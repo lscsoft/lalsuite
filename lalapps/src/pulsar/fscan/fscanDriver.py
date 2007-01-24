@@ -63,6 +63,8 @@ Usage: [options]
   -W, --html-filename        (optional) path and filename of output html file that displays output plots and data.
   -r  --html-reference-path  (optional) path to already existing reference output plots and data for display on html page.
   -e  --html-ref-ifo-epoch   (optional) string that give ifo and GPS start and end times of reference plots, e.g.,H1_840412814_845744945.
+  -q  --threshold-snr        (optional) if > 0 and a reference is given, then look for coincident lines with the reference spectra above this threshold.
+  -y  --coincidence-deltaf   (optional) if a reference and threshold on snr is given, then use this as the coincidence window on frequency.
   -X  --misc-desc            (optional) misc. part of the SFT description field in the filename (also used if -D option is > 0).
   -H, --use-hot              (optional) input data is from h(t) calibrated frames (h of t = hot!) (0 or 1).
   
@@ -76,7 +78,7 @@ Usage: [options]
 ####################################
 # PARSE COMMAND LINE OPTIONS 
 #
-shortop = "s:L:G:d:x:M:k:T:p:o:N:i:w:P:u:v:c:F:B:b:O:W:r:e:D:X:m:g:l:hSHZCR"
+shortop = "s:L:G:d:x:M:k:T:p:o:N:i:w:P:u:v:c:F:B:b:O:W:r:e:q:y:D:X:m:g:l:hSHZCR"
 longop = [
   "help",
   "analysis-start-time=",
@@ -105,7 +107,9 @@ longop = [
   "plot-output-path=",
   "html-filename=",
   "html-reference-path=",
-  "html-ref-ifo-epoch=",  
+  "html-ref-ifo-epoch=",
+  "threshold-snr=",
+  "coincidence-deltaf=",
   "make-gps-dirs=",
   "misc-desc=",
   "max-num-per-node=",
@@ -156,6 +160,8 @@ makeMatlabPlots = False
 htmlFilename = None
 htmlReferenceDir = None
 htmlRefIFOEpoch = None
+thresholdSNR = -1
+coincidenceDeltaF = 0
 makeGPSDirs = 0
 miscDesc = None
 maxNumPerNode = 1
@@ -221,6 +227,10 @@ for o, a in opts:
     htmlReferenceDir = a
   elif o in ("-e", "--html-ref-ifo-epoch"):
     htmlRefIFOEpoch = a
+  elif o in ("-q", "--threshold-snr"):
+    thresholdSNR = long(a)
+  elif o in ("-y", "--coincidence-deltaf"):
+    coincidenceDeltaF = long(a)
   elif o in ("-D", "--make-gps-dirs"):
     makeGPSDirs = int(a)
   elif o in ("-X", "--misc-desc"):
@@ -534,8 +544,26 @@ if (htmlFilename != None):
   htmlFID.write('<h1>FSCAN PLOTS</h1>\n')
   htmlFID.write('</div>\n')
   htmlFID.write('<br>\n')
+  if (htmlReferenceDir != None) and (thresholdSNR > 0):
+    htmlLinesFilename = 'Lines_%s' % htmlFilename
+    htmlLinesFID = file(htmlLinesFilename,'w')
+    htmlLinesFID.write('<html>\n')
+    htmlLinesFID.write('<head>\n')
+    htmlLinesFID.write('<meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">\n')
+    htmlLinesFID.write('<title>FSCANCOINCIDENTLINES</title>\n')
+    htmlLinesFID.write('</head>\n')
+    htmlLinesFID.write('<body>\n')
+    htmlLinesFID.write('<div style="text-align: center;">\n')
+    htmlLinesFID.write('<h1>FSCAN COINCIDENT LINES</h1>\n')
+    htmlLinesFID.write('</div>\n')
+    htmlLinesFID.write('<br>\n')  
+    # Add a link from the main page to this file:
+    htmlFID.write('<div style="text-align: center;">\n')    
+    htmlFID.write('Click <a href="%s">here</a> to get a list of coincident lines (or click on the link to "Coincident Lines" below each plot on the left).<br>\n' % htmlLinesFilename)
+    htmlFID.write('</div>\n')
+    htmlFID.write('<br>\n')
   htmlFID.write('<div style="text-align: center;">\n')
-  htmlFID.write('<h3>Click on a plot to get a larger pdf version. Click on a link below a plot to get corresponding timestamp or frequency vs power data file.</h3>\n')
+  htmlFID.write('<h3>Click on a plot to get a larger pdf version, or right click on a plot and click on "View Image" to get a larger .png version. Click on a link below a plot to get corresponding timestamp or frequency vs power data file.</h3>\n')
   htmlFID.write('</div>\n')
   htmlFID.write('<br>\n')  
   htmlFID.write('<table style="width: 100%; text-align: left;" border="1" cellpadding="2" cellspacing="2">\n')
@@ -544,12 +572,15 @@ if (htmlFilename != None):
 # Write spec_avg jobs to SUPER DAG:
 endFreq = startFreq + freqBand
 thisStartFreq = startFreq
+thisEndFreq = thisStartFreq + freqSubBand
 nodeCount = 0L
-while (thisStartFreq < endFreq):
-  thisEndFreq = thisStartFreq + freqSubBand
-  if (thisEndFreq >= endFreq):
+while (thisEndFreq < endFreq):
+  # Because SFTs are in the band [startFreq,endFreq) but spec_avg works on [startFreq,endFreq]
+  # we need to avoid the last subBand requested. The user thus should request 1 Hz more than
+  # wanted and the last one Hz band will not be used.
+  #if (thisEndFreq >= endFreq):
      # Fix off-by-one bin end frequency error; for simplicity remove final 1 Hz
-     thisEndFreq = endFreq - 1
+     #thisEndFreq = endFreq - 1
   specAvgJobName = 'SpecAvg_%i' % nodeCount
   dagFID.write('JOB %s spectrumAverage.sub\n' % specAvgJobName)
   dagFID.write('RETRY %s 10\n' % specAvgJobName)
@@ -569,9 +600,14 @@ while (thisStartFreq < endFreq):
      # Matlab will append .pdf and .png to outputFileName to save plots:
      outputFileName = '%s/%s' % (plotOutputPath, inputFileName)     
      effTBase = timeBaseline/180.0
+     effTBaseFull = timeBaseline
      deltaFTicks = 5
-     medBins = 10
-     argList = '%s %s %s %d %d %d %d %d %d %d' % (inputFileName,outputFileName,channelName,analysisStartTime,analysisEndTime,thisStartFreq,thisEndFreq,effTBase,deltaFTicks,medBins)
+     taveFlag = 1
+     if (htmlReferenceDir != None):
+        referenceFileName = '%s/spec_%d.00_%d.00_%s\n' % (htmlReferenceDir,thisStartFreq,thisEndFreq,htmlRefIFOEpoch)
+     else:
+        referenceFileName = 'none'
+     argList = '%s %s %s %d %d %d %d %d %d %d %d %d %d %s' % (inputFileName,outputFileName,channelName,analysisStartTime,analysisEndTime,thisStartFreq,thisEndFreq,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coincidenceDeltaF,referenceFileName)
      tagStringOut = '%s_%i' % (tagString, nodeCount)  
      dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(runMatlabPlotScriptJobName,argList,tagStringOut))
      dagFID.write('PARENT %s CHILD %s\n'%(specAvgJobName,runMatlabPlotScriptJobName))
@@ -594,6 +630,11 @@ while (thisStartFreq < endFreq):
      htmlFID.write('    SFT Timestamps: <a href="%s_timestamps">%s_timestamps</a><br>\n' % (inputFileName,inputFileName))
      htmlFID.write('    Freq. vs Power: <a href="%s.txt">%s.txt</a><br>\n' % (inputFileName,inputFileName))
      htmlFID.write('    Freq. vs Power (Sorted): <a href="%s_sorted.txt">%s_sorted.txt</a><br>\n' % (inputFileName,inputFileName))
+     if (htmlReferenceDir != None) and (thresholdSNR > 0):
+        htmlFID.write('    Coincident Lines: <a href="%s_sorted.txt">%s_lines.txt</a><br>\n' % (inputFileName,inputFileName))
+        htmlLinesFID.write('<br>\n')
+        htmlLinesFID.write('<object data="%s_sorted.txt" type="text/plain"></object>' % inputFileName)
+        htmlLinesFID.write('<br>\n')
      htmlFID.write('  </td>\n')
      if (htmlReferenceDir != None):
         htmlFID.write('  <td style="vertical-align: top;">\n')
@@ -603,6 +644,7 @@ while (thisStartFreq < endFreq):
         htmlFID.write('  </td>\n')
      htmlFID.write('  </tr>\n')
   thisStartFreq = thisStartFreq + freqSubBand
+  thisEndFreq = thisStartFreq + freqSubBand
   nodeCount = nodeCount + 1
 
 # Close the DAG file
@@ -616,6 +658,12 @@ if (htmlFilename != None):
   htmlFID.write('</body>\n')
   htmlFID.write('</html>\n')
   htmlFID.close
+  if (htmlReferenceDir != None) and (thresholdSNR > 0):
+     htmlLinesFID.write('<span style="text-decoration: underline;"><br>\n')
+     htmlLinesFID.write('</span>\n')
+     htmlLinesFID.write('</body>\n')
+     htmlLinesFID.write('</html>\n')
+     htmlLinesFID.close
 
 ###################################################
 # SUBMIT THE .dag FILE TO CONDOR; RUN condor_submit_dag
