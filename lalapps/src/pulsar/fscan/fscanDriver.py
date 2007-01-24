@@ -545,7 +545,9 @@ if (htmlFilename != None):
   htmlFID.write('</div>\n')
   htmlFID.write('<br>\n')
   if (htmlReferenceDir != None) and (thresholdSNR > 0):
-    htmlLinesFilename = '%s_Lines.html' % htmlFilename
+    htmlLinesFilenameList = os.path.split(htmlFilename)
+    htmlLinesFilenameShort = 'Lines_%s' % htmlLinesFilenameList[1]
+    htmlLinesFilename = os.path.join(htmlLinesFilenameList[0],htmlLinesFilenameShort)
     htmlLinesFID = file(htmlLinesFilename,'w')
     htmlLinesFID.write('<html>\n')
     htmlLinesFID.write('<head>\n')
@@ -559,11 +561,11 @@ if (htmlFilename != None):
     htmlLinesFID.write('<br>\n')  
     # Add a link from the main page to this file:
     htmlFID.write('<div style="text-align: center;">\n')    
-    htmlFID.write('Click <a href="%s">here</a> to get a list of coincident lines (or click on the link to "Coincident Lines" below each plot on the left).<br>\n' % htmlLinesFilename)
+    htmlFID.write('Click <a href="%s">here</a> to get a list of coincident lines (or click on the link to "Coincident Lines" below each plot on the left).<br>\n' % htmlLinesFilenameShort)
     htmlFID.write('</div>\n')
     htmlFID.write('<br>\n')
   htmlFID.write('<div style="text-align: center;">\n')
-  htmlFID.write('<h3>Click on a plot to get a larger pdf version, or right click on a plot and click on "View Image" to get a larger .png version. Click on a link below a plot to get corresponding timestamp or frequency vs power data file.</h3>\n')
+  htmlFID.write('<h3>Click on a plot to get a larger pdf version. Click on a link below a plot to get the corresponding timestamp or frequency vs power data file.</h3>\n')
   htmlFID.write('</div>\n')
   htmlFID.write('<br>\n')  
   htmlFID.write('<table style="width: 100%; text-align: left;" border="1" cellpadding="2" cellspacing="2">\n')
@@ -631,9 +633,9 @@ while (thisEndFreq < endFreq):
      htmlFID.write('    Freq. vs Power: <a href="%s.txt">%s.txt</a><br>\n' % (inputFileName,inputFileName))
      htmlFID.write('    Freq. vs Power (Sorted): <a href="%s_sorted.txt">%s_sorted.txt</a><br>\n' % (inputFileName,inputFileName))
      if (htmlReferenceDir != None) and (thresholdSNR > 0):
-        htmlFID.write('    Coincident Lines: <a href="%s_sorted.txt">%s_lines.txt</a><br>\n' % (inputFileName,inputFileName))
+        htmlFID.write('    Coincident Lines: <a href="%s_lines.txt">%s_lines.txt</a><br>\n' % (inputFileName,inputFileName))
         htmlLinesFID.write('<br>\n')
-        htmlLinesFID.write('<object data="%s_sorted.txt" type="text/plain"></object>' % inputFileName)
+        htmlLinesFID.write('<object data="%s_lines.txt" type="text/plain"></object>' % inputFileName)
         htmlLinesFID.write('<br>\n')
      htmlFID.write('  </td>\n')
      if (htmlReferenceDir != None):
