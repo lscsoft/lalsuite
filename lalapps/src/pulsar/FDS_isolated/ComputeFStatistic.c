@@ -2687,8 +2687,6 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     TRY (LALLeapSecs(status->statusPtr, &leap, &starttime, &formatAndAcc), status);
     cfg->edat->leap = leap;
 
-    fprintf(stdout,"%d\n",leap);
-
     TRY (LALInitBarycenter(status->statusPtr, cfg->edat), status);               
 
   } /* end: init ephemeris data */
