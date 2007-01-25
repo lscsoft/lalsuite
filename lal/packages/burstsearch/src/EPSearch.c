@@ -184,7 +184,7 @@ static void whiten(COMPLEX8FrequencySeries *fseries, const REAL4FrequencySeries 
 /******** <lalVerbatim file="EPSearchCP"> ********/
 SnglBurstTable *
 XLALEPSearch(
-	const COMPLEX8FrequencySeries  *hrssresponse,
+	const COMPLEX8FrequencySeries  *response,
 	const REAL4TimeSeries  *tseries,
 	EPSearchParams   *params
 )
@@ -203,7 +203,7 @@ XLALEPSearch(
 	TFTiling                *Tiling;
 	REAL4TimeFrequencyPlane *tfplane;
 	REAL4                   *normalisation;
-	REAL8                   *hrssfactor;
+	REAL8                   *hrssfactor = NULL;
 	const LIGOTimeGPS        gps_zero = LIGOTIMEGPSZERO;
 
 	/*
@@ -232,10 +232,9 @@ XLALEPSearch(
 	psd = XLALCreateREAL4FrequencySeries("anonymous", &gps_zero, 0, 0, &lalDimensionlessUnit, window->data->length / 2 + 1);
 	tfplane = XLALCreateTFPlane(&params->tfPlaneParams);
 	normalisation = LALMalloc(tfplane->params.freqBins * sizeof(*normalisation));
-	hrssfactor = LALMalloc(tfplane->params.freqBins * sizeof(*hrssfactor));
 	Tiling = XLALCreateTFTiling(&params->tfTilingInput, &tfplane->params);
 
-	if(!normalisation || !hrssfactor) {
+	if(!normalisation) {
 		errorcode = XLAL_ENOMEM;
 		goto error;
 	}
@@ -266,17 +265,14 @@ XLALEPSearch(
 		print_real4fseries(psd, params->printSpectrum);
 
 	/*
-	 * If doing hrss estimation, check the response function's
-	 * parameters
+	 * Compute the hrss factors
 	 */
 
-	if(hrssresponse) {
-		if((hrssresponse->f0 != psd->f0) ||
-		   (hrssresponse->deltaF != psd->deltaF) ||
-		   (hrssresponse->data->length != psd->data->length)) {
-		errorcode = XLAL_EINVAL;
+	XLALPrintInfo("XLALEPSearch(): computing the hrss factors\n");
+	hrssfactor = XLALTFPlaneEvalHrssFactor(tfplane, response, psd);
+	if(!hrssfactor) {
+		errorcode = XLAL_EFUNC;
 		goto error;
-		}
 	}
 
 	/*
@@ -325,16 +321,6 @@ XLALEPSearch(
 			goto error;
 		}
 		XLALDestroyCOMPLEX8FrequencySeries(fseries);
-
-		/*
-		 * Compute the hrss factors
-		 */
-
-		if(hrssresponse) {
-			XLALPrintInfo("XLALEPSearch(): computing the hrss factors\n");
-			XLALTFPlaneEvalHrssFactor(hrssfactor, tfplane, hrssresponse, psd);
-		} else
-			memset(hrssfactor, 0, tfplane->params.freqBins * sizeof(*hrssfactor));
 
 		/*
 		 * Compute the excess power for each time-frequency tile

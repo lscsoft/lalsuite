@@ -36,7 +36,7 @@ tagEPSearchParams {
 
 SnglBurstTable *
 XLALEPSearch(
-	const COMPLEX8FrequencySeries  *hrssresponse,
+	const COMPLEX8FrequencySeries  *response,
 	const REAL4TimeSeries  *tseries,
 	EPSearchParams   *params
 );

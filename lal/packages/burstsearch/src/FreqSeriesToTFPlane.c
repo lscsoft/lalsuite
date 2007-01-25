@@ -139,26 +139,47 @@ static REAL4 apply_filter(
  */
 
 REAL8 *XLALTFPlaneEvalHrssFactor(
-	REAL8 *hrssfactor,
 	const REAL4TimeFrequencyPlane *plane,
 	const COMPLEX8FrequencySeries *response,
 	const REAL4FrequencySeries *psd
 )
 {
+	const char func[] = "XLALTFPlaneEvalHrssFactor";
 	int fbins_per_channel = plane->params.deltaF / response->deltaF;
 	int fstart = (plane->params.flow - response->f0) / response->deltaF;
 	int tserieslength = 2 * (response->data->length - 1);
 	const COMPLEX8 *r = response->data->data + fstart;
 	const REAL4 *p = psd->data->data + fstart;
-	REAL8 *h = hrssfactor;
+	REAL8 *hrssfactor;
+	REAL8 *h;
 	int i, j;
 
+	/*
+	 * Check that the response is compatible with the spectrum.
+	 */
+
+	if((response->f0 != psd->f0) ||
+	   (response->deltaF != psd->deltaF) ||
+	   (response->data->length != psd->data->length))
+	   	XLAL_ERROR_NULL(func, XLAL_EINVAL);
+
+	/*
+	 * Allocate memory
+	 */
+
+	hrssfactor = LALMalloc(plane->params.freqBins * sizeof(*hrssfactor));
+	if(!hrssfactor)
+		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+
+	/*
+	 * Compute the factors
+	 */
+
+	h = hrssfactor;
 	for(i = 0; i < plane->params.freqBins; i++, h++) {
-		for(j = 0, *h = 0.0; j < fbins_per_channel; j++, r++, p++) {
-			REAL8 re = r->re;
-			REAL8 im = r->im;
-			*h += sqrt((re * re + im * im) * *p);
-		}
+		*h = 0.0;
+		for(j = 0; j < fbins_per_channel; j++, r++, p++)
+			*h += sqrt((r->re * r->re + r->im * r->im) * *p);
 		*h *= 0.5 / (fbins_per_channel * tserieslength) / sqrt(psd->deltaF);
 	}
 

@@ -71,7 +71,6 @@ XLALFreqSeriesToTFPlane(
 
 REAL8 *
 XLALTFPlaneEvalHrssFactor(
-	REAL8 *hrssfactor,
 	const REAL4TimeFrequencyPlane *plane,
 	const COMPLEX8FrequencySeries *response,
 	const REAL4FrequencySeries *psd
