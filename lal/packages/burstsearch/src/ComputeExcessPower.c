@@ -52,13 +52,6 @@ XLALComputeExcessPower(
 	INT4 nt = plane->params.timeBins;
 	size_t i;
 
-	/*{
-		FILE *fp = fopen("hrssfactor.dat","w");
-		for(i=0; i<nf; i++, hrssfactor++)
-			fprintf(fp,"%d %e\n",i, *hrssfactor);
-		fclose(fp);
-	}*/
-
 	/* check on some parameter values */
 	if((nf <= 0) || (nt <= 0))
 		XLAL_ERROR(func, XLAL_EDOM);
@@ -85,5 +78,5 @@ XLALComputeExcessPower(
 	}
 
 	/* success */
-	return(0);
+	return 0;
 }
