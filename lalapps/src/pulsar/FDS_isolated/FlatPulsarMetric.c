@@ -69,7 +69,7 @@ typedef struct {
   const EphemerisData *edat;
   const LALDetector *site;
   REAL8 refTime;
-  LIGOTimeGPS startTime;
+  REAL8 startTime;
   REAL8 Tspan;
 } cov_params_t;
 
@@ -78,8 +78,6 @@ LALStatus empty_status;
 
 /*---------- Global variables ----------*/
 static const REAL8 sp1_fact_inv[] = { 1.0/1.0, 1.0/2, 1.0/(3*2), 1.0/(4*3*2), 1.0/(5*4*3*2), 1.0/(6*5*4*3*2) };	/* 1/(s+1)! */
-
-
 
 /*---------- internal prototypes ----------*/
 REAL8 XLALcov ( const REAL8Vector *at, const REAL8Vector *bt );
@@ -159,12 +157,16 @@ Phi_i_Phi_j ( double ti, void *params )
 
 } /* Phi_i_Phi_j() */
 
-/* for integration */
+/* integration-function: compute phi_i where i = params->comp.
+ * This is using natural units for time, so tt in [ 0, 1] corresponding
+ * to GPS-times in [startTime, startTime + Tspan ]
+ */
 double
-Phi_i ( double ti, void *params )
+Phi_i ( double tt, void *params )
 {
   cov_params_t *par = (cov_params_t*)params;
   double ret;
+  REAL8 ti = par->startTime + tt * par->Tspan;
 
   /* rX, rY */
   if ( par->comp < 0 )
@@ -179,13 +181,11 @@ Phi_i ( double ti, void *params )
       LALBarycenterEarth( &status, &earth, &tGPS, par->edat );
       if ( par->site->frDetector.prefix[0] == 'Z' )	/* LISA */
 	{
-	  coseps = 1;
-	  sineps = 0;
+	  coseps = 1; sineps = 0;
 	}
       else
 	{
-	  sineps = sin ( LAL_IEARTH );
-	  coseps = cos ( LAL_IEARTH );
+	  sineps = sin ( LAL_IEARTH ); coseps = cos ( LAL_IEARTH );
 	}
       
       rX = (LAL_C_SI / LAL_AU_SI) * earth.posNow[0] ;
@@ -246,6 +246,7 @@ XLALFlatMetricCW ( gsl_matrix *gij, 			/**< [out] metric */
   params.edat = edat;
   params.site = site;
   params.refTime = XLALGPSGetREAL8 ( &refTime );
+  params.startTime = XLALGPSGetREAL8 ( &startTime );
   params.Tspan = Tspan;
   
   /* gXX */
@@ -254,7 +255,7 @@ XLALFlatMetricCW ( gsl_matrix *gij, 			/**< [out] metric */
   gg = cov_Phi_ij ( &params );
 
   gsl_matrix_set (gij, 0, 0, gg);
-  /* gXX */
+  /* gYY */
   params.comp1 = COMP_RY;
   params.comp2 = COMP_RY;
   gg = cov_Phi_ij ( &params );
@@ -289,7 +290,7 @@ XLALFlatMetricCW ( gsl_matrix *gij, 			/**< [out] metric */
 	{
 	  params.comp1 = s;
 	  params.comp2 = sp;
-	  gg = - cov_Phi_ij ( &params );
+	  gg = cov_Phi_ij ( &params );
 
 	  gsl_matrix_set (gij, s+2,  sp+2, gg);
 	  gsl_matrix_set (gij, sp+2, s+2, gg);
