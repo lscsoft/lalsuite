@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
   fprintf(stdout, "config file %s contains %d waves\n", filename, nrcatalog.length);
 
   for ( k = 0; k < nrcatalog.length; k++) {
-    fprintf("\n\n Wave # %d:\n", k);
+    fprintf(stdout,"\n\n Wave # %d:\n", k);
     fprintf(stdout, "Mass ratio = %f, spin1=(%f,%f,%f), spin2=(%f,%f, %f), l=%d, m=%d, datafile=%s\n", 
 	    nrcatalog.data[k].massRatio, nrcatalog.data[k].spin1[0], nrcatalog.data[k].spin1[1],
 	    nrcatalog.data[k].spin1[2], nrcatalog.data[k].spin2[0], nrcatalog.data[k].spin1[1],
