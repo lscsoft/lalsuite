@@ -192,9 +192,9 @@ Phi_i ( double tt, void *params )
       rY = (LAL_C_SI / LAL_AU_SI) * ( coseps * earth.posNow[1] + sineps * earth.posNow[2] );
       
       if ( par->comp == COMP_RX )
-	ret = rX;
+	ret = -rX;	/* NOTE the '-' sign: the skypos-variable is k \propto -n  */
       else
-	ret= rY;
+	ret= -rY;
     } /* rX,rY */
   else
     {
