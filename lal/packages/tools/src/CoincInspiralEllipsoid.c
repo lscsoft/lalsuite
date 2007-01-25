@@ -234,8 +234,6 @@ XLALSnglInspiralCoincTestEllipsoid(
   static const char *func = "XLALSnglInspiralCoincTest";
 
 
-  printf("Calling the ellipsoid NIfo coinc function");
-
   /* Loop over sngl_inspirals contained in coinc_inspiral */
   for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
@@ -256,6 +254,7 @@ XLALSnglInspiralCoincTestEllipsoid(
         EventIDColumn  *thisID      = NULL;
         CoincInspiralTable *thisCoinc;
 
+        accuracyParams->match = 0;
         for ( thisID = eventIDHead; thisID; thisID = thisID->next )
         {
           thisCoinc = thisID->coincInspiralTable;
