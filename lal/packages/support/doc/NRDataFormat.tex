@@ -1,0 +1,113 @@
+%%%%$Id$%%%
+
+\documentclass[amsmath,amssymb]{article}
+\usepackage{graphicx}
+
+
+\begin{document}
+
+\title{Data formats for numerical relativity waves}
+\date{\today}
+\author{Author list TBD}
+\maketitle
+
+\begin{abstract}
+This document describes data formats to further the interaction
+between numerical relativity groups and the LSC. The aim is to have a
+simple format which is nevertheless sufficiently general so that all
+numerical relativity groups can use it.  
+\end{abstract}
+
+\section{Multipole expansion of the wave}
+\label{sec:multipoles}
+
+The output of a numerical relativity code is the full spacetime of a
+binary black hole system while what is required for data analysis
+purposes is the strain $h(t)$ as measured by a detector.  We assume
+that the wave extraction is performed in the wavezone so that the
+spacetime can be written as a perturbation of flat space $g_{\mu\nu} =
+\eta_{\mu\nu} + h_{\mu\nu}$.  We describe the gravitational wave
+$h_{\mu\nu}$ wave in the TT gauge.  The wave falls off as $1/r$ where
+$r$ is the distance from the source
+\begin{equation}
+  \label{eq:1}
+  h_{ij} = \frac{A_{ij}}{r} 
+\end{equation}
+where $A_{ij}$ is a transverse traceless tensor.  
+
+Introduce a coordinate system $(x,y,z)$ associated with the binary
+system as follows.  The orbital plane is taken to be the $x$-$y$ plane
+with the $z$-axis in the direction of the orbital angular momentum.
+The orbital plane works when the black holes are non-spinning but it
+can be ambiguous, especially when the spin of the black holes causes
+the orbital plane to precess significantly.  **some more words here***
+The $x$-axis is chosen so that the initial orbital phase of the binary
+is 0.  **better to choose phase at coalescence?***
+
+Given this coordinate system, we define spherical coordinates
+$(\iota,\phi)$ where $\iota$ is the inclination angle and $\phi$ is
+the phase angle and we break up $h_{ij}$ into modes in this coordinate
+system. **figure?***
+
+Description on the mode expansion....
+
+\section{Data format}
+\label{sec:format}
+
+
+For our purposes, a single numerical waveform is defined by 9
+parameters: the mass ratio $M_1/M_2$, the three components of the
+individual spins $\mathbf{S}_1$ and $\mathbf{S}_2$ and the mode
+numbers $(l,m)$.  These 9 parameters will be referred to as the
+``metadata'' for a waveform.  ***We can add more parameters to this
+metadata if necessary.***
+
+The data for a single mode $rh_{+,\times}^{lm}$ is to be written as a
+plain text file in three columns for the time $t$, $h_+$ and
+$h_\times$.  The time is in units of the ADM mass. The time must be in
+units of the total mass $M$ of the binary (or, almost equivalently,
+the ADM mass) and the sampling must be uniform.  A sampling rate of
+$1\times M$ is sufficient for our purposes, but there is no other
+restriction on it. **specify a directory structure?**
+
+This is an example of a data file 
+\begin{verbatim}
+# time       hplus        hcross
+0.000000e+00 1.138725e-02 -8.319811e-04
+2.000000e-01 1.138725e-02 -1.247969e-03
+4.000000e-01 1.138726e-02 -1.663954e-03
+6.000000e-01 1.138727e-02 -2.079936e-03
+8.000000e-01 1.138728e-02 -2.495913e-03
+1.000000e-00 1.138728e-02 -2.911884e-03
+1.200000e+00 1.138729e-02 -3.327850e-03
+1.400000e+00 1.138730e-02 -3.743807e-03
+1.600000e+00 1.138731e-02 -4.159757e-03
+1.800000e+00 1.138733e-02 -4.575696e-03
+2.000000e+00 1.138734e-02 -4.991627e-03
+2.200000e+00 1.138735e-02 -5.407545e-03
+2.400000e+00 1.138737e-02 -5.823452e-03
+2.600000e+00 1.138739e-02 -6.239345e-03
+2.800000e+00 1.138740e-02 -6.655225e-03
+3.000000e+00 1.138752e-02 -7.071059e-03
+3.200000e+00 1.138754e-02 -7.486903e-03
+3.400000e+00 1.138757e-02 -7.902739e-03
+\end{verbatim}
+
+The metadata information for the different datafiles will be stored in
+a separate directory.  This metadata file will also be plain text and
+will have 10 columns: 9 for the metadata and the last one specifying
+the location of the corresponding datafile.  This is an example of a
+metadata file containing two waveforms:
+\begin{verbatim}
+## example wave
+## m1/m2 S1x S1y S1z S2x S2y S2z l m filename
+1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 2 ./example1.dat
+ another test
+##1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 1 ./example2.dat
+\end{verbatim}
+Lines starting with a $\%$ or $\#$ will be taken to be comment lines and
+ignored. There can be an arbitrary number of comment lines.  **more***
+
+
+
+\end{document}
