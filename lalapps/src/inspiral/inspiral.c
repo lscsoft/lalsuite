@@ -236,6 +236,9 @@ REAL8  trigScanVolumeSafetyFac = 0.0;
 /* Use this safety factor for  the volume spanned by a trigger in the     */
 /* parameter space. When set to 1.0, the volume is taken to be that of the*/
 /* ambiguity ellipsoid at the template MM.                                */ 
+REAL8  trigScanMinMatch=0.0;            /* the minimal match of the     */
+                                        /* original bank entered at the */
+                                        /* command line                 */
 INT2  trigScanAppendStragglers = -1;    /* Switch to append cluster     */
                                         /* out-liers (stragglers)       */
 
@@ -390,7 +393,6 @@ int main( int argc, char *argv[] )
   
   /* trigScan clustering input parameters */
   trigScanClusterIn  *condenseIn=NULL; 
-  REAL8              bankMinMatch=0.0L;
 
 
   /*
@@ -566,12 +568,6 @@ int main( int argc, char *argv[] )
 
   if ( vrbflg ) fprintf( stdout, "parsed %d templates from %s\n", 
       numTmplts, bankFileName );
-
-  /* Store the bankMinMatch before it gets over-riden below */
-  if ( bankHead )
-  {
-    bankMinMatch = bankHead->minMatch;
-  }
 
   /* override the minimal match of the bank if specified on the command line */
   if ( minimalMatch >= 0 )
@@ -1955,9 +1951,6 @@ int main( int argc, char *argv[] )
     { 
         XLALPopulateTrigScanInput( &condenseIn, fcDataParams, 
                 fcTmpltParams, fcFilterParams, bankHead );
-        /* minMatch stored in bankHead could be mangled. Reset 
-         * to the actual value used to create the bank here  */
-        condenseIn->mmCoarse = bankMinMatch;
     }
 
 
@@ -2704,7 +2697,8 @@ int main( int argc, char *argv[] )
         if ( condenseIn && (savedEvents.snglInspiralTable) ) 
         { 
             condenseIn->bin_time   = trigScanDeltaEndTime; 
-            condenseIn->sf_volume  = trigScanVolumeSafetyFac; 
+            condenseIn->sf_volume  = trigScanVolumeSafetyFac;
+            condenseIn->mmCoarse = trigScanMinMatch;
             condenseIn->scanMethod = trigScanMethod; 
             condenseIn->n          = XLALCountSnglInspiral ( (savedEvents.snglInspiralTable) ); 
             condenseIn->vrbflag    = vrbflg;
@@ -2926,6 +2920,8 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --ts-endtime-interval msec   set end-time interval for TrigScan clustering\n"\
 "  --ts-volume-safety fac       set template volume safety factor for TrigScan\n"\
 "                               clustering fac should be >= 1.0\n"\
+"  --ts-min-match M             set minimal match for TrigScan clustering\n"\ 
+"                                 M should be between 0.0 and 1.0\n"\
 "\n"\
 "  --enable-output              write the results to a LIGO LW XML file\n"\
 "  --output-mask MASK           write the output sngl_inspiral table\n"\
@@ -3053,6 +3049,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"ts-cluster",              required_argument, 0,                '*'},
     {"ts-endtime-interval",     required_argument, 0,                '<'},
     {"ts-volume-safety",        required_argument, 0,                '>'},
+    {"ts-min-match",            required_argument, 0,                '!'},
     {"rsq-veto-time-thresh",    required_argument, 0,                '('},
     {"rsq-veto-max-snr",        required_argument, 0,                ')'},
     {"rsq-veto-coeff",          required_argument, 0,                '['},
@@ -4186,6 +4183,20 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "float", "%s", optarg ); 
         break; 
 
+      case '!':
+        /* TrigScan Minimal Match */ 
+        trigScanMinMatch = atof( optarg );
+        if ( ( trigScanMinMatch < 0.0 ) || ( trigScanMinMatch > 1.0 ) )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "ts-min-match must be between 0.0 and 1.0 : "
+              "(%f specified)\n",
+              long_options[option_index].name, trigScanMinMatch );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
       case '?':
         exit( 1 );
         break;
@@ -4846,6 +4857,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       if ( trigScanVolumeSafetyFac < 1.0 )
       {
           fprintf ( stderr, "You must specify --ts-volume-safety\n" );
+          exit(1);
+      }
+
+      if ( ! trigScanMinMatch ) 
+      {       
+          fprintf ( stderr, "You must specify --ts-min-match\n" );
           exit(1);
       }
 
