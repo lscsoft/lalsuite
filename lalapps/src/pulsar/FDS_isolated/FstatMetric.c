@@ -151,6 +151,7 @@ typedef struct
 {
   EphemerisData *edat;		/**< ephemeris data (from LALInitBarycenter()) */
   LIGOTimeGPS startTime;	/**< start time of observation */
+  LIGOTimeGPS refTime;		/**< reference time for spin-parameters  */
   DopplerPoint dopplerPoint;	/**< sky-position and spins */
   DopplerPoint offsetUnits;	/**< (natural)units for skypos and spins */
   gsl_vector *dopplerOffset;	/**< offset-vector from signal-location */
@@ -190,6 +191,7 @@ CHAR *uvar_ephemDir;		/**< directory of ephemeris-files */
 CHAR *uvar_ephemYear;		/**< year-range of ephemeris-file to use */
 
 REAL8 uvar_startTime;		/**< GPS start time of observation */
+REAL8 uvar_refTime;		/**< reference-time for spin-parameters fkdot */
 REAL8 uvar_duration;		/**< length of observation in seconds */
 INT4 uvar_numSteps;		/**< how many timesteps to use in Gauss-Legendre integration */
 
@@ -392,12 +394,21 @@ main(int argc, char *argv[])
 	case METRIC_FLAT:
 	  {
 	    LALDetector *site = &(config.multiDetStates->data[0]->detector ); 
-	    if ( 0 != XLALFlatMetricCW ( gFlat_ij, config.startTime, config.startTime,  uvar_duration, config.edat, site ) )
+	    if ( 0 != XLALFlatMetricCW ( gFlat_ij, config.refTime, config.startTime,  uvar_duration, config.edat, site ) )
 	      {
 		LogPrintf ( LOG_CRITICAL, "XLALFlatMetricCW() failed!\n");
 		return -1;
 	      }
 	  }
+	  mm = quad_form ( gFlat_ij, config.dopplerOffset );	/* FIXME: convert doppler-parameters */
+	  if ( fpMetric )
+	    {
+	      const CHAR *gprefix = "gFlat_ij = \n";
+	      const CHAR *mprefix = "mFlat = ";
+	      
+	      printGSLmetric ( fpMetric, gprefix, gFlat_ij );
+	      fprintf ( fpMetric, "\n%s %.16g;\n\n", mprefix, mm );
+	    } /* if fpMetric */
 
 	  break;
 	  
@@ -419,6 +430,7 @@ main(int argc, char *argv[])
   gsl_matrix_free ( gF_ij );
   gsl_matrix_free ( gFav_ij );
   gsl_matrix_free ( g_ij );
+  gsl_matrix_free ( gFlat_ij );
 
   gsl_matrix_free ( m1_ij );
   gsl_matrix_free ( m2_ij );
@@ -829,6 +841,7 @@ initUserVars (LALStatus *status)
   uvar_f1dot = 0.0;
 
   uvar_startTime = 714180733;
+  uvar_refTime   = uvar_startTime;
   uvar_duration = 10 * 3600;
   uvar_numSteps = 2000;
 
@@ -851,6 +864,7 @@ initUserVars (LALStatus *status)
   LALregREALUserVar(status,	f1dot, 		's', UVAR_OPTIONAL, 	"first spindown-value df/dt");
   LALregREALUserVar(status,	df1dot, 	 0, UVAR_OPTIONAL, 	"first spindown-value offset");
   LALregREALUserVar(status, 	startTime,      't', UVAR_OPTIONAL, 	"GPS start time of observation");
+  LALregREALUserVar(status, 	refTime,      	 0, UVAR_OPTIONAL, 	"reference time for spin-parameters [Default = startTime]");
   LALregREALUserVar(status,    	duration,	'T', UVAR_OPTIONAL,	"Alternative: Duration of observation in seconds");
   LALregINTUserVar(status,    	numSteps,	 0,  UVAR_OPTIONAL,	"Order of Gauss-Legendre quadrature to use");
   LALregSTRINGUserVar(status,	ephemDir,       'E', UVAR_OPTIONAL, 	"Directory where Ephemeris files are located");
@@ -881,8 +895,8 @@ InitCode (LALStatus *status, ConfigVariables *cfg)
   ATTATCHSTATUSPTR (status);
 
   /* ----- determine start-time from user-input */
-  cfg->startTime.gpsSeconds = (INT4)uvar_startTime;
-  cfg->startTime.gpsNanoSeconds = (INT4)(1.0*(uvar_startTime - cfg->startTime.gpsSeconds) * OneBillion );
+  XLALFloatToGPS( &(cfg->startTime), uvar_startTime );
+  XLALFloatToGPS( &(cfg->refTime), uvar_refTime );
 
   /*---------- Initialize Ephemeris-data ---------- */
   {
