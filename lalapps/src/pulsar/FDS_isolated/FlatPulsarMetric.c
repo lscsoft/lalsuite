@@ -37,6 +37,7 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_blas.h>
+#include <gsl/gsl_integration.h>
 
 #include <lal/DetectorStates.h>
 #include <lal/PulsarTimes.h>
@@ -52,15 +53,159 @@ NRCSID( FLATPULSARMETRICC, "$Id$");
 /*----- SWITCHES -----*/
 
 /*---------- internal types ----------*/
+typedef enum {
+  COMP_RX = -2,
+  COMP_RY = -1,
+  COMP_S0,	/* s=0: Freq */
+  COMP_S1,	/* s=1: f1dot */
+  COMP_S2,	/* s=2: f2dot */
+  COMP_S3,	/* s=3: f3dot */
+  COMP_LAST
+} component_t;
+
+typedef struct {
+  component_t comp1, comp2;	/* the two components of the component-product Phi_i_Phi_j to compute*/
+  component_t comp;		/* component for single-component Phi_i compute */
+  const EphemerisData *edat;
+  const LALDetector *site;
+  REAL8 refTime;
+  LIGOTimeGPS startTime;
+  REAL8 Tspan;
+} cov_params_t;
 
 /*---------- empty initializers ---------- */
+LALStatus empty_status;
 
 /*---------- Global variables ----------*/
+static const REAL8 sp1_fact_inv[] = { 1.0/1.0, 1.0/2, 1.0/(3*2), 1.0/(4*3*2), 1.0/(5*4*3*2), 1.0/(6*5*4*3*2) };	/* 1/(s+1)! */
+
+
 
 /*---------- internal prototypes ----------*/
 REAL8 XLALcov ( const REAL8Vector *at, const REAL8Vector *bt );
-
+double Phi_i ( double ti, void *params );
+double Phi_i_Phi_j ( double ti, void *params );
+REAL8 cov_Phi_ij ( const cov_params_t *params );
 /*==================== FUNCTION DEFINITIONS ====================*/
+
+REAL8 
+cov_Phi_ij ( const cov_params_t *params )
+{
+  gsl_function integrand;
+  cov_params_t par;
+  int stat;
+  double epsabs = 1e-6;
+  double epsrel = 1e-6;
+  double abserr;
+  size_t neval;
+
+  double av_ij, av_i, av_j;
+
+  par = (*params);	/* struct-copy */
+  integrand.params = (void*)&par;
+
+  /* compute <phi_i phi_j> */
+  integrand.function = &Phi_i_Phi_j;
+  stat = gsl_integration_qng (&integrand, 0, 1, epsabs, epsrel, &av_ij, &abserr, &neval);
+  if ( stat != 0 )
+    {
+      LALPrintError ( "\nGSL-integration 'gsl_integration_qng()' of <Phi_i Phi_j> failed!\n");
+      XLAL_ERROR_REAL8( "cov_Phi_ij", XLAL_EFUNC );
+    }
+  printf ( "Integration of <Phi_i Phi_j> succeeded with abserr = %g, neval = %d: result = %g\n", abserr, neval, av_ij );
+
+  /* compute <phi_i> */
+  integrand.function = &Phi_i;
+  par.comp = par.comp1;
+  stat = gsl_integration_qng (&integrand, 0, 1, epsabs, epsrel, &av_i, &abserr, &neval);
+  if ( stat != 0 )
+    {
+      LALPrintError ( "\nGSL-integration 'gsl_integration_qng()' of <Phi_i> failed!\n");
+      XLAL_ERROR_REAL8( "cov_Phi_ij", XLAL_EFUNC );
+    }
+  printf ( "Integration of <Phi_i> succeeded with abserr = %g, neval = %d: result = %g\n", abserr, neval, av_i );
+
+  /* compute <phi_i> */
+  integrand.function = &Phi_i;
+  par.comp = par.comp2;
+  stat = gsl_integration_qng (&integrand, 0, 1, epsabs, epsrel, &av_j, &abserr, &neval);
+  if ( stat != 0 )
+    {
+      LALPrintError ( "\nGSL-integration 'gsl_integration_qng()' of <Phi_j> failed!\n");
+      XLAL_ERROR_REAL8( "cov_Phi_ij", XLAL_EFUNC );
+    }
+  printf ( "Integration of <Phi_i> succeeded with abserr = %g, neval = %d: result = %g\n", abserr, neval, av_j );
+  
+
+  return ( av_ij - av_i * av_j );	/* return covariance */
+
+} /* cov_Phi_ij() */
+
+
+double 
+Phi_i_Phi_j ( double ti, void *params )
+{
+  cov_params_t *par = (cov_params_t*)params;
+
+  double phi_i, phi_j;
+
+  par->comp = par->comp1;
+  phi_i = Phi_i ( ti, params );
+
+  par->comp = par->comp2;
+  phi_j = Phi_i ( ti, params );
+
+  return ( phi_i * phi_j );
+
+} /* Phi_i_Phi_j() */
+
+/* for integration */
+double
+Phi_i ( double ti, void *params )
+{
+  cov_params_t *par = (cov_params_t*)params;
+  double ret;
+
+  /* rX, rY */
+  if ( par->comp < 0 )
+    {
+      LALStatus status = empty_status;
+      EarthState earth;
+      LIGOTimeGPS tGPS;
+      REAL8 coseps, sineps;		/* inclination equatorial wrt ecliptic coords (eps ~23.4deg) */
+      REAL8 rX, rY;
+
+      XLALFloatToGPS( &tGPS, ti );
+      LALBarycenterEarth( &status, &earth, &tGPS, par->edat );
+      if ( par->site->frDetector.prefix[0] == 'Z' )	/* LISA */
+	{
+	  coseps = 1;
+	  sineps = 0;
+	}
+      else
+	{
+	  sineps = sin ( LAL_IEARTH );
+	  coseps = cos ( LAL_IEARTH );
+	}
+      
+      rX = (LAL_C_SI / LAL_AU_SI) * earth.posNow[0] ;
+      rY = (LAL_C_SI / LAL_AU_SI) * ( coseps * earth.posNow[1] + sineps * earth.posNow[2] );
+      
+      if ( par->comp == COMP_RX )
+	ret = rX;
+      else
+	ret= rY;
+    } /* rX,rY */
+  else
+    {
+      int s = par->comp;
+      ret = pow ( (ti - par->refTime)/par->Tspan, s + 1 ) * sp1_fact_inv[s];
+    }
+
+  return ret;
+
+} /* Phi_i() */
+
 
 /** Compute a flat approximation for the continuous-wave metric (by neglecting the z-motion of 
  * the detector in ecliptic coordinates. 
@@ -72,25 +217,22 @@ REAL8 XLALcov ( const REAL8Vector *at, const REAL8Vector *bt );
  * \f$\omega_s \equiv 2\pi \, f^{(s)}\, T^{s+1}\f$ in terms of the observation time \f$T\f$,
  * and \f$\tilde{k}_l \equiv - 2\pi \bar{f} \hat{n} R_\mathrm{orb} / c\f$.
  * 
- * NOTE: the different detectors are currently combined simply by unit-weight averaging.
+ * NOTE: the different detectors are combined by unit-weight averaging.
  */
 int
-XLALFlatMetricCW ( gsl_matrix *gij, 				/**< [out] metric */
-		   const MultiDetectorStateSeries *mDetStates,/**< [in] detector-state series */
-		   LIGOTimeGPS refTime			/**< [in] reference time for spin-parameters */
+XLALFlatMetricCW ( gsl_matrix *gij, 			/**< [out] metric */
+		   LIGOTimeGPS refTime,			/**< [in] reference time for spin-parameters */
+		   LIGOTimeGPS startTime,		/**< [in] startTime */
+		   REAL8 Tspan,				/**< [in] total observation time spanned */
+		   const EphemerisData *edat,		/**< [in] ephemeris data */
+		   const LALDetector *site		/**< [in] detector */
 		   )
 {
   UINT4 dim, numSpins, s, sp;
-  UINT4 X, numDet;
-  UINT4 i, l, numSteps;
-  REAL8Vector *rx, *ry;		/* position time-series in ecliptic coordinates */
-  REAL8Vector **ti;		/* time-series of deltaT^(s+1)/(Tspan (s+1)!) */
-
-  REAL8 coseps, sineps;		/* inclination equatorial wrt ecliptic coords (eps ~23.4deg) */
-  REAL8 Tspan;
   REAL8 gg;
+  cov_params_t params;
 
-  if ( !gij || !mDetStates || ( gij->size1 != gij->size2  ) )
+  if ( !gij || ( gij->size1 != gij->size2  ) || !edat || !site )
     return -1;
 
   dim = gij->size1;
@@ -101,97 +243,57 @@ XLALFlatMetricCW ( gsl_matrix *gij, 				/**< [out] metric */
     }
   numSpins = dim - 2;
 
-  switch ( mDetStates->data[0]->system )
-    {
-    case COORDINATESYSTEM_ECLIPTIC:
-      coseps = 1;
-      sineps = 0;
-      break;
-    case COORDINATESYSTEM_EQUATORIAL:
-      sineps = sin ( LAL_IEARTH );
-      coseps = cos ( LAL_IEARTH );
-      break;
-    default:
-      LALPrintError("\nIllegal coordinate system '%d' for XLALFlatMetricCW(): only EQUATORIAL or ECLIPTIC allowed!\n\n");
-      return -1;
-    } /* switch (system) */
-
-  numDet = mDetStates->length;    
-  numSteps = 0;
-  for ( X=0; X < numDet; X ++ )
-    numSteps += mDetStates->data[X]->length;
-
-  Tspan = mDetStates->Tspan;
+  params.edat = edat;
+  params.site = site;
+  params.refTime = XLALGPSGetREAL8 ( &refTime );
+  params.Tspan = Tspan;
   
-  if ( (rx = XLALCreateREAL8Vector ( numSteps ) ) == NULL )
-    goto failed;
-  if ( (ry = XLALCreateREAL8Vector ( numSteps ) ) == NULL )
-    goto failed;
-  ti = LALCalloc ( numSpins, sizeof(REAL8Vector*) );
-  for ( s=0; s < numSpins; s ++ )
-    if ( ( ti[s] = XLALCreateREAL8Vector ( numSteps )) == NULL )
-      goto failed;
+  /* gXX */
+  params.comp1 = COMP_RX;
+  params.comp2 = COMP_RX;
+  gg = cov_Phi_ij ( &params );
 
-
-  /* determine the 2 + numSpins time-series {rx(t), ry(t), deltaT^{s+1}/(s+1)!} */
-  l = 0;
-  for ( X=0; X < numDet; X ++ )
-    {
-      const DetectorStateSeries *detStates = mDetStates->data[X];
-      UINT4 numStepsX = detStates->length;
-      for ( i=0; i < numStepsX; i ++ )
-	{
-	  /* detector position-series in ecliptic coordinates, normalized by 1AU */
-	  /* 
-	     rx->data[l] = (LAL_C_SI / LAL_AU_SI) * detStates->data[i].rDetector[0] ;
-	     ry->data[i] = (LAL_C_SI / LAL_AU_SI) * ( coseps * detStates->data[i].rDetector[1]  + sineps * detStates->data[i].rDetector[2] );
-	  */
-
-	  rx->data[l] = (LAL_C_SI / LAL_AU_SI) * detStates->data[i].earthState.posNow[0] ;
-	  ry->data[i] = (LAL_C_SI / LAL_AU_SI) * ( coseps * detStates->data[i].earthState.posNow[1]  
-						   + sineps * detStates->data[i].earthState.posNow[2] );
-
-	  /* 
-	  printf ("ti = %d, rx = %.6f, ry = %.6f\n", detStates->data[i].tGPS.gpsSeconds, rx->data[l], ry->data[l] );
-	  */
-
-	  /* spins */
-	  ti[0]->data[l] = XLALGPSDiff ( &(detStates->data[i].tGPS), &refTime )  / Tspan;
-	  for ( s=1; s < numSpins; s ++ )
-	    ti[s]->data[l] = ti[s-1]->data[l] * ti[0]->data[l] / (s + 1.0);
-
-	  l ++ ;	/* counter over all time-steps */
-	} /* for i < numStepsX */
-    } /* for X < numDet */
-
-  /* gxx */
-  gg = XLALcov ( rx, rx );
   gsl_matrix_set (gij, 0, 0, gg);
-  /* gyy */
-  gg = XLALcov ( ry, ry );
+  /* gXX */
+  params.comp1 = COMP_RY;
+  params.comp2 = COMP_RY;
+  gg = cov_Phi_ij ( &params );
+
   gsl_matrix_set (gij, 1, 1, gg);
-  /* gxy */
-  gg = XLALcov ( rx, ry );
+  /* gXY */
+  params.comp1 = COMP_RX;
+  params.comp2 = COMP_RY;
+  gg = cov_Phi_ij ( &params );
+
   gsl_matrix_set (gij, 0, 1, gg);
   gsl_matrix_set (gij, 1, 0, gg);
   
   /* spins */
   for ( s=0; s < numSpins; s ++ )
     {
-      gg =  - XLALcov ( rx, ti[s] );
+      params.comp1 = COMP_RX;
+      params.comp2 = s;
+      gg = - cov_Phi_ij ( &params );
+
       gsl_matrix_set (gij, 0, s+2, gg);
       gsl_matrix_set (gij, s+2, 0, gg);
 
-      gg = - XLALcov ( ry, ti[s] );
+      params.comp1 = COMP_RY;
+      params.comp2 = s;
+      gg = - cov_Phi_ij ( &params );
+
       gsl_matrix_set (gij, 1, s+2, gg);
       gsl_matrix_set (gij, s+2, 1, gg);
 
-      for ( sp=s; sp < numSpins; sp ++ )
+      for ( sp = s; sp < numSpins; sp ++ )
 	{
-	  gg = XLALcov ( ti[s], ti[sp] );
+	  params.comp1 = s;
+	  params.comp2 = sp;
+	  gg = - cov_Phi_ij ( &params );
+
 	  gsl_matrix_set (gij, s+2,  sp+2, gg);
 	  gsl_matrix_set (gij, sp+2, s+2, gg);
-	} /* for s' in [s, numSpins) */
+	} /* for sp in [s, numSpins) */
 
     } /* for s < numSpins */
 
@@ -201,26 +303,9 @@ XLALFlatMetricCW ( gsl_matrix *gij, 				/**< [out] metric */
   gsl_matrix_swap_columns (gij, 0, 2);	/* swap w0 <--> kx */
   gsl_matrix_swap_columns (gij, 1, 2);	/* swap kx <--> ky */
 
-
   /* Ok */
-  if ( rx ) XLALDestroyREAL8Vector ( rx);
-  if ( ry ) XLALDestroyREAL8Vector ( ry);
-  for ( s=0; s < numSpins; s ++ )
-    if ( ti[s] )
-      XLALDestroyREAL8Vector ( ti[s] );
-
   return 0;
-
- failed:
-  if ( rx ) XLALDestroyREAL8Vector ( rx);
-  if ( ry ) XLALDestroyREAL8Vector ( ry);
-  for ( s=0; s < numSpins; s ++ )
-    if ( ti[s] )
-      XLALDestroyREAL8Vector ( ti[s] );
   
-  return -1;
-  
-
 } /* XLALFlatMetricCW() */
 
 

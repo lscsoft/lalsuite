@@ -78,4 +78,4 @@ testFlatPulsarMetric_SOURCES = testFlatPulsarMetric.c FlatPulsarMetric.c FlatPul
 
 matchGrids_SOURCES = matchGrids.c DopplerScan.c
 
-FstatMetric_SOURCES = FstatMetric.c 
+FstatMetric_SOURCES = FstatMetric.c FlatPulsarMetric.c FlatPulsarMetric.h

@@ -73,7 +73,7 @@ NRCSID( FLATPULSARMETRICH, "$Id$" );
 /*---------- Global variables ----------*/
 
 /*---------- exported prototypes [API] ----------*/
-int XLALFlatMetricCW ( gsl_matrix *gij, const MultiDetectorStateSeries *mDetSeries, LIGOTimeGPS refTime );
+int XLALFlatMetricCW ( gsl_matrix *gij, LIGOTimeGPS refTime, LIGOTimeGPS startTime, REAL8 Tspan, const EphemerisData *edat, const LALDetector *site);
 
 void LALFlatPulsarMetric ( LALStatus *, REAL8Vector **metric, LIGOTimeGPS startTime, REAL8 duration, const LALDetector *site);
 
