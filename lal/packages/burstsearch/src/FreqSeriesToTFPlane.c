@@ -32,7 +32,7 @@ static COMPLEX8FrequencySeries *generate_filter(const COMPLEX8FrequencySeries *t
 	RealFFTPlan *plan;
 	REAL8 twopiOverNumpts;
 	unsigned firstzero;
-	REAL4 filternorm = 0.0;
+	REAL4 filternorm;
 	unsigned j;
 
 	/* keep this many samples from the filter on either side of each
@@ -61,8 +61,7 @@ static COMPLEX8FrequencySeries *generate_filter(const COMPLEX8FrequencySeries *t
 		tdfilter->data[j] = tdfilter->data[tdfilter->length - j] = (sin(twopiOverNumpts * j * (fstart + fbins_per_channel)) - sin(twopiOverNumpts * j * fstart)) / (LAL_PI * j * dt);
 
 	/* calculate the normalisation */
-	for(j = 0; j < tdfilter->length; j++)
-		filternorm += tdfilter->data[j] * tdfilter->data[j];
+	filternorm = XLALREAL4SequenceSumSquares(tdfilter, 0, tdfilter->length);
 
 	/* apply the normalisation */
 	for(j = 0; j < tdfilter->length; j++)
