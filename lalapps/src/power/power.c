@@ -1052,6 +1052,7 @@ static COMPLEX8FrequencySeries *generate_response(
 	size_t length
 )
 {
+	const char func[] = "generate_response";
 	COMPLEX8FrequencySeries *response;
 	size_t i;
 	const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
@@ -1063,6 +1064,10 @@ static COMPLEX8FrequencySeries *generate_response(
 	calfacts.ifo = ifo;
 
 	response = XLALCreateCOMPLEX8FrequencySeries(chname, &epoch, 0.0, 1.0 / (length * deltaT), &strainPerCount, length / 2 + 1);
+	if(!response) {
+		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+		return NULL;
+	}
 
 	if(options.verbose) 
 		fprintf(stderr, "generate_response(): working at GPS time %u.%09u s\n", response->epoch.gpsSeconds, response->epoch.gpsNanoSeconds );
@@ -1074,9 +1079,9 @@ static COMPLEX8FrequencySeries *generate_response(
 		for(i = 0; i < response->data->length; i++)
 			response->data->data[i] = one;
 	} else {
-		LAL_CALL(LALFrCacheImport(stat, &calcache, calcachefile), stat);
+		calcache = XLALFrImportCache(calcachefile);
 		LAL_CALL(LALExtractFrameResponse(stat, response, calcache, &calfacts), stat);
-		LAL_CALL(LALDestroyFrCache(stat, &calcache), stat);
+		XLALFrDestroyCache(calcache);
 	}
 
 	return(response);
@@ -1698,6 +1703,8 @@ int main( int argc, char *argv[])
 			/* Create the response function (generates unity
 			 * response if cache file is NULL). */
 			response = generate_response(&stat, options.calCacheFile, options.channelName, series->deltaT, series->epoch, series->data->length);
+			if(!response)
+				exit(1);
 			if(options.printData)
 				LALCPrintFrequencySeries(response, "response.dat");
 
@@ -1733,6 +1740,8 @@ int main( int argc, char *argv[])
 		 */
 
 		hrssresponse = generate_response(&stat, options.calCacheFile, options.channelName, series->deltaT, series->epoch, options.windowLength);
+		if(!hrssresponse)
+			exit(1);
 		if(options.printData)
 			LALCPrintFrequencySeries(hrssresponse, "hrssresponse.dat");
 
