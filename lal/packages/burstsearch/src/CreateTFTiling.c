@@ -76,6 +76,9 @@ TFTiling *XLALCreateTFTiling(
 	FOR_EACH_TILE {
 		numtiles++;
 	}
+	if(!numtiles)
+		/* can't fit any tiles into the TF plane! */
+		XLAL_ERROR_NULL(func, XLAL_EINVAL);
 
 	/* allocate memory */
 	tiling = LALMalloc(sizeof(*tiling));

@@ -243,26 +243,21 @@ XLALEPSearch(
 		errorcode = XLAL_EFUNC;
 		goto error;
 	}
-	if(!Tiling->numtiles) {
-		/* couldn't fit any tiles into the TF plane! */
-		errorcode = XLAL_EINVAL;
-		goto error;
-	}
 
 	/*
 	 * Compute the average spectrum.
 	 */
 
 	switch(params->method) {
-		case useMean:
+	case useMean:
 		XLALREAL4AverageSpectrumWelch(psd, tseries, window->data->length, params->windowShift, window, fplan);
 		break;
 
-		case useMedian:
+	case useMedian:
 		XLALREAL4AverageSpectrumMedian(psd, tseries, window->data->length, params->windowShift, window, fplan);
 		break;
 
-		default:
+	default:
 		errorcode = XLAL_EINVAL;
 		goto error;
 	}
