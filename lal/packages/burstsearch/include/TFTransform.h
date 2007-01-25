@@ -65,7 +65,6 @@ XLALFreqSeriesToTFPlane(
 	REAL4 *normalisation,
 	const COMPLEX8FrequencySeries *fseries,
 	const REAL4FrequencySeries *psd,
-	int overwhiten_flag,
 	const REAL4FFTPlan *reverseplan
 );
 

@@ -173,7 +173,6 @@ int XLALFreqSeriesToTFPlane(
 	REAL4 *normalisation,
 	const COMPLEX8FrequencySeries *fseries,
 	const REAL4FrequencySeries *psd,
-	int overwhiten_flag,
 	const REAL4FFTPlan *reverseplan
 )
 /******** </lalVerbatim> ********/
@@ -241,7 +240,8 @@ int XLALFreqSeriesToTFPlane(
 	 * series because the intent is to skip some amount of data at the
 	 * start and end to avoid noise from edge effects;  figure out how
 	 * many samples at the start of the original time series need to be
-	 * skipped in order to centre the time-frequency plan within it. */
+	 * skipped in order to centre the time-frequency plane within it.
+	 * */
 	tstart = (snr->length - nt * tbins_per_sample) / 2;
 
 	/* set the epoch of the TF plane */
@@ -258,7 +258,7 @@ int XLALFreqSeriesToTFPlane(
 
 	/* loop over time-frequency plane's channels */
 	for(i = 0; i < channels; i++, filter->f0 += fbins_per_channel * filter->deltaF) {
-		*normalisation++ = apply_filter(fcorr, fseries, filter, overwhiten_flag ? psd : NULL);
+		*normalisation++ = apply_filter(fcorr, fseries, filter, psd);
 
 		/* PRB - Inverse transform the product so that we get a
 		 * time series at the full sample rate. */

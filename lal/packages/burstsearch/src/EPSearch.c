@@ -324,7 +324,7 @@ XLALEPSearch(
 		 */
 
 		XLALPrintInfo("XLALEPSearch(): computing the time-frequency decomposition\n");
-		if(XLALFreqSeriesToTFPlane(tfplane, normalisation, fseries, psd, params->useOverWhitening, rplan)) {
+		if(XLALFreqSeriesToTFPlane(tfplane, normalisation, fseries, params->useOverWhitening ? psd : NULL, rplan)) {
 			XLALDestroyCOMPLEX8FrequencySeries(fseries);
 			errorcode = XLAL_EFUNC;
 			goto error;
