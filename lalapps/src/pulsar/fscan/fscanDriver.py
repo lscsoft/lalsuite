@@ -556,7 +556,7 @@ if (htmlFilename != None):
     htmlLinesFID.write('</head>\n')
     htmlLinesFID.write('<body>\n')
     htmlLinesFID.write('<div style="text-align: center;">\n')
-    htmlLinesFID.write('<h1>FSCAN COINCIDENT LINES</h1>\n')
+    htmlLinesFID.write('<h1>FSCAN COINCIDENT LINES WITH SNR >= %d</h1>\n' % thresholdSNR)
     htmlLinesFID.write('</div>\n')
     htmlLinesFID.write('<br>\n')  
     # Add a link from the main page to this file:
@@ -635,7 +635,7 @@ while (thisEndFreq < endFreq):
      if (htmlReferenceDir != None) and (thresholdSNR > 0):
         htmlFID.write('    Coincident Lines: <a href="%s_lines.txt">%s_lines.txt</a><br>\n' % (inputFileName,inputFileName))
         htmlLinesFID.write('<br>\n')
-        htmlLinesFID.write('<object data="%s_lines.txt" type="text/plain" style="width: 820px; height: 540px"></object>' % inputFileName)
+        htmlLinesFID.write('<object data="%s_lines.txt" type="text/plain" style="width: 620px; height: 450px"></object>' % inputFileName)
         htmlLinesFID.write('<br>\n')
      htmlFID.write('  </td>\n')
      if (htmlReferenceDir != None):
