@@ -47,7 +47,7 @@ XLALComputeFrequencySeries(
 		XLAL_ERROR_NULL(func, XLAL_EINVAL);
 
 	/* create the frequency series, and a copy of the time series data */
-	fseries = XLALCreateCOMPLEX8FrequencySeries("anonymous", &tseries->epoch, tseries->f0, 1.0 / (length * tseries->deltaT), &lalDimensionlessUnit, length / 2 + 1);
+	fseries = XLALCreateCOMPLEX8FrequencySeries(tseries->name, &tseries->epoch, tseries->f0, 1.0 / (length * tseries->deltaT), &lalDimensionlessUnit, length / 2 + 1);
 	tmp = XLALCutREAL4Sequence(tseries->data, 0, length);
 	if(!fseries || !tmp)
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
