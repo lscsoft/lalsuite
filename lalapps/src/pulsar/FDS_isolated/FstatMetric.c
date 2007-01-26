@@ -195,7 +195,7 @@ REAL8 uvar_refTime;		/**< reference-time for spin-parameters fkdot */
 REAL8 uvar_duration;		/**< length of observation in seconds */
 INT4 uvar_numSteps;		/**< how many timesteps to use in Gauss-Legendre integration */
 
-REAL8 uvar_cosiota;		/**< cos(iota) */
+REAL8 uvar_cosi;		/**< cos(iota) */
 REAL8 uvar_psi;			/**< polarization-angle psi */
 
 BOOLEAN uvar_printMotion;	/**< output orbital motion? */
@@ -904,7 +904,7 @@ initUserVars (LALStatus *status)
   LALregINTUserVar(status,    	numSteps,	 0,  UVAR_OPTIONAL,	"Order of Gauss-Legendre quadrature to use");
   LALregSTRINGUserVar(status,	ephemDir,       'E', UVAR_OPTIONAL, 	"Directory where Ephemeris files are located");
   LALregSTRINGUserVar(status,	ephemYear,      'y', UVAR_OPTIONAL, 	"Year (or range of years) of ephemeris files to be used");
-  LALregREALUserVar(status, 	cosiota,	 0, UVAR_OPTIONAL,	"Pulsar orientation-angle cos(iota) [-1,1]" );
+  LALregREALUserVar(status, 	cosi,	 	 0, UVAR_OPTIONAL,	"Pulsar orientation-angle cos(iota) [-1,1]" );
   LALregREALUserVar(status,	psi,		 0, UVAR_OPTIONAL,	"Wave polarization-angle psi [0, pi]" );
   LALregBOOLUserVar(status,	printMotion,	 0, UVAR_OPTIONAL,	"Output the orbital motion for integration-steps.");
   LALregSTRINGUserVar(status,	outputMetric,	 0, UVAR_OPTIONAL,	"Output the metric components (in octave format) into this file.");
@@ -1151,8 +1151,8 @@ InitCode (LALStatus *status, ConfigVariables *cfg)
 
   /* ----- compute amplitude-factors alpha1, alpha2, alpha3 ----- */
   {
-    REAL8 Aplus = 0.5 * ( 1.0 + SQ(uvar_cosiota) );
-    REAL8 Across = uvar_cosiota;
+    REAL8 Aplus = 0.5 * ( 1.0 + SQ(uvar_cosi) );
+    REAL8 Across = uvar_cosi;
     REAL8 cos2psi = cos(2.0 * uvar_psi );
     REAL8 sin2psi = sin(2.0 * uvar_psi );
     cfg->Al1 = SQ(Aplus) * SQ( cos2psi ) + SQ(Across) * SQ(sin2psi);
