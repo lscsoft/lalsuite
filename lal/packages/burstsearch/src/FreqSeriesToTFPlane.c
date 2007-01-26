@@ -10,6 +10,7 @@ NRCSID(FREQSERIESTOTFPLANEC, "$Id$");
 #include <math.h>
 #include <lal/Date.h>
 #include <lal/LALConstants.h>
+#include <lal/LALDatatypes.h>
 #include <lal/RealFFT.h>
 #include <lal/TFTransform.h>
 #include <lal/FrequencySeries.h>
@@ -32,7 +33,7 @@ static COMPLEX8FrequencySeries *generate_filter(const COMPLEX8FrequencySeries *t
 	RealFFTPlan *plan;
 	REAL8 twopiOverNumpts;
 	unsigned firstzero;
-	REAL4 filternorm;
+	REAL4 norm;
 	unsigned j;
 
 	/* keep this many samples from the filter on either side of each
@@ -60,13 +61,12 @@ static COMPLEX8FrequencySeries *generate_filter(const COMPLEX8FrequencySeries *t
 	for(j = 1; j < firstzero; j++)
 		tdfilter->data[j] = tdfilter->data[tdfilter->length - j] = (sin(twopiOverNumpts * j * (fstart + fbins_per_channel)) - sin(twopiOverNumpts * j * fstart)) / (LAL_PI * j * dt);
 
-	/* calculate the normalisation */
-	filternorm = XLALREAL4SequenceSumSquares(tdfilter, 0, tdfilter->length);
-
-	/* apply the normalisation */
+	/* normalize the filter */
+	norm = sqrt(XLALREAL4SequenceSumSquares(tdfilter, 0, tdfilter->length));
 	for(j = 0; j < tdfilter->length; j++)
-		tdfilter->data[j] /= sqrt(filternorm);
+		tdfilter->data[j] /= norm;
 
+	/* transform to frequency domain */
 	if(XLALREAL4ForwardFFT(fdfilter->data, tdfilter, plan)) {
 		XLALDestroyREAL4Sequence(tdfilter);
 		XLALDestroyCOMPLEX8FrequencySeries(fdfilter);
@@ -77,6 +77,7 @@ static COMPLEX8FrequencySeries *generate_filter(const COMPLEX8FrequencySeries *t
 	/* extract the part of the filter to be applied to each channel */
 	XLALResizeCOMPLEX8FrequencySeries(fdfilter, fstart - fwindow, fbins_per_channel + 2 * fwindow);
 
+	/* clean up and return filter */
 	XLALDestroyREAL4Sequence(tdfilter);
 	XLALDestroyREAL4FFTPlan(plan);
 	return fdfilter;
@@ -145,8 +146,8 @@ REAL8 *XLALTFPlaneEvalHrssFactor(
 )
 {
 	const char func[] = "XLALTFPlaneEvalHrssFactor";
-	int fbins_per_channel = plane->params.deltaF / response->deltaF;
-	int fstart = (plane->params.flow - response->f0) / response->deltaF;
+	int fbins_per_channel = plane->deltaF / response->deltaF;
+	int fstart = (plane->flow - response->f0) / response->deltaF;
 	int tserieslength = 2 * (response->data->length - 1);
 	const COMPLEX8 *r = response->data->data + fstart;
 	const REAL4 *p = psd->data->data + fstart;
@@ -167,7 +168,7 @@ REAL8 *XLALTFPlaneEvalHrssFactor(
 	 * Allocate memory
 	 */
 
-	hrssfactor = LALMalloc(plane->params.freqBins * sizeof(*hrssfactor));
+	hrssfactor = LALMalloc(plane->freqBins * sizeof(*hrssfactor));
 	if(!hrssfactor)
 		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 
@@ -176,7 +177,7 @@ REAL8 *XLALTFPlaneEvalHrssFactor(
 	 */
 
 	h = hrssfactor;
-	for(i = 0; i < plane->params.freqBins; i++, h++) {
+	for(i = 0; i < plane->freqBins; i++, h++) {
 		*h = 0.0;
 		for(j = 0; j < fbins_per_channel; j++, r++, p++)
 			*h += sqrt((r->re * r->re + r->im * r->im) * *p);
@@ -203,8 +204,8 @@ int XLALFreqSeriesToTFPlane(
 	COMPLEX8Sequence *fcorr;
 	INT4 i;
 	INT4 j;
-	INT4 nt = plane->params.timeBins;
-	INT4 channels = plane->params.freqBins;
+	INT4 nt = plane->timeBins;
+	INT4 channels = plane->freqBins;
 	INT4 tstart;
 	INT4 fstart;
 	INT4 fbins_per_channel;
@@ -215,21 +216,21 @@ int XLALFreqSeriesToTFPlane(
 	if((nt <= 0) ||
 	   (channels <= 0) ||
 	   (fseries->deltaF <= 0.0) ||
-	   (plane->params.deltaT <= 0.0) ||
+	   (plane->deltaT <= 0.0) ||
 	   (fseries->f0 < 0.0) ||
-	   (plane->params.flow < fseries->f0) ||
-	   (fmod(plane->params.deltaF, fseries->deltaF) != 0.0) ||
-	   (fmod(plane->params.flow - fseries->f0, fseries->deltaF) != 0.0))
+	   (plane->flow < fseries->f0) ||
+	   (fmod(plane->deltaF, fseries->deltaF) != 0.0) ||
+	   (fmod(plane->flow - fseries->f0, fseries->deltaF) != 0.0))
 		XLAL_ERROR(func, XLAL_EDOM);
 
 	/* number of input frequency series bins per frequency channel in
 	 * the time-frequency plane. */
-	fbins_per_channel = (int) (plane->params.deltaF / fseries->deltaF);
+	fbins_per_channel = (int) (plane->deltaF / fseries->deltaF);
 
 	/* time-frequency plane's low frequency cutoff relative to the
 	 * input series' heterodyne frequency, in units of frequency bins
 	 * */
-	fstart = (int) ((plane->params.flow - fseries->f0) / fseries->deltaF);
+	fstart = (int) ((plane->flow - fseries->f0) / fseries->deltaF);
 
 	/* make sure we have enough data points in freq series */
 	if(fstart + channels * fbins_per_channel > (INT4) fseries->data->length)
@@ -246,7 +247,7 @@ int XLALFreqSeriesToTFPlane(
 
 	/* sampling rate of time series which gave fseries */
 	dt = 1.0 / (snr->length * fseries->deltaF);
-	if(fmod(plane->params.deltaT, dt) != 0.0) {
+	if(fmod(plane->deltaT, dt) != 0.0) {
 		XLALDestroyCOMPLEX8Sequence(fcorr);
 		XLALDestroyREAL4Sequence(snr);
 		XLAL_ERROR(func, XLAL_EDOM);
@@ -254,7 +255,7 @@ int XLALFreqSeriesToTFPlane(
 
 	/* number of input time series bins per sample in each of the
 	 * time-frequency plane's channel */
-	tbins_per_sample = (int) (plane->params.deltaT / dt);
+	tbins_per_sample = (int) (plane->deltaT / dt);
 
 	/* the time-frequency plane spans less time than the original time
 	 * series because the intent is to skip some amount of data at the
@@ -264,7 +265,8 @@ int XLALFreqSeriesToTFPlane(
 	 * */
 	tstart = (snr->length - nt * tbins_per_sample) / 2;
 
-	/* set the epoch of the TF plane */
+	/* set the name and epoch of the TF plane */
+	strncpy(plane->name, fseries->name, LALNameLength);
 	plane->epoch = fseries->epoch;
 	XLALGPSAdd(&plane->epoch, tstart * dt);
 

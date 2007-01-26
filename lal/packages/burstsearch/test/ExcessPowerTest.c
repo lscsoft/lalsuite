@@ -196,7 +196,7 @@ main (int argc, char *argv[])
    */
   {
 
-    LALAddWhiteNoise (&status, fseries.data, 1.0);
+    XLALAddWhiteNoise (fseries.data, 1.0);
     TestStatus (&status, CODES(0), 1);
 
     /*  
@@ -360,50 +360,6 @@ main (int argc, char *argv[])
   {
     printf ("\n===== Check Errors =====\n");
   }
-
-  /* 
-   *
-   *  Test function LALAddWhiteNoise()
-   *
-   */
-  {
-    COMPLEX8Vector *v=NULL;
-    INT4 ii;
-    COMPLEX8 *p=NULL;
-
-    if (verbose)
-      {
-	printf ("\n--- Testing LALAddWhiteNoise() \n\n");
-      }
-    
-    LALCCreateVector( &status, &v, 10);
-    TestStatus (&status, CODES(0), 1);
-    for(ii=0; ii<10; ii++)
-      {
-	v->data[ii].re=0.0;
-	v->data[ii].im=0.0;
-      }
-
-    LALAddWhiteNoise( &status, NULL, 1.0);
-    TestStatus( &status, CODES(LAL_NULL_ERR), 1);
-
-    p = v->data;
-    v->data=NULL;
-    LALAddWhiteNoise( &status, v, 1.0);
-    TestStatus( &status, CODES(LAL_NULL_ERR), 1);
-    v->data=p;
-
-    ii=v->length;
-    v->length=0;
-    LALAddWhiteNoise( &status, v, 1.0);
-    TestStatus( &status, CODES(LAL_RANGE_ERR), 1);
-    v->length=ii;
-
-    LALCDestroyVector (&status, &v);
-    TestStatus (&status, CODES(0), 1);
-  }
-
-
 
   /* 
    *

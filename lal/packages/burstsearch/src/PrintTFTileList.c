@@ -19,13 +19,13 @@ static void PrintTFTile(FILE *file, const TFTile *tile, const REAL4TimeFrequency
 	INT4 t2 = tile->tstart + tile->tbins;
 	INT4 f1 = tile->fstart;
 	INT4 f2 = tile->fstart + tile->fbins;
-	REAL8 flow = plane->params.flow;
+	REAL8 flow = plane->flow;
 	REAL8 epoch = plane->epoch.gpsSeconds + plane->epoch.gpsNanoSeconds / (REAL8) 1e-9;
-	REAL8 deltaT = plane->params.deltaT;
+	REAL8 deltaT = plane->deltaT;
 
 	fprintf(file, "\n");
-	fprintf(file, " Frequency interval: %f Hz to %f Hz, i.e.,  bins %d to %d of %d\n", flow + f1 / deltaT, flow + (f2 + 1) / deltaT, f1, f2, plane->params.freqBins);
-	fprintf(file, " Time interval    :  %f s to %f s, i.e.,  bins %d to %d of %d\n", epoch + t1 * deltaT, epoch + (t2 + 1) * deltaT, t1, t2, plane->params.timeBins);
+	fprintf(file, " Frequency interval: %f Hz to %f Hz, i.e.,  bins %d to %d of %d\n", flow + f1 / deltaT, flow + (f2 + 1) / deltaT, f1, f2, plane->freqBins);
+	fprintf(file, " Time interval    :  %f s to %f s, i.e.,  bins %d to %d of %d\n", epoch + t1 * deltaT, epoch + (t2 + 1) * deltaT, t1, t2, plane->timeBins);
 	fprintf(file, " Total number of degrees of freedom:  %f\n", XLALTFTileDegreesOfFreedom(tile));
 	fprintf(file, " Excess power:  %f,   1 / alpha    :  %f\n", tile->excessPower, exp(-tile->lnalpha));
 	/* print out effective number of sigma */

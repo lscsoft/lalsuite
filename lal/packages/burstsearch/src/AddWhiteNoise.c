@@ -7,7 +7,6 @@ $Id$
 
 NRCSID (ADDWHITENOISEC, "$Id$");
 
-#include <lal/LALStatusMacros.h>
 #include <lal/ExcessPower.h>
 #include <lal/LALErrno.h>
 #include <lal/Random.h>
@@ -21,14 +20,14 @@ NRCSID (ADDWHITENOISEC, "$Id$");
 
 /******** <lalVerbatim file="AddWhiteNoiseCP"> ********/
 int XLALAddWhiteNoise(
-	COMPLEX8Vector *v,
+	COMPLEX8Sequence *v,
 	REAL8 amplitude
 )
 /******** </lalVerbatim> ********/
 {
 	static const char *func = "XLALAddWhiteNoise";
 	RandomParams *params;
-	REAL4Vector *noise_r, *noise_i;
+	REAL4Sequence *noise_r, *noise_i;
 	size_t i;
 
 	/* no-op on NULL input vector */
@@ -69,33 +68,3 @@ int XLALAddWhiteNoise(
 	return(0);
 }
 
-
-/******** <lalVerbatim file="AddWhiteNoiseCP"> ********/
-void
-LALAddWhiteNoise(
-	LALStatus *status,
-	COMPLEX8Vector *v,
-	REAL8 noiseLevel
-)
-/******** </lalVerbatim> ********/
-{
-	INITSTATUS (status, "LALAddWhiteNoise", ADDWHITENOISEC);
-	ATTATCHSTATUSPTR (status);
-
-	/* make sure that arguments are not NULL */
-	ASSERT(v, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(v->data, status, LAL_NULL_ERR, LAL_NULL_MSG);
-
-	/* make sure length of series is nonzero */
-	ASSERT(v->length > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
-
-	/* Wrap XLAL call in an ASSERT() */
-	if(XLALAddWhiteNoise(v, noiseLevel)) {
-		XLALClearErrno();
-		ABORT(status, LAL_FAIL_ERR, LAL_FAIL_MSG);
-	}
-
-	/* normal exit */
-	DETATCHSTATUSPTR (status);
-	RETURN (status);
-}

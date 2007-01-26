@@ -13,6 +13,7 @@ NRCSID (COMPUTEEXCESSPOWERC, "$Id$");
 #include <lal/Thresholds.h>
 #include <lal/XLALError.h>
 
+
 static REAL8 real8_sumwithfac (
 	const REAL4 *data,
 	const REAL8 *fac,
@@ -28,7 +29,6 @@ static REAL8 real8_sumwithfac (
 
 	return(sum);
 }
-
 
 
 /******** <lalVerbatim file="ComputeExcessPowerCP"> ********/
@@ -48,8 +48,8 @@ XLALComputeExcessPower(
 	REAL8 dof;
 	INT4 bin;
 	INT4 binstep;
-	INT4 nf = plane->params.freqBins;
-	INT4 nt = plane->params.timeBins;
+	INT4 nf = plane->freqBins;
+	INT4 nt = plane->timeBins;
 	size_t i;
 
 	/* check on some parameter values */
@@ -71,7 +71,7 @@ XLALComputeExcessPower(
 			hrsssq += pow(real8_sumwithfac(&plane->data[(tile->tstart + bin) * nf], hrssfactor, tile->fstart, tile->fbins), 2.0);
 		}
 		tile->excessPower = sum - dof;
-		tile->hrss = sqrt(hrsssq * binstep * tile->deltaT);
+		tile->hrss = sqrt(hrsssq * binstep * plane->deltaT);
 		tile->lnalpha = XLALlnOneMinusChisqCdf(sum, dof);
 		if(XLALIsREAL8FailNaN(tile->lnalpha))
 			XLAL_ERROR(func, XLAL_EFUNC);
@@ -79,4 +79,29 @@ XLALComputeExcessPower(
 
 	/* success */
 	return 0;
+}
+
+
+/******** <lalVerbatim file="ComputeLikelihoodCP"> ********/
+REAL8
+XLALComputeLikelihood(
+	TFTiling *tiling
+)
+/******** </lalVerbatim> ********/
+{
+	REAL8 avglambda = 0.0;
+	REAL8 rho4;
+	TFTile *tile;
+	size_t i;
+
+	for(i = 0, tile = tiling->tile; i < tiling->numtiles; i++, tile++) {
+		rho4 = tile->excessPower * tile->excessPower;
+		avglambda += XLALTFTileDegreesOfFreedom(tile) / rho4 * exp(tile->lnweight - tile->lnalpha);
+	}
+
+	/* compute the likelihood averaged over TF tiles */
+	avglambda /= tiling->numtiles;
+
+	/* return value of statistic */
+	return(avglambda);
 }

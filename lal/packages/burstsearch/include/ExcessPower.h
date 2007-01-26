@@ -19,12 +19,16 @@ extern "C" {
 NRCSID(EXCESSPOWERH, "$Id$");
 
 typedef struct tagTFTile {
+	/* tile specification as indeces into time-frequency plane data */
 	INT4 fstart;
 	INT4 fbins;
 	INT4 tstart;
 	INT4 tbins;
+	/* time-frequency plan parameters */
+	REAL8 flow;
 	REAL8 deltaT;
 	REAL8 deltaF;
+	/* computed tile properties */
 	REAL8 excessPower;
 	REAL8 hrss;
 	REAL8 lnalpha;
@@ -38,28 +42,6 @@ typedef struct tagTFTiling {
 } TFTiling;
 
 
-typedef struct tagCreateTFTilingIn {
-	INT4 inv_fractional_stride;
-	REAL8 maxTileBandwidth;
-	REAL8 maxTileDuration;
-} CreateTFTilingIn;
-
-
-int
-XLALAddWhiteNoise(
-	COMPLEX8Vector *v,
-	REAL8 noiseLevel
-);
-
-
-void
-LALAddWhiteNoise(
-	LALStatus *status,
-	COMPLEX8Vector *v,
-	REAL8 noiseLevel
-);
-
-
 REAL8
 XLALTFTileDegreesOfFreedom(
 	const TFTile *tile
@@ -68,8 +50,10 @@ XLALTFTileDegreesOfFreedom(
 
 TFTiling *
 XLALCreateTFTiling(
-	const CreateTFTilingIn *input, 
-	const TFPlaneParams *planeparams
+	const REAL4TimeFrequencyPlane *plane,
+	INT4 inv_fractional_stride,
+	REAL8 maxTileBandwidth,
+	REAL8 maxTileDuration
 );
 
 
@@ -101,6 +85,14 @@ XLALPrintTFTileList(
 	const REAL4TimeFrequencyPlane *plane,
 	size_t maxTiles
 );
+
+
+int
+XLALAddWhiteNoise(
+	COMPLEX8Sequence *v,
+	REAL8 noiseLevel
+);
+
 
 #ifdef  __cplusplus
 }

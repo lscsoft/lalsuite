@@ -37,7 +37,6 @@ $Id$
 #include <lal/LALDatatypes.h>
 #include <lal/LALStatusMacros.h>
 #include <lal/Window.h>
-#include <lal/TFTransform.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALError.h>
 #include <lal/Thresholds.h>
@@ -54,7 +53,7 @@ extern "C" {
 NRCSID (TFCLUSTERSH, "$Id$");
 
 
-  /******************************** <lalErrTable file="TFClustersHErrTab"> */
+/******************************** <lalErrTable file="TFClustersHErrTab"> */
 #define TFCLUSTERSH_ENULLP       1
 #define TFCLUSTERSH_ENNULLP      2
 #define TFCLUSTERSH_ESTRICTPOS    4
@@ -78,6 +77,25 @@ NRCSID (TFCLUSTERSH, "$Id$");
 /*************************************************** </lalErrTable> */
 
 
+/*************************************<lalLaTeX file="TFClustersStructs">
+\subsubsection*{struct \texttt{TFPlaneParams}}
+\noindent A description of a time-frequency plane.
+\begin{description}
+\item[\texttt{INT4 timeBins}] Number of time bins in TF plane.
+\item[\texttt{INT4 freqBins}] Number of frequency bins in TF plane.
+\item[\texttt{REAL8 deltaT}] Time resolution of the plane.
+\item[\texttt{REAL8 deltaF}] Frequency resolution of the plane.
+\item[\texttt{REAL8 flow}] Low-frequency boundary of the plane.
+\end{description}
+******************************************************* </lalLaTeX> */
+
+typedef struct tagTFPlaneParams {
+	INT4 timeBins;
+	INT4 freqBins;
+	REAL8 deltaT;	/* time resolution of the plane */
+	REAL8 deltaF;	/* frequency resolution of the plane */
+	REAL8 flow;	/* minimum frequency to search for */
+} TFPlaneParams;
 
 /*************************************<lalLaTeX file="TFClustersStructs">
 \subsubsection*{struct \texttt{TFCSpectrogram}}

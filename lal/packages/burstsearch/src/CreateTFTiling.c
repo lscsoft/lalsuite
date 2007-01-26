@@ -32,16 +32,18 @@ REAL8 XLALTFTileDegreesOfFreedom(const TFTile *tile)
 
 #define FOR_EACH_TILE \
 	for(tbins = 2; tbins <= max_tbins; tbins *= 2) \
-		for(fbins = 1 / (tbins * planeparams->deltaT * planeparams->deltaF); fbins <= max_fbins; fbins *= 2) \
-			for(tstart = 0; tstart + tbins <= planeparams->timeBins; tstart += tbins / input->inv_fractional_stride) \
-				for(fstart = 0; fstart + fbins <= planeparams->freqBins; fstart += fbins / input->inv_fractional_stride)
+		for(fbins = 1 / (tbins * plane->deltaT * plane->deltaF); fbins <= max_fbins; fbins *= 2) \
+			for(tstart = 0; tstart + tbins <= plane->timeBins; tstart += tbins / inv_fractional_stride) \
+				for(fstart = 0; fstart + fbins <= plane->freqBins; fstart += fbins / inv_fractional_stride)
 
 
 
 /******** <lalVerbatim file="CreateTFTilingCP"> ********/
 TFTiling *XLALCreateTFTiling(
-	const CreateTFTilingIn *input,
-	const TFPlaneParams *planeparams
+	const REAL4TimeFrequencyPlane *plane,
+	INT4 inv_fractional_stride,
+	REAL8 maxTileBandwidth,
+	REAL8 maxTileDuration
 )
 /******** </lalVerbatim> *********/
 {
@@ -61,15 +63,18 @@ TFTiling *XLALCreateTFTiling(
 	INT4 tstart;
 	INT4 tbins;
 
+	if(!plane)
+		XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
 	/* determine the tile size limits */
 	/* FIXME: should the two conditionals in fact be errors? */
-	max_tbins = input->maxTileDuration / planeparams->deltaT;
-	if(planeparams->timeBins < max_tbins)
-		max_tbins = planeparams->timeBins;
-	max_fbins = input->maxTileBandwidth / planeparams->deltaF;
-	if(planeparams->freqBins < max_fbins)
-		max_fbins = planeparams->freqBins;
-	maxDOF = (2 * max_tbins * max_fbins) * planeparams->deltaT * planeparams->deltaF;
+	max_tbins = maxTileDuration / plane->deltaT;
+	if(plane->timeBins < max_tbins)
+		max_tbins = plane->timeBins;
+	max_fbins = maxTileBandwidth / plane->deltaF;
+	if(plane->freqBins < max_fbins)
+		max_fbins = plane->freqBins;
+	maxDOF = (2 * max_tbins * max_fbins) * plane->deltaT * plane->deltaF;
 
 	/* Count the tiles */
 	numtiles = 0;
@@ -99,8 +104,9 @@ TFTiling *XLALCreateTFTiling(
 		tile->fbins = fbins;
 		tile->tstart = tstart;
 		tile->tbins = tbins;
-		tile->deltaT = planeparams->deltaT;
-		tile->deltaF = planeparams->deltaF;
+		tile->flow = plane->flow;
+		tile->deltaT = plane->deltaT;
+		tile->deltaF = plane->deltaF;
 		tile->excessPower = XLAL_REAL8_FAIL_NAN;
 		tile->lnalpha = XLAL_REAL8_FAIL_NAN;
 		weight[(int) XLALTFTileDegreesOfFreedom(tile)]++;
@@ -113,4 +119,17 @@ TFTiling *XLALCreateTFTiling(
 	LALFree(weight);
 
 	return(tiling);
+}
+
+
+/******** <lalVerbatim file="DestroyTFTilingCP"> ********/
+void
+XLALDestroyTFTiling(
+	TFTiling *tiling
+)
+/******** </lalVerbatim> ********/
+{
+	if(tiling)
+		LALFree(tiling->tile);
+	LALFree(tiling);
 }

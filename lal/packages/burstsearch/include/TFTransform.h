@@ -18,25 +18,37 @@ extern "C" {
 NRCSID(TFTRANSFORMH, "$Id$");
 
 
-typedef struct tagTFPlaneParams {
+typedef struct tagREAL4TimeFrequencyPlane {
+	CHAR name[LALNameLength];	/* name of data from which this was computed */
+	LIGOTimeGPS epoch;	/* epoch of data from which this was computed */
 	INT4 timeBins;	/* Number of time bins in TF plane */
-	INT4 freqBins;	/* Number of freq bins in TF plane */
 	REAL8 deltaT;	/* time resolution of the plane */
+	INT4 freqBins;	/* Number of freq bins in TF plane */
 	REAL8 deltaF;	/* frequency resolution of the plane */
 	REAL8 flow;	/* minimum frequency to search for */
-} TFPlaneParams;
-
-
-typedef struct tagREAL4TimeFrequencyPlane {
-	LIGOTimeGPS epoch;
-	TFPlaneParams params;
 	REAL4 *data;
 	/*
 	 * data[i*params->freqBins+j] is a real number
 	 * corresponding to a time t_i = epoch + i*(deltaT)
-	 * and a frequency f_j = flow + j / (deltaT)
+	 * and a frequency f_j = flow + j*(deltaF)
 	 */
 } REAL4TimeFrequencyPlane;
+
+
+REAL4TimeFrequencyPlane *
+XLALCreateTFPlane(
+	INT4 timeBins,
+	REAL8 deltaT,
+	INT4 freqBins,
+	REAL8 deltaF,
+	REAL8 flow
+);
+
+
+void
+XLALDestroyTFPlane(
+	REAL4TimeFrequencyPlane *plane
+);
 
 
 COMPLEX8FrequencySeries *
@@ -44,18 +56,6 @@ XLALComputeFrequencySeries(
 	const REAL4TimeSeries *tseries,
 	const REAL4Window *window,
 	const REAL4FFTPlan *plan
-);
-
-
-REAL4TimeFrequencyPlane *
-XLALCreateTFPlane(
-	TFPlaneParams *params
-);
-
-
-void
-XLALDestroyTFPlane(
-	REAL4TimeFrequencyPlane *plane
 );
 
 
@@ -75,6 +75,7 @@ XLALTFPlaneEvalHrssFactor(
 	const COMPLEX8FrequencySeries *response,
 	const REAL4FrequencySeries *psd
 );
+
 
 #ifdef  __cplusplus
 }

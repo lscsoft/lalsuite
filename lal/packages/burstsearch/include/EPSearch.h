@@ -12,7 +12,6 @@ $Id$
 #include <lal/LIGOMetadataTables.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/TimeFreqFFT.h>
-#include <lal/TFTransform.h>
 #include <lal/Window.h>
 
 #ifdef  __cplusplus   /* C++ protection. */
@@ -30,9 +29,18 @@ tagEPSearchParams {
 	UINT4                 windowShift;
 	REAL8                 lnalphaThreshold;
 	AvgSpecMethod         method;
-	CreateTFTilingIn      tfTilingInput;
-	TFPlaneParams         tfPlaneParams;
+	/* time-frequency plane parameters */
+	INT4                  tf_timeBins;
+	INT4                  tf_freqBins;
+	REAL8                 tf_deltaT;
+	REAL8                 tf_deltaF;
+	REAL8                 tf_flow;
+	/* t.f. plane tiling parameters */
+	INT4                  inv_fractional_stride;
+	REAL8                 maxTileBandwidth;
+	REAL8                 maxTileDuration;
 } EPSearchParams;
+
 
 SnglBurstTable *
 XLALEPSearch(
@@ -41,6 +49,7 @@ XLALEPSearch(
 	EPSearchParams   *params
 );
 
+
 int
 XLALEPConditionData(
 	REAL4TimeSeries  *series,
@@ -48,6 +57,7 @@ XLALEPConditionData(
 	REAL8             resampledeltaT,
 	INT4              corruption
 );
+
 
 #ifdef  __cplusplus
 }
