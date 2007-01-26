@@ -23,48 +23,67 @@ numerical relativity groups can use it.
 
 The output of a numerical relativity code is the full spacetime of a
 binary black hole system while what is required for data analysis
-purposes is the strain $h(t)$ as measured by a detector.  We assume
-that the wave extraction is performed in the wavezone so that the
-spacetime can be written as a perturbation of flat space $g_{\mu\nu} =
-\eta_{\mu\nu} + h_{\mu\nu}$.  We use greek indices to denote spacetime
-dimensions while latin indices are purely spatial.  We describe the
-gravitational wave $h_{\mu\nu}$ wave in the TT gauge so that
-$h_{\mu\nu}$ is purely spatial and orthogonal to the direction of
-propagation.  The wave falls off as $1/r$ where $r$ is the distance
-from the source
+purposes is the strain $h(t)$ as measured by a detector.  The quantity
+of interest is the gravitational wave $h_{ij}$ where $i$ and $j$ are
+spatial indices and $h_{ij}$ is a transverse-traceless tensor.  We
+always work in the TT gauge so that the $h_{ij}$ contains all the
+information of the metric perturbation.  The wave falls off as $1/r$
+where $r$ is the distance from the source
 \begin{equation}
   \label{eq:1}
   h_{ij} = \frac{A_{ij}}{r} 
 \end{equation}
 where $A_{ij}$ is a transverse traceless tensor.  
 
+There are different methods for extracting $h_{ij}$ from a numerical
+evolution.  One common method is to use the complex Weyl tensor
+component $\psi_4$ which is related to the second time derivative of
+$h_{ij}$. Another method is to use the Zerilli function which
+approximates the spacetime in the wave-zone as a perturbation of a
+Schwarzschild spacetime.  For our purposes, it is not important how
+the wave is extracted, and different groups are free to use whatever
+methods they find appropriate.  The starting point of our analysis are
+the multipole moments of $h_{ij}$ and it is important to describe
+explicitly our conventions for the multipole decomposition.  In
+addition to these multipole moments, we also require the corresponding
+values of $\psi_4$ or the Zerilli function in the formats described
+later. 
+
 Introduce a coordinate system $(x,y,z)$ associated with the binary
 system as follows.  The orbital plane is taken to be the $x$-$y$ plane
 with the $z$-axis in the direction of the orbital angular momentum.
 The orbital plane works when the black holes are non-spinning but it
 can be ambiguous, especially when the spin of the black holes causes
-the orbital plane to precess significantly.  **some more words here***
-The $x$-axis is chosen so that the initial orbital phase of the binary
-is 0.  **better to choose phase at coalescence?***
-
-Given this coordinate system, we define spherical coordinates
-$(\theta,\phi)$ where $\theta$ is the inclination angle and $\phi$ is
-the phase angle and we break up $h_{ij}$ into modes in this coordinate
-system. **figure?***
+the orbital plane to precess significantly.  The $x$-axis is chosen so
+that the initial orbital phase of the binary is 0.  **better to choose
+phase at coalescence?*** Let $\mathbf{e}_x$, $\mathbf{e}_y$ and
+$\mathbf{e}_z$ denote the orthonormal coordinate basis vectors. Given
+this coordinate system, we define spherical coordinates
+$(\theta,\phi)$ where $\theta$ is the inclination angle from the
+$z$-axis and $\phi$ is the phase angle. We break up $h_{ij}$ into
+modes in this coordinate system. **figure?***
 
 In the transverse traceless gauge, $h_{ij}$ is has two independent
 polarizations 
 \begin{equation}
   \label{eq:2}
-  h_{ij} = h_+ (e_+)_{ij} + h_\times (e_\times)_{ij}\,.
+  h_{ij} = h_+ (\mathbf{e}_+)_{ij} + h_\times (\mathbf{e}_\times)_{ij}\,,
+\end{equation}
+where $e_+$ and $e_\times$ are the usual basis tensors for
+transverse-traceless tensors:
+\begin{equation}
+  \label{eq:9}
+  \mathbf{e}_+ = \mathbf{e}_x\otimes\mathbf{e}_x -
+  \mathbf{e}_y\otimes\mathbf{e}_y\,, \qquad \textrm{and} \qquad 
+  \mathbf{e}_+ = \mathbf{e}_x\otimes\mathbf{e}_y + \mathbf{e}_y\otimes\mathbf{e}_x\,.
 \end{equation}
 It is convenient to use the combination $h_+ - ih_\times$ which is
 related to the Weyl tensor component $\psi_4$ by two time derivatives:
 \begin{equation}
   \label{eq:3}
-  \psi_4 = \frac{d^2h_+}{dt^2} - i\frac{d^2h_\times}{dt^2}\,.
+  \psi_4 = \ddot{h}_+ -i\ddot{h}_\times\,.
 \end{equation}
-$\psi_4$, and therefore also $h_+-ih_\times$, can be decomposed into
+$\psi_4$. It can be shown that $h_+-ih_\times$, can be decomposed into
 modes using spin weighted spherical harmonics ${}_sY_{lm}$ of weight
 -2:
 \begin{equation}
@@ -85,10 +104,10 @@ in terms of the Wigner $d$-functions
 where
 \begin{eqnarray}
   \label{eq:6}
-  d^\ell_{m,s}(\theta) = \sum_{k = k_1}^{k_2}
+  d^\ell_{m,s}(\theta) &=& \sum_{k = k_1}^{k_2}
     \frac{(-1)^k[(\ell+m)!(\ell-m)!(\ell+s)!(\ell-s)!]^{1/2}}{(\ell +m
-      -k)!(\ell-s-k)!k!(k+s-m)!} \\ \left(\frac{\cos
-        \theta}{2}\right)^{2\ell+m-s-2k}\left(\frac{\sin\theta}{2}\right)^{2k+s-m} 
+      -k)!(\ell-s-k)!k!(k+s-m)!} \times \\ 
+    &&\times \left(\frac{\cos\theta}{2}\right)^{2\ell+m-s-2k}\left(\frac{\sin\theta}{2}\right)^{2k+s-m}  
 \end{eqnarray}
 with $k_1 = \textrm{max}(0, m-s)$ and $k_2=\textrm{min}(\ell+m,
 \ell-s)$.  For reference,
@@ -97,6 +116,27 @@ with $k_1 = \textrm{max}(0, m-s)$ and $k_2=\textrm{min}(\ell+m,
   {}^{-2}Y_{2-2} &=& \sqrt{\frac{5}{64\pi}}(1-\cos\theta)^2e^{-2i\phi}\,, \\
   {}^{-2}Y_{22} &=& \sqrt{\frac{5}{64\pi}}(1+\cos\theta)^2e^{2i\phi} \,.
 \end{eqnarray}
+The mode expansion coefficients $H_{lm}$ are given by
+\begin{equation}
+  \label{eq:10}
+  H_{\ell m} = \oint {}^{-2}Y_{lm}^\star(\theta,\phi)(h_+-ih_\times )\,d\Omega\,.
+\end{equation}
+If $\psi_4$ is used for wave extraction, then $H_{lm}$ is given by two
+time integrals of the corresponding mode of $\psi_4$.  It isimportant
+that the integration constants be chosen to make sure, as far as
+possible, that $h_{+,\times}$ do not have a secular drift, i.e. they
+vanish initially and at late times.  
+
+We define $h_+^{(\ell m)}$ and $h_\times^{\ell m}$ as
+\begin{equation}
+  \label{eq:11}
+  h_+^{(\ell m)} -ih_\times^{(\ell m)} := H_{\ell m}\,.  
+\end{equation}
+It is these modes of $h_+$ and $h_\times$ that must be provided.  
+
+
+
+
 
 
 \section{Data formats}
@@ -142,7 +182,7 @@ This is an example of a data file
 \end{verbatim}
 
 The metadata information for the different datafiles will be stored in
-a separate directory.  This metadata file will also be plain text and
+a separate file.  This metadata file will also be plain text and
 will have 10 columns: 9 for the metadata and the last one specifying
 the location of the corresponding datafile.  This is an example of a
 metadata file containing two waveforms:
