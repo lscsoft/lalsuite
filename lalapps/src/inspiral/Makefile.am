@@ -90,10 +90,9 @@ pkgdata_DATA = BNSMasses.dat inspsrcs.dat inspsrcs.errors inspsrcs-050Mpc.errors
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(SIRESRC) $(COIRESRC) $(SIVASRC) $(MINJSRC) \
              $(INCASRC) $(COHERESRC) $(INSPINJSRC) \
-             $(SPLITBANKSRC) inspiral.py \
-	     inspiral_online_pipe.in inspiral_hipe.in \
-	     inspiral_online_pipe_inject.in \
-	     check_hipe_times.in \
+             $(SPLITBANKSRC) inspiral.py inspiral_pipe.in \
+             inspiral_online_pipe.in inspiral_hipe.in \
+             inspiral_online_pipe_inject.in check_hipe_times.in \
              $(DATA)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
