@@ -635,7 +635,7 @@ while (thisEndFreq < endFreq):
      if (htmlReferenceDir != None) and (thresholdSNR > 0):
         htmlFID.write('    Coincident Lines: <a href="%s_lines.txt">%s_lines.txt</a><br>\n' % (inputFileName,inputFileName))
         htmlLinesFID.write('<br>\n')
-        htmlLinesFID.write('<object data="%s_lines.txt" type="text/plain"></object>' % inputFileName)
+        htmlLinesFID.write('<object data="%s_lines.txt" type="text/plain" style="width: 820px; height: 540px"></object>' % inputFileName)
         htmlLinesFID.write('<br>\n')
      htmlFID.write('  </td>\n')
      if (htmlReferenceDir != None):
