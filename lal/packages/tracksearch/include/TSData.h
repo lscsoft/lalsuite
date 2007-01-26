@@ -39,7 +39,6 @@ and production use of the tracksearch libraries.
 #include <lal/LALStdlib.h>
 #include <lal/Matrix.h>
 #include <lal/RealFFT.h>
-#include <lal/TFTransform.h>
 #include <lal/TSSearch.h>
 #include <lal/TimeSeries.h>
 #include <string.h>

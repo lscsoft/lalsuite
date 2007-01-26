@@ -22,7 +22,6 @@ $Id$
 #include <lal/PrintVector.h>
 #include <lal/RealFFT.h>
 #include <lal/SeqFactories.h>
-#include <lal/TFTransform.h>
 #include <lal/TSSearch.h>
 #include <lal/TimeFreq.h>
 #include <lal/TimeFreqFFT.h>
