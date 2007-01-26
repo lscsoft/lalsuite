@@ -110,8 +110,9 @@ cov_Phi_ij ( const cov_params_t *params )
       LALPrintError ( "\nGSL-integration 'gsl_integration_qng()' of <Phi_i Phi_j> failed!\n");
       XLAL_ERROR_REAL8( "cov_Phi_ij", XLAL_EFUNC );
     }
+  /*
   printf ( "Integration of <Phi_i Phi_j> succeeded with abserr = %g, neval = %d: result = %g\n", abserr, neval, av_ij );
-
+  */
   /* compute <phi_i> */
   integrand.function = &Phi_i;
   par.comp = par.comp1;
@@ -121,8 +122,9 @@ cov_Phi_ij ( const cov_params_t *params )
       LALPrintError ( "\nGSL-integration 'gsl_integration_qng()' of <Phi_i> failed!\n");
       XLAL_ERROR_REAL8( "cov_Phi_ij", XLAL_EFUNC );
     }
+  /*
   printf ( "Integration of <Phi_i> succeeded with abserr = %g, neval = %d: result = %g\n", abserr, neval, av_i );
-
+  */
   /* compute <phi_i> */
   integrand.function = &Phi_i;
   par.comp = par.comp2;
@@ -132,8 +134,9 @@ cov_Phi_ij ( const cov_params_t *params )
       LALPrintError ( "\nGSL-integration 'gsl_integration_qng()' of <Phi_j> failed!\n");
       XLAL_ERROR_REAL8( "cov_Phi_ij", XLAL_EFUNC );
     }
+  /*
   printf ( "Integration of <Phi_i> succeeded with abserr = %g, neval = %d: result = %g\n", abserr, neval, av_j );
-  
+  */
 
   return ( av_ij - av_i * av_j );	/* return covariance */
 
@@ -604,5 +607,4 @@ LALFlatPulsarMetric ( LALStatus *status,
   RETURN(status);
 
 } /* LALFlatPulsarMetric() */
-
 
