@@ -347,11 +347,11 @@ main(int argc, char *argv[])
 	      fprintf ( fpMetric, "\nA = %.16g; B = %.16g; C = %.16g; D = %.16g;\n",
 			config.Ad, config.Bd, config.Cd, config.Dd );
 	      
-	      fprintf ( fpMetric, "\ngF_ij = \n" ); XLALfprintfGSLmatrix ( fpMetric, "%.6g",  gF_ij );
-	      fprintf ( fpMetric, "\ngFav_ij = \n");XLALfprintfGSLmatrix ( fpMetric, "%.6g",  gFav_ij );
-	      fprintf ( fpMetric, "\nm1_ij = \n");  XLALfprintfGSLmatrix ( fpMetric, "%.6g",  m1_ij );
-	      fprintf ( fpMetric, "\nm2_ij = \n");  XLALfprintfGSLmatrix ( fpMetric, "%.6g",  m2_ij );
-	      fprintf ( fpMetric, "\nm3_ij = \n");  XLALfprintfGSLmatrix ( fpMetric, "%.6g",  m3_ij );
+	      fprintf ( fpMetric, "\ngF_ij = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, "%.6g",  gF_ij );
+	      fprintf ( fpMetric, "\ngFav_ij = \\\n");XLALfprintfGSLmatrix ( fpMetric, "%.6g",  gFav_ij );
+	      fprintf ( fpMetric, "\nm1_ij = \\\n");  XLALfprintfGSLmatrix ( fpMetric, "%.6g",  m1_ij );
+	      fprintf ( fpMetric, "\nm2_ij = \\\n");  XLALfprintfGSLmatrix ( fpMetric, "%.6g",  m2_ij );
+	      fprintf ( fpMetric, "\nm3_ij = \\\n");  XLALfprintfGSLmatrix ( fpMetric, "%.6g",  m3_ij );
 	      
 	      fprintf ( fpMetric, "\nmF = %.16g;\nmFav = %.16g;\nmMin = %.16g;\nmMax = %.16g;\n\n",
 			mF, mFav, mMin, mMax );
@@ -376,11 +376,11 @@ main(int argc, char *argv[])
 	    {
 	      const CHAR *gprefix, *mprefix;
 	      if ( metricType == METRIC_PHASE ) {
-		gprefix = "gPh_ij = \n"; mprefix = "mPh = ";
+		gprefix = "gPh_ij = \\\n"; mprefix = "mPh = ";
 	      } else if ( metricType == METRIC_ORBITAL ) {
-		gprefix = "gOrb_ij = \n"; mprefix = "mOrb = ";
+		gprefix = "gOrb_ij = \\\n"; mprefix = "mOrb = ";
 	      } else if ( metricType == METRIC_PTOLE ) {
-		gprefix = "gPtole_ij = \n"; mprefix = "mPtole = ";
+		gprefix = "gPtole_ij = \\\n"; mprefix = "mPtole = ";
 	      }
 	      fprintf ( fpMetric, gprefix ); XLALfprintfGSLmatrix ( fpMetric, "%.6g", g_ij );
 	      fprintf ( fpMetric, "\n%s %.16g;\n\n", mprefix, mm );
@@ -437,7 +437,7 @@ main(int argc, char *argv[])
 	    mm = quad_form ( gFlat_ij, dopplerOffsetCanon );
 	    if ( fpMetric )
 	      {
-		const CHAR *gprefix = "gFlat_ij = \n";
+		const CHAR *gprefix = "gFlat_ij = \\\n";
 		const CHAR *mprefix = "mFlat = ";
 		
 		fprintf ( fpMetric, gprefix); XLALfprintfGSLmatrix ( fpMetric, "%.6g", gFlat_ij );
