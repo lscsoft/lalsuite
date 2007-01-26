@@ -39,6 +39,7 @@ NRCSID (TFCLUSTERSC, "$Id$");
 
 
 #include <lal/AVFactories.h>
+#include <lal/RealFFT.h>
 #include <lal/TFClusters.h>
 #include <math.h>
 
