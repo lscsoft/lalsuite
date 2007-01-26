@@ -466,7 +466,7 @@ initLatticeCovering ( LALStatus *status,
   }
   */
 
-  printGSLmatrix ( stderr, "%.9f ", scan->gij );
+  XLALfprintfGSLmatrix ( stderr, "%.9f ", scan->gij );
 
 
   
@@ -542,30 +542,3 @@ loadFullGridFile ( LALStatus *status,
   
 } /* loadFullGridFile() */
 
-
-/** output gsl-matrix in octave-compatible format to fp, using format \a fmt 
- * for each element 
- */
-int
-printGSLmatrix ( FILE *fp, const CHAR *fmt, const gsl_matrix *mat )
-{
-  UINT4 i, j, rows, cols;
-
-  if ( !fp || !fmt || !mat )
-    return -1;
-
-  rows = mat->size1;
-  cols = mat->size2;
-
-  fprintf (fp,  "[ ");
-  for ( i=0; i < rows; i ++ )
-    {
-      for ( j=0; j < cols; j ++ )
-	fprintf ( fp, fmt, gsl_matrix_get (mat, i, j ) );
-      if ( i != rows - 1) fprintf (fp, ";\n");
-    }
-  fprintf (fp, " ];\n");
-  
-  return 0;
-
-} /* printGSLmatrix() */
