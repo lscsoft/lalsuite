@@ -228,8 +228,6 @@ REAL8 quad_form ( const gsl_matrix *mat, const gsl_vector *vec );
 
 void getPtolePosVel( PosVel_t *posvel, REAL8 tGPS, REAL8 tAutumn );
 
-int printGSLmetric ( FILE *fp, const CHAR *prefix, const gsl_matrix *gij );
-
 void XLALDestroyMultiPhaseDerivs ( MultiPhaseDerivs *mdPhi );
 
 void FreeMem ( LALStatus *status, ConfigVariables *cfg );
@@ -349,11 +347,11 @@ main(int argc, char *argv[])
 	      fprintf ( fpMetric, "\nA = %.16g; B = %.16g; C = %.16g; D = %.16g;\n",
 			config.Ad, config.Bd, config.Cd, config.Dd );
 	      
-	      printGSLmetric ( fpMetric, "\ngF_ij = ", gF_ij );
-	      printGSLmetric ( fpMetric, "\ngFav_ij = ", gFav_ij );
-	      printGSLmetric ( fpMetric, "\nm1_ij = ", m1_ij );
-	      printGSLmetric ( fpMetric, "\nm2_ij = ", m2_ij );
-	      printGSLmetric ( fpMetric, "\nm3_ij = ", m3_ij );
+	      fprintf ( fpMetric, "\ngF_ij = \n" ); XLALfprintfGSLmatrix ( fpMetric, "%.6g",  gF_ij );
+	      fprintf ( fpMetric, "\ngFav_ij = \n");XLALfprintfGSLmatrix ( fpMetric, "%.6g",  gFav_ij );
+	      fprintf ( fpMetric, "\nm1_ij = \n");  XLALfprintfGSLmatrix ( fpMetric, "%.6g",  m1_ij );
+	      fprintf ( fpMetric, "\nm2_ij = \n");  XLALfprintfGSLmatrix ( fpMetric, "%.6g",  m2_ij );
+	      fprintf ( fpMetric, "\nm3_ij = \n");  XLALfprintfGSLmatrix ( fpMetric, "%.6g",  m3_ij );
 	      
 	      fprintf ( fpMetric, "\nmF = %.16g;\nmFav = %.16g;\nmMin = %.16g;\nmMax = %.16g;\n\n",
 			mF, mFav, mMin, mMax );
@@ -378,13 +376,13 @@ main(int argc, char *argv[])
 	    {
 	      const CHAR *gprefix, *mprefix;
 	      if ( metricType == METRIC_PHASE ) {
-		gprefix = "gPh_ij = "; mprefix = "mPh = ";
+		gprefix = "gPh_ij = \n"; mprefix = "mPh = ";
 	      } else if ( metricType == METRIC_ORBITAL ) {
-		gprefix = "gOrb_ij = "; mprefix = "mOrb = ";
+		gprefix = "gOrb_ij = \n"; mprefix = "mOrb = ";
 	      } else if ( metricType == METRIC_PTOLE ) {
-		gprefix = "gPtole_ij = "; mprefix = "mPtole = ";
+		gprefix = "gPtole_ij = \n"; mprefix = "mPtole = ";
 	      }
-	      printGSLmetric ( fpMetric, gprefix, g_ij );
+	      fprintf ( fpMetric, gprefix ); XLALfprintfGSLmatrix ( fpMetric, "%.6g", g_ij );
 	      fprintf ( fpMetric, "\n%s %.16g;\n\n", mprefix, mm );
 	      
 	    } /* if fpMetric */
@@ -394,22 +392,59 @@ main(int argc, char *argv[])
 	case METRIC_FLAT:
 	  {
 	    LALDetector *site = &(config.multiDetStates->data[0]->detector ); 
-	    if ( 0 != XLALFlatMetricCW ( gFlat_ij, config.refTime, config.startTime,  uvar_duration, config.edat, site ) )
+	    REAL8 dkX, dkY, dom0, dom1; 	/* 'canonical' Doppler-variables */
+	    gsl_vector *dopplerOffsetCanon;
+	    REAL8 dnx, dny, dnz, dnX, dnY;
+	    REAL8 sind, sina, cosd, cosa, sineps, coseps;
+	    REAL8 Tspan = uvar_duration;
+	    /* ----- translate Doppler-offsets into 'canonical coords ----- */
+
+	    sind = sin(uvar_Delta); cosd = cos(uvar_Delta);
+	    sina = sin(uvar_Alpha); cosa = cos(uvar_Alpha);
+	    sineps = sin ( LAL_IEARTH ); coseps = cos ( LAL_IEARTH );
+
+	    /* sky-pos offset in equatorial coords */
+	    dnx = - cosd * sina * uvar_dAlpha - sind * cosa * uvar_dDelta;
+	    dny =   cosd * cosa * uvar_dAlpha - sind * sina * uvar_dDelta;
+	    dnz =   cosd * uvar_dDelta;
+
+	    /* translate into ecliptic corrds */
+	    dnX = dnx;
+	    dnY = coseps * dny + sineps * dnz;
+
+	    /* sky-pos offset in canonical units */
+	    dkX = - LAL_TWOPI * uvar_Freq * LAL_AU_SI / LAL_C_SI * dnX;
+	    dkY = - LAL_TWOPI * uvar_Freq * LAL_AU_SI / LAL_C_SI * dnY;
+
+	    /* spin-offsets in canonical units */
+	    dom0 = LAL_TWOPI * Tspan * uvar_dFreq;
+	    dom1 = LAL_TWOPI * Tspan * Tspan * uvar_df1dot;
+
+	    dopplerOffsetCanon = gsl_vector_calloc ( METRIC_DIM );
+	    gsl_vector_set ( dopplerOffsetCanon, 0, dom0 );
+	    gsl_vector_set ( dopplerOffsetCanon, 1, dkX );
+	    gsl_vector_set ( dopplerOffsetCanon, 2, dkY );
+	    gsl_vector_set ( dopplerOffsetCanon, 3, dom1 );
+
+	    LogPrintf (LOG_DETAIL, "\nOffsets: dom0 = %.6g, dkX = %.6g, dkY = %.6g, dom1 = %.6g\n", dom0, dkX, dkY, dom1 );
+
+	    if ( 0 != XLALFlatMetricCW ( gFlat_ij, config.refTime, config.startTime, Tspan, config.edat, site ) )
 	      {
 		LogPrintf ( LOG_CRITICAL, "XLALFlatMetricCW() failed!\n");
 		return -1;
 	      }
-	  }
-	  mm = quad_form ( gFlat_ij, config.dopplerOffset );	/* FIXME: convert doppler-parameters */
-	  if ( fpMetric )
-	    {
-	      const CHAR *gprefix = "gFlat_ij = \n";
-	      const CHAR *mprefix = "mFlat = ";
-	      
-	      printGSLmetric ( fpMetric, gprefix, gFlat_ij );
-	      fprintf ( fpMetric, "\n%s %.16g;\n\n", mprefix, mm );
-	    } /* if fpMetric */
 
+	    mm = quad_form ( gFlat_ij, dopplerOffsetCanon );
+	    if ( fpMetric )
+	      {
+		const CHAR *gprefix = "gFlat_ij = \n";
+		const CHAR *mprefix = "mFlat = ";
+		
+		fprintf ( fpMetric, gprefix); XLALfprintfGSLmatrix ( fpMetric, "%.6g", gFlat_ij );
+		fprintf ( fpMetric, "\n%s %.16g;\n\n", mprefix, mm );
+	      } /* if fpMetric */
+	    
+	  }
 	  break;
 	  
 	default:
@@ -1268,7 +1303,9 @@ getMultiPhaseDerivs (LALStatus *status,
 	      tmp[1] = proj * zEcl[1];
 	      tmp[2] = proj * zEcl[2];
 
-	      printf ("%f \t %f %f %f \t %f %f %f\n", ti, rX[0], rX[1], rX[2], tmp[0], tmp[1], tmp[2] );
+	      /* 
+		 printf ("%f \t %f %f %f \t %f %f %f\n", ti, rX[0], rX[1], rX[2], tmp[0], tmp[1], tmp[2] );
+	      */
 
 	      rX[0] += tmp[0];
 	      rX[1] += tmp[1];
@@ -1457,39 +1494,6 @@ getPtolePosVel( PosVel_t *posvel, REAL8 tGPS, REAL8 tAutumnGPS )
   return;
 
 } /* getPtolePosVel() */
-
-/** Output 4x4 metric gsl_matrix in octave-format.
- * return -1 on error, 0 if OK.
- */
-int
-printGSLmetric ( FILE *fp, const CHAR *prefix, const gsl_matrix *gij )
-{
-  if ( !gij )
-    return -1;
-  if ( !fp )
-    return -1;
-  if ( (gij->size1 != 4) || (gij->size2 != 4 ) )
-    return -1;
-  if ( !prefix ) 
-    return -1;
-
-  fprintf (fp, prefix );
-  fprintf (fp, " [ %.16g, %.16g, %.16g, %.16g;\n",
-	   gsl_matrix_get ( gij, 0, 0 ), gsl_matrix_get ( gij, 0, 1 ), 
-	   gsl_matrix_get ( gij, 0, 2 ), gsl_matrix_get ( gij, 0, 3 ) );
-  fprintf (fp, "   %.16g, %.16g, %.16g, %.16g;\n",
-	   gsl_matrix_get ( gij, 1, 0 ), gsl_matrix_get ( gij, 1, 1 ),
-	   gsl_matrix_get ( gij, 1, 2 ), gsl_matrix_get ( gij, 1, 3 ) );
-  fprintf (fp, "   %.16g, %.16g, %.16g, %.16g;\n",
-	   gsl_matrix_get ( gij, 2, 0 ), gsl_matrix_get ( gij, 2, 1 ),
-	   gsl_matrix_get ( gij, 2, 2 ), gsl_matrix_get ( gij, 2, 3 ) );
-  fprintf (fp, "   %.16g, %.16g, %.16g, %.16g ];\n",
-	   gsl_matrix_get ( gij, 3, 0 ), gsl_matrix_get ( gij, 3, 1 ),
-	   gsl_matrix_get ( gij, 3, 2 ), gsl_matrix_get ( gij, 3, 3 ) );
-  
-  return 0;
-
-} /* printGSLMetric() */
 
 void
 XLALDestroyMultiPhaseDerivs ( MultiPhaseDerivs *mdPhi )
