@@ -276,7 +276,7 @@ static int check_for_missing_parameters(char *prog, struct option *long_options,
 			break;
 
 			case 'Q':
-			arg_is_missing = params->tfPlaneParams.flow < 0.0;
+			arg_is_missing = params->tf_flow < 0.0;
 			break;
 
 			case 'W':
@@ -300,7 +300,7 @@ static int check_for_missing_parameters(char *prog, struct option *long_options,
 			break;
 
 			case 'f':
-			arg_is_missing = !params->tfTilingInput.inv_fractional_stride;
+			arg_is_missing = !params->inv_fractional_stride;
 			break;
 
 			case 'g':
@@ -316,7 +316,7 @@ static int check_for_missing_parameters(char *prog, struct option *long_options,
 			break;
 
 			case 'l':
-			arg_is_missing = !params->tfTilingInput.maxTileBandwidth;
+			arg_is_missing = !params->maxTileBandwidth;
 			break;
 
 			case 'o':
@@ -442,9 +442,9 @@ void parse_command_line(
 	params->printSpectrum = NULL;	/* default == disable */
 	params->lnalphaThreshold = XLAL_REAL8_FAIL_NAN;	/* impossible */
 	params->method = -1;	/* impossible */
-	params->tfPlaneParams.flow = -1.0;	/* impossible */
-	params->tfTilingInput.maxTileBandwidth = 0;  /* impossible */
-	params->tfTilingInput.inv_fractional_stride = 0;	/* impossible */
+	params->tf_flow = -1.0;	/* impossible */
+	params->maxTileBandwidth = 0;  /* impossible */
+	params->inv_fractional_stride = 0;	/* impossible */
 	params->windowShift = 0;	/* impossible */
 
 	options.bandwidth = 0;	/* impossible */
@@ -586,9 +586,9 @@ void parse_command_line(
 		break;
 
 		case 'Q':
-		params->tfPlaneParams.flow = atof(optarg);
-		if((params->tfPlaneParams.flow < 0.0)) {
-			sprintf(msg,"must not be negative (%f Hz specified)", params->tfPlaneParams.flow);
+		params->tf_flow = atof(optarg);
+		if((params->tf_flow < 0.0)) {
+			sprintf(msg,"must not be negative (%f Hz specified)", params->tf_flow);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -683,9 +683,9 @@ void parse_command_line(
 		break;
 
 		case 'f':
-		params->tfTilingInput.inv_fractional_stride = 1.0 / atof(optarg);
-		if(params->tfTilingInput.inv_fractional_stride < 0 ||  !is_power_of_2(params->tfTilingInput.inv_fractional_stride)) {
-			sprintf(msg, "must be 2^-n, n integer, (%g specified)", 1.0 / params->tfTilingInput.inv_fractional_stride);
+		params->inv_fractional_stride = 1.0 / atof(optarg);
+		if(params->inv_fractional_stride < 0 ||  !is_power_of_2(params->inv_fractional_stride)) {
+			sprintf(msg, "must be 2^-n, n integer, (%g specified)", 1.0 / params->inv_fractional_stride);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -723,10 +723,10 @@ void parse_command_line(
 		break;
 
 		case 'l':
-		params->tfTilingInput.maxTileBandwidth = atof(optarg);
-		params->tfPlaneParams.deltaT = 1 / (2 * params->tfTilingInput.maxTileBandwidth);
-		if((params->tfTilingInput.maxTileBandwidth <= 0) || !is_power_of_2(params->tfTilingInput.maxTileBandwidth)) {
-			sprintf(msg,"must be a power of 2 greater than 0 (%f specified)",params->tfTilingInput.maxTileBandwidth);
+		params->maxTileBandwidth = atof(optarg);
+		params->tf_deltaT = 1 / (2 * params->maxTileBandwidth);
+		if((params->maxTileBandwidth <= 0) || !is_power_of_2(params->maxTileBandwidth)) {
+			sprintf(msg,"must be a power of 2 greater than 0 (%f specified)",params->maxTileBandwidth);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -734,10 +734,10 @@ void parse_command_line(
 		break;
 
 		case 'm':
-		params->tfTilingInput.maxTileDuration = atof(optarg);
-		params->tfPlaneParams.deltaF = 1 / (2 * params->tfTilingInput.maxTileDuration);
-		if((params->tfTilingInput.maxTileDuration > 1.0) || !is_power_of_2(1/params->tfTilingInput.maxTileDuration)) {
-			sprintf(msg,"must be a power of 2 not greater than 1.0 (%f specified)", params->tfTilingInput.maxTileDuration);
+		params->maxTileDuration = atof(optarg);
+		params->tf_deltaF = 1 / (2 * params->maxTileDuration);
+		if((params->maxTileDuration > 1.0) || !is_power_of_2(1/params->maxTileDuration)) {
+			sprintf(msg,"must be a power of 2 not greater than 1.0 (%f specified)", params->maxTileDuration);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -877,25 +877,25 @@ void parse_command_line(
 	 * Sanitize filter frequencies.
 	 */
 
-	if(options.cal_high_pass > params->tfPlaneParams.flow)
-		fprintf(stderr, "%s: warning: calibrated data quantization high-pass frequency (%f Hz) greater than TF plane low frequency (%f Hz)\n", argv[0], options.cal_high_pass, params->tfPlaneParams.flow);
+	if(options.cal_high_pass > params->tf_flow)
+		fprintf(stderr, "%s: warning: calibrated data quantization high-pass frequency (%f Hz) greater than TF plane low frequency (%f Hz)\n", argv[0], options.cal_high_pass, params->tf_flow);
 
-	if(options.high_pass > params->tfPlaneParams.flow - 10.0)
-		fprintf(stderr, "%s: warning: data conditioning high-pass frequency (%f Hz) greater than 10 Hz below TF plane low frequency (%f Hz)\n", argv[0], options.high_pass, params->tfPlaneParams.flow);
+	if(options.high_pass > params->tf_flow - 10.0)
+		fprintf(stderr, "%s: warning: data conditioning high-pass frequency (%f Hz) greater than 10 Hz below TF plane low frequency (%f Hz)\n", argv[0], options.high_pass, params->tf_flow);
 
 	/*
 	 * Miscellaneous chores.
 	 */
 
-	params->tfPlaneParams.timeBins = (options.windowLength / 2) / (options.ResampleRate * params->tfPlaneParams.deltaT);
-	params->tfPlaneParams.freqBins = options.bandwidth / params->tfPlaneParams.deltaF;
+	params->tf_timeBins = (options.windowLength / 2) / (options.ResampleRate * params->tf_deltaT);
+	params->tf_freqBins = options.bandwidth / params->tf_deltaF;
 
 	params->useOverWhitening = useoverwhitening;
 
 	if(options.verbose) {
 		fprintf(stderr, "%s: using --psd-average-points %zu\n", argv[0], options.PSDAverageLength);
 		fprintf(stderr, "%s: available RAM limits analysis to %d samples\n", argv[0], options.maxSeriesLength);
-		fprintf(stderr, "%s: time-frequency plane has %d time bins by %d frequency bins\n", argv[0], params->tfPlaneParams.timeBins, params->tfPlaneParams.freqBins);
+		fprintf(stderr, "%s: time-frequency plane has %d time bins by %d frequency bins\n", argv[0], params->tf_timeBins, params->tf_freqBins);
 	}
 }
 
