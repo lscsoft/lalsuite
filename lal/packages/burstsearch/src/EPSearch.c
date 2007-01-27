@@ -54,7 +54,7 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 	const LIGOTimeGPS *epoch
 )
 {
-	const char *func = "XLALTFTileToBurstEvent";
+	const char func[] = "XLALTFTileToBurstEvent";
 	SnglBurstTable *event = LALCalloc(1, sizeof(*event));
 	if(!event)
 		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
@@ -88,7 +88,7 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 
 static SnglBurstTable *XLALTFTilesToSnglBurstTable(SnglBurstTable *head, const REAL4TimeFrequencyPlane *plane, const TFTiling *tiling, REAL8 lnalphaThreshold)
 {
-	const char *func = "XLALTFTilesToSnglBurstTable";
+	const char func[] = "XLALTFTilesToSnglBurstTable";
 	SnglBurstTable *oldhead;
 	TFTile *tile;
 	size_t i;
@@ -189,7 +189,7 @@ XLALEPSearch(
 )
 /******** </lalVerbatim> ********/
 { 
-	static const char *func = "EPSearch";
+	const char func[] = "EPSearch";
 	SnglBurstTable *head = NULL;
 	int errorcode = 0;
 	int start_sample;
@@ -383,7 +383,7 @@ int XLALEPConditionData(
 )
 /* </lalVerbatim> */
 {
-	const char *func = "XLALEPConditionData";
+	const char func[] = "XLALEPConditionData";
 	const REAL8         epsilon = 1.0e-8;
 	PassBandParamStruc  highpassParam;
 	size_t              newlength;

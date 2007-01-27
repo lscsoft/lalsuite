@@ -38,7 +38,7 @@ REAL8 XLALChisqCdf(
 	 *  used in paper.
 	 */
 
-	static const char *func = "XLALChisqCdf";
+	const char func[] = "XLALChisqCdf";
 	REAL8 prob;
 
 	/* Arguments chi2 and dof must be non-negative */
@@ -81,7 +81,7 @@ REAL8 XLALOneMinusChisqCdf(
 	 *  except for the very end.
 	 */
 
-	static const char *func = "XLALOneMinusChisqCdf";
+	const char func[] = "XLALOneMinusChisqCdf";
 	REAL8 prob;
 
 	if ((chi2 < 0.0) || (dof <= 0.0))
@@ -125,7 +125,7 @@ REAL8 XLALlnOneMinusChisqCdf(
 	 * See Abramowitz and Stegun, (6.5.32).
 	 */
 
-	static const char *func = "XLALlnOneMinusChisqCdf";
+	const char func[] = "XLALlnOneMinusChisqCdf";
 	REAL8 a = dof/2;
 	REAL8 x = chi2/2;
 	REAL8 ln_prob, term;
@@ -192,7 +192,7 @@ REAL8 XLALNoncChisqCdfNonSafe(
 	 *  term in the series involves a call to XLALChisqCdf().
 	 */
 
-	static const char *func = "XLALNoncChisqCdfNonSafe";
+	const char func[] = "XLALNoncChisqCdfNonSafe";
 	const REAL8 fractionalAccuracy = 1.0e-5;
 	const INT4 maxloop = 170;	/* Factorial() breaks down here */
 	REAL8 temp;
@@ -240,7 +240,7 @@ REAL8 XLALNoncChisqCdf(
 )
 /******** </lalVerbatim> ********/
 {
-	static const char *func = "XLALNoncChisqCdf";
+	const char func[] = "XLALNoncChisqCdf";
 	REAL8 prob = XLALNoncChisqCdfNonSafe(chi2, dof, nonCentral);
 
 	if(XLALIsREAL8FailNaN(prob))
@@ -265,7 +265,7 @@ REAL8 XLALChi2Threshold(
 {
 	/* threshold for chi2:  returns value of chi2 such that falseAlarm = 1
 	 * - chisqCdf(chi2,dof) */
-	static const char *func = "XLALChi2Threshold";
+	const char func[] = "XLALChi2Threshold";
 	REAL8 chi2;
 
 	/* Argument dof must be positive, and supplied false alarm probability
@@ -318,7 +318,7 @@ REAL8 XLALRhoThreshold(
 	 * noncChisqCdf(chi2,dof,rho^2) note that rho^2 is the same as
 	 * nonCentral
 	 */
-	static const char *func = "XLALRhoThreshold";
+	const char func[] = "XLALRhoThreshold";
 	REAL8 xmin = -2.0;
 	REAL8 xmax = +2.0;
 	struct NoncChisqCdfParams params;

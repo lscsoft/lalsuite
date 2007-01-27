@@ -25,7 +25,7 @@ int XLALAddWhiteNoise(
 )
 /******** </lalVerbatim> ********/
 {
-	static const char *func = "XLALAddWhiteNoise";
+	const char func[] = "XLALAddWhiteNoise";
 	RandomParams *params;
 	REAL4Sequence *noise_r, *noise_i;
 	size_t i;

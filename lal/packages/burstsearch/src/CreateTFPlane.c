@@ -23,7 +23,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 )
 /******** </lalVerbatim> ********/
 {
-	static const char *func = "XLALCreateTFPlane";
+	static const char func[] = "XLALCreateTFPlane";
 	REAL4TimeFrequencyPlane *plane;
 	REAL4 *data;
 

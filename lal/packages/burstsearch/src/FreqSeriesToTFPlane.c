@@ -27,7 +27,7 @@ NRCSID(FREQSERIESTOTFPLANEC, "$Id$");
 
 static COMPLEX8FrequencySeries *generate_filter(const COMPLEX8FrequencySeries *template, INT4 fbins_per_channel, REAL8 dt, INT4 fstart)
 {
-	static const char *func = "generate_filter";
+	const char func[] = "generate_filter";
 	REAL4Sequence *tdfilter;
 	COMPLEX8FrequencySeries *fdfilter;
 	RealFFTPlan *plan;
@@ -198,7 +198,7 @@ int XLALFreqSeriesToTFPlane(
 )
 /******** </lalVerbatim> ********/
 {
-	static const char *func = "XLALFreqSeriesToTFPlane";
+	const char func[] = "XLALFreqSeriesToTFPlane";
 	REAL4Sequence *snr;
 	COMPLEX8FrequencySeries *filter;
 	COMPLEX8Sequence *fcorr;

@@ -47,7 +47,7 @@ TFTiling *XLALCreateTFTiling(
 )
 /******** </lalVerbatim> *********/
 {
-	static const char *func = "XLALCreateTFTiling";
+	const char func[] = "XLALCreateTFTiling";
 	TFTiling *tiling;
 	TFTile *tile;
 	int *weight;

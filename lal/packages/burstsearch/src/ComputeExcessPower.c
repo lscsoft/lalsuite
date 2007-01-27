@@ -41,7 +41,7 @@ XLALComputeExcessPower(
 )
 /******** </lalVerbatim> ********/
 {
-	static const char *func = "XLALComputeExcessPower";
+	static const char func[] = "XLALComputeExcessPower";
 	TFTile *tile = tiling->tile;
 	REAL8 sum;
 	REAL8 hrsssq;

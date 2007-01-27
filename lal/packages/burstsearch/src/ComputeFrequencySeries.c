@@ -33,7 +33,7 @@ XLALComputeFrequencySeries(
 	 * LIGO-T010095-00-Z with the normalization factor (5) applied.
 	 */
 
-	static const char *func = "XLALComputeFrequencySeries";
+	const char func[] = "XLALComputeFrequencySeries";
 	COMPLEX8FrequencySeries *fseries;
 	REAL4Sequence *tmp;
 	REAL4 A;
