@@ -262,6 +262,10 @@ main(int argc, char *argv[])
 
   /* register user-variables */
   LAL_CALL (LALGetDebugLevel (&status, argc, argv, 'v'), &status);
+
+  /* set log-level */
+  LogSetLevel ( lalDebugLevel );
+
   LAL_CALL (initUserVars (&status), &status);	  
 
   /* read cmdline & cfgfile  */	
@@ -426,7 +430,7 @@ main(int argc, char *argv[])
 	    gsl_vector_set ( dopplerOffsetCanon, 2, dkY );
 	    gsl_vector_set ( dopplerOffsetCanon, 3, dom1 );
 
-	    LogPrintf (LOG_DETAIL, "\nOffsets: dom0 = %.6g, dkX = %.6g, dkY = %.6g, dom1 = %.6g\n", dom0, dkX, dkY, dom1 );
+	    LogPrintf (LOG_DETAIL, "Offsets: dom0 = %.6g, dkX = %.6g, dkY = %.6g, dom1 = %.6g\n", dom0, dkX, dkY, dom1 );
 
 	    if ( 0 != XLALFlatMetricCW ( gFlat_ij, config.refTime, config.startTime, Tspan, config.edat, site ) )
 	      {
