@@ -37,7 +37,7 @@ where $A_{ij}$ is a transverse traceless tensor.
 
 There are different methods for extracting $h_{ij}$ from a numerical
 evolution.  One common method is to use the complex Weyl tensor
-component $\psi_4$ which is related to the second time derivative of
+component $\Psi_4$ which is related to the second time derivative of
 $h_{ij}$. Another method is to use the Zerilli function which
 approximates the spacetime in the wave-zone as a perturbation of a
 Schwarzschild spacetime.  For our purposes, it is not important how
@@ -46,22 +46,28 @@ methods they find appropriate.  The starting point of our analysis are
 the multipole moments of $h_{ij}$ and it is important to describe
 explicitly our conventions for the multipole decomposition.  In
 addition to these multipole moments, we also require the corresponding
-values of $\psi_4$ or the Zerilli function in the formats described
+values of $\Psi_4$ or the Zerilli function in the formats described
 later. 
 
-Introduce a coordinate system $(x,y,z)$ associated with the binary
-system as follows.  The orbital plane is taken to be the $x$-$y$ plane
-with the $z$-axis in the direction of the orbital angular momentum.
-The orbital plane works when the black holes are non-spinning but it
-can be ambiguous, especially when the spin of the black holes causes
-the orbital plane to precess significantly.  The $x$-axis is chosen so
-that the initial orbital phase of the binary is 0.  **better to choose
-phase at coalescence?*** Let $\mathbf{e}_x$, $\mathbf{e}_y$ and
-$\mathbf{e}_z$ denote the orthonormal coordinate basis vectors. Given
-this coordinate system, we define spherical coordinates
-$(\theta,\phi)$ where $\theta$ is the inclination angle from the
-$z$-axis and $\phi$ is the phase angle. We break up $h_{ij}$ into
-modes in this coordinate system. **figure?***
+
+Introduce a coordinate system $(x,y,z,t)$ associated with the binary
+system as follows.  The orbital plane of the binary at $t=0$ is taken to
+be the $x$-$y$ plane with the $z$-axis in the direction of the orbital
+angular momentum.  The orbital plane works when the black holes are
+non-spinning but it can be ambiguous, especially when the spin of the
+black holes causes the orbital plane to precess significantly.
+Similarly, the $x$-axis is chosen so that the orbital phase of the
+binary vanishes at $t=0$.   This still leaves open the question of what
+to choose as the zero of time.  The two obvious choices are the
+beginning of the simulation and the time at coalescence (although the
+latter may well be slicing dependent).  It is not immediately clear
+which would be preferable, especially in the case of spinning systems.
+
+Let $\mathbf{e}_x$, $\mathbf{e}_y$ and $\mathbf{e}_z$ denote the
+orthonormal coordinate basis vectors. Given this coordinate system, we
+define spherical coordinates $(\iota,\phi)$ where $\iota$ is the
+inclination angle from the $z$-axis and $\phi$ is the phase angle.  We
+break up $h_{ij}$ into modes in this coordinate system. **figure?***
 
 In the transverse traceless gauge, $h_{ij}$ is has two independent
 polarizations 
@@ -78,12 +84,12 @@ transverse-traceless tensors:
   \mathbf{e}_+ = \mathbf{e}_x\otimes\mathbf{e}_y + \mathbf{e}_y\otimes\mathbf{e}_x\,.
 \end{equation}
 It is convenient to use the combination $h_+ - ih_\times$ which is
-related to the Weyl tensor component $\psi_4$ by two time derivatives:
+related to the Weyl tensor component $\Psi_4$ by two time derivatives:
 \begin{equation}
   \label{eq:3}
-  \psi_4 = \ddot{h}_+ -i\ddot{h}_\times\,.
+  \Psi_4 = \ddot{h}_+ -i\ddot{h}_\times\,.
 \end{equation}
-$\psi_4$. It can be shown that $h_+-ih_\times$, can be decomposed into
+$\Psi_4$. It can be shown that $h_+-ih_\times$, can be decomposed into
 modes using spin weighted spherical harmonics ${}_sY_{lm}$ of weight
 -2:
 \begin{equation}
@@ -121,13 +127,17 @@ The mode expansion coefficients $H_{lm}$ are given by
   \label{eq:10}
   H_{\ell m} = \oint {}^{-2}Y_{lm}^\star(\theta,\phi)(rh_+-irh_\times )\,d\Omega\,.
 \end{equation}
-If $\psi_4$ is used for wave extraction, then $H_{lm}$ is given by two
-time integrals of the corresponding mode of $\psi_4$.  It isimportant
+If $\Psi_4$ is used for wave extraction, then $H_{lm}$ is given by two
+time integrals of the corresponding mode of $\Psi_4$.  It is important
 that the integration constants be chosen to make sure, as far as
 possible, that $h_{+,\times}$ do not have a secular drift, i.e. they
-vanish initially and at late times.  
+vanish initially and at late times.  For waveforms which evolve right
+through the merger and ringdown, the vanishing at late times should be
+unambiguous.  However, in numerical simulations, there is often spurious
+radiation at the beginning of the evolution.  When to we require the
+waveform to be zero?  Before or after this radiation has gone out?
 
-We define $h_+^{(\ell m)}$ and $h_\times^{\ell m}$ as
+We define $h_+^{(\ell m)}$ and $h_\times^{(\ell m)}$ as
 \begin{equation}
   \label{eq:11}
   h_+^{(\ell m)}(t) -ih_\times^{(\ell m)}(t) := \frac{H_{\ell m}(t)}{r}\,.  
@@ -151,14 +161,19 @@ numbers $(l,m)$.  These 9 parameters will be referred to as the
 metadata if necessary.***
 
 The data for a single mode $rh_{+,\times}^{lm}$ is to be written as a
-plain text file in three columns for the time $t$, $h_+$ and
-$h_\times$.  The time is in units of the ADM mass. The time must be in
-units of the total mass $M$ of the binary (or, almost equivalently,
-the ADM mass) and the sampling must be uniform.  A sampling rate of
-$1\times M$ is sufficient for our purposes, but there is no other
-restriction on it. **specify a directory structure?**
-
+plain text file in three columns for the time $t$, $rh_+$ and
+$rh_\times$.  The time must be in units of the total mass $M$ of the
+binary (or, almost equivalently, the ADM mass) and the sampling must be
+uniform.  If the result of a simulation or set of simulations yields a
+waveform sampled non-uniformly, we ask that the NR group interpolate to
+give a uniformly sampled waveform.  A sampling rate of $1\times M$ is
+sufficient for our purposes, but there is no other restriction on it.
+The strain multiplied by the distance will also be in units of the total
+mass $M$ of the binary.  There can be any number of comment lines at the
+top of the file and it is envisioned that the details of the simulation
+and the mode contained in the file will be held in the comment lines.
 This is an example of a data file 
+
 \begin{verbatim}
 # time       hplus        hcross
 0.000000e+00 1.138725e-02 -8.319811e-04
