@@ -277,14 +277,14 @@ XLALFlatMetricCW ( gsl_matrix *gij, 			/**< [out] metric */
     {
       params.comp1 = COMP_RX;
       params.comp2 = s;
-      gg = - cov_Phi_ij ( &params );
+      gg = cov_Phi_ij ( &params );
 
       gsl_matrix_set (gij, 0, s+2, gg);
       gsl_matrix_set (gij, s+2, 0, gg);
 
       params.comp1 = COMP_RY;
       params.comp2 = s;
-      gg = - cov_Phi_ij ( &params );
+      gg = cov_Phi_ij ( &params );
 
       gsl_matrix_set (gij, 1, s+2, gg);
       gsl_matrix_set (gij, s+2, 1, gg);
