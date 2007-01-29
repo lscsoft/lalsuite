@@ -170,6 +170,11 @@ XLALNextDopplerSkyPos( PulsarDopplerParams *pos, DopplerSkyScanState *skyScan)
 	}
       break;
 
+    case STATE_LAST:
+    default:
+      return -1;
+      break;
+
     } /* switch skyScan->stat */
 
   return 0;

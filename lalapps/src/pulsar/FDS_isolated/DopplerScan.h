@@ -81,12 +81,12 @@ NRCSID( DOPPLERSCANH, "$Id$" );
 /*---------- external types ----------*/
 
 /** Different 'states' a Doppler-scan can be in */
-enum {
+typedef enum {
   STATE_IDLE = 0,   	/**< not initialized yet */
   STATE_READY,		/**< initialized and ready */
   STATE_FINISHED,	/**< all templates have been read */
   STATE_LAST
-};
+} scan_state_t;
 
 /** different types of grids: */
 typedef enum
@@ -146,7 +146,7 @@ typedef struct {
 
 /** this structure reflects the current state of a DopplerSkyScan */
 typedef struct {
-  INT2 state;  			/**< idle, ready or finished */
+  scan_state_t state;  			/**< idle, ready or finished */
   SkyRegion skyRegion; 		/**< polygon (and bounding square) defining sky-region  */
   UINT4 numSkyGridPoints;	/**< how many skygrid-points */
   PulsarSpins dfkdot;		/**< fixed-size steps in spins */ 
