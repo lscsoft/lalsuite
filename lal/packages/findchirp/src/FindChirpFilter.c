@@ -383,7 +383,6 @@ LALFindChirpFilterSegment (
   /* The raw chisq is stored in the database. this quantity is chisq    */
   /* distributed with 2p-2 degrees of freedom.                          */
   chisqThreshFac = norm * params->chisqDelta / (REAL4) numChisqBins;
-  fprintf(stdout, "Chisq Threshfac: %e\n", chisqThreshFac);
 
   /* if full snrsq vector is required, store the snrsq */
   if ( params->rhosqVec ) 
