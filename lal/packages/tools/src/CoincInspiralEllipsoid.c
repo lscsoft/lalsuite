@@ -381,8 +381,8 @@ REAL8 XLALCalculateEThincaParameter(
    fContactWorkSpace    *workSpace;
    
 
-   loMatch = 0.0;
-   hiMatch = 0.9999;
+   loMatch = 0.0001;
+   hiMatch = 1.0;
 
   if ( !table1 || !table2 )
     XLAL_ERROR_REAL8( func, XLAL_EFAULT );
@@ -426,10 +426,10 @@ REAL8 XLALCalculateEThincaParameter(
     errorList[i].position = XLALGetPositionFromSnglInspiral( errorList[i].trigger );
 
     errorList[i].err_matrix = XLALGetErrorMatrixFromSnglInspiral( errorList[i].trigger,
-                                 hiMatch );
+                                 loMatch );
   }
 
-  /* Check to see if they overlap for the highest match possible. If so there is
+  /* Check to see if they overlap for the lowest difference possible. If so there is
    * nothing more to be done.
    */
    isOverlap = XLALCompareInspiralsEllipsoid( &errorList[0], &errorList[1], workSpace,
@@ -447,15 +447,15 @@ REAL8 XLALCalculateEThincaParameter(
        gsl_vector_free( errorList[i].position );
      }
      XLALFreeFContactWorkSpace( workSpace );
-     return hiMatch;
+     return loMatch;
    }
 
-  /* Now test for the lowest match */
+  /* Now test for the largest error */
   for (i = 0; i < 2; i++ )
   {
 
     errorList[i].err_matrix = XLALGetErrorMatrixFromSnglInspiral( errorList[i].trigger,
-                                 loMatch );
+                                 hiMatch );
   }
    
    isOverlap = XLALCompareInspiralsEllipsoid( &errorList[0], &errorList[1], workSpace,
@@ -497,11 +497,11 @@ REAL8 XLALCalculateEThincaParameter(
      }
      if (isOverlap)
      {
-       loMatch = midMatch;
+       hiMatch = midMatch;
      }
      else
      {
-       hiMatch = midMatch;
+       loMatch = midMatch;
      }
    }
 
@@ -586,8 +586,6 @@ REAL8 XLALEThincaParameterForInjection(
          + 2.0 * trigger->Gamma[4] * dt0 * dt3
          + trigger->Gamma[5] * dt3 * dt3;
 
-  eMatch = 1.0 - eMatch;
-
   return eMatch;
 }
 
@@ -606,12 +604,12 @@ static REAL8 getTimeError(const SnglInspiralTable *table, REAL8 eMatch)
   REAL8 x;
   REAL8 denom;
   
-  a11 = table->Gamma[0] / (1.0 - eMatch);
-  a12 = table->Gamma[1] / (1.0 - eMatch);
-  a13 = table->Gamma[2] / (1.0 - eMatch);
-  a22 = table->Gamma[3] / (1.0 - eMatch);
-  a23 = table->Gamma[4] / (1.0 - eMatch);
-  a33 = table->Gamma[5] / (1.0 - eMatch);
+  a11 = table->Gamma[0] / eMatch;
+  a12 = table->Gamma[1] / eMatch;
+  a13 = table->Gamma[2] / eMatch;
+  a22 = table->Gamma[3] / eMatch;
+  a23 = table->Gamma[4] / eMatch;
+  a33 = table->Gamma[5] / eMatch;
 
   x = (a23 * a23 - a22 * a33) * a22;
   denom = (a12*a23 - a22*a13) * (a12*a23 - a22*a13)

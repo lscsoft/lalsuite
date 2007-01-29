@@ -1259,7 +1259,7 @@ int main( int argc, char *argv[] )
   {
      fprintf( stderr, "Error: Invalid e-thinca parameter\n" );
      fprintf( stderr, "--e-thinca-parameter should be specified, "\
-               "and should be < 1.\n" );
+               "and should be between 0 and 1.\n" );
      exit(1);
   }    
 

@@ -68,7 +68,7 @@ gsl_matrix * XLALGetErrorMatrixFromSnglInspiral(SnglInspiralTable *event,
   gsl_matrix_set( fisher, 2, 1, event->Gamma[4] );
   gsl_matrix_set( fisher, 2, 2, event->Gamma[5] );
 
-  gsl_matrix_scale( fisher, 1.0 / (1.0 - eMatch) );
+  gsl_matrix_scale( fisher, 1.0 / eMatch );
 
   /* Now invert to get the matrix we need */
   gsl_linalg_LU_decomp( fisher, p, &signum );

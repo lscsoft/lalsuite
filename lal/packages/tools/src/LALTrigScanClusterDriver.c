@@ -324,12 +324,12 @@ static void LALTrigScan3DMetricCoeff_TcT0T3  (
                 kk<N && thisEvent; kk++, thisEvent = thisEvent->next  ) 
         {
             /* Copy out the 3d metric co-effs */
-            masterList[kk].Gamma[0] = thisEvent->Gamma[0]/(condenseIn->sf_volume*(1.0L - condenseIn->mmCoarse));
-            masterList[kk].Gamma[1] = thisEvent->Gamma[1]/(condenseIn->sf_volume*(1.0L - condenseIn->mmCoarse));
-            masterList[kk].Gamma[2] = thisEvent->Gamma[2]/(condenseIn->sf_volume*(1.0L - condenseIn->mmCoarse));
-            masterList[kk].Gamma[3] = thisEvent->Gamma[3]/(condenseIn->sf_volume*(1.0L - condenseIn->mmCoarse));
-            masterList[kk].Gamma[4] = thisEvent->Gamma[4]/(condenseIn->sf_volume*(1.0L - condenseIn->mmCoarse));
-            masterList[kk].Gamma[5] = thisEvent->Gamma[5]/(condenseIn->sf_volume*(1.0L - condenseIn->mmCoarse));
+            masterList[kk].Gamma[0] = thisEvent->Gamma[0]/condenseIn->ts_scaling;
+            masterList[kk].Gamma[1] = thisEvent->Gamma[1]/condenseIn->ts_scaling;
+            masterList[kk].Gamma[2] = thisEvent->Gamma[2]/condenseIn->ts_scaling;
+            masterList[kk].Gamma[3] = thisEvent->Gamma[3]/condenseIn->ts_scaling;
+            masterList[kk].Gamma[4] = thisEvent->Gamma[4]/condenseIn->ts_scaling;
+            masterList[kk].Gamma[5] = thisEvent->Gamma[5]/condenseIn->ts_scaling;
 
             /* Now figure out the largest tc and tau0 footPrints of the triggers */
             a11 = masterList[kk].Gamma[0] ;

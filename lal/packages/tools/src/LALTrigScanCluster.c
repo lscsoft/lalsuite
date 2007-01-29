@@ -491,7 +491,6 @@ INT4 XLALPopulateTrigScanInput (
     deltaT     = fcTmpltParams->deltaT;
     deltaF     = sampleRate / (REAL8)(numPoints);
 
-    (*condenseIn)->mmCoarse    = bankHead->minMatch;
     (*condenseIn)->rho_th1     = sqrt(fcFilterParams->rhosqThresh);
     (*condenseIn)->chisq_th1   = fcFilterParams->chisqThresh;
     
