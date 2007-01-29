@@ -136,6 +136,8 @@ LALFindChirpFilterSegment (
       FINDCHIRPH_ERHOT, FINDCHIRPH_MSGERHOT );
   ASSERT( params->chisqThresh >= 0, status,
       FINDCHIRPH_ECHIT, FINDCHIRPH_MSGECHIT );
+  ASSERT( params->chisqDelta >= 0, status,
+      FINDCHIRPH_ECHIT, FINDCHIRPH_MSGECHIT );
 
   /* check that the fft plan exists */
   ASSERT( params->invPlan, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
@@ -363,7 +365,8 @@ LALFindChirpFilterSegment (
   modqsqThresh = params->rhosqThresh / norm;
 
   /* we threshold on the "modified" chisq threshold computed from       */
-  /*   chisqThreshFac = delta^2 * norm / p                              */
+  /*   chisqThreshFac = chisqDelta * norm / p                           */
+  /*                                                                    */
   /*   rho^2 = norm * modqsq                                            */
   /*                                                                    */
   /* So we actually threshold on                                        */
@@ -371,16 +374,16 @@ LALFindChirpFilterSegment (
   /*    r^2 < chisqThresh * ( 1 + modqsq * chisqThreshFac )             */
   /*                                                                    */
   /* which is the same as thresholding on                               */
-  /*    r^2 < chisqThresh * ( 1 + rho^2 * delta^2 / p )                 */
+  /*    r^2 < chisqThresh * ( 1 + rho^2 * chisqDelta / p )              */
   /* and since                                                          */
   /*    chisq = p r^2                                                   */
   /* this is equivalent to thresholding on                              */
-  /*    chisq < chisqThresh * ( p + rho^2 delta^2 )                     */
+  /*    chisq < chisqThresh * ( p + rho^2 chisqDelta )                  */
   /*                                                                    */
   /* The raw chisq is stored in the database. this quantity is chisq    */
   /* distributed with 2p-2 degrees of freedom.                          */
-  mismatch = 1.0 - input->fcTmplt->tmplt.minMatch;
-  chisqThreshFac = norm * mismatch * mismatch / (REAL4) numChisqBins;
+  chisqThreshFac = norm * params->chisqDelta / (REAL4) numChisqBins;
+  fprintf(stdout, "Chisq Threshfac: %e\n", chisqThreshFac);
 
   /* if full snrsq vector is required, store the snrsq */
   if ( params->rhosqVec ) 

@@ -420,12 +420,13 @@ typedef struct
 tagFindChirpFilterParams
 {
   REAL8                         deltaT;
-  REAL4				clusterWindow;			
+  REAL4                         clusterWindow;                  
   REAL4                         rhosqThresh;
   REAL4                         chisqThresh;
+  REAL4                         chisqDelta;
   REAL4                         norm;
   UINT4                         maximiseOverChirp;
-  Clustering			clusterMethod;		
+  Clustering                    clusterMethod;          
   Approximant                   approximant;
   COMPLEX8Vector               *qVec;
   COMPLEX8Vector               *qVecBCV;
