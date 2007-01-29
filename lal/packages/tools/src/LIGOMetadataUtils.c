@@ -566,9 +566,9 @@ XLALTimeSortSearchSummary(
 
   /* re-link the linked list in the right order */
   thisSearchSumm = *summHead = summHandle[0];
-  for ( i = 1; i < numSumms; ++i )
+  for ( i = 1; i < numSumms; ++i, thisSearchSumm = thisSearchSumm->next )
   {
-    thisSearchSumm = thisSearchSumm->next = summHandle[i];
+    thisSearchSumm->next = summHandle[i];
   }
   thisSearchSumm->next = NULL;
 

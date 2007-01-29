@@ -172,7 +172,7 @@ XLALPlayTestSimInspiral(
 int
 XLALSimInspiralInSearchedData(
     SimInspiralTable         **eventHead,
-    SearchSummaryTable        *summList
+    SearchSummaryTable       **summList
     )
 /* </lalVerbatim> */
 {
@@ -184,11 +184,11 @@ XLALSimInspiralInSearchedData(
 
   int numInj = 0;
 
-  XLALTimeSortSearchSummary( &summList, LALCompareSearchSummaryByOutTime );
+  XLALTimeSortSearchSummary( summList, LALCompareSearchSummaryByOutTime );
   XLALSortSimInspiral( eventHead, XLALCompareSimInspiralByGeocentEndTime ); 
 
   thisEvent = *eventHead;
-  thisSearchSumm = summList;
+  thisSearchSumm = *summList;
 
 
   while ( thisEvent )

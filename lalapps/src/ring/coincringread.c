@@ -906,7 +906,7 @@ why??????????????
     
     /* keep only injections in times analyzed */
     numSimInData = XLALSimRingdownInSearchedData( &simEventHead, 
-        searchSummList ); 
+        &searchSummList ); 
 
     if ( vrbflg ) fprintf( stdout, "%d injections in analyzed data\n", 
         numSimInData );

@@ -1027,7 +1027,7 @@ XLALPlayTestSimInspiral(
 int
 XLALSimInspiralInSearchedData(
     SimInspiralTable         **eventHead,
-    SearchSummaryTable        *summList
+    SearchSummaryTable       **summList
     );
 
 INT8
@@ -1478,7 +1478,7 @@ XLALPlayTestSimRingdown(
 int
 XLALSimRingdownInSearchedData(
     SimRingdownTable         **eventHead,
-    SearchSummaryTable        *summList
+    SearchSummaryTable       **summList
     );
 
 INT8  

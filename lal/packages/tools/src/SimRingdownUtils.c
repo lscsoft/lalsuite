@@ -111,7 +111,7 @@ XLALPlayTestSimRingdown(
 int
 XLALSimRingdownInSearchedData(
     SimRingdownTable         **eventHead,
-    SearchSummaryTable        *summList
+    SearchSummaryTable       **summList
     )
 /* </lalVerbatim> */
 {
@@ -123,11 +123,11 @@ XLALSimRingdownInSearchedData(
 
   int numInj = 0;
 
-  XLALTimeSortSearchSummary( &summList, LALCompareSearchSummaryByOutTime );
+  XLALTimeSortSearchSummary( summList, LALCompareSearchSummaryByOutTime );
   XLALSortSimRingdown( eventHead, XLALCompareSimRingdownByGeocentStartTime );
 
   thisEvent = *eventHead;
-  thisSearchSumm = summList;
+  thisSearchSumm = *summList;
 
 
   while ( thisEvent )

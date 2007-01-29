@@ -1059,7 +1059,7 @@ int main( int argc, char *argv[] )
 
     /* keep only injections in times analyzed */
     numSimInData = XLALSimInspiralInSearchedData( &simEventHead, 
-        searchSummList ); 
+        &searchSummList ); 
 
     if ( vrbflg ) fprintf( stdout, "%d injections in analyzed data\n", 
         numSimInData );
