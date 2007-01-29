@@ -4817,12 +4817,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           exit(1);
       }
 
-      if ( ! trigScanMinMatch ) 
-      {       
-          fprintf ( stderr, "You must specify --ts-min-match\n" );
-          exit(1);
-      }
-
       if ( maximizationInterval )
       {
           fprintf ( stderr, "Cannot specify both --maximization-interval"
