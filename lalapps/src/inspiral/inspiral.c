@@ -1570,6 +1570,7 @@ int main( int argc, char *argv[] )
     fcInitParams->numChisqBins = 0;
     snrThresh                  = 0;
     chisqThresh                = LAL_REAL4_MAX;
+    chisqDelta                 = LAL_REAL4_MAX;
 
     if ( bankSimFileName )
     {
@@ -4528,6 +4529,11 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     if ( chisqThresh < 0 )
     {
       fprintf( stderr, "--chisq-threshold must be specified\n" );
+      exit( 1 );
+    }
+    if ( chisqDelta < 0 )
+    {
+      fprintf( stderr, "--chisq-delta must be specified\n" );
       exit( 1 );
     }
   }
