@@ -148,7 +148,6 @@ INT4  ovrlap            = -1;           /* overlap between segments     */
 CHAR  ifo[3];                           /* two character ifo code       */
 CHAR *channelName = NULL;               /* channel string               */
 UINT4 inputDataLength = 0;              /* number of points in input    */
-REAL4 minimalMatch = -1;                /* override bank minimal match  */
 REAL4 strainHighPassFreq = -1;          /* h(t) high pass frequency     */
 INT4  strainHighPassOrder = -1;         /* h(t) high pass filter order  */
 REAL4 strainHighPassAtten = -1;         /* h(t) high pass attenuation   */
@@ -182,6 +181,7 @@ CHAR *bankFileName      = NULL;         /* name of input template bank  */
 INT4  startTemplate     = -1;           /* index of first template      */
 INT4  stopTemplate      = -1;           /* index of last template       */
 INT4  numChisqBins      = -1;           /* number of chisq bins         */
+REAL4 chisqDelta        = -1;           /* set chisq delta param        */
 REAL4 snrThresh         = -1;           /* signal to noise thresholds   */
 REAL4 chisqThresh       = -1;           /* chisq veto thresholds        */
 Clustering clusterMethod;               /* chosen clustering algorithm  */  
@@ -567,20 +567,6 @@ int main( int argc, char *argv[] )
 
   if ( vrbflg ) fprintf( stdout, "parsed %d templates from %s\n", 
       numTmplts, bankFileName );
-
-  /* override the minimal match of the bank if specified on the command line */
-  if ( minimalMatch >= 0 )
-  {
-    if ( vrbflg && bankHead )
-    {
-      fprintf( stdout, "Overriding bank minimal match:\n   value in bank = %e,"
-          " new value = %e\n", bankHead->minMatch, minimalMatch );
-    }
-    for ( bankCurrent = bankHead; bankCurrent; bankCurrent = bankCurrent->next )
-    {
-      bankCurrent->minMatch = minimalMatch;
-    }
-  }
 
   if ( numTmplts )
   {
@@ -1702,6 +1688,7 @@ int main( int argc, char *argv[] )
   /* parse the thresholds */
   fcFilterParams->rhosqThresh = snrThresh * snrThresh;
   fcFilterParams->chisqThresh = chisqThresh;
+  fcFilterParams->chisqDelta  = chisqDelta;
 
   if ( vrbflg ) fprintf( stdout, "done\n" );
 
@@ -2868,7 +2855,6 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "\n"\
 "  --td-follow-up FILE          Follow up coincident BCV events in FILE\n"\
 "  --bank-file FILE             read template bank parameters from FILE\n"\
-"  --minimal-match M            override bank minimal match with M (sets delta)\n"\
 "  --start-template N           start filtering at template number N in bank\n"\
 "  --stop-template N            stop filtering at template number N in bank\n"\
 "  --reverse-chirp-bank         filters data using a reverse chirp template bank\n"\
@@ -2894,9 +2880,10 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --approximant APPROX         set approximant of the waveform to APPROX\n"\
 "                               (FindChirpSP|BCV|BCVC|BCVSpin|TaylorT1|TaylorT2|\n"\
 "                                  TaylorT3|PadeT1|EOB|GeneratePPN)\n"\
-"  --chisq-bins P               set number of chisq veto bins to P\n"\
 "  --snr-threshold RHO          set signal-to-noise threshold to RHO\n"\
-"  --chisq-threshold X          threshold on chi^2 < X * ( p + rho^2 * delta^2 )\n"\
+"  --chisq-bins P               set number of chisq veto bins to P\n"\
+"  --chisq-delta DELTA          set chisq delta parameter to DELTA\n"\
+"  --chisq-threshold X          threshold on chi^2 < X * ( p + DELTA *rho^2 )\n"\
 "  --cluster-method MTHD        max over chirp MTHD (tmplt|window|none)\n"\
 "  --cluster-window SEC         set length of clustering time window if required\n"\
 "\n"\
@@ -2998,7 +2985,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"inverse-spec-length",     required_argument, 0,                'k'},
     {"dynamic-range-exponent",  required_argument, 0,                'l'},
     {"start-template",          required_argument, 0,                'm'},
-    {"minimal-match",           required_argument, 0,                'M'},
+    {"chisq-delta",             required_argument, 0,                'M'},
     {"stop-template",           required_argument, 0,                'n'},
     {"chisq-bins",              required_argument, 0,                'o'},
     {"calibration-cache",       required_argument, 0,                'p'},
@@ -3507,16 +3494,15 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'M':
-        minimalMatch = (REAL4) atof( optarg );
-        if ( minimalMatch < 0 || minimalMatch > 1 )
+        chisqDelta = (REAL4) atof( optarg );
+        if ( chisqDelta < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "minimal match must be in the range [0,1]: "          
+              "chi squared delta parameter must be positive: "          
               "(%e specified)\n", 
-              long_options[option_index].name, minimalMatch );
+              long_options[option_index].name, chisqDelta );
         }
-        /* process param added after bank is generated so that a */
-        /* value in the bank looks like a command line option.   */
+        ADD_PROCESS_PARAM( "float", "%e", chisqDelta );
         break;
 
       case 'n':
@@ -4715,16 +4701,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           exit( 1 );
         }
       }
-    }
-  }
-
-  if ( mmFast >= 0.0 )
-  {
-    if ( mmFast > minimalMatch )
-    {
-      fprintf( stderr, "the argument of --fast (%e) cannot exceed the "
-          "minimalmatch (%e)\n", mmFast, minimalMatch );
-      exit( 1 );
     }
   }
 
