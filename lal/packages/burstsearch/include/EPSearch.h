@@ -21,9 +21,26 @@ extern "C" {
 NRCSID(EPSEARCHH, "$Id$");
 
 
+/*
+ * liblal.so can't resolve symbols from liblalsupport.so, so to call
+ * diagnostics dump functions from lal, they have to be passed in as
+ * pointers.  The prototypes here must match those in LIGOLwXMLArray.h or
+ * memory problems will occur.  Since this is only used for diagnostics,
+ * not production runs, there isn't any need to do this more robustly.
+ * Note, also that the LIGOLwXMLStream structure is defined in a header
+ * from liblalsupport, so here it has to be refered to as a void *.
+ */
+
+struct XLALEPSearchDiagnostics {
+	void *LIGOLwXMLStream;
+	int (*XLALWriteLIGOLwXMLArrayREAL4FrequencySeries)(void *, const char *, const REAL4FrequencySeries *);
+	int (*XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries)(void *, const char *, const COMPLEX8FrequencySeries *);
+};
+
+
 typedef struct
 tagEPSearchParams {
-	char                 *printSpectrum;
+	struct XLALEPSearchDiagnostics *diagnostics;
 	BOOLEAN               useOverWhitening;	
 	REAL4Window          *window;
 	UINT4                 windowShift;

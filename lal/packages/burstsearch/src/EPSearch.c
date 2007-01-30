@@ -110,45 +110,6 @@ static SnglBurstTable *XLALTFTilesToSnglBurstTable(SnglBurstTable *head, const R
 
 
 /*
- * Print a frequency series.
- */
-
-static void print_real4fseries(const REAL4FrequencySeries *fseries, const char *file)
-{
-#if 0
-	/* FIXME: why can't the linker find this function? */
-	LALSPrintFrequencySeries(fseries, file);
-#else
-	FILE *fp = fopen(file, "w");
-	size_t i;
-
-	if(fp) {
-		for(i = 0; i < fseries->data->length; i++)
-			fprintf(fp, "%f\t%g\n", i * fseries->deltaF, fseries->data->data[i]);
-		fclose(fp);
-	}
-#endif
-}
-
-static void print_complex8fseries(const COMPLEX8FrequencySeries *fseries, const char *file)
-{
-#if 0
-	/* FIXME: why can't the linker find this function? */
-	LALCPrintFrequencySeries(fseries, file);
-#else
-	FILE *fp = fopen(file, "w");
-	size_t i;
-
-	if(fp) {
-		for(i = 0; i < fseries->data->length; i++)
-			fprintf(fp, "%f\t%g\n", i * fseries->deltaF, sqrt(fseries->data->data[i].re * fseries->data->data[i].re + fseries->data->data[i].im * fseries->data->data[i].im));
-		fclose(fp);
-	}
-#endif
-}
-
-
-/*
  * Normalize a complex8 fseries to a real4 average psd so that the rms of Re or
  * Im is 1.  (i.e. whiten the data).
  */
@@ -259,8 +220,8 @@ XLALEPSearch(
 		goto error;
 	}
 
-	if(params->printSpectrum)
-		print_real4fseries(psd, params->printSpectrum);
+	if(params->diagnostics)
+		params->diagnostics->XLALWriteLIGOLwXMLArrayREAL4FrequencySeries(params->diagnostics->LIGOLwXMLStream, "PSD", psd);
 
 	/*
 	 * Compute the hrss factors
@@ -304,8 +265,8 @@ XLALEPSearch(
 
 		XLALPrintInfo("XLALEPSearch(): normalizing to the average spectrum\n");
 		whiten(fseries, psd);
-		if(params->printSpectrum)
-			print_complex8fseries(fseries, "frequency_series.dat");
+		if(params->diagnostics)
+			params->diagnostics->XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries(params->diagnostics->LIGOLwXMLStream, "frequency_series.dat", fseries);
 
 		/*
 		 * Compute the time-frequency plane from the frequency

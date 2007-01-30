@@ -27,10 +27,10 @@
 #include <lal/LALError.h>
 #include <lal/LALStdlib.h>
 #include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLArray.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
-#include <lal/PrintFTSeries.h>
 #include <lal/Random.h>
 #include <lal/RealFFT.h>
 #include <lal/ResampleTimeSeries.h>
@@ -75,7 +75,7 @@ static struct {
 	int FilterCorruption;       /* samples corrupted by conditioning   */
 	INT4 maxSeriesLength;       /* RAM-limited input length            */
 	REAL4 noiseAmpl;            /* gain factor for white noise         */
-	INT4 printData;
+	LIGOLwXMLStream *diagnostics;	/* diagnostics dump hooks*/
 	size_t PSDAverageLength;    /* number of samples to use for PSD    */
 	INT4 ResampleRate;          /* sample rate after resampling        */
 	INT4 seed;                  /* set non-zero to generate noise      */
@@ -203,8 +203,7 @@ static void print_usage(char *program)
 "	[--mdc-cache <cache file>]\n" \
 "	[--mdc-channel <channel name>]\n" \
 "	[--noise-amplitude <amplitude>]\n" \
-"	[--printData]\n" \
-"	[--printSpectrum]\n" \
+"	[--dump-diagnostics]\n" \
 "	 --psd-average-method <method>\n" \
 "	 --psd-average-points <samples>\n" \
 "	[--ram-limit <MebiBytes>]\n" \
@@ -414,8 +413,7 @@ void parse_command_line(
 		{"mdc-cache",           required_argument, NULL,           'R'},
 		{"mdc-channel",         required_argument, NULL,           'S'},
 		{"noise-amplitude",     required_argument, NULL,           'V'},
-		{"printData",           no_argument, &options.printData,  TRUE},
-		{"printSpectrum",       required_argument, NULL,           'X'},
+		{"dump-diagnostics",    required_argument, NULL,           'X'},
 		{"psd-average-method",  required_argument, NULL,           'Y'},
 		{"psd-average-points",  required_argument, NULL,           'Z'},
 		{"ram-limit",           required_argument, NULL,           'a'},
@@ -439,7 +437,7 @@ void parse_command_line(
 	 * Set parameter defaults.
 	 */
 
-	params->printSpectrum = NULL;	/* default == disable */
+	params->diagnostics = NULL;	/* default == disable */
 	params->lnalphaThreshold = XLAL_REAL8_FAIL_NAN;	/* impossible */
 	params->method = -1;	/* impossible */
 	params->tf_flow = -1.0;	/* impossible */
@@ -455,7 +453,7 @@ void parse_command_line(
 	options.FilterCorruption = -1;	/* impossible */
 	options.mdcchannelName = NULL;	/* default */
 	options.noiseAmpl = -1.0;	/* default */
-	options.printData = FALSE;	/* default */
+	options.diagnostics = NULL;	/* default == disable*/
 	options.PSDAverageLength = 0;	/* impossible */
 	options.ResampleRate = 0;	/* impossible */
 	options.seed = 1;	        /* default */
@@ -626,7 +624,16 @@ void parse_command_line(
 		break;
 
 		case 'X':
-		params->printSpectrum = optarg;
+		{
+		LALStatus stat;
+		memset(&stat, 0, sizeof(stat));
+		options.diagnostics = malloc(sizeof(options.diagnostics));
+		LALOpenLIGOLwXMLFile(&stat, options.diagnostics, optarg);
+		}
+		params->diagnostics = malloc(sizeof(*params->diagnostics));
+		params->diagnostics->LIGOLwXMLStream = options.diagnostics;
+		params->diagnostics->XLALWriteLIGOLwXMLArrayREAL4FrequencySeries = XLALWriteLIGOLwXMLArrayREAL4FrequencySeries;
+		params->diagnostics->XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries = XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries;
 		break;
 
 		case 'Y':
@@ -1209,8 +1216,8 @@ static void add_mdc_injections(
 	}
 
 	/* write diagnostic info to disk */
-	if(options.printData)
-		LALPrintTimeSeries(mdc, "timeseriesmdc.dat");
+	if(options.diagnostics)
+		XLALWriteLIGOLwXMLArrayREAL4TimeSeries(options.diagnostics, "timeseriesmdc.dat", mdc);
 
 	/* add the mdc signal to the given time series */
 	for(i = 0; i < series->data->length; i++)
@@ -1244,7 +1251,6 @@ static void add_sim_injections(
 	char pluschan[30]; 
 	char crosschan[30];
 	LIGOTimeGPS start,end;
-	FILE *fp = NULL;
 	UINT4 i, n;
 	REAL8 simDuration;
 
@@ -1381,12 +1387,9 @@ static void add_sim_injections(
 	  crossseries = get_time_series(stat, options.simdirname, options.simCacheFile, crosschan, start, end, lengthlimit, FALSE);
 	  
 	  /* write diagnostic info to disk */
-	  if(options.printData){
-	    fp = fopen("timeseriessim.dat","w");
-	    for(i = 0;(unsigned)i<plusseries->data->length;i++){
-	      fprintf(fp,"%e %e %e\n",i*plusseries->deltaT,plusseries->data->data[i],crossseries->data->data[i] );
-	    }
-	    fclose(fp);
+	  if(options.diagnostics) {
+		XLALWriteLIGOLwXMLArrayREAL4TimeSeries(options.diagnostics, "timeseriessim.dat plus", plusseries);
+		XLALWriteLIGOLwXMLArrayREAL4TimeSeries(options.diagnostics, "timesereissim.dat cros", crossseries);
 	  }
 
 	  /* read in the waveform in a CoherentGW struct */
@@ -1427,13 +1430,8 @@ static void add_sim_injections(
 	  LAL_CALL(LALSimulateCoherentGW( stat, signal, &waveform, &detector ),stat);	
 	  XLALRespFilt(signal, transfer);
 
-	  if(options.printData){
-	    fp = fopen("timeseriessignal.dat","w");
-	    for(i = 0;(unsigned)i<signal->data->length;i++){
-	      fprintf(fp,"%e %e\n",i*signal->deltaT,signal->data->data[i] );
-	    }
-	    fclose(fp);
-	  }
+	  if(options.diagnostics)
+		XLALWriteLIGOLwXMLArrayREAL4TimeSeries(options.diagnostics, "timeseriessignal.dat", signal);
 	  /* inject the signal into the data channel */
 	  LAL_CALL(LALSSInjectTimeSeries( stat, series, signal ),stat);
 
@@ -1689,8 +1687,8 @@ int main( int argc, char *argv[])
 		 * Write diagnostic info to disk
 		 */
 
-		if(options.printData)
-			LALPrintTimeSeries(series, "timeseriesasq.dat");
+		if(options.diagnostics)
+			XLALWriteLIGOLwXMLArrayREAL4TimeSeries(options.diagnostics, "timeseriesasq.dat", series);
 
 		/*
 		 * Add burst/inspiral injections into the time series if
@@ -1705,8 +1703,8 @@ int main( int argc, char *argv[])
 			response = generate_response(&stat, options.calCacheFile, options.channelName, series->deltaT, series->epoch, series->data->length);
 			if(!response)
 				exit(1);
-			if(options.printData)
-				LALCPrintFrequencySeries(response, "response.dat");
+			if(options.diagnostics)
+				XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries(options.diagnostics, "response.dat", response);
 
 			/* perform injections */
 			if(burstInjectionFile)
@@ -1716,8 +1714,8 @@ int main( int argc, char *argv[])
 			else if(options.simCacheFile)
 				add_sim_injections(&stat, series, response, options.maxSeriesLength);
 
-			if(options.printData)
-				LALPrintTimeSeries(series, "injections.dat");
+			if(options.diagnostics)
+				XLALWriteLIGOLwXMLArrayREAL4TimeSeries(options.diagnostics, "injections.dat", series);
 
 			/*clean up*/
 			XLALDestroyCOMPLEX8FrequencySeries(response);
@@ -1729,8 +1727,8 @@ int main( int argc, char *argv[])
 
 		if(mdcCacheFile) {
 		        add_mdc_injections(&stat, mdcCacheFile, series, epoch, options.stopEpoch, options.maxSeriesLength);
-			if(options.printData)
-				LALPrintTimeSeries(series, "timeseriesasqmdc.dat");
+			if(options.diagnostics)
+				XLALWriteLIGOLwXMLArrayREAL4TimeSeries(options.diagnostics, "timeseriesasqmdc.dat", series);
 		}
 
 		/*
@@ -1742,8 +1740,8 @@ int main( int argc, char *argv[])
 		hrssresponse = generate_response(&stat, options.calCacheFile, options.channelName, series->deltaT, series->epoch, options.windowLength);
 		if(!hrssresponse)
 			exit(1);
-		if(options.printData)
-			LALCPrintFrequencySeries(hrssresponse, "hrssresponse.dat");
+		if(options.diagnostics)
+			XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries(options.diagnostics, "hrssresponse.dat", hrssresponse);
 
 		/*
 		 * Condition the time series data.
@@ -1762,8 +1760,8 @@ int main( int argc, char *argv[])
 			exit(1);
 		}
 
-		if(options.printData)
-			LALPrintTimeSeries(series, "condtimeseries.dat");
+		if(options.diagnostics)
+			XLALWriteLIGOLwXMLArrayREAL4TimeSeries(options.diagnostics, "condtimeseries.dat", series);
 
 		if(options.verbose)
 			fprintf(stderr, "%s: %u samples (%.9f s) at GPS time %d.%09d s remain after conditioning\n", argv[0], series->data->length, series->data->length * series->deltaT, series->epoch.gpsSeconds, series->epoch.gpsNanoSeconds);
