@@ -263,9 +263,6 @@ XLALfprintfGSLmatrix ( FILE *fp, const char *fmt, const gsl_matrix *gij )
   rows = gij->size1;
   cols = gij->size2;
 
-  if ( (gij->size1 != 4) || (gij->size2 != 4 ) )
-    return -1;
-
   fprintf (fp, " [ " );
   for ( i=0; i < rows; i ++ )
     {
