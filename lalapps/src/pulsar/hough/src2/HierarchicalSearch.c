@@ -901,7 +901,7 @@ int MAIN( int argc, char *argv[]) {
        caused by the residual spindown.  The reference time for the spindown is the midtime, 
        so relevant interval is Tobs/2 and largest possible value of residual spindown is 
        (number of residual spindowns -1)*resolution in residual spindowns */
-    extraBinsfdot = 0.5 * tObs1 * (nf1dotRes-1) * df1dotRes / dFreqStack1;
+    extraBinsfdot = tObs1 * nf1dotRes * df1dotRes / dFreqStack1;
 
     semiCohPar.extraBinsFstat = extraBinsSky + extraBinsfdot;    
     LogPrintf(LOG_DEBUG, "No. of extra Fstat freq. bins = %d for skypatch + %d for residual fdot\n",
@@ -1725,14 +1725,6 @@ void ComputeFstatHoughMap(LALStatus *status,
   ASSERT ( out->length > 0, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
   ASSERT ( out->list != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );  
 
-  /* initialise number of candidates -- this means that any previous candidates 
-     stored in the list will be lost for all practical purposes*/
-  out->nCandidates = 0; 
-  
-  /* create toplist of candidates */
-  if (params->useToplist) {
-    create_toplist(&houghToplist, out->length, sizeof(SemiCohCandidate), smallerHough);
-  }
 
   /* copy some parameters from peakgram vector */
   deltaF = pgV->pg->deltaF;
@@ -1761,7 +1753,6 @@ void ComputeFstatHoughMap(LALStatus *status,
   patchSizeX = params->patchSizeX;
   patchSizeY = params->patchSizeY;
 
-
   /* calculate time differences from start of observation time for each stack*/
   TRY( LALDCreateVector( status->statusPtr, &timeDiffV, nStacks), status);
   
@@ -1785,17 +1776,15 @@ void ComputeFstatHoughMap(LALStatus *status,
 
   {
     REAL8 maxTimeDiff, startTimeDiff, endTimeDiff;
-    INT4 nfdotBy2;
 
     startTimeDiff = fabs(timeDiffV->data[0]);
     endTimeDiff = fabs(timeDiffV->data[timeDiffV->length - 1]);
     maxTimeDiff = HSMAX( startTimeDiff, endTimeDiff);
 
-    nfdotBy2 = nfdot/2;
-
+    /* set number of freq. bins for which LUTs will be calculated */
+    /* this sets the range of residual spindowns values */
     /* phmdVS.nfSize  = 2*nfdotBy2 + 1; */
-    phmdVS.nfSize  = 2 * floor(nfdotBy2 * dfdot * maxTimeDiff / deltaF + 0.5) + 1; 
-
+    phmdVS.nfSize  = 2 * floor(nfdot * dfdot * maxTimeDiff / deltaF + 0.5) + 1; 
   }
 
   phmdVS.deltaF  = deltaF;
@@ -1879,6 +1868,26 @@ void ComputeFstatHoughMap(LALStatus *status,
   LogPrintf(LOG_DETAIL, "Freq. range analyzed by Hough = [%fHz - %fHz] (%d bins)\n", 
 	    fBinIni*deltaF, fBinFin*deltaF, fBinFin - fBinIni + 1);
   ASSERT ( fBinIni < fBinFin, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+
+  /* initialise number of candidates -- this means that any previous candidates 
+     stored in the list will be lost for all practical purposes*/
+  out->nCandidates = 0; 
+  
+  /* create toplist of candidates */
+  if (params->useToplist) {
+    create_toplist(&houghToplist, out->length, sizeof(SemiCohCandidate), smallerHough);
+  }
+  else { 
+    /* if no toplist then use number of hough maps */
+    INT4 numHmaps = (fBinFin - fBinIni + 1)*phmdVS.nfSize;
+    if (out->length != numHmaps) {
+      out->length = numHmaps;
+      out->list = (SemiCohCandidate *)LALRealloc( out->list, out->length * sizeof(SemiCohCandidate));
+    }
+  }
+
+
+
 
   /*------------------ start main Hough calculation ---------------------*/
 
