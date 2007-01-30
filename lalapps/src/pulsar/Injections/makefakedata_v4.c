@@ -873,8 +873,6 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
   /* -------------------- Prepare quantities for barycentering -------------------- */
   {
     UINT4 len;
-    INT4 leapSecs;
-    LALLeapSecFormatAndAcc leapParams;
     EphemerisData edat = empty_EphemerisData;
     CHAR *earthdata, *sundata;
 
@@ -904,12 +902,6 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
     edat.ephiles.earthEphemeris = earthdata;
     edat.ephiles.sunEphemeris   = sundata;
         
-    /* get leap-seconds since start of GPS-time */
-    leapParams.format =  LALLEAPSEC_GPSUTC;
-    leapParams.accuracy = LALLEAPSEC_STRICT;	/* complain about missing leap-info */
-    TRY ( LALLeapSecs(status->statusPtr, &leapSecs,  &(cfg->startTimeGPS), &leapParams), status);
-    edat.leap = (INT2) leapSecs;
-
     /* Init ephemerides */  
     TRY( LALInitBarycenter(status->statusPtr, &edat), status);   
     LALFree(earthdata);
