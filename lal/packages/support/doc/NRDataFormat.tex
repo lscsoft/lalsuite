@@ -3,6 +3,8 @@
 \documentclass[amsmath,amssymb]{article}
 \usepackage{graphicx}
 
+\def\Ys{{}^sY}
+\def\Y2{{}^{-2}Y}
 
 \begin{document}
 
@@ -90,12 +92,12 @@ related to the Weyl tensor component $\Psi_4$ by two time derivatives:
   \Psi_4 = \ddot{h}_+ -i\ddot{h}_\times\,.
 \end{equation}
 $\Psi_4$. It can be shown that $h_+-ih_\times$, can be decomposed into
-modes using spin weighted spherical harmonics ${}_sY_{lm}$ of weight
+modes using spin weighted spherical harmonics $\Ys_{lm}$ of weight
 -2:
 \begin{equation}
   \label{eq:4}
   h_+ - ih_\times = \frac{1}{r}\sum_{\ell=2}^{\infty}\sum_{m=-\ell}^\ell H_{\ell m}(t)\,
-  {}^{-2}Y_{\ell m}(\theta,\phi)\,.
+  \Y2_{\ell m}(\theta,\phi)\,.
 \end{equation}
 The expansion parameters $H_{lm}$ are complex functions of the retarded time
 $t-r$ and, if we fix $r$ to be the radius of the sphere at which we
@@ -105,7 +107,7 @@ The explicit expression for the spin weighted spherical harmonics is
 in terms of the Wigner $d$-functions
 \begin{equation}
   \label{eq:5}
-   {}^sY_{lm} = (-1)^s\sqrt{\frac{2\ell+1}{4\pi}} d^\ell_{m,-s}(\theta)e^{im\phi}
+   \Ys_{lm} = (-1)^s\sqrt{\frac{2\ell+1}{4\pi}} d^\ell_{m,-s}(\theta)e^{im\phi}
 \end{equation}
 where
 \begin{eqnarray}
@@ -119,13 +121,13 @@ with $k_1 = \textrm{max}(0, m-s)$ and $k_2=\textrm{min}(\ell+m,
 \ell-s)$.  For reference,
 \begin{eqnarray}
   \label{eq:7}
-  {}^{-2}Y_{2-2} &=& \sqrt{\frac{5}{64\pi}}(1-\cos\theta)^2e^{-2i\phi}\,, \\
-  {}^{-2}Y_{22} &=& \sqrt{\frac{5}{64\pi}}(1+\cos\theta)^2e^{2i\phi} \,.
+  \Y2_{2-2} &=& \sqrt{\frac{5}{64\pi}}(1-\cos\theta)^2e^{-2i\phi}\,, \\
+  \Y2_{22} &=& \sqrt{\frac{5}{64\pi}}(1+\cos\theta)^2e^{2i\phi} \,.
 \end{eqnarray}
 The mode expansion coefficients $H_{lm}$ are given by
 \begin{equation}
   \label{eq:10}
-  H_{\ell m} = \oint {}^{-2}Y_{lm}^\star(\theta,\phi)(rh_+-irh_\times )\,d\Omega\,.
+  H_{\ell m} = \oint \Y2_{lm}^\star(\theta,\phi)(rh_+-irh_\times )\,d\Omega\,.
 \end{equation}
 If $\Psi_4$ is used for wave extraction, then $H_{lm}$ is given by two
 time integrals of the corresponding mode of $\Psi_4$.  It is important
