@@ -897,8 +897,11 @@ int MAIN( int argc, char *argv[]) {
     extraBinsSky = LAL_SQRT2 * VTOT * usefulParams1.spinRange_midTime.fkdot[0] 
       * HSMAX(semiCohPar.patchSizeX, semiCohPar.patchSizeY) / dFreqStack1;
 
-    extraBinsfdot = 0.25 * tObs1 * (nf1dotRes-1) * df1dotRes / dFreqStack1;
-    /* extraBinsfdot = nStacks1;     */
+    /* extra bins due to fdot is maximum number of frequency bins drift that can be 
+       caused by the residual spindown.  The reference time for the spindown is the midtime, 
+       so relevant interval is Tobs/2 and largest possible value of residual spindown is 
+       (number of residual spindowns -1)*resolution in residual spindowns */
+    extraBinsfdot = 0.5 * tObs1 * (nf1dotRes-1) * df1dotRes / dFreqStack1;
 
     semiCohPar.extraBinsFstat = extraBinsSky + extraBinsfdot;    
     LogPrintf(LOG_DEBUG, "No. of extra Fstat freq. bins = %d for skypatch + %d for residual fdot\n",
