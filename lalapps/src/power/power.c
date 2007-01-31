@@ -203,7 +203,7 @@ static void print_usage(char *program)
 "	[--mdc-cache <cache file>]\n" \
 "	[--mdc-channel <channel name>]\n" \
 "	[--noise-amplitude <amplitude>]\n" \
-"	[--dump-diagnostics]\n" \
+"	[--dump-diagnostics <xml filename>]\n" \
 "	 --psd-average-method <method>\n" \
 "	 --psd-average-points <samples>\n" \
 "	[--ram-limit <MebiBytes>]\n" \
@@ -627,7 +627,7 @@ void parse_command_line(
 		{
 		LALStatus stat;
 		memset(&stat, 0, sizeof(stat));
-		options.diagnostics = malloc(sizeof(options.diagnostics));
+		options.diagnostics = calloc(1, sizeof(options.diagnostics));
 		LALOpenLIGOLwXMLFile(&stat, options.diagnostics, optarg);
 		}
 		params->diagnostics = malloc(sizeof(*params->diagnostics));
@@ -918,7 +918,8 @@ static REAL4TimeSeries *get_calibrated_data(
 	const char *chname,
 	LIGOTimeGPS *start,
 	double duration,
-	size_t lengthlimit
+	size_t lengthlimit,
+	double quantize_high_pass
 )
 {
 	static const char func[] = "get_calibrated_data";
@@ -934,7 +935,7 @@ static REAL4TimeSeries *get_calibrated_data(
 
 	/* high pass filter before casting REAL8 to REAL4 */
 	highpassParam.nMax = 4;
-	highpassParam.f2 = options.cal_high_pass;
+	highpassParam.f2 = quantize_high_pass;
 	highpassParam.f1 = -1.0;
 	highpassParam.a2 = 0.9;
 	highpassParam.a1 = -1.0;
@@ -964,7 +965,8 @@ static REAL4TimeSeries *get_time_series(
 	LIGOTimeGPS start,
 	LIGOTimeGPS end,
 	size_t lengthlimit,
-	int getcaltimeseries
+	int getcaltimeseries,
+	double quantize_high_pass
 )
 {
 	REAL4TimeSeries *series;
@@ -989,10 +991,9 @@ static REAL4TimeSeries *get_time_series(
 
 	/* Get the data */
 	if(getcaltimeseries)
-		series = get_calibrated_data(stream, chname, &start, duration, lengthlimit);
+		series = get_calibrated_data(stream, chname, &start, duration, lengthlimit, quantize_high_pass);
 	else
 		series = XLALFrReadREAL4TimeSeries(stream, chname, &start, duration, lengthlimit);
-
 
 	/* Check for missing data */
 	if(stream->state & LAL_FR_GAP) {
@@ -1208,12 +1209,8 @@ static void add_mdc_injections(
 	if(options.verbose)
 		fprintf(stderr, "add_mdc_injections(): using MDC frames for injections\n");
 
-	{
-	REAL8 old_high_pass = options.cal_high_pass;
-	options.cal_high_pass = 40.0;
-	mdc = get_time_series(stat, mdcDirName, mdcCacheFile, options.mdcchannelName, epoch, stopepoch, lengthlimit, TRUE);
-	options.cal_high_pass = old_high_pass;
-	}
+	/* set quantization high pass at 40.0 Hz */
+	mdc = get_time_series(stat, mdcDirName, mdcCacheFile, options.mdcchannelName, epoch, stopepoch, lengthlimit, TRUE, 40.0);
 
 	/* write diagnostic info to disk */
 	if(options.diagnostics)
@@ -1381,10 +1378,10 @@ static void add_sim_injections(
 	  XLALGPSAdd(&end, simDuration);
 
 	  /* Get the plus time series */
-	  plusseries = get_time_series(stat, options.simdirname, options.simCacheFile, pluschan, start, end, lengthlimit, FALSE);
+	  plusseries = get_time_series(stat, options.simdirname, options.simCacheFile, pluschan, start, end, lengthlimit, FALSE, options.cal_high_pass);
 	  
 	  /* Get the cross time series */
-	  crossseries = get_time_series(stat, options.simdirname, options.simCacheFile, crosschan, start, end, lengthlimit, FALSE);
+	  crossseries = get_time_series(stat, options.simdirname, options.simCacheFile, crosschan, start, end, lengthlimit, FALSE, options.cal_high_pass);
 	  
 	  /* write diagnostic info to disk */
 	  if(options.diagnostics) {
@@ -1652,7 +1649,7 @@ int main( int argc, char *argv[])
 		 * Get the data.
 		 */
 
-		series = get_time_series(&stat, dirname, cachefile, options.channelName, epoch, options.stopEpoch, options.maxSeriesLength, options.calibrated);
+		series = get_time_series(&stat, dirname, cachefile, options.channelName, epoch, options.stopEpoch, options.maxSeriesLength, options.calibrated, options.cal_high_pass);
 
 		/*
 		 * If we specified input files but nothing got read, there
