@@ -35,7 +35,7 @@ __date__ = "$Date$"[7:-2]
 __version__ = "$Revision$"[11:-2]
 
 import math
-import numarray
+import numpy
 from optparse import OptionParser
 from pysqlite2 import dbapi2 as sqlite
 import sys
@@ -151,8 +151,8 @@ def new_fseries(f_0, delta_f, n):
 	Initialize and return an array for holding a single-instrument data
 	set.
 	"""
-	f = numarray.zeros((3, n), "Float64")
-	f[0] = f_0 + numarray.arange(n) * delta_f
+	f = numpy.zeros((3, n), "Float64")
+	f[0] = f_0 + numpy.arange(n) * delta_f
 	return f
 
 
@@ -172,7 +172,7 @@ def fourier_transform(sngl_burst_table, options):
 			print >>sys.stderr, "	%.1f%%\r" % (100.0 * n / len(sngl_burst_table)),
 		if event.ifo not in fseries:
 			fseries[event.ifo] = new_fseries(options.f_naught, options.delta_f, options.n_f)
-		value = event.get_power() / (-2j * math.pi) / fseries[event.ifo][0] * (numarray.exp(-2j * math.pi * float(event.get_stop() - options.t_naught) * fseries[event.ifo][0]) - numarray.exp(-2j * math.pi * float(event.get_start() - options.t_naught) * fseries[event.ifo][0]))
+		value = event.get_power() / (-2j * math.pi) / fseries[event.ifo][0] * (numpy.exp(-2j * math.pi * float(event.get_stop() - options.t_naught) * fseries[event.ifo][0]) - numpy.exp(-2j * math.pi * float(event.get_start() - options.t_naught) * fseries[event.ifo][0]))
 		fseries[event.ifo][1] += value.real
 		fseries[event.ifo][2] += value.imag
 	print >>sys.stderr, "	100.0%"

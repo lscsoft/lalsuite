@@ -32,7 +32,7 @@ import matplotlib
 matplotlib.use("Agg")
 from matplotlib import figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg
-import numarray
+import numpy
 import sys
 
 from glue.ligolw import ligolw
@@ -98,9 +98,9 @@ def make_frequency_plot(fseries):
 	axes = fig.gca()
 	axes.semilogy()
 	axes.grid(True)
-	axes.plot(fseries[0], numarray.fabs(fseries[1]))
-	axes.plot(fseries[0], numarray.fabs(fseries[2]))
-	axes.plot(fseries[0], numarray.sqrt(fseries[1]**2.0 + fseries[2]**2.0))
+	axes.plot(fseries[0], numpy.fabs(fseries[1]))
+	axes.plot(fseries[0], numpy.fabs(fseries[2]))
+	axes.plot(fseries[0], numpy.sqrt(fseries[1]**2.0 + fseries[2]**2.0))
 	axes.set_xlim([min(fseries[0]), max(fseries[0])])
 	axes.set_title("Frequency Decomposition of Confidence Time Series")
 	axes.set_xlabel("Frequency (Hz)")
@@ -123,9 +123,9 @@ class RatePlot(SnglBurstUtils.BurstPlot):
 		SnglBurstUtils.BurstPlot.__init__(self, r"Greenwich Mean Sidereal Time (rad)", r"\begin{center}Event Power Accumulation Rate\\(power / sidereal day / rad)\end{center}")
 		self.axes.semilogy()
 		self.axes.set_title(r"\begin{center}%s Event Power Accumulation Rate By Sidereal Time for\\Source at R.A. %g rad, Dec. %g rad\end{center}" % (instrument.replace("_", r"\_"), source_ra, source_dec))
-		self.axes.set_xticks(numarray.arange(9) * math.pi / 4)
+		self.axes.set_xticks(numpy.arange(9) * math.pi / 4)
 		self.axes.set_xticklabels([r"0", r"$\pi/4$", r"$\pi/2$", r"$3\pi/4$", r"$\pi$", r"$5\pi/4$", r"$3\pi/2$", r"$7\pi/4$", r"$2\pi$"])
-		#self.axes.set_xticks(numarray.arange(25))
+		#self.axes.set_xticks(numpy.arange(25))
 		self.instrument = instrument
 		self.source_ra = source_ra
 		self.source_dec = source_dec
@@ -148,20 +148,20 @@ class RatePlot(SnglBurstUtils.BurstPlot):
 		# Compute the normalized power accumulation rate and the
 		# normalized response function
 		rate = self.rate.ratio()
-		response = numarray.array([plus**2.0 + cross**2.0 for (plus, cross) in map(lambda t: inject.XLALComputeDetAMResponse(inject.cached_detector[self.instrument].response(), self.source_ra, self.source_dec, 0.0, t), self.sidereal_times)], "Float64")
+		response = numpy.array([plus**2.0 + cross**2.0 for (plus, cross) in map(lambda t: inject.XLALComputeDetAMResponse(inject.cached_detector[self.instrument].response(), self.source_ra, self.source_dec, 0.0, t), self.sidereal_times)], "Float64")
 		normalized_rate = normalize(rate)
 		normalized_response = normalize(response)
 
 		# triplicate to simplify cross-correlation computation
-		normalized_rate = numarray.concatenate((normalized_rate, normalized_rate, normalized_rate))
-		normalized_response = numarray.concatenate((normalized_response, normalized_response, normalized_response))
+		normalized_rate = numpy.concatenate((normalized_rate, normalized_rate, normalized_rate))
+		normalized_response = numpy.concatenate((normalized_response, normalized_response, normalized_response))
 
 		# compute cross-correlation
-		self.correlation = numarray.zeros((n,), "Float64")
-		self.resp_autocorr = numarray.zeros((n,), "Float64")
+		self.correlation = numpy.zeros((n,), "Float64")
+		self.resp_autocorr = numpy.zeros((n,), "Float64")
 		for i in xrange(n):
-			self.correlation[i] = numarray.innerproduct(normalized_response[0:n], normalized_rate[i + n / 2 : i + 3 * n / 2])
-			self.resp_autocorr[i] = numarray.innerproduct(normalized_response[0:n], normalized_response[i + n / 2 : i + 3 * n / 2])
+			self.correlation[i] = numpy.inner(normalized_response[0:n], normalized_rate[i + n / 2 : i + 3 * n / 2])
+			self.resp_autocorr[i] = numpy.inner(normalized_response[0:n], normalized_response[i + n / 2 : i + 3 * n / 2])
 
 		# plot
 		self.axes.plot(self.sidereal_times, rate, "k")
@@ -173,7 +173,7 @@ class CorrelationPlot(SnglBurstUtils.BurstPlot):
 	def __init__(self, correlation_instruments):
 		SnglBurstUtils.BurstPlot.__init__(self, r"Phase (rad)", r"Inner Product")
 		self.axes.set_title(r"Projections of Event Power Accumulation Rate onto Antenna Response")
-		self.axes.set_xticks(numarray.arange(9) * math.pi / 4)
+		self.axes.set_xticks(numpy.arange(9) * math.pi / 4)
 		self.axes.set_xticklabels([r"$-\pi$", r"$-3\pi/4$", r"$-\pi/2$", r"$-\pi/4$", r"$0$", r"$\pi/4$", r"$\pi/2$", r"$3\pi/4$", r"$\pi$"])
 		self.correlation_instruments = correlation_instruments
 		self.correlation = {}

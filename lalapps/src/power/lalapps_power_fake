@@ -26,7 +26,7 @@
 # =============================================================================
 #
 
-import numarray
+import numpy
 from optparse import OptionParser
 import sys
 
@@ -125,7 +125,7 @@ def make_triggers(process, doc, rate, seglist):
 	ids = lsctables.NewILWDs(sngl_burst, "event_id")
 
 	(start, stop) = seglist.extent()
-	for t in map(LIGOTimeGPS, numarray.arange(float(start), float(stop), 1.0 / rate)):
+	for t in map(LIGOTimeGPS, numpy.arange(float(start), float(stop), 1.0 / rate)):
 		seg = segments.segment(t - 1.0 / 32.0, t + 1.0 / 32.0)
 		if seg not in seglist:
 			continue
