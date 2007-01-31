@@ -1116,13 +1116,16 @@ int MAIN( int argc, char *argv[]) {
 	{
 	  LogPrintf(LOG_DETAIL, "Analyzing %d/%d Coarse sky grid points and %d/%d spindown values\n", 
 			    skyGridCounter, thisScan1.numSkyGridPoints, ifdot+1, nf1dot);
-	  /* set spindown value for Fstat calculation */
-  	  thisPoint1.fkdot[1] = usefulParams1.spinRange_midTime.fkdot[1] + ifdot * df1dot;
-	  thisPoint1.fkdot[0] = usefulParams1.spinRange_midTime.fkdot[0];
 	  	  
 	  /* calculate the Fstatistic for each stack*/
 	  LogPrintf(LOG_DETAIL, "Starting Fstat calculation for each stack...");
 	  for ( k = 0; k < nStacks1; k++) {
+
+	    /* set spindown value for Fstat calculation */
+	    thisPoint1.fkdot[1] = usefulParams1.spinRange_midTime.fkdot[1] + ifdot * df1dot;
+	    thisPoint1.fkdot[0] = fstatVector1.data[k].f0;
+	    /* thisPoint1.fkdot[0] = usefulParams1.spinRange_midTime.fkdot[0]; */
+
 	    LAL_CALL( ComputeFStatFreqBand ( &status, fstatVector1.data + k, &thisPoint1, 
 					     stackMultiSFT1.data[k], stackMultiNoiseWeights1.data[k], 
 					     stackMultiDetStates1.data[k], &CFparams), &status);
@@ -1375,7 +1378,7 @@ int MAIN( int argc, char *argv[]) {
       sort_fstat_toplist(semiCohToplist);
       if ( write_fstat_toplist_to_fp( semiCohToplist, fpSemiCoh, NULL) < 0)
 	fprintf( stderr, "Error in writing toplist to file\n");
-    /*     LAL_CALL( AppendFstatCandidates( &status, &fStatCand, fpFstat), &status); */
+      /*     LAL_CALL( AppendFstatCandidates( &status, &fStatCand, fpFstat), &status); */
       if (fprintf(fpSemiCoh,"%%DONE\n") < 0)
 	fprintf(stderr, "Error writing end marker\n");
       fclose(fpSemiCoh);
