@@ -253,17 +253,13 @@ XLALfprintfGSLmatrix ( FILE *fp, const char *fmt, const gsl_matrix *gij )
   int i, j;
 
   /* check user input */
-  if ( !gij )
-    return -1;
-  if ( !fp )
-    return -1;
-  if ( !fmt ) 
+  if ( !gij || !fp || !fmt )
     return -1;
 
   rows = gij->size1;
   cols = gij->size2;
 
-  fprintf (fp, " [ " );
+  fprintf (fp, " [ \\\n" );
   for ( i=0; i < rows; i ++ )
     {
       for (j=0; j < cols; j ++ )
@@ -280,3 +276,33 @@ XLALfprintfGSLmatrix ( FILE *fp, const char *fmt, const gsl_matrix *gij )
   return 0;
 
 } /* XLALprintGSLmatrix() */
+
+
+/** Output gsl_matrix in octave-format, using the given format for the matrix-entries
+ * return -1 on error, 0 if OK.
+ */
+int
+XLALfprintfGSLvector ( FILE *fp, const char *fmt, const gsl_vector *vect )
+{
+  int rows;
+  int i;
+
+  /* check user input */
+  if ( !vect || !fp || !fmt )
+    return -1;
+
+  rows = vect->size;
+
+  fprintf (fp, " [ " );
+  for ( i=0; i < rows; i ++ )
+    {
+      fprintf (fp, fmt, gsl_vector_get ( vect, i ) );
+      if ( i < rows - 1 )
+	fprintf (fp, ", ");
+    } /* for i < rows */
+
+  fprintf (fp, " ];\n" );
+  
+  return 0;
+
+} /* XLALprintGSLvector() */
