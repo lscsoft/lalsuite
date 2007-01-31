@@ -395,7 +395,6 @@ main(int argc, char *argv[])
 
 	case METRIC_FLAT:
 	  {
-	    LALDetector *site = &(config.multiDetStates->data[0]->detector ); 
 	    REAL8 dkX, dkY, dom0, dom1; 	/* 'canonical' Doppler-variables */
 	    gsl_vector *dopplerOffsetCanon;
 	    REAL8 dnx, dny, dnz, dnX, dnY;
