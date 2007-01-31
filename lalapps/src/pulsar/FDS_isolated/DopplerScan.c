@@ -106,6 +106,7 @@ const DopplerSkyGrid empty_DopplerSkyGrid;
 const DopplerSkyScanState empty_DopplerSkyScanState;
 const DopplerSkyScanInit empty_DopplerSkyScanInit;
 const DopplerRegion empty_DopplerRegion;
+const SkyRegion empty_SkyRegion;
 
 /*---------- Global variables ----------*/
 extern INT4 lalDebugLevel;
@@ -1325,13 +1326,6 @@ ParseSkyRegionString (LALStatus *status, SkyRegion *region, const CHAR *input)
   ASSERT (region != NULL, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
   ASSERT (region->vertices == NULL, status, DOPPLERSCANH_ENONULL,  DOPPLERSCANH_MSGENONULL);
 
-  region->numVertices = 0;
-  region->lowerLeft.longitude = LAL_TWOPI;
-  region->lowerLeft.latitude = LAL_PI;
-  region->upperRight.longitude = 0;
-  region->upperRight.latitude = 0;
-  region->lowerLeft.system = region->upperRight.system = COORDINATESYSTEM_EQUATORIAL;
-
   /* ----- first check if special skyRegion string was specified: */
   if ( input == NULL )
     skyRegion = SKYREGION_ALLSKY;
@@ -1348,6 +1342,7 @@ ParseSkyRegionString (LALStatus *status, SkyRegion *region, const CHAR *input)
     }
 
   /* count number of entries (by # of opening parantheses) */
+  region->numVertices = 0;
   pos = skyRegion;
   while ( (pos = strchr (pos, '(')) != NULL )
     {
@@ -1359,8 +1354,7 @@ ParseSkyRegionString (LALStatus *status, SkyRegion *region, const CHAR *input)
     LogPrintf (LOG_CRITICAL, "Failed to parse sky-region: `%s`\n", skyRegion);
     ABORT (status, DOPPLERSCANH_ESKYREGION, DOPPLERSCANH_MSGESKYREGION);
   }
-    
-  
+
   /* allocate list of vertices */
   if ( (region->vertices = LALMalloc (region->numVertices * sizeof (SkyPosition))) == NULL) {
     ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
@@ -1371,12 +1365,13 @@ ParseSkyRegionString (LALStatus *status, SkyRegion *region, const CHAR *input)
 
   region->upperRight.longitude = 0;
   region->upperRight.latitude  = -LAL_PI/2;
-
+  region->lowerLeft.system = region->upperRight.system = COORDINATESYSTEM_EQUATORIAL;
 
   /* and parse list of vertices from input-string */
   pos = skyRegion;
   for (i = 0; i < region->numVertices; i++)
     {
+      region->vertices[i].system = COORDINATESYSTEM_EQUATORIAL;
       if ( sscanf (pos, "(%" LAL_REAL8_FORMAT ", %" LAL_REAL8_FORMAT ")", 
 		   &(region->vertices[i].longitude), &(region->vertices[i].latitude) ) != 2) 
 	{
@@ -1384,13 +1379,11 @@ ParseSkyRegionString (LALStatus *status, SkyRegion *region, const CHAR *input)
 	}
 
       /* keep track of min's and max's to get the bounding square */
-      region->lowerLeft.longitude=MIN(region->lowerLeft.longitude,region->vertices[i].longitude);
-      region->lowerLeft.latitude =MIN(region->lowerLeft.latitude, region->vertices[i].latitude);
+      region->lowerLeft.longitude=MIN(region->lowerLeft.longitude, region->vertices[i].longitude);
+      region->lowerLeft.latitude =MIN(region->lowerLeft.latitude,  region->vertices[i].latitude);
 
-      region->upperRight.longitude = MAX( region->upperRight.longitude, 
-					  region->vertices[i].longitude);
-      region->upperRight.latitude  = MAX( region->upperRight.latitude, 
-					  region->vertices[i].latitude);
+      region->upperRight.longitude = MAX( region->upperRight.longitude, region->vertices[i].longitude);
+      region->upperRight.latitude  = MAX( region->upperRight.latitude, region->vertices[i].latitude);
 
       pos = strchr (pos + 1, '(');
 

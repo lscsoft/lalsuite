@@ -168,6 +168,7 @@ extern const DopplerSkyScanState empty_DopplerSkyScanState;
 extern const DopplerSkyScanInit empty_DopplerSkyScanInit;
 extern const PulsarDopplerParams empty_PulsarDopplerParams;
 extern const DopplerRegion empty_DopplerRegion;
+extern const SkyRegion empty_SkyRegion;
 
 /*---------- external prototypes [API] ----------*/
 
