@@ -38,7 +38,7 @@
 #include "FlatPulsarMetric.h"
 
 #include "DopplerFullScan.h"
-
+#include "DopplerLatticeCovering.h"
 
 /*---------- DEFINES ----------*/
 #define MIN(x,y) (x < y ? x : y)
@@ -67,7 +67,9 @@ struct tagDopplerFullScanState {
   LIGOTimeGPS refTime;			/**< reference time for grid templates */
   REAL8VectorList *covering;		/**< multi-dimensional covering */
   REAL8VectorList *thisGridPoint; 	/**< pointer to current grid-point */
-
+  /* lattice scan state */
+  DopplerLatticeScan *latticeScan;	/**< state of lattice Scan */
+  
   /* ----- emulate old-style factored grids */
   factoredGridScan_t *factoredScan;	/**< only used to emulate FACTORED grids sky x Freq x f1dot */
 
@@ -82,10 +84,8 @@ const DopplerFullScanState empty_DopplerFullScanState;
 extern INT4 lalDebugLevel;
 
 /*---------- internal prototypes ----------*/
-void initLatticeCovering(LALStatus *, DopplerFullScanState *scan, const DopplerFullScanInit *init);
 void initFactoredGrid (LALStatus *, DopplerFullScanState *scan,	const DopplerFullScanInit *init);
 int nextPointInFactoredGrid (PulsarDopplerParams *pos, DopplerFullScanState *scan);
-int printGSLmatrix ( FILE *fp, const CHAR *fmt, const gsl_matrix *mat );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -94,7 +94,7 @@ int printGSLmatrix ( FILE *fp, const CHAR *fmt, const gsl_matrix *mat );
  * keeps all details within the DopplerScan module for future extension to real multidimensional
  * grids. 
  * 
- * NOTE: Use 'NextDopplerPos()' to step through this template grid.
+ * NOTE: Use 'XLALNextDopplerPos()' to step through this template grid.
  * 
  */
 void 
@@ -139,7 +139,16 @@ InitDopplerFullScan(LALStatus *status,
 
     case GRID_METRIC_LATTICE:
       /* NOTE: experimental und under construction */
-      TRY ( initLatticeCovering ( status->statusPtr, thisScan, init ), status );
+      {
+	DopplerLatticeInit latticeInit;
+	latticeInit.searchRegion = init->searchRegion;
+	latticeInit.metricMismatch = init->metricMismatch;
+	latticeInit.startTime = init->startTime;
+	latticeInit.Tspan = init->Tspan;
+	latticeInit.ephemeris = init->ephemeris;
+	
+	TRY ( InitDopplerLatticeScan ( status->statusPtr, &(thisScan->latticeScan), &latticeInit ), status );
+      }
       
       break;
 
@@ -317,6 +326,10 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
       
       break;
 
+    case GRID_METRIC_LATTICE:
+      LogPrintf ( LOG_NORMAL, "Stepping not implemented yet for lattice-grid!\n"); 
+      break;
+
     default:
       LALPrintError("\nInvalid grid type '%d'\n\n", scan->gridType );
       xlalErrno = XLAL_EINVAL;
@@ -432,48 +445,6 @@ FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan)
 
 } /* FreeDopplerSkyScan() */
 
-/** Initialized and construct an optimal lattice-covering for the given searchRegion.
- */
-void
-initLatticeCovering ( LALStatus *status, 
-		     DopplerFullScanState *scan, 
-		     const DopplerFullScanInit *init)
-{
-  UINT4 numSpins, dim;
-
-  INITSTATUS( status, "initLatticeCovering", DOPPLERFULLSCANC );
-  ATTATCHSTATUSPTR ( status );
-
-  ASSERT ( scan, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
-  ASSERT ( scan->state == STATE_IDLE, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
-  ASSERT ( init, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
-
-  /* determine number of spins to compute metric for (at least 1) */
-  numSpins = PULSAR_MAX_SPINS;
-  while ( (numSpins > 1) && (init->searchRegion.fkdotBand[numSpins - 1] == 0) )
-    numSpins --;
-
-  dim = 2 + numSpins;	/* sky + spins (must be at least 3) */
-
-  /* compute flat metric */
-  if ( (scan->gij = gsl_matrix_calloc (dim, dim)) == NULL ) {
-    ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
-  }
-  /* 
-  if ( XLALFlatMetricCW ( scan->gij, mdetStates, init->searchRegion.refTime ) != 0 ) {
-    LALPrintError ("\nCall to XLALFlatMetricCW() failed!\n\n");
-    ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );
-  }
-  */
-
-  XLALfprintfGSLmatrix ( stderr, "%.9f ", scan->gij );
-
-
-  
-  DETATCHSTATUSPTR ( status );
-  RETURN ( status );
-
-} /* initLatticeCovering() */
 
 
 /** load a full multi-dim template grid from the file init->gridFile
@@ -541,4 +512,3 @@ loadFullGridFile ( LALStatus *status,
   RETURN ( status );
   
 } /* loadFullGridFile() */
-
