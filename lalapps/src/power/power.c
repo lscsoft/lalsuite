@@ -1212,10 +1212,6 @@ static void add_mdc_injections(
 	/* set quantization high pass at 40.0 Hz */
 	mdc = get_time_series(stat, mdcDirName, mdcCacheFile, options.mdcchannelName, epoch, stopepoch, lengthlimit, TRUE, 40.0);
 
-	/* write diagnostic info to disk */
-	if(options.diagnostics)
-		XLALWriteLIGOLwXMLArrayREAL4TimeSeries(options.diagnostics, "timeseriesmdc.dat", mdc);
-
 	/* add the mdc signal to the given time series */
 	for(i = 0; i < series->data->length; i++)
 		series->data->data[i] += mdc->data->data[i];
@@ -1383,12 +1379,6 @@ static void add_sim_injections(
 	  /* Get the cross time series */
 	  crossseries = get_time_series(stat, options.simdirname, options.simCacheFile, crosschan, start, end, lengthlimit, FALSE, options.cal_high_pass);
 	  
-	  /* write diagnostic info to disk */
-	  if(options.diagnostics) {
-		XLALWriteLIGOLwXMLArrayREAL4TimeSeries(options.diagnostics, "timeseriessim.dat plus", plusseries);
-		XLALWriteLIGOLwXMLArrayREAL4TimeSeries(options.diagnostics, "timesereissim.dat cros", crossseries);
-	  }
-
 	  /* read in the waveform in a CoherentGW struct */
 	  memset( &waveform, 0, sizeof(CoherentGW) );
 	  /* this step sets the adata,fdata,phidata to 0 */ 
@@ -1427,8 +1417,6 @@ static void add_sim_injections(
 	  LAL_CALL(LALSimulateCoherentGW( stat, signal, &waveform, &detector ),stat);	
 	  XLALRespFilt(signal, transfer);
 
-	  if(options.diagnostics)
-		XLALWriteLIGOLwXMLArrayREAL4TimeSeries(options.diagnostics, "timeseriessignal.dat", signal);
 	  /* inject the signal into the data channel */
 	  LAL_CALL(LALSSInjectTimeSeries( stat, series, signal ),stat);
 
@@ -1681,13 +1669,6 @@ int main( int argc, char *argv[])
 		}
 
 		/*
-		 * Write diagnostic info to disk
-		 */
-
-		if(options.diagnostics)
-			XLALWriteLIGOLwXMLArrayREAL4TimeSeries(options.diagnostics, "timeseriesasq.dat", series);
-
-		/*
 		 * Add burst/inspiral injections into the time series if
 		 * requested.
 		 */
@@ -1700,8 +1681,6 @@ int main( int argc, char *argv[])
 			response = generate_response(&stat, options.calCacheFile, options.channelName, series->deltaT, series->epoch, series->data->length);
 			if(!response)
 				exit(1);
-			if(options.diagnostics)
-				XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries(options.diagnostics, "response.dat", response);
 
 			/* perform injections */
 			if(burstInjectionFile)
@@ -1711,9 +1690,6 @@ int main( int argc, char *argv[])
 			else if(options.simCacheFile)
 				add_sim_injections(&stat, series, response, options.maxSeriesLength);
 
-			if(options.diagnostics)
-				XLALWriteLIGOLwXMLArrayREAL4TimeSeries(options.diagnostics, "injections.dat", series);
-
 			/*clean up*/
 			XLALDestroyCOMPLEX8FrequencySeries(response);
 		}
@@ -1722,11 +1698,8 @@ int main( int argc, char *argv[])
 		 * Add MDC injections into the time series if requested.
 		 */
 
-		if(mdcCacheFile) {
+		if(mdcCacheFile)
 		        add_mdc_injections(&stat, mdcCacheFile, series, epoch, options.stopEpoch, options.maxSeriesLength);
-			if(options.diagnostics)
-				XLALWriteLIGOLwXMLArrayREAL4TimeSeries(options.diagnostics, "timeseriesasqmdc.dat", series);
-		}
 
 		/*
 		 * Generate the response function at the right deltaf to be
@@ -1737,8 +1710,6 @@ int main( int argc, char *argv[])
 		hrssresponse = generate_response(&stat, options.calCacheFile, options.channelName, series->deltaT, series->epoch, options.windowLength);
 		if(!hrssresponse)
 			exit(1);
-		if(options.diagnostics)
-			XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries(options.diagnostics, "hrssresponse.dat", hrssresponse);
 
 		/*
 		 * Condition the time series data.
@@ -1756,9 +1727,6 @@ int main( int argc, char *argv[])
 			fprintf(stderr, "%s: XLALEPConditionData() failed.\n", argv[0]);
 			exit(1);
 		}
-
-		if(options.diagnostics)
-			XLALWriteLIGOLwXMLArrayREAL4TimeSeries(options.diagnostics, "condtimeseries.dat", series);
 
 		if(options.verbose)
 			fprintf(stderr, "%s: %u samples (%.9f s) at GPS time %d.%09d s remain after conditioning\n", argv[0], series->data->length, series->data->length * series->deltaT, series->epoch.gpsSeconds, series->epoch.gpsNanoSeconds);
@@ -1843,6 +1811,9 @@ int main( int argc, char *argv[])
 		burstEvent = burstEvent->next;
 		LALFree(event);
 	}
+
+	if(options.diagnostics)
+		LAL_CALL(LALCloseLIGOLwXMLFile(&stat, options.diagnostics), &stat);
 
 	LALCheckMemoryLeaks();
 	exit(0);
