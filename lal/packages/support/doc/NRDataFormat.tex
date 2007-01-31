@@ -69,19 +69,29 @@ Let $\mathbf{e}_x$, $\mathbf{e}_y$ and $\mathbf{e}_z$ denote the
 orthonormal coordinate basis vectors. Given this coordinate system, we
 define spherical coordinates $(\iota,\phi)$ where $\iota$ is the
 inclination angle from the $z$-axis and $\phi$ is the phase angle.  We
-break up $h_{ij}$ into modes in this coordinate system. **figure?***
-Introduce a new coordinate system, the wave frame, $(x^\prime,
-y^\prime, z^\prime)$ suchj that the $z^\prime$ axis is the direction
-of propagation of the wave.  ***define wave frame carefully***
-
+break up $h_{ij}$ into modes in this coordinate system.  Introduce a
+new coordinate system, the wave frame, $(x^\prime, y^\prime,
+z^\prime)$ such that the $z^\prime$ axis is the direction of
+propagation of the wave.  Thus, $\mathbf{e}_{z^\prime} = \cos\iota
+ \mathbf{e}_z + \sin\iota\cos\phi \mathbf{e}_x +
+\sin\iota\sin\phi \mathbf{e}_y$. There is a freedom in choosing
+$x^\prime$ and $y^\prime$ corresponding to rotations around the
+$z^\prime$-axis.  This freedom is fixed by requiring ***check this***need a figure***
+\begin{equation}
+  \label{eq:8}
+  \mathbf{e}_{x^\prime} =
+  \frac{\mathbf{e}_{z^\prime}\times\mathbf{e}_z}{||\mathbf{e}_{z^\prime}\times\mathbf{e}_z||} \,, 
+  \qquad \textrm{and} \qquad 
+  \mathbf{e}_{z^\prime} = \mathbf{e}_{x^\prime} \times \mathbf{e}_{y^\prime} \,.
+\end{equation}
 In the transverse traceless gauge, $h_{ij}$ is has two independent
 polarizations 
 \begin{equation}
   \label{eq:2}
   h_{ij} = h_+ (\mathbf{e}_+)_{ij} + h_\times (\mathbf{e}_\times)_{ij}\,,
 \end{equation}
-where $e_+$ and $e_\times$ are the usual basis tensors for
-transverse-traceless tensors:
+where $\mathbf{e}_+$ and $\mathbf{e}_\times$ are the usual basis tensors for
+transverse-traceless tensors in the wave frame
 \begin{equation}
   \label{eq:9}
   \mathbf{e}_+ = \mathbf{e}_{x^\prime}\otimes\mathbf{e}_{x^\prime} -
