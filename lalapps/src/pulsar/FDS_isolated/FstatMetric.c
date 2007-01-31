@@ -432,7 +432,7 @@ main(int argc, char *argv[])
 
 	    LogPrintf (LOG_DETAIL, "Offsets: dom0 = %.6g, dkX = %.6g, dkY = %.6g, dom1 = %.6g\n", dom0, dkX, dkY, dom1 );
 
-	    if ( 0 != XLALFlatMetricCW ( gFlat_ij, config.refTime, config.startTime, Tspan, config.edat, site ) )
+	    if ( 0 != XLALFlatMetricCW ( gFlat_ij, config.refTime, config.startTime, Tspan, config.edat ) )
 	      {
 		LogPrintf ( LOG_CRITICAL, "XLALFlatMetricCW() failed!\n");
 		return -1;
