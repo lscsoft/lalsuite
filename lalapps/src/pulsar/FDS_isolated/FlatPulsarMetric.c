@@ -67,7 +67,6 @@ typedef struct {
   component_t comp1, comp2;	/* the two components of the component-product Phi_i_Phi_j to compute*/
   component_t comp;		/* component for single-component Phi_i compute */
   const EphemerisData *edat;
-  const LALDetector *site;
   REAL8 refTime;
   REAL8 startTime;
   REAL8 Tspan;
@@ -177,27 +176,19 @@ Phi_i ( double tt, void *params )
       LALStatus status = empty_status;
       EarthState earth;
       LIGOTimeGPS tGPS;
-      REAL8 coseps, sineps;		/* inclination equatorial wrt ecliptic coords (eps ~23.4deg) */
       REAL8 rX, rY;
 
       XLALFloatToGPS( &tGPS, ti );
       LALBarycenterEarth( &status, &earth, &tGPS, par->edat );
-      if ( par->site->frDetector.prefix[0] == 'Z' )	/* LISA */
-	{
-	  coseps = 1; sineps = 0;
-	}
-      else
-	{
-	  sineps = sin ( LAL_IEARTH ); coseps = cos ( LAL_IEARTH );
-	}
       
+      /* FIXME: treat LISA correctly [ephemeris already in ecliptic coords */
       rX = (LAL_C_SI / LAL_AU_SI) * earth.posNow[0] ;
-      rY = (LAL_C_SI / LAL_AU_SI) * ( coseps * earth.posNow[1] + sineps * earth.posNow[2] );
+      rY = (LAL_C_SI / LAL_AU_SI) * ( COS_EPS * earth.posNow[1] + SIN_EPS * earth.posNow[2] );
       
       if ( par->comp == COMP_RX )
-	ret = -rX;	/* NOTE the '-' sign: the skypos-variable is k \propto -n  */
+	ret = - rX;	/* NOTE the '-' sign: the skypos-variable is k \propto -n  */
       else
-	ret= -rY;
+	ret= - rY;
     } /* rX,rY */
   else
     {
@@ -227,15 +218,14 @@ XLALFlatMetricCW ( gsl_matrix *gij, 			/**< [out] metric */
 		   LIGOTimeGPS refTime,			/**< [in] reference time for spin-parameters */
 		   LIGOTimeGPS startTime,		/**< [in] startTime */
 		   REAL8 Tspan,				/**< [in] total observation time spanned */
-		   const EphemerisData *edat,		/**< [in] ephemeris data */
-		   const LALDetector *site		/**< [in] detector */
+		   const EphemerisData *edat		/**< [in] ephemeris data */
 		   )
 {
   UINT4 dim, numSpins, s, sp;
   REAL8 gg;
   cov_params_t params;
 
-  if ( !gij || ( gij->size1 != gij->size2  ) || !edat || !site )
+  if ( !gij || ( gij->size1 != gij->size2  ) || !edat )
     return -1;
 
   dim = gij->size1;
@@ -247,7 +237,6 @@ XLALFlatMetricCW ( gsl_matrix *gij, 			/**< [out] metric */
   numSpins = dim - 2;
 
   params.edat = edat;
-  params.site = site;
   params.refTime = XLALGPSGetREAL8 ( &refTime );
   params.startTime = XLALGPSGetREAL8 ( &startTime );
   params.Tspan = Tspan;

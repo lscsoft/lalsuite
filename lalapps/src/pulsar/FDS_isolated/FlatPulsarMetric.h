@@ -52,6 +52,8 @@ NRCSID( FLATPULSARMETRICH, "$Id$" );
 
 
 /*---------- DEFINES ----------*/
+#define SIN_EPS		0.3977771557	/**< sin(LAL_IEARTH) */
+#define COS_EPS		0.9174820622	/**< cos(LAL_IEARTH) */
 
 /*----- Error-codes -----*/
 #define FLATPULSARMETRIC_ENULL 		1
@@ -73,7 +75,7 @@ NRCSID( FLATPULSARMETRICH, "$Id$" );
 /*---------- Global variables ----------*/
 
 /*---------- exported prototypes [API] ----------*/
-int XLALFlatMetricCW ( gsl_matrix *gij, LIGOTimeGPS refTime, LIGOTimeGPS startTime, REAL8 Tspan, const EphemerisData *edat, const LALDetector *site);
+int XLALFlatMetricCW ( gsl_matrix *gij, LIGOTimeGPS refTime, LIGOTimeGPS startTime, REAL8 Tspan, const EphemerisData *edat );
 
 void LALFlatPulsarMetric ( LALStatus *, REAL8Vector **metric, LIGOTimeGPS startTime, REAL8 duration, const LALDetector *site);
 
