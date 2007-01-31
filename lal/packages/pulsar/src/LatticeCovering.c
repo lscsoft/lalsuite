@@ -98,26 +98,18 @@ static BOOLEAN isSymmetric (const gsl_matrix *Sij);
  * 
  *	\li 2) use it to LALLatticeFill() the space.
  *
- * \note The encoding of the symmetric matrix 'metric' is the same
- * as conventionally used in the Pulsar-metric modules, namely
- * the vector-index l is given in terms of l = a + b*(b+1)/2, if
- * a <= b are the matrix-indices (a,b). This encoding is implemented
- * in the macro PMETRIC_INDEX(a,b)
- *
  */
 void
 LALLatticeCovering (LALStatus *status,
 		    REAL8VectorList **covering,		/**< [out] final covering-grid */
 		    REAL8 coveringRadius,		/**< [in] covering radius */
-		    const REAL8Vector *metric,		/**< [in] constant metric */
+		    const gsl_matrix *metric,		/**< [in] constant metric */
 		    const REAL8Vector *startPoint,	/**< [in] start-point in the covering-region */
 		    BOOLEAN (*isInside)(const REAL8Vector *point), /**< [in] boundary-condition */
 		    LatticeType latticeType )
 {
   UINT4 dim;	/* dimension of parameter-space */
-  INT4 tmp;
   gsl_matrix *generator = NULL;
-  gsl_matrix *gmetric = NULL;
 
   INITSTATUS( status, "LALLatticeCovering", LATTICECOVERINGC );
   ATTATCHSTATUSPTR (status); 
@@ -126,36 +118,22 @@ LALLatticeCovering (LALStatus *status,
   ASSERT ( covering != NULL, status, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );  
   ASSERT ( *covering == NULL,status, LATTICECOVERING_ENONULL, LATTICECOVERING_MSGENONULL );
   ASSERT ( metric, status, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );
+  ASSERT ( metric->size1 == metric->size2, status, LATTICECOVERING_EINPUT, LATTICECOVERING_MSGEINPUT );
   ASSERT ( startPoint, status, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );
   ASSERT ( startPoint->data, status, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );
 
   /* determine dimension of parameter-space from metric */
-  tmp = XLALFindMetricDim (metric);
-  if ( tmp <= 0 ) {
-    LALPrintError ("\nERROR: input metric has illegal dimensions\n\n");
-    ABORT (status, LATTICECOVERING_EINPUT, LATTICECOVERING_MSGEINPUT);
-  }
-  else
-    dim = (UINT4) tmp;
+  dim = metric->size1;
 
   /* check that startPoint has dimensions consistent with metric */
-  ASSERT ( dim == startPoint->length, status, 
-	   LATTICECOVERING_EINPUT, LATTICECOVERING_MSGEINPUT);
-
-  /* translate 'LAL'-encoded metric into a gsl_matrix: */
-  if ( (gmetric = XLALmetric2gsl (metric)) == NULL ) 
-    {
-      XLALClearErrno(); 
-      ABORT (status, LATTICECOVERING_EFUNC, LATTICECOVERING_MSGEFUNC);
-    }
+  ASSERT ( dim == startPoint->length, status, LATTICECOVERING_EINPUT, LATTICECOVERING_MSGEINPUT);
   
   /* 1) ----- get the generating matrix for a properly scaled An* lattice */
-  if (XLALFindCoveringGenerator (&generator, latticeType, dim, coveringRadius, gmetric ) < 0)
+  if (XLALFindCoveringGenerator (&generator, latticeType, coveringRadius, metric ) < 0)
     {
       int code = xlalErrno;
       XLALClearErrno(); 
       LALPrintError ("\nERROR: XLALFindCoveringGenerator() failed (xlalErrno = %d)!\n\n", code);
-      gsl_matrix_free (gmetric);
       ABORT (status, LATTICECOVERING_EFUNC, LATTICECOVERING_MSGEFUNC);
     }
 
@@ -163,12 +141,10 @@ LALLatticeCovering (LALStatus *status,
   LALLatticeFill(status->statusPtr, covering, generator, startPoint, isInside );
   BEGINFAIL (status) {
     gsl_matrix_free (generator);
-    gsl_matrix_free (gmetric);
   } ENDFAIL(status);
   
   /* free memory */
   gsl_matrix_free (generator);
-  gsl_matrix_free (gmetric);
 
   DETATCHSTATUSPTR (status);
   RETURN( status );
@@ -614,11 +590,11 @@ XLALMetricGramSchmidt(gsl_matrix **outvects,	/**< [out] orthonormal row vects */
 int 
 XLALFindCoveringGenerator (gsl_matrix **outmatrix, /**< [out] generating matrix for covering lattice */
 			  LatticeType type,	/**< [in] type of lattice */
-			  UINT4 dimension,	/**< [in] lattice-dimension */
 			  REAL8 coveringRadius,	/**< [in] desired covering radius */
 			  const gsl_matrix *gij	/**< [in] (constant) metric of covering space */
 			  )
 {
+  UINT4 dim;
   gsl_matrix *generator0 = NULL;
   gsl_matrix *generator1 = NULL;
   gsl_matrix *generator2 = NULL;
@@ -633,9 +609,15 @@ XLALFindCoveringGenerator (gsl_matrix **outmatrix, /**< [out] generating matrix 
     LALPrintError ("\nERROR: Output matrix not set to NULL\n\n");
     XLAL_ERROR("XLALFindCoveringGenerator", XLAL_EINVAL);
   }
+  if ( ! isSymmetric (gij) ) {
+    LALPrintError ("\nERROR: metric is not symmetric!!\n\n");
+    XLAL_ERROR("XLALFindCoveringGenerator", XLAL_EINVAL);
+  }
+
+  dim = gij->size1;
 
   /* 1) */
-  XLALGetLatticeGenerator (&generator0, dimension, type);/* 'raw' generator (not necessarily full-rank)*/
+  XLALGetLatticeGenerator (&generator0, dim, type);/* 'raw' generator (not necessarily full-rank)*/
 
   /* 2) */
   XLALReduceGenerator2FullRank( &generator1, generator0 ); /* full-rank, but in Cartesian coordinates */
@@ -659,7 +641,7 @@ XLALFindCoveringGenerator (gsl_matrix **outmatrix, /**< [out] generating matrix 
    * where basis is the row-matrix of unit basis-vectors of the new 
    * orthonormal basis in 'old' coordinates 
    */
-  if ( (generator2 = gsl_matrix_calloc (dimension, dimension)) == NULL ) {
+  if ( (generator2 = gsl_matrix_calloc (dim, dim)) == NULL ) {
     XLAL_ERROR("XLALFindCoveringGenerator", XLAL_ENOMEM);
   }
   

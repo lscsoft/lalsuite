@@ -112,7 +112,7 @@ extern REAL8VectorList empty_REAL8VectorList;
 
 /*---------- exported prototypes [API] ----------*/
 void LALLatticeCovering (LALStatus *, REAL8VectorList **covering, REAL8 coveringRadius, 
-			 const REAL8Vector *metric, const REAL8Vector *startPoint,
+			 const gsl_matrix *metric, const REAL8Vector *startPoint,
 			 BOOLEAN (*isInside)(const REAL8Vector *point),
 			 LatticeType latticeType);
 
@@ -120,8 +120,7 @@ void LALLatticeFill (LALStatus *, REAL8VectorList **fillGrid, const gsl_matrix  
 		     const REAL8Vector *startPoint, BOOLEAN (*isInside)(const REAL8Vector *point) );
 
 /* functions for handling lattice's generating matrix */
-int XLALFindCoveringGenerator (gsl_matrix **outmatrix, LatticeType type, UINT4 dimension, 
-			       REAL8 coveringRadius, const gsl_matrix *gij);
+int XLALFindCoveringGenerator (gsl_matrix **outmatrix, LatticeType type, REAL8 coveringRadius, const gsl_matrix *gij);
 int XLALReduceGenerator2FullRank(gsl_matrix **outmatrix, const gsl_matrix *inmatrix);
 int XLALGetLatticeGenerator (gsl_matrix **outmatrix, UINT4 dimension, LatticeType type);
 
