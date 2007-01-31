@@ -84,25 +84,27 @@ typedef struct {
 
 /** 'standard' representation of Doppler-paremeters */
 typedef struct {
-  vect3D_t vn;			/**< unit-vector pointing to sky-location */
+  vect2D_t vn;			/**< X, Y, component of ecliptic unit-vector to sky-location */
   PulsarSpins fkdot;		/**< vector of spins f^(k) */
 } dopplerParams_t;
 
 /** boundary of (single-hemisphere) search region in Doppler-space */
 typedef struct {
   vect2Dlist_t skyRegion; 	/**< (ecliptic) vector-polygon {nX, nY} defining a sky search-region */
-  hemisphere_t hemisphere;	/**< which sky-hemisphere the polygon lies on */
+  hemisphere_t hemisphere;	/**< hemisphere of 2D vector-polygon */
   PulsarSpinRange fkRange;	/**< search-region in spin parameters ['physical' units] */
 } dopplerBoundary_t;
 
 struct tagDopplerLatticeScan {
   scan_state_t state;		/**< current state of the scan: idle, ready of finished */
   REAL8 Tspan;			/**< total observation time spanned */
-  UINT4 dimSearch;		/**< dimension of search-space to cover [can be less than dim(latticeOrigin)!] */
   dopplerBoundary_t boundary;	/**< boundary of Doppler-space to cover */
-  gsl_vector *latticeOrigin;	/**< 'origin' of the lattice {w0, kX, kY, w1, w2, ... } */
+  UINT4 dimCanonical;		/**< dimension of full canonical Doppler-space */
+  UINT4 dimLattice;		/**< dimension of nonzero-band search-lattice (can be <= dimCanonical) */
+  gsl_vector *canonicalOrigin;	/**< 'origin' of the lattice {w0, kX, kY, w1, w2, ... } */
   gsl_matrix *latticeGenerator;	/**< generating matrix for the lattice: rows are the lattice-vectors */
-  gsl_vector_int *index;	/**< index-counters of current lattice point */
+  gsl_vector_int *latticeIndex;	/**< index-counters of current lattice point */
+  gsl_vector_int *map2canonical;/**< mapping of lattice-index into (canonical) Doppler index {f0, nX, nY, f1, f2, ...} */
 };
 
 /*---------- empty initializers ---------- */
@@ -123,16 +125,16 @@ void setupSearchRegion ( LALStatus *status, DopplerLatticeScan *scan, const Dopp
 
 hemisphere_t onWhichHemisphere ( const vect3Dlist_t *skypoints );
 int skyposToVect3D ( vect3D_t *eclVect, const SkyPosition *skypos );
-int vect3DToSkypos ( SkyPosition *skypos, const vect3D_t *vect );
+int vect2DToSkypos ( SkyPosition *skypos, const vect2D_t *vect2D, hemisphere_t hemi );
 int findCenterOfMass ( vect3D_t *center, const vect3Dlist_t *points );
 
-int indexToCanonicalOffset ( gsl_vector **canonicalOffset, const gsl_vector_int *index, const gsl_matrix *generator );
+int indexToCanonical ( gsl_vector **canonicalOffset, const gsl_vector_int *index, const DopplerLatticeScan *scan );
 int XLALindexToDoppler ( dopplerParams_t *doppler, const gsl_vector_int *index, const DopplerLatticeScan *scan );
 int isIndexInsideBoundary ( const gsl_vector_int *index, const DopplerLatticeScan *scan );
 
 int convertDoppler2Canonical ( gsl_vector **canonicalPoint, const dopplerParams_t *doppler, REAL8 Tspan );
 int convertSpins2Canonical ( PulsarSpins wk, const PulsarSpins fkdot, REAL8 Tspan );
-int convertCanonical2Doppler ( dopplerParams_t *doppler, const gsl_vector *canonical, hemisphere_t hemi, REAL8 Tspan );
+int convertCanonical2Doppler ( dopplerParams_t *doppler, const gsl_vector *canonical, REAL8 Tspan );
 
 int vect2DInPolygon ( const vect2D_t *point, const vect2Dlist_t *polygon );
 int isDopplerInsideBoundary ( const dopplerParams_t *doppler,  const dopplerBoundary_t *boundary );
@@ -152,7 +154,8 @@ InitDopplerLatticeScan ( LALStatus *status,
 			 )
 {
   DopplerLatticeScan *ret = NULL;
-  gsl_matrix *gij;
+  gsl_matrix *gij, *gijLattice;
+  UINT4 i, j;
 
   INITSTATUS( status, "InitDopplerLatticeScan", DOPPLERLATTICECOVERING );
   ATTATCHSTATUSPTR ( status );
@@ -173,48 +176,57 @@ InitDopplerLatticeScan ( LALStatus *status,
   TRY ( setupSearchRegion ( status->statusPtr, ret, &(init->searchRegion) ), status );
 
   /* ----- compute flat metric ----- */
-  if ( (gij = gsl_matrix_calloc (ret->dimSearch, ret->dimSearch)) == NULL ) {
-    FreeDopplerLatticeScan ( status->statusPtr, scan );
+  if ( (gij = gsl_matrix_calloc (ret->dimCanonical, ret->dimCanonical)) == NULL ) {
     ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
   }
 
-  if ( XLALFlatMetricCW ( gij, init->searchRegion.refTime, init->startTime, init->Tspan, init->ephemeris ) )
-    {
-      gsl_matrix_free ( gij );
-      FreeDopplerLatticeScan ( status->statusPtr, scan );
-      LALPrintError ("\nCall to XLALFlatMetricCW() failed!\n\n");
-      ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );
-    }
+  if ( XLALFlatMetricCW ( gij, init->searchRegion.refTime, init->startTime, init->Tspan, init->ephemeris ) ) {
+    ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );
+  }
   fprintf ( stderr, "\ngij = ");
   XLALfprintfGSLmatrix ( stderr, "% 15.9e ", gij );
 
-  /* ----- compute generating matrix for the lattice ----- */
-  if ( XLALFindCoveringGenerator (&(ret->latticeGenerator), LATTICE_TYPE_ANSTAR, sqrt(init->metricMismatch), gij ) < 0)
+  /* ----- reduce metric to subspace with actual nonzero search-bands !! ----- */
+  if ( ( gijLattice = gsl_matrix_calloc ( ret->dimLattice, ret->dimLattice )) == NULL ) {
+    ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
+  }
+  for ( i=0; i < ret->dimLattice; i ++ )
     {
-      int code = xlalErrno;
-      XLALClearErrno(); 
-      gsl_matrix_free ( gij );
-      FreeDopplerLatticeScan ( status->statusPtr, scan );
-      LALPrintError ("\nERROR: XLALFindCoveringGenerator() failed (xlalErrno = %d)!\n\n", code);
-      ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );
-    }
+      for ( j=i; j < ret->dimLattice; j ++ )
+	{
+	  UINT4 iMap, jMap;
+	  REAL8 gijMap;
+	  iMap = gsl_vector_int_get( ret->map2canonical, i );
+	  jMap = gsl_vector_int_get( ret->map2canonical, j );
+	  gijMap = gsl_matrix_get ( gij, iMap, jMap );
+	  gsl_matrix_set ( gijLattice, i, j, gijMap );
+	  gsl_matrix_set ( gijLattice, j, i, gijMap );
+	} /* for j < dimLattice */
+    } /* for i < dimLattice */
+
+  fprintf ( stderr, "\ngijLattice = ");
+  XLALfprintfGSLmatrix ( stderr, "% 15.9e ", gijLattice );
+
+  /* ----- compute generating matrix for the lattice ----- */
+  if ( XLALFindCoveringGenerator (&(ret->latticeGenerator), LATTICE_TYPE_ANSTAR, sqrt(init->metricMismatch), gijLattice ) ) {
+    ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );
+  }
   fprintf ( stderr, "\ngenerator = ");
   XLALfprintfGSLmatrix ( stderr, "% 15.9e ", ret->latticeGenerator );
 
   fprintf ( stderr, "\norigin = ");
-  XLALfprintfGSLvector ( stderr, "% .9e ", ret->latticeOrigin );
+  XLALfprintfGSLvector ( stderr, "% .9e ", ret->canonicalOrigin );
   fprintf ( stderr, "\n");
 
   /* ----- prepare index-counter to generate lattice-points ----- */
-  if ( (ret->index = gsl_vector_int_calloc ( ret->dimSearch )) == NULL ) {
-    gsl_matrix_free ( gij );
-    FreeDopplerLatticeScan ( status->statusPtr, scan );
+  if ( (ret->latticeIndex = gsl_vector_int_calloc ( ret->dimLattice )) == NULL ) {
     ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
   }
-  
+
   /* clean up memory */
   gsl_matrix_free ( gij );
-
+  gsl_matrix_free ( gijLattice );
+  
   /* return final scan-state */
   ret->state = STATE_READY;
   (*scan) = ret;
@@ -225,13 +237,13 @@ InitDopplerLatticeScan ( LALStatus *status,
     gsl_vector *origin2 = NULL;
     SkyPosition skypos = empty_SkyPosition;
     int inside;
-    if ( convertCanonical2Doppler ( &doppler, ret->latticeOrigin, ret->boundary.hemisphere, ret->Tspan ) ) {
+    if ( convertCanonical2Doppler ( &doppler, ret->canonicalOrigin, ret->Tspan ) ) {
       ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );
     }
     inside = isDopplerInsideBoundary ( &doppler, &(ret->boundary) );
     fprintf (stderr, "Doppler inside boundary: %d\n", inside );
-    fprintf (stderr, "\norigin: vn = { %f, %f, %f }, fkdot = { %f, %g, %g, %g }\n", 
-	     doppler.vn[0], doppler.vn[1], doppler.vn[2],
+    fprintf (stderr, "\norigin: vn = { %f, %f}, fkdot = { %f, %g, %g, %g }\n", 
+	     doppler.vn[0], doppler.vn[1], 
 	     doppler.fkdot[0], doppler.fkdot[1], doppler.fkdot[2], doppler.fkdot[3] 
 	     );
     if ( convertDoppler2Canonical ( &origin2, &doppler, ret->Tspan ) ) {
@@ -242,7 +254,7 @@ InitDopplerLatticeScan ( LALStatus *status,
     fprintf ( stderr, "\n");
 
     skypos.system = COORDINATESYSTEM_EQUATORIAL;
-    if ( vect3DToSkypos ( &skypos, (const vect3D_t*)&(doppler.vn) ) ) {
+    if ( vect2DToSkypos ( &skypos, (const vect2D_t*)&(doppler.vn), ret->boundary.hemisphere ) ) {
       ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );
     }
     fprintf (stderr, "\nSkypos: Alpha = %f, Delta = %f\n\n", skypos.longitude, skypos.latitude );
@@ -253,7 +265,7 @@ InitDopplerLatticeScan ( LALStatus *status,
     gsl_vector_int_set ( ret->index, 0, 1 );
     fprintf (stderr, "index = ");
     XLALfprintfGSLvector_int ( stderr, "%d", ret->index );
-    if ( indexToCanonicalOffset ( &canOffs, ret->index, ret->latticeGenerator ) ) {
+    if ( indexToCanonical ( &canOffs, ret->index, ret->latticeGenerator ) ) {
       ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );
     }
     fprintf ( stderr, "\noffset = ");
@@ -378,15 +390,17 @@ FreeDopplerLatticeScan ( LALStatus *status, DopplerLatticeScan **scan )
   if ( (*scan)->boundary.skyRegion.data )
     LALFree ( (*scan)->boundary.skyRegion.data );
 
-  if ( (*scan)->latticeOrigin )
-    gsl_vector_free ( (*scan)->latticeOrigin );
+  if ( (*scan)->canonicalOrigin )
+    gsl_vector_free ( (*scan)->canonicalOrigin );
 
   if ( (*scan)->latticeGenerator )
     gsl_matrix_free ( (*scan)->latticeGenerator );
 
-  if ( (*scan)->index )
-    gsl_vector_int_free ( (*scan)->index );
+  if ( (*scan)->latticeIndex )
+    gsl_vector_int_free ( (*scan)->latticeIndex );
 
+  if ( (*scan)->map2canonical )
+    gsl_vector_int_free ( (*scan)->map2canonical );
   
   LALFree ( (*scan) );
   (*scan) = NULL;
@@ -411,16 +425,16 @@ XLALgetCurrentLatticeIndex ( gsl_vector_int **index, const DopplerLatticeScan *s
 
   if ( *index == NULL )	/* allocate output-vector */
     {
-      if ( ((*index) = gsl_vector_int_calloc ( scan->dimSearch )) == NULL ) {
+      if ( ((*index) = gsl_vector_int_calloc ( scan->dimLattice )) == NULL ) {
 	XLAL_ERROR (fn, XLAL_ENOMEM );
       }
     }
-  else if ( (*index)->size != scan->dimSearch ) {
-    LALPrintError ("\n\nOutput vector has wrong dimension %d instead of %d!\n\n", (*index)->size, scan->dimSearch);
+  else if ( (*index)->size != scan->dimLattice ) {
+    LALPrintError ("\n\nOutput vector has wrong dimension %d instead of %d!\n\n", (*index)->size, scan->dimLattice);
     XLAL_ERROR (fn, XLAL_EINVAL );
   }
   
-  gsl_vector_int_memcpy ( (*index), scan->index );  
+  gsl_vector_int_memcpy ( (*index), scan->latticeIndex );  
 
   return 0;
 } /* XLALgetCurrentLatticeIndex() */
@@ -432,11 +446,11 @@ XLALsetCurrentLatticeIndex ( DopplerLatticeScan *scan, const gsl_vector_int *ind
 {
   const CHAR *fn = "XLALsetCurrentLatticeIndex()";
 
-  if ( !index || !scan || (scan->state != STATE_READY) || (index->size != scan->dimSearch) ) {
+  if ( !index || !scan || (scan->state != STATE_READY) || (index->size != scan->dimLattice) ) {
     XLAL_ERROR (fn, XLAL_EINVAL );
   }
 
-  gsl_vector_int_memcpy ( scan->index, index );
+  gsl_vector_int_memcpy ( scan->latticeIndex, index );
 
   return 0;
 } /* XLALsetCurrentLatticeIndex() */
@@ -473,7 +487,7 @@ XLALadvanceLatticeIndex ( DopplerLatticeScan *scan )
     XLAL_ERROR (fn, XLAL_EINVAL );
   }
 
-  dim = scan->dimSearch;
+  dim = scan->dimLattice;
 
   if ( XLALgetCurrentLatticeIndex ( &index0, scan ) ) {
     XLAL_ERROR (fn, XLAL_EFUNC );
@@ -560,12 +574,12 @@ XLALgetCurrentDopplerPos ( PulsarDopplerParams *pos, const DopplerLatticeScan *s
     XLAL_ERROR (fn, XLAL_EINVAL );
   }
 
-  if ( XLALindexToDoppler ( &doppler, scan->index, scan ) ) {
+  if ( XLALindexToDoppler ( &doppler, scan->latticeIndex, scan ) ) {
     XLAL_ERROR (fn, XLAL_EFUNC );
   }
 
   skypos.system = skyCoords;
-  if ( vect3DToSkypos ( &skypos, (const vect3D_t*)&doppler.vn ) ) {
+  if ( vect2DToSkypos ( &skypos, (const vect2D_t*)&(doppler.vn), scan->boundary.hemisphere) ) {
     XLAL_ERROR (fn, XLAL_EFUNC );
   }
 
@@ -599,21 +613,11 @@ XLALindexToDoppler ( dopplerParams_t *doppler, const gsl_vector_int *index, cons
     XLAL_ERROR (fn, XLAL_EINVAL );
   }
 
-  if ( (canonical = gsl_vector_calloc ( scan->latticeOrigin->size )) == NULL ) {
-    XLAL_ERROR (fn, XLAL_ENOMEM );
-  }
-
-  if ( indexToCanonicalOffset ( &canonical, index, scan->latticeGenerator ) ) {
-    gsl_vector_free ( canonical );
+  if ( indexToCanonical ( &canonical, index, scan ) ) {
     XLAL_ERROR (fn, XLAL_EFUNC );
   }
 
-  if ( gsl_vector_add (canonical, scan->latticeOrigin ) ) {
-    gsl_vector_free ( canonical );
-    XLAL_ERROR (fn, XLAL_EFUNC );
-  }
-
-  if ( convertCanonical2Doppler ( doppler, canonical, scan->boundary.hemisphere, scan->Tspan ) ) {
+  if ( convertCanonical2Doppler ( doppler, canonical, scan->Tspan ) ) {
     gsl_vector_free ( canonical );
     XLAL_ERROR (fn, XLAL_EFUNC );
   }
@@ -652,10 +656,8 @@ int
 isDopplerInsideBoundary ( const dopplerParams_t *doppler,  const dopplerBoundary_t *boundary )
 {
   vect2D_t skyPoint = {0, 0};
-  int insideSky, insideSpins, sameHemi;
-  hemisphere_t this_hemi;
-  UINT4 numSpins;
-  UINT4 s;
+  int insideSky, insideSpins;
+  UINT4 numSpins, s;
 
   if ( !doppler || !boundary )
     return -1;
@@ -664,15 +666,9 @@ isDopplerInsideBoundary ( const dopplerParams_t *doppler,  const dopplerBoundary
 
   skyPoint[0] = doppler->vn[0];
   skyPoint[1] = doppler->vn[1];
-  this_hemi = VECT_HEMI ( doppler->vn );
 
   if ( (insideSky = vect2DInPolygon ( (const vect2D_t*)skyPoint, &(boundary->skyRegion) )) < 0 )
     return -1;
-
-  if ( this_hemi != boundary->hemisphere )
-    sameHemi = FALSE;
-  else
-    sameHemi = TRUE;
 
   insideSpins = TRUE;
   for ( s=0; s < numSpins; s ++ )
@@ -684,7 +680,7 @@ isDopplerInsideBoundary ( const dopplerParams_t *doppler,  const dopplerBoundary
 	insideSpins = ( insideSpins && FALSE );
     } /* for s < numSpins */
   
-  return ( insideSky && sameHemi && insideSpins );
+  return ( insideSky && insideSpins );
 
 } /* insideBoundary() */
 
@@ -698,6 +694,7 @@ setupSearchRegion ( LALStatus *status, DopplerLatticeScan *scan, const DopplerRe
 {
   UINT4 i;
   vect3Dlist_t *points3D = NULL;
+  vect3D_t com;		/* center-of-mass of points3D */
   dopplerParams_t midPoint = empty_dopplerParams;
   UINT4 numSpins = sizeof(PulsarSpins) / sizeof(REAL8) ;	/* number of elements in PulsarSpin array */
 
@@ -728,7 +725,9 @@ setupSearchRegion ( LALStatus *status, DopplerLatticeScan *scan, const DopplerRe
     scan->boundary.skyRegion.data[i][1] = points3D->data[i][1];
   }
 
-  findCenterOfMass ( &(midPoint.vn), points3D );
+  findCenterOfMass ( &com, points3D );
+  midPoint.vn[0] = com[0];
+  midPoint.vn[1] = com[1];
 
   LALFree ( points3D->data );
   LALFree ( points3D );
@@ -742,71 +741,99 @@ setupSearchRegion ( LALStatus *status, DopplerLatticeScan *scan, const DopplerRe
     midPoint.fkdot[i] = searchRegion->fkdot[i] + 0.5 * searchRegion->fkdotBand[i];
 
   /* ----- use the center of the searchRegion as origin of the lattice ----- */
-  if ( 0 != convertDoppler2Canonical ( &(scan->latticeOrigin), &midPoint, scan->Tspan ) ) {
+  if ( 0 != convertDoppler2Canonical ( &(scan->canonicalOrigin), &midPoint, scan->Tspan ) ) {
     LALPrintError ("\n\nconvertDoppler2Canonical() failed!\n");
     ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );
   }
+  scan->dimCanonical = scan->canonicalOrigin->size;
 
-  /* determine number of spins to compute metric for (at least 1) */
-  while ( (numSpins > 1) && (searchRegion->fkdotBand[numSpins - 1] == 0) )
-    numSpins --;
+  /* ----- map lattice-indices to Doppler-dimensions with nonzero search-bands ----- */
+  {
+    gsl_vector_int *mapTmp;
+    UINT4 s, l;
+    if ( (mapTmp = gsl_vector_int_calloc ( scan->dimCanonical )) == NULL ) { /* <= dimLattice */
+      ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
+    }
+    l=0;
+    if ( searchRegion->fkdotBand[0] )
+      gsl_vector_int_set ( mapTmp, l++, 0 );
+    if ( scan->boundary.skyRegion.length > 1 )
+      {
+	gsl_vector_int_set ( mapTmp, l++, 1 );
+	gsl_vector_int_set ( mapTmp, l++, 2 );
+      }
+    for (s=1; s < numSpins; s ++ )
+      {
+	if ( searchRegion->fkdotBand[s] )
+	  gsl_vector_int_set ( mapTmp, l++, 2 + s );
+      } /* for s < numSpins */
+    /* cut down to minimum size */
+    if ( (l > 0) && (scan->map2canonical = gsl_vector_int_calloc ( l ) ) == NULL ) {
+      ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
+    }
+    for ( i=0; i < l; i ++ )
+      gsl_vector_int_set ( scan->map2canonical, i, gsl_vector_int_get ( mapTmp, i ) );
 
-  scan->dimSearch = 2 + numSpins;	/* sky + spins (must be at least 3) */
+    gsl_vector_int_free ( mapTmp );
+
+    scan->dimLattice = scan->map2canonical->size;	/* dimension of actual search-lattice */
+
+  } /* find mapping lattice <--> dopplerSpace */
 
   DETATCHSTATUSPTR ( status );
   RETURN ( status );
 
 } /* setupSearchRegion() */
 
-/** Convert index-vector {i0, i1, i2, ..} into canonical offset Delta{w0, kX, kY, w1, w2, ...}
+/** Convert index-vector {i0, i1, i2, ..} into canonical Doppler-vector {w0, kX, kY, w1, w2, ...}
  * 
- * \note the output-vector 'canonicalOffset' can be NULL, in which case it will be allocated here,
- * with dimension == dim(index-vector). If allocated already, its dimension must be >= dim(index)
+ * \note the output-vector 'canonical' can be NULL, in which case it will be allocated here,
+ * If allocated already, its dimension must be dimCanonical
  * 
  * Return: 0=OK, -1=ERROR
  */
 int 
-indexToCanonicalOffset ( gsl_vector **canonicalOffset, const gsl_vector_int *index, const gsl_matrix *generator )
+indexToCanonical ( gsl_vector **canonical, const gsl_vector_int *index, const DopplerLatticeScan *scan )
 {
-  UINT4 dim, i, j;
+  UINT4 i, j;
 
   /* check input */  
-  if ( !canonicalOffset || !index || !generator)
+  if ( !canonical || !index || !scan)
     return -1;
 
-  dim = index->size;
-  if ( ( generator->size1 != dim ) || ( generator->size2 != dim ) ) {
-    LALPrintError ("\nindexToCanonicalOffset(): generator has to be square-matrix of same dimension as index-vector!\n\n");
-    return -1;
-  }
-  if ( (*canonicalOffset != NULL) && ( (*canonicalOffset)->size < dim ) ) {
-    LALPrintError ("\nindexToCanonicalOffset(): output-vector has to have AT LEAST same dimension as index-vector!\n\n");
+  if ( (*canonical != NULL) && ( (*canonical)->size != scan->dimCanonical ) ) {
+    LALPrintError ("\nindexToCanonicalOffset(): output-vector has dim=%d instead of dimCanonical=%d!\n\n", 
+		   (*canonical)->size, scan->dimCanonical );
     return -1;
   }
 
-  /* allocate or initialize output-vector */
-  if ( (*canonicalOffset) == NULL )
-    {
-      if ( ((*canonicalOffset) = gsl_vector_calloc ( dim )) == NULL )
-	return -1;
-    }
-  else
-    gsl_vector_set_zero ( *canonicalOffset );
+  /* allocate and initialized output-vector to zero */
+  if ( (*canonical) == NULL ) {
+    if ( ((*canonical) = gsl_vector_calloc ( scan->dimCanonical )) == NULL )
+      return -1;
+  }
+  gsl_vector_set_zero ( *canonical );
 
-  /* lattice-vect = index . generator */
-  for ( i=0; i < dim; i ++ )	
+  /* lattice-vect^i = index_j  generator^(ji) */
+  for ( i=0; i < scan->dimLattice; i ++ )	
     {
       REAL8 comp = 0;
-      for (j=0; j < dim; j ++ )
-	comp += 1.0 * gsl_vector_int_get ( index, j ) * gsl_matrix_get ( generator, j, i );
+      UINT4 iMap = gsl_vector_int_get ( scan->map2canonical, i );
 
-      gsl_vector_set ( (*canonicalOffset), i, comp );
+      for (j=0; j < scan->dimLattice; j ++ )
+	comp += 1.0 * gsl_vector_int_get ( index, j ) * gsl_matrix_get ( scan->latticeGenerator, j, i );
+
+      gsl_vector_set ( (*canonical), iMap, comp );
 
     } /* i < dim */
 
+  if ( gsl_vector_add ( *canonical, scan->canonicalOrigin ) ) {
+    return -1;
+  }
+
   return 0;
 
-} /* indexToCanonicalOffset() */
+} /* indexToCanonical() */
 
 
 /** Convert Doppler-parameters from {nX, nY, nZ, fkdot} into internal 'canonical' form
@@ -877,18 +904,13 @@ convertSpins2Canonical ( PulsarSpins wk, const PulsarSpins fkdot, REAL8 Tspan )
  * Return: 0=OK, -1=ERROR
  */
 int 
-convertCanonical2Doppler ( dopplerParams_t *doppler, const gsl_vector *canonical, hemisphere_t hemi, REAL8 Tspan )
+convertCanonical2Doppler ( dopplerParams_t *doppler, const gsl_vector *canonical, REAL8 Tspan )
 {
-  REAL8 prefact, vn2;
+  REAL8 prefact;
   UINT4 numSpins, numSpinsMax, s;
 
   if ( !canonical || !doppler )
     return -1;
-
-  if ( (hemi != HEMI_NORTH) && ( hemi != HEMI_SOUTH ) ) {
-    LALPrintError ("Need to choose either HEMI_NORTH or HEMI_SOUTH!\n");
-    return -1;
-  }
 
   numSpinsMax = sizeof(doppler->fkdot) / sizeof(doppler->fkdot[0]);
   for (s=0; s < numSpinsMax; s ++ )
@@ -915,17 +937,6 @@ convertCanonical2Doppler ( dopplerParams_t *doppler, const gsl_vector *canonical
 
   doppler->vn[0] = - gsl_vector_get ( canonical, 1 ) / prefact;	/* nX = - kX / ( 2*pi*Rorb*f/c ) */
   doppler->vn[1] = - gsl_vector_get ( canonical, 2 ) / prefact;	/* nY = - kY / ( 2*pi*Rorb*f/c ) */
-
-  vn2 = SQUARE ( doppler->vn[0] ) + SQUARE ( doppler->vn[1] );
-  if ( gsl_fcmp ( vn2, 1.0, EPS_REAL8 ) > 0 ) {
-    LALPrintError ( "\n\nconvertCanonical2Doppler(): Sky-vector has length > 1! (vn2 = %f)\n\n", vn2 );
-    return -1;
-  }
-  
-  doppler->vn[2] = sqrt ( fabs ( 1.0 - vn2 ) );		/* nZ = sqrt(1 - nX^2 - nY^2 ) */
-
-  if ( hemi == HEMI_SOUTH )
-    doppler->vn[2] *= -1;
 
   return 0;
 
@@ -1047,14 +1058,16 @@ skyposToVect3D ( vect3D_t *eclVect, const SkyPosition *skypos )
  * return: 0=OK, -1=ERROR
  */
 int
-vect3DToSkypos ( SkyPosition *skypos, const vect3D_t *vect )
+vect2DToSkypos ( SkyPosition *skypos, const vect2D_t *vect2D, hemisphere_t hemi )
 {
   REAL8 invnorm;
   vect3D_t nvect = {0,0,0};
+  vect3D_t vn3D = {0,0,0};
+  REAL8 vn2;
   REAL8 longitude, latitude;
   REAL8 sineps, coseps;
 
-  if ( !skypos || !vect )
+  if ( !skypos || !vect2D )
     return -1;
 
   switch ( skypos->system )
@@ -1070,9 +1083,22 @@ vect3DToSkypos ( SkyPosition *skypos, const vect3D_t *vect )
       break;
     } /* switch(system) */
 
-  nvect[0] = (*vect)[0];
-  nvect[1] = coseps * (*vect)[1] - sineps * (*vect)[2];
-  nvect[2] = sineps * (*vect)[1] + coseps * (*vect)[2];
+  vn3D[0] = (*vect2D)[0];
+  vn3D[1] = (*vect2D)[1];
+
+  vn2 = SQUARE ( vn3D[0] ) + SQUARE ( vn3D[1] );
+  if ( gsl_fcmp ( vn2, 1.0, EPS_REAL8 ) > 0 ) {
+    LALPrintError ( "\n\nvect2DToSkypos(): Sky-vector has length > 1! (vn2 = %f)\n\n", vn2 );
+    return -1;
+  }
+  vn3D[2] = sqrt ( fabs ( 1.0 - vn2 ) );		/* nZ = sqrt(1 - nX^2 - nY^2 ) */
+
+  if ( hemi == HEMI_SOUTH )
+    vn3D[2] *= -1;
+
+  nvect[0] = vn3D[0];
+  nvect[1] = coseps * vn3D[1] - sineps * vn3D[2];
+  nvect[2] = sineps * vn3D[1] + coseps * vn3D[2];
 
   invnorm = 1.0 / VECT_NORM ( nvect );
   
@@ -1089,7 +1115,7 @@ vect3DToSkypos ( SkyPosition *skypos, const vect3D_t *vect )
 
   return 0;
 
-} /* vect3DToSkypos() */
+} /* vect2DToSkypos() */
 
 
 /** Find the "center of mass" of the given list of 3D points
