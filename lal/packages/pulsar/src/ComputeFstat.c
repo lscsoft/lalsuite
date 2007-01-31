@@ -134,6 +134,10 @@ void ComputeFStatFreqBand ( LALStatus *status,
   ASSERT ( fstatVector->data->data, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( fstatVector->data->length > 0, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
 
+  /** something to improve/cleanup -- the start frequency is available both 
+      from the fstatvector and from the input doppler point -- they could be inconsistent
+      or the user of this function could misunderstand */
+
   /* copy values from 'doppler' to local variable 'thisPoint' */
   thisPoint = *doppler;
 
