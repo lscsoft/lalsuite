@@ -188,7 +188,7 @@ XLALEPSearch(
 
 	fplan = XLALCreateForwardREAL4FFTPlan(window->data->length, 1);
 	rplan = XLALCreateReverseREAL4FFTPlan(window->data->length, 1);
-	psd = XLALCreateREAL4FrequencySeries("anonymous", &tseries->epoch, 0, 0, &lalDimensionlessUnit, window->data->length / 2 + 1);
+	psd = XLALCreateREAL4FrequencySeries("PSD", &tseries->epoch, 0, 0, &lalDimensionlessUnit, window->data->length / 2 + 1);
 	tfplane = XLALCreateTFPlane(params->tf_timeBins, params->tf_deltaT, params->tf_freqBins, params->tf_deltaF, params->tf_flow);
 	normalisation = LALMalloc(params->tf_freqBins * sizeof(*normalisation));
 	Tiling = XLALCreateTFTiling(tfplane, params->inv_fractional_stride, params->maxTileBandwidth, params->maxTileDuration);
@@ -221,7 +221,7 @@ XLALEPSearch(
 	}
 
 	if(params->diagnostics)
-		params->diagnostics->XLALWriteLIGOLwXMLArrayREAL4FrequencySeries(params->diagnostics->LIGOLwXMLStream, "PSD", psd);
+		params->diagnostics->XLALWriteLIGOLwXMLArrayREAL4FrequencySeries(params->diagnostics->LIGOLwXMLStream, NULL, psd);
 
 	/*
 	 * Compute the hrss factors
@@ -266,7 +266,7 @@ XLALEPSearch(
 		XLALPrintInfo("XLALEPSearch(): normalizing to the average spectrum\n");
 		whiten(fseries, psd);
 		if(params->diagnostics)
-			params->diagnostics->XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries(params->diagnostics->LIGOLwXMLStream, "frequency_series.dat", fseries);
+			params->diagnostics->XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries(params->diagnostics->LIGOLwXMLStream, "whitened fseries", fseries);
 
 		/*
 		 * Compute the time-frequency plane from the frequency
