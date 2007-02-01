@@ -8,8 +8,8 @@ $Id$
 \subsection{Module \texttt{LALInsidePolygon.c}}
 
 Module to check whether a point with coordinates (x,y) in inside 
-a polygon defined by the vectors (vx, vy). It return valid = 1 if 
-the point is inside or valid = 0 if outside. 
+a polygon defined by the vectors (vx, vy). The functions returns 1 if 
+the point is inside or 0 otherwise. 
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
@@ -23,11 +23,11 @@ the point is inside or valid = 0 if outside.
 \end{itemize}
 
 \subsubsection*{Description/Algorithm}
-
+None
 \subsubsection*{Uses}
 None.
-
 \subsubsection*{Notes}
+Tested in matlab codes and some BCV tests within lal/lalapps.
 
 \vfill{\footnotesize\input{LALInsidePolygonCV}}
 
@@ -66,9 +66,6 @@ void LALInsidePolygon(  LALStatus          *status,
      }
      *valid = c;
    }
-
-   
-
    
    DETATCHSTATUSPTR(status);
    RETURN(status);
