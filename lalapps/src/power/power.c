@@ -75,7 +75,7 @@ static struct {
 	int FilterCorruption;       /* samples corrupted by conditioning   */
 	INT4 maxSeriesLength;       /* RAM-limited input length            */
 	REAL4 noiseAmpl;            /* gain factor for white noise         */
-	LIGOLwXMLStream *diagnostics;	/* diagnostics dump hooks*/
+	LIGOLwXMLStream *diagnostics;  /* diagnostics XML stream */
 	size_t PSDAverageLength;    /* number of samples to use for PSD    */
 	INT4 ResampleRate;          /* sample rate after resampling        */
 	INT4 seed;                  /* set non-zero to generate noise      */
@@ -627,7 +627,7 @@ void parse_command_line(
 		{
 		LALStatus stat;
 		memset(&stat, 0, sizeof(stat));
-		options.diagnostics = calloc(1, sizeof(options.diagnostics));
+		options.diagnostics = calloc(1, sizeof(*options.diagnostics));
 		LALOpenLIGOLwXMLFile(&stat, options.diagnostics, optarg);
 		}
 		params->diagnostics = malloc(sizeof(*params->diagnostics));
