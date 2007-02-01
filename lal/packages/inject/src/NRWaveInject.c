@@ -34,15 +34,64 @@
 #include <lal/Date.h>
 
 
+
+/** Spherical Harmonic for the l=2, m=2 mode */
+/* Eventually all these functions should be placed in their own library */
+COMPLEX16 SphHarm22 ( 
+    REAL4   theta,  /* angle with respect to the z axis */
+    REAL4   phi    /* angle with respect to the x axis */)
+
+{
+    COMPLEX16  out; /* complex number */
+    REAL4      deptheta; /** dependency on theta */
+    REAL4      pi; 
+
+    pi = 4.0 * atan( 1.0 );
+    deptheta = sqrt( 5.0 / ( 64.0 * pi ) ) * ( 1.0 + cos( theta ))*( 1.0 + cos( theta ));
+
+    out.re = deptheta * cos( 2.0*phi );
+    out.im = deptheta * sin( 2.0*phi );
+
+    return( out );
+}
+
+
 /** Takes a (sky averaged) numerical relativity waveform and returns the
  * waveform appropriate for given coalescence phase and inclination angles */
+/** for the moment only mode (2,2) implemented */
 REAL4TimeVectorSeries *
 XLALOrientNRWave( 
     REAL4TimeVectorSeries *strain,         /**< sky average h+, hx data */ 
     REAL4                  inclination,    /**< binary inclination      */
     REAL4                  coa_phase       /**< binary coalescence phase*/)
 {
-  /* XXX this is a dummy function XXX */
+    COMPLEX16  MultSphHarm;
+    REAL4      tmp1, tmp2;
+    REAL4      pi;
+    UINT4      vecLength, k;
+
+    pi = 4.0 * atan( 1.0 );
+
+    vecLength = strain->data->vectorLength;
+
+/* Calculating the (2,2) Spherical Harmonic */
+    MultSphHarm = SphHarm22( inclination, coa_phase );
+
+/* Filling the data vector with the data multiplied by the Harmonic */
+    for ( k = 0; k < vecLength; k++)
+    {
+	tmp1 = strain->data->data[k];
+	tmp2 = strain->data->data[vecLength + k];
+
+	strain->data->data[k] = 
+	    (tmp1 * MultSphHarm.re) - 
+	    (tmp2 * MultSphHarm.im);
+
+	strain->data->data[vecLength + k] = 
+	    (tmp2 * MultSphHarm.re) +
+	    (tmp1 * MultSphHarm.im);
+    }
+
   return( strain );
 }
 
