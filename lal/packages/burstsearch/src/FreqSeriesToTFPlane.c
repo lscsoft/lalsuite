@@ -61,11 +61,6 @@ static COMPLEX8FrequencySeries *generate_filter(const COMPLEX8FrequencySeries *t
 	for(j = 1; j < firstzero; j++)
 		tdfilter->data[j] = tdfilter->data[tdfilter->length - j] = (sin(twopiOverNumpts * j * (fstart + fbins_per_channel)) - sin(twopiOverNumpts * j * fstart)) / (LAL_PI * j * dt);
 
-	/* normalize the filter */
-	norm = sqrt(XLALREAL4SequenceSumSquares(tdfilter, 0, tdfilter->length));
-	for(j = 0; j < tdfilter->length; j++)
-		tdfilter->data[j] /= norm;
-
 	/* transform to frequency domain */
 	if(XLALREAL4ForwardFFT(fdfilter->data, tdfilter, plan)) {
 		XLALDestroyREAL4Sequence(tdfilter);
@@ -76,6 +71,13 @@ static COMPLEX8FrequencySeries *generate_filter(const COMPLEX8FrequencySeries *t
 
 	/* extract the part of the filter to be applied to each channel */
 	XLALResizeCOMPLEX8FrequencySeries(fdfilter, fstart - fwindow, fbins_per_channel + 2 * fwindow);
+
+	/* normalize the filter */
+	norm = sqrt(XLALCOMPLEX8SequenceSumSquares(fdfilter->data, 0, fdfilter->data->length));
+	for(j = 0; j < fdfilter->data->length; j++) {
+		fdfilter->data->data[j].re /= norm;
+		fdfilter->data->data[j].im /= norm;
+	}
 
 	/* clean up and return filter */
 	XLALDestroyREAL4Sequence(tdfilter);
