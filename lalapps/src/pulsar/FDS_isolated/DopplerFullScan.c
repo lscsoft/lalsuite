@@ -148,6 +148,7 @@ InitDopplerFullScan(LALStatus *status,
 	latticeInit.ephemeris = init->ephemeris;
 	
 	TRY ( InitDopplerLatticeScan ( status->statusPtr, &(thisScan->latticeScan), &latticeInit ), status );
+	thisScan->state = STATE_READY;
       }
       
       break;
@@ -279,19 +280,17 @@ XLALNumDopplerTemplates ( DopplerFullScanState *scan)
 int
 XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
 { 
+  int ret;
+  const CHAR *fn = "XLALNextDopplerPos()";
 
   /* This traps coding errors in the calling routine. */
-  if ( pos == NULL || scan == NULL )
-    {
-      xlalErrno = XLAL_EINVAL;
-      return -1;
-    }
-  if ( scan->state == STATE_IDLE )
-    {
-      LALPrintError ("\nCalled XLALNextDopplerPos() on un-initialized DopplerFullScanState !\n\n");
-      xlalErrno = XLAL_EINVAL;
-      return -1;
-    }
+  if ( pos == NULL || scan == NULL ) {
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  if ( scan->state == STATE_IDLE ) {
+    LALPrintError ("\nCalled XLALNextDopplerPos() on un-initialized DopplerFullScanState !\n\n");
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
 
   /* is this search finished? then return '1' */
   if (  scan->state == STATE_FINISHED ) 
@@ -327,7 +326,26 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
       break;
 
     case GRID_METRIC_LATTICE:
-      LogPrintf ( LOG_NORMAL, "Stepping not implemented yet for lattice-grid!\n"); 
+      ret = XLALadvanceLatticeIndex ( scan->latticeScan );
+      if ( ret < 0 ) {
+	XLAL_ERROR ( fn, XLAL_EFUNC );
+      }
+      else if ( ret == 1 )
+	{
+	  LALPrintError ( "\n\nXLALadvanceLatticeIndex(): no more lattice points!\n\n");
+	  scan->state = STATE_FINISHED;
+	}
+      if ( XLALgetCurrentDopplerPos ( pos, scan->latticeScan, COORDINATESYSTEM_EQUATORIAL ) ) {
+	XLAL_ERROR ( fn, XLAL_EFUNC );
+      }
+      { /* debugging */
+	gsl_vector_int *index = NULL;
+	XLALgetCurrentLatticeIndex ( &index, scan->latticeScan );
+	fprintf (stderr, "\nIndex = ");
+	XLALfprintfGSLvector_int ( stderr, "%d", index );
+	gsl_vector_int_free ( index );
+      }
+
       break;
 
     default:
@@ -437,6 +455,10 @@ FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan)
   if ( (*scan)->covering )
     XLALREAL8VectorListDestroy ( (*scan)->covering );
 
+  if ( (*scan)->latticeScan ) {
+    TRY ( FreeDopplerLatticeScan ( status->statusPtr, &((*scan)->latticeScan) ), status );
+  }
+
   LALFree ( (*scan) );
   (*scan) = NULL;
 
@@ -454,7 +476,7 @@ loadFullGridFile ( LALStatus *status,
 		   DopplerFullScanState *scan, 
 		   const DopplerFullScanInit *init 
 		   )
-{
+  {
   LALParsedDataFile *data = NULL;
   REAL8VectorList head = empty_REAL8VectorList;
   REAL8VectorList *tail = NULL;

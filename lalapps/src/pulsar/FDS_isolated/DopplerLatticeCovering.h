@@ -58,6 +58,11 @@ typedef struct tagDopplerLatticeScan DopplerLatticeScan;
 void InitDopplerLatticeScan(LALStatus *, DopplerLatticeScan **scan, const DopplerLatticeInit *init );
 void FreeDopplerLatticeScan ( LALStatus *status, DopplerLatticeScan **scan );
 
+int XLALgetCurrentLatticeIndex ( gsl_vector_int **index, const DopplerLatticeScan *scan  );
+int XLALsetCurrentLatticeIndex ( DopplerLatticeScan *scan, const gsl_vector_int *index );
+int XLALgetCurrentDopplerPos ( PulsarDopplerParams *pos, const DopplerLatticeScan *scan, CoordinateSystem skyCoords );
+int XLALadvanceLatticeIndex ( DopplerLatticeScan *scan );
+
 
 /* ----- variout utility functions ----- */
 

@@ -118,12 +118,6 @@ dopplerParams_t empty_dopplerParams;
 /*---------- Global variables ----------*/
 extern INT4 lalDebugLevel;
 
-/* ----- EXTERNAL API [FIXME: move to header-file] ----- */
-int XLALgetCurrentLatticeIndex ( gsl_vector_int **index, const DopplerLatticeScan *scan  );
-int XLALsetCurrentLatticeIndex ( DopplerLatticeScan *scan, const gsl_vector_int *index );
-int XLALgetCurrentDopplerPos ( PulsarDopplerParams *pos, const DopplerLatticeScan *scan, CoordinateSystem skyCoords );
-int XLALadvanceLatticeIndex ( DopplerLatticeScan *scan );
-
 /*---------- internal function prototypes ----------*/
 void skyRegionString2vect3D ( LALStatus *, vect3Dlist_t **skyRegionEcl, const CHAR *skyRegionString );
 void setupSearchRegion ( LALStatus *status, DopplerLatticeScan *scan, const DopplerRegion *searchRegion );
@@ -234,145 +228,6 @@ InitDopplerLatticeScan ( LALStatus *status,
   /* return final scan-state */
   ret->state = STATE_READY;
   (*scan) = ret;
-
-#if 1
-  { /* some debug-tests */
-    dopplerParams_t doppler = empty_dopplerParams;
-    gsl_vector *origin2 = NULL;
-    SkyPosition skypos = empty_SkyPosition;
-    int inside;
-    if ( convertCanonical2Doppler ( &doppler, ret->canonicalOrigin, ret->dopplerUnits ) ) {
-      ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );
-    }
-    inside = isDopplerInsideBoundary ( &doppler, &(ret->boundary) );
-    fprintf (stderr, "Doppler inside boundary: %d\n", inside );
-    fprintf (stderr, "\norigin: vn = { %f, %f}, fkdot = { %f, %g, %g, %g }\n", 
-	     doppler.vn[0], doppler.vn[1], 
-	     doppler.fkdot[0], doppler.fkdot[1], doppler.fkdot[2], doppler.fkdot[3] 
-	     );
-    if ( convertDoppler2Canonical ( &origin2, &doppler, ret->dopplerUnits ) ) {
-      ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );
-    }
-    fprintf (stderr, "\norigin2 = ");
-    XLALfprintfGSLvector ( stderr, "% .9e ", origin2 );
-    fprintf ( stderr, "\n");
-
-    skypos.system = COORDINATESYSTEM_EQUATORIAL;
-    if ( vect2DToSkypos ( &skypos, (const vect2D_t*)&(doppler.vn), ret->boundary.hemisphere ) ) {
-      ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );
-    }
-    fprintf (stderr, "\nSkypos: Alpha = %f, Delta = %f\n\n", skypos.longitude, skypos.latitude );
-  }
-#if 0
-  {
-    gsl_vector *canOffs = NULL;
-    gsl_vector_int_set ( ret->index, 0, 1 );
-    fprintf (stderr, "index = ");
-    XLALfprintfGSLvector_int ( stderr, "%d", ret->index );
-    if ( indexToCanonical ( &canOffs, ret->index, ret->latticeGenerator ) ) {
-      ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );
-    }
-    fprintf ( stderr, "\noffset = ");
-    XLALfprintfGSLvector ( stderr, "% .9e ", canOffs );
-    fprintf ( stderr, "\n");
-    gsl_vector_free ( canOffs );
-  }
-#endif
-
-  {
-    PulsarDopplerParams dopplerpos;
-    if ( XLALgetCurrentDopplerPos ( &dopplerpos, ret, COORDINATESYSTEM_EQUATORIAL ) ) {
-      ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );    
-    }
-    printf ("\nCurrent Doppler-position: {Freq, Alpha, Delta, f1dot, f2dot, f3dot} = {%f, %f, %f, %g, %g, %g}\n\n",
-	    dopplerpos.fkdot[0], dopplerpos.Alpha, dopplerpos.Delta, 
-	    dopplerpos.fkdot[1], dopplerpos.fkdot[2], dopplerpos.fkdot[3] );
-  }
-
-  {
-    int res = XLALadvanceLatticeIndex ( ret );
-    if ( res < 0 ) {
-      LALPrintError ( "\n\nXLALadvanceLatticeIndex() failed!\n\n");
-      ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );    
-    }
-    else if ( res == 1 )
-      {
-	LALPrintError ( "\n\nXLALadvanceLatticeIndex(): no more lattice points!\n\n");
-      }
-      
-    {
-      PulsarDopplerParams dopplerpos;
-      gsl_vector_int *index = NULL;
-      if ( XLALgetCurrentDopplerPos ( &dopplerpos, ret, COORDINATESYSTEM_EQUATORIAL ) ) {
-	ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );    
-      }
-      if ( XLALgetCurrentLatticeIndex ( &index, ret ) ) {
-	ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );    
-      }
-      fprintf (stderr, "\nNew index = ");
-      XLALfprintfGSLvector_int ( stderr, "%d", index );
-      printf ("\nNew Doppler-position: {Freq, Alpha, Delta, f1dot, f2dot, f3dot} = {%f, %f, %f, %g, %g, %g}\n\n",
-	      dopplerpos.fkdot[0], dopplerpos.Alpha, dopplerpos.Delta, 
-	      dopplerpos.fkdot[1], dopplerpos.fkdot[2], dopplerpos.fkdot[3] );
-    }
-  }
-  {
-    int res = XLALadvanceLatticeIndex ( ret );
-    if ( res < 0 ) {
-      LALPrintError ( "\n\nXLALadvanceLatticeIndex() failed!\n\n");
-      ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );    
-    }
-    else if ( res == 1 )
-      {
-	LALPrintError ( "\n\nXLALadvanceLatticeIndex(): no more lattice points!\n\n");
-      }
-    
-    {
-      PulsarDopplerParams dopplerpos;
-      gsl_vector_int *index = NULL;
-      if ( XLALgetCurrentDopplerPos ( &dopplerpos, ret, COORDINATESYSTEM_EQUATORIAL ) ) {
-	ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );    
-      }
-      if ( XLALgetCurrentLatticeIndex ( &index, ret ) ) {
-	ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );    
-      }
-      fprintf (stderr, "\nNew index = ");
-      XLALfprintfGSLvector_int ( stderr, "%d", index );
-      printf ("\nNew Doppler-position: {Freq, Alpha, Delta, f1dot, f2dot, f3dot} = {%f, %f, %f, %g, %g, %g}\n\n",
-	      dopplerpos.fkdot[0], dopplerpos.Alpha, dopplerpos.Delta, 
-	      dopplerpos.fkdot[1], dopplerpos.fkdot[2], dopplerpos.fkdot[3] );
-    }
-  }
-  {
-    int res = XLALadvanceLatticeIndex ( ret );
-    if ( res < 0 ) {
-      LALPrintError ( "\n\nXLALadvanceLatticeIndex() failed!\n\n");
-      ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );    
-    }
-    else if ( res == 1 )
-      {
-	LALPrintError ( "\n\nXLALadvanceLatticeIndex(): no more lattice points!\n\n");
-      }
-    
-    {
-      PulsarDopplerParams dopplerpos;
-      gsl_vector_int *index = NULL;
-      if ( XLALgetCurrentDopplerPos ( &dopplerpos, ret, COORDINATESYSTEM_EQUATORIAL ) ) {
-	ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );    
-      }
-      if ( XLALgetCurrentLatticeIndex ( &index, ret ) ) {
-	ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );    
-      }
-      fprintf (stderr, "\nNew index = ");
-      XLALfprintfGSLvector_int ( stderr, "%d", index );
-      printf ("\nNew Doppler-position: {Freq, Alpha, Delta, f1dot, f2dot, f3dot} = {%f, %f, %f, %g, %g, %g}\n\n",
-	      dopplerpos.fkdot[0], dopplerpos.Alpha, dopplerpos.Delta, 
-	      dopplerpos.fkdot[1], dopplerpos.fkdot[2], dopplerpos.fkdot[3] );
-    }
-  }
-
-
-#endif
 
   DETATCHSTATUSPTR ( status );
   RETURN ( status );
@@ -854,9 +709,6 @@ indexToCanonical ( gsl_vector **canonical, const gsl_vector_int *index, const Do
 
     } /* i < dim */
 
-  fprintf (stderr, "\nCanonical offset = ");
-  XLALfprintfGSLvector ( stderr, "%g", (*canonical) );
-
   if ( gsl_vector_add ( *canonical, scan->canonicalOrigin ) ) {
     return -1;
   }
@@ -947,7 +799,7 @@ skyRegionString2vect3D ( LALStatus *status,
   SkyRegion region = empty_SkyRegion;
   UINT4 i;
 
-  INITSTATUS( status, "skyRegionString2list", DOPPLERLATTICECOVERING );
+  INITSTATUS( status, "skyRegionString2vect3D()", DOPPLERLATTICECOVERING );
   ATTATCHSTATUSPTR ( status );
 
   ASSERT ( skyRegion, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );  
@@ -967,6 +819,9 @@ skyRegionString2vect3D ( LALStatus *status,
   
   for ( i=0; i < region.numVertices; i ++ )
     skyposToVect3D ( &(ret->data[i]), &(region.vertices[i]) );
+
+  /* free memory */
+  LALFree ( region.vertices );
 
   /* return sky-region */
   (*skyRegion) = ret;
