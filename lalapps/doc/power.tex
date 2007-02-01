@@ -171,6 +171,7 @@ simulated data.
 \option{--channel-name}~\parm{string} \newline \hspace*{0.5in}
 [\option{--cluster}] \newline \hspace*{0.5in}
 [\option{--debug-level}~\parm{level}] \newline \hspace*{0.5in}
+[\option{--dump-diagnostics~\parm{XML filename}}] \newline \hspace*{0.5in}
 \option{--filter-corruption}~\parm{samples} \newline \hspace*{0.5in}
 \option{--frame-cache}~\parm{cache file} \newline \hspace*{0.5in}
 \option{--frame-dir}~\parm{directory} \newline \hspace*{0.5in}
@@ -187,8 +188,6 @@ simulated data.
 [\option{--mdc-cache}~\parm{cache file}] \newline \hspace*{0.5in}
 [\option{--mdc-channel}~\parm{channel name}] \newline \hspace*{0.5in}
 [\option{--noise-amplitude}~\parm{amplitude}] \newline \hspace*{0.5in}
-[\option{--printData}] \newline \hspace*{0.5in}
-[\option{--printSpectrum}] \newline \hspace*{0.5in}
 \option{--psd-average-method}~\parm{method} \newline \hspace*{0.5in}
 \option{--psd-average-points}~\parm{samples} \newline \hspace*{0.5in}
 [\option{--ram-limit}~\parm{MebiBytes}] \newline \hspace*{0.5in}
@@ -301,6 +300,10 @@ Sets the LAL debug level to \parm{level}.  The default value is
 padding, but keeps memory tracking and error messages.  If you want to turn
 off memory tracking completely, then use 33.
 
+\item[\option{--dump-diagnostics \parm{XML filename}}]
+Dump diagnostic snapshots of internal time and frequency series data to a
+LIGO Light Weight XML file of the given name.  The file is overwritten.
+
 \item[\option{--filter-corruption} \parm{samples}]
 The input time series data is passed through a conditioning filter prior to
 analysis.  Generally, the conditioning filter should be expected to corrupt
@@ -391,16 +394,6 @@ injections.
 If this parameter is provided, then Gaussian white noise will be mixed with
 the input data.  If neither \option{--frame-cache} nor \option{--frame-dir}
 is provided, then the noise will be the only data analyzed.
-
-\item[\option{--printData}]
-Print the input time series at various stages of conditioning to data files
-for diagnostic purposes.  Generally a version of the input time series is
-dumped before and after each round of injections is made.
-
-\item[\option{--printSpectrum}]
-Print the average PSD measured over each PSD interval as well as the
-frequency-domain representation of each analysis window to data files.
-This is used for diagnostics.
 
 \item[\option{--psd-average-method} \parm{method}]
 Set the averaging method used in determining the average power spectral
