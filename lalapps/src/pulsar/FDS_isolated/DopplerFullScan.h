@@ -62,6 +62,7 @@ typedef struct {
   DopplerRegion searchRegion;		/**< Doppler-space region to be covered + scanned */
   DopplerGridType gridType;		/**< which type of grid to generate */  
   LALPulsarMetricType metricType; 	/**< which metric to use if GRID_METRIC */
+  BOOLEAN projectMetric;		/**< project metric on f=const subspace */
   PulsarDopplerParams stepSizes;	/**< user-settings for stepsizes if GRID_FLAT */
   REAL8 metricMismatch;			/**< for GRID_METRIC and GRID_ISOTROPIC */
   LIGOTimeGPS startTime;		/**< start-time of the observation */

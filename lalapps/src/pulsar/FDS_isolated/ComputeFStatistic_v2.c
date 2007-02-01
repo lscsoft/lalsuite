@@ -161,6 +161,7 @@ CHAR *uvar_ephemDir;
 CHAR *uvar_ephemYear;
 INT4  uvar_gridType;
 INT4  uvar_metricType;
+BOOLEAN uvar_projectMetric;
 REAL8 uvar_metricMismatch;
 CHAR *uvar_skyRegion;
 CHAR *uvar_DataFiles;
@@ -493,6 +494,7 @@ initUserVars (LALStatus *status)
   
   uvar_TwoFthreshold = 10.0;
   uvar_metricType =  LAL_PMETRIC_NONE;
+  uvar_projectMetric = TRUE;
   uvar_gridType = GRID_FLAT;
 
   uvar_metricMismatch = 0.02;
@@ -578,6 +580,7 @@ initUserVars (LALStatus *status)
 
   LALregSTRINGUserVar(status,	skyGridFile,	 0,  UVAR_DEVELOPER, "[OBSOLETE: use --gridFile] Load sky-grid from this file.");
   LALregINTUserVar(status,	upsampleSFTs,	 0,  UVAR_DEVELOPER, "(integer) Factor to up-sample SFTs by");
+  LALregBOOLUserVar(status, 	projectMetric, 	 0,  UVAR_DEVELOPER, "Use projected metric on Freq=const subspact");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -904,6 +907,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     scanInit.gridType = uvar_gridType;
     scanInit.gridFile = gridFile;
     scanInit.metricType = uvar_metricType;
+    scanInit.projectMetric = uvar_projectMetric;
     scanInit.metricMismatch = uvar_metricMismatch;
     scanInit.stepSizes = cfg->stepSizes;
     scanInit.ephemeris = cfg->ephemeris;		/* used by Ephemeris-based metric */

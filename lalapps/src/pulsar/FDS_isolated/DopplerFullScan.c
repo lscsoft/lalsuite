@@ -197,7 +197,7 @@ initFactoredGrid (LALStatus *status,
   skyScanInit.gridType = init->gridType;
   skyScanInit.metricType = init->metricType;
   skyScanInit.metricMismatch = init->metricMismatch;
-  skyScanInit.projectMetric = TRUE;
+  skyScanInit.projectMetric = init->projectMetric;
   skyScanInit.obsBegin = init->startTime;
   skyScanInit.obsDuration = init->Tspan;
 
@@ -326,18 +326,20 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
       break;
 
     case GRID_METRIC_LATTICE:
+      if ( XLALgetCurrentDopplerPos ( pos, scan->latticeScan, COORDINATESYSTEM_EQUATORIAL ) ) {
+	XLAL_ERROR ( fn, XLAL_EFUNC );
+      }
+      /* advance to next point */
       ret = XLALadvanceLatticeIndex ( scan->latticeScan );
       if ( ret < 0 ) {
 	XLAL_ERROR ( fn, XLAL_EFUNC );
       }
       else if ( ret == 1 )
 	{
-	  LALPrintError ( "\n\nXLALadvanceLatticeIndex(): no more lattice points!\n\n");
+	  LALPrintError ( "\n\nXLALadvanceLatticeIndex(): this was the last lattice points!\n\n");
 	  scan->state = STATE_FINISHED;
 	}
-      if ( XLALgetCurrentDopplerPos ( pos, scan->latticeScan, COORDINATESYSTEM_EQUATORIAL ) ) {
-	XLAL_ERROR ( fn, XLAL_EFUNC );
-      }
+
       { /* debugging */
 	gsl_vector_int *index = NULL;
 	XLALgetCurrentLatticeIndex ( &index, scan->latticeScan );
