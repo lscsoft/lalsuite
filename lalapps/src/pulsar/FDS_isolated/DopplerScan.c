@@ -227,25 +227,25 @@ InitDopplerSkyScan( LALStatus *status,
     case GRID_FLAT:		/* flat-grid: constant dAlpha, dDelta */
       TRY ( buildFlatSkyGrid( status->statusPtr, &(skyScan->skyGrid), &(skyScan->skyRegion), init->dAlpha, init->dDelta), status);
       break;
-
+      
     case GRID_ISOTROPIC: 	/* variant of manual stepping: try to produce an isotropic mesh */
       TRY ( buildIsotropicSkyGrid( status->statusPtr, &(skyScan->skyGrid), &(skyScan->skyRegion), init->dAlpha, init->dDelta), status);
       break;
-
+      
     case GRID_METRIC:
       TRY ( buildMetricSkyGrid (status->statusPtr, &(skyScan->skyGrid), &(skyScan->skyRegion), init), status);
       break;
-
+      
     case GRID_METRIC_SKYFILE:
     case GRID_FILE_SKYGRID:
       TRY ( loadSkyGridFile (status->statusPtr, &skyScan->skyGrid, init->skyGridFile, &skyScan->skyRegion), status);
       break;
-
+      
     default:
       LogPrintf (LOG_CRITICAL, "Unknown grid-type `%d`\n\n", init->gridType);
       ABORT ( status, DOPPLERSCANH_EMETRICTYPE, DOPPLERSCANH_MSGEMETRICTYPE);
       break;
-
+      
     } /* switch (metric) */
 
   /* NOTE: we want to make sure we return at least one grid-point: 
@@ -849,7 +849,7 @@ buildFlatSkyGrid (LALStatus *status,
   ASSERT ( *skyGrid == NULL, status, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL);
 
   if ( skyRegion->numVertices < 3 )	/* got no surface to cover */
-    return;
+    goto done;
 
   thisPoint = skyRegion->lowerLeft;	/* start from lower-left corner */
 
@@ -887,7 +887,7 @@ buildFlatSkyGrid (LALStatus *status,
 
   *skyGrid = head.next;	/* return final grid-list */
 
-  
+ done:
   RETURN (status);
 
 } /* buildFlatSkyGrid */
@@ -913,7 +913,7 @@ buildIsotropicSkyGrid (LALStatus *status, DopplerSkyGrid **skyGrid, const SkyReg
   ASSERT ( *skyGrid == NULL, status, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL);
 
   if ( skyRegion->numVertices < 3 )	/* got no surface to cover */
-    return;
+    goto done;
 
   thisPoint = skyRegion->lowerLeft;	/* start from lower-left corner */
 
@@ -956,6 +956,7 @@ buildIsotropicSkyGrid (LALStatus *status, DopplerSkyGrid **skyGrid, const SkyReg
 
   *skyGrid = head.next;	/* set result: could be NULL! */
 
+ done:
   RETURN (status);
 
 } /* buildIsotropicSkyGrid() */
@@ -993,7 +994,7 @@ buildMetricSkyGrid (LALStatus *status,
 	   status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
 
   if ( skyRegion->numVertices < 3 )	/* got no surface to cover */
-    return;
+    goto done;
 
   thisPoint = skyRegion->lowerLeft;	/* start from lower-left corner */
   
@@ -1041,6 +1042,7 @@ buildMetricSkyGrid (LALStatus *status,
   /* get rid of 2D-mesh */
   TRY ( LALDestroyTwoDMesh ( status->statusPtr,  &mesh2d, 0), status);
 
+ done:
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
@@ -1748,3 +1750,17 @@ getMetricEllipse(LALStatus *status,
 
 } /* getMetricEllipse() */
 
+/** Debug-output of PulsarDopplerParams struct */
+int
+fprintfDopplerParams ( FILE *fp, const PulsarDopplerParams *params )
+{
+  if ( !fp || !params )
+    return -1;
+
+  fprintf ( fp, " sky = {%f, %f}, fkdot = { %f, %g, %g, %g }\n",
+	    params->Alpha, params->Delta, 
+	    params->fkdot[0], params->fkdot[1], params->fkdot[2], params->fkdot[3]
+	    );
+
+  return 0;
+} /* printfDopplerParams() */

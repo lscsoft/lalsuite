@@ -187,6 +187,8 @@ void SkySquare2String (LALStatus *, CHAR **string, REAL8 Alpha, REAL8 Delta, REA
 void getMCDopplerCube (LALStatus *, DopplerRegion *cube, PulsarDopplerParams signal, UINT4 PointsPerDim, const DopplerSkyScanInit *params);
 void getMetricEllipse(LALStatus *, MetricEllipse *ellipse, REAL8 mismatch, const REAL8Vector *metric, UINT4 dim0);
 
+int fprintfDopplerParams ( FILE *fp, const PulsarDopplerParams *params );
+
 #ifdef  __cplusplus
 }
 #endif  
