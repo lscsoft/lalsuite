@@ -306,3 +306,29 @@ XLALfprintfGSLvector ( FILE *fp, const char *fmt, const gsl_vector *vect )
   return 0;
 
 } /* XLALprintGSLvector() */
+
+int
+XLALfprintfGSLvector_int ( FILE *fp, const char *fmt, const gsl_vector_int *vect )
+{
+  int rows;
+  int i;
+
+  /* check user input */
+  if ( !vect || !fp || !fmt )
+    return -1;
+
+  rows = vect->size;
+
+  fprintf (fp, " [ " );
+  for ( i=0; i < rows; i ++ )
+    {
+      fprintf (fp, fmt, gsl_vector_int_get ( vect, i ) );
+      if ( i < rows - 1 )
+	fprintf (fp, ", ");
+    } /* for i < rows */
+
+  fprintf (fp, " ];\n" );
+  
+  return 0;
+
+} /* XLALprintGSLvector_int() */

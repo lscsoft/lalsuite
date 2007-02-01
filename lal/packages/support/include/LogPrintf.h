@@ -67,6 +67,8 @@ void LogPrintf (LogLevel_t, const char* format, ...);
 void LogPrintfVerbatim (LogLevel_t, const char* format, ...);
 
 int XLALfprintfGSLmatrix ( FILE *fp, const char *fmt, const gsl_matrix *gij );
+int XLALfprintfGSLvector ( FILE *fp, const char *fmt, const gsl_vector *vect );
+int XLALfprintfGSLvector_int ( FILE *fp, const char *fmt, const gsl_vector_int *vect );
 
 #ifdef  __cplusplus
 }
