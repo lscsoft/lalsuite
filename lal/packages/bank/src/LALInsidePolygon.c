@@ -7,9 +7,9 @@ $Id$
 
 \subsection{Module \texttt{LALInsidePolygon.c}}
 
-Module to check whether a point with coordinates (x,y) in inside 
-a polygon defined by the vectors (vx, vy). The functions returns 1 if 
-the point is inside or 0 otherwise. 
+Module to check whether a point with coordinates (x0,y0) is inside 
+a polygon defined by the vectors (vx, vy), which size (n) must be 
+provided. The functions returns 1 if the point is inside or 0 otherwise. 
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
@@ -17,8 +17,8 @@ the point is inside or 0 otherwise.
 \idx{LALInsidePolygon()}
 \begin{itemize}
    \item \texttt{vx, vy} Input, two arrays of floats defining the polygon. 
-   \item \texttt{x, y} Input, coordinate of the point to look at.
    \item \texttt{n} Input, the size of the vectors.
+   \item \texttt{x0, y0} Input, the coordinate of the point.
    \item \texttt{valid} Output, 0 if outside and 1 if inside.
 \end{itemize}
 
