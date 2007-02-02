@@ -10,6 +10,7 @@ LALInspiralComputeMetric.c\
 LALInspiralComputeParams.c\
 LALInspiralCreateCoarseBank.c\
 LALInspiralCreateFineBank.c\
+LALInspiralHexagonalBank.c\
 LALInspiralLongestTemplateInBank.c\
 LALInspiralMoments.c\
 LALInspiralMomentsIntegrand.c\

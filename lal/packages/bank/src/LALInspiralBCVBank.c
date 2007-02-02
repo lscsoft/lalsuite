@@ -139,18 +139,6 @@ LALRalloc()
 #include <lal/FindRoot.h>
 
 
-/* Thomas:: temporary definition for SPA hexagonal grid. */
-static REAL4  A0;
-static REAL4  A3;
-
-typedef struct{
-REAL4 ct;
-REAL4 b;
-}
-PRIN;
-
-static void LALSPAF(LALStatus *status,  REAL4 *result, REAL4 x, void *t3);
-/* end comments ::Thomas */
 
 static void 
 PSItoMasses (
@@ -160,7 +148,7 @@ PSItoMasses (
 );
 
 
-NRCSID(LALINSPIRALCREATECOARSEBANKC, "$Id$");
+NRCSID(LALINSPIRALBCVBANKC, "$Id$");
 
 
 
@@ -185,7 +173,7 @@ LALInspiralCreateBCVBank (
   static REAL4VectorSequence *tempList=NULL;
 
   INITSTATUS( status, "LALInspiralCreateBCVBank", 
-      LALINSPIRALCREATECOARSEBANKC );
+      LALINSPIRALBCVBANKC );
   ATTATCHSTATUSPTR( status );
 
   ASSERT( coarseIn.psi0Min > 0., status,
@@ -321,7 +309,7 @@ LALInspiralCreateFlatBank (
   UINT4 nlist = 0;
 
   INITSTATUS( status, "LALInspiralCreateFlatBank", 
-      LALINSPIRALCREATECOARSEBANKC );
+      LALINSPIRALBCVBANKC );
   ATTATCHSTATUSPTR( status );
 
   /* From the knowledge of the metric and the minimal match find the */
@@ -370,7 +358,7 @@ LALInspiralBCVFcutBank (
   REAL8 frac, fendBCV;
   REAL4 LowGM, HighGM;
 
-  INITSTATUS( status, "LALInspiralBCVFcutBank", LALINSPIRALCREATECOARSEBANKC );
+  INITSTATUS( status, "LALInspiralBCVFcutBank", LALINSPIRALBCVBANKC );
 
   nf = coarseIn.numFcutTemplates;
   ndx = nlist = *NList;
@@ -516,7 +504,7 @@ LALInspiralBCVBankFcutS3S4 (
   INT4  nf;
   
 
-  INITSTATUS( status, "LALInspiralBCVBankFcutS3S4", LALINSPIRALCREATECOARSEBANKC );
+  INITSTATUS( status, "LALInspiralBCVBankFcutS3S4", LALINSPIRALBCVBANKC );
 
   nf    = coarseIn.numFcutTemplates;
 
@@ -629,7 +617,7 @@ LALInspiralBCVRegularFcutBank (
   UINT4 i,nf, nlist, j, ndx;
   REAL8 fendBCV;
 
-  INITSTATUS( status, "LALInspiralBCVFcutBank", LALINSPIRALCREATECOARSEBANKC );
+  INITSTATUS( status, "LALInspiralBCVFcutBank", LALINSPIRALBCVBANKC );
 
   nf = coarseIn.numFcutTemplates;
   ndx = nlist = *NList;
@@ -731,7 +719,7 @@ LALInspiralCreateFlatBankS3S4 (
 
   
   INITSTATUS( status, "LALInspiralCreateFlatBankS3S4", 
-      LALINSPIRALCREATECOARSEBANKC );
+      LALINSPIRALBCVBANKC );
   ATTATCHSTATUSPTR( status );
 
   
@@ -903,7 +891,7 @@ LALExcludeTemplate(
   REAL4 psi3Int = -10000.;
 
   INITSTATUS( status, "LALExcludeTemplate", 
-      LALINSPIRALCREATECOARSEBANKC );
+      LALINSPIRALBCVBANKC );
   ATTATCHSTATUSPTR( status );
  
 
