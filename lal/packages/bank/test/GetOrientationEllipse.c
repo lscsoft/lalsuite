@@ -1,42 +1,39 @@
-/* <lalVerbatim file="SpaceCoveringCV">
+/* <lalVerbatim file="GetOrientationEllipseCV">
 Author: Thomas Cokelaer 
 $Id$
 </lalVerbatim> */
 
 /* <lalLaTeX>
-\subsection{Program \texttt{SpaceCovering.c}}
-\label{ss:SpaceCovering.c}
+\subsection{Program \texttt{GetOrientationEllipse.c}}
+\label{ss:GetOrientationEllipse.c}
 
-Test code for the \texttt{bank} modules.
+Test code for the \texttt{bank} modules. 
+
 
 \subsubsection*{Usage}
 \begin{verbatim}
-SpaceCovering --template [TaylorT1, EOB ....] --grid-type [square, hexagonal, squareOriented, hexagonalOriented]
+./getOrientationEllipse
 \end{verbatim}
 
 \subsubsection*{Description}
 
-This test code gives an example of how to generate a template bank and
-generates vertices of the ambiguity 'rectangle' around each lattice point
-suitable for plotting with xmgr or xgrace.
+This code illustrates the use of several functions such as  \texttt{LALInspiralParameterCalc}, 
+\texttt{LALGetInspiralMoments}, and \texttt{LALInspiralComputeMetric}. It shows how to defined 
+a suitable \texttt{InspiralCoarseBankIn} structure so as to extract the metric components for a set of
+binary parameters. In this example, we first declare all the relevant parameter needed (minimum 
+and maximum mass, fLower, design sensitivity curve and so on), which can be changed by the user 
+before compilation.
 
-\subsubsection*{Exit codes}
-\input{CoarseTest2CE}
-
-\subsubsection*{Uses}
-\begin{verbatim}
-lalDebugLevel
-LALRectangleVertices
-LALInspiralCreateCoarseBank
-\end{verbatim}
+Then, a loop spans a square parameter space defined by tau0 in the range [.1,40] seconds and 
+tau3 in [1, 2] seconds. For each set of parameter, the metric is computed and the code prints on 
+stdout the value of the coordinate used (tau0, tau3) and the orientation of the metric
+in degrees. We do not check whether a template is valid or not in this code but one could have 
+use a function such as \texttt{LALInspiralValidtemplate} to do so. 
 
 \subsubsection*{Notes}
-
-\vfill{\footnotesize\input{CoarseTest2CV}}
+\vfill{\footnotesize\input{GetOrientationEllipseCV}}
 </lalLaTeX> */
 
-/* <lalErrTable file="CoarseTest2CE"> */
-/* </lalErrTable> */
 
 #include <stdio.h>
 #include <lal/AVFactories.h>
@@ -44,13 +41,6 @@ LALInspiralCreateCoarseBank
 #include <lal/LALNoiseModels.h>
 
 
-void LALInspiralCreateBoundarySpace(InspiralCoarseBankIn coarseIn);
-
-typedef struct {
-  int calque;
-   int gridSpacing;
-}
-UserParams; 
 
 INT4 lalDebugLevel=33;
 
@@ -62,17 +52,18 @@ main(int argc, char **argv)
   static LALStatus status;     
   /* Structure specifying the nature of the bank needed */
   static InspiralCoarseBankIn coarseIn;
-
-
-
-  /*  void *noisemodel = LALLIGOIPsd;*/
   void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALVIRGOPsd;
-  UINT4   j, numPSDpts=262144/4/4;
+  UINT4   j, numPSDpts=262144/4/4; /*Size of the vectors*/
   InspiralTemplate tempPars;
   InspiralMetric metric;
   InspiralMomentsEtc moments;
 
 
+  /* In order to use any functions related to the metric, we need to fill the
+   * coarseIn structure which is defined here. The most important are the
+   * mMin, mMax and fLower parameters which influence the size of the
+   * parameter space and metric. Of course, mmCoarse, the minimal match is
+   * also relevant. */
   coarseIn.LowGM        = -2;
   coarseIn.HighGM       = 6;
   coarseIn.fLower       = 20.L;
@@ -90,13 +81,15 @@ main(int argc, char **argv)
   /* coarseIn.massRange = MinComponentMassMaxTotalMass;*/
   /* minimum value of eta */
   coarseIn.etamin       = coarseIn.mMin * ( coarseIn.MMax - coarseIn.mMin) / pow(coarseIn.MMax,2.);
-  coarseIn.psi0Min      = 1.e0;
+/*  coarseIn.psi0Min      = 1.e0;
   coarseIn.psi0Max      = 2.5e4;
   coarseIn.psi3Min      = -1e4;
   coarseIn.psi3Max      = -10;
   coarseIn.alpha        = 0.L;
   coarseIn.numFcutTemplates = 4;
+*/
 
+  /* init the vector for the PSD */
   memset( &(coarseIn.shf), 0, sizeof(REAL8FrequencySeries) );
   coarseIn.shf.f0 = 0;
   LALDCreateVector( &status, &(coarseIn.shf.data), numPSDpts );
@@ -117,36 +110,36 @@ main(int argc, char **argv)
   LALInspiralSetParams( &status, &tempPars, coarseIn );
 
 
+  /* */
+  
   {
-    double tau0, tau3;
-    int validPars;
+    REAL4 tau0 = 0.;
+    REAL4 tau3 = 0.;
+    INT4 validPars = 0;
     InspiralBankParams bankPars, bankParsOld;
 
+    /* Get the limit of the parameter space*/
     LALInspiralSetSearchLimits( &status, &bankPars, coarseIn );
-
-    for (tau0=.1; tau0<40; tau0+=2){
+    /* Loop over a rectangle with pre-defined range in tau_0 and tau_3. We will
+     * then check if this is a valid template. */
+    for (tau0=.1; tau0<40; tau0+=1){
       for (tau3=.1; tau3<2; tau3+=0.1){
-	tempPars.t0= tau0;
-	tempPars.t3=tau3;
+	tempPars.t0 = tau0;
+	tempPars.t3 = tau3;
 	LALInspiralParameterCalc( &status, &tempPars );
+        /* Even for non physical template, we can get the metric componenets*/
 	LALGetInspiralMoments( &status, &moments, &coarseIn.shf, &tempPars );
 	LALInspiralComputeMetric( &status, &metric, &tempPars, &moments );
-	LALInspiralValidTemplate( &status,
-				  &validPars, bankPars, coarseIn );
-
-	validPars=1;
-	if (validPars) 
-	  printf("%f  %f %f\n", tempPars.t0, tempPars.t3, metric.theta*180/3.14159);
-	else
-	  printf("%f  %f %f\n", tempPars.t0, tempPars.t3, -1.);
+        /*Now, we simply ouput the values we are interested in : t0, t3 and
+         * angle. */
+	  
+        printf("%f  %f %f\n", tempPars.t0, tempPars.t3, metric.theta*180/3.14159);
 	fflush(stdout);
 
       }
     }
   }
 
-
-  LALInspiralCreateBoundarySpace(coarseIn);
 
   /* Free the list, and exit. */
 
@@ -157,148 +150,3 @@ main(int argc, char **argv)
 
 
 
-
-
-
-
-
-void LALInspiralCreateBoundarySpace(InspiralCoarseBankIn coarseIn)
-{
-
-  static InspiralTemplate p;
-  static LALStatus status;
-  
-  
-  
-  double mmin, mmax, Mmax, totalMmax, compmmin, m1, m2, finalmass;
-  
-  UINT2 type;
-  FILE *fpr;
-  
-  fpr = fopen("ChirpSpace.out", "w");
-  
-  /*
-    Change the parameters of the search space here 
-   
-    type=0 creates a region defined by mMin and mMax
-    i.e. maximum mass of the companion given by mMax
-    type=1 creates a region defined by mMin and MMax
-    i.e. total mass of the body given by MMax
-   */
-   type = 0;
-   mmin = coarseIn.mMin;
-   mmax = coarseIn.mMax;
-   Mmax = mmax*2.;
-   p.ieta=1; 
-   p.fLower=coarseIn.fLower; 
-  
-   /*
-    Don't change anything below: 
-   */
-   mmin = log10(mmin);
-   mmax = log10(mmax);
-   Mmax = log10(Mmax);
-
-   p.order = twoPN;
-
-   totalMmax = pow(10.,Mmax);
-   compmmin = pow(10.,mmin);
-   
-
-   p.massChoice=m1Andm2;
-   p.mass1 = compmmin;
-
-   if (type)
-     finalmass=Mmax;
-   else
-     finalmass=mmax;
-
-   for (m2=mmin; m2<=finalmass; m2+=0.01) {
-      p.mass2 = pow(10.,m2);
-      LALInspiralParameterCalc (&status, &p);
-      if (p.totalMass > totalMmax) break;
-      fprintf(fpr, "%e %e %e %e %e %e %e %e %e %e %e\n", 
-         p.t0,
-         p.t3,
-         p.t2,
-         p.mass2,
-         p.mass1, 
-         p.t4,
-         p.totalMass,
-         p.eta,
-         p.mu,
-         p.chirpMass,
-         p.tC);
-   }
-
-
-   if (type)
-   {
-	   p.totalMass = totalMmax;
-	   for (m2=log10(totalMmax-compmmin); m2>=mmin; m2-=0.01) 
-	   {
-		   p.mass2 = pow(10.,m2);
-		   if ((p.mass1=p.totalMass - p.mass2) > p.totalMass/2.) break;
-		   LALInspiralParameterCalc (&status, &p);
-		   fprintf(fpr, "%e %e %e %e %e %e %e %e %e %e %e\n", 
-				   p.t0,
-				   p.t3,
-				   p.t2,
-				   p.mass2,
-				   p.mass1, 
-				   p.t4,
-				   p.totalMass,
-				   p.eta,
-				   p.mu,
-				   p.chirpMass,
-				   p.tC);
-	   }
-   }
-   else
-   {
-	   p.totalMass = totalMmax;
-	   p.mass2 = p.totalMass/2.;
-	   for (m1=mmin; m1<=mmax; m1+=0.01) 
-	   {
-		   p.mass1 = pow(10.L,m1);
-		   LALInspiralParameterCalc (&status, &p);
-      
-		   if (p.totalMass > totalMmax) break;
-		   fprintf(fpr, "%e %e %e %e %e %e %e %e %e %e %e\n", 
-				   p.t0,
-				   p.t3,
-				   p.t2,
-				   p.mass2,
-				   p.mass1, 
-				   p.t4,
-				   p.totalMass,
-				   p.eta,
-				   p.mu,
-				   p.chirpMass,
-				   p.tC);
-	   }
-   }
-
-   p.massChoice=totalMassAndEta;
-   p.eta = 0.25;
-   for (m2=log10(totalMmax); m2>=mmin; m2-=0.01) {
-      if ((p.totalMass = pow(10.,m2)) < 2.*compmmin) break;
-      LALInspiralParameterCalc (&status, &p);
-      fprintf(fpr, "%e %e %e %e %e %e %e %e %e %e %e\n", 
-         p.t0,
-         p.t3,
-         p.t2,
-         p.mass2,
-         p.mass1, 
-         p.t4,
-         p.totalMass,
-         p.eta,
-         p.mu,
-         p.chirpMass,
-         p.tC);
-   }
-
-
-   fclose(fpr);
-
-}
