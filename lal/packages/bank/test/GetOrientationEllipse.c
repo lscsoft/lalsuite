@@ -17,18 +17,22 @@ Test code for the \texttt{bank} modules.
 
 \subsubsection*{Description}
 
-This code illustrates the use of several functions such as  \texttt{LALInspiralParameterCalc}, 
-\texttt{LALGetInspiralMoments}, and \texttt{LALInspiralComputeMetric}. It shows how to defined 
-a suitable \texttt{InspiralCoarseBankIn} structure so as to extract the metric components for a set of
-binary parameters. In this example, we first declare all the relevant parameter needed (minimum 
-and maximum mass, fLower, design sensitivity curve and so on), which can be changed by the user 
-before compilation.
+This code illustrates the use of several functions such as  
+\texttt{LALInspiralParameterCalc}, \texttt{LALGetInspiralMoments},
+and \texttt{LALInspiralComputeMetric}. It shows how to defined 
+a suitable \texttt{InspiralCoarseBankIn} structure so as to extract
+the metric components for a set of binary parameters. In this 
+example, we first declare all the relevant parameter needed 
+(minimum  and maximum mass, fLower, design sensitivity curve 
+and so on), which can be changed by the user before compilation.
 
-Then, a loop spans a square parameter space defined by tau0 in the range [.1,40] seconds and 
-tau3 in [1, 2] seconds. For each set of parameter, the metric is computed and the code prints on 
-stdout the value of the coordinate used (tau0, tau3) and the orientation of the metric
-in degrees. We do not check whether a template is valid or not in this code but one could have 
-use a function such as \texttt{LALInspiralValidtemplate} to do so. 
+Then, a loop spans a square parameter space defined by tau0 in the
+range [.1,40] seconds and tau3 in [1, 2] seconds. For each set of
+parameter, the metric is computed and the code prints on stdout 
+the value of the coordinate used (tau0, tau3) and the orientation 
+of the metric in degrees. We do not check whether a template is valid 
+or not in this code but one could have use a function such as 
+\texttt{LALInspiralValidtemplate} to do so. 
 
 \subsubsection*{Notes}
 \vfill{\footnotesize\input{GetOrientationEllipseCV}}
