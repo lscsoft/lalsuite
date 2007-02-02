@@ -1,5 +1,5 @@
 /* <lalVerbatim file="CoarseTestCV">
-Author: Churches, D. K. and Sathyaprakash, B. S.
+Author: Churches, D. K. and Sathyaprakash, B. S., Cokelaer, T
 $Id$
 </lalVerbatim> */
 
@@ -21,6 +21,10 @@ gives 2292 templates, while the same \texttt{mMin} but choosing \texttt{MMax}$=4
 instead gives 2512 templates -- about 10\% incrase. However, the extra templates are ALL
 short-lived templates and therefore potentially trigger a large number of false alarms,
 as noted by Brown in E7 analysis.
+
+This test code creates a template bank and stores it into CoarseTest.out . Then, it creates 
+a finer template bank around a sub-set of the original template bank and stores it in the 
+same output file.
 
 \subsubsection*{Usage}
 Input the following values of the InspiralCoarseBankIn structure to
@@ -134,17 +138,19 @@ main ( void )
    void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
    FILE *fpr;
   
+   /* output filename*/
    fpr = fopen("CoarseTest.out", "w");
 
+   /* define the two template banks*/
    coarseIn = (InspiralCoarseBankIn *)LALMalloc(sizeof(InspiralCoarseBankIn));
    fineIn = (InspiralFineBankIn *)LALMalloc(sizeof(InspiralFineBankIn));
 
+   /* fill the coarseBankIn structure */
    coarseIn->mMin = 1.0;
    coarseIn->mMax = 20.0;
    coarseIn->MMax = coarseIn->mMax * 2.0;
    coarseIn->massRange = MinComponentMassMaxTotalMass;
    /* coarseIn->massRange = MinMaxComponentMass; */
-
    coarseIn->mmCoarse = 0.95;
    coarseIn->mmFine = 0.97;
    coarseIn->fLower = 40.;
@@ -166,9 +172,9 @@ main ( void )
    coarseIn->shf.deltaF = coarseIn->tSampling / ( 2.L * (REAL8) coarseIn->shf.data->length + 1.L);
    LALNoiseSpectralDensity (&status, coarseIn->shf.data, noisemodel, coarseIn->shf.deltaF );
    
+   /* create and save the coarse bank */
    coarseIn->iflso = 0.;
    LALInspiralCreateCoarseBank(&status, &coarseList, &clist, *coarseIn);
-
    fprintf(fpr, "#clist=%d\n",clist);
    for (i=0; i<clist; i++) 
    {
@@ -184,6 +190,7 @@ main ( void )
 
   fprintf(fpr, "&\n");
 
+  /* Then creates the finer bank around some of the original template bank*/
   fineIn->coarseIn = *coarseIn;
   for (j=0; j<clist; j+=48) 
   {
