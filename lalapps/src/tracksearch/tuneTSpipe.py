@@ -59,6 +59,8 @@ class tuneObject:
         self.FApipeNames=[]
         self.DEpipeNames=[]
         self.pipeBuilder=cp.get('all','pipeProgram')
+        #Set the pickle file from Curves Found in FA_pipe run.
+        self.curveFoundPickle=[]
         #Create directory to place all pipes if not already present!
         buildDir(self.home)
     #End __init__ method 
@@ -200,13 +202,69 @@ class tuneObject:
             output_fp.close()
             formatContour = "%10.5f %10.5f %10.5f %10i\n"
             output_fp=open(self.home+'/FA_results_CurvesFound_MatlabPlot.dat','w')
+            lineData=[]
             for entry in auxoutData:
+                lineData.append([entry[0],entry[1],entry[6],entry[6]])
                 output_fp.write(formatContour % (float(entry[0]),
                                                  float(entry[1]),
                                                  float(entry[6]),
                                                  int(entry[6])))
+        pickleout_fp=open(self.home+'/FA_results_Found.pickle','w')
+        pickle.dump(lineData,pickleout_fp)
+        pickleout_fp.close()
         output_fp.close()
     #End __writeFAfiles__()
+    
+    def getBackground(self,LH,LL,curvePickleFile):
+        """
+        Uses specified pickle file to try and find the curves found at a given
+        LH and LL.  This is used as the off-source background rate.
+        """
+        if self.curveFoundPickle == []:
+            print "Pickle unopen trying to load:",curvePickleFile
+            print "Returning 1% of seen noise background rate, due to expected Z P,L choices."
+            if not(os.path.isfile(curvePickleFile)):
+                print "Did you remember to run the false alarm calculate feature? ./tuneTSpipe.py --file=file.tun -c"
+                os.abort()
+            input_fp=file(curvePickleFile,'r')
+            self.curveFoundPickle=pickle.load(input_fp)
+            self.curveFoundPickle.sort()
+            input_fp.close()
+            print "Done loading pickle jar."
+        start=0
+        stop=self.curveFoundPickle.__len__()
+        current=int(round(stop/2))
+        found=False
+        tries=0
+        #Ini file has z=4.5 is .99999 or a background of 0.00001
+        percentage=0.000001
+        while not(found):
+            #if tries > int(self.curveFoundPickle.__len__()/4):
+            if tries > 10:
+                "Error looking up parameters."
+                os.abort()
+            tries=tries+1
+            entry=self.curveFoundPickle[current]
+            [lh,ll]=[entry[0],entry[1]]
+#            print "C,F,H,==,<,>",current,"[",LH,LL,"]","[",lh,ll,"]",[LH,LL]==[lh,ll],[LH,LL]<[lh,ll],[LH,ll]>[lh,ll]
+            if [LH,LL]==[lh,ll]:
+                found=True
+                return int(percentage*entry[2])
+            elif ((current==start) or (current==stop)):
+                return int(0)
+            elif [LH,LL]<[lh,ll]:
+                tmp=current
+                current=current-int(round((current-start)/2.0))
+                stop=tmp
+            elif [LH,LL]>[lh,ll]:
+                tmp=current
+                current=current+int(round((stop-current)/2.0))
+                start=tmp
+            if current<start or current>stop:
+                return int(0)
+        print "This error should never happen!"
+        return int(0)
+    #End getBackground()
     
     def performFAsetup(self):
         buildDir(self.installPipes)
@@ -317,6 +375,7 @@ class tuneObject:
             countMe=countMe+1
             #Revising to avoid opening data files
             candidate=candidateList()
+            #print "Checking ",entry
             myStat=candidate.candidateStatsOnDisk(entry)
             if myStat == []:
                 curves=meanP=varP=stdP=meanL=stdL=0
@@ -330,9 +389,19 @@ class tuneObject:
                 meanL=myStat[5]
                 varL=myStat[6]
                 stdL=math.sqrt(varL)
+                maxP=myStat[7]
+                maxL=myStat[8]
                 #Threshold FAR values
                 threshP=meanP+(myFAR*stdP)
                 threshL=int(round(float((meanL+(myFAR*stdL)))))
+                if threshP < maxP:
+                    print "Threshold seems inappropriate:",threshP,maxP
+                    print "Resetting IP threshold to 1 event in data set!"
+                    threshP=maxP
+                if threshL < maxL:
+                    print "Threshold seems inappropriate:",threshL,maxL
+                    print "Resetting CL threshold to 1 event in data set!"
+                    threshL=maxL
             myOpts=str(str(entry).replace(self.installPipes,'').split('/')[1]).split('_')
             myLH=myOpts[1]
             myLL=myOpts[2]
@@ -484,7 +553,7 @@ class tuneObject:
         #count num of can files with 1 entry+
         #determine percentage succsessful
         #write 2 ranked 4c list lh ll #map percentage
-#        globFiles=self.__findLayer1GlobFiles__(self.installPipes2)
+        #globFiles=self.__findLayer1GlobFiles__(self.installPipes2)
         if self.cpIni.has_section('candidatethreshold'):
             globFiles=self.__findFiles__(self.installPipes2,['Glob','_1.candidates','DE_','Threshold:'])
         else:
@@ -528,20 +597,32 @@ class tuneObject:
         formatContour = "%10.5f %10.5f %10.5f %10i\n"
         file_fp=open(self.home+'/DE_results_L.dat','w')
         file2_fp=open(self.home+'/DE_results_Matlab_Length.dat','w')
+        file3_fp=open(self.home+'/DE_results_Matlab_Length_NoBack.dat','w')
         file_fp.write("H L P Len Eff Count \n")
         for entry in outputL:
             file_fp.write(format4CL % (entry[0],entry[1],entry[2],entry[3],entry[4],entry[5]))
-            file2_fp.write(formatContour % (entry[0],entry[1],entry[2],entry[4]))
+            background=self.getBackground(entry[0],entry[1],self.home+'/FA_results_Found.pickle')
+            #Omit zero result entries!
+            if float(entry[4])>0:
+                file2_fp.write(formatContour % (entry[0],entry[1],entry[2],entry[4]))
+            file3_fp.write(formatContour % (entry[0],entry[1],entry[2],entry[4]-background))
         file_fp.close()
         file2_fp.close()
+        file3_fp.close()
         file_fp=open(self.home+'/DE_results_P.dat','w')
         file1_fp=open(self.home+'/DE_results_Matlab_Power.dat','w')
+        file3_fp=open(self.home+'/DE_results_Matlab_Power_NoBack.dat','w')
         file_fp.write("H L P Len Eff Count \n")
         for entry in outputP:
             file_fp.write(format4CP % (entry[0],entry[1],entry[2],entry[3],entry[4],entry[5]))
-            file1_fp.write( formatContour %(entry[0],entry[1],entry[2],entry[4]))
+            background=self.getBackground(entry[0],entry[1],self.home+'/FA_results_Found.pickle')
+            background=int(background)
+            if float(entry[4])>0:
+                file1_fp.write( formatContour %(entry[0],entry[1],entry[2],entry[4]))
+            file3_fp.write( formatContour %(entry[0],entry[1],entry[2],entry[4]-background))
         file_fp.close()
         file1_fp.close()
+        file3_fp.close()
         file_fp=open(self.home+'/DE_results_Mix.dat','w')
         file_fp.write("H L P Len Eff Count \n")
         for entry in outputPickle:

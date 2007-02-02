@@ -804,6 +804,8 @@ class candidateList:
         Output is a list like
         [startT,stopT,curveCount,AvgP,StdevP,AvgL,StdevL]
         """
+        maxP=float(0)
+        maxL=int(0)
         Lsum=float(0)
         Psum=float(0)
         LsumSqr=float(0)
@@ -813,6 +815,10 @@ class candidateList:
         for entry in self.curves:
             gpsStamps.append(entry.printStartGPS())
             curveCount.append(entry.printCurveID())
+            if int(entry.length)>maxL:
+                maxL=int(entry.length)
+            if float(entry.power)>maxP:
+                maxP=float(entry.power)
             Lsum=Lsum.__add__(float(entry.length))
             LsumSqr=LsumSqr + (float(entry.length)*float(entry.length))
             Psum=Psum.__add__(float(entry.power))
@@ -834,7 +840,7 @@ class candidateList:
         else:
             startT=gpsStamps[0]
             stopT=gpsStamps[gpsStamps.__len__()-1]
-        statList=[startT,stopT,curveCount.__len__(),meanP,varP,meanL,varL]
+        statList=[startT,stopT,curveCount.__len__(),meanP,varP,meanL,varL,maxP,maxL]
         return statList
     #End candidateStats method
 
@@ -894,7 +900,10 @@ class candidateList:
         parses the files a line a time constructing stat information
         on the fly with no data loading what so ever! This is slower
         than other stat methods but it does not eat up the memory.
+        It also returns two other values the max P and max L found!
         """
+        maxL=int(0)
+        maxP=int(0)
         Lsum=float(0)
         Psum=float(0)
         LsumSqr=float(0)
@@ -923,9 +932,13 @@ class candidateList:
                 except IndexError:
                     print "Problem with file:",inputFilename
                     print "Returning zeroes for this file stats!"
-                    return [0,0,0,0,0,0,0]
+                    return [0,0,0,0,0,0,0,0,0]
                 L=float(L)
                 P=float(P)
+                if maxL<L:
+                    maxL=L
+                if maxP<P:
+                    maxP=P
                 Lsum=Lsum+L
                 Psum=Psum+P
                 LsumSqr=LsumSqr+(L*L)
@@ -940,7 +953,7 @@ class candidateList:
         varL=float(LsumSqr - float(Lsum*Lsum).__div__(n)).__div__(n)
         meanP=Psum.__div__(n)
         varP=float(PsumSqr - float(Psum*Psum).__div__(n)).__div__(n)
-        statList=[0,0,n,meanP,varP,meanL,varL]
+        statList=[0,0,n,meanP,varP,meanL,varL,maxP,maxL]
         return statList
     #end method candidateStatsOnDisk
     
@@ -1032,7 +1045,11 @@ class candidateList:
         for lineInfo in self.curves:
             curveID,l,p=lineInfo.getKurveHeader()
             d=lineInfo.getCandidateDuration()
-            f=lineInfo.getCandidateBandwidth()
+            b=lineInfo.getCandidateBandwidth()
+            t=float(lineInfo.printStartGPS())
+            s=float(lineInfo.printStopGPS())
+            f=float(lineInfo.printStartFreq())
+            g=float(lineInfo.printStopFreq())
             try:
                 evalResult=eval(testExp)
             except ValueError:

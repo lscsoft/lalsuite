@@ -84,7 +84,7 @@ parser.add_option("-t","--threshold",dest="thresholdString",
                   )
 parser.add_option("-T","--expression_threshold",dest="expThreshold",
                   default="",
-                  help="This is a more flexible thresholding interface.  We are allowed to manipulate variables to build expressions. Variables allowed are:\n P ,power \n L ,pixel length \n T , time duration in seconds \n F , frequency bandwith of kurve \n  See the help for the candidateList class for better explaination of the valid syntax allowed. ENCLOSE THE EXPRESSION IN DOUBLE QUOTES!",
+                  help="This is a more flexible thresholding interface.  We are allowed to manipulate variables to build expressions. Variables allowed are:\n P ,power \n L ,pixel length \n D , time duration in seconds \n B , frequency bandwith of kurve \n  T, start time float\n S, stop time float\n F, start Freq \n, G, stop Freq \n See the help for the candidateList class for better explaination of the valid syntax allowed. ENCLOSE THE EXPRESSION IN DOUBLE QUOTES!",
                   )
 parser.add_option("-s","--write_summary",dest="dumpSummaryDisk",
                   default=False,
@@ -172,6 +172,7 @@ elif ((threshold != "") and (canList.__len__() >= 1)):
     #SECTION 4 PRINTING
 elif ((canList.__len__() >= 1) and (printFile)):
     #Iterate of files creating plotable graphic for each!
+    print "Preparing for printing :",canList.__len__()," files."
     for entry in canList:
         candidateObject=candidateList()
         candidateObject.loadfile(entry)
@@ -180,7 +181,6 @@ elif ((canList.__len__() >= 1) and (printFile)):
         else:
             pathName=os.path.dirname(candidateObject.filename[0])
             saveFiles=pathName+'/ScatterPlot:'+os.path.basename(candidateObject.filename[0])
-            print "Writing scatter plotable data :",saveFiles
             candidateObject.writePixelList(saveFiles,'tf')        
             gnuplotScriptFile(saveFiles)
         del entry

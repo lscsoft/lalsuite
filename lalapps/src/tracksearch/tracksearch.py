@@ -169,6 +169,17 @@ class tracksearchCheckIniFile:
         #Check the [injectionsection] section if present searching for injection file.
         if injectSecFound:
             injectFile=self.iniOpts.get('tracksearchinjection','inject_file')
+            injectCount=int(self.iniOpts.get('tracksearchinjection','inject_count'))
+            injectLayerSize=int(self.iniOpts.get('layerconfig','layer1SetSize'))
+            injectLayerTimeScale=float(self.iniOpts.get('layerconfig','layer1TimeScale'))
+            injectTopBlockSize=float(self.iniOpts.get('layerconfig','layerTopBlockSize'))
+            totalJobNodes=injectTopBlockSize/(injectLayerTimeScale*injectLayerSize)
+            totalInjects=totalJobNodes*injectCount
+            print "ESTIMATING INJECTION PROPERTIES!"
+            print "Time Nodes with Injection:",totalJobNodes
+            print "Total Injections to do   :",totalInjects
+            print "Injects per Time Node    :",injectCount
+            print ""
             if not os.path.exists(injectFile):
                 self.errList.append('Can not find text file to inject :'+str(injectFile))
                 os.abort()
