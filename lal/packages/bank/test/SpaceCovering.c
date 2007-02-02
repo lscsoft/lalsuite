@@ -17,13 +17,13 @@ SpaceCovering
 \end{verbatim}
 
 \subsubsection*{Description}
-
 This test code gives an example of how to generate a template bank and
 generates vertices of the ambiguity 'rectangle' around each lattice point
 suitable for plotting with xmgr or xgrace.
 
-\subsubsection*{Exit codes}
-\input{CoarseTest2CE}
+This is valid for various template bank placement (Hexagonal, SquareNorOriented).
+This is valid for BCV and physical template families.
+
 
 \subsubsection*{Uses}
 \begin{verbatim}
@@ -33,12 +33,9 @@ LALInspiralCreateCoarseBank
 \end{verbatim}
 
 \subsubsection*{Notes}
+\vfill{\footnotesize\input{SpaceCoveringCV}}
 
-\vfill{\footnotesize\input{CoarseTest2CV}}
 </lalLaTeX> */
-
-/* <lalErrTable file="CoarseTest2CE"> */
-/* </lalErrTable> */
 
 #include <stdio.h>
 #include <lal/AVFactories.h>
@@ -64,9 +61,9 @@ main(int argc, char **argv)
   static LALStatus status;     
   /* Structure specifying the nature of the bank needed */
   static InspiralCoarseBankIn coarseIn;
-/* Template bank lists */
+  /* Template bank lists */
   static InspiralTemplateList *list1, *list2;
-/* Number of templates in list1 and list2 */
+  /* Number of templates in list1 and list2 */
   INT4 nlist1=0, nlist2=0;
 
   void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
@@ -299,7 +296,7 @@ main(int argc, char **argv)
 
 
 
-
+/*  we should move this function into lal */
 
 void LALInspiralCreateBoundarySpace(InspiralCoarseBankIn coarseIn)
 {
