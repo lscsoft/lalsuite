@@ -169,6 +169,35 @@ the linked list.
 \texttt{InspiralTemplate} structure containing the template parameters.
 \end{description}
 
+\subsubsection*{Structure \texttt{InspiralTemplateNodeList}}
+\idx[Type]{InspiralTemplateNodeList}
+
+\noindent This structure provides a method of constucting linked
+lists of \texttt{InspiralTemplateNode} structures (as if it weren't already
+complicated enough).  Actually it is necessary to create a list of 
+sub banks for the template bank veto so that roughly 20 or so templates
+can be filtered and stored in memory at one time. 
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
+typedef struct
+tagInspiralTemplateNodeList
+{
+  struct tagInspiralTemplateNodeList       *next;
+  InspiralTemplateNode                     *nodePtr;
+}
+InspiralTemplateNodeList;
+/* </lalVerbatim> */
+#if 0
+<lalLaTeX>
+\begin{description}
+\item[\texttt{struct tagInspiralTemplateNodeList *next}] The next structure in
+the linked list.
+
+\item[\texttt{InspiralTemplateNode *nodePtr}] A pointer to an
+\texttt{InspiralTemplateNode} structure.
+\end{description}
+
 \subsubsection*{Structure \texttt{FindChirpSegment}}
 \idx[Type]{FindChirpSegment}
 
@@ -178,6 +207,8 @@ function.
 
 </lalLaTeX>
 #endif
+
+
 /* <lalVerbatim> */
 typedef struct
 tagFindChirpSegment
