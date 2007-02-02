@@ -238,7 +238,7 @@ int XLALFreqSeriesToTFPlane(
 	if(fstart + channels * fbins_per_channel > (INT4) fseries->data->length)
 		XLAL_ERROR(func, XLAL_EDATA);
 
-	/* create vectors and FFT plans */
+	/* create temporary vectors */
 	fcorr = XLALCreateCOMPLEX8Sequence(fseries->data->length);
 	snr = XLALCreateREAL4Sequence(2 * (fseries->data->length - 1));
 	if(!fcorr || !snr) {
