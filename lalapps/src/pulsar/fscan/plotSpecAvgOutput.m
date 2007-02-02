@@ -72,7 +72,7 @@ vecFLabels = fStart + deltaFTicks*(0:numTicks);
 set(gca, 'YTick', vecTicks);
 set(gca, 'YTickLabel', fliplr(vecFLabels));
 titleString = sprintf('Spectrogram for %s; GPS %d - %d s.',chanName,tStart,tEnd);
-title(titleString);
+title(titleString,'Interpreter','none');
 xlabel('SFT number (see table for corresponding date)');
 ylabel('Frequency (Hz)');
 colorbar;
@@ -86,7 +86,7 @@ if (taveFlag > 0)
   %set(gca, 'XTick', vecTicks);
   %set(gca, 'XTickLabel', vecFLabels);
   titleString = sprintf('Spectrum for %s; averaged over GPS %d - %d s.',chanName,tStart,tEnd);
-  title(titleString);
+  title(titleString,'Interpreter','none');
   ylabel('Normalized Average Power');
   xlabel('Frequency (Hz)');
   outputTextFile = sprintf('%s.txt',outputFileName);
