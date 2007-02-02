@@ -11,7 +11,9 @@ Test code for the \texttt{bank} modules.
 
 \subsubsection*{Usage}
 \begin{verbatim}
-SpaceCovering --template [TaylorT1, EOB ....] --grid-type [square, hexagonal, squareOriented, hexagonalOriented]
+SpaceCovering 
+--template [TaylorT1, EOB ....] 
+--grid-spacing [square, hexagonal, squareOriented, hexagonalOriented]
 \end{verbatim}
 
 \subsubsection*{Description}
@@ -101,7 +103,7 @@ main(int argc, char **argv)
           coarseIn.gridSpacing = SquareNotOriented;
 	else if (strcmp(argv[i], "HexagonalNotOriented")         == 0)  
           coarseIn.gridSpacing = HexagonalNotOriented;
-	else {fprintf(stderr, "bank-grid-type is either square or hexagonal\n"); exit(0);}
+	else {fprintf(stderr, "grid-spacing is either square or hexagonal\n"); exit(0);}
 	
       }
       i++;
@@ -110,14 +112,14 @@ main(int argc, char **argv)
   coarseIn.LowGM        = -2;
   coarseIn.HighGM       = 6;
   coarseIn.fLower       = 40.L;
-  coarseIn.fUpper       = 2000.L;
+  coarseIn.fUpper       = 2047.L;
   coarseIn.tSampling    = 4096.L;
   coarseIn.order        = twoPN;
   coarseIn.space        = Tau0Tau3;
   coarseIn.mmCoarse     = 0.95;
   coarseIn.mmFine       = 0.95;
   coarseIn.iflso        = 0.0L;
-  coarseIn.mMin         = 1;
+  coarseIn.mMin         = 3;
   coarseIn.mMax         = 30.0;
   coarseIn.MMax         = coarseIn.mMax * 2.;
   coarseIn.massRange    = MinMaxComponentMass; 
@@ -139,6 +141,7 @@ main(int argc, char **argv)
 			   coarseIn.shf.data,
 			   noisemodel, coarseIn.shf.deltaF );
 
+  
   if (userParams.calque == BCV)
   {
 	coarseIn.approximant = BCV;
@@ -152,6 +155,7 @@ main(int argc, char **argv)
       	
   LALInspiralCreateCoarseBank(&status, &list1, &nlist1, coarseIn);
   
+  
   fprintf(stderr, "save %d template in results in SpaceCovering.out\n", nlist1);
   fpr = fopen("SpaceCovering.out", "w");
   for (j=0; j<nlist1; j++)
@@ -162,18 +166,20 @@ main(int argc, char **argv)
 	  case TaylorT3:
 	  case EOB:
 
- 	  fprintf(fpr, "%e %e %e %e\n", 
+ 	  fprintf(fpr, "%e %e %e %e %e\n", 
 	  		  list1[j].params.t0, 
 			  list1[j].params.t3, 
-			  list1[j].params.totalMass, 
-			  list1[j].params.fFinal);
+			  list1[j].metric.g00, 
+			  list1[j].metric.g11,
+			  list1[j].metric.theta);
 		  break;
 	  case BCV:
-	  fprintf(fpr, "%e %e %e %e\n", 
+	  fprintf(fpr, "%e %e %e %e %e\n", 
 	  		  list1[j].params.psi0, 
 			  list1[j].params.psi3, 
-			  list1[j].params.totalMass, 
-			  list1[j].params.fFinal);
+			  list1[j].metric.g00, 
+			  list1[j].metric.g11,
+			  list1[j].metric.theta);
 	  break;
 	  }
   }
