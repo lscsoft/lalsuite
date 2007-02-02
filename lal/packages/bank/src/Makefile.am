@@ -5,6 +5,7 @@ InspiralBankGeneration.c\
 InspiralSpinBank.c\
 LALDeterminant3.c\
 LALInsidePolygon.c\
+LALInspiralBCVBank.c\
 LALInspiralComputeMetric.c\
 LALInspiralComputeParams.c\
 LALInspiralCreateCoarseBank.c\

@@ -1,20 +1,10 @@
 /*  <lalVerbatim file="LALInspiralBCVBankCV">
-Author: Cokelaer T.
+Author Cokelaer, T
 $Id$
 </lalVerbatim>  */
 
 /*  <lalLaTeX>
 
-\subsection{Module \texttt{LALInspiralBCVBank.c}}
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralBCVBankCP}
-\idx{LALInspiralBCVBank()}
-
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
 \subsection{Module \texttt{LALInspiralCreateBCVBank.c}}
 Lay a flat grid of BCV templates in the user specified range
 of the parameters $(\psi_0, \psi_3)$ in {\tt coarseIn} structure
@@ -49,67 +39,6 @@ LALRalloc()
 \subsubsection*{Notes}
 \clearpage
 
-
-\subsection{Module \texttt{LALInspiralCreateFlatBank.c}}
-Lay a flat grid of templates in the user defined $(x_0, x_1)$ 
-coordinates and range.
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralCreateFlatBankCP}
-\idx{LALInspiralCreateFlatBank()}
-\begin{itemize}
-   \item \texttt{list,} Output, an array containing the template bank parameters
-   \item \texttt{bankParams,} Input. It is necessary and sufficient to input 
-   the eigenvalues of the metric and the angle between the $x_0$ axis and the 
-   semi-major axis of the ambiguity ellipse, that is,
-   \texttt{bankParams.metric.g00, bankParams.metric.g11, bankParams.metric.theta,}
-   the minimal match, \texttt{bankParams.minimalMatch} and the range of the two
-   coordinates over which templates must be chosen:
-({\tt bankParams->x0Min}, {\tt bankParams->x0Max}) and
-({\tt bankParams->x1Min}, {\tt bankParams->x1Max}).
-\end{itemize}
-The code expects {\tt list->vectorLength=2} and allocates just the 
-requisite amount of memory to {\tt list} and returns the number 
-of grid points in {\tt list->length.} The data points {\tt list->data[2j],}
-{\tt j=1,2,\ldots, list->length,} contain the $x_0$-coordinates of the grid
-and data points {\tt list->data[2j+1],} contain the $x_1$-coordinates 
-of the grid.
-
-\subsubsection*{Description}
-Given the {\tt metric} and the {\tt minimalMatch} this routine calls 
-{\tt bank/LALInspiralUpdateParams} to get the spacings in user coordinates (which are 
-not necessarily the eigen-directions) and lays a uniform grid of templates in 
-the range specified in ({\tt bankParams->x0Min}, {\tt bankParams->x0Max}) and
-({\tt bankParams->x1Min}, {\tt bankParams->x1Max}).
-\subsubsection*{Algorithm}
-The algorithm to lay templates is as follows: Given the increments $Dx_0$ and
-$Dx_1$ found from calling {\tt bank/LALInspiralUpdateParams} lay a rectangular
-grid in the space of $(x_0, x_1).$
-\begin{obeylines}
-\texttt{
-\hskip 1 true cm $x_1 = x_1^{\min}$
-\hskip 1 true cm do while ($x_1 <= x_1^{\rm max}$)
-\hskip 1 true cm \{
-\hskip 2 true cm $x_0 = x_0^{\min}$
-\hskip 2 true cm do while ($x_0 <= x_0^{\rm max}$)
-\hskip 2 true cm \{
-\hskip 3 true cm Add ($x_0, x_1$) to list
-\hskip 3 true cm numTemplates++
-\hskip 3 true cm Increment $x_0:$ $x_0 = x_0 + Dx_0$ 
-\hskip 2 true cm \}
-\hskip 2 true cm Increment $x_1:$ $x_1 = x_1 + Dx_1$ 
-\hskip 1 true cm \}
-}
-\end{obeylines}
-
-\subsubsection*{Uses}
-\begin{verbatim}
-LALInspiralUpdateParams()
-LALRalloc()
-\end{verbatim}
-
-\subsubsection*{Notes}
-\clearpage
 
 \subsection{Module \texttt{LALInspiralBCVFcutBank.c}}
 Given a grid of templates with distinct values of $(\psi_0, \psi_3)$
@@ -199,6 +128,7 @@ LALRalloc()
 
 
 \vspace{0.1in}
+\vfill{\footnotesize\input{LALInspiralBCVBankCV}}
 </lalLaTeX>  */
 
 #include <stdio.h>
@@ -208,6 +138,20 @@ LALRalloc()
 #include <lal/LALStdio.h>
 #include <lal/FindRoot.h>
 
+
+/* Thomas:: temporary definition for SPA hexagonal grid. */
+static REAL4  A0;
+static REAL4  A3;
+
+typedef struct{
+REAL4 ct;
+REAL4 b;
+}
+PRIN;
+
+static void LALSPAF(LALStatus *status,  REAL4 *result, REAL4 x, void *t3);
+/* end comments ::Thomas */
+
 static void 
 PSItoMasses (
     InspiralTemplate *params, 
@@ -215,9 +159,14 @@ PSItoMasses (
     REAL4 highGM
 );
 
-NRCSID(LALINSPIRALBCVBANKC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralBCVBankCP"> */
+NRCSID(LALINSPIRALCREATECOARSEBANKC, "$Id$");
+
+
+
+
+
+/*  <lalVerbatim file="LALInspiralCreateBCVBankCP"> */
 void 
 LALInspiralCreateBCVBank (
     LALStatus            *status, 
@@ -225,7 +174,8 @@ LALInspiralCreateBCVBank (
     INT4                 *nlist,
     InspiralCoarseBankIn coarseIn
     ) 
-{  /*  </lalVerbatim>  */
+/*  </lalVerbatim>  */
+{  
   INT4 j;
   INT4 nlistOld;
   static InspiralBankParams bankParams;
@@ -235,7 +185,7 @@ LALInspiralCreateBCVBank (
   static REAL4VectorSequence *tempList=NULL;
 
   INITSTATUS( status, "LALInspiralCreateBCVBank", 
-      LALINSPIRALBCVBANKC );
+      LALINSPIRALCREATECOARSEBANKC );
   ATTATCHSTATUSPTR( status );
 
   ASSERT( coarseIn.psi0Min > 0., status,
@@ -371,7 +321,7 @@ LALInspiralCreateFlatBank (
   UINT4 nlist = 0;
 
   INITSTATUS( status, "LALInspiralCreateFlatBank", 
-      LALINSPIRALBCVBANKC );
+      LALINSPIRALCREATECOARSEBANKC );
   ATTATCHSTATUSPTR( status );
 
   /* From the knowledge of the metric and the minimal match find the */
@@ -420,7 +370,7 @@ LALInspiralBCVFcutBank (
   REAL8 frac, fendBCV;
   REAL4 LowGM, HighGM;
 
-  INITSTATUS( status, "LALInspiralBCVFcutBank", LALINSPIRALBCVBANKC );
+  INITSTATUS( status, "LALInspiralBCVFcutBank", LALINSPIRALCREATECOARSEBANKC );
 
   nf = coarseIn.numFcutTemplates;
   ndx = nlist = *NList;
@@ -566,7 +516,7 @@ LALInspiralBCVBankFcutS3S4 (
   INT4  nf;
   
 
-  INITSTATUS( status, "LALInspiralBCVBankFcutS3S4", LALINSPIRALBCVBANKC );
+  INITSTATUS( status, "LALInspiralBCVBankFcutS3S4", LALINSPIRALCREATECOARSEBANKC );
 
   nf    = coarseIn.numFcutTemplates;
 
@@ -679,7 +629,7 @@ LALInspiralBCVRegularFcutBank (
   UINT4 i,nf, nlist, j, ndx;
   REAL8 fendBCV;
 
-  INITSTATUS( status, "LALInspiralBCVFcutBank", LALINSPIRALBCVBANKC );
+  INITSTATUS( status, "LALInspiralBCVFcutBank", LALINSPIRALCREATECOARSEBANKC );
 
   nf = coarseIn.numFcutTemplates;
   ndx = nlist = *NList;
@@ -735,7 +685,6 @@ LALEmpiricalPSI2MassesConversion (
     REAL4             lightring
     )
 {
-
   if ( params->psi0 <= 0.L || params->psi3 >= 0.L )
     {
       *valid = 0;
@@ -743,18 +692,19 @@ LALEmpiricalPSI2MassesConversion (
   else
     {
       params->totalMass = -params->psi3/(16.L*LAL_PI * LAL_PI * params->psi0);
-      params->totalMass = params->totalMass * 2.  ; /* The factor 2 is purely empirical and 
-						       comes from simulations. It seems indeed
-						       that the relation between psi0 and psi3 
-						       which gives the total mass is not really
-						       suitable. Usually, the total mass is 
-						       twice as much as the estimated one.
-						    */
+      params->totalMass = params->totalMass * 2.  ; /* The factor 2 is purely empiricail and 
+						      comes from simulaitons. ?It seems indeed
+						      tyhat the relation between psi0 and psi3 
+						      which gives the total mass is not really
+						      suitable. Ususally, the total mass is 
+						      twice as much as the estimated one.
+						   */
       params->fFinal = 1.L/( LAL_PI * pow(lightring, 1.5L) * params->totalMass );
-      params->totalMass /= LAL_MTSUN_SI; 
-      
-      *valid = 1;
-    }
+      params->totalMass /= LAL_MTSUN_SI; /* it it used later ? */
+
+    *valid = 1;
+
+  }
 }
 
 
@@ -781,7 +731,7 @@ LALInspiralCreateFlatBankS3S4 (
 
   
   INITSTATUS( status, "LALInspiralCreateFlatBankS3S4", 
-      LALINSPIRALBCVBANKC );
+      LALINSPIRALCREATECOARSEBANKC );
   ATTATCHSTATUSPTR( status );
 
   
@@ -927,6 +877,9 @@ LALInspiralCreateFlatBankS3S4 (
     break;
   }
   
+
+
+
   list->length = nlist;
 
   DETATCHSTATUSPTR(status);
@@ -950,7 +903,7 @@ LALExcludeTemplate(
   REAL4 psi3Int = -10000.;
 
   INITSTATUS( status, "LALExcludeTemplate", 
-      LALINSPIRALBCVBANKC );
+      LALINSPIRALCREATECOARSEBANKC );
   ATTATCHSTATUSPTR( status );
  
 
@@ -966,3 +919,6 @@ LALExcludeTemplate(
   DETATCHSTATUSPTR(status);
   RETURN (status);
 }
+
+
+

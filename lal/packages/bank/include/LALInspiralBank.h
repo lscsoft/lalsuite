@@ -291,7 +291,7 @@ GridSpacing;
 
 typedef enum
   {
-    In, Above, Below, Out
+    In, Above, Below, Out, Edge
   }
 Position;
 
@@ -390,6 +390,7 @@ tagHexaGridParam
   REAL4 etaMin;
   REAL4 MMin;
   REAL4 MMax;
+  REAL4 fLower;
 
   InspiralBankMassRange         massRange;
   CoordinateSpace               space;
@@ -1043,9 +1044,18 @@ Length(CellList *head);
 \newpage\input{ChirpSpaceC}
 </lalLaTeX> */
 
+/* <lalLaTeX>
+\newpage\input{GetOrientationEllipseC}
+</lalLaTeX> */
+
 /*<lalLaTeX>
 \newpage\input{InspiralSpinBankTestC}
 </lalLaTeX>*/
+
+/* <lalLaTeX>
+\newpage\input{SpaceCoveringC}
+</lalLaTeX> */
+
 
 #ifdef  __cplusplus
 }
