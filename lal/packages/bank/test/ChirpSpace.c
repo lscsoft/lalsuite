@@ -1,5 +1,5 @@
 /* <lalVerbatim file="ChirpSpaceCV">
-Author: Sathyaprakash, B. S.
+Author: Sathyaprakash, B. S., Cokelaer, T.
 $Id$
 </lalVerbatim> */
 
