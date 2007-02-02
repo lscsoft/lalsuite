@@ -67,13 +67,10 @@ TFTiling *XLALCreateTFTiling(
 		XLAL_ERROR_NULL(func, XLAL_EFAULT);
 
 	/* determine the tile size limits */
-	/* FIXME: should the two conditionals in fact be errors? */
 	max_tbins = maxTileDuration / plane->deltaT;
-	if(plane->timeBins < max_tbins)
-		max_tbins = plane->timeBins;
 	max_fbins = maxTileBandwidth / plane->deltaF;
-	if(plane->freqBins < max_fbins)
-		max_fbins = plane->freqBins;
+	if((plane->timeBins < max_tbins) || (plane->freqBins < max_fbins))
+		XLAL_ERROR_NULL(func, XLAL_EINVAL);
 	maxDOF = (2 * max_tbins * max_fbins) * plane->deltaT * plane->deltaF;
 
 	/* Count the tiles */
