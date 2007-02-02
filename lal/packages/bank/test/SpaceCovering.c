@@ -16,6 +16,9 @@ SpaceCovering
 --grid-spacing [square, hexagonal, squareOriented, hexagonalOriented]
 \end{verbatim}
 
+--template BCV --grid-spacing Hexagonal gives 178 templates
+and --template EOB grid-spacing Hexagonal gives 532 templates
+
 \subsubsection*{Description}
 This test code gives an example of how to generate a template bank and
 generates vertices of the ambiguity 'rectangle' around each lattice point
