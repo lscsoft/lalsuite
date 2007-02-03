@@ -904,7 +904,7 @@ int MAIN( int argc, char *argv[]) {
     extraBinsfdot = tObs1 * nf1dotRes * df1dotRes / dFreqStack1;
 
     semiCohPar.extraBinsFstat = extraBinsSky + extraBinsfdot;    
-    LogPrintf(LOG_DEBUG, "No. of extra Fstat freq. bins = %d for skypatch + %d for residual fdot\n",
+    LogPrintf(LOG_DEBUG, "No. of extra Fstat freq. bins = %d for skypatch + %d for residual fdot: total = %d\n",
 	      extraBinsSky, extraBinsfdot, semiCohPar.extraBinsFstat); 
   }
   
