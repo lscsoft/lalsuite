@@ -2785,6 +2785,7 @@ int main( int argc, char *argv[] )
       LALFree( thisInj );
     }
   }
+  if ( condenseIn )  LALFree( condenseIn );
   if ( approximantName) free( approximantName );
   if ( calCacheName )  free( calCacheName );
   if ( frInCacheName ) free( frInCacheName );
