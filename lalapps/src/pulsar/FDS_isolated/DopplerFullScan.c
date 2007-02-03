@@ -343,7 +343,6 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
       { /* debugging */
 	gsl_vector_int *index = NULL;
 	XLALgetCurrentLatticeIndex ( &index, scan->latticeScan );
-	fprintf (stderr, "\nIndex = ");
 	XLALfprintfGSLvector_int ( stderr, "%d", index );
 	gsl_vector_int_free ( index );
       }
