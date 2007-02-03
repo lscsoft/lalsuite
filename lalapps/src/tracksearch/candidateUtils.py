@@ -973,23 +973,27 @@ class candidateList:
             #See notes in methods below for explaination
             d=lineInfo.getCandidateDuration()+self.gpsWidth.getAsFloat()
             f=lineInfo.getCandidateBandwidth()+self.freqWidth
-            summary.append([l,p,d,f])
+            t=float(lineInfo.printStartGPS())
+            s=float(lineInfo.printStopGPS())
+            f=float(lineInfo.printStartFreq())
+            g=float(lineInfo.printStopFreq())
+            summary.append([t,s,f,g,l,p,d,f])
         return summary
     #End dumpCandidateKurveSummary()
 
     def writeSummary(self):
         """
         Methods to write summary to disk for viewing
-        Length,Power,Duration,Bandwidth
+        Start Time, Stop Time, Start F, Stop F, Length,Power,Duration,Bandwidth
         """
         sourceFile=self.filename[0]
         outRoot,outExt=os.path.splitext(sourceFile)
         outFile=outRoot+'.summary'
         summaryData=self.dumpCandidateKurveSummary()
-        format = "%i  %10.5f  %10.5f  %10.5f \n"
+        format = "%10.5f %10.5f %10.5f %10.5f %i  %10.5f  %10.5f  %10.5f \n"
         fp=open(outFile,'w')
         for entry in summaryData:
-            outString=format%(entry[0],entry[1],entry[2],entry[3])
+            outString=format%(entry[0],entry[1],entry[2],entry[3],entry[4],entry[5],entry[6],entry[7])
             fp.write(outString)
         fp.close()
     # End writeSummary method
@@ -997,15 +1001,15 @@ class candidateList:
     def printSummary(self):
         """
         Methods to write summary to display for viewing
-        Length,Power,Duration,Bandwidth
+        Start Time, Stop Time, Start F, Stop F, Length,Power,Duration,Bandwidth
         """
         summaryData=self.dumpCandidateKurveSummary()
         sourceFile=self.filename[0]
         print "#"
         print "#"+sourceFile
-        format = "%i  %10.5f  %10.5f  %10.5f "
+        format = "%10.5f %10.5f %10.5f %10.5f %i  %10.5f  %10.5f  %10.5f \n"
         for entry in summaryData:
-            outString=format%(entry[0],entry[1],entry[2],entry[3])
+            outString=format%(entry[0],entry[1],entry[2],entry[3],entry[4],entry[5],entry[6],entry[7])
             print outString
     # End writeSummary method
     
