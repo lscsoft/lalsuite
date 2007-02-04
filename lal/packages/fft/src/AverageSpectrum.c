@@ -690,3 +690,67 @@ int XLALREAL4SpectrumInvertTruncate(
 
   return 0;
 }
+
+
+/*
+ *
+ * Normalize a COMPLEX8 fseries to a REAL4 average PSD so that the RMS of
+ * the real and imaginary components are both 1.  (i.e. whiten the data).
+ * The PSD is expected to be normalized according to the LAL technical
+ * specifications, in particular PSDs computed by
+ * XLALREAL4AverageSpectrumMedian() and friends are required.  PSDs
+ * computed from high- or low-passed data can include 0s at one or the
+ * other end of the spectrum, and these would normally result in
+ * divide-by-zero errors.  This routine avoids PSD divide-by-zero errors by
+ * permitting zeroes in the PSD outside of the band given by fmin <= f <
+ * fmax.  The fmin and fmax parameters set the frequency band ``of
+ * interest'';  divide-by-zero errors within the band of interest are
+ * reported, while divide-by-zero errors outside the band of interest are
+ * ignored and the output frequency series zeroed in the affected bins.
+ *
+ * The input PSD is allowed to span a larger frequency band than the input
+ * frequency series, but the frequency resolutions of the two must be the
+ * same.  The return value is the input frequency series pointer on
+ * success, or NULL on error.
+ *
+ */
+
+
+COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries *fseries, const REAL4FrequencySeries *psd, REAL8 fmin, REAL8 fmax)
+{
+  static const char func[] = "XLALWhitenCOMPLEX8FrequencySeries";
+  COMPLEX8 *fdata = fseries->data->data;
+  REAL4 *pdata = psd->data->data;
+  REAL4 factor;
+  unsigned i;	/* fseries index */
+  unsigned j;	/* psd index */
+
+  if((psd->deltaF != fseries->deltaF) ||
+     (fseries->f0 < psd->f0))
+    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+
+  j = (fseries->f0 - psd->f0) / psd->deltaF;
+  if(j + fseries->data->length > psd->data->length)
+    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+
+  for(i = 0; i < fseries->data->length; i++, j++)
+  {
+    if(pdata[j] == 0)
+    {
+      /* PSD has a 0 in it */
+      REAL8 f = fseries->f0 + i * fseries->deltaF;
+      if((fmin <= f) && (f < fmax))
+        /* ignore, zero the output */
+        factor = 0;
+      else
+        /* error */
+        XLAL_ERROR_NULL(func, XLAL_EFPDIV0);
+    }
+    else
+      factor = sqrt(4 * fseries->deltaF / pdata[j]);
+    fdata[i].re *= factor;
+    fdata[i].im *= factor;
+  }
+
+  return fseries;
+}

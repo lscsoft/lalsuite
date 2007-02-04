@@ -296,6 +296,13 @@ REAL4TimeSeries *XLALREAL4Convolution(
     REAL4TimeSeries             *transfer
     );
 
+COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(
+    COMPLEX8FrequencySeries     *fseries,
+    const REAL4FrequencySeries  *psd,
+    REAL8                        fmin,
+    REAL8                        fmax
+    );
+
 
 
 

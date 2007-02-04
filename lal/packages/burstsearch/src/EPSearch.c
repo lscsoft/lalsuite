@@ -110,34 +110,6 @@ static SnglBurstTable *XLALTFTilesToSnglBurstTable(SnglBurstTable *head, const R
 
 
 /*
- * Normalize a complex8 fseries to a real4 average psd so that the rms of Re or
- * Im is 1.  (i.e. whiten the data).
- */
-
-static void whiten(COMPLEX8FrequencySeries *fseries, const REAL4FrequencySeries *psd)
-{
-	REAL4 factor;
-	size_t i;
-
-	for(i = 0; i < fseries->data->length; i++) {
-		/* FIXME: the computation of the average PSD sometimes
-		 * underflows at low frequencies due to the strength of the
-		 * high-pass filter(s) used in the data conditioning phase.
-		 * This is OK when it happens outside the band of interest,
-		 * but it is an error for this to occur in the band of
-		 * interest.  We have *never* seen this happen, but it
-		 * still might be worth adding some sort of check. */
-		if(psd->data->data[i] == 0.0)
-			factor = 0.0;
-		else
-			factor = sqrt(4.0 * fseries->deltaF / psd->data->data[i]);
-		fseries->data->data[i].re *= factor;
-		fseries->data->data[i].im *= factor;
-	}
-}
-
-
-/*
  * Generate a linked list of burst events from a time series.
  */
 
@@ -264,9 +236,12 @@ XLALEPSearch(
 		 */
 
 		XLALPrintInfo("XLALEPSearch(): normalizing to the average spectrum\n");
-		whiten(fseries, psd);
+		if(!XLALWhitenCOMPLEX8FrequencySeries(fseries, psd, tfplane->flow, fseries->f0 + fseries->data->length * fseries->deltaF)) {
+			errorcode = XLAL_EFUNC;
+			goto error;
+		}
 		if(params->diagnostics)
-			params->diagnostics->XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries(params->diagnostics->LIGOLwXMLStream, "whitened fseries", fseries);
+			params->diagnostics->XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries(params->diagnostics->LIGOLwXMLStream, "whitened", fseries);
 
 		/*
 		 * Compute the time-frequency plane from the frequency
