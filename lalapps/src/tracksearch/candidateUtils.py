@@ -972,12 +972,12 @@ class candidateList:
             curveID,l,p=lineInfo.getKurveHeader()
             #See notes in methods below for explaination
             d=lineInfo.getCandidateDuration()+self.gpsWidth.getAsFloat()
-            f=lineInfo.getCandidateBandwidth()+self.freqWidth
+            F=lineInfo.getCandidateBandwidth()+self.freqWidth
             t=float(lineInfo.printStartGPS())
             s=float(lineInfo.printStopGPS())
             f=float(lineInfo.printStartFreq())
             g=float(lineInfo.printStopFreq())
-            summary.append([t,s,f,g,l,p,d,f])
+            summary.append([t,s,f,g,l,p,d,F])
         return summary
     #End dumpCandidateKurveSummary()
 

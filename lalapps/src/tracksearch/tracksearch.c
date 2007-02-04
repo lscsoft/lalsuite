@@ -2020,7 +2020,6 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   /*
    * Fill the map marking parameter structure
    */
-  mapMarkerParams.deltaT=signalSeries->deltaT;
   mapMarkerParams.mapTimeBins=inputs.height;
   mapMarkerParams.mapFreqBins=inputs.width;
   mapMarkerParams.mapStartGPS.gpsSeconds=signalSeries->epoch.gpsSeconds;
@@ -2032,6 +2031,8 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 			 &mapMarkerParams.mapStartGPS),
 	   status);
   signalStop=(signalSeries->deltaT*signalSeries->data->length)+signalStart;
+  /*This is the map time resoltion*/
+  mapMarkerParams.deltaT=(signalStop-signalStart)/mapMarkerParams.mapTimeBins;
   LAL_CALL(
 	   LALFloatToGPS(status,
       			 &(mapMarkerParams.mapStopGPS),
