@@ -130,7 +130,8 @@ typedef struct tagTrackSearchOut
  */
 typedef struct tagTrackSearchMapMarkingParams
 {
-  REAL4 deltaT;
+  REAL4 deltaT;/*The time bin resolution dur/#bins */
+  REAL4 dataDeltaT;/*Sampling rate of data used*/
   LIGOTimeGPS mapStartGPS;
   LIGOTimeGPS mapStopGPS;
   INT4 mapTimeBins;

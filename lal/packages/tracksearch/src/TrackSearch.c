@@ -1002,6 +1002,7 @@ void LALTrackSearchInsertMarkers(
 {
   LALTimeInterval dT;
   REAL8 deltaT;
+  REAL8 dataDeltaT;
   REAL8 currentRelativeFloatTime=0;
   INT4 i;
   INT4 j;
@@ -1014,7 +1015,6 @@ void LALTrackSearchInsertMarkers(
   j=0;
   /* Use sampling rate Hz to determine dT */
   deltaT=((REAL8) input->deltaT);
-
   for (i=0;i < output->numberOfCurves;i++)
     { /* 
        *Get ready to start looping over returned curve 
@@ -1028,7 +1028,7 @@ void LALTrackSearchInsertMarkers(
 	   */
 	  output->curves[i].fBinHz[j]=
 	    (output->curves[i].col[j]*
-	     ((1/(2*input->deltaT))/(input->mapFreqBins))
+	     ((1/(2*input->dataDeltaT))/(input->mapFreqBins))
 	     );
 	  currentRelativeFloatTime=output->curves[i].row[j]*deltaT;
 	    LALFloatToInterval(status->statusPtr,
