@@ -850,6 +850,7 @@ tsaTest(
       createParams.wlengthT=32;
       createParams.wlengthF=0;
       markerParams.deltaT=1;
+      markerParams.dataDeltaT=1;
       markerParams.mapStartGPS.gpsSeconds=1;
       markerParams.mapStartGPS.gpsNanoSeconds=1;
       markerParams.mapStopGPS.gpsSeconds=128;

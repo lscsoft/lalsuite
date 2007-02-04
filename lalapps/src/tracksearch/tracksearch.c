@@ -2033,6 +2033,7 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   signalStop=(signalSeries->deltaT*signalSeries->data->length)+signalStart;
   /*This is the map time resoltion*/
   mapMarkerParams.deltaT=(signalStop-signalStart)/mapMarkerParams.mapTimeBins;
+  mapMarkerParams.dataDeltaT=signalSeries->deltaT;
   LAL_CALL(
 	   LALFloatToGPS(status,
       			 &(mapMarkerParams.mapStopGPS),
