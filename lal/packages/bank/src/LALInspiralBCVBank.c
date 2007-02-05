@@ -139,20 +139,7 @@ LALRalloc()
 #include <lal/FindRoot.h>
 
 
-
-static void 
-PSItoMasses (
-    InspiralTemplate *params, 
-    UINT4 *valid,
-    REAL4 highGM
-);
-
-
 NRCSID(LALINSPIRALBCVBANKC, "$Id$");
-
-
-
-
 
 /*  <lalVerbatim file="LALInspiralCreateBCVBankCP"> */
 void 
@@ -164,13 +151,14 @@ LALInspiralCreateBCVBank (
     ) 
 /*  </lalVerbatim>  */
 {  
-  INT4 j;
-  INT4 nlistOld;
-  static InspiralBankParams bankParams;
-  static InspiralMetric metric;
-  static InspiralTemplate params;
+  INT4 							j = 0;
+  INT4 							nlistOld = 0;
+  /*do we really need static declaration here ? */
+  static InspiralBankParams 	bankParams;
+  static InspiralMetric 		metric;
+  static InspiralTemplate 		params;
   static CreateVectorSequenceIn in; 
-  static REAL4VectorSequence *tempList=NULL;
+  static REAL4VectorSequence 	*tempList = NULL;
 
   INITSTATUS( status, "LALInspiralCreateBCVBank", 
       LALINSPIRALBCVBANKC );
@@ -187,14 +175,17 @@ LALInspiralCreateBCVBank (
   ASSERT( coarseIn.LowGM < coarseIn.HighGM, status, 
       LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE );
 
-  params.fLower = coarseIn.fLower;
-  params.fCutoff = coarseIn.fUpper;
-  params.alpha = coarseIn.alpha;
-
+  /* populate the param structure so as to call
+   * ComputeMetricBCV */
+  params.fLower 	= coarseIn.fLower;
+  params.fCutoff 	= coarseIn.fUpper;
+  params.alpha 		= coarseIn.alpha;
+  /* Get the BCV metric in psi0psi3 plane. */
   LALInspiralComputeMetricBCV( status->statusPtr, 
       &metric, &coarseIn.shf, &params );
   CHECKSTATUSPTR( status );
 
+  /* print the metric if lalinfo is on*/
   if ( lalDebugLevel & LALINFO ) 
   {
     REAL8 dx0 = sqrt( 2.L * (1.L-coarseIn.mmCoarse)/metric.g00 );
@@ -206,18 +197,34 @@ LALInspiralCreateBCVBank (
     LALPrintError( "dp0=%e dp1=%e\n", dx0, dx1 );
   }
 
-  bankParams.metric = &metric;
-  bankParams.minimalMatch = coarseIn.mmCoarse;
-  bankParams.x0Min = coarseIn.psi0Min;
-  bankParams.x0Max = coarseIn.psi0Max;
-  bankParams.x1Min = coarseIn.psi3Min;
-  bankParams.x1Max = coarseIn.psi3Max;
+  /* We have the metric, which is constant. Now we need to place 
+   * the templates in the parameter space which is define as follows by 
+   * the psi0 and psi3 range: 
+   * */
+  bankParams.metric 		= &metric;
+  bankParams.minimalMatch 	= coarseIn.mmCoarse;
+  bankParams.x0Min 			= coarseIn.psi0Min;
+  bankParams.x0Max 			= coarseIn.psi0Max;
+  bankParams.x1Min 			= coarseIn.psi3Min;
+  bankParams.x1Max 			= coarseIn.psi3Max;
   
-  in.length = 1;
-  in.vectorLength = 2;
+  /* Let us define a temporary list of templates. */
+  in.length 		= 1;
+  in.vectorLength 	= 2;
   LALSCreateVectorSequence( status->statusPtr, &tempList, &in );
   CHECKSTATUSPTR( status );
 
+  /* First we place templates in the psi0/psi3 plane.
+   * 
+   * Historically we had two template banks. If gridSpacing is set to 
+   * S2BCV, then, the code generates the bank used during S2. This bank
+   * uses a non-oriented square placement in psi0/psi3 plane and the 
+   * fcut dimension placement is done BCVRegularFcutBank or BCVFCutBank 
+   * function.
+   * If gridSpacing is not S3BCV, then we have the choice between a 
+   * square or an hexagonal placement, oriented or not and fcut is placed
+   * using BankFcutS3S4.
+   * */
   if (coarseIn.gridSpacing  != S2BCV)
   {
     LALInspiralCreateFlatBankS3S4( status->statusPtr, tempList, &bankParams , coarseIn);
@@ -236,30 +243,37 @@ LALInspiralCreateBCVBank (
   {
     ABORT (status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
   }
-
+  /* We populate the output.
+   * */
   for ( j = 0; j < *nlist; ++j )
   {
-    /* Retain only those templates that have meaningful chirptimes:*/
-    (*list)[j].params.psi0 = (REAL8) tempList->data[2*j];
-    (*list)[j].params.psi3 = (REAL8) tempList->data[2*j+1];
-    (*list)[j].params.fLower = params.fLower;
-    (*list)[j].params.nStartPad = 0;
-    (*list)[j].params.nEndPad = 0;
-    (*list)[j].params.tSampling= coarseIn.tSampling;
-    (*list)[j].params.distance =  1.;
-    (*list)[j].params.signalAmplitude= 1.;
-    (*list)[j].params.approximant= BCV;
-    (*list)[j].params.massChoice= psi0Andpsi3;
-    (*list)[j].params.order= twoPN;
-    (*list)[j].metric = metric;
-    (*list)[j].params.alpha = coarseIn.alpha;
+    (*list)[j].params.psi0 				= (REAL8) tempList->data[2*j];
+    (*list)[j].params.psi3 				= (REAL8) tempList->data[2*j+1];
+    (*list)[j].params.fLower 			= params.fLower;
+    (*list)[j].params.nStartPad 		= 0;
+    (*list)[j].params.nEndPad 			= 0;
+    (*list)[j].params.tSampling			= coarseIn.tSampling;
+    (*list)[j].params.distance 			=  1.;
+    (*list)[j].params.signalAmplitude	= 1.;
+    (*list)[j].params.approximant		= BCV;
+    (*list)[j].params.massChoice		= psi0Andpsi3;
+    (*list)[j].params.order				= twoPN;
+    (*list)[j].metric 					= metric;
+    (*list)[j].params.alpha 			= coarseIn.alpha;
   }
-
   nlistOld = *nlist;
+  
+  /* Once the psi0/psi3 plane is populated, for each coordinate, we 
+   * populate along the fcut dimension. Again, for historical reason,
+   * we call one of the following functions which slightly differs 
+   * from each other (see documentation).
+   * */
+   
   /* If coarseIn.lowGM == - 1 then LowGM is  unphysical. Hence, we use a 
-   * Regular grid in cutoff frequency which is independant of LowGM or HighGM
-   * and which lays between Flower and Fsampling/2
-   *
+   * Regular grid in cutoff frequency which is independant of LowGM or 
+   * HighGM and which lays between Flower and Fsampling/2. If 
+   * coarseIn.lowGM != -1 then, we populate between two frequencyies 
+   * defines by low and high GM. (i.e lowGM = 6 means fLSO).
    *  */
   if (coarseIn.gridSpacing != S2BCV)
     {
@@ -283,7 +297,7 @@ LALInspiralCreateBCVBank (
   if ( lalDebugLevel & LALINFO ) 
   {
     LALPrintError( 
-        "Templates before %d and after %d calling LALInspiralBCVBank\n", 
+        "LALInspiralBCVBank: template numbers before %d and after %d calling LALInspiralBCVBank\n", 
         nlistOld, *nlist );
   }
 
@@ -354,17 +368,22 @@ LALInspiralBCVFcutBank (
     ) 
 /*  </lalVerbatim>  */
 {  
-  UINT4 nf, nlist, j, ndx;
-  REAL8 frac, fendBCV;
-  REAL4 LowGM, HighGM;
+  UINT4 nf; 	/* number of layers */
+  UINT4 nlist; 	/* number of final templates */
+  UINT4 j;
+  UINT4 ndx;	/* temporary number of templates */
+  REAL8 frac;	/* general variable*/
+  REAL8 fendBCV;
+  REAL4 LowGM;
+  REAL4 HighGM;
 
   INITSTATUS( status, "LALInspiralBCVFcutBank", LALINSPIRALBCVBANKC );
 
-  nf = coarseIn.numFcutTemplates;
-  ndx = nlist = *NList;
+  nf 		= coarseIn.numFcutTemplates;
+  ndx 		= nlist = *NList;
 
-  LowGM = coarseIn.LowGM;
-  HighGM = coarseIn.HighGM;
+  LowGM 	= coarseIn.LowGM;
+  HighGM 	= coarseIn.HighGM;
 
   /* if we have only one layer, we don't need HighGM. 
    * And default value for LowGM is  3GM*/
@@ -377,11 +396,12 @@ LALInspiralBCVFcutBank (
     frac = (1.L - 1.L/pow(HighGM/3., 1.5L)) / (nf-1.L);
   }
   
+  /* for each psi0/psi3 pair, we generate the fcut layers */
   for ( j = 0; j < nlist; ++j )
   {
     UINT4 valid = 0;
-    
-    PSItoMasses( &((*list)[j].params), &valid , LowGM);
+    /* let us get the estimated params.fFinal*/    
+    LALPSItoMasses(status,  &((*list)[j].params), &valid , LowGM);
     
     if ( valid )
     {
@@ -389,41 +409,43 @@ LALInspiralBCVFcutBank (
       REAL8 fMax; 
 
       fMax = (*list)[j].params.fFinal;
-
+      /* for each fcut layer */
       for ( i = 0; i < nf; ++i )
       {
-	fendBCV = fMax * (1.L - (REAL8) i * frac);
+		fendBCV = fMax * (1.L - (REAL8) i * frac);
 
         if ( (*list)[j].params.tSampling <= 0 )
         {
           ABORT( status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE );
         }
+        /* the fFinal must be > flower and less than Nyquist. 
+         * if not, no template is generated. */
         if ( fendBCV > (*list)[j].params.fLower && 
             fendBCV < (*list)[j].params.tSampling / 2.0 )
         {
           ++ndx;
 
-	    *list = (InspiralTemplateList *) 
-            LALRealloc( *list, ndx * sizeof(InspiralTemplateList) );
+		  *list = (InspiralTemplateList *) 
+          LALRealloc( *list, ndx * sizeof(InspiralTemplateList) );
           if ( ! *list )
           {
             ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
           }
           memset( *list + ndx - 1, 0, sizeof(InspiralTemplate) );
-          (*list)[ndx-1] = (*list)[j];
-          (*list)[ndx-1].params.fFinal = fendBCV;
-          (*list)[ndx-1].metric = (*list)[0].metric;
-          (*list)[ndx-1].nLayer = i;
-
+          (*list)[ndx-1] 				= (*list)[j];
+          (*list)[ndx-1].params.fFinal 	= fendBCV;
+          (*list)[ndx-1].metric 		= (*list)[0].metric;
+          (*list)[ndx-1].nLayer 		= i;
         }
       }
     }
   }
+  /**/
   for ( j = nlist; j < ndx; ++j )
   {
     (*list)[j-nlist] = (*list)[j];
   }
-
+  /**/
   *NList = ndx - nlist;
   *list = LALRealloc( *list, *NList * sizeof(InspiralTemplateList) );
   if ( ! *list )
@@ -435,13 +457,19 @@ LALInspiralBCVFcutBank (
 }
 
 
-static void
-PSItoMasses (
-    InspiralTemplate *params,
-    UINT4            *valid,
-    REAL4             HighGM
+void
+LALPSItoMasses (
+    LALStatus			*status, 
+    InspiralTemplate 	*params,
+    UINT4            	*valid,
+    REAL4             	HighGM
     )
 {
+
+  INITSTATUS( status, "LALPSItoMasses", 
+      LALINSPIRALBCVBANKC );
+  ATTATCHSTATUSPTR( status );
+  
   if ( params->psi0 <= 0.L || params->psi3 >= 0.L )
   {
     *valid = 0;
@@ -450,10 +478,10 @@ PSItoMasses (
   {
     REAL8 totalMass; 
     REAL8 eta; 
-    REAL8 eightBy3 = 8.L/3.L;
-    REAL8 twoBy3=2.L/3.L;
-    REAL8 fiveBy3 = 5.L/3.L;
-
+    REAL8 eightBy3 	= 8.L/3.L;
+    REAL8 twoBy3	= 2.L/3.L;
+    REAL8 fiveBy3 	= 5.L/3.L;
+	/*we estimate the total mass and then fFinal*/
     params->totalMass = -params->psi3/(16.L*LAL_PI * LAL_PI * params->psi0);
     eta = params->eta = 
       3.L/(128.L * params->psi0 * pow(LAL_PI*params->totalMass, fiveBy3));
@@ -480,6 +508,8 @@ PSItoMasses (
     params->t3 = LAL_PI/(8.0*eta*pow(totalMass, twoBy3) * 
         pow(LAL_PI * params->fLower, fiveBy3));
   }
+  DETATCHSTATUSPTR(status);
+  RETURN (status);
 }
 
 
@@ -490,105 +520,99 @@ PSItoMasses (
 /*  <lalVerbatim file="LALInspiralBCVFcutBankCP"> */
 void 
 LALInspiralBCVBankFcutS3S4 (
-    LALStatus            *status, 
-    InspiralTemplateList **list, 
-    INT4                *NList, 
-    InspiralCoarseBankIn coarseIn
+    LALStatus            	*status, 
+    InspiralTemplateList 	**list, 
+    INT4					*NList, 
+    InspiralCoarseBankIn 	coarseIn
     ) 
 /*  </lalVerbatim>  */
 {  
-  UINT4 nlist, j, ndx;
-  REAL4 frac;
-  REAL4 LowGM, HighGM;
-  REAL4 fendBCV;
-  INT4  nf;
+  UINT4 nf; 	/* number of layers */
+  UINT4 nlist; 	/* number of final templates */
+  UINT4 j;
+  UINT4 ndx;	/* temporary number of templates */
+  REAL8 frac;	/* general variable*/
+  REAL8 fendBCV;
+  REAL4 LowGM;
+  REAL4 HighGM;
   
-
   INITSTATUS( status, "LALInspiralBCVBankFcutS3S4", LALINSPIRALBCVBANKC );
 
-  nf    = coarseIn.numFcutTemplates;
+  nf    	= coarseIn.numFcutTemplates;
+  ndx   	= nlist = *NList;
+  LowGM		=  3.;
+  HighGM    = coarseIn.HighGM;
 
-  ndx   = nlist = *NList;
-
-  LowGM         =  3.;
-  HighGM        = coarseIn.HighGM;
-
-
+  /* for each template, we get the fcut layers*/
   for ( j = 0; j < nlist; ++j )
   {
     UINT4 valid = 0;
-    
-    LALEmpiricalPSI2MassesConversion( &((*list)[j].params), &valid , LowGM);   
+    LALEmpiricalPSItoMassesConversion(status, 
+    	&((*list)[j].params), &valid , LowGM);   
     
     if (valid)
-      {
-	UINT4 i;
-	REAL8 fMax; 
+    {
+	  UINT4 i;
+	  REAL8 fMax; 
 
-	fMax = (*list)[j].params.fFinal; 
-	if ( (*list)[j].params.tSampling <= 0 )
+	  fMax = (*list)[j].params.fFinal; 
+	  if ( (*list)[j].params.tSampling <= 0 )
 	  {
 	    ABORT( status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE );
 	  }
         /* the user might request only one layer */	
-	if (nf == 1)
-	    frac = 1;
-	else 
+	  if (nf == 1)
+	  {
+	  	  frac = 1;
+	  }
+	  else 
+	  {
 	    frac = (1.L - 1.L/pow(HighGM/3., 1.5L)) / (nf-1.L);
+	  }
 	 
-        /* sometimes since fMin is greater than the nyquist frequency, there
-         * is no template generated. This is not acceptable. We need at least
-         * one frequency at the nyquist frequency otherwise low masses
-         * systems are missed. */
-        if (((fMax * (1.L - (REAL4) (nf-1) * frac)) >= (*list)[j].params.tSampling/2.0)) 
-         {
-           fMax = (*list)[j].params.tSampling/2.0 - 1. ;
-           frac = -1;
-         }
+      /* sometimes since fMin is greater than the nyquist frequency, there
+       * is no template generated. This is not acceptable. We need at least
+       * one frequency at the nyquist frequency otherwise low masses
+       * systems are missed. */
+      if (((fMax * (1.L - (REAL4) (nf-1) * frac)) >= (*list)[j].params.tSampling/2.0)) 
+      {
+        fMax = (*list)[j].params.tSampling/2.0 - 1. ;
+        frac = -1;
+      }
          
-        /*Similarly, for high masses. */
-        /*if (((fMax * (1.L - (REAL4) (nf-1) * frac)) <= (*list)[j].params.fLower * 1.5)) 
-         {
-           fMax = (*list)[j].params.fLower * 1.5 ;           
-         }
+      /*Similarly, for high masses. */
+      /*if (((fMax * (1.L - (REAL4) (nf-1) * frac)) <= (*list)[j].params.fLower * 1.5)) 
+       {
+          fMax = (*list)[j].params.fLower * 1.5 ;           
+        }
         */
-        for (i=0; i<nf; i++)
-        {
-          fendBCV = fMax * (1.L - (REAL4) i * frac);
-
-
+      for (i=0; i<nf; i++)
+      {
+        fendBCV = fMax * (1.L - (REAL4) i * frac);
 	    /* we search for valid expression of fendBCV and populate the bank */
 	    if ( fendBCV >= (*list)[j].params.fLower * 1.5 && 
-		 fendBCV < (*list)[j].params.tSampling / 2.0 )
-	      {
-		
-		++ndx;
-		
-		*list = (InspiralTemplateList *) 
+		  fendBCV < (*list)[j].params.tSampling / 2.0 )
+	    {		
+		  ++ndx;
+		  *list = (InspiralTemplateList *) 
 		  LALRealloc( *list, ndx * sizeof(InspiralTemplateList) );
-		if ( ! *list )
+		  if ( ! *list )
 		  {
 		    ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
 		  }
-		memset( *list + ndx - 1, 0, sizeof(InspiralTemplate) );
-		(*list)[ndx-1] = (*list)[j];
-		(*list)[ndx-1].params.fFinal = fendBCV;
-		(*list)[ndx-1].metric = (*list)[0].metric;
-		(*list)[ndx-1].nLayer = i;
-		
-	      }
-	    
+		  memset( *list + ndx - 1, 0, sizeof(InspiralTemplate) );
+		  (*list)[ndx-1] = (*list)[j];
+		  (*list)[ndx-1].params.fFinal = fendBCV;
+		  (*list)[ndx-1].metric = (*list)[0].metric;
+		  (*list)[ndx-1].nLayer = i;
+		}
 	  }
-	
-      }
+	}
   }
-  
-  
   for ( j = nlist; j < ndx; ++j )
   {
     (*list)[j-nlist] = (*list)[j];
   }
-
   *NList = ndx - nlist;
   *list = LALRealloc( *list, *NList * sizeof(InspiralTemplateList) );
   if ( ! *list )
@@ -605,10 +629,10 @@ LALInspiralBCVBankFcutS3S4 (
 /*  <lalVerbatim file="LALInspiralBCVRegularFcutBankCP"> */
 void 
 LALInspiralBCVRegularFcutBank (
-    LALStatus            *status, 
-    InspiralTemplateList **list, 
-    INT4                *NList, 
-    InspiralCoarseBankIn coarseIn
+    LALStatus            	*status, 
+    InspiralTemplateList 	**list, 
+    INT4                	*NList, 
+    InspiralCoarseBankIn 	coarseIn
     ) 
 /*  </lalVerbatim>  */
 {  
@@ -624,24 +648,24 @@ LALInspiralBCVRegularFcutBank (
   
   for ( j = 0; j < nlist; ++j )
   {     
-      for ( i = 1; i <=nf; ++i )
-      {
-	fendBCV = (*list)[j].params.fLower 
+    for ( i = 1; i <=nf; ++i )
+    {
+	  fendBCV = (*list)[j].params.fLower 
 		+ i * ((*list)[j].params.tSampling/2.0 - (*list)[j].params.fLower) / nf ;
-        ++ndx;
+      ++ndx;
 
-	*list = (InspiralTemplateList *) 
-        LALRealloc( *list, ndx * sizeof(InspiralTemplateList) );
-        if ( ! *list )
-          {
-            ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
-          }
-         memset( *list + ndx - 1, 0, sizeof(InspiralTemplate) );
-         (*list)[ndx-1] = (*list)[j];
-         (*list)[ndx-1].params.fFinal = fendBCV;
-         (*list)[ndx-1].metric = (*list)[0].metric;
-         (*list)[ndx-1].nLayer = i;
+	  *list = (InspiralTemplateList *) 
+      LALRealloc( *list, ndx * sizeof(InspiralTemplateList) );
+      if ( ! *list )
+      {
+        ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
       }
+      memset( *list + ndx - 1, 0, sizeof(InspiralTemplate) );
+      (*list)[ndx-1] = (*list)[j];
+      (*list)[ndx-1].params.fFinal = fendBCV;
+      (*list)[ndx-1].metric = (*list)[0].metric;
+      (*list)[ndx-1].nLayer = i;
+    }
   }
     
   
@@ -667,32 +691,40 @@ LALInspiralBCVRegularFcutBank (
 
 
 void
-LALEmpiricalPSI2MassesConversion (
-    InspiralTemplate *params,
-    UINT4            *valid,
-    REAL4             lightring
+LALEmpiricalPSItoMassesConversion (
+    LALStatus 			*status,
+    InspiralTemplate 	*params,
+    UINT4            	*valid,
+    REAL4             	lightring
     )
 {
+
+  INITSTATUS( status, "LALEmpiricalPSItoMassesConversion", 
+      LALINSPIRALBCVBANKC );
+  ATTATCHSTATUSPTR( status );
+  
   if ( params->psi0 <= 0.L || params->psi3 >= 0.L )
-    {
-      *valid = 0;
-    }
+  {
+    *valid = 0;
+  }
   else
-    {
-      params->totalMass = -params->psi3/(16.L*LAL_PI * LAL_PI * params->psi0);
-      params->totalMass = params->totalMass * 2.  ; /* The factor 2 is purely empiricail and 
+  {
+    params->totalMass = -params->psi3/(16.L*LAL_PI * LAL_PI * params->psi0);
+    params->totalMass = params->totalMass * 2.  ; /* The factor 2 is purely empiricail and 
 						      comes from simulaitons. ?It seems indeed
 						      tyhat the relation between psi0 and psi3 
 						      which gives the total mass is not really
 						      suitable. Ususally, the total mass is 
 						      twice as much as the estimated one.
 						   */
-      params->fFinal = 1.L/( LAL_PI * pow(lightring, 1.5L) * params->totalMass );
-      params->totalMass /= LAL_MTSUN_SI; /* it it used later ? */
+    params->fFinal = 1.L/( LAL_PI * pow(lightring, 1.5L) * params->totalMass );
+    params->totalMass /= LAL_MTSUN_SI; /* it it used later ? */
 
     *valid = 1;
-
   }
+  
+  DETATCHSTATUSPTR(status);
+  RETURN (status);
 }
 
 
@@ -767,52 +799,48 @@ LALInspiralCreateFlatBankS3S4 (
       {
 	layer++;
 	for (x0 = bankParams->x0Min - 1e6 +dx0/2.*(layer%2); x0 <= bankParams->x0Max+1e6; x0 += dx0 )
+	{
+	  UINT4 ndx = 2 * nlist;
+	  if ( coarseIn.gridSpacing == Hexagonal) 
 	  {
-	    UINT4 ndx = 2 * nlist;
-	
-	    if ( coarseIn.gridSpacing == Hexagonal) 
-	      {
-	    
-		x =  x0 *cos(metric->theta) + sin(metric->theta)* x1;
+	    x =  x0 *cos(metric->theta) + sin(metric->theta)* x1;
 		y =  x0 *sin(metric->theta) - cos(metric->theta)* x1;
-	      }
-	    else
-	      {
+	  }
+	  else
+	  {
 		x = x0;
 		y = x1;
-	      }
+	  }
 	    
-	    if ( (x > bankParams->x0Min -dx0/2.) && (y < bankParams->x1Max + dx1/2.) && 
+	  if ( (x > bankParams->x0Min -dx0/2.) && (y < bankParams->x1Max + dx1/2.) && 
 		 (x < bankParams->x0Max +dx0/2.) && (y > bankParams->x1Min - dx1/2.))
-	      {
+	  {
+
 		if (coarseIn.insidePolygon == True)
 		{
-                  LALInsidePolygon(status->statusPtr, xp, yp, npol, x, y, &valid);
+          LALInsidePolygon(status->statusPtr, xp, yp, npol, x, y, &valid);
 		}
-                else
+        else
 		{
 		  LALExcludeTemplate(status->statusPtr, &valid, bankParams, x, y);
 		}
+		
 
-
-
-                if (valid == 1)
-                    {
-                      list->data = (REAL4 *) LALRealloc( list->data, (ndx+2) * sizeof(REAL4) );
-                      if ( !list->data )
-                        {
-                          ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
-                        }
-                      list->data[ndx] = x;
-                      list->data[ndx + 1] = y;
-                      ++nlist;                 
-                    } 
-                
-	                        
-              } 
-	  }      
-      }
-      break;
+        if (valid == 1)
+        {
+          list->data = (REAL4 *) LALRealloc( list->data, (ndx+2) * sizeof(REAL4) );
+          if ( !list->data )
+          {
+            ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+          }
+          list->data[ndx] = x;
+          list->data[ndx + 1] = y;
+          ++nlist;                 
+        } 
+      } 
+	}      
+  }
+  break;
   
   case  Square:
   case  SquareNotOriented:
@@ -820,54 +848,51 @@ LALInspiralCreateFlatBankS3S4 (
     /* !! dx1 and dx0 are computed in a different way de[pending on the 
        value of BANKGRId */
     for (x1 = bankParams->x1Min -1e6;  x1 <= bankParams->x1Max + 1e6; x1 += dx1)
-      {
-	
-	for (x0 = bankParams->x0Min - 1e6 ; x0 <= bankParams->x0Max+1e6; x0 += dx0 )
-
+    {
+	  for (x0 = bankParams->x0Min - 1e6 ; x0 <= bankParams->x0Max+1e6; x0 += dx0 )
 	  {
 	    UINT4 ndx = 2 * nlist; 
 
 	    if (coarseIn.gridSpacing == Square)
-	      {
-		x =  x0 *cos(metric->theta) + sin(metric->theta)* x1 ;
-		y =  x0 *sin(metric->theta) - cos(metric->theta)* x1;
-	      }
+	    {
+		  x =  x0 *cos(metric->theta) + sin(metric->theta)* x1 ;
+		  y =  x0 *sin(metric->theta) - cos(metric->theta)* x1;
+	    }
 	    else if (coarseIn.gridSpacing == SquareNotOriented)
-	      {
-		x = x0;
-		y = x1;
-	      }
+	    {
+		  x = x0;
+		  y = x1;
+	    }
 	    if ( (x > bankParams->x0Min - dx0/2.) && (y < bankParams->x1Max + dx1/2.) && 
 		 (x < bankParams->x0Max + dx0/2.) && (y > bankParams->x1Min - dx1/2.))
 	    
-	      {
-		if (coarseIn.insidePolygon == True) {
-		  LALInsidePolygon(status->statusPtr, xp, yp, npol, x, y, &valid);
-                }
-		else
-		{
-		  LALExcludeTemplate(status->statusPtr, &valid, bankParams, x, y);
-		}
-                if (valid)
-                {
-                  list->data = (REAL4 *) LALRealloc( list->data, (ndx+2) * sizeof(REAL4) );
-                  if ( !list->data )
-                  {
-                    ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+	    {
+
+		  if (coarseIn.insidePolygon == True) 
+		    {
+		      LALInsidePolygon(status->statusPtr, xp, yp, npol, x, y, &valid);
+            }
+		  else
+		  {
+		    LALExcludeTemplate(status->statusPtr, &valid, bankParams, x, y);
 		  }
-                  list->data[ndx] = x;
-                  list->data[ndx + 1] = y;
-                  ++nlist; 
-                }
-	      }
+          if (valid)
+          {
+            list->data = (REAL4 *) LALRealloc( list->data, (ndx+2) * sizeof(REAL4) );
+            if ( !list->data )
+            {
+              ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+		    }
+            list->data[ndx] = x;
+            list->data[ndx + 1] = y;
+            ++nlist; 
+          }
+	    }
 	  }
-   }
-    break;
+     }
+  break;
   }
   
-
-
-
   list->length = nlist;
 
   DETATCHSTATUSPTR(status);
@@ -877,7 +902,7 @@ LALInspiralCreateFlatBankS3S4 (
 
 /* Thomas: 31 Aug 2006. This function is redundant with the polygon fit. 
 It was design for BBH and therefore had tight boundary. For a more general 
-purpose, I extend the range to generous values
+purpose, I extended the range to generous values
  */
 void
 LALExcludeTemplate(
@@ -894,7 +919,6 @@ LALExcludeTemplate(
       LALINSPIRALBCVBANKC );
   ATTATCHSTATUSPTR( status );
  
-
   if (x > psi0Int && y < psi3Int )
   {
     *valid = 0 ;
