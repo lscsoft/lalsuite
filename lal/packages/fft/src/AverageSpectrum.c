@@ -694,17 +694,23 @@ int XLALREAL4SpectrumInvertTruncate(
 
 /*
  *
- * Normalize a COMPLEX8 fseries to a REAL4 average PSD so that the RMS of
- * the real and imaginary components are both 1.  (i.e. whiten the data).
- * The PSD is expected to be normalized according to the LAL technical
- * specifications, in particular PSDs computed by
- * XLALREAL4AverageSpectrumMedian() and friends are required.  PSDs
- * computed from high- or low-passed data can include 0s at one or the
+ * Normalize a COMPLEX8 frequency series to a REAL4 average PSD.  If the
+ * frequency series is the Fourier transform of (coloured) Gaussian random
+ * noise, and the PSD is of the same noise, and both have been computed
+ * according to the LAL technical specifications (LIGO-T010095-00-Z), then
+ * the output frequency series' bins will be complex Gaussian random
+ * variables with mean squares of 1 (the real and imaginary components,
+ * individually, have variances of 1/2).  Fourier transforms computed by
+ * XLALREAL4ForwardFFT(), and PSDs computed by
+ * XLALREAL4AverageSpectrumMedian() and friends conform to the LAL
+ * technical specifications.
+ *
+ * PSDs computed from high- or low-passed data can include 0s at one or the
  * other end of the spectrum, and these would normally result in
  * divide-by-zero errors.  This routine avoids PSD divide-by-zero errors by
  * permitting zeroes in the PSD outside of the band given by fmin <= f <
  * fmax.  The fmin and fmax parameters set the frequency band ``of
- * interest'';  divide-by-zero errors within the band of interest are
+ * interest''.  Divide-by-zero errors within the band of interest are
  * reported, while divide-by-zero errors outside the band of interest are
  * ignored and the output frequency series zeroed in the affected bins.
  *
@@ -747,7 +753,7 @@ COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeri
         XLAL_ERROR_NULL(func, XLAL_EFPDIV0);
     }
     else
-      factor = sqrt(4 * fseries->deltaF / pdata[j]);
+      factor = sqrt(2 * fseries->deltaF / pdata[j]);
     fdata[i].re *= factor;
     fdata[i].im *= factor;
   }
