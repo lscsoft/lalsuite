@@ -4,11 +4,7 @@
  *
  * Author: Brown, D. A.
  * 
-<<<<<<< inspiral.c
  * Revision: $Id$
-=======
- * Revision: $Id$
->>>>>>> 1.238.2.2
  * 
  *-----------------------------------------------------------------------
  */
@@ -62,37 +58,16 @@
 #include <lal/FindChirpChisq.h>
 #include <lal/LALTrigScanCluster.h>
 
-<<<<<<< inspiral.c
 RCSID( "$Id$" );
-=======
-RCSID( "$Id$" );
->>>>>>> 1.238.2.2
 
-<<<<<<< inspiral.c
 #define CVS_ID_STRING "$Id$"
-=======
-#define CVS_ID_STRING "$Id$"
->>>>>>> 1.238.2.2
 #define CVS_NAME_STRING "$Name$"
-<<<<<<< inspiral.c
 #define CVS_REVISION "$Revision$"
 #define CVS_ID_STRING "$Id$"
-=======
-#define CVS_REVISION "$Revision$"
-#define CVS_ID_STRING "$Id$"
->>>>>>> 1.238.2.2
 #define CVS_NAME_STRING "$Name$"
-<<<<<<< inspiral.c
 #define CVS_REVISION "$Revision$"
-=======
-#define CVS_REVISION "$Revision$"
->>>>>>> 1.238.2.2
 #define CVS_SOURCE "$Source$"
-<<<<<<< inspiral.c
 #define CVS_DATE "$Date$"
-=======
-#define CVS_DATE "$Date$"
->>>>>>> 1.238.2.2
 #define PROGRAM_NAME "inspiral"
 
 /* define the parameters for a 1.4,1.4 sloar mass standard candle with snr 8 */
