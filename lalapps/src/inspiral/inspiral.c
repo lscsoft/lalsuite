@@ -4,7 +4,11 @@
  *
  * Author: Brown, D. A.
  * 
+<<<<<<< inspiral.c
  * Revision: $Id$
+=======
+ * Revision: $Id$
+>>>>>>> 1.238.2.2
  * 
  *-----------------------------------------------------------------------
  */
@@ -58,16 +62,37 @@
 #include <lal/FindChirpChisq.h>
 #include <lal/LALTrigScanCluster.h>
 
+<<<<<<< inspiral.c
 RCSID( "$Id$" );
+=======
+RCSID( "$Id$" );
+>>>>>>> 1.238.2.2
 
+<<<<<<< inspiral.c
 #define CVS_ID_STRING "$Id$"
+=======
+#define CVS_ID_STRING "$Id$"
+>>>>>>> 1.238.2.2
 #define CVS_NAME_STRING "$Name$"
+<<<<<<< inspiral.c
 #define CVS_REVISION "$Revision$"
 #define CVS_ID_STRING "$Id$"
-#define CVS_NAME_STRING "$Name$"
+=======
 #define CVS_REVISION "$Revision$"
+#define CVS_ID_STRING "$Id$"
+>>>>>>> 1.238.2.2
+#define CVS_NAME_STRING "$Name$"
+<<<<<<< inspiral.c
+#define CVS_REVISION "$Revision$"
+=======
+#define CVS_REVISION "$Revision$"
+>>>>>>> 1.238.2.2
 #define CVS_SOURCE "$Source$"
+<<<<<<< inspiral.c
 #define CVS_DATE "$Date$"
+=======
+#define CVS_DATE "$Date$"
+>>>>>>> 1.238.2.2
 #define PROGRAM_NAME "inspiral"
 
 /* define the parameters for a 1.4,1.4 sloar mass standard candle with snr 8 */
@@ -2408,6 +2433,10 @@ int main( int argc, char *argv[] )
       &status );
   LAL_CALL( LALDestroyFindChirpInput( &status, &fcFilterInput ), 
       &status );
+  if ( fcFilterParams->filterOutputVetoParams ) 
+  {
+    LALFree( fcFilterParams->filterOutputVetoParams );
+  }
   LAL_CALL( LALFindChirpFilterFinalize( &status, &fcFilterParams ), 
       &status );
   LAL_CALL( LALFindChirpTemplateFinalize( &status, &fcTmpltParams ), 
@@ -2693,8 +2722,6 @@ int main( int argc, char *argv[] )
             /* Call the clustering routine */ 
             LAL_CALL( LALClusterSnglInspiralOverTemplatesAndEndTime ( &status, 
                         &(savedEvents.snglInspiralTable), condenseIn ), &status );
-            
-            LALFree ( condenseIn ); 
         }
         else
         {
