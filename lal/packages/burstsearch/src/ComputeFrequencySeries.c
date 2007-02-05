@@ -17,6 +17,7 @@ NRCSID (COMPUTEFREQUENCYSERIESC, "$Id$");
 #include <lal/Window.h>
 #include <lal/XLALError.h>
 
+
 /******** <lalVerbatim file="ComputeFrequencySeriesCP"> ********/
 COMPLEX8FrequencySeries *
 XLALComputeFrequencySeries(
@@ -37,30 +38,36 @@ XLALComputeFrequencySeries(
 	COMPLEX8FrequencySeries *fseries;
 	REAL4Sequence *tmp;
 	REAL4 A;
-	size_t i;
-	size_t length = tseries->data->length;
+	unsigned i;
 
-	/* make sure sizes are reasonable and agree */
-	if((window->data->length != length) ||
-	   (tseries->deltaT <= 0.0) ||
-	   (window->sumofsquares <= 0.0))
-		XLAL_ERROR_NULL(func, XLAL_EINVAL);
+	/* validate input */
+	if(window->data->length != tseries->data->length)
+		XLAL_ERROR_NULL(func, XLAL_EBADLEN);
+	if(window->sumofsquares == 0.0)
+		XLAL_ERROR_NULL(func, XLAL_EFPDIV0);
 
 	/* create the frequency series, and a copy of the time series data */
-	fseries = XLALCreateCOMPLEX8FrequencySeries(tseries->name, &tseries->epoch, tseries->f0, 1.0 / (length * tseries->deltaT), &lalDimensionlessUnit, length / 2 + 1);
-	tmp = XLALCutREAL4Sequence(tseries->data, 0, length);
-	if(!fseries || !tmp)
+	fseries = XLALCreateCOMPLEX8FrequencySeries(tseries->name, &tseries->epoch, tseries->f0, 1.0 / (tseries->data->length * tseries->deltaT), &lalDimensionlessUnit, tseries->data->length / 2 + 1);
+	tmp = XLALCutREAL4Sequence(tseries->data, 0, tseries->data->length);
+	if(!fseries || !tmp) {
+		XLALDestroyCOMPLEX8FrequencySeries(fseries);
+		XLALDestroyREAL4Sequence(tmp);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	}
 
 	/* compute normalization factor */
-	A = sqrt(length / window->sumofsquares) * tseries->deltaT;
+	A = sqrt(tseries->data->length / window->sumofsquares) * tseries->deltaT;
 
 	/* compute windowed version of time series data */
-	for(i = 0; i < length; i++)
+	for(i = 0; i < tseries->data->length; i++)
 		tmp->data[i] *= A * window->data->data[i];
 
 	/* compute the DFT */
-	XLALREAL4ForwardFFT(fseries->data, tmp, plan);
+	if(XLALREAL4ForwardFFT(fseries->data, tmp, plan)) {
+		XLALDestroyCOMPLEX8FrequencySeries(fseries);
+		XLALDestroyREAL4Sequence(tmp);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	}
 
 	/* clean up */
 	XLALDestroyREAL4Sequence(tmp);
