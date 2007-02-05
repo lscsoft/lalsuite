@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2005 Badri Krishnan, Alicia Sintes  
+ *  Copyright (C) 2005 Badri Krishnan, Alicia Sintes, Reinhard Prix, Bernd Machenschalk  
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 
 /** 
- * \author Badri Krishnan, Alicia Sintes
+ * \author Badri Krishnan, Alicia Sintes, Reinhard Prix, Bernd Machenschalk
  * \file HierarchicalSearch.c
  * \brief Program for calculating F-stat values for different time segments 
    and combining them semi-coherently using the Hough transform, and following 
@@ -2484,7 +2484,9 @@ void GetHoughCandidates_threshold(LALStatus            *status,
 	      TRY( LALStereo2SkyLocation (status->statusPtr, &sourceLocation, 
 					  j, i, patch, parDem), status);
 	      
-	      thisCandidate.alpha = sourceLocation.alpha;
+	      /* the above function uses atan2() which returns alpha in
+		 the range [-pi,pi] => add pi to it */
+	      thisCandidate.alpha = sourceLocation.alpha + LAL_PI;
 	      thisCandidate.delta = sourceLocation.delta;
 	      
 	      out->list[numCandidates] = thisCandidate;
@@ -2546,11 +2548,17 @@ void GetHoughCandidates_threshold(LALStatus            *status,
     
     /* get sky location of pixel */
     
-    TRY( LALStereo2SkyLocation (status->statusPtr, &sourceLocation, 
-				jMax, iMax, patch, parDem), status);
-      
-    thisCandidate.alpha = sourceLocation.alpha;
-    thisCandidate.delta = sourceLocation.delta;
+    /*     TRY( LALStereo2SkyLocation (status->statusPtr, &sourceLocation,  */
+    /* 				jMax, iMax, patch, parDem), status); */
+ 
+   /* the above function uses atan2() which returns alpha in
+       the range [-pi,pi] => add pi to it */
+    /* thisCandidate.alpha = sourceLocation.alpha + LAL_PI; */
+    /* thisCandidate.delta = sourceLocation.delta; */
+    
+    /* return coordinates of hough map center only */    
+    thisCandidate.alpha = parDem->skyPatch.alpha;
+    thisCandidate.delta = parDem->skyPatch.delta;
     
     out->list[numCandidates] = thisCandidate;
     numCandidates++;
