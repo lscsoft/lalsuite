@@ -12,7 +12,6 @@ $Id$
 #include <lal/LIGOMetadataTables.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/TimeFreqFFT.h>
-#include <lal/TFTransform.h>
 #include <lal/Window.h>
 #include <lal/LALInspiral.h>
 
