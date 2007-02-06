@@ -425,7 +425,6 @@ fprintf(stderr, "%f %f\n", cells[i].t0, cells[i].t3);
         tempPars->t3  = cells[i].t3;
         tempPars->massChoice = t03;
         tempPars->fLower = coarseIn.fLower;
-	fprintf(stderr, "# %f %f\n", cells[i].t0, cells[i].t3);
         LALInspiralParameterCalc( status->statusPtr, tempPars );
         CHECKSTATUSPTR( status );
 	    
@@ -673,9 +672,9 @@ LALPopulateNarrowEdge(LALStatus               *status,
 	  (*cell)[next].t3 = bisectionLine(gridParam->x0Min, gridParam->fLower, gridParam->mMin,gridParam->mMax);
     }
 
-    fprintf(stderr,"with narrow edge, t0=%f and t3=%f\n", (*cell)[next].t0,(*cell)[next].t3);
     LALInitHexagonalBank(status->statusPtr,  cell,  next, 
 		moments, paramsIn, gridParam, cellEvolution, cellList);
+    cellEvolution->nTemplate++;
 
 
 

@@ -209,7 +209,8 @@ LALInspiralCreatePNCoarseBankHexa(
     LALFree(list);
   }
 
-
+fprintf(stderr, "##");
+fflush(stderr);
   
   if (cellList != NULL)
     ABORT(status, LALINSPIRALBANKH_EHEXAINIT,LALINSPIRALBANKH_MSGEHEXAINIT);
@@ -321,7 +322,8 @@ LALInspiralCreatePNCoarseBankHexa(
       *nlist = *nlist +1; 
     }
   }
-
+fprintf(stderr, "##");
+fflush(stderr);
 
   /* allocate appropriate memory and fill the output bank */
   *list = (InspiralTemplateList*) 
@@ -499,6 +501,7 @@ LALPopulateCell(
     }
   }
   
+  cellEvolution->nTemplate +=it;
  
 
   /* Here, the parent has its 6 children set; he become sterile. */
@@ -670,12 +673,12 @@ LALInitHexagonalBank(
       LALListDelete(cellList, id);
       
     } 
-    /* cellEvolution->nTemplate++;*/
+  
 
   }
 #endif  
-  
-  cellEvolution->nTemplate++;
+
+
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
