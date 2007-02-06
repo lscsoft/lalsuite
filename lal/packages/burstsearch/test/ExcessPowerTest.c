@@ -313,7 +313,6 @@ main (int argc, char *argv[])
 	TestStatus (&status, CODES(0), 1);
       }
 
-    XLALPrintTFTileList (stdout, tfTiling, 4);
     TestStatus (&status, CODES(0), 1);
     printf("\n");
     printf("  ***    Matched filtering SNR           : %f\n",sqrt(snr2));

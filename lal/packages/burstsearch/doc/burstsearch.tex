@@ -965,62 +965,6 @@ LALOneMinusChisqCdf
 
 \newpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Module \texttt{LALPrintTFTileList.c}}
-\label{ss:LALPrintTFTileList.c}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-Outputs the details of a specified number of TF tiles to a file.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{PrintTFTileListCP}
-\idx{LALPrintTFTileList()}
-
-\subsubsection*{Description}
-
-The routine \verb+PrintTFTileList()+ outputs the details of a specified number
-of TF tiles to a file.  Its input parameters are (i) an integer
-\verb+maxTiles+ giving the maximum number of tiles to be output, (ii) a
-pointer \verb+tfTiling+ to a \verb+TFTiling+ structure, and (iii) a pointer
-\verb+fp+ to a \verb+FILE+.  Information on each of the first \verb+maxTiles+
-tiles in the linked list are then output to the file in a text format.  The
-information includes:
-\begin{itemize}
-
-\item The index $i$ of the time-frequency plane
-to which the tile belongs.
-
-\item The tile's frequency and time intervals, both in absolute units
-(Hertz and seconds) and in bins on the time frequency plane.
-
-\item The number of degrees of freedom $2 N_{\cal T}$.
-
-\item The excess power $\Delta P_{\cal T}$.
-
-\item The probability $\alpha_{\cal T}$.  
-
-\item The ``effective number of sigma'', $z$, corresponding to the
-probability $\alpha_{\cal T}$, defined by ${\rm erfc}(z/\sqrt{2}) =
-\alpha_{\cal T}$.  This is useful for comparisons with matched
-filtering signal-to-noise ratios.
-
-\end{itemize}
-
-By calling this routine, and by passing to it the parameter $n_{\rm
-events}$ obtained from the routine \verb+CountEPEvents()+, one can obtain
-an ordered list of all tiles passing a specified threshold $\alpha_*$.
-
-\subsubsection*{Uses}
-\begin{verbatim}
-LALChi2Threshold 
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{PrintTFTileListCV}}
-
-\newpage
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Module \texttt{LALComputeLikelihood.c}}
 \label{ss:LALComputeLikelihood.c}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

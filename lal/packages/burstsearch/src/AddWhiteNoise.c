@@ -8,63 +8,75 @@ $Id$
 NRCSID (ADDWHITENOISEC, "$Id$");
 
 #include <lal/ExcessPower.h>
-#include <lal/LALErrno.h>
 #include <lal/Random.h>
 #include <lal/Sequence.h>
 #include <lal/XLALError.h>
 
 
 /*
- *  Add white noise to complex vector
+ *  Add Gaussian white noise to various vectors
  */
 
 /******** <lalVerbatim file="AddWhiteNoiseCP"> ********/
-int XLALAddWhiteNoise(
-	COMPLEX8Sequence *v,
-	REAL8 amplitude
+REAL4Sequence *XLALREAL4AddWhiteNoise(
+	REAL4Sequence *sequence,
+	REAL4 rms,
+	RandomParams *params
 )
 /******** </lalVerbatim> ********/
 {
-	const char func[] = "XLALAddWhiteNoise";
-	RandomParams *params;
-	REAL4Sequence *noise_r, *noise_i;
-	size_t i;
+	const char func[] = "XLALREAL4AddWhiteNoise";
+	REAL4Sequence *noise;
+	unsigned i;
 
-	/* no-op on NULL input vector */
-	if(!v)
-		return(0);
+	/* create temporary storage */
+	noise = XLALCreateREAL4Sequence(sequence->length);
+	if(!noise)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
-	/* Seed random number generator */
-	params = XLALCreateRandomParams(0);
+	/* fill temporary sequence with Gaussian deviates and add to input */
+	XLALNormalDeviates(noise, params);
+	for(i = 0; i < sequence->length; i++)
+		sequence->data[i] += rms * noise->data[i];
 
-	/* Create temporary sequences */
-	noise_r = XLALCreateREAL4Sequence(v->length);
-	noise_i = XLALCreateREAL4Sequence(v->length);
-
-	/* Check for malloc failures */
-	if(!params || !noise_r || !noise_i) {
-		XLALDestroyRandomParams(params);
-		XLALDestroyREAL4Sequence(noise_r);
-		XLALDestroyREAL4Sequence(noise_i);
-		XLAL_ERROR(func, XLAL_EFUNC);
-	}
-
-	/* Fill temporary sequences with Gaussian deviates */
-	XLALNormalDeviates(noise_r, params);
-	XLALNormalDeviates(noise_i, params);
-
-	/* Add noise to input */
-	for(i = 0; i < v->length; i++) {
-		v->data[i].re += amplitude * noise_r->data[i];
-		v->data[i].im += amplitude * noise_i->data[i];
-	}
-
-	/* Clean up */
-	XLALDestroyRandomParams(params);
-	XLALDestroyREAL4Sequence(noise_r);
-	XLALDestroyREAL4Sequence(noise_i);
+	/* clean up */
+	XLALDestroyREAL4Sequence(noise);
 
 	/* success */
-	return(0);
+	return sequence;
 }
 
+
+/******** <lalVerbatim file="AddWhiteNoiseCP"> ********/
+COMPLEX8Sequence *XLALCOMPLEX8AddWhiteNoise(
+	COMPLEX8Sequence *sequence,
+	REAL8 rms,
+	RandomParams *params
+)
+/******** </lalVerbatim> ********/
+{
+	const char func[] = "XLALCOMPLEX8AddWhiteNoise";
+	REAL4Sequence *noise;
+	unsigned i;
+
+	/* create temporary storage */
+	noise = XLALCreateREAL4Sequence(sequence->length);
+	if(!noise)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+
+	/* fill temporary sequence with Gaussian deviates and add to input */
+	XLALNormalDeviates(noise, params);
+	for(i = 0; i < sequence->length; i++)
+		sequence->data[i].re += rms * noise->data[i];
+
+	/* repeat for imaginary component */
+	XLALNormalDeviates(noise, params);
+	for(i = 0; i < sequence->length; i++)
+		sequence->data[i].im += rms * noise->data[i];
+
+	/* clean up */
+	XLALDestroyREAL4Sequence(noise);
+
+	/* success */
+	return sequence;
+}

@@ -10,6 +10,7 @@ $Id$
 #include <lal/Window.h>
 #include <lal/RealFFT.h>
 #include <lal/LALRCSID.h>
+#include <lal/Sequence.h>
 
 #ifdef  __cplusplus		/* C++ protection. */
 extern "C" {
@@ -19,27 +20,33 @@ NRCSID(TFTRANSFORMH, "$Id$");
 
 
 typedef struct tagREAL4TimeFrequencyPlane {
-	CHAR name[LALNameLength];	/* name of data from which this was computed */
-	LIGOTimeGPS epoch;	/* epoch of data from which this was computed */
-	INT4 timeBins;	/* Number of time bins in TF plane */
-	REAL8 deltaT;	/* time resolution of the plane */
-	INT4 freqBins;	/* Number of freq bins in TF plane */
-	REAL8 deltaF;	/* frequency resolution of the plane */
-	REAL8 flow;	/* minimum frequency to search for */
-	REAL4 *data;
-	/*
-	 * data[i*params->freqBins+j] is a real number
-	 * corresponding to a time t_i = epoch + i*(deltaT)
-	 * and a frequency f_j = flow + j*(deltaF)
-	 */
+	/* name of data from which this was computed */
+	CHAR name[LALNameLength];
+	/* epoch of data from which this was computed */
+	LIGOTimeGPS epoch;
+	/* time resolution of the plane */
+	REAL8 deltaT;
+	/* Number of frequency channels in TF plane */
+	UINT4 channels;
+	/* TF plane's frequency resolution (channel spacing) */
+	REAL8 deltaF;
+	/* low frequency boundary of TF plane */
+	REAL8 flow;
+	/* inner product of filters for neighbouring channels */
+	REAL8 channel_overlap;
+	/* predicted mean square for the time series in each channel */
+	REAL4Sequence *channel_mean_square;
+	/* channel data;  channel[j]->data[i] corresponds to time epoch + i
+	 * * deltaT and frequency flow + j * deltaF */
+	REAL4Sequence **channel;
 } REAL4TimeFrequencyPlane;
 
 
 REAL4TimeFrequencyPlane *
 XLALCreateTFPlane(
-	INT4 timeBins,
+	UINT4 timeBins,
 	REAL8 deltaT,
-	INT4 freqBins,
+	UINT4 channels,
 	REAL8 deltaF,
 	REAL8 flow
 );
@@ -51,29 +58,25 @@ XLALDestroyTFPlane(
 );
 
 
-COMPLEX8FrequencySeries *
-XLALComputeFrequencySeries(
+COMPLEX8FrequencySeries *XLALWindowedREAL4ForwardFFT(
 	const REAL4TimeSeries *tseries,
 	const REAL4Window *window,
 	const REAL4FFTPlan *plan
+);
+
+COMPLEX16FrequencySeries *XLALWindowedREAL8ForwardFFT(
+	const REAL8TimeSeries *tseries,
+	const REAL8Window *window,
+	const REAL8FFTPlan *plan
 );
 
 
 int
 XLALFreqSeriesToTFPlane(
 	REAL4TimeFrequencyPlane *tfplane,
-	REAL4 *normalisation,
 	const COMPLEX8FrequencySeries *fseries,
 	const REAL4FrequencySeries *psd,
 	const REAL4FFTPlan *reverseplan
-);
-
-
-REAL8 *
-XLALTFPlaneEvalHrssFactor(
-	const REAL4TimeFrequencyPlane *plane,
-	const COMPLEX8FrequencySeries *response,
-	const REAL4FrequencySeries *psd
 );
 
 

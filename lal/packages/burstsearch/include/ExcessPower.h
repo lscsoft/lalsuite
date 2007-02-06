@@ -11,6 +11,7 @@ $Id$
 #include <lal/LALDatatypes.h>
 #include <lal/TFTransform.h>
 #include <lal/LALRCSID.h>
+#include <lal/Random.h>
 
 #ifdef  __cplusplus		/* C++ protection. */
 extern "C" {
@@ -19,12 +20,12 @@ extern "C" {
 NRCSID(EXCESSPOWERH, "$Id$");
 
 typedef struct tagTFTile {
-	/* tile specification as indeces into time-frequency plane data */
-	INT4 fstart;
-	INT4 fbins;
-	INT4 tstart;
-	INT4 tbins;
-	/* time-frequency plan parameters */
+	/* tile specification as indexes into time-frequency plane data */
+	UINT4 channel0;
+	UINT4 channels;
+	UINT4 tstart;
+	UINT4 tbins;
+	/* time-frequency plane parameters for reconstructing tile dimensions */
 	REAL8 flow;
 	REAL8 deltaT;
 	REAL8 deltaF;
@@ -37,6 +38,7 @@ typedef struct tagTFTile {
 
 
 typedef struct tagTFTiling {
+	/* array of tiles */
 	TFTile *tile;
 	size_t numtiles;
 } TFTiling;
@@ -66,9 +68,7 @@ XLALDestroyTFTiling(
 int
 XLALComputeExcessPower(
 	TFTiling *tiling,
-	const REAL4TimeFrequencyPlane *plane,
-	const REAL8 *hrssfactor,
-	const REAL4 *norm
+	const REAL4TimeFrequencyPlane *plane
 );
 
 
@@ -78,19 +78,16 @@ XLALComputeLikelihood(
 );
 
 
-void
-XLALPrintTFTileList(
-	FILE *fp,
-	const TFTiling *tiling,
-	const REAL4TimeFrequencyPlane *plane,
-	size_t maxTiles
+REAL4Sequence *XLALREAL4AddWhiteNoise(
+	REAL4Sequence *sequence,
+	REAL4 rms,
+	RandomParams *params
 );
 
-
-int
-XLALAddWhiteNoise(
-	COMPLEX8Sequence *v,
-	REAL8 noiseLevel
+COMPLEX8Sequence *XLALCOMPLEX8AddWhiteNoise(
+	COMPLEX8Sequence *sequence,
+	REAL8 rms,
+	RandomParams *params
 );
 
 

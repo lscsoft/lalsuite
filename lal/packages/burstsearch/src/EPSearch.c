@@ -73,8 +73,8 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 	event->duration = tile->tbins * tile->deltaT;
 	event->peak_time = event->start_time;
 	XLALGPSAdd(&event->peak_time, 0.5 * event->duration);
-	event->bandwidth = tile->fbins * tile->deltaF;
-	event->central_freq = tile->flow + tile->fstart*tile->deltaF + (0.5 * event->bandwidth);
+	event->bandwidth = tile->channels * tile->deltaF;
+	event->central_freq = tile->flow + tile->channel0 * tile->deltaF + (0.5 * event->bandwidth);
 	event->amplitude = tile->hrss;
 	event->snr = tile->excessPower;
 	event->confidence =  tile->lnalpha;
@@ -116,7 +116,6 @@ static SnglBurstTable *XLALTFTilesToSnglBurstTable(SnglBurstTable *head, const R
 /******** <lalVerbatim file="EPSearchCP"> ********/
 SnglBurstTable *
 XLALEPSearch(
-	const COMPLEX8FrequencySeries  *response,
 	const REAL4TimeSeries  *tseries,
 	EPSearchParams   *params
 )
@@ -127,15 +126,13 @@ XLALEPSearch(
 	int errorcode = 0;
 	int start_sample;
 	COMPLEX8FrequencySeries *fseries = NULL;
-	REAL4Window *window = params->window;
+	REAL4Window *tukey;
 	RealFFTPlan *fplan;
 	RealFFTPlan *rplan;
 	REAL4FrequencySeries *psd;
 	REAL4TimeSeries *cuttseries;
 	TFTiling *Tiling;
 	REAL4TimeFrequencyPlane *tfplane;
-	REAL4 *normalisation;
-	REAL8 *hrssfactor = NULL;
 
 	/*
 	 * FreqSeriesToTFPlane() is passed a frequency series, and it needs
@@ -145,34 +142,35 @@ XLALEPSearch(
 	 * So we need to make sure that's true.
 	 */
 
-	if(window->data->length & 1) {
+	if(params->window->data->length & 1) {
 		/* window length is odd */
 		XLAL_ERROR_NULL(func, XLAL_EINVAL);
 	}
 
 	/*
-	 * Create an FFT plan, allocate space for the average spectrum,
-	 * allocate temporary storage for frequency series data, allocate
-	 * storage for the normalisation data, allocate and initialize the
-	 * time-frequency plane storage, and construct a time-frequency
-	 * tiling of the plane.
+	 * Construct forward and reverse FFT plans, storage for the PSD,
+	 * the time-frequency plane, and a tiling.
 	 */
 
-	fplan = XLALCreateForwardREAL4FFTPlan(window->data->length, 1);
-	rplan = XLALCreateReverseREAL4FFTPlan(window->data->length, 1);
-	psd = XLALCreateREAL4FrequencySeries("PSD", &tseries->epoch, 0, 0, &lalDimensionlessUnit, window->data->length / 2 + 1);
+	fplan = XLALCreateForwardREAL4FFTPlan(params->window->data->length, 1);
+	rplan = XLALCreateReverseREAL4FFTPlan(params->window->data->length, 1);
+	psd = XLALCreateREAL4FrequencySeries("PSD", &tseries->epoch, 0, 0, &lalDimensionlessUnit, params->window->data->length / 2 + 1);
 	tfplane = XLALCreateTFPlane(params->tf_timeBins, params->tf_deltaT, params->tf_freqBins, params->tf_deltaF, params->tf_flow);
-	normalisation = LALMalloc(params->tf_freqBins * sizeof(*normalisation));
 	Tiling = XLALCreateTFTiling(tfplane, params->inv_fractional_stride, params->maxTileBandwidth, params->maxTileDuration);
-
-	if(!normalisation) {
-		errorcode = XLAL_ENOMEM;
-		goto error;
-	}
-	if(!fplan || !rplan || !psd || !tfplane || !Tiling) {
+	tukey = XLALCreateTukeyREAL4Window(params->window->data->length, 0.5);
+	if(!fplan || !rplan || !psd || !tfplane || !Tiling || !tukey) {
 		errorcode = XLAL_EFUNC;
 		goto error;
 	}
+
+	/*
+	 * Adjust the Tukey window's normalization so that it is
+	 * RMS-preserving in the flat portion.  This is done by setting its
+	 * normalization to be equal to that of a rectangular window
+	 * (pretend the tapers aren't present).
+	 */
+
+	tukey->sumofsquares = tukey->data->length;
 
 	/*
 	 * Compute the average spectrum.
@@ -180,11 +178,11 @@ XLALEPSearch(
 
 	switch(params->method) {
 	case useMean:
-		XLALREAL4AverageSpectrumWelch(psd, tseries, window->data->length, params->windowShift, window, fplan);
+		XLALREAL4AverageSpectrumWelch(psd, tseries, params->window->data->length, params->windowShift, params->window, fplan);
 		break;
 
 	case useMedian:
-		XLALREAL4AverageSpectrumMedian(psd, tseries, window->data->length, params->windowShift, window, fplan);
+		XLALREAL4AverageSpectrumMedian(psd, tseries, params->window->data->length, params->windowShift, params->window, fplan);
 		break;
 
 	default:
@@ -196,27 +194,16 @@ XLALEPSearch(
 		params->diagnostics->XLALWriteLIGOLwXMLArrayREAL4FrequencySeries(params->diagnostics->LIGOLwXMLStream, NULL, psd);
 
 	/*
-	 * Compute the hrss factors
-	 */
-
-	XLALPrintInfo("XLALEPSearch(): computing the hrss factors\n");
-	hrssfactor = XLALTFPlaneEvalHrssFactor(tfplane, response, psd);
-	if(!hrssfactor) {
-		errorcode = XLAL_EFUNC;
-		goto error;
-	}
-
-	/*
 	 * Loop over data applying excess power method.
 	 */
 
-	for(start_sample = 0; start_sample + window->data->length <= tseries->data->length; start_sample += params->windowShift) {
+	for(start_sample = 0; start_sample + params->window->data->length <= tseries->data->length; start_sample += params->windowShift) {
 		/*
 		 * Extract a window-length of data from the time series,
 		 * compute its DFT, then free it.
 		 */
 
-		cuttseries = XLALCutREAL4TimeSeries(tseries, start_sample, window->data->length);
+		cuttseries = XLALCutREAL4TimeSeries(tseries, start_sample, params->window->data->length);
 		if(!cuttseries) {
 			errorcode = XLAL_EFUNC;
 			goto error;
@@ -224,7 +211,7 @@ XLALEPSearch(
 		XLALPrintInfo("XLALEPSearch(): analyzing samples %zu -- %zu (%.9lf s -- %.9lf s)\n", start_sample, start_sample + cuttseries->data->length, start_sample * cuttseries->deltaT, (start_sample + cuttseries->data->length) * cuttseries->deltaT);
 
 		XLALPrintInfo("XLALEPSearch(): computing the Fourier transform\n");
-		fseries = XLALComputeFrequencySeries(cuttseries, window, fplan);
+		fseries = XLALWindowedREAL4ForwardFFT(cuttseries, tukey, fplan);
 		XLALDestroyREAL4TimeSeries(cuttseries);
 		if(!fseries) {
 			errorcode = XLAL_EFUNC;
@@ -249,7 +236,7 @@ XLALEPSearch(
 		 */
 
 		XLALPrintInfo("XLALEPSearch(): computing the time-frequency decomposition\n");
-		if(XLALFreqSeriesToTFPlane(tfplane, normalisation, fseries, params->useOverWhitening ? psd : NULL, rplan)) {
+		if(XLALFreqSeriesToTFPlane(tfplane, fseries, psd, rplan)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
@@ -262,7 +249,7 @@ XLALEPSearch(
 		 */
 
 		XLALPrintInfo("XLALEPSearch(): computing the excess power for each tile\n");
-		if(XLALComputeExcessPower(Tiling, tfplane, hrssfactor, normalisation)) {
+		if(XLALComputeExcessPower(Tiling, tfplane)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
@@ -296,8 +283,7 @@ XLALEPSearch(
 	XLALDestroyCOMPLEX8FrequencySeries(fseries);
 	XLALDestroyTFTiling(Tiling);
 	XLALDestroyTFPlane(tfplane);
-	LALFree(normalisation);
-	LALFree(hrssfactor);
+	XLALDestroyREAL4Window(tukey);
 	if(errorcode) {
 		XLALDestroySnglBurstTable(head);
 		XLAL_ERROR_NULL(func, errorcode);
