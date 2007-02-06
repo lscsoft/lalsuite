@@ -49,7 +49,10 @@ Papoulis:   & $\frac{1}{\pi}\sin(\pi |y|)+(1-|y|)\cos(\pi |y|)$ \\[1ex]
 Hamming:    & $1-0.46[1-\cos(\pi y)]$ \\[1ex]
 Kaiser:     & $I_0\left(\beta\sqrt{1-(1-|y|)^2}\right)
 		/I_0\left(\beta\right)$ \\[1ex]
-Creighton:  & $\exp\left[-\beta y^2/(1-y^2)\right]$
+Creighton:  & $\exp\left[-\beta y^2/(1-y^2)\right]$ \\[1ex]
+Tukey:      & $\left\{\begin{array}{c@{\qquad}l}
+		\sin^2 [\pi (|y| - 1) / (2 \beta)] & |y| \geq 1 - \beta \\
+		1 & |y| \leq 1 - \beta \end{array}\right.$
 \end{tabular}\end{center}
 
 \begin{wrapfigure}{r}{0.65\textwidth}
@@ -119,7 +122,12 @@ dynamical range (a Creighton or a Papoulis window).  A second
 consideration in some circumstances is computational cost: a
 rectangular window is trivial, and polynomial windows (e.g.\ Welch,
 Bartlett, Parzen) are somewhat cheaper than windows requiring a
-function call (e.g.\ Hann, Papoulis, Kaiser, Creighton).
+function call (e.g.\ Hann, Papoulis, Kaiser, Creighton, Tukey).
+
+The $\beta$ parameter for the Tukey window sets what fraction of the domain
+is used by the $\cos^2$ turn on/turn off.  Note that the rectangular ($beta
+= 0$) and Hann ($\beta = 1$) windows are special cases of the Tukey window.
+
 
 **********************************************************************</lalLaTeX> */
 
@@ -188,12 +196,13 @@ typedef enum {Rectangular,
               Hamming,
               Kaiser,
               Creighton,
+	      Tukey,
               NumberWindowTypes} WindowType;
 \end{verbatim}
 For convenience, the following macro is also defined
 \begin{verbatim}
 #define WINDOWNAMELIST {"Rectangular","Hann","Welch","Bartlett","Parzen","Papoulis",
-                        "Hamming", "Kaiser", "Creighton"}
+                        "Hamming", "Kaiser", "Creighton", "Tukey"}
 \end{verbatim}
 This string can be used to print out the name of any of the windows (see the
 test program for an example of this).  If a new window is added, be sure to
@@ -214,12 +223,13 @@ typedef enum {Rectangular,
               Hamming,
               Kaiser,
 	      Creighton,
+	      Tukey,
               /* add any new window types just before this comment */
               NumberWindowTypes} WindowType;
 
 /* if you add new windows above, be sure to add a descriptive name below. */
 #define WINDOWNAMELIST \
-{"Rectangular","Hann","Welch","Bartlett","Parzen","Papoulis","Hamming","Kaiser","Creighton"}
+{"Rectangular","Hann","Welch","Bartlett","Parzen","Papoulis","Hamming","Kaiser","Creighton", "Tukey"}
 
 /*******************************************************************<lalLaTeX>
 
@@ -300,6 +310,7 @@ REAL4Window *XLALCreatePapoulisREAL4Window( UINT4 length );
 REAL4Window *XLALCreateHammingREAL4Window( UINT4 length );
 REAL4Window *XLALCreateKaiserREAL4Window( UINT4 length, REAL4 beta );
 REAL4Window *XLALCreateCreightonREAL4Window( UINT4 length, REAL4 beta );
+REAL4Window *XLALCreateTukeyREAL4Window( UINT4 length, REAL4 beta );
 REAL8Window *XLALCreateRectangularREAL8Window( UINT4 length );
 REAL8Window *XLALCreateHannREAL8Window( UINT4 length );
 REAL8Window *XLALCreateWelchREAL8Window( UINT4 length );
@@ -309,6 +320,7 @@ REAL8Window *XLALCreatePapoulisREAL8Window( UINT4 length );
 REAL8Window *XLALCreateHammingREAL8Window( UINT4 length );
 REAL8Window *XLALCreateKaiserREAL8Window( UINT4 length, REAL4 beta );
 REAL8Window *XLALCreateCreightonREAL8Window( UINT4 length, REAL4 beta );
+REAL8Window *XLALCreateTukeyREAL8Window( UINT4 length, REAL4 beta );
 void XLALDestroyREAL4Window( REAL4Window *window );
 void XLALDestroyREAL8Window( REAL8Window *window );
 

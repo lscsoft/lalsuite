@@ -344,6 +344,14 @@ REAL4Window * XLALCreateREAL4Window( UINT4 length, WindowType type, REAL4 beta )
       }
       break;
 
+    case Tukey:
+      while ( i-- ) {
+        y = 1.0 - dy*(j++);
+        *(data1++) = *(data2--) = w = (y >= 1 - beta) ? pow(sin(LAL_PI_2 * (y - 1) / beta), 2.0) : 1;
+        wss += w*w;
+      }
+      break;
+
       /* Default case -- this will NEVER happen -- it is trapped above! */
     default:
       XLALDestroyREAL4Vector( window->data );
@@ -516,6 +524,14 @@ REAL8Window * XLALCreateREAL8Window( UINT4 length, WindowType type, REAL4 beta )
       }
       break;
 
+    case Tukey:
+      while ( i-- ) {
+        y = 1.0 - dy*(j++);
+        *(data1++) = *(data2--) = w = (y >= 1 - beta) ? pow(sin(LAL_PI_2 * (y - 1) / beta), 2.0) : 1;
+        wss += w*w;
+      }
+      break;
+
       /* Default case -- this will NEVER happen -- it is trapped above! */
     default:
       XLALDestroyREAL8Vector( window->data );
@@ -631,6 +647,16 @@ REAL4Window * XLALCreateCreightonREAL4Window( UINT4 length, REAL4 beta )
   return window;
 }
 
+REAL4Window * XLALCreateTukeyREAL4Window( UINT4 length, REAL4 beta )
+{
+  static const char *func = "XLALCreateTukeyREAL4Window";
+  REAL4Window *window;
+  window = XLALCreateREAL4Window( length, Tukey, beta );
+  if ( ! window )
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  return window;
+}
+
 
 REAL8Window * XLALCreateRectangularREAL8Window( UINT4 length )
 {
@@ -717,6 +743,16 @@ REAL8Window * XLALCreateCreightonREAL8Window( UINT4 length, REAL4 beta )
   static const char *func = "XLALCreateCreightonREAL8Window";
   REAL8Window *window;
   window = XLALCreateREAL8Window( length, Creighton, beta );
+  if ( ! window )
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  return window;
+}
+
+REAL8Window * XLALCreateTukeyREAL8Window( UINT4 length, REAL4 beta )
+{
+  static const char *func = "XLALCreateTukeyREAL8Window";
+  REAL8Window *window;
+  window = XLALCreateREAL8Window( length, Tukey, beta );
   if ( ! window )
     XLAL_ERROR_NULL( func, XLAL_EFUNC );
   return window;
