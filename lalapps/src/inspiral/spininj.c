@@ -67,15 +67,12 @@ RCSID( "$Id$" );
 "                           Default is SPININJ_logDistance \n"\
 "  --distance-min           set minimal value of simulated sources distance in kpc \n"\
 "  --distance-max           set maximal value of simulated sources distance in kpc \n\n"\
-"  --theta0-min             set minimal value of the initial orbital angle theta0  (0.01)\n"\
-"  --theta0-max             set maximal value of the initial orbital angle theta0  (pi-0.01)\n"\
-"  --theta0-range           set range of the initial orbital angle theta0 (0.01 -  (pi-0.01))\n\n"\
-"  --phi0-min               set minimal value of the initial orbital angle phi0  (0)\n"\
-"  --phi0-max               set maximal value of the initial orbital angle phi0  (2 pi)\n"\
-"  --phi0-range             set range of the initial orbital angle phi0  (0 -  2 pi)\n\n"\
 "  --coa-phase-min          set minimal value of the initial orbital angle coa-phase  (0)\n"\
 "  --coa-phase-max          set maximal value of the initial orbital angle coa-phase  (2 pi)\n"\
 "  --coa-phase-range        set range of the initial orbital angle coa-phase  (0 -  2 pi)\n\n"\
+"  --inclination-min        set minimal value of the initial inclination  (>=0.01 \n"\
+"  --inclination-max        set maximal value of the initial inclination  (<=pi)\n"\
+"  --inclination-range      set range of the initial inclination (0.01 -  pi)\n\n"\
 "  --spin1-min              set minimal value of the initial spin  (>=0)\n"\
 "  --spin1-max              set maximal value of the initial spin  (<=1)\n"\
 "  --spin1-range            set range of the initial spin (0 -  1)\n\n"\
@@ -124,9 +121,10 @@ typedef struct {
   CHAR            *userTag ;  
   massEnum         mdistr;
   distributionEnum ddistr;
+  REAL4           theta0, phi0; 
   SPININJrange         spin1,  spin2;
-  SPININJrange         theta0, phi0;
   SPININJrange         coa_phase;
+  SPININJrange         inclination;
 } InspiralInjectionParameters;
 
 
@@ -148,10 +146,6 @@ void LALSetDistance(LALStatus *status,
 		    SimInspiralTable *this_inj);
 
 void LALSetSpin(LALStatus                   *status,
-		InspiralInjectionParameters params,
-		SimInspiralTable            *this_inj  );
-
-void LALSetOrbit(LALStatus                   *status,
 		InspiralInjectionParameters params,
 		SimInspiralTable            *this_inj  );
 
@@ -265,8 +259,6 @@ int main( int argc, char *argv[] )
 	      &status);   
     LAL_CALL( LALSetSpin(&status, paramsIn, this_inj), 
 	      &status); 
-    LAL_CALL( LALSetOrbit(&status, paramsIn, this_inj), 
-	      &status);  
     LAL_CALL( LALSetDistance(&status, paramsIn, this_inj), 
 	      &status);
     LAL_CALL( LALSetSpatialDistribution(&status, paramsIn, this_inj),
@@ -430,27 +422,6 @@ void LALSetSpin(LALStatus                   *status,
 
 }
 
-
-void LALSetOrbit(LALStatus                   *status,
-		 InspiralInjectionParameters params,
-		 SimInspiralTable            *this_inj  )
-{       
-  REAL4 u; 
-  REAL4 cosTheta0Max;
-  REAL4 cosTheta0Min;
-  
-  LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
-
-  cosTheta0Max = cos(params.theta0.min);
-  cosTheta0Min = cos(params.theta0.max);
-
-  this_inj->theta0 = acos(cosTheta0Min + u * (cosTheta0Max - cosTheta0Min) );
-
-  LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
-  this_inj->phi0 = params.phi0.min + u * (params.phi0.max - params.phi0.min);
-
-}
-
 /* TODO to check */
 void LALSetDistance(LALStatus *status, 
 		    InspiralInjectionParameters params,
@@ -500,7 +471,15 @@ void LALSetSpatialDistribution(LALStatus *status,
 
   /*TO check */  
   LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
-  this_inj->inclination = acos( 2.0 * u - 1.0 );
+ 
+  /* we are setting min value of inclination to 0.01
+   * inclination = 0 causes initial orb ang mmtm to coincide with 
+   * a coord singularity in the injection code. 
+   */ 
+
+  this_inj->inclination = 
+        acos( cos(params.inclination.min) 
+        + u *(cos(params.inclination.max) - cos(params.inclination.min)));
   
   /* provide an input argument ? */
   LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
@@ -692,16 +671,16 @@ void LALParserInspiralInjection(LALStatus *status,
   memset( params->waveform, 0, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR) );
   
   /* Default values */
-  params->theta0.min                      = 0.01; /* can not be set to zero */
-  params->theta0.max                      = LAL_PI - 0.01; /* can not be set to pi */
-  params->phi0.min                        = 0.0;
-  params->phi0.max                        = LAL_TWOPI;
-  params->spin1.min                       = 0.;
-  params->spin2.min                       = 0.;
-  params->spin1.max                       = 1.;
-  params->spin2.max                       = 1.;
-  params->coa_phase.min                   = 0.;
-  params->coa_phase.max                   = LAL_TWOPI;
+  params->theta0                      = 0;    /* variable not used for spinning inj */
+  params->inclination.min             = 0.01; /* can not be set to zero */
+  params->inclination.max             = LAL_PI;
+  params->phi0                        = 0.0; /* set =0 with no less of generality */
+  params->spin1.min                   = 0.;
+  params->spin2.min                   = 0.;
+  params->spin1.max                   = 1.;
+  params->spin2.max                   = 1.;
+  params->coa_phase.min               = 0.;
+  params->coa_phase.max               = LAL_TWOPI;
   params->fLower                      = 40; 
   params->gpsStartTime.gpsSeconds     = S2StartTime;
   params->gpsStartTime.gpsNanoSeconds = 0;
@@ -883,43 +862,24 @@ void LALParserInspiralInjection(LALStatus *status,
 	this_proc_param = this_proc_param->next = 
 	  next_process_param( "spin2-max", "float", "%le", params->spin2.max );
       } 
-      else if ( strcmp(argv[i] , "--theta0-min") == 0 ){
-	params->theta0.min = atof( argv[++i] );
+      else if ( strcmp(argv[i] , "--inclination-min") == 0 ){
+	params->inclination.min = atof( argv[++i] );
 	this_proc_param = this_proc_param->next = 
-	  next_process_param( "theta0-min", "float", "%le", params->theta0.min );
+	  next_process_param( "inclination-min", "float", "%le", params->inclination.min );
       } 
-      else if ( strcmp(argv[i] , "--theta0-max") == 0 ){
-	params->theta0.max = atof( argv[++i] );
+      else if ( strcmp(argv[i] , "--inclination-max") == 0 ){
+	params->inclination.max = atof( argv[++i] );
 	this_proc_param = this_proc_param->next = 
-	  next_process_param( "theta0-max", "float", "%le", params->theta0.max );
+	  next_process_param( "inclination-max", "float", "%le", params->inclination.max );
       } 
-      else if ( strcmp(argv[i] , "--theta0-range") == 0 ){
-	params->theta0.min = atof( argv[++i] );
-	params->theta0.max = atof( argv[++i] );
+      else if ( strcmp(argv[i] , "--inclination-range") == 0 ){
+	params->inclination.min = atof( argv[++i] );
+	params->inclination.max = atof( argv[++i] );
 
 	this_proc_param = this_proc_param->next = 
-	  next_process_param( "theta0-min", "float", "%le", params->theta0.min );
+	  next_process_param( "inclination-min", "float", "%le", params->inclination.min );
 	this_proc_param = this_proc_param->next = 
-	  next_process_param( "theta0-max", "float", "%le", params->theta0.max );
-      } 
-      else if ( strcmp(argv[i] , "--phi0-min") == 0 ){
-	params->phi0.min = atof( argv[++i] );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "phi0-min", "float", "%le", params->phi0.min );
-      } 
-      else if ( strcmp(argv[i] , "--phi0-max") == 0 ){
-	params->phi0.max = atof( argv[++i] );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "phi0-max", "float", "%le", params->phi0.max );
-      } 
-      else if ( strcmp(argv[i] , "--phi0-range") == 0 ){
-	params->phi0.min = atof( argv[++i] );
-	params->phi0.max = atof( argv[++i] );
-
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "phi0-min", "float", "%le", params->phi0.min );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "phi0-max", "float", "%le", params->phi0.max );
+	  next_process_param( "inclination-max", "float", "%le", params->inclination.max );
       } 
       else if ( strcmp(argv[i] , "--waveform") == 0 ){
 	LALSnprintf( params->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
@@ -1080,48 +1040,6 @@ void LALCheckInspiralInjectionParameters(LALStatus *status,
 	       "gps-end-time", params.gpsEndTime.gpsSeconds );
       exit( 1 );
     } 
-  if ( params.theta0.min < 0.01   )
-    {
-      fprintf( stderr, "invalid argument to --%s:\n"
-	       "theta0-min can not be set to zero (less than 0.01)\n",
-	       "theta0-min");
-      exit( 1 );
-    }
-  if ( params.theta0.max > LAL_PI -0.01)
-    {
-      fprintf( stderr, "invalid argument to --%s:\n"
-	       "theta0-max can not be greater than (pi - 0.01) )\n",
-	       "theta0-max");
-      exit( 1 );
-    } 
-  if (  params.theta0.min > params.theta0.max   )
-    {
-      fprintf( stderr, "invalid argument to --%s:\n"
-	       "theta0-min (%f) can not be less than theta0-max (%f)\n",
-	       "theta0", params.theta0.min, params.theta0.max);
-      exit( 1 );
-    }
-  if ( params.phi0.min < 0 )
-    {
-      fprintf( stderr, "invalid argument to --%s:\n"
-	       "phi0-min can not be less than 0 )\n",
-	       "phi0-min");
-      exit( 1 );
-    } 
-  if ( params.phi0.max > LAL_TWOPI )
-    {
-      fprintf( stderr, "invalid argument to --%s:\n"
-	       "phi0-max can not be greater than 2 pi )\n",
-	       "phi0-max");
-      exit( 1 );
-    } 
-  if (  params.phi0.min > params.phi0.max   )
-    {
-      fprintf( stderr, "invalid argument to --%s:\n"
-	       "phi0-min (%f) can not be less than phi0-max (%f)\n",
-	       "phi0", params.phi0.min, params.phi0.max);
-      exit( 1 );
-    }
   if ( params.meanTimeStep <= 0 )
     {
       fprintf( stderr, "invalid argument to --%s:\n"
@@ -1219,6 +1137,33 @@ void LALCheckInspiralInjectionParameters(LALStatus *status,
                "spin2-min (%f) must be < spin2-max (%f) \n",
                "spin2-min or spin2-max",params.spin2.min, params.spin2.max);
                                                                                                                              
+      exit( 1 );
+    }
+
+    if (  params.inclination.max > LAL_PI)
+    {
+      fprintf( stderr, "invalid argument to --%s:\n"
+               "inclination-max (%f) must be < pi \n",
+               "inclination-max", params.inclination.max);
+
+      exit( 1 );
+    }
+
+    if (  params.inclination.min < 0.01)
+    {
+      fprintf( stderr, "invalid argument to --%s:\n"
+               "inclination-min (%f) must be > 0.01 \n",
+               "inclination-min", params.inclination.min);
+
+      exit( 1 );
+    }
+
+    if (  params.inclination.max < params.inclination.min)
+    {
+      fprintf( stderr, "invalid argument to --%s:\n"
+               "inclination-min (%f) must be < inclination-max (%f) \n",
+               "inclination-min or inclination-max",params.inclination.min, params.inclination.max);
+
       exit( 1 );
     }
 
