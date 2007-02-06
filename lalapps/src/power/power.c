@@ -1021,16 +1021,13 @@ static REAL4TimeSeries *get_time_series(
 
 static void gaussian_noise(
 	REAL4TimeSeries *series,
-	INT4 seed,
-	REAL4 rms
+	REAL4 rms,
+	RandomParams *rparams
 )
 {
-	RandomParams *rparams = XLALCreateRandomParams(seed);
 	unsigned i;
 
 	XLALNormalDeviates(series->data, rparams);
-	XLALDestroyRandomParams(rparams);
-
 	for(i = 0; i < series->data->length; i++)
 		series->data->data[i] *= rms;
 }
@@ -1569,6 +1566,7 @@ int main( int argc, char *argv[])
 	MetadataTable             procTable;
 	MetadataTable             procparams;
 	MetadataTable             searchsumm;
+	RandomParams             *rparams = NULL;
 
 	/*
 	 * Initialize everything
@@ -1651,7 +1649,9 @@ int main( int argc, char *argv[])
 				fprintf(stderr, "%s: error: failure allocating data for Gaussian noise\n", argv[0]);
 				exit(1);
 			}
-			gaussian_noise(series, options.seed, options.noise_rms);
+			if(!rparams)
+				rparams = XLALCreateRandomParams(options.seed);
+			gaussian_noise(series, options.noise_rms, rparams);
 		} else {
 			/*
 			 * Should never get here.
@@ -1788,6 +1788,7 @@ int main( int argc, char *argv[])
 	 * Final cleanup.
 	 */
 
+	XLALDestroyRandomParams(rparams);
 	XLALDestroyREAL4Window(params.window);
 	LALFree(procTable.processTable);
 	LALFree(searchsumm.searchSummaryTable);
