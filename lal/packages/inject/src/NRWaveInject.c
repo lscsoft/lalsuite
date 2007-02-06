@@ -32,6 +32,7 @@
 #include <lal/NRWaveIO.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/Date.h>
+#include <lal/LALConstants.h>
 
 
 
@@ -44,10 +45,8 @@ COMPLEX16 SphHarm22 (
 {
     COMPLEX16  out; /* complex number */
     REAL4      deptheta; /** dependency on theta */
-    REAL4      pi; 
 
-    pi = 4.0 * atan( 1.0 );
-    deptheta = sqrt( 5.0 / ( 64.0 * pi ) ) * ( 1.0 + cos( theta ))*( 1.0 + cos( theta ));
+    deptheta = sqrt( 5.0 / ( 64.0 * LAL_PI ) ) * ( 1.0 + cos( theta ))*( 1.0 + cos( theta ));
 
     out.re = deptheta * cos( 2.0*phi );
     out.im = deptheta * sin( 2.0*phi );
@@ -67,10 +66,7 @@ XLALOrientNRWave(
 {
     COMPLEX16  MultSphHarm;
     REAL4      tmp1, tmp2;
-    REAL4      pi;
     UINT4      vecLength, k;
-
-    pi = 4.0 * atan( 1.0 );
 
     vecLength = strain->data->vectorLength;
 
