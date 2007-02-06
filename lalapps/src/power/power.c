@@ -74,7 +74,7 @@ static struct {
 	CHAR *comment;              /* user comment                        */
 	int FilterCorruption;       /* samples corrupted by conditioning   */
 	INT4 maxSeriesLength;       /* RAM-limited input length            */
-	REAL4 noiseAmpl;            /* gain factor for white noise         */
+	REAL4 noise_rms;            /* Gaussian white noise RMS            */
 	LIGOLwXMLStream *diagnostics;  /* diagnostics XML stream */
 	size_t PSDAverageLength;    /* number of samples to use for PSD    */
 	INT4 ResampleRate;          /* sample rate after resampling        */
@@ -332,12 +332,12 @@ static int check_for_missing_parameters(char *prog, struct option *long_options,
 		}
 	}
 
-	if(!cachefile && !dirname && (options.noiseAmpl < 0.0)) {
-		fprintf(stderr, "%s: must provide at least one of --frame-cache, --frame-dir or --noise-amplitude\n", prog);
-		arg_is_missing = TRUE;
+	if(!!cachefile + !!dirname + (options.noise_rms > 0.0) != 1) {
+		fprintf(stderr, "%s: must provide exactly one of --frame-cache, --frame-dir or --gaussian-noise-rms\n", prog);
+		got_all_arguments = FALSE;
 	}
 	
-	return(got_all_arguments);
+	return got_all_arguments;
 }
 
 
@@ -412,7 +412,7 @@ void parse_command_line(
 		{"max-tileduration",    required_argument, NULL,           'm'},
 		{"mdc-cache",           required_argument, NULL,           'R'},
 		{"mdc-channel",         required_argument, NULL,           'S'},
-		{"noise-amplitude",     required_argument, NULL,           'V'},
+		{"gaussian-noise-rms",  required_argument, NULL,           'V'},
 		{"dump-diagnostics",    required_argument, NULL,           'X'},
 		{"psd-average-method",  required_argument, NULL,           'Y'},
 		{"psd-average-points",  required_argument, NULL,           'Z'},
@@ -452,8 +452,8 @@ void parse_command_line(
 	options.comment = "";		/* default */
 	options.FilterCorruption = -1;	/* impossible */
 	options.mdcchannelName = NULL;	/* default */
-	options.noiseAmpl = -1.0;	/* default */
-	options.diagnostics = NULL;	/* default == disable*/
+	options.noise_rms = -1.0;	/* default == disable */
+	options.diagnostics = NULL;	/* default == disable */
 	options.PSDAverageLength = 0;	/* impossible */
 	options.ResampleRate = 0;	/* impossible */
 	options.seed = 1;	        /* default */
@@ -604,9 +604,9 @@ void parse_command_line(
 		break;
 
 		case 'V':
-		options.noiseAmpl = atof(optarg);
-		if(options.noiseAmpl <= 0.0) {
-			sprintf(msg, "must be > 0.0 (%f specified)", options.noiseAmpl);
+		options.noise_rms = atof(optarg);
+		if(options.noise_rms <= 0.0) {
+			sprintf(msg, "must be > 0.0 (%f specified)", options.noise_rms);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -1019,29 +1019,20 @@ static REAL4TimeSeries *get_time_series(
  * ============================================================================
  */
 
-static void makeWhiteNoise(
-	LALStatus *stat,
+static void gaussian_noise(
 	REAL4TimeSeries *series,
 	INT4 seed,
-	REAL4 amplitude
+	REAL4 rms
 )
 {
-	size_t i;
-	static RandomParams *rparams = NULL;
+	RandomParams *rparams = XLALCreateRandomParams(seed);
+	unsigned i;
 
-	LAL_CALL(LALCreateRandomParams(stat, &rparams, seed), stat);
-	LAL_CALL(LALNormalDeviates(stat, series->data, rparams), stat);
-	LAL_CALL(LALDestroyRandomParams(stat, &rparams), stat);
+	XLALNormalDeviates(series->data, rparams);
+	XLALDestroyRandomParams(rparams);
 
 	for(i = 0; i < series->data->length; i++)
-		series->data->data[i] *= amplitude;
-	
-	if(options.verbose) {
-		REAL4 norm = 0.0;
-		for(i = 0; i < series->data->length; i++)
-			norm += series->data->data[i] * series->data->data[i];
-		fprintf(stderr, "makeWhiteNoise(): the norm is %e\n", sqrt(norm / series->data->length));
-	}
+		series->data->data[i] *= rms;
 }
 
 
@@ -1637,35 +1628,36 @@ int main( int argc, char *argv[])
 		 * Get the data.
 		 */
 
-		series = get_time_series(&stat, dirname, cachefile, options.channelName, epoch, options.stopEpoch, options.maxSeriesLength, options.calibrated, options.cal_high_pass);
+		if(dirname || cachefile) {
+			/*
+			 * Read from frame files
+			 */
 
-		/*
-		 * If we specified input files but nothing got read, there
-		 * was an error.
-		 */
-
-		if((dirname || cachefile) && !series) {
-			fprintf(stderr, "%s: error: failure reading input data\n", argv[0]);
-			exit(1);
-		}
-
-		/*
-		 * Create an empty series of 1s if we didn't read one (eg.
-		 * if no input files were specified), then add white noise
-		 * to the series.
-		 */
-
-		if(options.noiseAmpl > 0.0) {
+			series = get_time_series(&stat, dirname, cachefile, options.channelName, epoch, options.stopEpoch, options.maxSeriesLength, options.calibrated, options.cal_high_pass);
 			if(!series) {
-				size_t i, length;
-				length = XLALGPSDiff(&options.stopEpoch, &epoch) * options.ResampleRate;
-				if(options.maxSeriesLength)
-					length = min(options.maxSeriesLength, length);
-				series = XLALCreateREAL4TimeSeries(options.channelName, &epoch, 0.0, (REAL8) 1.0 / options.ResampleRate, &lalADCCountUnit, length);
-				for(i = 0; i < series->data->length; i++)
-					series->data->data[i] = 1.0;
+				fprintf(stderr, "%s: error: failure reading input data\n", argv[0]);
+				exit(1);
 			}
-			makeWhiteNoise(&stat, series, options.seed, options.noiseAmpl);
+		} else if(options.noise_rms > 0.0) {
+			/*
+			 * Synthesize Gaussian white noise.
+			 */
+
+			unsigned length = XLALGPSDiff(&options.stopEpoch, &epoch) * options.ResampleRate;
+			if(options.maxSeriesLength)
+				length = min(options.maxSeriesLength, length);
+			series = XLALCreateREAL4TimeSeries(options.channelName, &epoch, 0.0, (REAL8) 1.0 / options.ResampleRate, &lalADCCountUnit, length);
+			if(!series) {
+				fprintf(stderr, "%s: error: failure allocating data for Gaussian noise\n", argv[0]);
+				exit(1);
+			}
+			gaussian_noise(series, options.seed, options.noise_rms);
+		} else {
+			/*
+			 * Should never get here.
+			 */
+			fprintf(stderr, "%s: error: oops, don't know how to get data\n", argv[0]);
+			exit(1);
 		}
 
 		/*
@@ -1703,7 +1695,7 @@ int main( int argc, char *argv[])
 
 		/*
 		 * Generate the response function at the right deltaf to be
-		 * usd for h_rss estimation.  (if the cache file is NULL
+		 * used for h_rss estimation.  (if the cache file is NULL
 		 * then a unit response is generated).
 		 */
 

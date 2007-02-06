@@ -187,7 +187,7 @@ simulated data.
 \option{--max-tileduration}~\parm{sec.s} \newline \hspace*{0.5in}
 [\option{--mdc-cache}~\parm{cache file}] \newline \hspace*{0.5in}
 [\option{--mdc-channel}~\parm{channel name}] \newline \hspace*{0.5in}
-[\option{--noise-amplitude}~\parm{amplitude}] \newline \hspace*{0.5in}
+[\option{--gaussian-noise-rms}~\parm{RMS}] \newline \hspace*{0.5in}
 \option{--psd-average-method}~\parm{method} \newline \hspace*{0.5in}
 \option{--psd-average-points}~\parm{samples} \newline \hspace*{0.5in}
 [\option{--ram-limit}~\parm{MebiBytes}] \newline \hspace*{0.5in}
@@ -316,18 +316,14 @@ is 0.5 seconds worth of data.
 Obtain the locations of input \texttt{.gwf} frame files from the LAL frame
 cache file \parm{cache file}.  LAL frame cache files are explained in the
 ``framedata'' package in LAL and can be constructed by making calls to
-\prog{LSCDataFind} on some systems.  If both \option{--frame-cache} and
-\option{--frame-dir} are specified, \option{--frame-dir} will be used.  If
-neither \option{--frame-cache} nor \option{--frame-dir} are provided, then
-\option{--noise-amplitude} must be given in order to force the creation of
-simulated noise.
+\prog{LSCDataFind} on some systems.  One of \option{--frame-cache},
+\option{--frame-dir}, or \option{--gaussian-noise-rms} must be specified.
 
 \item[\option{--frame-dir} \parm{directory}]
 Use the \texttt{.gwf} frame files found in \parm{directory} for input.  If
 both \option{--frame-cache} and \option{--frame-dir} are specified,
-\option{--frame-dir} will be used.  If neither \option{--frame-cache} nor
-\option{--frame-dir} are provided, then \option{--noise-amplitude} must be
-given in order to force the creation of simulated noise.
+\option{--frame-dir} will be used.  One of \option{--frame-cache},
+\option{--frame-dir}, or \option{--gaussian-noise-rms} must be specified.
 
 \item[\option{--gps-end-time} \parm{seconds}]
 Set the GPS time up to which input data should be read to \parm{seconds}.
@@ -390,10 +386,11 @@ locations of MDC frames to be used for injections.
 Use the data found in the channel \parm{channel name} in the MDC frames for
 injections.
 
-\item[\option{--noise-amplitude} \parm{amplitude}]
-If this parameter is provided, then Gaussian white noise will be mixed with
-the input data.  If neither \option{--frame-cache} nor \option{--frame-dir}
-is provided, then the noise will be the only data analyzed.
+\item[\option{--gaussian-noise-rms} \parm{RMS}]
+If this parameter is provided instead of \option{--frame-cache} or
+\option{--frame-dir}, then Gaussian white noise will be synthesized and
+used as the input data.  One of \option{--frame-cache},
+\option{--frame-dir}, or \option{--gaussian-noise-rms} must be specified.
 
 \item[\option{--psd-average-method} \parm{method}]
 Set the averaging method used in determining the average power spectral
@@ -430,8 +427,9 @@ analysis.  This must be a power of 2 in the range \unit{2}{\hertz} to
 \unit{16386}{\hertz} inclusively.
 
 \item[\option{--seed} \parm{seed}]
-When mixing noise into the input data, use \parm{seed} to seed the random
-number generator.
+When synthesizing Gaussian white noise with \option{--gaussian-noise-rms},
+this options can be optionally used to set the random number generator's
+seed.
 
 \item[\option{--target-sample-rate} \parm{Hz}]
 Down-convert the input data stream to a sample rate of \parm{Hz} samples
