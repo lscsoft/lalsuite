@@ -499,8 +499,7 @@ LALPopulateCell(
     }
   }
   
-  /* how many new cells have been created ? */
-  cellEvolution->nTemplate += it;
+ 
 
   /* Here, the parent has its 6 children set; he become sterile. */
   (*cell)[headId].status 	= Sterile;
@@ -676,8 +675,7 @@ LALInitHexagonalBank(
   }
 #endif  
   
-
-
+  cellEvolution->nTemplate++;
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
