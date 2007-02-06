@@ -308,6 +308,10 @@ LALInspiralCreateCoarseBank(
 	LALInspiralCreatePNCoarseBankHexa( status->statusPtr, list, nlist, coarseIn );
 	CHECKSTATUSPTR( status );
       }
+      else if (coarseIn.gridSpacing == HybridHexagonal){
+	LALInspiralCreatePNCoarseBankHybridHexa( status->statusPtr, list, nlist, coarseIn );
+	CHECKSTATUSPTR( status );
+      }
       else if (coarseIn.gridSpacing == SquareNotOriented){
 	LALInspiralCreatePNCoarseBank( status->statusPtr, list, nlist, coarseIn );
 	CHECKSTATUSPTR( status );
