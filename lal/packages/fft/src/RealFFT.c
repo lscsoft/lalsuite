@@ -559,7 +559,7 @@ void XLALDestroyREAL8FFTPlan( REAL8FFTPlan *plan )
 }
 
 int XLALREAL8ForwardFFT( COMPLEX16Vector *output, REAL8Vector *input,
-    REAL8FFTPlan *plan )
+    const REAL8FFTPlan *plan )
 {
   static const char *func = "XLALREAL8ForwardFFT";
   REAL8 *tmp;
@@ -608,7 +608,7 @@ int XLALREAL8ForwardFFT( COMPLEX16Vector *output, REAL8Vector *input,
 
 
 int XLALREAL8ReverseFFT( REAL8Vector *output, COMPLEX16Vector *input,
-    REAL8FFTPlan *plan )
+    const REAL8FFTPlan *plan )
 {
   static const char *func = "XLALREAL8ReverseFFT";
   REAL8 *tmp;
@@ -658,7 +658,7 @@ int XLALREAL8ReverseFFT( REAL8Vector *output, COMPLEX16Vector *input,
 
 
 int XLALREAL8VectorFFT( REAL8Vector *output, REAL8Vector *input,
-    REAL8FFTPlan *plan )
+    const REAL8FFTPlan *plan )
 {
   static const char *func="XLALREAL8VectorFFT";
   if ( ! output || ! input || ! plan )
@@ -677,7 +677,7 @@ int XLALREAL8VectorFFT( REAL8Vector *output, REAL8Vector *input,
 
 
 int XLALREAL8PowerSpectrum( REAL8Vector *spec, REAL8Vector *data,
-    REAL8FFTPlan *plan )
+    const REAL8FFTPlan *plan )
 {
   static const char *func = "XLALREAL8PowerSpectrum";
   REAL8 *tmp;
