@@ -123,6 +123,9 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
     
     domeganew = params->wdotnew * v11;
 
+    if (omega < 0.0){
+       fprintf(stderr, "WARNING: Omega has become -ve, this should lead to nan's \n");
+    }
     
     domega =
 	params->wdotorb[0] 
@@ -146,12 +149,11 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
 				 + (8.0/7.0) * v * (params->epnorb[6]
 				 + (9.0/8.0) * v * (params->epnorb[7]
 				 + (10.0/9.0)* v *  params->epnorb[8] )))))) );
-    
+ 
     domega += params->wspin15 * omega * 
 	( LNhx * (113.0 * S1x + 113.0 * S2x + 75.0 * params->m2m1 * S1x + 75.0 * params->m1m2 * S2x) +
 	  LNhy * (113.0 * S1y + 113.0 * S2y + 75.0 * params->m2m1 * S1y + 75.0 * params->m1m2 * S2y) +
 	  LNhz * (113.0 * S1z + 113.0 * S2z + 75.0 * params->m2m1 * S1z + 75.0 * params->m1m2 * S2z) );
-
 
     dotLNS1 = (LNhx*S1x + LNhy*S1y + LNhz*S1z);
     dotLNS2 = (LNhx*S2x + LNhy*S2y + LNhz*S2z);
@@ -164,7 +166,7 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
 	  721.0 * dotLNS1 * dotLNS2 );
 
     domega *= domeganew;
- 
+
     /* Michele-041208: this evaluates the part of the test coming from the spin energy terms */
     /* If more terms come in, they need to be added by hand */
     
@@ -270,7 +272,6 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
     /* Michele-041208: not a derivative, but pass it back here anyway */ 
 
     values->data[11] = test;
-
 }
  
 
@@ -801,9 +802,13 @@ LALSTPNWaveformEngine (
   initphi = 0.0; /* -? see code at the end; initial phase is disabled for the moment*/
 
   /* note that Theta0 cannot be 0.0!*/
-  initLNhx = sin(params->orbitTheta0)*cos(params->orbitPhi0);
+  /*initLNhx = sin(params->orbitTheta0)*cos(params->orbitPhi0);
   initLNhy = sin(params->orbitTheta0)*sin(params->orbitPhi0);
-  initLNhz = cos(params->orbitTheta0);
+  initLNhz = cos(params->orbitTheta0);*/
+
+  initLNhx = sin(params->inclination);
+  initLNhy = 0.;
+  initLNhz = cos(params->inclination);
 
   initS1x = params->spin1[0] * (params->mass1 * params->mass1) / (params->totalMass * params->totalMass);
   initS1y = params->spin1[1] * (params->mass1 * params->mass1) / (params->totalMass * params->totalMass);
@@ -1102,7 +1107,7 @@ LALSTPNWaveformEngine (
       LNhx  = values.data[2] = newvalues.data[2];
       LNhy  = values.data[3] = newvalues.data[3];
       LNhz  = values.data[4] = newvalues.data[4];
-    
+  
       S1x   = values.data[5] = newvalues.data[5];
       S1y   = values.data[6] = newvalues.data[6];
       S1z   = values.data[7] = newvalues.data[7];
@@ -1119,8 +1124,46 @@ LALSTPNWaveformEngine (
       t = (++count - params->nStartPad) * dt;
 
   }  
- while(test < 0.0 && omegadot > 0 && LNhz*LNhz < 1.0 - LNhztol && omega/unitHz < 1000.0) ;
-  
+ /* Test that omega/unitHz < NYQUIST */
+ while(test < 0.0 && omegadot > 0 && LNhz*LNhz < 1.0 - LNhztol && omega/unitHz < params->tSampling/2. && !(isnan(omega))) ;
+
+ /* if code stopped since evolving quantities became nan write an error message */
+ if (isnan(omega)){
+    fprintf(stderr, 
+    "WARNING: evolving quantities have become nan. "
+     "m1: %e, "
+     "m2: %e, "
+     "spin1x: %e, "
+     "spin1y: %e, "
+     "spin1z: %e, "
+     "spin2x: %e, "
+     "spin2y: %e, "
+     "spin2z: %e, " 
+     "inclination: %e\n ",
+      params->mass1, params->mass2, 
+      params->spin1[0], params->spin1[1], params->spin1[2],
+      params->spin2[0], params->spin2[1], params->spin2[2],
+      params->inclination);
+ } 
+
+ /* if code stopped due to co-ord singularity write an error message */
+ if (!(LNhz*LNhz < 1.0 - LNhztol)){
+     fprintf( stderr,
+     "WARNING: Injection terminated, co-ord singularity. "
+     "m1: %e, "
+     "m2: %e, "
+     "spin1x: %e, "
+     "spin1y: %e, "
+     "spin1z: %e, "
+     "spin2x: %e, "
+     "spin2y: %e, "
+     "spin2z: %e, " 
+     "inclination: %e\n ",
+      params->mass1, params->mass2, 
+      params->spin1[0], params->spin1[1], params->spin1[2],
+      params->spin2[0], params->spin2[1], params->spin2[2],
+      params->inclination);
+ }
 
   /* Michele-041208: modified, added test */
   /* Michele-041208: to check, is omega really in Hz? */
