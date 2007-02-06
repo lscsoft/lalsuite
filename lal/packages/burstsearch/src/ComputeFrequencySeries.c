@@ -30,8 +30,8 @@ XLALComputeFrequencySeries(
 	/*
 	 * This function accepts a time series and a window function, and
 	 * computes and returns the Fourier transform of the windowed time
-	 * series.  The output is equal to the left-hand-side of (3) in
-	 * LIGO-T010095-00-Z with the normalization factor (5) applied.
+	 * series.  The output is equal to the left-hand-side of (7) in
+	 * LIGO-T010095-00-Z with the normalization factor (9) applied.
 	 */
 
 	const char func[] = "XLALComputeFrequencySeries";
@@ -41,7 +41,8 @@ XLALComputeFrequencySeries(
 	unsigned i;
 
 	/* validate input */
-	if(window->data->length != tseries->data->length)
+	if((window->data->length != tseries->data->length) ||
+	   (tseries->data->length == 0))
 		XLAL_ERROR_NULL(func, XLAL_EBADLEN);
 	if(window->sumofsquares == 0.0)
 		XLAL_ERROR_NULL(func, XLAL_EFPDIV0);
