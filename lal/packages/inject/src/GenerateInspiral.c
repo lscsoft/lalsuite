@@ -429,7 +429,13 @@ LALGenerateInspiralPopulateInspiral(
   inspiralParams->beta	 = -1.;      /* bcv useless for the time being */
 
   /* inclination of the binary */
+  /* inclination cannot be equal to zero for SpinTaylor injections */
+  if ( inspiralParams->approximant == SpinTaylor && thisEvent->inclination == 0 )
+  {
+    ABORT( status, GENERATEINSPIRALH_EZERO, GENERATEINSPIRALH_MSGEZERO );
+  }
   inspiralParams->inclination =  thisEvent->inclination;
+
   inspiralParams->ieta	    =  1;
   inspiralParams->nStartPad =  0;
   /* increased end padding from zero so that longer waveforms do not
@@ -448,11 +454,6 @@ LALGenerateInspiralPopulateInspiral(
   inspiralParams->spin1[2]    = thisEvent->spin1z;
   inspiralParams->spin2[2]    = thisEvent->spin2z;
 
-  /* theta0 can not be equal to zero for SpinTaylor injections */
-  if ( inspiralParams->approximant == SpinTaylor && thisEvent->theta0 == 0 )
-  {
-    ABORT( status, GENERATEINSPIRALH_EZERO, GENERATEINSPIRALH_MSGEZERO );
-  }
   inspiralParams->orbitTheta0 = thisEvent->theta0;
   inspiralParams->orbitPhi0   = thisEvent->phi0;
 
