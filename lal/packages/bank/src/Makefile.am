@@ -6,11 +6,13 @@ InspiralSpinBank.c\
 LALDeterminant3.c\
 LALInsidePolygon.c\
 LALInspiralBCVBank.c\
+LALInspiralBankList.c\
 LALInspiralComputeMetric.c\
 LALInspiralComputeParams.c\
 LALInspiralCreateCoarseBank.c\
 LALInspiralCreateFineBank.c\
 LALInspiralHexagonalBank.c\
+LALInspiralHybridHexagonalBank.c\
 LALInspiralLongestTemplateInBank.c\
 LALInspiralMoments.c\
 LALInspiralMomentsIntegrand.c\

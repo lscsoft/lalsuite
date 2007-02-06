@@ -1,0 +1,120 @@
+/*  <lalVerbatim file="LALInspiralBankListCV">
+Author: Cokelaer Thomas
+$Id$
+</lalVerbatim>  */
+
+/*  <lalLaTeX>
+\subsection{Module \texttt{LALInspiralBankList.c}}
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{LALInspiralBankListCP}
+\idx{LALInspiralBankList()}
+
+\subsubsection*{Description}
+A list of subroutimes to manipulate link list.
+
+\vspace{0.1in}
+\vfill{\footnotesize\input{LALInspiralBankListCV}}
+</lalLaTeX>  */
+
+
+#include <stdio.h>
+#include <lal/LALInspiralBank.h>
+#include <lal/AVFactories.h>
+#include <lal/SeqFactories.h>
+#include <lal/LALStdio.h>
+#include <lal/FindRoot.h>
+
+
+/* for debugging only
+void
+print_list(CellList *head)
+{
+  if (head == NULL){
+    printf("\n");
+  }
+  else { 
+    printf(" %d", head->id);
+    print_list(head->next);
+  }
+}
+*/
+
+UINT4 LALListLength(CellList *list)
+{
+  UINT4 count = 0; 
+  while (list != NULL){
+    count++;
+    list = list->next;
+  }
+  return count;
+}
+
+
+
+void LALListAppend(
+	CellList **headRef, 
+	INT4 id)
+{
+  CellList *current;
+
+  if ((current = malloc(sizeof(*current))) == NULL) {
+    {
+      printf("Error with malloc\n");
+      exit(0);
+    }
+  }
+  current->id = id;
+  current->next = *headRef;
+  *headRef = current;
+}
+
+
+
+/*Is it used somewhere ? delete everything in principle*/
+/*
+void DeleteList(CellList **headRef)
+{
+  CellList *tmp;
+  
+  while (headRef !=NULL){
+    tmp = (*headRef)->next;
+    free(headRef);
+    (*headRef) = tmp;
+  }
+  
+}
+*/
+
+
+void LALListDelete(CellList **headRef, INT4 id)
+{
+  CellList *ptr  = NULL;
+  CellList *prev = NULL;
+
+
+  for (ptr = *headRef; ptr != NULL; ptr= ptr->next){
+    if (id == ptr->id)
+      break;
+
+    prev = ptr;
+  }
+
+  if (ptr==NULL)
+    return ;
+
+  if (prev!=NULL){
+    prev->next = ptr->next;
+  }
+  else{
+    *headRef = ptr->next;
+  }
+
+  /* free the data here if needed such as free(ptr->id); */
+  free(ptr);
+
+  return ;
+
+
+ 
+}

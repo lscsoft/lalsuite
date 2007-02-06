@@ -36,19 +36,7 @@ LALInspiralComputeMetric()
 #include <lal/FindRoot.h>
 
 
-/* Thomas:: temporary definition for SPA hexagonal grid. */
-static REAL4  A0;
-static REAL4  A3;
-
-typedef struct{
-REAL4 ct;
-REAL4 b;
-}
-PRIN;
-
-static void LALSPAF(LALStatus *status,  REAL4 *result, REAL4 x, void *t3);
-
-
+/* Thomas:: definition for hexagonal grid. */
 
 
 NRCSID(LALINSPIRALHEXAGONALBANKC, "$Id$");
@@ -62,22 +50,21 @@ LALInspiralCreatePNCoarseBankHexa(
     InspiralCoarseBankIn coarseIn
     ) 
 {  
-
+  INT4                  i; 
+  INT4 			firstId = 0;
+  REAL4                 piFl;
+  REAL4 		A0, A3; 
   InspiralBankParams    bankPars;
   InspiralTemplate      *tempPars;
   InspiralMomentsEtc    moments;
-  INT4                  i;
-  InspiralCell          *cells;
-  REAL4                 piFl;
+  InspiralCell          *cells;  
   HexaGridParam         gridParam;
   CellEvolution         cellEvolution;
-  INT4 firstId=0;
-  CellList *cellList=NULL;
+  CellList 		*cellList = NULL;
 
   INITSTATUS( status, "LALInspiralHexagonalBank", 
       LALINSPIRALHEXAGONALBANKC );
   ATTATCHSTATUSPTR( status );
-
 
   ASSERT( coarseIn.mMin > 0., status, 
       LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE );
@@ -89,7 +76,8 @@ LALInspiralCreatePNCoarseBankHexa(
   /* Set the elements of the metric and tempPars structures in  */
   /* conformity with the coarseIn structure                     */ 
   if ( !(tempPars = (InspiralTemplate *) 
-                LALCalloc( 1, sizeof(InspiralTemplate)))) {
+  			LALCalloc( 1, sizeof(InspiralTemplate)))) 
+  {
     LALFree(tempPars);
     LALFree(cells);
     ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
@@ -117,7 +105,11 @@ LALInspiralCreatePNCoarseBankHexa(
   
   /* Get the moments of the PSD integrand and other parameters */
   /* required in the computation of the metric  once for all.   */
-  LALGetInspiralMoments( status->statusPtr, &moments, &coarseIn.shf, tempPars );
+  LALGetInspiralMoments( 
+  		status->statusPtr, 
+  		&moments,
+   		&coarseIn.shf,
+   	 	tempPars );
   CHECKSTATUSPTR( status );
   
   /* Allocate memory for one cell */
@@ -125,26 +117,26 @@ LALInspiralCreatePNCoarseBankHexa(
       LALCalloc(1,   sizeof(InspiralCell) );
 
   /*define gridParam*/
-  gridParam.mm = coarseIn.mmCoarse;
-  gridParam.x0Min     = bankPars.x0Min;
-  gridParam.x0Max     = bankPars.x0Max;
-  gridParam.x1Min     = bankPars.x1Min;
-  gridParam.x1Max     = bankPars.x1Max;
-  gridParam.mMin      = coarseIn.mMin;
-  gridParam.mMax      = coarseIn.mMax;
-  gridParam.MMin      = coarseIn.MMin;
-  gridParam.MMax      = coarseIn.MMax;
-  gridParam.etaMin    = coarseIn.etamin;
-  gridParam.space     = coarseIn.space;
-  gridParam.massRange = coarseIn.massRange;
+  gridParam.mm 			= coarseIn.mmCoarse;
+  gridParam.x0Min     	= bankPars.x0Min;
+  gridParam.x0Max     	= bankPars.x0Max;
+  gridParam.x1Min     	= bankPars.x1Min;
+  gridParam.x1Max     	= bankPars.x1Max;
+  gridParam.mMin      	= coarseIn.mMin;
+  gridParam.mMax      	= coarseIn.mMax;
+  gridParam.MMin      	= coarseIn.MMin;
+  gridParam.MMax      	= coarseIn.MMax;
+  gridParam.etaMin    	= coarseIn.etamin;
+  gridParam.space     	= coarseIn.space;
+  gridParam.massRange 	= coarseIn.massRange;
+  gridParam.gridSpacing = coarseIn.gridSpacing;
   
 
-  cellEvolution.nTemplate = 1;
-  cellEvolution.nTemplateMax = 1;
-  cellEvolution.fertile = 0;
+  cellEvolution.nTemplate 		= 1;
+  cellEvolution.nTemplateMax 	= 1;
+  cellEvolution.fertile 		= 0;
 
   /* initialise that first cell */
-
   tempPars->massChoice  = t03;
   cells[0].t0           = tempPars->t0;
   cells[0].t3           = tempPars->t3;
@@ -155,73 +147,75 @@ LALInspiralCreatePNCoarseBankHexa(
   A3    = LAL_PI / pow(piFl, 5./3.)/8.;
 
 
-  LALCellInit(status->statusPtr, 
-	      &cells, firstId, 
-	      &moments, tempPars,
-	      &gridParam, &cellEvolution, 
-	      &cellList);
+  /* Initialise the first template */
+  LALInitHexagonalBank(
+  			status->statusPtr, 
+		       	&cells, firstId, 
+		       	&moments, tempPars,
+		       	&gridParam, &cellEvolution, 
+		       	&cellList);
   CHECKSTATUSPTR( status );
 
 
-
-
   {
-    INT4        k, kk;
+    INT4 k, kk; /*some indexes*/
+    INT4 *list 		= NULL;
+    CellList *ptr 	= NULL;
+    INT4 length 	= 1; /* default size of the bank when we 
+    						start the bank generation. */
 
-
-    INT4       *list=NULL;
-    CellList *ptr=NULL;
-    INT4 length=1;
-
+    /* we re-allocate an array which size equals the 
+     * template bank size. */
     if (! (list =  LALMalloc(length*sizeof(INT4))))
-      {
-	ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
-	
-      }
+    {
+      ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
+    }
 
-    while (cellEvolution.fertile) {
-      length = Length(cellList);
-      
-      
+    /* while there are cells/template which can propagate, we carry on the loop.*/
+    while (cellEvolution.fertile) 
+    {
+      length = LALListLength(cellList);
+      /*realloc some memory for the next template*/
       if (! (list =  LALRealloc(list, length*sizeof(INT4))))
       {
-	ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
-	/* freeing memory here ? */
+		ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
+		/* freeing memory here ? */
       }
       ptr = cellList;
-
-      for (k=0; k< length; k++){
-	list[k]=ptr->id;	
-	ptr = ptr->next;
-
-      }      
-
-      for (kk = 0; kk < length; kk++) 
-	{	
-	
-	k = list[kk];
-
-	if ( cells[k].status == Fertile) {
-
+      /* we extract the ids which might change within the LALPopulateCell 
+       * function. Indeed the bank might grow and then we will lost track 
+       * of ids/bank size and so on. */
+      for ( k = 0; k < length; k++)
+      {
+		list[k] = ptr->id;	
+		ptr = ptr->next;
+      }
+      /* look at all the template/ids in the current bank to search for fertile cells */
+      for (kk = 0; kk < length; kk++)
+	  {	
+		k = list[kk];
+		if ( cells[k].status == Fertile) 
+		{
           LALPopulateCell(status->statusPtr, &moments, &cells,
               k,  tempPars, &gridParam, &cellEvolution, &cellList);          
-	  CHECKSTATUSPTR( status );         	 	  
+		  CHECKSTATUSPTR( status );         	 	  
+	  	  /* now the bank might have grown, but we only look at the 
+	  	   * template created before this for loop, when we entered 
+	  	   * in the while loop
+	  	   * */
         }
       }
     }
-
     LALFree(list);
-
-
-
-
-
   }
 
+
+  
   if (cellList != NULL)
-    printf("wierd behaviour here\n");
-
-
+    ABORT(status, LALINSPIRALBANKH_EHEXAINIT,LALINSPIRALBANKH_MSGEHEXAINIT);
+	/* Here is the current number of template generated. Now, we need 
+	 * to clean some of them which might be redundant.
+	 * */
   *nlist = cellEvolution.nTemplate;
 
   {
@@ -229,86 +223,98 @@ LALInspiralCreatePNCoarseBankHexa(
     INT4 length;
     length = cellEvolution.nTemplate;
 
-    for (k=0; k<length; k++)
+    for ( k = 0; k < length; k++)
     {  
-	REAL4  a,b, x0, tempA3;
-	SFindRootIn input;
-	INT4 valid;
+      REAL4 a;
+      REAL4 b;
+      REAL4 x0;
+      REAL4 tempA3;
+      SFindRootIn input;
+      INT4 valid;
 
-	PRIN  prin;
+      PRIN  prin;
 	
-	tempA3              = pow(A3, -5./2.)/pow(0.25,-1.5);
-	tempPars->t0        = cells[k].t0;
-	tempPars->t3        = cells[k].t3;
-	
-	if(cells[k].RectPosition[0] == Below ) {
-	  
-	  a = tan(cells[k].metric.theta);
-	  b = cells[k].t3 - a * cells[k].t0;
-	  
-	  input.function = LALSPAF;
-	  input.xmin = cells[k].t3-1e-3;
-	  input.xmax = 1000;
-	  input.xacc = 1e-6;
-	  
-	  prin.ct = a * A0 * tempA3;
-	  prin.b = b;
-	  
-	  LALSBisectionFindRoot(status->statusPtr,&x0, &input, (void *)&prin);
-	  CHECKSTATUSPTR( status );         
-	  
-	  tempPars->t3 = x0 + 1e-3; 
-	  tempPars->t0 = (tempPars->t3 - b)/a;
-	  if (tempPars->t0 > 0) {
-	    LALInspiralParameterCalc(status->statusPtr, tempPars);
-	    CHECKSTATUSPTR( status );         		  
-	  }
-	
-	  cells[k].t0  = tempPars->t0;
-	  cells[k].t3  = tempPars->t3;    
+      tempA3              = pow(A3, -5./2.)/pow(0.25,-1.5);
+      tempPars->t0        = cells[k].t0;
+      tempPars->t3        = cells[k].t3;
 
-	  /* update its position values */
-	  valid = 1;
-	  GetPositionRectangle(status->statusPtr, &cells, k,  tempPars , 
-			       &gridParam, 
-			       &cellEvolution, 
-			       &cellList, 
-			       &valid);
-	  
-	  {
-	    INT4 above=0, below=0, in=0, out=0;
-	    switch (cells[k].RectPosition[1]){
-	    case In:    in    +=1; break;
-	    case Below: below +=1; break;
-	    case Above: above +=1; break;
-	    case Out:   out   +=1; break;
-	    }
-	    switch (cells[k].RectPosition[2]){
-	    case In:    in    +=1; break;
-	    case Below: below +=1; break;
-	    case Above: above +=1; break;
-	    case Out:   out   +=1; break;
-	    }
-	    switch (cells[k].RectPosition[3]){
-	    case In:    in    +=1; break;
-	    case Below: below +=1; break;
-	    case Above: above +=1; break;
-	    case Out:   out   +=1; break;
-	    }
-	    switch (cells[k].RectPosition[4]){
-	    case In:    in    +=1; break;
-	    case Below: below +=1; break;
-	    case Above: above +=1; break;
-	    case Out:   out   +=1; break;
-	    }
-	    
-	    if (above == 2 && cells[k].position == In){
-	      cells[cells[k].child[0]].position = Out;
-	    }
-	  }
-	} 
-      }
+      /* if non physical parameter i.e below eta=0.25*/
+      if(cells[k].RectPosition[0] == Below ) 
+      {	  
+        INT4 above=0, below=0, in=0, out=0;
+      		  
+		/*first, we define the line which is along the long semi-axis of the 
+		 * ambiguity function, defined by the angle theta and the position of 
+		 * the template.
+		 * */      		  
+		a = tan(cells[k].metric.theta);
+		b = cells[k].t3 - a * cells[k].t0;
+		/* and call a function to search for a solution along eta=1/4 */
+		input.function 	= LALSPAF;
+		input.xmin 		= cells[k].t3-1e-3;
+		input.xmax 		= 1000;
+		input.xacc 		= 1e-6;
+	
+		prin.ct = a * A0 * tempA3;
+		prin.b = b;
+	
+		LALSBisectionFindRoot(status->statusPtr,
+			&x0, &input, (void *)&prin);
+		CHECKSTATUSPTR( status );         
+	
+		tempPars->t3 = x0 + 1e-3; /* to be sure it is physical */
+		tempPars->t0 = (tempPars->t3 - b)/a;
+		if (tempPars->t0 > 0) 
+		{
+	  	  LALInspiralParameterCalc(status->statusPtr, tempPars);
+	  	  CHECKSTATUSPTR( status );         		  
+        }
+		cells[k].t0  = tempPars->t0;
+		cells[k].t3  = tempPars->t3;    
+		
+		/* update its position values */
+		valid = 1;
+		GetPositionRectangle(status->statusPtr, &cells, k,  tempPars , 
+			     &gridParam, 
+			     &cellEvolution, 
+			     &cellList, 
+			     &valid);
+	
+		{
+
+	  		switch (cells[k].RectPosition[1]){
+			  case In:    in    +=1; break;
+			  case Below: below +=1; break;
+			  case Above: above +=1; break;
+			  case Out:   out   +=1; break;
+			  }
+			  switch (cells[k].RectPosition[2]){
+			  case In:    in    +=1; break;
+			  case Below: below +=1; break;
+			  case Above: above +=1; break;
+			  case Out:   out   +=1; break;
+			  }
+			  switch (cells[k].RectPosition[3]){
+			  case In:    in    +=1; break;
+			  case Below: below +=1; break;
+			  case Above: above +=1; break;
+			  case Out:   out   +=1; break;
+			  }
+			  switch (cells[k].RectPosition[4]){
+			  case In:    in    +=1; break;
+			  case Below: below +=1; break;
+			  case Above: above +=1; break;
+			  case Out:   out   +=1; break;
+			  }
+			}
+
+		  if (above == 2 && cells[k].position == In)
+		  {
+		    cells[cells[k].child[0]].position = Out;	    
+		  }
+      }  
     }
+  }
 
   for (i=0; i<cellEvolution.nTemplate; i++) {
     if (cells[i].position == In ) {
@@ -316,36 +322,35 @@ LALInspiralCreatePNCoarseBankHexa(
     }
   }
 
-    /* allocate appropriate memory */
 
-  
+  /* allocate appropriate memory and fill the output bank */
   *list = (InspiralTemplateList*) 
     LALRealloc( *list, sizeof(InspiralTemplateList) * (*nlist+1) );
   if ( ! *list )
-      {
-	LALFree( tempPars );
-	ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
-      }
+  {
+    LALFree( tempPars );
+    ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
+  }
   memset( *list + *nlist, 0, sizeof(InspiralTemplateList) );
-  
-  
   {
     *nlist = 0 ;
-    for (i=0; i<cellEvolution.nTemplate; i++) {
-      	if (cells[i].position == In) {
-          tempPars->t0  = cells[i].t0;
-          tempPars->t3  = cells[i].t3;
-          tempPars->massChoice = t03;
-          tempPars->fLower = coarseIn.fLower;
+    for (i=0; i<cellEvolution.nTemplate; i++) 
+    {
+      if (cells[i].position == In) 
+      {
+        tempPars->t0  = cells[i].t0;
+        tempPars->t3  = cells[i].t3;
+        tempPars->massChoice = t03;
+        tempPars->fLower = coarseIn.fLower;
 
-          LALInspiralParameterCalc( status->statusPtr, tempPars );
-          CHECKSTATUSPTR( status );
+        LALInspiralParameterCalc( status->statusPtr, tempPars );
+        CHECKSTATUSPTR( status );
 	    
-          (*list)[*nlist].ID            = *nlist; 
-          (*list)[*nlist].params        = *tempPars; 
-          (*list)[*nlist].metric        = cells[i].metric; 
-          ++(*nlist); 
-        }
+        (*list)[*nlist].ID            = *nlist; 
+        (*list)[*nlist].params        = *tempPars; 
+        (*list)[*nlist].metric        = cells[i].metric; 
+        ++(*nlist); 
+      }
     }
   }
   
@@ -362,30 +367,31 @@ LALInspiralCreatePNCoarseBankHexa(
 
 
 void
-LALPopulateCell(LALStatus               *status,
+LALPopulateCell(
+		LALStatus               *status,
 		InspiralMomentsEtc      *moments,
 		InspiralCell            **cell, 
 		INT4                     headId,
 		InspiralTemplate        *paramsIn,
 		HexaGridParam           *gridParam,
 		CellEvolution           *cellEvolution, 
-		CellList **cellList
+		CellList		**cellList
 		)
 {
-  REAL4 dx0, dx1,  newt0, newt3;  
+  REAL4 dx0, dx1;
+  REAL4 newt0, newt3;  
   INT4 i, id1, id2;
-  REAL4 theta, ctheta,stheta;
+  REAL4 theta, ctheta, stheta;
   INT4 offSpring;
   INT4 it;
-  INT4 add=0;
+  INT4 add = 0;
 
   INITSTATUS( status, "LALPopulateCell", 
 	      LALINSPIRALHEXAGONALBANKC );
   ATTATCHSTATUSPTR( status );
 
-  /* aliases to get the characteristics of the parent template, that we refer
-   * to its ID (headId) */  
-  
+  /* aliases to get the characteristics of the parent template, 
+   * that we refer to its ID (headId) */  
   dx0           = (*cell)[headId].dx0;
   dx1           = (*cell)[headId].dx1;
   theta         = (*cell)[headId].metric.theta;
@@ -393,21 +399,24 @@ LALPopulateCell(LALStatus               *status,
   stheta        = sin(theta);
   offSpring     = cellEvolution->nTemplate;
 
-  
-  /* Around the parent, the offspring can be at most 6 (hexagonal grid). 
+   /* Around the parent, the offspring can be at most 6 (hexagonal grid). 
    * By default the child are unset. If so it is created and have the 
    * properties of its parents. However, a child migh have been created 
    * earlier. In that case, we do not do anything.  */  
   it = 0 ; 
 
-  for (i = 0; i < 6; i++) {
-    if ((*cell)[headId].child[i] == -1) {
+  for (i = 0; i < 6; i++) 
+  {
+    if ((*cell)[headId].child[i] == -1) 
+    {
       add++;
       /* reallocate memory by set of 1000 cells if needed*/
-      if ( (offSpring+add)>cellEvolution->nTemplateMax){
+      if ( (offSpring+add)>cellEvolution->nTemplateMax)
+      {
         *cell = (InspiralCell*) 
-          LALRealloc( *cell, sizeof(InspiralCell) * (cellEvolution->nTemplateMax + 1000) );
-        if ( ! cell ) {
+          LALRealloc( *cell,
+           sizeof(InspiralCell) * (cellEvolution->nTemplateMax + 1000) );
+        if ( !cell ) {
           ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
         }
         cellEvolution->nTemplateMax +=  1000;
@@ -415,75 +424,75 @@ LALPopulateCell(LALStatus               *status,
       
       /* creates the child connection if needed. A child heritates the
        * properties of its parent */
-   
       switch ( i ){
       case 0:
-	newt0   = dx0 ;
-	newt3   = 0 ;
-	(*cell)[offSpring + it].t0   = (*cell)[headId].t0;
-	(*cell)[offSpring + it].t3   = (*cell)[headId].t3;
-	(*cell)[offSpring + it].t0   += newt0 *ctheta + stheta* newt3;
-	(*cell)[offSpring + it].t3   += newt0 *stheta - ctheta* newt3;
-	LALCellInit(status->statusPtr,  cell,  offSpring+it, 
+		newt0   = dx0 ;
+		newt3   = 0 ;
+		(*cell)[offSpring + it].t0   = (*cell)[headId].t0;
+		(*cell)[offSpring + it].t3   = (*cell)[headId].t3;
+		(*cell)[offSpring + it].t0   += newt0 *ctheta + stheta* newt3;
+		(*cell)[offSpring + it].t3   += newt0 *stheta - ctheta* newt3;
+		LALInitHexagonalBank(status->statusPtr,  cell,  offSpring+it, 
 		    moments, paramsIn, gridParam, cellEvolution, cellList);
-	break;
+	  	break;
       case 1:
-	newt0   =   dx0/2. ;
-	newt3   =   -dx1 *sqrt(3./2) ;
-	(*cell)[offSpring + it].t0   = (*cell)[headId].t0;
-	(*cell)[offSpring + it].t3   = (*cell)[headId].t3;
-	(*cell)[offSpring + it].t0   += newt0 * ctheta + stheta * newt3;
-	(*cell)[offSpring + it].t3   += newt0 * stheta - ctheta * newt3;
-	LALCellInit(status->statusPtr,  cell,  offSpring+it, 
+		newt0   =   dx0/2. ;
+		newt3   =   -dx1 *sqrt(3./2) ;
+		(*cell)[offSpring + it].t0   = (*cell)[headId].t0;
+		(*cell)[offSpring + it].t3   = (*cell)[headId].t3;
+		(*cell)[offSpring + it].t0   += newt0 * ctheta + stheta * newt3;
+		(*cell)[offSpring + it].t3   += newt0 * stheta - ctheta * newt3;
+		LALInitHexagonalBank(status->statusPtr,  cell,  offSpring+it, 
 		    moments, paramsIn, gridParam, cellEvolution, cellList);
-	break;
+		break;
       case 2:
-	newt0   =  -dx0/2 ;
-	newt3   =  -dx1 *sqrt(3./2);
-	(*cell)[offSpring + it].t0   = (*cell)[headId].t0;
-	(*cell)[offSpring + it].t3   = (*cell)[headId].t3;
-	(*cell)[offSpring + it].t0   += newt0 * ctheta + stheta * newt3;
-	(*cell)[offSpring + it].t3   += newt0 * stheta - ctheta * newt3;
-	LALCellInit(status->statusPtr,  cell,  offSpring+it, 
+		newt0   =  -dx0/2 ;
+		newt3   =  -dx1 *sqrt(3./2);
+		(*cell)[offSpring + it].t0   = (*cell)[headId].t0;
+		(*cell)[offSpring + it].t3   = (*cell)[headId].t3;
+		(*cell)[offSpring + it].t0   += newt0 * ctheta + stheta * newt3;
+		(*cell)[offSpring + it].t3   += newt0 * stheta - ctheta * newt3;
+		LALInitHexagonalBank(status->statusPtr,  cell,  offSpring+it, 
 		    moments, paramsIn, gridParam, cellEvolution, cellList);
-	break;
+		break;
       case 3:
-	newt0   = -dx0 ;
-	newt3   = 0;
-	(*cell)[offSpring + it].t0   = (*cell)[headId].t0;
-	(*cell)[offSpring + it].t3   = (*cell)[headId].t3;
-	(*cell)[offSpring + it].t0   += newt0 * ctheta + stheta * newt3;
-	(*cell)[offSpring + it].t3   += newt0 * stheta - ctheta * newt3;
-	LALCellInit(status->statusPtr,  cell,  offSpring+it, 
+		newt0   = -dx0 ;
+		newt3   = 0;
+		(*cell)[offSpring + it].t0   = (*cell)[headId].t0;
+		(*cell)[offSpring + it].t3   = (*cell)[headId].t3;
+		(*cell)[offSpring + it].t0   += newt0 * ctheta + stheta * newt3;
+		(*cell)[offSpring + it].t3   += newt0 * stheta - ctheta * newt3;
+		LALInitHexagonalBank(status->statusPtr,  cell,  offSpring+it, 
 		    moments, paramsIn, gridParam, cellEvolution, cellList);
-	break;
+		break;
       case 4:
-	newt0   =  -dx0/2. ;
-	newt3   =  dx1 *sqrt(3./2);
-	(*cell)[offSpring + it].t0   = (*cell)[headId].t0;
-	(*cell)[offSpring + it].t3   = (*cell)[headId].t3;
-	(*cell)[offSpring + it].t0   += newt0 * ctheta + stheta * newt3;
-	(*cell)[offSpring + it].t3   += newt0 * stheta - ctheta * newt3;
-	LALCellInit(status->statusPtr,  cell,  offSpring+it, 
+		newt0   =  -dx0/2. ;
+		newt3   =  dx1 *sqrt(3./2);
+		(*cell)[offSpring + it].t0   = (*cell)[headId].t0;
+		(*cell)[offSpring + it].t3   = (*cell)[headId].t3;
+		(*cell)[offSpring + it].t0   += newt0 * ctheta + stheta * newt3;
+		(*cell)[offSpring + it].t3   += newt0 * stheta - ctheta * newt3;
+		LALInitHexagonalBank(status->statusPtr,  cell,  offSpring+it, 
 		    moments, paramsIn, gridParam, cellEvolution, cellList);
-	break;
+		break;
       case 5:
-	newt0   = dx0/2. ;
-	newt3   = dx1 *sqrt(3./2);
-	(*cell)[offSpring + it].t0   = (*cell)[headId].t0;
-	(*cell)[offSpring + it].t3   = (*cell)[headId].t3;
-	(*cell)[offSpring + it].t0   += newt0 * ctheta + stheta * newt3;
-	(*cell)[offSpring + it].t3   += newt0 * stheta - ctheta * newt3;
-	LALCellInit(status->statusPtr,  cell,  offSpring+it, 
+		newt0   = dx0/2. ;
+		newt3   = dx1 *sqrt(3./2);
+		(*cell)[offSpring + it].t0   = (*cell)[headId].t0;
+		(*cell)[offSpring + it].t3   = (*cell)[headId].t3;
+		(*cell)[offSpring + it].t0   += newt0 * ctheta + stheta * newt3;
+		(*cell)[offSpring + it].t3   += newt0 * stheta - ctheta * newt3;
+		LALInitHexagonalBank(status->statusPtr,  cell,  offSpring+it, 
 		    moments, paramsIn, gridParam, cellEvolution, cellList);
-	break;
+		break;
       }      
       
       /* Now, tricky part, if a child has been creating, he must have a
        * connection with its parents and vice-versa.  */
-      if ((*cell)[offSpring + it].child[(i+3)%6] == -1){
-	(*cell)[offSpring + it].child[(i+3)%6] = (*cell)[headId].ID;
-	(*cell)[headId].child[i] = offSpring+it;
+      if ((*cell)[offSpring + it].child[(i+3)%6] == -1)
+      {
+		(*cell)[offSpring + it].child[(i+3)%6] = (*cell)[headId].ID;
+		(*cell)[headId].child[i] = offSpring+it;
       }
       /* a new cell index */
       it += 1;
@@ -493,48 +502,48 @@ LALPopulateCell(LALStatus               *status,
   /* how many new cells have been created ? */
   cellEvolution->nTemplate += it;
 
-
   /* Here, the parent has its 6 children set; he become sterile. */
-  (*cell)[headId].status = Sterile;
-  (cellEvolution->fertile)=cellEvolution->fertile-1;
-  Delete(cellList, headId);
-
+  (*cell)[headId].status 	= Sterile;
+  (cellEvolution->fertile) 	= cellEvolution->fertile-1;
+  LALListDelete(cellList, headId);
 
   /* what shall we do with that parent. Is he valid ? inside the space,
-   * outside since eta>0.25 but close to the boundary .... */  
-   	
+   * outside since eta > 0.25 but close to the boundary .... */     	
   {
-    if ((*cell)[headId].RectPosition[0]==Above && (*cell)[headId].in==1)
-      {
-	(*cell)[headId].RectPosition[0]=Out;
-      }
+    if ((*cell)[headId].RectPosition[0] == Above && (*cell)[headId].in == 1)
+    {
+	  (*cell)[headId].RectPosition[0]=Out;
+    }
   }
   
-
-  
-  /* propagate  connection annexe au freres pour eviter redondance */  
-  for (i=0; i<6; i++){/* for each child*/
+  /* propagate  connections to the brothers to avoid redundancies */  
+  for (i=0; i<6; i++)
+  {
+  	/* for each child*/
     id1 = (*cell)[headId].child[i%6];
     id2 = (*cell)[headId].child[(i+1)%6];
     (*cell)[id1].child[(i+2)%6] = (*cell)[id2].ID;
     (*cell)[id2].child[(i+4+1)%6] = (*cell)[id1].ID;   
   }
   
-  
   /* enfin trouver position[0] (In/out)? of the children. */
-  for (i=0; i<6; i++){/* for each child find position[0]*/
+  for (i=0; i<6; i++)
+  {/* for each child find position[0]*/
     id1 = (*cell)[headId].child[i%6];
 
-    if ((*cell)[id1].status == Fertile) {
+    if ((*cell)[id1].status == Fertile) 
+    {
       LALSPAValidPosition(status->statusPtr, cell, id1, 
 			  moments, cellEvolution, cellList);
       CHECKSTATUSPTR( status );
 	  
-      if ((*cell)[id1].position != In ) {
-        if ((*cell)[id1].status == Fertile) {
+      if ((*cell)[id1].position != In ) 
+      {
+        if ((*cell)[id1].status == Fertile) 
+        {
           (*cell)[id1].status= Sterile;
           cellEvolution->fertile=cellEvolution->fertile-1;
-	  Delete(cellList, id1);
+	  	  LALListDelete(cellList, id1);
         }
       }
     }
@@ -542,25 +551,25 @@ LALPopulateCell(LALStatus               *status,
     
   DETATCHSTATUSPTR( status );
   RETURN ( status );
-
 }
 
 
 
 void 
-LALCellInit(    LALStatus               *status,
-                InspiralCell            **cell, 
-                INT4                    id,
-                InspiralMomentsEtc      *moments, 
-                InspiralTemplate        *paramsIn, 
-		HexaGridParam           *gridParam, 
-		CellEvolution           *cellEvolution,
-		CellList **cellList)
+LALInitHexagonalBank(
+	LALStatus               *status,
+	InspiralCell            **cell, 
+	INT4                    id,
+	InspiralMomentsEtc      *moments, 
+	InspiralTemplate        *paramsIn, 
+	HexaGridParam           *gridParam, 
+	CellEvolution           *cellEvolution,
+	CellList **cellList)
 {
-  
   INT4          i;
-  INT4 valid;   
-  INITSTATUS( status, "LALCellInit", 
+  INT4 		valid;   
+  
+  INITSTATUS( status, "LALInitHexagonalBank", 
 	      LALINSPIRALHEXAGONALBANKC );
   ATTATCHSTATUSPTR( status );
   
@@ -568,11 +577,12 @@ LALCellInit(    LALStatus               *status,
      therefore it is fertile */
   cellEvolution->fertile = cellEvolution->fertile + 1;;
   (*cell)[id].status = Fertile;  
-  append(cellList, id);
+  LALListAppend(cellList, id);
 
 
   /* all of whom are unset and do not have any id set*/
-  for (i = 0; i < 6; i++) {
+  for (i = 0; i < 6; i++) 
+  {
     (*cell)[id].child[i] = -1;
   } 
  
@@ -583,7 +593,8 @@ LALCellInit(    LALStatus               *status,
 
 
   /* before ant further computation, check that t0, t3 is positive.*/
-  if ((*cell)[id].t0 > 0 && (*cell)[id].t3 > 0){
+  if ((*cell)[id].t0 > 0 && (*cell)[id].t3 > 0)
+  {
     /* Get the metric at the position of the cell */ 
     paramsIn->t0 = (*cell)[id].t0;
     paramsIn->t3 = (*cell)[id].t3;
@@ -603,37 +614,69 @@ LALCellInit(    LALStatus               *status,
     CHECKSTATUSPTR( status );
 
     /* if outside, this is a sterile cell which can not propagate */  
-    if ((*cell)[id].RectPosition[0] == Out) {
+    if ((*cell)[id].RectPosition[0] == Out) 
+    {
       (*cell)[id].position      = Out;
-      for (i = 0; i < 5; i++){
+      for (i = 0; i < 5; i++)
+      {
         (*cell)[id].RectPosition[i] = Out;
       }
       (*cell)[id].status = Sterile;
       (cellEvolution->fertile)=cellEvolution->fertile-1;
-      Delete(cellList, id);
+      LALListDelete(cellList, id);
       
       
       DETATCHSTATUSPTR(status);
       RETURN(status);
     }
-    else{
+    else
+    {
       valid = 1;
       GetPositionRectangle(status->statusPtr, &(*cell), id,  paramsIn , 
 			   gridParam, cellEvolution, &(*cellList), &valid);
     }
   }
-  else{/* if t0 or t3 < 0 , this is not a valid cell*/
+  else
+  {/* if t0 or t3 < 0 , this is not a valid cell*/
     valid = 0;   
   }
 
-  
-  if (valid == 0){
-    for (i=0; i<5; i++){(*cell)[id].RectPosition[i] = Out;}
-    (*cell)[id].position = Out;
-    (*cell)[id].status = Sterile;
-    (cellEvolution->fertile)=cellEvolution->fertile-1;
-    Delete(cellList, id);
+  /* If this is not a valid template, we remove it from the bank*/
+  if (valid == 0)
+  {
+    for (i=0; i<5; i++)
+    {
+      (*cell)[id].RectPosition[i] = Out;
+    }
+    (*cell)[id].position 		= Out;
+    (*cell)[id].status 			= Sterile;
+    (cellEvolution->fertile)	=cellEvolution->fertile-1;
+    LALListDelete(cellList, id);
   }
+
+
+
+
+#if 1
+  if (gridParam->gridSpacing == HybridHexagonal)
+  {
+    INT4 below=0, above=0;    
+    for (i=1; i<=4; i++){
+      if ( (*cell)[id].RectPosition[i] == Below) below++;
+      if ( (*cell)[id].RectPosition[i] == Above) above++;
+    }    
+    if (below==2 && above == 2){
+      (*cell)[id].status = Edge;
+      (cellEvolution->fertile)=cellEvolution->fertile-1;
+      LALListDelete(cellList, id);
+      
+    } 
+    /* cellEvolution->nTemplate++;*/
+
+  }
+#endif  
+  
+
 
 
   DETATCHSTATUSPTR(status);
@@ -642,54 +685,60 @@ LALCellInit(    LALStatus               *status,
 
 
 
-
+/* Get the position of the rectangle corners which are inscribe within the ambiguity 
+ * function. Are they within the parameter space or not ?*/
 void
-GetPositionRectangle(LALStatus *status, 
-		     InspiralCell **cell,
-		     INT4 id,
-		     InspiralTemplate *params, 
-		     HexaGridParam *gridParam, 
-		     CellEvolution *cellEvolution, 
-		     CellList **cellList, 
-		     INT4 *valid)
+GetPositionRectangle(
+		LALStatus 		*status, 
+		InspiralCell 		**cell,
+		INT4 			id,
+		InspiralTemplate 	*params, 
+		    HexaGridParam 		*gridParam, 
+		    CellEvolution 		*cellEvolution, 
+		    CellList 			**cellList, 
+		    INT4 				*valid)
 {
-
   RectangleIn   RectIn;
   RectangleOut  RectOut;
   InspiralTemplate paramsIn;
-
-
 
   INITSTATUS( status, "GetPosition", 
 	      LALINSPIRALHEXAGONALBANKC );
   ATTATCHSTATUSPTR( status );
 
+  /* let us investigate this particular template : */
   RectIn.x0    = params->t0;
   RectIn.y0    = params->t3;
   RectIn.dx    = (*cell)[id].dx0 ;
   RectIn.dy    = (*cell)[id].dx1 ;
   RectIn.theta = (*cell)[id].metric.theta;
   
+  /* what is the rectangle ? */
   LALRectangleVertices(status->statusPtr, &RectOut, &RectIn);
   CHECKSTATUSPTR( status );
 
+  /* for each corner, let us decide where it lies in the parameter space */
   paramsIn = *params;
-
   paramsIn.t0 = RectOut.x1;
   paramsIn.t3 = RectOut.y1;
   
-  if (RectOut.x1>0 && RectOut.y1>0){
+  if (RectOut.x1<0 || RectOut.y1<0
+   || RectOut.x2<0 || RectOut.y2<0
+   || RectOut.x3<0 || RectOut.y3<0
+   || RectOut.x4<0 || RectOut.y4<0)
+  {
+   	*valid = 0; 
+    DETATCHSTATUSPTR(status);
+    RETURN(status);     
+  }
+   
+  if (RectOut.x1>0 && RectOut.y1>0)
+  {
     LALFindPosition(status->statusPtr,(*cell)[id].dx0, (*cell)[id].dx1, 
 		    &((*cell)[id].RectPosition[1]), 
 		    &paramsIn, 
 		    gridParam);    
-
     CHECKSTATUSPTR( status );
-  }
-  else {
-    *valid = 0; 
-    DETATCHSTATUSPTR(status);
-    RETURN(status);     
   }
   
   paramsIn.t0 = RectOut.x2;
@@ -700,40 +749,24 @@ GetPositionRectangle(LALStatus *status,
     CHECKSTATUSPTR( status );
     
   }
-  else
-    {
-      *valid = 0;
-      DETATCHSTATUSPTR(status);
-      RETURN(status);     
-    }
   
   paramsIn.t0 = RectOut.x3;
   paramsIn.t3 = RectOut.y3; 
-  if (RectOut.x3>0 && RectOut.y3>0){
+  if (RectOut.x3>0 && RectOut.y3>0)
+  {
     LALFindPosition(status->statusPtr, (*cell)[id].dx0, (*cell)[id].dx1,
 		    &((*cell)[id].RectPosition[3]), &paramsIn, gridParam);
     CHECKSTATUSPTR( status );
   }
-  else
-    {
-      *valid = 0 ;
-      DETATCHSTATUSPTR(status);
-      RETURN(status);     
-    }
   
   paramsIn.t0 = RectOut.x4;
   paramsIn.t3 = RectOut.y4;
-  if (RectOut.x4>0 && RectOut.y4>0){
+  if (RectOut.x4>0 && RectOut.y4>0)
+  {
     LALFindPosition(status->statusPtr, (*cell)[id].dx0, (*cell)[id].dx1,
 		    &((*cell)[id].RectPosition[4]), &paramsIn, gridParam); 
     CHECKSTATUSPTR( status );
   }
-  else
-    {
-      *valid = 0;
-      DETATCHSTATUSPTR(status);
-      RETURN(status);     
-    }
     
   DETATCHSTATUSPTR( status );
   RETURN ( status );
@@ -755,7 +788,7 @@ LALSPAValidPosition(LALStatus *status,
 		    CellList **cellList
 		    )
 {
-  INT4 below=0, in=0, out=0, above=0;
+  INT4 below = 0, in = 0, out = 0, above = 0;
   
   INITSTATUS( status, "LALSPAFindPosition", 
 	      LALINSPIRALHEXAGONALBANKC );
@@ -802,14 +835,11 @@ LALSPAValidPosition(LALStatus *status,
 	{
 	  (*cell)[id1].status = Fertile;
 	  (cellEvolution->fertile)=cellEvolution->fertile+1;; 
-	  append(cellList, id1);
+	  LALListAppend(cellList, id1);
 	}
       DETATCHSTATUSPTR(status);
       RETURN(status);
   }
-
-
-
 
   if ( above == 5){
     (*cell)[id1].position = Out;
@@ -817,7 +847,7 @@ LALSPAValidPosition(LALStatus *status,
       {
 	(*cell)[id1].status = Sterile;
 	(cellEvolution->fertile)=cellEvolution->fertile-1;
-	Delete(cellList, id1);
+	LALListDelete(cellList, id1);
 
       }
   }
@@ -827,7 +857,7 @@ LALSPAValidPosition(LALStatus *status,
       {
 	(*cell)[id1].status = Sterile;
 	(cellEvolution->fertile)=cellEvolution->fertile-1;
-	Delete(cellList, id1);
+	LALListDelete(cellList, id1);
 
       }
   }  
@@ -837,7 +867,7 @@ LALSPAValidPosition(LALStatus *status,
       {
 	(*cell)[id1].status = Sterile;
 	(cellEvolution->fertile)=cellEvolution->fertile-1;
-	Delete(cellList, id1);
+	LALListDelete(cellList, id1);
 
       }
   }
@@ -847,7 +877,7 @@ LALSPAValidPosition(LALStatus *status,
       {
 	(*cell)[id1].status = Fertile;
 	(cellEvolution->fertile)=cellEvolution->fertile+1;
-	append(cellList, id1);
+	LALListAppend(cellList, id1);
       }
 
   }
@@ -858,7 +888,7 @@ LALSPAValidPosition(LALStatus *status,
       {
 	(*cell)[id1].status = Sterile;
 	(cellEvolution->fertile)=cellEvolution->fertile-1;
-	Delete(cellList, id1);
+	LALListDelete(cellList, id1);
 
       }
     }
@@ -869,7 +899,7 @@ LALSPAValidPosition(LALStatus *status,
       {
 	(*cell)[id1].status = Fertile;
 	(cellEvolution->fertile)=cellEvolution->fertile-1;
-	Delete(cellList, id1);
+	LALListDelete(cellList, id1);
 
 
       }
@@ -881,43 +911,43 @@ LALSPAValidPosition(LALStatus *status,
       {
 	(*cell)[id1].status = Sterile;
 	(cellEvolution->fertile)=cellEvolution->fertile-1;
-	Delete(cellList, id1);
+	LALListDelete(cellList, id1);
 
       }
   }
-
-	    
-
+	   
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 
 
 void
-LALFindPosition(LALStatus               *status, 
+LALFindPosition(LALStatus       *status, 
 		REAL4                   dx0, 
 		REAL4                   dx1,
 		Position                *position, 
 		InspiralTemplate        *paramsIn,
 		HexaGridParam           *gridParam
 )
-
 {
-  REAL8 mint3;  
-  REAL4   eta, totalMass,ieta, oneby4, tiny, piFl;
+  REAL8 	mint3;  
+  REAL4   	eta;
+  REAL4 	totalMass,ieta, oneby4, tiny, piFl, A0, A3;
 
   INITSTATUS( status, "LALFindPosition", 
 	      LALINSPIRALHEXAGONALBANKC );
   ATTATCHSTATUSPTR( status );
 
-
   ieta 	        = 1.;
-  oneby4 	= 1./4.;
+  oneby4 		= 1./4.;
   tiny 	        = 1.e-10;
   piFl 	        = LAL_PI * paramsIn->fLower;
+  A0    = 5. / pow(piFl, 8./3.) / 256.;
+  A3    = LAL_PI / pow(piFl, 5./3.)/8.;
   
   ASSERT(paramsIn->t0 > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(paramsIn->t3 > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  
   
   /* given t0, t3 we get the totalMass and eta. 
      We do not need to call ParameterCalc again and again here. */
@@ -939,22 +969,23 @@ LALFindPosition(LALStatus               *status,
   
   /* does t3 positive*/
   
-  if ((paramsIn->t3-dx1)<0){ 
+  if ((paramsIn->t3-dx1)<0)
+  { 
     mint3 = 0;
   }
-  else{
+  else
+  {
     mint3 = paramsIn->t3-dx1;
   }
   
-  if ( 
-      (paramsIn->t0 <gridParam->x0Min - dx0)
+  if ( (paramsIn->t0 <gridParam->x0Min - dx0)
       ||(paramsIn->t0 >gridParam->x0Max + dx0) 
           || (paramsIn->t3 <= mint3))
-    {
-      *position = Out;
-      DETATCHSTATUSPTR(status);
-      RETURN(status);
-    }   
+  {
+    *position = Out;
+    DETATCHSTATUSPTR(status);
+    RETURN(status);
+  }   
 
   switch ( gridParam->massRange )
   {
@@ -1031,7 +1062,6 @@ LALFindPosition(LALStatus               *status,
           *position = Out;
         }
       }
-
       break;
 
     default:
@@ -1044,13 +1074,12 @@ LALFindPosition(LALStatus               *status,
 }
 
 
-
-
-
-static void LALSPAF(LALStatus *status,  
-		    REAL4 *result, 
-		    REAL4 t3, 
-		    void *param)
+/* This function corresponds to the eta=1/4 line? */
+void LALSPAF(
+	LALStatus 	*status,  
+	REAL4 		*result, 
+	REAL4 		t3, 
+	void 		*param)
 {
   REAL4 ct, b;
   PRIN *prin;
@@ -1063,104 +1092,8 @@ static void LALSPAF(LALStatus *status,
   ct = prin->ct;
   b  = prin->b;
 
-
   *result = ct*pow(t3,5./2.) - t3 + b;
 
   DETATCHSTATUSPTR( status );  
   RETURN(status);
-}
-
-
-
-void
-print_list(CellList *head)
-{
-  if (head==NULL){
-    printf("\n");
-  }
-  else { 
-    printf(" %d", head->id);
-    print_list(head->next);
-  }
-}
-
-
-int Length(CellList *list)
-{
-
-  int count = 0; 
-
-  while (list!=NULL){
-    count++;
-    list = list->next;
-  }
-  return count;
-}
-
-
-void append(CellList **headRef, INT4 id)
-{
-  CellList *current;
-
-
-  if ((current = malloc(sizeof(*current))) == NULL) {
-    {
-      printf("Error with malloc\n");
-      exit(0);
-    }
-  }
-
-  current->id = id;
-  current->next = *headRef;
-  *headRef = current;
-
-}
-
-
-
-
-void DeleteList(CellList **headRef)
-{
-  CellList *tmp;
-  
-  while (headRef !=NULL){
-    tmp = (*headRef)->next;
-    free(headRef);
-    (*headRef) = tmp;
-  }
-  
-}
-
-
-
-void Delete(CellList **headRef, INT4 id)
-{
-  CellList *ptr  = NULL;
-  CellList *prev = NULL;
-
-
-  for (ptr = *headRef; ptr != NULL; ptr= ptr->next){
-    if (id == ptr->id)
-      break;
-
-    prev = ptr;
-  }
-
-  if (ptr==NULL)
-    return ;
-
-  if (prev!=NULL){
-    prev->next = ptr->next;
-  }
-  else{
-    *headRef = ptr->next;
-  }
-
-  /* free the data here if needed such as free(ptr->id); */
-  free(ptr);
-
-  return ;
-
-
- 
 }

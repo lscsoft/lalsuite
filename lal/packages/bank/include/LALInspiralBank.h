@@ -55,6 +55,8 @@ NRCSID(LALINSPIRALBANKH, "$Id$" );
 #define LALINSPIRALBANKH_EFRANGE    16
 #define LALINSPIRALBANKH_EORDER     32
 #define LALINSPIRALBANKH_EGRIDSPACING 64
+#define LALINSPIRALBANKH_EHEXAINIT 128
+
 #define LALINSPIRALBANKH_MSGENULL   "Null pointer"
 #define LALINSPIRALBANKH_MSGEMEM    "Memory allocation failure"
 #define LALINSPIRALBANKH_MSGECHOICE "Invalid choice for an input parameter"
@@ -63,6 +65,8 @@ NRCSID(LALINSPIRALBANKH, "$Id$" );
 #define LALINSPIRALBANKH_MSGEFRANGE "Limits outside range of frequency series"
 #define LALINSPIRALBANKH_MSGEORDER  "Inappropriate PN order"
 #define LALINSPIRALBANKH_MSGEGRIDSPACING "If physical template requested, grid spacing parameter must be either SquareNotOriented or Hexagonal. If BCV, it must be Hexagonal or SquareNotOriented although Square and HexagonalNotOriented can be used. Instead of Hexagonal or Square option, S2BCV option can be usde to generate the bank used in S2 data using a  square lattice and an old code without any polygon fitting."
+#define LALINSPIRALBANKH_MSGEHEXAINIT "Empty bank. abnormal behaviour in HexaBank generation."
+
 /* </lalErrTable> */
 
 /* <lalLaTeX>
@@ -280,6 +284,7 @@ typedef enum
   Square,
   HexagonalNotOriented,
   Hexagonal, 
+  HybridHexagonal, 
   S2BCV
 }
 GridSpacing;
@@ -391,7 +396,7 @@ tagHexaGridParam
   REAL4 MMin;
   REAL4 MMax;
   REAL4 fLower;
-
+  GridSpacing gridSpacing;
   InspiralBankMassRange         massRange;
   CoordinateSpace               space;
 }
@@ -595,6 +600,14 @@ RectangleOut;
 \index{\texttt{RectangleOut}}
 </lalLaTeX>  */
 
+
+typedef struct{
+REAL4 ct;
+REAL4 b;
+}
+PRIN;
+
+
 /*  <lalLaTeX>
 \vfill{\footnotesize\input{LALInspiralBankHV}}
 </lalLaTeX>  */
@@ -621,6 +634,9 @@ LALInspiralCreatePNCoarseBank (
     InspiralCoarseBankIn coarseIn
     );
 
+/* <lalLaTeX>
+\newpage\input{LALInspiralBCVBankC}
+</lalLaTeX>  */
 void 
 LALInspiralCreateBCVBank (
     LALStatus            *status, 
@@ -637,13 +653,13 @@ LALInspiralCreateFlatBankS3S4 (
     InspiralCoarseBankIn coarseIn
     );
 
-void
+void 
 LALExcludeTemplate(
     LALStatus            *status, 
-    INT4                 *valid, 
+    INT4 *valid,
     InspiralBankParams   *bankParams,
-    REAL4                 x,
-    REAL4                 y
+    REAL4 x,
+    REAL4 y
     );
 
 void 
@@ -661,6 +677,31 @@ LALInspiralBCVFcutBank (
     INT4                *NList, 
     InspiralCoarseBankIn coarseIn
     );
+
+void 
+PSItoMasses (
+    LALStatus            *status, 
+    InspiralTemplate 	                *params, 
+    UINT4 				*valid,
+    REAL4 				highGM
+);
+
+
+void 
+LALEmpiricalPSItoMassesConversion(
+    LALStatus            *status, 
+    InspiralTemplate    *params,
+    UINT4               *valid,
+    REAL4               lightring
+);
+
+void 
+LALPSItoMasses(
+    LALStatus            *status, 
+    InspiralTemplate    *params,
+    UINT4               *valid,
+    REAL4               thisfreq
+);
 
 void 
 LALInspiralBCVRegularFcutBank (
@@ -808,7 +849,7 @@ LALInspiralMomentsIntegrand
    REAL8  *integrand,
    REAL8  f,
    void   *pars
-);
+   );
 
 /*  <lalLaTeX>
 \newpage\input{LALInspiralSetSearchLimitsC}
@@ -861,7 +902,7 @@ LALInspiralValidTemplate(
    INT4                 *valid,
    InspiralBankParams   bankParams,
    InspiralCoarseBankIn coarseIn
-);
+   );
 
 /* <lalLaTeX>
 \newpage\input{LALInspiralUpdateParamsC}
@@ -900,11 +941,10 @@ LALDeterminant3 (
 \newpage\input{LALInverse3C}
 </lalLaTeX>  */
 void 
-LALInverse3
-(
- LALStatus *status, 
- REAL8     **inverse, 
- REAL8     **matrix
+LALInverse3(
+        LALStatus *status, 
+        REAL8     **inverse, 
+        REAL8     **matrix
 );
 
 /* <lalLaTeX>
@@ -922,12 +962,11 @@ LALInspiralSetParams (
 </lalLaTeX>  */
 
 void 
-LALRectangleVertices
-(
+LALRectangleVertices(
    LALStatus *status, 
    RectangleOut *out,
    RectangleIn *in
-);
+   );
 
 
 /* <lalLaTeX>
@@ -944,25 +983,24 @@ LALInsidePolygon(
    INT4                 *valid
    ); 
    
-
-   void 
-LALEmpiricalPSI2MassesConversion(
-    InspiralTemplate    *params,
-    UINT4               *valid,
-    REAL4               lightring
-);
-
-
 void 
 LALInspiralCreatePNCoarseBankHexa(
     LALStatus            *status, 
     InspiralTemplateList **list, 
     INT4                 *nlist,
     InspiralCoarseBankIn coarseIn
-    ) ;
+    );
+
+void 
+LALInspiralCreatePNCoarseBankHybridHexa(
+    LALStatus            *status, 
+    InspiralTemplateList **list, 
+    INT4                 *nlist,
+    InspiralCoarseBankIn coarseIn
+    );
 
 void
-LALCellInit(
+LALInitHexagonalBank(
     LALStatus         *status, 
     InspiralCell      **cell,
     INT4              id, 
@@ -1013,24 +1051,42 @@ GetPositionRectangle(LALStatus *status,
 		     InspiralTemplate *params, 
 		     HexaGridParam           *gridParam, 
 		     CellEvolution *cellEvolution,
-		     CellList **cellList, INT4 *valid
-		     );
+		     CellList **cellList, 
+                     INT4 *valid
+                     );
 
 
 
-void append(CellList ** headRef, INT4 id);
-void DeleteList(CellList **headRef);
-int  GetIdFromIndex(CellList *head, INT4 index);
-void  Delete(CellList ** headRef, INT4 id);
+void 
+LALListAppend(
+    CellList ** headRef, 
+    INT4 id
+    );
 
-
+UINT4
+GetIdFromIndex(
+    CellList *head, 
+    INT4 index
+    );
 
 void
-print_list(CellList *head);
+LALListDelete(
+    CellList ** headRef, 
+    INT4 id
+    );
 
-int
-Length(CellList *head);
+UINT4
+LALListLength(
+    CellList *head
+    );
 
+void 
+LALSPAF(
+	LALStatus 	*status,  
+	REAL4 		*result, 
+	REAL4 		x,
+	void 		*t3
+);
 
 /* <lalLaTeX>
 \newpage\input{CoarseTestC}
