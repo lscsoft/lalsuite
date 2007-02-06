@@ -1454,7 +1454,6 @@ static void add_sim_injections(
 
 static SnglBurstTable **analyze_series(
 	SnglBurstTable **addpoint,
-	COMPLEX8FrequencySeries  *hrssresponse,
 	REAL4TimeSeries *series,
 	size_t psdlength,
 	EPSearchParams *params
@@ -1483,7 +1482,7 @@ static SnglBurstTable **analyze_series(
 		if(options.verbose)
 			fprintf(stderr, "analyze_series(): analyzing samples %zu -- %zu (%.9lf s -- %.9lf s)\n", start, start + interval->data->length, start * interval->deltaT, (start + interval->data->length) * interval->deltaT);
 
-		*addpoint = XLALEPSearch(hrssresponse, interval, params);
+		*addpoint = XLALEPSearch(interval, params);
 		if(options.cluster)
 			XLALClusterSnglBurstTable(addpoint, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq, XLALSnglBurstCluster);
 		while(*addpoint)
@@ -1699,6 +1698,7 @@ int main( int argc, char *argv[])
 		 * then a unit response is generated).
 		 */
 
+		/* FIXME: not used anymore */
 		hrssresponse = generate_response(&stat, options.calCacheFile, options.channelName, series->deltaT, series->epoch, options.windowLength);
 		if(!hrssresponse)
 			exit(1);
@@ -1740,7 +1740,7 @@ int main( int argc, char *argv[])
 		 * Analyze the data
 		 */
 
-		EventAddPoint = analyze_series(EventAddPoint, hrssresponse, series, options.PSDAverageLength, &params);
+		EventAddPoint = analyze_series(EventAddPoint, series, options.PSDAverageLength, &params);
 
 		/*
 		 * Reset for next run
