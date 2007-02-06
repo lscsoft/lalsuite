@@ -67,7 +67,7 @@ NRCSID( GENERATEINSPIRALH,
 #define GENERATEINSPIRALH_MSGENORM "Normal exit"
 #define GENERATEINSPIRALH_MSGENULL "Null pointer"
 #define GENERATEINSPIRALH_MSGEDFDT "Waveform sampling interval is too large"
-#define GENERATEINSPIRALH_MSGEZERO "theta0 zero for SpinTaylor waveform"
+#define GENERATEINSPIRALH_MSGEZERO "inclination zero for SpinTaylor waveform"
 /* </lalErrTable> */
 
 
