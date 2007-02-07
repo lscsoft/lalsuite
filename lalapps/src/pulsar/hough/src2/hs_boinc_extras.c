@@ -773,7 +773,11 @@ void init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
   fstat_cpt_file_open (cptf);
 
   /* create checkpoint file name if necc. */
-  if(!cptname) {
+  if(cptname) {
+    int s = strlen(cptname)+1;
+    cptfilename = (char*)malloc(s);
+    strncpy(cptfilename,cptname,s);
+  } else {
 #define CHECKPOINT_EXT ".cpt"
     int s = strlen(outputname)+strlen(CHECKPOINT_EXT)+1;
     cptfilename = (char*)malloc(s);
@@ -821,17 +825,25 @@ void init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
 
 /* set_checkpoint() */
 int add_candidate_and_checkpoint (toplist_t*toplist, FstatOutputEntry cand) {
-  int ret = fstat_cpt_file_add (cptf, cand);
-  if (boinc_time_to_checkpoint()) {
-    FILE* fp;
+  FILE* fp;
+  int ret;
+
+  ret = fstat_cpt_file_add (cptf, cand);
+
+  /* if (boinc_time_to_checkpoint()) */ {
     fstat_cpt_file_flush (cptf);
     fp = fopen(cptfilename,"w");
-    fprintf(fp,"%f,%f,%d,%d,%d,%d\n",
-	    last_rac, last_dec, last_count, last_total,
-	    cptf->checksum, cptf->bytes);
-    fclose(fp);
+    if (fp) {
+      fprintf(fp,"%f,%f,%d,%d,%d,%d\n",
+	      last_rac, last_dec, last_count, last_total,
+	      cptf->checksum, cptf->bytes);
+      fclose(fp);
+    } else {
+      LogPrintf (LOG_CRITICAL,  "ERROR: Couldn't write checkpoint file %s\n", cptfilename);
+    }
     boinc_checkpoint_completed();
   }
+  
   return (ret);
 }
 
