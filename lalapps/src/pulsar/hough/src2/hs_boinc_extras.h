@@ -19,7 +19,7 @@ NRCSID(HSBOINCEXTRASHRCSID,"$Id$");
 #define SHOW_PROGRESS show_progress
 #define fopen boinc_fopen
 
-#ifdef HS_CHECKPOINTING
+#ifndef HS_CHECKPOINTING
 #define HS_CHECKPOINTING 0
 #endif
 
