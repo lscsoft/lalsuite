@@ -163,37 +163,43 @@ XLALCalculateNRStrain(
   double                 fcross;
   double                 tDelay;
   REAL4TimeSeries       *htData = NULL;
-  int                    k;
+  UINT4                  vecLength, k;
   InterferometerNumber   ifoNumber = LAL_UNKNOWN_IFO;
 
+  /* get the detector information */
   memset( &det, 0, sizeof(LALDetector) );
   ifoNumber = XLALIFONumber( ifo );
   XLALReturnDetector( &det, ifoNumber );
 
+  /* compute detector response */
   XLALComputeDetAMResponse(&fplus, &fcross, det.response, inj->longitude, 
       inj->latitude, inj->polarization, inj->end_time_gmst);
 
+  /* calculate the time delay */
   tDelay = XLALTimeDelayFromEarthCenter( det.location, inj->longitude,
       inj->latitude, &(inj->geocent_end_time) );
 
-  /* store the ht data */
+  /* create htData */
   htData = LALCalloc(1, sizeof(*htData));
   if (!htData) 
   {
     XLAL_ERROR_NULL( "XLALCalculateNRStrain", XLAL_ENOMEM );
   }
-  htData->epoch = *XLALGPSAdd( &(inj->geocent_end_time), tDelay );
-  htData->deltaT = strain->deltaT;
-  htData->data = XLALCreateREAL4Vector( strain->data->vectorLength );
+  vecLength = strain->data->vectorLength;
+  htData->data = XLALCreateREAL4Vector( vecLength );
   if ( ! htData->data )
   {
     XLAL_ERROR_NULL( "XLALCalculateNRStrain", XLAL_ENOMEM );
   }
 
-  for ( k = 0; k < strain->data->vectorLength; ++k )
+  /* store the htData */
+  htData->epoch = *XLALGPSAdd( &(inj->geocent_end_time), tDelay );
+  htData->deltaT = strain->deltaT;
+
+  for ( k = 0; k < vecLength; ++k )
   {
     htData->data->data[k] = fplus * strain->data->data[k]  + 
-      fcross * strain->data->data[strain->data->vectorLength + k];
+      fcross * strain->data->data[vecLength + k];
   }
 
   /* XXX TO DO: interpolate data to the required sample rate XXX */
