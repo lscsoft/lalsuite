@@ -56,7 +56,9 @@ NRCSID( NRWAVEIOC, "$Id$");
 
 REAL4TimeVectorSeries *
 XLALOrientNRWave( 
-    REAL4TimeVectorSeries *strain, 
+    REAL4TimeVectorSeries *strain,
+    UINT4                  modeL,
+    INT4                   modeM,
     REAL4                  inclination,
     REAL4                  coa_phase);
 
