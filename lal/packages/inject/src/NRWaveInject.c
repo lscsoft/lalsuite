@@ -164,6 +164,7 @@ XLALCalculateNRStrain(
   double                 tDelay;
   REAL4TimeSeries       *htData = NULL;
   int                    k;
+  InterferometerNumber   ifoNumber = LAL_UNKNOWN_IFO;
 
   memset( &det, 0, sizeof(LALDetector) );
   ifoNumber = XLALIFONumber( ifo );
