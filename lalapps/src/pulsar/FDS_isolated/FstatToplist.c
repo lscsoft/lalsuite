@@ -572,14 +572,15 @@ int fstat_cpt_file_read (FStatCheckpointFile*cptf, UINT4 checksum, UINT4 maxbyte
     LogPrintf (LOG_CRITICAL, "ERROR: invalid toplist\n");
     return(bytes);
   } else if (bytes == -1) {
-    cptf->bytes = 0;
     LogPrintf (LOG_CRITICAL, "ERROR: format error in toplist\n");
-    /* seek to start of file and truncate */
+    cptf->bytes = 0;
+    rewind(cptf->fp);
     return(bytes);
   } else if (checksum != cptf->checksum) {
+    LogPrintf (LOG_CRITICAL, "ERROR: checksum error in toplist %u / %u\n", checksum, cptf->checksum);
     cptf->bytes = 0;
-    LogPrintf (LOG_CRITICAL, "ERROR: checksum error in toplist\n");
-    /* seek to start of file and truncate */
+    cptf->checksum = 0;
+    rewind(cptf->fp);
     return(bytes);
   }
   cptf->bytes = bytes;
