@@ -467,7 +467,7 @@ int fstat_cpt_file_open (FStatCheckpointFile *cptf) {
     LogPrintf (LOG_CRITICAL, "ERROR: FStatCheckpointFile is NULL\n");
     return(-1);
   }
-  cptf->fp = fopen(cptf->filename, "rb+");
+  cptf->fp = fopen(cptf->filename, "wb+");
   if (!(cptf->fp)) {
     LogPrintf (LOG_CRITICAL, "ERROR: Couldn't open checkpointing toplist file %s\n",cptf->filename);
     return(-1);
