@@ -1,16 +1,23 @@
 %%%%$Id$%%%
 
-\documentclass[amsmath,amssymb]{article}
-\usepackage{graphicx}
-
-\def\Ys{{}^sY}
-\def\Y2{{}^{-2}Y}
-
-\begin{document}
-
+\documentclass{article}
+\usepackage{amsmath,amssymb,graphicx,rcs}
+\numberwithin{equation}{section}
+\newcommand{\Ys}{{{}^sY}}
+\newcommand{\Ytwo}{{{}^{-2}Y}}
+\newcommand{\xhat}{\mathbf{e}_x}
+\newcommand{\yhat}{\mathbf{e}_y}
+\newcommand{\zhat}{\mathbf{e}_z}
+\newcommand{\eplus}{\mathbf{e}_+}
+\newcommand{\ecross}{\mathbf{e}_\times}
+\newcommand{\rhat}{\mathbf{e}_{z^\prime}}
+\newcommand{\iotahat}{\mathbf{e}_{x^\prime}}
+\newcommand{\phihat}{\mathbf{e}_{y^\prime}}
+\RCS $Date$
 \title{Data formats for numerical relativity waves}
-\date{\today}
+\date{\RCSDate}
 \author{Author list TBD}
+\begin{document}
 \maketitle
 
 \begin{abstract}
@@ -65,39 +72,39 @@ beginning of the simulation and the time at coalescence (although the
 latter may well be slicing dependent).  It is not immediately clear
 which would be preferable, especially in the case of spinning systems.
 
-Let $\mathbf{e}_x$, $\mathbf{e}_y$ and $\mathbf{e}_z$ denote the
+Let $\xhat$, $\yhat$ and $\zhat$ denote the
 orthonormal coordinate basis vectors. Given this coordinate system, we
 define spherical coordinates $(\iota,\phi)$ where $\iota$ is the
 inclination angle from the $z$-axis and $\phi$ is the phase angle.  We
 break up $h_{ij}$ into modes in this coordinate system.  Introduce a
 new coordinate system, the wave frame, $(x^\prime, y^\prime,
 z^\prime)$ such that the $z^\prime$ axis is the direction of
-propagation of the wave.  Thus, $\mathbf{e}_{z^\prime} = \cos\iota
- \mathbf{e}_z + \sin\iota\cos\phi \mathbf{e}_x +
-\sin\iota\sin\phi \mathbf{e}_y$. There is a freedom in choosing
+propagation of the wave.  Thus, $\rhat = \cos\iota
+ \zhat + \sin\iota\cos\phi \xhat +
+\sin\iota\sin\phi \yhat$. There is a freedom in choosing
 $x^\prime$ and $y^\prime$ corresponding to rotations around the
 $z^\prime$-axis.  This freedom is fixed by requiring ***check this***need a figure***
 \begin{equation}
   \label{eq:8}
-  \mathbf{e}_{x^\prime} =
-  \frac{\mathbf{e}_{z^\prime}\times\mathbf{e}_z}{||\mathbf{e}_{z^\prime}\times\mathbf{e}_z||} \,, 
+  \iotahat =
+  \frac{\rhat\times\zhat}{||\rhat\times\zhat||} \,, 
   \qquad \textrm{and} \qquad 
-  \mathbf{e}_{z^\prime} = \mathbf{e}_{x^\prime} \times \mathbf{e}_{y^\prime} \,.
+  \rhat = \iotahat \times \phihat \,.
 \end{equation}
 In the transverse traceless gauge, $h_{ij}$ is has two independent
 polarizations 
 \begin{equation}
   \label{eq:2}
-  h_{ij} = h_+ (\mathbf{e}_+)_{ij} + h_\times (\mathbf{e}_\times)_{ij}\,,
+  h_{ij} = h_+ (\eplus)_{ij} + h_\times (\ecross)_{ij}\,,
 \end{equation}
-where $\mathbf{e}_+$ and $\mathbf{e}_\times$ are the usual basis tensors for
+where $\eplus$ and $\ecross$ are the usual basis tensors for
 transverse-traceless tensors in the wave frame
 \begin{equation}
   \label{eq:9}
-  \mathbf{e}_+ = \mathbf{e}_{x^\prime}\otimes\mathbf{e}_{x^\prime} -
-  \mathbf{e}_{y^\prime}\otimes\mathbf{e}_{y^\prime}\,, \qquad \textrm{and} \qquad 
-  \mathbf{e}_+ = \mathbf{e}_{x^\prime}\otimes\mathbf{e}_{y^\prime} +
-  \mathbf{e}_{y^\prime}\otimes\mathbf{e}_{x^\prime}\,. 
+  \eplus = \iotahat\otimes\iotahat -
+  \phihat\otimes\phihat\,, \qquad \textrm{and} \qquad 
+  \ecross = \iotahat\otimes\phihat +
+  \phihat\otimes\iotahat\,. 
 \end{equation}
 It is convenient to use the combination $h_+ - ih_\times$ which is
 related to the Weyl tensor component $\Psi_4$ by two time derivatives:
@@ -111,7 +118,7 @@ modes using spin weighted spherical harmonics $\Ys_{lm}$ of weight
 \begin{equation}
   \label{eq:4}
   h_+ - ih_\times = \frac{1}{r}\sum_{\ell=2}^{\infty}\sum_{m=-\ell}^\ell H_{\ell m}(t)\,
-  \Y2_{\ell m}(\theta,\phi)\,.
+  \Ytwo_{\ell m}(\iota,\phi)\,.
 \end{equation}
 The expansion parameters $H_{lm}$ are complex functions of the retarded time
 $t-r$ and, if we fix $r$ to be the radius of the sphere at which we
@@ -121,27 +128,27 @@ The explicit expression for the spin weighted spherical harmonics is
 in terms of the Wigner $d$-functions
 \begin{equation}
   \label{eq:5}
-   \Ys_{lm} = (-1)^s\sqrt{\frac{2\ell+1}{4\pi}} d^\ell_{m,-s}(\theta)e^{im\phi}
+   \Ys_{lm} = (-1)^s\sqrt{\frac{2\ell+1}{4\pi}} d^\ell_{m,-s}(\iota)e^{im\phi}
 \end{equation}
 where
 \begin{eqnarray}
   \label{eq:6}
-  d^\ell_{m,s}(\theta) &=& \sum_{k = k_1}^{k_2}
+  d^\ell_{m,s}(\iota) &=& \sum_{k = k_1}^{k_2}
     \frac{(-1)^k[(\ell+m)!(\ell-m)!(\ell+s)!(\ell-s)!]^{1/2}}{(\ell +m
       -k)!(\ell-s-k)!k!(k+s-m)!} \times \\ 
-    &&\times \left(\frac{\cos\theta}{2}\right)^{2\ell+m-s-2k}\left(\frac{\sin\theta}{2}\right)^{2k+s-m}  
+    &&\times \left(\frac{\cos\iota}{2}\right)^{2\ell+m-s-2k}\left(\frac{\sin\iota}{2}\right)^{2k+s-m}  
 \end{eqnarray}
 with $k_1 = \textrm{max}(0, m-s)$ and $k_2=\textrm{min}(\ell+m,
 \ell-s)$.  For reference,
 \begin{eqnarray}
   \label{eq:7}
-  \Y2_{2-2} &=& \sqrt{\frac{5}{64\pi}}(1-\cos\theta)^2e^{-2i\phi}\,, \\
-  \Y2_{22} &=& \sqrt{\frac{5}{64\pi}}(1+\cos\theta)^2e^{2i\phi} \,.
+  \Ytwo_{2-2} &=& \sqrt{\frac{5}{64\pi}}(1-\cos\iota)^2e^{-2i\phi}\,, \\
+  \Ytwo_{22} &=& \sqrt{\frac{5}{64\pi}}(1+\cos\iota)^2e^{2i\phi} \,.
 \end{eqnarray}
 The mode expansion coefficients $H_{lm}$ are given by
 \begin{equation}
   \label{eq:10}
-  H_{\ell m} = \oint \Y2_{lm}^\star(\theta,\phi)(rh_+-irh_\times )\,d\Omega\,.
+  H_{\ell m} = \oint \Ytwo_{lm}^\star(\iota,\phi)(rh_+-irh_\times )\,d\Omega\,.
 \end{equation}
 If $\Psi_4$ is used for wave extraction, then $H_{lm}$ is given by two
 time integrals of the corresponding mode of $\Psi_4$.  It is important
