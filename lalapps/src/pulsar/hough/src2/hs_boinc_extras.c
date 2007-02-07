@@ -4,9 +4,11 @@
 
 /* TODO:
    - cleanup of toplist if something goes wrong reading it from checkpoint
+   - final output write specific to hough, w/o reducing precision
    - error handling in checkpointing
    - catch malloc errors in worker()
    - behavior when boinc_is_standlone()?
+   - check for critical sections
 */
 
 
@@ -64,10 +66,12 @@ NRCSID(HSBOINCEXTRASCRCSID,"$Id$");
 
 /** global VARIABLES **/
 
-/* information about the output files */
-static char **outfiles = NULL;        /* the names  of the output files of the program */
-static int  noutfiles  = 0;           /* the number of the output files of the program */
+/* program might have multiple output file(s) */
+static char **outfiles = NULL;        /* the names  of the output files */
+static int  noutfiles  = 0;           /* the number of the output files */
 static char resultfile[MAX_PATH_LEN]; /* the name of the file / zip archive to return */
+
+/* FLOPS estimation */
 static double estimated_flops = -1;
 
 /* hooks for communication with the graphics thread */
@@ -82,17 +86,18 @@ extern void set_search_pos(float RAdeg, float DEdeg);
 extern int boinc_init_graphics(void (*worker)(void));
 #endif
 
-/* worker doesn't take arguments, so we have to pass them as (mol) global vars :-( */
+/* worker() doesn't take arguments, so we have to pass them as (mol) global vars :-( */
 static int global_argc;
 static char **global_argv;
 
 /* variables for checkpointing */
-static char* cptfilename;
-static FStatCheckpointFile* cptf = NULL;
-static UINT4 bufsize = 8*1024;
-static UINT4 maxsize = 1024*1024;
-static double last_rac, last_dec;
-static UINT4 last_count, last_total;
+static char* cptfilename;                 /* name of the checkpoint file */
+static FStatCheckpointFile* cptf = NULL;  /* FStatCheckpointFile structure */
+static UINT4 bufsize = 8*1024;            /* size of output file buffer */
+static UINT4 maxsize = 1024*1024;         /* maximal size of the output file */
+static double last_rac, last_dec;         /* last sky position, set by show_progress(),
+					     used by set_checkpoint() */
+static UINT4 last_count, last_total;      /* last template count, see last_rac */
 
 
 
@@ -184,20 +189,26 @@ static void sighandler(int sig){
 
 /*
   show_progress()
+
+  this just sets some variables,
+  so should be pretty fast and can be called several times a second
  */
 void show_progress(double rac, double dec, UINT4 count, UINT4 total) {
   double fraction = (double)count / (double)total;
 
-  /* set globals */
+  /* set globals for checkpoint */
   last_rac = rac;
   last_dec = dec;
   last_count = count;
   last_total = total;
 
+  /* tell graphics thread */
   if (fraction_done_hook)
     *fraction_done_hook = fraction;
   if (set_search_pos_hook)
     set_search_pos_hook(rac * 180.0/LAL_PI, dec * 180.0/LAL_PI);
+
+  /* tell BOINC client */
   boinc_fraction_done(fraction);
   if (estimated_flops >= 0)
     boinc_ops_cumulative( estimated_flops * fraction, 0 /*ignore IOPS*/ );
@@ -228,14 +239,6 @@ void register_output_file(char*filename) {
   strcpy(outfiles[noutfiles],filename);
   noutfiles++;
 }
-
-
-
-/* to be inmplemented... */
-void set_checkpoint(char*filename,double rac,double dec, long tpl_count, long tpl_total);
-void get_checkpoint(char*filename);
-
-
 
 
 
@@ -296,6 +299,7 @@ static int resolve_and_unzip(const char*filename, char*resfilename, const size_t
 	LogPrintf (LOG_CRITICAL, "ERROR: Couldn't unzip '%s'\n", filename);
 	return(-1);
       }
+/* critcal> */
       if( boinc_delete_file(filename) ) {
 	LogPrintf (LOG_CRITICAL, "ERROR: Couldn't delete '%s'\n", filename);
 	return(-1);
@@ -304,6 +308,7 @@ static int resolve_and_unzip(const char*filename, char*resfilename, const size_t
 	LogPrintf (LOG_CRITICAL, "ERROR: Couldn't rename to '%s'\n", filename);
 	return(-1);
       }
+/* <critical */
     }
 
     /* copy the filename into resfile as if boinc_resove() had succeeded */
@@ -318,6 +323,7 @@ static int resolve_and_unzip(const char*filename, char*resfilename, const size_t
   if (zipped <= 0)
     return(zipped);
 
+/* critical> */
   /* delete the local link so we can unzip to that name */
   if( boinc_delete_file(filename) ) {
     LogPrintf (LOG_CRITICAL, "ERROR: Couldn't delete '%s'\n", filename);
@@ -329,6 +335,7 @@ static int resolve_and_unzip(const char*filename, char*resfilename, const size_t
     LogPrintf (LOG_CRITICAL, "ERROR: Couldn't unzip '%s'\n", resfilename);
     return(-1);
   }
+/* <critical */
 
   /* the new resolved filename is the unzipped file */
   strncpy(resfilename,filename,size);
@@ -568,13 +575,14 @@ static void worker (void) {
    */
   if(noutfiles == 0)
     LogPrintf (LOG_CRITICAL, "ERROR: no output file has been specified\n");
-
+/* critical> */
   for(i=0;i<noutfiles;i++)
     if ( 0 == strncmp(resultfile, outfiles[i], sizeof(resultfile)) )
       LogPrintf (LOG_NORMAL, "WARNING: output (%d) and result file are identical (%s) - output not zipped\n", i, resultfile);
     else if ( boinc_zip(ZIP_IT, resultfile, outfiles[i]) ) {
       LogPrintf (LOG_NORMAL, "WARNING: Can't zip output file '%s'\n", outfiles[i]);
     }
+/* <critical */
 
   /* finally set (fl)ops count if given */
   if (estimated_flops >= 0)
@@ -749,6 +757,8 @@ int main(int argc, char**argv) {
 }
 
 
+
+/* CHECKPOINTING FUNCTIONS */
 
 /* inits checkpointing and read a checkpoint if already there */
 void init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
