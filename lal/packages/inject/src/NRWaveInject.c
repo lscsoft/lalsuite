@@ -36,8 +36,6 @@
 
 
 /** Spherical Harmonic for the l=2 mode */
-/* This function is for the moment not used in the code */
-/* It'll be useful only when XLALOrientNRWave is allowed to take L, M as input */
 COMPLEX16 SphHarm ( 
     UINT4   L,      /* value of L */
     INT4    M,      /* value of M */
@@ -84,33 +82,16 @@ COMPLEX16 SphHarm (
 	    
 	    default:
 		/* Error message informing that the chosen M is incompatible with L=2*/
+		printf("Sorry, the value chosen for m is not compatible with l");
 		break;
 	}
     }
     else 
     {
 	/* Error message informing that L!=2 is not yet implemented*/
+	printf("Sorry, for the moment we haven't implemented anything other than l=2");
     }
     
-    return( out );
-}
-
-
-/** Spherical Harmonic for the l=2, m=2 mode */
-/* Eventually all these functions should be placed in their own library */
-COMPLEX16 SphHarm22 ( 
-    REAL4   theta,  /* angle with respect to the z axis */
-    REAL4   phi    /* angle with respect to the x axis */)
-
-{
-    COMPLEX16  out; /* complex number */
-    REAL4      deptheta; /** dependency on theta */
-
-    deptheta = sqrt( 5.0 / ( 64.0 * LAL_PI ) ) * ( 1.0 + cos( theta ))*( 1.0 + cos( theta ));
-
-    out.re = deptheta * cos( 2.0*phi );
-    out.im = deptheta * sin( 2.0*phi );
-
     return( out );
 }
 
@@ -121,6 +102,8 @@ COMPLEX16 SphHarm22 (
 REAL4TimeVectorSeries *
 XLALOrientNRWave( 
     REAL4TimeVectorSeries *strain,         /**< sky average h+, hx data */ 
+    UINT4                  modeL,          /**< L                       */
+    INT4                   modeM,          /**< M                       */
     REAL4                  inclination,    /**< binary inclination      */
     REAL4                  coa_phase       /**< binary coalescence phase*/)
 {
@@ -131,7 +114,7 @@ XLALOrientNRWave(
     vecLength = strain->data->vectorLength;
 
 /* Calculating the (2,2) Spherical Harmonic */
-    MultSphHarm = SphHarm22( inclination, coa_phase );
+    MultSphHarm = SphHarm( modeL, modeM, inclination, coa_phase );
 
 /* Filling the data vector with the data multiplied by the Harmonic */
     for ( k = 0; k < vecLength; k++)
