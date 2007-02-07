@@ -94,7 +94,7 @@ int main( int argc, char *argv[] )
   SimInspiralTable *injections = NULL; /* list of injections to be done  */
   SimInspiralTable    *thisInj = NULL; /* current injection              */
 
-  REAL4TimeSeries        inj;          /* time series of zeros to which we
+  REAL4TimeSeries        injData;      /* time series of zeros to which we
                                           add injections                 */
   REAL4TimeVectorSeries *strain = NULL;/* h+,hx time series              */
   REAL4TimeSeries       *htData = NULL;/* h(t) data for given detector   */
@@ -310,6 +310,14 @@ int main( int argc, char *argv[] )
   }
 
   /* check that we have injections */
+  if ( sampleRate < 0 )
+  {
+    fprintf( stderr, 
+        "--sample-rate must be specified\n");
+    exit( 1 );
+  }
+
+  /* check that we have injections */
   if ( !injectionFile )
   {
     fprintf( stderr, 
@@ -342,28 +350,31 @@ int main( int argc, char *argv[] )
   /* set up the injData to be zeros of the correct length, to which we will 
    * add the injections */
 
-  memset( &inj, 0, sizeof(REAL4TimeSeries) );
+  memset( &injData, 0, sizeof(REAL4TimeSeries) );
 
-  inj.epoch = gpsStartTime;
-  inj.deltaT = 1./sampleRate;
-  LALSnprintf( inj.name, LIGOMETA_CHANNEL_MAX * sizeof(CHAR), "%s:STRAIN", 
+  injData.epoch = gpsStartTime;
+  injData.deltaT = 1./sampleRate;
+  LALSnprintf( injData.name, LIGOMETA_CHANNEL_MAX * sizeof(CHAR), "%s:STRAIN", 
           ifo );
   numPoints = sampleRate * (gpsEndSec - gpsStartSec);
 
   /* create data structure */
-  inj.data = XLALCreateREAL4Vector( numPoints );
-  if ( ! inj.data )
+  injData.data = XLALCreateREAL4Vector( numPoints );
+  if ( ! injData.data )
   {
       fprintf( stderr, "error: could not allocate memory for injections" );
       exit( 1 );
   }
-  memset( inj.data->data, 0, numPoints * sizeof(REAL4) );
+  memset( injData.data->data, 0, numPoints * sizeof(REAL4) );
 
 
 
   /* read the injections */
   numInjections = SimInspiralTableFromLIGOLw( &injections, injectionFile,
         gpsStartSec, gpsEndSec );
+
+  if( vrbflg ) fprintf(stdout,"Read %d injections from the file %s\n", 
+      numInjections, injectionFile);
 
   if ( numInjections < 0 )  
   {
@@ -382,18 +393,25 @@ int main( int argc, char *argv[] )
       /* nrDataFile = XLALFindNRFile( nrMetaFile, thisInj ); */
     }
 
-    /* compute the h+, hx strain averaged over the sky */
+    if ( vrbflg) fprintf(stdout,
+        "Reading the waveform from the file %s ...", nrDataFile );
     strain = XLALReadNRWave( (thisInj->mass1 + thisInj->mass2), nrDataFile);
+    if ( vrbflg) fprintf(stdout, "done\n");
 
     /* compute the h+, hx strain for the given inclination, coalescence phase*/
-    strain = XLALOrientNRWave( *strain, thisInj->inclination,
+    if ( vrbflg )fprintf(stdout,
+        "Generating waveform for inclination = %f, coa_phase = %f\n",
+        thisInj->inclination, thisInj->coa_phase );
+    strain = XLALOrientNRWave( strain, thisInj->inclination,
         thisInj->coa_phase );
 
-    /* compute the strain time series for given ifo, sky location */
+    if ( vrbflg ) fprintf(stdout,
+        "Generating the strain data for the given sky location\n");
     htData = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate);
 
     /* XXX inject the htData into our injection time stream XXX */
-    /*LAL_CALL( LALSSInjectTimeSeries( &status, &inj, htData ), &status );*/
+    /*LAL_CALL( LALSSInjectTimeSeries( &status, &injData, htData ), &status );*/
+
   }
   exit( 0 );
 }
