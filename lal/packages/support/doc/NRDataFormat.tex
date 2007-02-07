@@ -74,14 +74,32 @@ which would be preferable, especially in the case of spinning systems.
 
 Let $\xhat$, $\yhat$ and $\zhat$ denote the
 orthonormal coordinate basis vectors. Given this coordinate system, we
-define spherical coordinates $(\iota,\phi)$ where $\iota$ is the
+define spherical coordinates $(r,\iota,\phi)$ where $\iota$ is the
 inclination angle from the $z$-axis and $\phi$ is the phase angle.  We
-break up $h_{ij}$ into modes in this coordinate system.  Introduce a
+break up $h_{ij}$ into modes in this coordinate system.
+In the wave zone, the wave will be propagating in the direction of
+\begin{equation}
+  \rhat =  \xhat\sin\iota\cos\phi + \yhat\sin\iota\sin\phi + \zhat\cos\iota
+\end{equation}
+A natural set of orthogonal basis vectors from which to build the
+transverse traceless basis tensors is
+\begin{subequations}
+  \begin{alignat}{3}
+    \hat{r} &=
+    &\hat{x}&\,\sin\theta\cos\phi \,&+&\, \hat{y}\,\sin\theta\sin\phi
+    + \hat{z}\,\cos\theta \\
+    \hat{\theta} &=
+    &\hat{x}&\,\cos\theta\cos\phi \,&+&\, \hat{y}\,\cos\theta\sin\phi
+    - \hat{z}\,\sin\theta \\
+    \hat{\phi} &=
+    -\,&\hat{x}&\,\sin\phi \,&+&\, \hat{y}\,\cos\phi
+  \end{alignat}
+\end{subequations}
+
+  Introduce a
 new coordinate system, the wave frame, $(x^\prime, y^\prime,
 z^\prime)$ such that the $z^\prime$ axis is the direction of
-propagation of the wave.  Thus, $\rhat = \cos\iota
- \zhat + \sin\iota\cos\phi \xhat +
-\sin\iota\sin\phi \yhat$. There is a freedom in choosing
+propagation of the wave.  Thus, $$. There is a freedom in choosing
 $x^\prime$ and $y^\prime$ corresponding to rotations around the
 $z^\prime$-axis.  This freedom is fixed by requiring ***check this***need a figure***
 \begin{equation}
