@@ -5,14 +5,17 @@
 \numberwithin{equation}{section}
 \newcommand{\Ys}{{{}^sY}}
 \newcommand{\Ytwo}{{{}^{-2}Y}}
-\newcommand{\xhat}{\mathbf{e}_x}
-\newcommand{\yhat}{\mathbf{e}_y}
-\newcommand{\zhat}{\mathbf{e}_z}
-\newcommand{\eplus}{\mathbf{e}_+}
-\newcommand{\ecross}{\mathbf{e}_\times}
-\newcommand{\rhat}{\mathbf{e}_{z^\prime}}
-\newcommand{\iotahat}{\mathbf{e}_{x^\prime}}
-\newcommand{\phihat}{\mathbf{e}_{y^\prime}}
+\newcommand{\tens}[1]{\overleftrightarrow{#1}}
+\newcommand{\xhat}{\vec{e}_x}
+\newcommand{\yhat}{\vec{e}_y}
+\newcommand{\zhat}{\vec{e}_z}
+\newcommand{\ihat}{\vec{e}_i}
+\newcommand{\jhat}{\vec{e}_j}
+\newcommand{\rhat}{\vec{e}_{r}}
+\newcommand{\iotahat}{\vec{e}_{\iota}}
+\newcommand{\phihat}{\vec{e}_{\phi}}
+\newcommand{\eplus}{\tens{e}_+}
+\newcommand{\ecross}{\tens{e}_\times}
 \RCS $Date$
 \title{Data formats for numerical relativity waves}
 \date{\RCSDate}
@@ -78,42 +81,26 @@ define spherical coordinates $(r,\iota,\phi)$ where $\iota$ is the
 inclination angle from the $z$-axis and $\phi$ is the phase angle.  We
 break up $h_{ij}$ into modes in this coordinate system.
 In the wave zone, the wave will be propagating in the direction of
-\begin{equation}
-  \rhat =  \xhat\sin\iota\cos\phi + \yhat\sin\iota\sin\phi + \zhat\cos\iota
-\end{equation}
-A natural set of orthogonal basis vectors from which to build the
-transverse traceless basis tensors is
 \begin{subequations}
   \begin{alignat}{3}
-    \hat{r} &=
-    &\hat{x}&\,\sin\theta\cos\phi \,&+&\, \hat{y}\,\sin\theta\sin\phi
-    + \hat{z}\,\cos\theta \\
-    \hat{\theta} &=
-    &\hat{x}&\,\cos\theta\cos\phi \,&+&\, \hat{y}\,\cos\theta\sin\phi
-    - \hat{z}\,\sin\theta \\
-    \hat{\phi} &=
-    -\,&\hat{x}&\,\sin\phi \,&+&\, \hat{y}\,\cos\phi
+    \rhat &=  &\xhat&\,\sin\iota\cos\phi\, &+&\, \yhat\,\sin\iota\sin\phi
+    + \zhat\,\cos\iota
+\intertext{A natural set of orthogonal basis vectors from which to build the
+transverse traceless basis tensors is}
+    \iotahat &=
+    &\xhat&\,\cos\iota\cos\phi \,&+&\, \yhat\,\cos\iota\sin\phi
+    - \zhat\,\sin\iota \\
+    \phihat &=
+    -\,&\xhat&\,\sin\phi \,&+&\, \yhat\,\cos\phi
   \end{alignat}
 \end{subequations}
-
-  Introduce a
-new coordinate system, the wave frame, $(x^\prime, y^\prime,
-z^\prime)$ such that the $z^\prime$ axis is the direction of
-propagation of the wave.  Thus, $$. There is a freedom in choosing
-$x^\prime$ and $y^\prime$ corresponding to rotations around the
-$z^\prime$-axis.  This freedom is fixed by requiring ***check this***need a figure***
-\begin{equation}
-  \label{eq:8}
-  \iotahat =
-  \frac{\rhat\times\zhat}{||\rhat\times\zhat||} \,, 
-  \qquad \textrm{and} \qquad 
-  \rhat = \iotahat \times \phihat \,.
-\end{equation}
+Note in particular that $\phihat$ is perpendicular to $\zhat$.
 In the transverse traceless gauge, $h_{ij}$ is has two independent
 polarizations 
 \begin{equation}
   \label{eq:2}
-  h_{ij} = h_+ (\eplus)_{ij} + h_\times (\ecross)_{ij}\,,
+  \tens{h} = \sum_{i,j}h_{ij}\,\ihat\otimes\jhat
+  = h_+ \eplus + h_\times \ecross\,,
 \end{equation}
 where $\eplus$ and $\ecross$ are the usual basis tensors for
 transverse-traceless tensors in the wave frame
@@ -128,9 +115,9 @@ It is convenient to use the combination $h_+ - ih_\times$ which is
 related to the Weyl tensor component $\Psi_4$ by two time derivatives:
 \begin{equation}
   \label{eq:3}
-  \Psi_4 = \ddot{h}_+ -i\ddot{h}_\times\,.
+  \Psi_4 = - \ddot{h}_+ i\ddot{h}_\times\,.
 \end{equation}
-$\Psi_4$. It can be shown that $h_+-ih_\times$, can be decomposed into
+It can be shown that $h_+-ih_\times$, can be decomposed into
 modes using spin weighted spherical harmonics $\Ys_{lm}$ of weight
 -2:
 \begin{equation}
@@ -196,7 +183,7 @@ funtions of time.
 
 For our purposes, a single numerical waveform is defined by 9
 parameters: the mass ratio $M_1/M_2$, the three components of the
-individual spins $\mathbf{S}_1$ and $\mathbf{S}_2$ and the mode
+individual spins $\vec{S}_1$ and $\vec{S}_2$ and the mode
 numbers $(l,m)$.  These 9 parameters will be referred to as the
 ``metadata'' for a waveform.  ***We can add more parameters to this
 metadata if necessary.***
