@@ -108,6 +108,12 @@ int create_toplist(toplist_t**list,
 }
 
 
+/* clears an existing toplist of all elements inserted so far */
+void clear_toplist(toplist_t*list) {
+  list->elems = 0;
+}
+
+
 /* frees the space occupied by the toplist */
 void free_toplist(toplist_t**list) {
     free((*list)->heap);

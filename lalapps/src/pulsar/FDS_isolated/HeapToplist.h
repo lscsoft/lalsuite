@@ -40,6 +40,10 @@ extern void free_toplist(toplist_t**list);
 extern int insert_into_toplist(toplist_t*list, void *element);
 
 
+/* clears an existing toplist of all elements inserted so far */
+extern void clear_toplist(toplist_t*list);
+
+
 /* apply a function to all elements of the list in the current order
    (possibly after calling qsort_toplist(), e.g. for writing out */
 extern void go_through_toplist(toplist_t*list, void (*handle)(void *));
@@ -69,5 +73,6 @@ extern void* toplist_elem(toplist_t*list, size_t index);
    returns -1 if list1 is "smaller", 1 if list2 is "smaller", 0 if they are equal,
    2 if they are uncomparable (different data types or "smaller" functions */
 extern int compare_toplists(toplist_t*list1, toplist_t*list2);
+
 
 #endif /* HEAPTOPLIST_H - double inclusion protection */
