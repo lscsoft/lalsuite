@@ -124,21 +124,6 @@ do {                                                                 \
 } while (0)
 
 
-/* Function to check the return code of a failed function call. */
-static int
-check(LALStatus *status,INT4 code,const CHAR * message)
-{
-  if (status->statusCode != code) {
-    printf("FAIL: did not recognize %s\n",message);
-    return 1;
-  }
-  else if (strcmp(message,status->statusDescription)) {
-    printf("FAIL: incorrect warning message %s not %s\n",status->statusDescription,message);
-    return 1;
-  }
-  return 0;
-}
-
 
 int
 main( int argc, char **argv )
@@ -159,7 +144,6 @@ main( int argc, char **argv )
   REAL8Vector *dVector = NULL; /* input data vector (double-precision) */
   REAL4Window *sWindow = NULL; /* window to apply (single-precision) */
   REAL8Window *dWindow = NULL; /* window to apply (double-precision) */
-  REAL4Window dummy;           /* dummy pre-allocated window */
   LALWindowParams params;      /* window creation parameters */
   WindowType wintype;          /* window type */
   REAL8 testsquares[] =        /* sum of squares for NPOINTS=1024: */
@@ -171,7 +155,7 @@ main( int argc, char **argv )
     300.357781729967622,   /* Papoulis */
     406.9376,              /* Hamming */
     375.544713725875234,   /* Kaiser */
-    393.028878331734330 }; /* Creighton */
+    393.028878331734330};  /* Creighton */
 
 
   /* Read command line arguments. */
@@ -260,38 +244,27 @@ main( int argc, char **argv )
     params.length = NPOINTS;
     params.beta = 1.0;
 
-    /* Test behavior for null parameter block */
-    LALCreateREAL4Window( &status, &sWindow, NULL );
-    if (check(&status,WINDOWH_ENULLPARAM,WINDOWH_MSGENULLPARAM))
-      return 1;
-
-    /* Test behavior for null window handle */
-    LALCreateREAL4Window( &status, NULL, &params );
-    if (check(&status,WINDOWH_ENULLHANDLE,WINDOWH_MSGENULLHANDLE))
-      return 1;
-
-    /* Test behavior for non-null window pointer */
-    sWindow = &dummy;
-    LALCreateREAL4Window( &status, &sWindow, &params );
-    if (check(&status,WINDOWH_ENNUL,WINDOWH_MSGENNUL))
-      return 1;
-    sWindow = NULL;
-
     /* Test behavior for non-positive length  */
     params.length=0;
-    LALCreateREAL4Window( &status, &sWindow, &params);
-    if (check(&status,WINDOWH_EELENGTH,WINDOWH_MSGEELENGTH))
+    sWindow = XLALCreateREAL4Window(params.length, params.type, params.beta);
+    if (sWindow) {
+      ERROR(0, "XLALCreateREAL4Window() failed to detect 0 length", NULL);
       return 1;
+    }
 
     /* Test failures for undefined window type on lower and upper bounds */
     params.type=-1;
-    LALCreateREAL4Window( &status, &sWindow, &params );
-    if (check(&status,WINDOWH_ETYPEUNKNOWN,WINDOWH_MSGETYPEUNKNOWN))
+    sWindow = XLALCreateREAL4Window(params.length, params.type, params.beta);
+    if (sWindow) {
+      ERROR(0, "XLALCreateREAL4Window() failed to detect out-of-bound type", NULL);
       return 1;
+    }
     params.type=NumberWindowTypes;
-    LALCreateREAL4Window( &status, &sWindow, &params );
-    if (check(&status,WINDOWH_ETYPEUNKNOWN,WINDOWH_MSGETYPEUNKNOWN))
+    sWindow = XLALCreateREAL4Window(params.length, params.type, params.beta);
+    if (sWindow) {
+      ERROR(0, "XLALCreateREAL4Window() failed to detect out-of-bound type", NULL);
       return 1;
+    }
   }
 #endif
 
@@ -324,17 +297,21 @@ main( int argc, char **argv )
 	else if ( wintype == Creighton )
 	  params.beta = 2.0;
       }
-      if ( pOption )
-	SUB( LALCreateREAL8Window( &status, &dWindow, &params),
-	     &status );
-      else
-	SUB( LALCreateREAL4Window( &status, &sWindow, &params),
-	     &status );
+      if ( pOption ) {
+      	dWindow = XLALCreateREAL8Window(params.length, params.type, params.beta);
+	params.sumofsquares = dWindow->sumofsquares;
+	params.windowname = dWindow->windowname;
+      } else {
+      	sWindow = XLALCreateREAL4Window(params.length, params.type, params.beta);
+	params.sumofsquares = sWindow->sumofsquares;
+	params.windowname = sWindow->windowname;
+      }
 
       /* Check sum of squares. */
       if ( width == NPOINTS )
 	if ( ( wintype != Kaiser || params.beta == 6.0 ) &&
-	     ( wintype != Creighton || params.beta == 2.0 ) ) {
+	     ( wintype != Creighton || params.beta == 2.0 ) &&
+	     ( wintype != Tukey ) ) {
 	  if ( fabs( params.sumofsquares - testsquares[(int)wintype] )
 	       > 1.e-5 ) {
 	    printf("FAIL: Window %s appears incorrect.\n",
@@ -369,7 +346,7 @@ main( int argc, char **argv )
 	  if ( i++ < npts )
 	    fprintf( fp, "%23.16e\n", dWindow->data->data[0] );
 	}
-	SUB( LALDestroyREAL8Window( &status, &dWindow ), &status );
+	XLALDestroyREAL8Window(dWindow);
 	for ( ; i < npts; i++ )
 	  fprintf( fp, "%23.16e\n", 0.0 );
       }
@@ -390,7 +367,7 @@ main( int argc, char **argv )
 	  if ( i++ < npts )
 	    fprintf( fp, "%16.9e\n", sWindow->data->data[0] );
 	}
-	SUB( LALDestroyREAL4Window( &status, &sWindow ), &status );
+	XLALDestroyREAL4Window(sWindow);
 	for ( ; i < npts; i++ )
 	  fprintf( fp, "%16.9e\n", 0.0 );
       }
