@@ -467,9 +467,13 @@ int fstat_cpt_file_open (FStatCheckpointFile *cptf) {
     LogPrintf (LOG_CRITICAL, "ERROR: FStatCheckpointFile is NULL\n");
     return(-1);
   }
-  cptf->fp = fopen(cptf->filename, "wb+");
+  cptf->fp = fopen(cptf->filename, "rb+");
   if (!(cptf->fp)) {
-    LogPrintf (LOG_CRITICAL, "ERROR: Couldn't open checkpointing toplist file %s\n",cptf->filename);
+    LogPrintf (LOG_NORMAL, "ERROR: Couldn't open existing checkpointing toplist file %s\n",cptf->filename);
+    cptf->fp = fopen(cptf->filename, "wb+");
+  }
+  if (!(cptf->fp)) {
+    LogPrintf (LOG_CRITICAL, "ERROR: Couldn't open new checkpointing toplist file %s\n",cptf->filename);
     return(-1);
   }
   /* set a buffer large enough that no output is written to disk
@@ -561,30 +565,39 @@ int fstat_cpt_file_add (FStatCheckpointFile*cptf, FstatOutputEntry line) {
    returns 0 if successful,
    -1 if the file contained a syntax error,
    -2 if given an improper toplist */
-int fstat_cpt_file_read (FStatCheckpointFile*cptf, UINT4 checksum, UINT4 maxbytes) {
-  INT4 bytes;
+int fstat_cpt_file_read (FStatCheckpointFile*cptf, UINT4 checksum_should, UINT4 maxbytes) {
+  INT4  bytes;
+  UINT4 checksum_read;
   if (!cptf) {
     LogPrintf (LOG_CRITICAL, "ERROR: FStatCheckpointFile is NULL\n");
     return(-1);
   }
-  bytes = read_fstat_toplist_from_fp(cptf->list, cptf->fp, &(cptf->checksum), maxbytes);
+
+  bytes = read_fstat_toplist_from_fp(cptf->list, cptf->fp, &checksum_read, maxbytes);
+
+  LogPrintf (LOG_DEBUG, "DEBUG: read_fstat_toplist_from_fp() returned %d\n", bytes);
+
+  cptf->bytes = 0;
+  cptf->checksum = 0;
+
   if (bytes == -2) {
     LogPrintf (LOG_CRITICAL, "ERROR: invalid toplist\n");
     return(bytes);
   } else if (bytes == -1) {
     LogPrintf (LOG_CRITICAL, "ERROR: format error in toplist\n");
-    cptf->bytes = 0;
     rewind(cptf->fp);
     clear_toplist(cptf->list);
     return(bytes);
-  } else if (checksum != cptf->checksum) {
-    LogPrintf (LOG_CRITICAL, "ERROR: checksum error in toplist %u / %u\n", checksum, cptf->checksum);
-    cptf->bytes = 0;
-    cptf->checksum = 0;
+  } else if (checksum_read != checksum_should) {
+    LogPrintf (LOG_CRITICAL, "ERROR: checksum error in toplist %d / %d\n",
+	       checksum_should, checksum_read);
     rewind(cptf->fp);
     clear_toplist(cptf->list);
     return(bytes);
   }
+
   cptf->bytes = bytes;
+  cptf->checksum = checksum_read;
+
   return(0);
 }
