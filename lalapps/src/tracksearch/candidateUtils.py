@@ -472,6 +472,7 @@ class candidateList:
             print "Check : ",inputFilename
             print ""
             return
+        self.filename=[str(inputFilename)]
         line=str(' ')
         while line:
             line=input_fp.readline()
@@ -498,7 +499,6 @@ class candidateList:
             print "Object memory left untouched!"
             return
         self.totalCount=int(self.curves.__len__())
-        self.filename=[str(inputFilename)]
         #Determine the bin widths in this structure
         if self.totalCount > 0:
             try: self.findBinWidths()
