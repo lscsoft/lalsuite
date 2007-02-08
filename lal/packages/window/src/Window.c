@@ -211,9 +211,6 @@ REAL4Window * XLALCreateREAL4Window( UINT4 length, WindowType type, REAL4 beta )
   if ( ! length )
     XLAL_ERROR_NULL( func, XLAL_EBADLEN );
 
-  if ( type >= NumberWindowTypes )
-    XLAL_ERROR_NULL( func, XLAL_ETYPE );
-  
   /* Set and check value of beta, if it is used. */
   if ( type == Kaiser || type == Creighton)
   {
@@ -236,8 +233,6 @@ REAL4Window * XLALCreateREAL4Window( UINT4 length, WindowType type, REAL4 beta )
 
   window->type = type;
   window->beta = beta;
-  LALSnprintf( window->windowname, sizeof( window->windowname ), "%s",
-      WindowTypeNames[window->type] );
 
   dy    = 2.0/(REAL4)( length );
   pidy  = LAL_PI*dy;
@@ -352,7 +347,7 @@ REAL4Window * XLALCreateREAL4Window( UINT4 length, WindowType type, REAL4 beta )
       }
       break;
 
-      /* Default case -- this will NEVER happen -- it is trapped above! */
+      /* Default case -- unknown window */
     default:
       XLALDestroyREAL4Vector( window->data );
       LALFree( window );
@@ -371,8 +366,10 @@ REAL4Window * XLALCreateREAL4Window( UINT4 length, WindowType type, REAL4 beta )
     wss += 1.0;
   }
 
-  /* Set sum of squares and exit. */
+  /* Set sum of squares, name, and exit. */
   window->sumofsquares = wss;
+  LALSnprintf( window->windowname, sizeof( window->windowname ), "%s",
+      WindowTypeNames[window->type] );
   return window;
 }
 
@@ -390,9 +387,6 @@ REAL8Window * XLALCreateREAL8Window( UINT4 length, WindowType type, REAL4 beta )
 
   if ( ! length )
     XLAL_ERROR_NULL( func, XLAL_EBADLEN );
-
-  if ( type >= NumberWindowTypes )
-    XLAL_ERROR_NULL( func, XLAL_ETYPE );
 
   /* Set and check value of beta, if it is used. */
   if ( type == Kaiser || type == Creighton)
@@ -416,8 +410,6 @@ REAL8Window * XLALCreateREAL8Window( UINT4 length, WindowType type, REAL4 beta )
 
   window->type = type;
   window->beta = beta;
-  LALSnprintf( window->windowname, sizeof( window->windowname ), "%s",
-      WindowTypeNames[window->type] );
 
   dy    = 2.0/(REAL8)( length );
   pidy  = LAL_PI*dy;
@@ -532,7 +524,7 @@ REAL8Window * XLALCreateREAL8Window( UINT4 length, WindowType type, REAL4 beta )
       }
       break;
 
-      /* Default case -- this will NEVER happen -- it is trapped above! */
+      /* Default case -- unknown window */
     default:
       XLALDestroyREAL8Vector( window->data );
       LALFree( window );
@@ -551,8 +543,10 @@ REAL8Window * XLALCreateREAL8Window( UINT4 length, WindowType type, REAL4 beta )
     wss += 1.0;
   }
 
-  /* Set sum of squares and exit. */
+  /* Set sum of squares, name, and exit. */
   window->sumofsquares = wss;
+  LALSnprintf( window->windowname, sizeof( window->windowname ), "%s",
+      WindowTypeNames[window->type] );
   return window;
 }
 
