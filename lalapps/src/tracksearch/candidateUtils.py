@@ -1,6 +1,6 @@
 #!/usr/bin/env python2.3
 
-__author__ = 'Charlie Torres <charlie@phys.utb.edu>'
+__author__ = 'Cristina Torres <cristina@phys.utb.edu>'
 __date__ = '$Date$'
 __version__ = ''
 
@@ -461,6 +461,55 @@ class candidateList:
             print "No candidate entries found in:",inputFilename
     #End loadfile method
 
+    def __loadfileQuick__(self,inputFilename):
+        """
+        Reads in a candidate list from the disk with a given filename
+        """
+        try:
+            input_fp=open(inputFilename,'r')
+        except IOError:
+            print "File IO error"
+            print "Check : ",inputFilename
+            print ""
+            return
+        line=str(' ')
+        while line:
+            line=input_fp.readline()
+            if not (line.startswith('#') or line.startswith('\n')):
+                if line.startswith('Curve'):
+                    [A,B,C]=str(str(line).split(':')[1]).split(',')
+                    self.curves.append(kurve(A,B,C))
+                    #Advance to next data line expected!
+                    line=input_fp.readline()
+                    if not line.__contains__(';'):
+                        print "Data file seems corrupted:",inputFilename
+                    tmpLine=str(line).replace(';',',').split(':')
+                    for pixel in tmpLine:
+                        [a,b,c,d,e,f]=str(pixel).split(',')
+                        self.curves[self.curves.__len__()-1].appendPixel(\
+                            int(A),int(b),gpsInt(c,d),float(e),float(f)\
+                            )
+                    del tmpLine
+        input_fp.close()
+        if self.curves.__len__() < 1:
+            print "Error no lines in file?"
+            print "Check :",inputFilename
+            self.totalCount=0
+            print "Object memory left untouched!"
+            return
+        self.totalCount=int(self.curves.__len__())
+        self.filename=[str(inputFilename)]
+        #Determine the bin widths in this structure
+        if self.totalCount > 0:
+            try: self.findBinWidths()
+            except ValueError:
+                print "Can not estimate the bin widths from file:",inputFilename
+                print "Assuming file is invalid! Forgeting data."
+                self.curves=[]
+                self.gpsWidth=gpsInt(0,0)
+                self.freqWidth=float(0)
+    #End __loadfileQuick__ method
+
     def writefile(self,outputFilename):
         """
         Write the current candidate list structure to disk using given
@@ -514,12 +563,25 @@ class candidateList:
     def findBinWidths(self):
         """
         Use the information loaded to determine the bin sizes.
+        We use up to at most a sample of curveEstimateLimit curves to
+        estimate the bin widths.
         Col->F
         Row->T
         """
         TDArrayFreq=[]
         TDArrayGPSFloat=[]
-        for curveElement in self.curves:
+        curveEstimateLimit=5000
+        decimateFactor=int(self.curves.__len__()/curveEstimateLimit)
+        dataIndex=[]
+        counter=0
+        if decimateFactor>0:
+            while counter <= self.curves.__len__():
+                dataIndex.append(counter)
+                counter=counter+decimateFactor
+        else:
+            dataIndex=range(self.curves.__len__())
+        for currentIndex in dataIndex:
+            curveElement=self.curves[currentIndex]
             for entry in curveElement.getKurveDataBlock():
                 TDArrayFreq.append(entry[3])
                 TDArrayGPSFloat.append(entry[2].getAsFloat())
@@ -533,6 +595,8 @@ class candidateList:
         for x in TDArrayGPSFloat:
             if x not in uniqT:
                 uniqT.append(x)
+        del  TDArrayFreq
+        del  TDArrayGPSFloat
         uniqT.sort()
         uniqF.sort()
         sumVal=0
@@ -1221,7 +1285,11 @@ class candidateList:
         format2C="%10.5f %10.5f\n"
         pixelList=self.getPixelList()
         pixelList.sort()
-        minVal=pixelList[0][0]
+        try:
+            minVal=pixelList[0][0]
+        except IndexError:
+            output_fp.close()
+            return
         newPixelList=[]
         for entry in pixelList:
             newPixelList.append([entry[0]-minVal,entry[1],entry[2]])

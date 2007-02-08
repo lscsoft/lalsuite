@@ -1,6 +1,6 @@
 #!/usr/bin/env python2.3
 
-__author__ = 'Charlie Torres <charlie@phys.utb.edu>'
+__author__ = 'Cristina Torres <cristina@phys.utb.edu>'
 __date__ = '$Date$'
 __version__ = ''
 
@@ -28,16 +28,19 @@ def buildCandidateGlob(fileList):
         print "Globbing is not possible only one file found!"
         print "Returning the result as that entry!"
         tmpObject=candidateList()
-        tmpObject.loadfile(canList.pop(0))
+        #tmpObject.loadfile(canList.pop(0))
+        tmpObject.__loadfileQuick__(canList.pop(0))
         newCandidateObject=copy.deepcopy(tmpObject)
     else:
         newCandidateObject=candidateList()
-        newCandidateObject.loadfile(canList.pop(0))
+        #newCandidateObject.loadfile(canList.pop(0))
+        newCandidateObject.__loadfileQuick__(canList.pop(0))
     for entry in canList:
             print " "
             print "Loading candidate list file: ",entry
             tmpCandidate=candidateList()
-            tmpCandidate.loadfile(entry)
+            #tmpCandidate.loadfile(entry)
+            tmpCandidate.__loadfileQuick__(entry)
             print "Globing file:",entry
             newCandidateObject=newCandidateObject.globList(tmpCandidate,True)
             del tmpCandidate
@@ -144,7 +147,8 @@ elif (clobberFilename != '') and (canList.__len__() == 1):
     newCandidateClobberObject=buildCandidateGlob(clobberList)
     #Create candidate list to clobber.
     clobberVictim=candidateList()
-    clobberVictim.loadfile(canList[0])
+    #clobberVictim.loadfile(canList[0])
+    clobberVictim.__loadfileQuick__(canList[0])
     #Clobber the Victim
     newClobberedList=clobberVictim.clusterClobberWith(newCandidateClobberObject)
     #Write the results to the disk!
@@ -159,7 +163,8 @@ elif ((threshold != "") and (canList.__len__() >= 1)):
     args=str(threshold).split(',')
     for entry in canList:
         candidateObject=candidateList()
-        candidateObject.loadfile(entry)
+        #candidateObject.loadfile(entry)
+        candidateObject.__loadfileQuick__(entry)
         candidateObject.applyNewThresholds(args[0],args[1],args[2],args[3],args[4])
     pathName=''
     if outfile != "":
@@ -175,7 +180,8 @@ elif ((canList.__len__() >= 1) and (printFile)):
     print "Preparing for printing :",canList.__len__()," files."
     for entry in canList:
         candidateObject=candidateList()
-        candidateObject.loadfile(entry)
+        #candidateObject.loadfile(entry)
+        candidateObject.__loadfileQuick__(entry)
         if (outfile != "") and (canList.__len__() == 1):
             candidateObject.writePixelList(outfile,'tf')
         else:
@@ -191,7 +197,8 @@ elif ((expThreshold != "") and (canList.__len__() >=1)):
     #Carry out thresholding
     for entry in canList:
         candidateObject=candidateList()
-        candidateObject.loadfile(entry)
+        #candidateObject.loadfile(entry)
+        candidateObject.__loadfileQuick__(entry)
         candidateResults=candidateObject.applyArbitraryThresholds(expThreshold)
         expThresholdName=str(expThreshold).replace('(','--').replace(')','--')
         pathName=''
@@ -209,14 +216,16 @@ elif ((expThreshold != "") and (canList.__len__() >=1)):
 elif ((canList.__len__() >=1) and dumpSummaryDisk):
     for entry in canList:
         candidateObject=candidateList()
-        candidateObject.loadfile(entry)
+#        candidateObject.loadfile(entry)
+        candidateObject.__loadfileQuick__(entry)
         candidateObject.writeSummary()
         del candidateObject
         
 elif ((canList.__len__() >=1) and dumpSummaryScreen):
     for entry in canList:
         candidateObject=candidateList()
-        candidateObject.loadfile(entry)
+        #candidateObject.loadfile(entry)
+        candidateObject.__loadfileQuick__(entry)
         candidateObject.printSummary()
         del entry
 
