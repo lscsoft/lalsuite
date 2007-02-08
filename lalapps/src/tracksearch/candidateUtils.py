@@ -1268,6 +1268,20 @@ class candidateList:
         return pixelList
     #End method getPixelList()
 
+    def getGnuplotPixelList(self,startVal):
+        """
+        Get pixel list as a text list objects for proper GNUPLOT
+        formating.  We use startVal to make the time marker relative
+        to that time value.
+        """
+        pixelList=[]
+        for element in self.curves:
+            for point in element.getKurveDataBlock_HumanReadable():
+                pixelList.append([point[0]-startVal,point[1],point[2]])
+            pixelList.append([' ',' ',' '])
+        return pixelList
+    #End method getGnuplotPixelList()
+    
     def writePixelList(self,filename,style):
         """
         Write the list of pixels to a 3C file given a FILENAME
@@ -1282,8 +1296,8 @@ class candidateList:
             print "Error on type of pixel list file!"
             os.abort
         output_fp=open(filename,'w')
-        format3C="%10.5f %10.5f %10.5f\n"
-        format2C="%10.5f %10.5f\n"
+        format3C="%10.5s %10.5s %10.5s\n"
+        format2C="%10.5s %10.5s\n"
         pixelList=self.getPixelList()
         pixelList.sort()
         try:
@@ -1291,23 +1305,20 @@ class candidateList:
         except IndexError:
             output_fp.close()
             return
-        newPixelList=[]
         print "You requested ",style
-        for entry in pixelList:
-            newPixelList.append([entry[0],entry[1],entry[2]])
         if style.lower() == 'tfp':
-            for line in newPixelList:
+            for line in self.getGnuplotPixelList(0):
                 output_fp.write(format3C%(line[0],line[1],line[2]))
         elif style.lower() == 'tf':
-            for line in newPixelList:
-                output_fp.write(format2C%(line[0]-minVal,line[1]))
+            for line in self.getGnuplotPixelList(0):
+                output_fp.write(format2C%(line[0],line[1]))
         elif style.lower() == 'tf+time':
             #Take candidate object recorded filename
             [A,B]=str(os.path.basename(self.filename[0]).split(':')[2]).split(',')
             gpsStart=gpsInt(A,B)
             minVal=gpsStart.getAsFloat()
-            for line in newPixelList:
-                output_fp.write(format2C%(line[0]-minVal,line[1]))
+            for line in self.getGnuplotPixelList(minVal):
+                output_fp.write(format2C%(line[0],line[1]))
         output_fp.close()
         #End method writePixelList()
 #End candidateList class

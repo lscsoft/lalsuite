@@ -53,7 +53,7 @@ def gnuplotScriptFile(filename):
     plot to view the pixels found as part of a curve(s). Add a .plt
     extension to the filename specified
     """
-    txtTemplate='plot "%s"\n set size 1.0,0.6\n set terminal postscript portrait enhanced mono dashed lw 1 "Helvetica" 14\n set output "%s.ps"\n replot\n set terminal x11\n set size 1,1\n'
+    txtTemplate='plot "%s" with lines\n set size 1.0,0.6\n set terminal postscript portrait enhanced mono dashed lw 1 "Helvetica" 14\n set output "%s.ps"\n replot\n set terminal x11\n set size 1,1\n'
     output_fp=open(filename+'.plt','w')
     output_fp.write(txtTemplate%(filename,filename))
     output_fp.close()
