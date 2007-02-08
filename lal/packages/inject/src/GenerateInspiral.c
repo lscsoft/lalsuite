@@ -371,7 +371,7 @@ LALGenerateInspiralPopulatePPN(
     LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
         "f_lower must be specified in the injection file generation.\n" );
     LALInfo( status, warnMsg );
-    ABORT( status, LALINSPIRALH_EF_LOWER, LALINSPIRALH_MSGEFLOWER );
+    ABORT( status, LALINSPIRALH_EFLOWERINJ, LALINSPIRALH_MSGEFLOWERINJ );
   }
   ppnParams->fStopIn  = -1.0 /
     (6.0 * sqrt(6.0) * LAL_PI * ppnParams->mTot * LAL_MTSUN_SI);
