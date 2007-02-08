@@ -1275,6 +1275,7 @@ class candidateList:
         TFP gets 3C data of time,freq,power
         anything else gets just time,freq
         The list is in terms of the first time value and its offset.
+        if the style arguement is tf+time then...
         The start time should be listed in the filename! (I hope)
         """
         if type(style) != type(str('test')):
@@ -1291,14 +1292,22 @@ class candidateList:
             output_fp.close()
             return
         newPixelList=[]
+        print "You requested ",style
         for entry in pixelList:
-            newPixelList.append([entry[0]-minVal,entry[1],entry[2]])
+            newPixelList.append([entry[0],entry[1],entry[2]])
         if style.lower() == 'tfp':
             for line in newPixelList:
                 output_fp.write(format3C%(line[0],line[1],line[2]))
-        else:
+        elif style.lower() == 'tf':
             for line in newPixelList:
-                output_fp.write(format2C%(line[0],line[1]))
+                output_fp.write(format2C%(line[0]-minVal,line[1]))
+        elif style.lower() == 'tf+time':
+            #Take candidate object recorded filename
+            [A,B]=str(os.path.basename(self.filename[0]).split(':')[2]).split(',')
+            gpsStart=gpsInt(A,B)
+            minVal=gpsStart.getAsFloat()
+            for line in newPixelList:
+                output_fp.write(format2C%(line[0]-minVal,line[1]))
         output_fp.close()
         #End method writePixelList()
 #End candidateList class

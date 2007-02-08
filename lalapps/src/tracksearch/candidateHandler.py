@@ -183,11 +183,11 @@ elif ((canList.__len__() >= 1) and (printFile)):
         #candidateObject.loadfile(entry)
         candidateObject.__loadfileQuick__(entry)
         if (outfile != "") and (canList.__len__() == 1):
-            candidateObject.writePixelList(outfile,'tf')
+            candidateObject.writePixelList(outfile,'tf+time')
         else:
             pathName=os.path.dirname(candidateObject.filename[0])
             saveFiles=pathName+'/ScatterPlot:'+os.path.basename(candidateObject.filename[0])
-            candidateObject.writePixelList(saveFiles,'tf')        
+            candidateObject.writePixelList(saveFiles,'tf+time')        
             gnuplotScriptFile(saveFiles)
         del entry
         del candidateObject
