@@ -2111,6 +2111,9 @@ CHAR* GetStringFromGridType(INT4 input)
   case Hexagonal:
     LALSnprintf(this, sizeof(this),"Hexagonal");
     break;
+  case HybridHexagonal:
+    LALSnprintf(this, sizeof(this),"HybridHexagonal");
+    break;
   }
   
   return this;
@@ -3502,6 +3505,9 @@ ParseParameters(	INT4 			*argc,
 	else if (!strcmp(argv[i], "Hexagonal")) { 
 	  coarseBankIn->gridSpacing = Hexagonal;
 	}
+	else if (!strcmp(argv[i], "HybridHexagonal")) { 
+	  coarseBankIn->gridSpacing = HybridHexagonal;
+	}
 	else if (!strcmp(argv[i], "HexagonalNotOriented")) {
 	  coarseBankIn->gridSpacing = HexagonalNotOriented;
 	}
@@ -4333,7 +4339,7 @@ void Help(void)
   fprintf(stderr, "\t[--bank-alpha<float>]\t\t set the BCV alpha value in the moments computation\n");
   fprintf(stderr, "\t[--bank-fcut-range<float float>] set the range of BCV fcut (in units of GM) \n");
   fprintf(stderr, "\t[--bank-ffinal<float>]\t\t set the final frequency to be used in the BCV moments computation\n");
-  fprintf(stderr, "\t[--bank-grid-spacing <gridSpacing>]\t set the grid type of the BCV bank (Square, SquareNotOriented, Hexagonal, HexagonalNotOriented\t\n");
+  fprintf(stderr, "\t[--bank-grid-spacing <gridSpacing>]\t set the grid type of the BCV bank (Square, SquareNotOriented, HybridHexagonal,Hexagonal, HexagonalNotOriented\t\n");
   
   
   fprintf(stderr, "\t[--bank-number-fcut<integer>]\t set the number of BCV fcut \n");
@@ -4451,6 +4457,8 @@ BEAscii2Xml(void)
       fprintf( stdout, "reading triggers from file: %s\n", BEASCII2XML_BANK );
       numFileTriggers = 
       LALSnglInspiralTableFromLIGOLw( &inputData,BEASCII2XML_BANK , 0, -1 );
+      
+
       fprintf(stderr," done %d\n", numFileTriggers);      
       myfprintf(output, LIGOLW_XML_SNGL_INSPIRAL );
        while(inputData)
