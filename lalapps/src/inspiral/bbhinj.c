@@ -56,7 +56,7 @@ RCSID( "$Id$" );
 "  --help                   display this message\n"\
 "  --version                print version information and exit\n"\
 "  --verbose                print mass and galactocentic cartesian coordinates\n"\
-"  --f-lower FREQUENCY      lower cut-off frequency. If not provided, default value is 0. \n"\
+"  --f-lower FREQUENCY      lower cut-off frequency.\n"\
 "                           If so, LAL code will use 40Hz by default.\n"\
 "  --gps-start-time TIME    start injections at GPS time TIME (729273613)\n"\
 "  --gps-end-time TIME      end injections at GPS time TIME (734367613)\n"\
@@ -536,6 +536,11 @@ int main( int argc, char *argv[] )
         "EOBtwoPN");
   }
 
+  if ( !fLower )
+  {
+    fprintf( stderr, "--f-lower must be specified and non-zero\n" );
+    exit( 1 );
+  }
 
   /*
    *
