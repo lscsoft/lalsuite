@@ -80,7 +80,7 @@ NRCSID( LALINSPIRALH, "$Id$" );
 #define LALINSPIRALH_EROOTINIT      14
 #define LALINSPIRALH_EFLOWER        15  
 #define LALINSPIRALH_EVECTOR        16
-#define LALINSPIRALH_EF_LOWER       17
+#define LALINSPIRALH_EFLOWERINJ     17
 
 
 #define LALINSPIRALH_MSGENULL         "Arguments contained an unexpected null pointer"
@@ -99,7 +99,7 @@ NRCSID( LALINSPIRALH, "$Id$" );
 #define LALINSPIRALH_MSGEROOTINIT     "Can't find good bracket for BisectionFindRoot"
 #define LALINSPIRALH_MSGEFLOWER       "fLower too low in comparison to flso"
 #define LALINSPIRALH_MSGEVECTOR       "Attempting to write beyond the end of vector"
-#define LALINSPIRALH_MSGEF_LOWER      "f_lower for the injection must be greater than zero"
+#define LALINSPIRALH_MSGEFLOWERINJ    "f_lower for the injection must be greater than zero"
 
 /** ---------------------------------------------------------------------  </lalErrTable> */
 
