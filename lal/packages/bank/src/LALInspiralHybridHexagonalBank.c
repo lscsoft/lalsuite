@@ -13,7 +13,9 @@ $Id$
 \idx{LALInspiralHybridHexagonalBank()}
 
 \subsubsection*{Description}
-
+This code does almost the same as the standard Hexagonal Bank code. However, once the templates cover both the equal line and an
+other line (m1=min mass or m2 = max_mass) then, there is no need to carry on any square/hexagonal placement. One can simply
+poulate template along a bissectrice. 
 \subsubsection*{Algorithm}
 
 \subsubsection*{Uses}
@@ -62,7 +64,7 @@ LALPopulateNarrowEdge(LALStatus       *status,
 
 NRCSID(LALINSPIRALHYBRIDHEXAGONALBANKC, "$Id$");
 
-
+/*  <lalVerbatim file="LALInspiralHybridHexagonalBankCP"> */
 void 
 LALInspiralCreatePNCoarseBankHybridHexa(
     LALStatus            *status, 
@@ -70,7 +72,7 @@ LALInspiralCreatePNCoarseBankHybridHexa(
     INT4                 *nlist,
     InspiralCoarseBankIn coarseIn
     ) 
-{  
+{  /*  </lalVerbatim>  */
   INT4                  i; 
   INT4 			firstId = 0;
   REAL4 		A0, A3; 
@@ -469,8 +471,6 @@ REAL8 XLALInspiralBissectionLine (REAL8 x, REAL8 fa, REAL8 mMin, REAL8 mMax)
   REAL8  piFa;
   REAL8 y1, y2, p, q, M, S, eta, xbndry;
   REAL8 A, B, A0, A3;
-
-  
   
   A = 5./256/LAL_PI/fa;
   B = 1./8./fa;
@@ -482,10 +482,6 @@ REAL8 XLALInspiralBissectionLine (REAL8 x, REAL8 fa, REAL8 mMin, REAL8 mMax)
   A3  = 1.0 / (8.0 * fa * pow(piFa, (2.0/3.0)));
 
   /* First we solve for the lower (equal mass) limit */
-  y1 = 4.0 * A3;
-  y1 *= (pow(x/(4.0*A0),2.0/5.0));
-
-
   y1 = XLALInspiralTau3FromTau0AndEqualMassLine( x, fa);
   
 

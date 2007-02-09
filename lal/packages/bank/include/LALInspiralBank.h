@@ -991,7 +991,10 @@ LALInsidePolygon(
    REAL4                y, 
    INT4                 *valid
    ); 
-   
+ 
+/* <lalLaTeX>
+   \newpage\input{LALInspiralHybridHexagonalBankC}
+   </lalLaTeX>  */  
 void 
 LALInspiralCreatePNCoarseBankHexa(
     LALStatus            *status, 
