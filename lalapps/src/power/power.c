@@ -1757,6 +1757,14 @@ int main( int argc, char *argv[])
 		XLALDestroyCOMPLEX8FrequencySeries(hrssresponse);
 	}
 
+	/* Unscale the amplitudes if calibrated data */
+	if(options.calibrated) {
+		const double scale = 1e10;
+		SnglBurstTable *event;
+		for(event = burstEvent; event; event = event->next)
+			event->amplitude /= scale;
+	}
+
 	/*
 	 * Cluster and sort the events, and assign IDs.
 	 */
