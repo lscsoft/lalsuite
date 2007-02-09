@@ -365,7 +365,7 @@ class candidateList:
             print 'Error with header information in instance, using default DefaultName.file'
             return 'DefaultName.file'
         else:
-            filename='GLOB:'+os.path.basename(self.filename[0])+\
+            filename='GLOB::'+os.path.basename(self.filename[0])+\
             'FileCount:'+str(self.filename.__len__())
         return filename
 
@@ -1314,7 +1314,12 @@ class candidateList:
                 output_fp.write(format2C%(line[0],line[1]))
         elif style.lower() == 'tf+time':
             #Take candidate object recorded filename
-            [A,B]=str(os.path.basename(self.filename[0]).split(':')[2]).split(',')
+            fTime=str(os.path.basename(self.filename[0]).split(':')[2])
+            if fTime.__contains__(','):
+                [A,B]=fTime.split(',')
+            else:
+                A=fTime
+                B=0
             gpsStart=gpsInt(A,B)
             minVal=gpsStart.getAsFloat()
             for line in self.getGnuplotPixelList(minVal):
