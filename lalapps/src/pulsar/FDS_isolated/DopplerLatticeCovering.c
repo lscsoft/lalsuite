@@ -146,7 +146,7 @@ int isDopplerInsideBoundary ( const dopplerParams_t *doppler,  const dopplerBoun
 
 int fprintf_vect2D ( FILE *fp, const vect2D_t *vect, hemisphere_t hemi );
 int fprintf_vect2Dlist ( FILE *fp, const vect2Dlist_t *list, hemisphere_t hemi );
-
+DopplerLatticeScan *XLALDuplicateDopplerLatticeScan ( const DopplerLatticeScan *scan );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -261,32 +261,30 @@ InitDopplerLatticeScan ( LALStatus *status,
 } /* InitDopplerLatticeScan() */
 
 
-/** Free an allocated DopplerLatticeScan 
+/** Free an allocated DopplerLatticeScan.
+ * Return: 0=OK, -1=ERROR
  */
-void
-FreeDopplerLatticeScan ( LALStatus *status, DopplerLatticeScan **scan )
+int
+XLALFreeDopplerLatticeScan ( DopplerLatticeScan **scan )
 {
-  INITSTATUS( status, "FreeDopplerLatticeScan", DOPPLERLATTICECOVERING );
-
-  ASSERT ( scan, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );  
-  ASSERT ( *scan, status, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL );  
-  ASSERT ( (*scan)->state != STATE_IDLE, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
+  if ( !scan || !(*scan) )
+    return -1;
 
   if ( (*scan)->boundary.skyRegion.data )
     LALFree ( (*scan)->boundary.skyRegion.data );
-
+  
   if ( (*scan)->canonicalOrigin )
     gsl_vector_free ( (*scan)->canonicalOrigin );
-
+  
   if ( (*scan)->latticeGenerator )
     gsl_matrix_free ( (*scan)->latticeGenerator );
-
+  
   if ( (*scan)->latticeIndex )
     gsl_vector_int_free ( (*scan)->latticeIndex );
-
+  
   if ( (*scan)->prevIndexBoundaryUp )
     gsl_vector_int_free ( (*scan)->prevIndexBoundaryUp );
-
+  
   if ( (*scan)->prevIndexCenter )
     gsl_vector_int_free ( (*scan)->prevIndexCenter );
 
@@ -296,9 +294,9 @@ FreeDopplerLatticeScan ( LALStatus *status, DopplerLatticeScan **scan )
   LALFree ( (*scan) );
   (*scan) = NULL;
 
-  RETURN(status);
+  return 0;
 
-} /* FreeDopplerLatticeScan() */
+} /* XLALFreeDopplerLatticeScan() */
 
 
 /** Return current lattice Index of the scan:
@@ -345,6 +343,37 @@ XLALsetCurrentLatticeIndex ( DopplerLatticeScan *scan, const gsl_vector_int *Ind
 
   return 0;
 } /* XLALsetCurrentLatticeIndex() */
+
+/** Count number of templates in lattice-grid by stepping through the whole
+ * grid. NOTE: original scan-state isn't modified.
+ *
+ * Return: > 0: OK, -1=ERROR
+ */
+REAL8 
+XLALCountLatticeTemplates ( const DopplerLatticeScan *scan )
+{
+  int ret;
+  REAL8 counter;
+  DopplerLatticeScan *dupl;
+
+ if ( !scan || scan->state != STATE_READY )
+    return -1;
+
+ if ( (dupl = XLALDuplicateDopplerLatticeScan ( scan )) == NULL )
+   return -1;
+
+ counter = 0;
+ while ( (ret = XLALadvanceLatticeIndex ( dupl )) == 0 )
+   counter ++;
+
+ XLALFreeDopplerLatticeScan ( &dupl );
+      
+ if ( ret < 0 )
+   return -1;
+ else
+   return counter;
+
+} /* XLALCountLatticeTemplates() */
 
 
 /** The central "lattice-stepping" function: advance to the 'next' Index-point, taking care not
@@ -489,6 +518,97 @@ XLALgetCurrentDopplerPos ( PulsarDopplerParams *pos, const DopplerLatticeScan *s
 /* ------------------------------------------------------------ */
 /* -------------------- INTERNAL functions -------------------- */
 /* ------------------------------------------------------------ */
+
+/** Return a copy a full DopplerLatticeScan state, useful as a backup
+ * while counting the lattice.
+ *
+ * Return: NULL=ERROR
+ */
+DopplerLatticeScan *
+XLALDuplicateDopplerLatticeScan ( const DopplerLatticeScan *scan )
+{
+  DopplerLatticeScan *ret;
+  size_t size;
+  void *src, *dst;
+
+  if (!scan || scan->state == STATE_IDLE )
+    return NULL;
+
+  if ( (ret = LALCalloc ( 1, sizeof(*ret) )) == NULL )
+    return NULL;
+
+  (*ret) = (*scan);	/* struct-copy everything non-alloc'ed */
+
+  /* properly copy everything alloc'ed */
+
+  /* 'char*' */
+  if ( (src = scan->boundary.skyRegion.data) )
+    {
+      size = sizeof(*scan->boundary.skyRegion.data);
+      if ( (dst = LALCalloc(1, size)) == NULL  )
+	return NULL;
+      memcpy ( dst, src, size );
+      ret->boundary.skyRegion.data = dst;
+    }
+
+  /* gsl_vector */
+  if ( (src = scan->canonicalOrigin) )
+    {
+      size = scan->canonicalOrigin->size;
+      if ( (dst = gsl_vector_alloc(size)) == NULL  )
+	return NULL;
+      gsl_vector_memcpy ( dst, src );
+      ret->canonicalOrigin = dst;
+    }
+
+  /* gsl_matrix */
+  if ( (src = scan->latticeGenerator) )
+    {
+      size = scan->latticeGenerator->size1;
+      if ( (dst = gsl_matrix_alloc(size,size)) == NULL  )
+	return NULL;
+      gsl_matrix_memcpy ( dst, src );
+      ret->latticeGenerator = dst;
+    }
+
+  /* gsl_vector_int */
+  if ( (src = scan->latticeIndex) )
+    {
+      size = scan->latticeIndex->size;
+      if ( (dst = gsl_vector_int_alloc(size)) == NULL  )
+	return NULL;
+      gsl_vector_int_memcpy ( dst, src );
+      ret->latticeIndex = dst;
+    }
+  if ( (src = scan->prevIndexBoundaryUp) )
+    {
+      size = scan->prevIndexBoundaryUp->size;
+      if ( (dst = gsl_vector_int_alloc(size)) == NULL  )
+	return NULL;
+      gsl_vector_int_memcpy ( dst, src );
+      ret->prevIndexBoundaryUp = dst;
+    }
+  if ( (src = scan->prevIndexCenter) )
+    {
+      size = scan->prevIndexCenter->size;
+      if ( (dst = gsl_vector_int_alloc(size)) == NULL  )
+	return NULL;
+      gsl_vector_int_memcpy ( dst, src );
+      ret->prevIndexCenter = dst;
+    }
+  if ( (src = scan->map2canonical) )
+    {
+      size = scan->map2canonical->size;
+      if ( (dst = gsl_vector_int_alloc(size)) == NULL  )
+	return NULL;
+      gsl_vector_int_memcpy ( dst, src );
+      ret->map2canonical = dst;
+    }
+
+  return ret;
+
+} /* XLALDuplicateDopplerLatticeScan() */
+
 
 
 /** Convert given Index into doppler-params
@@ -1017,9 +1137,10 @@ vect2DToSkypos ( SkyPosition *skypos, const vect2D_t *vect2D, hemisphere_t hemi 
   vn2 = SQUARE ( vn3D[0] ) + SQUARE ( vn3D[1] );
   if ( gsl_fcmp ( vn2, 1.0, EPS_REAL8 ) > 0 ) {
     LALPrintError ( "\n\nvect2DToSkypos(): Sky-vector has length > 1! (vn2 = %f)\n\n", vn2 );
-    return -1;
+    vn3D[2] = 0;
   }
-  vn3D[2] = sqrt ( fabs ( 1.0 - vn2 ) );		/* nZ = sqrt(1 - nX^2 - nY^2 ) */
+  else
+    vn3D[2] = sqrt ( fabs ( 1.0 - vn2 ) );		/* nZ = sqrt(1 - nX^2 - nY^2 ) */
 
   if ( hemi == HEMI_SOUTH )
     vn3D[2] *= -1;

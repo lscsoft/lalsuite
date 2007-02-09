@@ -261,14 +261,24 @@ initFactoredGrid (LALStatus *status,
 REAL8 
 XLALNumDopplerTemplates ( DopplerFullScanState *scan)
 { 
-  if ( scan->numTemplates )	/* pre-computed already ? */
-    return scan->numTemplates;
-  else
+  if ( ! scan->numTemplates )	/* not pre-computed already ? */
     {
-      /* FIXME: not implemented yet */
-      LogPrintf ( LOG_NORMAL, "template counting not implemented yet!\n"); 
-      return -1;
-    }
+      switch ( scan->gridType )
+	{
+	case GRID_METRIC_LATTICE:
+	  LogPrintf ( LOG_DEBUG, "Now counting number of templates in lattice ... ");
+	  scan->numTemplates = XLALCountLatticeTemplates ( scan->latticeScan );
+	  LogPrintfVerbatim( LOG_DEBUG, " done. (%.0f)\n", scan->numTemplates );
+	  break;
+	default:
+	  /* FIXME: not implemented yet */
+	  LogPrintf ( LOG_NORMAL, "template counting not implemented yet for gridType=%d!\n", scan->gridType ); 
+	  return -1;
+	  break;
+	} /* switch() */
+    } /* ! numTemplates */
+
+  return scan->numTemplates;
 
 } /* XLALNumDopplerTemplates() */
 
@@ -339,13 +349,14 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
 	  LALPrintError ( "\n\nXLALadvanceLatticeIndex(): this was the last lattice points!\n\n");
 	  scan->state = STATE_FINISHED;
 	}
-
+#if 0
       { /* debugging */
 	gsl_vector_int *index = NULL;
 	XLALgetCurrentLatticeIndex ( &index, scan->latticeScan );
 	XLALfprintfGSLvector_int ( stderr, "%d", index );
 	gsl_vector_int_free ( index );
       }
+#endif
 
       break;
 
@@ -457,7 +468,7 @@ FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan)
     XLALREAL8VectorListDestroy ( (*scan)->covering );
 
   if ( (*scan)->latticeScan ) {
-    TRY ( FreeDopplerLatticeScan ( status->statusPtr, &((*scan)->latticeScan) ), status );
+    XLALFreeDopplerLatticeScan ( &((*scan)->latticeScan) );
   }
 
   LALFree ( (*scan) );
