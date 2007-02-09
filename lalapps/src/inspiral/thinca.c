@@ -1669,6 +1669,8 @@ int main( int argc, char *argv[] )
   /* perform the alphaf-cut */
   if (doBCVC & doAlphaFCut)
     {
+      LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+         "--do-alphaf-cut" );
     if ( vrbflg ) fprintf( stdout,
        "Discarding triggers in H1 with alphaF > %f OR alphaF < %f (BCVC case) \n", 
         alphafParams.h1_lo, alphafParams.h1_hi );
@@ -1922,6 +1924,8 @@ int main( int argc, char *argv[] )
     /* BCV case */  
     if (doBCVC)
     {     
+      LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+         "--bcvc" );
       /* perform the iota cut */
       if( iotaCut  ) 
       {
@@ -1938,6 +1942,8 @@ int main( int argc, char *argv[] )
     
     if ( doPsi0Psi3Cut ) 
     {
+      LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+         "--psi0-psi3-cut" );
       if ( vrbflg ) fprintf( stdout,
          "Discarding triggers using Dpsi0Dpsi3 cut \n");
       XLALInspiralPsi0Psi3CutBCVC( &coincInspiralList );
