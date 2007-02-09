@@ -113,8 +113,8 @@ static REAL8 filter_overlap(
 		return 0;
 
 	for(i = 0; i < n; i++) {
-		sum.re += fdata[n + i].re * fdata[i].re + fdata[n + i].im * fdata[i].im;
-		sum.im += fdata[n + i].im * fdata[i].re - fdata[n + i].re * fdata[i].im;
+		sum.re += fdata[filter->data->length - n + i].re * fdata[i].re + fdata[filter->data->length - n + i].im * fdata[i].im;
+		sum.im += fdata[filter->data->length - n + i].im * fdata[i].re - fdata[filter->data->length - n + i].re * fdata[i].im;
 	}
 
 	return sqrt(sum.re * sum.re + sum.im * sum.im);
