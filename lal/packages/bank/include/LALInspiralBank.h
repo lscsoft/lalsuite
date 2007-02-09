@@ -718,6 +718,15 @@ LALNudgeTemplatesToConstantTotalMassLine(
     InspiralCoarseBankIn coarseIn
     );
 
+/* <lalLaTeX>
+   \newpage\input{LALInspiralBankUtilsC}
+   </lalLaTeX>  */
+REAL4
+XLALInspiralTau3FromTau0AndEqualMassLine(
+    REAL4               tau0,
+    REAL4               fL
+    );
+
 
 /* <lalLaTeX>
    \newpage\input{InspiralSpinBankC}
@@ -1025,13 +1034,14 @@ LALPopulateCell(
     );
 
 void
-LALFindPosition(LALStatus               *status, 
-		REAL4                   dx0, 
-		REAL4                   dx1,
-		Position                *position, 
-		InspiralTemplate        *paramsIn,
-		HexaGridParam           *gridParam
-		);
+LALFindPosition(
+    LALStatus               *status, 
+    REAL4                   dx0, 
+    REAL4                   dx1,
+    Position                *position, 
+    InspiralTemplate        *paramsIn,
+    HexaGridParam           *gridParam
+    );
 
 
 void
@@ -1045,15 +1055,16 @@ LALSPAValidPosition(
     );
 
 void
-GetPositionRectangle(LALStatus *status, 
-		     InspiralCell **cell,
-		     INT4 id,
-		     InspiralTemplate *params, 
-		     HexaGridParam           *gridParam, 
-		     CellEvolution *cellEvolution,
-		     CellList **cellList, 
-                     INT4 *valid
-                     );
+GetPositionRectangle(
+    LALStatus *status, 
+    InspiralCell **cell,
+    INT4 id,
+    InspiralTemplate *params, 
+    HexaGridParam           *gridParam, 
+    CellEvolution *cellEvolution,
+    CellList **cellList, 
+    INT4 *valid
+    );
 
 
 

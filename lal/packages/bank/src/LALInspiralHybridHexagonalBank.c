@@ -41,9 +41,9 @@ LALInspiralComputeMetric()
 #define Sqrt(a)    (sqrt((a)))
 #define MT_SUN     (4.92549095e-6)
 
-double solveForM (double x, double p, double q, double a);
-double bisectionLine (double x, double fa, double mMin, double mMax);
-double getSqRootArgument (double x, double p, double q, double a);
+REAL8 solveForM (REAL8 x, REAL8 p, REAL8 q, REAL8 a);
+REAL8 XLALInspiralBissectionLine (REAL8 x, REAL8 fa, REAL8 mMin, REAL8 mMax);
+REAL8 getSqRootArgument (REAL8 x, REAL8 p, REAL8 q, REAL8 a);
 
 
 
@@ -259,7 +259,6 @@ LALInspiralCreatePNCoarseBankHybridHexa(
       i++;
     }
     
-    fprintf(stderr, "edge = %f %f\n", cells[edge1].t0, cells[edge2].t0);
   
     
     if (cells[edge1].t0 > cells[edge2].t0){
@@ -284,11 +283,8 @@ LALInspiralCreatePNCoarseBankHybridHexa(
 
 #endif
   
-  for (i=0; i<cellEvolution.nTemplate; i++) {
-fprintf(stderr, "%f %f\n", cells[i].t0, cells[i].t3);
 
-    
-  }
+      
   if (cellList != NULL)
     ABORT(status, LALINSPIRALBANKH_EHEXAINIT,LALINSPIRALBANKH_MSGEHEXAINIT);
 	/* Here is the current number of template generated. Now, we need 
@@ -315,7 +311,6 @@ fprintf(stderr, "%f %f\n", cells[i].t0, cells[i].t3);
       tempA3              = pow(A3, -5./2.)/pow(0.25,-1.5);
       tempPars->t0        = cells[k].t0;
       tempPars->t3        = cells[k].t3;
-
       /* if non physical parameter i.e below eta=0.25*/
       if(cells[k].RectPosition[0] == Below ) 
       {	  
@@ -346,7 +341,12 @@ fprintf(stderr, "%f %f\n", cells[i].t0, cells[i].t3);
 		{
 	  	  LALInspiralParameterCalc(status->statusPtr, tempPars);
 	  	  CHECKSTATUSPTR( status );         		  
-        }
+        	}
+		else 
+		{
+			LALWarning(status,"HybridHexagonal placement: nothing to be done since t0<=0\n");
+		}
+		
 		cells[k].t0  = tempPars->t0;
 		cells[k].t3  = tempPars->t3;    
 		
@@ -357,7 +357,6 @@ fprintf(stderr, "%f %f\n", cells[i].t0, cells[i].t3);
 			     &cellEvolution, 
 			     &cellList, 
 			     &valid);
-	
 		{
 
 	  		switch (cells[k].RectPosition[1]){
@@ -386,24 +385,37 @@ fprintf(stderr, "%f %f\n", cells[i].t0, cells[i].t3);
 			  }
 			}
 
+
 		  if (above == 2 && cells[k].position == In)
 		  {
-		    cells[cells[k].child[0]].position = Out;	    
+		  if (cells[k].child[0] >=0 )
+		   {
+		     cells[cells[k].child[0]].position = Out;	
+		   }
+		   else
+		   {
+		     /* nothing to be done, the child is not valid anyway*/
+		   }
+
 		  }
-      }  
+		  else 
+		  {
+
+		  }
+	}
+	else
+	 {
+	 
+	 }
     }
   }
 
   for (i=0; i<cellEvolution.nTemplate; i++) {
-    if (cells[i].position == In & cells[i].t0>0) {
+    if (cells[i].position == In ) {
       *nlist = *nlist +1; 
     }
   }
   
-  
-
-
-
 
 
   /* allocate appropriate memory and fill the output bank */
@@ -450,71 +462,75 @@ fprintf(stderr, "%f %f\n", cells[i].t0, cells[i].t3);
 
 
 
-/* code from Anand Sengupta which  estimate the bissectrice line to the binary parameter space
- * boundaries. Useful to place template optimally when only one template can
- * cover the eta=1/4 line as well as the (m1=min, m2)or (m1=max, m2) lines.  */
-/* it has to be written properly at some points, but works pretty well at the
- * moment. */
-/******************************************************************/
-double bisectionLine (double x, double fa, double mMin, double mMax)
+
+REAL8 XLALInspiralBissectionLine (REAL8 x, REAL8 fa, REAL8 mMin, REAL8 mMax)
 {
 
-    double pi, alpha, beta, piFa;
-    double y1, y2, p, q, M, S, eta, xbndry;
+  REAL8  piFa;
+  REAL8 y1, y2, p, q, M, S, eta, xbndry;
+  REAL8 A, B, A0, A3;
 
-    double A, B;
+  
+  
+  A = 5./256/LAL_PI/fa;
+  B = 1./8./fa;
 
-    A=5./256/LAL_PI/fa;
-    B=1./8./fa;
+  /*    return pow(.25, -3./5.)*B*pow(x/A, 2./5.);*/  
+  piFa = LAL_PI * fa;
 
-    /*    return pow(.25, -3./5.)*B*pow(x/A, 2./5.);*/
+  A0 = (5.0 / 256.0) * pow(piFa, (-8.0/3.0));
+  A3  = 1.0 / (8.0 * fa * pow(piFa, (2.0/3.0)));
 
-    pi   = 4.0 * atan(1.0);
-    piFa = pi * fa;
+  /* First we solve for the lower (equal mass) limit */
+  y1 = 4.0 * A3;
+  y1 *= (pow(x/(4.0*A0),2.0/5.0));
 
-    alpha = (5.0 / 256.0) * pow(piFa, (-8.0/3.0));
-    beta  = 1.0 / (8.0 * fa * pow(piFa, (2.0/3.0)));
 
-    /* First we solve for the lower (equal mass) limit */
-    y1 = 4.0*beta;
-    y1 *= (pow(x/(4.0*alpha),2.0/5.0));
+  y1 = XLALInspiralTau3FromTau0AndEqualMassLine( x, fa);
+  
 
     /* Figure out the boundary between m1 = mMin and m1 = mMax */
     M   = mMin + mMax;
     eta = (mMin*mMax)/pow(M, 2.0);
-    xbndry = alpha * pow(M*MT_SUN, -5.0/3.0) / eta;
+    xbndry = A0 * pow(M*MT_SUN, -5.0/3.0) / eta;
 
-    /* Next we solve for the upper part */
-    p = pow(x*mMin/alpha, -3.0/5.0);
+
+  /* Next we solve for the upper part */
+    p = pow(x*mMin/A0, -3.0/5.0);
     if (x >= xbndry )
-          q = mMin;
+    {          q = mMin;}
     else
-          q = mMax;
-    M = solveForM (x, MT_SUN, q, alpha);
-    S = getSqRootArgument (x, MT_SUN, q, alpha);
+          {q = mMax;}
+    M = solveForM (x, MT_SUN, q, A0);
+    S = getSqRootArgument (x, MT_SUN, q, A0);
     if (x >= xbndry ) 
-          eta = mMin*(M-mMin)/ pow(M,2.0);
+          {
+	  eta = mMin*(M-mMin)/ pow(M,2.0);
+	  }
     else
-          eta = mMax*(M-mMax)/ pow(M,2.0);
+          {
+	  eta = mMax*(M-mMax)/ pow(M,2.0);
+	  }
 
-    y2 = beta * (pow(M*MT_SUN, -2.0/3.0)) / eta;
+    y2 = A3 * (pow(M*MT_SUN, -2.0/3.0)) / eta;
 
     /*    fprintf (stderr, "M = %e SqRootArg = %e eta = %e y1 = %e y2 = %e "
 	  "xbndry = %e y = %e\n", M, S, eta, y1, y2, xbndry, 0.5*(y1+y2));*/
-
-    return 0.5*(y1+y2);
+ 
+ 
+     return 0.5*(y1+y2);
 }
 
 
-double solveForM (double x, double p, double q, double a)
+REAL8 solveForM (REAL8 x, REAL8 p, REAL8 q, REAL8 a)
     /* x = tau_0
      * p = solarmass in sec
      * q = mMin in solar masses
      * a = alpha
      */
 {
-    double ans;
-    double temp;
+    REAL8 ans;
+    REAL8 temp;
 
 
     temp = (-4.*Power(a,9.)*Power(p,15.)*Power(q,9.)*
@@ -542,15 +558,14 @@ double solveForM (double x, double p, double q, double a)
     return ans;
 }
 
-double getSqRootArgument (double x, double p, double q, double a)
+REAL8 getSqRootArgument (REAL8 x, REAL8 p, REAL8 q, REAL8 a)
 {
-    double ans;
+    REAL8 ans;
 
     ans = -4*Power(a,9)*Power(p,15)*Power(q,9)*Power(x,9) + 
    27*Power(a,6)*Power(p,20)*Power(q,14)*Power(x,12);
 
     return ans;
-
 }
 
 
@@ -616,7 +631,7 @@ LALPopulateNarrowEdge(LALStatus               *status,
 
     /* we will search the intersection between the bissectrice of the parameter space and
     the ellipse which crosses the center of the ellipses next to this point. Such an ellipse 
-    as semi axes scaled by sqrt(3).*/
+    has semi axes scaled by sqrt(3).*/
     t0 = (*cell)[headId].t0;
     t3 = (*cell)[headId].t3;
     a  = dx0 * sqrt(3.);
@@ -626,18 +641,22 @@ LALPopulateNarrowEdge(LALStatus               *status,
 
 
     iteration = 1;
-    while (fabs(theta_max-theta_min)>(.1/180.*LAL_PI) && iteration<20){
-
+    while (fabs(theta_max-theta_min)>(.1/180.*LAL_PI) && iteration<20)
+    {
+      /*for a given angle, what is the ellipse point whivh is the closest to the bissectrice?*/
       theta_int = (theta_max + theta_min)/2.;
 
       xr_int = a*cos(theta_int);
       yr_int = b*sin(theta_int);
       
+      /*here are the coordinates of the point we are looking at, which stans on an ellipse of semi axis scaled by sqrt(3)
+      (suppose to cross all relevant template center)*/
       x_int = xr_int *c - yr_int * s +t0;
       y_int = xr_int *s + yr_int * c +t3;
                   
-      dy = y_int -  bisectionLine(x_int, gridParam->fLower, gridParam->mMin,gridParam->mMax);
-
+      /* how far this point is far away of the bissectrice ? */
+      dy = y_int -  XLALInspiralBissectionLine(x_int, gridParam->fLower, gridParam->mMin,gridParam->mMax);
+      /* which direction shall we go for the dichotomy ? */	
       if (flag==0){
 	if (dy>0 )
 	  theta_max = theta_int;
@@ -653,31 +672,34 @@ LALPopulateNarrowEdge(LALStatus               *status,
       iteration++;
     }
 
+    /* let us save this new cell coordinate  */
     
     (*cell)[next].t0   = x_int;
     (*cell)[next].t3   = y_int;
 
+     /*special case when the new position is outside the parameter space requested. */
     if ( (*cell)[next].t0  > gridParam->x0Max ){
       (*cell)[next].t0 = gridParam->x0Max;
-      (*cell)[next].t3 = bisectionLine(gridParam->x0Max, gridParam->fLower, gridParam->mMin,gridParam->mMax);
+      (*cell)[next].t3 = XLALInspiralBissectionLine(gridParam->x0Max, gridParam->fLower, gridParam->mMin,gridParam->mMax);
     }
 
     if ( (*cell)[next].t3  > gridParam->x1Max ){
       (*cell)[next].t0 = gridParam->x0Max;
-      (*cell)[next].t3 = bisectionLine(gridParam->x0Max, gridParam->fLower, gridParam->mMin,gridParam->mMax);
+      (*cell)[next].t3 = XLALInspiralBissectionLine(gridParam->x0Max, gridParam->fLower, gridParam->mMin,gridParam->mMax);
     }
 
     if ( (*cell)[next].t0  < gridParam->x0Min ){
 	  (*cell)[next].t0 = gridParam->x0Min;
-	  (*cell)[next].t3 = bisectionLine(gridParam->x0Min, gridParam->fLower, gridParam->mMin,gridParam->mMax);
+	  (*cell)[next].t3 = XLALInspiralBissectionLine(gridParam->x0Min, gridParam->fLower, gridParam->mMin,gridParam->mMax);
     }
 
+    /*Finally, we initialise the cell properly*/
     LALInitHexagonalBank(status->statusPtr,  cell,  next, 
 		moments, paramsIn, gridParam, cellEvolution, cellList);
+    /* and change the size of the population accordingly*/
     cellEvolution->nTemplate++;
 
-
-
+    /* the parent celle can not populate anymore*/
     (*cell)[next].status = Sterile;
     (cellEvolution->fertile)=cellEvolution->fertile-1;
     LALListDelete(cellList, next);
@@ -685,6 +707,8 @@ LALPopulateNarrowEdge(LALStatus               *status,
     
     
   }
+
+  /*Similarly fot the first parent. */
  (*cell)[headId].status = Sterile;
  (cellEvolution->fertile)=cellEvolution->fertile-1;
   LALListDelete(cellList, headId);	
