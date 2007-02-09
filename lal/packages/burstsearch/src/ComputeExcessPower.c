@@ -28,18 +28,26 @@ int XLALComputeExcessPower(
 	for(i = 0; i < tiling->numtiles; i++, tile++) {
 		const double dof = XLALTFTileDegreesOfFreedom(tile);
 		const unsigned tstep = tile->tbins / dof;
-		double sum = 0.0;
-		unsigned t, channel;
+		double sumsquares = 0.0;
+		double hsumsquares = 0.0;
+		unsigned t;
 
 		for(t = tile->tstart; t < tile->tstart + tile->tbins; t += tstep) {
-			double tmp = 0.0;
-			for(channel = tile->channel0; channel < tile->channel0 + tile->channels; channel++)
-				tmp += plane->channel[channel]->data[t];
-			sum += pow(tmp, 2.0) / (tile->channels + (tile->channels - 1) * plane->channel_overlap);
+			double sum = 0.0;
+			double hsum = 0.0;
+			unsigned channel;
+
+			for(channel = tile->channel0; channel < tile->channel0 + tile->channels; channel++) {
+				sum += plane->channel[channel]->data[t];
+				hsum += plane->channel[channel]->data[t] * sqrt(plane->channel_mean_square->data[channel]);
+			}
+
+			sumsquares += sum * sum / (tile->channels + (tile->channels - 1) * plane->channel_overlap);
+			hsumsquares += hsum * hsum / (tile->channels + (tile->channels - 1) * plane->channel_overlap);
 		}
-		tile->excessPower = sum - dof;
-		tile->hrss = 0;
-		tile->lnalpha = XLALlnOneMinusChisqCdf(sum, dof);
+		tile->excessPower = sumsquares - dof;
+		tile->hrss = sqrt(hsumsquares);
+		tile->lnalpha = XLALlnOneMinusChisqCdf(sumsquares, dof);
 		if(XLALIsREAL8FailNaN(tile->lnalpha))
 			XLAL_ERROR(func, XLAL_EFUNC);
 	}
