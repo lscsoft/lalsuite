@@ -156,7 +156,6 @@ LALInspiralCreatePNCoarseBankHexa(
 		       	&cellList);
   CHECKSTATUSPTR( status );
 
-
   {
     INT4 k, kk; /*some indexes*/
     INT4 *list 		= NULL;
@@ -208,9 +207,6 @@ LALInspiralCreatePNCoarseBankHexa(
     }
     LALFree(list);
   }
-
-fprintf(stderr, "##");
-fflush(stderr);
   
   if (cellList != NULL)
     ABORT(status, LALINSPIRALBANKH_EHEXAINIT,LALINSPIRALBANKH_MSGEHEXAINIT);
@@ -282,7 +278,6 @@ fflush(stderr);
 			     &valid);
 	
 		{
-
 	  		switch (cells[k].RectPosition[1]){
 			  case In:    in    +=1; break;
 			  case Below: below +=1; break;
@@ -322,8 +317,8 @@ fflush(stderr);
       *nlist = *nlist +1; 
     }
   }
-fprintf(stderr, "##");
-fflush(stderr);
+;
+
 
   /* allocate appropriate memory and fill the output bank */
   *list = (InspiralTemplateList*) 
@@ -355,11 +350,10 @@ fflush(stderr);
       }
     }
   }
-  
-    
+   
   LALFree( cells );
   LALFree( tempPars );
-  
+    
   DETATCHSTATUSPTR( status );
   RETURN ( status );
 }
@@ -582,7 +576,7 @@ LALInitHexagonalBank(
   LALListAppend(cellList, id);
 
 
-  /* all of whom are unset and do not have any id set*/
+  /* all of whom are unset and do not have any id set yet*/
   for (i = 0; i < 6; i++) 
   {
     (*cell)[id].child[i] = -1;
@@ -594,7 +588,7 @@ LALInitHexagonalBank(
   (*cell)[id].metric.space = gridParam->space;
 
 
-  /* before ant further computation, check that t0, t3 is positive.*/
+  /* before any further computation, check that t0, t3 are positive.*/
   if ((*cell)[id].t0 > 0 && (*cell)[id].t3 > 0)
   {
     /* Get the metric at the position of the cell */ 
@@ -625,8 +619,7 @@ LALInitHexagonalBank(
       }
       (*cell)[id].status = Sterile;
       (cellEvolution->fertile)=cellEvolution->fertile-1;
-      LALListDelete(cellList, id);
-      
+      LALListDelete(cellList, id);      
       
       DETATCHSTATUSPTR(status);
       RETURN(status);
@@ -940,7 +933,7 @@ LALFindPosition(LALStatus       *status,
   ATTATCHSTATUSPTR( status );
 
   ieta 	        = 1.;
-  oneby4 		= 1./4.;
+  oneby4 	= 1./4.;
   tiny 	        = 1.e-10;
   piFl 	        = LAL_PI * paramsIn->fLower;
   A0    = 5. / pow(piFl, 8./3.) / 256.;
@@ -948,7 +941,6 @@ LALFindPosition(LALStatus       *status,
   
   ASSERT(paramsIn->t0 > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(paramsIn->t3 > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  
   
   /* given t0, t3 we get the totalMass and eta. 
      We do not need to call ParameterCalc again and again here. */
@@ -968,8 +960,7 @@ LALFindPosition(LALStatus       *status,
     paramsIn->mass2 = 0.5*totalMass * ( 1.L - sqrt(1.L - 4.L*eta));
   }
   
-  /* does t3 positive*/
-  
+  /* does t3 positive*/  
   if ((paramsIn->t3-dx1)<0)
   { 
     mint3 = 0;
