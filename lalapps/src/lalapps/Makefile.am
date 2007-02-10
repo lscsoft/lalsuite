@@ -13,5 +13,8 @@ lalapps_version_SOURCES = version.c lalapps.h
 lalapps_tconvert_SOURCES = tconvert.c getdate.c getdate.h
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 INCLUDES = -I$(top_srcdir)/src
+if HAVE_PYTHON
+pkgpython_DATA = __init__.py
+endif
 EXTRA_DIST = series.c series.h getdate.y
 TESTS = lalapps_version
