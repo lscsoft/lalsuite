@@ -563,7 +563,7 @@ def make_datafind_fragment(dag, instrument, seg):
 	node.set_observatory(instrument[0])
 	if node.get_type() == None:
 		node.set_type(datafindjob.get_config_file().get("datafind", "type_%s" % instrument))
-	node.set_post_script(datafindjob.get_config_file().get("condor", "LSCdataFindcheck") + " --dagman-return $RETURN --gps-start-time %s --gps-end-time %s %s" % (str(seg[0]), str(seg[1]), node.get_output()))
+	node.set_post_script(datafindjob.get_config_file().get("condor", "LSCdataFindcheck") + " --dagman-return $RETURN --stat --gps-start-time %s --gps-end-time %s %s" % (str(seg[0]), str(seg[1]), node.get_output()))
 	dag.add_node(node)
 	return node
 
