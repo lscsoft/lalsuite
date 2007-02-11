@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
 
   /* test config file reading */
   sprintf(filename, "NRWaveIOTest.cfg");
-  SHOULD_WORK (LALNRDataFind( &status, &nrcatalog, "./", filename), &status);
+  SHOULD_WORK (LALNRDataFind( &status, &nrcatalog, ".", filename), &status);
   fprintf(stdout, "config file %s contains %d waves\n", filename, nrcatalog.length);
 
   for ( k = 0; k < nrcatalog.length; k++) {
