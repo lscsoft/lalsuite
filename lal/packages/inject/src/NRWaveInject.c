@@ -204,7 +204,7 @@ XLALFindNRFile( NRWaveCatalog *nrCatalog,  /**< input  NR wave catalog  */
 {
 
   REAL8 massRatioIn, massRatio, diff, newDiff;
-  INT4 k, best;
+  UINT4 k, best;
   CHAR *ret=NULL;
 
   massRatioIn = inj->mass1/inj->mass2;
