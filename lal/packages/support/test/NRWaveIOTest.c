@@ -156,6 +156,9 @@ int main(int argc, char *argv[])
   fprintf(stdout, "%%filename=%s, deltaT=%e sec, Heterodyne Freq.=%e, length=%d \n",
 	  nrdata->name, nrdata->deltaT, nrdata->f0, nrdata->data->vectorLength);
 
+  XLALDestroyREAL4VectorSequence ( nrdata->data );
+  LALFree(nrdata);
+  
 
   /* test config file reading */
   sprintf(filename, "NRWaveIOTest.cfg");
@@ -171,9 +174,19 @@ int main(int argc, char *argv[])
 	    nrcatalog.data[k].filename);
   }
 
+  SHOULD_WORK (LALReadNRWave(&status, &nrdata, 10.0, nrcatalog.data[0].filename), &status);
+
+  for (k = 0; k < length; k++) {
+    fprintf(stdout, "%e  %e  %e\n", k*nrdata->deltaT, nrdata->data->data[k],
+	    nrdata->data->data[length+k]);
+  }
+
+  fprintf(stdout, "%%filename=%s, deltaT=%e sec, Heterodyne Freq.=%e, length=%d \n",
+	  nrdata->name, nrdata->deltaT, nrdata->f0, nrdata->data->vectorLength);
 
   XLALDestroyREAL4VectorSequence ( nrdata->data );
   LALFree(nrdata);
+  
 
   LALFree(nrcatalog.data);
 
