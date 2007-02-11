@@ -36,101 +36,91 @@
 NRCSID( NRWAVEIOC, "$Id$");
 
 
+
 /** Reads a numerical relativity waveform given a filename and a value of the 
     total mass for setting the timescale.  The output waveform is scaled corresponding
     to a distance of 1Mpc.
 */
-REAL4TimeVectorSeries *
-XLALReadNRWave( REAL4  mass,       /**< Value of total mass for setting time scale */
-		CHAR   *filename   /**< File containing numrel waveform */) 
+void LALReadNRWave(LALStatus *status, 
+		   REAL4TimeVectorSeries **out, /**< output time series for h+ and hx */
+		   const REAL4  mass,           /**< Value of total mass for setting time scale */
+		   const CHAR  *filename        /**< File containing numrel waveform */) 
 {
 
-  INT4 r, count;
-  FILE *fp=NULL;
-  REAL4TimeVectorSeries *out=NULL;
+  UINT4 length, k, r;
+  REAL4TimeVectorSeries *ret=NULL;
   REAL4VectorSequence *data=NULL;
   REAL4Vector *timeVec=NULL;
   REAL4 massMpc;
-
-  CHAR str1[16], str2[16],str3[16], str4[16];
+  LALParsedDataFile *cfgdata=NULL;
   REAL4 tmp1, tmp2, tmp3;
 
+  INITSTATUS (status, "LALReadNRWave", NRWAVEIOC);
+  ATTATCHSTATUSPTR (status); 
+ 
+  /* some consistency checks */
+  ASSERT (filename != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
+  ASSERT ( mass > 0, status, NRWAVEIO_EVAL, NRWAVEIO_MSGEVAL );
+  ASSERT ( out != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
+  ASSERT ( *out == NULL, status, NRWAVEIO_ENONULL, NRWAVEIO_MSGENONULL );
 
-  fp = fopen(filename, "r");
-  if (!fp) {
-    XLAL_ERROR_NULL( "XLALReadNRWave", XLAL_ENAME );
-  }
+  TRY( LALParseDataFile ( status->statusPtr, &cfgdata, filename), status);
+  length = cfgdata->lines->nTokens; /*number of data points */
 
-  /* read the first comment line which is expected to be  
-     something like  "# time h+ hx"  -- do we need this?*/ 
-  r = fscanf(fp, "%s%s%s%s\n", str1, str2, str3, str4);
-  
-  /* count number of lines */
-  count = 0;
-  do 
-    {
-      r = fscanf(fp,"%f%f%f\n", &tmp1, &tmp2, &tmp3);
-      /* make sure the line has the right number of entries or is EOF */
-      if (r==3) count++;
-    } while ( r != EOF);
-  rewind(fp);  
-
-  /* read the first line again */  
-  r = fscanf(fp, "%s%s%s%s\n", str1, str2, str3, str4);
 
   /* allocate memory */
-  out = LALCalloc(1, sizeof(*out));
-  if (!out) {
-    XLAL_ERROR_NULL( "XLALReadNRWave", XLAL_ENOMEM );
+  ret = LALCalloc(1, sizeof(*ret));
+  if (!ret) {
+    ABORT( status, NRWAVEIO_ENOMEM, NRWAVEIO_MSGENOMEM );
   }
-  strcpy(out->name,filename);
-  out->f0 = 0;
+  strcpy(ret->name,filename);
+  ret->f0 = 0;
   
-  data =  XLALCreateREAL4VectorSequence (2, count);
+  data =  XLALCreateREAL4VectorSequence (2, length);
   if (!data) {
-    XLAL_ERROR_NULL( "XLALReadNRWave", XLAL_ENOMEM );
+    ABORT( status, NRWAVEIO_ENOMEM, NRWAVEIO_MSGENOMEM );
   }
   
-  timeVec = XLALCreateREAL4Vector ( count );
+  timeVec = XLALCreateREAL4Vector (length);
   if (!timeVec) {
-    XLAL_ERROR_NULL( "XLALReadNRWave", XLAL_ENOMEM );
+    ABORT( status, NRWAVEIO_ENOMEM, NRWAVEIO_MSGENOMEM );
   }
-
 
   /* mass in Mpc -- we multiply h(t) by this factor */
   massMpc = LAL_MRSUN_SI / ( LAL_PC_SI * 1.0e6);
 
-  /* loop over file again */
-  count = 0;
-  do 
-    {
-      r = fscanf(fp,"%f%f%f\n", &tmp1, &tmp2, &tmp3);
-      /* make sure the line has the right number of entries or is EOF */
-      if (r==3) {
-	timeVec->data[count] = tmp1;
-	data->data[count] = massMpc * tmp2;
-	data->data[data->vectorLength + count] = massMpc * tmp3;
-	count++;
-      }
-      
-    } while ( r != EOF);
-  
+  /* now get the data */
+  for (k = 0; k < length; k++) {
+    r = sscanf(cfgdata->lines->tokens[k], "%f%f%f", &tmp1, &tmp2, &tmp3);    
 
-  /* scale time */
-  out->deltaT = LAL_MTSUN_SI * mass * ( timeVec->data[1] - timeVec->data[0]);
-  /* need additional consistency check on timeVec to 
-     make sure it is spaced uniformly */
+    /* Check the data file format */
+    if ( r != 3) {
+      /* there must be exactly 3 data entries -- time, h+, hx */
+      ABORT( status, NRWAVEIO_EFORMAT, NRWAVEIO_MSGEFORMAT );
+    }
 
-  fclose(fp);
+    timeVec->data[k] = tmp1;
+    data->data[k] = massMpc * tmp2;
+    data->data[data->vectorLength + k] = massMpc * tmp3;
+     
+  }
+
+  /*  scale time */
+  ret->deltaT = LAL_MTSUN_SI * mass * ( timeVec->data[1] - timeVec->data[0]);
+
+  /* go through timeVec to make sure it is uniformly spaced */
+
+
+  ret->data = data;
+  (*out) = ret;
 
   XLALDestroyREAL4Vector (timeVec);
+  TRY( LALDestroyParsedDataFile (status->statusPtr, &cfgdata), status);
 
-  out->data = data;
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
   
-  /* normal exit */	
-  return out;
-  
-} /* XLALReadNRWave() */
+} /* LALReadNRWave() */
 
 
 
@@ -141,8 +131,9 @@ XLALReadNRWave( REAL4  mass,       /**< Value of total mass for setting time sca
  */
 void
 LALNRDataFind( LALStatus *status,
-	       NRWaveCatalog *out, /**< list of numrel metadata */
-	       CHAR   *filename /**< File with metadata information */)
+	       NRWaveCatalog *out,  /**< list of numrel metadata */
+	       const CHAR *dir,     /**< directory with data files */
+	       const CHAR *filename /**< File with metadata information */)
 {
   LALParsedDataFile *cfgdata=NULL;
   UINT4 k, numWaves;
@@ -152,6 +143,7 @@ LALNRDataFind( LALStatus *status,
 
   ASSERT (filename != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
   ASSERT ( out != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
+  ASSERT ( dir != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
 
   TRY( LALParseDataFile ( status->statusPtr, &cfgdata, filename), status);
   numWaves = cfgdata->lines->nTokens; /*number of waves */
@@ -162,7 +154,7 @@ LALNRDataFind( LALStatus *status,
 
   /* now get wave parameters from each line of data */
   for (k = 0; k < numWaves; k++) {
-    TRY(LALGetSingleNRMetaData( status->statusPtr, out->data + k, cfgdata->lines->tokens[k]), status);
+    TRY(LALGetSingleNRMetaData( status->statusPtr, out->data + k, dir, cfgdata->lines->tokens[k]), status);
   }
 
   TRY( LALDestroyParsedDataFile (status->statusPtr, &cfgdata), status);
@@ -175,22 +167,25 @@ LALNRDataFind( LALStatus *status,
 
 /** Parse a single string to fill the NRWaveMetaData structure */
 void
-LALGetSingleNRMetaData( LALStatus             *status,
-			NRWaveMetaData  *out, /**< Meta data struct to be filled */
-			const CHAR            *cfgstr /**< config string containing the data for a single NR wave*/) 
+LALGetSingleNRMetaData( LALStatus       *status,
+			NRWaveMetaData  *out,   /**< Meta data struct to be filled */
+			const CHAR      *dir,   /**< data directory */
+			const CHAR      *cfgstr /**< config string containing the data for a single NR wave*/) 
 {
   REAL4 tmpR[7];
   INT4  tmpI[2];
   INT4 test;
+  CHAR tmpStr[512];
 
   INITSTATUS (status, "LALGetSingleNRMetaData", NRWAVEIOC);
   ATTATCHSTATUSPTR (status); 
 
   ASSERT (cfgstr != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
   ASSERT (out != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
+  ASSERT (dir != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
 
   test = sscanf(cfgstr, "%f%f%f%f%f%f%f%d%d%s", tmpR, tmpR+1, tmpR+2, tmpR+3, tmpR+4, tmpR+5, 
-	 tmpR+6, tmpI, tmpI+1, out->filename);
+	 tmpR+6, tmpI, tmpI+1, tmpStr);
 
   /* Check the metadata file format */
   if ( test != 10) {
@@ -198,6 +193,9 @@ LALGetSingleNRMetaData( LALStatus             *status,
        -- massratio, spin1[3], spin2[3], l, m, filename */
     ABORT( status, NRWAVEIO_EFORMAT, NRWAVEIO_MSGEFORMAT );
   }
+
+  /* the mass ratio must be positive */
+  ASSERT (tmpR[0] >= 0, status, NRWAVEIO_EVAL, NRWAVEIO_MSGEVAL );
 
   /*** need a few more format checks here ***/
 
@@ -212,6 +210,10 @@ LALGetSingleNRMetaData( LALStatus             *status,
 
   out->mode[0] = tmpI[0];
   out->mode[1] = tmpI[1];
+
+  strcpy(out->filename, dir);
+  strcat(out->filename, "/");
+  strcat(out->filename, tmpStr);
 
   DETATCHSTATUSPTR(status);
   RETURN(status);

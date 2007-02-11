@@ -65,13 +65,17 @@ NRCSID (NRWAVEIOH, "$Id$");
 
 /** \name Error codes */
 /*@{*/
-#define NRWAVEIO_ENULL 	1
-#define NRWAVEIO_EFILE 	2
-#define NRWAVEIO_EVAL 	5
-#define NRWAVEIO_EFORMAT 6
+#define NRWAVEIO_ENULL 	  1
+#define NRWAVEIO_EFILE 	  2
+#define NRWAVEIO_ENONULL  3
+#define NRWAVEIO_ENOMEM   4
+#define NRWAVEIO_EVAL 	  5
+#define NRWAVEIO_EFORMAT  6
 
 #define NRWAVEIO_MSGENULL 	"Null pointer"
 #define NRWAVEIO_MSGEFILE 	"Error in file-IO"
+#define NRWAVEIO_MSGENONULL 	"Not a Null pointer"
+#define NRWAVEIO_MSGENOMEM 	"Memory ellocation error"
 #define NRWAVEIO_MSGEVAL  	"Invalid value"
 #define NRWAVEIO_MSGEFORMAT     "Meta data file format incorrect"
 /*@}*/
@@ -101,11 +105,11 @@ typedef struct
 NRWaveCatalog;
 
 
-REAL4TimeVectorSeries * XLALReadNRWave( REAL4  mass, CHAR *filename); 
+void LALReadNRWave(LALStatus *status, REAL4TimeVectorSeries **out, const REAL4  mass, const CHAR  *filename);
 
-void LALNRDataFind( LALStatus *status, NRWaveCatalog *out, CHAR   *filename);
+void LALNRDataFind( LALStatus *status, NRWaveCatalog *out, const CHAR *dir, const CHAR *filename);
 
-void LALGetSingleNRMetaData( LALStatus *status, NRWaveMetaData *data, const CHAR *cfgstr);
+void LALGetSingleNRMetaData( LALStatus *status, NRWaveMetaData *data, const CHAR *dir, const CHAR *cfgstr);
 
 
 #ifdef  __cplusplus

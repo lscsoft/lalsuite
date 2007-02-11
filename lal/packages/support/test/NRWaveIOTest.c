@@ -144,22 +144,22 @@ int main(int argc, char *argv[])
   REAL4TimeVectorSeries *nrdata=NULL;
 
   sprintf(filename, "NRWaveIOTest.dat");
-  nrdata = XLALReadNRWave(10.0, filename);
+  SHOULD_WORK (LALReadNRWave(&status, &nrdata, 10.0, filename), &status);
 
   length = nrdata->data->vectorLength;
 
   for (k = 0; k < length; k++) {
-    fprintf(stdout, "%e  %e  %e\n", k*nrdata->deltaT, nrdata->data->data[k], 
+    fprintf(stdout, "%e  %e  %e\n", k*nrdata->deltaT, nrdata->data->data[k],
 	    nrdata->data->data[length+k]);
   }
 
-  fprintf(stdout, "%%filename=%s, deltaT=%e sec, Heterodyne Freq.=%e, length=%d \n", 
+  fprintf(stdout, "%%filename=%s, deltaT=%e sec, Heterodyne Freq.=%e, length=%d \n",
 	  nrdata->name, nrdata->deltaT, nrdata->f0, nrdata->data->vectorLength);
 
 
   /* test config file reading */
   sprintf(filename, "NRWaveIOTest.cfg");
-  SHOULD_WORK (LALNRDataFind( &status, &nrcatalog, filename), &status);
+  SHOULD_WORK (LALNRDataFind( &status, &nrcatalog, "./", filename), &status);
   fprintf(stdout, "config file %s contains %d waves\n", filename, nrcatalog.length);
 
   for ( k = 0; k < nrcatalog.length; k++) {
@@ -171,12 +171,6 @@ int main(int argc, char *argv[])
 	    nrcatalog.data[k].filename);
   }
 
-
-
-  /* the following (SFT-bad6) has a wrong CRC64 checksum. However, this is 
-   * not checked in LALSFTdataFind, so it should succeed! */
-  /*   SHOULD_WORK( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad6", NULL ), &status ); */
-  /*   SUB ( LALDestroySFTCatalog( &status, &catalog), &status ); */
 
   XLALDestroyREAL4VectorSequence ( nrdata->data );
   LALFree(nrdata);

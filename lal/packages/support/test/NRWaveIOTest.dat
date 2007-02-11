@@ -1,4 +1,6 @@
+# this is an example numrel wave data file
 # time hplus hcross
+
 0.000000e+00 1.138725e-02 -8.319811e-04
 2.000000e-01 1.138725e-02 -1.247969e-03
 4.000000e-01 1.138726e-02 -1.663954e-03
