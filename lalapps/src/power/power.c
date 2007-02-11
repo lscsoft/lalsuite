@@ -65,40 +65,37 @@ RCSID( "power $Id$");
 
 /* Parameters from command line */
 static struct {
-	CHAR *calCacheFile;         /* name of the calibration cache file  */
- 	CHAR *simCacheFile;         /* name of the sim waveform cache file */
- 	CHAR *simdirname;           /* name of the dir. with the sim. wave */
+	char *calcachefile;         /* name of the calibration cache file  */
+ 	char *simcachefile;         /* name of the sim waveform cache file */
 
- 	REAL4 simDistance;          /* Distance at which the sim waveforms have been generated */
+ 	double simDistance;         /* Distance at which the sim waveforms have been generated */
 	int cluster;                /* TRUE == perform clustering          */
-	CHAR *comment;              /* user comment                        */
+	char *comment;              /* user comment                        */
 	int FilterCorruption;       /* samples corrupted by conditioning   */
-	INT4 maxSeriesLength;       /* RAM-limited input length            */
-	REAL4 noise_rms;            /* Gaussian white noise RMS            */
+	int maxSeriesLength;        /* RAM-limited input length            */
+	double noise_rms;           /* Gaussian white noise RMS            */
 	LIGOLwXMLStream *diagnostics;  /* diagnostics XML stream */
 	size_t PSDAverageLength;    /* number of samples to use for PSD    */
-	INT4 ResampleRate;          /* sample rate after resampling        */
-	INT4 seed;                  /* set non-zero to generate noise      */
+	int ResampleRate;           /* sample rate after resampling        */
+	int seed;                   /* set non-zero to generate noise      */
 	LIGOTimeGPS startEpoch;     /* gps start time                      */
 	LIGOTimeGPS stopEpoch;      /* gps stop time                       */
 	int verbose;
 	int calibrated;             /* input is double-precision h(t)      */
-	REAL8 high_pass;            /* conditioning high pass freq (Hz)    */
-	REAL8 cal_high_pass;        /* double->single high pass freq (Hz)  */
+	double high_pass;           /* conditioning high pass freq (Hz)    */
+	double cal_high_pass;       /* double->single high pass freq (Hz)  */
 	int bandwidth;
 	int max_event_rate;         /* safety valve (Hz), 0 == disable     */
-	UINT4 windowLength;
+	int windowLength;
 	WindowType windowType;
 	char *channelName;
 	char ifo[3];                /* two character interferometer        */
-	char *mdcCacheFile;         /* name of mdc signal cache file       */
-	char *mdcDirName;           /* name of mdc signal cache file       */
+	char *mdccachefile;         /* name of mdc signal cache file       */
 	char *mdcchannelName;       /* mdc signal only channnel info       */
 	char *burstInjectionFile;   /* file with list of burst injections  */
 	char *inspiralInjectionFile;/* file with list of burst injections  */
 	char *simInjectionFile;     /* file with list of sim injections    */
 	char *cachefile;            /* name of file with frame cache info  */
-	char *dirname;              /* name of directory with frames       */
 } options;
 
 
@@ -187,7 +184,6 @@ static void print_usage(char *program)
 "	[--max-event-rate <Hz>]\n" \
 "	 --filter-corruption <samples>\n" \
 "	 --frame-cache <cache file>\n" \
-"	 --frame-dir <directory>\n" \
 "	 --gps-end-time <seconds>\n" \
 "	 --gps-start-time <seconds>\n" \
 "	[--help]\n" \
@@ -329,8 +325,8 @@ static int check_for_missing_parameters(char *prog, struct option *long_options,
 		}
 	}
 
-	if(!!options.cachefile + !!options.dirname + (options.noise_rms > 0.0) != 1) {
-		fprintf(stderr, "%s: must provide exactly one of --frame-cache, --frame-dir or --gaussian-noise-rms\n", prog);
+	if(!!options.cachefile + (options.noise_rms > 0.0) != 1) {
+		fprintf(stderr, "%s: must provide exactly one of --frame-cache or --gaussian-noise-rms\n", prog);
 		got_all_arguments = FALSE;
 	}
 	
@@ -397,7 +393,6 @@ void parse_command_line(
 		{"max-event-rate",      required_argument, NULL,           'F'},
 		{"filter-corruption",	required_argument, NULL,           'j'},
 		{"frame-cache",         required_argument, NULL,           'G'},
-		{"frame-dir",           required_argument, NULL,           'H'},
 		{"gps-end-time",        required_argument, NULL,           'K'},
 		{"gps-start-time",      required_argument, NULL,           'M'},
 		{"help",                no_argument,       NULL,           'O'},
@@ -443,7 +438,7 @@ void parse_command_line(
 	params->windowShift = 0;	/* impossible */
 
 	options.bandwidth = 0;	/* impossible */
-	options.calCacheFile = NULL;	/* default */
+	options.calcachefile = NULL;	/* default */
 	options.channelName = NULL;	/* impossible */
 	memset(options.ifo, 0, sizeof(options.ifo));	/* empty */
 	options.cluster = FALSE;	/* default */
@@ -466,18 +461,15 @@ void parse_command_line(
 	XLALINT8NSToGPS(&options.stopEpoch, 0);	/* impossible */
 
 	options.simDistance = 10000.0;  /* default (10 Mpc) */
-	options.simCacheFile = NULL;	/* default */
-	options.simdirname = NULL;      /* default */
+	options.simcachefile = NULL;	/* default */
 	options.burstInjectionFile = NULL;	/* default == disable */
 	options.simInjectionFile = NULL;	/* default == disable */
 	options.inspiralInjectionFile = NULL;	/* default == disable */
 	options.cachefile = NULL;	        /* default == disable */
-	options.dirname = NULL;	                /* default == disable */
 
 	ram = 0;	/* default */
 
-	options.mdcCacheFile = NULL;	        /* default == disable */
-	options.mdcDirName = NULL;	        /* default == disable */
+	options.mdccachefile = NULL;	        /* default == disable */
 	enableoverwhitening = FALSE;       /* default */
 
 	/*
@@ -498,7 +490,7 @@ void parse_command_line(
 		break;
 
 		case 'B':
-		options.calCacheFile = optarg;
+		options.calcachefile = optarg;
 		ADD_PROCESS_PARAM("string");
 		break;
 
@@ -520,11 +512,6 @@ void parse_command_line(
 
 		case 'G':
 		options.cachefile = optarg;
-		ADD_PROCESS_PARAM("string");
-		break;
-
-		case 'H':
-		options.dirname =  optarg;
 		ADD_PROCESS_PARAM("string");
 		break;
 
@@ -591,7 +578,7 @@ void parse_command_line(
 		break;
 
 		case 'R':
-		options.mdcCacheFile = optarg;
+		options.mdccachefile = optarg;
 		ADD_PROCESS_PARAM("string");
 		break;
 
@@ -759,7 +746,7 @@ void parse_command_line(
 		break;
 
 		case 'q':
-		options.simCacheFile = optarg;
+		options.simcachefile = optarg;
 		ADD_PROCESS_PARAM("string");
 		break;
 
@@ -863,7 +850,7 @@ void parse_command_line(
 	 * will be used for injections and h_rss.
 	 */
 
-	if(!options.calCacheFile) {
+	if(!options.calcachefile) {
 		fprintf(stderr, "warning: no calibration cache is provided:  software injections and hrss will be computed with unit response\n");
 	} else if(options.calibrated) {
 		fprintf(stderr, "error: calibration cache provided for use with calibrated data!\n");
@@ -954,10 +941,9 @@ static REAL4TimeSeries *get_calibrated_data(
 	return(series);
 }
 
+
 static REAL4TimeSeries *get_time_series(
-	LALStatus *stat,
-	const char *dirname,
-	const char *cachefile,
+	const char *cachefilename,
 	const char *chname,
 	LIGOTimeGPS start,
 	LIGOTimeGPS end,
@@ -966,22 +952,23 @@ static REAL4TimeSeries *get_time_series(
 	double quantize_high_pass
 )
 {
-	REAL4TimeSeries *series;
-	FrStream *stream = NULL;
-	FrCache *frameCache = NULL;
+	const char func[] = "get_time_series";
 	double duration = XLALGPSDiff(&end, &start);
+	FrCache *cache;
+	FrStream *stream;
+	REAL4TimeSeries *series;
+
+	if(duration < 0)
+		XLAL_ERROR_NULL(func, XLAL_EINVAL);
 
 	/* Open frame stream */
-	if(cachefile && dirname && options.verbose)
-		fprintf(stderr, "get_time_series(): warning: --frame-cache ignored (using --frame-dir)\n");
-	if(dirname)
-		LAL_CALL(LALFrOpen(stat, &stream, dirname, "*.gwf"), stat);
-	else if(cachefile) {
-		LAL_CALL(LALFrCacheImport(stat, &frameCache, cachefile), stat);
-		LAL_CALL(LALFrCacheOpen(stat, &stream, frameCache), stat);
-		LAL_CALL(LALDestroyFrCache(stat, &frameCache), stat);
-	} else
-		return(NULL);
+	cache = XLALFrImportCache(cachefilename);
+	if(!cache)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	stream = XLALFrCacheOpen(cache);
+	XLALFrDestroyCache(cache);
+	if(!stream)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
 	/* Turn on checking for missing data */
 	stream->mode = LAL_FR_VERBOSE_MODE;
@@ -994,17 +981,20 @@ static REAL4TimeSeries *get_time_series(
 
 	/* Check for missing data */
 	if(stream->state & LAL_FR_GAP) {
-		fprintf(stderr, "get_time_series(): error: gap in data detected between GPS times %d.%09d s and %d.%09d s\n", start.gpsSeconds, start.gpsNanoSeconds, end.gpsSeconds, end.gpsNanoSeconds);
+		XLALPrintError("get_time_series(): error: gap in data detected between GPS times %d.%09d s and %d.%09d s\n", start.gpsSeconds, start.gpsNanoSeconds, end.gpsSeconds, end.gpsNanoSeconds);
 		XLALDestroyREAL4TimeSeries(series);
-		series = NULL;
+		XLAL_ERROR_NULL(func, XLAL_EDATA);
 	}
 
-	/* verbosity */
-	if(options.verbose)
-		fprintf(stderr, "get_time_series(): read %u samples (%.9lf s) at GPS time %u.%09u s\n", series->data->length, series->data->length * series->deltaT, start.gpsSeconds, start.gpsNanoSeconds);
-
-	/* Clean up */
+	/* Close stream */
 	XLALFrClose(stream);
+
+	/* Check for other failures */
+	if(!series)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+
+	/* verbosity */
+	XLALPrintInfo("get_time_series(): read %u samples (%.9lf s) at GPS time %u.%09u s\n", series->data->length, series->data->length * series->deltaT, start.gpsSeconds, start.gpsNanoSeconds);
 
 	return(series);
 }
@@ -1180,9 +1170,7 @@ static void add_inspiral_injections(
  */
 
 static void add_mdc_injections(
-	LALStatus *stat,
-	const char *mdcDirName,
-	const char *mdcCacheFile,
+	const char *mdccachefile,
 	REAL4TimeSeries *series,
 	LIGOTimeGPS epoch,
 	LIGOTimeGPS stopepoch,
@@ -1196,7 +1184,7 @@ static void add_mdc_injections(
 		fprintf(stderr, "add_mdc_injections(): using MDC frames for injections\n");
 
 	/* set quantization high pass at 40.0 Hz */
-	mdc = get_time_series(stat, mdcDirName, mdcCacheFile, options.mdcchannelName, epoch, stopepoch, lengthlimit, TRUE, 40.0);
+	mdc = get_time_series(mdccachefile, options.mdcchannelName, epoch, stopepoch, lengthlimit, TRUE, 40.0);
 
 	/* add the mdc signal to the given time series */
 	for(i = 0; i < series->data->length; i++)
@@ -1360,10 +1348,10 @@ static void add_sim_injections(
 	  XLALGPSAdd(&end, simDuration);
 
 	  /* Get the plus time series */
-	  plusseries = get_time_series(stat, options.simdirname, options.simCacheFile, pluschan, start, end, lengthlimit, FALSE, options.cal_high_pass);
+	  plusseries = get_time_series(options.simcachefile, pluschan, start, end, lengthlimit, FALSE, options.cal_high_pass);
 	  
 	  /* Get the cross time series */
-	  crossseries = get_time_series(stat, options.simdirname, options.simCacheFile, crosschan, start, end, lengthlimit, FALSE, options.cal_high_pass);
+	  crossseries = get_time_series(options.simcachefile, crosschan, start, end, lengthlimit, FALSE, options.cal_high_pass);
 	  
 	  /* read in the waveform in a CoherentGW struct */
 	  memset( &waveform, 0, sizeof(CoherentGW) );
@@ -1623,12 +1611,12 @@ int main( int argc, char *argv[])
 		 * Get the data.
 		 */
 
-		if(options.dirname || options.cachefile) {
+		if(options.cachefile) {
 			/*
 			 * Read from frame files
 			 */
 
-			series = get_time_series(&stat, options.dirname, options.cachefile, options.channelName, epoch, options.stopEpoch, options.maxSeriesLength, options.calibrated, options.cal_high_pass);
+			series = get_time_series(options.cachefile, options.channelName, epoch, options.stopEpoch, options.maxSeriesLength, options.calibrated, options.cal_high_pass);
 			if(!series) {
 				fprintf(stderr, "%s: error: failure reading input data\n", argv[0]);
 				exit(1);
@@ -1662,12 +1650,12 @@ int main( int argc, char *argv[])
 		 * requested.
 		 */
 
-		if(options.burstInjectionFile || options.inspiralInjectionFile || options.simCacheFile) {
+		if(options.burstInjectionFile || options.inspiralInjectionFile || options.simcachefile) {
 			COMPLEX8FrequencySeries *response;
 
 			/* Create the response function (generates unity
 			 * response if cache file is NULL). */
-			response = generate_response(&stat, options.calCacheFile, options.channelName, series->deltaT, series->epoch, series->data->length);
+			response = generate_response(&stat, options.calcachefile, options.channelName, series->deltaT, series->epoch, series->data->length);
 			if(!response)
 				exit(1);
 
@@ -1676,7 +1664,7 @@ int main( int argc, char *argv[])
 				add_burst_injections(&stat, series, response);
 			if(options.inspiralInjectionFile)
 				add_inspiral_injections(&stat, series, response);
-			if(options.simCacheFile)
+			if(options.simcachefile)
 				add_sim_injections(&stat, series, response, options.maxSeriesLength);
 
 			/*clean up*/
@@ -1687,8 +1675,8 @@ int main( int argc, char *argv[])
 		 * Add MDC injections into the time series if requested.
 		 */
 
-		if(options.mdcCacheFile)
-		        add_mdc_injections(&stat, options.mdcDirName, options.mdcCacheFile, series, epoch, options.stopEpoch, options.maxSeriesLength);
+		if(options.mdccachefile)
+		        add_mdc_injections(options.mdccachefile, series, epoch, options.stopEpoch, options.maxSeriesLength);
 
 		/*
 		 * Generate the response function at the right deltaf to be
@@ -1697,7 +1685,7 @@ int main( int argc, char *argv[])
 		 */
 
 		/* FIXME: not used anymore */
-		hrssresponse = generate_response(&stat, options.calCacheFile, options.channelName, series->deltaT, series->epoch, options.windowLength);
+		hrssresponse = generate_response(&stat, options.calcachefile, options.channelName, series->deltaT, series->epoch, options.windowLength);
 		if(!hrssresponse)
 			exit(1);
 
