@@ -190,3 +190,44 @@ XLALCalculateNRStrain(
   return( htData );
 }
 
+
+
+/** For given inspiral parameters, find nearest waveform in 
+    catalog of numerical relativity waveforms.  At the moment, only
+    the mass ratio is considered.  
+*/
+CHAR *
+XLALFindNRFile( NRWaveCatalog *nrCatalog,  /**< input  NR wave catalog  */
+		SimInspiralTable      *inj,    /**< injection details  */
+		INT4  modeL, /**< mode index l*/
+		INT4  modeM /**< mode index m*/)
+{
+
+  REAL8 massRatioIn, massRatio, diff, newDiff;
+  INT4 k, best;
+  CHAR *ret=NULL;
+
+  massRatioIn = inj->mass1/inj->mass2;
+  massRatio = nrCatalog->data[0].massRatio;
+
+  diff = fabs(massRatio - massRatioIn);
+
+  /* look over catalog and fimd waveform closest in mass ratio */
+  for (best = 0, k = 0; k < nrCatalog->length; k++) {
+
+    massRatio = nrCatalog->data[k].massRatio;
+    newDiff = fabs(massRatio - massRatioIn);
+
+    if ( diff > newDiff) {
+      diff = newDiff;
+      best = k;
+    }    
+  } 
+
+  ret = LALMalloc( LALNameLength*sizeof(CHAR) );
+
+  strcpy(ret, nrCatalog->data[best].filename);
+
+  return ret;
+
+}

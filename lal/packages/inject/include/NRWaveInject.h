@@ -69,6 +69,11 @@ XLALCalculateNRStrain(
     CHAR                  *ifo,
     INT4                   sampleRate);
 
+CHAR *
+XLALFindNRFile( NRWaveCatalog nrCatalog;
+		SimInspiralTable  *inj,
+		INT4  modeL, 
+		INT4  modeM );
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */
