@@ -56,8 +56,7 @@ static void print_usage(char *program)
       "  --ifo             ifo         ifo for which to generate injections\n"\
       "  --nr-meta-file    meta_file   file containing details of available\n"\
       "                                numerical relativity waveforms\n"\
-      "  --nr-data-file    meta_file   before we have the meta file, specify\n"\
-      "                                file with numerical relativity waveform\n"\
+      "  --nr-data-dir     meta_file   specify directory containing metadata file\n"\
       "  --gps-start-time  start       start time of output file\n"\
       "  --gps-end-time    end         end time of output file\n"\
       "  --sample-rate     rate        the sample rate used to generate injections\n"\
@@ -75,11 +74,14 @@ int main( int argc, char *argv[] )
 {
   extern int vrbflg;
 
-  LALStatus             status = blank_status;
+  LALStatus     status = blank_status;
 
   CHAR  *injectionFile = NULL;         /* name of file containing injs   */
   CHAR  *nrMetaFile    = NULL;         /* name of file with nr meta info */
-  CHAR  *nrDataFile    = NULL;         /* name of file with nr waveform  */
+  CHAR  *nrDataDir    = NULL;          /* name of dir with nr waveform   */
+  CHAR  *nrDataFile   = NULL;          /* a file with numrel data        */
+
+  NRWaveCatalog nrCatalog;             /* NR wave metadata struct        */
 
   CHAR   ifo[LIGOMETA_IFO_MAX];        /* name of ifo                    */
   int gpsStartSec = -1;                /* start time of data             */
@@ -98,6 +100,7 @@ int main( int argc, char *argv[] )
                                           add injections                 */
   REAL4TimeVectorSeries *strain = NULL;/* h+,hx time series              */
   REAL4TimeSeries       *htData = NULL;/* h(t) data for given detector   */
+
 
   /* getopt arguments */
   struct option long_options[] =
@@ -251,8 +254,8 @@ int main( int argc, char *argv[] )
       case 'd':
         /* create storage for the injection file name */
         optarg_len = strlen( optarg ) + 1;
-        nrDataFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( nrDataFile, optarg, optarg_len );
+        nrDataDir = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( nrDataDir, optarg, optarg_len );
         break;
 
       case '?':
@@ -325,19 +328,13 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  if ( !nrMetaFile && !nrDataFile )
+  if ( !nrMetaFile )
   {
     fprintf( stderr, 
-        "either --nr-meta-file or --nr-data-file must be specified\n");
+        "--nr-meta-file must be specified\n");
     exit( 1 );
   }
  
-  if ( nrMetaFile && nrDataFile )
-  {
-    fprintf( stderr, 
-        "only one of --nr-meta-file or --nr-data-file must be specified\n");
-    exit( 1 );
-  }
  
 
 
@@ -382,37 +379,42 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  for( thisInj = injections; thisInj; thisInj = thisInj ->next )
-  {
-    if ( nrMetaFile )
-    {
-      fprintf( stderr, "XLALFindNRFile hasn't been implemented yet.\n"
-          "Specify the data file using --nr-data-file" );
-      exit( 1 );
+  /* get catalog of numrel waveforms from metadata file */
+  LAL_CALL(LALNRDataFind( &status, &nrCatalog, nrMetaFile, nrDataDir ), &status);
 
-      /* nrDataFile = XLALFindNRFile( nrMetaFile, thisInj ); */
-    }
+  /* start injections */
+  for( thisInj = injections; thisInj; thisInj = thisInj->next )
+  {
+
+    nrDataFile = XLALFindNRFile( &nrCatalog, thisInj, 2, 2);
 
     if ( vrbflg) fprintf(stdout,
-        "Reading the waveform from the file %s ...", nrDataFile );
-    strain = XLALReadNRWave( (thisInj->mass1 + thisInj->mass2), nrDataFile);
+        "Reading the waveform from the file %s ...", nrCatalog.data[0].filename );
+
+    LAL_CALL(LALReadNRWave(&status, &strain, thisInj->mass1 + thisInj->mass2, 
+			   nrDataFile), &status);
+    
     if ( vrbflg) fprintf(stdout, "done\n");
 
     /* compute the h+, hx strain for the given inclination, coalescence phase*/
-    if ( vrbflg )fprintf(stdout,
-        "Generating waveform for inclination = %f, coa_phase = %f\n",
-        thisInj->inclination, thisInj->coa_phase );
+    if ( vrbflg )fprintf(stdout, "Generating waveform for inclination = %f, coa_phase = %f\n",
+			 thisInj->inclination, thisInj->coa_phase );
     strain = XLALOrientNRWave( strain, thisInj->inclination,
-        thisInj->coa_phase );
+			       thisInj->coa_phase,2,2 );
 
     if ( vrbflg ) fprintf(stdout,
         "Generating the strain data for the given sky location\n");
     htData = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate);
-
+    
     /* XXX inject the htData into our injection time stream XXX */
     /*LAL_CALL( LALSSInjectTimeSeries( &status, &injData, htData ), &status );*/
 
   }
+
+  LALFree(nrCatalog.data);
+
+  LALCheckMemoryLeaks(); 
+
   exit( 0 );
 }
 
