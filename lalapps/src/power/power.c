@@ -90,20 +90,17 @@ static struct {
 	UINT4 windowLength;
 	WindowType windowType;
 	char *channelName;
-	char *mdcchannelName;         /* mdc signal only channnel info       */
+	char ifo[3];                /* two character interferometer        */
+	char *mdcCacheFile;         /* name of mdc signal cache file       */
+	char *mdcDirName;           /* name of mdc signal cache file       */
+	char *mdcchannelName;       /* mdc signal only channnel info       */
+	char *burstInjectionFile;   /* file with list of burst injections  */
+	char *inspiralInjectionFile;/* file with list of burst injections  */
+	char *simInjectionFile;     /* file with list of sim injections    */
+	char *cachefile;            /* name of file with frame cache info  */
+	char *dirname;              /* name of directory with frames       */
 } options;
- 
-/* global variables */
-CHAR ifo[3];                        /* two character interferometer        */
-CHAR *cachefile;                    /* name of file with frame cache info  */
-CHAR *dirname;                      /* name of directory with frames       */
 
-/* data conditioning parameters */
-CHAR *burstInjectionFile;           /* file with list of burst injections  */
-CHAR *inspiralInjectionFile;        /* file with list of burst injections  */
-CHAR *simInjectionFile;             /* file with list of sim injections  */
-CHAR *mdcCacheFile;                 /* name of mdc signal cache file       */
-CHAR *mdcDirName;                 /* name of mdc signal cache file       */
 
 /*
  * ============================================================================
@@ -215,7 +212,7 @@ static void print_usage(char *program)
 "	[--seed <seed>]\n" \
 "	 --tile-stride-fraction <fraction>\n" \
 "	 --lnthreshold <ln threshold>\n" \
-"	[--useoverwhitening]\n" \
+"	[--enable-over-whitening]\n" \
 "	[--user-tag <comment>]\n" \
 "	[--verbose]\n" \
 "	 --window <window>\n" \
@@ -332,7 +329,7 @@ static int check_for_missing_parameters(char *prog, struct option *long_options,
 		}
 	}
 
-	if(!!cachefile + !!dirname + (options.noise_rms > 0.0) != 1) {
+	if(!!options.cachefile + !!options.dirname + (options.noise_rms > 0.0) != 1) {
 		fprintf(stderr, "%s: must provide exactly one of --frame-cache, --frame-dir or --gaussian-noise-rms\n", prog);
 		got_all_arguments = FALSE;
 	}
@@ -385,7 +382,7 @@ void parse_command_line(
 { 
 	char msg[240];
 	int args_are_bad = FALSE;
-	int useoverwhitening;
+	int enableoverwhitening;
 	int c;
 	int option_index;
 	int ram;
@@ -424,7 +421,7 @@ void parse_command_line(
 		{"seed",                required_argument, NULL,           'c'},
 		{"tile-stride-fraction", required_argument, NULL,          'f'},
 		{"lnthreshold",         required_argument, NULL,           'g'},
-		{"useoverwhitening",    no_argument, &useoverwhitening,   TRUE},  
+		{"enable-over-whitening", no_argument, &enableoverwhitening,   TRUE},  
 		{"user-tag",            required_argument, NULL,           'h'},
 		{"verbose",             no_argument, &options.verbose,    TRUE},
 		{"window",              required_argument, NULL,           'i'},
@@ -448,6 +445,7 @@ void parse_command_line(
 	options.bandwidth = 0;	/* impossible */
 	options.calCacheFile = NULL;	/* default */
 	options.channelName = NULL;	/* impossible */
+	memset(options.ifo, 0, sizeof(options.ifo));	/* empty */
 	options.cluster = FALSE;	/* default */
 	options.comment = "";		/* default */
 	options.FilterCorruption = -1;	/* impossible */
@@ -470,18 +468,17 @@ void parse_command_line(
 	options.simDistance = 10000.0;  /* default (10 Mpc) */
 	options.simCacheFile = NULL;	/* default */
 	options.simdirname = NULL;      /* default */
+	options.burstInjectionFile = NULL;	/* default == disable */
+	options.simInjectionFile = NULL;	/* default == disable */
+	options.inspiralInjectionFile = NULL;	/* default == disable */
+	options.cachefile = NULL;	        /* default == disable */
+	options.dirname = NULL;	                /* default == disable */
 
 	ram = 0;	/* default */
 
-	cachefile = NULL;	        /* default */
-	dirname = NULL;	                /* default */
-	memset(ifo, 0, sizeof(ifo));	/* default */
-	burstInjectionFile = NULL;	/* default */
-	simInjectionFile = NULL;	/* default */
-	inspiralInjectionFile = NULL;	/* default */
-	mdcCacheFile = NULL;	        /* default */
-	mdcDirName = NULL;	        /* default */
-	useoverwhitening = FALSE;       /* default */
+	options.mdcCacheFile = NULL;	        /* default == disable */
+	options.mdcDirName = NULL;	        /* default == disable */
+	enableoverwhitening = FALSE;       /* default */
 
 	/*
 	 * Parse command line.
@@ -507,7 +504,7 @@ void parse_command_line(
 
 		case 'C':
 		options.channelName = optarg;
-		memcpy(ifo, optarg, sizeof(ifo) - 1);
+		memcpy(options.ifo, optarg, sizeof(options.ifo) - 1);
 		ADD_PROCESS_PARAM("string");
 		break;
 
@@ -522,17 +519,17 @@ void parse_command_line(
 		break;
 
 		case 'G':
-		cachefile = optarg;
+		options.cachefile = optarg;
 		ADD_PROCESS_PARAM("string");
 		break;
 
 		case 'H':
-		dirname =  optarg;
+		options.dirname =  optarg;
 		ADD_PROCESS_PARAM("string");
 		break;
 
 		case 'I':
-		inspiralInjectionFile = optarg;
+		options.inspiralInjectionFile = optarg;
 		ADD_PROCESS_PARAM("string");
 		break;
 
@@ -579,7 +576,7 @@ void parse_command_line(
 		break;
 
 		case 'P':
-		burstInjectionFile = optarg;
+		options.burstInjectionFile = optarg;
 		ADD_PROCESS_PARAM("string");
 		break;
 
@@ -594,7 +591,7 @@ void parse_command_line(
 		break;
 
 		case 'R':
-		mdcCacheFile = optarg;
+		options.mdcCacheFile = optarg;
 		ADD_PROCESS_PARAM("string");
 		break;
 
@@ -767,7 +764,7 @@ void parse_command_line(
 		break;
 
 		case 't':
-		simInjectionFile = optarg;
+		options.simInjectionFile = optarg;
 		ADD_PROCESS_PARAM("string");
 		break;
 
@@ -897,7 +894,7 @@ void parse_command_line(
 	params->tf_timeBins = (options.windowLength / 2) / (options.ResampleRate * params->tf_deltaT);
 	params->tf_freqBins = options.bandwidth / params->tf_deltaF;
 
-	params->useOverWhitening = useoverwhitening;
+	params->useOverWhitening = enableoverwhitening;
 
 	if(options.verbose) {
 		fprintf(stderr, "%s: using --psd-average-points %zu\n", argv[0], options.PSDAverageLength);
@@ -1057,7 +1054,7 @@ static COMPLEX8FrequencySeries *generate_response(
 	FrCache *calcache = NULL;
 
 	memset(&calfacts, 0, sizeof(calfacts));
-	calfacts.ifo = ifo;
+	calfacts.ifo = options.ifo;
 
 	response = XLALCreateCOMPLEX8FrequencySeries(chname, &epoch, 0.0, 1.0 / (length * deltaT), &strainPerCount, length / 2 + 1);
 	if(!response) {
@@ -1109,7 +1106,7 @@ static void add_burst_injections(
 	if(options.verbose)
 		fprintf(stderr, "add_burst_injections(): reading in SimBurst Table\n");
 
-	LAL_CALL(LALSimBurstTableFromLIGOLw(stat, &injections, burstInjectionFile, startTime, stopTime), stat);
+	LAL_CALL(LALSimBurstTableFromLIGOLw(stat, &injections, options.burstInjectionFile, startTime, stopTime), stat);
 
 	if(options.verbose)
 		fprintf(stderr, "add_burst_injections(): injecting signals into time series\n");
@@ -1153,7 +1150,7 @@ static void add_inspiral_injections(
 	if(options.verbose)
 	  fprintf(stderr, "add_inspiral_injections(): reading in SimInspiral Table\n");
 
-	numInjections = SimInspiralTableFromLIGOLw(&injections, inspiralInjectionFile, startTime, stopTime);
+	numInjections = SimInspiralTableFromLIGOLw(&injections, options.inspiralInjectionFile, startTime, stopTime);
 
 	if(numInjections < 0){
 	  fprintf(stderr,"add_inspiral_injections():error:cannot read injection file\n");
@@ -1183,8 +1180,9 @@ static void add_inspiral_injections(
  */
 
 static void add_mdc_injections(
-	LALStatus *stat, 
-	const char *mdcCacheFile, 
+	LALStatus *stat,
+	const char *mdcDirName,
+	const char *mdcCacheFile,
 	REAL4TimeSeries *series,
 	LIGOTimeGPS epoch,
 	LIGOTimeGPS stopepoch,
@@ -1316,7 +1314,7 @@ static void add_sim_injections(
 	if(options.verbose)
 	  fprintf(stderr, "add_sim_injections(): reading in SimBurst Table\n");
 	
-	LAL_CALL(LALSimBurstTableFromLIGOLw(stat, &injections, simInjectionFile, startTime, stopTime), stat);
+	LAL_CALL(LALSimBurstTableFromLIGOLw(stat, &injections, options.simInjectionFile, startTime, stopTime), stat);
 	
 	simBurst = injections;
 	while ( simBurst ){
@@ -1515,7 +1513,7 @@ static void output_results(LALStatus *stat, char *file, MetadataTable *procTable
 	LAL_CALL(LALOpenLIGOLwXMLFile(stat, &xml, file), stat);
 
 	/* process table */
-	snprintf(procTable->processTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
+	snprintf(procTable->processTable->ifos, LIGOMETA_IFOS_MAX, "%s", options.ifo);
 	LAL_CALL(LALGPSTimeNow(stat, &(procTable->processTable->end_time), &accuracy), stat);
 	LAL_CALL(LALBeginLIGOLwXMLTable(stat, &xml, process_table), stat);
 	LAL_CALL(LALWriteLIGOLwXMLTable(stat, &xml, *procTable, process_table), stat);
@@ -1527,7 +1525,7 @@ static void output_results(LALStatus *stat, char *file, MetadataTable *procTable
 	LAL_CALL(LALEndLIGOLwXMLTable(stat, &xml), stat);
 
 	/* search summary table */
-	snprintf(searchsumm->searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
+	snprintf(searchsumm->searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", options.ifo);
 	searchsumm->searchSummaryTable->nevents = XLALCountSnglBurst(burstEvent);
 	LAL_CALL(LALBeginLIGOLwXMLTable(stat, &xml, search_summary_table), stat);
 	LAL_CALL(LALWriteLIGOLwXMLTable(stat, &xml, *searchsumm, search_summary_table), stat);
@@ -1625,12 +1623,12 @@ int main( int argc, char *argv[])
 		 * Get the data.
 		 */
 
-		if(dirname || cachefile) {
+		if(options.dirname || options.cachefile) {
 			/*
 			 * Read from frame files
 			 */
 
-			series = get_time_series(&stat, dirname, cachefile, options.channelName, epoch, options.stopEpoch, options.maxSeriesLength, options.calibrated, options.cal_high_pass);
+			series = get_time_series(&stat, options.dirname, options.cachefile, options.channelName, epoch, options.stopEpoch, options.maxSeriesLength, options.calibrated, options.cal_high_pass);
 			if(!series) {
 				fprintf(stderr, "%s: error: failure reading input data\n", argv[0]);
 				exit(1);
@@ -1664,7 +1662,7 @@ int main( int argc, char *argv[])
 		 * requested.
 		 */
 
-		if(burstInjectionFile || inspiralInjectionFile || options.simCacheFile) {
+		if(options.burstInjectionFile || options.inspiralInjectionFile || options.simCacheFile) {
 			COMPLEX8FrequencySeries *response;
 
 			/* Create the response function (generates unity
@@ -1674,11 +1672,11 @@ int main( int argc, char *argv[])
 				exit(1);
 
 			/* perform injections */
-			if(burstInjectionFile)
+			if(options.burstInjectionFile)
 				add_burst_injections(&stat, series, response);
-			else if(inspiralInjectionFile)
+			if(options.inspiralInjectionFile)
 				add_inspiral_injections(&stat, series, response);
-			else if(options.simCacheFile)
+			if(options.simCacheFile)
 				add_sim_injections(&stat, series, response, options.maxSeriesLength);
 
 			/*clean up*/
@@ -1689,8 +1687,8 @@ int main( int argc, char *argv[])
 		 * Add MDC injections into the time series if requested.
 		 */
 
-		if(mdcCacheFile)
-		        add_mdc_injections(&stat, mdcCacheFile, series, epoch, options.stopEpoch, options.maxSeriesLength);
+		if(options.mdcCacheFile)
+		        add_mdc_injections(&stat, options.mdcDirName, options.mdcCacheFile, series, epoch, options.stopEpoch, options.maxSeriesLength);
 
 		/*
 		 * Generate the response function at the right deltaf to be
@@ -1788,7 +1786,7 @@ int main( int argc, char *argv[])
 	 * Output the results.
 	 */
 
-	snprintf(outfilename, sizeof(outfilename)-1, "%s-POWER_%s-%d-%d.xml", ifo, options.comment, options.startEpoch.gpsSeconds, options.stopEpoch.gpsSeconds - options.startEpoch.gpsSeconds);
+	snprintf(outfilename, sizeof(outfilename)-1, "%s-POWER_%s-%d-%d.xml", options.ifo, options.comment, options.startEpoch.gpsSeconds, options.stopEpoch.gpsSeconds - options.startEpoch.gpsSeconds);
 	outfilename[sizeof(outfilename)-1] = '\0';
 	output_results(&stat, outfilename, &procTable, &procparams, &searchsumm, burstEvent);
 
