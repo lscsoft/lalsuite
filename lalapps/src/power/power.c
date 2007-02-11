@@ -73,7 +73,7 @@ RCSID("power $Id$");
 static struct {
 	/* search parameters */
 	int bandwidth;
-	int window_length;
+	unsigned window_length;
 	WindowType window_type;
 	int cluster;		/* TRUE == perform clustering          */
 	size_t psd_length;	/* number of samples to use for PSD    */
@@ -238,19 +238,19 @@ static void print_usage(const char *program)
 
 static void print_bad_argument(const char *prog, const char *arg, const char *msg)
 {
-	fprintf(stderr, "%s: error: invalid argument for --%s: %s\n", prog, arg, msg);
+	XLALPrintError("%s: error: invalid argument for --%s: %s\n", prog, arg, msg);
 }
 
 
 static void print_missing_argument(const char *prog, const char *arg)
 {
-	fprintf(stderr, "%s: error: --%s not specified\n", prog, arg);
+	XLALPrintError("%s: error: --%s not specified\n", prog, arg);
 }
 
 
 static void print_alloc_fail(const char *prog, const char *msg)
 {
-	fprintf(stderr, "%s: error: memory allocation failure %s\n", prog, msg);
+	XLALPrintError("%s: error: memory allocation failure %s\n", prog, msg);
 }
 
 
@@ -350,7 +350,7 @@ static int check_for_missing_parameters(char *prog, struct option *long_options,
 	}
 
 	if(!!options.cache_filename + (options.noise_rms > 0.0) != 1) {
-		fprintf(stderr, "%s: must provide exactly one of --frame-cache or --gaussian-noise-rms\n", prog);
+		XLALPrintError("%s: must provide exactly one of --frame-cache or --gaussian-noise-rms\n", prog);
 		got_all_arguments = FALSE;
 	}
 
@@ -816,7 +816,7 @@ void parse_command_line(int argc, char *argv[], EPSearchParams *params, Metadata
 	 */
 
 	if(XLALGPSCmp(&options.gps_start, &options.gps_end) > 0) {
-		fprintf(stderr, "%s: error: GPS start time > GPS stop time\n", argv[0]);
+		XLALPrintError("%s: error: GPS start time > GPS stop time\n", argv[0]);
 		args_are_bad = TRUE;
 	}
 
@@ -847,7 +847,7 @@ void parse_command_line(int argc, char *argv[], EPSearchParams *params, Metadata
 
 	params->window = XLALCreateREAL4Window(options.window_length, options.window_type, 0.0);
 	if(!params->window) {
-		fprintf(stderr, "%s: failure generating time-domain window\n", argv[0]);
+		XLALPrintError("%s: failure generating time-domain window\n", argv[0]);
 		exit(1);
 	}
 
@@ -864,9 +864,9 @@ void parse_command_line(int argc, char *argv[], EPSearchParams *params, Metadata
 	 */
 
 	if(!options.cal_cache_filename) {
-		fprintf(stderr, "warning: no calibration cache is provided:  software injections and hrss will be computed with unit response\n");
+		XLALPrintWarning("warning: no calibration cache is provided:  software injections and hrss will be computed with unit response\n");
 	} else if(options.calibrated) {
-		fprintf(stderr, "error: calibration cache provided for use with calibrated data!\n");
+		XLALPrintError("error: calibration cache provided for use with calibrated data!\n");
 		exit(1);
 	}
 
@@ -882,10 +882,10 @@ void parse_command_line(int argc, char *argv[], EPSearchParams *params, Metadata
 	 */
 
 	if(options.cal_high_pass > params->tf_flow)
-		fprintf(stderr, "%s: warning: calibrated data quantization high-pass frequency (%f Hz) greater than TF plane low frequency (%f Hz)\n", argv[0], options.cal_high_pass, params->tf_flow);
+		XLALPrintWarning("%s: warning: calibrated data quantization high-pass frequency (%f Hz) greater than TF plane low frequency (%f Hz)\n", argv[0], options.cal_high_pass, params->tf_flow);
 
 	if(options.high_pass > params->tf_flow - 10.0)
-		fprintf(stderr, "%s: warning: data conditioning high-pass frequency (%f Hz) greater than 10 Hz below TF plane low frequency (%f Hz)\n", argv[0], options.high_pass, params->tf_flow);
+		XLALPrintWarning("%s: warning: data conditioning high-pass frequency (%f Hz) greater than 10 Hz below TF plane low frequency (%f Hz)\n", argv[0], options.high_pass, params->tf_flow);
 
 	/*
 	 * Miscellaneous chores.
@@ -1065,15 +1065,15 @@ static COMPLEX8FrequencySeries *generate_response(LALStatus *stat, const char *c
  */
 
 
-static void add_burst_injections(LALStatus *stat, REAL4TimeSeries *series, COMPLEX8FrequencySeries *response)
+static REAL4TimeSeries *add_burst_injections(LALStatus *stat, REAL4TimeSeries *series, COMPLEX8FrequencySeries *response)
 {
-	INT4 startTime = series->epoch.gpsSeconds;
-	INT4 stopTime = startTime + series->data->length * series->deltaT;
+	const INT4 startTime = series->epoch.gpsSeconds;
+	const INT4 stopTime = startTime + series->data->length * series->deltaT;
+	const INT4 calType = 0;
 	SimBurstTable *injections = NULL;
-	INT4 calType = 0;
 
 	if(!response) {
-		fprintf(stderr, "add_burst_injections(): must supply calibration information for injections\n");
+		XLALPrintError("add_burst_injections(): must supply calibration information for injections\n");
 		exit(1);
 	}
 
@@ -1092,6 +1092,8 @@ static void add_burst_injections(LALStatus *stat, REAL4TimeSeries *series, COMPL
 		injections = injections->next;
 		LALFree(thisEvent);
 	}
+
+	return series;
 }
 
 
@@ -1102,7 +1104,7 @@ static void add_burst_injections(LALStatus *stat, REAL4TimeSeries *series, COMPL
  */
 
 
-static void add_inspiral_injections(LALStatus *stat, REAL4TimeSeries *series, COMPLEX8FrequencySeries *response)
+static REAL4TimeSeries *add_inspiral_injections(LALStatus *stat, REAL4TimeSeries *series, COMPLEX8FrequencySeries *response)
 {
 	INT4 startTime = series->epoch.gpsSeconds;
 	INT4 stopTime = startTime + series->data->length * series->deltaT;
@@ -1111,7 +1113,7 @@ static void add_inspiral_injections(LALStatus *stat, REAL4TimeSeries *series, CO
 	INT4 numInjections = 0;
 
 	if(!response) {
-		fprintf(stderr, "add_inspiral_injections(): must supply calibration information for injections\n");
+		XLALPrintError("add_inspiral_injections(): must supply calibration information for injections\n");
 		exit(1);
 	}
 
@@ -1120,7 +1122,7 @@ static void add_inspiral_injections(LALStatus *stat, REAL4TimeSeries *series, CO
 	numInjections = SimInspiralTableFromLIGOLw(&injections, options.sim_inspiral_filename, startTime, stopTime);
 
 	if(numInjections < 0) {
-		fprintf(stderr, "add_inspiral_injections():error:cannot read injection file\n");
+		XLALPrintError("add_inspiral_injections():error:cannot read injection file\n");
 		exit(1);
 	}
 
@@ -1136,6 +1138,8 @@ static void add_inspiral_injections(LALStatus *stat, REAL4TimeSeries *series, CO
 		injections = injections->next;
 		LALFree(thisEvent);
 	}
+
+	return series;
 }
 
 
@@ -1146,15 +1150,18 @@ static void add_inspiral_injections(LALStatus *stat, REAL4TimeSeries *series, CO
  */
 
 
-static void add_mdc_injections(const char *mdccachefile, REAL4TimeSeries *series, LIGOTimeGPS epoch, LIGOTimeGPS stopepoch, size_t lengthlimit)
+static REAL4TimeSeries *add_mdc_injections(const char *mdccachefile, REAL4TimeSeries *series, LIGOTimeGPS epoch, LIGOTimeGPS stopepoch, size_t lengthlimit)
 {
-	REAL4TimeSeries *mdc = NULL;
+	const char func[] = "add_mdc_injections";
+	REAL4TimeSeries *mdc;
 	size_t i;
 
-	XLALPrintInfo("add_mdc_injections(): using MDC frames for injections\n");
+	XLALPrintInfo("add_mdc_injections(): mixing data from MDC frames\n");
 
-	/* set quantization high pass at 40.0 Hz */
+	/* note: quantization high pass at 40.0 Hz */
 	mdc = get_time_series(mdccachefile, options.mdc_channel_name, epoch, stopepoch, lengthlimit, TRUE, 40.0);
+	if(!mdc)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
 	/* add the mdc signal to the given time series */
 	for(i = 0; i < series->data->length; i++)
@@ -1162,6 +1169,8 @@ static void add_mdc_injections(const char *mdccachefile, REAL4TimeSeries *series
 
 	/* clean up */
 	XLALDestroyREAL4TimeSeries(mdc);
+
+	return series;
 }
 
 
@@ -1196,7 +1205,7 @@ static void add_sim_injections(LALStatus *stat, REAL4TimeSeries *series, COMPLEX
 	BurstParamStruc burstParam;
 
 	if(!response) {
-		fprintf(stderr, "add_sim_injections(): must supply calibration information for injections\n");
+		XLALPrintError("add_sim_injections(): must supply calibration information for injections\n");
 		exit(1);
 	}
 
@@ -1204,7 +1213,7 @@ static void add_sim_injections(LALStatus *stat, REAL4TimeSeries *series, COMPLEX
 	memset(&detector, 0, sizeof(DetectorResponse));
 	transfer = (COMPLEX8FrequencySeries *) LALCalloc(1, sizeof(COMPLEX8FrequencySeries));
 	if(!transfer) {
-		fprintf(stderr, "add_sim_injections(): detector.transfer not allocated\n");
+		XLALPrintError("add_sim_injections(): detector.transfer not allocated\n");
 		exit(1);
 	}
 
@@ -1431,7 +1440,7 @@ static SnglBurstTable **analyze_series(SnglBurstTable **addpoint, REAL4TimeSerie
 		while(*addpoint)
 			addpoint = &(*addpoint)->next;
 		if(xlalErrno) {
-			fprintf(stderr, "analyze_series(): fatal error: XLALEPSearch() returned failure\n");
+			XLALPrintError("analyze_series(): fatal error: XLALEPSearch() returned failure\n");
 			exit(1);
 		}
 
@@ -1575,7 +1584,7 @@ int main(int argc, char *argv[])
 
 			series = get_time_series(options.cache_filename, options.channel_name, epoch, options.gps_end, options.max_series_length, options.calibrated, options.cal_high_pass);
 			if(!series) {
-				fprintf(stderr, "%s: error: failure reading input data\n", argv[0]);
+				XLALPrintError("%s: error: failure reading input data\n", argv[0]);
 				exit(1);
 			}
 		} else if(options.noise_rms > 0.0) {
@@ -1588,7 +1597,7 @@ int main(int argc, char *argv[])
 				length = min(options.max_series_length, length);
 			series = XLALCreateREAL4TimeSeries(options.channel_name, &epoch, 0.0, (REAL8) 1.0 / options.resample_rate, &lalADCCountUnit, length);
 			if(!series) {
-				fprintf(stderr, "%s: error: failure allocating data for Gaussian noise\n", argv[0]);
+				XLALPrintError("%s: error: failure allocating data for Gaussian noise\n", argv[0]);
 				exit(1);
 			}
 			if(!rparams)
@@ -1598,7 +1607,7 @@ int main(int argc, char *argv[])
 			/*
 			 * Should never get here.
 			 */
-			fprintf(stderr, "%s: error: oops, don't know how to get data\n", argv[0]);
+			XLALPrintError("%s: error: oops, don't know how to get data\n", argv[0]);
 			exit(1);
 		}
 
@@ -1659,7 +1668,7 @@ int main(int argc, char *argv[])
 		}
 
 		if(XLALEPConditionData(series, options.high_pass, (REAL8) 1.0 / options.resample_rate, options.filter_corruption)) {
-			fprintf(stderr, "%s: XLALEPConditionData() failed.\n", argv[0]);
+			XLALPrintError("%s: XLALEPConditionData() failed.\n", argv[0]);
 			exit(1);
 		}
 
