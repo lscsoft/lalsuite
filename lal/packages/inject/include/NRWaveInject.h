@@ -71,7 +71,7 @@ XLALCalculateNRStrain(
     INT4                   sampleRate);
 
 CHAR *
-XLALFindNRFile( NRWaveCatalog nrCatalog;
+XLALFindNRFile( NRWaveCatalog nrCatalog,
 		SimInspiralTable  *inj,
 		INT4  modeL, 
 		INT4  modeM );
