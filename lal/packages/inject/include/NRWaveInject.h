@@ -47,6 +47,7 @@
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/NRWaveIO.h>
 
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {
