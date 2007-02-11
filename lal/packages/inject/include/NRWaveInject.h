@@ -70,6 +70,12 @@ XLALCalculateNRStrain(
     CHAR                  *ifo,
     INT4                   sampleRate);
 
+
+REAL4TimeSeries *
+XLALInterpolateNRWave( REAL4TimeSeries *in,
+		       INT4      sampleRate);
+
+
 CHAR *
 XLALFindNRFile( NRWaveCatalog *nrCatalog,
 		SimInspiralTable  *inj,

@@ -33,14 +33,14 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/Date.h>
 #include <lal/LALConstants.h>
-
+#include <lal/NRWaveInject.h>
 
 /** Spherical Harmonic for the l=2 mode */
 COMPLEX16 SphHarm ( 
-    UINT4   L,      /* value of L */
-    INT4    M,      /* value of M */
-    REAL4   theta,  /* angle with respect to the z axis */
-    REAL4   phi    /* angle with respect to the x axis */)
+    UINT4   L,      /**< value of L */
+    INT4    M,      /**< value of M */
+    REAL4   theta,  /**< angle with respect to the z axis */
+    REAL4   phi     /**< angle with respect to the x axis */)
 
 {
     COMPLEX16  out; /* complex number */
@@ -89,7 +89,7 @@ COMPLEX16 SphHarm (
     else 
     {
 	/* Error message informing that L!=2 is not yet implemented*/
-	printf("Sorry, for the moment we haven't implemented anything other than l=2");
+	fprintf(stderr, "Sorry, for the moment we haven't implemented anything other than l=2");
     }
     
     return( out );
@@ -135,11 +135,10 @@ XLALOrientNRWave(
 
 
 REAL4TimeSeries *
-XLALCalculateNRStrain( 
-    REAL4TimeVectorSeries *strain, /**< h+, hx time series data*/
-    SimInspiralTable      *inj,    /**< injection details      */
-    CHAR                  *ifo,    /**< interferometer */
-    INT4            sampleRate     /**< sample rate of time series */)
+XLALCalculateNRStrain( REAL4TimeVectorSeries *strain, /**< h+, hx time series data*/
+		       SimInspiralTable      *inj,    /**< injection details      */
+		       CHAR                  *ifo,    /**< interferometer */
+		       INT4            sampleRate     /**< sample rate of time series */)
 {
   LALDetector            det;
   double                 fplus;
@@ -185,9 +184,80 @@ XLALCalculateNRStrain(
       fcross * strain->data->data[vecLength + k];
   }
 
-  /* XXX TO DO: interpolate data to the required sample rate XXX */
+  /*interpolate to given sample rate */
+  htData = XLALInterpolateNRWave( htData, sampleRate);
 
   return( htData );
+}
+
+
+
+/** Function for interpolating time series to a given sampling rate. 
+    Input vector is destroyed and a new vector is allocated.
+*/
+REAL4TimeSeries *
+XLALInterpolateNRWave( REAL4TimeSeries *in,           /**< input strain time series */
+		       INT4            sampleRate     /**< sample rate of time series */)
+{
+
+  REAL4TimeSeries *ret=NULL;
+  REAL8 deltaTin, deltaTout, r, y1, y2;
+  REAL8 tObs; /* duration of signal */
+  UINT4 k, lo, numPoints;
+  
+  deltaTin = in->deltaT;
+  tObs = deltaTin * in->data->length;  
+
+  /* length of output vector */ 
+  numPoints = (UINT4) (sampleRate * tObs);
+
+
+  /* allocate memory */
+  ret = LALCalloc(1, sizeof(*ret));
+  if (!ret) 
+  {
+    XLAL_ERROR_NULL( "XLALCalculateNRStrain", XLAL_ENOMEM );
+  }
+
+  ret->data = XLALCreateREAL4Vector( numPoints );
+  if (! ret->data) 
+  {
+    XLAL_ERROR_NULL( "XLALCalculateNRStrain", XLAL_ENOMEM );
+  }
+
+  ret->deltaT = 1./sampleRate;
+  deltaTout = ret->deltaT;
+
+  /* copy stuff from in which should be the same */
+  ret->epoch = in->epoch;
+  ret->f0 = in->f0;
+  ret->sampleUnits = in->sampleUnits;
+  strcpy(ret->name, in->name);
+
+  /* go over points of output vector and interpolate linearly
+     using closest points of input */
+  for (k = 0; k < numPoints; k++) {
+
+    lo = (UINT4)( k*deltaTout / deltaTin);
+
+    /* y1 and y2 are the input values at x1 and x2 */
+    /* here we need to make sure that we don't exceed
+       bounds of input vector */
+    y1 = in->data->data[lo];
+    y2 = in->data->data[lo+1];
+
+    /* we want to calculate y2*r + y1*(1-r) where
+       r = (x-x1)/(x2-x1) */
+    r = k*deltaTout / deltaTin - lo;
+    
+    ret->data->data[k] = y2 * r + y1 * (1 - r);
+  }
+
+  /* destroy input vector */
+  XLALDestroyREAL4Vector ( in->data);
+  LALFree(in);
+
+  return ret;
 }
 
 
@@ -197,10 +267,10 @@ XLALCalculateNRStrain(
     the mass ratio is considered.  
 */
 CHAR *
-XLALFindNRFile( NRWaveCatalog *nrCatalog,  /**< input  NR wave catalog  */
-		SimInspiralTable      *inj,    /**< injection details  */
-		INT4  modeL, /**< mode index l*/
-		INT4  modeM /**< mode index m*/)
+XLALFindNRFile( NRWaveCatalog *nrCatalog,   /**< input  NR wave catalog  */
+		SimInspiralTable      *inj, /**< injection details  */
+		INT4  modeL,                /**< mode index l*/
+		INT4  modeM                 /**< mode index m*/)
 {
 
   REAL8 massRatioIn, massRatio, diff, newDiff;
