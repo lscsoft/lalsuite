@@ -13,15 +13,82 @@ $Id$
 \idx{LALInspiralHybridHexagonalBank()}
 
 \subsubsection*{Description}
-This code does almost the same as the standard Hexagonal Bank code. However, once the templates cover both the equal line and an
-other line (m1=min mass or m2 = max mass) then, there is no need to carry on any square/hexagonal placement. One can simply
-poulate template along a bissectrice. 
+This code does almost the same as the standard Hexagonal Bank code. However, 
+once the templates cover both the equal line and an other line ($m_1={\rm mMin}$ 
+or $m_2 ={\rm mMax}$), then there is no need to carry on any square/hexagonal 
+placement. One can simply populate templates along a bissectrice. 
+
 \subsubsection*{Algorithm}
+The algorithm is identical to the hexagonal placement. However, once a template covers
+both the equal mass line and the upper boundary, then the hexagonal placement stops. 
+So, an additional placement is needed to finalise the bank. In principle the placement 
+needs to be completed on bothe side of the template bank, at low mass and high mass. So, 
+we should start from the two templates which covers the two boundaries and populate the 
+parameter space along a bissectrice. 
+
+
+The coordinates of the bissectrice at a given $tau_0$ coordinate is estimated by tracing a vertical 
+line in the $\tau_0/tau_3$ plane, estimate the vlue of $tau_3$ on the upper boundary and low 
+boundary ($\eta=1/4$ line), and finally take the mean of the two values. Although,  is is an approximation
+since we should also take into account the orientation of the ellipse, we 
+think this is good enough.  The vertical line crosses the parameter space on the
+$\eta=1/4$ line and the other parameter space boundary which is define either by (1)
+$m_1=variable$ and $m_2=mMin$ or (2) $m_1=variable$ and $m_2=mMax$. Concerning (1), 
+$\eta=1/4$, this is a trivial computation, since 
+\begin{equation}
+\tau_3 =    \frac{  A3}{\eta}  \left( \frac{\eta \tau_0}{A0} \right)^{2/5},
+\end{equation}
+which in the case of $\eta=1/4$ simply becomes :
+\begin{equation}
+\tau_3 =     4 A3  \left( \frac{\tau_0}{4 A0} \right)^{2/5}.
+\end{equation}
+In the case (2), if $\tau_0$ is provided, if we can extract the total mass and $\eta$ parameter, 
+then $tau_3$ is given by 
+\begin{equation}
+\tau_3 =    \frac{  A3}{\eta}  M^{-2/3}.
+\end{equation}
+So, we need $M$ and $\eta$. Starting from
+\begin{equation}
+\tau_0 =    \frac{  A0}{\eta}  \left( M \right)^{-5/3}, 
+\end{equation}
+we can extract a cubic equation
+\begin{equation}
+x^3 - px+q=0
+\end{equation}
+where $x = M^{1/3}$, $p = -\frac{A0}{\tau_0/m_{\rm Extreme}}$ and $q= - m_{\rm Extreme}=0$. $ m_{\rm Extreme}$ 
+is either set to mMin or mMax depending on which side of the parameter space we are. 
+
+The solution for $x$ is standard and takes the expression : 
+\begin{equation}
+x =  \left(-\frac{q}{2}-\frac{1}{2}*\sqrt{\frac{27 q^2 + 4 p^3}{27}}\right)^{\frac{1}{3}}
+   + \left(-\frac{q}{2}+\frac{1}{2}*\sqrt{\frac{27 q^2 + 4 p^3}{27}}\right)^{\frac{1}{3}};
+\end{equation}
+
+\begin{figure}[]
+\begin{center}
+\includegraphics[angle=-180, width=-3.5 true in]{LALInspiralHybridHexa2}
+\label{fig:hybridhexa1}
+\end{center}
+\caption{Example of hybrid hexagonal placement. Once an ellipse covers the upper and lower boundary, then the hexagonal
+placement stops. This occurs neccesseraly at low and high mass range. }
+\end{figure}
+ 
+
+\begin{figure}[]
+\begin{center}
+\includegraphics[angle=-180, width=-3.5 true in]{LALInspiralHybridHexa1}
+\label{fig:hybridhexa1}
+\end{center}
+\caption{Example of hybrid hexagonal placement. Once the ellipses covers the upper and lower part of the parameter space (at
+tau0=3.6 and tau0=0.4), then the placement is switched from the hexagonal to a placement along the bissectric of the
+upper/lower boundaries as described in the text.}
+\end{figure}
+ 
 
 \subsubsection*{Uses}
 \begin{verbatim}
-LALInspiralParameterCalc()
-LALInspiralComputeMetric()
+LALPopulateNarrowEdge()
+XLALInspiralBissectionLine ()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -39,18 +106,10 @@ LALInspiralComputeMetric()
 
 
 
-#define Power(a,b) (pow((a),(b)))
-#define Sqrt(a)    (sqrt((a)))
-#define MT_SUN     (4.92549095e-6)
 
-REAL8 solveForM (REAL8 x, REAL8 p, REAL8 q, REAL8 a);
-REAL8 XLALInspiralBissectionLine (REAL8 x, REAL8 fa, REAL8 mMin, REAL8 mMax);
-REAL8 getSqRootArgument (REAL8 x, REAL8 p, REAL8 q, REAL8 a);
-
-
-
+  
 void
-LALPopulateNarrowEdge(LALStatus       *status,
+LALPopulateNarrowEdge(LALStatus       	*status,
 		      InspiralMomentsEtc      *moments,
 		      InspiralCell            **cell, 
 		      INT4                     headId,
@@ -472,99 +531,33 @@ XLALInspiralBissectionLine (
 	REAL8 mMin,
 	REAL8 mMax)
 {
-
-  REAL8  piFa;
-  REAL8 tau3_a, tau3_b, p, q, M, S, eta, xbndry;
-  REAL8 A, B, A0, A3;
+  REAL8 piFa;
+  REAL8 tau3_a, tau3_b, M, eta, massSep;
   
-  
-
-  A0 = (5.0 / 256.0) * pow( LAL_PI * fL, (-8.0/3.0));
-
   /* First we solve for the lower (equal mass) limit */
   tau3_a = XLALInspiralTau3FromTau0AndEqualMassLine( tau0, fL);
 
   /* Figure out the boundary between m1 = mMin and m1 = mMax */
-  M   = mMin + mMax;
-  eta = (mMin*mMax)/pow(M, 2.0);
-  xbndry = A0 * pow(M*MT_SUN, -5.0/3.0) / eta;
-
-  /* Next we solve for the upper part */
-  p = pow(tau0*mMin/A0, -3.0/5.0);
-  if (tau0 >= xbndry )
-  { 
-    q = mMin;
-  }
-  else
-  {
-    q = mMax;
-  }
-
-  M = solveForM (tau0, MT_SUN, q, A0);
-  S = getSqRootArgument (tau0, MT_SUN, q, A0);
+  M = mMin + mMax;
+  eta = (mMin*mMax)/pow(M, 2.0);  
+  massSep = XLALInspiralTau0FromMEta(M, eta, fL);
   
-  if (tau0 >= xbndry ) 
-  {
+  /* Next we solve for the upper part */
+  if (tau0 >= massSep )
+  { 
+    M = XLALInspiralMFromTau0AndNonEqualMass (tau0,  mMin, fL);
     eta = mMin*(M-mMin)/ pow(M,2.0);
   }
   else
   {
+    M = XLALInspiralMFromTau0AndNonEqualMass (tau0,  mMax, fL);
     eta = mMax*(M-mMax)/ pow(M,2.0);
   }
-
-
-  tau3_b = XLALInspiralTau3FfromNonEqualMass(M,eta,fL);
+ 
+  tau3_b = XLALInspiralTau3FromNonEqualMass(M,eta,fL);
  
   return (0.5 * (tau3_a + tau3_b));
 }
-
-
-REAL8 solveForM (REAL8 x, REAL8 p, REAL8 q, REAL8 a)
-    /* x = tau_0
-     * p = solarmass in sec
-     * q = mMin in solar masses
-     * a = alpha
-     */
-{
-    REAL8 ans;
-    REAL8 temp;
-
-
-    temp = (-4.*Power(a,9.)*Power(p,15.)*Power(q,9.)*
-	    Power(x,9.) + 
-	    27.*Power(a,6.)*Power(p,20.)*Power(q,14.)*
-	    Power(x,12.));
-    
-    if (temp <0)
-      temp = 0 ;
-    else
-      temp = sqrt(temp);
-    
-    
-    
-    ans = q + (Power(0.6666666666666666,0.3333333333333333)*
-	       Power(a,3.0))/
-      Power(9.0*Power(a,3.0)*Power(p,10.0)*Power(q,7.0)*
-	    Power(x,6.0) + Sqrt(3.)* temp ,0.3333333333333333) + 
-      Power(9.*Power(a,3.)*Power(p,10.)*Power(q,7.)*
-	    Power(x,6.) + Sqrt(3.)* temp ,0.3333333333333333)/
-(Power(2.,0.3333333333333333)*
- Power(3.,0.6666666666666666)*Power(p,5.)*Power(q,3.)*
- Power(x,3.)); 
-
-    return ans;
-}
-
-REAL8 getSqRootArgument (REAL8 x, REAL8 p, REAL8 q, REAL8 a)
-{
-    REAL8 ans;
-
-    ans = -4*Power(a,9)*Power(p,15)*Power(q,9)*Power(x,9) + 
-   27*Power(a,6)*Power(p,20)*Power(q,14)*Power(x,12);
-
-    return ans;
-}
-
 
 
 
@@ -593,8 +586,6 @@ LALPopulateNarrowEdge(LALStatus               *status,
   /* aliases to get the characteristics of the parent template, that we refer
    * to its ID (headId) */  
   
-
-
   while ( (*cell)[headId].t0 < gridParam->x0Max && (*cell)[headId].t0 > gridParam->x0Min) {
 
     dx0           = (*cell)[headId].dx0/sqrt(2.);
@@ -603,11 +594,7 @@ LALPopulateNarrowEdge(LALStatus               *status,
     ctheta        = cos(theta); /*aliases*/
     stheta        = sin(theta); /*aliases*/
     offSpring     = cellEvolution->nTemplate;
-        
-	
-
-
-
+      
     /* reallocate memory by set of 1000 cells if needed*/
     if ( cellEvolution->nTemplate  >= cellEvolution->nTemplateMax){
       *cell = (InspiralCell*) 

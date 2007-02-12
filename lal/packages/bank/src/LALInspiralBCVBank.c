@@ -20,7 +20,7 @@ of the parameters $(\psi_0, \psi_3)$ in {\tt coarseIn} structure
 
 \subsubsection*{Description}
 Given the range of the parameters $(\psi_0, \psi_3),$  
-number of templates in the {\tt fCut} direction,
+the number of templates in the {\tt fCut} direction,
 {\it minimalMatch}, noise spectral density, upper and
 lower frequency cutoffs (all in the input structure {\tt coarseIn})
 this routine outputs the list of templates in the BCV bank
@@ -151,12 +151,12 @@ LALInspiralCreateBCVBank (
     ) 
 /*  </lalVerbatim>  */
 {  
-  INT4 							j = 0;
-  INT4 							nlistOld = 0;
+  INT4 	j = 0;
+  INT4 	nlistOld = 0;
   /*do we really need static declaration here ? */
   static InspiralBankParams 	bankParams;
-  static InspiralMetric 		metric;
-  static InspiralTemplate 		params;
+  static InspiralMetric 	metric;
+  static InspiralTemplate 	params;
   static CreateVectorSequenceIn in; 
   static REAL4VectorSequence 	*tempList = NULL;
 
@@ -203,10 +203,10 @@ LALInspiralCreateBCVBank (
    * */
   bankParams.metric 		= &metric;
   bankParams.minimalMatch 	= coarseIn.mmCoarse;
-  bankParams.x0Min 			= coarseIn.psi0Min;
-  bankParams.x0Max 			= coarseIn.psi0Max;
-  bankParams.x1Min 			= coarseIn.psi3Min;
-  bankParams.x1Max 			= coarseIn.psi3Max;
+  bankParams.x0Min 		= coarseIn.psi0Min;
+  bankParams.x0Max 		= coarseIn.psi0Max;
+  bankParams.x1Min 		= coarseIn.psi3Min;
+  bankParams.x1Max 		= coarseIn.psi3Max;
   
   /* Let us define a temporary list of templates. */
   in.length 		= 1;
