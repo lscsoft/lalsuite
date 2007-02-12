@@ -399,8 +399,8 @@ int main( int argc, char *argv[] )
     /* compute the h+, hx strain for the given inclination, coalescence phase*/
     if ( vrbflg )fprintf(stdout, "Generating waveform for inclination = %f, coa_phase = %f\n",
 			 thisInj->inclination, thisInj->coa_phase );
-    strain = XLALOrientNRWave( strain, thisInj->inclination,
-			       thisInj->coa_phase,2,2 );
+    strain = XLALOrientNRWave( strain, 2,2,thisInj->inclination,
+			       thisInj->coa_phase);
 
     if ( vrbflg ) fprintf(stdout,
         "Generating the strain data for the given sky location\n");
