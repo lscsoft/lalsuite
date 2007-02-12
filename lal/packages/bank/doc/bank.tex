@@ -90,7 +90,7 @@ feature will be used in the construction of the grid. Note that
 the minimum (maximum) value of the Newtonian chirp-time occurs when 
 the two masses are equal and the total mass is a maximum (minimum).
 
-\subsection{Coarse Grid Algorithm}
+\subsection{Coarse Grid Algorithm : the square placement}
 
 The coarse grid algorithm used in this module is most economically
 described by the following main steps in the algorithm:
@@ -193,7 +193,43 @@ the placement algorithm is guaranteed to work with only \texttt {TaylorF2}
 approximants. A detailed study of approximants that are well captured by
 this template placement algorithm is described elsewhere \cite{Sathyaprakash
 2001a}.
+\item \texttt {GridSpacing,} specify the type of placement to be used. For the
+physical template families placement, it must be \texttt{SquareNotOriented,
+Hexagonal, HybridHexagonal}. For the non-BCV case, it could be Square,
+\texttt{SquarenotOriented, Hexagonal, HexagonalNonOriented}. Concerning
+the physical case, the non oriented square placement, as described in this
+section, places the template on a square lattice but does not take into
+account the orientation of the ellipse, which might cause problem in some
+particular cases. The Hexagonal placement was then implemented taking  into
+account the orientation of the ellipse. No square placement with the correct
+orientation has been implemented since the hexagonal is now used for in the
+LIGO analysis. Concerning the non-spinning BCV placement, all 4 cases are
+available. However, only the non oriented square placement and oriented
+hexagonal placement hav ebeen thouroughly tested as well. 
+
 \end{itemize}
+
+\subsection{Coarse Grid Algorithm : the hexagonal placement}
+This module has the ability to place the templates on an hexagonal lattice.
+This placement reduces by 30\% (as expected) the number of templates used by
+the square lattice. Although the algorithm is different (and described in this
+documentation), it is based on the same structure and uses the same function
+to be called, namely \texttt{LALInspiralCreateCoarseBank}. The lattice is
+specified by the variable \texttt{gridSpacing} from the structure \texttt{InspiralCoarseBankIn}, where
+the user must set gridSpacing to \texttt{Hexagonal}. 
+
+\subsection{Coarse Grid Algorithm : the hybrid hexagonal placement}
+A very similar placement place the template on an hexagonal lattice similarly
+to the previous hexagonal placement bu has a slightly different placement when
+upper an lower boundaries of the parameter space are coverred by a single
+template. In such a case, the hexagonal placement is replace by a placement
+along the bissectrice of the upper and lower boundaries. See the documentation
+for more details. This algorithm is called by setting gridSpacing to  \texttt{HybridHexagonal}.
+
+\subsection{Coarse Grid algorithm: non physical placement (BCV)}
+There is also the ability to create a bank for the non-spinning BCV templates.
+See the documentation. If so, the user must set approximant to BCV instead of
+one of the physical approximant (EOB, TaylorT1, ...).
 
 \newpage\input{LALInspiralBankH}
 
