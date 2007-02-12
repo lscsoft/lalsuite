@@ -14,7 +14,7 @@ $Id$
 
 \subsubsection*{Description}
 This code does almost the same as the standard Hexagonal Bank code. However, once the templates cover both the equal line and an
-other line (m1=min mass or m2 = max_mass) then, there is no need to carry on any square/hexagonal placement. One can simply
+other line (m1=min mass or m2 = max mass) then, there is no need to carry on any square/hexagonal placement. One can simply
 poulate template along a bissectrice. 
 \subsubsection*{Algorithm}
 
@@ -465,56 +465,57 @@ LALInspiralCreatePNCoarseBankHybridHexa(
 
 
 
-REAL8 XLALInspiralBissectionLine (REAL8 x, REAL8 fa, REAL8 mMin, REAL8 mMax)
+REAL8
+XLALInspiralBissectionLine (
+	REAL8 tau0,
+	REAL8 fL,
+	REAL8 mMin,
+	REAL8 mMax)
 {
 
   REAL8  piFa;
-  REAL8 y1, y2, p, q, M, S, eta, xbndry;
+  REAL8 tau3_a, tau3_b, p, q, M, S, eta, xbndry;
   REAL8 A, B, A0, A3;
   
-  A = 5./256/LAL_PI/fa;
-  B = 1./8./fa;
-
-  /*    return pow(.25, -3./5.)*B*pow(x/A, 2./5.);*/  
-  piFa = LAL_PI * fa;
-
-  A0 = (5.0 / 256.0) * pow(piFa, (-8.0/3.0));
-  A3  = 1.0 / (8.0 * fa * pow(piFa, (2.0/3.0)));
-
-  /* First we solve for the lower (equal mass) limit */
-  y1 = XLALInspiralTau3FromTau0AndEqualMassLine( x, fa);
   
 
-    /* Figure out the boundary between m1 = mMin and m1 = mMax */
-    M   = mMin + mMax;
-    eta = (mMin*mMax)/pow(M, 2.0);
-    xbndry = A0 * pow(M*MT_SUN, -5.0/3.0) / eta;
+  A0 = (5.0 / 256.0) * pow( LAL_PI * fL, (-8.0/3.0));
 
+  /* First we solve for the lower (equal mass) limit */
+  tau3_a = XLALInspiralTau3FromTau0AndEqualMassLine( tau0, fL);
+
+  /* Figure out the boundary between m1 = mMin and m1 = mMax */
+  M   = mMin + mMax;
+  eta = (mMin*mMax)/pow(M, 2.0);
+  xbndry = A0 * pow(M*MT_SUN, -5.0/3.0) / eta;
 
   /* Next we solve for the upper part */
-    p = pow(x*mMin/A0, -3.0/5.0);
-    if (x >= xbndry )
-    {          q = mMin;}
-    else
-          {q = mMax;}
-    M = solveForM (x, MT_SUN, q, A0);
-    S = getSqRootArgument (x, MT_SUN, q, A0);
-    if (x >= xbndry ) 
-          {
-	  eta = mMin*(M-mMin)/ pow(M,2.0);
-	  }
-    else
-          {
-	  eta = mMax*(M-mMax)/ pow(M,2.0);
-	  }
+  p = pow(tau0*mMin/A0, -3.0/5.0);
+  if (tau0 >= xbndry )
+  { 
+    q = mMin;
+  }
+  else
+  {
+    q = mMax;
+  }
 
-    y2 = A3 * (pow(M*MT_SUN, -2.0/3.0)) / eta;
+  M = solveForM (tau0, MT_SUN, q, A0);
+  S = getSqRootArgument (tau0, MT_SUN, q, A0);
+  
+  if (tau0 >= xbndry ) 
+  {
+    eta = mMin*(M-mMin)/ pow(M,2.0);
+  }
+  else
+  {
+    eta = mMax*(M-mMax)/ pow(M,2.0);
+  }
 
-    /*    fprintf (stderr, "M = %e SqRootArg = %e eta = %e y1 = %e y2 = %e "
-	  "xbndry = %e y = %e\n", M, S, eta, y1, y2, xbndry, 0.5*(y1+y2));*/
+
+  tau3_b = XLALInspiralTau3FfromNonEqualMass(M,eta,fL);
  
- 
-     return 0.5*(y1+y2);
+  return (0.5 * (tau3_a + tau3_b));
 }
 
 
