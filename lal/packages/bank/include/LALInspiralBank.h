@@ -1,6 +1,6 @@
 /* <lalVerbatim file="LALInspiralBankHV">
 
-Author: Churches, D.K. and Sathyaprakash, B.S.
+Author: Churches, D.K. and Sathyaprakash, B.S., Cokelaer, T.
 $Id$
 
 </lalVerbatim> */
@@ -64,7 +64,7 @@ NRCSID(LALINSPIRALBANKH, "$Id$" );
 #define LALINSPIRALBANKH_MSGESIZE   "Invalid input range"
 #define LALINSPIRALBANKH_MSGEFRANGE "Limits outside range of frequency series"
 #define LALINSPIRALBANKH_MSGEORDER  "Inappropriate PN order"
-#define LALINSPIRALBANKH_MSGEGRIDSPACING "If physical template requested, grid spacing parameter must be either SquareNotOriented or Hexagonal. If BCV, it must be Hexagonal or SquareNotOriented although Square and HexagonalNotOriented can be used. Instead of Hexagonal or Square option, S2BCV option can be usde to generate the bank used in S2 data using a  square lattice and an old code without any polygon fitting."
+#define LALINSPIRALBANKH_MSGEGRIDSPACING "Inappropriate grid spacing parameter [SquareNotOriented or Hexagonal]"
 #define LALINSPIRALBANKH_MSGEHEXAINIT "Empty bank. abnormal behaviour in HexaBank generation."
 
 /* </lalErrTable> */
@@ -72,8 +72,8 @@ NRCSID(LALINSPIRALBANKH, "$Id$" );
 /* <lalLaTeX>
 
 \subsection*{Enums}
-
 \begin{enumerate} 
+
 \item \texttt{CoordinateSpace:}
 \input{LALCoordinateSpaceH}
 Choose templates either in the $(\tau_0,\tau_2)$ or $(\tau_0,\tau_3)$ 
@@ -88,9 +88,7 @@ choice \texttt{Tau0Tau3} can be made. Since October 2003 a new choice {\tt Psi0P
 was added to handle BCV templates.
 
 \item\texttt{InspiralBankMassRange:}
-
 \input{LALInspiralBankMassRangeH}
-
 An enum that appears in the \texttt{InspiralCoarseBankIn} structure 
 which fixes the way templates are chosen: The choice 
 \texttt{MinComponentMassMaxTotalMass} means the minimum of the
@@ -100,6 +98,36 @@ The choice \texttt{MinMaxComponentMass} means the minimum of the
 components masses will be again fixed by \texttt{mMin} and the
 maximum of the component masses is fixed by \texttt{mMax} of the
 \texttt{InspiralCoarseIn} structure below.
+
+\item\texttt{GridSpacing:}
+\input{LALGridSpacingH}
+This enum is set by the user to specify the type of placement requested. It can be 
+\texttt{Square, Hexagonal, SquareNotOriented, HexagonalNotOriented, S2BCV}. The two first 
+align the ellipse along the eigen-vectors whereas the two next do not. The last is a 
+square placement which was being used during S2 and is therefore obsolete and should 
+not be used (feel free to remove it). Historically, we used the \texttt{SquareNotOriented}
+placement until S4. Then, in S5, we switched to the \texttt{Hexagonal} placement,
+which should be used for future searches. 
+
+\item\texttt{Position:}
+\input{LALPositionH}
+This enum can take the following values \texttt{In, Out, Below, Edge, Above} and is used 
+ \emph{only} by the Hexagonal placement.  It simply specifies
+the place of a point with respect to the parameter space. Edge, means that the ellipse 
+covers two boundaries(upper and lower).
+
+\item\texttt{InsidePolygon:}
+\input{LALInsidePolygonH}
+This enum is set to true or false, it is just a boolean variable for the
+ purpose of BCV placement but can be used in an other context.. 
+
+\item\texttt{Generation}
+\input{LALGenerationH}
+This enum is either \texttt{fertile,sterile}, and is a boolean expression used \emph{only}
+ by the Hexagonal placement. 
+
+
+
 \end{enumerate}
 
 \subsection*{Structures}
@@ -136,22 +164,22 @@ parameters \texttt{psi0Min, psi0Max, psi3Min, psi3Max, alpha, numFcutTemplates.}
 	to use minimum component mass and maximum totalmass.
 \item \texttt{space}: enum that decides whether to use $(\tau_0,\tau_2)$ 
         or $(\tau_0,\tau_3)$ in constructing the template bank
-\item \texttt{alpha}: the BCV amplitude correction parameter
+\item \texttt{alpha}: 	the BCV amplitude correction parameter
 \item \texttt{psi0Min}: minimum value of the parameter $\psi_0$
 \item \texttt{psi0Max}: maximum value of the parameter $\psi_0$
 \item \texttt{psi3Min}: minimum value of the parameter $\psi_3$
 \item \texttt{psi3Max}: maximum value of the parameter $\psi_3$
-\item \texttt{mMin}: minimum mass of components to search for 
-\item \texttt{mMax}: maximum mass of components to search for
-\item \texttt{MMax}:   alternatively, maximum total mass of binary to search for
-\item \texttt{mmCoarse}:  Coarse grid minimal match 
+\item \texttt{mMin}: 	minimum mass of components to search for 
+\item \texttt{mMax}: 	maximum mass of components to search for
+\item \texttt{MMax}:   	alternatively, maximum total mass of binary to search for
+\item \texttt{mmCoarse}:Coarse grid minimal match 
 \item \texttt{mmFine}:  Fine grid minimal match 
 \item \texttt{fLower}:  Lower frequency cutoff
 \item \texttt{fUpper}:  Upper frequency cutoff 
 \item \texttt{tSampling}:  Sampling rate
-\item \texttt{etamin}: minimum value of eta in our search 
-\item \texttt{shf}: Frequency series containing the PSD 
-\item \texttt{iflso}: (currently not implemented) flso will be used as an 
+\item \texttt{etamin}: 	minimum value of eta in our search 
+\item \texttt{shf}: 	Frequency series containing the PSD 
+\item \texttt{iflso}: 	(currently not implemented) flso will be used as an 
 \item \texttt{numFcutTemplates}: number of templates in the {\tt fcut} direction
 
 The next two members are used in setting up the InspiralTemplate
@@ -162,13 +190,13 @@ parameter structure but not in creating the template bank.
 \end{itemize}
 
 \item \texttt{InspiralFineBankIn}
-Structre needed by the function \texttt{LALInspiralCreateFineBank}.
+Structure needed by the function \texttt{LALInspiralCreateFineBank}.
 	which computes a finer mesh around a given lattice point
 	using the value of the fine-mesh minimal match, coarse-mesh
 	minimal match and the metric at the current lattice point.
 \input{LALInspiralFineBankInH}
 \begin{itemize}
-\item {templateList:} A list contianing all the fine-mesh templates
+\item {templateList:} A list containing all the fine-mesh templates
 \item {coarseIn:} input structure that contains useful necessary parameters
 to construct a fine-mesh.
 \end{itemize}
@@ -195,7 +223,7 @@ not filled by the bank code.
 \item \texttt{InspiralBankParams:}
 This is a structure needed in the inner workings
 of the \texttt{LALInspiralCreateCoarseBank} code.
-\input{LALInspiralParamsH}
+\input{LALInspiralBankParamsH}
 \begin{itemize}
 \item \texttt{nparams}: Number of parameters (currently fixed at 2, so this 
 		is as of now unused)
@@ -251,16 +279,54 @@ stored in this array. The required moments are from J(1) to J(17)
  however, they are computed since future extensions, planned in the
  near future, will require them). However, in C we need an array size
 18 to use an array that has an index 18. To ease the notation we have
-therefore defined an oversized (by one element) array.
+therefore defined an over sized (by one element) array.
 \end{itemize}
 
 \item {\texttt{RectangleIn} and \texttt{RectangleOut}:}
-Input and ouput structures to function LALRectangleVertices.
+Input and output structures to function LALRectangleVertices.
 \input{LALRectangleInH}
 \input{LALRectangleOutH}
 
+
+
+\item\texttt{HexaGridParam}
+This is a structure needed in the inner workings of the \texttt{LALInspiralHexagonalBank} code.
+\input{LALHexaGridParamH}
+It contains some part of CoarseBankIn and some other standard parameters.  It provides the
+parameter space boundaries with the minimum and maximum values of mass parameters, the 
+minimal match, the space, massRange and gridSpacing parameter.
+
+\item\texttt{CellEvolution}
+This is a structure needed in the inner workings of the \texttt{LALInspiralHexagonalBank} code.
+\input{LALCellEvolutionH}
+This structure checks the status of the placement. \texttt{fertile} tells if the
+placement is still evolving or not. \texttt{nTemplateMax} is the number of maximum templates allowed,
+ which can be resized. And \texttt{nTemplate} is the number of template set. nTemplate can not 
+ be higher than nTemplateMax. 
+  
+\item\texttt{CellList}
+This is a structure needed in the inner workings of the \texttt{LALInspiralHexagonalBank} code.
+\input{LALCellListH}
+Similarly to the square placement, which uses InspiralList, we used a 
+linked list for the hexagonal placement. A different structure has been 
+implemented so as to simplify the complexity of the algorithm. It also set
+an id to each cell which has been created. This id is unique to each 
+cell/template. 
+
+\item\texttt{InspiralCell}
+This is a structure needed in the inner workings of the \texttt{LALInspiralHexagonalBank} code.
+\input{LALInspiralCellH}
+Each cell is defined by this structure, which contains the position of 
+each cell in the tau0/tau3 parameter space, the metric at that point, and various 
+information such as the status of the cell. Is it still fertile ? what is its position 
+with respect to the parameter space and so on. child is a 6-length array with a link 
+to the 6 templates (hexagonal) around the current template that we are dealing with. 
+
 \end{enumerate}
-</lalLaTeX>  */
+</lalLaTeX> */
+
+
+
 
 
 /* <lalVerbatim file="LALCoordinateSpaceH"> */
@@ -293,13 +359,20 @@ GridSpacing;
 \idx[Type]{GridSpacing} 
 </lalLaTeX>  */
 
-
+/* <lalVerbatim file="LALPositionH"> */
 typedef enum
-  {
-    In, Above, Below, Out, Edge
-  }
+{
+  In,
+  Above,
+  Below,
+  Out,
+  Edge
+}
 Position;
-
+/*  </lalVerbatim>  */
+/*  <lalLaTeX> 
+\idx[Type]{Position} 
+</lalLaTeX>  */
 
 /* <lalVerbatim file="LALInsidePolygonH"> */
 typedef enum
@@ -314,12 +387,17 @@ InsidePolygon;
 </lalLaTeX>  */
 
 
-
+/* <lalVerbatim file="LALGenerationH"> */
 typedef enum
-  {
-    Sterile, Fertile
-  }
+{
+  Sterile,
+  Fertile
+}
 Generation;
+/*  </lalVerbatim>  */
+/*  <lalLaTeX> 
+\idx[Type]{Generation} 
+</lalLaTeX>  */
 
 /* <lalVerbatim file="LALInspiralBankMassRangeH"> */
 typedef enum
@@ -333,6 +411,9 @@ InspiralBankMassRange;
 /*  <lalLaTeX> 
 \idx[Type]{InspiralBankMassRange} 
 </lalLaTeX>  */
+
+
+
 
 /* <lalVerbatim file="LALInspiralMetricH"> */
 typedef struct 
@@ -367,8 +448,9 @@ InspiralMetric;
 \idx[Type]{InspiralMetric} 
 </lalLaTeX>  */
 
-/* <lalVerbatim file="LALInspiralTemplateListH"> */
 
+
+/* <lalVerbatim file="LALInspiralTemplateListH"> */
 typedef struct
 tagInspiralTemplateList
 {
@@ -379,9 +461,13 @@ tagInspiralTemplateList
   struct tagInspiralTemplateList *next;  
 }
 InspiralTemplateList;
+/* </lalVerbatim>  */
+/*  <lalLaTeX> 
+\idx[Type]{InspiralTemplateList} 
+</lalLaTeX>  */
 
 
-
+/* <lalVerbatim file="LALHexaGridParamH"> */
 typedef struct 
 tagHexaGridParam
 {
@@ -396,12 +482,17 @@ tagHexaGridParam
   REAL4 MMin;
   REAL4 MMax;
   REAL4 fLower;
-  GridSpacing gridSpacing;
-  InspiralBankMassRange         massRange;
-  CoordinateSpace               space;
+  GridSpacing 		gridSpacing;
+  InspiralBankMassRange massRange;
+  CoordinateSpace       space;
 }
 HexaGridParam;
+/* </lalVerbatim>  */
+/*  <lalLaTeX> 
+\idx[Type]{HexaGridParam} 
+</lalLaTeX>  */
 
+/* <lalVerbatim file="LALCellEvolutionH"> */
 typedef struct 
 tagCellEvolution
 {
@@ -410,8 +501,12 @@ tagCellEvolution
   INT4 fertile;
 }
 CellEvolution;
+/* </lalVerbatim>  */
+/*  <lalLaTeX> 
+\idx[Type]{CellEvolution} 
+</lalLaTeX>  */
 
-
+/* <lalVerbatim file="LALCellListH"> */
 typedef struct 
 tagCellList
 {
@@ -419,12 +514,16 @@ tagCellList
   struct tagCellList *next;
 }
 CellList;
+/* </lalVerbatim>  */
+/*  <lalLaTeX> 
+\idx[Type]{CellList} 
+</lalLaTeX>  */
 
 
+/* <lalVerbatim file="LALInspiralCellH"> */
 typedef struct 
 tagInspiralCell
 {  
-
   INT4  ID;
   INT4  in;
   INT4  child[6];
@@ -436,17 +535,14 @@ tagInspiralCell
   Position position;
   Position RectPosition[5];
   InspiralMetric metric;
-
 }
 InspiralCell;
-
-
 /* </lalVerbatim>  */
-/*  <lalLaTeX>
-\idx[Type]{InspiralTemplateList}
+/*  <lalLaTeX> 
+\idx[Type]{InspiralCell} 
 </lalLaTeX>  */
 
-/*  <lalVerbatim file="LALInspiralParamsH"> */
+/*  <lalVerbatim file="LALInspiralBankParamsH"> */
 typedef struct
 tagInspiralBankParams
 {
@@ -592,7 +688,16 @@ RectangleIn;
 typedef struct
 tagRectangleOut 
 {
-  REAL8 x1, y1, x2, y2, x3, y3, x4, y4, x5, y5;
+  REAL8 x1;
+  REAL8 y1;
+  REAL8 x2;
+  REAL8 y2;
+  REAL8 x3;
+  REAL8 y3;
+  REAL8 x4;
+  REAL8 y4;
+  REAL8 x5;
+  REAL8 y5;
 }
 RectangleOut;
 /*  </lalVerbatim>  */
@@ -611,6 +716,9 @@ PRIN;
 /*  <lalLaTeX>
 \vfill{\footnotesize\input{LALInspiralBankHV}}
 </lalLaTeX>  */
+
+
+
 
 
 /* Function prototypes */
@@ -727,7 +835,34 @@ XLALInspiralTau3FromTau0AndEqualMassLine(
     REAL4               fL
     );
 
+REAL4 
+XLALInspiralTau3FromNonEqualMass(
+  REAL4               	m1,
+  REAL4 		m2,
+  REAL4			fL
+);
 
+REAL4 
+XLALInspiralTau0FromMEta(
+  REAL4              	M,
+  REAL4 		eta,
+  REAL4			fL
+);
+ 
+ 
+REAL8 
+XLALInspiralBissectionLine (
+  REAL8 x, 
+  REAL8 fL,
+  REAL8 mMin,
+  REAL8 mMax);
+
+REAL8
+XLALInspiralMFromTau0AndNonEqualMass(
+  REAL8 tau0,
+  REAL8 extremMass,
+  REAL8 fL);
+  
 /* <lalLaTeX>
    \newpage\input{InspiralSpinBankC}
    </lalLaTeX>  */
