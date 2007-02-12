@@ -409,7 +409,11 @@ int main( int argc, char *argv[] )
     /* XXX inject the htData into our injection time stream XXX */
     /*LAL_CALL( LALSSInjectTimeSeries( &status, &injData, htData ), &status );*/
 
-  }
+
+    XLALDestroyREAL4VectorSequence ( strain->data );
+    LALFree(strain);
+
+  } /* loop over injections */
 
   LALFree(nrCatalog.data);
 
