@@ -380,7 +380,7 @@ int main( int argc, char *argv[] )
   }
 
   /* get catalog of numrel waveforms from metadata file */
-  LAL_CALL(LALNRDataFind( &status, &nrCatalog, nrMetaFile, nrDataDir ), &status);
+  LAL_CALL(LALNRDataFind( &status, &nrCatalog, nrDataDir, nrMetaFile ), &status);
 
   /* start injections */
   for( thisInj = injections; thisInj; thisInj = thisInj->next )
@@ -389,7 +389,7 @@ int main( int argc, char *argv[] )
     nrDataFile = XLALFindNRFile( &nrCatalog, thisInj, 2, 2);
 
     if ( vrbflg) fprintf(stdout,
-        "Reading the waveform from the file %s ...", nrCatalog.data[0].filename );
+        "Reading the waveform from the file %s ...", nrDataFile );
 
     LAL_CALL(LALReadNRWave(&status, &strain, thisInj->mass1 + thisInj->mass2, 
 			   nrDataFile), &status);
