@@ -70,7 +70,7 @@ main(int argc, char **argv)
   INT4 nlist1=0, nlist2=0;
 
   void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
-  UINT4   j, numPSDpts=262144;
+  UINT4   j, numPSDpts=16384/2;
   FILE *fpr;
   UserParams userParams;
   INT4 i=1;
@@ -79,40 +79,77 @@ main(int argc, char **argv)
 
   while(i < argc)
     {
-      if ( strcmp(argv[i],	"--template") 	== 0 ) {
-	if ( strcmp(argv[++i],	"TaylorT1")	==0)	userParams.calque = TaylorT1;
-	else if ( strcmp(argv[i],	"TaylorT2")	==0)	userParams.calque = TaylorT2;
-	else if ( strcmp(argv[i],	"TaylorT3")	==0)	userParams.calque = TaylorT3;
-	else if ( strcmp(argv[i],	"TaylorF1")	==0)	userParams.calque = TaylorF1;
-	else if ( strcmp(argv[i],	"TaylorF2")	==0)	userParams.calque = TaylorF2;
-	else if ( strcmp(argv[i],	"PadeT1")	==0)	userParams.calque = PadeT1;
-	else if ( strcmp(argv[i],	"PadeF1")	==0)	userParams.calque = PadeF1;
-	else if ( strcmp(argv[i],	"EOB")		==0)	userParams.calque = EOB;
-	else if ( strcmp(argv[i],	"BCV")		==0)    userParams.calque = BCV;
-	else if ( strcmp(argv[i],	"SpinTaylorT3")	==0)	userParams.calque = SpinTaylorT3;
-
+      if (strcmp(argv[i], "--help") == 0) {
+        fprintf(stderr, "--template [TaylorT1, TaylorT3, EOB, ...]\n--grid-spacing [Hexagonal, SquareNotOriented, ...]\n`--noise-model [LIGO, VIRGO...]\n");
+        exit(0);
       }
+      else if ( strcmp(argv[i],	"--noise-model") 	== 0 ) {
+	if ( strcmp(argv[++i],	"VIRGO")	==0)	{
+          (noisemodel) = &LALVIRGOPsd;
+        }
+        else if ( strcmp(argv[i],	"LIGOI")	==0){	
+          (noisemodel) = &LALLIGOIPsd;                
+        }
+        else if ( strcmp(argv[i],	"LIGOA")	==0){	
+          (noisemodel) = &LALAdvLIGOPsd;                
+        }
+        else if ( strcmp(argv[i],	"EGO")	==0){	
+          (noisemodel) = &LALEGOPsd;                
+        }
+      }
+      else if ( strcmp(argv[i],	"--template") 	== 0 ) {
+	if ( strcmp(argv[++i],	"TaylorT1")	==0)	{
+          userParams.calque = TaylorT1;
+        }
+	else if ( strcmp(argv[i],	"TaylorT2")	==0)	{
+          userParams.calque = TaylorT2;
+        }
+	else if ( strcmp(argv[i],	"TaylorT3")	==0)	{
+          userParams.calque = TaylorT3;
+        }
+	else if ( strcmp(argv[i],	"TaylorF1")	==0)	{
+          userParams.calque = TaylorF1;
+        }
+	else if ( strcmp(argv[i],	"TaylorF2")	==0)	{
+          userParams.calque = TaylorF2;
+        }
+	else if ( strcmp(argv[i],	"PadeT1")	==0)	{
+          userParams.calque = PadeT1;
+        }
+	else if ( strcmp(argv[i],	"PadeF1")	==0)	{
+          userParams.calque = PadeF1;
+        }
+	else if ( strcmp(argv[i],	"EOB")		==0)	{
+          userParams.calque = EOB;
+        }
+	else if ( strcmp(argv[i],	"BCV")		==0)    {
+          userParams.calque = BCV;
+        }
+	else if ( strcmp(argv[i],	"SpinTaylorT3")	==0)	{
+          userParams.calque = SpinTaylorT3;
+        }
+      } /*end of --template if*/
       else if  ( strcmp(argv[i],	"--grid-spacing") 	== 0 ) {
-	i++;
-	
+	i++;	
 	if (strcmp(argv[i], "Square") == 0)   
           coarseIn.gridSpacing = Square;
 	else if (strcmp(argv[i], "Hexagonal")         == 0)   
           coarseIn.gridSpacing = Hexagonal;
+	else if (strcmp(argv[i], "HybridHexagonal")         == 0)   
+          coarseIn.gridSpacing = HybridHexagonal;
 	else if (strcmp(argv[i], "SquareNotOriented")         == 0)   
           coarseIn.gridSpacing = SquareNotOriented;
 	else if (strcmp(argv[i], "HexagonalNotOriented")         == 0)  
           coarseIn.gridSpacing = HexagonalNotOriented;
 	else {fprintf(stderr, "grid-spacing is either square or hexagonal\n"); exit(0);}
-	
       }
       i++;
     }
 
   coarseIn.LowGM        = -2;
   coarseIn.HighGM       = 6;
-  coarseIn.fLower       = 40.L;
-  coarseIn.fUpper       = 2047.L;
+  coarseIn.fLower       = 20.L;
+  coarseIn.fUpper       = 2047L;
   coarseIn.tSampling    = 4096.L;
   coarseIn.order        = twoPN;
   coarseIn.space        = Tau0Tau3;
@@ -157,6 +194,9 @@ main(int argc, char **argv)
   
   
   fprintf(stderr, "save %d template in results in SpaceCovering.out\n", nlist1);
+  fflush(stdout);
+  fflush(stderr);
+  
   fpr = fopen("SpaceCovering.out", "w");
   for (j=0; j<nlist1; j++)
   {
