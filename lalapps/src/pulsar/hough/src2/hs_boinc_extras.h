@@ -24,10 +24,16 @@ NRCSID(HSBOINCEXTRASHRCSID,"$Id$");
 #endif
 
 #if (HS_CHECKPOINTING)
-#define SET_CHECKPOINT set_checkpoint()
 #define GET_CHECKPOINT init_and_read_checkpoint
-/* #define INSERT_INTO_FSTAT_TOPLIST add_candidate_and_checkpoint */
+
+#if 1
+#define SET_CHECKPOINT
+#define INSERT_INTO_FSTAT_TOPLIST add_candidate_and_checkpoint
+#else
+#define SET_CHECKPOINT set_checkpoint()
 #define INSERT_INTO_FSTAT_TOPLIST add_checkpoint_candidate
+#endif
+
 #else
 #define GET_CHECKPOINT(toplist,total,count,outputname,cptname) *total=0;
 #define INSERT_INTO_FSTAT_TOPLIST insert_into_fstat_toplist
