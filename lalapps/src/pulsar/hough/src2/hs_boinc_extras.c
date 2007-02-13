@@ -62,8 +62,6 @@ NRCSID(HSBOINCEXTRASCRCSID,"$Id$");
 #define MATCH_START(s1,s2,l) (0 == strncmp(s1,s2,(l=strlen(s1))-1))
 
 
-
-
 /** global VARIABLES **/
 
 /* program might have multiple output file(s) */
@@ -608,9 +606,7 @@ int main(int argc, char**argv) {
 
   LogSetLevel(LOG_DETAIL); /* as long as we are debugging */
 
-#ifdef COMPILE_TAG
-  LogPrintf(LOG_NORMAL, "Compile tag: %s\n", COMPILE_TAG);
-#endif
+  LogPrintf(LOG_NORMAL, "Built at: " __DATE__ " " __TIME__ "\n");
 
   /* pass argc/v to the worker via global vars */
   global_argc = argc;
