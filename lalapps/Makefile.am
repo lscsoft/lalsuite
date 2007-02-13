@@ -39,11 +39,11 @@ echo "";\
 echo "	Bourne shell [bash] users: please add the";\
 echo "	following lines to your .profile file";\
 echo "";\
-echo '		. $(sysconfdir)/lal-user-env.sh';\
+echo '		. $(sysconfdir)/lalapps-user-env.sh';\
 echo "";\
 echo "	C-shell [tcsh] users: please add the following";\
 echo "	lines to your .login file";\
 echo "";\
-echo '	source $(sysconfdir)/lal-user-env.csh';\
+echo '	source $(sysconfdir)/lalapps-user-env.csh';\
 echo "";\
 echo "================================================================="
