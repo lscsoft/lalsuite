@@ -243,7 +243,7 @@ int read_fstat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxby
 
     } /* while (fgets() ) */
 
-    return 0;
+    return chars;
 
 } /* read_fstat_toplist_from_fp() */
 
