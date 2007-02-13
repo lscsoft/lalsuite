@@ -636,8 +636,6 @@ LALAddSnglInspiralToCoinc(
     )
 /* </lalVerbatim> */
 {
-  CoincInspiralTable  *coincInspiral = NULL;
-  EventIDColumn       *eventId = NULL;
   
   INITSTATUS( status, "LALAddSnglInspiralToCoinc", COINCINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
@@ -783,7 +781,6 @@ XLALSnglInspiralCoincTest(
   INT4                  match = 1;
   INT4                  ifoNumber = 0;
   
-  static const char *func = "XLALSnglInspiralCoincTest";
 
   /* Loop over sngl_inspirals contained in coinc_inspiral */
   for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
@@ -1197,8 +1194,6 @@ XLALInspiralPsi0Psi3CutBCVC(
   CoincInspiralTable   *coincHead = NULL;
 
   INT4  discardTrigger = 0;
-  REAL4 distA = 0, distB = 0;
-  REAL4 sigA, sigB;
   REAL4 psi0A, psi0B, psi3A, psi3B, snr, snrA, snrB, x, y, X, Y, theta=0.040;
 
   thisCoinc = *coincInspiral;
@@ -2227,7 +2222,6 @@ XLALInspiralSNRCutBCV2(
   while( thisCoinc )
   {
     INT4  discardTrigger = 0;
-    REAL4 snrH1 = 0, snrH2 = 0;
 
     CoincInspiralTable *tmpCoinc = thisCoinc;
     thisCoinc = thisCoinc->next;
