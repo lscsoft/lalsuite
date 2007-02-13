@@ -547,6 +547,10 @@ int fstat_cpt_file_add (FStatCheckpointFile*cptf, FstatOutputEntry line) {
       return(-1);
     }
     cptf->bytes += bytes;
+
+    if (cptf->bytes != ftell(cptf->fp)) 
+      LogPrintf(LOG_DEBUG,"ERROR: bytes: %u, file: %d\n", cptf->bytes, ftell(cptf->fp));
+
     if (cptf->bytes >= cptf->maxsize) {
       LogPrintf(LOG_NORMAL, "Compacting toplist file\n");
       bytes = atomic_write_fstat_toplist_to_file(cptf->list, cptf->filename, &(cptf->checksum));
