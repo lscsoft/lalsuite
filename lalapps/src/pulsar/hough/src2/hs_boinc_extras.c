@@ -803,17 +803,19 @@ void init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
 
   if (scanned != 6) {
     LogPrintf (LOG_DEBUG,  "Error reading checkpoint - startng over\n");
+    remove(cptfilename);
     return;
   }
 
   if (total_read != total) {
     LogPrintf (LOG_DEBUG,  "Error reading checkpoint - startng over\n");
+    remove(cptfilename);
     return;
   }
 
   LogPrintf (LOG_DEBUG,  "Read checkpoint - reading previous output...\n");
 
-  if (0 > fstat_cpt_file_read (cptf, checksum, bytes)) {
+  if (fstat_cpt_file_read (cptf, checksum, bytes) != 0) {
     LogPrintf (LOG_DEBUG,  "Error reading previous output - startng over\n");
     return;
   }
@@ -845,6 +847,30 @@ int add_candidate_and_checkpoint (toplist_t*toplist, FstatOutputEntry cand) {
   }
   
   return (ret);
+}
+
+
+int add_checkpoint_candidate (toplist_t*toplist, FstatOutputEntry cand) {
+  return(fstat_cpt_file_add (cptf, cand));
+}
+
+/* set_checkpoint() */
+void set_checkpoint () {
+  FILE* fp;
+
+  /* if (boinc_time_to_checkpoint()) */ {
+    fstat_cpt_file_flush (cptf);
+    fp = fopen(cptfilename,"w");
+    if (fp) {
+      fprintf(fp,"%f,%f,%d,%d,%d,%d\n",
+	      last_rac, last_dec, last_count, last_total,
+	      cptf->checksum, cptf->bytes);
+      fclose(fp);
+    } else {
+      LogPrintf (LOG_CRITICAL,  "ERROR: Couldn't write checkpoint file %s\n", cptfilename);
+    }
+    boinc_checkpoint_completed();
+  }
 }
 
 
