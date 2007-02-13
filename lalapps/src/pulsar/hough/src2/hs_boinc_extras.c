@@ -608,6 +608,10 @@ int main(int argc, char**argv) {
 
   LogSetLevel(LOG_DETAIL); /* as long as we are debugging */
 
+#ifdef COMPILE_TAG
+  LogPrintf(LOG_NORMAL, "Compile tag: %s\n", COMPILE_TAG);
+#endif
+
   /* pass argc/v to the worker via global vars */
   global_argc = argc;
   global_argv = argv;
