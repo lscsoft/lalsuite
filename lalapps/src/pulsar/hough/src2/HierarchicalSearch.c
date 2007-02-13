@@ -133,6 +133,7 @@ RCSID( "$Id$");
 #define GET_CHECKPOINT(toplist,total,count,outputname,cptname) *total=0;
 #define INSERT_INTO_FSTAT_TOPLIST insert_into_fstat_toplist
 #define SHOW_PROGRESS(rac,dec,tpl_count,tpl_total)
+#define SET_CHECKPOINT
 #define MAIN  main
 #define FOPEN fopen
 #endif
@@ -1343,6 +1344,8 @@ int MAIN( int argc, char *argv[]) {
 	    } /* end block for follow-up stage */ 
 	  
 	} /* end loop over coarse grid fdot values */
+
+      SET_CHECKPOINT;
 
       XLALNextDopplerSkyPos( &dopplerpos1, &thisScan1 );
 
