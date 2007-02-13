@@ -320,8 +320,8 @@ INT2 XLALCompareInspiralsEllipsoid(
     XLALSetTimeInPositionVector( bPtr->position,
           (curTimeBNS - curTimeANS) * 1.0e-9 );
 
-    /* if analyzing a grb the position and time-delay is KNOWN */
-    if (params->grb) 
+    /* if analyzing an external trigger the position and time-delay is KNOWN */
+    if (params->exttrig) 
     {
       timeShift=travelTime;
       XLALSetTimeInPositionVector( aPtr->position, timeShift );

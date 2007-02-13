@@ -633,13 +633,13 @@ XLALCompareInspirals (
   bAcc = params->ifoAccuracy[ifobNum];
 
 
-  if ( params->grb &&
+  if ( params->exttrig &&
        labs( ta - tb + params->lightTravelTime[ifoaNum][ifobNum]) < (aAcc.dt + bAcc.dt) )
   {
     XLALPrintInfo( "Triggers pass time coincidence test\n" );
     params->match = 1;
   }
-  else if (  !params->grb &&
+  else if (  !params->exttrig &&
       labs( ta - tb ) < (aAcc.dt + bAcc.dt)
       + params->lightTravelTime[ifoaNum][ifobNum])
   {

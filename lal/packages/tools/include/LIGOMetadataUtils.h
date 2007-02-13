@@ -166,7 +166,7 @@ tagSnglInspiralAccuracy
   REAL4       dtau0;
   REAL4       dtau3;
   SnglInspiralParameterTest test;
-  INT4        grb;
+  INT4        exttrig;
 }
 SnglInspiralAccuracy;
 /*</lalVerbatim> */
@@ -193,7 +193,7 @@ tagInspiralAccuracyList
   REAL4                     iotaCutH1H2;
   REAL4                     iotaCutH1L1;
   REAL8                     eMatch;
-  INT4                      grb;
+  INT4                      exttrig;
 }
 InspiralAccuracyList;
 /*</lalVerbatim> */
