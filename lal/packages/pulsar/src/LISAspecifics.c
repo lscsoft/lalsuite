@@ -60,12 +60,12 @@ int XLALgetLISAtwoArmIFO ( DetectorTensor *detT, LIGOTimeGPS tGPS, LISAarmT armA
 /*==================== FUNCTION DEFINITIONS ====================*/
 
 /** Set up the \em LALDetector struct representing LISA X, Y, Z TDI observables.
- * INPUT: channelNum = '1', '2', '3': detector-tensor corresponding to TDIs X, Y, Z respectively.
+ * INPUT: channelNum = '1', '2', '3', '4', '5', '6': detector-tensor corresponding to TDIs X, Y, Z, Y-Z, Z-X, X-Y respectively.
  * return -1 on ERROR, 0 if OK
  */
 int 
 XLALcreateLISA (LALDetector *Detector,	/**< [out] LALDetector */
-		CHAR channelNum		/**< [in] which TDI observable: '1' = X, '2'= Y, '3' = Z */
+		CHAR channelNum		/**< [in] which TDI observable: '1' = X, '2'= Y, '3' = Z, '4' = Y-Z, '5' = Z-X, '6' = X-Y */
 		)
 {
   LALFrDetector detector_params;
@@ -88,8 +88,20 @@ XLALcreateLISA (LALDetector *Detector,	/**< [out] LALDetector */
       strcpy ( detector_params.name, "Z3: LISA TDI Z" );
       strcpy ( detector_params.prefix, "Z3");
       break;
+    case '4':
+      strcpy ( detector_params.name, "Z4: LISA TDI Y-Z" );
+      strcpy ( detector_params.prefix, "Z4");
+      break;
+    case '5':
+      strcpy ( detector_params.name, "Z5: LISA TDI Z-X" );
+      strcpy ( detector_params.prefix, "Z5");
+      break;
+    case '6':
+      strcpy ( detector_params.name, "Z6: LISA TDI X-Y" );
+      strcpy ( detector_params.prefix, "Z6");
+      break;
     default:
-      LALPrintError ("\nIllegal LISA TDI index '%c': must be one of {'1', '2', '3'}.\n\n", channelNum );
+      LALPrintError ("\nIllegal LISA TDI index '%c': must be one of {'1', '2', '3', '4', '5', '6'}.\n\n", channelNum );
       return -1;      
       break;
     } /* switch (detIndex) */
@@ -120,6 +132,9 @@ XLALgetLISADetectorTensor ( DetectorTensor *detT, 	/**< [out]: LISA LWL detector
 			    CHAR channelNum )		/**< channel-number (as a char)  '1', '2', '3' .. */
 {
   LISAarmT armA, armB;
+  CHAR chan1 = 0;
+  CHAR chan2 = 0;
+  DetectorTensor detT1, detT2;
 
   if ( !detT )
     return -1;
@@ -136,17 +151,45 @@ XLALgetLISADetectorTensor ( DetectorTensor *detT, 	/**< [out]: LISA LWL detector
     case '3':		/* TDI observable 'Z' */
       armA = LISA_ARM1; armB = LISA_ARM2;
       break;
+    case '4':
+      chan1 = '2'; chan2 = '3';
+      break;
+    case '5':
+      chan1 = '3'; chan2 = '1';
+      break;
+    case '6':
+      chan1 = '1'; chan2 = '2';
+      break;
     default:	/* unknown */
       LALPrintError ("\nInvalid channel-number '%c' for LISA \n\n", channelNum );
       xlalErrno = XLAL_EINVAL;
       return -1;
       break;
     } /* switch channel[1] */
-  
-  if ( XLALgetLISAtwoArmIFO ( detT, tGPS, armA, armB ) != 0 ) {
-    LALPrintError ("\nXLALgetLISAtwoArmIFO() failed !\n\n");
-    xlalErrno = XLAL_EINVAL;
-    return -1;
+
+  if (chan1 == 0) {
+    if ( XLALgetLISAtwoArmIFO ( detT, tGPS, armA, armB ) != 0 ) {
+      LALPrintError ("\nXLALgetLISAtwoArmIFO() failed !\n\n");
+      xlalErrno = XLAL_EINVAL;
+      return -1;
+    }
+  } else {
+    if ( XLALgetLISADetectorTensor ( &detT1, tGPS, chan1 ) != 0 ) {
+      LALPrintError ("\nXLALgetLISADetectorTensor() failed !\n\n");
+      xlalErrno = XLAL_EINVAL;
+      return -1;
+    }
+    if ( XLALgetLISADetectorTensor ( &detT2, tGPS, chan2 ) != 0 ) {
+      LALPrintError ("\nXLALgetLISADetectorTensor() failed !\n\n");
+      xlalErrno = XLAL_EINVAL;
+      return -1;
+    }
+    detT->d11 = detT1.d11 - detT2.d11;
+    detT->d12 = detT1.d12 - detT2.d12;
+    detT->d13 = detT1.d13 - detT2.d13;
+    detT->d22 = detT1.d22 - detT2.d22;
+    detT->d23 = detT1.d23 - detT2.d23;
+    detT->d33 = detT1.d33 - detT2.d33;
   }
 
   return 0;
