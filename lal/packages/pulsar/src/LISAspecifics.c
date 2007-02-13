@@ -68,7 +68,6 @@ XLALcreateLISA (LALDetector *Detector,	/**< [out] LALDetector */
 		CHAR channelNum		/**< [in] which TDI observable: '1' = X, '2'= Y, '3' = Z, '4' = Y-Z, '5' = Z-X, '6' = X-Y */
 		)
 {
-  LALFrDetector detector_params;
   LALDetector Detector1;
 
   if ( !Detector )
@@ -77,28 +76,28 @@ XLALcreateLISA (LALDetector *Detector,	/**< [out] LALDetector */
   switch ( channelNum )
     {
     case '1':
-      strcpy ( detector_params.name, "Z1: LISA TDI X" );
-      strcpy ( detector_params.prefix, "Z1");
+      strcpy ( Detector1.frDetector.name, "Z1: LISA TDI X" );
+      strcpy ( Detector1.frDetector.prefix, "Z1");
       break;
     case '2':
-      strcpy ( detector_params.name, "Z2: LISA TDI Y" );
-      strcpy ( detector_params.prefix, "Z2");
+      strcpy ( Detector1.frDetector.name, "Z2: LISA TDI Y" );
+      strcpy ( Detector1.frDetector.prefix, "Z2");
       break;
     case '3':
-      strcpy ( detector_params.name, "Z3: LISA TDI Z" );
-      strcpy ( detector_params.prefix, "Z3");
+      strcpy ( Detector1.frDetector.name, "Z3: LISA TDI Z" );
+      strcpy ( Detector1.frDetector.prefix, "Z3");
       break;
     case '4':
-      strcpy ( detector_params.name, "Z4: LISA TDI Y-Z" );
-      strcpy ( detector_params.prefix, "Z4");
+      strcpy ( Detector1.frDetector.name, "Z4: LISA TDI Y-Z" );
+      strcpy ( Detector1.frDetector.prefix, "Z4");
       break;
     case '5':
-      strcpy ( detector_params.name, "Z5: LISA TDI Z-X" );
-      strcpy ( detector_params.prefix, "Z5");
+      strcpy ( Detector1.frDetector.name, "Z5: LISA TDI Z-X" );
+      strcpy ( Detector1.frDetector.prefix, "Z5");
       break;
     case '6':
-      strcpy ( detector_params.name, "Z6: LISA TDI X-Y" );
-      strcpy ( detector_params.prefix, "Z6");
+      strcpy ( Detector1.frDetector.name, "Z6: LISA TDI X-Y" );
+      strcpy ( Detector1.frDetector.prefix, "Z6");
       break;
     default:
       LALPrintError ("\nIllegal LISA TDI index '%c': must be one of {'1', '2', '3', '4', '5', '6'}.\n\n", channelNum );
@@ -107,14 +106,15 @@ XLALcreateLISA (LALDetector *Detector,	/**< [out] LALDetector */
     } /* switch (detIndex) */
 
   /* fill frDetector with dummy numbers: meaningless for LISA */
-  detector_params.vertexLongitudeRadians = 0;
-  detector_params.vertexLatitudeRadians = 0;
-  detector_params.vertexElevation = 0;
-  detector_params.xArmAltitudeRadians = 0;
-  detector_params.xArmAzimuthRadians = 0;
+  Detector1.frDetector.vertexLongitudeRadians = 0;
+  Detector1.frDetector.vertexLatitudeRadians = 0;
+  Detector1.frDetector.vertexElevation = 0;
+  Detector1.frDetector.xArmAltitudeRadians = 0;
+  Detector1.frDetector.xArmAzimuthRadians = 0;
+  Detector1.frDetector.yArmAltitudeRadians = 0;
+  Detector1.frDetector.yArmAzimuthRadians = 0;
 
-  if ( XLALCreateDetector(&Detector1, &detector_params, LALDETECTORTYPE_IFODIFF ) == NULL )
-    return -1;
+  Detector1.type = LALDETECTORTYPE_ABSENT;
 
   (*Detector) = Detector1;
 
