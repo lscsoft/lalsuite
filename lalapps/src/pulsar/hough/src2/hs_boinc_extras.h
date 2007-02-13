@@ -24,8 +24,10 @@ NRCSID(HSBOINCEXTRASHRCSID,"$Id$");
 #endif
 
 #if (HS_CHECKPOINTING)
+#define SET_CHECKPOINT set_checkpoint()
 #define GET_CHECKPOINT init_and_read_checkpoint
-#define INSERT_INTO_FSTAT_TOPLIST add_candidate_and_checkpoint
+/* #define INSERT_INTO_FSTAT_TOPLIST add_candidate_and_checkpoint */
+#define INSERT_INTO_FSTAT_TOPLIST add_checkpoint_candidate
 #else
 #define GET_CHECKPOINT(toplist,total,count,outputname,cptname) *total=0;
 #define INSERT_INTO_FSTAT_TOPLIST insert_into_fstat_toplist
@@ -65,6 +67,11 @@ extern void init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
         of init_and_read_checkpoint(), which, however, should be the same
         in all reasonable cases. */
 extern int add_candidate_and_checkpoint (toplist_t*toplist, FstatOutputEntry cand);
+
+/* replacement for add_candidate_and_checkpoint(), currently being tested */
+extern int add_checkpoint_candidate (toplist_t*toplist, FstatOutputEntry cand);
+extern void set_checkpoint(void);
+
 
 /* does the final (compact) write of the file and cleans up checkpointing stuff
    The checkpoint file remains there in case something goes wrong during the rest */
