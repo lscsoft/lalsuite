@@ -43,7 +43,7 @@ NRCSID(PNTEMPLATESC,"$Id$");
 /* Default parameter settings. */
 int lalDebugLevel = 0;
 
-static void PSItoMasses (LALStatus *status, InspiralTemplate *params, UINT4 *valid, REAL4 psi0, REAL4 psi3);
+/*static void PSItoMasses (LALStatus *status, InspiralTemplate *params, UINT4 *valid, REAL4 psi0, REAL4 psi3);*/
 void  LALInspiralCreateFlatBank(LALStatus *status, REAL4VectorSequence *list, InspiralBankParams *bankParams);
 static void
 GetInspiralMoments (
