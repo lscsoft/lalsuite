@@ -1964,6 +1964,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
       coarseBankIn.fLower);
   ADD_PROCESS_PARAM("float","%f","--max-total-mass",
       userParam.maxTotalMass);
+  ADD_PROCESS_PARAM("float","%f","--min-total-mass",
+      userParam.minTotalMass);
   ADD_PROCESS_PARAM("float","%f","--m1",	
       userParam.m1);
   ADD_PROCESS_PARAM("float","%f","--m2",	
@@ -3587,9 +3589,12 @@ ParseParameters(	INT4 			*argc,
 	Help();
       }
       else if (!strcmp(argv[i],"--max-total-mass")) {
-	
 	BEParseGetDouble(argv,  &i, &tmp1);
 	userParam->maxTotalMass = (REAL4)tmp1;	
+      }
+      else if (!strcmp(argv[i],"--min-total-mass")) {
+	BEParseGetDouble(argv,  &i, &tmp1);
+	userParam->minTotalMass = (REAL4)tmp1;	
       }
       else if (!strcmp(argv[i],"--ascii2xml")) {       
 	ascii2xml = 1;
@@ -4129,7 +4134,16 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
           exit(1);
 	}
     }
-
+  if (userParam->minTotalMass != -1)
+    {
+      if (userParam->minTotalMass > 2*randIn->mMax) 
+	{	
+	  sprintf(msg, "--min-total-mass (%f) must be < twice the maximal mass (%f) ",
+	      userParam->maxTotalMass , randIn->mMax );
+          fprintf(stderr, msg);
+          exit(1);
+        }
+    }
   /* massChoice setting (begin)*/
 
 
@@ -4367,6 +4381,7 @@ void Help(void)
   fprintf(stderr, "\t[--fl-template<float>]\t\t set the lower cut off frequnecy of template \n");
   fprintf(stderr, "\t[--fl<float>]\t\t\t set both template and signal lower cutoff frequency \n");
   fprintf(stderr, "\t[--max-total-mass<float>]\t set maximum total mass to be injected\n");
+  fprintf(stderr, "\t[--min-total-mass<float>]\t set minimum total mass to be injected\n");
   fprintf(stderr, "\t[--gps-start-time<integer>]\t set gps start time if real data or psd are requested\n");
   fprintf(stderr, "\t[--m1<float>]\t\t\t force injection first individual mass to be equal to m1. needs to set m2 as well then\n");
   fprintf(stderr, "\t[--m2<float>]\t\t\t force injection second individual mass to be equal to m2. needs to set m1 as well then\n");

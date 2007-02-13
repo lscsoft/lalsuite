@@ -284,6 +284,7 @@ typedef struct{
   double m1,m2, psi0,psi3, tau0, tau3, template_m1, template_m2;
   DetectorName noiseModel;
   REAL4   maxTotalMass;
+  REAL4   minTotalMass;
   char *chanName;
   CHAR *calCacheName;
   CHAR *frInCacheName;
