@@ -479,7 +479,7 @@ int main( int argc, char *argv[] )
      with those values ALL triggers will survive (i.e. no cut). */
   accuracyParams.iotaCutH1H2=-1.0;
   accuracyParams.iotaCutH1L1=-1.0;
-  accuracyParams.grb=0;
+  accuracyParams.exttrig=0;
 
 
   /*
@@ -1207,7 +1207,7 @@ int main( int argc, char *argv[] )
         sourceFile = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
         memcpy( sourceFile, optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
-	accuracyParams.grb=1;
+	accuracyParams.exttrig=1;
         break;
         
       default:
@@ -1804,7 +1804,7 @@ int main( int argc, char *argv[] )
     for ( ifoTwo = 0; ifoTwo < LAL_NUM_IFO; ifoTwo++)
     {
       XLALReturnDetector( &bDet, ifoTwo );
-      if ( accuracyParams.grb )
+      if ( accuracyParams.exttrig )
       {
         sourceTime.gpsSeconds=(INT4)( (endCoincidence+startCoincidence)/2.0 );
         sourceTime.gpsNanoSeconds=0;
