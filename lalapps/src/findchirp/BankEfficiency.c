@@ -196,7 +196,6 @@ main (INT4 argc, CHAR **argv )
   if (vrbflg){
     fprintf(stdout, " ... done \n");
   }
-
   /* --- create the template bank --- */
  if ( vrbflg )
   {
@@ -230,7 +229,8 @@ main (INT4 argc, CHAR **argv )
        fflush(stdout);
      }
  }
-/*
+
+ /*
 
 if  ( userParam.dataCheckPoint )
   {
@@ -1942,6 +1942,10 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
       coarseBankIn.fUpper);
   ADD_2PROCESS_PARAM("float","%f %f","--bank-mass-range",
       coarseBankIn.mMin, coarseBankIn.mMax);
+  ADD_PROCESS_PARAM("float","%f","--bank-max-total-mass",
+      coarseBankIn.MMax);
+  ADD_PROCESS_PARAM("float","%f","--bank-min-total-mass",
+      coarseBankIn.MMin);
   ADD_2PROCESS_PARAM("float","%f %f","--bank-beta-range",
       coarseBankIn.betaMin, coarseBankIn.betaMax);
   ADD_2PROCESS_PARAM("float","%f %f","--bank-psi0-range",
@@ -3524,6 +3528,14 @@ ParseParameters(	INT4 			*argc,
       else if (!strcmp(argv[i],"--bank-mass-range")) {
 	BEParseGetDouble2(argv,  &i, &(coarseBankIn->mMin), &(coarseBankIn->mMax));
       }
+      else if (!strcmp(argv[i],"--bank-max-total-mass")) {
+	BEParseGetDouble(argv,  &i, &(coarseBankIn->MMax));
+        coarseBankIn->massRange       = MinMaxComponentTotalMass; 
+      }
+      else if (!strcmp(argv[i],"--bank-min-total-mass")) {
+	BEParseGetDouble(argv,  &i, &(coarseBankIn->MMin));
+        coarseBankIn->massRange       = MinMaxComponentTotalMass; 
+      }
       else if (!strcmp(argv[i],"--bank-beta-range")) {
 	BEParseGetDouble2(argv,  &i, &(coarseBankIn->betaMin), &(coarseBankIn->betaMax));
       }
@@ -4344,6 +4356,8 @@ void Help(void)
   
   fprintf(stderr, "\t[--bank-number-fcut<integer>]\t set the number of BCV fcut \n");
   fprintf(stderr, "\t[--bank-mass-range<float float>] set the range of mass to be covered by the SPA bank\n");
+  fprintf(stderr, "\t[--bank-max-total-mass<float>] set the max total mass of the bank\n");
+  fprintf(stderr, "\t[--bank-min-total-mass<float>] set the min total mass of the bank\n");
   fprintf(stderr, "\t[--bank-psi0-range<float float>] set the range of psi0 to be covered by the BCV bank\n");
   fprintf(stderr, "\t[--bank-psi3-range<float float>] set the range of psi3 to be covered by the BCV bank\n");
   fprintf(stderr, "\t[--channel<string>]\t\t set the channel to look at \n");
