@@ -16,5 +16,5 @@ INCLUDES = -I$(top_srcdir)/src
 if HAVE_PYTHON
 pkgpython_DATA = __init__.py
 endif
-EXTRA_DIST = series.c series.h getdate.y
+EXTRA_DIST = series.c series.h getdate.y __init__.py
 TESTS = lalapps_version
