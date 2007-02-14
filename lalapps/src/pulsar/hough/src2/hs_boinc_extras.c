@@ -830,6 +830,11 @@ int add_candidate_and_checkpoint (toplist_t*toplist, FstatOutputEntry cand) {
   FILE* fp;
   int ret;
 
+  if(toplist != cptf->list) {
+    LogPrintf (LOG_CRITICAL,  "ERROR: wrong toplist passed to add_candidate_and_checkpoint()\n", cptfilename);
+    return(-2);
+  }
+
   ret = fstat_cpt_file_add (cptf, cand);
 
   /* if (boinc_time_to_checkpoint()) */ {
@@ -850,9 +855,17 @@ int add_candidate_and_checkpoint (toplist_t*toplist, FstatOutputEntry cand) {
 }
 
 
+
 int add_checkpoint_candidate (toplist_t*toplist, FstatOutputEntry cand) {
+  if(toplist != cptf->list) {
+    LogPrintf (LOG_CRITICAL,  "ERROR: wrong toplist passed to add_checkpoint_candidate()\n", cptfilename);
+    return(-2);
+  }
+
   return(fstat_cpt_file_add (cptf, cand));
 }
+
+
 
 /* set_checkpoint() */
 void set_checkpoint () {
