@@ -84,6 +84,9 @@ static const LALUnit empty_LALUnit;
 /* User variables */
 BOOLEAN uvar_help;
 BOOLEAN uvar_lisasim;
+BOOLEAN uvar_makeYminusZ;
+BOOLEAN uvar_makeZminusX;
+BOOLEAN uvar_makeXminusY;
 CHAR *uvar_extraComment;
 CHAR *uvar_outputDir;
 CHAR *uvar_inputXML;
@@ -113,6 +116,8 @@ main(int argc, char *argv[])
   COMPLEX8FrequencySeries *sft = NULL;
   REAL4 fourpifL;
   COMPLEX8 ztmp;
+  SFTVector **SFTVectList;
+  SFTVector *SFTvect;
 
   lalDebugLevel = 0;
 
@@ -193,14 +198,19 @@ main(int argc, char *argv[])
   sftParams.noiseSFTs = NULL;
   sftParams.make_v2SFTs = 1;
 
+  if ( ( SFTVectList = LALCalloc( multiTs->length, sizeof(*SFTVectList) ) ) == NULL )
+      return LISAMAKESFTS_EMEM;
+
   for ( ifo=0; ifo < multiTs->length; ifo ++ )
     {
-      SFTVector *SFTvect = NULL;
       CHAR *desc;
       if ( (desc = assembleDescription ( multiTs->data[ifo]->name, uvar_miscField )) == NULL )
 	return -1;
 
+      SFTvect = NULL;
+
       LAL_CALL ( LALSignalToSFTs (&status, &SFTvect, multiTs->data[ifo], &sftParams ), &status );
+      SFTVectList[ifo] = SFTvect;
       /* Calibrate into "strain" using long-wavelength approx */
       for ( sidx=0; sidx < SFTvect->length; sidx++ )
 	{
@@ -221,19 +231,104 @@ main(int argc, char *argv[])
 		  sft->data->data[fidx].re /= (fourpifL * fourpifL);
 		  sft->data->data[fidx].im /= (fourpifL * fourpifL);
 		}
-	    }
-	}
+	    } /* for fidx < sft->data->length */
+	} /* for sidx < SFTvect->length */
 
       LAL_CALL ( LALWriteSFTVector2Dir (&status, SFTvect, uvar_outputDir, add_comment, desc ), &status );
       LALFree ( desc );
-      LAL_CALL ( LALDestroySFTVector ( &status, &SFTvect ), &status );
     } /* for ifo < length */
 
+  if ( uvar_makeYminusZ ) {
+    CHAR *desc;
+    CHAR comboname[MAX_FILENAME_LEN];
+    UINT4 ifo1 = 1;
+    UINT4 ifo2 = 2;
+
+    LALSnprintf ( comboname, MAX_FILENAME_LEN, "{%s}-{%s}", multiTs->data[ifo1]->name, multiTs->data[ifo2]->name );
+    if ( (desc = assembleDescription ( comboname, uvar_miscField )) == NULL )
+      return -1;
+    if ( multiTs->length != 3 )
+      {
+	LogPrintf (LOG_CRITICAL,  "Need 3 input time series to make Y-Z; got %d\n", multiTs->length);
+	return LISAMAKESFTS_EINPUT;
+      }
+    SFTvect = NULL;
+    LAL_CALL ( LALSubtractSFTVectors (&status, &SFTvect, SFTVectList[ifo1], SFTVectList[ifo2]), &status );
+    for ( sidx=0; sidx < SFTvect->length; sidx++ )
+      {
+	SFTvect->data[sidx].name[0] = 'Z';
+	SFTvect->data[sidx].name[1] = '4';
+      }
+    LAL_CALL ( LALWriteSFTVector2Dir (&status, SFTvect, uvar_outputDir, add_comment, desc ), &status );
+    LALFree ( desc );
+    
+  } /* if uvar_makeYminusZ */
+
+  if ( uvar_makeZminusX ) {
+    CHAR *desc;
+    CHAR comboname[MAX_FILENAME_LEN];
+    UINT4 ifo1 = 2;
+    UINT4 ifo2 = 0;
+
+    LALSnprintf ( comboname, MAX_FILENAME_LEN, "{%s}-{%s}", multiTs->data[ifo1]->name, multiTs->data[ifo2]->name );
+    if ( (desc = assembleDescription ( comboname, uvar_miscField )) == NULL )
+      return -1;
+    if ( multiTs->length != 3 )
+      {
+	LogPrintf (LOG_CRITICAL,  "Need 3 input time series to make Z-X; got %d\n", multiTs->length);
+	return LISAMAKESFTS_EINPUT;
+      }
+    SFTvect = NULL;
+    LAL_CALL ( LALCreateSFTVector (&status, &SFTvect, SFTVectList[0]->length,
+				   SFTVectList[0]->data[0].data->length ),
+	       &status );
+    LAL_CALL ( LALSubtractSFTVectors (&status, &SFTvect, SFTVectList[ifo1], SFTVectList[ifo2]), &status );
+    for ( sidx=0; sidx < SFTvect->length; sidx++ )
+      {
+	SFTvect->data[sidx].name[0] = 'Z';
+	SFTvect->data[sidx].name[1] = '5';
+      }
+    LAL_CALL ( LALWriteSFTVector2Dir (&status, SFTvect, uvar_outputDir, add_comment, desc ), &status );
+    LALFree ( desc );
+    
+  } /* if uvar_makeZminusX */
+
+  if ( uvar_makeXminusY ) {
+    CHAR *desc;
+    CHAR comboname[MAX_FILENAME_LEN];
+    UINT4 ifo1 = 0;
+    UINT4 ifo2 = 1;
+
+    LALSnprintf ( comboname, MAX_FILENAME_LEN, "{%s}-{%s}", multiTs->data[ifo1]->name, multiTs->data[ifo2]->name );
+    if ( (desc = assembleDescription ( comboname, uvar_miscField )) == NULL )
+      return -1;
+    if ( multiTs->length != 3 )
+      {
+	LogPrintf (LOG_CRITICAL,  "Need 3 input time series to make X-Y; got %d\n", multiTs->length);
+	return LISAMAKESFTS_EINPUT;
+      }
+    SFTvect = NULL;
+    LAL_CALL ( LALCreateSFTVector (&status, &SFTvect, SFTVectList[0]->length,
+				   SFTVectList[0]->data[0].data->length ),
+	       &status );
+    LAL_CALL ( LALSubtractSFTVectors (&status, &SFTvect, SFTVectList[ifo1], SFTVectList[ifo2]), &status );
+    for ( sidx=0; sidx < SFTvect->length; sidx++ )
+      {
+	SFTvect->data[sidx].name[0] = 'Z';
+	SFTvect->data[sidx].name[1] = '6';
+      }
+    LAL_CALL ( LALWriteSFTVector2Dir (&status, SFTvect, uvar_outputDir, add_comment, desc ), &status );
+    LALFree ( desc );
+    
+  } /* if uvar_makeXminusY */
 
   /* free memory */
   LALFree ( add_comment );
   for ( ifo = 0; ifo < multiTs->length ; ifo ++ )
-    XLALDestroyREAL4TimeSeries ( multiTs->data[ifo] );
+    {
+      LAL_CALL ( LALDestroySFTVector ( &status, &(SFTVectList[ifo]) ), &status );
+      XLALDestroyREAL4TimeSeries ( multiTs->data[ifo] );
+    }
   LALFree ( multiTs->data );
   LALFree ( multiTs );
   LAL_CALL (LALDestroyUserVars (&status), &status);
@@ -269,6 +364,10 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status, miscField,	'm', UVAR_OPTIONAL, "User-specifiable portion of the SFT-filename ('misc' field)");
   
   LALregBOOLUserVar(status,   lisasim,		's', UVAR_OPTIONAL, "TDI data are from LISA Simulator");
+
+  LALregBOOLUserVar(status,   makeYminusZ,	'x', UVAR_OPTIONAL, "Produce Y-Z (combination independent of X)");
+  LALregBOOLUserVar(status,   makeZminusX,	'y', UVAR_OPTIONAL, "Produce Z-X (combination independent of Y)");
+  LALregBOOLUserVar(status,   makeXminusY,	'z', UVAR_OPTIONAL, "Produce X-Y (combination independent of Z)");
 
   LALregBOOLUserVar(status,   help,		'h', UVAR_HELP,     "Print this help/usage message");
   
