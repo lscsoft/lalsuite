@@ -1345,6 +1345,10 @@ int MAIN( int argc, char *argv[]) {
 	  
 	} /* end loop over coarse grid fdot values */
 
+      /* this is necessary here, because the checkpoint needs some information from here */
+      SHOW_PROGRESS(dopplerpos1.Alpha,dopplerpos1.Delta,
+		    skyGridCounter,thisScan1.numSkyGridPoints);
+
       SET_CHECKPOINT;
 
       XLALNextDopplerSkyPos( &dopplerpos1, &thisScan1 );
