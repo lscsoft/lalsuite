@@ -140,12 +140,21 @@ class kurve:
     def getCandidateBandwidth(self):
         """
         This methods figures out the curves maximun bandwidth and returns
-        it in units of Hz.
+        it in units of Hz.  This doesn't necessarily correlate to end Freq - start Freq
         """
-        bandWidth=self.printStopFreq() - self.printStartFreq()
+        minFreq=0
+        maxFreq=0
+        listFreq=[]
+        currentFreq=0
+        if self.element.__len__() > 0:
+            for entry in self.element:
+                listFreq.append(entry[3])
+            listFreq.sort()
+            minFreq=listFreq[0]
+            maxFreq=listFreq[listFreq.__len__()-1]
+        bandWidth=maxFreq-minFreq
         #Remember bandwidth above is middle bin to middle bin must and .5 and .5 bin edges!
-        answer=abs(bandWidth)
-        return answer
+        return abs(bandWidth)
     #End method getCandidateBandwidth
 
     def getCandidateDuration(self):
@@ -419,10 +428,9 @@ class candidateList:
         if ((int(content.__len__()).__mod__(2) != 0)):
             print 'Error parsing :',self.filename," Number of data lines :",content.__len__()
             os.abort()
-        if (content.__len__() > 1) and (self.totalCount == 0):
-            print "Hum?  The file appears inconsistent."
-            print "File has ",content.__len__(),"lines with header listing ",self.totalCount," entries."
-            print inputFilename
+#        if (content.__len__() > 1) and (self.totalCount == 0):
+#            print "File has ",content.__len__(),"lines with header listing ",self.totalCount," entries."
+#            print inputFilename
 
         if (content.__len__ > 0):
              walkIndex=0
@@ -575,13 +583,23 @@ class candidateList:
         dataIndex=[]
         counter=0
         if decimateFactor>0:
-            while counter <= self.curves.__len__():
+            while counter < self.curves.__len__():
                 dataIndex.append(counter)
                 counter=counter+decimateFactor
         else:
             dataIndex=range(self.curves.__len__())
         for currentIndex in dataIndex:
-            curveElement=self.curves[currentIndex]
+            try:
+                curveElement=self.curves[currentIndex]
+            except IndexError:
+                print "Current Index     :",currentIndex
+                print "Length self.curves:",self.curves.__len__()
+                print "File being loaded :",self.filename[0]
+                if currentIndex<0:
+                    print "Invalid index: Skipping bin width calculation"
+                    return
+                else:
+                    print "Continuing!"
             for entry in curveElement.getKurveDataBlock():
                 TDArrayFreq.append(entry[3])
                 TDArrayGPSFloat.append(entry[2].getAsFloat())
@@ -1317,8 +1335,11 @@ class candidateList:
             fTime=str(os.path.basename(self.filename[0]).split(':')[2])
             if fTime.__contains__(','):
                 [A,B]=fTime.split(',')
-            else:
+            elif fTime.isdigit():
                 A=fTime
+                B=0
+            else:
+                A=0
                 B=0
             gpsStart=gpsInt(A,B)
             minVal=gpsStart.getAsFloat()
@@ -1348,9 +1369,6 @@ def generateFileList(inputTXT):
         dirnameFilename=os.path.dirname(absPathFilename)
         basenameFilename=os.path.basename(absPathFilename)
         extensionFilename=str(str(basenameFilename).split('.')[1])
-        print dirnameFilename
-        print basenameFilename
-        print extensionFilename
     if os.path.isdir(dirnameFilename):
         #Create the listing of files to process
         objList=[]
@@ -1359,8 +1377,6 @@ def generateFileList(inputTXT):
         for entry in fileList:
             if (str(entry).__contains__(extensionFilename)):
                 objList.append(dirnameFilename+'/'+entry)
-            #elif (str(entry).__contains__(dirnameFilename)):
-            #    objList.append(entry)
     elif os.path.isfile(dirnameFilename):
             #Read this list in from the file
             #Could possibly be just the name of single candidate file!

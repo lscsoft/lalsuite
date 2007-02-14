@@ -104,6 +104,11 @@ parser.add_option("-p","--print",dest="print2file",
                   action="store_true",
                   help="This option states that files specified with the --file option should be printed to a similiar list of coordinate pairs that may be plotted using some external X interface, such as gnuplot. To show you a visual representation of the candidates found.  THIS OPTION NOT YET IMPLEMENTED!"
                   )
+parser.add_option("-x","--stats",dest="stats",
+                  default=False,
+                  action="store_true",
+                  help="Determines the stats of the candidates present in the file it returns to the screen: meanP, meanL, stdP, stdL, minL,minP,minP,maxP. Found in the specified candidate file."
+                  )
 (options,args)=parser.parse_args()
 filename=str(options.filename)
 glob=options.glob
@@ -132,7 +137,7 @@ if (glob and (canList.__len__() >= 1)):
         outName=newGlobFile.__filemaskGlob__()
     #If file preexists erase it first!
     if os.path.isfile(outName):
-        print "Prexistinf file found:",outName
+        print "Prexisting file found:",outName
         print "Removing!"
         os.unlink(outName)
     for entry in canList:

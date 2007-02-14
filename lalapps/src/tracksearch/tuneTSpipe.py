@@ -117,11 +117,39 @@ class tuneObject:
         return filesinPath
     #End method __findFiles__
 
-    
+    def __findDirs__(self,searchPath,dirName):
+        """
+        Finds any path that terminates its name with dirName.  This is an
+        exact search ie find != Find and no partial text searches as in
+        __findFiles__
+        """
+        dirsInPath=[]
+        for root,dir,files in os.walk(searchPath):
+            tmpPath=os.path.abspath(root)
+            if tmpPath.endswith(dirName):
+                dirsInPath.append(tmpPath)
+        return dirsInPath
+    #End __findDirs__(self,searchPath,dirName)
+
+    def __scanDirectoryCandidateFiles__(self,entry):
+        """
+        Looks at all *.candidate files tallying up the num of files with an
+        entry
+        """
+        pathString=os.path.normpath(entry+'/*.candidates')
+        cmdString='cd '+entry+' ;grep -m 1 "Curve number" *.candidates | wc -l'
+        [err,fileCountTXT]=commands.getstatusoutput(cmdString)
+        if fileCountTXT.isdigit():
+            triggerCount=int(fileCountTXT)
+        else:
+            triggerCount=0
+        return triggerCount
+    #End __scanDirectoryCandidateFiles__(entry)
+
     def __determineDEinPath__(self,candPath):
         """
-        This uses the shell and grep to count the number of candidate files with
-        a trigger in some particular path
+        This uses the shell and grep to count the number of candidate files
+        with a trigger in some particular path.  NOT CONSIDERED RELIABLE!
         """
         cmdString='grep -h -i "Total Curves" '+str(candPath)+'/* | grep -c -v 0'
         cmdString2='grep -h -i "Total Curves" '+str(candPath)+'/* | wc -l '
@@ -395,12 +423,12 @@ class tuneObject:
                 threshP=meanP+(myFAR*stdP)
                 threshL=int(round(float((meanL+(myFAR*stdL)))))
                 if threshP < maxP:
-                    print "Threshold seems inappropriate:",threshP,maxP
-                    print "Resetting IP threshold to 1 event in data set!"
+                    #print "Threshold seems inappropriate:",threshP,maxP
+                    #print "Resetting IP threshold to 1 event in data set!"
                     threshP=maxP
                 if threshL < maxL:
-                    print "Threshold seems inappropriate:",threshL,maxL
-                    print "Resetting CL threshold to 1 event in data set!"
+                    #print "Threshold seems inappropriate:",threshL,maxL
+                    #print "Resetting CL threshold to 1 event in data set!"
                     threshL=maxL
             myOpts=str(str(entry).replace(self.installPipes,'').split('/')[1]).split('_')
             myLH=myOpts[1]
@@ -548,8 +576,151 @@ class tuneObject:
         newCP.write(fp)
         fp.close()
     #End DEeditIniFile
-    
-    def performDEcalc(self):
+
+    def __performShellDEcalc__(self):
+        """
+        Relys on quickly check /1/ directions and counting number of canidate
+        files. Then it counts the number of files with 1 or more entries.
+        From this we determine the detection efficiency.  Though we won't know
+        anything about the triggers themselves.  To work successfully we need
+        to execute the search with masterIni [housekeeper] to keep *.candidate
+        files in the /1/ directory!  We assume that the trials are configured
+        at one injection per map! This is critical, see masterIni
+        [tracksearchinjection] to verify this!
+        """
+        print "Remember we assumed that masterIni configured with 1 injection per map!"
+        print "Options in [tracksearchinjection]"
+        for entry in self.cpIni.options('tracksearchinjection'):
+            print entry," ",self.cpIni.get('tracksearchinjection',entry)
+        print ""
+        if self.cpIni.has_section('layerconfig'):
+            topBlockSize=int(self.cpIni.get('layerconfig','layerTopBlockSize'))
+            timeScale=float(self.cpIni.get('layerconfig','layer1TimeScale'))
+            deltaT=timeScale
+            mapCounts=topBlockSize/timeScale
+        else:
+            print "Error missing required section LAYERCONFIG"
+            os.abort
+        if self.cpIni.has_section('candidatethreshold'):
+            print "Ok.  There is a problem. Please review your tuning setup.  You have a candidateThreshold section in the masterIni file.  We can't do python thresholding with this tuning subroutine."
+            print "Trying alternate tuning routine: self.__performMapDEcalc__"
+            print "BE WARNED THIS ALTERNATIVE ROUTINE IS REALLY REALLY SLOW!!!"
+            print "Please see tuneTSpipe.py comments for explaination."
+            [outputPickle,outputP,outputL,outputContour]=self.__performMapDEcalc__()
+            return [outputPickle,outputP,outputL,outputContour]
+        else:
+            globFiles=self.__findFiles__(self.installPipes2,['Glob','_1.candidates','DE_'])
+        print "Calculating efficiencies for ",globFiles.__len__()," trials."
+        countMe=0
+        modValue=10
+        outputPickle=[]
+        outputL=[]
+        outputP=[]
+        outputContour=[]
+        #Scan for directories /1/ labeled
+        foundDirs=self.__findDirs__(self.installPipes2,'1')
+        for entry in foundDirs:
+            if countMe%modValue==0:
+                sys.stdout.writelines('.')
+                sys.stdout.flush()
+            countMe=countMe+1
+            myOpts=str(str(entry).replace(self.installPipes2,'').split('/')[1]).split('_')
+            triggerCount=self.__scanDirectoryCandidateFiles__(entry)
+            h=myOpts[1]
+            l=myOpts[2]
+            p=myOpts[3]
+            len=myOpts[4]
+            eff=float(triggerCount/mapCounts)
+            curveCount=int(triggerCount)
+            outputPickle.append([h,l,p,len,eff,mapCounts,0,0])
+            if float(p)>0:
+                outputP.append([float(h),float(l),float(p),float(eff),int(curveCount),int(mapCounts)])
+            if float(len)>3:
+                outputL.append([float(h),float(l),int(float(len)),float(eff),int(curveCount),int(mapCounts)])
+            outputContour.append([float(h),float(l),float(p),int(curveCount)])
+        #End the loop
+        print " "
+        return [outputPickle,outputP,outputL,outputContour]
+    #end __performShellDEcalc__()
+        
+    def __performMapDEcalc__(self):
+        """
+        Checks for triggers using a map definition from GWDAW9 paper.
+        Takes the ini file information to count the number of maps that
+        were triggered using the Glob file for this information.
+        Take summary information from file and process it using the masterini file information
+        Assume that there is only 1 valid injection per map/interval of interest.
+        """
+        if self.cpIni.has_section('layerconfig'):
+            topBlockSize=int(self.cpIni.get('layerconfig','layerTopBlockSize'))
+            timeScale=float(self.cpIni.get('layerconfig','layer1TimeScale'))
+            deltaT=timeScale
+            mapCounts=topBlockSize/timeScale
+        else:
+            print "Error missing required section LAYERCONFIG"
+            os.abort
+        if self.cpIni.has_section('candidatethreshold'):
+            globFiles=self.__findFiles__(self.installPipes2,['Glob','_1.candidates','DE_','Threshold:'])
+        else:
+            globFiles=self.__findFiles__(self.installPipes2,['Glob','_1.candidates','DE_'])
+        print "Calculating efficiencies for ",globFiles.__len__()," files."
+        countMe=0
+        modValue=10
+        outputPickle=[]
+        outputL=[]
+        outputP=[]
+        outputContour=[]
+        numInjections=int(self.cpIni.get('tracksearchinjection','inject_count'))
+        numInjections=0
+        for entry in globFiles:
+            if countMe%modValue==0:
+                sys.stdout.writelines('.')
+                sys.stdout.flush()
+            myOpts=str(str(entry).replace(self.installPipes2,'').split('/')[1]).split('_')
+            globStartTime=float(str(os.path.basename(entry)).split(':')[2])
+            h=myOpts[1]
+            l=myOpts[2]
+            p=myOpts[3]
+            len=myOpts[4]
+            #Load glob file
+            candObj=candidateList()
+            candObj.loadfile(entry)
+            fileSummary=candObj.dumpCandidateKurveSummary()
+            fileSummary.sort()
+            del candObj
+            #Create Summary
+            injectCount=0
+            currentTime=globStartTime
+            #Check through Summary and record answer
+            indexLow=0
+            indexHigh=0
+            while currentTime < globStartTime+topBlockSize:
+                while fileSummary[indexLow]<currentTime:
+                    indexLow=indexLow+1
+                while fileSummary[indexHigh]<(currentTime+deltaT):
+                    indexHigh=indexHigh+1
+                #Take the difference this is num of triggers between currentTime and cT+dT
+                trigFound=indexHigh-indexLow
+                if trigFound>0:
+                    injectCount=injectCount+1
+                currentTime=currentTime+deltaT
+            eff=injectCount/mapCounts
+            curveCount=int(injectCount)
+            outputPickle.append([h,l,p,len,eff,mapCounts,0,0])
+            if float(p)>0:
+                outputP.append([float(h),float(l),float(p),float(eff),int(curveCount),int(numInjections)])
+            if float(len)>3:
+                outputL.append([float(h),float(l),int(float(len)),float(eff),int(curveCount),int(numInjections)])
+            outputContour.append([float(h),float(l),float(p),int(curveCount)])
+        #End the loop
+        print " "
+        return [outputPickle,outputP,outputL,outputContour]
+    #end __performMapDEcalc__()
+
+    def __performNonMapDEcalc__(self):
+        """
+        This counts just triggers from the glob not considering our orignal trigger definition.
+        """
         #count num of can files with 1 entry+
         #determine percentage succsessful
         #write 2 ranked 4c list lh ll #map percentage
@@ -581,8 +752,7 @@ class tuneObject:
             l=myOpts[2]
             p=myOpts[3]
             len=myOpts[4]
-            #eff=float(candObj.totalCount)/float(numInjections)
-            eff=0
+            eff=curveCount
             outputPickle.append([h,l,p,len,eff,curveCount,numInjections,entry])
             if float(p)>0:
                 outputP.append([float(h),float(l),float(p),float(eff),int(curveCount),int(numInjections)])
@@ -590,11 +760,17 @@ class tuneObject:
                 outputL.append([float(h),float(l),int(float(len)),float(eff),int(curveCount),int(numInjections)])
             outputContour.append([float(h),float(l),float(p),int(curveCount)])
         print " "
+        return [outputPickle,outputP,outputL,outputContour]
+    #End __performNonMapDEcalc__()
+        
+    def performDEcalc(self):
+        #[outputPickle,outputP,outputL,outputContour]=self.__performNonMapDEcalc__()
+        [outputPickle,outputP,outputL,outputContour]=self.__performShellDEcalc__()
         #Write out results files to disk
         format4CL = "%10.5f  %10.5f  %15i    %10.5f %10i %10i\n"
         format4CP = "%10.5f  %10.5f  %10.5f  %10.5f %10i %10i\n"
         format6C = "%10.5f %10.5f  %10.5f %10i  %10.5f %10i %10i\n"
-        formatContour = "%10.5f %10.5f %10.5f %10i\n"
+        formatContour = "%10.5f %10.5f %10.5f %10.5f\n"
         file_fp=open(self.home+'/DE_results_L.dat','w')
         file2_fp=open(self.home+'/DE_results_Matlab_Length.dat','w')
         file3_fp=open(self.home+'/DE_results_Matlab_Length_NoBack.dat','w')
@@ -604,8 +780,8 @@ class tuneObject:
             background=self.getBackground(entry[0],entry[1],self.home+'/FA_results_Found.pickle')
             #Omit zero result entries!
             if float(entry[4])>0:
-                file2_fp.write(formatContour % (entry[0],entry[1],entry[2],entry[4]))
-            file3_fp.write(formatContour % (entry[0],entry[1],entry[2],entry[4]-background))
+                file2_fp.write(formatContour % (entry[0],entry[1],entry[2],entry[3]))
+            file3_fp.write(formatContour % (entry[0],entry[1],entry[2],entry[3]-background))
         file_fp.close()
         file2_fp.close()
         file3_fp.close()
@@ -618,8 +794,8 @@ class tuneObject:
             background=self.getBackground(entry[0],entry[1],self.home+'/FA_results_Found.pickle')
             background=int(background)
             if float(entry[4])>0:
-                file1_fp.write( formatContour %(entry[0],entry[1],entry[2],entry[4]))
-            file3_fp.write( formatContour %(entry[0],entry[1],entry[2],entry[4]-background))
+                file1_fp.write( formatContour %(entry[0],entry[1],entry[2],entry[3]))
+            file3_fp.write( formatContour %(entry[0],entry[1],entry[2],entry[3]-background))
         file_fp.close()
         file1_fp.close()
         file3_fp.close()
