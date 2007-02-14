@@ -1203,6 +1203,10 @@ LALReadTimestampsFile (LALStatus* status, LIGOTimeGPSVector **timestamps, const 
  *
  * NOTE: Currently this only supports writing v2-SFTs.
  * If you need to write a v1-SFT, you should use LALWrite_v2SFT_to_v1file() 
+ * 
+ * NOTE2: the comment written into the SFT-file contains the 'sft->name' field concatenated with 
+ * the user-specified 'comment'
+ *
  */
 void
 LALWriteSFT2file (LALStatus *status,
@@ -1212,6 +1216,7 @@ LALWriteSFT2file (LALStatus *status,
 {
   FILE  *fp = NULL;
   UINT4 comment_len = 0;
+  CHAR *SFTcomment;
   UINT4 pad_len = 0;
   CHAR pad[] = {0, 0, 0, 0, 0, 0, 0};	/* for comment-padding */
   _SFT_header_v2_t rawheader;
@@ -1241,16 +1246,25 @@ LALWriteSFT2file (LALStatus *status,
       if ( lalDebugLevel ) LALPrintError ("\nFailed to open file '%s' for writing: %s\n\n", fname, strerror(errno));
       ABORT ( status, SFTFILEIO_ESFTWRITE, SFTFILEIO_MSGESFTWRITE );      
     }
-  
+
+  /* concat sft->name + comment for SFT-file comment-field */
+  comment_len = strlen(sft->name) + 1;
+  if ( comment )
+    comment_len += strlen(comment) + 2;	/* separate by "; " */
+
+  if ( (SFTcomment = LALCalloc( comment_len, sizeof(CHAR) )) == NULL ) {
+    ABORT( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
+  }
+  strcpy ( SFTcomment, sft->name );
+  if ( comment ) {
+    strcat ( SFTcomment, "; " );
+    strcat ( SFTcomment, comment );
+  }
+
   /* comment length including null terminator to string must be an
-   * integer multiple of eight bytes. comment==NULL means 'no
-   * comment'  
+   * integer multiple of eight bytes. 
    */
-  if (comment) 
-    {
-      comment_len = strlen(comment) + 1;
-      pad_len = (8 - (comment_len % 8)) % 8;
-    }
+  pad_len = (8 - (comment_len % 8)) % 8;
   
   /* ----- fill out header */
   rawheader.version        		= 2;
@@ -1269,11 +1283,9 @@ LALWriteSFT2file (LALStatus *status,
   /* ----- compute CRC */
   rawheader.crc64 = calc_crc64((const CHAR*)&rawheader, sizeof(rawheader), ~(0ULL));
 
-  if ( comment )
-    {
-      rawheader.crc64 = calc_crc64((const CHAR*)comment, comment_len, rawheader.crc64);
-      rawheader.crc64 = calc_crc64((const CHAR*)pad, pad_len, rawheader.crc64);
-    }
+  rawheader.crc64 = calc_crc64((const CHAR*)SFTcomment, comment_len, rawheader.crc64);
+  rawheader.crc64 = calc_crc64((const CHAR*)pad, pad_len, rawheader.crc64);
+
   rawheader.crc64 = calc_crc64((const CHAR*) sft->data->data, sft->data->length * sizeof( *sft->data->data ), rawheader.crc64);
   
   /* ----- write the header to file */
@@ -1282,15 +1294,14 @@ LALWriteSFT2file (LALStatus *status,
   }
   
   /* ----- write the comment to file */
-  if ( comment )
-    {
-      if ( comment_len != fwrite( comment, 1, comment_len, fp) ) {
-	ABORT ( status, SFTFILEIO_ESFTWRITE, SFTFILEIO_MSGESFTWRITE );
-      }
-      if (pad_len != fwrite( pad, 1, pad_len, fp) ) {
-	ABORT ( status, SFTFILEIO_ESFTWRITE, SFTFILEIO_MSGESFTWRITE );
-      }
-    } /* if comment */
+  if ( comment_len != fwrite( SFTcomment, 1, comment_len, fp) ) {
+    ABORT ( status, SFTFILEIO_ESFTWRITE, SFTFILEIO_MSGESFTWRITE );
+  }
+  if (pad_len != fwrite( pad, 1, pad_len, fp) ) {
+    ABORT ( status, SFTFILEIO_ESFTWRITE, SFTFILEIO_MSGESFTWRITE );
+  }
+
+  LALFree ( SFTcomment );
 
   /* write the data to the file.  Data must be packed REAL,IMAG,REAL,IMAG,... */
   if ( sft->data->length != fwrite( sft->data->data, sizeof(*sft->data->data), sft->data->length, fp) ) {
