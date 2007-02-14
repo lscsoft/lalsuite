@@ -32,7 +32,7 @@ int XLALComputeExcessPower(
 		double hsumsquares = 0.0;
 		unsigned t;
 
-		for(t = tile->tstart; t < tile->tstart + tile->tbins; t += tstep) {
+		for(t = tile->tstart + tstep / 2; t < tile->tstart + tile->tbins; t += tstep) {
 			double sum = 0.0;
 			double hsum = 0.0;
 			unsigned channel;
