@@ -174,7 +174,6 @@ simulated data.
 [\option{--dump-diagnostics~\parm{XML filename}}] \newline \hspace*{0.5in}
 \option{--filter-corruption}~\parm{samples} \newline \hspace*{0.5in}
 \option{--frame-cache}~\parm{cache file} \newline \hspace*{0.5in}
-\option{--frame-dir}~\parm{directory} \newline \hspace*{0.5in}
 \option{--gps-end-time}~\parm{seconds} \newline \hspace*{0.5in}
 \option{--gps-start-time}~\parm{seconds} \newline \hspace*{0.5in}
 [\option{--help}] \newline \hspace*{0.5in}
@@ -198,9 +197,8 @@ simulated data.
 [\option{--seed}~\parm{seed}] \newline \hspace*{0.5in}
 \option{--target-sample-rate}~\parm{Hz} \newline \hspace*{0.5in}
 \option{--tile-stride-fraction}~\parm{fraction} \newline \hspace*{0.5in}
-[\option{--useoverwhitening}] \newline \hspace*{0.5in}
+[\option{--enable-over-whitening}] \newline \hspace*{0.5in}
 [\option{--user-tag}~\parm{comment}] \newline \hspace*{0.5in}
-[\option{--verbose}] \newline \hspace*{0.5in}
 \option{--window}~\parm{window} \newline \hspace*{0.5in}
 \option{--window-length}~\parm{samples} \newline \hspace*{0.5in}
 \option{--window-shift}~\parm{samples}
@@ -447,14 +445,17 @@ of the same size overlap one-another.  This numeric parameter must be \(=
 which causes each tile to overlap its neighbours in time by \(\frac{1}{2}\)
 its duration and in frequency by \(\frac{1}{2}\) its bandwidth.
 
+\ite[\option{--enable-over-whitening}]
+Turn on over whitening.  The channel filters used to construct the
+time-frequency plane will be weighted by the inverse of the noise power
+spectral density, causing the pixels in the time-frequency plane to be
+constructed preferentially from low-noise frequency bins.
+
 \item[\option{--user-tag} \parm{comment}]
 Set the user tag to the string \parm{comment}.  This string must not
 contain spaces or dashes (``-'').  This string will appear in the name of
 the file to which output information is written, and is recorded in the
 various XML tables within the file.
-
-\item[\option{--verbose}]
-Enable the output of informational messages.
 
 \item[\option{--window} \parm{window}]
 Set the type of window to use when extracting an analysis window from the
