@@ -525,6 +525,10 @@ LALSubtractSFTVectors (LALStatus *status,
   UINT4 numSFTs1, numSFTs2;
   UINT4 i, j;
   SFTVector *ret = NULL;
+  CHAR name1Trunc[LALNameLength];
+  CHAR name2Trunc[LALNameLength];
+  CHAR prefix[LALNameLength];
+  UINT4 halfNameLength;
 
   INITSTATUS( status, "LALSubtractSFTVectors", SFTUTILSC);
   ATTATCHSTATUSPTR (status); 
@@ -561,6 +565,8 @@ LALSubtractSFTVectors (LALStatus *status,
     }
 
   TRY ( LALCreateSFTVector ( status->statusPtr, &ret, numSFTs1, numBins1 ), status );
+
+  halfNameLength = (LALNameLength - strlen("Xn:{}-{}"))/2;
   
   /* copy the *complete* SFTs (header+ data !) one-by-one */
   for (i=0; i < numSFTs1; i ++)
@@ -574,6 +580,10 @@ LALSubtractSFTVectors (LALStatus *status,
 	  ret->data[i].data->data[j].re = inVect1->data[i].data->data[j].re - inVect2->data[i].data->data[j].re;
 	  ret->data[i].data->data[j].im = inVect1->data[i].data->data[j].im - inVect2->data[i].data->data[j].im;
 	}  /* for j < numBins1 */
+      LALSnprintf ( name1Trunc, halfNameLength, "%s", inVect1->data[i].name );
+      LALSnprintf ( name2Trunc, halfNameLength, "%s", inVect2->data[i].name );
+      LALSnprintf ( prefix, strlen("Xn:"), "%s", inVect1->data[i].name );
+      LALSnprintf ( ret->data[i].name, LALNameLength, "%s{%s}-{%s}", prefix, name1Trunc, name2Trunc );
     } /* for i < numSFTs1 */
 
   (*outVect) = ret;
