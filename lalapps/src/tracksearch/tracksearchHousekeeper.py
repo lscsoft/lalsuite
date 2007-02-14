@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-__author__ = 'Charlie Torres <charlie@phys.utb.edu>'
+__author__ = 'Cristina Torres <cristina@phys.utb.edu>'
 __date__ = '$Date$'
 __version__ = ''
 

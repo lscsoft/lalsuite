@@ -353,6 +353,18 @@ LALappsTSACollapseMap(LALStatus         *status,
    * Begin the map collapse
    * Collapse fBins first into mapPrimeF
    */
+  /* 
+   * Note: Logic flaw on map collapse!
+   * Consider a pixel of avg power P in each pixel.  If the curve is
+   * 40 pixels long the total power is 40*P.  If we collapse that map
+   * in the time direction by 10 columns -> 1 column.  The new curve
+   * would be 4 pixels long. It should have the same total power!  We
+   * can not average the pixels and keep the average from the 40 pixel
+   * map.  Instead the 4 pixels must have an average power per 
+   * pixel of 10 times the original map pixel average. ie P'=10P
+   * We were doing P'=10P/10=P but we know P'>P it has to be!
+   * If we average we keep the curvature dynamic range down!
+   */ 
   for (h=0;h<map->imageRep->tCol;h++)
     {
       for (i=0,k=0;i<(map->imageRep->fRow/2+1);i=i+cparams.averageFBins,k++)
@@ -383,7 +395,7 @@ LALappsTSACollapseMap(LALStatus         *status,
 	      /* [time][freq] */
 	      tmpSum=tmpSum+mapPrimeF->imageRep->map[(i+j)][h];
 	    }
-	  mapPrime->imageRep->map[k][h]=tmpSum/pixelCount;
+	     mapPrime->imageRep->map[k][h]=tmpSum/pixelCount;
 	}
     }
   /*
