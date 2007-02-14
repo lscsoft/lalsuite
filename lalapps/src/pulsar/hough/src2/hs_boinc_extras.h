@@ -35,6 +35,7 @@ NRCSID(HSBOINCEXTRASHRCSID,"$Id$");
 #endif
 
 #else
+#define SET_CHECKPOINT
 #define GET_CHECKPOINT(toplist,total,count,outputname,cptname) *total=0;
 #define INSERT_INTO_FSTAT_TOPLIST insert_into_fstat_toplist
 #endif
