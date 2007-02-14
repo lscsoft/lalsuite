@@ -59,6 +59,9 @@
 "                           (DDISTR = log10),\n"\
 "                           or over volume (DDISTR = volume)\n"\
 "                           or using source list (DDISTR = source)\n"\
+"  --l-distr LDISTR         sets the distribution for the source locations,\n"\
+"                           LDISTR=source uses the locations given in the \n"\
+"                           source-file, LDISTR=random uses random locations\n"\
 "  --min-mass MIN           set the minimum component mass to MIN (3.0)\n"\
 "  --max-mass MAX           set the maximum component mass to MAX (20.0)\n"\
 "  [--min-mass2 MIN]      set the minimum component mass2 to MIN (minMass1)\n"\
@@ -126,6 +129,7 @@ enum { mTotElem, etaElem, distElem, incElem, phiElem, lonElem, latElem,
   psiElem, m1Elem, m2Elem, numElem };
 enum dDistTag {sourceD, uniform, logten, volume} dDistr;
 enum mDistrTag {sourceM, totalMass, componentMass, gaussian} mDistr;
+enum lDistrTag {sourceL, random} lDistr;
 
 SimInspiralTable *this_sim_insp;
 
@@ -712,17 +716,21 @@ int inj_params( double *injPar, char *source )
 
   /* use the user-specified parameters to calculate the distance */
 
-  if ( dDistr == sourceD )
+  if ( lDistr == sourceL )
   {
     /* get sky position */
     sky_position( &dist, &alpha, &delta, source );
   }
-  else
+  else if ( lDistr == random )
   {
     /* generate sky angles */
     alpha = asin( 2.0 * my_urandom() - 1.0 ) ;
     delta = LAL_TWOPI * my_urandom() ;
+  }
 
+  /* generate user specified random distance if NOT source specified */
+  if ( dDistr != sourceD )
+  {
 
     if (dDistr == uniform )
     {
@@ -854,6 +862,7 @@ int main( int argc, char *argv[] )
     {"min-distance",            required_argument, 0,                'p'},
     {"max-distance",            required_argument, 0,                'r'},
     {"d-distr",                 required_argument, 0,                'e'},
+    {"l-distr",                 required_argument, 0,                'l'},
     {"enable-milkyway",         required_argument, 0,                'M'},
     {"disable-milkyway",              no_argument, 0,                'D'},
     {"output",                  required_argument, 0,                'P'},
@@ -1231,7 +1240,38 @@ int main( int argc, char *argv[] )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown source distribution: "
-              "%s must be one of (uniform, log10, volume, source)\n", 
+              "%s, must be one of (uniform, log10, volume, source)\n", 
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+
+        break;
+	
+      case 'l':
+        optarg_len = strlen( optarg ) + 1;
+        memcpy( dummy, optarg, optarg_len );
+        this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+          calloc( 1, sizeof(ProcessParamsTable) );
+        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+            PROGRAM_NAME );
+        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--l-distr" );
+        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+            optarg );
+
+        if (!strcmp(dummy, "source")) 
+        {         
+          lDistr=sourceL; 
+        } 
+        else if (!strcmp(dummy, "random")) 
+        {
+          lDistr=random;        
+        } 
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown location distribution: "
+              "%s must be one of (source, random)\n", 
               long_options[option_index].name, optarg );
           exit( 1 );
         }
