@@ -26,7 +26,7 @@ NRCSID(HSBOINCEXTRASHRCSID,"$Id$");
 #if (HS_CHECKPOINTING)
 #define GET_CHECKPOINT init_and_read_checkpoint
 
-#if 1
+#if 0
 #define SET_CHECKPOINT
 #define INSERT_INTO_FSTAT_TOPLIST add_candidate_and_checkpoint
 #else
