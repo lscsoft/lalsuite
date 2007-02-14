@@ -512,6 +512,79 @@ LALConcatSFTVectors (LALStatus *status,
 
 
 
+/** Subtract two SFT-vectors and put the results in a new one.
+ *
+ */
+void
+LALSubtractSFTVectors (LALStatus *status,
+		     SFTVector **outVect,	/**< [out] concatenated SFT-vector */
+		     const SFTVector *inVect1,	/**< input-vector 1 */
+		     const SFTVector *inVect2 ) /**< input-vector 2 */
+{
+  UINT4 numBins1, numBins2;
+  UINT4 numSFTs1, numSFTs2;
+  UINT4 i, j;
+  SFTVector *ret = NULL;
+
+  INITSTATUS( status, "LALSubtractSFTVectors", SFTUTILSC);
+  ATTATCHSTATUSPTR (status); 
+
+  ASSERT (outVect,  status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
+  ASSERT ( *outVect == NULL,  status, SFTUTILS_ENONULL,  SFTUTILS_MSGENONULL);
+  ASSERT (inVect1 && inVect1->data, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
+  ASSERT (inVect2 && inVect2->data, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
+
+
+  /* NOTE: we allow SFT-entries with NULL data-entries, i.e. carrying only the headers */
+  if ( inVect1->data[0].data )
+    numBins1 = inVect1->data[0].data->length;
+  else
+    numBins1 = 0;
+  if ( inVect2->data[0].data )
+    numBins2 = inVect2->data[0].data->length;
+  else
+    numBins2 = 0;
+
+  if ( numBins1 != numBins2 )
+    {
+      LALPrintError ("\nERROR: the SFT-vectors must have the same number of frequency-bins!\n\n");
+      ABORT ( status, SFTUTILS_EINPUT,  SFTUTILS_MSGEINPUT);
+    }
+  
+  numSFTs1 = inVect1 -> length;
+  numSFTs2 = inVect2 -> length;
+
+  if ( numSFTs1 != numSFTs2 )
+    {
+      LALPrintError ("\nERROR: the SFT-vectors must have the same number of SFTs!\n\n");
+      ABORT ( status, SFTUTILS_EINPUT,  SFTUTILS_MSGEINPUT);
+    }
+
+  TRY ( LALCreateSFTVector ( status->statusPtr, &ret, numSFTs1, numBins1 ), status );
+  
+  /* copy the *complete* SFTs (header+ data !) one-by-one */
+  for (i=0; i < numSFTs1; i ++)
+    {
+      LALCopySFT ( status->statusPtr, &(ret->data[i]), &(inVect1->data[i]) );
+      BEGINFAIL ( status ) {
+	LALDestroySFTVector ( status->statusPtr, &ret );
+      } ENDFAIL(status);
+      for (j=0; j < numBins1; j++)
+	{
+	  ret->data[i].data->data[j].re = inVect1->data[i].data->data[j].re - inVect2->data[i].data->data[j].re;
+	  ret->data[i].data->data[j].im = inVect1->data[i].data->data[j].im - inVect2->data[i].data->data[j].im;
+	}  /* for j < numBins1 */
+    } /* for i < numSFTs1 */
+
+  (*outVect) = ret;
+  
+  DETATCHSTATUSPTR (status); 
+  RETURN (status);
+
+} /* LALSubtractSFTVectors() */
+
+
+
 /** Append the given SFTtype to the SFT-vector (no SFT-specific checks are done!) */
 void
 LALAppendSFT2Vector (LALStatus *status,
