@@ -129,7 +129,7 @@ enum { mTotElem, etaElem, distElem, incElem, phiElem, lonElem, latElem,
   psiElem, m1Elem, m2Elem, numElem };
 enum dDistTag {sourceD, uniform, logten, volume} dDistr;
 enum mDistrTag {sourceM, totalMass, componentMass, gaussian} mDistr;
-enum lDistrTag {sourceL, random} lDistr;
+enum lDistrTag {sourceL, randomLoc} lDistr;
 
 SimInspiralTable *this_sim_insp;
 
@@ -721,7 +721,7 @@ int inj_params( double *injPar, char *source )
     /* get sky position */
     sky_position( &dist, &alpha, &delta, source );
   }
-  else if ( lDistr == random )
+  else if ( lDistr == randomLoc )
   {
     /* generate sky angles */
     alpha = asin( 2.0 * my_urandom() - 1.0 ) ;
@@ -1265,7 +1265,7 @@ int main( int argc, char *argv[] )
         } 
         else if (!strcmp(dummy, "random")) 
         {
-          lDistr=random;        
+          lDistr=randomLoc;        
         } 
         else
         {
