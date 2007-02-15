@@ -4,7 +4,6 @@
 
 /* TODO:
    - why does boinc_time_to_checkpoint() always yield 0?
-   - command-line parameters for setting buffersize and maximum filesize
    - final output write specific to hough, w/o reducing precision
    - error handling in checkpointing
    - catch malloc errors in worker()
@@ -534,13 +533,13 @@ static void worker (void) {
 
     /* maximal output filesize (roughly - can grow beyond this until the next checkpoint) */
     else if (MATCH_START("--MaxFileSize=",argv[arg],l)) {
-      maxsize = atoi(argv[arg]+l);
+      maxsize = 1024*atoi(argv[arg]+l);
       rarg--; rargc--; /* this argument is not passed to the main worker function */
     }
 
     /* size of output file buffer */
     else if (MATCH_START("--OutputBufSize=",argv[arg],l)) {
-      bufsize = atoi(argv[arg]+l);
+      bufsize = 1024*atoi(argv[arg]+l);
       rarg--; rargc--; /* this argument is not passed to the main worker function */
     }
 
