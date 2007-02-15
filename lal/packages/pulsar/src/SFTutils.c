@@ -18,8 +18,8 @@
  */
 
 /**
- * \author Reinhard Prix, Badri Krishnan
- * \date 2005
+ * \author Reinhard Prix, Badri Krishnan, John T. Whelan
+ * \date 2005, 2007
  * \file 
  * \ingroup SFTfileIO
  * \brief Utility functions for handling of SFTtype and SFTVector's.
@@ -513,12 +513,12 @@ LALConcatSFTVectors (LALStatus *status,
 
 
 
-/** Subtract two SFT-vectors and put the results in a new one.
+/** Subtract two SFT-vectors and put the results in a new one (which it allocates).
  *
  */
 void
 LALSubtractSFTVectors (LALStatus *status,
-		     SFTVector **outVect,	/**< [out] concatenated SFT-vector */
+		     SFTVector **outVect,	/**< [out] difference of SFT-vectors */
 		     const SFTVector *inVect1,	/**< input-vector 1 */
 		     const SFTVector *inVect2 ) /**< input-vector 2 */
 {
@@ -584,7 +584,8 @@ LALSubtractSFTVectors (LALStatus *status,
 	}  /* for j < numBins1 */
       LALSnprintf ( name1Trunc, halfNameLength, "%s", inVect1->data[i].name );
       LALSnprintf ( name2Trunc, halfNameLength, "%s", inVect2->data[i].name );
-      LALSnprintf ( prefix, strlen("Xn:"), "%s", inVect1->data[i].name );
+      LALSnprintf ( prefix, (strlen("Xn:") + 1) ,
+		    "%s", inVect1->data[i].name );
       LALSnprintf ( ret->data[i].name, LALNameLength, "%s{%s}-{%s}", prefix, name1Trunc, name2Trunc );
     } /* for i < numSFTs1 */
 
