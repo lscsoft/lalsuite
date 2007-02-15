@@ -244,7 +244,7 @@ main(int argc, char *argv[])
     UINT4 ifo1 = 1;
     UINT4 ifo2 = 2;
 
-    LALSnprintf ( comboname, MAX_FILENAME_LEN, "{%s}-{%s}", multiTs->data[ifo1]->name, multiTs->data[ifo2]->name );
+    LALSnprintf ( comboname, MAX_FILENAME_LEN, "Z4:{%s}-{%s}", multiTs->data[ifo1]->name, multiTs->data[ifo2]->name );
     if ( (desc = assembleDescription ( comboname, uvar_miscField )) == NULL )
       return -1;
     if ( multiTs->length != 3 )
@@ -271,7 +271,7 @@ main(int argc, char *argv[])
     UINT4 ifo1 = 2;
     UINT4 ifo2 = 0;
 
-    LALSnprintf ( comboname, MAX_FILENAME_LEN, "{%s}-{%s}", multiTs->data[ifo1]->name, multiTs->data[ifo2]->name );
+    LALSnprintf ( comboname, MAX_FILENAME_LEN, "Z5:{%s}-{%s}", multiTs->data[ifo1]->name, multiTs->data[ifo2]->name );
     if ( (desc = assembleDescription ( comboname, uvar_miscField )) == NULL )
       return -1;
     if ( multiTs->length != 3 )
@@ -301,7 +301,7 @@ main(int argc, char *argv[])
     UINT4 ifo1 = 0;
     UINT4 ifo2 = 1;
 
-    LALSnprintf ( comboname, MAX_FILENAME_LEN, "{%s}-{%s}", multiTs->data[ifo1]->name, multiTs->data[ifo2]->name );
+    LALSnprintf ( comboname, MAX_FILENAME_LEN, "Z6:{%s}-{%s}", multiTs->data[ifo1]->name, multiTs->data[ifo2]->name );
     if ( (desc = assembleDescription ( comboname, uvar_miscField )) == NULL )
       return -1;
     if ( multiTs->length != 3 )
