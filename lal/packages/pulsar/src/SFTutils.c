@@ -451,7 +451,6 @@ LALSubtractSFTVectors (LALStatus *status,
 		     const SFTVector *inVect1,	/**< input-vector 1 */
 		     const SFTVector *inVect2 ) /**< input-vector 2 */
 {
-  UINT4 numBins1, numBins2;
   UINT4 numSFTs1, numSFTs2;
   UINT4 i, j;
   SFTVector *ret = NULL;
@@ -467,24 +466,8 @@ LALSubtractSFTVectors (LALStatus *status,
   ASSERT ( *outVect == NULL,  status, SFTUTILS_ENONULL,  SFTUTILS_MSGENONULL);
   ASSERT (inVect1 && inVect1->data, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
   ASSERT (inVect2 && inVect2->data, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
+  ASSERT ( inVect1->data[0].data && inVect2->data[0].data, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
 
-
-  /* NOTE: we allow SFT-entries with NULL data-entries, i.e. carrying only the headers */
-  if ( inVect1->data[0].data )
-    numBins1 = inVect1->data[0].data->length;
-  else
-    numBins1 = 0;
-  if ( inVect2->data[0].data )
-    numBins2 = inVect2->data[0].data->length;
-  else
-    numBins2 = 0;
-
-  if ( numBins1 != numBins2 )
-    {
-      LALPrintError ("\nERROR: the SFT-vectors must have the same number of frequency-bins!\n\n");
-      ABORT ( status, SFTUTILS_EINPUT,  SFTUTILS_MSGEINPUT);
-    }
-  
   numSFTs1 = inVect1 -> length;
   numSFTs2 = inVect2 -> length;
 
@@ -494,34 +477,66 @@ LALSubtractSFTVectors (LALStatus *status,
       ABORT ( status, SFTUTILS_EINPUT,  SFTUTILS_MSGEINPUT);
     }
 
-  TRY ( LALCreateSFTVector ( status->statusPtr, &ret, numSFTs1, numBins1 ), status );
+  TRY ( LALCreateSFTVector ( status->statusPtr, &ret, numSFTs1, inVect1->data[0].data->length ), status );
 
   halfNameLength = (LALNameLength - strlen("Xn:{}-{}"))/2;
   
   /* copy the SFTs and subtract their data one-by-one */
   for (i=0; i < numSFTs1; i ++)
     {
-      COMPLEX8Sequence* tmpDataPtr = ret->data[i].data;
-      /* copy over header from source SFT */
-      memcpy( &(ret->data[i]), &(inVect1->data[i]), sizeof(ret->data[i]) );
-      /* restore data ptr (length of two series is same) */
-      ret->data[i].data = tmpDataPtr;
+      UINT4 numBins1, numBins2;
+      LIGOTimeGPS epoch1, epoch2;
+      REAL8 Freq1, Freq2, deltaF1, deltaF2;
+      numBins1 = inVect1->data[i].data->length;
+      numBins2 = inVect2->data[i].data->length;
+      epoch1   = inVect1->data[i].epoch;
+      epoch2   = inVect2->data[i].epoch;
+      Freq1    = inVect1->data[i].f0;
+      Freq2    = inVect2->data[i].f0;
+      deltaF1  = inVect1->data[i].deltaF;
+      deltaF2  = inVect2->data[i].deltaF;      
+
+      if ( numBins1 != numBins2 ) {
+	LALPrintError ("\nERROR: the SFTs must have the same number of frequency-bins!\n\n");
+	goto failed;
+      }
+      if ( (epoch1.gpsSeconds != epoch2.gpsSeconds) || ( epoch1.gpsNanoSeconds != epoch2.gpsNanoSeconds ) ) {
+	LALPrintError ("\nERROR: the SFTs must have the same epochs!\n\n");
+	goto failed;
+      }
+      if ( Freq1 != Freq2 ) {
+	LALPrintError ("\nERROR: the SFTs must have the same start frequency!\n\n");
+	goto failed;
+      }
+      if ( deltaF1 != deltaF2 ) {
+	LALPrintError ("\nERROR: the SFTs must have the same frequency-steps!\n\n");
+	goto failed;
+      }
+      /* copy header info */
+      ret->data[i].epoch  = epoch1;
+      ret->data[i].f0     = Freq1;
+      ret->data[i].deltaF = deltaF1;
+
       for (j=0; j < numBins1; j++)
 	{
 	  ret->data[i].data->data[j].re = inVect1->data[i].data->data[j].re - inVect2->data[i].data->data[j].re;
 	  ret->data[i].data->data[j].im = inVect1->data[i].data->data[j].im - inVect2->data[i].data->data[j].im;
 	}  /* for j < numBins1 */
+
       LALSnprintf ( name1Trunc, halfNameLength, "%s", inVect1->data[i].name );
       LALSnprintf ( name2Trunc, halfNameLength, "%s", inVect2->data[i].name );
-      LALSnprintf ( prefix, (strlen("Xn:") + 1) ,
-		    "%s", inVect1->data[i].name );
+      LALSnprintf ( prefix, (strlen("Xn:") + 1), "%s", inVect1->data[i].name );
       LALSnprintf ( ret->data[i].name, LALNameLength, "%s{%s}-{%s}", prefix, name1Trunc, name2Trunc );
     } /* for i < numSFTs1 */
 
+  /* success: */
   (*outVect) = ret;
-  
   DETATCHSTATUSPTR (status); 
   RETURN (status);
+
+ failed:
+  LALDestroySFTVector (  status->statusPtr, &ret );
+  ABORT ( status, SFTUTILS_EINPUT,  SFTUTILS_MSGEINPUT);
 
 } /* LALSubtractSFTVectors() */
 
