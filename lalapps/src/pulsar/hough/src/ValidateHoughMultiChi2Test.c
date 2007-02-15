@@ -146,7 +146,7 @@ int main(int argc, char *argv[]){
 
   /* Chi2Test parameters */
   static HoughParamsTest chi2Params;
-  static REAL8Vector numberCountV;  /* Vector with the number count of each block inside */
+  REAL8Vector numberCountV;  /* Vector with the number count of each block inside */
   REAL8  numberCountTotal;   /* Sum over all the numberCounts */
   REAL8  chi2;
 
@@ -539,7 +539,7 @@ int main(int argc, char *argv[]){
   /* memory for number Count Vector */
   numberCountV.length = uvar_p;
   numberCountV.data = NULL;
-  numberCountV.data = (REAL8 *)LALCalloc( uvar_p, sizeof(REAL8));
+  numberCountV.data = (REAL8 *)LALMalloc( uvar_p*sizeof(REAL8));
 
   /* block for calculating peakgram and number count */  
   {
@@ -568,18 +568,18 @@ int main(int argc, char *argv[]){
    /* loop over SFT, generate peakgram and get number count */
 
    j=0;
+   iIFO=0;
+   iSFT=0;
+   
+   numsft = mdetStates->data[iIFO]->length;
   
-   for (iIFO=0 ; iIFO<numifo ; iIFO++){
-
-      iSFT=0;
-      numsft = mdetStates->data[iIFO]->length;
      
-      for (k=0 ; k<uvar_p ; k++){
+      for (k=0 ; k<uvar_p ; k++ ){
        
          numberSFTp=chi2Params.numberSFTp[k];
          numberCount = 0;
 
-         for (ii=0 ; ii < numberSFTp ; ii++ , iSFT++ , j++) {
+         for (ii=0 ; (ii < numberSFTp)&&(iIFO<numifo) ; ii++) {
 	   
 	    sft = inputSFTs->data[iIFO]->data + iSFT;
 
@@ -588,13 +588,26 @@ int main(int argc, char *argv[]){
             index = floor( foft.data[j]*timeBase - sftFminBin + 0.5); 
 
             numberCount += pg1.data[index]*weightsV.data[j];
+	    
+	    j++;
+
+	    iSFT++;
+
+	    if (iSFT >= numsft){
+		
+		iIFO++;
+		iSFT=0;
+		if (iIFO<numifo){
+		numsft = mdetStates->data[iIFO]->length;
+		}
+	    }
 
          } /* loop over SFTs */
        
          numberCountV.data[k]=numberCount;
        	  
       } /* loop over blocks */
-   } /* loop over IFOs */
+  
   }
   
 /* Chi2 Test */
@@ -606,7 +619,7 @@ int main(int argc, char *argv[]){
       numberCountTotal=0;
       chi2=0;   
 
-      for(k=0; k>uvar_p ; k++){
+      for(k=0; k<uvar_p ; k++){
 	  numberCountTotal += numberCountV.data[k];
       }
       
@@ -735,10 +748,11 @@ void SplitSFTs(LALStatus         *status,
 	       REAL8Vector       *weightsV,
 	       HoughParamsTest   *chi2Params){
   
-    INT4    j=0;           /* index of each block. It runs betwen 0 and p */       
+    INT4    j=0;           /* index of each block. It runs betwen 0 and p */ 
+    UINT4   iSFT=0;       
     REAL8   *weights_ptr;  /* pointer to weightsV.data */
     REAL8   sumWeightpMax; /* Value of sumWeight we want to fix in each set of SFTs */
-    UINT4   numberSFT;     /* Counter with the # of SFTs in each set */
+    UINT4   numberSFT;     /* Counter with the # of SFTs in each block */        
     UINT4   mObsCoh, p;
     REAL8   partialsumWeightp, partialsumWeightSquarep;
   
@@ -761,17 +775,16 @@ void SplitSFTs(LALStatus         *status,
 
   sumWeightpMax=mObsCoh/p;       /* Compute the value of the sumWeight we want to fix in each set of SFT's */
   weights_ptr=weightsV->data;    /* Make the pointer to point to the first position of the vector weightsV.data */
+  
 
- 
       for (j=0;(UINT4)(weights_ptr-weightsV->data)<mObsCoh;j++){
 
 	  partialsumWeightSquarep=0;
 	  partialsumWeightp=0;
 	  
-	  for(numberSFT=1;
-	      partialsumWeightp<sumWeightpMax;
-	      numberSFT++){
-		  
+	  for(numberSFT=0;(partialsumWeightp<sumWeightpMax)&&(iSFT<mObsCoh);){
+	          numberSFT++;
+		  iSFT++;
 		  partialsumWeightp += *weights_ptr;
 		  partialsumWeightSquarep += (*weights_ptr)*(*weights_ptr);
 		  weights_ptr++;
