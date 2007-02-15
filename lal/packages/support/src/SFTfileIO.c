@@ -3202,6 +3202,9 @@ is_valid_detector (const char *channel)
       "Z1",	  /* LISA effective IFO 1 */
       "Z2",	  /* LISA effective IFO 2 */
       "Z3",	  /* LISA effective IFO 3 */
+      "Z4",	  /* LISA effective IFO 2 minus 3 */
+      "Z5",	  /* LISA effective IFO 3 minus 1 */
+      "Z6",	  /* LISA effective IFO 1 minus 2 */
       NULL
     };
   
