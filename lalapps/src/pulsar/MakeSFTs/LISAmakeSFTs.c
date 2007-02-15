@@ -331,6 +331,7 @@ main(int argc, char *argv[])
     }
   LALFree ( multiTs->data );
   LALFree ( multiTs );
+  LALFree ( SFTVectList );
   LAL_CALL (LALDestroyUserVars (&status), &status);
 
   LALCheckMemoryLeaks(); 
