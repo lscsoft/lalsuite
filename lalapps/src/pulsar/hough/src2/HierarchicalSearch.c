@@ -1345,6 +1345,8 @@ int MAIN( int argc, char *argv[]) {
 	  
 	} /* end loop over coarse grid fdot values */
 
+      skyGridCounter++;
+      
       /* this is necessary here, because the checkpoint needs some information from here */
       SHOW_PROGRESS(dopplerpos1.Alpha,dopplerpos1.Delta,
 		    skyGridCounter,thisScan1.numSkyGridPoints);
@@ -1353,8 +1355,6 @@ int MAIN( int argc, char *argv[]) {
 
       XLALNextDopplerSkyPos( &dopplerpos1, &thisScan1 );
 
-      skyGridCounter++;
-      
     } /* end while loop over 1st stage coarse skygrid */
 
   LogPrintfVerbatim ( LOG_DEBUG, " done.\n");
