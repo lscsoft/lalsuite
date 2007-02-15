@@ -33,6 +33,7 @@
 
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
+#include <lal/FrequencySeries.h>
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/LISAspecifics.h>
 
@@ -571,6 +572,11 @@ LALSubtractSFTVectors (LALStatus *status,
   /* copy the *complete* SFTs (header+ data !) one-by-one */
   for (i=0; i < numSFTs1; i ++)
     {
+      LALDestroyCOMPLEX8FrequencySeries ( status->statusPtr, &(ret->data[i]) );
+      BEGINFAIL ( status ) {
+	LALDestroySFTVector ( status->statusPtr, &ret );
+      } ENDFAIL(status);
+      memset ( &(ret->data[i]), 0, sizeof( ret->data[0] ) );
       LALCopySFT ( status->statusPtr, &(ret->data[i]), &(inVect1->data[i]) );
       BEGINFAIL ( status ) {
 	LALDestroySFTVector ( status->statusPtr, &ret );
