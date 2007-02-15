@@ -343,13 +343,13 @@ int atomic_write_fstat_toplist_to_file(toplist_t *l, char *filename, UINT4*check
     UINT4 s;
 
 #define TEMP_EXT ".tmp"
-    s = strlen(cptf->filename)+strlen(TEMP_EXT)+1;
+    s = strlen(filename)+strlen(TEMP_EXT)+1;
     tempname = (char*)malloc(s);
     if(!tempname) {
       LogPrintf (LOG_CRITICAL, "Could not allocate new filename\n");
       return(-1);
     }
-    strncpy(tempname,cptf->filename,s);
+    strncpy(tempname,filename,s);
     strncat(tempname,TEMP_EXT,s);
 
     fpnew=fopen(tempname, "wb");
