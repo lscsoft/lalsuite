@@ -260,6 +260,7 @@ main(int argc, char *argv[])
 	SFTvect->data[sidx].name[1] = '4';
       }
     LAL_CALL ( LALWriteSFTVector2Dir (&status, SFTvect, uvar_outputDir, add_comment, desc ), &status );
+    LAL_CALL ( LALDestroySFTVector ( &status, &(SFTvect) ), &status );
     LALFree ( desc );
     
   } /* if uvar_makeYminusZ */
@@ -289,6 +290,7 @@ main(int argc, char *argv[])
 	SFTvect->data[sidx].name[1] = '5';
       }
     LAL_CALL ( LALWriteSFTVector2Dir (&status, SFTvect, uvar_outputDir, add_comment, desc ), &status );
+    LAL_CALL ( LALDestroySFTVector ( &status, &(SFTvect) ), &status );
     LALFree ( desc );
     
   } /* if uvar_makeZminusX */
@@ -318,6 +320,7 @@ main(int argc, char *argv[])
 	SFTvect->data[sidx].name[1] = '6';
       }
     LAL_CALL ( LALWriteSFTVector2Dir (&status, SFTvect, uvar_outputDir, add_comment, desc ), &status );
+    LAL_CALL ( LALDestroySFTVector ( &status, &(SFTvect) ), &status );
     LALFree ( desc );
     
   } /* if uvar_makeXminusY */
