@@ -550,17 +550,6 @@ int fstat_cpt_file_add (FStatCheckpointFile*cptf, FstatOutputEntry line) {
 
     if (cptf->bytes != ftell(cptf->fp)) 
       LogPrintf(LOG_DEBUG,"ERROR: bytes: %u, file: %d\n", cptf->bytes, ftell(cptf->fp));
-
-    if (cptf->bytes >= cptf->maxsize) {
-      LogPrintf(LOG_NORMAL, "Compacting toplist file\n");
-      bytes = atomic_write_fstat_toplist_to_file(cptf->list, cptf->filename, &(cptf->checksum));
-      if (bytes < 0) {
-	LogPrintf(LOG_CRITICAL, "Failed to write toplist to file: %d: %s\n",
-		  errno,strerror(errno));
-	return(-1);
-      }
-      cptf->bytes = bytes;
-    }
   }
   return(ret);
 }
@@ -605,4 +594,25 @@ int fstat_cpt_file_read (FStatCheckpointFile*cptf, UINT4 checksum_should, UINT4 
   cptf->checksum = checksum_read;
 
   return(0);
+}
+
+
+void fstat_cpt_file_compact(FStatCheckpointFile*cptf) {
+  INT4  bytes;
+  UINT4 checksum;
+
+  LogPrintf(LOG_NORMAL, "Compacting toplist file\n");
+  if (cptf->fp)
+    fclose(cptf->fp);
+  else
+    LogPrintf(LOG_CRITICAL, "ERROR: Toplist filepointer is NULL\n");
+  bytes = atomic_write_fstat_toplist_to_file(cptf->list, cptf->filename, &checksum);
+  if (bytes < 0) {
+    LogPrintf(LOG_CRITICAL, "Failed to write toplist to file: %d: %s\n",
+	      errno,strerror(errno));
+    return(-1);
+  }
+  fstat_cpt_file_open(cptf);
+  cptf->bytes = bytes;
+  cptf->checksum = checksum;
 }

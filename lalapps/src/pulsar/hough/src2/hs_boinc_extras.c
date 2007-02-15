@@ -103,7 +103,7 @@ static UINT4 last_count, last_total;      /* last template count, see last_rac *
 /** PROTOTYPES **/
 static void worker (void);
 static void sighandler(int);
-
+static void write_checkpoint(void);
 
 
 
@@ -866,24 +866,38 @@ int add_checkpoint_candidate (toplist_t*toplist, FstatOutputEntry cand) {
 }
 
 
+void write_checkpoint () {
+  FILE* fp;
+  fp = fopen(cptfilename,"w");
+  if (fp) {
+    fprintf(fp,"%f,%f,%d,%d,%d,%d\n",
+	    last_rac, last_dec, last_count, last_total,
+	    cptf->checksum, cptf->bytes);
+    fclose(fp);
+  } else {
+    LogPrintf (LOG_CRITICAL,  "ERROR: Couldn't write checkpoint file %s\n", cptfilename);
+  }
+}
+
 
 /* set_checkpoint() */
 void set_checkpoint () {
-  FILE* fp;
-
-  /* if (boinc_time_to_checkpoint()) */ {
-    fstat_cpt_file_flush (cptf);
-    fp = fopen(cptfilename,"w");
-    if (fp) {
-      fprintf(fp,"%f,%f,%d,%d,%d,%d\n",
-	      last_rac, last_dec, last_count, last_total,
-	      cptf->checksum, cptf->bytes);
-      fclose(fp);
-    } else {
-      LogPrintf (LOG_CRITICAL,  "ERROR: Couldn't write checkpoint file %s\n", cptfilename);
+  if (boinc_time_to_checkpoint())
+    {
+      if (cptf->bytes >= cptf->maxsize)
+	fstat_cpt_file_compact(cptf);
+      else
+	fstat_cpt_file_flush (cptf);
+      write_checkpoint();
+      boinc_checkpoint_completed();
     }
-    boinc_checkpoint_completed();
-  }
+  else if (cptf->bytes >= cptf->maxsize)
+    {
+      boinc_begin_critical_section();
+      fstat_cpt_file_compact(cptf);
+      write_checkpoint();
+      boinc_end_critical_section();
+    }
 }
 
 
