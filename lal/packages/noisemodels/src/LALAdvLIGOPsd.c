@@ -19,16 +19,15 @@ Module to calculate the noise power spectral density for the initial LIGO detect
 The module takes as an input a frequency $f$ in Hz, and it 
 calculates the noise spectral density (per Hz) $S_{h}(f)$ 
 for that frequency. The noise PSD is based on data provided by
-K. Blackburn (see T. Damour, B.R. Iyer and B.S. Sathyaprakash,
-Phys. Rev. D 63, 044023 (2001)) and is approximated by
-the following:
+Kip Thorne, and the fit by B.S.Sathyaprakash
+
+
 \begin{equation}
-   S_h(f) = \left ( \frac {4.49 f}{f_0} \right )^{-56} + 
-            0.16 \left ( \frac{f}{f_0} \right )^{-4.52} + 0.52 + 
-            0.32 \left ( \frac {f}{f_0} \right )^2
+   S_h(f) = S_0\left\{  \left(\frac{f}{f_0}\right)^{-4.14} - 5\left(\frac{f0}{f}\right)^2 + 111. * \left(\frac{1. -
+   \frac{f}{f_0}^2 + 0.5 * \frac{f}{f_0}^4}{1. + 0.5\frac{f}{f_0}^2} \right)\right\};
 \end{equation}
-The returned value is scaled up by $s_0 = 10^{46}/9.$ In otherwords, 
-the expected noise PSD is $9 \times 10^{-46}$ times the returned value.
+where, $f_0=215$Hz
+The returned value is scaled up by $S_0 = 10^{46}.$ 
 
 \subsubsection*{Algorithm}
 
