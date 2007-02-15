@@ -23,8 +23,8 @@ Kip Thorne, and the fit by B.S.Sathyaprakash
 
 
 \begin{equation}
-   S_h(f) = S_0\left\{  \left(\frac{f}{f_0}\right)^{-4.14} - 5\left(\frac{f0}{f}\right)^2 + 111. * \left(\frac{1. -
-   \frac{f}{f_0}^2 + 0.5 * \frac{f}{f_0}^4}{1. + 0.5\frac{f}{f_0}^2} \right)\right\};
+   S_h(f) = S_0\left\{  \left(\frac{f}{f_0}\right)^{-4.14} - 5\left(\frac{f_0}{f}\right)^2 + 111  \left(\frac{1. -
+   \frac{f}{f_0}^2 + 0.5  \frac{f}{f_0}^4}{1. + 0.5\frac{f}{f_0}^2} \right)\right\};
 \end{equation}
 where, $f_0=215$Hz
 The returned value is scaled up by $S_0 = 10^{46}.$ 
