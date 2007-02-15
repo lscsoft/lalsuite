@@ -337,12 +337,21 @@ int write_fstat_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
    derived from the filename by appending ".tmp". Returns the number
    of chars written or -1 if the temp file could not be opened. */
 int atomic_write_fstat_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum) {
-    char tempname[MAXFILENAMELENGTH];
+    char* tempname;
     INT4 length;
     FILE * fpnew;
+    UINT4 s;
 
-    strncpy(tempname,filename,sizeof(tempname)-4);
-    strcat(tempname,".tmp");
+#define TEMP_EXT ".tmp"
+    s = strlen(cptf->filename)+strlen(TEMP_EXT)+1;
+    tempname = (char*)malloc(s);
+    if(!tempname) {
+      LogPrintf (LOG_CRITICAL, "Could not allocate new filename\n");
+      return(-1);
+    }
+    strncpy(tempname,cptf->filename,s);
+    strncat(tempname,TEMP_EXT,s);
+
     fpnew=fopen(tempname, "wb");
     if(!fpnew) {
       LogPrintf (LOG_CRITICAL, "Failed to open temp Fstat file \"%s\" for writing: %d: %s\n",
@@ -350,27 +359,34 @@ int atomic_write_fstat_toplist_to_file(toplist_t *l, char *filename, UINT4*check
 #ifdef _MSC_VER
       LogPrintf (LOG_CRITICAL, "Windows system call returned: %d\n", _doserrno);
 #endif
+      free(tempname);
       return -1;
     }
     length = write_fstat_toplist_to_fp(l,fpnew,checksum);
     fclose(fpnew);
+    
     if (length < 0) {
       LogPrintf (LOG_CRITICAL, "Failed to write temp Fstat file \"%s\": %d: %s\n",
 		 tempname,errno,strerror(errno));
 #ifdef _MSC_VER
       LogPrintf (LOG_CRITICAL, "Windows system call returned: %d\n", _doserrno);
 #endif
+      free(tempname);
       return(length);
     }
+
     if(rename(tempname, filename)) {
       LogPrintf (LOG_CRITICAL, "Failed to rename Fstat file to \"%s\": %d: %s\n",
 		 filename,errno,strerror(errno));
 #ifdef _MSC_VER
       LogPrintf (LOG_CRITICAL, "Windows system call returned: %d\n", _doserrno);
-#endif
+#endif 
+      free(tempname);
       return -1;
-    } else
-      return length;
+    }
+
+    free(tempname);
+    return length;
 }
 
 
@@ -544,6 +560,9 @@ int fstat_cpt_file_add (FStatCheckpointFile*cptf, FstatOutputEntry line) {
     if (bytes < 0) {
       LogPrintf(LOG_CRITICAL, "Failed to write toplist item to file: %d: %s\n",
 		errno,strerror(errno));
+#ifdef _MSC_VER
+      LogPrintf (LOG_CRITICAL, "Windows system call returned: %d\n", _doserrno);
+#endif 
       return(-1);
     }
     cptf->bytes += bytes;
@@ -597,7 +616,7 @@ int fstat_cpt_file_read (FStatCheckpointFile*cptf, UINT4 checksum_should, UINT4 
 }
 
 
-void fstat_cpt_file_compact(FStatCheckpointFile*cptf) {
+int fstat_cpt_file_compact(FStatCheckpointFile*cptf) {
   INT4  bytes;
   UINT4 checksum;
 
@@ -606,13 +625,15 @@ void fstat_cpt_file_compact(FStatCheckpointFile*cptf) {
     fclose(cptf->fp);
   else
     LogPrintf(LOG_CRITICAL, "ERROR: Toplist filepointer is NULL\n");
+
   bytes = atomic_write_fstat_toplist_to_file(cptf->list, cptf->filename, &checksum);
   if (bytes < 0) {
-    LogPrintf(LOG_CRITICAL, "Failed to write toplist to file: %d: %s\n",
-	      errno,strerror(errno));
-    return(-1);
+    return(bytes);
   }
+
   fstat_cpt_file_open(cptf);
   cptf->bytes = bytes;
   cptf->checksum = checksum;
+
+  return(bytes);
 }
