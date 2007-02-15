@@ -440,77 +440,6 @@ LALCopySFT (LALStatus *status,
 
 } /* LALCopySFT() */
 
-
-/** Concatenate two SFT-vectors to a new one.
- *
- * Note: the input-vectors are *copied* completely, so they can safely
- * be free'ed after concatenation. 
- */
-void
-LALConcatSFTVectors (LALStatus *status,
-		     SFTVector **outVect,	/**< [out] concatenated SFT-vector */
-		     const SFTVector *inVect1,	/**< input-vector 1 */
-		     const SFTVector *inVect2 ) /**< input-vector 2 */
-{
-  UINT4 numBins1, numBins2;
-  UINT4 numSFTs1, numSFTs2;
-  UINT4 i;
-  SFTVector *ret = NULL;
-
-  INITSTATUS( status, "LALConcatSFTVector", SFTUTILSC);
-  ATTATCHSTATUSPTR (status); 
-
-  ASSERT (outVect,  status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
-  ASSERT ( *outVect == NULL,  status, SFTUTILS_ENONULL,  SFTUTILS_MSGENONULL);
-  ASSERT (inVect1 && inVect1->data, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
-  ASSERT (inVect2 && inVect2->data, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
-
-
-  /* NOTE: we allow SFT-entries with NULL data-entries, i.e. carrying only the headers */
-  if ( inVect1->data[0].data )
-    numBins1 = inVect1->data[0].data->length;
-  else
-    numBins1 = 0;
-  if ( inVect2->data[0].data )
-    numBins2 = inVect2->data[0].data->length;
-  else
-    numBins2 = 0;
-
-  if ( numBins1 != numBins2 )
-    {
-      LALPrintError ("\nERROR: the SFT-vectors must have the same number of frequency-bins!\n\n");
-      ABORT ( status, SFTUTILS_EINPUT,  SFTUTILS_MSGEINPUT);
-    }
-  
-  numSFTs1 = inVect1 -> length;
-  numSFTs2 = inVect2 -> length;
-
-  TRY ( LALCreateSFTVector ( status->statusPtr, &ret, numSFTs1 + numSFTs2, numBins1 ), status );
-  
-  /* copy the *complete* SFTs (header+ data !) one-by-one */
-  for (i=0; i < numSFTs1; i ++)
-    {
-      LALCopySFT ( status->statusPtr, &(ret->data[i]), &(inVect1->data[i]) );
-      BEGINFAIL ( status ) {
-	LALDestroySFTVector ( status->statusPtr, &ret );
-      } ENDFAIL(status);
-    } /* for i < numSFTs1 */
-
-  for (i=0; i < numSFTs2; i ++)
-    {
-      LALCopySFT ( status->statusPtr, &(ret->data[numSFTs1 + i]), &(inVect2->data[i]) );
-      BEGINFAIL ( status ) {
-	LALDestroySFTVector ( status->statusPtr, &ret );
-      } ENDFAIL(status);
-    } /* for i < numSFTs1 */
-
-  (*outVect) = ret;
-  
-  DETATCHSTATUSPTR (status); 
-  RETURN (status);
-
-} /* LALConcatSFTVectors() */
-
 
 
 /** Subtract two SFT-vectors and put the results in a new one (which it allocates).
