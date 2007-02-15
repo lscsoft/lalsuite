@@ -30,7 +30,7 @@ elif host.find('ldas-grid')>=0:
 else:
         path  		= '/home/cokelaer/lscsoft/lalapps/src/findchirp/'
 
-executable_name = 'lalapps_BankEfficiency'
+executable_name = 'lalapps_test'
 
 
 def set_predefined_search_parameter(BE):
@@ -80,11 +80,12 @@ def create_condor_file(BE, arguments):
 	fp.write('priority = 10\n')
 	
 	tag = str(BE['noise-model'])+'_'+str(BE['fl'])+'_'+ str(BE['search']) +'_'+str(BE['signal'])+'_'+str(BE['signal-order'])+'_'+str(BE['template'])+'_'+str(BE['template-order'])+'_'+str(BE['sampling'])+'_'+str(BE['mm'])+'.$(macroseed)\n'
+
         if host.find('ldas-grid')>=0:        
 		index = 1
 		this_path = '/usr1/'+user+'/'
 		this_file = 'tmp'+str(index)
-		while os.path.isfile(path+this_file)==True:
+		while os.path.isfile(this_path+this_file)==True:
 			index=index+1
 			this_file = 'tmp'+str(index)
 			
@@ -161,7 +162,6 @@ def main():
     time.sleep(1)
     print '--- Parsing user arguments'
     parser = OptionParser()
-    
     parser.add_option( "--noise-model", 
 		dest='noise_model',default='LIGOI',metavar='NOISEMODEL',
 		help=" <VIRGO, GEO, LIGOI, LIGOA, EGO>") 
@@ -200,7 +200,7 @@ def main():
 		help="number of trial." )
     parser.add_option("--bank-grid-spacing",
 		dest='bank_grid_spacing', default='Hexagonal', 
-	 	help="type of template bank placement : Hexagonal, SquareNotOriented, HexagonalNotOriented" )
+	 	help="type of template bank placement : HybridHexagonal,Hexagonal, SquareNotOriented, HexagonalNotOriented" )
     parser.add_option("--fl",
 		dest='fl',  type='int',default=-1, 
 		help="lower cut off frequency" )
@@ -223,6 +223,11 @@ def main():
 
 
     (options, args) = parser.parse_args()
+    print options
+    print args
+    for thisarg in args:
+	print str(args[thisarg]) + str(options[thisarg])
+
     BE={} 
     BE['search'] = options.search 
     BE['noise-model']=options.noise_model
@@ -271,6 +276,8 @@ def main():
             BE['fl']=20
         elif BE['noise-model']=='EGO':
             BE['fl']=14
+            if BE['search']=='PBH':
+		BE['fl']=20
 
     # compute the number of trial per node   
     nCondor = math.ceil(options.ntrial/options.njobs)
@@ -322,6 +329,7 @@ def main():
                  finalise.sh"""
 
     create_finalise_script(BE, options)
+    os.system('mkdir log')
         
 if __name__ == "__main__":
     main()
