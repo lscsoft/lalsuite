@@ -569,18 +569,14 @@ LALSubtractSFTVectors (LALStatus *status,
 
   halfNameLength = (LALNameLength - strlen("Xn:{}-{}"))/2;
   
-  /* copy the *complete* SFTs (header+ data !) one-by-one */
+  /* copy the SFTs and subtract their data one-by-one */
   for (i=0; i < numSFTs1; i ++)
     {
-      LALDestroyCOMPLEX8FrequencySeries ( status->statusPtr, &(ret->data[i]) );
-      BEGINFAIL ( status ) {
-	LALDestroySFTVector ( status->statusPtr, &ret );
-      } ENDFAIL(status);
-      memset ( &(ret->data[i]), 0, sizeof( ret->data[0] ) );
-      LALCopySFT ( status->statusPtr, &(ret->data[i]), &(inVect1->data[i]) );
-      BEGINFAIL ( status ) {
-	LALDestroySFTVector ( status->statusPtr, &ret );
-      } ENDFAIL(status);
+      COMPLEX8Sequence* tmpDataPtr = ret->data[i].data;
+      /* copy over header from source SFT */
+      memcpy( &(ret->data[i]), &(inVect1->data[i]), sizeof(ret->data[i]) );
+      /* restore data ptr (length of two series is same) */
+      ret->data[i].data = tmpDataPtr;
       for (j=0; j < numBins1; j++)
 	{
 	  ret->data[i].data->data[j].re = inVect1->data[i].data->data[j].re - inVect2->data[i].data->data[j].re;
