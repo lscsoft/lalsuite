@@ -107,7 +107,7 @@ extern int fstat_cpt_file_close(FStatCheckpointFile*cptf);
 extern int fstat_cpt_file_read (FStatCheckpointFile*cptf, UINT4 checksum, UINT4 maxbytes);
 
 /* compact a toplist file if the length has reached maxbytes */
-extern void fstat_cpt_file_compact(FStatCheckpointFile*cptf);
+extern int fstat_cpt_file_compact(FStatCheckpointFile*cptf);
 
 
 #endif /* FSTATTOPLIST_H */
