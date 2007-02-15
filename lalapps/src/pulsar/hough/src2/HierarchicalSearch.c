@@ -260,68 +260,61 @@ int MAIN( int argc, char *argv[]) {
   EphemerisData *edat = NULL;
 
   /* timestamp vectors */
-  LIGOTimeGPSVector *midTstack1=NULL; 
-  LIGOTimeGPSVector *midTstack2=NULL; 
-  LIGOTimeGPSVector *startTstack1=NULL; 
-  LIGOTimeGPSVector *startTstack2=NULL; 
+  LIGOTimeGPSVector *midTstack=NULL; 
+  LIGOTimeGPSVector *startTstack=NULL; 
+
   
   LIGOTimeGPS refTimeGPS = empty_LIGOTimeGPS;
-  LIGOTimeGPS tStart1GPS = empty_LIGOTimeGPS; 
-  LIGOTimeGPS tStart2GPS = empty_LIGOTimeGPS;
-  LIGOTimeGPS tMid1GPS = empty_LIGOTimeGPS;
-  REAL8 tObs1, tObs2;
+  LIGOTimeGPS tStartGPS = empty_LIGOTimeGPS; 
+  LIGOTimeGPS tMidGPS = empty_LIGOTimeGPS;
+  REAL8 tObs;
 
   /* velocities and positions at midTstack */
-  REAL8VectorSequence *velStack1=NULL;
-  REAL8VectorSequence *posStack1=NULL;
+  REAL8VectorSequence *velStack=NULL;
+  REAL8VectorSequence *posStack=NULL;
 
   /* weights for each stack*/
   REAL8Vector *weightsV=NULL;
   REAL8Vector *weightsNoise=NULL;
 
   /* duration of each stack */
-  REAL8 tStack1, tStack2 = 0;
+  REAL8 tStack;
 
   /* sft related stuff */
-  static MultiSFTVectorSequence stackMultiSFT1;
-  static MultiSFTVectorSequence stackMultiSFT2;
-  static MultiNoiseWeightsSequence stackMultiNoiseWeights1;
-  static MultiNoiseWeightsSequence stackMultiNoiseWeights2;
-  static MultiDetectorStateSeriesSequence stackMultiDetStates1;
-  static MultiDetectorStateSeriesSequence stackMultiDetStates2;
-  LIGOTimeGPS minStartTimeGPS1, maxEndTimeGPS1;
-  LIGOTimeGPS minStartTimeGPS2, maxEndTimeGPS2;
+  static MultiSFTVectorSequence stackMultiSFT;
+  static MultiNoiseWeightsSequence stackMultiNoiseWeights;
+  static MultiDetectorStateSeriesSequence stackMultiDetStates;
+  LIGOTimeGPS minStartTimeGPS, maxEndTimeGPS;
+
 
   /* some useful variables for each stage */
-  UsefulStageVariables usefulParams1, usefulParams2;
+  UsefulStageVariables usefulParams;
 
   /* number of stacks -- not necessarily same as uvar_nStacks! */
-  UINT4 nStacks1, nStacks2;
-  REAL8 dFreqStack1, dFreqStack2; /* frequency resolution of Fstat calculation */
-  REAL8 df1dot, df1dotRes, df1dot2;  /* coarse grid resolution in spindown */
-  UINT4 nf1dot, nf1dotRes, nf1dot2; /* coarse and fine grid number of spindown values */
+  UINT4 nStacks;
+  REAL8 dFreqStack; /* frequency resolution of Fstat calculation */
+  REAL8 df1dot, df1dotRes;  /* coarse grid resolution in spindown */
+  UINT4 nf1dot, nf1dotRes; /* coarse and fine grid number of spindown values */
 
   /* LALdemod related stuff */
-  REAL8FrequencySeriesVector fstatVector1, fstatVector2; /* Fstatistic vectors for each stack */
-  UINT4 binsFstat1, binsFstat2;
+  REAL8FrequencySeriesVector fstatVector1; /* Fstatistic vectors for each stack */
+  UINT4 binsFstat1;
   static ComputeFParams CFparams;		   
 
   /* hough variables */
   HOUGHPeakGramVector pgV;
   SemiCoherentParams semiCohPar;
-  SemiCohCandidateList semiCohCandList1;
+  SemiCohCandidateList semiCohCandList;
   REAL8 alphaPeak, sumWeightSquare, meanN, sigmaN;
 
   /* fstat candidate structure */
-  toplist_t *fstatToplist=NULL;
   toplist_t *semiCohToplist=NULL;
 
   /* template and grid variables */
-  DopplerSkyScanInit scanInit1, scanInit2;   /* init-structure for DopperScanner */
-  DopplerSkyScanState thisScan1 = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
-  DopplerSkyScanState thisScan2 = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
-  PulsarDopplerParams dopplerpos1, dopplerpos2;	       /* current search-parameters */
-  PulsarDopplerParams thisPoint1, thisPoint2; 
+  DopplerSkyScanInit scanInit;   /* init-structure for DopperScanner */
+  DopplerSkyScanState thisScan = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
+  PulsarDopplerParams dopplerpos;	       /* current search-parameters */
+  PulsarDopplerParams thisPoint; 
 
   /* temporary storage for spinrange vector */
   PulsarSpinRange spinRange_Temp;
@@ -332,10 +325,8 @@ int MAIN( int argc, char *argv[]) {
   CHAR *logstr=NULL; 
 
   /* output candidate files and file pointers */
-  CHAR *fnameFstatCand=NULL;
   CHAR *fnameSemiCohCand=NULL;
   CHAR *fnameFstatVec1=NULL;
-  FILE *fpFstat=NULL;
   FILE *fpSemiCoh=NULL;
   FILE *fpFstat1=NULL;
   
@@ -355,18 +346,14 @@ int MAIN( int argc, char *argv[]) {
   BOOLEAN uvar_semiCohToplist; /* if overall first stage candidates are to be output */
 
   REAL8 uvar_dAlpha, uvar_dDelta; /* resolution for flat or isotropic grids -- coarse grid*/
-  REAL8 uvar_dAlpha2, uvar_dDelta2; /* resolution for flat or isotropic grids -- follow up*/
   REAL8 uvar_f1dot; /* first spindown value */
   REAL8 uvar_f1dotBand; /* range of first spindown parameter */
   REAL8 uvar_Freq, uvar_FreqBand;
   REAL8 uvar_dFreq, uvar_df1dot; /* coarse grid frequency and spindown resolution */
-  REAL8 uvar_dFreq2, uvar_df1dot2; /* follow-up grid frequency and spindown resolution */
   REAL8 uvar_peakThrF; /* threshold of Fstat to select peaks */
   REAL8 uvar_mismatch1; /* metric mismatch for first stage coarse grid */
-  REAL8 uvar_mismatch2; /* metric mismatch for second stage coarse grid */
   REAL8 uvar_refTime;
   REAL8 uvar_minStartTime1, uvar_maxEndTime1;
-  REAL8 uvar_minStartTime2, uvar_maxEndTime2;
   REAL8 uvar_dopplerMax;
   REAL8 uvar_pixelFactor;
   REAL8 uvar_semiCohPatchX, uvar_semiCohPatchY;
@@ -376,20 +363,18 @@ int MAIN( int argc, char *argv[]) {
 
   INT4 uvar_method; /* hough = 0, stackslide = 1, -1 = pure fstat*/
   INT4 uvar_nCand1; /* number of candidates to be followed up from first stage */
-  INT4 uvar_nCand2; /* number of candidates from second stage */
   INT4 uvar_blocksRngMed;
   INT4 uvar_nStacksMax;
   INT4 uvar_Dterms;
   INT4 uvar_SSBprecision;
   INT4 uvar_nf1dotRes;
-  INT4 uvar_gridType1, uvar_gridType2;
-  INT4 uvar_metricType1, uvar_metricType2;
+  INT4 uvar_gridType1;
+  INT4 uvar_metricType1;
   INT4 uvar_sftUpsampling;
 
   CHAR *uvar_ephemE=NULL;
   CHAR *uvar_ephemS=NULL;
   CHAR *uvar_DataFiles1=NULL;
-  CHAR *uvar_DataFiles2=NULL;
   CHAR *uvar_fnameout=NULL;
   CHAR *uvar_skyGridFile=NULL;
   CHAR *uvar_skyRegion=NULL;
@@ -421,8 +406,6 @@ int MAIN( int argc, char *argv[]) {
   uvar_Dterms = DTERMS;
   uvar_dAlpha = DALPHA;
   uvar_dDelta = DDELTA;
-  uvar_dAlpha2 = DALPHA;
-  uvar_dDelta2 = DDELTA;
   uvar_f1dot = FDOT;
   uvar_f1dotBand = DFDOT;
   uvar_Freq = FSTART;
@@ -430,21 +413,16 @@ int MAIN( int argc, char *argv[]) {
   uvar_blocksRngMed = BLOCKSRNGMED;
   uvar_nf1dotRes = 0;
   uvar_peakThrF = FSTATTHRESHOLD;
-  uvar_nCand1 = uvar_nCand2 = NCAND1;
+  uvar_nCand1 = NCAND1;
   uvar_SSBprecision = SSBPREC_RELATIVISTIC;
   uvar_metricType1 = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
-  uvar_metricType2 = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
   uvar_gridType1 = GRID_METRIC;
-  uvar_gridType2 = GRID_METRIC;
-  uvar_mismatch1 = uvar_mismatch2 = MISMATCH;
+  uvar_mismatch1 = MISMATCH;
   uvar_pixelFactor = PIXELFACTOR;
   uvar_threshold1 = 0;
   uvar_minStartTime1 = 0;
   uvar_maxEndTime1 = LAL_INT4_MAX;
   uvar_sftUpsampling = 1;
-
-  uvar_minStartTime2 = 0;
-  uvar_maxEndTime2 = LAL_INT4_MAX;
 
   uvar_dopplerMax = 1.05e-4;
 
@@ -476,7 +454,6 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "useWeights",   0,  UVAR_OPTIONAL, "Weight each stack using noise and AM?", &uvar_useWeights ), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "followUp",     0,  UVAR_OPTIONAL, "Follow up stage?", &uvar_followUp), &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles1",   0,  UVAR_REQUIRED, "1st SFT file pattern", &uvar_DataFiles1), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles2",   0,  UVAR_OPTIONAL, "2nd SFT file pattern", &uvar_DataFiles2), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",    0,  UVAR_OPTIONAL, "sky-region polygon (or 'allsky')", &uvar_skyRegion), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "Freq",        'f', UVAR_OPTIONAL, "Start search frequency", &uvar_Freq), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dFreq",        0,  UVAR_OPTIONAL, "Frequency resolution (default=1/Tstack)", &uvar_dFreq), &status);
@@ -486,21 +463,14 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "f1dotBand",    0,  UVAR_OPTIONAL, "Spindown Range", &uvar_f1dotBand), &status);
   LAL_CALL( LALRegisterREALUserVar (  &status, "df1dotRes",    0,  UVAR_OPTIONAL, "Resolution in residual fdot values (default=df1dot/nStacks)", &uvar_df1dotRes), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "nf1dotRes",    0,  UVAR_OPTIONAL, "No.of residual fdot values (default=nStacks)", &uvar_nf1dotRes), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "dFreq2",       0,  UVAR_OPTIONAL, "Frequency resolution for follow-up (default=1/Tstack2)", &uvar_dFreq2), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "df1dot2",      0,  UVAR_OPTIONAL, "Spindown resolution for follow-up (default=1/Tstack2^2)", &uvar_df1dot2), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nStacksMax",   0,  UVAR_OPTIONAL, "Maximum No. of 1st stage stacks", &uvar_nStacksMax ),&status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "tStack",       0,  UVAR_REQUIRED, "Duration of 1st stage stacks (sec)", &uvar_tStack ),&status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch1",    0,  UVAR_OPTIONAL, "1st stage mismatch", &uvar_mismatch1), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch2",    0,  UVAR_OPTIONAL, "2nd stage mismatch", &uvar_mismatch2), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "gridType1",    0,  UVAR_OPTIONAL, "0=flat,1=isotropic,2=metric,3=file", &uvar_gridType1),  &status);
-  LAL_CALL( LALRegisterINTUserVar (   &status, "gridType2",    0,  UVAR_OPTIONAL, "0=flat,1=isotropic,2=metric", &uvar_gridType2),  &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "metricType1",  0,  UVAR_OPTIONAL, "0=none,1=Ptole-analytic,2=Ptole-numeric,3=exact", &uvar_metricType1), &status);
-  LAL_CALL( LALRegisterINTUserVar (   &status, "metricType2",  0,  UVAR_OPTIONAL, "0=none,1=Ptole-analytic,2=Ptole-numeric,3=exact", &uvar_metricType2), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyGridFile",  0,  UVAR_OPTIONAL, "sky-grid file", &uvar_skyGridFile), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha",       0,  UVAR_OPTIONAL, "Resolution for flat or isotropic coarse grid", &uvar_dAlpha), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",       0,  UVAR_OPTIONAL, "Resolution for flat or isotropic coarse grid", &uvar_dDelta), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha2",      0,  UVAR_OPTIONAL, "Resolution for flat or isotropic grids for follow up", &uvar_dAlpha2), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta2",      0,  UVAR_OPTIONAL, "Resolution for flat or isotropic grids for follow up", &uvar_dDelta2), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "pixelFactor",  0,  UVAR_OPTIONAL, "Semi coh. sky resolution = 1/v*pixelFactor*f*Tcoh", &uvar_pixelFactor), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "semiCohPatchX",0,  UVAR_OPTIONAL, "Semi coh. sky grid size (default = 1/f*Tcoh*Vepi)", &uvar_semiCohPatchX), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "semiCohPatchY",0,  UVAR_OPTIONAL, "Semi coh. sky grid size (default = 1/f*Tcoh*Vepi)", &uvar_semiCohPatchY), &status);
@@ -508,15 +478,12 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "peakThrF",     0,  UVAR_OPTIONAL, "Fstat Threshold", &uvar_peakThrF), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nCand1",       0,  UVAR_OPTIONAL, "No.of 1st stage candidates to be followed up", &uvar_nCand1), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "threshold1",   0,  UVAR_OPTIONAL, "Threshold on significance for 1st stage (if no toplist)", &uvar_threshold1), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "nCand2",       0,  UVAR_OPTIONAL, "No.of 2nd stage candidates to be saved",&uvar_nCand2), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printCand1",   0,  UVAR_OPTIONAL, "Print 1st stage candidates", &uvar_printCand1), &status);  
   LAL_CALL( LALRegisterREALUserVar(   &status, "refTime",      0,  UVAR_OPTIONAL, "Ref. time for pulsar pars [Default: mid-time]", &uvar_refTime), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemE",       0,  UVAR_OPTIONAL, "Location of Earth ephemeris file", &uvar_ephemE),  &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemS",       0,  UVAR_OPTIONAL, "Location of Sun ephemeris file", &uvar_ephemS),  &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "minStartTime1",0,  UVAR_OPTIONAL, "1st stage min start time of observation", &uvar_minStartTime1), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "maxEndTime1",  0,  UVAR_OPTIONAL, "1st stage max end time of observation",   &uvar_maxEndTime1),   &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "minStartTime2",0,  UVAR_OPTIONAL, "2nd stage min start time of observation", &uvar_minStartTime2), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "maxEndTime2",  0,  UVAR_OPTIONAL, "2nd stage max end time of observation",   &uvar_maxEndTime2),   &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printFstat1",  0, UVAR_OPTIONAL,  "Print 1st stage Fstat vectors", &uvar_printFstat1), &status);  
 
   /* developer user variables */
@@ -564,24 +531,9 @@ int MAIN( int argc, char *argv[]) {
   /* probability of peak selection */
   alphaPeak = (1+uvar_peakThrF)*exp(-uvar_peakThrF);
   
-
-  if ( uvar_followUp && (!LALUserVarWasSet(&uvar_DataFiles2))) {
-    fprintf( stderr, "Must specify SFTs for second stage!\n");
-    return( HIERARCHICALSEARCH_EBAD );
-  }
-
-  /* no need to follow up zero 1st stage candidates */
-  if ( uvar_nCand1 <= 0 )
-    uvar_followUp = FALSE;
-
   /* create toplist -- semiCohToplist has the same structure 
      as a fstat candidate, so treat it as a fstat candidate */
   create_fstat_toplist(&semiCohToplist, uvar_nCand1);
-
-  /* no need to follow up if no candidates are to be saved */
-  if ( uvar_nCand2 <= 0 )
-    uvar_followUp = FALSE;
-
 
   /* write the log file */
   if ( uvar_log ) 
@@ -636,10 +588,8 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALInitBarycenter( &status, edat), &status);        
 
 
-  LAL_CALL ( LALFloatToGPS( &status, &minStartTimeGPS1, &uvar_minStartTime1), &status);
-  LAL_CALL ( LALFloatToGPS( &status, &maxEndTimeGPS1, &uvar_maxEndTime1), &status);
-  LAL_CALL ( LALFloatToGPS( &status, &minStartTimeGPS2, &uvar_minStartTime2), &status);
-  LAL_CALL ( LALFloatToGPS( &status, &maxEndTimeGPS2, &uvar_maxEndTime2), &status);
+  LAL_CALL ( LALFloatToGPS( &status, &minStartTimeGPS, &uvar_minStartTime1), &status);
+  LAL_CALL ( LALFloatToGPS( &status, &maxEndTimeGPS, &uvar_maxEndTime1), &status);
     
   /* create output Hough file for writing if requested by user */
   if ( uvar_printCand1 )
@@ -648,21 +598,6 @@ int MAIN( int argc, char *argv[]) {
       strcpy(fnameSemiCohCand, uvar_fnameout);
     }
   
-  /* open output fstat file for writing */
-  /* create output Fstat file name and open it for writing */
-  if ( uvar_followUp ) 
-    {
-      const CHAR *append = "_fstat.dat";
-      fnameFstatCand = LALCalloc( strlen(uvar_fnameout) + strlen(append) + 1, sizeof(CHAR) );
-      strcpy(fnameFstatCand, uvar_fnameout);
-      strcat(fnameFstatCand, append);
-
-      if  (!(fpFstat = fopen(fnameFstatCand, "wb")))
-	{
-	  fprintf ( stderr, "Unable to open Fstat file '%s' for writing.\n", fnameFstatCand);
-	  return HIERARCHICALSEARCH_EFILE;
-	}
-    } 
 
   if ( uvar_printFstat1 )
     {
@@ -682,51 +617,51 @@ int MAIN( int argc, char *argv[]) {
   INIT_MEM(spinRange_Temp);
 
   /* some useful first stage params */
-  usefulParams1.sftbasename = uvar_DataFiles1;
-  usefulParams1.nStacks = uvar_nStacksMax;
-  usefulParams1.tStack = uvar_tStack;
+  usefulParams.sftbasename = uvar_DataFiles1;
+  usefulParams.nStacks = uvar_nStacksMax;
+  usefulParams.tStack = uvar_tStack;
 
-  INIT_MEM ( usefulParams1.spinRange_startTime );
-  INIT_MEM ( usefulParams1.spinRange_endTime );
-  INIT_MEM ( usefulParams1.spinRange_refTime );
-  INIT_MEM ( usefulParams1.spinRange_midTime );
+  INIT_MEM ( usefulParams.spinRange_startTime );
+  INIT_MEM ( usefulParams.spinRange_endTime );
+  INIT_MEM ( usefulParams.spinRange_refTime );
+  INIT_MEM ( usefulParams.spinRange_midTime );
 
   /* copy user specified spin variables at reftime  */
   /* the reference time value in spinRange_refTime will be set in SetUpSFTs() */
-  usefulParams1.spinRange_refTime.fkdot[0] = uvar_Freq; /* frequency */
-  usefulParams1.spinRange_refTime.fkdot[1] = uvar_f1dot;  /* 1st spindown */
-  usefulParams1.spinRange_refTime.fkdotBand[0] = uvar_FreqBand; /* frequency range */
-  usefulParams1.spinRange_refTime.fkdotBand[1] = uvar_f1dotBand; /* spindown range */
+  usefulParams.spinRange_refTime.fkdot[0] = uvar_Freq; /* frequency */
+  usefulParams.spinRange_refTime.fkdot[1] = uvar_f1dot;  /* 1st spindown */
+  usefulParams.spinRange_refTime.fkdotBand[0] = uvar_FreqBand; /* frequency range */
+  usefulParams.spinRange_refTime.fkdotBand[1] = uvar_f1dotBand; /* spindown range */
 
-  usefulParams1.edat = edat;
-  usefulParams1.minStartTimeGPS = minStartTimeGPS1;
-  usefulParams1.maxEndTimeGPS = maxEndTimeGPS1;
-  usefulParams1.blocksRngMed = uvar_blocksRngMed;
-  usefulParams1.Dterms = uvar_Dterms;
-  usefulParams1.dopplerMax = uvar_dopplerMax;
+  usefulParams.edat = edat;
+  usefulParams.minStartTimeGPS = minStartTimeGPS;
+  usefulParams.maxEndTimeGPS = maxEndTimeGPS;
+  usefulParams.blocksRngMed = uvar_blocksRngMed;
+  usefulParams.Dterms = uvar_Dterms;
+  usefulParams.dopplerMax = uvar_dopplerMax;
 
   /* set reference time for pular parameters */
   if ( LALUserVarWasSet(&uvar_refTime)) 
-    usefulParams1.refTime = uvar_refTime;
+    usefulParams.refTime = uvar_refTime;
   else {
     LogPrintf(LOG_DEBUG, "Reference time will be set to mid-time of observation time\n");
-    usefulParams1.refTime = -1;
+    usefulParams.refTime = -1;
   }
   
   /* for 1st stage: read sfts, calculate multi-noise weights and detector states */  
   LogPrintf (LOG_DEBUG, "Reading SFTs and setting up stacks ... ");
-  LAL_CALL( SetUpSFTs( &status, &stackMultiSFT1, &stackMultiNoiseWeights1, &stackMultiDetStates1, &usefulParams1), &status);
+  LAL_CALL( SetUpSFTs( &status, &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &usefulParams), &status);
   LogPrintfVerbatim (LOG_DEBUG, "done\n");
 
   /* some useful params computed by SetUpSFTs */
-  tStack1 = usefulParams1.tStack;
-  tObs1 = usefulParams1.tObs;
-  nStacks1 = usefulParams1.nStacks;
-  tStart1GPS = usefulParams1.tStartGPS;
-  midTstack1 = usefulParams1.midTstack;
-  startTstack1 = usefulParams1.startTstack;
-  tMid1GPS = usefulParams1.spinRange_midTime.refTime;
-  refTimeGPS = usefulParams1.spinRange_refTime.refTime;
+  tStack = usefulParams.tStack;
+  tObs = usefulParams.tObs;
+  nStacks = usefulParams.nStacks;
+  tStartGPS = usefulParams.tStartGPS;
+  midTstack = usefulParams.midTstack;
+  startTstack = usefulParams.startTstack;
+  tMidGPS = usefulParams.spinRange_midTime.refTime;
+  refTimeGPS = usefulParams.spinRange_refTime.refTime;
   LogPrintf(LOG_DEBUG, "GPS Reference Time = %d\n", refTimeGPS.gpsSeconds);
 
 
@@ -735,10 +670,10 @@ int MAIN( int argc, char *argv[]) {
   /* set Fstat calculation frequency resolution
      -- default is 1/tstack */
   if ( LALUserVarWasSet(&uvar_dFreq) ) {
-    dFreqStack1 = uvar_dFreq;
+    dFreqStack = uvar_dFreq;
   }
   else {
-    dFreqStack1 = 1.0/tStack1;
+    dFreqStack = 1.0/tStack;
   }
 
   /* set Fstat spindown resolution
@@ -747,11 +682,11 @@ int MAIN( int argc, char *argv[]) {
     df1dot = uvar_df1dot;
   }
   else {
-    df1dot = 1.0/(tStack1*tStack1);
+    df1dot = 1.0/(tStack*tStack);
   }
 
   /* number of coarse grid spindown values */
-  nf1dot = (UINT4)( usefulParams1.spinRange_midTime.fkdotBand[1]/ df1dot + 0.5) + 1; 
+  nf1dot = (UINT4)( usefulParams.spinRange_midTime.fkdotBand[1]/ df1dot + 0.5) + 1; 
 
   /* set number of residual spindowns for semi-coherent step  
      --default = nStacks */
@@ -759,7 +694,7 @@ int MAIN( int argc, char *argv[]) {
     nf1dotRes = uvar_nf1dotRes;
   }
   else {
-    nf1dotRes = nStacks1;
+    nf1dotRes = nStacks;
   }
 
   /* resolution of residual spindowns 
@@ -768,64 +703,64 @@ int MAIN( int argc, char *argv[]) {
     df1dotRes = uvar_df1dotRes;
   }
   else {
-    df1dotRes = df1dot/nStacks1;
+    df1dotRes = df1dot/nStacks;
   }
 
   
   /*---------- compute noise weight for each stack and initialize total weights vector 
      -- for debugging purposes only -- we will calculate noise and AM weights later ----------*/
   if (lalDebugLevel) {
-    LAL_CALL( ComputeStackNoiseWeights( &status, &weightsNoise, &stackMultiNoiseWeights1), &status);
+    LAL_CALL( ComputeStackNoiseWeights( &status, &weightsNoise, &stackMultiNoiseWeights), &status);
   }
 
   /* weightsV is the actual weights vector used */
-  LAL_CALL( LALDCreateVector( &status, &weightsV, nStacks1), &status);
+  LAL_CALL( LALDCreateVector( &status, &weightsV, nStacks), &status);
    
 
   /**** debugging information ******/   
   /* print some debug info about spinrange */
   LogPrintf(LOG_DEBUG, "Frequency and spindown range at refTime (%d): [%f-%f], [%e-%e]\n", 
-	    usefulParams1.spinRange_refTime.refTime.gpsSeconds,
-	    usefulParams1.spinRange_refTime.fkdot[0], 
-	    usefulParams1.spinRange_refTime.fkdot[0] + usefulParams1.spinRange_refTime.fkdotBand[0], 
-	    usefulParams1.spinRange_refTime.fkdot[1], 
-	    usefulParams1.spinRange_refTime.fkdot[1] + usefulParams1.spinRange_refTime.fkdotBand[1]);
+	    usefulParams.spinRange_refTime.refTime.gpsSeconds,
+	    usefulParams.spinRange_refTime.fkdot[0], 
+	    usefulParams.spinRange_refTime.fkdot[0] + usefulParams.spinRange_refTime.fkdotBand[0], 
+	    usefulParams.spinRange_refTime.fkdot[1], 
+	    usefulParams.spinRange_refTime.fkdot[1] + usefulParams.spinRange_refTime.fkdotBand[1]);
   
   LogPrintf(LOG_DEBUG, "Frequency and spindown range at startTime (%d): [%f-%f], [%e-%e]\n", 
-	    usefulParams1.spinRange_startTime.refTime.gpsSeconds,
-	    usefulParams1.spinRange_startTime.fkdot[0], 
-	    usefulParams1.spinRange_startTime.fkdot[0] + usefulParams1.spinRange_startTime.fkdotBand[0], 
-	    usefulParams1.spinRange_startTime.fkdot[1], 
-	    usefulParams1.spinRange_startTime.fkdot[1] + usefulParams1.spinRange_startTime.fkdotBand[1]);
+	    usefulParams.spinRange_startTime.refTime.gpsSeconds,
+	    usefulParams.spinRange_startTime.fkdot[0], 
+	    usefulParams.spinRange_startTime.fkdot[0] + usefulParams.spinRange_startTime.fkdotBand[0], 
+	    usefulParams.spinRange_startTime.fkdot[1], 
+	    usefulParams.spinRange_startTime.fkdot[1] + usefulParams.spinRange_startTime.fkdotBand[1]);
 
   LogPrintf(LOG_DEBUG, "Frequency and spindown range at midTime (%d): [%f-%f], [%e-%e]\n", 
-	    usefulParams1.spinRange_midTime.refTime.gpsSeconds,
-	    usefulParams1.spinRange_midTime.fkdot[0], 
-	    usefulParams1.spinRange_midTime.fkdot[0] + usefulParams1.spinRange_midTime.fkdotBand[0], 
-	    usefulParams1.spinRange_midTime.fkdot[1], 
-	    usefulParams1.spinRange_midTime.fkdot[1] + usefulParams1.spinRange_midTime.fkdotBand[1]);
+	    usefulParams.spinRange_midTime.refTime.gpsSeconds,
+	    usefulParams.spinRange_midTime.fkdot[0], 
+	    usefulParams.spinRange_midTime.fkdot[0] + usefulParams.spinRange_midTime.fkdotBand[0], 
+	    usefulParams.spinRange_midTime.fkdot[1], 
+	    usefulParams.spinRange_midTime.fkdot[1] + usefulParams.spinRange_midTime.fkdotBand[1]);
 
   LogPrintf(LOG_DEBUG, "Frequency and spindown range at endTime (%d): [%f-%f], [%e-%e]\n", 
-	    usefulParams1.spinRange_endTime.refTime.gpsSeconds,
-	    usefulParams1.spinRange_endTime.fkdot[0], 
-	    usefulParams1.spinRange_endTime.fkdot[0] + usefulParams1.spinRange_endTime.fkdotBand[0], 
-	    usefulParams1.spinRange_endTime.fkdot[1], 
-	    usefulParams1.spinRange_endTime.fkdot[1] + usefulParams1.spinRange_endTime.fkdotBand[1]);
+	    usefulParams.spinRange_endTime.refTime.gpsSeconds,
+	    usefulParams.spinRange_endTime.fkdot[0], 
+	    usefulParams.spinRange_endTime.fkdot[0] + usefulParams.spinRange_endTime.fkdotBand[0], 
+	    usefulParams.spinRange_endTime.fkdot[1], 
+	    usefulParams.spinRange_endTime.fkdot[1] + usefulParams.spinRange_endTime.fkdotBand[1]);
 
   /* print debug info about stacks */
   LogPrintf(LOG_DEBUG, "1st stage params: Nstacks = %d,  Tstack = %.0fsec, dFreq = %eHz, Tobs = %.0fsec\n", 
-	    nStacks1, tStack1, dFreqStack1, tObs1);
-  for (k = 0; k < nStacks1; k++) {
+	    nStacks, tStack, dFreqStack, tObs);
+  for (k = 0; k < nStacks; k++) {
 
     LogPrintf(LOG_DEBUG, "Stack %d ", k);
     if ( weightsNoise )
-      LogPrintfVerbatim(LOG_DEBUG, "(GPS start time = %d, Noise weight = %f ) ", startTstack1->data[k].gpsSeconds, 
+      LogPrintfVerbatim(LOG_DEBUG, "(GPS start time = %d, Noise weight = %f ) ", startTstack->data[k].gpsSeconds, 
 			weightsNoise->data[k]);
 
-    for ( j = 0; j < (INT4)stackMultiSFT1.data[k]->length; j++) {
+    for ( j = 0; j < (INT4)stackMultiSFT.data[k]->length; j++) {
 
-      INT4 tmpVar = stackMultiSFT1.data[k]->data[j]->length;
-      LogPrintfVerbatim(LOG_DEBUG, "%s: %d  ", stackMultiSFT1.data[k]->data[j]->data[0].name, tmpVar);
+      INT4 tmpVar = stackMultiSFT.data[k]->data[j]->length;
+      LogPrintfVerbatim(LOG_DEBUG, "%s: %d  ", stackMultiSFT.data[k]->data[j]->data[0].name, tmpVar);
 
     } /* loop over ifos */    
     LogPrintfVerbatim(LOG_DEBUG, "\n");
@@ -836,12 +771,12 @@ int MAIN( int argc, char *argv[]) {
   /*---------- set up F-statistic calculation stuff ---------*/
   
   /* set reference time for calculating Fstatistic */
-  /* thisPoint1.refTime = tStart1GPS; */
-  thisPoint1.refTime = tMid1GPS; 
+  /* thisPoint.refTime = tStartGPS; */
+  thisPoint.refTime = tMidGPS; 
   /* binary orbit and higher spindowns not considered */
-  thisPoint1.orbit = NULL;
-  thisPoint1.fkdot[2] = 0.0;
-  thisPoint1.fkdot[3] = 0.0;
+  thisPoint.orbit = NULL;
+  thisPoint.fkdot[2] = 0.0;
+  thisPoint.fkdot[3] = 0.0;
 
   /* some compute F params */
   CFparams.Dterms = uvar_Dterms;
@@ -851,13 +786,13 @@ int MAIN( int argc, char *argv[]) {
 
   /* set up some semiCoherent parameters */
   semiCohPar.useToplist = uvar_useToplist1;
-  semiCohPar.tsMid = midTstack1;
-  /* semiCohPar.refTime = tStart1GPS; */
-  semiCohPar.refTime = tMid1GPS;
+  semiCohPar.tsMid = midTstack;
+  /* semiCohPar.refTime = tStartGPS; */
+  semiCohPar.refTime = tMidGPS;
   /* calculate detector velocity and positions */
-  LAL_CALL( GetStackVelPos( &status, &velStack1, &posStack1, &stackMultiDetStates1), &status);  
-  semiCohPar.vel = velStack1;
-  semiCohPar.pos = posStack1;
+  LAL_CALL( GetStackVelPos( &status, &velStack, &posStack, &stackMultiDetStates), &status);  
+  semiCohPar.vel = velStack;
+  semiCohPar.pos = posStack;
 
   semiCohPar.outBaseName = uvar_fnameout;
   semiCohPar.pixelFactor = uvar_pixelFactor;
@@ -865,12 +800,12 @@ int MAIN( int argc, char *argv[]) {
   semiCohPar.dfdot = df1dotRes;
 
   /* allocate memory for Hough candidates */
-  semiCohCandList1.length = uvar_nCand1;
+  semiCohCandList.length = uvar_nCand1;
   /* reference time for candidates */
-  /* semiCohCandList1.refTime = tStart1GPS; */
-  semiCohCandList1.refTime = tMid1GPS;
-  semiCohCandList1.nCandidates = 0; /* initialization */
-  semiCohCandList1.list = (SemiCohCandidate *)LALCalloc( 1, semiCohCandList1.length * sizeof(SemiCohCandidate));
+  /* semiCohCandList.refTime = tStartGPS; */
+  semiCohCandList.refTime = tMidGPS;
+  semiCohCandList.nCandidates = 0; /* initialization */
+  semiCohCandList.list = (SemiCohCandidate *)LALCalloc( 1, semiCohCandList.length * sizeof(SemiCohCandidate));
 
 
   /* set semicoherent patch size */
@@ -878,14 +813,14 @@ int MAIN( int argc, char *argv[]) {
     semiCohPar.patchSizeX = uvar_semiCohPatchX;
   }
   else {
-    semiCohPar.patchSizeX = 1.0 / ( tStack1 * usefulParams1.spinRange_midTime.fkdot[0] * VEPI ); 
+    semiCohPar.patchSizeX = 1.0 / ( tStack * usefulParams.spinRange_midTime.fkdot[0] * VEPI ); 
   }	    
   
   if ( LALUserVarWasSet(&uvar_semiCohPatchY)) {
     semiCohPar.patchSizeY = uvar_semiCohPatchY;
   }
   else {
-    semiCohPar.patchSizeY = 1.0 / ( tStack1 * usefulParams1.spinRange_midTime.fkdot[0] * VEPI ); 
+    semiCohPar.patchSizeY = 1.0 / ( tStack * usefulParams.spinRange_midTime.fkdot[0] * VEPI ); 
   }
     
   LogPrintf(LOG_DEBUG,"Hough/Stackslide patchsize is %frad x %frad\n", 
@@ -895,14 +830,14 @@ int MAIN( int argc, char *argv[]) {
     /* extra bins for fstat due to skypatch and spindowns */
     UINT4 extraBinsSky, extraBinsfdot;
 
-    extraBinsSky = LAL_SQRT2 * VTOT * usefulParams1.spinRange_midTime.fkdot[0] 
-      * HSMAX(semiCohPar.patchSizeX, semiCohPar.patchSizeY) / dFreqStack1;
+    extraBinsSky = LAL_SQRT2 * VTOT * usefulParams.spinRange_midTime.fkdot[0] 
+      * HSMAX(semiCohPar.patchSizeX, semiCohPar.patchSizeY) / dFreqStack;
 
     /* extra bins due to fdot is maximum number of frequency bins drift that can be 
        caused by the residual spindown.  The reference time for the spindown is the midtime, 
        so relevant interval is Tobs/2 and largest possible value of residual spindown is 
        (number of residual spindowns -1)*resolution in residual spindowns */
-    extraBinsfdot = tObs1 * nf1dotRes * df1dotRes / dFreqStack1;
+    extraBinsfdot = tObs * nf1dotRes * df1dotRes / dFreqStack;
 
     semiCohPar.extraBinsFstat = extraBinsSky + extraBinsfdot;    
     LogPrintf(LOG_DEBUG, "No. of extra Fstat freq. bins = %d for skypatch + %d for residual fdot: total = %d\n",
@@ -910,149 +845,45 @@ int MAIN( int argc, char *argv[]) {
   }
   
   /* allocate fstat memory */
-  fstatVector1.length = nStacks1;
+  fstatVector1.length = nStacks;
   fstatVector1.data = NULL;
-  fstatVector1.data = (REAL8FrequencySeries *)LALCalloc( 1, nStacks1 * sizeof(REAL8FrequencySeries));
-  binsFstat1 = (UINT4)(usefulParams1.spinRange_midTime.fkdotBand[0]/dFreqStack1 + 0.5) + semiCohPar.extraBinsFstat;
+  fstatVector1.data = (REAL8FrequencySeries *)LALCalloc( 1, nStacks * sizeof(REAL8FrequencySeries));
+  binsFstat1 = (UINT4)(usefulParams.spinRange_midTime.fkdotBand[0]/dFreqStack + 0.5) + semiCohPar.extraBinsFstat;
   LogPrintf(LOG_DEBUG, "Number of Fstat frequency bins = %d\n", binsFstat1); 
 
-  for (k = 0; k < nStacks1; k++) { 
+  for (k = 0; k < nStacks; k++) { 
     /* careful--the epoch here is not the reference time for f0! */
-    fstatVector1.data[k].epoch = startTstack1->data[k];
-    fstatVector1.data[k].deltaF = dFreqStack1;
-    fstatVector1.data[k].f0 = usefulParams1.spinRange_midTime.fkdot[0] - 0.5 * semiCohPar.extraBinsFstat * dFreqStack1;
+    fstatVector1.data[k].epoch = startTstack->data[k];
+    fstatVector1.data[k].deltaF = dFreqStack;
+    fstatVector1.data[k].f0 = usefulParams.spinRange_midTime.fkdot[0] - 0.5 * semiCohPar.extraBinsFstat * dFreqStack;
     fstatVector1.data[k].data = (REAL8Sequence *)LALCalloc( 1, sizeof(REAL8Sequence));
     fstatVector1.data[k].data->length = binsFstat1;
     fstatVector1.data[k].data->data = (REAL8 *)LALCalloc( 1, binsFstat1 * sizeof(REAL8));
   } 
 
-  
-
-  /*------------------ read sfts and set up stacks for follow up stage -----------------------*/
-  /* check if user requested a follow up stage*/
-  if ( uvar_followUp ) {
-    
-    /* some useful first stage params */
-    usefulParams2.sftbasename = uvar_DataFiles2;
-    usefulParams2.nStacks = 1;
-    INIT_MEM ( usefulParams2.spinRange_startTime );
-    INIT_MEM ( usefulParams2.spinRange_endTime );
-    INIT_MEM ( usefulParams2.spinRange_midTime );
-
-    usefulParams2.spinRange_refTime = usefulParams1.spinRange_refTime;
-    usefulParams2.edat = edat;
-    usefulParams2.minStartTimeGPS = minStartTimeGPS2;
-    usefulParams2.maxEndTimeGPS = maxEndTimeGPS2;
-    usefulParams2.blocksRngMed = uvar_blocksRngMed;
-    usefulParams2.Dterms = uvar_Dterms;
-    usefulParams2.dopplerMax = uvar_dopplerMax;
-    
-    usefulParams2.refTime = usefulParams1.refTime;
-
-    LogPrintf (LOG_DEBUG, "Setting up follow up stage SFTs ... ");
-    /* for 2nd stage: read sfts, calculate multi-noise weights and detector states */  
-    LAL_CALL( SetUpSFTs( &status, &stackMultiSFT2, &stackMultiNoiseWeights2, 
-			 &stackMultiDetStates2, &usefulParams2), &status);
-    LogPrintfVerbatim (LOG_DEBUG, "done \n");
-    
-    /* some useful params computed by SetUpSFTs */
-    tStack2 = usefulParams2.tStack;
-    tObs2 = usefulParams2.tObs;
-    nStacks2 = usefulParams2.nStacks;
-    tStart2GPS = usefulParams2.tStartGPS;
-    midTstack2 = usefulParams2.midTstack;
-    startTstack2 = usefulParams2.startTstack;
-
-
-    /* set Fstat calculation frequency resolution
-       -- default is 1/tstack */
-    if ( LALUserVarWasSet(&uvar_dFreq2) ) {
-      dFreqStack2 = uvar_dFreq2;
-    }
-    else {
-      dFreqStack2 = 1.0/tStack2;
-    }
-    
-    /* set Fstat spindown resolution
-       -- default is 1/Tstack^2 */
-    if ( LALUserVarWasSet(&uvar_df1dot) ) {
-      df1dot2 = uvar_df1dot2;
-    }
-    else {
-      df1dot2 = 1.0/(tStack2*tStack2);
-    }
-    
-    /* some second stage debug info */
-    LogPrintf(LOG_DEBUG, "GPS start time: %d, Duration: %fsec, ", startTstack2->data[0].gpsSeconds, tStack2);
-    for ( j = 0; j < (INT4)stackMultiSFT2.data[0]->length; j++) {
-      INT4 tmpVar = stackMultiSFT2.data[0]->data[j]->length;
-      LogPrintfVerbatim(LOG_DEBUG, "%s: %d  ", stackMultiSFT2.data[0]->data[j]->data[0].name, tmpVar);
-      } /* loop over ifos */    
-    LogPrintfVerbatim(LOG_DEBUG, "\n");
-    
-        
-    /* set reference time for calculating fstat -- now it is beginning of second stack*/
-    thisPoint2.refTime = tStart2GPS;
-    /* binary and higher spindowns not implemented so far */
-    thisPoint2.orbit = NULL;
-    thisPoint2.fkdot[2] = 0.0;
-    thisPoint2.fkdot[3] = 0.0;
-              
-  } /* end if(uvar_followup) */
-  
-  
 
 
   /*-----------Create template grid for first stage ---------------*/
   /* prepare initialization of DopplerSkyScanner to step through paramter space */
-  scanInit1.dAlpha = uvar_dAlpha;
-  scanInit1.dDelta = uvar_dDelta;
-  scanInit1.gridType = uvar_gridType1;
-  scanInit1.metricType = uvar_metricType1;
-  scanInit1.metricMismatch = uvar_mismatch1;
-  scanInit1.projectMetric = TRUE;
-  scanInit1.obsDuration = tStack1;
-  scanInit1.obsBegin = tMid1GPS;
-  scanInit1.Detector = &(stackMultiDetStates1.data[0]->data[0]->detector);
-  scanInit1.ephemeris = edat;
-  scanInit1.skyGridFile = uvar_skyGridFile;
-  scanInit1.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
-  strcpy (scanInit1.skyRegionString, uvar_skyRegion);
-  scanInit1.Freq = usefulParams1.spinRange_midTime.fkdot[0] +  usefulParams1.spinRange_midTime.fkdotBand[0];
+  scanInit.dAlpha = uvar_dAlpha;
+  scanInit.dDelta = uvar_dDelta;
+  scanInit.gridType = uvar_gridType1;
+  scanInit.metricType = uvar_metricType1;
+  scanInit.metricMismatch = uvar_mismatch1;
+  scanInit.projectMetric = TRUE;
+  scanInit.obsDuration = tStack;
+  scanInit.obsBegin = tMidGPS;
+  scanInit.Detector = &(stackMultiDetStates.data[0]->data[0]->detector);
+  scanInit.ephemeris = edat;
+  scanInit.skyGridFile = uvar_skyGridFile;
+  scanInit.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
+  strcpy (scanInit.skyRegionString, uvar_skyRegion);
+  scanInit.Freq = usefulParams.spinRange_midTime.fkdot[0] +  usefulParams.spinRange_midTime.fkdotBand[0];
 
   /* initialize skygrid  */  
   LogPrintf(LOG_DEBUG, "Setting up coarse sky grid...");
-  LAL_CALL ( InitDopplerSkyScan ( &status, &thisScan1, &scanInit1), &status); 
+  LAL_CALL ( InitDopplerSkyScan ( &status, &thisScan, &scanInit), &status); 
   LogPrintfVerbatim(LOG_DEBUG, "done\n");  
-
-
-  /* parameters for 2nd stage */
-  /* set up parameters for second stage Fstat calculation */
-  /* we don't set frequency and frequency band 
-     -- these depend on candidates to be followed up */
-  if ( uvar_followUp ) 
-    {
-      /* allocate memory for Fstat candidates */
-      create_fstat_toplist(&fstatToplist, uvar_nCand2);
-      
-     /* prepare initialization of DopplerSkyScanner to step through paramter space */
-      scanInit2.dAlpha = uvar_dAlpha2;
-      scanInit2.dDelta = uvar_dDelta2;
-      scanInit2.gridType = uvar_gridType2;
-      scanInit2.metricType = uvar_metricType2;
-      scanInit2.metricMismatch = uvar_mismatch2;
-      scanInit2.projectMetric = TRUE;
-      scanInit2.obsDuration = tStack2;
-      scanInit2.obsBegin = startTstack2->data[0];
-      scanInit2.Detector = &(stackMultiDetStates2.data[0]->data[0]->detector);
-      scanInit2.ephemeris = edat;  /* used by Ephemeris-based metric */
-      scanInit2.Freq = usefulParams2.spinRange_midTime.fkdot[0] + usefulParams2.spinRange_midTime.fkdotBand[0];
-
-      /* the search region for scanInit2 will be set later 
-	 -- it depends on the candidates from the first stage */
-    } /* end if( uvar_followUp) */
-
-
 
 
 
@@ -1062,38 +893,38 @@ int MAIN( int argc, char *argv[]) {
   /* loop over skygrid points */
   skyGridCounter = 0;
 
-  XLALNextDopplerSkyPos(&dopplerpos1, &thisScan1);
+  XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
   
   /* "spool forward" if we found a checkpoint */
   {
     UINT4 count = 0;
-    GET_CHECKPOINT(semiCohToplist, &count, thisScan1.numSkyGridPoints, fnameSemiCohCand, NULL);
+    GET_CHECKPOINT(semiCohToplist, &count, thisScan.numSkyGridPoints, fnameSemiCohCand, NULL);
     for(skyGridCounter = 0; skyGridCounter < count; skyGridCounter++)
-      XLALNextDopplerSkyPos(&dopplerpos1, &thisScan1);
+      XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
   }
 
-  LogPrintf(LOG_DEBUG, "Total skypoints = %d. Progress: ", thisScan1.numSkyGridPoints);
+  LogPrintf(LOG_DEBUG, "Total skypoints = %d. Progress: ", thisScan.numSkyGridPoints);
 
 
-  while(thisScan1.state != STATE_FINISHED)
+  while(thisScan.state != STATE_FINISHED)
     {
       UINT4 ifdot;  /* counter for spindown values */
       SkyPosition skypos;
 
-      SHOW_PROGRESS(dopplerpos1.Alpha,dopplerpos1.Delta,
-		    skyGridCounter,thisScan1.numSkyGridPoints);
+      SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta,
+		    skyGridCounter,thisScan.numSkyGridPoints);
 
       LogPrintfVerbatim(LOG_DEBUG, "%d, ", skyGridCounter );
       
       /*------------- calculate F statistic for each stack --------------*/
       
       /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
-      thisPoint1.Alpha = dopplerpos1.Alpha;
-      thisPoint1.Delta = dopplerpos1.Delta;   
+      thisPoint.Alpha = dopplerpos.Alpha;
+      thisPoint.Delta = dopplerpos.Delta;   
 
       /* get amplitude modulation weights */
-      skypos.longitude = thisPoint1.Alpha;
-      skypos.latitude = thisPoint1.Delta;
+      skypos.longitude = thisPoint.Alpha;
+      skypos.latitude = thisPoint.Delta;
       skypos.system = COORDINATESYSTEM_EQUATORIAL;
 
       /* initialize weights to unity */
@@ -1101,13 +932,13 @@ int MAIN( int argc, char *argv[]) {
 
 
       if (uvar_useWeights) {
-	LAL_CALL( ComputeStackNoiseAndAMWeights( &status, weightsV, &stackMultiNoiseWeights1,
-						 &stackMultiDetStates1, skypos), &status);
+	LAL_CALL( ComputeStackNoiseAndAMWeights( &status, weightsV, &stackMultiNoiseWeights,
+						 &stackMultiDetStates, skypos), &status);
       }
       semiCohPar.weightsV = weightsV;
       
       LogPrintf(LOG_DETAIL, "Stack weights for alpha = %f, delta = %f are:\n", skypos.longitude, skypos.latitude);
-      for (k = 0; k < nStacks1; k++) {
+      for (k = 0; k < nStacks; k++) {
 	LogPrintf(LOG_DETAIL, "%f\n", weightsV->data[k]);
       }
 
@@ -1116,41 +947,41 @@ int MAIN( int argc, char *argv[]) {
       for ( ifdot = 0; ifdot < nf1dot; ifdot++)
 	{
 	  LogPrintf(LOG_DETAIL, "Analyzing %d/%d Coarse sky grid points and %d/%d spindown values\n", 
-			    skyGridCounter, thisScan1.numSkyGridPoints, ifdot+1, nf1dot);
+			    skyGridCounter, thisScan.numSkyGridPoints, ifdot+1, nf1dot);
 	  	  
 	  /* calculate the Fstatistic for each stack*/
 	  LogPrintf(LOG_DETAIL, "Starting Fstat calculation for each stack...");
-	  for ( k = 0; k < nStacks1; k++) {
+	  for ( k = 0; k < nStacks; k++) {
 
 	    /* set spindown value for Fstat calculation */
-	    thisPoint1.fkdot[1] = usefulParams1.spinRange_midTime.fkdot[1] + ifdot * df1dot;
-	    thisPoint1.fkdot[0] = fstatVector1.data[k].f0;
-	    /* thisPoint1.fkdot[0] = usefulParams1.spinRange_midTime.fkdot[0]; */
+	    thisPoint.fkdot[1] = usefulParams.spinRange_midTime.fkdot[1] + ifdot * df1dot;
+	    thisPoint.fkdot[0] = fstatVector1.data[k].f0;
+	    /* thisPoint.fkdot[0] = usefulParams.spinRange_midTime.fkdot[0]; */
 
-	    LAL_CALL( ComputeFStatFreqBand ( &status, fstatVector1.data + k, &thisPoint1, 
-					     stackMultiSFT1.data[k], stackMultiNoiseWeights1.data[k], 
-					     stackMultiDetStates1.data[k], &CFparams), &status);
+	    LAL_CALL( ComputeFStatFreqBand ( &status, fstatVector1.data + k, &thisPoint, 
+					     stackMultiSFT.data[k], stackMultiNoiseWeights.data[k], 
+					     stackMultiDetStates.data[k], &CFparams), &status);
 	  }
 	  LogPrintfVerbatim(LOG_DETAIL, "done\n");
 	  
 	  /* print fstat vector if required -- mostly for debugging */
 	  if ( uvar_printFstat1 )
 	    {
-	      for (k = 0; k < nStacks1; k++)
-		LAL_CALL( PrintFstatVec ( &status, fstatVector1.data + k, fpFstat1, &thisPoint1, refTimeGPS, k+1), &status); 
+	      for (k = 0; k < nStacks; k++)
+		LAL_CALL( PrintFstatVec ( &status, fstatVector1.data + k, fpFstat1, &thisPoint, refTimeGPS, k+1), &status); 
 	    }
 
 	  
 	  /*--------------- get candidates from a semicoherent search ---------------*/
 
 	  /* the input to this section is the set of fstat vectors fstatVector1 and the 
-	     parameters semiCohPar. The output is the list of candidates in semiCohCandList1 */
+	     parameters semiCohPar. The output is the list of candidates in semiCohCandList */
 
 
 	  /* set sky location and spindown for Hough grid -- same as for Fstat calculation */	  
-	  semiCohPar.alpha = thisPoint1.Alpha;
-	  semiCohPar.delta = thisPoint1.Delta;
-	  semiCohPar.fdot = thisPoint1.fkdot[1];
+	  semiCohPar.alpha = thisPoint.Alpha;
+	  semiCohPar.delta = thisPoint.Delta;
+	  semiCohPar.fdot = thisPoint.fkdot[1];
  
 	  /* the hough option */
 	  /* select peaks */ 	      
@@ -1158,11 +989,11 @@ int MAIN( int argc, char *argv[]) {
 
 	    LogPrintf(LOG_DETAIL, "Starting Hough calculation...\n");
 	    sumWeightSquare = 0.0;
-	    for ( k = 0; k < nStacks1; k++)
+	    for ( k = 0; k < nStacks; k++)
 	      sumWeightSquare += weightsV->data[k] * weightsV->data[k];
 
 	    /* set number count threshold based on significance threshold */	    
-	    meanN = nStacks1 * alphaPeak; 
+	    meanN = nStacks * alphaPeak; 
 	    sigmaN = sqrt(sumWeightSquare * alphaPeak * (1.0 - alphaPeak));
 	    semiCohPar.threshold = uvar_threshold1*sigmaN + meanN;	 
 	    LogPrintf(LOG_DETAIL, "Expected mean number count=%f, std=%f, threshold=%f\n", 
@@ -1172,10 +1003,10 @@ int MAIN( int argc, char *argv[]) {
 	    LAL_CALL( FstatVectToPeakGram( &status, &pgV, &fstatVector1, uvar_peakThrF), &status);
 	    	    
 	    /* get candidates */
-	    LAL_CALL ( ComputeFstatHoughMap ( &status, &semiCohCandList1, &pgV, &semiCohPar), &status);
+	    LAL_CALL ( ComputeFstatHoughMap ( &status, &semiCohCandList, &pgV, &semiCohPar), &status);
 	    
 	    /* free peakgrams -- we don't need them now because we have the Hough maps */
-	    for (k=0; k<nStacks1; k++) 
+	    for (k=0; k<nStacks; k++) 
 	      LALFree(pgV.pg[k].peak);
 	    LALFree(pgV.pg);
 	    LogPrintf(LOG_DETAIL, "...finished Hough calculation\n");
@@ -1186,191 +1017,43 @@ int MAIN( int argc, char *argv[]) {
             LogPrintf(LOG_DETAIL, "Starting StackSlide calculation...\n");
 	    /* 12/18/06 gm; use threshold from command line as threshold on stackslide sum of F-stat values */
             semiCohPar.threshold = uvar_threshold1; 
-            LAL_CALL( StackSlideVecF( &status, &semiCohCandList1, &fstatVector1, &semiCohPar), &status);
+            LAL_CALL( StackSlideVecF( &status, &semiCohCandList, &fstatVector1, &semiCohPar), &status);
 	    LogPrintf(LOG_DETAIL, "...finished StackSlide calculation\n");
           }
 
 	  /* print candidates if desired */
 	  /* 	  if ( uvar_printCand1 ) { */
-	  /* 	    LAL_CALL ( PrintSemiCohCandidates ( &status, &semiCohCandList1, fpSemiCoh, refTimeGPS), &status); */
+	  /* 	    LAL_CALL ( PrintSemiCohCandidates ( &status, &semiCohCandList, fpSemiCoh, refTimeGPS), &status); */
 	  /* 	  } */
 
 
 	  if( uvar_semiCohToplist) {
 	    /* this is necessary here, because GetSemiCohToplist() might set
 	       a checkpoint that needs some information from here */
-	    SHOW_PROGRESS(dopplerpos1.Alpha,dopplerpos1.Delta,
-			  skyGridCounter,thisScan1.numSkyGridPoints);
+	    SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta,
+			  skyGridCounter,thisScan.numSkyGridPoints);
 
 	    LogPrintf(LOG_DETAIL, "Selecting toplist from semicoherent candidates\n");
-	    LAL_CALL( GetSemiCohToplist(&status, semiCohToplist, &semiCohCandList1, meanN, sigmaN), &status);
+	    LAL_CALL( GetSemiCohToplist(&status, semiCohToplist, &semiCohCandList, meanN, sigmaN), &status);
 	  }
-
-  
-	  /*------------- Follow up candidates --------------*/
-	  
-	  /* check if user requested a follow up stage*/
-	  if ( uvar_followUp ) 
-	    {
-
-	      LogPrintf(LOG_DEBUG, "Starting followup of %d candidates...", semiCohCandList1.nCandidates);	      
-	      /* loop over candidates surviving 1st stage  */
-	      for ( j=0; j < semiCohCandList1.nCandidates; j++) 
-		{		  
-
-		  /* 2nd stage frequency and spindown variables */
-		  /* these are the parameters passed down from the 
-		     first stage which is why they have the subscript 1 */
-		  REAL8 fStart1, freqBand1, fdot1, fdotBand1;
-		  REAL8 alpha1, delta1, alphaBand1, deltaBand1;
-
-		  LogPrintf(LOG_DEBUG, "Following up %d of %d semicoherent candidates\n", j, semiCohCandList1.nCandidates);
-
-		  /* get spin range of candidate */
-		  spinRange_Temp.refTime = semiCohCandList1.refTime;
-		  spinRange_Temp.fkdot[0] = semiCohCandList1.list[j].freq - 0.5 * semiCohCandList1.list[j].dFreq;
-		  spinRange_Temp.fkdotBand[0] = semiCohCandList1.list[j].dFreq;
-		  spinRange_Temp.fkdot[1] = semiCohCandList1.list[j].fdot - 0.5 * semiCohCandList1.list[j].dFdot;
-		  spinRange_Temp.fkdotBand[1] = semiCohCandList1.list[j].dFdot;
-
-		  /* extrapulate spin range to start time of second stack */
-		  LAL_CALL( LALExtrapolatePulsarSpinRange(  &status, &spinRange_Temp, tStart2GPS, &spinRange_Temp ), &status);
-
-		  /* set frequency and spindown ranges */
-		  fStart1 = spinRange_Temp.fkdot[0];
-		  freqBand1 = spinRange_Temp.fkdotBand[0];
-		  fdot1 = spinRange_Temp.fkdot[1];
-		  fdotBand1 = spinRange_Temp.fkdotBand[1];
-		  
-		  /* set sky region to be refined */
-		  alpha1 = semiCohCandList1.list[j].alpha - 0.5 * semiCohCandList1.list[j].dAlpha;
-		  delta1 = semiCohCandList1.list[j].delta - 0.5 * semiCohCandList1.list[j].dDelta;
-		  alphaBand1 = semiCohCandList1.list[j].dAlpha;
-		  deltaBand1 = semiCohCandList1.list[j].dDelta;
-		  LAL_CALL (SkySquare2String( &status, &(scanInit2.skyRegionString),
-					      alpha1, delta1, alphaBand1, deltaBand1), &status);
-
-		  
-		  /* allocate fstat memory */
-		  fstatVector2.length = nStacks2;
-		  fstatVector2.data = NULL;
-		  fstatVector2.data = (REAL8FrequencySeries *)LALCalloc( 1, nStacks2 * sizeof(REAL8FrequencySeries));
-		  binsFstat2 = (UINT4)(freqBand1/dFreqStack2 + 0.5) + 1;
-		  for (k = 0; k < nStacks2; k++) 
-		    { 
-		      fstatVector2.data[k].epoch = startTstack2->data[k];
-		      fstatVector2.data[k].deltaF = dFreqStack2;
-		      fstatVector2.data[k].f0 = fStart1;
-		      fstatVector2.data[k].data = (REAL8Sequence *)LALCalloc( 1, sizeof(REAL8Sequence));
-		      fstatVector2.data[k].data->length = binsFstat2;
-		      fstatVector2.data[k].data->data = (REAL8 *)LALCalloc( 1, binsFstat2 * sizeof(REAL8));
-		    } 
-
-
-		  /* initialize skygrid  */  
-		  LAL_CALL ( InitDopplerSkyScan ( &status, &thisScan2, &scanInit2), &status); 
-		  
-		  
-		  /* loop over fine skygrid points */
-		  while(1)
-		    {
-		      UINT4 ifdot2;  /* counter for spindown values */
-
-		      XLALNextDopplerSkyPos( &dopplerpos2, &thisScan2 );
-		      if (thisScan2.state == STATE_FINISHED) /* scanned all DopplerPositions yet? */
-			break;
-
-		      
-		      /*------------- calculate F statistic for each stack --------------*/
-		      
-		      /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
-		      thisPoint2.Alpha = dopplerpos2.Alpha;
-		      thisPoint2.Delta = dopplerpos2.Delta;
-		      		      
-		      /* number of fdot values */
-		      nf1dot2 = (UINT4)( fdotBand1 / df1dot2 + 0.5) + 1; 
-		      
-		      /* loop over fdot values */
-		      for ( ifdot2 = 0; ifdot2 < nf1dot2; ifdot2++)
-			{
-
-			  /*LogPrintf(LOG_DEBUG, "Following up with %d Freq. bins, %d/%d spindowns, %d skypoints\n",
-			    binsFstat2, ifdot,nfdot, thisScan2.numSkyGridPoints); */
-			  
-			  /* set spindown value for Fstat calculation */
-			  thisPoint2.fkdot[1] = fdot1 + ifdot2 * df1dot2;
-			  thisPoint2.fkdot[0] = fStart1;
-
-			  /* calculate the Fstatistic */
-			  for ( k = 0; k < nStacks2; k++) {
-			    LAL_CALL( ComputeFStatFreqBand ( &status, fstatVector2.data + k, &thisPoint2, 
-							     stackMultiSFT2.data[k], stackMultiNoiseWeights2.data[k], 
-							     stackMultiDetStates2.data[k], &CFparams), &status);
-			  }
-			  
-			  /* select candidates from 2nd stage */
-			  for (k = 0; k < nStacks2; k++) 
-			    {
-			      LAL_CALL( GetFstatCandidates_toplist( &status, fstatToplist, fstatVector2.data + k,
-								    thisPoint2.Alpha, thisPoint2.Delta,
-								    thisPoint2.fkdot[1] ), &status);
-
-			    } /* end loop over nstacks2 for selecting candidates */
-			  
-			  
-			} /* end loop over refined spindown parameters */
-		      
-		    } /* end while loop over second stage refined sky grid */
-		  
-
-		  /* free Fstat vectors  */
-		  for(k = 0; k < nStacks2; k++) {
-		    LALFree(fstatVector2.data[k].data->data);
-		    LALFree(fstatVector2.data[k].data);
-		  }
-		  LALFree(fstatVector2.data);
-
-
-		  /* destroy dopplerscan2 variables */ 
-		  LAL_CALL ( FreeDopplerSkyScan(&status, &thisScan2), &status);
-		  if ( scanInit2.skyRegionString )
-		    LALFree ( scanInit2.skyRegionString );
-		  
-		  
-		} /* end loop over candidates from 1st stage */
-	      
-	      LogPrintfVerbatim(LOG_DEBUG, "done\n");
-
-	    } /* end block for follow-up stage */ 
 	  
 	} /* end loop over coarse grid fdot values */
 
       skyGridCounter++;
       
       /* this is necessary here, because the checkpoint needs some information from here */
-      SHOW_PROGRESS(dopplerpos1.Alpha,dopplerpos1.Delta,
-		    skyGridCounter,thisScan1.numSkyGridPoints);
+      SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta,
+		    skyGridCounter,thisScan.numSkyGridPoints);
 
       SET_CHECKPOINT;
 
-      XLALNextDopplerSkyPos( &dopplerpos1, &thisScan1 );
+      XLALNextDopplerSkyPos( &dopplerpos, &thisScan );
 
     } /* end while loop over 1st stage coarse skygrid */
 
   LogPrintfVerbatim ( LOG_DEBUG, " done.\n");
 
   LogPrintf(LOG_DEBUG, "Finished analysis and now printing results and cleaning up...");
-
-  /* print fstat candidates */  
-  {
-    UINT4 checksum;
-    if ( uvar_followUp ) {
-      sort_fstat_toplist(fstatToplist);
-      if ( write_fstat_toplist_to_fp( fstatToplist, fpFstat, &checksum) < 0)
-	fprintf( stderr, "Error in writing toplist to file\n");
-    /*     LAL_CALL( AppendFstatCandidates( &status, &fStatCand, fpFstat), &status); */
-    }
-  }
 	
 
 #if (!HS_CHECKPOINTING)
@@ -1400,28 +1083,6 @@ int MAIN( int argc, char *argv[]) {
   
   /* free memory */
 
-  if ( uvar_followUp )
-    {
-      XLALDestroyTimestampVector(midTstack2);
-      XLALDestroyTimestampVector(startTstack2);
-      /* free sfts */
-      for ( k = 0; k < nStacks2; k++) {
-	LAL_CALL( LALDestroyMultiSFTVector ( &status, stackMultiSFT2.data + k), &status);
-	LAL_CALL( LALDestroyMultiNoiseWeights ( &status, stackMultiNoiseWeights2.data + k), &status);
-	XLALDestroyMultiDetectorStateSeries ( stackMultiDetStates2.data[k] );
-      }
-      LALFree(stackMultiSFT2.data);
-      LALFree(stackMultiNoiseWeights2.data);
-      LALFree(stackMultiDetStates2.data);
-           
-      if ( fstatToplist ) 
-	free_fstat_toplist(&fstatToplist);
-      
-      fclose(fpFstat);
-      LALFree(fnameFstatCand);
-
-    }
-
   if ( uvar_printCand1 )
     {
       LALFree(fnameSemiCohCand);
@@ -1434,21 +1095,21 @@ int MAIN( int argc, char *argv[]) {
     }
   
   /* free first stage memory */
-  for ( k = 0; k < nStacks1; k++) {
-    LAL_CALL( LALDestroyMultiSFTVector ( &status, stackMultiSFT1.data + k), &status);
-    LAL_CALL( LALDestroyMultiNoiseWeights ( &status, stackMultiNoiseWeights1.data + k), &status);
-    XLALDestroyMultiDetectorStateSeries ( stackMultiDetStates1.data[k] );
+  for ( k = 0; k < nStacks; k++) {
+    LAL_CALL( LALDestroyMultiSFTVector ( &status, stackMultiSFT.data + k), &status);
+    LAL_CALL( LALDestroyMultiNoiseWeights ( &status, stackMultiNoiseWeights.data + k), &status);
+    XLALDestroyMultiDetectorStateSeries ( stackMultiDetStates.data[k] );
   }
-  LALFree(stackMultiSFT1.data);
-  LALFree(stackMultiNoiseWeights1.data);
-  LALFree(stackMultiDetStates1.data);
+  LALFree(stackMultiSFT.data);
+  LALFree(stackMultiNoiseWeights.data);
+  LALFree(stackMultiDetStates.data);
   
 
-  XLALDestroyTimestampVector(midTstack1);
-  XLALDestroyTimestampVector(startTstack1);
+  XLALDestroyTimestampVector(midTstack);
+  XLALDestroyTimestampVector(startTstack);
 
   /* free Fstat vectors  */
-  for(k = 0; k < nStacks1; k++) {
+  for(k = 0; k < nStacks; k++) {
     LALFree(fstatVector1.data[k].data->data);
     LALFree(fstatVector1.data[k].data);
   }
@@ -1459,20 +1120,20 @@ int MAIN( int argc, char *argv[]) {
   LALFree(edat->ephemE);
   LALFree(edat->ephemS);
   LALFree(edat);
-  LAL_CALL( LALDDestroyVectorSequence (&status,  &velStack1), &status);
-  LAL_CALL( LALDDestroyVectorSequence (&status,  &posStack1), &status);
+  LAL_CALL( LALDDestroyVectorSequence (&status,  &velStack), &status);
+  LAL_CALL( LALDDestroyVectorSequence (&status,  &posStack), &status);
 
   LAL_CALL( LALDDestroyVector ( &status, &weightsNoise ), &status);
   LAL_CALL( LALDDestroyVector ( &status, &weightsV ), &status);
   
   /* free dopplerscan stuff */
-  LAL_CALL ( FreeDopplerSkyScan(&status, &thisScan1), &status);
-  if ( scanInit1.skyRegionString )
-    LALFree ( scanInit1.skyRegionString );
+  LAL_CALL ( FreeDopplerSkyScan(&status, &thisScan), &status);
+  if ( scanInit.skyRegionString )
+    LALFree ( scanInit.skyRegionString );
 
  
   /* free candidates */
-  LALFree(semiCohCandList1.list);
+  LALFree(semiCohCandList.list);
   free_fstat_toplist(&semiCohToplist);
 
   LAL_CALL (LALDestroyUserVars(&status), &status);  
