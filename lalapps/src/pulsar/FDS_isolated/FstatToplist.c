@@ -632,6 +632,7 @@ int fstat_cpt_file_compact(FStatCheckpointFile*cptf) {
   }
 
   fstat_cpt_file_open(cptf);
+  fseek(cptf->fp, 0, SEEK_END);
   cptf->bytes = bytes;
   cptf->checksum = checksum;
 
