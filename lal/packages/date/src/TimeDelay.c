@@ -191,3 +191,60 @@ XLALLightTravelTime(
 
 	return (INT8) (1e9 * sqrt(dotprod(deltaLoc, deltaLoc)) / LAL_C_SI);
 }
+
+/* <lalVerbatim file="TimeDelayCP"> */
+void
+XLALPopulateAccuracyParams(
+       InspiralAccuracyList   *accuracyParams,
+       const DetTimeAndASource *timeAndSource
+)
+/* </lalVerbatim> */
+{
+
+  const CHAR *func = "XLALPopulateAccuracyParams";
+
+  INT4 ifoNumber, ifoTwo;
+  REAL8 timeDelay;
+  LALDetector aDet, bDet;
+
+
+  /* check that the accuracyParams structure is allocated */
+  if ( accuracyParams == NULL )
+  {
+    XLAL_ERROR_VOID( func, XLAL_EFAULT );
+  }
+
+  /* Populate the lightTravel matrix */
+  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    XLALReturnDetector( &aDet, ifoNumber );
+
+    for ( ifoTwo = 0; ifoTwo < LAL_NUM_IFO; ifoTwo++)
+    {
+      XLALReturnDetector( &bDet, ifoTwo );
+
+
+      if ( timeAndSource==NULL )
+      { 
+	/* compute maximum light travel time */
+	accuracyParams->lightTravelTime[ ifoNumber][ ifoTwo ] =
+          XLALLightTravelTime( &aDet, &bDet );
+      } 
+      else 
+      {
+	/* compute signal travel time  */
+	timeDelay=-XLALArrivalTimeDiff( aDet.location, bDet.location, timeAndSource->p_source->longitude,timeAndSource->p_source->latitude,  timeAndSource->p_det_and_time->p_gps);
+
+	accuracyParams->lightTravelTime[ ifoNumber][ ifoTwo ] =
+           (INT8) 1e9*timeDelay;
+      }
+    }
+  }
+
+  /* set the exttrig flag */
+  if ( timeAndSource )
+  {
+    accuracyParams->exttrig=1;
+  } 
+
+}

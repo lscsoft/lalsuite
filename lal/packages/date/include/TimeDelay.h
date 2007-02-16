@@ -34,6 +34,7 @@ translation of the Maple worksheet by Anderson, \emph{et al.}, available at
 #include <lal/Date.h>
 #include <lal/DetectorSite.h>
 #include <lal/SkyCoordinates.h>
+#include <lal/LIGOMetadataUtils.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -161,6 +162,12 @@ void
 LALTimeDelayFromEarthCenter( LALStatus               *status,
                              REAL8                   *p_delay,
                              const DetTimeAndASource *p_det_time_and_source );
+
+void
+XLALPopulateAccuracyParams(
+       InspiralAccuracyList   *accuracyParams,
+       const DetTimeAndASource *timeAndSource
+);
 
 #ifdef __cplusplus
 }
