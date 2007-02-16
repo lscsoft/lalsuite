@@ -464,7 +464,7 @@ assembleDescription ( const CHAR *name, const CHAR *miscField )
 {
   CHAR *desc, *ptr;
   UINT4 len;
-  const CHAR illegals[] = "-. ";
+  const CHAR illegals[] = "-. {}";
 
   if ( !name )
     return NULL;
@@ -485,7 +485,7 @@ assembleDescription ( const CHAR *name, const CHAR *miscField )
     strcat ( desc, uvar_miscField );
   }
 
-  /* Now go through and replace all illegal characters ['-', '.', ' '] by '_' */
+  /* Now go through and replace all illegal characters ['-', '.', ' ', '{', '}'] by '_' */
   ptr = desc;
   while ( *ptr != 0 )
     {
