@@ -320,7 +320,7 @@ INT2 XLALCompareInspiralsEllipsoid(
     XLALSetTimeInPositionVector( bPtr->position,
           (curTimeBNS - curTimeANS) * 1.0e-9 );
 
-    /* if analyzing an external trigger the position and time-delay is KNOWN */
+    /* if analyzing a grb the position and time-delay is KNOWN */
     if (params->exttrig) 
     {
       timeShift=travelTime;
@@ -363,7 +363,8 @@ INT2 XLALCompareInspiralsEllipsoid(
 /* <lalVerbatim file="CoincInspiralEllipsoidCP"> */
 REAL8 XLALCalculateEThincaParameter( 
           SnglInspiralTable *table1,
-          SnglInspiralTable *table2
+          SnglInspiralTable *table2,
+          InspiralAccuracyList* accuracyParams
              )
 /* </lalVerbatim> */
 {
@@ -372,14 +373,12 @@ REAL8 XLALCalculateEThincaParameter(
 
    TriggerErrorList   errorList[2];
 
-   REAL8 loMatch, hiMatch, midMatch;
-   
+   REAL8 loMatch, hiMatch, midMatch;  
    INT4 ifoNumber, ifoTwo, i;
    INT2  isOverlap;
    LALDetector aDet, bDet;
-   InspiralAccuracyList accuracyParams;
    fContactWorkSpace    *workSpace;
-   
+   InspiralAccuracyList *aParams;
 
    loMatch = 0.0001;
    hiMatch = 1.0;
@@ -393,20 +392,21 @@ REAL8 XLALCalculateEThincaParameter(
     XLAL_ERROR_REAL8( func, XLAL_EFUNC );
   }
 
-  memset( &accuracyParams, 0, sizeof( InspiralAccuracyList ));
-
-  /* Populate the lightTravel matrix */
-  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  /* populate accuracyParams table only if NULL pointer passed */
+  if (accuracyParams == NULL)
   {
-    XLALReturnDetector( &aDet, ifoNumber );
-
-    for ( ifoTwo = 0; ifoTwo < LAL_NUM_IFO; ifoTwo++)
+    aParams = (InspiralAccuracyList *)LALMalloc( sizeof( InspiralAccuracyList ));
+    if ( !aParams )
     {
-      XLALReturnDetector( &bDet, ifoTwo );
-
-      accuracyParams.lightTravelTime[ ifoNumber][ ifoTwo ] =
-      XLALLightTravelTime( &aDet, &bDet );
+      XLALFreeFContactWorkSpace( workSpace );
+      XLAL_ERROR_REAL8( func, XLAL_ENOMEM );
     }
+
+    XLALPopulateAccuracyParams( aParams, NULL );    
+  }
+  else
+  {
+    aParams = accuracyParams;
   }
 
   /* Set up the trigger lists */
@@ -433,7 +433,7 @@ REAL8 XLALCalculateEThincaParameter(
    * nothing more to be done.
    */
    isOverlap = XLALCompareInspiralsEllipsoid( &errorList[0], &errorList[1], workSpace,
-                                        &accuracyParams );
+                                        aParams );
 
    for (i = 0; i < 2; i++ )
    {
@@ -446,6 +446,7 @@ REAL8 XLALCalculateEThincaParameter(
      {
        gsl_vector_free( errorList[i].position );
      }
+     if ( !accuracyParams ) LALFree( aParams );
      XLALFreeFContactWorkSpace( workSpace );
      return loMatch;
    }
@@ -459,7 +460,7 @@ REAL8 XLALCalculateEThincaParameter(
   }
    
    isOverlap = XLALCompareInspiralsEllipsoid( &errorList[0], &errorList[1], workSpace,
-                                        &accuracyParams );
+                                        aParams );
 
    for (i = 0; i < 2; i++ )
    {
@@ -471,6 +472,7 @@ REAL8 XLALCalculateEThincaParameter(
      {
        gsl_vector_free( errorList[i].position );
      }
+     if ( !accuracyParams ) LALFree( aParams );
      XLALFreeFContactWorkSpace( workSpace );
      XLALPrintError("The two triggers provided are NOT coincident!!");
      XLAL_ERROR_REAL8( func, XLAL_EINVAL );
@@ -489,7 +491,7 @@ REAL8 XLALCalculateEThincaParameter(
                                  midMatch );
      }
      isOverlap = XLALCompareInspiralsEllipsoid( &errorList[0], &errorList[1], workSpace,
-                                        &accuracyParams );
+                                        aParams );
 
      for (i = 0; i < 2; i++ )
      {
@@ -510,6 +512,7 @@ REAL8 XLALCalculateEThincaParameter(
    {
      gsl_vector_free( errorList[i].position );
    }
+   if ( !accuracyParams ) LALFree( aParams );
    XLALFreeFContactWorkSpace( workSpace );
 
    return midMatch;

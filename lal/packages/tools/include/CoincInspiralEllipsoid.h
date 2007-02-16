@@ -91,8 +91,9 @@ int XLALSetTimeInPositionVector( gsl_vector *position,
 /* Function for calculating the e-thinca parameter between coincident events */
 REAL8 XLALCalculateEThincaParameter(
           SnglInspiralTable *table1,
-          SnglInspiralTable *table2
-             );
+          SnglInspiralTable *table2,
+          InspiralAccuracyList* accuracyParams
+);
 
 REAL8 XLALEThincaParameterForInjection(
                     SimInspiralTable  *injection,
