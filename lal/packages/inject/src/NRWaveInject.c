@@ -289,11 +289,210 @@ COMPLEX16 SphHarm (
 		break;	   
 	    
 	    default:
-		/* Error message informing that the chosen M is incompatible with L=2*/
+		/* Error message informing that the chosen M is incompatible with L*/
 		printf("Sorry, the value chosen for m is not compatible with l");
 		break;
 	}
     }
+
+    else if (L == 3)
+    {
+	switch ( M )
+	{
+	    case -3:
+		deptheta = Sqrt(21./(2.*LAL_PI))*Cos(theta/2.)*Power(Sin(theta/2.),5);
+		out.re = deptheta * cos( -3.0*phi );
+		out.im = deptheta * sin( -3.0*phi );
+		break;
+
+	    case -2:
+		deptheta = Sqrt(7./4.*LAL_PI)*(2 + 3*Cos(theta))*Power(Sin(theta/2.),4);
+		out.re = deptheta * cos( -2.0*phi );
+		out.im = deptheta * sin( -2.0*phi );
+		break;
+
+	    case -1:
+		deptheta = Sqrt(35./(2.*LAL_PI))*(Sin(theta) + 4*Sin(2*theta) - 3*Sin(3*theta))/32.;
+		out.re = deptheta * cos( -phi );
+		out.im = deptheta * sin( -phi );
+		break;
+
+	    case 0:
+		deptheta = (Sqrt(105./(2.*LAL_PI))*Cos(theta)*Power(Sin(theta),2))/4.;
+		out.re = deptheta;
+		out.im = deptheta;
+		break;
+
+	    case 1:
+		deptheta = -Sqrt(35./(2.*LAL_PI))*(Sin(theta) - 4*Sin(2*theta) - 3*Sin(3*theta))/32.;
+		out.re = deptheta * cos( phi );
+		out.im = deptheta * sin( phi );
+		break;
+		
+	    case 2:
+		deptheta = Sqrt(7./LAL_PI)*Power(Cos(theta/2.),4)*(-2 + 3*Cos(theta))/2.;
+		out.re = deptheta * cos( 2.0*phi );
+		out.im = deptheta * sin( 2.0*phi );
+		break;	   
+	    
+	    case 3:
+		deptheta = -Sqrt(21./(2.*LAL_PI))*Power(Cos(theta/2.),5)*Sin(theta/2.);
+		out.re = deptheta * cos( 3.0*phi );
+		out.im = deptheta * sin( 3.0*phi );
+		break;	   
+
+	    default:
+		/* Error message informing that the chosen M is incompatible with L*/
+		printf("Sorry, the value chosen for m is not compatible with l\n");
+		break;
+	}
+    }    
+
+    else if (L == 4)
+    {
+	switch ( M )
+	{
+
+	    case -4:
+		deptheta = 3.*Sqrt(7./LAL_PI)*Power(Cos(theta/2.),2)*Power(Sin(theta/2.),6);
+		out.re = deptheta * cos( -4.0*phi );
+		out.im = deptheta * sin( -4.0*phi );
+		break;
+
+	    case -3:
+		deptheta = 3.*Sqrt(7./(2.*LAL_PI))*Cos(theta/2.)*(1 + 2*Cos(theta))*Power(Sin(theta/2.),5);
+		out.re = deptheta * cos( -3.0*phi );
+		out.im = deptheta * sin( -3.0*phi );
+		break;
+
+	    case -2:
+		deptheta = (3*(9. + 14.*Cos(theta) + 7.*Cos(2*theta))*Power(Sin(theta/2.),4))/(4.*Sqrt(LAL_PI));
+		out.re = deptheta * cos( -2.0*phi );
+		out.im = deptheta * sin( -2.0*phi );
+		break;
+
+	    case -1:
+		deptheta = (3.*(3.*Sin(theta) + 2.*Sin(2*theta) + 7.*Sin(3*theta) - 7.*Sin(4*theta)))/(32.*Sqrt(2*LAL_PI));
+		out.re = deptheta * cos( -phi );
+		out.im = deptheta * sin( -phi );
+		break;
+
+	    case 0:
+		deptheta = (3.*Sqrt(5./(2.*LAL_PI))*(5. + 7.*Cos(2*theta))*Power(Sin(theta),2))/16.;
+		out.re = deptheta;
+		out.im = deptheta;
+		break;
+
+	    case 1:
+		deptheta = (3.*(3.*Sin(theta) - 2.*Sin(2*theta) + 7.*Sin(3*theta) + 7.*Sin(4*theta)))/(32.*Sqrt(2*LAL_PI));
+		out.re = deptheta * cos( phi );
+		out.im = deptheta * sin( phi );
+		break;
+		
+	    case 2:
+		deptheta = (3.*Power(Cos(theta/2.),4)*(9. - 14.*Cos(theta) + 7.*Cos(2*theta)))/(4.*Sqrt(LAL_PI));
+		out.re = deptheta * cos( 2.0*phi );
+		out.im = deptheta * sin( 2.0*phi );
+		break;	   
+	    
+	    case 3:
+		deptheta = -3.*Sqrt(7./(2.*LAL_PI))*Power(Cos(theta/2.),5)*(-1. + 2.*Cos(theta))*Sin(theta/2.);
+		out.re = deptheta * cos( 3.0*phi );
+		out.im = deptheta * sin( 3.0*phi );
+		break;	   
+
+	    case 4:
+		deptheta = 3.*Sqrt(7./LAL_PI)*Power(Cos(theta/2.),6)*Power(Sin(theta/2.),2);
+		out.re = deptheta * cos( 4.0*phi );
+		out.im = deptheta * sin( 4.0*phi );
+		break;	   
+
+	    default:
+		/* Error message informing that the chosen M is incompatible with L*/
+		printf("Sorry, the value chosen for m is not compatible with l\n");
+		break;
+	}
+    }    
+
+    else if (L == 5)
+    {
+	switch ( M )
+	{
+
+	    case -5:
+		deptheta = Sqrt(330./LAL_PI)*Power(Cos(theta/2.),3)*Power(Sin(theta/2.),7);
+		out.re = deptheta * cos( -5.0*phi );
+		out.im = deptheta * sin( -5.0*phi );
+		break;
+
+	    case -4:
+		deptheta = Sqrt(33./LAL_PI)*Power(Cos(theta/2.),2)*(2. + 5.*Cos(theta))*Power(Sin(theta/2.),6);
+		out.re = deptheta * cos( -4.0*phi );
+		out.im = deptheta * sin( -4.0*phi );
+		break;
+
+	    case -3:
+		deptheta = (Sqrt(33./(2.*LAL_PI))*Cos(theta/2.)*(17. + 24.*Cos(theta) + 15.*Cos(2.*theta))*Power(Sin(theta/2.),5))/4.;
+		out.re = deptheta * cos( -3.0*phi );
+		out.im = deptheta * sin( -3.0*phi );
+		break;
+
+	    case -2:
+		deptheta = (Sqrt(11./LAL_PI)*(32. + 57.*Cos(theta) + 36.*Cos(2.*theta) + 15.*Cos(3.*theta))*Power(Sin(theta/2.),4))/8.;
+		out.re = deptheta * cos( -2.0*phi );
+		out.im = deptheta * sin( -2.0*phi );
+		break;
+
+	    case -1:
+		deptheta = (Sqrt(77./LAL_PI)*(2.*Sin(theta) + 8.*Sin(2.*theta) + 3.*Sin(3.*theta) + 12.*Sin(4.*theta) - 15.*Sin(5.*theta)))/256.;
+		out.re = deptheta * cos( -phi );
+		out.im = deptheta * sin( -phi );
+		break;
+
+	    case 0:
+		deptheta = (Sqrt(1155./(2.*LAL_PI))*(5.*Cos(theta) + 3.*Cos(3.*theta))*Power(Sin(theta),2))/32.;
+		out.re = deptheta;
+		out.im = deptheta;
+		break;
+
+	    case 1:
+		deptheta = Sqrt(77./LAL_PI)*(-2.*Sin(theta) + 8.*Sin(2.*theta) - 3.*Sin(3.*theta) + 12.*Sin(4.*theta) + 15.*Sin(5.*theta)))/256.;
+		out.re = deptheta * cos( phi );
+		out.im = deptheta * sin( phi );
+		break;
+		
+	    case 2:
+		deptheta = Sqrt(11./LAL_PI)*Power(Cos(theta/2.),4)*(-32. + 57.*Cos(theta) - 36.*Cos(2.*theta) + 15.*Cos(3.*theta)))/8.;
+		out.re = deptheta * cos( 2.0*phi );
+		out.im = deptheta * sin( 2.0*phi );
+		break;	   
+	    
+	    case 3:
+		deptheta = -Sqrt(33./(2.*LAL_PI))*Power(Cos(theta/2.),5)*(17. - 24.*Cos(theta) + 15.*Cos(2.*theta))*Sin(theta/2.))/4.;
+		out.re = deptheta * cos( 3.0*phi );
+		out.im = deptheta * sin( 3.0*phi );
+		break;	   
+
+	    case 4:
+		deptheta = Sqrt(33./LAL_PI)*Power(Cos(theta/2.),6)*(-2. + 5.*Cos(theta))*Power(Sin(theta/2.),2);
+		out.re = deptheta * cos( 4.0*phi );
+		out.im = deptheta * sin( 4.0*phi );
+		break;	   
+
+	    case 5:
+		deptheta = -Sqrt(330./LAL_PI)*Power(Cos(theta/2.),7)*Power(Sin(theta/2.),3);
+		out.re = deptheta * cos( 5.0*phi );
+		out.im = deptheta * sin( 5.0*phi );
+		break;	   
+
+	    default:
+		/* Error message informing that the chosen M is incompatible with L*/
+		printf("Sorry, the value chosen for m is not compatible with l\n");
+		break;
+	}
+    }    
+
+
     else 
     {
 	/* Error message informing that L!=2 is not yet implemented*/
