@@ -242,3 +242,63 @@ XLALFindNRFile( NRWaveCatalog *nrCatalog,   /**< input  NR wave catalog  */
   return ret;
 
 }
+
+/** Spherical Harmonic for the l=2 mode */
+COMPLEX16 SphHarm ( 
+    UINT4   L,      /**< value of L */
+    INT4    M,      /**< value of M */
+    REAL4   theta,  /**< angle with respect to the z axis */
+    REAL4   phi     /**< angle with respect to the x axis */)
+
+{
+    COMPLEX16  out; /* complex number */
+    REAL4      deptheta; /** dependency on theta */
+
+    if (L == 2)
+    {
+	switch ( M )
+	{
+	    case -2:
+		deptheta = sqrt( 5.0 / ( 64.0 * LAL_PI ) ) * ( 1.0 - cos( theta ))*( 1.0 - cos( theta ));
+		out.re = deptheta * cos( -2.0*phi );
+		out.im = deptheta * sin( -2.0*phi );
+		break;
+
+	    case -1:
+		deptheta = sqrt( 5.0 / ( 16.0 * LAL_PI ) ) * sin( theta )*( 1.0 - cos( theta ));
+		out.re = deptheta * cos( -phi );
+		out.im = deptheta * sin( -phi );
+		break;
+
+	    case 0:
+		deptheta = sqrt( 15.0 / ( 32.0 * LAL_PI ) ) * sin( theta )*sin( theta );
+		out.re = deptheta;
+		out.im = deptheta;
+		break;
+
+	    case 1:
+		deptheta = sqrt( 5.0 / ( 16.0 * LAL_PI ) ) * sin( theta )*( 1.0 + cos( theta ));
+		out.re = deptheta * cos( phi );
+		out.im = deptheta * sin( phi );
+		break;
+		
+	    case 2:
+		deptheta = sqrt( 5.0 / ( 64.0 * LAL_PI ) ) * ( 1.0 + cos( theta ))*( 1.0 + cos( theta ));
+		out.re = deptheta * cos( 2.0*phi );
+		out.im = deptheta * sin( 2.0*phi );
+		break;	   
+	    
+	    default:
+		/* Error message informing that the chosen M is incompatible with L=2*/
+		printf("Sorry, the value chosen for m is not compatible with l");
+		break;
+	}
+    }
+    else 
+    {
+	/* Error message informing that L!=2 is not yet implemented*/
+	fprintf(stderr, "Sorry, for the moment we haven't implemented anything other than l=2");
+    }
+    
+    return( out );
+}
