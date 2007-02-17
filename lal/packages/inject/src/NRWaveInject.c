@@ -300,43 +300,43 @@ COMPLEX16 SphHarm (
 	switch ( M )
 	{
 	    case -3:
-		deptheta = Sqrt(21./(2.*LAL_PI))*Cos(theta/2.)*Power(Sin(theta/2.),5);
+		deptheta = sqrt(21./(2.*LAL_PI))*cos(theta/2.)*pow(sin(theta/2.),5);
 		out.re = deptheta * cos( -3.0*phi );
 		out.im = deptheta * sin( -3.0*phi );
 		break;
 
 	    case -2:
-		deptheta = Sqrt(7./4.*LAL_PI)*(2 + 3*Cos(theta))*Power(Sin(theta/2.),4);
+		deptheta = sqrt(7./4.*LAL_PI)*(2 + 3*cos(theta))*pow(sin(theta/2.),4);
 		out.re = deptheta * cos( -2.0*phi );
 		out.im = deptheta * sin( -2.0*phi );
 		break;
 
 	    case -1:
-		deptheta = Sqrt(35./(2.*LAL_PI))*(Sin(theta) + 4*Sin(2*theta) - 3*Sin(3*theta))/32.;
+		deptheta = sqrt(35./(2.*LAL_PI))*(sin(theta) + 4*sin(2*theta) - 3*sin(3*theta))/32.;
 		out.re = deptheta * cos( -phi );
 		out.im = deptheta * sin( -phi );
 		break;
 
 	    case 0:
-		deptheta = (Sqrt(105./(2.*LAL_PI))*Cos(theta)*Power(Sin(theta),2))/4.;
+		deptheta = (sqrt(105./(2.*LAL_PI))*cos(theta)*pow(sin(theta),2))/4.;
 		out.re = deptheta;
 		out.im = deptheta;
 		break;
 
 	    case 1:
-		deptheta = -Sqrt(35./(2.*LAL_PI))*(Sin(theta) - 4*Sin(2*theta) - 3*Sin(3*theta))/32.;
+		deptheta = -sqrt(35./(2.*LAL_PI))*(sin(theta) - 4*sin(2*theta) - 3*sin(3*theta))/32.;
 		out.re = deptheta * cos( phi );
 		out.im = deptheta * sin( phi );
 		break;
 		
 	    case 2:
-		deptheta = Sqrt(7./LAL_PI)*Power(Cos(theta/2.),4)*(-2 + 3*Cos(theta))/2.;
+		deptheta = sqrt(7./LAL_PI)*pow(cos(theta/2.),4)*(-2 + 3*cos(theta))/2.;
 		out.re = deptheta * cos( 2.0*phi );
 		out.im = deptheta * sin( 2.0*phi );
 		break;	   
 	    
 	    case 3:
-		deptheta = -Sqrt(21./(2.*LAL_PI))*Power(Cos(theta/2.),5)*Sin(theta/2.);
+		deptheta = -sqrt(21./(2.*LAL_PI))*pow(cos(theta/2.),5)*sin(theta/2.);
 		out.re = deptheta * cos( 3.0*phi );
 		out.im = deptheta * sin( 3.0*phi );
 		break;	   
@@ -354,55 +354,55 @@ COMPLEX16 SphHarm (
 	{
 
 	    case -4:
-		deptheta = 3.*Sqrt(7./LAL_PI)*Power(Cos(theta/2.),2)*Power(Sin(theta/2.),6);
+		deptheta = 3.*sqrt(7./LAL_PI)*pow(cos(theta/2.),2)*pow(sin(theta/2.),6);
 		out.re = deptheta * cos( -4.0*phi );
 		out.im = deptheta * sin( -4.0*phi );
 		break;
 
 	    case -3:
-		deptheta = 3.*Sqrt(7./(2.*LAL_PI))*Cos(theta/2.)*(1 + 2*Cos(theta))*Power(Sin(theta/2.),5);
+		deptheta = 3.*sqrt(7./(2.*LAL_PI))*cos(theta/2.)*(1 + 2*cos(theta))*pow(sin(theta/2.),5);
 		out.re = deptheta * cos( -3.0*phi );
 		out.im = deptheta * sin( -3.0*phi );
 		break;
 
 	    case -2:
-		deptheta = (3*(9. + 14.*Cos(theta) + 7.*Cos(2*theta))*Power(Sin(theta/2.),4))/(4.*Sqrt(LAL_PI));
+		deptheta = (3*(9. + 14.*cos(theta) + 7.*cos(2*theta))*pow(sin(theta/2.),4))/(4.*sqrt(LAL_PI));
 		out.re = deptheta * cos( -2.0*phi );
 		out.im = deptheta * sin( -2.0*phi );
 		break;
 
 	    case -1:
-		deptheta = (3.*(3.*Sin(theta) + 2.*Sin(2*theta) + 7.*Sin(3*theta) - 7.*Sin(4*theta)))/(32.*Sqrt(2*LAL_PI));
+		deptheta = (3.*(3.*sin(theta) + 2.*sin(2*theta) + 7.*sin(3*theta) - 7.*sin(4*theta)))/(32.*sqrt(2*LAL_PI));
 		out.re = deptheta * cos( -phi );
 		out.im = deptheta * sin( -phi );
 		break;
 
 	    case 0:
-		deptheta = (3.*Sqrt(5./(2.*LAL_PI))*(5. + 7.*Cos(2*theta))*Power(Sin(theta),2))/16.;
+		deptheta = (3.*sqrt(5./(2.*LAL_PI))*(5. + 7.*cos(2*theta))*pow(sin(theta),2))/16.;
 		out.re = deptheta;
 		out.im = deptheta;
 		break;
 
 	    case 1:
-		deptheta = (3.*(3.*Sin(theta) - 2.*Sin(2*theta) + 7.*Sin(3*theta) + 7.*Sin(4*theta)))/(32.*Sqrt(2*LAL_PI));
+		deptheta = (3.*(3.*sin(theta) - 2.*sin(2*theta) + 7.*sin(3*theta) + 7.*sin(4*theta)))/(32.*sqrt(2*LAL_PI));
 		out.re = deptheta * cos( phi );
 		out.im = deptheta * sin( phi );
 		break;
 		
 	    case 2:
-		deptheta = (3.*Power(Cos(theta/2.),4)*(9. - 14.*Cos(theta) + 7.*Cos(2*theta)))/(4.*Sqrt(LAL_PI));
+		deptheta = (3.*pow(cos(theta/2.),4)*(9. - 14.*cos(theta) + 7.*cos(2*theta)))/(4.*sqrt(LAL_PI));
 		out.re = deptheta * cos( 2.0*phi );
 		out.im = deptheta * sin( 2.0*phi );
 		break;	   
 	    
 	    case 3:
-		deptheta = -3.*Sqrt(7./(2.*LAL_PI))*Power(Cos(theta/2.),5)*(-1. + 2.*Cos(theta))*Sin(theta/2.);
+		deptheta = -3.*sqrt(7./(2.*LAL_PI))*pow(cos(theta/2.),5)*(-1. + 2.*cos(theta))*sin(theta/2.);
 		out.re = deptheta * cos( 3.0*phi );
 		out.im = deptheta * sin( 3.0*phi );
 		break;	   
 
 	    case 4:
-		deptheta = 3.*Sqrt(7./LAL_PI)*Power(Cos(theta/2.),6)*Power(Sin(theta/2.),2);
+		deptheta = 3.*sqrt(7./LAL_PI)*pow(cos(theta/2.),6)*pow(sin(theta/2.),2);
 		out.re = deptheta * cos( 4.0*phi );
 		out.im = deptheta * sin( 4.0*phi );
 		break;	   
@@ -420,67 +420,67 @@ COMPLEX16 SphHarm (
 	{
 
 	    case -5:
-		deptheta = Sqrt(330./LAL_PI)*Power(Cos(theta/2.),3)*Power(Sin(theta/2.),7);
+		deptheta = sqrt(330./LAL_PI)*pow(cos(theta/2.),3)*pow(sin(theta/2.),7);
 		out.re = deptheta * cos( -5.0*phi );
 		out.im = deptheta * sin( -5.0*phi );
 		break;
 
 	    case -4:
-		deptheta = Sqrt(33./LAL_PI)*Power(Cos(theta/2.),2)*(2. + 5.*Cos(theta))*Power(Sin(theta/2.),6);
+		deptheta = sqrt(33./LAL_PI)*pow(cos(theta/2.),2)*(2. + 5.*cos(theta))*pow(sin(theta/2.),6);
 		out.re = deptheta * cos( -4.0*phi );
 		out.im = deptheta * sin( -4.0*phi );
 		break;
 
 	    case -3:
-		deptheta = (Sqrt(33./(2.*LAL_PI))*Cos(theta/2.)*(17. + 24.*Cos(theta) + 15.*Cos(2.*theta))*Power(Sin(theta/2.),5))/4.;
+		deptheta = (sqrt(33./(2.*LAL_PI))*cos(theta/2.)*(17. + 24.*cos(theta) + 15.*cos(2.*theta))*pow(sin(theta/2.),5))/4.;
 		out.re = deptheta * cos( -3.0*phi );
 		out.im = deptheta * sin( -3.0*phi );
 		break;
 
 	    case -2:
-		deptheta = (Sqrt(11./LAL_PI)*(32. + 57.*Cos(theta) + 36.*Cos(2.*theta) + 15.*Cos(3.*theta))*Power(Sin(theta/2.),4))/8.;
+		deptheta = (sqrt(11./LAL_PI)*(32. + 57.*cos(theta) + 36.*cos(2.*theta) + 15.*cos(3.*theta))*pow(sin(theta/2.),4))/8.;
 		out.re = deptheta * cos( -2.0*phi );
 		out.im = deptheta * sin( -2.0*phi );
 		break;
 
 	    case -1:
-		deptheta = (Sqrt(77./LAL_PI)*(2.*Sin(theta) + 8.*Sin(2.*theta) + 3.*Sin(3.*theta) + 12.*Sin(4.*theta) - 15.*Sin(5.*theta)))/256.;
+		deptheta = (sqrt(77./LAL_PI)*(2.*sin(theta) + 8.*sin(2.*theta) + 3.*sin(3.*theta) + 12.*sin(4.*theta) - 15.*sin(5.*theta)))/256.;
 		out.re = deptheta * cos( -phi );
 		out.im = deptheta * sin( -phi );
 		break;
 
 	    case 0:
-		deptheta = (Sqrt(1155./(2.*LAL_PI))*(5.*Cos(theta) + 3.*Cos(3.*theta))*Power(Sin(theta),2))/32.;
+		deptheta = (sqrt(1155./(2.*LAL_PI))*(5.*cos(theta) + 3.*cos(3.*theta))*pow(sin(theta),2))/32.;
 		out.re = deptheta;
 		out.im = deptheta;
 		break;
 
 	    case 1:
-		deptheta = Sqrt(77./LAL_PI)*(-2.*Sin(theta) + 8.*Sin(2.*theta) - 3.*Sin(3.*theta) + 12.*Sin(4.*theta) + 15.*Sin(5.*theta)))/256.;
+		deptheta = sqrt(77./LAL_PI)*(-2.*sin(theta) + 8.*sin(2.*theta) - 3.*sin(3.*theta) + 12.*sin(4.*theta) + 15.*sin(5.*theta))/256.;
 		out.re = deptheta * cos( phi );
 		out.im = deptheta * sin( phi );
 		break;
 		
 	    case 2:
-		deptheta = Sqrt(11./LAL_PI)*Power(Cos(theta/2.),4)*(-32. + 57.*Cos(theta) - 36.*Cos(2.*theta) + 15.*Cos(3.*theta)))/8.;
+		deptheta = sqrt(11./LAL_PI)*pow(cos(theta/2.),4)*(-32. + 57.*cos(theta) - 36.*cos(2.*theta) + 15.*cos(3.*theta))/8.;
 		out.re = deptheta * cos( 2.0*phi );
 		out.im = deptheta * sin( 2.0*phi );
 		break;	   
 	    
 	    case 3:
-		deptheta = -Sqrt(33./(2.*LAL_PI))*Power(Cos(theta/2.),5)*(17. - 24.*Cos(theta) + 15.*Cos(2.*theta))*Sin(theta/2.))/4.;
+		deptheta = -sqrt(33./(2.*LAL_PI))*pow(cos(theta/2.),5)*(17. - 24.*cos(theta) + 15.*cos(2.*theta))*sin(theta/2.)/4.;
 		out.re = deptheta * cos( 3.0*phi );
 		out.im = deptheta * sin( 3.0*phi );
 		break;	   
 
 	    case 4:
-		deptheta = Sqrt(33./LAL_PI)*Power(Cos(theta/2.),6)*(-2. + 5.*Cos(theta))*Power(Sin(theta/2.),2);
+		deptheta = sqrt(33./LAL_PI)*pow(cos(theta/2.),6)*(-2. + 5.*cos(theta))*pow(sin(theta/2.),2);
 		out.re = deptheta * cos( 4.0*phi );
 		out.im = deptheta * sin( 4.0*phi );
 		break;	   
 
 	    case 5:
-		deptheta = -Sqrt(330./LAL_PI)*Power(Cos(theta/2.),7)*Power(Sin(theta/2.),3);
+		deptheta = -sqrt(330./LAL_PI)*pow(cos(theta/2.),7)*pow(sin(theta/2.),3);
 		out.re = deptheta * cos( 5.0*phi );
 		out.im = deptheta * sin( 5.0*phi );
 		break;	   
