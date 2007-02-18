@@ -48,6 +48,8 @@
 #include <lal/SeqFactories.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/NRWaveIO.h>
+#include <lal/TimeDelay.h>
+#include <lal/DetResponse.h>
 
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {
