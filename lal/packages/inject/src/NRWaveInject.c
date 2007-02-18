@@ -207,16 +207,33 @@ XLALInterpolateNRWave( REAL4TimeSeries *in,           /**< input strain time ser
     catalog of numerical relativity waveforms.  At the moment, only
     the mass ratio is considered.  
 */
-CHAR *
-XLALFindNRFile( NRWaveCatalog *nrCatalog,   /**< input  NR wave catalog  */
-		SimInspiralTable      *inj, /**< injection details  */
-		INT4  modeL,                /**< mode index l*/
-		INT4  modeM                 /**< mode index m*/)
+INT4
+XLALFindNRFile( NRWaveMetaData   *out,       /**< output wave data */
+	        NRWaveCatalog    *nrCatalog, /**< input  NR wave catalog  */
+		SimInspiralTable *inj,       /**< injection details  */
+		INT4  modeL,                 /**< mode index l*/
+		INT4  modeM                  /**< mode index m*/)
 {
 
   REAL8 massRatioIn, massRatio, diff, newDiff;
   UINT4 k, best;
-  CHAR *ret=NULL;
+
+  /* check arguments are sensible */
+  if ( !out ) {
+    LALPrintError ("\nOutput pointer is NULL !\n\n");
+    XLAL_ERROR ( "XLALFindNRFile", XLAL_EINVAL);
+  }
+
+  if ( !nrCatalog ) {
+    LALPrintError ("\n NR Catalog pointer is NULL !\n\n");
+    XLAL_ERROR ( "XLALFindNRFile", XLAL_EINVAL);
+  }
+
+  if ( !inj ) {
+    LALPrintError ("\n SimInspiralTable pointer is NULL !\n\n");
+    XLAL_ERROR ( "XLALFindNRFile", XLAL_EINVAL);
+  }
+
 
   massRatioIn = inj->mass1/inj->mass2;
   massRatio = nrCatalog->data[0].massRatio;
@@ -224,7 +241,13 @@ XLALFindNRFile( NRWaveCatalog *nrCatalog,   /**< input  NR wave catalog  */
   diff = fabs(massRatio - massRatioIn);
 
   /* look over catalog and fimd waveform closest in mass ratio */
-  for (best = 0, k = 0; k < nrCatalog->length; k++) {
+  for (best = 0, k = 1; k < nrCatalog->length; k++) {
+
+    /* check catalog data is not null */
+    if ( nrCatalog->data + k == NULL ) {
+      LALPrintError ("\n NR Catalog data is NULL !\n\n");
+      XLAL_ERROR ( "XLALFindNRFile", XLAL_EINVAL);
+    }
 
     massRatio = nrCatalog->data[k].massRatio;
     newDiff = fabs(massRatio - massRatioIn);
@@ -233,13 +256,13 @@ XLALFindNRFile( NRWaveCatalog *nrCatalog,   /**< input  NR wave catalog  */
       diff = newDiff;
       best = k;
     }    
+    /* need checks on mode numbers as well! */
   } 
 
-  ret = LALMalloc( LALNameLength*sizeof(CHAR) );
+  /* copy best match to output */
+  memcpy(out, nrCatalog->data + best, sizeof(NRWaveMetaData));
 
-  strcpy(ret, nrCatalog->data[best].filename);
-
-  return ret;
+  return 0;
 
 }
 

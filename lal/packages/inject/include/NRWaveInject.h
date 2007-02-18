@@ -78,8 +78,9 @@ XLALInterpolateNRWave( REAL4TimeSeries *in,
 		       INT4      sampleRate);
 
 
-CHAR *
-XLALFindNRFile( NRWaveCatalog *nrCatalog,
+INT4 
+XLALFindNRFile( NRWaveMetaData *out,
+		NRWaveCatalog *nrCatalog,
 		SimInspiralTable  *inj,
 		INT4  modeL, 
 		INT4  modeM );
