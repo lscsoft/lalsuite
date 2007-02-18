@@ -75,10 +75,10 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 	XLALGPSAdd(&event->peak_time, 0.5 * event->duration);
 	event->bandwidth = tile->channels * tile->deltaF;
 	event->central_freq = tile->flow + tile->channel0 * tile->deltaF + (0.5 * event->bandwidth);
+	/* FIXME: put hrss into the "hrss" column */
 	event->amplitude = tile->hrss;
 	event->snr = tile->excessPower;
 	event->confidence =  tile->lnalpha;
-	event->tfvolume = XLALTFTileDegreesOfFreedom(tile) / 2.0;
 	event->string_cluster_t = XLAL_REAL4_FAIL_NAN;
 	event->event_id = 0;
 

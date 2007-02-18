@@ -172,12 +172,11 @@ fputs( "      <Column Name=\"sngl_burstgroup:sngl_burst:bandwidth\" Type=\"real_
 fputs( "      <Column Name=\"sngl_burstgroup:sngl_burst:amplitude\" Type=\"real_4\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_burstgroup:sngl_burst:snr\" Type=\"real_4\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_burstgroup:sngl_burst:confidence\" Type=\"real_4\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_burstgroup:sngl_burst:tfvolume\" Type=\"real_4\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_burstgroup:sngl_burst:event_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
 fputs( "      <Stream Name=\"sngl_burstgroup:sngl_burst:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SNGL_BURST_ROW \
-"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%g,%g,%g,%g,%g,%g,%g,\"sngl_burst:event_id:%u\""
+"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%g,%g,%g,%g,%g,%g,\"sngl_burst:event_id:%u\""
 
 #define PRINT_LIGOLW_XML_SNGL_RINGDOWN(fp) ( \
 fputs( "   <Table Name=\"sngl_ringdowngroup:sngl_ringdown:table\">\n", fp ) == EOF || \

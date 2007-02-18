@@ -765,10 +765,6 @@ LALSnglBurstTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 13 )
       {
-        thisEvent->tfvolume = r4colData;
-      }
-      else if ( tableDir[j].idx == 14 )
-      {
         sscanf(lscolData, "[^0-9]%u", &thisEvent->event_id);
       }
       else

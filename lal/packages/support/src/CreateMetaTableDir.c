@@ -170,8 +170,7 @@ MetaTableDirectory* XLALCreateMetaTableDir(
           {"confidence",              -1, 10},
           {"peak_time",               -1, 11},
           {"peak_time_ns",            -1, 12},
-          {"tfvolume",                -1, 13},
-          {"event_id",                -1, 14},
+          {"event_id",                -1, 13},
           {NULL,                       0, 0}
         };
         for ( i=0 ; tmpTableDir[i].name; ++i )
@@ -449,7 +448,6 @@ LALCreateMetaTableDir(
           {"confidence",              -1, 10},
           {"peak_time",               -1, 11},
           {"peak_time_ns",            -1, 12},
-          {"tfvolume",                -1, 13},
           {"event_id",                -1, 14},
           {NULL,                       0, 0}
         };

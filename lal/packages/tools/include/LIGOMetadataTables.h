@@ -344,7 +344,6 @@ tagSnglBurstTable
   REAL4         amplitude;
   REAL4         snr;
   REAL4         confidence;
-  REAL4         tfvolume;
   REAL4         string_cluster_t;
   UINT4         event_id;
 }

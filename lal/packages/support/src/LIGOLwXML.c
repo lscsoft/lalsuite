@@ -422,7 +422,6 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglBurstTable->amplitude,
 	      tablePtr.snglBurstTable->snr,
 	      tablePtr.snglBurstTable->confidence,
-	      tablePtr.snglBurstTable->tfvolume,
 	      tablePtr.snglBurstTable->event_id
               );
         tablePtr.snglBurstTable = tablePtr.snglBurstTable->next;

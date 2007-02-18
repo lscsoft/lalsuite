@@ -128,7 +128,6 @@ static void findmatchingconf(const SnglBurstTable *a, SnglBurstTable *b, SnglBur
 		b->snr = c->snr;
 		b->confidence = c->confidence;
 		b->peak_time = c->peak_time;
-		b->tfvolume = c->tfvolume;
 	}
 }
 
@@ -929,7 +928,6 @@ void XLALSnglBurstCluster(SnglBurstTable *a, const SnglBurstTable *b)
 		a->snr = b->snr;
 		a->confidence = b->confidence;
 		a->peak_time = b->peak_time;
-		a->tfvolume = b->tfvolume;
 	}
 }
 
@@ -959,7 +957,6 @@ void XLALCoincBurstCluster(SnglBurstTable *a, SnglBurstTable *b, SnglBurstTable 
 	    a->snr = c->snr;
 	    a->confidence = c->confidence;
 	    a->peak_time = c->peak_time;
-	    a->tfvolume = c->tfvolume;
 
 	    b->central_freq =  d->central_freq;
 	    b->bandwidth = d->bandwidth; 
@@ -969,7 +966,6 @@ void XLALCoincBurstCluster(SnglBurstTable *a, SnglBurstTable *b, SnglBurstTable 
 	    b->snr = d->snr;
 	    b->confidence = d->confidence;
 	    b->peak_time = d->peak_time;
-	    b->tfvolume = d->tfvolume;
 	  }
 }
 
