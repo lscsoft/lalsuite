@@ -6,7 +6,6 @@ $Id$
 #ifndef _EPSEARCH_H
 #define _EPSEARCH_H
 
-#include <lal/ExcessPower.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALRCSID.h>
 #include <lal/LIGOMetadataTables.h>
