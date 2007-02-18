@@ -79,7 +79,7 @@ int main( int argc, char *argv[] )
   CHAR  *injectionFile = NULL;         /* name of file containing injs   */
   CHAR  *nrMetaFile    = NULL;         /* name of file with nr meta info */
   CHAR  *nrDataDir    = NULL;          /* name of dir with nr waveform   */
-  CHAR  *nrDataFile   = NULL;          /* a file with numrel data        */
+  NRWaveMetaData thisMetaData;         /* single NR wave metadata struct */
 
   NRWaveCatalog nrCatalog;             /* NR wave metadata struct        */
 
@@ -386,21 +386,21 @@ int main( int argc, char *argv[] )
   for( thisInj = injections; thisInj; thisInj = thisInj->next )
   {
 
-    nrDataFile = XLALFindNRFile( &nrCatalog, thisInj, 2, 2);
+    XLALFindNRFile( &thisMetaData, &nrCatalog, thisInj, 2, 2);
 
     if ( vrbflg) fprintf(stdout,
-        "Reading the waveform from the file %s ...", nrDataFile );
+        "Reading the waveform from the file %s ...", thisMetaData.filename );
 
     LAL_CALL(LALReadNRWave(&status, &strain, thisInj->mass1 + thisInj->mass2, 
-			   nrDataFile), &status);
+			  thisMetaData.filename), &status);
     
     if ( vrbflg) fprintf(stdout, "done\n");
 
     /* compute the h+, hx strain for the given inclination, coalescence phase*/
     if ( vrbflg )fprintf(stdout, "Generating waveform for inclination = %f, coa_phase = %f\n",
 			 thisInj->inclination, thisInj->coa_phase );
-    strain = XLALOrientNRWave( strain, 2,2,thisInj->inclination,
-			       thisInj->coa_phase);
+    strain = XLALOrientNRWave( strain, thisMetaData.mode[0], thisMetaData.mode[1], 
+			       thisInj->inclination, thisInj->coa_phase);
 
     if ( vrbflg ) fprintf(stdout,
         "Generating the strain data for the given sky location\n");
