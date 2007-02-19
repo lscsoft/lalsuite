@@ -9,7 +9,6 @@
 #include <lal/AVFactories.h>
 #include <lal/Date.h>
 #include <lal/EPSearch.h>
-#include <lal/ExcessPower.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
 #include <lal/FindChirpTD.h>
