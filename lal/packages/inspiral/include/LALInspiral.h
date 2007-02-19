@@ -447,7 +447,8 @@ typedef enum {
    fixedMasses, 
    fixedPsi, 
    fixedTau,
-   massesAndSpin
+   massesAndSpin,
+   minmaxTotalMass
  } InputMasses;
 /* </lalVerbatim>  */
 

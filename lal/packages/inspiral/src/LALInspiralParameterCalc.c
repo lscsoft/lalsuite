@@ -132,7 +132,7 @@ LALInspiralParameterCalc (
  
    ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT((INT4)params->massChoice >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT((INT4)params->massChoice <= 13, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT((INT4)params->massChoice <= 14, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
    totalMass 	= 0.0;
    ieta 	= params->ieta;
@@ -145,6 +145,7 @@ LALInspiralParameterCalc (
    switch(params->massChoice) 
    {
       case massesAndSpin:
+      case minmaxTotalMass:
       case m1Andm2:
 
          ASSERT(params->mass1 > 0.0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
