@@ -49,8 +49,8 @@ extern "C" {
 
 NRCSID( SPHERICALHARMONICSH, "$Id$");
 
-/** Spherical Harmonic for the l=2 mode */
-COMPLEX16 SphHarm ( UINT4   L,  INT4 M,  REAL4 theta, REAL4   phi );
+/** Spin weighted Spherical Harmonic  */
+INT4 XLALSphHarm ( COMPLEX16 *out, UINT4   L,  INT4 M,  REAL4 theta, REAL4   phi );
 
 
 

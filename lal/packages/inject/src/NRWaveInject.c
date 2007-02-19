@@ -54,10 +54,11 @@ XLALOrientNRWave(
 
     vecLength = strain->data->vectorLength;
 
-/* Calculating the (2,2) Spherical Harmonic */
-    MultSphHarm = SphHarm( modeL, modeM, inclination, coa_phase );
+    /* Calculating the (2,2) Spherical Harmonic */
+    /* need some error checking */
+    XLALSphHarm( &MultSphHarm, modeL, modeM, inclination, coa_phase );
 
-/* Filling the data vector with the data multiplied by the Harmonic */
+    /* Filling the data vector with the data multiplied by the Harmonic */
     for ( k = 0; k < vecLength; k++)
     {
 	tmp1 = strain->data->data[k];
@@ -266,261 +267,267 @@ XLALFindNRFile( NRWaveMetaData   *out,       /**< output wave data */
 
 }
 
-/** Spherical Harmonic for the l=2 mode */
-COMPLEX16 SphHarm ( 
-    UINT4   L,      /**< value of L */
-    INT4    M,      /**< value of M */
-    REAL4   theta,  /**< angle with respect to the z axis */
-    REAL4   phi     /**< angle with respect to the x axis */)
-
+/** Spin 2 weighted spherical Harmonic */
+INT4 XLALSphHarm ( COMPLEX16 *out, /**< output */
+		   UINT4   L,      /**< value of L */
+		   INT4    M,      /**< value of M */
+		   REAL4   theta,  /**< angle with respect to the z axis */
+		   REAL4   phi     /**< angle with respect to the x axis */)
+     
 {
-    COMPLEX16  out; /* complex number */
     REAL4      deptheta; /** dependency on theta */
+
+  /* check arguments are sensible */
+    if ( !out ) {
+      LALPrintError ("\nOutput pointer is NULL !\n\n");
+      XLAL_ERROR ( "XLALSphHarm", XLAL_EINVAL);
+    }
 
     if (L == 2)
     {
-	switch ( M )
-	{
-	    case -2:
-		deptheta = sqrt( 5.0 / ( 64.0 * LAL_PI ) ) * ( 1.0 - cos( theta ))*( 1.0 - cos( theta ));
-		out.re = deptheta * cos( -2.0*phi );
-		out.im = deptheta * sin( -2.0*phi );
-		break;
-
-	    case -1:
-		deptheta = sqrt( 5.0 / ( 16.0 * LAL_PI ) ) * sin( theta )*( 1.0 - cos( theta ));
-		out.re = deptheta * cos( -phi );
-		out.im = deptheta * sin( -phi );
-		break;
-
-	    case 0:
-		deptheta = sqrt( 15.0 / ( 32.0 * LAL_PI ) ) * sin( theta )*sin( theta );
-		out.re = deptheta;
-		out.im = deptheta;
-		break;
-
-	    case 1:
-		deptheta = sqrt( 5.0 / ( 16.0 * LAL_PI ) ) * sin( theta )*( 1.0 + cos( theta ));
-		out.re = deptheta * cos( phi );
-		out.im = deptheta * sin( phi );
-		break;
-		
-	    case 2:
-		deptheta = sqrt( 5.0 / ( 64.0 * LAL_PI ) ) * ( 1.0 + cos( theta ))*( 1.0 + cos( theta ));
-		out.re = deptheta * cos( 2.0*phi );
-		out.im = deptheta * sin( 2.0*phi );
-		break;	   
-	    
-	    default:
-		/* Error message informing that the chosen M is incompatible with L*/
-		printf("Sorry, the value chosen for m is not compatible with l");
-		break;
-	}
-    }
-
+      switch ( M ){
+      case -2:
+	deptheta = sqrt( 5.0 / ( 64.0 * LAL_PI ) ) * ( 1.0 - cos( theta ))*( 1.0 - cos( theta ));
+	out->re = deptheta * cos( -2.0*phi );
+	out->im = deptheta * sin( -2.0*phi );
+	break;
+	
+      case -1:
+	deptheta = sqrt( 5.0 / ( 16.0 * LAL_PI ) ) * sin( theta )*( 1.0 - cos( theta ));
+	out->re = deptheta * cos( -phi );
+	out->im = deptheta * sin( -phi );
+	break;
+	
+      case 0:
+	deptheta = sqrt( 15.0 / ( 32.0 * LAL_PI ) ) * sin( theta )*sin( theta );
+	out->re = deptheta;
+	out->im = deptheta;
+	break;
+	
+      case 1:
+	deptheta = sqrt( 5.0 / ( 16.0 * LAL_PI ) ) * sin( theta )*( 1.0 + cos( theta ));
+	out->re = deptheta * cos( phi );
+	out->im = deptheta * sin( phi );
+	break;
+	
+      case 2:
+	deptheta = sqrt( 5.0 / ( 64.0 * LAL_PI ) ) * ( 1.0 + cos( theta ))*( 1.0 + cos( theta ));
+	out->re = deptheta * cos( 2.0*phi );
+	out->im = deptheta * sin( 2.0*phi );
+	break;	   
+	
+      default:
+	/* Error message informing that the chosen M is incompatible with L*/
+	LALPrintError ("\n Inconsistent (L, M) values \n\n");
+	XLAL_ERROR ( "XLALSphHarm", XLAL_EINVAL);
+	break;
+      }  /* switch (M) */
+    }  /* L==2*/
+    
     else if (L == 3)
-    {
-	switch ( M )
-	{
-	    case -3:
-		deptheta = sqrt(21./(2.*LAL_PI))*cos(theta/2.)*pow(sin(theta/2.),5);
-		out.re = deptheta * cos( -3.0*phi );
-		out.im = deptheta * sin( -3.0*phi );
-		break;
-
-	    case -2:
-		deptheta = sqrt(7./4.*LAL_PI)*(2 + 3*cos(theta))*pow(sin(theta/2.),4);
-		out.re = deptheta * cos( -2.0*phi );
-		out.im = deptheta * sin( -2.0*phi );
-		break;
-
-	    case -1:
-		deptheta = sqrt(35./(2.*LAL_PI))*(sin(theta) + 4*sin(2*theta) - 3*sin(3*theta))/32.;
-		out.re = deptheta * cos( -phi );
-		out.im = deptheta * sin( -phi );
-		break;
-
-	    case 0:
-		deptheta = (sqrt(105./(2.*LAL_PI))*cos(theta)*pow(sin(theta),2))/4.;
-		out.re = deptheta;
-		out.im = deptheta;
-		break;
-
-	    case 1:
-		deptheta = -sqrt(35./(2.*LAL_PI))*(sin(theta) - 4*sin(2*theta) - 3*sin(3*theta))/32.;
-		out.re = deptheta * cos( phi );
-		out.im = deptheta * sin( phi );
-		break;
-		
-	    case 2:
-		deptheta = sqrt(7./LAL_PI)*pow(cos(theta/2.),4)*(-2 + 3*cos(theta))/2.;
-		out.re = deptheta * cos( 2.0*phi );
-		out.im = deptheta * sin( 2.0*phi );
-		break;	   
-	    
-	    case 3:
-		deptheta = -sqrt(21./(2.*LAL_PI))*pow(cos(theta/2.),5)*sin(theta/2.);
-		out.re = deptheta * cos( 3.0*phi );
-		out.im = deptheta * sin( 3.0*phi );
-		break;	   
-
-	    default:
-		/* Error message informing that the chosen M is incompatible with L*/
-		printf("Sorry, the value chosen for m is not compatible with l\n");
-		break;
-	}
-    }    
-
+      {
+	switch ( M ) {
+	case -3:
+	  deptheta = sqrt(21./(2.*LAL_PI))*cos(theta/2.)*pow(sin(theta/2.),5);
+	  out->re = deptheta * cos( -3.0*phi );
+	  out->im = deptheta * sin( -3.0*phi );
+	  break;
+	  
+	case -2:
+	  deptheta = sqrt(7./4.*LAL_PI)*(2 + 3*cos(theta))*pow(sin(theta/2.),4);
+	  out->re = deptheta * cos( -2.0*phi );
+	  out->im = deptheta * sin( -2.0*phi );
+	  break;
+	  
+	case -1:
+	  deptheta = sqrt(35./(2.*LAL_PI))*(sin(theta) + 4*sin(2*theta) - 3*sin(3*theta))/32.;
+	  out->re = deptheta * cos( -phi );
+	  out->im = deptheta * sin( -phi );
+	  break;
+	  
+	case 0:
+	  deptheta = (sqrt(105./(2.*LAL_PI))*cos(theta)*pow(sin(theta),2))/4.;
+	  out->re = deptheta;
+	  out->im = deptheta;
+	  break;
+	  
+	case 1:
+	  deptheta = -sqrt(35./(2.*LAL_PI))*(sin(theta) - 4*sin(2*theta) - 3*sin(3*theta))/32.;
+	  out->re = deptheta * cos( phi );
+	  out->im = deptheta * sin( phi );
+	  break;
+	  
+	case 2:
+	  deptheta = sqrt(7./LAL_PI)*pow(cos(theta/2.),4)*(-2 + 3*cos(theta))/2.;
+	  out->re = deptheta * cos( 2.0*phi );
+	  out->im = deptheta * sin( 2.0*phi );
+	  break;	   
+	  
+	case 3:
+	  deptheta = -sqrt(21./(2.*LAL_PI))*pow(cos(theta/2.),5)*sin(theta/2.);
+	  out->re = deptheta * cos( 3.0*phi );
+	  out->im = deptheta * sin( 3.0*phi );
+	  break;	   
+	  
+	default:
+	  /* Error message informing that the chosen M is incompatible with L*/
+	  LALPrintError ("\n Inconsistent (L, M) values \n\n");
+	  XLAL_ERROR ( "XLALSphHarm", XLAL_EINVAL);
+	  break;
+	} 
+      }   /* L==3 */ 
+    
     else if (L == 4)
     {
-	switch ( M )
-	{
-
-	    case -4:
-		deptheta = 3.*sqrt(7./LAL_PI)*pow(cos(theta/2.),2)*pow(sin(theta/2.),6);
-		out.re = deptheta * cos( -4.0*phi );
-		out.im = deptheta * sin( -4.0*phi );
-		break;
-
-	    case -3:
-		deptheta = 3.*sqrt(7./(2.*LAL_PI))*cos(theta/2.)*(1 + 2*cos(theta))*pow(sin(theta/2.),5);
-		out.re = deptheta * cos( -3.0*phi );
-		out.im = deptheta * sin( -3.0*phi );
-		break;
-
-	    case -2:
-		deptheta = (3*(9. + 14.*cos(theta) + 7.*cos(2*theta))*pow(sin(theta/2.),4))/(4.*sqrt(LAL_PI));
-		out.re = deptheta * cos( -2.0*phi );
-		out.im = deptheta * sin( -2.0*phi );
-		break;
-
-	    case -1:
-		deptheta = (3.*(3.*sin(theta) + 2.*sin(2*theta) + 7.*sin(3*theta) - 7.*sin(4*theta)))/(32.*sqrt(2*LAL_PI));
-		out.re = deptheta * cos( -phi );
-		out.im = deptheta * sin( -phi );
-		break;
-
-	    case 0:
-		deptheta = (3.*sqrt(5./(2.*LAL_PI))*(5. + 7.*cos(2*theta))*pow(sin(theta),2))/16.;
-		out.re = deptheta;
-		out.im = deptheta;
-		break;
-
-	    case 1:
-		deptheta = (3.*(3.*sin(theta) - 2.*sin(2*theta) + 7.*sin(3*theta) + 7.*sin(4*theta)))/(32.*sqrt(2*LAL_PI));
-		out.re = deptheta * cos( phi );
-		out.im = deptheta * sin( phi );
-		break;
-		
-	    case 2:
-		deptheta = (3.*pow(cos(theta/2.),4)*(9. - 14.*cos(theta) + 7.*cos(2*theta)))/(4.*sqrt(LAL_PI));
-		out.re = deptheta * cos( 2.0*phi );
-		out.im = deptheta * sin( 2.0*phi );
-		break;	   
-	    
-	    case 3:
-		deptheta = -3.*sqrt(7./(2.*LAL_PI))*pow(cos(theta/2.),5)*(-1. + 2.*cos(theta))*sin(theta/2.);
-		out.re = deptheta * cos( 3.0*phi );
-		out.im = deptheta * sin( 3.0*phi );
-		break;	   
-
-	    case 4:
-		deptheta = 3.*sqrt(7./LAL_PI)*pow(cos(theta/2.),6)*pow(sin(theta/2.),2);
-		out.re = deptheta * cos( 4.0*phi );
-		out.im = deptheta * sin( 4.0*phi );
-		break;	   
-
-	    default:
-		/* Error message informing that the chosen M is incompatible with L*/
-		printf("Sorry, the value chosen for m is not compatible with l\n");
-		break;
-	}
-    }    
-
+      switch ( M )	{
+	
+      case -4:
+	deptheta = 3.*sqrt(7./LAL_PI)*pow(cos(theta/2.),2)*pow(sin(theta/2.),6);
+	out->re = deptheta * cos( -4.0*phi );
+	out->im = deptheta * sin( -4.0*phi );
+	break;
+	
+      case -3:
+	deptheta = 3.*sqrt(7./(2.*LAL_PI))*cos(theta/2.)*(1 + 2*cos(theta))*pow(sin(theta/2.),5);
+	out->re = deptheta * cos( -3.0*phi );
+	out->im = deptheta * sin( -3.0*phi );
+	break;
+	
+      case -2:
+	deptheta = (3*(9. + 14.*cos(theta) + 7.*cos(2*theta))*pow(sin(theta/2.),4))/(4.*sqrt(LAL_PI));
+	out->re = deptheta * cos( -2.0*phi );
+	out->im = deptheta * sin( -2.0*phi );
+	break;
+	
+      case -1:
+	deptheta = (3.*(3.*sin(theta) + 2.*sin(2*theta) + 7.*sin(3*theta) - 7.*sin(4*theta)))/(32.*sqrt(2*LAL_PI));
+	out->re = deptheta * cos( -phi );
+	out->im = deptheta * sin( -phi );
+	break;
+	
+      case 0:
+	deptheta = (3.*sqrt(5./(2.*LAL_PI))*(5. + 7.*cos(2*theta))*pow(sin(theta),2))/16.;
+	out->re = deptheta;
+	out->im = deptheta;
+	break;
+	
+      case 1:
+	deptheta = (3.*(3.*sin(theta) - 2.*sin(2*theta) + 7.*sin(3*theta) + 7.*sin(4*theta)))/(32.*sqrt(2*LAL_PI));
+	out->re = deptheta * cos( phi );
+	out->im = deptheta * sin( phi );
+	break;
+	
+      case 2:
+	deptheta = (3.*pow(cos(theta/2.),4)*(9. - 14.*cos(theta) + 7.*cos(2*theta)))/(4.*sqrt(LAL_PI));
+	out->re = deptheta * cos( 2.0*phi );
+	out->im = deptheta * sin( 2.0*phi );
+	break;	   
+	
+      case 3:
+	deptheta = -3.*sqrt(7./(2.*LAL_PI))*pow(cos(theta/2.),5)*(-1. + 2.*cos(theta))*sin(theta/2.);
+	out->re = deptheta * cos( 3.0*phi );
+	out->im = deptheta * sin( 3.0*phi );
+	break;	   
+	
+      case 4:
+	deptheta = 3.*sqrt(7./LAL_PI)*pow(cos(theta/2.),6)*pow(sin(theta/2.),2);
+	out->re = deptheta * cos( 4.0*phi );
+	out->im = deptheta * sin( 4.0*phi );
+	break;	   
+	
+      default:
+	/* Error message informing that the chosen M is incompatible with L*/
+	LALPrintError ("\n Inconsistent (L, M) values \n\n");
+	XLAL_ERROR ( "XLALSphHarm", XLAL_EINVAL);
+	break;
+      }
+    }    /* L==4 */
+    
     else if (L == 5)
     {
-	switch ( M )
-	{
+	switch ( M )	{
 
-	    case -5:
-		deptheta = sqrt(330./LAL_PI)*pow(cos(theta/2.),3)*pow(sin(theta/2.),7);
-		out.re = deptheta * cos( -5.0*phi );
-		out.im = deptheta * sin( -5.0*phi );
-		break;
-
-	    case -4:
-		deptheta = sqrt(33./LAL_PI)*pow(cos(theta/2.),2)*(2. + 5.*cos(theta))*pow(sin(theta/2.),6);
-		out.re = deptheta * cos( -4.0*phi );
-		out.im = deptheta * sin( -4.0*phi );
-		break;
-
-	    case -3:
-		deptheta = (sqrt(33./(2.*LAL_PI))*cos(theta/2.)*(17. + 24.*cos(theta) + 15.*cos(2.*theta))*pow(sin(theta/2.),5))/4.;
-		out.re = deptheta * cos( -3.0*phi );
-		out.im = deptheta * sin( -3.0*phi );
-		break;
-
-	    case -2:
-		deptheta = (sqrt(11./LAL_PI)*(32. + 57.*cos(theta) + 36.*cos(2.*theta) + 15.*cos(3.*theta))*pow(sin(theta/2.),4))/8.;
-		out.re = deptheta * cos( -2.0*phi );
-		out.im = deptheta * sin( -2.0*phi );
-		break;
-
-	    case -1:
-		deptheta = (sqrt(77./LAL_PI)*(2.*sin(theta) + 8.*sin(2.*theta) + 3.*sin(3.*theta) + 12.*sin(4.*theta) - 15.*sin(5.*theta)))/256.;
-		out.re = deptheta * cos( -phi );
-		out.im = deptheta * sin( -phi );
-		break;
-
-	    case 0:
-		deptheta = (sqrt(1155./(2.*LAL_PI))*(5.*cos(theta) + 3.*cos(3.*theta))*pow(sin(theta),2))/32.;
-		out.re = deptheta;
-		out.im = deptheta;
-		break;
-
-	    case 1:
-		deptheta = sqrt(77./LAL_PI)*(-2.*sin(theta) + 8.*sin(2.*theta) - 3.*sin(3.*theta) + 12.*sin(4.*theta) + 15.*sin(5.*theta))/256.;
-		out.re = deptheta * cos( phi );
-		out.im = deptheta * sin( phi );
-		break;
-		
-	    case 2:
-		deptheta = sqrt(11./LAL_PI)*pow(cos(theta/2.),4)*(-32. + 57.*cos(theta) - 36.*cos(2.*theta) + 15.*cos(3.*theta))/8.;
-		out.re = deptheta * cos( 2.0*phi );
-		out.im = deptheta * sin( 2.0*phi );
-		break;	   
-	    
-	    case 3:
-		deptheta = -sqrt(33./(2.*LAL_PI))*pow(cos(theta/2.),5)*(17. - 24.*cos(theta) + 15.*cos(2.*theta))*sin(theta/2.)/4.;
-		out.re = deptheta * cos( 3.0*phi );
-		out.im = deptheta * sin( 3.0*phi );
-		break;	   
-
-	    case 4:
-		deptheta = sqrt(33./LAL_PI)*pow(cos(theta/2.),6)*(-2. + 5.*cos(theta))*pow(sin(theta/2.),2);
-		out.re = deptheta * cos( 4.0*phi );
-		out.im = deptheta * sin( 4.0*phi );
-		break;	   
-
-	    case 5:
-		deptheta = -sqrt(330./LAL_PI)*pow(cos(theta/2.),7)*pow(sin(theta/2.),3);
-		out.re = deptheta * cos( 5.0*phi );
-		out.im = deptheta * sin( 5.0*phi );
-		break;	   
-
-	    default:
-		/* Error message informing that the chosen M is incompatible with L*/
-		printf("Sorry, the value chosen for m is not compatible with l\n");
-		break;
+	case -5:
+	  deptheta = sqrt(330./LAL_PI)*pow(cos(theta/2.),3)*pow(sin(theta/2.),7);
+	  out->re = deptheta * cos( -5.0*phi );
+	  out->im = deptheta * sin( -5.0*phi );
+	  break;
+	  
+	case -4:
+	  deptheta = sqrt(33./LAL_PI)*pow(cos(theta/2.),2)*(2. + 5.*cos(theta))*pow(sin(theta/2.),6);
+	  out->re = deptheta * cos( -4.0*phi );
+	  out->im = deptheta * sin( -4.0*phi );
+	  break;
+	  
+	case -3:
+	  deptheta = (sqrt(33./(2.*LAL_PI))*cos(theta/2.)*(17. + 24.*cos(theta) + 15.*cos(2.*theta))*pow(sin(theta/2.),5))/4.;
+	  out->re = deptheta * cos( -3.0*phi );
+	  out->im = deptheta * sin( -3.0*phi );
+	  break;
+	  
+	case -2:
+	  deptheta = (sqrt(11./LAL_PI)*(32. + 57.*cos(theta) + 36.*cos(2.*theta) + 15.*cos(3.*theta))*pow(sin(theta/2.),4))/8.;
+	  out->re = deptheta * cos( -2.0*phi );
+	  out->im = deptheta * sin( -2.0*phi );
+	  break;
+	  
+	case -1:
+	  deptheta = (sqrt(77./LAL_PI)*(2.*sin(theta) + 8.*sin(2.*theta) + 3.*sin(3.*theta) + 12.*sin(4.*theta) - 15.*sin(5.*theta)))/256.;
+	  out->re = deptheta * cos( -phi );
+	  out->im = deptheta * sin( -phi );
+	  break;
+	  
+	case 0:
+	  deptheta = (sqrt(1155./(2.*LAL_PI))*(5.*cos(theta) + 3.*cos(3.*theta))*pow(sin(theta),2))/32.;
+	  out->re = deptheta;
+	  out->im = deptheta;
+	  break;
+	  
+	case 1:
+	  deptheta = sqrt(77./LAL_PI)*(-2.*sin(theta) + 8.*sin(2.*theta) - 3.*sin(3.*theta) + 12.*sin(4.*theta) + 15.*sin(5.*theta))/256.;
+	  out->re = deptheta * cos( phi );
+	  out->im = deptheta * sin( phi );
+	  break;
+	  
+	case 2:
+	  deptheta = sqrt(11./LAL_PI)*pow(cos(theta/2.),4)*(-32. + 57.*cos(theta) - 36.*cos(2.*theta) + 15.*cos(3.*theta))/8.;
+	  out->re = deptheta * cos( 2.0*phi );
+	  out->im = deptheta * sin( 2.0*phi );
+	  break;	   
+	  
+	case 3:
+	  deptheta = -sqrt(33./(2.*LAL_PI))*pow(cos(theta/2.),5)*(17. - 24.*cos(theta) + 15.*cos(2.*theta))*sin(theta/2.)/4.;
+	  out->re = deptheta * cos( 3.0*phi );
+	  out->im = deptheta * sin( 3.0*phi );
+	  break;	   
+	  
+	case 4:
+	  deptheta = sqrt(33./LAL_PI)*pow(cos(theta/2.),6)*(-2. + 5.*cos(theta))*pow(sin(theta/2.),2);
+	  out->re = deptheta * cos( 4.0*phi );
+	  out->im = deptheta * sin( 4.0*phi );
+	  break;	   
+	  
+	case 5:
+	  deptheta = -sqrt(330./LAL_PI)*pow(cos(theta/2.),7)*pow(sin(theta/2.),3);
+	  out->re = deptheta * cos( 5.0*phi );
+	  out->im = deptheta * sin( 5.0*phi );
+	  break;	   
+	  
+	default:
+	  /* Error message informing that the chosen M is incompatible with L*/
+	  LALPrintError ("\n Inconsistent (L, M) values \n\n");
+	  XLAL_ERROR ( "XLALSphHarm", XLAL_EINVAL);
+	  break;
 	}
-    }    
-
-
+    }  /* L==5 */
+    
+    
     else 
     {
-	/* Error message informing that L!=2 is not yet implemented*/
-	fprintf(stderr, "Sorry, for the moment we haven't implemented anything other than l=2");
+      /* Error message informing that L!=2 is not yet implemented*/
+      LALPrintError ("\n These (L, M) values not implemented yet \n\n");
+      XLAL_ERROR ( "XLALSphHarm", XLAL_EINVAL);
     }
     
-    return( out );
+    return 0;
 }
