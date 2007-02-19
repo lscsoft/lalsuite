@@ -249,11 +249,44 @@ void LALRandomInspiralSignal
                     CHECKSTATUSPTR(status);
                     break;
 
+                case minmaxTotalMass:
+                    /*
+                     * restriction is on the min and max Total mass. Should be
+                     * check carefully. Right now, I think that it is almost
+                     * uniformly distributed in total mass but seem to drop at
+                     * very high mass. I'm not sure about the etaMin either. I
+                     * might remove this code anyway soon. This is for a quick
+                     * test for Craig Robinson and the high mass CBC search
+                     * */
+                    {
+                     REAL8 etaMin ;
+                     randIn->param.totalMass = randIn->MMin + (randIn->MMax - randIn->MMin)*epsilon1 ;
+    
+                    if (randIn->param.totalMass < (randIn->mMin+ randIn->mMax)) {
+                      etaMin = (randIn->mMin / randIn->param.totalMass);		 
+                      etaMin = etaMin - etaMin *etaMin;
+                    }
+                    else {
+                      etaMin = (randIn->mMax / randIn->param.totalMass);		 
+                      etaMin = etaMin - etaMin *etaMin;
+                    }
+                    randIn->param.eta = etaMin + epsilon2 * (.25 - etaMin);      
+
+                    }
+                    randIn->param.massChoice = totalMassAndEta;
+                    LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+                    CHECKSTATUSPTR(status);
+                    randIn->param.massChoice = minmaxTotalMass;
+                    break;
+
+                    
                 case totalMassAndEta: 
                     /*
                      * restriction is on the total mass of the binary 
                      * and the minimum mass of the component stars
                      */
+
+                    
                     randIn->param.mass1 = randIn->mMin 
                             + (randIn->MMax - 2.*randIn->mMin) * epsilon1;
                     randIn->param.mass2 = randIn->mMin 
@@ -370,7 +403,21 @@ void LALRandomInspiralSignal
                 case bhns:
                     valid=1;
                     break;
-
+                case minmaxTotalMass:
+                    if (
+                            randIn->param.mass1 >= randIn->mMin &&
+                            randIn->param.mass2 >= randIn->mMin &&
+                            randIn->param.mass1 <= randIn->mMax &&
+                            randIn->param.mass2 <= randIn->mMax &&
+                            (randIn->param.eta > randIn->etaMin) &&
+                            (randIn->param.mass1+randIn->param.mass2) < randIn->MMax  &&
+                            (randIn->param.mass1+randIn->param.mass2) > randIn->MMin 
+                       )
+                    {
+                        valid = 1;
+                    }
+                     break;
+                     
                 case m1Andm2: 
                 case t03: 
                 case t02:

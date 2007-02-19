@@ -193,6 +193,7 @@ extern "C" {
                 REAL8 mMax;       /* largest component mass allowed */
                 /* OR */
                 REAL8 MMax;       /* largest total mass allowed */
+                REAL8 MMin;       /* largest total mass allowed */
                 REAL8 SignalAmp;  /* amplitude of the signal (relevant only when type=2) */
                 REAL8 NoiseAmp;   /* amplitude of noise (relevant only when type=2) */
                 REAL8 etaMin;     /* smallest value of the symmetric mass ratio */
