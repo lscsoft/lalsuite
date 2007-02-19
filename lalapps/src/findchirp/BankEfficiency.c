@@ -209,6 +209,7 @@ main (INT4 argc, CHAR **argv )
      coarseBankIn.mMin = 0;
    }
    /*coarseBankIn.span = bhns_only;*/
+
    LAL_CALL( LALInspiralBankGeneration( &status, &coarseBankIn, &tmpltHead, &sizeBank),
 	     &status );
 
@@ -2719,6 +2720,14 @@ void BEGenerateInputData(LALStatus *status,
 	    LALRandomInspiralSignal(status->statusPtr, signal, randIn);
 	    CHECKSTATUSPTR(status);
 	  }
+	else if (userParam.minTotalMass > 0 && userParam.maxTotalMass > 0)
+	  {
+	    randIn->param.massChoice = minmaxTotalMass;
+            randIn->MMax = userParam.maxTotalMass;
+            randIn->MMin = userParam.minTotalMass;
+	    LALRandomInspiralSignal(status->statusPtr, signal, randIn);
+	    CHECKSTATUSPTR(status);
+          }
 	else if (randIn->t0Min != 0)
           {
             randIn->param.massChoice = t03;
@@ -3532,7 +3541,6 @@ ParseParameters(	INT4 			*argc,
       }
       else if (!strcmp(argv[i],"--bank-max-total-mass")) {
 	BEParseGetDouble(argv,  &i, &(coarseBankIn->MMax));
-        coarseBankIn->massRange       = MinMaxComponentTotalMass; 
       }
       else if (!strcmp(argv[i],"--bank-min-total-mass")) {
 	BEParseGetDouble(argv,  &i, &(coarseBankIn->MMin));
@@ -3588,11 +3596,11 @@ ParseParameters(	INT4 			*argc,
       else if (!strcmp(argv[i], "--help") || !strcmp(argv[i],"--h")) {
 	Help();
       }
-      else if (!strcmp(argv[i],"--max-total-mass")) {
+      else if (!strcmp(argv[i],"--signal-max-total-mass")) {
 	BEParseGetDouble(argv,  &i, &tmp1);
 	userParam->maxTotalMass = (REAL4)tmp1;	
       }
-      else if (!strcmp(argv[i],"--min-total-mass")) {
+      else if (!strcmp(argv[i],"--signal-min-total-mass")) {
 	BEParseGetDouble(argv,  &i, &tmp1);
 	userParam->minTotalMass = (REAL4)tmp1;	
       }
@@ -4047,12 +4055,19 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 
   
   if  ((coarseBankIn->mMin >= coarseBankIn->mMax ) || (coarseBankIn->mMin <=0)){
-    sprintf(msg, "--bank-mass-range (%f %f) paramter must be sorted and > 0 \n",
+    sprintf(msg, "--bank-mass-range (%f %f) parameter must be sorted and > 0 \n",
 	    coarseBankIn->mMin, coarseBankIn->mMax);
     fprintf(stderr, msg);
   }
   else /* if valid parameters */
     {
+      if (userParam->maxTotalMass != -1)
+      {
+        coarseBankIn->mMax = coarseBankIn->MMax - coarseBankIn->mMin;
+      }
+        
+
+        
       if (userParam->maxTotalMass != -1)
 	{
 	  if (userParam->maxTotalMass >= (2 * coarseBankIn->mMax))
@@ -4064,11 +4079,13 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 	    }
 	  else
 	    {
-	      coarseBankIn->MMax =  userParam->maxTotalMass;
+            
+              coarseBankIn->MMax =  userParam->maxTotalMass;
 	      coarseBankIn->etamin = coarseBankIn->mMin * (coarseBankIn->MMax  - coarseBankIn->mMin)
 		/ (coarseBankIn->MMax )
 		/ (coarseBankIn->MMax );
-	    }
+              
+            } 
 	}
       else
 	{
@@ -4078,6 +4095,8 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 	    / (coarseBankIn->MMax );
 	}
     }
+  
+
   
   if (coarseBankIn->psi0Min <=0 || coarseBankIn->psi0Min > coarseBankIn->psi0Max) {
     sprintf(msg, "--bank-psi0-range (%f %f) paramter must be sorted and > 0 \n",
@@ -4236,6 +4255,13 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
   }
  else /* if valid parameters */
    {
+        if (userParam->maxTotalMass !=-1)
+        {
+          randIn->MMax = userParam->maxTotalMass;
+          randIn->MMin = userParam->minTotalMass;
+          randIn->mMax = randIn->MMax - randIn->mMin;
+        }
+        
      if (userParam->maxTotalMass != -1)
        {  
 	 if (userParam->maxTotalMass >= (2 * randIn->mMax))
@@ -4247,7 +4273,10 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 	   }
 	 else
 	   {
+	   if (userParam->maxTotalMass ==-1)
+           {
 	     randIn->MMax = userParam->maxTotalMass;
+           }
 	     randIn->etaMin = randIn->mMin * (randIn->MMax  - randIn->mMin)
 	       / (randIn->MMax )
 	       / (randIn->MMax );
@@ -4255,7 +4284,10 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
        }          
      else 
        {
-	 randIn->MMax = 2 * randIn->mMax;
+        if (userParam->maxTotalMass ==-1)
+        {
+ 	  randIn->MMax = 2 * randIn->mMax;
+        }
 	 randIn->etaMin = randIn->mMin * (randIn->MMax  - randIn->mMin)
 	   / (randIn->MMax )
 	   / (randIn->MMax );
