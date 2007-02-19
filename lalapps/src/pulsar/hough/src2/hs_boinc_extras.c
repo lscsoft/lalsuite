@@ -3,8 +3,6 @@
 */
 
 /* TODO:
-   - why does boinc_time_to_checkpoint() always yield 0?
-   - final output write specific to hough, w/o reducing precision
    - error handling in checkpointing
    - catch malloc errors in worker()
    - behavior when boinc_is_standlone()?
@@ -837,37 +835,9 @@ void init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
 
 
 
-/* set_checkpoint() */
-int add_candidate_and_checkpoint (toplist_t*toplist, FstatOutputEntry cand) {
-  FILE* fp;
-  int ret;
-
-  if(toplist != cptf->list) {
-    LogPrintf (LOG_CRITICAL,  "ERROR: wrong toplist passed to add_candidate_and_checkpoint()\n", cptfilename);
-    return(-2);
-  }
-
-  ret = fstat_cpt_file_add (cptf, cand);
-
-  /* if (boinc_time_to_checkpoint()) */ {
-    fstat_cpt_file_flush (cptf);
-    fp = fopen(cptfilename,"w");
-    if (fp) {
-      fprintf(fp,"%f,%f,%d,%d,%d,%d\n",
-	      last_rac, last_dec, last_count, last_total,
-	      cptf->checksum, cptf->bytes);
-      fclose(fp);
-    } else {
-      LogPrintf (LOG_CRITICAL,  "ERROR: Couldn't write checkpoint file %s\n", cptfilename);
-    }
-    boinc_checkpoint_completed();
-  }
-  
-  return (ret);
-}
-
-
-
+/* adds a candidate to the toplist and to the ccheckpointing file, too, if it was actually inserted.
+   compacting, if necessary, is NOT done here, but in set_checkpoint() - doing it here would lead to
+   inconsistent state on disk until the next set_checkpoint call. */
 int add_checkpoint_candidate (toplist_t*toplist, FstatOutputEntry cand) {
   if(toplist != cptf->list) {
     LogPrintf (LOG_CRITICAL,  "ERROR: wrong toplist passed to add_checkpoint_candidate()\n", cptfilename);
@@ -878,7 +848,9 @@ int add_checkpoint_candidate (toplist_t*toplist, FstatOutputEntry cand) {
 }
 
 
-/* called only from set_checkpoint() */
+/* actually writes a checkpoint
+   single point to contain the checkpoint format
+   called only from set_checkpoint() */
 void write_checkpoint () {
   FILE* fp;
   fp = fopen(cptfilename,"w");
@@ -893,7 +865,10 @@ void write_checkpoint () {
 }
 
 
-/* set_checkpoint() */
+/* sets a checkpoint.
+   It also "compacts" the output file, i.e. completely rewrites it from
+   the toplist in memory, when it has reached the maximum size. When doing
+   so it also writes another checkpoint for consistency. */
 void set_checkpoint () {
 #ifndef FORCE_CHECKPOINTING
   if (boinc_time_to_checkpoint())
