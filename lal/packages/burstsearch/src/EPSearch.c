@@ -8,7 +8,6 @@ Revision: $Id$
 #include <lal/BandPassTimeSeries.h>
 #include <lal/Date.h>
 #include <lal/EPSearch.h>
-#include <lal/ExcessPower.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALErrno.h>
@@ -18,6 +17,7 @@ Revision: $Id$
 #include <lal/LIGOMetadataTables.h>
 #include <lal/RealFFT.h>
 #include <lal/ResampleTimeSeries.h>
+#include <lal/TFTransform.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
@@ -131,7 +131,6 @@ XLALEPSearch(
 	RealFFTPlan *rplan;
 	REAL4FrequencySeries *psd;
 	REAL4TimeSeries *cuttseries;
-	TFTiling *Tiling;
 	REAL4TimeFrequencyPlane *tfplane;
 
 	/*
@@ -155,10 +154,9 @@ XLALEPSearch(
 	fplan = XLALCreateForwardREAL4FFTPlan(params->window->data->length, 1);
 	rplan = XLALCreateReverseREAL4FFTPlan(params->window->data->length, 1);
 	psd = XLALCreateREAL4FrequencySeries("PSD", &tseries->epoch, 0, 0, &lalDimensionlessUnit, params->window->data->length / 2 + 1);
-	tfplane = XLALCreateTFPlane(params->tf_timeBins, params->tf_deltaT, params->tf_freqBins, params->tf_deltaF, params->tf_flow);
-	Tiling = XLALCreateTFTiling(tfplane, params->inv_fractional_stride, params->maxTileBandwidth, params->maxTileDuration);
+	tfplane = XLALCreateTFPlane(params->tf_timeBins, params->tf_deltaT, params->tf_freqBins, params->tf_deltaF, params->tf_flow, params->inv_fractional_stride, params->maxTileBandwidth, params->maxTileDuration);
 	tukey = XLALCreateTukeyREAL4Window(params->window->data->length, 0.5);
-	if(!fplan || !rplan || !psd || !tfplane || !Tiling || !tukey) {
+	if(!fplan || !rplan || !psd || !tfplane || !tukey) {
 		errorcode = XLAL_EFUNC;
 		goto error;
 	}
@@ -249,7 +247,7 @@ XLALEPSearch(
 		 */
 
 		XLALPrintInfo("XLALEPSearch(): computing the excess power for each tile\n");
-		if(XLALComputeExcessPower(Tiling, tfplane)) {
+		if(XLALComputeExcessPower(tfplane)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
@@ -263,7 +261,7 @@ XLALEPSearch(
 
 		XLALPrintInfo("XLALEPSearch(): converting tiles to trigger list\n");
 		XLALClearErrno();
-		head = XLALTFTilesToSnglBurstTable(head, tfplane, Tiling, params->lnalphaThreshold);
+		head = XLALTFTilesToSnglBurstTable(head, tfplane, tfplane->tiling, params->lnalphaThreshold);
 		if(xlalErrno) {
 			errorcode = XLAL_EFUNC;
 			goto error;
@@ -281,7 +279,6 @@ XLALEPSearch(
 	XLALDestroyREAL4FFTPlan(rplan);
 	XLALDestroyREAL4FrequencySeries(psd);
 	XLALDestroyCOMPLEX8FrequencySeries(fseries);
-	XLALDestroyTFTiling(Tiling);
 	XLALDestroyTFPlane(tfplane);
 	XLALDestroyREAL4Window(tukey);
 	if(errorcode) {

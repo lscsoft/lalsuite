@@ -6,11 +6,10 @@ $Id$
 #ifndef _EPSEARCH_H
 #define _EPSEARCH_H
 
-#include <lal/ExcessPower.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALRCSID.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/ResampleTimeSeries.h>
+#include <lal/Random.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/Window.h>
 
@@ -72,6 +71,34 @@ XLALEPConditionData(
 	REAL8             flow,
 	REAL8             resampledeltaT,
 	INT4              corruption
+);
+
+
+COMPLEX8FrequencySeries *XLALWindowedREAL4ForwardFFT(
+	const REAL4TimeSeries *tseries,
+	const REAL4Window *window,
+	const REAL4FFTPlan *plan
+);
+
+
+COMPLEX16FrequencySeries *XLALWindowedREAL8ForwardFFT(
+	const REAL8TimeSeries *tseries,
+	const REAL8Window *window,
+	const REAL8FFTPlan *plan
+);
+
+
+REAL4Sequence *XLALREAL4AddWhiteNoise(
+	REAL4Sequence *sequence,
+	REAL4 rms,
+	RandomParams *params
+);
+
+
+COMPLEX8Sequence *XLALCOMPLEX8AddWhiteNoise(
+	COMPLEX8Sequence *sequence,
+	REAL8 rms,
+	RandomParams *params
 );
 
 

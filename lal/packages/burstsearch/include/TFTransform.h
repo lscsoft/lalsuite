@@ -1,5 +1,5 @@
 /********************************** <lalVerbatim file="TFTransformHV">
-Author: Flanagan, E
+Author: Flanagan, E., Kipp Cannon
 $Id$
 **************************************************** </lalVerbatim> */
 
@@ -17,6 +17,72 @@ extern "C" {
 #endif
 
 NRCSID(TFTRANSFORMH, "$Id$");
+
+
+/*
+ * A tiling of the time-frequency plane
+ */
+
+
+typedef struct tagTFTile {
+	/* tile specification as indexes into time-frequency plane data */
+	UINT4 channel0;
+	UINT4 channels;
+	UINT4 tstart;
+	UINT4 tbins;
+	/* time-frequency plane parameters for reconstructing tile dimensions */
+	REAL8 flow;
+	REAL8 deltaT;
+	REAL8 deltaF;
+	/* computed tile properties */
+	REAL8 excessPower;
+	REAL8 hrss;
+	REAL8 lnalpha;
+	REAL8 lnweight;
+} TFTile;
+
+
+typedef struct tagTFTiling {
+	/* array of tiles */
+	TFTile *tile;
+	size_t numtiles;
+} TFTiling;
+
+
+REAL8
+XLALTFTileDegreesOfFreedom(
+	const TFTile *tile
+);
+
+
+TFTiling *
+XLALCreateTFTiling(
+	REAL8 plane_deltaT,
+	REAL8 plane_flow,
+	REAL8 plane_deltaF,
+	UINT4 plane_channel_length,
+	UINT4 plane_num_channels,
+	INT4 inv_fractional_stride,
+	REAL8 maxTileBandwidth,
+	REAL8 maxTileDuration
+);
+
+
+void
+XLALDestroyTFTiling(
+	TFTiling *tiling
+);
+
+
+REAL8
+XLALComputeLikelihood(
+	TFTiling *tiling
+);
+
+
+/*
+ * A time-frequency plane
+ */
 
 
 typedef struct tagREAL4TimeFrequencyPlane {
@@ -39,6 +105,8 @@ typedef struct tagREAL4TimeFrequencyPlane {
 	/* channel data;  channel[j]->data[i] corresponds to time epoch + i
 	 * * deltaT and frequency flow + j * deltaF */
 	REAL4Sequence **channel;
+	/* time-frequency plane's tiling */
+	TFTiling *tiling;
 } REAL4TimeFrequencyPlane;
 
 
@@ -48,7 +116,10 @@ XLALCreateTFPlane(
 	REAL8 deltaT,
 	UINT4 channels,
 	REAL8 deltaF,
-	REAL8 flow
+	REAL8 flow,
+	INT4 tiling_inv_fractional_stride,
+	REAL8 tiling_max_bandwidth,
+	REAL8 tiling_max_duration
 );
 
 
@@ -58,25 +129,18 @@ XLALDestroyTFPlane(
 );
 
 
-COMPLEX8FrequencySeries *XLALWindowedREAL4ForwardFFT(
-	const REAL4TimeSeries *tseries,
-	const REAL4Window *window,
-	const REAL4FFTPlan *plan
-);
-
-COMPLEX16FrequencySeries *XLALWindowedREAL8ForwardFFT(
-	const REAL8TimeSeries *tseries,
-	const REAL8Window *window,
-	const REAL8FFTPlan *plan
-);
-
-
 int
 XLALFreqSeriesToTFPlane(
 	REAL4TimeFrequencyPlane *tfplane,
 	const COMPLEX8FrequencySeries *fseries,
 	const REAL4FrequencySeries *psd,
 	const REAL4FFTPlan *reverseplan
+);
+
+
+int
+XLALComputeExcessPower(
+	const REAL4TimeFrequencyPlane *plane
 );
 
 

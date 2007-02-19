@@ -8,7 +8,6 @@ $Id$
 
 NRCSID (COMPUTEEXCESSPOWERC, "$Id$");
 
-#include <lal/ExcessPower.h>
 #include <lal/TFTransform.h>
 #include <lal/Thresholds.h>
 #include <lal/XLALError.h>
@@ -16,12 +15,12 @@ NRCSID (COMPUTEEXCESSPOWERC, "$Id$");
 
 /******** <lalVerbatim file="ComputeExcessPowerCP"> ********/
 int XLALComputeExcessPower(
-	TFTiling *tiling,
 	const REAL4TimeFrequencyPlane *plane
 )
 /******** </lalVerbatim> ********/
 {
 	const char func[] = "XLALComputeExcessPower";
+	TFTiling *tiling = plane->tiling;
 	TFTile *tile = tiling->tile;
 	size_t i;
 

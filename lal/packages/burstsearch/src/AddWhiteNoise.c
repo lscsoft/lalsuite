@@ -7,7 +7,7 @@ $Id$
 
 NRCSID (ADDWHITENOISEC, "$Id$");
 
-#include <lal/ExcessPower.h>
+#include <lal/EPSearch.h>	/* for our own prototypes */
 #include <lal/Random.h>
 #include <lal/Sequence.h>
 #include <lal/XLALError.h>
@@ -16,6 +16,7 @@ NRCSID (ADDWHITENOISEC, "$Id$");
 /*
  *  Add Gaussian white noise to various vectors
  */
+
 
 /******** <lalVerbatim file="AddWhiteNoiseCP"> ********/
 REAL4Sequence *XLALREAL4AddWhiteNoise(

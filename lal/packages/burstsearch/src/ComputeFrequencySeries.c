@@ -12,7 +12,7 @@ NRCSID (COMPUTEFREQUENCYSERIESC, "$Id$");
 #include <lal/FrequencySeries.h>
 #include <lal/RealFFT.h>
 #include <lal/Sequence.h>
-#include <lal/TFTransform.h>
+#include <lal/EPSearch.h>	/* for our own prototypes */
 #include <lal/Units.h>
 #include <lal/Window.h>
 #include <lal/XLALError.h>

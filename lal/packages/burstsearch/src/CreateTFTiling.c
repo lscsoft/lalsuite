@@ -8,7 +8,6 @@ $Id$
 
 NRCSID(CREATETFTILINGC, "$Id$");
 
-#include <lal/ExcessPower.h>
 #include <lal/LALStdlib.h>
 #include <lal/TFTransform.h>
 #include <lal/XLALError.h>
@@ -32,15 +31,19 @@ REAL8 XLALTFTileDegreesOfFreedom(const TFTile *tile)
 
 #define FOR_EACH_TILE \
 	for(tbins = 2; tbins <= max_tbins; tbins *= 2) \
-		for(channels = 1 / (tbins * plane->deltaT * plane->deltaF); channels <= max_channels; channels *= 2) \
-			for(tstart = 0; tstart + tbins <= plane->channel[0]->length; tstart += tbins / inv_fractional_stride) \
-				for(channel0 = 0; channel0 + channels <= plane->channels; channel0 += channels / inv_fractional_stride)
+		for(channels = 1 / (tbins * plane_deltaT * plane_deltaF); channels <= max_channels; channels *= 2) \
+			for(tstart = 0; tstart + tbins <= plane_channel_length; tstart += tbins / inv_fractional_stride) \
+				for(channel0 = 0; channel0 + channels <= plane_num_channels; channel0 += channels / inv_fractional_stride)
 
 
 
 /******** <lalVerbatim file="CreateTFTilingCP"> ********/
 TFTiling *XLALCreateTFTiling(
-	const REAL4TimeFrequencyPlane *plane,
+	REAL8 plane_deltaT,
+	REAL8 plane_flow,
+	REAL8 plane_deltaF,
+	UINT4 plane_channel_length,
+	UINT4 plane_num_channels,
 	INT4 inv_fractional_stride,
 	REAL8 maxTileBandwidth,
 	REAL8 maxTileDuration
@@ -64,15 +67,12 @@ TFTiling *XLALCreateTFTiling(
 	unsigned tstart;
 	unsigned tbins;
 
-	if(!plane)
-		XLAL_ERROR_NULL(func, XLAL_EFAULT);
-
 	/* determine the tile size limits */
-	max_tbins = maxTileDuration / plane->deltaT;
-	max_channels = maxTileBandwidth / plane->deltaF;
-	if((plane->channel[0]->length < max_tbins) || (plane->channels < max_channels))
+	max_tbins = maxTileDuration / plane_deltaT;
+	max_channels = maxTileBandwidth / plane_deltaF;
+	if((plane_channel_length < max_tbins) || (plane_num_channels < max_channels))
 		XLAL_ERROR_NULL(func, XLAL_EINVAL);
-	maxDOF = (2 * max_tbins * max_channels) * plane->deltaT * plane->deltaF;
+	maxDOF = (2 * max_tbins * max_channels) * plane_deltaT * plane_deltaF;
 
 	/* Count the tiles */
 	numtiles = 0;
@@ -102,9 +102,9 @@ TFTiling *XLALCreateTFTiling(
 		tile->channels = channels;
 		tile->tstart = tstart;
 		tile->tbins = tbins;
-		tile->flow = plane->flow;
-		tile->deltaT = plane->deltaT;
-		tile->deltaF = plane->deltaF;
+		tile->flow = plane_flow;
+		tile->deltaT = plane_deltaT;
+		tile->deltaF = plane_deltaF;
 		tile->excessPower = XLAL_REAL8_FAIL_NAN;
 		tile->lnalpha = XLAL_REAL8_FAIL_NAN;
 		weight[(int) XLALTFTileDegreesOfFreedom(tile)]++;

@@ -20,7 +20,10 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	REAL8 deltaT,   /* time resolution of the plane */
 	UINT4 channels, /* Number of frequency channels in TF plane */
 	REAL8 deltaF,   /* frequency resolution of the plane */
-	REAL8 flow      /* minimum frequency to search for */
+	REAL8 flow,     /* minimum frequency to search for */
+	INT4 tiling_inv_fractional_stride,
+	REAL8 tiling_max_bandwidth,
+	REAL8 tiling_max_duration
 )
 /******** </lalVerbatim> ********/
 {
@@ -28,22 +31,31 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	REAL4TimeFrequencyPlane *plane;
 	REAL4Sequence *channel_mean_square;
 	REAL4Sequence **channel;
+	TFTiling *tiling;
 	unsigned i;
 
-	/* Make sure that input parameters are reasonable */
+	/*
+	 * Make sure that input parameters are reasonable
+	 */
+
 	if((flow < 0) ||
 	   (deltaF <= 0.0) ||
 	   (deltaT <= 0.0))
 		XLAL_ERROR_NULL(func, XLAL_EINVAL);
 
-	/* Allocate memory */
+	/*
+	 * Allocate memory
+	 */
+
 	plane = LALMalloc(sizeof(*plane));
 	channel_mean_square = XLALCreateREAL4Sequence(channels);
 	channel = LALMalloc(channels * sizeof(*channel));
-	if(!plane || !channel_mean_square || !channel) {
+	tiling = XLALCreateTFTiling(deltaT, flow, deltaF, timeBins, channels, tiling_inv_fractional_stride, tiling_max_bandwidth, tiling_max_duration);
+	if(!plane || !channel_mean_square || !channel || !tiling) {
 		LALFree(plane);
 		XLALDestroyREAL4Sequence(channel_mean_square);
 		LALFree(channel);
+		XLALDestroyTFTiling(tiling);
 		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 	}
 	for(i = 0; i < channels; i++) {
@@ -54,12 +66,13 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 			LALFree(plane);
 			XLALDestroyREAL4Sequence(channel_mean_square);
 			LALFree(channel);
-		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+			XLALDestroyTFTiling(tiling);
+			XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 		}
 	}
 
 	/* 
-	 * Initialize the structure.
+	 * Initialize the structure
 	 */
 
 	plane->name[0] = '\0';
@@ -71,9 +84,13 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	plane->flow = flow;
 	plane->channel_mean_square = channel_mean_square;
 	plane->channel = channel;
+	plane->tiling = tiling;
 
-	/* Normal exit */
-	return(plane);
+	/*
+	 * Success
+	 */
+
+	return plane;
 }
 
 
@@ -91,6 +108,7 @@ XLALDestroyTFPlane(
 		for(i = 0; i < plane->channels; i++)
 			XLALDestroyREAL4Sequence(plane->channel[i]);
 		LALFree(plane->channel);
+		XLALDestroyTFTiling(plane->tiling);
 	}
 	LALFree(plane);
 }
