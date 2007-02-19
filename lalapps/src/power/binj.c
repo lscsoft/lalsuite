@@ -554,9 +554,24 @@ static double hpeak_from_tau_and_hrss(double tau, double hrss)
  * ============================================================================
  */
 
+
 static LIGOTimeGPS equatorial_arrival_time(LALDetector detector, LIGOTimeGPS geocent_peak_time, double right_ascension, double declination)
 {
 	return *XLALGPSAdd(&geocent_peak_time, XLALTimeDelayFromEarthCenter(detector.location, right_ascension, declination, &geocent_peak_time));
+}
+
+
+static LIGOTimeGPS zenith_arrival_time(LALDetector detector, LIGOTimeGPS geocent_peak_time)
+{
+	/* LAL borkage:  when co-ordinates are "ZENITH", LAL's burst
+	 * injection code ignores the injection time specified in the
+	 * sim_burst table, and instead chooses its own time at which to do
+	 * the injection.  Unfortunately, injection-finding codes can't
+	 * read LAL's mind and must assume the injection was done at the
+	 * time set in the sim_burst table.  The following is LAL's current
+	 * algorithm.  Rather than hoping it never changes, somebody could
+	 * fix GenerateBurst() and friends. */
+	return geocent_peak_time;
 }
 
 
@@ -892,8 +907,8 @@ int main(int argc, char *argv[])
 			this_sim_burst->polarization = 0.0;
 
 			/* observatory peak times in GPS seconds */
-			this_sim_burst->h_peak_time = horizon_arrival_time(lho, this_sim_burst->geocent_peak_time);
-			this_sim_burst->l_peak_time = horizon_arrival_time(llo, this_sim_burst->geocent_peak_time);
+			this_sim_burst->h_peak_time = zenith_arrival_time(lho, this_sim_burst->geocent_peak_time);
+			this_sim_burst->l_peak_time = zenith_arrival_time(llo, this_sim_burst->geocent_peak_time);
 			break;
 		}
 
