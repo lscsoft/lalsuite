@@ -280,9 +280,6 @@ main(int argc, char *argv[])
 	return LISAMAKESFTS_EINPUT;
       }
     SFTvect = NULL;
-    LAL_CALL ( LALCreateSFTVector (&status, &SFTvect, SFTVectList[0]->length,
-				   SFTVectList[0]->data[0].data->length ),
-	       &status );
     LAL_CALL ( LALSubtractSFTVectors (&status, &SFTvect, SFTVectList[ifo1], SFTVectList[ifo2]), &status );
     for ( sidx=0; sidx < SFTvect->length; sidx++ )
       {
@@ -310,9 +307,6 @@ main(int argc, char *argv[])
 	return LISAMAKESFTS_EINPUT;
       }
     SFTvect = NULL;
-    LAL_CALL ( LALCreateSFTVector (&status, &SFTvect, SFTVectList[0]->length,
-				   SFTVectList[0]->data[0].data->length ),
-	       &status );
     LAL_CALL ( LALSubtractSFTVectors (&status, &SFTvect, SFTVectList[ifo1], SFTVectList[ifo2]), &status );
     for ( sidx=0; sidx < SFTvect->length; sidx++ )
       {
