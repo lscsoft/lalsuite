@@ -878,6 +878,7 @@ int add_checkpoint_candidate (toplist_t*toplist, FstatOutputEntry cand) {
 }
 
 
+/* called only from set_checkpoint() */
 void write_checkpoint () {
   FILE* fp;
   fp = fopen(cptfilename,"w");
@@ -894,10 +895,12 @@ void write_checkpoint () {
 
 /* set_checkpoint() */
 void set_checkpoint () {
-  if (1 || boinc_time_to_checkpoint())
+#ifndef FORCE_CHECKPOINTING
+  if (boinc_time_to_checkpoint())
+#endif
     {
       if (cptf->bytes >= cptf->maxsize)
-	fstat_cpt_file_compact(cptf);
+	  fstat_cpt_file_compact(cptf);
       else
 	fstat_cpt_file_flush (cptf);
       write_checkpoint();
