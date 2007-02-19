@@ -61,14 +61,16 @@ addition to these multipole moments, we also require the corresponding
 values of $\Psi_4$ or the Zerilli function in the formats described
 later. 
 
-
 Introduce a coordinate system $(x,y,z,t)$ associated with the binary
 system as follows.  The orbital plane of the binary at $t=0$ is taken to
 be the $x$-$y$ plane with the $z$-axis in the direction of the orbital
 angular momentum.  The orbital plane works when the black holes are
 non-spinning but it can be ambiguous, especially when the spin of the
 black holes causes the orbital plane to precess significantly.
-Similarly, the $x$-axis is chosen so that the orbital phase of the
+In such cases, it is left to the numerical relativity group to decide
+what the best choice of the ``orbital plane'' should be. 
+
+The $x$-axis is chosen so that the orbital phase of the
 binary vanishes at $t=0$.   This still leaves open the question of what
 to choose as the zero of time.  The two obvious choices are the
 beginning of the simulation and the time at coalescence (although the
@@ -115,7 +117,7 @@ It is convenient to use the combination $h_+ - ih_\times$ which is
 related to the Weyl tensor component $\Psi_4$ by two time derivatives:
 \begin{equation}
   \label{eq:3}
-  \Psi_4 = - \ddot{h}_+ i\ddot{h}_\times\,.
+  \Psi_4 = \ddot{h}_+ - i\ddot{h}_\times\,.
 \end{equation}
 It can be shown that $h_+-ih_\times$, can be decomposed into
 modes using spin weighted spherical harmonics $\Ys_{lm}$ of weight
@@ -183,26 +185,39 @@ funtions of time.
 
 For our purposes, a single numerical waveform is defined by 9
 parameters: the mass ratio $M_1/M_2$, the three components of the
-individual spins $\vec{S}_1$ and $\vec{S}_2$ and the mode
-numbers $(l,m)$.  These 9 parameters will be referred to as the
-``metadata'' for a waveform.  ***We can add more parameters to this
-metadata if necessary.***
+individual spins $\vec{S}_1$ and $\vec{S}_2$ and the mode numbers
+$(l,m)$.  These 9 parameters will be referred to as the ``metadata''
+for a waveform.  It is possible to add more parameters to this
+metadata if necessary. Note that $M_1$ denotes the larger of the two
+masses so that the mass ratio should never be lesser than unity.  The
+choice of the individual masses $M_1$ and $M_2$ is to be decided by
+the individual numerical relativity groups.  Thus, for non-spinning
+black holes, $M_1$ and $M_2$ could be the irreducible masses of the
+two horizons, or the masses could be specified in the initial data
+etc.  
 
 The data for a single mode $rh_{+,\times}^{lm}$ is to be written as a
 plain text file in three columns for the time $t$, $rh_+$ and
 $rh_\times$.  The time must be in units of the total mass $M$ of the
-binary (or, almost equivalently, the ADM mass) and the sampling must be
-uniform.  If the result of a simulation or set of simulations yields a
-waveform sampled non-uniformly, we ask that the NR group interpolate to
-give a uniformly sampled waveform.  A sampling rate of $1\times M$ is
-sufficient for our purposes, but there is no other restriction on it.
-The strain multiplied by the distance will also be in units of the total
-mass $M$ of the binary.  There can be any number of comment lines at the
-top of the file and it is envisioned that the details of the simulation
-and the mode contained in the file will be held in the comment lines.
-This is an example of a data file 
+binary.  There can be subtleties in the choice of $M$.  It could be
+the ADM mass of the spacetime, or it could be the sum of the
+individual masses.  Again, the choice is left up to the numerical
+relativity group which produced the waveform.  It should be whatever
+best represents the time coordinate of the particular simulation.  
+
+The sampling in time must be uniform.  If the result of a simulation
+or set of simulations yields a waveform sampled non-uniformly, we ask
+that the NR group interpolate to give a uniformly sampled waveform.  A
+sampling rate of $1\times M$ is sufficient for our purposes, but there
+is not a requirement.  The strain multiplied by the distance will also
+be in units of the total mass $M$ of the binary.  There can be any
+number of comment lines at the top of the file and it is envisioned
+that the details of the simulation and the mode contained in the file
+will be held in the comment lines.  This is an example of a data file:
 
 \begin{verbatim}
+# numerical waveform from ....
+# equal mass, non spinning, 5 orbits
 # time       hplus        hcross
 0.000000e+00 1.138725e-02 -8.319811e-04
 2.000000e-01 1.138725e-02 -1.247969e-03
@@ -222,6 +237,7 @@ This is an example of a data file
 3.000000e+00 1.138752e-02 -7.071059e-03
 3.200000e+00 1.138754e-02 -7.486903e-03
 3.400000e+00 1.138757e-02 -7.902739e-03
+......
 \end{verbatim}
 
 The metadata information for the different datafiles will be stored in
@@ -232,13 +248,22 @@ metadata file containing two waveforms:
 \begin{verbatim}
 ## example wave
 ## m1/m2 S1x S1y S1z S2x S2y S2z l m filename
-1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 2 ./example1.dat
+1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 2 example1.dat
 ## another example
-1.0 1.0 0.0 0.0 0.0 -1.0 0.0  2 1 ./example2.dat
+1.5 1.0 0.0 0.0 0.0 -1.0 0.0  2 1 example2.dat
 \end{verbatim}
 Lines starting with a $\%$ or $\#$ will be taken to be comment lines and
-ignored. There can be an arbitrary number of comment lines.  **more***
-
+ignored.  There can be an arbitrary number of comment lines.  The
+filenames must give the relative paths to the data files starting from
+the location of the metadata file.  Thus, if the datafiles are stired
+in a directory called \texttt{data}, then the metadata file would read:
+\begin{verbatim}
+## example wave
+## m1/m2 S1x S1y S1z S2x S2y S2z l m filename
+1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 2 data/example1.dat
+## another example
+1.5 1.0 0.0 0.0 0.0 -1.0 0.0  2 1 data/example2.dat
+\end{verbatim}
 
 
 \end{document}
