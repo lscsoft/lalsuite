@@ -540,9 +540,14 @@ int fstat_cpt_file_close(FStatCheckpointFile*cptf) {
     return(-1);
   }
   fclose(cptf->fp);
-  return(final_write_fstat_toplist_to_file(cptf->list,
-					   cptf->filename,
-					   &(cptf->checksum)));
+  /* We're currently using this function only for HierarchicalSearch.
+     For behavior totally compatible to the CFS-Einstein@Home code
+     one should call final_write_fstat_toplist_to_file() instead of
+     atomic_write_fstat_toplist_to_file(), as this would re-sort
+     the list and reduce the precision before writing it */
+  return(atomic_write_fstat_toplist_to_file(cptf->list,
+					    cptf->filename,
+					    &(cptf->checksum)));
 }
 
 
@@ -632,7 +637,7 @@ int fstat_cpt_file_compact(FStatCheckpointFile*cptf) {
   }
 
   fstat_cpt_file_open(cptf);
-  fseek(cptf->fp, 0, SEEK_END);
+  fseek(cptf->fp, 0L, SEEK_END);
   cptf->bytes = bytes;
   cptf->checksum = checksum;
 
