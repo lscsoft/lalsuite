@@ -55,11 +55,13 @@ extern int optind, opterr, optopt;
 
 RCSID("$Id$");
 
-#define PROGRAM_NAME "ComputeStrainDriver"
 #define CVS_NAME "$Name$"
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
+
+#define PROGRAM_NAME "ComputeStrainDriver"
+
 
 /***************************************************************************/
 
