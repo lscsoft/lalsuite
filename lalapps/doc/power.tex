@@ -12,6 +12,10 @@
 \label{subsection:running_power}
 \idx[Running]{power}
 
+%
+% FIXME: this section is obsolete
+%
+
 This section is under construction!
 
 
@@ -169,7 +173,6 @@ simulated data.
 [\option{--calibrated-data}~\parm{high pass frequency}] \newline \hspace*{0.5in}
 [\option{--calibration-cache}~\parm{cache file}] \newline \hspace*{0.5in}
 \option{--channel-name}~\parm{string} \newline \hspace*{0.5in}
-[\option{--cluster}] \newline \hspace*{0.5in}
 [\option{--debug-level}~\parm{level}] \newline \hspace*{0.5in}
 [\option{--dump-diagnostics~\parm{XML filename}}] \newline \hspace*{0.5in}
 \option{--filter-corruption}~\parm{samples} \newline \hspace*{0.5in}
@@ -281,16 +284,6 @@ the ``framedata'' package in LAL.
 Set the name of the data channel to analyze to \parm{string}.  This must
 match the name of one of the data channels in the input frame files.  For
 example, ``\verb|H2:LSC-AS_Q|''.
-
-\item[\option{--cluster}]
-Enable a clustering algorithm.  The result is the reduction of overlapping
-triggers to a single trigger which covers a square time-frequency volume
-which encompasses all overlapping trigger regions.   The signal-to-noise
-and the confidence associated with a clustered trigger belong to the most
-significant excess-power trigger in the cluster.  \emph{Note:}  The
-algorithm is in a prototyping stage, and its behaviour is not robustly
-tested.  Treat with care, and look at the code to insure you understand the
-implication of enabling this option.
 
 \item[\option{--debug-level} \parm{level}]
 Sets the LAL debug level to \parm{level}.  The default value is
@@ -487,7 +480,6 @@ To run the program, type:
 lalapps_power \
 --bandwidth 1024 \
 --channel-name "H1:LSC-AS_Q" \
---cluster \
 --filter-corruption 8192 \
 --frame-cache H-754008315-754008371.cache \
 --frame-sample-rate 16384 \
@@ -795,15 +787,12 @@ in the tile will then be
    K_{1}}^{\Delta n_{f} -1} \sigma^{2}(k, b)}.
 \end{equation}
 
-In Gaussian noise,  the power in a given tile is $\chi^2$-distributed
-with $2 V$ degrees of freedom where $V$ is the time-frequency volume
-of the tile.    A burst trigger is identified if the probability of
-obtaining the excess power in a tile from Gaussian noise is smaller
-than some threshold $\alpha$.   For large bursts in the data stream,
-many tiles can be identified as triggers with different sizes and
-aspect ratios.   When the search over a particular segment is
-complete,   triggers are clustered and the clustering is described in 
-Section~\ref{section:clustering} .
+In Gaussian noise, the power in a given tile is $\chi^2$-distributed with
+$2 V$ degrees of freedom where $V$ is the time-frequency volume of the
+tile.  A burst trigger is identified if the probability of obtaining the
+excess power in a tile from Gaussian noise is smaller than some threshold
+$\alpha$.  For large bursts in the data stream, many tiles can be
+identified as triggers with different sizes and aspect ratios.
 
 
 \subsubsection{$h_{\text{rss}}$ Estimation}
@@ -1131,6 +1120,10 @@ Figure~\ref{fig:testattenuation8_9}
 
 \subsection{Clustering in Excess Power Search}
 \label{section:clustering}
+
+%
+% FIXME: this section is obsolete
+%
 
 The excess power search is a multi-resolution analysis of the
 time-frequency structure of the input time series.  A burst trigger is
@@ -1472,141 +1465,6 @@ EOB waveforms. The $50 p.c.$ efficiency is at $66.5 Mpc$ effective distance.
 \clearpage
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% BURCA:  coincidence analysis code
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Program \prog{lalapps\_burca}}
-\label{program:lalapps-burca}
-\idx[Program]{\prog{lalapps\_burca}}
-
-\begin{entry}
-\item[Name]
-\prog{lalapps\_burca} --- program does burst coincidence analysis.
-
-\item[Synopsis]
-\prog{lalapps\_burca} \newline \hspace*{0.5in}
-[\option{--verbose}] \newline \hspace*{0.5in}
-[\option{--noplayground}] \newline \hspace*{0.5in}
-[\option{--noncoincident}] \newline \hspace*{0.5in}
-[\option{--ignore-playground}] \newline \hspace*{0.5in}
-[\option{--ignore-tfcomparison}] \newline \hspace*{0.5in}
-[\option{--ignore-tcomparison}] \newline \hspace*{0.5in}
-\option{--ifo-a}~\parm{trigfile.a} \newline \hspace*{0.5in}
-\option{--ifo-b}~\parm{trigfile.b} \newline \hspace*{0.5in}
-[\option{--clustertype}] \newline \hspace*{0.5in}
-[\option{--dt}~\parm{deltat}] \newline \hspace*{0.5in}
-[\option{--start-time}~\parm{GPS seconds}] \newline \hspace*{0.5in}
-[\option{--stop-time}~\parm{GPS seconds}] \newline \hspace*{0.5in}
-[\option{--slide-time}~\parm{GPS seconds}] \newline \hspace*{0.5in}
-[\option{--slide-time-ns}~\parm{GPS nanoseconds}] \newline \hspace*{0.5in}
-[\option{--output-dir}~\parm{directory}] \newline \hspace*{0.5in}
-[\option{--number-slides}~\parm{number}] \newline \hspace*{0.5in}
-[\option{--user-tag}] \newline \hspace*{0.5in}
-[\option{--help}] \newline \hspace*{0.5in}
-
-
-\item[Description] 
-\prog{lalapps\_burca} performs coincidence on triggers from the burst
-search code.  It must be called with at least one input file from each 
-instrument.  Currently it outputs the triggers from \option{--ifo\_a} which
-are coincident with triggers from \option{--ifo\_b}.  One can also perform
-time-slided background analysis by using the options \option{--slide-time},
-  \option{--slide-time-ns} and \option{--number-slides}.  The output files
-are of the form H1-BURCA\_H1L1\_P\_0\_H1H2-755518013-345.xml.
-      
-
-\item[Options]\leavevmode
-\begin{entry}
-\item[\option{--verbose}]  Displays some useful messages.
-
-\item[\option{--noncoincident}]  Finds the non-coincident triggers and
-outputs in a file of the form H1-NEGBURCA\_H1L1\_P\_0\_H1H2-755518013-345.xml.
-
-\item[\option{--ignore-playground}] Considers all triggers independent of 
-whether they are playground or non-playground. 
-
-\item[\option{--ignore-tfcomparison}] While comparing triggers they are marked 
-coincident if the triggers lie within +/- \parm{deltaT}(argument of 
-\option{--dt}).
-
-\item[\option{--ignore-tcomparison}] While comparing triggers they are marked 
-coincident if the triggers lie within +/- \parm{deltaT}(argument of 
-\option{--dt}) and if they overlap in frequency band.
-
-\item[\option{--ifo-a} \parm{trigfile.a}]  LIGO lightweight XML file with
-triggers from interferometer A.  This argument can be called multiple
-times.  Triggers are sorted \emph{after} all files have been read in. 
-
-\item[\option{--ifo-b} \parm{trigfile.b}]  LIGO lightweight XML file with
-triggers from interferometer B.  This argument can be called multiple
-times.  Triggers are sorted \emph{after} all files have been read in. 
-
-\item[\option{--start-time} \parm{GPS seconds}]  Ignore triggers with start
-times earlier than \parm{GPS seconds}.
-
-\item[\option{--stop-time} \parm{GPS seconds}]  Ignore triggers with stop
-times later than \parm{GPS seconds}.
-
-\item[\option{--clustertype} \parm{cluster type}] Clusters the coincident 
-triggers and the type of clustering is specified as an option.  The valid
-types are \parm{clusterbypeaktimeandfreq, clusterbytimeandfreq}.  
-
-\item[\option{--dt} \parm{deltat}]  Accept triggers for coincidence comparison 
-if their start times agree within \parm{deltat} msec.  If not supplied,  then
-\parm{deltat} = 0.
-
-\item[\option{--slide-time} \parm{GPS seconds}] The time in GPS seconds by which 
-the triggers are slided in each step for background analysis.
-
-\item[\option{--slide-time-ns} \parm{GPS nanoseconds}] The time in GPS 
-nanoseconds by which the triggers are slided in each step for background 
-analysis.  The total time slided in each step is thus calculated from
-both \option{--slide-time} and \option{--slide-time-ns}.
-
-\item[\option{--number-slides} \parm{number}] Specifies the number of slides
-to be performed for the background analysis.  
-
-\item[\option{--user-tag} \parm{tag}] Optional user tag.  Gets appended to the 
-output file names.
-
-\item[\option{--noplayground}]  Record triggers in the non-playground times.  
-The default behaviour returns only those triggers which lie in the playground 
-data set.  
-
-\item[\option{--help}]  Print a help message.
-\end{entry}
-
-\item[Coincidence Example]
-\begin{verbatim}
-lalapps_burca \
---ifo-a L-POWER-734357353-1024.xml \
---ifo-b H-POWER-734357353-1024.xml \
---dt 10 \
---start-time 734357353 \
---stop-time 734358353 \
---noplayground
-\end{verbatim}
-
-\item[Background Example]
-\begin{verbatim}
-lalapps_burca \
---ifo-a L-POWER-734357353-1024.xml \
---ifo-b H-POWER-734357353-1024.xml \
---dt 10 \
---slide-time 4 \
---slide-time-ns 250000000 \
---number-slides 50 \
---start-time 734357353 \
---stop-time 734358353 \
---noplayground
-\end{verbatim}
-
-\item[Author] 
-Patrick Brady and Saikat Ray-Majumder
-\end{entry}
-\clearpage
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % BINJ:  injection generation code
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Program \prog{lalapps\_binj}}
@@ -1859,318 +1717,4 @@ lalapps_binj \
 \item[Author] 
 Jolien Creighton, Patrick Brady, Duncan Brown, Saikat Ray-Majumder, Kipp
 Cannon
-\end{entry}
-\clearpage
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% BINJ_FIND:  injection finding code
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Program \prog{lalapps\_binj\_find}}
-\label{program:lalapps-binj-find}
-\idx[Program]{\prog{lalapps\_binj\_find}}
-
-\begin{entry}
-\item[Name]
-\prog{lalapps\_binj\_find} --- Finds the triggers corresponding to injections.
-
-\item[Synopsis]
-\prog{lalapps\_binj\_find} \newline \hspace*{0.5in}
-[\option{--verbose}] \newline \hspace*{0.5in}
-[\option{--printresult}] \newline \hspace*{0.5in}
-[\option{--playground}] \newline \hspace*{0.5in}
-[\option{--noplayground}] \newline \hspace*{0.5in}
-[\option{--best-confidence}] \newline \hspace*{0.5in}
-[\option{--best-peaktime}] \newline \hspace*{0.5in}
-[\option{--help}] \newline \hspace*{0.5in}
-\option{--input-trig}~\parm{trigger file} \newline \hspace*{0.5in}
-\option{--input-burstinj}~\parm{burst injection file} \newline \hspace*{0.5in}
-[\option{--input-inspinj}~\parm{inspiral injection file}] \newline \hspace*{0.5in}
-\option{--output-inj-made}~\parm{output injection} \newline \hspace*{0.5in}
-[\option{--max-confidence}~\parm{max confidence}] \newline \hspace*{0.5in}
-\option{--gps-start-time}~\parm{tstart} \newline \hspace*{0.5in}
-\option{--gps-end-time}~\parm{tend} \newline \hspace*{0.5in}
-[\option{--min-centralfreq}~\parm{min centralfreq}] \newline \hspace*{0.5in}
-[\option{--max-centralfreq}~\parm{max centralfreq}] \newline \hspace*{0.5in}
-\option{--output-inj-found}~\parm{output inj made} \newline \hspace*{0.5in}
-\option{--compare-choice}~\parm{compare choice} \newline \hspace*{0.5in}
-\option{--output-trig}~\parm{output-trig} \newline \hspace*{0.5in}
-
-\item[Description] 
-\prog{lalapps\_binj\_find} finds the triggers which correspond to an injection.
-
-
-It takes in the list of injections that were generated by the \prog{lalapps\_binj} 
-and first checks if the time of an injection is within times
-for which triggers have been generated.  If triggers were generated then the program 
-scans through the list of triggers produced by the pipeline searching for one
-which corresponds to the injection.  Then this comparison is repeated for all the 
-injections in the list.
-
-The method of comparison is decided by the \option{--compare-choice}.  By default
-the program checks if the time and frequency of the injection lies inside the 
-time-frequency tile of the trigger.  One can also choose to compare if only the
-time of the injection lies inside the time duration of the trigger.  However in the
-case of waveforms which do not have a characteristic frequency only the time comparison 
-is done.
- 
-The outputs of the program are in three seperate files: one containing the list of the 
-injections that were actually made,  one containing the list of injections that were found
-and the other containing the list of triggers which correspond to the injections that were 
-found.  Let us explain the contents of the first file a bit more.  \prog{lalapps\_binj}
-produces a list of injections all of which may not be actually analysed,  for eg.
-analysis of a particular stretch of data may fail for some reason while injections were 
-listed for those times.  So to count the number of injections that were actually made
-one should account for the failed jobs.  The argument to \option{--output-inj-made} in
-fact contains this list of injections that were actually made.
-   
-
-\item[\option{--verbose}]
-Optional.  Print useful information while executing the code.
-
-\item[\option{--printresult}]
-Optional.  Writes the number of injections that were made and the number that were found with
-the total time that was analyzed.
-
-\item[\option{--playground}]
-Optional.  Compare injections and triggers iff they lie in the playground times.
-
-\item[\option{--noplayground}]
-OPtional.  Compare injections and triggers iff they lie outside the playground times. 
-
-\item[\option{--best-confidence}]
-Optional.  When multiple triggers are found corresponding to a single injection,  the
-one with the maximum confidence is marked as the trigger corresponding to the injection.
-
-\item[\option{--best-peaktime}]
-Optional.  When multiple triggers are found corresponding to a single injection,  the
-one with the peak time matching most closely with the injection time is marked as the 
-trigger corresponding to that particular injection.
-
-\item[\option{--help}]
-Optional.  Prints the usage information.
-
-\item[\option{--input-trig} \parm{trigfile}]
-This is a .txt file containing the list of .xml trigger files produced by the pipeline.
-The trigger files listed in the txt file are then searched for triggers matching the 
-injections.
-
-\item[\option{--input-burstinj} \parm{injection file}]
-This is a .txt file containing the list of .xml injection files produced by the 
-\prog{lalapps\_binj}. The injections in the files listed in the txt file are then 
-compared with the triggers produced by the pipeline to find matching triggers.
-
-\item[\option{--input-inspinj} \parm{injection file}]
-This is a .txt file containing the list of .xml injection files produced by the 
-\prog{lalapps\_bbhinj}. The injections in the files listed in the txt file are then searched 
-for compared with the triggers produced by the pipeline to find matching triggers.
-
-\item[\option{--output-inj-made} \parm{made injection file}]
-This file contains the list of injections that were actually made.
-
-\item[\option{--max-confidence} \parm{max-confidence}]
-The triggers having a confidence lower than max-confidence are only concidered for
-the comparison with the injections.
-
-\item[\option{--gps-start-time} \parm{gps-start-time}]
-The triggers and injections are considered for comparison if only they occur at times after 
-the gps time specified as this option.
-
-\item[\option{--gps-start-time} \parm{gps-end-time}]
-The triggers and injections are considered for comparison if only they occur at times before 
-the gps time specified as this option.
-
-\item[\option{--min-centralfreq} \parm{min-centralfreq}]
-Optional.  Triggers are only considered for comparison if they have central frequency more than the 
-frequency specified as this option.
-
-\item[\option{--max-centralfreq} \parm{max-centralfreq}]
-Optional.  Triggers are only considered for comparison if they have central frequency less than the 
-frequency specified as this option.
-
-\item[\option{--output-inj-found} \parm{output-inj-found}]
-This file contains the list of injections that were found to have a corresponding trigger.
-
-\item[\option{--compare-choice} \parm{compare-choice}]
-This specifies the different types of comparisons that may be performed while searching 
-for triggers corresponding to an injection. As of now the compare-choices are 
-\parm{comparebytimeandfreq, comparebytime}.  By default the choice is \parm{comparebytimeandfreq}, 
-when both time and frequency are compared to determine if an injection has been found.  The other
-choice is \parm{comparebytime} when only the time is compared for the detection purpose.
-
-\item[\option{--output-trig} \parm{output-trig}]
-This file contains the list of triggers that are found matching with some injections.
-
-\item[Example]
-\begin{verbatim}
-lalapps_binj_find \
---input-trig H1.txt \
---input-burstinj burstinj.txt \
---output-trig H1.xml \
---output-inj-made H1injmade.xml \
---output-inj-found H1injfound.xml \
---best-peaktime \
---gps-start-time 753601043 \
---gps-end-time 757346760 \
---printresult \
---compare-choice comparebytimeandfreq
-\end{verbatim}
-
-\item[Author] 
-Patrick Brady, Saikat Ray-Majumder
-\end{entry}
-\clearpage
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% bread:  trigger file manipulation
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Program \prog{lalapps\_bread}}
-\label{program:lalapps-bread}
-\idx[Program]{\prog{lalapps\_bread}}
-
-\begin{entry}
-\item[Name]
-\prog{lalapps\_bread} -- reads in triggers from multiple xml files into one
-single xml file 
-
-\item[Synopsis]
-\prog{lalapps\_bread} \newline \hspace*{0.5in}
-[\option{--help}] \newline \hspace*{0.5in}
-\option{--input}~\parm{filename} \newline \hspace*{0.5in}
-\option{--output}~\parm{filename} \newline \hspace*{0.5in}
-[\option{--outtxt}~\parm{filename}] \newline \hspace*{0.5in}
-[\option{--max-confidence}~\parm{maximum conf}] \newline \hspace*{0.5in}
-[\option{--noplayground}] \newline \hspace*{0.5in}
-[\option{--sort}] \newline \hspace*{0.5in}
-[\option{--cluster}] \newline \hspace*{0.5in}
-[\option{--min-duration}~\parm{min dur}] \newline \hspace*{0.5in}
-[\option{--max-duration}~\parm{max dur}] \newline \hspace*{0.5in}
-[\option{--min-centralfreq}~\parm{min centralfreq}] \newline \hspace*{0.5in}
-[\option{--max-centralfreq}~\parm{max centralfreq}] \newline \hspace*{0.5in}
-[\option{--max-bandwidth}~\parm{max bw}] \newline \hspace*{0.5in}
-[\option{--min-bandwidth}~\parm{min bw}] \newline \hspace*{0.5in}
-[\option{--min-amplitude}~\parm{min amp}] \newline \hspace*{0.5in}
-[\option{--max-amplitude}~\parm{max amp}] \newline \hspace*{0.5in}
-[\option{--min-snr}~\parm{min snr}] \newline \hspace*{0.5in}
-[\option{--max-snr}~\parm{max snr}] \newline \hspace*{0.5in}
-[\option{--min-start-time}~\parm{min start time}] \newline \hspace*{0.5in}
-[\option{--max-start-time}~\parm{max start time}] \newline \hspace*{0.5in}
-[\option{--globtrig}] \newline \hspace*{0.5in}
-[\option{--verbose}]
-
-\item[Description] 
-\prog{lalapps\_bread} reads in triggers from multiple xml files, does any
-requested cuts specified by the user and then writes the triggers in a
-single xml file.  
-
-\item[Options]\leavevmode
-\begin{entry}
-\item[\option{--help}] Print a help message.
-
-\item[\option{--input} \parm{cache file}]
-Obtain the locations of input \texttt{.xml} trigger files from the LAL
-cache file \parm{cache file}.  LAL cache files are explained in the
-``framedata'' package in LAL and can be constructed by making calls to
-\prog{LSCDataFind} on some systems.  
-
-
-\item[\option{--output} \parm{filename}]
-\prog{lalapps\_bread} writes all the triggers out in one single xml file,
-specified by filename.  The (old) option \option{--outfile} can also be
-used.
-
-\item[\option{--outtxt} \parm{filename}]
-Optional.  If this option is specified \prog{lalapps\_bread} writes all the 
-triggers out in one single txt file, specified by filename. 
-
-\item[\option{--max-confidence} \parm{maximum conf}]
-Optional. Outputs only the triggers with a confidence less than or equal to
-the given value.
-
-\item[\option{--noplayground}]
-Optional. By default only triggers lying inside the playground are output.
-If this option is specified then all the triggers will be output. 
-
-\item[\option{--sort}]
-Not properly implemented yet. Now the triggers are always sorted in time
-before being written out.
-
-\item[\option{--cluster}]
-Apply the LAL SnglBurstTable clustering algorithm to the triggers before
-applying any cuts.  This is the same algorithm used by
-\prog{lalapps\_power}.  Running \prog{lalapps\_power} without clustering,
-followed by a clustering pass with \prog{lalapps\_bread} is equivalent to
-applying clustering in \prog{lalapps\_power}.
-
-\item[\option{--min-duration} \parm{duration}]
-Optional. Outputs only the triggers with a duration greater than or equal
-to the value specified.
-
-\item[\option{--max-duration} \parm{duration}]
-Optional. Outputs only the triggers with a durations less than or equal to
-the value specified.
-
-\item[\option{--min-centralfreq} \parm{frequency}]
-Optional. Outputs only the triggers with a central frequency greater than
-or equal to the value specified.
-
-\item[\option{--max-centralfreq} \parm{frequency}]
-Optional. Outputs only the triggers with a central frequency less than or
-equal to the value specified.
-
-\item[\option{--min-bandwidth} \parm{bandwidth}]
-Optional. Outputs only the triggers with a bandwidth greater than or equal
-to the value specified.
-
-\item[\option{--max-bandwidth} \parm{bandwidth}]
-Optional. Outputs only the triggers with a bandwidth less than or equal to
-the value specified.
-
-\item[\option{--min-amplitude} \parm{amplitude}]
-Optional. Outputs only the triggers with an amplitude greater than or equal
-to the value specified.
-
-\item[\option{--max-amplitude} \parm{amplitude}]
-Optional. Outputs only the triggers with an amplitude less than or equal to
-the value specified.
-
-\item[\option{--min-snr} \parm{snr}]
-Optional. Outputs only the triggers with a SNR greater than or equal to the
-value specified.
-
-\item[\option{--max-snr} \parm{snr}]
-Optional. Outputs only the triggers with a SNR less than or equal to the
-value specified.
-
-\item[\option{--min-start-time} \parm{time}]
-Optional. Outputs only the triggers with a start time later than or equal
-to the time specified.
-
-\item[\option{--max-start-time} \parm{time}]
-Optional. Outputs only the triggers with a start time earlier than or equal
-to the time specified.
-
-\item[\option{--globtrig} \parm{globtrig}]
-Optional.  When this option is specified with the directory containing the 
-triggers in it as an argument the \prog{lalapps\_bread} globs the triggers
-from the directory and writes to an output file as specified.
-   
-\item[\option{--verbose}]
-Optional. Prints out detailed message as the program runs including the
-total no. of triggers.
-
-\end{entry}
-
-\item[Example]
-\begin{verbatim}
-lalapps_bread \
---input H1.txt \
---output H1.xml \
---max-confidence -50 \
---verbose
-\end{verbatim}
-
-\item[Author] 
-Patrick Brady, Saikat Ray Majumder, Kipp Cannon
 \end{entry}
