@@ -54,8 +54,8 @@ extern int optind, opterr, optopt;
 
 RCSID("$Id$");
 
-#define CVS_NAME "$Header$"
-#define CVS_NAME "$Author$"
+#define CVS_HEADER "$Header$"
+#define CVS_AUTHOR "$Author$"
 #define CVS_NAME "$Name$"
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
