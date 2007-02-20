@@ -574,6 +574,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglRingdownTable->mass,
               tablePtr.snglRingdownTable->spin,
               tablePtr.snglRingdownTable->epsilon,
+              tablePtr.snglRingdownTable->num_clust_trigs,
               tablePtr.snglRingdownTable->amplitude,
               tablePtr.snglRingdownTable->snr,
               tablePtr.snglRingdownTable->eff_dist,

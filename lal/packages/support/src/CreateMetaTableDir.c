@@ -209,11 +209,12 @@ MetaTableDirectory* XLALCreateMetaTableDir(
           {"mass",                    -1, 8},
           {"spin",                    -1, 9},
           {"epsilon",                 -1, 10},
-          {"amplitude",               -1, 11},
-          {"snr",                     -1, 12},
-          {"eff_dist",                -1, 13},
-          {"sigma_sq",                -1, 14},
-          {"event_id",                -1, 15},
+          {"num_clust_trigs",         -1, 11},
+          {"amplitude",               -1, 12},
+          {"snr",                     -1, 13},
+          {"eff_dist",                -1, 14},
+          {"sigma_sq",                -1, 15},
+          {"event_id",                -1, 16},
           {NULL,                       0, 0}
         };
         for ( i=0 ; tmpTableDir[i].name; ++i )

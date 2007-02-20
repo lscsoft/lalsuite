@@ -192,6 +192,7 @@ fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:phase\" Type=\"rea
 fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:mass\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:spin\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:epsilon\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:num_clust_trigs\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:amplitude\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:snr\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:eff_dist\" Type=\"real_4\"/>\n" , fp ) == EOF || \
@@ -200,7 +201,7 @@ fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:event_id\" Type=\"
 fputs( "      <Stream Name=\"sngl_ringdowngroup:sngl_ringdown:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF ) 
 
 #define SNGL_RINGDOWN_ROW \
-"         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%22.16e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%22.16e,\"sngl_ringdown:event_id:%lld\""    
+"         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%22.16e,%e,%e,%e,%e,%e,%e,%d,%e,%e,%e,%22.16e,\"sngl_ringdown:event_id:%lld\""    
 
 #define PRINT_LIGOLW_XML_SIM_BURST(fp) ( \
 fputs( "   <Table Name=\"sim_burstgroup:sim_burst:table\">\n" , fp ) == EOF || \

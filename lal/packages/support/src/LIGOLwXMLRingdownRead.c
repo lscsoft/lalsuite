@@ -197,21 +197,25 @@ SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 11 )
       {
-        thisEvent->amplitude = r4colData;
+        thisEvent->num_clust_trigs = i4colData;
       }
       else if ( tableDir[j].idx == 12 )
       {
+        thisEvent->amplitude = r4colData;
+      }
+      else if ( tableDir[j].idx == 13 )
+      {
         thisEvent->snr = r4colData;
       }
-      else if ( tableDir[j].idx == 13)
+      else if ( tableDir[j].idx == 14)
       {
         thisEvent->eff_dist = r4colData;
       }
-      else if ( tableDir[j].idx == 14 )
+      else if ( tableDir[j].idx == 15 )
       {
         thisEvent->sigma_sq = r8colData;
       }
-      else if ( tableDir[j].idx == 15 )
+      else if ( tableDir[j].idx == 16 )
       {
         /* JC: AVOID BUG IN METAIO -- BAD */
         union { const char *cs; const unsigned char *cus; } bad;

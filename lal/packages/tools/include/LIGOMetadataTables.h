@@ -430,6 +430,7 @@ tagSnglRingdownTable
   REAL4         mass;
   REAL4         spin;
   REAL4         epsilon;
+  INT4		num_clust_trigs;
   REAL4         amplitude;
   REAL4         snr;
   REAL4         eff_dist;
