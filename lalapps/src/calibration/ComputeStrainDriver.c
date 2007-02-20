@@ -42,6 +42,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/AVFactories.h>
 #include <lal/ConfigFile.h>
 #include <lal/TimeSeries.h>
+#include <lalapps.h>
 
 extern char *optarg;
 extern int optind, opterr, optopt;
@@ -50,6 +51,16 @@ extern int optind, opterr, optopt;
 
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
+
+
+NRCSID( STRINGSEARCHC, "ComputeStrainDriver $Id$");
+RCSID( "ComputeStrainDriver $Id$");
+
+#define PROGRAM_NAME "ComputeStrainDriver"
+#define CVS_REVISION "$Revision$"
+#define CVS_SOURCE "$Source$"
+#define CVS_DATE "$Date$"
+
 
 /***************************************************************************/
 
