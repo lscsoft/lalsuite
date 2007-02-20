@@ -52,7 +52,6 @@ extern int optind, opterr, optopt;
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
 
-
 RCSID("$Id$");
 
 #define CVS_NAME "$Header$"
@@ -63,7 +62,6 @@ RCSID("$Id$");
 #define CVS_DATE "$Date$"
 
 #define PROGRAM_NAME "ComputeStrainDriver"
-
 
 /***************************************************************************/
 
