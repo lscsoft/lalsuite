@@ -47,13 +47,12 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 extern char *optarg;
 extern int optind, opterr, optopt;
 
-#define MAXFORDER 100                     /* Maximum filter order */
-
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
 
 RCSID("$Id$");
 
+#define CVS_ID "$Id$"
 #define CVS_HEADER "$Header$"
 #define CVS_AUTHOR "$Author$"
 #define CVS_NAME "$Name$"
