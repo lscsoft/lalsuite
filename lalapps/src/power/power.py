@@ -514,8 +514,8 @@ def init_job_types(config_parser, types = ["datafind", "binj", "power", "lladd",
 
 def psds_from_job_length(powerjob, t):
 	"""
-	Return the number of PSDs that can fit into a job of length t.  In
-	general, the return value is a non-integer.
+	Return the number of PSDs that can fit into a job of length t
+	seconds.  In general, the return value is a non-integer.
 	"""
 	if t < 0.0:
 		raise ValueError, t
@@ -524,8 +524,8 @@ def psds_from_job_length(powerjob, t):
 
 def job_length_from_psds(powerjob, psds):
 	"""
-	From the analysis parameters and a count of PSDs, return the length of
-	the job in seconds.
+	From the analysis parameters and a count of PSDs, return the length
+	of the job in seconds.
 	"""
 	if psds < 1:
 		raise ValueError, psds
@@ -557,7 +557,7 @@ def segment_ok(powerjob, segment):
 	"""
 	Return True if the segment can be analyzed using lalapps_power.
 	"""
-	return psds_from_job_length(powerjob, float(segment.duration())) >= 1.0
+	return psds_from_job_length(powerjob, float(abs(segment))) >= 1.0
 
 
 #
@@ -572,7 +572,7 @@ def segment_ok(powerjob, segment):
 def make_datafind_fragment(dag, instrument, seg):
 	datafind_pad = 512
 	node = pipeline.LSCDataFindNode(datafindjob)
-	node.set_name("LSCdataFind-%s-%s-%s" % (instrument, int(seg[0]), int(seg.duration())))
+	node.set_name("LSCdataFind-%s-%s-%s" % (instrument, int(seg[0]), int(abs(seg))))
 	node.set_start(seg[0] - datafind_pad)
 	node.set_end(seg[1] + 1)
 	node.set_observatory(instrument[0])
@@ -585,7 +585,7 @@ def make_datafind_fragment(dag, instrument, seg):
 
 def make_lladd_fragment(dag, parents, instrument, seg, tag, preserves = []):
 	node = LigolwAddNode(lladdjob)
-	node.set_name("lladd-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(seg.duration())))
+	node.set_name("lladd-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(abs(seg))))
 	for parent in parents:
 		node.add_parent(parent)
 		node.add_input_cache(parent.get_output_cache())
@@ -596,7 +596,7 @@ def make_lladd_fragment(dag, parents, instrument, seg, tag, preserves = []):
 
 def make_power_fragment(dag, parents, instrument, seg, tag, framecache, injargs = {}):
 	node = PowerNode(powerjob)
-	node.set_name("lalapps_power-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(seg.duration())))
+	node.set_name("lalapps_power-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(abs(seg))))
 	map(node.add_parent, parents)
 	node.set_cache(framecache)
 	node.set_ifo(instrument)
@@ -612,7 +612,7 @@ def make_power_fragment(dag, parents, instrument, seg, tag, framecache, injargs 
 
 def make_bucut_fragment(dag, parents, instrument, seg, tag):
 	node = BucutNode(bucutjob)
-	node.set_name("ligolw_bucut-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(seg.duration())))
+	node.set_name("ligolw_bucut-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(abs(seg))))
 	for parent in parents:
 		node.add_parent(parent)
 		node.add_input_cache(parent.get_output_cache())
@@ -648,7 +648,7 @@ def make_binj_fragment(dag, seg, tag, offset, flow, fhigh):
 
 def make_bucluster_fragment(dag, parents, instrument, seg, tag):
 	node = BuclusterNode(buclusterjob)
-	node.set_name("ligolw_bucluster-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(seg.duration())))
+	node.set_name("ligolw_bucluster-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(abs(seg))))
 	for parent in parents:
 		node.add_parent(parent)
 		node.add_input_cache(parent.get_output_cache())
@@ -659,7 +659,7 @@ def make_bucluster_fragment(dag, parents, instrument, seg, tag):
 
 def make_burca_fragment(dag, parents, instrument, seg, tag):
 	node = BurcaNode(burcajob)
-	node.set_name("ligolw_burca-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(seg.duration())))
+	node.set_name("ligolw_burca-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(abs(seg))))
 	for parent in parents:
 		node.add_parent(parent)
 		node.add_input_cache(parent.get_output_cache())
@@ -670,7 +670,7 @@ def make_burca_fragment(dag, parents, instrument, seg, tag):
 
 def make_binjfind_fragment(dag, parents, instrument, seg, tag):
 	node = BinjfindNode(binjfindjob)
-	node.set_name("ligolw_binjfind-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(seg.duration())))
+	node.set_name("ligolw_binjfind-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(abs(seg))))
 	for parent in parents:
 		node.add_parent(parent)
 		node.add_input_cache(parent.get_output_cache())
@@ -688,12 +688,20 @@ def make_binjfind_fragment(dag, parents, instrument, seg, tag):
 #
 
 
-def make_multipower_fragment(dag, powerparents, lladdparents, framecache, seglist, instrument, tag, injargs = {}):
+def make_multipower_fragment(dag, powerparents, lladdparents, instrument, seglist, tag, framecache, injargs = {}, clustering = False):
 	segment = seglist.extent()
 	powernodes = [make_power_fragment(dag, powerparents, instrument, seg, tag, framecache, injargs) for seg in seglist]
+	if clustering:
+		# cluster individual power jobs' outputs (keeps file sizes
+		# small, to lower risk of lladd running out of memory)
+		powernodes = [make_bucluster_fragment(dag, [powernode], instrument, segments.segment(powernode.get_start(), powernode.get_end()), tag) for powernode in powernodes]
 	lladdnode = make_lladd_fragment(dag, powernodes + lladdparents, instrument, segment, "POWER_%s" % tag, preserves = reduce(list.__add__, [node.get_output_cache() for node in lladdparents], []))
-	lladdnode.set_output("%s-POWER_%s-%s-%s.xml.gz" % (instrument, tag, int(segment[0]), int(segment.duration())))
-	return lladdnode
+	lladdnode.set_output("%s-POWER_%s-%s-%s.xml.gz" % (instrument, tag, int(segment[0]), int(abs(segment))))
+	if clustering:
+		# recluster the triggers following lladd
+		return make_bucluster_fragment(dag, lladdnode, instrument, segment, tag)
+	else:
+		return lladdnode
 
 
 #
@@ -705,7 +713,7 @@ def make_multipower_fragment(dag, powerparents, lladdparents, framecache, seglis
 #
 
 
-def make_power_segment_fragment(dag, datafindnode, segment, instrument, psds_per_job, tag, verbose = False):
+def make_power_segment_fragment(dag, datafindnode, instrument, segment, tag, psds_per_job, clustering = False, verbose = False):
 	"""
 	Construct a DAG fragment for an entire segment, splitting the
 	segment into multiple power jobs.
@@ -713,7 +721,7 @@ def make_power_segment_fragment(dag, datafindnode, segment, instrument, psds_per
 	seglist = split_segment(powerjob, segment, psds_per_job)
 	if verbose:
 		print >>sys.stderr, "Segment split: " + str(seglist)
-	return make_multipower_fragment(dag, [datafindnode], [], datafindnode.get_output(), seglist, instrument, tag)
+	return make_multipower_fragment(dag, [datafindnode], [], instrument, seglist, tag, datafindnode.get_output(), clustering = clustering)
 
 
 #
@@ -732,7 +740,7 @@ def make_multibinj_fragment(dag, seg, tag):
 	binjnodes = [make_binj_fragment(dag, seg, tag, 0.0, flow, fhigh)]
 
 	node = make_lladd_fragment(dag, binjnodes, "ALL", seg, tag)
-	node.set_output("HL-%s-%d-%d.xml" % (tag, int(seg[0]), int(seg.duration())))
+	node.set_output("HL-%s-%d-%d.xml" % (tag, int(seg[0]), int(abs(seg))))
 	return node
 
 
@@ -745,9 +753,9 @@ def make_multibinj_fragment(dag, seg, tag):
 #
 
 
-def make_injection_segment_fragment(dag, datafindnode, binjnode, segment, instrument, psds_per_job, tag, verbose = False):
+def make_injection_segment_fragment(dag, datafindnode, binjnode, segment, instrument, psds_per_job, tag, clustering = False, verbose = False):
 	seglist = split_segment(powerjob, segment, psds_per_job)
 	if verbose:
 		print >>sys.stderr, "Injections split: " + str(seglist)
-	return make_multipower_fragment(dag, [datafindnode, binjnode], [], datafindnode.get_output(), seglist, instrument, "INJECTIONS_%s" % tag, injargs = {"burstinjection-file": binjnode.get_output_cache()[0].path()})
+	return make_multipower_fragment(dag, [datafindnode, binjnode], [], instrument, seglist, "INJECTIONS_%s" % tag, datafindnode.get_output(), injargs = {"burstinjection-file": binjnode.get_output_cache()[0].path()}, clustering = clustering)
 

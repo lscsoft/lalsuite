@@ -152,7 +152,7 @@ except Exception, e:
 # =============================================================================
 #
 
-if options.seg.duration() < 3600:
+if abs(options.seg) < 3600:
 	psds_per_job = 4
 	psds_per_injection = 4
 else:
@@ -276,7 +276,7 @@ def make_publish_fragment(dag, tag, parent, destination):
 #
 
 def make_burst2mon_fragment(dag, parent, instrument, seg, tag):
-	cluster_output = "%s-POWERMON_%s-%s-%s.xml" % (instrument, tag, int(seg[0]), int(seg.duration()))
+	cluster_output = "%s-POWERMON_%s-%s-%s.xml" % (instrument, tag, int(seg[0]), int(abs(seg)))
 	cluster = power.make_bucluster_fragment(dag, [], instrument, seg, "POWERMON_%s" % tag)
 	cluster.add_parent(parent)
 	cluster.set_pre_script("/bin/cp %s %s" % (parent.get_output_files()[0], cluster_output))
@@ -328,7 +328,7 @@ dag.set_dag_file(options.dag_name)
 
 datafindfrag = power.make_datafind_fragment(dag, options.instrument, options.seg)
 
-darmpowerfrag = power.make_power_segment_fragment(dag, datafindfrag, options.seg, options.instrument, psds_per_job, options.user_tag)
+darmpowerfrag = power.make_power_segment_fragment(dag, datafindfrag, options.instrument, options.seg, options.user_tag, psds_per_job, clustering = options.enable_clustering)
 if "cluster" in power.powerjob.get_opts():
 	darmpowerfrag = power.make_bucluster_fragment(dag, [darmpowerfrag], options.instrument, options.seg, options.user_tag)
 
@@ -336,7 +336,7 @@ make_publish_fragment(dag, "POWER", darmpowerfrag, options.publish_dest)
 if options.dmtmon_dest:
 	make_burst2mon_fragment(dag, darmpowerfrag, options.instrument, options.seg, options.user_tag)
 
-injpowerfrag = power.make_injection_segment_fragment(dag, datafindfrag, options.seg, options.instrument, psds_per_injection, options.user_tag)
+injpowerfrag = power.make_injection_segment_fragment(dag, datafindfrag, options.seg, options.instrument, psds_per_injection, options.user_tag, clustering = options.enable_clustering)
 if "cluster" in power.powerjob.get_opts():
 	injpowerfrag = power.make_bucluster_fragment(dag, [injpowerfrag], options.instrument, options.seg, "INJECTIONS_%s" % options.user_tag)
 

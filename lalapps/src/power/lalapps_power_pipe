@@ -185,18 +185,14 @@ def make_single_instrument_fragment(dag, options, instrument, seglist, binjnode 
 		datafindfrag = power.make_datafind_fragment(dag, instrument, seg)
 
 		# a segment without injections
-		node = power.make_power_segment_fragment(dag, datafindfrag, seg, instrument, options.psds_per_power, options.tag, verbose = options.verbose)
-		if options.enable_clustering:
-			node = power.make_bucluster_fragment(dag, [node], instrument, seg, options.tag)
+		node = power.make_power_segment_fragment(dag, datafindfrag, instrument, seg, options.tag, options.psds_per_power, clustering = options.enable_clustering, verbose = options.verbose)
 
 		# store fragment
 		powerfrags.append(node)
 
 		# a segment with injections
 		if binjnode != None:
-			node = power.make_injection_segment_fragment(dag, datafindfrag, binjnode, seg, instrument, options.psds_per_injection, options.tag, verbose = options.verbose)
-			if options.enable_clustering:
-				node = power.make_bucluster_fragment(dag, [node], instrument, seg, "INJECTIONS_%s" % options.tag)
+			node = power.make_injection_segment_fragment(dag, datafindfrag, binjnode, seg, instrument, options.psds_per_injection, options.tag, clustering = options.enable_clustering, verbose = options.verbose)
 
 			# store fragment
 			injpowerfrags.append(node)
