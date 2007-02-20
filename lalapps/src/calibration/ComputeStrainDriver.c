@@ -53,7 +53,7 @@ extern int optind, opterr, optopt;
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
 
 
-RCSID( "$Id$");
+RCSID("$Id$");
 
 #define PROGRAM_NAME "ComputeStrainDriver"
 #define CVS_NAME "$Name$"
