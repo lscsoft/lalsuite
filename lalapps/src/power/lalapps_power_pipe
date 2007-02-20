@@ -18,6 +18,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+
 #
 # =============================================================================
 #
@@ -25,6 +26,7 @@
 #
 # =============================================================================
 #
+
 
 """
 Excess power offline pipeline construction script.
@@ -60,6 +62,7 @@ from lalapps import power
 # =============================================================================
 #
 
+
 def parse_command_line():
 	parser = OptionParser(version="%prog CVS $Id$")
 	parser.add_option("--condor-log-dir", metavar = "path", default = ".", help = "set directory for Condor log (default = .)")
@@ -88,13 +91,15 @@ except ValueError, e:
 # =============================================================================
 #
 
+
 def parse_config_file(options):
 	if options.verbose:
-		print >>sys.stderr, "reading %s..." % options.config_file
+		print >>sys.stderr, "reading %s ..." % options.config_file
 	config = ConfigParser.SafeConfigParser()
 	config.read(options.config_file)
 
 	options.tag = config.get("pipeline", "user_tag")
+	options.enable_clustering = config.getboolean("pipeline", "enable_clustering")
 
 	options.seglistdict = segments.segmentlistdict()
 	for ifo in config.get("pipeline", "ifos").split():
@@ -116,6 +121,7 @@ config_parser = parse_config_file(options)
 # =============================================================================
 #
 
+
 power.init_job_types(config_parser)
 
 
@@ -127,9 +133,10 @@ power.init_job_types(config_parser)
 # =============================================================================
 #
 
+
 def compute_segment_lists(seglistdict, time_slides, full_segments = True, verbose = False):
 	if verbose:
-		print >>sys.stderr, "constructing segment list..."
+		print >>sys.stderr, "constructing segment list ..."
 
 	if not full_segments:
 		# extract the segments that are coincident under the time
@@ -166,19 +173,20 @@ def compute_segment_lists(seglistdict, time_slides, full_segments = True, verbos
 # =============================================================================
 #
 
+
 def make_single_instrument_fragment(dag, options, instrument, seglist, binjnode = None):
 	powerfrags = []
 	injpowerfrags = []
 	for seg in seglist:
 		if options.verbose:
-			print >>sys.stderr, "generating fragment: %s: %s -- %s" % (instrument, str(seg[0]), str(seg[1]))
+			print >>sys.stderr, "generating %s fragment %s" % (instrument, str(seg))
 
 		# LSCdataFind
 		datafindfrag = power.make_datafind_fragment(dag, instrument, seg)
 
 		# a segment without injections
 		node = power.make_power_segment_fragment(dag, datafindfrag, seg, instrument, options.psds_per_power, options.tag, verbose = options.verbose)
-		if "cluster" in power.powerjob.get_opts():
+		if options.enable_clustering:
 			node = power.make_bucluster_fragment(dag, [node], instrument, seg, options.tag)
 
 		# store fragment
@@ -187,7 +195,7 @@ def make_single_instrument_fragment(dag, options, instrument, seglist, binjnode 
 		# a segment with injections
 		if binjnode != None:
 			node = power.make_injection_segment_fragment(dag, datafindfrag, binjnode, seg, instrument, options.psds_per_injection, options.tag, verbose = options.verbose)
-			if "cluster" in power.powerjob.get_opts():
+			if options.enable_clustering:
 				node = power.make_bucluster_fragment(dag, [node], instrument, seg, "INJECTIONS_%s" % options.tag)
 
 			# store fragment
@@ -203,6 +211,7 @@ def make_single_instrument_fragment(dag, options, instrument, seglist, binjnode 
 #
 # =============================================================================
 #
+
 
 def make_coinc_stage(dag, parents, tag, time_slides, time_slides_cache_entry, binjnode = None, verbose = False):
 	if verbose:
@@ -261,6 +270,7 @@ def make_coinc_stage(dag, parents, tag, time_slides, time_slides_cache_entry, bi
 # =============================================================================
 #
 
+
 time_slides = ligolw_cafe.get_time_slides(options.time_slides.path(), verbose = options.verbose, gz = options.time_slides.path()[-3:] == ".gz")
 
 compute_segment_lists(options.seglistdict, time_slides, full_segments = options.full_segments, verbose = options.verbose)
@@ -270,19 +280,23 @@ power.make_dag_directories(config_parser)
 dag = pipeline.CondorDAG(tempfile.mkstemp(".log", "power_", options.condor_log_dir)[1])
 dag.set_dag_file(os.path.splitext(filenames[0])[0])
 
+
 #
 # DAG "preamble":  injection and time slide lists.
 #
+
 
 if options.no_injections:
 	binjnode = None
 else:
 	binjnode = power.make_multibinj_fragment(dag, options.seglistdict.extent_all(), "INJECTIONS_%s" % options.tag)
 
+
 #
 # Build single instrument fragments, one for each instrument for each
 # segment.
 #
+
 
 sngl_inst_pwrfrags = []
 sngl_inst_injfrags = []
@@ -296,6 +310,7 @@ for instrument, seglist in options.seglistdict.iteritems():
 # Coincidence
 #
 
+
 make_coinc_stage(dag, sngl_inst_pwrfrags, options.tag, time_slides, options.time_slides, verbose = options.verbose)
 make_coinc_stage(dag, sngl_inst_injfrags, "INJECTIONS_%s" % options.tag, time_slides, options.time_slides, binjnode = binjnode, verbose = options.verbose)
 
@@ -304,8 +319,9 @@ make_coinc_stage(dag, sngl_inst_injfrags, "INJECTIONS_%s" % options.tag, time_sl
 # Output
 #
 
+
 if options.verbose:
-	print >>sys.stderr, "writing dag..."
+	print >>sys.stderr, "writing dag ..."
 dag.write_sub_files()
 dag.write_dag()
 
@@ -317,6 +333,7 @@ dag.write_dag()
 #
 # =============================================================================
 #
+
 
 def check_caches_against_segwizard(segwizard_filename, cache_filenames):
 	"""
