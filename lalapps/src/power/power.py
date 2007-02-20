@@ -14,6 +14,7 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51
 # Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+
 #
 # =============================================================================
 #
@@ -21,6 +22,7 @@
 #
 # =============================================================================
 #
+
 
 """
 Classes needed for the excess power analysis pipeline.
@@ -49,17 +51,22 @@ from pylal.date import LIGOTimeGPS
 # =============================================================================
 #
 
+
 def get_universe(config_parser):
 	return config_parser.get("condor", "universe")
+
 
 def get_executable(config_parser, name):
 	return config_parser.get("condor", name)
 
+
 def get_out_dir(config_parser):
 	return config_parser.get("pipeline", "out_dir")
 
+
 def get_cache_dir(config_parser):
 	return config_parser.get("pipeline", "cache_dir")
+
 
 def make_dag_directories(config_parser):
 	os.mkdir(get_cache_dir(config_parser))
@@ -73,6 +80,7 @@ def make_dag_directories(config_parser):
 #
 # =============================================================================
 #
+
 
 class BurstInjJob(pipeline.CondorDAGJob):
 	"""
@@ -439,7 +447,11 @@ class BurcaNode(pipeline.CondorDAGNode):
 # =============================================================================
 #
 
+
+#
 # This is *SUCH* a hack I don't know where to begin.  Please, shoot me.
+#
+
 
 datafindjob = None
 binjjob = None
@@ -449,6 +461,7 @@ binjfindjob = None
 bucutjob = None
 buclusterjob = None
 burcajob = None
+
 
 def init_job_types(config_parser, types = ["datafind", "binj", "power", "lladd", "binjfind", "bucluster", "bucut", "burca"]):
 	"""
@@ -497,6 +510,7 @@ def init_job_types(config_parser, types = ["datafind", "binj", "power", "lladd",
 #
 # =============================================================================
 #
+
 
 def psds_from_job_length(powerjob, t):
 	"""
@@ -553,6 +567,7 @@ def segment_ok(powerjob, segment):
 #
 # =============================================================================
 #
+
 
 def make_datafind_fragment(dag, instrument, seg):
 	datafind_pad = 512
@@ -672,6 +687,7 @@ def make_binjfind_fragment(dag, parents, instrument, seg, tag):
 # =============================================================================
 #
 
+
 def make_multipower_fragment(dag, powerparents, lladdparents, framecache, seglist, instrument, tag, injargs = {}):
 	segment = seglist.extent()
 	powernodes = [make_power_fragment(dag, powerparents, instrument, seg, tag, framecache, injargs) for seg in seglist]
@@ -687,6 +703,7 @@ def make_multipower_fragment(dag, powerparents, lladdparents, framecache, seglis
 #
 # =============================================================================
 #
+
 
 def make_power_segment_fragment(dag, datafindnode, segment, instrument, psds_per_job, tag, verbose = False):
 	"""
@@ -707,6 +724,7 @@ def make_power_segment_fragment(dag, datafindnode, segment, instrument, psds_per
 # =============================================================================
 #
 
+
 def make_multibinj_fragment(dag, seg, tag):
 	flow = float(powerjob.get_opts()["low-freq-cutoff"])
 	fhigh = flow + float(powerjob.get_opts()["bandwidth"])
@@ -725,6 +743,7 @@ def make_multibinj_fragment(dag, seg, tag):
 #
 # =============================================================================
 #
+
 
 def make_injection_segment_fragment(dag, datafindnode, binjnode, segment, instrument, psds_per_job, tag, verbose = False):
 	seglist = split_segment(powerjob, segment, psds_per_job)
