@@ -25,7 +25,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <errno.h>
 #include <getopt.h>
 #include <stdarg.h>
-
+w
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
