@@ -42,9 +42,9 @@ NRCSID( NRWAVEIOC, "$Id$");
     to a distance of 1Mpc.
 */
 void LALReadNRWave(LALStatus *status, 
-		   REAL4TimeVectorSeries **out, /**< output time series for h+ and hx */
-		   const REAL4  mass,           /**< Value of total mass for setting time scale */
-		   const CHAR  *filename        /**< File containing numrel waveform */) 
+		   REAL4TimeVectorSeries **out, /**< [out] output time series for h+ and hx */
+		   const REAL4  mass,           /**< [in] Value of total mass for setting time scale */
+		   const CHAR  *filename        /**< [in] File containing numrel waveform */) 
 {
 
   UINT4 length, k, r;
@@ -87,7 +87,7 @@ void LALReadNRWave(LALStatus *status,
   }
 
   /* mass in Mpc -- we multiply h(t) by this factor */
-  massMpc = LAL_MRSUN_SI / ( LAL_PC_SI * 1.0e6);
+  massMpc = mass * LAL_MRSUN_SI / ( LAL_PC_SI * 1.0e6);
 
   /* now get the data */
   for (k = 0; k < length; k++) {
@@ -131,9 +131,9 @@ void LALReadNRWave(LALStatus *status,
  */
 void
 LALNRDataFind( LALStatus *status,
-	       NRWaveCatalog *out,  /**< list of numrel metadata */
-	       const CHAR *dir,     /**< directory with data files */
-	       const CHAR *filename /**< File with metadata information */)
+	       NRWaveCatalog *out,  /**< [out] list of numrel metadata */
+	       const CHAR *dir,     /**< [in] directory with data files */
+	       const CHAR *filename /**< [in] File with metadata information */)
 {
   LALParsedDataFile *cfgdata=NULL;
   UINT4 k, numWaves;
@@ -168,9 +168,9 @@ LALNRDataFind( LALStatus *status,
 /** Parse a single string to fill the NRWaveMetaData structure */
 void
 LALGetSingleNRMetaData( LALStatus       *status,
-			NRWaveMetaData  *out,   /**< Meta data struct to be filled */
-			const CHAR      *dir,   /**< data directory */
-			const CHAR      *cfgstr /**< config string containing the data for a single NR wave*/) 
+			NRWaveMetaData  *out,   /**< [out] Meta data struct to be filled */
+			const CHAR      *dir,   /**< [in] data directory */
+			const CHAR      *cfgstr /**< [in] config string containing the data for a single NR wave*/) 
 {
   REAL4 tmpR[7];
   INT4  tmpI[2];
