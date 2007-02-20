@@ -931,6 +931,7 @@ XLALMaxSnglRingdownOverIntervals(
   SnglRingdownTable    *thisEvent = NULL;
   SnglRingdownTable    *nextEvent = NULL;
   SnglRingdownTable    *prevEvent = NULL;
+  INT4 count = 1;
   
   /* if there are no events, then no-op */
   if ( ! *eventHead )
@@ -945,6 +946,7 @@ XLALMaxSnglRingdownOverIntervals(
     if ( start_time_sec(nextEvent) == start_time_sec(thisEvent) &&
         start_time_nsec(nextEvent)/deltaT == start_time_nsec(thisEvent)/deltaT )
     {
+      count = count + 1;
       if ( nextEvent->snr > thisEvent->snr )
       {
         /* replace thisEvent with nextEvent */
@@ -966,16 +968,18 @@ XLALMaxSnglRingdownOverIntervals(
         thisEvent->next = nextEvent->next;
         XLALFreeSnglRingdown ( &nextEvent );
         nextEvent = thisEvent->next;
-      }
+      }      
     }
     else
     {
+      thisEvent->num_clust_trigs = count;
+      count = 1;
       /* step to next set of events */
       prevEvent=thisEvent;
       thisEvent=nextEvent;
       nextEvent = thisEvent->next;
-      }
-    }
+    }    
+  }
   
   *eventHead = ringdownEventList; 
   
