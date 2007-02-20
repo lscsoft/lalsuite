@@ -614,11 +614,11 @@ int main(int argc, char *argv[]){
   {
       REAL8   eta;                /* Auxiliar variable */ 
       REAL8   nj, sumWeightj, sumWeightSquarej;
-      REAL8   chi2;               
+                     
 
       numberCountTotal=0;
-      chi2=0;   
-
+      chi2=0;
+ 
       for(k=0; k<uvar_p ; k++){
 	  numberCountTotal += numberCountV.data[k];
       }
@@ -634,6 +634,7 @@ int main(int argc, char *argv[]){
 	  chi2 += (nj-sumWeightj*eta)*(nj-sumWeightj*eta)/(sumWeightSquarej*eta*(1-eta));
       }
    }
+
 
   {
     FILE *fp=NULL;
@@ -658,6 +659,11 @@ int main(int argc, char *argv[]){
   LALFree(edat->ephemE);
   LALFree(edat->ephemS);
   LALFree(edat);
+
+  LALFree(chi2Params.numberSFTp);
+  LALFree(chi2Params.sumWeight);
+  LALFree(chi2Params.sumWeightSquare);
+  LALFree(numberCountV.data);
 
   LAL_CALL (LALDestroyMultiSFTVector(&status, &inputSFTs), &status );
   LALFree(pg1.data);
@@ -768,7 +774,8 @@ void SplitSFTs(LALStatus         *status,
   ASSERT (chi2Params->length,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
   ASSERT (chi2Params->numberSFTp,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
   ASSERT (chi2Params->sumWeight,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
-  ASSERT (chi2Params->sumWeightSquare,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL); 
+  ASSERT (chi2Params->sumWeightSquare,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (chi2Params->length < weightsV->length,  status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
   
   mObsCoh = weightsV->length;    
   p = chi2Params->length;
