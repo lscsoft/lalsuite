@@ -89,6 +89,7 @@ struct CommandLineArgsTag {
   char *datadir;
   char *renamefrom;
   char *renameto;
+  char *checkfilename;
 } CommandLineArgs;
 
 
@@ -132,6 +133,15 @@ int main(int argc,char *argv[])
   FrOutPar opar;
 
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
+
+  if (CommandLineArgs.checkfilename)
+    {
+      if (access(CommandLineArgs.checkfilename, F_OK) == 0) {
+	fprintf(stdout, "Frame file %s exists. Exiting.\n",CommandLineArgs.checkfilename);
+	return 0;
+      }
+    }
+
   if (ReadData(CommandLineArgs)) return 2;
   if (ReadFiltersFile(CommandLineArgs)) return 3;
   
@@ -556,10 +566,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"data-dir",            required_argument, NULL,           'z'},
     {"rename-from",         required_argument, NULL,           'a'},
     {"rename-to",           required_argument, NULL,           'w'},
+    {"check-file-exists",   required_argument, NULL,           'v'},
     {"help",                no_argument, NULL,                 'h' },
     {0, 0, 0, 0}
   };
-  char args[] = "hrcduxyf:C:A:E:D:R:F:s:e:i:j:k:l:m:n:t:o:H:T:S:z:";
+  char args[] = "hrcduxyf:C:A:E:D:R:F:s:e:i:j:k:l:m:n:t:o:H:T:S:z:v:";
   
   /* Initialize default values */
   CLA->f=0.0;
@@ -585,6 +596,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->datadir=NULL;
   CLA->renamefrom=NULL;
   CLA->renameto=NULL;
+  CLA->checkfilename=NULL;
 
   InputData.delta=0;
   InputData.wings=0;
@@ -713,6 +725,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'w':
       CLA->renameto=optarg;       
       break;
+    case 'v':
+      CLA->checkfilename=optarg;       
+      break;
     case 'h':
       /* print usage/help message */
       fprintf(stdout,"Arguments are:\n");
@@ -742,6 +757,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tframe-type (-T)\tSTRING\t Frame type to be written (eg, H1_RDS_C01_LX)\n");
       fprintf(stdout,"\tstrain-channel (-S)\tSTRING\t Strain channel name in frame (eg, H1:LSC-STRAIN)\n");
       fprintf(stdout,"\tdata-dir (-z)\tSTRING\t Ouput frame to this directory (eg, /tmp/S4/H1/H). Don't forget the H or L at the end!\n");
+      fprintf(stdout,"\tcheck-file-exists (-w)\tSTRING\t Checks file give as argument exists already and won't run if so. \n");
       fprintf(stdout,"\thelp (-h)\tFLAG\t This message\n");    
       exit(0);
       break;
