@@ -25,7 +25,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <errno.h>
 #include <getopt.h>
 #include <stdarg.h>
-w
+
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
@@ -53,7 +53,7 @@ extern int optind, opterr, optopt;
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
 
 
-NRCSID( STRINGSEARCHC, "ComputeStrainDriver $Id$");
+NRCSID( COMPUTESTRAINDRIVERC, "ComputeStrainDriver $Id$");
 RCSID( "ComputeStrainDriver $Id$");
 
 #define PROGRAM_NAME "ComputeStrainDriver"
