@@ -62,8 +62,6 @@ RCSID("$Id $");
 
 #define PROGRAM_NAME "ComputeStrainDriver"
 
-
-
 /***************************************************************************/
 
 /* STRUCTURES */
