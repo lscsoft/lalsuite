@@ -52,6 +52,7 @@ extern int optind, opterr, optopt;
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
 
+
 RCSID( "$Id$");
 
 #define PROGRAM_NAME "ComputeStrainDriver"
