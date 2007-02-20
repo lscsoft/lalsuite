@@ -74,7 +74,6 @@ static struct options {
 	int bandwidth;
 	unsigned window_length;
 	WindowType window_type;
-	int cluster;		/* TRUE == perform clustering          */
 	size_t psd_length;	/* number of samples to use for PSD    */
 	int seed;		/* set non-zero to generate noise      */
 
@@ -123,7 +122,6 @@ static struct options *options_defaults(struct options *options)
 		.bandwidth = 0,	/* impossible */
 		.cal_cache_filename = NULL,	/* default */
 		.channel_name = NULL,	/* impossible */
-		.cluster = FALSE,	/* default */
 		.comment = "",	/* default */
 		.filter_corruption = -1,	/* impossible */
 		.mdc_cache_filename = NULL,	/* default == disable */
@@ -236,7 +234,6 @@ static void print_usage(const char *program)
 "	[--calibrated-data <high pass frequency>]\n" \
 "	[--calibration-cache <cache file>]\n" \
 "	 --channel-name <string>\n" \
-"	[--cluster]\n" \
 "	[--debug-level <level>]\n" \
 "	[--max-event-rate <Hz>]\n" \
 "	 --filter-corruption <samples>\n" \
@@ -440,7 +437,6 @@ static struct options *parse_command_line(int argc, char *argv[], struct options
 		{"calibrated-data", required_argument, NULL, 'J'},
 		{"calibration-cache", required_argument, NULL, 'B'},
 		{"channel-name", required_argument, NULL, 'C'},
-		{"cluster", no_argument, &options->cluster, TRUE},
 		{"debug-level", required_argument, NULL, 'D'},
 		{"max-event-rate", required_argument, NULL, 'F'},
 		{"filter-corruption", required_argument, NULL, 'j'},
@@ -1421,7 +1417,7 @@ static void add_sim_injections(LALStatus *stat, REAL4TimeSeries *series, COMPLEX
  */
 
 
-static SnglBurstTable **analyze_series(SnglBurstTable **addpoint, REAL4TimeSeries *series, size_t psdlength, size_t window_length, EPSearchParams *params, int cluster)
+static SnglBurstTable **analyze_series(SnglBurstTable **addpoint, REAL4TimeSeries *series, size_t psdlength, size_t window_length, EPSearchParams *params)
 {
 	REAL4TimeSeries *interval;
 	size_t i, start;
@@ -1444,8 +1440,6 @@ static SnglBurstTable **analyze_series(SnglBurstTable **addpoint, REAL4TimeSerie
 		XLALPrintInfo("analyze_series(): analyzing samples %zu -- %zu (%.9lf s -- %.9lf s)\n", start, start + interval->data->length, start * interval->deltaT, (start + interval->data->length) * interval->deltaT);
 
 		*addpoint = XLALEPSearch(interval, params);
-		if(cluster)
-			XLALClusterSnglBurstTable(addpoint, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq, XLALSnglBurstCluster);
 		while(*addpoint)
 			addpoint = &(*addpoint)->next;
 		if(xlalErrno) {
@@ -1700,7 +1694,7 @@ int main(int argc, char *argv[])
 		 * Analyze the data
 		 */
 
-		EventAddPoint = analyze_series(EventAddPoint, series, options.psd_length, options.window_length, &params, options.cluster);
+		EventAddPoint = analyze_series(EventAddPoint, series, options.psd_length, options.window_length, &params);
 
 		/*
 		 * Reset for next run
@@ -1726,11 +1720,9 @@ int main(int argc, char *argv[])
 	}
 
 	/*
-	 * Cluster and sort the events, and assign IDs.
+	 * Sort the events, and assign IDs.
 	 */
 
-	if(options.cluster)
-		XLALClusterSnglBurstTable(&burstEvent, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq, XLALSnglBurstCluster);
 	XLALSortSnglBurst(&burstEvent, XLALCompareSnglBurstByStartTimeAndLowFreq);
 	XLALSnglBurstAssignIDs(burstEvent);
 
