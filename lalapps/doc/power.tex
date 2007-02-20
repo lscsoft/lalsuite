@@ -307,14 +307,8 @@ is 0.5 seconds worth of data.
 Obtain the locations of input \texttt{.gwf} frame files from the LAL frame
 cache file \parm{cache file}.  LAL frame cache files are explained in the
 ``framedata'' package in LAL and can be constructed by making calls to
-\prog{LSCDataFind} on some systems.  One of \option{--frame-cache},
-\option{--frame-dir}, or \option{--gaussian-noise-rms} must be specified.
-
-\item[\option{--frame-dir} \parm{directory}]
-Use the \texttt{.gwf} frame files found in \parm{directory} for input.  If
-both \option{--frame-cache} and \option{--frame-dir} are specified,
-\option{--frame-dir} will be used.  One of \option{--frame-cache},
-\option{--frame-dir}, or \option{--gaussian-noise-rms} must be specified.
+\prog{LSCDataFind} on some systems.  One of \option{--frame-cache}, or
+\option{--gaussian-noise-rms} must be specified.
 
 \item[\option{--gps-end-time} \parm{seconds}]
 Set the GPS time up to which input data should be read to \parm{seconds}.
@@ -378,10 +372,10 @@ Use the data found in the channel \parm{channel name} in the MDC frames for
 injections.
 
 \item[\option{--gaussian-noise-rms} \parm{RMS}]
-If this parameter is provided instead of \option{--frame-cache} or
-\option{--frame-dir}, then Gaussian white noise will be synthesized and
-used as the input data.  One of \option{--frame-cache},
-\option{--frame-dir}, or \option{--gaussian-noise-rms} must be specified.
+If this parameter is provided instead of \option{--frame-cache}, then
+Gaussian white noise will be synthesized and used as the input data.  One
+of \option{--frame-cache}, or \option{--gaussian-noise-rms} must be
+specified.
 
 \item[\option{--psd-average-method} \parm{method}]
 Set the averaging method used in determining the average power spectral
