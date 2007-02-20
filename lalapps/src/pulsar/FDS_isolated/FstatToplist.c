@@ -540,6 +540,8 @@ int fstat_cpt_file_close(FStatCheckpointFile*cptf) {
     return(-1);
   }
   fclose(cptf->fp);
+  /* completely sort the list before writing it (a heap is only partially sorted) */
+  sort_fstat_toplist(cptf->list);
   /* We're currently using this function only for HierarchicalSearch.
      For behavior totally compatible to the CFS-Einstein@Home code
      one should call final_write_fstat_toplist_to_file() instead of
