@@ -202,7 +202,6 @@ simulated data.
 \option{--tile-stride-fraction}~\parm{fraction} \newline \hspace*{0.5in}
 [\option{--enable-over-whitening}] \newline \hspace*{0.5in}
 [\option{--user-tag}~\parm{comment}] \newline \hspace*{0.5in}
-\option{--window}~\parm{window} \newline \hspace*{0.5in}
 \option{--window-length}~\parm{samples} \newline \hspace*{0.5in}
 \option{--window-shift}~\parm{samples}
 
@@ -444,12 +443,6 @@ contain spaces or dashes (``-'').  This string will appear in the name of
 the file to which output information is written, and is recorded in the
 various XML tables within the file.
 
-\item[\option{--window} \parm{window}]
-Set the type of window to use when extracting an analysis window from the
-time series to the LAL window corresponding to the integer parameter
-\parm{window}.  See the LAL package ``window'' for a description of the
-window that corresponds to each value of \parm{window}.
-
 \item[\option{--window-length} \parm{samples}]
 Set the number of samples to use for an analysis window to \parm{samples}.
 Only the central half of the window will be analyzed, the first quarter and
@@ -488,7 +481,6 @@ lalapps_power \
 --tile-stride-fraction 0.5 \
 --user-tag testing \
 --verbose \
---window 2 \
 --window-length 32768 \
 --window-shift 8192
 \end{verbatim}
