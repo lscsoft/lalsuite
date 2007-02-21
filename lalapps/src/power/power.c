@@ -69,11 +69,10 @@ RCSID("power $Id$");
  */
 
 
-static struct options {
+struct options {
 	/* search parameters */
 	int bandwidth;
 	unsigned window_length;
-	WindowType window_type;
 	size_t psd_length;	/* number of samples to use for PSD    */
 	int seed;		/* set non-zero to generate noise      */
 
@@ -113,16 +112,23 @@ static struct options {
 
 	/* diagnostics */
 	LIGOLwXMLStream *diagnostics;	/* diagnostics XML stream */
-} options;
+};
 
 
-static struct options *options_defaults(struct options *options)
+static struct options *options_new(void)
 {
+	static char default_comment[] = "";
+	struct options *options = malloc(sizeof(*options));
+
+	if(!options)
+		return NULL;
+
+	/* defaults */
 	*options = (struct options) {
 		.bandwidth = 0,	/* impossible */
 		.cal_cache_filename = NULL,	/* default */
 		.channel_name = NULL,	/* impossible */
-		.comment = "",	/* default */
+		.comment = default_comment,	/* default */
 		.filter_corruption = -1,	/* impossible */
 		.mdc_cache_filename = NULL,	/* default == disable */
 		.mdc_channel_name = NULL,	/* default */
@@ -135,7 +141,6 @@ static struct options *options_defaults(struct options *options)
 		.high_pass = -1.0,	/* impossible */
 		.cal_high_pass = -1.0,	/* impossible */
 		.max_event_rate = 0,	/* default */
-		.window_type = NumberWindowTypes,	/* impossible */
 		.window_length = 0,	/* impossible */
 		.sim_distance = 10000.0,	/* default (10 Mpc) */
 		.sim_cache_filename = NULL,	/* default */
@@ -238,6 +243,7 @@ static void print_usage(const char *program)
 "	[--max-event-rate <Hz>]\n" \
 "	 --filter-corruption <samples>\n" \
 "	 --frame-cache <cache file>\n" \
+"	[--gaussian-noise-rms <rms amplitude>]\n" \
 "	 --gps-end-time <seconds>\n" \
 "	 --gps-start-time <seconds>\n" \
 "	[--help]\n" \
@@ -249,7 +255,6 @@ static void print_usage(const char *program)
 "	 --max-tileduration <samples>\n" \
 "	[--mdc-cache <cache file>]\n" \
 "	[--mdc-channel <channel name>]\n" \
-"	[--noise-amplitude <amplitude>]\n" \
 "	[--dump-diagnostics <xml filename>]\n" \
 "	 --psd-average-method <method>\n" \
 "	 --psd-average-points <samples>\n" \
@@ -264,7 +269,6 @@ static void print_usage(const char *program)
 "	 --lnthreshold <ln threshold>\n" \
 "	[--enable-over-whitening]\n" \
 "	[--user-tag <comment>]\n" \
-"	 --window <window>\n" \
 "	 --window-length <samples>\n" \
 "	 --window-shift <samples>\n", program);
 }
@@ -279,12 +283,6 @@ static void print_bad_argument(const char *prog, const char *arg, const char *ms
 static void print_missing_argument(const char *prog, const char *arg)
 {
 	XLALPrintError("%s: error: --%s not specified\n", prog, arg);
-}
-
-
-static void print_alloc_fail(const char *prog, const char *msg)
-{
-	XLALPrintError("%s: error: memory allocation failure %s\n", prog, msg);
 }
 
 
@@ -357,10 +355,6 @@ static int check_for_missing_parameters(char *prog, struct option *long_options,
 			arg_is_missing = params->lnalphaThreshold == XLAL_REAL8_FAIL_NAN;
 			break;
 
-		case 'i':
-			arg_is_missing = options->window_type == NumberWindowTypes;
-			break;
-
 		case 'j':
 			arg_is_missing = options->filter_corruption < 0;
 			break;
@@ -423,8 +417,9 @@ static void parse_command_line_debug(int argc, char *argv[])
 	do { paramaddpoint = add_process_param(paramaddpoint, type, long_options[option_index].name, optarg); } while(0)
 
 
-static struct options *parse_command_line(int argc, char *argv[], struct options *options, EPSearchParams *params, MetadataTable *procparams)
+static struct options *parse_command_line(int argc, char *argv[], EPSearchParams *params, MetadataTable *procparams)
 {
+	struct options *options;
 	char msg[240];
 	int args_are_bad = FALSE;
 	int enableoverwhitening;
@@ -466,14 +461,23 @@ static struct options *parse_command_line(int argc, char *argv[], struct options
 		{"lnthreshold", required_argument, NULL, 'g'},
 		{"enable-over-whitening", no_argument, &enableoverwhitening, TRUE},
 		{"user-tag", required_argument, NULL, 'h'},
-		{"window", required_argument, NULL, 'i'},
 		{"window-length", required_argument, NULL, 'W'},
 		{"window-shift", required_argument, NULL, 'd'},
 		{NULL, 0, NULL, 0}
 	};
 
 	/*
-	 * Set parameter defaults.
+	 * Allocate and initialize options structure
+	 */
+
+	options = options_new();
+	if(!options)
+		return NULL;
+	ram = 0;	/* default */
+	enableoverwhitening = FALSE;	/* default */
+
+	/*
+	 * Set parameter defaults
 	 */
 
 	params->diagnostics = NULL;	/* default == disable */
@@ -483,9 +487,6 @@ static struct options *parse_command_line(int argc, char *argv[], struct options
 	params->maxTileBandwidth = 0;	/* impossible */
 	params->inv_fractional_stride = 0;	/* impossible */
 	params->windowShift = 0;	/* impossible */
-	ram = 0;	/* default */
-	enableoverwhitening = FALSE;	/* default */
-	options_defaults(options);
 
 	/*
 	 * Parse command line.
@@ -708,16 +709,6 @@ static struct options *parse_command_line(int argc, char *argv[], struct options
 		ADD_PROCESS_PARAM("string");
 		break;
 
-	case 'i':
-		options->window_type = atoi(optarg);
-		if(options->window_type >= NumberWindowTypes) {
-			sprintf(msg, "must be < %d (%i specified)", NumberWindowTypes, options->window_type);
-			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
-		}
-		ADD_PROCESS_PARAM("int");
-		break;
-
 	case 'j':
 		options->filter_corruption = atoi(optarg);
 		if(options->filter_corruption < 0) {
@@ -847,9 +838,9 @@ static struct options *parse_command_line(int argc, char *argv[], struct options
 	 * Generate time-domain window function.
 	 */
 
-	params->window = XLALCreateREAL4Window(options->window_length, options->window_type, 0.0);
+	params->window = XLALCreateHannREAL4Window(options->window_length);
 	if(!params->window) {
-		XLALPrintError("%s: failure generating time-domain window\n", argv[0]);
+		XLALPrintError("%s: failure generating Hann window\n", argv[0]);
 		exit(1);
 	}
 
@@ -1186,6 +1177,7 @@ static REAL4TimeSeries *add_mdc_injections(const char *mdccachefile, const char 
  */
 
 
+#if 0
 static void add_sim_injections(LALStatus *stat, REAL4TimeSeries *series, COMPLEX8FrequencySeries *response, size_t lengthlimit)
 {
 	REAL4TimeSeries *signal;
@@ -1402,6 +1394,7 @@ static void add_sim_injections(LALStatus *stat, REAL4TimeSeries *series, COMPLEX
 		LALFree(thisEvent);
 	}
 }
+#endif
 
 
 /*
@@ -1510,6 +1503,7 @@ int main(int argc, char *argv[])
 {
 	LALStatus stat;
 	LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
+	struct options *options;
 	EPSearchParams params;
 	LIGOTimeGPS epoch;
 	LIGOTimeGPS boundepoch;
@@ -1539,29 +1533,29 @@ int main(int argc, char *argv[])
 	procparams.processParamsTable = NULL;
 
 	/* parse arguments and fill procparams table */
-	parse_command_line(argc, argv, &options, &params, &procparams);
+	options = parse_command_line(argc, argv, &params, &procparams);
 
 	/* create the search summary table */
 	searchsumm.searchSummaryTable = LALCalloc(1, sizeof(SearchSummaryTable));
 
 	/* fill the comment */
-	snprintf(procTable.processTable->comment, LIGOMETA_COMMENT_MAX, "%s", options.comment);
-	snprintf(searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, "%s", options.comment);
+	snprintf(procTable.processTable->comment, LIGOMETA_COMMENT_MAX, "%s", options->comment);
+	snprintf(searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, "%s", options->comment);
 
 	/* the number of nodes for a standalone job is always 1 */
 	searchsumm.searchSummaryTable->nnodes = 1;
 
 	/* store the input start and end times */
-	searchsumm.searchSummaryTable->in_start_time = options.gps_start;
-	searchsumm.searchSummaryTable->in_end_time = options.gps_end;
+	searchsumm.searchSummaryTable->in_start_time = options->gps_start;
+	searchsumm.searchSummaryTable->in_end_time = options->gps_end;
 
 	/* determine the input time series post-conditioning overlap, and set
 	 * the outer loop's upper bound */
-	overlap = options.window_length - params.windowShift;
-	XLALPrintInfo("%s: time series overlap is %zu samples (%.9lf s)\n", argv[0], overlap, overlap / (double) options.resample_rate);
+	overlap = options->window_length - params.windowShift;
+	XLALPrintInfo("%s: time series overlap is %zu samples (%.9lf s)\n", argv[0], overlap, overlap / (double) options->resample_rate);
 
-	boundepoch = options.gps_end;
-	XLALGPSAdd(&boundepoch, -(2 * options.filter_corruption + (int) overlap) / (double) options.resample_rate);
+	boundepoch = options->gps_end;
+	XLALGPSAdd(&boundepoch, -(2 * options->filter_corruption + (int) overlap) / (double) options->resample_rate);
 	XLALPrintInfo("%s: time series epochs must be less than %u.%09u s\n", argv[0], boundepoch.gpsSeconds, boundepoch.gpsNanoSeconds);
 
 
@@ -1574,37 +1568,37 @@ int main(int argc, char *argv[])
 	 * small enough to fit in RAM.
 	 */
 
-	for(epoch = options.gps_start; XLALGPSCmp(&epoch, &boundepoch) < 0;) {
+	for(epoch = options->gps_start; XLALGPSCmp(&epoch, &boundepoch) < 0;) {
 		/*
 		 * Get the data.
 		 */
 
-		if(options.cache_filename) {
+		if(options->cache_filename) {
 			/*
 			 * Read from frame files
 			 */
 
-			series = get_time_series(options.cache_filename, options.channel_name, epoch, options.gps_end, options.max_series_length, options.calibrated, options.cal_high_pass);
+			series = get_time_series(options->cache_filename, options->channel_name, epoch, options->gps_end, options->max_series_length, options->calibrated, options->cal_high_pass);
 			if(!series) {
 				XLALPrintError("%s: error: failure reading input data\n", argv[0]);
 				exit(1);
 			}
-		} else if(options.noise_rms > 0.0) {
+		} else if(options->noise_rms > 0.0) {
 			/*
 			 * Synthesize Gaussian white noise.
 			 */
 
-			unsigned length = XLALGPSDiff(&options.gps_end, &epoch) * options.resample_rate;
-			if(options.max_series_length)
-				length = min(options.max_series_length, length);
-			series = XLALCreateREAL4TimeSeries(options.channel_name, &epoch, 0.0, (REAL8) 1.0 / options.resample_rate, &lalADCCountUnit, length);
+			unsigned length = XLALGPSDiff(&options->gps_end, &epoch) * options->resample_rate;
+			if(options->max_series_length)
+				length = min(options->max_series_length, length);
+			series = XLALCreateREAL4TimeSeries(options->channel_name, &epoch, 0.0, (REAL8) 1.0 / options->resample_rate, &lalADCCountUnit, length);
 			if(!series) {
 				XLALPrintError("%s: error: failure allocating data for Gaussian noise\n", argv[0]);
 				exit(1);
 			}
 			if(!rparams)
-				rparams = XLALCreateRandomParams(options.seed);
-			gaussian_noise(series, options.noise_rms, rparams);
+				rparams = XLALCreateRandomParams(options->seed);
+			gaussian_noise(series, options->noise_rms, rparams);
 		} else {
 			/*
 			 * Should never get here.
@@ -1618,22 +1612,25 @@ int main(int argc, char *argv[])
 		 * requested.
 		 */
 
-		if(options.sim_burst_filename || options.sim_inspiral_filename || options.sim_cache_filename) {
+		if(options->sim_burst_filename || options->sim_inspiral_filename || options->sim_cache_filename) {
 			COMPLEX8FrequencySeries *response;
 
 			/* Create the response function (generates unity
 			 * response if cache file is NULL). */
-			response = generate_response(&stat, options.cal_cache_filename, options.ifo, options.channel_name, series->deltaT, series->epoch, series->data->length);
+			response = generate_response(&stat, options->cal_cache_filename, options->ifo, options->channel_name, series->deltaT, series->epoch, series->data->length);
 			if(!response)
 				exit(1);
 
 			/* perform injections */
-			if(options.sim_burst_filename)
-				add_burst_injections(&stat, options.sim_burst_filename, series, response);
-			if(options.sim_inspiral_filename)
-				add_inspiral_injections(&stat, options.sim_inspiral_filename, series, response);
-			if(options.sim_cache_filename)
-				add_sim_injections(&stat, series, response, options.max_series_length);
+			if(options->sim_burst_filename)
+				add_burst_injections(&stat, options->sim_burst_filename, series, response);
+			if(options->sim_inspiral_filename)
+				add_inspiral_injections(&stat, options->sim_inspiral_filename, series, response);
+			if(options->sim_cache_filename) {
+				fprintf(stderr, "error:  \"sim\" code disabled\n");
+				exit(1);
+				/*add_sim_injections(&stat, series, response, options->max_series_length);*/
+			}
 
 			/*clean up */
 			XLALDestroyCOMPLEX8FrequencySeries(response);
@@ -1643,22 +1640,22 @@ int main(int argc, char *argv[])
 		 * Add MDC injections into the time series if requested.
 		 */
 
-		if(options.mdc_cache_filename)
-			add_mdc_injections(options.mdc_cache_filename, options.mdc_channel_name, series, epoch, options.gps_end, options.max_series_length);
+		if(options->mdc_cache_filename)
+			add_mdc_injections(options->mdc_cache_filename, options->mdc_channel_name, series, epoch, options->gps_end, options->max_series_length);
 
 		/*
 		 * Condition the time series data.
 		 */
 
 		/* Scale the time series if calibrated data */
-		if(options.calibrated) {
+		if(options->calibrated) {
 			const double scale = 1e10;
 			unsigned i;
 			for(i = 0; i < series->data->length; i++)
 				series->data->data[i] *= scale;
 		}
 
-		if(XLALEPConditionData(series, options.high_pass, (REAL8) 1.0 / options.resample_rate, options.filter_corruption)) {
+		if(XLALEPConditionData(series, options->high_pass, (REAL8) 1.0 / options->resample_rate, options->filter_corruption)) {
 			XLALPrintError("%s: XLALEPConditionData() failed.\n", argv[0]);
 			exit(1);
 		}
@@ -1672,17 +1669,17 @@ int main(int argc, char *argv[])
 
 		if(!searchsumm.searchSummaryTable->out_start_time.gpsSeconds) {
 			searchsumm.searchSummaryTable->out_start_time = series->epoch;
-			XLALGPSAdd(&searchsumm.searchSummaryTable->out_start_time, series->deltaT * (options.window_length / 2 - params.windowShift));
+			XLALGPSAdd(&searchsumm.searchSummaryTable->out_start_time, series->deltaT * (options->window_length / 2 - params.windowShift));
 		}
 		searchsumm.searchSummaryTable->out_end_time = series->epoch;
-		XLALGPSAdd(&searchsumm.searchSummaryTable->out_end_time, series->deltaT * (series->data->length - (options.window_length / 2 - params.windowShift)));
+		XLALGPSAdd(&searchsumm.searchSummaryTable->out_end_time, series->deltaT * (series->data->length - (options->window_length / 2 - params.windowShift)));
 
 
 		/*
 		 * Analyze the data
 		 */
 
-		EventAddPoint = analyze_series(EventAddPoint, series, options.psd_length, options.window_length, &params);
+		EventAddPoint = analyze_series(EventAddPoint, series, options->psd_length, options->window_length, &params);
 
 		/*
 		 * Reset for next run
@@ -1699,7 +1696,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Unscale the h_{rss} estimates if calibrated data */
-	if(options.calibrated) {
+	if(options->calibrated) {
 		const double scale = 1e10;
 		SnglBurstTable *event;
 		for(event = burstEvent; event; event = event->next)
@@ -1718,7 +1715,7 @@ int main(int argc, char *argv[])
 	 * Check event rate limit.
 	 */
 
-	if((options.max_event_rate > 0) && (SnglBurstTableLength(burstEvent) > XLALGPSDiff(&searchsumm.searchSummaryTable->out_end_time, &searchsumm.searchSummaryTable->out_start_time) * options.max_event_rate)) {
+	if((options->max_event_rate > 0) && (SnglBurstTableLength(burstEvent) > XLALGPSDiff(&searchsumm.searchSummaryTable->out_end_time, &searchsumm.searchSummaryTable->out_start_time) * options->max_event_rate)) {
 		XLALPrintError("%s: event rate limit exceeded!", argv[0]);
 		exit(1);
 	}
@@ -1727,9 +1724,9 @@ int main(int argc, char *argv[])
 	 * Output the results.
 	 */
 
-	snprintf(outfilename, sizeof(outfilename) - 1, "%s-POWER_%s-%d-%d.xml", options.ifo, options.comment, options.gps_start.gpsSeconds, options.gps_end.gpsSeconds - options.gps_start.gpsSeconds);
+	snprintf(outfilename, sizeof(outfilename) - 1, "%s-POWER_%s-%d-%d.xml", options->ifo, options->comment, options->gps_start.gpsSeconds, options->gps_end.gpsSeconds - options->gps_start.gpsSeconds);
 	outfilename[sizeof(outfilename) - 1] = '\0';
-	output_results(&stat, outfilename, options.ifo, &procTable, &procparams, &searchsumm, burstEvent);
+	output_results(&stat, outfilename, options->ifo, &procTable, &procparams, &searchsumm, burstEvent);
 
 	/*
 	 * Final cleanup.
@@ -1752,8 +1749,8 @@ int main(int argc, char *argv[])
 		LALFree(event);
 	}
 
-	if(options.diagnostics)
-		LAL_CALL(LALCloseLIGOLwXMLFile(&stat, options.diagnostics), &stat);
+	if(options->diagnostics)
+		LAL_CALL(LALCloseLIGOLwXMLFile(&stat, options->diagnostics), &stat);
 
 	LALCheckMemoryLeaks();
 	exit(0);
