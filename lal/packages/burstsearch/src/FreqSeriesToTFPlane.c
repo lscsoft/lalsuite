@@ -69,7 +69,7 @@ static COMPLEX8FrequencySeries *generate_filter(
 
 	if(psd) {
 		REAL4 *pdata = psd->data->data + (int) ((fdfilter->f0 - psd->f0) / psd->deltaF);
-		for(i = 0; i < fdfilter-.data->length; i++) {
+		for(i = 0; i < fdfilter->data->length; i++) {
 			fdfilter->data->data[i].re /= sqrt(pdata[i]);
 			fdfilter->data->data[i].im /= sqrt(pdata[i]);
 		}
