@@ -690,16 +690,17 @@ def make_binjfind_fragment(dag, parents, instrument, seg, tag):
 
 def make_multipower_fragment(dag, powerparents, lladdparents, instrument, seglist, tag, framecache, injargs = {}, clustering = False):
 	segment = seglist.extent()
-	powernodes = [make_power_fragment(dag, powerparents, instrument, seg, tag, framecache, injargs) for seg in seglist]
+	nodes = [make_power_fragment(dag, powerparents, instrument, seg, tag, framecache, injargs) for seg in seglist]
 	if clustering:
 		# cluster individual power jobs' outputs (keeps file sizes
 		# small, to lower risk of lladd running out of memory)
-		powernodes = [make_bucluster_fragment(dag, [powernode], instrument, segments.segment(powernode.get_start(), powernode.get_end()), tag) for powernode in powernodes]
-	lladdnode = make_lladd_fragment(dag, powernodes + lladdparents, instrument, segment, "POWER_%s" % tag, preserves = reduce(list.__add__, [node.get_output_cache() for node in lladdparents], []))
+		nodes = [make_bucluster_fragment(dag, [node], instrument, segments.segment(node.get_start(), node.get_end()), tag) for node in nodes]
+	lladdnode = make_lladd_fragment(dag, nodes + lladdparents, instrument, segment, "POWER_%s" % tag, preserves = reduce(list.__add__, [node.get_output_cache() for node in lladdparents], []))
 	lladdnode.set_output("%s-POWER_%s-%s-%s.xml.gz" % (instrument, tag, int(segment[0]), int(abs(segment))))
 	if clustering:
-		# recluster the triggers following lladd
-		return make_bucluster_fragment(dag, lladdnode, instrument, segment, tag)
+		# recluster the triggers following lladd to catch edge
+		# effects
+		return make_bucluster_fragment(dag, [lladdnode], instrument, segment, tag)
 	else:
 		return lladdnode
 
