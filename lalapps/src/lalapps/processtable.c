@@ -34,10 +34,10 @@ void
 populate_process_table (
     LALStatus           *status,
     ProcessTable        *ptable,
-    CHAR                *program_name,
-    CHAR                *cvs_revision,
-    CHAR                *cvs_source,
-    CHAR                *cvs_date
+    const CHAR          *program_name,
+    const CHAR          *cvs_revision,
+    const CHAR          *cvs_source,
+    const CHAR          *cvs_date
     )
 {
   const char source_str[] = CVS_SOURCE_STR;
@@ -48,7 +48,7 @@ populate_process_table (
   size_t cvsstrlen;
   uid_t userid;
   struct passwd *pwent;
-  char *cvsstrstart, *cvsstrend;
+  const char *cvsstrstart, *cvsstrend;
   LALDate laldate;
   LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
 

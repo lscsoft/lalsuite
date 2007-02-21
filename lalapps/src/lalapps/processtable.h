@@ -12,10 +12,10 @@ void
 populate_process_table (
     LALStatus           *status,
     ProcessTable        *ptable,
-    CHAR                *program,
-    CHAR                *cvs_revision,
-    CHAR                *cvs_source,
-    CHAR                *cvs_date
+    const CHAR          *program,
+    const CHAR          *cvs_revision,
+    const CHAR          *cvs_source,
+    const CHAR          *cvs_date
     );
 
 #ifdef  __cplusplus
