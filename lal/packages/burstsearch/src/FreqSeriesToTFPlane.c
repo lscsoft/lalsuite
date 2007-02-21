@@ -19,12 +19,22 @@ NRCSID(FREQSERIESTOTFPLANEC, "$Id$");
 
 
 /*
- * Generate the frequency domain filter function by constructing the filter
- * in the time domain and then transforming to the frequency domain.
+ * Generate the frequency domain channel filter function.  The filter is
+ * nominally a Hann window twice the channel's width, centred on the
+ * channel's centre frequency.  The filter is normalized so that its sum
+ * squares is 1.  If the psd parameter is not NULL, then the filter is
+ * divided by the square root of this frequency series prior to
+ * normalilization.  This has the effect of demphasizing frequency bins
+ * with high noise content, and is called "over whitening".
  */
 
 
-static COMPLEX8FrequencySeries *generate_filter(const COMPLEX8FrequencySeries *template, REAL8 channel_flow, REAL8 channel_width)
+static COMPLEX8FrequencySeries *generate_filter(
+	const COMPLEX8FrequencySeries *template,
+	REAL8 channel_flow,
+	REAL8 channel_width,
+	const REAL4FrequencySeries *psd
+)
 {
 	const char func[] = "generate_filter";
 	char filter_name[100];
@@ -52,6 +62,18 @@ static COMPLEX8FrequencySeries *generate_filter(const COMPLEX8FrequencySeries *t
 		fdfilter->data->data[i].im = 0.0;
 	}
 	XLALDestroyREAL4Window(hann);
+
+	/*
+	 * divide by PSD if needed
+	 */
+
+	if(psd) {
+		REAL4 *pdata = psd->data->data + (int) ((fdfilter->f0 - psd->f0) / psd->deltaF);
+		for(i = 0; i < fdfilter-.data->length; i++) {
+			fdfilter->data->data[i].re /= sqrt(pdata[i]);
+			fdfilter->data->data[i].im /= sqrt(pdata[i]);
+		}
+	}
 
 	/*
 	 * normalize the filter.  the filter needs to be normalized so that
@@ -176,7 +198,8 @@ int XLALFreqSeriesToTFPlane(
 	REAL4TimeFrequencyPlane *plane,
 	const COMPLEX8FrequencySeries *fseries,
 	const REAL4FrequencySeries *psd,
-	const REAL4FFTPlan *reverseplan
+	const REAL4FFTPlan *reverseplan,
+	INT4 enable_over_whitening
 )
 /******** </lalVerbatim> ********/
 {
@@ -239,7 +262,7 @@ int XLALFreqSeriesToTFPlane(
 
 	/* generate the frequency domain filter functions */
 	for(i = 0; i < plane->channels; i++) {
-		filter[i] = generate_filter(fseries, plane->flow + i * plane->deltaF, plane->deltaF);
+		filter[i] = generate_filter(fseries, plane->flow + i * plane->deltaF, plane->deltaF, enable_over_whitening ? psd : NULL);
 		if(!filter[i]) {
 			while(--i)
 				XLALDestroyCOMPLEX8FrequencySeries(filter[i]);

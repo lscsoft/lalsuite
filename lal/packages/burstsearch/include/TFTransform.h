@@ -136,7 +136,8 @@ XLALFreqSeriesToTFPlane(
 	REAL4TimeFrequencyPlane *tfplane,
 	const COMPLEX8FrequencySeries *fseries,
 	const REAL4FrequencySeries *psd,
-	const REAL4FFTPlan *reverseplan
+	const REAL4FFTPlan *reverseplan,
+	INT4 enable_over_whitening
 );
 
 
