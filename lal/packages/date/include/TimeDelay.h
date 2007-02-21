@@ -165,8 +165,15 @@ LALTimeDelayFromEarthCenter( LALStatus               *status,
 
 void
 XLALPopulateAccuracyParams(
-       InspiralAccuracyList   *accuracyParams,
-       const DetTimeAndASource *timeAndSource
+       InspiralAccuracyList  *accuracyParams
+);
+
+void
+XLALPopulateAccuracyParamsExt(
+       InspiralAccuracyList  *accuracyParams,
+       const LIGOTimeGPS     *gpstime,
+       const REAL8            ra_deg,
+       const REAL8            dec_deg
 );
 
 #ifdef __cplusplus
