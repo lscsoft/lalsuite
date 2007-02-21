@@ -109,6 +109,7 @@ int gethostname(char *name, int len);
 #include <string.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALFrameIO.h>
 #include <lal/FrameCache.h>
 #include <lal/FrameStream.h>
 
@@ -124,14 +125,6 @@ NRCSID( FRAMESTREAMC, "$Id$" );
 
 
 #include <errno.h>
-#include <unistd.h>
-#include <sys/param.h>
-#define STR( x ) #x
-#define XSTR( x ) STR( x )
-#define MAXPROTOCOLLEN 16
-#ifndef MAXHOSTNAMELEN
-#define MAXHOSTNAMELEN 256
-#endif
 
 
 /*
@@ -141,65 +134,33 @@ NRCSID( FRAMESTREAMC, "$Id$" );
  */
 
 
-static struct FrFile *URLFrFileINew( FrFileInfo *file )
+static struct FrFile *URLFrFileINew( FrFileInfo *file, int dochecksum )
 {
-  struct FrFile *frfile = NULL;
-  char prot[MAXPROTOCOLLEN + 1] = "";
-  char host[MAXHOSTNAMELEN + 1] = "";
-  char path[MAXPATHLEN + 1]     = "";
-  int n;
-
-  /* get protocol, hostname, and path */
-  if ( ! file || ! file->url )
+  struct FrFile *frfile;
+  if ( ! file )
     return NULL;
-  n = sscanf( file->url, "%" XSTR( MAXPROTOCOLLEN ) "[^:]://%"
-      XSTR( MAXHOSTNAMELEN ) "[^/]%" XSTR( MAXPATHLEN ) "s", prot, host, path );
-  if ( n != 3 ) /* perhaps the hostname has been omitted */
-  {
-    n = sscanf( file->url, "%" XSTR( MAXPROTOCOLLEN ) "[^:]://%"
-        XSTR( MAXPATHLEN ) "s", prot, path );
-    if ( n == 2 )
-      strcpy( host, "localhost" );
-    else
-    {
-      strncpy( path, file->url, MAXPATHLEN );
-      strcpy( prot, "none" );
-    }
-  }
-
-  /* process various protocols */
-  if ( ! strcmp( prot, "none" ) )
-  { /* assume a file on the localhost */
-    /* TODO: should check for leading ~ */
-    frfile = FrFileINew( path );
-  }
-  else if ( ! strcmp( prot, "file" ) )
-  {
-    if ( strcmp( host, "localhost" ) )
-    { /* make sure the host *is* localhost */
-      char localhost[MAXHOSTNAMELEN + 1];
-      gethostname( localhost, MAXHOSTNAMELEN );
-      if ( strcmp( host, localhost ) )
-      { /* nope */
-        fprintf( stderr, "Can not read files from remote hosts.\n" );
-        errno = EINVAL;
+  frfile = XLALFrOpenURL( file->url );
+  if ( frfile && dochecksum ) {
+    int code;
+    code = XLALFrFileCheckSum( frfile );
+    switch ( code ) {
+      case 0:
+        break;
+      case -1:
+        XLALPrintError( "XLAL Error: wrong checksum in file %s\n", file->url );
+        FrFileIEnd( frfile );
         return NULL;
-      }
-    }
-    frfile = FrFileINew( path );
-    if ( ! frfile && lalDebugLevel )
-    {
-      LALPrintError( "Error opening frame file %s\n", path );
+      case 1:
+        XLALPrintWarning( "XLAL Warning: missing checksum in file %s\n", file->url );
+        break;
+      default: /* unhandled case */
+        FrFileIEnd( frfile );
+        XLAL_ERROR_NULL( "URLFrFileINew", XLAL_EERR );
     }
   }
-  else
-  {
-    fprintf( stderr, "Unsupported protocol %s.", prot );
-    return NULL;
-  }
-
   return frfile;
 }
+
 
 
 /*
@@ -289,7 +250,7 @@ static FrFileInfo * create_flist( FrCache *cache )
     {
       struct FrFile *frfile;
       double t1;
-      frfile = URLFrFileINew( list + i );
+      frfile = URLFrFileINew( list + i, 0 );
       if ( ! frfile )
       {
         free_flist( list );
@@ -350,7 +311,7 @@ FrStream * XLALFrCacheOpen( FrCache *cache )
     XLAL_ERROR_NULL( func, XLAL_EIO ); /* assume it was an I/O error */
   }
 
-  stream->file = URLFrFileINew( stream->flist );
+  stream->file = URLFrFileINew( stream->flist, 0 );
   if ( ! stream->file )
   {
     free_flist( stream->flist );
@@ -412,6 +373,9 @@ int XLALFrSetMode( FrStream *stream, int mode )
   if ( ! stream )
     XLAL_ERROR( func, XLAL_EFAULT );
   stream->mode = mode;
+  /* if checksum mode is turned on, do checksum on current file */
+  if ( (mode & LAL_FR_CHECKSUM_MODE) && (stream->file) )
+    return XLALFrFileCheckSum( stream->file );
   return 0;
 }
 
@@ -448,7 +412,7 @@ int XLALFrRewind( FrStream *stream )
   }
   stream->pos   = 0;
   stream->fnum  = 0;
-  stream->file  = URLFrFileINew( stream->flist );
+  stream->file  = URLFrFileINew( stream->flist, stream->mode & LAL_FR_CHECKSUM_MODE );
   stream->state = LAL_FR_OK;
   if ( ! stream->file )
   {
@@ -526,7 +490,7 @@ int XLALFrNext( FrStream *stream )
       return 1;
     }
     stream->pos  = 0;
-    stream->file = URLFrFileINew( stream->flist + stream->fnum );
+    stream->file = URLFrFileINew( stream->flist + stream->fnum, stream->mode & LAL_FR_CHECKSUM_MODE );
     url2 = stream->flist[stream->fnum].url;
     if ( ! stream->file )
     {
@@ -649,7 +613,7 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
       double tbeg;
       double tend;
       stream->fnum = i;
-      stream->file = URLFrFileINew( file1 );
+      stream->file = URLFrFileINew( file1, stream->mode & LAL_FR_CHECKSUM_MODE );
       if ( ! stream->file )
       {
         stream->state |= LAL_FR_ERR | LAL_FR_URL;
@@ -690,7 +654,7 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
     {
       stream->state |= LAL_FR_GAP;
       stream->fnum   = i;
-      stream->file   = URLFrFileINew( file1 );
+      stream->file   = URLFrFileINew( file1, stream->mode & LAL_FR_CHECKSUM_MODE );
       stream->pos    = 0;
       if ( ! stream->file )
       {
@@ -777,7 +741,7 @@ int XLALFrSetpos( FrStream *stream, FrPos *position )
       XLAL_ERROR( func, XLAL_EINVAL );
     }
     stream->fnum = position->fnum;
-    stream->file = URLFrFileINew( stream->flist + stream->fnum );
+    stream->file = URLFrFileINew( stream->flist + stream->fnum, stream->mode & LAL_FR_CHECKSUM_MODE );
     if ( ! stream->file )
     {
       stream->state |= LAL_FR_ERR | LAL_FR_URL;

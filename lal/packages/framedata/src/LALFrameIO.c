@@ -76,6 +76,38 @@ struct FrFile * XLALFrOpenURL( const char *url )
   return frfile;
 }
 
+
+/* code taken from the FrCheck program in the FrameL library */
+int XLALFrFileCheckSum( FrFile *iFile )
+{
+  static const char *func = "XLALFrFileCheckSum";
+  FrameH *frame = NULL;
+  FRBOOL chkSumFiFlag = iFile->chkSumFiFlag;
+  FRBOOL chkSumFrFlag = iFile->chkSumFrFlag;
+  iFile->chkSumFiFlag = FR_YES;
+  iFile->chkSumFrFlag = FR_NO;
+  /* sequential read */
+  while ((frame = FrameReadRecycle(iFile, frame)))
+    ;
+  iFile->chkSumFiFlag = chkSumFiFlag;
+  iFile->chkSumFrFlag = chkSumFrFlag;
+  if ( iFile->error != FR_OK ) {
+    XLALPrintError( "XLAL Error - %s: %s\n", func, FrErrorGetHistory() );
+    XLAL_ERROR( func, XLAL_EFAILED );
+    return -1;
+  }
+  if ( iFile->chkTypeFiRead == 0 ) {
+    XLALPrintWarning( "XLAL Warning - %s: missing checksum\n", func );
+    return 1;
+  } 
+  if ( iFile->chkSumFiRead != iFile->chkSumFi ) {
+    XLALPrintError( "XLAL Error - %s: bad checksum\n", func );
+    return -1;
+  }
+  return 0;
+}
+
+
 /* This routine is essentially the same as FrHistoryNew but the name of the
  * history can be set too. */
 FrHistory * XLALFrHistoryAdd( FrameH *frame, const char *name, const char *comment )

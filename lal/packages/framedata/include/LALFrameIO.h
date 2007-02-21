@@ -11,6 +11,7 @@ extern "C" {
 #endif
 
 struct FrFile * XLALFrOpenURL( const char *url );
+int XLALFrFileCheckSum( FrFile *iFile );
 FrHistory * XLALFrHistoryAdd( FrameH *frame, const char *name, const char *comment );
 FrDetector * XLALFrDetectorNew( int detector );
 FrameH * XLALFrameNew( LIGOTimeGPS *epoch, double duration, 

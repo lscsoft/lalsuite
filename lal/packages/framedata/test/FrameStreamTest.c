@@ -68,8 +68,8 @@ int main( void )
   LALFrOpen( &status, &stream, dirname, "F-TEST-*.gwf" );
   TESTSTATUS( &status );
 
-  LALFrSetMode( &status, LAL_FR_VERBOSE_MODE, stream );
-  TESTSTATUS( &status );
+  if ( XLALFrSetMode( stream, LAL_FR_VERBOSE_MODE | LAL_FR_CHECKSUM_MODE ) )
+    return 1;
 
   /* seek to some initial time */
   epoch.gpsSeconds     = 600000071;

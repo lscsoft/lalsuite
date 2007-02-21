@@ -104,7 +104,8 @@ typedef enum
   LAL_FR_VERBOSE_MODE    = 3,  /* display warnings and info */
   LAL_FR_IGNOREGAP_MODE  = 4,  /* ignore gaps in data */
   LAL_FR_IGNORETIME_MODE = 8,  /* ignore invalid times requested */
-  LAL_FR_DEFAULT_MODE    = 15  /* ignore time/gaps but report warnings & info */
+  LAL_FR_DEFAULT_MODE    = 15, /* ignore time/gaps but report warnings & info */
+  LAL_FR_CHECKSUM_MODE   = 16  /* ensure that file checksums are OK */
 }
 FrMode;
 struct FrFile;
