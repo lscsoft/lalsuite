@@ -39,6 +39,7 @@
 "  --help                   display this message\n"\
 "  --source-file FILE       read source parameters from FILE\n"\
 "  --mass-file FILE         read population mass parameters from FILE\n"\
+"  --f-lower FREQUENCY      lower cut-off frequency.\n"\
 "  --gps-start-time TIME    start injections at GPS time TIME (729273613)\n"\
 "  --gps-end-time TIME      end injections at GPS time TIME (734367613)\n"\
 "  --time-step STEP         space injections by ave of STEP sec (2630 / PI)\n"\
@@ -805,6 +806,7 @@ int main( int argc, char *argv[] )
   long gpsEndTime = S2StopTime;
   double meanTimeStep = 2630 / LAL_PI; /* seconds between injections     */
   double timeInterval = 0;
+  REAL4 fLower = -1;
 
   long long tinj = 1000000000LL * gpsStartTime;
   struct time_list  tlisthead;
@@ -840,6 +842,7 @@ int main( int argc, char *argv[] )
     {"help",                          no_argument, 0,                'h'},
     {"source-file",             required_argument, 0,                'f'},
     {"mass-file",               required_argument, 0,                'm'},
+    {"f-lower",                 required_argument, 0,                'F'},
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
     {"time-step",               required_argument, 0,                't'},
@@ -939,6 +942,13 @@ int main( int argc, char *argv[] )
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, "string", 
               "%s", optarg );
+        break;
+
+      case 'F':
+        fLower = atof( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, "float", 
+              "%f", fLower );
         break;
 
       case 'a':
@@ -1227,7 +1237,7 @@ int main( int argc, char *argv[] )
         else if (!strcmp(dummy, "uniform")) 
         {
           dDistr=uniform;
-        }  
+        }
         else if (!strcmp(dummy, "log10")) 
         {
           dDistr=logten;
@@ -1329,6 +1339,14 @@ int main( int argc, char *argv[] )
   {
     fprintf( stderr, 
         "Must specify either a --mass-file or a --m-distr\n" );
+    fprintf( stderr, USAGE );
+    exit( 1 );
+  }
+
+  /* require --f-lower be explicit */
+  if ( fLower <= 0.0 )
+  {
+    fprintf( stderr, "--f-lower must be specified and non-zero\n" );
     fprintf( stderr, USAGE );
     exit( 1 );
   }
@@ -1568,6 +1586,16 @@ int main( int argc, char *argv[] )
     /* populate the site specific information */
     LAL_CALL(LALPopulateSimInspiralSiteInfo( &status, this_sim_insp ), 
         &status);
+
+    /* populate the flower */
+    if (fLower > 0) 	
+    {
+	this_sim_insp->f_lower = fLower;
+    }
+    else
+    {
+	this_sim_insp->f_lower = 0;
+    }
 
     if ( !lalEffDist )
     {
