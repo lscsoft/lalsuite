@@ -29,7 +29,8 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 {
 	static const char func[] = "XLALCreateTFPlane";
 	REAL4TimeFrequencyPlane *plane;
-	REAL4Sequence *channel_mean_square;
+	REAL8Sequence *channel_overlap;
+	REAL8Sequence *channel_mean_square;
 	REAL4Sequence **channel;
 	TFTiling *tiling;
 	unsigned i;
@@ -40,7 +41,8 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 
 	if((flow < 0) ||
 	   (deltaF <= 0.0) ||
-	   (deltaT <= 0.0))
+	   (deltaT <= 0.0) ||
+	   (channels < 1))
 		XLAL_ERROR_NULL(func, XLAL_EINVAL);
 
 	/*
@@ -48,12 +50,14 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	 */
 
 	plane = LALMalloc(sizeof(*plane));
-	channel_mean_square = XLALCreateREAL4Sequence(channels);
+	channel_overlap = XLALCreateREAL8Sequence(channels - 1);
+	channel_mean_square = XLALCreateREAL8Sequence(channels);
 	channel = LALMalloc(channels * sizeof(*channel));
 	tiling = XLALCreateTFTiling(deltaT, flow, deltaF, timeBins, channels, tiling_inv_fractional_stride, tiling_max_bandwidth, tiling_max_duration);
-	if(!plane || !channel_mean_square || !channel || !tiling) {
+	if(!plane || !channel_overlap || !channel_mean_square || !channel || !tiling) {
 		LALFree(plane);
-		XLALDestroyREAL4Sequence(channel_mean_square);
+		XLALDestroyREAL8Sequence(channel_overlap);
+		XLALDestroyREAL8Sequence(channel_mean_square);
 		LALFree(channel);
 		XLALDestroyTFTiling(tiling);
 		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
@@ -64,7 +68,8 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 			while(--i)
 				XLALDestroyREAL4Sequence(channel[i]);
 			LALFree(plane);
-			XLALDestroyREAL4Sequence(channel_mean_square);
+			XLALDestroyREAL8Sequence(channel_overlap);
+			XLALDestroyREAL8Sequence(channel_mean_square);
 			LALFree(channel);
 			XLALDestroyTFTiling(tiling);
 			XLAL_ERROR_NULL(func, XLAL_ENOMEM);
@@ -82,6 +87,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	plane->channels = channels;
 	plane->deltaF = deltaF;
 	plane->flow = flow;
+	plane->channel_overlap = channel_overlap;
 	plane->channel_mean_square = channel_mean_square;
 	plane->channel = channel;
 	plane->tiling = tiling;
@@ -104,7 +110,8 @@ XLALDestroyTFPlane(
 	unsigned i;
 
 	if(plane) {
-		XLALDestroyREAL4Sequence(plane->channel_mean_square);
+		XLALDestroyREAL8Sequence(plane->channel_overlap);
+		XLALDestroyREAL8Sequence(plane->channel_mean_square);
 		for(i = 0; i < plane->channels; i++)
 			XLALDestroyREAL4Sequence(plane->channel[i]);
 		LALFree(plane->channel);

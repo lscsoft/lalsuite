@@ -148,14 +148,14 @@ static COMPLEX8Sequence *apply_filter(
  */
 
 
-static REAL4 channel_mean_square(
+static REAL8 channel_mean_square(
 	const REAL4FrequencySeries *psd,
 	const COMPLEX8FrequencySeries *filter
 )
 {
 	REAL4 *pdata = psd->data->data + (int) ((filter->f0 - psd->f0) / psd->deltaF);
 	COMPLEX8 *fdata = filter->data->data;
-	REAL4 sum = 0.0;
+	double sum = 0.0;
 	unsigned i;
 
 	for(i = 0; i < filter->data->length; i++, pdata++, fdata++)
@@ -236,8 +236,9 @@ int XLALFreqSeriesToTFPlane(
 		XLAL_ERROR(func, XLAL_EFUNC);
 	}
 
-	/* compute the channel overlap */
-	plane->channel_overlap = filter_overlap(filter, plane->deltaF);
+	/* compute the channel overlaps */
+	for(i = 0; i < plane->channels - 1; i++)
+		plane->channel_overlap->data[i] = filter_overlap(filter, plane->deltaF);
 
 	/* loop over time-frequency plane's channels */
 	for(i = 0; i < plane->channels; i++, filter->f0 += plane->deltaF) {
