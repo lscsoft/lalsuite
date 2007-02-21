@@ -34,6 +34,9 @@ to LALTimeDelay() with detector 1 set to the geocenter.
 
 The function XLALLightTravelTime() computes the light travel time between two detectors and returns the answer in \texttt{INT8} nanoseconds.
 
+The function XLALPopulateAccuracyParams creates an instance of InspiralAccuracyList populated with the light-travel times between the detectors, using just the previous function.
+The function XLALPopulateAccuracyParamsExt, however, creates an instance of InspiralAccuracyList populated with the \textbf{real} travel time of a putative signal for the given time and the given sky location (in right ascension and declination, both given in degrees).
+
 \subsubsection*{Algorithm}
 
 TBA. See Anderson, \textit{et al.} \cite{tools:Anderson:2000} in the mean time.
@@ -195,8 +198,7 @@ XLALLightTravelTime(
 /* <lalVerbatim file="TimeDelayCP"> */
 void
 XLALPopulateAccuracyParams(
-       InspiralAccuracyList   *accuracyParams,
-       const DetTimeAndASource *timeAndSource
+       InspiralAccuracyList  *accuracyParams
 )
 /* </lalVerbatim> */
 {
@@ -204,7 +206,6 @@ XLALPopulateAccuracyParams(
   const CHAR *func = "XLALPopulateAccuracyParams";
 
   INT4 ifoNumber, ifoTwo;
-  REAL8 timeDelay;
   LALDetector aDet, bDet;
 
 
@@ -223,28 +224,78 @@ XLALPopulateAccuracyParams(
     {
       XLALReturnDetector( &bDet, ifoTwo );
 
-
-      if ( timeAndSource==NULL )
-      { 
-	/* compute maximum light travel time */
-	accuracyParams->lightTravelTime[ ifoNumber][ ifoTwo ] =
-          XLALLightTravelTime( &aDet, &bDet );
-      } 
-      else 
-      {
-	/* compute signal travel time  */
-	timeDelay=-XLALArrivalTimeDiff( aDet.location, bDet.location, timeAndSource->p_source->longitude,timeAndSource->p_source->latitude,  timeAndSource->p_det_and_time->p_gps);
-
-	accuracyParams->lightTravelTime[ ifoNumber][ ifoTwo ] =
-           (INT8) 1e9*timeDelay;
-      }
+      /* compute maximum light travel time */
+      accuracyParams->lightTravelTime[ ifoNumber][ ifoTwo ] =
+	XLALLightTravelTime( &aDet, &bDet );     
     }
   }
 
   /* set the exttrig flag */
-  if ( timeAndSource )
+  accuracyParams->exttrig=0;
+}
+
+
+
+/* <lalVerbatim file="TimeDelayCP"> */
+void
+XLALPopulateAccuracyParamsExt(
+       InspiralAccuracyList  *accuracyParams,
+       const LIGOTimeGPS     *gpstime,
+       const REAL8            ra_deg,
+       const REAL8            dec_deg
+)
+/* </lalVerbatim> */
+{
+
+  const CHAR *func = "XLALPopulateAccuracyParamsExt";
+
+  INT4 ifoNumber, ifoTwo;
+  REAL8 timeDelay;
+  REAL8 ra_radians, dec_radians;
+  LALDetector aDet, bDet;
+
+  /* check that the accuracyParams structure is allocated */
+  if ( accuracyParams == NULL )
   {
-    accuracyParams->exttrig=1;
-  } 
+    XLAL_ERROR_VOID( func, XLAL_EFAULT );
+  }
+
+  /* check the values given */
+  if (ra_deg<0 || ra_deg > 360) 
+  {
+    XLALPrintError("Right ascension value outside [0; 360]. Value given: %f\n", ra_deg);
+    XLAL_ERROR_VOID( func, XLAL_EDATA );
+  }
+  if (dec_deg<-90 || dec_deg>90) 
+  {
+    XLALPrintError("Declination value outside [-90; 90]. Value given: %f\n", dec_deg);
+    XLAL_ERROR_VOID( func, XLAL_EDATA );
+  }
+
+  /* convert position */
+  ra_radians  =  ra_deg * LAL_PI_180;
+  dec_radians = dec_deg * LAL_PI_180;
+
+
+  /* Populate the lightTravel matrix */
+  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    XLALReturnDetector( &aDet, ifoNumber );
+
+    for ( ifoTwo = 0; ifoTwo < LAL_NUM_IFO; ifoTwo++)
+    {
+      XLALReturnDetector( &bDet, ifoTwo );
+
+      /* compute signal travel time  */
+      timeDelay=-XLALArrivalTimeDiff( aDet.location, bDet.location, 
+				      ra_radians, dec_radians, gpstime);
+      
+      accuracyParams->lightTravelTime[ ifoNumber][ ifoTwo ] =
+	(INT8) 1e9*timeDelay;      
+    }
+  }
+
+  /* set the exttrig flag */
+  accuracyParams->exttrig=1;
 
 }
