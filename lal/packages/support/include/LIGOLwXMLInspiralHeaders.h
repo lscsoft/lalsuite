@@ -207,7 +207,7 @@ fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:ligo_angle\" Typ
 fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:ligo_angle_sig\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:inclination\"  Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:polarization\"  Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:event_id\" Type=\"int_8s\"/>\n", fp ) == EOF || \ 
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:event_id\" Type=\"int_8s\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:h1quad_re\"  Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:h1quad_im\"  Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:h2quad_re\"  Type=\"real_4\"/>\n" , fp ) == EOF || \

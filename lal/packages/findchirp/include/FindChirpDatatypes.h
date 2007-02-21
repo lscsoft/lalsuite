@@ -173,7 +173,7 @@ the linked list.
 \idx[Type]{InspiralTemplateNodeList}
 
 \noindent This structure provides a method of constucting linked
-lists of \texttt{InspiralTemplateNode} structures (as if it weren't already
+lists of \texttt{InspiralTemplateNode} structures (as if it were not already
 complicated enough).  Actually it is necessary to create a list of 
 sub banks for the template bank veto so that roughly 20 or so templates
 can be filtered and stored in memory at one time. 
