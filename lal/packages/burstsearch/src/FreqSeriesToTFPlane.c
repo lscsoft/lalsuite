@@ -27,17 +27,20 @@ NRCSID(FREQSERIESTOTFPLANEC, "$Id$");
 static COMPLEX8FrequencySeries *generate_filter(const COMPLEX8FrequencySeries *template, REAL8 channel_flow, REAL8 channel_width)
 {
 	const char func[] = "generate_filter";
+	char filter_name[100];
 	REAL4Window *hann;
 	COMPLEX8FrequencySeries *fdfilter;
 	unsigned i;
 	REAL4 norm;
+
+	sprintf(filter_name, "channel %g +/- %g Hz", channel_flow + channel_width / 2, channel_width);
 
 	/*
 	 * Channel filter is a Hann window twice the channel's width,
 	 * centred on the channel's centre frequency.
 	 */
 
-	fdfilter = XLALCreateCOMPLEX8FrequencySeries("channel filter", &template->epoch, channel_flow - channel_width / 2, template->deltaF, &lalDimensionlessUnit, 2 * channel_width / template->deltaF);
+	fdfilter = XLALCreateCOMPLEX8FrequencySeries(filter_name, &template->epoch, channel_flow - channel_width / 2, template->deltaF, &lalDimensionlessUnit, 2 * channel_width / template->deltaF);
 	hann = XLALCreateHannREAL4Window(fdfilter->data->length);
 	if(!fdfilter || !hann) {
 		XLALDestroyCOMPLEX8FrequencySeries(fdfilter);
@@ -78,28 +81,31 @@ static COMPLEX8FrequencySeries *generate_filter(const COMPLEX8FrequencySeries *t
 
 /*
  * Compute the magnitude of the inner product of neighbouring channel
- * filters.
+ * filters.  assumes filter2->f0 >= filter1->f0, and that the highest
+ * numbered sample in filter1 is not past the end of filter2.
  */
 
 
 static REAL8 filter_overlap(
-	COMPLEX8FrequencySeries *filter,
-	REAL8 channel_spacing
+	COMPLEX8FrequencySeries *filter1,
+	COMPLEX8FrequencySeries *filter2
 )
 {
-	COMPLEX8 *fdata = filter->data->data;
-	COMPLEX8 sum = {0, 0};
-	const unsigned n = filter->data->length - channel_spacing / filter->deltaF;
-	unsigned i;
+	COMPLEX8 *f1data = filter1->data->data + (int) ((filter2->f0 - filter1->f0) / filter1->deltaF);
+	COMPLEX8 *f1end = filter1->data->data + filter1->data->length;
+	COMPLEX8 *f2data = filter2->data->data;
+	COMPLEX16 sum = {0, 0};
 
-	if(channel_spacing / filter->deltaF > filter->data->length)
-		return 0;
+	if((filter1->f0 > filter2->f0) || ((f1end - f1data) > (int) filter2->data->length) || (filter1->deltaF != filter2->deltaF))
+		return XLAL_REAL8_FAIL_NAN;
 
-	for(i = 0; i < n; i++) {
-		sum.re += fdata[filter->data->length - n + i].re * fdata[i].re + fdata[filter->data->length - n + i].im * fdata[i].im;
-		sum.im += fdata[filter->data->length - n + i].im * fdata[i].re - fdata[filter->data->length - n + i].re * fdata[i].im;
+	/* sum filter1 * conj(filter2) */
+	for(; f1data < f1end; f1data++, f2data++) {
+		sum.re += f1data->re * f2data->re + f1data->im * f2data->im;
+		sum.im += f1data->im * f2data->re - f1data->re * f2data->im;
 	}
 
+	/* return | sum filter1 * conj(filter2) | */
 	return sqrt(sum.re * sum.re + sum.im * sum.im);
 }
 
@@ -176,7 +182,7 @@ int XLALFreqSeriesToTFPlane(
 {
 	const char func[] = "XLALFreqSeriesToTFPlane";
 	REAL4Sequence *snr;
-	COMPLEX8FrequencySeries *filter;
+	COMPLEX8FrequencySeries **filter;
 	COMPLEX8Sequence *fcorr;
 	unsigned i;
 	unsigned j;
@@ -195,9 +201,11 @@ int XLALFreqSeriesToTFPlane(
 		XLAL_ERROR(func, XLAL_EDATA);
 
 	/* create temporary vectors */
+	filter = LALMalloc(plane->channels * sizeof(*filter));
 	fcorr = XLALCreateCOMPLEX8Sequence(fseries->data->length);
 	snr = XLALCreateREAL4Sequence(2 * (fseries->data->length - 1));
-	if(!fcorr || !snr) {
+	if(!filter || !fcorr || !snr) {
+		LALFree(filter);
 		XLALDestroyCOMPLEX8Sequence(fcorr);
 		XLALDestroyREAL4Sequence(snr);
 		XLAL_ERROR(func, XLAL_EFUNC);
@@ -206,6 +214,7 @@ int XLALFreqSeriesToTFPlane(
 	/* sampling rate of time series which gave fseries */
 	dt = 1.0 / (snr->length * fseries->deltaF);
 	if(fmod(plane->deltaT, dt) != 0.0) {
+		LALFree(filter);
 		XLALDestroyCOMPLEX8Sequence(fcorr);
 		XLALDestroyREAL4Sequence(snr);
 		XLAL_ERROR(func, XLAL_EDOM);
@@ -228,29 +237,36 @@ int XLALFreqSeriesToTFPlane(
 	plane->epoch = fseries->epoch;
 	XLALGPSAdd(&plane->epoch, tstart * dt);
 
-	/* generate the frequency domain filter function. */
-	filter = generate_filter(fseries, plane->flow, plane->deltaF);
-	if(!filter) {
-		XLALDestroyCOMPLEX8Sequence(fcorr);
-		XLALDestroyREAL4Sequence(snr);
-		XLAL_ERROR(func, XLAL_EFUNC);
+	/* generate the frequency domain filter functions */
+	for(i = 0; i < plane->channels; i++) {
+		filter[i] = generate_filter(fseries, plane->flow + i * plane->deltaF, plane->deltaF);
+		if(!filter[i]) {
+			while(--i)
+				XLALDestroyCOMPLEX8FrequencySeries(filter[i]);
+			LALFree(filter);
+			XLALDestroyCOMPLEX8Sequence(fcorr);
+			XLALDestroyREAL4Sequence(snr);
+			XLAL_ERROR(func, XLAL_EFUNC);
+		}
 	}
 
 	/* compute the channel overlaps */
 	for(i = 0; i < plane->channels - 1; i++)
-		plane->channel_overlap->data[i] = filter_overlap(filter, plane->deltaF);
+		plane->channel_overlap->data[i] = filter_overlap(filter[i], filter[i + 1]);
 
 	/* loop over time-frequency plane's channels */
-	for(i = 0; i < plane->channels; i++, filter->f0 += plane->deltaF) {
+	for(i = 0; i < plane->channels; i++) {
 		/* cross correlate the input data against the channel
 		 * filter by taking their product in the frequency domain
 		 * and then inverse transforming to the time domain to
 		 * obtain an SNR time series.  Note that
 		 * XLALREAL4ReverseFFT() omits the factor of 1/N in the
 		 * inverse transform. */
-		apply_filter(fcorr, fseries, filter);
+		apply_filter(fcorr, fseries, filter[i]);
 		if(XLALREAL4ReverseFFT(snr, fcorr, reverseplan)) {
-			XLALDestroyCOMPLEX8FrequencySeries(filter);
+			for(i = 0; i < plane->channels; i++)
+				XLALDestroyCOMPLEX8FrequencySeries(filter[i]);
+			LALFree(filter);
 			XLALDestroyCOMPLEX8Sequence(fcorr);
 			XLALDestroyREAL4Sequence(snr);
 			XLAL_ERROR(func, XLAL_EFUNC);
@@ -263,14 +279,16 @@ int XLALFreqSeriesToTFPlane(
 			plane->channel[i]->data[j] = snr->data[tstart + j * tbins_per_sample];
 
 		/* Store the predicted mean square for this channel */
-		plane->channel_mean_square->data[i] = channel_mean_square(psd, filter);
+		plane->channel_mean_square->data[i] = channel_mean_square(psd, filter[i]);
 	}
 
-	/* Get rid of all temporary memory */
-	XLALDestroyCOMPLEX8FrequencySeries(filter);
+	/* clean up */
+	for(i = 0; i < plane->channels; i++)
+		XLALDestroyCOMPLEX8FrequencySeries(filter[i]);
+	LALFree(filter);
 	XLALDestroyCOMPLEX8Sequence(fcorr);
 	XLALDestroyREAL4Sequence(snr);
 
-	/* normal exit */
+	/* success */
 	return 0;
 }
