@@ -1072,8 +1072,8 @@ static COMPLEX8FrequencySeries *generate_response(LALStatus *stat, const char *c
 
 static REAL4TimeSeries *add_burst_injections(LALStatus *stat, char *filename, REAL4TimeSeries *series, COMPLEX8FrequencySeries *response)
 {
-	const INT4 startTime = series->epoch.gpsSeconds;
-	const INT4 stopTime = startTime + series->data->length * series->deltaT;
+	const INT4 start_time = series->epoch.gpsSeconds;
+	const INT4 stop_time = start_time + series->data->length * series->deltaT;
 	const INT4 calType = 0;
 	SimBurstTable *injections = NULL;
 
@@ -1084,7 +1084,7 @@ static REAL4TimeSeries *add_burst_injections(LALStatus *stat, char *filename, RE
 
 	XLALPrintInfo("add_burst_injections(): reading in SimBurst Table\n");
 
-	LAL_CALL(LALSimBurstTableFromLIGOLw(stat, &injections, filename, startTime, stopTime), stat);
+	LAL_CALL(LALSimBurstTableFromLIGOLw(stat, &injections, filename, start_time, stop_time), stat);
 
 	XLALPrintInfo("add_burst_injections(): injecting signals into time series\n");
 
@@ -1111,8 +1111,8 @@ static REAL4TimeSeries *add_burst_injections(LALStatus *stat, char *filename, RE
 
 static REAL4TimeSeries *add_inspiral_injections(LALStatus *stat, char *filename, REAL4TimeSeries *series, COMPLEX8FrequencySeries *response)
 {
-	INT4 startTime = series->epoch.gpsSeconds;
-	INT4 stopTime = startTime + series->data->length * series->deltaT;
+	INT4 start_time = series->epoch.gpsSeconds;
+	INT4 stop_time = start_time + series->data->length * series->deltaT;
 	SimInspiralTable *injections = NULL;
 
 	INT4 numInjections = 0;
@@ -1124,7 +1124,7 @@ static REAL4TimeSeries *add_inspiral_injections(LALStatus *stat, char *filename,
 
 	XLALPrintInfo("add_inspiral_injections(): reading in SimInspiral Table\n");
 
-	numInjections = SimInspiralTableFromLIGOLw(&injections, filename, startTime, stopTime);
+	numInjections = SimInspiralTableFromLIGOLw(&injections, filename, start_time, stop_time);
 
 	if(numInjections < 0) {
 		XLALPrintError("add_inspiral_injections():error:cannot read injection file\n");
@@ -1203,8 +1203,8 @@ static void add_sim_injections(LALStatus *stat, REAL4TimeSeries *series, COMPLEX
 	UINT4 i, n;
 	REAL8 simDuration;
 
-	INT4 startTime = series->epoch.gpsSeconds;
-	INT4 stopTime = startTime + series->data->length * series->deltaT;
+	INT4 start_time = series->epoch.gpsSeconds;
+	INT4 stop_time = start_time + series->data->length * series->deltaT;
 	SimBurstTable *injections = NULL;
 	SimBurstTable *simBurst = NULL;
 	BurstParamStruc burstParam;
@@ -1280,7 +1280,7 @@ static void add_sim_injections(LALStatus *stat, REAL4TimeSeries *series, COMPLEX
 
 	XLALPrintInfo("add_sim_injections(): reading in SimBurst Table\n");
 
-	LAL_CALL(LALSimBurstTableFromLIGOLw(stat, &injections, options.simInjectionFile, startTime, stopTime), stat);
+	LAL_CALL(LALSimBurstTableFromLIGOLw(stat, &injections, options.simInjectionFile, start_time, stop_time), stat);
 
 	simBurst = injections;
 	while(simBurst) {
@@ -1516,7 +1516,6 @@ int main(int argc, char *argv[])
 	size_t overlap;
 	CHAR outfilename[256];
 	REAL4TimeSeries *series = NULL;
-	COMPLEX8FrequencySeries *hrssresponse = NULL;
 	SnglBurstTable *burstEvent = NULL;
 	SnglBurstTable **EventAddPoint = &burstEvent;
 	MetadataTable procTable;
@@ -1648,17 +1647,6 @@ int main(int argc, char *argv[])
 			add_mdc_injections(options.mdc_cache_filename, options.mdc_channel_name, series, epoch, options.gps_end, options.max_series_length);
 
 		/*
-		 * Generate the response function at the right deltaf to be
-		 * used for h_rss estimation.  (if the cache file is NULL
-		 * then a unit response is generated).
-		 */
-
-		/* FIXME: not used anymore */
-		hrssresponse = generate_response(&stat, options.cal_cache_filename, options.ifo, options.channel_name, series->deltaT, series->epoch, options.window_length);
-		if(!hrssresponse)
-			exit(1);
-
-		/*
 		 * Condition the time series data.
 		 */
 
@@ -1667,7 +1655,7 @@ int main(int argc, char *argv[])
 			const double scale = 1e10;
 			unsigned i;
 			for(i = 0; i < series->data->length; i++)
-				series->data->data[i] = scale * series->data->data[i];
+				series->data->data[i] *= scale;
 		}
 
 		if(XLALEPConditionData(series, options.high_pass, (REAL8) 1.0 / options.resample_rate, options.filter_corruption)) {
@@ -1708,10 +1696,9 @@ int main(int argc, char *argv[])
 
 		XLALGPSAdd(&epoch, (series->data->length - overlap) * series->deltaT);
 		XLALDestroyREAL4TimeSeries(series);
-		XLALDestroyCOMPLEX8FrequencySeries(hrssresponse);
 	}
 
-	/* Unscale the amplitudes if calibrated data */
+	/* Unscale the h_{rss} estimates if calibrated data */
 	if(options.calibrated) {
 		const double scale = 1e10;
 		SnglBurstTable *event;
