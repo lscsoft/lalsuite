@@ -24,62 +24,13 @@ NRCSID(FREQSERIESTOTFPLANEC, "$Id$");
  */
 
 
-static COMPLEX8FrequencySeries *generate_filter(const COMPLEX8FrequencySeries *template, REAL8 channel_flow, REAL8 channel_width/*, REAL8 dt*/)
+static COMPLEX8FrequencySeries *generate_filter(const COMPLEX8FrequencySeries *template, REAL8 channel_flow, REAL8 channel_width)
 {
 	const char func[] = "generate_filter";
 	REAL4Window *hann;
 	COMPLEX8FrequencySeries *fdfilter;
 	unsigned i;
 	REAL4 norm;
-#if 0
-	REAL4Sequence *tdfilter;
-	RealFFTPlan *plan;
-	REAL8 twopiOverNumpts;
-	INT4 fstart = channel_flow / template->deltaF;
-	INT4 fbins_per_channel = channel_width / template->deltaF;
-	unsigned firstzero;
-
-	/* keep this many samples from the filter on either side of each
-	 * channel */
-	const INT4 fwindow = 100;
-
-	/* allocate memory */
-	tdfilter = XLALCreateREAL4Sequence(2 * (template->data->length - 1));
-	plan = XLALCreateForwardREAL4FFTPlan(tdfilter->length, 0);
-	fdfilter = XLALCreateCOMPLEX8FrequencySeries("channel filter", &template->epoch, 0.0, template->deltaF, &lalDimensionlessUnit, template->data->length);
-	if(!tdfilter || !plane || !fdfilter) {
-		XLALDestroyREAL4Sequence(tdfilter);
-		XLALDestroyREAL4FFTPlan(plan);
-		XLALDestroyCOMPLEX8FrequencySeries(fdfilter);
-		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
-	}
-
-	/* zero the time-domain filter */
-	memset(tdfilter->data, 0, tdfilter->length * sizeof(*tdfilter->data));
-
-	/* number of points from peak of filter to first zero */
-	firstzero = tdfilter->length / fbins_per_channel;
-
-	twopiOverNumpts = 2.0 * LAL_PI / tdfilter->length;
-	tdfilter->data[0] = twopiOverNumpts * fbins_per_channel / (LAL_PI * dt);
-	for(i = 1; i < firstzero; i++)
-		tdfilter->data[i] = tdfilter->data[tdfilter->length - i] = (sin(twopiOverNumpts * i * (fstart + fbins_per_channel)) - sin(twopiOverNumpts * i * fstart)) / (LAL_PI * i * dt);
-
-	/* transform to frequency domain */
-	if(XLALREAL4ForwardFFT(fdfilter->data, tdfilter, plan)) {
-		XLALDestroyREAL4Sequence(tdfilter);
-		XLALDestroyREAL4FFTPlan(plan);
-		XLALDestroyCOMPLEX8FrequencySeries(fdfilter);
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
-	}
-
-	/* clean up */
-	XLALDestroyREAL4Sequence(tdfilter);
-	XLALDestroyREAL4FFTPlan(plan);
-
-	/* extract the part of the filter to be applied to each channel */
-	XLALResizeCOMPLEX8FrequencySeries(fdfilter, fstart - fwindow, fbins_per_channel + 2 * fwindow);
-#else
 
 	/*
 	 * Channel filter is a Hann window twice the channel's width,
@@ -98,9 +49,9 @@ static COMPLEX8FrequencySeries *generate_filter(const COMPLEX8FrequencySeries *t
 		fdfilter->data->data[i].im = 0.0;
 	}
 	XLALDestroyREAL4Window(hann);
-#endif
 
-	/* normalize the filter.  the filter needs to be normalized so that
+	/*
+	 * normalize the filter.  the filter needs to be normalized so that
 	 * it's sum squares is 1, but where the sum is done over all
 	 * frequency components positive and negative.  since we are
 	 * dealing with real data, our frequency series and this filter
@@ -108,14 +59,19 @@ static COMPLEX8FrequencySeries *generate_filter(const COMPLEX8FrequencySeries *t
 	 * frequency components being known as the complex conjugates of
 	 * the positive frequencies).  therefore the sum squares function
 	 * is only summing the positive frequencies, and so the value
-	 * returned needs to be doubled;  hence the factor of 2. */
+	 * returned needs to be doubled;  hence the factor of 2.
+	 */
+
 	norm = sqrt(2 * XLALCOMPLEX8SequenceSumSquares(fdfilter->data, 0, fdfilter->data->length));
 	for(i = 0; i < fdfilter->data->length; i++) {
 		fdfilter->data->data[i].re /= norm;
 		fdfilter->data->data[i].im /= norm;
 	}
 
-	/* success */
+	/*
+	 * success
+	 */
+
 	return fdfilter;
 }
 
@@ -273,7 +229,7 @@ int XLALFreqSeriesToTFPlane(
 	XLALGPSAdd(&plane->epoch, tstart * dt);
 
 	/* generate the frequency domain filter function. */
-	filter = generate_filter(fseries, plane->flow, plane->deltaF/*, dt*/);
+	filter = generate_filter(fseries, plane->flow, plane->deltaF);
 	if(!filter) {
 		XLALDestroyCOMPLEX8Sequence(fcorr);
 		XLALDestroyREAL4Sequence(snr);
