@@ -327,6 +327,10 @@ INT2 XLALCompareInspiralsEllipsoid(
       timeShift=travelTime;
       XLALSetTimeInPositionVector( aPtr->position, timeShift );
     }
+    else
+    {
+      timeShift = -travelTime;
+    }
 
     /* Loop over the time shift to sweep the light travel time */
     while (timeShift <= travelTime)
