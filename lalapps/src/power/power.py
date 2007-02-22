@@ -694,13 +694,13 @@ def make_multipower_fragment(dag, powerparents, lladdparents, instrument, seglis
 	if clustering:
 		# cluster individual power jobs' outputs (keeps file sizes
 		# small, to lower risk of lladd running out of memory)
-		nodes = [make_bucluster_fragment(dag, [node], instrument, segments.segment(node.get_start(), node.get_end()), tag) for node in nodes]
+		nodes = [make_bucluster_fragment(dag, [node], instrument, segments.segment(node.get_start(), node.get_end()), tag + "_PRELLADD") for node in nodes]
 	lladdnode = make_lladd_fragment(dag, nodes + lladdparents, instrument, segment, "POWER_%s" % tag, preserves = reduce(list.__add__, [node.get_output_cache() for node in lladdparents], []))
 	lladdnode.set_output("%s-POWER_%s-%s-%s.xml.gz" % (instrument, tag, int(segment[0]), int(abs(segment))))
 	if clustering:
 		# recluster the triggers following lladd to catch edge
 		# effects
-		return make_bucluster_fragment(dag, [lladdnode], instrument, segment, tag)
+		return make_bucluster_fragment(dag, [lladdnode], instrument, segment, tag + "_POSTLLADD")
 	else:
 		return lladdnode
 
