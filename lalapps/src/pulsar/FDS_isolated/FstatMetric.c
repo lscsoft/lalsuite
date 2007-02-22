@@ -164,52 +164,57 @@ typedef struct
   REAL8 Ad, Bd, Cd, Dd;
 } ConfigVariables;
 
+
+typedef struct 
+{ 
+  BOOLEAN help;
+
+  LALStringVector* IFOs;	/**< list of detector-names "H1,H2,L1,.." or single detector*/
+  LALStringVector* IFOweights; /**< list of relative detector-weights "w1, w2, w3, .." */
+  
+  REAL8 Freq;		/**< target-frequency */
+  REAL8 dFreq;		/**< target-frequency offset */
+  
+  REAL8 Alpha;		/**< skyposition Alpha: radians, equatorial coords. */
+  REAL8 dAlpha;		/**< skyposition Alpha offset */
+
+  REAL8 Delta;		/**< skyposition Delta: radians, equatorial coords. */
+  REAL8 dDelta;		/**< skyposition Delta offset */
+  
+  REAL8 f1dot;		/**< target 1. spindown-value df/dt */
+  REAL8 df1dot;		/**< spindown df/dt offset */
+
+  CHAR *ephemDir;	/**< directory of ephemeris-files */
+  CHAR *ephemYear;	/**< year-range of ephemeris-file to use */
+
+  REAL8 startTime;	/**< GPS start time of observation */
+  REAL8 refTime;	/**< reference-time for spin-parameters fkdot */
+  REAL8 duration;	/**< length of observation in seconds */
+  INT4 numSteps;	/**< how many timesteps to use in Gauss-Legendre integration */
+
+  REAL8 cosi;		/**< cos(iota) */
+  REAL8 psi;		/**< polarization-angle psi */
+  
+  BOOLEAN printMotion;	/**< output orbital motion? */
+  CHAR* outputMetric;	/**< filename to write metrics into */
+  
+  INT4 metricType;	/**< metric to compute: F-, phase-, orbital-, Ptole- metric */
+  INT4 unitsType;	/**< which units to use for 't' and 'rX/c': SI vs natural */
+} UserVariables_t;
+
+
 /*---------- empty structs for initializations ----------*/
 ConfigVariables empty_ConfigVariables;
 PulsarTimesParamStruc empty_PulsarTimesParamStruc;
-
+UserVariables_t empty_UserVariables;
 /* ---------- global variables ----------*/
-
-BOOLEAN uvar_help;
-
-LALStringVector* uvar_IFOs;	/**< list of detector-names "H1,H2,L1,.." or single detector*/
-LALStringVector* uvar_IFOweights; /**< list of relative detector-weights "w1, w2, w3, .." */
-
-REAL8 uvar_Freq;		/**< target-frequency */
-REAL8 uvar_dFreq;		/**< target-frequency offset */
-
-REAL8 uvar_Alpha;		/**< skyposition Alpha: radians, equatorial coords. */
-REAL8 uvar_dAlpha;		/**< skyposition Alpha offset */
-
-REAL8 uvar_Delta;		/**< skyposition Delta: radians, equatorial coords. */
-REAL8 uvar_dDelta;		/**< skyposition Delta offset */
-
-REAL8 uvar_f1dot;		/**< target 1. spindown-value df/dt */
-REAL8 uvar_df1dot;		/**< spindown df/dt offset */
-
-CHAR *uvar_ephemDir;		/**< directory of ephemeris-files */
-CHAR *uvar_ephemYear;		/**< year-range of ephemeris-file to use */
-
-REAL8 uvar_startTime;		/**< GPS start time of observation */
-REAL8 uvar_refTime;		/**< reference-time for spin-parameters fkdot */
-REAL8 uvar_duration;		/**< length of observation in seconds */
-INT4 uvar_numSteps;		/**< how many timesteps to use in Gauss-Legendre integration */
-
-REAL8 uvar_cosi;		/**< cos(iota) */
-REAL8 uvar_psi;			/**< polarization-angle psi */
-
-BOOLEAN uvar_printMotion;	/**< output orbital motion? */
-CHAR* uvar_outputMetric;	/**< filename to write metrics into */
-
-INT4 uvar_metricType;		/**< metric to compute: F-, phase-, orbital-, Ptole- metric */
-INT4 uvar_unitsType;		/**< which units to use for 't' and 'rX/c': SI vs natural */
 
 extern int vrbflg;
 
 
 /* ---------- local prototypes ---------- */
-void initUserVars (LALStatus *);
-void InitCode (LALStatus *, ConfigVariables *cfg);
+void initUserVars (LALStatus *status, UserVariables_t *uvar);
+void InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar);
 void getMultiPhaseDerivs (LALStatus *, MultiPhaseDerivs **derivs, 
 			  const MultiDetectorStateSeries *detStates, 
 			  const DopplerPoint *dopplerPoint, 
@@ -249,6 +254,7 @@ main(int argc, char *argv[])
   REAL8 mF, mFav, disc, mMin, mMax;
   gsl_matrix *g_ij, *gFlat_ij;
   REAL8 mm;
+  UserVariables_t uvar = empty_UserVariables;
 
   FILE *fpMetric = 0;
   PhaseType_t phaseType;
@@ -266,16 +272,16 @@ main(int argc, char *argv[])
   /* set log-level */
   LogSetLevel ( lalDebugLevel );
 
-  LAL_CALL (initUserVars (&status), &status);	  
+  LAL_CALL (initUserVars (&status, &uvar), &status);	  
 
   /* read cmdline & cfgfile  */	
   LAL_CALL (LALUserVarReadAllInput (&status, argc,argv), &status);  
 
-  if (uvar_help) 	/* help requested: we're done */
+  if (uvar.help) 	/* help requested: we're done */
     exit (0);
 
-  if ( uvar_outputMetric )
-    if ( (fpMetric = fopen ( uvar_outputMetric, "wb" )) == NULL )
+  if ( uvar.outputMetric )
+    if ( (fpMetric = fopen ( uvar.outputMetric, "wb" )) == NULL )
       return FSTATMETRIC_EFILE;
   
   /* basic setup and initializations */
@@ -287,17 +293,17 @@ main(int argc, char *argv[])
   g_ij = gsl_matrix_calloc ( METRIC_DIM, METRIC_DIM );
   gFlat_ij = gsl_matrix_calloc ( METRIC_DIM, METRIC_DIM );
 
-  LAL_CALL ( InitCode(&status, &config), &status);
+  LAL_CALL ( InitCode(&status, &config, &uvar), &status);
 
-  if ( uvar_metricType == METRIC_ALL )
+  if ( uvar.metricType == METRIC_ALL )
     {
       startMetricType = METRIC_FSTAT;
       stopMetricType = METRIC_LAST;
     }
   else
     {
-      startMetricType = uvar_metricType;
-      stopMetricType = uvar_metricType + 1;
+      startMetricType = uvar.metricType;
+      stopMetricType = uvar.metricType + 1;
     }
   for ( metricType = startMetricType; metricType < stopMetricType; metricType ++ )
     {
@@ -399,29 +405,29 @@ main(int argc, char *argv[])
 	    gsl_vector *dopplerOffsetCanon;
 	    REAL8 dnx, dny, dnz, dnX, dnY;
 	    REAL8 sind, sina, cosd, cosa, sineps, coseps;
-	    REAL8 Tspan = uvar_duration;
+	    REAL8 Tspan = uvar.duration;
 	    /* ----- translate Doppler-offsets into 'canonical coords ----- */
 
-	    sind = sin(uvar_Delta); cosd = cos(uvar_Delta);
-	    sina = sin(uvar_Alpha); cosa = cos(uvar_Alpha);
+	    sind = sin(uvar.Delta); cosd = cos(uvar.Delta);
+	    sina = sin(uvar.Alpha); cosa = cos(uvar.Alpha);
 	    sineps = sin ( LAL_IEARTH ); coseps = cos ( LAL_IEARTH );
 
 	    /* sky-pos offset in equatorial coords */
-	    dnx = - cosd * sina * uvar_dAlpha - sind * cosa * uvar_dDelta;
-	    dny =   cosd * cosa * uvar_dAlpha - sind * sina * uvar_dDelta;
-	    dnz =   cosd * uvar_dDelta;
+	    dnx = - cosd * sina * uvar.dAlpha - sind * cosa * uvar.dDelta;
+	    dny =   cosd * cosa * uvar.dAlpha - sind * sina * uvar.dDelta;
+	    dnz =   cosd * uvar.dDelta;
 
 	    /* translate into ecliptic corrds */
 	    dnX = dnx;
 	    dnY = coseps * dny + sineps * dnz;
 
 	    /* sky-pos offset in canonical units */
-	    dkX = - LAL_TWOPI * uvar_Freq * LAL_AU_SI / LAL_C_SI * dnX;
-	    dkY = - LAL_TWOPI * uvar_Freq * LAL_AU_SI / LAL_C_SI * dnY;
+	    dkX = - LAL_TWOPI * uvar.Freq * LAL_AU_SI / LAL_C_SI * dnX;
+	    dkY = - LAL_TWOPI * uvar.Freq * LAL_AU_SI / LAL_C_SI * dnY;
 
 	    /* spin-offsets in canonical units */
-	    dom0 = LAL_TWOPI * Tspan * uvar_dFreq;
-	    dom1 = LAL_TWOPI * Tspan * Tspan * uvar_df1dot;
+	    dom0 = LAL_TWOPI * Tspan * uvar.dFreq;
+	    dom1 = LAL_TWOPI * Tspan * Tspan * uvar.df1dot;
 
 	    dopplerOffsetCanon = gsl_vector_calloc ( METRIC_DIM );
 	    gsl_vector_set ( dopplerOffsetCanon, 0, dom0 );
@@ -859,60 +865,60 @@ computePhaseMetric ( gsl_matrix *g_ij, const PhaseDerivs *dPhi, const REAL8Vecto
 
 /** register all "user-variables" */
 void
-initUserVars (LALStatus *status)
+initUserVars (LALStatus *status, UserVariables_t *uvar)
 {
   INITSTATUS( status, "initUserVars", rcsid );
   ATTATCHSTATUSPTR (status);
 
   /* set a few defaults */
-  uvar_help = FALSE;
+  uvar->help = FALSE;
 
 #define EPHEM_YEARS  "00-04"
-  uvar_ephemYear = (CHAR*)LALCalloc (1, strlen(EPHEM_YEARS)+1);
-  strcpy (uvar_ephemYear, EPHEM_YEARS);
+  uvar->ephemYear = (CHAR*)LALCalloc (1, strlen(EPHEM_YEARS)+1);
+  strcpy (uvar->ephemYear, EPHEM_YEARS);
 
 #define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
-  uvar_ephemDir = (CHAR*)LALCalloc (1, strlen(DEFAULT_EPHEMDIR)+1);
-  strcpy (uvar_ephemDir, DEFAULT_EPHEMDIR);
+  uvar->ephemDir = (CHAR*)LALCalloc (1, strlen(DEFAULT_EPHEMDIR)+1);
+  strcpy (uvar->ephemDir, DEFAULT_EPHEMDIR);
 
-  uvar_Freq = 100;
-  uvar_f1dot = 0.0;
+  uvar->Freq = 100;
+  uvar->f1dot = 0.0;
 
-  uvar_startTime = 714180733;
-  uvar_refTime   = uvar_startTime;
-  uvar_duration = 10 * 3600;
-  uvar_numSteps = 2000;
+  uvar->startTime = 714180733;
+  uvar->refTime   = uvar->startTime;
+  uvar->duration = 10 * 3600;
+  uvar->numSteps = 2000;
 
-  uvar_printMotion = FALSE;
+  uvar->printMotion = FALSE;
 
-  uvar_metricType = METRIC_ALL;
-  uvar_unitsType = UNITS_SI;
+  uvar->metricType = METRIC_ALL;
+  uvar->unitsType = UNITS_SI;
 
   /* register all our user-variable */
 
-  LALregBOOLUserVar(status,	help,		'h', UVAR_HELP,		"Print this help/usage message");
-  LALregLISTUserVar(status,	IFOs,		'I', UVAR_REQUIRED, 	"Comma-separated list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
-  LALregLISTUserVar(status,	IFOweights,	 0, UVAR_OPTIONAL, 	"Comma-separated list of relative noise-weights, eg. \"w1,w2,w3,..\" ");
-  LALregREALUserVar(status,	Alpha,		'a', UVAR_OPTIONAL,	"skyposition Alpha in radians, equatorial coords.");
-  LALregREALUserVar(status,	dAlpha,		 0, UVAR_OPTIONAL,	"skyposition offset in Alpha");
-  LALregREALUserVar(status,	Delta, 		'd', UVAR_OPTIONAL,	"skyposition Delta in radians, equatorial coords.");
-  LALregREALUserVar(status,	dDelta, 	 0, UVAR_OPTIONAL,	"skyposition offset in Delta");
-  LALregREALUserVar(status,	Freq, 		'f', UVAR_OPTIONAL, 	"target frequency");
-  LALregREALUserVar(status,	dFreq, 		 0, UVAR_OPTIONAL, 	"target frequency offset");
-  LALregREALUserVar(status,	f1dot, 		's', UVAR_OPTIONAL, 	"first spindown-value df/dt");
-  LALregREALUserVar(status,	df1dot, 	 0, UVAR_OPTIONAL, 	"first spindown-value offset");
-  LALregREALUserVar(status, 	startTime,      't', UVAR_OPTIONAL, 	"GPS start time of observation");
-  LALregREALUserVar(status, 	refTime,      	 0, UVAR_OPTIONAL, 	"reference time for spin-parameters [Default = startTime]");
-  LALregREALUserVar(status,    	duration,	'T', UVAR_OPTIONAL,	"Alternative: Duration of observation in seconds");
-  LALregINTUserVar(status,    	numSteps,	 0,  UVAR_OPTIONAL,	"Order of Gauss-Legendre quadrature to use");
-  LALregSTRINGUserVar(status,	ephemDir,       'E', UVAR_OPTIONAL, 	"Directory where Ephemeris files are located");
-  LALregSTRINGUserVar(status,	ephemYear,      'y', UVAR_OPTIONAL, 	"Year (or range of years) of ephemeris files to be used");
-  LALregREALUserVar(status, 	cosi,	 	 0, UVAR_OPTIONAL,	"Pulsar orientation-angle cos(iota) [-1,1]" );
-  LALregREALUserVar(status,	psi,		 0, UVAR_OPTIONAL,	"Wave polarization-angle psi [0, pi]" );
-  LALregBOOLUserVar(status,	printMotion,	 0, UVAR_OPTIONAL,	"Output the orbital motion for integration-steps.");
-  LALregSTRINGUserVar(status,	outputMetric,	 0, UVAR_OPTIONAL,	"Output the metric components (in octave format) into this file.");
-  LALregINTUserVar(status,    	metricType,	 0,  UVAR_OPTIONAL,	"Type of metric to compute: 0=ALL, 1=mF, 2=mPh, 3=mOrb, 4=mPtole, 5=flat");
-  LALregINTUserVar(status,    	unitsType,	 0,  UVAR_OPTIONAL,	"Which units to use for metric components: 0=SI, 1=natural (order-1)");
+  LALregBOOLUserStruct(status,	help,		'h', UVAR_HELP,		"Print this help/usage message");
+  LALregLISTUserStruct(status,	IFOs,		'I', UVAR_REQUIRED, 	"Comma-separated list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
+  LALregLISTUserStruct(status,	IFOweights,	 0, UVAR_OPTIONAL, 	"Comma-separated list of relative noise-weights, eg. \"w1,w2,w3,..\" ");
+  LALregREALUserStruct(status,	Alpha,		'a', UVAR_OPTIONAL,	"skyposition Alpha in radians, equatorial coords.");
+  LALregREALUserStruct(status,	dAlpha,		 0, UVAR_OPTIONAL,	"skyposition offset in Alpha");
+  LALregREALUserStruct(status,	Delta, 		'd', UVAR_OPTIONAL,	"skyposition Delta in radians, equatorial coords.");
+  LALregREALUserStruct(status,	dDelta, 	 0, UVAR_OPTIONAL,	"skyposition offset in Delta");
+  LALregREALUserStruct(status,	Freq, 		'f', UVAR_OPTIONAL, 	"target frequency");
+  LALregREALUserStruct(status,	dFreq, 		 0, UVAR_OPTIONAL, 	"target frequency offset");
+  LALregREALUserStruct(status,	f1dot, 		's', UVAR_OPTIONAL, 	"first spindown-value df/dt");
+  LALregREALUserStruct(status,	df1dot, 	 0, UVAR_OPTIONAL, 	"first spindown-value offset");
+  LALregREALUserStruct(status, 	startTime,      't', UVAR_OPTIONAL, 	"GPS start time of observation");
+  LALregREALUserStruct(status, 	refTime,      	 0, UVAR_OPTIONAL, 	"reference time for spin-parameters [Default = startTime]");
+  LALregREALUserStruct(status,  duration,	'T', UVAR_OPTIONAL,	"Alternative: Duration of observation in seconds");
+  LALregINTUserStruct(status,   numSteps,	 0,  UVAR_OPTIONAL,	"Order of Gauss-Legendre quadrature to use");
+  LALregSTRINGUserStruct(status, ephemDir,       'E', UVAR_OPTIONAL, 	"Directory where Ephemeris files are located");
+  LALregSTRINGUserStruct(status, ephemYear,      'y', UVAR_OPTIONAL, 	"Year (or range of years) of ephemeris files to be used");
+  LALregREALUserStruct(status, 	cosi,	 	 0, UVAR_OPTIONAL,	"Pulsar orientation-angle cos(iota) [-1,1]" );
+  LALregREALUserStruct(status,	psi,		 0, UVAR_OPTIONAL,	"Wave polarization-angle psi [0, pi]" );
+  LALregBOOLUserStruct(status,	printMotion,	 0, UVAR_OPTIONAL,	"Output the orbital motion for integration-steps.");
+  LALregSTRINGUserStruct(status, outputMetric,	 0, UVAR_OPTIONAL,	"Output the metric components (in octave format) into this file.");
+  LALregINTUserStruct(status,  	metricType,	 0,  UVAR_OPTIONAL,	"Type of metric: 0=ALL, 1=mF, 2=mPh, 3=mOrb, 4=mPtole, 5=flat");
+  LALregINTUserStruct(status,  	unitsType,	 0,  UVAR_OPTIONAL,	"Which units to use for metric components: 0=SI, 1=natural (order-1)");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -923,7 +929,7 @@ initUserVars (LALStatus *status)
 /** basic initializations: set-up 'ConfigVariables'
  */
 void
-InitCode (LALStatus *status, ConfigVariables *cfg)
+InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
 {
   LIGOTimeGPSVector *GLtimestamps = NULL;
   REAL8Vector *detWeights;
@@ -933,8 +939,8 @@ InitCode (LALStatus *status, ConfigVariables *cfg)
   ATTATCHSTATUSPTR (status);
 
   /* ----- determine start-time from user-input */
-  XLALFloatToGPS( &(cfg->startTime), uvar_startTime );
-  XLALFloatToGPS( &(cfg->refTime), uvar_refTime );
+  XLALFloatToGPS( &(cfg->startTime), uvar->startTime );
+  XLALFloatToGPS( &(cfg->refTime), uvar->refTime );
 
   /*---------- Initialize Ephemeris-data ---------- */
   {
@@ -944,15 +950,15 @@ InitCode (LALStatus *status, ConfigVariables *cfg)
     LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
     INT4 leap;
 
-    if (LALUserVarWasSet (&uvar_ephemDir) )
+    if (LALUserVarWasSet (&uvar->ephemDir) )
       {
-	LALSnprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", uvar_ephemDir, uvar_ephemYear);
-	LALSnprintf(EphemSun, FNAME_LENGTH, "%s/sun%s.dat", uvar_ephemDir, uvar_ephemYear);
+	LALSnprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", uvar->ephemDir, uvar->ephemYear);
+	LALSnprintf(EphemSun, FNAME_LENGTH, "%s/sun%s.dat", uvar->ephemDir, uvar->ephemYear);
       }
     else
       {
-	LALSnprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", uvar_ephemYear);
-	LALSnprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  uvar_ephemYear);
+	LALSnprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", uvar->ephemYear);
+	LALSnprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  uvar->ephemYear);
       }
     EphemEarth[FNAME_LENGTH-1]=0;
     EphemSun[FNAME_LENGTH-1]=0;
@@ -976,11 +982,11 @@ InitCode (LALStatus *status, ConfigVariables *cfg)
     ABORT (status, FSTATMETRIC_EMEM, FSTATMETRIC_MSGEMEM);
   }
   cfg->offsetUnits.skypos.system = COORDINATESYSTEM_EQUATORIAL;
-  if ( uvar_unitsType == UNITS_NATURAL )
+  if ( uvar->unitsType == UNITS_NATURAL )
     {
-      REAL8 nNat = uvar_Freq * uvar_duration * ORB_V0;
-      cfg->offsetUnits.fkdot->data[0] = 1.0 / uvar_duration;
-      cfg->offsetUnits.fkdot->data[1] = 1.0 / SQ(uvar_duration);
+      REAL8 nNat = uvar->Freq * uvar->duration * ORB_V0;
+      cfg->offsetUnits.fkdot->data[0] = 1.0 / uvar->duration;
+      cfg->offsetUnits.fkdot->data[1] = 1.0 / SQ(uvar->duration);
       cfg->offsetUnits.skypos.longitude = 1.0 / nNat;
       cfg->offsetUnits.skypos.latitude = 1.0 / nNat;
     }
@@ -999,22 +1005,22 @@ InitCode (LALStatus *status, ConfigVariables *cfg)
       ABORT (status, FSTATMETRIC_EMEM, FSTATMETRIC_MSGEMEM);
     }
 
-    cfg->dopplerPoint.fkdot->data[0] = uvar_Freq;
-    cfg->dopplerPoint.fkdot->data[1] = uvar_f1dot;
+    cfg->dopplerPoint.fkdot->data[0] = uvar->Freq;
+    cfg->dopplerPoint.fkdot->data[1] = uvar->f1dot;
 
     cfg->dopplerPoint.skypos.system = COORDINATESYSTEM_EQUATORIAL;
-    cfg->dopplerPoint.skypos.longitude = uvar_Alpha;
-    cfg->dopplerPoint.skypos.latitude = uvar_Delta;
+    cfg->dopplerPoint.skypos.longitude = uvar->Alpha;
+    cfg->dopplerPoint.skypos.latitude = uvar->Delta;
   } /* get parameter-space point */
 
   /* ----- set Doppler-offset (take care of metric units) ----- */
   {
     REAL8 dFreq, dAlpha, dDelta, df1dot;
 
-    dFreq 	= uvar_dFreq   / cfg->offsetUnits.fkdot->data[0];
-    dAlpha	= uvar_dAlpha  / cfg->offsetUnits.skypos.longitude;
-    dDelta	= uvar_dDelta  / cfg->offsetUnits.skypos.latitude;
-    df1dot	= uvar_df1dot  / cfg->offsetUnits.fkdot->data[1];
+    dFreq 	= uvar->dFreq   / cfg->offsetUnits.fkdot->data[0];
+    dAlpha	= uvar->dAlpha  / cfg->offsetUnits.skypos.longitude;
+    dDelta	= uvar->dDelta  / cfg->offsetUnits.skypos.latitude;
+    df1dot	= uvar->df1dot  / cfg->offsetUnits.fkdot->data[1];
 
     cfg->dopplerOffset = gsl_vector_calloc ( METRIC_DIM );
     gsl_vector_set ( cfg->dopplerOffset, 0, dFreq );
@@ -1029,23 +1035,23 @@ InitCode (LALStatus *status, ConfigVariables *cfg)
   {
     UINT4 i;
     REAL8Vector *ti;	/* temporary */
-    REAL8 Tinv = 1.0 / uvar_duration;
+    REAL8 Tinv = 1.0 / uvar->duration;
 
-    if ( (cfg->GLweights = XLALCreateREAL8Vector ( uvar_numSteps )) == NULL ) {
+    if ( (cfg->GLweights = XLALCreateREAL8Vector ( uvar->numSteps )) == NULL ) {
       ABORT (status, FSTATMETRIC_EMEM, FSTATMETRIC_MSGEMEM );
     }
-    if ( ( ti = XLALCreateREAL8Vector ( uvar_numSteps )) == NULL ) {
+    if ( ( ti = XLALCreateREAL8Vector ( uvar->numSteps )) == NULL ) {
       ABORT (status, FSTATMETRIC_EMEM, FSTATMETRIC_MSGEMEM );
     }
-    if ( (GLtimestamps = XLALCreateTimestampVector ( uvar_numSteps )) == NULL ) {
+    if ( (GLtimestamps = XLALCreateTimestampVector ( uvar->numSteps )) == NULL ) {
       ABORT (status, FSTATMETRIC_EMEM, FSTATMETRIC_MSGEMEM );
     }
 
     /* compute Gauss-Legendre roots, timestamps and associated weights */
-    gauleg(uvar_startTime, uvar_startTime+uvar_duration, ti->data, cfg->GLweights->data, uvar_numSteps);
+    gauleg(uvar->startTime, uvar->startTime+uvar->duration, ti->data, cfg->GLweights->data, uvar->numSteps);
     
     /* convert REAL8-times into LIGOTimeGPS-times */
-    for ( i=0; i < (UINT4)uvar_numSteps; i ++ )
+    for ( i=0; i < (UINT4)uvar->numSteps; i ++ )
       {
 	XLALFloatToGPS ( &(GLtimestamps->data[i]), ti->data[i] );
 	cfg->GLweights->data[i] *= Tinv;
@@ -1059,7 +1065,7 @@ InitCode (LALStatus *status, ConfigVariables *cfg)
   {
     LALDetector *ifo = NULL;
 
-    numDet = uvar_IFOs->length;
+    numDet = uvar->IFOs->length;
 
     if ( (cfg->multiDetStates = LALCalloc ( 1, sizeof( *(cfg->multiDetStates) ))) == NULL ) {
       ABORT (status, FSTATMETRIC_EMEM, FSTATMETRIC_MSGEMEM);
@@ -1068,12 +1074,12 @@ InitCode (LALStatus *status, ConfigVariables *cfg)
       ABORT (status, FSTATMETRIC_EMEM, FSTATMETRIC_MSGEMEM);
     }
     cfg->multiDetStates->length = numDet;
-    cfg->multiDetStates->Tspan = uvar_duration;
+    cfg->multiDetStates->Tspan = uvar->duration;
 
     for ( X=0; X < numDet; X ++ )
       {
-	if ( ( ifo = XLALGetSiteInfo ( uvar_IFOs->data[X] ) ) == NULL ) {
-	  LALPrintError("\nFailed to get site-info for IFO '%s'\n\n", uvar_IFOs->data[X] );
+	if ( ( ifo = XLALGetSiteInfo ( uvar->IFOs->data[X] ) ) == NULL ) {
+	  LALPrintError("\nFailed to get site-info for IFO '%s'\n\n", uvar->IFOs->data[X] );
 	  ABORT (status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT);
 	}
 	/* obtain detector positions and velocities, together with LMSTs */
@@ -1093,24 +1099,24 @@ InitCode (LALStatus *status, ConfigVariables *cfg)
   for ( X=0; X < numDet ; X ++ )
     detWeights->data[X] = 1.0;	/* default: equal weights */
   
-  if ( uvar_IFOweights )
+  if ( uvar->IFOweights )
     {
-      if ( uvar_IFOweights->length != numDet )
+      if ( uvar->IFOweights->length != numDet )
 	{
 	  LALPrintError ("\nNumber of IFOweights must agree with IFOs if given!\n\n");
 	  ABORT (status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT);	  
 	}
       for ( X=0; X < numDet ; X ++ )
 	{
-	  if ( 1 != sscanf ( uvar_IFOweights->data[X], "%lf", &(detWeights->data[X])) )
+	  if ( 1 != sscanf ( uvar->IFOweights->data[X], "%lf", &(detWeights->data[X])) )
 	    {
 	      LALPrintError ("\nFailed to parse noise-weight '%s' into float.\n\n", 
-			     uvar_IFOweights->data[X] );
+			     uvar->IFOweights->data[X] );
 	      ABORT (status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT);	  
 	    }
 	} /* for X < numDet */
       
-    } /* if uvar_IFOweights */
+    } /* if uvar->IFOweights */
 
   /* ---------- combine relative detector-weights with GL-weights ----------*/
   {
@@ -1129,12 +1135,12 @@ InitCode (LALStatus *status, ConfigVariables *cfg)
 	UINT4 alpha;
 	
 	/* create k^th weights vector */
-	if ( (tmp->data[X] = XLALCreateREAL8Vector ( uvar_numSteps )) == NULL ) {
+	if ( (tmp->data[X] = XLALCreateREAL8Vector ( uvar->numSteps )) == NULL ) {
 	  ABORT (status,  FSTATMETRIC_EMEM,  FSTATMETRIC_MSGEMEM);      
 	}
 	
 	/* set all weights to detectorWeight * GLweight */
-	for ( alpha = 0; alpha < (UINT4)uvar_numSteps; alpha ++ ) 
+	for ( alpha = 0; alpha < (UINT4)uvar->numSteps; alpha ++ ) 
 	  tmp->data[X]->data[alpha] = detWeights->data[X] * cfg->GLweights->data[alpha];
 	
       } /* for X < numDet */
@@ -1154,10 +1160,10 @@ InitCode (LALStatus *status, ConfigVariables *cfg)
 
   /* ----- compute amplitude-factors alpha1, alpha2, alpha3 ----- */
   {
-    REAL8 Aplus = 0.5 * ( 1.0 + SQ(uvar_cosi) );
-    REAL8 Across = uvar_cosi;
-    REAL8 cos2psi = cos(2.0 * uvar_psi );
-    REAL8 sin2psi = sin(2.0 * uvar_psi );
+    REAL8 Aplus = 0.5 * ( 1.0 + SQ(uvar->cosi) );
+    REAL8 Across = uvar->cosi;
+    REAL8 cos2psi = cos(2.0 * uvar->psi );
+    REAL8 sin2psi = sin(2.0 * uvar->psi );
     cfg->Al1 = SQ(Aplus) * SQ( cos2psi ) + SQ(Across) * SQ(sin2psi);
     cfg->Al2 = SQ(Aplus) * SQ( sin2psi ) + SQ(Across) * SQ(cos2psi);
     cfg->Al3 = ( SQ(Aplus) - SQ(Across) ) * sin2psi * cos2psi ;
