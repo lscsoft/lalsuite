@@ -77,6 +77,7 @@ NRCSID( USERINPUTH, "$Id$");
 /*@}*/
 /*************************************************** </lalErrTable> */
 
+  /*----- short-cut macros to register global "uvar_" User-Variables ----- */
 #define LALregREALUserVar(status,name,option,flag,help) \
 TRY(LALRegisterREALUserVar((status)->statusPtr, #name, option, flag, help,&(uvar_ ## name)), status)
 
@@ -91,6 +92,22 @@ TRY(LALRegisterSTRINGUserVar((status)->statusPtr, #name, option, flag, help, &(u
 
 #define LALregLISTUserVar(status,name,option,flag,help) \
 TRY(LALRegisterLISTUserVar((status)->statusPtr, #name, option, flag, help, &(uvar_ ## name)),status)
+
+/*----- another family of short-cut macros: register _struct-pointer_ "uvar->" User-Variables ----- */
+#define LALregREALUserStruct(status,name,option,flag,help) \
+TRY(LALRegisterREALUserVar((status)->statusPtr, #name, option, flag, help, &(uvar-> name)), status)
+
+#define LALregINTUserStruct(status,name,option,flag,help) \
+TRY(LALRegisterINTUserVar((status)->statusPtr, #name, option,flag, help, &(uvar-> name)), status)
+
+#define LALregBOOLUserStruct(status,name,option,flag,help) \
+TRY(LALRegisterBOOLUserVar((status)->statusPtr, #name, option, flag, help, &(uvar-> name)),status)
+
+#define LALregSTRINGUserStruct(status,name,option,flag,help) \
+TRY(LALRegisterSTRINGUserVar((status)->statusPtr, #name, option, flag, help, &(uvar-> name)),status)
+
+#define LALregLISTUserStruct(status,name,option,flag,help) \
+TRY(LALRegisterLISTUserVar((status)->statusPtr, #name, option, flag, help, &(uvar-> name)),status)
 
 
 /** State-flags: variable is optional, required, help, developer or was_set */
