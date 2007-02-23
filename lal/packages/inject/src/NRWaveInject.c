@@ -17,8 +17,8 @@
  *  MA  02111-1307  USA
  */
 
-/** \file NRWaveIO.c
- *  \ingroup NRWaveIO
+/** \file NRWaveInject.c
+ *  \ingroup NRWaveInject
  *  \author S.Fairhurst, B.Krishnan, L.Santamaria
  * 
  *  \brief Functions for reading/writing numerical relativity waveforms

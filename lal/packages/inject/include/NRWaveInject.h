@@ -19,7 +19,7 @@
 
 
 /** \defgroup NRWaveInject
- * \ingroup support
+ * \ingroup inject 
  * \author S.Fairhurst, B. Krishnan, L.Santamaria
  * 
  * \brief Module for generating h(t) from Numrel waveforms
@@ -28,8 +28,8 @@
  *
  */
  
-/** \file NRWaveIO.h
- *  \ingroup NRWaveIO   
+/** \file NRWaveInject.h
+ *  \ingroup NRWaveInject  
  * \date $Date$
  *
  * 
