@@ -12,7 +12,8 @@ libinject_la_SOURCES =	\
         StochasticMC.c                  GenerateBurst.c\
 	GenerateInspiral.c		GenerateInspiralSmooth.c  \
 	GeneratePulsarSignal.c		SimulatePulsarSignal.c	 \
-	CelestialCoordinatesLaldoc.c NRWaveInject.c
+	CelestialCoordinatesLaldoc.c NRWaveInject.c \
+	InspiralInjectionParams.c
 
 ## Hack to get this working for now... change later
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include -I$(srcdir)/../../date/include
