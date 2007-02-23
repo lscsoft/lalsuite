@@ -73,8 +73,8 @@ int doBCVC = 0;
 int h1h2Consistency = 0;
 int doVeto = 0;
 int completeCoincs = 0;
-REAL4 locRec=-1; /* for specifying a certain location on the sky */
-REAL4 locDec=-100;   
+REAL4 ra_deg=-1; /* for specifying a certain location on the sky */
+REAL4 dec_deg=-100;   
 
 /*
  * 
@@ -247,8 +247,8 @@ static void readSource( char* sourceFile, REAL4* rec, REAL4* dec )
 	c = sscanf( line, "%s %c%le:%le %c%le:%le %s %s %s",
 		    &dummy, &ra_sgn, &ra_h, &ra_m, &dec_sgn, &dec_d, &dec_m,
 		    &dummy, &dummy, &dummy);
-	*rec=( ra_h + ra_m / 60.0 ) * LAL_PI / 12.0;
-	*dec=( dec_d + dec_m / 60.0 ) * LAL_PI / 180.0;
+	*rec=( ra_h + ra_m / 60.0 ) * 12.0; /* convert to degree */
+	*dec=( dec_d + dec_m / 60.0 ); /* already degree */
 	if ( ra_sgn == '-' )
 	  *rec *= -1;
 	if ( dec_sgn == '-' )
@@ -309,7 +309,6 @@ int main( int argc, char *argv[] )
   UINT4  N = 0;
 
   LALDetector          aDet;
-  LALDetector          bDet;
 
   SnglInspiralTable    *inspiralEventList = NULL;
   SnglInspiralTable    *thisInspiralTrigger = NULL;
@@ -352,12 +351,10 @@ int main( int argc, char *argv[] )
   /* by default we do not remove any triggers in the SNR Cut*/  
   
   REAL4                 snrCut = 0;   
-  
-  char*                 sourceFile=NULL;
  
-  LIGOTimeGPS           sourceTime;
-  REAL8                 timeDelay;
-
+  LIGOTimeGPS*   gpsTime;
+  char*          sourceFile=NULL;
+ 
   const CHAR                  *ifoArg[LAL_NUM_IFO] = 
                                    {"g1-triggers", "h1-triggers", 
                                     "h2-triggers", "l1-triggers", 
@@ -1255,11 +1252,11 @@ int main( int argc, char *argv[] )
    * set to ellipsoid.
    */
   if ( accuracyParams.test == ellipsoid &&
-       (accuracyParams.eMatch <= 0.0 || accuracyParams.eMatch >= 1.0) )
+        accuracyParams.eMatch <= 0.0  )
   {
      fprintf( stderr, "Error: Invalid e-thinca parameter\n" );
-     fprintf( stderr, "--e-thinca-parameter should be specified, "\
-               "and should be between 0 and 1.\n" );
+     fprintf( stderr, "--e-thinca-parameter must be specified, "\
+               "and must be larger than 0.\n" );
      exit(1);
   }    
 
@@ -1525,7 +1522,7 @@ int main( int argc, char *argv[] )
   /* read the source location in GRB mode,
      right ascension and declination read in radians */
   if (sourceFile) {
-    readSource( sourceFile, &locRec, &locDec );   
+    readSource( sourceFile, &ra_deg, &dec_deg );   
   }
 
   /* delete the first, empty process_params entry */
@@ -1797,30 +1794,21 @@ int main( int argc, char *argv[] )
   }
 
   /* Populate the lightTravel matrix */
-  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  if ( accuracyParams.exttrig )
   {
-    XLALReturnDetector( &aDet, ifoNumber );
-    
-    for ( ifoTwo = 0; ifoTwo < LAL_NUM_IFO; ifoTwo++)
-    {
-      XLALReturnDetector( &bDet, ifoTwo );
-      if ( accuracyParams.exttrig )
-      {
-        sourceTime.gpsSeconds=(INT4)( (endCoincidence+startCoincidence)/2.0 );
-        sourceTime.gpsNanoSeconds=0;
-	
-	/* compute signal travel time  */
-	timeDelay=-XLALArrivalTimeDiff( aDet.location, bDet.location, locRec, locDec, &sourceTime);
-	accuracyParams.lightTravelTime[ ifoNumber][ ifoTwo ] = 
-          (INT8) 1e9*timeDelay;
+    gpsTime=(LIGOTimeGPS*) LALMalloc( sizeof(LIGOTimeGPS) );
+    gpsTime->gpsSeconds=
+      (INT4)( (endCoincidence+startCoincidence)/2.0 );
+    gpsTime->gpsNanoSeconds=0;
 
-      }
-      else
-      {
-        accuracyParams.lightTravelTime[ ifoNumber][ ifoTwo ] = 
-          XLALLightTravelTime( &aDet, &bDet );
-      }
-    }
+    XLALPopulateAccuracyParamsExt( &accuracyParams, gpsTime, ra_deg, dec_deg);
+    
+    LALFree( gpsTime );
+  }
+  else 
+  {
+    XLALPopulateAccuracyParams( &accuracyParams);
+ 
   }
  
   
