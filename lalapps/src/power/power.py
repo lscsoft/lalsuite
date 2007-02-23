@@ -585,7 +585,7 @@ def make_datafind_fragment(dag, instrument, seg):
 
 def make_lladd_fragment(dag, parents, instrument, seg, tag, preserves = []):
 	node = LigolwAddNode(lladdjob)
-	node.set_name("lladd-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(abs(seg))))
+	node.set_name("lladd_%s_%s_%s_%s" % (instrument, tag, int(seg[0]), int(abs(seg))))
 	for parent in parents:
 		node.add_parent(parent)
 		node.add_input_cache(parent.get_output_cache())
@@ -596,7 +596,7 @@ def make_lladd_fragment(dag, parents, instrument, seg, tag, preserves = []):
 
 def make_power_fragment(dag, parents, instrument, seg, tag, framecache, injargs = {}):
 	node = PowerNode(powerjob)
-	node.set_name("lalapps_power-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(abs(seg))))
+	node.set_name("lalapps_power_%s_%s_%s_%s" % (instrument, tag, int(seg[0]), int(abs(seg))))
 	map(node.add_parent, parents)
 	node.set_cache(framecache)
 	node.set_ifo(instrument)
@@ -612,7 +612,7 @@ def make_power_fragment(dag, parents, instrument, seg, tag, framecache, injargs 
 
 def make_bucut_fragment(dag, parents, instrument, seg, tag):
 	node = BucutNode(bucutjob)
-	node.set_name("ligolw_bucut-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(abs(seg))))
+	node.set_name("ligolw_bucut_%s_%s_%s_%s" % (instrument, tag, int(seg[0]), int(abs(seg))))
 	for parent in parents:
 		node.add_parent(parent)
 		node.add_input_cache(parent.get_output_cache())
@@ -636,7 +636,7 @@ def make_binj_fragment(dag, seg, tag, offset, flow, fhigh):
 	node = BurstInjNode(binjjob)
 	node.set_start(start)
 	node.set_end(seg[1])
-	node.set_name("lalapps_binj-%d-%d" % (int(start), int(flow)))
+	node.set_name("lalapps_binj_%d_%d" % (int(start), int(flow)))
 	node.set_user_tag(tag)
 	node.add_macro("macroflow", flow)
 	node.add_macro("macrofhigh", fhigh)
@@ -648,7 +648,7 @@ def make_binj_fragment(dag, seg, tag, offset, flow, fhigh):
 
 def make_bucluster_fragment(dag, parents, instrument, seg, tag):
 	node = BuclusterNode(buclusterjob)
-	node.set_name("ligolw_bucluster-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(abs(seg))))
+	node.set_name("ligolw_bucluster_%s_%s_%s_%s" % (instrument, tag, int(seg[0]), int(abs(seg))))
 	for parent in parents:
 		node.add_parent(parent)
 		node.add_input_cache(parent.get_output_cache())
@@ -659,7 +659,7 @@ def make_bucluster_fragment(dag, parents, instrument, seg, tag):
 
 def make_burca_fragment(dag, parents, instrument, seg, tag):
 	node = BurcaNode(burcajob)
-	node.set_name("ligolw_burca-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(abs(seg))))
+	node.set_name("ligolw_burca_%s_%s_%s_%s" % (instrument, tag, int(seg[0]), int(abs(seg))))
 	for parent in parents:
 		node.add_parent(parent)
 		node.add_input_cache(parent.get_output_cache())
@@ -670,7 +670,7 @@ def make_burca_fragment(dag, parents, instrument, seg, tag):
 
 def make_binjfind_fragment(dag, parents, instrument, seg, tag):
 	node = BinjfindNode(binjfindjob)
-	node.set_name("ligolw_binjfind-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(abs(seg))))
+	node.set_name("ligolw_binjfind_%s_%s_%s_%s" % (instrument, tag, int(seg[0]), int(abs(seg))))
 	for parent in parents:
 		node.add_parent(parent)
 		node.add_input_cache(parent.get_output_cache())
@@ -694,13 +694,13 @@ def make_multipower_fragment(dag, powerparents, lladdparents, instrument, seglis
 	if clustering:
 		# cluster individual power jobs' outputs (keeps file sizes
 		# small, to lower risk of lladd running out of memory)
-		nodes = [make_bucluster_fragment(dag, [node], instrument, segments.segment(node.get_start(), node.get_end()), tag + "_PRELLADD") for node in nodes]
+		nodes = [make_bucluster_fragment(dag, [node], instrument, segments.segment(node.get_start(), node.get_end()), "%s_PRELLADD" % tag) for node in nodes]
 	lladdnode = make_lladd_fragment(dag, nodes + lladdparents, instrument, segment, "POWER_%s" % tag, preserves = reduce(list.__add__, [node.get_output_cache() for node in lladdparents], []))
 	lladdnode.set_output("%s-POWER_%s-%s-%s.xml.gz" % (instrument, tag, int(segment[0]), int(abs(segment))))
 	if clustering:
 		# recluster the triggers following lladd to catch edge
 		# effects
-		return make_bucluster_fragment(dag, [lladdnode], instrument, segment, tag + "_POSTLLADD")
+		return make_bucluster_fragment(dag, [lladdnode], instrument, segment, "%s_POSTLLADD" % tag)
 	else:
 		return lladdnode
 

@@ -258,7 +258,7 @@ def make_publish_fragment(dag, tag, parent, destination):
 		if e.errno != 17:
 			raise e
 	node = PublishNode(publishjob)
-	node.set_name("publish-%s" % tag)
+	node.set_name("publish_%s" % tag)
 	node.add_parent(parent)
 	node.set_input(parent.get_output_files()[0])
 	node.set_output(destination)
