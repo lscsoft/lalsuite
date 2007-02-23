@@ -18,6 +18,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+
 #
 # =============================================================================
 #
@@ -25,6 +26,7 @@
 #
 # =============================================================================
 #
+
 
 """
 Burst trigger frequency decomposition.
@@ -60,6 +62,7 @@ from pylal import SnglBurstUtils
 #
 # =============================================================================
 #
+
 
 def parse_command_line():
 	parser = OptionParser(version = "%prog CVS $Id$")
@@ -102,9 +105,11 @@ def parse_command_line():
 # =============================================================================
 #
 
+
 #
 # Override some methods of the SnglBurst and SearchSummary row classes
 #
+
 
 class SnglBurst(SnglBurstUtils.SnglBurst):
 	def get_stop(self):
@@ -131,6 +136,7 @@ lsctables.SearchSummaryTable.RowType = SearchSummary
 # input cross-checks
 #
 
+
 def verify_burst_events(database):
 	for event in database.sngl_burst_table:
 		seg = segments.segment(event.get_start(), event.get_stop())
@@ -145,6 +151,7 @@ def verify_burst_events(database):
 #
 # =============================================================================
 #
+
 
 def new_fseries(f_0, delta_f, n):
 	"""
@@ -229,6 +236,7 @@ def bin_livetime_by_sidereal_time(rates, segmentlists):
 # =============================================================================
 #
 
+
 def new_doc(fseries, rates):
 	if options.verbose:
 		print >>sys.stderr, "generating output document ..."
@@ -255,7 +263,9 @@ def new_doc(fseries, rates):
 # =============================================================================
 #
 
+
 options, filenames = parse_command_line()
+
 
 fseries = {}
 rates = {}
@@ -288,5 +298,6 @@ for n, filename in enumerate(utils.sort_files_by_size(filenames, options.verbose
 			else:
 				fseries[key] = value
 	xmldoc.unlink()
+
 
 utils.write_filename(new_doc(fseries, rates), options.output, options.verbose)
