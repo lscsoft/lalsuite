@@ -344,13 +344,32 @@ COMPLEX8FrequencySeries *generateActuation(
 {
   INT4   k;
   REAL4  fNorm = 0;
+  COMPLEX8Vector *num = NULL;  
+  COMPLEX8Vector *denom = NULL;  
+
+  num = XLALCreateCOMPLEX8Vector( resp->data->length );
+  denom = XLALCreateCOMPLEX8Vector( resp->data->length );
+
+  /* the response function is
+   *
+   *                  ETMcal * pendF^2
+   * R(f) =  ---------------------------------------
+   *         pendF^2 - freq^2 - i freq (pendF/pendQ)
+   */
 
   for ( k = 0; k < resp->data->length; k++ )
   {
     fNorm = k * resp->deltaF / pendF;
-    resp->data->data[k].re =  ETMcal * ( 1 - fNorm * fNorm );
-    resp->data->data[k].im = - ETMcal * fNorm / pendQ;
+    denom->data[k].re = ( 1 - fNorm * fNorm );
+    denom->data[k].im = - fNorm / pendQ;
+    num->data[k].re = 1.0 * ETMcal;
+    num->data[k].im = 0.0;
   }
-  return ( resp );
+  
+  XLALCCVectorDivide( resp->data, num, denom);
+  XLALDestroyCOMPLEX8Vector( num );
+  XLALDestroyCOMPLEX8Vector( denom );
+  return( resp );
+
 }
 
