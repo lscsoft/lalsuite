@@ -48,7 +48,7 @@ RCSID("$Id$");
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
-#define PROGRAM_NAME "binj"
+#define PROGRAM_NAME "lalapps_binj"
 
 #define TRUE      1
 #define FALSE     0
