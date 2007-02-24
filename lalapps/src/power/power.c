@@ -48,7 +48,7 @@ int vsnprintf(char *str, size_t size, const char *format, va_list ap);
 NRCSID(POWERC, "power $Id$");
 RCSID("power $Id$");
 
-#define PROGRAM_NAME "power"
+#define PROGRAM_NAME "lalapps_power"
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
