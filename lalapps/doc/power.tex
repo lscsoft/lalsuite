@@ -173,6 +173,7 @@ simulated data.
 [\option{--calibrated-data}~\parm{high pass frequency}] \newline \hspace*{0.5in}
 [\option{--calibration-cache}~\parm{cache file}] \newline \hspace*{0.5in}
 \option{--channel-name}~\parm{string} \newline \hspace*{0.5in}
+\option{--confidence-threshold}~\parm{threshold} \newline \hspace*{0.5in}
 [\option{--debug-level}~\parm{level}] \newline \hspace*{0.5in}
 [\option{--dump-diagnostics~\parm{XML filename}}] \newline \hspace*{0.5in}
 \option{--filter-corruption}~\parm{samples} \newline \hspace*{0.5in}
@@ -182,7 +183,6 @@ simulated data.
 [\option{--help}] \newline \hspace*{0.5in}
 \option{--high-pass}~\parm{Hz} \newline \hspace*{0.5in}
 [\option{--inspiralinjection-file}~\parm{file name}] \newline \hspace*{0.5in}
-\option{--lnthreshold}~\parm{threshold} \newline \hspace*{0.5in}
 \option{--low-freq-cutoff}~\parm{Hz} \newline \hspace*{0.5in}
 [\option{--max-event-rate}~\parm{Hz}] \newline \hspace*{0.5in}
 \option{--max-tileband}~\parm{Hz} \newline \hspace*{0.5in}
@@ -336,9 +336,13 @@ which is used to set information about the types of inspiral injections to be ma
 This file may be constructed by hand, the
 \verb+lalapps_bbhinj+ program described in the Inspiral package   
 
-\item[\option{--lnthreshold} \parm{threshold}]
-Set the threshold in logarithm of alpha above which identified events
-should be discarded.  See the LAL ``burstsearch'' package for details.
+\item[\option{--confidence-threshold} \parm{threshold}]
+Set the confidence threshold below which events should be discarded.  The
+``confidence'' of an event is \(-\ln P(\text{event} | \text{stationary
+Gaussian white noise})\), so an event with a confidence of 30 has a
+probability of \(\ee^{-30}\) of being found in stationary Gaussian white
+noise.  LIGO strain outputs are not stationary, and so a typical,
+practical, threshold is 70 or higher.
 
 \item[\option{--low-freq-cutoff} \parm{Hz}]
 Set the lowest frequency at which to search for gravitational waves to
