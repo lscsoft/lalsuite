@@ -201,21 +201,33 @@ SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 12 )
       {
-        thisEvent->amplitude = r4colData;
+        thisEvent->ds2_H1H2 = r4colData;
       }
       else if ( tableDir[j].idx == 13 )
       {
-        thisEvent->snr = r4colData;
+        thisEvent->ds2_H1L1 = r4colData;
       }
-      else if ( tableDir[j].idx == 14)
+      else if ( tableDir[j].idx == 14 )
       {
-        thisEvent->eff_dist = r4colData;
+        thisEvent->ds2_H2L1 = r4colData;
       }
       else if ( tableDir[j].idx == 15 )
       {
-        thisEvent->sigma_sq = r8colData;
+        thisEvent->amplitude = r4colData;
       }
       else if ( tableDir[j].idx == 16 )
+      {
+        thisEvent->snr = r4colData;
+      }
+      else if ( tableDir[j].idx == 17)
+      {
+        thisEvent->eff_dist = r4colData;
+      }
+      else if ( tableDir[j].idx == 18 )
+      {
+        thisEvent->sigma_sq = r8colData;
+      }
+      else if ( tableDir[j].idx == 19 )
       {
         /* JC: AVOID BUG IN METAIO -- BAD */
         union { const char *cs; const unsigned char *cus; } bad;
