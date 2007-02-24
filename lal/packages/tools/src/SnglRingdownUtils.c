@@ -327,8 +327,7 @@ LALCompareRingdowns (
 {
   INT8    ta,  tb;
   REAL4   df, dQ;
-  REAL4   fa, fb, Qa, Qb, Fa, Fb, Xa, Xb, Ya, Yb, Omegaa, Omegab, Ra, Rb, D;
-  REAL4   AA, BB, CC, DD, EE;
+  REAL4   fa, fb, Qa, Qb, Fa, Fb, Xa, Xb, Ya, Yb, Omegaa, Omegab, Ra, Rb, D, ds2;
   InterferometerNumber ifoaNum,  ifobNum;
   SnglRingdownAccuracy aAcc, bAcc;
   
@@ -407,7 +406,7 @@ LALCompareRingdowns (
     Ya = 1.0/sqrt(2) * ( pow(Qa,-1) - 1.0/6 * pow(Qa,-3) + 27.0/640 * pow(Qa,-5) 
            - 43.0/3584 * pow(Qa,-7) + 1067.0/294912 * pow(Qa,-9) );
     Omegaa = pow(Ya,6)/5400 + pow(Ya,4)/756 + pow(Ya,2)/120 + 1.0/24 + 1.0/8 * pow(Ya,-2);
-    Ra = sqrt( aAcc.ds_sq / Omegaa);  /* radius of circle */
+    Ra = sqrt( aAcc.ds_sq / Omegaa);   /* radius of circle */
 
     Fb = log(fb);
     Xb = Fb + 1.0/16 * pow(Qb,-2) + 1.0/256 * pow(Qb,-4) - 11.0/3072 * pow(Qb,-6)
@@ -415,15 +414,39 @@ LALCompareRingdowns (
     Yb = 1.0/sqrt(2) * ( pow(Qb,-1) - 1.0/6 * pow(Qb,-3) + 27.0/640 * pow(Qb,-5)
             - 43.0/3584 * pow(Qb,-7) + 1067.0/294912 * pow(Qb,-9) );
     Omegab = pow(Yb,6)/5400 + pow(Yb,4)/756 + pow(Yb,2)/120 + 1.0/24 + 1.0/8 * pow(Yb,-2); 
-    
     Rb = sqrt( bAcc.ds_sq / Omegab); 
 
     D = sqrt( pow((Xa - Xb),2) + pow((Ya - Yb),2) ); /*geometric distance between templates*/
+    ds2 = D * D / pow( ( 1/sqrt(Omegaa) + 1/sqrt(Omegab) ),2);    
 
     if ( D < (Ra+Rb) )
     {
       LALInfo( status, "Triggers pass the ds_sq coincidence test" );
       params->match = 1;
+      if ( (strcmp(aPtr->ifo,"H1")==0 && strcmp(bPtr->ifo,"H2")==0)
+		||(strcmp(aPtr->ifo,"H2")==0 && strcmp(bPtr->ifo,"H1")==0) )
+      {
+	aPtr->ds2_H1H2=ds2;
+        bPtr->ds2_H1H2=ds2;
+      }
+      else if( (strcmp(aPtr->ifo,"H1")==0 && strcmp(bPtr->ifo,"L1")==0) 
+ 		|| (strcmp(aPtr->ifo,"L1")==0 && strcmp(bPtr->ifo,"H1")==0) )
+      {
+        aPtr->ds2_H1L1=ds2;
+        bPtr->ds2_H1L1=ds2;
+      }
+      else if( (strcmp(aPtr->ifo,"H2")==0 && strcmp(bPtr->ifo,"L1")==0)
+		|| (strcmp(aPtr->ifo,"L1")==0 && strcmp(bPtr->ifo,"H2")==0) )
+      {
+        aPtr->ds2_H2L1=ds2;
+        bPtr->ds2_H2L1=ds2;
+      }
+      else
+      {
+        LALInfo( status, "Unknown pair of ifo's" );
+        params->match = 0;
+        goto exit;
+      }
     }
     else
     {
@@ -980,7 +1003,7 @@ XLALMaxSnglRingdownOverIntervals(
       nextEvent = thisEvent->next;
     }    
   }
-  
+  thisEvent->num_clust_trigs = count; 
   *eventHead = ringdownEventList; 
   
   return (0);
