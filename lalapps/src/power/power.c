@@ -239,6 +239,7 @@ static void print_usage(const char *program)
 "	[--calibrated-data <high pass frequency>]\n" \
 "	[--calibration-cache <cache file>]\n" \
 "	 --channel-name <string>\n" \
+"	 --confidence-threshold <confidence>\n" \
 "	[--debug-level <level>]\n" \
 "	[--max-event-rate <Hz>]\n" \
 "	 --filter-corruption <samples>\n" \
@@ -266,7 +267,6 @@ static void print_usage(const char *program)
 "	[--siminjection-file <file name>]\n" \
 "	[--seed <seed>]\n" \
 "	 --tile-stride-fraction <fraction>\n" \
-"	 --lnthreshold <ln threshold>\n" \
 "	[--enable-over-whitening]\n" \
 "	[--user-tag <comment>]\n" \
 "	 --window-length <samples>\n" \
@@ -417,7 +417,7 @@ static void parse_command_line_debug(int argc, char *argv[])
 	do { paramaddpoint = add_process_param(paramaddpoint, type, long_options[option_index].name, optarg); } while(0)
 
 
-static struct options *parse_command_line(int argc, char *argv[], EPSearchParams *params, MetadataTable *procparams)
+static struct options *parse_command_line(int argc, char *argv[], EPSearchParams *params, MetadataTable *_process_params_table)
 {
 	struct options *options;
 	char msg[240];
@@ -426,40 +426,40 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	int c;
 	int option_index;
 	int ram;
-	ProcessParamsTable **paramaddpoint = &procparams->processParamsTable;
+	ProcessParamsTable **paramaddpoint = &_process_params_table->processParamsTable;
 	struct option long_options[] = {
 		{"bandwidth", required_argument, NULL, 'A'},
+		{"burstinjection-file", required_argument, NULL, 'P'},
 		{"calibrated-data", required_argument, NULL, 'J'},
 		{"calibration-cache", required_argument, NULL, 'B'},
 		{"channel-name", required_argument, NULL, 'C'},
+		{"confidence-threshold", required_argument, NULL, 'g'},
 		{"debug-level", required_argument, NULL, 'D'},
-		{"max-event-rate", required_argument, NULL, 'F'},
+		{"dump-diagnostics", required_argument, NULL, 'X'},
+		{"enable-over-whitening", no_argument, &enableoverwhitening, TRUE},
 		{"filter-corruption", required_argument, NULL, 'j'},
 		{"frame-cache", required_argument, NULL, 'G'},
+		{"gaussian-noise-rms", required_argument, NULL, 'V'},
 		{"gps-end-time", required_argument, NULL, 'K'},
 		{"gps-start-time", required_argument, NULL, 'M'},
 		{"help", no_argument, NULL, 'O'},
 		{"high-pass", required_argument, NULL, 'o'},
-		{"burstinjection-file", required_argument, NULL, 'P'},
 		{"inspiralinjection-file", required_argument, NULL, 'I'},
 		{"low-freq-cutoff", required_argument, NULL, 'Q'},
+		{"max-event-rate", required_argument, NULL, 'F'},
 		{"max-tileband", required_argument, NULL, 'l'},
 		{"max-tileduration", required_argument, NULL, 'm'},
 		{"mdc-cache", required_argument, NULL, 'R'},
 		{"mdc-channel", required_argument, NULL, 'S'},
-		{"gaussian-noise-rms", required_argument, NULL, 'V'},
-		{"dump-diagnostics", required_argument, NULL, 'X'},
 		{"psd-average-method", required_argument, NULL, 'Y'},
 		{"psd-average-points", required_argument, NULL, 'Z'},
 		{"ram-limit", required_argument, NULL, 'a'},
 		{"resample-rate", required_argument, NULL, 'e'},
-		{"sim-cache", required_argument, NULL, 'q'},
-		{"siminjection-file", required_argument, NULL, 't'},
-		{"sim-distance", required_argument, NULL, 'u'},
 		{"seed", required_argument, NULL, 'c'},
+		{"sim-cache", required_argument, NULL, 'q'},
+		{"sim-distance", required_argument, NULL, 'u'},
+		{"siminjection-file", required_argument, NULL, 't'},
 		{"tile-stride-fraction", required_argument, NULL, 'f'},
-		{"lnthreshold", required_argument, NULL, 'g'},
-		{"enable-over-whitening", no_argument, &enableoverwhitening, TRUE},
 		{"user-tag", required_argument, NULL, 'h'},
 		{"window-length", required_argument, NULL, 'W'},
 		{"window-shift", required_argument, NULL, 'd'},
@@ -1454,7 +1454,7 @@ static SnglBurstTable **analyze_series(SnglBurstTable **addpoint, REAL4TimeSerie
  */
 
 
-static void output_results(LALStatus *stat, char *file, const char *ifo, MetadataTable *procTable, MetadataTable *procparams, MetadataTable *searchsumm, SnglBurstTable *burstEvent)
+static void output_results(LALStatus *stat, char *file, const char *ifo, MetadataTable *_process_table, MetadataTable *_process_params_table, MetadataTable *_search_summary_table, SnglBurstTable *burstEvent)
 {
 	LIGOLwXMLStream xml;
 	LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
@@ -1464,22 +1464,21 @@ static void output_results(LALStatus *stat, char *file, const char *ifo, Metadat
 	LAL_CALL(LALOpenLIGOLwXMLFile(stat, &xml, file), stat);
 
 	/* process table */
-	snprintf(procTable->processTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
-	LAL_CALL(LALGPSTimeNow(stat, &(procTable->processTable->end_time), &accuracy), stat);
+	LAL_CALL(LALGPSTimeNow(stat, &(_process_table->processTable->end_time), &accuracy), stat);
 	LAL_CALL(LALBeginLIGOLwXMLTable(stat, &xml, process_table), stat);
-	LAL_CALL(LALWriteLIGOLwXMLTable(stat, &xml, *procTable, process_table), stat);
+	LAL_CALL(LALWriteLIGOLwXMLTable(stat, &xml, *_process_table, process_table), stat);
 	LAL_CALL(LALEndLIGOLwXMLTable(stat, &xml), stat);
 
 	/* process params table */
 	LAL_CALL(LALBeginLIGOLwXMLTable(stat, &xml, process_params_table), stat);
-	LAL_CALL(LALWriteLIGOLwXMLTable(stat, &xml, *procparams, process_params_table), stat);
+	LAL_CALL(LALWriteLIGOLwXMLTable(stat, &xml, *_process_params_table, process_params_table), stat);
 	LAL_CALL(LALEndLIGOLwXMLTable(stat, &xml), stat);
 
 	/* search summary table */
-	snprintf(searchsumm->searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
-	searchsumm->searchSummaryTable->nevents = XLALCountSnglBurst(burstEvent);
+	snprintf(_search_summary_table->searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
+	_search_summary_table->searchSummaryTable->nevents = XLALCountSnglBurst(burstEvent);
 	LAL_CALL(LALBeginLIGOLwXMLTable(stat, &xml, search_summary_table), stat);
-	LAL_CALL(LALWriteLIGOLwXMLTable(stat, &xml, *searchsumm, search_summary_table), stat);
+	LAL_CALL(LALWriteLIGOLwXMLTable(stat, &xml, *_search_summary_table, search_summary_table), stat);
 	LAL_CALL(LALEndLIGOLwXMLTable(stat, &xml), stat);
 
 	/* burst table */
@@ -1512,9 +1511,9 @@ int main(int argc, char *argv[])
 	REAL4TimeSeries *series = NULL;
 	SnglBurstTable *burstEvent = NULL;
 	SnglBurstTable **EventAddPoint = &burstEvent;
-	MetadataTable procTable;
-	MetadataTable procparams;
-	MetadataTable searchsumm;
+	MetadataTable _process_table;
+	MetadataTable _process_params_table;
+	MetadataTable _search_summary_table;
 	RandomParams *rparams = NULL;
 
 	/*
@@ -1527,27 +1526,28 @@ int main(int argc, char *argv[])
 	parse_command_line_debug(argc, argv);
 
 	/* create the process and process params tables */
-	procTable.processTable = LALCalloc(1, sizeof(ProcessTable));
-	LAL_CALL(LALGPSTimeNow(&stat, &(procTable.processTable->start_time), &accuracy), &stat);
-	LAL_CALL(populate_process_table(&stat, procTable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE), &stat);
-	procparams.processParamsTable = NULL;
+	_process_table.processTable = LALCalloc(1, sizeof(ProcessTable));
+	LAL_CALL(LALGPSTimeNow(&stat, &(_process_table.processTable->start_time), &accuracy), &stat);
+	LAL_CALL(populate_process_table(&stat, _process_table.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE), &stat);
+	_process_params_table.processParamsTable = NULL;
 
-	/* parse arguments and fill procparams table */
-	options = parse_command_line(argc, argv, &params, &procparams);
+	/* parse arguments and fill _process_params_table table */
+	options = parse_command_line(argc, argv, &params, &_process_params_table);
+	snprintf(_process_table.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", options->ifo);
 
 	/* create the search summary table */
-	searchsumm.searchSummaryTable = LALCalloc(1, sizeof(SearchSummaryTable));
+	_search_summary_table.searchSummaryTable = LALCalloc(1, sizeof(SearchSummaryTable));
 
 	/* fill the comment */
-	snprintf(procTable.processTable->comment, LIGOMETA_COMMENT_MAX, "%s", options->comment);
-	snprintf(searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, "%s", options->comment);
+	snprintf(_process_table.processTable->comment, LIGOMETA_COMMENT_MAX, "%s", options->comment);
+	snprintf(_search_summary_table.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, "%s", options->comment);
 
 	/* the number of nodes for a standalone job is always 1 */
-	searchsumm.searchSummaryTable->nnodes = 1;
+	_search_summary_table.searchSummaryTable->nnodes = 1;
 
 	/* store the input start and end times */
-	searchsumm.searchSummaryTable->in_start_time = options->gps_start;
-	searchsumm.searchSummaryTable->in_end_time = options->gps_end;
+	_search_summary_table.searchSummaryTable->in_start_time = options->gps_start;
+	_search_summary_table.searchSummaryTable->in_end_time = options->gps_end;
 
 	/* determine the input time series post-conditioning overlap, and set
 	 * the outer loop's upper bound */
@@ -1667,12 +1667,12 @@ int main(int argc, char *argv[])
 		 * gets analyzed.
 		 */
 
-		if(!searchsumm.searchSummaryTable->out_start_time.gpsSeconds) {
-			searchsumm.searchSummaryTable->out_start_time = series->epoch;
-			XLALGPSAdd(&searchsumm.searchSummaryTable->out_start_time, series->deltaT * (options->window_length / 2 - params.windowShift));
+		if(!_search_summary_table.searchSummaryTable->out_start_time.gpsSeconds) {
+			_search_summary_table.searchSummaryTable->out_start_time = series->epoch;
+			XLALGPSAdd(&_search_summary_table.searchSummaryTable->out_start_time, series->deltaT * (options->window_length / 2 - params.windowShift));
 		}
-		searchsumm.searchSummaryTable->out_end_time = series->epoch;
-		XLALGPSAdd(&searchsumm.searchSummaryTable->out_end_time, series->deltaT * (series->data->length - (options->window_length / 2 - params.windowShift)));
+		_search_summary_table.searchSummaryTable->out_end_time = series->epoch;
+		XLALGPSAdd(&_search_summary_table.searchSummaryTable->out_end_time, series->deltaT * (series->data->length - (options->window_length / 2 - params.windowShift)));
 
 
 		/*
@@ -1715,7 +1715,7 @@ int main(int argc, char *argv[])
 	 * Check event rate limit.
 	 */
 
-	if((options->max_event_rate > 0) && (SnglBurstTableLength(burstEvent) > XLALGPSDiff(&searchsumm.searchSummaryTable->out_end_time, &searchsumm.searchSummaryTable->out_start_time) * options->max_event_rate)) {
+	if((options->max_event_rate > 0) && (SnglBurstTableLength(burstEvent) > XLALGPSDiff(&_search_summary_table.searchSummaryTable->out_end_time, &_search_summary_table.searchSummaryTable->out_start_time) * options->max_event_rate)) {
 		XLALPrintError("%s: event rate limit exceeded!", argv[0]);
 		exit(1);
 	}
@@ -1726,7 +1726,7 @@ int main(int argc, char *argv[])
 
 	snprintf(outfilename, sizeof(outfilename) - 1, "%s-POWER_%s-%d-%d.xml", options->ifo, options->comment, options->gps_start.gpsSeconds, options->gps_end.gpsSeconds - options->gps_start.gpsSeconds);
 	outfilename[sizeof(outfilename) - 1] = '\0';
-	output_results(&stat, outfilename, options->ifo, &procTable, &procparams, &searchsumm, burstEvent);
+	output_results(&stat, outfilename, options->ifo, &_process_table, &_process_params_table, &_search_summary_table, burstEvent);
 
 	/*
 	 * Final cleanup.
@@ -1734,12 +1734,12 @@ int main(int argc, char *argv[])
 
 	XLALDestroyRandomParams(rparams);
 	XLALDestroyREAL4Window(params.window);
-	LALFree(procTable.processTable);
-	LALFree(searchsumm.searchSummaryTable);
+	LALFree(_process_table.processTable);
+	LALFree(_search_summary_table.searchSummaryTable);
 
-	while(procparams.processParamsTable) {
-		ProcessParamsTable *table = procparams.processParamsTable;
-		procparams.processParamsTable = table->next;
+	while(_process_params_table.processParamsTable) {
+		ProcessParamsTable *table = _process_params_table.processParamsTable;
+		_process_params_table.processParamsTable = table->next;
 		LALFree(table);
 	}
 
