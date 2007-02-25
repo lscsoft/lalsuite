@@ -24,7 +24,7 @@ NRCSID(FREQSERIESTOTFPLANEC, "$Id$");
  * channel's centre frequency.  The filter is normalized so that its sum
  * squares is 1.  If the psd parameter is not NULL, then the filter is
  * divided by the square root of this frequency series prior to
- * normalilization.  This has the effect of demphasizing frequency bins
+ * normalilization.  This has the effect of de-emphasizing frequency bins
  * with high noise content, and is called "over whitening".
  */
 
@@ -39,7 +39,7 @@ static COMPLEX8FrequencySeries *generate_filter(
 	const char func[] = "generate_filter";
 	char filter_name[100];
 	REAL4Window *hann;
-	COMPLEX8FrequencySeries *fdfilter;
+	COMPLEX8FrequencySeries *filter;
 	unsigned i;
 	REAL4 norm;
 
@@ -50,16 +50,16 @@ static COMPLEX8FrequencySeries *generate_filter(
 	 * centred on the channel's centre frequency.
 	 */
 
-	fdfilter = XLALCreateCOMPLEX8FrequencySeries(filter_name, &template->epoch, channel_flow - channel_width / 2, template->deltaF, &lalDimensionlessUnit, 2 * channel_width / template->deltaF);
-	hann = XLALCreateHannREAL4Window(fdfilter->data->length);
-	if(!fdfilter || !hann) {
-		XLALDestroyCOMPLEX8FrequencySeries(fdfilter);
+	filter = XLALCreateCOMPLEX8FrequencySeries(filter_name, &template->epoch, channel_flow - channel_width / 2, template->deltaF, &lalDimensionlessUnit, 2 * channel_width / template->deltaF);
+	hann = XLALCreateHannREAL4Window(filter->data->length);
+	if(!filter || !hann) {
+		XLALDestroyCOMPLEX8FrequencySeries(filter);
 		XLALDestroyREAL4Window(hann);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
-	for(i = 0; i < fdfilter->data->length; i++) {
-		fdfilter->data->data[i].re = hann->data->data[i];
-		fdfilter->data->data[i].im = 0.0;
+	for(i = 0; i < filter->data->length; i++) {
+		filter->data->data[i].re = hann->data->data[i];
+		filter->data->data[i].im = 0.0;
 	}
 	XLALDestroyREAL4Window(hann);
 
@@ -68,10 +68,10 @@ static COMPLEX8FrequencySeries *generate_filter(
 	 */
 
 	if(psd) {
-		REAL4 *pdata = psd->data->data + (int) ((fdfilter->f0 - psd->f0) / psd->deltaF);
-		for(i = 0; i < fdfilter->data->length; i++) {
-			fdfilter->data->data[i].re /= sqrt(pdata[i]);
-			fdfilter->data->data[i].im /= sqrt(pdata[i]);
+		REAL4 *pdata = psd->data->data + (int) ((filter->f0 - psd->f0) / psd->deltaF);
+		for(i = 0; i < filter->data->length; i++) {
+			filter->data->data[i].re /= sqrt(pdata[i]);
+			filter->data->data[i].im /= sqrt(pdata[i]);
 		}
 	}
 
@@ -87,17 +87,17 @@ static COMPLEX8FrequencySeries *generate_filter(
 	 * returned needs to be doubled;  hence the factor of 2.
 	 */
 
-	norm = sqrt(2 * XLALCOMPLEX8SequenceSumSquares(fdfilter->data, 0, fdfilter->data->length));
-	for(i = 0; i < fdfilter->data->length; i++) {
-		fdfilter->data->data[i].re /= norm;
-		fdfilter->data->data[i].im /= norm;
+	norm = sqrt(2 * XLALCOMPLEX8SequenceSumSquares(filter->data, 0, filter->data->length));
+	for(i = 0; i < filter->data->length; i++) {
+		filter->data->data[i].re /= norm;
+		filter->data->data[i].im /= norm;
 	}
 
 	/*
 	 * success
 	 */
 
-	return fdfilter;
+	return filter;
 }
 
 
@@ -109,13 +109,13 @@ static COMPLEX8FrequencySeries *generate_filter(
 
 
 static REAL8 filter_overlap(
-	COMPLEX8FrequencySeries *filter1,
-	COMPLEX8FrequencySeries *filter2
+	const COMPLEX8FrequencySeries *filter1,
+	const COMPLEX8FrequencySeries *filter2
 )
 {
-	COMPLEX8 *f1data = filter1->data->data + (int) ((filter2->f0 - filter1->f0) / filter1->deltaF);
-	COMPLEX8 *f1end = filter1->data->data + filter1->data->length;
-	COMPLEX8 *f2data = filter2->data->data;
+	const COMPLEX8 *f1data = filter1->data->data + (int) ((filter2->f0 - filter1->f0) / filter1->deltaF);
+	const COMPLEX8 *f1end = filter1->data->data + filter1->data->length;
+	const COMPLEX8 *f2data = filter2->data->data;
 	COMPLEX16 sum = {0, 0};
 
 	if((filter1->f0 > filter2->f0) || ((f1end - f1data) > (int) filter2->data->length) || (filter1->deltaF != filter2->deltaF))
@@ -181,8 +181,8 @@ static REAL8 channel_mean_square(
 	const COMPLEX8FrequencySeries *filter
 )
 {
-	REAL4 *pdata = psd->data->data + (int) ((filter->f0 - psd->f0) / psd->deltaF);
-	COMPLEX8 *fdata = filter->data->data;
+	const REAL4 *pdata = psd->data->data + (int) ((filter->f0 - psd->f0) / psd->deltaF);
+	const COMPLEX8 *fdata = filter->data->data;
 	double sum = 0.0;
 	unsigned i;
 
