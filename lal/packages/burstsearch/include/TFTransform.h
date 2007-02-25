@@ -37,8 +37,9 @@ typedef struct tagTFTile {
 	/* computed tile properties */
 	REAL8 excessPower;
 	REAL8 hrss;
-	REAL8 lnalpha;
 	REAL8 lnweight;
+	/* -ln P(event | stationary Gaussian white noise) */
+	REAL8 confidence;
 } TFTile;
 
 

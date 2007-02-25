@@ -43,7 +43,7 @@ tagEPSearchParams {
 	BOOLEAN               useOverWhitening;	
 	REAL4Window          *window;
 	UINT4                 windowShift;
-	REAL8                 lnalphaThreshold;
+	REAL8                 confidence_threshold;
 	AvgSpecMethod         method;
 	/* time-frequency plane parameters */
 	INT4                  tf_timeBins;

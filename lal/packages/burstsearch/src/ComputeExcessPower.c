@@ -46,8 +46,8 @@ int XLALComputeExcessPower(
 		}
 		tile->excessPower = sumsquares - dof;
 		tile->hrss = sqrt(hsumsquares);
-		tile->lnalpha = XLALlnOneMinusChisqCdf(sumsquares, dof);
-		if(XLALIsREAL8FailNaN(tile->lnalpha))
+		tile->confidence = -XLALlnOneMinusChisqCdf(sumsquares, dof);
+		if(XLALIsREAL8FailNaN(tile->confidence))
 			XLAL_ERROR(func, XLAL_EFUNC);
 	}
 
@@ -69,7 +69,7 @@ REAL8 XLALComputeLikelihood(
 
 	for(i = 0, tile = tiling->tile; i < tiling->numtiles; i++, tile++) {
 		rho4 = tile->excessPower * tile->excessPower;
-		avglambda += XLALTFTileDegreesOfFreedom(tile) / rho4 * exp(tile->lnweight - tile->lnalpha);
+		avglambda += XLALTFTileDegreesOfFreedom(tile) / rho4 * exp(tile->lnweight - tile->confidence);
 	}
 
 	/* compute the likelihood averaged over TF tiles */

@@ -106,7 +106,7 @@ TFTiling *XLALCreateTFTiling(
 		tile->deltaT = plane_deltaT;
 		tile->deltaF = plane_deltaF;
 		tile->excessPower = XLAL_REAL8_FAIL_NAN;
-		tile->lnalpha = XLAL_REAL8_FAIL_NAN;
+		tile->confidence = XLAL_REAL8_FAIL_NAN;
 		weight[(int) XLALTFTileDegreesOfFreedom(tile)]++;
 		tile++;
 	}

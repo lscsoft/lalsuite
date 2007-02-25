@@ -78,7 +78,7 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 	/* FIXME: put hrss into the "hrss" column */
 	event->amplitude = tile->hrss;
 	event->snr = tile->excessPower;
-	event->confidence =  tile->lnalpha;
+	event->confidence = tile->confidence;
 	event->string_cluster_t = XLAL_REAL4_FAIL_NAN;
 	event->event_id = 0;
 
@@ -86,7 +86,7 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 }
 
 
-static SnglBurstTable *XLALTFTilesToSnglBurstTable(SnglBurstTable *head, const REAL4TimeFrequencyPlane *plane, const TFTiling *tiling, REAL8 lnalphaThreshold)
+static SnglBurstTable *XLALTFTilesToSnglBurstTable(SnglBurstTable *head, const REAL4TimeFrequencyPlane *plane, const TFTiling *tiling, REAL8 confidence_threshold)
 {
 	const char func[] = "XLALTFTilesToSnglBurstTable";
 	SnglBurstTable *oldhead;
@@ -94,7 +94,7 @@ static SnglBurstTable *XLALTFTilesToSnglBurstTable(SnglBurstTable *head, const R
 	size_t i;
 
 	for(i = 0, tile = tiling->tile; i < tiling->numtiles; i++, tile++) {
-		if(tile->lnalpha <= lnalphaThreshold) {
+		if(tile->confidence >= confidence_threshold) {
 			oldhead = head;
 			head = XLALTFTileToBurstEvent(tile, plane->name, &plane->epoch); 
 			if(!head) {
@@ -261,7 +261,7 @@ XLALEPSearch(
 
 		XLALPrintInfo("XLALEPSearch(): converting tiles to trigger list\n");
 		XLALClearErrno();
-		head = XLALTFTilesToSnglBurstTable(head, tfplane, tfplane->tiling, params->lnalphaThreshold);
+		head = XLALTFTilesToSnglBurstTable(head, tfplane, tfplane->tiling, params->confidence_threshold);
 		if(xlalErrno) {
 			errorcode = XLAL_EFUNC;
 			goto error;
