@@ -352,7 +352,7 @@ static int check_for_missing_parameters(char *prog, struct option *long_options,
 			break;
 
 		case 'g':
-			arg_is_missing = params->lnalphaThreshold == XLAL_REAL8_FAIL_NAN;
+			arg_is_missing = params->confidence_threshold == XLAL_REAL8_FAIL_NAN;
 			break;
 
 		case 'j':
@@ -481,7 +481,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	 */
 
 	params->diagnostics = NULL;	/* default == disable */
-	params->lnalphaThreshold = XLAL_REAL8_FAIL_NAN;	/* impossible */
+	params->confidence_threshold = XLAL_REAL8_FAIL_NAN;	/* impossible */
 	params->method = -1;	/* impossible */
 	params->tf_flow = -1.0;	/* impossible */
 	params->maxTileBandwidth = 0;	/* impossible */
@@ -700,7 +700,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		break;
 
 	case 'g':
-		params->lnalphaThreshold = atof(optarg);
+		params->confidence_threshold = atof(optarg);
 		ADD_PROCESS_PARAM("float");
 		break;
 
