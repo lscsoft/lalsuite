@@ -357,8 +357,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
   SFTtype *SFT_al;		/* SFT alpha  */
   UINT4 Dterms = params->Dterms;
   
-  REAL8 norm = OOTWOPI; /*  / params->upsampling; */
-  INT4 upsampling;
+  REAL8 norm = OOTWOPI; 
 
   /* ----- check validity of input */
 #ifndef LAL_NDEBUG
@@ -386,21 +385,16 @@ XLALComputeFaFb ( Fcomponents *FaFb,
     }
 #endif
 
-  if ( params->upsampling == 0 )
-    upsampling = 1;
-  else
-    upsampling = params->upsampling;
-
-  if ( (upsampling > 1) && (params->Dterms != 0) )
-    {
-      fprintf (stderr, "\n===== WARNING: XLALComputeFaFb() does not work correctly if using UPSAMPLING and Dterms!=0! you have been warned!\n\n");
-    }
+  if ( params->upsampling > 1 ) {
+    fprintf (stderr, "\n===== WARNING: XLALComputeFaFb() should not be used with upsampled-SFTs!\n");
+    XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
+  }
 
   /* ----- prepare convenience variables */
   numSFTs = sfts->length;
   Tsft = 1.0 / sfts->data[0].deltaF;
   {
-    REAL8 dFreq = sfts->data[0].deltaF / upsampling;
+    REAL8 dFreq = sfts->data[0].deltaF;
     freqIndex0 = (UINT4) ( sfts->data[0].f0 / dFreq + 0.5); /* lowest freqency-index */
     freqIndex1 = freqIndex0 + sfts->data[0].data->length;
   }
@@ -470,9 +464,9 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	  XLAL_ERROR ( "XLALComputeFaFb", XLAL_EFUNC);
 	}
 
-	kstar = (INT4) (Dphi_alpha * upsampling + 0.5);	/* k* = round(Dphi_alpha*chi) for positive Dphi */
-	kappa_star = Dphi_alpha - 1.0 * kstar / upsampling;
-	kappa_max = kappa_star + 1.0 * Dterms / upsampling;
+	kstar = (INT4) (Dphi_alpha + 0.5);	/* k* = round(Dphi_alpha*chi) for positive Dphi */
+	kappa_star = Dphi_alpha - 1.0 * kstar;
+	kappa_max = kappa_star + 1.0 * Dterms;
 
 	/* ----- check that required frequency-bins are found in the SFTs ----- */
 	k0 = kstar - Dterms;	
@@ -517,9 +511,8 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	   * take out repeated divisions into a single common denominator,
 	   * plus use extra cleverness to compute the nominator efficiently...
 	   */
-	  COMPLEX8 Xal = *Xalpha_l;
-	  REAL4 Sn = Xal.re;
-	  REAL4 Tn = Xal.im;
+	  REAL4 Sn = (*Xalpha_l).re;
+	  REAL4 Tn = (*Xalpha_l).im;
 	  REAL4 pn = kappa_max;
 	  REAL4 qn = pn;
 	  REAL4 U_alpha, V_alpha;
@@ -529,11 +522,10 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	  for ( l = 1; l <= 2*Dterms; l ++ )
 	    {
 	      Xalpha_l ++;
-	      Xal = *Xalpha_l;
 	      
-	      pn = pn - 1.0f / upsampling; /* p_(n+1) */
-	      Sn = pn * Sn + qn * Xal.re;	/* S_(n+1) */
-	      Tn = pn * Tn + qn * Xal.im;	/* T_(n+1) */
+	      pn = pn - 1.0f; 			/* p_(n+1) */
+	      Sn = pn * Sn + qn * (*Xalpha_l).re;	/* S_(n+1) */
+	      Tn = pn * Tn + qn * (*Xalpha_l).im;	/* T_(n+1) */
 	      qn *= pn;				/* q_(n+1) */
 	    } /* for l <= 2*Dterms */
 	  
