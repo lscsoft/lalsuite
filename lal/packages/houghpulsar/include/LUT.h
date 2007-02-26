@@ -658,10 +658,14 @@ NRCSID (LUTH, "$Id$");
 /* #define PIXELFACTOR  2 */
 
 /** Earth v_epicycle/c  TO BE CHANGED DEPENDING ON DETECTOR */
-#define VEPI 1.0e-06
-/** Total detector velocity/c TO BE CHANGED DEPENDING ON DETECTOR */
-#define VTOT 1.06e-04
+/* #define VEPI 1.0e-06 */
+/* vepi = 2*pi*R_earth /(day *c) */
+#define VEPI LAL_TWOPI * LAL_REARTH_SI / ( LAL_DAYSID_SI * LAL_C_SI )
 
+/** Total detector velocity/c TO BE CHANGED DEPENDING ON DETECTOR */
+/* #define VTOT 1.06e-04 */
+/* vtot = 2*pi* 1AU / (year * c) */
+#define VTOT LAL_TWOPI * LAL_AU_SI / ( LAL_YRSID_SI * LAL_C_SI )
 
 
 /* **************************************************************
