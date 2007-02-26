@@ -148,13 +148,13 @@ main(int argc, char **argv)
 
   coarseIn.LowGM        = -2;
   coarseIn.HighGM       = 6;
-  coarseIn.fLower       = 20.L;
+  coarseIn.fLower       = 40.L;
   coarseIn.fUpper       = 2047L;
   coarseIn.tSampling    = 4096.L;
   coarseIn.order        = twoPN;
   coarseIn.space        = Tau0Tau3;
-  coarseIn.mmCoarse     = 0.95;
-  coarseIn.mmFine       = 0.95;
+  coarseIn.mmCoarse     = 0.98;
+  coarseIn.mmFine       = 0.98;
   coarseIn.iflso        = 0.0L;
   coarseIn.mMin         = 3;
   coarseIn.mMax         = 30.0;
@@ -206,19 +206,23 @@ main(int argc, char **argv)
 	  case TaylorT3:
 	  case EOB:
 
- 	  fprintf(fpr, "%e %e %e %e %e\n", 
+ 	  fprintf(fpr, "%e %e %e %e %e %e %e\n", 
 	  		  list1[j].params.t0, 
 			  list1[j].params.t3, 
 			  list1[j].metric.g00, 
 			  list1[j].metric.g11,
-			  list1[j].metric.theta);
+                          2*sqrt((1-coarseIn.mmCoarse)/list1[j].metric.g00),
+                          2*sqrt((1-coarseIn.mmCoarse)/list1[j].metric.g11),
+			  list1[j].metric.theta*180/LAL_PI);
 		  break;
 	  case BCV:
-	  fprintf(fpr, "%e %e %e %e %e\n", 
+	  fprintf(fpr, "%e %e %e %e %e %e %e\n", 
 	  		  list1[j].params.psi0, 
 			  list1[j].params.psi3, 
 			  list1[j].metric.g00, 
 			  list1[j].metric.g11,
+                          2*sqrt((1-coarseIn.mmCoarse)/list1[j].metric.g00),
+                          2*sqrt((1-coarseIn.mmCoarse)/list1[j].metric.g11),
 			  list1[j].metric.theta);
 	  break;
 	  }
@@ -231,100 +235,120 @@ main(int argc, char **argv)
   {
     UINT4 j;
     UINT4 valid;
-  
     static RectangleIn RectIn;
     static RectangleOut RectOut;
-
-  
-    
+    static HexagonOut HexaOut;
+      
     /* Print out the template parameters */
     for (j=0; j<nlist1; j++)
     {
-    RectIn.dx = sqrt(2.0 * (1. - coarseIn.mmCoarse)/list1[j].metric.g00 );
-    RectIn.dy = sqrt(2.0 * (1. - coarseIn.mmCoarse)/list1[j].metric.g11 );
-    RectIn.theta = list1[j].metric.theta   ;
-	/*
-	Retain only those templates that have meaningful masses:
-	*/
-	if (userParams.calque == BCV)
+      RectIn.dx = sqrt(2.0 * (1. - coarseIn.mmCoarse)/list1[j].metric.g00 );
+      RectIn.dy = sqrt(2.0 * (1. - coarseIn.mmCoarse)/list1[j].metric.g11 );
+      RectIn.theta = list1[j].metric.theta  ;               
+      
+      if (userParams.calque == BCV)
+      {
+        RectIn.x0 = (REAL8) list1[j].params.psi0;
+        RectIn.y0 = (REAL8) list1[j].params.psi3;
+      }
+      else
+      {
+        RectIn.x0 = (REAL8) list1[j].params.t0;
+        RectIn.y0 = (REAL8) list1[j].params.t3;
+      }
+      /*
+       * LALInspiralValidParams(&status, &valid, bankParams, coarseIn);
+       * */
+      valid = 1;
+      if (valid) 
+      {
+        if (coarseIn.gridSpacing == SquareNotOriented)
         {
-          RectIn.x0 = (REAL8) list1[j].params.psi0;
-          RectIn.y0 = (REAL8) list1[j].params.psi3;
+          LALRectangleVertices(&status, &RectOut, &RectIn);
+          fprintf(fpr, "%e %e\n%e %e\n%e %e\n%e %e\n%e %e\n", 
+              RectOut.x1, RectOut.y1, 
+              RectOut.x2, RectOut.y2, 
+              RectOut.x3, RectOut.y3, 
+              RectOut.x4, RectOut.y4, 
+              RectOut.x5, RectOut.y5);
+          fprintf(fpr, "&\n");
+        }
+        else if (coarseIn.gridSpacing == Hexagonal || coarseIn.gridSpacing == HybridHexagonal)
+        {
+          RectIn.dx = sqrt(3.0 * (1. - coarseIn.mmCoarse)/list1[j].metric.g00 );
+          RectIn.dy = sqrt(3.0 * (1. - coarseIn.mmCoarse)/list1[j].metric.g11 );
+          /*RectIn.theta = list1[j].metric.theta + LAL_PI/6;*/
+          LALHexagonVertices(&status, &HexaOut, &RectIn);
+          fprintf(fpr, "%e %e\n%e %e\n%e %e\n%e %e\n%e %e\n%e %e\n%e %e\n", 
+              HexaOut.x1, HexaOut.y1, 
+              HexaOut.x2, HexaOut.y2, 
+              HexaOut.x3, HexaOut.y3, 
+              HexaOut.x4, HexaOut.y4, 
+              HexaOut.x5, HexaOut.y5, 
+              HexaOut.x6, HexaOut.y6, 
+              HexaOut.x7, HexaOut.y7);
+          fprintf(fpr, "&\n");
+
+        }
+      }
+       
+      /*plots the ellipses*/    
+      {
+        int Nth =100;
+        double th;
+        double x,y,phi,a,b, theta;
+        for (theta=0; theta<2*3.14; theta+=2*3.14/(double)Nth)
+        {
+          a = sqrt( 2.L * (1.L-coarseIn.mmCoarse)/list1[j].metric.g00 );
+          b = sqrt( 2.L * (1.L-coarseIn.mmCoarse)/list1[j].metric.g11 );
+          x = a * cos(theta)/scaling;
+          y = b * sin(theta)/scaling;
+          phi=list1[j].metric.theta ;
+          /*              phi *=1.1;*/
+          if (userParams.calque == BCV)
+          {
+            th = x*cos(phi)-y*sin(phi)+list1[j].params.psi0;
+            y  = x*sin(phi)+y*cos(phi)+list1[j].params.psi3;
+          }
+          else
+          {
+            th = x*cos(phi)-y*sin(phi)+list1[j].params.t0;
+            y  = x*sin(phi)+y*cos(phi)+list1[j].params.t3;
+          }
+          x  = th;
+          fprintf(fpr, "%f %f\n", x, y);	    
+        }
+        theta = 0;
+        a = sqrt( 2.L * (1.L-coarseIn.mmCoarse)/list1[j].metric.g00 );
+        b = sqrt( 2.L * (1.L-coarseIn.mmCoarse)/list1[j].metric.g11 );
+        x = a * cos(theta) /scaling;
+        y = b * sin(theta)/scaling;
+        phi=list1[j].metric.theta ;
+        
+        if (userParams.calque == BCV)
+        {
+          th = x*cos(phi)-y*sin(phi)+list1[j].params.psi0;
+          y  = x*sin(phi)+y*cos(phi)+list1[j].params.psi3;
         }
         else
         {
-          RectIn.x0 = (REAL8) list1[j].params.t0;
-          RectIn.y0 = (REAL8) list1[j].params.t3;
+          th = x*cos(phi)-y*sin(phi)+list1[j].params.t0;
+          y  = x*sin(phi)+y*cos(phi)+list1[j].params.t3;
         }
-	/*
-	LALInspiralValidParams(&status, &valid, bankParams, coarseIn);
-	*/
-	valid = 1;
-        if (valid) 
-	{
-		LALRectangleVertices(&status, &RectOut, &RectIn);
-		fprintf(fpr, "%e %e\n%e %e\n%e %e\n%e %e\n%e %e\n", 
-				RectOut.x1, RectOut.y1, 
-				RectOut.x2, RectOut.y2, 
-				RectOut.x3, RectOut.y3, 
-				RectOut.x4, RectOut.y4, 
-				RectOut.x5, RectOut.y5);
-		fprintf(fpr, "&\n");
-	}
-
-	{
-	  int Nth =100;
-	  double th;
-	  double x,y,phi,a,b, theta;
-	  for (theta=0; theta<2*3.14; theta+=2*3.14/(double)Nth)
-	    {
-	      a = sqrt( 2.L * (1.L-coarseIn.mmCoarse)/list1[j].metric.g00 );
-	      b = sqrt( 2.L * (1.L-coarseIn.mmCoarse)/list1[j].metric.g11 );
-	      x = a * cos(theta)/scaling;
-	      y = b * sin(theta)/scaling;
-	      phi=list1[j].metric.theta ;
-              if (userParams.calque == BCV)
-                {
-                th = x*cos(phi)-y*sin(phi)+list1[j].params.psi0;
-                y  = x*sin(phi)+y*cos(phi)+list1[j].params.psi3;
-                }
-              else
-              {
-                th = x*cos(phi)-y*sin(phi)+list1[j].params.t0;
-                y  = x*sin(phi)+y*cos(phi)+list1[j].params.t3;
-              }
-	      x  = th;
-	      fprintf(fpr, "%f %f\n", x, y);	    
-	    }
-		theta = 0;
-	      a = sqrt( 2.L * (1.L-coarseIn.mmCoarse)/list1[j].metric.g00 );
-	      b = sqrt( 2.L * (1.L-coarseIn.mmCoarse)/list1[j].metric.g11 );
-	      x = a * cos(theta) /scaling;
-	      y = b * sin(theta)/scaling;
-	      phi=list1[j].metric.theta ;
-
-              if (userParams.calque == BCV)
-                {
-                th = x*cos(phi)-y*sin(phi)+list1[j].params.psi0;
-                y  = x*sin(phi)+y*cos(phi)+list1[j].params.psi3;
-                }
-              else
-              {
-                th = x*cos(phi)-y*sin(phi)+list1[j].params.t0;
-                y  = x*sin(phi)+y*cos(phi)+list1[j].params.t3;
-              }
-	      x  = th;
-	      fprintf(fpr, "%f %f\n", x, y);	    
-
-	  
-	      fprintf(fpr, "&\n");
-	}
+        x  = th;
+        fprintf(fpr, "%f %f\n", x, y);	    
+        
+        fprintf(fpr, "&\n");
+      }
     }
   }
+  
 
+
+  
   LALInspiralCreateBoundarySpace(coarseIn);
 
-
+  
   fclose(fpr);
   /* Free the list, and exit. */
   if (list1 != NULL) LALFree (list1);
