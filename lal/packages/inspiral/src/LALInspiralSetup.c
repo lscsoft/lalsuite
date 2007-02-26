@@ -42,6 +42,7 @@ None.
 #include <math.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
 
 /* static void LALPadeCoeffs7(int n, double *padecoeffs, double *taylorcoeffs); */
 
@@ -82,9 +83,9 @@ LALInspiralSetup (
    ak->omegaS = params->OmegaS;
    ak->zeta2  = params->Zeta2; 
    ak->ieta = params->ieta;
-   ak->EulerC = 0.577216;
-   ak->lambda = -(1987./3080. + 3./11. * params->OmegaS);
-   ak->theta = params->Theta;
+   ak->EulerC = LAL_GAMMA;
+   ak->lambda = -1987./3080.;
+   ak->theta = -11831./9240.;
    ak->t0 = params->startTime;
    ak->m1 = params->mass1;
    ak->m2 = params->mass2;
@@ -200,15 +201,15 @@ LALInspiralSetup (
   ak->pta3 = -0.75*LAL_PI;
   ak->pta4 = 9.275495/14.450688 + 2.84875*ieta*eta/2.58048 
            + 1855.*ieta*eta*eta/2048.;
-  ak->pta5 = -(3.8645/17.2032 + 15./2048.*ieta*eta) * LAL_PI;
+  ak->pta5 = -(3.8645/17.2032 - 65./2048.*ieta*eta) * LAL_PI;
   ak->pta6 =  (83.1032450749357/5.7682522275840 - 53./40.*LAL_PI*LAL_PI 
            - 107./56. * ak->EulerC + (-123.292747421/4.161798144 
            + 2.255/2.048 *LAL_PI*LAL_PI + 385./48. * ak->lambda 
            - 55./16.* ak->theta) * ieta * eta + 1.54565/18.35008 * ieta*eta*eta 
            - 1.179625/1.769472 * ieta*eta*eta*eta);
 
-  ak->pta7 =  (1.88516689/1.73408256 + 1.40495/1.14688 * ieta*eta
-           - 1.22659/5.16096 * ieta*eta*eta) * LAL_PI;
+  ak->pta7 =  (1.88516689/1.73408256 + 488825./516096. * ieta*eta
+           - 141769./516096. * ieta*eta*eta) * LAL_PI;
   ak->ptl6 = 107./448.;
 
   ak->ftaN = 1./(8.*LAL_PI*ak->totalmass);
@@ -216,17 +217,17 @@ LALInspiralSetup (
   ak->fta3 = -0.3*LAL_PI;
   ak->fta4 = 1.855099/14.450688 +  5.6975*ieta*eta/25.8048 
            + 3.71*ieta*eta*eta/20.48;
-  ak->fta5 = -(7.729/21.504 + 3./256.*ieta*eta) * LAL_PI;
+  ak->fta5 = -(7.729/21.504 - 13./256.*ieta*eta) * LAL_PI;
   ak->fta6 = (-7.20817631400877/2.88412611379200 + (53./200.) * LAL_PI*LAL_PI
-           + 1.07/2.80 * ak->EulerC
+           + 1.07/2.80 * ak->EulerC + 1.07/2.90 * log(2.)
            + (1.23292747421/.20808990720 - 4.51/20.48 * LAL_PI*LAL_PI
            - 77./48. * ak->lambda + 11./16. * ak->theta) * ieta*eta
            - 3.0913/183.5008 * ieta*eta*eta 
            + 2.35925/17.69472 * ieta*eta*eta*eta);
 
-  ak->fta7 = (-1.88516689/4.33520640 - 2.8099/5.7344 * ieta*eta
-           + 1.22659/12.90240 * ieta*eta*eta)*LAL_PI;
-  ak->ftl6 = 107./280.;
+  ak->fta7 = (-1.88516689/4.33520640 - 97765./258048. * ieta*eta
+           + 141769./1290240. * ieta*eta*eta)*LAL_PI;
+  ak->ftl6 = -107./2240.;
 
 /* Initialize members of the structures which get fed into 
    phasing2() and frequency2(). 
