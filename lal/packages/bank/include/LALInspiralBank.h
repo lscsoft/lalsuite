@@ -705,6 +705,31 @@ RectangleOut;
 \index{\texttt{RectangleOut}}
 </lalLaTeX>  */
 
+/*  <lalVerbatim file="LALHexagonOutH"> */
+typedef struct
+tagHexagonOut 
+{
+  REAL8 x1;
+  REAL8 y1;
+  REAL8 x2;
+  REAL8 y2;
+  REAL8 x3;
+  REAL8 y3;
+  REAL8 x4;
+  REAL8 y4;
+  REAL8 x5;
+  REAL8 y5;
+  REAL8 x6;
+  REAL8 y6;
+  REAL8 x7;
+  REAL8 y7;
+}
+HexagonOut;
+/*  </lalVerbatim>  */
+/*  <lalLaTeX>
+\index{\texttt{HexagonOut}}
+</lalLaTeX>  */
+
 
 typedef struct{
 REAL4 ct;
@@ -1109,6 +1134,13 @@ void
 LALRectangleVertices(
    LALStatus *status, 
    RectangleOut *out,
+   RectangleIn *in
+   );
+
+void 
+LALHexagonVertices(
+   LALStatus *status, 
+   HexagonOut *out,
    RectangleIn *in
    );
 
