@@ -56,7 +56,7 @@ main(int argc, char **argv)
   static LALStatus status;     
   /* Structure specifying the nature of the bank needed */
   static InspiralCoarseBankIn coarseIn;
-  void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALVIRGOPsd;
+  void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
   UINT4   j, numPSDpts=262144/4/4; /*Size of the vectors*/
   InspiralTemplate tempPars;
   InspiralMetric metric;
@@ -70,7 +70,7 @@ main(int argc, char **argv)
    * also relevant. */
   coarseIn.LowGM        = -2;
   coarseIn.HighGM       = 6;
-  coarseIn.fLower       = 20.L;
+  coarseIn.fLower       = 40.L;
   coarseIn.fUpper       = 2047.L;
   coarseIn.tSampling    = 4096.L;
   coarseIn.order        = twoPN;
@@ -119,26 +119,33 @@ main(int argc, char **argv)
   {
     REAL4 tau0 = 0.;
     REAL4 tau3 = 0.;
-    INT4 validPars = 0;
+    INT4 valid = 0;
     InspiralBankParams bankPars, bankParsOld;
 
     /* Get the limit of the parameter space*/
     LALInspiralSetSearchLimits( &status, &bankPars, coarseIn );
     /* Loop over a rectangle with pre-defined range in tau_0 and tau_3. We will
      * then check if this is a valid template. */
-    for (tau0=.1; tau0<40; tau0+=1){
-      for (tau3=.1; tau3<2; tau3+=0.1){
-	tempPars.t0 = tau0;
-	tempPars.t3 = tau3;
-	LALInspiralParameterCalc( &status, &tempPars );
-        /* Even for non physical template, we can get the metric componenets*/
-	LALGetInspiralMoments( &status, &moments, &coarseIn.shf, &tempPars );
-	LALInspiralComputeMetric( &status, &metric, &tempPars, &moments );
-        /*Now, we simply ouput the values we are interested in : t0, t3 and
-         * angle. */
-	  
-        printf("%f  %f %f\n", tempPars.t0, tempPars.t3, metric.theta*180/3.14159);
-	fflush(stdout);
+    for (tau0=.8; tau0<10; tau0+=0.01){
+      for (tau3=.3; tau3<2; tau3+=0.01){
+        valid = 1;
+        bankPars.x0 = tau0;
+        bankPars.x1 = tau3;
+        
+        LALInspiralValidParams(&status, &valid, bankPars, coarseIn );
+	if  (valid==1)
+        {
+	  tempPars.t0 = tau0;
+  	  tempPars.t3 = tau3;
+	  LALInspiralParameterCalc( &status, &tempPars );
+          /* Even for non physical template, we can get the metric componenents*/
+  	  LALGetInspiralMoments( &status, &moments, &coarseIn.shf, &tempPars );
+	  LALInspiralComputeMetric( &status, &metric, &tempPars, &moments );
+          /*Now, we simply ouput the values we are interested in : t0, t3 and
+           * angle. */
+          printf("%f  %f %f\n", tempPars.t0, tempPars.t3, metric.theta*180/3.14159);
+  	  fflush(stdout);
+        }
 
       }
     }
