@@ -12,6 +12,7 @@ SIVASRC 	= siva.c
 INSPINJSRC 	= inspinj.c
 MINJSRC 	= minj.c
 BBHINJSRC 	= bbhinj.c
+BLINDINJSRC 	= blindinj.c
 SPLITBANKSRC 	= splitbank.c
 TRIGBANKSRC 	= trigbank.c
 INSPFRINJSRC 	= inspfrinj.c
@@ -24,7 +25,7 @@ if LALMETAIO
 bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank \
                lalapps_inca lalapps_sire lalapps_coire lalapps_siva \
                lalapps_inspinj lalapps_splitbank \
-               lalapps_minj lalapps_bbhinj \
+               lalapps_minj lalapps_bbhinj lalapps_blindinj \
                lalapps_inspfrinj lalapps_gwf2xml \
                lalapps_thinca lalapps_trigbank \
                lalapps_spininj lalapps_coherent_inspiral \
@@ -43,6 +44,7 @@ lalapps_siva_SOURCES 		= $(SIVASRC)
 lalapps_inspinj_SOURCES 	= $(INSPINJSRC)
 lalapps_minj_SOURCES 		= $(MINJSRC)
 lalapps_bbhinj_SOURCES 		= $(BBHINJSRC)
+lalapps_blindinj_SOURCES 		= $(BLINDINJSRC)
 lalapps_splitbank_SOURCES 	= $(SPLITBANKSRC)
 lalapps_trigbank_SOURCES 	= $(TRIGBANKSRC)
 lalapps_spininj_SOURCES 	= $(SPININJSRC)
