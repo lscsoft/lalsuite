@@ -357,7 +357,8 @@ static void worker (void) {
   int i;                       /* loop counter */
   int l;                       /* length of matched string */
   int res = 0;                 /* return value of function call */
-  char *startc,*endc,*appc;
+  char *startc,*endc,*appc;    /* pointers for parsing a command-line argument */
+  int output_help = 0;         /* flag: should we write out an additional help string? */
 
   boinc_init_diagnostics(BOINC_DIAG_DUMPCALLSTACKENABLED |
                          BOINC_DIAG_HEAPCHECKENABLED |
@@ -541,6 +542,12 @@ static void worker (void) {
       rarg--; rargc--; /* this argument is not passed to the main worker function */
     }
 
+    /* add help for additional BOINC options? */
+    else if ((0 == strncmp("--help",argv[arg])) || (0 == strncmp("-h",argv[arg]))) {
+      output_help = 1;
+      rargv[rarg] = argv[arg];
+    }
+
     /* any other argument */
     else 
       rargv[rarg] = argv[arg];
@@ -573,6 +580,14 @@ static void worker (void) {
   res = MAIN(rargc,rargv);
   if (res) {
     LogPrintf (LOG_CRITICAL, "ERROR: MAIN() returned with error '%d'\n",res);
+  }
+
+
+  if(output_help) {
+    fprintf(stderr,"Additional options the BOINC version understands:");
+    fprintf(stderr,"--WUfpops         \"flops estimation\", passed to the BOINC client as the number of Flops\n");
+    fprintf(stderr,"--MaxFileSize     maximum size the outpufile may grow to befor compacted (in 1k)\n");
+    fprintf(stderr,"--OutputBufSize   size of the output file buffer (in 1k)\n");
   }
 
   /* we'll still try to zip and send back what's left from an output file for diagnostics */
@@ -832,7 +847,6 @@ void init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
 
   *count = count_read;
 }
-
 
 
 /* adds a candidate to the toplist and to the ccheckpointing file, too, if it was actually inserted.
