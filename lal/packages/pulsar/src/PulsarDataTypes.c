@@ -50,10 +50,18 @@ const PulsarParams empty_PulsarParams;
 const PulsarCandidate empty_PulsarCandidate;
 
 /* initializers for frequently used non-pulsar types */
-const LIGOTimeGPS empty_LIGOTimeGPS;
-const BarycenterInput empty_BarycenterInput;
 const EphemerisData empty_EphemerisData;
-const SkyPosition empty_SkyPosition;
+const LIGOTimeGPS empty_LIGOTimeGPS = {0,0};
+const SkyPosition empty_SkyPosition = {0,0,COORDINATESYSTEM_HORIZON};
+const BarycenterInput empty_BarycenterInput = { {0,0},
+						{ {0,0,0},
+						  {{0,0,0},{0,0,0},{0,0,0}},
+						  LALDETECTORTYPE_ABSENT,
+						  {NULL,NULL,0,0,0,0,0,0,0,0,0}
+						},
+						0,
+						0,
+						0 };
 
 /*---------- internal prototypes ----------*/
 
