@@ -523,6 +523,11 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 
 	case 'F':
 		options->max_event_rate = atoi(optarg);
+		if(options->max_event_rate < 0) {
+			sprintf(msg, "must not be negative (%d specified)", options->max_event_rate);
+			print_bad_argument(argv[0], long_options[option_index].name, msg);
+			args_are_bad = TRUE;
+		}
 		ADD_PROCESS_PARAM("int");
 		break;
 
