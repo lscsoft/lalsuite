@@ -585,10 +585,11 @@ static void worker (void) {
 
 
   if(output_help) {
-    fprintf(stderr,"Additional options the BOINC version understands:");
-    fprintf(stderr,"--WUfpops         \"flops estimation\", passed to the BOINC client as the number of Flops\n");
-    fprintf(stderr,"--MaxFileSize     maximum size the outpufile may grow to befor compacted (in 1k)\n");
-    fprintf(stderr,"--OutputBufSize   size of the output file buffer (in 1k)\n");
+    printf("Additional options the BOINC version understands:\n");
+    printf("      --WUfpops         REAL     \"flops estimation\", passed to the BOINC client as the number of Flops\n");
+    printf("      --MaxFileSize     INT      maximum size the outpufile may grow to befor compacted (in 1k)\n");
+    printf("      --OutputBufSize   INT      size of the output file buffer (in 1k)\n");
+    boinc_finish(0);
   }
 
   /* we'll still try to zip and send back what's left from an output file for diagnostics */
