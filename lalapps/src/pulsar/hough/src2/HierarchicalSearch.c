@@ -653,13 +653,6 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( SetUpSFTs( &status, &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &usefulParams), &status);
   LogPrintfVerbatim (LOG_DEBUG, "done\n");
 
-  LogPrintf (LOG_DEBUG, "Upsampling SFTs by factor %d ... ", uvar_sftUpsampling );
-  for (k = 0; k < nStacks; k++) {
-    LAL_CALL ( upsampleMultiSFTVector ( &status, stackMultiSFT.data[k], uvar_sftUpsampling, 16 ), &status );
-  }
-  LogPrintfVerbatim (LOG_DEBUG, "done.\n");
-
-
   /* some useful params computed by SetUpSFTs */
   tStack = usefulParams.tStack;
   tObs = usefulParams.tObs;
@@ -671,6 +664,15 @@ int MAIN( int argc, char *argv[]) {
   refTimeGPS = usefulParams.spinRange_refTime.refTime;
   LogPrintf(LOG_DEBUG, "GPS Reference Time = %d\n", refTimeGPS.gpsSeconds);
 
+
+  if ( uvar_sftUpsampling > 1 )
+    {
+      LogPrintf (LOG_DEBUG, "Upsampling SFTs by factor %d ... ", uvar_sftUpsampling );
+      for (k = 0; k < nStacks; k++) {
+	LAL_CALL ( upsampleMultiSFTVector ( &status, stackMultiSFT.data[k], uvar_sftUpsampling, 16 ), &status );
+      }
+      LogPrintfVerbatim (LOG_DEBUG, "done.\n");
+    }
 
   /*------- set frequency and spindown resolutions and ranges for Fstat and semicoherent steps -----*/
 
