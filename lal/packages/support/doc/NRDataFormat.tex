@@ -268,8 +268,8 @@ metadata file containing two waveforms:
 Lines starting with a $\%$ or $\#$ will be taken to be comment lines and
 ignored.  There can be an arbitrary number of comment lines.  The
 filenames must give the relative paths to the data files starting from
-the location of the metadata file.  Thus, if the datafiles are stired
-in a directory called \texttt{data}, then the metadata file would read:
+the location of the metadata file.  Thus, if the datafiles are stored
+in a sub-directory called \texttt{data}, then the metadata file would read:
 \begin{verbatim}
 ## example wave
 ## m1/m2 S1x S1y S1z S2x S2y S2z l m filename
@@ -277,6 +277,14 @@ in a directory called \texttt{data}, then the metadata file would read:
 ## another example
 1.5 1.0 0.0 0.0 0.0 -1.0 0.0  2 1 data/example2.dat
 \end{verbatim}
+
+If the waveforms have been calculated using $\Psi_4$, then for
+cross-checking purposed, datafiles for the real and imaginary parts of
+$\Psi_4$ must also be provided in the same format as for the
+waveforms, i.e. three columns which are respectively time, real part
+of $\Psi_4$ and imaginary part of $\Psi_4$.  Again there can be an
+arbitrary number of comment lines, but in this case there does not
+need to be a metadata file.
 
 
 \end{document}
