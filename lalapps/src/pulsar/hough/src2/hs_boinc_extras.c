@@ -543,7 +543,8 @@ static void worker (void) {
     }
 
     /* add help for additional BOINC options? */
-    else if ((0 == strncmp("--help",argv[arg])) || (0 == strncmp("-h",argv[arg]))) {
+    else if ((0 == strncmp("--help",argv[arg],strlen("--help"))) ||
+	     (0 == strncmp("-h",argv[arg],strlen("--help")))) {
       output_help = 1;
       rargv[rarg] = argv[arg];
     }
