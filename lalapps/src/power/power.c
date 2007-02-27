@@ -236,12 +236,14 @@ static void print_usage(const char *program)
 "The following options are recognized.  Options not surrounded in [] are\n" \
 "required.\n" \
 "	 --bandwidth <bandwidth>\n" \
+"	[--burstinjection-file <file name>]\n" \
 "	[--calibrated-data <high pass frequency>]\n" \
 "	[--calibration-cache <cache file>]\n" \
 "	 --channel-name <string>\n" \
 "	 --confidence-threshold <confidence>\n" \
 "	[--debug-level <level>]\n" \
-"	[--max-event-rate <Hz>]\n" \
+"	[--dump-diagnostics <xml filename>]\n" \
+"	[--enable-over-whitening]\n" \
 "	 --filter-corruption <samples>\n" \
 "	 --frame-cache <cache file>\n" \
 "	[--gaussian-noise-rms <rms amplitude>]\n" \
@@ -249,25 +251,23 @@ static void print_usage(const char *program)
 "	 --gps-start-time <seconds>\n" \
 "	[--help]\n" \
 "	 --high-pass <high pass frequency>\n" \
-"	[--burstinjection-file <file name>]\n" \
 "	[--inspiralinjection-file <file name>]\n" \
 "	 --low-freq-cutoff <Hz>\n" \
+"	[--max-event-rate <Hz>]\n" \
 "	 --max-tileband <Hz>\n" \
 "	 --max-tileduration <samples>\n" \
 "	[--mdc-cache <cache file>]\n" \
 "	[--mdc-channel <channel name>]\n" \
-"	[--dump-diagnostics <xml filename>]\n" \
 "	 --psd-average-method <method>\n" \
 "	 --psd-average-points <samples>\n" \
 "	[--ram-limit <MebiBytes>]\n" \
 "	 --resample-rate <Hz>\n" \
-"       [--sim-cache <sim cache file>]\n" \
-"       [--sim-seconds <sim seconds>]\n" \
-"       [--sim-distance <sim distance(Kpc)>]\n" \
-"	[--siminjection-file <file name>]\n" \
 "	[--seed <seed>]\n" \
+"	[--sim-cache <sim cache file>]\n" \
+"	[--sim-seconds <sim seconds>]\n" \
+"	[--sim-distance <sim distance(Kpc)>]\n" \
+"	[--siminjection-file <file name>]\n" \
 "	 --tile-stride-fraction <fraction>\n" \
-"	[--enable-over-whitening]\n" \
 "	[--user-tag <comment>]\n" \
 "	 --window-length <samples>\n" \
 "	 --window-shift <samples>\n", program);
