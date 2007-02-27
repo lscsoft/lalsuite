@@ -134,11 +134,30 @@ power.init_job_types(config_parser)
 #
 
 
+def remove_too_short_segments(seglistdict, powerjob):
+	"""
+	Remove segments from seglistdict that are too short to analyze.
+	"""
+	# CAUTION:  this function modifies seglistdict in place.
+	for seglist in seglistdict.itervalues():
+		for i in xrange(len(seglist) - 1, -1, -1):
+			if not power.segment_ok(powerjob, seglist[i]):
+				del seglist[i]
+
+
 def compute_segment_lists(seglistdict, time_slides, full_segments = True, verbose = False):
+	# CAUTION:  this function modifies seglistdict in place.
 	if verbose:
 		print >>sys.stderr, "constructing segment list ..."
 
 	if not full_segments:
+		# cull too-short single-instrument segments from the input
+		# segmentlist dictionary;  this can significantly increase
+		# the speed of the llwapp.get_coincident_segmentlistdict()
+		# function when the input segmentlists have had many data
+		# quality holes poked out of them
+		remove_too_short_segments(seglistdict, power.powerjob)
+
 		# extract the segments that are coincident under the time
 		# slides
 		new = llwapp.get_coincident_segmentlistdict(seglistdict, time_slides)
@@ -148,10 +167,20 @@ def compute_segment_lists(seglistdict, time_slides, full_segments = True, verbos
 		for seglist in new.itervalues():
 			for i in xrange(len(seglist)):
 				psds = power.psds_from_job_length(power.powerjob, float(abs(seglist[i])))
-				if psds >= 0.0:
-					new_duration = power.job_length_from_psds(power.powerjob, int(math.ceil(psds)))
-				else:
-					new_duration = power.job_length_from_psds(power.powerjob, 1)
+				# FIXME: if psds is < 1, it means the
+				# coincident segment is too short for even
+				# a single job, but the original
+				# single-instrument segments might be long
+				# enough to run a job in each instrument.
+				# Here, an attempt is made to search for
+				# extra data in the time following the
+				# coincident segment, but to maximize the
+				# chances of analyzing the data we should
+				# also try looking for data from the time
+				# preceding the coincident segment.
+				if psds < 1.0:
+					psds = 1.0
+				new_duration = power.job_length_from_psds(power.powerjob, int(math.ceil(psds)))
 				seglist[i] = segments.segment(seglist[i][0], seglist[i][0] + new_duration)
 
 		# and take intersection with original segments to not
@@ -159,10 +188,7 @@ def compute_segment_lists(seglistdict, time_slides, full_segments = True, verbos
 		seglistdict &= new
 
 	# remove segments that are too short
-	for seglist in seglistdict.itervalues():
-		for i in xrange(len(seglist) - 1, -1, -1):
-			if not power.segment_ok(power.powerjob, seglist[i]):
-				del seglist[i]
+	remove_too_short_segments(seglistdict, power.powerjob)
 
 
 #
