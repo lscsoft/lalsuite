@@ -247,7 +247,7 @@ static void readSource( char* sourceFile, REAL4* rec, REAL4* dec )
 	c = sscanf( line, "%s %c%le:%le %c%le:%le %s %s %s",
 		    &dummy, &ra_sgn, &ra_h, &ra_m, &dec_sgn, &dec_d, &dec_m,
 		    &dummy, &dummy, &dummy);
-	*rec=( ra_h + ra_m / 60.0 ) * 12.0; /* convert to degree */
+	*rec=( ra_h + ra_m / 60.0 ) * 15.0; /* convert to degree */
 	*dec=( dec_d + dec_m / 60.0 ); /* already degree */
 	if ( ra_sgn == '-' )
 	  *rec *= -1;
