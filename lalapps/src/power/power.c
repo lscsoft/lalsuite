@@ -701,6 +701,11 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 
 	case 'g':
 		params->confidence_threshold = atof(optarg);
+		if(params->confidence_threshold < 0) {
+			sprintf(msg, "must be >= 0 (%g specified)", params->confidence_threshold);
+			print_bad_argument(argv[0], long_options[option_index].name, msg);
+			args_are_bad = TRUE;
+		}
 		ADD_PROCESS_PARAM("float");
 		break;
 
