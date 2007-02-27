@@ -575,7 +575,8 @@ int fstat_cpt_file_add (FStatCheckpointFile*cptf, FstatOutputEntry line) {
     cptf->bytes += bytes;
 
     if (cptf->bytes != ftell(cptf->fp)) 
-      LogPrintf(LOG_DEBUG,"ERROR: bytes: %u, file: %d\n", cptf->bytes, ftell(cptf->fp));
+      LogPrintf(LOG_DEBUG,"ERROR: File length mismatch bytes: %u, file: %d\n",
+		cptf->bytes, ftell(cptf->fp));
   }
   return(ret);
 }
@@ -616,6 +617,11 @@ int fstat_cpt_file_read (FStatCheckpointFile*cptf, UINT4 checksum_should, UINT4 
     return(bytes);
   }
 
+  if (ftell(cptf->fp) > bytes) {
+    LogPrintf(LOG_DEBUG,"ERROR: File length mismatch: bytes: %u, file: %d, fixing\n",
+	      bytes, ftell(cptf->fp));
+    fseek(cptf->fp, bytes, SEEK_SET);  
+  }
   cptf->bytes = bytes;
   cptf->checksum = checksum_read;
 
