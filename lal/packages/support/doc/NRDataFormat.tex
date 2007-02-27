@@ -12,10 +12,17 @@
 \newcommand{\ihat}{\vec{e}_i}
 \newcommand{\jhat}{\vec{e}_j}
 \newcommand{\rhat}{\vec{e}_{r}}
+\newcommand{\that}{\vec{e}_{t}}
 \newcommand{\iotahat}{\vec{e}_{\iota}}
 \newcommand{\phihat}{\vec{e}_{\phi}}
 \newcommand{\eplus}{\tens{e}_+}
 \newcommand{\ecross}{\tens{e}_\times}
+
+\newcommand{\ellhat}{\vec{\ell}}
+\newcommand{\nhat}{\vec{n}}
+\newcommand{\mhat}{\vec{m}}
+\newcommand{\mbarhat}{\vec{\bar{m}}}
+
 \RCS $Date$
 \title{Data formats for numerical relativity waves}
 \date{\RCSDate}
@@ -75,7 +82,7 @@ binary vanishes at $t=0$.   This still leaves open the question of what
 to choose as the zero of time.  The two obvious choices are the
 beginning of the simulation and the time at coalescence (although the
 latter may well be slicing dependent).  It is not immediately clear
-which would be preferable, especially in the case of spinning systems.
+which would be preferable **something to be discussed**. 
 
 Let $\xhat$, $\yhat$ and $\zhat$ denote the
 orthonormal coordinate basis vectors. Given this coordinate system, we
@@ -114,7 +121,13 @@ transverse-traceless tensors in the wave frame
   \phihat\otimes\iotahat\,. 
 \end{equation}
 It is convenient to use the combination $h_+ - ih_\times$ which is
-related to the Weyl tensor component $\Psi_4$ by two time derivatives:
+related to $\Psi_4$ by two time derivatives\footnote{We define
+  $\Psi_4$ as $\Psi_4 := C_{abcd}\ell^a \bar{m}^b \bar{m}^c n^d$ where
+  $C_{abcd}$ is the Weyl tensor and $a,b\ldots$ denote spacetime
+  indices.  If we denote the unit timelike normal to the spatial slice
+  as $\that$, then the null tetrad $(\ell^a,n^a,m^a)$ is $\ellhat = (\that +
+  \rhat)/\sqrt{2}$, $\nhat = (\that - \rhat)/\sqrt{2}$, $\mhat = (\iotahat
+  + i\phihat)/\sqrt{2}$ and $\mbarhat$ is the complex conjugate of $\mhat$.}
 \begin{equation}
   \label{eq:3}
   \Psi_4 = \ddot{h}_+ - i\ddot{h}_\times\,.
