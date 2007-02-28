@@ -51,6 +51,7 @@ struct ring_params {
   REAL8        geoHighpassFrequency;
   REAL8        geoScale;
   REAL4        vetoThresh;
+  UINT4        vetoNumtmps;
   /* flags */
   int          strainData;
   int          simData;

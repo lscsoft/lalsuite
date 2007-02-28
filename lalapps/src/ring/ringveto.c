@@ -592,7 +592,7 @@ static RingVetoTemplateBank *createsubbanks( struct ring_params *params, RingTem
    RingVetoTemplateBank *lastvetobank = NULL;
    /*SnglRingdownTable *thisTmplt = NULL;*/
    UINT4 bankSize = bank->numTmplt; /* get the # of temps */
-   UINT4 subBankSize = 15; /*this could maybe be a command line argument */
+   UINT4 subBankSize = params->vetoNumtmps; 
    UINT4 numsubBanks = floor(bankSize / subBankSize);
    /*fprintf(stdout,"NUM of subbanks = %d\n",numsubBanks);*/
    UINT4 remainder = bankSize - subBankSize*numsubBanks;
