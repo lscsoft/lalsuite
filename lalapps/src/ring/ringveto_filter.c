@@ -713,7 +713,7 @@ static REAL4 computeChisq (RingVetoResults *thisResult,
   snrFactor = 1.0 * params->dynRangeFac / thisResult->sigma;
   for (j=0;j < (thisResult->numResults);j++){
     REAL4 otherSNRfactor  = 1.0 * params->dynRangeFac / Result->sigma;
-    REAL4 betaFac = sqrt(betajj->data[j]*betaii)/betaji->data[j];
+    betaFac = sqrt(betajj->data[j]*betaii)/betaji->data[j];
     if (i != j){
       normFac = betaji->data[j]/betaii - betajj->data[j]/betaji->data[j];
       chisqVal += 1.0*
@@ -729,7 +729,7 @@ static REAL4 computeChisq (RingVetoResults *thisResult,
       }
     Result=Result->next;
     }
-  chisqVal /= (numResults-1)*(1.0-deltasq); /* Divide by DOF */  
+  chisqVal /= (thisResult->numResults-1)*(1.0-deltasq); /* Divide by DOF */  
   XLALDestroyREAL4Vector(betajj);
   XLALDestroyREAL4Vector(betaji);
   XLALDestroyINT4Vector(tau);
