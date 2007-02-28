@@ -76,9 +76,10 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
     { "block-duration",          required_argument, 0, 'w' },
     { "pad-data",                required_argument, 0, 'W' },
     { "veto-thresh",                required_argument, 0, 'v' },
+    { "veto-numtmps",                required_argument, 0, 'P' },
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:hi:I:m:o:O:p:q:Q:r:R:s:S:t:T:u:U:v:Vw:W:";
+  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:hi:I:m:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:v:Vw:W:";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -173,6 +174,9 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
         break;
       case 'p': /* bank template phase */
         localparams.bankParams.templatePhase = atof( optarg );
+        break;
+      case 'P': /* veto threshold */
+        localparams.vetoNumtmps = atof( optarg );
         break;
       case 'q': /* bank min quality */
         localparams.bankParams.minQuality = atof( optarg );
@@ -270,6 +274,7 @@ static int ring_default_params( struct ring_params *params )
   /* this is the expectation from noise ... so it is pretty safe */
   /* to make this the default */
   params->vetoThresh = 1; 
+  params->vetoNumtmps = 15;
   return 0;
 }
 
@@ -484,7 +489,7 @@ static int ring_usage( const char *program )
   fprintf( stderr, "--only-segment-numbers=seglist  list of segment numbers to compute\n" );
   fprintf( stderr, "--only-template-numbers=tmpltlist  list of filter templates to use\n" );
   fprintf( stderr, "--veto-thresh=(0,infty)  veto thresh (1=expectation from noise)\n" );
-
+fprintf( stderr, "--veto-numtmps=[2,infty)  tmps in sub bank (default=15) \n" );
   fprintf( stderr, "\ntrigger output options:\n" );
   fprintf( stderr, "--output-file=outfile      output triggers to file outfile\n" );
   fprintf( stderr, "--trig-start-time=sec      output only triggers after GPS time sec\n" );
