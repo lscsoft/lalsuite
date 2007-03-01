@@ -575,6 +575,7 @@ static RingVetoCC computeCC( RingVetoResults *Result,
     BT = getBT(&thisResult->tmpSnipTilde,&thisResult->tmpSnipTilde,revplan);
     Beta->data[cnt*i+i] = BT.beta;
     Tau->data[cnt*i+i] = BT.tau;
+    verbose("BETA[%d,%d] = %e \n",i,i,BT.beta);
     i++;
     Result=Result->next;
     }
@@ -587,6 +588,7 @@ static RingVetoCC computeCC( RingVetoResults *Result,
       /* one pair */
       BT = getBT(&Result->tmpSnipTilde,&thisResult->next->tmpSnipTilde,
                  revplan);
+      verbose("norm BETA[%d,%d] = %e \n",j,i,BT.beta/Beta->data[cnt*i+i]);
       Beta->data[cnt*i+j] = BT.beta; /*/sqrt(Beta->data[cnt*i+i]*
                                          Beta->data[cnt*j+j]);*/
       /*if(BT.tau > Result->tmpSnipTilde.data->length/2) 
@@ -640,8 +642,8 @@ static RV_BT getBT(COMPLEX8FrequencySeries *A,
   /*XLALCOMPLEX8FreqTimeFFT( OUT, C, revplan );*/ 
   
   for(i=0; i < OUT->data->length; i++){
-    BT.beta += OUT->data->data[i].re*OUT->data->data[i].re+
-                 OUT->data->data[i].im*OUT->data->data[i].im;
+    BT.beta += A->data->data[i].re*B->data->data[i].re+
+                 B->data->data[i].im*A->data->data[i].im;
     BT.tau = 0;
     /*if (sqrt(OUT->data->data[i].re*OUT->data->data[i].re 
              + OUT->data->data[i].im*OUT->data->data[i].im) > BT.beta){
@@ -663,10 +665,10 @@ static void normSnip( COMPLEX8Vector *vec){
   UINT4 i = 0;
   REAL4 vecSum = 0;
   for(i=0;i<vec->length;i++) vecSum+= 
-     sqrt(vec->data[i].re*vec->data[i].re + vec->data[i].im*vec->data[i].im);
+     vec->data[i].re*vec->data[i].re + vec->data[i].im*vec->data[i].im;
   for(i=0;i<vec->length;i++) {
-    vec->data[i].re/=vecSum;
-    vec->data[i].im/=vecSum;
+    vec->data[i].re/=sqrt(vecSum);
+    vec->data[i].im/=sqrt(vecSum);
     }
   }
 
