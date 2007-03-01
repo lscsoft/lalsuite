@@ -172,9 +172,7 @@ CHAR *uvar_outputLoudest;
 
 INT4 uvar_NumCandidatesToKeep;
 
-CHAR *uvar_skyGridFile;
 CHAR *uvar_gridFile;
-CHAR *uvar_outputSkyGrid;
 REAL8 uvar_dopplermax;
 INT4 uvar_RngMedWindow;
 REAL8 uvar_refTime;
@@ -278,11 +276,13 @@ int main(int argc,char *argv[])
       fprintf (fpFstat, "%s", GV.logstring );
     } /* if outputFstat */
   
+  /* count number of templates */
+  numTemplates = XLALNumDopplerTemplates ( GV.scanState );
+
   /*----------------------------------------------------------------------
    * main loop: demodulate data for each point in the sky-position grid
    * and for each value of the frequency-spindown
    */
-  numTemplates = XLALNumDopplerTemplates ( GV.scanState );
   templateCounter = 0.0; 
   tickCounter = 0;
   clock0 = time(NULL);
@@ -504,7 +504,6 @@ initUserVars (LALStatus *status)
 
   uvar_outputFstat = NULL;
 
-  uvar_skyGridFile = NULL;
   uvar_gridFile = NULL;
 
   uvar_dopplermax =  1.05e-4;
@@ -572,13 +571,11 @@ initUserVars (LALStatus *status)
   LALregINTUserVar (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
   LALregINTUserVar(status, 	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
   LALregINTUserVar(status,	Dterms,		't', UVAR_DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
-  LALregSTRINGUserVar(status,	outputSkyGrid,	 0,  UVAR_DEVELOPER, "Write sky-grid into this file.");
 
   LALregSTRINGUserVar(status,   workingDir,     'w', UVAR_DEVELOPER, "Directory to use as work directory.");
   LALregREALUserVar(status, 	timerCount, 	 0,  UVAR_DEVELOPER, "N: Output progress/timer info every N templates");  
   LALregREALUserVar(status,	internalRefTime, 0,  UVAR_DEVELOPER, "internal reference time to use for Fstat-computation [Default: startTime]");
 
-  LALregSTRINGUserVar(status,	skyGridFile,	 0,  UVAR_DEVELOPER, "[OBSOLETE: use --gridFile] Load sky-grid from this file.");
   LALregINTUserVar(status,	upsampleSFTs,	 0,  UVAR_DEVELOPER, "(integer) Factor to up-sample SFTs by");
   LALregBOOLUserVar(status, 	projectMetric, 	 0,  UVAR_DEVELOPER, "Use projected metric on Freq=const subspact");
 
@@ -893,19 +890,10 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   /* initialize full multi-dimensional Doppler-scanner */
   {
     DopplerFullScanInit scanInit;			/* init-structure for DopperScanner */
-    CHAR *gridFile = NULL;
-
-    /* deal with the redundant --skyGridFile [OBSOLETE] and --gridFile options */
-    if ( uvar_skyGridFile ) {
-      LogPrintf (LOG_NORMAL, "Warning: --skyGridFile is obsolete and will disappear in the future, use --gridFile instead!\n");
-      gridFile = uvar_skyGridFile;
-    }
-    else
-      gridFile = uvar_gridFile;
     
     scanInit.searchRegion = cfg->searchRegion;
     scanInit.gridType = uvar_gridType;
-    scanInit.gridFile = gridFile;
+    scanInit.gridFile = uvar_gridFile;
     scanInit.metricType = uvar_metricType;
     scanInit.projectMetric = uvar_projectMetric;
     scanInit.metricMismatch = uvar_metricMismatch;
@@ -1147,28 +1135,22 @@ checkUserInputConsistency (LALStatus *status)
   {
     BOOLEAN haveAlphaBand = LALUserVarWasSet( &uvar_AlphaBand );
     BOOLEAN haveDeltaBand = LALUserVarWasSet( &uvar_DeltaBand );
-    BOOLEAN haveSkyRegion, haveAlphaDelta, haveSkyGridFile, haveGridFile; 
+    BOOLEAN haveSkyRegion, haveAlphaDelta, haveGridFile; 
     BOOLEAN useSkyGridFile, useFullGridFile, haveMetric, useMetric;
 
     haveSkyRegion  	= (uvar_skyRegion != NULL);
     haveAlphaDelta 	= (LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta) );
-    haveSkyGridFile   	= (uvar_skyGridFile != NULL);
     haveGridFile      	= (uvar_gridFile != NULL);
     useSkyGridFile   	= (uvar_gridType == GRID_FILE_SKYGRID);
     useFullGridFile	= (uvar_gridType == GRID_FILE_FULLGRID);
     haveMetric     	= (uvar_metricType > LAL_PMETRIC_NONE);
     useMetric     	= (uvar_gridType == GRID_METRIC);
 
-    if ( haveSkyGridFile && haveGridFile ) 
-      {
-	LALPrintError("\nERROR: Don't specify both --skyGridFile and --gridFile!\n\n");
-	ABORT ( status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT );
-      }
-    if ( !useFullGridFile && !useSkyGridFile && ( haveSkyGridFile || haveGridFile ) )
+    if ( !useFullGridFile && !useSkyGridFile && haveGridFile )
       {
         LALWarning (status, "\nWARNING: gridFile was specified but not needed ... will be ignored\n\n");
       }
-    if ( useSkyGridFile && !( haveSkyGridFile || haveGridFile ) )
+    if ( useSkyGridFile && !haveGridFile )
       {
         LALPrintError ("\nERROR: gridType=SKY-FILE, but no --gridFile specified!\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);  
