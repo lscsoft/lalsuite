@@ -535,21 +535,44 @@ extern int fstat_cpt_file_info (FStatCheckpointFile *cptf,
 
 /* closes and compacts the file */
 int fstat_cpt_file_close(FStatCheckpointFile*cptf) {
+  int ret;
+  FILE*fp;
+
   if (!cptf) {
     LogPrintf (LOG_CRITICAL, "ERROR: FStatCheckpointFile is NULL\n");
     return(-1);
   }
   fclose(cptf->fp);
+
   /* completely sort the list before writing it (a heap is only partially sorted) */
   sort_fstat_toplist(cptf->list);
+
   /* We're currently using this function only for HierarchicalSearch.
      For behavior totally compatible to the CFS-Einstein@Home code
      one should call final_write_fstat_toplist_to_file() instead of
      atomic_write_fstat_toplist_to_file(), as this would re-sort
      the list and reduce the precision before writing it */
-  return(atomic_write_fstat_toplist_to_file(cptf->list,
-					    cptf->filename,
-					    &(cptf->checksum)));
+  ret = atomic_write_fstat_toplist_to_file(cptf->list,
+					   cptf->filename,
+					   &(cptf->checksum));
+  if (ret)
+    return(ret);
+
+  fp = fopen(cptf->filename,"a");
+  if (fp == NULL) {
+    LogPrintf (LOG_CRITICAL, "ERROR: Error appending end marker\n");
+    return(-3);
+  }
+
+  ret = fprintf(fp,"%%DONE\n");
+  if ( ret < 0) {
+    LogPrintf (LOG_CRITICAL, "ERROR: Error writing end marker\n");
+  } else 
+    ret = 0;
+
+  fclose(fp);
+
+  return(ret);
 }
 
 
@@ -574,7 +597,7 @@ int fstat_cpt_file_add (FStatCheckpointFile*cptf, FstatOutputEntry line) {
     }
     cptf->bytes += bytes;
 
-    if (cptf->bytes != ftell(cptf->fp)) 
+    if ((INT4)cptf->bytes != ftell(cptf->fp)) 
       LogPrintf(LOG_DEBUG,"ERROR: File length mismatch bytes: %u, file: %d\n",
 		cptf->bytes, ftell(cptf->fp));
   }
