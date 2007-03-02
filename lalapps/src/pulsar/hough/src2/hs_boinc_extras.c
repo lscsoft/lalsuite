@@ -497,12 +497,23 @@ static void worker (void) {
       int s;
       if (boinc_resolve_filename(argv[arg]+l,resultfile,sizeof(resultfile))) {
         LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", argv[arg]+l);
+        s = strlen(argv[arg])+strlen(OUTPUT_EXT)+1;
+        rargv[rarg] = (char*)malloc(s);
+        strncpy(rargv[rarg],argv[arg],s);
+        strncat(rargv[rarg],OUTPUT_EXT,s);
+        register_output_file(rargv[rarg]+l);
+      } else {
+	/* derive the name of the local output file from the boinc-resolved output file */
+	startc = strrchr(resultfile'/');
+	if(startc == NULL)
+	  startc = strrchr(resultfile'\\');
+	startc++;
+	s = l+strlen(startc)+1;
+        rargv[rarg] = (char*)malloc(s);
+	strncpy(rargv[rarg],argv[arg],l);
+        strncat(rargv[rarg],startc,s);
+	register_output_file(startc);
       }
-      s = strlen(argv[arg])+strlen(OUTPUT_EXT)+1;
-      rargv[rarg] = (char*)malloc(s);
-      strncpy(rargv[rarg],argv[arg],s);
-      strncat(rargv[rarg],OUTPUT_EXT,s);
-      register_output_file(rargv[rarg]+l);
     }
     else if (0 == strncmp("-o",argv[arg],strlen("-o"))) {
       int s;
@@ -515,12 +526,22 @@ static void worker (void) {
       } else {
 	if (boinc_resolve_filename(argv[arg],resultfile,sizeof(resultfile))) {
 	  LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", argv[arg]);
+	  s = strlen(argv[arg])+strlen(OUTPUT_EXT)+1;
+	  rargv[rarg] = (char*)malloc(s);
+	  strncpy(rargv[rarg],argv[arg],s);
+	  strncat(rargv[rarg],OUTPUT_EXT,s);
+	  register_output_file(rargv[rarg]);
+	} else {
+	  /* derive the name of the local output file from the boinc-resolved output file */
+	  startc = strrchr(resultfile'/');
+	  if(startc == NULL)
+	    startc = strrchr(resultfile'\\');
+	  startc++;
+	  s = strlen(startc)+1;
+	  rargv[rarg] = (char*)malloc(s);
+	  strncpy(rargv[rarg],startc,s);
+	  register_output_file(startc);
 	}
-	s = strlen(argv[arg])+strlen(OUTPUT_EXT)+1;
-	rargv[rarg] = (char*)malloc(s);
-	strncpy(rargv[rarg],argv[arg],s);
-	strncat(rargv[rarg],OUTPUT_EXT,s);
-	register_output_file(rargv[rarg]);
       }
     }
 
