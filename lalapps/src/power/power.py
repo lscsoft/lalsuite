@@ -689,17 +689,45 @@ def make_binjfind_fragment(dag, parents, instrument, seg, tag):
 
 
 def make_multipower_fragment(dag, powerparents, lladdparents, instrument, seglist, tag, framecache, injargs = {}, clustering = False):
+	# for node names, get the bounding segment
+
 	segment = seglist.extent()
+
+	# construct the list of files lladd should not delete
+
+	preserves = []
+	for node in lladdparents:
+		preserves += node.get_output_cache()
+
+	# construct the power jobs
+
 	nodes = [make_power_fragment(dag, powerparents, instrument, seg, tag, framecache, injargs) for seg in seglist]
+
+	# generate a bucluster node for the entire segment if clustering
+	# has been enabled (doing this before lladd keeps file sizes small
+	# to lower the risk of lladd running out of memory)
+
 	if clustering:
-		# cluster individual power jobs' outputs (keeps file sizes
-		# small, to lower risk of lladd running out of memory)
-		nodes = [make_bucluster_fragment(dag, [node], instrument, segments.segment(node.get_start(), node.get_end()), "%s_PRELLADD" % tag) for node in nodes]
-	lladdnode = make_lladd_fragment(dag, nodes + lladdparents, instrument, segment, "POWER_%s" % tag, preserves = reduce(list.__add__, [node.get_output_cache() for node in lladdparents], []))
+		lladdparents = [make_bucluster_fragment(dag, nodes, instrument, segment, tag)] + lladdparents
+	else:
+		lladdparents = nodes + lladdparents
+
+	# if only one power job was created, and there are no other files
+	# to cobine its output with, don't add a lladd (+ bucluster) follow
+	# up (note: be careful with this logic, you have to think about why
+	# the following test establishes what it establishes)
+
+	if len(nodes) == len(lladdparents) == 1:
+		return lladdparents[0]
+
+	# construct lladd node
+
+	lladdnode = make_lladd_fragment(dag, lladdparents, instrument, segment, "POWER_%s" % tag, preserves = preserves)
 	lladdnode.set_output("%s-POWER_%s-%s-%s.xml.gz" % (instrument, tag, int(segment[0]), int(abs(segment))))
+
+	# add final clustering follow up if enabled
+
 	if clustering:
-		# recluster the triggers following lladd to catch edge
-		# effects
 		return make_bucluster_fragment(dag, [lladdnode], instrument, segment, "%s_POSTLLADD" % tag)
 	else:
 		return lladdnode
