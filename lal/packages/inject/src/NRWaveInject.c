@@ -235,8 +235,15 @@ XLALFindNRFile( NRWaveMetaData   *out,       /**< output wave data */
     XLAL_ERROR ( "XLALFindNRFile", XLAL_EINVAL);
   }
 
-
-  massRatioIn = inj->mass1/inj->mass2;
+  /* we think this is a bug (Ravi,Chad) So we want to check for the highest
+     mass before calculating the mass ratio */
+  if (inj->mass2 > inj->mass1) {
+     massRatioIn = inj->mass2/inj->mass1;
+  }
+  else {
+     massRatioIn = inj->mass1/inj->mass2;
+  }
+ 
   massRatio = nrCatalog->data[0].massRatio;
 
   diff = fabs(massRatio - massRatioIn);
