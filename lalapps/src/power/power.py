@@ -222,7 +222,7 @@ class PowerNode(pipeline.AnalysisNode):
 		# file, the only place we know for sure we know the name is
 		# in this function so we can only set the post script here.
 		# What if this function is never called?
-		self.set_post_script("/usr/bin/gzip %s" % os.path.abspath(filename))
+		self.set_post_script("/usr/bin/gzip -f %s" % os.path.abspath(filename))
 		filename += ".gz"
 
 		return [CacheEntry(self.get_ifo(), self.__usertag, seg, "file://localhost" + os.path.abspath(filename))]
