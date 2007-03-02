@@ -28,6 +28,8 @@
 #include <lal/NRWaveInject.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/Inject.h>
+#include <lal/FileIO.h>
+
 
 RCSID( "$Id$" );
 
@@ -37,6 +39,9 @@ RCSID( "$Id$" );
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "nr_wave"
+
+static void  output_ht(NRWaveMetaData *thisMetaData,  SimInspiralTable *thisInj, int sampleRate,  
+                       REAL4TimeSeries *htData, char *ifo, int vrbflg);
 
 /*
  * 
@@ -60,10 +65,9 @@ static void print_usage(char *program)
       "  --gps-start-time  start       start time of output file\n"\
       "  --gps-end-time    end         end time of output file\n"\
       "  --sample-rate     rate        the sample rate used to generate injections\n"\
+      "  --write-output                write h(t) to an ascii file in NRwave directory\n"\
       "\n", program);
 }
-
-
 
 /*
  * 
@@ -101,6 +105,7 @@ int main( int argc, char *argv[] )
   REAL4TimeVectorSeries *strain = NULL;/* h+,hx time series              */
   REAL4TimeSeries       *htData = NULL;/* h(t) data for given detector   */
 
+  int writeFlag = 0;		       /* write h(t) to file?? */
 
   /* getopt arguments */
   struct option long_options[] =
@@ -117,6 +122,7 @@ int main( int argc, char *argv[] )
     {"ifo",                     required_argument, 0,                'i'},
     {"help",                    no_argument,       0,                'h'},
     {"version",                 no_argument,       0,                'V'},
+    {"write-output",            no_argument,       0,                'W'},
     {0, 0, 0, 0}
   };
   int c;
@@ -129,7 +135,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:b:d:f:i:m:r:V",
+        "a:b:d:f:i:m:r:V:W",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -166,6 +172,11 @@ int main( int argc, char *argv[] )
             "CVS Version: " CVS_ID_STRING "\n"
             "CVS Tag: " CVS_NAME_STRING "\n" );
         exit( 0 );
+        break;
+
+      case 'W':
+        /* write output */
+        writeFlag = 1; 
         break;
 
       case 'a':
@@ -393,9 +404,9 @@ int main( int argc, char *argv[] )
 
     LAL_CALL(LALReadNRWave(&status, &strain, thisInj->mass1 + thisInj->mass2, 
 			  thisMetaData.filename), &status);
-    
-    if ( vrbflg) fprintf(stdout, "done\n");
 
+    if ( vrbflg) fprintf(stdout, "done\n");
+    
     /* compute the h+, hx strain for the given inclination, coalescence phase*/
     if ( vrbflg )fprintf(stdout, "Generating waveform for inclination = %f, coa_phase = %f\n",
 			 thisInj->inclination, thisInj->coa_phase );
@@ -408,7 +419,8 @@ int main( int argc, char *argv[] )
     
     /* XXX inject the htData into our injection time stream XXX */
     /*LAL_CALL( LALSSInjectTimeSeries( &status, &injData, htData ), &status );*/
-
+    if (writeFlag)
+      output_ht( &thisMetaData,  thisInj,  sampleRate, htData, ifo, vrbflg);
 
     XLALDestroyREAL4VectorSequence ( strain->data );
     LALFree(strain);
@@ -422,3 +434,23 @@ int main( int argc, char *argv[] )
   exit( 0 );
 }
 
+static void  output_ht(NRWaveMetaData *thisMetaData,  SimInspiralTable *thisInj, int sampleRate, 
+                       REAL4TimeSeries *htData, char *ifo, int vrbflg) 
+  {
+  FILE *htOut = NULL;
+  char *fileName = NULL;
+  fileName = (char *) calloc(1,sizeof(char)*128);
+  UINT4 i = 0;
+  /* Name is ht_<GPS>_<waveform_file> */
+  if (!(sprintf(fileName, "%s_ht_%d.dat", thisMetaData->filename, (int) thisInj->geocent_end_time.gpsSeconds))){
+    printf("Couldn't create output file string\n");
+    return;}
+  if (vrbflg) printf("filename is %s\n",fileName);
+  if (!(htOut = fopen(fileName, "w"))){
+    printf("Couldn't open file\n");
+    return;}
+  if (vrbflg) printf("writing file\n");
+  for (i=0; i < htData->data->length; i++){
+    fprintf(htOut,"%e\t %f\n",htData->data->data[i],(float) i/sampleRate);}
+  return;
+  }
