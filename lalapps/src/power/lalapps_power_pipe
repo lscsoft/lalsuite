@@ -68,12 +68,15 @@ def parse_command_line():
 	parser.add_option("--condor-log-dir", metavar = "path", default = ".", help = "set directory for Condor log (default = .)")
 	parser.add_option("--config-file", metavar = "filename", default = "power.ini", help = "set .ini config file name (default = power.ini)")
 	parser.add_option("--full-segments", action = "store_true", help = "analyze all data from segment lists, not just coincident times")
+	parser.add_option("--minimum-gap", metavar = "seconds", default = "240", help = "merge jobs analyzing data from the same instrument if the gap between them is less than this many seconds (default = 240)")
 	parser.add_option("--no-injections", action = "store_true", help = "do not do injections")
 	parser.add_option("--time-slides", metavar = "filename", default = "time_slides.xml", help = "set file from which to obtain the time slide table")
 	parser.add_option("-v", "--verbose", action = "store_true", help = "be verbose")
 	options, filenames = parser.parse_args()
 
 	options.time_slides = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(options.time_slides))
+
+	options.minimum_gap = float(options.minimum_gap)
 
 	return options, (filenames or ["power.dag"])
 
@@ -145,7 +148,7 @@ def remove_too_short_segments(seglistdict, powerjob):
 				del seglist[i]
 
 
-def compute_segment_lists(seglistdict, time_slides, full_segments = True, verbose = False):
+def compute_segment_lists(seglistdict, time_slides, minimum_gap, full_segments = True, verbose = False):
 	# CAUTION:  this function modifies seglistdict in place.
 	if verbose:
 		print >>sys.stderr, "constructing segment list ..."
@@ -182,6 +185,9 @@ def compute_segment_lists(seglistdict, time_slides, full_segments = True, verbos
 					psds = 1.0
 				new_duration = power.job_length_from_psds(power.powerjob, int(math.ceil(psds)))
 				seglist[i] = segments.segment(seglist[i][0], seglist[i][0] + new_duration)
+
+		# try to fill gaps between jobs
+		new.protract(minimum_gap / 2).contract(minimum_gap / 2)
 
 		# and take intersection with original segments to not
 		# exceed original bounds
@@ -295,7 +301,7 @@ def make_coinc_stage(dag, parents, tag, time_slides, time_slides_cache_entry, bi
 
 time_slides = ligolw_cafe.get_time_slides(options.time_slides.path(), verbose = options.verbose, gz = options.time_slides.path()[-3:] == ".gz")
 
-compute_segment_lists(options.seglistdict, time_slides, full_segments = options.full_segments, verbose = options.verbose)
+compute_segment_lists(options.seglistdict, time_slides, options.minimum_gap, full_segments = options.full_segments, verbose = options.verbose)
 
 power.make_dag_directories(config_parser)
 
