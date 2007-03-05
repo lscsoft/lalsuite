@@ -62,11 +62,8 @@ const BarycenterInput empty_BarycenterInput = { {0,0},
 						{ {0,0,0},
 						  {{0,0,0},{0,0,0},{0,0,0}},
 						  LALDETECTORTYPE_ABSENT,
-						  {NULL,NULL,0,0,0,0,0,0,0,0,0}
-						},
-						0,
-						0,
-						0 };
+						  {{0},{0},0,0,0,0,0,0,0,0,0}
+						},0,0,0};
 #endif
 
 /*---------- internal prototypes ----------*/
