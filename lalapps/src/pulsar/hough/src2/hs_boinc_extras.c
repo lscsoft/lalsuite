@@ -497,16 +497,20 @@ static void worker (void) {
       int s;
       if (boinc_resolve_filename(argv[arg]+l,resultfile,sizeof(resultfile))) {
         LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", argv[arg]+l);
+      }
+      /* derive the name of the local output file from the boinc-resolved output file */
+      startc = strrchr(resultfile,'/');
+      if(startc == NULL)
+	startc = strrchr(resultfile,'\\');
+      if(startc == NULL) {
         s = strlen(argv[arg])+strlen(OUTPUT_EXT)+1;
         rargv[rarg] = (char*)malloc(s);
         strncpy(rargv[rarg],argv[arg],s);
         strncat(rargv[rarg],OUTPUT_EXT,s);
         register_output_file(rargv[rarg]+l);
+	LogPrintf (LOG_NORMAL, "WARNING: boinc-resolved result file \"%s\" in local directory - using \"%s\"\n",
+		   argv[arg]+l,rargv[rarg]+l);
       } else {
-	/* derive the name of the local output file from the boinc-resolved output file */
-	startc = strrchr(resultfile'/');
-	if(startc == NULL)
-	  startc = strrchr(resultfile'\\');
 	startc++;
 	s = l+strlen(startc)+1;
         rargv[rarg] = (char*)malloc(s);
@@ -526,16 +530,20 @@ static void worker (void) {
       } else {
 	if (boinc_resolve_filename(argv[arg],resultfile,sizeof(resultfile))) {
 	  LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", argv[arg]);
+	}
+	/* derive the name of the local output file from the boinc-resolved output file */
+	startc = strrchr(resultfile,'/');
+	if(startc == NULL)
+	  startc = strrchr(resultfile,'\\');
+	if(startc == NULL) {
 	  s = strlen(argv[arg])+strlen(OUTPUT_EXT)+1;
 	  rargv[rarg] = (char*)malloc(s);
 	  strncpy(rargv[rarg],argv[arg],s);
 	  strncat(rargv[rarg],OUTPUT_EXT,s);
 	  register_output_file(rargv[rarg]);
+	  LogPrintf (LOG_NORMAL, "WARNING: boinc-resolved result file \"%s\" in local directory - using \"%s\"\n",
+		     argv[arg],rargv[rarg]);
 	} else {
-	  /* derive the name of the local output file from the boinc-resolved output file */
-	  startc = strrchr(resultfile'/');
-	  if(startc == NULL)
-	    startc = strrchr(resultfile'\\');
 	  startc++;
 	  s = strlen(startc)+1;
 	  rargv[rarg] = (char*)malloc(s);
@@ -886,13 +894,13 @@ int add_checkpoint_candidate (toplist_t*toplist, FstatOutputEntry cand) {
 
 
 /* actually writes a checkpoint
-   single point to contain the checkpoint format
-   called only from set_checkpoint() */
+   single point to contain the checkpoint format string
+   called only from 2 places in set_checkpoint() */
 void write_checkpoint () {
   FILE* fp;
   fp = fopen(cptfilename,"w");
   if (fp) {
-    fprintf(fp,"%f,%f,%d,%d,%d,%d\n",
+    fprintf(fp,"%lf,%lf,%u,%u,%u,%u\n",
 	    last_rac, last_dec, last_count, last_total,
 	    cptf->checksum, cptf->bytes);
     fclose(fp);
@@ -912,9 +920,9 @@ void set_checkpoint () {
 #endif
     {
       if (cptf->bytes >= cptf->maxsize)
-	  fstat_cpt_file_compact(cptf);
+	fstat_cpt_file_compact(cptf);
       else
-	fstat_cpt_file_flush (cptf);
+	fstat_cpt_file_flush(cptf);
       write_checkpoint();
       boinc_checkpoint_completed();
     }
