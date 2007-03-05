@@ -875,6 +875,8 @@ REAL8 freqfactor, FilterResponse *filtresp){
       }
       else{
         tdt = (t - T0Update) + emit.deltaT;
+	binOutput.deltaT = 0.;
+	binOutput2.deltaT = 0.;
       }
       
       /** calculate df  = f*(dt(t2) - dt(t))/(t2 - t)  - here (t2 - t) is 1 sec */
