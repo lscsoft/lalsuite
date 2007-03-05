@@ -383,7 +383,7 @@ REAL8 XLALCalculateEThincaParameter(
    fContactWorkSpace    *workSpace;
 
    loMatch = 0.0001;
-   hiMatch = 1.0;
+   hiMatch = 2.0;
 
   if ( !table1 || !table2 || !accuracyParams)
     XLAL_ERROR_REAL8( func, XLAL_EFAULT );
