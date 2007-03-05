@@ -30,8 +30,12 @@
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/SkyCoordinates.h> 
-
+#include <lal/DetectorSite.h>
+#include <lal/DetResponse.h>
 #include <lal/BandPassTimeSeries.h>
+#include <lal/FrequencySeries.h>
+#include <lal/RealFFT.h>
+#include <lal/ComplexFFT.h>
 
 /* frame headers */
 #include <FrIO.h>
@@ -83,10 +87,12 @@ extern "C" {
 #define MAXSTRLENGTH 100 /* maximum number of characters in a frame filename */
 #define MAXNUMFRAMES 25000 /* maximum number of frame files in input data file */
 #define MAXLISTLENGTH 20000 /* maximum length of a list of frames files */
-#define MAXCALIBLENGTH 100000 /* maximum length of a calibration file */
+#define MAXCALIBLENGTH 130000 /* maximum length of a calibration file */
 
 #define ALPHAMIN 0.25 /* minimum acceptable value of alpha calib coefficient */
 #define ALPHAMAX 2.0 /* maximum acceptable value of alpha calib coefficient */
+
+#define FILTERFFTTIME 200
 
 /* define structures */
 
@@ -165,11 +171,19 @@ typedef struct tagFilters{
   REAL8IIRFilter *filter3Im;
 }Filters;
 
+typedef struct tagFilterResponse{
+  REAL8Vector *freqResp;
+  REAL8Vector *phaseResp;
+  
+  REAL8 srate; /* sample rate */
+  REAL8 deltaf; /* frequency step between successive points */
+}FilterResponse;
+
 /* define functions */
 void get_input_args(InputParams *inputParams, int argc, char *argv[]);
 
 void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times, HeterodyneParams hetParams,
-REAL8 freqfactor);
+REAL8 freqfactor, FilterResponse *filtResp);
 
 void set_filters(Filters *iirFilters, REAL8 filterKnee, REAL8 samplerate);
 
@@ -186,7 +200,7 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 time, REAL
 duration, REAL8 scalefac, REAL8 highpass);
 
 /* read in science segment list file - returns the number of segments */
-INT4 get_segment_list(INT4Vector *starts, INT4Vector *stops, CHAR *seglistfile);
+INT4 get_segment_list(INT4Vector *starts, INT4Vector *stops, CHAR *seglistfile, INT4 heterodyneflag);
 
 /* get frame data for partcular science segment */
 CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache, INT4 numFrames, INT4 *position);
@@ -202,6 +216,8 @@ frequency);
 /* function to remove outliers above a certain standard deviation threshold - returns the number
 of outliers removed */
 INT4 remove_outliers(COMPLEX16TimeSeries *data, REAL8Vector *times, REAL8 stddevthresh);
+
+void CreateFilterResponse( FilterResponse *filtresp, REAL8 filterKnee );
 
 #ifdef  __cplusplus
 }

@@ -16,7 +16,7 @@ and reheterodyne with this phase difference. */
 #include "heterodyne_pulsar.h"
 
 /* define a macro to round a number without having to use the C round function */
-#define ROUND(a) (ceil(a)-a > 0.5 ? floor(a) : ceil(a))
+#define ROUND(a) (floor(a+0.5))
 
 int main(int argc, char *argv[]){
   static LALStatus status;
@@ -27,17 +27,17 @@ int main(int argc, char *argv[]){
   Filters iirFilters;
 
   FILE *fpin=NULL, *fpout=NULL;
-  FrameCache cache;
-  INT4 frcount=0, count=0;
+  INT4 count=0;
 
   CHAR outputfile[256]="";
   CHAR channel[20]="";
 
   INT4Vector *starts=NULL, *stops=NULL; /* science segment start and stop times */
   INT4 numSegs=0;
-  CHAR *smalllist=NULL; /* list of frame files for a science segment */
 
   REAL8Vector *times=NULL; /* times of data read from coarse heterodyne file */
+  
+  FilterResponse filtresp; /* variable to hold the filter response function */
   
   /* get input options */
   get_input_args(&inputParams, argc, argv);
@@ -87,7 +87,7 @@ frequency.\n", inputParams.freqfactor);
 
   if(inputParams.heterodyneflag == 2){ /* if updating parameters read in updated par file */
     LALReadTEMPOParFile(&status, &hetParams.hetUpdate, inputParams.paramfileupdate);
-    
+
     /* check whether the file has been read in  */
     if(status.statusCode){
       fprintf(stderr, "Error... function returned returned error code %d and message:\n\t%s.\n",
@@ -107,19 +107,20 @@ hetParams.hetUpdate.f1, hetParams.hetUpdate.pepoch);
   /* get science segment lists - allocate initial memory for starts and stops */
   starts = XLALCreateINT4Vector(MAXNUMFRAMES);
   stops = XLALCreateINT4Vector(MAXNUMFRAMES);
-  numSegs = get_segment_list(starts, stops, inputParams.segfile);
+  numSegs = get_segment_list(starts, stops, inputParams.segfile, inputParams.heterodyneflag);
   starts = XLALResizeINT4Vector(starts, numSegs);
   stops = XLALResizeINT4Vector(stops, numSegs);
 
   if(inputParams.verbose){ fprintf(stderr, "I've read in the segment list.\n"); }
-
+  
   /* open input file */
   if((fpin = fopen(inputParams.datafile, "r")) == NULL){
     fprintf(stderr, "Error... Can't open input data file!\n");
     return 1;
   }
-
-  if(inputParams.heterodyneflag == 0){ /* input comes from frame files so read in frame filenames */
+  
+  if(inputParams.heterodyneflag == 0 || inputParams.heterodyneflag == 3){ /* input comes from frame
+files so read in frame filenames */
     CHAR det[3]; /* detector from cache file */
     CHAR type[10]; /* frame type e.g. RDS_R_L3 - from cache file */
     
@@ -128,14 +129,33 @@ hetParams.hetUpdate.f1, hetParams.hetUpdate.pepoch);
 &cache.duration[frcount], cache.framelist[frcount]) != EOF){
       /* fscanf(fpin, "%s", framelist[frcount]);*/
       if(frcount++ >= MAXNUMFRAMES){
-        fprintf(stderr, "Error... increase length of MAXNUMFRAMES or decrease number of frame files to read in.\n");
+        fprintf(stderr, "Error... increase length of MAXNUMFRAMES or decrease number of frame files
+to read in.\n");
       }
     }
     fclose(fpin);
     
     if(inputParams.verbose){  fprintf(stderr, "I've read in the frame list.\n");  }
   }
-
+    
+  if(inputParams.heterodyneflag == 1 || inputParams.heterodyneflag == 2){
+    if(inputParams.filterknee == 0.){
+      fprintf(stderr, "Error... need to know the filter knee frequency used in the coarse \
+heterodyne stage.\n");
+      return 1;
+    }
+    
+    /* calculate the frequency and phase response of the filter used in the coarse heterodyne */ 
+    if(inputParams.filterknee > 0.0){
+      CreateFilterResponse(&filtresp, inputParams.filterknee);
+      
+      fprintf(stderr, "srate = %lf, length = %d\n", filtresp.srate, filtresp.freqResp->length);
+    }
+    
+    /*reset the filter knee to zero so the filtering is not performed on the fine heterodyned data*/
+    inputParams.filterknee = 0.;
+  }
+  
   /************************BIT THAT DOES EVERYTHING*********************************************/
 
   /* set filters - values held for the whole data set so we don't get lots of glitches from the
@@ -172,7 +192,7 @@ hetParams.hetUpdate.f1, hetParams.hetUpdate.pepoch);
 
     data = LALCalloc(1, sizeof(*data));
 
-    if(inputParams.heterodyneflag == 0){/* i.e. reading from frame files */
+    if(inputParams.heterodyneflag == 0 || inputParams.heterodyneflag == 3){/* i.e. reading from frame files */
       REAL8 gpstime;
       INT4 duration;
       REAL8TimeSeries *datareal;
@@ -287,9 +307,11 @@ hetParams.hetUpdate.f1, hetParams.hetUpdate.pepoch);
       hetParams.length = i;
 
       times = XLALResizeREAL8Vector(times, i);
+      
+      fprintf(stderr, "I've read in the data.\n");
     }
     else{
-      fprintf(stderr, "Error... Heterodyne flag = %d, should be 0, 1, or 2.\n",
+      fprintf(stderr, "Error... Heterodyne flag = %d, should be 0, 1, 2 or 3.\n",
       inputParams.heterodyneflag);
       return 0;
     }
@@ -299,17 +321,18 @@ hetParams.hetUpdate.f1, hetParams.hetUpdate.pepoch);
     data->epoch.gpsNanoSeconds = (UINT4)(1.e9*(hetParams.timestamp - floor(hetParams.timestamp)));
     
     /* heterodyne data */
-    heterodyne_data(data, times, hetParams, inputParams.freqfactor);
+    heterodyne_data(data, times, hetParams, inputParams.freqfactor, &filtresp);
     if(inputParams.verbose){  fprintf(stderr, "I've heterodyned the data.\n");  }
-      
+ 
     /* filter data */
     if(inputParams.filterknee > 0.){ /* filter if knee frequency is not zero */
       filter_data(data, &iirFilters);
-      if(inputParams.verbose){  fprintf(stderr, "I've low pass filtered the data at %.1lf Hz\n",
+           
+      if(inputParams.verbose){  fprintf(stderr, "I've low pass filtered the data at %.2lf Hz\n",
 inputParams.filterknee);  }
     }
 
-    if(inputParams.heterodyneflag==0){
+    if(inputParams.heterodyneflag==0 || inputParams.heterodyneflag==3){
       times = NULL;
       times = XLALCreateREAL8Vector( MAXLENGTH );
     }
@@ -317,7 +340,7 @@ inputParams.filterknee);  }
     /* resample data and data times */
     resampData = resample_data(data, times, starts, stops, inputParams.samplerate,
 inputParams.resamplerate, inputParams.heterodyneflag);
-    if(inputParams.verbose){  fprintf(stderr, "I've resampled the data from %.1lf to %.3lf Hz\n",
+    if(inputParams.verbose){  fprintf(stderr, "I've resampled the data from %.1lf to %.4lf Hz\n",
 inputParams.samplerate, inputParams.resamplerate);  }
 
     XLALDestroyCOMPLEX16Vector( data->data );
@@ -411,7 +434,7 @@ inputParams.samplerate, inputParams.resamplerate);  }
     LALFree(resampData);
 
     XLALDestroyREAL8Vector(times);
-  }while(count < numSegs && inputParams.heterodyneflag==0);
+  }while(count < numSegs && (inputParams.heterodyneflag==0 || inputParams.heterodyneflag==3));
 
   fprintf(stderr, "Heterodyning complete.\n");
 
@@ -510,7 +533,8 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
       case 'i': /* interferometer */
         sprintf(inputParams->ifo, "%s", optarg);
         break;
-      case 'z': /* heterodyne flag - 0 for coarse, 1 for fine, 2 for update to params */
+      case 'z': /* heterodyne flag - 0 for coarse, 1 for fine, 2 for update to params, 3 for a one
+ step fine heteroydne (like the old code) */
         inputParams->heterodyneflag = atoi(optarg);
         break;
       case 'p': /* pulsar name */
@@ -677,31 +701,35 @@ error */
 
 /* heterodyne data function */
 void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times, HeterodyneParams hetParams,
-REAL8 freqfactor){
+REAL8 freqfactor, FilterResponse *filtresp){
   static LALStatus status;
 
   REAL8 phaseCoarse=0., phaseUpdate=0., deltaphase=0.;
-  REAL8 t=0., tdt=0., T0=0., T0Update=0.;
+  REAL8 t=0., t2=0., tdt=0., T0=0., T0Update=0.;
   REAL8 dtpos=0.; /* time between position epoch and data timestamp */
   INT4 i=0;
 
   EphemerisData *edat=NULL;
-  BarycenterInput baryinput;
-  EarthState earth;
-  EmissionTime  emit;
+  BarycenterInput baryinput, baryinput2;
+  EarthState earth, earth2;
+  EmissionTime  emit, emit2;
 
-  BinaryPulsarInput binInput;
-  BinaryPulsarOutput binOutput;
+  BinaryPulsarInput binInput, binInput2;
+  BinaryPulsarOutput binOutput, binOutput2;
+   
+  COMPLEX16 dataTemp, dataTemp2;
   
-  COMPLEX16 dataTemp;
-  
+  REAL8 df=0., fcoarse=0., resp=0., srate=0.;
+  REAL8 filtphase=0.;
+  UINT4 position=0, middle=0;
+   
   /* set the position and frequency epochs if not already set */
   if(hetParams.het.pepoch == 0. && hetParams.het.posepoch != 0.)
     hetParams.het.pepoch = hetParams.het.posepoch;
   else if(hetParams.het.posepoch == 0. && hetParams.het.pepoch != 0.)
     hetParams.het.posepoch = hetParams.het.pepoch;
 
-  if(hetParams.heterodyneflag > 0){
+  if(hetParams.heterodyneflag == 1 || hetParams.heterodyneflag == 2){
     if(hetParams.hetUpdate.pepoch == 0. && hetParams.hetUpdate.posepoch != 0.)
       hetParams.hetUpdate.pepoch = hetParams.hetUpdate.posepoch;
     else if(hetParams.hetUpdate.posepoch == 0. && hetParams.hetUpdate.pepoch != 0.)
@@ -719,38 +747,37 @@ REAL8 freqfactor){
     (*edat).ephiles.earthEphemeris = hetParams.earthfile;
     (*edat).ephiles.sunEphemeris = hetParams.sunfile;
     LALInitBarycenter(&status, edat);
-
+    if(status.statusCode){
+      fprintf(stderr, "Error... function returned returned error code %d and message:\n\t%s.\n",
+      status.statusCode, status.statusDescription);
+      exit(0);
+    }
+   
     /* set up location of detector */
     baryinput.site.location[0] = hetParams.detector.location[0]/LAL_C_SI;
     baryinput.site.location[1] = hetParams.detector.location[1]/LAL_C_SI;
     baryinput.site.location[2] = hetParams.detector.location[2]/LAL_C_SI;
   }
-  
+    
   for(i=0;i<hetParams.length;i++){
     /*************************************************************************************/
 
     /* produce initial heterodyne phase for coarse heterodyne with no time delays */
     if(hetParams.heterodyneflag == 0)
-      tdt = hetParams.timestamp + (REAL8)i/hetParams.samplerate - T0;
-    else
-      tdt = times->data[i] - T0;
-    
-    /* multiply by 2 to get gw phase */
-    phaseCoarse = freqfactor*(hetParams.het.f0*tdt + 0.5*hetParams.het.f1*tdt*tdt +
-    (1./6.)*hetParams.het.f2*tdt*tdt*tdt + (1./24.)*hetParams.het.f3*tdt*tdt*tdt*tdt);
-
-    /**************************************************************************************/
-    /* produce second phase for fine heterodyne */
-    if(hetParams.heterodyneflag > 0){
+      tdt = hetParams.timestamp + (REAL8)i/hetParams.samplerate - T0; 
+    else if( hetParams.heterodyneflag == 1 || hetParams.heterodyneflag == 2)
+      tdt = times->data[i] - T0; 
+    /* if doing one single heterodyne i.e. het flag = 3 then just calc phaseCoarse at all times */
+    else if(hetParams.heterodyneflag == 3){
       /* set up LALBarycenter */
-      dtpos = hetParams.timestamp - hetParams.hetUpdate.posepoch;
+      dtpos = hetParams.timestamp - hetParams.het.posepoch;
 
       /* set up RA, DEC, and distance variables for LALBarycenter*/
-      baryinput.delta = hetParams.hetUpdate.dec + dtpos*hetParams.hetUpdate.pmdec;
-      baryinput.alpha = hetParams.hetUpdate.ra +dtpos*hetParams.hetUpdate.pmra/cos(baryinput.delta);
+      baryinput.delta = hetParams.het.dec + dtpos*hetParams.het.pmdec;
+      baryinput.alpha = hetParams.het.ra +dtpos*hetParams.het.pmra/cos(baryinput.delta);
       baryinput.dInv = 0.0;  /* no parallax */
 
-      t = times->data[i]; /* get data time */
+      t = hetParams.timestamp + (REAL8)i/hetParams.samplerate; /* get data time */
 
       /* set leap seconds noting that for all runs prior to S5 that the number of leap seconds was
       13 and that 1 more leap seconds was added on 31st Dec 2005 24:00:00 i.e. GPS 820108813 */
@@ -760,40 +787,139 @@ REAL8 freqfactor){
         (*edat).leap = 14;
 
       baryinput.tgps.gpsSeconds = (UINT8)floor(t);
-      baryinput.tgps.gpsNanoSeconds = (UINT8)floor((fmod(t,1.0)*1.e9));	 
+      baryinput.tgps.gpsNanoSeconds = (UINT8)floor((fmod(t,1.0)*1.e9));	
+
       LALBarycenterEarth(&status, &earth, &baryinput.tgps, edat); 
       LALBarycenter(&status, &emit, &baryinput, &earth);
+      if(status.statusCode){
+        fprintf(stderr, "Error... function returned returned error code %d and message:\n\t%s.\n",
+        status.statusCode, status.statusDescription);
+        exit(0);
+      }
 
       /* if binary pulsar add extra time delay */
-      if(hetParams.hetUpdate.model!=NULL){
+      if(hetParams.het.model!=NULL){
         /* input SSB time into binary timing function */
         binInput.tb = t + emit.deltaT;
 
         /* calculate binary time delay */
-        LALBinaryPulsarDeltaT(&status, &binOutput, &binInput, &hetParams.hetUpdate);
-
+        LALBinaryPulsarDeltaT(&status, &binOutput, &binInput, &hetParams.het);
+        if(status.statusCode){
+          fprintf(stderr, "Error... function returned returned error code %d and message:\n\t%s.\n",
+          status.statusCode, status.statusDescription);
+          exit(0);
+        }
+        
         /* add binary time delay */
-        tdt = t - T0Update + emit.deltaT +  binOutput.deltaT;
+        tdt = (t - T0) + emit.deltaT +  binOutput.deltaT;
       }
       else{
-        tdt = t - T0Update + emit.deltaT;
+        tdt = t - T0 + emit.deltaT;
       }
+    }
+       
+    /* multiply by 2 to get gw phase */
+    phaseCoarse = freqfactor*(hetParams.het.f0*tdt + 0.5*hetParams.het.f1*tdt*tdt +
+    (1./6.)*hetParams.het.f2*tdt*tdt*tdt + (1./24.)*hetParams.het.f3*tdt*tdt*tdt*tdt);
+
+    fcoarse = freqfactor*(hetParams.het.f0 + hetParams.het.f1*tdt +
+    0.5*hetParams.het.f2*tdt*tdt + (1./6.)*hetParams.het.f3*tdt*tdt*tdt);
+    
+    /**************************************************************************************/
+    /* produce second phase for fine heterodyne */
+    if(hetParams.heterodyneflag == 1 || hetParams.heterodyneflag == 2){
+      /* set up LALBarycenter */
+      dtpos = hetParams.timestamp - hetParams.hetUpdate.posepoch;
+
+      /* set up RA, DEC, and distance variables for LALBarycenter*/
+      baryinput.delta = hetParams.hetUpdate.dec + dtpos*hetParams.hetUpdate.pmdec;
+      baryinput.alpha = hetParams.hetUpdate.ra +dtpos*hetParams.hetUpdate.pmra/cos(baryinput.delta);
+      baryinput.dInv = 0.0;  /* no parallax */
+
+      t = times->data[i]; /* get data time */
+     
+      t2 = times->data[i] + 1.; /* just add a second to get the gradient */
+        
+      /* set leap seconds noting that for all runs prior to S5 that the number of leap seconds was
+      13 and that 1 more leap seconds was added on 31st Dec 2005 24:00:00 i.e. GPS 820108813 */
+      if(t <= 820108813)
+        (*edat).leap = 13;
+      else
+        (*edat).leap = 14;
+
+      baryinput2 = baryinput;
+        
+      baryinput.tgps.gpsSeconds = (UINT8)floor(t);
+      baryinput.tgps.gpsNanoSeconds = (UINT8)floor((fmod(t,1.0)*1.e9));
+      
+      baryinput2.tgps.gpsSeconds = (UINT8)floor(t2);
+      baryinput2.tgps.gpsNanoSeconds = (UINT8)floor((fmod(t2,1.0)*1.e9));
+      
+      LALBarycenterEarth(&status, &earth, &baryinput.tgps, edat); 
+      LALBarycenter(&status, &emit, &baryinput, &earth);
+      
+      LALBarycenterEarth(&status, &earth2, &baryinput2.tgps, edat); 
+      LALBarycenter(&status, &emit2, &baryinput2, &earth2);
+           
+      /* if binary pulsar add extra time delay */
+      if(hetParams.hetUpdate.model!=NULL){
+        /* input SSB time into binary timing function */
+        binInput.tb = t + emit.deltaT;
+        binInput2.tb = t2 + emit2.deltaT;
+        
+        /* calculate binary time delay */
+        LALBinaryPulsarDeltaT(&status, &binOutput, &binInput, &hetParams.hetUpdate);
+        LALBinaryPulsarDeltaT(&status, &binOutput2, &binInput2, &hetParams.hetUpdate);
+        
+        /* add binary time delay */
+        tdt = (t - T0Update) + emit.deltaT + binOutput.deltaT;
+      }
+      else{
+        tdt = (t - T0Update) + emit.deltaT;
+      }
+      
+      /** calculate df  = f*(dt(t2) - dt(t))/(t2 - t)  - here (t2 - t) is 1 sec */
+      df = fcoarse*(emit2.deltaT - emit.deltaT + binOutput2.deltaT - binOutput.deltaT);
+      
+      srate = (REAL8)filtresp->freqResp->length*filtresp->deltaf; /* sample rate */
+      middle = (UINT4)srate*FILTERFFTTIME/2;
+      
+      /* find filter frequency response closest to df */
+      position = middle + (INT4)floor(df/filtresp->deltaf);
+      
       /* multiply by freqfactor to get gw phase */
       phaseUpdate = freqfactor*(hetParams.hetUpdate.f0*tdt + 0.5*hetParams.hetUpdate.f1*tdt*tdt +
-      (1./6.)*hetParams.hetUpdate.f2*tdt*tdt*tdt + (1./24.)*hetParams.hetUpdate.f3*tdt*tdt*tdt*tdt);
+      (1./6.)*hetParams.hetUpdate.f2*tdt*tdt*tdt +(1./24.)*hetParams.hetUpdate.f3*tdt*tdt*tdt*tdt);
     }
 
     /******************************************************************************************/
     dataTemp = data->data->data[i];
 
     /* perform heterodyne */
-    if(hetParams.heterodyneflag == 0){
+    if(hetParams.heterodyneflag == 0  || hetParams.heterodyneflag == 3 ){
       deltaphase = 2.*LAL_PI*fmod(phaseCoarse, 1.);
       dataTemp.im = 0.; /* make sure imaginary part is zero */
     }
-    if(hetParams.heterodyneflag > 0)
+    if(hetParams.heterodyneflag == 1 || hetParams.heterodyneflag == 2){
       deltaphase = 2.*LAL_PI*fmod(phaseUpdate - phaseCoarse, 1.);
-
+      
+      /* mutliply the data by the filters complex response function to remove its effect */
+      /* do a linear interpolation between filter response function points */
+      filtphase = filtresp->phaseResp->data[position] + ((filtresp->phaseResp->data[position+1] -
+                  filtresp->phaseResp->data[position]) /
+                  (filtresp->deltaf)) * ((REAL8)srate/2. + df - (REAL8)position*filtresp->deltaf);
+      filtphase = fmod(filtphase - filtresp->phaseResp->data[middle], 2.*LAL_PI);
+      
+      resp = filtresp->freqResp->data[position] + 
+             ((filtresp->freqResp->data[position+1] - filtresp->freqResp->data[position]) /
+             (filtresp->deltaf)) * ((REAL8)srate/2. + df - (REAL8)position*filtresp->deltaf); 
+      
+      dataTemp2 = dataTemp;
+             
+      dataTemp.re = (1./resp)*(dataTemp2.re*cos(filtphase) - dataTemp2.im*sin(filtphase));
+      dataTemp.im = (1./resp)*(dataTemp2.re*sin(filtphase) + dataTemp2.im*cos(filtphase));
+    }
+    
     data->data->data[i].re = dataTemp.re*cos(-deltaphase) - dataTemp.im*sin(-deltaphase);
     data->data->data[i].im = dataTemp.re*sin(-deltaphase) + dataTemp.im*cos(-deltaphase);
   }
@@ -803,7 +929,7 @@ REAL8 freqfactor){
     LALFree(edat->ephemS);
     LALFree(edat);
   }
-  
+
   /* check LALstatus error code in case any of the barycntring code has had a problem */
   if(status.statusCode){
     fprintf(stderr, "Error... got error code %d and message:\n\t%s\n", 
@@ -893,7 +1019,7 @@ calibrated h(t) */
       highpasspar.f2   = highpass;
       highpasspar.a2   = 0.9; /* this means 10% attenuation at f2 */
       
-      /* FIXME: I want to pad the data with ~1 minute it's not 
+      /* FIXME: I want to pad the data with ~1 minute so it's not 
        * affected by the filter response */
       XLALButterworthREAL8TimeSeries( dblseries, &highpasspar );
     }
@@ -952,11 +1078,10 @@ void set_filters(Filters *iirFilters, REAL8 filterKnee, REAL8 samplerate){
 void filter_data(COMPLEX16TimeSeries *data, Filters *iirFilters){
   COMPLEX16 tempData;
   INT4 i=0;
-
-  /* filter the data */
+  
   for(i=0;i<data->data->length;i++){
     tempData.re = 0.;
-    tempData.im = 0.;
+    tempData.im = 0.; 
 
     tempData.re = LALDIIRFilter(data->data->data[i].re, iirFilters->filter1Re);
     tempData.im = LALDIIRFilter(data->data->data[i].im, iirFilters->filter1Im);
@@ -966,10 +1091,11 @@ void filter_data(COMPLEX16TimeSeries *data, Filters *iirFilters){
 
     tempData.re = LALDIIRFilter(data->data->data[i].re, iirFilters->filter3Re);
     tempData.im = LALDIIRFilter(data->data->data[i].im, iirFilters->filter3Im);
-
+      
     data->data->data[i].re = tempData.re;
     data->data->data[i].im = tempData.im;
-  }
+  } 
+  
 }
 
 /* function to average the data at one sample rate down to a new sample rate */
@@ -988,8 +1114,8 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data, REAL8Vector *times
     
   series = LALCalloc(1, sizeof(*series));
   series->data = XLALCreateCOMPLEX16Vector( length );
-
-  if(hetflag == 0){ /* coarse heterodyne */
+  
+  if(hetflag == 0 || hetflag == 3 ){ /* coarse heterodyne */
     for(i=0;i<data->data->length-size+1;i+=size){
       tempData.re = 0.;
       tempData.im = 0.;
@@ -1004,13 +1130,17 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data, REAL8Vector *times
       series->data->data[count].re = tempData.re/(REAL8)size;
       series->data->data[count].im = tempData.im/(REAL8)size;
 
+      /* take the middle(ish) point - if just resampling rather than averaging */
+      /*series->data->data[count].re = data->data->data[i + size/2].re;
+      series->data->data[count].im = data->data->data[i + size/2].im;*/
+      
       times->data[count] = (REAL8)data->epoch.gpsSeconds + (REAL8)data->epoch.gpsNanoSeconds/1.e9 +
       (1./resampleRate)/2. + ((REAL8)count/resampleRate);
 
       count++;
     }
   }
-  else if(hetflag > 0){ /* need to calculate how many chunks of data at the new sample rate will fit
+  else if(hetflag == 1 || hetflag == 2){ /* need to calculate how many chunks of data at the new sample rate will fit
 into each science segment (starts and stops) */
     INT4 duration; /* duration of a science segment */
     INT4 remainder; /* number of data points lost */
@@ -1018,8 +1148,10 @@ into each science segment (starts and stops) */
 
     count=0;
     j=0;
-
+    
     for(i=0;i<starts->length;i++){
+      fprintf(stderr, "starts->data = %d, stops->data = %d.\n", starts->data[i], stops->data[i]);
+      
       /* find first bit of data within a segment */
       if(starts->data[i] < times->data[j] && stops->data[i] <= times->data[j]){
         /* if the segmemt is before the jth data point then continue */
@@ -1077,9 +1209,9 @@ stops->data[i]);
         j += (INT4)(duration*sampleRate);
         continue; /* if segment is smaller than the number of samples needed then skip to next */
       }
-
+      
       remainder = (INT4)(duration*sampleRate)%size;
-
+      
       prevdur = j;
       for(j=prevdur+floor(remainder/2);j<prevdur + (INT4)(duration*sampleRate)
           -ceil(remainder/2) - 1;j+=size){
@@ -1112,7 +1244,7 @@ stops->data[i]);
 }
 
 /* read in science segment list file - returns the number of segments */
-INT4 get_segment_list(INT4Vector *starts, INT4Vector *stops, CHAR *seglistfile){
+INT4 get_segment_list(INT4Vector *starts, INT4Vector *stops, CHAR *seglistfile, INT4 heterodyneflag){
   FILE *fp=NULL;
   INT4 i=0;
   long offset;
@@ -1139,6 +1271,18 @@ INT4 get_segment_list(INT4Vector *starts, INT4Vector *stops, CHAR *seglistfile){
       fseek(fp, offset, SEEK_SET); /* if line doesn't start with a # then it is data */
       fscanf(fp, "%d%d%d%d", &num, &starts->data[i], &stops->data[i], &dur); /*format is segwizard
 type: num starts stops dur */
+      
+      /* if performing a fine heterodyne remove the first 60 secs at the start of a segment 
+         to remove the filter response - if the segment is less than 60 secs then ignore it */
+      if( heterodyneflag == 1 || heterodyneflag == 2 ){
+        if(dur > 60){
+          starts->data[i] += 60;
+          dur -= 60;
+        }
+        else
+          continue;
+      }
+      
       i++;
     }
   }
@@ -1400,4 +1544,101 @@ stddev.im*stddevthresh){
   times = XLALResizeREAL8Vector(times, j);
   
   return data->data->length - j;
+}
+
+void CreateFilterResponse( FilterResponse *filtresp, REAL8 filterKnee ){
+  int i = 0;
+  int srate, time;
+ 
+  Filters testFilters;
+
+  COMPLEX16Vector *data=NULL;
+  COMPLEX16Vector *fftdata=NULL;
+  
+  COMPLEX16FFTPlan *fftplan=NULL;
+  
+  REAL8 phase=0., tempphase=0.;
+  INT4 count=0;
+  
+  srate = 16384; /* sample at 16384 Hz */
+  time = FILTERFFTTIME; /* have 200 second long data stretch - might need longer to increase
+resolution */
+
+  /**** CREATE SET OF IIR FILTERS ****/
+  set_filters(&testFilters, filterKnee, srate);
+
+  /* create some data */
+  data = XLALCreateCOMPLEX16Vector(time*srate);
+
+  /* create impulse and perform filtering */
+  for (i = 0;i<srate*time; i++){
+    if(i==0){
+      data->data[i].re = 1.;
+      data->data[i].im = 1.;
+    }
+    else{
+      data->data[i].re = 0.;
+      data->data[i].im = 0.;
+    }
+      
+    data->data[i].re = LALDIIRFilter( data->data[i].re, testFilters.filter1Re );
+    data->data[i].re = LALDIIRFilter( data->data[i].re, testFilters.filter2Re );
+    data->data[i].re = LALDIIRFilter( data->data[i].re, testFilters.filter3Re );
+    
+    data->data[i].im = LALDIIRFilter( data->data[i].im, testFilters.filter1Im );
+    data->data[i].im = LALDIIRFilter( data->data[i].im, testFilters.filter2Im );
+    data->data[i].im = LALDIIRFilter( data->data[i].im, testFilters.filter3Im );
+  }
+  
+  /* FFT the data */
+  fftplan = XLALCreateForwardCOMPLEX16FFTPlan(srate*time, 1);
+
+  fftdata = XLALCreateCOMPLEX16Vector(srate*time);
+  
+  XLALCOMPLEX16VectorFFT(fftdata, data, fftplan);
+  
+  /* flip vector so that it's in ascending frequency */
+  for(i=0;i<srate*time/2;i++){
+    COMPLEX16 tempdata;
+      
+    tempdata.re = fftdata->data[i].re;
+    tempdata.im = fftdata->data[i].im;
+      
+    fftdata->data[i].re = fftdata->data[i+srate*time/2].re;
+    fftdata->data[i+srate*time/2].re = tempdata.re;
+    
+    fftdata->data[i].im = fftdata->data[i+srate*time/2].im;
+    fftdata->data[i+srate*time/2].im = tempdata.im;
+  }
+  
+  filtresp->srate = (REAL8)srate;
+
+  filtresp->freqResp = XLALCreateREAL8Vector(srate*time);
+  filtresp->phaseResp = XLALCreateREAL8Vector(srate*time);
+  
+  /* output the frequency and phase response */
+  for(i=0;i<srate*time;i++){
+    filtresp->freqResp->data[i] = sqrt(fftdata->data[i].re*fftdata->data[i].re +
+fftdata->data[i].im*fftdata->data[i].im)/sqrt(2.);
+    
+    phase = atan2(fftdata->data[i].re, fftdata->data[i].im);
+   
+    if(i==0){
+      filtresp->phaseResp->data[i] = phase;
+      continue;
+    }
+    else if(phase - tempphase < 0.)
+      count++;
+      
+    filtresp->phaseResp->data[i] = phase + 2.*LAL_PI*(REAL8)count;
+    
+    tempphase = phase;
+  }
+  
+  /* set frequency step */
+  filtresp->deltaf = (REAL8)srate/(REAL8)filtresp->freqResp->length;
+  
+  XLALDestroyCOMPLEX16Vector(data);
+  XLALDestroyCOMPLEX16Vector(fftdata);
+  XLALDestroyCOMPLEX16FFTPlan(fftplan);
 }
