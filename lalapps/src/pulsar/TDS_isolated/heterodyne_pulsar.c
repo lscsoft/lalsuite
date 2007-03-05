@@ -148,11 +148,8 @@ heterodyne stage.\n");
     }
     
     /* calculate the frequency and phase response of the filter used in the coarse heterodyne */ 
-    if(inputParams.filterknee > 0.0){
+    if(inputParams.filterknee > 0.0)
       CreateFilterResponse(&filtresp, inputParams.filterknee);
-      
-      fprintf(stderr, "srate = %lf, length = %d\n", filtresp.srate, filtresp.freqResp->length);
-    }
     
     /*reset the filter knee to zero so the filtering is not performed on the fine heterodyned data*/
     inputParams.filterknee = 0.;
@@ -1152,8 +1149,6 @@ into each science segment (starts and stops) */
     j=0;
     
     for(i=0;i<starts->length;i++){
-      fprintf(stderr, "starts->data = %d, stops->data = %d.\n", starts->data[i], stops->data[i]);
-      
       /* find first bit of data within a segment */
       if(starts->data[i] < times->data[j] && stops->data[i] <= times->data[j]){
         /* if the segmemt is before the jth data point then continue */
