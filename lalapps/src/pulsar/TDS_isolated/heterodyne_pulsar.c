@@ -27,14 +27,16 @@ int main(int argc, char *argv[]){
   Filters iirFilters;
 
   FILE *fpin=NULL, *fpout=NULL;
-  INT4 count=0;
+  FrameCache cache;
+  INT4 count=0, frcount=0;
 
   CHAR outputfile[256]="";
   CHAR channel[20]="";
 
   INT4Vector *starts=NULL, *stops=NULL; /* science segment start and stop times */
   INT4 numSegs=0;
-
+  CHAR *smalllist=NULL; /* list of frame files for a science segment */
+  
   REAL8Vector *times=NULL; /* times of data read from coarse heterodyne file */
   
   FilterResponse filtresp; /* variable to hold the filter response function */
@@ -129,8 +131,8 @@ files so read in frame filenames */
 &cache.duration[frcount], cache.framelist[frcount]) != EOF){
       /* fscanf(fpin, "%s", framelist[frcount]);*/
       if(frcount++ >= MAXNUMFRAMES){
-        fprintf(stderr, "Error... increase length of MAXNUMFRAMES or decrease number of frame files
-to read in.\n");
+        fprintf(stderr, "Error... increase length of MAXNUMFRAMES or decrease number of frame files\
+ to read in.\n");
       }
     }
     fclose(fpin);
