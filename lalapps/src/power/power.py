@@ -790,3 +790,33 @@ def make_injection_segment_fragment(dag, datafindnodes, binjnodes, segment, inst
 		print >>sys.stderr, "Injections split: " + str(seglist)
 	return make_multipower_fragment(dag, datafindnodes + binjnodes, [], instrument, seglist, "INJECTIONS_%s" % tag, datafindnodes[0].get_output(), injargs = {"burstinjection-file": binjnodes[0].get_output_cache()[0].path()}, clustering = clustering)
 
+
+#
+# =============================================================================
+#
+#             The Coincidence Fragment:  lladd + binjfind + burca
+#
+# =============================================================================
+#
+
+
+def make_coinc_fragment(dag, power_parents, time_slides_cache, segment, tag, binjnodes = None):
+	# merge all input files using ligolw_add, including the time slides
+	# file
+
+	nodes = make_lladd_fragment(dag, power_parents, "ALL", segment, tag, preserves = time_slides_cache)
+	nodes[0].add_input_cache(time_slides_cache)
+	nodes[0].set_output("ALL-%s-%s-%s.xml.gz" % (tag, int(segment[0]), int(abs(segment))))
+
+	# add ligolw_binjfind
+
+	if binjnodes is not None:
+		nodes[0].add_input_cache(binjnodes[0].get_output_cache())
+		nodes[0].add_preserve_cache(binjnodes[0].get_output_cache())
+		nodes = make_bucut_fragment(dag, nodes, "ALL", segment, tag)
+		nodes = make_binjfind_fragment(dag, nodes, "ALL", segment, tag)
+
+	# run ligolw_burca
+
+	return make_burca_fragment(dag, nodes, "ALL", segment, tag)
+

@@ -74,7 +74,7 @@ def parse_command_line():
 	parser.add_option("-v", "--verbose", action = "store_true", help = "be verbose")
 	options, filenames = parser.parse_args()
 
-	options.time_slides = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(options.time_slides))
+	options.time_slides = [CacheEntry(None, None, None, "file://localhost" + os.path.abspath(options.time_slides))]
 
 	options.minimum_gap = float(options.minimum_gap)
 
@@ -241,7 +241,7 @@ def make_single_instrument_fragment(dag, options, instrument, seglist, binjnodes
 #
 
 
-def make_coinc_stage(dag, parents, tag, time_slides, time_slides_cache_entry, binjnodes = None, verbose = False):
+def make_coinc_stage(dag, parents, tag, time_slides, time_slides_cache, binjnodes = None, verbose = False):
 	if verbose:
 		print >>sys.stderr, "Generating coincidence nodes for tag = %s" % tag
 
@@ -275,19 +275,9 @@ def make_coinc_stage(dag, parents, tag, time_slides, time_slides_cache_entry, bi
 		# there were parents that didn't match any caches?
 		print "Warning:  %d jobs produce output that will not be used by a coincidence job" % len(parents)
 
-	# build the ligolw_add + ligolw_burca fragments;  if a binjnode has
-	# been provided, add its output into the lladd node and add
-	# binjfinding.
-	for parents, cache, seg in zip(fragments, caches, segs):
-		nodes = power.make_lladd_fragment(dag, parents, "ALL", seg, tag, preserves = [time_slides_cache_entry])
-		nodes[0].set_output("ALL-COINC_%s-%s-%s.xml.gz" % (tag, int(seg[0]), int(abs(seg))))
-		nodes[0].add_input_cache([time_slides_cache_entry])
-		if binjnodes is not None:
-			nodes[0].add_input_cache(binjnodes[0].get_output_cache())
-			nodes[0].add_preserve_cache(binjnodes[0].get_output_cache())
-			nodes = power.make_bucut_fragment(dag, nodes, "ALL", seg, tag)
-			nodes = power.make_binjfind_fragment(dag, nodes, "ALL", seg, tag)
-		nodes = power.make_burca_fragment(dag, nodes, "ALL", seg, tag)
+	# build the coinc fragments
+	for parents, seg in zip(fragments, segs):
+		nodes = power.make_coinc_fragment(dag, parents, time_slides_cache, seg, tag, binjnodes = binjnodes)
 
 
 #
@@ -299,7 +289,7 @@ def make_coinc_stage(dag, parents, tag, time_slides, time_slides_cache_entry, bi
 #
 
 
-time_slides = ligolw_cafe.get_time_slides(options.time_slides.path(), verbose = options.verbose, gz = options.time_slides.path()[-3:] == ".gz")
+time_slides = ligolw_cafe.get_time_slides(options.time_slides[0].path(), verbose = options.verbose, gz = options.time_slides[0].path()[-3:] == ".gz")
 
 compute_segment_lists(options.seglistdict, time_slides, options.minimum_gap, full_segments = options.full_segments, verbose = options.verbose)
 
