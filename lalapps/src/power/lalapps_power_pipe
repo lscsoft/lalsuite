@@ -340,7 +340,7 @@ for instrument, seglist in options.seglistdict.iteritems():
 
 
 make_coinc_stage(dag, sngl_inst_pwrfrags, options.tag, time_slides, options.time_slides, verbose = options.verbose)
-make_coinc_stage(dag, sngl_inst_injfrags, "INJECTIONS_%s" % options.tag, time_slides, options.time_slides, binjnode = binjnode, verbose = options.verbose)
+make_coinc_stage(dag, sngl_inst_injfrags, "INJECTIONS_%s" % options.tag, time_slides, options.time_slides, binjnodes = binjnodes, verbose = options.verbose)
 
 
 #
