@@ -580,7 +580,7 @@ def make_datafind_fragment(dag, instrument, seg):
 		node.set_type(datafindjob.get_config_file().get("datafind", "type_%s" % instrument))
 	node.set_post_script(datafindjob.get_config_file().get("condor", "LSCdataFindcheck") + " --dagman-return $RETURN --stat --gps-start-time %s --gps-end-time %s %s" % (str(seg[0]), str(seg[1]), node.get_output()))
 	dag.add_node(node)
-	return node
+	return [node]
 
 
 def make_lladd_fragment(dag, parents, instrument, seg, tag, preserves = []):
@@ -591,7 +591,7 @@ def make_lladd_fragment(dag, parents, instrument, seg, tag, preserves = []):
 		node.add_input_cache(parent.get_output_cache())
 	node.add_preserve_cache(preserves)
 	dag.add_node(node)
-	return node
+	return [node]
 
 
 def make_power_fragment(dag, parents, instrument, seg, tag, framecache, injargs = {}):
@@ -607,7 +607,7 @@ def make_power_fragment(dag, parents, instrument, seg, tag, framecache, injargs 
 		# this is a hack, but I can't be bothered
 		node.add_var_arg("--%s %s" % (arg, value))
 	dag.add_node(node)
-	return node
+	return [node]
 
 
 def make_bucut_fragment(dag, parents, instrument, seg, tag):
@@ -618,7 +618,7 @@ def make_bucut_fragment(dag, parents, instrument, seg, tag):
 		node.add_input_cache(parent.get_output_cache())
 	node.add_macro("macrocomment", tag)
 	dag.add_node(node)
-	return node
+	return [node]
 
 
 def make_binj_fragment(dag, seg, tag, offset, flow, fhigh):
@@ -643,7 +643,7 @@ def make_binj_fragment(dag, seg, tag, offset, flow, fhigh):
 	node.add_macro("macrofratio", fratio)
 	node.add_macro("macroseed", int(time.time() + start))
 	dag.add_node(node)
-	return node
+	return [node]
 
 
 def make_bucluster_fragment(dag, parents, instrument, seg, tag):
@@ -654,7 +654,7 @@ def make_bucluster_fragment(dag, parents, instrument, seg, tag):
 		node.add_input_cache(parent.get_output_cache())
 	node.add_macro("macrocomment", tag)
 	dag.add_node(node)
-	return node
+	return [node]
 
 
 def make_burca_fragment(dag, parents, instrument, seg, tag):
@@ -665,7 +665,7 @@ def make_burca_fragment(dag, parents, instrument, seg, tag):
 		node.add_input_cache(parent.get_output_cache())
 	node.add_macro("macrocomment", tag)
 	dag.add_node(node)
-	return node
+	return [node]
 
 
 def make_binjfind_fragment(dag, parents, instrument, seg, tag):
@@ -676,7 +676,7 @@ def make_binjfind_fragment(dag, parents, instrument, seg, tag):
 		node.add_input_cache(parent.get_output_cache())
 	node.add_macro("macrocomment", tag)
 	dag.add_node(node)
-	return node
+	return [node]
 
 
 #
@@ -701,36 +701,38 @@ def make_multipower_fragment(dag, powerparents, lladdparents, instrument, seglis
 
 	# construct the power jobs
 
-	nodes = [make_power_fragment(dag, powerparents, instrument, seg, tag, framecache, injargs) for seg in seglist]
+	nodes = []
+	for seg in seglist:
+		nodes.extend(make_power_fragment(dag, powerparents, instrument, seg, tag, framecache, injargs))
 
 	# generate a bucluster node for the entire segment if clustering
 	# has been enabled (doing this before lladd keeps file sizes small
 	# to lower the risk of lladd running out of memory)
 
 	if clustering:
-		lladdparents = [make_bucluster_fragment(dag, nodes, instrument, segment, tag)] + lladdparents
+		lladdparents = make_bucluster_fragment(dag, nodes, instrument, segment, tag) + lladdparents
 	else:
 		lladdparents = nodes + lladdparents
 
 	# if only one power job was created, and there are no other files
-	# to cobine its output with, don't add a lladd (+ bucluster) follow
-	# up (note: be careful with this logic, you have to think about why
-	# the following test establishes what it establishes)
+	# to combine its output with, don't add a lladd (+ bucluster)
+	# follow up (note: be careful with this logic, you have to think
+	# about why the following test establishes what it establishes)
 
 	if len(nodes) == len(lladdparents) == 1:
-		return lladdparents[0]
+		return lladdparents
 
 	# construct lladd node
 
-	lladdnode = make_lladd_fragment(dag, lladdparents, instrument, segment, "POWER_%s" % tag, preserves = preserves)
-	lladdnode.set_output("%s-POWER_%s-%s-%s.xml.gz" % (instrument, tag, int(segment[0]), int(abs(segment))))
+	lladdnodes = make_lladd_fragment(dag, lladdparents, instrument, segment, "POWER_%s" % tag, preserves = preserves)
+	lladdnodes[0].set_output("%s-POWER_%s-%s-%s.xml.gz" % (instrument, tag, int(segment[0]), int(abs(segment))))
 
 	# add final clustering follow up if enabled
 
 	if clustering:
-		return make_bucluster_fragment(dag, [lladdnode], instrument, segment, "%s_POSTLLADD" % tag)
+		return make_bucluster_fragment(dag, lladdnodes, instrument, segment, "%s_POSTLLADD" % tag)
 	else:
-		return lladdnode
+		return lladdnodes
 
 
 #
@@ -742,7 +744,7 @@ def make_multipower_fragment(dag, powerparents, lladdparents, instrument, seglis
 #
 
 
-def make_power_segment_fragment(dag, datafindnode, instrument, segment, tag, psds_per_job, clustering = False, verbose = False):
+def make_power_segment_fragment(dag, datafindnodes, instrument, segment, tag, psds_per_job, clustering = False, verbose = False):
 	"""
 	Construct a DAG fragment for an entire segment, splitting the
 	segment into multiple power jobs.
@@ -750,7 +752,7 @@ def make_power_segment_fragment(dag, datafindnode, instrument, segment, tag, psd
 	seglist = split_segment(powerjob, segment, psds_per_job)
 	if verbose:
 		print >>sys.stderr, "Segment split: " + str(seglist)
-	return make_multipower_fragment(dag, [datafindnode], [], instrument, seglist, tag, datafindnode.get_output(), clustering = clustering)
+	return make_multipower_fragment(dag, datafindnodes, [], instrument, seglist, tag, datafindnodes[0].get_output(), clustering = clustering)
 
 
 #
@@ -766,11 +768,11 @@ def make_multibinj_fragment(dag, seg, tag):
 	flow = float(powerjob.get_opts()["low-freq-cutoff"])
 	fhigh = flow + float(powerjob.get_opts()["bandwidth"])
 
-	binjnodes = [make_binj_fragment(dag, seg, tag, 0.0, flow, fhigh)]
+	binjnodes = make_binj_fragment(dag, seg, tag, 0.0, flow, fhigh)
 
-	node = make_lladd_fragment(dag, binjnodes, "ALL", seg, tag)
+	node = make_lladd_fragment(dag, binjnodes, "ALL", seg, tag)[0]
 	node.set_output("HL-%s-%d-%d.xml" % (tag, int(seg[0]), int(abs(seg))))
-	return node
+	return [node]
 
 
 #
@@ -782,9 +784,9 @@ def make_multibinj_fragment(dag, seg, tag):
 #
 
 
-def make_injection_segment_fragment(dag, datafindnode, binjnode, segment, instrument, psds_per_job, tag, clustering = False, verbose = False):
+def make_injection_segment_fragment(dag, datafindnodes, binjnodes, segment, instrument, psds_per_job, tag, clustering = False, verbose = False):
 	seglist = split_segment(powerjob, segment, psds_per_job)
 	if verbose:
 		print >>sys.stderr, "Injections split: " + str(seglist)
-	return make_multipower_fragment(dag, [datafindnode, binjnode], [], instrument, seglist, "INJECTIONS_%s" % tag, datafindnode.get_output(), injargs = {"burstinjection-file": binjnode.get_output_cache()[0].path()}, clustering = clustering)
+	return make_multipower_fragment(dag, datafindnodes + binjnodes, [], instrument, seglist, "INJECTIONS_%s" % tag, datafindnodes[0].get_output(), injargs = {"burstinjection-file": binjnodes[0].get_output_cache()[0].path()}, clustering = clustering)
 

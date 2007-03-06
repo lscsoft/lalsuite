@@ -206,7 +206,7 @@ def compute_segment_lists(seglistdict, time_slides, minimum_gap, full_segments =
 #
 
 
-def make_single_instrument_fragment(dag, options, instrument, seglist, binjnode = None):
+def make_single_instrument_fragment(dag, options, instrument, seglist, binjnodes = None):
 	powerfrags = []
 	injpowerfrags = []
 	for seg in seglist:
@@ -217,17 +217,17 @@ def make_single_instrument_fragment(dag, options, instrument, seglist, binjnode 
 		datafindfrag = power.make_datafind_fragment(dag, instrument, seg)
 
 		# a segment without injections
-		node = power.make_power_segment_fragment(dag, datafindfrag, instrument, seg, options.tag, options.psds_per_power, clustering = options.enable_clustering, verbose = options.verbose)
+		nodes = power.make_power_segment_fragment(dag, datafindfrag, instrument, seg, options.tag, options.psds_per_power, clustering = options.enable_clustering, verbose = options.verbose)
 
 		# store fragment
-		powerfrags.append(node)
+		powerfrags.extend(nodes)
 
 		# a segment with injections
-		if binjnode != None:
-			node = power.make_injection_segment_fragment(dag, datafindfrag, binjnode, seg, instrument, options.psds_per_injection, options.tag, clustering = options.enable_clustering, verbose = options.verbose)
+		if binjnodes is not None:
+			nodes = power.make_injection_segment_fragment(dag, datafindfrag, binjnodes, seg, instrument, options.psds_per_injection, options.tag, clustering = options.enable_clustering, verbose = options.verbose)
 
 			# store fragment
-			injpowerfrags.append(node)
+			injpowerfrags.extend(nodes)
 
 	return powerfrags, injpowerfrags
 
@@ -241,7 +241,7 @@ def make_single_instrument_fragment(dag, options, instrument, seglist, binjnode 
 #
 
 
-def make_coinc_stage(dag, parents, tag, time_slides, time_slides_cache_entry, binjnode = None, verbose = False):
+def make_coinc_stage(dag, parents, tag, time_slides, time_slides_cache_entry, binjnodes = None, verbose = False):
 	if verbose:
 		print >>sys.stderr, "Generating coincidence nodes for tag = %s" % tag
 
@@ -279,15 +279,15 @@ def make_coinc_stage(dag, parents, tag, time_slides, time_slides_cache_entry, bi
 	# been provided, add its output into the lladd node and add
 	# binjfinding.
 	for parents, cache, seg in zip(fragments, caches, segs):
-		node = power.make_lladd_fragment(dag, parents, "ALL", seg, tag, preserves = [time_slides_cache_entry])
-		node.set_output("ALL-COINC_%s-%s-%s.xml.gz" % (tag, int(seg[0]), int(abs(seg))))
-		node.add_input_cache([time_slides_cache_entry])
-		if binjnode != None:
-			node.add_input_cache(binjnode.get_output_cache())
-			node.add_preserve_cache(binjnode.get_output_cache())
-			node = power.make_bucut_fragment(dag, [node], "ALL", seg, tag)
-			node = power.make_binjfind_fragment(dag, [node], "ALL", seg, tag)
-		node = power.make_burca_fragment(dag, [node], "ALL", seg, tag)
+		nodes = power.make_lladd_fragment(dag, parents, "ALL", seg, tag, preserves = [time_slides_cache_entry])
+		nodes[0].set_output("ALL-COINC_%s-%s-%s.xml.gz" % (tag, int(seg[0]), int(abs(seg))))
+		nodes[0].add_input_cache([time_slides_cache_entry])
+		if binjnodes is not None:
+			nodes[0].add_input_cache(binjnodes[0].get_output_cache())
+			nodes[0].add_preserve_cache(binjnodes[0].get_output_cache())
+			nodes = power.make_bucut_fragment(dag, nodes, "ALL", seg, tag)
+			nodes = power.make_binjfind_fragment(dag, nodes, "ALL", seg, tag)
+		nodes = power.make_burca_fragment(dag, nodes, "ALL", seg, tag)
 
 
 #
@@ -315,9 +315,9 @@ dag.set_dag_file(os.path.splitext(filenames[0])[0])
 
 
 if options.no_injections:
-	binjnode = None
+	binjnodes = None
 else:
-	binjnode = power.make_multibinj_fragment(dag, options.seglistdict.extent_all(), "INJECTIONS_%s" % options.tag)
+	binjnodes = power.make_multibinj_fragment(dag, options.seglistdict.extent_all(), "INJECTIONS_%s" % options.tag)
 
 
 #
@@ -329,7 +329,7 @@ else:
 sngl_inst_pwrfrags = []
 sngl_inst_injfrags = []
 for instrument, seglist in options.seglistdict.iteritems():
-	a, b = make_single_instrument_fragment(dag, options, instrument, seglist, binjnode)
+	a, b = make_single_instrument_fragment(dag, options, instrument, seglist, binjnodes)
 	sngl_inst_pwrfrags.extend(a)
 	sngl_inst_injfrags.extend(b)
 
