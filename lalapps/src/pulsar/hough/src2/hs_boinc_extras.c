@@ -876,6 +876,9 @@ void init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
     return;
   }
 
+  /* make sure the point of next writing is where we stopped reding */
+  fseek(cptf->fp,cptf->bytes,SEEK_SET);
+
   *count = count_read;
 }
 
