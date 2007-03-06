@@ -251,7 +251,7 @@ int read_fstat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxby
 /* Prints a Tooplist line to a string buffer.
    Separate function to force consistency of output and reduced precision for sorting */
 static int print_fstatline_to_str(FstatOutputEntry fline, char* buf, int buflen) {
-      return(LALSnprintf(buf, buflen,
+  return(LALSnprintf(buf, buflen,
 		  /* output precision: choose by following (generous!) significant-digit constraints:
 		   * Freq:1e-13 
 		   * Alpha,Delta:1e-7 
@@ -272,17 +272,20 @@ static int print_fstatline_to_str(FstatOutputEntry fline, char* buf, int buflen)
    Updates checksum if given */
 int write_fstat_toplist_item_to_fp(FstatOutputEntry fline, FILE*fp, UINT4*checksum) {
     char linebuf[256];
+    int ret;
     UINT4 i;
 
-    UINT4 length = print_fstatline_to_str(fline, linebuf, sizeof(linebuf));
+    UINT4 length = print_fstatline_to_str(fline, linebuf, sizeof(linebuf)-1);
     
-    if(length>sizeof(linebuf)) {
+    if(length>sizeof(linebuf)-1) {
        return -1;
     }
 
     if (checksum)
 	for(i=0;i<length;i++)
 	    *checksum += linebuf[i];
+
+    linebuf[sizeof(linebuf)-1] = '\0';
 
     return(fprintf(fp,"%s",linebuf));
 }
@@ -584,6 +587,7 @@ int fstat_cpt_file_close(FStatCheckpointFile*cptf) {
  */
 int fstat_cpt_file_add (FStatCheckpointFile*cptf, FstatOutputEntry line) {
   int ret, bytes;
+
   ret = insert_into_toplist(cptf->list, &line);
   if (ret) {
     bytes = write_fstat_toplist_item_to_fp(line, cptf->fp, &(cptf->checksum));
@@ -597,10 +601,11 @@ int fstat_cpt_file_add (FStatCheckpointFile*cptf, FstatOutputEntry line) {
     }
     cptf->bytes += bytes;
 
-    if ((INT4)cptf->bytes != ftell(cptf->fp)) 
-      LogPrintf(LOG_DEBUG,"ERROR: File length mismatch bytes: %u, file: %d\n",
-		cptf->bytes, ftell(cptf->fp));
+    if ((int)cptf->bytes != ftell(cptf->fp)) 
+      LogPrintf(LOG_DEBUG,"ERROR: bytecount mismatch: returned: %d, bytes: %u, file: %ld\n",
+		bytes, cptf->bytes, ftell(cptf->fp));
   }
+
   return(ret);
 }
 
@@ -647,6 +652,9 @@ int fstat_cpt_file_read (FStatCheckpointFile*cptf, UINT4 checksum_should, UINT4 
   }
   cptf->bytes = bytes;
   cptf->checksum = checksum_read;
+
+  if (cptf->bytes != ftell(cptf->fp)) 
+    LogPrintf(LOG_DEBUG,"ERROR: read: %u, file: %ld\n", cptf->bytes, ftell(cptf->fp));
 
   return(0);
 }
