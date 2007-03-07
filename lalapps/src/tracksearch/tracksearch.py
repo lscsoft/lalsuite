@@ -245,9 +245,7 @@ class tracksearchHousekeeperJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.cp=cp
         self.block_id=block_id
         self.__executable = cp.get('condor','housekeeper')
-        #HACK change to local in new condor version
-        #self.__universe = cp.get('condor','universe')
-        self.__universe = 'scheduler'
+        self.__universe = cp.get('condor','housekeeper_universe')
         pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
         pipeline.AnalysisJob.__init__(self,cp)
         for sec in ['housekeeper']:
@@ -284,7 +282,7 @@ class tracksearchTimeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.dagDirectory=dagDir
         #ConfigParser object -> cp
         self.__executable = cp.get('condor','tracksearch')
-        self.__universe = cp.get('condor','universe');
+        self.__universe = cp.get('condor','tracksearch_universe');
         self.validJobTypes=['normal','injection']
         #If invalid type is requested display warning and
         #assume a normal injection was requested
@@ -339,8 +337,8 @@ class tracksearchTimeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.add_condor_cmd('initialdir',layerPath)
         #Set log
         channelName=string.strip(cp.get('tracksearchtime','channel_name'))
-        self.set_stdout_file(os.path.normpath(blockPath+'/logs/tracksearchTime-'+channelName+'-$(cluster)-$(process).out'))
-        self.set_stderr_file(os.path.normpath(blockPath+'/logs/tracksearchTime-'+channelName+'-$(cluster)-$(process).err'))
+        self.set_stdout_file(os.path.normpath(blockPath+'/logs/tracksearchTime-'+channelName+'-$(macrogpsstartseconds)_$(cluster)_$(process).out'))
+        self.set_stderr_file(os.path.normpath(blockPath+'/logs/tracksearchTime-'+channelName+'-$(macrogpsstartseconds)_$(cluster)_$(process).err'))
         self.set_sub_file(self.dagDirectory+'tracksearchTime.sub')
     #End init
 #End Class
@@ -353,7 +351,7 @@ class tracksearchMapJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.dagDirectory=dagDir
         #ConfigParser object -> cp
         self.__executable = cp.get('condor','tracksearch')
-        self.__universe = cp.get('condor','universe');
+        self.__universe = cp.get('condor','tracksearch_universe');
         pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
         pipeline.AnalysisJob.__init__(self,cp)
         blockID=block_id
@@ -392,7 +390,7 @@ class tracksearchAveragerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     #Setup job options to take a cache of caches and build new maps
             #ConfigParser object -> cp
         self.__executable = cp.get('condor','averager')
-        self.__universe = cp.get('condor','universe');
+        self.__universe = cp.get('condor','averager_universe');
         pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
         pipeline.AnalysisJob.__init__(self,cp)
         blockID=block_id
@@ -429,9 +427,7 @@ class tracksearchMapCacheBuildJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     #Setup job options to take a cache of caches and build new maps
             #ConfigParser object -> cp
         self.__executable = cp.get('condor','cachebuilder')
-        #HACK for SETB pool
-        #self.__universe = cp.get('condor','universe');
-        self.__universe = 'scheduler';
+        self.__universe = cp.get('condor','cachebuilder_universe');
         pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
         pipeline.AnalysisJob.__init__(self,cp)
         blockID=block_id
@@ -552,7 +548,7 @@ class tracksearchClusterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.dagDirectory=dagDir
         self.__executable = cp.get('condor','clustertool')
         #HACK SETB pool the job runs on the scheduler
-        self.__universe = cp.get('condor','universe')
+        self.__universe = cp.get('condor','clustertool_universe')
         pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
         pipeline.AnalysisJob.__init__(self,cp)
         self.block_id=blockID=block_id
@@ -588,8 +584,7 @@ class tracksearchThresholdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     def __init__(self,cp,block_id,dagDir):
         self.dagDirectory=dagDir
         self.__executable = cp.get('condor','clustertool')
-        #HACK SETB pool the jobs runs on the scheduler
-        self.__universe= cp .get('condor','universe')
+        self.__universe= cp .get('condor','clustertool_universe')
         pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
         pipeline.AnalysisJob.__init__(self,cp)
         self.block_id=blockID=block_id
@@ -780,6 +775,7 @@ class tracksearch:
     #End Init
 
     def getDagDirectory(self):
+        #This function should place DAGs in a local partition (nonNFS) future version.
         #The blockID is just the GPSstart:Duration
         dagDirectory=str(self.resultPath+'/DAG_files/'+self.blockID+'/')
         return dagDirectory
@@ -815,7 +811,7 @@ class tracksearch:
         df_job = pipeline.LSCDataFindJob(outputDir,dataFindLogPath,self.cp)
         #Additional HACK due to recent changes in GLUE
         # Remember we edited the GLUE archive to make this work.
-        #
+        # DOESN'T apply to cluster runs!
         df_job.set_sub_file(self.dagDirectory+'datafind.sub')
         df_job.add_condor_cmd('initialdir',str(dataFindInitialDir))
         prev_df = None
@@ -844,7 +840,7 @@ class tracksearch:
             tracksearchTime_node=tracksearchTimeNode(tracksearchTime_job)
             #Fix format of FILENAME
             #Inserted a SETB Pool Hack for testing
-            tracksearchTime_node.add_var_opt('cachefile','/home/charlie/pipeTest/testFrame.cache')
+            tracksearchTime_node.add_var_opt('cachefile','/home/ctorres/pipeTest/testFrame.cache')
             #tracksearchTime_node.add_var_opt('frame_cache',df_node.get_output())
 
             #Set the node job time markers from chunk!
@@ -856,7 +852,7 @@ class tracksearch:
             prevLayerJobList.append(tracksearchTime_node)
         return prevLayerJobList
     #Finished with getting data and layer 1 of analysis submit files
-    #end def
+    #end def startingSearchLayer(self,layerID):
 
     def finalSearchLayer(self,layerID,nodeLinks):
         #This layer will setup last nodes of dag.  These nodes

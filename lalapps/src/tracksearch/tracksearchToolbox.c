@@ -32,36 +32,36 @@ void LALappsTSAReadMapFile( LALStatus         *status,
    */
   if ((file = open(fileNameVec->data,O_RDONLY,0)) == -1)
     LALappsTSassert(0,
-		    TRACKSEARCHAVERAGERC_EREAD,
-		    TRACKSEARCHAVERAGERC_MSGEREAD);
+		    TRACKSEARCHTOOLBOXC_ERHEAD,
+		    TRACKSEARCHTOOLBOXC_EMSGRHEAD);
 
   if ((dataRead=read(file,
 		     (void*) &tmpImageCreateParams,
 		     sizeof(tmpImageCreateParams))) <= 0)
     LALappsTSassert(0,
-		    TRACKSEARCHAVERAGERC_EREAD,
-		    TRACKSEARCHAVERAGERC_MSGEREAD);
+		    TRACKSEARCHTOOLBOXC_ERHEAD,
+		    TRACKSEARCHTOOLBOXC_EMSGRHEAD);
 
   if ((dataRead=read(file,
 		     (void*) &cW,
 		     sizeof(cW))) <= 0)
     LALappsTSassert(0,
-		    TRACKSEARCHAVERAGERC_EREAD,
-		    TRACKSEARCHAVERAGERC_MSGEREAD);
+		    TRACKSEARCHTOOLBOXC_ERHEAD,
+		    TRACKSEARCHTOOLBOXC_EMSGRHEAD);
     
   if ((dataRead=read(file,
 		     (void*) &cMS,
 		     sizeof(cMS))) <= 0)
     LALappsTSassert(0,
-		    TRACKSEARCHAVERAGERC_EREAD,
-		    TRACKSEARCHAVERAGERC_MSGEREAD);
+		    TRACKSEARCHTOOLBOXC_ERHEAD,
+		    TRACKSEARCHTOOLBOXC_EMSGRHEAD);
 
   if ((dataRead=read(file,
 		     (void*) &tmpImageBorders,
 		     sizeof(tmpImageBorders))) <= 0)
     LALappsTSassert(0,
-		    TRACKSEARCHAVERAGERC_EREAD,
-		    TRACKSEARCHAVERAGERC_MSGEREAD);
+		    TRACKSEARCHTOOLBOXC_ERHEAD,
+		    TRACKSEARCHTOOLBOXC_EMSGRHEAD);
   /* 
    * Allocate the struture
    */
@@ -78,48 +78,46 @@ void LALappsTSAReadMapFile( LALStatus         *status,
 		     (void*) &((*tfImage)->imageRep->type),
 		     sizeof((*tfImage)->imageRep->type))) <= 0)
     LALappsTSassert(0,
-		    TRACKSEARCHAVERAGERC_EREAD,
-		    TRACKSEARCHAVERAGERC_MSGEREAD);
-
+		    TRACKSEARCHTOOLBOXC_ERHEAD,
+		    TRACKSEARCHTOOLBOXC_EMSGRHEAD);
   if ((dataRead=read(file,
 		     (void*) &((*tfImage)->imageRep->fRow),
 		     sizeof((*tfImage)->imageRep->fRow))) <= 0)
     LALappsTSassert(0,
-		    TRACKSEARCHAVERAGERC_EREAD,
-		    TRACKSEARCHAVERAGERC_MSGEREAD);
+		    TRACKSEARCHTOOLBOXC_ERHEAD,
+		    TRACKSEARCHTOOLBOXC_EMSGRHEAD);
 
   if ((dataRead=read(file,
 		     (void*) &((*tfImage)->imageRep->tCol),
 		     sizeof((*tfImage)->imageRep->tCol))) <= 0)
     LALappsTSassert(0,
-		    TRACKSEARCHAVERAGERC_EREAD,
-		    TRACKSEARCHAVERAGERC_MSGEREAD);
+		    TRACKSEARCHTOOLBOXC_ERHEAD,
+		    TRACKSEARCHTOOLBOXC_EMSGRHEAD);
 
   for (i=0;i<(*tfImage)->imageRep->fRow/2+1;i++)
       if ((dataRead=read(file,
 			 (void*) &((*tfImage)->imageRep->freqBin[i]),
 			 sizeof((*tfImage)->imageRep->freqBin[i]))) <= 0)
 	LALappsTSassert(0,
-			TRACKSEARCHAVERAGERC_EREAD,
-			TRACKSEARCHAVERAGERC_MSGEREAD);
-  
+			TRACKSEARCHTOOLBOXC_ERDATA,
+			TRACKSEARCHTOOLBOXC_EMSGRDATA);
 
   for (i=0;i<(*tfImage)->imageRep->tCol;i++)
         if ((dataRead=read(file,
 			 (void*) &((*tfImage)->imageRep->timeInstant[i]),
 			 sizeof((*tfImage)->imageRep->timeInstant[i]))) <= 0)
 	  LALappsTSassert(0,
-			  TRACKSEARCHAVERAGERC_EREAD,
-			  TRACKSEARCHAVERAGERC_MSGEREAD);
+			  TRACKSEARCHTOOLBOXC_ERDATA,
+			  TRACKSEARCHTOOLBOXC_EMSGRDATA);
 	
   for (i=0;i<(*tfImage)->imageRep->tCol;i++)
     for (j=0;j<(*tfImage)->imageRep->fRow/2+1;j++)
 	 if ((dataRead=read(file,
 			 (void*) &((*tfImage)->imageRep->map[i][j]),
 			 sizeof((*tfImage)->imageRep->map[i][j]))) <= 0)
-	   LALappsTSassert(0,
-			   TRACKSEARCHAVERAGERC_EREAD,
-			   TRACKSEARCHAVERAGERC_MSGEREAD);
+	  LALappsTSassert(0,
+			  TRACKSEARCHTOOLBOXC_ERDATA,
+			  TRACKSEARCHTOOLBOXC_EMSGRDATA);
   /*
    * Close the file
    */
@@ -153,7 +151,18 @@ void LALappsTSAWriteMapFile( LALStatus         *status,
   else
     thisFilename=fileNameVec;
 
-  file=creat(thisFilename->data,TSAPERMS);
+  if ((file=creat(thisFilename->data,TSAPERMS)) == -1)
+    {
+      /* A quick pause to see if we can try again to create the file.*/
+      sleep(1);
+      if ((file=creat(thisFilename->data,TSAPERMS)) == -1)
+	{
+	  fprintf(stderr,"Error creating:%s\n",thisFilename->data);
+	  LALappsTSassert(0,
+			  TRACKSEARCHTOOLBOXC_EWRITE,
+			  TRACKSEARCHTOOLBOXC_EMSGWRITE);
+	}
+    }
   /*
    * Always write the field
    * imageCreateParams
@@ -175,16 +184,16 @@ void LALappsTSAWriteMapFile( LALStatus         *status,
       sizeof(tfImage->imageCreateParams)
       )
     LALappsTSassert(0,
-	    TRACKSEARCHAVERAGERC_EWRITE,
-	    TRACKSEARCHAVERAGERC_MSGEWRITE);
+		    TRACKSEARCHTOOLBOXC_EHEAD,
+		    TRACKSEARCHTOOLBOXC_EMSGHEAD);
 
   if ((dataWrite=write(file,
 	    (void*) &(tfImage->clippedWith),
 	    sizeof(tfImage->clippedWith))) != sizeof(tfImage->clippedWith)
       )
     LALappsTSassert(0,
-	    TRACKSEARCHAVERAGERC_EWRITE,
-	    TRACKSEARCHAVERAGERC_MSGEWRITE);
+		    TRACKSEARCHTOOLBOXC_EHEAD,
+		    TRACKSEARCHTOOLBOXC_EMSGHEAD);
 
     if ((dataWrite=write(file,
 	    (void*) &(tfImage->clipperMapStart),
@@ -192,17 +201,16 @@ void LALappsTSAWriteMapFile( LALStatus         *status,
 	sizeof(tfImage->clipperMapStart)
       )
     LALappsTSassert(0,
-	    TRACKSEARCHAVERAGERC_EWRITE,
-	    TRACKSEARCHAVERAGERC_MSGEWRITE);
+		    TRACKSEARCHTOOLBOXC_EHEAD,
+		    TRACKSEARCHTOOLBOXC_EMSGHEAD);
 
   if ((dataWrite=write(file,
 	    (void*) &(tfImage->imageBorders),
 	    sizeof(tfImage->imageBorders))) != sizeof(tfImage->imageBorders)
       )
     LALappsTSassert(0,
-	    TRACKSEARCHAVERAGERC_EWRITE,
-	    TRACKSEARCHAVERAGERC_MSGEWRITE);
-
+		    TRACKSEARCHTOOLBOXC_EHEAD,
+		    TRACKSEARCHTOOLBOXC_EMSGHEAD);
   /*
    * Write the (TimeFreqRep) structure out as atomic variables in order
    */
@@ -212,16 +220,17 @@ void LALappsTSAWriteMapFile( LALStatus         *status,
       sizeof(tfImage->imageRep->type)
       )
     LALappsTSassert(0,
-		    TRACKSEARCHAVERAGERC_EWRITE,
-		    TRACKSEARCHAVERAGERC_MSGEWRITE);
+		    TRACKSEARCHTOOLBOXC_EDATA,
+		    TRACKSEARCHTOOLBOXC_EMSGDATA);
+
   if ((dataWrite=write(file,
 	    (void*) &(tfImage->imageRep->fRow),
 	    sizeof(tfImage->imageRep->fRow))) != 
       sizeof(tfImage->imageRep->fRow)
       )
     LALappsTSassert(0,
-		    TRACKSEARCHAVERAGERC_EWRITE,
-		    TRACKSEARCHAVERAGERC_MSGEWRITE);
+		    TRACKSEARCHTOOLBOXC_EDATA,
+		    TRACKSEARCHTOOLBOXC_EMSGDATA);
 
   if ((dataWrite=write(file,
 	    (void*) &(tfImage->imageRep->tCol),
@@ -229,8 +238,8 @@ void LALappsTSAWriteMapFile( LALStatus         *status,
       sizeof(tfImage->imageRep->tCol)
       )
     LALappsTSassert(0,
-		    TRACKSEARCHAVERAGERC_EWRITE,
-		    TRACKSEARCHAVERAGERC_MSGEWRITE);
+		    TRACKSEARCHTOOLBOXC_EDATA,
+		    TRACKSEARCHTOOLBOXC_EMSGDATA);
 
   for (i=0;i<tfImage->imageRep->fRow/2+1;i++)
       if ((dataWrite=write(file,
@@ -239,8 +248,8 @@ void LALappsTSAWriteMapFile( LALStatus         *status,
 	  sizeof(tfImage->imageRep->freqBin[i])
 	  )
 	LALappsTSassert(0,
-			TRACKSEARCHAVERAGERC_EWRITE,
-			TRACKSEARCHAVERAGERC_MSGEWRITE);
+			TRACKSEARCHTOOLBOXC_EDATA,
+			TRACKSEARCHTOOLBOXC_EMSGDATA);
 
   for (i=0;i<tfImage->imageRep->tCol;i++)
       if ((dataWrite=write(file,
@@ -249,8 +258,8 @@ void LALappsTSAWriteMapFile( LALStatus         *status,
 	  sizeof(tfImage->imageRep->timeInstant[i])
 	  )
 	LALappsTSassert(0,
-			TRACKSEARCHAVERAGERC_EWRITE,
-			TRACKSEARCHAVERAGERC_MSGEWRITE);
+			TRACKSEARCHTOOLBOXC_EDATA,
+			TRACKSEARCHTOOLBOXC_EMSGDATA);
 
   for (i=0;i<tfImage->imageRep->tCol;i++)
     for (j=0;j<tfImage->imageRep->fRow/2+1;j++)
@@ -260,8 +269,8 @@ void LALappsTSAWriteMapFile( LALStatus         *status,
 	    sizeof(tfImage->imageRep->map[i][j])
 	    )
 	  LALappsTSassert(0,
-			  TRACKSEARCHAVERAGERC_EWRITE,
-			  TRACKSEARCHAVERAGERC_MSGEWRITE);
+			  TRACKSEARCHTOOLBOXC_EDATA,
+			  TRACKSEARCHTOOLBOXC_EMSGDATA);
   /*
    * Close the file
    */
@@ -320,23 +329,24 @@ LALappsTSACreateMap(LALStatus                    *status,
    * Error checking
    */
   LALappsTSassert((status != NULL),
-		  TRACKSEARCHAVERAGERC_EARGS,
-		  TRACKSEARCHAVERAGERC_MSGEARGS);
-  LALappsTSassert(((*map) == NULL),
-		  TRACKSEARCHAVERAGERC_ENULL,
-		  TRACKSEARCHAVERAGERC_MSGENULL);
-  LALappsTSassert(((createParams) != NULL),
-		  TRACKSEARCHAVERAGERC_EARGS,
-		  TRACKSEARCHAVERAGERC_MSGEARGS);
+		  TRACKSEARCHTOOLBOXC_EALLOC,
+		  TRACKSEARCHTOOLBOXC_EMSGALLOC);
 
+  LALappsTSassert(((*map) == NULL),
+		  TRACKSEARCHTOOLBOXC_EALLOC,
+		  TRACKSEARCHTOOLBOXC_EMSGALLOC);
+
+  LALappsTSassert(((createParams) != NULL),
+		  TRACKSEARCHTOOLBOXC_EALLOC,
+		  TRACKSEARCHTOOLBOXC_EMSGALLOC);
   /*
    * Allocate the memory for TSAMap variable
    */
   *map = (TSAMap*)LALMalloc(sizeof(TSAMap));
   LALappsTSassert((*map)!=NULL,
-		  TRACKSEARCHAVERAGERC_EMEM,
-		  TRACKSEARCHAVERAGERC_MSGEMEM);
-      
+		  TRACKSEARCHTOOLBOXC_EALLOC,
+		  TRACKSEARCHTOOLBOXC_EMSGALLOC);
+  
 
   /*
    * Set image border field and creation field
@@ -683,9 +693,9 @@ LALappsTSALoadCacheFile(LALStatus    *status,
       {
 	fscanf(inputFilePtr,"%s\n",(*mapCache)->filename[i]->data);
 	LALappsTSassert((inputFilePtr != EOF),
-			TRACKSEARCHAVERAGERC_EREAD,
-			TRACKSEARCHAVERAGERC_MSGEREAD);
-			
+			TRACKSEARCHTOOLBOXC_EALLOC,
+			TRACKSEARCHTOOLBOXC_EMSGALLOC);
+		
 	/*
 	 * Ignore blank lines
 	 */

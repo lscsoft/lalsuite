@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.3
+#!/usr/bin/env python
 
 __author__ = 'Cristina Torres <cristina@phys.utb.edu>'
 __date__ = '$Date$'
@@ -1375,7 +1375,7 @@ def generateFileList(inputTXT):
         fileList=[]
         fileList=os.listdir(dirnameFilename)
         for entry in fileList:
-            if (str(entry).__contains__(extensionFilename)):
+            if (str(entry).lstrip().rstrip().endswith(extensionFilename.lstrip().rstrip())):
                 objList.append(dirnameFilename+'/'+entry)
     elif os.path.isfile(dirnameFilename):
             #Read this list in from the file

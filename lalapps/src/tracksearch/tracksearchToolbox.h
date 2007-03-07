@@ -18,9 +18,22 @@ $ID: tracksearch.h,v 1.0 2004/04/14 02:00:00 cristina Exp $
  */
 #define TRACKSEARCHTOOLBOXC_ENORM                          0
 #define TRACKSEARCHTOOLBOXC_EFAIL                          1
+#define TRACKSEARCHTOOLBOXC_EHEAD                          4
+#define TRACKSEARCHTOOLBOXC_EDATA                          8
+#define TRACKSEARCHTOOLBOXC_ERHEAD                         16
+#define TRACKSEARCHTOOLBOXC_ERDATA                         32
+#define TRACKSEARCHTOOLBOXC_EALLOC                          2
+#define TRACKSEARCHTOOLBOXC_EWRITE                         64
+
 
 #define  TRACKSEARCHTOOLBOXC_EMSGNORM            "TSToolbox Normal Exit"
 #define  TRACKSEARCHTOOLBOXC_EMSGFAIL            "TSToolbox Subroutine Fail"
+#define  TRACKSEARCHTOOLBOXC_EMSGHEAD            "TSToolbox Error writing candidate file header."
+#define  TRACKSEARCHTOOLBOXC_EMSGDATA            "TSToolbox Error writing candidate file data."
+#define  TRACKSEARCHTOOLBOXC_EMSGRHEAD           "TSToolbox Error reading candidate file header."
+#define  TRACKSEARCHTOOLBOXC_EMSGRDATA           "TSToolbox Error reading candidate file data."
+#define  TRACKSEARCHTOOLBOXC_EMSGALLOC           "TSToolbox Memory allocation problem."
+#define  TRACKSEARCHTOOLBOXC_EMSGWRITE           "TSToolbox Error creating file for writing."
 
 /*
  * Misc functions for lalapps tracksearch related software

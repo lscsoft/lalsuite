@@ -286,7 +286,7 @@ else:
     mapListing=[]
     fileList=os.listdir(filename)
     for entry in fileList:
-        if ((str(entry).__contains__(':.dat')) and not (str(entry).__contains__('cache'))):
+        if ((str(entry).__contains__(':.dat')) and not ((str(entry).__contains__('cache')) or str(entry).__contains__('DumpMap'))):
             mapListing.append(entry)
 
 print 'Starting to setup map caches at time '+str(startTime)

@@ -2717,10 +2717,18 @@ void LALappsCreateInjectableData(LALStatus           *status,
    * Count the lines in the file
    */
   while ((c = fgetc(fp)) != EOF)
-    if (c == '\n')
-      lineCount++;
-  /*printf("Lines found in input wave file: %i\n",lineCount);*/
-  rewind(fp);
+    {
+      if (c == '\n')
+	lineCount++;
+    }
+
+  if (!(lineCount > 0))
+    {
+      fprintf(stderr,TRACKSEARCHC_MSGEREAD);
+      exit(TRACKSEARCHC_EREAD);
+    }
+ 
+  fclose(fp);
   /*
    * Allocate RAM to load up values
    */
@@ -2729,11 +2737,23 @@ void LALappsCreateInjectableData(LALStatus           *status,
   /*
    * Expecting 2C data tstep and amp
    */
+  /* Reopen file to read in contents! */
+  fp = fopen(params.injectTxtFile->data,"r");
+  if (!fp)
+    {
+      fprintf(stderr,TRACKSEARCHC_MSGEFILE);
+      exit(TRACKSEARCHC_EFILE);
+    }
   for (i=0;i<lineCount;i++)
     {
-      fscanf(fp,"%f %f\n",&domain->data[i],&range->data[i]);
+      if ((fscanf(fp,"%f %f \n",&domain->data[i],&range->data[i])) == EOF)
+	{
+	  fprintf(stderr,TRACKSEARCHC_MSGEREAD);
+	  exit(TRACKSEARCHC_EREAD);
+	}
       range->data[i]=(range->data[i]*params.scaleFactor);
     }
+  fclose(fp);
   fileDuration=domain->data[domain->length-1]-domain->data[0];
   newLineCount=params.sampleRate*fileDuration;
   offSetPoints=params.sampleRate*params.startTimeOffset;
@@ -2749,6 +2769,7 @@ void LALappsCreateInjectableData(LALStatus           *status,
   /*
    * Call interpolating routine to create resample waveform
    */
+
   LAL_CALL(LALSVectorPolynomialInterpolation(status,
 					     waveDomain,
 					     waveRange,
@@ -2758,6 +2779,9 @@ void LALappsCreateInjectableData(LALStatus           *status,
 
   pointLength=(params.numOfInjects*
     (waveDomain->length+timePoints))+offSetPoints;
+  LALappsTSassert((pointLength>0),
+		  TRACKSEARCHC_EARGS,
+		  TRACKSEARCHC_MSGEARGS);
   LAL_CALL(
 	   LALCreateREAL4TimeSeries(status,
 				    injectSet,
