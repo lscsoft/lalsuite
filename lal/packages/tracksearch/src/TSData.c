@@ -763,7 +763,7 @@ LALSVectorPolynomialInterpolation(
 	    }
 	  if ((topElement-bottomElement) == 1) cut=0;
 	}
-      if (currentElement < 1) currentElement=2;
+      if (currentElement < 2) currentElement=2;
       if ((domain->length - currentElement) < 2)
 	currentElement=domain->length - 2;
       for (j=0,k=currentElement-2;k<currentElement+3;k++,j++)
