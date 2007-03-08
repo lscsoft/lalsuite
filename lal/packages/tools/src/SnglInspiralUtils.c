@@ -439,6 +439,31 @@ LALCompareSnglInspiralByTime (
   }
 }
 
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+int
+LALCompareSnglInspiralByID (
+    const void *a,
+    const void *b
+    )
+/* </lalVerbatim> */
+{
+  const SnglInspiralTable *aPtr = *((const SnglInspiralTable * const *)a);
+  const SnglInspiralTable *bPtr = *((const SnglInspiralTable * const *)b);
+
+  if ( aPtr->event_id->id > bPtr->event_id->id )
+  {
+    return 1;
+  }
+  else if ( aPtr->event_id->id < bPtr->event_id->id )
+  {
+    return -1;
+  }
+  else
+  {
+    return 0;
+  }
+}
+
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
 void
