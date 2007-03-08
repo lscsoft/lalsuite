@@ -962,85 +962,75 @@ XLALRecreateCoincFromSngls(
     return( 0 );
   }
 
+  /* sort single inspiral trigger list according to event_id */
+  snglInspiral=XLALSortSnglInspiral( snglInspiral, LALCompareSnglInspiralByID);
+
   /* loop over the linked list of sngl inspirals */
   for( thisSngl = snglInspiral; thisSngl; thisSngl = thisSngl->next )
   {
     ifoNumber = XLALIFONumber( thisSngl->ifo );
-    thisCoinc = coincHead;
-    while ( thisCoinc )
+    if ( thisSngl->event_id->id == eventId )
     {
-      /* loop over the interferometers to get the event_id*/
-      for ( ifoInCoinc = 0; ifoInCoinc < LAL_NUM_IFO; ifoInCoinc++)
+      /* thisSngl is part of the coinc, so add it */
+      if ( thisCoinc->snglInspiral[ifoNumber] )
       {
-        if ( thisCoinc->snglInspiral[ifoInCoinc] )
+	/* already have an event for this ifo */
+	XLALPrintError(
+		"Already have a single from this ifo with event id %lld",
+		eventId);
+	/* free memory */
+	while ( coincHead )
         {
-          eventId = thisCoinc->snglInspiral[ifoInCoinc]->event_id->id;
-          break;
+	  thisCoinc = coincHead;
+	  coincHead = coincHead->next;
+	  LALFree(thisCoinc);
         }
+	XLAL_ERROR(func, XLAL_EDATA);
       }
-      
-      if ( thisSngl->event_id->id == eventId )
+      else
       {
-        /* thisSngl is part of the coinc, so add it */
-        if ( thisCoinc->snglInspiral[ifoNumber] )
-        {
-          /* already have an event for this ifo */
-          XLALPrintError(
-              "Already have a single from this ifo with event id %lld",
-              eventId);
-          /* free memory */
-          while ( coincHead )
-          {
-            thisCoinc = coincHead;
-            coincHead = coincHead->next;
-            LALFree(thisCoinc);
-          }
-          XLAL_ERROR(func, XLAL_EDATA);
-        }
-        else
-        {
-          thisCoinc->snglInspiral[ifoNumber] = thisSngl;
-          thisCoinc->numIfos += 1;
-          thisSngl->event_id->coincInspiralTable = thisCoinc;
-          break;
-        }
+	thisCoinc->snglInspiral[ifoNumber] = thisSngl;
+	thisCoinc->numIfos += 1;
+	thisSngl->event_id->coincInspiralTable = thisCoinc;
       }
-
-      /* proceed to the next coinc */
-      prevCoinc = thisCoinc;
-      thisCoinc = thisCoinc->next;
     }
-
-    if ( thisSngl->event_id->id != eventId )
+    else
     {
       /* need to start a new coinc */
       if ( coincHead )
       {
-        thisCoinc = prevCoinc->next = 
-          LALCalloc( 1, sizeof(CoincInspiralTable) );
+	prevCoinc=thisCoinc;
+	thisCoinc->next =
+	  LALCalloc( 1, sizeof(CoincInspiralTable) );
+	thisCoinc = thisCoinc->next;
       }
       else
       {
-        thisCoinc = coincHead = LALCalloc( 1, sizeof(CoincInspiralTable) );
+	thisCoinc = coincHead = LALCalloc( 1, sizeof(CoincInspiralTable) );
       }
+      
       if ( !thisCoinc )
       {
-        /* out of memory: free memory + exit*/
-        while ( coincHead )
+	/* out of memory: free memory + exit*/
+	while ( coincHead )
         {
-          thisCoinc = coincHead;
-          coincHead = coincHead->next;
-          LALFree( thisCoinc );
-        }
-        XLAL_ERROR(func,XLAL_ENOMEM);
+	  thisCoinc = coincHead;
+	  coincHead = coincHead->next;
+	  LALFree( thisCoinc );
+	}
+	XLAL_ERROR(func,XLAL_ENOMEM);
       }
-
+      
       thisCoinc->snglInspiral[ifoNumber] = thisSngl;
       thisCoinc->numIfos = 1;
       thisSngl->event_id->coincInspiralTable = thisCoinc;
       numCoincs +=1;
+
+      eventId=thisSngl->event_id->id;
     }
   }
+
+  
   /* discard any coincs which are from a single ifo */
   thisCoinc = coincHead; 
   coincHead = NULL;
@@ -1074,7 +1064,7 @@ XLALRecreateCoincFromSngls(
   }
 
   *coincPtr = coincHead;
-        
+               
   return( numCoincs );
 }
 
