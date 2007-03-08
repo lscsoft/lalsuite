@@ -24,7 +24,6 @@ None
 #include <lal/LALConstants.h>
 #include <lal/Calibration.h>
 
-
 NRCSID( UPDATEFACTORSC, "$Id$" );
 RCSID("$Id$");
 
