@@ -24,7 +24,11 @@ NRCSID(HSBOINCEXTRASHRCSID,"$Id$");
 #endif
 
 #if (HS_CHECKPOINTING)
-#define GET_CHECKPOINT init_and_read_checkpoint
+#define GET_CHECKPOINT(toplist,total,count,outputname,cptname)\
+ if(init_and_read_checkpoint(toplist,total,count,outputname,cptname) < 0) {\
+    fprintf(stderr,HIERARCHICALSEARCH_MSGCHECKPT);\
+    return(HIERARCHICALSEARCH_ECHECKPT);\
+  }
 #define SET_CHECKPOINT set_checkpoint()
 #define INSERT_INTO_FSTAT_TOPLIST add_checkpoint_candidate
 
@@ -55,8 +59,14 @@ extern void show_progress(double rac, double dec, UINT4 count, UINT4 total);
    The variables are modified only if a previous checkpoint was found.
    If *cptname (name of the checkpoint file) is NULL,
    the name is constructed by appending ".cpt" to the output filename.
-   The FILE* should be the one that checpointed_fopen() above has returned. */
-extern void init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
+   The FILE* should be the one that checpointed_fopen() above has returned.
+
+   The function returns
+     0 if no checkpoint could be found,
+    -1 if a checkpoint was found but it or the previous output couldn't be read,
+     1 otherwise (a checkpoint was found and previous output could be read)
+*/
+extern int init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
 				     UINT4 total, char*outputname, char*cptname);
 
 /* This corresponds to insert_into_fstat_toplist().

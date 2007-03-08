@@ -3,7 +3,6 @@
 */
 
 /* TODO:
-   - error handling in checkpointing
    - catch malloc errors in worker()
    - behavior when boinc_is_standlone()?
    - check for critical sections
@@ -586,16 +585,18 @@ static void worker (void) {
   } /* for all command line arguments */
 
 
-
   /* sanity check */
   if (!resultfile) {
       LogPrintf (LOG_CRITICAL, "ERROR: no result file has been specified\n");
       res = HIERARCHICALSEARCH_EFILE;
   }
 
-  /* debug */
+  /* debug: dump the modified command line */
+  fprintf(stderr,"command line:");
   for(i=0;i<rargc;i++)
-    LogPrintf (LOG_DETAIL, "DETAIL: command-line argument %d: %s\n", i,rargv[i]);
+    fprintf(stderr," %s",rargv[i]);
+  fprintf(stderr,"\n");
+  
 
   /* if there already was an error, there is no use in continuing */
   if (res) {
@@ -606,7 +607,6 @@ static void worker (void) {
 
   /* CALL WORKER's MAIN()
    */
-
   res = MAIN(rargc,rargv);
   if (res) {
     LogPrintf (LOG_CRITICAL, "ERROR: MAIN() returned with error '%d'\n",res);
@@ -621,12 +621,12 @@ static void worker (void) {
     boinc_finish(0);
   }
 
-  /* we'll still try to zip and send back what's left from an output file for diagnostics */
-  /* in case of an error before any output was written the result will contain the link file */
-
 
   /* HANDLE OUTPUT FILES
    */
+
+  /* we'll still try to zip and send back what's left from an output file for diagnostics */
+  /* in case of an error before any output was written the result will contain the link file */
   if(noutfiles == 0)
     LogPrintf (LOG_CRITICAL, "ERROR: no output file has been specified\n");
 /* critical> */
@@ -817,7 +817,7 @@ int main(int argc, char**argv) {
 /* CHECKPOINTING FUNCTIONS */
 
 /* inits checkpointing and read a checkpoint if already there */
-void init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
+int init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
 			      UINT4 total, char*outputname, char*cptname) {
   FILE*fp;
   unsigned int  checksum, bytes;
@@ -844,8 +844,8 @@ void init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
   fp = fopen(cptfilename,"r");
   
   if (!fp) {
-    LogPrintf (LOG_DEBUG,  "Couldn't open checkpoint - startng over\n");
-    return;
+    LogPrintf (LOG_DEBUG,  "Couldn't open checkpoint - starting from beginning\n");
+    return(0);
   }
 
   LogPrintf (LOG_DEBUG,  "Found checkpoint - reading...\n");
@@ -858,28 +858,30 @@ void init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
   fclose(fp);
 
   if (scanned != 6) {
-    LogPrintf (LOG_DEBUG,  "Error reading checkpoint - startng over\n");
+    LogPrintf (LOG_DEBUG,  "ERROR reading checkpoint\n");
     remove(cptfilename);
-    return;
+    return(-1);
   }
 
   if (total_read != total) {
-    LogPrintf (LOG_DEBUG,  "Error reading checkpoint - startng over\n");
+    LogPrintf (LOG_DEBUG,  "ERROR reading checkpoint\n");
     remove(cptfilename);
-    return;
+    return(-1);
   }
 
   LogPrintf (LOG_DEBUG,  "Read checkpoint - reading previous output...\n");
 
   if (fstat_cpt_file_read (cptf, checksum, bytes) != 0) {
-    LogPrintf (LOG_DEBUG,  "Error reading previous output - startng over\n");
-    return;
+    LogPrintf (LOG_DEBUG,  "ERROR reading previous output\n");
+    return(-1);
   }
 
   /* make sure the point of next writing is where we stopped reding */
   fseek(cptf->fp,cptf->bytes,SEEK_SET);
 
   *count = count_read;
+
+  return(1);
 }
 
 
