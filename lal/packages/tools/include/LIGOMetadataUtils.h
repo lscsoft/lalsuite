@@ -548,6 +548,12 @@ LALCompareSnglInspiralByTime (
     const void *b
     );
 
+int
+LALCompareSnglInspiralByID (
+     const void *a,
+     const void *b
+     );
+
 void
 LALCompareSnglInspiral (
     LALStatus                *status,
