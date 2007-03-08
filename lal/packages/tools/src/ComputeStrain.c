@@ -49,6 +49,7 @@ None
 #define fhigh_FIRHP 0.00244140625
 
 NRCSID( COMPUTESTRAINC, "$Id$" );
+RCSID("$Id$");
 
 void LALComputeStrain(
     LALStatus              *status,
