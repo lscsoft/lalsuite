@@ -48,6 +48,7 @@ None
 #define N_FIR_HP 2000
 #define fhigh_FIRHP 0.00244140625
 
+
 NRCSID( COMPUTESTRAINC, "$Id$" );
 RCSID("$Id$");
 
