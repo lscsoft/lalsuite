@@ -20,10 +20,13 @@ None
 
 #include <math.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALStdio.h>
 #include <lal/LALConstants.h>
 #include <lal/Calibration.h>
 
+
 NRCSID( UPDATEFACTORSC, "$Id$" );
+RCSID("$Id$");
 
 static COMPLEX16 *cmul( COMPLEX16 *pc, COMPLEX16 *pa, COMPLEX16 *pb )
 {
