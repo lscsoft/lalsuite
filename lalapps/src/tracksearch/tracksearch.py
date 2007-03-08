@@ -339,7 +339,7 @@ class tracksearchTimeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         channelName=string.strip(cp.get('tracksearchtime','channel_name'))
         self.set_stdout_file(os.path.normpath(blockPath+'/logs/tracksearchTime-'+channelName+'-$(macrogpsstartseconds)_$(cluster)_$(process).out'))
         self.set_stderr_file(os.path.normpath(blockPath+'/logs/tracksearchTime-'+channelName+'-$(macrogpsstartseconds)_$(cluster)_$(process).err'))
-        self.set_sub_file(self.dagDirectory+'tracksearchTime.sub')
+        self.set_sub_file(os.path.normpath(self.dagDirectory+'/tracksearchTime.sub'))
     #End init
 #End Class
 
@@ -374,7 +374,7 @@ class tracksearchMapJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         #Set log
         self.set_stdout_file(os.path.normpath(blockPath+'/logs/tracksearchMap-$(cluster)-$(process).out'))
         self.set_stderr_file(os.path.normpath(blockPath+'/logs/tracksearchMap-$(cluster)-$(process).err'))
-        self.set_sub_file(self.dagDirectory+'tracksearchMap.sub')
+        self.set_sub_file(os.path.normpath(self.dagDirectory+'/tracksearchMap.sub'))
     #End init
 #End Class
 
@@ -412,7 +412,7 @@ class tracksearchAveragerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         #Set log
         self.set_stdout_file(os.path.normpath(blockPath+'/logs/tracksearchAverager-$(cluster)-$(process).out'))
         self.set_stderr_file(os.path.normpath(blockPath+'/logs/tracksearchAverager-$(cluster)-$(process).err'))
-        self.set_sub_file(self.dagDirectory+'tracksearchAverager.sub')
+        self.set_sub_file(os.path.normpath(self.dagDirectory+'/tracksearchAverager.sub'))
     #End init
 #End Class
 
@@ -478,7 +478,7 @@ class tracksearchMapCacheBuildJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         #Set log
         self.set_stdout_file(os.path.normpath(blockPath+'/logs/tracksearchCacheBuild-$(cluster)-$(process).out'))
         self.set_stderr_file(os.path.normpath(blockPath+'/logs/tracksearchCacheBuild-$(cluster)-$(process).err'))
-        self.set_sub_file(self.dagDirectory+'tracksearchCacheBuild.sub')
+        self.set_sub_file(os.path.normpath(self.dagDirectory+'/tracksearchCacheBuild.sub'))
     #End init
 
     def getJobTSAList(self):
@@ -533,7 +533,7 @@ class tracksearchDataFindJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         pad = 0
         length=int(cp.get('layerconfig','layer1TimeScale'))
         overlap=0
-        self.df_job.set_sub_file(self.dagDirectory+'datafind.sub')
+        self.df_job.set_sub_file(os.path.normpath(self.dagDirectory+'/datafind.sub'))
         self.df_job.add_condor_cmd('initialdir',determineLayerPath())
     #End init
 #End Class
@@ -561,7 +561,7 @@ class tracksearchClusterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         buildDir(blockPath+'/logs')
         self.set_stdout_file(os.path.normpath(blockPath+'/logs/tracksearchCluster-$(cluster)-$(process).out'))
         self.set_stderr_file(os.path.normpath(blockPath+'/logs/tracksearchCluster-$(cluster)-$(process).err'))
-        self.set_sub_file(self.dagDirectory+'tracksearchCluster.sub')
+        self.set_sub_file(os.path.normpath(self.dagDirectory+'/tracksearchCluster.sub'))
         #Load in the cluster configuration sections!
         #Add the candidateUtils.py equivalent library to dag for proper
         #execution!
@@ -597,7 +597,7 @@ class tracksearchThresholdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         buildDir(blockPath+'/logs')
         self.set_stdout_file(os.path.normpath(blockPath+'/logs/tracksearchThreshold-$(cluster)-$(process).out'))
         self.set_stderr_file(os.path.normpath(blockPath+'/logs/tracksearchThreshold-$(cluster)-$(process).err'))
-        self.set_sub_file(self.dagDirectory+'tracksearchThreshold.sub')
+        self.set_sub_file(os.path.normpath(self.dagDirectory+'/tracksearchThreshold.sub'))
         #Load in the cluster configuration sections!
         #Add the candidateUtils.py equivalent library to dag for proper
         #execution!
@@ -775,9 +775,17 @@ class tracksearch:
     #End Init
 
     def getDagDirectory(self):
-        #This function should place DAGs in a local partition (nonNFS) future version.
-        #The blockID is just the GPSstart:Duration
-        dagDirectory=str(self.resultPath+'/DAG_files/'+self.blockID+'/')
+        """
+        This function must set the dag directory variable.  It is controlled via the INI file.
+        See the entry [filelayout],dagpath.  Ideally this should be a nonNFS directory.  Condor may flag
+        error and refuse to run the dag otherwise.
+        """
+        try:
+            dagDirectory=str(self.cp.get('filelayout','dagpath')+'/'+self.blockID+'/')
+        except:
+            print "Didn't find the dagpath option in [filelayout], defaulting to old behaviour."
+            dagDirectory=str(self.resultPath+'/DAG_files/'+self.blockID+'/')
+        dagDirectory=os.path.normpath(dagDirectory)
         return dagDirectory
     #end def
     
@@ -812,7 +820,7 @@ class tracksearch:
         #Additional HACK due to recent changes in GLUE
         # Remember we edited the GLUE archive to make this work.
         # DOESN'T apply to cluster runs!
-        df_job.set_sub_file(self.dagDirectory+'datafind.sub')
+        df_job.set_sub_file(os.path.normpath(self.dagDirectory+'/datafind.sub'))
         df_job.add_condor_cmd('initialdir',str(dataFindInitialDir))
         prev_df = None
         for chunk in self.sciSeg:
@@ -881,7 +889,7 @@ class tracksearch:
         #Setup the appropriate globbed list clobbering jobs
         tracksearchCluster_job2=tracksearchClusterJob(self.cp,self.blockID,self.dagDirectory)
         tracksearchCluster_job2.add_condor_cmd('initialdir',tracksearchCluster_job2.initialDir)
-        tracksearchCluster_job2.set_sub_file(self.dagDirectory+'tracksearchCluster2.sub')
+        tracksearchCluster_job2.set_sub_file(os.path.normpath(self.dagDirectory+'/tracksearchCluster2.sub'))
         tracksearchCluster_job.add_condor_cmd('initialdir',tracksearchCluster_job.initialDir)
         nextJobList=[]
         for i in range(1,layerID-1):

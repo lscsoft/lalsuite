@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 #
-# Charlie
+# Cristina
 #
 pythonlibdir = ${prefix}/lib/python
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
@@ -20,8 +20,10 @@ lalapps_tfdat2pgm_SOURCES=$(TSUTILSRCS)
 EXTRA_DIST = $(TRACKSEARCHSRCS)
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
+if HAVE_PYTHON
 bin_SCRIPTS = candidateHandler.py tracksearch_pipe.py tuneTSpipe.py 
-pythonlib_SCRIPTS = candidateUtils.py tracksearch.py
-pkgdata_DATA = tracksearchPipeline.ini tracksearchOpts.tun
+pkgpython_DATA = candidateUtils.py tracksearch.py
+endif
 
+pkgdata_DATA = tracksearchPipeline.ini tracksearchOpts.tun
 

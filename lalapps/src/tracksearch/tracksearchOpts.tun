@@ -13,6 +13,7 @@
 masterini=/home/charlie/research.d/src/lalapps/src/tracksearch/tracksearchPipeline_4tun.ini
 tuningHome=/home/charlie/pipeTest/tuneTests
 tuningLogs=/tmp/charlie/Logs_tunePipes/
+tuningDags=/tmp/ctorres/DAGS_tunePips/
 seglist=/home/charlie/pipeTest/segmentsCLIP.txt.revised
 pipeProgram=/home/charlie/research.d/src/lalapps/src/tracksearch/tracksearch_pipe.py
 

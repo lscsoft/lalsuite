@@ -54,6 +54,7 @@ class tuneObject:
         self.installPipes2=self.home+'/DE_pipes'
         self.installIni2=self.home+'/DE_ini'
         self.log=cp.get('all','tuningLogs')
+        self.dagpath=cp.get('all','tuningDags')
         self.seglist=cp.get('all','seglist')
         self.mySigmaFA=float(cp.get('false-alarm-calculate','FAR'))
         self.FApipeNames=[]
@@ -165,15 +166,9 @@ class tuneObject:
         Scans all subdirectories to root2dag for dags to create a master dag file for tuning execution.
         This module uses the shell and find utilities to locate all dags for inclusion.
         """
-#        cmdString='find '+root2dags+'/* | grep ".dag"'
-#        errs=commands.getstatusoutput(cmdString)
- #       if errs[0] != 0:
-  #          print "There was an error finding the individual dag submit files for each pipe!"
-  #          print errs[1]
-  #          print " "
-  #      fileList=errs[1].split('\n')
         fileList=self.__findFiles__(root2dags,['.dag'])
         print "The master DAG will have ",fileList.__len__()," nodes/subdags."
+        print "You should find the master dag contained in:",root2dags
         print "Preparing the master dag may take awhile."
         for dagEntry in fileList:
             cmdString2='condor_submit_dag -no_submit '+dagEntry
@@ -320,8 +315,8 @@ class tuneObject:
         print " "
         print "Ok. Finished"
         #Search the workspace to construct a huge parent DAG for submitting all the DAGs
-        root2dags=self.installPipes
-        dagFilename=self.home+'/FA_Tuning.dag'
+        root2dags=os.path.normpath(self.dagpath)
+        dagFilename=os.path.normpath(self.dagpath+'/FA/FA_tuning.dag')
         self.__buildDAGfrom__(dagFilename,root2dags)
     #end performFAsetup method
 
@@ -334,8 +329,9 @@ class tuneObject:
         newCP=copy.deepcopy(self.cpIni)
         # New/Rewritten ini options
         uniqStr='FA_'+str(LH)+'_'+str(LL)+'_'
-        newCP.set('filelayout','workpath',self.installPipes+'/'+uniqStr)
-        newCP.set('filelayout','logpath',self.log+uniqStr)
+        newCP.set('filelayout','workpath',os.path.normpath(self.installPipes+'/'+uniqStr))
+        newCP.set('filelayout','logpath',os.path.normpath(self.log+'/'+uniqStr))
+        newCP.set('filelayout','dagpath',os.path.normpath(self.dagpath+'/FA/'+uniqStr))
         newCP.set('tracksearchbase','start_threshold',LH)
         newCP.set('tracksearchbase','member_threshold',LL)
         # If injection section present strip it out!
@@ -522,8 +518,8 @@ class tuneObject:
             #True states use the ini file to set injection into the pipeline.
             self.createPipe(pipeIniName,True)
         #Search the workspace to construct a huge parent DAG for submitting all the DAGs
-        root2dags=self.installPipes2
-        dagFilename=self.home+'/DE_Tuning.dag'
+        root2dags=os.path.normpath(self.dagpath)
+        dagFilename=os.path.normpath(self.dagpath+'/DE/DE_tuning.dag')
         self.__buildDAGfrom__(dagFilename,root2dags)
     #End performDEsetup
 
@@ -538,6 +534,7 @@ class tuneObject:
         uniqStr='DE_'+str(LH)+'_'+str(LL)+'_'+str(P)+'_'+str(L)+'_'
         newCP.set('filelayout','workpath',self.installPipes2+'/'+uniqStr)
         newCP.set('filelayout','logpath',self.log+uniqStr)
+        newCP.set('filelayout','dagpath',os.path.normpath(self.dagpath+'/DE/'+uniqStr))
         newCP.set('tracksearchbase','start_threshold',LH)
         newCP.set('tracksearchbase','member_threshold',LL)
         newCP.set('tracksearchbase','length_threshold',L)
@@ -562,6 +559,7 @@ class tuneObject:
         uniqStr='DE_'+str(LH)+'_'+str(LL)+'_'+str(P)+'_'+str(L)+'_'
         newCP.set('filelayout','workpath',self.installPipes2+'/'+uniqStr)
         newCP.set('filelayout','logpath',self.log+uniqStr)
+        newCP.set('filelayout','dagpath',os.path.normpath(self.dagpath+'/DE/'+uniqStr))
         newCP.set('tracksearchbase','start_threshold',LH)
         newCP.set('tracksearchbase','member_threshold',LL)
         #We adjust the options associated with the python post processing routines.
