@@ -123,6 +123,7 @@ int main(int argc, char *argv[]){
   UINT4 numsft;
 
   INT4 k,j;
+  FILE *fp=NULL;
 
   /* information about all the ifos */
   MultiDetectorStateSeries *mdetStates = NULL;
@@ -145,7 +146,7 @@ int main(int argc, char *argv[]){
   REAL8  numberCount;
 
   /* Chi2Test parameters */
-  static HoughParamsTest chi2Params;
+  HoughParamsTest chi2Params;
   REAL8Vector numberCountV;  /* Vector with the number count of each block inside */
   REAL8  numberCountTotal;   /* Sum over all the numberCounts */
   REAL8  chi2;
@@ -279,10 +280,10 @@ int main(int argc, char *argv[]){
 
   /***** start main calculations *****/
 
-  
-  chi2Params.numberSFTp = (UINT4 *)LALCalloc( uvar_p , sizeof(UINT4));
-  chi2Params.sumWeight = (REAL8 *)LALCalloc( uvar_p , sizeof(REAL8));
-  chi2Params.sumWeightSquare = (REAL8 *)LALCalloc( uvar_p , sizeof(REAL8));
+  chi2Params.length=uvar_p;
+  chi2Params.numberSFTp = (UINT4 *)LALMalloc( uvar_p*sizeof(UINT4));
+  chi2Params.sumWeight = (REAL8 *)LALMalloc( uvar_p*sizeof(REAL8));
+  chi2Params.sumWeightSquare = (REAL8 *)LALMalloc( uvar_p*sizeof(REAL8));
 
 
   /* read sft Files and set up weights */
@@ -636,13 +637,14 @@ int main(int argc, char *argv[]){
    }
 
 
-  {
-    FILE *fp=NULL;
-    fp = fopen("./tempout", "w");
+  
+   
+    fp = fopen(uvar_outfile , "w");
+    setvbuf(fp, (char *)NULL, _IOLBF, 0);
     fprintf(fp, "%g  %g  %g  %g \n", (numberCountTotal - meanN)/sigmaN, meanN ,sigmaN, chi2);
     fprintf(stdout, "%g  %g  %g  %g \n", (numberCountTotal - meanN)/sigmaN, meanN ,sigmaN, chi2);
     fclose(fp);
-  }
+  
 
 
   /* free memory */
@@ -660,14 +662,15 @@ int main(int argc, char *argv[]){
   LALFree(edat->ephemS);
   LALFree(edat);
 
-  LALFree(chi2Params.numberSFTp);
-  LALFree(chi2Params.sumWeight);
-  LALFree(chi2Params.sumWeightSquare);
-  LALFree(numberCountV.data);
-
   LAL_CALL (LALDestroyMultiSFTVector(&status, &inputSFTs), &status );
   LALFree(pg1.data);
   
+  LALFree(numberCountV.data);
+
+  LALFree(chi2Params.numberSFTp);
+  LALFree(chi2Params.sumWeight);
+  LALFree(chi2Params.sumWeightSquare);
+
   LAL_CALL (LALDestroyUserVars(&status), &status);
 
   LALCheckMemoryLeaks();
