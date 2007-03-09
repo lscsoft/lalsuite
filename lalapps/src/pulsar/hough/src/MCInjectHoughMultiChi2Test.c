@@ -170,6 +170,8 @@ int main(int argc, char *argv[]){
  
   INT4 MCloopId;
   INT4 h0loop;
+
+  INT4 k , j ;
   
   FILE  *fpPar = NULL;
   FILE  *fpH0 = NULL;
@@ -178,7 +180,7 @@ int main(int argc, char *argv[]){
 
  /* Chi2Test parameters */
   HoughParamsTest chi2Params;
-  REAL8Vector numberCountV;  /* Vector with the number count of each block inside */
+  REAL8Vector numberCountVec;  /* Vector with the number count of each block inside */
   REAL8  numberCountTotal;   /* Sum over all the numberCounts */
   REAL8  chi2;
 
@@ -1020,15 +1022,14 @@ int main(int argc, char *argv[]){
       }
       
       /* memory for number Count Vector */
-      numberCountV.length = uvar_p;
-      numberCountV.data = NULL;
-      numberCountV.data = (REAL8 *)LALMalloc( uvar_p*sizeof(REAL8));
+      numberCountVec.length = uvar_p;
+      numberCountVec.data = NULL;
+      numberCountVec.data = (REAL8 *)LALMalloc( uvar_p*sizeof(REAL8));
 
       /* block for calculating peakgram and number count */  
       {
        UINT4 iIFO, iSFT, ii, numberSFTp;
        INT4 index;
-       REAL8 sumWeightSquare;
        SFTtype  *sft;
 
        LAL_CALL(SplitSFTs(&status, &weightsV, &chi2Params), &status);
@@ -1074,7 +1075,7 @@ int main(int argc, char *argv[]){
 
 	     } /* loop over SFTs */
        
-	     numberCountV.data[k]=numberCount;
+	     numberCountVec.data[k]=numberCount;
        	  
 	 } /* loop over blocks */	
 
@@ -1106,14 +1107,14 @@ int main(int argc, char *argv[]){
       chi2=0;
  
       for(k=0; k<uvar_p ; k++){
-	  numberCountTotal += numberCountV.data[k];
+	  numberCountTotal += numberCountVec.data[k];
       }
       
       eta=numberCountTotal/mObsCoh;
       
       for(j=0 ; j<(uvar_p) ; j++){
 	  
-	  nj=numberCountV.data[j];
+	  nj=numberCountVec.data[j];
 	  sumWeightj=chi2Params.sumWeight[j];
 	  sumWeightSquarej=chi2Params.sumWeightSquare[j];
 	  
@@ -1124,7 +1125,8 @@ int main(int argc, char *argv[]){
       /******************************************************************/
       /* printing the significance and Chi2Test in the proper file */
       /******************************************************************/
-      fp = fopen(./outChi2Test , "w");
+      FILE *fp=NULL;
+      fp = fopen("./outChi2Test" , "w");
       setvbuf(fp, (char *)NULL, _IOLBF, 0);
       fprintf(fp, "%g  %g  %g  %g \n", (numberCountTotal - meanN)/sigmaN, meanN ,sigmaN, chi2);
       fprintf(stdout, "%g  %g  %g  %g \n", (numberCountTotal - meanN)/sigmaN, meanN ,sigmaN, chi2);
