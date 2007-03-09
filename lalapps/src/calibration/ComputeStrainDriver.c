@@ -25,6 +25,18 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <errno.h>
 #include <getopt.h>
 #include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <regex.h>
+#include <pwd.h>
+#include <unistd.h>
+#include <time.h>
+#include <lalapps.h>
 
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
@@ -42,6 +54,10 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/AVFactories.h>
 #include <lal/ConfigFile.h>
 #include <lal/TimeSeries.h>
+#include <lal/LALVersion.h>
+#include <lal/LALFrameIO.h>
+#include <lal/LALDetectors.h>
+#include <lal/Date.h>
 #include <lalapps.h>
 
 extern char *optarg;
@@ -51,6 +67,7 @@ extern int optind, opterr, optopt;
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
 
 RCSID("$Id$");
+NRCSID(COMPUTESTRAINDRIVERC, "$Id$");
 
 #define CVS_ID "$Id$"
 #define CVS_HEADER "$Header$"
@@ -92,11 +109,9 @@ struct CommandLineArgsTag {
   char *checkfilename;
 } CommandLineArgs;
 
-
 /***************************************************************************/
 
 /* GLOBAL VARIABLES */
-
 
 StrainIn InputData;
 StrainOut OutputData;
@@ -111,6 +126,9 @@ char ifo[2];
 char site[1];
 
 /***************************************************************************/
+/* to avoid a warning */
+int gethostname(char *name, size_t len);
+
 
 /* FUNCTION PROTOTYPES */
 /* Reads the command line */
@@ -122,15 +140,16 @@ int ReadData(struct CommandLineArgsTag CLA);
 /* Reads the filters file */
 int ReadFiltersFile(struct CommandLineArgsTag CLA);
 
+/* Writes frame file */
+int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA);
+
 /* Frees the memory */
 int FreeMem(void);                                        
-
 
 /************************************* MAIN PROGRAM *************************************/
 
 int main(int argc,char *argv[])
 {
-  FrOutPar opar;
 
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
 
@@ -143,50 +162,15 @@ int main(int argc,char *argv[])
     }
 
   if (ReadData(CommandLineArgs)) return 2;
+
   if (ReadFiltersFile(CommandLineArgs)) return 3;
   
   LALComputeStrain(&status, &OutputData, &InputData);
   TESTSTATUS( &status );
 
-  LALResizeREAL8TimeSeries(&status, &(OutputData.hR), (int)(InputData.wings/OutputData.hR.deltaT),
-			   OutputData.hR.data->length-2*(UINT4)(InputData.wings/OutputData.hR.deltaT));
-  TESTSTATUS( &status );
-  LALResizeREAL8TimeSeries(&status, &(OutputData.hC), (int)(InputData.wings/OutputData.hC.deltaT),
-			   OutputData.hC.data->length-2*(UINT4)(InputData.wings/OutputData.hC.deltaT));
-  TESTSTATUS( &status );
-  LALResizeREAL8TimeSeries(&status, &(OutputData.h), (int)(InputData.wings/OutputData.h.deltaT),
-			   OutputData.h.data->length-2*(UINT4)(InputData.wings/OutputData.h.deltaT));
-  TESTSTATUS( &status );
-
-  strncpy( OutputData.hR.name, CommandLineArgs.strainchannel, sizeof( OutputData.hR.name ) );
-  strncpy( OutputData.hC.name, CommandLineArgs.strainchannel, sizeof( OutputData.hC.name ) );
-  strncpy( OutputData.h.name,  CommandLineArgs.strainchannel, sizeof( OutputData.h.name  ) );
-
-  opar.source=CommandLineArgs.datadir;
-  opar.description=CommandLineArgs.frametype;
-  opar.type = ProcDataChannel;
-  opar.nframes = 1;
-  opar.frame = 0;
-  opar.run = 4;
-
-  if (CommandLineArgs.testsensing)
-    {
-      LALFrWriteREAL8TimeSeries( &status, &OutputData.hR, &opar );
-      TESTSTATUS( &status );
-    }else if(CommandLineArgs.testactuation){      
-      LALFrWriteREAL8TimeSeries( &status, &OutputData.hC, &opar );
-      TESTSTATUS( &status );
-    }else{
-      LALFrWriteREAL8TimeSeries( &status, &OutputData.h, &opar );
-      TESTSTATUS( &status );
-    }
-
-  if(CommandLineArgs.renamefrom && CommandLineArgs.renameto)
-    {
-      rename(CommandLineArgs.renamefrom,CommandLineArgs.renameto);
-    }
-      
-  if(FreeMem()) return 8;
+  if (WriteFrame(argc,argv,CommandLineArgs)) return 4;
+       
+  if(FreeMem()) return 5;
 
   return 0;
 }
@@ -196,6 +180,116 @@ int main(int argc,char *argv[])
 /*  FUNCTIONS */
 
 /*******************************************************************************/
+int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
+{
+  /* This is mostly ripped off some code Jolien sent me a while back */
+
+  FrFile *frfile;
+  FrameH *frame;
+  char fname[FILENAME_MAX];
+  char tmpfname[FILENAME_MAX];
+  char site;
+  INT4 t0;
+  INT4 dt;
+  int detectorFlags;
+  char hostnamep1[1024];
+  char hostnamep2[1024];
+  char username[1024];
+  char allargs[16384];
+  char lalappsconfargs[16384];
+  char lalconfargs[16384];
+  char headerinfo[16384]; 
+  int i;
+
+  /*re-size h(t) data time series*/
+  LALResizeREAL8TimeSeries(&status, &(OutputData.h), (int)(InputData.wings/OutputData.h.deltaT),
+			   OutputData.h.data->length-2*(UINT4)(InputData.wings/OutputData.h.deltaT));
+  TESTSTATUS( &status );
+  strncpy( OutputData.h.name,  CLA.strainchannel, sizeof( OutputData.h.name  ) );
+
+  /* based on IFO name, choose the correct detector */
+  if ( 0 == strncmp( OutputData.h.name, "H2:", 3 ) )
+    detectorFlags = LAL_LHO_2K_DETECTOR_BIT;
+  else if ( 0 == strncmp( OutputData.h.name, "H1:", 3 ) )
+    detectorFlags = LAL_LHO_4K_DETECTOR_BIT;
+  else if ( 0 == strncmp( OutputData.h.name, "L1:", 3 ) )
+    detectorFlags = LAL_LLO_4K_DETECTOR_BIT;
+  else
+    return 1;  /* Error: not a recognized name */
+  site = OutputData.h.name[0];
+
+  /* based on series metadata, generate standard filename */
+  duration = OutputData.h.deltaT * OutputData.h.data->length;
+  t0 = OutputData.h.epoch.gpsSeconds;
+  dt = ceil( XLALGPSGetREAL8( &OutputData.h.epoch ) + duration ) - t0;
+  if ( t0 < 0 || dt < 1 )
+    return 1;  /* Error: invalid time or duration */
+  LALSnprintf( fname, sizeof( fname ), "%s/%c-%s-%d-%d.gwf", CLA.datadir,site, CLA.frametype, t0, dt );
+  LALSnprintf( tmpfname, sizeof( tmpfname ), "%s.tmp", fname );
+
+  frame = XLALFrameNew( &OutputData.h.epoch , duration, "LIGO", 0, 1, detectorFlags );
+
+  /* Here's where I need to add a bunch of things */
+  /* Add cvs header */
+  LALSnprintf( headerinfo, sizeof( headerinfo), "Code header info: %s",CVS_HEADER);
+  FrHistoryAdd( frame, headerinfo);
+
+  /* Add lalapps info */
+  LALSnprintf( lalappsconfargs, sizeof( lalappsconfargs), "LALApps Info:\nLALApps Version:     %s\nCVS Tag:             %s\nConfigure Date:      %s\nConfigure Arguments: %s", 
+	       LALAPPS_VERSION , LALAPPS_CVS_TAG , LALAPPS_CONFIGURE_DATE , LALAPPS_CONFIGURE_ARGS );
+  FrHistoryAdd( frame, lalappsconfargs);  
+
+  /* Add lal info */
+  LALSnprintf( lalconfargs, sizeof( lalconfargs), "LAL Info:\nLAL Version:     %s\nCVS Tag:             %s\nConfigure Date:      %s\nConfigure Arguments: %s", 
+	       LAL_VERSION , LAL_CVS_TAG , LAL_CONFIGURE_DATE , LAL_CONFIGURE_ARGS );
+  FrHistoryAdd( frame, lalconfargs);  
+
+  /* Create string with all command line arguments and add it to history */
+  strcat(allargs, "Command line run: ");
+  
+  for(i = 0; i < argc; i++)
+    {
+      strcat(allargs,argv[i]);
+      strcat(allargs, " ");
+    }
+  FrHistoryAdd( frame, allargs);
+
+  /* hostname and user */
+/*   strcat(hostnamep1,"Host machine that made this frame: "); */
+/*   gethostname(hostnamep2, 256); */
+/*   strcat(hostnamep1, hostnamep2); */
+/*   FrHistoryAdd( frame, hostnamep1); */
+/*   strcat(username,"User that made this frame: "); */
+/*   strcat(username, getlogin()); */
+/*   FrHistoryAdd( frame, username); */
+
+  /* Frequency range of validity (FIXME: This should be updated regularly somehow) */
+  FrHistoryAdd( frame, "Frequency validity range: 40Hz-5kHz.");
+
+  XLALFrameAddREAL8TimeSeriesProcData( frame, &OutputData.h);
+
+  
+
+  
+  /* write first to tmpfile then rename it */
+  frfile = FrFileONew( tmpfname, 1 ); /* 1 = GZIP */
+  if ( ! frfile )
+    return 1;  /* Error: could not open frame file */
+  
+  FrameWrite( frame, frfile );
+  FrFileOEnd( frfile );
+  FrameFree( frame ); /* this frees proc and vect */
+  
+  /* now rename */
+  if ( rename( tmpfname, fname ) < 0 )
+    return 1; /* Error: system error */
+  
+  return 0;
+
+}
+
+/*******************************************************************************/
+
 
 int ReadData(struct CommandLineArgsTag CLA)
 {
