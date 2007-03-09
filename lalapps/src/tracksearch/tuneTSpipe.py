@@ -315,7 +315,7 @@ class tuneObject:
         print " "
         print "Ok. Finished"
         #Search the workspace to construct a huge parent DAG for submitting all the DAGs
-        root2dags=os.path.normpath(self.dagpath)
+        root2dags=os.path.normpath(self.dagpath+'/FA/')
         dagFilename=os.path.normpath(self.dagpath+'/FA/FA_tuning.dag')
         self.__buildDAGfrom__(dagFilename,root2dags)
     #end performFAsetup method
@@ -429,9 +429,11 @@ class tuneObject:
             myOpts=str(str(entry).replace(self.installPipes,'').split('/')[1]).split('_')
             myLH=myOpts[1]
             myLL=myOpts[2]
-            auxoutData.append([float(myLH),float(myLL),float(meanL),float(stdL),float(meanP),float(stdP),int(curves)])
-            outputData.append([float(myLH),float(myLL),float(threshP),float(threshL)])
-            contourData.append([float(myLH),float(myLL),float(threshP),float(threshL)])
+            #Ignore lines where both Pval and Lval are zero
+            if ((threshP !=0) and (threshL != 0)):
+                auxoutData.append([float(myLH),float(myLL),float(meanL),float(stdL),float(meanP),float(stdP),int(curves)])
+                outputData.append([float(myLH),float(myLL),float(threshP),float(threshL)])
+                contourData.append([float(myLH),float(myLL),float(threshP),float(threshL)])
         print " "
         self.__writeFAfiles__(auxoutData,outputData)
     #End performFAcalc method
@@ -518,7 +520,7 @@ class tuneObject:
             #True states use the ini file to set injection into the pipeline.
             self.createPipe(pipeIniName,True)
         #Search the workspace to construct a huge parent DAG for submitting all the DAGs
-        root2dags=os.path.normpath(self.dagpath)
+        root2dags=os.path.normpath(self.dagpath+'/DE/')
         dagFilename=os.path.normpath(self.dagpath+'/DE/DE_tuning.dag')
         self.__buildDAGfrom__(dagFilename,root2dags)
     #End performDEsetup
