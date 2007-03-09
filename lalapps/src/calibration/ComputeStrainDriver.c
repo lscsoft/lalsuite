@@ -128,6 +128,7 @@ char site[1];
 /***************************************************************************/
 /* to avoid a warning */
 int gethostname(char *name, size_t len);
+int getdomainname(char *name, size_t len);
 
 
 /* FUNCTION PROTOTYPES */
@@ -192,9 +193,9 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   INT4 t0;
   INT4 dt;
   int detectorFlags;
-  char hostnamep1[1024];
-  char hostnamep2[1024];
-  char username[1024];
+  char hostnameanduser[4096];
+  char hostname[1024];
+  char domainname[1024];
   char allargs[16384];
   char lalappsconfargs[16384];
   char lalconfargs[16384];
@@ -235,12 +236,12 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   FrHistoryAdd( frame, headerinfo);
 
   /* Add lalapps info */
-  LALSnprintf( lalappsconfargs, sizeof( lalappsconfargs), "LALApps Info:\nLALApps Version:     %s\nCVS Tag:             %s\nConfigure Date:      %s\nConfigure Arguments: %s", 
+  LALSnprintf( lalappsconfargs, sizeof( lalappsconfargs), "LALApps Info:\n                          LALApps Version: %s\n                          CVS Tag: %s\n                          Configure Date: %s\n                          Configure Arguments: %s", 
 	       LALAPPS_VERSION , LALAPPS_CVS_TAG , LALAPPS_CONFIGURE_DATE , LALAPPS_CONFIGURE_ARGS );
   FrHistoryAdd( frame, lalappsconfargs);  
 
   /* Add lal info */
-  LALSnprintf( lalconfargs, sizeof( lalconfargs), "LAL Info:\nLAL Version:     %s\nCVS Tag:             %s\nConfigure Date:      %s\nConfigure Arguments: %s", 
+  LALSnprintf( lalconfargs, sizeof( lalconfargs), "LAL Info:\n                          LAL Version: %s\n                          CVS Tag: %s\n                          Configure Date: %s\n                          Configure Arguments: %s", 
 	       LAL_VERSION , LAL_CVS_TAG , LAL_CONFIGURE_DATE , LAL_CONFIGURE_ARGS );
   FrHistoryAdd( frame, lalconfargs);  
 
@@ -255,24 +256,21 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   FrHistoryAdd( frame, allargs);
 
   /* hostname and user */
-/*   strcat(hostnamep1,"Host machine that made this frame: "); */
-/*   gethostname(hostnamep2, 256); */
-/*   strcat(hostnamep1, hostnamep2); */
-/*   FrHistoryAdd( frame, hostnamep1); */
-/*   strcat(username,"User that made this frame: "); */
-/*   strcat(username, getlogin()); */
-/*   FrHistoryAdd( frame, username); */
-
+  gethostname(hostname,sizeof(hostname));
+  getdomainname(domainname,sizeof(domainname));
+  LALSnprintf( hostnameanduser, sizeof( hostnameanduser), "Made by user: %s. Made on machine: %s.%s",getlogin(),hostname,domainname);
+  FrHistoryAdd( frame, hostnameanduser);
+  
   /* Frequency range of validity (FIXME: This should be updated regularly somehow) */
   FrHistoryAdd( frame, "Frequency validity range: 40Hz-5kHz.");
 
   XLALFrameAddREAL8TimeSeriesProcData( frame, &OutputData.h);
 
-  
-
+  /* compress the frame data */
+/*   FrameCompress(frame, 8, 1); */
   
   /* write first to tmpfile then rename it */
-  frfile = FrFileONew( tmpfname, 1 ); /* 1 = GZIP */
+  frfile = FrFileONew( tmpfname, 8 ); /* 1 = GZIP */
   if ( ! frfile )
     return 1;  /* Error: could not open frame file */
   
