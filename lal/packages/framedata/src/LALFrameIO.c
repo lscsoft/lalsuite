@@ -593,7 +593,7 @@ int XLALFrameAddREAL8TimeSeriesProcData( FrameH *frame, REAL8TimeSeries *series 
 	}
 
 	/* comment is rcs info of this routine */
-	FrStrCpy( &proc->comment, rcsinfo );
+/* 	FrStrCpy( &proc->comment, rcsinfo ); */
 
 	/* time offset: compute this from frame time */
 	frameEpoch.gpsSeconds     = frame->GTimeS;
