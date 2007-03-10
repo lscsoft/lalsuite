@@ -508,6 +508,12 @@ CheckUserInput (LALStatus *status,  struct CommandLineArgsTag *CLA )
 	fprintf (stderr, "\nYou need to specify both --aPlus and --aCross\n\n");
 	ABORT (status, SEMIANALYTIC_EINPUT, SEMIANALYTIC_MSGEINPUT);
       }
+    if ( (CLA->cosi < -1.0) || (CLA->cosi > 1.0) )
+      {
+        fprintf (stderr, "\nIncorrect value for cos(iota)\n\n");
+        ABORT (status, SEMIANALYTIC_EINPUT, SEMIANALYTIC_MSGEINPUT);
+      }
+
     /* hack, hack... */
     if ( have_h0 )	/* internally only use aPlus, aCross */
       {
