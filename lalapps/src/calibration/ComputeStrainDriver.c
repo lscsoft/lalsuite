@@ -59,6 +59,8 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/LALDetectors.h>
 #include <lal/Date.h>
 #include <lalapps.h>
+#include <lal/Units.h>
+#include <lal/LALString.h>
 
 extern char *optarg;
 extern int optind, opterr, optopt;
@@ -104,8 +106,6 @@ struct CommandLineArgsTag {
   char *frametype;
   char *strainchannel;
   char *datadir;
-  char *renamefrom;
-  char *renameto;
   char *checkfilename;
 } CommandLineArgs;
 
@@ -183,7 +183,8 @@ int main(int argc,char *argv[])
 /*******************************************************************************/
 int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
 {
-  /* This is mostly ripped off some code Jolien sent me a while back */
+  /* This is mostly ripped off some code Jolien sent me a while back,
+     and calibration frame writing code */
 
   FrFile *frfile;
   FrameH *frame;
@@ -201,13 +202,35 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   char lalconfargs[16384];
   char headerinfo[16384]; 
   int i;
+  REAL4TimeSeries *alpha = NULL;
+  REAL4TimeSeries *alphaim = NULL;
+  REAL4TimeSeries *gamma = NULL;
+  REAL4TimeSeries *gammaim = NULL;
+  char alphaName[] = "Xn:CAL-CAV_FAC";
+  char gammaName[] = "Xn:CAL-OLOOP_FAC";
+  char alphaimName[] = "Xn:CAL-CAV_FAC_Im";
+  char gammaimName[] = "Xn:CAL-OLOOP_FAC_Im";
 
-  /*re-size h(t) data time series*/
+  /*re-size h(t) and data time series*/
   LALResizeREAL8TimeSeries(&status, &(OutputData.h), (int)(InputData.wings/OutputData.h.deltaT),
 			   OutputData.h.data->length-2*(UINT4)(InputData.wings/OutputData.h.deltaT));
   TESTSTATUS( &status );
   strncpy( OutputData.h.name,  CLA.strainchannel, sizeof( OutputData.h.name  ) );
 
+  /* resize alpha and gamma time series */
+  LALResizeCOMPLEX16TimeSeries(&status, &(OutputData.alpha), (int)(InputData.wings/OutputData.alpha.deltaT),
+			   OutputData.alpha.data->length-2*(UINT4)(InputData.wings/OutputData.alpha.deltaT));
+  TESTSTATUS( &status );
+  LALResizeCOMPLEX16TimeSeries(&status, &(OutputData.alphabeta), (int)(InputData.wings/OutputData.alphabeta.deltaT),
+			   OutputData.alphabeta.data->length-2*(UINT4)(InputData.wings/OutputData.alphabeta.deltaT));
+  TESTSTATUS( &status );
+  
+  /* Names for factors time series */
+  memcpy( alphaName, OutputData.h.name, 2 );
+  memcpy( gammaName, OutputData.h.name, 2 );
+  memcpy( alphaimName, OutputData.h.name, 2 );
+  memcpy( gammaimName, OutputData.h.name, 2 );
+  
   /* based on IFO name, choose the correct detector */
   if ( 0 == strncmp( OutputData.h.name, "H2:", 3 ) )
     detectorFlags = LAL_LHO_2K_DETECTOR_BIT;
@@ -218,6 +241,9 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   else
     return 1;  /* Error: not a recognized name */
   site = OutputData.h.name[0];
+  
+  memcpy( alphaName, OutputData.h.name, 2 );
+  memcpy( gammaName, OutputData.h.name, 2 );
 
   /* based on series metadata, generate standard filename */
   duration = OutputData.h.deltaT * OutputData.h.data->length;
@@ -228,6 +254,11 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   LALSnprintf( fname, sizeof( fname ), "%s/%c-%s-%d-%d.gwf", CLA.datadir,site, CLA.frametype, t0, dt );
   LALSnprintf( tmpfname, sizeof( tmpfname ), "%s.tmp", fname );
 
+  /* Harwired numbers in call to XLALFrameNew: */
+  /* Run number is set to 0, this is an annoying thing to have to
+     change all the time and if you can't tell the run number from
+     the GPS time you have a problem */
+  /* number of frames in frame to 1 */
   frame = XLALFrameNew( &OutputData.h.epoch , duration, "LIGO", 0, 1, detectorFlags );
 
   /* Here's where I need to add a bunch of things */
@@ -263,11 +294,42 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   
   /* Frequency range of validity (FIXME: This should be updated regularly somehow) */
   FrHistoryAdd( frame, "Frequency validity range: 40Hz-5kHz.");
+  FrHistoryAdd( frame, fname);
 
+  /* Add in the h(t) data */
   XLALFrameAddREAL8TimeSeriesProcData( frame, &OutputData.h);
 
-  /* compress the frame data */
-/*   FrameCompress(frame, 8, 1); */
+  /* Add in the factors data */
+  alpha = XLALCreateREAL4TimeSeries( alphaName, &OutputData.alpha.epoch, 0.0, OutputData.alpha.deltaT, 
+				     &lalDimensionlessUnit,  OutputData.alpha.data->length);
+  gamma = XLALCreateREAL4TimeSeries( gammaName, &OutputData.alphabeta.epoch, 0.0, OutputData.alphabeta.deltaT, 
+				     &lalDimensionlessUnit,  OutputData.alphabeta.data->length);
+  alphaim = XLALCreateREAL4TimeSeries( alphaimName, &OutputData.alpha.epoch, 0.0, OutputData.alpha.deltaT, 
+				       &lalDimensionlessUnit,  OutputData.alpha.data->length);
+  gammaim = XLALCreateREAL4TimeSeries( gammaimName, &OutputData.alphabeta.epoch, 0.0, OutputData.alphabeta.deltaT, 
+				       &lalDimensionlessUnit,  OutputData.alphabeta.data->length);
+
+  for (i=0; i < (int)OutputData.alpha.data->length; i++)
+    {
+      alpha->data->data[i]=OutputData.alpha.data->data[i].re;
+      alphaim->data->data[i]=OutputData.alpha.data->data[i].im;
+      gamma->data->data[i]=OutputData.alphabeta.data->data[i].re;
+      gammaim->data->data[i]=OutputData.alphabeta.data->data[i].im;
+    }
+
+  XLALFrameAddCalFac( frame, alpha, atoi(&CLA.frametype[9]) );
+  XLALFrameAddCalFac( frame, alphaim, atoi(&CLA.frametype[9]) );
+  XLALFrameAddCalFac( frame, gamma, atoi(&CLA.frametype[9]));
+  XLALFrameAddCalFac( frame, gammaim, atoi(&CLA.frametype[9]));
+
+  XLALDestroyREAL4TimeSeries( gamma );
+  XLALDestroyREAL4TimeSeries( alpha );
+  XLALDestroyREAL4TimeSeries( gammaim );
+  XLALDestroyREAL4TimeSeries( alphaim );
+
+  /* If Level 1: Add DARM_CTRL, DARM_ERR, DARM_CTRL_EXC_DAQ, and all filters */
+
+
   
   /* write first to tmpfile then rename it */
   frfile = FrFileONew( tmpfname, 8 ); /* 1 = GZIP */
@@ -405,14 +467,17 @@ static FrChanIn chanin_exc;
   LALDCreateVector(&status,&OutputData.hR.data,(UINT4)(duration/OutputData.hR.deltaT +0.5));
   TESTSTATUS( &status );
 
+  OutputData.alpha.epoch=InputData.AS_Q.epoch;
   OutputData.alpha.deltaT=CLA.To;
   LALZCreateVector(&status,&OutputData.alpha.data,(UINT4)(duration/OutputData.alpha.deltaT +0.5));
   TESTSTATUS( &status );
 
+  OutputData.alphabeta.epoch=InputData.AS_Q.epoch;
   OutputData.alphabeta.deltaT=CLA.To;
   LALZCreateVector(&status,&OutputData.alphabeta.data,(UINT4)(duration/OutputData.alphabeta.deltaT +0.5));
   TESTSTATUS( &status );
 
+  OutputData.beta.epoch=InputData.AS_Q.epoch;
   OutputData.beta.deltaT=CLA.To;
   LALZCreateVector(&status,&OutputData.beta.data,(UINT4)(duration/OutputData.beta.deltaT +0.5));
   TESTSTATUS( &status );
@@ -656,8 +721,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"frame-type",          required_argument, NULL,           'T'},
     {"strain-channel",      required_argument, NULL,           'S'},
     {"data-dir",            required_argument, NULL,           'z'},
-    {"rename-from",         required_argument, NULL,           'a'},
-    {"rename-to",           required_argument, NULL,           'w'},
     {"check-file-exists",   required_argument, NULL,           'v'},
     {"help",                no_argument, NULL,                 'h' },
     {0, 0, 0, 0}
@@ -686,8 +749,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->frametype=NULL;
   CLA->strainchannel=NULL;
   CLA->datadir=NULL;
-  CLA->renamefrom=NULL;
-  CLA->renameto=NULL;
   CLA->checkfilename=NULL;
 
   InputData.delta=0;
@@ -810,12 +871,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     case 'z':
       CLA->datadir=optarg;       
-      break;
-    case 'a':
-      CLA->renamefrom=optarg;       
-      break;
-    case 'w':
-      CLA->renameto=optarg;       
       break;
     case 'v':
       CLA->checkfilename=optarg;       
