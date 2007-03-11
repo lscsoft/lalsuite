@@ -129,7 +129,7 @@ char site[1];
 /***************************************************************************/
 /* to avoid a warning */
 int gethostname(char *name, size_t len);
-int getdomainname(char *name, size_t len);
+/* int getdomainname(char *name, size_t len); */
 
 
 /* FUNCTION PROTOTYPES */
