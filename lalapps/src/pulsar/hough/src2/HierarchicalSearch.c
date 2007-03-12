@@ -215,6 +215,8 @@ void GetHoughCandidates_threshold(LALStatus *status, SemiCohCandidateList *out, 
 
 void GetSemiCohToplist(LALStatus *status, toplist_t *list, SemiCohCandidateList *in, REAL8 meanN, REAL8 sigmaN);
 
+void ReallocFstatVector(LALStatus *status, REAL8FrequencySeriesVector *out, REAL8VectorSequence *vel, 
+			REAL8 alpha, REAL8 delta, REAL8 patchSizeX, REAL8 patchSizeY);
 
 /* default values for input variables */
 #define EARTHEPHEMERIS 		"earth05-09.dat"
@@ -297,7 +299,7 @@ int MAIN( int argc, char *argv[]) {
   UINT4 nf1dot, nf1dotRes; /* coarse and fine grid number of spindown values */
 
   /* LALdemod related stuff */
-  REAL8FrequencySeriesVector fstatVector1; /* Fstatistic vectors for each stack */
+  REAL8FrequencySeriesVector fstatVector; /* Fstatistic vectors for each stack */
   UINT4 binsFstat1;
   static ComputeFParams CFparams;		   
 
@@ -849,25 +851,25 @@ int MAIN( int argc, char *argv[]) {
     extraBinsfdot = (UINT4)(tObs * nf1dotRes * df1dotRes / dFreqStack + 0.5);
 
     semiCohPar.extraBinsFstat = extraBinsSky + extraBinsfdot;    
-    LogPrintf(LOG_DEBUG, "No. of extra Fstat freq. bins = %d for skypatch + %d for residual fdot: total = %d\n",
+    LogPrintf(LOG_DEBUG, "Maxmum No. of extra Fstat freq. bins = %d for skypatch + %d for residual fdot: total = %d\n",
 	      extraBinsSky, extraBinsfdot, semiCohPar.extraBinsFstat); 
   }
   
   /* allocate fstat memory */
-  fstatVector1.length = nStacks;
-  fstatVector1.data = NULL;
-  fstatVector1.data = (REAL8FrequencySeries *)LALCalloc( 1, nStacks * sizeof(REAL8FrequencySeries));
+  fstatVector.length = nStacks;
+  fstatVector.data = NULL;
+  fstatVector.data = (REAL8FrequencySeries *)LALCalloc( 1, nStacks * sizeof(REAL8FrequencySeries));
   binsFstat1 = (UINT4)(usefulParams.spinRange_midTime.fkdotBand[0]/dFreqStack + 0.5) + semiCohPar.extraBinsFstat;
   LogPrintf(LOG_DEBUG, "Number of Fstat frequency bins = %d\n", binsFstat1); 
 
   for (k = 0; k < nStacks; k++) { 
     /* careful--the epoch here is not the reference time for f0! */
-    fstatVector1.data[k].epoch = startTstack->data[k];
-    fstatVector1.data[k].deltaF = dFreqStack;
-    fstatVector1.data[k].f0 = usefulParams.spinRange_midTime.fkdot[0] - 0.5 * semiCohPar.extraBinsFstat * dFreqStack;
-    fstatVector1.data[k].data = (REAL8Sequence *)LALCalloc( 1, sizeof(REAL8Sequence));
-    fstatVector1.data[k].data->length = binsFstat1;
-    fstatVector1.data[k].data->data = (REAL8 *)LALCalloc( 1, binsFstat1 * sizeof(REAL8));
+    fstatVector.data[k].epoch = startTstack->data[k];
+    fstatVector.data[k].deltaF = dFreqStack;
+    fstatVector.data[k].f0 = usefulParams.spinRange_midTime.fkdot[0] - 0.5 * semiCohPar.extraBinsFstat * dFreqStack;
+    fstatVector.data[k].data = (REAL8Sequence *)LALCalloc( 1, sizeof(REAL8Sequence));
+    fstatVector.data[k].data->length = binsFstat1;
+    fstatVector.data[k].data->data = (REAL8 *)LALCalloc( 1, binsFstat1 * sizeof(REAL8));
   } 
 
 
@@ -964,10 +966,10 @@ int MAIN( int argc, char *argv[]) {
 
 	    /* set spindown value for Fstat calculation */
 	    thisPoint.fkdot[1] = usefulParams.spinRange_midTime.fkdot[1] + ifdot * df1dot;
-	    thisPoint.fkdot[0] = fstatVector1.data[k].f0;
+	    thisPoint.fkdot[0] = fstatVector.data[k].f0;
 	    /* thisPoint.fkdot[0] = usefulParams.spinRange_midTime.fkdot[0]; */
 
-	    LAL_CALL( ComputeFStatFreqBand ( &status, fstatVector1.data + k, &thisPoint, 
+	    LAL_CALL( ComputeFStatFreqBand ( &status, fstatVector.data + k, &thisPoint, 
 					     stackMultiSFT.data[k], stackMultiNoiseWeights.data[k], 
 					     stackMultiDetStates.data[k], &CFparams), &status);
 	  }
@@ -977,13 +979,13 @@ int MAIN( int argc, char *argv[]) {
 	  if ( uvar_printFstat1 )
 	    {
 	      for (k = 0; k < nStacks; k++)
-		LAL_CALL( PrintFstatVec ( &status, fstatVector1.data + k, fpFstat1, &thisPoint, refTimeGPS, k+1), &status); 
+		LAL_CALL( PrintFstatVec ( &status, fstatVector.data + k, fpFstat1, &thisPoint, refTimeGPS, k+1), &status); 
 	    }
 
 	  
 	  /*--------------- get candidates from a semicoherent search ---------------*/
 
-	  /* the input to this section is the set of fstat vectors fstatVector1 and the 
+	  /* the input to this section is the set of fstat vectors fstatVector and the 
 	     parameters semiCohPar. The output is the list of candidates in semiCohCandList */
 
 
@@ -1009,7 +1011,7 @@ int MAIN( int argc, char *argv[]) {
 		      meanN, sigmaN, semiCohPar.threshold);
 	    
 	    /* convert fstat vector to peakgrams using the Fstat threshold */
-	    LAL_CALL( FstatVectToPeakGram( &status, &pgV, &fstatVector1, uvar_peakThrF), &status);
+	    LAL_CALL( FstatVectToPeakGram( &status, &pgV, &fstatVector, uvar_peakThrF), &status);
 	    	    
 	    /* get candidates */
 	    LAL_CALL ( ComputeFstatHoughMap ( &status, &semiCohCandList, &pgV, &semiCohPar), &status);
@@ -1026,7 +1028,7 @@ int MAIN( int argc, char *argv[]) {
             LogPrintf(LOG_DETAIL, "Starting StackSlide calculation...\n");
 	    /* 12/18/06 gm; use threshold from command line as threshold on stackslide sum of F-stat values */
             semiCohPar.threshold = uvar_threshold1; 
-            LAL_CALL( StackSlideVecF( &status, &semiCohCandList, &fstatVector1, &semiCohPar), &status);
+            LAL_CALL( StackSlideVecF( &status, &semiCohCandList, &fstatVector, &semiCohPar), &status);
 	    LogPrintf(LOG_DETAIL, "...finished StackSlide calculation\n");
           }
 
@@ -1119,10 +1121,10 @@ int MAIN( int argc, char *argv[]) {
 
   /* free Fstat vectors  */
   for(k = 0; k < nStacks; k++) {
-    LALFree(fstatVector1.data[k].data->data);
-    LALFree(fstatVector1.data[k].data);
+    LALFree(fstatVector.data[k].data->data);
+    LALFree(fstatVector.data[k].data);
   }
-  LALFree(fstatVector1.data);
+  LALFree(fstatVector.data);
   
 
   /* free Vel/Pos vectors and ephemeris */
@@ -1541,8 +1543,8 @@ void ComputeFstatHoughMap(LALStatus *status,
   /* and make sure that we have fstat values for sufficient number of bins */
   parRes.f0Bin =  fBinIni;      
 
-  fBinIni += params->extraBinsFstat/2;
-  fBinFin -= params->extraBinsFstat/2;
+  fBinIni += params->extraBinsFstat/2 + 1;
+  fBinFin -= params->extraBinsFstat/2 + 1;
   /* this is not very clean -- the Fstat calculation has to know how many extra bins are needed */
 
   LogPrintf(LOG_DETAIL, "Freq. range analyzed by Hough = [%fHz - %fHz] (%d bins)\n", 
@@ -2784,9 +2786,46 @@ void GetSemiCohToplist(LALStatus            *status,
     debug = INSERT_INTO_FSTAT_TOPLIST( list, line);
 
   }
+  
+  DETATCHSTATUSPTR (status);
+  RETURN(status); 
+
+} /* GetSemiCohToplist() */
+
+
+
+/** reallocate fstat vector */
+void ReallocFstatVector(LALStatus                  *status,
+			REAL8FrequencySeriesVector *out,
+			REAL8VectorSequence *vel,
+			REAL8                alpha,
+			REAL8                delta,
+			REAL8                patchSizeX,
+			REAL8                patchSizeY)
+{
+
+  REAL8 skypos[3], xi[3], xiProj[3];
+  REAL8 xiDotn;
+
+  INITSTATUS( status, "ReallocFstatVector", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  skypos[0] = cos(delta) * cos(alpha);
+  skypos[1] = cos(delta) * sin(alpha);
+  skypos[2] = sin(delta);
+
+  xi[0] = out->data[0].f0 * vel->data[0];
+  xi[1] = out->data[0].f0 * vel->data[1];
+  xi[2] = out->data[0].f0 * vel->data[2];
+
+  xiDotn = xi[0]*skypos[0] + xi[1]*skypos[1] + xi[2]*skypos[2];
+
+  xiProj[0] = xi[0] - xiDotn * skypos[0];
+  xiProj[1] = xi[1] - xiDotn * skypos[1];
+  xiProj[2] = xi[2] - xiDotn * skypos[2];
+
 
   DETATCHSTATUSPTR (status);
   RETURN(status);
 
-} /* GetSemiCohToplist() */
-
+}
