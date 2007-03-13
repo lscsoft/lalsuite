@@ -874,7 +874,7 @@ int init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
   if(cptname) {
     int s = strlen(cptname)+1;
     cptfilename = (char*)malloc(s);
-    if(cptfilename){
+    if(!cptfilename){
       LogPrintf(LOG_CRITICAL, "Out of memory\n");
       return(-2);
     }
@@ -883,7 +883,7 @@ int init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
 #define CHECKPOINT_EXT ".cpt"
     int s = strlen(outputname)+strlen(CHECKPOINT_EXT)+1;
     cptfilename = (char*)malloc(s);
-    if(cptfilename){
+    if(!cptfilename){
       LogPrintf(LOG_CRITICAL, "Out of memory\n");
       return(-2);
     }
