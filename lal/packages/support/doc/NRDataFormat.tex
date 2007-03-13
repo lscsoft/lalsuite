@@ -31,10 +31,12 @@
 \maketitle
 
 \begin{abstract}
-This document describes data formats to further the interaction
-between numerical relativity groups and the LSC. The aim is to have a
-simple format which is nevertheless sufficiently general so that all
-numerical relativity groups can use it.  
+  This document describes data formats to further the interaction
+  between gravitational wave source modeling groups and the LIGO
+  Scientific Collaboration. The aim is to have a simple format which
+  is nevertheless sufficiently general and applicable to various kinds
+  of sources including binary systems and systems undergoing
+  gravitational collapse.  
 \end{abstract}
 
 \section{Multipole expansion of the wave}
@@ -50,9 +52,11 @@ information of the metric perturbation.  The wave falls off as $1/r$
 where $r$ is the distance from the source
 \begin{equation}
   \label{eq:1}
-  h_{ij} = \frac{A_{ij}}{r} 
+  h_{ij} = \frac{H_{ij}M}{r} \,.
 \end{equation}
-where $A_{ij}$ is a transverse traceless tensor.  
+Here $H_{ij}$ is a transverse traceless tensor and $M$ is the total
+mass of the system; this equation is, naturally, only valid far away
+from the source.  
 
 There are different methods for extracting $h_{ij}$ from a numerical
 evolution.  One common method is to use the complex Weyl tensor
@@ -60,36 +64,32 @@ component $\Psi_4$ which is related to the second time derivative of
 $h_{ij}$. Another method is to use the Zerilli function which
 approximates the spacetime in the wave-zone as a perturbation of a
 Schwarzschild spacetime.  For our purposes, it is not important how
-the wave is extracted, and different groups are free to use whatever
-methods they find appropriate.  The starting point of our analysis are
-the multipole moments of $h_{ij}$ and it is important to describe
-explicitly our conventions for the multipole decomposition.  In
-addition to these multipole moments, we also require the corresponding
-values of $\Psi_4$ or the Zerilli function in the formats described
-later. 
+the wave is extracted, and different numerical relativity groups are
+free to use whatever methods they find appropriate.  The starting
+point of our analysis are the multipole moments of $h_{ij}$ and it is
+important to describe explicitly our conventions for the multipole
+decomposition.  In addition to these multipole moments, we also
+require the corresponding values of $\Psi_4$ or the Zerilli function
+in the formats described later.
 
-Introduce a coordinate system $(x,y,z,t)$ associated with the binary
-system as follows.  The orbital plane of the binary at $t=0$ is taken to
-be the $x$-$y$ plane with the $z$-axis in the direction of the orbital
-angular momentum.  The orbital plane works when the black holes are
-non-spinning but it can be ambiguous, especially when the spin of the
-black holes causes the orbital plane to precess significantly.
-In such cases, it is left to the numerical relativity group to decide
-what the best choice of the ``orbital plane'' should be. 
+Let $(x,y,z,t)$ be a Cartesian coordinate system in the wave zone,
+sufficiently far away from the source. Let $\xhat$, $\yhat$ and
+$\zhat$ denote the orthonormal coordinate basis vectors.  Given this
+coordinate system, we define standard spherical coordinates
+$(r,\iota,\phi)$ where $\iota$ is the inclination angle from the
+$z$-axis and $\phi$ is the phase angle.  At this point, we have not
+specified anything about the source.  In fact, the source could be a
+binary system, a star undergoing gravitational collapse or anything
+else that could be of interest for gravitational wave source
+modeling.  In a later section we will specialize to binary black hole
+systems and suggest possibilities for some of the various choices that
+have to be made.  However, these choices are eventually to be made by
+the individual numerical and for data analysis purposes, the
+quantities of direct interest are the modes of $h_{ij}$ as described
+in the next paragraph.
 
-The $x$-axis is chosen so that the orbital phase of the
-binary vanishes at $t=0$.   This still leaves open the question of what
-to choose as the zero of time.  The two obvious choices are the
-beginning of the simulation and the time at coalescence (although the
-latter may well be slicing dependent).  It is not immediately clear
-which would be preferable **something to be discussed**. 
-
-Let $\xhat$, $\yhat$ and $\zhat$ denote the
-orthonormal coordinate basis vectors. Given this coordinate system, we
-define spherical coordinates $(r,\iota,\phi)$ where $\iota$ is the
-inclination angle from the $z$-axis and $\phi$ is the phase angle.  We
-break up $h_{ij}$ into modes in this coordinate system.
-In the wave zone, the wave will be propagating in the direction of
+We break up $h_{ij}$ into modes in this coordinate system.  In the
+wave zone, the wave will be propagating in the direction of
 \begin{subequations}
   \begin{alignat}{3}
     \rhat &=  &\xhat&\,\sin\iota\cos\phi\, &+&\, \yhat\,\sin\iota\sin\phi
@@ -173,21 +173,22 @@ The mode expansion coefficients $H_{lm}$ are given by
 If $\Psi_4$ is used for wave extraction, then $H_{lm}$ is given by two
 time integrals of the corresponding mode of $\Psi_4$.  It is important
 that the integration constants be chosen to make sure, as far as
-possible, that $h_{+,\times}$ do not have a secular drift, i.e. they
-vanish initially and at late times.  For waveforms which evolve right
-through the merger and ringdown, the vanishing at late times should be
-unambiguous.  However, in numerical simulations, there is often spurious
-radiation at the beginning of the evolution.  When to we require the
-waveform to be zero?  Before or after this radiation has gone out?
-
+possible, that $h_{+,\times}$ do not have a secular drift. 
 We define $h_+^{(\ell m)}$ and $h_\times^{(\ell m)}$ as
 \begin{equation}
   \label{eq:11}
   h_+^{(\ell m)}(t) -ih_\times^{(\ell m)}(t) := \frac{H_{\ell m}(t)}{r}\,.  
 \end{equation}
-It is these modes of $rh_+$ and $rh_\times$ that must be provided as
-funtions of time.  
-
+It is these modes $H_{\ell m}$ of $rh_+$ and $rh_\times$ that must be
+provided as functions of time.  
+% The waveforms are easily reconstructed
+% from the modes:
+% \begin{equation}
+%   \label{eq:8}
+%   rh_+(r,\theta,\phi) - i rh_\times(x,\theta,\phi)
+%   = \sum_{lm} \Ytwo_{lm}(\theta,\phi)\left[ H_+^{(\ell m)}(x) - i
+%   H_\times^{(\ell m)}\right]
+% \end{equation}
 
 
 
@@ -255,7 +256,7 @@ will be held in the comment lines.  This is an example of a data file:
 
 The metadata information for the different datafiles will be stored in
 a separate file.  This metadata file will also be plain text and
-will have 10 columns: 9 for the metadata and the last one specifying
+will have 10 columns: 9 for the metadata and one specifying
 the location of the corresponding datafile.  This is an example of a
 metadata file containing two waveforms:
 \begin{verbatim}
@@ -272,11 +273,15 @@ the location of the metadata file.  Thus, if the datafiles are stored
 in a sub-directory called \texttt{data}, then the metadata file would read:
 \begin{verbatim}
 ## example wave
-## m1/m2 S1x S1y S1z S2x S2y S2z l m filename
-1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 2 data/example1.dat
+## filename       l m m1/m2 S1x S1y S1z S2x S2y S2z 
+data/example1.dat 2 2 1.0 0.0 0.0 0.0 0.0 0.0 0.0
 ## another example
-1.5 1.0 0.0 0.0 0.0 -1.0 0.0  2 1 data/example2.dat
+data/example2.dat 2 1 1.5 1.0 0.0 0.0 0.0 -1.0 0.0
 \end{verbatim}
+The purpose of the metadata file is to describe the parameters for a
+single or multiple numerical simulation and it should be emphasized
+that we will add more parameters as necessary such as, for example, the
+eccentricity of the orbit.  
 
 If the waveforms have been calculated using $\Psi_4$, then for
 cross-checking purposed, datafiles for the real and imaginary parts of
@@ -286,5 +291,42 @@ of $\Psi_4$ and imaginary part of $\Psi_4$.  Again there can be an
 arbitrary number of comment lines, but in this case there does not
 need to be a metadata file.
 
+
+\section{Open Issues for binary black hole systems}
+
+We now specialize to the case of binary black hole simulations and we
+list the open issues which can be topics for further discusion as
+bullet points.  
+
+Introduce a coordinate system $(x,y,z,t)$ associated with the binary
+system as follows.  The orbital plane of the binary at $t=0$ is taken
+to be the $x$-$y$ plane with the $z$-axis in the direction of the
+orbital angular momentum. 
+\begin{itemize}
+\item Is this the best choice of the $z$-axis?  Would it be better to
+  choose, say, the spin of the final black hole? The decisions will be
+  determined by requirements of simplicity and having as few modes to
+  work with as possible.  
+\end{itemize}
+The orbital plane is unambiguous when the black holes are non-spinning
+but it can be ambiguous in many situations, especially when the spin
+of the black holes causes the orbital plane to precess significantly.
+In such cases, it is left to the numerical relativity group to decide
+what the best choice of the ``orbital plane'' should be.
+
+We now need to make a choice for the phase. 
+\begin{itemize}
+\item The two obvious choices are the beginning of the simulation and
+  the time at coalescence defined perhaps as the peak of $h_+^2 +
+  h_\times^2$.  It is not immediately clear which would be preferable.
+\end{itemize}
+What is the right choice for the individual masses and the total mass
+which sets the scale for the amplitude and the time.
+\begin{itemize}
+\item Should we use the individual horizon masses (including the
+  effect of angular momentum), or should it be the total ADM mass or
+  rather, the ADM mass calculated at the sphere where the waves are
+  extracted.  
+\end{itemize}
 
 \end{document}
