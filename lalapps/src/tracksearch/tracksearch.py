@@ -568,8 +568,12 @@ class tracksearchClusterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.candUtil=str(cp.get('pylibraryfiles','pyutilfile'))
         self.add_condor_cmd('should_transfer_files','yes')
         self.add_condor_cmd('when_to_transfer_output','on_exit')
-        self.add_condor_cmd('transfer_input_files',self.candUtil)
-        #self.add_input_file(self.candUtil)
+        #If the job is to run in the scheduler universe we set the proper ENV
+        #variables otherwise the submit file will transfer the py script.
+        if self.__universe == 'scheduler':
+            self.add_condor_cmd('environment','PYTHONPATH=$PYTHONPATH:'+os.path.abspath(os.path.dirname(self.candUtil)))
+        else:
+            self.add_condor_cmd('transfer_input_files',self.candUtil)
         for sec in ['clusterconfig']:
                 self.add_ini_opts(cp,sec)
         #End __init__ method
