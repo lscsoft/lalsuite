@@ -100,6 +100,7 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
 #define HIERARCHICALSEARCH_EDLOPEN 8
 #define HIERARCHICALSEARCH_EWORKER 9
 #define HIERARCHICALSEARCH_ECHECKPT 10
+#define HIERARCHICALSEARCH_EMEM 11
 
 
 #define HIERARCHICALSEARCH_MSGENORM "Normal exit"
@@ -111,6 +112,7 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
 #define HIERARCHICALSEARCH_MSGEVAL "Invalid value"
 #define HIERARCHICALSEARCH_MSGENONULL "Pointer not null"
 #define HIERARCHICALSEARCH_MSGCHECKPT "Could not resume from checkpoint"
+#define HIERARCHICALSEARCH_MSGMEM "Out of memory"
 
 
 /* ******************************************************************
