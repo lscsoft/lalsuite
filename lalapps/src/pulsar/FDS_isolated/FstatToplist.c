@@ -53,6 +53,7 @@ int finite(double);
 
 /* local prototypes */
 static void reduce_fstat_toplist_precision(toplist_t *l);
+static int _atomic_write_fstat_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum, int write_done);
 static int print_fstatline_to_str(FstatOutputEntry fline, char* buf, int buflen);
 
 
@@ -272,7 +273,6 @@ static int print_fstatline_to_str(FstatOutputEntry fline, char* buf, int buflen)
    Updates checksum if given */
 int write_fstat_toplist_item_to_fp(FstatOutputEntry fline, FILE*fp, UINT4*checksum) {
     char linebuf[256];
-    int ret;
     UINT4 i;
 
     UINT4 length = print_fstatline_to_str(fline, linebuf, sizeof(linebuf)-1);
@@ -340,6 +340,13 @@ int write_fstat_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
    derived from the filename by appending ".tmp". Returns the number
    of chars written or -1 if the temp file could not be opened. */
 int atomic_write_fstat_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum) {
+  return(_atomic_write_fstat_toplist_to_file(l, filename, checksum, 0));
+}
+
+/* function that does the actual work of atomic_write_fstat_toplist_to_file(),
+   appending a %DONE marker if specified (not when called from atomic_write_fstat_toplist_to_file().
+   NOTE that the checksum will be a little wrong when %DOME is appended, as this line is not counted */
+static int _atomic_write_fstat_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum, int write_done) {
     char* tempname;
     INT4 length;
     FILE * fpnew;
@@ -366,6 +373,16 @@ int atomic_write_fstat_toplist_to_file(toplist_t *l, char *filename, UINT4*check
       return -1;
     }
     length = write_fstat_toplist_to_fp(l,fpnew,checksum);
+
+    if ((write_done) && (length >= 0)) {
+      int ret;
+      ret = fprintf(fpnew,"%%DONE\n");
+      if (ret < 0)
+	length = ret;
+      else
+	length += ret;
+    }
+
     fclose(fpnew);
     
     if (length < 0) {
@@ -538,9 +555,6 @@ extern int fstat_cpt_file_info (FStatCheckpointFile *cptf,
 
 /* closes and compacts the file */
 int fstat_cpt_file_close(FStatCheckpointFile*cptf) {
-  int ret;
-  FILE*fp;
-
   if (!cptf) {
     LogPrintf (LOG_CRITICAL, "ERROR: FStatCheckpointFile is NULL\n");
     return(-1);
@@ -555,27 +569,10 @@ int fstat_cpt_file_close(FStatCheckpointFile*cptf) {
      one should call final_write_fstat_toplist_to_file() instead of
      atomic_write_fstat_toplist_to_file(), as this would re-sort
      the list and reduce the precision before writing it */
-  ret = atomic_write_fstat_toplist_to_file(cptf->list,
-					   cptf->filename,
-					   &(cptf->checksum));
-  if (ret)
-    return(ret);
-
-  fp = fopen(cptf->filename,"a");
-  if (fp == NULL) {
-    LogPrintf (LOG_CRITICAL, "ERROR: Error appending end marker\n");
-    return(-3);
-  }
-
-  ret = fprintf(fp,"%%DONE\n");
-  if ( ret < 0) {
-    LogPrintf (LOG_CRITICAL, "ERROR: Error writing end marker\n");
-  } else 
-    ret = 0;
-
-  fclose(fp);
-
-  return(ret);
+  return(_atomic_write_fstat_toplist_to_file(cptf->list,
+					    cptf->filename,
+					    &(cptf->checksum),
+					    1));
 }
 
 
