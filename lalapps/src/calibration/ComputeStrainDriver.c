@@ -225,6 +225,17 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   LALResizeCOMPLEX16TimeSeries(&status, &(OutputData.alphabeta), (int)(InputData.wings/OutputData.alphabeta.deltaT),
 			   OutputData.alphabeta.data->length-2*(UINT4)(InputData.wings/OutputData.alphabeta.deltaT));
   TESTSTATUS( &status );
+
+  /* Resize DARM_CTRL, DARM_ERR, and EXC */
+  LALResizeREAL4TimeSeries(&status, &(InputData.DARM), (int)(InputData.wings/InputData.DARM.deltaT),
+			   InputData.DARM.data->length-2*(UINT4)(InputData.wings/InputData.DARM.deltaT));
+  TESTSTATUS( &status );
+  LALResizeREAL4TimeSeries(&status, &(InputData.DARM_ERR), (int)(InputData.wings/InputData.DARM_ERR.deltaT),
+			   InputData.DARM_ERR.data->length-2*(UINT4)(InputData.wings/InputData.DARM_ERR.deltaT));
+  TESTSTATUS( &status );
+  LALResizeREAL4TimeSeries(&status, &(InputData.EXC), (int)(InputData.wings/InputData.EXC.deltaT),
+			   InputData.EXC.data->length-2*(UINT4)(InputData.wings/InputData.EXC.deltaT));
+  TESTSTATUS( &status );
   
   /* Names for factors time series */
   memcpy( alphaName, OutputData.h.name, 2 );
@@ -329,7 +340,9 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   XLALDestroyREAL4TimeSeries( alphaim );
 
   /* If Level 1: Add DARM_CTRL, DARM_ERR, DARM_CTRL_EXC_DAQ, and all filters */
-
+  XLALFrameAddREAL4TimeSeriesAdcData( frame, &(InputData.DARM));
+  XLALFrameAddREAL4TimeSeriesAdcData( frame, &(InputData.DARM_ERR) );
+  XLALFrameAddREAL4TimeSeriesAdcData( frame, &(InputData.EXC));
 
   
   /* write first to tmpfile then rename it */
