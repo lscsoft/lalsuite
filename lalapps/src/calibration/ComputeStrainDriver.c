@@ -28,15 +28,9 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <fcntl.h>
 #include <regex.h>
 #include <pwd.h>
-#include <unistd.h>
 #include <time.h>
-#include <lalapps.h>
 
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
@@ -58,9 +52,12 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/LALFrameIO.h>
 #include <lal/LALDetectors.h>
 #include <lal/Date.h>
-#include <lalapps.h>
 #include <lal/Units.h>
 #include <lal/LALString.h>
+#include <lal/FrequencySeries.h>
+#include <lalapps.h>
+
+#include "LALASCIIFileRead.h"
 
 extern char *optarg;
 extern int optind, opterr, optopt;
@@ -108,6 +105,8 @@ struct CommandLineArgsTag {
   char *strainchannel;
   char *datadir;
   char *checkfilename;
+  char *filenameC;         /* file with FD official calibration sensing */
+  char *filenameH;         /* file with FD official calibration open loop gain */
 } CommandLineArgs;
 
 /***************************************************************************/
@@ -343,6 +342,22 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   XLALFrameAddREAL4TimeSeriesAdcData( frame, &(InputData.DARM));
   XLALFrameAddREAL4TimeSeriesAdcData( frame, &(InputData.DARM_ERR) );
   XLALFrameAddREAL4TimeSeriesAdcData( frame, &(InputData.EXC));
+
+  /* Add FD calibration files */ 
+  {
+    COMPLEX8FrequencySeries *seriesH = NULL, *seriesC = NULL;
+    REAL8 durationC,durationH;
+
+    XLALASCIIFileReadCalRef( &seriesC, &durationC, CLA.filenameC );
+    XLALASCIIFileReadCalRef( &seriesH, &durationH, CLA.filenameH );
+
+    XLALFrameAddCalRef( frame, seriesC, atoi(&CLA.frametype[9]), durationC );
+    XLALFrameAddCalRef( frame, seriesH, atoi(&CLA.frametype[9]), durationH );
+
+    XLALDestroyCOMPLEX8FrequencySeries( seriesC );
+    XLALDestroyCOMPLEX8FrequencySeries( seriesH );
+  }
+  
 
   
   /* write first to tmpfile then rename it */
@@ -730,16 +745,17 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"delta",               no_argument, NULL,                 'd'},
     {"no-factors",          no_argument, NULL,                 'u'},
     {"td-fir",              no_argument, NULL,                 'x'},
-    {"output-factors",      no_argument, NULL,                 'y'},
     {"require-histories",   required_argument, NULL,           'H'},
     {"frame-type",          required_argument, NULL,           'T'},
     {"strain-channel",      required_argument, NULL,           'S'},
     {"data-dir",            required_argument, NULL,           'z'},
     {"check-file-exists",   required_argument, NULL,           'v'},
+    {"olg-file",            required_argument, NULL,           'a'},
+    {"sensing-file",        required_argument, NULL,           'b'},
     {"help",                no_argument, NULL,                 'h' },
     {0, 0, 0, 0}
   };
-  char args[] = "hrcduxyf:C:A:E:D:R:F:s:e:i:j:k:l:m:n:t:o:H:T:S:z:v:";
+  char args[] = "hrcduxf:C:A:E:D:R:F:s:e:i:j:k:l:m:n:t:o:H:T:S:z:v:";
   
   /* Initialize default values */
   CLA->f=0.0;
@@ -764,6 +780,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->strainchannel=NULL;
   CLA->datadir=NULL;
   CLA->checkfilename=NULL;
+  CLA->filenameC=NULL;
+  CLA->filenameH=NULL;
 
   InputData.delta=0;
   InputData.wings=0;
@@ -871,12 +889,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       /* use time domain FIR filtering instead of FFT convolution */
       InputData.fftconv=0;
       break;
-    case 'y':
-      /* output calibration factors (the code will output them into the residual signal
-	 hence the testsensing=1) */
-      InputData.outalphas=1;
-      CLA->testsensing=1;       
-      break;
     case 'T':
       CLA->frametype=optarg;       
       break;
@@ -888,6 +900,12 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     case 'v':
       CLA->checkfilename=optarg;       
+      break;
+    case 'a':
+      CLA->filenameH=optarg;       
+      break;
+    case 'b':
+      CLA->filenameC=optarg;       
       break;
     case 'h':
       /* print usage/help message */
@@ -919,6 +937,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tstrain-channel (-S)\tSTRING\t Strain channel name in frame (eg, H1:LSC-STRAIN)\n");
       fprintf(stdout,"\tdata-dir (-z)\tSTRING\t Ouput frame to this directory (eg, /tmp/S4/H1/H). Don't forget the H or L at the end!\n");
       fprintf(stdout,"\tcheck-file-exists (-w)\tSTRING\t Checks file give as argument exists already and won't run if so. \n");
+      fprintf(stdout,"\tolg-file (-a)\tSTRING\t Name of official OLG file (for storage in frames). \n");
+      fprintf(stdout,"\tsensing-file (-b)\tSTRING\t Name of official sensing file (for storage in frames). \n");
       fprintf(stdout,"\thelp (-h)\tFLAG\t This message\n");    
       exit(0);
       break;
@@ -1030,6 +1050,18 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
    if(CLA->datadir == NULL)
     {
       fprintf(stderr,"No data directory specified.\n");
+      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      return 1;
+    }      
+   if(CLA->filenameH == NULL)
+    {
+      fprintf(stderr,"No open loop gain file specified.\n");
+      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      return 1;
+    }      
+   if(CLA->filenameC == NULL)
+    {
+      fprintf(stderr,"No sensing file specified.\n");
       fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
       return 1;
     }      

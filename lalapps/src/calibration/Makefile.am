@@ -14,7 +14,7 @@ lalapps_mkcalfac_SOURCES = mkcalfac.c
 lalapps_mkcalref_SOURCES = mkcalref.c
 endif
 lalapps_ComputeStrain_SOURCES = ComputeStrain.c
-lalapps_ComputeStrainDriver_SOURCES = ComputeStrainDriver.c
+lalapps_ComputeStrainDriver_SOURCES = ComputeStrainDriver.c LALASCIIFileRead.c LALASCIIFileRead.h
 lalapps_ComputeStrainDriverDMT_SOURCES = ComputeStrainDriverDMT.c
 lalapps_ComputeFactors_SOURCES = ComputeFactors.c
 lalapps_NoiseComparison_SOURCES = NoiseComparison.c
