@@ -52,7 +52,7 @@ information of the metric perturbation.  The wave falls off as $1/r$
 where $r$ is the distance from the source
 \begin{equation}
   \label{eq:1}
-  h_{ij} = \frac{H_{ij}M}{r} \,.
+  h_{ij} = H_{ij}\frac{M}{r} \,.
 \end{equation}
 Here $H_{ij}$ is a transverse traceless tensor and $M$ is the total
 mass of the system; this equation is, naturally, only valid far away
@@ -74,19 +74,17 @@ in the formats described later.
 
 Let $(x,y,z,t)$ be a Cartesian coordinate system in the wave zone,
 sufficiently far away from the source. Let $\xhat$, $\yhat$ and
-$\zhat$ denote the orthonormal coordinate basis vectors.  Given this
-coordinate system, we define standard spherical coordinates
+$\zhat$ denote the spatial orthonormal coordinate basis vectors.
+Given this coordinate system, we define standard spherical coordinates
 $(r,\iota,\phi)$ where $\iota$ is the inclination angle from the
 $z$-axis and $\phi$ is the phase angle.  At this point, we have not
 specified anything about the source.  In fact, the source could be a
 binary system, a star undergoing gravitational collapse or anything
-else that could be of interest for gravitational wave source
-modeling.  In a later section we will specialize to binary black hole
-systems and suggest possibilities for some of the various choices that
-have to be made.  However, these choices are eventually to be made by
-the individual numerical and for data analysis purposes, the
-quantities of direct interest are the modes of $h_{ij}$ as described
-in the next paragraph.
+else that could be of interest for gravitational wave source modeling.
+In a later section we will specialize to binary black hole systems and
+suggest possibilities for some of the various choices that have to be
+made.  However, as far as possible, these choices are eventually to be
+made by the individual source modeling group.
 
 We break up $h_{ij}$ into modes in this coordinate system.  In the
 wave zone, the wave will be propagating in the direction of
@@ -125,9 +123,11 @@ related to $\Psi_4$ by two time derivatives\footnote{We define
   $\Psi_4$ as $\Psi_4 := C_{abcd}\ell^a \bar{m}^b \bar{m}^c n^d$ where
   $C_{abcd}$ is the Weyl tensor and $a,b\ldots$ denote spacetime
   indices.  If we denote the unit timelike normal to the spatial slice
-  as $\that$, then the null tetrad $(\ell^a,n^a,m^a)$ is $\ellhat = (\that +
-  \rhat)/\sqrt{2}$, $\nhat = (\that - \rhat)/\sqrt{2}$, $\mhat = (\iotahat
-  + i\phihat)/\sqrt{2}$ and $\mbarhat$ is the complex conjugate of $\mhat$.}
+  as $\that$, then the null tetrad adapted to the constant $r$ spheres
+  is $(\ell^a,n^a,m^a,\bar{m}^a)$ is $\ellhat = (\that + \rhat)/\sqrt{2}$,
+  $\nhat = (\that - \rhat)/\sqrt{2}$, $\mhat = (\iotahat +
+  i\phihat)/\sqrt{2}$ and $\mbarhat$ is the complex conjugate of
+  $\mhat$.}
 \begin{equation}
   \label{eq:3}
   \Psi_4 = \ddot{h}_+ - i\ddot{h}_\times\,.
@@ -197,37 +197,38 @@ provided as functions of time.
 \label{sec:format}
 
 
-For our purposes, a single numerical waveform is defined by 9
-parameters: the mass ratio $M_1/M_2$, the three components of the
-individual spins $\vec{S}_1$ and $\vec{S}_2$ and the mode numbers
-$(l,m)$.  These 9 parameters will be referred to as the ``metadata''
-for a waveform.  It is possible to add more parameters to this
-metadata if necessary. Note that $M_1$ denotes the larger of the two
-masses so that the mass ratio should never be lesser than unity.  The
-choice of the individual masses $M_1$ and $M_2$ is to be decided by
-the individual numerical relativity groups.  Thus, for non-spinning
-black holes, $M_1$ and $M_2$ could be the irreducible masses of the
-two horizons, or the masses could be specified in the initial data
-etc.  
+For our purposes, a single numerical waveform is defined by \emph{at
+  least} 9 parameters: the mass ratio $q = M_1/M_2$, the three
+components of the individual spins $\vec{S}_1$ and $\vec{S}_2$ and the
+mode numbers $(l,m)$.  These 9 parameters will be referred to as the
+``metadata'' for a waveform.  It is possible to add more parameters to
+this metadata if necessary. We use the convention that $M_1$ denotes
+the larger of the two masses so that $q\geq 1$.  The choice of
+precisely how the individual masses $M_1$ and $M_2$ are calculated is
+to be decided by the individual numerical relativity groups.  Thus,
+for non-spinning black holes, $M_1$ and $M_2$ could be the irreducible
+masses of the two horizons, and for spinning black holes it could be
+given by the Christodoulou formula with an appropriately defined spin.
 
 The data for a single mode $rh_{+,\times}^{lm}$ is to be written as a
 plain text file in three columns for the time $t$, $rh_+$ and
-$rh_\times$.  The time must be in units of the total mass $M$ of the
-binary.  There can be subtleties in the choice of $M$.  It could be
-the ADM mass of the spacetime, or it could be the sum of the
+$rh_\times$ respectively.  The time must be in units of the total mass
+$M$ of the binary.  There can be subtleties in the choice of $M$.  It
+could be the ADM mass of the spacetime, or it could be the sum of the
 individual masses.  Again, the choice is left up to the numerical
 relativity group which produced the waveform.  It should be whatever
-best represents the time coordinate of the particular simulation.  
+best represents the time coordinate of the particular simulation.
 
-The sampling in time must be uniform.  If the result of a simulation
-or set of simulations yields a waveform sampled non-uniformly, we ask
-that the NR group interpolate to give a uniformly sampled waveform.  A
-sampling rate of $1\times M$ is sufficient for our purposes, but there
-is not a requirement.  The strain multiplied by the distance will also
-be in units of the total mass $M$ of the binary.  There can be any
-number of comment lines at the top of the file and it is envisioned
-that the details of the simulation and the mode contained in the file
-will be held in the comment lines.  This is an example of a data file:
+The sampling in time must be uniform in units of $M$.  If the result
+of a simulation or set of simulations yields a waveform sampled
+non-uniformly, we ask that the NR group interpolate to give a
+uniformly sampled waveform.  A sampling rate of $1\times M$ is usually
+sufficient for our purposes, but this is not a requirement.  The
+strain multiplied by the distance will also be in units of the total
+mass $M$ of the binary.  There can be any number of comment lines at
+the top of the file and it is envisioned that the details of the
+simulation and the mode contained in the file will be held in the
+comment lines.  This is an example of a data file:
 
 \begin{verbatim}
 # numerical waveform from ....
@@ -298,21 +299,22 @@ We now specialize to the case of binary black hole simulations and we
 list the open issues which can be topics for further discusion as
 bullet points.  
 
-Introduce a coordinate system $(x,y,z,t)$ associated with the binary
-system as follows.  The orbital plane of the binary at $t=0$ is taken
-to be the $x$-$y$ plane with the $z$-axis in the direction of the
-orbital angular momentum. 
+We associate the coordinate system $(x,y,z,t)$ with the binary system
+as follows.  The orbital plane of the binary at $t=0$ is taken to be
+the $x$-$y$ plane with the $z$-axis in the direction of the orbital
+angular momentum.
 \begin{itemize}
 \item Is this the best choice of the $z$-axis?  Would it be better to
   choose, say, the spin of the final black hole? The decisions will be
   determined by requirements of simplicity and having as few modes to
   work with as possible.  
 \end{itemize}
-The orbital plane is unambiguous when the black holes are non-spinning
-but it can be ambiguous in many situations, especially when the spin
-of the black holes causes the orbital plane to precess significantly.
-In such cases, it is left to the numerical relativity group to decide
-what the best choice of the ``orbital plane'' should be.
+Because of precession effects, the orbital plane is unambiguous when
+the black holes are non-spinning but it can be ambiguous in many
+situations, especially when the spin of the black holes causes the
+orbital plane to precess significantly.  In such cases, it is left to
+the numerical relativity group to decide what the best choice of the
+``orbital plane'' should be.
 
 We now need to make a choice for the phase. 
 \begin{itemize}
@@ -321,7 +323,7 @@ We now need to make a choice for the phase.
   h_\times^2$.  It is not immediately clear which would be preferable.
 \end{itemize}
 What is the right choice for the individual masses and the total mass
-which sets the scale for the amplitude and the time.
+which sets the scale for the amplitude and the time?
 \begin{itemize}
 \item Should we use the individual horizon masses (including the
   effect of angular momentum), or should it be the total ADM mass or
