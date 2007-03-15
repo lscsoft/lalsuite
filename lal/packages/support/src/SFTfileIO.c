@@ -132,6 +132,8 @@ static int compareSFTdesc(const void *ptr1, const void *ptr2);
 static UINT8 calc_crc64(const CHAR *data, UINT4 length, UINT8 crc);
 int read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp );
 
+void _LALLoadSFTs ( LALStatus *, SFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax );
+
 /*==================== FUNCTION DEFINITIONS ====================*/
 
 /** Find the list of SFTs matching the \a file_pattern and satisfying the given \a constraints, 
@@ -165,7 +167,7 @@ LALSFTdataFind (LALStatus *status,
 		)
 {
   LALStringVector *fnames;
-  UINT4 i, numFiles;
+  UINT4 i, numFiles, numSFTs;
   SFTCatalog *ret = NULL;
   SFTtype first_header = empty_SFTtype;
 						   
@@ -197,7 +199,7 @@ LALSFTdataFind (LALStatus *status,
   }
   numFiles = fnames->length;
 
-
+  numSFTs = 0;
   /* ----- main loop: parse all matching files */
   for ( i = 0; i < numFiles; i ++ )
     {
@@ -319,21 +321,35 @@ LALSFTdataFind (LALStatus *status,
 
 	  if ( want_this_block )
 	    {
-	      UINT4 oldlen = ret->length;
 	      SFTDescriptor *desc;
-	      
-	      ret->data = LALRealloc ( ret->data, (oldlen+1) * sizeof( *(ret->data) ) );
 
-	      ret->length ++;
-	      if ( ret->data == NULL )
+	      numSFTs ++;
+
+	      /* do we need to alloc more memory for the SFTs? */
+	      if (  numSFTs > ret->length )
 		{
-		  LALDestroyStringVector ( status->statusPtr, &fnames );
-		  LALDestroySFTCatalog ( status->statusPtr, &ret );
-		  if ( this_comment ) LALFree ( this_comment );
-		  fclose(fp);
-		  ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
+		  UINT4 j;
+		  /* we realloc SFT-memory blockwise in order to 
+		   * improve speed in debug-mode (using LALMalloc/LALFree)
+		   */
+#define REALLOC_BLOCKSIZE 100
+		  ret->data = LALRealloc ( ret->data, (ret->length + REALLOC_BLOCKSIZE) * sizeof( *(ret->data) ) );
+		  if ( ret->data == NULL )
+		    {
+		      LALDestroyStringVector ( status->statusPtr, &fnames );
+		      LALDestroySFTCatalog ( status->statusPtr, &ret );
+		      if ( this_comment ) LALFree ( this_comment );
+		      fclose(fp);
+		      ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
+		    }
+		  /* properly initialize data-fields pointers to NULL to avoid SegV when Freeing */
+		  for ( j=0; j < REALLOC_BLOCKSIZE; j ++ )
+		    memset ( &(ret->data[ret->length + j]), 0, sizeof( ret->data[0] ) );
+
+		  ret->length += REALLOC_BLOCKSIZE;
 		}
-	      desc = &(ret->data[oldlen]);
+
+	      desc = &(ret->data[numSFTs - 1]);
 
 	      desc->locator = LALCalloc ( 1, sizeof ( *(desc->locator) ) );
 	      if ( desc->locator )
@@ -370,6 +386,14 @@ LALSFTdataFind (LALStatus *status,
 
   /* free matched filenames */
   LALDestroyStringVector ( status->statusPtr, &fnames );
+
+  /* now realloc SFT-vector (alloc'ed blockwise) to its *actual size* */
+  if ( (ret->data = LALRealloc ( ret->data, numSFTs * sizeof( *(ret->data) ) )) == NULL )
+    {
+      LALDestroySFTCatalog ( status->statusPtr, &ret );
+      ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
+    }
+  ret->length = numSFTs;
 
   /* ----- final consistency-checks: ----- */
 
