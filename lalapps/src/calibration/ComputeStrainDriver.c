@@ -124,6 +124,7 @@ FrCache *framecache;                                           /* frame reading 
 FrStream *framestream=NULL;
 char ifo[2];
 char site[1];
+char filtercvsinfo[16384];
 
 /***************************************************************************/
 /* to avoid a warning */
@@ -181,6 +182,7 @@ int main(int argc,char *argv[])
 /*  FUNCTIONS */
 
 /*******************************************************************************/
+
 int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
 {
   /* This is mostly ripped off some code Jolien sent me a while back,
@@ -253,9 +255,6 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
     return 1;  /* Error: not a recognized name */
   site = OutputData.h.name[0];
   
-  memcpy( alphaName, OutputData.h.name, 2 );
-  memcpy( gammaName, OutputData.h.name, 2 );
-
   /* based on series metadata, generate standard filename */
   duration = OutputData.h.deltaT * OutputData.h.data->length;
   t0 = OutputData.h.epoch.gpsSeconds;
@@ -307,6 +306,9 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   FrHistoryAdd( frame, "Frequency validity range: 40Hz-5kHz.");
   FrHistoryAdd( frame, fname);
 
+  /* String containing the filter file cvs info (first line in filter file) */
+  FrHistoryAdd( frame, filtercvsinfo);
+
   /* Add in the h(t) data */
   XLALFrameAddREAL8TimeSeriesProcData( frame, &OutputData.h);
 
@@ -357,8 +359,94 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
     XLALDestroyCOMPLEX8FrequencySeries( seriesC );
     XLALDestroyCOMPLEX8FrequencySeries( seriesH );
   }
-  
 
+  /* Add TD filters */  
+  {
+    FrVect *vectA, *vectD, *vectC;
+    char seconds[LALUnitTextSize] = "s";
+    int tstart;
+    int tend;
+    FrStatData *sdatA, *sdatD, *sdatC;
+    FrDetector *detector;
+    char prefix[3];
+
+    /* To find the detector, look for the detector prefix stored as the first
+     * two characters of the channel name. */
+    prefix[0] = InputData.DARM_ERR.name[0];
+    prefix[1] = InputData.DARM_ERR.name[1];
+    prefix[2] = 0;
+    
+    detector = FrameFindDetector( frame, prefix );
+    if ( ! detector )
+      {
+        fprintf( stderr, "No detector associated with prefix in frame\n");
+	return 1;
+      }
+
+    /* start and end times for the static filter data */
+    tstart = InputData.DARM_ERR.epoch.gpsSeconds;
+    tend = (int)ceil( InputData.DARM_ERR.epoch.gpsSeconds + 1e-9*InputData.DARM_ERR.epoch.gpsNanoSeconds 
+		      + InputData.DARM_ERR.data->length * InputData.DARM_ERR.deltaT );
+
+    /* Actuation */
+    vectA = FrVectNew1D( "Actuation", FR_VECT_8R, InputData.A->directCoef->length, InputData.DARM_ERR.deltaT, seconds, seconds );
+    if ( ! vectA )
+      { 
+	fprintf(stderr,"Unable to write actuation TD filter into frame.\n");
+	return 1;
+      }
+    vectA->startX[0] = 0.0;
+    memcpy( vectA->data, InputData.A->directCoef->data,  InputData.A->directCoef->length* sizeof( * InputData.A->directCoef->data) );
+
+    /* Servo */
+    vectD = FrVectNew1D( "Servo", FR_VECT_8R, InputData.D->directCoef->length, InputData.DARM_ERR.deltaT, seconds, seconds );
+    if ( ! vectD )
+      { 
+	fprintf(stderr,"Unable to write servo TD filter into frame.\n");
+	return 1;
+      }
+    vectD->startX[0] = 0.0;
+    memcpy( vectD->data, InputData.D->directCoef->data,  InputData.D->directCoef->length* sizeof( * InputData.D->directCoef->data) );
+
+    /* Sensing */
+    vectC = FrVectNew1D( "Inverse_Sensing", FR_VECT_8R, InputData.Cinv->directCoef->length, InputData.DARM_ERR.deltaT/InputData.CinvUSF, 
+			 seconds, seconds );
+    if ( ! vectC )
+      { 
+	fprintf(stderr,"Unable to write inverse sensing TD filter into frame.\n");
+	return 1;
+      }
+    vectC->startX[0] = 0.0;
+    memcpy( vectC->data, InputData.Cinv->directCoef->data,  InputData.Cinv->directCoef->length* sizeof( * InputData.Cinv->directCoef->data) );
+
+
+    /* Add the static data to the frames */
+    sdatA = FrStatDataNew( "Actuation", "time domain FIR filter", "time_series", tstart, tend, atoi(&CLA.frametype[9]), vectA, NULL );
+    if ( ! sdatA )
+      { 
+	fprintf(stderr,"Unable to write actuation TD filter into frame. 2.\n");
+	return 1;
+      }
+    FrStatDataAdd( detector, sdatA );
+
+    sdatD = FrStatDataNew( "Servo", "time domain FIR filter", "time_series", tstart, tend, atoi(&CLA.frametype[9]), vectD, NULL );
+    if ( ! sdatD )
+      { 
+	fprintf(stderr,"Unable to write servo TD filter into frame. 2.\n");
+	return 1;
+      }
+    FrStatDataAdd( detector, sdatD );
+
+    sdatC = FrStatDataNew( "Inverse_Sensing", "time domain FIR filter", "time_series", tstart, tend, atoi(&CLA.frametype[9]), vectC, NULL );
+    if ( ! sdatC )
+      { 
+	fprintf(stderr,"Unable to write inverse sensing TD filter into frame. 2.\n");
+	return 1;
+      }
+    FrStatDataAdd( detector, sdatC );
+  }
+
+  /* Add cvs version of filters file used */
   
   /* write first to tmpfile then rename it */
   frfile = FrFileONew( tmpfname, 8 ); /* 1 = GZIP */
@@ -526,7 +614,7 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
   char sensingstr[7],usfstr[17], delaystr[5];
   char aastr[9], servostr[5];
   int NCinv, NA, ND, l;
-
+ 
   LALParseDataFile (&status, &Filters, CLA.filterfile);
   TESTSTATUS( &status );
 
@@ -541,8 +629,15 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
     }
   
   /**-----------------------------------------------------------------------**/
-  /* read sensing function info */
+  /* read CVS info */
   i=0; /*start with first line */
+  thisline = Filters->lines->tokens[i];	/* get line i */
+  strncpy(filtercvsinfo, thisline, sizeof(filtercvsinfo) );
+  i++; /*advance one line */
+
+  /**-----------------------------------------------------------------------**/
+  /* read sensing function info */
+
   thisline = Filters->lines->tokens[i];	/* get line i */
   sscanf (thisline,"%s", sensingstr);
   if ( strcmp(sensingstr, "SENSING" ) ) 
