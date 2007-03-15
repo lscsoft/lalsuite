@@ -413,7 +413,7 @@ int MAIN( int argc, char *argv[]) {
   uvar_Freq = FSTART;
   uvar_FreqBand = FBAND;
   uvar_blocksRngMed = BLOCKSRNGMED;
-  uvar_nf1dotRes = 0;
+  uvar_nf1dotRes = 1;
   uvar_peakThrF = FSTATTHRESHOLD;
   uvar_nCand1 = NCAND1;
   uvar_SSBprecision = SSBPREC_RELATIVISTIC;
@@ -709,7 +709,7 @@ int MAIN( int argc, char *argv[]) {
   }
 
   /* resolution of residual spindowns 
-     -- default = df1dot/nstacks1 */
+     -- default = df1dot/nf1dotRes */
   if ( LALUserVarWasSet(&uvar_df1dotRes) ) {
     df1dotRes = uvar_df1dotRes;
   }
@@ -848,7 +848,7 @@ int MAIN( int argc, char *argv[]) {
        caused by the residual spindown.  The reference time for the spindown is the midtime, 
        so relevant interval is Tobs/2 and largest possible value of residual spindown is 
        (number of residual spindowns -1)*resolution in residual spindowns */
-    extraBinsfdot = (UINT4)(tObs * nf1dotRes * df1dotRes / dFreqStack + 0.5);
+    extraBinsfdot = (UINT4)(tObs * (nf1dotRes - 1) * df1dotRes / dFreqStack + 0.5);
 
     semiCohPar.extraBinsFstat = extraBinsSky + extraBinsfdot;    
     LogPrintf(LOG_DEBUG, "Maxmum No. of extra Fstat freq. bins = %d for skypatch + %d for residual fdot: total = %d\n",
