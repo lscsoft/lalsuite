@@ -215,8 +215,8 @@ void GetHoughCandidates_threshold(LALStatus *status, SemiCohCandidateList *out, 
 
 void GetSemiCohToplist(LALStatus *status, toplist_t *list, SemiCohCandidateList *in, REAL8 meanN, REAL8 sigmaN);
 
-void ReallocFstatVector(LALStatus *status, REAL8FrequencySeriesVector *out, REAL8VectorSequence *vel, 
-			REAL8 alpha, REAL8 delta, REAL8 patchSizeX, REAL8 patchSizeY);
+UINT4 ComputeNumExtraBins(REAL8VectorSequence *vel, REAL8 f0, REAL8 deltaF, 
+			 REAL8 alpha,REAL8 delta, REAL8 patchSizeX, REAL8 patchSizeY);
 
 /* default values for input variables */
 #define EARTHEPHEMERIS 		"earth05-09.dat"
@@ -957,8 +957,19 @@ int MAIN( int argc, char *argv[]) {
 	 -- spindown range and resolutionhas been set earlier */
       for ( ifdot = 0; ifdot < nf1dot; ifdot++)
 	{
+	  UINT4 tmpExtraBins;
+
+	  /* experimental! */
+	  tmpExtraBins = ComputeNumExtraBins(velStack, usefulParams.spinRange_refTime.fkdot[0], 
+					     dFreqStack, thisPoint.Alpha, thisPoint.Delta, 
+					     semiCohPar.patchSizeX, semiCohPar.patchSizeY);
+
+
+
 	  LogPrintf(LOG_DETAIL, "Analyzing %d/%d Coarse sky grid points and %d/%d spindown values\n", 
 			    skyGridCounter, thisScan.numSkyGridPoints, ifdot+1, nf1dot);
+
+    
 	  	  
 	  /* calculate the Fstatistic for each stack*/
 	  LogPrintf(LOG_DETAIL, "Starting Fstat calculation for each stack...");
@@ -2795,37 +2806,67 @@ void GetSemiCohToplist(LALStatus            *status,
 
 
 /** reallocate fstat vector */
-void ReallocFstatVector(LALStatus                  *status,
-			REAL8FrequencySeriesVector *out,
-			REAL8VectorSequence *vel,
-			REAL8                alpha,
-			REAL8                delta,
-			REAL8                patchSizeX,
-			REAL8                patchSizeY)
+UINT4 ComputeNumExtraBins(REAL8VectorSequence *vel,
+			 REAL8                f0,
+			 REAL8                deltaF,
+			 REAL8                alpha,
+			 REAL8                delta,
+			 REAL8                patchSizeX,
+			 REAL8                patchSizeY)
 {
 
-  REAL8 skypos[3], xi[3], xiProj[3];
-  REAL8 xiDotn;
+  REAL8 skypos[3], xi[3], xiProj[3], xhat[3], yhat[3];
+  REAL8 xiDotn, xiProjX, xiProjY, patchSizeNorm, xiProjNorm;
+  UINT4 k, nStacks, extraBins, extraBinsInThisStack;
 
-  INITSTATUS( status, "ReallocFstatVector", rcsid );
-  ATTATCHSTATUSPTR (status);
+  nStacks = vel->vectorLength;
+  extraBins = 0;
 
   skypos[0] = cos(delta) * cos(alpha);
   skypos[1] = cos(delta) * sin(alpha);
   skypos[2] = sin(delta);
 
-  xi[0] = out->data[0].f0 * vel->data[0];
-  xi[1] = out->data[0].f0 * vel->data[1];
-  xi[2] = out->data[0].f0 * vel->data[2];
+  xhat[0] = -sin(alpha);
+  xhat[1] = cos(alpha);
+  xhat[3] = 0;
 
-  xiDotn = xi[0]*skypos[0] + xi[1]*skypos[1] + xi[2]*skypos[2];
+  yhat[0] = sin(delta)*cos(alpha);
+  yhat[1] = sin(delta)*sin(alpha);
+  yhat[2] = -cos(delta);
 
-  xiProj[0] = xi[0] - xiDotn * skypos[0];
-  xiProj[1] = xi[1] - xiDotn * skypos[1];
-  xiProj[2] = xi[2] - xiDotn * skypos[2];
+  /* loop over stacks */
+  for ( k = 0; k < nStacks; k++) {
 
+    UINT4 minBinsPar, minBinsPerp;
 
-  DETATCHSTATUSPTR (status);
-  RETURN(status);
+    
+    xi[0] = vel->data[3*k];
+    xi[1] = vel->data[3*k+1];
+    xi[2] = vel->data[3*k+2];
+    
+    xiDotn = xi[0]*skypos[0] + xi[1]*skypos[1] + xi[2]*skypos[2];
+    
+    xiProj[0] = xi[0] - xiDotn * skypos[0];
+    xiProj[1] = xi[1] - xiDotn * skypos[1];
+    xiProj[2] = xi[2] - xiDotn * skypos[2];
+
+    xiProjX = xiProj[0]*xhat[0] + xiProj[1]*xhat[1] + xiProj[2]*xhat[2];
+    xiProjY = xiProj[0]*yhat[0] + xiProj[1]*yhat[1] + xiProj[2]*yhat[2];
+
+    xiProjNorm = sqrt(xiProj[0]*xiProj[0] + xiProj[0]*xiProj[0] + xiProj[0]*xiProj[0]);
+    patchSizeNorm = patchSizeX*patchSizeX + patchSizeY*patchSizeY;
+
+    minBinsPar = (UINT4)(f0 * fabs(xiDotn) * patchSizeNorm /deltaF + 0.5);
+
+    minBinsPerp = (UINT4)(f0 * xiProjNorm * patchSizeNorm/ deltaF + 0.5);
+
+    extraBinsInThisStack = minBinsPar + minBinsPerp;
+
+    if (extraBins < extraBinsInThisStack)
+      extraBins = extraBinsInThisStack;
+  
+  } /* loop over stacks */
+
+  return extraBins;
 
 }
