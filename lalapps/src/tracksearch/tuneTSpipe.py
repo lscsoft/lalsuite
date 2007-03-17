@@ -124,11 +124,17 @@ class tuneObject:
         exact search ie find != Find and no partial text searches as in
         __findFiles__
         """
+        countMe=0
+        modValue=1
         dirsInPath=[]
         for root,dir,files in os.walk(searchPath):
             tmpPath=os.path.abspath(root)
             if tmpPath.endswith(dirName):
                 dirsInPath.append(tmpPath)
+                if countMe%modValue==0:
+                    sys.stdout.writelines('.')
+                    sys.stdout.flush()
+                countMe=countMe+1
         return dirsInPath
     #End __findDirs__(self,searchPath,dirName)
 
@@ -609,16 +615,19 @@ class tuneObject:
             [outputPickle,outputP,outputL,outputContour]=self.__performMapDEcalc__()
             return [outputPickle,outputP,outputL,outputContour]
         else:
-            globFiles=self.__findFiles__(self.installPipes2,['Glob','_1.candidates','DE_'])
-        print "Calculating efficiencies for ",globFiles.__len__()," trials."
+            globFiles=[]
+            #Waste of CPU cycles to guess the number of files to process
+            #globFiles=self.__findFiles__(self.installPipes2,['Glob','_1.candidates','DE_'])
+        #Scan for directories /1/ labeled
+        print "Checking for output files in tuning directory."
+        foundDirs=self.__findDirs__(self.installPipes2,'1')
+        print "Calculating efficiencies for approximately ",foundDirs.__len__()," trials."
         countMe=0
         modValue=10
         outputPickle=[]
         outputL=[]
         outputP=[]
         outputContour=[]
-        #Scan for directories /1/ labeled
-        foundDirs=self.__findDirs__(self.installPipes2,'1')
         for entry in foundDirs:
             if countMe%modValue==0:
                 sys.stdout.writelines('.')
