@@ -1897,8 +1897,7 @@ void SetUpStacks(LALStatus *status,
 		 SFTCatalog  *in,          /**< Input sft catalog to be broken up into stacks (ordered in increasing time)*/
 		 UINT4 nStacksMax )        /**< User specified number of stacks */
 {
-
-  UINT4 j, stackCounter, length, newNstacks;
+  UINT4 j, stackCounter, length;
   REAL8 tStart, thisTime;
   REAL8 Tsft;
 
@@ -1926,63 +1925,51 @@ void SetUpStacks(LALStatus *status,
   TRY ( LALGPStoFloat ( status->statusPtr, &tStart, &(in->data[0].header.epoch)), status);
 
   /* loop over the sfts */
-  for( stackCounter = 0, j = 0; j < in->length; j++) {
-
-    /* proceed only if we have not exceeded maximum allowed number of stacks */
-    if (stackCounter < nStacksMax) {
-      
+  stackCounter = 0; 
+  for( j = 0; j < in->length; j++) 
+    {
       /* thisTime is current sft timestamp */
       TRY ( LALGPStoFloat ( status->statusPtr, &thisTime, &(in->data[j].header.epoch)), status);
-      
+    
       /* if sft lies in stack duration then add 
 	 this sft to the stack. Otherwise move 
 	 on to the next stack */
-      if ( (thisTime - tStart + Tsft <= tStack) ) {
-	
-	out->data[stackCounter].length += 1;    
-	
-	length = out->data[stackCounter].length;
-
-	/* realloc to increase length of catalog */    
-	out->data[stackCounter].data = (SFTDescriptor *)LALRealloc( out->data[stackCounter].data, length * sizeof(SFTDescriptor));
-	out->data[stackCounter].data[length - 1] = in->data[j];   
-      }    
-      else { /* move onto the next stack */
-
-	stackCounter++;
-
-	/* check again if we have not exceeded nStacksMax */
-	if (stackCounter < nStacksMax) {
-
+      if ( (thisTime - tStart + Tsft <= tStack) ) 
+	{
+	  out->data[stackCounter].length += 1;    
+	  
+	  length = out->data[stackCounter].length;
+	  
+	  /* realloc to increase length of catalog */    
+	  out->data[stackCounter].data = (SFTDescriptor *)LALRealloc( out->data[stackCounter].data, length * sizeof(SFTDescriptor));
+	  out->data[stackCounter].data[length - 1] = in->data[j];   
+	}    
+      else /* move onto the next stack */
+	{ 
+	  if ( stackCounter + 1 == nStacksMax )
+	    break;
+	  
+	  stackCounter++;
+	  
 	  /* reset start time of stack */
 	  TRY ( LALGPStoFloat ( status->statusPtr, &tStart, &(in->data[j].header.epoch)), status);
-	
+	  
 	  /* realloc to increase length of catalog and copy data */    
 	  out->data[stackCounter].length = 1;    /* first entry in new stack */
 	  out->data[stackCounter].data = (SFTDescriptor *)LALRealloc( out->data[stackCounter].data, sizeof(SFTDescriptor));
 	  out->data[stackCounter].data[0] = in->data[j];   
-
-	} /* 	if (stackCounter < nStacksMax) */
-	
-      } /* else */
-
-    } /* if stackCounter < nStacksMax */
-
-  } /* loop over sfts */
+	} /* if new stack */
+      
+    } /* loop over sfts */
 
   /* realloc catalog sequence length to actual number of stacks */
-  newNstacks = stackCounter + 1;
-  if ( newNstacks < nStacksMax ) {
-    out->length = newNstacks;
-    out->data = (SFTCatalog *)LALRealloc( out->data, newNstacks * sizeof(SFTCatalog));
-  }
-
+  out->length = stackCounter + 1;
+  out->data = (SFTCatalog *)LALRealloc( out->data, (stackCounter+1) * sizeof(SFTCatalog) );
+  
   DETATCHSTATUSPTR (status);
   RETURN(status);
-}
 
-
-
+} /* SetUpStacks() */
 
 
 
