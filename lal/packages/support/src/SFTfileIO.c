@@ -129,6 +129,7 @@ static int read_sft_header_from_fp (FILE *fp, SFTtype  *header, UINT4 *version, 
 static int read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *header_crc64, UINT8 *ref_crc64, CHAR **comment, BOOLEAN swapEndian);
 static int read_v1_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, BOOLEAN swapEndian);
 static int compareSFTdesc(const void *ptr1, const void *ptr2);
+static int compareDetName(const void *ptr1, const void *ptr2);
 static UINT8 calc_crc64(const CHAR *data, UINT4 length, UINT8 crc);
 int read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp );
 
@@ -875,6 +876,9 @@ LALLoadSFTs ( LALStatus *status,
     each ifo found in the catalog.   As in LALLoadSFTs, fMin and fMax can be 
     set to -1 to get the full SFT from the lowest to the highest frequency 
     bin found in the SFT.  
+    * 
+    * output SFTvectors are sorted alphabetically by detector-name
+    * 
  */
 void LALLoadMultiSFTs ( LALStatus *status,
 			MultiSFTVector **out,             /**< [out] vector of read-in SFTs -- one sft vector for each ifo found in catalog*/
@@ -1047,8 +1051,9 @@ void LALLoadMultiSFTs ( LALStatus *status,
       
     } ENDFAIL(status);
   }
-
-
+  
+  /* sort final multi-SFT vector by detector-name */
+  qsort ( multSFTVec->data, multSFTVec->length, sizeof( multSFTVec->data[0] ), compareDetName );
 
   /* free memory and exit */
   for ( j = 0; j < numifo; j++) {
@@ -3644,6 +3649,28 @@ compareSFTdesc(const void *ptr1, const void *ptr2)
   else
     return 0;
 } /* compareSFTdesc() */
+
+/* compare two SFT-vectors by detector name in alphabetic order */
+static int 
+compareDetName(const void *ptr1, const void *ptr2)
+{
+  const SFTVector **sftvect1 = ptr1;
+  const SFTVector **sftvect2 = ptr2;
+
+  if ( (*sftvect1)->data[0].name[0] < (*sftvect2)->data[0].name[0] )
+    return -1;
+  else if ( (*sftvect1)->data[0].name[0] > (*sftvect2)->data[0].name[0] )
+    return 1;
+  else if ( (*sftvect1)->data[0].name[1] < (*sftvect2)->data[0].name[1] )
+    return -1;
+  else if ( (*sftvect1)->data[0].name[1] > (*sftvect2)->data[0].name[1] )
+    return 1;
+  else
+    return 0;
+
+} /* compareDetName() */
+
+
 
 /** Read valid SFT version-number at position fp, and determine if we need to 
  * endian-swap the data.
