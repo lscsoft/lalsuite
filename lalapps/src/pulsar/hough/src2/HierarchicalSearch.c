@@ -841,7 +841,8 @@ int MAIN( int argc, char *argv[]) {
     /* extra bins for fstat due to skypatch and spindowns */
     UINT4 extraBinsSky, extraBinsfdot;
 
-    extraBinsSky = (UINT4)(LAL_SQRT2 * VTOT * usefulParams.spinRange_midTime.fkdot[0] 
+    extraBinsSky = (UINT4)(LAL_SQRT2 * VTOT  
+			   * (usefulParams.spinRange_midTime.fkdot[0] + usefulParams.spinRange_midTime.fkdotBand[0]) 
 			   * HSMAX(semiCohPar.patchSizeX, semiCohPar.patchSizeY) / dFreqStack);
 
     /* extra bins due to fdot is maximum number of frequency bins drift that can be 
@@ -859,14 +860,14 @@ int MAIN( int argc, char *argv[]) {
   fstatVector.length = nStacks;
   fstatVector.data = NULL;
   fstatVector.data = (REAL8FrequencySeries *)LALCalloc( 1, nStacks * sizeof(REAL8FrequencySeries));
-  binsFstat1 = (UINT4)(usefulParams.spinRange_midTime.fkdotBand[0]/dFreqStack + 0.5) + semiCohPar.extraBinsFstat;
+  binsFstat1 = (UINT4)(usefulParams.spinRange_midTime.fkdotBand[0]/dFreqStack + 0.5) + 2*semiCohPar.extraBinsFstat;
   LogPrintf(LOG_DEBUG, "Number of Fstat frequency bins = %d\n", binsFstat1); 
 
   for (k = 0; k < nStacks; k++) { 
     /* careful--the epoch here is not the reference time for f0! */
     fstatVector.data[k].epoch = startTstack->data[k];
     fstatVector.data[k].deltaF = dFreqStack;
-    fstatVector.data[k].f0 = usefulParams.spinRange_midTime.fkdot[0] - 0.5 * semiCohPar.extraBinsFstat * dFreqStack;
+    fstatVector.data[k].f0 = usefulParams.spinRange_midTime.fkdot[0] - semiCohPar.extraBinsFstat * dFreqStack;
     fstatVector.data[k].data = (REAL8Sequence *)LALCalloc( 1, sizeof(REAL8Sequence));
     fstatVector.data[k].data->length = binsFstat1;
     fstatVector.data[k].data->data = (REAL8 *)LALCalloc( 1, binsFstat1 * sizeof(REAL8));
@@ -1477,7 +1478,7 @@ void ComputeFstatHoughMap(LALStatus *status,
     /* set number of freq. bins for which LUTs will be calculated */
     /* this sets the range of residual spindowns values */
     /* phmdVS.nfSize  = 2*nfdotBy2 + 1; */
-    phmdVS.nfSize  = 2 * floor(nfdot * dfdot * maxTimeDiff / deltaF + 0.5) + 1; 
+    phmdVS.nfSize  = 2 * floor((nfdot-1) * dfdot * maxTimeDiff / deltaF + 0.5) + 1; 
   }
 
   phmdVS.deltaF  = deltaF;
@@ -1554,8 +1555,8 @@ void ComputeFstatHoughMap(LALStatus *status,
   /* and make sure that we have fstat values for sufficient number of bins */
   parRes.f0Bin =  fBinIni;      
 
-  fBinIni += params->extraBinsFstat/2 + 1;
-  fBinFin -= params->extraBinsFstat/2 + 1;
+  fBinIni += params->extraBinsFstat;
+  fBinFin -= params->extraBinsFstat;
   /* this is not very clean -- the Fstat calculation has to know how many extra bins are needed */
 
   LogPrintf(LOG_DETAIL, "Freq. range analyzed by Hough = [%fHz - %fHz] (%d bins)\n", 
