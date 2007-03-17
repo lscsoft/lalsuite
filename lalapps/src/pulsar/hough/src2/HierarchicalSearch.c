@@ -697,7 +697,7 @@ int MAIN( int argc, char *argv[]) {
   }
 
   /* number of coarse grid spindown values */
-  nf1dot = (UINT4)( usefulParams.spinRange_midTime.fkdotBand[1]/ df1dot + 0.5) + 1; 
+  nf1dot = (UINT4)( usefulParams.spinRange_midTime.fkdotBand[1]/ df1dot + 1e-6) + 1; 
 
   /* set number of residual spindowns for semi-coherent step  
      --default = nStacks */
@@ -853,14 +853,14 @@ int MAIN( int argc, char *argv[]) {
 
     semiCohPar.extraBinsFstat = extraBinsSky + extraBinsfdot;    
     LogPrintf(LOG_DEBUG, "Maxmum No. of extra Fstat freq. bins = %d for skypatch + %d for residual fdot: total = %d\n",
-	      extraBinsSky, extraBinsfdot, semiCohPar.extraBinsFstat); 
+	      2*extraBinsSky, 2*extraBinsfdot, 2*semiCohPar.extraBinsFstat); 
   }
   
   /* allocate fstat memory */
   fstatVector.length = nStacks;
   fstatVector.data = NULL;
   fstatVector.data = (REAL8FrequencySeries *)LALCalloc( 1, nStacks * sizeof(REAL8FrequencySeries));
-  binsFstat1 = (UINT4)(usefulParams.spinRange_midTime.fkdotBand[0]/dFreqStack + 0.5) + 2*semiCohPar.extraBinsFstat;
+  binsFstat1 = (UINT4)(usefulParams.spinRange_midTime.fkdotBand[0]/dFreqStack + 1e-6) + 1 + 2*semiCohPar.extraBinsFstat;
   LogPrintf(LOG_DEBUG, "Number of Fstat frequency bins = %d\n", binsFstat1); 
 
   for (k = 0; k < nStacks; k++) { 
