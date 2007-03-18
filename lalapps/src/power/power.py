@@ -349,15 +349,22 @@ class BuclusterNode(pipeline.CondorDAGNode):
 		pipeline.CondorDAGNode.__init__(self, *args)
 		self.cache = []
 
+	def set_name(self, *args):
+		pipeline.CondorDAGNode.set_name(self, *args)
+		self.cache_name = os.path.join(self._CondorDAGNode__job.cache_dir, "%s.cache" % self.get_name())
+		self.add_var_opt("input-cache", self.cache_name)
+
 	def add_input_cache(self, cache):
 		self.cache.extend(cache)
-		for c in cache:
-			filename = c.path()
-			pipeline.CondorDAGNode.add_file_arg(self, filename)
-			self.add_output_file(filename)
 
 	def add_file_arg(self, filename):
 		raise NotImplementedError
+
+	def write_input_files(self, *args):
+		pipeline.CondorDAGNode.write_input_files(self, *args)
+		f = file(self.cache_name, "w")
+		for c in self.cache:
+			print >>f, str(c)
 
 	def get_output_cache(self):
 		return self.cache
@@ -497,6 +504,7 @@ def init_job_types(config_parser, types = ["datafind", "binj", "power", "lladd",
 	# ligolw_bucluster
 	if "bucluster" in types:
 		buclusterjob = BuclusterJob(config_parser)
+		buclusterjob.cache_dir = get_cache_dir(config_parser)
 
 	# ligolw_burca
 	if "burca" in types:
