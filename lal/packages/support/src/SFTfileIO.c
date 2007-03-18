@@ -3654,8 +3654,8 @@ compareSFTdesc(const void *ptr1, const void *ptr2)
 static int 
 compareDetName(const void *ptr1, const void *ptr2)
 {
-  const SFTVector **sftvect1 = ptr1;
-  const SFTVector **sftvect2 = ptr2;
+  const SFTVector **sftvect1 = (const SFTVector **)ptr1;
+  const SFTVector **sftvect2 = (const SFTVector **)ptr2;
 
   if ( (*sftvect1)->data[0].name[0] < (*sftvect2)->data[0].name[0] )
     return -1;
