@@ -286,7 +286,7 @@ int MAIN( int argc, char *argv[]) {
   static MultiSFTVectorSequence stackMultiSFT;
   static MultiNoiseWeightsSequence stackMultiNoiseWeights;
   static MultiDetectorStateSeriesSequence stackMultiDetStates;
-  LIGOTimeGPS minStartTimeGPS, maxEndTimeGPS;
+  static LIGOTimeGPS minStartTimeGPS, maxEndTimeGPS;
 
 
   /* some useful variables for each stage */
@@ -299,27 +299,27 @@ int MAIN( int argc, char *argv[]) {
   UINT4 nf1dot, nf1dotRes; /* coarse and fine grid number of spindown values */
 
   /* LALdemod related stuff */
-  REAL8FrequencySeriesVector fstatVector; /* Fstatistic vectors for each stack */
+  static REAL8FrequencySeriesVector fstatVector; /* Fstatistic vectors for each stack */
   UINT4 binsFstat1;
   static ComputeFParams CFparams;		   
 
   /* hough variables */
-  HOUGHPeakGramVector pgV;
-  SemiCoherentParams semiCohPar;
-  SemiCohCandidateList semiCohCandList;
+  static HOUGHPeakGramVector pgV;
+  static SemiCoherentParams semiCohPar;
+  static SemiCohCandidateList semiCohCandList;
   REAL8 alphaPeak, sumWeightSquare, meanN, sigmaN;
 
   /* fstat candidate structure */
   toplist_t *semiCohToplist=NULL;
 
   /* template and grid variables */
-  DopplerSkyScanInit scanInit;   /* init-structure for DopperScanner */
+  static DopplerSkyScanInit scanInit;   /* init-structure for DopperScanner */
   DopplerSkyScanState thisScan = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
-  PulsarDopplerParams dopplerpos;	       /* current search-parameters */
-  PulsarDopplerParams thisPoint; 
+  static PulsarDopplerParams dopplerpos;	       /* current search-parameters */
+  static PulsarDopplerParams thisPoint; 
 
   /* temporary storage for spinrange vector */
-  PulsarSpinRange spinRange_Temp;
+  static PulsarSpinRange spinRange_Temp;
 
   /* variables for logging */
   CHAR *fnamelog=NULL;
@@ -837,43 +837,11 @@ int MAIN( int argc, char *argv[]) {
   LogPrintf(LOG_DEBUG,"Hough/Stackslide patchsize is %frad x %frad\n", 
 	    semiCohPar.patchSizeX, semiCohPar.patchSizeY); 
 
-  { 
-    /* extra bins for fstat due to skypatch and spindowns */
-    UINT4 extraBinsSky, extraBinsfdot;
-
-    extraBinsSky = (UINT4)(LAL_SQRT2 * VTOT  
-			   * (usefulParams.spinRange_midTime.fkdot[0] + usefulParams.spinRange_midTime.fkdotBand[0]) 
-			   * HSMAX(semiCohPar.patchSizeX, semiCohPar.patchSizeY) / dFreqStack);
-
-    /* extra bins due to fdot is maximum number of frequency bins drift that can be 
-       caused by the residual spindown.  The reference time for the spindown is the midtime, 
-       so relevant interval is Tobs/2 and largest possible value of residual spindown is 
-       (number of residual spindowns -1)*resolution in residual spindowns */
-    extraBinsfdot = (UINT4)(tObs * (nf1dotRes - 1) * df1dotRes / dFreqStack + 0.5);
-
-    semiCohPar.extraBinsFstat = extraBinsSky + extraBinsfdot;    
-    LogPrintf(LOG_DEBUG, "Maxmum No. of extra Fstat freq. bins = %d for skypatch + %d for residual fdot: total = %d\n",
-	      2*extraBinsSky, 2*extraBinsfdot, 2*semiCohPar.extraBinsFstat); 
-  }
-  
-  /* allocate fstat memory */
+  /* allocate some fstat memory */
   fstatVector.length = nStacks;
   fstatVector.data = NULL;
   fstatVector.data = (REAL8FrequencySeries *)LALCalloc( 1, nStacks * sizeof(REAL8FrequencySeries));
-  binsFstat1 = (UINT4)(usefulParams.spinRange_midTime.fkdotBand[0]/dFreqStack + 1e-6) + 1 + 2*semiCohPar.extraBinsFstat;
-  LogPrintf(LOG_DEBUG, "Number of Fstat frequency bins = %d\n", binsFstat1); 
-
-  for (k = 0; k < nStacks; k++) { 
-    /* careful--the epoch here is not the reference time for f0! */
-    fstatVector.data[k].epoch = startTstack->data[k];
-    fstatVector.data[k].deltaF = dFreqStack;
-    fstatVector.data[k].f0 = usefulParams.spinRange_midTime.fkdot[0] - semiCohPar.extraBinsFstat * dFreqStack;
-    fstatVector.data[k].data = (REAL8Sequence *)LALCalloc( 1, sizeof(REAL8Sequence));
-    fstatVector.data[k].data->length = binsFstat1;
-    fstatVector.data[k].data->data = (REAL8 *)LALCalloc( 1, binsFstat1 * sizeof(REAL8));
-  } 
-
-
+  
 
   /*-----------Create template grid for first stage ---------------*/
   /* prepare initialization of DopplerSkyScanner to step through paramter space */
@@ -942,7 +910,6 @@ int MAIN( int argc, char *argv[]) {
       /* initialize weights to unity */
       LAL_CALL( LALHOUGHInitializeWeights( &status, weightsV), &status);
 
-
       if (uvar_useWeights) {
 	LAL_CALL( ComputeStackNoiseAndAMWeights( &status, weightsV, &stackMultiNoiseWeights,
 						 &stackMultiDetStates, skypos), &status);
@@ -954,23 +921,65 @@ int MAIN( int argc, char *argv[]) {
 	LogPrintf(LOG_DETAIL, "%f\n", weightsV->data[k]);
       }
 
+
+      { /********Allocate fstat vector memory *****************/
+
+	/* extra bins for fstat due to skypatch and spindowns */
+	UINT4 extraBinsSky, extraBinsfdot;
+
+	UINT4 tmpExtraBins;
+	
+	/* experimental! */
+	tmpExtraBins = ComputeNumExtraBins(velStack, usefulParams.spinRange_refTime.fkdot[0], 
+					   dFreqStack, thisPoint.Alpha, thisPoint.Delta, 
+					   semiCohPar.patchSizeX, semiCohPar.patchSizeY);
+	
+	extraBinsSky = (UINT4)(LAL_SQRT2 * VTOT  
+			       * (usefulParams.spinRange_midTime.fkdot[0] + usefulParams.spinRange_midTime.fkdotBand[0]) 
+			       * HSMAX(semiCohPar.patchSizeX, semiCohPar.patchSizeY) / dFreqStack);
+	
+	extraBinsSky = 45;
+	
+	/* extra bins due to fdot is maximum number of frequency bins drift that can be 
+	   caused by the residual spindown.  The reference time for the spindown is the midtime, 
+	   so relevant interval is Tobs/2 and largest possible value of residual spindown is 
+	   (number of residual spindowns -1)*resolution in residual spindowns */
+	extraBinsfdot = (UINT4)(tObs * (nf1dotRes - 1) * df1dotRes / dFreqStack + 0.5);
+	
+	semiCohPar.extraBinsFstat = extraBinsSky + extraBinsfdot;    
+	/* LogPrintf(LOG_DEBUG, "Maxmum No. of extra Fstat freq. bins = %d for skypatch + %d for residual fdot: total = %d\n", */
+	/* 2*extraBinsSky, 2*extraBinsfdot, 2*semiCohPar.extraBinsFstat);  */
+            
+	/* allocate fstat memory */
+	binsFstat1 = (UINT4)(usefulParams.spinRange_midTime.fkdotBand[0]/dFreqStack + 1e-6) + 1 + 2*semiCohPar.extraBinsFstat;
+	/* 	LogPrintf(LOG_DEBUG, "Number of Fstat frequency bins = %d\n", binsFstat1);  */
+	
+	for (k = 0; k < nStacks; k++) { 
+	  /* careful--the epoch here is not the reference time for f0! */
+	  fstatVector.data[k].epoch = startTstack->data[k];
+	  fstatVector.data[k].deltaF = dFreqStack;
+	  fstatVector.data[k].f0 = usefulParams.spinRange_midTime.fkdot[0] - semiCohPar.extraBinsFstat * dFreqStack;
+	  if (fstatVector.data[k].data == NULL) {
+	    fstatVector.data[k].data = (REAL8Sequence *)LALCalloc( 1, sizeof(REAL8Sequence));
+	    fstatVector.data[k].data->length = binsFstat1;
+	    fstatVector.data[k].data->data = (REAL8 *)LALCalloc( 1, binsFstat1 * sizeof(REAL8));
+	  } 
+	  else {
+	    fstatVector.data[k].data = (REAL8Sequence *)LALRealloc( fstatVector.data[k].data, sizeof(REAL8Sequence));
+	    fstatVector.data[k].data->length = binsFstat1;
+	    fstatVector.data[k].data->data = (REAL8 *)LALRealloc( fstatVector.data[k].data->data, binsFstat1 * sizeof(REAL8));
+	  } 
+	} /* loop over stacks */
+      } /* fstat memory allocation block */
+      
+
       /* loop over fdot values
 	 -- spindown range and resolutionhas been set earlier */
       for ( ifdot = 0; ifdot < nf1dot; ifdot++)
 	{
-	  UINT4 tmpExtraBins;
-
-	  /* experimental! */
-	  tmpExtraBins = ComputeNumExtraBins(velStack, usefulParams.spinRange_refTime.fkdot[0], 
-					     dFreqStack, thisPoint.Alpha, thisPoint.Delta, 
-					     semiCohPar.patchSizeX, semiCohPar.patchSizeY);
-
-
 
 	  LogPrintf(LOG_DETAIL, "Analyzing %d/%d Coarse sky grid points and %d/%d spindown values\n", 
-			    skyGridCounter, thisScan.numSkyGridPoints, ifdot+1, nf1dot);
-
-    
+			    skyGridCounter, thisScan.numSkyGridPoints, ifdot+1, nf1dot);    
 	  	  
 	  /* calculate the Fstatistic for each stack*/
 	  LogPrintf(LOG_DETAIL, "Starting Fstat calculation for each stack...");
@@ -1463,7 +1472,7 @@ void ComputeFstatHoughMap(LALStatus *status,
   /* look up table vector */
   lutV.length = nStacks;
   lutV.lut = NULL;
-  lutV.lut = (HOUGHptfLUT *)LALMalloc(nStacks*sizeof(HOUGHptfLUT));
+  lutV.lut = (HOUGHptfLUT *)LALCalloc(1,nStacks*sizeof(HOUGHptfLUT));
   
   /* partial hough map derivative vector */
   phmdVS.length  = nStacks;
@@ -1483,28 +1492,28 @@ void ComputeFstatHoughMap(LALStatus *status,
 
   phmdVS.deltaF  = deltaF;
   phmdVS.phmd = NULL;
-  phmdVS.phmd=(HOUGHphmd *)LALMalloc( phmdVS.length * phmdVS.nfSize *sizeof(HOUGHphmd));
+  phmdVS.phmd=(HOUGHphmd *)LALCalloc( 1,phmdVS.length * phmdVS.nfSize *sizeof(HOUGHphmd));
   
   /* residual spindown trajectory */
   freqInd.deltaF = deltaF;
   freqInd.length = nStacks;
   freqInd.data = NULL;
-  freqInd.data =  ( UINT8 *)LALMalloc(nStacks*sizeof(UINT8));
+  freqInd.data =  ( UINT8 *)LALCalloc(1,nStacks*sizeof(UINT8));
    
   /* resolution in space of residual spindowns */
   ht.dFdot.length = 1;
   ht.dFdot.data = NULL;
-  ht.dFdot.data = (REAL8 *)LALMalloc( ht.dFdot.length * sizeof(REAL8));
+  ht.dFdot.data = (REAL8 *)LALCalloc( 1, ht.dFdot.length * sizeof(REAL8));
 
   /* the residual spindowns */
   ht.spinRes.length = 1;
   ht.spinRes.data = NULL;
-  ht.spinRes.data = (REAL8 *)LALMalloc(ht.spinRes.length*sizeof(REAL8));
+  ht.spinRes.data = (REAL8 *)LALCalloc( 1, ht.spinRes.length*sizeof(REAL8));
 
   /* the residual spindowns */
   ht.spinDem.length = 1;
   ht.spinDem.data = NULL;
-  ht.spinDem.data = (REAL8 *)LALMalloc(ht.spinRes.length*sizeof(REAL8));
+  ht.spinDem.data = (REAL8 *)LALCalloc( 1, ht.spinRes.length*sizeof(REAL8));
 
   /* the demodulation params */
   parDem.deltaF = deltaF;
@@ -1530,8 +1539,8 @@ void ComputeFstatHoughMap(LALStatus *status,
     histTotal.length = nStacks+1;
     hist.data = NULL;
     histTotal.data = NULL;
-    hist.data = (UINT8 *)LALMalloc((nStacks+1)*sizeof(UINT8));
-    histTotal.data = (UINT8 *)LALMalloc((nStacks+1)*sizeof(UINT8));
+    hist.data = (UINT8 *)LALCalloc(1, (nStacks+1)*sizeof(UINT8));
+    histTotal.data = (UINT8 *)LALCalloc(1, (nStacks+1)*sizeof(UINT8));
     { 
       UINT4   j;
       for(j=0; j< histTotal.length; ++j) 
@@ -1606,8 +1615,8 @@ void ComputeFstatHoughMap(LALStatus *status,
     patch.ySide = ySide;
     patch.xCoor = NULL;
     patch.yCoor = NULL;
-    patch.xCoor = (REAL8 *)LALMalloc(xSide*sizeof(REAL8));
-    patch.yCoor = (REAL8 *)LALMalloc(ySide*sizeof(REAL8));
+    patch.xCoor = (REAL8 *)LALCalloc(1,xSide*sizeof(REAL8));
+    patch.yCoor = (REAL8 *)LALCalloc(1,ySide*sizeof(REAL8));
     TRY( LALHOUGHFillPatchGrid( status->statusPtr, &patch, &parSize ), status );
     
     /*------------- other memory allocation and settings----------------- */
@@ -1615,25 +1624,25 @@ void ComputeFstatHoughMap(LALStatus *status,
       lutV.lut[j].maxNBins = maxNBins;
       lutV.lut[j].maxNBorders = maxNBorders;
       lutV.lut[j].border =
-	(HOUGHBorder *)LALMalloc(maxNBorders*sizeof(HOUGHBorder));
+	(HOUGHBorder *)LALCalloc(1,maxNBorders*sizeof(HOUGHBorder));
       lutV.lut[j].bin =
-	(HOUGHBin2Border *)LALMalloc(maxNBins*sizeof(HOUGHBin2Border));
+	(HOUGHBin2Border *)LALCalloc(1,maxNBins*sizeof(HOUGHBin2Border));
       for (i=0; i<maxNBorders; ++i){
 	lutV.lut[j].border[i].ySide = ySide;
 	lutV.lut[j].border[i].xPixel =
-	  (COORType *)LALMalloc(ySide*sizeof(COORType));
+	  (COORType *)LALCalloc(1,ySide*sizeof(COORType));
       }
     }
 
     for(j = 0; j < phmdVS.length * phmdVS.nfSize; ++j){
       phmdVS.phmd[j].maxNBorders = maxNBorders;
       phmdVS.phmd[j].leftBorderP =
-	(HOUGHBorder **)LALMalloc(maxNBorders*sizeof(HOUGHBorder *));
+	(HOUGHBorder **)LALCalloc(1,maxNBorders*sizeof(HOUGHBorder *));
       phmdVS.phmd[j].rightBorderP =
-	(HOUGHBorder **)LALMalloc(maxNBorders*sizeof(HOUGHBorder *));
+	(HOUGHBorder **)LALCalloc(1,maxNBorders*sizeof(HOUGHBorder *));
       phmdVS.phmd[j].ySide = ySide;
       phmdVS.phmd[j].firstColumn = NULL;
-      phmdVS.phmd[j].firstColumn = (UCHAR *)LALMalloc(ySide*sizeof(UCHAR));
+      phmdVS.phmd[j].firstColumn = (UCHAR *)LALCalloc(1,ySide*sizeof(UCHAR));
     }
     
     /*------------------- create all the LUTs at fBin ---------------------*/  
@@ -1670,7 +1679,7 @@ void ComputeFstatHoughMap(LALStatus *status,
     ht.patchSizeY = patchSizeY;
     ht.dFdot.data[0] = dfdot;
     ht.map   = NULL;
-    ht.map   = (HoughTT *)LALMalloc(xSide*ySide*sizeof(HoughTT));
+    ht.map   = (HoughTT *)LALCalloc(1,xSide*ySide*sizeof(HoughTT));
     TRY( LALHOUGHInitializeHT( status->statusPtr, &ht, &patch), status); /*not needed */
     
     /*  Search frequency interval possible using the same LUTs */
@@ -1833,10 +1842,10 @@ void FstatVectToPeakGram (LALStatus *status,
 
   /* first memory allocation */  
   pgV->length = nStacks;
-  pgV->pg = (HOUGHPeakGram *)LALMalloc( nStacks * sizeof(HOUGHPeakGram));
+  pgV->pg = (HOUGHPeakGram *)LALCalloc( 1, nStacks * sizeof(HOUGHPeakGram));
 
 
-  upg = (UCHAR *)LALMalloc( nSearchBins * sizeof(UCHAR));
+  upg = (UCHAR *)LALCalloc( 1, nSearchBins * sizeof(UCHAR));
 
   /* loop over each stack and set peakgram */
   for (k=0; k<nStacks; k++) {
@@ -1858,7 +1867,7 @@ void FstatVectToPeakGram (LALStatus *status,
 
     /* fix length of peakgram and allocate memory appropriately */
     pgV->pg[k].length = nPeaks; 
-    pgV->pg[k].peak = (INT4 *)LALMalloc( nPeaks * sizeof(INT4)); 
+    pgV->pg[k].peak = (INT4 *)LALCalloc( 1, nPeaks * sizeof(INT4)); 
 
     /* fill up other peakgram parameters */
     pgV->pg[k].deltaF = FstatVect->data[k].deltaF;
@@ -2857,4 +2866,4 @@ UINT4 ComputeNumExtraBins(REAL8VectorSequence *vel,
 
   return extraBins;
 
-}
+}   /*ComputeNumExtraBins()*/
