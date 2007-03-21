@@ -32,6 +32,7 @@
 #include <lal/NRWaveIO.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/Date.h>
+#include <lal/Units.h>
 #include <lal/LALConstants.h>
 #include <lal/NRWaveInject.h>
 #include <lal/SphericalHarmonics.h>
@@ -119,6 +120,7 @@ XLALCalculateNRStrain( REAL4TimeVectorSeries *strain, /**< h+, hx time series da
   /* store the htData */
   htData->epoch = *XLALGPSAdd( &(inj->geocent_end_time), tDelay );
   htData->deltaT = strain->deltaT;
+  htData->sampleUnits = lalADCCountUnit;
 
   for ( k = 0; k < vecLength; ++k )
   {
