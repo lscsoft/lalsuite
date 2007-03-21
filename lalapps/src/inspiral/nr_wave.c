@@ -29,6 +29,11 @@
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/Inject.h>
 #include <lal/FileIO.h>
+#include <lal/Units.h>
+#include <lal/FrequencySeries.h>
+#include <lal/TimeSeries.h>
+#include <lal/TimeFreqFFT.h>
+#include <lal/VectorOps.h>
 
 
 RCSID( "$Id$" );
@@ -40,8 +45,10 @@ RCSID( "$Id$" );
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "nr_wave"
 
-static void  output_ht(NRWaveMetaData *thisMetaData,  SimInspiralTable *thisInj, int sampleRate,  
-                       REAL4TimeSeries *htData, char *ifo, int vrbflg);
+static void  output_ht(CHAR *fName, 
+    REAL4TimeSeries *injData);
+
+extern int vrbflg;
 
 /*
  * 
@@ -76,7 +83,6 @@ static void print_usage(char *program)
  */
 int main( int argc, char *argv[] )
 {
-  extern int vrbflg;
 
   LALStatus     status = blank_status;
 
@@ -88,13 +94,15 @@ int main( int argc, char *argv[] )
   NRWaveCatalog nrCatalog;             /* NR wave metadata struct        */
 
   CHAR   ifo[LIGOMETA_IFO_MAX];        /* name of ifo                    */
+  CHAR   fileName[FILENAME_MAX];       /* name of output file            */
+  CHAR   name[LALNameLength];
+
   int gpsStartSec = -1;                /* start time of data             */
   int gpsEndSec = -1;                  /* end time of data               */
   LIGOTimeGPS gpsStartTime = {0,0};    /* start time GPS                 */
   LIGOTimeGPS gpsEndTime = {0,0};      /* end time GPS                   */
 
   int sampleRate = -1;                 /* output sample rate             */
-  int numPoints = 0;                   /* number of data points          */
   int numInjections = 0;
 
   SimInspiralTable *injections = NULL; /* list of injections to be done  */
@@ -103,9 +111,9 @@ int main( int argc, char *argv[] )
   REAL4TimeSeries        injData;      /* time series of zeros to which we
                                           add injections                 */
   REAL4TimeVectorSeries *strain = NULL;/* h+,hx time series              */
-  REAL4TimeSeries       *htData = NULL;/* h(t) data for given detector   */
+  REAL4TimeSeries       *htData;      /* h(t) data for given detector   */
 
-  int writeFlag = 0;		       /* write h(t) to file?? */
+  int writeFlag = 0;           /* write h(t) to file?? */
 
   /* getopt arguments */
   struct option long_options[] =
@@ -117,7 +125,7 @@ int main( int argc, char *argv[] )
     {"gps-end-time",            required_argument, 0,                'b'},
     {"injection-file",          required_argument, 0,                'f'},
     {"nr-meta-file",            required_argument, 0,                'm'},
-    {"nr-data-file",            required_argument, 0,                'd'},
+    {"nr-data-dir",             required_argument, 0,                'd'},
     {"sample-rate",             required_argument, 0,                'r'},
     {"ifo",                     required_argument, 0,                'i'},
     {"help",                    no_argument,       0,                'h'},
@@ -256,14 +264,14 @@ int main( int argc, char *argv[] )
         break;
 
       case 'm':
-        /* create storage for the injection file name */
+        /* create storage for the meta file name */
         optarg_len = strlen( optarg ) + 1;
         nrMetaFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
         memcpy( nrMetaFile, optarg, optarg_len );
         break;
 
       case 'd':
-        /* create storage for the injection file name */
+        /* create storage for the nr data directory */
         optarg_len = strlen( optarg ) + 1;
         nrDataDir = (CHAR *) calloc( optarg_len, sizeof(CHAR));
         memcpy( nrDataDir, optarg, optarg_len );
@@ -345,8 +353,14 @@ int main( int argc, char *argv[] )
         "--nr-meta-file must be specified\n");
     exit( 1 );
   }
- 
- 
+
+  if ( !nrDataDir )
+  {
+    fprintf( stderr, 
+        "--nr-data-dir must be specified\n");
+    exit( 1 );
+  }
+
 
 
   /*
@@ -354,32 +368,23 @@ int main( int argc, char *argv[] )
    * Main Code
    *
    */
-     
+
   /* set up the injData to be zeros of the correct length, to which we will 
    * add the injections */
 
-  memset( &injData, 0, sizeof(REAL4TimeSeries) );
+  LALSnprintf( name, LIGOMETA_CHANNEL_MAX * sizeof(CHAR), "%s:STRAIN", ifo );
 
-  injData.epoch = gpsStartTime;
-  injData.deltaT = 1./sampleRate;
-  LALSnprintf( injData.name, LIGOMETA_CHANNEL_MAX * sizeof(CHAR), "%s:STRAIN", 
-          ifo );
-  numPoints = sampleRate * (gpsEndSec - gpsStartSec);
+  LALSnprintf( fileName, FILENAME_MAX, "%s-NR_WAVE-%d-%d.dat", 
+      ifo, gpsStartSec, gpsEndSec - gpsStartSec);
 
-  /* create data structure */
-  injData.data = XLALCreateREAL4Vector( numPoints );
-  if ( ! injData.data )
-  {
-      fprintf( stderr, "error: could not allocate memory for injections" );
-      exit( 1 );
-  }
-  memset( injData.data->data, 0, numPoints * sizeof(REAL4) );
 
+  injData = *XLALCreateREAL4TimeSeries( name, &gpsStartTime, 0, 1./sampleRate, 
+      &lalADCCountUnit, sampleRate * (gpsEndSec - gpsStartSec) );
 
 
   /* read the injections */
   numInjections = SimInspiralTableFromLIGOLw( &injections, injectionFile,
-        gpsStartSec, gpsEndSec );
+      gpsStartSec, gpsEndSec );
 
   if( vrbflg ) fprintf(stdout,"Read %d injections from the file %s\n", 
       numInjections, injectionFile);
@@ -391,7 +396,8 @@ int main( int argc, char *argv[] )
   }
 
   /* get catalog of numrel waveforms from metadata file */
-  LAL_CALL(LALNRDataFind( &status, &nrCatalog, nrDataDir, nrMetaFile ), &status);
+  LAL_CALL(LALNRDataFind( &status, &nrCatalog, nrDataDir, nrMetaFile ), 
+      &status);
 
   /* start injections */
   for( thisInj = injections; thisInj; thisInj = thisInj->next )
@@ -403,24 +409,25 @@ int main( int argc, char *argv[] )
         "Reading the waveform from the file %s ...", thisMetaData.filename );
 
     LAL_CALL(LALReadNRWave(&status, &strain, thisInj->mass1 + thisInj->mass2, 
-			  thisMetaData.filename), &status);
+          thisMetaData.filename), &status);
 
     if ( vrbflg) fprintf(stdout, "done\n");
-    
+
     /* compute the h+, hx strain for the given inclination, coalescence phase*/
-    if ( vrbflg )fprintf(stdout, "Generating waveform for inclination = %f, coa_phase = %f\n",
-			 thisInj->inclination, thisInj->coa_phase );
-    strain = XLALOrientNRWave( strain, thisMetaData.mode[0], thisMetaData.mode[1], 
-			       thisInj->inclination, thisInj->coa_phase);
+    if ( vrbflg )
+      fprintf(stdout, 
+          "Generating waveform for inclination = %f, coa_phase = %f\n",
+          thisInj->inclination, thisInj->coa_phase );
+    strain = XLALOrientNRWave( strain, thisMetaData.mode[0], 
+        thisMetaData.mode[1], thisInj->inclination, thisInj->coa_phase);
 
     if ( vrbflg ) fprintf(stdout,
         "Generating the strain data for the given sky location\n");
     htData = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate);
-    
-    /* XXX inject the htData into our injection time stream XXX */
-    /*LAL_CALL( LALSSInjectTimeSeries( &status, &injData, htData ), &status );*/
-    if (writeFlag)
-      output_ht( &thisMetaData,  thisInj,  sampleRate, htData, ifo, vrbflg);
+
+    /* inject the htData into our injection time stream */
+    LAL_CALL( LALSSInjectTimeSeries( &status, &injData, htData ), &status );
+    if (writeFlag) output_ht( fileName, &injData);
 
     XLALDestroyREAL4VectorSequence ( strain->data );
     LALFree(strain);
@@ -434,23 +441,25 @@ int main( int argc, char *argv[] )
   exit( 0 );
 }
 
-static void  output_ht(NRWaveMetaData *thisMetaData,  SimInspiralTable *thisInj, int sampleRate, 
-                       REAL4TimeSeries *htData, char *ifo, int vrbflg) 
-  {
+static void  output_ht(CHAR            *fileName, 
+    REAL4TimeSeries *injData
+    ) 
+{
   FILE *htOut = NULL;
-  char *fileName = NULL;
-  fileName = (char *) calloc(1,sizeof(char)*128);
   UINT4 i = 0;
-  /* Name is ht_<GPS>_<waveform_file> */
-  if (!(sprintf(fileName, "%s_ht_%d.dat", thisMetaData->filename, (int) thisInj->geocent_end_time.gpsSeconds))){
-    printf("Couldn't create output file string\n");
-    return;}
-  if (vrbflg) printf("filename is %s\n",fileName);
-  if (!(htOut = fopen(fileName, "w"))){
-    printf("Couldn't open file\n");
-    return;}
-  if (vrbflg) printf("writing file\n");
-  for (i=0; i < htData->data->length; i++){
-    fprintf(htOut,"%e\t %f\n",htData->data->data[i],(float) i/sampleRate);}
-  return;
+  REAL8 time = 0;
+  htOut = fopen(fileName, "w");
+  time = XLALGPSGetREAL8( &(injData->epoch) );
+
+  if ( vrbflg )
+  {
+    fprintf( stdout, "Writing output data to %s\n", fileName );
   }
+
+  for (i=0; i < injData->data->length; i++)
+  {
+    fprintf(htOut,"%e\t%e\t\n", time, injData->data->data[i]);
+    time += injData->deltaT;
+  }
+  return;
+}
