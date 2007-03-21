@@ -58,9 +58,9 @@ extern int vrbflg;
 static void print_usage(char *program)
 {
   fprintf(stderr,
-      "Usage:  %s [options] [LIGOLW XML input files]\n" \
-      "The following options are recognized.  Options not surrounded in [] are\n" \
-      "required.\n" \
+      "Usage:  %s [options]\n"\
+      "The following options are recognized.  Options not surrounded in [] are\n"\
+      "required.\n"\
       "  [--help]                      display this message\n"\
       "  [--verbose]                   print progress information\n"\
       "  [--version]                   print version information and exit\n"\
@@ -68,7 +68,8 @@ static void print_usage(char *program)
       "  --ifo             ifo         ifo for which to generate injections\n"\
       "  --nr-meta-file    meta_file   file containing details of available\n"\
       "                                numerical relativity waveforms\n"\
-      "  --nr-data-dir     meta_file   specify directory containing metadata file\n"\
+      "  --nr-data-dir     dir         specify directory containing numerical\n"\
+      "                                relativity waveforms\n"\
       "  --gps-start-time  start       start time of output file\n"\
       "  --gps-end-time    end         end time of output file\n"\
       "  --sample-rate     rate        the sample rate used to generate injections\n"\
