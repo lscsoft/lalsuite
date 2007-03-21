@@ -938,7 +938,7 @@ int MAIN( int argc, char *argv[]) {
 			       * (usefulParams.spinRange_midTime.fkdot[0] + usefulParams.spinRange_midTime.fkdotBand[0]) 
 			       * HSMAX(semiCohPar.patchSizeX, semiCohPar.patchSizeY) / dFreqStack);
 	
-	extraBinsSky = 45;
+	/* extraBinsSky = 45; */
 	
 	/* extra bins due to fdot is maximum number of frequency bins drift that can be 
 	   caused by the residual spindown.  The reference time for the spindown is the midtime, 
