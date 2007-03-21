@@ -459,7 +459,7 @@ static void  output_ht(CHAR            *fileName,
 
   for (i=0; i < injData->data->length; i++)
   {
-    fprintf(htOut,"%e\t%e\t\n", time, injData->data->data[i]);
+    fprintf(htOut,"%.6f\t%e\t\n", time, injData->data->data[i]);
     time += injData->deltaT;
   }
   return;
