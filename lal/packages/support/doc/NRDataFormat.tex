@@ -34,8 +34,8 @@
   This document describes data formats to further the interaction
   between gravitational wave source modeling groups and the LIGO
   Scientific Collaboration. The aim is to have a simple format which
-  is nevertheless sufficiently general and applicable to various kinds
-  of sources including binaries of compact objects and systems
+  is nevertheless sufficiently general, and is applicable to various
+  kinds of sources including binaries of compact objects and systems
   undergoing gravitational collapse.
 \end{abstract}
 
@@ -65,15 +65,18 @@ issues remaining in these numerical simulations, and the goal of this
 document is not to resolve them.  The goal is simply to spell out the
 technical details of the waveform data so that it can be incorporated
 seamlessly with the data analysis software currently being developed
-within the LSC.  
+within the LSC.  However, we do hope that this closer interaction will
+eventually help in resolving some of these issues which could be
+relevant for the detection of gravitational radiation.  
 
 The relevant software development is being carried out as part of the
 LIGO Algorithms Library
-\footnote{\texttt{http://www.lsc-group.phys.uwm.edu/daswg/projects/lal.html}}
+\footnote{Available from \texttt{http://www.lsc-group.phys.uwm.edu/daswg/projects/lal.html}}
 which contains core routines for gravitational wave data analysis
-written in ANSI C89.  The latest version of this document is available
-within this library.
-\footnote{\texttt{lal/packages/support/doc/NRDataFormat.tex}}
+written in ANSI C89, and is distributed under the GNU General Public
+Licence.  The latest version of this document is available within
+this library.  \footnote{The precise location of the document is
+  \texttt{lal/packages/support/doc/NRDataFormat.tex}.}
 
 
 
@@ -175,7 +178,7 @@ modes using spin weighted spherical harmonics $\Ys_{lm}$ of weight
 -2:
 \begin{equation}
   \label{eq:4}
-  h_+ - ih_\times = \frac{1}{r}\sum_{\ell=2}^{\infty}\sum_{m=-\ell}^\ell H_{\ell m}(t)\,
+  h_+ - ih_\times = \frac{M}{r}\sum_{\ell=2}^{\infty}\sum_{m=-\ell}^\ell H_{\ell m}(t)\,
   \Ytwo_{\ell m}(\iota,\phi)\,.
 \end{equation}
 The expansion parameters $H_{lm}$ are complex functions of the retarded time
@@ -218,7 +221,7 @@ We define $h_+^{(\ell m)}$ and $h_\times^{(\ell m)}$ as
   h_+^{(\ell m)}(t) -ih_\times^{(\ell m)}(t) := \frac{H_{\ell m}(t)}{r}\,.  
 \end{equation}
 It is these modes $H_{\ell m}$ of $rh_+$ and $rh_\times$ that must be
-provided as functions of time.  
+provided as functions of time in units of $M$.
 % The waveforms are easily reconstructed
 % from the modes:
 % \begin{equation}
@@ -242,11 +245,26 @@ mode numbers $(l,m)$.  These 9 parameters will be referred to as the
 ``metadata'' for a waveform.  It is possible to add more parameters to
 this metadata if necessary. We use the convention that $M_1$ denotes
 the larger of the two masses so that $q\geq 1$.  The choice of
-precisely how the individual masses $M_1$ and $M_2$ are calculated is
-to be decided by the individual numerical relativity groups.  Thus,
-for non-spinning black holes, $M_1$ and $M_2$ could be the irreducible
-masses of the two horizons, and for spinning black holes it could be
-given by the Christodoulou formula with an appropriately defined spin.
+precisely how the individual masses $M_1$ and $M_2$, and the total
+mass $M$ are calculated is
+to be decided by the individual numerical relativity groups. Here are
+some suggestions:
+\begin{itemize}
+\item For non-spinning black holes, $M_1$ and $M_2$ could be the
+irreducible masses of the two horizons:
+\begin{equation}
+  \label{eq:12}
+  M_{irr} = \sqrt{\frac{A}{16\pi}}
+\end{equation}
+where $A$ is the horizon area.  For spinning black holes it could be
+given by the Christodoulou formula:
+\begin{equation}
+  \label{eq:13}
+  M_{J} = \sqrt{\frac{A}{16\pi} + \frac{4\pi J^2}{A}}
+\end{equation}
+where $J$ is an appropriately defined spin for the individual black
+holes.
+\end{itemize}
 
 The data for a single mode $rh_{+,\times}^{lm}$ is to be written as a
 plain text file in three columns for the time $t$, $rh_+$ and
@@ -316,15 +334,15 @@ the location of the metadata file.  Thus, if the datafiles are stored
 in a sub-directory called \texttt{data}, then the metadata file would read:
 \begin{verbatim}
 ## example wave
-## filename       l m m1/m2 S1x S1y S1z S2x S2y S2z 
-data/example1.dat 2 2 1.0 0.0 0.0 0.0 0.0 0.0 0.0
+##   l m m1/m2 S1x S1y S1z S2x S2y S2z filename     
+     2 2 1.0 0.0 0.0 0.0 0.0 0.0 0.0  data/example1.dat
 ## another example
-data/example2.dat 2 1 1.5 1.0 0.0 0.0 0.0 -1.0 0.0
+     2 1 1.5 1.0 0.0 0.0 0.0 -1.0 0.0 data/example2.dat
 \end{verbatim}
 The purpose of the metadata file is to describe the parameters for a
-single or multiple numerical simulation and it should be emphasized
-that we will add more parameters as necessary such as, for example, the
-eccentricity of the orbit.  
+single or multiple numerical simulations, and it should be emphasized
+that when necessary, we will add more parameters such as, for example,
+the eccentricity of the orbit.
 
 If the waveforms have been calculated using $\Psi_4$, then for
 cross-checking purposed, datafiles for the real and imaginary parts of
@@ -338,8 +356,7 @@ need to be a metadata file.
 \section{Open Issues for binary black hole systems}
 
 We now specialize to the case of binary black hole simulations and we
-list the open issues which can be topics for further discusion as
-bullet points.  
+list some open issues which can be topics for further discusion.  
 
 We associate the coordinate system $(x,y,z,t)$ with the binary system
 as follows.  The orbital plane of the binary at $t=0$ is taken to be
@@ -358,12 +375,6 @@ orbital plane to precess significantly.  In such cases, it is left to
 the numerical relativity group to decide what the best choice of the
 ``orbital plane'' should be.
 
-We now need to make a choice for the phase. 
-\begin{itemize}
-\item The two obvious choices are the beginning of the simulation and
-  the time at coalescence defined perhaps as the peak of $h_+^2 +
-  h_\times^2$.  It is not immediately clear which would be preferable.
-\end{itemize}
 What is the right choice for the individual masses and the total mass
 which sets the scale for the amplitude and the time?
 \begin{itemize}
@@ -373,27 +384,34 @@ which sets the scale for the amplitude and the time?
   extracted.  
 \end{itemize}
 
+What is the best choice for the radiation extraction sphere?
+\begin{itemize}
+\item How far away should the sphere be?  Is it sufficient to take the
+  sphere to be a coordinate sphere, or do we need some further gauge
+  conditions?  
+\end{itemize}
+
+Numerical relativity groups are welcome to point out any issues that
+might be important, and to make this list of issues more complete.  
+
+
 \section{Authorship Rights}
 
 
-A webpage will be set up where waveform data can be uploaded in the
+After further consultation with numerical relativity community, a
+webpage will be set up where waveform data can be uploaded in the
 format specified above.  Access to this webpage will be open to any
 numerical relativity group which wishes to be involved in this
-project.  However, uploading the waveforms does by any means guarantee
-that they will be used by the LSC to analyze real data from the LIGO
-and GEO detectors.  It also does not imply any authorship rights on
-possible publications that may arise from this data.
+project.  It is expected (though not required) that the waveforms
+supplied to the LSC through this forum have previously been published
+in a peer reviewed scientific journal.  Any publication arising from
+these waveform data will cite the appropriate publication and funding
+agency as required by the numerical relativity group.
 
-It is expected (though not required) that the waveforms supplied to
-the LSC through this forum have previously been published in a peer
-reviewed journal.  Any publication arising from these waveform data
-will cite the appropriate publication and funding agency as specified
-by the numerical relativity group.
-
-
-
-
-
+Uploading the waveforms does by any means guarantee that they will be
+used by the LSC to analyze real data from the LIGO and GEO detectors.
+It also does not imply any authorship rights on possible publications
+that may arise from this data.
 
 
 \end{document}
