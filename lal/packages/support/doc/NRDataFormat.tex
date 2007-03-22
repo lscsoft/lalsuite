@@ -75,7 +75,7 @@ LIGO Algorithms Library
 which contains core routines for gravitational wave data analysis
 written in ANSI C89, and is distributed under the GNU General Public
 Licence.  The latest version of this document is available within
-this library.  \footnote{The precise location of the document is
+this library.  \footnote{The location of the document is
   \texttt{lal/packages/support/doc/NRDataFormat.tex}.}
 
 
@@ -84,18 +84,19 @@ this library.  \footnote{The precise location of the document is
 \label{sec:multipoles}
 
 The output of a numerical relativity code is the full spacetime of a
-binary black hole system while what is required for data analysis
-purposes is the strain $h(t)$ as measured by a detector.  The quantity
+binary black hole system. On the other hand, what is required for
+gravitational wave data analysis purposes is the strain $h(t)$ as
+measured by a detector located far away from the source.  The quantity
 of interest is the gravitational wave $h_{ij}$ where $i$ and $j$ are
-spatial indices and $h_{ij}$ is a transverse-traceless tensor.  We
+spatial indices, and $h_{ij}$ is a transverse-traceless tensor.  We
 always work in the TT gauge so that the $h_{ij}$ contains all the
 information of the metric perturbation.  The wave falls off as $1/r$
 where $r$ is the distance from the source
 \begin{equation}
   \label{eq:1}
-  h_{ij} = H_{ij}\frac{M}{r} \,.
+  h_{ij} = A_{ij}\frac{M}{r} \,.
 \end{equation}
-Here $H_{ij}$ is a transverse traceless tensor and $M$ is the total
+Here $A_{ij}$ is a transverse traceless tensor and $M$ is the total
 mass of the system; this equation is, naturally, only valid far away
 from the source.  
 
@@ -128,18 +129,19 @@ made.  However, as far as possible, these choices are eventually to be
 made by the individual source modeling group.
 
 We break up $h_{ij}$ into modes in this coordinate system.  In the
-wave zone, the wave will be propagating in the direction of
+wave zone, the wave will be propagating in the direction of the radial
+unit vector
 \begin{subequations}
   \begin{alignat}{3}
     \rhat &=  &\xhat&\,\sin\iota\cos\phi\, &+&\, \yhat\,\sin\iota\sin\phi
-    + \zhat\,\cos\iota
+    + \zhat\,\cos\iota\,.
 \intertext{A natural set of orthogonal basis vectors from which to build the
 transverse traceless basis tensors is}
     \iotahat &=
     &\xhat&\,\cos\iota\cos\phi \,&+&\, \yhat\,\cos\iota\sin\phi
-    - \zhat\,\sin\iota \\
+    - \zhat\,\sin\iota \,,\\
     \phihat &=
-    -\,&\xhat&\,\sin\phi \,&+&\, \yhat\,\cos\phi
+    -\,&\xhat&\,\sin\phi \,&+&\, \yhat\,\cos\phi\,.
   \end{alignat}
 \end{subequations}
 Note in particular that $\phihat$ is perpendicular to $\zhat$.
@@ -242,13 +244,12 @@ For our purposes, a single numerical waveform is defined by \emph{at
   least} 9 parameters: the mass ratio $q = M_1/M_2$, the three
 components of the individual spins $\vec{S}_1$ and $\vec{S}_2$ and the
 mode numbers $(l,m)$.  These 9 parameters will be referred to as the
-``metadata'' for a waveform.  It is possible to add more parameters to
-this metadata if necessary. We use the convention that $M_1$ denotes
-the larger of the two masses so that $q\geq 1$.  The choice of
-precisely how the individual masses $M_1$ and $M_2$, and the total
-mass $M$ are calculated is
-to be decided by the individual numerical relativity groups. Here are
-some suggestions:
+``metadata'' for a waveform.  We will add more parameters to this
+metadata if necessary. We use the convention that $M_1$ denotes the
+larger of the two masses so that $q\geq 1$.  The choice of precisely
+how the individual masses $M_1$ and $M_2$, and the total mass $M$ are
+calculated is to be decided by the individual numerical relativity
+groups. Here are some suggestions:
 \begin{itemize}
 \item For non-spinning black holes, $M_1$ and $M_2$ could be the
 irreducible masses of the two horizons:
@@ -288,7 +289,9 @@ strain multiplied by the distance will also be in units of the total
 mass $M$ of the binary.  There can be any number of comment lines at
 the top of the file and it is envisioned that the details of the
 simulation and the mode contained in the file will be held in the
-comment lines.  This is an example of a data file:
+comment lines.  
+
+This is an example of a data file:
 
 \begin{verbatim}
 # numerical waveform from ....
@@ -323,21 +326,36 @@ metadata file containing two waveforms:
 \begin{verbatim}
 ## example wave
 ## m1/m2 S1x S1y S1z S2x S2y S2z l m filename
-1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 2 example1.dat
+   1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 2  example1_22.dat
+   1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 1  example1_21.dat
+   1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 0  example1_20.dat
+   1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 -1 example1_2-1.dat
+   1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 -2 example1_2-2.dat
 ## another example
-1.5 1.0 0.0 0.0 0.0 -1.0 0.0  2 1 example2.dat
+   1.5 1.0 0.0 0.0 0.0 -1.0 0.0  2 2  example2_22.dat
+   1.5 1.0 0.0 0.0 0.0 -1.0 0.0  2 1  example2_21.dat
+   1.5 1.0 0.0 0.0 0.0 -1.0 0.0  2 0  example2_20.dat
+   1.5 1.0 0.0 0.0 0.0 -1.0 0.0  2 -1 example2_2-1.dat
+   1.5 1.0 0.0 0.0 0.0 -1.0 0.0  2 -2 example2_2-2.dat
 \end{verbatim}
+
 Lines starting with a $\%$ or $\#$ will be taken to be comment lines and
-ignored.  There can be an arbitrary number of comment lines.  The
-filenames must give the relative paths to the data files starting from
-the location of the metadata file.  Thus, if the datafiles are stored
-in a sub-directory called \texttt{data}, then the metadata file would read:
+ignored.  There can be an arbitrary number of comment lines.  Note
+that for each value of $\ell$, all values of $m$ need to be specified.
+
+The filenames must give the relative paths to the data files starting
+from the location of the metadata file.  Thus, if the datafiles are
+stored in a sub-directory called \texttt{data}, then the metadata file
+would read:
 \begin{verbatim}
 ## example wave
-##   l m m1/m2 S1x S1y S1z S2x S2y S2z filename     
-     2 2 1.0 0.0 0.0 0.0 0.0 0.0 0.0  data/example1.dat
-## another example
-     2 1 1.5 1.0 0.0 0.0 0.0 -1.0 0.0 data/example2.dat
+## m1/m2 S1x S1y S1z S2x S2y S2z l mfilename     
+   1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 2  data/example1_22.dat
+   1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 1  data/example1_21.dat
+   1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 0  data/example1_20.dat
+   1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 -1 data/example1_2-1.dat
+   1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 -2 data/example1_2-2.dat
+   ......
 \end{verbatim}
 The purpose of the metadata file is to describe the parameters for a
 single or multiple numerical simulations, and it should be emphasized
@@ -350,10 +368,12 @@ $\Psi_4$ must also be provided in the same format as for the
 waveforms, i.e. three columns which are respectively time, real part
 of $\Psi_4$ and imaginary part of $\Psi_4$.  Again there can be an
 arbitrary number of comment lines, but in this case there does not
-need to be a metadata file.
+need to be a metadata file.  The same holds for the Zerilli function
+if that was used in constructing the waveform. 
 
 
 \section{Open Issues for binary black hole systems}
+\label{sec:openissues}
 
 We now specialize to the case of binary black hole simulations and we
 list some open issues which can be topics for further discusion.  
@@ -396,7 +416,7 @@ might be important, and to make this list of issues more complete.
 
 
 \section{Authorship Rights}
-
+\label{sec:authorship}
 
 After further consultation with numerical relativity community, a
 webpage will be set up where waveform data can be uploaded in the
