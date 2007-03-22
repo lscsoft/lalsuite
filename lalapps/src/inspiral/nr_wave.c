@@ -449,7 +449,14 @@ static void  output_ht(CHAR            *fileName,
   FILE *htOut = NULL;
   UINT4 i = 0;
   REAL8 time = 0;
-  htOut = fopen(fileName, "w");
+
+  /* open output file */
+  if ((htOut = fopen(fileName, "w")) == NULL)
+  {
+    fprintf(stderr, "Error opening output file: %s\n", fileName);
+    exit( 1 );
+  }
+
   time = XLALGPSGetREAL8( &(injData->epoch) );
 
   if ( vrbflg )
