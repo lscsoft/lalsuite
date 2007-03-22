@@ -428,12 +428,14 @@ int main( int argc, char *argv[] )
 
     /* inject the htData into our injection time stream */
     LAL_CALL( LALSSInjectTimeSeries( &status, &injData, htData ), &status );
-    if (writeFlag) output_ht( fileName, &injData);
 
     XLALDestroyREAL4VectorSequence ( strain->data );
     LALFree(strain);
+    strain = NULL;
 
   } /* loop over injections */
+  
+  if (writeFlag) output_ht( fileName, &injData);
 
   LALFree(nrCatalog.data);
 
