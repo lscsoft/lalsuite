@@ -641,7 +641,7 @@ LALLoadSFTs ( LALStatus *status,
   SFTVector *sfts;             /* the SFTVector to return */
   FILE *fp;                    /* filepointer to read an SFT from */
   UINT4 i;                     /* loop counter */
-  UINT4 firstInSFT, lastInSFT; /* first and last bin in current SFT */
+  UINT4 firstInSFT, lastInSFT=0; /* first and last bin in current SFT */
 
   INITSTATUS (status, "LALLoadSegmentedSFTs", SFTFILEIOC);
   ATTATCHSTATUSPTR (status); 
@@ -712,7 +712,8 @@ LALLoadSFTs ( LALStatus *status,
       sfts->length++;
 
       /* while there are files with this timestamp */
-      while (GPSEQUAL(epoch,catalog->data[catFile].header.epoch))
+      while ((catFile < catalog->length) &&
+	     (GPSEQUAL(epoch,catalog->data[catFile].header.epoch)))
 	{
 	  /* deltaF consistency check */
 	  if ( deltaF != catalog->data[catFile].header.deltaF ) {
@@ -767,7 +768,8 @@ LALLoadSFTs ( LALStatus *status,
 	    LALDestroySFTtype(status->statusPtr,&onesft);
       
 	    /* skip remaining catalog files with same timestamp (must have higher frequency) */
-	    while (GPSEQUAL(epoch,catalog->data[catFile].header.epoch))
+	    while ((catFile < catalog->length) && 
+		   (GPSEQUAL(epoch,catalog->data[catFile].header.epoch)))
 	      catFile++;
 
 
