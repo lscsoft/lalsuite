@@ -35,9 +35,47 @@
   between gravitational wave source modeling groups and the LIGO
   Scientific Collaboration. The aim is to have a simple format which
   is nevertheless sufficiently general and applicable to various kinds
-  of sources including binary systems and systems undergoing
-  gravitational collapse.  
+  of sources including binaries of compact objects and systems
+  undergoing gravitational collapse.
 \end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+
+Numerical relativity has made enormous progress in the last few years.
+Many numerical relativity groups now have stable and accurate codes
+which can accurately simulate the inspiral, merger and ringdown phases
+of binary black hole coalescence.  Similarly, significant progress has
+been made in the numerical simulation of stellar gravitational
+collapse and there is now a much better understanding of how supernova
+explosions happen.  All these processes are among the most promising
+sources of gravitational radiation and therefore there is significant
+interest in using these numerical relativity results within various
+data analysis pipelines used within the LSC.  A dialogue between
+numerical relativists and LIGO data analysts was recently initiated in
+November 2006 through a meeting in Boston, and it seems appropriate to
+continue this dialogue at a more concrete level, and to start
+incorporating numerical relativity results within various LSC data
+analysis software. 
+
+The aim of this document is to spell out the formats for data exchange
+between numerical relativists and the LIGO Scientific Collaboration.
+It is clear that there are still outstanding conceptual and numerical
+issues remaining in these numerical simulations, and the goal of this
+document is not to resolve them.  The goal is simply to spell out the
+technical details of the waveform data so that it can be incorporated
+seamlessly with the data analysis software currently being developed
+within the LSC.  
+
+The relevant software development is being carried out as part of the
+LIGO Algorithms Library
+\footnote{\texttt{http://www.lsc-group.phys.uwm.edu/daswg/projects/lal.html}}
+which contains core routines for gravitational wave data analysis
+written in ANSI C89.  The latest version of this document is available
+within this library.
+\footnote{\texttt{lal/packages/support/doc/NRDataFormat.tex}}
+
+
 
 \section{Multipole expansion of the wave}
 \label{sec:multipoles}
@@ -212,12 +250,16 @@ given by the Christodoulou formula with an appropriately defined spin.
 
 The data for a single mode $rh_{+,\times}^{lm}$ is to be written as a
 plain text file in three columns for the time $t$, $rh_+$ and
-$rh_\times$ respectively.  The time must be in units of the total mass
-$M$ of the binary.  There can be subtleties in the choice of $M$.  It
-could be the ADM mass of the spacetime, or it could be the sum of the
-individual masses.  Again, the choice is left up to the numerical
-relativity group which produced the waveform.  It should be whatever
-best represents the time coordinate of the particular simulation.
+$rh_\times$ respectively.  For a given value of $\ell$, we require
+that waveforms be provided for all values of
+$m=-\ell,\ldots,\ell-1,\ell$.  This must be done irrespective of any
+symmetries that may be present in the simulation.  The time must be in
+units of the total mass $M$ of the binary.  There can be subtleties in
+the choice of $M$.  It could be the ADM mass of the spacetime, or it
+could be the sum of the individual masses.  Again, the choice is left
+up to the numerical relativity group which produced the waveform.  It
+should be whatever best represents the time coordinate of the
+particular simulation.
 
 The sampling in time must be uniform in units of $M$.  If the result
 of a simulation or set of simulations yields a waveform sampled
@@ -330,5 +372,28 @@ which sets the scale for the amplitude and the time?
   rather, the ADM mass calculated at the sphere where the waves are
   extracted.  
 \end{itemize}
+
+\section{Authorship Rights}
+
+
+A webpage will be set up where waveform data can be uploaded in the
+format specified above.  Access to this webpage will be open to any
+numerical relativity group which wishes to be involved in this
+project.  However, uploading the waveforms does by any means guarantee
+that they will be used by the LSC to analyze real data from the LIGO
+and GEO detectors.  It also does not imply any authorship rights on
+possible publications that may arise from this data.
+
+It is expected (though not required) that the waveforms supplied to
+the LSC through this forum have previously been published in a peer
+reviewed journal.  Any publication arising from these waveform data
+will cite the appropriate publication and funding agency as specified
+by the numerical relativity group.
+
+
+
+
+
+
 
 \end{document}
