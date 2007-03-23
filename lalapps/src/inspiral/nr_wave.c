@@ -45,8 +45,7 @@ RCSID( "$Id$" );
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "nr_wave"
 
-static void  output_ht(CHAR *fName, 
-    REAL4TimeSeries *injData);
+static void output_ht( CHAR *fName, REAL4TimeSeries *injData );
 
 extern int vrbflg;
 
@@ -55,7 +54,7 @@ extern int vrbflg;
  * USAGE
  *
  */
-static void print_usage(char *program)
+static void print_usage( char *program )
 {
   fprintf(stderr,
       "Usage:  %s [options]\n"\
@@ -84,43 +83,42 @@ static void print_usage(char *program)
  */
 int main( int argc, char *argv[] )
 {
+  LALStatus status = blank_status;
 
-  LALStatus     status = blank_status;
+  CHAR *injectionFile = NULL;            /* name of file containing injs   */
+  CHAR *nrMetaFile    = NULL;            /* name of file with nr meta info */
+  CHAR *nrDataDir     = NULL;            /* name of dir with nr waveform   */
+  NRWaveMetaData thisMetaData;           /* single NR wave metadata struct */
 
-  CHAR  *injectionFile = NULL;         /* name of file containing injs   */
-  CHAR  *nrMetaFile    = NULL;         /* name of file with nr meta info */
-  CHAR  *nrDataDir    = NULL;          /* name of dir with nr waveform   */
-  NRWaveMetaData thisMetaData;         /* single NR wave metadata struct */
+  NRWaveCatalog nrCatalog;               /* NR wave metadata struct        */
 
-  NRWaveCatalog nrCatalog;             /* NR wave metadata struct        */
+  CHAR ifo[LIGOMETA_IFO_MAX];            /* name of ifo                    */
+  CHAR fileName[FILENAME_MAX];           /* name of output file            */
+  CHAR name[LALNameLength];
 
-  CHAR   ifo[LIGOMETA_IFO_MAX];        /* name of ifo                    */
-  CHAR   fileName[FILENAME_MAX];       /* name of output file            */
-  CHAR   name[LALNameLength];
+  int gpsStartSec          = -1;         /* start time of data             */
+  int gpsEndSec            = -1;         /* end time of data               */
+  LIGOTimeGPS gpsStartTime = {0, 0};     /* start time GPS                 */
+  LIGOTimeGPS gpsEndTime   = {0, 0};     /* end time GPS                   */
 
-  int gpsStartSec = -1;                /* start time of data             */
-  int gpsEndSec = -1;                  /* end time of data               */
-  LIGOTimeGPS gpsStartTime = {0,0};    /* start time GPS                 */
-  LIGOTimeGPS gpsEndTime = {0,0};      /* end time GPS                   */
+  int sampleRate    = -1;                /* output sample rate             */
+  int numInjections = 0;                 /* number of injections */
 
-  int sampleRate = -1;                 /* output sample rate             */
-  int numInjections = 0;
+  SimInspiralTable *injections = NULL;   /* list of injections to be done  */
+  SimInspiralTable *thisInj    = NULL;   /* current injection              */
 
-  SimInspiralTable *injections = NULL; /* list of injections to be done  */
-  SimInspiralTable    *thisInj = NULL; /* current injection              */
+  REAL4TimeSeries injData;               /* time series of zeros to which
+                                            we add injections              */
+  REAL4TimeVectorSeries *strain = NULL;  /* h+, hx time series             */
+  REAL4TimeSeries *htData;               /* h(t) data for given detector   */
 
-  REAL4TimeSeries        injData;      /* time series of zeros to which we
-                                          add injections                 */
-  REAL4TimeVectorSeries *strain = NULL;/* h+,hx time series              */
-  REAL4TimeSeries       *htData;      /* h(t) data for given detector   */
-
-  int writeFlag = 0;           /* write h(t) to file?? */
+  int writeFlag = 0;                     /* write h(t) to file??           */
 
   /* getopt arguments */
   struct option long_options[] =
   {
     /* these options set a flag */
-    {"verbose",             no_argument,   &vrbflg,                   1 },
+    {"verbose",                 no_argument,       &vrbflg,           1 },
     /* these options don't set a flag */
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
@@ -306,7 +304,6 @@ int main( int argc, char *argv[] )
    *
    */
 
-
   /* check validity of input data time */
 
   /* start time specified */
@@ -348,6 +345,7 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
+  /* metadata file specified */
   if ( !nrMetaFile )
   {
     fprintf( stderr, 
@@ -355,6 +353,7 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
+  /* data directory specified */
   if ( !nrDataDir )
   {
     fprintf( stderr, 
@@ -362,26 +361,23 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-
-
   /*
    *
    * Main Code
    *
    */
 
-  /* set up the injData to be zeros of the correct length, to which we will 
-   * add the injections */
-
+  /* set channel name */
   LALSnprintf( name, LIGOMETA_CHANNEL_MAX * sizeof(CHAR), "%s:STRAIN", ifo );
 
+  /* set output filename */
   LALSnprintf( fileName, FILENAME_MAX, "%s-NR_WAVE-%d-%d.dat", 
       ifo, gpsStartSec, gpsEndSec - gpsStartSec);
 
-
+  /* set up the injData to be zeros of the correct length, to which we will 
+   * add the injections */
   injData = *XLALCreateREAL4TimeSeries( name, &gpsStartTime, 0, 1./sampleRate, 
       &lalADCCountUnit, sampleRate * (gpsEndSec - gpsStartSec) );
-
 
   /* read the injections */
   numInjections = SimInspiralTableFromLIGOLw( &injections, injectionFile,
@@ -403,12 +399,13 @@ int main( int argc, char *argv[] )
   /* start injections */
   for( thisInj = injections; thisInj; thisInj = thisInj->next )
   {
-
+    /* find nearest matching numrel waveform */
     XLALFindNRFile( &thisMetaData, &nrCatalog, thisInj, 2, 2);
 
     if ( vrbflg) fprintf(stdout,
         "Reading the waveform from the file %s ...", thisMetaData.filename );
 
+    /* read numrel waveform */
     LAL_CALL(LALReadNRWave(&status, &strain, thisInj->mass1 + thisInj->mass2, 
           thisMetaData.filename), &status);
 
@@ -444,9 +441,9 @@ int main( int argc, char *argv[] )
   exit( 0 );
 }
 
-static void  output_ht(CHAR            *fileName, 
-    REAL4TimeSeries *injData
-    ) 
+/* function to output h(t) waveform to file */
+static void output_ht(CHAR *fileName,
+    REAL4TimeSeries *injData)
 {
   FILE *htOut = NULL;
   UINT4 i = 0;
@@ -459,6 +456,7 @@ static void  output_ht(CHAR            *fileName,
     exit( 1 );
   }
 
+  /* get gps time */
   time = XLALGPSGetREAL8( &(injData->epoch) );
 
   if ( vrbflg )
@@ -466,9 +464,12 @@ static void  output_ht(CHAR            *fileName,
     fprintf( stdout, "Writing output data to %s\n", fileName );
   }
 
-  for (i=0; i < injData->data->length; i++)
+  /* output h(t) waveform */
+  for (i = 0; i < injData->data->length; i++)
   {
-    fprintf(htOut,"%.6f\t%e\t\n", time, injData->data->data[i]);
+    fprintf(htOut, "%.6f\t%e\t\n", time, injData->data->data[i]);
+
+    /* increment time */
     time += injData->deltaT;
   }
   return;
