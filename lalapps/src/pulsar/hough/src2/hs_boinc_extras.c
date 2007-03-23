@@ -528,6 +528,10 @@ static void worker (void) {
       if(startc == NULL)
 	startc = strrchr(resultfile,'\\');
       if(startc == NULL) {
+	/* boinc_resolve() doesn't give us a file outside the current directory, so we can't
+	   use the same name for the zip archive and the uncompressed file. Instead we will
+	   apend the OUTPUT_EXT to the output filename, write the output there and at the
+	   end zip this file into an archive with the original output file name */
         s = strlen(argv[arg])+strlen(OUTPUT_EXT)+1;
         rargv[rarg] = (char*)malloc(s);
 	if(!rargv[rarg]){
@@ -540,6 +544,9 @@ static void worker (void) {
 	LogPrintf (LOG_NORMAL, "WARNING: boinc-resolved result file \"%s\" in local directory - using \"%s\"\n",
 		   argv[arg]+l,rargv[rarg]+l);
       } else {
+	/* boinc_resolve() points us to a file outside the local directory. We will derive that
+	   filename from the returned string, write the output to a local file with that name
+	   and at the end zip the output file into an archive boinc_resolve() pointed us to */
 	startc++;
 	s = l+strlen(startc)+1;
         rargv[rarg] = (char*)malloc(s);
@@ -555,7 +562,7 @@ static void worker (void) {
     else if (0 == strncmp("-o",argv[arg],strlen("-o"))) {
       int s;
       rargv[rarg] = argv[arg]; /* copy the "-o" */
-      arg++;                /* grab next argument */
+      arg++;                   /* grab next argument */
       rarg++;
       if(arg >= argc) {
 	LogPrintf(LOG_CRITICAL,"ERROR in command line: no argument following '-o' option\n");
@@ -569,6 +576,7 @@ static void worker (void) {
 	if(startc == NULL)
 	  startc = strrchr(resultfile,'\\');
 	if(startc == NULL) {
+	  /* see previous case */
 	  s = strlen(argv[arg])+strlen(OUTPUT_EXT)+1;
 	  rargv[rarg] = (char*)malloc(s);
 	  if(!rargv[rarg]){
@@ -581,6 +589,7 @@ static void worker (void) {
 	  LogPrintf (LOG_NORMAL, "WARNING: boinc-resolved result file \"%s\" in local directory - using \"%s\"\n",
 		     argv[arg],rargv[rarg]);
 	} else {
+	  /* see previous case */
 	  startc++;
 	  s = strlen(startc)+1;
 	  rargv[rarg] = (char*)malloc(s);
