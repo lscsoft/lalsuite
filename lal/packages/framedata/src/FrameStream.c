@@ -182,6 +182,33 @@ static int flist_compare( const void *p, const void *q )
   return 0;
 }
 
+/* compare routine to identify duplicate entries: two files with the same
+ * start time and duration and the same basename (but possibly different
+ * urls) ... the purpose is to take two entries such as:
+ *
+ *   file://localhost/archive/frames/S5/strain-LX/LHO/H-H2_RDS_C02_LX-8157/H-H2_RDS_C02_LX-815750954-128.gwf
+ *   file://localhost/data/node134/frames/S5/strain-LX/LHO/H-H2_RDS_C02_LX-8157/H-H2_RDS_C02_LX-815750954-128.gwf
+ *
+ * and get rid of one of them.  */
+static int flist_compare_uniq( const void *p, const void *q )
+{
+  const FrFileInfo *file1 = p;
+  const FrFileInfo *file2 = q;
+  char *fname1;
+  char *fname2;
+  int c;
+  if ( file1->t0 < file2->t0 )
+    return -1;
+  if ( file1->t0 > file2->t0 )
+    return 1;
+  fname1 = strrchr( file1->url, '/' );
+  fname1 = fname1 ? fname1 + 1 : file1->url;
+  fname2 = strrchr( file2->url, '/' );
+  fname2 = fname2 ? fname2 + 1 : file2->url;
+  c = strcmp( fname1, fname2 );
+  return c;
+}
+
 
 /* compare routine for binary search bsearch to locate the first file
  * containing wanted time, or the first file after a gap if the wanted time
@@ -211,7 +238,7 @@ static void free_flist( FrFileInfo *flist )
   FrFileInfo *p = flist;
   if ( ! p )
     return;
-  while ( p->ind > -1 )
+  while ( p->ind > -2 )
   {
     if ( p->url )
       LALFree( p->url );
@@ -224,13 +251,14 @@ static void free_flist( FrFileInfo *flist )
 
 
 /* create a frame file list from a cache */
-static FrFileInfo * create_flist( FrCache *cache )
+UINT4 create_flist( FrFileInfo **plist, FrCache *cache )
 {
   FrFileInfo *list;
-  UINT4 i;
-  list = LALCalloc( cache->numFrameFiles + 1, sizeof( *list ) );
-  list[cache->numFrameFiles].ind = -1; /* indicates end */
-  for ( i = 0; i < cache->numFrameFiles; ++i )
+  INT4 i, j, n;
+  n = cache->numFrameFiles;
+  list = *plist = LALCalloc( n + 1, sizeof( *list ) );
+  list[n].ind = -2; /* indicates end */
+  for ( i = 0; i < n; ++i )
   {
     FrStat *file = cache->frameFiles + i;
     list[i].url = LALMalloc( strlen( file->url ) + 1 );
@@ -238,7 +266,8 @@ static FrFileInfo * create_flist( FrCache *cache )
     {
       free_flist( list );
       LALFree( list );
-      return NULL;
+      *plist = NULL;
+      return 0;
     }
     strcpy( list[i].url, file->url );
     if ( file->startTime > 0 && file->duration > 0 )
@@ -255,7 +284,8 @@ static FrFileInfo * create_flist( FrCache *cache )
       {
         free_flist( list );
         LALFree( list );
-        return NULL;
+	*plist = NULL;
+        return 0;
       }
       if ( FrTOCReadFull( frfile ) == NULL )
       {
@@ -263,7 +293,8 @@ static FrFileInfo * create_flist( FrCache *cache )
             list[i].url );
         free_flist( list );
         LALFree( list );
-        return NULL;
+	*plist = NULL;
+        return 0;
       }
       /* TODO: loop over frames */
       list[i].t0 = floor( frfile->toc->GTimeS[0] );
@@ -276,10 +307,32 @@ static FrFileInfo * create_flist( FrCache *cache )
   }
 
   qsort( list, cache->numFrameFiles, sizeof( *list ), flist_compare );
-  for ( i = 0; i < cache->numFrameFiles; ++i )
-    list[i].ind = i;
 
-  return list;
+  /* index lines and look for duplicate entries (and get rid of them) */
+  i = 0;
+  for ( j = 0; j < n; ++j )
+  {
+    FrFileInfo swap;
+    swap = list[i];
+    list[i] = list[j];
+    list[j] = swap;
+    if ( j+1 == n || flist_compare_uniq( list + i, list + j + 1 ) )
+    {
+      list[i].ind = i;
+      ++i;
+    }
+    else if ( j+1 < n )
+    {
+      XLALPrintWarning( "XLAL Warning: duplicate entry in file list\n"
+          "\tkeep:    %s\n\tdiscard: %s\n", list[j+1].url, list[i].url );
+    }
+  }
+  n = i;
+  for ( ; i < (INT4)cache->numFrameFiles; ++i )
+      list[i].ind = -1; /* beyond the last file in the list */
+  list[cache->numFrameFiles].ind = -2; /* last item in list */
+
+  return n;
 }
 
 
@@ -303,8 +356,7 @@ FrStream * XLALFrCacheOpen( FrCache *cache )
     XLAL_ERROR_NULL( func, XLAL_ENOMEM );
 
   stream->mode = LAL_FR_DEFAULT_MODE;
-  stream->nfile = cache->numFrameFiles;
-  stream->flist = create_flist( cache );
+  stream->nfile = create_flist( &stream->flist, cache );
   if ( ! stream->flist )
   {
     LALFree( stream );
