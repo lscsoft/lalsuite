@@ -294,11 +294,12 @@ provided as functions of time in units of $M$.
 \label{sec:format}
 
 
+Let us now specialize to simulations of binary black hole coalescence.
 For our purposes, a single numerical waveform is defined by \emph{at
   least} 9 parameters: the mass ratio $q = M_1/M_2$, the three
 components of the individual spins $\vec{S}_1$ and $\vec{S}_2$ and the
-mode numbers $(\ell,m)$.  These 9 parameters will be referred to as the
-``metadata'' for a waveform.  We will add more parameters to this
+mode numbers $(\ell,m)$.  These 9 parameters will be referred to as
+the ``metadata'' for a waveform.  We will add more parameters to this
 metadata if necessary. We use the convention that $M_1$ denotes the
 larger of the two masses so that $q\geq 1$.  The choice of precisely
 how the individual masses $M_1$ and $M_2$, and the total mass $M$ are
@@ -425,7 +426,24 @@ waveforms, i.e. three columns which are respectively time, real part
 of $\Psi_4$ and imaginary part of $\Psi_4$.  Again there can be an
 arbitrary number of comment lines, but in this case there does not
 need to be a metadata file.  The same holds for the Zerilli function
-if that was used in constructing the waveform. 
+if that was used in constructing the waveform. Finally, it would be
+desirable if the waveform data are reproducible at a later date if
+necessary.  For this purpose, the numerical relativity groups are
+required to submit a file with the parameters of the simulation.
+There is no requirement on the format of this file.  
+
+To summarize, the numerical relativity groups are asked to submit a
+tarball containing the following:
+\begin{itemize}
+\item [Required] The data files for $h_+$ and $h_\times$ -- one for
+  each $(\ell,m)$ mode of each simulation.
+\item [Required] The meta-data file(s).
+\item [Optional] Data files for the functions (e.g. $\Psi_4$ or the
+  Zerilli function) which were used to construct $h_{+}$ and $h_{\times}$.
+\item [Required] Parameter file for reproducing the waveforms.
+\end{itemize}
+
+
 
 
 \section{Open Issues for binary black hole systems}
@@ -444,12 +462,11 @@ angular momentum.
   determined by requirements of simplicity and having as few modes to
   work with as possible.  
 \end{itemize}
-Because of precession effects, the orbital plane is unambiguous when
-the black holes are non-spinning but it can be ambiguous in many
-situations, especially when the spin of the black holes causes the
-orbital plane to precess significantly.  In such cases, it is left to
-the numerical relativity group to decide what the best choice of the
-``orbital plane'' should be.
+The orbital plane is unambiguous when the black holes are non-spinning
+but it can be ambiguous in many situations, especially when the spin
+of the black holes causes the orbital plane to precess significantly.
+In such cases, it is left to the numerical relativity group to decide
+what the best choice of the ``orbital plane'' should be. 
 
 What is the right choice for the individual masses and the total mass
 which sets the scale for the amplitude and the time?
