@@ -302,26 +302,9 @@ mode numbers $(\ell,m)$.  These 9 parameters will be referred to as
 the ``metadata'' for a waveform.  We will add more parameters to this
 metadata if necessary. We use the convention that $M_1$ denotes the
 larger of the two masses so that $q\geq 1$.  The choice of precisely
-how the individual masses $M_1$ and $M_2$, and the total mass $M$ are
-calculated is to be decided by the individual numerical relativity
-groups. Here are some suggestions:
-\begin{itemize}
-\item For non-spinning black holes, $M_1$ and $M_2$ could be the
-irreducible masses of the two horizons:
-\begin{equation}
-  \label{eq:12}
-  M_{irr} = \sqrt{\frac{A}{16\pi}}
-\end{equation}
-where $A$ is the horizon area.  For spinning black holes it could be
-given by the Christodoulou formula:
-\begin{equation}
-  \label{eq:13}
-  M_{J} = \sqrt{\frac{A}{16\pi} + \frac{4\pi J^2}{A}}
-\end{equation}
-where $J$ is an appropriately defined spin for the individual black
-holes.  The calculation of $J$ is again left up to the numerical
-relativity group.
-\end{itemize}
+how the individual masses $M_1$ and $M_2$, the total mass $M$, and the
+spins, are calculated is to be decided by the individual numerical
+relativity groups.
 
 The data for a single mode $rh_{+,\times}^{(\ell m)}$ is to be written as a
 plain text file in three columns for the time $t$, $rh_+^{(\ell m)}$ and
@@ -434,14 +417,14 @@ There is no requirement on the format of this file.
 
 To summarize, the numerical relativity groups are asked to submit a
 tarball containing the following:
-\begin{itemize}
-\item [Required] The data files for $h_+$ and $h_\times$ -- one for
+\begin{description}
+\item[1.][Required] The data files for $h_+$ and $h_\times$ -- one for
   each $(\ell,m)$ mode of each simulation.
-\item [Required] The meta-data file(s).
-\item [Optional] Data files for the functions (e.g. $\Psi_4$ or the
+\item[2.][Required] The meta-data file(s).
+\item[3.][Optional] Data files for the functions (e.g. $\Psi_4$ or the
   Zerilli function) which were used to construct $h_{+}$ and $h_{\times}$.
-\item [Required] Parameter file for reproducing the waveforms.
-\end{itemize}
+\item[4.][Required] Parameter file for reproducing the waveforms.
+\end{description}
 
 
 
@@ -450,7 +433,7 @@ tarball containing the following:
 \label{sec:openissues}
 
 We now specialize to the case of binary black hole simulations and we
-list some open issues which can be topics for further discus ion.  
+list some open issues which can be topics for further discussion.  
 
 We associate the coordinate system $(x,y,z,t)$ with the binary system
 as follows.  The orbital plane of the binary at $t=0$ is taken to be
@@ -458,25 +441,39 @@ the $x$-$y$ plane with the $z$-axis in the direction of the orbital
 angular momentum.
 \begin{itemize}
 \item Is this the best choice of the $z$-axis?  Would it be better to
-  choose, say, the spin of the final black hole? The decisions will be
-  determined by requirements of simplicity and having as few modes to
-  work with as possible.  
+  choose, say, the spin of the final black hole as the $z$-axis? The
+  decisions will be determined by requirements of simplicity and
+  having as few modes to work with as possible.
+\item The orbital plane is unambiguous when the black holes are non-spinning
+  but it can be ambiguous in many situations, especially when the spin
+  of the black holes causes the orbital plane to precess significantly.
+  In such cases, it is left to the numerical relativity group to decide
+  what the best choice of the ``orbital plane'' should be. 
 \end{itemize}
-The orbital plane is unambiguous when the black holes are non-spinning
-but it can be ambiguous in many situations, especially when the spin
-of the black holes causes the orbital plane to precess significantly.
-In such cases, it is left to the numerical relativity group to decide
-what the best choice of the ``orbital plane'' should be. 
-
-What is the right choice for the individual masses and the total mass
-which sets the scale for the amplitude and the time?
+What is the right choice for parameters such as the individual masses,
+the total mass and the spins?  Here are some possibilities:
 \begin{itemize}
-\item Should we use the individual horizon masses (including the
-  effect of angular momentum), or should it be the total ADM mass or
-  rather, the ADM mass calculated at the sphere where the waves are
-  extracted.  
+\item $M_1$ and $M_2$ could be the parameters appearing in the initial
+  data construction.  Alternatively, for non spinning black holes,
+  they could be the irreducible masses of the two horizons:
+  \begin{equation}
+    \label{eq:12}
+    M_{irr} = \sqrt{\frac{A}{16\pi}}
+  \end{equation}
+  where $A$ is the horizon area.  For spinning black holes it could be
+  given by the Christodoulou formula:
+  \begin{equation}
+    \label{eq:13}
+    M_{J} = \sqrt{\frac{A}{16\pi} + \frac{4\pi J^2}{A}}
+  \end{equation}
+  where $J$ is an appropriately defined spin for the individual black
+  holes.  The calculation of $J$ is again left up to the numerical
+  relativity group.
+\item For the total mass $M$, should we use the sum of individual
+  horizon masses (including the effect of angular momentum), or should
+  it be the total ADM mass or rather, an approximation to the ADM mass
+  calculated at the sphere where the waves are extracted.
 \end{itemize}
-
 What is the best choice for the radiation extraction sphere?
 \begin{itemize}
 \item How far away should the sphere be?  Is it sufficient to take the
