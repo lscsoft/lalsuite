@@ -93,31 +93,40 @@ explosions happen.  All these processes are among the most promising
 sources of gravitational radiation and therefore there is significant
 interest in using these numerical relativity results within various
 data analysis pipelines used within the LIGO Scientific Collaboration
-(LSC).  A dialogue between numerical relativists and LIGO data
+(LSC).  A dialog between numerical relativists and LSC data
 analysts was recently initiated in November 2006 through a meeting in
-Boston, and it seems appropriate to continue this dialogue at a more
+Boston, and it seems appropriate to continue this dialog at a more
 concrete level, and to start incorporating numerical relativity
 results within various LSC data analysis software.
 
 The aim of this document is to spell out the formats for data exchange
-between numerical relativists and the LIGO Scientific Collaboration.
-It is clear that there are still outstanding conceptual and numerical
-issues remaining in these numerical simulations, and the goal of this
-document is not to resolve them.  The goal is simply to spell out the
-technical details of the waveform data so that it can be incorporated
-seamlessly with the data analysis software currently being developed
-within the LSC.  However, we do hope that this closer interaction will
-eventually help in resolving some of these issues which could be
-relevant for the detection of gravitational radiation.  
+between numerical relativists and the LSC.  It is clear that there are
+still outstanding conceptual and numerical issues remaining in these
+numerical simulations, and the goal of this document is not to resolve
+them.  The goal is simply to spell out the technical details of the
+waveform data so that it can be incorporated seamlessly with the data
+analysis software currently being developed within the LSC.  However,
+we do hope that this closer interaction will eventually help in
+resolving some of these issues which could be relevant for the
+detection of gravitational radiation.
 
 The relevant software development is being carried out as part of the
 LIGO Algorithms Library
 \footnote{Available from \texttt{http://www.lsc-group.phys.uwm.edu/daswg/projects/lal.html}}
 which contains core routines for gravitational wave data analysis
 written in ANSI C89, and is distributed under the GNU General Public
-Licence.  The latest version of this document is available within
-this library.  \footnote{The location of the document is
-  \texttt{lal/doc/NRDataFormat.tex}.}
+License.  The latest version of this document is available within
+this library.\footnote{The location of the document is
+  \texttt{lal/doc/NRDataFormat.tex}.}  The remainder of this document
+is structured as follows.  Section \ref{sec:multipoles} describes our
+conventions for decomposing the gravitational wave data in terms of
+spherical harmonics, section \ref{sec:format} specifies the data
+formats for binary black hole simulations, section
+\ref{sec:openissues} enumerates some open issues in binary black hole
+simulations which could be topics of further discussion between data
+analysts and numerical relativists, and finally section
+\ref{sec:authorship} discusses the authorship and related issues
+related to the use of numerical relativity data.  
 
 
 
@@ -130,16 +139,16 @@ gravitational wave data analysis purposes is the strain $h(t)$ as
 measured by a detector located far away from the source.  The quantity
 of interest is the gravitational wave $h_{ij}$ where $i$ and $j$ are
 spatial indices, and $h_{ij}$ is a transverse-traceless tensor.  We
-always work in the TT gauge so that the $h_{ij}$ contains all the
-information of the metric perturbation.  The wave falls off as $1/r$
+always work in the TT gauge so that the $h_{ij}$ the information of
+the metric perturbation to leading order.  The wave falls off as $1/r$
 where $r$ is the distance from the source
 \begin{equation}
   \label{eq:1}
-  h_{ij} = A_{ij}\frac{M}{r} \,.
+  h_{ij} = A_{ij}\frac{M}{r} + \mathcal{O}\left(r^{-2}\right)\,.
 \end{equation}
 Here $A_{ij}$ is a transverse traceless tensor and $M$ is the total
-mass of the system; this equation is, naturally, only valid far away
-from the source.  
+mass of the system; this approximation is, naturally, only valid far
+away from the source.
 
 There are different methods for extracting $h_{ij}$ from a numerical
 evolution.  One common method is to use the complex Weyl tensor
@@ -246,8 +255,12 @@ with $k_1 = \textrm{max}(0, m-s)$ and $k_2=\textrm{min}(\ell+m,
 \ell-s)$.  For reference,
 \begin{eqnarray}
   \label{eq:7}
-  \Ytwo_{2-2} &=& \sqrt{\frac{5}{64\pi}}(1-\cos\iota)^2e^{-2i\phi}\,, \\
-  \Ytwo_{22} &=& \sqrt{\frac{5}{64\pi}}(1+\cos\iota)^2e^{2i\phi} \,.
+  \Ytwo_{22} &=& \sqrt{\frac{5}{64\pi}}(1+\cos\iota)^2e^{2i\phi} \,,\\
+  \Ytwo_{21} &=& \sqrt{\frac{5}{16\pi}}  \sin\iota( 1 - \cos\iota )e^{i\phi} \,,\\
+  \Ytwo_{20} &=& \sqrt{\frac{15}{32\pi}} \sin^2\iota \,,\\
+  \Ytwo_{2-1} &=& \sqrt{\frac{5}{16\pi}}  \sin\iota( 1 - \cos\iota
+  )e^{-i\phi} \,,\\
+  \Ytwo_{2-2} &=& \sqrt{\frac{5}{64\pi}}(1-\cos\iota)^2e^{-2i\phi}\,.
 \end{eqnarray}
 The mode expansion coefficients $H_{lm}$ are given by
 \begin{equation}
@@ -263,7 +276,7 @@ We define $h_+^{(\ell m)}$ and $h_\times^{(\ell m)}$ as
   \label{eq:11}
   h_+^{(\ell m)}(t) -ih_\times^{(\ell m)}(t) := \frac{H_{\ell m}(t)}{r}\,.  
 \end{equation}
-It is these modes $H_{\ell m}$ of $rh_+$ and $rh_\times$ that must be
+It is these modes $rh_{+,\times}^{(\ell m)}$ of $rh_+$ and $rh_\times$ that must be
 provided as functions of time in units of $M$.
 % The waveforms are easily reconstructed
 % from the modes:
@@ -284,7 +297,7 @@ provided as functions of time in units of $M$.
 For our purposes, a single numerical waveform is defined by \emph{at
   least} 9 parameters: the mass ratio $q = M_1/M_2$, the three
 components of the individual spins $\vec{S}_1$ and $\vec{S}_2$ and the
-mode numbers $(l,m)$.  These 9 parameters will be referred to as the
+mode numbers $(\ell,m)$.  These 9 parameters will be referred to as the
 ``metadata'' for a waveform.  We will add more parameters to this
 metadata if necessary. We use the convention that $M_1$ denotes the
 larger of the two masses so that $q\geq 1$.  The choice of precisely
@@ -305,21 +318,23 @@ given by the Christodoulou formula:
   M_{J} = \sqrt{\frac{A}{16\pi} + \frac{4\pi J^2}{A}}
 \end{equation}
 where $J$ is an appropriately defined spin for the individual black
-holes.
+holes.  The calculation of $J$ is again left up to the numerical
+relativity group.
 \end{itemize}
 
-The data for a single mode $rh_{+,\times}^{lm}$ is to be written as a
-plain text file in three columns for the time $t$, $rh_+$ and
-$rh_\times$ respectively.  For a given value of $\ell$, we require
+The data for a single mode $rh_{+,\times}^{(\ell m)}$ is to be written as a
+plain text file in three columns for the time $t$, $rh_+^{(\ell m)}$ and
+$rh_\times^{(\ell m)}$ respectively.  For a given value of $\ell$, we require
 that waveforms be provided for all values of
 $m=-\ell,\ldots,\ell-1,\ell$.  This must be done irrespective of any
 symmetries that may be present in the simulation.  The time must be in
 units of the total mass $M$ of the binary.  There can be subtleties in
-the choice of $M$.  It could be the ADM mass of the spacetime, or it
-could be the sum of the individual masses.  Again, the choice is left
-up to the numerical relativity group which produced the waveform.  It
-should be whatever best represents the time coordinate of the
-particular simulation.
+the choice of $M$.  It could be the ADM mass of the spacetime, an
+approximation to the ADM mass measured at the wave-extraction sphere,
+or it could be the sum of the individual masses.  Again, the choice is
+left up to the numerical relativity group which produced the waveform.
+It should be whatever best represents the time coordinate and the
+scale of $h_{ij}$ in the particular simulation.
 
 The sampling in time must be uniform in units of $M$.  If the result
 of a simulation or set of simulations yields a waveform sampled
@@ -417,7 +432,7 @@ if that was used in constructing the waveform.
 \label{sec:openissues}
 
 We now specialize to the case of binary black hole simulations and we
-list some open issues which can be topics for further discusion.  
+list some open issues which can be topics for further discus ion.  
 
 We associate the coordinate system $(x,y,z,t)$ with the binary system
 as follows.  The orbital plane of the binary at $t=0$ is taken to be
@@ -476,7 +491,7 @@ that may arise from this data.  Submitted data will not be public;
 access is restricted to LSC members only.  Furthermore, we propose
 that any publication arising from this data will be circulated for
 comments and approval to the numerical relativity groups which
-provided the waveforms used proir to public release.
+provided the waveforms used prior to public release.
 
 
 \end{document}
