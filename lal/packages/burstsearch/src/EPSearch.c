@@ -206,7 +206,7 @@ XLALEPSearch(
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
-		XLALPrintInfo("XLALEPSearch(): analyzing samples %zu -- %zu (%.9lf s -- %.9lf s)\n", start_sample, start_sample + cuttseries->data->length, start_sample * cuttseries->deltaT, (start_sample + cuttseries->data->length) * cuttseries->deltaT);
+		XLALPrintInfo("XLALEPSearch(): analyzing %u samples (%.9lf s) at offset %u (%.9lf s) from epoch %d.%09u s\n", cuttseries->data->length, cuttseries->data->length * cuttseries->deltaT, start_sample, start_sample * cuttseries->deltaT, tseries->epoch.gpsSeconds, tseries->epoch.gpsNanoSeconds);
 		if(params->diagnostics)
 			params->diagnostics->XLALWriteLIGOLwXMLArrayREAL4TimeSeries(params->diagnostics->LIGOLwXMLStream, NULL, cuttseries);
 
