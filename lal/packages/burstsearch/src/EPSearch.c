@@ -62,7 +62,7 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 	event->next = NULL;
 	strncpy(event->ifo, channelName, 2);
 	event->ifo[2] = '\0';
-	strncpy(event->search, "power", LIGOMETA_SEARCH_MAX);
+	strncpy(event->search, "excesspower", LIGOMETA_SEARCH_MAX);
 	event->search[LIGOMETA_SEARCH_MAX] = '\0';
 	strncpy(event->channel, channelName, LIGOMETA_CHANNEL_MAX);
 	event->channel[LIGOMETA_CHANNEL_MAX] = '\0';
