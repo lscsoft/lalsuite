@@ -558,7 +558,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		} else if(XLALGPSToINT8NS(&options->gps_end) < LAL_INT8_C(441417609000000000) || XLALGPSToINT8NS(&options->gps_end) > LAL_INT8_C(999999999000000000)) {
-			sprintf(msg, "must be in the range [Jan 01 1994 00:00:00 UTC, Sep 14 2011 01:46:26 UTC] (%d.%09d specified)", options->gps_end.gpsSeconds, options->gps_end.gpsNanoSeconds);
+			sprintf(msg, "must be in the range [Jan 01 1994 00:00:00 UTC, Sep 14 2011 01:46:26 UTC] (%d.%09u specified)", options->gps_end.gpsSeconds, options->gps_end.gpsNanoSeconds);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -571,7 +571,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		} else if(XLALGPSToINT8NS(&options->gps_start) < LAL_INT8_C(441417609000000000) || XLALGPSToINT8NS(&options->gps_start) > LAL_INT8_C(999999999000000000)) {
-			sprintf(msg, "must be in the range [Jan 01 1994 00:00:00 UTC, Sep 14 2011 01:46:26 UTC] (%d.%09d specified)", options->gps_start.gpsSeconds, options->gps_start.gpsNanoSeconds);
+			sprintf(msg, "must be in the range [Jan 01 1994 00:00:00 UTC, Sep 14 2011 01:46:26 UTC] (%d.%09u specified)", options->gps_start.gpsSeconds, options->gps_start.gpsNanoSeconds);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -984,7 +984,7 @@ static REAL4TimeSeries *get_time_series(const char *cachefilename, const char *c
 
 	/* Check for missing data */
 	if(stream->state & LAL_FR_GAP) {
-		XLALPrintError("get_time_series(): error: gap in data detected between GPS times %d.%09d s and %d.%09d s\n", start.gpsSeconds, start.gpsNanoSeconds, end.gpsSeconds, end.gpsNanoSeconds);
+		XLALPrintError("get_time_series(): error: gap in data detected between GPS times %d.%09u s and %d.%09u s\n", start.gpsSeconds, start.gpsNanoSeconds, end.gpsSeconds, end.gpsNanoSeconds);
 		XLALDestroyREAL4TimeSeries(series);
 		XLAL_ERROR_NULL(func, XLAL_EDATA);
 	}
@@ -1671,7 +1671,7 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 
-		XLALPrintInfo("%s: %u samples (%.9f s) at GPS time %d.%09d s remain after conditioning\n", argv[0], series->data->length, series->data->length * series->deltaT, series->epoch.gpsSeconds, series->epoch.gpsNanoSeconds);
+		XLALPrintInfo("%s: %u samples (%.9f s) at GPS time %d.%09u s remain after conditioning\n", argv[0], series->data->length, series->data->length * series->deltaT, series->epoch.gpsSeconds, series->epoch.gpsNanoSeconds);
 
 		/*
 		 * Store the start and end times of the data that actually
