@@ -134,6 +134,8 @@ int main( int argc, char *argv[] )
   int numInFiles = 0;
   char **inFileNameList;
   char line[MAX_PATH];
+  int  errnum;
+  static const char *func = "XLALSnglRingdownTableFromLIGOLw"; 
 
   UINT8 triggerInputTimeNS = 0;
 
@@ -970,14 +972,20 @@ int main( int argc, char *argv[] )
       }
 
       /* read the events from the file into a temporary list */
-      *eventHandle = XLALSnglRingdownTableFromLIGOLw( inFileNameList[j] );
+      XLAL_TRY( *eventHandle = XLALSnglRingdownTableFromLIGOLw( inFileNameList[j] ), errnum);
       if ( ! *eventHandle )
-      {
-        fprintf( stderr, "error: unable to read sngl_ringdown table from %s\n", 
-            inFileNameList[j] );
-        exit( 1 );
-      }
-
+        switch ( errnum )
+        {
+          case XLAL_EDATA:
+            XLALPrintError("Unable to read sngl_ringdown table from %s\n", inFileNameList[j] );
+            /*LALFree(thisInputFile);*/
+            XLALClearErrno();
+            break;
+          default:
+            XLALSetErrno( errnum );
+            XLAL_ERROR( func, XLAL_EFUNC );
+        }
+      
       /* only keep triggers from the data that we want to analyze */
       thisEvent = *eventHandle;
       while ( thisEvent )
