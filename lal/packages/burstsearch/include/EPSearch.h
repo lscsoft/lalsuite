@@ -33,6 +33,7 @@ NRCSID(EPSEARCHH, "$Id$");
 struct XLALEPSearchDiagnostics {
 	void *LIGOLwXMLStream;
 	int (*XLALWriteLIGOLwXMLArrayREAL4FrequencySeries)(void *, const char *, const REAL4FrequencySeries *);
+	int (*XLALWriteLIGOLwXMLArrayREAL4TimeSeries)(void *, const char *, const REAL4TimeSeries *);
 	int (*XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries)(void *, const char *, const COMPLEX8FrequencySeries *);
 };
 
