@@ -92,7 +92,7 @@ int main( int argc, char *argv[] )
 
   NRWaveCatalog nrCatalog;               /* NR wave metadata struct        */
 
-  CHAR ifo[LIGOMETA_IFO_MAX];            /* name of ifo                    */
+  CHAR *ifo = NULL;                      /* name of ifo                    */
   CHAR fileName[FILENAME_MAX];           /* name of output file            */
   CHAR name[LALNameLength];
 
@@ -248,11 +248,10 @@ int main( int argc, char *argv[] )
         break;
 
       case 'i':
-        {
-          /* create storage for the ifo name and copy it */
-          memset( ifo, 0, sizeof(ifo) );
-          memcpy( ifo, optarg, sizeof(ifo) - 1 );
-        }
+        /* create storage for the ifo name and copy it */
+        optarg_len = strlen( optarg ) + 1;
+        ifo = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( ifo, optarg, optarg_len );
         break;
 
       case 'f':
@@ -329,7 +328,7 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  /* check that we have injections */
+  /* check that sample rate has been specified */
   if ( sampleRate < 0 )
   {
     fprintf( stderr, 
@@ -342,6 +341,13 @@ int main( int argc, char *argv[] )
   {
     fprintf( stderr, 
         "--injection-file must be specified\n");
+    exit( 1 );
+  }
+
+  /* check for ifo */
+  if ( !ifo )
+  {
+    fprintf(stderr, "--ifo must be specifed\n");
     exit( 1 );
   }
 
