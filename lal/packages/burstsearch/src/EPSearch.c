@@ -207,6 +207,8 @@ XLALEPSearch(
 			goto error;
 		}
 		XLALPrintInfo("XLALEPSearch(): analyzing samples %zu -- %zu (%.9lf s -- %.9lf s)\n", start_sample, start_sample + cuttseries->data->length, start_sample * cuttseries->deltaT, (start_sample + cuttseries->data->length) * cuttseries->deltaT);
+		if(params->diagnostics)
+			params->diagnostics->XLALWriteLIGOLwXMLArrayREAL4TimeSeries(params->diagnostics->LIGOLwXMLStream, NULL, cuttseries);
 
 		XLALPrintInfo("XLALEPSearch(): computing the Fourier transform\n");
 		fseries = XLALWindowedREAL4ForwardFFT(cuttseries, tukey, fplan);
