@@ -252,6 +252,13 @@ int main( int argc, char *argv[] )
         optarg_len = strlen( optarg ) + 1;
         ifo = (CHAR *) calloc( optarg_len, sizeof(CHAR));
         memcpy( ifo, optarg, optarg_len );
+
+        /* check for supported ifo */
+        if (XLALIFONumber(ifo) == LAL_UNKNOWN_IFO)
+        {
+          fprintf(stderr, "IFO not recognised: %s\n", ifo);
+          exit(1);
+        }
         break;
 
       case 'f':
@@ -331,39 +338,35 @@ int main( int argc, char *argv[] )
   /* check that sample rate has been specified */
   if ( sampleRate < 0 )
   {
-    fprintf( stderr, 
-        "--sample-rate must be specified\n");
+    fprintf( stderr, "--sample-rate must be specified\n" );
     exit( 1 );
   }
 
   /* check that we have injections */
-  if ( !injectionFile )
+  if ( injectionFile == NULL )
   {
-    fprintf( stderr, 
-        "--injection-file must be specified\n");
+    fprintf( stderr, "--injection-file must be specified\n" );
     exit( 1 );
   }
 
-  /* check for ifo */
-  if ( !ifo )
+  /* ifo specified */
+  if ( ifo == NULL )
   {
-    fprintf(stderr, "--ifo must be specifed\n");
+    fprintf( stderr, "--ifo must be specifed\n" );
     exit( 1 );
   }
 
   /* metadata file specified */
-  if ( !nrMetaFile )
+  if ( nrMetaFile == NULL )
   {
-    fprintf( stderr, 
-        "--nr-meta-file must be specified\n");
+    fprintf( stderr, "--nr-meta-file must be specified\n" );
     exit( 1 );
   }
 
   /* data directory specified */
-  if ( !nrDataDir )
+  if ( nrDataDir == NULL )
   {
-    fprintf( stderr, 
-        "--nr-data-dir must be specified\n");
+    fprintf( stderr, "--nr-data-dir must be specified\n" );
     exit( 1 );
   }
 
