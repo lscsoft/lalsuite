@@ -638,6 +638,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		params->diagnostics = malloc(sizeof(*params->diagnostics));
 		params->diagnostics->LIGOLwXMLStream = options->diagnostics;
 		params->diagnostics->XLALWriteLIGOLwXMLArrayREAL4FrequencySeries = XLALWriteLIGOLwXMLArrayREAL4FrequencySeries;
+		params->diagnostics->XLALWriteLIGOLwXMLArrayREAL4TimeSeries = XLALWriteLIGOLwXMLArrayREAL4TimeSeries;
 		params->diagnostics->XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries = XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries;
 		break;
 
