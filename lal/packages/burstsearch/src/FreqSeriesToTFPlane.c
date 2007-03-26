@@ -204,22 +204,13 @@ int XLALFreqSeriesToTFPlane(
 /******** </lalVerbatim> ********/
 {
 	const char func[] = "XLALFreqSeriesToTFPlane";
-	REAL4Sequence *snr;
 	COMPLEX8FrequencySeries **filter;
 	COMPLEX8Sequence *fcorr;
-	/* length of SNR time series */
-	unsigned snr_length = 2 * (fseries->data->length - 1);
 	unsigned i;
-	unsigned j;
-	unsigned tstart;
-	unsigned tbins_per_sample;
-	/* sample rate of time series from which fseries was computed */
-	REAL8 dt = 1.0 / (snr_length * fseries->deltaF);
 
 	/* check input parameters */
 	if((fmod(plane->deltaF, fseries->deltaF) != 0.0) ||
-	   (fmod(plane->flow - fseries->f0, fseries->deltaF) != 0.0) ||
-	   (fmod(plane->deltaT, dt) != 0.0))
+	   (fmod(plane->flow - fseries->f0, fseries->deltaF) != 0.0))
 		XLAL_ERROR(func, XLAL_EINVAL);
 
 	/* make sure the frequency series spans an appropriate band */
@@ -227,31 +218,12 @@ int XLALFreqSeriesToTFPlane(
 	   (plane->flow + plane->channels * plane->deltaF > fseries->f0 + fseries->data->length * fseries->deltaF))
 		XLAL_ERROR(func, XLAL_EDATA);
 
-	/* number of input time series bins per sample in each of the
-	 * time-frequency plane's channels */
-	tbins_per_sample = (int) (plane->deltaT / dt);
-
-	/* the time-frequency plane spans less time than the original time
-	 * series because the intent is to skip some amount of data at the
-	 * start and end to avoid noise from edge effects;  figure out how
-	 * many samples at the start of the original time series need to be
-	 * skipped in order to centre the time-frequency plane within it.
-	 * */
-	tstart = (snr_length - plane->channel[0]->length * tbins_per_sample) / 2;
-
-	/* set the name and epoch of the TF plane */
-	strncpy(plane->name, fseries->name, LALNameLength);
-	plane->epoch = fseries->epoch;
-	XLALGPSAdd(&plane->epoch, tstart * dt);
-
 	/* create temporary vectors */
 	filter = LALMalloc(plane->channels * sizeof(*filter));
 	fcorr = XLALCreateCOMPLEX8Sequence(fseries->data->length);
-	snr = XLALCreateREAL4Sequence(snr_length);
-	if(!filter || !fcorr || !snr) {
+	if(!filter || !fcorr) {
 		LALFree(filter);
 		XLALDestroyCOMPLEX8Sequence(fcorr);
-		XLALDestroyREAL4Sequence(snr);
 		XLAL_ERROR(func, XLAL_EFUNC);
 	}
 
@@ -263,10 +235,13 @@ int XLALFreqSeriesToTFPlane(
 				XLALDestroyCOMPLEX8FrequencySeries(filter[i]);
 			LALFree(filter);
 			XLALDestroyCOMPLEX8Sequence(fcorr);
-			XLALDestroyREAL4Sequence(snr);
 			XLAL_ERROR(func, XLAL_EFUNC);
 		}
 	}
+
+	/* set the name and epoch of the TF plane */
+	strncpy(plane->name, fseries->name, LALNameLength);
+	plane->epoch = fseries->epoch;
 
 	/* compute the channel overlaps */
 	for(i = 0; i < plane->channels - 1; i++)
@@ -281,20 +256,13 @@ int XLALFreqSeriesToTFPlane(
 		 * XLALREAL4ReverseFFT() omits the factor of 1/N in the
 		 * inverse transform. */
 		apply_filter(fcorr, fseries, filter[i]);
-		if(XLALREAL4ReverseFFT(snr, fcorr, reverseplan)) {
+		if(XLALREAL4ReverseFFT(plane->channel[i], fcorr, reverseplan)) {
 			for(i = 0; i < plane->channels; i++)
 				XLALDestroyCOMPLEX8FrequencySeries(filter[i]);
 			LALFree(filter);
 			XLALDestroyCOMPLEX8Sequence(fcorr);
-			XLALDestroyREAL4Sequence(snr);
 			XLAL_ERROR(func, XLAL_EFUNC);
 		}
-
-		/* Down-sample the SNR data into the time-frequency plane
-		 * storage arrays.  Note that the first tstart samples of
-		 * the SNR time series are skipped. */
-		for(j = 0; j < plane->channel[i]->length; j++)
-			plane->channel[i]->data[j] = snr->data[tstart + j * tbins_per_sample];
 
 		/* Store the predicted mean square for this channel */
 		plane->channel_mean_square->data[i] = channel_mean_square(psd, filter[i]);
@@ -305,7 +273,6 @@ int XLALFreqSeriesToTFPlane(
 		XLALDestroyCOMPLEX8FrequencySeries(filter[i]);
 	LALFree(filter);
 	XLALDestroyCOMPLEX8Sequence(fcorr);
-	XLALDestroyREAL4Sequence(snr);
 
 	/* success */
 	return 0;

@@ -58,11 +58,12 @@ XLALTFTileDegreesOfFreedom(
 
 TFTiling *
 XLALCreateTFTiling(
+	UINT4 plane_length,
 	REAL8 plane_deltaT,
 	REAL8 plane_flow,
 	REAL8 plane_deltaF,
-	UINT4 plane_channel_length,
 	UINT4 plane_num_channels,
+	UINT4 tiling_tstart,
 	INT4 inv_fractional_stride,
 	REAL8 maxTileBandwidth,
 	REAL8 maxTileDuration
@@ -115,11 +116,12 @@ typedef struct tagREAL4TimeFrequencyPlane {
 
 REAL4TimeFrequencyPlane *
 XLALCreateTFPlane(
-	UINT4 timeBins,
-	REAL8 deltaT,
+	UINT4 tseries_length,
+	REAL8 tseries_deltaT,
 	UINT4 channels,
 	REAL8 deltaF,
 	REAL8 flow,
+	UINT4 tiling_start,
 	INT4 tiling_inv_fractional_stride,
 	REAL8 tiling_max_bandwidth,
 	REAL8 tiling_max_duration

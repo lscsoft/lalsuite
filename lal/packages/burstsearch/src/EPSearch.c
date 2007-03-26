@@ -148,13 +148,15 @@ XLALEPSearch(
 
 	/*
 	 * Construct forward and reverse FFT plans, storage for the PSD,
-	 * the time-frequency plane, and a tiling.
+	 * the time-frequency plane, and a tiling.  Note that the flat part
+	 * of the Tukey window needs to match the locations of the tiles as
+	 * specified by the tiling_start parameter of XLALCreateTFPlane.
 	 */
 
 	fplan = XLALCreateForwardREAL4FFTPlan(params->window->data->length, 1);
 	rplan = XLALCreateReverseREAL4FFTPlan(params->window->data->length, 1);
 	psd = XLALCreateREAL4FrequencySeries("PSD", &tseries->epoch, 0, 0, &lalDimensionlessUnit, params->window->data->length / 2 + 1);
-	tfplane = XLALCreateTFPlane(params->tf_timeBins, params->tf_deltaT, params->tf_freqBins, params->tf_deltaF, params->tf_flow, params->inv_fractional_stride, params->maxTileBandwidth, params->maxTileDuration);
+	tfplane = XLALCreateTFPlane(params->window->data->length, tseries->deltaT, params->tf_freqBins, params->tf_deltaF, params->tf_flow, params->window->data->length / 4, params->inv_fractional_stride, params->maxTileBandwidth, params->maxTileDuration);
 	tukey = XLALCreateTukeyREAL4Window(params->window->data->length, 0.5);
 	if(!fplan || !rplan || !psd || !tfplane || !tukey) {
 		errorcode = XLAL_EFUNC;
