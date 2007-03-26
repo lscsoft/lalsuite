@@ -84,20 +84,21 @@ LIGO Scientific Collaboration\\ Numerical Relativity Community\\
 \label{sec:intro}
 
 Numerical relativity has made enormous progress in the last few years.
-Many numerical relativity groups now have stable and accurate codes
-which can accurately simulate the inspiral, merger and ringdown phases
-of binary black hole coalescence.  Similarly, significant progress has
-been made in the numerical simulation of stellar gravitational
-collapse and there is now a much better understanding of how supernova
-explosions happen.  All these processes are among the most promising
-sources of gravitational radiation and therefore there is significant
-interest in using these numerical relativity results within various
-data analysis pipelines used within the LIGO Scientific Collaboration
-(LSC).  A dialog between numerical relativists and LSC data
-analysts was recently initiated in November 2006 through a meeting in
-Boston, and it seems appropriate to continue this dialog at a more
-concrete level, and to start incorporating numerical relativity
-results within various LSC data analysis software.
+Many numerical relativity groups now have sufficiently stable and
+accurate codes which can accurately simulate the inspiral, merger and
+ringdown phases of binary black hole coalescence.  Similarly,
+significant progress has been made in the numerical simulation of
+stellar gravitational collapse and there is now a much better
+understanding of how supernova explosions happen.  All these processes
+are among the most promising sources of gravitational radiation and
+therefore there is significant interest in using these numerical
+relativity results within various data analysis pipelines used within
+the LIGO Scientific Collaboration (LSC).  A dialog between numerical
+relativists and LSC data analysts was recently initiated in November
+2006 through a meeting in Boston, and it seems appropriate to continue
+this dialog at a more concrete level, and to start incorporating
+numerical relativity results within various LSC data analysis
+software.
 
 The aim of this document is to spell out the formats for data exchange
 between numerical relativists and the LSC.  It is clear that there are
@@ -105,10 +106,12 @@ still outstanding conceptual and numerical issues remaining in these
 numerical simulations, and the goal of this document is not to resolve
 them.  The goal is simply to spell out the technical details of the
 waveform data so that it can be incorporated seamlessly with the data
-analysis software currently being developed within the LSC.  However,
-we do hope that this closer interaction will eventually help in
-resolving some of these issues which could be relevant for the
-detection of gravitational radiation.
+analysis software currently being developed within the LSC, and to
+facilitate the interchange of information back and forth between the
+numerical relativity and data analysis efforts.  However, we do hope
+that this closer interaction will eventually help in resolving some of
+these issues which could be relevant for the detection of
+gravitational radiation.
 
 The relevant software development is being carried out as part of the
 LIGO Algorithms Library
@@ -157,12 +160,12 @@ $h_{ij}$. Another method is to use the Zerilli function which
 approximates the spacetime in the wave-zone as a perturbation of a
 Schwarzschild spacetime.  For our purposes, it is not important how
 the wave is extracted, and different numerical relativity groups are
-free to use whatever methods they find appropriate.  The starting
-point of our analysis are the multipole moments of $h_{ij}$ and it is
-important to describe explicitly our conventions for the multipole
-decomposition.  In addition to these multipole moments, we also
-require the corresponding values of $\Psi_4$ or the Zerilli function
-in the formats described later.
+free to use methods they find appropriate.  The starting point of our
+analysis are the multipole moments of $h_{ij}$ and it is important to
+describe explicitly our conventions for the multipole decomposition.
+In addition to these multipole moments, we also require the
+corresponding values of $\Psi_4$ or the Zerilli function in the
+formats described later.
 
 Let $(x,y,z,t)$ be a Cartesian coordinate system in the wave zone,
 sufficiently far away from the source. Let $\xhat$, $\yhat$ and
@@ -295,11 +298,16 @@ provided as functions of time in units of $M$.
 
 
 Let us now specialize to simulations of binary black hole coalescence.
-For our purposes, a single numerical waveform is defined by \emph{at
-  least} 9 parameters: the mass ratio $q = M_1/M_2$, the three
-components of the individual spins $\vec{S}_1$ and $\vec{S}_2$ and the
-mode numbers $(\ell,m)$.  These 9 parameters will be referred to as
-the ``metadata'' for a waveform.  We will add more parameters to this
+A numerical relativity simulation has many parameters which need to be
+specified, and many of these parameters may not be directly relevant
+to the data analysis problem.  We need to specify which parameters of
+the numerical simulation will be significantly useful for the
+astrophysics of a binary black hole system in a circular orbit.  For
+our purposes then, a single numerical waveform is defined by at least
+9 parameters: the mass ratio $q = M_1/M_2$, the three components of
+the individual spins $\vec{S}_1$ and $\vec{S}_2$ and the mode numbers
+$(\ell,m)$.  These 9 parameters will be referred to as the
+``metadata'' for a waveform; we will add more parameters to this
 metadata if necessary. We use the convention that $M_1$ denotes the
 larger of the two masses so that $q\geq 1$.  The choice of precisely
 how the individual masses $M_1$ and $M_2$, the total mass $M$, and the
@@ -320,16 +328,16 @@ left up to the numerical relativity group which produced the waveform.
 It should be whatever best represents the time coordinate and the
 scale of $h_{ij}$ in the particular simulation.
 
-The sampling in time must be uniform in units of $M$.  If the result
-of a simulation or set of simulations yields a waveform sampled
-non-uniformly, we ask that the NR group interpolate to give a
-uniformly sampled waveform.  A sampling rate of $1\times M$ is usually
-sufficient for our purposes, but this is not a requirement.  The
-strain multiplied by the distance will also be in units of the total
-mass $M$ of the binary.  There can be any number of comment lines at
-the top of the file and it is envisioned that the details of the
-simulation and the mode contained in the file will be held in the
-comment lines.  
+For data analysis purpoises, the sampling in time must be uniform in
+units of $M$.  If the result of a simulation or set of simulations
+yields a waveform sampled non-uniformly, we ask that the NR group
+interpolate to give a uniformly sampled waveform.  A sampling rate of
+$1\times M$ is usually sufficient for our purposes, but this is not a
+requirement.  The strain multiplied by the distance will also be in
+units of the total mass $M$ of the binary.  There can be any number of
+comment lines at the top of the file and it is envisioned that the
+details of the simulation and the mode contained in the file will be
+held in the comment lines.
 
 This is an example of a data file:
 
@@ -478,9 +486,15 @@ What is the best choice for the radiation extraction sphere?
 \begin{itemize}
 \item How far away should the sphere be?  Is it sufficient to take the
   sphere to be a coordinate sphere, or do we need some further gauge
-  conditions?  
+  conditions?
 \end{itemize}
-
+How important is the choice of initial data?
+\begin{itemize}
+\item Clearly, the initial data used in almost all current simulations
+  do not exactly represent real astrophysical binary black hole
+  systems.  Is this deviation important for gravitational wave
+  detection?
+\end{itemize}
 Numerical relativity groups are welcome to point out any issues that
 might be important, and to make this list of issues more complete.  
 
