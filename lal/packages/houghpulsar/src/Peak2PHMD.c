@@ -163,9 +163,18 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
   firstBin = (phmd->fBin) + (lut->iniBin) + (lut->offset);
   lastBin  = firstBin + (lut->nBin)-1;
 
- /* Make sure peakgram f-interval and phmd.fBin+lut are compatible */
-  ASSERT ( pgI <= firstBin, status, PHMDH_EINT, PHMDH_MSGEINT);
-  ASSERT ( pgF >= lastBin,  status, PHMDH_EINT, PHMDH_MSGEINT);
+  /* Make sure peakgram f-interval and phmd.fBin+lut are compatible */
+  /*   ASSERT ( pgI <= firstBin, status, PHMDH_EINT, PHMDH_MSGEINT); */
+  /*   ASSERT ( pgF >= lastBin,  status, PHMDH_EINT, PHMDH_MSGEINT); */
+  /* ASSERTs replaced by ABORTs to make sure these checks are done even 
+     when compiled with the LAL_NDEBUG flag */
+  if (  pgI <= firstBin ) {
+    ABORT( status, PHMDH_EINT, PHMDH_MSGEINT); 
+  }
+  if (  pgF >= lastBin ) { 
+    ABORT( status, PHMDH_EINT, PHMDH_MSGEINT); 
+  } 
+
 
   /* -------------------------------------------------------------------   */
   /* initialization */
