@@ -427,7 +427,8 @@ typedef enum {
    FindChirpSP,
    GeneratePPN,
    BCVC,
-   FrameFile
+   FrameFile,
+   AmpCorPPN,
  } Approximant;
 /* </lalVerbatim>  */
 
@@ -930,6 +931,27 @@ LALInspiralInit(
 
 
 /* --- HERE ARE THE WAVEFORMS/MODELS PROTOTYPES --- */
+/*  <lalLaTeX>
+\newpage\input{LALInspiralWaveC}
+</lalLaTeX>  */
+
+void LALInspiralAmplitudeCorrectedWave(
+     LALStatus *status,
+     REAL4Vector *signalvec,
+     InspiralTemplate *params);
+
+void LALInspiralAmplitudeCorrectedWaveTemplates(
+     LALStatus *status,
+     REAL4Vector *filter1,
+     REAL4Vector *filter2,
+     InspiralTemplate *params);
+
+void 
+LALInspiralAmplitudeCorrectedWaveForInjection(
+   LALStatus        *status,
+   CoherentGW       *waveform,
+   InspiralTemplate *params,
+   PPNParamStruc  *ppnParams);
 
 /*  <lalLaTeX>
 \newpage\input{LALInspiralWaveC}
@@ -939,7 +961,7 @@ void LALInspiralWave(
      LALStatus *status,
      REAL4Vector *signalvec,
      InspiralTemplate *params);
-
+/*  <lalLaTeX>
 void LALInspiralWaveTemplates(
      LALStatus *status,
      REAL4Vector *filter1,
