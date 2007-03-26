@@ -130,7 +130,7 @@ LALInspiralWave(
 
 
    ASSERT((INT4)params->approximant >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT((INT4)params->approximant <= 12, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT((INT4)params->approximant <= 20, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT((int)params->order >= 0, status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER);
    ASSERT(params->order <= 7, status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER);
 
@@ -180,6 +180,10 @@ LALInspiralWave(
 	   LALSTPNWaveform(status->statusPtr, signal, params); 
            CHECKSTATUSPTR(status);
 	   break;
+      case AmpCorPPN:
+   	   LALInspiralAmplitudeCorrectedWave(status->statusPtr, signal, params);
+	   CHECKSTATUSPTR(status);	   
+      	   break;
       default:
            ABORT( status, 9999, "Unknown case in switch." );
    }
@@ -214,7 +218,7 @@ LALInspiralWaveTemplates(
 
 
    ASSERT((INT4)params->approximant >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT((INT4)params->approximant <= 12, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT((INT4)params->approximant <= 20, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT((INT4)params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT((INT4)params->order <= 7, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
@@ -224,7 +228,7 @@ LALInspiralWaveTemplates(
       case PadeT1:
            LALInspiralWave1Templates(status->statusPtr, signal1, signal2, params);
            CHECKSTATUSPTR(status);
-      break;
+      	   break;
       case TaylorT2:
            LALInspiralWave2Templates(status->statusPtr, signal1, signal2, params);
            CHECKSTATUSPTR(status);
@@ -232,11 +236,11 @@ LALInspiralWaveTemplates(
       case TaylorT3:
            LALInspiralWave3Templates(status->statusPtr, signal1, signal2, params);
            CHECKSTATUSPTR(status);
-      break;
+      	   break;
       case EOB:
            LALEOBWaveformTemplates(status->statusPtr, signal1, signal2, params);
            CHECKSTATUSPTR(status);
-      break;
+           break;
       case TaylorF1:
       case TaylorF2:
       case PadeF1:
@@ -246,9 +250,13 @@ LALInspiralWaveTemplates(
            LALSTPNWaveformTemplates(status->statusPtr, signal1, signal2, params);
            CHECKSTATUSPTR(status);
            break; 
-      break;
+      case AmpCorPPN:
+      	   LALInspiralAmplitudeCorrectedWaveTemplates(status->statusPtr, signal1, signal2, params);
+	   CHECKSTATUSPTR(status);
+	   break;
       default: 
-      break;
+           ABORT( status, 9999, "Unknown case in switch." );
+      	   
    }
 
    DETATCHSTATUSPTR(status);
@@ -306,8 +314,13 @@ LALInspiralWaveForInjection(
 	LALSTPNWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
 	CHECKSTATUSPTR(status);
 	break;
-     default:
-       break; 	
+      case AmpCorPPN:
+	   LALInspiralAmplitudeCorrectedWaveForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
+	   CHECKSTATUSPTR(status);
+     	break;
+      default:
+           ABORT( status, 9999, "Unknown case in switch." );
+       	
    }
 
    DETATCHSTATUSPTR(status);

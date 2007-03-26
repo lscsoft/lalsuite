@@ -454,6 +454,7 @@ LALInspiralChooseModel(
       case oneHalfPN:
       switch (params->approximant) 
       {
+         case AmpCorPPN:
          case TaylorT1:
          case TaylorT2:
          case TaylorT3:
@@ -481,6 +482,7 @@ LALInspiralChooseModel(
       case onePN:
       switch (params->approximant) 
       {
+         case AmpCorPPN:
          case TaylorT1:
          case TaylorT2:
          case TaylorT3:
@@ -509,6 +511,7 @@ LALInspiralChooseModel(
       case onePointFivePN:
       switch (params->approximant) 
       {
+         case AmpCorPPN:
          case TaylorT1:
          case TaylorT2:
          case TaylorT3:
@@ -540,6 +543,7 @@ LALInspiralChooseModel(
       case twoPN:
       switch (params->approximant) 
       {
+         case AmpCorPPN:
          case TaylorT1:
          case TaylorT2:
          case TaylorT3:
@@ -575,6 +579,7 @@ LALInspiralChooseModel(
       case twoPointFivePN:
       switch (params->approximant) 
       {
+         case AmpCorPPN:
          case TaylorT1:
          case TaylorT2:
          case TaylorT3:
@@ -611,6 +616,7 @@ LALInspiralChooseModel(
       case threePN:
       switch (params->approximant) 
       {
+         case AmpCorPPN:
          case TaylorT1:
          case TaylorT2:
          case TaylorT3:
@@ -647,6 +653,7 @@ LALInspiralChooseModel(
       case threePointFivePN:
       switch (params->approximant) 
       {
+         case AmpCorPPN:
          case TaylorT1:
          case TaylorT2:
          case TaylorT3:
@@ -680,6 +687,7 @@ LALInspiralChooseModel(
 
 
    switch (params->approximant){
+   case AmpCorPPN:
    case TaylorT1:
    case TaylorT2:
    case TaylorT3:
