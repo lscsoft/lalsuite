@@ -128,6 +128,8 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
       if (strcmp(argv[i], "--approximant")==0)
 	{
 	  params->massChoice  = m1Andm2;
+	  if (strcmp(argv[++i],"AmpCorPPN")==0){
+	    params->approximant = AmpCorPPN; }
 	  if (strcmp(argv[++i],"TaylorT1")==0){
 	    params->approximant = TaylorT1; }
 	  else if (strcmp(argv[i],"TaylorT2")==0){
@@ -370,7 +372,7 @@ void LALInspiralITStructureHelp()
 {
 
   fprintf(stderr,"InspiralTemplate Structure; parsing arguments\n");
-  fprintf(stderr,"--approximant (TaylorT1, TaylorT2, TaylorT3, EOB, BCV, BCVSpin, PadeT1)\n");
+  fprintf(stderr,"--approximant (TaylorT1, TaylorT2, TaylorT3, EOB, BCV, BCVSpin, PadeT1, AmpCorPPN)\n");
   fprintf(stderr,"--order       (0, 1, 2, 3, 4, 5, 6 (i.e. 4==twoPN)\n");
   fprintf(stderr,"--mass1       (in solar mass)\n"); 
   fprintf(stderr,"--mass2       (in solar mass)\n");
