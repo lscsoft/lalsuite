@@ -7,7 +7,8 @@ NEED_METAIO =
 endif
 
 check_PROGRAMS = 	BasicInjectTest InjectTest GeneratePPNInspiralTest SimulateTaylorCWTest \
-			SimulateSBTest SkyCoordinatesTest SimulatePopcornTest GeneratePulsarSignalTest $(NEED_METAIO)
+			SimulateSBTest SkyCoordinatesTest SimulatePopcornTest GeneratePulsarSignalTest \
+			GeneratePPNAmpCorInspiralTest GeneratePPNFullPhaseInspiralTest $(NEED_METAIO)
 
 InjectTest_SOURCES      = InjectTest.c
 InjectTest_LDADD        = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
@@ -25,6 +26,10 @@ SimulatePopcornTest_SOURCES = SimulatePopcornTest.c
 SimulatePopcornTest_LDADD   = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 GeneratePulsarSignalTest_SOURCES = GeneratePulsarSignalTest.c
 GeneratePulsarSignalTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+GeneratePPNAmpCorInspiralTest_SOURCES = GeneratePPNAmpCorInspiralTest.c
+GeneratePPNAmpCorInspiralTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+#GeneratePPNFullPhaseInspiralTest_SOURCES = GeneratePPNFullPhaseInspiralTest.c
+#GeneratePPNFullPhaseInspiralTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
 if METAIO
 InjectionInterfaceTest_SOURCES = InjectionInterfaceTest.c
