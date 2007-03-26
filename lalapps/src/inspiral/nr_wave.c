@@ -112,13 +112,14 @@ int main( int argc, char *argv[] )
   REAL4TimeVectorSeries *strain = NULL;  /* h+, hx time series             */
   REAL4TimeSeries *htData;               /* h(t) data for given detector   */
 
-  int writeFlag = 0;                     /* write h(t) to file??           */
+  int writeFlag = 0;                     /* write h(t) to file?            */
 
   /* getopt arguments */
   struct option long_options[] =
   {
     /* these options set a flag */
     {"verbose",                 no_argument,       &vrbflg,           1 },
+    {"write-output",            no_argument,       &writeFlag,        1 },
     /* these options don't set a flag */
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
@@ -129,7 +130,6 @@ int main( int argc, char *argv[] )
     {"ifo",                     required_argument, 0,                'i'},
     {"help",                    no_argument,       0,                'h'},
     {"version",                 no_argument,       0,                'V'},
-    {"write-output",            no_argument,       0,                'W'},
     {0, 0, 0, 0}
   };
   int c;
@@ -179,11 +179,6 @@ int main( int argc, char *argv[] )
             "CVS Version: " CVS_ID_STRING "\n"
             "CVS Tag: " CVS_NAME_STRING "\n" );
         exit( 0 );
-        break;
-
-      case 'W':
-        /* write output */
-        writeFlag = 1; 
         break;
 
       case 'a':
@@ -392,12 +387,15 @@ int main( int argc, char *argv[] )
   numInjections = SimInspiralTableFromLIGOLw( &injections, injectionFile,
       gpsStartSec, gpsEndSec );
 
-  if( vrbflg ) fprintf(stdout,"Read %d injections from the file %s\n", 
-      numInjections, injectionFile);
+  if ( vrbflg )
+  {
+    fprintf(stdout,"Read %d injection(s) from the file %s\n",
+        numInjections, injectionFile);
+  }
 
   if ( numInjections < 0 )  
   {
-    fprintf( stderr, "error: cannot read injection file" );
+    fprintf( stderr, "ERROR: Cannot read injection file\n" );
     exit( 1 );
   }
 
@@ -411,44 +409,62 @@ int main( int argc, char *argv[] )
     /* find nearest matching numrel waveform */
     XLALFindNRFile( &thisMetaData, &nrCatalog, thisInj, 2, 2);
 
-    if ( vrbflg) fprintf(stdout,
-        "Reading the waveform from the file %s ...", thisMetaData.filename );
+    if ( vrbflg )
+    {
+      fprintf(stdout, "Reading the waveform from the file \"%s\"...",
+          thisMetaData.filename );
+    }
 
     /* read numrel waveform */
     LAL_CALL(LALReadNRWave(&status, &strain, thisInj->mass1 + thisInj->mass2, 
           thisMetaData.filename), &status);
 
-    if ( vrbflg) fprintf(stdout, "done\n");
-
-    /* compute the h+, hx strain for the given inclination, coalescence phase*/
     if ( vrbflg )
-      fprintf(stdout, 
+    {
+      fprintf(stdout, "done\n");
+    }
+
+    if ( vrbflg )
+    {
+      fprintf(stdout,
           "Generating waveform for inclination = %f, coa_phase = %f\n",
           thisInj->inclination, thisInj->coa_phase );
-    strain = XLALOrientNRWave( strain, thisMetaData.mode[0], 
+    }
+
+    /* compute the h+ and hx for given inclination and coalescence phase*/
+    strain = XLALOrientNRWave( strain, thisMetaData.mode[0],
         thisMetaData.mode[1], thisInj->inclination, thisInj->coa_phase);
 
-    if ( vrbflg ) fprintf(stdout,
-        "Generating the strain data for the given sky location\n");
+    if ( vrbflg )
+    {
+      fprintf(stdout,
+          "Generating the strain data for the given sky location\n");
+    }
+
+    /* compute strain for given sky location */
     htData = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate);
 
-    /* inject the htData into our injection time stream */
+    /* inject the htData into injection time stream */
     LAL_CALL( LALSSInjectTimeSeries( &status, &injData, htData ), &status );
 
+    /* clear memory for strain */
     XLALDestroyREAL4VectorSequence ( strain->data );
     LALFree(strain);
     strain = NULL;
 
-  } /* loop over injections */
+  } /* end loop over injections */
   
-  if (writeFlag) output_ht( fileName, &injData);
+  /* output injections */
+  if ( writeFlag )
+    output_ht( fileName, &injData);
 
+  /* clear memory */
   LALFree(nrCatalog.data);
-
   LALCheckMemoryLeaks(); 
 
   exit( 0 );
 }
+
 
 /* function to output h(t) waveform to file */
 static void output_ht(CHAR *fileName,
@@ -461,7 +477,7 @@ static void output_ht(CHAR *fileName,
   /* open output file */
   if ((htOut = fopen(fileName, "w")) == NULL)
   {
-    fprintf(stderr, "Error opening output file: %s\n", fileName);
+    fprintf(stderr, "ERROR: Unable to open output file \"%s\"\n", fileName);
     exit( 1 );
   }
 
