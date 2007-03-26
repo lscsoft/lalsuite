@@ -56,7 +56,7 @@ extern int vrbflg;
  */
 static void print_usage( char *program )
 {
-  fprintf(stderr,
+  fprintf( stderr,
       "Usage:  %s [options]\n"\
       "The following options are recognized.  Options not surrounded in [] are\n"\
       "required.\n"\
@@ -64,7 +64,8 @@ static void print_usage( char *program )
       "  [--verbose]                   print progress information\n"\
       "  [--version]                   print version information and exit\n"\
       "  --injection-file  inj_file    read injection details from inj_file\n"\
-      "  --ifo             ifo         ifo for which to generate injections\n"\
+      "  --ifo             ifo         IFO for which to generate injections\n"\
+      "  --all-ifos                    create injections for all IFOs\n"\
       "  --nr-meta-file    meta_file   file containing details of available\n"\
       "                                numerical relativity waveforms\n"\
       "  --nr-data-dir     dir         specify directory containing numerical\n"\
@@ -73,7 +74,7 @@ static void print_usage( char *program )
       "  --gps-end-time    end         end time of output file\n"\
       "  --sample-rate     rate        the sample rate used to generate injections\n"\
       "  --write-output                write h(t) to an ascii file in NRwave directory\n"\
-      "\n", program);
+      "\n", program );
 }
 
 /*
@@ -85,6 +86,9 @@ int main( int argc, char *argv[] )
 {
   LALStatus status = blank_status;
 
+  int i;                                 /* loop counter */
+  int num_ifos;                          /* number of ifos */
+
   CHAR *injectionFile = NULL;            /* name of file containing injs   */
   CHAR *nrMetaFile    = NULL;            /* name of file with nr meta info */
   CHAR *nrDataDir     = NULL;            /* name of dir with nr waveform   */
@@ -92,7 +96,7 @@ int main( int argc, char *argv[] )
 
   NRWaveCatalog nrCatalog;               /* NR wave metadata struct        */
 
-  CHAR *ifo = NULL;                      /* name of ifo                    */
+  CHAR ifo[LIGOMETA_IFO_MAX];            /* name of ifo                    */
   CHAR fileName[FILENAME_MAX];           /* name of output file            */
   CHAR name[LALNameLength];
 
@@ -113,6 +117,7 @@ int main( int argc, char *argv[] )
   REAL4TimeSeries *htData;               /* h(t) data for given detector   */
 
   int writeFlag = 0;                     /* write h(t) to file?            */
+  int ifosFlag  = 0;                     /* injections for all ifos?       */
 
   /* getopt arguments */
   struct option long_options[] =
@@ -120,6 +125,7 @@ int main( int argc, char *argv[] )
     /* these options set a flag */
     {"verbose",                 no_argument,       &vrbflg,           1 },
     {"write-output",            no_argument,       &writeFlag,        1 },
+    {"all-ifos",                no_argument,       &ifosFlag,         1 },
     /* these options don't set a flag */
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
@@ -245,7 +251,6 @@ int main( int argc, char *argv[] )
       case 'i':
         /* create storage for the ifo name and copy it */
         optarg_len = strlen( optarg ) + 1;
-        ifo = (CHAR *) calloc( optarg_len, sizeof(CHAR));
         memcpy( ifo, optarg, optarg_len );
 
         /* check for supported ifo */
@@ -344,10 +349,10 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  /* ifo specified */
-  if ( ifo == NULL )
+  /* ifo specified, or all ifos */
+  if (( !ifo ) && ( !ifosFlag ))
   {
-    fprintf( stderr, "--ifo must be specifed\n" );
+    fprintf( stderr, "--ifo, or --all-ifos, must be specifed\n" );
     exit( 1 );
   }
 
@@ -374,10 +379,6 @@ int main( int argc, char *argv[] )
   /* set channel name */
   LALSnprintf( name, LIGOMETA_CHANNEL_MAX * sizeof(CHAR), "%s:STRAIN", ifo );
 
-  /* set output filename */
-  LALSnprintf( fileName, FILENAME_MAX, "%s-NR_WAVE-%d-%d.dat", 
-      ifo, gpsStartSec, gpsEndSec - gpsStartSec);
-
   /* set up the injData to be zeros of the correct length, to which we will 
    * add the injections */
   injData = *XLALCreateREAL4TimeSeries( name, &gpsStartTime, 0, 1./sampleRate, 
@@ -403,60 +404,92 @@ int main( int argc, char *argv[] )
   LAL_CALL(LALNRDataFind( &status, &nrCatalog, nrDataDir, nrMetaFile ), 
       &status);
 
-  /* start injections */
-  for( thisInj = injections; thisInj; thisInj = thisInj->next )
+  /* get number of ifos to calculate injections for */
+  if (ifosFlag)
   {
-    /* find nearest matching numrel waveform */
-    XLALFindNRFile( &thisMetaData, &nrCatalog, thisInj, 2, 2);
+    num_ifos = LAL_NUM_IFO;
+  }
+  else
+  {
+    num_ifos = 1;
+  }
+
+  /* loop over ifos */
+  for ( i = 0; i < num_ifos; i++ )
+  {
+    /* get ifo */
+    if (ifosFlag)
+    {
+      XLALReturnIFO( ifo, i );
+    }
 
     if ( vrbflg )
     {
-      fprintf(stdout, "Reading the waveform from the file \"%s\"...",
-          thisMetaData.filename );
+      fprintf( stdout, "Perfroming injections for IFO: %s\n", ifo);
     }
 
-    /* read numrel waveform */
-    LAL_CALL(LALReadNRWave(&status, &strain, thisInj->mass1 + thisInj->mass2, 
-          thisMetaData.filename), &status);
+    /* set output filename */
+    LALSnprintf( fileName, FILENAME_MAX, "%s-NR_WAVE-%d-%d.dat", 
+        ifo, gpsStartSec, gpsEndSec - gpsStartSec);
 
-    if ( vrbflg )
+    /* loop over injections */
+    for ( thisInj = injections; thisInj; thisInj = thisInj->next )
     {
-      fprintf(stdout, "done\n");
-    }
+      /* find nearest matching numrel waveform */
+      XLALFindNRFile( &thisMetaData, &nrCatalog, thisInj, 2, 2);
 
-    if ( vrbflg )
+      if ( vrbflg )
+      {
+        fprintf(stdout, "Reading the waveform from the file \"%s\"...",
+            thisMetaData.filename );
+      }
+
+      /* read numrel waveform */
+      LAL_CALL(LALReadNRWave(&status, &strain, thisInj->mass1 + thisInj->mass2, 
+            thisMetaData.filename), &status);
+
+      if ( vrbflg )
+      {
+        fprintf(stdout, "done\n");
+      }
+
+      if ( vrbflg )
+      {
+        fprintf(stdout,
+            "Generating waveform for inclination = %f, coa_phase = %f\n",
+            thisInj->inclination, thisInj->coa_phase );
+      }
+
+      /* compute the h+ and hx for given inclination and coalescence phase*/
+      strain = XLALOrientNRWave( strain, thisMetaData.mode[0],
+          thisMetaData.mode[1], thisInj->inclination, thisInj->coa_phase);
+
+      if ( vrbflg )
+      {
+        fprintf(stdout,
+            "Generating the strain data for the given sky location\n");
+      }
+
+      /* compute strain for given sky location */
+      htData = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate);
+
+      /* inject the htData into injection time stream */
+      LAL_CALL( LALSSInjectTimeSeries( &status, &injData, htData ), &status );
+
+      /* clear memory for strain */
+      XLALDestroyREAL4VectorSequence ( strain->data );
+      LALFree(strain);
+      strain = NULL;
+
+    } /* end loop over injections */
+
+    /* output injections */
+    if ( writeFlag )
     {
-      fprintf(stdout,
-          "Generating waveform for inclination = %f, coa_phase = %f\n",
-          thisInj->inclination, thisInj->coa_phase );
+      output_ht( fileName, &injData);
     }
 
-    /* compute the h+ and hx for given inclination and coalescence phase*/
-    strain = XLALOrientNRWave( strain, thisMetaData.mode[0],
-        thisMetaData.mode[1], thisInj->inclination, thisInj->coa_phase);
-
-    if ( vrbflg )
-    {
-      fprintf(stdout,
-          "Generating the strain data for the given sky location\n");
-    }
-
-    /* compute strain for given sky location */
-    htData = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate);
-
-    /* inject the htData into injection time stream */
-    LAL_CALL( LALSSInjectTimeSeries( &status, &injData, htData ), &status );
-
-    /* clear memory for strain */
-    XLALDestroyREAL4VectorSequence ( strain->data );
-    LALFree(strain);
-    strain = NULL;
-
-  } /* end loop over injections */
-  
-  /* output injections */
-  if ( writeFlag )
-    output_ht( fileName, &injData);
+  } /* end loop over ifos */
 
   /* clear memory */
   LALFree(nrCatalog.data);
