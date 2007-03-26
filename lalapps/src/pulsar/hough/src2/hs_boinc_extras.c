@@ -222,18 +222,19 @@ void show_progress(double rac, double dec, UINT4 count, UINT4 total) {
   to the server as a result file
  */
 void register_output_file(char*filename) {
+  int len = strlen(filename)+1;
   outfiles = (char**)realloc(outfiles,(noutfiles+1)*sizeof(char*));
   if (outfiles == NULL) {
     LogPrintf (LOG_CRITICAL, "ERROR: Can't allocate output filename '%s'\n", filename);
     noutfiles = 0;
     return;
   }
-  outfiles[noutfiles] = malloc(strlen(filename));
+  outfiles[noutfiles] = calloc(len,sizeof(char));
   if (outfiles[noutfiles] == NULL) {
     LogPrintf (LOG_CRITICAL, "ERROR: Can't allocate output filename '%s'\n", filename);
     return;
   }
-  strcpy(outfiles[noutfiles],filename);
+  strncpy(outfiles[noutfiles],filename,len);
   noutfiles++;
 }
 
@@ -393,7 +394,7 @@ static void worker (void) {
      them as needed. Output filename(s) will be recorded (resolved
      and unresolved) and the flops estimation will be dealt with.
   */
-  rargv = (char**)malloc(argc*sizeof(char*));
+  rargv = (char**)calloc(1,argc*sizeof(char*));
   if(!rargv){
     LogPrintf(LOG_CRITICAL, "Out of memory\n");
     boinc_finish(HIERARCHICALSEARCH_EMEM);
@@ -406,7 +407,7 @@ static void worker (void) {
     
     /* config file */
     if (argv[arg][0] == '@') {
-      rargv[rarg] = (char*)malloc(MAX_PATH_LEN);
+      rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
 	boinc_finish(HIERARCHICALSEARCH_EMEM);
@@ -419,7 +420,7 @@ static void worker (void) {
 
     /* skygrid file */
     else if (MATCH_START("--skyGridFile=",argv[arg],l)) {
-      rargv[rarg] = (char*)malloc(MAX_PATH_LEN);
+      rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
 	boinc_finish(HIERARCHICALSEARCH_EMEM);
@@ -431,7 +432,7 @@ static void worker (void) {
 
     /* ephermeris files */
     else if (MATCH_START("--ephemE=",argv[arg],l)) {
-      rargv[rarg] = (char*)malloc(MAX_PATH_LEN);
+      rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
 	boinc_finish(HIERARCHICALSEARCH_EMEM);
@@ -441,7 +442,7 @@ static void worker (void) {
 	res = HIERARCHICALSEARCH_EFILE;
     }
     else if (MATCH_START("--ephemS=",argv[arg],l)) {
-      rargv[rarg] = (char*)malloc(MAX_PATH_LEN);
+      rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
 	boinc_finish(HIERARCHICALSEARCH_EMEM);
@@ -454,7 +455,7 @@ static void worker (void) {
 
     /* SFT files (no unzipping, but dealing with multiple files separated by ';' */
     else if (0 == strncmp("--DataFiles",argv[arg],11)) {
-      rargv[rarg] = (char*)malloc(1024);
+      rargv[rarg] = (char*)calloc(1024,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
 	boinc_finish(HIERARCHICALSEARCH_EMEM);
@@ -533,7 +534,7 @@ static void worker (void) {
 	   apend the OUTPUT_EXT to the output filename, write the output there and at the
 	   end zip this file into an archive with the original output file name */
         s = strlen(argv[arg])+strlen(OUTPUT_EXT)+1;
-        rargv[rarg] = (char*)malloc(s);
+        rargv[rarg] = (char*)calloc(s,sizeof(char));
 	if(!rargv[rarg]){
 	  LogPrintf(LOG_CRITICAL, "Out of memory\n");
 	  boinc_finish(HIERARCHICALSEARCH_EMEM);
@@ -549,7 +550,7 @@ static void worker (void) {
 	   and at the end zip the output file into an archive boinc_resolve() pointed us to */
 	startc++;
 	s = l+strlen(startc)+1;
-        rargv[rarg] = (char*)malloc(s);
+        rargv[rarg] = (char*)calloc(s,sizeof(char));
 	if(!rargv[rarg]){
 	  LogPrintf(LOG_CRITICAL, "Out of memory\n");
 	  boinc_finish(HIERARCHICALSEARCH_EMEM);
@@ -576,9 +577,9 @@ static void worker (void) {
 	if(startc == NULL)
 	  startc = strrchr(resultfile,'\\');
 	if(startc == NULL) {
-	  /* see previous case */
+	  /* see previous case - local filename, add OUTPUT_EXT  */
 	  s = strlen(argv[arg])+strlen(OUTPUT_EXT)+1;
-	  rargv[rarg] = (char*)malloc(s);
+	  rargv[rarg] = (char*)calloc(s,sizeof(char));
 	  if(!rargv[rarg]){
 	    LogPrintf(LOG_CRITICAL, "Out of memory\n");
 	    boinc_finish(HIERARCHICALSEARCH_EMEM);
@@ -589,10 +590,10 @@ static void worker (void) {
 	  LogPrintf (LOG_NORMAL, "WARNING: boinc-resolved result file \"%s\" in local directory - using \"%s\"\n",
 		     argv[arg],rargv[rarg]);
 	} else {
-	  /* see previous case */
+	  /* see previous case - different directory - derive local filename */
 	  startc++;
 	  s = strlen(startc)+1;
-	  rargv[rarg] = (char*)malloc(s);
+	  rargv[rarg] = (char*)calloc(s,sizeof(char));
 	  if(!rargv[rarg]){
 	    LogPrintf(LOG_CRITICAL, "Out of memory\n");
 	    boinc_finish(HIERARCHICALSEARCH_EMEM);
@@ -882,7 +883,7 @@ int init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
   /* create checkpoint file name if necc. */
   if(cptname) {
     int s = strlen(cptname)+1;
-    cptfilename = (char*)malloc(s);
+    cptfilename = (char*)calloc(s,sizeof(char));
     if(!cptfilename){
       LogPrintf(LOG_CRITICAL, "Out of memory\n");
       return(-2);
@@ -891,7 +892,7 @@ int init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
   } else {
 #define CHECKPOINT_EXT ".cpt"
     int s = strlen(outputname)+strlen(CHECKPOINT_EXT)+1;
-    cptfilename = (char*)malloc(s);
+    cptfilename = (char*)calloc(s,sizeof(char));
     if(!cptfilename){
       LogPrintf(LOG_CRITICAL, "Out of memory\n");
       return(-2);
