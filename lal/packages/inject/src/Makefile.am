@@ -16,7 +16,6 @@ libinject_la_SOURCES =	\
 	CelestialCoordinatesLaldoc.c    NRWaveInject.c \
 	InspiralInjectionParams.c
 	
-	#GeneratePPNFullPhaseInspiral.c	 \
 
 ## Hack to get this working for now... change later
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include -I$(srcdir)/../../date/include
