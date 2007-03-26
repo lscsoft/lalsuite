@@ -363,6 +363,10 @@ static int check_for_missing_parameters(char *prog, struct option *long_options,
 			arg_is_missing = !params->maxTileBandwidth;
 			break;
 
+		case 'm':
+			arg_is_missing = !params->maxTileDuration;
+			break;
+
 		case 'o':
 			arg_is_missing = options->high_pass < 0.0;
 			break;
@@ -483,8 +487,11 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	params->diagnostics = NULL;	/* default == disable */
 	params->confidence_threshold = XLAL_REAL8_FAIL_NAN;	/* impossible */
 	params->method = -1;	/* impossible */
+	params->tf_freqBins = 0;	/* impossible */
+	params->tf_deltaF = 0;	/* impossible */
 	params->tf_flow = -1.0;	/* impossible */
 	params->maxTileBandwidth = 0;	/* impossible */
+	params->maxTileDuration = 0;	/* impossible */
 	params->inv_fractional_stride = 0;	/* impossible */
 	params->windowShift = 0;	/* impossible */
 
@@ -732,7 +739,6 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 
 	case 'l':
 		params->maxTileBandwidth = atof(optarg);
-		params->tf_deltaT = 1 / (2 * params->maxTileBandwidth);
 		if((params->maxTileBandwidth <= 0) || !is_power_of_2(params->maxTileBandwidth)) {
 			sprintf(msg, "must be a power of 2 greater than 0 (%f specified)", params->maxTileBandwidth);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -895,14 +901,12 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	 * Miscellaneous chores.
 	 */
 
-	params->tf_timeBins = (options->window_length / 2) / (options->resample_rate * params->tf_deltaT);
 	params->tf_freqBins = options->bandwidth / params->tf_deltaF;
 
 	params->useOverWhitening = enableoverwhitening;
 
 	XLALPrintInfo("%s: using --psd-average-points %zu\n", argv[0], options->psd_length);
 	XLALPrintInfo("%s: available RAM limits analysis to %d samples\n", argv[0], options->max_series_length);
-	XLALPrintInfo("%s: time-frequency plane has %d time bins by %d frequency bins\n", argv[0], params->tf_timeBins, params->tf_freqBins);
 
 	return options;
 }
