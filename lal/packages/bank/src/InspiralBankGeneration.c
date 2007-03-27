@@ -40,6 +40,7 @@ LALInspiralBankGeneration(
   case TaylorT1:
   case TaylorT2:
   case TaylorT3:
+  case AmpCorPPN:
 
     /* Use LALInspiralCreateCoarseBank(). */
     TRY( LALInspiralCreateCoarseBank( status->statusPtr, &coarseList, ntiles,

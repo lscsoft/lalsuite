@@ -290,6 +290,7 @@ LALInspiralCreateCoarseBank(
       CHECKSTATUSPTR( status );
       break;
 
+    case AmpCorPPN: 
     case TaylorT1: 
     case TaylorT2: 
     case TaylorT3: 
