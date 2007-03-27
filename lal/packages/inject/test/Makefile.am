@@ -8,7 +8,7 @@ endif
 
 check_PROGRAMS = 	BasicInjectTest InjectTest GeneratePPNInspiralTest SimulateTaylorCWTest \
 			SimulateSBTest SkyCoordinatesTest SimulatePopcornTest GeneratePulsarSignalTest \
-			GeneratePPNAmpCorInspiralTest GeneratePPNFullPhaseInspiralTest $(NEED_METAIO)
+			GeneratePPNAmpCorInspiralTest $(NEED_METAIO)
 
 InjectTest_SOURCES      = InjectTest.c
 InjectTest_LDADD        = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la

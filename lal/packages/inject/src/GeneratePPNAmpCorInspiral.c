@@ -1,3 +1,44 @@
+/************************** <lalVerbatim file="GeneratePPNAmpCorInspiralCV">
+Author: Creighton, T. D., McKechan David, Van Den Broeck Chris
+$Id$
+**************************************************** </lalVerbatim> */
+
+/********************************************************** <lalLaTeX>
+
+\providecommand{\lessim}{\stackrel{<}{\scriptstyle\sim}}
+
+\subsection{Module \texttt{GeneratePPNampCorInspiral.c}}
+\label{ss:GeneratePPNAmpCorInspiral.c}
+
+Computes a parametrized post-Newtonian inspiral waveform 
+with ampltidude corrections.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{GeneratePPNAmpCorInspiralCP}
+\idx{LALGeneratePPNampCorInspiral()}
+
+\subsubsection*{Description}
+
+See GeneratePPNInspiral.c
+
+\subsubsection*{Algorithm}
+
+
+\subsubsection*{Uses}
+\begin{verbatim}
+LALMalloc()                   LALFree()
+LALSCreateVectorSequence()    LALSDestroyVectorSequence()
+LALSCreateVector()            LALSDestroyVector()
+LALDCreateVector()            LALDDestroyVector()
+LALSBisectionFindRoot()       LALSnprintf()
+\end{verbatim}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{GeneratePPNAmpCorInspiralCV}}
+
+******************************************************* </lalLaTeX> */
 
 #include <math.h>
 #include <lal/LALStdio.h>
