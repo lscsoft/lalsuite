@@ -46,7 +46,7 @@ tagEPSearchParams {
 	REAL8                 confidence_threshold;
 	AvgSpecMethod         method;
 	/* time-frequency plane parameters */
-	BOOLEAN               useOverWhitening;	
+	int                   useOverWhitening;	
 	INT4                  tf_freqBins;
 	REAL8                 tf_deltaF;
 	REAL8                 tf_flow;
