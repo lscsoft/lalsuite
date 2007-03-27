@@ -483,7 +483,9 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   yStart =  params->fStartIn / fFac;
   
   /* Compute starting frequency for each harmonic separately */  
-  yStart = 2.0*yStart/((REAL4)(NUMHARMONICS));
+  /* The line below computes the start time for the highest harmonic */
+  /* I'm glad it works */
+  /*yStart = 2.0*yStart/((REAL4)(NUMHARMONICS));*/
     
   /* Compute starting times for the different harmonics */ 
   if ( params->fStopIn == 0.0 )
