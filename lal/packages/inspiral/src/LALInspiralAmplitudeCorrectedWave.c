@@ -434,7 +434,6 @@ tion, that value must be zero*/
       if (signal1)
       {
          *(signal1->data + count) = (REAL4) waveform.h->data->data[2*i];
-	 fprintf(stderr, "%d %e\n",i ,(REAL4) waveform.h->data->data[2*i] );
 	 if (signal2)
 	 {
          *(signal2->data + count) = (REAL4) waveform.h->data->data[2*i+1];
