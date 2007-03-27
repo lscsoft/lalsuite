@@ -237,8 +237,7 @@ XLALFindNRFile( NRWaveMetaData   *out,       /**< output wave data */
     XLAL_ERROR ( "XLALFindNRFile", XLAL_EINVAL);
   }
 
-  /* we think this is a bug (Ravi,Chad) So we want to check for the highest
-     mass before calculating the mass ratio */
+  /* we want to check for the highest mass before calculating the mass ratio */
   if (inj->mass2 > inj->mass1) {
      massRatioIn = inj->mass2/inj->mass1;
   }
@@ -246,12 +245,14 @@ XLALFindNRFile( NRWaveMetaData   *out,       /**< output wave data */
      massRatioIn = inj->mass1/inj->mass2;
   }
  
-  massRatio = nrCatalog->data[0].massRatio;
-
-  diff = fabs(massRatio - massRatioIn);
+  /*   massRatio = nrCatalog->data[0].massRatio; */
+  
+  /*   diff = fabs(massRatio - massRatioIn); */
 
   /* look over catalog and fimd waveform closest in mass ratio */
-  for (best = 0, k = 1; k < nrCatalog->length; k++) {
+  /* initialize diff */
+  diff = -1;
+  for (k = 0; k < nrCatalog->length; k++) {
 
     /* check catalog data is not null */
     if ( nrCatalog->data + k == NULL ) {
@@ -259,15 +260,24 @@ XLALFindNRFile( NRWaveMetaData   *out,       /**< output wave data */
       XLAL_ERROR ( "XLALFindNRFile", XLAL_EINVAL);
     }
 
-    massRatio = nrCatalog->data[k].massRatio;
-    newDiff = fabs(massRatio - massRatioIn);
+    /* look for waveforms with correct mode values */
+    if ((modeL == nrCatalog->data[k].mode[0]) && (modeM == nrCatalog->data[k].mode[1])) {
 
-    if ( diff > newDiff) {
-      diff = newDiff;
-      best = k;
-    }    
-    /* need checks on mode numbers as well! */
-  } 
+      massRatio = nrCatalog->data[k].massRatio;
+      newDiff = fabs(massRatio - massRatioIn);
+      
+      if ( (diff < 0) || (diff > newDiff)) {
+	diff = newDiff;
+	best = k;
+      }    
+    } /* if (modeL == ...) */
+  } /* loop over waveform catalog */
+
+  /* error checking if waveforms with input mode values were not found */
+  if ( diff < 0) {
+    LALPrintError ("\n Input mode numbers not found !\n\n");
+    XLAL_ERROR ( "XLALFindNRFile", XLAL_EINVAL);
+  }
 
   /* copy best match to output */
   memcpy(out, nrCatalog->data + best, sizeof(NRWaveMetaData));
