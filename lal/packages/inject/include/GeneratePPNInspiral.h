@@ -362,7 +362,6 @@ LALGeneratePPNInspiral( LALStatus     *,
 			CoherentGW    *output,
 			PPNParamStruc *params );
 /* <lalLaTeX>
-/* <lalLaTeX>
 \newpage\input{GeneratePPNFullPhaseInspiralC}
 </lalLaTeX> */
 void
@@ -370,7 +369,6 @@ LALGeneratePPNFullPhaseInspiral( LALStatus     *,
 			CoherentGW    *output,
 			PPNParamStruc *params );
 
-/* <lalLaTeX>
 /* <lalLaTeX>
 \newpage\input{GeneratePPNAmpCorInspiralC}
 </lalLaTeX> */
