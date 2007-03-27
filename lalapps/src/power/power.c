@@ -59,108 +59,9 @@ RCSID("power $Id$");
 
 /*
  * ============================================================================
- *                                Global Data
- * ============================================================================
- */
-
-
-/*
- * Parameters from command line
- */
-
-
-struct options {
-	/* search parameters */
-	int bandwidth;
-	unsigned window_length;
-	size_t psd_length;	/* number of samples to use for PSD    */
-	int seed;		/* set non-zero to generate noise      */
-
-	/* frame data input input */
-	LIGOTimeGPS gps_start;	/* gps start time */
-	LIGOTimeGPS gps_end;	/* gps stop time */
-	char *cache_filename;	/* name of file with frame cache info */
-	char *cal_cache_filename;	/* name of the calibration cache file */
-	char *channel_name;	/* channel to analyze */
-	char ifo[3];		/* two character interferometer */
-	int max_series_length;	/* RAM-limited input length */
-
-	/* h(t) support */
-	int calibrated;		/* input is double-precision h(t) */
-	double cal_high_pass;	/* double->single high pass freq (Hz) */
-
-	/* data conditioning */
-	int resample_rate;	/* sample rate after resampling */
-	double high_pass;	/* conditioning high pass freq (Hz) */
-	int filter_corruption;	/* samples corrupted by conditioning */
-
-	/* injection support */
-	double noise_rms;	/* Gaussian white noise RMS */
-	char *mdc_cache_filename;	/* name of mdc signal cache file */
-	char *mdc_channel_name;	/* mdc signal only channnel info */
-	char *sim_burst_filename;	/* file with list of burst injections */
-	char *sim_inspiral_filename;	/* file with list of inspiral injections */
-
-	/* WTF */
-	char *simInjectionFile;	/* file with list of sim injections */
-	char *sim_cache_filename;	/* name of the sim waveform cache file */
-	double sim_distance;	/* Distance at which the sim waveforms have been generated */
-
-	/* output control */
-	char *comment;		/* user comment */
-	int max_event_rate;	/* safety valve (Hz), 0 == disable */
-
-	/* diagnostics */
-	LIGOLwXMLStream *diagnostics;	/* diagnostics XML stream */
-};
-
-
-static struct options *options_new(void)
-{
-	static char default_comment[] = "";
-	struct options *options = malloc(sizeof(*options));
-
-	if(!options)
-		return NULL;
-
-	/* defaults */
-	*options = (struct options) {
-		.bandwidth = 0,	/* impossible */
-		.cal_cache_filename = NULL,	/* default */
-		.channel_name = NULL,	/* impossible */
-		.comment = default_comment,	/* default */
-		.filter_corruption = -1,	/* impossible */
-		.mdc_cache_filename = NULL,	/* default == disable */
-		.mdc_channel_name = NULL,	/* default */
-		.noise_rms = -1.0,	/* default == disable */
-		.diagnostics = NULL,	/* default == disable */
-		.psd_length = 0,	/* impossible */
-		.resample_rate = 0,	/* impossible */
-		.seed = 1,	/* default */
-		.calibrated = FALSE,	/* default */
-		.high_pass = -1.0,	/* impossible */
-		.cal_high_pass = -1.0,	/* impossible */
-		.max_event_rate = 0,	/* default */
-		.window_length = 0,	/* impossible */
-		.sim_distance = 10000.0,	/* default (10 Mpc) */
-		.sim_cache_filename = NULL,	/* default */
-		.sim_burst_filename = NULL,	/* default == disable */
-		.simInjectionFile = NULL,	/* default == disable */
-		.sim_inspiral_filename = NULL,	/* default == disable */
-		.cache_filename = NULL,	/* default == disable */
-	};
-
-	memset(options->ifo, 0, sizeof(options->ifo));	/* empty */
-	XLALINT8NSToGPS(&options->gps_start, 0);	/* impossible */
-	XLALINT8NSToGPS(&options->gps_end, 0);	/* impossible */
-
-	return options;
-}
-
-
-/*
- * ============================================================================
+ *
  *                               Misc Utilities
+ *
  * ============================================================================
  */
 
@@ -211,6 +112,7 @@ static int is_power_of_2(int x)
  * Count the events in a SnglBurstTable.
  */
 
+
 static int SnglBurstTableLength(const SnglBurstTable *list)
 {
 	int i;
@@ -224,8 +126,163 @@ static int SnglBurstTableLength(const SnglBurstTable *list)
 
 /*
  * ============================================================================
+ *
  *                       Initialize and parse arguments
+ *
  * ============================================================================
+ */
+
+
+/*
+ * Parameters from command line
+ */
+
+
+struct options {
+	/*
+	 * search parameters
+	 */
+
+	int bandwidth;
+	unsigned window_length;
+	/* number of samples to use for PSD    */
+	size_t psd_length;
+	/* set non-zero to generate noise      */
+	int seed;
+
+	/*
+	 * frame data input
+	 */
+
+	LIGOTimeGPS gps_start;
+	LIGOTimeGPS gps_end;
+	/* name of file with frame cache info */
+	char *cache_filename;
+	/* name of the calibration cache file */
+	char *cal_cache_filename;
+	/* channel to analyze */
+	char *channel_name;
+	/* two character interferometer */
+	char ifo[3];
+	/* don't read a time series longer than this (e.g., because of
+	 * available memory) */
+	int max_series_length;
+
+	/*
+	 * h(t) support
+	 */
+
+	/* flag indicating that input is double-precision h(t) */
+	int calibrated;
+	/* high pass filter cut-off for double --> single quantization */
+	double cal_high_pass;
+
+	/*
+	 * data conditioning
+	 */
+
+	/* sample rate after resampling */
+	int resample_rate;
+	/* conditioning high pass freq (Hz) */
+	double high_pass;
+	/* samples corrupted by conditioning */
+	int filter_corruption;
+
+	/*
+	 * injection support
+	 */
+
+	/* Gaussian white noise RMS */
+	double noise_rms;
+	/* name of mdc signal cache file */
+	char *mdc_cache_filename;
+	/* mdc signal only channnel info */
+	char *mdc_channel_name;
+	/* file with list of burst injections */
+	char *sim_burst_filename;
+	/* file with list of inspiral injections */
+	char *sim_inspiral_filename;
+
+	/*
+	 * WTF
+	 */
+
+	/* file with list of sim injections */
+	char *simInjectionFile;
+	/* name of the sim waveform cache file */
+	char *sim_cache_filename;
+	/* Distance at which the sim waveforms have been generated */
+	double sim_distance;
+
+	/*
+	 * output control
+	 */
+
+	/* user comment */
+	char *comment;
+	/* safety valve (Hz), 0 == disable */
+	int max_event_rate;
+
+	/*
+	 * diagnostics support
+	 */
+
+	/* diagnostics call back for passing to LAL (NULL = disable) */
+	LIGOLwXMLStream *diagnostics;
+};
+
+
+static struct options *options_new(void)
+{
+	static char default_comment[] = "";
+	struct options *options = malloc(sizeof(*options));
+
+	if(!options)
+		return NULL;
+
+	*options = (struct options) {
+		.bandwidth = 0,	/* impossible */
+		.cal_cache_filename = NULL,	/* default */
+		.channel_name = NULL,	/* impossible */
+		.comment = default_comment,	/* default */
+		.filter_corruption = -1,	/* impossible */
+		.mdc_cache_filename = NULL,	/* default == disable */
+		.mdc_channel_name = NULL,	/* default */
+		.noise_rms = -1.0,	/* default == disable */
+		.diagnostics = NULL,	/* default == disable */
+		.psd_length = 0,	/* impossible */
+		.resample_rate = 0,	/* impossible */
+		.seed = 1,	/* default */
+		.max_series_length = 0,	/* default */
+		.calibrated = FALSE,	/* default */
+		.high_pass = -1.0,	/* impossible */
+		.cal_high_pass = -1.0,	/* impossible */
+		.max_event_rate = 0,	/* default */
+		.window_length = 0,	/* impossible */
+		.sim_distance = 10000.0,	/* default (10 Mpc) */
+		.sim_cache_filename = NULL,	/* default */
+		.sim_burst_filename = NULL,	/* default == disable */
+		.simInjectionFile = NULL,	/* default == disable */
+		.sim_inspiral_filename = NULL,	/* default == disable */
+		.cache_filename = NULL,	/* default == disable */
+	};
+
+	memset(options->ifo, 0, sizeof(options->ifo));	/* empty */
+	XLALINT8NSToGPS(&options->gps_start, 0);	/* impossible */
+	XLALINT8NSToGPS(&options->gps_end, 0);	/* impossible */
+
+	return options;
+}
+
+
+static void options_free(struct options *options)
+{
+	free(options);
+}
+
+
+/*
+ * Friendly messages.
  */
 
 
@@ -245,7 +302,8 @@ static void print_usage(const char *program)
 "	[--dump-diagnostics <xml filename>]\n" \
 "	[--enable-over-whitening]\n" \
 "	 --filter-corruption <samples>\n" \
-"	 --frame-cache <cache file>\n" \
+"	 --frame-cache <cache file>\n", program);
+fprintf(stderr,
 "	[--gaussian-noise-rms <rms amplitude>]\n" \
 "	 --gps-end-time <seconds>\n" \
 "	 --gps-start-time <seconds>\n" \
@@ -259,7 +317,8 @@ static void print_usage(const char *program)
 "	[--mdc-cache <cache file>]\n" \
 "	[--mdc-channel <channel name>]\n" \
 "	 --psd-average-method <method>\n" \
-"	 --psd-average-points <samples>\n" \
+"	 --psd-average-points <samples>\n");
+fprintf(stderr,
 "	[--ram-limit <MebiBytes>]\n" \
 "	 --resample-rate <Hz>\n" \
 "	[--seed <seed>]\n" \
@@ -270,7 +329,7 @@ static void print_usage(const char *program)
 "	 --tile-stride-fraction <fraction>\n" \
 "	[--user-tag <comment>]\n" \
 "	 --window-length <samples>\n" \
-"	 --window-shift <samples>\n", program);
+"	 --window-shift <samples>\n");
 }
 
 
@@ -286,20 +345,12 @@ static void print_missing_argument(const char *prog, const char *arg)
 }
 
 
-static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, const char *type, const char *param, const char *value)
-{
-	*proc_param = LALCalloc(1, sizeof(**proc_param));
-	(*proc_param)->next = NULL;
-	snprintf((*proc_param)->program, LIGOMETA_PROGRAM_MAX, PROGRAM_NAME);
-	snprintf((*proc_param)->type, LIGOMETA_TYPE_MAX, type);
-	snprintf((*proc_param)->param, LIGOMETA_PARAM_MAX, "--%s", param);
-	snprintf((*proc_param)->value, LIGOMETA_VALUE_MAX, "%s", value ? value : "");
-
-	return &(*proc_param)->next;
-}
+/*
+ * Check for missing command line arguments.
+ */
 
 
-static int check_for_missing_parameters(char *prog, struct option *long_options, const struct options *options, const EPSearchParams *params)
+static int all_required_arguments_present(char *prog, struct option *long_options, const struct options *options, const EPSearchParams *params)
 {
 	int index;
 	int got_all_arguments = TRUE;
@@ -390,6 +441,33 @@ static int check_for_missing_parameters(char *prog, struct option *long_options,
 }
 
 
+/*
+ * Helper function for adding an entry to the process params table.
+ */
+
+
+static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, const char *type, const char *param, const char *value)
+{
+	*proc_param = LALCalloc(1, sizeof(**proc_param));
+	(*proc_param)->next = NULL;
+	snprintf((*proc_param)->program, LIGOMETA_PROGRAM_MAX, PROGRAM_NAME);
+	snprintf((*proc_param)->type, LIGOMETA_TYPE_MAX, type);
+	snprintf((*proc_param)->param, LIGOMETA_PARAM_MAX, "--%s", param);
+	snprintf((*proc_param)->value, LIGOMETA_VALUE_MAX, "%s", value ? value : "");
+
+	return &(*proc_param)->next;
+}
+
+
+#define ADD_PROCESS_PARAM(type) \
+	do { paramaddpoint = add_process_param(paramaddpoint, type, long_options[option_index].name, optarg); } while(0)
+
+
+/*
+ * Parse the --debug-level command line argument.
+ */
+
+
 static void parse_command_line_debug(int argc, char *argv[])
 {
 	int c;
@@ -417,8 +495,9 @@ static void parse_command_line_debug(int argc, char *argv[])
 }
 
 
-#define ADD_PROCESS_PARAM(type) \
-	do { paramaddpoint = add_process_param(paramaddpoint, type, long_options[option_index].name, optarg); } while(0)
+/*
+ * Parse all the other command line arguments.
+ */
 
 
 static struct options *parse_command_line(int argc, char *argv[], EPSearchParams *params, MetadataTable *_process_params_table)
@@ -426,10 +505,8 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	struct options *options;
 	char msg[240];
 	int args_are_bad = FALSE;
-	int enableoverwhitening;
 	int c;
 	int option_index;
-	int ram;
 	ProcessParamsTable **paramaddpoint = &_process_params_table->processParamsTable;
 	struct option long_options[] = {
 		{"bandwidth", required_argument, NULL, 'A'},
@@ -440,7 +517,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		{"confidence-threshold", required_argument, NULL, 'g'},
 		{"debug-level", required_argument, NULL, 'D'},
 		{"dump-diagnostics", required_argument, NULL, 'X'},
-		{"enable-over-whitening", no_argument, &enableoverwhitening, TRUE},
+		{"enable-over-whitening", no_argument, &params->useOverWhitening, TRUE},
 		{"filter-corruption", required_argument, NULL, 'j'},
 		{"frame-cache", required_argument, NULL, 'G'},
 		{"gaussian-noise-rms", required_argument, NULL, 'V'},
@@ -477,8 +554,6 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	options = options_new();
 	if(!options)
 		return NULL;
-	ram = 0;	/* default */
-	enableoverwhitening = FALSE;	/* default */
 
 	/*
 	 * Set parameter defaults
@@ -494,6 +569,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	params->maxTileDuration = 0;	/* impossible */
 	params->inv_fractional_stride = 0;	/* impossible */
 	params->windowShift = 0;	/* impossible */
+	params->useOverWhitening = FALSE;	/* default */
 
 	/*
 	 * Parse command line.
@@ -668,9 +744,14 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		break;
 
 	case 'a':
-		ram = atoi(optarg);
-		if(ram <= 0) {
-			sprintf(msg, "must be > 0 (%i specified)", ram);
+		/*
+		 * Convert the available RAM (in MebiBytes) to a
+		 * guestimated limit on the length of a time series to read
+		 * in.
+		 */
+		options->max_series_length = atoi(optarg) * 1024 * 1024 / (8 * sizeof(REAL4));
+		if(options->max_series_length <= 0) {
+			sprintf(msg, "must be > 0 (%i specified)", atoi(optarg));
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -831,17 +912,10 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	}
 
 	/*
-	 * Convert the amount of available RAM to a limit on the length of a
-	 * time series to read in.
+	 * Check for missing command line arguments.
 	 */
 
-	options->max_series_length = (ram * 1024 * 1024) / (8 * sizeof(REAL4));
-
-	/*
-	 * Check for missing parameters
-	 */
-
-	if(!check_for_missing_parameters(argv[0], long_options, options, params))
+	if(!all_required_arguments_present(argv[0], long_options, options, params))
 		args_are_bad = TRUE;
 
 	/*
@@ -885,7 +959,8 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	 * shift.
 	 */
 
-	options->max_series_length = block_commensurate(options->max_series_length, options->psd_length, options->psd_length - (options->window_length - params->windowShift));
+	if(options->max_series_length)
+		options->max_series_length = block_commensurate(options->max_series_length, options->psd_length, options->psd_length - (options->window_length - params->windowShift));
 
 	/*
 	 * Sanitize filter frequencies.
@@ -903,10 +978,9 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 
 	params->tf_freqBins = options->bandwidth / params->tf_deltaF;
 
-	params->useOverWhitening = enableoverwhitening;
-
 	XLALPrintInfo("%s: using --psd-average-points %zu\n", argv[0], options->psd_length);
-	XLALPrintInfo("%s: available RAM limits analysis to %d samples\n", argv[0], options->max_series_length);
+	if(options->max_series_length)
+		XLALPrintInfo("%s: available RAM limits analysis to %d samples\n", argv[0], options->max_series_length);
 
 	return options;
 }
@@ -914,7 +988,9 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 
 /*
  * ============================================================================
+ *
  *                                   Input
+ *
  * ============================================================================
  */
 
@@ -927,12 +1003,18 @@ static REAL4TimeSeries *get_calibrated_data(FrStream *stream, const char *chname
 	PassBandParamStruc highpassParam;
 	unsigned int i;
 
-	/* retrieve calibrated data as REAL8 time series */
+	/*
+	 * retrieve calibrated data as REAL8 time series
+	 */
+
 	calibrated = XLALFrReadREAL8TimeSeries(stream, chname, start, duration, lengthlimit);
 	if(!calibrated)
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
-	/* high pass filter before casting REAL8 to REAL4 */
+	/*
+	 * high pass filter before casting REAL8 to REAL4
+	 */
+
 	highpassParam.nMax = 4;
 	highpassParam.f2 = quantize_high_pass;
 	highpassParam.f1 = -1.0;
@@ -943,7 +1025,10 @@ static REAL4TimeSeries *get_calibrated_data(FrStream *stream, const char *chname
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 
-	/* copy data into a REAL4 time series */
+	/*
+	 * copy data into a REAL4 time series
+	 */
+
 	series = XLALCreateREAL4TimeSeries(calibrated->name, &calibrated->epoch, calibrated->f0, calibrated->deltaT, &calibrated->sampleUnits, calibrated->data->length);
 	if(!series) {
 		XLALDestroyREAL8TimeSeries(calibrated);
@@ -968,7 +1053,10 @@ static REAL4TimeSeries *get_time_series(const char *cachefilename, const char *c
 	if(duration < 0)
 		XLAL_ERROR_NULL(func, XLAL_EINVAL);
 
-	/* Open frame stream */
+	/*
+	 * Open frame stream.
+	 */
+
 	cache = XLALFrImportCache(cachefilename);
 	if(!cache)
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
@@ -977,30 +1065,48 @@ static REAL4TimeSeries *get_time_series(const char *cachefilename, const char *c
 	if(!stream)
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
-	/* Turn on checking for missing data */
+	/*
+	 * Turn on checking for missing data.
+	 */
+
 	stream->mode = LAL_FR_VERBOSE_MODE;
 
-	/* Get the data */
+	/*
+	 * Get the data.
+	 */
+
 	if(getcaltimeseries)
 		series = get_calibrated_data(stream, chname, &start, duration, lengthlimit, quantize_high_pass);
 	else
 		series = XLALFrReadREAL4TimeSeries(stream, chname, &start, duration, lengthlimit);
 
-	/* Check for missing data */
+	/*
+	 * Check for missing data.
+	 */
+
 	if(stream->state & LAL_FR_GAP) {
 		XLALPrintError("get_time_series(): error: gap in data detected between GPS times %d.%09u s and %d.%09u s\n", start.gpsSeconds, start.gpsNanoSeconds, end.gpsSeconds, end.gpsNanoSeconds);
 		XLALDestroyREAL4TimeSeries(series);
 		XLAL_ERROR_NULL(func, XLAL_EDATA);
 	}
 
-	/* Close stream */
+	/*
+	 * Close stream.
+	 */
+
 	XLALFrClose(stream);
 
-	/* Check for other failures */
+	/*
+	 * Check for other failures.
+	 */
+
 	if(!series)
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
-	/* verbosity */
+	/*
+	 * Verbosity.
+	 */
+
 	XLALPrintInfo("get_time_series(): read %u samples (%.9lf s) at GPS time %u.%09u s\n", series->data->length, series->data->length * series->deltaT, start.gpsSeconds, start.gpsNanoSeconds);
 
 	return series;
@@ -1009,7 +1115,9 @@ static REAL4TimeSeries *get_time_series(const char *cachefilename, const char *c
 
 /*
  * ============================================================================
+ *
  *                    Fill a time series with white noise
+ *
  * ============================================================================
  */
 
@@ -1026,7 +1134,9 @@ static void gaussian_noise(REAL4TimeSeries *series, REAL4 rms, RandomParams *rpa
 
 /*
  * ============================================================================
+ *
  *                             Response function
+ *
  * ============================================================================
  */
 
@@ -1071,7 +1181,9 @@ static COMPLEX8FrequencySeries *generate_response(LALStatus *stat, const char *c
 
 /*
  * ============================================================================
+ *
  *                              Burst injections
+ *
  * ============================================================================
  */
 
@@ -1110,7 +1222,9 @@ static REAL4TimeSeries *add_burst_injections(LALStatus *stat, char *filename, RE
 
 /*
  * ============================================================================
+ *
  *                              Inspiral injections
+ *
  * ============================================================================
  */
 
@@ -1156,7 +1270,9 @@ static REAL4TimeSeries *add_inspiral_injections(LALStatus *stat, char *filename,
 
 /*
  * ============================================================================
+ *
  *                               MDC injections
+ *
  * ============================================================================
  */
 
@@ -1169,16 +1285,25 @@ static REAL4TimeSeries *add_mdc_injections(const char *mdccachefile, const char 
 
 	XLALPrintInfo("add_mdc_injections(): mixing data from MDC frames\n");
 
-	/* note: quantization high pass at 40.0 Hz */
+	/*
+	 * note: quantization high pass at 40.0 Hz
+	 */
+
 	mdc = get_time_series(mdccachefile, channel_name, epoch, stopepoch, lengthlimit, TRUE, 40.0);
 	if(!mdc)
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
-	/* add the mdc signal to the given time series */
+	/*
+	 * add the mdc signal to the given time series
+	 */
+
 	for(i = 0; i < series->data->length; i++)
 		series->data->data[i] += mdc->data->data[i];
 
-	/* clean up */
+	/*
+	 * clean up
+	 */
+
 	XLALDestroyREAL4TimeSeries(mdc);
 
 	return series;
@@ -1187,7 +1312,9 @@ static REAL4TimeSeries *add_mdc_injections(const char *mdccachefile, const char 
 
 /*
  * ============================================================================
+ *
  *                               Sim injections
+ *
  * ============================================================================
  */
 
@@ -1414,7 +1541,9 @@ static void add_sim_injections(LALStatus *stat, REAL4TimeSeries *series, COMPLEX
 
 /*
  * ============================================================================
+ *
  *                               Analysis Loop
+ *
  * ============================================================================
  */
 
@@ -1464,7 +1593,9 @@ static SnglBurstTable **analyze_series(SnglBurstTable **addpoint, REAL4TimeSerie
 
 /*
  * ============================================================================
+ *
  *                                   Output
+ *
  * ============================================================================
  */
 
@@ -1478,25 +1609,37 @@ static void output_results(LALStatus *stat, char *file, const char *ifo, Metadat
 	memset(&xml, 0, sizeof(LIGOLwXMLStream));
 	LAL_CALL(LALOpenLIGOLwXMLFile(stat, &xml, file), stat);
 
-	/* process table */
+	/*
+	 * process table
+	 */
+
 	LAL_CALL(LALGPSTimeNow(stat, &(_process_table->processTable->end_time), &accuracy), stat);
 	LAL_CALL(LALBeginLIGOLwXMLTable(stat, &xml, process_table), stat);
 	LAL_CALL(LALWriteLIGOLwXMLTable(stat, &xml, *_process_table, process_table), stat);
 	LAL_CALL(LALEndLIGOLwXMLTable(stat, &xml), stat);
 
-	/* process params table */
+	/*
+	 * process params table
+	 */
+
 	LAL_CALL(LALBeginLIGOLwXMLTable(stat, &xml, process_params_table), stat);
 	LAL_CALL(LALWriteLIGOLwXMLTable(stat, &xml, *_process_params_table, process_params_table), stat);
 	LAL_CALL(LALEndLIGOLwXMLTable(stat, &xml), stat);
 
-	/* search summary table */
+	/*
+	 * search summary table
+	 */
+
 	snprintf(_search_summary_table->searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
 	_search_summary_table->searchSummaryTable->nevents = XLALCountSnglBurst(burstEvent);
 	LAL_CALL(LALBeginLIGOLwXMLTable(stat, &xml, search_summary_table), stat);
 	LAL_CALL(LALWriteLIGOLwXMLTable(stat, &xml, *_search_summary_table, search_summary_table), stat);
 	LAL_CALL(LALEndLIGOLwXMLTable(stat, &xml), stat);
 
-	/* burst table */
+	/*
+	 * burst table
+	 */
+
 	LAL_CALL(LALBeginLIGOLwXMLTable(stat, &xml, sngl_burst_table), stat);
 	myTable.snglBurstTable = burstEvent;
 	LAL_CALL(LALWriteLIGOLwXMLTable(stat, &xml, myTable, sngl_burst_table), stat);
@@ -1508,7 +1651,9 @@ static void output_results(LALStatus *stat, char *file, const char *ifo, Metadat
 
 /*
  * ============================================================================
+ *
  *                                Entry point
+ *
  * ============================================================================
  */
 
@@ -1526,13 +1671,15 @@ int main(int argc, char *argv[])
 	REAL4TimeSeries *series = NULL;
 	SnglBurstTable *burstEvent = NULL;
 	SnglBurstTable **EventAddPoint = &burstEvent;
+	/* the ugly underscores are because some badger put global symbols
+	 * in LAL by exactly these names. it's a mad house, a maad house */
 	MetadataTable _process_table;
 	MetadataTable _process_params_table;
 	MetadataTable _search_summary_table;
 	RandomParams *rparams = NULL;
 
 	/*
-	 * Initialize everything
+	 * Command line
 	 */
 
 	memset(&stat, 0, sizeof(stat));
@@ -1540,32 +1687,39 @@ int main(int argc, char *argv[])
 	set_debug_level("3");
 	parse_command_line_debug(argc, argv);
 
-	/* create the process and process params tables */
+	/*
+	 * Create the process and process params tables.
+	 */
+
 	_process_table.processTable = LALCalloc(1, sizeof(ProcessTable));
 	LAL_CALL(LALGPSTimeNow(&stat, &(_process_table.processTable->start_time), &accuracy), &stat);
 	LAL_CALL(populate_process_table(&stat, _process_table.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE), &stat);
 	_process_params_table.processParamsTable = NULL;
 
-	/* parse arguments and fill _process_params_table table */
+	/*
+	 * Parse arguments and fill _process_params_table table.
+	 */
+
 	options = parse_command_line(argc, argv, &params, &_process_params_table);
 	snprintf(_process_table.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", options->ifo);
-
-	/* create the search summary table */
-	_search_summary_table.searchSummaryTable = LALCalloc(1, sizeof(SearchSummaryTable));
-
-	/* fill the comment */
 	snprintf(_process_table.processTable->comment, LIGOMETA_COMMENT_MAX, "%s", options->comment);
+
+	/*
+	 * Create the search summary table.  The number of nodes for a
+	 * standalone job is always 1
+	 */
+
+	_search_summary_table.searchSummaryTable = LALCalloc(1, sizeof(SearchSummaryTable));
 	snprintf(_search_summary_table.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, "%s", options->comment);
-
-	/* the number of nodes for a standalone job is always 1 */
 	_search_summary_table.searchSummaryTable->nnodes = 1;
-
-	/* store the input start and end times */
 	_search_summary_table.searchSummaryTable->in_start_time = options->gps_start;
 	_search_summary_table.searchSummaryTable->in_end_time = options->gps_end;
 
-	/* determine the input time series post-conditioning overlap, and set
-	 * the outer loop's upper bound */
+	/*
+	 * determine the input time series post-conditioning overlap, and
+	 * set the outer loop's upper bound
+	 */
+
 	overlap = options->window_length - params.windowShift;
 	XLALPrintInfo("%s: time series overlap is %zu samples (%.9lf s)\n", argv[0], overlap, overlap / (double) options->resample_rate);
 
@@ -1576,9 +1730,13 @@ int main(int argc, char *argv[])
 
 	/*
 	 * ====================================================================
-	 *                         Outer Loop
-	 * ====================================================================
 	 *
+	 *                         Outer Loop
+	 *
+	 * ====================================================================
+	 */
+
+	/*
 	 * Split the total length of time to be analyzed into time series
 	 * small enough to fit in RAM.
 	 */
@@ -1689,7 +1847,6 @@ int main(int argc, char *argv[])
 		_search_summary_table.searchSummaryTable->out_end_time = series->epoch;
 		XLALGPSAdd(&_search_summary_table.searchSummaryTable->out_end_time, series->deltaT * (series->data->length - (options->window_length / 2 - params.windowShift)));
 
-
 		/*
 		 * Analyze the data
 		 */
@@ -1710,7 +1867,10 @@ int main(int argc, char *argv[])
 		XLALDestroyREAL4TimeSeries(series);
 	}
 
-	/* Unscale the h_{rss} estimates if calibrated data */
+	/*
+	 * Unscale the h_{rss} estimates if calibrated data
+	 */
+
 	if(options->calibrated) {
 		const double scale = 1e10;
 		SnglBurstTable *event;
@@ -1724,7 +1884,6 @@ int main(int argc, char *argv[])
 
 	XLALSortSnglBurst(&burstEvent, XLALCompareSnglBurstByStartTimeAndLowFreq);
 	XLALSnglBurstAssignIDs(burstEvent);
-
 
 	/*
 	 * Check event rate limit.
@@ -1766,6 +1925,7 @@ int main(int argc, char *argv[])
 
 	if(options->diagnostics)
 		LAL_CALL(LALCloseLIGOLwXMLFile(&stat, options->diagnostics), &stat);
+	options_free(options);
 
 	LALCheckMemoryLeaks();
 	exit(0);
