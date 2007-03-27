@@ -88,7 +88,7 @@ Many numerical relativity groups now have sufficiently stable and
 accurate codes which can accurately simulate the inspiral, merger and
 ringdown phases of binary black hole coalescence.  Similarly,
 significant progress has been made in the numerical simulation of
-stellar gravitational collapse and there is now a much better
+stellar gravitational collapse and there now seems to be a much better
 understanding of how supernova explosions happen.  All these processes
 are among the most promising sources of gravitational radiation and
 therefore there is significant interest in using these numerical
@@ -105,21 +105,21 @@ between numerical relativists and the LSC.  It is clear that there are
 still outstanding conceptual and numerical issues remaining in these
 numerical simulations, and the goal of this document is not to resolve
 them.  The goal is simply to spell out the technical details of the
-waveform data so that it can be incorporated seamlessly with the data
-analysis software currently being developed within the LSC, and to
-facilitate the interchange of information back and forth between the
-numerical relativity and data analysis efforts.  However, we do hope
-that this closer interaction will eventually help in resolving some of
-these issues which could be relevant for the detection of
-gravitational radiation.
+waveform data so that they can be incorporated seamlessly within the
+data analysis software currently being developed within the LSC, and
+to facilitate the exchange of information between the numerical
+relativity and data analysis groups.  However, we do hope that this
+closer interaction will eventually help in resolving some of these
+issues which could be relevant for the detection of gravitational
+radiation.
 
 The relevant software development is being carried out as part of the
-LIGO Algorithms Library
-\footnote{Available from \texttt{http://www.lsc-group.phys.uwm.edu/daswg/projects/lal.html}}
+LIGO Algorithms Library \footnote{Available from
+  \texttt{http://www.lsc-group.phys.uwm.edu/daswg/projects/lal.html}}
 which contains core routines for gravitational wave data analysis
 written in ANSI C89, and is distributed under the GNU General Public
-License.  The latest version of this document is available within
-this library.\footnote{The location of the document is
+License.  The latest version of this document is available within this
+library.\footnote{The location of the document is
   \texttt{lal/doc/NRDataFormat.tex}.}  The remainder of this document
 is structured as follows.  Section \ref{sec:multipoles} describes our
 conventions for decomposing the gravitational wave data in terms of
@@ -128,23 +128,25 @@ formats for binary black hole simulations, section
 \ref{sec:openissues} enumerates some open issues in binary black hole
 simulations which could be topics of further discussion between data
 analysts and numerical relativists, and finally section
-\ref{sec:authorship} discusses the authorship and related issues
-related to the use of numerical relativity data.  
+\ref{sec:authorship} discusses the authorship and other issues related
+to the use of numerical relativity data.
 
 
 
 \section{Multipole expansion of the wave}
 \label{sec:multipoles}
 
+
 The output of a numerical relativity code is the full spacetime of a
 binary black hole system. On the other hand, what is required for
 gravitational wave data analysis purposes is the strain $h(t)$ as
 measured by a detector located far away from the source.  The quantity
-of interest is the gravitational wave $h_{ij}$ where $i$ and $j$ are
-spatial indices, and $h_{ij}$ is a transverse-traceless tensor.  We
-always work in the TT gauge so that the $h_{ij}$ the information of
-the metric perturbation to leading order.  The wave falls off as $1/r$
-where $r$ is the distance from the source
+of interest is then the gravitational wave metric perturbation
+$h_{ab}$ in the wave-zone, where $a$ and $b$ are space-time indices.
+We always work in the Transverse Traceless (TT) gauge so that all
+information about the metric perturbation is contained in the TT
+tensor $h_{ij}$, where $i$ and $j$ are spatial indices.  The wave
+falls off as $1/r$ where $r$ is the distance from the source:
 \begin{equation}
   \label{eq:1}
   h_{ij} = A_{ij}\frac{M}{r} + \mathcal{O}\left(r^{-2}\right)\,.
@@ -268,7 +270,7 @@ with $k_1 = \textrm{max}(0, m-s)$ and $k_2=\textrm{min}(\ell+m,
 The mode expansion coefficients $H_{lm}$ are given by
 \begin{equation}
   \label{eq:10}
-  H_{\ell m} = \oint \Ytwo_{lm}^\star(\iota,\phi)(rh_+-irh_\times )\,d\Omega\,.
+  MH_{\ell m} = \oint \Ytwo_{lm}^\star(\iota,\phi)(rh_+-irh_\times )\,d\Omega\,.
 \end{equation}
 If $\Psi_4$ is used for wave extraction, then $H_{lm}$ is given by two
 time integrals of the corresponding mode of $\Psi_4$.  It is important
@@ -277,7 +279,7 @@ possible, that $h_{+,\times}$ do not have a secular drift.
 We define $h_+^{(\ell m)}$ and $h_\times^{(\ell m)}$ as
 \begin{equation}
   \label{eq:11}
-  h_+^{(\ell m)}(t) -ih_\times^{(\ell m)}(t) := \frac{H_{\ell m}(t)}{r}\,.  
+  rh_+^{(\ell m)}(t) -irh_\times^{(\ell m)}(t) := MH_{\ell m}(t)\,.  
 \end{equation}
 It is these modes $rh_{+,\times}^{(\ell m)}$ of $rh_+$ and $rh_\times$ that must be
 provided as functions of time in units of $M$.
@@ -310,9 +312,8 @@ $(\ell,m)$.  These 9 parameters will be referred to as the
 ``metadata'' for a waveform; we will add more parameters to this
 metadata if necessary. We use the convention that $M_1$ denotes the
 larger of the two masses so that $q\geq 1$.  The choice of precisely
-how the individual masses $M_1$ and $M_2$, the total mass $M$, and the
-spins, are calculated is to be decided by the individual numerical
-relativity groups.
+how $M_1$, $M_2$ and the spins are calculated is to be decided by the
+individual numerical relativity groups.
 
 The data for a single mode $rh_{+,\times}^{(\ell m)}$ is to be written as a
 plain text file in three columns for the time $t$, $rh_+^{(\ell m)}$ and
@@ -328,7 +329,7 @@ left up to the numerical relativity group which produced the waveform.
 It should be whatever best represents the time coordinate and the
 scale of $h_{ij}$ in the particular simulation.
 
-For data analysis purpoises, the sampling in time must be uniform in
+For data analysis purposes, the sampling in time must be uniform in
 units of $M$.  If the result of a simulation or set of simulations
 yields a waveform sampled non-uniformly, we ask that the NR group
 interpolate to give a uniformly sampled waveform.  A sampling rate of
@@ -343,7 +344,7 @@ This is an example of a data file:
 
 \begin{verbatim}
 # numerical waveform from ....
-# equal mass, non spinning, 5 orbits
+# equal mass, non spinning, 5 orbits, l=m=2
 # time       hplus        hcross
 0.000000e+00 1.138725e-02 -8.319811e-04
 2.000000e-01 1.138725e-02 -1.247969e-03
@@ -370,7 +371,7 @@ The metadata information for the different datafiles will be stored in
 a separate file.  This metadata file will also be plain text and
 will have 10 columns: 9 for the metadata and one specifying
 the location of the corresponding datafile.  This is an example of a
-metadata file containing two waveforms:
+metadata file containing all the modes for two waveforms:
 \begin{verbatim}
 ## example wave
 ## m1/m2 S1x S1y S1z S2x S2y S2z l m filename
@@ -386,10 +387,12 @@ metadata file containing two waveforms:
    1.5 1.0 0.0 0.0 0.0 -1.0 0.0  2 -1 example2_2-1.dat
    1.5 1.0 0.0 0.0 0.0 -1.0 0.0  2 -2 example2_2-2.dat
 \end{verbatim}
-
-Lines starting with a $\%$ or $\#$ will be taken to be comment lines and
-ignored.  There can be an arbitrary number of comment lines.  Note
-that for each value of $\ell$, all values of $m$ need to be specified.
+The order of the columns must be as in the examples, i.e. $q$,
+components of $\vec{S}_1$, $\vec{S}_2$, $\ell$, $m$ and the filename
+respectively.  Lines starting with a $\%$ or $\#$ will be taken to be
+comment lines and ignored.  There can be an arbitrary number of
+comment lines.  Note that for each value of $\ell$, all values of $m$
+need to be specified.
 
 The filenames must give the relative paths to the data files starting
 from the location of the metadata file.  Thus, if the datafiles are
@@ -397,7 +400,7 @@ stored in a sub-directory called \texttt{data}, then the metadata file
 would read:
 \begin{verbatim}
 ## example wave
-## m1/m2 S1x S1y S1z S2x S2y S2z l mfilename     
+## m1/m2 S1x S1y S1z S2x S2y S2z l m filename     
    1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 2  data/example1_22.dat
    1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 1  data/example1_21.dat
    1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 0  data/example1_20.dat
@@ -440,8 +443,8 @@ tarball containing the following:
 \section{Open Issues for binary black hole systems}
 \label{sec:openissues}
 
-We now specialize to the case of binary black hole simulations and we
-list some open issues which can be topics for further discussion.  
+We now list some open issues for binary black hole simulations which
+could be topics for further discussion.
 
 We associate the coordinate system $(x,y,z,t)$ with the binary system
 as follows.  The orbital plane of the binary at $t=0$ is taken to be
