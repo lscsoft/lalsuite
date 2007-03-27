@@ -106,6 +106,7 @@ Depending on the user inputs one of the following functions is called:\\
 </lalLaTeX>  */
 
 #include <lal/LALInspiral.h>
+#include <lal/LALNoiseModels.h>
 #include <lal/LALStdlib.h>
 #include <lal/GeneratePPNInspiral.h>
 
@@ -177,7 +178,11 @@ LALInspiralWave(
            CHECKSTATUSPTR(status);
 	   break;
       case SpinTaylor:
-	   LALSTPNWaveform(status->statusPtr, signal, params); 
+           /*GenerateTimeDomainWaveformForInjection (status->statusPtr, signal, params);
+           CHECKSTATUSPTR(status);*/
+	   /* this generate the h+ waveform whereas the one above takes into
+            * account h+, hx and orientation of the system*/
+           LALSTPNWaveform(status->statusPtr, signal, params); 
            CHECKSTATUSPTR(status);
 	   break;
       case AmpCorPPN:
@@ -311,9 +316,9 @@ LALInspiralWaveForInjection(
            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
 	   break;
       case SpinTaylor:
-	LALSTPNWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
-	CHECKSTATUSPTR(status);
-	break;
+           LALSTPNWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
+           CHECKSTATUSPTR(status);
+           break;
       case AmpCorPPN:
 	   LALInspiralAmplitudeCorrectedWaveForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
 	   CHECKSTATUSPTR(status);
