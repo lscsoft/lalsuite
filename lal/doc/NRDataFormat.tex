@@ -104,12 +104,12 @@ The aim of this document is to spell out the formats for data exchange
 between numerical relativists and the LSC.  It is clear that there are
 still outstanding conceptual and numerical issues remaining in these
 numerical simulations, and the goal of this document is not to resolve
-them.  The goal is simply to spell out the technical details of the
-waveform data so that they can be incorporated seamlessly within the
-data analysis software currently being developed within the LSC, and
-to facilitate the exchange of information between the numerical
-relativity and data analysis groups.  However, we do hope that this
-closer interaction will eventually help in resolving some of these
+them.  The goal is twofold: (i) To spell out the technical details of
+the waveform data so that they can be incorporated seamlessly within
+the data analysis software currently being developed within the LSC,
+and (ii) to facilitate the exchange of information between the
+numerical relativity and data analysis groups.  We do hope that this
+closer interaction will eventually help in resolving some of the open
 issues which could be relevant for the detection of gravitational
 radiation.
 
@@ -249,13 +249,13 @@ in terms of the Wigner $d$-functions
    \Ys_{lm} = (-1)^s\sqrt{\frac{2\ell+1}{4\pi}} d^\ell_{m,-s}(\iota)e^{im\phi}
 \end{equation}
 where
-\begin{eqnarray}
+\begin{equation}
   \label{eq:6}
-  d^\ell_{m,s}(\iota) &=& \sum_{k = k_1}^{k_2}
+  d^\ell_{m,s}(\iota) = \sum_{k = k_1}^{k_2}
     \frac{(-1)^k[(\ell+m)!(\ell-m)!(\ell+s)!(\ell-s)!]^{1/2}}{(\ell +m
-      -k)!(\ell-s-k)!k!(k+s-m)!} \times \\ 
-    &&\times \left(\frac{\cos\iota}{2}\right)^{2\ell+m-s-2k}\left(\frac{\sin\iota}{2}\right)^{2k+s-m}  
-\end{eqnarray}
+      -k)!(\ell-s-k)!k!(k+s-m)!}  
+    \times \left(\frac{\cos\iota}{2}\right)^{2\ell+m-s-2k}\left(\frac{\sin\iota}{2}\right)^{2k+s-m}  
+\end{equation}
 with $k_1 = \textrm{max}(0, m-s)$ and $k_2=\textrm{min}(\ell+m,
 \ell-s)$.  For reference,
 \begin{eqnarray}
@@ -390,9 +390,9 @@ metadata file containing all the modes for two waveforms:
 The order of the columns must be as in the examples, i.e. $q$,
 components of $\vec{S}_1$, $\vec{S}_2$, $\ell$, $m$ and the filename
 respectively.  Lines starting with a $\%$ or $\#$ will be taken to be
-comment lines and ignored.  There can be an arbitrary number of
-comment lines.  Note that for each value of $\ell$, all values of $m$
-need to be specified.
+comment lines; there can be an arbitrary number of comment lines.
+Note that for each value of $\ell$, all values of $m$ need to be
+specified.
 
 The filenames must give the relative paths to the data files starting
 from the location of the metadata file.  Thus, if the datafiles are
@@ -498,8 +498,8 @@ How important is the choice of initial data?
   systems.  Is this deviation important for gravitational wave
   detection?
 \end{itemize}
-Numerical relativity groups are welcome to point out any issues that
-might be important, and to make this list of issues more complete.  
+Numerical relativity groups are welcome to raise any other issues that
+might be important.
 
 
 \section{Exchange of Waveform Data}
@@ -519,10 +519,9 @@ Uploading the waveforms does not by any means guarantee that they will
 be used by the LSC to analyze real data from the LIGO and GEO
 detectors.  It also does not imply any authorship rights on possible
 publications that may arise from this data.  Submitted data will not
-be public; access is restricted to LSC members only.  Furthermore, we
-propose that any publication arising from this data will be circulated
-for comments and approval to the numerical relativity groups which
-provided the waveforms used prior to public release.
-
+be public; access is restricted to LSC members only.  Furthermore,
+regarding any publications arising from this data, the numerical
+relativity group(s) which provided the waveform will be consulted
+before public release.
 
 \end{document}
