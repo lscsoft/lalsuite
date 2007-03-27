@@ -961,7 +961,7 @@ void LALInspiralWave(
      LALStatus *status,
      REAL4Vector *signalvec,
      InspiralTemplate *params);
-/*  <lalLaTeX>
+
 void LALInspiralWaveTemplates(
      LALStatus *status,
      REAL4Vector *filter1,
