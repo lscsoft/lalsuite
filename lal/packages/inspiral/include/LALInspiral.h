@@ -428,7 +428,7 @@ typedef enum {
    GeneratePPN,
    BCVC,
    FrameFile,
-   AmpCorPPN,
+   AmpCorPPN
  } Approximant;
 /* </lalVerbatim>  */
 
