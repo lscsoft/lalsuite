@@ -425,6 +425,7 @@ signal.data[i] = strainSegment->data[i].re;
 
 	      
 	      break;
+	    case AmpCorPPN:
 	    case TaylorT1:
 	    case TaylorT2:
 	    case TaylorT3:
@@ -2073,6 +2074,9 @@ CHAR* GetStringFromTemplate(INT4 input)
     case EOB:
       LALSnprintf(this, sizeof(this), "EOB");
       break;
+    case AmpCorPPN:
+      LALSnprintf(this, sizeof(this),"AmpCorPPN");
+      break;
     case TaylorT1:
       LALSnprintf(this, sizeof(this),"TaylorT1");
       break;
@@ -3687,6 +3691,7 @@ ParseParameters(	INT4 			*argc,
 	BEParseGetString(argv, &i);
 	
 	if (strcmp(argv[i],	  "TaylorT1")	==0) 		userParam->signal = TaylorT1;
+	else if (strcmp(argv[i],"AmpCorPPN")	==0)		userParam->signal = AmpCorPPN;
 	else if (strcmp(argv[i],"TaylorT2")	==0)		userParam->signal = TaylorT2;
 	else if (strcmp(argv[i],"TaylorT3")	==0)	    	userParam->signal = TaylorT3;
 	else if (strcmp(argv[i],"TaylorF1")	==0)	    	userParam->signal = TaylorF1;
@@ -3776,6 +3781,7 @@ ParseParameters(	INT4 			*argc,
 	
 	if (!strcmp(argv[i],	"TaylorT1")	)		userParam->template = TaylorT1;
 	else if (!strcmp(argv[i],	"TaylorT2")	)	userParam->template = TaylorT2;
+	else if (!strcmp(argv[i],	"AmpCorPPN")	)	userParam->template = AmpCorPPN;
 	else if (!strcmp(argv[i],	"TaylorT3")	)	userParam->template = TaylorT3;
 	else if (!strcmp(argv[i],	"TaylorF1")	)	userParam->template = TaylorF1;
 	else if (!strcmp(argv[i],	"TaylorF2")	)	userParam->template = TaylorF2;
