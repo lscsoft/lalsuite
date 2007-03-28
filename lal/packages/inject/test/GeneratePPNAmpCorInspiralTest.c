@@ -181,7 +181,7 @@ main(int argc, char **argv)
   int arg;                      /* command-line argument counter */
   static LALStatus stat;        /* status structure */
   CHAR *outfile = NULL;         /* name of outfile */
-  CHAR *fftout  = "fftout"; 	/* EXPANSION outfile */
+  CHAR *fftout  = NULL; 	/* EXPANSION outfile */
   REAL4 m1 = M1, m2 = M2;       /* binary masses */
   REAL4 dist = DIST;            /* binary distance */
   REAL4 inc = 0.0, phii = 0.0;  /* inclination and coalescence phase */
@@ -189,7 +189,7 @@ main(int argc, char **argv)
   REAL8 dt = DT;                /* sampling interval */
   REAL8 deltat = 0.0;           /* wave sampling interval */
   INT4 order = ORDER;           /* PN order */
-
+  UINT4 wlength = 0;
 
   /* Other variables. */
   UINT4 i;                      /* index */
@@ -197,6 +197,20 @@ main(int argc, char **argv)
   PPNParamStruc params;         /* input parameters */
   CoherentGW waveform;          /* output waveform */
   FILE *fp;                     /* output file pointer */
+  REAL4 *hoft;
+  LALDetAMResponseSeries    am_response_series = {NULL,NULL,NULL};
+  REAL4TimeSeries           plus_series, cross_series, scalar_series;
+  LALTimeIntervalAndNSample time_info;
+  LALSource                 pulsar;
+  LALDetector               detector;
+  LALDetAndSource           det_and_pulsar;
+  FILE *fourier;
+  static REAL4TimeSeries         ht;
+  static COMPLEX8FrequencySeries Hf;
+  RealFFTPlan    *fwdRealPlan    = NULL;
+  RealFFTPlan    *revRealPlan    = NULL;
+  REAL8 f = 0.0; 
+
 
 
   /*******************************************************************
@@ -397,19 +411,12 @@ main(int argc, char **argv)
    * The output now has hPlus, hCross instead of aPlus and aCross. It also has h(t), ReH(f) and ImH(f)    *
    ********************************************************************************************************/
  
-  UINT4 wlength = waveform.h->data->length; 	
+  wlength = waveform.h->data->length; 	
  
   /*************************** h(t)*/
  
-  REAL4 *hoft;
   hoft = malloc(wlength*sizeof(REAL4));
   
-  LALDetAMResponseSeries    am_response_series = {NULL,NULL,NULL};
-  REAL4TimeSeries           plus_series, cross_series, scalar_series;
-  LALTimeIntervalAndNSample time_info;
-  LALSource                 pulsar;
-  LALDetector               detector;
-  LALDetAndSource           det_and_pulsar;
 
   /* fake detector */
   detector.location[0] = 0.;
@@ -495,13 +502,6 @@ main(int argc, char **argv)
   
   /*************************** H(F)*/
 
-  FILE *fourier;
-
-  static REAL4TimeSeries         ht;
-  static COMPLEX8FrequencySeries Hf;
-  
-  RealFFTPlan    *fwdRealPlan    = NULL;
-  RealFFTPlan    *revRealPlan    = NULL;
 
   LALSCreateVector( &stat, &ht.data, wlength );
   LALCCreateVector( &stat, &Hf.data, wlength / 2 + 1 );
@@ -521,8 +521,7 @@ main(int argc, char **argv)
   printf("\n  Writing FFT data to fourier file...\n\n");
 #endif  
  
-  REAL8 f = 0.0; 
-  fourier = fopen(fftout, "w");
+  fourier = fopen("fftout", "w");
   for(i = 0; i < wlength/2+1; i++, f+=Hf.deltaF) 
     fprintf(fourier," %f %10.3e %10.3e\n", f, Hf.data->data[i].re, Hf.data->data[i].im);	  
   fclose(fourier);
