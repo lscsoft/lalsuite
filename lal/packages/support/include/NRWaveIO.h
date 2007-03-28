@@ -116,4 +116,4 @@ void LALGetSingleNRMetaData( LALStatus *status, NRWaveMetaData *data, const CHAR
 }                /* Close C++ protection */
 #endif
 
-#endif     /* Close double-include protection _SFTBIN_H */
+#endif     /* Close double-include protection _NRWAVEIO_H */
