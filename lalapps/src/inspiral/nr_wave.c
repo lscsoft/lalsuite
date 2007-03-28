@@ -72,6 +72,8 @@ static void print_usage( char *program )
       "                                relativity waveforms\n"\
       "  --gps-start-time  start       start time of output file\n"\
       "  --gps-end-time    end         end time of output file\n"\
+      "  --modeL-lo        lo          lowest value of l to inject\n"\
+      "  --modeL-hi        hi          highest value of l to inject\n"\
       "  --sample-rate     rate        the sample rate used to generate injections\n"\
       "  --write-output                write h(t) to an ascii file in NRwave directory\n"\
       "\n", program );
@@ -89,6 +91,7 @@ int main( int argc, char *argv[] )
   int i;                                 /* loop counter */
   int num_ifos;                          /* number of ifos */
 
+  INT4 modeLlo, modeLhi;                 /* lowest and highest values of l to inject */
   INT4 modeL, modeM;                     /* mode indices of NR waves */
   
   CHAR *injectionFile = NULL;            /* name of file containing injs   */
@@ -136,6 +139,8 @@ int main( int argc, char *argv[] )
     {"nr-data-dir",             required_argument, 0,                'd'},
     {"sample-rate",             required_argument, 0,                'r'},
     {"ifo",                     required_argument, 0,                'i'},
+    {"modeL-lo",                required_argument, 0,                'L'},
+    {"modeL-hi",                required_argument, 0,                'H'},
     {"help",                    no_argument,       0,                'h'},
     {"version",                 no_argument,       0,                'V'},
     {0, 0, 0, 0}
@@ -150,7 +155,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:b:d:f:i:m:r:V:W",
+        "a:b:d:f:i:m:r:L:H:V:W",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -249,6 +254,32 @@ int main( int argc, char *argv[] )
           exit( 1 );
         }
         break;
+
+      case 'L':
+	/* set lower bound of l */
+	modeLlo = (INT4)atoi(optarg);
+	if ( modeLlo < 2 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "l value must be a greater than 1: "
+              "(%d specified) \n", 
+              long_options[option_index].name, modeLlo );
+          exit( 1 );
+        }
+	break;	
+
+      case 'H':
+	/* set lower bound of l */
+	modeLhi = (INT4)atoi(optarg);
+	if ( modeLhi < 2 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "l value must be a greater than 1: "
+              "(%d specified) \n", 
+              long_options[option_index].name, modeLhi );
+          exit( 1 );
+        }
+	break;	
 
       case 'i':
         /* create storage for the ifo name and copy it */
@@ -416,9 +447,6 @@ int main( int argc, char *argv[] )
     num_ifos = 1;
   }
 
-  /* set value of l -- this will be eventually set by the command line*/
-  modeL = 2;
-
 
   /* loop over ifos */
   for ( i = 0; i < num_ifos; i++ )
@@ -442,56 +470,61 @@ int main( int argc, char *argv[] )
     for ( thisInj = injections; thisInj; thisInj = thisInj->next )
     {
 
-      /* loop over m values */
-      for (modeM = -modeL; modeM <= modeL; modeM++) 
+      /* loop over l values */
+      for (modeL = modeLlo; modeL <= modeLhi; modeL++)
 	{
-	  /* find nearest matching numrel waveform */
-	  XLALFindNRFile( &thisMetaData, &nrCatalog, thisInj, modeL, modeM);
-	  
-	  if ( vrbflg )
+	  /* loop over m values */
+	  for (modeM = -modeL; modeM <= modeL; modeM++) 
 	    {
-	      fprintf(stdout, "Reading the waveform from the file \"%s\"...",
-		      thisMetaData.filename );
-	    }
-	  
-	  /* read numrel waveform */
-	  LAL_CALL(LALReadNRWave(&status, &strain, thisInj->mass1 + thisInj->mass2, 
-				 thisMetaData.filename), &status);
-	  
-	  if ( vrbflg )
-	    {
-	      fprintf(stdout, "done\n");
-	    }
-	  
-	  if ( vrbflg )
-	    {
-	      fprintf(stdout,
-		      "Generating waveform for inclination = %f, coa_phase = %f\n",
-		      thisInj->inclination, thisInj->coa_phase );
-	    }
-	  
-	  /* compute the h+ and hx for given inclination and coalescence phase*/
-	  strain = XLALOrientNRWave( strain, thisMetaData.mode[0],
-				     thisMetaData.mode[1], thisInj->inclination, thisInj->coa_phase);
-	  
-	  if ( vrbflg )
-	    {
-	      fprintf(stdout,
-		      "Generating the strain data for the given sky location\n");
-	    }
-	  
-	  /* compute strain for given sky location */
-	  htData = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate);
-	  
-	  /* inject the htData into injection time stream */
-	  LAL_CALL( LALSSInjectTimeSeries( &status, &injData, htData ), &status );
-	  
-	  /* clear memory for strain */
-	  XLALDestroyREAL4VectorSequence ( strain->data );
-	  LALFree(strain);
-	  strain = NULL;
+	      /* find nearest matching numrel waveform */
+	      XLALFindNRFile( &thisMetaData, &nrCatalog, thisInj, modeL, modeM);
+	      
+	      if ( vrbflg )
+		{
+		  fprintf(stdout, "Reading the waveform from the file \"%s\"...",
+			  thisMetaData.filename );
+		}
+	      
+	      /* read numrel waveform */
+	      LAL_CALL(LALReadNRWave(&status, &strain, thisInj->mass1 + thisInj->mass2, 
+				     thisMetaData.filename), &status);
+	      
+	      if ( vrbflg )
+		{
+		  fprintf(stdout, "done\n");
+		}
+	      
+	      if ( vrbflg )
+		{
+		  fprintf(stdout,
+			  "Generating waveform for inclination = %f, coa_phase = %f\n",
+			  thisInj->inclination, thisInj->coa_phase );
+		}
+	      
+	      /* compute the h+ and hx for given inclination and coalescence phase*/
+	      strain = XLALOrientNRWave( strain, thisMetaData.mode[0],
+					 thisMetaData.mode[1], thisInj->inclination, thisInj->coa_phase);
+	      
+	      if ( vrbflg )
+		{
+		  fprintf(stdout,
+			  "Generating the strain data for the given sky location\n");
+		}
+	      
+	      /* compute strain for given sky location */
+	      htData = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate);
+	      
+	      /* inject the htData into injection time stream */
+	      LAL_CALL( LALSSInjectTimeSeries( &status, &injData, htData ), &status );
+	      
+	      /* clear memory for strain */
+	      XLALDestroyREAL4VectorSequence ( strain->data );
+	      LALFree(strain);
+	      strain = NULL;
+	      
+	    }/* end loop over modeM values */
 
-	}/* end loop over modeM values */
+	} /* end loop over modeL values */
 
     } /* end loop over injections */
 
