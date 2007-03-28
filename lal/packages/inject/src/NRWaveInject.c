@@ -117,8 +117,18 @@ XLALCalculateNRStrain( REAL4TimeVectorSeries *strain, /**< h+, hx time series da
     XLAL_ERROR_NULL( "XLALCalculateNRStrain", XLAL_ENOMEM );
   }
 
-  /* store the htData */
-  htData->epoch = *XLALGPSAdd( &(inj->geocent_end_time), tDelay );
+  /* store the htData */  
+
+  /* add timedelay to inj->geocent_end_time */
+  {
+    REAL8 tEnd;
+    tEnd =  XLALGPSGetREAL8(&(inj->geocent_end_time) );
+    tEnd += tDelay;
+    XLALGPSSetREAL8(&(htData->epoch), tEnd );
+  }
+  /* Using XLALGPSAdd is bad because that changes the GPS time! */
+  /*  htData->epoch = *XLALGPSAdd( &(inj->geocent_end_time), tDelay ); */
+
   htData->deltaT = strain->deltaT;
   htData->sampleUnits = lalADCCountUnit;
 
