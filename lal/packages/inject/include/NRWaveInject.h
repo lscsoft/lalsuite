@@ -35,6 +35,8 @@
  * 
  */
 
+#ifndef _NRWAVEINJECT_H
+#define _NRWAVEINJECT_H
 
 /* includes */
 #include <stdlib.h>
@@ -55,7 +57,7 @@
 extern "C" {
 #endif
 
-NRCSID( NRWAVEIOC, "$Id$");
+NRCSID( NRWAVEINJECTH, "$Id$");
 
 REAL4TimeVectorSeries *
 XLALOrientNRWave( 
@@ -88,4 +90,6 @@ XLALFindNRFile( NRWaveMetaData *out,
 #ifdef  __cplusplus
 }                /* Close C++ protection */
 #endif
+
+#endif           /* Close double-include protection _NRWAVEINJECT_H */
 
