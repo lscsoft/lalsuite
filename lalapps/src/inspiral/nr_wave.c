@@ -89,6 +89,8 @@ int main( int argc, char *argv[] )
   int i;                                 /* loop counter */
   int num_ifos;                          /* number of ifos */
 
+  INT4 modeL, modeM;                     /* mode indices of NR waves */
+  
   CHAR *injectionFile = NULL;            /* name of file containing injs   */
   CHAR *nrMetaFile    = NULL;            /* name of file with nr meta info */
   CHAR *nrDataDir     = NULL;            /* name of dir with nr waveform   */
@@ -414,6 +416,10 @@ int main( int argc, char *argv[] )
     num_ifos = 1;
   }
 
+  /* set value of l -- this will be eventually set by the command line*/
+  modeL = 2;
+
+
   /* loop over ifos */
   for ( i = 0; i < num_ifos; i++ )
   {
@@ -435,51 +441,57 @@ int main( int argc, char *argv[] )
     /* loop over injections */
     for ( thisInj = injections; thisInj; thisInj = thisInj->next )
     {
-      /* find nearest matching numrel waveform */
-      XLALFindNRFile( &thisMetaData, &nrCatalog, thisInj, 2, 2);
 
-      if ( vrbflg )
-      {
-        fprintf(stdout, "Reading the waveform from the file \"%s\"...",
-            thisMetaData.filename );
-      }
+      /* loop over m values */
+      for (modeM = -modeL; modeM <= modeL; modeM++) 
+	{
+	  /* find nearest matching numrel waveform */
+	  XLALFindNRFile( &thisMetaData, &nrCatalog, thisInj, modeL, modeM);
+	  
+	  if ( vrbflg )
+	    {
+	      fprintf(stdout, "Reading the waveform from the file \"%s\"...",
+		      thisMetaData.filename );
+	    }
+	  
+	  /* read numrel waveform */
+	  LAL_CALL(LALReadNRWave(&status, &strain, thisInj->mass1 + thisInj->mass2, 
+				 thisMetaData.filename), &status);
+	  
+	  if ( vrbflg )
+	    {
+	      fprintf(stdout, "done\n");
+	    }
+	  
+	  if ( vrbflg )
+	    {
+	      fprintf(stdout,
+		      "Generating waveform for inclination = %f, coa_phase = %f\n",
+		      thisInj->inclination, thisInj->coa_phase );
+	    }
+	  
+	  /* compute the h+ and hx for given inclination and coalescence phase*/
+	  strain = XLALOrientNRWave( strain, thisMetaData.mode[0],
+				     thisMetaData.mode[1], thisInj->inclination, thisInj->coa_phase);
+	  
+	  if ( vrbflg )
+	    {
+	      fprintf(stdout,
+		      "Generating the strain data for the given sky location\n");
+	    }
+	  
+	  /* compute strain for given sky location */
+	  htData = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate);
+	  
+	  /* inject the htData into injection time stream */
+	  LAL_CALL( LALSSInjectTimeSeries( &status, &injData, htData ), &status );
+	  
+	  /* clear memory for strain */
+	  XLALDestroyREAL4VectorSequence ( strain->data );
+	  LALFree(strain);
+	  strain = NULL;
 
-      /* read numrel waveform */
-      LAL_CALL(LALReadNRWave(&status, &strain, thisInj->mass1 + thisInj->mass2, 
-            thisMetaData.filename), &status);
-
-      if ( vrbflg )
-      {
-        fprintf(stdout, "done\n");
-      }
-
-      if ( vrbflg )
-      {
-        fprintf(stdout,
-            "Generating waveform for inclination = %f, coa_phase = %f\n",
-            thisInj->inclination, thisInj->coa_phase );
-      }
-
-      /* compute the h+ and hx for given inclination and coalescence phase*/
-      strain = XLALOrientNRWave( strain, thisMetaData.mode[0],
-          thisMetaData.mode[1], thisInj->inclination, thisInj->coa_phase);
-
-      if ( vrbflg )
-      {
-        fprintf(stdout,
-            "Generating the strain data for the given sky location\n");
-      }
-
-      /* compute strain for given sky location */
-      htData = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate);
-
-      /* inject the htData into injection time stream */
-      LAL_CALL( LALSSInjectTimeSeries( &status, &injData, htData ), &status );
-
-      /* clear memory for strain */
-      XLALDestroyREAL4VectorSequence ( strain->data );
-      LALFree(strain);
-      strain = NULL;
+	}/* end loop over modeM values */
 
     } /* end loop over injections */
 
