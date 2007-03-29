@@ -67,8 +67,8 @@ extern int vrbflg;
 REAL8 nonUnitMetric[MAX_DIMENSION][ MAX_DIMENSION * MAX_DIMENSION] = 
   {
     { /* 2D */ 
-      1,   0.2,
-      0.2, 0.5 
+      1,   0.4,
+      0.4, 0.5 
     },
     { /* 3D */
       1.0, 0.1, 0.2,
@@ -130,6 +130,8 @@ int main(int argc, char *argv[])
 
   /* for production code: dont' let gsl abort on errors, but return error-codes to caller! */
   /* gsl_set_error_handler_off (); */
+  if ( uvar_help )
+    return 0;
 
   /*  testGS(); */
 
@@ -209,14 +211,13 @@ testCovering2 (void)
       LALPrintError ("\nFailed to get proper metric set up \n\n");
       return -1;
     }
-  gsl_matrix_free (gij);
 
   /* setup start-point */
   startPoint.length = uvar_dimension;
   startPoint.data = LALCalloc (uvar_dimension, sizeof(startPoint.data[0]) ); /* already (0,0) */
 
   /* generate covering */
-  LAL_CALL( LALLatticeCovering(&status, &covering, uvar_coveringRadius, metric, &startPoint, testArea1, 
+  LAL_CALL( LALLatticeCovering(&status, &covering, uvar_coveringRadius, gij, &startPoint, testArea1, 
 			       uvar_latticeType), &status);
 
 
@@ -278,6 +279,7 @@ testCovering2 (void)
     } /* if uvar_numMCpoints */
 
   /* free memory */
+  gsl_matrix_free (gij);
   XLALREAL8VectorListDestroy ( covering );
   LALFree ( startPoint.data );
   LAL_CALL ( LALDDestroyVector (&status, &metric), &status);
@@ -342,7 +344,7 @@ testCovering (void)
   /* second: use new function */
   gij  = gsl_matrix_view_array ( gij_data, dim, dim );
 
-  XLALFindCoveringGenerator (&generatorB, type, dim, radius, &(gij.matrix) );
+  XLALFindCoveringGenerator (&generatorB, type, radius, &(gij.matrix) );
   if ( xlalErrno )
     {
       int code = xlalErrno;
@@ -375,7 +377,7 @@ testCovering (void)
 
   /* do the same again with the new high-level function */
   metric = XLALgsl2LALmetric ( &(gij.matrix) );
-  LAL_CALL( LALLatticeCovering (&status, &covering, radius, metric, &startPoint, testArea1,
+  LAL_CALL( LALLatticeCovering (&status, &covering, radius, &(gij.matrix), &startPoint, testArea1,
 				LATTICE_TYPE_ANSTAR), &status);
 
   if ( (fp = fopen ( "test_lattice2.dat", "wb" )) == NULL )
