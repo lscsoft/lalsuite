@@ -3,7 +3,7 @@ pkginclude_HEADERS = Inject.h SimulateCoherentGW.h SimulateSB.h GeneratePPNInspi
 	GenerateTaylorCW.h GenerateSpinOrbitCW.h SkyCoordinates.h SimulateInspiral.h \
 	SimulatePopcorn.h GenerateBurst.h GenerateInspiral.h StochasticMC.h \
 	GeneratePulsarSignal.h SkyCoordinatesLaldoc.h NRWaveInject.h \
-	SphericalHarmonics.h InspiralInjectionParams.h
+	SphericalHarmonics.h InspiralInjectionParams.h GenerateInspRing.h
 
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
