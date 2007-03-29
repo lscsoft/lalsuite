@@ -23,14 +23,16 @@ uname = os.uname()
 host = uname[1]
 if host.find('explorer')>=0:
         path  		= '/home/'+user+'/lscsoft/lalapps/src/findchirp/'
+	executable_name = 'lalapps_BankEfficiency'
 elif host.find('coma')>=0:        
         path  		= '/home2/'+user+'/lscsoft/lalapps/src/findchirp/'
+	executable_name = 'lalapps_BankEfficiency'
 elif host.find('ldas-grid')>=0:        
         path  		= '/archive/home/'+user+'/opt/lalapps/src/findchirp/'
+	executable_name = 'lalapps_test'
 else:
         path  		= '/home/cokelaer/lscsoft/lalapps/src/findchirp/'
 
-executable_name = 'lalapps_test'
 
 
 def set_predefined_search_parameter(BE):
@@ -51,6 +53,26 @@ def set_predefined_search_parameter(BE):
 	    BE['signal-mass-range'] = '1 60'
 	    BE['sampling'] = 4096
 	    BE['bank-ffinal'] = BE['sampling']/2 - 1
+	
+	elif BE['search']=='S5':
+	    BE['bank-mass-range'] = '1 30'
+	    BE['signal-mass-range'] = '1 30'
+	    BE['sampling'] = 4096
+	    BE['bank-ffinal'] = BE['sampling']/2 - 1
+	
+	elif BE['search']=='BCV':
+	    BE['bank-psi0-range'] = '10000 550000'
+	    BE['bank-psi3-range'] = '-5000 -10'
+	    BE['bank-number-fcut'] = '3'
+	    BE['signal-mass-range'] = '3 80'
+	    BE['bank-mass-range'] = '3 80'
+	    BE['signal-max-total-mass'] =  80
+	    BE['bank-alpha'] = 0.01
+	    BE['sampling'] = 4096
+	    BE['bank-ffinal'] = BE['sampling']/2 - 1
+	    BE['template'] = 'BCV'
+	    BE['bank-inside-polygon'] = 1
+	   
 	   
 	elif BE['search']=='PBH':
 	    BE['bank-mass-range'] = '.3 1'
@@ -134,7 +156,7 @@ def create_dag_file(njobs):
 def create_finalise_script(BE, options):
         fp = open('finalise.sh', 'w')
         fp.write('#!/bin/sh\n')
-        fp.write('cat out_* > Trigger.dat\n')
+        fp.write('rm -f temp.dat ; find . -name "out_*" | awk \'{print "cat  " $1 ">> temp.dat"}\' > Trigger.dat\n')
         fp.write('cp TMPLTBANK.xml BE_Bank.xml\n')
         fp.write(path+executable_name +' --ascii2xml --template EOB --signal EOB\n')
         fp.write('mv Trigger.xml Trigger_' + BE['noise-model'] +'_'+str(BE['fl'])+'_'+options.search+'_'+BE['bank-grid-spacing']+'_'+BE['template'])
@@ -167,7 +189,7 @@ def main():
 		help=" <VIRGO, GEO, LIGOI, LIGOA, EGO>") 
     parser.add_option("--search",
 		dest='search',default='BNS',
-		help=" <BNS, BBH, PBH , BHNS>")
+		help=" <BNS, BBH, PBH , BHNS, S5 (1,60)>")
     parser.add_option("--signal-mass-range",
 		default='1 3', dest='signal_mass_range',
 		help="min and max individual mass in solar mass." )
@@ -229,18 +251,18 @@ def main():
 	print str(args[thisarg]) + str(options[thisarg])
 
     BE={} 
-    BE['search'] = options.search 
-    BE['noise-model']=options.noise_model
-    BE['fl']=options.fl
-    BE['bank-mass-range']=options.bank_mass_range
-    BE['signal-mass-range']=options.signal_mass_range
-    BE['signal']=options.signal
-    BE['template']=options.template
-    BE['signal-order']=options.signal_order
-    BE['template-order']=options.template_order
-    BE['mm']=options.minimal_match
-    BE['sampling']=options.sampling
-    BE['bank-grid-spacing']=options.bank_grid_spacing
+    BE['search'] 		= options.search 
+    BE['noise-model']		= options.noise_model
+    BE['fl']			= options.fl
+    BE['bank-mass-range']	= options.bank_mass_range
+    BE['signal-mass-range']	= options.signal_mass_range
+    BE['signal']		= options.signal
+    BE['template']		= options.template
+    BE['signal-order']		= options.signal_order
+    BE['template-order']	= options.template_order
+    BE['mm']			= options.minimal_match
+    BE['sampling']		= options.sampling
+    BE['bank-grid-spacing']	= options.bank_grid_spacing
     #derived options set to fixed value for the time being.
     if options.bank_ffinal > options.sampling/2-1:
 	BE['bank-ffinal'] = options.sampling/2-1
