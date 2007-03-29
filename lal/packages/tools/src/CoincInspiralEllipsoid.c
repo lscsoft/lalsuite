@@ -33,6 +33,78 @@ $Id$
 
 NRCSID( COINCINSPIRALELLIPSOIDC, "$Id$" );
 
+#if 0
+<lalLaTeX>
+\subsection{Module \texttt{CoincInspiralEllipsoid.c}}
+
+\noindent Blah.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{CoincInspiralEllipsoidCP}
+\idx{LALCreateTwoIFOCoincListEllipsoid()}
+\idx{XLALSnglInspiralCoincTestEllipsoid()}
+\idx{XLALCompareInspiralsEllipsoid()}
+\idx{XLALCalculateEThincaParameter()}
+\idx{XLALCalculateEThincaParameterForInjection()}
+
+\subsubsection*{Description}
+
+\texttt{LALCreateTwoIFOCoincListEllipsoid()} takes in a linked list of
+single inspiral tables and returns a list of two instrument coincidences.
+To determine coincidence, the triggers are modelled as ellipsoids in the
+parameter space. Triggers are deemed to be coincident if these ellipsoids
+are found to overlap.The ellipsoid scaling factor is given within the
+\texttt{accuracyParams} structure. When single inspirals from two different 
+instruments are found to be coincident, the code creates a new 
+\texttt{coincInspiralTable} and uses \texttt{LALAddSnglInspiralToCoinc()} 
+to add the single inspirals to the coinc. The function returns 
+\texttt{coincOutput} which is a pointer to the head of a linked list of
+\texttt{CoincInspiralTable}s.
+
+\texttt{XLALSnglInspiralCoincTestEllipsoid()} is used in the creation of
+multiple IFO coincident events. It is called by \texttt{LALCreateNIFOCoincList()}
+when the coincidence test is set to be ellipsoid. Unlike in other coincidence 
+tests, coincidence here is determined by the use of event id's as opposed to 
+calling the comparison function. This is because the test for ellipsoid overlap
+uses matrix inversions and function maximizations, which are potentially costly
+operations. If all members of the coinc are found to be
+coincident with the single, then \texttt{accuracyParams.match} is set to 1,
+otherwise to 0.
+
+\texttt{XLALCompareInspiralsEllipsoid()} checks for the overlap of ellipsoids
+associated with two single inspiral tables. The ellipsoid scaling factor is
+provided by \texttt{accuracyParams}. If the ellipsoids are found to overlap,
+1 is returned; otherwise 0 is returned.
+
+\texttt{XLALCalculateEThincaParameter()} calculates the maximum e-thinca
+parameter between two single inspiral tables. It does this using a bisection
+method, and uses \texttt{XLALCompareInspiralsEllipsoid()} to check for overlap.
+The maximum value for the e-thinca parameter is returned. If the two triggers
+do not overlap for an e-thinca parameter of 2.0, the triggers are not
+coincident, and an error is thrown.
+
+\texttt{XLALCalculateEThincaParameterForInjection()} takes in a 
+\texttt{SnglInspiralTable} and a \texttt{SimInspiralTable}, and returns the
+e-thinca parameter between the trigger and the injection. This amounts to
+calculating the square of the metric distance between the two points in 
+$(t_C, \tau_0, \tau_3)$ space.
+
+\subsubsection*{Algorithm}
+
+\noindent None.
+
+\subsubsection*{Uses}
+
+\noindent
+
+\subsubsection*{Notes}
+%% Any relevant notes.
+
+\vfill{\footnotesize\input{CoincInspiralEllipsoidCV}}
+
+</lalLaTeX>
+#endif
 
 static REAL8 getTimeError(const SnglInspiralTable *table, REAL8 eMatch);
 
@@ -501,10 +573,12 @@ REAL8 XLALCalculateEThincaParameter(
 
 
 /* This function returns the e-thinca parameter between a trigger and an injection */
+/* <lalVerbatim file="CoincInspiralEllipsoidCP"> */
 REAL8 XLALEThincaParameterForInjection( 
                     SimInspiralTable  *injection,
                     SnglInspiralTable *trigger
                     )
+/* </lalVerbatim> */
 {
 
   static const char *func = "XLALEThincaParameterForInjection";

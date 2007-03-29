@@ -14,6 +14,20 @@
 Author: Robinson, C. A.
 $Id$
 </lalVerbatim>
+
+<lalLaTeX>
+\section{Header \texttt{CoincInspiralEllipsoid.h}}
+\label{s:CoincInspiralEllipsoid.h}
+
+Provides function definitions for performing inspiral coincidence analysis
+using error ellipsoids.
+
+\subsection*{Synopsis}
+\begin{verbatim}
+#include <lal/CoincInspiralEllipsoid.h>
+\end{verbatim}
+
+</lalLaTeX>
 #endif
 
 #ifndef _COINCINSPIRALELLIPSOID_H
@@ -42,7 +56,7 @@ extern "C" {
 
 NRCSID( COINCINSPIRALELLIPSOIDH, "$Id$" );
 
-
+/* <lalVerbatim> */
 typedef struct tagTriggerErrorList
 {
   SnglInspiralTable          *trigger;
@@ -51,6 +65,14 @@ typedef struct tagTriggerErrorList
   struct tagTriggerErrorList *next;
 }
 TriggerErrorList;
+/* </lalVerbatim> */
+#if 0
+<lalLaTeX>
+The \texttt{TriggerErrorList} is a linked list used within e-thinca. It
+contains pointers to the \texttt{SnglInspiralTable} for a given trigger,
+and its associated error matrix and position vector.
+</lalLaTeX>
+#endif
 
 /* Functions for performing coincident analysis */
 void
@@ -99,6 +121,15 @@ REAL8 XLALEThincaParameterForInjection(
                     SimInspiralTable  *injection,
                     SnglInspiralTable *trigger
                     );
+
+#if 0
+<lalLaTeX>
+\vfill{\footnotesize\input{CoincInspiralEllipsoidHV}}
+
+\newpage\input{CoincInspiralEllipsoidC}
+\newpage\input{GetErrorMatrixFromSnglInspiralC}
+</lalLaTeX>
+#endif
 
 #ifdef  __cplusplus
 }
