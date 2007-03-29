@@ -196,6 +196,7 @@ LALInspiralCreateBCVBank (
         metric.g00, metric.g11, metric.theta );
     LALPrintError( "dp0=%e dp1=%e\n", dx0, dx1 );
   }
+  metric.g11/=64*2;
 
   /* We have the metric, which is constant. Now we need to place 
    * the templates in the parameter space which is define as follows by 
@@ -741,7 +742,7 @@ LALInspiralCreateFlatBankS3S4 (
 {  
   InspiralMetric *metric; 
   REAL8 minimalMatch; 
-  REAL8 x0, x1, dx1=0, dx0=0, x, y;
+  REAL8 x0, x1, dx1=0, dx0=0, x=0, y=0;
   UINT4 nlist = 0;
   INT4 layer  = 1;
   INT4 valid = -1;
@@ -762,37 +763,42 @@ LALInspiralCreateFlatBankS3S4 (
   minimalMatch = bankParams->minimalMatch;
 
   switch (coarseIn.gridSpacing){
-  case Hexagonal:
-    dx0 = sqrt(2.L * (1.L - minimalMatch)/metric->g00 );
-    dx1 = sqrt(2.L * (1.L - minimalMatch)/metric->g11 );
-    dx0 *=3./2./sqrt(2.);
-    dx1 *=sqrt(3./2.);
-    break;
-  case Square:
-    dx0 = sqrt(2.L * (1.L - minimalMatch)/metric->g00 );
-    dx1 = sqrt(2.L * (1.L - minimalMatch)/metric->g11 );
-    break;
-  case  HexagonalNotOriented:
-    LALInspiralUpdateParams( status->statusPtr, 
-			     bankParams, *metric, minimalMatch );
-    CHECKSTATUSPTR( status );
-    dx0 = bankParams->dx0 * 3./2./sqrt(2.);
-    dx1 = bankParams->dx1 * sqrt(3./2.);
-    break;
+    case HybridHexagonal:
+    case S2BCV:
+    case Hexagonal:
+      dx0 = sqrt(2.L * (1.L - minimalMatch)/metric->g00 );
+      dx1 = sqrt(2.L * (1.L - minimalMatch)/metric->g11 );
+      dx0 *=3./2./sqrt(2.);
+      dx1 *=sqrt(3./2.);
+      break;
+    case Square:
+      dx0 = sqrt(2.L * (1.L - minimalMatch)/metric->g00 );
+      dx1 = sqrt(2.L * (1.L - minimalMatch)/metric->g11 );
+      break;
+    case  HexagonalNotOriented:
+      LALInspiralUpdateParams( status->statusPtr, 
+  			     bankParams, *metric, minimalMatch );
+      CHECKSTATUSPTR( status );
+      dx0 = bankParams->dx0 * 3./2./sqrt(2.);
+      dx1 = bankParams->dx1 * sqrt(3./2.);
+      break;
 
-  case  SquareNotOriented:
-    LALInspiralUpdateParams( status->statusPtr, 
-			     bankParams, *metric, minimalMatch );
-    CHECKSTATUSPTR( status );
-    dx0 = bankParams->dx0;
-    dx1 = bankParams->dx1;
-    break;
+    case  SquareNotOriented:
+      LALInspiralUpdateParams( status->statusPtr, 
+  			     bankParams, *metric, minimalMatch );
+      CHECKSTATUSPTR( status );
+      dx0 = bankParams->dx0;
+      dx1 = bankParams->dx1;
+      break;
   }
 
   
-  switch (coarseIn.gridSpacing){
-  case Hexagonal:
-  case HexagonalNotOriented:
+  switch (coarseIn.gridSpacing)
+  {
+    case HybridHexagonal:
+    case S2BCV:
+    case Hexagonal:
+    case HexagonalNotOriented:
     
     /* x1==psi3 and x0==psi0 */
     for (x1 = bankParams->x1Min -1e6;  x1 <= bankParams->x1Max + 1e6; x1 += dx1)
