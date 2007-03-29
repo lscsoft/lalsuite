@@ -29,13 +29,19 @@
 #include <lal/LIGOLwXML.h>
 #include <lal/Units.h>
 #include <lal/Date.h>
+#include <lal/Inject.h>
 #include <lal/InspiralInjectionParams.h>
+#include <lal/GenerateInspiral.h>
+#include <lal/GenerateInspRing.h>
 #include <lal/FindChirp.h>
+#include <lal/GenerateRing.h>
+#include <lal/Ring.h>
 #include <lal/LALNoiseModels.h>
 #include <lal/RealFFT.h>
 #include <lal/FrequencySeries.h>
 #include <lal/TimeSeries.h>
 #include <lal/TimeFreqFFT.h>
+#include <lal/VectorOps.h>
 
 RCSID( "$Id$" );
 #define CVS_ID_STRING "$Id$"
@@ -84,9 +90,11 @@ static ProcessParamsTable *next_process_param(
     const char *type,
     const char *fmt, ... );
 
+static void destroyCoherentGW( CoherentGW *waveform );
+
 static REAL4TimeSeries *injectWaveform( 
     LALStatus            *status,
-    SimInspiralTable     *inj,
+    SimInspiralTable     *inspInj,
     ResponseFunction      responseType,
     InterferometerNumber  ifoNumber,
     LIGOTimeGPS           epoch);
@@ -101,14 +109,15 @@ INT4          sampleRate = 16384;    /* sample rate of output channel */
 
 /* default values of various things */
 REAL4         fLower = 30;         /* start frequency of injection */
+REAL4         mergerLength  = 10;  /* length in ms of the merger */
 REAL8         longestSignal = 95.0;/* length of 1.0 - 1.0 from 30 Hz */
 REAL8         timeWindow = 4;      /* injection can be delayed by up to this
                                       number of seconds */
 INT4          randSeed = 1;
-REAL4         minNSMass = 1.00;     /* minimum NS component mass */
+REAL4         minNSMass = 1.0;     /* minimum NS component mass */
 REAL4         maxNSMass = 2.0;     /* maximum NS component mass */
-REAL4         minBHMass = 2.0;     /* minimum BH component mass */
-REAL4         maxBHMass = 80.0;    /* maximum BH component mass */
+REAL4         minBHMass = 20.0;     /* minimum BH component mass */
+REAL4         maxBHMass = 20.1;    /* maximum BH component mass */
 REAL4         maxTotalMass = 100.0;/* maximum total mass */
 
 REAL4         minNSSpin = 0.0;     /* minimum NS component spin */
@@ -116,13 +125,17 @@ REAL4         maxNSSpin = 0.2;     /* maximum NS component spin */
 REAL4         minBHSpin = 0.0;     /* minimum BH component spin */
 REAL4         maxBHSpin = 1.0;     /* maximum BH component spin */
 
-REAL4         BNSfrac = 0.33;      /* fraction of injections which are BNS */
-REAL4         BBHfrac = 0.33;      /* fraction of injections which are BBH */
+REAL4         BNSfrac = 0.00;      /* fraction of injections which are BNS */
+REAL4         BBHfrac = 1.00;      /* fraction of injections which are BBH */
 /* 1 - BNSfrac - BBHfrac are NS-BH inj  */
 
 REAL4         snrMin = 10.0;       /* minimum (combined) snr of injection */
 REAL4         snrMax = 15.0;       /* maximum (combined) snr of injection */
 /* snrs assume detectors at design     */
+
+/* radiated energy: 3.5 + 3(S/m^2) + 152/90 (S/m^2)^2
+ * final spin:      0.69 + 0.3 (S/m^2) - 0.038 (S/m^2)^2
+ */
 
 /* functions */
 
@@ -153,25 +166,63 @@ ProcessParamsTable *next_process_param(
   return pp;
 }
 
+static void destroyCoherentGW( CoherentGW *waveform )
+{
+  if ( waveform->h )
+  {
+    XLALDestroyREAL4VectorSequence( waveform->h->data );
+    LALFree( waveform->a );
+  }
+  if ( waveform->a )
+  {
+    XLALDestroyREAL4VectorSequence( waveform->a->data );
+    LALFree( waveform->a );
+  }
+  if ( waveform->phi )
+  {
+    XLALDestroyREAL8Vector( waveform->phi->data );
+    LALFree( waveform->phi );
+  }
+  if ( waveform->f )
+  {
+    XLALDestroyREAL4Vector( waveform->f->data );
+    LALFree( waveform->f );
+  }
+  if ( waveform->shift )
+  {
+    XLALDestroyREAL4Vector( waveform->shift->data );
+    LALFree( waveform->shift );
+  }
+
+  return;
+}
+
 static REAL4TimeSeries *injectWaveform( 
     LALStatus            *status,
-    SimInspiralTable     *inj,
+    SimInspiralTable     *inspInj,
     ResponseFunction      responseType,
     InterferometerNumber  ifoNumber,
     LIGOTimeGPS           epoch)
 {
   REAL4TimeSeries           *chan;
   COMPLEX8FrequencySeries   *resp;
+  COMPLEX8Vector            *unity;
   CHAR                       name[LALNameLength];
   CHAR                       ifo[LIGOMETA_IFO_MAX];
+  PPNParamStruc              ppnParams;
+
+  INT8                       waveformStartTime;
+  DetectorResponse           detector;
+  CoherentGW                 waveform;
   ActuationParameters        actData = actuationParams[ifoNumber];
-  UINT4 k;
+  UINT4 i,k;
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
+  FILE  *fp = NULL;
+  char  fileName[FILENAME_MAX];
 
   /* set up the channel to which we add the injection */
   XLALReturnIFO( ifo, ifoNumber );
   LALSnprintf( name, LALNameLength * sizeof(CHAR), "%s:INJECT", ifo );
-
   chan = XLALCreateREAL4TimeSeries( name, &epoch, 0, 1./sampleRate, 
       &lalADCCountUnit, sampleRate * duration );
   if ( ! chan )
@@ -181,10 +232,49 @@ static REAL4TimeSeries *injectWaveform(
   }
 
   memset( chan->data->data, 0, chan->data->length * sizeof(REAL4) );
+
+  /*
+   *
+   * Generate the Waveforms
+   *
+   */
+
+  /* fixed waveform injection parameters */
+  memset( &ppnParams, 0, sizeof(PPNParamStruc) );
+  ppnParams.deltaT   = chan->deltaT;
+  ppnParams.lengthIn = 0;
+  ppnParams.ppn      = NULL;
+
+
+  memset( &waveform, 0, sizeof(CoherentGW) );
+
+  LAL_CALL( LALGenerateInspiral(status, &waveform, inspInj, &ppnParams), 
+      status);
+
+  /* add the ringdown */
+  waveform = *XLALGenerateInspRing( &waveform, inspInj );
+
+  /* write out the waveform */
+  LALSnprintf( fileName, FILENAME_MAX, "%s-INSPIRAL_WAVEFORM.dat", 
+        ifo );
+  fp = fopen(fileName, "w");
+  for ( i = 0; i < waveform.phi->data->length; i++ )
+  {
+    fprintf( fp, "%e\t %e\t %f\t %f\t %f\n", waveform.a->data->data[2*i],
+      waveform.a->data->data[2*i+1], waveform.f->data->data[i], 
+      waveform.phi->data->data[i] , waveform.shift->data->data[i] );
+  }
+  fclose( fp );
+
+  /* 
+   *
+   * set up the response function
+   *
+   */
+
   resp = XLALCreateCOMPLEX8FrequencySeries( chan->name, &(chan->epoch), 0,
       1.0 / ( duration ), &strainPerCount, ( sampleRate * duration / 2 + 1 ) );
-
-  /* set up the response function */
+  
   switch ( responseType )
   {
     case noResponse:
@@ -214,7 +304,6 @@ static REAL4TimeSeries *injectWaveform(
       break;
 
     case actuationX:
-
       /* actuation units are m/count so we must divide by arm length */
       resp = generateActuation( resp, actData.ETMXcal / actData.length,
           actData.pendFX, actData.pendQX);
@@ -227,11 +316,51 @@ static REAL4TimeSeries *injectWaveform(
       break;
   }
 
+  /*
+   *
+   * set up the detector structure
+   *
+   */
+
+  /* allocate memory and copy the parameters describing the freq series */
+  memset( &detector, 0, sizeof( DetectorResponse ) );
+  detector.site = (LALDetector *) LALMalloc( sizeof(LALDetector) );
+  XLALReturnDetector( detector.site, ifoNumber );
+  detector.transfer = XLALCreateCOMPLEX8FrequencySeries( chan->name, 
+      &(chan->epoch), 0, 1.0 / ( duration ), &strainPerCount, 
+      ( sampleRate * duration / 2 + 1 ) );
+
+  XLALUnitInvert( &(detector.transfer->sampleUnits), &(resp->sampleUnits) );
+
+  /* invert the response function to get the transfer function */
+  unity = XLALCreateCOMPLEX8Vector( resp->data->length );  
+  for ( k = 0; k < unity->length; ++k ) 
+  {
+    unity->data[k].re = 1.0;
+    unity->data[k].im = 0.0;
+  }
+
+  XLALCCVectorDivide( detector.transfer->data, unity, resp->data );
+  XLALDestroyCOMPLEX8Vector( unity );
+
+  /* set the injection time */
+  waveformStartTime = XLALGPStoINT8( &(inspInj->geocent_end_time));
+  waveformStartTime -= (INT8) ( 1000000000.0 * ppnParams.tc );
+
+  XLALINT8toGPS( &(waveform.a->epoch), waveformStartTime );
+  memcpy(&(waveform.f->epoch), &(waveform.a->epoch), 
+      sizeof(LIGOTimeGPS) );
+  memcpy(&(waveform.phi->epoch), &(waveform.a->epoch),
+      sizeof(LIGOTimeGPS) );
 
   /* perform the injection */
-  LAL_CALL( LALFindChirpInjectSignals( status, chan, inj, 
-        resp ), status );
+  LAL_CALL( LALSimulateCoherentGW( status, chan, &waveform, &detector ),
+      status);
 
+  destroyCoherentGW( &waveform );
+  XLALDestroyCOMPLEX8FrequencySeries( detector.transfer );
+  if ( detector.site ) LALFree( detector.site );
+  
   XLALDestroyCOMPLEX8FrequencySeries( resp ); 
   return( chan );
 }
@@ -250,7 +379,6 @@ int main( int argc, char *argv[] )
   LIGOTimeGPS           earliestEndTime = {0, 0};
   ResponseFunction      injectionResponse = noResponse;
 
-
   /* program variables */
   RandomParams         *randParams  = NULL;
   REAL4                 massPar     = 0;
@@ -266,12 +394,12 @@ int main( int argc, char *argv[] )
   CHAR waveform[LIGOMETA_WAVEFORM_MAX];
 
   /* xml output data */
-  CHAR                  fname[256];
+  CHAR                  fname[FILENAME_MAX];
   MetadataTable         proctable;
   MetadataTable         procparams;
-  MetadataTable         injections;
+  MetadataTable         inspInjections;
   ProcessParamsTable   *this_proc_param;
-  SimInspiralTable     *inj = NULL;
+  SimInspiralTable     *inj  = NULL;
   LIGOLwXMLStream       xmlfp;
   FILE                 *fp = NULL;
 
@@ -344,7 +472,6 @@ int main( int argc, char *argv[] )
 
   /* clear the waveform field */
   memset( waveform, 0, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR) );
-
   LALSnprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
       "SpinTaylorthreePointFivePN");
 
@@ -495,7 +622,7 @@ int main( int argc, char *argv[] )
   randParams = XLALCreateRandomParams( randSeed );
 
   /* null out the head of the linked list */
-  memset( &injections, 0, sizeof(MetadataTable) );
+  memset( &inspInjections, 0, sizeof(MetadataTable) );
 
   /* create the output file name */
   LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
@@ -508,7 +635,7 @@ int main( int argc, char *argv[] )
    */
 
   /* create the sim_inspiral table */
-  injections.simInspiralTable = inj = (SimInspiralTable *)
+  inspInjections.simInspiralTable = inj = (SimInspiralTable *)
     LALCalloc( 1, sizeof(SimInspiralTable) );
 
 
@@ -648,7 +775,6 @@ int main( int argc, char *argv[] )
 
   inj->distance = 1.0 * pow( snrsqAt1Mpc, 0.5 ) / desiredSnr;
   inj = XLALPopulateSimInspiralSiteInfo( inj );
-
   if ( vrbflg ) fprintf( stdout, 
       "Rescaling the distance to %.2f to give a combined snr of %.2f\n", 
       inj->distance, desiredSnr);
@@ -759,18 +885,18 @@ int main( int argc, char *argv[] )
   }
 
   /* write the sim_inspiral table */
-  if ( injections.simInspiralTable )
+  if ( inspInjections.simInspiralTable )
   {
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_inspiral_table ), 
         &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, injections, 
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, inspInjections, 
           sim_inspiral_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
   }
-  while ( injections.simInspiralTable )
+  while ( inspInjections.simInspiralTable )
   {
-    inj = injections.simInspiralTable;
-    injections.simInspiralTable = injections.simInspiralTable->next;
+    inj = inspInjections.simInspiralTable;
+    inspInjections.simInspiralTable = inspInjections.simInspiralTable->next;
     LALFree( inj );
   }
 
