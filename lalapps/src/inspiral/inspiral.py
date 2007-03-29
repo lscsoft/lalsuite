@@ -290,27 +290,6 @@ class SireJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stderr_file('logs/sire-$(macroifo)-$(cluster)-$(process).err')
     self.set_sub_file('sire.sub')
 
-class Tama2LigoLwJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
-  """
-  A lalapps_tama2ligolw job used by the inspiral pipeline. The stdout and 
-  stderr from the job are directed to the logs directory. The path to the 
-  executable is determined from the ini file.
-  """
-  def __init__(self,cp,dax=False):
-    """
-    cp = ConfigParser object from which options are read.
-    """
-    self.__executable = cp.get('condor','tama2lw')
-    self.__universe = cp.get('condor','universe')
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp,dax)
-    
-    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
-
-    self.set_stdout_file('logs/tama2ligolw-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/tama2ligolw-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
-    self.set_sub_file('tama2ligolw.sub')
-
 class FrJoinJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A lalapps_frjoin job used by the inspiral pipeline. The path to the
@@ -327,8 +306,8 @@ class FrJoinJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
-    self.set_stdout_file('logs/frjoin-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/frjoin-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_stdout_file('logs/frjoin-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/frjoin-$(cluster)-$(process).err')
     self.set_sub_file('frjoin.sub')
 
 class CohBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
@@ -1095,15 +1074,13 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.__ifo = None
     self.__usertag = job.get_config('pipeline','user-tag')
 
-  def set_outputs(self,out_name,usertag=None,cluster=None,slide_time=None,
-    tama_output=None):
+  def set_outputs(self,out_name,usertag=None,cluster=None,slide_time=None):
     """
     Sets the name of the sire output file.
     out_name = name of sire output file
     usertag = usertag to tag the output filename with
     cluster = cluster time (ms)
     slide_time = slide time (sec)
-    tama_output = output tama file?
     """
     outfile = out_name
     
@@ -1120,16 +1097,12 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     summ_file = outfile + '.txt' 
     self.add_var_opt('summary',summ_file)
     
-    if tama_output:
-      tama_out = outfile + '.dat'
-      self.add_var_opt('tama-output',tama_out)
-
     outfile += '.xml'
     self.__output = outfile
     self.add_var_opt('output',outfile)
 
   def set_inj_outputs(self,out_name,inj_coinc,usertag=None,cluster=None,
-    slide_time=None,tama_output=None):
+    slide_time=None):
     """
     Sets the name of the sire output file.
     out_name = name of sire output file
@@ -1137,7 +1110,6 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     usertag = usertag to tag the output filename with
     cluster = cluster time (ms)
     slide_time = slide time (sec)
-    tama_output = output tama file?
     """
     outfile = out_name
     
@@ -1156,10 +1128,6 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     
     outfile += '_FOUND' + str(inj_coinc)
     
-    if tama_output:
-      tama_out = outfile + '.dat'
-      self.add_var_opt('tama-output',tama_out)
-    
     summ_file = outfile + '.txt' 
     self.add_var_opt('summary',summ_file)
     
@@ -1176,21 +1144,6 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.add_output_file(self.__output)
     return self.__output
 
-
-class Tama2LigoLwNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
-  """
-  A Tama2LigoLwNode runs an instance of the tama triggers to LIGO Lw XML 
-  converter in a Condor DAG.
-  """
-  def __init__(self,job):
-    """
-    job = A CondorDAGJob that can run an instance of lalapps_inca.
-    """
-    pipeline.CondorDAGNode.__init__(self,job)
-    pipeline.AnalysisNode.__init__(self)
-    self.__input = None
-    self.__output = None
-    self.__usertag = job.get_config('pipeline','user-tag')
 
 class FrJoinNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
