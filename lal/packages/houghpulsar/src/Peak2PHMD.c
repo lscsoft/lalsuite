@@ -168,10 +168,10 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
   /*   ASSERT ( pgF >= lastBin,  status, PHMDH_EINT, PHMDH_MSGEINT); */
   /* ASSERTs replaced by ABORTs to make sure these checks are done even 
      when compiled with the LAL_NDEBUG flag */
-  if (  pgI <= firstBin ) {
+  if (  pgI > firstBin ) {
     ABORT( status, PHMDH_EINT, PHMDH_MSGEINT); 
   }
-  if (  pgF >= lastBin ) { 
+  if (  pgF < lastBin ) { 
     ABORT( status, PHMDH_EINT, PHMDH_MSGEINT); 
   } 
 
