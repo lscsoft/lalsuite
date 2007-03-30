@@ -222,6 +222,7 @@ struct options {
 	char *comment;
 	/* safety valve (Hz), 0 == disable */
 	int max_event_rate;
+	char *output_filename;
 
 	/*
 	 * diagnostics support
@@ -258,6 +259,7 @@ static struct options *options_new(void)
 		.high_pass = -1.0,	/* impossible */
 		.cal_high_pass = -1.0,	/* impossible */
 		.max_event_rate = 0,	/* default */
+		.output_filename = NULL,	/* impossible */
 		.window_length = 0,	/* impossible */
 		.sim_distance = 10000.0,	/* default (10 Mpc) */
 		.sim_cache_filename = NULL,	/* default */
@@ -316,6 +318,7 @@ fprintf(stderr,
 "	 --max-tileduration <samples>\n" \
 "	[--mdc-cache <cache file>]\n" \
 "	[--mdc-channel <channel name>]\n" \
+"	[--output <filename>]\n" \
 "	 --psd-average-method <method>\n" \
 "	 --psd-average-points <samples>\n");
 fprintf(stderr,
@@ -532,6 +535,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		{"max-tileduration", required_argument, NULL, 'm'},
 		{"mdc-cache", required_argument, NULL, 'R'},
 		{"mdc-channel", required_argument, NULL, 'S'},
+		{"output", required_argument, NULL, 'b'},
 		{"psd-average-method", required_argument, NULL, 'Y'},
 		{"psd-average-points", required_argument, NULL, 'Z'},
 		{"ram-limit", required_argument, NULL, 'a'},
@@ -758,6 +762,11 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		ADD_PROCESS_PARAM("int");
 		break;
 
+	case 'b':
+		options->output_filename = optarg;
+		ADD_PROCESS_PARAM("lstring");
+		break;
+
 	case 'c':
 		options->seed = atoi(optarg);
 		if(options->seed <= 0) {
@@ -973,11 +982,33 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		XLALPrintWarning("%s: warning: data conditioning high-pass frequency (%f Hz) greater than 10 Hz below TF plane low frequency (%f Hz)\n", argv[0], options->high_pass, params->tf_flow);
 
 	/*
+	 * Set output filename to default value if needed.
+	 */
+
+	if(!options->output_filename) {
+		int length = 1000;
+		options->output_filename = calloc(length, sizeof(*options->output_filename));
+		if(!options->output_filename) {
+			XLALPrintError("memory error");
+			exit(1);
+		}
+		length = snprintf(options->output_filename, length, "%s-POWER_%s-%d-%d.xml", options->ifo, options->comment, options->gps_start.gpsSeconds, options->gps_end.gpsSeconds - options->gps_start.gpsSeconds);
+		if(length > 999) {
+			XLALPrintError("output filename too long (999 characters max)");
+			exit(1);
+		}
+		options->output_filename = realloc(options->output_filename, (length + 1) * sizeof(*options->output_filename));
+		if(!options->output_filename) {
+			XLALPrintError("memory error");
+			exit(1);
+		}
+	}
+
+	/*
 	 * Miscellaneous chores.
 	 */
 
 	params->tf_freqBins = options->bandwidth / params->tf_deltaF;
-
 	XLALPrintInfo("%s: using --psd-average-points %zu\n", argv[0], options->psd_length);
 	if(options->max_series_length)
 		XLALPrintInfo("%s: available RAM limits analysis to %d samples\n", argv[0], options->max_series_length);
@@ -1667,7 +1698,6 @@ int main(int argc, char *argv[])
 	LIGOTimeGPS epoch;
 	LIGOTimeGPS boundepoch;
 	size_t overlap;
-	CHAR outfilename[256];
 	REAL4TimeSeries *series = NULL;
 	SnglBurstTable *burstEvent = NULL;
 	SnglBurstTable **EventAddPoint = &burstEvent;
@@ -1898,9 +1928,7 @@ int main(int argc, char *argv[])
 	 * Output the results.
 	 */
 
-	snprintf(outfilename, sizeof(outfilename) - 1, "%s-POWER_%s-%d-%d.xml", options->ifo, options->comment, options->gps_start.gpsSeconds, options->gps_end.gpsSeconds - options->gps_start.gpsSeconds);
-	outfilename[sizeof(outfilename) - 1] = '\0';
-	output_results(&stat, outfilename, options->ifo, &_process_table, &_process_params_table, &_search_summary_table, burstEvent);
+	output_results(&stat, options->output_filename, options->ifo, &_process_table, &_process_params_table, &_search_summary_table, burstEvent);
 
 	/*
 	 * Final cleanup.
