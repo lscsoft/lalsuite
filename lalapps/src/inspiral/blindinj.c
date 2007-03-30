@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------------- 
  * 
- * File Name: bbhinj.c
+ * File Name: blindinj.c
  *
  * Author: Fairhurst, S
  * 
@@ -49,7 +49,7 @@ RCSID( "$Id$" );
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
-#define PROGRAM_NAME "bbhinj"
+#define PROGRAM_NAME "blindinj"
 
 #define USAGE \
   "lalapps_blindinj [options]\n"\
@@ -116,8 +116,8 @@ REAL8         timeWindow = 4;      /* injection can be delayed by up to this
 INT4          randSeed = 1;
 REAL4         minNSMass = 1.0;     /* minimum NS component mass */
 REAL4         maxNSMass = 2.0;     /* maximum NS component mass */
-REAL4         minBHMass = 20.0;     /* minimum BH component mass */
-REAL4         maxBHMass = 20.1;    /* maximum BH component mass */
+REAL4         minBHMass = 2.0;     /* minimum BH component mass */
+REAL4         maxBHMass = 80.0;    /* maximum BH component mass */
 REAL4         maxTotalMass = 100.0;/* maximum total mass */
 
 REAL4         minNSSpin = 0.0;     /* minimum NS component spin */
@@ -125,17 +125,15 @@ REAL4         maxNSSpin = 0.2;     /* maximum NS component spin */
 REAL4         minBHSpin = 0.0;     /* minimum BH component spin */
 REAL4         maxBHSpin = 1.0;     /* maximum BH component spin */
 
-REAL4         BNSfrac = 0.00;      /* fraction of injections which are BNS */
-REAL4         BBHfrac = 1.00;      /* fraction of injections which are BBH */
+REAL4         BNSfrac = 0.35;      /* fraction of injections which are BNS */
+REAL4         BBHfrac = 0.35;      /* fraction of injections which are BBH */
 /* 1 - BNSfrac - BBHfrac are NS-BH inj  */
 
-REAL4         snrMin = 10.0;       /* minimum (combined) snr of injection */
-REAL4         snrMax = 15.0;       /* maximum (combined) snr of injection */
+REAL4         bnsSnrMin = 12.0;   /* minimum (combined) snr of bns injection */
+REAL4         bnsSnrMax = 20.0;   /* maximum (combined) snr of bns injection */
+REAL4         snrMin = 12.0;      /* minimum (combined) snr of injection */
+REAL4         snrMax = 20.0;      /* maximum (combined) snr of injection */
 /* snrs assume detectors at design     */
-
-/* radiated energy: 3.5 + 3(S/m^2) + 152/90 (S/m^2)^2
- * final spin:      0.69 + 0.3 (S/m^2) - 0.038 (S/m^2)^2
- */
 
 /* functions */
 
@@ -382,7 +380,7 @@ int main( int argc, char *argv[] )
   /* program variables */
   RandomParams         *randParams  = NULL;
   REAL4                 massPar     = 0;
-  MassDistribution      mDist       = uniformComponentMass;
+  MassDistribution      mDist       = logComponentMass;
   InterferometerNumber  ifoNumber   = LAL_UNKNOWN_IFO;
   REAL4                 desiredSnr  = 0;           
   REAL4                 snrsqAt1Mpc = 0;           
@@ -651,6 +649,9 @@ int main( int argc, char *argv[] )
   /* set the masses */
   massPar = XLALUniformDeviate( randParams );
 
+  fprintf(  stdout, "Random variable to determine inj type = %f\n", 
+      massPar);
+
   if ( massPar < BNSfrac )
   {
     if ( vrbflg ) fprintf( stdout, "Generating a BNS injection\n" );
@@ -658,6 +659,8 @@ int main( int argc, char *argv[] )
         minNSMass, maxNSMass, minNSMass, maxNSMass, maxTotalMass );
     inj = XLALRandomInspiralSpins( inj, randParams, minNSSpin,
         maxNSSpin, minNSSpin, maxNSSpin );
+    desiredSnr = bnsSnrMin + (bnsSnrMax - bnsSnrMin) *  
+      XLALUniformDeviate( randParams );
   }
   else if ( massPar < (BNSfrac + BBHfrac) )
   {
@@ -666,6 +669,7 @@ int main( int argc, char *argv[] )
         minBHMass, maxBHMass, minBHMass, maxBHMass, maxTotalMass );
     inj = XLALRandomInspiralSpins( inj, randParams, minBHSpin,
         maxBHSpin, minBHSpin, maxBHSpin );
+    desiredSnr = snrMin + (snrMax - snrMin) * XLALUniformDeviate( randParams );
   }
   else
   {
@@ -674,6 +678,7 @@ int main( int argc, char *argv[] )
         minNSMass, maxNSMass, minBHMass, maxBHMass, maxTotalMass );
     inj = XLALRandomInspiralSpins( inj, randParams, minNSSpin,
         maxNSSpin, minBHSpin, maxBHSpin );
+    desiredSnr = snrMin + (snrMax - snrMin) * XLALUniformDeviate( randParams );
   }
 
 
@@ -770,9 +775,7 @@ int main( int argc, char *argv[] )
     }
   }
 
-  /* scale the distance so that the snr is equal to ... */
-  desiredSnr = snrMin + (snrMax - snrMin) *  XLALUniformDeviate( randParams );
-
+  /* scale the distance so that the snr is equal to desired value */
   inj->distance = 1.0 * pow( snrsqAt1Mpc, 0.5 ) / desiredSnr;
   inj = XLALPopulateSimInspiralSiteInfo( inj );
   if ( vrbflg ) fprintf( stdout, 
