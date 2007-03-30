@@ -40,7 +40,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	static const char func[] = "XLALCreateTFPlane";
 	REAL4TimeFrequencyPlane *plane;
 	REAL8Sequence *channel_overlap;
-	REAL8Sequence *channel_mean_square;
+	REAL8Sequence *channel_rms;
 	REAL4Sequence **channel;
 	TFTiling *tiling;
 	unsigned i;
@@ -61,13 +61,13 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 
 	plane = LALMalloc(sizeof(*plane));
 	channel_overlap = XLALCreateREAL8Sequence(channels - 1);
-	channel_mean_square = XLALCreateREAL8Sequence(channels);
+	channel_rms = XLALCreateREAL8Sequence(channels);
 	channel = LALMalloc(channels * sizeof(*channel));
 	tiling = XLALCreateTFTiling(tseries_length, tseries_deltaT, flow, deltaF, channels, tiling_start, tiling_inv_fractional_stride, tiling_max_bandwidth, tiling_max_duration);
-	if(!plane || !channel_overlap || !channel_mean_square || !channel || !tiling) {
+	if(!plane || !channel_overlap || !channel_rms || !channel || !tiling) {
 		LALFree(plane);
 		XLALDestroyREAL8Sequence(channel_overlap);
-		XLALDestroyREAL8Sequence(channel_mean_square);
+		XLALDestroyREAL8Sequence(channel_rms);
 		LALFree(channel);
 		XLALDestroyTFTiling(tiling);
 		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
@@ -79,7 +79,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 				XLALDestroyREAL4Sequence(channel[i]);
 			LALFree(plane);
 			XLALDestroyREAL8Sequence(channel_overlap);
-			XLALDestroyREAL8Sequence(channel_mean_square);
+			XLALDestroyREAL8Sequence(channel_rms);
 			LALFree(channel);
 			XLALDestroyTFTiling(tiling);
 			XLAL_ERROR_NULL(func, XLAL_ENOMEM);
@@ -98,7 +98,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	plane->deltaF = deltaF;
 	plane->flow = flow;
 	plane->channel_overlap = channel_overlap;
-	plane->channel_mean_square = channel_mean_square;
+	plane->channel_rms = channel_rms;
 	plane->channel = channel;
 	plane->tiling = tiling;
 
@@ -121,7 +121,7 @@ XLALDestroyTFPlane(
 
 	if(plane) {
 		XLALDestroyREAL8Sequence(plane->channel_overlap);
-		XLALDestroyREAL8Sequence(plane->channel_mean_square);
+		XLALDestroyREAL8Sequence(plane->channel_rms);
 		for(i = 0; i < plane->channels; i++)
 			XLALDestroyREAL4Sequence(plane->channel[i]);
 		LALFree(plane->channel);

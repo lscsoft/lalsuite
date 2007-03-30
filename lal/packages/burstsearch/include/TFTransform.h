@@ -104,8 +104,8 @@ typedef struct tagREAL4TimeFrequencyPlane {
 	 * channel_overlap[0] is the inner product of the filters for
 	 * channels 0 and 1, and so on */
 	REAL8Sequence *channel_overlap;
-	/* predicted mean square for the time series in each channel */
-	REAL8Sequence *channel_mean_square;
+	/* predicted root mean square for the time series in each channel */
+	REAL8Sequence *channel_rms;
 	/* channel data;  channel[j]->data[i] corresponds to time epoch + i
 	 * * deltaT and frequency flow + j * deltaF */
 	REAL4Sequence **channel;

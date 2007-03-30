@@ -239,10 +239,6 @@ int XLALFreqSeriesToTFPlane(
 		}
 	}
 
-	/* set the name and epoch of the TF plane */
-	strncpy(plane->name, fseries->name, LALNameLength);
-	plane->epoch = fseries->epoch;
-
 	/* compute the channel overlaps */
 	for(i = 0; i < plane->channels - 1; i++)
 		plane->channel_overlap->data[i] = filter_overlap(filter[i], filter[i + 1]);
@@ -264,8 +260,8 @@ int XLALFreqSeriesToTFPlane(
 			XLAL_ERROR(func, XLAL_EFUNC);
 		}
 
-		/* Store the predicted mean square for this channel */
-		plane->channel_mean_square->data[i] = channel_mean_square(psd, filter[i]);
+		/* Store the expected root mean square for this channel */
+		plane->channel_rms->data[i] = sqrt(channel_mean_square(psd, filter[i]));
 	}
 
 	/* clean up */
@@ -273,6 +269,10 @@ int XLALFreqSeriesToTFPlane(
 		XLALDestroyCOMPLEX8FrequencySeries(filter[i]);
 	LALFree(filter);
 	XLALDestroyCOMPLEX8Sequence(fcorr);
+
+	/* set the name and epoch of the TF plane */
+	strncpy(plane->name, fseries->name, LALNameLength);
+	plane->epoch = fseries->epoch;
 
 	/* success */
 	return 0;
