@@ -157,23 +157,23 @@ fputs( "      <Stream Name=\"search_summvarsgroup:search_summvars:table\" Type=\
 "         \"process:process_id:0\",\"%s\",\"%s\",%22.16e"
 
 #define PRINT_LIGOLW_XML_SNGL_BURST(fp) ( \
-fputs( "   <Table Name=\"sngl_burstgroup:sngl_burst:table\">\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_burstgroup:sngl_burst:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_burstgroup:sngl_burst:ifo\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_burstgroup:sngl_burst:search\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_burstgroup:sngl_burst:channel\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_burstgroup:sngl_burst:start_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_burstgroup:sngl_burst:start_time_ns\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_burstgroup:sngl_burst:peak_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_burstgroup:sngl_burst:peak_time_ns\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_burstgroup:sngl_burst:duration\" Type=\"real_4\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_burstgroup:sngl_burst:central_freq\" Type=\"real_4\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_burstgroup:sngl_burst:bandwidth\" Type=\"real_4\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_burstgroup:sngl_burst:amplitude\" Type=\"real_4\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_burstgroup:sngl_burst:snr\" Type=\"real_4\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_burstgroup:sngl_burst:confidence\" Type=\"real_4\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_burstgroup:sngl_burst:event_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
-fputs( "      <Stream Name=\"sngl_burstgroup:sngl_burst:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
+fputs( "   <Table Name=\"sngl_burst:table\">\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_burst:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_burst:ifo\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_burst:search\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_burst:channel\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_burst:start_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_burst:start_time_ns\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_burst:peak_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_burst:peak_time_ns\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_burst:duration\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_burst:central_freq\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_burst:bandwidth\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_burst:amplitude\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_burst:snr\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_burst:confidence\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_burst:event_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
+fputs( "      <Stream Name=\"sngl_burst:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SNGL_BURST_ROW \
 "         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%g,%g,%g,%g,%g,%g,\"sngl_burst:event_id:%u\""
@@ -207,30 +207,30 @@ fputs( "      <Stream Name=\"sngl_ringdowngroup:sngl_ringdown:table\" Type=\"Loc
 "         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%22.16e,%e,%e,%e,%e,%e,%e,%d,%e,%e,%e,%e,%e,%e,%22.16e,\"sngl_ringdown:event_id:%lld\""    
 
 #define PRINT_LIGOLW_XML_SIM_BURST(fp) ( \
-fputs( "   <Table Name=\"sim_burstgroup:sim_burst:table\">\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_burstgroup:sim_burst:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sim_burstgroup:sim_burst:waveform\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_burstgroup:sim_burst:geocent_peak_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_burstgroup:sim_burst:geocent_peak_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_burstgroup:sim_burst:h_peak_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_burstgroup:sim_burst:h_peak_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_burstgroup:sim_burst:l_peak_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_burstgroup:sim_burst:l_peak_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_burstgroup:sim_burst:peak_time_gmst\" Type=\"real_8\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_burstgroup:sim_burst:dtminus\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_burstgroup:sim_burst:dtplus\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_burstgroup:sim_burst:longitude\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_burstgroup:sim_burst:latitude\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_burstgroup:sim_burst:coordinates\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_burstgroup:sim_burst:polarization\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_burstgroup:sim_burst:hrss\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_burstgroup:sim_burst:hpeak\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_burstgroup:sim_burst:distance\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_burstgroup:sim_burst:freq\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_burstgroup:sim_burst:tau\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_burstgroup:sim_burst:zm_number\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_burstgroup:sim_burst:simulation_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
-fputs( "      <Stream Name=\"sim_burstgroup:sim_burst:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
+fputs( "   <Table Name=\"sim_burst:table\">\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_burst:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sim_burst:waveform\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_burst:geocent_peak_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_burst:geocent_peak_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_burst:h_peak_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_burst:h_peak_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_burst:l_peak_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_burst:l_peak_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_burst:peak_time_gmst\" Type=\"real_8\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_burst:dtminus\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_burst:dtplus\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_burst:longitude\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_burst:latitude\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_burst:coordinates\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_burst:polarization\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_burst:hrss\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_burst:hpeak\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_burst:distance\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_burst:freq\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_burst:tau\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_burst:zm_number\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_burst:simulation_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
+fputs( "      <Stream Name=\"sim_burst:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SIM_BURST_ROW \
 "         \"process:process_id:0\",\"%s\",%d,%d,%d,%d,%d,%d,%22.16e,%e,%e,%e,%e,\"%s\",%e,%e,%e,%e,%e,%e,%d,\"sim_burst:simulation_id:%lld\""
