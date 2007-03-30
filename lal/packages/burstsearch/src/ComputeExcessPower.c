@@ -38,7 +38,7 @@ int XLALComputeExcessPower(
 
 			for(channel = tile->channel0; channel < tile->channel0 + tile->channels; channel++) {
 				sum += plane->channel[channel]->data[t];
-				hsum += plane->channel[channel]->data[t] * plane->channel_rms->data[channel];
+				hsum += (plane->channel[channel]->data[t] - 1) * plane->channel_rms->data[channel];
 			}
 
 			sumsquares += sum * sum / (tile->channels + channel_overlap);
