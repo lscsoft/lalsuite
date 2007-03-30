@@ -178,6 +178,7 @@ simulated data.
 [\option{--dump-diagnostics~\parm{XML filename}}] \newline \hspace*{0.5in}
 \option{--filter-corruption}~\parm{samples} \newline \hspace*{0.5in}
 \option{--frame-cache}~\parm{cache file} \newline \hspace*{0.5in}
+[\option{--gaussian-noise-rms}~\parm{RMS}] \newline \hspace*{0.5in}
 \option{--gps-end-time}~\parm{seconds} \newline \hspace*{0.5in}
 \option{--gps-start-time}~\parm{seconds} \newline \hspace*{0.5in}
 [\option{--help}] \newline \hspace*{0.5in}
@@ -189,7 +190,7 @@ simulated data.
 \option{--max-tileduration}~\parm{sec.s} \newline \hspace*{0.5in}
 [\option{--mdc-cache}~\parm{cache file}] \newline \hspace*{0.5in}
 [\option{--mdc-channel}~\parm{channel name}] \newline \hspace*{0.5in}
-[\option{--gaussian-noise-rms}~\parm{RMS}] \newline \hspace*{0.5in}
+[\option{--output}~\parm{file name}] \newline \hspace*{0.5in}
 \option{--psd-average-method}~\parm{method} \newline \hspace*{0.5in}
 \option{--psd-average-points}~\parm{samples} \newline \hspace*{0.5in}
 [\option{--ram-limit}~\parm{MebiBytes}] \newline \hspace*{0.5in}
@@ -284,6 +285,14 @@ Set the name of the data channel to analyze to \parm{string}.  This must
 match the name of one of the data channels in the input frame files.  For
 example, ``\verb|H2:LSC-AS_Q|''.
 
+\item[\option{--confidence-threshold} \parm{threshold}]
+Set the confidence threshold below which events should be discarded.  The
+``confidence'' of an event is \(-\ln P(\text{event} | \text{stationary
+Gaussian white noise})\), so an event with a confidence of 30 has a
+probability of \(\ee^{-30}\) of being found in stationary Gaussian white
+noise.  LIGO strain outputs are not stationary, and so a typical,
+practical, threshold is 70 or higher.
+
 \item[\option{--debug-level} \parm{level}]
 Sets the LAL debug level to \parm{level}.  The default value is
 \texttt{LALMSGLVL2}.  A useful setting is 65 which turns off memory
@@ -308,6 +317,12 @@ cache file \parm{cache file}.  LAL frame cache files are explained in the
 ``framedata'' package in LAL and can be constructed by making calls to
 \prog{LSCDataFind} on some systems.  One of \option{--frame-cache}, or
 \option{--gaussian-noise-rms} must be specified.
+
+\item[\option{--gaussian-noise-rms} \parm{RMS}]
+If this parameter is provided instead of \option{--frame-cache}, then
+Gaussian white noise will be synthesized and used as the input data.  One
+of \option{--frame-cache}, or \option{--gaussian-noise-rms} must be
+specified.
 
 \item[\option{--gps-end-time} \parm{seconds}]
 Set the GPS time up to which input data should be read to \parm{seconds}.
@@ -335,14 +350,6 @@ injections to be made.   The file should contain a \verb+sim_inspiral+ table
 which is used to set information about the types of inspiral injections to be made.
 This file may be constructed by hand, the
 \verb+lalapps_bbhinj+ program described in the Inspiral package   
-
-\item[\option{--confidence-threshold} \parm{threshold}]
-Set the confidence threshold below which events should be discarded.  The
-``confidence'' of an event is \(-\ln P(\text{event} | \text{stationary
-Gaussian white noise})\), so an event with a confidence of 30 has a
-probability of \(\ee^{-30}\) of being found in stationary Gaussian white
-noise.  LIGO strain outputs are not stationary, and so a typical,
-practical, threshold is 70 or higher.
 
 \item[\option{--low-freq-cutoff} \parm{Hz}]
 Set the lowest frequency at which to search for gravitational waves to
@@ -374,11 +381,15 @@ locations of MDC frames to be used for injections.
 Use the data found in the channel \parm{channel name} in the MDC frames for
 injections.
 
-\item[\option{--gaussian-noise-rms} \parm{RMS}]
-If this parameter is provided instead of \option{--frame-cache}, then
-Gaussian white noise will be synthesized and used as the input data.  One
-of \option{--frame-cache}, or \option{--gaussian-noise-rms} must be
-specified.
+\item[\option{--output} \parm{file name}]
+Set the name of the LIGO Light Weight XML file to which results will be
+written.  The default is
+``\parm{instrument}\_POWER\_\parm{comment}-\parm{start}-\parm{duration}.xml''.
+Where \parm{instrument} is derived from the name of the channel being
+analyzed, and \parm{comment} is obtained from the command line.
+\parm{start} is the integar part of the GPS start time from the command
+line, and \parm{duration} is the difference of the integer parts of the
+GPS start and end times from the command line.
 
 \item[\option{--psd-average-method} \parm{method}]
 Set the averaging method used in determining the average power spectral
