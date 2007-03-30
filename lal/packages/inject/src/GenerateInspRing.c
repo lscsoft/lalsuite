@@ -145,6 +145,7 @@ XLALGenerateInspRing(
 
   /* estimate the final angular momentum */
   orbAngMom = 4 * inspiralInj->eta * 0.7;
+  mTot = inspiralInj->mass1 + inspiralInj->mass2;
 
   Jx = orbAngMom * sin(inspiralInj->inclination) + 
     (inspiralInj->spin1x * inspiralInj->mass1 * inspiralInj->mass1 + 
@@ -164,10 +165,11 @@ XLALGenerateInspRing(
       "Jx = %.2f, Jy = %.2f, Jz = %.2f\n", Jx, Jy, Jz);
   XLALPrintInfo( "Estimated Final Spin = %.2f\n", totalAngMom );
 
-  mTot = inspiralInj->mass1 + inspiralInj->mass2;
+  /* estimate the final mass */
+  XLALPrintInfo( "Total inspiral mass = %.2f\n", mTot );
+  mTot *= (1 - 0.01 * (1.0 + 6.0 * totalAngMom * totalAngMom ) );
   ringInj->mass = mTot;
-  XLALPrintInfo( "Estimated Final Mass (equal total inspiral mass) = %.2f",
-      ringInj->mass );
+  XLALPrintInfo( "Estimated Final Mass = %.2f\n", ringInj->mass );
 
   /* populate the ring params */
   ringInj->spin = totalAngMom < 0.99 ? totalAngMom : 0.95;

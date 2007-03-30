@@ -138,37 +138,47 @@ SimInspiralTable* XLALRandomInspiralMasses(
     REAL4  maxTotalMass      /**< maximum total mass of binary */
     )
 {       
-  REAL4 mtotal;
-  if (mDist == uniformComponentMass)
-  {
-    /* uniformly distributed mass1 and uniformly distributed mass2 */
-    inj->mass1 = mass1Min + XLALUniformDeviate( randParams ) * 
-      (mass1Max - mass1Min);
-    inj->mass2 = mass2Min + XLALUniformDeviate( randParams ) * 
-      (mass2Max - mass2Min);
-    mtotal = inj->mass1 + inj->mass2 ;
-  }
-  else if ( mDist == uniformTotalMass )
-  {
-    /*uniformly distributed total mass */
-    REAL4 minMass= mass1Min + mass2Min;
-    REAL4 maxMass= mass1Max + mass2Max;
-    mtotal = minMass + XLALUniformDeviate( randParams ) * (maxMass - minMass);
-    inj->mass1 = mass1Min + 
-      XLALUniformDeviate( randParams ) * (mass1Max - mass1Min);
-    inj->mass2 = mtotal - inj->mass1;
+  REAL4 mTotal = maxTotalMass +1;
 
-    while (inj->mass1 >= mtotal || inj->mass2 >= mass2Max || 
-        inj->mass2 <= mass2Min ) 
+  while ( mTotal > maxTotalMass )
+  {
+
+    if ( mDist == uniformComponentMass )
     {
-      inj->mass1 = mass1Min + 
-        XLALUniformDeviate( randParams ) * (mass1Max - mass1Min);
-      inj->mass2 = mtotal - inj->mass1;
+      /* uniformly distributed mass1 and uniformly distributed mass2 */
+      inj->mass1 = mass1Min + XLALUniformDeviate( randParams ) * 
+        (mass1Max - mass1Min);
+      inj->mass2 = mass2Min + XLALUniformDeviate( randParams ) * 
+        (mass2Max - mass2Min);
+      mTotal = inj->mass1 + inj->mass2 ;
+    }
+    else if ( mDist == logComponentMass )
+    {
+      /* distributed logarithmically in mass1 and mass2 */
+      inj->mass1 = exp( log(mass1Min) + XLALUniformDeviate( randParams ) *
+          (log(mass1Max) - log(mass1Min) ) );
+      inj->mass2 = exp( log(mass2Min) + XLALUniformDeviate( randParams ) *
+          (log(mass2Max) - log(mass2Min) ) );
+      mTotal = inj->mass1 + inj->mass2;
+    }
+    else if ( mDist == uniformTotalMass )
+    {
+      /*uniformly distributed total mass */
+      REAL4 minMass= mass1Min + mass2Min;
+      REAL4 maxMass= mass1Max + mass2Max;
+      mTotal = minMass + XLALUniformDeviate( randParams ) * (maxMass - minMass);
+      inj->mass2 = -1.0;
+      while( inj->mass2 > mass2Max || inj->mass2 <= mass2Min )
+      {
+        inj->mass1 = mass1Min + 
+          XLALUniformDeviate( randParams ) * (mass1Max - mass1Min);
+        inj->mass2 = mTotal - inj->mass1;
+      }
     }
   }
 
-  inj->eta = inj->mass1 * inj->mass2 / ( mtotal * mtotal );
-  inj->mchirp = mtotal * pow(inj->eta, 0.6);
+  inj->eta = inj->mass1 * inj->mass2 / ( mTotal * mTotal );
+  inj->mchirp = mTotal * pow(inj->eta, 0.6);
 
   return ( inj );
 }  
@@ -365,7 +375,7 @@ COMPLEX8FrequencySeries *generateActuation(
     num->data[k].re = 1.0 * ETMcal;
     num->data[k].im = 0.0;
   }
-  
+
   XLALCCVectorDivide( resp->data, num, denom);
   XLALDestroyCOMPLEX8Vector( num );
   XLALDestroyCOMPLEX8Vector( denom );

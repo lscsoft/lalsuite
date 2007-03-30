@@ -45,6 +45,7 @@ typedef enum
   massFromSourceFile,
   uniformTotalMass,
   uniformComponentMass,
+  logComponentMass,
   gaussianMassDist
 } 
 MassDistribution;
