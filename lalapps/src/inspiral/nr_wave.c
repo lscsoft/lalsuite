@@ -88,10 +88,11 @@ int main( int argc, char *argv[] )
 {
   LALStatus status = blank_status;
 
-  int i;                                 /* loop counter */
-  int num_ifos;                          /* number of ifos */
+  int i;                                 /* loop counter                   */
+  int num_ifos;                          /* number of ifos                 */
 
-  INT4 modeLlo, modeLhi;                 /* lowest and highest values of l to inject */
+  INT4 modeLlo = -1;                     /* lowest value of l to inject    */
+  INT4 modeLhi = -1;                     /* highest values of l to inject  */
   INT4 modeL, modeM;                     /* mode indices of NR waves */
   
   CHAR *injectionFile = NULL;            /* name of file containing injs   */
@@ -400,6 +401,20 @@ int main( int argc, char *argv[] )
   if ( nrDataDir == NULL )
   {
     fprintf( stderr, "--nr-data-dir must be specified\n" );
+    exit( 1 );
+  }
+
+  /* lowest value of l */
+  if ( modeLlo == -1 )
+  {
+    fprintf( stderr, "--modeL-lo must be specified\n" );
+    exit( 1 );
+  }
+
+  /* highest value of l */
+  if (modeLhi == -1 )
+  {
+    fprintf( stderr, "--modeL-hi must be specified\n" );
     exit( 1 );
   }
 
