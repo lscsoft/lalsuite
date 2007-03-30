@@ -33,6 +33,7 @@ elif host.find('ldas-grid')>=0:
 else:
         path  		= '/home/cokelaer/lscsoft/lalapps/src/findchirp/'
 
+executable_name = 'lalapps_BankEfficiency'
 
 
 def set_predefined_search_parameter(BE):
@@ -156,7 +157,7 @@ def create_dag_file(njobs):
 def create_finalise_script(BE, options):
         fp = open('finalise.sh', 'w')
         fp.write('#!/bin/sh\n')
-        fp.write('rm -f temp.dat ; find . -name "out_*" | awk \'{print "cat  " $1 ">> temp.dat"}\' > Trigger.dat\n')
+        fp.write('rm -f Trigger.dat ; find . -name "out_*" | awk \'{print "cat  " $1 ">> Trigger.dat"}\' > script.sh; chmod 755 script.sh ; ./script.sh; \n')
         fp.write('cp TMPLTBANK.xml BE_Bank.xml\n')
         fp.write(path+executable_name +' --ascii2xml --template EOB --signal EOB\n')
         fp.write('mv Trigger.xml Trigger_' + BE['noise-model'] +'_'+str(BE['fl'])+'_'+options.search+'_'+BE['bank-grid-spacing']+'_'+BE['template'])
