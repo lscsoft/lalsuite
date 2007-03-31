@@ -134,21 +134,20 @@ int main( int argc, char *argv[] )
   CHAR   cohdataStr[LALNameLength];
   CHAR   caseIDChars[6][LIGOMETA_IFOS_MAX] = {"0","0","0","0","0","0"};
 
-  INT4   cohSegLength     = 4; /* should match hardcoded value in inspiral.c */
-  INT4   numPoints        = 0;
-  UINT4  numSegments      = 1;      /* number of segments */
-  UINT4  numBeamPoints    = 3721;   /* number of sky position templates */
-  UINT4  nCohDataFr       = 0;
-  UINT8  eventID          = 0;
+  INT4   segLength       = 4; /* should match hardcoded value in inspiral.c */
+  INT4   numPoints       = 0;
+  UINT4  numSegments     = 1;      /* number of segments */
+  UINT4  nCohDataFr      = 0;
+  UINT8  eventID         = 0;
 
-  REAL4  m1               = 0.0;
-  REAL4  m2               = 0.0;
-  REAL4  dynRange         = 0.0;
+  REAL4  m1              = 0.0;
+  REAL4  m2              = 0.0;
+  REAL4  dynRange        = 0.0;
 
   /* variables for initializing tempTime to account for time-slides */
-  UINT8  triggerNumber    = 0;
-  UINT8  slideNumber      = 0;
-  UINT8  slideSign        = 0;
+  UINT8  triggerNumber   = 0;
+  UINT8  slideNumber     = 0;
+  UINT8  slideSign       = 0;
 
   /* counters and other variables */
   INT4   j,k,l,w,kmax;
@@ -160,29 +159,28 @@ int main( int argc, char *argv[] )
   INT4   numTriggers      = 0;
   INT4   numCoincs        = 0;
 
-  FrCache      *frInCache   = NULL;
+  FrCache              *frInCache        = NULL;
 
-  SnglInspiralTable    *currentTrigger = NULL;
-  SnglInspiralTable    *cohbankEventList=NULL;
+  SnglInspiralTable    *currentTrigger   = NULL;
+  SnglInspiralTable    *cohbankEventList = NULL;
 
   CoincInspiralTable   *coincHead = NULL;
   CoincInspiralTable   *thisCoinc = NULL;
 
-  SearchSummvarsTable  *inputFiles = NULL;
+  SearchSummvarsTable  *inputFiles     = NULL;
   SearchSummaryTable   *searchSummList = NULL;
 
 
-  NullStatInitParams   *nullInspInitParams = NULL;
-  NullStatParams       *nullInspFilterParams = NULL;
-  NullStatInputInput   *nullInspFilterInput = NULL;
-  NullStatCVector      *nullInspCVec = NULL;
-  MultiInspiralTable   *thisEvent = NULL;
-  MultiInspiralTable   *tempTable = NULL;
-  MetadataTable        savedEvents;
-  COMPLEX8TimeSeries   tempSnippet;
+  NullStatInitParams      *nullStatInitParams   = NULL;
+  NullStatParams          *nullStatParams       = NULL;
+  NullStatInputParams     *nullStatInputParams  = NULL;
+  NullStatCVector         *nullStatCVec         = NULL;
+  MultiInspiralTable      *thisEvent            = NULL;
+  MultiInspiralTable      *tempTable            = NULL;
+  MetadataTable           savedEvents;
+  COMPLEX8TimeSeries      tempSnippet;
 
-  char nameArrayBeam[6][256] = {"0","0","0","0","0","0"}; /*beam files*/
-  char nameArrayCData[6][256] = {"0","0","0","0","0","0"};/*cData chan names*/
+  char nameArrayCData[6][256] = {"0","0","0","0","0","0"}; /*cData chan names*/
 
   set_debug_level( "1" ); /* change with parse option */
 
@@ -190,7 +188,7 @@ int main( int argc, char *argv[] )
   dynRange = pow( 2.0, dynRangeExponent );
 
   /* set other variables */
-  numPoints = sampleRate * cohSegLength;
+  numPoints = sampleRate * segLength;
   savedEvents.multiInspiralTable = NULL;
   k = 0;
 
@@ -340,11 +338,11 @@ int main( int argc, char *argv[] )
 
       /* Initialize the necessary structures for thisCoinc-ident trigger*/
 
-      if( !(nullStatInitParams = (NullStatisticInitParams *) 
-          calloc(1,sizeof(NullStatisticInitParams)) ))
+      if( !(nullStatInitParams = (NullStatInitParams *) 
+          calloc(1,sizeof(NullStatInitParams)) ))
       {
         fprintf( stdout, 
-         "could not allocate memory for nullInspiral init params\n" );
+         "could not allocate memory for nullStat init params\n" );
         goto cleanexit;
       }
 
@@ -352,7 +350,6 @@ int main( int argc, char *argv[] )
       nullStatInitParams->numDetectors    = numDetectors;
       nullStatInitParams->numSegments     = numSegments;
       nullStatInitParams->numPoints       = numPoints;
-      nullStatInitParams->numBeamPoints   = numBeamPoints;
       nullStatInitParams->nullStatOut     = nullStatOut;
 
       /* create the data structures needed */
@@ -360,7 +357,7 @@ int main( int argc, char *argv[] )
       if ( verbose ) fprintf( stdout, "initializing...\n " );
 
       /* initialize null statistic functions */
-      LAL_CALL( LALNullStatisticInputInit (&status, &nullStatInput,
+      LAL_CALL( LALNullStatisticInputInit (&status, &nullStatInputParams,
                 nullStatInitParams), &status );
 
       m1 = thisCoinc->snglInspiral[kmax]->mass1;
@@ -375,18 +372,18 @@ int main( int argc, char *argv[] )
       nullStatInput->tmplt->eta = (m1 * m2) / ((m1 + m2) * (m1 + m2 ));
 
       if (verbose)  fprintf( stdout, "m1:%f m2:%f totalmass:%f mu:%f eta%f\n", 
-         m1, m2,nullStatInput->tmplt->totalMass,nullStatInput->tmplt->mu,
-         nullStatInput->tmplt->eta);
+         m1, m2,nullStatInputParams->tmplt->totalMass,nullStatInput->tmplt->mu,
+         nullStatInputParams->tmplt->eta);
 
        LAL_CALL( LALNullStatisticParamsInit (&status, &nullStatParams,
                  nullStatInitParams),&status );
 
-       nullStatParams->deltaT                  = 1/((REAL4) sampleRate);  
-       nullStatParams->cohSNRThresh            = nullStatThresh;
-       nullStatParams->cohSNROut               = nullStatOut;
-       nullStatParams->numTmplts               = 1;
-       nullStatParams->fLow                    = fLow;
-       nullStatParams->maximizeOverChirp       = maximizeOverChirp;
+       nullStatParams->deltaT           = 1/((REAL4) sampleRate);  
+       nullStatParams->cohSNRThresh     = nullStatThresh;
+       nullStatParams->cohSNROut        = nullStatOut;
+       nullStatParams->numTmplts        = 1;
+       nullStatParams->fLow             = fLow;
+       nullStatParams->maxOverChirp     = maximizeOverChirp;
 
        for( j=0; j<LAL_NUM_IFO; j++ )  /* what does this do??? */
        {
