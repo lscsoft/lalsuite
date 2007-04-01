@@ -70,7 +70,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 		XLALDestroyREAL8Sequence(channel_rms);
 		LALFree(channel);
 		XLALDestroyTFTiling(tiling);
-		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 	for(i = 0; i < channels; i++) {
 		channel[i] = XLALCreateREAL4Sequence(tseries_length);
