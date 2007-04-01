@@ -44,7 +44,7 @@ TFTiling *XLALCreateTFTiling(
 	REAL8 plane_deltaF,
 	UINT4 plane_num_channels,
 	UINT4 tiling_tstart,
-	INT4 inv_fractional_stride,
+	UINT4 inv_fractional_stride,
 	REAL8 maxTileBandwidth,
 	REAL8 maxTileDuration
 )
@@ -68,11 +68,15 @@ TFTiling *XLALCreateTFTiling(
 	/* tile size limits */
 	const unsigned min_tbins = 1.0 / maxTileBandwidth / plane_deltaT;
 	const unsigned max_tbins = maxTileDuration / plane_deltaT;
+	const unsigned min_channels = 1 / (max_tbins * plane_deltaT * plane_deltaF);
 	const unsigned max_channels = maxTileBandwidth / plane_deltaF;
 	const int maxDOF = (2 * max_tbins * max_channels) * plane_deltaT * plane_deltaF;
 
 	/* check the tile size limits */
-	if((tmax < tiling_tstart + max_tbins) || (plane_num_channels < max_channels))
+	if((min_tbins < inv_fractional_stride) ||
+	   (min_channels < inv_fractional_stride) ||
+	   (tmax < tiling_tstart + max_tbins) ||
+	   (plane_num_channels < max_channels))
 		XLAL_ERROR_NULL(func, XLAL_EINVAL);
 
 	/* Count the tiles */

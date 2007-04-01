@@ -64,7 +64,7 @@ XLALCreateTFTiling(
 	REAL8 plane_deltaF,
 	UINT4 plane_num_channels,
 	UINT4 tiling_tstart,
-	INT4 inv_fractional_stride,
+	UINT4 inv_fractional_stride,
 	REAL8 maxTileBandwidth,
 	REAL8 maxTileDuration
 );
