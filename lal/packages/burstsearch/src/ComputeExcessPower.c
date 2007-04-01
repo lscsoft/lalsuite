@@ -8,6 +8,7 @@ $Id$
 
 NRCSID (COMPUTEEXCESSPOWERC, "$Id$");
 
+#include <lal/Sequence.h>
 #include <lal/TFTransform.h>
 #include <lal/Thresholds.h>
 #include <lal/XLALError.h>
@@ -25,20 +26,21 @@ int XLALComputeExcessPower(
 	for(i = 0; i < plane->tiling->numtiles; i++) {
 		TFTile *tile = &plane->tiling->tile[i];
 		const double channel_overlap = XLALREAL8SequenceSum(plane->channel_overlap, tile->channel0, tile->channels - 1);
+		const double pixel_mean_square = XLALREAL8SequenceSumSquares(plane->channel_rms, tile->channel0, tile->channels) / (tile->channels + channel_overlap);
 		const double dof = XLALTFTileDegreesOfFreedom(tile);
-		const unsigned tstep = tile->tbins / dof;
+		const unsigned tstep = (tile->tend - tile->tstart) / dof;
 		double sumsquares = 0.0;
 		double hsumsquares = 0.0;
 		unsigned t;
 
-		for(t = tile->tstart + tstep / 2; t < tile->tstart + tile->tbins; t += tstep) {
+		for(t = tile->tstart + tstep / 2; t < tile->tend; t += tstep) {
 			unsigned channel;
 			double sum = 0.0;
 			double hsum = 0.0;
 
 			for(channel = tile->channel0; channel < tile->channel0 + tile->channels; channel++) {
 				sum += plane->channel[channel]->data[t];
-				hsum += (plane->channel[channel]->data[t] - 1) * plane->channel_rms->data[channel];
+				hsum += plane->channel[channel]->data[t] * plane->channel_rms->data[channel];
 			}
 
 			sumsquares += sum * sum / (tile->channels + channel_overlap);
@@ -46,7 +48,7 @@ int XLALComputeExcessPower(
 		}
 
 		tile->excessPower = sumsquares - dof;
-		tile->hrss = sqrt(hsumsquares);
+		tile->hrss = sqrt(hsumsquares - dof * pixel_mean_square);
 		tile->confidence = -XLALlnOneMinusChisqCdf(sumsquares, dof);
 		if(XLALIsREAL8FailNaN(tile->confidence))
 			XLAL_ERROR(func, XLAL_EFUNC);

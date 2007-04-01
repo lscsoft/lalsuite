@@ -19,7 +19,7 @@ NRCSID(CREATETFTILINGC, "$Id$");
 
 REAL8 XLALTFTileDegreesOfFreedom(const TFTile *tile)
 {
-	return((2 * tile->tbins * tile->channels) * tile->deltaT * tile->deltaF);
+	return((2 * (tile->tend - tile->tstart) * tile->channels) * tile->deltaT * tile->deltaF);
 }
 
 
@@ -102,7 +102,7 @@ TFTiling *XLALCreateTFTiling(
 		tile->channel0 = channel0;
 		tile->channels = channels;
 		tile->tstart = tstart;
-		tile->tbins = tbins;
+		tile->tend = tstart + tbins;
 		tile->flow = plane_flow;
 		tile->deltaT = plane_deltaT;
 		tile->deltaF = plane_deltaF;

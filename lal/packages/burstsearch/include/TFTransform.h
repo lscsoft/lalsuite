@@ -29,7 +29,7 @@ typedef struct tagTFTile {
 	UINT4 channel0;
 	UINT4 channels;
 	UINT4 tstart;
-	UINT4 tbins;
+	UINT4 tend;
 	/* time-frequency plane parameters for reconstructing tile dimensions */
 	REAL8 flow;
 	REAL8 deltaT;

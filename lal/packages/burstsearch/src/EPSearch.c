@@ -70,7 +70,7 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 	event->start_time = *epoch; 
  
 	XLALGPSAdd(&event->start_time, tile->tstart * tile->deltaT);
-	event->duration = tile->tbins * tile->deltaT;
+	event->duration = (tile->tend - tile->tstart) * tile->deltaT;
 	event->peak_time = event->start_time;
 	XLALGPSAdd(&event->peak_time, 0.5 * event->duration);
 	event->bandwidth = tile->channels * tile->deltaF;
