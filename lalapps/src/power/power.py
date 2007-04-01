@@ -76,8 +76,16 @@ def make_dag_directories(config_parser):
 	os.mkdir(get_out_dir(config_parser))
 
 
+def get_parents_per_binjfind(config_parser):
+	return config_parser.getint("pipeline", "parents_per_binjfind")
+
+
 def get_parents_per_bucluster(config_parser):
 	return config_parser.getint("pipeline", "parents_per_bucluster")
+
+
+def get_parents_per_bucut(config_parser):
+	return config_parser.getint("pipeline", "parents_per_bucut")
 
 
 #
@@ -503,10 +511,12 @@ def init_job_types(config_parser, types = ["datafind", "binj", "power", "lladd",
 	# ligolw_binjfind
 	if "binjfind" in types:
 		binjfindjob = BinjfindJob(config_parser)
+		binjfindjob.parents_per_binjfind = get_parents_per_binjfind(config_parser)
 
 	# ligolw_bucut
 	if "bucut" in types:
 		bucutjob = BucutJob(config_parser)
+		bucutjob.parents_per_bucut = get_parents_per_bucut(config_parser)
 
 	# ligolw_bucluster
 	if "bucluster" in types:
@@ -626,17 +636,6 @@ def make_power_fragment(dag, parents, instrument, seg, tag, framecache, injargs 
 	return [node]
 
 
-def make_bucut_fragment(dag, parents, instrument, seg, tag):
-	node = BucutNode(bucutjob)
-	node.set_name("ligolw_bucut_%s_%s_%s_%s" % (instrument, tag, int(seg[0]), int(abs(seg))))
-	for parent in parents:
-		node.add_parent(parent)
-		node.add_input_cache(parent.get_output_cache())
-	node.add_macro("macrocomment", tag)
-	dag.add_node(node)
-	return [node]
-
-
 def make_binj_fragment(dag, seg, tag, offset, flow, fhigh):
 	# determine frequency ratio from number of injections across band
 	# (take a bit off to allow fhigh to be picked up despite round-off
@@ -662,12 +661,40 @@ def make_binj_fragment(dag, seg, tag, offset, flow, fhigh):
 	return [node]
 
 
+def make_binjfind_fragment(dag, parents, tag):
+	nodes = []
+	for first in xrange(0, len(parents), binjfindjob.parents_per_binjfind):
+		node = BinjfindNode(binjfindjob)
+		node.set_name("ligolw_binjfind_%s_%d" % (tag, first))
+		for parent in parents[first:first + binjfindjob.parents_per_binjfind]:
+			node.add_parent(parent)
+			node.add_input_cache(parent.get_output_cache())
+		node.add_macro("macrocomment", tag)
+		dag.add_node(node)
+		nodes.append(node)
+	return nodes
+
+
 def make_bucluster_fragment(dag, parents, instrument, seg, tag):
 	nodes = []
 	for first in xrange(0, len(parents), buclusterjob.parents_per_bucluster):
 		node = BuclusterNode(buclusterjob)
-		node.set_name("ligolw_bucluster_%s_%s_%s_%s_%d" % (instrument, tag, int(seg[0]), int(abs(seg)), first))
+		node.set_name("ligolw_bucluster_%s_%s_%d_%d_%d" % (instrument, tag, int(seg[0]), int(abs(seg)), first))
 		for parent in parents[first:first + buclusterjob.parents_per_bucluster]:
+			node.add_parent(parent)
+			node.add_input_cache(parent.get_output_cache())
+		node.add_macro("macrocomment", tag)
+		dag.add_node(node)
+		nodes.append(node)
+	return nodes
+
+
+def make_bucut_fragment(dag, parents, tag):
+	nodes = []
+	for first in xrange(0, len(parents), bucutjob.parents_per_bucut):
+		node = BucutNode(bucutjob)
+		node.set_name("ligolw_bucut_%s_%d" % (tag, first))
+		for parent in parents[first:first + bucutjob.parents_per_bucut]:
 			node.add_parent(parent)
 			node.add_input_cache(parent.get_output_cache())
 		node.add_macro("macrocomment", tag)
@@ -678,18 +705,7 @@ def make_bucluster_fragment(dag, parents, instrument, seg, tag):
 
 def make_burca_fragment(dag, parents, instrument, seg, tag):
 	node = BurcaNode(burcajob)
-	node.set_name("ligolw_burca_%s_%s_%s_%s" % (instrument, tag, int(seg[0]), int(abs(seg))))
-	for parent in parents:
-		node.add_parent(parent)
-		node.add_input_cache(parent.get_output_cache())
-	node.add_macro("macrocomment", tag)
-	dag.add_node(node)
-	return [node]
-
-
-def make_binjfind_fragment(dag, parents, instrument, seg, tag):
-	node = BinjfindNode(binjfindjob)
-	node.set_name("ligolw_binjfind_%s_%s_%s_%s" % (instrument, tag, int(seg[0]), int(abs(seg))))
+	node.set_name("ligolw_burca_%s_%s_%d_%d" % (instrument, tag, int(seg[0]), int(abs(seg))))
 	for parent in parents:
 		node.add_parent(parent)
 		node.add_input_cache(parent.get_output_cache())
@@ -780,12 +796,11 @@ def make_injection_segment_fragment(dag, datafindnodes, binjnodes, segment, inst
 #
 
 
-def make_coinc_fragment(dag, power_parents, time_slides_cache, segment, tag, binjnodes = None, clustering = False):
+def make_coinc_fragment(dag, power_parents, time_slides_cache, segment, tag, binjnodes = [], clustering = False):
 	# generate a bucluster node to pre-process all input files if
-	# clustering has been enabled (doing a first pass before lladd
+	# clustering has been enabled.  doing a first pass before lladd
 	# keeps file sizes small to lower the risk of lladd running out of
-	# memory, doing a single bucluster job for all input files reduces
-	# scheduler overhead)
+	# memory
 
 	if clustering:
 		nodes = make_bucluster_fragment(dag, power_parents, "ALL", segment, tag)
@@ -793,13 +808,20 @@ def make_coinc_fragment(dag, power_parents, time_slides_cache, segment, tag, bin
 		nodes = power_parents
 
 	# merge all input files using ligolw_add, including the time slides
-	# file
+	# file, and the injections file if needed.  it's not pretty
+	# including the injection file here, but this saves adding an extra
+	# lladd just prior to the binjfind.
 
 	nodes = make_lladd_fragment(dag, nodes, "ALL", segment, tag, preserves = time_slides_cache)
+	if len(nodes) != 1:
+		raise Exception, "woah, this script is broken!"
 
 	lladdnode = nodes[0]
 	lladdnode.add_input_cache(time_slides_cache)
 	lladdnode.set_output("ALL-%s-%s-%s.xml.gz" % (tag, int(segment[0]), int(abs(segment))))
+	for binj in binjnodes:
+		lladdnode.add_input_cache(binj.get_output_cache())
+		lladdnode.add_preserve_cache(binj.get_output_cache())
 
 	# add post-lladd clustering follow up if enabled
 
@@ -808,19 +830,5 @@ def make_coinc_fragment(dag, power_parents, time_slides_cache, segment, tag, bin
 
 	# run ligolw_burca
 
-	nodes = make_burca_fragment(dag, nodes, "ALL", segment, tag)
-
-	# add ligolw_binjfind if needed (precede by a ligolw_bucut to trim
-	# the injection list)
-
-	if binjnodes is not None:
-		for binj in binjnodes:
-			lladdnode.add_input_cache(binj.get_output_cache())
-			lladdnode.add_preserve_cache(binj.get_output_cache())
-		nodes = make_bucut_fragment(dag, nodes, "ALL", segment, tag)
-		nodes = make_binjfind_fragment(dag, nodes, "ALL", segment, tag)
-
-	# run ligolw_burca
-
-	return nodes
+	return make_burca_fragment(dag, nodes, "ALL", segment, tag)
 

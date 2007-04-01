@@ -241,7 +241,7 @@ def make_single_instrument_fragment(dag, options, instrument, seglist, binjnodes
 #
 
 
-def make_coinc_stage(dag, parents, tag, time_slides, time_slides_cache, binjnodes = None, clustering = False, verbose = False):
+def make_coinc_stage(dag, parents, tag, time_slides, time_slides_cache, binjnodes = [], clustering = False, verbose = False):
 	if not len(parents):
 		# no parents, so don't waste time doing anything
 		return []
@@ -291,6 +291,21 @@ def make_coinc_stage(dag, parents, tag, time_slides, time_slides_cache, binjnode
 #
 # =============================================================================
 #
+#                           Injection Identification
+#
+# =============================================================================
+#
+
+
+def make_binjfind_stage(dag, parents, tag, verbose = False):
+	if verbose:
+		print >>sys.stderr, "Adding injection identification nodes for tag = %s" % tag
+	return power.make_binjfind_fragment(dag, power.make_bucut_fragment(dag, parents, tag), tag)
+
+
+#
+# =============================================================================
+#
 #                               DAG Construction
 #
 # =============================================================================
@@ -315,7 +330,7 @@ dag.set_dag_file(os.path.splitext(filenames[0])[0])
 if options.do_injections:
 	binjnodes = power.make_multibinj_fragment(dag, options.seglistdict.extent_all(), "INJECTIONS_%s" % options.tag)
 else:
-	binjnodes = None
+	binjnodes = []
 
 
 #
@@ -337,8 +352,15 @@ for instrument, seglist in options.seglistdict.iteritems():
 #
 
 
-coinc_frags = make_coinc_stage(dag, sngl_inst_pwrfrags, options.tag, time_slides, options.time_slides, clustering = options.enable_clustering, verbose = options.verbose)
-coinc_frags += make_coinc_stage(dag, sngl_inst_injfrags, "INJECTIONS_%s" % options.tag, time_slides, options.time_slides, binjnodes = binjnodes, clustering = options.enable_clustering, verbose = options.verbose)
+# injections
+
+coinc_frags = make_coinc_stage(dag, sngl_inst_injfrags, "INJECTIONS_%s" % options.tag, time_slides, options.time_slides, binjnodes = binjnodes, clustering = options.enable_clustering, verbose = options.verbose)
+coinc_frags = make_binjfind_stage(dag, coinc_frags, "INJECTIONS_%s" % options.tag, verbose = options.verbose)
+
+
+# non-injections
+
+coinc_frags += make_coinc_stage(dag, sngl_inst_pwrfrags, options.tag, time_slides, options.time_slides, clustering = options.enable_clustering, verbose = options.verbose)
 
 
 #
