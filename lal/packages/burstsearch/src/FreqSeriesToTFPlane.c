@@ -43,7 +43,7 @@ static COMPLEX8FrequencySeries *generate_filter(
 	unsigned i;
 	REAL4 norm;
 
-	sprintf(filter_name, "channel %g +/- %g Hz", channel_flow + channel_width / 2, channel_width);
+	sprintf(filter_name, "channel %g +/- %g Hz", channel_flow + channel_width / 2, channel_width / 2);
 
 	/*
 	 * Channel filter is a Hann window twice the channel's width,
