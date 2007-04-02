@@ -32,9 +32,6 @@
 Excess power offline pipeline construction script.
 """
 
-__author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"
-__date__ = "$Date$"[5:-2]
-__version__ = "$Revision$"[11:-2]
 
 import ConfigParser
 import glob
@@ -44,6 +41,7 @@ import os
 import sys
 import tempfile
 
+
 from glue import pipeline
 from glue import segments
 from glue import segmentsUtils
@@ -52,6 +50,11 @@ from pylal import ligolw_cafe
 from pylal import llwapp
 from pylal.date import LIGOTimeGPS
 from lalapps import power
+
+
+__author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"
+__date__ = "$Date$"[5:-2]
+__version__ = "$Revision$"[11:-2]
 
 
 #
@@ -154,9 +157,10 @@ def remove_too_short_segments(seglistdict, powerjob):
 
 
 def compute_segment_lists(seglistdict, time_slides, minimum_gap, full_segments = True, verbose = False):
-	# CAUTION:  this function modifies seglistdict in place.
 	if verbose:
 		print >>sys.stderr, "constructing segment list ..."
+
+	seglistdict = seglistdict.copy()
 
 	if not full_segments:
 		# cull too-short single-instrument segments from the input
@@ -200,6 +204,9 @@ def compute_segment_lists(seglistdict, time_slides, minimum_gap, full_segments =
 
 	# remove segments that are too short
 	remove_too_short_segments(seglistdict, power.powerjob)
+
+	# done
+	return seglistdict
 
 
 #
@@ -314,7 +321,7 @@ def make_binjfind_stage(dag, parents, tag, verbose = False):
 
 time_slides = ligolw_cafe.get_time_slides(options.time_slides[0].path(), verbose = options.verbose, gz = options.time_slides[0].path()[-3:] == ".gz")
 
-compute_segment_lists(options.seglistdict, time_slides, options.minimum_gap, full_segments = options.full_segments, verbose = options.verbose)
+options.seglistdict = compute_segment_lists(options.seglistdict, time_slides, options.minimum_gap, full_segments = options.full_segments, verbose = options.verbose)
 
 power.make_dag_directories(config_parser)
 
