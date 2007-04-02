@@ -231,32 +231,7 @@ main (INT4 argc, CHAR **argv )
      }
  }
 
- /*
 
-if  ( userParam.dataCheckPoint )
-  {
-#ifdef LALAPPS_CONDOR
-     condor_compress_ckpt = 1;
-     if ( ckptPath[0] )
-      {
-        LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s-%d.ckpt",
-                     ckptPath, fileName, randIn.useed );
-      }
-      else
-      {
-        LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s-%d.ckpt", fileName, randIn.useed );
-     }
-      if ( vrbflg ) fprintf( stdout, "checkpointing to file %s\n", fname );
-       init_image_with_file_name( fname );
-     ckpt_and_exit();
-#else
-      fprintf( stderr, "--data-checkpoint cannot be used unless "
-             "lalapps is condor compiled\n" );
-      exit( 1 );
-#endif
-     }
-
- */
 
   /* --- Estimate the fft's plans --- */
   LAL_CALL(LALCreateForwardRealFFTPlan(&status, &fwdp, signal.length, 0), 
@@ -529,31 +504,6 @@ signal.data[i] = strainSegment->data[i].re;
 			    &OverlapOutputBestTemplate);
 	  /* We can also keep the best trigger in each template. */
 
-/*	if ( userParam.dataCheckPoint && (ntrials%10)==0 )
-	    {
-	fprintf(stderr, "checkpoiting at trial number %d\n", ntrials);
-	#ifdef LALAPPS_CONDOR
-	      condor_compress_ckpt = 1;
-	      if ( ckptPath[0] )
-	        {
-	          LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s-%d.ckpt",
-	                       ckptPath, fileName, randIn.useed );
-	        }
-	      else
-	        {
-	          LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s-%d.ckpt", fileName , randIn.useed);
-	        }
-	      if ( vrbflg ) fprintf( stdout, "checkpointing to file %s\n", fname );
-
-	      init_image_with_file_name( fname );
-	      ckpt_and_exit();
-	#else
-	      fprintf( stderr, "--data-checkpoint cannot be used unless "
-	               "lalapps is condor compiled\n" );
-	      exit( 1 );
-	#endif
-      }
-*/
 	}/*end of  bank process*/
 
       
@@ -3478,7 +3428,6 @@ void InitUserParametersIn(UserParametersIn *userParam)
   userParam->numSeconds   = -1;
   userParam->realNoise    = 0;
   userParam->inputPSD     = NULL;
-  userParam->dataCheckPoint                      = 0;
 }
 
 
@@ -3565,9 +3514,6 @@ ParseParameters(	INT4 			*argc,
 	}
       else if (!strcmp(argv[i],"--debug")) {
         BEParseGetInt(argv,  &i, &(lalDebugLevel)); 
-      }
-      else if (!strcmp(argv[i], "--data-checkpoint")) {
-	userParam->dataCheckPoint = 1;	
       }
       else if (!strcmp(argv[i], "--detector")) {
 	BEParseGetString(argv, &i);
@@ -4458,6 +4404,7 @@ void Help(void)
   fprintf(stderr, "\t[--print-best-overlap]\t\t print best overlap and other information\n");
   fprintf(stderr, "\t[--print-snr-histo]\t\t print histogram of the correlation output\n");
   fprintf(stderr, "\t[--print-bank]\t\t\t print the bank in ascii and xml format\n");
+  fprintf(stderr, "\t[--print-result-xml]\t\t\t print the results in an xml file\n");
   fprintf(stderr, "\t[--print-prototype]\t\t print a prototype to be used by condor script\n");
   fprintf(stderr, "\t[--fast-simulation]\t\t perform fast simulation in the case of SPA abnk\n");
   fprintf(stderr, "type --print-default to get the default values of the current version\n");
