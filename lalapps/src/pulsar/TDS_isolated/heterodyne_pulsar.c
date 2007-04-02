@@ -875,8 +875,8 @@ REAL8 freqfactor, FilterResponse *filtresp){
       }
       else{
         tdt = (t - T0Update) + emit.deltaT;
-	binOutput.deltaT = 0.;
-	binOutput2.deltaT = 0.;
+          binOutput.deltaT = 0.;
+          binOutput2.deltaT = 0.;
       }
       
       /** calculate df  = f*(dt(t2) - dt(t))/(t2 - t)  - here (t2 - t) is 1 sec */
@@ -990,8 +990,17 @@ duration, REAL8 scalefac, REAL8 highpass){
 
   /* get data */
   /* read in frame data */
-  if((frvect = FrFileIGetV(frfile, dblseries->name, time, (REAL8)duration)) == NULL)
+  if((frvect = FrFileIGetV(frfile, dblseries->name, time, (REAL8)duration)) == NULL){
+    FrFileIEnd(frfile);
     return NULL; /* couldn't read frame data */
+  }
+  
+  /* check if there was missing data within the frame(s) */
+  if(frvect->next){
+    FrFileIEnd(frfile);
+    return NULL; /* couldn't read frame data */
+  }
+    
   FrFileIEnd(frfile);
 
   /* fill into REAL8 vector */
