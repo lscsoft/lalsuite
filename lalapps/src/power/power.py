@@ -183,6 +183,7 @@ class PowerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 		"""
 		pipeline.CondorDAGJob.__init__(self, get_universe(config_parser), get_executable(config_parser, "lalapps_power"))
 		pipeline.AnalysisJob.__init__(self, config_parser)
+		self.add_condor_cmd("compress_files", "*.xml.gz")
 
 		self.add_ini_opts(config_parser, "lalapps_power")
 
@@ -222,31 +223,30 @@ class PowerNode(pipeline.AnalysisNode):
 
 	def get_output_cache(self):
 		"""
-		Returns a LAL cache of the output file name from the power
-		code. This must be kept synchronized with the name of the
-		output file in power.c.  Note in particular the calculation
-		of the "start" and "duration" parts of the name.
+		Returns a LAL cache of the output file name.  Calling this
+		method also induces the output name to get set, so it must
+		be at least once.
 		"""
-		if None in [self.get_start(), self.get_end(), self.get_ifo(), self.__usertag]:
-			raise ValueError, "start time, end time, ifo, or user tag has not been set"
 		seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
-		filename = "%s-POWER_%s-%d-%d.xml" % (self.get_ifo(), self.__usertag, int(self.get_start()), int(self.get_end()) - int(self.get_start()))
-
-		# Really this should be done somewhere else, but as long as
-		# we are using a DAG post-script to compress the output
-		# file, the only place we know for sure we know the name is
-		# in this function so we can only set the post script here.
-		# What if this function is never called?
+		filename = self.get_output()
+		# FIXME: condor's documentation claims that it will
+		# compress output files written by standard universe jobs.
+		# I did what the documentation says, and the files were not
+		# compressed.  Why?  Get rid of this post script when this
+		# gets figured out.
 		self.set_post_script("/usr/bin/gzip -f %s" % os.path.abspath(filename))
-		filename += ".gz"
-
-		return [CacheEntry(self.get_ifo(), self.__usertag, seg, "file://localhost" + os.path.abspath(filename))]
+		return [CacheEntry(self.get_ifo(), self.__usertag, seg, "file://localhost" + os.path.abspath(filename + ".gz"))]
 
 	def get_output_files(self):
 		raise NotImplementedError
 
 	def get_output(self):
-		raise NotImplementedError
+		if self._AnalysisNode__output is None:
+			if None in (self.get_start(), self.get_end(), self.get_ifo(), self.__usertag):
+				raise ValueError, "start time, end time, ifo, or user tag has not been set"
+			seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
+			self.set_output("%s-POWER_%s-%d-%d.xml" % (self.get_ifo(), self.__usertag, int(self.get_start()), int(self.get_end()) - int(self.get_start())))
+		return self._AnalysisNode__output
 
 	def set_mdccache(self, file):
 		"""
