@@ -461,8 +461,8 @@ tion, that value must be zero*/
   
    params->tC = count*dt;
    
-   params->fFinal = waveform.f->data->data[count-1];
-   /* params->fFinal = waveform.f->data->data[waveform.f->data->length - 1]; */ 
+   /* The highest harmonic has a frequency 3.5 times higher than the dominant */
+   params->fFinal = 3.5*waveform.f->data->data[count-1];
    
    *countback = count;
 
