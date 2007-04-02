@@ -229,8 +229,8 @@ XLALGenerateInspRing(
     XLAL_ERROR_NULL( "XLALCalculateNRStrain", XLAL_ENOMEM );
   }
 
-  memset(waveform->a->data->data + inputLength, 0, 
-      (outputLength - inputLength) * sizeof(REAL4 *) );
+  memset(waveform->a->data->data + 2 * inputLength, 0, 
+      2 * (outputLength - inputLength) * sizeof(REAL4 *) );
   XLALResizeREAL8TimeSeries( waveform->phi, 0, outputLength);
   if ( !waveform->phi->data )
   {
