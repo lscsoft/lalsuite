@@ -117,6 +117,8 @@ tagFrameHNode
 }
 FrameHNode;
 
+
+
 /*
  *
  * variables that control program behaviour
@@ -215,9 +217,12 @@ FindChirpBankSimParams bankSimParams = { 0, 0, -1, -1, NULL, -1, NULL, NULL };
                                         /* template bank sim params     */
 
 /* reverse chirp bank option */
-INT4 reverseChirpBank      = 0;           /* enable the reverse chirp     */
+INT4 reverseChirpBank      = 0;         /* enable the reverse chirp     */
                                         /* template bank option         */
 
+/* template bank veto options */
+UINT4 subBankSize          = 0;         /* num templates in a subbank   */
+UINT4 ccFlag = 0;
 /* output parameters */
 CHAR  *userTag          = NULL;         /* string the user can tag with */
 CHAR  *ifoTag           = NULL;         /* string to tag parent IFOs    */
@@ -309,9 +314,13 @@ int main( int argc, char *argv[] )
   INT4                          numTmplts    = 0;
   InspiralTemplate             *bankHead     = NULL;
   InspiralTemplate             *bankCurrent  = NULL;
-  InspiralTemplateNode         *tmpltHead    = NULL;
-  InspiralTemplateNode         *tmpltCurrent = NULL;
-  InspiralTemplateNode         *tmpltInsert  = NULL;
+
+  /* template bank veto structures */
+  UINT4                         maxSubBankSize = 0;
+  UINT4                         subBankIndex = 0;
+  FindChirpSubBank             *subBankHead = NULL;
+  FindChirpSubBank             *subBankCurrent = NULL;
+  FindChirpBankVetoData         bankVetoData;
 
   /* inspiral events */
   INT4                          numEvents   = 0;
@@ -337,8 +346,6 @@ int main( int argc, char *argv[] )
   /* counters and other variables */
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
   UINT4 i, j, k;
-  INT4  inserted;
-  INT4  currentLevel;
   INT4  cDataForFrame = 0;
   CHAR  fname[FILENAME_MAX];
   CHAR  cdataStr[LALNameLength];
@@ -518,7 +525,7 @@ int main( int argc, char *argv[] )
 
   /*
    *
-   * create a (possibly heirarcical) template bank
+   * create a template bank
    *
    */
 
@@ -567,29 +574,6 @@ int main( int argc, char *argv[] )
 
   if ( vrbflg ) fprintf( stdout, "parsed %d templates from %s\n", 
       numTmplts, bankFileName );
-
-  if ( numTmplts )
-  {
-    /* save the minimal match of the bank in the process params: create */
-    /* the table entry with calloc() since it will be freed with free() */
-    this_proc_param = this_proc_param->next = (ProcessParamsTable *) 
-      calloc( 1, sizeof(ProcessParamsTable) ); 
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
-        PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
-        "--minimal-match" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "float" ); 
-    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%e", 
-        bankHead->minMatch );
-  }
-
-  /* create the linked list of template nodes for coarse templates */
-  for ( bankCurrent = bankHead; bankCurrent; bankCurrent = bankCurrent->next )
-  {
-    LAL_CALL( LALFindChirpCreateTmpltNode( &status, 
-          bankCurrent, &tmpltCurrent ), &status );
-    if ( !tmpltHead ) tmpltHead = tmpltCurrent;
-  }
 
 
   /*
@@ -1675,9 +1659,6 @@ int main( int argc, char *argv[] )
     fcFilterParams->filterOutputVetoParams = NULL;
   }
 
-  LAL_CALL( LALCreateFindChirpInput( &status, &fcFilterInput, fcInitParams ), 
-      &status );
-
   LAL_CALL( LALFindChirpChisqVetoInit( &status, fcFilterParams->chisqParams, 
         fcInitParams->numChisqBins, fcInitParams->numPoints ), 
       &status );
@@ -1904,7 +1885,8 @@ int main( int argc, char *argv[] )
      *      F           F           F        Do Nothing
      *      F           F           T        Irrelevant (do nothing)
      *================================================================*/
-    if ( numTmplts > 0 && ( injectionFile  || (tdFollowUpFiles && mmFast >= 0.0) ))
+    if ( numTmplts > 0 && 
+        ( injectionFile  || (tdFollowUpFiles && mmFast >= 0.0) ) )
     {
       /* Make space for analyseThisTmplt */
       analyseThisTmplt = (UINT4 *) LALCalloc (numTmplts, sizeof(UINT4));
@@ -1919,13 +1901,13 @@ int main( int argc, char *argv[] )
       /* that are 'close' to the injections             */
         LAL_CALL( LALFindChirpSetAnalyseTemplate( &status, analyseThisTmplt,
             mmFast, fcSegVec->data[0].data->deltaF, sampleRate, fcDataParams,
-            numTmplts, tmpltHead, numInjections, injections ), &status );
+            numTmplts, bankHead, numInjections, injections ), &status );
 
       }
       else
       {
-        XLALFindChirpTagTemplateAndSegment(dataSegVec, tmpltHead, &tdFollowUpEvents,
-                ifo, mmFast, analyseThisTmplt );
+        XLALFindChirpTagTemplateAndSegment(dataSegVec, bankHead, 
+            &tdFollowUpEvents, ifo, mmFast, analyseThisTmplt );
       }
     }  
 
@@ -1943,14 +1925,61 @@ int main( int argc, char *argv[] )
 
     /*
      *
-     * hierarchial search engine
+     * split the template bank into subbanks for the bank veto
+     *
+     */
+    
+    /* only sort the bank if doing bank veto */
+    if (subBankSize > 1)   
+        bankHead = XLALFindChirpSortTemplates( bankHead, numTmplts );
+ 
+    if ( vrbflg ) fprintf( stdout, 
+        "splitting bank in to subbanks of size ~ %d\n", subBankSize );
+    
+    subBankHead = XLALFindChirpCreateSubBanks( &maxSubBankSize,
+        subBankSize, numTmplts, bankHead );
+
+    if ( vrbflg ) fprintf( stdout, "maximum subbank size = %d\n", 
+        maxSubBankSize );
+
+    bankVetoData.length = maxSubBankSize;
+
+    /* free the existing qVec structure so that we can use the bankveto one */
+    XLALDestroyCOMPLEX8Vector( fcFilterParams->qVec );
+    fcFilterParams->qVec = NULL;
+
+    /* create an array of fcFilterInput structs */
+    bankVetoData.qVecArray = (COMPLEX8Vector **)
+      LALCalloc( bankVetoData.length, sizeof(COMPLEX8Vector*) );
+    bankVetoData.fcInputArray = (FindChirpFilterInput **)
+      LALCalloc( bankVetoData.length, sizeof(FindChirpFilterInput*) );
+    /* create ccMat for bank veto */
+    bankVetoData.ccMat = 
+      XLALCreateVector( bankVetoData.length * bankVetoData.length );
+    /* bankVetoData.normMat = XLALCreateVector( bankVetoData.length ); */
+   
+    /* point to response and spectrum */
+    bankVetoData.spec = spec.data;
+    bankVetoData.resp = resp.data;
+     
+    for ( i = 0; i < bankVetoData.length; ++i )
+    {
+      bankVetoData.qVecArray[i] = 
+        XLALCreateCOMPLEX8Vector( fcInitParams->numPoints );
+      LAL_CALL( LALCreateFindChirpInput( &status, 
+            &(bankVetoData.fcInputArray[i]), fcInitParams ), &status );
+    }
+
+    /*
+     *
+     * search engine
      *
      */
 
 
-    for ( tmpltCurrent = tmpltHead, inserted = 0, thisTemplateIndex = 0; 
-        tmpltCurrent; 
-        tmpltCurrent = tmpltCurrent->next, inserted = 0, thisTemplateIndex++ )
+    for ( subBankCurrent = subBankHead, thisTemplateIndex = 0; 
+        subBankCurrent; 
+        subBankCurrent = subBankCurrent->next, thisTemplateIndex++ )
     {
 
       /* If we are injecting or in td-follow-up mode and the    */
@@ -1965,41 +1994,53 @@ int main( int argc, char *argv[] )
               "\n\n === Template %d going through \n\n", thisTemplateIndex );
       }
 
-      /*  generate template */
-      switch ( approximant )
+      for ( bankCurrent = subBankCurrent->bankHead, subBankIndex = 0;
+          bankCurrent; bankCurrent = bankCurrent->next, ++subBankIndex )
       {
-        case TaylorT1:
-        case TaylorT2:
-        case TaylorT3:
-        case GeneratePPN:
-        case PadeT1:
-        case EOB:
-          LAL_CALL( LALFindChirpTDTemplate( &status, fcFilterInput->fcTmplt, 
-                tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
-          break;
+        /* set fcFilterInput to the correct one */
+        fcFilterInput = bankVetoData.fcInputArray[subBankIndex];
+        if ( vrbflg ) fprintf( stdout,
+            "Creating template in fcInputArray[%d] at %p\n", subBankIndex,
+            fcFilterInput );
 
-        case FindChirpSP:
-          LAL_CALL( LALFindChirpSPTemplate( &status, fcFilterInput->fcTmplt, 
-                tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
-          break;
+        /*  generate template */
+        switch ( approximant )
+        {
+          case TaylorT1:
+          case TaylorT2:
+          case TaylorT3:
+          case GeneratePPN:
+          case PadeT1:
+          case EOB:
+            LAL_CALL( LALFindChirpTDTemplate( &status, fcFilterInput->fcTmplt, 
+                  bankCurrent, fcTmpltParams ), &status );
+            break;
 
-        case BCV:
-          LAL_CALL( LALFindChirpBCVTemplate( &status, fcFilterInput->fcTmplt, 
-                tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
-          break;
+          case FindChirpSP:
+            LAL_CALL( LALFindChirpSPTemplate( &status, fcFilterInput->fcTmplt, 
+                  bankCurrent, fcTmpltParams ), &status );
+            break;
 
-        case BCVSpin:
-          LAL_CALL( LALFindChirpBCVSpinTemplate( &status, 
-                fcFilterInput->fcTmplt, tmpltCurrent->tmpltPtr, 
-                fcTmpltParams, fcDataParams ), &status );
-          break;
+          case BCV:
+            LAL_CALL( LALFindChirpBCVTemplate( &status, fcFilterInput->fcTmplt, 
+                  bankCurrent, fcTmpltParams ), &status );
+            break;
 
-        default:
-          fprintf( stderr, "error: unknown waveform template approximant \n" );
-          exit( 1 );
-          break;
+          case BCVSpin:
+            LAL_CALL( LALFindChirpBCVSpinTemplate( &status, 
+                  fcFilterInput->fcTmplt, bankCurrent, 
+                  fcTmpltParams, fcDataParams ), &status );
+            break;
+
+          default:
+            fprintf( stderr, 
+                "error: unknown waveform template approximant \n" );
+            exit( 1 );
+            break;
+        }
       }
 
+      ccFlag = 1;
       /* loop over data segments */
       for ( i = 0; i < fcSegVec->length ; ++i )
       {
@@ -2050,193 +2091,204 @@ int main( int argc, char *argv[] )
 
           }
           else
-          {
-            analyseTag = XLALCmprSgmntTmpltFlags( numInjections,
-                analyseThisTmplt[thisTemplateIndex],
-                fcSegVec->data[i].analyzeSegment );
+          { 
+            if (subBankSize > 1)
+               analyseTag = fcSegVec->data[i].analyzeSegment;
+            else
+               analyseTag = XLALCmprSgmntTmpltFlags( numInjections,
+                  analyseThisTmplt[thisTemplateIndex],
+                  fcSegVec->data[i].analyzeSegment );
           }
         }
 
-        /* filter data segment */ 
-        if ( fcSegVec->data[i].level == tmpltCurrent->tmpltPtr->level && 
-            analyseTag )
+        for ( bankCurrent = subBankCurrent->bankHead, subBankIndex = 0;
+            bankCurrent; bankCurrent = bankCurrent->next, ++subBankIndex )
         {
-          if ( vrbflg ) fprintf( stdout, 
-              "filtering segment %d/%d [%lld-%lld] "
-              "against template %d/%d (%e,%e)\n", 
-              fcSegVec->data[i].number,  fcSegVec->length,
-              fcSegStartTimeNS, fcSegEndTimeNS,
-              tmpltCurrent->tmpltPtr->number, numTmplts,
-              fcFilterInput->fcTmplt->tmplt.mass1, 
-              fcFilterInput->fcTmplt->tmplt.mass2 );
-
-          fcFilterInput->segment = fcSegVec->data + i;
-
-          /* decide which filtering routine to use */
-          switch ( approximant )
+          /* set fcFilterInput and qVec to the correct ones 
+          fcFilterInput = bankVetoData.fcInputArray[subBankIndex];
+          if ( vrbflg ) fprintf( stdout,
+              "Using template in fcInputArray[%d] at %p\n", subBankIndex,
+              fcFilterInput );
+          fcFilterParams->qVec = bankVetoData.qVecArray[subBankIndex];
+          if ( vrbflg ) fprintf( stdout,
+              "Using qVec in qVecArray[%d] at %p\n", subBankIndex,
+              fcFilterParams->qVec );
+          if (vrbflg) fprintf(stderr, "\n analyseTag %d\n\n", analyseTag);*/
+          /* filter data segment */ 
+          if ( analyseTag )
           {
-            case TaylorT1:
-            case TaylorT2:
-            case TaylorT3:
-            case GeneratePPN:
-            case PadeT1:
-            case EOB:
-              /* construct normalization for time domain templates... */
-              LAL_CALL( LALFindChirpTDNormalize( &status, 
-                    fcFilterInput->fcTmplt, fcFilterInput->segment, 
-                    fcDataParams ), &status );
-              /* ...and fall through to FindChirpFilterSegment() */
-            case FindChirpSP:
-              LAL_CALL( LALFindChirpFilterSegment( &status, 
-                    &eventList, fcFilterInput, fcFilterParams ), &status ); 
-              break;
+            /* CHAD - moved to fix enable filter inj only bug */
+            /* set fcFilterInput and qVec to the correct ones */
+            fcFilterInput = bankVetoData.fcInputArray[subBankIndex];
+            if ( vrbflg ) fprintf( stdout,
+                "Using template in fcInputArray[%d] at %p\n", subBankIndex,
+                fcFilterInput );
+            fcFilterParams->qVec = bankVetoData.qVecArray[subBankIndex];
+            if ( vrbflg ) fprintf( stdout,
+                "Using qVec in qVecArray[%d] at %p\n", subBankIndex,
+                fcFilterParams->qVec );
+            /* END CHADs CHANGES */
+            if ( vrbflg ) fprintf( stdout, 
+                "filtering segment %d/%d [%lld-%lld] "
+                "against template %d/%d (%e,%e)\n", 
+                fcSegVec->data[i].number, fcSegVec->length,
+                fcSegStartTimeNS, fcSegEndTimeNS,
+                bankCurrent->number, numTmplts,
+                fcFilterInput->fcTmplt->tmplt.mass1, 
+                fcFilterInput->fcTmplt->tmplt.mass2 );
 
-            case BCV:
-              if (!bcvConstraint)
-              {
-                LAL_CALL( LALFindChirpBCVFilterSegment( &status,
-                      &eventList, fcFilterInput, fcFilterParams ), &status );
-              }
-              else
-              { 
-                LAL_CALL( LALFindChirpBCVCFilterSegment( &status,
-                      &eventList, fcFilterInput, fcFilterParams ), &status );
-              }
-              break;
+            fcFilterInput->segment = fcSegVec->data + i;
 
-            case BCVSpin:
-              LAL_CALL( LALFindChirpBCVSpinFilterSegment( &status,
-                    &eventList, fcFilterInput, fcFilterParams, fcDataParams 
-                    ), &status );
-              break;
-
-            default:
-              fprintf( stderr, 
-                  "error: unknown waveform approximant for filter\n" );
-              exit( 1 );
-              break;
-          }
-
-          if ( writeRhosq )
-          {
-            CHAR snrsqStr[LALNameLength];
-            LALSnprintf( snrsqStr, LALNameLength*sizeof(CHAR), 
-                "SNRSQ_%d", nRhosqFr++ );
-            strcpy( fcFilterParams->rhosqVec->name, chan.name );
-            outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
-                fcFilterParams->rhosqVec, "none", snrsqStr );
-          }
-
-          if ( writeCData && ! strcmp(ifo,tmpltCurrent->tmpltPtr->ifo) )
-          {
-            trigTime = tmpltCurrent->tmpltPtr->end_time.gpsSeconds + 1e-9 * 
-              tmpltCurrent->tmpltPtr->end_time.gpsNanoSeconds;
-            lowerBound = gpsStartTime.gpsSeconds + numPoints/(4 * sampleRate );
-            upperBound = gpsEndTime.gpsSeconds - numPoints/(4 * sampleRate );
-
-            if ( trigTime >= lowerBound && trigTime <= upperBound )
+            /* decide which filtering routine to use */
+            switch ( approximant )
             {
-              tempTmplt = (SnglInspiralTable *) 
-                LALCalloc(1, sizeof(SnglInspiralTable) );
-              tempTmplt->event_id = (EventIDColumn *) 
-                LALCalloc(1, sizeof(EventIDColumn) );
-              tempTmplt->mass1 = tmpltCurrent->tmpltPtr->mass1;
-              tempTmplt->end_time.gpsSeconds = 
-                tmpltCurrent->tmpltPtr->end_time.gpsSeconds;
-              tempTmplt->end_time.gpsNanoSeconds = 
-                tmpltCurrent->tmpltPtr->end_time.gpsNanoSeconds;
-              tempTmplt->event_id->id = tmpltCurrent->tmpltPtr->event_id->id;
+              case TaylorT1:
+              case TaylorT2:
+              case TaylorT3:
+              case GeneratePPN:
+              case PadeT1:
+              case EOB:
+                /* construct normalization for time domain templates... */
+                LAL_CALL( LALFindChirpTDNormalize( &status, 
+                      fcFilterInput->fcTmplt, fcFilterInput->segment, 
+                      fcDataParams ), &status );
 
-              LAL_CALL( LALFindChirpCreateCoherentInput( &status,
-                  &coherentInputData, fcFilterParams->cVec, 
-                  tempTmplt, 2.0, numPoints / 4 ), &status );
+                /* ...and fall through to FindChirpFilterSegment() */
+              case FindChirpSP:
+                LAL_CALL( LALFindChirpFilterSegment( &status, 
+                      &eventList, fcFilterInput, fcFilterParams ), &status ); 
+                break;
 
-              LALFree( tempTmplt->event_id );
-              LALFree( tempTmplt );
-
-              if ( coherentInputData )
-              {
-                cDataForFrame = 1;
-		LALSnprintf( cdataStr, LALNameLength*sizeof(CHAR),
-			     "CData_%Ld", tmpltCurrent->tmpltPtr->event_id->id );
-                strcpy( coherentInputData->name, chan.name );
-                if ( ! coherentFrames )
+              case BCV:
+                if ( ! bcvConstraint )
                 {
-                  thisCoherentFrame = coherentFrames = (FrameHNode *) 
-                    LALCalloc( 1, sizeof(FrameHNode) );
+                  LAL_CALL( LALFindChirpBCVFilterSegment( &status,
+                        &eventList, fcFilterInput, fcFilterParams ), &status );
                 }
                 else
-                {
-                  thisCoherentFrame = thisCoherentFrame->next = (FrameHNode *) 
-                    LALCalloc( 1, sizeof(FrameHNode) );
+                { 
+                  LAL_CALL( LALFindChirpBCVCFilterSegment( &status,
+                        &eventList, fcFilterInput, fcFilterParams ), &status );
                 }
-                thisCoherentFrame->frHeader = fr_add_proc_COMPLEX8TimeSeries( 
-                    outFrame, coherentInputData, "none", cdataStr );
-                LAL_CALL( LALCDestroyVector( &status, 
-                      &(coherentInputData->data) ), &status );
-                LALFree( coherentInputData );
-                coherentInputData = NULL;
+                break;
+
+              case BCVSpin:
+                LAL_CALL( LALFindChirpBCVSpinFilterSegment( &status,
+                      &eventList, fcFilterInput, fcFilterParams, fcDataParams 
+                      ), &status );
+                break;
+
+              default:
+                fprintf( stderr, 
+                    "error: unknown waveform approximant for filter\n" );
+                exit( 1 );
+                break;
+            }
+
+            if ( writeRhosq )
+            {
+              CHAR snrsqStr[LALNameLength];
+              LALSnprintf( snrsqStr, LALNameLength*sizeof(CHAR), 
+                  "SNRSQ_%d", nRhosqFr++ );
+              strcpy( fcFilterParams->rhosqVec->name, chan.name );
+              outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
+                  fcFilterParams->rhosqVec, "none", snrsqStr );
+            }
+
+            if ( writeCData && ! strcmp(ifo, bankCurrent->ifo) )
+            {
+              trigTime = bankCurrent->end_time.gpsSeconds + 1e-9 * 
+                bankCurrent->end_time.gpsNanoSeconds;
+              lowerBound = 
+                gpsStartTime.gpsSeconds + numPoints/(4 * sampleRate );
+              upperBound = 
+                gpsEndTime.gpsSeconds - numPoints/(4 * sampleRate );
+
+              if ( trigTime >= lowerBound && trigTime <= upperBound )
+              {
+                tempTmplt = (SnglInspiralTable *) 
+                  LALCalloc(1, sizeof(SnglInspiralTable) );
+                tempTmplt->event_id = (EventIDColumn *) 
+                  LALCalloc(1, sizeof(EventIDColumn) );
+                tempTmplt->mass1 = bankCurrent->mass1;
+                tempTmplt->end_time.gpsSeconds = 
+                  bankCurrent->end_time.gpsSeconds;
+                tempTmplt->end_time.gpsNanoSeconds = 
+                  bankCurrent->end_time.gpsNanoSeconds;
+                tempTmplt->event_id->id = bankCurrent->event_id->id;
+
+                LAL_CALL( LALFindChirpCreateCoherentInput( &status,
+                      &coherentInputData, fcFilterParams->cVec, 
+                      tempTmplt, 2.0, numPoints / 4 ), &status );
+
+                LALFree( tempTmplt->event_id );
+                LALFree( tempTmplt );
+
+                if ( coherentInputData )
+                {
+                  cDataForFrame = 1;
+                  LALSnprintf( cdataStr, LALNameLength*sizeof(CHAR),
+                      "CData_%Ld", bankCurrent->event_id->id );
+                  strcpy( coherentInputData->name, chan.name );
+                  if ( ! coherentFrames )
+                  {
+                    thisCoherentFrame = coherentFrames = (FrameHNode *) 
+                      LALCalloc( 1, sizeof(FrameHNode) );
+                  }
+                  else
+                  {
+                    thisCoherentFrame = thisCoherentFrame->next = 
+                      (FrameHNode *) LALCalloc( 1, sizeof(FrameHNode) );
+                  }
+                  thisCoherentFrame->frHeader = fr_add_proc_COMPLEX8TimeSeries( 
+                      outFrame, coherentInputData, "none", cdataStr );
+                  LAL_CALL( LALCDestroyVector( &status, 
+                        &(coherentInputData->data) ), &status );
+                  LALFree( coherentInputData );
+                  coherentInputData = NULL;
+                }
               }
             }
+
+            if ( writeChisq )
+            {
+              CHAR chisqStr[LALNameLength];
+              REAL4TimeSeries chisqts;
+              LALSnprintf( chisqStr, LALNameLength*sizeof(CHAR), 
+                  "CHISQ_%d", nChisqFr++ );
+              chisqts.epoch = fcFilterInput->segment->data->epoch;
+              memcpy( &(chisqts.name), fcFilterInput->segment->data->name,
+                  LALNameLength * sizeof(CHAR) );
+              chisqts.deltaT = fcFilterInput->segment->deltaT;
+              chisqts.data = fcFilterParams->chisqVec;
+              outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
+                  &chisqts, "none", chisqStr );
+            }
+            if ( vrbflg ) 
+              fprintf( stdout, "epoch = %d\n",
+                  fcFilterInput->segment->data->epoch.gpsSeconds );
           }
-
-          if ( writeChisq )
-          {
-            CHAR chisqStr[LALNameLength];
-            REAL4TimeSeries chisqts;
-            LALSnprintf( chisqStr, LALNameLength*sizeof(CHAR), 
-                "CHISQ_%d", nChisqFr++ );
-            chisqts.epoch = fcFilterInput->segment->data->epoch;
-            memcpy( &(chisqts.name), fcFilterInput->segment->data->name,
-                LALNameLength * sizeof(CHAR) );
-            chisqts.deltaT = fcFilterInput->segment->deltaT;
-            chisqts.data = fcFilterParams->chisqVec;
-            outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
-                &chisqts, "none", chisqStr );
-          }
-          if ( vrbflg ) 
-            fprintf( stdout, "epoch = %d\n",
-                fcFilterInput->segment->data->epoch.gpsSeconds );
-        }
-        else
-        {
-          if ( vrbflg ) fprintf( stdout, "skipping segment %d/%d [%lld-%lld] "
-              "(segment level %d, template level %d)\n", 
-              fcSegVec->data[i].number, fcSegVec->length, 
-              fcSegStartTimeNS, fcSegEndTimeNS,
-              fcSegVec->data[i].level, tmpltCurrent->tmpltPtr->level );
-        }
-
-        /*  test if filter returned any events */
-        if ( eventList )
-        {
-          if ( vrbflg ) fprintf( stdout, 
-              "segment %d rang template [m (%e,%e)] [psi (%e,%e)]\n",
-              fcSegVec->data[i].number,
-              fcFilterInput->fcTmplt->tmplt.mass1, 
-              fcFilterInput->fcTmplt->tmplt.mass2,
-              fcFilterInput->fcTmplt->tmplt.psi0, 
-              fcFilterInput->fcTmplt->tmplt.psi3 );
-
-          if ( tmpltCurrent->tmpltPtr->fine != NULL && inserted == 0 )
+          else /* not analyzeTag */
           {
             if ( vrbflg ) fprintf( stdout, 
-                "inserting fine templates into list\n" );
-
-            tmpltInsert = tmpltCurrent;
-            inserted = 1;
-            fcSegVec->data[i].level += 1;
-
-            for ( bankCurrent = tmpltCurrent->tmpltPtr->fine ; 
-                bankCurrent; bankCurrent = bankCurrent->next )
-            {
-              LAL_CALL( LALFindChirpCreateTmpltNode( &status, 
-                    bankCurrent, &tmpltInsert ), &status );
-            }
-
+                "skipping segment %d/%d [%lld-%lld]\n",
+                fcSegVec->data[i].number, fcSegVec->length, 
+                fcSegStartTimeNS, fcSegEndTimeNS );
           }
-          else if ( ! tmpltCurrent->tmpltPtr->fine )
+
+
+          /*  test if filter returned any events */
+          if ( eventList )
           {
+            /* this can only happen for BCV and BCVSpin */
+            if ( vrbflg ) fprintf( stdout, 
+                "segment %d rang template [m (%e,%e)] [psi (%e,%e)]\n",
+                fcSegVec->data[i].number,
+                fcFilterInput->fcTmplt->tmplt.mass1, 
+                fcFilterInput->fcTmplt->tmplt.mass2,
+                fcFilterInput->fcTmplt->tmplt.psi0, 
+                fcFilterInput->fcTmplt->tmplt.psi3 );
+
             if ( vrbflg ) fprintf( stdout, "***>  dumping events  <***\n" );
 
             if ( ! savedEvents.snglInspiralTable )
@@ -2247,50 +2299,118 @@ int main( int argc, char *argv[] )
             {
               event->next = eventList;
             }
-          }
-          else
-          {
-            if ( vrbflg ) fprintf( stdout, 
-                "already inserted fine templates, skipping\n" ); 
 
-            fcSegVec->data[i].level += 1;
-          } 
-
-          /* save a ptr to the last event in the list and count the events */
-          ++numEvents;
-          while ( eventList->next )
-          {
-            eventList = eventList->next;
+            /* save a ptr to the last event in the list and count the events */
             ++numEvents;
-          }
-          event = eventList;
-          eventList = NULL;
-        } /* end if ( events ) */
-
-        /* if going up a level, remove inserted nodes, reset segment levels */ 
-        if ( tmpltCurrent->next && (tmpltCurrent->next->tmpltPtr->level < 
-              tmpltCurrent->tmpltPtr->level) )
-        {
-          /* record the current number */
-          currentLevel = tmpltCurrent->tmpltPtr->level;
-
-          /* decrease segment filter levels if the have been increased */
-          for ( i = 0 ; i < fcSegVec->length; i++ )
-          {
-            if ( fcSegVec->data[i].level == currentLevel )
+            while ( eventList->next )
             {
-              fcSegVec->data[i].level -= 1;
+              eventList = eventList->next;
+              ++numEvents;
             }
-          }
+            event = eventList;
+            eventList = NULL;
 
-          if ( vrbflg ) fprintf( stdout, "removing inserted fine templates\n" );
-
-          while ( tmpltCurrent->tmpltPtr->level == currentLevel )
+          } /* end if ( events ) for BCV and BCVSpin */
+        } /* end of loop over templates in subbank */
+        
+        /* If doing bank veto compute CC Matrix */
+        /* I removed the ccFlag dependence - this is being computed
+           for each segment now!!! */
+        if (ccFlag && (subBankCurrent->subBankSize > 1) && analyseTag)
+        {
+          if (vrbflg) fprintf(stderr, "doing ccmat\n");
+          XLALBankVetoCCMat( &bankVetoData, subBankCurrent,
+          dynRange, fLow, spec.deltaF, chan.deltaT);
+          ccFlag = 0;
+          /*char filename[10];
+          sprintf(filename, "ccmat%d.dat",i);
+          FILE *FP = NULL;
+          FP = fopen(filename,"w");
+          for(j = 0; j < bankVetoData.ccMat->length; ++j)
           {
-            LAL_CALL( LALFindChirpDestroyTmpltNode( &status, &tmpltCurrent ),
-                &status );
-          }          
-        } /* end if up a level */
+            fprintf(FP, "%e\n",bankVetoData.ccMat->data[j]);
+          }*/
+        }
+        /* now look through the filter outputs of the subbank for events */
+        for ( bankCurrent = subBankCurrent->bankHead, subBankIndex = 0;
+            bankCurrent; bankCurrent = bankCurrent->next, ++subBankIndex )
+        {
+          if ( analyseTag )
+          {
+            /* set fcFilterInput and qVec to the correct ones */
+            fcFilterInput = bankVetoData.fcInputArray[subBankIndex];
+            if ( vrbflg ) fprintf( stdout,
+                "Finding Events - Using template in fcInputArray[%d] at %p\n", 
+                subBankIndex, fcFilterInput );
+            fcFilterParams->qVec = bankVetoData.qVecArray[subBankIndex];
+            if ( vrbflg ) fprintf( stdout,
+                "Finding Events - Using qVec in qVecArray[%d] at %p\n", 
+                subBankIndex, fcFilterParams->qVec );
+
+            /* determine if FindChirpFilterSegment returned any events */
+            switch ( approximant )
+            {
+              case TaylorT1:
+              case TaylorT2:
+              case TaylorT3:
+              case GeneratePPN:
+              case PadeT1:
+              case EOB:
+              case FindChirpSP:
+                /* find any events in the time series of snr and chisq */
+                LAL_CALL( LALFindChirpClusterEvents( &status,
+                      &eventList, fcFilterInput, fcFilterParams,
+                      &bankVetoData, subBankIndex ), &status );
+
+                /* apply the rsq veto to any surviving events */
+                if ( fcFilterParams->filterOutputVetoParams )
+                {
+                  LAL_CALL( LALFindChirpFilterOutputVeto( &status,
+                        &eventList, fcFilterInput, fcFilterParams ), &status ); 
+                }
+                break;
+              default:
+                break;
+            }
+
+            /*  test if filter returned any events */
+            if ( eventList )
+            {
+              /* this can only happen for FindChirpFilter */
+              if ( vrbflg ) fprintf( stdout, 
+                  "segment %d rang template [m (%e,%e)] [psi (%e,%e)]\n",
+                  fcSegVec->data[i].number,
+                  fcFilterInput->fcTmplt->tmplt.mass1, 
+                  fcFilterInput->fcTmplt->tmplt.mass2,
+                  fcFilterInput->fcTmplt->tmplt.psi0, 
+                  fcFilterInput->fcTmplt->tmplt.psi3 );
+
+              if ( vrbflg ) fprintf( stdout, "***>  dumping events  <***\n" );
+
+              if ( ! savedEvents.snglInspiralTable )
+              {
+                savedEvents.snglInspiralTable = eventList;
+              }
+              else
+              {
+                event->next = eventList;
+              }
+
+              /* save a ptr to the last event in the list , count the events */
+              ++numEvents;
+              while ( eventList->next )
+              {
+                eventList = eventList->next;
+                ++numEvents;
+              }
+              event = eventList;
+              eventList = NULL;
+
+            } /* end if ( events ) for FindChirpFilter */
+
+          } /* end if (analyseTag) */
+
+        } /* end loop over template in subbank */
 
       } /* end loop over data segments */
 
@@ -2303,7 +2423,7 @@ int main( int argc, char *argv[] )
         case GeneratePPN:
         case PadeT1:
         case EOB:
-	case FindChirpSP:
+        case FindChirpSP:
           /* the chisq bins need to be re-computed for the next template */
           for ( i = 0; i < fcSegVec->length ; ++i )
           {
@@ -2406,8 +2526,22 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALFindChirpChisqVetoFinalize( &status, 
         fcFilterParams->chisqParams, fcInitParams->numChisqBins ), 
       &status );
-  LAL_CALL( LALDestroyFindChirpInput( &status, &fcFilterInput ), 
-      &status );
+
+  for ( i = 0; i < bankVetoData.length; ++i )
+  {
+    XLALDestroyCOMPLEX8Vector( bankVetoData.qVecArray[i] );
+    bankVetoData.qVecArray[i] = NULL;
+    LAL_CALL( LALDestroyFindChirpInput( &status, 
+          &(bankVetoData.fcInputArray[i]) ), &status );
+    bankVetoData.fcInputArray[i] = NULL;
+  }
+  LALFree( bankVetoData.qVecArray );
+  LALFree( bankVetoData.fcInputArray );
+  XLALDestroyVector( bankVetoData.ccMat );
+  /* XLALDestroyVector( bankVetoData.normMat ); */
+
+  fcFilterParams->qVec = NULL;
+
   if ( fcFilterParams->filterOutputVetoParams ) 
   {
     LALFree( fcFilterParams->filterOutputVetoParams );
@@ -2423,22 +2557,23 @@ int main( int argc, char *argv[] )
   LALFree( fcInitParams );
 
   /* free the template bank */
-  while ( bankHead )
+  while ( subBankHead )
   {
-    bankCurrent = bankHead;
-    bankHead = bankHead->next;
-    if ( bankCurrent->event_id )
+    subBankCurrent = subBankHead;
+    while ( subBankCurrent->bankHead )
     {
-      LALFree( bankCurrent->event_id );
+      bankCurrent = subBankCurrent->bankHead;
+      subBankCurrent->bankHead = subBankCurrent->bankHead->next;
+      if ( bankCurrent->event_id )
+      {
+        LALFree( bankCurrent->event_id );
+      }
+      LALFree( bankCurrent );
+      bankCurrent = NULL;
     }
-    LALFree( bankCurrent );
-    bankCurrent = NULL;
-  }
-
-  /* destroy linked list of template nodes */
-  while ( tmpltHead )
-  {
-    LAL_CALL( LALFindChirpDestroyTmpltNode( &status, &tmpltHead ), &status );
+    subBankHead = subBankHead->next;
+    LALFree( subBankCurrent );
+    subBankCurrent = NULL;
   }
 
   /* free any bank sim parameters */
@@ -2902,6 +3037,8 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --rsq-veto-coeff COEFF       set the r^2 veto coefficient to COEFF\n"\
 "  --rsq-veto-pow POW           set the r^2 veto power to POW\n"\
 "\n"\
+"  --bank-veto-subbank-size N   set the number of tmplts in a subbank to N\n"\
+"\n"\
 "  --maximization-interval msec set length of maximization interval\n"\
 "\n"\
 "  --ts-cluster   MTHD          max over template and end time MTHD \n"\
@@ -3040,6 +3177,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"rsq-veto-max-snr",        required_argument, 0,                ')'},
     {"rsq-veto-coeff",          required_argument, 0,                '['},
     {"rsq-veto-pow",            required_argument, 0,                ']'},
+    {"bank-veto-subbank-size",  required_argument, 0,                ','},
     /* frame writing options */
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
     {"write-filter-data",       no_argument,       &writeFilterData,  1 },
@@ -3075,7 +3213,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     c = getopt_long_only( argc, argv, 
         "-A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VW:X:Y:Z:"
         "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:"
-        "0:1::2:3:4:567:8:9:*:>:<:(:):[:]",
+        "0:1::2:3:4:567:8:9:*:>:<:(:):[:],:",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -4224,6 +4362,24 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
+      case ',':
+        {
+          int subBankSizeArg = atoi( optarg );
+
+          if ( subBankSizeArg < 1 )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                " number of templates in a subbank must be greater than zero: "
+                "(%d specified)\n",
+                long_options[option_index].name, subBankSizeArg );
+            exit( 1 );
+          }
+          ADD_PROCESS_PARAM( "int", "%s", optarg );
+
+          subBankSize = (UINT4) subBankSizeArg;
+        }
+        break;
+
       default:
         fprintf( stderr, "unknown error while parsing options (%d)\n", c );
         exit( 1 );
@@ -4760,19 +4916,26 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     }
     else if ( ( rsqVetoTimeThresh < 0 ) || ( rsqVetoMaxSNR < 0 ) )
     {
-      fprintf( stderr, "--rsq-veto-time-thresh and --rsq-veto-max-snr must be \n"
+      fprintf( stderr, "--rsq-veto-time-thresh and "
+          "--rsq-veto-max-snr must be \n"
           "specified if the --do-rsq-veto argument is specified\n" );
       exit( 1 );      
     }
-    else if ( ( rsqVetoCoeff > 0 ) && ( ( rsqVetoTimeThresh < 0 ) || ( rsqVetoMaxSNR < 0 ) || ( rsqVetoPow < 0 ) ) )
+    else if ( ( rsqVetoCoeff > 0 ) && 
+        ( ( rsqVetoTimeThresh < 0 ) || 
+          ( rsqVetoMaxSNR < 0 ) || ( rsqVetoPow < 0 ) ) )
     {
-      fprintf( stderr, "--rsq-veto-time-thresh --rsq-veto-max-snr and --rsq-veto-pow \n"
+      fprintf( stderr, "--rsq-veto-time-thresh --rsq-veto-max-snr "
+          "and --rsq-veto-pow \n"
           "must be specified if --rsq-veto-coeff is specified\n" );
       exit( 1 );
     }
-   else if ( ( rsqVetoPow > 0 ) && ( ( rsqVetoTimeThresh < 0 ) || ( rsqVetoMaxSNR < 0 ) || ( rsqVetoCoeff < 0 ) ) )
+    else if ( ( rsqVetoPow > 0 ) && 
+        ( ( rsqVetoTimeThresh < 0 ) || ( rsqVetoMaxSNR < 0 ) || 
+          ( rsqVetoCoeff < 0 ) ) )
     {
-      fprintf( stderr, "--rsq-veto-time-thresh --rsq-veto-max-snr and --rsq-veto-coeff \n"
+      fprintf( stderr, "--rsq-veto-time-thresh "
+          "--rsq-veto-max-snr and --rsq-veto-coeff \n"
           "must be specified if --rsq-veto-pow is specified\n" );
       exit( 1 );
     }
@@ -4820,25 +4983,58 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   /* Check the trigScan input parameters */
   if ( trigScanMethod )
   {
-      if ( trigScanMetricScalingFac <= 0.0 )
-      {
-          fprintf ( stderr, "You must specify --ts-metric-scaling\n" );
-          exit(1);
-      }
+    if ( trigScanMetricScalingFac <= 0.0 )
+    {
+      fprintf ( stderr, "You must specify --ts-metric-scaling\n" );
+      exit(1);
+    }
 
-      if ( maximizationInterval )
-      {
-          fprintf ( stderr, "Cannot specify both --maximization-interval"
-                  " and --ts-cluster \nChoose any one of the two methods"
-                  " for clustering raw inspiral triggers.\n" );
-          exit(1);
-      }
+    if ( maximizationInterval )
+    {
+      fprintf ( stderr, "Cannot specify both --maximization-interval"
+          " and --ts-cluster \nChoose any one of the two methods"
+          " for clustering raw inspiral triggers.\n" );
+      exit(1);
+    }
   }
   /* If the trigScan parameters are reasonable, set trigScanDeltaEndTime*/
   /* Here we change trigScanDeltaEndTime to msec                        */
   trigScanDeltaEndTime /= 1000.L;
 
+  /* check the bank veto input parameters */
+  if ( ! subBankSize )
+  {
+    fprintf( stderr, "--bank-veto-subbank-size must be specifed.\n"
+        "Use --bank-veto-subbank-size 1 to disable template bank veto\n" );
+    exit( 1 );
+  }
+  else
+  {
+    if ( numChisqBins > 0 && subBankSize != 1 )
+    {
+      fprintf( stderr, 
+          "Template bank veto is incompatible with --num-chisq-bins %d\n"
+          "Use --bank-veto-subbank-size 1 to disable template bank veto\n",
+          numChisqBins );
+      exit( 1 );
+    }
+    if ( mmFast >= 0 )
+    {
+      fprintf( stderr, "Template bank veto is incompatible --fast %f\n"
+          "Use --bank-veto-subbank-size 1 to disable template bank veto\n",
+          mmFast );
+      exit( 1 );
+    }
+    if ( numTDFiles > 0 )
+    {
+      fprintf( stderr, "Template bank veto is incompatible --td-follow-up\n"
+          "Use --bank-veto-subbank-size 1 to disable template bank veto\n" );
+      exit( 1 );
+    }
+  }
+
   return 0;
 }
+
 
 #undef ADD_PROCESS_PARAM
