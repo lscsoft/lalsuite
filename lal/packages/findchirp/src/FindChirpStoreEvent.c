@@ -53,7 +53,8 @@ LALFindChirpStoreEvent (
   INT4                       timeIndex;
   REAL4                      deltaT;
   LALMSTUnitsAndAcc          gmstUnits;
-
+  UINT4			     numPoints;
+ 
   INITSTATUS( status, "LALFindChirpStoreEvent", FINDCHIRPSTOREEVENTC );
   ATTATCHSTATUSPTR( status );
 
@@ -92,6 +93,7 @@ LALFindChirpStoreEvent (
   /* note: we expect the gps seconds to be set before calling this routine */
   timeIndex = thisEvent->end_time.gpsSeconds;
   deltaT = params->deltaT;
+  numPoints = params->qVec->length;
 
   /* set the gmst units and strictness */
   gmstUnits.units = MST_HRS;
@@ -159,9 +161,11 @@ LALFindChirpStoreEvent (
   }
   thisEvent->sigmasq = norm * input->segment->segNorm->data[kmax] * 
     input->segment->segNorm->data[kmax] * input->fcTmplt->tmpltNorm;
-  thisEvent->eff_distance = 
-    (input->fcTmplt->tmpltNorm * input->segment->segNorm->data[kmax] * 
-     input->segment->segNorm->data[kmax]) / thisEvent->snr;
+  thisEvent->eff_distance = 4.0 * (deltaT / (REAL4)numPoints) / norm *
+    4.0 * (deltaT / (REAL4)numPoints) / norm * input->fcTmplt->tmpltNorm /
+    thisEvent->snr;
+    /*(input->fcTmplt->tmpltNorm * input->segment->segNorm->data[kmax] * 
+     input->segment->segNorm->data[kmax]) / thisEvent->snr;*/
   thisEvent->eff_distance = sqrt( thisEvent->eff_distance );
   thisEvent->snr *= norm;
   thisEvent->snr = sqrt( thisEvent->snr );

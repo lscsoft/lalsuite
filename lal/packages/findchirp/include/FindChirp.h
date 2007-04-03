@@ -88,7 +88,6 @@ that implement the search.
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/FindChirpDatatypes.h>
 #include <lal/FindChirpChisq.h>
-#include <lal/FindChirpFilterOutputVeto.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -407,6 +406,37 @@ given by the argument to the flag \texttt{--cluster-window}
 
 \end{description}
 
+\subsubsection*{Structure \texttt{FindChirpFilterOutputVetoParams}}
+\idx[Type]{FindChirpFilterOutputVetoParams}
+
+\noindent This structure provides the parameters for the filter
+output veto.
+
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
+typedef struct
+tagFindChirpFilterOutputVetoParams
+{
+  REAL4          rsqvetoWindow;
+  REAL4          rsqvetoThresh;
+  REAL4          rsqvetoTimeThresh;
+  REAL4          rsqvetoMaxSNR;
+  REAL4          rsqvetoCoeff;
+  REAL4          rsqvetoPow;
+}
+FindChirpFilterOutputVetoParams;
+/* </lalVerbatim> */
+#if 0
+<lalLaTeX>
+
+\begin{description}
+\item[\texttt{REAL4 rsqvetoWindow}] Width of the $r^2$ veto window in units of 
+seconds.
+
+\item[\texttt{REAL4 rsqvetoThresh}] Threshold of the $r^2$ veto test analogous to the 
+$r^2$ threshold employed in the bns and macho inspiral searches.
+\end{description}
 \subsubsection*{Structure \texttt{FindChirpFilterParams}}
 \idx[Type]{FindChirpFilterParams}
 
@@ -424,8 +454,8 @@ tagFindChirpFilterParams
   REAL4                         rhosqThresh;
   REAL4                         chisqThresh;
   REAL4                         chisqDelta;
-  REAL4                         norm;
   UINT4                         maximiseOverChirp;
+  UINT4                         ignoreIndex;
   Clustering                    clusterMethod;          
   Approximant                   approximant;
   COMPLEX8Vector               *qVec;
@@ -599,6 +629,33 @@ in a form that can be used by \texttt{FindChirpFilterSegment()}
 in a form that can be used by \texttt{FindChirpFilterSegment()}
 \end{description}
 
+\subsubsection*{Structure \texttt{FindChirpSubBankData}}
+\idx[Type]{FindChirpSubBankData}
+
+\noindent This structure contains data needed for the bank veto.
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
+typedef struct
+tagFindChirpBankVetoData
+{
+  UINT4                   length;
+  COMPLEX8Vector        **qVecArray;
+  FindChirpFilterInput  **fcInputArray;
+  REAL4Vector            *ccMat;
+  REAL4Vector		 *normMat;
+  REAL4Vector		 *spec;
+  COMPLEX8Vector         *resp;
+}
+FindChirpBankVetoData;
+/* </lalVerbatim> */
+#if 0
+<lalLaTeX>
+\begin{description}
+
+\item[\texttt{struct tagFindChirpSubBankData *next}] The next structure in
+the linked list.
+\end{description}
 
 </lalLaTeX>
 #endif
@@ -629,6 +686,7 @@ FindChirpBankSimParams;
 
 \item[\texttt{REAL4 maxMass}] Maximum mass of injected signals.
 \end{description}
+
 
 \vfill{\footnotesize\input{FindChirpHV}}
 </lalLaTeX> 
@@ -834,7 +892,7 @@ LALFindChirpStoreEvent (
     REAL4                       norm,
     UINT4                       eventStartIdx,
     UINT4                       numChisqBins,
-    CHAR                        searchName[LIGOMETA_SEARCH_MAX]
+    CHAR                       *searchName
     );
 
 void
@@ -843,17 +901,23 @@ LALFindChirpClusterEvents (
     SnglInspiralTable         **eventList,
     FindChirpFilterInput       *input,
     FindChirpFilterParams      *params,
-    COMPLEX8                   *q,
-    UINT4                       kmax,
-    UINT4                       numPoints,
-    UINT4                       ignoreIndex,
-    REAL4                       norm,
-    REAL4                       modqsqThresh,
-    REAL4                       chisqThreshFac,
-    UINT4                       numChisqBins,
-    CHAR                        searchName[LIGOMETA_SEARCH_MAX] 
+    FindChirpBankVetoData      *bankVetoData,
+    UINT4                       subBankIndex
     );
 
+#if 0
+<lalLaTeX>
+\newpage\input{FindChirpFilterOutputVetoC}
+</lalLaTeX>
+#endif
+
+void 
+LALFindChirpFilterOutputVeto( 
+    LALStatus                          *status,
+    SnglInspiralTable                 **eventList,
+    FindChirpFilterInput               *input,
+    FindChirpFilterParams              *fcParams
+    );
 
 #if 0
 <lalLaTeX>
@@ -872,7 +936,7 @@ LALFindChirpInjectSignals (
 INT4
 XLALFindChirpTagTemplateAndSegment (
     DataSegmentVector       *dataSegVec,
-    InspiralTemplateNode    *tmpltHead,
+    InspiralTemplate        *tmpltHead,
     SnglInspiralTable       **events,
     CHAR                    *ifo,
     REAL4                   tdFast,
@@ -901,7 +965,7 @@ LALFindChirpSetAnalyseTemplate (
     INT4                         sampleRate,
     FindChirpDataParams          *fcDataParams,
     int                          numTmplts,
-    InspiralTemplateNode         *tmpltHead,
+    InspiralTemplate             *tmpltHead,
     int                          numInjections,
     SimInspiralTable             *injections
     );
@@ -944,9 +1008,37 @@ XLALFindChirpBankSimMaxMatch (
 
 SimInstParamsTable *
 XLALFindChirpBankSimComputeMatch (
-    SnglInspiralTable   *tmplt,
+    SnglInspiralTable   *inputTmplt,
     REAL4                matchNorm
     );
+
+FindChirpSubBank*
+XLALFindChirpCreateSubBanks(
+    UINT4                      *maxSubBankSize,
+    UINT4                       subBankSize,
+    UINT4                       bankSize,
+    InspiralTemplate           *bankHead
+    );
+
+void
+XLALBankVetoCCMat ( 
+    FindChirpBankVetoData 	*bankVetoData,
+    FindChirpSubBank            *vetoBank,
+    REAL4 			dynRange, 
+    REAL4 			fLow,
+    REAL4 			deltaF,
+    REAL4			deltaT
+    );
+
+REAL4
+XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
+                     UINT4 i,
+                     UINT4 snrIX,
+                     UINT4 *dof);
+
+InspiralTemplate * 
+XLALFindChirpSortTemplates( InspiralTemplate *bankHead, UINT4 num );
+
 
 #ifdef  __cplusplus
 #pragma {

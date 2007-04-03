@@ -405,7 +405,7 @@ LALFindChirpBCVFilterSegment (
 
   rhosqThresh = params->rhosqThresh;
 
-  params->norm = norm = deltaT / ((REAL4) numPoints) ;
+  norm = deltaT / ((REAL4) numPoints) ;
   /* notice difference from corresponding factor in the sp templates: */
   /* no factor of 4 (taken care of in inputData and inputDataBCV      */
   /* and no segnorm, since we already multiplied by a1, b1 and b2.    */

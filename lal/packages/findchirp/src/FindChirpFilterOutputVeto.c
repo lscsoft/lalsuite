@@ -90,10 +90,10 @@ for future analysis.
 \subsubsection*{Uses}
 
 \subsubsection*{Notes}
-The same test described here could also be employed for monitoring the behavior 
-of the signal to noise time series, $\rho(\emph{t$_j$})$, about a trigger, 
-therefore the inclusion of \texttt{qVec} and \texttt{qNorm} as input to the function 
-for future work.
+The same test described here could also be employed for monitoring the
+behavior of the signal to noise time series, $\rho(\emph{t$_j$})$, about a
+trigger, therefore the inclusion of \texttt{qVec} and \texttt{qNorm} as
+input to the function for future work.
 
 \vfill{\footnotesize\input{FindChirpFilterOutputVetoCV}}
 </lalLaTeX>
@@ -115,24 +115,26 @@ void
 LALFindChirpFilterOutputVeto( 
     LALStatus                          *status,
     SnglInspiralTable                 **eventList, 
-    FindChirpSegment                   *segment,
-    REAL4Vector                        *chisqVec,
-    REAL8                               deltaT,
-    COMPLEX8Vector                     *qVec,
-    REAL4                               qNorm,
-    FindChirpFilterOutputVetoParams    *params
+    FindChirpFilterInput               *input,
+    FindChirpFilterParams              *fcParams
     )
 /* </lalVerbatim> */
 {
 
-  UINT4                 x; /* for loops */
-  UINT4		        eventIndex; /* store the event as an index */
-  UINT4		        windowIndex; /* r^2 veto window index */ 
-  UINT4                 timeaboversqThresh; /* time spent above the r^2 veto threshold */
-  REAL4                 rsqvetoWindow; /* the r^2 veto window */
-  REAL4		        rsqvetoThresh; /* the r^2 veto threshold */	
+  UINT4                 x;                  /* for loops */
+  UINT4		        eventIndex;         /* store the event as an index */
+  UINT4		        windowIndex;        /* r^2 veto window index */ 
+  UINT4                 timeaboversqThresh; /* time above the veto threshold */
+  REAL4                 rsqvetoWindow;      /* the r^2 veto window */
+  REAL4		        rsqvetoThresh;      /* the r^2 veto threshold */	
   SnglInspiralTable    *event = NULL;
   SnglInspiralTable    *lastevent = NULL; 
+  FindChirpSegment     *segment;
+  REAL4Vector          *chisqVec;
+  REAL8                 deltaT;
+  COMPLEX8Vector       *qVec;
+  FindChirpFilterOutputVetoParams *params;
+
   event = *eventList;
 
   INITSTATUS( status, "LALFindChirpFilterFilterOutputVeto", 
@@ -142,33 +144,37 @@ LALFindChirpFilterOutputVeto(
 
   /*
    *    
-   *   check that the arguments are reasonable
+   * check that the arguments are reasonable
    *          
    */
- 	
 
+
+  /* store the values needed to compute the veto */
+  segment = input->segment;
+  chisqVec = fcParams->chisqVec;
+  deltaT = fcParams->deltaT;
+  qVec = fcParams->qVec;
+  params = fcParams->filterOutputVetoParams;
 
   /* check that the filterOutputVeto parameter structure exist */	
   ASSERT( params->rsqvetoWindow, status, 
-      FINDCHIRPFILTEROUTPUTVETOH_ENULL, FINDCHIRPFILTEROUTPUTVETOH_MSGENULL);
-  ASSERT( params->rsqvetoThresh, status, 
-      FINDCHIRPFILTEROUTPUTVETOH_ENULL, FINDCHIRPFILTEROUTPUTVETOH_MSGENULL);
-	
+      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL);
+
   /* check that the workspace vectors exist */
   ASSERT( chisqVec->data, status, 
-      FINDCHIRPFILTEROUTPUTVETOH_ENULL, FINDCHIRPFILTEROUTPUTVETOH_MSGENULL);
-	
+      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL);
+
   /* check that deltaT is reasonable */	
   ASSERT( deltaT > 0, status,
-      FINDCHIRPFILTEROUTPUTVETOH_EDTZO, FINDCHIRPFILTEROUTPUTVETOH_MSGEDTZO );
-			
+      FINDCHIRPH_EDTZO, FINDCHIRPH_MSGEDTZO );
+
   /* make sure that the segment structure exists */
   ASSERT( segment, status, 
-      FINDCHIRPFILTEROUTPUTVETOH_ENULL, FINDCHIRPFILTEROUTPUTVETOH_MSGENULL );
+      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
   /* make sure that the segment structure contains some input */
   ASSERT( segment->data->epoch.gpsSeconds, status, 
-      FINDCHIRPFILTEROUTPUTVETOH_ENULL, FINDCHIRPFILTEROUTPUTVETOH_MSGENULL );
+      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
   /* If an event exists, begin the r^2 veto calculations */  
   while ( event )
@@ -179,26 +185,29 @@ LALFindChirpFilterOutputVeto(
           (REAL8) ( event->end_time.gpsNanoSeconds + 1 ) * 1.0e-9 ) / deltaT );
 
     /* convert the window duration into an index */
-    windowIndex = (UINT4) floor( (REAL8) ( ( params->rsqvetoWindow ) / deltaT ) );
-											
+    windowIndex = 
+      (UINT4) floor( (REAL8) ( ( params->rsqvetoWindow ) / deltaT ) );
+
     /* Initialize output to zero */ 
     timeaboversqThresh = 0;
-	     
+
     /* Count the number of time samples above the given r^2 veto threshold */
     for( x = eventIndex - windowIndex; x <= eventIndex; ++x )
     {
       if ( chisqVec->data[x] >= params->rsqvetoThresh )
-          ++timeaboversqThresh;
+        ++timeaboversqThresh;
     }
-		
+
     /* Convert the output to seconds and record the computed values in the 
        sngl_inspiral event */
     event->rsqveto_duration = (REAL4) timeaboversqThresh * deltaT;
 
-    /* do the rsq veto if only rsqvetoTimeThresh and rsqvetoMaxSNR are specified */
-    if ( ( params->rsqvetoTimeThresh > 0 ) && ( params->rsqvetoMaxSNR > 0 ) && ( ( params->rsqvetoCoeff < 0 ) || ( params->rsqvetoPow < 0 ) ) )
+    /* do the rsq veto if only rsqvetoTimeThresh and rsqvetoMaxSNR are given */
+    if ( ( params->rsqvetoTimeThresh > 0 ) && ( params->rsqvetoMaxSNR > 0 ) && 
+        ( ( params->rsqvetoCoeff < 0 ) || ( params->rsqvetoPow < 0 ) ) )
     {
-      if ( ( event->snr < params->rsqvetoMaxSNR ) && ( event->rsqveto_duration > params->rsqvetoTimeThresh ) )
+      if ( ( event->snr < params->rsqvetoMaxSNR ) && 
+          ( event->rsqveto_duration > params->rsqvetoTimeThresh ) )
       {
         /* reassign eventList if vetoing first event */
         if ( event == *eventList )
@@ -218,26 +227,31 @@ LALFindChirpFilterOutputVeto(
       }
       else
       {
-      lastevent = event;
-      event = event->next;
+        lastevent = event;
+        event = event->next;
       }
     }
     /* do the rsq veto if all rsqveto parameters are specified */
-    else if ( ( params->rsqvetoTimeThresh > 0 ) && ( params->rsqvetoMaxSNR > 0 ) && ( params->rsqvetoCoeff > 0 ) && ( params->rsqvetoPow > 0 ) )
+    else if ( ( params->rsqvetoTimeThresh > 0 ) && 
+        ( params->rsqvetoMaxSNR > 0 ) && ( params->rsqvetoCoeff > 0 ) && 
+        ( params->rsqvetoPow > 0 ) )
     {
-      if ( ( ( event->snr < params->rsqvetoMaxSNR ) && ( event->rsqveto_duration > params->rsqvetoTimeThresh ) ) || ( event->rsqveto_duration > ( params->rsqvetoCoeff*pow( event->snr, params->rsqvetoPow ) ) ) )
+      if ( ( ( event->snr < params->rsqvetoMaxSNR ) && 
+            ( event->rsqveto_duration > params->rsqvetoTimeThresh ) ) || 
+          ( event->rsqveto_duration > 
+            ( params->rsqvetoCoeff * pow( event->snr, params->rsqvetoPow ) ) ) )
       {
         /* reassign eventList if vetoing first event */
         if ( event == *eventList )
         {
-          SnglInspiralTable    *tmpevent = event;
+          SnglInspiralTable *tmpevent = event;
           *eventList = event->next;
           free( tmpevent );
           event = *eventList;
         }
         else
         {
-          SnglInspiralTable    *tmpevent = event;
+          SnglInspiralTable *tmpevent = event;
           lastevent->next = event->next;
           free( tmpevent );
           event = lastevent->next;
@@ -245,8 +259,8 @@ LALFindChirpFilterOutputVeto(
       }
       else
       {
-      lastevent = event;
-      event = event->next;
+        lastevent = event;
+        event = event->next;
       }
     }
     else

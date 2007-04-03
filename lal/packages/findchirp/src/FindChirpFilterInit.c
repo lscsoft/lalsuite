@@ -845,8 +845,11 @@ LALFindChirpFilterFinalize (
   CHECKSTATUSPTR( status );
 
   /* destroy workspace vector for optimal filter: freq domain */
-  LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) );
-  CHECKSTATUSPTR( status );
+  if (outputPtr->qVec)
+  {
+    LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) );
+    CHECKSTATUSPTR( status );
+  }
 
   if (outputPtr->qVecBCV) 
   { 

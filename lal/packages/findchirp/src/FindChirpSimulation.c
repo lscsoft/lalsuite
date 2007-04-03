@@ -418,7 +418,7 @@ XLALFindChirpSetAnalyzeSegment (
 INT4 
 XLALFindChirpTagTemplateAndSegment (
         DataSegmentVector       *dataSegVec,
-        InspiralTemplateNode    *tmpltHead,
+        InspiralTemplate        *tmpltHead,
         SnglInspiralTable       **events,
         CHAR                    *ifo,
         REAL4                   tdFast,
@@ -430,7 +430,7 @@ XLALFindChirpTagTemplateAndSegment (
 
     UINT4                s, t;  /* s over segments and t over templates */
     SnglInspiralTable    *thisEvent = NULL;
-    InspiralTemplateNode *thisTmplt = NULL;
+    InspiralTemplate     *thisTmplt = NULL;
     DataSegment          *currentSegment = NULL;
     UINT4                flag = 0;
     INT8                 tc, chanStartTime, chanEndTime;
@@ -514,8 +514,8 @@ XLALFindChirpTagTemplateAndSegment (
             REAL8    dt0, dt3;
             REAL8    match;
 
-            dt0   = thisTmplt->tmpltPtr->t0 - thisEvent->tau0;
-            dt3   = thisTmplt->tmpltPtr->t3 - thisEvent->tau3;
+            dt0   = thisTmplt->t0 - thisEvent->tau0;
+            dt3   = thisTmplt->t3 - thisEvent->tau3;
             match = g11*dt0*dt0 + 2.0*g12*dt0*dt3 + g22*dt3*dt3;
             match = 1.0 - match;
 
@@ -610,13 +610,13 @@ LALFindChirpSetAnalyseTemplate (
     INT4                       sampleRate,
     FindChirpDataParams        *fcDataParams,
     int                        numTmplts,
-    InspiralTemplateNode       *tmpltHead,
+    InspiralTemplate           *tmpltHead,
     int                        numInjections,
     SimInspiralTable           *injections
     )
 /* </lalVerbatim> */
 {
-  InspiralTemplateNode  *tmpltCurrent = NULL;
+  InspiralTemplate      *tmpltCurrent = NULL;
   REAL8FrequencySeries  *mmFshf = NULL;
   InspiralTemplate      *mmFTemplate = NULL;
   InspiralMetric        mmFmetric;
@@ -773,8 +773,8 @@ LALFindChirpSetAnalyseTemplate (
         for ( tmpltCurrent = tmpltHead; tmpltCurrent; 
             tmpltCurrent = tmpltCurrent->next)
         {
-          dt0 = tmpltCurrent->tmpltPtr->t0 - mmFTemplate->t0;
-          dt3 = tmpltCurrent->tmpltPtr->t3 - mmFTemplate->t3;
+          dt0 = tmpltCurrent->t0 - mmFTemplate->t0;
+          dt3 = tmpltCurrent->t3 - mmFTemplate->t3;
 
           metricDist  = (mmFmetric.G00 * (dt0*dt0));
           metricDist += (2.0* mmFmetric.G01 * (dt0*dt3));
@@ -795,8 +795,8 @@ LALFindChirpSetAnalyseTemplate (
               analyseThisTmplt[kj-1],
               mmFTemplate->t0,
               mmFTemplate->t3,
-              tmpltCurrent->tmpltPtr->t0,
-              tmpltCurrent->tmpltPtr->t3,
+              tmpltCurrent->t0,
+              tmpltCurrent->t3,
               match,
               dt0,
               dt3,

@@ -99,17 +99,12 @@ LALFindChirpFilterSegment (
   REAL8                 deltaF;
   REAL4                 norm;
   REAL4                 modqsqThresh;
-  REAL4                 mismatch;
-  REAL4                 chisqThreshFac;
-  REAL4                 modChisqThresh;
-  UINT4                 numChisqBins;
   BOOLEAN               haveEvent     = 0;
   COMPLEX8             *qtilde        = NULL;
   COMPLEX8             *q             = NULL;
   COMPLEX8             *inputData     = NULL;
   COMPLEX8             *tmpltSignal   = NULL;
   SnglInspiralTable    *thisEvent     = NULL;
-  CHAR                  searchName[LIGOMETA_SEARCH_MAX];
 
   INITSTATUS( status, "LALFindChirpFilter", FINDCHIRPFILTERC );
   ATTATCHSTATUSPTR( status );
@@ -187,43 +182,13 @@ LALFindChirpFilterSegment (
   switch ( params->approximant )
   {
     case TaylorT1:
-      LALSnprintf( searchName, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
-          "TaylorT1twoPN" );
-      break;
-
     case TaylorT2:
-      LALSnprintf( searchName, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
-          "TaylorT2twoPN" );
-      break;
-
     case TaylorT3:
-      LALSnprintf( searchName, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
-          "TaylorT3twoPN" );
-      break;
-
     case TaylorF2:
-      LALSnprintf( searchName, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
-          "TaylorF2twoPN" );
-      break;
-
     case GeneratePPN:
-      LALSnprintf( searchName, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
-          "GeneratePPNtwoPN" );
-      break;
-
     case PadeT1:
-      LALSnprintf( searchName, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-          "PadeT1twoPN" );
-      break;
-
     case EOB:
-      LALSnprintf( searchName, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-          "EOBtwoPN" );
-      break;
-
     case FindChirpSP:
-      LALSnprintf( searchName, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
-          "FindChirpSPtwoPN" );
       break;
 
     default:
@@ -261,11 +226,6 @@ LALFindChirpFilterSegment (
   kmax = input->fcTmplt->tmplt.fFinal / deltaF < numPoints/2 ? 
     input->fcTmplt->tmplt.fFinal / deltaF : numPoints/2;
 
-  /* the length of the chisq bin vec is the number of bin boundaries so the */
-  /* number of chisq bins is (length - 1) or 0 if there are no boundaries   */
-  numChisqBins = input->segment->chisqBinVec->length ? 
-    input->segment->chisqBinVec->length - 1 : 0;
-
 
   /*
    *
@@ -282,7 +242,8 @@ LALFindChirpFilterSegment (
   deltaEventIndex = (UINT4) rint( (input->fcTmplt->tmplt.tC / deltaT) + 1.0 );
 
   /* ignore corrupted data at start and end */
-  ignoreIndex = ( input->segment->invSpecTrunc / 2 ) + deltaEventIndex;
+  params->ignoreIndex = ignoreIndex = 
+    ( input->segment->invSpecTrunc / 2 ) + deltaEventIndex;
 
   if ( lalDebugLevel & LALINFO )
   {
@@ -304,7 +265,7 @@ LALFindChirpFilterSegment (
     ABORT( status, FINDCHIRPH_ECRUP, FINDCHIRPH_MSGECRUP );
   }
   /* XXX reset ignoreIndex to one quarter of a segment XXX */
-  ignoreIndex = numPoints / 4;
+  params->ignoreIndex = ignoreIndex = numPoints / 4;
 
   if ( lalDebugLevel & LALINFO )
   {
@@ -358,31 +319,11 @@ LALFindChirpFilterSegment (
     memset( params->cVec->data->data, 0, numPoints * sizeof( COMPLEX8 ) ); 
 
   /* normalisation */
-  params->norm = norm = 
+  input->fcTmplt->norm = norm = 
     4.0 * (deltaT / (REAL4)numPoints) / input->segment->segNorm->data[kmax];
 
   /* normalised snr threhold */
   modqsqThresh = params->rhosqThresh / norm;
-
-  /* we threshold on the "modified" chisq threshold computed from       */
-  /*   chisqThreshFac = chisqDelta * norm / p                           */
-  /*                                                                    */
-  /*   rho^2 = norm * modqsq                                            */
-  /*                                                                    */
-  /* So we actually threshold on                                        */
-  /*                                                                    */
-  /*    r^2 < chisqThresh * ( 1 + modqsq * chisqThreshFac )             */
-  /*                                                                    */
-  /* which is the same as thresholding on                               */
-  /*    r^2 < chisqThresh * ( 1 + rho^2 * chisqDelta / p )              */
-  /* and since                                                          */
-  /*    chisq = p r^2                                                   */
-  /* this is equivalent to thresholding on                              */
-  /*    chisq < chisqThresh * ( p + rho^2 chisqDelta )                  */
-  /*                                                                    */
-  /* The raw chisq is stored in the database. this quantity is chisq    */
-  /* distributed with 2p-2 degrees of freedom.                          */
-  chisqThreshFac = norm * params->chisqDelta / (REAL4) numChisqBins;
 
   /* if full snrsq vector is required, store the snrsq */
   if ( params->rhosqVec ) 
@@ -415,72 +356,49 @@ LALFindChirpFilterSegment (
     }
   }
 
-  /* look for an event in the filter output */
-  for ( j = ignoreIndex; j < numPoints - ignoreIndex; ++j )
+  /* determine if we need to compute the chisq vector */
+  if ( input->segment->chisqBinVec->length )
   {
-    REAL4 modqsq = q[j].re * q[j].re + q[j].im * q[j].im;
-
-    /* if snrsq exceeds threshold at any point */
-    if ( modqsq > modqsqThresh )
+    /* look for an event in the filter output */
+    for ( j = ignoreIndex; j < numPoints - ignoreIndex; ++j )
     {
-      haveEvent = 1;        /* mark segment to have events    */
-      break;
+      REAL4 modqsq = q[j].re * q[j].re + q[j].im * q[j].im;
+
+      /* if snrsq exceeds threshold at any point */
+      if ( modqsq > modqsqThresh )
+      {
+        haveEvent = 1;        /* mark segment to have events    */
+        break;
+      }
+    }
+    if ( haveEvent )
+    {
+      /* compute the chisq vector for this segment */
+      memset( params->chisqVec->data, 0, 
+          params->chisqVec->length * sizeof(REAL4) );
+
+      /* pointers to chisq input */
+      params->chisqInput->qtildeVec = params->qtildeVec;
+      params->chisqInput->qVec      = params->qVec;
+
+      /* pointer to the chisq bin vector in the segment */
+      params->chisqParams->chisqBinVec = input->segment->chisqBinVec;
+      params->chisqParams->norm        = norm;
+
+      /* compute the chisq bin boundaries for this template */
+      if ( ! params->chisqParams->chisqBinVec->data )
+      {
+        LALFindChirpComputeChisqBins( status->statusPtr, 
+            params->chisqParams->chisqBinVec, input->segment, kmax );
+        CHECKSTATUSPTR( status );
+      }
+
+      /* compute the chisq threshold: this is slow! */
+      LALFindChirpChisqVeto( status->statusPtr, params->chisqVec, 
+          params->chisqInput, params->chisqParams );
+      CHECKSTATUSPTR (status); 
     }
   }
-      
-  /* compute chisq vector if we want it and there is an event */
-  if ( haveEvent && input->segment->chisqBinVec->length )
-  {
-    memset( params->chisqVec->data, 0, 
-        params->chisqVec->length * sizeof(REAL4) );
-
-    /* pointers to chisq input */
-    params->chisqInput->qtildeVec = params->qtildeVec;
-    params->chisqInput->qVec      = params->qVec;
-
-    /* pointer to the chisq bin vector in the segment */
-    params->chisqParams->chisqBinVec = input->segment->chisqBinVec;
-    params->chisqParams->norm        = norm;
-
-    /* compute the chisq bin boundaries for this template */
-    if ( ! params->chisqParams->chisqBinVec->data )
-    {
-      LALFindChirpComputeChisqBins( status->statusPtr, 
-          params->chisqParams->chisqBinVec, input->segment, kmax );
-      CHECKSTATUSPTR( status );
-    }
-
-    /* compute the chisq threshold: this is slow! */
-    LALFindChirpChisqVeto( status->statusPtr, params->chisqVec, 
-        params->chisqInput, params->chisqParams );
-    CHECKSTATUSPTR (status); 
-  }
-
-  /* process events in the filter output */
-  if ( haveEvent )
-  {
-    LALFindChirpClusterEvents( status->statusPtr, eventList, input,
-        params, q, kmax, numPoints, ignoreIndex, 
-        norm, modqsqThresh, chisqThreshFac, numChisqBins, searchName );
-    CHECKSTATUSPTR( status );
-  }
-
-
-  /*
-   *
-   * check the events pass the filter output veto
-   *
-   */
-
-  
-  if ( params->filterOutputVetoParams )
-  {
-    LALFindChirpFilterOutputVeto( status->statusPtr, eventList, 
-        input->segment, params->chisqVec, deltaT, params->qVec, norm, 
-        params->filterOutputVetoParams );
-    CHECKSTATUSPTR( status );
-  }
-
 
   /* normal exit */
   DETATCHSTATUSPTR( status );
