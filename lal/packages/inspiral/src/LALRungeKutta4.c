@@ -91,7 +91,7 @@ rk4GSLIntegrator * XLALRungeKutta4Init( INT4 n,
 
   /* Initialise GSL integrator */
   XLAL_CALLGSL( integrator->step    = gsl_odeiv_step_alloc(integrator->type, n) );
-  XLAL_CALLGSL( integrator->control = gsl_odeiv_control_standard_new(1.0e-5, 1.0e-5, 1.0, 1.0) );
+  XLAL_CALLGSL( integrator->control = gsl_odeiv_control_standard_new(1.0e-2, 1.0e-2, 1.0, 1.0) );
   XLAL_CALLGSL( integrator->evolve  = gsl_odeiv_evolve_alloc(n) );
 
   /* Check the integrator is allocated correctly */
