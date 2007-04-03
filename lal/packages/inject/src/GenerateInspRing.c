@@ -226,17 +226,17 @@ XLALGenerateInspRing(
   if ( !waveform->a->data->data )
   {
     XLALFree( waveform->a);
-    XLAL_ERROR_NULL( "XLALCalculateNRStrain", XLAL_ENOMEM );
+    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
   }
 
   memset(waveform->a->data->data + 2 * inputLength, 0, 
-      2 * (outputLength - inputLength) * sizeof(REAL4 *) );
+      2 * (outputLength - inputLength) * sizeof(REAL4) );
   XLALResizeREAL8TimeSeries( waveform->phi, 0, outputLength);
   if ( !waveform->phi->data )
   {
     XLALFree( waveform->a);
     XLALFree( waveform->phi);
-    XLAL_ERROR_NULL( "XLALCalculateNRStrain", XLAL_ENOMEM );
+    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
   }
 
   XLALResizeREAL4TimeSeries( waveform->f, 0, outputLength);
@@ -245,7 +245,7 @@ XLALGenerateInspRing(
     XLALFree( waveform->a );
     XLALFree( waveform->phi );
     XLALFree( waveform->f );
-    XLAL_ERROR_NULL( "XLALCalculateNRStrain", XLAL_ENOMEM );
+    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
   }
 
   if ( waveform->shift )
