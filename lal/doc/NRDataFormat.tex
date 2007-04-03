@@ -58,16 +58,10 @@ LIGO Scientific Collaboration\\ Numerical Relativity Community\\
 \newcommand{\ihat}{\vec{e}_i}
 \newcommand{\jhat}{\vec{e}_j}
 \newcommand{\rhat}{\vec{e}_{r}}
-\newcommand{\that}{\vec{e}_{t}}
 \newcommand{\iotahat}{\vec{e}_{\iota}}
 \newcommand{\phihat}{\vec{e}_{\phi}}
 \newcommand{\eplus}{\tens{e}_+}
 \newcommand{\ecross}{\tens{e}_\times}
-
-\newcommand{\ellhat}{\vec{\ell}}
-\newcommand{\nhat}{\vec{n}}
-\newcommand{\mhat}{\vec{m}}
-\newcommand{\mbarhat}{\vec{\bar{m}}}
 
 \RCS $Date$
 \date{\RCSDate}
@@ -220,13 +214,15 @@ transverse-traceless tensors in the wave frame
 It is convenient to use the combination $h_+ - ih_\times$ which is
 related to $\Psi_4$ by two time derivatives\footnote{We define
   $\Psi_4$ as $\Psi_4 := C_{abcd}\ell^a \bar{m}^b \bar{m}^c n^d$ where
-  $C_{abcd}$ is the Weyl tensor and $a,b\ldots$ denote spacetime
-  indices.  If we denote the unit timelike normal to the spatial slice
-  as $\that$, then the null tetrad adapted to the constant $r$ spheres
-  is $(\ell^a,n^a,m^a,\bar{m}^a)$ is $\ellhat = (\that + \rhat)/\sqrt{2}$,
-  $\nhat = (\that - \rhat)/\sqrt{2}$, $\mhat = (\iotahat +
-  i\phihat)/\sqrt{2}$ and $\mbarhat$ is the complex conjugate of
-  $\mhat$.}
+  $C_{abcd}$ is the Weyl tensor and $a,b\ldots$ denote abstract
+  spacetime indices.  If we denote the unit timelike normal to the
+  spatial slice as $e_t^a$ and the promotions of
+  $\{\rhat,\iotahat,\phihat\}$ to the full spacetime as
+  $\{e_r^a,e_\iota^a,e_\phi^a\}$, then the null tetrad adapted to the
+  constant $r$ spheres is $\{\ell^a,n^a,m^a,\bar{m}^a\}$ where $\ell^a
+  = (e_t^a + e_r^a)/\sqrt{2}$, $n^a = (e_t^a - e_r^a)/\sqrt{2}$, $m^a
+  = (e_\iota^a + ie_\phi^a)/\sqrt{2}$, and $\bar{m}^a$ is the complex
+  conjugate of $m^a$.}
 \begin{equation}
   \label{eq:3}
   \Psi_4 = \ddot{h}_+ - i\ddot{h}_\times\,.
