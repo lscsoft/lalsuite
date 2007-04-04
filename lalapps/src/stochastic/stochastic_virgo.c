@@ -77,18 +77,17 @@ static int test_flag = 0;
 static int post_analysis_flag = 0;
 
 /* parameters for the stochastic search */
-UINT8 startTime = 782758813;
-UINT8 stopTime =  782761753;
+UINT8 startTime = 782758873;
+UINT8 stopTime =  782759353;
 
-CHAR frameCache1 [200]= "cache/HV-0_1.cache";
-CHAR frameCache2[200] = "cache/HV-0_1.cache";
-CHAR frameCacheMC1 [200]= "cache/HV-0_1.cache";
-CHAR frameCacheMC2[200] = "cache/HV-0_1.cache";
-
-CHAR channel1[LALNameLength]= "H1:noise_omega_0_1";
-CHAR channel2[LALNameLength]= "V2:noise_omega_0_1";
-CHAR channelMC1[LALNameLength]= "H1:noise_omega_0_1";
-CHAR channelMC2[LALNameLength]= "V2:noise_omega_0_1";
+CHAR frameCache1 [200]= "cache/H1-NOISE.cache";
+CHAR frameCache2[200] = "cache/V2-NOISE.cache";
+CHAR frameCacheMC1 [200]= "cache/H1-DNS.cache";
+CHAR frameCacheMC2[200] = "cache/V2-DNS.cache";
+CHAR channel1[LALNameLength]= "H1:STRAIN";
+CHAR channel2[LALNameLength]= "V2:noise";
+CHAR channelMC1[LALNameLength]= "H1:dnssignalv0";
+CHAR channelMC2[LALNameLength]= "V2:dnssignalv0";
 CHAR ifo1[LALNameLength] = "H1";
 CHAR ifo2[LALNameLength] = "V2";
 INT4 site1 = 4;
@@ -776,8 +775,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   fftDataLength2 = segmentLength2 + 1;
   
   if(fftDataLength1<=fftDataLength2)
-   hBarLength  = zeroPadLength1;
-  else hBarLength  = zeroPadLength2;
+   hBarLength  = fftDataLength1;
+  else hBarLength  = fftDataLength2;
   
   /* create fft plan */
   LAL_CALL(LALCreateForwardRealFFTPlan(&status,&fftDataPlan1,zeroPadLength1,0),&status);
