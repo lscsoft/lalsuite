@@ -246,6 +246,14 @@ UINT4 ComputeNumExtraBins(REAL8VectorSequence *vel, REAL8 f0, REAL8 deltaF,
    made global so a signal handler can read it */ 
 LALStatus *global_status;
 
+#ifdef OUTPUT_TIMING
+time_t clock0;
+UINT4 nSFTs;
+UINT4 nStacks;
+UINT4 nSkyRefine;
+#endif
+
+
 int MAIN( int argc, char *argv[]) {
 
   LALStatus status = blank_status;
@@ -865,6 +873,8 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL ( InitDopplerSkyScan ( &status, &thisScan, &scanInit), &status); 
   LogPrintfVerbatim(LOG_DEBUG, "done\n");  
 
+  
+  LogPrintf (LOG_DEBUG, "Number of nominal and *sideband* Fstat freq. bins :\n %d %d\n", binsFstat1, 2*semiCohPar.extraBinsFstat);
 
 
   /*----- start main calculations by going over coarse grid points and 
@@ -884,6 +894,10 @@ int MAIN( int argc, char *argv[]) {
   }
 
   LogPrintf(LOG_DEBUG, "Total skypoints = %d. Progress: ", thisScan.numSkyGridPoints);
+
+#ifdef OUTPUT_TIMING
+    clock0 = time(NULL);
+#endif 
 
 
   while(thisScan.state != STATE_FINISHED)
@@ -947,12 +961,9 @@ int MAIN( int argc, char *argv[]) {
 	extraBinsfdot = (UINT4)(tObs * (nf1dotRes - 1) * df1dotRes / dFreqStack + 0.5);
 	
 	semiCohPar.extraBinsFstat = extraBinsSky + extraBinsfdot;    
-	/* LogPrintf(LOG_DEBUG, "Maxmum No. of extra Fstat freq. bins = %d for skypatch + %d for residual fdot: total = %d\n", */
-	/* 2*extraBinsSky, 2*extraBinsfdot, 2*semiCohPar.extraBinsFstat);  */
             
 	/* allocate fstat memory */
 	binsFstat1 = (UINT4)(usefulParams.spinRange_midTime.fkdotBand[0]/dFreqStack + 1e-6) + 1 + 2*semiCohPar.extraBinsFstat;
-	/* 	LogPrintf(LOG_DEBUG, "Number of Fstat frequency bins = %d\n", binsFstat1);  */
 	
 	for (k = 0; k < nStacks; k++) { 
 	  /* careful--the epoch here is not the reference time for f0! */
@@ -1082,6 +1093,18 @@ int MAIN( int argc, char *argv[]) {
       XLALNextDopplerSkyPos( &dopplerpos, &thisScan );
 
     } /* end while loop over 1st stage coarse skygrid */
+
+#ifdef OUTPUT_TIMING
+  {
+    time_t tau = time(NULL) - clock0;
+    UINT4 Nrefine = nSkyRefine * nf1dotRes;
+    FILE *timing_fp = fopen ( "HS_timing.dat", "ab" );
+    fprintf ( timing_fp, "%d 	%d 	%d 	%d 	%d 	%d 	%d 	%d\n",  
+	      thisScan.numSkyGridPoints, nf1dot, binsFstat1, 2 * semiCohPar.extraBinsFstat, nSFTs, nStacks, Nrefine, tau );
+    fclose ( timing_fp );
+  }
+#endif
+  
 
   LogPrintfVerbatim ( LOG_DEBUG, " done.\n");
 
@@ -1234,7 +1257,7 @@ void SetUpSFTs( LALStatus *status,
 
   /* reset number of stacks */
   in->nStacks = catalogSeq.length;
-    
+
   /* get timestamps of start and mid of each stack */  
   /* set up vector containing mid times of stacks */    
   in->midTstack =  XLALCreateTimestampVector ( in->nStacks );
@@ -1364,6 +1387,22 @@ void SetUpSFTs( LALStatus *status,
       } /* end if */
     } /* loop over stacks */
   LALFree( catalogSeq.data);  
+
+
+#ifdef OUTPUT_TIMING
+  /* need to count the total number of SFTs */
+  nStacks = stackMultiSFT->length;
+  nSFTs = 0;
+  for ( k = 0; k < nStacks; k ++ )
+    {
+      UINT4 X;
+      for ( X=0; X < stackMultiSFT->data[k]->length; X ++ )
+	nSFTs += stackMultiSFT->data[k]->data[X]->length;
+    } /* for k < stacks */
+#endif
+
+
+
   
   DETATCHSTATUSPTR (status);
   RETURN(status);
@@ -1589,9 +1628,6 @@ void ComputeFstatHoughMap(LALStatus *status,
     }
   }
 
-
-
-
   /*------------------ start main Hough calculation ---------------------*/
 
   /* initialization */  
@@ -1607,6 +1643,7 @@ void ComputeFstatHoughMap(LALStatus *status,
     TRY( LALHOUGHComputeSizePar( status->statusPtr, &parSize, &parRes ),  status );
     xSide = parSize.xSide;
     ySide = parSize.ySide;
+
     maxNBins = parSize.maxNBins;
     maxNBorders = parSize.maxNBorders;
 	
@@ -1751,6 +1788,12 @@ void ComputeFstatHoughMap(LALStatus *status,
       TRY( LALHOUGHWeighSpacePHMD(status->statusPtr, &phmdVS, params->weightsV), status);      
 
     }   /* closing while loop over fBinSearch */
+
+#ifdef OUTPUT_TIMING
+    /* printf ("xside x yside = %d x %d = %d\n", parSize.xSide, parSize.ySide, parSize.xSide * parSize.ySide ); */
+    TRY( LALHOUGHComputeSizePar( status->statusPtr, &parSize, &parRes ),  status );
+    nSkyRefine = parSize.xSide * parSize.ySide;
+#endif
     
     fBin = fBinSearch;
     
