@@ -233,9 +233,11 @@ LALFindChirpBCVSpinFilterSegment (
         FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   }
 
-  /* if a chisqVec vector has been created, check we can store data in it */
-  if ( params->chisqVec )
+  /* if we are doing a chisq, check we can store the data */
+  if ( input->segment->chisqBinVec->length ) 
   {
+    ASSERT( params->chisqVec, status,
+        FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
     ASSERT( params->chisqVec->data, status,
         FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   }
