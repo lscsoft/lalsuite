@@ -1,4 +1,4 @@
-all: doxygen refman
+all: doxygen 
 
 doxygen:
 	echo -n "Collecting figures from LAL ... "
