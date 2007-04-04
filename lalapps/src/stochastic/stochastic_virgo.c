@@ -77,7 +77,7 @@ static int test_flag = 0;
 static int post_analysis_flag = 0;
 
 /* parameters for the stochastic search */
-UINT8 startTime = 782758873;
+UINT8 startTime = 782758843;
 UINT8 stopTime =  782759353;
 
 CHAR frameCache1 [200]= "cache/H1-NOISE.cache";
@@ -810,7 +810,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   strncpy(hBarTilde2.name, "hBarTilde2", LALNameLength);
   hBarTilde1.epoch = hBarTilde2.epoch = hBarTildeTemp1.epoch;
   hBarTilde1.f0 = hBarTilde2.f0 = 0.;
-  hBarTilde1.deltaF = hBarTilde2.deltaF = hBarTildeTemp1.deltaF; 
+  hBarTilde1.deltaF = hBarTilde2.deltaF = hBarTildeTemp1.deltaF/2.; 
   hBarTilde1.sampleUnits = hBarTilde2.sampleUnits = hBarTildeTemp1.sampleUnits; 
 
   hBarTilde1.data = hBarTilde2.data = NULL;
