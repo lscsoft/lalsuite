@@ -612,8 +612,8 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
   int numlines,i,n;
   CHAR *thisline;
   char sensingstr[7],usfstr[17], delaystr[5];
-  char aastr[9], servostr[5];
-  int NCinv, NA, ND, l;
+  char aastr[9], servostr[5], awstr[13];
+  int NCinv, NA, ND, NAW, l;
  
   LALParseDataFile (&status, &Filters, CLA.filterfile);
   TESTSTATUS( &status );
@@ -805,6 +805,54 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
     }
 
   /**-----------------------------------------------------------------------**/
+  /* Read in antiwhitening filter */
+  i++; /*advance one line */
+  thisline = Filters->lines->tokens[i];	/* get line i */
+  sscanf (thisline,"%s", aastr);
+  if ( strcmp(awstr, "ANTIWHITENING" ) ) 
+    {
+      fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", 
+	      thisline, CLA.filterfile, "ANTIWHITENING");
+      LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
+      return 1;
+    }
+  /* Read number of sensing filters and their orders */
+  i++;/*advance one line */
+  thisline = Filters->lines->tokens[i];	/* get line i */
+  NAW=strtol(thisline, &thisline,10);
+  if ( strcmp(thisline, " FILTER_ORDER" ) ) 
+    {
+      fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", 
+	      thisline, CLA.filterfile, "FILTER_ORDER");
+      LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
+      return 1;      
+    }
+   
+  /* Allocate inverse sensing funtion filters */
+  InputData.AW=(REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter)); 
+
+  /* Allocate inverse sensing function filter */
+  InputData.AW->directCoef=NULL;
+  InputData.AW->recursCoef=NULL;
+  InputData.AW->history=NULL;
+
+  LALDCreateVector(&status,&(InputData.AW->directCoef),NAW);
+  LALDCreateVector(&status,&(InputData.AW->recursCoef),NAW);
+  LALDCreateVector(&status,&(InputData.AW->history),NAW-1);
+
+  for(l=0;l<NAW;l++) InputData.AW->directCoef->data[l]=0.0;
+  for(l=0;l<NAW;l++) InputData.AW->recursCoef->data[l]=0.0;
+  for(l=0;l<NAW-1;l++) InputData.AW->history->data[l]=0.0;
+  
+  for(n = 0; n < NAW; n++)
+    {
+      /* read direct coeffs */
+      i++;/*advance one line */
+      thisline = Filters->lines->tokens[i];	/* get line i */
+      InputData.AW->directCoef->data[n]=strtod(thisline, &thisline);
+    }
+
+  /**-----------------------------------------------------------------------**/
 
   LALDestroyParsedDataFile ( &status, &Filters );
   TESTSTATUS( &status );
@@ -847,10 +895,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"check-file-exists",   required_argument, NULL,           'v'},
     {"olg-file",            required_argument, NULL,           'a'},
     {"sensing-file",        required_argument, NULL,           'b'},
-    {"help",                no_argument, NULL,                 'h' },
+    {"darm-err-only",       required_argument, NULL,           'w'},
+    {"help",                no_argument, NULL,                 'h'},
     {0, 0, 0, 0}
   };
-  char args[] = "hrcduxf:C:A:E:D:R:F:s:e:i:j:k:l:m:n:t:o:H:T:S:z:v:";
+  char args[] = "hrcduxf:C:A:E:D:R:F:s:e:i:j:k:l:m:n:t:o:H:T:S:z:v:w:";
   
   /* Initialize default values */
   CLA->f=0.0;
@@ -883,6 +932,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   InputData.usefactors=1;
   InputData.fftconv=1;
   InputData.outalphas=0;
+  InputData.darmctrl=1;
 
   /* Scan through list of command line arguments */
   while ( 1 )
@@ -1002,6 +1052,10 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'b':
       CLA->filenameC=optarg;       
       break;
+    case 'w':
+      /* don't use calibration factors in teh strain computation */
+      InputData.darmctrl=0;
+      break;
     case 'h':
       /* print usage/help message */
       fprintf(stdout,"Arguments are:\n");
@@ -1034,6 +1088,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tcheck-file-exists (-w)\tSTRING\t Checks file give as argument exists already and won't run if so. \n");
       fprintf(stdout,"\tolg-file (-a)\tSTRING\t Name of official OLG file (for storage in frames). \n");
       fprintf(stdout,"\tsensing-file (-b)\tSTRING\t Name of official sensing file (for storage in frames). \n");
+      fprintf(stdout,"\tdarm-err-only (-w)\tSTRING\t Do darm_err only calibration. Default is to use darm_err and darm_ctrl. For first epoch of S5.\n");
       fprintf(stdout,"\thelp (-h)\tFLAG\t This message\n");    
       exit(0);
       break;
@@ -1206,6 +1261,14 @@ int FreeMem(void)
   LALDDestroyVector(&status,&InputData.A->history);   
   TESTSTATUS( &status );
   LALFree(InputData.A);
+
+  LALDDestroyVector(&status,&InputData.AW->directCoef);
+  TESTSTATUS( &status );
+  LALDDestroyVector(&status,&InputData.AW->recursCoef);
+  TESTSTATUS( &status );
+  LALDDestroyVector(&status,&InputData.AW->history);   
+  TESTSTATUS( &status );
+  LALFree(InputData.AW);
 
   LALDDestroyVector(&status,&InputData.D->directCoef);
   TESTSTATUS( &status );
