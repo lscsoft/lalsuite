@@ -1791,7 +1791,6 @@ void ComputeFstatHoughMap(LALStatus *status,
 
 #ifdef OUTPUT_TIMING
     /* printf ("xside x yside = %d x %d = %d\n", parSize.xSide, parSize.ySide, parSize.xSide * parSize.ySide ); */
-    TRY( LALHOUGHComputeSizePar( status->statusPtr, &parSize, &parRes ),  status );
     nSkyRefine = parSize.xSide * parSize.ySide;
 #endif
     
