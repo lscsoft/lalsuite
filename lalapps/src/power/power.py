@@ -601,6 +601,7 @@ def make_datafind_fragment(dag, instrument, seg):
 	node.set_name("LSCdataFind-%s-%s-%s" % (instrument, int(seg[0]), int(abs(seg))))
 	node.set_start(seg[0] - datafind_pad)
 	node.set_end(seg[1] + 1)
+	node.set_ifo(instrument)
 	node.set_observatory(instrument[0])
 	if node.get_type() == None:
 		node.set_type(datafindjob.get_config_file().get("datafind", "type_%s" % instrument))
@@ -727,7 +728,7 @@ def make_multipower_fragment(dag, powerparents, instrument, seglist, tag, framec
 	segment = seglist.extent()
 	nodes = []
 	for seg in seglist:
-		nodes.extend(make_power_fragment(dag, powerparents, instrument, seg, tag, framecache, injargs))
+		nodes += make_power_fragment(dag, powerparents, instrument, seg, tag, framecache, injargs)
 	return nodes
 
 
@@ -740,15 +741,38 @@ def make_multipower_fragment(dag, powerparents, instrument, seglist, tag, framec
 #
 
 
+#
+# Without injections
+#
+
+
 def make_power_segment_fragment(dag, datafindnodes, instrument, segment, tag, psds_per_job, verbose = False):
 	"""
 	Construct a DAG fragment for an entire segment, splitting the
 	segment into multiple power jobs.
 	"""
+	if len(datafindnodes) != 1:
+		raise ValueError, "must set exactly one datafind parent per power job"
 	seglist = split_segment(powerjob, segment, psds_per_job)
 	if verbose:
 		print >>sys.stderr, "Segment split: " + str(seglist)
 	return make_multipower_fragment(dag, datafindnodes, instrument, seglist, tag, datafindnodes[0].get_output())
+
+
+#
+# With injections
+#
+
+
+def make_injection_segment_fragment(dag, datafindnodes, binjnodes, instrument, segment, tag, psds_per_job, verbose = False):
+	if len(datafindnodes) != 1:
+		raise ValueError, "must set exactly one datafind parent per power job"
+	if len(binjnodes) != 1:
+		raise ValueError, "must set exactly one binj parent per power job"
+	seglist = split_segment(powerjob, segment, psds_per_job)
+	if verbose:
+		print >>sys.stderr, "Injections split: " + str(seglist)
+	return make_multipower_fragment(dag, datafindnodes + binjnodes, instrument, seglist, tag, datafindnodes[0].get_output(), injargs = {"burstinjection-file": binjnodes[0].get_output_cache()[0].path()})
 
 
 #
@@ -774,29 +798,17 @@ def make_multibinj_fragment(dag, seg, tag):
 #
 # =============================================================================
 #
-#     Analyze A Segment Using Multiple lalapps_power Jobs With Injections
+#             The Coincidence Fragment:  bucluster + lladd + burca
 #
 # =============================================================================
 #
 
 
-def make_injection_segment_fragment(dag, datafindnodes, binjnodes, segment, instrument, psds_per_job, tag, verbose = False):
-	seglist = split_segment(powerjob, segment, psds_per_job)
-	if verbose:
-		print >>sys.stderr, "Injections split: " + str(seglist)
-	return make_multipower_fragment(dag, datafindnodes + binjnodes, instrument, seglist, "INJECTIONS_%s" % tag, datafindnodes[0].get_output(), injargs = {"burstinjection-file": binjnodes[0].get_output_cache()[0].path()})
+def make_coinc_fragment(dag, power_parents, time_slides_filename, segment, tag, binjnodes = [], clustering = False):
+	# cache entry for time slides file
 
+	time_slides_cache = [CacheEntry(None, None, None, "file://localhost" + os.path.abspath(time_slides_filename))]
 
-#
-# =============================================================================
-#
-#             The Coincidence Fragment:  lladd + binjfind + burca
-#
-# =============================================================================
-#
-
-
-def make_coinc_fragment(dag, power_parents, time_slides_cache, segment, tag, binjnodes = [], clustering = False):
 	# generate a bucluster node to pre-process all input files if
 	# clustering has been enabled.  doing a first pass before lladd
 	# keeps file sizes small to lower the risk of lladd running out of

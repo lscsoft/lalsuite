@@ -73,11 +73,10 @@ def parse_command_line():
 	parser.add_option("--full-segments", action = "store_true", help = "Analyze all data from segment lists, not just coincident times.")
 	parser.add_option("--minimum-gap", metavar = "seconds", default = "240", help = "Merge jobs analyzing data from the same instrument if the gap between them is less than this many seconds (default = 240).")
 	parser.add_option("--variant", metavar = "[injections|noninjections|both]", default = "both", help = "Select the variant of the pipeline to construct.  \"injections\" produces a simulations-only version of the pipeline, \"noninjections\" produces a version with no simulation jobs, and \"both\" produces a full pipeline with both simulation and non-simulation jobs.")
-	parser.add_option("--time-slides", metavar = "filename", default = "time_slides.xml", help = "Set file from which to obtain the time slide table.")
+	parser.add_option("--background-time-slides", metavar = "filename", default = "background_time_slides.xml", help = "Set file from which to obtain the time slide table for use in the background branch of the pipeline (default = \"background_time_slides.xml\").")
+	parser.add_option("--injection-time-slides", metavar = "filename", default = "injection_time_slides.xml", help = "Set file from which to obtain the time slide table for use in the injection branch of the pipeline (default = \"injection_time_slides.xml\".")
 	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
 	options, filenames = parser.parse_args()
-
-	options.time_slides = [CacheEntry(None, None, None, "file://localhost" + os.path.abspath(options.time_slides))]
 
 	options.minimum_gap = float(options.minimum_gap)
 
@@ -86,12 +85,12 @@ def parse_command_line():
 	options.do_injections = options.variant in ("injections", "both")
 	options.do_noninjections = options.variant in ("noninjections", "both")
 
-	return options, (filenames or ["power.dag"])
+	if options.do_injections and options.injection_time_slides is None:
+		raise ValueError, "missing required --injection-time-slides argument"
+	if options.do_noninjections and options.background_time_slides is None:
+		raise ValueError, "missing required --background-time-slides argument"
 
-try:
-	options, filenames = parse_command_line()
-except ValueError, e:
-	print >>sys.stderr, "error: %s" % str(e)
+	return options, (filenames or ["power.dag"])
 
 
 #
@@ -112,28 +111,14 @@ def parse_config_file(options):
 	options.tag = config.get("pipeline", "user_tag")
 	options.enable_clustering = config.getboolean("pipeline", "enable_clustering")
 
-	options.seglistdict = segments.segmentlistdict()
+	seglistdict = segments.segmentlistdict()
 	for ifo in config.get("pipeline", "ifos").split():
-		options.seglistdict[ifo] = segmentsUtils.fromsegwizard(file(config.get("pipeline", "seglist_%s" % ifo)), coltype = LIGOTimeGPS).coalesce()
+		seglistdict[ifo] = segmentsUtils.fromsegwizard(file(config.get("pipeline", "seglist_%s" % ifo)), coltype = LIGOTimeGPS).coalesce()
 
 	options.psds_per_power = config.getint("pipeline", "psds_per_power")
 	options.psds_per_injection = config.getint("pipeline", "psds_per_injection")
 
-	return config
-
-config_parser = parse_config_file(options)
-
-
-#
-# =============================================================================
-#
-#                              Define .sub Files
-#
-# =============================================================================
-#
-
-
-power.init_job_types(config_parser)
+	return seglistdict, config
 
 
 #
@@ -218,25 +203,45 @@ def compute_segment_lists(seglistdict, time_slides, minimum_gap, full_segments =
 #
 
 
-def make_single_instrument_fragment(dag, options, instrument, seglist, binjnodes = None, do_noninjections = True):
-	powerfrags = []
-	injpowerfrags = []
+def make_datafind_fragment(dag, instrument, seglist):
+	nodes = []
+	for seg in seglist:
+		nodes += power.make_datafind_fragment(dag, instrument, seg)
+	return nodes
+
+
+def make_single_instrument_fragment(dag, datafinds, instrument, seglist, tag, options):
+	nodes = []
 	for seg in seglist:
 		if options.verbose:
 			print >>sys.stderr, "generating %s fragment %s" % (instrument, str(seg))
 
-		# LSCdataFind
-		datafindfrag = power.make_datafind_fragment(dag, instrument, seg)
+		# find the datafind job this power job is going to need
+		dfnodes = [node for node in datafinds if node.get_ifo() == instrument and seg in segments.segment(node.get_start(), node.get_end())]
+		if not len(dfnodes):
+			raise ValueError, "error, no datafind for power job at %s in %s" % (str(seg), instrument)
 
-		# a segment without injections
-		if do_noninjections:
-			powerfrags += power.make_power_segment_fragment(dag, datafindfrag, instrument, seg, options.tag, options.psds_per_power, verbose = options.verbose)
+		# power job
+		nodes += power.make_power_segment_fragment(dag, dfnodes, instrument, seg, tag, options.psds_per_power, verbose = options.verbose)
 
-		# a segment with injections
-		if binjnodes is not None:
-			injpowerfrags += power.make_injection_segment_fragment(dag, datafindfrag, binjnodes, seg, instrument, options.psds_per_injection, options.tag, verbose = options.verbose)
+	return nodes
 
-	return powerfrags, injpowerfrags
+
+def make_single_instrument_injections_fragment(dag, datafinds, instrument, seglist, tag, binjnodes, options):
+	nodes = []
+	for seg in seglist:
+		if options.verbose:
+			print >>sys.stderr, "generating %s fragment %s" % (instrument, str(seg))
+
+		# find the datafind job this power job is going to need
+		dfnodes = [node for node in datafinds if node.get_ifo() == instrument and seg in segments.segment(node.get_start(), node.get_end())]
+		if not len(dfnodes):
+			raise ValueError, "error, no datafind for power job at %s in %s" % (str(seg), instrument)
+
+		# power job
+		nodes += power.make_injection_segment_fragment(dag, dfnodes, binjnodes, instrument, seg, tag, options.psds_per_injection, verbose = options.verbose)
+
+	return nodes
 
 
 #
@@ -248,7 +253,7 @@ def make_single_instrument_fragment(dag, options, instrument, seglist, binjnodes
 #
 
 
-def make_coinc_stage(dag, parents, tag, time_slides, time_slides_cache, binjnodes = [], clustering = False, verbose = False):
+def make_coinc_stage(dag, parents, tag, time_slides, time_slides_filename, binjnodes = [], clustering = False, verbose = False):
 	if not len(parents):
 		# no parents, so don't waste time doing anything
 		return []
@@ -267,8 +272,9 @@ def make_coinc_stage(dag, parents, tag, time_slides, time_slides_cache, binjnode
 
 	# now that the cache entries have been grouped, figure out which
 	# DAG node goes with which entry (assume each DAG fragment provided
-	# a cache of output files with exactly 1 file);  also compute the
-	# segment spanned by each cache while we're at it.
+	# a cache of output files with exactly 1 file, which in the current
+	# pipeline is true);  also compute the segment spanned by each
+	# cache while we're at it.
 	segs = []
 	fragments = []
 	# so we can modify it
@@ -289,7 +295,7 @@ def make_coinc_stage(dag, parents, tag, time_slides, time_slides_cache, binjnode
 	# build the coinc fragments
 	burcanodes = []
 	for parents, seg in zip(fragments, segs):
-		burcanodes += power.make_coinc_fragment(dag, parents, time_slides_cache, seg, tag, binjnodes = binjnodes, clustering = clustering)
+		burcanodes += power.make_coinc_fragment(dag, parents, time_slides_filename, seg, tag, binjnodes = binjnodes, clustering = clustering)
 
 	# done
 	return burcanodes
@@ -319,12 +325,48 @@ def make_binjfind_stage(dag, parents, tag, verbose = False):
 #
 
 
-time_slides = ligolw_cafe.get_time_slides(options.time_slides[0].path(), verbose = options.verbose, gz = options.time_slides[0].path()[-3:] == ".gz")
+#
+# Command line
+#
 
-options.seglistdict = compute_segment_lists(options.seglistdict, time_slides, options.minimum_gap, full_segments = options.full_segments, verbose = options.verbose)
+
+options, filenames = parse_command_line()
+
+
+#
+# Parse .ini file.
+#
+
+
+seglistdict, config_parser = parse_config_file(options)
+
+
+#
+# Define .sub files
+#
+
+
+power.init_job_types(config_parser)
+
+
+#
+# Construct initial segment lists
+#
+
+
+background_time_slides = ligolw_cafe.get_time_slides(options.background_time_slides, verbose = options.verbose, gz = options.background_time_slides[-3:] == ".gz")
+background_seglistdict = compute_segment_lists(seglistdict, background_time_slides, options.minimum_gap, full_segments = options.full_segments, verbose = options.verbose)
+
+injection_time_slides = ligolw_cafe.get_time_slides(options.injection_time_slides, verbose = options.verbose, gz = options.injection_time_slides[-3:] == ".gz")
+injection_seglistdict = compute_segment_lists(seglistdict, injection_time_slides, options.minimum_gap, full_segments = options.full_segments, verbose = options.verbose)
+
+
+#
+# Start DAG
+#
+
 
 power.make_dag_directories(config_parser)
-
 dag = pipeline.CondorDAG(tempfile.mkstemp(".log", "power_", options.condor_log_dir)[1])
 dag.set_dag_file(os.path.splitext(filenames[0])[0])
 
@@ -334,10 +376,19 @@ dag.set_dag_file(os.path.splitext(filenames[0])[0])
 #
 
 
+binjnodes = []
 if options.do_injections:
-	binjnodes = power.make_multibinj_fragment(dag, options.seglistdict.extent_all(), "INJECTIONS_%s" % options.tag)
-else:
-	binjnodes = []
+	binjnodes += power.make_multibinj_fragment(dag, injection_seglistdict.extent_all(), "INJECTIONS_%s" % options.tag)
+
+
+#
+# Build datafind jobs
+#
+
+
+datafinds = []
+for instrument, seglist in (injection_seglistdict | background_seglistdict).iteritems():
+	datafinds += make_datafind_fragment(dag, instrument, seglist)
 
 
 #
@@ -346,12 +397,14 @@ else:
 #
 
 
-sngl_inst_pwrfrags = []
-sngl_inst_injfrags = []
-for instrument, seglist in options.seglistdict.iteritems():
-	a, b = make_single_instrument_fragment(dag, options, instrument, seglist, binjnodes, options.do_noninjections)
-	sngl_inst_pwrfrags.extend(a)
-	sngl_inst_injfrags.extend(b)
+inj_nodes = []
+for instrument, seglist in injection_seglistdict.iteritems():
+	inj_nodes += make_single_instrument_injections_fragment(dag, datafinds, instrument, seglist, "INJECTIONS_%s" % options.tag, binjnodes, options)
+
+
+nodes = []
+for instrument, seglist in background_seglistdict.iteritems():
+	nodes += make_single_instrument_fragment(dag, datafinds, instrument, seglist, options.tag, options)
 
 
 #
@@ -361,13 +414,13 @@ for instrument, seglist in options.seglistdict.iteritems():
 
 # injections
 
-coinc_frags = make_coinc_stage(dag, sngl_inst_injfrags, "INJECTIONS_%s" % options.tag, time_slides, options.time_slides, binjnodes = binjnodes, clustering = options.enable_clustering, verbose = options.verbose)
-coinc_frags = make_binjfind_stage(dag, coinc_frags, "INJECTIONS_%s" % options.tag, verbose = options.verbose)
+inj_nodes = make_coinc_stage(dag, inj_nodes, "INJECTIONS_%s" % options.tag, injection_time_slides, options.injection_time_slides, binjnodes = binjnodes, clustering = options.enable_clustering, verbose = options.verbose)
+inj_nodes = make_binjfind_stage(dag, inj_nodes, "INJECTIONS_%s" % options.tag, verbose = options.verbose)
 
 
 # non-injections
 
-coinc_frags += make_coinc_stage(dag, sngl_inst_pwrfrags, options.tag, time_slides, options.time_slides, clustering = options.enable_clustering, verbose = options.verbose)
+nodes = make_coinc_stage(dag, nodes, options.tag, background_time_slides, options.background_time_slides, clustering = options.enable_clustering, verbose = options.verbose)
 
 
 #
