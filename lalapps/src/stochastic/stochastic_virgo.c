@@ -184,7 +184,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL8TimeSeries segmentPadD1,segmentPadD2;
   REAL4TimeSeries segmentPad1,segmentPad2,segment1,segment2;
   REAL4Vector *seg1[numSegments],*seg2[numSegments];
-  /*REAL4Vector *segBuffer1, *segBuffer2;*/
   LALUnit dataUnit = {-18,{0,0,0,0,0,1,0},{0,0,0,0,0,0,0}};
 
 
@@ -775,8 +774,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   fftDataLength2 = segmentLength2 + 1;
   
   if(fftDataLength1<=fftDataLength2)
-   hBarLength  = zeroPadLength1;
-  else hBarLength  = zeroPadLength2;
+   hBarLength  = fftDataLength1;
+  else hBarLength  = fftDataLength2;
   
   /* create fft plan */
   LAL_CALL(LALCreateForwardRealFFTPlan(&status,&fftDataPlan1,zeroPadLength1,0),&status);
@@ -788,7 +787,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   hBarTildeTemp1.epoch = hBarTildeTemp2.epoch = gpsMidSegTime;
 
   hBarTildeTemp1.f0 = hBarTildeTemp2.f0 = 0.;
-  hBarTildeTemp1.deltaF = hBarTildeTemp2.deltaF = 1./(REAL8)segmentDuration; 
+  hBarTildeTemp1.deltaF = hBarTildeTemp2.deltaF = 1./(REAL8)segmentDuration/2.; 
   hBarTildeTemp1.sampleUnits = hBarTildeTemp2.sampleUnits= hBarUnit; 
 
  /* allocate memory for zeropad */
@@ -810,7 +809,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   strncpy(hBarTilde2.name, "hBarTilde2", LALNameLength);
   hBarTilde1.epoch = hBarTilde2.epoch = hBarTildeTemp1.epoch;
   hBarTilde1.f0 = hBarTilde2.f0 = 0.;
-  hBarTilde1.deltaF = hBarTilde2.deltaF = hBarTildeTemp1.deltaF/2.; 
+  hBarTilde1.deltaF = hBarTilde2.deltaF = hBarTildeTemp1.deltaF; 
   hBarTilde1.sampleUnits = hBarTilde2.sampleUnits = hBarTildeTemp1.sampleUnits; 
 
   hBarTilde1.data = hBarTilde2.data = NULL;
