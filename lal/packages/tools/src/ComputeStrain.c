@@ -77,16 +77,27 @@ REAL8IIRFilter ALPHASLPFIR;
  LALMakeFIRHP(status->statusPtr, &HPFIR);
  CHECKSTATUSPTR( status );
 
- /* copy AS_Q input into residual strain as double */  
+ /* copy DARM_ERR input into residual strain as double */  
  for (p=0; p<(int)output->hR.data->length; p++) 
    {
     output->hR.data->data[p]=input->DARM_ERR.data->data[p];
    }
 
- /* copy DARM_CTRL input into control strain as double */  
- for (p=0; p<(int)output->hC.data->length; p++) 
+ if (input->darmctrl)
    {
-     output->hC.data->data[p]=input->DARM_ERR.data->data[p];
+     /* copy DARM_CTRL input into control strain as double */  
+     for (p=0; p<(int)output->hC.data->length; p++) 
+       {
+	 output->hC.data->data[p]=input->DARM.data->data[p];
+       }
+   }else
+   {
+     /* If DARM_ERR only calibration copy DARM_ERR data into control
+	signal */
+     for (p=0; p<(int)output->hC.data->length; p++) 
+       {
+	 output->hC.data->data[p]=input->DARM_ERR.data->data[p];
+       }
    }
 
  /* unit impulse */
@@ -241,29 +252,44 @@ REAL8IIRFilter ALPHASLPFIR;
      XLALFIRFilter(&(output->hC),&(HPFIR));
    }
 
- /* Filter through servo */
- if (input->fftconv)
+ if (input->darmctrl)
    {
-     LALFFTFIRFilter(status->statusPtr,&(output->hC), input->D);
-     CHECKSTATUSPTR( status );
-   }
- else
+     /* Filter through anti-whitening */
+     if (input->fftconv)
+       {
+	 LALFFTFIRFilter(status->statusPtr,&(output->hC), input->AW);
+	 CHECKSTATUSPTR( status );
+       }
+     else
+       {
+	 XLALFIRFilter(&(output->hC), input->A);
+       }
+   }else
    {
-     XLALFIRFilter(&(output->hC), input->D);
-   }
+     /* Filter through servo */
+     if (input->fftconv)
+       {
+	 LALFFTFIRFilter(status->statusPtr,&(output->hC), input->D);
+	 CHECKSTATUSPTR( status );
+       }
+     else
+       {
+	 XLALFIRFilter(&(output->hC), input->D);
+       }
 
- /* At this point I have something very similar to darm_ctrl in hC */
- /* add the calibration lines */
- if (!input->delta && (input->DARM_ERR.deltaT == input->EXC.deltaT))
-   {
-     int k;
-     for(k = 0; k < (int)output->hC.data->length; k++){
-       output->hC.data->data[k] += input->EXC.data->data[k];
-     }
-   }
- else
-   {
-     fprintf(stdout, "Warning: Not adding calibration lines to control signal.\n");
+     /* At this point I have something very similar to darm_ctrl in hC */
+     /* add the calibration lines */
+     if (!input->delta && (input->DARM_ERR.deltaT == input->EXC.deltaT))
+       {
+	 int k;
+	 for(k = 0; k < (int)output->hC.data->length; k++){
+	   output->hC.data->data[k] += input->EXC.data->data[k];
+	 }
+       }
+     else
+       {
+	 fprintf(stdout, "Warning: Not adding calibration lines to control signal.\n");
+       }
    }
 
  /* Filter through analog actuation */
