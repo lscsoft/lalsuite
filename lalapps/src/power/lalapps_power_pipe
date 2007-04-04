@@ -203,9 +203,11 @@ def compute_segment_lists(seglistdict, time_slides, minimum_gap, full_segments =
 #
 
 
-def make_datafind_fragment(dag, instrument, seglist):
+def make_datafind_fragment(dag, instrument, seglist, verbose = False):
 	nodes = []
 	for seg in seglist:
+		if verbose:
+			print >>sys.stderr, "making datafind job for %s spanning %s" % (instrument, seg)
 		nodes += power.make_datafind_fragment(dag, instrument, seg)
 	return nodes
 
@@ -216,9 +218,10 @@ def make_single_instrument_fragment(dag, datafinds, instrument, seglist, tag, op
 		if options.verbose:
 			print >>sys.stderr, "generating %s fragment %s" % (instrument, str(seg))
 
-		# find the datafind job this power job is going to need
-		dfnodes = [node for node in datafinds if node.get_ifo() == instrument and seg in segments.segment(node.get_start(), node.get_end())]
-		if not len(dfnodes):
+		# find the datafind job this power job is going to need,
+		# taking the first if more than one is suitable
+		dfnodes = [node for node in datafinds if (node.get_ifo() == instrument) and (seg in segments.segment(node.get_start(), node.get_end()))][:1]
+		if not dfnodes:
 			raise ValueError, "error, no datafind for power job at %s in %s" % (str(seg), instrument)
 
 		# power job
@@ -233,9 +236,10 @@ def make_single_instrument_injections_fragment(dag, datafinds, instrument, segli
 		if options.verbose:
 			print >>sys.stderr, "generating %s fragment %s" % (instrument, str(seg))
 
-		# find the datafind job this power job is going to need
-		dfnodes = [node for node in datafinds if node.get_ifo() == instrument and seg in segments.segment(node.get_start(), node.get_end())]
-		if not len(dfnodes):
+		# find the datafind job this power job is going to need,
+		# taking the first if more than one is suitable
+		dfnodes = [node for node in datafinds if (node.get_ifo() == instrument) and (seg in segments.segment(node.get_start(), node.get_end()))][:1]
+		if not dfnodes:
 			raise ValueError, "error, no datafind for power job at %s in %s" % (str(seg), instrument)
 
 		# power job
@@ -254,8 +258,8 @@ def make_single_instrument_injections_fragment(dag, datafinds, instrument, segli
 
 
 def make_coinc_stage(dag, parents, tag, time_slides, time_slides_filename, binjnodes = [], clustering = False, verbose = False):
-	if not len(parents):
-		# no parents, so don't waste time doing anything
+	if not time_slides:
+		# no time slides, so don't waste time doing anything
 		return []
 
 	if verbose:
@@ -354,11 +358,19 @@ power.init_job_types(config_parser)
 #
 
 
-background_time_slides = ligolw_cafe.get_time_slides(options.background_time_slides, verbose = options.verbose, gz = options.background_time_slides[-3:] == ".gz")
-background_seglistdict = compute_segment_lists(seglistdict, background_time_slides, options.minimum_gap, full_segments = options.full_segments, verbose = options.verbose)
+if options.do_noninjections:
+	background_time_slides = ligolw_cafe.get_time_slides(options.background_time_slides, verbose = options.verbose, gz = options.background_time_slides[-3:] == ".gz")
+	background_seglistdict = compute_segment_lists(seglistdict, background_time_slides, options.minimum_gap, full_segments = options.full_segments, verbose = options.verbose)
+else:
+	background_time_slides = []
+	background_seglistdict = segments.segmentlistdict()
 
-injection_time_slides = ligolw_cafe.get_time_slides(options.injection_time_slides, verbose = options.verbose, gz = options.injection_time_slides[-3:] == ".gz")
-injection_seglistdict = compute_segment_lists(seglistdict, injection_time_slides, options.minimum_gap, full_segments = options.full_segments, verbose = options.verbose)
+if options.do_injections:
+	injection_time_slides = ligolw_cafe.get_time_slides(options.injection_time_slides, verbose = options.verbose, gz = options.injection_time_slides[-3:] == ".gz")
+	injection_seglistdict = compute_segment_lists(seglistdict, injection_time_slides, options.minimum_gap, full_segments = options.full_segments, verbose = options.verbose)
+else:
+	injection_time_slides = []
+	injection_seglistdict = segments.segmentlistdict()
 
 
 #
@@ -388,7 +400,7 @@ if options.do_injections:
 
 datafinds = []
 for instrument, seglist in (injection_seglistdict | background_seglistdict).iteritems():
-	datafinds += make_datafind_fragment(dag, instrument, seglist)
+	datafinds += make_datafind_fragment(dag, instrument, seglist, verbose = options.verbose)
 
 
 #

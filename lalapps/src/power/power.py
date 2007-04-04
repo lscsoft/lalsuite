@@ -752,7 +752,7 @@ def make_power_segment_fragment(dag, datafindnodes, instrument, segment, tag, ps
 	segment into multiple power jobs.
 	"""
 	if len(datafindnodes) != 1:
-		raise ValueError, "must set exactly one datafind parent per power job"
+		raise ValueError, "must set exactly one datafind parent per power job, got %d" % len(datafindnodes)
 	seglist = split_segment(powerjob, segment, psds_per_job)
 	if verbose:
 		print >>sys.stderr, "Segment split: " + str(seglist)
@@ -766,9 +766,9 @@ def make_power_segment_fragment(dag, datafindnodes, instrument, segment, tag, ps
 
 def make_injection_segment_fragment(dag, datafindnodes, binjnodes, instrument, segment, tag, psds_per_job, verbose = False):
 	if len(datafindnodes) != 1:
-		raise ValueError, "must set exactly one datafind parent per power job"
+		raise ValueError, "must set exactly one datafind parent per power job, got %d" % len(datafindnodes)
 	if len(binjnodes) != 1:
-		raise ValueError, "must set exactly one binj parent per power job"
+		raise ValueError, "must set exactly one binj parent per power job, got %d" % len(binjnodes)
 	seglist = split_segment(powerjob, segment, psds_per_job)
 	if verbose:
 		print >>sys.stderr, "Injections split: " + str(seglist)
