@@ -49,7 +49,7 @@ LIGO Scientific Collaboration\\ Numerical Relativity Community\\
 \tableofcontents
 
 \numberwithin{equation}{section}
-\newcommand{\Ys}{{{}^sY}}
+\newcommand{\Ys}{{{}^{-s}Y}}
 \newcommand{\Ytwo}{{{}^{-2}Y}}
 \newcommand{\tens}[1]{\tensor{#1}}
 \newcommand{\xhat}{\vec{e}_x}
@@ -245,7 +245,7 @@ The explicit expression for the spin weighted spherical harmonics is
 in terms of the Wigner $d$-functions
 \begin{equation}
   \label{eq:5}
-   \Ys_{lm} = (-1)^s\sqrt{\frac{2\ell+1}{4\pi}} d^\ell_{m,-s}(\iota)e^{im\phi}
+   \Ys_{lm} = (-1)^s\sqrt{\frac{2\ell+1}{4\pi}} d^\ell_{m,s}(\iota)e^{im\phi}
 \end{equation}
 where
 \begin{equation}
@@ -260,7 +260,7 @@ with $k_1 = \textrm{max}(0, m-s)$ and $k_2=\textrm{min}(\ell+m,
 \begin{eqnarray}
   \label{eq:7}
   \Ytwo_{22} &=& \sqrt{\frac{5}{64\pi}}(1+\cos\iota)^2e^{2i\phi} \,,\\
-  \Ytwo_{21} &=& \sqrt{\frac{5}{16\pi}}  \sin\iota( 1 - \cos\iota )e^{i\phi} \,,\\
+  \Ytwo_{21} &=& \sqrt{\frac{5}{16\pi}}  \sin\iota( 1 + \cos\iota )e^{i\phi} \,,\\
   \Ytwo_{20} &=& \sqrt{\frac{15}{32\pi}} \sin^2\iota \,,\\
   \Ytwo_{2-1} &=& \sqrt{\frac{5}{16\pi}}  \sin\iota( 1 - \cos\iota
   )e^{-i\phi} \,,\\
@@ -314,19 +314,24 @@ larger of the two masses so that $q\geq 1$.  The choice of precisely
 how $M_1$, $M_2$ and the spins are calculated is to be decided by the
 individual numerical relativity groups.
 
-The data for a single mode $rh_{+,\times}^{(\ell m)}$ is to be written as a
-plain text file in three columns for the time $t$, $rh_+^{(\ell m)}$ and
-$rh_\times^{(\ell m)}$ respectively.  For a given value of $\ell$, we require
-that waveforms be provided for all values of
-$m=-\ell,\ldots,\ell-1,\ell$.  This must be done irrespective of any
-symmetries that may be present in the simulation.  The time must be in
-units of the total mass $M$ of the binary.  There can be subtleties in
-the choice of $M$.  It could be the ADM mass of the spacetime, an
-approximation to the ADM mass measured at the wave-extraction sphere,
-or it could be the sum of the individual masses.  Again, the choice is
-left up to the numerical relativity group which produced the waveform.
-It should be whatever best represents the time coordinate and the
-scale of $h_{ij}$ in the particular simulation.
+The data for a single mode $rh_{+,\times}^{(\ell m)}$ is to be written
+as a plain text file in three columns for the time $t$, $rh_+^{(\ell
+m)}$ and $rh_\times^{(\ell m)}$ respectively.  For a given simulation,
+we leave it to the numerical groups to decide the maximum value of $\ell
+= \ell_{max}$ to which they will provide the waveform.  We require that
+for every $\ell \le \ell_{max}$ they provide the waveform for all values
+of $m=-\ell,\ldots,\ell-1,\ell$.  This must be done irrespective of any
+symmetries that may be present in the simulation.  If there are certain
+modes which, due to small amplitude, cannot be accurately determined,
+these can be set to zero.
+
+The time and strain columns must be in units of the total mass $M$ of
+the binary.  There can be subtleties in the choice of $M$.  It could be
+the ADM mass of the spacetime, an approximation to the ADM mass measured
+at the wave-extraction sphere, or it could be the sum of the individual
+masses.  Again, the choice is left up to the numerical relativity group
+which produced the waveform.  It should be whatever best represents the
+time coordinate and the scale of $h_{ij}$ in the particular simulation.
 
 For data analysis purposes, the sampling in time must be uniform in
 units of $M$.  If the result of a simulation or set of simulations
@@ -366,51 +371,62 @@ This is an example of a data file:
 ......
 \end{verbatim}
 
-The metadata information for the different datafiles will be stored in
-a separate file.  This metadata file will also be plain text and
-will have 10 columns: 9 for the metadata and one specifying
-the location of the corresponding datafile.  This is an example of a
-metadata file containing all the modes for two waveforms:
-\begin{verbatim}
-## example wave
-## m1/m2 S1x S1y S1z S2x S2y S2z l m filename
-   1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 2  example1_22.dat
-   1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 1  example1_21.dat
-   1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 0  example1_20.dat
-   1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 -1 example1_2-1.dat
-   1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 -2 example1_2-2.dat
-## another example
-   1.5 1.0 0.0 0.0 0.0 -1.0 0.0  2 2  example2_22.dat
-   1.5 1.0 0.0 0.0 0.0 -1.0 0.0  2 1  example2_21.dat
-   1.5 1.0 0.0 0.0 0.0 -1.0 0.0  2 0  example2_20.dat
-   1.5 1.0 0.0 0.0 0.0 -1.0 0.0  2 -1 example2_2-1.dat
-   1.5 1.0 0.0 0.0 0.0 -1.0 0.0  2 -2 example2_2-2.dat
-\end{verbatim}
-The order of the columns must be as in the examples, i.e. $q$,
-components of $\vec{S}_1$, $\vec{S}_2$, $\ell$, $m$ and the filename
-respectively.  Lines starting with a $\%$ or $\#$ will be taken to be
-comment lines; there can be an arbitrary number of comment lines.
-Note that for each value of $\ell$, all values of $m$ need to be
-specified.
+The metadata information for the different datafiles will be stored in a
+separate file.  This metadata file must contain (at least) two sections,
+one for the simulation metadata, and the other listing the filenames
+which correspond to the various $(\ell,m)$ modes of the waveform.  There
+will be a separate metadata file for each waveform.
 
+\begin{verbatim}
+[metadata]
+simulation-details = NRfile.dat
+mass-ratio = 1.0
+S1x = 0.0
+S1y = 0.0
+S1z = 0.5
+S2x = 0.0
+S2x = 0.0
+S2x = 0.0
+
+[htdata]
+2,2  = example1_22.dat
+2,1  = example1_21.dat
+2,0  = example1_20.dat
+2,-1 = example1_2-1.dat
+2,-2 = example1_2-2.dat
+\end{verbatim}
+
+It would be desirable if the waveform data are reproducible at
+a later date if necessary.  For this purpose, the numerical relativity
+groups are required to submit a file with the parameters of the
+simulation.  There is no requirement on the format of this file.  
+The \texttt{simulation-details} line will contain the name of the file
+describing the parameters used to describe the NR simulation.
+
+The remainder of the entries in the metadata section describe the
+physical parameters of the waveform.  To begin with, for non-spinning
+waveforms, the only required parameter is the mass ratio.  For waveforms
+with spin, the initial spins of the two black holes (in the co-ordinates
+discussed in the previous section) must also be specified. It should be
+emphasized that when necessary, we will add more parameters such as, for
+example, the eccentricity of the orbit. Lines starting with a $\%$ or
+$\#$ will be taken to be comment lines; there can be an arbitrary number
+of comment lines.
+
+The section \texttt{[htdata]} contains one line for each $(\ell,m)$
+mode.  These give the file names containing the corresponding modes.
 The filenames must give the relative paths to the data files starting
 from the location of the metadata file.  Thus, if the datafiles are
 stored in a sub-directory called \texttt{data}, then the metadata file
 would read:
 \begin{verbatim}
-## example wave
-## m1/m2 S1x S1y S1z S2x S2y S2z l m filename     
-   1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 2  data/example1_22.dat
-   1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 1  data/example1_21.dat
-   1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 0  data/example1_20.dat
-   1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 -1 data/example1_2-1.dat
-   1.0 0.0 0.0 0.0 0.0 0.0 0.0  2 -2 data/example1_2-2.dat
-   ......
+[htdata]
+2,2  = data/example1_22.dat
+2,1  = data/example1_21.dat
+2,0  = data/example1_20.dat
+2,-1 = data/example1_2-1.dat
+2,-2 = data/example1_2-2.dat
 \end{verbatim}
-The purpose of the metadata file is to describe the parameters for a
-single or multiple numerical simulations, and it should be emphasized
-that when necessary, we will add more parameters such as, for example,
-the eccentricity of the orbit.
 
 If the waveforms have been calculated using $\Psi_4$, then for
 cross-checking purposed, datafiles for the real and imaginary parts of
@@ -419,21 +435,27 @@ waveforms, i.e. three columns which are respectively time, real part
 of $\Psi_4$ and imaginary part of $\Psi_4$.  Again there can be an
 arbitrary number of comment lines, but in this case there does not
 need to be a metadata file.  The same holds for the Zerilli function
-if that was used in constructing the waveform. Finally, it would be
-desirable if the waveform data are reproducible at a later date if
-necessary.  For this purpose, the numerical relativity groups are
-required to submit a file with the parameters of the simulation.
-There is no requirement on the format of this file.  
+if that was used in constructing the waveform.  This data should be
+referenced in the metadata file in an additional section:
+
+\begin{verbatim}
+[psi4data]
+2,2  = data/example1_psi4_22.dat
+2,1  = data/example1_psi4_21.dat
+2,0  = data/example1_psi4_20.dat
+2,-1 = data/example1_psi4_2-1.dat
+2,-2 = data/example1_psi4_2-2.dat
+\end{verbatim}
 
 To summarize, the numerical relativity groups are asked to submit a
-tarball containing the following:
+tarball containing the following information for each simulation:
 \begin{description}
 \item[1.][Required] The data files for $h_+$ and $h_\times$ -- one for
-  each $(\ell,m)$ mode of each simulation.
-\item[2.][Required] The meta-data file(s).
+  each $(\ell,m)$ mode of the simulation.
+\item[2.][Required] The meta-data file.
 \item[3.][Optional] Data files for the functions (e.g. $\Psi_4$ or the
   Zerilli function) which were used to construct $h_{+}$ and $h_{\times}$.
-\item[4.][Required] Parameter file for reproducing the waveforms.
+\item[4.][Required] Parameter file for reproducing the waveform.
 \end{description}
 
 
@@ -482,7 +504,12 @@ the total mass and the spins?  Here are some possibilities:
 \item For the total mass $M$, should we use the sum of individual
   horizon masses (including the effect of angular momentum), or should
   it be the total ADM mass or rather, an approximation to the ADM mass
-  calculated at the sphere where the waves are extracted.
+  calculated at the sphere where the waves are extracted.  This could
+  be specified in the metadata file.  For example, additional lines
+  \begin{verbatim}
+     mADM = 1.0
+     mChristodoulou = 0.97
+  \end{verbatim}
 \end{itemize}
 What is the best choice for the radiation extraction sphere?
 \begin{itemize}
