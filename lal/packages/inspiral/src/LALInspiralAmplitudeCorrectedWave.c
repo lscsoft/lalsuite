@@ -1,5 +1,5 @@
 /*  <lalVerbatim file="LALInspiralAmplitudeCorrectedWaveCV">
-Author: 
+Author: Cokelaer T, McKechan D
 $Id$
 </lalVerbatim>  */
 
