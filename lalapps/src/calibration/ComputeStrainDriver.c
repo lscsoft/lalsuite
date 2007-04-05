@@ -808,7 +808,7 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
   /* Read in antiwhitening filter */
   i++; /*advance one line */
   thisline = Filters->lines->tokens[i];	/* get line i */
-  sscanf (thisline,"%s", aastr);
+  sscanf (thisline,"%s", awstr);
   if ( strcmp(awstr, "ANTIWHITENING" ) ) 
     {
       fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", 
@@ -895,11 +895,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"check-file-exists",   required_argument, NULL,           'v'},
     {"olg-file",            required_argument, NULL,           'a'},
     {"sensing-file",        required_argument, NULL,           'b'},
-    {"darm-err-only",       required_argument, NULL,           'w'},
+    {"darm-err-only",       no_argument, NULL,                 'w'},
     {"help",                no_argument, NULL,                 'h'},
     {0, 0, 0, 0}
   };
-  char args[] = "hrcduxf:C:A:E:D:R:F:s:e:i:j:k:l:m:n:t:o:H:T:S:z:v:w:";
+  char args[] = "hrcduxf:C:A:E:D:R:F:s:e:i:j:k:l:m:n:t:o:H:T:S:z:v:w";
   
   /* Initialize default values */
   CLA->f=0.0;
