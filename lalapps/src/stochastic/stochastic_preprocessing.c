@@ -77,8 +77,8 @@ static int test_flag = 0;
 
 
 /* parameters for the stochastic search */
-UINT8 startTime = 782758813;
-UINT8 stopTime =  782759413;
+UINT8 startTime = 782758900;
+UINT8 stopTime =  782759100;
 
 CHAR frameCache1 [200]= "cache/H1-NOISE.cache";
 CHAR frameCache2[200] = "cache/V2-NOISE.cache";
@@ -143,6 +143,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   FrCache *frCache1,*frCache2;
   FrStream *frStream1,*frStream2;
   FrChanIn frChanIn1, frChanIn2;
+  FrOutPar frPSD1 = { ifo1, "PSD", ProcDataChannel, 1, 0, 0 };
+  FrOutPar frPSD2 = { ifo2, "PSD", ProcDataChannel, 1, 0, 0 };
+  FrOutPar frCC12 = { ifo1, "CC", ProcDataChannel, 1, 0, 0 };
 
   /* input data segment */
   LIGOTimeGPS gpsStartTime,gpsStartPadTime,gpsMidSegTime;
@@ -187,7 +190,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   RealFFTPlan *fftDataPlan1 = NULL;
   RealFFTPlan *fftDataPlan2 = NULL;
   COMPLEX8FrequencySeries hBarTildeTemp1,hBarTildeTemp2,hBarTilde1,hBarTilde2;
-  COMPLEX8FrequencySeries h1StarH2;
+  COMPLEX8FrequencySeries h1StarH2Temp,h1StarH2;
+  FrequencySamplingParams freqParams;
   UINT4 zeroPadLength1, zeroPadLength2;
   UINT4 fftDataLength1, fftDataLength2;
   UINT4 hBarLength;
@@ -543,6 +547,11 @@ INT4 main(INT4 argc, CHAR *argv[])
   if(fftDataLength1<=fftDataLength2)
    hBarLength  = fftDataLength1;
   else hBarLength  = fftDataLength2;
+
+  freqParams.length = filterLength;
+  freqParams.f0 = fMin;
+  freqParams.deltaF = deltaF;
+  
   
   /* create fft plan */
   LAL_CALL(LALCreateForwardRealFFTPlan(&status,&fftDataPlan1,zeroPadLength1,0),&status);
@@ -591,15 +600,19 @@ INT4 main(INT4 argc, CHAR *argv[])
   memset( hBarTilde2.data->data, 0, 
           hBarTilde2.data->length * sizeof(*hBarTilde2.data->data)); 
   
+  strncpy(h1StarH2.name, "h1StarH2Temp", LALNameLength);
   strncpy(h1StarH2.name, "h1StarH2", LALNameLength);
-  h1StarH2.epoch = hBarTilde1.epoch;
-  h1StarH2.f0 = 0.;
-  h1StarH2.deltaF = hBarTilde1.deltaF; 
-
-  h1StarH2.data =  NULL;
-  LAL_CALL( LALCCreateVector(&status, &(h1StarH2.data), hBarLength), 
+  h1StarH2Temp.epoch = h1StarH2.epoch = hBarTilde1.epoch;
+  h1StarH2Temp.f0 = 0.; h1StarH2.f0 =fMin;
+  h1StarH2Temp.deltaF = hBarTilde1.deltaF; h1StarH2.deltaF = deltaF; 
+  h1StarH2Temp.sampleUnits = h1StarH2.sampleUnits = h2BarUnit; 
+  h1StarH2Temp.data = h1StarH2.data = NULL;
+  LAL_CALL( LALCCreateVector(&status, &(h1StarH2Temp.data), hBarLength), 
             &status );
-
+  LAL_CALL( LALCCreateVector(&status, &(h1StarH2.data), filterLength), 
+            &status );
+  memset( h1StarH2Temp.data->data, 0, 
+          h1StarH2Temp.data->length * sizeof(*h1StarH2Temp.data->data));
   memset( h1StarH2.data->data, 0, 
           h1StarH2.data->length * sizeof(*h1StarH2.data->data));
 
@@ -827,6 +840,7 @@ INT4 main(INT4 argc, CHAR *argv[])
              avPSD1.data->data[i]=avPSD1.data->data[i]+PSD1[lSeg]->data[i];
              avPSD2.data->data[i]=avPSD2.data->data[i]+PSD2[lSeg]->data[i];
 	    }
+           
 	  }
         /* increment epoch */
         gpsStartPadTime.gpsSeconds=gpsStartPadTime.gpsSeconds+segmentDuration;
@@ -1141,12 +1155,34 @@ INT4 main(INT4 argc, CHAR *argv[])
    }
  
    /* compute the cross correlation product */
-
    if (verbose_flag)
    fprintf(stdout, "compute the cross correlation product...\n");
-   LAL_CALL( LALCCVectorMultiplyConjugate(&status, h1StarH2.data,
+   LAL_CALL( LALCCVectorMultiplyConjugate(&status, h1StarH2Temp.data,
              hBarTilde2.data, hBarTilde1.data), &status );
 
+   /* coarse grain to optimal filter frequency resolution and range */
+   if (verbose_flag)
+   fprintf(stdout, "coarse grain to optimal filter frequency resolution and range...\n");
+   LAL_CALL( LALCCoarseGrainFrequencySeries(&status, &h1StarH2,
+              &h1StarH2Temp, &freqParams), &status );
+
+  /* print */
+  if ((test_flag)&&(lInter==testInter))
+   {
+    LALCPrintFrequencySeries(&h1StarH2Temp, "h1StarH2Temp.dat");
+    LALCPrintFrequencySeries(&h1StarH2, "h1StarH2.dat");
+   }
+
+   /* write into frames */
+   if (verbose_flag)
+    fprintf(stdout, "write average PSDs into frames\n"); 
+   LALFrWriteREAL4FrequencySeries( &status, &avPSD1, &frPSD1,);
+   LALFrWriteREAL4FrequencySeries( &status, &avPSD2, &frPSD2);
+   
+    /* write into frames */
+    if (verbose_flag)
+     fprintf(stdout, "write cross correlation product into frame\n"); 
+    LALFrWriteREAL4FrequencySeries( &status, &h1StarH2, &frCC12);
 
    /* increment epoch */
   gpsMidSegTime.gpsSeconds=gpsMidSegTime.gpsSeconds+segmentDuration;  
