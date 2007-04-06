@@ -624,27 +624,12 @@ INT4 localtime = input->AS_Q.epoch.gpsSeconds;
       LALComputeCalibrationFactors(status->statusPtr,&factors,&params);
       CHECKSTATUSPTR( status );
 
-      /* check alpha */
-      if( (factors.alpha.re < 0.3) ||  (factors.alpha.re > 2.0) ) 
-	{
-	 factors.alpha.re = 1.0;
-	 if (m>0) factors.alpha.re=output->alpha.data->data[m-1].re;
-	 facterrflag=1;
-	}
 
       /* check alphabeta */
-      if( (factors.alphabeta.re < 0.3) ||  (factors.alphabeta.re > 2.0) ) 
+      if( (factors.alphabeta.re < 0.8) ||  (factors.alphabeta.re > 1.2) ) 
 	{
 	 factors.alphabeta.re = 1.0;
 	 if (m>0) factors.alphabeta.re=output->alphabeta.data->data[m-1].re;
-	 facterrflag=1;
-	}
-
-      /* check beta */
-      if( (factors.beta.re < 0.3) ||  (factors.beta.re > 2.0) ) 
-	{
-	 factors.beta.re = 1.0;
-	 if (m>0) factors.beta.re=output->beta.data->data[m-1].re;
 	 facterrflag=1;
 	}
       
