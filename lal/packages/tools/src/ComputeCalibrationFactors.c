@@ -142,7 +142,7 @@ void LALComputeCalibrationFactors(
   /* De-whiten DARM_CTRL */
   if(W0.re != 0 && W0.im != 0)
     {
-     cdiv( &DARM_CTRL, &DARM_CTRL, &W0); 
+     cmul( &DARM_CTRL, &DARM_CTRL, &W0); 
     }
 
   output->darm=DARM_CTRL;
