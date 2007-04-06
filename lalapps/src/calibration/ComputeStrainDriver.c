@@ -227,7 +227,7 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
 			   OutputData.alphabeta.data->length-2*(UINT4)(InputData.wings/OutputData.alphabeta.deltaT));
   TESTSTATUS( &status );
 
-  /* Resize DARM_CTRL, DARM_ERR, and EXC */
+  /* Resize DARM_CTRL, DARM_ERR, EXC and AS_Q*/
   LALResizeREAL4TimeSeries(&status, &(InputData.DARM), (int)(InputData.wings/InputData.DARM.deltaT),
 			   InputData.DARM.data->length-2*(UINT4)(InputData.wings/InputData.DARM.deltaT));
   TESTSTATUS( &status );
@@ -236,6 +236,9 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   TESTSTATUS( &status );
   LALResizeREAL4TimeSeries(&status, &(InputData.EXC), (int)(InputData.wings/InputData.EXC.deltaT),
 			   InputData.EXC.data->length-2*(UINT4)(InputData.wings/InputData.EXC.deltaT));
+  TESTSTATUS( &status );
+  LALResizeREAL4TimeSeries(&status, &(InputData.AS_Q), (int)(InputData.wings/InputData.AS_Q.deltaT),
+			   InputData.AS_Q.data->length-2*(UINT4)(InputData.wings/InputData.AS_Q.deltaT));
   TESTSTATUS( &status );
   
   /* Names for factors time series */
@@ -340,10 +343,11 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   XLALDestroyREAL4TimeSeries( gammaim );
   XLALDestroyREAL4TimeSeries( alphaim );
 
-  /* If Level 1: Add DARM_CTRL, DARM_ERR, DARM_CTRL_EXC_DAQ, and all filters */
+  /* If Level 1: Add DARM_CTRL, DARM_ERR, DARM_CTRL_EXC_DAQ, AS_Q, and all filters */
   XLALFrameAddREAL4TimeSeriesAdcData( frame, &(InputData.DARM));
   XLALFrameAddREAL4TimeSeriesAdcData( frame, &(InputData.DARM_ERR) );
   XLALFrameAddREAL4TimeSeriesAdcData( frame, &(InputData.EXC));
+  XLALFrameAddREAL4TimeSeriesAdcData( frame, &(InputData.AS_Q));
 
   /* Add FD calibration files */ 
   {
