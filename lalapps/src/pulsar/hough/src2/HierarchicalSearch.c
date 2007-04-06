@@ -308,7 +308,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* LALdemod related stuff */
   static REAL8FrequencySeriesVector fstatVector; /* Fstatistic vectors for each stack */
-  UINT4 binsFstat1;
+  UINT4 binsFstat1, binsFstatSearch;
   static ComputeFParams CFparams;		   
 
   /* hough variables */
@@ -959,7 +959,8 @@ int MAIN( int argc, char *argv[]) {
 	semiCohPar.extraBinsFstat = extraBinsSky + extraBinsfdot;    
             
 	/* allocate fstat memory */
-	binsFstat1 = (UINT4)(usefulParams.spinRange_midTime.fkdotBand[0]/dFreqStack + 1e-6) + 1 + 2*semiCohPar.extraBinsFstat;
+	binsFstatSearch = (UINT4)(usefulParams.spinRange_midTime.fkdotBand[0]/dFreqStack + 1e-6) + 1;
+	binsFstat1 = binsFstatSearch + 2*semiCohPar.extraBinsFstat;
 	
 	for (k = 0; k < nStacks; k++) { 
 	  /* careful--the epoch here is not the reference time for f0! */
@@ -1096,7 +1097,7 @@ int MAIN( int argc, char *argv[]) {
     UINT4 Nrefine = nSkyRefine * nf1dotRes;
     FILE *timing_fp = fopen ( "HS_timing.dat", "ab" );
     fprintf ( timing_fp, "%d 	%d 	%d 	%d 	%d 	%d 	%d 	%d\n",  
-	      thisScan.numSkyGridPoints, nf1dot, binsFstat1, 2 * semiCohPar.extraBinsFstat, nSFTs, nStacks, Nrefine, tau );
+	      thisScan.numSkyGridPoints, nf1dot, binsFstatSearch, 2 * semiCohPar.extraBinsFstat, nSFTs, nStacks, Nrefine, tau );
     fclose ( timing_fp );
   }
 #endif
