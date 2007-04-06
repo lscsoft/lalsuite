@@ -53,6 +53,10 @@ XLALFindChirpCreateSubBanks(
 
   numSubBanks = bankSize / subBankSize;
 
+  /* if there are no templates return NULL */
+  if ( ! bankSize )
+    return NULL;
+  
   if ( ! numSubBanks )
   {
     /* the bank is smaller than the subbank size, so return the entire */
