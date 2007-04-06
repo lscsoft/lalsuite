@@ -873,10 +873,6 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL ( InitDopplerSkyScan ( &status, &thisScan, &scanInit), &status); 
   LogPrintfVerbatim(LOG_DEBUG, "done\n");  
 
-  
-  LogPrintf (LOG_DEBUG, "Number of nominal and *sideband* Fstat freq. bins :\n %d %d\n", binsFstat1, 2*semiCohPar.extraBinsFstat);
-
-
   /*----- start main calculations by going over coarse grid points and 
           selecting candidates and following up --------*/
  
