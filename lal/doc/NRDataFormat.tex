@@ -39,7 +39,8 @@ LIGO Scientific Collaboration\\ Numerical Relativity Community\\
 \bigskip
 }
 \title{Data formats for numerical relativity waves}
-\author{Duncan Brown, Stephen Fairhurst, Badri Krishnan, John Whelan and others}
+\author{Duncan Brown, Stephen Fairhurst, Badri Krishnan, Adam Mercer,
+Kopparapu RaviKumar, John Whelan and others}
 \rcsid$Id$
 
 \begin{document}
@@ -109,11 +110,13 @@ issues which could be relevant for the detection of gravitational
 radiation.
 
 The relevant software development is being carried out as part of the
-LIGO Algorithms Library \footnote{Available from
+LSC Algorithms Library \footnote{Available from
   \texttt{http://www.lsc-group.phys.uwm.edu/daswg/projects/lal.html}}
 which contains core routines for gravitational wave data analysis
 written in ANSI C89, and is distributed under the GNU General Public
-License.  The latest version of this document is available within this
+License.  
+
+The latest version of this document is available within this
 library.\footnote{The location of the document is
   \texttt{lal/doc/NRDataFormat.tex}.}  The remainder of this document
 is structured as follows.  Section \ref{sec:multipoles} describes our
@@ -136,7 +139,7 @@ The output of a numerical relativity code is the full spacetime of a
 binary black hole system. On the other hand, what is required for
 gravitational wave data analysis purposes is the strain $h(t)$ as
 measured by a detector located far away from the source.  The quantity
-of interest is then the gravitational wave metric perturbation
+of interest is therefore the gravitational wave metric perturbation
 $h_{ab}$ in the wave-zone, where $a$ and $b$ are space-time indices.
 We always work in the Transverse Traceless (TT) gauge so that all
 information about the metric perturbation is contained in the TT
@@ -160,7 +163,7 @@ the wave is extracted, and different numerical relativity groups are
 free to use methods they find appropriate.  The starting point of our
 analysis are the multipole moments of $h_{ij}$ and it is important to
 describe explicitly our conventions for the multipole decomposition.
-In addition to these multipole moments, we also require the
+In addition to these multipole moments, we also request the
 corresponding values of $\Psi_4$ or the Zerilli function in the
 formats described later.
 
@@ -272,16 +275,16 @@ The mode expansion coefficients $H_{lm}$ are given by
   MH_{\ell m} = \oint \Ytwo_{lm}^\star(\iota,\phi)(rh_+-irh_\times )\,d\Omega\,.
 \end{equation}
 If $\Psi_4$ is used for wave extraction, then $H_{lm}$ is given by two
-time integrals of the corresponding mode of $\Psi_4$.  It is important
-that the integration constants be chosen to make sure, as far as
-possible, that $h_{+,\times}$ do not have a secular drift. 
-We define $h_+^{(\ell m)}$ and $h_\times^{(\ell m)}$ as
+time integrals of the corresponding mode of $\Psi_4$.  In this case, it
+is important that the information provided contains details about how
+the integration constants be chosen.  We define $h_+^{(\ell m)}$ and
+$h_\times^{(\ell m)}$ as
 \begin{equation}
   \label{eq:11}
   rh_+^{(\ell m)}(t) -irh_\times^{(\ell m)}(t) := MH_{\ell m}(t)\,.  
 \end{equation}
-It is these modes $rh_{+,\times}^{(\ell m)}$ of $rh_+$ and $rh_\times$ that must be
-provided as functions of time in units of $M$.
+It is these modes $rh_{+,\times}^{(\ell m)}$ of $rh_+$ and $rh_\times$
+that must be provided as functions of time in units of $M$.
 % The waveforms are easily reconstructed
 % from the modes:
 % \begin{equation}
@@ -300,19 +303,18 @@ provided as functions of time in units of $M$.
 
 Let us now specialize to simulations of binary black hole coalescence.
 A numerical relativity simulation has many parameters which need to be
-specified, and many of these parameters may not be directly relevant
-to the data analysis problem.  We need to specify which parameters of
-the numerical simulation will be significantly useful for the
-astrophysics of a binary black hole system in a circular orbit.  For
-our purposes then, a single numerical waveform is defined by at least
-9 parameters: the mass ratio $q = M_1/M_2$, the three components of
-the individual spins $\vec{S}_1$ and $\vec{S}_2$ and the mode numbers
-$(\ell,m)$.  These 9 parameters will be referred to as the
-``metadata'' for a waveform; we will add more parameters to this
-metadata if necessary. We use the convention that $M_1$ denotes the
-larger of the two masses so that $q\geq 1$.  The choice of precisely
-how $M_1$, $M_2$ and the spins are calculated is to be decided by the
-individual numerical relativity groups.
+specified, and many of which may not be directly relevant to the data
+analysis problem.  We need to specify which parameters of the numerical
+simulation will be significantly useful for the astrophysics of a binary
+black hole system in a circular orbit.  For our purposes, a single
+numerical waveform is defined by at least seven parameters: the mass
+ratio $q = M_1/M_2$, the three components of the individual spins
+$\vec{S}_1$ and $\vec{S}_2$.  These parameters will be referred to as
+the ``metadata'' for a waveform; more parameters can be added as
+necessary. We use the convention that $M_1$ denotes the larger of the
+two masses so that $q\geq 1$.  The choice of precisely how $M_1$, $M_2$
+and the spins are calculated is left up to the individual numerical
+relativity groups.  
 
 The data for a single mode $rh_{+,\times}^{(\ell m)}$ is to be written
 as a plain text file in three columns for the time $t$, $rh_+^{(\ell
@@ -323,7 +325,12 @@ for every $\ell \le \ell_{max}$ they provide the waveform for all values
 of $m=-\ell,\ldots,\ell-1,\ell$.  This must be done irrespective of any
 symmetries that may be present in the simulation.  If there are certain
 modes which, due to small amplitude, cannot be accurately determined,
-these can be set to zero.
+these can be set to zero.  Numerical groups often extract the waveform
+from the simulation at several different radii and then use Richardson
+extrapolation to determine the most accurate waveform.  We would not
+consider waveforms from different radii as distinct, and would prefer
+only the most accurate determination of the waveform from any given
+simulation.
 
 The time and strain columns must be in units of the total mass $M$ of
 the binary.  There can be subtleties in the choice of $M$.  It could be
@@ -377,18 +384,22 @@ one for the simulation metadata, and the other listing the filenames
 which correspond to the various $(\ell,m)$ modes of the waveform.  There
 will be a separate metadata file for each waveform.
 
+This is an example of a metadata file:
+
 \begin{verbatim}
 [metadata]
 simulation-details = NRfile.dat
+nr-group = friendlyNRgroup
+email = myemail@somewhere.edu
 mass-ratio = 1.0
-S1x = 0.0
-S1y = 0.0
-S1z = 0.5
-S2x = 0.0
-S2x = 0.0
-S2x = 0.0
+spin1x = 0.0
+spin1y = 0.0
+spin1z = 0.5
+spin2x = 0.0
+spin2y = 0.8
+spin2z = 0.0
 
-[htdata]
+[ht-data]
 2,2  = example1_22.dat
 2,1  = example1_21.dat
 2,0  = example1_20.dat
@@ -401,26 +412,28 @@ a later date if necessary.  For this purpose, the numerical relativity
 groups are required to submit a file with the parameters of the
 simulation.  There is no requirement on the format of this file.  
 The \texttt{simulation-details} line will contain the name of the file
-describing the parameters used to describe the NR simulation.
+describing the parameters used to describe the NR simulation.  In
+addition, we ask for the numerical relativity groups to provide a
+\texttt{nr-group} name and a contact \texttt{email}.
 
-The remainder of the entries in the metadata section describe the
-physical parameters of the waveform.  To begin with, for non-spinning
-waveforms, the only required parameter is the mass ratio.  For waveforms
-with spin, the initial spins of the two black holes (in the co-ordinates
-discussed in the previous section) must also be specified. It should be
-emphasized that when necessary, we will add more parameters such as, for
-example, the eccentricity of the orbit. Lines starting with a $\%$ or
-$\#$ will be taken to be comment lines; there can be an arbitrary number
-of comment lines.
+The remainder of the entries in the \texttt{[metadata]} section describe
+the physical parameters of the waveform.  To begin with, for
+non-spinning waveforms, the only required parameter is the mass ratio.
+For waveforms with spin, the initial spins of the two black holes (in
+the co-ordinates discussed in the previous section) must also be
+specified. It should be emphasized that when necessary, we will add more
+parameters such as, for example, the eccentricity of the orbit. Lines
+starting with a $\%$ or $\#$ will be taken to be comment lines; there
+can be an arbitrary number of comment lines.
 
-The section \texttt{[htdata]} contains one line for each $(\ell,m)$
+The section \texttt{[ht-data]} contains one line for each $(\ell,m)$
 mode.  These give the file names containing the corresponding modes.
 The filenames must give the relative paths to the data files starting
 from the location of the metadata file.  Thus, if the datafiles are
 stored in a sub-directory called \texttt{data}, then the metadata file
 would read:
 \begin{verbatim}
-[htdata]
+[ht-data]
 2,2  = data/example1_22.dat
 2,1  = data/example1_21.dat
 2,0  = data/example1_20.dat
@@ -429,23 +442,25 @@ would read:
 \end{verbatim}
 
 If the waveforms have been calculated using $\Psi_4$, then for
-cross-checking purposed, datafiles for the real and imaginary parts of
-$\Psi_4$ must also be provided in the same format as for the
-waveforms, i.e. three columns which are respectively time, real part
-of $\Psi_4$ and imaginary part of $\Psi_4$.  Again there can be an
-arbitrary number of comment lines, but in this case there does not
-need to be a metadata file.  The same holds for the Zerilli function
-if that was used in constructing the waveform.  This data should be
-referenced in the metadata file in an additional section:
+cross-checking purposes, we request that datafiles containing the real
+and imaginary parts of $\Psi_4$ also be provided in the same format as
+for the waveforms, i.e. three columns which are respectively time, real
+part of $\Psi_4$ and imaginary part of $\Psi_4$.  Again there can be an
+arbitrary number of comment lines, but in this case there does not need
+to be a metadata file.  This data should be referenced in the metadata
+file in an additional section:
 
 \begin{verbatim}
-[psi4data]
+[psi4-data]
 2,2  = data/example1_psi4_22.dat
 2,1  = data/example1_psi4_21.dat
 2,0  = data/example1_psi4_20.dat
 2,-1 = data/example1_psi4_2-1.dat
 2,-2 = data/example1_psi4_2-2.dat
 \end{verbatim}
+
+Similarly, if the waveform were extracted using the Zerilli formalism, a
+section \texttt{[zerilli-data]} would be added.
 
 To summarize, the numerical relativity groups are asked to submit a
 tarball containing the following information for each simulation:
@@ -528,9 +543,7 @@ How large are the error-bars on the numerical results?
 \begin{itemize}
 \item Is there a reliable way to estimate the systematic errors due to
   finite resolution effects, different gauge choices, wave extraction
-  methods etc?  Are these systematic errors irrelevant for LIGO given
-  that there is an intrinsic uncertainty of $\sim 10\%$ in the
-  calibration of the data from LIGO (and other) detectors? 
+  methods etc?  
 \end{itemize}
 
 Numerical relativity groups are welcome to raise any other issues that
