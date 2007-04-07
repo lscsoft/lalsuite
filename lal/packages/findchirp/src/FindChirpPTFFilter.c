@@ -34,6 +34,27 @@ double rint(double x);
 
 NRCSID (FINDCHIRPPTFFILTERC, "$Id$");
 
+/* LAPACK function for the calculation of the eigenvalues of a NxN matrix */
+void
+LALFindChirpFindEigenvalues ( LALStatus *status,
+                              CHAR JOBVL, CHAR JOBVR, INT4 N, REAL4* A, 
+                              INT4 LDA, REAL4* WR, REAL4* WI, REAL4* VL, 
+                              INT4 LDVL, REAL4* VR, INT4 LDVR, REAL4* WORK, 
+                              INT4 LWORK, INT4* INFO)
+{   
+    extern void sgeev_ ( CHAR* JOBVLp, CHAR* JOBVRp, INT4* Np, REAL4* A, 
+                          INT4* LDAp, REAL4* WR, REAL4* WI, REAL4* VL, 
+                          INT4* LDVLp, REAL4* VR, INT4* LDVRp, REAL4* WORK, 
+                          INT4* LWORKp, INT4* INFOp);
+    
+    sgeev_ ( &JOBVL, &JOBVR, &N, A, &LDA, WR, WI, VL, &LDVL, VR, &LDVR, WORK, 
+             &LWORK, INFO);
+
+    DETATCHSTATUSPTR( status );
+    RETURN( status );
+}
+
+
 
 /* <lalVerbatim file="FindChirpPTFFilterCP"> */
 void
@@ -50,15 +71,18 @@ LALFindChirpPTFFilterSegment (
   UINT4                 deltaEventIndex;
   UINT4                 ignoreIndex;
   UINT4                 haveEvent   = 0;
-  REAL4                 deltaT, sum;
-  REAL4                 PTFA[5][5], PTFmatrix[25];
+  REAL4                 deltaT, sum, temp, PTFMatrix[25];
   REAL8                 deltaF;
   REAL4                 snrThresh      = 0;
   REAL4                *snr            = NULL;
-  REAL4                *PTFBinverse[5];
   COMPLEX8             *PTFQtilde, *qtilde, *PTFq, *inputData;
   COMPLEX8Vector        qVec;
-  
+
+  /* Variables needed for the eigenvalues finding LAPACK routine */
+  CHAR  n; 
+  INT4  info;
+  REAL4 wr[5], wi[5], vl[25], vr[25], work[25];
+  n = 'N';
 
   INITSTATUS( status, "LALFindChirpPTFFilter", FINDCHIRPPTFFILTERC );
   ATTATCHSTATUSPTR( status );
@@ -136,9 +160,6 @@ LALFindChirpPTFFilterSegment (
   /* template and data */
   inputData = input->segment->data->data->data;
   PTFQtilde = input->fcTmplt->PTFQtilde->data;
-  
-  for (i=0; i<5; i++) PTFBinverse[i] = input->fcTmplt->PTFBinverse->data +
-                                       i * 5;
 
   /* number of points and frequency cutoffs */
   deltaT = params->deltaT;
@@ -242,30 +263,57 @@ LALFindChirpPTFFilterSegment (
 
   /* construct A */
   
-  for (k=0; k<numPoints; i++)
+  for (k=0; k<numPoints; i++) /* beginning of main loop over time */
   {  
     for (i=0; i<5; i++)
     {  
       for (j=0; j<i+1; j++)
       {  
-        PTFA[i][j] = PTFq[i * numPoints + k].re * PTFq[j * numPoints + k].re +
-                     PTFq[i * numPoints + k].im * PTFq[j * numPoints + k].im;
+        params->PTFA->data[5 * i + j] = PTFq[i * numPoints + k].re * 
+                                        PTFq[j * numPoints + k].re +
+                                        PTFq[i * numPoints + k].im * 
+                                        PTFq[j * numPoints + k].im;
+        params->PTFA[5 * j + i] = params->PTFA[i + 5 * j];
       }  
     }  
- /* multiply by PTFBinverse to obtain AB^(-1) */
-    sum = 0.0;
-    for (i=0; i<5; i++)
+  /* multiply by PTFBinverse to obtain AB^(-1) */
+
+  LALSMatrixMultiply(status, params->PTFMatrix, params->PTFA, 
+                     input->fcTmplt->PTFBinverse);
+
+  /* Transpose PTFMatrix and store it into the corresponding local variable:
+   * the input to the LAPACK eigenvalues finding routine must be in 
+   * Fortran column-wise format
+   */ 
+
+  for (i=0; i<25; i++) 
+  {
+    for (j=0; j<25; j++)
     {  
-      for (j=0; j<i+1; j++)
-      {  
-       for (l=0; l<5; l++) sum = sum + PTFA[i][l] * PTFBinverse[l][j];
-       PTFmatrix[i + 5 * j] = sum;
-       sum = 0.0;
-      }
+      PTFMatrix[i + 5 * j] = params->PTFMatrix->data[j + 5 * i];
     }
+  }  
    
     /* find max eigenvalue and store it in snr vector */
-  }
+    info = 0;
+    LALFindChirpFindEigenvalues( status, n, n, 5, PTFMatrix, 5, wr, wi, vl, 1, 
+                                 vr, 1, work, 25, &info );
+    if (info != 0) fprintf (stderr, " Eigenvalues failure with error %d\n", info);
+     
+    if (wi[0] == 0) 
+      snr[k] = wr[0];
+    else
+      snr[k] = 0.0;
+  
+    for (i=1; i<5; i++)
+      {
+        if ( wi[i] == 0) 
+        {  
+          if ( (temp = wr[i]) > snr[k] ) 
+            snr[k] = temp;                
+        } 
+      }
+  } /* End of main loop over time */
  
 
   fprintf( stderr, "Ptf filtering data segment\n" );
