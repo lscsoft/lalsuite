@@ -172,7 +172,7 @@ FUNC (
   CHAR   source[FILENAME_MAX];
   CHAR   fname[FILENAME_MAX];
   CHAR   tmpfname[FILENAME_MAX];
-  CHAR   units[LALUnitNameSize];
+  CHAR   units[LALUnitTextSize];
   CHARVector vnits;
   struct FrFile *frfile;
   UINT4 nframes;
@@ -280,7 +280,7 @@ FSFUNC (
   CHAR   source[FILENAME_MAX];
   CHAR   fname[FILENAME_MAX];
   CHAR   tmpfname[FILENAME_MAX];
-  CHAR   units[LALUnitNameSize];
+  CHAR   units[LALUnitTextSize];
   CHARVector vnits;
   struct FrFile *frfile;
   UINT4 nframes;
