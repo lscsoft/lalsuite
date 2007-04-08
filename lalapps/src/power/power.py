@@ -595,13 +595,18 @@ def segment_ok(powerjob, segment):
 #
 
 
+datafind_pad = 512
+
+
 def make_datafind_fragment(dag, instrument, seg):
-	datafind_pad = 512
 	node = pipeline.LSCDataFindNode(datafindjob)
 	node.set_name("LSCdataFind-%s-%s-%s" % (instrument, int(seg[0]), int(abs(seg))))
 	node.set_start(seg[0] - datafind_pad)
 	node.set_end(seg[1] + 1)
-	node.set_ifo(instrument)
+	# FIXME: argh, shoot me, I need the node to know what instrument
+	# it's for, but can't call set_ifo() because that adds a
+	# --channel-name command line argument
+	node._AnalysisNode__ifo = instrument
 	node.set_observatory(instrument[0])
 	if node.get_type() == None:
 		node.set_type(datafindjob.get_config_file().get("datafind", "type_%s" % instrument))
@@ -618,6 +623,9 @@ def make_lladd_fragment(dag, parents, instrument, seg, tag, preserves = []):
 		node.add_input_cache(parent.get_output_cache())
 	node.add_preserve_cache(preserves)
 	dag.add_node(node)
+	# NOTE:  code that calls this generally requires a single node to
+	# be returned;  if this behaviour changes, check and fix all
+	# calling codes.
 	return [node]
 
 
@@ -643,7 +651,9 @@ def make_binj_fragment(dag, seg, tag, offset, flow, fhigh):
 	# errors)
 	fratio = 0.9999999 * (fhigh / flow) ** (1.0 / binjjob.injection_bands)
 
-	# one injection every time-step / pi seconds
+	# one injection every time-step / pi seconds, taking
+	# injection_bands steps across the frequency range, this is how
+	# often the sequence "repeats"
 	period = binjjob.injection_bands * float(binjjob.get_opts()["time-step"]) / math.pi
 
 	# adjust start time to be commensurate with injection period
@@ -663,11 +673,13 @@ def make_binj_fragment(dag, seg, tag, offset, flow, fhigh):
 
 
 def make_binjfind_fragment(dag, parents, tag):
+	parents = type(parents)(parents)
 	nodes = []
-	for first in xrange(0, len(parents), binjfindjob.parents_per_binjfind):
+	while parents:
 		node = BinjfindNode(binjfindjob)
-		node.set_name("ligolw_binjfind_%s_%d" % (tag, first))
-		for parent in parents[first:first + binjfindjob.parents_per_binjfind]:
+		node.set_name("ligolw_binjfind_%s_%d" % (tag, len(nodes)))
+		for i in xrange(min(binjfindjob.parents_per_binjfind, len(parents))):
+			parent = parents.pop()
 			node.add_parent(parent)
 			node.add_input_cache(parent.get_output_cache())
 		node.add_macro("macrocomment", tag)
@@ -677,11 +689,13 @@ def make_binjfind_fragment(dag, parents, tag):
 
 
 def make_bucluster_fragment(dag, parents, instrument, seg, tag):
+	parents = type(parents)(parents)
 	nodes = []
-	for first in xrange(0, len(parents), buclusterjob.parents_per_bucluster):
+	while parents:
 		node = BuclusterNode(buclusterjob)
-		node.set_name("ligolw_bucluster_%s_%s_%d_%d_%d" % (instrument, tag, int(seg[0]), int(abs(seg)), first))
-		for parent in parents[first:first + buclusterjob.parents_per_bucluster]:
+		node.set_name("ligolw_bucluster_%s_%s_%d_%d_%d" % (instrument, tag, int(seg[0]), int(abs(seg)), len(nodes)))
+		for i in xrange(min(buclusterjob.parents_per_bucluster, len(parents))):
+			parent = parents.pop()
 			node.add_parent(parent)
 			node.add_input_cache(parent.get_output_cache())
 		node.add_macro("macrocomment", tag)
@@ -691,11 +705,13 @@ def make_bucluster_fragment(dag, parents, instrument, seg, tag):
 
 
 def make_bucut_fragment(dag, parents, tag):
+	parents = type(parents)(parents)
 	nodes = []
-	for first in xrange(0, len(parents), bucutjob.parents_per_bucut):
+	while parents:
 		node = BucutNode(bucutjob)
-		node.set_name("ligolw_bucut_%s_%d" % (tag, first))
-		for parent in parents[first:first + bucutjob.parents_per_bucut]:
+		node.set_name("ligolw_bucut_%s_%d" % (tag, len(nodes)))
+		for i in xrange(min(bucutjob.parents_per_bucut, len(parents))):
+			parent = parents.pop()
 			node.add_parent(parent)
 			node.add_input_cache(parent.get_output_cache())
 		node.add_macro("macrocomment", tag)
@@ -718,17 +734,19 @@ def make_burca_fragment(dag, parents, instrument, seg, tag):
 #
 # =============================================================================
 #
-#        DAG Fragment Combining Multiple lalapps_power With ligolw_add
+#         DAG Fragment Combining Multiple lalapps_binj With ligolw_add
 #
 # =============================================================================
 #
 
 
-def make_multipower_fragment(dag, powerparents, instrument, seglist, tag, framecache, injargs = {}):
-	segment = seglist.extent()
-	nodes = []
-	for seg in seglist:
-		nodes += make_power_fragment(dag, powerparents, instrument, seg, tag, framecache, injargs)
+def make_multibinj_fragment(dag, seg, tag):
+	flow = float(powerjob.get_opts()["low-freq-cutoff"])
+	fhigh = flow + float(powerjob.get_opts()["bandwidth"])
+
+	nodes = make_binj_fragment(dag, seg, tag, 0.0, flow, fhigh)
+	nodes = make_lladd_fragment(dag, nodes, "ALL", seg, tag)
+	nodes[0].set_output("HL-%s-%d-%d.xml" % (tag, int(seg[0]), int(abs(seg))))
 	return nodes
 
 
@@ -753,10 +771,14 @@ def make_power_segment_fragment(dag, datafindnodes, instrument, segment, tag, ps
 	"""
 	if len(datafindnodes) != 1:
 		raise ValueError, "must set exactly one datafind parent per power job, got %d" % len(datafindnodes)
+	framecache = datafindnodes[0].get_output()
 	seglist = split_segment(powerjob, segment, psds_per_job)
 	if verbose:
 		print >>sys.stderr, "Segment split: " + str(seglist)
-	return make_multipower_fragment(dag, datafindnodes, instrument, seglist, tag, datafindnodes[0].get_output())
+	nodes = []
+	for seg in seglist:
+		nodes += make_power_fragment(dag, datafindnodes, instrument, seg, tag, framecache)
+	return nodes
 
 
 #
@@ -767,78 +789,84 @@ def make_power_segment_fragment(dag, datafindnodes, instrument, segment, tag, ps
 def make_injection_segment_fragment(dag, datafindnodes, binjnodes, instrument, segment, tag, psds_per_job, verbose = False):
 	if len(datafindnodes) != 1:
 		raise ValueError, "must set exactly one datafind parent per power job, got %d" % len(datafindnodes)
+	framecache = datafindnodes[0].get_output()
 	if len(binjnodes) != 1:
 		raise ValueError, "must set exactly one binj parent per power job, got %d" % len(binjnodes)
+	simfile = binjnodes[0].get_output_cache()[0].path()
 	seglist = split_segment(powerjob, segment, psds_per_job)
 	if verbose:
 		print >>sys.stderr, "Injections split: " + str(seglist)
-	return make_multipower_fragment(dag, datafindnodes + binjnodes, instrument, seglist, tag, datafindnodes[0].get_output(), injargs = {"burstinjection-file": binjnodes[0].get_output_cache()[0].path()})
+	nodes = []
+	for seg in seglist:
+		nodes += make_power_fragment(dag, datafindnodes + binjnodes, instrument, seg, tag, framecache, injargs = {"burstinjection-file": simfile})
+	return nodes
 
 
 #
 # =============================================================================
 #
-#         DAG Fragment Combining Multiple lalapps_binj With ligolw_add
+#              Combine a group of trigger files with clustering
 #
 # =============================================================================
 #
 
 
-def make_multibinj_fragment(dag, seg, tag):
-	flow = float(powerjob.get_opts()["low-freq-cutoff"])
-	fhigh = flow + float(powerjob.get_opts()["bandwidth"])
+def make_lladded_bucluster_fragment(dag, parents, segment, tag):
+	# make first-pass bucluster jobs (these are no-ops on files that
+	# don't contain sngl_burst tables).
 
-	binjnodes = make_binj_fragment(dag, seg, tag, 0.0, flow, fhigh)
+	nodes = make_bucluster_fragment(dag, parents, "ALL", segment, tag)
 
-	node = make_lladd_fragment(dag, binjnodes, "ALL", seg, tag)[0]
-	node.set_output("HL-%s-%d-%d.xml" % (tag, int(seg[0]), int(abs(seg))))
-	return [node]
+	# make ligolw_add job.
+
+	nodes = make_lladd_fragment(dag, nodes, "ALL", segment, tag)
+
+	# set the output
+
+	nodes[0].set_output("ALL-%s-%s-%s.xml.gz" % (tag, int(segment[0]), int(abs(segment))))
+
+	# add second-pass clustering
+
+	return make_bucluster_fragment(dag, nodes, "ALL", segment, "%s_POSTLLADD" % tag)
 
 
 #
 # =============================================================================
 #
-#             The Coincidence Fragment:  bucluster + lladd + burca
+#       The Coincidence Fragment:  bucluster + lladd + bucluster + burca
 #
 # =============================================================================
 #
 
 
-def make_coinc_fragment(dag, power_parents, time_slides_filename, segment, tag, binjnodes = [], clustering = False):
-	# cache entry for time slides file
+def make_coinc_fragment(dag, parents, segment, tag, time_slides_filename, binjnodes = []):
+	# cache for extra files to include in next ligolw_add
 
-	time_slides_cache = [CacheEntry(None, None, None, "file://localhost" + os.path.abspath(time_slides_filename))]
-
-	# generate a bucluster node to pre-process all input files if
-	# clustering has been enabled.  doing a first pass before lladd
-	# keeps file sizes small to lower the risk of lladd running out of
-	# memory
-
-	if clustering:
-		nodes = make_bucluster_fragment(dag, power_parents, "ALL", segment, tag)
-	else:
-		nodes = power_parents
-
-	# merge all input files using ligolw_add, including the time slides
-	# file, and the injections file if needed.  it's not pretty
-	# including the injection file here, but this saves adding an extra
-	# lladd just prior to the binjfind.
-
-	nodes = make_lladd_fragment(dag, nodes, "ALL", segment, tag, preserves = time_slides_cache)
-	if len(nodes) != 1:
-		raise Exception, "woah, this script is broken!"
-
-	lladdnode = nodes[0]
-	lladdnode.add_input_cache(time_slides_cache)
-	lladdnode.set_output("ALL-%s-%s-%s.xml.gz" % (tag, int(segment[0]), int(abs(segment))))
+	extra_cache = [CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename)) for filename in [time_slides_filename]]
 	for binj in binjnodes:
-		lladdnode.add_input_cache(binj.get_output_cache())
-		lladdnode.add_preserve_cache(binj.get_output_cache())
+		extra_cache += binj.get_output_cache()
 
-	# add post-lladd clustering follow up if enabled
+	# cache for files that should not be deleted in the event that
+	# --remove-input is set.  assume all input files are shared between
+	# this and other branches of the DAG, and should not be deleted
 
-	if clustering:
-		nodes = make_bucluster_fragment(dag, nodes, "ALL", segment, "%s_POSTLLADD" % tag)
+	preserve_cache = list(extra_cache)
+	for node in parents:
+		preserve_cache += node.get_output_cache()
+
+	# make ligolw_add job.  assume all input files are shared between
+	# this and other branches of the DAG, and should not be deleted in
+	# the event that --remove-input is set
+
+	nodes = make_lladd_fragment(dag, parents, "ALL", segment, "%s_PREBURCA" % tag, preserves = preserve_cache)
+
+	# add the extra files to the input cache
+
+	nodes[0].add_input_cache(extra_cache)
+
+	# set the output
+
+	nodes[0].set_output("ALL-%s-%s-%s.xml.gz" % (tag, int(segment[0]), int(abs(segment))))
 
 	# run ligolw_burca
 
