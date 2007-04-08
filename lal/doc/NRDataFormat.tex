@@ -81,17 +81,17 @@ Kopparapu RaviKumar, John Whelan and others}
 
 Numerical relativity has made enormous progress in the last few years.
 Many numerical relativity groups now have sufficiently stable and
-accurate codes which can accurately simulate the inspiral, merger and
+accurate codes which can accurately simulate the inspiral, merger, and
 ringdown phases of binary black hole coalescence.  Similarly,
 significant progress has been made in the numerical simulation of
 stellar gravitational collapse and there now seems to be a much better
 understanding of how supernova explosions happen.  All these processes
 are among the most promising sources of gravitational radiation and
-therefore there is significant interest in using these numerical
+therefore, there is significant interest in using these numerical
 relativity results within various data analysis pipelines used within
 the LIGO Scientific Collaboration (LSC).  A dialog between numerical
 relativists and LSC data analysts was recently initiated in November
-2006 through a meeting in Boston, and it seems appropriate to continue
+2006 through a meeting in Boston. It seems appropriate to continue
 this dialog at a more concrete level, and to start incorporating
 numerical relativity results within various LSC data analysis
 software.
@@ -99,7 +99,7 @@ software.
 The aim of this document is to spell out the formats for data exchange
 between numerical relativists and the LSC.  It is clear that there are
 still outstanding conceptual and numerical issues remaining in these
-numerical simulations, and the goal of this document is not to resolve
+numerical simulations; the goal of this document is not to resolve
 them.  The goal is twofold: (i) To spell out the technical details of
 the waveform data so that they can be incorporated seamlessly within
 the data analysis software currently being developed within the LSC,
@@ -114,20 +114,19 @@ LSC Algorithms Library \footnote{Available from
   \texttt{http://www.lsc-group.phys.uwm.edu/daswg/projects/lal.html}}
 which contains core routines for gravitational wave data analysis
 written in ANSI C89, and is distributed under the GNU General Public
-License.  
-
-The latest version of this document is available within this
+License.  The latest version of this document is available within this
 library.\footnote{The location of the document is
-  \texttt{lal/doc/NRDataFormat.tex}.}  The remainder of this document
-is structured as follows.  Section \ref{sec:multipoles} describes our
-conventions for decomposing the gravitational wave data in terms of
-spherical harmonics, section \ref{sec:format} specifies the data
-formats for binary black hole simulations, section
-\ref{sec:openissues} enumerates some open issues in binary black hole
-simulations which could be topics of further discussion between data
-analysts and numerical relativists, and finally section
-\ref{sec:authorship} discusses the authorship and other issues related
-to the use of numerical relativity data.
+  \texttt{lal/doc/NRDataFormat.tex}.}
+  
+The remainder of this document is structured as follows.  Section
+\ref{sec:multipoles} describes our conventions for decomposing the
+gravitational wave data in terms of spherical harmonics, section
+\ref{sec:format} specifies the data formats for binary black hole
+simulations, section \ref{sec:openissues} enumerates some open issues in
+binary black hole simulations which could be topics of further
+discussion between data analysts and numerical relativists, and finally
+section \ref{sec:authorship} discusses the authorship and other issues
+related to the use of numerical relativity data.
 
 
 
@@ -137,7 +136,7 @@ to the use of numerical relativity data.
 
 The output of a numerical relativity code is the full spacetime of a
 binary black hole system. On the other hand, what is required for
-gravitational wave data analysis purposes is the strain $h(t)$ as
+gravitational wave data analysis purposes is the strain $h(t)$, as
 measured by a detector located far away from the source.  The quantity
 of interest is therefore the gravitational wave metric perturbation
 $h_{ab}$ in the wave-zone, where $a$ and $b$ are space-time indices.
@@ -308,7 +307,7 @@ analysis problem.  We need to specify which parameters of the numerical
 simulation will be significantly useful for the astrophysics of a binary
 black hole system in a circular orbit.  For our purposes, a single
 numerical waveform is defined by at least seven parameters: the mass
-ratio $q = M_1/M_2$, the three components of the individual spins
+ratio $q = M_1/M_2$, and the three components of the individual spins
 $\vec{S}_1$ and $\vec{S}_2$.  These parameters will be referred to as
 the ``metadata'' for a waveform; more parameters can be added as
 necessary. We use the convention that $M_1$ denotes the larger of the
