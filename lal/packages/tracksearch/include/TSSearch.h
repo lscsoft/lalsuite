@@ -1,5 +1,5 @@
 /********************************** <lalVerbatim file="TrackSearchHV">
-Author: Torres, C
+Author: Torres, Cristina
 $Id$
 **************************************************** </lalVerbatim> */
 
@@ -126,6 +126,7 @@ extern "C" {
     WindowType        window; /*Window to use in TF map creation*/
     UINT4             numEvents; /*Does map have features*/
     CHAR             *channelName; /*Data Channel Name */
+    ChannelType       channelNameType; /*Type of data channel to use */
     CHAR             *dataDirPath; /*Path to data frames */
     CHAR             *singleDataCache; /*Explicit name to 1 data cache*/
     CHAR             *detectorPSDCache;/*Explicit cache for PSD*/
