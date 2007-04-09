@@ -71,7 +71,7 @@ and $\phi(t)$ is the phase evolution of the inspiral waveform.
 #include <lal/AVFactories.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpChisq.h>
-#include <lal/FindChirpFilterOutputVeto.h>
+/*#include <lal/FindChirpFilterOutputVeto.h>*/
 
 double rint(double x);
 /* debugging */

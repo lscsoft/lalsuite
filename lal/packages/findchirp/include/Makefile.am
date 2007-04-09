@@ -4,7 +4,6 @@
 #
 pkginclude_HEADERS = FindChirpDatatypes.h \
                      FindChirp.h \
-                     FindChirpFilterOutputVeto.h \
                      FindChirpChisq.h \
                      FindChirpSP.h \
                      FindChirpTD.h \

@@ -104,7 +104,7 @@ input to the function for future work.
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/FindChirp.h>
-#include <lal/FindChirpFilterOutputVeto.h>
+/*#include <lal/FindChirpFilterOutputVeto.h>*/
 
 double rint(double x);
 
