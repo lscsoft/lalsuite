@@ -611,6 +611,46 @@ int XLALFrameAddREAL8TimeSeriesProcData( FrameH *frame, REAL8TimeSeries *series 
 	return 0;
 }
 
+int XLALFrameAddREAL4TimeSeriesProcData( FrameH *frame, REAL4TimeSeries *series )
+{
+	static const char * func = "XLALFrameAddREAL4TimeSeriesProcData";
+	char rcsinfo[]  = "$Id$" "$Name$";
+	LIGOTimeGPS frameEpoch;
+	FrProcData *proc;
+	FrVect *vect;
+	REAL8 duration;
+
+	duration = series->deltaT * series->data->length;
+
+	vect = XLALFrVectREAL4TimeSeries( series );
+	if ( ! vect )
+		XLAL_ERROR( func, XLAL_EFUNC );
+
+	proc = FrProcDataNewV( frame, vect );
+	if ( ! proc ) {
+		FrVectFree( vect );
+		XLAL_ERROR( func, XLAL_EERR );
+	}
+
+	/* comment is rcs info of this routine */
+/* 	FrStrCpy( &proc->comment, rcsinfo ); */
+
+	/* time offset: compute this from frame time */
+	frameEpoch.gpsSeconds     = frame->GTimeS;
+	frameEpoch.gpsNanoSeconds = frame->GTimeN;
+	proc->timeOffset = XLALGPSDiff( &series->epoch, &frameEpoch );
+
+	/* remaining metadata */
+	proc->type    = 1;
+	proc->subType = 0;
+	proc->tRange  = duration;
+	proc->fShift  = 0.0;
+	proc->phase   = 0.0;
+	proc->BW      = 0.0;
+
+	return 0;
+}
+
 int XLALFrameAddREAL4TimeSeriesAdcData( FrameH *frame, REAL4TimeSeries *series )
 {
 	static const char * func = "XLALFrameAddREAL4TimeSeriesAdcData";
