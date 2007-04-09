@@ -76,12 +76,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
 #define rint(x) (floor((x)+0.5))
 
 
-/*
- *
- * variables that control program behaviour
- *
- */
-
 /* debugging */
 extern int vrbflg;                      /* verbocity of lal function    */
 
@@ -103,12 +97,31 @@ INT4 G1file = 0;
 INT4 T1file = 0;
 INT4 V1file = 0;
 
-/*
- *
- * more initialization parameters to be inserted here, 
- * once we know what we need.
- *
- */
+/* input time-slide parameters */
+REAL8  slideStep[LAL_NUM_IFO]     = {0.0,0.0,0.0,0.0,0.0,0.0};
+int    bankDuration     = 0;
+
+CHAR  *cohbankFileName     = NULL;   /* name of input template bank  */
+UINT4  nullStatOut         = 0;      /* default is not to write frame */
+UINT4  eventsOut           = 0;      /* default is not to write events */
+REAL4  nullStatThresh      = -1;
+INT4   maximizeOverChirp   = 0;      /* default is no clustering */
+INT4   verbose             = 0;
+CHAR   outputPath[FILENAME_MAX];
+CHAR  *frInType            = NULL;   /* type of data frames */
+
+INT8          gpsStartTimeNS     = 0;   /* input data GPS start time ns */
+LIGOTimeGPS   gpsStartTime;             /* input data GPS start time    */
+INT8          gpsEndTimeNS       = 0;   /* input data GPS end time ns   */
+LIGOTimeGPS   gpsEndTime;               /* input data GPS end time      */
+int           gpsStartTimeTemp   = 0;   /* input data GPS start time ns */
+int           gpsEndTimeTemp     = 0;   /* input data GPS start time ns */
+
+LALStatus             status;
+LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
+
+CHAR  *userTag          = NULL;         /* string the user can tag with */
+CHAR  *ifoTag           = NULL;         /* string to tag IFOs    */
 
 
 int main( int argc, char *argv[] )
@@ -118,7 +131,7 @@ int main( int argc, char *argv[] )
   /* frame output data */
   struct FrFile *frOutFile  = NULL;
   struct FrameH *outFrame   = NULL;
-  FrStream     *frStream = NULL;
+  FrStream      *frStream   = NULL;
 
   /* output */
   MetadataTable         proctable;
@@ -128,36 +141,33 @@ int main( int argc, char *argv[] )
 
   FILE *filePtr[4];
 
-  CHAR   fileName[FILENAME_MAX];
-  CHAR   framename[FILENAME_MAX];
-  CHAR   xmlname[FILENAME_MAX];
-  CHAR   cohdataStr[LALNameLength];
-  CHAR   caseIDChars[6][LIGOMETA_IFOS_MAX] = {"0","0","0","0","0","0"};
+  CHAR  fileName[FILENAME_MAX];
+  CHAR  framename[FILENAME_MAX];
+  CHAR  xmlname[FILENAME_MAX];
+  CHAR  cohdataStr[LALNameLength];
 
-  INT4   segLength       = 4; /* should match hardcoded value in inspiral.c */
-  INT4   numPoints       = 0;
-  UINT4  numSegments     = 1;      /* number of segments */
-  UINT4  nCohDataFr      = 0;
-  UINT8  eventID         = 0;
+  INT4   segLength      = 4;  /* should match hardcoded value in inspiral.c */
+  INT4   numPoints      = 0;
+  UINT4  numSegments    = 1;  /* number of segments */
+  UINT4  nCohDataFr     = 0;  /* what is this? */
+  UINT8  eventID        = 0;
 
-  REAL4  m1              = 0.0;
-  REAL4  m2              = 0.0;
-  REAL4  dynRange        = 0.0;
+  REAL4  m1             = 0.0;
+  REAL4  m2             = 0.0;
+  REAL4  dynRange       = 0.0;
 
   /* variables for initializing tempTime to account for time-slides */
-  UINT8  triggerNumber   = 0;
-  UINT8  slideNumber     = 0;
-  UINT8  slideSign       = 0;
+  UINT8  triggerNumber  = 0;
+  UINT8  slideNumber    = 0;
+  UINT8  slideSign      = 0;
 
   /* counters and other variables */
-  INT4   j,k,l,w,kmax;
-  REAL4  theta,phi,vPlus,vMinus;
-  UINT4  numDetectors     = 0;
-  REAL8  tempTime[6]      = {0.0,0.0,0.0,0.0,0.0,0.0};
-  INT4   timeptDiff[5]    = {0,0,0,0,0};
-  UINT2  caseID[6]        = {0,0,0,0,0,0}; /* H1 L V G T H2 */
-  INT4   numTriggers      = 0;
-  INT4   numCoincs        = 0;
+  INT4   j, k, l, w, kidx;
+  UINT4  numDetectors            = 0;
+  REAL8  tempTime[LAL_NUM_IFO]   = {0.0,0.0,0.0,0.0,0.0,0.0}; 
+  INT4   timeptDiff[5]           = {0,0,0,0,0};
+  INT4   numTriggers             = 0;
+  INT4   numCoincs               = 0;
 
   FrCache              *frInCache        = NULL;
 
@@ -174,17 +184,35 @@ int main( int argc, char *argv[] )
   NullStatInitParams      *nullStatInitParams   = NULL;
   NullStatParams          *nullStatParams       = NULL;
   NullStatInputParams     *nullStatInputParams  = NULL;
-  NullStatCVector         *nullStatCVec         = NULL;
+  CVector                 *CVec                 = NULL;
   MultiInspiralTable      *thisEvent            = NULL;
   MultiInspiralTable      *tempTable            = NULL;
   MetadataTable           savedEvents;
   COMPLEX8TimeSeries      tempSnippet;
 
-  char nameArrayCData[6][256] = {"0","0","0","0","0","0"}; /*cData chan names*/
+  /* cData channel names */
+  char nameArrayCData[LAL_NUM_IFO][256] = {"0","0","0","0","0","0"}; 
 
   set_debug_level( "1" ); /* change with parse option */
 
-  /* set the dynamic range; needed for distNorm, templateNorm calculation */
+  /* create the process and process params tables */
+  proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
+  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
+        &accuracy ), &status );
+  LAL_CALL( populate_process_table( &status, proctable.processTable,
+        PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
+  this_proc_param = procparams.processParamsTable = (ProcessParamsTable *)
+    calloc( 1, sizeof(ProcessParamsTable) );
+
+  arg_parse_check( argc, argv, procparams );
+  if (verbose)  fprintf(stdout, "Called parse options.\n");
+
+  /* wind to the end of the process params table */
+  for ( this_proc_param = procparams.processParamsTable; this_proc_param->next;
+        this_proc_param = this_proc_param->next );
+
+
+  /* set the dynamic range */
   dynRange = pow( 2.0, dynRangeExponent );
 
   /* set other variables */
@@ -193,16 +221,15 @@ int main( int argc, char *argv[] )
   k = 0;
 
   /* read in the frame files */
-
-  if( verbose ) fprintf(stdout, "reading in the frame files\n");
+  if ( verbose ) fprintf(stdout, "Reading in the frame files.\n");
   for ( k=0; k<LAL_NUM_IFO ; k++)
   {
-    if( ifoframefile[k] )
+    if ( ifoframefile[k] )
     {
-      LAL_CALL( LALFrOpen(&status,&frStream,NULL,ifoframefile[k]), &status);   
-      if(!frStream)
+      LAL_CALL( LALFrOpen(&status, &frStream, NULL, ifoframefile[k]), &status); 
+      if (!frStream)
       {
-        fprintf(stdout,"The file %s does not exist - exiting...\n", 
+        fprintf(stdout,"The file %s does not exist - exiting.\n", 
                 ifoframefile[k]);
         goto cleanexit;
       }
@@ -212,85 +239,79 @@ int main( int argc, char *argv[] )
 
   /* read in the cohbank trigger ligo lw xml file */
   numTriggers = XLALReadInspiralTriggerFile( &cohbankEventList, 
-                   &currentTrigger, &searchSummList, &inputFiles, 
-                   cohbankFileName );
+                  &currentTrigger, &searchSummList, &inputFiles, 
+                  cohbankFileName );
 
-  fprintf(stdout,"Reading templates from %s\n",cohbankFileName);
+  fprintf(stdout,"Reading templates from %s.\n",cohbankFileName);
 
   if ( numTriggers < 0 )  /* no triggers found */
   {
-    fprintf(stderr, "Error reading triggers from file %s", cohbankFileName);
+    fprintf(stderr, "Error reading triggers from file %s.\n", cohbankFileName);
     exit( 1 );
   }
   else if ( numTriggers == 0 )  /* no triggers found */
   {
-    if( vrbflg )
+    if ( vrbflg )
     {
       fprintf( stdout,
-               "%s contains no triggers - the coherent bank will be empty\n",
+               "%s contains no triggers - the coherent bank will be empty.\n",
                cohbankFileName );
     }
   }
   else  /* triggers do exist */
   {
-    if( vrbflg )
+    if ( vrbflg )
     {
       fprintf( stdout,
-               "Read in %d triggers from the file %s\n", numTriggers,
+               "Read in %d triggers from the file %s.\n", numTriggers,
                cohbankFileName );
     }
 
     /* pair up the coincidences */
     numCoincs = XLALRecreateCoincFromSngls( &coincHead, cohbankEventList );
-    if( numCoincs < 0 )
+    if ( numCoincs < 0 )
     {
-      fprintf(stderr, "Unable to reconstruct coincs from single ifo triggers");
+      fprintf(stderr, "Unable to reconstruct coincs from single ifo triggers.");
       exit( 1 );
     }
     else if ( vrbflg )
     {
       fprintf( stdout,
-               "Recreated %d coincs from the %d triggers\n", numCoincs,
+               "Recreated %d coincs from the %d triggers.\n", numCoincs,
                numTriggers );
     }
 
     /* loop over coincident triggers to compute the null statistic */
-    for( thisCoinc=coincHead; thisCoinc; thisCoinc=thisCoinc->next)
+    for ( thisCoinc=coincHead; thisCoinc; thisCoinc=thisCoinc->next)
     {
       numDetectors = thisCoinc->numIfos;
 
-      /* l is another detector index, which can have a max value of 4 */
+      /* l is another detector index */
       l=0;
 
-      /* Note the participating ifos and the eventID
-         for this coincident trigger */
-      for( k=0 ; k<LAL_NUM_IFO ; k++)
+      /* Note the participating ifos and the eventID for this coincidenice */
+      for ( k=0 ; k<LAL_NUM_IFO ; k++)
       {
-        if( thisCoinc->snglInspiral[k] )
+        if ( thisCoinc->snglInspiral[k] )
         {
-          kmax = k; /* final trigger's k value */
-          caseID[k] = 1;
-          memcpy( caseIDChars[k], &thisCoinc->snglInspiral[k]->ifo, 
-                  sizeof(caseIDChars[k] - 1) );
           eventID = thisCoinc->snglInspiral[k]->event_id;
-          if( verbose ) fprintf(stdout,"eventID = %Ld\n",eventID );
+          if ( verbose ) fprintf(stdout,"eventID = %Ld.\n",eventID );
 
           /* Parse eventID to get the slide number */
           triggerNumber = eventID % 100000;
           slideNumber = ((eventID % 100000000) - triggerNumber)/100000;
-          slideSign = (eventID % 1000000000) - slideNumber*100000 - 
-                      triggerNumber;
+          slideSign = (eventID % 1000000000)-(slideNumber*100000)-triggerNumber;
 
-          /* Store CData frame name now for reading its frame-file */
-          /* later within thisCoinc-ident loop*/
+          /* Store CData frame name  */
           LALSnprintf( nameArrayCData[k], LALNameLength*sizeof(CHAR), 
-                      "%s:%s_CData_%d", caseIDChars[k],frInType,eventID );
+            "%s:%s_CData_%d", &thisCoinc->snglInspiral[k]->ifo, 
+            frInType, eventID );
+          kidx = k;
         }
-      }/* Closes loop for k; finished noting the participating ifos
-                and the eventID for this coincident trigger*/
-      
-      /* Initialize tempTime to account for time-slides (wrt H1, hence j<5)*/
-      for( j=0; j<5; j++)
+      } 
+
+      /* Initialize tempTime to account for time-slides */
+      for( j=0; j<(LAL_NUM_IFO-1); j++)
       {
         /* slideSign=0 is the same as a positive time slide */
         if(slideSign != 0)
@@ -304,45 +325,42 @@ int main( int argc, char *argv[] )
       }
 
       l=0;
-      if( G1file ) l++;
-      if( H1file ) l++;
-      if( H2file ) l++;
-      if( L1file ) l++;
-      if( T1file ) l++;
-      if( V1file ) l++;
+      if ( G1file ) l++;
+      if ( H1file ) l++;
+      if ( H2file ) l++;
+      if ( L1file ) l++;
+      if ( T1file ) l++;
+      if ( V1file ) l++;
 
-      if( (INT4)numDetectors != l )
+
+      if ( (INT4)numDetectors != l )
       {
-        fprintf( stderr, "You have events for %d detectors, 
-                but specified frame files for %d detectors\n",numDetectors,l);
-        if( (INT4)numDetectors > l )
+        fprintf( stderr, "You have events for %d detectors, but specified 
+                          frame files for %d detectors.\n",numDetectors,l);
+        if ( (INT4)numDetectors > l )
         {
-          fprintf( stderr, "You must specify more frame files. Exiting...\n");
+          fprintf( stderr, "Too few frame files specified. Exiting.\n");
           exit(1);
         }
         else
         {
-          if( verbose ) fprintf( stderr, "the number of detectors is smaller 
-             than the number of frame files you specified. Exiting...\n");
+          fprintf( stderr, "Too many frame files specified. Exiting.\n");
           exit(1)
         }
       }
 
       l = 0;
 
-      if( verbose ) fprintf(stdout,"numDetectors = %d\n", numDetectors);
-      if( verbose ) fprintf(stdout,"caseID = %d %d %d %d %d %d 
-         (G1,H1,H2,L1,V1,T1)\n", caseID[0], caseID[1], caseID[2], caseID[3], 
-         caseID[4], caseID[5]);
+      if ( verbose ) fprintf(stdout,"numDetectors = %d\n", numDetectors);
 
 
       /* Initialize the necessary structures for thisCoinc-ident trigger*/
 
-      if( !(nullStatInitParams = (NullStatInitParams *) 
+      if ( !(nullStatInitParams = (NullStatInitParams *) 
           calloc(1,sizeof(NullStatInitParams)) ))
       {
         fprintf( stdout, 
-         "could not allocate memory for nullStat init params\n" );
+         "Could not allocate memory for nullStat init params.\n" );
         goto cleanexit;
       }
 
@@ -354,97 +372,97 @@ int main( int argc, char *argv[] )
 
       /* create the data structures needed */
 
-      if ( verbose ) fprintf( stdout, "initializing...\n " );
+      if ( verbose ) fprintf( stdout, "Initializing.\n " );
 
       /* initialize null statistic functions */
-      LAL_CALL( LALNullStatisticInputInit (&status, &nullStatInputParams,
-                nullStatInitParams), &status );
+      XLALNullStatisticInputInit(&nullStatInputParams, nullStatInitParams);
 
-      m1 = thisCoinc->snglInspiral[kmax]->mass1;
-      m2 = thisCoinc->snglInspiral[kmax]->mass2;
+      m1 = thisCoinc->snglInspiral[kidx]->mass1;
+      m2 = thisCoinc->snglInspiral[kidx]->mass2;
 
-      nullStatInput->tmplt = (InspiralTemplate *) 
+      nullStatInputParams->tmplt = (InspiralTemplate *) 
          LALCalloc(1,sizeof(InspiralTemplate) );
-      nullStatInput->tmplt->mass1 = m1;
-      nullStatInput->tmplt->mass2 = m2;
-      nullStatInput->tmplt->totalMass = m1 + m2;
-      nullStatInput->tmplt->mu = m1 * m2 / (m1 + m2);
-      nullStatInput->tmplt->eta = (m1 * m2) / ((m1 + m2) * (m1 + m2 ));
+      nullStatInputParams->tmplt->mass1 = m1;
+      nullStatInputParams->tmplt->mass2 = m2;
+      nullStatInputParams->tmplt->totalMass = m1 + m2;
+      nullStatInputParams->tmplt->mu = m1 * m2 / (m1 + m2);
+      nullStatInputParams->tmplt->eta = (m1 * m2) / ((m1 + m2) * (m1 + m2 ));
 
-      if (verbose)  fprintf( stdout, "m1:%f m2:%f totalmass:%f mu:%f eta%f\n", 
-         m1, m2,nullStatInputParams->tmplt->totalMass,nullStatInput->tmplt->mu,
-         nullStatInputParams->tmplt->eta);
+      if (verbose) fprintf(stdout,"m1:%f, m2:%f, Mtotal:%f, mu:%f, eta:%f.\n", 
+         m1, m2, nullStatInputParams->tmplt->totalMass,
+         nullStatInputParams->tmplt->mu, nullStatInputParams->tmplt->eta);
 
-       LAL_CALL( LALNullStatisticParamsInit (&status, &nullStatParams,
-                 nullStatInitParams),&status );
+       XLALNullStatisticParamsInit(&nullStatParams, nullStatInitParams);
 
-       nullStatParams->deltaT           = 1/((REAL4) sampleRate);  
-       nullStatParams->cohSNRThresh     = nullStatThresh;
-       nullStatParams->cohSNROut        = nullStatOut;
-       nullStatParams->numTmplts        = 1;
-       nullStatParams->fLow             = fLow;
-       nullStatParams->maxOverChirp     = maximizeOverChirp;
+       nullStatParams->numTmplts         = 1;
+       nullStatParams->maxOverChirp      = maximizeOverChirp;
+       nullStatParams->fLow              = fLow;
+       nullStatParams->deltaT            = 1/((REAL4) sampleRate);  
+       nullStatParams->nullStatThresh    = nullStatThresh;
+       nullStatParams->nullStatOut       = nullStatOut;
 
-       for( j=0; j<LAL_NUM_IFO; j++ )  /* what does this do??? */
-       {
-         nullStatParams->detIDVec->data[j] = caseID[j];
-       }
+       /*
+        * we only need H1 and H2 at the moment, but assign
+        * all, for future use
+        */
+       nullStatParams->detVector->detector[LAL_IFO_G1] = 
+         lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+       nullStatParams->detVector->detector[LAL_IFO_H1] =
+         lalCachedDetectors[LALDetectorIndexLHODIFF];
+       nullStatParams->detVector->detector[LAL_IFO_H2] =
+         lalCachedDetectors[LALDetectorIndexLHODIFF];
+       nullStatParams->detVector->detector[LAL_IFO_L1] =
+         lalCachedDetectors[LALDetectorIndexLLODIFF];
+       nullStatParams->detVector->detector[LAL_IFO_T1] =
+         lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
+       nullStatParams->detVector->detector[LAL_IFO_V1] =
+         lalCachedDetectors[LALDetectorIndexVIRGODIFF];
 
 
        /* Read in the snippets associated with thisCoinc trigger */
-       l = 0;
-       for( j=0; j<LAL_NUM_IFO; j++ )
+       for ( j=0; j<LAL_NUM_IFO; j++ )
        {
-         if( caseID[j] )
-         {
-           if( verbose ) fprintf(stdout, "getting the COMPLEX8TimeSeries\n");
-           LAL_CALL(LALFrOpen(&status,&frStream,NULL,ifoframefile[j]), &status);
-           if(!frStream)
-           {
+         if ( (j == LAL_IFO_H1) || (j == LAL_IFO_H2) ) 
+         { 
+           if ( verbose ) fprintf(stdout, "Getting the COMPLEX8TimeSeries.\n");
+           LAL_CALL( LALFrOpen( &status, &frStream, NULL, ifoframefile[j]), 
+              &status);
+           if (!frStream)
+           {  
              fprintf(stdout,
-               "The file %s does not exist - exiting...\n", ifoframefile[j] );
+               "The file %s does not exist - exiting.\n", ifoframefile[j] );
              goto cleanexit;
            }
 
            frChan.name = nameArrayCData[j];
-           /*CHECK: Need to replace index l with an index that assigns these
-            CData to the correct ifo*/
-           LAL_CALL( LALFrGetCOMPLEX8TimeSeries( &status, 
-              &(cohInspCVec->cData[l]), &frChan, frStream), &status);
-           /*CHECK: Need to worry about WRAPPING of time-slides here */
-           /* tempTime is the start time of cData plus -(time slide)*/
-           tempTime[l] += cohInspCVec->cData[l].epoch.gpsSeconds + 
-                          cohInspCVec->cData[l].epoch.gpsNanoSeconds * 1e-9;
-           if( verbose ) fprintf(stdout,"tempTime = %f\n",tempTime[l]);
-           LAL_CALL( LALFrClose( &status, &frStream ), &status );
 
-           /* CHECK: delete this after updating the cohinspfilterparams defn
-             cohInspFilterParams->segNorm[l] = thisCoinc->snglInspiral[k]
-           */
-           nullStatParams->sigmasq[l] = thisCoinc->snglInspiral[j]->sigmasq;
-           l++;
-         }/* closes if( caseID[j] ) */
-       } /* closes for( j=0; j<LAL_NUM_IFO; j++ ) */
+           LAL_CALL( LALFrGetCOMPLEX8TimeSeries( &status, 
+              &(CVec->cData[j]), &frChan, frStream), &status);
+
+           /* Need to worry about WRAPPING of time-slides             */
+           /* tempTime is the start time of cData plus - (time slide) */
+           tempTime[j] += CVec->cData[j].epoch.gpsSeconds + 
+                          CVec->cData[j].epoch.gpsNanoSeconds * 1e-9;
+           if ( verbose ) fprintf( stdout, "tempTime = %f\n", tempTime[j]);
+  
+           LAL_CALL( LALFrClose( &status, &frStream ), &status );
+  
+           /* set sigma-squared */
+           nullStatParams->sigmasq[j] = thisCoinc->snglInspiral[j]->sigmasq;
+           j++;
+         }
+         else
+         {
+           if (verbose) fprintf(stdout,"No data to read for G1,L1,T1 or V1.\n");
+         }
+       }      /* closes for( j=0; j<LAL_NUM_IFO; j++ ) */
 
 
        /*
-        * lines that do the calculation of templateNorm have been skipped
-        * since that is probably not necessary due to the fact that the
-        * sigmasq is read.
-        *
-        * also skipping the commensuration of the c-data snippets. This
+        * skipping the commensuration of the c-data snippets. This
         * is necessary in principle, but the H1-H2 snippets are always
         * commensurate so we postpone writing that part of the code.
         */
 
         /* calculation of the null statistic */
         
-
-
-
-
-
-
-
-
-
