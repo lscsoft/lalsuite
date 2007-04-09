@@ -89,6 +89,15 @@ NRCSID (NULLSTATISTICH, "$Id$");
 
 
 typedef struct
+tagCVector
+{
+  UINT4                 numDetectors;
+  COMPLEX8TimeSeries   *cData;
+}
+CVector;
+
+
+typedef struct
 tagNullStatInitParams
 {
   UINT4   numDetectors;
@@ -102,12 +111,13 @@ NullStatInitParams;
 typedef struct
 tagNullStatInputParams
 {
-  DetectorVector             detVector;
-  InspiralTemplate          *tmplt;
-  CoherentInspiralCVector   *multiCData;
+  InspiralTemplate      *tmplt;
+  DetectorVector         detVector;
+  CVector               *multiCData;
 }
 NullStatInputParams;
   
+
 typedef struct
 tagNullStatParams
 {
@@ -119,20 +129,12 @@ tagNullStatParams
   REAL4             fLow;
   REAL4             deltaT;
   REAL4             nullStatThresh;
-  REAL8             sigmasq[4];
-  REAL4             templateNorm;
+  REAL4             eventNullStat;
+  REAL8             sigmasq[6];
   INT4              segmentLength;
+  DetectorVector    detVector;
   UINT4             nullStatOut;
   REAL4TimeSeries   nullStatVec;
 }
 NullStatParams;
-
-
-typedef struct
-tagNullStatCVector
-{
-  UINT4                numDetectors;
-  COMPLEX8TimeSeries   *cData;
-}
-NullStatCVector;
 
