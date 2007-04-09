@@ -44,7 +44,7 @@ def buildDir(dirpath):
     #Now double check that directory exists else flag error
     if not os.path.isdir(dirpath):
         print '***'
-        print 'SHIT, directory still not ready contain(s) ',pathArray.__len__(),' branches!'
+        print 'ERR, directory still not ready contain(s) ',pathArray.__len__(),' branches!'
         print dirpath
         print '+++'
         print pathArray
@@ -842,16 +842,26 @@ class tracksearch:
             df_node.set_end(chunk.end())
             df_node.set_observatory(ifo[0])
             cacheName='timeLayerCache-'+str(df_node.get_observatory())+'-'+str(df_node.get_start())+'-'+str(df_node.get_end())+'.cache'
-            df_node.set_output(cacheName)
+            #These next four lines likely don't apply!
+            #If the dataFind job goes fine the cache file will be
+            #stdout of the job
+            #df_node.add_output_file(cacheName)
             self.dag.add_node(df_node)
             tracksearchTime_node=tracksearchTimeNode(tracksearchTime_job)
-            #Fix format of FILENAME
-            #Inserted a SETB Pool Hack for testing
-            #Add data find as appropriate parent to Time node
             tracksearchTime_node.add_parent(df_node)
-            #tracksearchTime_node.add_var_opt('cachefile','/home/ctorres/pipeTest/testFrame.cache')
-            tracksearchTime_node.add_var_opt('cachefile',df_node.get_output())
-            #Consider using Condor file transfer mechanism to transfer the frame cache file also.
+            #If executable name is anything but LSCdataFind we
+            #assume that the cache file should be hard wired!
+            if not str(self.cp.get('condor','datafind')).lower().__contains__(str('LSCdataFind').lower()):
+                print 'Assuming we do not need standard data find job.!'
+                print 'Looking for ini option: condor,datafind_fixcache'
+                fixCache=self.cp.get('condor','datafind_fixcache')
+                print 'Cache to hard wire into pipeline is:',fixCache
+                tracksearchTime_node.add_var_opt('cachefile',fixCache)
+            else:
+                outputFileList=df_node.get_output_files()
+                tracksearchTime_node.add_var_opt('cachefile',outputFileList[0])
+            #Consider using Condor file transfer mechanism to
+            #transfer the frame cache file also.
             #Set the node job time markers from chunk!
             tracksearchTime_node.add_var_opt('gpsstart_seconds',chunk.start())
             self.dag.add_node(tracksearchTime_node)

@@ -1,5 +1,5 @@
 /*
- * Author: Torres C. (Univ of TX at Brownsville)
+ * Author: Torres Cristina (Univ of TX at Brownsville)
  */
 
 #include "tracksearch.h"
@@ -177,7 +177,7 @@ int main (int argc, char *argv[])
   /*
    *Sleep for Attaching DDD 
    */
-  unsigned int doze = 0;
+  unsigned int doze = 20;
   pid_t myPID;
   myPID = getpid( );
   fprintf( stdout, "pid %d sleeping for %d seconds\n", myPID, doze );
@@ -911,6 +911,7 @@ void LALappsTrackSearchInitialize(
       {"inject_space",        required_argument,  0,    'L'},
       {"inject_file",         required_argument,  0,    'M'},
       {"inject_scale",        required_argument,  0,    'N'},
+      {"channel_type",        required_argument,  0,    'O'},
       {0,                     0,                  0,      0}
     };
   
@@ -958,6 +959,7 @@ void LALappsTrackSearchInitialize(
   params->makenoise = -1;
   params->calChannelType=SimDataChannel;/*See lsd*/
   params->channelName=NULL; /* Leave NULL to avoid frame read problems */
+  params->channelNameType=LAL_ADC_CHAN; /*Default for data analysis */
   params->dataDirPath=NULL;
   params->singleDataCache=NULL;
   params->detectorPSDCache=NULL;
@@ -1397,6 +1399,22 @@ void LALappsTrackSearchInitialize(
 	  }
 	  break;
 
+	case 'O':
+	  {
+	    if(!strcmp(optarg,"LAL_ADC_CHAN"))
+	      params->channelNameType=LAL_ADC_CHAN;
+	    else if(!strcmp(optarg,"LAL_SIM_CHAN"))
+	      params->channelNameType=LAL_SIM_CHAN;
+	    else if(!strcmp(optarg,"LAL_PROC_CHAN"))
+	      params->channelNameType=LAL_PROC_CHAN;
+	    else
+	      {
+		fprintf(stderr,"Invalid channel type specified assuming LAL_ADC_CHAN\n");
+		params->channelNameType=LAL_ADC_CHAN;
+	      };
+	  }
+	  break;
+
 	default :
 	  {
 	    fprintf(stderr,TRACKSEARCHC_MSGEMISC);
@@ -1509,8 +1527,16 @@ void LALappsGetFrameData(LALStatus*          status,
   FrCache              *frameCache = NULL;
   FrChanIn              channelIn;
   REAL4TimeSeries      *tmpData=NULL;
+  REAL8TimeSeries      *convertibleREAL8Data=NULL;
+  REAL8TimeSeries      *tmpREAL8Data=NULL;
+  INT2TimeSeries       *convertibleINT2Data=NULL;
+  INT2TimeSeries       *tmpINT2Data=NULL;
+  INT4TimeSeries       *convertibleINT4Data=NULL;
+  INT4TimeSeries       *tmpINT4Data=NULL;
+
   UINT4                 loadPoints=0;
   UINT4                 i=0;
+  LALTYPECODE           dataTypeCode=0;
   ResampleTSParams      resampleParams;
   INT4                  errCode=0;
   REAL8                 timeInterval=0;
@@ -1519,15 +1545,7 @@ void LALappsGetFrameData(LALStatus*          status,
   LIGOTimeGPS           stopGPS;
   /* Set all variables from params structure here */
   channelIn.name = params->channelName;
-  /*(  memcpy(DataIn->name,
-   *	 params->channelName,
-   *	 (strlen(params->channelName)*sizeof(CHAR)));
-   *
-   *  memset( DataIn->data->data, 0, DataIn->data->length*sizeof(REAL4) );
-   */
-  /* Need to use NULL DataIN->name so we will skip this line of code
-     Nullifying the DataIn->name pointer by hand hope it works */
-
+  channelIn.type = params->channelNameType;
   /* only try to load frame if name is specified */
   if (dirname || cachefile)
     {
@@ -1542,13 +1560,6 @@ void LALappsGetFrameData(LALStatus*          status,
 	LAL_CALL( LALFrCacheOpen( status, &stream, frameCache ), status);
 	LAL_CALL( LALDestroyFrCache( status, &frameCache ), status );
       }
-      /*
-       * Determine information about the channel and seek to the
-       * right place in the fram files 
-       *
-       *      DataIn->epoch.gpsSeconds     = params->GPSstart.gpsSeconds;
-       *      DataIn->epoch.gpsNanoSeconds = params->GPSstart.gpsNanoSeconds;
-       */
       lal_errhandler = LAL_ERR_EXIT;
       /* Set verbosity of stream so user sees frame read problems! */
       LAL_CALL( LALFrSetMode(status,LAL_FR_VERBOSE_MODE,stream),status);
@@ -1558,7 +1569,7 @@ void LALappsGetFrameData(LALStatus*          status,
       timeInterval=DataIn->data->length*DataIn->deltaT;
       stopFloat=startFloat+timeInterval;
       LAL_CALL( LALFloatToGPS(status,&stopGPS,&stopFloat),status);
-      if (params->verbosity > 0)
+      if (params->verbosity >= verbose)
 	{
 	  fprintf(stderr,"Checking frame stream spans requested data interval!\n");
 	  fprintf(stderr,"Start %i.%i\n",DataIn->epoch.gpsSeconds,DataIn->epoch.gpsNanoSeconds);
@@ -1568,54 +1579,269 @@ void LALappsGetFrameData(LALStatus*          status,
       LAL_CALL( LALFrSeek(status, &(stopGPS),stream),status);
 
       LAL_CALL( LALFrSeek(status, &(DataIn->epoch), stream), status);
-      /*fprintf(stderr,"Stream state :%i\n",stream->state);
-       *if (stream->state != LAL_FR_OK)
-       *	{
-       *	  fprintf(stderr,"There was a problem encountered with the frame stream!\n");
-       *	  fprintf(stderr,"%i:%s\n",TRACKSEARCHC_EREAD,TRACKSEARCHC_MSGEREAD);
-       *	  exit(TRACKSEARCHC_EREAD);
-       *	}
-       */
       /*
-       * Load the metadata to check the frame sampling rate
+       * Determine the variable type of data in the frame file.
        */
-      lal_errhandler = LAL_ERR_EXIT;
-      LAL_CALL( LALFrGetREAL4TimeSeriesMetadata( status, 
-						 DataIn, 
-						 &channelIn, 
-						 stream), 
-			status);
-
-      /*
-       * Determine the sampling rate and assuming the params.sampling rate
-       * how many of these points do we load to get the same time duration
-       * of data points
-       */
-      params->SamplingRateOriginal=1/(DataIn->deltaT);
-      loadPoints=params->SamplingRateOriginal*(params->TimeLengthPoints/params->SamplingRate);
-      LAL_CALL(
-	       LALCreateREAL4TimeSeries(status,
-					&tmpData,
-					"Higher Sampling Tmp Data",
-					params->GPSstart,
-					0,
-					1/params->SamplingRateOriginal,
-					lalADCCountUnit,
-					loadPoints),
-	       status);
-      /* get the data */
-      LAL_CALL( LALFrSeek(status, &(tmpData->epoch), stream), status);
-      lal_errhandler = LAL_ERR_RTRN;
-      errCode=LAL_CALL( LALFrGetREAL4TimeSeries( status, 
-						 tmpData, 
-						 &channelIn, 
-						 stream), 
-			status);
-      if (errCode != 0)
+      LAL_CALL( LALFrGetTimeSeriesType(status, &dataTypeCode, &channelIn, stream),status);
+      
+      if (dataTypeCode == LAL_S_TYPE_CODE)
 	{
-	  fprintf(stderr,"Error loading data. The span of tseries data is not available in framestream!\n");
-	  exit(errCode);
+	  /* Proceed as usual reading in REAL4 data type information */
+	  /* Load the metadata to check the frame sampling rate */
+	  lal_errhandler = LAL_ERR_EXIT;
+	  LAL_CALL( LALFrGetREAL4TimeSeriesMetadata( status, 
+						     DataIn, 
+						     &channelIn, 
+						     stream), 
+		    status);
+	  /*
+	   * Determine the sampling rate and assuming the params.sampling rate
+	   * how many of these points do we load to get the same time duration
+	   * of data points
+	   */
+	  params->SamplingRateOriginal=1/(DataIn->deltaT);
+	  loadPoints=params->SamplingRateOriginal*(params->TimeLengthPoints/params->SamplingRate);
+	  LAL_CALL(
+		   LALCreateREAL4TimeSeries(status,
+					    &tmpData,
+					    "Higher Sampling Tmp Data",
+					    params->GPSstart,
+					    0,
+					    1/params->SamplingRateOriginal,
+					    lalADCCountUnit,
+					    loadPoints),
+		   status);
+	  /* get the data */
+	  LAL_CALL( LALFrSeek(status, &(tmpData->epoch), stream), status);
+	  lal_errhandler = LAL_ERR_RTRN;
+	  errCode=LAL_CALL( LALFrGetREAL4TimeSeries( status, 
+						     tmpData, 
+						     &channelIn, 
+						     stream), 
+			    status);
+	  if (errCode != 0)
+	    {
+	      fprintf(stderr,"The span of REAL4TimeSeries data is not available in frame stream!\n");
+	      exit(errCode);
+	    }
+	} /*End of reading type REAL4TimeSeries*/
+      else if (dataTypeCode == LAL_D_TYPE_CODE)
+	{
+	  /*Proceed with a REAL8 Version of above and copy to REAL4 Struct in the end*/
+	  /* Create temporary space use input REAL4TimeSeries traits!*/
+	  if (params->verbosity >= verbose)
+	    fprintf(stderr,"Must convert frame REAL8 data to REAL4 data for analysis!\n");
+	  LAL_CALL(
+		   LALCreateREAL8TimeSeries(status,
+					    &tmpREAL8Data,
+					    "tmp space",
+					    params->GPSstart,
+					    0,
+					    DataIn->deltaT,
+					    lalADCCountUnit,
+					    DataIn->data->length),
+		   status);
+
+	  /* Load the metadata to check the frame sampling rate */
+	  lal_errhandler = LAL_ERR_EXIT;
+	  LAL_CALL( LALFrGetREAL8TimeSeriesMetadata( status, 
+						     tmpREAL8Data, 
+						     &channelIn, 
+						     stream), 
+		    status);
+	  /*
+	   * Determine the sampling rate and assuming the params.sampling rate
+	   * how many of these points do we load to get the same time duration
+	   * of data points
+	   */
+	  params->SamplingRateOriginal=1/(tmpREAL8Data->deltaT);
+	  loadPoints=params->SamplingRateOriginal*(params->TimeLengthPoints/params->SamplingRate);
+	  LAL_CALL(
+		   LALCreateREAL8TimeSeries(status,
+					    &convertibleREAL8Data,
+					    "Higher Sampling Tmp Data",
+					    params->GPSstart,
+					    0,
+					    1/params->SamplingRateOriginal,
+					    lalADCCountUnit,
+					    loadPoints),
+		   status);
+	  /* get the data */
+	  LAL_CALL( LALFrSeek(status, &(tmpREAL8Data->epoch), stream), status);
+	  lal_errhandler = LAL_ERR_RTRN;
+	  errCode=LAL_CALL( LALFrGetREAL8TimeSeries( status, 
+						     convertibleREAL8Data, 
+						     &channelIn, 
+						     stream), 
+			    status);
+	  if (errCode != 0)
+	    {
+	      fprintf(stderr,"The span of REAL8TimeSeries data is not available in framestream!\n");
+	      exit(errCode);
+	    }
+	  /* Create high sampled REAL4 variable */
+	  LAL_CALL(
+		   LALCreateREAL4TimeSeries(status,
+                                            &tmpData,
+                                            "Higher Sampling REAL4 Data",
+                                            params->GPSstart,
+                                            0,
+                                            1/params->SamplingRateOriginal,
+                                            lalADCCountUnit,
+                                            loadPoints),
+                   status);
+	  /* Prepare to copy/cast REAL8 data into REAL4 structure */
+	  for (i=0;i<tmpData->data->length;i++)
+	    tmpData->data->data[i] = (REAL4) convertibleREAL8Data->data->data[i];
+	}/*End of reading type REAL8TimeSeries*/
+      else if  (dataTypeCode == LAL_I2_TYPE_CODE)
+	{
+	  /*Proceed with a INT2 Version of above and copy to REAL4 Struct in the end*/
+	  /* Create temporary space use input REAL4TimeSeries traits!*/
+	  if (params->verbosity >= verbose)
+	    fprintf(stderr,"Must convert frame INT2 data to REAL4 data for analysis!\n");
+	  LAL_CALL( 
+		   LALCreateINT2TimeSeries(status,
+					    &tmpINT2Data,
+					    "tmp space",
+					    params->GPSstart,
+					    0,
+					    DataIn->deltaT,
+					    lalADCCountUnit,
+					    DataIn->data->length),
+		   status);
+
+	  /* Load the metadata to check the frame sampling rate */
+	  lal_errhandler = LAL_ERR_EXIT;
+	  LAL_CALL( LALFrGetINT2TimeSeriesMetadata( status, 
+						     tmpINT2Data, 
+						     &channelIn, 
+						     stream), 
+		    status);
+	  /*
+	   * Determine the sampling rate and assuming the params.sampling rate
+	   * how many of these points do we load to get the same time duration
+	   * of data points
+	   */
+	  params->SamplingRateOriginal=1/(tmpINT2Data->deltaT);
+	  loadPoints=params->SamplingRateOriginal*(params->TimeLengthPoints/params->SamplingRate);
+	  LAL_CALL(
+		   LALCreateINT2TimeSeries(status,
+					    &convertibleINT2Data,
+					    "Tmp Data",
+					    params->GPSstart,
+					    0,
+					    1/params->SamplingRateOriginal,
+					    lalADCCountUnit,
+					    loadPoints),
+		   status);
+	  /* get the data */
+	  LAL_CALL( LALFrSeek(status, &(tmpINT2Data->epoch), stream), status);
+	  lal_errhandler = LAL_ERR_RTRN;
+	  errCode=LAL_CALL( LALFrGetINT2TimeSeries( status, 
+						     convertibleINT2Data, 
+						     &channelIn, 
+						     stream), 
+			    status);
+	  if (errCode != 0)
+	    {
+	      fprintf(stderr,"The span of INT2TimeSeries data is not available in framestream!\n");
+	      exit(errCode);
+	    }
+	  /* Create high sampled REAL4 variable */
+	  LAL_CALL(
+		   LALCreateREAL4TimeSeries(status,
+                                            &tmpData,
+                                            "Higher Sampling REAL4 Data",
+                                            params->GPSstart,
+                                            0,
+                                            1/params->SamplingRateOriginal,
+                                            lalADCCountUnit,
+                                            loadPoints),
+                   status);
+	  /* Prepare to copy/cast REAL8 data into REAL4 structure */
+	  for (i=0;i<tmpData->data->length;i++)
+	    tmpData->data->data[i] = (REAL4) convertibleINT2Data->data->data[i];
 	}
+      else if  (dataTypeCode == LAL_I4_TYPE_CODE)
+	{
+	  /*Proceed with a INT2 Version of above and copy to REAL4 Struct in the end*/
+	  /* Create temporary space use input REAL4TimeSeries traits!*/
+	  if (params->verbosity >= verbose)
+	    fprintf(stderr,"Must convert frame INT4 data to REAL4 data for analysis!\n");
+	  LAL_CALL( 
+		   LALCreateINT4TimeSeries(status,
+					    &tmpINT4Data,
+					    "REAL8 tmp space",
+					    params->GPSstart,
+					    0,
+					    DataIn->deltaT,
+					    lalADCCountUnit,
+					    DataIn->data->length),
+		   status);
+
+	  /* Load the metadata to check the frame sampling rate */
+	  lal_errhandler = LAL_ERR_EXIT;
+	  LAL_CALL( LALFrGetINT4TimeSeriesMetadata( status, 
+						     tmpINT4Data, 
+						     &channelIn, 
+						     stream), 
+		    status);
+	  /*
+	   * Determine the sampling rate and assuming the params.sampling rate
+	   * how many of these points do we load to get the same time duration
+	   * of data points
+	   */
+	  params->SamplingRateOriginal=1/(tmpINT4Data->deltaT);
+	  loadPoints=params->SamplingRateOriginal*(params->TimeLengthPoints/params->SamplingRate);
+	  LAL_CALL(
+		   LALCreateINT4TimeSeries(status,
+					    &convertibleINT4Data,
+					    "Tmp Data",
+					    params->GPSstart,
+					    0,
+					    1/params->SamplingRateOriginal,
+					    lalADCCountUnit,
+					    loadPoints),
+		   status);
+	  /* get the data */
+	  LAL_CALL( LALFrSeek(status, &(tmpINT4Data->epoch), stream), status);
+	  lal_errhandler = LAL_ERR_RTRN;
+	  errCode=LAL_CALL( LALFrGetINT4TimeSeries( status, 
+						     convertibleINT4Data, 
+						     &channelIn, 
+						     stream), 
+			    status);
+	  if (errCode != 0)
+	    {
+	      fprintf(stderr,"The span of INT2TimeSeries data is not available in framestream!\n");
+	      exit(errCode);
+	    }
+	  /* Create high sampled REAL4 variable */
+	  LAL_CALL(
+		   LALCreateREAL4TimeSeries(status,
+                                            &tmpData,
+                                            "Higher Sampling REAL4 Data",
+                                            params->GPSstart,
+                                            0,
+                                            1/params->SamplingRateOriginal,
+                                            lalADCCountUnit,
+                                            loadPoints),
+                   status);
+	  /* Prepare to copy/cast REAL8 data into REAL4 structure */
+	  for (i=0;i<tmpData->data->length;i++)
+	    tmpData->data->data[i] = (REAL4) convertibleINT4Data->data->data[i];
+	}
+      else
+	{
+	  fprintf(stderr,"This type of frame data(%o) can not be used.\n",dataTypeCode);
+	  fprintf(stderr,"Expecting INT2, INT4, REAL4 or REAL8\n");
+	  fprintf(stderr,"Contact tracksearch authors for further help.\n");
+	  LALappsTSassert(1==0,
+			  TRACKSEARCHC_EDATA,
+			  TRACKSEARCHC_MSGEDATA);
+	}
+      /* End of error for invalid data types in frame file.*/
       if (params->verbosity >= printFiles)
 	print_real4tseries(tmpData,"OriginalInputTimeSeries.diag");
       /*
@@ -1624,9 +1850,10 @@ void LALappsGetFrameData(LALStatus*          status,
        */
       if (params->SamplingRate < params->SamplingRateOriginal)
 	{
-	  fprintf(stdout,"We will resample the data from %6.3f to %6.3f.\n",
-		  1/tmpData->deltaT,
-		  params->SamplingRate);
+	  if (params->verbosity >= verbose)
+	    fprintf(stderr,"We will resample the data from %6.3f to %6.3f.\n",
+		    1/tmpData->deltaT,
+		    params->SamplingRate);
 	  resampleParams.deltaT=1/params->SamplingRate;
 	  resampleParams.filterType=defaultButterworth;
 	  /*resampleParams->filterParams*/
@@ -1650,9 +1877,10 @@ void LALappsGetFrameData(LALStatus*          status,
 	}
       else
 	{
-	  fprintf(stdout,"Resampling to %f, not possible we have %f sampling rate in the frame file.\n",
-		  params->SamplingRate,
-		  params->SamplingRateOriginal);
+	  if (params->verbosity >= verbose)
+	    fprintf(stdout,"Resampling to %f, not possible we have %f sampling rate in the frame file.\n",
+		    params->SamplingRate,
+		    params->SamplingRateOriginal);
 	  /*
 	   * Straight copy the data over to returnable structure
 	   */
@@ -1669,6 +1897,24 @@ void LALappsGetFrameData(LALStatus*          status,
       if (tmpData)
 	LAL_CALL(LALDestroyREAL4TimeSeries(status,tmpData),
 		 status);
+      if (convertibleREAL8Data)
+	LAL_CALL(LALDestroyREAL8TimeSeries(status,convertibleREAL8Data),
+		 status); 
+      if (tmpREAL8Data)
+	LAL_CALL(LALDestroyREAL8TimeSeries(status,tmpREAL8Data),
+		 status); 
+      if (convertibleINT2Data)
+	LAL_CALL(LALDestroyINT2TimeSeries(status,convertibleINT2Data),
+		 status); 
+      if (tmpINT2Data)
+	LAL_CALL(LALDestroyINT2TimeSeries(status,tmpINT2Data),
+		 status); 
+      if (convertibleINT4Data)
+	LAL_CALL(LALDestroyINT4TimeSeries(status,convertibleINT4Data),
+		 status); 
+      if (tmpINT4Data)
+	LAL_CALL(LALDestroyINT4TimeSeries(status,tmpINT4Data),
+		 status); 
       /* close the frame stream */
       LAL_CALL( LALFrClose( status, &stream ), status);
     }
