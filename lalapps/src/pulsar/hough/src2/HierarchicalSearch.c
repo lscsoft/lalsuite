@@ -948,8 +948,6 @@ int MAIN( int argc, char *argv[]) {
 			       * (usefulParams.spinRange_midTime.fkdot[0] + usefulParams.spinRange_midTime.fkdotBand[0]) 
 			       * HSMAX(semiCohPar.patchSizeX, semiCohPar.patchSizeY) / dFreqStack);
 	
-	/* extraBinsSky = 45; */
-	
 	/* extra bins due to fdot is maximum number of frequency bins drift that can be 
 	   caused by the residual spindown.  The reference time for the spindown is the midtime, 
 	   so relevant interval is Tobs/2 and largest possible value of residual spindown is 
@@ -1038,7 +1036,7 @@ int MAIN( int argc, char *argv[]) {
 	    semiCohPar.threshold = uvar_threshold1*sigmaN + meanN;	 
 	    LogPrintf(LOG_DETAIL, "Expected mean number count=%f, std=%f, threshold=%f\n", 
 		      meanN, sigmaN, semiCohPar.threshold);
-	    
+
 	    /* convert fstat vector to peakgrams using the Fstat threshold */
 	    LAL_CALL( FstatVectToPeakGram( &status, &pgV, &fstatVector, uvar_peakThrF), &status);
 	    	    
@@ -1175,7 +1173,9 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALDDestroyVectorSequence (&status,  &velStack), &status);
   LAL_CALL( LALDDestroyVectorSequence (&status,  &posStack), &status);
 
-  LAL_CALL( LALDDestroyVector ( &status, &weightsNoise ), &status);
+  if (weightsNoise) {
+    LAL_CALL( LALDDestroyVector ( &status, &weightsNoise ), &status);
+  }
   LAL_CALL( LALDDestroyVector ( &status, &weightsV ), &status);
   
   /* free dopplerscan stuff */
@@ -2238,9 +2238,9 @@ void GetHoughCandidates_threshold(LALStatus            *status,
     jMax = iMax = 0;
 
     /* loop over hough map to get location of max */
-    for (i = 0; i < ySide; i++)
+    for (i = 1; i < ySide-1; i++)
       {
-	for (j = 0; j < xSide; j++)
+	for (j = 1; j < xSide-1; j++)
 	  { 
 	    
 	    if ( ht->map[i*xSide + j] > currentMax ) {
