@@ -1,0 +1,253 @@
+/*-----------------------------------------------------------------------
+ *
+ * File Name: NullStatistic.c
+ *
+ * Author: Messaritaki, E.
+ *
+ * Revision: $Id$ 
+ *-----------------------------------------------------------------------
+ */
+
+#include <math.h>
+#include <string.h>
+
+#include <lal/LALRCSID.h>
+#include <lal/LALConfig.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALStdio.h>
+#include <lal/LALConstants.h>
+#include <lal/AVFactories.h>
+#include <lal/DataBuffer.h>
+#include <lal/FindChirp.h>
+#include <lal/FindChirpSP.h>
+#include <lal/DetectorSite.h>
+#include <lal/StochasticCrossCorrelation.h>
+#include <lal/LIGOMetadataTables.h>
+#include <lal/SkyCoordinates.h>
+#include <lal/Date.h>
+#include <lal/CoherentInspiral.h>
+#include <lal/NullStatistic.h>
+
+#define rint(x) (floor((x)+0.5))
+double modf( double value, double *integerPart );
+
+NRCSID (NULLSTATISTICC, "$Id$");
+
+
+static REAL4 cartesianInnerProduct(REAL4 x[3], REAL4 y[3])
+{
+  return x[0]*y[0] + x[1]*y[1] + x[2]*y[2];
+}
+
+
+void
+XLALNullStatisticInputInit (
+   NullStatInputParams    **input,
+   NullStatInitParams      *init
+   )
+{
+  static const char *func = "XLALNullStatisticInputInit";
+
+  CVector               *cVecPtr = NULL;
+  NullStatInputParams   *inputPtr = NULL;
+
+
+  /* check that the number of vectors is not zero and that it is 2 */
+  if ( init->numDetectors != 2 )  
+  {
+    XLALPrintError("number of detectors must be 2; only H1-H2 allowed");
+    XLAL_ERROR(func, XLAL_EINVAL);
+  }
+
+  /* check that the number of segments is positive */
+  if ( init->numSegments <= 0 )
+  {
+    XLALPrintError("number of segments must be positive");
+    XLAL_ERROR(func, XLAL_EINVAL);
+  }
+
+  /* check that the number of points is positive */
+  if ( init->numPoints <= 0 )
+  {
+    XLALPrintError("number of points must be positive");   
+    XLAL_ERROR(func, XLAL_EINVAL);
+  }
+
+  /* allocate memory for the NullStatInputParams structure */
+  inputPtr = *input = (NullStatInputParams *) 
+    LALCalloc(1,sizeof(NullStatInputParams) );
+  if ( !inputPtr )
+  {
+    XLALPrintError("could not allocate memory for NullStatInputParams");
+    XLAL_ERROR(func, XLAL_ENOMEM);
+  }
+
+  /* allocate memory for the CVector */
+  cVecPtr = (*input)->multiCData = (CVector *) LALCalloc(1, sizeof(CVector));
+  if ( !cVecPtr )
+  {
+    XLALPrintError("could not allocate memory for CVector");
+    XLAL_ERROR(func, XLAL_ENOMEM);
+  }
+
+  cVecPtr->numDetectors = init->numDetectors;
+
+  cVecPtr->cData = (COMPLEX8TimeSeries *)
+    LALCalloc(1, cVecPtr->numDetectors * sizeof(COMPLEX8TimeSeries) );
+  if ( !(cVecPtr->cData) )
+  {
+    XLALPrintError("could not allocate memory for cData vector");
+    XLAL_ERROR(func, XLAL_ENOMEM);
+  }
+
+  return( 0 );
+}
+
+
+void
+XLALNullStatisticParamsInit(
+   NullStatParams      **output,
+   NullStatInitParams   *init
+   )
+{
+  static const char *func = "XLALNullStatisticParamsInit";
+
+  NullStatParams  *outputPtr;
+
+
+  /* check that the number of vectors is not zero and that it is 2 */
+  if ( init->numDetectors != 2 )
+  {
+    XLALPrintError("number of detectors must be 2; only H1-H2 allowed");
+    XLAL_ERROR(func, XLAL_EINVAL);
+  }
+
+  /* check that the number of segments is positive */
+  if ( init->numSegments <= 0 )
+  {
+    XLALPrintError("number of segments must be positive");
+    XLAL_ERROR(func, XLAL_EINVAL);
+  }
+
+  /* check that the number of points is positive */
+  if ( init->numPoints <= 0 )
+  {
+    XLALPrintError("number of points must be positive");
+    XLAL_ERROR(func, XLAL_EINVAL);
+  }
+
+  /* allocate memory for the NullStatParams structure */
+  outputPtr = *output = (NullStatParams *) LALCalloc(1,sizeof(NullStatParams) );  if ( !outputPtr )
+  {
+    XLALPrintError("could not allocate memory for NullStatParams");
+    XLAL_ERROR(func, XLAL_ENOMEM);
+  }
+
+  /* if the null statistic is to be output, create the nullStatVec */
+  if ( nullStatOut )
+  {
+    outputPtr->nullStatVec = (REAL4TimeSeries *) 
+      LALCalloc(1, sizeof(REAL4TimeSeries) );
+    if ( !(outputPtr->nullStatVec) )
+    {
+      XLALPrintError("could not allocate memory for nullStatVec.");
+      XLAL_ERROR(func, XLAL_ENOMEM);
+    }
+  }
+
+  /* populate the output structure */
+  outputPtr->numDetectors = init->numDetectors;
+  outputPtr->numSegments = init->numSegments;
+  outputPtr->numPoints = init->numPoints;
+
+  return (0);
+}
+
+
+void
+XLALComputeNullStatistic (
+  MultiInspiralTable    **eventList,
+  NullStatInputParams    *input,
+  NullStatParams         *params
+  )
+{
+  UINT4                 numDetectors          = 0;
+  UINT4                 numSegments           = 0;
+  UINT4                 numPoints             = 0;
+  INT4                  segmentLength         = 0;
+  REAL4                 deltaT                = 0.0;
+  REAL4                 nullStatThresh        = 0.0;
+  UINT4                 nullStatOut           = 0;
+  LALDetector          *detector              = NULL;
+  COMPLEX8TimeSeries   *cData                 = NULL;
+  MultiInspiralTable   *thisEvent             = NULL;
+  REAL4TimeSeries      *nullStatVec;          = NULL;
+  REAL4                *sigmasq[LAL_NUM_IFO]  = NULL;
+
+  INT4    h1idx, h2idx, m, j;
+  REAL4   norm;           
+
+  static const char *func = "XLALComputeNullStatistic";
+
+  /* check that the arguments are reasonable */
+
+  /* assign the parameters to local variables */ 
+  numDetectors   = params->numDetectors;
+  numPoints      = params->numPoints;
+  numSegments    = params->numSegments;
+  nullStatOut    = params->nullStatOut;
+  deltaT         = params->deltaT;
+  segmentLength  = params->segmentLength;
+  nullStatThresh = params->nullStatThresh;
+  sigmasq        = params->sigmasq;
+
+  /* if the null statistic time series is required: */
+  if ( nullStatOut)
+  {
+    memset( params->nullStatVec->data->data, 0, numPoints*sizeof(REAL4));
+  }
+
+  h1idx = LAL_IFO_H1;
+  h2idx = LAL_IFO_H2;
+
+  norm = (1.0/( sigmasq[h1idx]*sigmasq[h1idx])) + 
+         (1.0/( sigmasq[h2idx]*sigmasq[h2idx]));
+  /* read in the c-data for multiple detectors */
+  cData = input->multiCData->cData;
+
+  /* 
+   * the time for which we want the null statistic is the one at the
+   * center of the 4-s time interval
+   */
+   idx = (INT4) (numPoints/2);
+
+  /* calculate the null statistic for H1-H2              */
+  /* the c-data already contain one division by sigma-sq */
+  if (nullStatOut)
+  {
+    for (m=0; m<(INT4)numPoints; m++)
+    {
+      nullStatRe = cData[h1idx].data->data[m].re / sigmasq[h1idx]
+                 - cData[h2idx].data->data[m].re / sigmasq[h2idx];
+      nullStatIm = cData[h1idx].data->data[m].im / sigmasq[h1idx]
+                 - cData[h2idx].data->data[m].im / sigmasq[h2idx];
+      nullStatVec[m]= ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / norm ;
+    }
+    eventNullStat = nullStatVec[idx];
+  }
+  else
+  {
+    nullStatRe = cData[h1idx].data->data[idx].re / sigmasq[h1idx]
+               - cData[h2idx].data->data[idx].re / sigmasq[h2idx] ;
+    nullStatIm = cData[h1idx].data->data[idx].im / sigmasq[h1idx]
+               - cData[h2idx].data->data[idx].im / sigmasq[h2idx] ;
+    eventNullStat = ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / norm ;
+  }
+
+
+  thisEvent->mass1 = input->tmplt->mass1;
+  thisEvent->mass2 = input->tmplt->mass2;
+  thisEvent->mchirp = input->tmplt->totalMass * 
+            pow( input->tmplt->eta, 3.0/5.0 );
+  thisEvent->eta = input->tmplt->eta;
+
