@@ -673,7 +673,7 @@ def make_binj_fragment(dag, seg, tag, offset, flow, fhigh):
 
 
 def make_binjfind_fragment(dag, parents, tag):
-	parents = type(parents)(parents)
+	parents = list(parents)
 	nodes = []
 	while parents:
 		node = BinjfindNode(binjfindjob)
@@ -689,7 +689,7 @@ def make_binjfind_fragment(dag, parents, tag):
 
 
 def make_bucluster_fragment(dag, parents, instrument, seg, tag):
-	parents = type(parents)(parents)
+	parents = list(parents)
 	nodes = []
 	while parents:
 		node = BuclusterNode(buclusterjob)
@@ -705,7 +705,7 @@ def make_bucluster_fragment(dag, parents, instrument, seg, tag):
 
 
 def make_bucut_fragment(dag, parents, tag):
-	parents = type(parents)(parents)
+	parents = list(parents)
 	nodes = []
 	while parents:
 		node = BucutNode(bucutjob)
