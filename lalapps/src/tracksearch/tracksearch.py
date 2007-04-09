@@ -818,24 +818,8 @@ class tracksearch:
         #Create dataFindJob
         #This path is relative to the jobs initialDir arguments!
         dataFindInitialDir=determineLayerPath(self.cp,self.blockID,layerID)
-        outputDir=dataFindInitialDir
         dataFindLogPath=os.path.normpath(determineBlockPath(self.cp,self.blockID)+'/logs/')
-        df_job = pipeline.LSCDataFindJob(outputDir,dataFindLogPath,self.cp)
-        #Additional HACK due to recent changes in GLUE
-        # Remember we edited the GLUE archive to make this work.
-        # DOESN'T apply to cluster runs!
-        df_job.set_sub_file(os.path.normpath(self.dagDirectory+'/datafind.sub'))
-        df_job.add_condor_cmd('initialdir',str(dataFindInitialDir))
-        prev_df = None
-        for chunk in self.sciSeg:
-            df_node=pipeline.LSCDataFindNode(df_job)
-            df_node.set_start(chunk.start())
-            df_node.set_end(chunk.end())
-            df_node.set_observatory(ifo[0])
-            if prev_df:
-                df_node.add_parent(prev_df)
-            self.dag.add_node(df_node)
-            prev_df = df_node
+        df_job = pipeline.LSCDataFindJob(dataFindInitialDir,dataFindLogPath,self.cp)
         #Setup the jobs after queries to LSCdataFind as equal children
         block_id=self.blockID
         layer_id=layerID
@@ -845,26 +829,34 @@ class tracksearch:
                                                layer_id,
                                                dagDir,
                                                self.jobType)
-        prevLayerJobList=[]
-        #THE FOLLOWIN LOOP NEEDS TO BE REVISED
-        #WE ARE LOOSING THE CACHE NAMES IN THE PREVIOUS LOOP
+        # Additional HACK due to recent changes in GLUE
+        # Remember we edited the GLUE archive to make this work.
+        # DOESN'T apply to cluster runs!
+        df_job.set_sub_file(os.path.normpath(self.dagDirectory+'/datafind.sub'))
+        df_job.add_condor_cmd('initialdir',str(dataFindInitialDir))
+        prevLayerJobList=[]        
+        prev_df = None
         for chunk in self.sciSeg:
+            df_node=pipeline.LSCDataFindNode(df_job)
+            df_node.set_start(chunk.start())
+            df_node.set_end(chunk.end())
+            df_node.set_observatory(ifo[0])
+            cacheName='timeLayerCache-'+str(df_node.get_observatory())+'-'+str(df_node.get_start())+'-'+str(df_node.get_end())+'.cache'
+            df_node.set_output(cacheName)
+            self.dag.add_node(df_node)
             tracksearchTime_node=tracksearchTimeNode(tracksearchTime_job)
             #Fix format of FILENAME
             #Inserted a SETB Pool Hack for testing
-            tracksearchTime_node.add_var_opt('cachefile','/home/ctorres/pipeTest/testFrame.cache')
-            #tracksearchTime_node.add_var_opt('frame_cache',df_node.get_output())
-
+            #Add data find as appropriate parent to Time node
+            tracksearchTime_node.add_parent(df_node)
+            #tracksearchTime_node.add_var_opt('cachefile','/home/ctorres/pipeTest/testFrame.cache')
+            tracksearchTime_node.add_var_opt('cachefile',df_node.get_output())
+            #Consider using Condor file transfer mechanism to transfer the frame cache file also.
             #Set the node job time markers from chunk!
             tracksearchTime_node.add_var_opt('gpsstart_seconds',chunk.start())
-
-            #We want these nodes to be a child of last data find job
-            tracksearchTime_node.add_parent(df_node)
             self.dag.add_node(tracksearchTime_node)
             prevLayerJobList.append(tracksearchTime_node)
         return prevLayerJobList
-    #Finished with getting data and layer 1 of analysis submit files
-    #end def startingSearchLayer(self,layerID):
 
     def finalSearchLayer(self,layerID,nodeLinks):
         #This layer will setup last nodes of dag.  These nodes
