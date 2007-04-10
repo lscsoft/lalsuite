@@ -626,7 +626,8 @@ INT4 localtime = input->AS_Q.epoch.gpsSeconds;
 
 
       /* check alphabeta */
-      if( (factors.alphabeta.re < 0.8) ||  (factors.alphabeta.re > 1.2) ) 
+      if( (factors.alphabeta.re < 0.8) ||  (factors.alphabeta.re > 1.2) 
+	  || (isnan(factors.alphabeta.re)) || isinf(factors.alphabeta.re)) 
 	{
 	 factors.alphabeta.re = 1.0;
 	 if (m>0) factors.alphabeta.re=output->alphabeta.data->data[m-1].re;
