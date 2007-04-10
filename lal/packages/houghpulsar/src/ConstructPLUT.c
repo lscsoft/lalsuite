@@ -1275,8 +1275,8 @@ static void CheckLineIntersection(REAL8 alpha, REAL8 xA, REAL8 yA,
       /* horizontal line */
       if ((patch->yMin <= yA) && (patch->yMax >= yA)){
 	noIn  = 1;
-	yymin =  ceil(yA/patch->deltaY+patch->ySide*0.5-0.5);
-	yymax = floor(yA/patch->deltaY+patch->ySide*0.5-0.5);
+	yymin =  ceil((REAL4)(yA/patch->deltaY-0.5) + (REAL4)(patch->ySide*0.5));
+	yymax = floor((REAL4)(yA/patch->deltaY-0.5) +(REAL4)(patch->ySide*0.5));
 	/* Note  yymax < yymin,   to identify an horizontal line!
 	   If the area to mark is above (arriba), mark yymin and higher. 
 	   If the area to mark is below (abajo), mark yymax and lower.*/
@@ -1297,8 +1297,8 @@ static void CheckLineIntersection(REAL8 alpha, REAL8 xA, REAL8 yA,
 	ylower = MIN(myy1,y2); /* or  ylower=myy1+y2-yupper  */
 	yupper = MIN(yupper,patch->yMax);
 	ylower = MAX(ylower,patch->yMin);
-	yymin  = ceil(ylower/patch->deltaY+patch->ySide*0.5-0.5);
-	yymax  =floor(yupper/patch->deltaY+patch->ySide*0.5-0.5);
+	yymin  = ceil((REAL4)(ylower/patch->deltaY -0.5)+(REAL4)(patch->ySide*0.5));
+	yymax  =floor((REAL4)(yupper/patch->deltaY-0.5)+(REAL4)(patch->ySide*0.5));
 	/* in case of a pseudo-horizontal line (yymax < yymin) */
 	/* we use the same convention as in the horizontal case */
       }
@@ -1332,7 +1332,7 @@ static void DrawLine(REAL8 alpha, REAL8 xA, REAL8 yA,
    /* vertical line */
    INT4  xpixel;
 
-   xpixel = ceil(xA/patch->deltaX+patch->xSide*0.5-0.5);
+   xpixel = ceil( (REAL4)(xA/patch->deltaX-0.5) +(REAL4)(patch->xSide*0.5));
    for(jj=yymin;jj<=yymax;++jj){
      column[jj] = xpixel;
    }
@@ -1347,7 +1347,7 @@ static void DrawLine(REAL8 alpha, REAL8 xA, REAL8 yA,
    for(jj=yymin;jj<=yymax;++jj){  
      /* will not be executed in the horizontal case */    
      xofy = xA + tanalpha*( yA- patch->yCoor[jj] );
-     column[jj] = ceil(xofy/patch->deltaX+patch->xSide*0.5-0.5);
+     column[jj] = ceil( (REAL4)(xofy/patch->deltaX-0.5)+(REAL4)(patch->xSide*0.5));
    }
  }
  
