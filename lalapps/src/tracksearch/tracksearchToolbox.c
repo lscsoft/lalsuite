@@ -424,12 +424,14 @@ LALappsTSAWritePGM(LALStatus  *status,
   LAL_CALL(LALCHARCreateVector(status,&pgmFile,maxFilenameLength),status);
   LAL_CALL(LALCHARCreateVector(status,&auxFile,maxFilenameLength),status);
   LAL_CALL(LALCHARCreateVector(status,&rawFile,maxFilenameLength),status);
-  LAL_CALL(LALCHARCreateVector(status,&basicMask,maxFilenameLength),status);
   /*
    * Setup filename mask
    */
   if (overrideMask != NULL)
-    strcpy(basicMask->data,overrideMask->data);
+    {
+      LAL_CALL(LALCHARCreateVector(status,&basicMask,maxFilenameLength),status);
+      strcpy(basicMask->data,overrideMask->data);
+    }
   else
     LALappsDetermineFilename(status,
 			     map->imageBorders,

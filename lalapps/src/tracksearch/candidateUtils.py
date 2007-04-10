@@ -1072,7 +1072,7 @@ class candidateList:
         outRoot,outExt=os.path.splitext(sourceFile)
         outFile=outRoot+'.summary'
         summaryData=self.dumpCandidateKurveSummary()
-        format = "%10.5f %10.5f %10.5f %10.5f %i  %10.5f  %10.5f  %10.5f \n"
+        format = "%10.5f %10.5f %10.5f %10.5f %6.0i  %14.3f  %8.5f  %8.5f \n"
         fp=open(outFile,'w')
         for entry in summaryData:
             outString=format%(entry[0],entry[1],entry[2],entry[3],entry[4],entry[5],entry[6],entry[7])
@@ -1089,7 +1089,7 @@ class candidateList:
         sourceFile=self.filename[0]
         print "#"
         print "#"+sourceFile
-        format = "%10.5f %10.5f %10.5f %10.5f %i  %10.5f  %10.5f  %10.5f \n"
+        format = "%10.5f %10.5f %10.5f %10.5f %6.0i  %14.3f  %8.5f  %8.5f \n"
         for entry in summaryData:
             outString=format%(entry[0],entry[1],entry[2],entry[3],entry[4],entry[5],entry[6],entry[7])
             print outString
