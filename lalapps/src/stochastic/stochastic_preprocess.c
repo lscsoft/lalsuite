@@ -57,7 +57,7 @@ RCSID ("$Id$");
 #define CVS_ID "$Id$"
 #define CVS_REVISION "$Revision$"
 #define CVS_DATE "$Date$"
-#define PROGRAM_NAME "lalapps_stochastic_preprocessing"
+#define PROGRAM_NAME "lalapps_stochastic_preprocess"
 
 /* variables for getopt options parsing */
 extern char *optarg;
