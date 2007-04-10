@@ -2238,9 +2238,9 @@ void GetHoughCandidates_threshold(LALStatus            *status,
     jMax = iMax = 0;
 
     /* loop over hough map to get location of max */
-    for (i = 1; i < ySide-1; i++)
+    for (i = 0; i < ySide; i++)
       {
-	for (j = 1; j < xSide-1; j++)
+	for (j = 0; j < xSide; j++)
 	  { 
 	    
 	    if ( ht->map[i*xSide + j] > currentMax ) {
