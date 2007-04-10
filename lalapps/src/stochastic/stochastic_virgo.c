@@ -79,9 +79,12 @@ static int post_analysis_flag = 0;
 /* parameters for the stochastic search */
 UINT8 startTime = 782758843;
 UINT8 stopTime =  782759353;
-
+CHAR frameCache1 [200]= "cache/LIGOP1a.cache";
+CHAR frameCache2[200] = "cache/VirgoP1a.cache";
+/*
 CHAR frameCache1 [200]= "cache/H1-NOISE.cache";
 CHAR frameCache2[200] = "cache/V2-NOISE.cache";
+*/
 CHAR frameCacheMC1 [200]= "cache/H1-DNS.cache";
 CHAR frameCacheMC2[200] = "cache/V2-DNS.cache";
 CHAR channel1[LALNameLength]= "H1:STRAIN";
