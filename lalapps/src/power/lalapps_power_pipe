@@ -164,23 +164,27 @@ def compute_segment_lists(seglistdict, time_slides, minimum_gap, full_segments =
 		# adjust surviving segment lengths up to the next integer
 		# number of PSDs
 		for seglist in new.itervalues():
-			for i in xrange(len(seglist)):
-				psds = power.psds_from_job_length(power.powerjob, float(abs(seglist[i])))
-				# FIXME: if psds is < 1, it means the
-				# coincident segment is too short for even
-				# a single job, but the original
-				# single-instrument segments might be long
-				# enough to run a job in each instrument.
-				# Here, an attempt is made to search for
-				# extra data in the time following the
-				# coincident segment, but to maximize the
-				# chances of analyzing the data we should
-				# also try looking for data from the time
-				# preceding the coincident segment.
-				if psds < 1.0:
-					psds = 1.0
-				new_duration = power.job_length_from_psds(power.powerjob, int(math.ceil(psds)))
-				seglist[i] = segments.segment(seglist[i][0], seglist[i][0] + new_duration)
+			# count the number of PSDs in each segment
+			psds = [power.psds_from_job_length(power.powerjob, float(abs(seg))) for seg in seglist]
+
+			# round up to the nearest integer.
+			# FIXME: if psds is < 1, it means the coincident
+			# segment is too short for even a single job, but
+			# the original single-instrument segments might be
+			# long enough to run a job in each instrument.
+			# Here, an attempt is made to search for extra data
+			# in the time following the coincident segment, but
+			# to maximize the chances of analyzing the data we
+			# should also try looking for data from the time
+			# preceding the coincident segment.
+			psds = [int(math.ceil(max(n, 1.0))) for n in psds]
+
+			# compute the duration of each job
+			durations = [power.job_length_from_psds(power.powerjob, n) for n in psds]
+
+			# update segment list
+			for i, seg in enumerate(seglist):
+				seglist[i] = segments.segment(seg[0], seg[0] + durations[i])
 
 		# try to fill gaps between jobs
 		new.protract(minimum_gap / 2).contract(minimum_gap / 2)
@@ -194,77 +198,6 @@ def compute_segment_lists(seglistdict, time_slides, minimum_gap, full_segments =
 
 	# done
 	return seglistdict
-
-
-#
-# =============================================================================
-#
-#                              LSCdataFind Stage
-#
-# =============================================================================
-#
-
-
-def make_datafind_stage(dag, seglistdict, verbose = False):
-	if verbose:
-		print >>sys.stderr, "building LSCdataFind jobs ..."
-	nodes = []
-	for instrument, seglist in seglistdict.iteritems():
-		for seg in seglist:
-			if verbose:
-				print >>sys.stderr, "making datafind job for %s spanning %s" % (instrument, seg)
-			nodes += power.make_datafind_fragment(dag, instrument, seg)
-	nodes.sort(lambda a, b: cmp(a.get_ifo(), b.get_ifo()) or cmp(a.get_start(), b.get_start()))
-	return nodes
-
-
-#
-# =============================================================================
-#
-#                          Single Instrument Fragment
-#
-# =============================================================================
-#
-
-
-def make_single_instrument_stage(dag, datafinds, seglistdict, tag, options):
-	nodes = []
-	for instrument, seglist in seglistdict.iteritems():
-		for seg in seglist:
-			if options.verbose:
-				print >>sys.stderr, "generating %s fragment %s" % (instrument, str(seg))
-
-			# find the datafind job this power job is going to
-			# need
-			dfnodes = [node for node in datafinds if (node.get_ifo() == instrument) and (seg in segments.segment(node.get_start(), node.get_end()))]
-			if len(dfnodes) != 1:
-				raise ValueError, "error, not exactly 1 datafind is suitable for power job at %s in %s" % (str(seg), instrument)
-
-			# power jobs
-			nodes += power.make_power_segment_fragment(dag, dfnodes, instrument, seg, tag, options.psds_per_power, verbose = options.verbose)
-
-	# done
-	return nodes
-
-
-def make_single_instrument_injections_stage(dag, datafinds, seglistdict, tag, binjnodes, options):
-	nodes = []
-	for instrument, seglist in seglistdict.iteritems():
-		for seg in seglist:
-			if options.verbose:
-				print >>sys.stderr, "generating %s fragment %s" % (instrument, str(seg))
-
-			# find the datafind job this power job is going to
-			# need
-			dfnodes = [node for node in datafinds if (node.get_ifo() == instrument) and (seg in segments.segment(node.get_start(), node.get_end()))]
-			if len(dfnodes) != 1:
-				raise ValueError, "error, not exactly 1 datafind is suitable for power job at %s in %s" % (str(seg), instrument)
-
-			# power jobs
-			nodes += power.make_injection_segment_fragment(dag, dfnodes, binjnodes, instrument, seg, tag, options.psds_per_injection, verbose = options.verbose)
-
-	# done
-	return nodes
 
 
 #
@@ -285,7 +218,7 @@ def group_coinc_parents(parents, time_slides, verbose = False):
 	caches = []
 	for parent in parents:
 		caches += parent.get_output_cache()
-	caches = [bin.objects for bin in ligolw_cafe.ligolw_cafe(caches, time_slides, verbose = verbose)[1]]
+	caches = [set(bin.objects) for bin in ligolw_cafe.ligolw_cafe(caches, time_slides, verbose = verbose)[1]]
 
 	# compute the segment spanned by each cache of output files, store
 	# results in a list in the same order as the list of caches
@@ -335,9 +268,8 @@ def group_coinc_parents(parents, time_slides, verbose = False):
 
 
 def make_binjfind_stage(dag, parents, tag, verbose = False):
-	if verbose:
-		print >>sys.stderr, "Adding injection identification nodes for tag = %s" % tag
-	return power.make_binjfind_fragment(dag, power.make_bucut_fragment(dag, parents, tag), tag)
+	parents = power.make_bucut_fragment(dag, parents, tag)
+	return power.make_binjfind_fragment(dag, parents, tag)
 
 
 #
@@ -436,7 +368,7 @@ else:
 #
 
 
-datafinds = make_datafind_stage(dag, (injection_seglistdict | background_seglistdict).protract(power.datafind_pad / 2).contract(power.datafind_pad / 2), verbose = options.verbose)
+datafinds = power.make_datafind_stage(dag, (injection_seglistdict | background_seglistdict).protract(power.datafind_pad / 2).contract(power.datafind_pad / 2), verbose = options.verbose)
 
 
 #
@@ -447,12 +379,12 @@ datafinds = make_datafind_stage(dag, (injection_seglistdict | background_seglist
 
 # injections
 
-inj_pwr_nodes = make_single_instrument_injections_stage(dag, datafinds, injection_seglistdict, "INJECTIONS_%s" % options.tag, binjnodes, options)
+inj_pwr_nodes = power.make_single_instrument_injections_stage(dag, datafinds, binjnodes, injection_seglistdict, "INJECTIONS_%s" % options.tag, options.psds_per_injection, verbose = options.verbose)
 
 
 # non-injections
 
-pwr_nodes = make_single_instrument_stage(dag, datafinds, background_seglistdict, options.tag, options)
+pwr_nodes = power.make_single_instrument_stage(dag, datafinds, background_seglistdict, options.tag, options.psds_per_power, verbose = options.verbose)
 
 
 #
@@ -484,6 +416,8 @@ for parents, seg in group_coinc_parents(pwr_nodes, background_time_slides_all, v
 #
 
 
+if options.verbose:
+	print >>sys.stderr, "Adding injection identification nodes"
 inj_coinc_nodes = make_binjfind_stage(dag, inj_coinc_nodes, "INJECTIONS_%s" % options.tag, verbose = options.verbose)
 
 

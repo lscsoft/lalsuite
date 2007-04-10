@@ -125,18 +125,25 @@ class BurstInjNode(pipeline.CondorDAGNode):
 	def __init__(self, job):
 		pipeline.CondorDAGNode.__init__(self, job)
 		self.__usertag = None
+		self.output_cache = []
 
 	def set_user_tag(self, tag):
 		self.__usertag = tag
 		self.add_var_opt("user-tag", self.__usertag)
 
 	def get_user_tag(self):
+		if self.output_cache:
+			raise AttributeError, "cannot change attributes after computing output cache"
 		return self.__usertag
 
 	def set_start(self, start):
+		if self.output_cache:
+			raise AttributeError, "cannot change attributes after computing output cache"
 		self.add_var_opt("gps-start-time", start)
 
 	def set_end(self, end):
+		if self.output_cache:
+			raise AttributeError, "cannot change attributes after computing output cache"
 		self.add_var_opt("gps-end-time", end)
 
 	def get_start(self):
@@ -152,14 +159,16 @@ class BurstInjNode(pipeline.CondorDAGNode):
 		binj.c.  Note in particular the calculation of the "start"
 		and "duration" parts of the name.
 		"""
-		if not self.get_start() or not self.get_end():
-			raise ValueError, "start time or end time has not been set"
-		seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
-		if self.__usertag:
-			filename = "HL-INJECTIONS_%s-%d-%d.xml" % (self.__usertag, int(self.get_start()), int(self.get_end() - self.get_start()))
-		else:
-			filename = "HL-INJECTIONS-%d-%d.xml" % (int(self.get_start()), int(self.get_end() - self.get_start()))
-		return [CacheEntry("H1,H2,L1", self.__usertag, seg, "file://localhost" + os.path.abspath(filename))]
+		if not self.output_cache:
+			if not self.get_start() or not self.get_end():
+				raise ValueError, "start time or end time has not been set"
+			seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
+			if self.__usertag:
+				filename = "HL-INJECTIONS_%s-%d-%d.xml" % (self.__usertag, int(self.get_start()), int(self.get_end() - self.get_start()))
+			else:
+				filename = "HL-INJECTIONS-%d-%d.xml" % (int(self.get_start()), int(self.get_end() - self.get_start()))
+			self.output_cache = [CacheEntry("H1,H2,L1", self.__usertag, seg, "file://localhost" + os.path.abspath(filename))]
+		return self.output_cache
 
 	def get_output_files(self):
 		raise NotImplementedError
@@ -204,17 +213,22 @@ class PowerNode(pipeline.AnalysisNode):
 		pipeline.CondorDAGNode.__init__(self, job)
 		pipeline.AnalysisNode.__init__(self)
 		self.__usertag = None
+		self.output_cache = []
 
 	def set_ifo(self, instrument):
 		"""
 		Load additional options from the per-instrument section in
 		the config file.
 		"""
+		if self.output_cache:
+			raise AttributeError, "cannot change attributes after computing output cache"
 		pipeline.AnalysisNode.set_ifo(self, instrument)
 		for optvalue in self.job()._AnalysisJob__cp.items("lalapps_power_%s" % instrument):
 			self.add_var_arg("--%s %s" % optvalue)
 
 	def set_user_tag(self, tag):
+		if self.output_cache:
+			raise AttributeError, "cannot change attributes after computing output cache"
 		self.__usertag = tag
 		self.add_var_opt("user-tag", self.__usertag)
 
@@ -227,15 +241,18 @@ class PowerNode(pipeline.AnalysisNode):
 		method also induces the output name to get set, so it must
 		be at least once.
 		"""
-		seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
-		filename = self.get_output()
-		# FIXME: condor's documentation claims that it will
-		# compress output files written by standard universe jobs.
-		# I did what the documentation says, and the files were not
-		# compressed.  Why?  Get rid of this post script when this
-		# gets figured out.
-		self.set_post_script("/usr/bin/gzip -f %s" % os.path.abspath(filename))
-		return [CacheEntry(self.get_ifo(), self.__usertag, seg, "file://localhost" + os.path.abspath(filename + ".gz"))]
+		if not self.output_cache:
+			seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
+			filename = self.get_output()
+			# FIXME: condor's documentation claims that it will
+			# compress output files written by standard
+			# universe jobs.  I did what the documentation
+			# says, and the files were not compressed.  Why?
+			# Get rid of this post script when this gets
+			# figured out.
+			self.set_post_script("/usr/bin/gzip -f %s" % os.path.abspath(filename))
+			self.output_cache = [CacheEntry(self.get_ifo(), self.__usertag, seg, "file://localhost" + os.path.abspath(filename + ".gz"))]
+		return self.output_cache
 
 	def get_output_files(self):
 		raise NotImplementedError
@@ -279,7 +296,8 @@ class PowerNode(pipeline.AnalysisNode):
 class LigolwAddNode(pipeline.LigolwAddNode):
 	def __init__(self, *args):
 		pipeline.LigolwAddNode.__init__(self, *args)
-		self.cache = []
+		self.input_cache = []
+		self.output_cache = []
 
 	def set_name(self, *args):
 		pipeline.LigolwAddNode.set_name(self, *args)
@@ -287,23 +305,28 @@ class LigolwAddNode(pipeline.LigolwAddNode):
 		self.add_var_opt("input-cache", self.cache_name)
 
 	def add_input_cache(self, cache):
-		self.cache.extend(cache)
+		if self.output_cache:
+			raise AttributeError, "cannot change attributes after computing output cache"
+		self.input_cache.extend(cache)
 
 	def add_preserve_cache(self, cache):
 		for c in cache:
 			self.add_var_arg("--remove-input-except %s" % c.path())
 
 	def get_output_cache(self):
-		instruments = []
-		for c in self.cache:
-			if c.observatory != None:
-				instruments.extend([ins for ins in c.observatory.split(",") if ins not in instruments])
-		instruments.sort()
-		return [CacheEntry(",".join(instruments), None, segments.segmentlist([c.segment for c in self.cache if c.segment != None]).extent(), "file://localhost" + os.path.abspath(self._AnalysisNode__output))]
+		if not self.output_cache:
+			instruments = set()
+			for c in self.input_cache:
+				if c.observatory is not None:
+					instruments |= set([ins for ins in c.observatory.split(",")])
+			instruments = list(instruments)
+			instruments.sort()
+			self.output_cache = [CacheEntry(",".join(instruments), None, segments.segmentlist([c.segment for c in self.input_cache if c.segment is not None]).extent(), "file://localhost" + os.path.abspath(self._AnalysisNode__output))]
+		return self.output_cache
 
 	def write_input_files(self, *args):
 		f = file(self.cache_name, "w")
-		for c in self.cache:
+		for c in self.input_cache:
 			print >>f, str(c)
 		pipeline.LigolwAddNode.write_input_files(self, *args)
 
@@ -327,10 +350,11 @@ class BucutJob(pipeline.CondorDAGJob):
 class BucutNode(pipeline.CondorDAGNode):
 	def __init__(self, *args):
 		pipeline.CondorDAGNode.__init__(self, *args)
-		self.cache = []
+		self.input_cache = []
+		self.output_cache = self.input_cache
 
 	def add_input_cache(self, cache):
-		self.cache.extend(cache)
+		self.input_cache.extend(cache)
 		for c in cache:
 			filename = c.path()
 			pipeline.CondorDAGNode.add_file_arg(self, filename)
@@ -340,7 +364,7 @@ class BucutNode(pipeline.CondorDAGNode):
 		raise NotImplementedError
 
 	def get_output_cache(self):
-		return self.cache
+		return self.output_cache
 
 	def get_output_files(self):
 		raise NotImplementedError
@@ -362,7 +386,8 @@ class BuclusterJob(pipeline.CondorDAGJob):
 class BuclusterNode(pipeline.CondorDAGNode):
 	def __init__(self, *args):
 		pipeline.CondorDAGNode.__init__(self, *args)
-		self.cache = []
+		self.input_cache = []
+		self.output_cache = self.input_cache
 
 	def set_name(self, *args):
 		pipeline.CondorDAGNode.set_name(self, *args)
@@ -370,7 +395,7 @@ class BuclusterNode(pipeline.CondorDAGNode):
 		self.add_var_opt("input-cache", self.cache_name)
 
 	def add_input_cache(self, cache):
-		self.cache.extend(cache)
+		self.input_cache.extend(cache)
 
 	def add_file_arg(self, filename):
 		raise NotImplementedError
@@ -378,11 +403,11 @@ class BuclusterNode(pipeline.CondorDAGNode):
 	def write_input_files(self, *args):
 		pipeline.CondorDAGNode.write_input_files(self, *args)
 		f = file(self.cache_name, "w")
-		for c in self.cache:
+		for c in self.input_cache:
 			print >>f, str(c)
 
 	def get_output_cache(self):
-		return self.cache
+		return self.output_cache
 
 	def get_output_files(self):
 		raise NotImplementedError
@@ -404,10 +429,11 @@ class BinjfindJob(pipeline.CondorDAGJob):
 class BinjfindNode(pipeline.CondorDAGNode):
 	def __init__(self, *args):
 		pipeline.CondorDAGNode.__init__(self, *args)
-		self.cache = []
+		self.input_cache = []
+		self.output_cache = self.input_cache
 
 	def add_input_cache(self, cache):
-		self.cache.extend(cache)
+		self.input_cache.extend(cache)
 		for c in cache:
 			filename = c.path()
 			pipeline.CondorDAGNode.add_file_arg(self, filename)
@@ -417,7 +443,7 @@ class BinjfindNode(pipeline.CondorDAGNode):
 		raise NotImplementedError
 
 	def get_output_cache(self):
-		return self.cache
+		return self.output_cache
 
 	def get_output_files(self):
 		raise NotImplementedError
@@ -439,10 +465,11 @@ class BurcaJob(pipeline.CondorDAGJob):
 class BurcaNode(pipeline.CondorDAGNode):
 	def __init__(self, *args):
 		pipeline.CondorDAGNode.__init__(self, *args)
-		self.cache = []
+		self.input_cache = []
+		self.output_cache = self.input_cache
 
 	def add_input_cache(self, cache):
-		self.cache.extend(cache)
+		self.input_cache.extend(cache)
 		for c in cache:
 			filename = c.path()
 			pipeline.CondorDAGNode.add_file_arg(self, filename)
@@ -452,7 +479,7 @@ class BurcaNode(pipeline.CondorDAGNode):
 		raise NotImplementedError
 
 	def get_output_cache(self):
-		return self.cache
+		return self.output_cache
 
 	def get_output_files(self):
 		raise NotImplementedError
@@ -734,6 +761,28 @@ def make_burca_fragment(dag, parents, instrument, seg, tag):
 #
 # =============================================================================
 #
+#                              LSCdataFind Stage
+#
+# =============================================================================
+#
+
+
+def make_datafind_stage(dag, seglistdict, verbose = False):
+	if verbose:
+		print >>sys.stderr, "building LSCdataFind jobs ..."
+	nodes = []
+	for instrument, seglist in seglistdict.iteritems():
+		for seg in seglist:
+			if verbose:
+				print >>sys.stderr, "making datafind job for %s spanning %s" % (instrument, seg)
+			nodes += make_datafind_fragment(dag, instrument, seg)
+	nodes.sort(lambda a, b: cmp(a.get_ifo(), b.get_ifo()) or cmp(a.get_start(), b.get_start()))
+	return nodes
+
+
+#
+# =============================================================================
+#
 #         DAG Fragment Combining Multiple lalapps_binj With ligolw_add
 #
 # =============================================================================
@@ -753,7 +802,7 @@ def make_multibinj_fragment(dag, seg, tag):
 #
 # =============================================================================
 #
-#             Analyze A Segment Using Multiple lalapps_power Jobs
+#            Analyze One Segment Using Multiple lalapps_power Jobs
 #
 # =============================================================================
 #
@@ -799,6 +848,65 @@ def make_injection_segment_fragment(dag, datafindnodes, binjnodes, instrument, s
 	nodes = []
 	for seg in seglist:
 		nodes += make_power_fragment(dag, datafindnodes + binjnodes, instrument, seg, tag, framecache, injargs = {"burstinjection-file": simfile})
+	return nodes
+
+
+#
+# =============================================================================
+#
+#        Analyze All Segments in a segmentlistdict Using lalapps_power
+#
+# =============================================================================
+#
+
+
+#
+# Without injections
+#
+
+
+def make_single_instrument_stage(dag, datafinds, seglistdict, tag, psds_per_job, verbose = False):
+	nodes = []
+	for instrument, seglist in seglistdict.iteritems():
+		for seg in seglist:
+			if verbose:
+				print >>sys.stderr, "generating %s fragment %s" % (instrument, str(seg))
+
+			# find the datafind job this power job is going to
+			# need
+			dfnodes = [node for node in datafinds if (node.get_ifo() == instrument) and (seg in segments.segment(node.get_start(), node.get_end()))]
+			if len(dfnodes) != 1:
+				raise ValueError, "error, not exactly 1 datafind is suitable for power job at %s in %s" % (str(seg), instrument)
+
+			# power jobs
+			nodes += make_power_segment_fragment(dag, dfnodes, instrument, seg, tag, psds_per_job, verbose = verbose)
+
+	# done
+	return nodes
+
+
+#
+# With injections
+#
+
+
+def make_single_instrument_injections_stage(dag, datafinds, binjnodes, seglistdict, tag, psds_per_job, verbose = False):
+	nodes = []
+	for instrument, seglist in seglistdict.iteritems():
+		for seg in seglist:
+			if verbose:
+				print >>sys.stderr, "generating %s fragment %s" % (instrument, str(seg))
+
+			# find the datafind job this power job is going to
+			# need
+			dfnodes = [node for node in datafinds if (node.get_ifo() == instrument) and (seg in segments.segment(node.get_start(), node.get_end()))]
+			if len(dfnodes) != 1:
+				raise ValueError, "error, not exactly 1 datafind is suitable for power job at %s in %s" % (str(seg), instrument)
+
+			# power jobs
+			nodes += make_injection_segment_fragment(dag, dfnodes, binjnodes, instrument, seg, tag, psds_per_job, verbose = verbose)
+
+	# done
 	return nodes
 
 
