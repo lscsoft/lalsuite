@@ -250,6 +250,8 @@ class PowerNode(pipeline.AnalysisNode):
 			# says, and the files were not compressed.  Why?
 			# Get rid of this post script when this gets
 			# figured out.
+			# Duncan says I need to add "want_remote_io = True"
+			# to the submit file to get compress_files working.
 			self.set_post_script("/usr/bin/gzip -f %s" % os.path.abspath(filename))
 			self.output_cache = [CacheEntry(self.get_ifo(), self.__usertag, seg, "file://localhost" + os.path.abspath(filename + ".gz"))]
 		return self.output_cache
