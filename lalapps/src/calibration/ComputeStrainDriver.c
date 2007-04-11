@@ -453,7 +453,7 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   /* Add cvs version of filters file used */
   
   /* write first to tmpfile then rename it */
-  frfile = FrFileONew( tmpfname, 8 ); /* 1 = GZIP */
+  frfile = FrFileONew( tmpfname, 8); /* 1 = GZIP */
   if ( ! frfile )
     return 1;  /* Error: could not open frame file */
   
@@ -900,10 +900,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"olg-file",            required_argument, NULL,           'a'},
     {"sensing-file",        required_argument, NULL,           'b'},
     {"darm-err-only",       no_argument, NULL,                 'w'},
+    {"gamma-fudge-factor",  required_argument, NULL,           'y'},
     {"help",                no_argument, NULL,                 'h'},
     {0, 0, 0, 0}
   };
-  char args[] = "hrcduxf:C:A:E:D:R:F:s:e:i:j:k:l:m:n:t:o:H:T:S:z:v:w";
+  char args[] = "hrcduxf:C:A:E:D:R:F:s:e:i:j:k:l:m:n:t:o:H:T:S:z:v:wy:";
   
   /* Initialize default values */
   CLA->f=0.0;
@@ -937,6 +938,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   InputData.fftconv=1;
   InputData.outalphas=0;
   InputData.darmctrl=1;
+  InputData.gamma_fudgefactor=1.0;
 
   /* Scan through list of command line arguments */
   while ( 1 )
@@ -1060,6 +1062,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       /* don't use calibration factors in teh strain computation */
       InputData.darmctrl=0;
       break;
+    case 'y':
+      InputData.gamma_fudgefactor=atof(optarg);
+      break;
     case 'h':
       /* print usage/help message */
       fprintf(stdout,"Arguments are:\n");
@@ -1085,7 +1090,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tdelta (-d)\tFLAG\t Use unit impulse.\n");
       fprintf(stdout,"\tno-factors (-u)\tFLAG\t Do not use factors in strain computation.\n");
       fprintf(stdout,"\ttd-fir (-x)\tFLAG\t Use time-domain FIR filtering (default is FFT convolution).\n");
-      fprintf(stdout,"\toutput-factors (-y)\tFLAG\t Outputs upsampled calibration factors time series.\n");
+      fprintf(stdout,"\tgamma-fudge-factor (-y)\tFLAG\t Fudge factor used to adjust factor values. Gamma is divided by thos value.\n");
       fprintf(stdout,"\tframe-type (-T)\tSTRING\t Frame type to be written (eg, H1_RDS_C01_LX)\n");
       fprintf(stdout,"\tstrain-channel (-S)\tSTRING\t Strain channel name in frame (eg, H1:LSC-STRAIN)\n");
       fprintf(stdout,"\tdata-dir (-z)\tSTRING\t Ouput frame to this directory (eg, /tmp/S4/H1/H). Don't forget the H or L at the end!\n");
