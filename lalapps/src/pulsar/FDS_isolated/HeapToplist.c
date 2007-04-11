@@ -92,7 +92,7 @@ int create_toplist(toplist_t**list,
     free(listp);
     return(-1);
   }
-  if (!(listp->heap = malloc(sizeof(void*) * length))) {
+  if (!(listp->heap = malloc(sizeof(char*) * length))) {
     free(listp->data);
     free(listp);
     return(-1);
