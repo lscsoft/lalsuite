@@ -31,6 +31,7 @@ extern int write_fstat_toplist_to_fp(toplist_t*list, FILE*fp, UINT4*checksum);
    sets the checksum if non-NULL
    reads maximum maxbytes, all that is there if maxbytes is 0
    returns the number of bytes read,
+    0 if we found a %DONE marker at the end,
    -1 if the file contained a syntax error,
    -2 if given an improper toplist */
 extern int read_fstat_toplist_from_fp(toplist_t*list, FILE*fp, UINT4*checksum, UINT4 maxbytes);

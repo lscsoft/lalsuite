@@ -125,6 +125,7 @@ void sort_fstat_toplist(toplist_t*l) {
 
 /* reads a (created!) toplist from an open filepointer
    returns the number of bytes read,
+    0 if we found a %DONE marker at the end,
    -1 if the file contained a syntax error,
    -2 if given an improper toplist */
 int read_fstat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
@@ -153,6 +154,11 @@ int read_fstat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxby
 
     lines=1;
     while(fgets(line,sizeof(line)-1, fp)) {
+
+        if (!strncmp(line,"%DONE\n","%DONE\n")) {
+	  LogPrintf(LOG_NORMAL,"WARNING: found end marker - the task was already finished\n");
+	  return(0);
+        }
 
 	len = strlen(line);
 	chars += len;
@@ -607,7 +613,8 @@ int fstat_cpt_file_add (FStatCheckpointFile*cptf, FstatOutputEntry line) {
 
 
 /* reads a written checkpointed toplist back into a toplist
-   returns 0 if successful,
+   returns 0 if successfully read a list,
+    1 if we found a %DONE marker at the end,
    -1 if the file contained a syntax error,
    -2 if given an improper toplist */
 int fstat_cpt_file_read (FStatCheckpointFile*cptf, UINT4 checksum_should, UINT4 maxbytes) {
@@ -625,7 +632,10 @@ int fstat_cpt_file_read (FStatCheckpointFile*cptf, UINT4 checksum_should, UINT4 
   cptf->bytes = 0;
   cptf->checksum = 0;
 
-  if (bytes == -2) {
+  if (bytes == 0) {
+    LogPrintf (LOG_DEBUG, "DEBUG: found %DONE end marker\n");
+    return(1);
+  } else if (bytes == -2) {
     LogPrintf (LOG_CRITICAL, "ERROR: invalid toplist\n");
     return(bytes);
   } else if (bytes == -1) {
