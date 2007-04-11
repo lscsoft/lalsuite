@@ -46,6 +46,7 @@ from glue import pipeline
 from glue import segments
 from glue import segmentsUtils
 from glue.lal import CacheEntry
+from pylal import ligolw_tisi
 from pylal import ligolw_cafe
 from pylal import llwapp
 from pylal.date import LIGOTimeGPS
@@ -317,7 +318,7 @@ if options.do_noninjections:
 	background_time_slides = []
 	background_seglistdict = segments.segmentlistdict()
 	for background_time_slide_filename in options.background_time_slides:
-		background_time_slides += [ligolw_cafe.get_time_slides(background_time_slide_filename, verbose = options.verbose, gz = background_time_slide_filename[-3:] == ".gz")]
+		background_time_slides.append(ligolw_tisi.load_time_slides(background_time_slide_filename, verbose = options.verbose, gz = background_time_slide_filename[-3:] == ".gz").values())
 		background_seglistdict |= compute_segment_lists(seglistdict, background_time_slides[-1], options.minimum_gap, full_segments = options.full_segments, verbose = options.verbose)
 else:
 	background_time_slides = [[]]
@@ -328,7 +329,7 @@ background_time_slides_all = reduce(lambda a, b: a + b, background_time_slides)
 
 
 if options.do_injections:
-	injection_time_slides = ligolw_cafe.get_time_slides(options.injection_time_slides, verbose = options.verbose, gz = options.injection_time_slides[-3:] == ".gz")
+	injection_time_slides = ligolw_tisi.load_time_slides(options.injection_time_slides, verbose = options.verbose, gz = options.injection_time_slides[-3:] == ".gz").values()
 	injection_seglistdict = compute_segment_lists(seglistdict, injection_time_slides, options.minimum_gap, full_segments = options.full_segments, verbose = options.verbose)
 else:
 	injection_time_slides = []
