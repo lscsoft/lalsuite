@@ -556,7 +556,9 @@ int main( int argc, char *argv[] )
     /* output frame */
     if ( frameFlag )
     {
+      injData.sampleUnits = lalStrainUnit;
       output_frame(ifo, gpsStartSec, gpsEndSec, &injData );
+      injData.sampleUnits = lalADCCountUnit;
     }
 
   } /* end loop over ifos */
@@ -643,7 +645,7 @@ static void output_frame(CHAR *ifo,
   frame = XLALFrameNew( &injData->epoch, duration, "LIGO", 0, 1, detectorFlags );
 
   /* add channel to frame */
-  XLALFrameAddREAL4TimeSeriesProcData( frame, injData );
+  XLALFrameAddREAL4TimeSeriesSimData( frame, injData );
 
   if ( vrbflg )
   {
