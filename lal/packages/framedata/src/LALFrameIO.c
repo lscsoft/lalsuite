@@ -651,6 +651,42 @@ int XLALFrameAddREAL4TimeSeriesProcData( FrameH *frame, REAL4TimeSeries *series 
 	return 0;
 }
 
+
+int XLALFrameAddREAL4TimeSeriesSimData( FrameH *frame, REAL4TimeSeries *series )
+{
+	static const char * func = "XLALFrameAddREAL4TimeSeriesSimData";
+	char rcsinfo[]  = "$Id$" "$Name$";
+  LIGOTimeGPS frameEpoch;
+	FrSimData *sim;
+	FrVect *vect;
+
+	vect = XLALFrVectREAL4TimeSeries( series );
+	if ( ! vect )
+		XLAL_ERROR( func, XLAL_EFUNC );
+
+	sim = FrSimDataNew( frame, series->name, series->deltaT, series->data->length, 16 );
+	if ( ! sim ) {
+		FrVectFree( vect );
+		XLAL_ERROR( func, XLAL_EERR );
+	}
+  FrVectFree( sim->data );
+  sim->data = vect;
+
+	/* comment is rcs info of this routine */
+/* 	FrStrCpy( &proc->comment, rcsinfo ); */
+
+  /* time offset: compute this from frame time */
+  frameEpoch.gpsSeconds     = frame->GTimeS;
+  frameEpoch.gpsNanoSeconds = frame->GTimeN;
+  sim->timeOffset = XLALGPSDiff( &series->epoch, &frameEpoch );
+
+  /* remaining metadata */
+  sim->fShift = 0;
+  sim->phase  = 0;
+
+	return 0;
+}
+
 int XLALFrameAddREAL4TimeSeriesAdcData( FrameH *frame, REAL4TimeSeries *series )
 {
 	static const char * func = "XLALFrameAddREAL4TimeSeriesAdcData";

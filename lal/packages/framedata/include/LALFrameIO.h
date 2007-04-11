@@ -28,6 +28,7 @@ FrVect * XLALFrVectCOMPLEX16FrequencySeries( COMPLEX16FrequencySeries *series );
 int XLALFrameAddCalRef( FrameH *frame, COMPLEX8FrequencySeries *series, int version, double duration );
 int XLALFrameAddREAL8TimeSeriesProcData( FrameH *frame, REAL8TimeSeries *series );
 int XLALFrameAddREAL4TimeSeriesProcData( FrameH *frame, REAL4TimeSeries *series );
+int XLALFrameAddREAL4TimeSeriesSimData( FrameH *frame, REAL4TimeSeries *series );
 int XLALFrameAddREAL4TimeSeriesAdcData( FrameH *frame, REAL4TimeSeries *series );
 
 COMPLEX8FrequencySeries * XLALFrameGetCalRef( LIGOTimeGPS *validUntil, LIGOTimeGPS *epoch, const char *channel, FrameH *frame );
