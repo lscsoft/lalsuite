@@ -875,6 +875,7 @@ int init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
   unsigned int  checksum, bytes;
   unsigned long count_read, total_read;
   int scanned;
+  int ret;
 
   fstat_cpt_file_create (&cptf, outputname, bufsize, maxsize, toplist);
 
@@ -931,12 +932,16 @@ int init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
 
   LogPrintf (LOG_DEBUG,  "Read checkpoint - reading previous output...\n");
 
-  if (fstat_cpt_file_read (cptf, checksum, bytes) != 0) {
+  ret = fstat_cpt_file_read (cptf, checksum, bytes);
+
+  if (ret < 0) {
     LogPrintf (LOG_DEBUG,  "ERROR reading previous output\n");
     return(-1);
+  } else if (ret == 1) {
+    return (2);
   }
 
-  /* make sure the point of next writing is where we stopped reding */
+  /* make sure the point of next writing is where we stopped reading */
   fseek(cptf->fp,cptf->bytes,SEEK_SET);
 
   *count = count_read;

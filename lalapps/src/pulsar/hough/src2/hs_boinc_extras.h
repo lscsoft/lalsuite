@@ -25,9 +25,13 @@ NRCSID(HSBOINCEXTRASHRCSID,"$Id$");
 
 #if (HS_CHECKPOINTING)
 #define GET_CHECKPOINT(toplist,total,count,outputname,cptname)\
- if(init_and_read_checkpoint(toplist,total,count,outputname,cptname) < 0) {\
-    fprintf(stderr,HIERARCHICALSEARCH_MSGCHECKPT);\
-    return(HIERARCHICALSEARCH_ECHECKPT);\
+  { int ret = init_and_read_checkpoint(toplist,total,count,outputname,cptname);\
+    if(ret < 0) {\
+      fprintf(stderr,HIERARCHICALSEARCH_MSGCHECKPT);\
+      return(HIERARCHICALSEARCH_ECHECKPT);\
+    } else if (ret == 2) {\
+      return(HIERARCHICALSEARCH_ENORM);\
+    }\
   }
 #define SET_CHECKPOINT set_checkpoint()
 #define INSERT_INTO_FSTAT_TOPLIST add_checkpoint_candidate
@@ -65,7 +69,8 @@ extern void show_progress(double rac, double dec, UINT4 count, UINT4 total);
      0 if no checkpoint could be found,
     -1 if a checkpoint was found but it or the previous output couldn't be read,
     -2 if an error occured (out of memory),
-     1 otherwise (a checkpoint was found and previous output could be read)
+     1 if a checkpoint was found and previous output could be read
+     2 a previously written end marker was detected
 */
 extern int init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
 				     UINT4 total, char*outputname, char*cptname);
