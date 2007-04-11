@@ -67,8 +67,6 @@ extern int optind;
 static int double_flag = 0;
 static int double_high_pass_flag = 0;
 static int recenter_flag = 0;
-static int inject_flag = 0;
-static int inject_file_flag = 0;
 static int apply_mask_flag = 0;
 static int high_pass_flag = 0;
 static int overlap_hann_flag = 0;
@@ -1235,9 +1233,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
       /* options that set a flag */
       {"double", no_argument, &double_flag,1},
       {"double-high-pass-filter", no_argument, &double_high_pass_flag, 1},
-      {"recenter", no_argument, &recenter_flag,1},
-      {"inject", no_argument, &inject_flag, 1},
-      {"inject-file", no_argument, &inject_file_flag, 1},
+      {"recenter", no_argument, &recenter_flag, 1},
       {"apply-mask", no_argument, &apply_mask_flag, 1},
       {"high-pass-filter", no_argument, &high_pass_flag, 1},
       {"overlap-hann", no_argument, &overlap_hann_flag, 1},
@@ -1437,7 +1433,6 @@ void displayUsage(INT4 exitcode)
   fprintf(stderr, " --double              read double precision data in frames\n"); 
    fprintf(stderr, " --double-high-pass-filter              high pass data before casting to single precision\n"); 
   fprintf(stderr, " --recenter            recenter jobs\n");
-  fprintf(stderr, " --post-analysis       post analysis\n");
   fprintf(stderr, " -t                    GPS start time\n");
   fprintf(stderr, " -T                    GPS stop time\n");
   fprintf(stderr, " -i                    ifo for first stream\n");
@@ -1461,10 +1456,6 @@ void displayUsage(INT4 exitcode)
   fprintf(stderr, " -w                    hann duration\n");
   fprintf(stderr, " --apply-mask          apply frequency masking\n");
   fprintf(stderr, " -b                    number of bin for frequency mask\n");
-  fprintf(stderr, " --inject              inject a signal into the data\n");
-  fprintf(stderr, " --inject-file         inject a signal read from file into the data\n");
-  fprintf(stderr, " -o                    scale factor for injection\n");
-  fprintf(stderr, " -g                    seed\n");
   fprintf(stderr, " -O                    directory for output files\n");
   fprintf(stderr, " -z                    debugging level\n");     
   exit(exitcode);
