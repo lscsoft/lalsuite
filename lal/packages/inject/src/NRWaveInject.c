@@ -66,11 +66,11 @@ XLALOrientNRWave(
 	tmp2 = strain->data->data[vecLength + k];
 
 	strain->data->data[k] = 
-	    (tmp1 * MultSphHarm.re) - 
+	    (tmp1 * MultSphHarm.re) + 
 	    (tmp2 * MultSphHarm.im);
 
 	strain->data->data[vecLength + k] = 
-	    (tmp2 * MultSphHarm.re) +
+	    (tmp2 * MultSphHarm.re) -
 	    (tmp1 * MultSphHarm.im);
     }
   return( strain );
