@@ -118,7 +118,6 @@ int insert_into_fstat_toplist(toplist_t*tl, FstatOutputEntry elem) {
 
 /* (q)sort the toplist according to the sorting function. */
 void sort_fstat_toplist(toplist_t*l) {
-  LogPrintf(LOG_DEBUG,"Sorting toplist by Freq,Alpha,Delta,f1dot...\n");
   qsort_toplist(l,fstat_toplist_qsort_function);
 }
 
