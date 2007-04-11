@@ -189,7 +189,9 @@ static REAL8 channel_mean_square(
 	for(i = 0; i < filter->data->length; i++, pdata++, fdata++)
 		sum += *pdata * (fdata->re * fdata->re + fdata->im * fdata->im);
 
-	return sum / psd->deltaF;
+	/* FIXME:  is the factor of 2 correct?  I had originally not
+	 * included it.  Why? */
+	return sum / (2 * psd->deltaF);
 }
 
 
