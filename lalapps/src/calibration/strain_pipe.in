@@ -238,9 +238,9 @@ for seg in data:
     strain1.add_parent(df)
     dag.add_node(strain1)
 
-     print >> framelist_file, 'ls '+directory+'/'+ifo[0] \
-                         +'-'+frametype+'-'+str(int(chunk.start())+int(overlap))+'-' \
-                         +str(int(chunk.end())-int(chunk.start())-2*int(overlap))+'.gwf > /dev/null'
+    print >> framelist_file, 'ls '+directory+'/'+ifo[0] \
+    +'-'+frametype+'-'+str(int(chunk.start())+int(overlap))+'-' \
+    +str(int(chunk.end())-int(chunk.start())-2*int(overlap))+'.gwf > /dev/null'
 
 cachecheck_file.close()
 framelist_file.close()
