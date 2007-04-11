@@ -226,6 +226,7 @@ struct StrainInTag {
   REAL8IIRFilter *A;      /* Filters for analog actuation function */
   REAL8IIRFilter *D;      /* Filters for analog actuation function */
   REAL8IIRFilter *AW;      /* Filters for analog actuation function */
+  REAL8 gamma_fudgefactor;
   INT4 delta;
   INT4 usefactors;
   INT4 wings;               /* size of wings in seconds */

@@ -624,6 +624,10 @@ INT4 localtime = input->AS_Q.epoch.gpsSeconds;
       LALComputeCalibrationFactors(status->statusPtr,&factors,&params);
       CHECKSTATUSPTR( status );
 
+      if (input->gamma_fudgefactor != 0)
+	{
+	  factors.alphabeta.re /= input->gamma_fudgefactor;
+	}
 
       /* check alphabeta */
       if( (factors.alphabeta.re < 0.8) ||  (factors.alphabeta.re > 1.2) 
