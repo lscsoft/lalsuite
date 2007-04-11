@@ -562,18 +562,16 @@ int fstat_cpt_file_close(FStatCheckpointFile*cptf) {
   }
   fclose(cptf->fp);
 
+  /* reduce the precision of the calculated values to the ones we may have
+     read in from a previous output (checkpoint) to achieve a proper sorting order */
+  reduce_fstat_toplist_precision(cptf->list);
+
   /* completely sort the list before writing it (a heap is only partially sorted) */
   sort_fstat_toplist(cptf->list);
 
-  /* We're currently using this function only for HierarchicalSearch.
-     For behavior totally compatible to the CFS-Einstein@Home code
-     one should call final_write_fstat_toplist_to_file() instead of
-     atomic_write_fstat_toplist_to_file(), as this would re-sort
-     the list and reduce the precision before writing it */
-  return(_atomic_write_fstat_toplist_to_file(cptf->list,
-					    cptf->filename,
-					    &(cptf->checksum),
-					    1));
+  /* write out the list a final time, this time with a %DONE marker at the end */
+  return(_atomic_write_fstat_toplist_to_file
+	 (cptf->list, cptf->filename, &(cptf->checksum), 1));
 }
 
 
