@@ -34,6 +34,8 @@
 #include <lal/TimeSeries.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/VectorOps.h>
+#include <lal/LALDetectors.h>
+#include <lal/LALFrameIO.h>
 
 
 RCSID( "$Id$" );
@@ -46,6 +48,7 @@ RCSID( "$Id$" );
 #define PROGRAM_NAME "nr_wave"
 
 static void output_ht( CHAR *fName, REAL4TimeSeries *injData );
+static void output_frame(CHAR *ifo, INT4 gpsStart, INT4 gpsEnd, REAL4TimeSeries *injData);
 
 extern int vrbflg;
 
@@ -76,6 +79,7 @@ static void print_usage( char *program )
       "  --modeL-hi        hi          highest value of l to inject\n"\
       "  --sample-rate     rate        the sample rate used to generate injections\n"\
       "  --write-output                write h(t) to an ascii file in NRwave directory\n"\
+      "  --write-frame                 write h(t) waveform to a frame file\n"\
       "\n", program );
 }
 
@@ -104,7 +108,6 @@ int main( int argc, char *argv[] )
 
   CHAR ifo[LIGOMETA_IFO_MAX];            /* name of ifo                    */
   CHAR fileName[FILENAME_MAX];           /* name of output file            */
-  CHAR name[LALNameLength];
 
   int gpsStartSec          = -1;         /* start time of data             */
   int gpsEndSec            = -1;         /* end time of data               */
@@ -124,6 +127,7 @@ int main( int argc, char *argv[] )
 
   int writeFlag = 0;                     /* write h(t) to file?            */
   int ifosFlag  = 0;                     /* injections for all ifos?       */
+  int frameFlag = 0;                     /* write h(t) to a frame?         */
 
   /* getopt arguments */
   struct option long_options[] =
@@ -132,6 +136,7 @@ int main( int argc, char *argv[] )
     {"verbose",                 no_argument,       &vrbflg,           1 },
     {"write-output",            no_argument,       &writeFlag,        1 },
     {"all-ifos",                no_argument,       &ifosFlag,         1 },
+    {"write-frame",             no_argument,       &frameFlag,        1 },
     /* these options don't set a flag */
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
@@ -424,12 +429,9 @@ int main( int argc, char *argv[] )
    *
    */
 
-  /* set channel name */
-  LALSnprintf( name, LIGOMETA_CHANNEL_MAX * sizeof(CHAR), "%s:STRAIN", ifo );
-
   /* set up the injData to be zeros of the correct length, to which we will 
    * add the injections */
-  injData = *XLALCreateREAL4TimeSeries( name, &gpsStartTime, 0, 1./sampleRate, 
+  injData = *XLALCreateREAL4TimeSeries( "", &gpsStartTime, 0, 1./sampleRate, 
       &lalADCCountUnit, sampleRate * (gpsEndSec - gpsStartSec) );
 
   /* read the injections */
@@ -461,7 +463,6 @@ int main( int argc, char *argv[] )
   {
     num_ifos = 1;
   }
-
 
   /* loop over ifos */
   for ( i = 0; i < num_ifos; i++ )
@@ -531,7 +532,10 @@ int main( int argc, char *argv[] )
 	      
 	      /* inject the htData into injection time stream */
 	      LAL_CALL( LALSSInjectTimeSeries( &status, &injData, htData ), &status );
-	      
+
+        /* set channel name */
+        LALSnprintf( injData.name, LIGOMETA_CHANNEL_MAX * sizeof(CHAR), "%s:STRAIN", ifo );
+ 	      
 	      /* clear memory for strain */
 	      XLALDestroyREAL4VectorSequence ( strain->data );
 	      LALFree(strain);
@@ -547,6 +551,12 @@ int main( int argc, char *argv[] )
     if ( writeFlag )
     {
       output_ht( fileName, &injData);
+    }
+
+    /* output frame */
+    if ( frameFlag )
+    {
+      output_frame(ifo, gpsStartSec, gpsEndSec, &injData );
     }
 
   } /* end loop over ifos */
@@ -590,5 +600,66 @@ static void output_ht(CHAR *fileName,
     /* increment time */
     time += injData->deltaT;
   }
+  return;
+}
+
+
+/* function to output h(t) waveform in a frame file */
+static void output_frame(CHAR *ifo,
+    INT4 gpsStart,
+    INT4 gpsEnd,
+    REAL4TimeSeries *injData)
+{
+  char fname[FILENAME_MAX];
+  int duration;
+  int detectorFlags;
+  FrameH *frame;
+  FrFile *frfile;
+
+  /* get frame filename */
+  duration = gpsEnd - gpsStart;
+  LALSnprintf( fname, FILENAME_MAX, "%s-NR_WAVE-%d-%d.gwf", ifo, gpsStart, duration );
+
+  /* set detector flags */
+  if (strncmp(ifo, "H2", 2) == 0)
+    detectorFlags = LAL_LHO_2K_DETECTOR_BIT;
+  else if (strncmp(ifo, "H1", 2) == 0)
+    detectorFlags = LAL_LHO_4K_DETECTOR_BIT;
+  else if (strncmp(ifo, "L1", 2) == 0)
+    detectorFlags = LAL_LLO_4K_DETECTOR_BIT;
+  else if (strncmp(ifo, "G1", 2) == 0)
+    detectorFlags = LAL_GEO_600_DETECTOR_BIT;
+  else if (strncmp(ifo, "V1", 2) == 0)
+    detectorFlags = LAL_VIRGO_DETECTOR_BIT;
+  else if (strncmp(ifo, "T1", 2) == 0)
+    detectorFlags = LAL_TAMA_300_DETECTOR_BIT;
+  else
+  {
+    fprintf( stderr, "ERROR: Unrecognised IFO: %s\n", ifo );
+    exit( 1 );
+  }
+
+  /* define frame */
+  frame = XLALFrameNew( &injData->epoch, duration, "LIGO", 0, 1, detectorFlags );
+
+  /* add channel to frame */
+  XLALFrameAddREAL4TimeSeriesProcData( frame, injData );
+
+  if ( vrbflg )
+  {
+    fprintf( stdout, "Writing injection to frame: %s\n", fname );
+  }
+
+  /* write frame */
+  frfile = FrFileONew( fname, 8 );
+  if ( !frfile )
+  {
+    fprintf( stderr, "ERROR: Cannot open frame file: %s\n", fname );
+    exit( 1 );
+  }
+  FrameWrite( frame, frfile );
+  FrFileOEnd( frfile );
+  FrameFree( frame );
+
   return;
 }
