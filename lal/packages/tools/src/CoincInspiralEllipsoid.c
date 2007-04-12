@@ -65,7 +65,7 @@ to add the single inspirals to the coinc. The function returns
 \texttt{XLALSnglInspiralCoincTestEllipsoid()} is used in the creation of
 multiple IFO coincident events. It is called by \texttt{LALCreateNIFOCoincList()}
 when the coincidence test is set to be ellipsoid. Unlike in other coincidence 
-tests, coincidence here is determined by the use of event id's as opposed to 
+tests, coincidence here is determined by the use of event ids as opposed to 
 calling the comparison function. This is because the test for ellipsoid overlap
 uses matrix inversions and function maximizations, which are potentially costly
 operations. If all members of the coinc are found to be
