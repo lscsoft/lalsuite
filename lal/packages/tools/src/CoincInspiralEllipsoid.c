@@ -186,8 +186,8 @@ LALCreateTwoIFOCoincListEllipsoid(
 
   /* calculate the maximum time delay 
    * set it equal to 2 * worst IFO timing accuracy plus
-   * light travel time for earth's diameter 
-   * (detectors can't be further apart than this) */
+   * light travel time for earths diameter 
+   * (detectors cant be further apart than this) */
   
   maxTimeDiff = (INT8) (1e9 * 2.0 * timeError);    
   maxTimeDiff += (INT8) ( 1e9 * 2 * LAL_REARTH_SI / LAL_C_SI );
