@@ -167,7 +167,7 @@ static REAL4Vector* vector;
 
 int num_source;
 struct {
-  char   name[16];
+  char   name[20];
   double ra;
   double dec;
   double dist;
@@ -609,7 +609,7 @@ int sky_position( double *dist, double *alpha, double *delta, char *source )
   for ( i = 0; i < num_source; ++i )
     if ( u < frac[i] )
     {
-      LALSnprintf( source, 16.*sizeof(char), 
+      LALSnprintf( source, 20.*sizeof(char), 
           "%s", source_data[i].name );
       *dist  = source_data[i].dist;
       *alpha = source_data[i].ra;
