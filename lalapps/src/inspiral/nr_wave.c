@@ -1,11 +1,11 @@
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: nr_wave.c
  *
- * Author: S.Fairhurst, B. Krishnan, L.Santamaria 
+ * Author: S.Fairhurst, B. Krishnan, L.Santamaria
  *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -48,12 +48,13 @@ RCSID( "$Id$" );
 #define PROGRAM_NAME "nr_wave"
 
 static void output_ht( CHAR *fName, REAL4TimeSeries *injData );
-static void output_frame(CHAR *ifo, INT4 gpsStart, INT4 gpsEnd, REAL4TimeSeries *injData);
+static void output_frame( CHAR *ifo, INT4 gpsStart, INT4 gpsEnd,
+    REAL4TimeSeries *injData );
 
 extern int vrbflg;
 
 /*
- * 
+ *
  * USAGE
  *
  */
@@ -84,7 +85,7 @@ static void print_usage( char *program )
 }
 
 /*
- * 
+ *
  * MAIN
  *
  */
@@ -97,8 +98,8 @@ int main( int argc, char *argv[] )
 
   INT4 modeLlo = -1;                     /* lowest value of l to inject    */
   INT4 modeLhi = -1;                     /* highest values of l to inject  */
-  INT4 modeL, modeM;                     /* mode indices of NR waves */
-  
+  INT4 modeL, modeM;                     /* mode indices of NR waves       */
+
   CHAR *injectionFile = NULL;            /* name of file containing injs   */
   CHAR *nrMetaFile    = NULL;            /* name of file with nr meta info */
   CHAR *nrDataDir     = NULL;            /* name of dir with nr waveform   */
@@ -115,7 +116,7 @@ int main( int argc, char *argv[] )
   LIGOTimeGPS gpsEndTime   = {0, 0};     /* end time GPS                   */
 
   int sampleRate    = -1;                /* output sample rate             */
-  int numInjections = 0;                 /* number of injections */
+  int numInjections = 0;                 /* number of injections           */
 
   SimInspiralTable *injections = NULL;   /* list of injections to be done  */
   SimInspiralTable *thisInj    = NULL;   /* current injection              */
@@ -160,8 +161,7 @@ int main( int argc, char *argv[] )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only( argc, argv, 
-        "a:b:d:f:i:m:r:L:H:V:W",
+    c = getopt_long_only( argc, argv, "a:b:d:f:i:m:r:L:H:V:W",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -188,7 +188,7 @@ int main( int argc, char *argv[] )
 
       case 'h':
         /* help message */
-        print_usage(argv[0]);
+        print_usage( argv[0] );
         exit( 0 );
         break;
 
@@ -215,9 +215,9 @@ int main( int argc, char *argv[] )
         if ( gpsStartSec > 999999999 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "GPS start time is after " 
+              "GPS start time is after "
               "Sep 14, 2011  01:46:26 UTC:\n"
-              "(%d specified)\n", 
+              "(%d specified)\n",
               long_options[option_index].name, gpsStartSec );
           exit( 1 );
         }
@@ -230,21 +230,21 @@ int main( int argc, char *argv[] )
         if ( gpsEndSec > 999999999 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "GPS end time is after " 
+              "GPS end time is after "
               "Sep 14, 2011  01:46:26 UTC:\n"
-              "(%d specified)\n", 
+              "(%d specified)\n",
               long_options[option_index].name, gpsEndSec );
           exit( 1 );
         }
         else if ( gpsEndSec < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "GPS end time is prior to " 
+              "GPS end time is prior to "
               "Jan 01, 1994  00:00:00 UTC:\n"
-              "(%d specified)\n", 
+              "(%d specified)\n",
               long_options[option_index].name, gpsEndSec );
           exit( 1 );
-        }            
+        }
         gpsEndTime.gpsSeconds = gpsEndSec;
         break;
 
@@ -255,37 +255,37 @@ int main( int argc, char *argv[] )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "sample rate must be a positive integer: "
-              "(%d specified) \n", 
+              "(%d specified) \n",
               long_options[option_index].name, sampleRate );
           exit( 1 );
         }
         break;
 
       case 'L':
-	/* set lower bound of l */
-	modeLlo = (INT4)atoi(optarg);
-	if ( modeLlo < 2 )
+        /* set lower bound of l */
+        modeLlo = (INT4) atoi( optarg );
+        if ( modeLlo < 2 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "l value must be a greater than 1: "
-              "(%d specified) \n", 
+              "(%d specified) \n",
               long_options[option_index].name, modeLlo );
           exit( 1 );
         }
-	break;	
+        break;
 
       case 'H':
-	/* set lower bound of l */
-	modeLhi = (INT4)atoi(optarg);
-	if ( modeLhi < 2 )
+        /* set lower bound of l */
+        modeLhi = (INT4) atoi( optarg );
+        if ( modeLhi < 2 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "l value must be a greater than 1: "
-              "(%d specified) \n", 
+              "(%d specified) \n",
               long_options[option_index].name, modeLhi );
           exit( 1 );
         }
-	break;	
+        break;
 
       case 'i':
         /* create storage for the ifo name and copy it */
@@ -293,9 +293,9 @@ int main( int argc, char *argv[] )
         memcpy( ifo, optarg, optarg_len );
 
         /* check for supported ifo */
-        if (XLALIFONumber(ifo) == LAL_UNKNOWN_IFO)
+        if ( XLALIFONumber( ifo ) == LAL_UNKNOWN_IFO )
         {
-          fprintf(stderr, "IFO not recognised: %s\n", ifo);
+          fprintf( stderr, "IFO not recognised: %s\n", ifo );
           exit(1);
         }
         break;
@@ -322,13 +322,13 @@ int main( int argc, char *argv[] )
         break;
 
       case '?':
-        print_usage(argv[0]);
+        print_usage( argv[0] );
         exit( 1 );
         break;
 
       default:
         fprintf( stderr, "unknown error while parsing options\n" );
-        print_usage(argv[0]);
+        print_usage( argv[0] );
         exit( 1 );
     }
   }
@@ -429,9 +429,9 @@ int main( int argc, char *argv[] )
    *
    */
 
-  /* set up the injData to be zeros of the correct length, to which we will 
+  /* set up the injData to be zeros of the correct length, to which we will
    * add the injections */
-  injData = *XLALCreateREAL4TimeSeries( "", &gpsStartTime, 0, 1./sampleRate, 
+  injData = *XLALCreateREAL4TimeSeries( "", &gpsStartTime, 0, 1./sampleRate,
       &lalADCCountUnit, sampleRate * (gpsEndSec - gpsStartSec) );
 
   /* read the injections */
@@ -440,22 +440,22 @@ int main( int argc, char *argv[] )
 
   if ( vrbflg )
   {
-    fprintf(stdout,"Read %d injection(s) from the file %s\n",
-        numInjections, injectionFile);
+    fprintf( stdout, "Read %d injection(s) from the file %s\n",
+        numInjections, injectionFile );
   }
 
-  if ( numInjections < 0 )  
+  if ( numInjections < 0 )
   {
     fprintf( stderr, "ERROR: Cannot read injection file\n" );
     exit( 1 );
   }
 
   /* get catalog of numrel waveforms from metadata file */
-  LAL_CALL(LALNRDataFind( &status, &nrCatalog, nrDataDir, nrMetaFile ), 
-      &status);
+  LAL_CALL( LALNRDataFind( &status, &nrCatalog, nrDataDir, nrMetaFile ),
+      &status );
 
   /* get number of ifos to calculate injections for */
-  if (ifosFlag)
+  if ( ifosFlag )
   {
     num_ifos = LAL_NUM_IFO;
   }
@@ -468,7 +468,7 @@ int main( int argc, char *argv[] )
   for ( i = 0; i < num_ifos; i++ )
   {
     /* get ifo */
-    if (ifosFlag)
+    if ( ifosFlag )
     {
       XLALReturnIFO( ifo, i );
     }
@@ -479,71 +479,72 @@ int main( int argc, char *argv[] )
     }
 
     /* set output filename */
-    LALSnprintf( fileName, FILENAME_MAX, "%s-NR_WAVE-%d-%d.dat", 
-        ifo, gpsStartSec, gpsEndSec - gpsStartSec);
+    LALSnprintf( fileName, FILENAME_MAX, "%s-NR_WAVE-%d-%d.dat",
+        ifo, gpsStartSec, gpsEndSec - gpsStartSec );
 
     /* loop over injections */
     for ( thisInj = injections; thisInj; thisInj = thisInj->next )
     {
-
       /* loop over l values */
-      for (modeL = modeLlo; modeL <= modeLhi; modeL++)
-	{
-	  /* loop over m values */
-	  for (modeM = -modeL; modeM <= modeL; modeM++) 
-	    {
-	      /* find nearest matching numrel waveform */
-	      XLALFindNRFile( &thisMetaData, &nrCatalog, thisInj, modeL, modeM);
-	      
-	      if ( vrbflg )
-		{
-		  fprintf(stdout, "Reading the waveform from the file \"%s\"...",
-			  thisMetaData.filename );
-		}
-	      
-	      /* read numrel waveform */
-	      LAL_CALL(LALReadNRWave(&status, &strain, thisInj->mass1 + thisInj->mass2, 
-				     thisMetaData.filename), &status);
-	      
-	      if ( vrbflg )
-		{
-		  fprintf(stdout, "done\n");
-		}
-	      
-	      if ( vrbflg )
-		{
-		  fprintf(stdout,
-			  "Generating waveform for inclination = %f, coa_phase = %f\n",
-			  thisInj->inclination, thisInj->coa_phase );
-		}
-	      
-	      /* compute the h+ and hx for given inclination and coalescence phase*/
-	      strain = XLALOrientNRWave( strain, thisMetaData.mode[0],
-					 thisMetaData.mode[1], thisInj->inclination, thisInj->coa_phase);
-	      
-	      if ( vrbflg )
-		{
-		  fprintf(stdout,
-			  "Generating the strain data for the given sky location\n");
-		}
-	      
-	      /* compute strain for given sky location */
-	      htData = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate);
-	      
-	      /* inject the htData into injection time stream */
-	      LAL_CALL( LALSSInjectTimeSeries( &status, &injData, htData ), &status );
+      for ( modeL = modeLlo; modeL <= modeLhi; modeL++ )
+      {
+        /* loop over m values */
+        for ( modeM = -modeL; modeM <= modeL; modeM++ )
+        {
+          /* find nearest matching numrel waveform */
+          XLALFindNRFile( &thisMetaData, &nrCatalog, thisInj, modeL, modeM );
 
-        /* set channel name */
-        LALSnprintf( injData.name, LIGOMETA_CHANNEL_MAX * sizeof(CHAR), "%s:STRAIN", ifo );
- 	      
-	      /* clear memory for strain */
-	      XLALDestroyREAL4VectorSequence ( strain->data );
-	      LALFree(strain);
-	      strain = NULL;
-	      
-	    }/* end loop over modeM values */
+          if ( vrbflg )
+          {
+            fprintf( stdout, "Reading the waveform from the file \"%s\"...",
+                thisMetaData.filename );
+          }
 
-	} /* end loop over modeL values */
+          /* read numrel waveform */
+          LAL_CALL( LALReadNRWave( &status, &strain, thisInj->mass1 +
+                thisInj->mass2, thisMetaData.filename ), &status );
+
+          if ( vrbflg )
+          {
+            fprintf( stdout, "done\n" );
+          }
+
+          if ( vrbflg )
+          {
+            fprintf( stdout,
+                "Generating waveform for inclination = %f, coa_phase = %f\n",
+                thisInj->inclination, thisInj->coa_phase );
+          }
+
+          /* compute the h+ and hx for given inclination and coalescence phase*/
+          strain = XLALOrientNRWave( strain, thisMetaData.mode[0],
+              thisMetaData.mode[1], thisInj->inclination, thisInj->coa_phase );
+
+          if ( vrbflg )
+          {
+            fprintf( stdout,
+                "Generating the strain data for the given sky location\n" );
+          }
+
+          /* compute strain for given sky location */
+          htData = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate );
+
+          /* inject the htData into injection time stream */
+          LAL_CALL( LALSSInjectTimeSeries( &status, &injData, htData ),
+              &status );
+
+          /* set channel name */
+          LALSnprintf( injData.name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
+              "%s:STRAIN", ifo );
+
+          /* clear memory for strain */
+          XLALDestroyREAL4VectorSequence ( strain->data );
+          LALFree( strain );
+          strain = NULL;
+
+        } /* end loop over modeM values */
+
+      } /* end loop over modeL values */
 
     } /* end loop over injections */
 
@@ -557,15 +558,15 @@ int main( int argc, char *argv[] )
     if ( frameFlag )
     {
       injData.sampleUnits = lalStrainUnit;
-      output_frame(ifo, gpsStartSec, gpsEndSec, &injData );
+      output_frame( ifo, gpsStartSec, gpsEndSec, &injData );
       injData.sampleUnits = lalADCCountUnit;
     }
 
   } /* end loop over ifos */
 
   /* clear memory */
-  LALFree(nrCatalog.data);
-  LALCheckMemoryLeaks(); 
+  LALFree( nrCatalog.data );
+  LALCheckMemoryLeaks();
 
   exit( 0 );
 }
@@ -580,9 +581,9 @@ static void output_ht(CHAR *fileName,
   REAL8 time = 0;
 
   /* open output file */
-  if ((htOut = fopen(fileName, "w")) == NULL)
+  if ( ( htOut = fopen( fileName, "w" ) ) == NULL )
   {
-    fprintf(stderr, "ERROR: Unable to open output file \"%s\"\n", fileName);
+    fprintf( stderr, "ERROR: Unable to open output file \"%s\"\n", fileName );
     exit( 1 );
   }
 
@@ -595,9 +596,9 @@ static void output_ht(CHAR *fileName,
   }
 
   /* output h(t) waveform */
-  for (i = 0; i < injData->data->length; i++)
+  for ( i = 0; i < injData->data->length; i++ )
   {
-    fprintf(htOut, "%.6f\t%e\t\n", time, injData->data->data[i]);
+    fprintf( htOut, "%.6f\t%e\t\n", time, injData->data->data[i] );
 
     /* increment time */
     time += injData->deltaT;
@@ -620,20 +621,21 @@ static void output_frame(CHAR *ifo,
 
   /* get frame filename */
   duration = gpsEnd - gpsStart;
-  LALSnprintf( fname, FILENAME_MAX, "%s-NR_WAVE-%d-%d.gwf", ifo, gpsStart, duration );
+  LALSnprintf( fname, FILENAME_MAX, "%s-NR_WAVE-%d-%d.gwf", ifo, gpsStart,
+      duration );
 
   /* set detector flags */
-  if (strncmp(ifo, "H2", 2) == 0)
+  if ( strncmp( ifo, "H2", 2 ) == 0 )
     detectorFlags = LAL_LHO_2K_DETECTOR_BIT;
-  else if (strncmp(ifo, "H1", 2) == 0)
+  else if ( strncmp( ifo, "H1", 2 ) == 0 )
     detectorFlags = LAL_LHO_4K_DETECTOR_BIT;
-  else if (strncmp(ifo, "L1", 2) == 0)
+  else if ( strncmp( ifo, "L1", 2 ) == 0 )
     detectorFlags = LAL_LLO_4K_DETECTOR_BIT;
-  else if (strncmp(ifo, "G1", 2) == 0)
+  else if ( strncmp( ifo, "G1", 2 ) == 0 )
     detectorFlags = LAL_GEO_600_DETECTOR_BIT;
-  else if (strncmp(ifo, "V1", 2) == 0)
+  else if ( strncmp( ifo, "V1", 2 ) == 0 )
     detectorFlags = LAL_VIRGO_DETECTOR_BIT;
-  else if (strncmp(ifo, "T1", 2) == 0)
+  else if ( strncmp( ifo, "T1", 2 ) == 0 )
     detectorFlags = LAL_TAMA_300_DETECTOR_BIT;
   else
   {
@@ -642,7 +644,8 @@ static void output_frame(CHAR *ifo,
   }
 
   /* define frame */
-  frame = XLALFrameNew( &injData->epoch, duration, "LIGO", 0, 1, detectorFlags );
+  frame = XLALFrameNew( &injData->epoch, duration, "LIGO", 0, 1,
+      detectorFlags );
 
   /* add channel to frame */
   XLALFrameAddREAL4TimeSeriesSimData( frame, injData );
