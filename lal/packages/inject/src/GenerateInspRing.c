@@ -72,7 +72,7 @@ XLALGenerateInspRing(
   SimRingdownTable     *ringInj = NULL;
   REAL4                 mTot = 0;
   REAL4                 orbAngMom, totalAngMom;
-  REAL4                 Jx, Jy, Jz, tmp_x;
+  REAL4                 Jx, Jy, Jz;
 
 
   /*
@@ -150,7 +150,6 @@ XLALGenerateInspRing(
   LALSnprintf( ringInj->coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR), 
       "EQUATORIAL");
   ringInj->geocent_start_time = inspiralInj->geocent_end_time;
-  ringInj->geocent_start_time.gpsNanoSeconds;
 
   ringInj->longitude    = inspiralInj->longitude;
   ringInj->latitude     = inspiralInj->latitude;
@@ -322,6 +321,7 @@ XLALGenerateInspRing(
    *
    */
 
+  freq = freq0;
 
   /* run frequency close to ring frequency */
   for ( n = 1; n < mergerLength + 1; n++ )

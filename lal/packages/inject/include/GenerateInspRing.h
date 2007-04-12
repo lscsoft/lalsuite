@@ -38,8 +38,8 @@ NRCSID( GENERATEINSPRING, "$Id$");
 
 CoherentGW *
 XLALGenerateInspRing(
-    CoherentGW		    *waveform,
-    SimInspiralTable	*thisEvent
+    CoherentGW        *waveform,
+    SimInspiralTable  *thisEvent
     );
 
 
