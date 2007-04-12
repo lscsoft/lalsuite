@@ -23,6 +23,8 @@
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GenerateRing.h>
 #include <lal/Ring.h>
+#include <lal/TimeSeries.h>
+#include <lal/GenerateInspRing.h>
 
 /** Takes an inspiral waveform, and a simInspiralTable and generates a ringdown
  * at an appropriate frequency and quality */
