@@ -130,7 +130,7 @@ XLALGenerateInspRing(
   }
 
   XLALPrintInfo(
-      "Final inspiral frequency = %.2f Hz, fdot = %.2f Hz/s\n"
+      "Final inspiral frequency = %.2f Hz, fdot = %.2e Hz/s\n"
       "\n", freq0, freqDot0);
 
   /*
@@ -350,11 +350,11 @@ XLALGenerateInspRing(
 
   XLALPrintInfo(
       "Starting to asymptote to ringdown\n"
-      "Final 'merger' frequency = %.2f Hz, fdot = %.2f Hz/s\n", 
+      "Final 'merger' frequency = %.2f Hz, fdot = %.2e Hz/s\n", 
       freq, freqDot); 
   XLALPrintInfo(
       "Frequency evolution fitted to freq = f_ring - A exp(-lambda t)\n"
-      "A = %.2f, lambda = %e\n"
+      "A = %.2f, lambda = %.2e\n"
       "\n", A, lambda); 
 
   for ( n = 1; n < mergerLength + ringLength; n++ )
@@ -363,7 +363,7 @@ XLALGenerateInspRing(
     freq = *(f++) = ringInj->frequency - A * exp( - n * dt * lambda );
     if ( shift )
     {
-      polDot /= exp( - lambda * dt);
+      polDot *= exp( - lambda * dt);
       polarization = *(shift++) = polarization + polDot;
     }
   }
@@ -402,6 +402,12 @@ XLALGenerateInspRing(
   a2Cross = ((dampFac - 1) * ( ampCross + N * ampCrossDot ) - ampCrossDot) /
     ( 2*N - N*N*(dampFac - 1) );
 
+  XLALPrintInfo( "Fitting amplitude evolution to a quadratic\n"
+      "A = a_0 + a_1 * t + a_2 * t^2\n"
+      "For plus polarization, a_0 = %.2e, a_1 = %.2e, a_2 = %.2e\n"
+      "For cross polarization, a_0 = %.2e, a_1 = %.2e, a_2 = %.2e\n"
+      "\n", ampPlus, ampPlusDot / dt, a2Plus / (dt * dt),
+      ampCross, ampCrossDot / dt, a2Cross / (dt * dt) );
 
   /* quadratic part */
   for ( n = 1; n < N; n++ )
