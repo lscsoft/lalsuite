@@ -107,6 +107,31 @@ int main( int argc, char *argv[] )
           proc = proc->next;
         }
       }
+      if ( frame->simData )
+      {
+        struct FrSimData *sim = frame->simData;
+        while ( sim )
+        {
+#if defined FR_VERS && FR_VERS < 5000
+          fprintf( stdout, "\t%s: srate = %f Hz,", sim->name,
+              sim>sampleRate );
+#else
+          fprintf( stdout, "\t%s:", sim->name );
+#endif
+          if ( sim->data )
+          {
+            int dim;
+            fprintf( stdout, " %ld %s points [%s]", (long)sim->data->nData,
+                typestr( sim->data->type ), sim->data->unitY );
+            for ( dim = 0; dim < (int)sim->data->nDim; ++dim )
+              fprintf( stdout, ", nx(%d) = %ld dx(%d) = %f %s", dim,
+                  (long)sim->data->nx[dim], dim, sim->data->dx[dim],
+                  sim->data->unitX[dim] );
+          }
+          fprintf( stdout, "\n" );
+          sim = sim->next;
+        }
+      }
       FrameFree( frame );
     }
     FrFileIEnd( frfile );
