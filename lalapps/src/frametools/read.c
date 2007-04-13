@@ -229,6 +229,7 @@ int main( int argc, char *argv[] )
     {
       struct FrAdcData *adc;
       struct FrProcData *proc;
+      struct FrSimData *sim;
       char ofname[256];
       FILE *fp;
       if ( ( adc = FrAdcDataFind( frame, channels[chan] ) ) )
@@ -279,6 +280,27 @@ int main( int argc, char *argv[] )
         if ( proc->data )
         {
           writeFrVect( fp, proc->data );
+        }
+      }
+      else if ( ( sim = FrSimDataFind( frame, channels[chan] ) ) )
+      {
+        if ( frame->dt < 1 )
+          sprintf( ofname, "%s-%03u.dat", channels[chan], frame->frame );
+        else
+          sprintf( ofname, "%s-%u.dat", channels[chan], frame->GTimeS );
+        if ( ! ( fp = fopen( ofname, "w" ) ) )
+          return fprintf( stderr, "could not open output file %s!", fname ), 1;
+        fprintf( stderr, "writing to file %s\n", ofname );
+        fprintf( fp, "## name             = %s\n",
+            sim->name ? sim->name : "" );
+        fprintf( fp, "## comment          = %s\n",
+            sim->comment ? sim->comment : "" );
+        fprintf( fp, "## GPS time (s)     = %u.%09u\n", frame->GTimeS,
+            frame->GTimeN );
+        fprintf( fp, "## freq shift (Hz)  = %f\n", sim->fShift );
+        if ( sim->data )
+        {
+          writeFrVect( fp, sim->data );
         }
       }
       else
