@@ -819,7 +819,6 @@ int main( int argc, char *argv[] )
     {
       UINT4             k;
       CHAR              ifo[LIGOMETA_IFO_MAX];
-      CHAR              fname[FILENAME_MAX];
       CHAR              type[LIGOMETA_COMMENT_MAX];
 
       XLALReturnIFO( ifo, ifoNumber );
