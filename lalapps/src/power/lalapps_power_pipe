@@ -360,16 +360,11 @@ else:
 
 
 #
-# Build datafind jobs, sort by instrument then by start time.  The
-# segment list for each instrument is built from the union of the injection
-# and background+foreground segment lists, with gaps smaller than the
-# padding added to each datafind job filled in.  Filling in the gaps
-# ensures that exactly 1 datafind job is suitable for each lalapps_power
-# job, and also hugely reduces the number of LSCdataFind nodes in the DAG.
+# Build datafind jobs.
 #
 
 
-datafinds = power.make_datafind_stage(dag, (injection_seglistdict | background_seglistdict).protract(power.datafind_pad / 2).contract(power.datafind_pad / 2), verbose = options.verbose)
+datafinds = power.make_datafind_stage(dag, injection_seglistdict | background_seglistdict, verbose = options.verbose)
 
 
 #

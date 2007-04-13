@@ -36,6 +36,7 @@ import time
 
 
 from glue import segments
+from glue import segmentsUtils
 from glue import pipeline
 from glue.lal import CacheEntry
 from pylal.date import LIGOTimeGPS
@@ -639,7 +640,6 @@ def make_datafind_fragment(dag, instrument, seg):
 	node.set_observatory(instrument[0])
 	if node.get_type() == None:
 		node.set_type(datafindjob.get_config_file().get("datafind", "type_%s" % instrument))
-	node.set_post_script(datafindjob.get_config_file().get("condor", "LSCdataFindcheck") + " --dagman-return $RETURN --stat --gps-start-time %s --gps-end-time %s %s" % (str(seg[0]), str(seg[1]), node.get_output()))
 	dag.add_node(node)
 	return [node]
 
@@ -772,13 +772,37 @@ def make_burca_fragment(dag, parents, instrument, seg, tag):
 def make_datafind_stage(dag, seglistdict, verbose = False):
 	if verbose:
 		print >>sys.stderr, "building LSCdataFind jobs ..."
+
+	#
+	# Fill gaps smaller than the padding added to each datafind job.
+	# Filling in the gaps ensures that exactly 1 datafind job is
+	# suitable for each lalapps_power job, and also hugely reduces the
+	# number of LSCdataFind nodes in the DAG.
+	#
+
+	filled = seglistdict.copy().protract(datafind_pad / 2).contract(datafind_pad / 2)
+
+	#
+	# Build the nodes
+	#
+
 	nodes = []
 	for instrument, seglist in seglistdict.iteritems():
 		for seg in seglist:
 			if verbose:
 				print >>sys.stderr, "making datafind job for %s spanning %s" % (instrument, seg)
 			nodes += make_datafind_fragment(dag, instrument, seg)
+
+			# add a post script to check the file list
+			required_segs = seglistdict[instrument] & segmentlist([seg])
+			nodes[-1].set_post_script(datafindjob.get_config_file().get("condor", "LSCdataFindcheck") + " --dagman-return $RETURN --stat --gps-segment-list %s %s" % (",".join(segmentsUtils.to_range_strings(required_segs)), node.get_output()))
+
+	#
+	# Sort by instrument, then by start time.
+	#
+
 	nodes.sort(lambda a, b: cmp(a.get_ifo(), b.get_ifo()) or cmp(a.get_start(), b.get_start()))
+
 	return nodes
 
 
