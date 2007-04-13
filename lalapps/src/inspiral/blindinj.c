@@ -60,7 +60,8 @@ RCSID( "$Id$" );
 "  --gps-start-time TIME    start time of injection\n"\
 "  --injection-type TYPE    type of injection, must be one of \n"\
 "                           (strain, etmx, etmy)\n"\
-"  --seed SEED              seed random number generator with SEED (1)\n"\
+"  --seed           SEED    seed random number generator with SEED (1)\n"\
+"  --debug-level    LEVEL   set the LAL debug level to LEVEL\n"\
 "\n"
 
 /* global definitions */
@@ -117,8 +118,8 @@ INT4          randSeed = 1;
 REAL4         minNSMass = 1.0;     /* minimum NS component mass */
 REAL4         maxNSMass = 2.0;     /* maximum NS component mass */
 REAL4         minBHMass = 2.0;     /* minimum BH component mass */
-REAL4         maxBHMass = 80.0;    /* maximum BH component mass */
-REAL4         maxTotalMass = 100.0;/* maximum total mass */
+REAL4         maxBHMass = 30.0;    /* maximum BH component mass */
+REAL4         maxTotalMass = 35.0; /* maximum total mass */
 
 REAL4         minNSSpin = 0.0;     /* minimum NS component spin */
 REAL4         maxNSSpin = 0.2;     /* maximum NS component spin */
@@ -127,13 +128,14 @@ REAL4         maxBHSpin = 1.0;     /* maximum BH component spin */
 
 REAL4         BNSfrac = 0.35;      /* fraction of injections which are BNS */
 REAL4         BBHfrac = 0.35;      /* fraction of injections which are BBH */
-/* 1 - BNSfrac - BBHfrac are NS-BH inj  */
+                                   /* 1 - BNSfrac - BBHfrac are NS-BH inj  */
 
-REAL4         bnsSnrMin = 12.0;   /* minimum (combined) snr of bns injection */
-REAL4         bnsSnrMax = 20.0;   /* maximum (combined) snr of bns injection */
-REAL4         snrMin = 12.0;      /* minimum (combined) snr of injection */
-REAL4         snrMax = 20.0;      /* maximum (combined) snr of injection */
-/* snrs assume detectors at design     */
+REAL4         bnsSnrMean = 9.0;  /* mean single ifo snr of bns injection */
+REAL4         bnsSnrStd = 0.5;   /* std of single ifo snr of bns injection */
+REAL4         snrMean = 12.0;    /* mean single ifo snr of injection */
+REAL4         snrStd  = 1.0;     /* std of single ifo snr of injection */
+                                 /* snrs assume detectors at design     */
+REAL4Vector  *normalDev;         /* vector to store normally distributed vars*/
 
 /* functions */
 
@@ -258,9 +260,15 @@ static REAL4TimeSeries *injectWaveform(
   fp = fopen(fileName, "w");
   for ( i = 0; i < waveform.phi->data->length; i++ )
   {
-    fprintf( fp, "%e\t %e\t %f\t %f\t %f\n", waveform.a->data->data[2*i],
-      waveform.a->data->data[2*i+1], waveform.f->data->data[i], 
-      waveform.phi->data->data[i] , waveform.shift->data->data[i] );
+    if ( waveform.shift ) fprintf( fp, "%e\t %e\t %f\t %f\t %f\n", 
+        waveform.a->data->data[2*i],
+        waveform.a->data->data[2*i+1], waveform.f->data->data[i], 
+        waveform.phi->data->data[i] , waveform.shift->data->data[i] );
+
+    else fprintf( fp, "%e\t %e\t %f\t %f\n", 
+        waveform.a->data->data[2*i],
+        waveform.a->data->data[2*i+1], waveform.f->data->data[i], 
+        waveform.phi->data->data[i] );
   }
   fclose( fp );
 
@@ -410,6 +418,7 @@ int main( int argc, char *argv[] )
     {"gps-start-time",          required_argument, 0,                'a'},
     {"injection-type",          required_argument, 0,                't'},
     {"seed",                    required_argument, 0,                's'},
+    {"debug-level",             required_argument, 0,                'z'},
     {0, 0, 0, 0}
   };
   int c;
@@ -454,7 +463,7 @@ int main( int argc, char *argv[] )
 
   /* set up inital debugging values */
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "1" );
+  set_debug_level( "33" );
 
 
   /* create the process and process params tables */
@@ -471,7 +480,7 @@ int main( int argc, char *argv[] )
   /* clear the waveform field */
   memset( waveform, 0, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR) );
   LALSnprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
-      "SpinTaylorthreePointFivePN");
+      "SpinTaylorthreePN");
 
   /*
    *
@@ -579,6 +588,12 @@ int main( int argc, char *argv[] )
         exit( 0 );
         break;
 
+      case 'z':
+        set_debug_level( optarg );
+        next_process_param( long_options[option_index].name, "int", "%d",
+            optarg );
+        break;
+
       case 'h':
       case '?':
         fprintf( stderr, USAGE );
@@ -648,8 +663,11 @@ int main( int argc, char *argv[] )
 
   /* set the masses */
   massPar = XLALUniformDeviate( randParams );
+  normalDev = XLALCreateREAL4Vector( 1 );
+  XLALNormalDeviates(normalDev, randParams);
 
-  fprintf(  stdout, "Random variable to determine inj type = %f\n", 
+  if ( vrbflg) fprintf(  stdout, 
+      "Random variable to determine inj type = %f\n", 
       massPar);
 
   if ( massPar < BNSfrac )
@@ -659,8 +677,7 @@ int main( int argc, char *argv[] )
         minNSMass, maxNSMass, minNSMass, maxNSMass, maxTotalMass );
     inj = XLALRandomInspiralSpins( inj, randParams, minNSSpin,
         maxNSSpin, minNSSpin, maxNSSpin );
-    desiredSnr = bnsSnrMin + (bnsSnrMax - bnsSnrMin) *  
-      XLALUniformDeviate( randParams );
+    desiredSnr = bnsSnrMean + bnsSnrStd * normalDev->data[0]; 
   }
   else if ( massPar < (BNSfrac + BBHfrac) )
   {
@@ -669,7 +686,7 @@ int main( int argc, char *argv[] )
         minBHMass, maxBHMass, minBHMass, maxBHMass, maxTotalMass );
     inj = XLALRandomInspiralSpins( inj, randParams, minBHSpin,
         maxBHSpin, minBHSpin, maxBHSpin );
-    desiredSnr = snrMin + (snrMax - snrMin) * XLALUniformDeviate( randParams );
+    desiredSnr = snrMean + snrStd * normalDev->data[0]; 
   }
   else
   {
@@ -678,8 +695,9 @@ int main( int argc, char *argv[] )
         minNSMass, maxNSMass, minBHMass, maxBHMass, maxTotalMass );
     inj = XLALRandomInspiralSpins( inj, randParams, minNSSpin,
         maxNSSpin, minBHSpin, maxBHSpin );
-    desiredSnr = snrMin + (snrMax - snrMin) * XLALUniformDeviate( randParams );
+    desiredSnr = snrMean + snrStd * normalDev->data[0]; 
   }
+  XLALDestroyVector( normalDev );
 
 
   /* set the sky location */
@@ -775,7 +793,8 @@ int main( int argc, char *argv[] )
     }
   }
 
-  /* scale the distance so that the snr is equal to desired value */
+  /* scale the distance so that the combined snr is equal to desired value */
+  desiredSnr *= 1.5;
   inj->distance = 1.0 * pow( snrsqAt1Mpc, 0.5 ) / desiredSnr;
   inj = XLALPopulateSimInspiralSiteInfo( inj );
   if ( vrbflg ) fprintf( stdout, 
