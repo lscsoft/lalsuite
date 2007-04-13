@@ -642,9 +642,6 @@ int main( int argc, char *argv[] )
   /* null out the head of the linked list */
   memset( &inspInjections, 0, sizeof(MetadataTable) );
 
-  /* create the output file name */
-  LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
-      randSeed, gpsStartTime.gpsSeconds,  duration );
 
   /*
    *
@@ -875,6 +872,12 @@ int main( int argc, char *argv[] )
    *
    */
 
+  /* create the output file name */
+  LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
+      randSeed, gpsStartTime.gpsSeconds,  duration );
+
+  if ( vrbflg ) fprintf( stdout, "Writing the injection details to %s\n",
+      fname);
 
   /* open the xml file */
   memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
