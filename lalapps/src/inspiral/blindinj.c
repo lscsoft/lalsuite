@@ -255,22 +255,27 @@ static REAL4TimeSeries *injectWaveform(
   waveform = *XLALGenerateInspRing( &waveform, inspInj );
 
   /* write out the waveform */
-  LALSnprintf( fileName, FILENAME_MAX, "%s-INSPIRAL_WAVEFORM.dat", 
-        ifo );
-  fp = fopen(fileName, "w");
-  for ( i = 0; i < waveform.phi->data->length; i++ )
+  if ( ifoNumber == LAL_IFO_H1 && vrbflg )
   {
-    if ( waveform.shift ) fprintf( fp, "%e\t %e\t %f\t %f\t %f\n", 
-        waveform.a->data->data[2*i],
-        waveform.a->data->data[2*i+1], waveform.f->data->data[i], 
-        waveform.phi->data->data[i] , waveform.shift->data->data[i] );
+    fprintf(  stdout, 
+        "Writing out A+, Ax, f, phi, shift for waveform "
+        "to file named INSPIRAL_WAVEFORM.dat\n");
+    LALSnprintf( fileName, FILENAME_MAX, "INSPIRAL_WAVEFORM.dat");
+    fp = fopen(fileName, "w");
+    for ( i = 0; i < waveform.phi->data->length; i++ )
+    {
+      if ( waveform.shift ) fprintf( fp, "%e\t %e\t %f\t %f\t %f\n", 
+          waveform.a->data->data[2*i],
+          waveform.a->data->data[2*i+1], waveform.f->data->data[i], 
+          waveform.phi->data->data[i] , waveform.shift->data->data[i] );
 
-    else fprintf( fp, "%e\t %e\t %f\t %f\n", 
-        waveform.a->data->data[2*i],
-        waveform.a->data->data[2*i+1], waveform.f->data->data[i], 
-        waveform.phi->data->data[i] );
+      else fprintf( fp, "%e\t %e\t %f\t %f\n", 
+          waveform.a->data->data[2*i],
+          waveform.a->data->data[2*i+1], waveform.f->data->data[i], 
+          waveform.phi->data->data[i] );
+    }
+    fclose( fp );
   }
-  fclose( fp );
 
   /* 
    *
@@ -843,6 +848,8 @@ int main( int argc, char *argv[] )
 
       LALSnprintf( fname, FILENAME_MAX, "%s-HARDWARE-INJECTION_%d_%s-%d-%d.txt",
           ifo, randSeed, type, gpsStartTime.gpsSeconds, duration );
+      if ( vrbflg ) fprintf( stdout, "Writing waveform to %s\n", fname);
+
       fp = fopen( fname, "w" ); 
       for ( k = 0; k < chan->data->length; k++ )
       {
