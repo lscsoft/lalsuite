@@ -114,6 +114,7 @@ REAL4         mergerLength  = 10;  /* length in ms of the merger */
 REAL8         longestSignal = 95.0;/* length of 1.0 - 1.0 from 30 Hz */
 REAL8         timeWindow = 4;      /* injection can be delayed by up to this
                                       number of seconds */
+UINT4         numInjections = 0;   /* number of injections we have generated */
 INT4          randSeed = 1;
 REAL4         minNSMass = 1.0;     /* minimum NS component mass */
 REAL4         maxNSMass = 2.0;     /* maximum NS component mass */
@@ -128,13 +129,13 @@ REAL4         maxBHSpin = 1.0;     /* maximum BH component spin */
 
 REAL4         BNSfrac = 0.35;      /* fraction of injections which are BNS */
 REAL4         BBHfrac = 0.35;      /* fraction of injections which are BBH */
-                                   /* 1 - BNSfrac - BBHfrac are NS-BH inj  */
+/* 1 - BNSfrac - BBHfrac are NS-BH inj  */
 
 REAL4         bnsSnrMean = 9.0;  /* mean single ifo snr of bns injection */
 REAL4         bnsSnrStd = 0.5;   /* std of single ifo snr of bns injection */
 REAL4         snrMean = 12.0;    /* mean single ifo snr of injection */
 REAL4         snrStd  = 1.0;     /* std of single ifo snr of injection */
-                                 /* snrs assume detectors at design     */
+/* snrs assume detectors at design     */
 REAL4Vector  *normalDev;         /* vector to store normally distributed vars*/
 
 /* functions */
@@ -213,7 +214,7 @@ static REAL4TimeSeries *injectWaveform(
 
   INT8                       waveformStartTime;
   DetectorResponse           detector;
-  CoherentGW                 waveform;
+  CoherentGW                 waveform, *wfm;
   ActuationParameters        actData = actuationParams[ifoNumber];
   UINT4 i,k;
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
@@ -227,8 +228,7 @@ static REAL4TimeSeries *injectWaveform(
       &lalADCCountUnit, sampleRate * duration );
   if ( ! chan )
   {
-    fprintf( stderr, "error\n" );
-    exit ( 1 );
+    exit( 1 );
   }
 
   memset( chan->data->data, 0, chan->data->length * sizeof(REAL4) );
@@ -245,14 +245,28 @@ static REAL4TimeSeries *injectWaveform(
   ppnParams.lengthIn = 0;
   ppnParams.ppn      = NULL;
 
-
   memset( &waveform, 0, sizeof(CoherentGW) );
 
   LAL_CALL( LALGenerateInspiral(status, &waveform, inspInj, &ppnParams), 
       status);
 
   /* add the ringdown */
-  waveform = *XLALGenerateInspRing( &waveform, inspInj );
+  wfm = XLALGenerateInspRing( &waveform, inspInj );
+
+  if ( !wfm )
+  {
+    fprintf( stderr, "Failed to generate the waveform \n" );
+    if (xlalErrno == XLAL_EFAILED)
+    {
+      fprintf( stderr, "Too much merger\n");
+      XLALDestroyREAL4TimeSeries( chan );     
+      xlalErrno = XLAL_SUCCESS;
+      return ( NULL );
+    }
+    else exit ( 1 );
+  }
+
+  waveform = *wfm;
 
   /* write out the waveform */
   if ( ifoNumber == LAL_IFO_H1 && vrbflg )
@@ -285,12 +299,12 @@ static REAL4TimeSeries *injectWaveform(
 
   resp = XLALCreateCOMPLEX8FrequencySeries( chan->name, &(chan->epoch), 0,
       1.0 / ( duration ), &strainPerCount, ( sampleRate * duration / 2 + 1 ) );
-  
+
   switch ( responseType )
   {
     case noResponse:
       fprintf( stderr, "Must specify the response function\n" );
-      return ( NULL );
+      exit( 1 );
       break;
 
     case unityResponse:
@@ -371,7 +385,7 @@ static REAL4TimeSeries *injectWaveform(
   destroyCoherentGW( &waveform );
   XLALDestroyCOMPLEX8FrequencySeries( detector.transfer );
   if ( detector.site ) LALFree( detector.site );
-  
+
   XLALDestroyCOMPLEX8FrequencySeries( resp ); 
   return( chan );
 }
@@ -665,204 +679,223 @@ int main( int argc, char *argv[] )
 
   /* set the masses */
   massPar = XLALUniformDeviate( randParams );
-  normalDev = XLALCreateREAL4Vector( 1 );
-  XLALNormalDeviates(normalDev, randParams);
 
   if ( vrbflg) fprintf(  stdout, 
       "Random variable to determine inj type = %f\n", 
       massPar);
 
-  if ( massPar < BNSfrac )
+  while ( numInjections == 0 )
   {
-    if ( vrbflg ) fprintf( stdout, "Generating a BNS injection\n" );
-    inj = XLALRandomInspiralMasses( inj, randParams, mDist,
-        minNSMass, maxNSMass, minNSMass, maxNSMass, maxTotalMass );
-    inj = XLALRandomInspiralSpins( inj, randParams, minNSSpin,
-        maxNSSpin, minNSSpin, maxNSSpin );
-    desiredSnr = bnsSnrMean + bnsSnrStd * normalDev->data[0]; 
-  }
-  else if ( massPar < (BNSfrac + BBHfrac) )
-  {
-    if ( vrbflg ) fprintf( stdout, "Generating a BBH injection\n" );
-    inj = XLALRandomInspiralMasses( inj, randParams, mDist,
-        minBHMass, maxBHMass, minBHMass, maxBHMass, maxTotalMass );
-    inj = XLALRandomInspiralSpins( inj, randParams, minBHSpin,
-        maxBHSpin, minBHSpin, maxBHSpin );
-    desiredSnr = snrMean + snrStd * normalDev->data[0]; 
-  }
-  else
-  {
-    if ( vrbflg ) fprintf( stdout, "Generating an NS - BH injection\n" );
-    inj = XLALRandomInspiralMasses( inj, randParams, mDist,
-        minNSMass, maxNSMass, minBHMass, maxBHMass, maxTotalMass );
-    inj = XLALRandomInspiralSpins( inj, randParams, minNSSpin,
-        maxNSSpin, minBHSpin, maxBHSpin );
-    desiredSnr = snrMean + snrStd * normalDev->data[0]; 
-  }
-  XLALDestroyVector( normalDev );
 
+    normalDev = XLALCreateREAL4Vector( 1 );
+    XLALNormalDeviates(normalDev, randParams);
 
-  /* set the sky location */
-  inj = XLALRandomInspiralSkyLocation( inj, randParams );
-  inj = XLALRandomInspiralOrientation( inj, randParams, 0);
-
-  /* set the source and waveform fields */
-  LALSnprintf( inj->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR), "???" );
-  memcpy( inj->waveform, waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR));
-
-  /* populate the site specific information */
-  inj = XLALPopulateSimInspiralSiteInfo( inj );
-
-  /* finally populate the flower */
-  inj->f_lower = fLower;
-
-
-  /*
-   *
-   * perform the injection
-   *
-   */
-
-  if ( vrbflg ) fprintf( stdout, "Injection details\n"
-      "mass 1 = %.2f;\t spin 1 = (%.2f, %.2f, %.2f)\n"
-      "mass 2 = %.2f;\t spin 2 = (%.2f, %.2f, %.2f)\n"
-      "Hanford effective distance = %.2f Mpc\n"
-      "Livingston effective distance = %.2f Mpc\n",
-      inj->mass1, inj->spin1x, inj->spin1y, inj->spin1z,
-      inj->mass2, inj->spin2x, inj->spin2y, inj->spin2z,
-      inj->eff_dist_h, 
-      inj->eff_dist_l );
-
-  for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
-  {
-    if ( ifoNumber == LAL_IFO_H1 || ifoNumber == LAL_IFO_L1 )
+    if ( massPar < BNSfrac )
     {
-      ResponseFunction  responseType = unityResponse;
-      REAL4             thisSnrsq = 0;
-      UINT4             k;
-
-      chan = injectWaveform( &status, inj, responseType, ifoNumber, 
-          gpsStartTime);
-
-      /*
-       *
-       * calculate the snr for the injection
-       *
-       */
-
-      /* fft the output */
-      pfwd = XLALCreateForwardREAL4FFTPlan( chan->data->length, 0 );
-      fftData = XLALCreateCOMPLEX8FrequencySeries( chan->name, 
-          &(chan->epoch), 0, 1.0/chan->deltaT, &lalDimensionlessUnit, 
-          chan->data->length/2 + 1 );
-      XLALREAL4TimeFreqFFT( fftData, chan, pfwd );
-      XLALDestroyREAL4FFTPlan( pfwd );
-
-      /* compute the SNR for initial LIGO at design */
-      thisSnrsq = 0;
-      for ( k = 0; k < fftData->data->length; k++ )
-      {
-        REAL8 freq;
-        REAL8 sim_psd_value;
-        freq = fftData->deltaF * k;
-        LALLIGOIPsd( NULL, &sim_psd_value, freq );
-        thisSnrsq += fftData->data->data[k].re * fftData->data->data[k].re /
-          sim_psd_value;
-        thisSnrsq += fftData->data->data[k].re * fftData->data->data[k].re /
-          sim_psd_value;
-      }
-      thisSnrsq *= 4*fftData->deltaF;
-      XLALDestroyCOMPLEX8FrequencySeries( fftData );
-
-      if ( ifoNumber == LAL_IFO_H1 )
-      {
-        /* add in H2, assuming half the snr */
-        snrsqAt1Mpc += 5/4 * thisSnrsq;
-      }
-      else
-      {
-        snrsqAt1Mpc += thisSnrsq;
-      }
-      if ( vrbflg ) 
-      {
-        CHAR  ifo[LIGOMETA_IFO_MAX];
-        XLALReturnIFO( ifo, ifoNumber );
-        fprintf(stdout, 
-            "For %s, the SNR at distance of 1 Mpc is %.2f\n", ifo, 
-            pow(thisSnrsq, 0.5));
-      }
-      XLALDestroyREAL4TimeSeries( chan );
+      if ( vrbflg ) fprintf( stdout, "Generating a BNS injection\n" );
+      inj = XLALRandomInspiralMasses( inj, randParams, mDist,
+          minNSMass, maxNSMass, minNSMass, maxNSMass, maxTotalMass );
+      inj = XLALRandomInspiralSpins( inj, randParams, minNSSpin,
+          maxNSSpin, minNSSpin, maxNSSpin );
+      desiredSnr = bnsSnrMean + bnsSnrStd * normalDev->data[0]; 
     }
-  }
-
-  /* scale the distance so that the combined snr is equal to desired value */
-  desiredSnr *= 1.5;
-  inj->distance = 1.0 * pow( snrsqAt1Mpc, 0.5 ) / desiredSnr;
-  inj = XLALPopulateSimInspiralSiteInfo( inj );
-  if ( vrbflg ) fprintf( stdout, 
-      "Rescaling the distance to %.2f to give a combined snr of %.2f\n", 
-      inj->distance, desiredSnr);
-
-  /*
-   *
-   * compute the waveforms for injection
-   *
-   */
-
-  for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
-  {
-    if ( ifoNumber == LAL_IFO_H1 || ifoNumber == LAL_IFO_H2 || 
-        ifoNumber == LAL_IFO_L1 )
+    else if ( massPar < (BNSfrac + BBHfrac) )
     {
-      UINT4             k;
-      CHAR              ifo[LIGOMETA_IFO_MAX];
-      CHAR              type[LIGOMETA_COMMENT_MAX];
+      if ( vrbflg ) fprintf( stdout, "Generating a BBH injection\n" );
+      inj = XLALRandomInspiralMasses( inj, randParams, mDist,
+          minBHMass, maxBHMass, minBHMass, maxBHMass, maxTotalMass );
+      inj = XLALRandomInspiralSpins( inj, randParams, minBHSpin,
+          maxBHSpin, minBHSpin, maxBHSpin );
+      desiredSnr = snrMean + snrStd * normalDev->data[0]; 
+    }
+    else
+    {
+      if ( vrbflg ) fprintf( stdout, "Generating an NS - BH injection\n" );
+      inj = XLALRandomInspiralMasses( inj, randParams, mDist,
+          minNSMass, maxNSMass, minBHMass, maxBHMass, maxTotalMass );
+      inj = XLALRandomInspiralSpins( inj, randParams, minNSSpin,
+          maxNSSpin, minBHSpin, maxBHSpin );
+      desiredSnr = snrMean + snrStd * normalDev->data[0]; 
+    }
+    XLALDestroyVector( normalDev );
 
-      XLALReturnIFO( ifo, ifoNumber );
 
-      if ( injectionResponse == unityResponse )
+    /* set the sky location */
+    inj = XLALRandomInspiralSkyLocation( inj, randParams );
+    inj = XLALRandomInspiralOrientation( inj, randParams, 0);
+
+    /* set the source and waveform fields */
+    LALSnprintf( inj->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR), "???" );
+    memcpy( inj->waveform, waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR));
+
+    /* populate the site specific information */
+    inj = XLALPopulateSimInspiralSiteInfo( inj );
+
+    /* finally populate the flower */
+    inj->f_lower = fLower;
+
+
+    /*
+     *
+     * perform the injection
+     *
+     */
+
+    if ( vrbflg ) fprintf( stdout, "Injection details\n"
+        "mass 1 = %.2f;\t spin 1 = (%.2f, %.2f, %.2f)\n"
+        "mass 2 = %.2f;\t spin 2 = (%.2f, %.2f, %.2f)\n"
+        "Hanford effective distance = %.2f Mpc\n"
+        "Livingston effective distance = %.2f Mpc\n",
+        inj->mass1, inj->spin1x, inj->spin1y, inj->spin1z,
+        inj->mass2, inj->spin2x, inj->spin2y, inj->spin2z,
+        inj->eff_dist_h, 
+        inj->eff_dist_l );
+
+    for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+    {
+      if ( ifoNumber == LAL_IFO_H1 || ifoNumber == LAL_IFO_L1 )
       {
-        LALSnprintf( type, LIGOMETA_COMMENT_MAX, "STRAIN");
-        if ( vrbflg ) fprintf( stdout, 
-            "Generating h(t) injection for %s\n", ifo );
-      }
-      if ( injectionResponse == actuationX ) 
-      {
-        LALSnprintf( type, LIGOMETA_COMMENT_MAX, "ETMX");
-        if ( vrbflg ) fprintf( stdout, 
-            "Generating ETMX hardware injection for %s\n", ifo );
-      }
-      if ( injectionResponse == actuationY ) 
-      {
-        LALSnprintf( type, LIGOMETA_COMMENT_MAX, "ETMY");
-        if (vrbflg ) fprintf( stdout, 
-            "Generating ETMY hardware injection for %s\n", ifo );
-      }
+        ResponseFunction  responseType = unityResponse;
+        REAL4             thisSnrsq = 0;
+        UINT4             k;
 
-      chan = injectWaveform( &status, inj, injectionResponse, 
-          ifoNumber, gpsStartTime);
+        chan = injectWaveform( &status, inj, responseType, ifoNumber, 
+            gpsStartTime);
 
-      LALSnprintf( fname, FILENAME_MAX, "%s-HARDWARE-INJECTION_%d_%s-%d-%d.txt",
-          ifo, randSeed, type, gpsStartTime.gpsSeconds, duration );
-      if ( vrbflg ) fprintf( stdout, "Writing waveform to %s\n", fname);
-
-      fp = fopen( fname, "w" ); 
-      for ( k = 0; k < chan->data->length; k++ )
-      {
-        if ( injectionResponse == unityResponse )
+        if ( ! chan )
         {
-          /* we have to fix the dynamic range scaling */
-          fprintf( fp, "%e\n", chan->data->data[k] / dynRange );
+          if ( vrbflg ) fprintf( stdout, 
+              "Unable to generate a realistic merger for this inspiral\n" 
+              "Trying again with different parameters\n" );
+          break;
+        }
+        else if ( ifoNumber == LAL_IFO_H1 ) numInjections++;
+
+
+        /*
+         *
+         * calculate the snr for the injection
+         *
+         */
+
+        /* fft the output */
+        pfwd = XLALCreateForwardREAL4FFTPlan( chan->data->length, 0 );
+        fftData = XLALCreateCOMPLEX8FrequencySeries( chan->name, 
+            &(chan->epoch), 0, 1.0/chan->deltaT, &lalDimensionlessUnit, 
+            chan->data->length/2 + 1 );
+        XLALREAL4TimeFreqFFT( fftData, chan, pfwd );
+        XLALDestroyREAL4FFTPlan( pfwd );
+
+        /* compute the SNR for initial LIGO at design */
+        thisSnrsq = 0;
+        for ( k = 0; k < fftData->data->length; k++ )
+        {
+          REAL8 freq;
+          REAL8 sim_psd_value;
+          freq = fftData->deltaF * k;
+          LALLIGOIPsd( NULL, &sim_psd_value, freq );
+          thisSnrsq += fftData->data->data[k].re * fftData->data->data[k].re /
+            sim_psd_value;
+          thisSnrsq += fftData->data->data[k].re * fftData->data->data[k].re /
+            sim_psd_value;
+        }
+        thisSnrsq *= 4*fftData->deltaF;
+        XLALDestroyCOMPLEX8FrequencySeries( fftData );
+
+        if ( ifoNumber == LAL_IFO_H1 )
+        {
+          /* add in H2, assuming half the snr */
+          snrsqAt1Mpc += 5/4 * thisSnrsq;
         }
         else
         {
-          fprintf( fp, "%e\n", chan->data->data[k] );
+          snrsqAt1Mpc += thisSnrsq;
+        }
+        if ( vrbflg ) 
+        {
+          CHAR  ifo[LIGOMETA_IFO_MAX];
+          XLALReturnIFO( ifo, ifoNumber );
+          fprintf(stdout, 
+              "For %s, the SNR at distance of 1 Mpc is %.2f\n", ifo, 
+              pow(thisSnrsq, 0.5));
+        }
+        XLALDestroyREAL4TimeSeries( chan );
+      }
+    }
+
+    if ( numInjections )
+    {
+      /* scale the distance so the combined snr is equal to desired value */
+      desiredSnr *= 1.5;
+      inj->distance = 1.0 * pow( snrsqAt1Mpc, 0.5 ) / desiredSnr;
+      inj = XLALPopulateSimInspiralSiteInfo( inj );
+      if ( vrbflg ) fprintf( stdout, 
+          "Rescaling the distance to %.2f to give a combined snr of %.2f\n", 
+          inj->distance, desiredSnr);
+
+      /*
+       *
+       * compute the waveforms for injection
+       *
+       */
+
+      for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+      {
+        if ( ifoNumber == LAL_IFO_H1 || ifoNumber == LAL_IFO_H2 || 
+            ifoNumber == LAL_IFO_L1 )
+        {
+          UINT4             k;
+          CHAR              ifo[LIGOMETA_IFO_MAX];
+          CHAR              type[LIGOMETA_COMMENT_MAX];
+
+          XLALReturnIFO( ifo, ifoNumber );
+
+          if ( injectionResponse == unityResponse )
+          {
+            LALSnprintf( type, LIGOMETA_COMMENT_MAX, "STRAIN");
+            if ( vrbflg ) fprintf( stdout, 
+                "Generating h(t) injection for %s\n", ifo );
+          }
+          if ( injectionResponse == actuationX ) 
+          {
+            LALSnprintf( type, LIGOMETA_COMMENT_MAX, "ETMX");
+            if ( vrbflg ) fprintf( stdout, 
+                "Generating ETMX hardware injection for %s\n", ifo );
+          }
+          if ( injectionResponse == actuationY ) 
+          {
+            LALSnprintf( type, LIGOMETA_COMMENT_MAX, "ETMY");
+            if (vrbflg ) fprintf( stdout, 
+                "Generating ETMY hardware injection for %s\n", ifo );
+          }
+
+          chan = injectWaveform( &status, inj, injectionResponse, 
+              ifoNumber, gpsStartTime);
+
+          LALSnprintf( fname, FILENAME_MAX, 
+              "%s-HARDWARE-INJECTION_%d_%s-%d-%d.txt",
+              ifo, randSeed, type, gpsStartTime.gpsSeconds, duration );
+          if ( vrbflg ) fprintf( stdout, "Writing waveform to %s\n", fname);
+
+          fp = fopen( fname, "w" ); 
+          for ( k = 0; k < chan->data->length; k++ )
+          {
+            if ( injectionResponse == unityResponse )
+            {
+              /* we have to fix the dynamic range scaling */
+              fprintf( fp, "%e\n", chan->data->data[k] / dynRange );
+            }
+            else
+            {
+              fprintf( fp, "%e\n", chan->data->data[k] );
+            }
+          }
+
+          fclose( fp );
+
+          XLALDestroyREAL4TimeSeries( chan );
         }
       }
-
-      fclose( fp );
-
-      XLALDestroyREAL4TimeSeries( chan );
     }
   }
 
