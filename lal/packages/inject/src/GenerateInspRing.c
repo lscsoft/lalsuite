@@ -34,7 +34,7 @@ XLALGenerateInspRing(
     SimInspiralTable	*inspiralInj  /**< details of the inspiral */
     )
 {
-  static const char *func = "XLALClusterSnglInspiralTable";
+  static const char *func = "XLALGenerateInspRing";
 
   REAL4 *a, *f; /* pointers to generated amplitude and frequency data */
   REAL4 *shift = NULL; /* pointers to generated shift (polarization) data */
@@ -234,7 +234,7 @@ XLALGenerateInspRing(
     (1 - pow( freq0 / (0.9 * ringInj->frequency), 8.0/3.0) );
   mergerLength = ceil( tToRing / dt ) - 1;
   phi0 = phase + LAL_TWOPI * 3 * freq0 * freq0 / (5 * freqDot0);
-  
+
   mergerPhase = phi0 - phase
     - ( LAL_TWOPI) * (3.0 * freq0 * freq0 ) / ( 5.0 * freqDot0 ) * 
     pow( 1 - ( 8.0 * freqDot0 * tToRing) / ( 3.0 * freq0 ) , 5.0/8.0 );
@@ -245,6 +245,20 @@ XLALGenerateInspRing(
       "%d data points, %.2f radians in GW phase\n" 
       "We then add the same length to asymptote to ringdown values\n",
       tToRing, mergerLength, mergerPhase);
+
+  if ( mergerPhase > 2 * LAL_TWOPI )
+  {
+    XLALPrintError("Failed to add a decent merger and ringdown\n"
+        "The merger had a length of %.2f radians in GW phase (only allow 4pi)\n"
+        "Returning null from %s\n",
+        mergerPhase, func);
+    XLALFree( waveform->a );
+    XLALFree( waveform->phi );
+    XLALFree( waveform->f );
+    XLALFree( waveform->shift );
+    XLAL_ERROR_NULL(func,XLAL_EFAILED);
+  }
+
 
   /* calculate number of additional points necessary to damp by exp(12). */
   phaseFac = LAL_TWOPI * ringInj->frequency * dt;
@@ -266,7 +280,7 @@ XLALGenerateInspRing(
    *
    * extend the data structures
    *
-  */
+   */
 
   waveform->a->data->length = outputLength;
   waveform->a->data->data = (REAL4 *) XLALRealloc( ( waveform->a->data->data ), 
@@ -305,6 +319,7 @@ XLALGenerateInspRing(
       XLALFree( waveform->phi );
       XLALFree( waveform->f );
       XLALFree( waveform->shift );
+      XLAL_ERROR_NULL( func, XLAL_ENOMEM );
     }
   }
 
