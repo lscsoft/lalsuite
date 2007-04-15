@@ -404,7 +404,7 @@ for parents, seg in group_coinc_parents(pwr_nodes, background_time_slides_all, v
 	if options.enable_clustering:
 		parents = power.make_lladded_bucluster_fragment(dag, parents, seg, options.tag)
 	for n, time_slide_filename in enumerate(options.background_time_slides):
-		coinc_nodes += power.make_coinc_fragment(dag, parents, seg, "%s_%d" % (options.tag, n), time_slide_filename, binjnodes = binjnodes)
+		coinc_nodes += power.make_coinc_fragment(dag, parents, seg, "%s_%d" % (options.tag, n), time_slide_filename)
 
 
 #
