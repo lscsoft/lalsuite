@@ -2849,7 +2849,7 @@ void ComputeNumExtraBins(LALStatus            *status,
 			 REAL8                deltaF)
 { 
 
-  UINT4 i, j, nStacks, extraBins2; 
+  UINT4 i, j, nStacks, extraBins2, tmpExtraBins2; 
   HOUGHptfLUT  lut;
   HOUGHDemodPar parDem; 
   HOUGHParamPLUT  parLut;
@@ -2950,12 +2950,14 @@ void ComputeNumExtraBins(LALStatus            *status,
     TRY( LALHOUGHConstructPLUT( status->statusPtr, &lut, &patch, &parLut ),
 	 status );
 
-    if ( (UINT4)lut.nBin > extraBins2)
-      extraBins2 = lut.nBin;
+    tmpExtraBins2 = HSMAX( abs(lut.iniBin), abs(lut.nBin + lut.iniBin) );
+
+    if ( tmpExtraBins2 > extraBins2)
+      extraBins2 = tmpExtraBins2;
   } /* LUTs are created */
   
 
-  par->extraBinsFstat = extraBins2/2 + 1;
+  par->extraBinsFstat = extraBins2 + 2;
 
   /* now free memory and exit */
   TRY( LALDDestroyVector( status->statusPtr, &timeDiffV), status);
