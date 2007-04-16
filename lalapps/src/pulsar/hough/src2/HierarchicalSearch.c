@@ -215,8 +215,8 @@ void GetHoughCandidates_threshold(LALStatus *status, SemiCohCandidateList *out, 
 
 void GetSemiCohToplist(LALStatus *status, toplist_t *list, SemiCohCandidateList *in, REAL8 meanN, REAL8 sigmaN);
 
-UINT4 ComputeNumExtraBins(REAL8VectorSequence *vel, REAL8 f0, REAL8 deltaF, 
-			 REAL8 alpha,REAL8 delta, REAL8 patchSizeX, REAL8 patchSizeY);
+void ComputeNumExtraBins(LALStatus *status, SemiCoherentParams *par, REAL8 fdot, REAL8 f0, REAL8 deltaF);
+
 
 /* default values for input variables */
 #define EARTHEPHEMERIS 		"earth05-09.dat"
@@ -917,6 +917,9 @@ int MAIN( int argc, char *argv[]) {
       skypos.latitude = thisPoint.Delta;
       skypos.system = COORDINATESYSTEM_EQUATORIAL;
 
+      semiCohPar.alpha = thisPoint.Alpha;
+      semiCohPar.delta = thisPoint.Delta;
+
       /* initialize weights to unity */
       LAL_CALL( LALHOUGHInitializeWeights( &status, weightsV), &status);
 
@@ -936,17 +939,16 @@ int MAIN( int argc, char *argv[]) {
 
 	/* extra bins for fstat due to skypatch and spindowns */
 	UINT4 extraBinsSky, extraBinsfdot;
-
-	UINT4 tmpExtraBins;
+	REAL8 freqHighest;
 	
 	/* experimental! */
-	tmpExtraBins = ComputeNumExtraBins(velStack, usefulParams.spinRange_refTime.fkdot[0], 
-					   dFreqStack, thisPoint.Alpha, thisPoint.Delta, 
-					   semiCohPar.patchSizeX, semiCohPar.patchSizeY);
+	freqHighest = usefulParams.spinRange_midTime.fkdot[0] + usefulParams.spinRange_midTime.fkdotBand[0];
+	ComputeNumExtraBins(&status, &semiCohPar, 0, freqHighest, dFreqStack);
 	
-	extraBinsSky = (UINT4)(LAL_SQRT2 * VTOT  
-			       * (usefulParams.spinRange_midTime.fkdot[0] + usefulParams.spinRange_midTime.fkdotBand[0]) 
-			       * HSMAX(semiCohPar.patchSizeX, semiCohPar.patchSizeY) / dFreqStack);
+	/* conservative estimate */
+	/* extraBinsSky = (UINT4)(0.5 * LAL_SQRT2 * VTOT   */
+	/*      * (usefulParams.spinRange_midTime.fkdot[0] + usefulParams.spinRange_midTime.fkdotBand[0])  */
+	/*      * HSMAX(semiCohPar.patchSizeX, semiCohPar.patchSizeY) / dFreqStack) + 10; */
 	
 	/* extra bins due to fdot is maximum number of frequency bins drift that can be 
 	   caused by the residual spindown.  The reference time for the spindown is the midtime, 
@@ -954,7 +956,7 @@ int MAIN( int argc, char *argv[]) {
 	   (number of residual spindowns -1)*resolution in residual spindowns */
 	extraBinsfdot = (UINT4)(tObs * (nf1dotRes - 1) * df1dotRes / dFreqStack + 0.5);
 	
-	semiCohPar.extraBinsFstat = extraBinsSky + extraBinsfdot;    
+	semiCohPar.extraBinsFstat += extraBinsfdot;    
             
 	/* allocate fstat memory */
 	binsFstatSearch = (UINT4)(usefulParams.spinRange_midTime.fkdotBand[0]/dFreqStack + 1e-6) + 1;
@@ -1016,9 +1018,7 @@ int MAIN( int argc, char *argv[]) {
 	     parameters semiCohPar. The output is the list of candidates in semiCohCandList */
 
 
-	  /* set sky location and spindown for Hough grid -- same as for Fstat calculation */	  
-	  semiCohPar.alpha = thisPoint.Alpha;
-	  semiCohPar.delta = thisPoint.Delta;
+	  /* set spindown for Hough grid -- same as for Fstat calculation */	  
 	  semiCohPar.fdot = thisPoint.fkdot[1];
  
 	  /* the hough option */
@@ -2841,68 +2841,191 @@ void GetSemiCohToplist(LALStatus            *status,
 
 
 
-/** reallocate fstat vector */
-UINT4 ComputeNumExtraBins(REAL8VectorSequence *vel,
+/** Optimized calculation of Fstat overhead */
+void ComputeNumExtraBins(LALStatus            *status,
+			 SemiCoherentParams   *par,
+			 REAL8                fdot,
 			 REAL8                f0,
-			 REAL8                deltaF,
-			 REAL8                alpha,
-			 REAL8                delta,
-			 REAL8                patchSizeX,
-			 REAL8                patchSizeY)
-{
+			 REAL8                deltaF)
+{ 
 
-  REAL8 skypos[3], xi[3], xiProj[3], xhat[3], yhat[3];
-  REAL8 xiDotn, xiProjX, xiProjY, patchSizeNorm, xiProjNorm;
-  UINT4 k, nStacks, extraBins, extraBinsInThisStack;
+  UINT4 i, j, nStacks, extraBins2; 
+  HOUGHptfLUT  lut;
+  HOUGHDemodPar parDem; 
+  HOUGHParamPLUT  parLut;
+  HOUGHSizePar   parSize; 
+  HOUGHResolutionPar parRes; 
+  REAL8 tMidStack, tStart, tEnd;
+  REAL8Vector *timeDiffV=NULL;
+  HOUGHPatchGrid  patch; 
+  REAL8 pixelFactor, alpha, delta, patchSizeX, patchSizeY, refTime;
+  LIGOTimeGPS refTimeGPS;
 
-  nStacks = vel->vectorLength;
-  extraBins = 0;
+  REAL8VectorSequence  *vel;
+  REAL8VectorSequence  *pos;
+  LIGOTimeGPSVector    *tsMid;
 
-  skypos[0] = cos(delta) * cos(alpha);
-  skypos[1] = cos(delta) * sin(alpha);
-  skypos[2] = sin(delta);
+  INITSTATUS( status, "ComputeNumExtraBins", rcsid );
+  ATTATCHSTATUSPTR (status);
 
-  xhat[0] = -sin(alpha);
-  xhat[1] = cos(alpha);
-  xhat[3] = 0;
+  vel = par->vel;
+  pos = par->pos;
+  pixelFactor = par->pixelFactor;
+  fdot = par->fdot;
+  alpha = par->alpha;
+  delta = par->delta;
+  patchSizeX = par->patchSizeX;
+  patchSizeY = par->patchSizeY;
+  tsMid = par->tsMid;
 
-  yhat[0] = sin(delta)*cos(alpha);
-  yhat[1] = sin(delta)*sin(alpha);
-  yhat[2] = -cos(delta);
+  refTimeGPS = par->refTime;  
+  TRY ( LALGPStoFloat( status->statusPtr, &refTime, &refTimeGPS), status);
 
-  /* loop over stacks */
-  for ( k = 0; k < nStacks; k++) {
+  nStacks = tsMid->length;;
 
-    UINT4 minBinsPar, minBinsPerp;
+  TRY ( LALGPStoFloat ( status->statusPtr, &tStart, tsMid->data), status);
+  TRY ( LALGPStoFloat ( status->statusPtr, &tEnd, tsMid->data + nStacks - 1), status);
+  refTime = 0.5 * (tStart + tEnd);
 
-    
-    xi[0] = vel->data[3*k];
-    xi[1] = vel->data[3*k+1];
-    xi[2] = vel->data[3*k+2];
-    
-    xiDotn = xi[0]*skypos[0] + xi[1]*skypos[1] + xi[2]*skypos[2];
-    
-    xiProj[0] = xi[0] - xiDotn * skypos[0];
-    xiProj[1] = xi[1] - xiDotn * skypos[1];
-    xiProj[2] = xi[2] - xiDotn * skypos[2];
-
-    xiProjX = xiProj[0]*xhat[0] + xiProj[1]*xhat[1] + xiProj[2]*xhat[2];
-    xiProjY = xiProj[0]*yhat[0] + xiProj[1]*yhat[1] + xiProj[2]*yhat[2];
-
-    xiProjNorm = sqrt(xiProj[0]*xiProj[0] + xiProj[0]*xiProj[0] + xiProj[0]*xiProj[0]);
-    patchSizeNorm = patchSizeX*patchSizeX + patchSizeY*patchSizeY;
-
-    minBinsPar = (UINT4)(f0 * fabs(xiDotn) * patchSizeNorm /deltaF + 0.5);
-
-    minBinsPerp = (UINT4)(f0 * xiProjNorm * patchSizeNorm/ deltaF + 0.5);
-
-    extraBinsInThisStack = minBinsPar + minBinsPerp;
-
-    if (extraBins < extraBinsInThisStack)
-      extraBins = extraBinsInThisStack;
+  /* the skygrid resolution params */
+  parRes.deltaF = deltaF;
+  parRes.patchSkySizeX  = patchSizeX;
+  parRes.patchSkySizeY  = patchSizeY;
+  parRes.pixelFactor = pixelFactor;
+  parRes.pixErr = PIXERR;
+  parRes.linErr = LINERR;
+  parRes.vTotC = VTOT;
+  parRes.f0Bin =  (INT8)(f0/deltaF + 0.5);
   
-  } /* loop over stacks */
+  TRY( LALHOUGHComputeSizePar( status->statusPtr, &parSize, &parRes ),  status );
 
-  return extraBins;
+  patch.xSide = parSize.xSide;
+  patch.ySide = parSize.ySide;
+  patch.xCoor = NULL;
+  patch.yCoor = NULL;
+  patch.xCoor = (REAL8 *)LALCalloc(1,patch.xSide*sizeof(REAL8));
+  patch.yCoor = (REAL8 *)LALCalloc(1,patch.ySide*sizeof(REAL8));
+  TRY( LALHOUGHFillPatchGrid( status->statusPtr, &patch, &parSize ), status );
+  
+  /* the demodulation params */
+  parDem.deltaF = deltaF;
+  parDem.skyPatch.alpha = alpha;
+  parDem.skyPatch.delta = delta;
+  parDem.spin.length = 1;
+  parDem.spin.data = NULL;
+  parDem.spin.data = (REAL8 *)LALCalloc(1, sizeof(REAL8));
+  parDem.spin.data[0] = fdot;
+
+  TRY( LALDCreateVector( status->statusPtr, &timeDiffV, nStacks), status);
+  
+  for (j=0; j<nStacks; j++) {
+    TRY ( LALGPStoFloat ( status->statusPtr, &tMidStack, tsMid->data + j), status);
+    timeDiffV->data[j] = tMidStack - refTime;
+  }
+
+  
+  lut.maxNBins = parSize.maxNBins;
+  lut.maxNBorders = parSize.maxNBorders;
+  lut.border = (HOUGHBorder *)LALCalloc(1, parSize.maxNBorders*sizeof(HOUGHBorder));
+  lut.bin = (HOUGHBin2Border *)LALCalloc(1, parSize.maxNBins*sizeof(HOUGHBin2Border));
+  for (i = 0; i < parSize.maxNBorders; i++){
+    lut.border[i].ySide = parSize.ySide;
+    lut.border[i].xPixel = (COORType *)LALCalloc(1,parSize.ySide*sizeof(COORType));
+  }
+
+  /* loop over stacks and create LUTs */
+  extraBins2 = 0;
+  for (j=0; j < (UINT4)nStacks; j++){ 
+    parDem.veloC.x = vel->data[3*j];
+    parDem.veloC.y = vel->data[3*j + 1];
+    parDem.veloC.z = vel->data[3*j + 2];      
+    parDem.positC.x = pos->data[3*j];
+    parDem.positC.y = pos->data[3*j + 1];
+    parDem.positC.z = pos->data[3*j + 2];
+    parDem.timeDiff = timeDiffV->data[j];
+
+    /* calculate parameters needed for buiding the LUT */
+    TRY( LALHOUGHParamPLUT( status->statusPtr, &parLut, &parSize, &parDem),status );
+    /* build the LUT */
+    TRY( LALHOUGHConstructPLUT( status->statusPtr, &lut, &patch, &parLut ),
+	 status );
+
+    if ( (UINT4)lut.nBin > extraBins2)
+      extraBins2 = lut.nBin;
+  } /* LUTs are created */
+  
+
+  par->extraBinsFstat = extraBins2/2 + 1;
+
+  /* now free memory and exit */
+  TRY( LALDDestroyVector( status->statusPtr, &timeDiffV), status);
+
+  for (i = 0; i < lut.maxNBorders; i++){
+    LALFree( lut.border[i].xPixel);
+  }
+  LALFree( lut.border);
+  LALFree( lut.bin);
+ 
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status); 
+
+
+  /*   REAL8 skypos[3], xi[3], xiProj[3], xhat[3], yhat[3]; */
+  /*   REAL8 xiDotn, xiProjX, xiProjY, patchSizeNorm, xiProjNorm; */
+
+  
+  /*   nStacks = vel->vectorLength; */
+  /*   extraBins = 0; */
+  
+  /*   skypos[0] = cos(delta) * cos(alpha); */
+  /*   skypos[1] = cos(delta) * sin(alpha); */
+  /*   skypos[2] = sin(delta); */
+  
+  /*   xhat[0] = -sin(alpha); */
+  /*   xhat[1] = cos(alpha); */
+  /*   xhat[3] = 0; */
+  
+  /*   yhat[0] = sin(delta)*cos(alpha); */
+  /*   yhat[1] = sin(delta)*sin(alpha); */
+  /*   yhat[2] = -cos(delta); */
+  
+  /*   /\* loop over stacks *\/ */
+  /*   for ( k = 0; k < nStacks; k++) { */
+  
+  /*     UINT4 minBinsPar, minBinsPerp; */
+  
+  
+  /*     xi[0] = vel->data[3*k]; */
+  /*     xi[1] = vel->data[3*k+1]; */
+  /*     xi[2] = vel->data[3*k+2]; */
+    
+  /*     xiDotn = xi[0]*skypos[0] + xi[1]*skypos[1] + xi[2]*skypos[2]; */
+  
+  /*     xiProj[0] = xi[0] - xiDotn * skypos[0]; */
+  /*     xiProj[1] = xi[1] - xiDotn * skypos[1]; */
+  /*     xiProj[2] = xi[2] - xiDotn * skypos[2]; */
+  
+  /*     xiProjX = xiProj[0]*xhat[0] + xiProj[1]*xhat[1] + xiProj[2]*xhat[2]; */
+  /*     xiProjY = xiProj[0]*yhat[0] + xiProj[1]*yhat[1] + xiProj[2]*yhat[2]; */
+  
+  /*     xiProjNorm = sqrt(xiProj[0]*xiProj[0] + xiProj[0]*xiProj[0] + xiProj[0]*xiProj[0]); */
+  /*     patchSizeNorm = patchSizeX*patchSizeX + patchSizeY*patchSizeY; */
+  
+  /*     minBinsPar = (UINT4)(f0 * fabs(xiDotn) * patchSizeNorm /deltaF + 0.5); */
+  
+  /*     minBinsPerp = (UINT4)(f0 * xiProjNorm * patchSizeNorm/ deltaF + 0.5); */
+  
+  /*     extraBinsInThisStack = minBinsPar + minBinsPerp; */
+  
+  /*     if (extraBins < extraBinsInThisStack) */
+  /*       extraBins = extraBinsInThisStack; */
+  
+  /*   } /\* loop over stacks *\/ */
+  
+
 
 }   /*ComputeNumExtraBins()*/
+
+
+
