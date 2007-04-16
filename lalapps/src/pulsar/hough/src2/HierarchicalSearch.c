@@ -2962,6 +2962,11 @@ void ComputeNumExtraBins(LALStatus            *status,
   /* now free memory and exit */
   TRY( LALDDestroyVector( status->statusPtr, &timeDiffV), status);
 
+  LALFree(patch.xCoor);
+  LALFree(patch.yCoor);
+
+  LALFree(parDem.spin.data);
+
   for (i = 0; i < lut.maxNBorders; i++){
     LALFree( lut.border[i].xPixel);
   }
