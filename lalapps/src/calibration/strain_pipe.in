@@ -184,8 +184,11 @@ data.make_short_chunks_from_unused(0,2*overlap,0,0,0)
 # get the ifo to filter
 ifo = cp.get('pipeline','ifo')
 datatype = cp.get('input','type') 
-base_data_dir = cp.get('pipeline','data-dir')
+base_data_dirL1 = cp.get('pipeline','data-dirL1')
+base_data_dirL2 = cp.get('pipeline','data-dirL2')
 frametype = cp.get('strain','frame-type')
+frametypeL1=frametype+"_L1"
+frametypeL2=frametype+"_L2"
 
 #open a file that will contain all the names of frame files to be generated
 framelist_file=open('frame_files.txt',mode='w')
@@ -222,19 +225,23 @@ for seg in data:
     #make the directory where the data's going to go
     gps_str=str(chunk.start())
     gps_time_first_four=gps_str[0]+gps_str[1]+gps_str[2]+gps_str[3]
-    directory = base_data_dir+'/'+gps_time_first_four+'/'
-    try: os.mkdir(directory)
+    try: os.mkdir(base_data_dirL1+'/'+ifo[0]+'-'+frametypeL1+'-'+gps_time_first_four)
     except OSError, err:
       import errno
       #print "Warning:", err
-      
+    try: os.mkdir(base_data_dirL2+'/'+ifo[0]+'-'+frametypeL2+'-'+gps_time_first_four)
+    except OSError, err:
+      import errno
+      #print "Warning:", err
+  
     #Strain job for first ifo  
     strain1 = strain.StrainNode(strain_job)
     strain1.set_start(chunk.start())
     strain1.set_end(chunk.end())
     strain1.set_cache(df.get_output())
     strain1.set_name("strain_"+ifo+"_"+str(segment_no)+"_"+str(chunk_number))
-    strain1.add_var_opt('data-dir',directory)
+    strain1.add_var_opt('data-dirL1',base_data_dirL1+'/'+ifo[0]+'-'+frametypeL1+'-'+gps_time_first_four+'/')
+    strain1.add_var_opt('data-dirL2',base_data_dirL2+'/'+ifo[0]+'-'+frametypeL2+'-'+gps_time_first_four+'/')
     strain1.add_parent(df)
     dag.add_node(strain1)
 
