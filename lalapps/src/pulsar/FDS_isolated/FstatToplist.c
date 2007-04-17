@@ -201,7 +201,6 @@ int read_fstat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxby
 	    FstatLine.Alpha >   LAL_TWOPI + epsilon  ||
 	    FstatLine.Delta < -0.5*LAL_PI - epsilon  ||
 	    FstatLine.Delta >  0.5*LAL_PI + epsilon  ||
-            FstatLine.Fstat < 0.0                    ||
 
 	    lastchar != '\n'
 	    ) {
@@ -210,9 +209,9 @@ int read_fstat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxby
 		       "First %d chars are:\n"
 		       "%s\n"
 		       "All fields should be finite\n"
-		       "1st and 2nd field should be positive.\n" 
-		       "3rd field should lie between 0 and %1.15f.\n" 
-		       "4th field should lie between %1.15f and %1.15f.\n",
+		       "1st field should be positive.\n" 
+		       "2nd field should lie between 0 and %1.15f.\n" 
+		       "3rd field should lie between %1.15f and %1.15f.\n",
 		       lines, sizeof(line)-1, line,
 		       (double)LAL_TWOPI, (double)-LAL_PI/2.0, (double)LAL_PI/2.0);
 	    return -1;
