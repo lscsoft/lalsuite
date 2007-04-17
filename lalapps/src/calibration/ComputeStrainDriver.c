@@ -1137,7 +1137,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tframe-type (-T)\tSTRING\t Frame type to be written (eg, H1_RDS_C01_LX)\n");
       fprintf(stdout,"\tstrain-channel (-S)\tSTRING\t Strain channel name in frame (eg, H1:LSC-STRAIN)\n");
       fprintf(stdout,"\tdata-dirL1 (-z)\tSTRING\t Ouput L1 frame to this directory (eg, /tmp/S4/H1/).\n");
-      fprintf(stdout,"\tdata-dir (-z)\tSTRING\t Ouput L2 frame to this directory (eg, /tmp/S4/H1/).\n");
+      fprintf(stdout,"\tdata-dirL2 (-z)\tSTRING\t Ouput L2 frame to this directory (eg, /tmp/S4/H1/).\n");
       fprintf(stdout,"\tcheck-file-exists (-w)\tFLAG\t Checks frame files exist and if they do it exits gracefully. \n");
       fprintf(stdout,"\tolg-file (-a)\tSTRING\t Name of official OLG file (for storage in frames). \n");
       fprintf(stdout,"\tsensing-file (-b)\tSTRING\t Name of official sensing file (for storage in frames). \n");
