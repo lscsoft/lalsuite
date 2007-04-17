@@ -95,7 +95,6 @@ struct CommandLineArgsTag {
   INT4 GPSEnd;             /* End GPS time for the segment to be calibrated */
   INT4 testsensing;
   INT4 testactuation;
-  char *level2type;        /* writes level 2 frame with this frametype */
   char *FrCacheFile;       /* Frame cache file for corresponding time */
   char *exc_chan;          /* excitation channel name */    
   char *darm_chan;         /* darm channel name */ 
@@ -104,7 +103,8 @@ struct CommandLineArgsTag {
   char *filterfile;        /* file with filter coefficients */
   char *frametype;
   char *strainchannel;
-  char *datadir;
+  char *datadirL1;
+  char *datadirL2;
   char *checkfilename;
   char *filenameC;         /* file with FD official calibration sensing */
   char *filenameH;         /* file with FD official calibration open loop gain */
@@ -265,7 +265,7 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   dt = ceil( XLALGPSGetREAL8( &OutputData.h.epoch ) + duration ) - t0;
   if ( t0 < 0 || dt < 1 )
     return 1;  /* Error: invalid time or duration */
-  LALSnprintf( fname, sizeof( fname ), "%s/%c-%s-%d-%d.gwf", CLA.datadir,site, CLA.frametype, t0, dt );
+  LALSnprintf( fname, sizeof( fname ), "%s/%c-%s%s-%d-%d.gwf", CLA.datadirL1,site, CLA.frametype,"_L1", t0, dt );
   LALSnprintf( tmpfname, sizeof( tmpfname ), "%s.tmp", fname );
 
   /* Harwired numbers in call to XLALFrameNew: */
@@ -308,7 +308,6 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   
   /* Frequency range of validity (FIXME: This should be updated regularly somehow) */
   FrHistoryAdd( frame, "Frequency validity range: 40Hz-5kHz.");
-  FrHistoryAdd( frame, fname);
 
   /* String containing the filter file cvs info (first line in filter file) */
   FrHistoryAdd( frame, filtercvsinfo);
@@ -316,25 +315,25 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   /* Add in the h(t) data */
   XLALFrameAddREAL8TimeSeriesProcData( frame, &OutputData.h);
 
-  if (CLA.level2type) 
-    {
-      char fname2[FILENAME_MAX];
-      char tmpfname2[FILENAME_MAX];
+  /* write level 2 frame */
+  {
+    char fname2[FILENAME_MAX];
+    char tmpfname2[FILENAME_MAX];
 
-      LALSnprintf( fname2, sizeof( fname2 ), "%s/%c-%s-%d-%d.gwf", CLA.datadir,site, CLA.level2type, t0, dt );
-      LALSnprintf( tmpfname2, sizeof( tmpfname2 ), "%s.tmp", fname2 );
-
-      /* write first to tmpfile then rename it */
-      frfile = FrFileONew( tmpfname2, 8); /* 1 = GZIP */
-      if ( ! frfile )
-	return 1;  /* Error: could not open frame file */
-      
-      FrameWrite( frame, frfile );
-      FrFileOEnd( frfile );
-      /* now rename */
-      if ( rename( tmpfname2, fname2 ) < 0 )
-	return 1; /* Error: system error */      
-    }
+    LALSnprintf( fname2, sizeof( fname2 ), "%s/%c-%s%s-%d-%d.gwf", CLA.datadirL2,site, CLA.frametype,"_L2", t0, dt );
+    LALSnprintf( tmpfname2, sizeof( tmpfname2 ), "%s.tmp", fname2 );
+    
+    /* write first to tmpfile then rename it */
+    frfile = FrFileONew( tmpfname2, 8); /* 1 = GZIP */
+    if ( ! frfile )
+      return 1;  /* Error: could not open frame file */
+    
+    FrameWrite( frame, frfile );
+    FrFileOEnd( frfile );
+    /* now rename */
+    if ( rename( tmpfname2, fname2 ) < 0 )
+      return 1; /* Error: system error */      
+  }
 
   /* Add in the factors data */
   alpha = XLALCreateREAL4TimeSeries( alphaName, &OutputData.alpha.epoch, 0.0, OutputData.alpha.deltaT, 
@@ -916,17 +915,17 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"require-histories",   required_argument, NULL,           'H'},
     {"frame-type",          required_argument, NULL,           'T'},
     {"strain-channel",      required_argument, NULL,           'S'},
-    {"data-dir",            required_argument, NULL,           'z'},
+    {"data-dirL1",          required_argument, NULL,           'z'},
+    {"data-dirL2",          required_argument, NULL,           'p'},
     {"check-file-exists",   required_argument, NULL,           'v'},
     {"olg-file",            required_argument, NULL,           'a'},
     {"sensing-file",        required_argument, NULL,           'b'},
     {"darm-err-only",       no_argument, NULL,                 'w'},
     {"gamma-fudge-factor",  required_argument, NULL,           'y'},
-    {"write-level2",        required_argument, NULL,           'p'},
     {"help",                no_argument, NULL,                 'h'},
     {0, 0, 0, 0}
   };
-  char args[] = "hrcduxf:C:A:E:D:R:F:s:e:i:j:k:l:m:n:t:o:H:T:S:z:v:wy:p";
+  char args[] = "hrcduxf:C:A:E:D:R:F:s:e:i:j:k:l:m:n:t:o:H:T:S:z:v:wy:p:";
   
   /* Initialize default values */
   CLA->f=0.0;
@@ -949,11 +948,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->testactuation=0;
   CLA->frametype=NULL;
   CLA->strainchannel=NULL;
-  CLA->datadir=NULL;
+  CLA->datadirL1=NULL;
+  CLA->datadirL2=NULL;
   CLA->checkfilename=NULL;
   CLA->filenameC=NULL;
   CLA->filenameH=NULL;
-  CLA->level2type = NULL;
 
   InputData.delta=0;
   InputData.wings=0;
@@ -1070,7 +1069,10 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       CLA->strainchannel=optarg;       
       break;
     case 'z':
-      CLA->datadir=optarg;       
+      CLA->datadirL1=optarg;       
+      break;
+    case 'p':
+      CLA->datadirL2=optarg;       
       break;
     case 'v':
       CLA->checkfilename=optarg;       
@@ -1080,9 +1082,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     case 'b':
       CLA->filenameC=optarg;       
-      break;
-    case 'p':
-      CLA->level2type=optarg;       
       break;
     case 'w':
       /* don't use calibration factors in teh strain computation */
@@ -1119,12 +1118,12 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tgamma-fudge-factor (-y)\tFLAG\t Fudge factor used to adjust factor values. Gamma is divided by thos value.\n");
       fprintf(stdout,"\tframe-type (-T)\tSTRING\t Frame type to be written (eg, H1_RDS_C01_LX)\n");
       fprintf(stdout,"\tstrain-channel (-S)\tSTRING\t Strain channel name in frame (eg, H1:LSC-STRAIN)\n");
-      fprintf(stdout,"\tdata-dir (-z)\tSTRING\t Ouput frame to this directory (eg, /tmp/S4/H1/H). Don't forget the H or L at the end!\n");
+      fprintf(stdout,"\tdata-dirL1 (-z)\tSTRING\t Ouput L1 frame to this directory (eg, /tmp/S4/H1/).\n");
+      fprintf(stdout,"\tdata-dir (-z)\tSTRING\t Ouput L2 frame to this directory (eg, /tmp/S4/H1/).\n");
       fprintf(stdout,"\tcheck-file-exists (-w)\tSTRING\t Checks file give as argument exists already and won't run if so. \n");
       fprintf(stdout,"\tolg-file (-a)\tSTRING\t Name of official OLG file (for storage in frames). \n");
       fprintf(stdout,"\tsensing-file (-b)\tSTRING\t Name of official sensing file (for storage in frames). \n");
       fprintf(stdout,"\tdarm-err-only (-w)\tFLAG\t Do darm_err only calibration. Default is to use darm_err and darm_ctrl. For first epoch of S5.\n");
-      fprintf(stdout,"\twrite-level2 (-w)\tSTRING\t Write level 2 frame as well as standard level 1 frame. Argument is level 2 frame type string.\n");
       fprintf(stdout,"\thelp (-h)\tFLAG\t This message\n");    
       exit(0);
       break;
@@ -1233,9 +1232,15 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
       return 1;
     }      
-   if(CLA->datadir == NULL)
+   if(CLA->datadirL1 == NULL)
     {
-      fprintf(stderr,"No data directory specified.\n");
+      fprintf(stderr,"No L1 frame directory specified.\n");
+      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      return 1;
+    }      
+   if(CLA->datadirL2 == NULL)
+    {
+      fprintf(stderr,"No L2 frame directory specified.\n");
       fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
       return 1;
     }      
