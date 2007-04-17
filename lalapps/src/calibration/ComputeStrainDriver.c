@@ -105,7 +105,7 @@ struct CommandLineArgsTag {
   char *strainchannel;
   char *datadirL1;
   char *datadirL2;
-  char *checkfilename;
+  INT4 checkfilename;
   char *filenameC;         /* file with FD official calibration sensing */
   char *filenameH;         /* file with FD official calibration open loop gain */
 } CommandLineArgs;
@@ -124,7 +124,6 @@ INT4 lalDebugLevel=0;
 FrCache *framecache;                                           /* frame reading variables */
 FrStream *framestream=NULL;
 char ifo[2];
-char site[1];
 char filtercvsinfo[16384];
 
 /***************************************************************************/
@@ -156,10 +155,28 @@ int main(int argc,char *argv[])
 
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
 
+  /* Check whether files exist before proceeding */
   if (CommandLineArgs.checkfilename)
     {
-      if (access(CommandLineArgs.checkfilename, F_OK) == 0) {
-	fprintf(stdout, "Frame file %s exists. Exiting.\n",CommandLineArgs.checkfilename);
+      char fname[FILENAME_MAX];
+      char fname2[FILENAME_MAX];
+      char site;
+      INT4 t0, dt;
+
+      site = CommandLineArgs.darmerr_chan[0];
+      
+      t0 = CommandLineArgs.GPSStart+InputData.wings;
+      dt = CommandLineArgs.GPSEnd-CommandLineArgs.GPSStart-2*InputData.wings;
+
+      LALSnprintf( fname, sizeof( fname ), "%s/%c-%s%s-%d-%d.gwf", CommandLineArgs.datadirL1,site, CommandLineArgs.frametype,"_L1", t0, dt );
+      LALSnprintf( fname2, sizeof( fname ), "%s/%c-%s%s-%d-%d.gwf", CommandLineArgs.datadirL2,site, CommandLineArgs.frametype,"_L2", t0, dt );
+
+      if (access(fname, F_OK) == 0) {
+	fprintf(stdout, "Frame file %s exists. Exiting.\n",fname);
+	return 0;
+      }
+      if (access(fname2, F_OK) == 0) {
+	fprintf(stdout, "Frame file %s exists. Exiting.\n",fname2);
 	return 0;
       }
     }
@@ -196,6 +213,7 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   char site;
   INT4 t0;
   INT4 dt;
+  INT4 FrDuration;
   int detectorFlags;
   char hostnameanduser[4096];
   char hostname[1024];
@@ -260,11 +278,11 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   site = OutputData.h.name[0];
   
   /* based on series metadata, generate standard filename */
-  duration = OutputData.h.deltaT * OutputData.h.data->length;
+  FrDuration = OutputData.h.deltaT * OutputData.h.data->length;
   t0 = OutputData.h.epoch.gpsSeconds;
-  dt = ceil( XLALGPSGetREAL8( &OutputData.h.epoch ) + duration ) - t0;
+  dt = ceil( XLALGPSGetREAL8( &OutputData.h.epoch ) + FrDuration ) - t0;
   if ( t0 < 0 || dt < 1 )
-    return 1;  /* Error: invalid time or duration */
+    return 1;  /* Error: invalid time or FrDuration */
   LALSnprintf( fname, sizeof( fname ), "%s/%c-%s%s-%d-%d.gwf", CLA.datadirL1,site, CLA.frametype,"_L1", t0, dt );
   LALSnprintf( tmpfname, sizeof( tmpfname ), "%s.tmp", fname );
 
@@ -273,7 +291,7 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
      change all the time and if you can't tell the run number from
      the GPS time you have a problem */
   /* number of frames in frame to 1 */
-  frame = XLALFrameNew( &OutputData.h.epoch , duration, "LIGO", 0, 1, detectorFlags );
+  frame = XLALFrameNew( &OutputData.h.epoch , FrDuration, "LIGO", 0, 1, detectorFlags );
 
   /* Here's where I need to add a bunch of things */
   /* Add cvs header */
@@ -372,13 +390,13 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   /* Add FD calibration files */ 
   {
     COMPLEX8FrequencySeries *seriesH = NULL, *seriesC = NULL;
-    REAL8 durationC,durationH;
+    REAL8 FrDurationC,FrDurationH;
 
-    XLALASCIIFileReadCalRef( &seriesC, &durationC, CLA.filenameC );
-    XLALASCIIFileReadCalRef( &seriesH, &durationH, CLA.filenameH );
+    XLALASCIIFileReadCalRef( &seriesC, &FrDurationC, CLA.filenameC );
+    XLALASCIIFileReadCalRef( &seriesH, &FrDurationH, CLA.filenameH );
 
-    XLALFrameAddCalRef( frame, seriesC, atoi(&CLA.frametype[9]), durationC );
-    XLALFrameAddCalRef( frame, seriesH, atoi(&CLA.frametype[9]), durationH );
+    XLALFrameAddCalRef( frame, seriesC, atoi(&CLA.frametype[9]), FrDurationC );
+    XLALFrameAddCalRef( frame, seriesH, atoi(&CLA.frametype[9]), FrDurationH );
 
     XLALDestroyCOMPLEX8FrequencySeries( seriesC );
     XLALDestroyCOMPLEX8FrequencySeries( seriesH );
@@ -917,7 +935,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"strain-channel",      required_argument, NULL,           'S'},
     {"data-dirL1",          required_argument, NULL,           'z'},
     {"data-dirL2",          required_argument, NULL,           'p'},
-    {"check-file-exists",   required_argument, NULL,           'v'},
+    {"check-file-exists",   no_argument, NULL,                 'v'},
     {"olg-file",            required_argument, NULL,           'a'},
     {"sensing-file",        required_argument, NULL,           'b'},
     {"darm-err-only",       no_argument, NULL,                 'w'},
@@ -950,7 +968,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->strainchannel=NULL;
   CLA->datadirL1=NULL;
   CLA->datadirL2=NULL;
-  CLA->checkfilename=NULL;
+  CLA->checkfilename=0;
   CLA->filenameC=NULL;
   CLA->filenameH=NULL;
 
@@ -1075,7 +1093,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       CLA->datadirL2=optarg;       
       break;
     case 'v':
-      CLA->checkfilename=optarg;       
+      CLA->checkfilename=1;       
       break;
     case 'a':
       CLA->filenameH=optarg;       
@@ -1120,7 +1138,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tstrain-channel (-S)\tSTRING\t Strain channel name in frame (eg, H1:LSC-STRAIN)\n");
       fprintf(stdout,"\tdata-dirL1 (-z)\tSTRING\t Ouput L1 frame to this directory (eg, /tmp/S4/H1/).\n");
       fprintf(stdout,"\tdata-dir (-z)\tSTRING\t Ouput L2 frame to this directory (eg, /tmp/S4/H1/).\n");
-      fprintf(stdout,"\tcheck-file-exists (-w)\tSTRING\t Checks file give as argument exists already and won't run if so. \n");
+      fprintf(stdout,"\tcheck-file-exists (-w)\tFLAG\t Checks frame files exist and if they do it exits gracefully. \n");
       fprintf(stdout,"\tolg-file (-a)\tSTRING\t Name of official OLG file (for storage in frames). \n");
       fprintf(stdout,"\tsensing-file (-b)\tSTRING\t Name of official sensing file (for storage in frames). \n");
       fprintf(stdout,"\tdarm-err-only (-w)\tFLAG\t Do darm_err only calibration. Default is to use darm_err and darm_ctrl. For first epoch of S5.\n");
