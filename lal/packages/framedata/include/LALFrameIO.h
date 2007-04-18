@@ -44,6 +44,9 @@ LALCalData * XLALFrameGetCalData( LIGOTimeGPS *epoch, const char *readoutChannel
 LALCalData * XLALFrGetCalData( LIGOTimeGPS *epoch, const char *readoutChannel, const char *fname );
 LALCalData * XLALFrCacheGetCalData( LIGOTimeGPS *epoch, const char *readoutChannel, FrCache *cache );
 
+/* frame writing function */
+int XLALFrameWrite(FrameH *frame, const char *fname, int compressLevel);
+
 #ifdef __cplusplus
 }
 #endif

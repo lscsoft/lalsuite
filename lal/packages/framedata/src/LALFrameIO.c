@@ -948,3 +948,32 @@ LALCalData * XLALFrCacheGetCalData( LIGOTimeGPS *epoch, const char *readoutChann
   FrFileIEnd( frfile );
   return caldata;
 }
+
+
+int XLALFrameWrite(FrameH *frame, const char *fname, int compressLevel)
+{
+  static const char *func = "XLALFrameWrite";
+  FrFile *frfile;
+  char tmpfname[FILENAME_MAX];
+  int c;
+
+  /* set temporary filename */
+  c = LALSnprintf( tmpfname, sizeof( tmpfname ), "%s.tmp", fname );
+  if ( c < 0 || c > (int)sizeof(tmpfname) - 2 )
+    XLALERROR( func, XLAL_ENAME );
+
+  /* open temporary file */
+  frfile = FrFileONew( tmpfname, compressLevel );
+  if ( !frfile )
+    XLAL_ERROR( func, XLAL_EIO );
+
+  /* write frame to temporary filename */
+  FrameWrite( frame, frfile );
+  FrFileOEnd( frfile );
+
+  /* rename tmpfile */
+  if (rename(tmpfname, fname) < 0)
+    XLAL_ERROR( func, XLAL_ESYS );
+
+  return 0;
+}
