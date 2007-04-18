@@ -617,7 +617,6 @@ static void output_frame(CHAR *ifo,
   int duration;
   int detectorFlags;
   FrameH *frame;
-  FrFile *frfile;
 
   /* get frame filename */
   duration = gpsEnd - gpsStart;
@@ -656,14 +655,13 @@ static void output_frame(CHAR *ifo,
   }
 
   /* write frame */
-  frfile = FrFileONew( fname, 8 );
-  if ( !frfile )
+  if (XLALFrameWrite( frame, fname, 8) != 0)
   {
-    fprintf( stderr, "ERROR: Cannot open frame file: %s\n", fname );
+    fprintf( stderr, "ERROR: Cannot save frame file: %s\n", fname );
     exit( 1 );
   }
-  FrameWrite( frame, frfile );
-  FrFileOEnd( frfile );
+
+  /* clear frame */
   FrameFree( frame );
 
   return;
