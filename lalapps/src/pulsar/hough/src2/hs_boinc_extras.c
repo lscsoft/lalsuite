@@ -996,7 +996,8 @@ void set_checkpoint () {
       }
       write_checkpoint();
       boinc_checkpoint_completed();
-      LogPrintf(LOG_DEBUG,"set_checkpt(): bytes: %u, file: %d\n", cptf->bytes, ftell(cptf->fp));
+      fprintf(stderr,"c,");
+      /* LogPrintf(LOG_DEBUG,"set_checkpt(): bytes: %u, file: %d\n", cptf->bytes, ftell(cptf->fp)); */
     }
 #ifndef FORCE_CHECKPOINTING
   else if (cptf->bytes >= cptf->maxsize)
