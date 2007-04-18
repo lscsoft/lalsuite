@@ -47,48 +47,17 @@ RCSID( "$Id$" );
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "nr_wave"
 
+/* function prototypes */
+static void print_usage( char *program );
 static void output_ht( CHAR *fName, REAL4TimeSeries *injData );
 static void output_frame( CHAR *ifo, INT4 gpsStart, INT4 gpsEnd,
     REAL4TimeSeries *injData );
 
+/* verbose flag */
 extern int vrbflg;
 
-/*
- *
- * USAGE
- *
- */
-static void print_usage( char *program )
-{
-  fprintf( stderr,
-      "Usage:  %s [options]\n"\
-      "The following options are recognized.  Options not surrounded in [] are\n"\
-      "required.\n"\
-      "  [--help]                      display this message\n"\
-      "  [--verbose]                   print progress information\n"\
-      "  [--version]                   print version information and exit\n"\
-      "  --injection-file  inj_file    read injection details from inj_file\n"\
-      "  --ifo             ifo         IFO for which to generate injections\n"\
-      "  --all-ifos                    create injections for all IFOs\n"\
-      "  --nr-meta-file    meta_file   file containing details of available\n"\
-      "                                numerical relativity waveforms\n"\
-      "  --nr-data-dir     dir         specify directory containing numerical\n"\
-      "                                relativity waveforms\n"\
-      "  --gps-start-time  start       start time of output file\n"\
-      "  --gps-end-time    end         end time of output file\n"\
-      "  --modeL-lo        lo          lowest value of l to inject\n"\
-      "  --modeL-hi        hi          highest value of l to inject\n"\
-      "  --sample-rate     rate        the sample rate used to generate injections\n"\
-      "  --write-output                write h(t) to an ascii file in NRwave directory\n"\
-      "  --write-frame                 write h(t) waveform to a frame file\n"\
-      "\n", program );
-}
 
-/*
- *
- * MAIN
- *
- */
+/* main program entry */
 int main( int argc, char *argv[] )
 {
   LALStatus status = blank_status;
@@ -569,6 +538,34 @@ int main( int argc, char *argv[] )
   LALCheckMemoryLeaks();
 
   exit( 0 );
+}
+
+
+/* function to display program usgae */
+static void print_usage( char *program )
+{
+  fprintf( stderr,
+      "Usage:  %s [options]\n"\
+      "The following options are recognized.  Options not surrounded in [] are\n"\
+      "required.\n"\
+      "  [--help]                      display this message\n"\
+      "  [--verbose]                   print progress information\n"\
+      "  [--version]                   print version information and exit\n"\
+      "  --injection-file  inj_file    read injection details from inj_file\n"\
+      "  --ifo             ifo         IFO for which to generate injections\n"\
+      "  --all-ifos                    create injections for all IFOs\n"\
+      "  --nr-meta-file    meta_file   file containing details of available\n"\
+      "                                numerical relativity waveforms\n"\
+      "  --nr-data-dir     dir         specify directory containing numerical\n"\
+      "                                relativity waveforms\n"\
+      "  --gps-start-time  start       start time of output file\n"\
+      "  --gps-end-time    end         end time of output file\n"\
+      "  --modeL-lo        lo          lowest value of l to inject\n"\
+      "  --modeL-hi        hi          highest value of l to inject\n"\
+      "  --sample-rate     rate        the sample rate used to generate injections\n"\
+      "  --write-output                write h(t) waveform to an ASCII file\n"\
+      "  --write-frame                 write h(t) waveform to a frame file\n"\
+      "\n", program );
 }
 
 
