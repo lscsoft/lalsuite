@@ -124,7 +124,7 @@ RCSID( "$Id$");
 
 /* Hooks for Einstein@Home / BOINC
    These are defined to do nothing special in the standalone case
-   and will be set in boinc_extras.h if USE_BOINC is set
+   and will be set in boinc_extras.h if EAH_BOINC is set
  */
 #ifdef EAH_BOINC
 #include "hs_boinc_extras.h"
@@ -136,6 +136,7 @@ RCSID( "$Id$");
 #define SET_CHECKPOINT
 #define MAIN  main
 #define FOPEN fopen
+#define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
 #endif
 
 extern int lalDebugLevel;
@@ -998,7 +999,9 @@ int MAIN( int argc, char *argv[]) {
 	    thisPoint.fkdot[0] = fstatVector.data[k].f0;
 	    /* thisPoint.fkdot[0] = usefulParams.spinRange_midTime.fkdot[0]; */
 
-	    LAL_CALL( ComputeFStatFreqBand ( &status, fstatVector.data + k, &thisPoint, 
+	    /* this is the most costly function. We here allow for using an architecture-specific optimized
+	       function from e.g. a local file instead of the standard ComputeFStatFreqBand() from LAL */
+	    LAL_CALL( COMPUTEFSTATFREQBAND ( &status, fstatVector.data + k, &thisPoint, 
 					     stackMultiSFT.data[k], stackMultiNoiseWeights.data[k], 
 					     stackMultiDetStates.data[k], &CFparams), &status);
 	  }
