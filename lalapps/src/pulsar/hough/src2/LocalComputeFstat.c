@@ -1,7 +1,12 @@
 /*
  * Stripped together and modified from ComputeFStat.c in LAL
  * by Bernd Machenschalk for Einstein@Home
+ * $Id$
  */
+
+#ifndef EAH_OPTIMIZATION
+#define EAH_OPTIMIZATION 0
+#endif
 
 /*---------- INCLUDES ----------*/
 #define __USE_ISOC99 1
@@ -110,6 +115,14 @@ void LocalComputeFStatFreqBand ( LALStatus *status,
   ASSERT ( fstatVector->data, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( fstatVector->data->data, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( fstatVector->data->length > 0, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
+
+  {
+    static int first = !0;
+    if (first) {
+      fprintf(stderr,"\n$Id$ E@HOPT:%d\n", EAH_OPTIMIZATION);
+      first = 0;
+    }
+  }
 
   /** something to improve/cleanup -- the start frequency is available both 
       from the fstatvector and from the input doppler point -- they could be inconsistent
@@ -483,6 +496,50 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
       /* if no danger of denominator -> 0 */
       if ( ( kappa_star > LD_SMALL4 ) || (kappa_star < -LD_SMALL4) )	
+
+#if (EAH_OPTIMIZATION == 1)
+	/* vectorization with common denominator */
+	{ 
+
+	  REAL4 *Xal;
+	  REAL4 U_alpha, V_alpha;
+	  UINT4 l, ve;
+	  REAL4 STn[4];
+	  REAL4 pn[4];
+	  REAL4 qn[4];
+	  REAL4 q_n;
+
+          Xal = (REAL4*)(Xalpha_l + 1);
+          STn[0] = Xalpha_l[0].re;
+          STn[1] = Xalpha_l[0].im;
+          STn[2] = Xalpha_l[1].re;
+          STn[3] = Xalpha_l[1].im;
+          pn[0] = kappa_max;
+          pn[1] = kappa_max;
+          pn[2] = kappa_max - 1.0f;
+          pn[3] = kappa_max - 1.0f;
+
+	  for( ve=0; ve<4; ve++ )
+            qn[ve] = pn[ve];
+
+	  for ( l = 1; l <= Dterms; l++ ) {
+	    for( ve=0; ve<4; ve++ ) {
+	      pn[ve] = pn[ve] - 1.0f;                        /* p_(n+1) */
+	      STn[ve] = pn[ve] * STn[ve] + qn[ve] * Xal[ve]; /* S_(n+1) */
+	      qn[ve] *= pn[ve];		                     /* q_(n+1) */
+	    }
+	    Xal += 4;
+          }
+	  
+	  q_n = qn[0] * qn[2];
+	  U_alpha = (STn[0] * qn[2] + STn[2] * qn[0]) / q_n;
+	  V_alpha = (STn[1] * qn[2] + STn[3] * qn[0]) / q_n;
+
+	  realXP = s_alpha * U_alpha - c_alpha * V_alpha;
+	  imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
+	  
+	}
+#else
 	{ 
 	  /* improved hotloop algorithm by Fekete Akos: 
 	   * take out repeated divisions into a single common denominator,
@@ -509,16 +566,13 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  U_alpha = Sn / qn;
 	  V_alpha = Tn / qn;
 
-#ifndef LAL_NDEBUG
-	  if ( !finite(U_alpha) || !finite(V_alpha) || !finite(pn) || !finite(qn) || !finite(Sn) || !finite(Tn) ) {
-	    XLAL_ERROR ("XLALComputeFaFb()", COMPUTEFSTATC_EIEEE);
-	  }
-#endif
-
 	  realXP = s_alpha * U_alpha - c_alpha * V_alpha;
 	  imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
 	  
-	} /* if |remainder| > LD_SMALL4 */
+	}
+#endif
+
+      /* if |remainder| > LD_SMALL4 */
       else
 	{ /* otherwise: lim_{rem->0}P_alpha,k  = 2pi delta_{k,kstar} */
 	  realXP = TWOPI_FLOAT * Xalpha_l[Dterms].re;
