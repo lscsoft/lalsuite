@@ -17,12 +17,12 @@ NRCSID(HSBOINCEXTRASHRCSID,"$Id$");
 /* linking proper functions to the hooks in HierarchicalSearch.c */
 
 /* use a local copy of ComputeFStatFreqBand() and realted functions for E@H-specific optimizations */
-#ifndef USE_LOCALCOMPUTEFSTATFREQBAND
+#ifndef EAH_OPTIMIZATION
 #define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
 #else
 #define COMPUTEFSTATFREQBAND LocalComputeFStatFreqBand
 
-exern int
+extern int
 LocalXLALComputeFaFb ( Fcomponents *FaFb,
 		  const SFTVector *sfts, 
 		  const PulsarSpins fkdot,
