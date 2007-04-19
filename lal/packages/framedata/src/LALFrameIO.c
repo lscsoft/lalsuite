@@ -960,7 +960,7 @@ int XLALFrameWrite(FrameH *frame, const char *fname, int compressLevel)
   /* set temporary filename */
   c = LALSnprintf( tmpfname, sizeof( tmpfname ), "%s.tmp", fname );
   if ( c < 0 || c > (int)sizeof(tmpfname) - 2 )
-    XLALERROR( func, XLAL_ENAME );
+    XLAL_ERROR( func, XLAL_ENAME );
 
   /* open temporary file */
   frfile = FrFileONew( tmpfname, compressLevel );
