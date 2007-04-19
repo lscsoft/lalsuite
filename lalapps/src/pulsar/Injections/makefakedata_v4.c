@@ -901,6 +901,13 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
     edat.ephiles.earthEphemeris = earthdata;
     edat.ephiles.sunEphemeris   = sundata;
+    
+    {
+      LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_LOOSE};
+      INT4 leapSecs;
+      TRY ( LALLeapSecs(status->statusPtr, &leapSecs,  &(cfg->startTimeGPS), &formatAndAcc), status);
+      edat.leap = (INT2) leapSecs;
+    }
         
     /* Init ephemerides */  
     TRY( LALInitBarycenter(status->statusPtr, &edat), status);   
