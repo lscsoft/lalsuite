@@ -19,7 +19,7 @@
 
 
 #include <lal/AVFactories.h>
-#include "ComputeFstat.h"
+#include <lal/ComputeFstat.h>
 
 NRCSID( COMPUTEFSTATC, "$Id$");
 
