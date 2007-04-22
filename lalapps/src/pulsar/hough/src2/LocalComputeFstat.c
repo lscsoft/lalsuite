@@ -62,15 +62,6 @@ static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/2
 /* empty initializers  */
 static const LALStatus empty_status;
 
-const SSBtimes empty_SSBtimes;
-const MultiSSBtimes empty_MultiSSBtimes;
-const AntennaPatternMatrix empty_AntennaPatternMatrix;
-const MultiAMCoeffs empty_MultiAMCoeffs;
-const Fcomponents empty_Fcomponents;
-const ComputeFParams empty_ComputeFParams;
-const ComputeFBuffer empty_ComputeFBuffer;
-
-
 /*---------- internal prototypes ----------*/
 int finite(double x);
 
