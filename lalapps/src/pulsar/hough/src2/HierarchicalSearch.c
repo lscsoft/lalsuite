@@ -393,7 +393,11 @@ int MAIN( int argc, char *argv[]) {
   global_status = &status;
 
   /* set LAL error-handler */
+#ifdef EAH_BOINC
+  lal_errhandler = BOINC_LAL_ErrHand;
+#else
   lal_errhandler = LAL_ERR_EXIT;
+#endif
 
   /*---------------------------------------------------------------*/
   /* set defaults, read user variables, log user variables and log cvs tags */

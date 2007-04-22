@@ -108,6 +108,47 @@ static void write_checkpoint (void);
 
 /** FUNCTIONS **/
 
+/* freaking LAL's REPORTSTATUS just won't work with any of NDEBUG or 
+ * LAL_NDEBUG set, so it's time to use our own...
+ */
+void ReportStatus( LALStatus *status )
+{ /* </lalVerbatim> */
+  LALStatus *ptr;                                                    
+  for ( ptr = status; ptr ; ptr = ptr->statusPtr )                  
+  {                                                           
+    LogPrintf ( LOG_NORMAL, "\nLevel %i: %s\n", ptr->level, ptr->Id );    
+    if ( ptr->statusCode )                                    
+    {                                                      
+      LogPrintf ( LOG_NORMAL, "\tStatus code %i: %s\n", ptr->statusCode,      
+                     ptr->statusDescription );                      
+    }                                                            
+    else                                                        
+    {                                                          
+      LogPrintf ( LOG_NORMAL, "\tStatus code 0: Nominal\n" );            
+    }                                                        
+    LogPrintf ( LOG_NORMAL, "\tfunction %s, file %s, line %i\n",      
+                   ptr->function, ptr->file, ptr->line );      
+  }                                                       
+  return;
+
+}
+
+/* LALApps error handler */
+int BOINC_LAL_ErrHand (LALStatus  *stat, const char *func, const char *file, const int line, volatile const char *id) {
+  if (stat->statusCode) {
+    fprintf(stderr,
+            "Level 0: %s\n"
+            "\tFunction call `%s' failed.\n"
+            "\tfile %s, line %d\n",
+            id, func, file, line );
+    ReportStatus(stat);
+    LogPrintf (LOG_CRITICAL, "BOINC_LAL_ErrHand(): now calling boinc_finish()\n");
+    boinc_finish( COMPUTEFSTAT_EXIT_LALCALLERROR+stat->statusCode );
+  }
+  /* should this call boinc_finish too?? */
+  return 0;
+}
+
 
 /*
   sighandler()

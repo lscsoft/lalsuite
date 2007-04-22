@@ -127,6 +127,8 @@ extern void set_checkpoint(void);
    The checkpoint file remains there in case something goes wrong during the rest */
 extern void write_and_close_checkpointed_file (void);
 
+/* LALApps error handler for BOINC */
+int BOINC_LAL_ErrHand (LALStatus*, const char*, const char*, const int, volatile const char*);
 
 
 /* the main() function of HierarchicalSerach.c becomes the extern MAIN(),
