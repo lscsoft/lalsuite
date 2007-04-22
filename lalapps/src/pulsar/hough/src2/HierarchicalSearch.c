@@ -659,7 +659,7 @@ int MAIN( int argc, char *argv[]) {
   if ( LALUserVarWasSet(&uvar_refTime)) 
     usefulParams.refTime = uvar_refTime;
   else {
-    LogPrintf(LOG_DEBUG, "Reference time will be set to mid-time of observation time\n");
+    LogPrintf(LOG_DETAIL, "Reference time will be set to mid-time of observation time\n");
     usefulParams.refTime = -1;
   }
   
@@ -743,28 +743,28 @@ int MAIN( int argc, char *argv[]) {
 
   /**** debugging information ******/   
   /* print some debug info about spinrange */
-  LogPrintf(LOG_DEBUG, "Frequency and spindown range at refTime (%d): [%f-%f], [%e-%e]\n", 
+  LogPrintf(LOG_DETAIL, "Frequency and spindown range at refTime (%d): [%f-%f], [%e-%e]\n", 
 	    usefulParams.spinRange_refTime.refTime.gpsSeconds,
 	    usefulParams.spinRange_refTime.fkdot[0], 
 	    usefulParams.spinRange_refTime.fkdot[0] + usefulParams.spinRange_refTime.fkdotBand[0], 
 	    usefulParams.spinRange_refTime.fkdot[1], 
 	    usefulParams.spinRange_refTime.fkdot[1] + usefulParams.spinRange_refTime.fkdotBand[1]);
   
-  LogPrintf(LOG_DEBUG, "Frequency and spindown range at startTime (%d): [%f-%f], [%e-%e]\n", 
+  LogPrintf(LOG_DETAIL, "Frequency and spindown range at startTime (%d): [%f-%f], [%e-%e]\n", 
 	    usefulParams.spinRange_startTime.refTime.gpsSeconds,
 	    usefulParams.spinRange_startTime.fkdot[0], 
 	    usefulParams.spinRange_startTime.fkdot[0] + usefulParams.spinRange_startTime.fkdotBand[0], 
 	    usefulParams.spinRange_startTime.fkdot[1], 
 	    usefulParams.spinRange_startTime.fkdot[1] + usefulParams.spinRange_startTime.fkdotBand[1]);
 
-  LogPrintf(LOG_DEBUG, "Frequency and spindown range at midTime (%d): [%f-%f], [%e-%e]\n", 
+  LogPrintf(LOG_DETAIL, "Frequency and spindown range at midTime (%d): [%f-%f], [%e-%e]\n", 
 	    usefulParams.spinRange_midTime.refTime.gpsSeconds,
 	    usefulParams.spinRange_midTime.fkdot[0], 
 	    usefulParams.spinRange_midTime.fkdot[0] + usefulParams.spinRange_midTime.fkdotBand[0], 
 	    usefulParams.spinRange_midTime.fkdot[1], 
 	    usefulParams.spinRange_midTime.fkdot[1] + usefulParams.spinRange_midTime.fkdotBand[1]);
 
-  LogPrintf(LOG_DEBUG, "Frequency and spindown range at endTime (%d): [%f-%f], [%e-%e]\n", 
+  LogPrintf(LOG_DETAIL, "Frequency and spindown range at endTime (%d): [%f-%f], [%e-%e]\n", 
 	    usefulParams.spinRange_endTime.refTime.gpsSeconds,
 	    usefulParams.spinRange_endTime.fkdot[0], 
 	    usefulParams.spinRange_endTime.fkdot[0] + usefulParams.spinRange_endTime.fkdotBand[0], 
@@ -776,18 +776,18 @@ int MAIN( int argc, char *argv[]) {
 	    nStacks, tStack, dFreqStack, tObs);
   for (k = 0; k < nStacks; k++) {
 
-    LogPrintf(LOG_DEBUG, "Stack %d ", k);
+    LogPrintf(LOG_DETAIL, "Stack %d ", k);
     if ( weightsNoise )
-      LogPrintfVerbatim(LOG_DEBUG, "(GPS start time = %d, Noise weight = %f ) ", startTstack->data[k].gpsSeconds, 
+      LogPrintfVerbatim(LOG_DETAIL, "(GPS start time = %d, Noise weight = %f ) ", startTstack->data[k].gpsSeconds, 
 			weightsNoise->data[k]);
 
     for ( j = 0; j < (INT4)stackMultiSFT.data[k]->length; j++) {
 
       INT4 tmpVar = stackMultiSFT.data[k]->data[j]->length;
-      LogPrintfVerbatim(LOG_DEBUG, "%s: %d  ", stackMultiSFT.data[k]->data[j]->data[0].name, tmpVar);
+      LogPrintfVerbatim(LOG_DETAIL, "%s: %d  ", stackMultiSFT.data[k]->data[j]->data[0].name, tmpVar);
 
     } /* loop over ifos */    
-    LogPrintfVerbatim(LOG_DEBUG, "\n");
+    LogPrintfVerbatim(LOG_DETAIL, "\n");
   } /* loop over stacks */
 
 
@@ -847,7 +847,7 @@ int MAIN( int argc, char *argv[]) {
     semiCohPar.patchSizeY = 1.0 / ( tStack * usefulParams.spinRange_midTime.fkdot[0] * VEPI ); 
   }
     
-  LogPrintf(LOG_DEBUG,"Hough/Stackslide patchsize is %frad x %frad\n", 
+  LogPrintf(LOG_DETAIL,"Hough/Stackslide patchsize is %frad x %frad\n", 
 	    semiCohPar.patchSizeX, semiCohPar.patchSizeY); 
 
   /* allocate some fstat memory */
@@ -874,9 +874,9 @@ int MAIN( int argc, char *argv[]) {
   scanInit.Freq = usefulParams.spinRange_midTime.fkdot[0] +  usefulParams.spinRange_midTime.fkdotBand[0];
 
   /* initialize skygrid  */  
-  LogPrintf(LOG_DEBUG, "Setting up coarse sky grid...");
+  LogPrintf(LOG_DETAIL, "Setting up coarse sky grid...");
   LAL_CALL ( InitDopplerSkyScan ( &status, &thisScan, &scanInit), &status); 
-  LogPrintfVerbatim(LOG_DEBUG, "done\n");  
+  LogPrintfVerbatim(LOG_DETAIL, "done\n");  
 
   /*----- start main calculations by going over coarse grid points and 
           selecting candidates and following up --------*/
@@ -1110,7 +1110,7 @@ int MAIN( int argc, char *argv[]) {
 
   LogPrintfVerbatim ( LOG_DEBUG, " done.\n");
 
-  LogPrintf(LOG_DEBUG, "Finished analysis and now printing results and cleaning up...");
+  LogPrintf(LOG_DETAIL, "Finished analysis and now printing results and cleaning up...");
 	
 
 #if (!HS_CHECKPOINTING)
@@ -1199,7 +1199,7 @@ int MAIN( int argc, char *argv[]) {
 
   LALCheckMemoryLeaks();
 
-  LogPrintfVerbatim(LOG_DEBUG, "done\n");
+  LogPrintfVerbatim(LOG_DETAIL, "done\n");
 
   return HIERARCHICALSEARCH_ENORM;
 } /* main */
@@ -2207,7 +2207,7 @@ void GetHoughCandidates_threshold(LALStatus            *status,
 	    if (numCandidates >= out->length) {
 	      out->length += BLOCKSIZE_REALLOC;
 	      out->list = (SemiCohCandidate *)LALRealloc( out->list, out->length * sizeof(SemiCohCandidate));
-	      LogPrintf(LOG_DEBUG, "Need to realloc Hough candidate list to %d entries\n", out->length);
+	      LogPrintf(LOG_DETAIL, "Need to realloc Hough candidate list to %d entries\n", out->length);
 	    } /* need a safeguard to ensure that the reallocs don't happen too often */
 	    
 	    /* add to list if candidate exceeds threshold and there is enough space in list */
@@ -2275,7 +2275,7 @@ void GetHoughCandidates_threshold(LALStatus            *status,
     if (numCandidates >= out->length) {
       out->length += BLOCKSIZE_REALLOC;
       out->list = (SemiCohCandidate *)LALRealloc( out->list, out->length * sizeof(SemiCohCandidate));
-      LogPrintf(LOG_DEBUG, "Need to realloc Hough candidate list to %d entries\n", out->length);
+      LogPrintf(LOG_DETAIL, "Need to realloc Hough candidate list to %d entries\n", out->length);
     } /* need a safeguard to ensure that the reallocs don't happen too often */
     
     
