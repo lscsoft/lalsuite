@@ -3303,7 +3303,7 @@ find_files (const CHAR *globdir)
   struct _finddata_t entry;
 #endif
   CHAR *dname;
-  const CHAR *ptr1, *ptr2;
+  CHAR *ptr1, *ptr2;
   CHAR *fpattern;
   size_t dirlen;
   CHAR **filelist = NULL; 
@@ -3716,8 +3716,12 @@ read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp )
       }
     }
   if ( *version < MIN_SFT_VERSION ) {
-    if ( lalDebugLevel )
-      LALPrintError( "\nERROR: illegal SFT-version not within [%.0f, %.0f]\n\n", MIN_SFT_VERSION, MAX_SFT_VERSION );
+    if ( lalDebugLevel ) {
+      unsigned char *v = (unsigned char*)(&ver);
+      LALPrintError( "\nERROR: illegal SFT-version (%X %X %X %X %X %X %X %X) not within [%.0f, %.0f]\n",
+		     v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],
+		     (float)MIN_SFT_VERSION, (float)MAX_SFT_VERSION );
+    }
     goto failed;
   }
   
