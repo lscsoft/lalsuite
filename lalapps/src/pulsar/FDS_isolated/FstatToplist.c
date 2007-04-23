@@ -154,7 +154,7 @@ int read_fstat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxby
     lines=1;
     while(fgets(line,sizeof(line)-1, fp)) {
 
-        if (!strncmp(line,"%DONE\n","%DONE\n")) {
+        if (!strncmp(line,"%DONE\n",strlen("%DONE\n"))) {
 	  LogPrintf(LOG_NORMAL,"WARNING: found end marker - the task was already finished\n");
 	  return(0);
         }
