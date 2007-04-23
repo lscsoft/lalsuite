@@ -3301,9 +3301,10 @@ find_files (const CHAR *globdir)
 #else
   intptr_t dir;
   struct _finddata_t entry;
+  CHAR* ptr3;
 #endif
   CHAR *dname;
-  CHAR *ptr1, *ptr2;
+  const CHAR *ptr1, *ptr2;
   CHAR *fpattern;
   size_t dirlen;
   CHAR **filelist = NULL; 
@@ -3439,13 +3440,13 @@ find_files (const CHAR *globdir)
 	return (NULL);
       }
 #else
-      if ((ptr1 = (CHAR*)LALMalloc(strlen(dname)+3)) == NULL)
+      if ((ptr3 = (CHAR*)LALMalloc(strlen(dname)+3)) == NULL)
 	return(NULL);
-      sprintf(ptr1,"%s\\*",dname);  
-      dir = _findfirst(ptr1,&entry);
-      LALFree(ptr1);
+      sprintf(ptr3,"%s\\*",dname);  
+      dir = _findfirst(ptr3,&entry);
+      LALFree(ptr3);
       if (dir == -1) {
-	LALPrintError ("Can't find file for pattern `%s`\n", ptr1);
+	LALPrintError ("Can't find file for pattern `%s`\n", ptr3);
 	LALFree (dname);
 	return (NULL);
       }
@@ -3656,8 +3657,8 @@ compareSFTdesc(const void *ptr1, const void *ptr2)
 static int 
 compareDetName(const void *ptr1, const void *ptr2)
 {
-  const SFTVector **sftvect1 = (const SFTVector **)ptr1;
-  const SFTVector **sftvect2 = (const SFTVector **)ptr2;
+  SFTVector const* const* sftvect1 = (SFTVector const* const*)ptr1;
+  SFTVector const* const* sftvect2 = (SFTVector const* const*)ptr2;
 
   if ( (*sftvect1)->data[0].name[0] < (*sftvect2)->data[0].name[0] )
     return -1;
