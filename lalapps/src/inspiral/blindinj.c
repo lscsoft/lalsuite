@@ -805,7 +805,7 @@ int main( int argc, char *argv[] )
         if ( ifoNumber == LAL_IFO_H1 )
         {
           /* add in H2, assuming half the snr */
-          snrsqAt1Mpc += 5/4 * thisSnrsq;
+          snrsqAt1Mpc += 5.0/4.0 * thisSnrsq;
         }
         else
         {
