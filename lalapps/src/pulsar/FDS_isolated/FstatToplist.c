@@ -657,7 +657,7 @@ int fstat_cpt_file_read (FStatCheckpointFile*cptf, UINT4 checksum_should, UINT4 
   cptf->bytes = bytes;
   cptf->checksum = checksum_read;
 
-  if (cptf->bytes != ftell(cptf->fp)) 
+  if ((int)(cptf->bytes) != ftell(cptf->fp)) 
     LogPrintf(LOG_DEBUG,"ERROR: read: %u, file: %ld\n", cptf->bytes, ftell(cptf->fp));
 
   return(0);
