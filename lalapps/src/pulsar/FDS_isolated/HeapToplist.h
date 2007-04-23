@@ -9,7 +9,7 @@
 
 #include <lal/LALRCSID.h>
 
-NRCSID( HEAPTOPLISTHID, "$Id$" );
+static const char *HEAPTOPLISTHID  = "$Id$";
 
 /* toplist structure */
 typedef struct {

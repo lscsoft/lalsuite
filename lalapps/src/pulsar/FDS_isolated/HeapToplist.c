@@ -82,10 +82,10 @@ int create_toplist(toplist_t**list,
 		   size_t size,
 		   int (*smaller)(const void *, const void *)) {
   toplist_t *listp;
-  const char *rcsid_dummy;
+  const char *rcsidh, *rcsidc;
 
-  rcsid_dummy = HEAPTOPLISTHID;
-  rcsid_dummy = HEAPTOPLISTCID;
+  rcsidh = HEAPTOPLISTHID;
+  rcsidc = HEAPTOPLISTCID;
   if (!(listp = malloc(sizeof(toplist_t))))
     return(-1);
   if (!(listp->data = malloc(size * length))) {
