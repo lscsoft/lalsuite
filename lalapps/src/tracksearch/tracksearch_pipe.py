@@ -80,7 +80,6 @@ allData.make_chunks(dataBlockSize)
 # Loop over our new collection of 100s chunks to set up each DAG
 indexA=0
 for block in allData:
-    """This code is only for 1 100sec stretch"""
     indexA+=1
     logfile=logFileMask+str(indexA)+'.log'
     tracksearchBlock=tracksearch.tracksearch(cp,block,injectFileFlag,logfile)
@@ -88,6 +87,9 @@ for block in allData:
     tracksearchBlock.writePipelineDAG()
         
 print "We prepared "+str(allData.__len__())+" search DAGs."
+if allData.__len__() == 0:
+    print "Please check your segment list."
+    os.abort()
 sys.exit(0)
 
 

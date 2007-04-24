@@ -37,8 +37,9 @@ def buildDir(dirpath):
             print 'File :',str(pathBlock)
             os.abort()
         if not os.path.isdir(pathBlock):
-           #print 'Making path:',pathBlock
-           try: os.mkdir(pathBlock)
+           print 'Making path:',pathBlock
+           try:
+               os.mkdir(pathBlock)
            except: pass
     
     #Now double check that directory exists else flag error
@@ -318,13 +319,14 @@ class tracksearchTimeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         #Set each trials total_time_point
         setSize=int(cp.get('layerconfig','layer1SetSize'))
         timeScale=float(cp.get('layerconfig','layer1TimeScale'))
-        TTP=int(sampleRate*setSize*timeScale)
-        self.add_opt('total_time_points',str(TTP))
+        totalTimePoints=int(sampleRate*setSize*timeScale)
+        self.add_opt('total_time_points',str(totalTimePoints))
         #Set segment size for each TF map
-        STP=powOf2Floor(timeScale*sampleRate)
-        self.add_opt('segment_time_points',str(STP))
+        #segmentTimePoints=powOf2Floor(timeScale*sampleRate)
+        segmentTimePoints=int(timeScale*sampleRate)
+        self.add_opt('segment_time_points',str(segmentTimePoints))
         #Set overlap size for each TF map
-        overlap=int(math.floor(STP*overlapPercentage))
+        overlap=int(math.floor(segmentTimePoints*overlapPercentage))
         self.add_opt('overlap',str(overlap))
 
         #Check for needed directories if not present make them!
@@ -842,13 +844,7 @@ class tracksearch:
             df_node.set_end(chunk.end())
             df_node.set_observatory(ifo[0])
             cacheName='timeLayerCache-'+str(df_node.get_observatory())+'-'+str(df_node.get_start())+'-'+str(df_node.get_end())+'.cache'
-            #These next four lines likely don't apply!
-            #If the dataFind job goes fine the cache file will be
-            #stdout of the job
-            #df_node.add_output_file(cacheName)
-            self.dag.add_node(df_node)
             tracksearchTime_node=tracksearchTimeNode(tracksearchTime_job)
-            tracksearchTime_node.add_parent(df_node)
             #If executable name is anything but LSCdataFind we
             #assume that the cache file should be hard wired!
             if not str(self.cp.get('condor','datafind')).lower().__contains__(str('LSCdataFind').lower()):
@@ -858,6 +854,9 @@ class tracksearch:
                 print 'Cache to hard wire into pipeline is:',fixCache
                 tracksearchTime_node.add_var_opt('cachefile',fixCache)
             else:
+                #Setup a traditional pipe with a real data finding job
+                self.dag.add_node(df_node)
+                tracksearchTime_node.add_parent(df_node)
                 outputFileList=df_node.get_output_files()
                 tracksearchTime_node.add_var_opt('cachefile',outputFileList[0])
             #Consider using Condor file transfer mechanism to
