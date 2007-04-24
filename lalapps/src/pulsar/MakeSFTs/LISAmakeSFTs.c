@@ -125,10 +125,6 @@ main(int argc, char *argv[])
 
   lalDebugLevel = 0;
 
-  writeTDI[0] = uvar_makeX;
-  writeTDI[1] = uvar_makeY;
-  writeTDI[2] = uvar_makeZ;
-
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
   
@@ -137,6 +133,11 @@ main(int argc, char *argv[])
 
   /* register all user-variables */
   LAL_CALL (initUserVars (&status), &status);	  
+
+  /* make life easier in the loop */
+  writeTDI[0] = uvar_makeX;
+  writeTDI[1] = uvar_makeY;
+  writeTDI[2] = uvar_makeZ;
 
   /* read cmdline & cfgfile  */	
   LAL_CALL (LALUserVarReadAllInput (&status, argc,argv), &status);  
