@@ -69,7 +69,7 @@ int main ( int argc, char *argv[] )
   UINT4 i;
   REAL4 m1 = 0.0;
   REAL4 m2 = 0.0;
-  float mtot,eta,c0,c2,c3,c4,x,x2,x3,x4,x8,chirpTime,fmax;
+  float mtot,eta,mchirp,c0,c2,c3,c4,x,x2,x3,x4,x8,chirpTime,fmax;
   REAL4 inc=0.0;
   REAL4 longit=0.0;
   REAL4 latit=0.0;
@@ -231,11 +231,13 @@ int main ( int argc, char *argv[] )
 
   mtot = m1 + m2;
   eta = ( m1 * m2 ) / ( mtot * mtot );
+  mchirp = pow( eta, 0.6) * (mtot);
   fstop = fmax = 1.0 / (6.0 * sqrt(6.0) * LAL_PI * mtot * LAL_MTSUN_SI);
 
   if (verbose){
     fprintf( stdout, "m1 = %e\tm2 = %e\tfLow = %e\n", m1, m2, fstart );
-    fprintf( stdout, "eta = %e\tm = %e\n", eta, mtot );
+    fprintf( stdout, "eta = %0.2f\tm = %0.2f\tmchirp = %0.2f\n", 
+        eta, mtot, mchirp);
     fprintf( stdout, "isco freq = %e Hz\n", fmax );
   }
 
