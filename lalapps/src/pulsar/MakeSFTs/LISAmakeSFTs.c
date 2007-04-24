@@ -84,6 +84,9 @@ static const LALUnit empty_LALUnit;
 /* User variables */
 BOOLEAN uvar_help;
 BOOLEAN uvar_lisasim;
+BOOLEAN uvar_makeX;
+BOOLEAN uvar_makeY;
+BOOLEAN uvar_makeZ;
 BOOLEAN uvar_makeYminusZ;
 BOOLEAN uvar_makeZminusX;
 BOOLEAN uvar_makeXminusY;
@@ -118,8 +121,13 @@ main(int argc, char *argv[])
   COMPLEX8 ztmp;
   SFTVector **SFTVectList;
   SFTVector *SFTvect;
+  BOOLEAN writeTDI[3];
 
   lalDebugLevel = 0;
+
+  writeTDI[0] = uvar_makeX;
+  writeTDI[1] = uvar_makeY;
+  writeTDI[2] = uvar_makeZ;
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
@@ -234,7 +242,9 @@ main(int argc, char *argv[])
 	    } /* for fidx < sft->data->length */
 	} /* for sidx < SFTvect->length */
 
-      LAL_CALL ( LALWriteSFTVector2Dir (&status, SFTvect, uvar_outputDir, add_comment, desc ), &status );
+      if (writeTDI[ifo]) {
+	LAL_CALL ( LALWriteSFTVector2Dir (&status, SFTvect, uvar_outputDir, add_comment, desc ), &status );
+      }
       LALFree ( desc );
     } /* for ifo < length */
 
@@ -353,6 +363,12 @@ initUserVars (LALStatus *status)
   uvar_extraComment = NULL;
   uvar_miscField = NULL;
   uvar_Tsft = 604800;	
+  uvar_makeX = 1;
+  uvar_makeY = 0;
+  uvar_makeZ = 0;
+  uvar_makeYminusZ = 1;
+  uvar_makeZminusX = 0;
+  uvar_makeXminusY = 0;
 
   /* now register all our user-variable */
   LALregSTRINGUserVar(status, inputXML,		'i', UVAR_REQUIRED, "XML file describing the LISA timeseries data");
@@ -362,6 +378,10 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status, miscField,	'm', UVAR_OPTIONAL, "User-specifiable portion of the SFT-filename ('misc' field)");
   
   LALregBOOLUserVar(status,   lisasim,		's', UVAR_OPTIONAL, "TDI data are from LISA Simulator");
+
+  LALregBOOLUserVar(status,   makeX,		'X', UVAR_OPTIONAL, "Produce X");
+  LALregBOOLUserVar(status,   makeY,		'Y', UVAR_OPTIONAL, "Produce Y");
+  LALregBOOLUserVar(status,   makeZ,		'Z', UVAR_OPTIONAL, "Produce Z");
 
   LALregBOOLUserVar(status,   makeYminusZ,	'x', UVAR_OPTIONAL, "Produce Y-Z (combination independent of X)");
   LALregBOOLUserVar(status,   makeZminusX,	'y', UVAR_OPTIONAL, "Produce Z-X (combination independent of Y)");
