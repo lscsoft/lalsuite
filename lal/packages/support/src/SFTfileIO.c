@@ -56,6 +56,12 @@ NRCSID (SFTFILEIOC, "$Id$");
 #define BLOCKSIZE 8192 * 8
 
 /*----- Macros ----- */
+
+/* use boinc_fopen() instead of fopen() for Einstein@Home/BOINC */
+#ifdef EAH_BOINC
+#define boinc_fopen fopen
+#endif
+
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
 
 #define GPSEQUAL(gps1,gps2) (((gps1).gpsSeconds == (gps2).gpsSeconds) && ((gps1).gpsNanoSeconds == (gps2).gpsNanoSeconds))
