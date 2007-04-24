@@ -247,6 +247,9 @@ FrVect * XLALFrVectREAL4TimeSeries( REAL4TimeSeries *series )
 
   memcpy( vect->data, series->data->data, series->data->length * sizeof( *series->data->data ) );
 
+  FrVectCompress (vect, 8, 0);
+  if (vect->compress == 0) FrVectCompress (vect, 6, 1);
+
   return vect;
 }
 
@@ -268,6 +271,8 @@ FrVect * XLALFrVectREAL8TimeSeries( REAL8TimeSeries *series )
 
   memcpy( vect->data, series->data->data, series->data->length * sizeof( *series->data->data ) );
 
+  FrVectCompress (vect, 6, 1);
+
   return vect;
 }
 
@@ -288,6 +293,8 @@ FrVect * XLALFrVectCOMPLEX8TimeSeries( COMPLEX8TimeSeries *series )
   vect->startX[0] = 0.0;
 
   memcpy( vect->data, series->data->data, series->data->length * sizeof( *series->data->data ) );
+
+  FrVectCompress (vect, 6, 1);
 
   return vect;
 }
@@ -311,6 +318,8 @@ FrVect * XLALFrVectCOMPLEX16TimeSeries( COMPLEX16TimeSeries *series )
 
   memcpy( vect->data, series->data->data, series->data->length * sizeof( *series->data->data ) );
 
+  FrVectCompress (vect, 6, 1);
+
   return vect;
 }
 
@@ -333,6 +342,9 @@ FrVect * XLALFrVectREAL4FrequencySeries( REAL4FrequencySeries *series )
 
   memcpy( vect->data, series->data->data, series->data->length * sizeof( *series->data->data ) );
 
+  FrVectCompress (vect, 8, 0);
+  if (vect->compress == 0) FrVectCompress (vect, 6, 1);
+
   return vect;
 }
 
@@ -353,6 +365,8 @@ FrVect * XLALFrVectREAL8FrequencySeries( REAL8FrequencySeries *series )
   vect->startX[0] = series->f0;
 
   memcpy( vect->data, series->data->data, series->data->length * sizeof( *series->data->data ) );
+
+  FrVectCompress (vect, 6, 1);
 
   return vect;
 }
@@ -375,6 +389,8 @@ FrVect * XLALFrVectCOMPLEX8FrequencySeries( COMPLEX8FrequencySeries *series )
 
   memcpy( vect->data, series->data->data, series->data->length * sizeof( *series->data->data ) );
 
+  FrVectCompress (vect, 6, 1);
+
   return vect;
 }
 
@@ -395,6 +411,8 @@ FrVect * XLALFrVectCOMPLEX16FrequencySeries( COMPLEX16FrequencySeries *series )
   vect->startX[0] = series->f0;
 
   memcpy( vect->data, series->data->data, series->data->length * sizeof( *series->data->data ) );
+
+  FrVectCompress (vect, 6, 1);
 
   return vect;
 }
@@ -705,6 +723,9 @@ int XLALFrameAddREAL4TimeSeriesAdcData( FrameH *frame, REAL4TimeSeries *series )
 	  adc->data->dataF[i] = series->data->data[i];
 /* 	  fprintf(stdout,"%d %f %f\n",i, adc->data->dataF[i], series->data->data[i]); */
 	}
+
+	FrVectCompress (adc->data, 8, 0);
+	if (adc->data->compress == 0) FrVectCompress (adc->data, 6, 1);
 
 	return 0;
 }
