@@ -59,7 +59,7 @@ NRCSID (SFTFILEIOC, "$Id$");
 
 /* use boinc_fopen() instead of fopen() for Einstein@Home/BOINC */
 #ifdef EAH_BOINC
-#define boinc_fopen fopen
+#define fopen boinc_fopen
 #endif
 
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
