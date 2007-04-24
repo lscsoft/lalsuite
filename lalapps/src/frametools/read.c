@@ -206,6 +206,7 @@ int main( int argc, char *argv[] )
   char *fname;
   char **channels;
   int nchannels;
+  int retval = 1;
 
   if ( argc < 3 )
   {
@@ -260,6 +261,8 @@ int main( int argc, char *argv[] )
         {
           writeFrVect( fp, adc->data );
         }
+        fclose( fp );
+        retval = 0;
       }
       else if ( ( proc = FrProcDataFind( frame, channels[chan] ) ) )
       {
@@ -281,6 +284,8 @@ int main( int argc, char *argv[] )
         {
           writeFrVect( fp, proc->data );
         }
+        fclose( fp );
+        retval = 0;
       }
       else if ( ( sim = FrSimDataFind( frame, channels[chan] ) ) )
       {
@@ -302,10 +307,12 @@ int main( int argc, char *argv[] )
         {
           writeFrVect( fp, sim->data );
         }
+        fclose( fp );
+        retval = 0;
       }
       else
       {
-        return fprintf( stderr, "channel %s not found!\n", channels[chan] ), 1;
+        fprintf( stderr, "warning: channel %s not found in frame %d\n", channels[chan], frame->frame );
       }
     }
     FrameFree( frame );
@@ -313,5 +320,5 @@ int main( int argc, char *argv[] )
 
   FrFileIEnd( frfile );
 
-  return 0;
+  return retval;
 }
