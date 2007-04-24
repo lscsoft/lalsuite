@@ -342,7 +342,7 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
     LALSnprintf( tmpfname2, sizeof( tmpfname2 ), "%s.tmp", fname2 );
     
     /* write first to tmpfile then rename it */
-    frfile = FrFileONew( tmpfname2, 8); /* 1 = GZIP */
+    frfile = FrFileONew( tmpfname2, -1); /* 1 = GZIP */
     if ( ! frfile )
       return 1;  /* Error: could not open frame file */
     
@@ -491,7 +491,7 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   /* Add cvs version of filters file used */
   
   /* write first to tmpfile then rename it */
-  frfile = FrFileONew( tmpfname, 8); /* 1 = GZIP */
+  frfile = FrFileONew( tmpfname, -1); /* 1 = GZIP */
   if ( ! frfile )
     return 1;  /* Error: could not open frame file */
   
