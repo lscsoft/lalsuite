@@ -83,7 +83,7 @@ XLALNullStatisticInputInit (
   }
 
   /* allocate memory for the CVector */
-  cVecPtr = (*input)->multiCData = (CVector *) LALCalloc(1, sizeof(CVector));
+  cVecPtr = (*input)->CData = (CVector *) LALCalloc(1, sizeof(CVector));
   if ( !cVecPtr )
   {
     XLALPrintError("could not allocate memory for CVector");
@@ -175,7 +175,6 @@ XLALComputeNullStatistic (
   UINT4                 numSegments           = 0;
   UINT4                 numPoints             = 0;
   INT4                  segmentLength         = 0;
-  REAL4                 deltaT                = 0.0;
   REAL4                 nullStatThresh        = 0.0;
   UINT4                 nullStatOut           = 0;
   LALDetector          *detector              = NULL;
@@ -196,7 +195,6 @@ XLALComputeNullStatistic (
   numPoints      = params->numPoints;
   numSegments    = params->numSegments;
   nullStatOut    = params->nullStatOut;
-  deltaT         = params->deltaT;
   segmentLength  = params->segmentLength;
   nullStatThresh = params->nullStatThresh;
   sigmasq        = params->sigmasq;
@@ -213,7 +211,7 @@ XLALComputeNullStatistic (
   norm = (1.0/( sigmasq[h1idx]*sigmasq[h1idx])) + 
          (1.0/( sigmasq[h2idx]*sigmasq[h2idx]));
   /* read in the c-data for multiple detectors */
-  cData = input->multiCData->cData;
+  cData = input->CData->cData;
 
   /* 
    * the time for which we want the null statistic is the one at the
@@ -247,7 +245,78 @@ XLALComputeNullStatistic (
 
   thisEvent->mass1 = input->tmplt->mass1;
   thisEvent->mass2 = input->tmplt->mass2;
-  thisEvent->mchirp = input->tmplt->totalMass * 
-            pow( input->tmplt->eta, 3.0/5.0 );
+  thisEvent->mchirp = input->tmplt->totalMass * pow(input->tmplt->eta, 3.0/5.0);
   thisEvent->eta = input->tmplt->eta;
+  thisEvent->null_statistic = eventNullStat;
+  
+  return (0);
+}
+
+
+void
+XLALNullStatisticParamsFinal(
+   NullStatParams      **output,
+   )
+{
+  static const char *func = "XLALNullStatisticParamsFinal";
+
+  NullStatParams  *outputPtr;
+
+  outputPtr = *output ;  
+ 
+  /* destroy detector vector */
+  LALFree( outputPtr->detVector->detector );
+  outputPtr->detectorVec->detector = NULL;
+  LALFree( outputPtr->detVector );
+  outputPtr->detVector = NULL;
+
+  /* destroy null statistic vector, if it exists */
+  if ( outputPtr->nullStatOut )
+  {
+    XLALDestroyVector( &(outputPrt->nullStatVec->data),sizeof(REAL4TimeSeries));
+    LALFree( outputPtr->nullStatVec );
+  }
+
+  LALFree( outputPtr );
+  *output = NULL;
+
+  return (0);
+}
+
+void
+XLALNullStatisticInputFinal (
+   NullStatInputParams    **input,
+   )
+{
+  static const char *func = "XLALNullStatisticInputFinal";
+
+  CVector               *cVecPtr 
+  NullStatInputParams   *inputPtr 
+
+  inputPtr = *input;
+
+  /* destroy the cVector if necessary */
+  if ( inputPtr->CData )
+  {
+    cVecPtr = (*input)->CData ;
+  
+    for ( l=0; l < cVecPtr->numDetectors; l++)
+    {
+      if ( cVecPtr->cData[l].data != NULL )
+      {
+        XLALDestroyVector(&(cVecPtr->cData[l].data),sizeof(COMPLEX8TimeSeries));
+      }
+    }
+  
+    LALFree( cVecPtr->cData );
+    LALFree (cVecPtr);
+    (*input)->CData = NULL;
+
+  }
+
+  LALFree( inputPtr );
+  *input = NULL;
+
+  return( 0 );
+}
 
