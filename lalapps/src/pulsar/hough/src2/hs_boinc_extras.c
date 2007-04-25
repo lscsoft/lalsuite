@@ -685,11 +685,12 @@ static void worker (void) {
   }
 
   /* debug: dump the modified command line */
+  /*
   fprintf(stderr,"command line:");
   for(i=0;i<rargc;i++)
     fprintf(stderr," %s",rargv[i]);
   fprintf(stderr,"\n");
-  
+  */
 
   /* if there already was an error, there is no use in continuing */
   if (res) {
