@@ -444,41 +444,34 @@ int main( int argc, char *argv[] )
 
 
   /*taken from Calibration CVS file: 
-   * calibration/frequencydomain/runs/S5/H1/model/V2/H1DARMparams_824791240.m */
-  actuationParams[LAL_IFO_H1].ETMXcal = -0.812e-9;
+   * calibration/frequencydomain/runs/S5/H1/model/V3/H1DARMparams_849677446.m */
+  actuationParams[LAL_IFO_H1].ETMXcal = -0.795e-9;
   actuationParams[LAL_IFO_H1].pendFX  = 0.767;
   actuationParams[LAL_IFO_H1].pendQX  = 10.0;
-  actuationParams[LAL_IFO_H1].ETMYcal = -0.831e-9;
+  actuationParams[LAL_IFO_H1].ETMYcal = -0.827e-9;
   actuationParams[LAL_IFO_H1].pendFY  = 0.761;
   actuationParams[LAL_IFO_H1].pendQY  = 10.0;
   actuationParams[LAL_IFO_H1].length  = 4000.0;
 
   /*taken from Calibration CVS file: 
-   * calibration/frequencydomain/runs/S5/H2/model/V2/H2DARMparams_826542380.m */
-  actuationParams[LAL_IFO_H2].ETMXcal = -0.860e-9;
+   * calibration/frequencydomain/runs/S5/H2/model/V3/H2DARMparams_849678155.m */
+  actuationParams[LAL_IFO_H2].ETMXcal = -0.876e-9;
   actuationParams[LAL_IFO_H2].pendFX  = 0.749;
   actuationParams[LAL_IFO_H2].pendQX  = 10.0;
-  actuationParams[LAL_IFO_H2].ETMYcal = -0.896e-9;
+  actuationParams[LAL_IFO_H2].ETMYcal = -0.912e-9;
   actuationParams[LAL_IFO_H2].pendFY  = 0.764;
   actuationParams[LAL_IFO_H2].pendQY  = 10.0;
   actuationParams[LAL_IFO_H2].length  = 2000.0;
 
   /*taken from Calibration CVS file: 
-   * calibration/frequencydomain/runs/S5/L1/model/V2/L1DARMparams_816851952.m */
-  actuationParams[LAL_IFO_L1].ETMXcal = -0.434e-9;
+   * calibration/frequencydomain/runs/S5/L1/model/V3/L1DARMparams_841930071.m */
+  actuationParams[LAL_IFO_L1].ETMXcal = -0.447e-9;
   actuationParams[LAL_IFO_L1].pendFX  = 0.766;
-  actuationParams[LAL_IFO_L1].pendQX  = 10.0;
-  actuationParams[LAL_IFO_L1].ETMYcal = -0.418e-9;
+  actuationParams[LAL_IFO_L1].pendQX  = 100.0;
+  actuationParams[LAL_IFO_L1].ETMYcal = -0.438e-9;
   actuationParams[LAL_IFO_L1].pendFY  = 0.756;
-  actuationParams[LAL_IFO_L1].pendQY  = 10.0;
+  actuationParams[LAL_IFO_L1].pendQY  = 100.0;
   actuationParams[LAL_IFO_L1].length  = 4000.0;
-  /* XXX  The EXMX/Y cals are from elog, which assumed 0.76 Hz for pendulum; 
-   * thus need rescaling to be consistent with pendulum frequencies above */
-  actuationParams[LAL_IFO_L1].ETMXcal = actuationParams[LAL_IFO_L1].ETMXcal * 
-    pow( 0.76 / actuationParams[LAL_IFO_L1].pendFX, 2);
-  actuationParams[LAL_IFO_L1].ETMYcal = actuationParams[LAL_IFO_L1].ETMYcal * 
-    pow( 0.76 / actuationParams[LAL_IFO_L1].pendFY, 2);
-
 
   /* set up inital debugging values */
   lal_errhandler = LAL_ERR_EXIT;
