@@ -636,6 +636,12 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
+  if ( gpsStartTime.gpsSeconds <= 0 )
+  {
+    fprintf( stderr, "Must specify the --gps-start-time\n" );
+    exit( 1 );
+  }
+
   /*
    *
    * initialization
