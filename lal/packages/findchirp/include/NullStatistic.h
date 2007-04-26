@@ -111,9 +111,9 @@ NullStatInitParams;
 typedef struct
 tagNullStatInputParams
 {
-  InspiralTemplate      *tmplt;
+  InspiralTemplate      *tmplt; /*probably not necessary */
   DetectorVector         detVector;
-  CVector               *multiCData;
+  CVector               *CData;
 }
 NullStatInputParams;
   
@@ -121,20 +121,56 @@ NullStatInputParams;
 typedef struct
 tagNullStatParams
 {
-  INT4              numTmplts;
-  UINT4             maxOverChirp;
-  UINT4             numDetectors;
-  UINT4             numSegments;
-  UINT4             numPoints;
-  REAL4             fLow;
-  REAL4             deltaT;
-  REAL4             nullStatThresh;
-  REAL4             eventNullStat;
-  REAL8             sigmasq[6];
-  INT4              segmentLength;
-  DetectorVector    detVector;
-  UINT4             nullStatOut;
-  REAL4TimeSeries   nullStatVec;
+  INT4               numTmplts;
+  UINT4              maxOverChirp; /* probably not necessary */
+  UINT4              numDetectors;
+  UINT4              numSegments;
+  UINT4              numPoints;
+  REAL4              nullStatThresh;
+  REAL4              eventNullStat;
+  REAL4              sigmasq[6];
+  INT4               segmentLength;
+  DetectorVector     detVector;
+  UINT4              nullStatOut;
+  REAL4TimeSeries   *nullStatVec;
 }
 NullStatParams;
+
+
+int
+XLALNullStatisticInputInit (
+   NullStatInputParams    **input,
+   NullStatInitParams      *init
+   );
+
+int
+XLALNullStatisticParamsInit(
+   NullStatParams      **output,
+   NullStatInitParams   *init
+   );
+
+int
+XLALComputeNullStatistic (
+  MultiInspiralTable    **eventList,
+  NullStatInputParams    *input,
+  NullStatParams         *params
+  );
+
+int
+XLALNullStatisticParamsFinal(
+   NullStatParams      **output
+   );
+
+int
+XLALNullStatisticInputFinal (
+   NullStatInputParams    **input
+   );
+
+
+#ifdef  __cplusplus
+#pragma {
+}
+#endif
+
+#endif /* _NULLSTATISTICH_H */
 
