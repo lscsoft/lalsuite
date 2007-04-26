@@ -168,7 +168,9 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
         ABr = ABi = 0;
         for ( k = stIX; k < tmpLen; k++ )
         {
-          /*if ( (k > iMax) || (k > jMax) ) break;*/
+          /* This stops the integration */
+          if ( (k > iMax) || (k > jMax) ) break;
+          /* remove it possibly */
           sqResp = ( bankVetoData->resp->data[k].re * 
                      bankVetoData->resp->data[k].re +
                      bankVetoData->resp->data[k].im *
