@@ -535,6 +535,114 @@ int main( int argc, char *argv[] )
 
   } /* close  else (if triggers do exist) */
 
+  
+  /* write the output xml file */
+  if ( userTag )
+  {
+    LALSnprintf( fileName, FILENAME_MAX, "%s-NULLSTAT_%s-%d-%d", ifoTag, 
+                 userTag, gpsStartTime.gpsSeconds, 
+                 gpsEndTime.gpsSeconds-gpsStartTime.gpsSeconds );
+  }
+  else
+  {
+    LALSnprintf( fileName, FILENAME_MAX, "%s-NULLSTAT-%d-%d", ifoTag,
+       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds-gpsStartTime.gpsSeconds );
+  }
+
+  if ( nullStatOut )
+  {
+    if ( outputPath[0] )
+    {
+      LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf",
+                   outputPath, fileName );
+    }
+    else
+    {
+      LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName);
+    }
+
+    if ( verbose ) fprintf( stdout, "Writing null statistic time series to %s.",
+                            framename );
+    frOutFile = FrFileONew( framename, 0 );
+    FrameWrite( outFrame, frOutFile );
+    FrFileOEnd( frOutFile );
+  }
+
+  if ( eventsOut )
+  {
+    memset( &results, 0, sizeof(LIGOLwXMLStream) );
+    if ( outputPath[0] )
+    {
+      LALSnprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml", 
+                   outputPath, fileName );
+    }
+    else
+    {
+      LALSnprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml", fileName );
+    }
+    if ( verbose ) fprintf( stdout, "Writing xml data to %s.", xmlname );
+    LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, xmlname ), &status );
+
+    /* process table */
+    if ( verbose ) fprintf( stdout, "Writing the process table..." );
+    LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time), 
+                              &accuracy ), &status );
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ), 
+                                      &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, proctable, 
+                                      process_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+    free( proctable.processTable );
+    if ( verbose ) fprintf( stdout, " done.\n" );
+
+    /* process params table */
+    if ( verbose ) fprintf( stdout, "Writing the process_params table..." );
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, 
+                                      process_params_table ), &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, procparams, 
+                                      process_params_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+    while( procparams.processParamsTable )
+    {
+      this_proc_param = procparams.processParamsTable;
+      procparams.processParamsTable = this_proc_param->next;
+      free( this_proc_param );
+    }
+    if ( verbose ) fprintf( stdout, " done.\n" );
+
+    /* multi inspiral table */
+    if( verbose ) fprintf( stdout,"Writing the multi-inspiral table...");
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, 
+                                      multi_inspiral_table ), &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, savedEvents, 
+                                      multi_inspiral_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable( &status, &results), &status );
+
+    while( savedEvents.multiInspiralTable )
+    {
+      MultiInspiralTable * tempEvent = savedEvents.multiInspiralTable;
+      savedEvents.multiInspiralTable = savedEvents.multiInspiralTable->next;
+      LALFree( tempEvent->event_id );
+      LALFree( tempEvent );
+      tempEvent = NULL;
+    }
+    if ( verbose ) fprintf( stdout, " done.\n" );
+
+    /* close the xml file */
+    LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
+    if ( verbose ) fprintf( stdout, "Closed the xml file.\n" );
+
+  }
+
+  /* free the frame cache */
+  if( frInCache ) LAL_CALL( LALDestroyFrCache( &status, &frInCache ), &status );
+  if ( frInType ) free( frInType );
+
+  if ( verbose ) fprintf( stdout, "Checking memory leaks and exiting.\n" );
+  LALCheckMemoryLeaks();
+
+  exit(0);
+
 }/* main function end */ 
 /* -------------------------------------------------------------------------- */
 
