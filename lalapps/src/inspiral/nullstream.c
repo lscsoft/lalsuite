@@ -142,12 +142,12 @@ int main( int argc, char *argv[] )
   CHAR  fileName[FILENAME_MAX];
   CHAR  framename[FILENAME_MAX];
   CHAR  xmlname[FILENAME_MAX];
-  CHAR  cohdataStr[LALNameLength];
+  CHAR  nullStatStr[LALNameLength];
 
   INT4   segLength      = 4;  /* should match hardcoded value in inspiral.c */
   INT4   numPoints      = 0;
   UINT4  numSegments    = 1;  /* number of segments */
-  UINT4  nCohDataFr     = 0;  /* what is this? */
+  UINT4  numNullStatFr  = 0;  /* what is this? */
   UINT8  eventID        = 0;
 
   REAL4  m1             = 0.0;
@@ -480,10 +480,28 @@ int main( int argc, char *argv[] )
       XLALComputeNullStatistic( &thisEvent, nullStatInputParams, 
          nullStatParams);
 
+      if ( nullStatOut )
+      {
+        LALSnprintf( nullStatStr, LALNameLength*sizeof(CHAR),
+                     "NULL_STAT_%d", numNullStatFr++ );
+        strcpy( NullStatParams->nullStatVec->name, "NullStatistic");
+        outFrame = fr_add_proc_REAL4TimeSeries( outFrame, nullStatParams, 
+                     "none", nullStatStr);
+      }
 
-      /*  test if any events got returned */
-      /*  not necessary now, but will be  */
-      /*  when a threshold is applied     */
+      if ( !eventsOut )
+      {
+        while( thisEvent )
+        {
+          MultiInspiralTable *tempEvent = thisEvent;
+          thisEvent = thisEvent->next;
+          LALFree( tempEvent );
+        }
+      }
+        
+
+      /*  test if any events got returned                             */
+      /*  not necessary now, but will be when a threshold is applied  */
       if ( thisEvent )
       {
         if ( vrbflg ) fprintf( stdout, "***>  dumping events  <***\n" );
@@ -507,8 +525,15 @@ int main( int argc, char *argv[] )
         event = thisEvent;
         thisEvent = NULL;
 
-      } /* end if ( thisEvent ) */
+      } /* close  if ( thisEvent ) */
 
+      XLALNullStatisticParamsFinal( &nullStatParams );
+
+      XLALNullStatisticInputFinal( &nullStatInputParams );
+
+    } /* close for (thisCoinc=coincHead; thisCoinc; thisCoinc=thisCoinc->next */
+
+  } /* close  else (if triggers do exist) */
 
 }/* main function end */ 
 /* -------------------------------------------------------------------------- */
