@@ -40,7 +40,7 @@ static REAL4 cartesianInnerProduct(REAL4 x[3], REAL4 y[3])
 }
 
 
-void
+int
 XLALNullStatisticInputInit (
    NullStatInputParams    **input,
    NullStatInitParams      *init
@@ -104,7 +104,7 @@ XLALNullStatisticInputInit (
 }
 
 
-void
+int
 XLALNullStatisticParamsInit(
    NullStatParams      **output,
    NullStatInitParams   *init
@@ -144,7 +144,7 @@ XLALNullStatisticParamsInit(
   }
 
   /* if the null statistic is to be output, create the nullStatVec */
-  if ( nullStatOut )
+  if ( outputPtr->nullStatOut )
   {
     outputPtr->nullStatVec = (REAL4TimeSeries *) 
       LALCalloc(1, sizeof(REAL4TimeSeries) );
@@ -164,7 +164,7 @@ XLALNullStatisticParamsInit(
 }
 
 
-void
+int
 XLALComputeNullStatistic (
   MultiInspiralTable    **eventList,
   NullStatInputParams    *input,
@@ -177,13 +177,16 @@ XLALComputeNullStatistic (
   INT4                  segmentLength         = 0;
   REAL4                 nullStatThresh        = 0.0;
   UINT4                 nullStatOut           = 0;
+  REAL4                 nullStatRe            = 0.0 ;
+  REAL4                 nullStatIm            = 0.0;
+  REAL4                 eventNullStat         = 0.0;
   LALDetector          *detector              = NULL;
   COMPLEX8TimeSeries   *cData                 = NULL;
   MultiInspiralTable   *thisEvent             = NULL;
-  REAL4TimeSeries      *nullStatVec;          = NULL;
-  REAL4                *sigmasq[LAL_NUM_IFO]  = NULL;
+  REAL4TimeSeries      *nullStatVec           = NULL;
+  REAL4                 sigmasq[6];
 
-  INT4    h1idx, h2idx, m, j;
+  INT4    h1idx, h2idx, m, j, idx;
   REAL4   norm;           
 
   static const char *func = "XLALComputeNullStatistic";
@@ -229,7 +232,8 @@ XLALComputeNullStatistic (
                  - cData[h2idx].data->data[m].re / sigmasq[h2idx];
       nullStatIm = cData[h1idx].data->data[m].im / sigmasq[h1idx]
                  - cData[h2idx].data->data[m].im / sigmasq[h2idx];
-      nullStatVec[m]= ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / norm ;
+      nullStatVec->data[m] = 
+         ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / norm ;
     }
     eventNullStat = nullStatVec[idx];
   }
@@ -253,9 +257,9 @@ XLALComputeNullStatistic (
 }
 
 
-void
+int
 XLALNullStatisticParamsFinal(
-   NullStatParams      **output,
+   NullStatParams      **output
    )
 {
   static const char *func = "XLALNullStatisticParamsFinal";
@@ -266,14 +270,14 @@ XLALNullStatisticParamsFinal(
  
   /* destroy detector vector */
   LALFree( outputPtr->detVector->detector );
-  outputPtr->detectorVec->detector = NULL;
+  outputPtr->detVector->detector = NULL;
   LALFree( outputPtr->detVector );
   outputPtr->detVector = NULL;
 
   /* destroy null statistic vector, if it exists */
   if ( outputPtr->nullStatOut )
   {
-    XLALDestroyVector( &(outputPrt->nullStatVec->data),sizeof(REAL4TimeSeries));
+    XLALDestroyVector( &(outputPtr->nullStatVec->data),sizeof(REAL4TimeSeries));
     LALFree( outputPtr->nullStatVec );
   }
 
@@ -283,17 +287,22 @@ XLALNullStatisticParamsFinal(
   return (0);
 }
 
-void
+int
 XLALNullStatisticInputFinal (
-   NullStatInputParams    **input,
+   NullStatInputParams    **input
    )
 {
   static const char *func = "XLALNullStatisticInputFinal";
 
-  CVector               *cVecPtr 
-  NullStatInputParams   *inputPtr 
+  CVector               *cVecPtr; 
+  NullStatInputParams   *inputPtr; 
+  INT4                   l;
 
   inputPtr = *input;
+
+  /* free the template memory */
+  LALFree( inputPtr->tmplt );
+  inputPtr->tmplt = NULL;
 
   /* destroy the cVector if necessary */
   if ( inputPtr->CData )
