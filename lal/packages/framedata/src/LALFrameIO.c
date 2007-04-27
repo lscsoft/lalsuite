@@ -682,7 +682,7 @@ int XLALFrameAddREAL4TimeSeriesSimData( FrameH *frame, REAL4TimeSeries *series )
 	if ( ! vect )
 		XLAL_ERROR( func, XLAL_EFUNC );
 
-	sim = FrSimDataNew( frame, series->name, series->deltaT, series->data->length, 16 );
+	sim = FrSimDataNew( frame, series->name, series->deltaT, series->data->length, -32 );
 	if ( ! sim ) {
 		FrVectFree( vect );
 		XLAL_ERROR( func, XLAL_EERR );
