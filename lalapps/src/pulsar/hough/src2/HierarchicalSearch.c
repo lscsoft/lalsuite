@@ -152,25 +152,27 @@ BOOLEAN uvar_printStats; /**< global variable for calculating Hough map stats */
 
 #define BLOCKSIZE_REALLOC 50
 
+/** Useful stuff for a single stage of the Hierarchical search */
 typedef struct {
-  CHAR  *sftbasename;
-  REAL8 tStack;     /**< duration of stacks */
+  CHAR  *sftbasename;    /**< filename pattern for sfts */
+  REAL8 tStack;          /**< duration of stacks */
   UINT4 nStacks;         /**< number of stacks */
   LIGOTimeGPS tStartGPS; /**< start and end time of stack */
   REAL8 tObs;            /**< tEndGPS - tStartGPS */
-  REAL8 refTime;
-  PulsarSpinRange spinRange_startTime;
-  PulsarSpinRange spinRange_endTime;
-  PulsarSpinRange spinRange_refTime;
-  PulsarSpinRange spinRange_midTime;
-  EphemerisData *edat;
-  LIGOTimeGPSVector *midTstack; 
-  LIGOTimeGPSVector *startTstack;   
-  LIGOTimeGPS minStartTimeGPS;
-  LIGOTimeGPS maxEndTimeGPS;
-  UINT4 blocksRngMed;
-  UINT4 Dterms;
-  REAL8 dopplerMax;
+  REAL8 refTime;         /**< reference time for pulsar params */
+  PulsarSpinRange spinRange_startTime; /**< freq and fdot range at start-time of observation */
+  PulsarSpinRange spinRange_endTime;   /**< freq and fdot range at end-time of observation */
+  PulsarSpinRange spinRange_refTime;   /**< freq and fdot range at the reference time */
+  PulsarSpinRange spinRange_midTime;   /**< freq and fdot range at mid-time of observation */
+  EphemerisData *edat;   /**< ephemeris data for LALBarycenter */
+  LIGOTimeGPSVector *midTstack;    /**< timestamps vector for mid time of each stack */ 
+  LIGOTimeGPSVector *startTstack;  /**< timestamps vector for start time of each stack */ 
+  LIGOTimeGPS minStartTimeGPS;     /**< all sft data must be after this time */
+  LIGOTimeGPS maxEndTimeGPS;       /**< all sft data must be before this time */
+  UINT4 blocksRngMed;              /**< blocksize for running median noise floor estimation */
+  UINT4 Dterms;                    /**< size of Dirichlet kernel for Fstat calculation */
+  REAL8 dopplerMax;                /**< extra sft wings for doppler motion */
+  REAL8 maxExtraFstatWings;        /**< extra wings in Fstat calculation arisong from master equation */
 } UsefulStageVariables;
 
 
@@ -223,7 +225,7 @@ void ComputeNumExtraBins(LALStatus *status, SemiCoherentParams *par, REAL8 fdot,
 #define EARTHEPHEMERIS 		"earth05-09.dat"
 #define SUNEPHEMERIS 		"sun05-09.dat"
 
-#define BLOCKSRNGMED 		101 	/**< Default running median window size */
+#define BLOCKSRNGMED 		51 	/**< Default running median window size */
 #define FSTART 			310.0	/**< Default Start search frequency */
 
 #define FBAND 			0.01	/**< Default search band */
@@ -654,6 +656,7 @@ int MAIN( int argc, char *argv[]) {
   usefulParams.blocksRngMed = uvar_blocksRngMed;
   usefulParams.Dterms = uvar_Dterms;
   usefulParams.dopplerMax = uvar_dopplerMax;
+  usefulParams.maxExtraFstatWings = LAL_SQRT2 * VTOT / (uvar_tStack * VEPI) ; /* this is an estimate */
 
   /* set reference time for pular parameters */
   if ( LALUserVarWasSet(&uvar_refTime)) 
@@ -837,7 +840,7 @@ int MAIN( int argc, char *argv[]) {
     semiCohPar.patchSizeX = uvar_semiCohPatchX;
   }
   else {
-    semiCohPar.patchSizeX = 1.0 / ( tStack * usefulParams.spinRange_midTime.fkdot[0] * VEPI ); 
+    semiCohPar.patchSizeX = 1.0 / (  tStack * usefulParams.spinRange_midTime.fkdot[0] * VEPI ); 
   }	    
   
   if ( LALUserVarWasSet(&uvar_semiCohPatchY)) {
@@ -924,7 +927,7 @@ int MAIN( int argc, char *argv[]) {
 
       semiCohPar.alpha = thisPoint.Alpha;
       semiCohPar.delta = thisPoint.Delta;
-
+      
       /* initialize weights to unity */
       LAL_CALL( LALHOUGHInitializeWeights( &status, weightsV), &status);
 
@@ -943,7 +946,7 @@ int MAIN( int argc, char *argv[]) {
       { /********Allocate fstat vector memory *****************/
 
 	/* extra bins for fstat due to skypatch and spindowns */
-	UINT4 extraBinsSky, extraBinsfdot;
+	UINT4 extraBinsfdot;
 	REAL8 freqHighest;
 	
 	/* experimental! */
@@ -1329,8 +1332,8 @@ void SetUpSFTs( LALStatus *status,
   doppWings = freqHi * in->dopplerMax;    /* maximum Doppler wing -- probably larger than it has to be */
   extraBins = HSMAX ( in->blocksRngMed/2 + 1, in->Dterms );
   
-  fMin = freqLo - doppWings - extraBins * deltaFsft; 
-  fMax = freqHi + doppWings + extraBins * deltaFsft; 
+  fMin = freqLo - doppWings - extraBins * deltaFsft - in->maxExtraFstatWings; 
+  fMax = freqHi + doppWings + extraBins * deltaFsft + in->maxExtraFstatWings; 
       
   /* finally memory for stack of multi sfts */
   stackMultiSFT->length = in->nStacks;
