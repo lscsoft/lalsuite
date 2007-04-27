@@ -98,7 +98,7 @@ INT4 V1file = 0;
 
 /* input time-slide parameters */
 REAL8  slideStep[LAL_NUM_IFO]     = {0.0,0.0,0.0,0.0,0.0,0.0};
-
+int    bankDuration        = 0;
 CHAR  *cohbankFileName     = NULL;   /* name of input template bank  */
 UINT4  nullStatOut         = 0;      /* default is not to write frame */
 UINT4  eventsOut           = 0;      /* default is not to write events */
@@ -137,7 +137,7 @@ int main( int argc, char *argv[] )
   ProcessParamsTable   *this_proc_param;
   LIGOLwXMLStream       results;
 
-  FILE *filePtr[4];
+  /* FILE *filePtr[4]; */
 
   CHAR  fileName[FILENAME_MAX];
   CHAR  framename[FILENAME_MAX];
@@ -160,10 +160,9 @@ int main( int argc, char *argv[] )
   UINT8  slideSign      = 0;
 
   /* counters and other variables */
-  INT4   j, k, l, w, kidx;
+  INT4   j, k, l, kidx;
   UINT4  numDetectors            = 0;
   REAL8  tempTime[LAL_NUM_IFO]   = {0.0,0.0,0.0,0.0,0.0,0.0}; 
-  INT4   timeptDiff[5]           = {0,0,0,0,0};
   INT4   numTriggers             = 0;
   INT4   numCoincs               = 0;
   INT4   numEvents               = 0;
@@ -186,9 +185,7 @@ int main( int argc, char *argv[] )
   CVector                 *CVec                 = NULL;
   MultiInspiralTable      *event                = NULL;
   MultiInspiralTable      *thisEvent            = NULL;
-  MultiInspiralTable      *tempTable            = NULL;
   MetadataTable           savedEvents;
-  COMPLEX8TimeSeries      tempSnippet;
 
   /* cData channel names */
   char nameArrayCData[LAL_NUM_IFO][256] = {"0","0","0","0","0","0"}; 
@@ -349,8 +346,9 @@ int main( int argc, char *argv[] )
 
       if ( (INT4)numDetectors != l )
       {
-        fprintf( stderr, "You have events for %d detectors, but specified 
-                          frame files for %d detectors.\n",numDetectors,l);
+        fprintf( stderr, 
+         "You have events for %d detectors but frame files for %d detectors.\n",
+         numDetectors,l);
         if ( (INT4)numDetectors > l )
         {
           fprintf( stderr, "Too few frame files specified. Exiting.\n");
@@ -359,7 +357,7 @@ int main( int argc, char *argv[] )
         else
         {
           fprintf( stderr, "Too many frame files specified. Exiting.\n");
-          exit(1)
+          exit(1);
         }
       }
 
@@ -484,7 +482,7 @@ int main( int argc, char *argv[] )
       {
         LALSnprintf( nullStatStr, LALNameLength*sizeof(CHAR),
                      "NULL_STAT_%d", numNullStatFr++ );
-        strcpy( NullStatParams->nullStatVec->name, "NullStatistic");
+        strcpy( nullStatParams->nullStatVec->name, "NullStatistic");
         outFrame = fr_add_proc_REAL4TimeSeries( outFrame, nullStatParams, 
                      "none", nullStatStr);
       }
@@ -634,6 +632,10 @@ int main( int argc, char *argv[] )
 
   }
 
+  goto cleanexit;
+
+  cleanexit:
+
   /* free the frame cache */
   if( frInCache ) LAL_CALL( LALDestroyFrCache( &status, &frInCache ), &status );
   if ( frInType ) free( frInType );
@@ -659,14 +661,12 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 
 
 #define USAGE1 \
-"lalapps_nullstream [options]\n\n"\
+"lalapps_nullstream [options]\n"\
 "  --help                       display this message\n"\
 "  --verbose                    print progress information\n"\
 "  --version                    print version information and exit\n"\
 "  --debug-level LEVEL          set the LAL debug level to LEVEL\n"\
-/*"  --low-frequency-cutoff F     low f cutoff of previously filtered data\n"\*/
-"  --ifo-tag STRING             set STRING to whatever the ifo-tag of \n"\
-                                "the bank file(needed for file naming) \n"\
+"  --ifo-tag STRING             set STRING to the ifo-tag of the bank file\n"\
 "  --user-tag STRING            set STRING to tag the file names\n"\
 "\n"
 #define USAGE2 \
@@ -676,9 +676,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --dynamic-range-exponent N   set N to same value used in inspiral.c\n"\
 "  [--h1-slide]      h1_slide    Slide H1 data by multiples of h1_slide\n"\
 "  [--h2-slide]      h2_slide    Slide H2 data by multiples of h2_slide\n"\
-/*"  --nullstat-thresh THRESH      set null statistic threshold to THRESH\n"\*/
-/*"  --maximize-over-chirp        do clustering\n"\*/
-"  --frame-type TAG             input data is contained in frames of type TAG\n"\
+"  --frame-type TAG            input data is contained in frames of type TAG\n"\
 "\n"
 #define USAGE3 \
 "  --write-events               write events\n"\
@@ -890,15 +888,15 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
    if ( numPointsSeg < 0 )
    {
-     fprintf( stderr, "--segment-length must be specified and set to the same
-               value used when the C-data was generated.\n");
+     fprintf( stderr, 
+       "--segment-length must be specified and set to the same value used when the C-data was generated.\n");
      exit( 1 );
    }
 
    if ( dynRangeExponent < 0 )
    {
-     fprintf( stderr, "--dynamic-range-exponent must be specified and set to
-              the same value as was used when the C-data was generated.\n");
+     fprintf( stderr, 
+       "--dynamic-range-exponent must be specified and set to the same value as was used when the C-data was generated.\n");
      exit( 1 );
    }
 
