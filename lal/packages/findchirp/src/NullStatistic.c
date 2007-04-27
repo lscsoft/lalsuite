@@ -200,7 +200,6 @@ XLALComputeNullStatistic (
   nullStatOut    = params->nullStatOut;
   segmentLength  = params->segmentLength;
   nullStatThresh = params->nullStatThresh;
-  sigmasq        = params->sigmasq;
 
   /* if the null statistic time series is required: */
   if ( nullStatOut)
@@ -211,8 +210,8 @@ XLALComputeNullStatistic (
   h1idx = LAL_IFO_H1;
   h2idx = LAL_IFO_H2;
 
-  norm = (1.0/( sigmasq[h1idx]*sigmasq[h1idx])) + 
-         (1.0/( sigmasq[h2idx]*sigmasq[h2idx]));
+  norm = ( 1.0 / ( params->sigmasq[h1idx] * params->sigmasq[h1idx] ) ) + 
+         ( 1.0 / ( params->sigmasq[h2idx] * params->sigmasq[h2idx] ) );
   /* read in the c-data for multiple detectors */
   cData = input->CData->cData;
 
@@ -228,21 +227,21 @@ XLALComputeNullStatistic (
   {
     for (m=0; m<(INT4)numPoints; m++)
     {
-      nullStatRe = cData[h1idx].data->data[m].re / sigmasq[h1idx]
-                 - cData[h2idx].data->data[m].re / sigmasq[h2idx];
-      nullStatIm = cData[h1idx].data->data[m].im / sigmasq[h1idx]
-                 - cData[h2idx].data->data[m].im / sigmasq[h2idx];
-      nullStatVec->data[m] = 
+      nullStatRe = cData[h1idx].data->data[m].re / params->sigmasq[h1idx]
+                 - cData[h2idx].data->data[m].re / params->sigmasq[h2idx];
+      nullStatIm = cData[h1idx].data->data[m].im / params->sigmasq[h1idx]
+                 - cData[h2idx].data->data[m].im / params->sigmasq[h2idx];
+      nullStatVec->data->data[m] = 
          ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / norm ;
     }
-    eventNullStat = nullStatVec[idx];
+    eventNullStat = nullStatVec->data->data[idx];
   }
   else
   {
-    nullStatRe = cData[h1idx].data->data[idx].re / sigmasq[h1idx]
-               - cData[h2idx].data->data[idx].re / sigmasq[h2idx] ;
-    nullStatIm = cData[h1idx].data->data[idx].im / sigmasq[h1idx]
-               - cData[h2idx].data->data[idx].im / sigmasq[h2idx] ;
+    nullStatRe = cData[h1idx].data->data[idx].re / params->sigmasq[h1idx]
+               - cData[h2idx].data->data[idx].re / params->sigmasq[h2idx] ;
+    nullStatIm = cData[h1idx].data->data[idx].im / params->sigmasq[h1idx]
+               - cData[h2idx].data->data[idx].im / params->sigmasq[h2idx] ;
     eventNullStat = ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / norm ;
   }
 
@@ -277,7 +276,7 @@ XLALNullStatisticParamsFinal(
   /* destroy null statistic vector, if it exists */
   if ( outputPtr->nullStatOut )
   {
-    XLALDestroyVector( &(outputPtr->nullStatVec->data),sizeof(REAL4TimeSeries));
+    XLALDestroyVector( outputPtr->nullStatVec->data );
     LALFree( outputPtr->nullStatVec );
   }
 
@@ -313,7 +312,7 @@ XLALNullStatisticInputFinal (
     {
       if ( cVecPtr->cData[l].data != NULL )
       {
-        XLALDestroyVector(&(cVecPtr->cData[l].data),sizeof(COMPLEX8TimeSeries));
+        XLALDestroyVector( cVecPtr->cData[l].data );
       }
     }
   

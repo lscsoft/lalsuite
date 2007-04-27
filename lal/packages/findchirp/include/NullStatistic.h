@@ -130,7 +130,7 @@ tagNullStatParams
   REAL4              eventNullStat;
   REAL4              sigmasq[6];
   INT4               segmentLength;
-  DetectorVector     detVector;
+  DetectorVector    *detVector;
   UINT4              nullStatOut;
   REAL4TimeSeries   *nullStatVec;
 }
