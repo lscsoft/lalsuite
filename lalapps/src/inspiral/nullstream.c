@@ -662,28 +662,28 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 
 #define USAGE1 \
 "lalapps_nullstream [options]\n"\
-"  --help                       display this message\n"\
-"  --verbose                    print progress information\n"\
-"  --version                    print version information and exit\n"\
-"  --debug-level LEVEL          set the LAL debug level to LEVEL\n"\
-"  --ifo-tag STRING             set STRING to the ifo-tag of the bank file\n"\
-"  --user-tag STRING            set STRING to tag the file names\n"\
+"  --help                      display this message\n"\
+"  --verbose                   print progress information\n"\
+"  --version                   print version information and exit\n"\
+"  --debug-level LEVEL         set the LAL debug level to LEVEL\n"\
+"  --ifo-tag STRING            set STRING to the ifo-tag of the bank file\n"\
+"  --user-tag STRING           set STRING to tag the file names\n"\
 "\n"
 #define USAGE2 \
-"  --cohbank-file FILE          read template bank parameters from FILE\n"\
-"  --sample-rate N              set data sample rate to N\n"\
-"  --segment-length N           set N to same value used in inspiral.c\n"\
-"  --dynamic-range-exponent N   set N to same value used in inspiral.c\n"\
-"  [--h1-slide]      h1_slide    Slide H1 data by multiples of h1_slide\n"\
-"  [--h2-slide]      h2_slide    Slide H2 data by multiples of h2_slide\n"\
+"  --cohbank-file COHBANKFILE  read template bank parameters from COHBANKFILE\n"\
+"  --sample-rate RATE          set data sample rate to RATE\n"\
+"  --segment-length LEN        set LEN to same value used in inspiral.c\n"\
+"  --dynamic-range-exponent N  set N to same value used in inspiral.c\n"\
+"  [--h1-slide] H1_SLIDE       Slide H1 data by multiples of H1_SLIDE\n"\
+"  [--h2-slide] H2_SLIDE       Slide H2 data by multiples of H2_SLIDE\n"\
 "  --frame-type TAG            input data is contained in frames of type TAG\n"\
 "\n"
 #define USAGE3 \
-"  --write-events               write events\n"\
-"  --write-nullstat-series      write null statistic time series\n"\
-"  --output-path                write files here\n"\
-"  --H1-framefile               frame data for H1\n"\
-"  --H2-framefile               frame data for H2\n"\
+"  --write-events              write events\n"\
+"  --write-nullstat-series     write null statistic time series\n"\
+"  --output-path               write files here\n"\
+"  --H1-framefile              frame data for H1\n"\
+"  --H2-framefile              frame data for H2\n"\
 "\n"
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
