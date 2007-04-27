@@ -226,7 +226,6 @@ AC_OUTPUT( 				\
 	src/pulsar/hough/Makefile	\
 	src/pulsar/hough/src/Makefile   \
 	src/pulsar/FDS_binary/Makefile  \
-	src/pulsar/PulsarMonitor/Makefile \
 	src/pulsar/SideBand/Makefile \
 	src/inspiral/Makefile		\
 	src/zmsearch/Makefile		\
