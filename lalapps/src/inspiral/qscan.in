@@ -1,0 +1,209 @@
+#!/usr/bin/env @PYTHONPROG@
+"""
+qscan.in - simple dag generator for q scans
+
+$Id$
+
+This program takes a list of GPS times and creates a condor dag to run
+qscans and the related post processing.
+"""
+
+__author__ = 'Romain Gouaty <romain@phys.lsu.edu>, ' + \
+             'Chad Hanna <channa@phys.lsu.edu>'
+__date__ = '$Date$'
+__version__ = '$Revision$'[11:-2]
+
+##############################################################################
+# import standard modules and append the lalapps prefix to the python path
+import sys, os, copy, math
+import socket, time
+import re, string
+from optparse import *
+import tempfile
+import ConfigParser
+import urlparse
+sys.path.append('@PYTHONLIBDIR@')
+
+##############################################################################
+# import the modules we need to build the pipeline
+from glue import pipeline
+#import inspiral
+
+##############################################################################
+# qscan class for qscan jobs
+
+class qscanJob(pipeline.CondorDAGJob):
+  """
+  A qscan job
+  """
+  def __init__(self, options, tag_base='QSCAN'):
+    """
+    """
+    self.__executable = options.executable
+    self.__universe = "vanilla"
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    self.tag_base = tag_base
+    self.options = options
+    self.okay_to_add_options = True
+#   self.add_arg(gps)
+#   self.add_file_arg(options.config_file)
+#   self.add_file_arg(options.cache_file)
+#   self.add_arg(options.output_path)
+
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+
+    self.set_stdout_file('logs/qscan-$(macrogpsstarttime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/qscan-$(macrogpsstarttime)-$(cluster)-$(process).err')
+    self.set_sub_file('qscan.sub')
+
+  def add_options(self):
+    if self.okay_to_add_options:
+      self.add_file_arg(self.options.config_file)
+      self.add_file_arg(self.options.cache_file)
+      self.add_arg(self.options.output_path)
+      self.okay_to_add_options = False
+
+
+##############################################################################
+# qscan class for qscan Node 
+
+class qscanNode(pipeline.CondorDAGNode):
+  """
+  Runs an instance of a qscan job
+  """
+  def __init__(self,job,time):
+    """
+    job = A CondorDAGJob that can run an instance of qscan.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    self.set_start(time)
+    job.add_options()
+  
+  def set_start(self,time):
+    """
+    Set the GPS start time of the analysis node by setting a --gps-start-time
+    option to the node when it is executed. We override the default method to
+    cope with the data padding.
+    @param time: GPS start time of job.
+    """
+    self.add_var_arg(str(time))
+    self.add_macro("macrogpsstarttime",str(time))
+
+
+
+##############################################################################
+#
+#  MAIN PROGRAM
+#
+##############################################################################
+usage = """usage: %prog [options]
+"""
+
+parser = OptionParser( usage )
+
+parser.add_option("-v", "--version",action="store_true",default=False,\
+    help="print version information and exit")
+
+parser.add_option("-f", "--config-file",action="store",type="string",\
+    metavar=" FILE",help="use configuration file FILE")
+
+parser.add_option("-p", "--log-path",action="store",type="string",\
+    metavar=" PATH",help="directory to write condor log file")
+
+parser.add_option("-c", "--cache-file",action="store",type="string",\
+    metavar=" FILE",help="use cache file FILE")
+
+parser.add_option("-g", "--gps-list",action="store",type="string",\
+    metavar=" FILE",help="use gps list FILE")
+
+parser.add_option("-o", "--output-path",action="store",type="string",\
+    metavar=" FILE",help="use output path FILE")
+
+parser.add_option("-e", "--executable",action="store",type="string",\
+    metavar=" FILE",help="use executable FILE")
+
+
+
+command_line = sys.argv[1:]
+(opts,args) = parser.parse_args()
+
+#################################
+# if --version flagged
+if opts.version:
+  print "$Id$"
+  sys.exit(0)
+
+#################################
+# Sanity check of input arguments
+if not opts.config_file:
+  print >> sys.stderr, "No configuration file specified."
+  print >> sys.stderr, "Use --config-file FILE to specify location."
+  sys.exit(1)
+
+if not opts.log_path:
+  print >> sys.stderr, "No log file path specified."
+  print >> sys.stderr, "Use --log-path PATH to specify a location."
+  sys.exit(1)
+
+if not opts.cache_file:
+  print >> sys.stderr, "No cache specified."
+  print >> sys.stderr, "Use --cache-file FILE to specify a cache file."
+  sys.exit(1)
+
+if not opts.gps_list:
+  print >> sys.stderr, "No gps list specified."
+  print >> sys.stderr, "Use --gps-list FILE to specify a list."
+  sys.exit(1)
+
+if not opts.output_path:
+  print >> sys.stderr, "No output path specified."
+  print >> sys.stderr, "Use --output-path PATH to specify an output location."
+  sys.exit(1)
+
+if not opts.executable:
+  print >> sys.stderr, "No executable specified."
+  print >> sys.stderr, "Use --executable PATH to specify an executable."
+  sys.exit(1)
+
+GPSfile = open(opts.gps_list,"r")
+GPStimes = []
+GPStimes = GPSfile.readlines()
+
+if not len(GPStimes):
+  print >> sys.stderr, "No GPS times found in file"
+  print >> sys.stderr, "Is the first line blank?"
+  sys.exit(1)
+
+GPStime = []
+
+for time in GPStimes:
+  print eval(time)
+  GPStime.append(eval(time))
+
+
+try: os.mkdir('logs')
+except: pass
+
+##############################################################################
+# create a log file that the Condor jobs will write to
+basename = re.sub(r'\.ini',r'',opts.config_file)
+tempfile.tempdir = opts.log_path
+tempfile.template = basename + '.dag.log.'
+logfile = tempfile.mktemp()
+fh = open( logfile, "w" )
+fh.close()
+
+##############################################################################
+# create the DAG writing the log to the specified directory
+dag = pipeline.CondorDAG(logfile)
+dag.set_dag_file( basename )
+subsuffix = '.sub'
+
+##############################################################################
+# create the Condor jobs that will be used in the DAG
+qscan_job = qscanJob(opts,  tag_base='QSCAN')
+for time in GPStime:
+  dag.add_node(qscanNode(qscan_job,time))
+
+dag.write_sub_files()
+dag.write_dag()
