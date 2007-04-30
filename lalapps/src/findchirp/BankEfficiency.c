@@ -1914,9 +1914,9 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
       userParam.startTime);     
   ADD_PROCESS_PARAM("float","%f","--fl-template", 
       coarseBankIn.fLower);
-  ADD_PROCESS_PARAM("float","%f","--max-total-mass",
+  ADD_PROCESS_PARAM("float","%f","--signal-max-total-mass",
       userParam.maxTotalMass);
-  ADD_PROCESS_PARAM("float","%f","--min-total-mass",
+  ADD_PROCESS_PARAM("float","%f","--signal-min-total-mass",
       userParam.minTotalMass);
   ADD_PROCESS_PARAM("float","%f","--m1",	
       userParam.m1);
@@ -4099,7 +4099,7 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
     {
       if (userParam->maxTotalMass < 2*randIn->mMin) 
 	{	
-	  sprintf(msg, "--max-total-mass (%f) must be > twice the minimla mass (%f) ",
+	  sprintf(msg, "--signal-max-total-mass (%f) must be > twice the minimal mass (%f) ",
 	      userParam->maxTotalMass , randIn->mMin );
           fprintf(stderr, msg);
           exit(1);
@@ -4364,8 +4364,6 @@ void Help(void)
   fprintf(stderr, "\t[--fl-signal<float>]\t\t set the lower cut off frequency of signal to inject\n");
   fprintf(stderr, "\t[--fl-template<float>]\t\t set the lower cut off frequnecy of template \n");
   fprintf(stderr, "\t[--fl<float>]\t\t\t set both template and signal lower cutoff frequency \n");
-  fprintf(stderr, "\t[--max-total-mass<float>]\t set maximum total mass to be injected\n");
-  fprintf(stderr, "\t[--min-total-mass<float>]\t set minimum total mass to be injected\n");
   fprintf(stderr, "\t[--gps-start-time<integer>]\t set gps start time if real data or psd are requested\n");
   fprintf(stderr, "\t[--m1<float>]\t\t\t force injection first individual mass to be equal to m1. needs to set m2 as well then\n");
   fprintf(stderr, "\t[--m2<float>]\t\t\t force injection second individual mass to be equal to m2. needs to set m1 as well then\n");
@@ -4382,6 +4380,8 @@ void Help(void)
   fprintf(stderr, "\t[--signal<string>]\t\t set signal approximant (TaylorT1, TaylorT2, TaylorT3, TaylorF2, PadeT1, EOB, SpinTaylor)\n");
   fprintf(stderr, "\t[--signal-alpha<float>]\t\t set alpha parameter of BCV injection\n");
   fprintf(stderr, "\t[--signal-amplitude<float>]\t set SNR of injection in the case NoiseandSignal simulation\n");
+  fprintf(stderr, "\t[--signal-max-total-mass<float>]\t set maximum total mass to be injected\n");
+  fprintf(stderr, "\t[--signal-min-total-mass<float>]\t set minimum total mass to be injected\n");
   fprintf(stderr, "\t[--signal-ffinal<float>]\t force final frequency value\n");
   fprintf(stderr, "\t[--signal-mass-range<float float>]\t set range of masses to inject (SPA injection)\n");
   fprintf(stderr, "\t[--signal-tau0-range<float float>]\t set range of tau0 to inject (SPA injection)\n");
