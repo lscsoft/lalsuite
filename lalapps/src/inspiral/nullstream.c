@@ -100,11 +100,10 @@ INT4 V1file = 0;
 REAL8  slideStep[6]        = {0.0,0.0,0.0,0.0,0.0,0.0};
 int    bankDuration        = 0;
 CHAR  *cohbankFileName     = NULL;   /* name of input template bank  */
-UINT4  nullStatOut         = 0;      /* default is not to write frame */
-UINT4  eventsOut           = 0;      /* default is not to write events */
+int    nullStatOut         = 0;      /* default is not to write frame */
+int    eventsOut           = 0;      /* default is not to write events */
 REAL4  nullStatThresh      = -1;
 INT4   maximizeOverChirp   = 0;      /* default is no clustering */
-INT4   verbose             = 0;
 CHAR   outputPath[FILENAME_MAX];
 CHAR  *frInType            = NULL;   /* type of data frames */
 
@@ -190,7 +189,7 @@ int main( int argc, char *argv[] )
 
   /* cData channel names */
   char nameArrayCData[6][256] = {"0","0","0","0","0","0"}; 
-  if (verbose) fprintf(stdout, "LAL_NUM_IFO=%d",LAL_NUM_IFO);
+  if ( vrbflg ) fprintf(stdout, "%d.\n",LAL_NUM_IFO);
 
   set_debug_level( "1" ); /* change with parse option */
 
@@ -204,7 +203,7 @@ int main( int argc, char *argv[] )
     LALCalloc( 1, sizeof(ProcessParamsTable) );
 
   arg_parse_check( argc, argv, procparams );
-  if (verbose)  fprintf(stdout, "Called parse options.\n");
+  if ( vrbflg )  fprintf(stdout, "Called parse options.\n");
 
   /* wind to the end of the process params table */
   for ( this_proc_param = procparams.processParamsTable; this_proc_param->next;
@@ -220,7 +219,7 @@ int main( int argc, char *argv[] )
   k = 0;
 
   /* read in the frame files */
-  if ( verbose ) fprintf(stdout, "Reading in the frame files.\n");
+  if ( vrbflg ) fprintf(stdout, "Reading in the frame files.\n");
   for ( k=0; k<6 ; k++)
   {
     if ( (k == LAL_IFO_H1) || (k==LAL_IFO_H2) )
@@ -306,9 +305,9 @@ int main( int argc, char *argv[] )
         if ( thisCoinc->snglInspiral[k]  && 
              ( (k==LAL_IFO_H1) || (k==LAL_IFO_H2) ) )
         {
-          /* record the event0id for this coincidence */
-          eventID = thisCoinc->snglInspiral[k]->event_id; 
-          if ( verbose ) fprintf(stdout,"eventID = %Ld.\n",eventID );
+          /* record the eventid for this coincidence */
+          eventID = thisCoinc->snglInspiral[k]->event_id->id; 
+          if ( vrbflg ) fprintf(stdout,"eventID = %Ld.\n",eventID );
 
           /* Parse eventID to get the slide number */
           triggerNumber = eventID % 100000;
@@ -365,7 +364,7 @@ int main( int argc, char *argv[] )
 
       l = 0;
 
-      if ( verbose ) fprintf(stdout,"numDetectors = %d\n", numDetectors);
+      if ( vrbflg ) fprintf(stdout,"numDetectors = %d\n", numDetectors);
 
       /* Initialize the necessary structures for thisCoinc-ident trigger*/
 
@@ -385,7 +384,7 @@ int main( int argc, char *argv[] )
 
       /* create the data structures needed */
 
-      if ( verbose ) fprintf( stdout, "Initializing.\n " );
+      if ( vrbflg ) fprintf( stdout, "Initializing.\n " );
 
       /* initialize null statistic functions */
       XLALNullStatisticInputInit(&nullStatInputParams, nullStatInitParams);
@@ -401,7 +400,7 @@ int main( int argc, char *argv[] )
       nullStatInputParams->tmplt->mu = m1 * m2 / (m1 + m2);
       nullStatInputParams->tmplt->eta = (m1 * m2) / ((m1 + m2) * (m1 + m2 ));
 
-      if (verbose) fprintf(stdout,"m1:%f, m2:%f, Mtotal:%f, mu:%f, eta:%f.\n", 
+      if ( vrbflg ) fprintf(stdout,"m1:%f, m2:%f, Mtotal:%f, mu:%f, eta:%f.\n", 
          m1, m2, nullStatInputParams->tmplt->totalMass,
          nullStatInputParams->tmplt->mu, nullStatInputParams->tmplt->eta);
 
@@ -435,7 +434,7 @@ int main( int argc, char *argv[] )
       {
         if ( (j == LAL_IFO_H1) || (j == LAL_IFO_H2) ) 
         { 
-          if ( verbose ) fprintf(stdout, "Getting the COMPLEX8TimeSeries.\n");
+          if ( vrbflg ) fprintf(stdout, "Getting the COMPLEX8TimeSeries.\n");
           LAL_CALL( LALFrOpen( &status, &frStream, NULL, ifoframefile[j]), 
              &status);
           if (!frStream)
@@ -454,7 +453,7 @@ int main( int argc, char *argv[] )
           /* tempTime is the start time of cData plus - (time slide) */
           tempTime[j] += CVec->cData[j].epoch.gpsSeconds + 
                          CVec->cData[j].epoch.gpsNanoSeconds * 1e-9;
-          if ( verbose ) fprintf( stdout, "tempTime = %f\n", tempTime[j]);
+          if ( vrbflg ) fprintf( stdout, "tempTime = %f\n", tempTime[j]);
  
           LAL_CALL( LALFrClose( &status, &frStream ), &status );
  
@@ -465,7 +464,7 @@ int main( int argc, char *argv[] )
         }
         else
         {
-          if (verbose) fprintf(stdout,"No data needed for G1, L1,T1 or V1.\n");
+          if ( vrbflg ) fprintf(stdout,"No data needed for G1, L1,T1 or V1.\n");
         }
       }      /* closes for( j=0; j<6; j++ ) */
 
@@ -485,8 +484,8 @@ int main( int argc, char *argv[] )
         LALSnprintf( nullStatStr, LALNameLength*sizeof(CHAR),
                      "NULL_STAT_%d", numNullStatFr++ );
         strcpy( nullStatParams->nullStatVec->name, "NullStatistic");
-        outFrame = fr_add_proc_REAL4TimeSeries( outFrame, nullStatParams, 
-                     "none", nullStatStr);
+        outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
+                      nullStatParams->nullStatVec, "none", nullStatStr);
       }
 
       if ( !eventsOut )
@@ -561,7 +560,7 @@ int main( int argc, char *argv[] )
       LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName);
     }
 
-    if ( verbose ) fprintf( stdout, "Writing null statistic time series to %s.",
+    if ( vrbflg ) fprintf( stdout, "Writing null statistic time series to %s.",
                             framename );
     frOutFile = FrFileONew( framename, 0 );
     FrameWrite( outFrame, frOutFile );
@@ -580,11 +579,11 @@ int main( int argc, char *argv[] )
     {
       LALSnprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml", fileName );
     }
-    if ( verbose ) fprintf( stdout, "Writing xml data to %s.", xmlname );
+    if ( vrbflg ) fprintf( stdout, "Writing xml data to %s.", xmlname );
     LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, xmlname ), &status );
 
     /* process table */
-    if ( verbose ) fprintf( stdout, "Writing the process table..." );
+    if ( vrbflg ) fprintf( stdout, "Writing the process table..." );
     LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time), 
                               &accuracy ), &status );
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ), 
@@ -593,10 +592,10 @@ int main( int argc, char *argv[] )
                                       process_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
     free( proctable.processTable );
-    if ( verbose ) fprintf( stdout, " done.\n" );
+    if ( vrbflg ) fprintf( stdout, " done.\n" );
 
     /* process params table */
-    if ( verbose ) fprintf( stdout, "Writing the process_params table..." );
+    if ( vrbflg ) fprintf( stdout, "Writing the process_params table..." );
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, 
                                       process_params_table ), &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, procparams, 
@@ -608,10 +607,10 @@ int main( int argc, char *argv[] )
       procparams.processParamsTable = this_proc_param->next;
       free( this_proc_param );
     }
-    if ( verbose ) fprintf( stdout, " done.\n" );
+    if ( vrbflg ) fprintf( stdout, " done.\n" );
 
     /* multi inspiral table */
-    if( verbose ) fprintf( stdout,"Writing the multi-inspiral table...");
+    if( vrbflg ) fprintf( stdout,"Writing the multi-inspiral table...");
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, 
                                       multi_inspiral_table ), &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, savedEvents, 
@@ -626,11 +625,11 @@ int main( int argc, char *argv[] )
       LALFree( tempEvent );
       tempEvent = NULL;
     }
-    if ( verbose ) fprintf( stdout, " done.\n" );
+    if ( vrbflg ) fprintf( stdout, " done.\n" );
 
     /* close the xml file */
     LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
-    if ( verbose ) fprintf( stdout, "Closed the xml file.\n" );
+    if ( vrbflg ) fprintf( stdout, "Closed the xml file.\n" );
 
   }
 
@@ -642,7 +641,7 @@ int main( int argc, char *argv[] )
   if( frInCache ) LAL_CALL( LALDestroyFrCache( &status, &frInCache ), &status );
   if ( frInType ) free( frInType );
 
-  if ( verbose ) fprintf( stdout, "Checking memory leaks and exiting.\n" );
+  if ( vrbflg ) fprintf( stdout, "Checking memory leaks and exiting.\n" );
   LALCheckMemoryLeaks();
 
   exit(0);
@@ -692,21 +691,18 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 {
    struct option long_options[] =
    {
-     {"verbose",                no_argument,       &verbose,           1 },
+     {"verbose",                no_argument,       &vrbflg,            1 },
      {"help",                   no_argument,       0,                 'h'},
      {"version",                no_argument,       0,                 'v'},
      {"debug-level",            required_argument, 0,                 'd'},
      {"ifo-tag",                required_argument, 0,                 'I'},
      {"user-tag",               required_argument, 0,                 'B'},
-/*     {"low-frequency-cutoff",   required_argument, 0,                 'f'},*/
      {"cohbank-file",           required_argument, 0,                 'u'},
      {"sample-rate",            required_argument, 0,                 'r'},
      {"segment-length",         required_argument, 0,                 'l'},
      {"dynamic-range-exponent", required_argument, 0,                 'e'},
      {"h1-slide",               required_argument, 0,                 'W'},
      {"h2-slide",               required_argument, 0,                 'X'},
-/*     {"nullstat-thresh",       required_argument, 0,                 'p'},*/
-/*     {"maximize-over-chirp",    no_argument,       &maximizeOverChirp, 1 },*/
      {"write-events",           no_argument,       &eventsOut,         1 },
      {"write-nullstat-series",  no_argument,       &nullStatOut,       1 },
      {"output-path",            required_argument, 0,                 'P'},
