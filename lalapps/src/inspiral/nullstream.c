@@ -160,12 +160,13 @@ int main( int argc, char *argv[] )
   UINT8  slideSign      = 0;
 
   /* counters and other variables */
-  INT4   j, k, l, kidx;
-  UINT4  numDetectors            = 0;
-  REAL8  tempTime[6]             = {0.0,0.0,0.0,0.0,0.0,0.0}; 
-  INT4   numTriggers             = 0;
-  INT4   numCoincs               = 0;
-  INT4   numEvents               = 0;
+  INT4   j, k, l;
+  INT4   kidx            = 0;
+  UINT4  numDetectors    = 0;
+  REAL8  tempTime[6]     = {0.0,0.0,0.0,0.0,0.0,0.0}; 
+  INT4   numTriggers     = 0;
+  INT4   numCoincs       = 0;
+  INT4   numEvents       = 0;
 
   FrCache              *frInCache        = NULL;
 
@@ -817,11 +818,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
          break;
 
        case 'u':
-         /* create storage for the bank filename */
-         /*optarg_len = strlen( optarg ) + 1;
-         bankFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-         memcpy( bankFileName, optarg, optarg_len );*/
-         strcpy(cohbankFileName, optarg);
+         /* create storage for the cohbank filename */
+         optarg_len = strlen( optarg ) + 1;
+         cohbankFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+         memcpy( cohbankFileName, optarg, optarg_len );
+         /*strcpy(cohbankFileName, optarg);*/
+         ADD_PROCESS_PARAM( "string", "%s", cohbankFileName );
          char tempName[256];
          char *duration =NULL;
          strcpy(tempName, cohbankFileName);
@@ -829,9 +831,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
          duration = strtok(NULL,"-");
          duration = strtok(NULL,"-");
          duration = strtok(NULL,".");
-         bankDuration=atoi(duration);
-           ADD_PROCESS_PARAM( "string", "%s", cohbankFileName );
-         duration=NULL;
+         bankDuration = atoi(duration);
+         duration = NULL;
          break;
 
        /* Read in time-slide steps for all detectors */
