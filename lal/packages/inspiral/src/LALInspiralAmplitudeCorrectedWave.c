@@ -347,12 +347,10 @@ LALInspiralAmplitudeCorrectedWaveEngine(
 {
    PPNParamStruc ppnParams;
    CoherentGW 	waveform; 
-   INT4 i,n=2, count;
-   REAL8 omega;
-   REAL8 amp, m, dt, t, v, p, h1, h2, f, fu, fHigh, piM;
+   INT4 i, count;
+   REAL8 dt;
    REAL8 mTot = 0;
    REAL8 unitHz = 0;
-   REAL8 f2a = 0;
    REAL8 mu = 0; 
    REAL8 cosI = 0;/* cosine of system inclination */
    REAL8 etab = 0;
@@ -409,7 +407,7 @@ LALInspiralAmplitudeCorrectedWaveEngine(
    ppnParams.ppn->data[0] = 1.0;
    if ( params->order > 0 )
      ppnParams.ppn->data[1] = 0.0;
-   for ( i = 2; i <= (UINT4)( params->order ); i++ )
+   for ( i = 2; i <= (INT4)( params->order ); i++ )
      ppnParams.ppn->data[i] = 1.0;
 	ppnParams.fStopIn = 0;
 	ppnParams.deltaT	= dt;
@@ -428,7 +426,7 @@ tion, that value must be zero*/
    LALGeneratePPNAmpCorInspiral( status->statusPtr, &waveform, &ppnParams );
 
    count = 0; 
-  for (i=0;i<waveform.h->data->length; i++)
+  for (i=0;i<(INT4)waveform.h->data->length; i++)
   {
 	   /* Non-injection case */
       if (signal1)
