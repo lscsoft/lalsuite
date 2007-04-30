@@ -130,7 +130,7 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	  params->massChoice  = m1Andm2;
 	  if (strcmp(argv[++i],"AmpCorPPN")==0){
 	    params->approximant = AmpCorPPN; }
-	  if (strcmp(argv[++i],"TaylorT1")==0){
+          else if (strcmp(argv[i],"TaylorT1")==0){
 	    params->approximant = TaylorT1; }
 	  else if (strcmp(argv[i],"TaylorT2")==0){
 	    params->approximant = TaylorT2;}
