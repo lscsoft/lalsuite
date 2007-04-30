@@ -87,7 +87,7 @@ REAL4  dynRangeExponent     = -1;  /* set to same value used in inspiral.c */
 
 /*null stream specific inputs*/
 
-char   ifoframefile[LAL_NUM_IFO][256];
+char   ifoframefile[6][256];
 
 INT4 H1file = 0;
 INT4 H2file = 0;
@@ -97,7 +97,7 @@ INT4 T1file = 0;
 INT4 V1file = 0;
 
 /* input time-slide parameters */
-REAL8  slideStep[LAL_NUM_IFO]     = {0.0,0.0,0.0,0.0,0.0,0.0};
+REAL8  slideStep[6]        = {0.0,0.0,0.0,0.0,0.0,0.0};
 int    bankDuration        = 0;
 CHAR  *cohbankFileName     = NULL;   /* name of input template bank  */
 UINT4  nullStatOut         = 0;      /* default is not to write frame */
@@ -162,7 +162,7 @@ int main( int argc, char *argv[] )
   /* counters and other variables */
   INT4   j, k, l, kidx;
   UINT4  numDetectors            = 0;
-  REAL8  tempTime[LAL_NUM_IFO]   = {0.0,0.0,0.0,0.0,0.0,0.0}; 
+  REAL8  tempTime[6]             = {0.0,0.0,0.0,0.0,0.0,0.0}; 
   INT4   numTriggers             = 0;
   INT4   numCoincs               = 0;
   INT4   numEvents               = 0;
@@ -188,7 +188,8 @@ int main( int argc, char *argv[] )
   MetadataTable           savedEvents;
 
   /* cData channel names */
-  char nameArrayCData[LAL_NUM_IFO][256] = {"0","0","0","0","0","0"}; 
+  char nameArrayCData[6][256] = {"0","0","0","0","0","0"}; 
+  if (verbose) fprintf(stdout, "LAL_NUM_IFO=%d",LAL_NUM_IFO);
 
   set_debug_level( "1" ); /* change with parse option */
 
@@ -219,7 +220,7 @@ int main( int argc, char *argv[] )
 
   /* read in the frame files */
   if ( verbose ) fprintf(stdout, "Reading in the frame files.\n");
-  for ( k=0; k<LAL_NUM_IFO ; k++)
+  for ( k=0; k<6 ; k++)
   {
     if ( (k == LAL_IFO_H1) || (k==LAL_IFO_H2) )
     {
@@ -299,7 +300,7 @@ int main( int argc, char *argv[] )
       l=0;
 
       /* Note the participating ifos and the eventID for this coincidence */
-      for ( k=0 ; k<LAL_NUM_IFO ; k++)
+      for ( k=0 ; k<6 ; k++)
       {
         if ( thisCoinc->snglInspiral[k]  && 
              ( (k==LAL_IFO_H1) || (k==LAL_IFO_H2) ) )
@@ -322,7 +323,7 @@ int main( int argc, char *argv[] )
       } 
 
       /* Initialize tempTime to account for time-slides */
-      for( j=0; j<(LAL_NUM_IFO-1); j++)
+      for( j=0; j<5; j++)
       {
         /* slideSign=0 is the same as a positive time slide */
         if(slideSign != 0)
@@ -429,7 +430,7 @@ int main( int argc, char *argv[] )
 
 
       /* Read in the snippets associated with thisCoinc trigger */
-      for ( j=0; j<LAL_NUM_IFO; j++ )
+      for ( j=0; j<6; j++ )
       {
         if ( (j == LAL_IFO_H1) || (j == LAL_IFO_H2) ) 
         { 
@@ -465,7 +466,7 @@ int main( int argc, char *argv[] )
         {
           if (verbose) fprintf(stdout,"No data needed for G1, L1,T1 or V1.\n");
         }
-      }      /* closes for( j=0; j<LAL_NUM_IFO; j++ ) */
+      }      /* closes for( j=0; j<6; j++ ) */
 
 
       /*
@@ -682,8 +683,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --write-events              write events\n"\
 "  --write-nullstat-series     write null statistic time series\n"\
 "  --output-path               write files here\n"\
-"  --H1-framefile              frame data for H1\n"\
-"  --H2-framefile              frame data for H2\n"\
+"  --h1-framefile              frame data for H1\n"\
+"  --h2-framefile              frame data for H2\n"\
 "\n"
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
@@ -708,8 +709,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      {"write-events",           no_argument,       &eventsOut,         1 },
      {"write-nullstat-series",  no_argument,       &nullStatOut,       1 },
      {"output-path",            required_argument, 0,                 'P'},
-     {"H1-framefile",           required_argument, 0,                 'A'},
-     {"H2-framefile",           required_argument, 0,                 'Z'},
+     {"h1-framefile",           required_argument, 0,                 'A'},
+     {"h2-framefile",           required_argument, 0,                 'Z'},
      {"frame-type",             required_argument, 0,                 'S'},
      {0, 0, 0, 0}
    };
