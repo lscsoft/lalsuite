@@ -22,6 +22,9 @@ with ampltidude corrections.
 
 See GeneratePPNInspiral.c
 
+Phase computed to 3.5PN
+Amplitude computed to 2.5PN
+
 \subsubsection*{Algorithm}
 
 
