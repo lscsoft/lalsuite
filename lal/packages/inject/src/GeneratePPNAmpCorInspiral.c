@@ -185,6 +185,7 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   REAL4 sinI, sin2I, sin4I; /* sine of system inclination */
   REAL4 fFac;          /* SI normalization for f and t */
   REAL4 f2aFac;        /* factor multiplying f in amplitude function */
+  REAL4 fthree, ffour, ffive, fsix, fseven; /* powers in f2a to speed up waveform construction */
   REAL4 preFac;        /* Overall prefactor in waveforms */
   REAL4 delta;         /* relative mass difference */
   REAL4 sd, scd;       /* sinI*delta, sd*cosI*/
@@ -217,6 +218,7 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   REAL4 a4Cfour, a4Csix, a4Cseven, a4Cmix;
   REAL4 a5Cfive, a5Cseven;
   REAL4 a6Csix;
+  REAL4 a7Cseven;
 
   REAL4 a1, a2, a3, a4, a5, a6, a7; /* generated amplitudes of harmonics */
   REAL4 a1mix, a2mix, a3mix, a4mix; /* generated amplitudes of harmonic mixed terms */
@@ -407,6 +409,9 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   /* Sixth harmonic cross */
   a6Csix = cosI*81.0/20.0*sin4I*(1.0 + 5.0*eta*(eta - 1.0));
 
+  /* Seventh harmonic cross */
+  a7Cseven = - scd*sin4I*117649.0/23040.0*(1.0 + eta*(3.0*eta - 4.0));
+
   /* Compute frequency, phase, and amplitude factors. */
   fFac = 1.0 / ( 4.0*LAL_TWOPI*LAL_MTSUN_SI*mTot );
   dt = -params->deltaT * eta / ( 5.0*LAL_MTSUN_SI*mTot );
@@ -477,17 +482,14 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
    * COMPUTE START TIME                                              *
    *******************************************************************/
 
-  /* First, find the normalized start frequencies, and the best guess as
+  /* First, find the normalized start frequency, and the best guess as
      to the start times from each term.  We require the
      frequency to be increasing. */
   yStart =  params->fStartIn / fFac;
   
-  /* Compute starting frequency for each harmonic separately */  
-  /* The line below computes the start time for the highest harmonic */
-  /* I'm glad it works */
-  /*yStart = 2.0*yStart/((REAL4)(NUMHARMONICS));*/
+  /* Compute starting frequency for highest harmonic */  
+  yStart = 2.0*yStart/((REAL4)(NUMHARMONICS));
     
-  /* Compute starting times for the different harmonics */ 
   if ( params->fStopIn == 0.0 )
     yMax = LAL_REAL4_MAX;
   else {
@@ -588,8 +590,6 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
     xMax = LAL_REAL4_MAX;
     tStop = 0.0;
   }
-
-
      
   /* Compute initial dimensionless time, record actual initial
      frequency (in case it is different), and record dimensional
@@ -717,24 +717,31 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
      preFac = -2.0*mu*LAL_MRSUN_SI/params->d; 
      delta = pow((1-4*eta), 0.5); 
 
+     /* powers of frequency */
+     fthree = pow(f2a, 1.5);
+     ffour  = pow(f2a, 2.0);
+     ffive  = pow(f2a, 2.5);
+     fsix   = pow(f2a, 3.0);
+     fseven = pow(f2a, 3.5);
+
      /* PLUS */
-     a1 = a1Pthree*pow(f2a, 1.5) + a1Pfive*pow(f2a, 2.5) + a1Psix*pow(f2a, 3.0) + a1Pseven*pow(f2a, 3.5);  
-     a1mix = a1Pmix*pow(f2a, 3.0);
+     a1 = a1Pthree*fthree + a1Pfive*ffive + a1Psix*fsix + a1Pseven*fseven;  
+     a1mix = a1Pmix*fsix;
        
-     a2 = a2Ptwo*f2a + a2Pfour*pow(f2a, 2.0) + a2Pfive*pow(f2a, 2.5) + a2Psix*pow(f2a, 3.0) + a2Pseven*pow(f2a, 3.5);		 
-     a2mix = a2Pmix*pow(f2a, 3.5);      	       
+     a2 = a2Ptwo*f2a + a2Pfour*ffour + a2Pfive*ffive + a2Psix*fsix + a2Pseven*fseven;		 
+     a2mix = a2Pmix*fseven;      	       
        
-     a3 = a3Pthree*pow(f2a, 1.5) + a3Pfive*pow(f2a, 2.5) + a3Psix*pow(f2a, 3.0) + a3Pseven*pow(f2a, 3.5);		
-     a3mix = a3Pmix*pow(f2a, 3.0);	       
+     a3 = a3Pthree*fthree + a3Pfive*ffive + a3Psix*fsix + a3Pseven*fseven;		
+     a3mix = a3Pmix*fsix;	       
      
-     a4 = a4Pfour*pow(f2a, 2.0) + a4Psix*pow(f2a, 3.0) + a4Pseven*pow(f2a, 3.5); 
-     a4mix = a4Pmix*pow(f2a, 3.5);      
+     a4 = a4Pfour*ffour + a4Psix*fsix + a4Pseven*fseven; 
+     a4mix = a4Pmix*fseven;      
      
-     a5 = a5Pfive*pow(f2a, 2.5) + a5Pseven*pow(f2a, 3.5);	    
+     a5 = a5Pfive*ffive + a5Pseven*fseven;	    
      
-     a6 = a6Psix*pow(f2a, 3.0);
+     a6 = a6Psix*fsix;
      
-     a7 = a7Pseven*pow(f2a, 3.5);
+     a7 = a7Pseven*fseven;
      
      *(h++) = preFac*(s[0]*a1*cos(1.0*(phiC - phase)/2.0) + s[1]*a2*cos(2.0*(phiC - phase)/2.0) + s[2]*a3*cos(3.0*(phiC - phase)/2.0) 
 	            + s[3]*a4*cos(4.0*(phiC - phase)/2.0) + s[4]*a5*cos(5.0*(phiC - phase)/2.0) + s[5]*a6*cos(6.0*(phiC - phase)/2.0)
@@ -743,23 +750,23 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
 		    + s[3]*a4mix*sin(4.0*(phiC - phase)/2.0));      
 
      /* CROSS */
-     a1 = a1Cthree*pow(f2a, 1.5) + a1Cfive*pow(f2a, 2.5) + a1Csix*pow(f2a, 3.0);         	     
-     a1mix = a1Cmixsix*pow(f2a, 3.0) + a1Cmixseven*pow(f2a, 3.5);    
+     a1 = a1Cthree*fthree + a1Cfive*ffive + a1Csix*fsix;         	     
+     a1mix = a1Cmixsix*fsix + a1Cmixseven*fseven;    
        
-     a2 = a2Ctwo*f2a + a2Cfour*pow(f2a, 2.0) + a2Cfive*pow(f2a, 2.5) + a2Csix*pow(f2a, 3.0) + a2Cseven*pow(f2a, 3.5);    
-     a2mix = a2Cmix*pow(f2a, 3.5);
+     a2 = a2Ctwo*f2a + a2Cfour*ffour + a2Cfive*ffive + a2Csix*fsix + a2Cseven*fseven;    
+     a2mix = a2Cmix*fseven;
      
-     a3 = a3Cthree*pow(f2a, 1.5) + a3Cfive*pow(f2a, 2.5) + a3Csix*pow(f2a, 3.0) + a3Cseven*pow(f2a, 3.5);   
-     a3mix = a3Cmix*pow(f2a, 3.0);
+     a3 = a3Cthree*fthree + a3Cfive*ffive + a3Csix*fsix + a3Cseven*fseven;   
+     a3mix = a3Cmix*fsix;
      
-     a4 = a4Cfour*pow(f2a, 2.0) + a4Csix*pow(f2a, 3.0) + a4Cseven*pow(f2a, 3.5);
-     a4mix = a4Cmix*pow(f2a, 3.5);  
+     a4 = a4Cfour*ffour + a4Csix*fsix + a4Cseven*fseven;
+     a4mix = a4Cmix*fseven;  
      
-     a5 = a5Cfive*pow(f2a, 2.5) + a5Cseven*pow(f2a, 3.5);
+     a5 = a5Cfive*ffive + a5Cseven*fseven;
      
-     a6 = a6Csix*pow(f2a, 3.0);
+     a6 = a6Csix*fsix;
      
-     a7 = - scd*sin4I*117649.0/23040.0*(1.0 + eta*(3.0*eta - 4.0))*pow(f2a, 3.5);
+     a7 = a7Cseven*fseven;
      
      *(h++) = preFac*(s[0]*a1*sin(1.0*(phiC - phase)/2.0) + s[1]*a2*sin(2.0*(phiC - phase)/2.0) + s[2]*a3*sin(3.0*(phiC - phase)/2.0) 
 		    + s[3]*a4*sin(4.0*(phiC - phase)/2.0) + s[4]*a5*sin(5.0*(phiC - phase)/2.0) + s[5]*a6*sin(6.0*(phiC - phase)/2.0)
