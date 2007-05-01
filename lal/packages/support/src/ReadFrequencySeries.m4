@@ -1,6 +1,6 @@
 dnl $Id$
 /************************************ <lalVerbatim file="ReadFrequencySeriesCV">
-Author: Torres, C. W.
+Author: Torres, C. V.
 $Id$
 ************************************* </lalVerbatim> */
 
