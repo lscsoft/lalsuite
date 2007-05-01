@@ -90,4 +90,24 @@ LALappsDetermineFilename(LALStatus                    *status,
 			 TrackSearchMapMarkingParams  imageBorders,
 			 CHARVector                 **thisFilename, 
 			 const CHAR*                  myFileExt);
+void
+LALappsCreateR4FromR8TimeSeries(LALStatus               *status,
+				REAL4TimeSeries        **R4TS,
+				REAL8TimeSeries         *R8TS);
+
+void LALappsPSD_Check(REAL8TimeSeries*);
+
+void print_real4tseries(const REAL4TimeSeries *fseries, 
+			const char *file);
+void print_real8tseries(const REAL8TimeSeries *fseries, 
+			const char *file);
+void print_real4fseries(const REAL4FrequencySeries *fseries,
+			const char *file);
+void print_real8fseries(const REAL8FrequencySeries *fseries, 
+			const char *file);
+void print_complex8fseries(const COMPLEX8FrequencySeries *fseries, 
+			   const char *file);
+void print_complex8_RandC_fseries(const COMPLEX8FrequencySeries *fseries, 
+				  const char *file);
+void print_lalUnit(LALUnit unit,const char *file);
 #endif

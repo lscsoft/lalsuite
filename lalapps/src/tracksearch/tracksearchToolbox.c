@@ -1,3 +1,21 @@
+ /*
+  * Copyright (C) 2004, 2005 Cristina V. Torres
+  *
+  *  This program is free software; you can redistribute it and/or modify
+  *  it under the terms of the GNU General Public License as published by
+  *  the Free Software Foundation; either version 2 of the License, or
+  *  (at your option) any later version.
+  *
+  *  This program is distributed in the hope that it will be useful,
+  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  *  GNU General Public License for more details.
+  *
+  *  You should have received a copy of the GNU General Public License
+  *  along with with program; see the file COPYING. If not, write to the
+  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+  *  MA  02111-1307  USA
+  */
 /*
  * Author: Torres C. (Univ of TX at Brownsville)
  */
@@ -734,6 +752,237 @@ LALappsTSADestroyCache(LALStatus       *status,
 /*
  * End LALappsTSADestroyCache
  */
+
+void LALappsCreateR4FromR8TimeSeries(LALStatus             *status,
+				     REAL4TimeSeries      **R4TS,
+				     REAL8TimeSeries       *R8TS)
+
+{
+  UINT4 i;
+
+  LAL_CALL(
+	   LALCreateREAL4TimeSeries(status,
+				    R4TS,
+				    R8TS->name,
+				    R8TS->epoch,
+				    R8TS->f0,
+				    R8TS->deltaT,
+				    R8TS->sampleUnits,
+				    R8TS->data->length),
+                   status);
+  for (i=0;i<(*R4TS)->data->length;i++)
+     (*R4TS)->data->data[i]=R8TS->data->data[i];
+}
+/* End LALappsCreateR4FromR8TimeSeries */
+
+void LALappsPSD_Check(REAL8TimeSeries       *dataIn)
+{
+  UINT4 size;
+  REAL4TimeSeries       *R4TimeSeries=NULL;
+  REAL4FrequencySeries  *avgPSDR4=NULL;
+  REAL4FFTPlan          *fftplanR4=NULL;
+  REAL8FrequencySeries  *avgPSDR8=NULL;
+  REAL8FFTPlan          *fftplanR8=NULL;
+  LALStatus             status;
+  const LIGOTimeGPS        gps_zero = LIGOTIMEGPSZERO;
+
+  print_real8tseries(dataIn,"PreCast_REAL8_Tseries.diag");
+  LALappsCreateR4FromR8TimeSeries(&status,&R4TimeSeries,dataIn);
+  print_real4tseries(R4TimeSeries,"PostCast_REAL4_Tseries.diag");
+
+  size=dataIn->data->length/2 +1;
+  LAL_CALL(LALCreateREAL8FrequencySeries(&status,
+					&avgPSDR8,
+					"psd",
+					gps_zero,
+					0,
+					1/(dataIn->deltaT*dataIn->data->length),
+					lalADCCountUnit,
+					size),
+	  &status);
+
+ LAL_CALL(LALCreateForwardREAL8FFTPlan(&status,
+				       &fftplanR8,
+				       dataIn->data->length,
+				       0),
+	  &status);
+ LAL_CALL(LALREAL8PowerSpectrum(&status,
+				avgPSDR8->data,
+				dataIn->data,
+				fftplanR8),
+	  &status);
+
+ print_real8fseries(avgPSDR8,"CastREAL4_REAL8_PSD.diag");
+
+ LAL_CALL(LALCreateForwardREAL4FFTPlan(&status,
+				       &fftplanR4,
+				       R4TimeSeries->data->length,
+				       0),
+	  &status);
+ LAL_CALL(LALREAL4PowerSpectrum(&status,
+				avgPSDR4->data,
+				R4TimeSeries->data,
+				fftplanR4),
+	  &status);
+
+ print_real4fseries(avgPSDR4,"CastREAL4_from_REAL8_PSD.diag");
+ /****** FROM HERE ******* Edit above to REAL4 */
+ 
+ if (R4TimeSeries != NULL)
+   LAL_CALL(LALDestroyREAL4TimeSeries(&status,R4TimeSeries),&status);
+
+ if (avgPSDR8 != NULL)
+   LAL_CALL(LALDestroyREAL8FrequencySeries(&status,avgPSDR8),&status);
+
+ if (avgPSDR4 != NULL)
+   LAL_CALL(LALDestroyREAL4FrequencySeries(&status,avgPSDR4),&status);
+
+ if (fftplanR8 != NULL)
+   LAL_CALL(LALDestroyREAL8FFTPlan(&status,&fftplanR8),&status);
+
+ if (fftplanR4 != NULL)
+   LAL_CALL(LALDestroyREAL4FFTPlan(&status,&fftplanR4),&status);
+}
+/* LALappsPSD_CHECK */
+
+
+/* TEMPORARY */
+/* Non Compliant code taken from EPSearch.c */
+void print_real4tseries(const REAL4TimeSeries *fseries, const char *file)
+{
+#if 0
+  /* FIXME: why can't the linker find this function? */
+  LALSPrintTimeSeries(fseries, file);
+#else
+  FILE *fp = fopen(file, "w");
+  LALStatus   status=blank_status;
+  REAL8   timeT;
+  size_t i;
+  LAL_CALL(LALGPStoFloat(&status,
+			 &timeT,
+			 &(fseries->epoch)),
+	   &status);
+  if(fp) 
+    {
+      for(i = 0; i < fseries->data->length; i++)
+	fprintf(fp, "%f\t%g\n", (i * fseries->deltaT)+timeT, fseries->data->data[i]);
+      fclose(fp);
+    }
+#endif
+}
+
+void print_real8tseries(const REAL8TimeSeries *fseries, const char *file)
+{
+#if 0
+  /* FIXME: why can't the linker find this function? */
+  LALDPrintTimeSeries(fseries, file);
+#else
+  FILE *fp = fopen(file, "w");
+  LALStatus   status=blank_status;
+  REAL8   timeT;
+  size_t i;
+  LAL_CALL(LALGPStoFloat(&status,
+			 &timeT,
+			 &(fseries->epoch)),
+	   &status);
+  if(fp) 
+    {
+      for(i = 0; i < fseries->data->length; i++)
+	fprintf(fp, "%f\t%g\n", (i * fseries->deltaT)+timeT, fseries->data->data[i]);
+      fclose(fp);
+    }
+#endif
+}
+
+void print_real4fseries(const REAL4FrequencySeries *fseries, const char *file)
+{
+#if 0
+  /* FIXME: why can't the linker find this function? */
+  LALCPrintFrequencySeries(fseries, file);
+#else
+  FILE *fp = fopen(file, "w");
+  size_t i;
+
+  if(fp) {
+    for(i = 0; i < fseries->data->length; i++)
+	fprintf(fp, "%f\t%g\n", (i * fseries->deltaF), fseries->data->data[i]);
+    fclose(fp);
+  }
+#endif
+}
+
+void print_real8fseries(const REAL8FrequencySeries *fseries, const char *file)
+{
+#if 0
+  /* FIXME: why can't the linker find this function? */
+  LALCPrintFrequencySeries(fseries, file);
+#else
+  FILE *fp = fopen(file, "w");
+  size_t i;
+
+  if(fp) {
+    for(i = 0; i < fseries->data->length; i++)
+	fprintf(fp, "%e\t%g\n", (i * fseries->deltaF), fseries->data->data[i]);
+    fclose(fp);
+  }
+#endif
+}
+
+void print_complex8fseries(const COMPLEX8FrequencySeries *fseries, const char *file)
+{
+#if 0
+  /* FIXME: why can't the linker find this function? */
+  LALCPrintFrequencySeries(fseries, file);
+#else
+  FILE *fp = fopen(file, "w");
+  size_t i;
+
+  if(fp) {
+    for(i = 0; i < fseries->data->length; i++)
+      fprintf(fp, "%f\t%g\n", i * fseries->deltaF, sqrt(fseries->data->data[i].re * fseries->data->data[i].re + fseries->data->data[i].im * fseries->data->data[i].im));
+    fclose(fp);
+  }
+#endif
+}
+
+void print_complex8_RandC_fseries(const COMPLEX8FrequencySeries *fseries, const char *file)
+{
+#if 0
+  /* FIXME: why can't the linker find this function? */
+  LALCPrintFrequencySeries(fseries, file);
+#else
+  FILE *fp = fopen(file, "w");
+  size_t i;
+
+  if(fp) {
+    for(i = 0; i < fseries->data->length; i++)
+      fprintf(fp, "%f\t%g\t%g\n", i * fseries->deltaF, 
+	      fseries->data->data[i].re,
+	      fseries->data->data[i].im);
+    fclose(fp);
+  }
+
+#endif
+}
+
+
+void print_lalUnit(LALUnit unit,const char *file)
+{
+  FILE *fp = fopen(file,"w");
+  CHARVector *unitString=NULL;
+  LALStatus  status=blank_status;
+
+  LAL_CALL(LALCHARCreateVector(&status,&unitString,maxFilenameLength),&status);
+  LAL_CALL(LALUnitAsString(&status,unitString,&unit),&status);
+  if (fp)
+    fprintf(fp,"%s\n",unitString->data);
+  fclose(fp);
+  LAL_CALL(LALCHARDestroyVector(&status,&unitString),&status);
+}
+/*
+ * End diagnostic code
+ */
+
 
 /*
  * Misc shorthand function

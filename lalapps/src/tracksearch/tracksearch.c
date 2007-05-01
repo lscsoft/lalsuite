@@ -1,3 +1,21 @@
+ /*
+  * Copyright (C) 2004, 2005 Cristina V. Torres
+  *
+  *  This program is free software; you can redistribute it and/or modify
+  *  it under the terms of the GNU General Public License as published by
+  *  the Free Software Foundation; either version 2 of the License, or
+  *  (at your option) any later version.
+  *
+  *  This program is distributed in the hope that it will be useful,
+  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  *  GNU General Public License for more details.
+  *
+  *  You should have received a copy of the GNU General Public License
+  *  along with with program; see the file COPYING. If not, write to the
+  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+  *  MA  02111-1307  USA
+  */
 /*
  * Author: Torres Cristina (Univ of TX at Brownsville)
  */
@@ -18,115 +36,6 @@ RCSID( "tracksearch $Id$");
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
-
-
-
-/* ********************************************************************** */
-/* ********************************************************************** */
-/* ********************************************************************** */
-/* ********************************************************************** */
-
-/* TEMPORARY */
-/* Non Compliant code taken from EPSearch.c */
-static void print_real4tseries(const REAL4TimeSeries *fseries, const char *file)
-{
-#if 0
-  /* FIXME: why can't the linker find this function? */
-  LALSPrintTimeSeries(fseries, file);
-#else
-  FILE *fp = fopen(file, "w");
-  LALStatus   status=blank_status;
-  REAL8   timeT;
-  size_t i;
-  LAL_CALL(LALGPStoFloat(&status,
-			 &timeT,
-			 &(fseries->epoch)),
-	   &status);
-  if(fp) 
-    {
-      for(i = 0; i < fseries->data->length; i++)
-	fprintf(fp, "%f\t%g\n", (i * fseries->deltaT)+timeT, fseries->data->data[i]);
-      fclose(fp);
-    }
-#endif
-}
-
-static void print_real4fseries(const REAL4FrequencySeries *fseries, const char *file)
-{
-#if 0
-  /* FIXME: why can't the linker find this function? */
-  LALCPrintFrequencySeries(fseries, file);
-#else
-  FILE *fp = fopen(file, "w");
-  size_t i;
-
-  if(fp) {
-    for(i = 0; i < fseries->data->length; i++)
-	fprintf(fp, "%f\t%g\n", (i * fseries->deltaF), fseries->data->data[i]);
-    fclose(fp);
-  }
-#endif
-}
-
-static void print_complex8fseries(const COMPLEX8FrequencySeries *fseries, const char *file)
-{
-#if 0
-  /* FIXME: why can't the linker find this function? */
-  LALCPrintFrequencySeries(fseries, file);
-#else
-  FILE *fp = fopen(file, "w");
-  size_t i;
-
-  if(fp) {
-    for(i = 0; i < fseries->data->length; i++)
-      fprintf(fp, "%f\t%g\n", i * fseries->deltaF, sqrt(fseries->data->data[i].re * fseries->data->data[i].re + fseries->data->data[i].im * fseries->data->data[i].im));
-    fclose(fp);
-  }
-#endif
-}
-
-static void print_complex8_RandC_fseries(const COMPLEX8FrequencySeries *fseries, const char *file)
-{
-#if 0
-  /* FIXME: why can't the linker find this function? */
-  LALCPrintFrequencySeries(fseries, file);
-#else
-  FILE *fp = fopen(file, "w");
-  size_t i;
-
-  if(fp) {
-    for(i = 0; i < fseries->data->length; i++)
-      fprintf(fp, "%f\t%g\t%g\n", i * fseries->deltaF, 
-	      fseries->data->data[i].re,
-	      fseries->data->data[i].im);
-    fclose(fp);
-  }
-
-#endif
-}
-
-static void print_lalUnit(LALUnit unit,const char *file)
-{
-  FILE *fp = fopen(file,"w");
-  CHARVector *unitString=NULL;
-  LALStatus  status=blank_status;
-
-  LAL_CALL(LALCHARCreateVector(&status,&unitString,maxFilenameLength),&status);
-  LAL_CALL(LALUnitAsString(&status,unitString,&unit),&status);
-  if (fp)
-    fprintf(fp,"%s\n",unitString->data);
-  fclose(fp);
-  LAL_CALL(LALCHARDestroyVector(&status,&unitString),&status);
-}
-/*
- * End diagnostic code
- */
-
-/* ********************************************************************** */
-/* ********************************************************************** */
-/* ********************************************************************** */
-/* ********************************************************************** */
-
 
 
 /* Non-Error Code Define Statements */
@@ -500,8 +409,9 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
    *End calibration conditional 
    */
 
-  /*
-   * Perform low pass filtering on the input data stream if requested
+  /*****************************************
+   * Perform low and or high  pass filtering on 
+   * the input data stream if requested
    */
   if ((params.highPass > 0) || (params.lowPass > 0))
     {
@@ -529,6 +439,7 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
     }
   /*
    * End the high pass filter
+   *****************************************
    */
   /*
    * Perform injections when inject structure has data.
@@ -611,6 +522,7 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 					 dataSet,
 					 &avgPSDParams),
 		status);
+
       if (params.smoothAvgPSD > 2)
 	{
 	  /* Error check that median block size less than =
@@ -1533,7 +1445,7 @@ void LALappsGetFrameData(LALStatus*          status,
   INT2TimeSeries       *tmpINT2Data=NULL;
   INT4TimeSeries       *convertibleINT4Data=NULL;
   INT4TimeSeries       *tmpINT4Data=NULL;
-
+  PassBandParamStruc    bandPassParams;
   UINT4                 loadPoints=0;
   UINT4                 i=0;
   LALTYPECODE           dataTypeCode=0;
@@ -1588,6 +1500,9 @@ void LALappsGetFrameData(LALStatus*          status,
 	{
 	  /* Proceed as usual reading in REAL4 data type information */
 	  /* Load the metadata to check the frame sampling rate */
+	  if (params->verbosity >= verbose)
+	    fprintf(stderr,"NO conversion of frame REAL4 data needed.\n");
+
 	  lal_errhandler = LAL_ERR_EXIT;
 	  LAL_CALL( LALFrGetREAL4TimeSeriesMetadata( status, 
 						     DataIn, 
@@ -1627,7 +1542,10 @@ void LALappsGetFrameData(LALStatus*          status,
 	} /*End of reading type REAL4TimeSeries*/
       else if (dataTypeCode == LAL_D_TYPE_CODE)
 	{
-	  /*Proceed with a REAL8 Version of above and copy to REAL4 Struct in the end*/
+	  /*
+	   * Proceed with a REAL8 Version of above and 
+	   * copy to REAL4 Struct in the end
+	   */
 	  /* Create temporary space use input REAL4TimeSeries traits!*/
 	  if (params->verbosity >= verbose)
 	    fprintf(stderr,"Must convert frame REAL8 data to REAL4 data for analysis!\n");
@@ -1679,20 +1597,82 @@ void LALappsGetFrameData(LALStatus*          status,
 	      fprintf(stderr,"The span of REAL8TimeSeries data is not available in framestream!\n");
 	      exit(errCode);
 	    }
-	  /* Create high sampled REAL4 variable */
-	  LAL_CALL(
-		   LALCreateREAL4TimeSeries(status,
-                                            &tmpData,
-                                            "Higher Sampling REAL4 Data",
-                                            params->GPSstart,
-                                            0,
-                                            1/params->SamplingRateOriginal,
-                                            lalADCCountUnit,
-                                            loadPoints),
-                   status);
+	  /*
+	   * REAL8-->REAL4 Workaround (tmp solution factor into units struct!)
+	   * eventually we will rework this technique to use REAL8
+	   * effectively!!!! In order to recover higher freq
+	   * componenet in time series we will high pass the REAL8 data
+	   * first before factoring it.
+	   */
+	  /******************************************/
+  /*
+   * Perform low and or high  pass filtering on 
+   * the input data stream if requested
+   */
+	  if (params->verbosity >= verbose)
+	      fprintf(stdout,"Frame Reader needs to high pass input for casting!\n");
+
+	  if ((params->highPass > 0) || (params->lowPass > 0))
+	    {
+	      if (params->verbosity >= verbose)
+		{
+		  fprintf(stdout,"FRAME READER: You requested a high pass filter of the data at %f Hz\n",params->highPass);
+		  fprintf(stdout,"FRAME READER: You requested a low pass filter of the data at %f Hz\n",params->lowPass);
+		}
+	      bandPassParams.name=NULL;
+	      bandPassParams.nMax=10;
+	      /* F < f1 kept, F > f2 kept */
+	      bandPassParams.f1=params->lowPass;
+	      bandPassParams.f2=params->highPass;
+	      bandPassParams.a1=0.9;
+	      bandPassParams.a2=0.9;
+	      /*
+	       * Call the low pass filter function.
+	       */
+	      LAL_CALL(LALButterworthREAL8TimeSeries(status,
+						     convertibleREAL8Data, 
+						     &bandPassParams),
+		       status);
+	      if (params->verbosity >= printFiles)
+		{
+		print_real8tseries(convertibleREAL8Data,"FRAME_READER_ButterworthFiltered.diag");
+		print_lalUnit(convertibleREAL8Data->sampleUnits,"FRAME_READER_ButterworthFiltered_Units.diag");
+		}
+	    }
+	  else
+	    {
+	      fprintf(stdout,"WARNING! Input data should be high pass filtered!\n");
+	      fprintf(stdout,"Use knee frequency of 30Hz minimum!\n");
+	      fprintf(stdout,"PSD estimate and results are questionable!\n");
+	      fprintf(stderr,"PSD estimate and results are questionable!\n");
+	    };
+	  /*
+	   * End the high pass filter
+	   *****************************************
+	   */
+	  /*
+	   * Factor the data by 10^20! See Xavi email.
+	   */
+	      if (params->verbosity >= printFiles)
+		{
+		print_real8tseries(convertibleREAL8Data,"FRAME_READER_PreFactoredREAL8.diag");
+		print_lalUnit(convertibleREAL8Data->sampleUnits,"FRAME_READER_PreFactoredREAL8_Units.diag");
+		}
+	  for (i=0;i<convertibleREAL8Data->data->length;i++)
+	    convertibleREAL8Data->data->data[i]=
+	      convertibleREAL8Data->data->data[i]/pow(10,20);
+	  convertibleREAL8Data->sampleUnits.powerOfTen=20;
+	      if (params->verbosity >= printFiles)
+		{
+		print_real8tseries(convertibleREAL8Data,"FRAME_READER_FactoredREAL8.diag");
+		print_lalUnit(convertibleREAL8Data->sampleUnits,"FRAME_READER_FactoredREAL8_Units.diag");
+		LALappsPSD_Check(convertibleREAL8Data);
+
+		}
+
 	  /* Prepare to copy/cast REAL8 data into REAL4 structure */
-	  for (i=0;i<tmpData->data->length;i++)
-	    tmpData->data->data[i] = (REAL4) convertibleREAL8Data->data->data[i];
+	  /* Copy REAL8 data into new REAL4 Structure */
+	      LALappsCreateR4FromR8TimeSeries(status,&tmpData,convertibleREAL8Data);
 	}/*End of reading type REAL8TimeSeries*/
       else if  (dataTypeCode == LAL_I2_TYPE_CODE)
 	{
@@ -1702,21 +1682,21 @@ void LALappsGetFrameData(LALStatus*          status,
 	    fprintf(stderr,"Must convert frame INT2 data to REAL4 data for analysis!\n");
 	  LAL_CALL( 
 		   LALCreateINT2TimeSeries(status,
-					    &tmpINT2Data,
-					    "tmp space",
-					    params->GPSstart,
-					    0,
-					    DataIn->deltaT,
-					    lalADCCountUnit,
-					    DataIn->data->length),
+					   &tmpINT2Data,
+					   "tmp space",
+					   params->GPSstart,
+					   0,
+					   DataIn->deltaT,
+					   lalADCCountUnit,
+					   DataIn->data->length),
 		   status);
 
 	  /* Load the metadata to check the frame sampling rate */
 	  lal_errhandler = LAL_ERR_EXIT;
 	  LAL_CALL( LALFrGetINT2TimeSeriesMetadata( status, 
-						     tmpINT2Data, 
-						     &channelIn, 
-						     stream), 
+						    tmpINT2Data, 
+						    &channelIn, 
+						    stream), 
 		    status);
 	  /*
 	   * Determine the sampling rate and assuming the params.sampling rate
@@ -1727,21 +1707,21 @@ void LALappsGetFrameData(LALStatus*          status,
 	  loadPoints=params->SamplingRateOriginal*(params->TimeLengthPoints/params->SamplingRate);
 	  LAL_CALL(
 		   LALCreateINT2TimeSeries(status,
-					    &convertibleINT2Data,
-					    "Tmp Data",
-					    params->GPSstart,
-					    0,
-					    1/params->SamplingRateOriginal,
-					    lalADCCountUnit,
-					    loadPoints),
+					   &convertibleINT2Data,
+					   "Tmp Data",
+					   params->GPSstart,
+					   0,
+					   1/params->SamplingRateOriginal,
+					   lalADCCountUnit,
+					   loadPoints),
 		   status);
 	  /* get the data */
 	  LAL_CALL( LALFrSeek(status, &(tmpINT2Data->epoch), stream), status);
 	  lal_errhandler = LAL_ERR_RTRN;
 	  errCode=LAL_CALL( LALFrGetINT2TimeSeries( status, 
-						     convertibleINT2Data, 
-						     &channelIn, 
-						     stream), 
+						    convertibleINT2Data, 
+						    &channelIn, 
+						    stream), 
 			    status);
 	  if (errCode != 0)
 	    {
@@ -1762,6 +1742,7 @@ void LALappsGetFrameData(LALStatus*          status,
 	  /* Prepare to copy/cast REAL8 data into REAL4 structure */
 	  for (i=0;i<tmpData->data->length;i++)
 	    tmpData->data->data[i] = (REAL4) convertibleINT2Data->data->data[i];
+	  tmpData->sampleUnits=convertibleINT2Data->sampleUnits;
 	}
       else if  (dataTypeCode == LAL_I4_TYPE_CODE)
 	{
@@ -1771,21 +1752,21 @@ void LALappsGetFrameData(LALStatus*          status,
 	    fprintf(stderr,"Must convert frame INT4 data to REAL4 data for analysis!\n");
 	  LAL_CALL( 
 		   LALCreateINT4TimeSeries(status,
-					    &tmpINT4Data,
-					    "REAL8 tmp space",
-					    params->GPSstart,
-					    0,
-					    DataIn->deltaT,
-					    lalADCCountUnit,
-					    DataIn->data->length),
+					   &tmpINT4Data,
+					   "REAL8 tmp space",
+					   params->GPSstart,
+					   0,
+					   DataIn->deltaT,
+					   lalADCCountUnit,
+					   DataIn->data->length),
 		   status);
 
 	  /* Load the metadata to check the frame sampling rate */
 	  lal_errhandler = LAL_ERR_EXIT;
 	  LAL_CALL( LALFrGetINT4TimeSeriesMetadata( status, 
-						     tmpINT4Data, 
-						     &channelIn, 
-						     stream), 
+						    tmpINT4Data, 
+						    &channelIn, 
+						    stream), 
 		    status);
 	  /*
 	   * Determine the sampling rate and assuming the params.sampling rate
@@ -1796,21 +1777,21 @@ void LALappsGetFrameData(LALStatus*          status,
 	  loadPoints=params->SamplingRateOriginal*(params->TimeLengthPoints/params->SamplingRate);
 	  LAL_CALL(
 		   LALCreateINT4TimeSeries(status,
-					    &convertibleINT4Data,
-					    "Tmp Data",
-					    params->GPSstart,
-					    0,
-					    1/params->SamplingRateOriginal,
-					    lalADCCountUnit,
-					    loadPoints),
+					   &convertibleINT4Data,
+					   "Tmp Data",
+					   params->GPSstart,
+					   0,
+					   1/params->SamplingRateOriginal,
+					   lalADCCountUnit,
+					   loadPoints),
 		   status);
 	  /* get the data */
 	  LAL_CALL( LALFrSeek(status, &(tmpINT4Data->epoch), stream), status);
 	  lal_errhandler = LAL_ERR_RTRN;
 	  errCode=LAL_CALL( LALFrGetINT4TimeSeries( status, 
-						     convertibleINT4Data, 
-						     &channelIn, 
-						     stream), 
+						    convertibleINT4Data, 
+						    &channelIn, 
+						    stream), 
 			    status);
 	  if (errCode != 0)
 	    {
@@ -1831,6 +1812,7 @@ void LALappsGetFrameData(LALStatus*          status,
 	  /* Prepare to copy/cast REAL8 data into REAL4 structure */
 	  for (i=0;i<tmpData->data->length;i++)
 	    tmpData->data->data[i] = (REAL4) convertibleINT4Data->data->data[i];
+	  tmpData->sampleUnits=convertibleINT4Data->sampleUnits;
 	}
       else
 	{
@@ -1843,7 +1825,10 @@ void LALappsGetFrameData(LALStatus*          status,
 	}
       /* End of error for invalid data types in frame file.*/
       if (params->verbosity >= printFiles)
-	print_real4tseries(tmpData,"OriginalInputTimeSeries.diag");
+	{
+	  print_real4tseries(tmpData,"OriginalInputTimeSeries.diag");
+	  print_lalUnit(tmpData->sampleUnits,"OriginalInputTimeSeries_Units.diag");
+	}
       /*
        * Prepare for the resample if needed or just copy the data so send
        * back
@@ -1863,11 +1848,15 @@ void LALappsGetFrameData(LALStatus*          status,
 					      &resampleParams),
 		   status);
 	  if (params->verbosity >= printFiles)
-	    print_real4tseries(tmpData,"ResampledlInputTimeSeries.diag");
+	    {
+	      print_real4tseries(tmpData,"ResampledlInputTimeSeries.diag");
+	      print_lalUnit(tmpData->sampleUnits,"ResampledlInputTimeSeries_Units.diag");
+	    }
 	  /*
 	   * Copy only the valid data and fill the returnable metadata
 	   */
 	  DataIn->deltaT=(1/params->SamplingRate);
+	  DataIn->sampleUnits=tmpData->sampleUnits;
 	  LALappsTSassert((tmpData->data->length >=
 			   DataIn->data->length),
 			  TRACKSEARCHC_EDATA,
@@ -1886,11 +1875,15 @@ void LALappsGetFrameData(LALStatus*          status,
 	   */
 	  params->SamplingRate=params->SamplingRateOriginal;
 	  DataIn->deltaT=1/params->SamplingRateOriginal;
+	  DataIn->sampleUnits=tmpData->sampleUnits;
 	  for (i=0;i<DataIn->data->length;i++)
 	    DataIn->data->data[i]=tmpData->data->data[i];
 	}
       if (params->verbosity >= printFiles)
-    	print_real4tseries(tmpData,"ActualReDoneTimeSeries.diag");
+	{
+	  print_real4tseries(DataIn,"ActualReDoneTimeSeries.diag");
+	  print_lalUnit(DataIn->sampleUnits,"ActualReDoneTimeSeries_Units.diag");
+	}
       /*
        * Release the memory for the temporary time series
        */
@@ -3240,6 +3233,8 @@ void fakeDataGeneration(LALStatus              *status,
   RETURN (status);
 }
 
+
+ 
 /*
  * End local scratch functions
  * These functions may eventually be integrated more into
