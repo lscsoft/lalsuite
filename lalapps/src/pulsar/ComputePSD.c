@@ -152,9 +152,12 @@ int main(int argc, char *argv[]){
   LAL_CALL(LALRegisterSTRINGUserVar(&status, "outputFILE", 'o', UVAR_OPTIONAL, "Output PSD file", &uvar_outputPSDFILE), &status);
   LAL_CALL(LALRegisterREALUserVar(  &status, "fStart", 'f', UVAR_OPTIONAL, "Frequency to start from", &uvar_fStart), &status);
   LAL_CALL(LALRegisterREALUserVar(  &status, "fBand", 'b', UVAR_OPTIONAL, "Frequency Band", &uvar_fBand), &status);
-  LAL_CALL(LALRegisterREALUserVar(  &status, "startTime", 0, UVAR_OPTIONAL, "GPS start time", &uvar_startTime), &status);
-  LAL_CALL(LALRegisterREALUserVar(  &status, "endTime",  0,  UVAR_OPTIONAL, "GPS end time", &uvar_endTime), &status);
-  LAL_CALL(LALRegisterSTRINGUserVar(&status, "timeStampsFile", 0, UVAR_OPTIONAL, "Time-stamps file", &uvar_timeStampsFile), &status);
+  LAL_CALL(LALRegisterREALUserVar(  &status, "startTime", 's', UVAR_OPTIONAL, "GPS start time", &uvar_startTime), &status);
+  LAL_CALL(LALRegisterREALUserVar(  &status, "endTime",  'e',  UVAR_OPTIONAL, "GPS end time", &uvar_endTime), &status);
+  LAL_CALL(LALRegisterSTRINGUserVar(&status, "timeStampsFile", 't', UVAR_OPTIONAL, "Time-stamps file", &uvar_timeStampsFile), &status);
+
+  LAL_CALL(LALRegisterINTUserVar(   &status, "blocksRngMed",  'w',  UVAR_OPTIONAL, "Running Median window size", &uvar_blocksRngMed), &status);
+  LAL_CALL(LALRegisterINTUserVar(   &status, "maxBinsClean", 'm', UVAR_OPTIONAL, "Maximum Cleaning Bins", &uvar_maxBinsClean), &status);
 
   LAL_CALL( LALRegisterLISTUserVar(   &status, "linefiles", 0,  UVAR_OPTIONAL, "Comma separated List of linefiles (filenames must contain IFO name)", &uvar_linefiles), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "log", 0,  UVAR_OPTIONAL, "Write log file", &uvar_log), &status);  
