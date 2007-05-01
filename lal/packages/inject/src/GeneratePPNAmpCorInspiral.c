@@ -64,7 +64,6 @@ NRCSID( GENERATEPPNAMPCORINSPIRALC, "$Id$" );
 #define ACCURACY (1.0e-8) /* Accuracy of root finder */
 #define TWOTHIRDS (0.6666666667) /* 2/3 */
 #define ONEMINUSEPS (0.99999)    /* Something close to 1 */
-#define GAMMA (0.5772156649) /* Euler-Mascheroni constant */
 
 /* A macro to computing the (normalized) frequency.  It appears in
    many places, including in the main loop, and I don't want the
@@ -435,7 +434,7 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   c4 = c[4] = p[4]*( 1855099.0/14450688.0 + eta*56975.0/258048.0 +
 		     eta*eta*371.0/2048.0 );
   c5 = c[5] = p[5]*( -7729.0/21504.0 + eta*13.0/256.0 )*LAL_PI;
-  c6 = c[6] = -p[6]*(720817631400877.0/288412611379200.0 - 107.0*GAMMA/280.0 - LAL_PI*LAL_PI*53.0/200.0
+  c6 = c[6] = -p[6]*(720817631400877.0/288412611379200.0 - 107.0*LAL_GAMMA/280.0 - LAL_PI*LAL_PI*53.0/200.0
 	           + eta*(-25302017977.0/4161798144.0 + LAL_PI*LAL_PI*451.0/2048.0)
 	           + eta*eta*30913.0/1835008.0
 	           + eta*eta*eta*235925.0/1769472.0);	   
@@ -448,7 +447,7 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   d3 = c3*5.0/2.0;
   d4 = c4*5.0;
   d5 = c5*5.0/8.0;
-  d6 = p[6]*(831032450749357.0/57682522275840.0 - LAL_PI*LAL_PI*53.0/40.0 - 107.0*GAMMA/56.0 
+  d6 = p[6]*(831032450749357.0/57682522275840.0 - LAL_PI*LAL_PI*53.0/40.0 - 107.0*LAL_GAMMA/56.0 
           + eta*(-123292747421.0/4161798144.0 + LAL_PI*LAL_PI*2255.0/2048.0 + 385.0/48.0*(-1987.0/3080)
 	         -55.0/16.0*(-11831.0/9240.0))
 	  + eta*eta*(154565.0/1835008.0 - eta*1179625.0/1769472.0));
