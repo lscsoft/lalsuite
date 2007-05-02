@@ -92,7 +92,7 @@ typedef struct
 tagCVector
 {
   UINT4                 numDetectors;
-  COMPLEX8TimeSeries   *cData;
+  COMPLEX8TimeSeries   *cData[LAL_NUM_IFO];
 }
 CVector;
 
