@@ -125,10 +125,10 @@ int main( int argc, char *argv[] )
 {
   FrChanIn      frChan;
 
-  /* frame output data */
-  struct FrFile *frOutFile  = NULL;
-  struct FrameH *outFrame   = NULL;
-  FrStream      *frStream   = NULL;
+  /* frame data */
+  FrStream       *frStream   = NULL;
+  struct FrFile  *frOutFile  = NULL;
+  struct FrameH  *outFrame   = NULL;
 
   /* output */
   MetadataTable         proctable;
@@ -146,7 +146,7 @@ int main( int argc, char *argv[] )
   INT4   segLength      = 4;  /* should match hardcoded value in inspiral.c */
   INT4   numPoints      = 0;
   UINT4  numSegments    = 1;  /* number of segments */
-  UINT4  numNullStatFr  = 0;  /* what is this? */
+  UINT4  numNullStatFr  = 0;  
   UINT8  eventID        = 0;
 
   REAL4  m1             = 0.0;
@@ -185,7 +185,7 @@ int main( int argc, char *argv[] )
   CVector                 *CVec                 = NULL;
   MultiInspiralTable      *event                = NULL;
   MultiInspiralTable      *thisEvent            = NULL;
-  MetadataTable           savedEvents;
+  MetadataTable            savedEvents;
 
   /* cData channel names */
   char nameArrayCData[6][256] = {"0","0","0","0","0","0"}; 
@@ -222,11 +222,11 @@ int main( int argc, char *argv[] )
   if ( vrbflg ) fprintf(stdout, "Reading in the frame files.\n");
   for ( k=0; k<6 ; k++)
   {
-    if ( (k == LAL_IFO_H1) || (k==LAL_IFO_H2) )
+    if ( (k == 1) || (k == 2) )
     {
       if ( ifoframefile[k] )
       { 
-        LAL_CALL(LALFrOpen(&status, &frStream, NULL, ifoframefile[k]), &status); 
+        frStream = XLALFrOpen( NULL, ifoframefile[k]); 
         if (!frStream)
         {
           fprintf(stdout,"The file %s does not exist - exiting.\n", 
@@ -455,7 +455,7 @@ int main( int argc, char *argv[] )
                          CVec->cData[j].epoch.gpsNanoSeconds * 1e-9;
           if ( vrbflg ) fprintf( stdout, "tempTime = %f\n", tempTime[j]);
  
-          LAL_CALL( LALFrClose( &status, &frStream ), &status );
+          XLALFrClose( frStream );
  
           /* set sigma-squared */
           nullStatParams->sigmasq[j] = thisCoinc->snglInspiral[j]->sigmasq;
