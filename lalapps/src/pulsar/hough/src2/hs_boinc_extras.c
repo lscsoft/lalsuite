@@ -161,22 +161,12 @@ int BOINC_LAL_ErrHand (LALStatus  *stat, const char *func, const char *file, con
 /* signal handlers */
 static void sighandler(int sig){
   LALStatus *mystat = global_status;
-
-#ifdef __GLIBC__
-  void *array[64];
-  size_t size;
-#endif
   static int killcounter = 0;
-
-  /* RP: not sure what this is for. FIXME: better remove?
-#ifndef _WIN32
-  sigset_t signalset;
-  sigemptyset(&signalset);
-  sigaddset(&signalset, sig);
-  pthread_sigmask(SIG_BLOCK, &signalset, NULL);
+#ifdef __GLIBC__
+  /* for glibc stacktrace */
+  void *stackframes[64];
+  size_t nostackframes;
 #endif
-  */
-
 
   /* lets start by ignoring ANY further occurences of this signal
      (hopefully just in THIS thread, if truly implementing POSIX threads */
@@ -184,19 +174,15 @@ static void sighandler(int sig){
   LogPrintf (LOG_CRITICAL, "APP DEBUG: Application caught signal %d.\n\n", sig );
 
   /* ignore TERM interrupts once  */
-  if ( sig == SIGTERM || sig == SIGINT )
-    {
-      killcounter ++;
-
-      if ( killcounter >= 4 )
-        {
-          LogPrintf (LOG_CRITICAL, "APP DEBUG: got 4th kill-signal, guess you mean it. Exiting now\n\n");
-          boinc_finish(COMPUTEFSTAT_EXIT_USER);
-        }
-      else
-        return;
-
-    } /* termination signals */
+  if ( sig == SIGTERM || sig == SIGINT ) {
+    killcounter ++;
+    if ( killcounter >= 4 ) {
+      LogPrintf (LOG_CRITICAL, "APP DEBUG: got 4th kill-signal, guess you mean it. Exiting now\n\n");
+      boinc_finish(COMPUTEFSTAT_EXIT_USER);
+    }
+    else
+      return;
+  } /* termination signals */
 
   if (mystat)
     LogPrintf (LOG_CRITICAL,   "Stack trace of LAL functions in worker thread:\n");
@@ -211,10 +197,10 @@ static void sighandler(int sig){
   
 #ifdef __GLIBC__
   /* now get TRUE stacktrace */
-  size = backtrace (array, 64);
-  LogPrintf (LOG_CRITICAL,   "Obtained %zd stack frames for this thread.\n", size);
+  nostackframes = backtrace (stackframes, 64);
+  LogPrintf (LOG_CRITICAL,   "Obtained %zd stack frames for this thread.\n", nostackframes);
   LogPrintf (LOG_CRITICAL,   "Use gdb command: 'info line *0xADDRESS' to print corresponding line numbers.\n");
-  backtrace_symbols_fd(array, size, fileno(stderr));
+  backtrace_symbols_fd(stackframes, nostackframes, fileno(stderr));
 #endif /* __GLIBC__ */
   /* sleep a few seconds to let the OTHER thread(s) catch the signal too... */
   sleep(5);
