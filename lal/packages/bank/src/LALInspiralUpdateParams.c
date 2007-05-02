@@ -1,5 +1,5 @@
 /*  <lalVerbatim file="LALInspiralUpdateParamsCV">
-Author: Sathyaprakash, B. S.
+Author: Sathyaprakash, B. S., T. Cokelaer
 $Id$
 </lalVerbatim>  */
 
@@ -7,7 +7,8 @@ $Id$
 
 \subsection{Module \texttt{LALInspiralUpdateParams.c}}
 
-Module to update the parameters used in creating a coarse bank. 
+Module to update the parameters used in creating a coarse bank 
+based on a square lattice. 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralUpdateParamsCP}
@@ -25,6 +26,9 @@ starting point of the same line and use the metric there
 to increment one step upwards in the direction of $\tau_{2(3)}.$ 
 to a {\it template list}.
 
+
+The $dx_i$ returned by this function gives the spacing for a 
+square lattice (e.g., $dx_i$ as given in Owen PRD 53).
 
 \subsubsection*{Algorithm}
 
@@ -63,7 +67,8 @@ void LALInspiralUpdateParams(LALStatus          *status,
    ASSERT (minimalmatch > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
    ASSERT (metric.theta < LAL_PI_2, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
    ASSERT (metric.theta > -LAL_PI_2, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-
+   
+   /* This dx0, dx1 are linked to a square placement only !! */
    dx0 = sqrt(2.L * (1.L - minimalmatch)/metric.g00 );
    dx1 = sqrt(2.L * (1.L - minimalmatch)/metric.g11 );
 
