@@ -1,0 +1,242 @@
+#!/usr/bin/env @PYTHONPROG@
+"""
+multi_hipe.in - multi inspiral pipeline driver script
+
+$Id$
+
+This script uses master segment lists to determine a set of segment
+lists appropriate to running inspiral_hipe on multiple epochs of fixed
+length between some start and some end time.  At present, the script
+only sets up directories and writes appropriate segment files to those
+directories.  
+
+Coming soon:
+
+  1.  read in the standard hipe config file to determine parameters,
+  etc.  Modify as needed for particular epoch and write back out in
+  the relevant directory
+
+  2.  set up dags for zero-lag and injection runs in each of the
+  epochs. 
+
+  3.  write a log file
+
+  4.  write a super-dag which would submit the other sub-dags.
+
+"""
+
+__author__ = 'Patrick Brady <patrick@gravity.phys.uwm.edu>'
+__date__ = '$Date$'
+__version__ = '$Revision$'[11:-2]
+
+##############################################################################
+# import standard modules and append the lalapps prefix to the python path
+import os
+import sys 
+import pylab
+from optparse import *
+from glue import segments
+from glue import segmentsUtils
+from pylal import readMeta
+
+# remove all segments of size less than min_length
+def cleanlist(seglist, min_length):
+  removals = segments.segmentlist()
+  for seg in seglist:
+    if seg.duration() < min_length:
+      removals.append(seg)
+  seglist = seglist - removals
+
+  return seglist
+
+# return those segments which intersect the interval
+def getSegments ( seglistin, interval):
+
+  seglistout = segments.segmentlist([s for s in seglistin \
+      if (s[1] > interval[0] and s[0] < interval[1]) ])
+
+  return seglistout
+
+
+# define usage and command line options and arguments - parse
+usage = """usage: %prog ...
+
+Construct a set of intervals of fixed duration spanning some larger
+epoch; determine the segments appropriate to the inspiral code for
+each of these intervals and write them out to approriate files in each
+of the directories.
+
+As of now, the code appears to do the right thing.  The segments are
+constructed to allow a 1 second overlap between searched times from
+one interval to the next.  BEWARE: This can result is some strange
+behaviour if people are not careful when generating summary files for
+the hole search.
+
+In the future, this code will also use the search ini file to
+construct dags to cover the particular interval.  Moreover, it will
+also generate dags for injection runs associated with each interval.
+This should speed up the whole process of bulk processing of the data. 
+
+"""
+parser = OptionParser( usage )
+
+parser.add_option("-v", "--verbose", action="store_true",default=False,\
+  help="make things verbose" )
+parser.add_option("-H","--h1-segments",action="store",type="string",\
+  default=None, metavar=" H1_SEGMENTS", help="H1 input segment to read" )
+parser.add_option("-K","--h2-segments",action="store",type="string",\
+  default=None, metavar=" H2_SEGMENTS", help="H2 input segment to read" )
+parser.add_option("-L","--l1-segments",action="store",type="string",\
+  default=None, metavar=" L1_SEGMENTS", help="L1 input segment to read" )
+parser.add_option("-s","--start-time",action="store",type="int",\
+    default=None, metavar=" START TIME",\
+    help="start time of search")
+parser.add_option("-e","--end-time",action="store",type="int",\
+    default=None, metavar=" END TIME",\
+    help="end time of search")
+parser.add_option("-i","--interval",action="store",type="int",\
+    default=None, metavar=" INTERVAL",\
+    help="length of each interval to be analyzed separately")
+# Add some plotting capabilities to check things
+parser.add_option("-p", "--plot-segments", action="store_true",default=False,\
+  help="plot segments for each interval with original segments" )
+
+( opts , args ) = parser.parse_args()
+
+# what do I want to do?
+#
+# 1.  Starting from a segment list for each IFO, build segment lists
+# which contain some interval (is contain correct?) 
+# 
+# 2.  Reduce the first segment for each interferometer to minimal
+# length that can be analyzed.
+#
+
+# FIXME:  we're going to hard code some numbers that should be read in
+# from the ini file. 
+paddata=8
+overlap=128
+minsciseg=16*overlap+2*paddata
+
+# Based on the start and end time, generate a list of epochs to
+# analyze. An entire hipe dag will be run for each of these epochs.
+search_epochs = segments.segmentlist()
+istart = opts.start_time
+while ( istart < opts.end_time ):
+  iend = istart + opts.interval
+  if iend > opts.end_time:
+    iend = opts.end_time
+  search_epochs.append(segments.segment(istart,iend))
+  istart += opts.interval
+segmentsUtils.tosegwizard(file("multi_hipe_selectedsegs.txt",'w'),search_epochs)
+
+# Read in all the segment lists
+ifolist = []
+segdict = {}
+if opts.h1_segments:
+  tmplist = segmentsUtils.fromsegwizard(file(opts.h1_segments)).coalesce()
+  segdict["H1"] = cleanlist(tmplist, minsciseg)
+  ifolist.append("H1")
+
+if opts.h2_segments:
+  tmplist = segmentsUtils.fromsegwizard(file(opts.h2_segments)).coalesce()
+  segdict["H2"] = cleanlist(tmplist, minsciseg)
+  ifolist.append("H2")
+
+if opts.l1_segments:
+  tmplist = segmentsUtils.fromsegwizard(file(opts.l1_segments))
+  segdict["L1"] = cleanlist(tmplist, minsciseg)
+  ifolist.append("L1")
+
+# loop over the intervals, constructing overlapping segment lists,
+# making directories, and writing output to them
+for interval in search_epochs:
+
+  # name and the directory
+  idirectory = str(interval[0])+"-"+str(interval[1])
+  os.mkdir(idirectory)
+
+  # extract the segmentlist for each of the interferometers
+  for ifo in ifolist:
+    tmplist = getSegments(segdict[ifo], interval)
+
+    # now we need to fix segments that overlap the start and end of
+    # the interval.  This is where the logic can get ugly, so read
+    # with care.  First, handle the segment overlapping the start
+    # .......
+    try:
+      segindex = tmplist.find(interval[0])
+      tmpseg = tmplist[segindex]
+      if ( tmpseg[1] - interval[0] >= minsciseg ):
+        modifiedstart = max( interval[0] - overlap/2 - paddata, tmpseg[0] )
+      else:
+        modifiedstart = max( \
+            min( tmpseg[1] - minsciseg, interval[0] - overlap/2 -paddata ),\
+            tmpseg[0] )
+    except ValueError, e:
+      modifiedstart = interval[0]
+      if opts.verbose:
+        print ifo + ": No segment containing interval start " + str(e)
+
+    # ....... and now the one overlapping the end time .......
+    try:
+      segindex = tmplist.find(interval[1])
+      tmpseg = tmplist[segindex]
+      if ( interval[1] - tmpseg[0] >= minsciseg ):
+        modifiedend = min( interval[1] + overlap/2 + paddata, tmpseg[1] )
+      else:
+        modifiedend = min( \
+            max( tmpseg[0] + minsciseg, interval[1] + overlap/2 + paddata),\
+            tmpseg[1] )
+    except ValueError, e:
+      modifiedend = interval[1]
+      if opts.verbose:
+        print ifo + ": No segment containing interval end " + str(e)
+
+    modifiedinterval = segments.segmentlist(\
+        [segments.segment(modifiedstart,modifiedend)])
+
+    tmplist = tmplist & modifiedinterval
+
+    # write out the segment list to a segwizard file
+    tmpoutfile = idirectory+"/"+ifo+"_selectedsegs.txt"
+    segmentsUtils.tosegwizard(file(tmpoutfile,'w'),tmplist)
+
+    # plot the segment lists
+    if opts.plot_segments:
+      pylab.figure()
+      pylab.hold(True)
+      y = pylab.asarray([0,0])
+      y = y + 0.1
+      for seg in tmplist:
+        pylab.plot(seg,y,'b',linewidth=4)
+      y = y + 0.1
+      for seg in segdict[ifo]:
+        pylab.plot(seg,y,'k',linewidth=4)
+      pylab.axvline(interval[0], color='g')
+      pylab.axvline(interval[1], color='g')
+      pylab.axvline(interval[0]-overlap/2-paddata, color='r')
+      pylab.axvline(interval[1]+overlap/2+paddata, color='r')
+      pylab.ylim([0.0,0.5])
+      pylab.xlim([interval[0]-2*minsciseg,interval[1]+2*minsciseg])
+      pylab.savefig(ifo+"-"+idirectory+".png")
+
+  # Next thing is to generate the dag for this interval of time.
+  # The steps here are:
+  #   1. make dir for zero-lag and playground
+  #   2. copy in ini file (and modify if needed)
+  #   3. generate dag
+  #   4. make dir for injections and run inspinj
+  #   5. repeat 2 & 3
+  #   6. repeat 4 & 5 as needed
+  os.mkdir(idirectory+"/analysis")
+  os.mkdir(idirectory+"/injections001")
+  os.mkdir(idirectory+"/injections002")
+  os.mkdir(idirectory+"/injections003")
+
+  # Ultimately, we would like to construct a dag to allow running
+  # these sub dags. For now,  we'll do it by hand .....
+
+sys.exit(0)
+
+
