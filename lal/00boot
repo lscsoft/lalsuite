@@ -290,6 +290,7 @@ esac
 dnl Checks for libraries.
 lal_save_LIBS="$LIBS"
 AC_CHECK_LIB(m, sin)
+AC_CHECK_LIB(z, compress)
 dnl if solaris, check for sunmath library
 case "${host_os}" in
   solaris*) AC_CHECK_LIB(sunmath, sincosp);;
@@ -352,7 +353,7 @@ fi
 
 dnl Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS(sys/time.h unistd.h getopt.h malloc.h)
+AC_CHECK_HEADERS(sys/time.h unistd.h getopt.h malloc.h zlib.h)
 case "${host_os}" in
   solaris*) AC_CHECK_HEADERS(sunmath.h);;
 esac
