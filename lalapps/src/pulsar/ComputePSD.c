@@ -288,17 +288,17 @@ int main(int argc, char *argv[]){
   }
 
 
-  for (j = 0, iIFO = 0; iIFO < numifo; iIFO++ ) {
+  for ( iIFO = 0; iIFO < numifo; iIFO++ ) {
     
     numsft = multPSD->data[iIFO]->length;
     
-    for ( iSFT = 0; iSFT < numsft; iSFT++, j++) {
+    for ( iSFT = 0; iSFT < numsft; iSFT++) {
 
       for ( k = 0; k < nBins; k++) {       
 
 	periodo[iIFO][k] += multPSD->data[iIFO]->data[iSFT].data->data[k]/numsft;
 
-      } /* look over frequency bins */
+      } /* loop over frequency bins */
 
     } /* loop over SFTs */
     
