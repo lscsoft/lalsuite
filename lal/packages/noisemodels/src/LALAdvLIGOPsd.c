@@ -27,7 +27,7 @@ Kip Thorne, and the fit by B.S.Sathyaprakash
    \frac{f}{f_0}^2 + 0.5  \frac{f}{f_0}^4}{1. + 0.5\frac{f}{f_0}^2} \right)\right\};
 \end{equation}
 where, $f_0=215$Hz
-The returned value is scaled up by $S_0 = 10^{46}.$ 
+The returned value is scaled up by $S_0 = 10^{49}.$ 
 
 \subsubsection*{Algorithm}
 
