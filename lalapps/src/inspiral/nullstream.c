@@ -188,7 +188,7 @@ int main( int argc, char *argv[] )
   MetadataTable            savedEvents;
 
   /* cData channel names */
-  ChanNames  cDataChanNames; 
+  ChanNames  *cDataChanNames ; 
 
   if ( vrbflg ) fprintf( stdout, "%d.\n", LAL_NUM_IFO );
 
@@ -317,11 +317,22 @@ int main( int argc, char *argv[] )
           slideSign = (eventID % 1000000000)-(slideNumber*100000)-triggerNumber;
 
           /* Store CData frame name  */
-          LALSnprintf( cDataChanName[k], LALNameLength*sizeof(CHAR), 
-            "%s:%s_CData_%d", &thisCoinc->snglInspiral[k]->ifo, 
-            frInType, eventID );
-          if ( vrbflg ) fprintf( stdout, "cDataChanName[%d]=%s:%s_CData_%Ld\n",
-                 k, &thisCoinc->snglInspiral[k]->ifo, frInType, eventID );
+          if ( k == LAL_IFO_H1 ) 
+             LALSnprintf( (*cDataChanNames).cDataChanNameH1,
+             LALNameLength*sizeof(CHAR), "%s:%s_CData_%Ld",
+             &thisCoinc->snglInspiral[k]->ifo, frInType, eventID );
+
+          if ( vrbflg ) fprintf( stdout,"error1\n" ); 
+
+          if ( k == LAL_IFO_H2 ) 
+             LALSnprintf( (*cDataChanNames).cDataChanNameH2,      
+             LALNameLength*sizeof(CHAR), "%s:%s_CData_%Ld",             
+             &thisCoinc->snglInspiral[k]->ifo, frInType, eventID );
+
+           if ( vrbflg ) fprintf( stdout,"error2\n" ); 
+
+/*         if ( vrbflg ) fprintf( stdout, "cDataChanName[%d]=%s:%s_CData_%Ld\n",
+                 k, &thisCoinc->snglInspiral[k]->ifo, frInType, eventID );*/
           kidx = k;
         }
       } 
@@ -456,10 +467,10 @@ int main( int argc, char *argv[] )
 
           /* the next two statements must be replaced by sth more sensible */
           if ( j == LAL_IFO_H1 ) 
-              CVec->cData[j]->name = cDataChanNames.cDataChanNameH1; 
+              *(CVec->cData[j]->name) = *(cDataChanNames->cDataChanNameH1); 
 
           if ( j == LAL_IFO_H2 )               
-              CVec->cData[j]->name = cDataChanNames.cDataChanNameH2;
+              *(CVec->cData[j]->name) = *(cDataChanNames->cDataChanNameH2);
 
           if ( vrbflg ) fprintf( stdout, "error\n");
           XLALFrGetCOMPLEX8TimeSeries( CVec->cData[j], frStream );
