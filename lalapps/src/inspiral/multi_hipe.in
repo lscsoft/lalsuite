@@ -10,6 +10,10 @@ length between some start and some end time.  At present, the script
 only sets up directories and writes appropriate segment files to those
 directories.  
 
+It uses the same configuration file as the inspiral_hipe script to
+determine various parameters and then set up analysis and injection
+runs.
+
 Coming soon:
 
   1.  read in the standard hipe config file to determine parameters,
@@ -34,10 +38,14 @@ __version__ = '$Revision$'[11:-2]
 import os
 import sys 
 import pylab
+import ConfigParser
 from optparse import *
 from glue import segments
 from glue import segmentsUtils
 from pylal import readMeta
+
+##############################################################################
+# define a few utility functions that make this job easier
 
 # remove all segments of size less than min_length
 def cleanlist(seglist, min_length):
@@ -57,7 +65,7 @@ def getSegments ( seglistin, interval):
 
   return seglistout
 
-
+##############################################################################
 # define usage and command line options and arguments - parse
 usage = """usage: %prog ...
 
@@ -97,6 +105,12 @@ parser.add_option("-e","--end-time",action="store",type="int",\
 parser.add_option("-i","--interval",action="store",type="int",\
     default=None, metavar=" INTERVAL",\
     help="length of each interval to be analyzed separately")
+parser.add_option("-j","--ninjections",action="store",type="int",\
+    default=0, metavar=" NINJ",\
+    help="Number of injection runs to set up")
+# read in the config file
+parser.add_option("-f","--config-file",action="store",type="string",\
+  default=None, metavar=" FILE", help="use configuration file FILE" )
 # Add some plotting capabilities to check things
 parser.add_option("-p", "--plot-segments", action="store_true",default=False,\
   help="plot segments for each interval with original segments" )
@@ -112,12 +126,23 @@ parser.add_option("-p", "--plot-segments", action="store_true",default=False,\
 # length that can be analyzed.
 #
 
-# FIXME:  we're going to hard code some numbers that should be read in
-# from the ini file. 
-paddata=8
-overlap=128
-minsciseg=16*overlap+2*paddata
+##############################################################################
+# create the config parser object and read in the ini file
+cp = ConfigParser.ConfigParser()
+cp.read(opts.config_file)
 
+##############################################################################
+# get the pad and chunk lengths from the values in the ini file
+paddata = int(cp.get('data', 'pad-data'))
+n = int(cp.get('data', 'segment-length'))
+s = int(cp.get('data', 'number-of-segments'))
+r = int(cp.get('data', 'sample-rate'))
+o = int(cp.get('inspiral', 'segment-overlap'))
+length = ( n * s - ( s - 1 ) * o ) / r
+overlap = o / r
+minsciseg = length + 2 * paddata
+
+##############################################################################
 # Based on the start and end time, generate a list of epochs to
 # analyze. An entire hipe dag will be run for each of these epochs.
 search_epochs = segments.segmentlist()
@@ -130,6 +155,7 @@ while ( istart < opts.end_time ):
   istart += opts.interval
 segmentsUtils.tosegwizard(file("multi_hipe_selectedsegs.txt",'w'),search_epochs)
 
+##############################################################################
 # Read in all the segment lists
 ifolist = []
 segdict = {}
@@ -148,6 +174,7 @@ if opts.l1_segments:
   segdict["L1"] = cleanlist(tmplist, minsciseg)
   ifolist.append("L1")
 
+##############################################################################
 # loop over the intervals, constructing overlapping segment lists,
 # making directories, and writing output to them
 for interval in search_epochs:
@@ -229,10 +256,21 @@ for interval in search_epochs:
   #   4. make dir for injections and run inspinj
   #   5. repeat 2 & 3
   #   6. repeat 4 & 5 as needed
-  os.mkdir(idirectory+"/analysis")
-  os.mkdir(idirectory+"/injections001")
-  os.mkdir(idirectory+"/injections002")
-  os.mkdir(idirectory+"/injections003")
+
+  ############################################################################
+  # set up the analysis dag for this interval
+  analysisdir = idirectory+"/analysis"
+  os.mkdir(analysisdir)
+  cp.write(file(analysisdir+"/config.ini",'w'))
+
+  ############################################################################
+  # set up the injection dag for this interval
+  for inj in range(opts.ninjections):
+    injectiondir = idirectory+"/injections%02d" % opts.ninjections
+    os.mkdir(injectiondir)
+
+    cp.set('input','num-slides','')
+    cp.write(file(injectiondir+"/config.ini",'w'))
 
   # Ultimately, we would like to construct a dag to allow running
   # these sub dags. For now,  we'll do it by hand .....
