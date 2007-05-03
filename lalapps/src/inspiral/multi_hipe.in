@@ -78,12 +78,16 @@ As of now, the code appears to do the right thing.  The segments are
 constructed to allow a 1 second overlap between searched times from
 one interval to the next.  BEWARE: This can result is some strange
 behaviour if people are not careful when generating summary files for
-the hole search.
+the whole search.
 
-In the future, this code will also use the search ini file to
-construct dags to cover the particular interval.  Moreover, it will
-also generate dags for injection runs associated with each interval.
-This should speed up the whole process of bulk processing of the data. 
+This code also uses the inspiral_hipe config file to determine
+information about segments and to insure that appropriate overlaps,
+etc are being done.  
+
+In the future, it will also construct dags to cover the particular
+interval. Moreover, it will also generate dags for injection runs
+associated with each interval. This should speed up the whole process
+of bulk processing of the data. 
 
 """
 parser = OptionParser( usage )
@@ -117,14 +121,6 @@ parser.add_option("-p", "--plot-segments", action="store_true",default=False,\
 
 ( opts , args ) = parser.parse_args()
 
-# what do I want to do?
-#
-# 1.  Starting from a segment list for each IFO, build segment lists
-# which contain some interval (is contain correct?) 
-# 
-# 2.  Reduce the first segment for each interferometer to minimal
-# length that can be analyzed.
-#
 
 ##############################################################################
 # create the config parser object and read in the ini file
