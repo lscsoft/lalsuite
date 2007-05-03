@@ -28,7 +28,7 @@ GeneratePulsarSignalTest_SOURCES = GeneratePulsarSignalTest.c
 GeneratePulsarSignalTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 AmpCorInspiralTest_SOURCES = GeneratePPNAmpCorInspiralTest.c
 AmpCorInspiralTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-AmpTruncInspiralTest_SOURCES = AmpTruncInspiralTest.c
+AmpTruncInspiralTest_SOURCES = GeneratePPNAmpTruncInspiralTest.c
 AmpTruncInspiralTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
 if METAIO
