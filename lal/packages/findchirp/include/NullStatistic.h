@@ -87,6 +87,14 @@ NRCSID (NULLSTATISTICH, "$Id$");
 #define NULLSTATH_MSGENDET "Number of detectors should be 2; H1 and H2"
 /* </lalErrTable> */
 
+typedef struct
+tagChanNames
+{
+  CHAR  cDataChanNameH1[LALNameLength];
+  CHAR  cDataChanNameH2[LALNameLength];
+}
+ChanNames;
+
 
 typedef struct
 tagCVector
