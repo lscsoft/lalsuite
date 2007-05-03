@@ -191,10 +191,10 @@ for interval in search_epochs:
       segindex = tmplist.find(interval[0])
       tmpseg = tmplist[segindex]
       if ( tmpseg[1] - interval[0] >= minsciseg ):
-        modifiedstart = max( interval[0] - overlap/2 - paddata, tmpseg[0] )
+        modifiedstart = max( interval[0] - overlap/2 - paddata - 1 , tmpseg[0] )
       else:
         modifiedstart = max( \
-            min( tmpseg[1] - minsciseg, interval[0] - overlap/2 -paddata ),\
+            min( tmpseg[1] - minsciseg, interval[0] - overlap/2 - paddata - 1 ),\
             tmpseg[0] )
     except ValueError, e:
       modifiedstart = interval[0]
@@ -206,10 +206,10 @@ for interval in search_epochs:
       segindex = tmplist.find(interval[1])
       tmpseg = tmplist[segindex]
       if ( interval[1] - tmpseg[0] >= minsciseg ):
-        modifiedend = min( interval[1] + overlap/2 + paddata, tmpseg[1] )
+        modifiedend = min( interval[1] + overlap/2 + paddata + 1, tmpseg[1] )
       else:
         modifiedend = min( \
-            max( tmpseg[0] + minsciseg, interval[1] + overlap/2 + paddata),\
+            max( tmpseg[0] + minsciseg, interval[1] + overlap/2 + paddata + 1 ),\
             tmpseg[1] )
     except ValueError, e:
       modifiedend = interval[1]
