@@ -65,6 +65,9 @@ static const LALStatus empty_status;
 /*---------- internal prototypes ----------*/
 int finite(double x);
 
+int local_sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
+int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x);
+
 /*==================== FUNCTION DEFINITIONS ====================*/
 
 
@@ -441,7 +444,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	lambda_alpha = phi_alpha - 0.5 * Dphi_alpha;
 	
 	/* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
-	if ( sin_cos_2PI_LUT ( &imagQ, &realQ, - lambda_alpha ) ) {
+	if ( local_sin_cos_2PI_LUT ( &imagQ, &realQ, - lambda_alpha ) ) {
 	  XLAL_ERROR ( "XLALComputeFaFb", XLAL_EFUNC);
 	}
 
@@ -466,7 +469,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
        * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the 
        * closest to zero and will pose no numerical difficulties !
        */
-      sin_cos_2PI_LUT ( &s_alpha, &c_alpha, kappa_star );
+      local_sin_cos_2PI_LUT ( &s_alpha, &c_alpha, kappa_star );
       c_alpha -= 1.0f; 
 
       /* ---------- calculate the (truncated to Dterms) sum over k ---------- */
@@ -614,10 +617,10 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
  * return = 0: OK, nonzero=ERROR
  */
 int
-sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x)
+local_sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x)
 {
-  return sin_cos_2PI_LUT ( sinx, cosx, x * OOTWOPI );
-} /* sin_cos_LUT() */
+  return local_sin_cos_2PI_LUT ( sinx, cosx, x * OOTWOPI );
+} /* local_sin_cos_LUT() */
 
 #define LUT_RES         64      /* resolution of lookup-table */
 #define LUT_RES_F	(1.0 * LUT_RES)
@@ -626,7 +629,7 @@ sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x)
 #define X_TO_IND	(1.0 * LUT_RES * OOTWOPI )
 #define IND_TO_X	(LAL_TWOPI * OO_LUT_RES)
 int
-sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
+local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 {
   REAL8 xt;
   INT4 i0;
@@ -663,7 +666,7 @@ sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 #ifndef LAL_NDEBUG
   if ( xt < 0.0 || xt > 1.0 )
     {
-      LALPrintError("\nFailed numerica in sin_cos_2PI_LUT(): xt = %f not in [0,1)\n\n", xt );
+      LALPrintError("\nFailed numerica in local_sin_cos_2PI_LUT(): xt = %f not in [0,1)\n\n", xt );
       return XLAL_FAILURE;
     }
 #endif
@@ -680,4 +683,4 @@ sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
   (*cos2pix) = tc - d * ts - d2 * tc;
 
   return XLAL_SUCCESS;
-} /* sin_cos_2PI_LUT() */
+} /* local_sin_cos_2PI_LUT() */
