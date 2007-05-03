@@ -38,6 +38,8 @@ __version__ = '$Revision$'[11:-2]
 import os
 import sys 
 import pylab
+import random
+import string
 import ConfigParser
 from optparse import *
 from glue import segments
@@ -89,6 +91,55 @@ interval. Moreover, it will also generate dags for injection runs
 associated with each interval. This should speed up the whole process
 of bulk processing of the data. 
 
+
+DIRECTORY HIERARCHY:
+
+The directory hierarchy that a search would have then follows:
+
+searchdir
+  tstart-tend
+    analysis
+    injection001
+    injection002
+    ....
+    injection00n
+  .
+  .
+  .
+
+
+METADATA FILES:
+
+The script currently writes out a segwizard format segment file which
+contains a listing of the intervals analyzed which is named
+
+searchdir/multi_hipe_selectedsegs.txt
+
+This can be used to add a new feature a little later on which would
+read in this segment list, use it to determine the fixed analysis
+interval, and construct the next interval in the sequence, generate
+the dag, and launch it.
+
+It would also be nice to have a master database that would include
+information about each of the jobs required to complete the analysis
+of the given interval of data noting it's success or failure.
+
+
+RELATED TOOLS AND REQUIRED TOOLS:
+
+With a structure like this, a host of other tools can be developed to
+make the whole analysis engine work well. Here is a list of things
+that we need with a note about its current status:
+
+* inspiral_hipe:  exists and meta-stable
+* multi_hipe: exists, but developmental
+* follow_hipe: under development
+* hipecoire: exists, stable, needs refinement
+* upperlimit: exists, metastable
+* hipe_likelihooh: under development
+* hipe_summary_page: under development
+* multi_hipe_summary: does not exist
+
 """
 parser = OptionParser( usage )
 
@@ -115,8 +166,10 @@ parser.add_option("-j","--ninjections",action="store",type="int",\
 # read in the config file
 parser.add_option("-f","--config-file",action="store",type="string",\
   default=None, metavar=" FILE", help="use configuration file FILE" )
+parser.add_option("-p", "--log-path",action="store",type="string",\
+    metavar=" PATH",help="directory to write condor log file")
 # Add some plotting capabilities to check things
-parser.add_option("-p", "--plot-segments", action="store_true",default=False,\
+parser.add_option("-P", "--plot-segments", action="store_true",default=False,\
   help="plot segments for each interval with original segments" )
 
 ( opts , args ) = parser.parse_args()
@@ -149,6 +202,9 @@ while ( istart < opts.end_time ):
     iend = opts.end_time
   search_epochs.append(segments.segment(istart,iend))
   istart += opts.interval
+# FIXME:  the writing out of the segments should be done at the end so
+# that successfully generated dags, etc can be maintained from run to
+# run
 segmentsUtils.tosegwizard(file("multi_hipe_selectedsegs.txt",'w'),search_epochs)
 
 ##############################################################################
@@ -255,18 +311,61 @@ for interval in search_epochs:
 
   ############################################################################
   # set up the analysis dag for this interval
+  #
+  # In doing this, we simply copy the configuration file into the
+  # sub-directory and then run the dag generation script.  The exact
+  # arguments to that script could be a problem, but we'll deal with
+  # that later.  For now, we want to try it.
+  hipe_arguments = " --h1-data --h2-data --l1-data --two-ifo --three-ifo"
+  hipe_arguments += " --output-segs --log-path " + opts.log_path
+  hipe_arguments += " --config-file config.ini --datafind --template-bank"
+  hipe_arguments += " --inspiral --coincidence --trigbank --inspiral-veto"
+  hipe_arguments += " --second-coinc"
+
+  cp.set('input','h1-segments',"../H1_selectedsegs.txt")
+  cp.set('input','h2-segments',"../H2_selectedsegs.txt")
+  cp.set('input','l1-segments',"../L1_selectedsegs.txt")
   analysisdir = idirectory+"/analysis"
   os.mkdir(analysisdir)
-  cp.write(file(analysisdir+"/config.ini",'w'))
+  os.chdir(analysisdir)
+  cp.write(file("config.ini",'w'))
+  os.system("lalapps_inspiral_hipe " + hipe_arguments)
+  os.chdir("../../")
 
   ############################################################################
   # set up the injection dag for this interval
-  for inj in range(opts.ninjections):
-    injectiondir = idirectory+"/injections%02d" % opts.ninjections
-    os.mkdir(injectiondir)
+  for inj in range(1,opts.ninjections + 1):
 
+    # read in the configuration file for injections
+    cpinj = ConfigParser.ConfigParser()
+    cpinj.read(("injections%02d.ini" % opts.ninjections))
+
+    # make the injection directory
+    injectiondir = idirectory+"/injections%02d" % inj
+    os.mkdir(injectiondir)
+    os.chdir(injectiondir)
+
+    # generate the list of injections
+    injectionfile = "HL-INJECTION-" + str(modifiedstart) +\
+      "-" + str(abs(modifiedinterval)) + ".xml"
+    inspinjcmd = "lalapps_inspinj "
+    inspinjcmd += " --gps-start-time " + str(modifiedstart)
+    inspinjcmd += " --gps-end-time " + str(modifiedend)
+    inspinjcmd += " --output " + injectionfile 
+    inspinjcmd += " --seed " + str(random.randint(1,1000))
+    for opt in cpinj.options('parameters'):
+      arg = string.strip(cpinj.get('parameters',opt))
+      inspinjcmd += " --" + opt + " " + arg
+    os.system(inspinjcmd)
+      
+    # update parameters in the config file and write out
     cp.set('input','num-slides','')
-    cp.write(file(injectiondir+"/config.ini",'w'))
+    cp.set('input','injection-file',injectionfile)
+    cp.write(file("config.ini",'w'))
+
+    # generate the dag
+    os.system("lalapps_inspiral_hipe " + hipe_arguments)
+    os.chdir("../../")
 
   # Ultimately, we would like to construct a dag to allow running
   # these sub dags. For now,  we'll do it by hand .....
