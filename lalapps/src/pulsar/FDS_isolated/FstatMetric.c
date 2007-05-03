@@ -940,7 +940,12 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
 
   /* ----- determine start-time from user-input */
   XLALFloatToGPS( &(cfg->startTime), uvar->startTime );
-  XLALFloatToGPS( &(cfg->refTime), uvar->refTime );
+  /* if refTime wasn't set, use startTime ! */
+  if ( LALUserVarWasSet ( &uvar->refTime ) )
+    XLALFloatToGPS( &(cfg->refTime), uvar->refTime );
+  else
+    XLALFloatToGPS( &(cfg->refTime), uvar->startTime );
+  
 
   /*---------- Initialize Ephemeris-data ---------- */
   {
