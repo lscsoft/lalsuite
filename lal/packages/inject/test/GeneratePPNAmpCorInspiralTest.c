@@ -11,7 +11,7 @@ Generates a parametrized post-Newtonian inspiral waveform.
 \subsubsection*{Usage}
 \begin{verbatim}
 GeneratePPNAmpCorInspiralTest [-m m1 m2] [-r dist] [-i inc phii] [-f fmin fmax]
-                        [-t dt] [-w deltat] [-p order] [-d debuglevel] [-o outfile] [-g fftoutfile NEEDED]
+                        [-t dt] [-w deltat] [-p order] [-d debuglevel] [-o outfile] [-g fftoutfile]
 \end{verbatim}
 
 ****************************************** </lalLaTeX><lalErrTable> */
@@ -60,6 +60,7 @@ GeneratePPNAmpCorInspiralTest [-m m1 m2] [-r dist] [-i inc phii] [-f fmin fmax]
 #include <lal/TimeFreqFFT.h>
 #include <lal/LALMoment.h>
 
+#include <lal/LALInspiral.h>
 
 NRCSID( GENERATEPPNINSPIRALTESTC, "$Id$" );
 
@@ -198,6 +199,7 @@ main(int argc, char **argv)
   CoherentGW waveform;          /* output waveform */
   FILE *fp;                     /* output file pointer */
   REAL4 *hoft;
+  static REAL4Vector *htaper1, *htaper2; /* For LALInspiralWaveTaper */ 
   LALDetAMResponseSeries    am_response_series = {NULL,NULL,NULL};
   REAL4TimeSeries           plus_series, cross_series, scalar_series;
   LALTimeIntervalAndNSample time_info;
@@ -412,12 +414,33 @@ main(int argc, char **argv)
    ********************************************************************************************************/
  
   wlength = waveform.h->data->length; 	
- 
+  UINT4 flength = waveform.f->data->length;
+
+  fprintf(stderr," fFinal = %e\n", waveform.f->data->data[flength -1]);
+
+  /* ************************************************** */
+  /* Before we do anything let's taper hplus and hcross */
+  /* This is a very inefficient interface for LALInspiralWaveTaper */
+  LALCreateVector(&stat, &htaper1, wlength);
+  LALCreateVector(&stat, &htaper2, wlength);
+
+  for(i = 0; i < wlength; i++){
+    htaper1->data[i] = waveform.h->data->data[2*i];
+    htaper2->data[i] = waveform.h->data->data[2*i+1];
+  }
+
+  LALInspiralWaveTaper(&stat, htaper1, 4, 3);
+  LALInspiralWaveTaper(&stat, htaper2, 4, 3);
+
+  for(i = 0; i < wlength; i++){
+    waveform.h->data->data[2*i] = htaper1->data[i];
+    waveform.h->data->data[2*i+1] = htaper2->data[i];
+  }
+
   /*************************** h(t)*/
  
   hoft = malloc(wlength*sizeof(REAL4));
-  
-
+ 
   /* fake detector */
   detector.location[0] = 0.;
   detector.location[1] = 0.;
@@ -497,7 +520,6 @@ main(int argc, char **argv)
 #endif
   }	
 
-
   /*********************** End h(t)*/
   
   /*************************** H(F)*/
@@ -521,7 +543,7 @@ main(int argc, char **argv)
   printf("\n  Writing FFT data to fourier file...\n\n");
 #endif  
  
-  fourier = fopen("fftout", "w");
+  fourier = fopen(fftout, "w");
   for(i = 0; i < wlength/2+1; i++, f+=Hf.deltaF) 
     fprintf(fourier," %f %10.3e %10.3e\n", f, Hf.data->data[i].re, Hf.data->data[i].im);	  
   fclose(fourier);
@@ -638,6 +660,8 @@ main(int argc, char **argv)
 
   /* Housekeeping of the extension */
   free(hoft);
+  LALDestroyVector(&stat, &htaper1);
+  LALDestroyVector(&stat, &htaper2);
   LALSDestroyVector(&stat, &(am_response_series.pPlus->data));
   LALSDestroyVector(&stat, &(am_response_series.pCross->data));
   LALSDestroyVector(&stat, &(am_response_series.pScalar->data));
