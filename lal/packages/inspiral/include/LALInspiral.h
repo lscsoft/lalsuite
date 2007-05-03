@@ -929,6 +929,16 @@ LALInspiralInit(
 	InspiralTemplate *params, 
 	InspiralInit     *paramsInit);
 
+/*  <lalLaTeX>
+\newpage\input{LALInspiralWaveTaperC}
+</lalLaTeX>  */
+
+void LALInspiralWaveTaper(
+     LALStatus    *status,
+     REAL4Vector  *signal,
+     UINT4	        n,
+     UINT4	  bookends
+     );
 
 /* --- HERE ARE THE WAVEFORMS/MODELS PROTOTYPES --- */
 /*  <lalLaTeX>
