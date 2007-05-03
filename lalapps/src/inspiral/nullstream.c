@@ -87,7 +87,7 @@ REAL4  dynRangeExponent     = -1;  /* set to same value used in inspiral.c */
 
 /*null stream specific inputs*/
 
-char   ifoframefile[6][256];
+char   ifoframefile[LAL_NUM_IFO][256];
 
 INT4 H1file = 0;
 INT4 H2file = 0;
@@ -97,7 +97,7 @@ INT4 T1file = 0;
 INT4 V1file = 0;
 
 /* input time-slide parameters */
-REAL8  slideStep[6]        = {0.0,0.0,0.0,0.0,0.0,0.0};
+REAL8  slideStep[LAL_NUM_IFO]        = {0.0,0.0,0.0,0.0,0.0,0.0};
 int    bankDuration        = 0;
 CHAR  *cohbankFileName     = NULL;   /* name of input template bank  */
 int    nullStatOut         = 0;      /* default is not to write frame */
@@ -123,7 +123,7 @@ CHAR  *ifoTag           = NULL;         /* string to tag IFOs    */
 
 int main( int argc, char *argv[] )
 {
-  FrChanIn      frChan;
+  /* FrChanIn      frChan; */
 
   /* frame data */
   FrStream       *frStream   = NULL;
@@ -162,7 +162,7 @@ int main( int argc, char *argv[] )
   INT4   j, k, l;
   INT4   kidx            = 0;
   UINT4  numDetectors    = 0;
-  REAL8  tempTime[6]     = {0.0,0.0,0.0,0.0,0.0,0.0}; 
+  REAL8  tempTime[LAL_NUM_IFO]     = {0.0,0.0,0.0,0.0,0.0,0.0}; 
   INT4   numTriggers     = 0;
   INT4   numCoincs       = 0;
   INT4   numEvents       = 0;
@@ -188,8 +188,9 @@ int main( int argc, char *argv[] )
   MetadataTable            savedEvents;
 
   /* cData channel names */
-  char nameArrayCData[6][256] = {"0","0","0","0","0","0"}; 
-  if ( vrbflg ) fprintf(stdout, "%d.\n",LAL_NUM_IFO);
+  ChanNames  cDataChanNames; 
+
+  if ( vrbflg ) fprintf( stdout, "%d.\n", LAL_NUM_IFO );
 
   set_debug_level( "1" ); /* change with parse option */
 
@@ -218,11 +219,12 @@ int main( int argc, char *argv[] )
   savedEvents.multiInspiralTable = NULL;
   k = 0;
 
-  /* read in the frame files */
+  /* read in the frame files: why is this here? it shows up later on too */
+#if 0
   if ( vrbflg ) fprintf(stdout, "Reading in the frame files.\n");
-  for ( k=0; k<6 ; k++)
+  for ( k=0; k<LAL_NUM_IFO ; k++)
   {
-    if ( (k == 1) || (k == 2) )
+    if ( (k == LAL_IFO_H1) || (k == LAL_IFO_H2) )
     {
       if ( ifoframefile[k] )
       { 
@@ -241,6 +243,7 @@ int main( int argc, char *argv[] )
         "Frame file not needed and not read for interferometer %d.\n",k);
     }
   }
+#endif
 
 
   /* read in the cohbank trigger ligo lw xml file */
@@ -285,9 +288,8 @@ int main( int argc, char *argv[] )
     }
     else if ( vrbflg )
     {
-      fprintf( stdout,
-               "Recreated %d coincs from the %d triggers.\n", numCoincs,
-               numTriggers );
+      fprintf( stdout, "Recreated %d coincs from the %d triggers.\n", 
+               numCoincs, numTriggers );
     }
 
     /* loop over coincident triggers to compute the null statistic */
@@ -300,14 +302,14 @@ int main( int argc, char *argv[] )
       l=0;
 
       /* Note the participating ifos and the eventID for this coincidence */
-      for ( k=0 ; k<6 ; k++)
+      for ( k=0 ; k<LAL_NUM_IFO ; k++)
       {
         if ( thisCoinc->snglInspiral[k]  && 
              ( (k==LAL_IFO_H1) || (k==LAL_IFO_H2) ) )
         {
           /* record the eventid for this coincidence */
           eventID = thisCoinc->snglInspiral[k]->event_id->id; 
-          if ( vrbflg ) fprintf(stdout,"eventID = %Ld.\n",eventID );
+          if ( vrbflg ) fprintf( stdout,"eventID = %Ld.\n",eventID );
 
           /* Parse eventID to get the slide number */
           triggerNumber = eventID % 100000;
@@ -315,13 +317,16 @@ int main( int argc, char *argv[] )
           slideSign = (eventID % 1000000000)-(slideNumber*100000)-triggerNumber;
 
           /* Store CData frame name  */
-          LALSnprintf( nameArrayCData[k], LALNameLength*sizeof(CHAR), 
+          LALSnprintf( cDataChanName[k], LALNameLength*sizeof(CHAR), 
             "%s:%s_CData_%d", &thisCoinc->snglInspiral[k]->ifo, 
             frInType, eventID );
+          if ( vrbflg ) fprintf( stdout, "cDataChanName[%d]=%s:%s_CData_%Ld\n",
+                 k, &thisCoinc->snglInspiral[k]->ifo, frInType, eventID );
           kidx = k;
         }
       } 
 
+#if 0
       /* Initialize tempTime to account for time-slides */
       for( j=0; j<5; j++)
       {
@@ -335,6 +340,7 @@ int main( int argc, char *argv[] )
           tempTime[j] -= slideStep[j]*slideNumber*slideSign;
         }
       }
+#endif
 
       l=0;
       if ( G1file ) l++; 
@@ -405,6 +411,7 @@ int main( int argc, char *argv[] )
          nullStatInputParams->tmplt->mu, nullStatInputParams->tmplt->eta);
 
       XLALNullStatisticParamsInit(&nullStatParams, nullStatInitParams);
+      if ( vrbflg ) fprintf( stdout, "Initializing.\n " );
 
       nullStatParams->numTmplts         = 1;
       nullStatParams->maxOverChirp      = maximizeOverChirp;
@@ -415,28 +422,31 @@ int main( int argc, char *argv[] )
        * we only need H1 and H2 at the moment, but assign
        * all, for future use
        */
+#if 0
       nullStatParams->detVector->detector[LAL_IFO_G1] = 
         lalCachedDetectors[LALDetectorIndexGEO600DIFF];
       nullStatParams->detVector->detector[LAL_IFO_H1] =
-        lalCachedDetectors[LALDetectorIndexLHODIFF];
+        lalCachedDetectors[0];
       nullStatParams->detVector->detector[LAL_IFO_H2] =
-        lalCachedDetectors[LALDetectorIndexLHODIFF];
+        lalCachedDetectors[0];
       nullStatParams->detVector->detector[LAL_IFO_L1] =
-        lalCachedDetectors[LALDetectorIndexLLODIFF];
+        lalCachedDetectors[1];
       nullStatParams->detVector->detector[LAL_IFO_T1] =
         lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
       nullStatParams->detVector->detector[LAL_IFO_V1] =
         lalCachedDetectors[LALDetectorIndexVIRGODIFF];
+#endif
 
+      CVec = nullStatInputParams->CData;
 
       /* Read in the snippets associated with thisCoinc trigger */
-      for ( j=0; j<6; j++ )
+      for ( j=0; j<LAL_NUM_IFO; j++ )
       {
         if ( (j == LAL_IFO_H1) || (j == LAL_IFO_H2) ) 
         { 
-          if ( vrbflg ) fprintf(stdout, "Getting the COMPLEX8TimeSeries.\n");
-          LAL_CALL( LALFrOpen( &status, &frStream, NULL, ifoframefile[j]), 
-             &status);
+          if ( vrbflg ) fprintf( stdout, "Getting the c-data time series.\n" );
+          frStream = XLALFrOpen( NULL, ifoframefile[j] ); 
+          
           if (!frStream)
           {  
             fprintf(stdout,
@@ -444,16 +454,21 @@ int main( int argc, char *argv[] )
             goto cleanexit;
           }
 
-          frChan.name = nameArrayCData[j];
+          /* the next two statements must be replaced by sth more sensible */
+          if ( j == LAL_IFO_H1 ) 
+              CVec->cData[j]->name = cDataChanNames.cDataChanNameH1; 
 
-          LAL_CALL( LALFrGetCOMPLEX8TimeSeries( &status, 
-             &(CVec->cData[j]), &frChan, frStream), &status);
+          if ( j == LAL_IFO_H2 )               
+              CVec->cData[j]->name = cDataChanNames.cDataChanNameH2;
+
+          if ( vrbflg ) fprintf( stdout, "error\n");
+          XLALFrGetCOMPLEX8TimeSeries( CVec->cData[j], frStream );
 
           /* Need to worry about WRAPPING of time-slides             */
           /* tempTime is the start time of cData plus - (time slide) */
-          tempTime[j] += CVec->cData[j].epoch.gpsSeconds + 
-                         CVec->cData[j].epoch.gpsNanoSeconds * 1e-9;
-          if ( vrbflg ) fprintf( stdout, "tempTime = %f\n", tempTime[j]);
+          tempTime[j] += CVec->cData[j]->epoch.gpsSeconds + 
+                         CVec->cData[j]->epoch.gpsNanoSeconds * 1e-9;
+          if ( vrbflg ) fprintf( stdout,"tempTime = %f\n", tempTime[j] );
  
           XLALFrClose( frStream );
  
@@ -464,9 +479,9 @@ int main( int argc, char *argv[] )
         }
         else
         {
-          if ( vrbflg ) fprintf(stdout,"No data needed for G1, L1,T1 or V1.\n");
+          if ( vrbflg) fprintf(stdout,"No data needed for G1, L1, T1 or V1.\n");
         }
-      }      /* closes for( j=0; j<6; j++ ) */
+      }      /* closes for( j=0; j<LAL_NUM_IFO; j++ ) */
 
 
       /*
