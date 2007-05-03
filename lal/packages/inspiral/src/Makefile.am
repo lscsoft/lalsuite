@@ -32,7 +32,8 @@ LALInspiralDerivatives.c\
 LALPrintTimeseries.c\
 LALRungeKutta4.c\
 LALSTPNWaveform.c\
-LALInspiralAmplitudeCorrectedWave.c
+LALInspiralAmplitudeCorrectedWave.c\
+LALInspiralWaveTaper.c
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
