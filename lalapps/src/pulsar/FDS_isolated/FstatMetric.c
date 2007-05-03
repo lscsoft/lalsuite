@@ -221,6 +221,8 @@ void getMultiPhaseDerivs (LALStatus *, MultiPhaseDerivs **derivs,
 			  PhaseType_t type, 
 			  const DopplerPoint *offsetUnits );
 
+void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch, BOOLEAN isLISA);
+
 int computeFstatMetric ( gsl_matrix *gF_ij, gsl_matrix *gFav_ij, 
 			 gsl_matrix *m1_ij, gsl_matrix *m2_ij, gsl_matrix *m3_ij, 
 			 ConfigVariables *cfg );
@@ -947,40 +949,22 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
     XLALFloatToGPS( &(cfg->refTime), uvar->startTime );
   
 
-  /*---------- Initialize Ephemeris-data ---------- */
-  {
-#define FNAME_LENGTH 1024
-    CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
-    CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
-    LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-    INT4 leap;
+  { /* ----- load ephemeris-data ----- */
+    CHAR *ephemDir;
+    BOOLEAN isLISA = FALSE;
 
-    if (LALUserVarWasSet (&uvar->ephemDir) )
-      {
-	LALSnprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", uvar->ephemDir, uvar->ephemYear);
-	LALSnprintf(EphemSun, FNAME_LENGTH, "%s/sun%s.dat", uvar->ephemDir, uvar->ephemYear);
-      }
-    else
-      {
-	LALSnprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", uvar->ephemYear);
-	LALSnprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  uvar->ephemYear);
-      }
-    EphemEarth[FNAME_LENGTH-1]=0;
-    EphemSun[FNAME_LENGTH-1]=0;
-    
     cfg->edat = LALCalloc(1, sizeof(EphemerisData));
-    /* NOTE: the 'ephiles' are ONLY ever used in LALInitBarycenter, which is
-     * why we could use local variables (EphemEarth, EphemSun) to initialize them.
-     */
-    cfg->edat->ephiles.earthEphemeris = EphemEarth;
-    cfg->edat->ephiles.sunEphemeris = EphemSun;
-    
-    TRY (LALLeapSecs (status->statusPtr, &leap, &(cfg->startTime), &formatAndAcc), status);
-    cfg->edat->leap = (INT2) leap;
+    if ( LALUserVarWasSet ( &uvar->ephemDir ) )
+      ephemDir = uvar->ephemDir;
+    else
+      ephemDir = NULL;
 
-    TRY (LALInitBarycenter(status->statusPtr, cfg->edat), status);               
+    /* hack: if first detector is LISA, we load MLDC-ephemeris instead of 'earth' files */
+    if ( uvar->IFOs->data[0][0] == 'Z' )
+      isLISA = TRUE;
 
-  } /* end: init ephemeris data */
+    TRY( InitEphemeris (status->statusPtr, cfg->edat, ephemDir, uvar->ephemYear, cfg->startTime, isLISA ), status);
+  }
 
   /* ----- which units to use? 'natural' or SI ----- */
   if ( (cfg->offsetUnits.fkdot = XLALCreateREAL8Vector ( NUM_SPINS )) == NULL ) {
@@ -1542,6 +1526,64 @@ XLALDestroyMultiPhaseDerivs ( MultiPhaseDerivs *mdPhi )
 
 } /* XLALDestroyMultiPhaseDerivs() */
 
+/** Load Ephemeris from ephemeris data-files  */
+void
+InitEphemeris (LALStatus * status,   
+	       EphemerisData *edat,	/**< [out] the ephemeris-data */
+	       const CHAR *ephemDir,	/**< directory containing ephems */
+	       const CHAR *ephemYear,	/**< which years do we need? */
+	       LIGOTimeGPS epoch,	/**< epoch of observation */
+	       BOOLEAN isLISA		/**< hack this function for LISA ephemeris */	
+	       )
+{
+#define FNAME_LENGTH 1024
+  CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
+  CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
+  LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_LOOSE};
+  INT4 leap;
+
+  INITSTATUS( status, "InitEphemeris", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT ( edat, status, FSTATMETRIC_ENULL, FSTATMETRIC_MSGENULL );
+  ASSERT ( ephemYear, status, FSTATMETRIC_ENULL, FSTATMETRIC_MSGENULL );
+
+  if ( ephemDir )
+    {
+      if ( isLISA )
+	LALSnprintf(EphemEarth, FNAME_LENGTH, "%s/ephemMLDC.dat", ephemDir);
+      else
+	LALSnprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", ephemDir, ephemYear);
+      
+      LALSnprintf(EphemSun, FNAME_LENGTH, "%s/sun%s.dat", ephemDir, ephemYear);
+    }
+  else
+    {
+      if ( isLISA )
+	LALSnprintf(EphemEarth, FNAME_LENGTH, "ephemMLDC.dat");
+      else
+	LALSnprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", ephemYear);
+      LALSnprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  ephemYear);
+    }
+  
+  EphemEarth[FNAME_LENGTH-1]=0;
+  EphemSun[FNAME_LENGTH-1]=0;
+  
+  /* NOTE: the 'ephiles' are ONLY ever used in LALInitBarycenter, which is
+   * why we can use local variables (EphemEarth, EphemSun) to initialize them.
+   */
+  edat->ephiles.earthEphemeris = EphemEarth;
+  edat->ephiles.sunEphemeris = EphemSun;
+    
+  TRY (LALLeapSecs (status->statusPtr, &leap, &epoch, &formatAndAcc), status);
+  edat->leap = (INT2) leap;
+
+  TRY (LALInitBarycenter(status->statusPtr, edat), status);
+
+  DETATCHSTATUSPTR ( status );
+  RETURN ( status );
+
+} /* InitEphemeris() */
 
 
 
@@ -1607,3 +1649,4 @@ gauleg(double x1, double x2, double x[], double w[], int n)
      }
 
 } /* gauleg() */
+
