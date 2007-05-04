@@ -198,6 +198,7 @@ main(int argc, char **argv)
   CHAR message[MSGLENGTH];      /* signal generation output message */
   PPNParamStruc params;         /* input parameters */
   CoherentGW waveform;          /* output waveform */
+  AmpSwitchStruc q;             /* Amplitude switches */
   FILE *fp;                     /* output file pointer */
   REAL4 *hoft;
   static REAL4Vector *htaper1, *htaper2; /* For LALInspiralWaveTaper */ 
@@ -390,6 +391,15 @@ main(int argc, char **argv)
   for ( i = 2; i <= (UINT4)( order ); i++ )
     params.ppn->data[i] = 1.0;
 
+  /* Amplitude switches */
+  q.q0 = 1;
+  q.q1 = 1;
+  q.q2 = 1;
+  q.q3 = 1;
+  q.q4 = 1;
+  q.q5 = 1;
+
+
   /* Output parameters. */
   memset( &waveform, 0, sizeof(CoherentGW) );
 
@@ -398,7 +408,7 @@ main(int argc, char **argv)
    *******************************************************************/
 
   /* Generate waveform. */
-  SUB( LALGeneratePPNAmpTruncInspiral( &stat, &waveform, &params ), &stat );
+  SUB( LALGeneratePPNAmpTruncInspiral( &stat, &waveform, &params, &q ), &stat );
 #if DEBUG
   fprintf(stderr,"\n  Left GeneratePPNAmpTruncInspiral  \n\n");
 #endif
