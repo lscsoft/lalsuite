@@ -722,23 +722,23 @@ LALGeneratePPNAmpTruncInspiral( LALStatus     *stat,
 
 
      /* PLUS */
-     a1 = a1Pthree*v3tr + a1Pfive*v5tr + a1Psix*v6tr + a1Pseven*v7tr;  
-     a1mix = a1Pmix*v6tr;
+     a1 = q[1]*a1Pthree*v3tr + q[3]*a1Pfive*v5tr + q[4]*a1Psix*v6tr + q[5]*a1Pseven*v7tr;  
+     a1mix = q[4]*a1Pmix*v6tr;
        
-     a2 = a2Ptwo*v2tr + a2Pfour*v4tr + a2Pfive*v5tr + a2Psix*v6tr + a2Pseven*v7tr;		 
-     a2mix = a2Pmix*v7tr;      	       
+     a2 = q[0]*a2Ptwo*v2tr + q[2]*a2Pfour*v4tr + q[3]*a2Pfive*v5tr + q[4]*a2Psix*v6tr + q[5]*a2Pseven*v7tr;		 
+     a2mix = q[5]*a2Pmix*v7tr;      	       
        
-     a3 = a3Pthree*v3tr + a3Pfive*v5tr + a3Psix*v6tr + a3Pseven*v7tr;		
-     a3mix = a3Pmix*v6tr;	       
+     a3 = q[1]*a3Pthree*v3tr + q[3]*a3Pfive*v5tr + q[4]*a3Psix*v6tr + q[5]*a3Pseven*v7tr;		
+     a3mix = q[4]*a3Pmix*v6tr;	       
      
-     a4 = a4Pfour*v4tr + a4Psix*v6tr + a4Pseven*v7tr; 
-     a4mix = a4Pmix*v7tr;      
+     a4 = q[2]*a4Pfour*v4tr + q[4]*a4Psix*v6tr + q[5]*a4Pseven*v7tr; 
+     a4mix = q[5]*a4Pmix*v7tr;      
      
-     a5 = a5Pfive*v5tr + a5Pseven*v7tr;	    
+     a5 = q[3]*a5Pfive*v5tr + q[5]*a5Pseven*v7tr;	    
      
-     a6 = a6Psix*v6tr;
+     a6 = q[4]*a6Psix*v6tr;
      
-     a7 = a7Pseven*v7tr;     
+     a7 = q[5]*a7Pseven*v7tr;     
 
 
      
@@ -749,23 +749,23 @@ LALGeneratePPNAmpTruncInspiral( LALStatus     *stat,
 		    + s[3]*a4mix*sin(4.0*(phiC - phase)/2.0));      
 
  /* CROSS */
-     a1 = a1Cthree*v3tr + a1Cfive*v5tr + a1Csix*v6tr;         	     
-     a1mix = a1Cmixsix*v6tr + a1Cmixseven*v7tr;    
+     a1 = q[1]*a1Cthree*v3tr + q[3]*a1Cfive*v5tr + q[4]*a1Csix*v6tr;         	     
+     a1mix = q[4]*a1Cmixsix*v6tr + q[5]*a1Cmixseven*v7tr;    
        
-     a2 = a2Ctwo*v2tr + a2Cfour*v4tr + a2Cfive*v5tr + a2Csix*v6tr + a2Cseven*v7tr;    
-     a2mix = a2Cmix*v7tr;
+     a2 = q[0]*a2Ctwo*v2tr + q[2]*a2Cfour*v4tr + q[3]*a2Cfive*v5tr + q[4]*a2Csix*v6tr + q[5]*a2Cseven*v7tr;    
+     a2mix = q[5]*a2Cmix*v7tr;
      
-     a3 = a3Cthree*v3tr + a3Cfive*v5tr + a3Csix*v6tr + a3Cseven*v7tr;   
-     a3mix = a3Cmix*v6tr;
+     a3 = q[1]*a3Cthree*v3tr + q[3]*a3Cfive*v5tr + q[4]*a3Csix*v6tr + q[5]*a3Cseven*v7tr;   
+     a3mix = q[4]*a3Cmix*v6tr;
      
-     a4 = a4Cfour*v4tr + a4Csix*v6tr + a4Cseven*v7tr;
-     a4mix = a4Cmix*v7tr;  
+     a4 = q[2]*a4Cfour*v4tr + q[4]*a4Csix*v6tr + q[5]*a4Cseven*v7tr;
+     a4mix = q[5]*a4Cmix*v7tr;  
      
-     a5 = a5Cfive*v5tr + a5Cseven*v7tr;
+     a5 = q[3]*a5Cfive*v5tr + q[5]*a5Cseven*v7tr;
      
-     a6 = a6Csix*v6tr;
+     a6 = q[4]*a6Csix*v6tr;
      
-     a7 = a7Cseven*v7tr;     
+     a7 = q[5]*a7Cseven*v7tr;     
      
      *(h++) = preFac*(s[0]*a1*sin(1.0*(phiC - phase)/2.0) + s[1]*a2*sin(2.0*(phiC - phase)/2.0) + s[2]*a3*sin(3.0*(phiC - phase)/2.0) 
 		    + s[3]*a4*sin(4.0*(phiC - phase)/2.0) + s[4]*a5*sin(5.0*(phiC - phase)/2.0) + s[5]*a6*sin(6.0*(phiC - phase)/2.0)
