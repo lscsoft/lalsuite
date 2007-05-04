@@ -66,8 +66,9 @@ static const LALStatus empty_status;
 int finite(double x);
 
 int local_sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
-int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x);
+int local_sin_cos_2PI_LUT_2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x);
 int local_sin_cos_2PI_LUT_7tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x);
+#define local_sin_cos_2PI_LUT local_sin_cos_2PI_LUT_7tab
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -618,7 +619,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
  * return = 0: OK, nonzero=ERROR
  */
 int
-local_sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x)
+local_sin_cos_LUT_2tab (REAL4 *sinx, REAL4 *cosx, REAL8 x)
 {
   return local_sin_cos_2PI_LUT ( sinx, cosx, x * OOTWOPI );
 } /* local_sin_cos_LUT() */
@@ -633,7 +634,7 @@ local_sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x)
 #define X_TO_IND	(1.0 * LUT_RES * OOTWOPI )
 #define IND_TO_X	(LAL_TWOPI * OO_LUT_RES)
 int
-local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
+local_sin_cos_2PI_LUT_ (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 {
   REAL8 xt;
   INT4 i0;
@@ -669,7 +670,7 @@ local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
    * for saftey we therefore rather use modf(), even if that 
    * will be somewhat slower... 
    */
-#if 1
+#if 0
   xt = modf(x, &dummy);/* xt in (-1, 1) */
   if ( xt < 0.0 )
     xt += 1.0; /* xt in [0, 1) */
@@ -748,14 +749,17 @@ int local_sin_cos_2PI_LUT_7tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
     tabs_empty = 0;
   }
 
-  /* x = xin - floor(xin); /* */
-  x = modf(xin, &dummy); /* */
-  while ( x < 0.0 )
-    x += 1.0; /* x in [0, 1) */
+#if 1
+  x = xin - floor(xin);
+#else
+  x = modf(xin, &dummy);
+  if ( x < 0.0 )
+    x += 1.0;
+#endif
 
-  i = x * LUT_RES;
+  i = x * LUT_RES + .5; /* round-to-nearest */
   d = x - diVal[i];
-#if(1)
+#if 1
   (*sin2pix) = sinVal[i] + d * (cosVal2PI[i] - d * sinVal2PIPI[i]);
   (*cos2pix) = cosVal[i] - d * (sinVal2PI[i] + d * cosVal2PIPI[i]);
 #else
