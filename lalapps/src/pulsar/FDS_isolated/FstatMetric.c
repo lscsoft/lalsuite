@@ -408,6 +408,8 @@ main(int argc, char *argv[])
 	    REAL8 dnx, dny, dnz, dnX, dnY;
 	    REAL8 sind, sina, cosd, cosa, sineps, coseps;
 	    REAL8 Tspan = uvar.duration;
+	    REAL8 VT = LAL_TWOPI * LAL_AU_SI /  LAL_YRSID_SI * Tspan;
+
 	    /* ----- translate Doppler-offsets into 'canonical coords ----- */
 
 	    sind = sin(uvar.Delta); cosd = cos(uvar.Delta);
@@ -424,8 +426,8 @@ main(int argc, char *argv[])
 	    dnY = coseps * dny + sineps * dnz;
 
 	    /* sky-pos offset in canonical units */
-	    dkX = - LAL_TWOPI * uvar.Freq * LAL_AU_SI / LAL_C_SI * dnX;
-	    dkY = - LAL_TWOPI * uvar.Freq * LAL_AU_SI / LAL_C_SI * dnY;
+	    dkX = - LAL_TWOPI * uvar.Freq * VT / LAL_C_SI * dnX;
+	    dkY = - LAL_TWOPI * uvar.Freq * VT / LAL_C_SI * dnY;
 
 	    /* spin-offsets in canonical units */
 	    dom0 = LAL_TWOPI * Tspan * uvar.dFreq;
