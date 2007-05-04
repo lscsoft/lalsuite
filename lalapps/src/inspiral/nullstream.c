@@ -316,23 +316,32 @@ int main( int argc, char *argv[] )
           slideNumber = ((eventID % 100000000) - triggerNumber)/100000;
           slideSign = (eventID % 1000000000)-(slideNumber*100000)-triggerNumber;
 
+          if ( vrbflg ) fprintf( stdout, "Input Frame = %s.\n", frInType);
+          if ( vrbflg ) fprintf( stdout, "ifo = %s.\n",
+               &thisCoinc->snglInspiral[k]->ifo);
+
+          LALSnprintf( (*cDataChanNames).cDataChanNameH1,
+              LALNameLength * sizeof(CHAR), "H1:LSC_DARM_ERR_CData_" );
+
+
           /* Store CData frame name  */
           if ( k == LAL_IFO_H1 ) 
-             LALSnprintf( (*cDataChanNames).cDataChanNameH1,
-             LALNameLength*sizeof(CHAR), "%s:%s_CData_%Ld",
-             &thisCoinc->snglInspiral[k]->ifo, frInType, eventID );
+          {
+            fprintf( stdout, "LAL_NUM_IFO .\n" );
+            LALSnprintf( (*cDataChanNames).cDataChanNameH1,
+              LALNameLength * sizeof(CHAR), "%s:%s_CData_%Ld",
+              &thisCoinc->snglInspiral[k]->ifo, frInType, eventID );
+            fprintf( stdout, "\nNamed H1 channel.\n" );
+          }
+          else if ( k == LAL_IFO_H2 ) 
+          {
+            fprintf( stdout, "LAL_NUM_IFO = %i.\n", k );
+            LALSnprintf( (*cDataChanNames).cDataChanNameH2,      
+              LALNameLength * sizeof(CHAR), "%s:%s_CData_%Ld",             
+              &thisCoinc->snglInspiral[k]->ifo, frInType, eventID );
+            fprintf( stdout, "\nNamed H2 channel.\n" );
+          }
 
-          if ( vrbflg ) fprintf( stdout,"error1\n" ); 
-
-          if ( k == LAL_IFO_H2 ) 
-             LALSnprintf( (*cDataChanNames).cDataChanNameH2,      
-             LALNameLength*sizeof(CHAR), "%s:%s_CData_%Ld",             
-             &thisCoinc->snglInspiral[k]->ifo, frInType, eventID );
-
-           if ( vrbflg ) fprintf( stdout,"error2\n" ); 
-
-/*         if ( vrbflg ) fprintf( stdout, "cDataChanName[%d]=%s:%s_CData_%Ld\n",
-                 k, &thisCoinc->snglInspiral[k]->ifo, frInType, eventID );*/
           kidx = k;
         }
       } 
