@@ -351,6 +351,11 @@ typedef struct tagGalacticInspiralParamStruc {
 \vfill{\footnotesize\input{GeneratePPNInspiralHV}}
 </lalLaTeX> */
 
+typedef struct tagAmpSwitchStruc {
+	UINT4 q0, q1, q2, q3, q4, q5;
+} AmpSwitchStruc;
+
+
 
 /* Function prototypes. */
 
@@ -368,7 +373,8 @@ LALGeneratePPNInspiral( LALStatus     *,
 void
 LALGeneratePPNAmpCorInspiral( LALStatus     *,
 			CoherentGW    *output,
-			PPNParamStruc *params );
+			PPNParamStruc *params,
+			AmpSwitchStruc *q );
 
 /* <lalLaTeX>
 \newpage\input{GeneratePPNAmpTruncInspiralC}
@@ -376,7 +382,8 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *,
 void
 LALGeneratePPNAmpTruncInspiral( LALStatus     *,
 			CoherentGW    *output,
-			PPNParamStruc *params );
+			PPNParamStruc *params,
+			AmpSwitchStruc *q );
 
 /* <lalLaTeX>
 \newpage\input{GetInspiralParamsC}
