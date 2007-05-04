@@ -675,8 +675,10 @@ local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
     xt += 1.0; /* xt in [0, 1) */
 #else
   xt = x - floor(x);
+  /* actually this shouldn't be necessary at all with floor():
   while ( xt < 0.0 )
     xt += 1.0;
+  */
 #endif
 
 #ifndef LAL_NDEBUG
