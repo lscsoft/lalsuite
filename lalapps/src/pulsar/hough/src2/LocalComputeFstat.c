@@ -634,7 +634,7 @@ local_sin_cos_LUT_2tab (REAL4 *sinx, REAL4 *cosx, REAL8 x)
 #define X_TO_IND	(1.0 * LUT_RES * OOTWOPI )
 #define IND_TO_X	(LAL_TWOPI * OO_LUT_RES)
 int
-local_sin_cos_2PI_LUT_ (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
+local_sin_cos_2PI_LUT_2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 {
   REAL8 xt;
   INT4 i0;
