@@ -67,6 +67,7 @@ int finite(double x);
 
 int local_sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
 int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x);
+int local_sin_cos_2PI_LUT_7tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x);
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -622,6 +623,9 @@ local_sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x)
   return local_sin_cos_2PI_LUT ( sinx, cosx, x * OOTWOPI );
 } /* local_sin_cos_LUT() */
 
+
+
+
 #define LUT_RES         64      /* resolution of lookup-table */
 #define LUT_RES_F	(1.0 * LUT_RES)
 #define OO_LUT_RES	(1.0 / LUT_RES)
@@ -639,15 +643,21 @@ local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 
   static BOOLEAN firstCall = TRUE;
   static REAL4 sinVal[LUT_RES+1], cosVal[LUT_RES+1];
+  static REAL8 const oo_lut_res = OO_LUT_RES;
 
   /* the first time we get called, we set up the lookup-table */
   if ( firstCall )
     {
       UINT4 k;
+
+      /* printf("initializing...\n"); */
+
       for (k=0; k <= LUT_RES; k++)
         {
-          sinVal[k] = sin( LAL_TWOPI * k * OO_LUT_RES );
-          cosVal[k] = cos( LAL_TWOPI * k * OO_LUT_RES );
+          sinVal[k] = sin( LAL_TWOPI * k * oo_lut_res );
+          cosVal[k] = cos( LAL_TWOPI * k * oo_lut_res );
+
+	  /* printf("%f\t%f\n",sinVal[k],cosVal[k]); */
         }
       firstCall = FALSE;
     }
@@ -659,10 +669,16 @@ local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
    * for saftey we therefore rather use modf(), even if that 
    * will be somewhat slower... 
    */
+#if 1
   xt = modf(x, &dummy);/* xt in (-1, 1) */
-
   if ( xt < 0.0 )
-    xt += 1.0;			/* xt in [0, 1 ) */
+    xt += 1.0; /* xt in [0, 1) */
+#else
+  xt = x - floor(x);
+  while ( xt < 0.0 )
+    xt += 1.0;
+#endif
+
 #ifndef LAL_NDEBUG
   if ( xt < 0.0 || xt > 1.0 )
     {
@@ -672,7 +688,7 @@ local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 #endif
 
   i0 = (INT4)( xt * LUT_RES_F + 0.5 );	/* i0 in [0, LUT_RES ] */
-  d = d2 = LAL_TWOPI * (xt - OO_LUT_RES * i0);
+  d = d2 = LAL_TWOPI * (xt - oo_lut_res * i0);
   d2 *= 0.5 * d;
 
   ts = sinVal[i0];
@@ -684,3 +700,67 @@ local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 
   return XLAL_SUCCESS;
 } /* local_sin_cos_2PI_LUT() */
+
+
+
+
+int local_sin_cos_2PI_LUT_7tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
+
+  /* Lookup tables for fast sin/cos calculation */
+  static REAL8 sinVal[LUT_RES+1];
+  static REAL8 sinVal2PI[LUT_RES+1];
+  static REAL8 sinVal2PIPI[LUT_RES+1];
+  static REAL8 cosVal[LUT_RES+1];
+  static REAL8 cosVal2PI[LUT_RES+1];
+  static REAL8 cosVal2PIPI[LUT_RES+1];
+  static REAL8 diVal[LUT_RES+1];
+
+  static BOOLEAN tabs_empty = 1; /* reset after initializing the sin/cos tables */
+
+  UINT4 i; /* array index */
+  REAL8 d, d2; /* intermediate value  */
+  REAL8 x; /* x limited to [0..1) */
+  REAL8 dummy; /* dummy for modf */
+
+  /* res=10*(params->mCohSFT); */
+  /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
+  /* using three tables with values including PI is simply faster */
+  if ( tabs_empty ) {
+    printf("initializing...\n");
+
+    for (i=0; i <= LUT_RES; i++) {
+      sinVal[i]      = sin((LAL_TWOPI*i)/(LUT_RES));
+      sinVal2PI[i]   = sinVal[i]    * LAL_TWOPI;
+      sinVal2PIPI[i] = sinVal2PI[i] * LAL_PI;
+      cosVal[i]      = cos((LAL_TWOPI*i)/(LUT_RES));
+      cosVal2PI[i]   = cosVal[i]    * LAL_TWOPI;
+      cosVal2PIPI[i] = cosVal2PI[i] * LAL_PI;
+
+      printf("%f\t%f\n",sinVal[i],cosVal[i]);
+    }
+
+    /* this additional table saves another "costly" division in sin/cos calculation */
+    for (i=0; i <= LUT_RES; i++)
+      diVal[i] = (REAL8)i/(REAL8)(LUT_RES);
+
+    tabs_empty = 0;
+  }
+
+  /* x = xin - floor(xin); /* */
+  x = modf(xin, &dummy); /* */
+  while ( x < 0.0 )
+    x += 1.0; /* x in [0, 1) */
+
+  i = x * LUT_RES;
+  d = x - diVal[i];
+#if(1)
+  (*sin2pix) = sinVal[i] + d * (cosVal2PI[i] - d * sinVal2PIPI[i]);
+  (*cos2pix) = cosVal[i] - d * (sinVal2PI[i] + d * cosVal2PIPI[i]);
+#else
+  d2 = d*d;
+  (*sin2pix) = sinVal[i] + d * cosVal2PI[i] - d2 * sinVal2PIPI[i];
+  (*cos2pix) = cosVal[i] - d * sinVal2PI[i] - d2 * cosVal2PIPI[i];
+#endif
+
+  return XLAL_SUCCESS;
+}
