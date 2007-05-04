@@ -177,13 +177,14 @@ Phi_i ( double tt, void *params )
       EarthState earth;
       LIGOTimeGPS tGPS;
       REAL8 rX, rY;
+      REAL8 VT = LAL_TWOPI * LAL_AU_SI /  LAL_YRSID_SI * par->Tspan;
 
       XLALFloatToGPS( &tGPS, ti );
       LALBarycenterEarth( &status, &earth, &tGPS, par->edat );
       
       /* FIXME: treat LISA correctly [ephemeris already in ecliptic coords */
-      rX = (LAL_C_SI / LAL_AU_SI) * earth.posNow[0] ;
-      rY = (LAL_C_SI / LAL_AU_SI) * ( COS_EPS * earth.posNow[1] + SIN_EPS * earth.posNow[2] );
+      rX = LAL_C_SI * earth.posNow[0]  / VT;
+      rY = LAL_C_SI * ( COS_EPS * earth.posNow[1] + SIN_EPS * earth.posNow[2] ) / VT ;
       
       if ( par->comp == COMP_RX )
 	ret = - rX;	/* NOTE the '-' sign: the skypos-variable is k \propto -n  */
@@ -209,7 +210,8 @@ Phi_i ( double tt, void *params )
  * but \a dim must be at least 3 and maximally 6 (Freq + 2 sky + 3 spin-downs)
  * The dimensionless coordinates are defined as
  * \f$\omega_s \equiv 2\pi \, f^{(s)}\, T^{s+1}\f$ in terms of the observation time \f$T\f$,
- * and \f$\tilde{k}_l \equiv - 2\pi \bar{f} \hat{n} R_\mathrm{orb} / c\f$.
+ * and \f$\tilde{k}_l \equiv - 2\pi \bar{f} \hat{n} V T / c\f$, where \f$V\f$ is the average 
+ * orbital velocity.
  * 
  * NOTE: the different detectors are combined by unit-weight averaging.
  */
