@@ -283,7 +283,7 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
 
   /* Set PN parameters for amplitude */
   for(i = 0; i < 6; i++){
-    q[i] = .0;
+    q[i] = 1.0;
   }
   if( ampSwitch->q0 == 0)
     q[0] = 0.0;
@@ -301,6 +301,7 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   /* Switch on all harmonics */
   for (i = 0; i < NUMHARMONICS; i++)
     s[i] = 1.0;
+
 
   /*******************************************************************
    * COMPUTE SYSTEM PARAMETERS                                       *
