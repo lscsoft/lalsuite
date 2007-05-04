@@ -8,7 +8,7 @@ endif
 
 check_PROGRAMS = 	BasicInjectTest InjectTest GeneratePPNInspiralTest SimulateTaylorCWTest \
 			SimulateSBTest SkyCoordinatesTest SimulatePopcornTest GeneratePulsarSignalTest \
-			AmpCorInspiralTest AmpTruncInspiralTest $(NEED_METAIO)
+			GeneratePPNAmpCorInspiralTest GeneratePPNAmpTruncInspiralTest $(NEED_METAIO)
 
 InjectTest_SOURCES      = InjectTest.c
 InjectTest_LDADD        = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
@@ -26,10 +26,10 @@ SimulatePopcornTest_SOURCES = SimulatePopcornTest.c
 SimulatePopcornTest_LDADD   = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 GeneratePulsarSignalTest_SOURCES = GeneratePulsarSignalTest.c
 GeneratePulsarSignalTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-AmpCorInspiralTest_SOURCES = GeneratePPNAmpCorInspiralTest.c
-AmpCorInspiralTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-AmpTruncInspiralTest_SOURCES = GeneratePPNAmpTruncInspiralTest.c
-AmpTruncInspiralTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+GeneratePPNAmpCorInspiralTest_SOURCES = GeneratePPNAmpCorInspiralTest.c
+GeneratePPNAmpCorInspiralTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+GeneratePPNAmpTruncInspiralTest_SOURCES = GeneratePPNAmpTruncInspiralTest.c
+GeneratePPNAmpTruncInspiralTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
 if METAIO
 InjectionInterfaceTest_SOURCES = InjectionInterfaceTest.c
