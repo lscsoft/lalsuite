@@ -204,10 +204,10 @@ tagCoherentInspiralFilterParams
   UINT4                         maximizeOverChirp;
   UINT4                         numDetectors;
   UINT4                         numSegments;
-  UINT4                         numPoints;
+  INT4                          numPoints;
   UINT4                         numBeamPoints;
   REAL4                         fLow;
-  REAL4                         deltaT;
+  REAL8                         deltaT;
   REAL4                         cohSNRThresh;
   REAL8                         sigmasq[4];
   REAL4                         templateNorm;
@@ -216,6 +216,7 @@ tagCoherentInspiralFilterParams
   UINT2Vector                  *detIDVec; /* Note: H1, H2 are from same site, but are different detectors */
   DetectorVector               *detectorVec; /*stores detectors' site info */
   REAL4TimeSeries              *cohSNRVec;
+  REAL4                         chirpTime;
 }
 CoherentInspiralFilterParams;
 #if 0
@@ -254,10 +255,9 @@ typedef struct
 tagCoherentInspiralCVector
 {
   UINT4                   numDetectors;
-  COMPLEX8TimeSeries     *cData;
+  COMPLEX8TimeSeries     *cData[4];
 }
 CoherentInspiralCVector;
-/* </lalVerbatim> */
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{CoherentInspiralCVector}}
@@ -295,8 +295,8 @@ typedef struct
 tagCoherentInspiralFilterInput
 {
   InspiralTemplate            *tmplt;
-  CoherentInspiralBeamVector  *beamVec;
   CoherentInspiralCVector     *multiCData;
+  CoherentInspiralBeamVector  *beamVec;
 }
 CoherentInspiralFilterInput;
 /* </lalVerbatim> */
@@ -392,7 +392,7 @@ LALCoherentInspiralEstimateDistance (
     LALStatus                             *status,
     REAL8                                  sigmasq[4],
     REAL4                                  templateNorm,
-    REAL4                                  deltaT,
+    REAL8                                  deltaT,
     INT4                                   segmentLength,  /* time pts */
     REAL4                                  coherentSNR,
     REAL4                                 *distance
