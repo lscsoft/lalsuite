@@ -2219,7 +2219,7 @@ int main( int argc, char *argv[] )
 
                 LAL_CALL( LALFindChirpCreateCoherentInput( &status,
                       &coherentInputData, fcFilterParams->cVec, 
-                      tempTmplt, 2.0, numPoints / 4 ), &status );
+                      tempTmplt, 0.5, numPoints / 4 ), &status );
 
                 LALFree( tempTmplt->event_id );
                 LALFree( tempTmplt );
@@ -2609,7 +2609,7 @@ int main( int argc, char *argv[] )
 
   /* write the output frame */
   if ( writeRawData || writeFilterData || writeResponse || writeSpectrum ||
-      writeRhosq || writeChisq || (writeCData && cDataForFrame) )
+       writeRhosq || writeChisq || writeCData )
   {
     if ( outputPath[0] )
     {
