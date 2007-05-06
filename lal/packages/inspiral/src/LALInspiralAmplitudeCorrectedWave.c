@@ -423,7 +423,7 @@ tion, that value must be zero*/
    }
 
    memset( &waveform, 0, sizeof(CoherentGW) );
-   LALGeneratePPNAmpCorInspiral( status->statusPtr, &waveform, &ppnParams );
+   LALGeneratePPNAmpCorInspiral( status->statusPtr, &waveform, &ppnParams, NULL );
 
    count = 0; 
   for (i=0;i<(INT4)waveform.h->data->length; i++)
