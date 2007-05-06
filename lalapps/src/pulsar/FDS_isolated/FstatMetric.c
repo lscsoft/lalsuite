@@ -1576,11 +1576,18 @@ InitEphemeris (LALStatus * status,
    */
   edat->ephiles.earthEphemeris = EphemEarth;
   edat->ephiles.sunEphemeris = EphemSun;
-    
-  TRY (LALLeapSecs (status->statusPtr, &leap, &epoch, &formatAndAcc), status);
-  edat->leap = (INT2) leap;
 
   TRY (LALInitBarycenter(status->statusPtr, edat), status);
+
+  if ( isLISA )	
+    {
+      edat->leap = -1;	/* dirty hack: signal that ephemeris are in *ECLIPTIC* coords, not EQUATORIAL */
+    }
+  else
+    {
+      TRY (LALLeapSecs (status->statusPtr, &leap, &epoch, &formatAndAcc), status);
+      edat->leap = (INT2) leap;
+    }
 
   DETATCHSTATUSPTR ( status );
   RETURN ( status );

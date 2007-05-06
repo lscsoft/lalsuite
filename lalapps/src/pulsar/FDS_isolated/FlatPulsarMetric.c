@@ -169,9 +169,20 @@ Phi_i ( double tt, void *params )
   cov_params_t *par = (cov_params_t*)params;
   double ret;
   REAL8 ti = par->startTime + tt * par->Tspan;
+  REAL8 sineps, coseps;
 
-  /* rX, rY */
-  if ( par->comp < 0 )
+  if ( par->edat->leap < 0 )	/* used to communicate coordinate-system of ephemeris-file */
+    {
+      sineps = 0;	/* LISA: ephemeris is using ECLIPTIC coords */
+      coseps = 1;
+    }
+  else
+    {
+      sineps = SIN_EPS;	/* non-LISA: earth ephemeris is using EQUATORIAL coords */
+      coseps = COS_EPS;
+    }
+  
+  if ( par->comp < 0 )	  /* rX, rY */
     {
       LALStatus status = empty_status;
       EarthState earth;
@@ -184,7 +195,7 @@ Phi_i ( double tt, void *params )
       
       /* FIXME: treat LISA correctly [ephemeris already in ecliptic coords */
       rX = LAL_C_SI * earth.posNow[0]  / VT;
-      rY = LAL_C_SI * ( COS_EPS * earth.posNow[1] + SIN_EPS * earth.posNow[2] ) / VT ;
+      rY = LAL_C_SI * ( coseps * earth.posNow[1] + sineps * earth.posNow[2] ) / VT ;
       
       if ( par->comp == COMP_RX )
 	ret = - rX;	/* NOTE the '-' sign: the skypos-variable is k \propto -n  */
@@ -213,7 +224,6 @@ Phi_i ( double tt, void *params )
  * and \f$\tilde{k}_l \equiv - 2\pi \bar{f} \hat{n} V T / c\f$, where \f$V\f$ is the average 
  * orbital velocity.
  * 
- * NOTE: the different detectors are combined by unit-weight averaging.
  */
 int
 XLALFlatMetricCW ( gsl_matrix *gij, 			/**< [out] metric */
