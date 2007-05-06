@@ -193,7 +193,6 @@ Phi_i ( double tt, void *params )
       XLALFloatToGPS( &tGPS, ti );
       LALBarycenterEarth( &status, &earth, &tGPS, par->edat );
       
-      /* FIXME: treat LISA correctly [ephemeris already in ecliptic coords */
       rX = LAL_C_SI * earth.posNow[0]  / VT;
       rY = LAL_C_SI * ( coseps * earth.posNow[1] + sineps * earth.posNow[2] ) / VT ;
       
