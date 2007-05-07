@@ -423,7 +423,7 @@ tion, that value must be zero*/
    }
 
    memset( &waveform, 0, sizeof(CoherentGW) );
-   LALGeneratePPNAmpCorInspiral( status->statusPtr, &waveform, &ppnParams, NULL );
+   LALGeneratePPNAmpCorInspiral( status->statusPtr, &waveform, &ppnParams );
 
    count = 0; 
   for (i=0;i<(INT4)waveform.h->data->length; i++)
@@ -460,7 +460,7 @@ tion, that value must be zero*/
    params->tC = count*dt;
    
    /* The highest harmonic has a frequency 3.5 times higher than the dominant */
-   params->fFinal = 3.5*waveform.f->data->data[count-1];
+   params->fFinal = 3.5*waveform.f->data->data[count-1]; 
    
    *countback = count;
 
