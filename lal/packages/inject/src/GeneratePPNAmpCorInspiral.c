@@ -167,8 +167,7 @@ do {                                                                 \
 void
 LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
 			CoherentGW    *output,
-		        PPNParamStruc *params,
-	                AmpSwitchStruc *ampSwitch)
+		        PPNParamStruc *params )
 { /* </lalVerbatim> */
 
   /* System-derived constants. */
@@ -285,19 +284,7 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   for(i = 0; i < 6; i++){
     q[i] = 1.0;
   }
-  if( ampSwitch->q0 == 0)
-    q[0] = 0.0;
-  if( ampSwitch->q1 == 0)
-    q[0] = 0.0;
-  if( ampSwitch->q2 == 0)
-    q[0] = 0.0;
-  if( ampSwitch->q3 == 0)
-    q[0] = 0.0;
-  if( ampSwitch->q4 == 0)
-    q[0] = 0.0;
-  if( ampSwitch->q5 == 0)
-    q[0] = 0.0;
-
+  
   /* Switch on all harmonics */
   for (i = 0; i < NUMHARMONICS; i++)
     s[i] = 1.0;

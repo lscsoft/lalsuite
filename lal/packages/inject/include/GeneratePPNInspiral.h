@@ -373,17 +373,16 @@ LALGeneratePPNInspiral( LALStatus     *,
 void
 LALGeneratePPNAmpCorInspiral( LALStatus     *,
 			CoherentGW    *output,
-			PPNParamStruc *params,
-			AmpSwitchStruc *q );
-
+			PPNParamStruc *params );
+			
 /* <lalLaTeX>
 \newpage\input{GeneratePPNAmpTruncInspiralC}
 </lalLaTeX> */
 void
 LALGeneratePPNAmpTruncInspiral( LALStatus     *,
 			CoherentGW    *output,
-			PPNParamStruc *params,
-			AmpSwitchStruc *q );
+			PPNParamStruc *params );
+			
 
 /* <lalLaTeX>
 \newpage\input{GetInspiralParamsC}

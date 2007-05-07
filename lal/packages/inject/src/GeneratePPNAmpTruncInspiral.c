@@ -168,8 +168,8 @@ do {                                                                 \
 void
 LALGeneratePPNAmpTruncInspiral( LALStatus     *stat,
 			CoherentGW    *output,
-		        PPNParamStruc *params,
-	                AmpSwitchStruc *ampSwitch)
+		        PPNParamStruc *params )
+	                
 { /* </lalVerbatim> */
 
   /* System-derived constants. */
@@ -298,19 +298,6 @@ LALGeneratePPNAmpTruncInspiral( LALStatus     *stat,
   for (i= 0; i < 6; i++)
     q[i] = 1.0;
   
-  if( ampSwitch->q0 == 0)
-    q[0] = 0.0;	  
-  if( ampSwitch->q0 == 0)
-    q[1] = 0.0;	  
-  if( ampSwitch->q0 == 0)
-    q[2] = 0.0;	  
-  if( ampSwitch->q0 == 0)
-    q[3] = 0.0;	  
-  if( ampSwitch->q0 == 0)
-    q[4] = 0.0;	  
-  if( ampSwitch->q0 == 0)
-    q[5] = 0.0;	  
-
   /* Switch on all harmonics */
   for (i = 0; i < NUMHARMONICS; i++)
     s[i] = 1.0;
