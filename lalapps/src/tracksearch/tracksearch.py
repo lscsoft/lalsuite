@@ -799,6 +799,45 @@ class tracksearch:
 
     #End Init
 
+    def __buildSubCacheFile__(self,masterCacheFile,subCachePath,startTime,endTime):
+        """
+        This method streamlines the masterCacheFile into smaller cache files to
+        streamline the access to data via a small cache files.  The small cache file
+        will be named via times and written to subCachePath directory.  The file will
+        contain all the gwfs which span the time interval requested.
+        """
+        fileContents=file(masterCacheFile).readlines()
+        fileContents.sort()
+        subCacheFile=os.path.normpath(subCachePath+'/Opt_'+str(startTime)+'_'+str(endTime)+'.cache')
+        startIndex=0
+        endIndex=fileContents.__len__()-1
+        newList=[]
+        for index in range(0,fileContents.__len__()):
+            timeStamp=int(fileContents[index].split(' ')[2])
+            timeOffset=int(fileContents[index].split(' ')[3])
+            frameStart=timeStamp
+            frameStop=timeStamp+timeOffset
+            if ((frameStart >= startTime) and (frameStop <= endTime)):
+                newList.append(fileContents[index])
+            elif ((frameStart < startTime) and (frameStop > startTime)):
+                newList.append(fileContents[index])
+            elif ((frameStart < endTime) and (frameStop > endTime)):
+                newList.append(fileContents[index])
+        if newList.__len__() == 0:
+            print "ERROR! Inappropriate cache file conversion for ",startTime," to ",endTime
+            os.abort()
+        newList.sort()
+        listStart=int(newList[0].split(' ')[2])
+        listEnd=int(newList[newList.__len__()-1].split(' ')[2])
+        listEndOffset=int(newList[newList.__len__()-1].split(' ')[3])
+        listEndAll=listEnd+listEndOffset
+        outFile=file(subCacheFile,'w')
+        outFile.writelines(newList)
+        outFile.close()
+        return subCacheFile
+    # End __buildSubCacheFile__
+
+
     def getDagDirectory(self):
         """
         This function must set the dag directory variable.  It is controlled via the INI file.
@@ -857,6 +896,9 @@ class tracksearch:
         df_job.add_condor_cmd('initialdir',str(dataFindInitialDir))
         prevLayerJobList=[]        
         prev_df = None
+        if not str(self.cp.get('condor','datafind')).lower().__contains__(str('LSCdataFind').lower()):
+            print 'Assuming we do not need standard data find job! Hardwiring in cache file to pipeline!'
+            print 'Looking for ini option: condor,datafind_fixcache'
         for chunk in self.sciSeg:
             df_node=pipeline.LSCDataFindNode(df_job)
             df_node.set_start(chunk.start())
@@ -867,11 +909,9 @@ class tracksearch:
             #If executable name is anything but LSCdataFind we
             #assume that the cache file should be hard wired!
             if not str(self.cp.get('condor','datafind')).lower().__contains__(str('LSCdataFind').lower()):
-                print 'Assuming we do not need standard data find job.!'
-                print 'Looking for ini option: condor,datafind_fixcache'
                 fixCache=self.cp.get('condor','datafind_fixcache')
-                print 'Cache to hard wire into pipeline is:',fixCache
-                tracksearchTime_node.add_var_opt('cachefile',fixCache)
+                subCacheFile=self.__buildSubCacheFile__(fixCache,dataFindInitialDir,chunk.start(),chunk.end())
+                tracksearchTime_node.add_var_opt('cachefile',subCacheFile)
             else:
                 #Setup a traditional pipe with a real data finding job
                 self.dag.add_node(df_node)
