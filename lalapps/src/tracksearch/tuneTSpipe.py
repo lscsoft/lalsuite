@@ -137,23 +137,29 @@ class tuneObject:
         return filesinPath
     #End method __findFiles__
 
-    def __findDirs__(self,searchPath,dirName):
+    def __findDirs__(self,searchPath,dirName,shortCircuit):
         """
         Finds any path that terminates its name with dirName.  This is an
         exact search ie find != Find and no partial text searches as in
-        __findFiles__
+        __findFiles__. If a path can be built like /searchPath/dirName  if shortCircuit
+        is true we stop the downward recursion.  Can not fine /searchPath/dirName/Layer/dirName
+        directories with shortCircuit equal True!
         """
         countMe=0
         modValue=1
         dirsInPath=[]
         for root,dir,files in os.walk(searchPath):
-            tmpPath=os.path.abspath(root)
-            if tmpPath.endswith(dirName):
-                dirsInPath.append(tmpPath)
-                if countMe%modValue==0:
-                    sys.stdout.writelines('.')
-                    sys.stdout.flush()
-                countMe=countMe+1
+            for subDir in dir:
+                tmpPath=os.path.abspath(os.path.normpath(root+'/'+subDir))
+                if tmpPath.endswith(dirName):
+                    dirsInPath.append(tmpPath)
+                    if countMe%modValue==0:
+                        sys.stdout.writelines('.')
+                        sys.stdout.flush()
+                        countMe=countMe+1
+            if shortCircuit == True:
+                while dir.__contains__(dirName):
+                    dir.remove(dirName)
         return dirsInPath
     #End __findDirs__(self,searchPath,dirName)
 
@@ -639,7 +645,8 @@ class tuneObject:
             #globFiles=self.__findFiles__(self.installPipes2,['Glob','_1.candidates','DE_'])
         #Scan for directories /1/ labeled
         print "Checking for output files in tuning directory."
-        foundDirs=self.__findDirs__(self.installPipes2,'1')
+        shortCircuit=True #Stops tranversing once a path ending in arg2 is determined!
+        foundDirs=self.__findDirs__(self.installPipes2,'1',shortCircuit)
         print "Calculating efficiencies for approximately ",foundDirs.__len__()," trials."
         countMe=0
         modValue=10
