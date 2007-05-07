@@ -191,6 +191,7 @@ main(int argc, char **argv)
   REAL8 deltat = 0.0;           /* wave sampling interval */
   INT4 order = ORDER;           /* PN order */
   UINT4 wlength = 0;
+  UINT4 flength = 0;
 
   /* Other variables. */
   UINT4 i;                      /* index */
@@ -414,7 +415,7 @@ main(int argc, char **argv)
    ********************************************************************************************************/
  
   wlength = waveform.h->data->length; 	
-  UINT4 flength = waveform.f->data->length;
+  flength = waveform.f->data->length;
 
   fprintf(stderr," fFinal = %e\n", waveform.f->data->data[flength -1]);
 
