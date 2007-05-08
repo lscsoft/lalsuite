@@ -1024,6 +1024,7 @@ void
 XLALBankVetoCCMat ( 
     FindChirpBankVetoData 	*bankVetoData,
     FindChirpSubBank            *vetoBank,
+    FindChirpDataParams         *params,
     REAL4 			dynRange, 
     REAL4 			fLow,
     REAL4 			deltaF,

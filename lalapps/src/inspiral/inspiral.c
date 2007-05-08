@@ -2319,7 +2319,7 @@ int main( int argc, char *argv[] )
         if (ccFlag && (subBankCurrent->subBankSize > 1) && analyseTag)
         {
           if (vrbflg) fprintf(stderr, "doing ccmat\n");
-          XLALBankVetoCCMat( &bankVetoData, subBankCurrent,
+          XLALBankVetoCCMat( &bankVetoData, subBankCurrent, fcDataParams,
           dynRange, fLow, spec.deltaF, chan.deltaT);
           ccFlag = 0;
           /*char filename[10];
