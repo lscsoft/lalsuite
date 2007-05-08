@@ -47,8 +47,10 @@ class getCache(UserDict):
         ifo = m.split(fname)[0]
         start = m.split(fname)[-2]
         dur = x.split(m.split(fname)[-1])
+        cache_path = os.path.abspath(self.options.cache_path)
         entry = lal.CacheEntry(ifo+" "+self.options.science_run+" " \
-                               +start+" "+dur[0]+" "+fname)
+              +start+" "+dur[0]+" "+"file://localhost"
+              +cache_path+"/"+fname)
         self[type].append(entry)
 
 ##############################################################################
