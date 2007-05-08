@@ -122,7 +122,7 @@ first_inspiral.close()
 
 # Write second inspiral cache file
 second_inspiral = open('second_inspiral.cache','w')
-for fname in cache["INSPIRAL-"]:
+for fname in cache["INSPIRAL_"]:
   second_inspiral.write(str(fname)+"\n")
 second_inspiral.close()
 
