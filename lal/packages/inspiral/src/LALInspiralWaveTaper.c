@@ -27,8 +27,6 @@
  *  \vspace{0.1in}
  *  \input{LALInspiralWaveTaperCP}
  *  \index{\verb&LALInspiralWaveTaper()&}
- *  \begin{itemize}
- *  \end{itemize}
  *
  *  \subsubsection*{Description}
  *
