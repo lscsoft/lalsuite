@@ -28,7 +28,8 @@ sys.path.append('@PYTHONLIBDIR@')
 from glue import pipeline
 from glue import lal
 from pylab import *
-from glue import segments from glue import segmentsUtils
+from glue import segments 
+from glue import segmentsUtils
 from glue.ligolw import ligolw
 from glue.ligolw import table
 from glue.ligolw import lsctables
@@ -64,10 +65,13 @@ class getCache(UserDict):
         start = m.split(fname)[-2]
         dur = x.split(m.split(fname)[-1])
         cache_path = os.path.abspath(self.options.cache_path)
-        entry = lal.CacheEntry(ifo+" "+self.options.science_run+" " \
+        try:
+          entry = lal.CacheEntry(ifo+" "+self.options.science_run+" " \
               +start+" "+dur[0]+" "+"file://localhost"
               +cache_path+"/"+fname)
-        self[type].append(entry)
+          self[type].append(entry)
+        except:
+          pass
 
   def getCacheAll(self):
     for type in self.types:
@@ -160,7 +164,7 @@ parser.add_option("-v", "--version",action="store_true",default=False,\
     help="print version information and exit")
 
 parser.add_option("-p", "--cache-path",action="store",type="string",\
-    metavar=" PATH",help="directory to find XML files")
+    metavar=" PATH",help="directory to find  all hipe XML files")
 
 parser.add_option("-r", "--science-run", action="store",type="string",\
     metavar=" RUN", help="name of science run")
@@ -190,13 +194,13 @@ if not opts.science_run:
   print >> sys.stderr, "Use --science-run RUN to specify a run."
   sys.exit(1)
 
-if not opts.xml_glob:
-  print >> sys.stderr, "Must specify a GLOB of xmls to read"
-  sys.exit(1)
+#if not opts.xml_glob:
+#  print >> sys.stderr, "Must specify a GLOB of xmls to read"
+#  sys.exit(1)
 
-if not opts.statistic:
-  print >> sys.stderr, "Must specify a statistic to use"
-  sys.exit(1)
+#if not opts.statistic:
+#  print >> sys.stderr, "Must specify a statistic to use"
+#  sys.exit(1)
 
 
 ############# TURN THE HIPE OUTPUT INTO LAL CACHE FILES #######################
@@ -207,8 +211,10 @@ cache.writeCacheAll()
 
 ############# READ IN THE COIRE FILES #########################################
 
-found, coincs = readFiles(opts.xml_glob,getstatistic(opts))
-followuptrigs = getfollowuptrigs(opts,coincs,missed)
+if opts.xml_glob:
+  pass
+#  found, coincs = readFiles(opts.xml_glob,getstatistic(opts))
+#  followuptrigs = getfollowuptrigs(opts,coincs,missed)
 
 sys.exit(0)
 
