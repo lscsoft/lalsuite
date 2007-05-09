@@ -1,6 +1,6 @@
 #!/usr/bin/env @PYTHONPROG@
 """
-qscan.in - simple dag generator for q scans
+Something
 
 $Id$
 
@@ -27,8 +27,16 @@ sys.path.append('@PYTHONLIBDIR@')
 # import the modules we need to build the pipeline
 from glue import pipeline
 from glue import lal
-#import inspiral
+from pylab import *
+from glue import segments from glue import segmentsUtils
+from glue.ligolw import ligolw
+from glue.ligolw import table
+from glue.ligolw import lsctables
+from glue.ligolw import utils
+from pylal import CoincInspiralUtils
+from pylal.fu_utils import *
 
+########## CLASS TO WRITE LAL CACHE FROM HIPE OUTPUT #########################
 class getCache(UserDict):
   """
   An instance of a lal cache
@@ -37,6 +45,14 @@ class getCache(UserDict):
     UserDict.__init__(self)
     self.dir = os.listdir(options.cache_path)
     self.options = options
+    self.types = ['TMPLTBANK', 'INSPIRAL_', 'INSPIRAL-', \
+                 'TRIGBANK', 'THINCA-', 'THINCA_']
+    self.oNames = ['bank.cache', 'trigbank.cache', 'first_inspiral.cache' \
+         'second_inspiral.cache', 'first_thinca.cache', 'second_thinca.cache'] 
+    self.nameMaps = map(None, self.oNames, self.types)
+    self.ifoTypes = ['H1','H2','L1','H1H2','H1L1','H2L1','H1H2L1']
+    self.ifoDict = {'H1':[],'H2':[],'L1':[],'H1H2':[], \
+                    'H1L1':[],'H2L1':[],'H1H2L1':[]}
   def getCacheType(self, type):
     self[type] = []
     p = re.compile(type)
@@ -53,11 +69,88 @@ class getCache(UserDict):
               +cache_path+"/"+fname)
         self[type].append(entry)
 
+  def getCacheAll(self):
+    for type in self.types:
+      self.getCacheType(type)
+
+  def writeCacheType(self,oName,type):
+    cName = open(oName,'w')
+    for fname in self[type]:
+      cName.write(str(fname)+"\n")
+      cName.close()
+
+  def writeCacheAll(self):
+    for oName, type in self.nameMaps:
+      self.writeCacheType(str(oName),type)
+  
+  def filesMatchingGPS(self, time, type):
+    cacheSubSet = self.ifoDict
+    for cache in self[type]:
+      for ifo in self.ifoTypes:
+       try:
+         if (time >= cache.to_segmentlistdict()[ifo][0][0]) and \
+            (time < cache.to_segmentlistdict()[ifo][0][1]):
+           cacheSubSet[ifo].append(cache)
+       except:
+         pass
+    return cacheSubSet
+      
+
+##############################################################################
+# redefine the SimInspiral columns of interest
+##############################################################################
+lsctables.SimInspiralTable.loadcolumns = [
+    "waveform",
+    "geocent_end_time",
+    "geocent_end_time_ns",
+    "h_end_time",
+    "h_end_time_ns",
+    "l_end_time",
+    "l_end_time_ns",
+    "source",
+    "mass1",
+    "mass2",
+    "mchirp",
+    "eta",
+    "distance",
+    "spin1x",
+    "spin1y",
+    "spin1z",
+    "spin2x",
+    "spin2y",
+    "spin2z",
+    "eff_dist_h",
+    "eff_dist_l",
+    "eff_dist_g",
+    "eff_dist_t",
+    "eff_dist_v"]
+
+##############################################################################
+# redefine the SnglInspiral columns of interest
+##############################################################################
+lsctables.SnglInspiralTable.loadcolumns = [
+    "ifo",
+    "end_time",
+    "end_time_ns",
+    "eff_distance",
+    "mass1",
+    "mass2",
+    "mchirp",
+    "eta",
+    "snr",
+    "chisq",
+    "chisq_dof",
+    "sigmasq",
+    "event_id"]
+
+      
 ##############################################################################
 #
 #  MAIN PROGRAM
 #
 ##############################################################################
+
+###### OPTION PARSING AND SANITY CHECKS #####################################
 usage = """usage: %prog [options]
 """
 
@@ -72,17 +165,21 @@ parser.add_option("-p", "--cache-path",action="store",type="string",\
 parser.add_option("-r", "--science-run", action="store",type="string",\
     metavar=" RUN", help="name of science run")
 
+parser.add_option("-g","--xml-glob",action="store",type="string",\
+    default=None, metavar=" XML_GLOB", \
+    help="GLOB of coire xml files to read (Loudest events)" )
+
+parser.add_option("-K","--statistic",action="store",type="string",\
+    default="effective_snrsq",metavar=" STAT",\
+    help="coincident statistic (default = effective_snr)")
 
 command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
 
-#################################
-# if --version flagged
 if opts.version:
   print "$Id$"
   sys.exit(0)
 
-#################################
 if not opts.cache_path:
   print >> sys.stderr, "No cache path specified."
   print >> sys.stderr, "Use --cache-path PATH to specify a location."
@@ -93,49 +190,25 @@ if not opts.science_run:
   print >> sys.stderr, "Use --science-run RUN to specify a run."
   sys.exit(1)
 
+if not opts.xml_glob:
+  print >> sys.stderr, "Must specify a GLOB of xmls to read"
+  sys.exit(1)
+
+if not opts.statistic:
+  print >> sys.stderr, "Must specify a statistic to use"
+  sys.exit(1)
+
+
+############# TURN THE HIPE OUTPUT INTO LAL CACHE FILES #######################
+
 cache = getCache(opts)
+cache.getCacheAll()
+cache.writeCacheAll()
 
-cache.getCacheType("TMPLTBANK")
-cache.getCacheType("INSPIRAL_")
-cache.getCacheType("INSPIRAL-")
-cache.getCacheType("TRIGBANK")
-cache.getCacheType("THINCA-")
-cache.getCacheType("THINCA_")
+############# READ IN THE COIRE FILES #########################################
 
-# Write bank cache file
-bank = open('bank.cache','w')
-for fname in cache["TMPLTBANK"]:
-  bank.write(str(fname)+"\n")
-bank.close()
+found, coincs = readFiles(opts.xml_glob,getstatistic(opts))
+followuptrigs = getfollowuptrigs(opts,coincs,missed)
 
-# Write trigbank cache file
-trigbank = open('trigbank.cache','w')
-for fname in cache["TRIGBANK"]:
-  trigbank.write(str(fname)+"\n")
-trigbank.close()
-
-# Write first inspiral cache file
-first_inspiral = open('first_inspiral.cache','w')
-for fname in cache["INSPIRAL-"]:
-  first_inspiral.write(str(fname)+"\n")
-first_inspiral.close()
-
-# Write second inspiral cache file
-second_inspiral = open('second_inspiral.cache','w')
-for fname in cache["INSPIRAL_"]:
-  second_inspiral.write(str(fname)+"\n")
-second_inspiral.close()
-
-# Write first thinca cache file
-first_thinca = open('first_thinca.cache','w')
-for fname in cache["THINCA-"]:
-  first_thinca.write(str(fname)+"\n")
-first_thinca.close()
-
-# Write second thinca cache file
-second_thinca = open('second_thinca.cache','w')
-for fname in cache["THINCA_"]:
-  second_thinca.write(str(fname)+"\n")
-second_thinca.close()
-
+sys.exit(0)
 
