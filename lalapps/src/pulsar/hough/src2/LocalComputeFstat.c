@@ -68,7 +68,17 @@ int finite(double x);
 int local_sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
 int local_sin_cos_2PI_LUT_2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x);
 int local_sin_cos_2PI_LUT_7tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x);
+
+
+/*---------- optimization dependant switches ----------*/
+
+/* probably the fastest version on all platforms */
 #define local_sin_cos_2PI_LUT local_sin_cos_2PI_LUT_7tab
+
+#if (EAH_OPTIMIZATION == 2)
+#define SINCOS_FLOOR
+#endif
+
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -536,7 +546,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  
 	}
 
-#elif (EAH_OPTIMIZATION == 1)
+#elif (EAH_OPTIMIZATION == 2)
 
         {
 	  /* THIS IS DANGEROUS!! It relies on current implementation of COMPLEX8 type!! */
