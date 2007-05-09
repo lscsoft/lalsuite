@@ -75,6 +75,7 @@ AM_CONDITIONAL([HAVE_PYTHON],[test "$PYTHON" != :])
 
 dnl Checks for libraries.
 AC_CHECK_LIB(m, sin)
+AC_CHECK_LIB(z, compress)
 
 dnl LAL and LALSupport (required unless part of a lal build).
 if test "${LAL_BUILD:="false"}" = "true" ; then
