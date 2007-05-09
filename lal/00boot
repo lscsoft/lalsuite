@@ -288,9 +288,10 @@ case "${host_os}" in
 esac
 
 dnl Checks for libraries.
+LALSUPPORT_LIBADD=""
 lal_save_LIBS="$LIBS"
 AC_CHECK_LIB(m, sin)
-AC_CHECK_LIB(z, compress)
+AC_CHECK_LIB(z, compress, [ LALSUPPORT_LIBADD="$LALSUPPORT_LIBADD -lz" ])
 dnl if solaris, check for sunmath library
 case "${host_os}" in
   solaris*) AC_CHECK_LIB(sunmath, sincosp);;
@@ -430,6 +431,7 @@ LIBS="$lal_save_LIBS"
 AC_SUBST(LALLIBADD)
 LAL_LIBADD="$LIBS $LALLIBADD"
 AC_SUBST(LAL_LIBADD)
+AC_SUBST(LALSUPPORT_LIBADD)
 AC_SUBST(MPI_CFLAGS)
 AC_SUBST(MPI_CPPFLAGS)
 AC_SUBST(MPI_LDFLAGS)
