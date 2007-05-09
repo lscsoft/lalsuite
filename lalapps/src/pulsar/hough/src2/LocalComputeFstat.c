@@ -535,7 +535,118 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
 	  
 	}
+
+#elif (EAH_OPTIMIZATION == 1)
+
+        {
+	  /* THIS IS DANGEROUS!! It relies on current implementation of COMPLEX8 type!! */
+	  REAL4 *Xalpha_kR4 = &(Xalpha[sftIndex].re);
+	
+	  /* temporary variables to prevent double calculations */
+	  REAL4 tsin2pi = tsin * (REAL4)OOTWOPI;
+	  REAL4 tcos2pi = tcos * (REAL4)OOTWOPI;
+	  REAL4 XRes, XIms;
+	  REAL8 combAF;
+
+	  /* The main idea of the vectorization is that
+
+	  [0] of a vector holds the real part of an even-index element
+	  [1] of a vector holds the imaginary part of an even-index element
+	  [2] of a vector holds the real part of an odd-index element
+	  [3] of a vector holds the imaginary part of an odd-index element
+	  
+	  The calculations for the four vector elements are performed independently
+	  possibly using vector-operations, and the sumsfor even- and odd-indexed
+	  element are combined at the very end.
+
+	  There was added a double-precision part that calculates the "inner"
+	  elements of the loop (that contribute the most to the result) in
+	  double precision. If vectorized, a complex calculation (i.e. two
+	  real ones) should be performed on a 128Bit vector unit capable of double
+	  precision, such as SSE or AltiVec
+	  */
+
+	  float XsumS[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
+	  /* the following vectors actually become registers in the AVUnit */
+	  vector unsigned char perm;     /* holds permutation pattern for unaligned memory access */
+	  vector float load0, load1, load2, load3;  /* temp registers for unaligned memory access */
+	  vector float load4, load5, load6, load7;
+	  vector float fdval, reTFreq;              /* temporary variables */
+	  vector float Xsum  = {0,0,0,0};           /* collects the sums */
+	  vector float four2 = {2,2,2,2};           /* vector constants */
+	  vector float four6 = {6,6,6,6};
+	  vector float tFreq = {((float)(tempFreq0 + klim/2 - 1)), /* tempFreq as vector */
+				((float)(tempFreq0 + klim/2 - 1)),
+				((float)(tempFreq0 + klim/2 - 2)),
+				((float)(tempFreq0 + klim/2 - 2)) };
+
+	  REAL4 tFreqS, aFreqS = 1;      /* tempFreq and accFreq for double precision */
+	  REAL4 XsumS[2] = {0,0};        /* partial sums */
+
+	  /* Vectorized version of the Kernel loop */
+	  /* This loop has now been unrolled manually */
+	  {
+	    /* single precision vector "loop" (isn't actually a loop anymore) */
+#define VEC_LOOP(n,a,b)\
+	      perm    = vec_lvsl(0,(Xalpha_kR4+(n)));\
+              load##b = vec_ld(0,(Xalpha_kR4+(n)+4));\
+	      fdval   = vec_perm(load##a,load##b,perm);\
+	      reTFreq = vec_re(tFreq);\
+	      tFreq   = vec_sub(tFreq,four2);\
+	      Xsum    = vec_madd(fdval, reTFreq, Xsum);
+
+	      /* non-vectorizing double-precision "loop" */
+#define VEC_LOOP_S(n)\
+              XsumS[0] = XsumS[0] * tFreqS + aFreqS * Xalpha_kR4[n];\
+              XsumS[1] = XsumS[1] * tFreqS + aFreqS * Xalpha_kR4[n+1];\
+	      aFreqS *= tFreqS;\
+              tFreqS -= 1.0;
+
+	    /* init the memory access */
+	    load0 = vec_ld(0,(Xalpha_kR4));
+	  
+	    /* three single-precision calculations first */
+	    VEC_LOOP(0,0,1);
+	    VEC_LOOP(4,1,2);
+	    VEC_LOOP(8,2,3);
+	  
+	    /* calculating the inner elements
+	       VEC_LOOP(16+12); VEC_LOOP(32+0);
+	       in double precision */
+
+	    /* skip these values in single precision calculation */
+	    tFreq   = vec_sub(tFreq,four6);
+	  
+	    tFreqS = tempFreq0 + klim/2 - 15; /* start at the 14th element */
+
+	    /* six double precision calculations */
+	    VEC_LOOP_S(12); VEC_LOOP_S(14);
+	    VEC_LOOP_S(16); VEC_LOOP_S(18);
+	    VEC_LOOP_S(20); VEC_LOOP_S(22);
+
+	    /* the rest is done in single precision again */
+	    /* init the memory access as above */
+	    load0 = vec_ld(0,(Xalpha_kR4+36));
+
+	    VEC_LOOP(24,0,1);
+	    VEC_LOOP(32,1,2);
+	    VEC_LOOP(36,2,3); 
+	  }
+	  
+	  /* output the vector */
+	  vec_st(Xsum,0,XsumS);
+	
+	  /* conbination of the three partial sums: */
+	  combAF  = 1.0 / aFreqS;
+	  XRes = XsumS[0] * combAF + XsumS[0] + XsumS[2];
+	  XIms = XsumS[1] * combAF + XsumS[1] + XsumS[3];
+
+	  realXP = s_alpha * XRes - c_alpha * XIms;
+	  imagXP = c_alpha * XRes + s_alpha * XIms;
+	} /* if x cannot be close to 0 */
+
 #else
+
 	{ 
 	  /* improved hotloop algorithm by Fekete Akos: 
 	   * take out repeated divisions into a single common denominator,
@@ -670,16 +781,12 @@ local_sin_cos_2PI_LUT_2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
    * for saftey we therefore rather use modf(), even if that 
    * will be somewhat slower... 
    */
-#if 0
+#ifdef SINCOS_FLOOR
+  xt = x - floor(x);
+#else
   xt = modf(x, &dummy);/* xt in (-1, 1) */
   if ( xt < 0.0 )
     xt += 1.0; /* xt in [0, 1) */
-#else
-  xt = x - floor(x);
-  /* actually this shouldn't be necessary at all with floor():
-  while ( xt < 0.0 )
-    xt += 1.0;
-  */
 #endif
 
 #ifndef LAL_NDEBUG
@@ -749,7 +856,7 @@ int local_sin_cos_2PI_LUT_7tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
     tabs_empty = 0;
   }
 
-#if 1
+#ifdef SINCOS_FLOOR
   x = xin - floor(xin);
 #else
   x = modf(xin, &dummy);
