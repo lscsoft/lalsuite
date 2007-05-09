@@ -627,7 +627,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	    /* skip these values in single precision calculation */
 	    tFreq   = vec_sub(tFreq,four6);
 	  
-	    tFreqS = tempFreq0 + klim/2 - 15; /* start at the 14th element */
+	    tFreqS = tempFreq0 + klim/2 - 7; /* start at the 6th element */
 
 	    /* six double precision calculations */
 	    VEC_LOOP_S(12); VEC_LOOP_S(14);
@@ -636,7 +636,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
 	    /* the rest is done in single precision again */
 	    /* init the memory access as above */
-	    load0 = vec_ld(0,(Xalpha_kR4+36));
+	    load0 = vec_ld(0,(Xalpha_kR4+24));
 
 	    VEC_LOOP(24,0,1);
 	    VEC_LOOP(32,1,2);
