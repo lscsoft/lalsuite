@@ -65,6 +65,9 @@ static const LALStatus empty_status;
 /*---------- internal prototypes ----------*/
 int finite(double x);
 
+int LocalXLALComputeFaFb (Fcomponents*, const SFTVector*, const PulsarSpins,
+			  const SSBtimes*, const AMCoeffs*, const ComputeFParams*);
+
 int local_sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
 int local_sin_cos_2PI_LUT_2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x);
 int local_sin_cos_2PI_LUT_7tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x);
@@ -550,11 +553,13 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
         {
 	  /* THIS IS DANGEROUS!! It relies on current implementation of COMPLEX8 type!! */
-	  REAL4 *Xalpha_kR4 = &(Xalpha[sftIndex].re);
+	  REAL4 *Xalpha_kR4 = (REAL4*)(Xalpha_l + 1);
 	
 	  /* temporary variables to prevent double calculations */
-	  REAL4 tsin2pi = tsin * (REAL4)OOTWOPI;
-	  REAL4 tcos2pi = tcos * (REAL4)OOTWOPI;
+	  /*
+	    REAL4 tsin2pi = s_alpha * (REAL4)OOTWOPI;
+	    REAL4 tcos2pi = c_alpha * (REAL4)OOTWOPI;
+	  */
 	  REAL4 XRes, XIms;
 	  REAL8 combAF;
 
@@ -576,19 +581,19 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  precision, such as SSE or AltiVec
 	  */
 
-	  float XsumS[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
+	  float XsumR[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
 	  /* the following vectors actually become registers in the AVUnit */
 	  vector unsigned char perm;     /* holds permutation pattern for unaligned memory access */
 	  vector float load0, load1, load2, load3;  /* temp registers for unaligned memory access */
-	  vector float load4, load5, load6, load7;
+	  /*	  vector float load4, load5, load6, load7; /**/
 	  vector float fdval, reTFreq;              /* temporary variables */
 	  vector float Xsum  = {0,0,0,0};           /* collects the sums */
 	  vector float four2 = {2,2,2,2};           /* vector constants */
 	  vector float four6 = {6,6,6,6};
-	  vector float tFreq = {((float)(tempFreq0 + klim/2 - 1)), /* tempFreq as vector */
-				((float)(tempFreq0 + klim/2 - 1)),
-				((float)(tempFreq0 + klim/2 - 2)),
-				((float)(tempFreq0 + klim/2 - 2)) };
+	  vector float tFreq = {((float)(kappa_max - 1)), /* tempFreq as vector */
+				((float)(kappa_max - 1)),
+				((float)(kappa_max - 2)),
+				((float)(kappa_max - 2)) };
 
 	  REAL4 tFreqS, aFreqS = 1;      /* tempFreq and accFreq for double precision */
 	  REAL4 XsumS[2] = {0,0};        /* partial sums */
@@ -627,7 +632,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	    /* skip these values in single precision calculation */
 	    tFreq   = vec_sub(tFreq,four6);
 	  
-	    tFreqS = tempFreq0 + klim/2 - 7; /* start at the 6th element */
+	    tFreqS = kappa_max - 7; /* start at the 6th element */
 
 	    /* six double precision calculations */
 	    VEC_LOOP_S(12); VEC_LOOP_S(14);
@@ -644,12 +649,12 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  }
 	  
 	  /* output the vector */
-	  vec_st(Xsum,0,XsumS);
+	  vec_st(Xsum,0,XsumR);
 	
 	  /* conbination of the three partial sums: */
 	  combAF  = 1.0 / aFreqS;
-	  XRes = XsumS[0] * combAF + XsumS[0] + XsumS[2];
-	  XIms = XsumS[1] * combAF + XsumS[1] + XsumS[3];
+	  XRes = XsumS[0] * combAF + XsumR[0] + XsumR[2];
+	  XIms = XsumS[1] * combAF + XsumR[1] + XsumR[3];
 
 	  realXP = s_alpha * XRes - c_alpha * XIms;
 	  imagXP = c_alpha * XRes + s_alpha * XIms;
