@@ -1568,6 +1568,12 @@ LALSnglRingdownCoincTest(
     RingdownAccuracyList       *accuracyParams
     );
 
+CoincRingdownTable *
+XLALRingdownDistanceCut(
+    CoincRingdownTable        **coincRingdown,
+    REAL4                       ratio
+    );
+
 SnglRingdownTable *
 XLALExtractSnglRingdownFromCoinc(
     CoincRingdownTable         *coincRingdown,
@@ -1599,14 +1605,16 @@ XLALCoincRingdownTimeNS (
 REAL4
 XLALCoincRingdownStat(
     CoincRingdownTable         *coincRingdown,
-    CoincInspiralStatistic      coincStat
+    CoincInspiralStatistic      coincStat,
+    CoincInspiralBittenLParams *bittenLParams
     );
 
 int 
 XLALClusterCoincRingdownTable (
     CoincRingdownTable        **coincList,
     INT8                        dtimeNS,
-    CoincInspiralStatistic      coincStat
+    CoincInspiralStatistic      coincStat,
+    CoincInspiralBittenLParams *bittenLParams
     );
 
 int
@@ -1642,6 +1650,14 @@ CoincRingdownTable *
 XLALCoincRingdownSlideCut(
     CoincRingdownTable **coincHead,
     int                  slideNum    
+    );
+
+CoincRingdownTable *
+XLALStatCutCoincRingdown (
+    CoincRingdownTable         *eventHead,
+    CoincInspiralStatistic      coincStat,
+    CoincInspiralBittenLParams *bittenLParams,
+    REAL4                       statCut
     );
 
 SnglRingdownTable *
