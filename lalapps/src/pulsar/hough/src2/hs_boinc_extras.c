@@ -545,7 +545,7 @@ static void worker (void) {
     }
 
     /* output file */
-#define OUTPUT_EXT ".res"
+#define OUTPUT_EXT ".zip"
     else if (MATCH_START("--fnameout=",argv[arg],l)) {
       int s;
       if (boinc_resolve_filename(argv[arg]+l,resultfile,sizeof(resultfile))) {
@@ -557,20 +557,19 @@ static void worker (void) {
 	startc = strrchr(resultfile,'\\');
       if(startc == NULL) {
 	/* boinc_resolve() doesn't give us a file outside the current directory, so we can't
-	   use the same name for the zip archive and the uncompressed file. Instead we will
-	   apend the OUTPUT_EXT to the output filename, write the output there and at the
-	   end zip this file into an archive with the original output file name */
-        s = strlen(argv[arg])+strlen(OUTPUT_EXT)+1;
+	   use the same name for the zip archive and the uncompressed file. So we apend the
+	   OUTPUT_EXT to the archive filename */
+        s = strlen(argv[arg])+1;
         rargv[rarg] = (char*)calloc(s,sizeof(char));
 	if(!rargv[rarg]){
 	  LogPrintf(LOG_CRITICAL, "Out of memory\n");
 	  boinc_finish(HIERARCHICALSEARCH_EMEM);
 	}
         strncpy(rargv[rarg],argv[arg],s);
-        strncat(rargv[rarg],OUTPUT_EXT,s);
+        strncat(resultfile,OUTPUT_EXT,sizeof(resultfile));
         register_output_file(rargv[rarg]+l);
-	LogPrintf (LOG_NORMAL, "WARNING: boinc-resolved result file \"%s\" in local directory - using \"%s\"\n",
-		   argv[arg]+l,rargv[rarg]+l);
+	LogPrintf (LOG_NORMAL, "WARNING: boinc-resolved result file \"%s\" in local directory - will zip into \"%s\"\n",
+		   argv[arg]+l,resultfile);
       } else {
 	/* boinc_resolve() points us to a file outside the local directory. We will derive that
 	   filename from the returned string, write the output to a local file with that name
@@ -605,17 +604,17 @@ static void worker (void) {
 	  startc = strrchr(resultfile,'\\');
 	if(startc == NULL) {
 	  /* see previous case - local filename, add OUTPUT_EXT  */
-	  s = strlen(argv[arg])+strlen(OUTPUT_EXT)+1;
+	  s = strlen(argv[arg])+1;
 	  rargv[rarg] = (char*)calloc(s,sizeof(char));
 	  if(!rargv[rarg]){
 	    LogPrintf(LOG_CRITICAL, "Out of memory\n");
 	    boinc_finish(HIERARCHICALSEARCH_EMEM);
 	  }
 	  strncpy(rargv[rarg],argv[arg],s);
-	  strncat(rargv[rarg],OUTPUT_EXT,s);
+	  strncat(resultfile,OUTPUT_EXT,sizeof(resultfile));
 	  register_output_file(rargv[rarg]);
-	  LogPrintf (LOG_NORMAL, "WARNING: boinc-resolved result file \"%s\" in local directory - using \"%s\"\n",
-		     argv[arg],rargv[rarg]);
+	  LogPrintf (LOG_NORMAL, "WARNING: boinc-resolved result file \"%s\" in local directory - will zip into \"%s\"\n",
+		     argv[arg],resultfile);
 	} else {
 	  /* see previous case - different directory - derive local filename */
 	  startc++;
