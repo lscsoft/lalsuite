@@ -1,3 +1,22 @@
+/*
+ *  Copyright (C) 2005  Alicia Sintes, Badri Krishnan, 
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the 
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  MA  02111-1307  USA
+ */
+ 
 /*-----------------------------------------------------------------------
  *
  * File Name: MCInjectHoughMulti.c
@@ -72,6 +91,10 @@ extern int lalDebugLevel;
 
 #define TRUE (1==1)
 #define FALSE (1==0)
+
+
+void ReadTimeStampsFile (LALStatus *status, LIGOTimeGPSVector *ts, CHAR *filename);
+
 
 /******************************************************
  *  Assignment of Id string using NRCSID()
@@ -149,6 +172,10 @@ int main(int argc, char *argv[]){
   FILE  *fpH0 = NULL;
   FILE  *fpNc = NULL;
 
+ /* sft constraint variables */
+  LIGOTimeGPS startTimeGPS, endTimeGPS;
+  LIGOTimeGPSVector inputTimeStampsVector;
+
   /******************************************************************/ 
   /*    user input variables   */
   /******************************************************************/ 
@@ -164,7 +191,8 @@ int main(int argc, char *argv[]){
   CHAR   *uvar_fnameOut=NULL;
   CHAR   *uvar_skyfile=NULL;
   LALStringVector *uvar_linefiles=NULL;
-
+  REAL8    uvar_startTime, uvar_endTime;
+  CHAR     *uvar_timeStampsFile=NULL;
   /******************************************************************/ 
   /*  set up the default parameters  */
   /******************************************************************/ 
@@ -249,7 +277,10 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighNoise",       0,  UVAR_OPTIONAL, "Use SFT noise weights",                 &uvar_weighNoise),      &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printLog",         0,  UVAR_OPTIONAL, "Print Log file",                        &uvar_printLog),        &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "fast",             0,  UVAR_OPTIONAL, "Use fast frequency domain SFT injections",    &uvar_fast),      &status);  
-   /* developer input variables */
+  LAL_CALL( LALRegisterREALUserVar(   &status, "startTime",        0,  UVAR_OPTIONAL, "GPS start time of observation",         &uvar_startTime),        &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "endTime",          0,  UVAR_OPTIONAL, "GPS end time of observation",           &uvar_endTime),          &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "timeStampsFile",   0,  UVAR_OPTIONAL, "Input time-stamps file",                &uvar_timeStampsFile),   &status);
+  /* developer input variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "nfSizeCylinder",   0, UVAR_DEVELOPER, "Size of cylinder of PHMDs",             &uvar_nfSizeCylinder),  &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",     0, UVAR_DEVELOPER, "Running Median block size",             &uvar_blocksRngMed),    &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "maxBinsClean",     0, UVAR_DEVELOPER, "Maximum number of bins in cleaning",    &uvar_maxBinsClean),    &status);
@@ -414,6 +445,21 @@ int main(int argc, char *argv[]){
  
     /* set detector constraint */
     constraints.detector = NULL;
+    
+    if ( LALUserVarWasSet( &uvar_startTime ) ) {
+      LAL_CALL ( LALFloatToGPS( &status, &startTimeGPS, &uvar_startTime), &status);
+      constraints.startTime = &startTimeGPS;
+    }
+
+    if ( LALUserVarWasSet( &uvar_endTime ) ) {
+      LAL_CALL ( LALFloatToGPS( &status, &endTimeGPS, &uvar_endTime), &status);
+      constraints.endTime = &endTimeGPS;
+    }
+
+    if ( LALUserVarWasSet( &uvar_timeStampsFile ) ) {
+      LAL_CALL ( ReadTimeStampsFile ( &status, &inputTimeStampsVector, uvar_timeStampsFile), &status);
+      constraints.timestamps = &inputTimeStampsVector;
+    }
 
     /* get sft catalog */
     LAL_CALL( LALSFTdataFind( &status, &catalog, uvar_sftDir, &constraints), &status);
@@ -422,6 +468,13 @@ int main(int argc, char *argv[]){
       exit(1);
     }
 
+
+    /* now we can free the inputTimeStampsVector */
+    if ( LALUserVarWasSet( &uvar_timeStampsFile ) ) {
+      LALFree( inputTimeStampsVector.data );
+    }
+    
+    
     /* get some sft parameters */
     mObsCoh = catalog->length; /* number of sfts */
     deltaF = catalog->data->header.deltaF;  /* frequency resolution */
@@ -1781,3 +1834,62 @@ void PrintLogFile (LALStatus       *status,
   RETURN (status);
 }    
 
+
+
+			
+/* ****************************************************************/
+/*    read timestamps file  Copied from driver */
+/* ****************************************************************/   
+/******************************************************************/
+void ReadTimeStampsFile (LALStatus          *status,
+			 LIGOTimeGPSVector  *ts,
+			 CHAR               *filename)
+{
+
+  FILE  *fp = NULL;
+  INT4  numTimeStamps, r;
+  UINT4 j;
+  REAL8 temp1, temp2;
+
+  INITSTATUS (status, "ReadTimeStampsFile", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT(ts, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 
+  ASSERT(ts->data == NULL, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 
+  ASSERT(ts->length == 0, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 
+  ASSERT(filename, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 
+
+  if ( (fp = fopen(filename, "r")) == NULL) {
+    ABORT( status, DRIVEHOUGHCOLOR_EFILE, DRIVEHOUGHCOLOR_MSGEFILE);
+  }
+
+  /* count number of timestamps */
+  numTimeStamps = 0;     
+
+  do {
+    r = fscanf(fp,"%lf%lf\n", &temp1, &temp2);
+    /* make sure the line has the right number of entries or is EOF */
+    if (r==2) numTimeStamps++;
+  } while ( r != EOF);
+  rewind(fp);
+
+  ts->length = numTimeStamps;
+  ts->data = LALCalloc (1, numTimeStamps * sizeof(LIGOTimeGPS));;
+  if ( ts->data == NULL ) {
+    fclose(fp);
+    ABORT( status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  }
+  
+  for (j = 0; j < ts->length; j++)
+    {
+      r = fscanf(fp,"%lf%lf\n", &temp1, &temp2);
+      ts->data[j].gpsSeconds = (INT4)temp1;
+      ts->data[j].gpsNanoSeconds = (INT4)temp2;
+    }
+  
+  fclose(fp);
+  	 
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+}    
