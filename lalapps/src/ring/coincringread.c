@@ -90,7 +90,9 @@ static void print_usage(char *program)
       " [--injection-file]    inj_file read injection parameters from inj_file\n"\
       " [--injection-window]  inj_win  trigger and injection coincidence window (ms)\n"\
       " [--missed-injections] missed   write missed injections to file missed\n"\
-      "\n");
+      "\n"\
+      " [--distance-cut]               do a distance cut\n"\
+      " [--dcut-ratio]   dcutRatio  cut triggers which lie outside the given range\n" );
 }
 
 /* function to read the next line of data from the input file list */
@@ -105,6 +107,7 @@ static char *get_next_line( char *line, size_t size, FILE *fp )
 
 int sortTriggers = 0;
 LALPlaygroundDataMask dataType;
+int distanceCut = 0;
 
 int main( int argc, char *argv[] )
 {
@@ -134,7 +137,7 @@ int main( int argc, char *argv[] )
   int numInFiles = 0;
   char **inFileNameList;
   char line[MAX_PATH];
-
+  REAL4 dcutRatio = 0;
   UINT8 triggerInputTimeNS = 0;
 
   MetadataTable         proctable;
@@ -238,6 +241,8 @@ int main( int argc, char *argv[] )
       {"injection-file",          required_argument,      0,              'I'},
       {"injection-window",        required_argument,      0,              'T'},
       {"missed-injections",       required_argument,      0,              'm'},
+      {"distance-cut",            no_argument, &distanceCut,              '1'},
+      {"dcut-ratio",              required_argument,      0,              'A'},
       {0, 0, 0, 0}
     };
     int c;
@@ -247,7 +252,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only ( argc, argv, "c:d:e:g:h:i:k:m:o:t:z:"
-                                       "C:D:E:I:N:S:T:V:Z", long_options, 
+                                       "A:C:D:E:I:N:S:T:V:Z", long_options, 
                                        &option_index );
 
     /* detect the end of the options */
@@ -446,7 +451,7 @@ int main( int argc, char *argv[] )
         if ( cluster_dt <= 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
-              "custer window must be > 0: "
+              "cluster window must be > 0: "
               "(%lld specified)\n",
               long_options[option_index].name, cluster_dt );
           exit( 1 );
@@ -503,6 +508,21 @@ int main( int argc, char *argv[] )
         memcpy( missedFileName, optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
+
+      case 'A':
+        /* injection coincidence time is specified on command line in ms */
+        dcutRatio =   atof( optarg );
+        if ( dcutRatio < 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "distance cut factor must be >= 0: "
+              "(%e specified)\n",
+              long_options[option_index].name, dcutRatio );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%e", dcutRatio );
+        break;
+
 
       case '?':
         exit( 1 );
@@ -608,7 +628,18 @@ int main( int argc, char *argv[] )
     LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
 
-
+  /* store the distance cut in the process_params table */
+  if ( distanceCut )
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--distance-cut" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  }
   /*
    *
    * read in the input triggers from the xml files
@@ -775,6 +806,20 @@ int main( int argc, char *argv[] )
          "Have %d non-playground triggers\n", numFileCoincs );
        numEventsPlayTest += numFileCoincs;
      }
+
+
+     if ( distanceCut )
+     {
+       coincFileHead = XLALRingdownDistanceCut( &coincFileHead, dcutRatio );
+
+       /* count the triggers, scroll to end of list */
+       numFileCoincs = XLALCountCoincRingdown( coincFileHead );
+
+       if ( vrbflg ) 
+         fprintf( stdout, "Have %d triggers after distance cut\n", numFileCoincs );
+         numEventsPlayTest += numFileCoincs;
+     }
+
 
     /* add coincs to list */
     if( numFileCoincs )
