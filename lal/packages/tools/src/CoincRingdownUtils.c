@@ -1030,6 +1030,54 @@ INT4 XLALCountCoincRingdown( CoincRingdownTable *head )
   return length;
 }
 
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+CoincRingdownTable *
+XLALStatCutCoincRingdown (  
+    CoincRingdownTable         *eventHead,
+    CoincInspiralStatistic      coincStat,
+    CoincInspiralBittenLParams *bittenLParams,
+    REAL4                       statCut
+    )
+/* </lalVerbatim> */
+{
+  CoincRingdownTable    *thisEvent = NULL;
+  CoincRingdownTable    *prevEvent = NULL;
+
+
+  thisEvent = eventHead;
+  eventHead = NULL;
+
+  while ( thisEvent )
+  {
+    CoincRingdownTable *tmpEvent = thisEvent;
+    thisEvent = thisEvent->next;
+
+    if ( XLALCoincRingdownStat(tmpEvent,coincStat,bittenLParams) >= statCut )
+    {
+      /* keep this template */
+      if ( ! eventHead  )
+      {
+        eventHead = tmpEvent;
+      }
+      else
+      {
+        prevEvent->next = tmpEvent;
+      }
+      tmpEvent->next = NULL;
+      prevEvent = tmpEvent;
+    }
+    else
+    {
+      /* discard this template */
+      XLALFreeCoincRingdown ( &tmpEvent );
+    }
+  }
+  return( eventHead );
+}
+
+
+
 /* <lalVerbatim file="CoincRingdownUtilsCP"> */
 SnglRingdownTable *
 XLALCompleteCoincRingdown (
@@ -1571,7 +1619,8 @@ XLALCoincRingdownTimeNS (
 REAL4
 XLALCoincRingdownStat(
     CoincRingdownTable         *coincRingdown,
-    CoincInspiralStatistic      coincStat
+    CoincInspiralStatistic      coincStat,
+    CoincInspiralBittenLParams *bittenLParams
     )
 {
   InterferometerNumber  ifoNumber;
@@ -1579,22 +1628,64 @@ XLALCoincRingdownStat(
   REAL4                 statValues[LAL_NUM_IFO];
   REAL4 statValue = 0;
   INT4  i;
+  INT4  ifoCounter = 0;
 
   if( coincStat == no_stat )
   {
     return(0);
   }
 
+  /* for bittenL only*/
+  if( coincStat == bitten_l )
+  {
+    for ( i = 0; i < LAL_NUM_IFO ; i++)
+    {
+      statValues[i] = 1e9; /* sufficiently high values */
+    }
+  }
+
+
   for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
   {
     if ( (snglRingdown = coincRingdown->snglRingdown[ifoNumber]) )
     {
+      /* count the number of IFOs for this coincidence */
+      ifoCounter++;
+
       if ( coincStat == snrsq )
       {
         statValue += snglRingdown->snr * snglRingdown->snr;
       }
+
+      else if ( coincStat == bitten_l )
+      {
+        statValues[ifoNumber] = bittenLParams->param_a[ifoNumber]
+                * snglRingdown->snr
+                + bittenLParams->param_b[ifoNumber];
+        statValue += snglRingdown->snr ;
+      }
+
     }
   }
+
+  /*    for the bitten L case only , we need to compare different
+        values and keep the minimum one */
+  if ( coincStat == bitten_l )
+  {
+    if (coincStat == bitten_l || ifoCounter<3) {
+      for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+      {
+        if ( (snglRingdown = coincRingdown->snglRingdown[ifoNumber]) )
+        {
+          if (statValues[ifoNumber] < statValue)
+          {
+           statValue = statValues[ifoNumber];
+          }
+        }
+      }
+    }
+  }
+
 
   return( statValue );
 }
@@ -1605,7 +1696,8 @@ int
 XLALClusterCoincRingdownTable (
     CoincRingdownTable        **coincList,
     INT8                        dtimeNS,
-    CoincInspiralStatistic      coincStat
+    CoincInspiralStatistic      coincStat,
+    CoincInspiralBittenLParams *bittenLParams
     )
 /* </lalVerbatim> */
 {
@@ -1614,6 +1706,10 @@ XLALClusterCoincRingdownTable (
   CoincRingdownTable     *prevCoinc = NULL;
   CoincRingdownTable     *nextCoinc = NULL;
   int                     numCoincClust = 0;
+  REAL4 thisStat = 0;
+  REAL4 nextStat = 0;
+
+  CoincInspiralStatistic  tripleStat = snrsq;
 
   if ( !coincList )
   {
@@ -1638,11 +1734,24 @@ XLALClusterCoincRingdownTable (
 
     /* find events within the cluster window */
     if ( (nextTime - thisTime) < dtimeNS )
-        {
-      REAL4 thisStat =
-        XLALCoincRingdownStat( thisCoinc, coincStat );
-      REAL4 nextStat =
-        XLALCoincRingdownStat( nextCoinc, coincStat );
+    {
+      if ( thisCoinc->numIfos > 2)
+      {
+         thisStat = XLALCoincRingdownStat( thisCoinc, tripleStat, bittenLParams );
+      }
+      else 
+      { 
+        thisStat = XLALCoincRingdownStat( thisCoinc, coincStat, bittenLParams );
+      }
+
+      if ( nextCoinc->numIfos > 2)
+      {
+        nextStat = XLALCoincRingdownStat( nextCoinc, tripleStat, bittenLParams );
+      }
+      else
+      {
+        nextStat = XLALCoincRingdownStat( nextCoinc, coincStat, bittenLParams );
+      }
 
       if ( nextStat > thisStat )
       {
