@@ -57,6 +57,11 @@
 #include <lal/FindChirpBCVSpin.h>
 #include <lal/FindChirpChisq.h>
 #include <lal/LALTrigScanCluster.h>
+#include <lal/PrintFTSeries.h>
+#include <lal/ReadFTSeries.h>
+#include <lal/FrequencySeries.h>
+#include <lal/GenerateInspiral.h>
+#include <lal/TimeSeries.h>
 
 RCSID( "$Id$" );
 
@@ -82,82 +87,54 @@ RCSID( "$Id$" );
 /* debugging */
 extern int vrbflg;                      /* verbocity of lal function    */
 
-/* template bank simulation params */
-INT4  bankSim           = 0;            /* number of template bank sims */
-CHAR *bankSimFileName   = NULL;         /* file contining sim_inspiral  */
-FindChirpBankSimParams bankSimParams = { 0, 0, -1, -1, NULL, -1, NULL, NULL };
-                                        /* template bank sim params     */
-
-/* input filenames */
-CHAR  *injectionFile    = NULL;         /* name of file containing injs */
-CHAR  *specFileH1       = NULL;         /* name of file containing spec of H1 */
-CHAR  *specFileH2       = NULL;         /* name of file containing spec of H2 */
-CHAR  *specFileL1       = NULL;         /* name of file containing spec of L1 */
-
-static INT4             numPoints       = 64;
-static REAL4            fLow            = 40.0;
 
 int main( int argc, char *argv[] )
 {
   LALStatus                     status = blank_status;
-  INT4                          flag = 0;
-  INT4                          i;
-  INT4                          j;
-  INT4                          k;
   REAL8                         dynRange = 1.0;
   REAL4                         dynRangeExponent = 65.0;
-  UINT4                         numInputPoints = numPoints;
+
+  UINT4                          k;
+  INT4                          numPoints       = 524288;
+  REAL4                         fSampling       = 2048.;
+  REAL8                         deltaT          = 1./fSampling;
+  REAL8                         deltaF          = fSampling / numPoints;
+
+  /* vars required to make freq series */
+  LIGOTimeGPS                   epoch = { 0, 0 }; 
+  REAL8                         f0 = 0.;
+  LALUnit                       sampleUnits; 
 
   /* files contain PSD info */
-  FILE                         *fpSpecH1;
-  FILE                         *fpSpecH2;
-  FILE                         *fpSpecL1;
+  CHAR                         *injectionFile = NULL;         
+  CHAR                         *specFileH1    = NULL;         
+  CHAR                         *specFileH2    = NULL;         
+  CHAR                         *specFileL1    = NULL;         
+
+  /* from blindinj */
+  COMPLEX8Vector               *unity;
+  const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
+  INT8                       waveformStartTime;
 
   /* injection information */
   int                  numInjections = 0;
-  SimInspiralTable    *injections = NULL;
-  SimInspiralTable    *thisInj = NULL;
-
 
   /* template bank simulation variables */
-  UINT4 bankSimCutLowIndex = 0;
-  UINT4 bankSimCutHighIndex = 0;
-  INT4  bankSimCount = 0;
-  REAL4 matchNorm = 0;
-  SnglInspiralTable  *loudestEventHead = NULL;
-  SnglInspiralTable  *thisLoudestEvent = NULL;
-  SimInspiralTable   *thisSimInspiral = NULL;
-  SimInstParamsTable *thisSimInstParams = NULL;
-  SimInspiralTable   *bankSimHead = NULL;
-  SimInspiralTable   *thisBankSim = NULL;
-  FindChirpBankSimParams *bankSimParamsPtr = NULL;
+  INT4  injSimCount = 0;
+  SimInspiralTable   *injectionHead = NULL;
+  SimInspiralTable   *thisInjection = NULL;
+  /*FindChirpBankSimParams *bankSimParamsPtr = NULL;*/
 
   /* raw input data storage */
-  REAL4TimeSeries               chan;
-  REAL8TimeSeries               strainChan;
-  REAL4FrequencySeries          specH1;
-  COMPLEX8FrequencySeries       resp;
-  DataSegmentVector            *dataSegVec = NULL;
-  COMPLEX8TimeSeries           *coherentInputData = NULL;
+  REAL8FrequencySeries          *specH1 = NULL;
+  COMPLEX8FrequencySeries       *resp;
+  REAL4TimeSeries               *chan;
 
-  /* output data */
-  MetadataTable         proctable;
-  MetadataTable         procparams;
-  MetadataTable         searchsumm;
-  MetadataTable         searchsummvars;
-  MetadataTable         siminspiral;
-  MetadataTable         siminstparams;
-  MetadataTable         summvalue;
-  MetadataTable         filtertable;
-  SearchSummvarsTable  *this_search_summvar = NULL;
-  SummValueTable       *this_summ_value = NULL;
-  ProcessParamsTable   *this_proc_param = NULL;
-  LIGOLwXMLStream       results;
-
-  /* make sure all the output table pointers are null */
-  siminspiral.simInspiralTable = NULL;
-  siminstparams.simInstParamsTable = NULL;
-
+  /* needed for inj */
+  CoherentGW                 waveform;
+  PPNParamStruc              ppnParams;
+  DetectorResponse           detector;
+  InterferometerNumber       ifoNumber   = LAL_UNKNOWN_IFO;
 
   /* getopt arguments */
   struct option long_options[] =
@@ -174,6 +151,9 @@ int main( int argc, char *argv[] )
     {0, 0, 0, 0}
   };
   int c;
+
+  set_debug_level("39");
+  
   
   /*
    *
@@ -291,124 +271,168 @@ int main( int argc, char *argv[] )
   fprintf( stdout, "H2 spec file is   %s\n", specFileH2 );
   fprintf( stdout, "L1 spec file is   %s\n", specFileL1 );
 
-  /* Try and read in power spectrum from files */
-  /* H1 file */
-  if ( !(fpSpecH1 = fopen( specFileH1, "r" )) )
-  {
-     fprintf( stdout, "unable to open the H1 spectrum file for reading\n" );
-     fflush( stdout );
-     exit (1);
-  }
+  /* create vector for H1 spectrum */
+  memcpy( &sampleUnits, &lalADCCountUnit, sizeof(LALUnit) );
+  LAL_CALL( LALCreateREAL8FrequencySeries ( &status, &specH1, "",epoch, f0, deltaF, sampleUnits, (numPoints / 2 + 1) ), &status);
 
-  /* H2 file */
-  if ( !(fpSpecH2 = fopen( specFileH2, "r" )) )
-  {
-     fprintf( stdout, "unable to open the H2 spectrum file for reading\n" );
-     fflush( stdout );
-     close( fpSpecH1 );
-     exit (1);
-  }
+  /* read in H1 spectrum */ 
+  LAL_CALL( LALDReadFrequencySeries(&status, specH1, specFileH1), &status );
+  fprintf( stdout, "read in H1 spec file\n" );
+  fflush( stdout );
 
-  /* L1 file */
-  if ( !(fpSpecL1 = fopen( specFileL1, "r" )) )
-  {
-     fprintf( stdout, "unable to open the L1 spectrum file for reading\n" );
-     fflush( stdout );
-     close( fpSpecH1 );
-     close( fpSpecH2 );
-     exit (1);
-  }
-
-  /* create storage for the power spectral estimate */
-  memset( &specH1, 0, sizeof(REAL4FrequencySeries) );
-  LAL_CALL( LALSCreateVector( &status, &(specH1.data), numPoints / 2 + 1 ),
-      &status );
-
-  /* read in spec and resp */
-  for ( k = 0; k < numPoints/2 + 1; ++k )
-  {
-    if (( (flag = fscanf( fpSpecH1, "%f\n",
-            &(specH1.data->data[k]) )) != 1 || flag == EOF )
-        && k < numPoints/2 + 1 )
-    {
-       fprintf( stdout, "error reading input spectrum\n" );
-       fflush( stdout );
-       fclose( fpSpecH1 );
-       fclose( fpSpecH2 );
-       fclose( fpSpecL1 );
-       exit(1);
-    }
-  }
-
-
-  /* close all these files */
-  close( fpSpecH1 );
-  close( fpSpecH2 );
-  close( fpSpecL1 );
-  fprintf( stdout, "closed all spec files\n" );
+  /*
+  *fprintf( stdout, "PSD value is %e \n", specH1->data->data[1] );
+  *fflush( stdout );
+  */
+  
+  /* write out spectrum test */
+  LALDPrintFrequencySeries(specH1, "Test.dat" );
+  fprintf( stdout, "written H1 spec file\n" );
   fflush( stdout );
 
   /* create the dynamic range exponent */
-  dynRange = pow( 2.0, dynRangeExponent );
+/*  dynRange = pow( 2.0, dynRangeExponent );*/
 
   /* create storage for the response function */
-  memset( &resp, 0, sizeof(COMPLEX8FrequencySeries) );
-  LAL_CALL( LALCCreateVector( &status, &(resp.data), numPoints / 2 + 1 ),
-      &status );
-
+/*  memset( &resp, 0, sizeof(COMPLEX8FrequencySeries) );
+  *LAL_CALL( LALCCreateVector( &status, &(resp.data), numPoints / 2 + 1 ), &status );
+*/
  /* if we are using calibrated data set the response to unity */
- for( k = 0; k < resp.data->length; ++k )
- {
-    resp.data->data[k].re = (REAL4) (1.0 / dynRange);
-    resp.data->data[k].im = 0.0;
- }
+/* for( k = 0; k < resp.data->length; ++k )
+ *{
+ *   resp.data->data[k].re = (REAL4) (1.0 / dynRange);
+ *   resp.data->data[k].im = 0.0;
+ *}
+*/
+
+  /* set up the channel to which we add the injection */
+/*  XLALReturnIFO( ifo, ifoNumber );
+ * LALSnprintf( name, LALNameLength * sizeof(CHAR), "%s:INJECT", ifo );
+ */ 
+
+ LAL_CALL( LALCreateREAL4TimeSeries( &status, &chan, "", epoch, f0, deltaT, sampleUnits, numPoints ), &status );
+  if ( ! chan )
+  {
+    exit( 1 );
+  }
+
+  /*
+   *
+   * set up the response function
+   *
+   */
+ LAL_CALL( LALCreateCOMPLEX8FrequencySeries( &status, &resp, chan->name, chan->epoch, f0, deltaF, strainPerCount, (numPoints / 2 + 1) ), &status );
 
   /* read in the simuation parameters from a sim_inspiral_table */
-  bankSim = SimInspiralTableFromLIGOLw( &bankSimHead, injectionFile, 0, 0 );
-  for ( thisBankSim = bankSimHead; thisBankSim; thisBankSim = thisBankSim->next )
+  /* bankSim = SimInspiralTableFromLIGOLw( &bankSimHead, injectionFile, 0, 0 ); */
+
+  LAL_CALL(numInjections = SimInspiralTableFromLIGOLw( &injectionHead,
+                                                  injectionFile,
+                                                  0,
+                                                  0), &status);
+
+  for ( thisInjection = injectionHead; thisInjection; thisInjection = thisInjection->next )
+  /*for ( thisBankSim = bankSimHead; thisBankSim; thisBankSim = thisBankSim->next )*/
   {
      /* set the time of the injection to zero so it is injected in  */
      /* the middle of the data segment: the other times are ignored */
-    thisBankSim->geocent_end_time.gpsSeconds = 0;
-    thisBankSim->geocent_end_time.gpsNanoSeconds = 0;
+    thisInjection->geocent_end_time.gpsSeconds = 0;
+    thisInjection->geocent_end_time.gpsNanoSeconds = 0;
   }
-  thisBankSim = bankSimHead;
+  thisInjection = injectionHead;
+
   /* if ( vrbflg ) */
-  fprintf( stdout, "Read %d bank sim parameters from %s\n", bankSim, injectionFile );
-
-  bankSimCutLowIndex = XLALFindChirpBankSimInitialize( &specH1, &resp, fLow );
-  /* if ( vrbflg ) */
-  fprintf( stdout, "psd low frequency cutoff index = %d\n", bankSimCutLowIndex );
+  fprintf( stdout, "Read %d inj parameters from %s\n", numInjections, injectionFile );
 
 
-  /* stuff to do with chan */
-  /* set the params of the input data time series */
-  memset( &chan, 0, sizeof(REAL4TimeSeries) );
-  LAL_CALL( LALSCreateVector( &status, &(chan.data), numInputPoints ), &status );
+  
+  /* setting fixed waveform injection parameters */
+  memset( &ppnParams, 0, sizeof(PPNParamStruc) );
+  ppnParams.deltaT   = deltaT;
+  ppnParams.lengthIn = 0;
+  ppnParams.ppn      = NULL;
 
-  bankSimCount = 0;
+
+  injSimCount = 0;
   do
   {
-     fprintf( stdout, "bank simulation %d/%d\n", bankSimCount, bankSim );
+     fprintf( stdout, "injection %d/%d\n", injSimCount, numInjections );
 
-     /* zero out the input data segment and the injection params */
-     fprintf( stdout,
-          "zeroing data stream and adding random injection for bank sim... " );
-     memset( chan.data->data, 0, chan.data->length * sizeof(REAL4) );
+     /* reset waveform structure */
+     memset( &waveform, 0, sizeof(CoherentGW) );
 
-     /* inject a random signal if we are doing a template bank simulation */
-     if ( ! siminspiral.simInspiralTable )
-        thisSimInspiral = siminspiral.simInspiralTable =
-        XLALFindChirpBankSimInjectSignal( dataSegVec, &resp, thisBankSim,
-        bankSimParamsPtr );
-     else
-        thisSimInspiral = thisSimInspiral->next =
-        XLALFindChirpBankSimInjectSignal( dataSegVec, &resp, thisBankSim,
-        bankSimParamsPtr );
+     /* reset chan structure */
+     memset( chan->data->data, 0, chan->data->length * sizeof(REAL4) );
 
-  } while ( ++bankSimCount < bankSim ); /* end loop over bank simulations */
+     /* create the waveform, amp, freq phase etc */
+     LAL_CALL( LALGenerateInspiral(&status, &waveform, thisInjection, &ppnParams), &status);
+
+    /* loop over ifo */
+    for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+    {
+        /* allocate memory and copy the parameters describing the freq series */
+        memset( &detector, 0, sizeof( DetectorResponse ) );
+        detector.site = (LALDetector *) LALMalloc( sizeof(LALDetector) );
+        XLALReturnDetector( detector.site, ifoNumber );
+ 
+        fprintf( stdout, "ifoNumber %d\n", ifoNumber );
+        fflush( stdout );
 
 
+        /************** wholesale copy from blindinj  ******************************/
+        detector.transfer = XLALCreateCOMPLEX8FrequencySeries( chan->name,
+           &(chan->epoch), f0, deltaF, &strainPerCount, ( numPoints / 2 + 1 ) );
+
+        XLALUnitInvert( &(detector.transfer->sampleUnits), &(resp->sampleUnits) );
+
+        /* invert the response function to get the transfer function */
+        unity = XLALCreateCOMPLEX8Vector( resp->data->length );
+        for ( k = 0; k < unity->length; ++k )
+        {
+           unity->data[k].re = 1.0;
+           unity->data[k].im = 0.0;
+        }
+
+        XLALCCVectorDivide( detector.transfer->data, unity, resp->data );
+        XLALDestroyCOMPLEX8Vector( unity );
+         
+        /* from bank sim routines */
+        thisInjection->geocent_end_time.gpsSeconds = 0;
+        thisInjection->geocent_end_time.gpsNanoSeconds = 0;
+
+        waveformStartTime = XLALGPStoINT8( &(thisInjection->geocent_end_time));
+        waveformStartTime -= (INT8) ( 1000000000.0 * ppnParams.tc );
+    
+        XLALINT8toGPS( &(waveform.a->epoch), waveformStartTime );
+        memcpy(&(waveform.f->epoch), &(waveform.a->epoch), sizeof(LIGOTimeGPS) );
+        memcpy(&(waveform.phi->epoch), &(waveform.a->epoch), sizeof(LIGOTimeGPS) );
+        /***************** ends here *****************************************/
+  
+       /* perform the injection */
+       LAL_CALL( LALSimulateCoherentGW(&status, chan, &waveform, &detector ), &status); 
+
+     }
+     /* end loop over ifo */
+
+
+
+
+    /* increment the bank sim sim_inspiral table if necessary */
+    if ( injectionHead )
+    {
+      thisInjection = thisInjection->next;
+    }
+
+  } while ( ++injSimCount < numInjections ); /* end loop over injections */
+
+  fprintf( stdout, "out of loop\n" );
+  fflush( stdout );
+  
+
+  /* I need to remember to destroy all the vectors i have created */
+  LAL_CALL( LALDestroyREAL4TimeSeries( &status, chan), &status );
+  LAL_CALL( LALDestroyCOMPLEX8FrequencySeries( &status, resp), &status );
+  LAL_CALL( LALDestroyREAL8FrequencySeries ( &status, specH1 ), &status);
 
   /* print a success message to stdout for parsing by exitcode */
   fprintf( stdout, "%s: EXITCODE0\n", argv[0] );
