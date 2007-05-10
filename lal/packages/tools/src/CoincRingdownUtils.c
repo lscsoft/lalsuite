@@ -1414,35 +1414,35 @@ XLALRingdownDistanceCut(
 
     CoincRingdownTable *tmpCoinc = thisCoinc;
     thisCoinc = thisCoinc->next;
-if( tmpCoinc->numIfos < 3 )
- {
-    for ( ifoA = 0; ifoA < LAL_NUM_IFO; ifoA++ )
+    
+    if( tmpCoinc->numIfos < 3 )
     {
-      for ( ifoB = ifoA + 1; ifoB < LAL_NUM_IFO; ifoB++ )
+      for ( ifoA = 0; ifoA < LAL_NUM_IFO; ifoA++ )
       {
-
-        if( tmpCoinc->snglRingdown[ifoA]
-            && tmpCoinc->snglRingdown[ifoB] &&  ratio  )
+        for ( ifoB = ifoA + 1; ifoB < LAL_NUM_IFO; ifoB++ )
         {
-          /* perform the distance consistency test */
-          distA = tmpCoinc->snglRingdown[ifoA]->eff_dist;
-          distB = tmpCoinc->snglRingdown[ifoB]->eff_dist;
-          fprintf( stdout,"distA=%e, distB=%e, ratio=%e\n",distA, distB, ratio);
 
-          if( ( distA > ratio*distB ) || ( distB > ratio*distA ) )
+          if( tmpCoinc->snglRingdown[ifoA]
+              && tmpCoinc->snglRingdown[ifoB] &&  ratio  )
           {
-            discardTrigger = 1;
-            break;
+            /* perform the distance consistency test */
+            distA = tmpCoinc->snglRingdown[ifoA]->eff_dist;
+            distB = tmpCoinc->snglRingdown[ifoB]->eff_dist;
+
+            if( ( distA > ratio*distB ) || ( distB > ratio*distA ) )
+            {
+              discardTrigger = 1;
+              break;
+            }
           }
         }
-      }
      
-      if ( discardTrigger )
-      {
-        break;
+        if ( discardTrigger )
+        {
+          break;
+        }
       }
     }
- }   
 
     if( discardTrigger )
     {
