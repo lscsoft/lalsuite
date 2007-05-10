@@ -164,6 +164,7 @@ int main( int argc, char *argv[] )
   int                   numCoincs = 0;
   int                   numEventsInIfos = 0;
   int                   numEventsPlayTest = 0;
+  int                   numEventsAboveThresh = 0;
   int                   numEventsCoinc = 0;
   int                   numClusteredEvents = 0;
   int                   numSnglFound = 0;
@@ -178,6 +179,8 @@ int main( int argc, char *argv[] )
   CoincRingdownTable   *coincHead = NULL;
   CoincRingdownTable   *thisCoinc = NULL;
   CoincRingdownTable   *missedCoincHead = NULL;
+  
+  CoincInspiralBittenLParams bittenLParams;
 
   LIGOLwXMLStream       xmlStream;
   MetadataTable         outputTable;
@@ -204,7 +207,7 @@ int main( int argc, char *argv[] )
     calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
 
-  
+  memset( &bittenLParams, 0, sizeof(CoincInspiralBittenLParams) );
 
   /*
    *
@@ -240,6 +243,12 @@ int main( int argc, char *argv[] )
       {"coinc-cut",               required_argument,      0,              'D'},
       {"injection-file",          required_argument,      0,              'I'},
       {"injection-window",        required_argument,      0,              'T'},
+      {"h1-bittenl-a",            required_argument,      0,              'a'},
+      {"h1-bittenl-b",            required_argument,      0,              'b'},
+      {"h2-bittenl-a",            required_argument,      0,              'j'},
+      {"h2-bittenl-b",            required_argument,      0,              'n'},
+      {"l1-bittenl-a",            required_argument,      0,              'l'},
+      {"l1-bittenl-b",            required_argument,      0,              'p'},
       {"missed-injections",       required_argument,      0,              'm'},
       {"distance-cut",            no_argument, &distanceCut,              '1'},
       {"dcut-ratio",              required_argument,      0,              'A'},
@@ -251,7 +260,7 @@ int main( int argc, char *argv[] )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only ( argc, argv, "c:d:e:g:h:i:k:m:o:t:z:"
+    c = getopt_long_only ( argc, argv, "a:b:c:d:e:g:h:i:j:k:l:m:n:o:p:t:z:"
                                        "A:C:D:E:I:N:S:T:V:Z", long_options, 
                                        &option_index );
 
@@ -274,6 +283,37 @@ int main( int argc, char *argv[] )
           exit( 1 );
         }
         break;
+
+      case 'a':
+        bittenLParams.param_a[LAL_IFO_H1] = atof(optarg);
+      ADD_PROCESS_PARAM( "float", "%s", optarg);
+        break;
+
+      case 'b':
+        bittenLParams.param_b[LAL_IFO_H1] = atof(optarg);
+      ADD_PROCESS_PARAM( "float", "%s", optarg);
+        break;
+
+      case 'j':
+        bittenLParams.param_a[LAL_IFO_H2] = atof(optarg);
+      ADD_PROCESS_PARAM( "float", "%s", optarg);
+        break;
+
+      case 'n':
+        bittenLParams.param_b[LAL_IFO_H2] = atof(optarg);
+      ADD_PROCESS_PARAM( "float", "%s", optarg);
+        break;
+
+      case 'l':
+        bittenLParams.param_a[LAL_IFO_L1] = atof(optarg);
+      ADD_PROCESS_PARAM( "float", "%s", optarg);
+        break;
+
+      case 'p':
+        bittenLParams.param_b[LAL_IFO_L1] = atof(optarg);
+      ADD_PROCESS_PARAM( "float", "%s", optarg);
+        break;
+
       
       case 'h':
         print_usage(argv[0]);
@@ -346,7 +386,6 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
-
       case 'e':
         /* store the number of slides */
         extractSlide = atoi( optarg );
@@ -418,6 +457,10 @@ int main( int argc, char *argv[] )
           else if ( ! strcmp( "effective_snrsq", optarg) )
           {
             coincstat = effective_snrsq;
+          }
+          else if ( ! strcmp( "bitten_l", optarg ) )
+          {
+            coincstat = bitten_l;
           }
           else
           {
@@ -821,6 +864,18 @@ int main( int argc, char *argv[] )
      }
 
 
+    /* perform the statistic cut */
+    if( statThreshold )
+    {
+      coincFileHead = XLALStatCutCoincRingdown ( coincFileHead, coincstat ,
+          &bittenLParams, statThreshold);
+      numFileCoincs = XLALCountCoincRingdown( coincFileHead );
+      if ( vrbflg ) fprintf( stdout,
+          "Kept %d coincs above threshold of %6.2f\n", numFileCoincs,
+          statThreshold );
+      numEventsAboveThresh += numFileCoincs;
+    }
+
     /* add coincs to list */
     if( numFileCoincs )
     {
@@ -850,6 +905,12 @@ int main( int argc, char *argv[] )
     {
       fprintf( stdout, 
           "Have %d coincs after play test\n", numEventsPlayTest);
+    }
+    if ( statThreshold )
+    {
+      fprintf( stdout,
+          "Have %d coincs above threshold of %6.2f\n", numEventsAboveThresh,
+          statThreshold);
     }
   }
 
@@ -887,6 +948,7 @@ int main( int argc, char *argv[] )
     }
   }
  
+
   
 
   /*
@@ -1044,6 +1106,7 @@ why??????????????
    }
 
 
+
    /*
     *
     * cluster the remaining events
@@ -1058,7 +1121,7 @@ why??????????????
      if ( !numSlides )
      {
        numClusteredEvents = XLALClusterCoincRingdownTable( &coincHead, 
-           cluster_dt, coincstat );
+           cluster_dt, coincstat , &bittenLParams );
      }
      else
      { 
@@ -1076,7 +1139,7 @@ why??????????????
          slideCoinc = XLALCoincRingdownSlideCut( &coincHead, slide );
          /* run clustering */
          numClusteredSlide = XLALClusterCoincRingdownTable( &slideCoinc, 
-           cluster_dt, coincstat);
+           cluster_dt, coincstat , &bittenLParams);
          
          if ( vrbflg ) fprintf( stdout, "%d clustered events \n", 
            numClusteredSlide );
