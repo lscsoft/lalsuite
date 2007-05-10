@@ -1,9 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-<<<<<<< Makefile.am
 # $Id$
-=======
-# $Id$
->>>>>>> 1.9
 if FRAME
 bin_PROGRAMS = lalapps_animate lalapps_calfacs lalapps_computespec \
                lalapps_frinfo lalapps_frread lalapps_frextr lalapps_frjoin \
