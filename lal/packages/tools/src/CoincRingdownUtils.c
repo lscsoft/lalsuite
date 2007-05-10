@@ -1388,12 +1388,12 @@ XLALGenerateCoherentBank(
 }
 #endif
 
-#if 0  
+ 
 /* <lalVerbatim file="CoincRingdownUtilsCP"> */
-void
+CoincRingdownTable *
 XLALRingdownDistanceCut(
     CoincRingdownTable        **coincRingdown,
-    RingdownAccuracyList       *accuracyParams
+    REAL4                       ratio
     )
 /* </lalVerbatim> */
 {
@@ -1410,41 +1410,26 @@ XLALRingdownDistanceCut(
   while( thisCoinc )
   {
     INT4  discardTrigger = 0;
-    REAL4 kappaA = 0, kappaB = 0;
-    REAL4 epsilonA = 0, epsilonB = 0;
-    REAL4 snrA = 0, snrB = 0;
     REAL4 distA = 0, distB = 0;
-    REAL8 sigmasqA = 0, sigmasqB = 0;
-    REAL4 distError = 0;
 
     CoincRingdownTable *tmpCoinc = thisCoinc;
     thisCoinc = thisCoinc->next;
-
+if( tmpCoinc->numIfos < 3 )
+ {
     for ( ifoA = 0; ifoA < LAL_NUM_IFO; ifoA++ )
     {
-      kappaA = accuracyParams->ifoAccuracy[ifoA].kappa;
-      epsilonA = accuracyParams->ifoAccuracy[ifoA].epsilon;
-      
       for ( ifoB = ifoA + 1; ifoB < LAL_NUM_IFO; ifoB++ )
       {
-        kappaB = accuracyParams->ifoAccuracy[ifoB].kappa;
-        epsilonB = accuracyParams->ifoAccuracy[ifoB].epsilon;
 
-        if( tmpCoinc->snglRingdown[ifoA] && ( kappaA || epsilonA ) 
-            && tmpCoinc->snglRingdown[ifoB] && ( kappaB || epsilonB ) )
+        if( tmpCoinc->snglRingdown[ifoA]
+            && tmpCoinc->snglRingdown[ifoB] &&  ratio  )
         {
           /* perform the distance consistency test */
-          sigmasqA = tmpCoinc->snglRingdown[ifoA]->sigmasq;
-          sigmasqB = tmpCoinc->snglRingdown[ifoB]->sigmasq;
-          distA = tmpCoinc->snglRingdown[ifoA]->eff_distance;
-          distB = tmpCoinc->snglRingdown[ifoB]->eff_distance;
-          snrA = tmpCoinc->snglRingdown[ifoA]->snr;
-          snrB = tmpCoinc->snglRingdown[ifoB]->snr;
+          distA = tmpCoinc->snglRingdown[ifoA]->eff_dist;
+          distB = tmpCoinc->snglRingdown[ifoB]->eff_dist;
+          fprintf( stdout,"distA=%e, distB=%e, ratio=%e\n",distA, distB, ratio);
 
-          if( ( sigmasqA > sigmasqB && 
-                fabs(distB - distA)/distA > epsilonB/snrB + kappaB ) ||
-              ( sigmasqB > sigmasqA &&
-                fabs(distA - distB)/distB > epsilonA/snrA + kappaA ) )
+          if( ( distA > ratio*distB ) || ( distB > ratio*distA ) )
           {
             discardTrigger = 1;
             break;
@@ -1457,6 +1442,7 @@ XLALRingdownDistanceCut(
         break;
       }
     }
+ }   
 
     if( discardTrigger )
     {
@@ -1476,9 +1462,10 @@ XLALRingdownDistanceCut(
       prevCoinc = tmpCoinc;
     }
   }
-  *coincInspiral = coincHead;
+  *coincRingdown = coincHead;
+  return( coincHead );
 }
-#endif
+
 
 #if 0
 /* <lalVerbatim file="CoincInspiralUtilsCP"> */
