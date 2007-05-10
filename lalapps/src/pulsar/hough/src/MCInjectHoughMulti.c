@@ -93,9 +93,6 @@ extern int lalDebugLevel;
 #define FALSE (1==0)
 
 
-void ReadTimeStampsFile (LALStatus *status, LIGOTimeGPSVector *ts, CHAR *filename);
-
-
 /******************************************************
  *  Assignment of Id string using NRCSID()
  */
@@ -128,7 +125,9 @@ int main(int argc, char *argv[]){
   
   /* skypatch info */
   REAL8  *skyAlpha, *skyDelta, *skySizeAlpha, *skySizeDelta; 
-  UINT4   nSkyPatches, skyIndex, skyCounter=0; 
+  UINT4   nSkyPatches,  skyCounter=0; 
+  INT4   skyIndex; 
+  
   static REAL8Cart3CoorVector skyPatchCenterV;
 
   /* standard pulsar sft types */ 
@@ -174,7 +173,7 @@ int main(int argc, char *argv[]){
 
  /* sft constraint variables */
   LIGOTimeGPS startTimeGPS, endTimeGPS;
-  LIGOTimeGPSVector inputTimeStampsVector;
+  LIGOTimeGPSVector *inputTimeStampsVector=NULL;
 
   /******************************************************************/ 
   /*    user input variables   */
@@ -456,9 +455,9 @@ int main(int argc, char *argv[]){
       constraints.endTime = &endTimeGPS;
     }
 
-    if ( LALUserVarWasSet( &uvar_timeStampsFile ) ) {
-      LAL_CALL ( ReadTimeStampsFile ( &status, &inputTimeStampsVector, uvar_timeStampsFile), &status);
-      constraints.timestamps = &inputTimeStampsVector;
+   if ( LALUserVarWasSet( &uvar_timeStampsFile ) ) {
+      LAL_CALL ( LALReadTimestampsFile ( &status, &inputTimeStampsVector, uvar_timeStampsFile), &status);
+      constraints.timestamps = inputTimeStampsVector;
     }
 
     /* get sft catalog */
@@ -468,10 +467,9 @@ int main(int argc, char *argv[]){
       exit(1);
     }
 
-
     /* now we can free the inputTimeStampsVector */
     if ( LALUserVarWasSet( &uvar_timeStampsFile ) ) {
-      LALFree( inputTimeStampsVector.data );
+      LALDestroyTimestampVector ( &status, &inputTimeStampsVector);
     }
     
     
@@ -1835,61 +1833,3 @@ void PrintLogFile (LALStatus       *status,
 }    
 
 
-
-			
-/* ****************************************************************/
-/*    read timestamps file  Copied from driver */
-/* ****************************************************************/   
-/******************************************************************/
-void ReadTimeStampsFile (LALStatus          *status,
-			 LIGOTimeGPSVector  *ts,
-			 CHAR               *filename)
-{
-
-  FILE  *fp = NULL;
-  INT4  numTimeStamps, r;
-  UINT4 j;
-  REAL8 temp1, temp2;
-
-  INITSTATUS (status, "ReadTimeStampsFile", rcsid);
-  ATTATCHSTATUSPTR (status);
-
-  ASSERT(ts, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 
-  ASSERT(ts->data == NULL, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 
-  ASSERT(ts->length == 0, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 
-  ASSERT(filename, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 
-
-  if ( (fp = fopen(filename, "r")) == NULL) {
-    ABORT( status, DRIVEHOUGHCOLOR_EFILE, DRIVEHOUGHCOLOR_MSGEFILE);
-  }
-
-  /* count number of timestamps */
-  numTimeStamps = 0;     
-
-  do {
-    r = fscanf(fp,"%lf%lf\n", &temp1, &temp2);
-    /* make sure the line has the right number of entries or is EOF */
-    if (r==2) numTimeStamps++;
-  } while ( r != EOF);
-  rewind(fp);
-
-  ts->length = numTimeStamps;
-  ts->data = LALCalloc (1, numTimeStamps * sizeof(LIGOTimeGPS));;
-  if ( ts->data == NULL ) {
-    fclose(fp);
-    ABORT( status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
-  }
-  
-  for (j = 0; j < ts->length; j++)
-    {
-      r = fscanf(fp,"%lf%lf\n", &temp1, &temp2);
-      ts->data[j].gpsSeconds = (INT4)temp1;
-      ts->data[j].gpsNanoSeconds = (INT4)temp2;
-    }
-  
-  fclose(fp);
-  	 
-  DETATCHSTATUSPTR (status);
-  /* normal exit */
-  RETURN (status);
-}    
