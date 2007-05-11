@@ -129,6 +129,9 @@ int main( int argc, char *argv[] )
   REAL8FrequencySeries          *specH1 = NULL;
   COMPLEX8FrequencySeries       *resp;
   REAL4TimeSeries               *chan;
+  REAL4FFTPlan                  *pfwd;
+  COMPLEX8FrequencySeries       *fftData;
+  REAL4                          thisSnrsq = 0;
 
   /* needed for inj */
   CoherentGW                 waveform;
@@ -326,10 +329,8 @@ int main( int argc, char *argv[] )
   /* read in the simuation parameters from a sim_inspiral_table */
   /* bankSim = SimInspiralTableFromLIGOLw( &bankSimHead, injectionFile, 0, 0 ); */
 
-  LAL_CALL(numInjections = SimInspiralTableFromLIGOLw( &injectionHead,
-                                                  injectionFile,
-                                                  0,
-                                                  0), &status);
+  /* set endtime to 0 so that we read in all events */
+  LAL_CALL(numInjections = SimInspiralTableFromLIGOLw( &injectionHead, injectionFile, 0, 0), &status);
 
   for ( thisInjection = injectionHead; thisInjection; thisInjection = thisInjection->next )
   /*for ( thisBankSim = bankSimHead; thisBankSim; thisBankSim = thisBankSim->next )*/
@@ -402,6 +403,9 @@ int main( int argc, char *argv[] )
 
         waveformStartTime = XLALGPStoINT8( &(thisInjection->geocent_end_time));
         waveformStartTime -= (INT8) ( 1000000000.0 * ppnParams.tc );
+        waveformStartTime += (INT8) ( 1000000000.0 *
+          ((REAL8) (chan->data->length - ppnParams.length) / 2.0) * chan->deltaT
+          );
     
         XLALINT8toGPS( &(waveform.a->epoch), waveformStartTime );
         memcpy(&(waveform.f->epoch), &(waveform.a->epoch), sizeof(LIGOTimeGPS) );
@@ -410,6 +414,50 @@ int main( int argc, char *argv[] )
   
        /* perform the injection */
        LAL_CALL( LALSimulateCoherentGW(&status, chan, &waveform, &detector ), &status); 
+
+
+       /* more theft */
+
+       /* fft the output */
+       pfwd = XLALCreateForwardREAL4FFTPlan( chan->data->length, 0 );
+       fftData = XLALCreateCOMPLEX8FrequencySeries( chan->name,
+           &(chan->epoch), 0, 1.0/chan->deltaT, &lalDimensionlessUnit,
+           chan->data->length/2 + 1 );
+       XLALREAL4TimeFreqFFT( fftData, chan, pfwd );
+       XLALDestroyREAL4FFTPlan( pfwd );
+
+       /* compute the SNR for initial LIGO at design */
+       thisSnrsq = 0;
+       for ( k = 0; k < fftData->data->length; k++ )
+       {
+         REAL8 freq;
+         /* use correct psd !!!!! */
+         REAL8 sim_psd_value;
+         freq = fftData->deltaF * k;
+         LALLIGOIPsd( NULL, &sim_psd_value, freq );
+
+         fprintf( stdout, "k= %d  freq = %e sim_psd_value = %e  \n", k, freq, sim_psd_value );
+         fprintf( stdout, fftData->data->data[k].re           
+
+         
+         thisSnrsq += fftData->data->data[k].re * fftData->data->data[k].re /
+           sim_psd_value;
+         thisSnrsq += fftData->data->data[k].re * fftData->data->data[k].re /
+           sim_psd_value;
+       }
+       fprintf( stdout, "thisSnrsq %f\n", thisSnrsq );
+       fprintf( stdout, "thisSnrsq %e\n", thisSnrsq );
+       thisSnrsq *= 4*fftData->deltaF;
+       XLALDestroyCOMPLEX8FrequencySeries( fftData );
+
+       fprintf( stdout, "thisSnrsq %f\n", thisSnrsq );
+       fprintf( stdout, "thisSnrsq %e\n", thisSnrsq );
+       fflush( stdout );
+       /* end of theft */ 
+
+
+
+
 
      }
      /* end loop over ifo */
