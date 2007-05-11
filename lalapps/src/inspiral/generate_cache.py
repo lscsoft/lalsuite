@@ -258,16 +258,23 @@ found, coincs = readFiles(opts.xml_glob,getstatistic(opts))
 missed = None
 followuptrigs = getfollowuptrigs(opts,coincs,missed)
 
+print "\nFound " + str(len(coincs)) + " trigs to follow up" 
+
 trigJob = trigBankFollowUpJob(opts)
 inspJob = inspiralFollowUpJob(opts)
 
+print "\n Setting up pipeline jobs"
 for trig in followuptrigs:
-  trig_process_params = cache.getProcessParamsFromCache( \
+  try:
+    trig_process_params = cache.getProcessParamsFromCache( \
                      cache.filesMatchingGPS(trig.gpsTime,'TRIGBANK'), \
                      trig.gpsTime)  
-  inspiral_process_params = cache.getProcessParamsFromCache( \
+  except: "couldn't get trigbank process params for " + trig.gpsTime
+  try: 
+    inspiral_process_params = cache.getProcessParamsFromCache( \
                      cache.filesMatchingGPS(trig.gpsTime,'INSPIRAL_'), \
                      trig.gpsTime)
+  except: "couldn't get trigbank process params for " + trig.gpsTime
   for ifo in trig_process_params:
     try: trig.gpsTime[ifo]
     except: continue
@@ -277,13 +284,15 @@ for trig in followuptrigs:
         dag.add_node(trigNode)
       except:
         trigNode = None
-        print "couldn't add trigbank job"
+        print "couldn't add trigbank job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
       if trigNode:
-        inspiralNode = inspiralFollowUpNode(inspJob,trig.gpsTime[ifo],inspiral_process_params[ifo],opts)
-        inspiralNode.add_parent(trigNode)
-        dag.add_node(inspiralNode)
-        #except: print "couldn't add inspiral job"
+        try:
+          inspiralNode = inspiralFollowUpNode(inspJob,trig.gpsTime[ifo],inspiral_process_params[ifo],opts)
+          inspiralNode.add_parent(trigNode)
+          dag.add_node(inspiralNode)
+        except: print "couldn't add inspiral job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
 
+print "\nWriting DAG"
 dag.write_sub_files()
 dag.write_dag()
 
