@@ -1463,34 +1463,32 @@ XLALRingdownDistanceCut(
     CoincRingdownTable *tmpCoinc = thisCoinc;
     thisCoinc = thisCoinc->next;
     
-    if( tmpCoinc->numIfos < 3 )
+    for ( ifoA = 0; ifoA < LAL_NUM_IFO; ifoA++ )
     {
-      for ( ifoA = 0; ifoA < LAL_NUM_IFO; ifoA++ )
+      for ( ifoB = ifoA + 1; ifoB < LAL_NUM_IFO; ifoB++ )
       {
-        for ( ifoB = ifoA + 1; ifoB < LAL_NUM_IFO; ifoB++ )
+
+        if( tmpCoinc->snglRingdown[ifoA]
+            && tmpCoinc->snglRingdown[ifoB] &&  ratio  )
         {
+          /* perform the distance consistency test */
+          distA = tmpCoinc->snglRingdown[ifoA]->eff_dist;
+          distB = tmpCoinc->snglRingdown[ifoB]->eff_dist;
 
-          if( tmpCoinc->snglRingdown[ifoA]
-              && tmpCoinc->snglRingdown[ifoB] &&  ratio  )
+          if( ( distA > ratio*distB ) || ( distB > ratio*distA ) )
           {
-            /* perform the distance consistency test */
-            distA = tmpCoinc->snglRingdown[ifoA]->eff_dist;
-            distB = tmpCoinc->snglRingdown[ifoB]->eff_dist;
-
-            if( ( distA > ratio*distB ) || ( distB > ratio*distA ) )
-            {
-              discardTrigger = 1;
-              break;
-            }
+            discardTrigger = 1;
+            break;
           }
         }
+      }
      
-        if ( discardTrigger )
-        {
-          break;
-        }
+      if ( discardTrigger )
+      {
+        break;
       }
     }
+  
 
     if( discardTrigger )
     {
