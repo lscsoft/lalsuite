@@ -1708,6 +1708,8 @@ XLALClusterCoincRingdownTable (
   int                     numCoincClust = 0;
   REAL4 thisStat = 0;
   REAL4 nextStat = 0;
+  InterferometerNumber  ifoNumber;
+  SnglRingdownTable    *snglRingdown;
 
   CoincInspiralStatistic  tripleStat = snrsq;
 
@@ -1753,6 +1755,18 @@ XLALClusterCoincRingdownTable (
         nextStat = XLALCoincRingdownStat( nextCoinc, coincStat, bittenLParams );
       }
 
+      for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+      {
+        if ( (snglRingdown = thisCoinc->snglRingdown[ifoNumber]) )
+        {
+          thisCoinc->snglRingdown[ifoNumber]->epsilon=thisStat;
+        }
+        if ( (snglRingdown = nextCoinc->snglRingdown[ifoNumber]) )
+        {
+          nextCoinc->snglRingdown[ifoNumber]->epsilon=nextStat;
+        }
+      }
+
       if ( nextStat > thisStat )
       {
         /* displace previous event in cluster */
@@ -1779,6 +1793,23 @@ XLALClusterCoincRingdownTable (
       {
         *coincList = thisCoinc;
       }
+      if ( thisCoinc->numIfos > 2)
+      {
+        thisStat = XLALCoincRingdownStat( thisCoinc, tripleStat, bittenLParams );
+      }
+      else
+      {
+        thisStat = XLALCoincRingdownStat( thisCoinc, coincStat, bittenLParams );
+      }
+
+      for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+      {
+        if ( (snglRingdown = thisCoinc->snglRingdown[ifoNumber]) )
+        {
+          thisCoinc->snglRingdown[ifoNumber]->epsilon=thisStat;
+        }
+      }
+
       prevCoinc = thisCoinc;
       thisCoinc = thisCoinc->next;
       nextCoinc = thisCoinc->next;
