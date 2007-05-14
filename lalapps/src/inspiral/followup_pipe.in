@@ -196,9 +196,10 @@ class plotSNRCHISQNode(pipeline.CondorDAGNode):
     self.add_var_opt("frame-file",fileName.replace(".xml",".gwf"))
     self.add_var_opt("gps",time)
     self.add_var_opt("inspiral-xml-file",fileName)
-    self.add_var_opt("output-path",".")
     self.container = HTMLcontainer(trig,"SNR_and_CHISQ_plots")
     self.add_var_opt("output-html-file",self.container)
+    self.add_var_opt("output-path","followuptrigs/"+self.container.name)
+
     tableFile = open(self.container.locallink,'w')
     writeIULHeader(tableFile)
     tableFile.write('<h3>Follow up of trigger [' +str(trig.eventID) +']</h3>\n')
