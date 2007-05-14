@@ -333,6 +333,7 @@ typedef struct
 tagSnglRingdownAccuracy
 {  
   INT4        match;
+  REAL4       kappa;
   INT8        dt;
   REAL4       df;
   REAL4       dQ;
@@ -341,7 +342,8 @@ tagSnglRingdownAccuracy
   SnglRingdownParameterTest test;
 }
 SnglRingdownAccuracy;
-  
+
+
 typedef struct
 tagRingdownAccuracyList
 {
@@ -1571,7 +1573,7 @@ LALSnglRingdownCoincTest(
 CoincRingdownTable *
 XLALRingdownDistanceCut(
     CoincRingdownTable        **coincRingdown,
-    REAL4                       ratio
+    RingdownAccuracyList       *accuracyParams
     );
 
 SnglRingdownTable *
