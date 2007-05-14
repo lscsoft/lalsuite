@@ -589,7 +589,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  vector float fdval, reTFreq;              /* temporary variables */
 	  vector float Xsum  = {0,0,0,0};           /* collects the sums */
 	  vector float four2 = {2,2,2,2};           /* vector constants */
-	  vector float four6 = {6,6,6,6};
+	  vector float skip  = {5,5,5,5};
 	  vector float tFreq = {((float)(kappa_max - 1)), /* tempFreq as vector */
 				((float)(kappa_max - 1)),
 				((float)(kappa_max - 2)),
@@ -630,22 +630,22 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	       in double precision */
 
 	    /* skip these values in single precision calculation */
-	    tFreq   = vec_sub(tFreq,four6);
+	    tFreq   = vec_sub(tFreq,skip);
 	  
 	    tFreqS = kappa_max - 7; /* start at the 6th element */
 
 	    /* six double precision calculations */
 	    VEC_LOOP_S(12); VEC_LOOP_S(14);
 	    VEC_LOOP_S(16); VEC_LOOP_S(18);
-	    VEC_LOOP_S(20); VEC_LOOP_S(22);
+	    VEC_LOOP_S(20);
 
 	    /* the rest is done in single precision again */
 	    /* init the memory access as above */
-	    load0 = vec_ld(0,(Xalpha_kR4+24));
+	    load0 = vec_ld(0,(Xalpha_kR4+22));
 
-	    VEC_LOOP(24,0,1);
-	    VEC_LOOP(32,1,2);
-	    VEC_LOOP(36,2,3); 
+	    VEC_LOOP(22,0,1);
+	    VEC_LOOP(30,1,2);
+	    VEC_LOOP(34,2,3); 
 	  }
 	  
 	  /* output the vector */
