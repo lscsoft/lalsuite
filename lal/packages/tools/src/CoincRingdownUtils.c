@@ -1441,7 +1441,7 @@ XLALGenerateCoherentBank(
 CoincRingdownTable *
 XLALRingdownDistanceCut(
     CoincRingdownTable        **coincRingdown,
-    REAL4                       ratio
+    RingdownAccuracyList       *accuracyParams
     )
 /* </lalVerbatim> */
 {
@@ -1458,24 +1458,31 @@ XLALRingdownDistanceCut(
   while( thisCoinc )
   {
     INT4  discardTrigger = 0;
+    REAL4 kappaA = 0, kappaB = 0;
     REAL4 distA = 0, distB = 0;
+    REAL8 sigmasqA = 0, sigmasqB = 0;
 
     CoincRingdownTable *tmpCoinc = thisCoinc;
     thisCoinc = thisCoinc->next;
     
     for ( ifoA = 0; ifoA < LAL_NUM_IFO; ifoA++ )
     {
+      kappaA = accuracyParams->ifoAccuracy[ifoA].kappa;
       for ( ifoB = ifoA + 1; ifoB < LAL_NUM_IFO; ifoB++ )
       {
-
-        if( tmpCoinc->snglRingdown[ifoA]
-            && tmpCoinc->snglRingdown[ifoB] &&  ratio  )
+        kappaB = accuracyParams->ifoAccuracy[ifoB].kappa;
+ 
+        if( tmpCoinc->snglRingdown[ifoA] && kappaA
+            && tmpCoinc->snglRingdown[ifoB] && kappaB  )
         {
           /* perform the distance consistency test */
+          sigmasqA = tmpCoinc->snglRingdown[ifoA]->sigma_sq;
+          sigmasqB = tmpCoinc->snglRingdown[ifoB]->sigma_sq;
           distA = tmpCoinc->snglRingdown[ifoA]->eff_dist;
           distB = tmpCoinc->snglRingdown[ifoB]->eff_dist;
 
-          if( ( distA > ratio*distB ) || ( distB > ratio*distA ) )
+          if( ( sigmasqA > sigmasqB && distA/distB > kappaA ) || 
+              ( sigmasqB > sigmasqA && distB/distA > kappaB ) )
           {
             discardTrigger = 1;
             break;
