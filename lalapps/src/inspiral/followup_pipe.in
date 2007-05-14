@@ -135,6 +135,10 @@ class inspiralFollowUpNode(pipeline.CondorDAGNode):
     for row in proc:
       if row.param[2:] == 'bank-file':
         continue
+      if row.param[2:] == 'trig-start-time':
+        continue
+      if row.param[2:] == 'trig-end-time':
+        continue
       self.add_var_opt(row.param[2:],row.value)
       if row.param[2:] == 'gps-start-time':
         self.add_macro("macrogpsstarttime",row.value)
@@ -154,6 +158,8 @@ class inspiralFollowUpNode(pipeline.CondorDAGNode):
     self.add_var_opt("write-chisq","")
     self.add_var_opt("write-spectrum","")
     self.add_var_opt("bank-file",bankFile)
+    self.add_var_opt("trig-start-time", str( eval(str(time))-1.0) )
+    self.add_var_opt("trig-end-time", str( eval(str(time))+1.0) )
     if self.add_rsq_veto:
       self.add_var_opt("enable-rsq-veto","")
     self.output_file_name = self.input_ifo + "-INSPIRAL_" + self.ifo_tag + \
@@ -309,16 +315,18 @@ plotJobCnt = 0
 
 print "\n.......Setting up pipeline jobs"
 for trig in followuptrigs:
-  try:
+  try: 
     trig_process_params = cache.getProcessParamsFromCache( \
                      cache.filesMatchingGPS(trig.gpsTime,'TRIGBANK'), \
-                     trig.gpsTime)  
-  except: "couldn't get trigbank process params for " + trig.gpsTime
+                     trig.gpsTime) 
+  except: print "couldn't get trigbank process params for " + trig.gpsTime
+
   try: 
     inspiral_process_params = cache.getProcessParamsFromCache( \
                      cache.filesMatchingGPS(trig.gpsTime,'INSPIRAL_'), \
                      trig.gpsTime)
-  except: "couldn't get trigbank process params for " + trig.gpsTime
+  except: print "couldn't get trigbank process params for " + trig.gpsTime
+
   for ifo in trig_process_params:
     try: trig.gpsTime[ifo]
     except: continue
