@@ -172,7 +172,6 @@ typedef struct {
   UINT4 blocksRngMed;              /**< blocksize for running median noise floor estimation */
   UINT4 Dterms;                    /**< size of Dirichlet kernel for Fstat calculation */
   REAL8 dopplerMax;                /**< extra sft wings for doppler motion */
-  REAL8 maxExtraFstatWings;        /**< extra wings in Fstat calculation arisong from master equation */
 } UsefulStageVariables;
 
 
@@ -225,7 +224,7 @@ void ComputeNumExtraBins(LALStatus *status, SemiCoherentParams *par, REAL8 fdot,
 #define EARTHEPHEMERIS 		"earth05-09.dat"
 #define SUNEPHEMERIS 		"sun05-09.dat"
 
-#define BLOCKSRNGMED 		51 	/**< Default running median window size */
+#define BLOCKSRNGMED 		101 	/**< Default running median window size */
 #define FSTART 			310.0	/**< Default Start search frequency */
 
 #define FBAND 			0.01	/**< Default search band */
@@ -656,7 +655,6 @@ int MAIN( int argc, char *argv[]) {
   usefulParams.blocksRngMed = uvar_blocksRngMed;
   usefulParams.Dterms = uvar_Dterms;
   usefulParams.dopplerMax = uvar_dopplerMax;
-  usefulParams.maxExtraFstatWings = LAL_SQRT2 * VTOT / (uvar_tStack * VEPI) ; /* this is an estimate */
 
   /* set reference time for pular parameters */
   if ( LALUserVarWasSet(&uvar_refTime)) 
@@ -1332,8 +1330,8 @@ void SetUpSFTs( LALStatus *status,
   doppWings = freqHi * in->dopplerMax;    /* maximum Doppler wing -- probably larger than it has to be */
   extraBins = HSMAX ( in->blocksRngMed/2 + 1, in->Dterms );
   
-  fMin = freqLo - doppWings - extraBins * deltaFsft - in->maxExtraFstatWings; 
-  fMax = freqHi + doppWings + extraBins * deltaFsft + in->maxExtraFstatWings; 
+  fMin = freqLo - doppWings - extraBins * deltaFsft; 
+  fMax = freqHi + doppWings + extraBins * deltaFsft;
       
   /* finally memory for stack of multi sfts */
   stackMultiSFT->length = in->nStacks;
