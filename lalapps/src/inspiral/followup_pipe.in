@@ -36,6 +36,7 @@ from glue.ligolw import lsctables
 from glue.ligolw import utils
 from pylal import CoincInspiralUtils
 from pylal.fu_utils import *
+from pylal.fu_writeXMLparams import * 
 from pylal import Fr      
 ##############################################################################
 # redefine the columns of interest
@@ -186,7 +187,7 @@ class plotSNRCHISQNode(pipeline.CondorDAGNode):
   """
   Runs an instance of a trig bank followup job
   """
-  def __init__(self,job,time,fileName):
+  def __init__(self,job,time,fileName,trig):
     """
     job = A CondorDAGJob that can run an instance of trigbank followup.
     """
@@ -196,6 +197,15 @@ class plotSNRCHISQNode(pipeline.CondorDAGNode):
     self.add_var_opt("gps",time)
     self.add_var_opt("inspiral-xml-file",fileName)
     self.add_var_opt("output-path",".")
+    self.container = HTMLcontainer(trig,"SNR_and_CHISQ_plots")
+    self.add_var_opt("output-html-file",self.container)
+    tableFile = open(self.container.locallink,'w')
+    writeIULHeader(tableFile)
+    tableFile.write('<h3>Follow up of trigger [' +str(trig.eventID) +']</h3>\n')
+    self.container.text = "click here for SNR and CHISQ plots"
+    tableFile.close()
+  def getContainer(self):
+    return self.container
 
 ##############################################################################
 #
@@ -245,6 +255,10 @@ parser.add_option("-n","--num-trigs",action="store",type="float",\
 parser.add_option("-l", "--log-path",action="store",type="string",\
     metavar=" PATH",help="directory to write condor log file")
 
+parser.add_option("-w", "--write-to-iulgroup",action="store_true",default=False,\
+    help="publish the page to the iulgroup")
+
+
 command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
 
@@ -270,7 +284,9 @@ if not opts.science_run:
 #  print >> sys.stderr, "Must specify a statistic to use"
 #  sys.exit(1)
 
-print opts.log_path
+
+setupdirs()
+
 ############# TURN THE HIPE OUTPUT INTO LAL CACHE FILES #######################
 
 cache = getCache(opts)
@@ -313,8 +329,13 @@ trigJobCnt = 0
 inspJobCnt = 0
 plotJobCnt = 0
 
+summaryHTMLlist = []
+
 print "\n.......Setting up pipeline jobs"
+
 for trig in followuptrigs:
+  summaryHTML = summaryHTMLTable(trig)
+  summaryHTML.containers.append(writeXMLparams(trig))
   try: 
     trig_process_params = cache.getProcessParamsFromCache( \
                      cache.filesMatchingGPS(trig.gpsTime,'TRIGBANK'), \
@@ -336,26 +357,32 @@ for trig in followuptrigs:
         dag.add_node(trigNode)
         trigJobCnt+=1
       except:
-        trigNode = None
+        trigNode = 0
         print "couldn't add trigbank job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
       if trigNode:
         try:
-          inspiralNode = inspiralFollowUpNode(inspJob,trig.gpsTime[ifo],inspiral_process_params[ifo],opts,trigNode.output_file_name)
+          inspiralNode = inspiralFollowUpNode(inspJob,trig.gpsTime[ifo],\
+             inspiral_process_params[ifo],opts,trigNode.output_file_name)
           inspiralNode.add_parent(trigNode)
           dag.add_node(inspiralNode)
           inspJobCnt+=1
         except: 
-          inspiralNode = None
+          inspiralNode = 0
           print "couldn't add inspiral job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
+      else: 
+        trigNode = 0
+        print "couldn't add inspiral job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
       if inspiralNode:
         try:
-          plotNode = plotSNRCHISQNode(plotJob,trig.gpsTime[ifo],inspiralNode.output_file_name)
+          plotNode = plotSNRCHISQNode(plotJob,trig.gpsTime[ifo],inspiralNode.output_file_name,trig)
           plotNode.add_parent(inspiralNode)
           dag.add_node(plotNode)
           plotJobCnt+=1
         except:
           print "couldn't add plot job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
-
+  summaryHTML.containers.append( plotNode.getContainer() )  
+  summaryHTMLlist.append(summaryHTML)
+    
 
 print "\nFound " + str(trigJobCnt)+ " trig bank jobs and "+ str(inspJobCnt) +" inspiral Jobs " \
       + str(plotJobCnt) + " plot jobs"
@@ -364,17 +391,11 @@ print "\n.......Writing DAG"
 dag.write_sub_files()
 dag.write_dag()
 
+writeHTMLTables(summaryHTMLlist)
+if opts.write_to_iulgroup:
+  publishToIULGroup(opts.page)
+
 sys.exit(0)
-
-
-#  for trig in followuptrigs:
-#    print getattr(trig.coincs,'H1').snr
-
-############# SET UP TRIG BANK JOBS   #########################################
-
-############# SET UP INSPIRAL JOBS    #########################################
-
-############# SET UP PLOTTING JOBS    #########################################
 
 
 
