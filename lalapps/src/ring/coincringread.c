@@ -91,8 +91,9 @@ static void print_usage(char *program)
       " [--injection-window]  inj_win  trigger and injection coincidence window (ms)\n"\
       " [--missed-injections] missed   write missed injections to file missed\n"\
       "\n"\
-      " [--distance-cut]               do a distance cut\n"\
-      " [--dcut-ratio]   dcutRatio  cut triggers which lie outside the given range\n" );
+      " [--h1-h2-distance-cut]         do a h1-h2 distance cut\n"\
+      " [--h1-kappa]             kappa  cut triggers which lie outside the given range\n"\
+      " [--h2-kappa]             kappa  cut triggers which lie outside the given range\n" );
 }
 
 /* function to read the next line of data from the input file list */
@@ -137,7 +138,7 @@ int main( int argc, char *argv[] )
   int numInFiles = 0;
   char **inFileNameList;
   char line[MAX_PATH];
-  REAL4 dcutRatio = 0;
+  REAL4 kappa = 0;
   UINT8 triggerInputTimeNS = 0;
 
   MetadataTable         proctable;
@@ -182,6 +183,8 @@ int main( int argc, char *argv[] )
   
   CoincInspiralBittenLParams bittenLParams;
 
+  RingdownAccuracyList  accuracyParams;
+  
   LIGOLwXMLStream       xmlStream;
   MetadataTable         outputTable;
 
@@ -250,8 +253,9 @@ int main( int argc, char *argv[] )
       {"l1-bittenl-a",            required_argument,      0,              'l'},
       {"l1-bittenl-b",            required_argument,      0,              'p'},
       {"missed-injections",       required_argument,      0,              'm'},
-      {"distance-cut",            no_argument, &distanceCut,              '1'},
-      {"dcut-ratio",              required_argument,      0,              'A'},
+      {"h1-kappa",                required_argument,      0,              'W'},
+      {"h2-kappa",                required_argument,      0,              'Y'},
+      {"h1-h2-distance-cut",      no_argument, &distanceCut,              '1'},
       {0, 0, 0, 0}
     };
     int c;
@@ -261,7 +265,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only ( argc, argv, "a:b:c:d:e:g:h:i:j:k:l:m:n:o:p:t:z:"
-                                       "A:C:D:E:I:N:S:T:V:Z", long_options, 
+                                       "A:C:D:E:I:N:S:T:V:W:Y:Z", long_options, 
                                        &option_index );
 
     /* detect the end of the options */
@@ -552,21 +556,18 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
-      case 'A':
-        /* injection coincidence time is specified on command line in ms */
-        dcutRatio =   atof( optarg );
-        if ( dcutRatio < 0 )
-        {
-          fprintf( stdout, "invalid argument to --%s:\n"
-              "distance cut factor must be >= 0: "
-              "(%e specified)\n",
-              long_options[option_index].name, dcutRatio );
-          exit( 1 );
-        }
-        ADD_PROCESS_PARAM( "int", "%e", dcutRatio );
+      case 'W':
+        /* kappa accuracy H1 */
+        accuracyParams.ifoAccuracy[LAL_IFO_H1].kappa = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
-
-
+         
+      case 'Y':
+        /* kappa accuracy H2 */
+        accuracyParams.ifoAccuracy[LAL_IFO_H2].kappa = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+      
       case '?':
         exit( 1 );
         break;
@@ -679,7 +680,7 @@ int main( int argc, char *argv[] )
     LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
-        "--distance-cut" );
+        "--h1-h2-distance-cut" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
@@ -853,14 +854,13 @@ int main( int argc, char *argv[] )
 
      if ( distanceCut )
      {
-       coincFileHead = XLALRingdownDistanceCut( &coincFileHead, dcutRatio );
+       coincFileHead = XLALRingdownDistanceCut( &coincFileHead, &accuracyParams );
 
        /* count the triggers, scroll to end of list */
        numFileCoincs = XLALCountCoincRingdown( coincFileHead );
 
        if ( vrbflg ) 
          fprintf( stdout, "Have %d triggers after distance cut\n", numFileCoincs );
-         numEventsPlayTest += numFileCoincs;
      }
 
 
