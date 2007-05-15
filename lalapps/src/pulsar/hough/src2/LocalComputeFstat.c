@@ -584,10 +584,13 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  float XsumR[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
 	  /* the following vectors actually become registers in the AVUnit */
 	  vector unsigned char perm;     /* holds permutation pattern for unaligned memory access */
-	  vector float load0, load1, load2, load3;  /* temp registers for unaligned memory access */
-	  /*	  vector float load4, load5, load6, load7; /**/
+	  vector float load0, load1, load2, load3, load4;  /* temp registers for unaligned memory access */
+	  vector float load5, load6, load7, load8, load9; /**/
 	  vector float fdval, reTFreq;              /* temporary variables */
+	  vector float aFreqV = {1,1,1,1};
+	  vector float zero  = {0,0,0,0};
 	  vector float Xsum  = {0,0,0,0};           /* collects the sums */
+	  vector float XsumV = {0,0,0,0};           /* collects the sums */
 	  vector float four2 = {2,2,2,2};           /* vector constants */
 	  vector float skip  = {6,6,6,6};
 	  vector float tFreq = {((float)(kappa_max - 1)), /* tempFreq as vector */
@@ -610,6 +613,15 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	      tFreq   = vec_sub(tFreq,four2);\
 	      Xsum    = vec_madd(fdval, reTFreq, Xsum);
 
+#define VEC_LOOP_AV(n,a,b)\
+	      perm    = vec_lvsl(0,(Xalpha_kR4+(n)));\
+              load##b = vec_ld(0,(Xalpha_kR4+(n)+4));\
+	      fdval   = vec_perm(load##a,load##b,perm);\
+              fdval   = vec_madd(fdval,aFreqV,zero);\
+	      XsumV   = vec_madd(XsumV, aFreqV, fdval);\
+              aFreqV  = vec_madd(aFreqV,tFreq,zero);\
+	      tFreq   = vec_sub(tFreq,four2);
+
 	      /* non-vectorizing double-precision "loop" */
 #define VEC_LOOP_S(n)\
               XsumS[0] = XsumS[0] * tFreqS + aFreqS * Xalpha_kR4[n];\
@@ -625,36 +637,25 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	    VEC_LOOP_RE(4,1,2);
 	    VEC_LOOP_RE(8,2,3);
 	  
-	    /* calculating the inner elements
-	       VEC_LOOP_RE(16+12); VEC_LOOP_RE(32+0);
-	       in double precision */
-
-	    /* skip these values in single precision calculation */
-	    tFreq   = vec_sub(tFreq,skip);
-	  
-	    tFreqS = kappa_max - 7; /* start at the 6th element */
-
-	    /* six double precision calculations */
-	    VEC_LOOP_S(12); VEC_LOOP_S(14);
-	    VEC_LOOP_S(16); VEC_LOOP_S(18);
-	    VEC_LOOP_S(20); VEC_LOOP_S(22);
+	    /* six single-precision common-denominator calculations */
+	    VEC_LOOP_AV(12,3,4);
+	    VEC_LOOP_AV(16,4,5);
+	    VEC_LOOP_AV(20,5,6);
 
 	    /* the rest is done in single precision again */
-	    /* init the memory access as above */
-	    load0 = vec_ld(0,(Xalpha_kR4+24));
 
-	    VEC_LOOP_RE(24,0,1);
-	    VEC_LOOP_RE(32,1,2);
-	    VEC_LOOP_RE(36,2,3); 
+	    VEC_LOOP_RE(24,6,7);
+	    VEC_LOOP_RE(32,7,8);
+	    VEC_LOOP_RE(36,8,9); 
 	  }
 	  
 	  /* output the vector */
 	  vec_st(Xsum,0,XsumR);
 	
-	  /* conbination of the three partial sums: */
-	  combAF  = 1.0 / aFreqS;
-	  XRes = XsumS[0] * combAF + XsumR[0] + XsumR[2];
-	  XIms = XsumS[1] * combAF + XsumR[1] + XsumR[3];
+	  /* conbination of the four partial sums: */
+	  combAF  = 1.0 / (aFreqV[0] * aFreqV[2]);
+	  XRes = (XsumV[0] * aFreqV[2] + XsumV[2] * aFreqV[0]) * combAF + XsumR[0] + XsumR[2];
+	  XIms = (XsumV[1] * aFreqV[2] + XsumV[3] * aFreqV[0]) * combAF + XsumR[1] + XsumR[3];
 
 	  realXP = s_alpha * XRes - c_alpha * XIms;
 	  imagXP = c_alpha * XRes + s_alpha * XIms;
