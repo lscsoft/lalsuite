@@ -589,7 +589,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  vector float fdval, reTFreq;              /* temporary variables */
 	  vector float Xsum  = {0,0,0,0};           /* collects the sums */
 	  vector float four2 = {2,2,2,2};           /* vector constants */
-	  vector float skip  = {5,5,5,5};
+	  vector float skip  = {6,6,6,6};
 	  vector float tFreq = {((float)(kappa_max - 1)), /* tempFreq as vector */
 				((float)(kappa_max - 1)),
 				((float)(kappa_max - 2)),
@@ -602,7 +602,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  /* This loop has now been unrolled manually */
 	  {
 	    /* single precision vector "loop" (isn't actually a loop anymore) */
-#define VEC_LOOP(n,a,b)\
+#define VEC_LOOP_RE(n,a,b)\
 	      perm    = vec_lvsl(0,(Xalpha_kR4+(n)));\
               load##b = vec_ld(0,(Xalpha_kR4+(n)+4));\
 	      fdval   = vec_perm(load##a,load##b,perm);\
@@ -620,13 +620,13 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	    /* init the memory access */
 	    load0 = vec_ld(0,(Xalpha_kR4));
 	  
-	    /* three single-precision calculations first */
-	    VEC_LOOP(0,0,1);
-	    VEC_LOOP(4,1,2);
-	    VEC_LOOP(8,2,3);
+	    /* six single-precision calculations first */
+	    VEC_LOOP_RE(0,0,1);
+	    VEC_LOOP_RE(4,1,2);
+	    VEC_LOOP_RE(8,2,3);
 	  
 	    /* calculating the inner elements
-	       VEC_LOOP(16+12); VEC_LOOP(32+0);
+	       VEC_LOOP_RE(16+12); VEC_LOOP_RE(32+0);
 	       in double precision */
 
 	    /* skip these values in single precision calculation */
@@ -637,15 +637,15 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	    /* six double precision calculations */
 	    VEC_LOOP_S(12); VEC_LOOP_S(14);
 	    VEC_LOOP_S(16); VEC_LOOP_S(18);
-	    VEC_LOOP_S(20);
+	    VEC_LOOP_S(20); VEC_LOOP_S(22);
 
 	    /* the rest is done in single precision again */
 	    /* init the memory access as above */
-	    load0 = vec_ld(0,(Xalpha_kR4+22));
+	    load0 = vec_ld(0,(Xalpha_kR4+24));
 
-	    VEC_LOOP(22,0,1);
-	    VEC_LOOP(30,1,2);
-	    VEC_LOOP(34,2,3); 
+	    VEC_LOOP_RE(24,0,1);
+	    VEC_LOOP_RE(32,1,2);
+	    VEC_LOOP_RE(36,2,3); 
 	  }
 	  
 	  /* output the vector */
