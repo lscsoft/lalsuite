@@ -1,0 +1,327 @@
+#!/usr/bin/env @PYTHONPROG@
+"""
+grb_hipe.in - grb inspiral pipeline driver script
+
+$Id$
+
+This script uses master segment lists to determine a set of segment
+lists appropriate to running inspiral_hipe on time around a GRB. At
+present, the script only sets up directories and writes appropriate
+segment files to those directories.  
+
+It uses the same configuration file as the inspiral_hipe script to
+determine various parameters and then set up analysis and injection
+runs.
+
+"""
+
+__author__ = 'Patrick Brady <patrick@gravity.phys.uwm.edu>'
+__date__ = '$Date$'
+__version__ = '$Revision$'[11:-2]
+
+##############################################################################
+# import standard modules and append the lalapps prefix to the python path
+import os
+import sys 
+import pylab
+import random
+import shutil
+import string
+import ConfigParser
+from optparse import *
+from glue import segments
+from glue import segmentsUtils
+from pylal import readMeta
+
+##############################################################################
+# define a few utility functions that make this job easier
+
+# remove all segments of size less than min_length
+def cleanlist(seglist, min_length):
+  removals = segments.segmentlist()
+  for seg in seglist:
+    if seg.duration() < min_length:
+      removals.append(seg)
+  seglist = seglist - removals
+
+  return seglist
+
+# return those segments which intersect the interval
+def getSegments ( seglistin, interval):
+
+  seglistout = segments.segmentlist([s for s in seglistin \
+      if (s[1] > interval[0] and s[0] < interval[1]) ])
+
+  return seglistout
+
+# Return the segment containing a particular time
+# FIXME: this can be written using one of Kipp's methods to identify the
+# segment number and should be replaced by that.
+def findSegment ( seglist, time ):
+
+  for seg in seglist:
+    if time in seg:
+      return seg
+
+  return None
+
+# Return the segment protracted symmetrically about on-source
+def buildOffSourceSegment ( scienceSegment, grbSegment, dt, ifo ):
+
+  scienceSegment = scienceSegment.contract(72)
+
+  nplus = int ( ( scienceSegment[1] - grbSegment[1] ) / dt )
+  nminus = int ( ( grbSegment[0] - scienceSegment[0] ) / dt )
+
+  if nplus < nminus:
+    nsegs = nplus
+  else:
+    nsegs = nminus
+
+  tmpSegment = grbSegment.protract( nsegs * dt + 72 )
+
+  scienceSegment = scienceSegment.protract(72)
+
+  return tmpSegment
+
+
+##############################################################################
+# define usage and command line options and arguments - parse
+usage = """usage: %prog ...
+
+Lay down a directory hierarchy appropriate to analyzing the data
+around the time of GRB using the inspiral pipeline. It determines an
+appropriate amount of data on each side of the reported GRB trigger.
+
+As of now, the code appears to do the right thing.  This code also
+uses the inspiral_hipe config file to determine information about
+segments and to insure that appropriate overlaps, etc are being done.  
+
+
+DIRECTORY HIERARCHY:
+
+The directory hierarchy that a search would have then follows:
+
+searchdir
+  grbYYMMDDxx
+    analysis
+    injection001
+    injection002
+    ....
+    injection00n
+  .
+  .
+  .
+
+
+METADATA FILES:
+
+The script currently writes ....
+
+
+RELATED TOOLS AND REQUIRED TOOLS:
+
+With a structure like this, a host of other tools can be developed to
+make the whole analysis engine work well. Here is a list of things
+that we need with a note about its current status:
+
+* inspiral_hipe:  exists and meta-stable
+* grb_hipe: exists, but developmental
+* grb_summary: exists, but developmental
+
+"""
+parser = OptionParser( usage )
+
+parser.add_option("-v", "--verbose", action="store_true",default=False,\
+  help="make things verbose" )
+parser.add_option("-H","--h1-segments",action="store",type="string",\
+  default=None, metavar=" H1_SEGMENTS", help="H1 input segment to read" )
+parser.add_option("-K","--h2-segments",action="store",type="string",\
+  default=None, metavar=" H2_SEGMENTS", help="H2 input segment to read" )
+parser.add_option("-L","--l1-segments",action="store",type="string",\
+  default=None, metavar=" L1_SEGMENTS", help="L1 input segment to read" )
+parser.add_option("-t","--triggers",action="append",type="int",\
+    default=None, metavar=" TRIGGER TIME",\
+    help="time of the trigger for the analysis")
+parser.add_option("-j","--ninjections",action="store",type="int",\
+    default=0, metavar=" NINJ",\
+    help="Number of injection runs to set up")
+parser.add_option("-S","--source-file",action="store",type="string",\
+  default=None, metavar=" SOURCE_FILE", help="external trigger source file" )
+# read in the config file
+parser.add_option("-f","--config-file",action="store",type="string",\
+  default=None, metavar=" FILE", help="use configuration file FILE" )
+parser.add_option("-p", "--log-path",action="store",type="string",\
+    metavar=" PATH",help="directory to write condor log file")
+# Add some plotting capabilities to check things
+parser.add_option("-P", "--plot-segments", action="store_true",default=False,\
+  help="plot segments for each interval with original segments" )
+
+( opts , args ) = parser.parse_args()
+
+
+##############################################################################
+# create the config parser object and read in the ini file
+cp = ConfigParser.ConfigParser()
+cp.read(opts.config_file)
+
+##############################################################################
+# get the pad and chunk lengths from the values in the ini file
+paddata = int(cp.get('data', 'pad-data'))
+n = int(cp.get('data', 'segment-length'))
+s = int(cp.get('data', 'number-of-segments'))
+r = int(cp.get('data', 'sample-rate'))
+o = int(cp.get('inspiral', 'segment-overlap'))
+length = ( n * s - ( s - 1 ) * o ) / r
+overlap = o / r
+minsciseg = length + 2 * paddata
+
+##############################################################################
+# Read in all the segment lists
+ifolist = []
+segdict = {}
+if opts.h1_segments:
+  tmplist = segmentsUtils.fromsegwizard(file(opts.h1_segments)).coalesce()
+  segdict["H1"] = cleanlist(tmplist, minsciseg)
+  ifolist.append("H1")
+
+if opts.h2_segments:
+  tmplist = segmentsUtils.fromsegwizard(file(opts.h2_segments)).coalesce()
+  segdict["H2"] = cleanlist(tmplist, minsciseg)
+  ifolist.append("H2")
+
+if opts.l1_segments:
+  tmplist = segmentsUtils.fromsegwizard(file(opts.l1_segments))
+  segdict["L1"] = cleanlist(tmplist, minsciseg)
+  ifolist.append("L1")
+
+##############################################################################
+# loop over the intervals, constructing overlapping segment lists,
+# making directories, and writing output to them
+for trigger in opts.triggers:
+
+  ##############################################################################
+  # set up the on source segment
+  onSourceSegment = segments.segment( trigger - 120, trigger + 60 )
+  injectionSegment = segments.segment( trigger - minsciseg/2 , 
+    trigger + minsciseg/2)
+
+  # name and the directory
+  idirectory = "GRB" + str(trigger)
+  os.mkdir(idirectory)
+  shutil.copy(opts.source_file,idirectory)
+
+  ##############################################################################
+  # set up the segment including the off-source segment
+
+  # first step involves making the segment infinitely large
+  offSourceSegment = \
+    segments.segment( -segments.infinity() , segments.infinity() )
+  
+  # for each ifo construct the maximal segment surrounding the grb, and
+  # then use the minimal length segment to actually do the analysis
+  for ifo in ifolist:
+    trigger_segment = findSegment( segdict[ifo], trigger )
+    tmpOffSourceSegment = \
+        buildOffSourceSegment(trigger_segment,onSourceSegment,180,ifo)
+    if tmpOffSourceSegment in offSourceSegment:
+      offSourceSegment = tmpOffSourceSegment
+
+  # write out the segment list to a segwizard file
+  for ifo in ifolist:
+    tmpoutfile = idirectory+"/"+ifo+"-selectedsegs.txt"
+    segmentsUtils.tosegwizard(file(tmpoutfile,'w'),\
+      segments.segmentlist([offSourceSegment]))
+    tmpoutfile = idirectory+"/"+ifo+"-injsegs.txt"
+    segmentsUtils.tosegwizard(file(tmpoutfile,'w'),\
+      segments.segmentlist([injectionSegment]))
+  segmentsUtils.tosegwizard(file(idirectory+"/onSourceSeg.txt",'w'),\
+      segments.segmentlist([onSourceSegment]))
+  
+  if opts.verbose:
+    print onSourceSegment
+    print offSourceSegment
+  
+  # plot the segment lists
+  if opts.plot_segments:
+    pylab.figure()
+    pylab.hold(True)
+    y = pylab.asarray([0,0])
+    y = y + 0.1
+    pylab.plot(offSourceSegment,y,'b',linewidth=4)
+    pylab.plot(onSourceSegment,y,'r',linewidth=4)
+    for ifo in ifolist:
+      y = y + 0.1
+      for seg in segdict[ifo]:
+        pylab.plot(seg,y,'k',linewidth=4)
+    pylab.axvline(offSourceSegment[0], color='g')
+    pylab.axvline(offSourceSegment[1], color='g')
+    pylab.axvline(onSourceSegment[0], color='r')
+    pylab.axvline(onSourceSegment[1], color='r')
+    pylab.ylim([0.0,0.5])
+    pylab.xlim([offSourceSegment[0]-2*minsciseg,\
+      offSourceSegment[1]+2*minsciseg])
+    pylab.savefig("segments-"+idirectory+".png")
+
+  # Next thing is to generate the dag for this interval of time.
+  # The steps here are:
+  #   1. make dir for zero-lag and playground
+  #   2. copy in ini file (and modify if needed)
+  #   3. generate dag
+  #   4. make dir for injections and run inspinj
+  #   5. repeat 2 & 3
+  #   6. repeat 4 & 5 as needed
+
+  ############################################################################
+  # set up the analysis dag for this interval
+  #
+  # In doing this, we simply copy the configuration file into the
+  # sub-directory and then run the dag generation script.  The exact
+  # arguments to that script could be a problem, but we'll deal with
+  # that later.  For now, we want to try it.
+  hipe_arguments = " --two-ifo"
+  hipe_arguments += " --output-segs --log-path " + opts.log_path
+  hipe_arguments += " --config-file config.ini --datafind --template-bank"
+  hipe_arguments += " --inspiral --coincidence --trigbank --inspiral-veto"
+  hipe_arguments += " --second-coinc"
+
+  for ifo in ifolist:
+    cp.set('input',ifo.lower()+'-segments',"../"+ifo+"-selectedsegs.txt")
+    hipe_arguments += " --"+ifo.lower()+"-data"
+  analysisdir = idirectory+"/analysis"
+  os.mkdir(analysisdir)
+  os.chdir(analysisdir)
+  cp.write(file("config.ini",'w'))
+  os.system("lalapps_inspiral_hipe " + hipe_arguments)
+  os.chdir("../../")
+
+  ############################################################################
+  # set up the injection dag for this interval
+  for inj in range(1,opts.ninjections + 1):
+
+    # make the injection directory
+    injectiondir = idirectory+"/injections%02d" % inj
+    os.mkdir(injectiondir)
+    os.chdir(injectiondir)
+
+    # update parameters in the config file and write out
+    for ifo in ifolist:
+      cp.set('input',ifo.lower()+'-segments',"../"+ifo+"-injsegs.txt")
+    cp.set('input','num-slides','')
+    cp.set('pipeline','exttrig-inj-start',1)
+    cp.set('pipeline','exttrig-inj-stop',1000)
+    cp.set('inspinj','gps-start-time',(trigger-120-180))
+    cp.set('inspinj','gps-end-time',(trigger-120))
+    cp.set('inspinj','source-file',"../"+opts.source_file)
+    cp.write(file("config.ini",'w'))
+
+    # generate the dag
+    os.system("lalapps_inspiral_hipe " + hipe_arguments)
+    os.chdir("../../")
+
+  # Ultimately, we would like to construct a dag to allow running
+  # these sub dags. For now,  we'll do it by hand .....
+
+sys.exit(0)
+
+
