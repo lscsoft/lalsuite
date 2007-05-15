@@ -109,9 +109,6 @@ typedef struct {
   AntennaPatternMatrix Mmunu;		/**< antenna-pattern matrix Mmunu = 0.5* Sinv*Tsft * [ Ad, Cd; Cd; Bd ] */
 } FstatCandidate;
 
-#define SCANLINE_CLUSTER_NEIGHBORS 2	/* number of neighbors on each side defining a local max on the scanline */
-#define SCANLINE_WINDOW_LEN	(1 + 2 * SCANLINE_CLUSTER_NEIGHBORS)
-
 /** moving 'Scanline window' of candidates on the scan-line,
  * which is used to find local 1D maxima.
  */
