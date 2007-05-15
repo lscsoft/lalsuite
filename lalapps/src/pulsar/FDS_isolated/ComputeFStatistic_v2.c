@@ -102,6 +102,26 @@ RCSID( "$Id$");
 
 /*---------- internal types ----------*/
 
+/** What info do we want to store in our toplist? */
+typedef struct {
+  PulsarDopplerParams doppler;		/**< Doppler params of this 'candidate' */
+  Fcomponents  Fstat;			/**< the Fstat-value (plus Fa,Fb) for this candidate */
+  AntennaPatternMatrix Mmunu;		/**< antenna-pattern matrix Mmunu = 0.5* Sinv*Tsft * [ Ad, Cd; Cd; Bd ] */
+} FstatCandidate;
+
+#define SCANLINE_CLUSTER_NEIGHBORS 2	/* number of neighbors on each side defining a local max on the scanline */
+#define SCANLINE_WINDOW_LEN	(1 + 2 * SCANLINE_CLUSTER_NEIGHBORS)
+
+/** moving 'Scanline window' of candidates on the scan-line,
+ * which is used to find local 1D maxima.
+ */
+typedef struct
+{
+  UINT4 length;
+  FstatCandidate *window; 		/**< array holding candidates */
+  FstatCandidate *center;		/**< pointer to middle candidate in window */
+} scanlineWindow_t;
+
 /** Configuration settings required for and defining a coherent pulsar search.
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
@@ -118,14 +138,9 @@ typedef struct {
   ComputeFParams CFparams;		    /**< parameters for Fstat (e.g Dterms, SSB-prec,...) */
   CHAR *logstring;                          /**< log containing max-info on this search setup */
   toplist_t* FstatToplist;		    /**< sorted 'toplist' of the NumCandidatesToKeep loudest candidates */
+  scanlineWindow_t *scanlineWindow;         /**< moving window of candidates on scanline to find local maxima */
 } ConfigVariables;
 
-/** What info do we want to store in our toplist? */
-typedef struct {
-  PulsarDopplerParams doppler;		/**< Doppler params of this 'candidate' */
-  Fcomponents  Fstat;			/**< the Fstat-value (plus Fa,Fb) for this candidate */
-  AntennaPatternMatrix Mmunu;		/**< antenna-pattern matrix Mmunu = 0.5* Sinv*Tsft * [ Ad, Cd; Cd; Bd ] */
-} FstatCandidate;
 
 /*---------- Global variables ----------*/
 extern int vrbflg;		/**< defined in lalapps.c */
@@ -171,6 +186,7 @@ CHAR *uvar_outputFstat;
 CHAR *uvar_outputLoudest;
 
 INT4 uvar_NumCandidatesToKeep;
+INT4 uvar_clusterOnScanline;
 
 CHAR *uvar_gridFile;
 REAL8 uvar_dopplermax;
@@ -205,6 +221,13 @@ void getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
 
+/* ---------- scanline window functions ---------- */
+scanlineWindow_t *XLALCreateScanlineWindow ( UINT4 windowWings );
+void XLALDestroyScanlineWindow ( scanlineWindow_t *scanlineWindow );
+int XLALAdvanceScanlineWindow ( const FstatCandidate *nextCand, scanlineWindow_t *scanWindow );
+BOOLEAN XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow );
+
+
 /*---------- empty initializers ---------- */
 static const ConfigVariables empty_ConfigVariables;
 static const FstatCandidate empty_FstatCandidate;
@@ -230,7 +253,8 @@ int main(int argc,char *argv[])
   Fcomponents Fstat = empty_Fcomponents;
   PulsarDopplerParams dopplerpos = empty_PulsarDopplerParams;		/* current search-parameters */
   FstatCandidate loudestFCand = empty_FstatCandidate, thisFCand = empty_FstatCandidate;
-
+  FstatCandidate scanLineBuffer[3];
+  FstatCandidate *writeCand;
 
   ConfigVariables GV = empty_ConfigVariables;		/**< global container for various derived configuration settings */
 
@@ -286,6 +310,8 @@ int main(int argc,char *argv[])
   templateCounter = 0.0; 
   tickCounter = 0;
   clock0 = time(NULL);
+
+  memset ( scanLineBuffer, 0, sizeof ( scanLineBuffer ) );
   while ( XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0 )
     {
       /* main function call: compute F-statistic for this template */
@@ -316,6 +342,7 @@ int main(int argc,char *argv[])
 	}
       
       /* propagate fkdot from internalRefTime back to refTime for outputting results */
+      /* FIXE: only do this for candidates we're going to write out */
       LAL_CALL ( LALExtrapolatePulsarSpins ( &status, dopplerpos.fkdot, GV.refTime, dopplerpos.fkdot, GV.searchRegion.refTime ), &status );
       dopplerpos.refTime = GV.refTime;
 
@@ -338,21 +365,24 @@ int main(int argc,char *argv[])
 	} 
       thisFCand.Fstat   = Fstat;
 
-      
+      /* push new value onto scan-line buffer */
+      XLALAdvanceScanlineWindow ( &thisFCand, GV.scanlineWindow );
+
       /* two types of threshold: fixed (TwoFThreshold) and dynamic (NumCandidatesToKeep) */
-      if ( 2.0 * thisFCand.Fstat.F >= uvar_TwoFthreshold )	/* fixed threshold */
+      if ( XLALCenterIsLocalMax ( GV.scanlineWindow ) 					/* must be 1D local maximum */
+	   && (2.0 * GV.scanlineWindow->center->Fstat.F >= uvar_TwoFthreshold) )	/* fixed threshold */
 	{
 	  /* insert this into toplist if requested */
 	  if ( GV.FstatToplist  )			/* dynamic threshold */
 	    {
-	      if ( insert_into_toplist(GV.FstatToplist, (void*)&thisFCand ) )
-		LogPrintf ( LOG_DETAIL, "Added new candidate into toplist: 2F = %f\n", 2.0 * Fstat.F );
+	      if ( insert_into_toplist(GV.FstatToplist, (void*)writeCand ) )
+		LogPrintf ( LOG_DETAIL, "Added new candidate into toplist: 2F = %f\n", 2.0 * writeCand->Fstat.F );
 	      else
-		LogPrintf ( LOG_DETAIL, "NOT added the candidate into toplist: 2F = %f\n", 2 * Fstat.F );
+		LogPrintf ( LOG_DETAIL, "NOT added the candidate into toplist: 2F = %f\n", 2 * writeCand->Fstat.F );
 	    }
 	  else if ( fpFstat ) 				/* no toplist :write out immediately */
 	    {
-	      if ( write_FstatCandidate_to_fp ( fpFstat, &thisFCand ) != 0 )
+	      if ( write_FstatCandidate_to_fp ( fpFstat, writeCand ) != 0 )
 		{
 		  LogPrintf (LOG_CRITICAL, "Failed to write candidate to file.\n");
 		  return -1;
@@ -493,6 +523,9 @@ initUserVars (LALStatus *status)
 
   
   uvar_TwoFthreshold = 10.0;
+  uvar_NumCandidatesToKeep = 0;
+  uvar_clusterOnScanline = 0;
+
   uvar_metricType =  LAL_PMETRIC_NONE;
   uvar_projectMetric = TRUE;
   uvar_gridType = GRID_FLAT;
@@ -561,7 +594,8 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
   LALregSTRINGUserVar(status,   outputLoudest,	 0,  UVAR_OPTIONAL, "Loudest F-statistic candidate + estimated MLE amplitudes");
 
-  LALregINTUserVar(status,      NumCandidatesToKeep,0,  UVAR_OPTIONAL, "Number of Fstat 'candidates' to keep. (0 = All)");
+  LALregINTUserVar(status,      NumCandidatesToKeep,0, UVAR_OPTIONAL, "Number of Fstat 'candidates' to keep. (0 = All)");
+  LALregINTUserVar(status,      clusterOnScanline, 0, UVAR_OPTIONAL, "Neighbors on each side for finding 1D local maxima on scanline");
 
 
   LALregINTUserVar ( status, 	minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest SFT-timestamp to include");
@@ -881,11 +915,14 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
 
   /* ----- set up toplist if requested ----- */
   if ( uvar_NumCandidatesToKeep > 0 )
-    {
-      if ( create_toplist( &(cfg->FstatToplist), uvar_NumCandidatesToKeep, sizeof(FstatCandidate), compareFstatCandidates) != 0 ) {
-	ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM ); 
-      }
-    } /* create toplist */
+    if ( create_toplist( &(cfg->FstatToplist), uvar_NumCandidatesToKeep, sizeof(FstatCandidate), compareFstatCandidates) != 0 ) {
+      ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM ); 
+    }
+
+  /* ----- set up scanline-window if requested for 1D local-maximum clustering on scanline ----- */
+  if ( (cfg->scanlineWindow = XLALCreateScanlineWindow ( uvar_clusterOnScanline )) == NULL ) {
+    ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM ); 
+  }
 
   /* initialize full multi-dimensional Doppler-scanner */
   {
@@ -1077,6 +1114,9 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   /* destroy FstatToplist if any */
   if ( cfg->FstatToplist )
     free_toplist( &(cfg->FstatToplist) );
+
+  if ( cfg->scanlineWindow )
+    XLALDestroyScanlineWindow ( cfg->scanlineWindow );
 
   /* Free config-Variables and userInput stuff */
   TRY (LALDestroyUserVars (status->statusPtr), status);
@@ -1329,3 +1369,93 @@ write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand )
   return 0;
   
 } /* write_candidate_to_fp() */
+
+/* --------------------------------------------------------------------------------
+ * Scanline window functions
+ * FIXME: should go into a separate file once implementation is settled down ...
+ *
+ * --------------------------------------------------------------------------------*/
+
+/** Create a scanline window, with given windowWings >= 0.
+ * Note: the actual window-size is 1 + 2 * windowWings
+ */
+scanlineWindow_t *
+XLALCreateScanlineWindow ( UINT4 windowWings ) /**< number of neighbors on each side in scanlineWindow */
+{
+  const CHAR *fn = "XLALCreateScanlineWindow()";
+  scanlineWindow_t *ret = NULL;
+  UINT4 windowLen = 1 + 2 * windowWings;
+
+  if ( ( ret = LALCalloc ( 1, sizeof(*ret)) ) == NULL ) {
+    XLAL_ERROR_NULL( fn, COMPUTEFSTATISTIC_EMEM );
+  }
+
+  ret->length = windowLen;
+
+  if ( (ret->window = LALCalloc ( windowLen, sizeof( ret->window[0] ) )) == NULL ) {
+    LALFree ( ret );
+    XLAL_ERROR_NULL( fn, COMPUTEFSTATISTIC_EMEM );
+  }
+
+  ret->center = &(ret->window[ windowWings ]);	/* points to central bin */
+
+  return ret;
+
+} /* XLALCreateScanlineWindow() */
+
+void
+XLALDestroyScanlineWindow ( scanlineWindow_t *scanlineWindow )
+{
+  if ( !scanlineWindow )
+    return;
+
+  if ( scanlineWindow->window )
+    LALFree ( scanlineWindow->window );
+
+  LALFree ( scanlineWindow );
+
+  return;
+  
+} /* XLALDestroyScanlineWindow() */
+
+/** Advance by pushing a new candidate into the scanline-window 
+ */
+int
+XLALAdvanceScanlineWindow ( const FstatCandidate *nextCand, scanlineWindow_t *scanWindow )
+{
+  const CHAR *fn = "XLALAdvanceScanlineWindow()";
+  UINT4 i;
+
+  if ( !nextCand || !scanWindow || !scanWindow->window ) {
+    XLAL_ERROR (fn, XLAL_EINVAL );
+  }
+
+  for ( i=1; i < scanWindow->length; i ++ )
+    scanWindow->window[i - 1] = scanWindow->window[i];
+
+  scanWindow->window[ scanWindow->length - 1 ] = *nextCand;	/* struct-copy */
+
+  return XLAL_SUCCESS;
+  
+} /* XLALAdvanceScanlineWindow() */
+
+/** check wether central candidate in Scanline-window is a local maximum 
+ */
+BOOLEAN
+XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow )
+{
+  UINT4 i;
+  REAL8 F0;
+
+  if ( !scanWindow || !scanWindow->center )
+    return FALSE;
+
+  F0 = scanWindow->center->Fstat.F;
+
+  for ( i=0; i < scanWindow->length; i ++ )
+    if ( scanWindow->window[i].Fstat.F > F0 )
+      return FALSE;
+
+  return TRUE;
+    
+} /* XLALCenterIsLocalMax() */
