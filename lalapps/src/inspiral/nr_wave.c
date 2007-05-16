@@ -461,8 +461,8 @@ int main( int argc, char *argv[] )
     for ( thisInj = injections; thisInj; thisInj = thisInj->next )
     {
 
-      /*LALDriveNRWave(&status, thisMetaData, nrCatalog, 
-	modeLlo, modeLhi, thisInj, strain);*/   
+      LALDriveNRWave(&status, &strain, &thisMetaData, &nrCatalog, 
+		     modeLlo, modeLhi, thisInj);   
 
       /* Assign length to the temporal variable */
       /* NOTE: Implies that all modes have the same length!!*/
@@ -489,72 +489,72 @@ int main( int argc, char *argv[] )
       /*       LALFree( strain ); */
       /*       strain = NULL; */
       
-      /* loop over l values */
-      for ( modeL = modeLlo; modeL <= modeLhi; modeL++ )
-      {
-        /* loop over m values */
-        for ( modeM = -modeL; modeM <= modeL; modeM++ )
-        {
-          /* find nearest matching numrel waveform */
-          XLALFindNRFile( &thisMetaData, &nrCatalog, thisInj, modeL, modeM );
+/*       /\* loop over l values *\/ */
+/*       for ( modeL = modeLlo; modeL <= modeLhi; modeL++ ) */
+/*       { */
+/*         /\* loop over m values *\/ */
+/*         for ( modeM = -modeL; modeM <= modeL; modeM++ ) */
+/*         { */
+/*           /\* find nearest matching numrel waveform *\/ */
+/*           XLALFindNRFile( &thisMetaData, &nrCatalog, thisInj, modeL, modeM ); */
 
-          if ( vrbflg )
-          {
-            fprintf( stdout, "Reading the waveform from the file \"%s\"...",
-                thisMetaData.filename );
-          }
+/*           if ( vrbflg ) */
+/*           { */
+/*             fprintf( stdout, "Reading the waveform from the file \"%s\"...", */
+/*                 thisMetaData.filename ); */
+/*           } */
 
-          /* read numrel waveform */
-          LAL_CALL( LALReadNRWave( &status, &strain, thisInj->mass1 +
-                thisInj->mass2, thisMetaData.filename ), &status );
+/*           /\* read numrel waveform *\/ */
+/*           LAL_CALL( LALReadNRWave( &status, &strain, thisInj->mass1 + */
+/*                 thisInj->mass2, thisMetaData.filename ), &status ); */
 
-          if ( vrbflg )
-          {
-            fprintf( stdout, "done\n" );
-          }
+/*           if ( vrbflg ) */
+/*           { */
+/*             fprintf( stdout, "done\n" ); */
+/*           } */
 
-          if ( vrbflg )
-          {
-            fprintf( stdout,
-                "Generating waveform for inclination = %f, coa_phase = %f\n",
-                thisInj->inclination, thisInj->coa_phase );
-          }
+/*           if ( vrbflg ) */
+/*           { */
+/*             fprintf( stdout, */
+/*                 "Generating waveform for inclination = %f, coa_phase = %f\n", */
+/*                 thisInj->inclination, thisInj->coa_phase ); */
+/*           } */
 
-          /* compute the h+ and hx for given inclination and coalescence phase*/
-          strain = XLALOrientNRWave( strain, thisMetaData.mode[0],
-              thisMetaData.mode[1], thisInj->inclination, thisInj->coa_phase );
+/*           /\* compute the h+ and hx for given inclination and coalescence phase*\/ */
+/*           strain = XLALOrientNRWave( strain, thisMetaData.mode[0], */
+/*               thisMetaData.mode[1], thisInj->inclination, thisInj->coa_phase ); */
 
-	  fprintf(stdout, "Elemento de strain= %e\n", strain->data->data[0]);
+/* 	  fprintf(stdout, "Elemento de strain= %e\n", strain->data->data[0]); */
 
 
-	  if (sumStrain == NULL) {
+/* 	  if (sumStrain == NULL) { */
 
-	    sumStrain = LALCalloc(1, sizeof(*sumStrain));	    
+/* 	    sumStrain = LALCalloc(1, sizeof(*sumStrain));	     */
 
-	    sumStrain->data =  XLALCreateREAL4VectorSequence(2, strain->data->vectorLength); 
-	    sumStrain->deltaT = strain->deltaT;
-	    sumStrain->f0 = strain->f0; 
-	    sumStrain->sampleUnits = strain->sampleUnits; 
+/* 	    sumStrain->data =  XLALCreateREAL4VectorSequence(2, strain->data->vectorLength);  */
+/* 	    sumStrain->deltaT = strain->deltaT; */
+/* 	    sumStrain->f0 = strain->f0;  */
+/* 	    sumStrain->sampleUnits = strain->sampleUnits;  */
 
-	    memset(sumStrain->data->data,0.0,2*strain->data->vectorLength);
+/* 	    memset(sumStrain->data->data,0.0,2*strain->data->vectorLength); */
 
-	    sumStrain = XLALSumStrain( sumStrain, strain );
-	  }
+/* 	    sumStrain = XLALSumStrain( sumStrain, strain ); */
+/* 	  } */
 
-	  else {
-	    sumStrain = XLALSumStrain( sumStrain, strain );
-	  }
+/* 	  else { */
+/* 	    sumStrain = XLALSumStrain( sumStrain, strain ); */
+/* 	  } */
 
-	  fprintf(stdout, "Elemento de sumStrain= %e\n", sumStrain->data->data[0]);
+/* 	  fprintf(stdout, "Elemento de sumStrain= %e\n", sumStrain->data->data[0]); */
 
-          /* clear memory for strain */
-          XLALDestroyREAL4VectorSequence ( strain->data );
-          LALFree( strain );
-          strain = NULL;
+/*           /\* clear memory for strain *\/ */
+/*           XLALDestroyREAL4VectorSequence ( strain->data ); */
+/*           LALFree( strain ); */
+/*           strain = NULL; */
 
-        } /* end loop over modeM values */
+/*         } /\* end loop over modeM values *\/ */
 
-      } /* end loop over modeL values */
+/*       } /\* end loop over modeL values *\/ */
 
 
       if ( vrbflg )
