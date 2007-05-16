@@ -57,6 +57,13 @@ static void output_frame( CHAR *ifo, INT4 gpsStart, INT4 gpsEnd,
 extern int vrbflg;
 
 
+void LALNRInject( LALStatus                 *status,
+		  REAL4TimeSeries           *injData,
+		  REAL4TimeVectorSeries     *strain,
+		  SimInspiralTable          *thisInj,
+		  CHAR                      *ifo);
+
+
 /* main program entry */
 int main( int argc, char *argv[] )
 {
@@ -67,7 +74,6 @@ int main( int argc, char *argv[] )
 
   INT4 modeLlo = -1;                     /* lowest value of l to inject    */
   INT4 modeLhi = -1;                     /* highest values of l to inject  */
-  INT4 modeL, modeM;                     /* mode indices of NR waves       */
 
   CHAR *injectionFile = NULL;            /* name of file containing injs   */
   CHAR *nrMetaFile    = NULL;            /* name of file with nr meta info */
@@ -92,17 +98,11 @@ int main( int argc, char *argv[] )
 
   REAL4TimeSeries injData;               /* time series of zeros to which
                                             we add injections              */
-  REAL4TimeVectorSeries *strain = NULL;  /* h+, hx time series             */
   REAL4TimeVectorSeries *sumStrain = NULL;
-  REAL4VectorSequence *data = NULL;
-  REAL4TimeSeries *htData;               /* h(t) data for given detector   */
 
   int writeFlag = 0;                     /* write h(t) to file?            */
   int ifosFlag  = 0;                     /* injections for all ifos?       */
   int frameFlag = 0;                     /* write h(t) to a frame?         */
-
-  int r;
-  UINT4 length;
 
   /* getopt arguments */
   struct option long_options[] =
@@ -461,93 +461,17 @@ int main( int argc, char *argv[] )
     for ( thisInj = injections; thisInj; thisInj = thisInj->next )
     {
 
-      /*LALDriveNRWave(&status, thisMetaData, nrCatalog, 
-	modeLlo, modeLhi, thisInj, strain);*/   
-
-      /* loop over l values */
-      for ( modeL = modeLlo; modeL <= modeLhi; modeL++ )
-      {
-        /* loop over m values */
-        for ( modeM = -modeL; modeM <= modeL; modeM++ )
-        {
-          /* find nearest matching numrel waveform */
-          XLALFindNRFile( &thisMetaData, &nrCatalog, thisInj, modeL, modeM );
-
-          if ( vrbflg )
-          {
-            fprintf( stdout, "Reading the waveform from the file \"%s\"...",
-                thisMetaData.filename );
-          }
-
-          /* read numrel waveform */
-          LAL_CALL( LALReadNRWave( &status, &strain, thisInj->mass1 +
-                thisInj->mass2, thisMetaData.filename ), &status );
-
-          if ( vrbflg )
-          {
-            fprintf( stdout, "done\n" );
-          }
-
-          if ( vrbflg )
-          {
-            fprintf( stdout,
-                "Generating waveform for inclination = %f, coa_phase = %f\n",
-                thisInj->inclination, thisInj->coa_phase );
-          }
-
-          /* compute the h+ and hx for given inclination and coalescence phase*/
-          strain = XLALOrientNRWave( strain, thisMetaData.mode[0],
-              thisMetaData.mode[1], thisInj->inclination, thisInj->coa_phase );
-
-	  if (sumStrain == NULL) {
-
-	    sumStrain = LALCalloc(1, sizeof(*sumStrain));	    
-
-	    sumStrain->data =  XLALCreateREAL4VectorSequence(2, strain->data->vectorLength); 
-	    sumStrain->deltaT = strain->deltaT;
-	    sumStrain->f0 = strain->f0; 
-	    sumStrain->sampleUnits = strain->sampleUnits; 
-
-	    memset(sumStrain->data->data,0.0,2*strain->data->vectorLength*sizeof(REAL4));
-
-	    sumStrain = XLALSumStrain( sumStrain, strain );
-	  }
-
-	  else {
-	    sumStrain = XLALSumStrain( sumStrain, strain );
-	  }
-
-          /* clear memory for strain */
-          XLALDestroyREAL4VectorSequence ( strain->data );
-          LALFree( strain );
-          strain = NULL;
-
-        } /* end loop over modeM values */
-
-      } /* end loop over modeL values */
-
-
+      LAL_CALL( LALAddStrainModes(&status, &sumStrain, &thisMetaData, &nrCatalog,
+			       modeLlo, modeLhi, thisInj), &status);
+            
       if ( vrbflg )
 	{
 	  fprintf( stdout,
 		   "Generating the strain data for the given sky location\n" );
 	}
 
-
-      /*LALNRInject( &status, &injData, sumStrain, thisInj, ifo);*/
-
-
-      /* compute strain for given sky location */
-      htData = XLALCalculateNRStrain( sumStrain, thisInj, ifo, sampleRate );
-
-      /* inject the htData into injection time stream */
-      LAL_CALL( LALSSInjectTimeSeries( &status, &injData, htData ),
-		&status );
-
-      /* set channel name */
-      LALSnprintf( injData.name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
-		   "%s:STRAIN", ifo );
-
+      LAL_CALL( LALInjectNRStrain( &status, &injData, sumStrain, thisInj, ifo), &status);
+      
       XLALDestroyREAL4VectorSequence ( sumStrain->data );
       LALFree( sumStrain );
       sumStrain = NULL;
@@ -702,36 +626,4 @@ static void output_frame(CHAR *ifo,
 }
 
 
-/* void *LALNRInject(  */
-/*   LALStatus                 *status,  */
-/*   REAL4TimeVectorSeries     *strain, */
-/*   REAL4TimeSeries           *injData,  */
-/*   SimInspiralTable          *thisInj,  */
-/*   CHAR                      ifo) */
-/* { */
 
-
-
-/*   REAL4TimeSeries htData;               /\* h(t) data for given detector *\/ */
-/*   INT4 gpsStartSec = gpsStartTime.gpsSeconds; */
-/*   INT4 gpsEndSec = gpsEndTime.gpsSeconds; */
-
-  /* set up the injData to be zeros of the correct length, to which we will
-   * add the injections */
-
-
-
-
-
-          /* compute strain for given sky location */
-/*          htData = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate );
-
-          /* inject the htData into injection time stream */
-/*          LAL_CALL( LALSSInjectTimeSeries( &status, &injData, htData ),
-              &status );
-
-          /* set channel name */
-/*          LALSnprintf( injData.name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
-              "%s:STRAIN", ifo );
-
-	      }*/
