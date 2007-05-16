@@ -30,7 +30,7 @@
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 #include <lal/NRWaveIO.h>
-
+#include <lal/LIGOMetadataTables.h>
 
 
 NRCSID( NRWAVEIOC, "$Id$");
@@ -217,4 +217,113 @@ LALGetSingleNRMetaData( LALStatus       *status,
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
+}
+
+
+/** Put the main functionalities of nr_wave.c together */
+void
+LALDriveNRWave(
+  LALStatus              *status,
+  NRWaveMetaData         thisMetaData, /* single NR wave metadata struct */
+  NRWaveCatalog          nrCatalog,    /* NR wave metadata struct        */
+  INT4                   modeLlo,      /* contains modeLlo and modeLhi   */
+  INT4                   modeLhi,      /* modeLhi                        */
+  SimInspiralTable       *thisInj,     /* injection                      */
+  REAL4TimeVectorSeries  *strain       /* h+, hx data                    */)
+{
+  INT4 modeL, modeM;
+  REAL4TimeVectorSeries *tempstrain=NULL;
+  REAL4VectorSequence *data = NULL;
+  int r;
+  UINT4 length;
+  FILE *file, *file2;
+
+      /* Assign length to the temporal variable */
+      /* NOTE: Implies that all modes have the same length!!*/
+      XLALFindNRFile( &thisMetaData, &nrCatalog, thisInj, 2, -2 );
+      LALReadNRWave( &status, &strain, thisInj->mass1 +
+		     thisInj->mass2, thisMetaData.filename );
+      length = strain->data->vectorLength;
+
+      /* Inicialize tempstrain as zero */
+      tempstrain = LALCalloc(1, sizeof(*tempstrain));  
+      data =  XLALCreateREAL4VectorSequence(2, length);
+      tempstrain->data = data;
+      tempstrain->deltaT = strain->deltaT;
+      tempstrain->f0 = strain->f0;
+      tempstrain->sampleUnits = strain->sampleUnits;
+      for (r=0; r<data->length*data->vectorLength; r++)
+	{
+	  tempstrain->data->data[r] = 0.0;
+	}
+
+      /* Reset strain as null pointer */
+      XLALDestroyREAL4VectorSequence ( strain->data );
+      LALFree( strain );
+      strain = NULL;
+ 
+      /* loop over l values */
+      for ( modeL = modeLlo; modeL <= modeLhi; modeL++ )
+      {
+        /* loop over m values */
+        for ( modeM = -modeL; modeM <= modeL; modeM++ )
+        {
+          /* find nearest matching numrel waveform */
+          XLALFindNRFile( &thisMetaData, &nrCatalog, thisInj, modeL, modeM );
+
+            fprintf( stdout, "Reading the waveform from the file \"%s\"...",
+                thisMetaData.filename );
+
+          /* read numrel waveform */
+          LALReadNRWave( &status, &strain, thisInj->mass1 +
+                thisInj->mass2, thisMetaData.filename );
+
+            fprintf( stdout, "done\n" );
+
+            fprintf( stdout,
+                "Generating waveform for inclination = %f, coa_phase = %f\n",
+                thisInj->inclination, thisInj->coa_phase );
+
+          /* compute the h+ and hx for given inclination and coalescence phase*/
+          strain = XLALOrientNRWave( strain, thisMetaData.mode[0],
+              thisMetaData.mode[1], thisInj->inclination, thisInj->coa_phase );
+
+	  fprintf(stdout, "Elemento de strain= %e\n", strain->data->data[0]);
+
+	  tempstrain = XLALSumStrain( tempstrain, strain );
+
+	  fprintf(stdout, "Elemento de tempstrain= %e\n", tempstrain->data->data[0]);
+
+          /* clear memory for strain */
+          XLALDestroyREAL4VectorSequence ( strain->data );
+          LALFree( strain );
+          strain = NULL;
+
+        } /* end loop over modeM values */
+
+      } /* end loop over modeL values */
+
+      /* copy tempstrain into strain */
+      strain = LALCalloc(1, sizeof(*strain));  
+      data =  XLALCreateREAL4VectorSequence(2, length);
+      strain->data = data;
+      strain->deltaT = tempstrain->deltaT;
+      strain->f0 = tempstrain->f0;
+      strain->sampleUnits = tempstrain->sampleUnits;
+      for (r=0; r<data->length*data->vectorLength; r++)
+	{
+	  strain->data->data[r] = tempstrain->data->data[r];
+	}
+	  
+          file = fopen("tempstrain.dat","w");
+
+	  r = 0;
+	  for ( r =0; r < tempstrain->data->vectorLength; r++)
+	    {
+	      fprintf(file,"%d %e %e \n", r, tempstrain->data->data[r], tempstrain->data->data[strain->data->vectorLength + r]);
+	    };
+
+	  fclose(file);   
+
+      fprintf( stdout, "Test 15th May\n");
 }
