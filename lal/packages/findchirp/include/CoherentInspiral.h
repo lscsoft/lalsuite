@@ -258,6 +258,8 @@ tagCoherentInspiralCVector
   COMPLEX8TimeSeries     *cData[4];
 }
 CoherentInspiralCVector;
+/* </lalVerbatim> */
+
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{CoherentInspiralCVector}}
