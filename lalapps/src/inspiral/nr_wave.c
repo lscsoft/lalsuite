@@ -461,100 +461,73 @@ int main( int argc, char *argv[] )
     for ( thisInj = injections; thisInj; thisInj = thisInj->next )
     {
 
-      LALDriveNRWave(&status, &strain, &thisMetaData, &nrCatalog, 
-		     modeLlo, modeLhi, thisInj);   
+      /*LALDriveNRWave(&status, thisMetaData, nrCatalog, 
+	modeLlo, modeLhi, thisInj, strain);*/   
 
-      /* Assign length to the temporal variable */
-      /* NOTE: Implies that all modes have the same length!!*/
-      /*       XLALFindNRFile( &thisMetaData, &nrCatalog, thisInj, 2, -2 ); */
-      /*       LAL_CALL( LALReadNRWave( &status, &strain, thisInj->mass1 + */
-      /*                 thisInj->mass2, thisMetaData.filename ), &status ); */
-      /*       length = strain->data->vectorLength; */
-      
-      /*       /\* Inicialize sumStrain as zero *\/ */
-      /*       sumStrain = LALCalloc(1, sizeof(*sumStrain));   */
-      /*       data =  XLALCreateREAL4VectorSequence(2, length); */
-      /*       sumStrain->data = data; */
-      /*       sumStrain->deltaT = strain->deltaT; */
-      /*       sumStrain->f0 = strain->f0; */
-      /*       sumStrain->sampleUnits = strain->sampleUnits; */
-      
-      /*       for (r=0; r<data->length*data->vectorLength; r++) */
-      /* 	{ */
-      /* 	  sumStrain->data->data[r] = 0.0; */
-      /* 	} */
-      
-      /*       /\* Reset strain as null pointer *\/  */
-      /*       XLALDestroyREAL4VectorSequence ( strain->data ); */
-      /*       LALFree( strain ); */
-      /*       strain = NULL; */
-      
-/*       /\* loop over l values *\/ */
-/*       for ( modeL = modeLlo; modeL <= modeLhi; modeL++ ) */
-/*       { */
-/*         /\* loop over m values *\/ */
-/*         for ( modeM = -modeL; modeM <= modeL; modeM++ ) */
-/*         { */
-/*           /\* find nearest matching numrel waveform *\/ */
-/*           XLALFindNRFile( &thisMetaData, &nrCatalog, thisInj, modeL, modeM ); */
+      /* loop over l values */
+      for ( modeL = modeLlo; modeL <= modeLhi; modeL++ )
+      {
+        /* loop over m values */
+        for ( modeM = -modeL; modeM <= modeL; modeM++ )
+        {
+          /* find nearest matching numrel waveform */
+          XLALFindNRFile( &thisMetaData, &nrCatalog, thisInj, modeL, modeM );
 
-/*           if ( vrbflg ) */
-/*           { */
-/*             fprintf( stdout, "Reading the waveform from the file \"%s\"...", */
-/*                 thisMetaData.filename ); */
-/*           } */
+          if ( vrbflg )
+          {
+            fprintf( stdout, "Reading the waveform from the file \"%s\"...",
+                thisMetaData.filename );
+          }
 
-/*           /\* read numrel waveform *\/ */
-/*           LAL_CALL( LALReadNRWave( &status, &strain, thisInj->mass1 + */
-/*                 thisInj->mass2, thisMetaData.filename ), &status ); */
+          /* read numrel waveform */
+          LAL_CALL( LALReadNRWave( &status, &strain, thisInj->mass1 +
+                thisInj->mass2, thisMetaData.filename ), &status );
 
-/*           if ( vrbflg ) */
-/*           { */
-/*             fprintf( stdout, "done\n" ); */
-/*           } */
+          if ( vrbflg )
+          {
+            fprintf( stdout, "done\n" );
+          }
 
-/*           if ( vrbflg ) */
-/*           { */
-/*             fprintf( stdout, */
-/*                 "Generating waveform for inclination = %f, coa_phase = %f\n", */
-/*                 thisInj->inclination, thisInj->coa_phase ); */
-/*           } */
+          if ( vrbflg )
+          {
+            fprintf( stdout,
+                "Generating waveform for inclination = %f, coa_phase = %f\n",
+                thisInj->inclination, thisInj->coa_phase );
+          }
 
-/*           /\* compute the h+ and hx for given inclination and coalescence phase*\/ */
-/*           strain = XLALOrientNRWave( strain, thisMetaData.mode[0], */
-/*               thisMetaData.mode[1], thisInj->inclination, thisInj->coa_phase ); */
+          /* compute the h+ and hx for given inclination and coalescence phase*/
+          strain = XLALOrientNRWave( strain, thisMetaData.mode[0],
+              thisMetaData.mode[1], thisInj->inclination, thisInj->coa_phase );
 
-/* 	  fprintf(stdout, "Elemento de strain= %e\n", strain->data->data[0]); */
+	  if (sumStrain == NULL) {
 
+	    sumStrain = LALCalloc(1, sizeof(*sumStrain));	    
 
-/* 	  if (sumStrain == NULL) { */
+	    sumStrain->data =  XLALCreateREAL4VectorSequence(2, strain->data->vectorLength); 
+	    sumStrain->deltaT = strain->deltaT;
+	    sumStrain->f0 = strain->f0; 
+	    sumStrain->sampleUnits = strain->sampleUnits; 
 
-/* 	    sumStrain = LALCalloc(1, sizeof(*sumStrain));	     */
+	    for (r = 0; r<2*strain->data->vectorLength; r++)
+	      {
+		sumStrain->data->data[r] = 0.0;
+	      }
+	    
+	    sumStrain = XLALSumStrain( sumStrain, strain );
+	  }
 
-/* 	    sumStrain->data =  XLALCreateREAL4VectorSequence(2, strain->data->vectorLength);  */
-/* 	    sumStrain->deltaT = strain->deltaT; */
-/* 	    sumStrain->f0 = strain->f0;  */
-/* 	    sumStrain->sampleUnits = strain->sampleUnits;  */
+	  else {
+	    sumStrain = XLALSumStrain( sumStrain, strain );
+	  }
 
-/* 	    memset(sumStrain->data->data,0.0,2*strain->data->vectorLength); */
+          /* clear memory for strain */
+          XLALDestroyREAL4VectorSequence ( strain->data );
+          LALFree( strain );
+          strain = NULL;
 
-/* 	    sumStrain = XLALSumStrain( sumStrain, strain ); */
-/* 	  } */
+        } /* end loop over modeM values */
 
-/* 	  else { */
-/* 	    sumStrain = XLALSumStrain( sumStrain, strain ); */
-/* 	  } */
-
-/* 	  fprintf(stdout, "Elemento de sumStrain= %e\n", sumStrain->data->data[0]); */
-
-/*           /\* clear memory for strain *\/ */
-/*           XLALDestroyREAL4VectorSequence ( strain->data ); */
-/*           LALFree( strain ); */
-/*           strain = NULL; */
-
-/*         } /\* end loop over modeM values *\/ */
-
-/*       } /\* end loop over modeL values *\/ */
+      } /* end loop over modeL values */
 
 
       if ( vrbflg )
@@ -570,8 +543,6 @@ int main( int argc, char *argv[] )
       /* compute strain for given sky location */
       htData = XLALCalculateNRStrain( sumStrain, thisInj, ifo, sampleRate );
 
-
- 
       /* inject the htData into injection time stream */
       LAL_CALL( LALSSInjectTimeSeries( &status, &injData, htData ),
 		&status );
