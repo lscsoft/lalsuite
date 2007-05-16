@@ -653,7 +653,7 @@ LALEquatorialToGeographic( LALStatus   *stat,
   }
 
   /* Compute the Greenwich mean sidereal time. */
-  gmst = XLALGreenwichMeanSiderealTime( gpsTime );
+  gmst = fmod( XLALGreenwichMeanSiderealTime( gpsTime ), LAL_TWOPI );
 
   /* Add to longitude, and exit. */
   output->system = COORDINATESYSTEM_GEOGRAPHIC;
@@ -689,7 +689,7 @@ LALGeographicToEquatorial( LALStatus   *stat,
   }
 
   /* Compute the Greenwich mean sidereal time. */
-  gmst = XLALGreenwichMeanSiderealTime( gpsTime );
+  gmst = fmod( XLALGreenwichMeanSiderealTime( gpsTime ), LAL_TWOPI );
 
   /* Subtract from longitude, and exit. */
   output->system = COORDINATESYSTEM_EQUATORIAL;
