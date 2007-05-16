@@ -508,11 +508,8 @@ int main( int argc, char *argv[] )
 	    sumStrain->f0 = strain->f0; 
 	    sumStrain->sampleUnits = strain->sampleUnits; 
 
-	    for (r = 0; r<2*strain->data->vectorLength; r++)
-	      {
-		sumStrain->data->data[r] = 0.0;
-	      }
-	    
+	    memset(sumStrain->data->data,0.0,2*strain->data->vectorLength*sizeof(REAL4));
+
 	    sumStrain = XLALSumStrain( sumStrain, strain );
 	  }
 
