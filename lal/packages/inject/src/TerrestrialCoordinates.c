@@ -295,7 +295,7 @@ the geoid.
 \par Uses
 \code
 LALGPStoUTC()
-LALGMST1()
+XLALGreenwichMeanSiderealTime()
 LALDHeapSort()
 \endcode
 
@@ -606,7 +606,7 @@ the geoid.
 \subsubsection*{Uses}
 \begin{verbatim}
 LALGPStoUTC()
-LALGMST1()
+XLALGreenwichMeanSiderealTime()
 LALDHeapSort()
 \end{verbatim}
 
@@ -637,10 +637,7 @@ LALEquatorialToGeographic( LALStatus   *stat,
 			   SkyPosition *input,
 			   LIGOTimeGPS *gpsTime )
 { /* </lalVerbatim> */
-  LALDate date;          /* LALDate time */
   REAL8 gmst;            /* siderial time (radians) */
-  LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
-  /* a few seconds probably aren't significant for the sky position */
 
   INITSTATUS( stat, "LALEquatorialToGeographic", TERRESTRIALCOORDINATESC );
   ATTATCHSTATUSPTR( stat );
@@ -656,13 +653,13 @@ LALEquatorialToGeographic( LALStatus   *stat,
   }
 
   /* Compute the Greenwich mean sidereal time. */
-  TRY( LALGPStoUTC( stat->statusPtr, &date, gpsTime, &accuracy ),
-       stat );
-  TRY( LALGMST1( stat->statusPtr, &gmst, &date, MST_RAD ), stat );
+  gmst = XLALGreenwichMeanSiderealTime( gpsTime );
 
   /* Add to longitude, and exit. */
   output->system = COORDINATESYSTEM_GEOGRAPHIC;
-  output->longitude = input->longitude - gmst;
+  output->longitude = fmod( input->longitude - gmst, LAL_TWOPI );
+  if ( output->longitude < 0.0 )
+    output->longitude += LAL_TWOPI;
   output->latitude = input->latitude;
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
@@ -676,10 +673,7 @@ LALGeographicToEquatorial( LALStatus   *stat,
 			   SkyPosition *input,
 			   LIGOTimeGPS *gpsTime )
 { /* </lalVerbatim> */
-  LALDate date;          /* LALDate time */
   REAL8 gmst;            /* siderial time (radians) */
-  LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
-  /* a few seconds probably aren't significant for the sky position */
 
   INITSTATUS( stat, "LALEquatorialToGeographic", TERRESTRIALCOORDINATESC );
   ATTATCHSTATUSPTR( stat );
@@ -695,13 +689,13 @@ LALGeographicToEquatorial( LALStatus   *stat,
   }
 
   /* Compute the Greenwich mean sidereal time. */
-  TRY( LALGPStoUTC( stat->statusPtr, &date, gpsTime, &accuracy ),
-       stat );
-  TRY( LALGMST1( stat->statusPtr, &gmst, &date, MST_RAD ), stat );
+  gmst = XLALGreenwichMeanSiderealTime( gpsTime );
 
   /* Subtract from longitude, and exit. */
   output->system = COORDINATESYSTEM_EQUATORIAL;
-  output->longitude = input->longitude + gmst;
+  output->longitude = fmod( input->longitude + gmst, LAL_TWOPI );
+  if ( output->longitude < 0.0 )
+    output->longitude += LAL_TWOPI;
   output->latitude = input->latitude;
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
