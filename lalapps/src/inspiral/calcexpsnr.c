@@ -486,6 +486,8 @@ int main( int argc, char *argv[] )
 
   /* loop over injections */
   injSimCount = 0;
+    
+        
   do
   {
      fprintf( stdout, "injection %d/%d\n", injSimCount+1, numInjections );
@@ -515,6 +517,7 @@ int main( int argc, char *argv[] )
     }
 
     /* loop over ifo */
+        
     for ( ifoNumber = 1; ifoNumber < 4; ifoNumber++ )
     {
         /* allocate memory and copy the parameters describing the freq series */
@@ -570,6 +573,7 @@ int main( int argc, char *argv[] )
        /* perform the injection */
        LAL_CALL( LALSimulateCoherentGW(&status, chan, &waveform, &detector ), &status); 
 
+       
        /* will this work? No! */
        /*LAL_CALL( LALDestroyCOMPLEX8FrequencySeries( &status, detector.transfer), &status );
         *LALFree( detector.site);
@@ -618,8 +622,14 @@ int main( int argc, char *argv[] )
 
        /* sum thisSnrsq to eventually get combined snr*/
        statValue += thisSnrsq; 
+
+       /* free some memory */
+       if (detector.transfer) detector.transfer = NULL;
+       if ( detector.site ) {LALFree( detector.site); detector.site = NULL;}
      }
      /* end loop over ifo */
+  
+    destroyCoherentGW( &waveform );
 
     thisCombSnr = pow(statValue, 0.5);
     fprintf( stdout, "thisCombSnr %e\n", thisCombSnr);
@@ -650,11 +660,14 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable, process_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
   free( proctable.processTable );
+  /* Just being pedantic here ... */
+  proctable.processTable = NULL;
  
   /* free the unused process param entry */
   this_proc_param = procparams.processParamsTable;
   procparams.processParamsTable = procparams.processParamsTable->next;
   free( this_proc_param );
+  this_proc_param = NULL;
 
   /* write the process params table */
   if ( vrbflg ) fprintf( stdout, "process_params... " );
@@ -678,26 +691,20 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALDestroyREAL8FrequencySeries ( &status, specH2 ), &status);
   LAL_CALL( LALDestroyREAL8FrequencySeries ( &status, specL1 ), &status);
 
-  free( specFileH1 );
-  free( specFileH2 );
-  free( specFileL1 );
-  free( injectionFile ); 
 
-  fprintf( stdout, "111111\n" );
-  fflush( stdout );
+  free( specFileH1 );
+  specFileH1 = NULL;
+  free( specFileH2 );
+  specFileH2 = NULL;
+  free( specFileL1 );
+  specFileL1 = NULL;
+  free( injectionFile ); 
+  injectionFile = NULL;
 
   /* try these lines here */
   /*LAL_CALL( LALDestroyCOMPLEX8FrequencySeries( &status, detector.transfer), &status );*/
  
-  destroyCoherentGW( &waveform );
 
-  fprintf( stdout, "222222\n" );
-  fflush( stdout );
-
-  if ( detector.site ) LALFree( detector.site);
-
-  fprintf( stdout, "333333\n" );
-  fflush( stdout );
 
   /* free the process params */
   while( procparams.processParamsTable )
@@ -705,6 +712,7 @@ int main( int argc, char *argv[] )
     this_proc_param = procparams.processParamsTable;
     procparams.processParamsTable = this_proc_param->next;
     free( this_proc_param );
+    this_proc_param = NULL;
   }
 
   /* free the sim inspiral tables */
