@@ -53,8 +53,8 @@
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 #include <lal/StreamInput.h>
-
-
+#include <lal/LIGOMetadataTables.h>
+/* #include <lal/NRWaveInject.h> */
 
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {
@@ -111,6 +111,8 @@ void LALNRDataFind( LALStatus *status, NRWaveCatalog *out, const CHAR *dir, cons
 
 void LALGetSingleNRMetaData( LALStatus *status, NRWaveMetaData *data, const CHAR *dir, const CHAR *cfgstr);
 
+void LALDriveNRWave( LALStatus *status, REAL4TimeVectorSeries  **outStrain,  NRWaveMetaData *thisMetaData, 
+		     NRWaveCatalog *nrCatalog, INT4 modeLlo, INT4 modeLhi, SimInspiralTable *thisInj);
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

@@ -52,7 +52,7 @@ XLALSumStrain(
 
     for ( k = 0; k < vecLength*length; k++)    
       {
-	tempstrain->data->data[k] = tempstrain->data->data[k] + strain->data->data[k];
+	tempstrain->data->data[k] += strain->data->data[k];
       }
     return( tempstrain );
 }
@@ -243,7 +243,7 @@ XLALInterpolateNRWave( REAL4TimeSeries *in,           /**< input strain time ser
 INT4
 XLALFindNRFile( NRWaveMetaData   *out,       /**< output wave data */
 	        NRWaveCatalog    *nrCatalog, /**< input  NR wave catalog  */
-		SimInspiralTable *inj,       /**< injection details  */
+		const SimInspiralTable *inj,       /**< injection details  */
 		INT4  modeL,                 /**< mode index l*/
 		INT4  modeM                  /**< mode index m*/)
 {
