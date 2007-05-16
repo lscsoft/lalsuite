@@ -221,14 +221,14 @@ LALGetSingleNRMetaData( LALStatus       *status,
 
 /** Put the main functionalities of nr_wave.c together */
 void
-LALDriveNRWave(
+LALAddStrainModes(
   LALStatus              *status,
   REAL4TimeVectorSeries  **outStrain,       /* h+, hx data                    */
   NRWaveMetaData         *thisMetaData, /* single NR wave metadata struct */
   NRWaveCatalog          *nrCatalog,    /* NR wave metadata struct        */
   INT4                   modeLlo,      /* contains modeLlo and modeLhi   */
   INT4                   modeLhi,      /* modeLhi                        */
-  SimInspiralTable       *thisInj     /* injection                      */)
+  const SimInspiralTable       *thisInj     /* injection                      */)
 {
   INT4 modeL, modeM;
   REAL4TimeVectorSeries *sumStrain=NULL;
@@ -244,24 +244,11 @@ LALDriveNRWave(
       for ( modeM = -modeL; modeM <= modeL; modeM++ )
         {
           /* find nearest matching numrel waveform */
-          XLALFindNRFile( &thisMetaData, nrCatalog, thisInj, modeL, modeM );
+          XLALFindNRFile( thisMetaData, nrCatalog, thisInj, modeL, modeM );
 
           /* read numrel waveform */
           TRY( LALReadNRWave( status->statusPtr, &tempStrain, thisInj->mass1 +
                 thisInj->mass2, thisMetaData->filename ), status );
-
-
-	  /*     if ( vrbflg ) */
-	  /*           { */
-	  /*             fprintf( stdout, "done\n" ); */
-	  /*           } */
-	  
-	  /*           if ( vrbflg ) */
-	  /*           { */
-	  /*             fprintf( stdout, */
-	  /*                 "Generating waveform for inclination = %f, coa_phase = %f\n", */
-	  /*                 thisInj->inclination, thisInj->coa_phase ); */
-	  /*           } */
 
           /* compute the h+ and hx for given inclination and coalescence phase*/
           tempStrain = XLALOrientNRWave( tempStrain, thisMetaData->mode[0],
@@ -279,7 +266,7 @@ LALDriveNRWave(
 	    sumStrain->f0 = tempStrain->f0; 
 	    sumStrain->sampleUnits = tempStrain->sampleUnits; 
 
-	    memset(sumStrain->data->data,0.0,2*tempStrain->data->vectorLength);
+	    memset(sumStrain->data->data,0.0,2*tempStrain->data->vectorLength*sizeof(REAL4));
 
 	    sumStrain = XLALSumStrain( sumStrain, tempStrain );
 	  }
@@ -305,95 +292,37 @@ LALDriveNRWave(
   DETATCHSTATUSPTR(status);
   RETURN(status);
 
-
-/*       /\* Assign length to the temporal variable *\/ */
-/*       /\* NOTE: Implies that all modes have the same length!!*\/ */
-/*       XLALFindNRFile( &thisMetaData, &nrCatalog, thisInj, 2, -2 ); */
-/*       LALReadNRWave( &status, &strain, thisInj->mass1 + */
-/* 		     thisInj->mass2, thisMetaData.filename ); */
-/*       length = strain->data->vectorLength; */
-
-/*       /\* Inicialize tempstrain as zero *\/ */
-/*       tempstrain = LALCalloc(1, sizeof(*tempstrain));   */
-/*       data =  XLALCreateREAL4VectorSequence(2, length); */
-/*       tempstrain->data = data; */
-/*       tempstrain->deltaT = strain->deltaT; */
-/*       tempstrain->f0 = strain->f0; */
-/*       tempstrain->sampleUnits = strain->sampleUnits; */
-/*       for (r=0; r<data->length*data->vectorLength; r++) */
-/* 	{ */
-/* 	  tempstrain->data->data[r] = 0.0; */
-/* 	} */
-
-/*       /\* Reset strain as null pointer *\/ */
-/*       XLALDestroyREAL4VectorSequence ( strain->data ); */
-/*       LALFree( strain ); */
-/*       strain = NULL; */
- 
-/*       /\* loop over l values *\/ */
-/*       for ( modeL = modeLlo; modeL <= modeLhi; modeL++ ) */
-/*       { */
-/*         /\* loop over m values *\/ */
-/*         for ( modeM = -modeL; modeM <= modeL; modeM++ ) */
-/*         { */
-/*           /\* find nearest matching numrel waveform *\/ */
-/*           XLALFindNRFile( &thisMetaData, &nrCatalog, thisInj, modeL, modeM ); */
-
-/*             fprintf( stdout, "Reading the waveform from the file \"%s\"...", */
-/*                 thisMetaData.filename ); */
-
-/*           /\* read numrel waveform *\/ */
-/*           LALReadNRWave( &status, &strain, thisInj->mass1 + */
-/*                 thisInj->mass2, thisMetaData.filename ); */
-
-/*             fprintf( stdout, "done\n" ); */
-
-/*             fprintf( stdout, */
-/*                 "Generating waveform for inclination = %f, coa_phase = %f\n", */
-/*                 thisInj->inclination, thisInj->coa_phase ); */
-
-/*           /\* compute the h+ and hx for given inclination and coalescence phase*\/ */
-/*           strain = XLALOrientNRWave( strain, thisMetaData.mode[0], */
-/*               thisMetaData.mode[1], thisInj->inclination, thisInj->coa_phase ); */
-
-/* 	  fprintf(stdout, "Elemento de strain= %e\n", strain->data->data[0]); */
-
-/* 	  tempstrain = XLALSumStrain( tempstrain, strain ); */
-
-/* 	  fprintf(stdout, "Elemento de tempstrain= %e\n", tempstrain->data->data[0]); */
-
-/*           /\* clear memory for strain *\/ */
-/*           XLALDestroyREAL4VectorSequence ( strain->data ); */
-/*           LALFree( strain ); */
-/*           strain = NULL; */
-
-/*         } /\* end loop over modeM values *\/ */
-
-/*       } /\* end loop over modeL values *\/ */
-
-/*       /\* copy tempstrain into strain *\/ */
-/*       strain = LALCalloc(1, sizeof(*strain));   */
-/*       data =  XLALCreateREAL4VectorSequence(2, length); */
-/*       strain->data = data; */
-/*       strain->deltaT = tempstrain->deltaT; */
-/*       strain->f0 = tempstrain->f0; */
-/*       strain->sampleUnits = tempstrain->sampleUnits; */
-/*       for (r=0; r<data->length*data->vectorLength; r++) */
-/* 	{ */
-/* 	  strain->data->data[r] = tempstrain->data->data[r]; */
-/* 	} */
-	  
-/*           file = fopen("tempstrain.dat","w"); */
-
-/* 	  r = 0; */
-/* 	  for ( r =0; r < tempstrain->data->vectorLength; r++) */
-/* 	    { */
-/* 	      fprintf(file,"%d %e %e \n", r, tempstrain->data->data[r], tempstrain->data->data[strain->data->vectorLength + r]); */
-/* 	    }; */
-
-/* 	  fclose(file);    */
-
-/*       fprintf( stdout, "Test 15th May\n"); */
+}
 
 
+void LALInjectNRStrain( LALStatus                 *status,
+			REAL4TimeSeries           *injData,
+			REAL4TimeVectorSeries     *strain,
+			SimInspiralTable          *thisInj,
+			CHAR                      *ifo)
+{
+
+  REAL8 sampleRate;
+  REAL4TimeSeries *htData = NULL;
+
+  INITSTATUS (status, "LALNRInject",  NRWAVEIOC);
+  ATTATCHSTATUSPTR (status); 
+
+  sampleRate = 1.0/strain->deltaT;  
+    
+  /*compute strain for given sky location*/
+  htData = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate );
+  
+  /* inject the htData into injection time stream */
+  TRY( LALSSInjectTimeSeries( status->statusPtr, injData, htData ),
+       status );
+  
+  /* set channel name */
+  LALSnprintf( injData->name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
+	       "%s:STRAIN", ifo );
+  
+  
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+  
 }

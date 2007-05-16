@@ -88,7 +88,7 @@ XLALInterpolateNRWave( REAL4TimeSeries *in,
 INT4 
 XLALFindNRFile( NRWaveMetaData *out,
 		NRWaveCatalog *nrCatalog,
-		SimInspiralTable  *inj,
+		const SimInspiralTable  *inj,
 		INT4  modeL, 
 		INT4  modeM);
 
