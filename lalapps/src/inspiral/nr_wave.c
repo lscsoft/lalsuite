@@ -534,7 +534,7 @@ int main( int argc, char *argv[] )
 	}
 
 
-      /*LALNRInject( &status, sumStrain, &injData, thisInj, &ifo, sampleRate, gpsStartTime, gpsEndTime);*/
+      /*LALNRInject( &status, &injData, sumStrain, thisInj, ifo);*/
 
 
       /* compute strain for given sky location */
@@ -702,26 +702,26 @@ static void output_frame(CHAR *ifo,
 }
 
 
-/*void LALNRInject( 
-  LALStatus                 *status, 
-  REAL4TimeVectorSeries     *strain,
-  REAL4TimeSeries           *injData, 
-  SimInspiralTable          *thisInj, 
-  CHAR                      *ifo, 
-  int                       sampleRate, 
-  LIGOTimeGPS               gpsStartTime, 
-  LIGOTimeGPS               gpsEndTime)
-{
-  REAL4TimeSeries htData;               /* h(t) data for given detector */
-/*INT4 gpsStartSec = gpsStartTime.gpsSeconds;
-  INT4 gpsEndSec = gpsEndTime.gpsSeconds;
+/* void *LALNRInject(  */
+/*   LALStatus                 *status,  */
+/*   REAL4TimeVectorSeries     *strain, */
+/*   REAL4TimeSeries           *injData,  */
+/*   SimInspiralTable          *thisInj,  */
+/*   CHAR                      ifo) */
+/* { */
+
+
+
+/*   REAL4TimeSeries htData;               /\* h(t) data for given detector *\/ */
+/*   INT4 gpsStartSec = gpsStartTime.gpsSeconds; */
+/*   INT4 gpsEndSec = gpsEndTime.gpsSeconds; */
 
   /* set up the injData to be zeros of the correct length, to which we will
    * add the injections */
-/*injData = *XLALCreateREAL4TimeSeries( "", &gpsStartTime, 0, 1./sampleRate,
-      &lalADCCountUnit, sampleRate * (gpsEndSec - gpsStartSec) );
 
-  fprintf( stdout, "Here we've constructed injData");
+
+
+
 
           /* compute strain for given sky location */
 /*          htData = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate );
