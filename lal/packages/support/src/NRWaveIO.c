@@ -30,8 +30,7 @@
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 #include <lal/NRWaveIO.h>
-
-
+#include <lal/NRWaveInject.h> 
 
 NRCSID( NRWAVEIOC, "$Id$");
 
@@ -250,6 +249,7 @@ LALDriveNRWave(
           /* read numrel waveform */
           TRY( LALReadNRWave( status->statusPtr, &tempStrain, thisInj->mass1 +
                 thisInj->mass2, thisMetaData->filename ), status );
+
 
 	  /*     if ( vrbflg ) */
 	  /*           { */

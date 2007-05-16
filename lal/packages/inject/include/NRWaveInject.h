@@ -60,6 +60,11 @@ extern "C" {
 NRCSID( NRWAVEINJECTH, "$Id$");
 
 REAL4TimeVectorSeries *
+XLALSumStrain( 
+    REAL4TimeVectorSeries *tempstrain,  
+    REAL4TimeVectorSeries *strain);
+
+REAL4TimeVectorSeries *
 XLALOrientNRWave( 
     REAL4TimeVectorSeries *strain,
     UINT4                  modeL,
@@ -83,9 +88,9 @@ XLALInterpolateNRWave( REAL4TimeSeries *in,
 INT4 
 XLALFindNRFile( NRWaveMetaData *out,
 		NRWaveCatalog *nrCatalog,
-		const SimInspiralTable  *inj,
+		SimInspiralTable  *inj,
 		INT4  modeL, 
-		INT4  modeM );
+		INT4  modeM);
 
 REAL4TimeVectorSeries *
 XLALSumStrain( 

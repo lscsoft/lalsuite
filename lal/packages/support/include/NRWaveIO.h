@@ -54,7 +54,7 @@
 #include <lal/FileIO.h>
 #include <lal/StreamInput.h>
 #include <lal/LIGOMetadataTables.h>
-/* #include <lal/NRWaveInject.h> */
+
 
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {
