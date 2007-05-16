@@ -582,6 +582,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  */
 
 	  float XsumR[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
+	  float XsumS[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
+	  float aFreq[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
 	  /* the following vectors actually become registers in the AVUnit */
 	  vector unsigned char perm;     /* holds permutation pattern for unaligned memory access */
 	  vector float load0, load1, load2, load3, load4;  /* temp registers for unaligned memory access */
@@ -598,8 +600,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 				((float)(kappa_max - 2)),
 				((float)(kappa_max - 2)) };
 
-	  REAL4 tFreqS, aFreqS = 1;      /* tempFreq and accFreq for double precision */
-	  REAL4 XsumS[2] = {0,0};        /* partial sums */
+	  /* REAL4 tFreqS, aFreqS = 1;      /* tempFreq and accFreq for double precision */
+	  /* REAL4 XsumS[2] = {0,0};        /* partial sums */
 
 	  /* Vectorized version of the Kernel loop */
 	  /* This loop has now been unrolled manually */
@@ -651,11 +653,13 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  
 	  /* output the vector */
 	  vec_st(Xsum,0,XsumR);
+	  vec_st(XsumV,0,XsumS);
+	  vec_st(aFreqV,0,aFreq);
 	
 	  /* conbination of the four partial sums: */
-	  combAF  = 1.0 / (aFreqV[0] * aFreqV[2]);
-	  XRes = (XsumV[0] * aFreqV[2] + XsumV[2] * aFreqV[0]) * combAF + XsumR[0] + XsumR[2];
-	  XIms = (XsumV[1] * aFreqV[2] + XsumV[3] * aFreqV[0]) * combAF + XsumR[1] + XsumR[3];
+	  combAF  = 1.0 / (aFreq[0] * aFreq[2]);
+	  XRes = (XsumS[0] * aFreq[2] + XsumS[2] * aFreq[0]) * combAF + XsumR[0] + XsumR[2];
+	  XIms = (XsumS[1] * aFreq[3] + XsumS[3] * aFreq[1]) * combAF + XsumR[1] + XsumR[3];
 
 	  realXP = s_alpha * XRes - c_alpha * XIms;
 	  imagXP = c_alpha * XRes + s_alpha * XIms;
