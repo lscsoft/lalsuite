@@ -93,11 +93,16 @@ int main( int argc, char *argv[] )
   REAL4TimeSeries injData;               /* time series of zeros to which
                                             we add injections              */
   REAL4TimeVectorSeries *strain = NULL;  /* h+, hx time series             */
+  REAL4TimeVectorSeries *sumStrain = NULL;
+  REAL4VectorSequence *data = NULL;
   REAL4TimeSeries *htData;               /* h(t) data for given detector   */
 
   int writeFlag = 0;                     /* write h(t) to file?            */
   int ifosFlag  = 0;                     /* injections for all ifos?       */
   int frameFlag = 0;                     /* write h(t) to a frame?         */
+
+  int r;
+  UINT4 length;
 
   /* getopt arguments */
   struct option long_options[] =
@@ -401,7 +406,7 @@ int main( int argc, char *argv[] )
   /* set up the injData to be zeros of the correct length, to which we will
    * add the injections */
   injData = *XLALCreateREAL4TimeSeries( "", &gpsStartTime, 0, 1./sampleRate,
-      &lalADCCountUnit, sampleRate * (gpsEndSec - gpsStartSec) );
+    &lalADCCountUnit, sampleRate * (gpsEndSec - gpsStartSec) );
 
   /* read the injections */
   numInjections = SimInspiralTableFromLIGOLw( &injections, injectionFile,
@@ -433,6 +438,7 @@ int main( int argc, char *argv[] )
     num_ifos = 1;
   }
 
+
   /* loop over ifos */
   for ( i = 0; i < num_ifos; i++ )
   {
@@ -444,7 +450,7 @@ int main( int argc, char *argv[] )
 
     if ( vrbflg )
     {
-      fprintf( stdout, "Perfroming injections for IFO: %s\n", ifo);
+      fprintf( stdout, "Performing injections for IFO: %s\n", ifo);
     }
 
     /* set output filename */
@@ -454,6 +460,35 @@ int main( int argc, char *argv[] )
     /* loop over injections */
     for ( thisInj = injections; thisInj; thisInj = thisInj->next )
     {
+
+      /*LALDriveNRWave(&status, thisMetaData, nrCatalog, 
+	modeLlo, modeLhi, thisInj, strain);*/   
+
+      /* Assign length to the temporal variable */
+      /* NOTE: Implies that all modes have the same length!!*/
+      /*       XLALFindNRFile( &thisMetaData, &nrCatalog, thisInj, 2, -2 ); */
+      /*       LAL_CALL( LALReadNRWave( &status, &strain, thisInj->mass1 + */
+      /*                 thisInj->mass2, thisMetaData.filename ), &status ); */
+      /*       length = strain->data->vectorLength; */
+      
+      /*       /\* Inicialize sumStrain as zero *\/ */
+      /*       sumStrain = LALCalloc(1, sizeof(*sumStrain));   */
+      /*       data =  XLALCreateREAL4VectorSequence(2, length); */
+      /*       sumStrain->data = data; */
+      /*       sumStrain->deltaT = strain->deltaT; */
+      /*       sumStrain->f0 = strain->f0; */
+      /*       sumStrain->sampleUnits = strain->sampleUnits; */
+      
+      /*       for (r=0; r<data->length*data->vectorLength; r++) */
+      /* 	{ */
+      /* 	  sumStrain->data->data[r] = 0.0; */
+      /* 	} */
+      
+      /*       /\* Reset strain as null pointer *\/  */
+      /*       XLALDestroyREAL4VectorSequence ( strain->data ); */
+      /*       LALFree( strain ); */
+      /*       strain = NULL; */
+      
       /* loop over l values */
       for ( modeL = modeLlo; modeL <= modeLhi; modeL++ )
       {
@@ -489,22 +524,28 @@ int main( int argc, char *argv[] )
           strain = XLALOrientNRWave( strain, thisMetaData.mode[0],
               thisMetaData.mode[1], thisInj->inclination, thisInj->coa_phase );
 
-          if ( vrbflg )
-          {
-            fprintf( stdout,
-                "Generating the strain data for the given sky location\n" );
-          }
+	  fprintf(stdout, "Elemento de strain= %e\n", strain->data->data[0]);
 
-          /* compute strain for given sky location */
-          htData = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate );
 
-          /* inject the htData into injection time stream */
-          LAL_CALL( LALSSInjectTimeSeries( &status, &injData, htData ),
-              &status );
+	  if (sumStrain == NULL) {
 
-          /* set channel name */
-          LALSnprintf( injData.name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
-              "%s:STRAIN", ifo );
+	    sumStrain = LALCalloc(1, sizeof(*sumStrain));	    
+
+	    sumStrain->data =  XLALCreateREAL4VectorSequence(2, strain->data->vectorLength); 
+	    sumStrain->deltaT = strain->deltaT;
+	    sumStrain->f0 = strain->f0; 
+	    sumStrain->sampleUnits = strain->sampleUnits; 
+
+	    memset(sumStrain->data->data,0.0,2*strain->data->vectorLength);
+
+	    sumStrain = XLALSumStrain( sumStrain, strain );
+	  }
+
+	  else {
+	    sumStrain = XLALSumStrain( sumStrain, strain );
+	  }
+
+	  fprintf(stdout, "Elemento de sumStrain= %e\n", sumStrain->data->data[0]);
 
           /* clear memory for strain */
           XLALDestroyREAL4VectorSequence ( strain->data );
@@ -514,6 +555,34 @@ int main( int argc, char *argv[] )
         } /* end loop over modeM values */
 
       } /* end loop over modeL values */
+
+
+      if ( vrbflg )
+	{
+	  fprintf( stdout,
+		   "Generating the strain data for the given sky location\n" );
+	}
+
+
+      /*LALNRInject( &status, sumStrain, &injData, thisInj, &ifo, sampleRate, gpsStartTime, gpsEndTime);*/
+
+
+      /* compute strain for given sky location */
+      htData = XLALCalculateNRStrain( sumStrain, thisInj, ifo, sampleRate );
+
+
+ 
+      /* inject the htData into injection time stream */
+      LAL_CALL( LALSSInjectTimeSeries( &status, &injData, htData ),
+		&status );
+
+      /* set channel name */
+      LALSnprintf( injData.name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
+		   "%s:STRAIN", ifo );
+
+      XLALDestroyREAL4VectorSequence ( sumStrain->data );
+      LALFree( sumStrain );
+      sumStrain = NULL;
 
     } /* end loop over injections */
 
@@ -663,3 +732,38 @@ static void output_frame(CHAR *ifo,
 
   return;
 }
+
+
+/*void LALNRInject( 
+  LALStatus                 *status, 
+  REAL4TimeVectorSeries     *strain,
+  REAL4TimeSeries           *injData, 
+  SimInspiralTable          *thisInj, 
+  CHAR                      *ifo, 
+  int                       sampleRate, 
+  LIGOTimeGPS               gpsStartTime, 
+  LIGOTimeGPS               gpsEndTime)
+{
+  REAL4TimeSeries htData;               /* h(t) data for given detector */
+/*INT4 gpsStartSec = gpsStartTime.gpsSeconds;
+  INT4 gpsEndSec = gpsEndTime.gpsSeconds;
+
+  /* set up the injData to be zeros of the correct length, to which we will
+   * add the injections */
+/*injData = *XLALCreateREAL4TimeSeries( "", &gpsStartTime, 0, 1./sampleRate,
+      &lalADCCountUnit, sampleRate * (gpsEndSec - gpsStartSec) );
+
+  fprintf( stdout, "Here we've constructed injData");
+
+          /* compute strain for given sky location */
+/*          htData = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate );
+
+          /* inject the htData into injection time stream */
+/*          LAL_CALL( LALSSInjectTimeSeries( &status, &injData, htData ),
+              &status );
+
+          /* set channel name */
+/*          LALSnprintf( injData.name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
+              "%s:STRAIN", ifo );
+
+	      }*/

@@ -38,6 +38,26 @@
 #include <lal/SphericalHarmonics.h>
 
 
+/** Takes a strain of h+ and hx data and stores it in a temporal
+ *  strain in order to perform the sum over l and m modes **/
+REAL4TimeVectorSeries *
+XLALSumStrain( 
+    REAL4TimeVectorSeries *tempstrain,     /**< storing variable */ 
+    REAL4TimeVectorSeries *strain          /**< variable to add  */)
+{
+    UINT4      vecLength, length, k;
+
+    vecLength = strain->data->vectorLength;
+    length = strain->data->length;
+
+    for ( k = 0; k < vecLength*length; k++)    
+      {
+	tempstrain->data->data[k] = tempstrain->data->data[k] + strain->data->data[k];
+      }
+    return( tempstrain );
+}
+
+
 /** Takes a (sky averaged) numerical relativity waveform and returns the
  * waveform appropriate for given coalescence phase and inclination angles */
 /** for the moment only mode (2,2) implemented */
