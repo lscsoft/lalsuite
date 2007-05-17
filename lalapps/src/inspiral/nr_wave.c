@@ -57,17 +57,6 @@ static void output_frame( CHAR *ifo, INT4 gpsStart, INT4 gpsEnd,
 extern int vrbflg;
 
 
-void LALNRInject( LALStatus                 *status,
-		  REAL4TimeSeries           *injData,
-		  REAL4TimeVectorSeries     *strain,
-		  SimInspiralTable          *thisInj,
-		  CHAR                      *ifo);
-
-
-/* typedef struct  */
-/* { */
-/*   NRWaveCatalog nrCatalog; */
-
 
 /* main program entry */
 int main( int argc, char *argv[] )
@@ -84,7 +73,7 @@ int main( int argc, char *argv[] )
   CHAR *nrMetaFile    = NULL;            /* name of file with nr meta info */
   CHAR *nrDataDir     = NULL;            /* name of dir with nr waveform   */
   NRWaveMetaData thisMetaData;           /* single NR wave metadata struct */
-
+  NumRelInjectParams nrPar;
   NRWaveCatalog nrCatalog;               /* NR wave metadata struct        */
 
   CHAR ifo[LIGOMETA_IFO_MAX];            /* name of ifo                    */
@@ -462,26 +451,12 @@ int main( int argc, char *argv[] )
     LALSnprintf( fileName, FILENAME_MAX, "%s-NR_WAVE-%d-%d.dat",
         ifo, gpsStartSec, gpsEndSec - gpsStartSec );
 
-    /* loop over injections */
-    for ( thisInj = injections; thisInj; thisInj = thisInj->next )
-    {
+    nrPar.modeLlo = modeLlo;
+    nrPar.modeLhi = modeLhi;
+    nrPar.nrCatalog = &nrCatalog;
+    nrPar.ifo = ifo;
 
-      LAL_CALL( LALAddStrainModes(&status, &sumStrain, &nrCatalog,
-			       modeLlo, modeLhi, thisInj), &status);
-            
-      if ( vrbflg )
-	{
-	  fprintf( stdout,
-		   "Generating the strain data for the given sky location\n" );
-	}
-
-      LAL_CALL( LALInjectStrainGW( &status, &injData, sumStrain, thisInj, ifo), &status);
-      
-      XLALDestroyREAL4VectorSequence ( sumStrain->data );
-      LALFree( sumStrain );
-      sumStrain = NULL;
-
-    } /* end loop over injections */
+    LAL_CALL(LALDriveNRInject( &status, &injData, injections, &nrPar), &status);
 
     /* output injections */
     if ( writeFlag )
@@ -632,41 +607,4 @@ static void output_frame(CHAR *ifo,
 
 
 
-/* void LALDriveNRInject( LALStatus *status, */
-/* 		       REAL4TimeSeries *injData, */
-/* 		       SimInspiralTable *injections,  */
-/* 		       ) */
-/* { */
 
-
-/*   SimInspiralTable *thisInj    = NULL;   /\* current injection              *\/ */
-
-/*   INITSTATUS (status, "LALDriveNRInject",  rcsid); */
-/*   ATTATCHSTATUSPTR (status);  */
-
-/*   /\* loop over injections *\/ */
-/*   for ( thisInj = injections; thisInj; thisInj = thisInj->next ) */
-/*     { */
-      
-/*       LAL_CALL( LALAddStrainModes(&status, &sumStrain, &thisMetaData, &nrCatalog, */
-/* 				  modeLlo, modeLhi, thisInj), &status); */
-      
-/*       if ( vrbflg ) */
-/* 	{ */
-/* 	  fprintf( stdout, */
-/* 		   "Generating the strain data for the given sky location\n" ); */
-/* 	} */
-      
-/*       LAL_CALL( LALInjectStrainGW( &status, &injData, sumStrain, thisInj, ifo), &status); */
-      
-/*       XLALDestroyREAL4VectorSequence ( sumStrain->data ); */
-/*       LALFree( sumStrain ); */
-/*       sumStrain = NULL; */
-
-/*     } /\* end loop over injections *\/ */
-
-
-/*   DETATCHSTATUSPTR(status); */
-/*   RETURN(status); */
-  
-/* } */
