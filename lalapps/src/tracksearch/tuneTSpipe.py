@@ -53,6 +53,10 @@ class tuneObject:
         self.cpTun=tunFileCP
         self.masterIni=cp.get('all','masterini')
         self.cpIni=ConfigParser.ConfigParser()
+        if not os.path.isfile(self.masterIni):
+            print "Error with masterIni in tun configuration file!"
+            print self.masterIni
+            os.abort()
         self.cpIni.read(self.masterIni)
         self.lambaList=[]
         self.lamHopts=cp.get('all','LH')
@@ -68,10 +72,10 @@ class tuneObject:
         self.myIni=cp.get('all','masterini')
         self.batchMask=cp.get('all','iniBatchLabel')
         self.home=cp.get('all','tuningHome')
-        self.installPipes=self.home+'/FA_pipes'
-        self.installIni=self.home+'/FA_ini'
-        self.installPipes2=self.home+'/DE_pipes'
-        self.installIni2=self.home+'/DE_ini'
+        self.installPipes=os.path.normpath(self.home+'/FA_pipes')
+        self.installIni=os.path.normpath(self.home+'/FA_ini')
+        self.installPipes2=os.path.normpath(self.home+'/DE_pipes')
+        self.installIni2=os.path.normpath(self.home+'/DE_ini')
         self.log=cp.get('all','tuningLogs')
         self.dagpath=cp.get('all','tuningDags')
         self.seglist=cp.get('all','seglist')
@@ -647,34 +651,45 @@ class tuneObject:
         print "Checking for output files in tuning directory."
         shortCircuit=True #Stops tranversing once a path ending in arg2 is determined!
         foundDirs=self.__findDirs__(self.installPipes2,'1',shortCircuit)
-        print "Calculating efficiencies for approximately ",foundDirs.__len__()," trials."
+        print "\n Calculating efficiencies for approximately ",foundDirs.__len__()," trials."
         countMe=0
         modValue=10
         outputPickle=[]
         outputL=[]
         outputP=[]
         outputContour=[]
+        refTime=time.time()
+        debugFile=file(str(os.path.basename(tunFile))+'_debug.info','w');
         for entry in foundDirs:
             if countMe%modValue==0:
                 sys.stdout.writelines('.')
                 sys.stdout.flush()
             countMe=countMe+1
             myOpts=str(str(entry).replace(self.installPipes2,'').split('/')[1]).split('_')
-            triggerCount=self.__scanDirectoryCandidateFiles__(entry)
-            h=myOpts[1]
-            l=myOpts[2]
-            p=myOpts[3]
-            len=myOpts[4]
-            eff=float(triggerCount/mapCounts)
-            curveCount=int(triggerCount)
-            outputPickle.append([h,l,p,len,eff,mapCounts,0,0])
-            if float(p)>0:
-                outputP.append([float(h),float(l),float(p),float(eff),int(curveCount),int(mapCounts)])
-            if float(len)>3:
-                outputL.append([float(h),float(l),int(float(len)),float(eff),int(curveCount),int(mapCounts)])
-            outputContour.append([float(h),float(l),float(p),int(curveCount)])
+            #Write each directory scanned to a file.  Debug purposes...
+            deltaTime="%3.2f"%(time.time()-refTime)
+            debugFile.write(str(deltaTime)+' '+str(entry)+'\n')
+            debugFile.flush()
+            if myOpts.__len__() > 4:
+                triggerCount=self.__scanDirectoryCandidateFiles__(entry)
+                h=myOpts[1]
+                l=myOpts[2]
+                p=myOpts[3]
+                len=myOpts[4]
+                eff=float(triggerCount/mapCounts)
+                curveCount=int(triggerCount)
+                outputPickle.append([h,l,p,len,eff,mapCounts,0,0])
+                if float(p)>0:
+                    outputP.append([float(h),float(l),float(p),float(eff),int(curveCount),int(mapCounts)])
+                if float(len)>3:
+                    outputL.append([float(h),float(l),int(float(len)),float(eff),int(curveCount),int(mapCounts)])
+                outputContour.append([float(h),float(l),float(p),int(curveCount)])
+            else:
+                print "Omit::Problem checking results for :",entry
+                print "Found opts::",myOpts
         #End the loop
         print " "
+        debugFile.close()
         return [outputPickle,outputP,outputL,outputContour]
     #end __performShellDEcalc__()
         

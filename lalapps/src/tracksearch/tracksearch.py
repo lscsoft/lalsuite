@@ -98,12 +98,12 @@ def powOf2Floor(input):
     return ans
 
 def determineLayerPath(cp,blockID,layerID):
-    layerPath=str('%s/%s/%s/'%(cp.get('filelayout','workpath'),blockID,layerID))
+    layerPath=os.path.normpath(str('%s/%s/%s/'%(cp.get('filelayout','workpath'),blockID,layerID)))
     return layerPath
 #End def
 
 def determineBlockPath(cp,blockID):
-    blockPath=str('%s/%s/'%(cp.get('filelayout','workpath'),blockID))
+    blockPath=os.path.normpath(str('%s/%s/'%(cp.get('filelayout','workpath'),blockID)))
     return blockPath
 #End def
 
@@ -548,7 +548,7 @@ class tracksearchDataFindJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         blockID=block_id
         layerID=1
         blockPath=cp.get('filelayout','workpath')+'/'+blockID+'/'+layerID+'/'
-        cachePath=blockPath+'/'+'cache'
+        cachePath=blockPath+'/cache'
         logPath=blockPath
         self.df_job=pipeline.LSCDataFindJob(cachePath,logPath,cp)
         pad = 0
@@ -889,9 +889,6 @@ class tracksearch:
                                                layer_id,
                                                dagDir,
                                                self.jobType)
-        # Additional HACK due to recent changes in GLUE
-        # Remember we edited the GLUE archive to make this work.
-        # DOESN'T apply to cluster runs!
         df_job.set_sub_file(os.path.normpath(self.dagDirectory+'/datafind.sub'))
         df_job.add_condor_cmd('initialdir',str(dataFindInitialDir))
         prevLayerJobList=[]        
@@ -899,6 +896,19 @@ class tracksearch:
         if not str(self.cp.get('condor','datafind')).lower().__contains__(str('LSCdataFind').lower()):
             print 'Assuming we do not need standard data find job! Hardwiring in cache file to pipeline!'
             print 'Looking for ini option: condor,datafind_fixcache'
+            # Pop first chunk off list to keep from repeating jobs!
+            # We do this because the for look has a repeat issue the first job
+            # seems to be a repeat of 2nd analysis chunk.  The for loop catches these types
+            # AnalysisSegment,
+            #<ScienceSegment: id 1, start 731488412, end 731554412, dur 66000, unused 0>
+            #<AnalysisChunk: start 731488412, end 731554412>
+            #<AnalysisChunk: start 731488412, end 731488742>
+            # Notice first analysis chunk has bounds of all data then second chunk bounds same
+            # start but the proper length.  The quick hack is to pop(0) the list of chunks
+            # as done above removing the first entry.  This must be unique to the way we create
+            # evenly spaced jobs in terms of samples and start times.  This saves 1 job per pipeline.
+            # Only works on datafind_fixcache jobs!!!! (Temp fix)
+            self.sciSeg._ScienceSegment__chunks.pop(0)
         for chunk in self.sciSeg:
             df_node=pipeline.LSCDataFindNode(df_job)
             df_node.set_start(chunk.start())

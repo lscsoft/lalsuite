@@ -147,7 +147,6 @@ canList=generateFileList(filename)
 
 #SECTION TO DO THE GLOBBING OF MANY CANDIDATE FILES
 if (glob and (canList.__len__() >= 1)):
-    newGlobFile=candidateList()
     if outfile != "":
         outName=outfile
     else:
@@ -157,9 +156,8 @@ if (glob and (canList.__len__() >= 1)):
         print "Prexisting file found:",outName
         print "Removing!"
         os.unlink(outName)
-    for entry in canList:
-        newGlobFile.globListFile(outfile,entry)
-
+    #Create new globbed candidate structure to write to disk!
+    newGlobFile=buildCandidateGlob(canList)
     #SECTION TO DO THE CLOBBERING OF A CANDIDATE FILE WITH ANOTHER
 elif (clobberFilename != '') and (canList.__len__() == 1):
     #Create clobberer

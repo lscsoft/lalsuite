@@ -1020,7 +1020,7 @@ class candidateList:
             print "Check : ",inputFilename
             print ""
             line=str('')
-            return
+            return []
         #Loop through file lines
         while line:
             #Load file info one line at a time!
@@ -1047,7 +1047,8 @@ class candidateList:
         varL=varP=float(0)
         n=curveCount
         if curveCount < 1:
-            return [0,0,0,0,0,0,0]
+            return  []
+            #return [0,0,0,0,0,0,0,0,0]
         meanL=Lsum.__div__(n)
         varL=float(LsumSqr - float(Lsum*Lsum).__div__(n)).__div__(n)
         meanP=Psum.__div__(n)

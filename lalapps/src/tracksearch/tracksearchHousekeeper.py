@@ -122,4 +122,5 @@ if (action == 'yes'):
         print file
         os.remove(file)
     print "Done."
-                  
+else:
+    print "Leaving file system intact!"
