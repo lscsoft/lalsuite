@@ -3064,9 +3064,7 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --disable-bank-sim-max       do not maximize the match over the bank\n"\
 "  --sim-approximant APX        set approximant of the injected waveform to APX\n"\
 "                                 (TaylorT1|TaylorT2|TaylorT3|PadeT1|EOB|\n"\
-"                                  GeneratePPN|FrameFile|NumRel)\n"\
-"  --numrel-data-dir NRDir      directory where numerical waveforms are located\n"\
-"  --numrel-meta-file NRMeta    Numerical relativity waveform metadata file\n"\
+"                                  GeneratePPN|FrameFile)\n"\
 "  --sim-frame-file F           read the bank sim waveform from frame named F\n"\
 "  --sim-frame-channel C        read the bank sim waveform from frame channel C\n"\
 "  --sim-minimum-mass M         set minimum mass of bank injected signal to M\n"\
@@ -3149,8 +3147,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"slide-time-ns",           required_argument, 0,                'Y'},
     {"bank-simulation",         required_argument, 0,                'K'},
     {"sim-approximant",         required_argument, 0,                'L'},
-    {"numrel-data-dir",         required_argument, 0,                '{'},
-    {"numrel-meta-file",        required_argument, 0,                '}'},
     {"random-seed",             required_argument, 0,                'J'},
     {"sim-minimum-mass",        required_argument, 0,                'U'},
     {"sim-maximum-mass",        required_argument, 0,                'W'},
@@ -3217,7 +3213,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     c = getopt_long_only( argc, argv, 
         "-A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VW:X:Y:Z:"
         "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:"
-        "0:1::2:3:4:567:8:9:*:>:<:(:):[:],:{:}:",
+        "0:1::2:3:4:567:8:9:*:>:<:(:):[:],:",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -3952,27 +3948,17 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           bankSimParams.approx = FrameFile;
         }
-	else if ( ! strcmp( "NumRel", optarg ) )
-	{
-	  bankSimParams.approx = NumRel;
-	}
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown order specified: %s\n(must be one of TaylorT1, "
-              "TaylorT2, TaylorT3, PadeT1, EOB, GeneratePPN, FrameFile, NumRel)\n", 
+              "TaylorT2, TaylorT3, PadeT1, EOB, GeneratePPN, FrameFile)\n", 
               long_options[option_index].name, optarg );
           exit( 1 );
         }
         haveBankSimApprox = 1;
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
-
-      case '{':
-	break;
-
-      case '}':
-	break;
 
       case 'J':
         if ( ! strcmp( "urandom", optarg ) )
