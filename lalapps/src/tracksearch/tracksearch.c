@@ -424,12 +424,27 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
       bandPassParams.nMax=10;
       /* F < f1 kept, F > f2 kept */
       bandPassParams.f1=params.lowPass;
-      bandPassParams.f2=params.highPass;
+      bandPassParams.f2=0;
       bandPassParams.a1=0.9;
-      bandPassParams.a2=0.9;
+      bandPassParams.a2=0;
       /*
+       * Band pass is achieved by low pass first then high pass!
        * Call the low pass filter function.
        */
+      LAL_CALL(LALButterworthREAL4TimeSeries(status,
+					     dataSet,
+					     &bandPassParams),
+	       status);
+      /*
+       * Call the hight pass filter function.
+       */
+      bandPassParams.name=NULL;
+      bandPassParams.nMax=10;
+      /* F < f1 kept, F > f2 kept */
+      bandPassParams.f1=0;
+      bandPassParams.f2=params.highPass;
+      bandPassParams.a1=0;
+      bandPassParams.a2=0.9;
       LAL_CALL(LALButterworthREAL4TimeSeries(status,
 					     dataSet,
 					     &bandPassParams),
@@ -438,7 +453,7 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 	print_real4tseries(dataSet,"ButterworthFiltered.diag");
     }
   /*
-   * End the high pass filter
+   * End the Butterworth filtering
    *****************************************
    */
   /*
@@ -1619,24 +1634,39 @@ void LALappsGetFrameData(LALStatus*          status,
 		  fprintf(stdout,"FRAME READER: You requested a high pass filter of the data at %f Hz\n",params->highPass);
 		  fprintf(stdout,"FRAME READER: You requested a low pass filter of the data at %f Hz\n",params->lowPass);
 		}
-	      bandPassParams.name=NULL;
-	      bandPassParams.nMax=10;
-	      /* F < f1 kept, F > f2 kept */
-	      bandPassParams.f1=params->lowPass;
-	      bandPassParams.f2=params->highPass;
-	      bandPassParams.a1=0.9;
-	      bandPassParams.a2=0.9;
-	      /*
-	       * Call the low pass filter function.
-	       */
-	      LAL_CALL(LALButterworthREAL8TimeSeries(status,
-						     convertibleREAL8Data, 
-						     &bandPassParams),
-		       status);
-	      if (params->verbosity >= printFiles)
-		{
-		print_real8tseries(convertibleREAL8Data,"FRAME_READER_ButterworthFiltered.diag");
-		print_lalUnit(convertibleREAL8Data->sampleUnits,"FRAME_READER_ButterworthFiltered_Units.diag");
+      bandPassParams.name=NULL;
+      bandPassParams.nMax=10;
+      /* F < f1 kept, F > f2 kept */
+      bandPassParams.f1=params->lowPass;
+      bandPassParams.f2=0;
+      bandPassParams.a1=0.9;
+      bandPassParams.a2=0;
+      /*
+       * Band pass is achieved by low pass first then high pass!
+       * Call the low pass filter function.
+       */
+      LAL_CALL(LALButterworthREAL8TimeSeries(status,
+					     convertibleREAL8Data, 
+					     &bandPassParams),
+	       status);
+      bandPassParams.name=NULL;
+      bandPassParams.nMax=10;
+      /* F < f1 kept, F > f2 kept */
+      bandPassParams.f1=0;
+      bandPassParams.f2=params->highPass;
+      bandPassParams.a1=0;
+      bandPassParams.a2=0.9;
+      LAL_CALL(LALButterworthREAL8TimeSeries(status,
+					     convertibleREAL8Data, 
+					     &bandPassParams),
+	       status);
+      /*
+       * End Butterworth filtering
+       */
+      if (params->verbosity >= printFiles)
+	{
+	  print_real8tseries(convertibleREAL8Data,"FRAME_READER_1_ButterworthFiltered.diag");
+	  print_lalUnit(convertibleREAL8Data->sampleUnits,"FRAME_READER_1_ButterworthFiltered_Units.diag");
 		}
 	    }
 	  else
@@ -1655,17 +1685,18 @@ void LALappsGetFrameData(LALStatus*          status,
 	   */
 	      if (params->verbosity >= printFiles)
 		{
-		print_real8tseries(convertibleREAL8Data,"FRAME_READER_PreFactoredREAL8.diag");
-		print_lalUnit(convertibleREAL8Data->sampleUnits,"FRAME_READER_PreFactoredREAL8_Units.diag");
+		print_real8tseries(convertibleREAL8Data,"FRAME_READER_2_PreFactoredREAL8.diag");
+		print_lalUnit(convertibleREAL8Data->sampleUnits,"FRAME_READER_2_PreFactoredREAL8_Units.diag");
 		}
+	      /* Factoring out 10^-20 and to unitsstructure! */
 	  for (i=0;i<convertibleREAL8Data->data->length;i++)
 	    convertibleREAL8Data->data->data[i]=
-	      convertibleREAL8Data->data->data[i]/pow(10,20);
-	  convertibleREAL8Data->sampleUnits.powerOfTen=20;
+	      convertibleREAL8Data->data->data[i]*pow(10,20);
+	  convertibleREAL8Data->sampleUnits.powerOfTen=-20;
 	      if (params->verbosity >= printFiles)
 		{
-		print_real8tseries(convertibleREAL8Data,"FRAME_READER_FactoredREAL8.diag");
-		print_lalUnit(convertibleREAL8Data->sampleUnits,"FRAME_READER_FactoredREAL8_Units.diag");
+		print_real8tseries(convertibleREAL8Data,"FRAME_READER_3_FactoredREAL8.diag");
+		print_lalUnit(convertibleREAL8Data->sampleUnits,"FRAME_READER_3_FactoredREAL8_Units.diag");
 		LALappsPSD_Check(convertibleREAL8Data);
 
 		}
@@ -1673,6 +1704,12 @@ void LALappsGetFrameData(LALStatus*          status,
 	  /* Prepare to copy/cast REAL8 data into REAL4 structure */
 	  /* Copy REAL8 data into new REAL4 Structure */
 	      LALappsCreateR4FromR8TimeSeries(status,&tmpData,convertibleREAL8Data);
+	      if (tmpREAL8Data)
+		LAL_CALL(LALDestroyREAL8TimeSeries(status,tmpREAL8Data),
+			 status); 
+	      if (convertibleREAL8Data)
+		LAL_CALL(LALDestroyREAL8TimeSeries(status,convertibleREAL8Data),
+			 status); 
 	}/*End of reading type REAL8TimeSeries*/
       else if  (dataTypeCode == LAL_I2_TYPE_CODE)
 	{
@@ -1743,6 +1780,12 @@ void LALappsGetFrameData(LALStatus*          status,
 	  for (i=0;i<tmpData->data->length;i++)
 	    tmpData->data->data[i] = (REAL4) convertibleINT2Data->data->data[i];
 	  tmpData->sampleUnits=convertibleINT2Data->sampleUnits;
+	  if (convertibleINT2Data)
+	    LAL_CALL(LALDestroyINT2TimeSeries(status,convertibleINT2Data),
+		     status); 
+	  if (tmpINT2Data)
+	    LAL_CALL(LALDestroyINT2TimeSeries(status,tmpINT2Data),
+		     status); 
 	}
       else if  (dataTypeCode == LAL_I4_TYPE_CODE)
 	{
@@ -1813,6 +1856,12 @@ void LALappsGetFrameData(LALStatus*          status,
 	  for (i=0;i<tmpData->data->length;i++)
 	    tmpData->data->data[i] = (REAL4) convertibleINT4Data->data->data[i];
 	  tmpData->sampleUnits=convertibleINT4Data->sampleUnits;
+	  if (convertibleINT4Data)
+	    LAL_CALL(LALDestroyINT4TimeSeries(status,convertibleINT4Data),
+		     status); 
+	  if (tmpINT4Data)
+	    LAL_CALL(LALDestroyINT4TimeSeries(status,tmpINT4Data),
+		     status); 
 	}
       else
 	{
@@ -1824,6 +1873,9 @@ void LALappsGetFrameData(LALStatus*          status,
 			  TRACKSEARCHC_MSGEDATA);
 	}
       /* End of error for invalid data types in frame file.*/
+      /* close the frame stream */
+      LAL_CALL( LALFrClose( status, &stream ), status);
+
       if (params->verbosity >= printFiles)
 	{
 	  print_real4tseries(tmpData,"OriginalInputTimeSeries.diag");
@@ -1890,28 +1942,7 @@ void LALappsGetFrameData(LALStatus*          status,
       if (tmpData)
 	LAL_CALL(LALDestroyREAL4TimeSeries(status,tmpData),
 		 status);
-      if (convertibleREAL8Data)
-	LAL_CALL(LALDestroyREAL8TimeSeries(status,convertibleREAL8Data),
-		 status); 
-      if (tmpREAL8Data)
-	LAL_CALL(LALDestroyREAL8TimeSeries(status,tmpREAL8Data),
-		 status); 
-      if (convertibleINT2Data)
-	LAL_CALL(LALDestroyINT2TimeSeries(status,convertibleINT2Data),
-		 status); 
-      if (tmpINT2Data)
-	LAL_CALL(LALDestroyINT2TimeSeries(status,tmpINT2Data),
-		 status); 
-      if (convertibleINT4Data)
-	LAL_CALL(LALDestroyINT4TimeSeries(status,convertibleINT4Data),
-		 status); 
-      if (tmpINT4Data)
-	LAL_CALL(LALDestroyINT4TimeSeries(status,tmpINT4Data),
-		 status); 
-      /* close the frame stream */
-      LAL_CALL( LALFrClose( status, &stream ), status);
     }
-	
 }
 /* End frame reading code */
 
@@ -2127,8 +2158,6 @@ LALappsDoTSeriesSearch(LALStatus         *status,
       tfInputs.type = params.TransformType;
       tfInputs.fRow = 2*params.FreqBins;
       tfInputs.tCol = params.TimeBins;
-      /*  tfInputs.wlengthT = params.FreqBins+1;*/
-      /*  tfInputs.wlengthF = params.FreqBins+1;*/
       tfInputs.wlengthF = params.windowsize;
       tfInputs.wlengthT = params.windowsize;
 

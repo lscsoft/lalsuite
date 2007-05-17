@@ -759,7 +759,7 @@ void LALappsCreateR4FromR8TimeSeries(LALStatus             *status,
 
 {
   UINT4 i;
-
+  CHAR txtNumber[32];
   LAL_CALL(
 	   LALCreateREAL4TimeSeries(status,
 				    R4TS,
@@ -771,7 +771,11 @@ void LALappsCreateR4FromR8TimeSeries(LALStatus             *status,
 				    R8TS->data->length),
                    status);
   for (i=0;i<(*R4TS)->data->length;i++)
-     (*R4TS)->data->data[i]=R8TS->data->data[i];
+    /*    (*R4TS)->data->data[i]=((REAL4) R8TS->data->data[i]);*/
+    {
+      sprintf(txtNumber,"%3.6e",R8TS->data->data[i]);
+      (*R4TS)->data->data[i]=atof(txtNumber);
+    }
 }
 /* End LALappsCreateR4FromR8TimeSeries */
 
@@ -786,6 +790,7 @@ void LALappsPSD_Check(REAL8TimeSeries       *dataIn)
   LALStatus             status;
   const LIGOTimeGPS        gps_zero = LIGOTIMEGPSZERO;
 
+  memset(&status, 0, sizeof(status));
   print_real8tseries(dataIn,"PreCast_REAL8_Tseries.diag");
   LALappsCreateR4FromR8TimeSeries(&status,&R4TimeSeries,dataIn);
   print_real4tseries(R4TimeSeries,"PostCast_REAL4_Tseries.diag");
@@ -813,6 +818,16 @@ void LALappsPSD_Check(REAL8TimeSeries       *dataIn)
 	  &status);
 
  print_real8fseries(avgPSDR8,"CastREAL4_REAL8_PSD.diag");
+
+  LAL_CALL(LALCreateREAL4FrequencySeries(&status,
+					&avgPSDR4,
+					"psd",
+					gps_zero,
+					0,
+					1/(dataIn->deltaT*dataIn->data->length),
+					lalADCCountUnit,
+					size),
+	  &status);
 
  LAL_CALL(LALCreateForwardREAL4FFTPlan(&status,
 				       &fftplanR4,
@@ -865,7 +880,7 @@ void print_real4tseries(const REAL4TimeSeries *fseries, const char *file)
   if(fp) 
     {
       for(i = 0; i < fseries->data->length; i++)
-	fprintf(fp, "%f\t%g\n", (i * fseries->deltaT)+timeT, fseries->data->data[i]);
+	fprintf(fp, "%f\t%3.6e\n", (i * fseries->deltaT)+timeT, fseries->data->data[i]);
       fclose(fp);
     }
 #endif
@@ -888,7 +903,7 @@ void print_real8tseries(const REAL8TimeSeries *fseries, const char *file)
   if(fp) 
     {
       for(i = 0; i < fseries->data->length; i++)
-	fprintf(fp, "%f\t%g\n", (i * fseries->deltaT)+timeT, fseries->data->data[i]);
+	fprintf(fp, "%f\t%3.15e\n", (i * fseries->deltaT)+timeT, fseries->data->data[i]);
       fclose(fp);
     }
 #endif
@@ -905,7 +920,7 @@ void print_real4fseries(const REAL4FrequencySeries *fseries, const char *file)
 
   if(fp) {
     for(i = 0; i < fseries->data->length; i++)
-	fprintf(fp, "%f\t%g\n", (i * fseries->deltaF), fseries->data->data[i]);
+	fprintf(fp, "%f\t%3.6e\n", (i * fseries->deltaF), fseries->data->data[i]);
     fclose(fp);
   }
 #endif
@@ -922,7 +937,7 @@ void print_real8fseries(const REAL8FrequencySeries *fseries, const char *file)
 
   if(fp) {
     for(i = 0; i < fseries->data->length; i++)
-	fprintf(fp, "%e\t%g\n", (i * fseries->deltaF), fseries->data->data[i]);
+	fprintf(fp, "%f\t%3.15e\n", (i * fseries->deltaF), fseries->data->data[i]);
     fclose(fp);
   }
 #endif
