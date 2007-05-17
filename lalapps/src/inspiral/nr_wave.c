@@ -470,7 +470,7 @@ int main( int argc, char *argv[] )
 		   "Generating the strain data for the given sky location\n" );
 	}
 
-      LAL_CALL( LALInjectNRStrain( &status, &injData, sumStrain, thisInj, ifo), &status);
+      LAL_CALL( LALInjectStrainGW( &status, &injData, sumStrain, thisInj, ifo), &status);
       
       XLALDestroyREAL4VectorSequence ( sumStrain->data );
       LALFree( sumStrain );
