@@ -104,6 +104,14 @@ typedef struct
 }
 NRWaveCatalog;
 
+typedef struct
+{
+  NRWaveCatalog *nrCatalog;
+  INT4 modeLlo;
+  INT4 modeLhi;
+  CHAR *ifo;
+} NumRelInjectParams;
+
 
 void LALReadNRWave(LALStatus *status, REAL4TimeVectorSeries **out, const REAL4  mass, const CHAR  *filename);
 
@@ -111,7 +119,7 @@ void LALNRDataFind( LALStatus *status, NRWaveCatalog *out, const CHAR *dir, cons
 
 void LALGetSingleNRMetaData( LALStatus *status, NRWaveMetaData *data, const CHAR *dir, const CHAR *cfgstr);
 
-
+void LALDriveNRInject( LALStatus *status, REAL4TimeSeries *injData, SimInspiralTable *injections, NumRelInjectParams *params );
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

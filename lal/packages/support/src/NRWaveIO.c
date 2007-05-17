@@ -218,4 +218,37 @@ LALGetSingleNRMetaData( LALStatus       *status,
   RETURN(status);
 }
 
+/** Main driver funtion for doing Numerical Relativity Injections */
+void LALDriveNRInject( LALStatus *status, 
+		       REAL4TimeSeries *injData, /**< The time series to inject into */
+		       SimInspiralTable *injections, /**< The list of injections to perform */
+		       NumRelInjectParams *params /**< Parameters */
+		       )
+{
 
+  REAL4TimeVectorSeries *sumStrain = NULL;
+  SimInspiralTable *thisInj    = NULL;   /* current injection */
+
+  INITSTATUS (status, "LALDriveNRInject",  NRWAVEIOC);
+  ATTATCHSTATUSPTR (status);
+
+  /* loop over injections */
+  for ( thisInj = injections; thisInj; thisInj = thisInj->next )
+    {
+      
+      TRY( LALAddStrainModes(status->statusPtr, &sumStrain, params->nrCatalog,
+				  params->modeLlo, params->modeLhi, thisInj), status);
+      
+      TRY( LALInjectStrainGW( status->statusPtr, injData, sumStrain, thisInj, params->ifo), status);
+      
+      XLALDestroyREAL4VectorSequence ( sumStrain->data );
+      LALFree( sumStrain );
+      sumStrain = NULL;
+
+    } /* end loop over injections */
+
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+  
+}
