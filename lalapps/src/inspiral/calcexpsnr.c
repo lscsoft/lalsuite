@@ -99,6 +99,7 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --ligo-srd               use LIGOI SRD curve\n"\
 "  --inj-file    FILE       xml FILE contains injections \n"\
 "  --coire-flag             use this if inj file is a coire file \n"\
+"  --output-file FILE       FILE for output \n"\
 "\n"
 
 static void destroyCoherentGW( CoherentGW *waveform );
@@ -160,6 +161,7 @@ int main( int argc, char *argv[] )
 
   /* files contain PSD info */
   CHAR                         *injectionFile = NULL;         
+  CHAR                         *outputFile    = NULL;         
   CHAR                         *specFileH1    = NULL;         
   CHAR                         *specFileH2    = NULL;         
   CHAR                         *specFileL1    = NULL;         
@@ -210,6 +212,11 @@ int main( int argc, char *argv[] )
   CHAR                  comment[LIGOMETA_COMMENT_MAX];
   ProcessParamsTable   *this_proc_param = NULL;
 
+  REAL4 sum = 0;
+  REAL4 bitten_H1 = 0;
+  REAL4 bitten_H2 = 0;
+  REAL4 thisCombSnr_H1H2 = 0;
+
   /* set initial debug level */
   set_debug_level("1");
 
@@ -240,6 +247,7 @@ int main( int argc, char *argv[] )
     {"spectrum-L1",             required_argument, 0,                'c'},
     {"inj-file",                required_argument, 0,                'd'},
     {"comment",                 required_argument, 0,                'e'},
+    {"output-file",             required_argument, 0,                'f'},
     {"coire-flag",              required_argument, &coireflg,         1 },
     {"ligo-srd",                no_argument,       &ligosrd,          1 },
     {"debug-level",             required_argument, 0,                'z'}, 
@@ -318,6 +326,14 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
+      case 'f':
+        /* create storage for the output file name */
+        optarg_len = strlen( optarg ) + 1;
+        outputFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( outputFile, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
      case 'e':
         if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
         {
@@ -370,6 +386,12 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
+  if ( outputFile == NULL )
+  {
+    fprintf( stderr, "Must specify the --output-file\n" );
+    exit( 1 );
+  }
+
   if ( !ligosrd && specFileH1 == NULL )
   {
     fprintf( stderr, "Must specify the --spectrum-H1\n" );
@@ -395,6 +417,7 @@ int main( int argc, char *argv[] )
  
   if ( vrbflg ){
     fprintf( stdout, "injection file is %s\n", injectionFile );
+    fprintf( stdout, "output file is %s\n", outputFile );
     fprintf( stdout, "H1 spec file is   %s\n", specFileH1 );
     fprintf( stdout, "H2 spec file is   %s\n", specFileH2 );
     fprintf( stdout, "L1 spec file is   %s\n", specFileL1 );
@@ -643,11 +666,14 @@ int main( int argc, char *argv[] )
            REAL8 sim_psd_value;
            freq = fftData->deltaF * k;
            LALLIGOIPsd( NULL, &sim_psd_value, freq ); 
-            
+           sim_psd_value *= 9.0e-46; 
 
-           thisSnrsq += fftData->data->data[k].re * fftData->data->data[k].re * (pow(10,46)/9.) / sim_psd_value;
-           thisSnrsq += fftData->data->data[k].im * fftData->data->data[k].im * (pow(10,46)/9.) / sim_psd_value;
-          }
+           thisSnrsq += fftData->data->data[k].re * fftData->data->data[k].re / sim_psd_value;
+           thisSnrsq += fftData->data->data[k].im * fftData->data->data[k].im / sim_psd_value;
+           /*thisSnrsq += fftData->data->data[k].re * fftData->data->data[k].re * (pow(10,46)/9.) / sim_psd_value;
+           *thisSnrsq += fftData->data->data[k].im * fftData->data->data[k].im * (pow(10,46)/9.) / sim_psd_value;
+           */
+           }
        }
        else {
           if (vrbflg) fprintf( stdout, "using input spectra \n");
@@ -685,6 +711,29 @@ int main( int argc, char *argv[] )
     thisCombSnr = pow(statValue, 0.5);
     fprintf( stdout, "thisCombSnr %e\n", thisCombSnr);
 
+    thisInjection->eff_dist_t = 1./thisCombSnr;
+
+
+    thisCombSnr_H1H2 = 0.;
+
+    sum = snrVec[1] * snrVec[1] + snrVec[2] * snrVec[2];
+    bitten_H1 = 3 * snrVec[1] -3;
+    bitten_H2 = 3 * snrVec[2] -3;
+
+    if (sum < bitten_H1){
+       thisCombSnr_H1H2 = sum;
+    }
+    else
+    {
+       thisCombSnr_H1H2 = bitten_H1;
+    }
+
+    if (bitten_H2 < thisCombSnr_H1H2){
+       thisCombSnr_H1H2 = bitten_H2;
+    }
+
+    thisInjection->eff_dist_v = 1./thisCombSnr_H1H2;
+
     /* increment the bank sim sim_inspiral table if necessary */
     if ( injectionHead )
     {
@@ -701,7 +750,7 @@ int main( int argc, char *argv[] )
 
   /* open the output xml file */
   memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
-  LALSnprintf( fname, sizeof(fname), "outFile.xml");
+  LALSnprintf( fname, sizeof(fname), outputFile);
   LAL_CALL( LALOpenLIGOLwXMLFile  ( &status, &xmlStream, fname), &status);
 
   /* write out the process and process params tables */
