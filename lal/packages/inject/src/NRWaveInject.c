@@ -36,6 +36,8 @@
 #include <lal/LALConstants.h>
 #include <lal/NRWaveInject.h>
 #include <lal/SphericalHarmonics.h>
+#include <lal/Random.h>
+#include <lal/Inject.h>
 
 
 NRCSID (NRWAVEINJECTC, "$Id$");
@@ -587,8 +589,7 @@ INT4 XLALSphHarm ( COMPLEX16 *out, /**< output */
 void
 LALAddStrainModes(
   LALStatus              *status,
-  REAL4TimeVectorSeries  **outStrain,       /* h+, hx data                    */
-  NRWaveMetaData         *thisMetaData, /* single NR wave metadata struct */
+  REAL4TimeVectorSeries  **outStrain,       /* h+, hx data       */
   NRWaveCatalog          *nrCatalog,    /* NR wave metadata struct        */
   INT4                   modeLlo,      /* contains modeLlo and modeLhi   */
   INT4                   modeLhi,      /* modeLhi                        */
@@ -597,6 +598,7 @@ LALAddStrainModes(
   INT4 modeL, modeM;
   REAL4TimeVectorSeries *sumStrain=NULL;
   REAL4TimeVectorSeries *tempStrain=NULL;
+  NRWaveMetaData thisMetaData;
 
   INITSTATUS (status, "LALDriveNRWave", NRWAVEINJECTC);
   ATTATCHSTATUSPTR (status); 
@@ -608,15 +610,15 @@ LALAddStrainModes(
       for ( modeM = -modeL; modeM <= modeL; modeM++ )
         {
           /* find nearest matching numrel waveform */
-          XLALFindNRFile( thisMetaData, nrCatalog, thisInj, modeL, modeM );
+          XLALFindNRFile( &thisMetaData, nrCatalog, thisInj, modeL, modeM );
 
           /* read numrel waveform */
           TRY( LALReadNRWave( status->statusPtr, &tempStrain, thisInj->mass1 +
-                thisInj->mass2, thisMetaData->filename ), status );
+                thisInj->mass2, thisMetaData.filename ), status );
 
           /* compute the h+ and hx for given inclination and coalescence phase*/
-          tempStrain = XLALOrientNRWave( tempStrain, thisMetaData->mode[0],
-              thisMetaData->mode[1], thisInj->inclination, thisInj->coa_phase );
+          tempStrain = XLALOrientNRWave( tempStrain, thisMetaData.mode[0],
+              thisMetaData.mode[1], thisInj->inclination, thisInj->coa_phase );
 
 	  fprintf(stdout, "Elemento de strain= %e\n", tempStrain->data->data[0]);
 
