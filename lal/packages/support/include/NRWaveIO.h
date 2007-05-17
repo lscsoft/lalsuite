@@ -111,11 +111,6 @@ void LALNRDataFind( LALStatus *status, NRWaveCatalog *out, const CHAR *dir, cons
 
 void LALGetSingleNRMetaData( LALStatus *status, NRWaveMetaData *data, const CHAR *dir, const CHAR *cfgstr);
 
-void LALAddStrainModes( LALStatus *status, REAL4TimeVectorSeries  **outStrain,  NRWaveMetaData *thisMetaData, 
-		     NRWaveCatalog *nrCatalog, INT4 modeLlo, INT4 modeLhi, const SimInspiralTable *thisInj);
-
-void LALInjectNRStrain( LALStatus *status, REAL4TimeSeries *injData, REAL4TimeVectorSeries *strain, 
-			SimInspiralTable *thisInj, CHAR *ifo);
 
 
 #ifdef  __cplusplus
