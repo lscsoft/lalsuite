@@ -72,7 +72,7 @@ int main( int argc, char *argv[] )
   CHAR *injectionFile = NULL;            /* name of file containing injs   */
   CHAR *nrMetaFile    = NULL;            /* name of file with nr meta info */
   CHAR *nrDataDir     = NULL;            /* name of dir with nr waveform   */
-  NRWaveMetaData thisMetaData;           /* single NR wave metadata struct */
+
   NumRelInjectParams nrPar;
   NRWaveCatalog nrCatalog;               /* NR wave metadata struct        */
 
@@ -88,15 +88,15 @@ int main( int argc, char *argv[] )
   int numInjections = 0;                 /* number of injections           */
 
   SimInspiralTable *injections = NULL;   /* list of injections to be done  */
-  SimInspiralTable *thisInj    = NULL;   /* current injection              */
 
-  REAL4TimeSeries injData;               /* time series of zeros to which
+  REAL4TimeSeries *injData = NULL;               /* time series of zeros to which
                                             we add injections              */
-  REAL4TimeVectorSeries *sumStrain = NULL;
 
   int writeFlag = 0;                     /* write h(t) to file?            */
   int ifosFlag  = 0;                     /* injections for all ifos?       */
   int frameFlag = 0;                     /* write h(t) to a frame?         */
+  int c;
+  lalDebugLevel = 5;
 
   /* getopt arguments */
   struct option long_options[] =
@@ -120,7 +120,7 @@ int main( int argc, char *argv[] )
     {"version",                 no_argument,       0,                'V'},
     {0, 0, 0, 0}
   };
-  int c;
+
 
   /* parse the arguments */
   while ( 1 )
@@ -399,8 +399,10 @@ int main( int argc, char *argv[] )
 
   /* set up the injData to be zeros of the correct length, to which we will
    * add the injections */
-  injData = *XLALCreateREAL4TimeSeries( "", &gpsStartTime, 0, 1./sampleRate,
+  injData = XLALCreateREAL4TimeSeries( "", &gpsStartTime, 0, 1./sampleRate,
     &lalADCCountUnit, sampleRate * (gpsEndSec - gpsStartSec) );
+
+  memset(injData->data->data, 0.0, injData->data->length * sizeof(REAL4));
 
   /* read the injections */
   numInjections = SimInspiralTableFromLIGOLw( &injections, injectionFile,
@@ -456,26 +458,49 @@ int main( int argc, char *argv[] )
     nrPar.nrCatalog = &nrCatalog;
     nrPar.ifo = ifo;
 
-    LAL_CALL(LALDriveNRInject( &status, &injData, injections, &nrPar), &status);
+    LAL_CALL(LALDriveNRInject( &status, injData, injections, &nrPar), &status);
 
     /* output injections */
     if ( writeFlag )
     {
-      output_ht( fileName, &injData);
+      output_ht( fileName, injData);
     }
 
     /* output frame */
     if ( frameFlag )
     {
-      injData.sampleUnits = lalStrainUnit;
-      output_frame( ifo, gpsStartSec, gpsEndSec, &injData );
-      injData.sampleUnits = lalADCCountUnit;
+      injData->sampleUnits = lalStrainUnit;
+      output_frame( ifo, gpsStartSec, gpsEndSec, injData );
+      injData->sampleUnits = lalADCCountUnit;
     }
 
   } /* end loop over ifos */
 
   /* clear memory */
   LALFree( nrCatalog.data );
+
+  if( injectionFile) free( injectionFile );
+  if ( nrMetaFile ) free( nrMetaFile);
+  if( nrDataDir) free(nrDataDir);
+
+  if(injData->data->data) {
+    LALFree( injData->data->data);
+  }
+  if( injData->data) {
+    LALFree( injData->data);
+  }
+  if ( injData) {
+    LALFree(injData);
+  }
+
+  while ( injections )
+    {
+      SimInspiralTable *thisInj = NULL;
+      thisInj = injections;
+      injections = injections->next;
+      LALFree( thisInj );
+    }
+
   LALCheckMemoryLeaks();
 
   exit( 0 );
