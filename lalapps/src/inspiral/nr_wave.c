@@ -64,6 +64,11 @@ void LALNRInject( LALStatus                 *status,
 		  CHAR                      *ifo);
 
 
+/* typedef struct  */
+/* { */
+/*   NRWaveCatalog nrCatalog; */
+
+
 /* main program entry */
 int main( int argc, char *argv[] )
 {
@@ -461,7 +466,7 @@ int main( int argc, char *argv[] )
     for ( thisInj = injections; thisInj; thisInj = thisInj->next )
     {
 
-      LAL_CALL( LALAddStrainModes(&status, &sumStrain, &thisMetaData, &nrCatalog,
+      LAL_CALL( LALAddStrainModes(&status, &sumStrain, &nrCatalog,
 			       modeLlo, modeLhi, thisInj), &status);
             
       if ( vrbflg )
@@ -627,3 +632,41 @@ static void output_frame(CHAR *ifo,
 
 
 
+/* void LALDriveNRInject( LALStatus *status, */
+/* 		       REAL4TimeSeries *injData, */
+/* 		       SimInspiralTable *injections,  */
+/* 		       ) */
+/* { */
+
+
+/*   SimInspiralTable *thisInj    = NULL;   /\* current injection              *\/ */
+
+/*   INITSTATUS (status, "LALDriveNRInject",  rcsid); */
+/*   ATTATCHSTATUSPTR (status);  */
+
+/*   /\* loop over injections *\/ */
+/*   for ( thisInj = injections; thisInj; thisInj = thisInj->next ) */
+/*     { */
+      
+/*       LAL_CALL( LALAddStrainModes(&status, &sumStrain, &thisMetaData, &nrCatalog, */
+/* 				  modeLlo, modeLhi, thisInj), &status); */
+      
+/*       if ( vrbflg ) */
+/* 	{ */
+/* 	  fprintf( stdout, */
+/* 		   "Generating the strain data for the given sky location\n" ); */
+/* 	} */
+      
+/*       LAL_CALL( LALInjectStrainGW( &status, &injData, sumStrain, thisInj, ifo), &status); */
+      
+/*       XLALDestroyREAL4VectorSequence ( sumStrain->data ); */
+/*       LALFree( sumStrain ); */
+/*       sumStrain = NULL; */
+
+/*     } /\* end loop over injections *\/ */
+
+
+/*   DETATCHSTATUSPTR(status); */
+/*   RETURN(status); */
+  
+/* } */
