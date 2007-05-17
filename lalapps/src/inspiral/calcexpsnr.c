@@ -265,7 +265,7 @@ int main( int argc, char *argv[] )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only( argc, argv, "a:b:c:d:e:z:hV", long_options, &option_index );
+    c = getopt_long_only( argc, argv, "a:b:c:d:e:f:z:hV", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -585,21 +585,18 @@ int main( int argc, char *argv[] )
         detector.site = (LALDetector *) LALMalloc( sizeof(LALDetector) );
         XLALReturnDetector( detector.site, ifoNumber );
  
-        fprintf( stdout, "ifoNumber %d\n", ifoNumber );
-        fflush( stdout );
-
         switch ( ifoNumber )
         {
         case 1:
-           fprintf( stdout, "looking at H1 \n");
+           if ( vrbflg ) fprintf( stdout, "looking at H1 \n");
            thisSpec = specH1;
            break;
         case 2:
-           fprintf( stdout, "looking at H2 \n");
+           if ( vrbflg ) fprintf( stdout, "looking at H2 \n");
            thisSpec = specH2;
            break;
         case 3:
-           fprintf( stdout, "looking at L1 \n");
+           if ( vrbflg ) fprintf( stdout, "looking at L1 \n");
            thisSpec = specL1;
            break;
         default:
@@ -640,9 +637,10 @@ int main( int argc, char *argv[] )
         */
  
       /* write out channel  */
-      LALSPrintTimeSeries(chan, "chanTest.dat" );
-      fprintf( stdout, "written out chan\n" );
-      fflush( stdout );
+      /*LALSPrintTimeSeries(chan, "chanTest.dat" );
+       *fprintf( stdout, "written out chan\n" );
+       *fflush( stdout );
+       */  
 
       LAL_CALL( LALCreateForwardRealFFTPlan( &status, &pfwd, chan->data->length, 0), &status);
 
@@ -692,10 +690,11 @@ int main( int argc, char *argv[] )
        snrVec[ifoNumber] = thisSnr; 
        LAL_CALL( LALDestroyCOMPLEX8FrequencySeries( &status, fftData), &status );
 
-       fprintf( stdout, "thisSnrsq %e\n", thisSnrsq );
-       fprintf( stdout, "thisSnr   %e\n", thisSnr );
-       fprintf( stdout, "snrVec    %e\n", snrVec[ifoNumber] );
-       fflush( stdout );
+       if ( vrbflg ){
+          fprintf( stdout, "thisSnrsq %e\n", thisSnrsq );
+          fprintf( stdout, "snrVec    %e\n", snrVec[ifoNumber] );
+          fflush( stdout );
+       }
 
        /* sum thisSnrsq to eventually get combined snr*/
        statValue += thisSnrsq; 
@@ -708,14 +707,13 @@ int main( int argc, char *argv[] )
   
     destroyCoherentGW( &waveform );
 
+    /* stored sum of squares snr in eff_dist_t */
     thisCombSnr = pow(statValue, 0.5);
-    fprintf( stdout, "thisCombSnr %e\n", thisCombSnr);
-
+    if ( vrbflg ) fprintf( stdout, "thisCombSnr %e\n", thisCombSnr);
     thisInjection->eff_dist_t = 1./thisCombSnr;
 
-
+    /* calc bittenL snr for H1H2 and store in eff_dist_v */
     thisCombSnr_H1H2 = 0.;
-
     sum = snrVec[1] * snrVec[1] + snrVec[2] * snrVec[2];
     bitten_H1 = 3 * snrVec[1] -3;
     bitten_H2 = 3 * snrVec[2] -3;
@@ -731,8 +729,8 @@ int main( int argc, char *argv[] )
     if (bitten_H2 < thisCombSnr_H1H2){
        thisCombSnr_H1H2 = bitten_H2;
     }
-
     thisInjection->eff_dist_v = 1./thisCombSnr_H1H2;
+
 
     /* increment the bank sim sim_inspiral table if necessary */
     if ( injectionHead )
@@ -743,9 +741,10 @@ int main( int argc, char *argv[] )
   } while ( ++injSimCount < numInjections ); 
   /* end loop over injections */
 
-  fprintf( stdout, "out of loop\n" );
-  fflush( stdout );
- 
+  /*fprintf( stdout, "out of loop\n" );
+   *fflush( stdout );
+   */
+    
   /* try opening, writing and closing an xml file */
 
   /* open the output xml file */
