@@ -362,8 +362,9 @@ for trig in followuptrigs:
     if trig.gpsTime[ifo]:
       try:
         trigNode = trigBankFollowUpNode(trigJob,trig.gpsTime[ifo],trig_process_params[ifo],opts)
-        dag.add_node(trigNode)
-        trigJobCnt+=1
+        if not opts.plots_only:
+          dag.add_node(trigNode)
+          trigJobCnt+=1
       except:
         trigNode = 0
         print "couldn't add trigbank job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
@@ -372,8 +373,9 @@ for trig in followuptrigs:
           inspiralNode = inspiralFollowUpNode(inspJob,trig.gpsTime[ifo],\
              inspiral_process_params[ifo],opts,trigNode.output_file_name)
           inspiralNode.add_parent(trigNode)
-          dag.add_node(inspiralNode)
-          inspJobCnt+=1
+          if not opts.plots_only:
+            dag.add_node(inspiralNode)
+            inspJobCnt+=1
         except: 
           inspiralNode = 0
           print "couldn't add inspiral job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
@@ -383,7 +385,8 @@ for trig in followuptrigs:
       if inspiralNode:
         try:
           plotNode = plotSNRCHISQNode(plotJob,trig.gpsTime[ifo],inspiralNode.output_file_name,trig,opts)
-          plotNode.add_parent(inspiralNode)
+          if not opts.plots_only:
+            plotNode.add_parent(inspiralNode)
           dag.add_node(plotNode)
           plotJobCnt+=1
         except:
