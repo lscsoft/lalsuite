@@ -687,7 +687,10 @@ void LALInjectStrainGW( LALStatus                 *status,
   LALSnprintf( injData->name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
 	       "%s:STRAIN", ifo );
   
-  
+
+  XLALDestroyREAL4Vector ( htData->data);
+  LALFree(htData);
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
   
