@@ -96,7 +96,9 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --spectrum-H1 FILE       FILE contains PSD info for H1\n"\
 "  --spectrum-H2 FILE       FILE contains PSD info for H2\n"\
 "  --spectrum-L1 FILE       FILE contains PSD info for L1\n"\
-"  --inj-file    FILE       xml FILE contains injections\n"\
+"  --ligo-srd               use LIGOI SRD curve\n"\
+"  --inj-file    FILE       xml FILE contains injections \n"\
+"  --coire-flag             use this if inj file is a coire file \n"\
 "\n"
 
 static void destroyCoherentGW( CoherentGW *waveform );
@@ -133,12 +135,13 @@ static void destroyCoherentGW( CoherentGW *waveform )
 }
 
 extern int vrbflg;           /* verbocity of lal function    */
+int ligosrd;                 /* whether to use ligo srd      */
+int coireflg;                /* is input file coire (1) or inj (null) */
 
 int main( int argc, char *argv[] )
 {
   LALStatus                     status = blank_status;
-  REAL8                         dynRange;
-  REAL4                         dynRangeExponent = 65.;
+  REAL8                         dynRange = 1.0/3.0e-23;
 
   UINT4                         k;
   UINT4                         kLow;
@@ -166,11 +169,15 @@ int main( int argc, char *argv[] )
   INT8                          waveformStartTime;
 
   int                           numInjections = 0;
+  int                           numTriggers = 0;
 
   /* template bank simulation variables */
   INT4                         injSimCount = 0;
-  SimInspiralTable            *injectionHead = NULL;
-  SimInspiralTable            *thisInjection = NULL;
+  SimInspiralTable            *injectionHead  = NULL;
+  SimInspiralTable            *thisInjection  = NULL;
+  SnglInspiralTable           *snglHead       = NULL;
+  SearchSummaryTable          *searchSummHead = NULL;
+  /*SummValueTable              *summValueHead  = NULL;    */
 
   /* raw input data storage */
   REAL8FrequencySeries          *specH1        = NULL;
@@ -233,6 +240,8 @@ int main( int argc, char *argv[] )
     {"spectrum-L1",             required_argument, 0,                'c'},
     {"inj-file",                required_argument, 0,                'd'},
     {"comment",                 required_argument, 0,                'e'},
+    {"coire-flag",              required_argument, &coireflg,         1 },
+    {"ligo-srd",                no_argument,       &ligosrd,          1 },
     {"debug-level",             required_argument, 0,                'z'}, 
     {0, 0, 0, 0}
   };
@@ -361,25 +370,29 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  if ( specFileH1 == NULL )
+  if ( !ligosrd && specFileH1 == NULL )
   {
     fprintf( stderr, "Must specify the --spectrum-H1\n" );
     exit( 1 );
   }
 
-  if ( specFileH2 == NULL )
+  if ( !ligosrd && specFileH2 == NULL )
   {
     fprintf( stderr, "Must specify the --spectrum-H2\n" );
     exit( 1 );
   }
 
-  if ( specFileL1 == NULL )
+  if ( !ligosrd && specFileL1 == NULL )
   {
     fprintf( stderr, "Must specify the --spectrum-L1\n" );
     exit( 1 );
   }
 
-  
+  if ( ligosrd && (specFileH1 || specFileH2 || specFileL1 ))
+  {
+    fprintf( stdout, "WARNING: using LIGOI SRD power spectral density \n" );
+  } 
+ 
   if ( vrbflg ){
     fprintf( stdout, "injection file is %s\n", injectionFile );
     fprintf( stdout, "H1 spec file is   %s\n", specFileH1 );
@@ -392,35 +405,35 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALCreateREAL8FrequencySeries ( &status, &specH2, "",epoch, f0, deltaF, lalADCCountUnit, (numPoints / 2 + 1) ), &status);
   LAL_CALL( LALCreateREAL8FrequencySeries ( &status, &specL1, "",epoch, f0, deltaF, lalADCCountUnit, (numPoints / 2 + 1) ), &status);
 
-  /* read in H1 spectrum */ 
-  LAL_CALL( LALDReadFrequencySeries(&status, specH1, specFileH1), &status );
-  if ( vrbflg ){
-     fprintf( stdout, "read in H1 spec file\n" );
-     fflush( stdout );
-  } 
+  if (!ligosrd){
+    /* read in H1 spectrum */ 
+    LAL_CALL( LALDReadFrequencySeries(&status, specH1, specFileH1), &status );
+    if ( vrbflg ){
+       fprintf( stdout, "read in H1 spec file\n" );
+       fflush( stdout );
+    } 
 
-  /* read in H2 spectrum */ 
-  LAL_CALL( LALDReadFrequencySeries(&status, specH2, specFileH2), &status );
-  if ( vrbflg ){
-     fprintf( stdout, "read in H2 spec file\n" );
-     fflush( stdout );
+    /* read in H2 spectrum */ 
+    LAL_CALL( LALDReadFrequencySeries(&status, specH2, specFileH2), &status );
+    if ( vrbflg ){
+       fprintf( stdout, "read in H2 spec file\n" );
+       fflush( stdout );
+    }
+
+    /* read in L1 spectrum */ 
+    LAL_CALL( LALDReadFrequencySeries(&status, specL1, specFileL1), &status );
+    if ( vrbflg ){
+       fprintf( stdout, "read in L1 spec file\n" );
+       fflush( stdout );
+     }
   }
 
-  /* read in L1 spectrum */ 
-  LAL_CALL( LALDReadFrequencySeries(&status, specL1, specFileL1), &status );
-  if ( vrbflg ){
-     fprintf( stdout, "read in L1 spec file\n" );
-     fflush( stdout );
-  }
-  
   /* write out spectrum test */
   /*LALDPrintFrequencySeries(specH1, "Test.dat" );
   fprintf( stdout, "written H1 spec file\n" );
   fflush( stdout );
   */
 
-  /* create the dynamic range exponent */
-  dynRange = pow( 2.0, dynRangeExponent );
  
   LAL_CALL( LALCreateREAL4TimeSeries( &status, &chan, "", epoch, f0, deltaT, 
                                      lalADCCountUnit, numPoints ), &status );
@@ -464,7 +477,33 @@ int main( int argc, char *argv[] )
   
   /* read in injections from injection file */
   /* set endtime to 0 so that we read in all events */
+  if ( vrbflg ) fprintf( stdout, "Reading sim_inspiral table of %s\n", injectionFile );
   LAL_CALL(numInjections = SimInspiralTableFromLIGOLw( &injectionHead, injectionFile, 0, 0), &status);
+  if ( vrbflg ) fprintf( stdout, "Read %d injections from sim_inspiral table of %s\n", 
+                                    numInjections, injectionFile );
+
+  if (coireflg){
+     if ( vrbflg ) fprintf( stdout, "Reading sngl_inspiral table of %s\n", injectionFile );
+     LAL_CALL(numTriggers = LALSnglInspiralTableFromLIGOLw(&snglHead, injectionFile, 0, -1), &status);
+     if ( vrbflg ) fprintf( stdout, "Read %d triggers from sngl_inspiral table of %s\n", 
+                                    numTriggers, injectionFile );
+     if ( vrbflg ) {
+           fprintf( stdout, "Reading search_summary table of %s ...", injectionFile );
+           fflush( stdout );
+           }
+     searchSummHead = XLALSearchSummaryTableFromLIGOLw (injectionFile);
+     if ( vrbflg ) fprintf( stdout, " done\n");
+  }
+
+  /* do we ever need this table */
+  /*if ( vrbflg ) {
+   *     fprintf( stdout, "Reading summ_value table of %s ...", injectionFile );
+   *     fflush( stdout );
+   *     }
+   * LAL_CALL( SummValueTableFromLIGOLw (&summValueHead, injectionFile), &status );
+   * if ( vrbflg ) fprintf( stdout, " done\n");
+   */
+
 
   for ( thisInjection = injectionHead; thisInjection; thisInjection = thisInjection->next )
   {
@@ -475,8 +514,6 @@ int main( int argc, char *argv[] )
   }
   thisInjection = injectionHead;
 
-  if ( vrbflg ) fprintf( stdout, "Read %d inj parameters from %s\n", 
-                                    numInjections, injectionFile );
 
   /* setting fixed waveform injection parameters */
   memset( &ppnParams, 0, sizeof(PPNParamStruc) );
@@ -594,22 +631,36 @@ int main( int argc, char *argv[] )
       LAL_CALL( LALDestroyRealFFTPlan( &status, &pfwd ), &status);
       pfwd = NULL;
 
-       /* compute the SNR for initial LIGO at design */
+       /* compute the SNR */
        thisSnrsq = 0;
        /* avoid f=0 part of psd */  
-       for ( k = kLow; k < kHi; k++ )
-       {
-         REAL8 freq;
-         /* use correct psd !!!!! */
-         /*REAL8 sim_psd_value*/;
-         freq = fftData->deltaF * k;
-         /* LALLIGOIPsd( NULL, &psd_value, freq ); */
 
-         thisSnrsq += fftData->data->data[k].re * fftData->data->data[k].re /
-           thisSpec->data->data[k];
-         thisSnrsq += fftData->data->data[k].im * fftData->data->data[k].im /
-           thisSpec->data->data[k];
+       if (ligosrd){
+          if (vrbflg) fprintf( stdout, "using LIGOI PSD \n");
+          for ( k = kLow; k < kHi; k++ )
+          {
+           REAL8 freq;
+           REAL8 sim_psd_value;
+           freq = fftData->deltaF * k;
+           LALLIGOIPsd( NULL, &sim_psd_value, freq ); 
+            
+
+           thisSnrsq += fftData->data->data[k].re * fftData->data->data[k].re * (pow(10,46)/9.) / sim_psd_value;
+           thisSnrsq += fftData->data->data[k].im * fftData->data->data[k].im * (pow(10,46)/9.) / sim_psd_value;
+          }
        }
+       else {
+          if (vrbflg) fprintf( stdout, "using input spectra \n");
+          for ( k = kLow; k < kHi; k++ )
+          {
+           thisSnrsq += fftData->data->data[k].re * fftData->data->data[k].re  /
+              thisSpec->data->data[k];
+           thisSnrsq += fftData->data->data[k].im * fftData->data->data[k].im /
+              thisSpec->data->data[k];
+          } 
+      }
+
+
        thisSnrsq *= 4*fftData->deltaF;
        thisSnr    = pow(thisSnrsq, 0.5);
        snrVec[ifoNumber] = thisSnr; 
@@ -675,13 +726,39 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, procparams, process_params_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
+  /* write the search summary table */
+  if ( coireflg ){
+     if ( vrbflg ) fprintf( stdout, "search_summary... " );
+     outputTable.searchSummaryTable = searchSummHead;
+     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, search_summary_table), &status);
+     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputTable, search_summary_table), &status);
+     LAL_CALL( LALEndLIGOLwXMLTable  ( &status, &xmlStream), &status);
+   }
+
+  /* write the summ value table */
+  /*if ( vrbflg ) fprintf( stdout, "summ_value... " );
+   *outputTable.summValueTable = summValueHead;
+   *LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, summ_value_table), &status);
+   *LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputTable, summ_value_table), &status);
+   *LAL_CALL( LALEndLIGOLwXMLTable  ( &status, &xmlStream), &status);
+   */
+
   /* write the sim inspiral table */
   if ( vrbflg ) fprintf( stdout, "sim_inspiral... " );
   outputTable.simInspiralTable = injectionHead;
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, sim_inspiral_table), &status);
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputTable, sim_inspiral_table), &status);
   LAL_CALL( LALEndLIGOLwXMLTable  ( &status, &xmlStream), &status);
-  LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlStream), &status);
+
+  /* write the sngl inspiral table */
+  if ( coireflg ){
+     if ( vrbflg ) fprintf( stdout, "sngl_inspiral... " );
+     outputTable.snglInspiralTable = snglHead;
+     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, sngl_inspiral_table), &status);
+     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputTable, sngl_inspiral_table), &status);
+     LAL_CALL( LALEndLIGOLwXMLTable  ( &status, &xmlStream), &status);
+     LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlStream), &status);
+  } 
 
   /* Freeing memory */
   LAL_CALL( LALDestroyREAL4TimeSeries( &status, chan), &status );
@@ -727,7 +804,7 @@ int main( int argc, char *argv[] )
   LALCheckMemoryLeaks(); 
 
   /*print a success message to stdout for parsing by exitcode */
-  fprintf( stdout, "%s: EXITCODE0\n", argv[0] );
+  fprintf( stdout, "\n%s: EXITCODE0\n", argv[0] );
   fflush( stdout );
 
   exit( 0 ); 
