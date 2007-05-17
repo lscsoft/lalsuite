@@ -90,8 +90,8 @@ NRCSID (NULLSTATISTICH, "$Id$");
 typedef struct
 tagChanNames
 {
-  CHAR  cDataChanNameH1[LALNameLength];
-  CHAR  cDataChanNameH2[LALNameLength];
+  CHAR  *chanNameH1[LALNameLength];
+  CHAR  *chanNameH2[LALNameLength];
 }
 ChanNames;
 
