@@ -292,6 +292,17 @@ int main( int argc, char *argv[] )
                numCoincs, numTriggers );
     }
 
+    cDataChanNames = (ChanNames *) LALMalloc( sizeof(ChanNames) );
+
+    if ( !cDataChanNames )
+    {
+        fprintf( stdout, "Could not allocate memory for channel names.\n" );
+        goto cleanexit;
+    }
+
+
+
+
     /* loop over coincident triggers to compute the null statistic */
     for ( thisCoinc=coincHead; thisCoinc; thisCoinc=thisCoinc->next)
     {
@@ -301,50 +312,43 @@ int main( int argc, char *argv[] )
       /* l is another detector index */
       l=0;
 
-      /* Note the participating ifos and the eventID for this coincidence */
-      for ( k=0 ; k<LAL_NUM_IFO ; k++)
+      /* Note the participating ifos and the eventID for this coincidence  */
+      /* channel naming is trivial in the H1-H2 case; to be revisited when */
+      /* more ifos are added; in that case use LAL_NUM_IFO and k instead of*/
+      /* LAL_IFO_H1.                                                       */
+
+      if ( thisCoinc->snglInspiral[LAL_IFO_H1] && 
+           thisCoinc->snglInspiral[LAL_IFO_H2] )
       {
-        if ( thisCoinc->snglInspiral[k]  && 
-             ( (k==LAL_IFO_H1) || (k==LAL_IFO_H2) ) )
-        {
-          /* record the eventid for this coincidence */
-          eventID = thisCoinc->snglInspiral[k]->event_id->id; 
-          if ( vrbflg ) fprintf( stdout,"eventID = %Ld.\n",eventID );
+        /* record the eventid for this coincidence */
+        eventID = thisCoinc->snglInspiral[LAL_IFO_H1]->event_id->id; 
+        if ( vrbflg ) fprintf( stdout,"eventID = %Ld.\n",eventID );
 
-          /* Parse eventID to get the slide number */
-          triggerNumber = eventID % 100000;
-          slideNumber = ((eventID % 100000000) - triggerNumber)/100000;
-          slideSign = (eventID % 1000000000)-(slideNumber*100000)-triggerNumber;
+        /* Parse eventID to get the slide number */
+#if 0
+        triggerNumber = eventID % 100000;
+        slideNumber = ((eventID % 100000000) - triggerNumber)/100000;
+        slideSign = (eventID % 1000000000)-(slideNumber*100000)-triggerNumber;
+#endif
 
-          if ( vrbflg ) fprintf( stdout, "Input Frame = %s.\n", frInType);
-          if ( vrbflg ) fprintf( stdout, "ifo = %s.\n",
-               &thisCoinc->snglInspiral[k]->ifo);
+        if ( vrbflg ) fprintf( stdout, "Input Frame = %s.\n", frInType);
 
-          LALSnprintf( (*cDataChanNames).cDataChanNameH1,
-              LALNameLength * sizeof(CHAR), "H1:LSC_DARM_ERR_CData_" );
+        /* Store CData frame name  */
 
+        LALSnprintf( cDataChanNames->chanNameH1,
+          LALNameLength * sizeof(CHAR), "%s:%s_CData_%Ld",
+          &thisCoinc->snglInspiral[LAL_IFO_H1]->ifo, frInType, eventID );
+        if (vrbflg) fprintf( stdout, "H1 channel: %s\n",
+           cDataChanNames->chanNameH1 );
 
-          /* Store CData frame name  */
-          if ( k == LAL_IFO_H1 ) 
-          {
-            fprintf( stdout, "LAL_NUM_IFO .\n" );
-            LALSnprintf( (*cDataChanNames).cDataChanNameH1,
-              LALNameLength * sizeof(CHAR), "%s:%s_CData_%Ld",
-              &thisCoinc->snglInspiral[k]->ifo, frInType, eventID );
-            fprintf( stdout, "\nNamed H1 channel.\n" );
-          }
-          else if ( k == LAL_IFO_H2 ) 
-          {
-            fprintf( stdout, "LAL_NUM_IFO = %i.\n", k );
-            LALSnprintf( (*cDataChanNames).cDataChanNameH2,      
-              LALNameLength * sizeof(CHAR), "%s:%s_CData_%Ld",             
-              &thisCoinc->snglInspiral[k]->ifo, frInType, eventID );
-            fprintf( stdout, "\nNamed H2 channel.\n" );
-          }
+        LALSnprintf( cDataChanNames->chanNameH2,      
+          LALNameLength * sizeof(CHAR), "%s:%s_CData_%Ld",             
+          (*(thisCoinc->snglInspiral[LAL_IFO_H2])).ifo, frInType, eventID );
+        if (vrbflg) fprintf( stdout, "H2 channel: %s\n",
+           cDataChanNames->chanNameH2 );
 
-          kidx = k;
-        }
-      } 
+        kidx = LAL_IFO_H1;
+      }
 
 #if 0
       /* Initialize tempTime to account for time-slides */
@@ -458,15 +462,17 @@ int main( int argc, char *argv[] )
 #endif
 
       CVec = nullStatInputParams->CData;
+      if ( vrbflg ) fprintf( stdout, "error\n" );
 
       /* Read in the snippets associated with thisCoinc trigger */
       for ( j=0; j<LAL_NUM_IFO; j++ )
       {
         if ( (j == LAL_IFO_H1) || (j == LAL_IFO_H2) ) 
         { 
+          if ( vrbflg ) fprintf( stdout, "error\n" );
           if ( vrbflg ) fprintf( stdout, "Getting the c-data time series.\n" );
           frStream = XLALFrOpen( NULL, ifoframefile[j] ); 
-          
+
           if (!frStream)
           {  
             fprintf(stdout,
@@ -476,12 +482,11 @@ int main( int argc, char *argv[] )
 
           /* the next two statements must be replaced by sth more sensible */
           if ( j == LAL_IFO_H1 ) 
-              *(CVec->cData[j]->name) = *(cDataChanNames->cDataChanNameH1); 
+              *(CVec->cData[j]->name) = (*cDataChanNames).chanNameH1; 
 
           if ( j == LAL_IFO_H2 )               
-              *(CVec->cData[j]->name) = *(cDataChanNames->cDataChanNameH2);
+              *(CVec->cData[j]->name) = *(cDataChanNames->chanNameH2);
 
-          if ( vrbflg ) fprintf( stdout, "error\n");
           XLALFrGetCOMPLEX8TimeSeries( CVec->cData[j], frStream );
 
           /* Need to worry about WRAPPING of time-slides             */
@@ -499,7 +504,8 @@ int main( int argc, char *argv[] )
         }
         else
         {
-          if ( vrbflg) fprintf(stdout,"No data needed for G1, L1, T1 or V1.\n");
+          if ( vrbflg ) fprintf( stdout, "No data needed for %s.\n", 
+                 thisCoinc->snglInspiral[j]->ifo );
         }
       }      /* closes for( j=0; j<LAL_NUM_IFO; j++ ) */
 
