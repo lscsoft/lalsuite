@@ -97,6 +97,14 @@ XLALSumStrain(
     REAL4TimeVectorSeries *tempstrain,     /**< storing variable */ 
     REAL4TimeVectorSeries *strain          /**< variable to add  */);
 
+
+void LALAddStrainModes( LALStatus *status, REAL4TimeVectorSeries  **outStrain,  NRWaveMetaData *thisMetaData, 
+		     NRWaveCatalog *nrCatalog, INT4 modeLlo, INT4 modeLhi, const SimInspiralTable *thisInj);
+
+void LALInjectStrainGW( LALStatus *status, REAL4TimeSeries *injData, REAL4TimeVectorSeries *strain, 
+			SimInspiralTable *thisInj, CHAR *ifo);
+
+
 #ifdef  __cplusplus
 }                /* Close C++ protection */
 #endif
