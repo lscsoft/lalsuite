@@ -1,21 +1,21 @@
- /*
-  * Copyright (C) 2004, 2005 Cristina V. Torres
-  *
-  *  This program is free software; you can redistribute it and/or modify
-  *  it under the terms of the GNU General Public License as published by
-  *  the Free Software Foundation; either version 2 of the License, or
-  *  (at your option) any later version.
-  *
-  *  This program is distributed in the hope that it will be useful,
-  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  *  GNU General Public License for more details.
-  *
-  *  You should have received a copy of the GNU General Public License
-  *  along with with program; see the file COPYING. If not, write to the
-  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-  *  MA  02111-1307  USA
-  */
+/*
+ * Copyright (C) 2004, 2005 Cristina V. Torres
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ *  MA  02111-1307  USA
+ */
 /*
  * Author: Torres Cristina (Univ of TX at Brownsville)
  */
@@ -100,7 +100,8 @@ int main (int argc, char *argv[])
   /* SET LAL DEBUG STUFF */
   set_debug_level("NONE");
   memset(&status, 0, sizeof(status));
-  lal_errhandler = LAL_ERR_EXIT;
+  /*lal_errhandler = LAL_ERR_EXIT;*/
+  lal_errhandler = LAL_ERR_ABRT;
   /*lal_errhandler = LAL_ERR_RTRN;*/
   set_debug_level("MEMDBG");
   set_debug_level("ERROR");
@@ -393,9 +394,9 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
       /*
        * Free the FFT memory space
        */
-	if (dataSetFFT)
+      if (dataSetFFT)
 	LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(status,dataSetFFT),
-	status);
+		 status);
       if (response)
 	LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(status,response),
 		 status);
@@ -413,52 +414,49 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
    * Perform low and or high  pass filtering on 
    * the input data stream if requested
    */
-  if ((params.highPass > 0) || (params.lowPass > 0))
+  if (params.lowPass > 0)
     {
-      if (params.lowPass > 0)
-	{
-	  if (params.verbosity >= verbose)
-	    fprintf(stdout,"You requested a low pass filter of the data at %f Hz\n",params.lowPass);
+      if (params.verbosity >= verbose)
+	fprintf(stdout,"You requested a low pass filter of the data at %f Hz\n",params.lowPass);
 
-	  bandPassParams.name=NULL;
-	  bandPassParams.nMax=10;
-	  /* F < f1 kept, F > f2 kept */
-	  bandPassParams.f1=params.lowPass;
-	  bandPassParams.f2=0;
-	  bandPassParams.a1=0.9;
-	  bandPassParams.a2=0;
-	  /*
-	   * Band pass is achieved by low pass first then high pass!
-	   * Call the low pass filter function.
-	   */
-	  LAL_CALL(LALButterworthREAL4TimeSeries(status,
-						 dataSet,
-						 &bandPassParams),
-		   status);
-	}
+      bandPassParams.name=NULL;
+      bandPassParams.nMax=10;
+      /* F < f1 kept, F > f2 kept */
+      bandPassParams.f1=params.lowPass;
+      bandPassParams.f2=0;
+      bandPassParams.a1=0.9;
+      bandPassParams.a2=0;
       /*
-       * Call the high pass filter function.
+       * Band pass is achieved by low pass first then high pass!
+       * Call the low pass filter function.
        */
-      if (params.highPass > 0)
-	{
-	  if (params.verbosity >= verbose)
-	    fprintf(stdout,"You requested a high pass filter of the data at %f Hz\n",params.highPass);
-
-	  bandPassParams.name=NULL;
-	  bandPassParams.nMax=10;
-	  /* F < f1 kept, F > f2 kept */
-	  bandPassParams.f1=0;
-	  bandPassParams.f2=params.highPass;
-	  bandPassParams.a1=0;
-	  bandPassParams.a2=0.9;
-	  LAL_CALL(LALButterworthREAL4TimeSeries(status,
-						 dataSet,
-						 &bandPassParams),
-		   status);
-	}
-      if (params.verbosity >= printFiles)
-	print_real4tseries(dataSet,"ButterworthFiltered.diag");
+      LAL_CALL(LALButterworthREAL4TimeSeries(status,
+					     dataSet,
+					     &bandPassParams),
+	       status);
     }
+  /*
+   * Call the high pass filter function.
+   */
+  if (params.highPass > 0)
+    {
+      if (params.verbosity >= verbose)
+	fprintf(stdout,"You requested a high pass filter of the data at %f Hz\n",params.highPass);
+
+      bandPassParams.name=NULL;
+      bandPassParams.nMax=10;
+      /* F < f1 kept, F > f2 kept */
+      bandPassParams.f1=0;
+      bandPassParams.f2=params.highPass;
+      bandPassParams.a1=0;
+      bandPassParams.a2=0.9;
+      LAL_CALL(LALButterworthREAL4TimeSeries(status,
+					     dataSet,
+					     &bandPassParams),
+	       status);
+    }
+  if ((params.verbosity >= printFiles) && ((params.highPass > 0)||(params.lowPass)))
+    print_real4tseries(dataSet,"ButterworthFiltered.diag");
   /*
    * End the Butterworth filtering
    *****************************************
@@ -543,7 +541,7 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 					 averagePSD,
 					 dataSet,
 					 &avgPSDParams),
-		status);
+		 status);
 
       if (params.smoothAvgPSD > 2)
 	{
@@ -610,7 +608,7 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 	   * Copy newly smoothed PSD to frequency series
 	   */
 	  for (i=0;i<averagePSD->data->length;i++)
-	   averagePSD->data->data[i]=smoothedAveragePSD->data[i];
+	    averagePSD->data->data[i]=smoothedAveragePSD->data[i];
 
 	  if (smoothedAveragePSD)
 	    LAL_CALL(LALSDestroyVector(status,
@@ -1454,8 +1452,6 @@ void LALappsGetFrameData(LALStatus*          status,
 			 CHARVector*         dirname,
 			 CHAR*               cachefile
 			 )
-
-
 {
   FrStream             *stream = NULL;
   FrCache              *frameCache = NULL;
@@ -1483,17 +1479,19 @@ void LALappsGetFrameData(LALStatus*          status,
   /* only try to load frame if name is specified */
   if (dirname || cachefile)
     {
-      if(dirname){
-	/* Open frame stream */
-	LAL_CALL( LALFrOpen( status, &stream, dirname->data, "*.gwf" ), status);
-      }
-      else if (cachefile){
-	/* Open frame cache */
-	lal_errhandler = LAL_ERR_EXIT;
-	LAL_CALL( LALFrCacheImport( status, &frameCache, cachefile ), status);
-	LAL_CALL( LALFrCacheOpen( status, &stream, frameCache ), status);
-	LAL_CALL( LALDestroyFrCache( status, &frameCache ), status );
-      }
+      if(dirname)
+	{
+	  /* Open frame stream */
+	  LAL_CALL( LALFrOpen( status, &stream, dirname->data, "*.gwf" ), status);
+	}
+      else if (cachefile)
+	{
+	  /* Open frame cache */
+	  lal_errhandler = LAL_ERR_EXIT;
+	  LAL_CALL( LALFrCacheImport( status, &frameCache, cachefile ), status);
+	  LAL_CALL( LALFrCacheOpen( status, &stream, frameCache ), status);
+	  LAL_CALL( LALDestroyFrCache( status, &frameCache ), status );
+	}
       lal_errhandler = LAL_ERR_EXIT;
       /* Set verbosity of stream so user sees frame read problems! */
       LAL_CALL( LALFrSetMode(status,LAL_FR_VERBOSE_MODE,stream),status);
@@ -1627,66 +1625,62 @@ void LALappsGetFrameData(LALStatus*          status,
 	   * first before factoring it.
 	   */
 	  /******************************************/
-  /*
-   * Perform low and or high  pass filtering on 
-   * the input data stream if requested
-   */
+	  /*
+	   * Perform low and or high  pass filtering on 
+	   * the input data stream if requested
+	   */
 	  if (params->verbosity >= verbose)
-	      fprintf(stdout,"Frame Reader needs to high pass input for casting!\n");
+	    fprintf(stdout,"Frame Reader needs to high pass input for casting!\n");
 
-	  if ((params->highPass > 0) || (params->lowPass > 0))
+	  if (params->lowPass > 0)
 	    {
-	      if (params->lowPass > 0)
-		{
-		  if (params->verbosity >= verbose)
-		    fprintf(stdout,"FRAME READER: You requested a low pass filter of the data at %f Hz\n",params->lowPass);
-		  bandPassParams.name=NULL;
-		  bandPassParams.nMax=10;
-		  /* F < f1 kept, F > f2 kept */
-		  bandPassParams.f1=params->lowPass;
-		  bandPassParams.f2=0;
-		  bandPassParams.a1=0.9;
-		  bandPassParams.a2=0;
-		  /*
-		   * Band pass is achieved by low pass first then high pass!
-		   * Call the low pass filter function.
-		   */
-		  LAL_CALL(LALButterworthREAL8TimeSeries(status,
-							 convertibleREAL8Data, 
-							 &bandPassParams),
-			   status);
-		}
-	      if (params->highPass > 0)
-		{
 	      if (params->verbosity >= verbose)
-		  fprintf(stdout,"FRAME READER: You requested a high pass filter of the data at %f Hz\n",params->highPass);
-		  bandPassParams.name=NULL;
-		  bandPassParams.nMax=10;
-		  /* F < f1 kept, F > f2 kept */
-		  bandPassParams.f1=0;
-		  bandPassParams.f2=params->highPass;
-		  bandPassParams.a1=0;
-		  bandPassParams.a2=0.9;
-		  LAL_CALL(LALButterworthREAL8TimeSeries(status,
-							 convertibleREAL8Data, 
-							 &bandPassParams),
-			   status);
-		}
-      /*
-       * End Butterworth filtering
-       */
-      if (params->verbosity >= printFiles)
-	{
-	  print_real8tseries(convertibleREAL8Data,"FRAME_READER_1_ButterworthFiltered.diag");
-	  print_lalUnit(convertibleREAL8Data->sampleUnits,"FRAME_READER_1_ButterworthFiltered_Units.diag");
-		}
+		fprintf(stdout,"FRAME READER: You requested a low pass filter of the data at %f Hz\n",params->lowPass);
+	      bandPassParams.name=NULL;
+	      bandPassParams.nMax=10;
+	      /* F < f1 kept, F > f2 kept */
+	      bandPassParams.f1=params->lowPass;
+	      bandPassParams.f2=0;
+	      bandPassParams.a1=0.9;
+	      bandPassParams.a2=0;
+	      /*
+	       * Band pass is achieved by low pass first then high pass!
+	       * Call the low pass filter function.
+	       */
+	      LAL_CALL(LALButterworthREAL8TimeSeries(status,
+						     convertibleREAL8Data, 
+						     &bandPassParams),
+		       status);
 	    }
-	  else
+	  if (params->highPass > 0)
+	    {
+	      if (params->verbosity >= verbose)
+		fprintf(stdout,"FRAME READER: You requested a high pass filter of the data at %f Hz\n",params->highPass);
+	      bandPassParams.name=NULL;
+	      bandPassParams.nMax=10;
+	      /* F < f1 kept, F > f2 kept */
+	      bandPassParams.f1=0;
+	      bandPassParams.f2=params->highPass;
+	      bandPassParams.a1=0;
+	      bandPassParams.a2=0.9;
+	      LAL_CALL(LALButterworthREAL8TimeSeries(status,
+						     convertibleREAL8Data, 
+						     &bandPassParams),
+		       status);
+	      /*
+	       * End Butterworth filtering
+	       */
+	    }
+	  if (params->highPass < 30)
 	    {
 	      fprintf(stdout,"WARNING! Input data should be high pass filtered!\n");
 	      fprintf(stdout,"Use knee frequency of 30Hz minimum!\n");
-	      fprintf(stdout,"PSD estimate and results are questionable!\n");
 	      fprintf(stderr,"PSD estimate and results are questionable!\n");
+	    };
+	  if ((params->verbosity >= printFiles) && ((params->highPass > 0)||(params->lowPass)))
+	    {
+	      print_real8tseries(convertibleREAL8Data,"FRAME_READER_1_ButterworthFiltered.diag");
+	      print_lalUnit(convertibleREAL8Data->sampleUnits,"FRAME_READER_1_ButterworthFiltered_Units.diag");
 	    };
 	  /*
 	   * End the high pass filter
@@ -1695,33 +1689,33 @@ void LALappsGetFrameData(LALStatus*          status,
 	  /*
 	   * Factor the data by 10^20! See Xavi email.
 	   */
-	      if (params->verbosity >= printFiles)
-		{
-		print_real8tseries(convertibleREAL8Data,"FRAME_READER_2_PreFactoredREAL8.diag");
-		print_lalUnit(convertibleREAL8Data->sampleUnits,"FRAME_READER_2_PreFactoredREAL8_Units.diag");
-		}
-	      /* Factoring out 10^-20 and to unitsstructure! */
+	  if (params->verbosity >= printFiles)
+	    {
+	      print_real8tseries(convertibleREAL8Data,"FRAME_READER_2_PreFactoredREAL8.diag");
+	      print_lalUnit(convertibleREAL8Data->sampleUnits,"FRAME_READER_2_PreFactoredREAL8_Units.diag");
+	    }
+	  /* Factoring out 10^-20 and to unitsstructure! */
 	  for (i=0;i<convertibleREAL8Data->data->length;i++)
 	    convertibleREAL8Data->data->data[i]=
 	      convertibleREAL8Data->data->data[i]*pow(10,20);
 	  convertibleREAL8Data->sampleUnits.powerOfTen=-20;
-	      if (params->verbosity >= printFiles)
-		{
-		print_real8tseries(convertibleREAL8Data,"FRAME_READER_3_FactoredREAL8.diag");
-		print_lalUnit(convertibleREAL8Data->sampleUnits,"FRAME_READER_3_FactoredREAL8_Units.diag");
-		LALappsPSD_Check(convertibleREAL8Data);
+	  if (params->verbosity >= printFiles)
+	    {
+	      print_real8tseries(convertibleREAL8Data,"FRAME_READER_3_FactoredREAL8.diag");
+	      print_lalUnit(convertibleREAL8Data->sampleUnits,"FRAME_READER_3_FactoredREAL8_Units.diag");
+	      LALappsPSD_Check(convertibleREAL8Data);
 
-		}
+	    }
 
 	  /* Prepare to copy/cast REAL8 data into REAL4 structure */
 	  /* Copy REAL8 data into new REAL4 Structure */
-	      LALappsCreateR4FromR8TimeSeries(status,&tmpData,convertibleREAL8Data);
-	      if (tmpREAL8Data)
-		LAL_CALL(LALDestroyREAL8TimeSeries(status,tmpREAL8Data),
-			 status); 
-	      if (convertibleREAL8Data)
-		LAL_CALL(LALDestroyREAL8TimeSeries(status,convertibleREAL8Data),
-			 status); 
+	  LALappsCreateR4FromR8TimeSeries(status,&tmpData,convertibleREAL8Data);
+	  if (tmpREAL8Data)
+	    LAL_CALL(LALDestroyREAL8TimeSeries(status,tmpREAL8Data),
+		     status); 
+	  if (convertibleREAL8Data)
+	    LAL_CALL(LALDestroyREAL8TimeSeries(status,convertibleREAL8Data),
+		     status); 
 	}/*End of reading type REAL8TimeSeries*/
       else if  (dataTypeCode == LAL_I2_TYPE_CODE)
 	{
@@ -1780,14 +1774,14 @@ void LALappsGetFrameData(LALStatus*          status,
 	  /* Create high sampled REAL4 variable */
 	  LAL_CALL(
 		   LALCreateREAL4TimeSeries(status,
-                                            &tmpData,
-                                            "Higher Sampling REAL4 Data",
-                                            params->GPSstart,
-                                            0,
-                                            1/params->SamplingRateOriginal,
-                                            lalADCCountUnit,
-                                            loadPoints),
-                   status);
+					    &tmpData,
+					    "Higher Sampling REAL4 Data",
+					    params->GPSstart,
+					    0,
+					    1/params->SamplingRateOriginal,
+					    lalADCCountUnit,
+					    loadPoints),
+		   status);
 	  /* Prepare to copy/cast REAL8 data into REAL4 structure */
 	  for (i=0;i<tmpData->data->length;i++)
 	    tmpData->data->data[i] = (REAL4) convertibleINT2Data->data->data[i];
@@ -1856,14 +1850,14 @@ void LALappsGetFrameData(LALStatus*          status,
 	  /* Create high sampled REAL4 variable */
 	  LAL_CALL(
 		   LALCreateREAL4TimeSeries(status,
-                                            &tmpData,
-                                            "Higher Sampling REAL4 Data",
-                                            params->GPSstart,
-                                            0,
-                                            1/params->SamplingRateOriginal,
-                                            lalADCCountUnit,
-                                            loadPoints),
-                   status);
+					    &tmpData,
+					    "Higher Sampling REAL4 Data",
+					    params->GPSstart,
+					    0,
+					    1/params->SamplingRateOriginal,
+					    lalADCCountUnit,
+					    loadPoints),
+		   status);
 	  /* Prepare to copy/cast REAL8 data into REAL4 structure */
 	  for (i=0;i<tmpData->data->length;i++)
 	    tmpData->data->data[i] = (REAL4) convertibleINT4Data->data->data[i];
@@ -1958,6 +1952,7 @@ void LALappsGetFrameData(LALStatus*          status,
 }
 /* End frame reading code */
 
+/* MISSING CLOSE } */
 
 
 /*
@@ -2009,7 +2004,7 @@ void LALappsDoTrackSearch(
   CHARVector            *outputFilename=NULL;
   CHARVector            *outputFilenameMask=NULL;
   CHARVector            *outputCandidateFilename=NULL;
- /*************************************************************/
+  /*************************************************************/
   /* 
    * The LALTracksearch seems to map the 
    * width to tCol and the height to fRow
@@ -2019,11 +2014,11 @@ void LALappsDoTrackSearch(
   /*
    * Setup file mask for output filenames
    */
-   sprintf(outputFilenameMask->data,"CandidateList_Start_%i_%i_Stop_%i_%i",
-	   tsMarkers.mapStartGPS.gpsSeconds,
-	   tsMarkers.mapStartGPS.gpsNanoSeconds,
-	   tsMarkers.mapStopGPS.gpsSeconds,
-	   tsMarkers.mapStopGPS.gpsNanoSeconds);
+  sprintf(outputFilenameMask->data,"CandidateList_Start_%i_%i_Stop_%i_%i",
+	  tsMarkers.mapStartGPS.gpsSeconds,
+	  tsMarkers.mapStartGPS.gpsNanoSeconds,
+	  tsMarkers.mapStopGPS.gpsSeconds,
+	  tsMarkers.mapStopGPS.gpsNanoSeconds);
   /* Flag to prepare structure inside LALTrackSearch */
   tsInputs.allocFlag = 1; 
   outputCurves.curves = NULL;
@@ -2042,7 +2037,7 @@ void LALappsDoTrackSearch(
    * variable outputCurves which is no longer required
    */
   tsInputs.allocFlag = 2;
-    LAL_CALL(  LALSignalTrackSearch(status,&outputCurves,tfmap,&tsInputs),
+  LAL_CALL(  LALSignalTrackSearch(status,&outputCurves,tfmap,&tsInputs),
 	     status);
   /*
    * Write PGM to disk if requested
@@ -2160,7 +2155,7 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 		  TRACKSEARCHC_EVAL,
 		  TRACKSEARCHC_MSGEVAL);
   if ((signalSeries == NULL) && ((params.injectMapCache !=NULL) ||
-			   (params.injectSingleMap !=NULL)))
+				 (params.injectSingleMap !=NULL)))
     injectionRun=1;
   /*
    * If we are creating our maps for analysis via tseries data
@@ -2316,7 +2311,7 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   mapMarkerParams.dataDeltaT=signalSeries->deltaT;
   LAL_CALL(
 	   LALFloatToGPS(status,
-      			 &(mapMarkerParams.mapStopGPS),
+			 &(mapMarkerParams.mapStopGPS),
 			 &signalStop),
 			 
 	   status);
@@ -2332,7 +2327,7 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   /*
    * Assemble the TSAmap to write to disk
    */
- if (1==1)
+  if (1==1)
     {
       LAL_CALL(LALCHARCreateVector(status,&binaryFilename,maxFilenameLength),
 	       status);
@@ -2390,7 +2385,7 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
   UINT4             i;  /* Counter for data breaking */
   INT4              j;
   UINT4             productioncode = 1; /* Variable for ascii or frame */
-                                        /* Set to zero to use ascii files */
+  /* Set to zero to use ascii files */
   /*
    * Check for nonNULL directory path Ptr to frame files
    */
@@ -2566,7 +2561,7 @@ LALappsDoTSAMapAnalysis(LALStatus        *status,
        * Free RAM
        */
       LALappsTSADestroyMap(status,
-		          &currentMap);
+			   &currentMap);
     }
   /*
    * Free map cache structure
@@ -2601,7 +2596,7 @@ LALappsDoTSAMapSearch(LALStatus          *status,
 		       tfmap->imageRep,
 		       inputs,
 		       tfmap->imageBorders,
-		      *params);
+		       *params);
 }
 /*
  * End LALappsDoTSAMapSearch
@@ -2775,7 +2770,10 @@ LALappsWriteSearchConfig(LALStatus          *status,
 	  myParams.injectMapCache);
   fprintf(configFile,"injectSingleMap\t: %s\n",
 	  myParams.injectSingleMap);
-
+  fprintf(configFile,"High Pass Freq\t: %f\n",
+	  myParams.highPass);
+  fprintf(configFile,"Low Pass Freq\t: %f\n",
+	  myParams.lowPass);
   fclose(configFile);
   return;
   
@@ -2803,19 +2801,19 @@ LALappsWriteSearchResults(LALStatus      *status,
 	      i,
 	      outCurve.curves[i].n,
 	      outCurve.curves[i].totalPower);
-    for (j = 0;j < outCurve.curves[i].n;j++)
-      { /*Long info*/
-	fprintf(totalFile,"%i,%i;%i,%i,%f,%f",
-		outCurve.curves[i].col[j],
-		outCurve.curves[i].row[j],
-		outCurve.curves[i].gpsStamp[j].gpsSeconds,
-		outCurve.curves[i].gpsStamp[j].gpsNanoSeconds,
-		outCurve.curves[i].fBinHz[j],
-		outCurve.curves[i].depth[j]);
-	if (j+1 < outCurve.curves[i].n)
-	  fprintf(totalFile,":");
-      }
-    fprintf(totalFile,"\n");
+      for (j = 0;j < outCurve.curves[i].n;j++)
+	{ /*Long info*/
+	  fprintf(totalFile,"%i,%i;%i,%i,%f,%f",
+		  outCurve.curves[i].col[j],
+		  outCurve.curves[i].row[j],
+		  outCurve.curves[i].gpsStamp[j].gpsSeconds,
+		  outCurve.curves[i].gpsStamp[j].gpsNanoSeconds,
+		  outCurve.curves[i].fBinHz[j],
+		  outCurve.curves[i].depth[j]);
+	  if (j+1 < outCurve.curves[i].n)
+	    fprintf(totalFile,":");
+	}
+      fprintf(totalFile,"\n");
     }
   /*
    * Close files and clear mem
@@ -3058,7 +3056,7 @@ void LALappsCreateInjectableData(LALStatus           *status,
 	   status);
 
   pointLength=(params.numOfInjects*
-    (waveDomain->length+timePoints))+offSetPoints;
+	       (waveDomain->length+timePoints))+offSetPoints;
   LALappsTSassert((pointLength>0),
 		  TRACKSEARCHC_EARGS,
 		  TRACKSEARCHC_MSGEARGS);
@@ -3108,7 +3106,7 @@ void LALappsCreateInjectableData(LALStatus           *status,
     LAL_CALL(LALDestroyVector(status,&waveRange),status);
   if (waveDomain)
     LAL_CALL(LALDestroyVector(status,&waveDomain),status);
-return;
+  return;
 }
 /*
  * End of function LALappsCreateInjectableData to create injectable
@@ -3141,7 +3139,7 @@ void Dump_Search_Data(
 		      TSSearchParams     params,
 		      TrackSearchOut     outCurve,
 		      char*              strCallNum
-      		      )
+		      )
 {
   INT4             i;
   INT4             j;
