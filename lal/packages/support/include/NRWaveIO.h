@@ -119,6 +119,9 @@ void LALNRDataFind( LALStatus *status, NRWaveCatalog *out, const CHAR *dir, cons
 
 void LALGetSingleNRMetaData( LALStatus *status, NRWaveMetaData *data, const CHAR *dir, const CHAR *cfgstr);
 
+void LALAddStrainModes( LALStatus *status, REAL4TimeVectorSeries  **outStrain, 
+		     NRWaveCatalog *nrCatalog, INT4 modeLlo, INT4 modeLhi, const SimInspiralTable *thisInj);
+
 void LALDriveNRInject( LALStatus *status, REAL4TimeSeries *injData, SimInspiralTable *injections, NumRelInjectParams *params );
 
 #ifdef  __cplusplus

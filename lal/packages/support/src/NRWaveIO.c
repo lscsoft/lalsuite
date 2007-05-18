@@ -218,6 +218,84 @@ LALGetSingleNRMetaData( LALStatus       *status,
   RETURN(status);
 }
 
+/** Put the main functionalities of nr_wave.c together */
+void
+LALAddStrainModes(
+  LALStatus              *status,
+  REAL4TimeVectorSeries  **outStrain,       /* h+, hx data       */
+  NRWaveCatalog          *nrCatalog,    /* NR wave metadata struct        */
+  INT4                   modeLlo,      /* contains modeLlo and modeLhi   */
+  INT4                   modeLhi,      /* modeLhi                        */
+  const SimInspiralTable       *thisInj     /* injection                      */)
+{
+  INT4 modeL, modeM;
+  REAL4TimeVectorSeries *sumStrain=NULL;
+  REAL4TimeVectorSeries *tempStrain=NULL;
+  NRWaveMetaData thisMetaData;
+
+  INITSTATUS (status, "LALAddStrainModes", NRWAVEIOC);
+  ATTATCHSTATUSPTR (status); 
+
+  /* loop over l values */
+  for ( modeL = modeLlo; modeL <= modeLhi; modeL++ )
+    {
+      /* loop over m values */
+      for ( modeM = -modeL; modeM <= modeL; modeM++ )
+        {
+          /* find nearest matching numrel waveform */
+          XLALFindNRFile( &thisMetaData, nrCatalog, thisInj, modeL, modeM );
+
+          /* read numrel waveform */
+          TRY( LALReadNRWave( status->statusPtr, &tempStrain, thisInj->mass1 +
+                thisInj->mass2, thisMetaData.filename ), status );
+
+          /* compute the h+ and hx for given inclination and coalescence phase*/
+          tempStrain = XLALOrientNRWave( tempStrain, thisMetaData.mode[0],
+              thisMetaData.mode[1], thisInj->inclination, thisInj->coa_phase );
+
+	  fprintf(stdout, "Elemento de strain= %e\n", tempStrain->data->data[0]);
+
+
+	  if (sumStrain == NULL) {
+
+	    sumStrain = LALCalloc(1, sizeof(*sumStrain));	    
+
+	    sumStrain->data =  XLALCreateREAL4VectorSequence(2, tempStrain->data->vectorLength); 
+	    sumStrain->deltaT = tempStrain->deltaT;
+	    sumStrain->f0 = tempStrain->f0; 
+	    sumStrain->sampleUnits = tempStrain->sampleUnits; 
+
+	    memset(sumStrain->data->data,0.0,2*tempStrain->data->vectorLength*sizeof(REAL4));
+
+	    sumStrain = XLALSumStrain( sumStrain, tempStrain );
+	  }
+
+	  else {
+	    sumStrain = XLALSumStrain( sumStrain, tempStrain );
+	  }
+
+	  fprintf(stdout, "Elemento de sumStrain= %e\n", sumStrain->data->data[0]);
+
+          /* clear memory for strain */
+          XLALDestroyREAL4VectorSequence ( tempStrain->data );
+          LALFree( tempStrain );
+          tempStrain = NULL;
+
+        } /* end loop over modeM values */
+
+      } /* end loop over modeL values */
+
+
+  *outStrain = sumStrain;
+      
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+
+}
+
+
+
+
 /** Main driver funtion for doing Numerical Relativity Injections */
 void LALDriveNRInject( LALStatus *status, 
 		       REAL4TimeSeries *injData, /**< The time series to inject into */
@@ -252,3 +330,5 @@ void LALDriveNRInject( LALStatus *status,
   RETURN(status);
   
 }
+
+
