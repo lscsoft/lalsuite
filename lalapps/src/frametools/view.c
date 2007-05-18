@@ -296,6 +296,7 @@ REAL4TimeSeries * getdata( const char *path, int cachefileflg, const char *chann
 	FrCache *cache   = NULL;
 	FrStream *stream = NULL;
 	int mode = LAL_FR_VERBOSE_MODE;
+	int tstype;
 	REAL4TimeSeries *series;
 
 	verbose( "reading %g seconds of %s data starting at time %d.%09d\n",
@@ -327,7 +328,22 @@ REAL4TimeSeries * getdata( const char *path, int cachefileflg, const char *chann
 	/* set the mode of the frame stream */
 	XLALFrSetMode( stream, mode );
 
-	series = XLALFrReadREAL4TimeSeries( stream, channel, start, duration, 0 );
+	tstype = XLALFrGetTimeSeriesType( channel, stream );
+	if ( tstype == LAL_S_TYPE_CODE ) {
+		series = XLALFrReadREAL4TimeSeries( stream, channel, start, duration, 0 );
+	} else if ( tstype == LAL_D_TYPE_CODE ) { /* assume strain data */
+		REAL8TimeSeries *dblseries;
+		UINT4 i;
+		dynrange_ = 1e20;
+		dblseries = XLALFrReadREAL8TimeSeries( stream, channel, start, duration, 0 );
+		/* TODO: this shouldn't be hard-coded! */
+		XLALHighPassREAL8TimeSeries( dblseries, 40.0, 0.9, 8 );
+		series = XLALCreateREAL4TimeSeries( dblseries->name, &dblseries->epoch, dblseries->f0, dblseries->deltaT, &dblseries->sampleUnits, dblseries->data->length );
+		for ( i = 0; i < series->data->length; ++i )
+			series->data->data[i] = dynrange_ * dblseries->data->data[i];
+	} else {
+		return NULL;
+	}
 
 	/* close the stream */
 	XLALFrClose( stream );
