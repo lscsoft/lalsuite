@@ -329,6 +329,7 @@ class tracksearchTimeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
                 self.add_ini_opts(cp,sec)
             self.injectFile=cp.get('tracksearchinjection','inject_file')
             self.add_opt('inject_file',os.path.basename(self.injectFile))
+            self.add_condor_cmd('should_transfer_files','yes')
             self.add_condor_cmd('when_to_transfer_output','on_exit')
             self.add_condor_cmd('transfer_input_files',self.injectFile)
         #Read expected job sampling rate
@@ -825,6 +826,8 @@ class tracksearch:
                 newList.append(fileContents[index])
         if newList.__len__() == 0:
             print "ERROR! Inappropriate cache file conversion for ",startTime," to ",endTime
+            print "Are you using correct dummy cache file?"
+            print masterCacheFile
             os.abort()
         newList.sort()
         listStart=int(newList[0].split(' ')[2])
@@ -909,6 +912,12 @@ class tracksearch:
             # evenly spaced jobs in terms of samples and start times.  This saves 1 job per pipeline.
             # Only works on datafind_fixcache jobs!!!! (Temp fix)
             self.sciSeg._ScienceSegment__chunks.pop(0)
+        else:
+            print "Manipulating LSCdataFind jobs to be executed!"
+            print "See comment in tracksearch.py line 901."
+            print "We are poping off first entry of _ScienceSegment_ to avoid 1 repeated job."
+            print "This is due to our pipeline methodology."
+            self.sciSeg._ScienceSegment__chunks.pop(0)
         for chunk in self.sciSeg:
             df_node=pipeline.LSCDataFindNode(df_job)
             df_node.set_start(chunk.start())
@@ -949,7 +958,7 @@ class tracksearch:
         prevJobList=[]
         for i in range(1,layerID):
             tracksearchCluster_node=tracksearchClusterNode(tracksearchCluster_job)
-            layer2work=determineLayerPath(self.cp,self.blockID,i)+"*.candidates"
+            layer2work=determineLayerPath(self.cp,self.blockID,i)+"/*.candidates"
             globFilename="Glob::"+str(self.blockID)+"_"+str(i)+".candidates"
             tracksearchCluster_node.add_var_opt('file',layer2work)
             tracksearchCluster_node.add_var_opt('outfile',globFilename)

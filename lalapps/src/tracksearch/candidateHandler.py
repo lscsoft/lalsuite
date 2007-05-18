@@ -256,6 +256,9 @@ elif (canList.__len__() < 0):
     #THIS SECTION SHOULD NEVER HAPPEN
 else:
     print "Error with combination of arguments given!"
+    print "Legitimate command line arguments don't get this error!"
+    print "Options in parser data structure."
     print options
+    print "Corresponding argument values."
     print args
     os.abort()
