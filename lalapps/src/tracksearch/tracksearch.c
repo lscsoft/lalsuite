@@ -415,40 +415,47 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
    */
   if ((params.highPass > 0) || (params.lowPass > 0))
     {
-      if (params.verbosity >= verbose)
+      if (params.lowPass > 0)
 	{
-	  fprintf(stdout,"You requested a high pass filter of the data at %f Hz\n",params.highPass);
-	  fprintf(stdout,"You requested a low pass filter of the data at %f Hz\n",params.lowPass);
+	  if (params.verbosity >= verbose)
+	    fprintf(stdout,"You requested a low pass filter of the data at %f Hz\n",params.lowPass);
+
+	  bandPassParams.name=NULL;
+	  bandPassParams.nMax=10;
+	  /* F < f1 kept, F > f2 kept */
+	  bandPassParams.f1=params.lowPass;
+	  bandPassParams.f2=0;
+	  bandPassParams.a1=0.9;
+	  bandPassParams.a2=0;
+	  /*
+	   * Band pass is achieved by low pass first then high pass!
+	   * Call the low pass filter function.
+	   */
+	  LAL_CALL(LALButterworthREAL4TimeSeries(status,
+						 dataSet,
+						 &bandPassParams),
+		   status);
 	}
-      bandPassParams.name=NULL;
-      bandPassParams.nMax=10;
-      /* F < f1 kept, F > f2 kept */
-      bandPassParams.f1=params.lowPass;
-      bandPassParams.f2=0;
-      bandPassParams.a1=0.9;
-      bandPassParams.a2=0;
       /*
-       * Band pass is achieved by low pass first then high pass!
-       * Call the low pass filter function.
+       * Call the high pass filter function.
        */
-      LAL_CALL(LALButterworthREAL4TimeSeries(status,
-					     dataSet,
-					     &bandPassParams),
-	       status);
-      /*
-       * Call the hight pass filter function.
-       */
-      bandPassParams.name=NULL;
-      bandPassParams.nMax=10;
-      /* F < f1 kept, F > f2 kept */
-      bandPassParams.f1=0;
-      bandPassParams.f2=params.highPass;
-      bandPassParams.a1=0;
-      bandPassParams.a2=0.9;
-      LAL_CALL(LALButterworthREAL4TimeSeries(status,
-					     dataSet,
-					     &bandPassParams),
-	       status);
+      if (params.highPass > 0)
+	{
+	  if (params.verbosity >= verbose)
+	    fprintf(stdout,"You requested a high pass filter of the data at %f Hz\n",params.highPass);
+
+	  bandPassParams.name=NULL;
+	  bandPassParams.nMax=10;
+	  /* F < f1 kept, F > f2 kept */
+	  bandPassParams.f1=0;
+	  bandPassParams.f2=params.highPass;
+	  bandPassParams.a1=0;
+	  bandPassParams.a2=0.9;
+	  LAL_CALL(LALButterworthREAL4TimeSeries(status,
+						 dataSet,
+						 &bandPassParams),
+		   status);
+	}
       if (params.verbosity >= printFiles)
 	print_real4tseries(dataSet,"ButterworthFiltered.diag");
     }
@@ -865,8 +872,8 @@ void LALappsTrackSearchInitialize(
   params->avgSpecMethod = -1; /*Will trigger error*/
   params->avgSpecWindow = Rectangular; /* Default no window */
   params->smoothAvgPSD = 0;/*0 means no smoothing*/
-  params->highPass=0;/*High pass filter freq*/
-  params->lowPass=0;/*Low pass filter freq*/
+  params->highPass=-1;/*High pass filter freq*/
+  params->lowPass=-1;/*Low pass filter freq*/
   params->FreqBins = 0;
   params->TimeBins = 0;
   params->windowsize = 0;/*256*/ /*30*/
@@ -1629,37 +1636,42 @@ void LALappsGetFrameData(LALStatus*          status,
 
 	  if ((params->highPass > 0) || (params->lowPass > 0))
 	    {
-	      if (params->verbosity >= verbose)
+	      if (params->lowPass > 0)
 		{
-		  fprintf(stdout,"FRAME READER: You requested a high pass filter of the data at %f Hz\n",params->highPass);
-		  fprintf(stdout,"FRAME READER: You requested a low pass filter of the data at %f Hz\n",params->lowPass);
+		  if (params->verbosity >= verbose)
+		    fprintf(stdout,"FRAME READER: You requested a low pass filter of the data at %f Hz\n",params->lowPass);
+		  bandPassParams.name=NULL;
+		  bandPassParams.nMax=10;
+		  /* F < f1 kept, F > f2 kept */
+		  bandPassParams.f1=params->lowPass;
+		  bandPassParams.f2=0;
+		  bandPassParams.a1=0.9;
+		  bandPassParams.a2=0;
+		  /*
+		   * Band pass is achieved by low pass first then high pass!
+		   * Call the low pass filter function.
+		   */
+		  LAL_CALL(LALButterworthREAL8TimeSeries(status,
+							 convertibleREAL8Data, 
+							 &bandPassParams),
+			   status);
 		}
-      bandPassParams.name=NULL;
-      bandPassParams.nMax=10;
-      /* F < f1 kept, F > f2 kept */
-      bandPassParams.f1=params->lowPass;
-      bandPassParams.f2=0;
-      bandPassParams.a1=0.9;
-      bandPassParams.a2=0;
-      /*
-       * Band pass is achieved by low pass first then high pass!
-       * Call the low pass filter function.
-       */
-      LAL_CALL(LALButterworthREAL8TimeSeries(status,
-					     convertibleREAL8Data, 
-					     &bandPassParams),
-	       status);
-      bandPassParams.name=NULL;
-      bandPassParams.nMax=10;
-      /* F < f1 kept, F > f2 kept */
-      bandPassParams.f1=0;
-      bandPassParams.f2=params->highPass;
-      bandPassParams.a1=0;
-      bandPassParams.a2=0.9;
-      LAL_CALL(LALButterworthREAL8TimeSeries(status,
-					     convertibleREAL8Data, 
-					     &bandPassParams),
-	       status);
+	      if (params->highPass > 0)
+		{
+	      if (params->verbosity >= verbose)
+		  fprintf(stdout,"FRAME READER: You requested a high pass filter of the data at %f Hz\n",params->highPass);
+		  bandPassParams.name=NULL;
+		  bandPassParams.nMax=10;
+		  /* F < f1 kept, F > f2 kept */
+		  bandPassParams.f1=0;
+		  bandPassParams.f2=params->highPass;
+		  bandPassParams.a1=0;
+		  bandPassParams.a2=0.9;
+		  LAL_CALL(LALButterworthREAL8TimeSeries(status,
+							 convertibleREAL8Data, 
+							 &bandPassParams),
+			   status);
+		}
       /*
        * End Butterworth filtering
        */
