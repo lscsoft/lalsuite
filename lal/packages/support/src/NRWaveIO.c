@@ -150,6 +150,9 @@ LALNRDataFind( LALStatus *status,
   /* allocate memory for output catalog */
   out->length = numWaves;
   out->data = LALCalloc(1, out->length * sizeof(NRWaveMetaData));
+  if ( out->data == NULL) {
+    ABORT( status, NRWAVEIO_ENOMEM, NRWAVEIO_MSGENOMEM );
+  }
 
   /* now get wave parameters from each line of data */
   for (k = 0; k < numWaves; k++) {
