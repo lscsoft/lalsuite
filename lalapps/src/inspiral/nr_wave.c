@@ -127,7 +127,7 @@ int main( int argc, char *argv[] )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only( argc, argv, "a:b:d:f:i:m:r:L:H:V:W",
+    c = getopt_long_only( argc, argv, "a:b:f:m:d:r:i:L:H:hV",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -214,6 +214,27 @@ int main( int argc, char *argv[] )
         gpsEndTime.gpsSeconds = gpsEndSec;
         break;
 
+      case 'f':
+        /* create storage for the injection file name */
+        optarg_len = strlen( optarg ) + 1;
+        injectionFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( injectionFile, optarg, optarg_len );
+        break;
+
+      case 'm':
+        /* create storage for the meta file name */
+        optarg_len = strlen( optarg ) + 1;
+        nrMetaFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( nrMetaFile, optarg, optarg_len );
+        break;
+
+      case 'd':
+        /* create storage for the nr data directory */
+        optarg_len = strlen( optarg ) + 1;
+        nrDataDir = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( nrDataDir, optarg, optarg_len );
+        break;
+
       case 'r':
         /* set the sample rate */
         sampleRate = (INT4) atoi( optarg );
@@ -224,6 +245,19 @@ int main( int argc, char *argv[] )
               "(%d specified) \n",
               long_options[option_index].name, sampleRate );
           exit( 1 );
+        }
+        break;
+
+      case 'i':
+        /* create storage for the ifo name and copy it */
+        optarg_len = strlen( optarg ) + 1;
+        memcpy( ifo, optarg, optarg_len );
+
+        /* check for supported ifo */
+        if ( XLALIFONumber( ifo ) == LAL_UNKNOWN_IFO )
+        {
+          fprintf( stderr, "IFO not recognised: %s\n", ifo );
+          exit(1);
         }
         break;
 
@@ -251,40 +285,6 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, modeLhi );
           exit( 1 );
         }
-        break;
-
-      case 'i':
-        /* create storage for the ifo name and copy it */
-        optarg_len = strlen( optarg ) + 1;
-        memcpy( ifo, optarg, optarg_len );
-
-        /* check for supported ifo */
-        if ( XLALIFONumber( ifo ) == LAL_UNKNOWN_IFO )
-        {
-          fprintf( stderr, "IFO not recognised: %s\n", ifo );
-          exit(1);
-        }
-        break;
-
-      case 'f':
-        /* create storage for the injection file name */
-        optarg_len = strlen( optarg ) + 1;
-        injectionFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( injectionFile, optarg, optarg_len );
-        break;
-
-      case 'm':
-        /* create storage for the meta file name */
-        optarg_len = strlen( optarg ) + 1;
-        nrMetaFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( nrMetaFile, optarg, optarg_len );
-        break;
-
-      case 'd':
-        /* create storage for the nr data directory */
-        optarg_len = strlen( optarg ) + 1;
-        nrDataDir = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( nrDataDir, optarg, optarg_len );
         break;
 
       case '?':
