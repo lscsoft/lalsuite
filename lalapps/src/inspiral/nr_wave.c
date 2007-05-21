@@ -48,7 +48,7 @@ RCSID( "$Id$" );
 #define PROGRAM_NAME "nr_wave"
 
 /* function prototypes */
-static void print_usage( char *program );
+static void print_usage( CHAR *program );
 static void output_frame( CHAR *ifo, INT4 gpsStart, INT4 gpsEnd,
     REAL4TimeSeries *injData );
 static void output_multi_channel_frame( INT4 num_ifos, INT4 gpsStart,
@@ -60,12 +60,12 @@ extern int vrbflg;
 
 
 /* main program entry */
-int main( int argc, char *argv[] )
+INT4 main( INT4 argc, CHAR *argv[] )
 {
   LALStatus status = blank_status;
 
-  int i;                                 /* loop counter                   */
-  int num_ifos;                          /* number of ifos                 */
+  INT4 i;                                 /* loop counter                   */
+  INT4 num_ifos;                          /* number of ifos                 */
 
   INT4 modeLlo = -1;                     /* lowest value of l to inject    */
   INT4 modeLhi = -1;                     /* highest values of l to inject  */
@@ -79,21 +79,21 @@ int main( int argc, char *argv[] )
 
   CHAR ifo[LIGOMETA_IFO_MAX];            /* name of ifo                    */
 
-  int gpsStartSec          = -1;         /* start time of data             */
-  int gpsEndSec            = -1;         /* end time of data               */
+  INT4 gpsStartSec          = -1;         /* start time of data             */
+  INT4 gpsEndSec            = -1;         /* end time of data               */
   LIGOTimeGPS gpsStartTime = {0, 0};     /* start time GPS                 */
   LIGOTimeGPS gpsEndTime   = {0, 0};     /* end time GPS                   */
 
-  int sampleRate    = -1;                /* output sample rate             */
-  int numInjections = 0;                 /* number of injections           */
+  INT4 sampleRate    = -1;                /* output sample rate             */
+  INT4 numInjections = 0;                 /* number of injections           */
 
   SimInspiralTable *injections = NULL;   /* list of injections to be done  */
 
   REAL4TimeSeries *injData[LAL_NUM_IFO]; /* time series of zeros to which
                                             we add injections              */
 
-  int ifosFlag  = 0;                     /* injections for all ifos?       */
-  int frameFlag = 0;                     /* write h(t) to a frame?         */
+  INT4 ifosFlag  = 0;                     /* injections for all ifos?       */
+  INT4 frameFlag = 0;                     /* write h(t) to a frame?         */
   int c;
   lalDebugLevel = 5;
 
@@ -500,7 +500,7 @@ int main( int argc, char *argv[] )
 
 
 /* function to display program usgae */
-static void print_usage( char *program )
+static void print_usage( CHAR *program )
 {
   fprintf( stderr,
       "Usage:  %s [options]\n"\
@@ -532,9 +532,9 @@ static void output_frame(CHAR *ifo,
     INT4 gpsEnd,
     REAL4TimeSeries *injData)
 {
-  char fname[FILENAME_MAX];
-  int duration;
-  int detectorFlags;
+  CHAR fname[FILENAME_MAX];
+  INT4 duration;
+  INT4 detectorFlags;
   FrameH *frame;
 
   /* get frame filename */
@@ -593,11 +593,11 @@ static void output_multi_channel_frame(INT4 num_ifos,
     INT4 gpsEnd,
     REAL4TimeSeries *injData[LAL_NUM_IFO])
 {
-  char fname[FILENAME_MAX];
-  int duration;
-  int detectorFlags;
+  CHAR fname[FILENAME_MAX];
+  INT4 duration;
+  INT4 detectorFlags;
   FrameH *frame;
-  int i;
+  INT4 i;
 
   /* get frame filename */
   duration = gpsEnd - gpsStart;
