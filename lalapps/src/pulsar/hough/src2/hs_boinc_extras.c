@@ -1016,7 +1016,7 @@ void set_checkpoint () {
   if (boinc_time_to_checkpoint())
 #endif
     {
-      if (cptf->bytes >= cptf->maxsize) {
+      if ((cptf->maxsize > 0) && (cptf->bytes >= cptf->maxsize)) {
 	fstat_cpt_file_compact(cptf);
       } else {
 	fstat_cpt_file_flush(cptf);
@@ -1030,7 +1030,8 @@ void set_checkpoint () {
   else if (cptf->bytes >= cptf->maxsize)
     {
       boinc_begin_critical_section();
-      fstat_cpt_file_compact(cptf);
+      if (cptf->maxsize > 0)
+	fstat_cpt_file_compact(cptf);
       write_checkpoint();
       boinc_end_critical_section();
       LogPrintf(LOG_DEBUG,"set_checkpt(): bytes: %u, file: %d\n", cptf->bytes, ftell(cptf->fp));
