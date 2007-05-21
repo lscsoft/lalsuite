@@ -78,6 +78,7 @@ int LocalXLALComputeFaFb (Fcomponents*, const SFTVector*, const PulsarSpins,
 int local_sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
 int local_sin_cos_2PI_LUT_2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x);
 int local_sin_cos_2PI_LUT_7tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x);
+int local_sin_cos_2PI_LUT_7R4tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x);
 
 
 /*---------- optimization dependant switches ----------*/
@@ -1050,6 +1051,72 @@ int local_sin_cos_2PI_LUT_7tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
   d2 = d*d;
   (*sin2pix) = sinVal[i] + d * cosVal2PI[i] - d2 * sinVal2PIPI[i];
   (*cos2pix) = cosVal[i] - d * sinVal2PI[i] - d2 * cosVal2PIPI[i];
+#endif
+
+  return XLAL_SUCCESS;
+}
+
+
+
+int local_sin_cos_2PI_LUT_7R4tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
+
+  /* Lookup tables for fast sin/cos calculation */
+  static REAL4 sinVal[LUT_RES+1];
+  static REAL4 sinVal2PI[LUT_RES+1];
+  static REAL4 sinVal2PIPI[LUT_RES+1];
+  static REAL4 cosVal[LUT_RES+1];
+  static REAL4 cosVal2PI[LUT_RES+1];
+  static REAL4 cosVal2PIPI[LUT_RES+1];
+  static REAL4 diVal[LUT_RES+1];
+
+  static BOOLEAN tabs_empty = 1; /* reset after initializing the sin/cos tables */
+
+  UINT4 i; /* array index */
+  REAL4 d, d2; /* intermediate value  */
+  REAL4 x; /* x limited to [0..1) */
+  REAL4 dummy; /* dummy for modf */
+
+  /* res=10*(params->mCohSFT); */
+  /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
+  /* using three tables with values including PI is simply faster */
+  if ( tabs_empty ) {
+    printf("initializing...\n");
+
+    for (i=0; i <= LUT_RES; i++) {
+      sinVal[i]      = sin((LAL_TWOPI*i)/(LUT_RES));
+      sinVal2PI[i]   = sinVal[i]    * LAL_TWOPI * -1.0;
+      sinVal2PIPI[i] = sinVal2PI[i] * LAL_PI;
+      cosVal[i]      = cos((LAL_TWOPI*i)/(LUT_RES));
+      cosVal2PI[i]   = cosVal[i]    * LAL_TWOPI;
+      cosVal2PIPI[i] = cosVal2PI[i] * LAL_PI * -1.0;
+
+      printf("%f\t%f\n",sinVal[i],cosVal[i]);
+    }
+
+    /* this additional table saves another "costly" division in sin/cos calculation */
+    for (i=0; i <= LUT_RES; i++)
+      diVal[i] = (REAL4)i/(REAL4)(LUT_RES);
+
+    tabs_empty = 0;
+  }
+
+#ifdef SINCOS_FLOOR
+  x = xin - floor(xin);
+#else
+  x = modf(xin, &dummy);
+  if ( x < 0.0 )
+    x += 1.0;
+#endif
+
+  i = x * LUT_RES + .5; /* round-to-nearest */
+  d = x - diVal[i];
+#if 1
+  (*sin2pix) = sinVal[i] + d * (cosVal2PI[i] + d * sinVal2PIPI[i]);
+  (*cos2pix) = cosVal[i] + d * (sinVal2PI[i] + d * cosVal2PIPI[i]);
+#else
+  d2 = d*d;
+  (*sin2pix) = sinVal[i] + d * cosVal2PI[i] + d2 * sinVal2PIPI[i];
+  (*cos2pix) = cosVal[i] + d * sinVal2PI[i] + d2 * cosVal2PIPI[i];
 #endif
 
   return XLAL_SUCCESS;
