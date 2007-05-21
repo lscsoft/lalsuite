@@ -692,9 +692,9 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	     /* Prepare common divisor method for 4 values ( two Re-Im pair ) */
 	     /*  Im1, Re1, Im0, Re0 */
 	     "MOVSS	%[kappa_m],%%xmm2   	\n\t"	/* X2:  -   -   -   C */
-	     "MOVLPS	+00h(%[Xa]),%%xmm1   	\n\t"	/* X1:  -   -  Y00 X00 */
-	     "MOVHPS	+08h(%[Xa]),%%xmm1   	\n\t"	/* X1: Y01 X01 Y00 X00 */
-	     "SHUFPS	%%xmm2,%%xmm2,00h   	\n\t"	/* X2:  C   C   C   C */
+	     "MOVLPS	0(%[Xa]),%%xmm1   	\n\t"	/* X1:  -   -  Y00 X00 */
+	     "MOVHPS	8(%[Xa]),%%xmm1   	\n\t"	/* X1: Y01 X01 Y00 X00 */
+	     "SHUFPS	$0,%%xmm2,%%xmm2   	\n\t"	/* X2:  C   C   C   C */
 	     "MOVAPS	%[V2222],%%xmm7   	\n\t"	/* X7:  2   2   2   2 */
 	     "SUBPS	%[V1100],%%xmm2   	\n\t"	/* X2: C-1 C-1  C   C */
 	     /* -------------------------------------------------------------------; */
@@ -706,8 +706,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	     /* xmm3: current numerator ( current Re,Im elements ) */
 	     /* -------------------------------------------------------------------; */
 	     /*  Im3, Re3, Im2, Re2 */
-	     "MOVLPS	+10h(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y02 X02 */
-	     "MOVHPS	+18h(%[Xa]),%%xmm3   	\n\t"	/* X3: Y03 X03 Y02 X02 */
+	     "MOVLPS	16(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y02 X02 */
+	     "MOVHPS	24(%[Xa]),%%xmm3   	\n\t"	/* X3: Y03 X03 Y02 X02 */
 	     "SUBPS	%%xmm7,%%xmm2   	\n\t"	/* X2: C-3 C-3 C-2 C-2 */
 	     "MULPS	%%xmm0,%%xmm3   	\n\t"	/* X3: Xnew*Ccol */
 	     "MULPS	%%xmm2,%%xmm1   	\n\t"	/* X1: Xold*Cnew */
@@ -715,8 +715,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	     "ADDPS	%%xmm3,%%xmm1   	\n\t"	/* X1: Xold=Xold*Cnew+Xnew*Ccol */
 	     /* -------------------------------------------------------------------; */
 	     /*  Im5, Re5, Im4, Re4 */
-	     "MOVLPS	+20h(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y04 X04 */
-	     "MOVHPS	+28h(%[Xa]),%%xmm3   	\n\t"	/* X3: Y05 X05 Y04 X04 */
+	     "MOVLPS	32(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y04 X04 */
+	     "MOVHPS	40(%[Xa]),%%xmm3   	\n\t"	/* X3: Y05 X05 Y04 X04 */
 	     "SUBPS	%%xmm7,%%xmm2   	\n\t"	/* X2: C-5 C-5 C-4 C-4 */
 	     "MULPS	%%xmm0,%%xmm3   	\n\t"	/* X3: Xnew*Ccol */
 	     "MULPS	%%xmm2,%%xmm1   	\n\t"	/* X1: Xold*Cnew */
@@ -724,8 +724,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	     "ADDPS	%%xmm3,%%xmm1   	\n\t"	/* X1: Xold=Xold*Cnew+Xnew*Ccol */
 	     /* -------------------------------------------------------------------; */
 	     /*  Im7, Re7, Im6, Re6 */
-	     "MOVLPS	+30h(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y06 X06 */
-	     "MOVHPS	+38h(%[Xa]),%%xmm3   	\n\t"	/* X3: Y07 X07 Y06 X06 */
+	     "MOVLPS	48(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y06 X06 */
+	     "MOVHPS	56(%[Xa]),%%xmm3   	\n\t"	/* X3: Y07 X07 Y06 X06 */
 	     "SUBPS	%%xmm7,%%xmm2   	\n\t"	/* X2: C-7 C-7 C-6 C-6 */
 	     "MULPS	%%xmm0,%%xmm3   	\n\t"	/* X3: Xnew*Ccol */
 	     "MULPS	%%xmm2,%%xmm1   	\n\t"	/* X1: Xold*Cnew */
@@ -733,8 +733,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	     "ADDPS	%%xmm3,%%xmm1   	\n\t"	/* X1: Xold=Xold*Cnew+Xnew*Ccol */
 	     /* -------------------------------------------------------------------; */
 	     /*  Im9, Re9, Im8, Re8 */
-	     "MOVLPS	+40h(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y08 X08 */
-	     "MOVHPS	+48h(%[Xa]),%%xmm3   	\n\t"	/* X3: Y09 X09 Y08 X08 */
+	     "MOVLPS	64(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y08 X08 */
+	     "MOVHPS	72(%[Xa]),%%xmm3   	\n\t"	/* X3: Y09 X09 Y08 X08 */
 	     "SUBPS	%%xmm7,%%xmm2   	\n\t"	/* X2: C-9 C-9 C-8 C-8 */
 	     "MULPS	%%xmm0,%%xmm3   	\n\t"	/* X3: Xnew*Ccol */
 	     "MULPS	%%xmm2,%%xmm1   	\n\t"	/* X1: Xold*Cnew */
@@ -742,8 +742,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	     "ADDPS	%%xmm3,%%xmm1   	\n\t"	/* X1: Xold=Xold*Cnew+Xnew*Ccol */
 	     /* -------------------------------------------------------------------; */
 	     /*  Im11, Re11, Im10, Re10 */
-	     "MOVLPS	+50h(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y10 X10 */
-	     "MOVHPS	+58h(%[Xa]),%%xmm3   	\n\t"	/* X3: Y11 X11 Y10 X10 */
+	     "MOVLPS	80(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y10 X10 */
+	     "MOVHPS	88(%[Xa]),%%xmm3   	\n\t"	/* X3: Y11 X11 Y10 X10 */
 	     "SUBPS	%%xmm7,%%xmm2   	\n\t"	/* X2: C11 C11 C10 C10 */
 	     "MULPS	%%xmm0,%%xmm3   	\n\t"	/* X3: Xnew*Ccol */
 	     "MULPS	%%xmm2,%%xmm1   	\n\t"	/* X1: Xold*Cnew */
@@ -751,8 +751,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	     "ADDPS	%%xmm3,%%xmm1   	\n\t"	/* X1: Xold=Xold*Cnew+Xnew*Ccol */
 	     /* -------------------------------------------------------------------; */
 	     /*  Im13, Re13, Im12, Re12 */
-	     "MOVLPS	+60h(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y12 X12 */
-	     "MOVHPS	+68h(%[Xa]),%%xmm3   	\n\t"	/* X3: Y13 X13 Y12 X12 */
+	     "MOVLPS	96(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y12 X12 */
+	     "MOVHPS	104(%[Xa]),%%xmm3   	\n\t"	/* X3: Y13 X13 Y12 X12 */
 	     "SUBPS	%%xmm7,%%xmm2   	\n\t"	/* X2: C13 C13 C12 C12 */
 	     "MULPS	%%xmm0,%%xmm3   	\n\t"	/* X3: Xnew*Ccol */
 	     "MULPS	%%xmm2,%%xmm1   	\n\t"	/* X1: Xold*Cnew */
@@ -760,8 +760,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	     "ADDPS	%%xmm3,%%xmm1   	\n\t"	/* X1: Xold=Xold*Cnew+Xnew*Ccol */
 	     /* -------------------------------------------------------------------; */
 	     /*  Im15, Re15, Im14, Re14 */
-	     "MOVLPS	+70h(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y14 X14 */
-	     "MOVHPS	+78h(%[Xa]),%%xmm3   	\n\t"	/* X3: Y15 X15 Y14 X14 */
+	     "MOVLPS	112(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y14 X14 */
+	     "MOVHPS	120(%[Xa]),%%xmm3   	\n\t"	/* X3: Y15 X15 Y14 X14 */
 	     "SUBPS	%%xmm7,%%xmm2   	\n\t"	/* X2: C15 C15 C14 C14 */
 	     "MULPS	%%xmm0,%%xmm3   	\n\t"	/* X3: Xnew*Ccol */
 	     "MULPS	%%xmm2,%%xmm1   	\n\t"	/* X1: Xold*Cnew */
@@ -775,7 +775,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	     /* -------------------------------------------------------------------; */
 	     /* The 17th element ( only a half of a pair ) */
 	     /*  dummy, dummy, Im16, Re16 */
-	     "MOVLPS	+80h(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y14 X14 */
+	     "MOVLPS	128(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y14 X14 */
 	     "SUBPS	%%xmm7,%%xmm2   	\n\t"	/* X2: C17 C17 C16 C16 */
 	     "MULPS	%%xmm0,%%xmm3   	\n\t"	/* X3: Xnew*Ccol */
 	     "MULPS	%%xmm2,%%xmm1   	\n\t"	/* X1: Xold*Cnew */
@@ -800,7 +800,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	     /* interface */
 	     :
 	     /* output  (here: to memory)*/
-	     [XSums]      "=m" (XSums),
+	     [XSums]      "=m" (XSums)
 
 	     :
 	     /* input */
@@ -809,7 +809,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
 	     /* constants */
 	     [V1100]       "m"  (V1100[0]),
-	     [V2222]       "m"  (V2222[0]),
+	     [V2222]       "m"  (V2222[0])
 
 	     :
 	     /* clobbered registers */
