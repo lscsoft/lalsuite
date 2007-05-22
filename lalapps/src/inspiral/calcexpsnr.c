@@ -142,7 +142,6 @@ int coireflg;                /* is input file coire (1) or inj (null) */
 int main( int argc, char *argv[] )
 {
   LALStatus                     status = blank_status;
-  REAL8                         dynRange = 1.0/3.0e-23;
 
   UINT4                         k;
   UINT4                         kLow;
@@ -156,8 +155,11 @@ int main( int argc, char *argv[] )
   REAL4                          statValue;
  
   /* vars required to make freq series */
-  LIGOTimeGPS                   epoch = { 0, 0 }; 
+  LIGOTimeGPS                   epoch = { 0, 0 };
+  LIGOTimeGPS                   wvfStartTime = {0, 0}; 
+  LIGOTimeGPS                   gpsStartTime = {0, 0}; 
   REAL8                         f0 = 0.;
+  REAL8                         offset = 0.;
 
   /* files contain PSD info */
   CHAR                         *injectionFile = NULL;         
@@ -168,7 +170,6 @@ int main( int argc, char *argv[] )
 
   COMPLEX8Vector               *unity = NULL;
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
-  INT8                          waveformStartTime;
 
   int                           numInjections = 0;
   int                           numTriggers = 0;
@@ -528,15 +529,16 @@ int main( int argc, char *argv[] )
    */
 
 
-  for ( thisInjection = injectionHead; thisInjection; thisInjection = thisInjection->next )
-  {
-     /* set the time of the injection to zero so it is injected in  */
+/*  for ( thisInjection = injectionHead; thisInjection; thisInjection = thisInjection->next )
+ * {
+ */    /* set the time of the injection to zero so it is injected in  */
      /* the middle of the data segment: the other times are ignored */
-    thisInjection->geocent_end_time.gpsSeconds = 0;
-    thisInjection->geocent_end_time.gpsNanoSeconds = 0;
-  }
-  thisInjection = injectionHead;
-
+ 
+ /*   thisInjection->geocent_end_time.gpsSeconds = 0;
+  *  thisInjection->geocent_end_time.gpsNanoSeconds = 0;
+  *}
+  */
+ thisInjection = injectionHead;
 
   /* setting fixed waveform injection parameters */
   memset( &ppnParams, 0, sizeof(PPNParamStruc) );
@@ -560,6 +562,8 @@ int main( int argc, char *argv[] )
 
      /* create the waveform, amp, freq phase etc */
      LAL_CALL( LALGenerateInspiral(&status, &waveform, thisInjection, &ppnParams), &status);
+     fprintf( stdout, "ppnParams.tc %e\n ", ppnParams.tc);
+     /* do i need to subtract this value from wvfStartTime */
 
     statValue = 0.;
   
@@ -590,57 +594,64 @@ int main( int argc, char *argv[] )
         case 1:
            if ( vrbflg ) fprintf( stdout, "looking at H1 \n");
            thisSpec = specH1;
+           wvfStartTime.gpsSeconds     = thisInjection->h_end_time.gpsSeconds;
+           wvfStartTime.gpsNanoSeconds = thisInjection->h_end_time.gpsNanoSeconds;
            break;
         case 2:
            if ( vrbflg ) fprintf( stdout, "looking at H2 \n");
            thisSpec = specH2;
+           wvfStartTime.gpsSeconds     = thisInjection->h_end_time.gpsSeconds;
+           wvfStartTime.gpsNanoSeconds = thisInjection->h_end_time.gpsNanoSeconds;
            break;
         case 3:
            if ( vrbflg ) fprintf( stdout, "looking at L1 \n");
            thisSpec = specL1;
+           wvfStartTime.gpsSeconds     = thisInjection->l_end_time.gpsSeconds;
+           wvfStartTime.gpsNanoSeconds = thisInjection->l_end_time.gpsNanoSeconds;
            break;
         default:
            fprintf( stderr, "Error: ifoNumber %d does not correspond to H1, H2 or L1: \n", ifoNumber );
            exit( 1 );
         }
 
-        /*LAL_CALL( LALCreateCOMPLEX8FrequencySeries( &status, &detector.transfer, chan->name, chan->epoch, f0, 
-         *                                           deltaF, strainPerCount, (numPoints / 2 + 1) ), &status );
-         */
+        offset = (chan->data->length / 2.0) * chan->deltaT;
+        gpsStartTime.gpsSeconds = wvfStartTime.gpsSeconds - offset;
+        gpsStartTime.gpsNanoSeconds = wvfStartTime.gpsNanoSeconds;
+        chan->epoch = gpsStartTime;
 
-        /* is this okay? copying in detector transfer which so far only contains response info  */
-        detector.transfer = detTransDummy;
+       if (vrbflg) fprintf(stdout, "offset start time of injection by %f seconds \n", offset ); 
+       
+       /* is this okay? copying in detector transfer which so far only contains response info  */
+       detector.transfer = detTransDummy;
 
-        XLALUnitInvert( &(detector.transfer->sampleUnits), &(resp->sampleUnits) );
+       XLALUnitInvert( &(detector.transfer->sampleUnits), &(resp->sampleUnits) );
 
-        /* from bank sim routines */
-        thisInjection->geocent_end_time.gpsSeconds = 0;
-        thisInjection->geocent_end_time.gpsNanoSeconds = 0;
-
-        waveformStartTime = XLALGPStoINT8( &(thisInjection->geocent_end_time));
-        waveformStartTime -= (INT8) ( 1000000000.0 * ppnParams.tc );
-        waveformStartTime += (INT8) ( 1000000000.0 *
-          ((REAL8) (chan->data->length - ppnParams.length) / 2.0) * chan->deltaT);
-    
-        XLALINT8toGPS( &(waveform.a->epoch), waveformStartTime );
-        memcpy(&(waveform.f->epoch), &(waveform.a->epoch), sizeof(LIGOTimeGPS) );
-        memcpy(&(waveform.phi->epoch), &(waveform.a->epoch), sizeof(LIGOTimeGPS) );
-
-  
+       waveform.a->epoch = wvfStartTime;
+       memcpy(&(waveform.f->epoch), &(waveform.a->epoch), sizeof(LIGOTimeGPS) );
+       memcpy(&(waveform.phi->epoch), &(waveform.a->epoch), sizeof(LIGOTimeGPS) );
+ 
        /* perform the injection */
        LAL_CALL( LALSimulateCoherentGW(&status, chan, &waveform, &detector ), &status); 
-
-       
-       /* will this work? No! */
-       /*LAL_CALL( LALDestroyCOMPLEX8FrequencySeries( &status, detector.transfer), &status );
-        *LALFree( detector.site);
-        */
  
-      /* write out channel  */
-      /*LALSPrintTimeSeries(chan, "chanTest.dat" );
-       *fprintf( stdout, "written out chan\n" );
-       *fflush( stdout );
-       */  
+       /* write out channel  */
+       switch ( ifoNumber )
+       {
+       case 1:
+           LALSPrintTimeSeries(chan, "chanTest_H1.dat" );
+           fprintf( stdout, "written out H1 chan\n" );
+           break;
+       case 2:
+           LALSPrintTimeSeries(chan, "chanTest_H2.dat" );
+           fprintf( stdout, "written out H2 chan\n" );
+           break;
+       case 3:
+           LALSPrintTimeSeries(chan, "chanTest_L1.dat" );
+           fprintf( stdout, "written out L1 chan\n" );
+           break;
+        default:
+           fprintf( stderr, "Error: ifoNumber %d does not correspond to H1, H2 or L1: \n", ifoNumber );
+           exit( 1 );
+       }  
 
       LAL_CALL( LALCreateForwardRealFFTPlan( &status, &pfwd, chan->data->length, 0), &status);
 
