@@ -45,9 +45,9 @@
 
 #define MAXIFO 2
 #define BANKEFFICIENCY_PARAMS_ROW \
-"         %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%d"
+"         %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%u"
 #define BANKEFFICIENCY_PARAMS_ROW_SPACE \
-"         %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %d "
+"         %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %u "
 
 /*do not use capital here for future mysql migration */
 #define PRINT_LIGOLW_XML_BANKEFFICIENCY(fp) ( \
@@ -546,14 +546,14 @@ SetDefault(InspiralCoarseBankIn 	*coarseIn,
 /* Help Function 
  * */
 void
-Help();
+Help(void);
 
 /* Print Function for final results 
  * */
 void
 PrintResults(
     ResultIn                    result,
-    RandomInspiralSignalIn      rand);
+    RandomInspiralSignalIn      randIn);
 
 
 
@@ -644,75 +644,6 @@ BEReadXmlBank(  LALStatus  *status,
 
 
 void 
-LALCreateRealPsd(LALStatus *status, 
-		 InspiralCoarseBankIn *bankIn,
-		 RandomInspiralSignalIn randIn, 
-		 UserParametersIn userParam);
-
-
-
-
-typedef struct 
-{  
-  LIGOTimeGPS   gpsStartTime;
-  LIGOTimeGPS   gpsEndTime;
-  INT4          padData;                  
-  INT4          numPoints;
-  INT4          numSegments;
-  CHAR          ifo[3];                           
-
-  INT4          inputDataLength;
-  INT4          resampFiltType;
-  INT4          sampleRate;   
-  INT4          highPass;     
-  REAL4         highPassFreq; 
-  INT4          highPassOrder;
-  REAL4         highPassAtten;
-  REAL4         fLow;
-  INT4          specType;           
-
-  CHAR          *calCacheName;
-  INT4          pointCal;           
-  REAL4         dynRangeExponent;          
-  REAL4         geoHighPassFreq;            
-  INT4          geoHighPassOrder;           
-  REAL4         geoHighPassAtten; 
-  
-  INT4          randomSeed; 
-  REAL4         gaussVar;   
-  INT4          gaussianNoise;
- 
-  CHAR          *fqChanName;
-  CHAR          *injectionFile;
-  CHAR          *frInCacheName;
-}
-InspiralPipelineIn;
-
-
-
-void SetInspiralPipelineParams(InspiralPipelineIn *param,
-			      RandomInspiralSignalIn randIn);
-
-
-
-
-typedef struct 
-{
-  INT4 numPoints;
-  REAL4 gaussVar;
-  REAL4 inputDeltaT;
-  INT4 specType;
-}
-WindowSpectrumIn;
-
-void 
-LALComputeWindowSpectrum(LALStatus *status, 
-			      WindowSpectrumIn *param,
-			      REAL4FrequencySeries  *spec,
-			      REAL4TimeSeries *chan);
-
-
-void 
 BECreateBank(
     LALStatus                   *status, 
     InspiralCoarseBankIn        *coarseBankIn,	
@@ -761,31 +692,12 @@ LALInspiralOverlapBCVSpin(
 
 
 
-void
-BEParseGetInt(  CHAR **argv, 
-                INT4 *index,
-                INT4 *data);
-
-void
-BEParseGetDouble(CHAR    **argv, 
-		 INT4    *index,
-		 REAL8    *data);
-
-void
-BEParseGetDouble2(CHAR    **argv, 
-		  INT4    *index,
-		  REAL8    *data1,                
-		  REAL8    *data2);
-
-void
-BEParseGetString(  CHAR    **argv, 
-		   INT4    *index );
+void BEParseGetInt( CHAR **argv, INT4 *index, INT4 *data);
+void BEParseGetDouble(CHAR **argv, INT4 *index, REAL8 *data);
+void BEParseGetDouble2(CHAR **argv, INT4 *index, REAL8 *data1, REAL8 *data2);
+void BEParseGetString(CHAR **argv, INT4 *index );
 
 
-void
-PrintParameters(InspiralCoarseBankIn 	coarse,
-		RandomInspiralSignalIn 	rand,
-		UserParametersIn    	other);
 
 CHAR* GetStringFromGridType(INT4 input);
 CHAR* GetStringFromSimulationType(INT4 input);
@@ -795,9 +707,7 @@ CHAR* GetStringFromNoiseModel(INT4 input);
 CHAR* GetStringFromScientificRun(INT4 input);
 
 
-void
-BEAscii2XmlHelp(void);
 
 void 
-BEAscii2Xml();
+BEAscii2Xml(void);
 

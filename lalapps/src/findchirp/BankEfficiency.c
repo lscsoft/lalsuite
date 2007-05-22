@@ -13,38 +13,24 @@ RCSID(  "$Id$");
 #define PROGRAM_NAME         "BankEfficiency"
 
 
-#ifdef LALAPPS_CONDOR
-extern int condor_compress_ckpt;
-void init_image_with_file_name( char *ckpt_file_name );
-void ckpt_and_exit( void );
-#endif
-
-
 static int vrbflg = 0;
 
 RandomParams *randParams = NULL;
 INT4 randnStartPad = 0;
-INT4 ascii2xml=0;
+INT4 ascii2xml = 0;
 
 
 int
 main (INT4 argc, CHAR **argv ) 
 {
-
-  /* checkpointing */
-  CHAR  ckptPath[FILENAME_MAX];           /* input and ckpt file path     */
-  /*CHAR  outputPath[FILENAME_MAX];         */
-  CHAR  fname[FILENAME_MAX];
-  CHAR   fileName[FILENAME_MAX];          /* name of output files         */
-
-
-  /* --- Variables ---*/
+  CHAR  	fname[FILENAME_MAX];
+  CHAR   	fileName[FILENAME_MAX];          
   INT4          ntrials = 0;
   INT4 	        i, thisTemplateIndex;
   Approximant   tempOrder; 
 
   /* --- input --- */
-  UserParametersIn 	userParam;
+  UserParametersIn 		userParam;
 
   /* --- signal related --- */
   REAL4Vector                   signal;
@@ -57,11 +43,10 @@ main (INT4 argc, CHAR **argv )
   INT4  	                sizeBank = 0;
   INT4                          filter_processed = 0;
   MetadataTable                 templateBank;
-  SnglInspiralTable            *tmpltHead  = NULL;
-  SnglInspiralTable            *tmpltCurrent  = NULL;
+  SnglInspiralTable            *tmpltHead = NULL;
+  SnglInspiralTable            *tmpltCurrent = NULL;
+
   /* --- filtering related --- */
-
-
   REAL4Vector    correlation;
   REAL4Vector    FilterBCVSpin1;
   REAL4Vector    FilterBCVSpin2;
@@ -81,10 +66,7 @@ main (INT4 argc, CHAR **argv )
   /* others */
   RealFFTPlan 		*fwdp = NULL;
   RealFFTPlan 		*revp = NULL;
-
-
   LALStatus             status = blank_status;
-
   FILE                  *Foutput;
 
   /* --- START main code --- */
@@ -96,7 +78,7 @@ main (INT4 argc, CHAR **argv )
   /* --- Some initialization --- */ 
 
   lal_errhandler = LAL_ERR_EXIT;
-  lalDebugLevel = 0;
+  lalDebugLevel = 1;
 
   templateBank.snglInspiralTable = NULL;
 
@@ -122,19 +104,15 @@ main (INT4 argc, CHAR **argv )
       exit(1);
     }
 
- /* zero out the checkpoint and output paths */
-  memset( ckptPath, 0, FILENAME_MAX * sizeof(CHAR) );
   memset( fname, 0, FILENAME_MAX * sizeof(CHAR) );
   memset( fileName, 0, FILENAME_MAX * sizeof(CHAR) );
-/*  memset( outputPath, 0, FILENAME_MAX * sizeof(CHAR) );*/
+  /*  memset( outputPath, 0, FILENAME_MAX * sizeof(CHAR) );*/
   LALSnprintf( fileName, FILENAME_MAX * sizeof(CHAR), "bankefficiency");
-  LALSnprintf( ckptPath, FILENAME_MAX * sizeof(CHAR), "/home2/spxtc/");
         
 
   /* init a random structure using possibly the seed from user input*/
   LAL_CALL(LALCreateRandomParams(&status, &randParams, randIn.useed ), 
 	   &status);
-
 
   /* 
      This is used if one want to use condor script to keep track of the
@@ -165,29 +143,33 @@ main (INT4 argc, CHAR **argv )
     userParam.numSeconds = (INT4)(signal.length/randIn.param.tSampling);
   }
 
-
-
+  
   /* --- Allocate memory for some vectors --- */
-  FilterBCV1.length     = signal.length;
-  FilterBCV2.length     = signal.length;
-  FilterBCVSpin1.length     = signal.length;
-  FilterBCVSpin2.length     = signal.length;
-  FilterBCVSpin3.length     = signal.length;
-
   randIn.psd.length 	= signal.length/2 + 1; 
   correlation.length 	= signal.length;
-
   signal.data 		= (REAL4*) LALCalloc(1, sizeof(REAL4) * signal.length);
   correlation.data 	= (REAL4*) LALCalloc(1, sizeof(REAL4) * correlation.length);
   randIn.psd.data 	= (REAL8*) LALCalloc(1, sizeof(REAL8) * randIn.psd.length); 
-  FilterBCV1.data       = (REAL4*) LALCalloc(1, sizeof(REAL4) * FilterBCV1.length);
-  FilterBCV2.data       = (REAL4*) LALCalloc(1, sizeof(REAL4) * FilterBCV2.length);
-  FilterBCVSpin1.data   = (REAL4*) LALCalloc(1, sizeof(REAL4) * FilterBCVSpin1.length);
-  FilterBCVSpin2.data   = (REAL4*) LALCalloc(1, sizeof(REAL4) * FilterBCVSpin2.length);
-  FilterBCVSpin3.data   = (REAL4*) LALCalloc(1, sizeof(REAL4) * FilterBCVSpin3.length);
+  
+  if (userParam.template==BCV)
+  {
+    FilterBCV1.length     = signal.length;
+    FilterBCV2.length     = signal.length;
+    FilterBCV1.data       = (REAL4*) LALCalloc(1, sizeof(REAL4) * FilterBCV1.length);
+    FilterBCV2.data       = (REAL4*) LALCalloc(1, sizeof(REAL4) * FilterBCV2.length);
+  }
+  
+  if (userParam.template==BCVSpin)
+  {
+    FilterBCVSpin1.length     = signal.length;
+    FilterBCVSpin2.length     = signal.length;
+    FilterBCVSpin3.length     = signal.length;
+    FilterBCVSpin1.data   = (REAL4*) LALCalloc(1, sizeof(REAL4) * FilterBCVSpin1.length);
+    FilterBCVSpin2.data   = (REAL4*) LALCalloc(1, sizeof(REAL4) * FilterBCVSpin2.length);
+    FilterBCVSpin3.data   = (REAL4*) LALCalloc(1, sizeof(REAL4) * FilterBCVSpin3.length);
+  }
    
-
-  /* --- create the PSd noise --- */
+  /* --- Create the PSD noise --- */
   if (vrbflg){
     fprintf(stdout, "generating PSD ...");
   }
@@ -196,43 +178,42 @@ main (INT4 argc, CHAR **argv )
   if (vrbflg){
     fprintf(stdout, " ... done \n");
   }
-  /* --- create the template bank --- */
+  
+  /* --- Create the template bank --- */
  if ( vrbflg )
   {
     fprintf( stdout, "generating template bank parameters... " );
     fflush( stdout );
   }
- {
-   /* make sure the pointer to the first template is null */
-   templateBank.snglInspiralTable = NULL;
-   if (coarseBankIn.approximant == BCVSpin){
-     coarseBankIn.mMin = 0;
-   }
-   /*coarseBankIn.span = bhns_only;*/
 
-   LAL_CALL( LALInspiralBankGeneration( &status, &coarseBankIn, &tmpltHead, &sizeBank),
-	     &status );
-
-
-   if ( sizeBank )
-     {
-       templateBank.snglInspiralTable = tmpltHead;
-     }
-   if (userParam.printBank)
-   {
-     LALBankPrintXML(templateBank, coarseBankIn, randIn, userParam);
-     LALBankPrintAscii(templateBank, sizeBank, coarseBankIn);
-   }
-   
-   if ( vrbflg )
-     {
-       fprintf( stdout, "done. Got %d templates\n", sizeBank );
-       fflush(stdout);
-     }
+ 
+ /* make sure the pointer to the first template is null */
+ templateBank.snglInspiralTable = NULL;
+ if (coarseBankIn.approximant == BCVSpin){
+   coarseBankIn.mMin = 0;
  }
+  
+ LAL_CALL( LALInspiralBankGeneration( &status, &coarseBankIn, &tmpltHead, &sizeBank),
+	   &status );
 
 
-
+ if ( sizeBank )
+ {
+   templateBank.snglInspiralTable = tmpltHead;
+ }
+ 
+ if (userParam.printBank)
+ {
+   LALBankPrintXML(templateBank, coarseBankIn, randIn, userParam);
+   LALBankPrintAscii(templateBank, sizeBank, coarseBankIn);
+ }
+   
+ if ( vrbflg )
+ {
+   fprintf( stdout, "done. Got %d templates\n", sizeBank );
+   fflush(stdout);
+ }
+ 
   /* --- Estimate the fft's plans --- */
   LAL_CALL(LALCreateForwardRealFFTPlan(&status, &fwdp, signal.length, 0), 
 	   &status);
@@ -248,19 +229,18 @@ main (INT4 argc, CHAR **argv )
   overlapin.ifExtOutput = 0;  /* new option from anand WaveOverlap */
 
   /* --- Create Matrix for BCV Maximization once for all --- */
-  LAL_CALL( BECreatePowerVector(&status, &powerVector, randIn, signal.length), 
+  if ((userParam.template == BCV) || (userParam.template==BCVSpin))
+  {
+    LAL_CALL( BECreatePowerVector(&status, &powerVector, randIn, signal.length), 
 	    &status);
-  LALCreateBCVMomentVector(&moments, &coarseBankIn.shf,  randIn.param.tSampling, 
+    LALCreateBCVMomentVector(&moments, &coarseBankIn.shf,  randIn.param.tSampling, 
 			randIn.param.fLower, signal.length);
+  }
   
   /*
-   * Main loop is here. We creae random signal and filter 
-   * it with the template bank.
-   */
-  /* while we want to perform one simulation */
-  if (vrbflg){
-    PrintParameters(coarseBankIn, randIn, userParam);
-  }
+   * Main loop is here. We create a random signal and filter 
+   * it with the template bank while we want to perform one
+    simulation. */
 
   while (++ntrials <= userParam.ntrials) 
     {     
@@ -286,26 +266,14 @@ main (INT4 argc, CHAR **argv )
       /* first generate some input signal. GW alone or mixed with gaussian noise. */
       /* if realNoise is requested and simulation type is at least with noise,
        * then we just add real noise to the simulated signal. */
-      if (userParam.realNoise && userParam.noiseModel == REALPSD) {
-        for (i=0; i<(INT4)signal.length/2; i++){
-	  /*INT4 k = signal.length-i;
-	    to be done*/
-		/*
-signal.data[i] = strainSegment->data[i].re; 
-	    signal.data[k] = strainSegment->data[i].im; 
-*/
-        }
-      }
-      else
-	{
 
-	  if (randnStartPad==1)
-	    {
-	      randIn.param.nStartPad = (int)((float)rand()/(float)RAND_MAX*signal.length/2);
-	    }
-	  LAL_CALL(BEGenerateInputData(&status,  &signal, &randIn, userParam),
-		   &status);
-	}
+      if (randnStartPad==1)
+      {
+	randIn.param.nStartPad = (int)((float)rand()/(float)RAND_MAX*signal.length/2);
+      }
+      LAL_CALL(BEGenerateInputData(&status,  &signal, &randIn, userParam),
+      	&status);
+	
 
       overlapin.signal 	= signal;
        
@@ -599,20 +567,28 @@ signal.data[i] = strainSegment->data[i].re;
 
   LALDestroyRandomParams(&status, &randParams );
   
-  LALFree(powerVector.fm5_3.data);
-  LALFree(powerVector.fm2_3.data);
-  LALFree(powerVector.fm1_2.data);
-  LALFree(powerVector.fm7_6.data);
-
-  LALFree(moments.a11.data);
-  LALFree(moments.a21.data);
-  LALFree(moments.a22.data);
-   
-  LALFree(FilterBCV2.data);
-  LALFree(FilterBCV1.data);
-  LALFree(FilterBCVSpin2.data);
-  LALFree(FilterBCVSpin1.data);
-  LALFree(FilterBCVSpin3.data);
+  if (userParam.template == BCV || userParam.template == BCVSpin)
+  {
+    LALFree(powerVector.fm5_3.data);
+    LALFree(powerVector.fm2_3.data);
+    LALFree(powerVector.fm1_2.data);
+    LALFree(powerVector.fm7_6.data);
+    LALFree(moments.a11.data);
+    LALFree(moments.a21.data);
+    LALFree(moments.a22.data);   
+  
+    if (userParam.template == BCV)
+    {  
+      LALFree(FilterBCV2.data);
+      LALFree(FilterBCV1.data);
+    }
+    else
+    {
+      LALFree(FilterBCVSpin2.data);
+      LALFree(FilterBCVSpin1.data);
+      LALFree(FilterBCVSpin3.data);
+    }
+  }
   
   LALFree(randIn.psd.data);
   LALDDestroyVector( &status, &(coarseBankIn.shf.data) );
@@ -949,6 +925,9 @@ LALCreateBCVFilters(REAL4Vector         *FilterBCV1,
     }  
 }
 
+
+
+/* This BCV spin code has never been validated.*/
 void 
 LALCreateBCVSpinFilters(REAL4Vector         *FilterBCVSpin1,
 			REAL4Vector 	    *FilterBCVSpin2,
@@ -1808,7 +1787,7 @@ BEPrintBank(	InspiralCoarseBankIn coarseBankIn,
 #if 0
   if ( numCoarse )
     {
-      /* --- we sae one line --- */
+      /* --- we save one line --- */
       tmplt = templateBank.snglInspiralTable = (SnglInspiralTable *)
 	LALCalloc( 1, sizeof(SnglInspiralTable) );
       LALSnprintf( tmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), ifo );
@@ -2464,9 +2443,7 @@ void BECreatePsd(LALStatus                *status,
 {
   UINT4 i=0;
   REAL4 df;
-  REAL4 dummy; 
   FILE  *Foutput;
-  FILE  *Finput;
 
   INITSTATUS( status, "BECreatePsd", BANKEFFICIENCYC );
   ATTATCHSTATUSPTR( status );
@@ -2515,32 +2492,16 @@ void BECreatePsd(LALStatus                *status,
 	       status->statusPtr);
       break;
     case REALPSD:	
-      /*    LAL_CALL(LALCreateRealPsd (status->statusPtr, coarseBankIn, *randIn , userParam), 
-	       status->statusPtr);
-      */
+      fprintf(stderr, "to be implemented\n");
+      exit(0);
       break;
-
-    case READPSD:
-     coarseBankIn->shf.data->data[0]=0;
-     if ((Finput= fopen(userParam.inputPSD,"r")) == NULL)
-	{
-	  fprintf(stderr, "userParam.inputPSD does not exists\n");
-	  exit(1);
-	}
-     else
-     while(fscanf(Finput, "%f %le\n",&dummy, &coarseBankIn->shf.data->data[i+1]) == 2)  
-         i++;
-
-     if ((i+1) != coarseBankIn->shf.data->length){
-
-       fprintf(stderr, "ERROR::number of points read(%d)  in the file (%s) and size of the time vectors (using the sampling(%f) and number of seconds (%f)) do not match.Generate a new file of (%d) points  with an expected df of %f \n",  i,userParam.inputPSD,randIn->param.tSampling, (coarseBankIn->shf.data->length-1)*2/randIn->param.tSampling,  coarseBankIn->shf.data->length-1, df);
-       exit(0);
-     }
-
-     
-     fclose(Finput);
       
-     }
+
+    case READPSD:  
+      fprintf(stderr, "to be implemented\n");
+      exit(0);
+      break;
+    }
 
   /* --- save the psd in the file psd.dat if requested --- */
   if (userParam.printPsd)
@@ -2934,182 +2895,7 @@ void LALInspiralOverlapBCVSpin(LALStatus *status,
 
 
 
-void
-PrintParameters(InspiralCoarseBankIn 	coarse,
-		RandomInspiralSignalIn 	randIn,
-		UserParametersIn    	other)
-{
 
-  fprintf(stdout, "coarseBankIn parameters\n"
-	          "-----------------------\n");
-
-  fprintf(stdout, "fLower\t\t=\t%f\n"
-	  "fUpper\t\t=\t%f\n"
-	  "tSampling\t=\t%f\n"
-	  "space\t\t=\t%d\n"
-	  "mmCoarse\t=\t%f\n" 
-	  "mmFine\t\t=\t%f\n" 
-	  "iflso\t\t=\t%d\n" 
-	  "mMin\t\t=\t%f\n" 
-	  "mMax\t\t=\t%f\n" 
-	  "MMax\t\t=\t%f\n" 
-	  "massRange\t=\t%d\n" 
-	  "etamin\t\t=\t%f\n" 
-	  "psi0Min\t\t=\t%f\n" 
-	  "psi0Max\t\t=\t%f\n" 
-	  "psi3Min\t\t=\t%f\n" 
-	  "psi3Max\t\t=\t%f\n" 
-	  "alpha\t\t=\t%f\n" 
-	  "numFcut\t\t=\t%d\n" 
-	  "approximant\t=\t%d\n" 
-	  "order\t\t=\t%d\n" 
-	  "LowGM\t\t=\t%f\n" 
-	  "HighGM\t\t=\t%f\n" 
-	  "gridType\t=\t%d\n",
-	  coarse.fLower,    	
-	  coarse.fUpper,    	
-	  coarse.tSampling, 	
-	  (INT4)(coarse.space),     	
-	  coarse.mmCoarse,
-	  coarse.mmFine,
-	  coarse.iflso,           
-	  coarse.mMin,      	
-	  coarse.mMax,      	
-	  coarse.MMax,      	
-	  coarse.massRange,       
-	  coarse.etamin, 	        
-	  coarse.psi0Min,   	
-	  coarse.psi0Max,   	
-	  coarse.psi3Min,   	
-	  coarse.psi3Max,   	
-	  coarse.alpha,     	
-	  coarse.numFcutTemplates, 
-	  coarse.approximant,     
-	  coarse.order,           
-	  (REAL8)coarse.LowGM,     	
-	  (REAL8)coarse.HighGM,    	
-	  (INT4)coarse.gridSpacing);
-
-  
-  fprintf(stdout, "bankIn parameters\n"
-	  "------------------------\n");
-
-  fprintf(stdout, "useed\t\t=\t%d\n"
-	  "type\t\t=\t%d\n"
-	  "SignalAmp\t=\t%f\n"
-	  "param.order\t=\t%d\n"
-	  "param.alpha\t=\t%f\n"
-	  "param.ieta\t=\t%d\n"
-	  "param.mass1\t=\t%f\n"
-	  "param.mass2\t=\t%f\n"
-	  "param.fLower\t=\t%f\n"
-	  "param.OmegaS\t=\t%f\n"
-	  "param.Theta\t=\t%f\n"
-	  "mMin\t\t=\t%f\n"
-	  "mMax\t\t=\t%f\n"
-	  "MMax\t\t=\t%f\n"
-	  "etaMin\t\t=\t%f\n"
-	  "psi0Min\t\t=\t%f\n"
-	  "psi0Max\t\t=\t%f\n"
-	  "psi3Min\t\t=\t%f\n"
-	  "psi3Max\t\t=\t%f\n"
-	  "param.approximant=\t%d\n"
-	  "param.tSampling\t=\t%f\n"
-	  "param.fCutoff\t=\t%f\n"
-	  "param.startTime\t=\t%f\n"
-	  "param.startPhase=\t%f\n"
-	  "param.nStartPad\t=\t%d\n"
-	  "param.signalAmplitude\t=\t%f\n"
-	  "param.nEndPad\t=\t%d\n"
-	  "NoiseAmp\t=\t%f\n",
-	  randIn.useed,
-	  randIn.type,
-	  randIn.SignalAmp,
-	  randIn.param.order,
-	  randIn.param.alpha,
-	  randIn.param.ieta,
-	  randIn.param.mass1,
-	  randIn.param.mass2,
-	  randIn.param.fLower,
-	  randIn.param.OmegaS,
-	  randIn.param.Theta,
-	  randIn.mMin,
-	  randIn.mMax,
-	  randIn.MMax,
-	  randIn.etaMin,
-	  randIn.psi0Min,
-	  randIn.psi0Max,
-	  randIn.psi3Min,
-	  randIn.psi3Max,
-	  randIn.param.approximant,
-	  randIn.param.tSampling,
-	  randIn.param.fCutoff,
-	  randIn.param.startTime,
-	  randIn.param.startPhase,
-	  randIn.param.nStartPad,
-	  randIn.param.signalAmplitude,
-	  randIn.param.nEndPad,
-	  randIn.NoiseAmp);
-
-  
-
-  fprintf(stdout, "userParam parameters\n"
-	  "------------------------\n");
-  
-   fprintf(stdout,
-	  "alphaFConstraint\t%d\t\n"
-	  "extraFinalPrinting\t%d\t\n"
-	  "template\t\t%d\t\n"
-	  "signalfFinal\t\t%f\t\n"
-	  "lalDebug\t\t%d\t\n"
-	  "signal\t\t\t%d\t\n"
-	  "m1\t\t\t%f\t\n"
-	  "m2\t\t\t%f\t\n"
-	  "numSeconds\t\t%d\t\n"
-	  "psi0\t\t%f\t\n"
-	  "psi3\t\t%f\t\n"
-	  "tau0\t\t%f\t\n"
-	  "tau3\t\t%f\t\n" 
-	  "printBestOverlap\t%d\t\n"	
-	  "printBestTemplate\t%d\t\n" 	
-	  "printSNRHisto\t\t%d\t\n"        
-	  "printPsd\t\t%d\t\n"             
-	  "printBank\t\t%d\t\n"    	
-	  "printResultXml\t\t%d\t\n"    	
-	  "printPrototype\t\t%d\t\n"    	
-	  "faithfulness\t\t%d\t\n"        	
-	  "ntrials\t\t%d\t\n" 	     	
-	  "fastSimulation\t\t%d\t\n"       
-	  "noiseModel\t\t%d\t\n"           
-	  "binaryInjection\t\t%d\t\n"      
-	  "maxTotalMass\t\t%f\t\n",         
-	  other.alphaFConstraint,
-	  other.extraFinalPrinting,
-	  other.template,
-	  other.signalfFinal,
-	  lalDebugLevel,
-	  other.signal,
-	  other.m1,
-	  other.m2,
-	  other.numSeconds,
-	  other.psi0,
-	  other.psi3,
-	  other.tau0,
-	  other.tau3, 
-	  other.printBestOverlap,	
-	  other.printBestTemplate, 	
-	  other.printSNRHisto,        
-	  other.printPsd,             
-	  other.printBank,    	
-	  other.printResultXml,    	
-	  other.printPrototype,    	
-	  other.faithfulness,        	
-	  other.ntrials, 	     	
-	  other.fastSimulation,       
-	  other.noiseModel,           
-	  other.binaryInjection,      
-	  other.maxTotalMass); 
-}
 
 
 
@@ -3444,7 +3230,13 @@ ParseParameters(	INT4 			*argc,
 {
   INT4  i = 1;
   REAL8 tmp1, tmp2;
-  
+
+  if (*argc==1) 
+  {
+    Help();
+    fprintf(stderr, "You must provide at least the template and signal argument");
+    exit(0);
+    }
   while(i < *argc)
     {
      
@@ -3654,7 +3446,7 @@ ParseParameters(	INT4 			*argc,
 	}
 	else  
 	{
-	  fprintf(stderr, "wrong approximant use (TaylorT1, TaylorT2, TaylorT3, EOB, PadeT1, BCV, SpinTaylor)\n");
+	  fprintf(stderr, "Wrong approximant. Use of of TaylorT1, TaylorT2, TaylorT3, EOB, PadeT1, BCV, SpinTaylor)\n");
 	  exit( 1 );
 	}
 	randIn->param.approximant = userParam->signal;		  
@@ -3743,7 +3535,7 @@ ParseParameters(	INT4 			*argc,
 	else if (!strcmp(argv[i],	"SpinTaylor")	)	userParam->template = SpinTaylor;
 	else 
 	  {
-	    fprintf(stderr, "wrong approximant\n");
+      	    fprintf(stderr, "Wrong approximant. Use of of TaylorT1, TaylorT2, TaylorT3, EOB, PadeT1, BCV, SpinTaylor)\n");
 	    exit( 1 );
 	  }
 
@@ -3800,11 +3592,7 @@ ParseParameters(	INT4 			*argc,
       else if (!strcmp(argv[i],"--print-bank")) {
         userParam->printBank		= 1;
       }
-      else if (!strcmp(argv[i],"--print-bank")) {
-	PrintParameters(*coarseBankIn, *randIn,*userParam);
-	exit(0);
-      }
-      else if (!strcmp(argv[i],"--print-result-xml")) {
+      else if (!strcmp(argv[i],"--print-xml")) {
         userParam->printResultXml        = 1;
       }
       else if (!strcmp(argv[i],"--print-prototype")) {
@@ -4267,16 +4055,6 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
       fprintf(stderr, "No injection performed so the check option can not be used (change simulation-type option)\n");
       exit ( 1 );
     }
-  if (coarseBankIn->approximant == (Approximant)(-1))
-    {
-      fprintf(stderr, "--template,  template approximant must be provided\n");
-      exit( 1 );
-    }
-  if (randIn->param.approximant == (Approximant)(-1))
-    {
-      fprintf(stderr, "--signal, signal approximant must be provided\n");
-      exit( 1 );
-    }
   if (userParam->binaryInjection == BHNS){
     if (randIn->mMin >3 || randIn->mMax < 3 ){
       fprintf(stderr, "BH-NS injection request to have the minimum mass less than 3 and maximum greater than 3.\n");
@@ -4314,57 +4092,60 @@ void Help(void)
   fprintf(stderr, "[VERSION %s]\n ", CVS_ID_STRING);
   fprintf(stderr, "[VERSION %s]\n ", CVS_ID_STRING_C);
   fprintf(stderr, "[DESCRIPTION]\n");
-  sprintf(msg, "\t lalapps_BankEfficiency is a standalone code testing the efficiency of\n"
-	  "\t inpiral template bank in the framework of matched filtering techniques. \n"
-	  "\t By efficiency we mean the match between a template and an inspiral injection.\n"
-	  "\t The code allows to use any design sensitivity curve provided  in lal/noisemodesl\n"
-	  "\t or real PSD coming from GW data interferometer. (currently only L1, H1 and H2 \n"
-	  "\t are handled but it is straightforwad to implement the GEO case. \n\n");
-  fprintf(stderr, msg);
-  sprintf(msg,
-	  "\t The injections which can be performed uses the inspiral packages and therefore \n"  
-	  "\t allows the following approximant [TaylorT1, TaylorT2, TaylorT3, EOB, PadeT1 \n"
-	  "\t and SpinTaylor. \n\n\tThe bank and filtering uses the noisemodels packages for time- \n"
-	  "\t domain approximant and BankEfficiency functions to perform BCV filtering method.\n"
-	  "\t Both noisemodesl (for Time-domain) and BankEfficiency (for BCV) and in agreement\n"
-	  );
-  fprintf(stderr, msg);
-  sprintf(msg,
-	  "\t with findchirp routines.\n\n"
-	  "\t Simulation can be done in absence of noise, in noise only or with an injection in noise.\n"
-	  "\t In that code, we stored only the maximum point of the correaltion as our SNR. It is \n"
-	  "\t sufficient in the case of overlap studies or when the data are gaussian and \n"
-	  "\t injection have large snr.\n"
-	  "\t Finally, results are stored in an xml files structures\n\n"
-	  "\t SEE lalapps documenation for further descrption and examples.\n");
-  fprintf(stderr, "%s\n",msg);
+  sprintf(msg, "\t lalapps_BankEfficiency is a standalone code that can be used to test the efficiency of\n"
+	  "\t an inpiral template bank, in the framework of compact binary coalescence searches.\n"
+	  "\t This code aimed at providing a test code to the template bank that are used by the search\n"
+	  "\t pipeline\n\n"
+	  "\t For the LAL fans, you should know that BankEfficiency uses the same functions as\n"
+	  "\t lalapps_tmpltbank uses. However, the filtering is independant of the findchirp package.\n"
+	  "\t It uses the noisemodel and inspiral packages instead.\n\n");
+  fprintf(stderr, "%s",msg);
+  sprintf(msg, 
+	  "\t BankEfficiency allows to test the template banks in 3 different ways:\n"  
+	  "\t  * injection only, in other words, to compute matches \n"
+	  "\t  * noise only, to get the background distribution\n"
+	  "\t  * noise and signal \n\n"
+	  "\t You can use any design sensitivity curve provided in lal/noisemodesl such as LIGOI, VIRGO ...\n\n"
+	  "\t Signal to be injected, or used for filtering are either physical template families (e.g., TaylorT3) \n"
+	  "\t or phenomenological (BCV).\n");
+  fprintf(stderr, "%s",msg);
+  sprintf(msg, "\t Concerning computation, there is a naive fast option for physical template families, that sets \n"
+  	  "\t a square of 0.3 seconds in tau_0 and 0.15 seconds in tau_3 around the injection\n\n"
+	  "\t The code can be easily parallelised. See bep.py for an example of dag and sub condor file\n\n"
+	  "\t A brief overview is given here. However, look at the option below, for more details. \n"
+	  "\t Testing the bank requires to inject many signals. The number of trial is set with --n.\n" );
+  fprintf(stderr, "%s",msg);
+  sprintf(msg,"\t The --template and --signal options must be provided to specify the type of approximant to be used. The\n"
+	  "\t randomization is done over the total mass, and within the --signal-mass-range and --bank-mass-range ranges.\n"
+	  "\t By default xml results are not stored (although is could be a default option, usage in parallel would create\n"
+	  "\t many xml files to be joined afterwards). The --check option replaces the template bank by a single template\n"
+	  "\t which parameters are identical to the injection.\n\n\n");	  
+  fprintf(stderr, "%s",msg);
+  
+  sprintf(msg, "[EXAMPLE]\n \t ./lalapps_BankEfficiency --template EOB --signal EOB --check --print-xml\n\n\n");
+  fprintf(stderr, "%s",msg);
+
 
   
   fprintf(stderr, "[SYNOPSIS]\n");
   fprintf(stderr, "\t[--help]\n");
-  fprintf(stderr, "\t[--verbose] \t\t\t gives some extra information on screen \n" );
-  fprintf(stderr, "\t[--ascii2xml]\t\t read the file Trigger.dat, concatenation of one or several outputs from BankEfficiency and creates a unique XML outputs.\n");
-
-
+  fprintf(stderr, "\t[--verbose]  \t\t\t extra information on the screen \n" );
+  fprintf(stderr, "\t[--ascii2xml]\t\t\t read the file Trigger.dat, concatenation of one or several outputs\n");
+  fprintf(stderr, "\t             \t\t\t BankEfficiency and creates a unique XML outputs.\n");
   fprintf(stderr, "\t[--bank-alpha<float>]\t\t set the BCV alpha value in the moments computation\n");
   fprintf(stderr, "\t[--bank-fcut-range<float float>] set the range of BCV fcut (in units of GM) \n");
   fprintf(stderr, "\t[--bank-ffinal<float>]\t\t set the final frequency to be used in the BCV moments computation\n");
-  fprintf(stderr, "\t[--bank-grid-spacing <gridSpacing>]\t set the grid type of the BCV bank (Square, SquareNotOriented, HybridHexagonal,Hexagonal, HexagonalNotOriented\t\n");
-  
-  
-  fprintf(stderr, "\t[--bank-number-fcut<integer>]\t set the number of BCV fcut \n");
-  fprintf(stderr, "\t[--bank-mass-range<float float>] set the range of mass to be covered by the SPA bank\n");
-  fprintf(stderr, "\t[--bank-max-total-mass<float>] set the max total mass of the bank\n");
-  fprintf(stderr, "\t[--bank-min-total-mass<float>] set the min total mass of the bank\n");
-  fprintf(stderr, "\t[--bank-psi0-range<float float>] set the range of psi0 to be covered by the BCV bank\n");
-  fprintf(stderr, "\t[--bank-psi3-range<float float>] set the range of psi3 to be covered by the BCV bank\n");
-  fprintf(stderr, "\t[--channel<string>]\t\t set the channel to look at \n");
+  fprintf(stderr, "\t[--bank-grid-spacing <gridSpacing>]\t set the grid type of the BCV bank (Square, SquareNotOriented,\n\t\t HybridHexagonal,Hexagonal, HexagonalNotOriented\t\n");
+  fprintf(stderr, "\t[--bank-number-fcut<integer>]\t number of BCV fcut layers\n");
+  fprintf(stderr, "\t[--bank-mass-range<float float>] mass range to be covered by the SPA bank\n");
+  fprintf(stderr, "\t[--bank-max-total-mass<float>]  max total mass of the bank\n");
+  fprintf(stderr, "\t[--bank-min-total-mass<float>]  min total mass of the bank\n");
+  fprintf(stderr, "\t[--bank-psi0-range<float float>] psi_0 range to be covered by the BCV bank\n");
+  fprintf(stderr, "\t[--bank-psi3-range<float float>] psi_3 to be covered by the BCV bank\n");
   fprintf(stderr, "\t[--debug<integer>]\t\t set the debug level (same as in lal)\n");
-  fprintf(stderr, "\t[--detector<string>]\t\t set the detector name to look at for real data (H1, H2, L1)\n");
   fprintf(stderr, "\t[--fl-signal<float>]\t\t set the lower cut off frequency of signal to inject\n");
   fprintf(stderr, "\t[--fl-template<float>]\t\t set the lower cut off frequnecy of template \n");
   fprintf(stderr, "\t[--fl<float>]\t\t\t set both template and signal lower cutoff frequency \n");
-  fprintf(stderr, "\t[--gps-start-time<integer>]\t set gps start time if real data or psd are requested\n");
   fprintf(stderr, "\t[--m1<float>]\t\t\t force injection first individual mass to be equal to m1. needs to set m2 as well then\n");
   fprintf(stderr, "\t[--m2<float>]\t\t\t force injection second individual mass to be equal to m2. needs to set m1 as well then\n");
   fprintf(stderr, "\t[--mm<float>]\t\t\t set minimal match of the bank\n");
@@ -4392,22 +4173,22 @@ void Help(void)
   fprintf(stderr, "\t[--simulation-type<string>]\t set type of simulation (SignalOnly, noiseOnly, NoiseAndSignal)\n");
   fprintf(stderr, "\t[--tau0<float>]\t\t\t force injection to have tau0 value \n");
   fprintf(stderr, "\t[--tau3<float>]\t\t\t force injection to have tau3 value\n");
-  fprintf(stderr, "\t[--template<string>]\t\tset signal approximant (TaylorT1, TaylorT2, TaylorT3, TaylorF2, PadeT1, EOB, SpinTaylor)\n");
+  fprintf(stderr, "\t[--template<string>]\t\t set signal approximant (TaylorT1, TaylorT2, TaylorT3, TaylorF2, PadeT1, EOB, SpinTaylor)\n");
   fprintf(stderr, "\t[--template-order<integer>]\t set PN order of template\n");
   fprintf(stderr, "\t[--alpha-constraint]\t\t set BCV code to be constrained \n");
   fprintf(stderr, "\t[--bhns-injection]\t\t set injection to be only bhbs systems\n");
   fprintf(stderr, "\t[--no-alpha-constraint]\t\t set BCV code to be unconstrained\n");
-  fprintf(stderr, "\t[--faithfulness]\t check the code. template parameters are equal to injection parameters, size of the bank is therefore unity. It computed the faithfulness instead of effectualness\n");
+  fprintf(stderr, "\t[--faithfulness]\t\t Check the code. Template parameters are equal to injection  parameters\n");
+  fprintf(stderr, "\t                \t\t size of the bank is therefore unity. It computed the faithfulness instead of effectualness\n");
   fprintf(stderr, "\t[--real-noise]\t\t\t use real data and real PSD.force simulaion type to be Noise Only\n");
   fprintf(stderr, "\t[--no-start-phase]\t\t\t unset random phase which is always set to zero.\n");
   fprintf(stderr, "\t[--print-psd]\t\t\t print the psd in  a file BE_PSD_type_gpstime.dat\n");
   fprintf(stderr, "\t[--print-best-overlap]\t\t print best overlap and other information\n");
   fprintf(stderr, "\t[--print-snr-histo]\t\t print histogram of the correlation output\n");
   fprintf(stderr, "\t[--print-bank]\t\t\t print the bank in ascii and xml format\n");
-  fprintf(stderr, "\t[--print-result-xml]\t\t\t print the results in an xml file\n");
+  fprintf(stderr, "\t[--print-xml]\t\t\t print the results in an xml file\n");
   fprintf(stderr, "\t[--print-prototype]\t\t print a prototype to be used by condor script\n");
   fprintf(stderr, "\t[--fast-simulation]\t\t perform fast simulation in the case of SPA abnk\n");
-  fprintf(stderr, "type --print-default to get the default values of the current version\n");
   exit(0);
 }
 
@@ -4419,7 +4200,10 @@ BEAscii2Xml(void)
   UINT8  id = 0;
   UINT4 start = 0;
   ResultIn trigger;
-  REAL4 tau0, tau3, tau0I, tau3I, psi0, psi3, phaseI, beta, spin1_a, spin1_b, spin1_c, spin2_a, spin2_b, spin2_c ,theta0, phi0  ;
+  REAL4 tau0, tau3, tau0I, tau3I, psi0, psi3,
+  	phaseI, beta, spin1_a, spin1_b,
+	spin1_c, spin2_a, spin2_b, spin2_c,
+	theta0, phi0;
   FILE *input1, *input2, *bank;
   FILE *output;      
 
@@ -4470,7 +4254,7 @@ BEAscii2Xml(void)
       fprintf(stderr,"parsing the bank  -- ");
       fprintf( stdout, "reading triggers from file: %s\n", BEASCII2XML_BANK );
       numFileTriggers = 
-      LALSnglInspiralTableFromLIGOLw( &inputData,BEASCII2XML_BANK , 0, -1 );
+      LALSnglInspiralTableFromLIGOLw( &inputData, BEASCII2XML_BANK , 0, -1 );
       
 
       fprintf(stderr," done %d\n", numFileTriggers);      
@@ -4630,40 +4414,3 @@ BEAscii2Xml(void)
 }
 
 
-void BEAscii2XmlHelp(void)
-{
-  fprintf(stderr, "BEAscii2Xml help:\n");
-  fprintf(stderr, "=================\n");
-  /*  fprintf(stderr, "[PURPOSE]\n\t%s\n \t%s\n \t%s\n \t%s\n", 
-		  "That code reads a file in ascii format generated by BankEfficiency",
-		  "code and generate the appropriate xml files. It is used if one forget",
-		  "to use the appropriate option within BankEfficiency code (--print-result-xml)",
-		  "or when the bankEfficiency code has been used within the condor ",
-		  "submit file. In that case indeed several ascii files have been ",
-		  "generated but no xml files.\n");
-  
-  fprintf(stderr, "[INPUT/OUTPUT]\n\t%s\n \t%s\n \t%s\n \t%s %s %s %s\n", 
-		  "That code do not need any input argument but needs an input file",
-		  "in ascii format (the user has to be sure it is in the appropriate",
-		  "format) and then it writes an xml file into an output file \n", 
-		  "the input and output file name are ", BEASCII2XML_INPUT1, "and", BEASCII2XML_OUTPUT);
-  */
-  exit(1);
-  
-
-}
-
-
-/*      
-void 
-LALCreateRealPsd(LALStatus *status,
-                InspiralCoarseBankIn *bankIn,
-                RandomInspiralSignalIn randIn,
-                UserParametersIn userParam)
-{
-  char* command=NULL;
-  sprintf(command, "./lalapps_tmpltbank --help");
-  system(command);
-}
- 
-*/
