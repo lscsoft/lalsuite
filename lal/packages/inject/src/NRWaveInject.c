@@ -61,9 +61,6 @@ XLALSumStrain(
     return( tempstrain );
 }
 
-NRCSID (NRWAVEINJECTC,"$Id$");
-
-
 /** Takes a (sky averaged) numerical relativity waveform and returns the
  * waveform appropriate for given coalescence phase and inclination angles */
 /** for the moment only mode (2,2) implemented */
