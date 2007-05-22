@@ -42,6 +42,8 @@ int main( void ) { return 77; }
 #include <lal/Window.h>
 #include <lal/Calibration.h>
 
+NRCSID (COMPUTECALIBRATIONFACTORSTESTC,"$Id: packages/tools/test/ComputeCalibrationFactorsTest.c $");
+
 #define MAXLINERS 76800                   /*HARDWIRED !!*/
 #define MAXLINESEGS 10000                 /*HARDWIRED !!*/
 

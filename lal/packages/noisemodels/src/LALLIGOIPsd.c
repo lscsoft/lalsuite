@@ -44,6 +44,8 @@ None.
 
 #include <lal/LALNoiseModels.h>
 
+NRCSID (LALLIGOIPSDC,"$Id$");
+
 /*  <lalVerbatim file="LALLIGOIPsdCP"> */
 void
 LALLIGOIPsd (LALStatus *status, REAL8 *psd, REAL8 f) 

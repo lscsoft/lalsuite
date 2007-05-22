@@ -10,6 +10,8 @@ $Id$
 #include <lal/LALStatusMacros.h>
 #include <lal/TFClusters.h>
 
+NRCSID (TFCWAVELETH,"$Id$");
+
 #define TFCWAVELETH_ENULLP 1000
 #define TFCWAVELETH_ELEN 1001
 #define TFCWAVELETH_ENNULLP 1002

@@ -9,6 +9,9 @@
 #include <lal/Units.h>
 #include <lal/Window.h>
 
+#include <lal/LALRCSID.h>
+NRCSID (AVERAGESPECTRUMC,"$Id$");
+
 
 /*
  *

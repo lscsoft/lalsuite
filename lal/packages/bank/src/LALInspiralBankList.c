@@ -25,6 +25,9 @@ A list of subroutimes to manipulate link list.
 #include <lal/LALStdio.h>
 #include <lal/FindRoot.h>
 
+#include <lal/LALRCSID.h>
+NRCSID (LALINSPIRALBANKLISTC,"$Id$");
+
 
 /* for debugging only
 void

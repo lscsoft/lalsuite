@@ -38,6 +38,8 @@ LALCheckMemoryLeaks
 #include <lal/AVFactories.h>
 #include <lal/LALNoiseModels.h>
 
+NRCSID (NOISEPSDTESTC,"$Id$");
+
 INT4 lalDebugLevel=1;
 /*  <lalVerbatim file="NoisePSDTestCP"> */
 int main ( void ) 

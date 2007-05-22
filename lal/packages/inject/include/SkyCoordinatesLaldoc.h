@@ -13,6 +13,7 @@ Provides routines to convert among various sky coordinate systems.
 \subsection*{Synopsis}
 \begin{verbatim}
 #include <lal/SkyCoordinates.h>
+
 \end{verbatim}
 
 This header covers routines to perform coordinate transformations
@@ -356,3 +357,6 @@ equatorial system).
 /* <lalLaTeX>
 \newpage\input{SkyCoordinatesTestC}
 </lalLaTeX> */
+
+#include <lal/LALRCSID.h>
+NRCSID (SKYCOORDINATESLALDOCH,"$Id$");

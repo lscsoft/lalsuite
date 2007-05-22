@@ -32,6 +32,8 @@ gh
 #define LAL_NO_COMPLEX_MACROS
 #include <lal/LALComplex.h>
 
+NRCSID (LALCOMPLEXC,"$Id$");
+
 
 COMPLEX16
 XLALCOMPLEX16Rect (REAL8 x, REAL8 y)

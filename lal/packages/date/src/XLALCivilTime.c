@@ -57,6 +57,9 @@
 
 #include "XLALLeapSeconds.h" /* contains the leap second table */
 
+#include <lal/LALRCSID.h>
+NRCSID (XLALCIVILTIMEC,"$Id$");
+
 /* in case this is not prototyped ... */
 struct tm * gmtime_r(const time_t *, struct tm *);
 

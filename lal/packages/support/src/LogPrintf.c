@@ -44,6 +44,8 @@
 
 #include "LogPrintf.h"
 
+NRCSID (LOGPRINTFC,"$Id$");
+
 /*---------- DEFINES ----------*/
 #  ifndef __GNUC__
 static volatile const char *name  = "$Id$";

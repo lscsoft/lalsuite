@@ -35,6 +35,9 @@ lalDebugLevel
 #include <lal/LALNoiseModels.h>
 #include <lal/AVFactories.h>
 
+#include <lal/LALRCSID.h>
+NRCSID (METRICTESTBCVC,"$Id$");
+
 INT4 lalDebugLevel=0;
 
 int 

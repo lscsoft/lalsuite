@@ -65,6 +65,8 @@
 #include <lal/LALStdlib.h>
 #include <lal/Example.h>
 
+NRCSID (EXAMPLETESTC,"$Id$");
+
 /**
  ** DEFINE CONSTANTS, GLOBAL VARIABLES, AND MACROS
  **

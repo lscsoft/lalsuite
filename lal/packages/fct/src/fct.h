@@ -8,6 +8,9 @@
 #ifndef FCT_H 
 #define FCT_H
 
+#include <lal/LALRCSID.h>
+NRCSID (FCTH,"$Id$");
+
 #define FCT_CALCULATE_ALL  0
 #define FCT_SPECIFY_RANGES 1
 

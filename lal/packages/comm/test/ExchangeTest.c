@@ -52,6 +52,9 @@
 #include <lal/LALStdlib.h>
 #include <lal/Comm.h>
 
+#include <lal/LALRCSID.h>
+NRCSID (EXCHANGETESTC,"$Id$");
+
 /* the allowed exchange types and corresponding strings */
 enum { ExchQuit, ExchData, ExchRslt };
 const char *msgstr[] = { "QUIT", "DATA", "RSLT" };

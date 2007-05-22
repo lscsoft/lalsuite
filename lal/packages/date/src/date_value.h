@@ -87,3 +87,5 @@
  * also, more accurate, http://tycho.usno.navy.mil/sidereal.html) */
 #define SIDEREAL_PER_TROPICAL 1.00273790935
 
+#include <lal/LALRCSID.h>
+NRCSID (DATE_VALUEH,"$Id$");

@@ -24,6 +24,8 @@
 #include <lal/PrintFTSeries.h>
 #include <lal/Calibration.h>
 
+NRCSID (COMPUTETRANSFERTESTC,"$Id$");
+
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS( pstat ); return 1; } \
   else ((void)0)

@@ -30,6 +30,9 @@
 #include <lal/PrintFTSeries.h>
 #include <lal/FrameStream.h>
 
+#include <lal/LALRCSID.h>
+NRCSID (READGEODATAC,"$Id$");
+
 #ifndef CHANNEL
 #define CHANNEL "LSC_MID_EP-P"
 #endif

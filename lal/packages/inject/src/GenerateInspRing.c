@@ -26,6 +26,8 @@
 #include <lal/TimeSeries.h>
 #include <lal/GenerateInspRing.h>
 
+NRCSID (GENERATEINSPRINGC,"$Id$");
+
 /** Takes an inspiral waveform, and a simInspiralTable and generates a ringdown
  * at an appropriate frequency and quality */
 CoherentGW *

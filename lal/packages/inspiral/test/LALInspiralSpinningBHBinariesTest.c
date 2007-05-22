@@ -70,6 +70,9 @@ brackets):
 #include <lal/LALInspiral.h>
 #include <lal/RealFFT.h>
 #include <lal/AVFactories.h>
+
+NRCSID (LALINSPIRALSPINNINGBHBINARIESTESTC,"$Id$");
+
 INT4 lalDebugLevel=0;
 
 void printf_timeseries (int n, float *signal, double delta, double t0) ;

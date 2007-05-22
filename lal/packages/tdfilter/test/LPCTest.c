@@ -1,5 +1,7 @@
 #include <lal/LPC.h>
 
+NRCSID (LPCTESTC,"$Id$");
+
 
 #define CHKST if(status.statusCode != 0) {REPORTSTATUS (&status); return -1;}
 

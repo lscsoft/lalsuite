@@ -20,6 +20,8 @@
 #include <lal/LALDatatypes.h>
 #include <lal/BandPassTimeSeries.h>
 
+NRCSID (CALIBRATIONH,"$Id$");
+
 #ifdef  __cplusplus
 extern "C" {
 #pragma } /** to match the previous brace **/

@@ -73,6 +73,8 @@ LALRandomInspiralSignal
 #include <lal/LALInspiralBank.h>
 #include <lal/LALNoiseModels.h>
 #include <lal/RealFFT.h>
+
+NRCSID (RANDOMINSPIRALSIGNALTESTC,"$Id$");
  
 void printf_timeseries(INT4 n, REAL4 *signal, REAL8 delta, REAL8 t0, FILE *file);
 

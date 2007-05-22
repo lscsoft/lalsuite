@@ -52,6 +52,9 @@
 #include <lal/LALStdlib.h>
 #include <lal/Comm.h>
 
+#include <lal/LALRCSID.h>
+NRCSID (SENDRECVTESTC,"$Id$");
+
 /* the allowed message codes and the message strings */
 enum { QuitMsg, DataMsg, RsltMsg };
 const char *msgstr[] = { "QUIT", "DATA", "RSLT" };

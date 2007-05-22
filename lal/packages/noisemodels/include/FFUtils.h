@@ -18,6 +18,8 @@
 #include <lal/Date.h>
 #include <lal/LIGOMetadataTables.h>
 
+NRCSID (FFUTILSH,"$Id$");
+
 
 
 

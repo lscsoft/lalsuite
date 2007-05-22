@@ -67,6 +67,9 @@ Example values of the parameters that can be set (with options in brackets) is:
 #include <lal/LALInspiral.h>
 #include <lal/RealFFT.h>
 #include <lal/AVFactories.h>
+
+NRCSID (LALINSPIRALTESTC,"$Id$");
+
 INT4 lalDebugLevel=0;
 
 void printf_timeseries (int n, float *signal, double delta, double t0) ;

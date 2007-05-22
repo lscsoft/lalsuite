@@ -21,6 +21,9 @@
 #include <lal/LALStdlib.h>
 #include <lal/BlockRho.h>
 
+#include <lal/LALRCSID.h>
+NRCSID (BLOCKTESTC,"$Id$");
+
 #define TestStatus( ps ) \
   if ( (ps)->statusCode ) { \
     fprintf( stderr, "Failed LAL routine near line %d\n", __LINE__ ); \

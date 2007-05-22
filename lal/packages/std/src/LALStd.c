@@ -35,6 +35,9 @@ prone to buffer-overflow problems.
 #include <config.h>
 #include <stdlib.h>
 #include <stdarg.h>
+
+NRCSID (LALSTDC,"$Id$");
+
 #ifdef HAVE_VSNPRINTF
 int vsnprintf( char *str, size_t size, const char *fmt, va_list ap );
 #else /* dangerous: just use vsprintf!!! */

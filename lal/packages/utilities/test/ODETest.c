@@ -28,6 +28,8 @@
 #include <lal/SeqFactories.h>
 #include <lal/ODE.h>
 
+NRCSID (ODETESTC,"$Id$");
+
 #define TESTSTATUS( ps ) \
   if ( (ps)->statusCode ) { REPORTSTATUS( ps ); exit( 1 ); } else ( (void) 0 )
 

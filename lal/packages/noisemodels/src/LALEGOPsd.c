@@ -38,6 +38,8 @@ None.
 
 #include <lal/LALNoiseModels.h>
 
+NRCSID (LALEGOPSDC,"$Id$");
+
 /*  <lalVerbatim file="LALEGOPsdCP"> */
 void LALEGOPsd (LALStatus *status, REAL8 *psd, REAL8 f) 
 { /* </lalVerbatim> */

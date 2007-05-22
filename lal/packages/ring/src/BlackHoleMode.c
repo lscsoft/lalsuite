@@ -13,6 +13,8 @@
 #include <lal/LALComplex.h>
 #include <lal/BlackHoleMode.h>
 
+NRCSID (BLACKHOLEMODEC,"$Id$");
+
 
 static int mysignbit( REAL8 x )
 {

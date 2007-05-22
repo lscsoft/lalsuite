@@ -22,6 +22,8 @@
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
 
+NRCSID (SIMRINGDOWNUTILSC,"$Id$");
+
 
   /* a few useful static functions */
 static INT8 geocent_start_time(const SimRingdownTable *x)

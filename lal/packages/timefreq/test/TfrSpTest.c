@@ -30,6 +30,8 @@
 
 #include <lal/TimeFreq.h>
 
+NRCSID (TFRSPTESTC,"$Id$");
+
 
 int lalDebugLevel=2;
 

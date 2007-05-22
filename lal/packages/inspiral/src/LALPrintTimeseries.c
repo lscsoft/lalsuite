@@ -1,6 +1,10 @@
-# include <stdio.h>
-  void LALPrintTimeseries (int n, double *signal, double delta, double t0) ;
-  void LALPrintTimeseries (int n, double *signal, double delta, double t0) 
+#include <stdio.h>
+
+#include <lal/RCSID.h>
+NRCSID (LALPRINTTIMESERIESC,"$Id$");
+
+void LALPrintTimeseries (int n, double *signal, double delta, double t0) ;
+void LALPrintTimeseries (int n, double *signal, double delta, double t0) 
 {
   int i=0;
   FILE *outfile;

@@ -3,6 +3,9 @@
 #include <FrameL.h>
 #include <lal/LALDatatypes.h>
 
+#include <lal/LALRCSID.h>
+NRCSID (FRAMESTREAMDEFH,"$Id$");
+
 /* Useful macros */
 #define SECNAN_TO_I8TIME( sec, nan ) \
   ((INT8)1000000000*(INT8)(sec)+(INT8)(nan))

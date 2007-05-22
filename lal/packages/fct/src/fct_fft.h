@@ -15,6 +15,9 @@
 
 #include "fct.h"
 
+#include <lal/LALRCSID.h>
+NRCSID (FCT_FFTH,"$Id$");
+
 struct fct_fft_plan_
 {
   int                fft_length;

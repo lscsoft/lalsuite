@@ -45,6 +45,8 @@ to.
 #include <lal/LALStdlib.h>
 #include <lal/LALVersion.h>
 
+NRCSID (LALVERSIONTESTC,"$Id$");
+
 int lalDebugLevel = 0;
 
 int main( void )

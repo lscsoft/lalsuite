@@ -3,6 +3,8 @@
 
 #include "lal/LALWavelet.h"
 
+NRCSID (WAVELET_TEST_STATICH,"$Id$");
+
 #define maxStrLen 100
 #define  maxError 0.000000001
 

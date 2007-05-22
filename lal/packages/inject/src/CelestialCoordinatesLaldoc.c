@@ -160,3 +160,6 @@ LALEquatorialToEcliptic( LALStatus   *stat,
 { </lalVerbatim> */
 
 #include <stddef.h> /* just so the contents aren't empty... */
+
+#include <lal/LALRCSID.h>
+NRCSID (CELESTIALCOORDINATESLALDOCC,"$Id$");

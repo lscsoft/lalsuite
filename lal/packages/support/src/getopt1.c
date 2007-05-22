@@ -89,6 +89,8 @@ getopt_long_only (int argc, char *const *argv, const char *options,
 
 #include <stdio.h>
 
+NRCSID (GETOPT1C,"$Id$");
+
 int
 main (int argc, char **argv)
 {

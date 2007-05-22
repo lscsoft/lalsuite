@@ -83,6 +83,8 @@ LALInspiralParameterCalc
 #include <lal/RealFFT.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
+
+NRCSID (FILTERTESTC,"$Id$");
  
 void printf_timeseries (INT4 n, REAL4 *signal, REAL8 delta, REAL8 t0);
 

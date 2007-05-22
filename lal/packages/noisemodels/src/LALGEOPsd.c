@@ -45,6 +45,8 @@ None.
 
 #include <lal/LALNoiseModels.h>
 
+NRCSID (LALGEOPSDC,"$Id$");
+
 /* <lalVerbatim file="LALGEOPsdCP"> */
 void
 LALGEOPsd(LALStatus *status, REAL8 *psd, REAL8 f) 

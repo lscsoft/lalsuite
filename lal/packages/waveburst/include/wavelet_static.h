@@ -5,6 +5,8 @@
 #include <strings.h>
 #include "lal/LALWavelet.h"
 
+NRCSID (WAVELET_STATICH,"$Id$");
+
 static int _f2l(int level, int indx);
 /* static int _l2f(int level, int layer); */
 static void _getSliceL(int level, int layer, Wavelet *wavelet, Slice *slice);

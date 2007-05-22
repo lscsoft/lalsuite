@@ -29,6 +29,8 @@
 
 #include <lal/TimeFreq.h>
 
+NRCSID (TFRRSPTESTC,"$Id$");
+
 int lalDebugLevel=2;
 
 int main(void)

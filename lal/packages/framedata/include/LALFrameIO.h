@@ -6,6 +6,9 @@
 #include <lal/LALCalibration.h>
 #include <lal/FrameCache.h>
 
+#include <lal/LALRCSID.h>
+NRCSID (LALFRAMEIOH,"$Id$");
+
 #ifdef __cplusplus
 extern "C" {
 #endif

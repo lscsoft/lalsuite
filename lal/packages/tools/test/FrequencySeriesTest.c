@@ -13,6 +13,8 @@
 #include <lal/FrequencySeries.h>
 #include <lal/Units.h>
 
+NRCSID (FREQUENCYSERIESTESTC,"$Id$");
+
 static LIGOTimeGPS gps_zero = LIGOTIMEGPSZERO;
 
 

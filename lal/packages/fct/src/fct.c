@@ -15,6 +15,9 @@
 #include "fct_fft.h"
 #include "fct.h"
 
+#include <lal/LALRCSID.h>
+NRCSID (FCTC,"$Id$");
+
 #ifndef M_PI
 #define M_PI 3.1415926535897932384626433832795029L
 #endif

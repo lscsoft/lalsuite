@@ -6,6 +6,9 @@
 
 #include "fct_fft.h"
 
+#include <lal/LALRCSID.h>
+NRCSID (FCT_FFTC,"$Id$");
+
 STORAGE_CLASS
 void fct_setup_fft(fct_plan *plan, fct_status* const status)
 {

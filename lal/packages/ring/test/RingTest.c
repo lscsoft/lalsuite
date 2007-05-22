@@ -32,6 +32,8 @@
 #include <lal/AVFactories.h>
 #include <lal/Ring.h>
 
+NRCSID (RINGTESTC,"$Id$");
+
 #define TestStatus( ps ) \
   if ( (ps)->statusCode ) { \
     fprintf( stderr, "Failed LAL routine near line %d\n", __LINE__ ); \

@@ -10,6 +10,9 @@
 #include <lal/FindChirpSP.h>
 #include "FindChirpTDTest.h"
 
+#include <lal/LALRCSID.h>
+NRCSID (FINDCHIRPTDTESTC,"$Id$");
+
 #define TEST_STATUS( ps ) \
   ( ( ps )->statusCode && ( exit( 1 ), \
     fprintf( stderr, "LAL Routine failed near line %d\n", __LINE__ ), 1 ) )

@@ -64,6 +64,8 @@ It is strongly recommended that
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 
+NRCSID (FILEIOC,"$Id$");
+
 #define STR( x ) #x
 #define XSTR( x ) STR( x )
 #define INFOMSG( msg, file ) ( ( lalDebugLevel & LALINFO ) ? \

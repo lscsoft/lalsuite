@@ -18,6 +18,8 @@ int gethostname(char *name, int len);
 #include <lal/LALFrameIO.h>
 #include <lal/LALCalibration.h>
 
+#include <lal/LALRCSID.h>
+NRCSID (LALFRAMEIOC,"$Id$");
 
 struct FrFile * XLALFrOpenURL( const char *url )
 {

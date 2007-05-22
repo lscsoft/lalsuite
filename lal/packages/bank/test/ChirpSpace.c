@@ -34,6 +34,9 @@ LALInspiralParameterCalc
 #include <stdio.h>
 #include <lal/LALInspiral.h>
 
+#include <lal/LALRCSID.h>
+NRCSID (CHIRPSPACEC,"$Id$");
+
 INT4 lalDebugLevel=0;
 
 int main ( void ) {

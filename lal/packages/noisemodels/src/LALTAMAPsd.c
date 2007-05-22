@@ -44,6 +44,8 @@ None.
 
 #include <lal/LALNoiseModels.h>
 
+NRCSID (LALTAMAPSDC,"$Id$");
+
 /*  <lalVerbatim file="LALTAMAPsdCP"> */
 void  LALTAMAPsd(LALStatus *status, REAL8 *psd, REAL8 f) 
 { /* </lalVerbatim> */

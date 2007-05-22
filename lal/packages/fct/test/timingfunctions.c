@@ -9,6 +9,9 @@
 #include <time.h>
 #include <sys/time.h>
 
+#include <lal/LALRCSID.h>
+NRCSID (TIMINGFUNCTIONSC,"$Id$");
+
 double UserTimeVal(void);
 double WallTimeVal(void);
 

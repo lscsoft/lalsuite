@@ -28,6 +28,8 @@ This header covers routines to generate ringdown waveforms.
 #include <lal/SkyCoordinates.h>
 #include <lal/LIGOMetadataTables.h>
 
+NRCSID (GENERATERINGH,"$Id$");
+
 #ifdef  __cplusplus
 extern "C" {
 #pragma }
