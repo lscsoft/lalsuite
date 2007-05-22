@@ -404,22 +404,6 @@ main (INT4 argc, CHAR **argv )
 		sizeBank                           = 1;  /* we dont need the whole bank for checking */ 
 	      }
 	        
-              if (userParam.template_m1 != -1){
-                /* same parameters but given by the user instead of the bank */
-		tempOrder = insptmplt.order;
-		insptmplt = randIn.param;
-                insptmplt.mass1 = userParam.template_m1;
-                insptmplt.mass2 = userParam.template_m2;
-                LAL_CALL(LALInspiralParameterCalc( &status,  &(insptmplt) ), &status);
-		overlapin.param                    = insptmplt;
-                LAL_CALL(LALInspiralParameterCalc( &status,  &(overlapin.param) ), &status);
-                overlapin.param.fCutoff = randIn.param.tSampling/2. - 1;
-                overlapin.param.fFinal = randIn.param.tSampling/2. - 1;
-		overlapin.param.approximant        = userParam.template;
-		overlapin.param.order              = tempOrder;
-		sizeBank                           = 1;  /* we dont need the whole bank for checking */ 
-	      }
-
 	      /* if we want to cut integration before the fFinal*/
    	      /* overlapin.param.fCutoff = 512;*/
 	       
@@ -1867,6 +1851,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
       coarseBankIn.alpha);
   ADD_2PROCESS_PARAM("float","%f %f","--bank-fcut-range",
       coarseBankIn.LowGM, coarseBankIn.HighGM);
+  ADD_PROCESS_PARAM("float","%f","--bank-number-fcut",
+      coarseBankIn.numFcutTemplates);
   ADD_PROCESS_PARAM("float","%d ","--bank-inside-polygon",
       coarseBankIn.insidePolygon);
   ADD_PROCESS_PARAM("float","%f","--bank-ffinal",
@@ -1884,14 +1870,10 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
   ADD_2PROCESS_PARAM("float","%f %f","--bank-psi3-range",
       coarseBankIn.psi3Min, coarseBankIn.psi3Max);
   ADD_PROCESS_PARAM("string","%s","--bank-grid-spacing",
-      GetStringFromGridType(coarseBankIn.gridSpacing));
-  ADD_PROCESS_PARAM("string", "%s","--detector",
-      GetStringFromDetector(userParam.detector));
+      GetStringFromGridType(coarseBankIn.gridSpacing));  
   ADD_PROCESS_PARAM("float","%f","--fl",	
       coarseBankIn.fLower);
-  ADD_PROCESS_PARAM("string", "%d","--gps-start-time",
-      userParam.startTime);     
-  ADD_PROCESS_PARAM("float","%f","--fl-template", 
+  ADD_PROCESS_PARAM("float","%f","--template-fl", 
       coarseBankIn.fLower);
   ADD_PROCESS_PARAM("float","%f","--signal-max-total-mass",
       userParam.maxTotalMass);
@@ -1927,7 +1909,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
       randIn.param.alpha);
   ADD_PROCESS_PARAM("float","%f","--signal-ffinal",
       userParam.signalfFinal);
-  ADD_PROCESS_PARAM("float","%f","--fl-signal",
+  ADD_PROCESS_PARAM("float","%f","--signal-fl",
       randIn.param.fLower);
   ADD_2PROCESS_PARAM("float","%f %f","--signal-mass-range",
       randIn.mMin, randIn.mMax);
@@ -2092,30 +2074,6 @@ CHAR* GetStringFromNoiseModel(INT4 input)
   return this;
 }
 
-CHAR* GetStringFromDetector(INT4 input)
- {
-  static CHAR this[3];  
-
-  switch (input){
-  case L1: 
-    LALSnprintf(this, sizeof(this),"L1");
-    break;
-  case H1: 
-    LALSnprintf(this, sizeof(this),"H1");
-    break;
-  case H2: 
-    LALSnprintf(this, sizeof(this),"H2");
-    break;
-  case V1: 
-    LALSnprintf(this, sizeof(this),"V1");
-    break;
-  case G1: 
-    LALSnprintf(this, sizeof(this),"G1");
-    break;
-  }
-  
-  return this;
-}
 
 
       
@@ -2145,7 +2103,7 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
 
   LALSnprintf( fname, sizeof(fname), 
 	       BANKEFFICIENCY_PRINTRESULT_FILEXML ,
-	       userParam.detector,
+	       "simulation",
 	       gpsStartTime.gpsSeconds,
 	       gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
 
@@ -3184,12 +3142,9 @@ void InitUserParametersIn(UserParametersIn *userParam)
   userParam->template		= BANKEFFICIENCY_TEMPLATE;
   /*By default, this value is empty and will be populate with the sampling frequency later*/
   userParam->signalfFinal       =  0.;
-
   userParam->signal       	= BANKEFFICIENCY_SIGNAL;
   userParam->m1           	= -1;
   userParam->m2           	= -1;
-  userParam->template_m1        = -1;
-  userParam->template_m2        = -1;
   userParam->numSeconds         = -1;
   userParam->psi0         	= -1;
   userParam->psi3         	= -1;
@@ -3197,23 +3152,20 @@ void InitUserParametersIn(UserParametersIn *userParam)
   userParam->tau3         	= -1;
   userParam->printBestOverlap 	= BANKEFFICIENCY_PRINTBESTOVERLAP;
   userParam->printBestTemplate 	= BANKEFFICIENCY_PRINTBESTTEMPLATE;
-  userParam->printSNRHisto        = BANKEFFICIENCY_PRINTSNRHISTO;
-  userParam->printPsd             = BANKEFFICIENCY_PRINTPSD;
+  userParam->printSNRHisto      = BANKEFFICIENCY_PRINTSNRHISTO;
+  userParam->printPsd           = BANKEFFICIENCY_PRINTPSD;
   userParam->printBank    	= BANKEFFICIENCY_PRINTBANK;
   userParam->printResultXml    	= BANKEFFICIENCY_PRINTRESULTXML;
   userParam->printPrototype    	= BANKEFFICIENCY_PRINTPROTOTYPE;
-  userParam->faithfulness        	= BANKEFFICIENCY_FAITHFULNESS;
+  userParam->faithfulness       = BANKEFFICIENCY_FAITHFULNESS;
   userParam->ntrials 	     	= BANKEFFICIENCY_NTRIALS;
-  userParam->fastSimulation       = BANKEFFICIENCY_FASTSIMULATION;
-  userParam->noiseModel           = LIGOI;
-  userParam->binaryInjection      = NoUserChoice; 
-  userParam->maxTotalMass         = -1;
-  userParam->startPhase           = 1;
-  userParam->detector     = L1;
-  userParam->startTime    = 751956568;
-  userParam->numSeconds   = -1;
-  userParam->realNoise    = 0;
-  userParam->inputPSD     = NULL;
+  userParam->fastSimulation     = BANKEFFICIENCY_FASTSIMULATION;
+  userParam->noiseModel         = LIGOI;
+  userParam->binaryInjection    = NoUserChoice; 
+  userParam->maxTotalMass       = -1;
+  userParam->startPhase         = 1;
+  userParam->numSeconds   	= -1;
+  userParam->inputPSD     	= NULL;
 }
 
 
@@ -3275,7 +3227,8 @@ ParseParameters(	INT4 			*argc,
 	  coarseBankIn->gridSpacing = SquareNotOriented;
 	}
 	else {
-	  coarseBankIn->gridSpacing = None;        	  	
+	  fprintf(stderr, "Unknown grid spacing after --bank-grid-spacing. Try --help.\n");
+	  exit(0);
 	}
       }        
       else if (!strcmp(argv[i],	"--bank-number-fcut")) {
@@ -3300,27 +3253,8 @@ ParseParameters(	INT4 			*argc,
       else if (!strcmp(argv[i],	"--bank-psi3-range")) {
         BEParseGetDouble2(argv,  &i, &(coarseBankIn->psi3Min), &(coarseBankIn->psi3Max));
       }
-      else if (!strcmp(argv[i], "--channel")) {
-	  BEParseGetString(argv, &i);
-	  userParam->chanName = argv[i];
-	}
       else if (!strcmp(argv[i],"--debug")) {
         BEParseGetInt(argv,  &i, &(lalDebugLevel)); 
-      }
-      else if (!strcmp(argv[i], "--detector")) {
-	BEParseGetString(argv, &i);
-	if (!strcmp(argv[i],  "L1")) {
-	  userParam->detector = L1;
-	}
-	else if (!strcmp(argv[i],"H1")) {
-	  userParam->detector = H1;
-	}
-	else if (!strcmp(argv[i],"H2")) {
-	  userParam->detector = H2;
-	}
-	else {
-	  userParam->detector  = None;
-	}
       }
       else if (!strcmp(argv[i],"--fl-signal")) {
         BEParseGetDouble(argv,  &i, &(randIn->param.fLower));
@@ -3332,9 +3266,6 @@ ParseParameters(	INT4 			*argc,
         BEParseGetDouble(argv,  &i, &(coarseBankIn->fLower));
 	randIn->param.fLower = coarseBankIn->fLower;
       }  
-      else if (!strcmp(argv[i], "--gps-start-time")) {
-	BEParseGetInt(argv, &i , &(userParam->startTime));
-      }
       else if (!strcmp(argv[i], "--help") || !strcmp(argv[i],"--h")) {
 	Help();
       }
@@ -3356,13 +3287,7 @@ ParseParameters(	INT4 			*argc,
       }
       else if (!strcmp(argv[i], "--m2")) {
         BEParseGetDouble(argv,  &i, &(userParam->m2));
-      }
-      else if (!strcmp(argv[i], "--template-m1")){
-        BEParseGetDouble(argv,  &i, &(userParam->template_m1));
-      }
-      else if (!strcmp(argv[i], "--template-m2")) {
-        BEParseGetDouble(argv,  &i, &(userParam->template_m2));
-      }
+      }      
       else if (!strcmp(argv[i],	"--mm")){
         BEParseGetDouble(argv,  &i, &(coarseBankIn->mmCoarse)); 
       }
@@ -3403,7 +3328,8 @@ ParseParameters(	INT4 			*argc,
 	  userParam->inputPSD = argv[++i];
 	}
 	else {
-	  userParam->noiseModel = None;	  
+	  fprintf(stderr, "Unknown moise model after --noise-model. Try --help\n");
+   	  exit(0);
 	}
       }
       else if (!strcmp(argv[i], "--num-seconds")) {
@@ -3414,9 +3340,6 @@ ParseParameters(	INT4 			*argc,
       }
       else if (!strcmp(argv[i], "--psi3")) {
         BEParseGetDouble(argv,  &i, &(userParam->psi3));
-      }
-      else if (!strcmp(argv[i], "--real-noise")) {
-	userParam->realNoise = 1;
       }
       else if (!strcmp(argv[i],"--sampling")) {
         BEParseGetDouble(argv,  &i, &(coarseBankIn->tSampling));
@@ -3503,7 +3426,11 @@ ParseParameters(	INT4 			*argc,
 	  randIn->type = 0;
 	else if (!strcmp(argv[i],"NoiseAndSignal"))
 	  randIn->type = 2;
-	else randIn->type = None;
+	else 
+	{
+	fprintf(stderr, "unknow simulation-type after --simulation-type. try --help \n");
+	exit(0);
+	}
       }
       else if (!strcmp(argv[i], "--no-start-phase")){
 	userParam->startPhase = 0;
@@ -3548,8 +3475,7 @@ ParseParameters(	INT4 			*argc,
       }
       else if (!strcmp(argv[i],	"--template-order")) {
         BEParseGetInt(argv,  &i, (INT4*)(&(coarseBankIn->order)));
-      }
-      
+      }      
       /* no user parameters requeste, only flags below*/               
       else if (!strcmp(argv[i],"--alpha-constraint")) {
         userParam->alphaFConstraint       = ALPHAFConstraint;
@@ -3568,9 +3494,6 @@ ParseParameters(	INT4 			*argc,
       }
       else if (!strcmp(argv[i],"--check")) {
         userParam->faithfulness    	= 1;
-      }
-      else if (!strcmp(argv[i],"--real-noise")) {
-        randIn->type    	        = RealNoise;
       }
       else if (!strcmp(argv[i],"--print-psd")) {
         userParam->printPsd 		= 1;
@@ -3785,14 +3708,6 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
     fprintf(stderr,  msg);
   }
   
-
-  if (coarseBankIn->gridSpacing == None  ){
-    sprintf(msg, "--bank-grid-spacing (%d) parameter must be < square, hexagonal, hexagonalOriented, squareOriented> \n",
-	    coarseBankIn->gridSpacing);
-    
-    fprintf(stderr,msg);
-  }
-
   
   if  ((coarseBankIn->mMin >= coarseBankIn->mMax ) || (coarseBankIn->mMin <=0)){
     sprintf(msg, "--bank-mass-range (%f %f) parameter must be sorted and > 0 \n",
@@ -3851,14 +3766,6 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
   }
 
 
-  if (userParam->detector == None)
-    {
-      sprintf(msg, "--detector (%d) expect option <H1, H2, L1> only",
-	      userParam->detector);
-      fprintf(stderr, msg);
-      exit(1);
-    }
-
   if (coarseBankIn->LowGM > coarseBankIn->HighGM)
     {
       sprintf(msg, "--bank-fcut-range (%f %f) expect sorted , typically 3 and 6",
@@ -3875,13 +3782,6 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
       exit(1);
     }
 
-  if (userParam->startTime <= 0 )
-    {
-      sprintf(msg, "--gps-start-time (%d) invalid. must be > 0 ",
-	      userParam->startTime );
-      fprintf(stderr, msg);
-      exit(1);
-    }
 
   if (userParam->maxTotalMass != -1)
     {
@@ -3906,15 +3806,6 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
   /* massChoice setting (begin)*/
 
 
-  if((userParam->template_m1 !=-1) && (userParam->template_m2!=-1))
-    {
-      if ((userParam->m1 == -1) || (userParam->m2==-1))
-	{
-	  sprintf(msg, "if --template-m1 and template-m2 are used, you must set --m1 and --m2 \n");
-          fprintf(stderr, msg);
-          exit(1);
-	}       
-    }
 
 
   if ((userParam->m1 != -1) && (userParam->m2 != -1)){
@@ -3974,11 +3865,6 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
      fprintf(stderr, msg);  
      exit(1);
  } 
- if (userParam->noiseModel == None){
-   sprintf(msg, "--noise-model must be <LIGOI, LIGOA, VIRGO, GEO, TAMA, REALPSD>\n");
-   fprintf(stderr, msg);  
-   exit(1);
- } 
   
  if (coarseBankIn->numFcutTemplates <= 0){
    sprintf(msg, "--bank-number-fcut (%d) must be > 0>\n", coarseBankIn->numFcutTemplates);
@@ -4036,7 +3922,7 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 
   if ((randIn->t0Min != 0 || randIn->t0Max != 0) && 
         ((randIn->t0Min >= randIn->t0Max ) || (randIn->t0Min <=0))){
-    sprintf(msg, "--signal-tau0-range (%f %f) paramter must be sorted and > 0 \n",
+    sprintf(msg, "--signal-tau0-range (%f %f) parameter must be sorted and > 0 \n",
             randIn->t0Min, randIn->t0Max);
     fprintf(stderr, msg);
     exit(1);
@@ -4120,6 +4006,11 @@ void Help(void)
 	  "\t By default xml results are not stored (although is could be a default option, usage in parallel would create\n"
 	  "\t many xml files to be joined afterwards). The --check option replaces the template bank by a single template\n"
 	  "\t which parameters are identical to the injection.\n\n\n");	  
+  fprintf(stderr, "%s",msg);
+  sprintf(msg,	"\t The parameter are randomized on the initial phase (can be removed using --no-start-pahse), and the masses\n"
+		"\t By default the massesare randomized such  that total mass is uniform. One can set --signal-tau0-range\n"
+		"\t which makes the injections uniformly distributed in the tau0/tau3 plane.\n");
+
   fprintf(stderr, "%s",msg);
   
   sprintf(msg, "[EXAMPLE]\n \t ./lalapps_BankEfficiency --template EOB --signal EOB --check --print-xml\n\n\n");
@@ -4371,35 +4262,16 @@ BEAscii2Xml(void)
 	      fprintf(output,",\n");
       }
       fprintf(output, BANKEFFICIENCY_PARAMS_ROW,
-	     trigger.psi0_trigger,
-	     trigger.psi3_trigger,
-	     trigger.beta_trigger,
-	     psi0, 
-	     psi3,
-             beta,   
-	     tau0, 
-	     tau3, 
-	     tau0I, 
-	     tau3I,
-             spin1_a,
-             spin1_b,
-             spin1_c,
-             spin2_a,
-             spin2_b,
-             spin2_c,
-	     theta0, 
-             phi0,
-             trigger.fend_trigger, 
-	     trigger.fend_inject,
-	     trigger.mass1_inject,
-	     trigger.mass2_inject,
-	     phaseI,
-	     trigger.rho_final,
-	     trigger.snrAtCoaTime, 
-	     trigger.phase,
-	     trigger.alphaF, 
-	     trigger.bin, 
-	     nStartPad, 
+	     trigger.psi0_trigger, trigger.psi3_trigger,
+	     trigger.beta_trigger, psi0, psi3, beta,   
+	     tau0, tau3, tau0I, tau3I,
+             spin1_a,spin1_b,spin1_c,spin2_a,spin2_b,spin2_c,
+	     theta0, phi0,
+             trigger.fend_trigger, trigger.fend_inject,
+	     trigger.mass1_inject, trigger.mass2_inject,
+	     phaseI, trigger.rho_final, trigger.snrAtCoaTime, 
+	     trigger.phase, trigger.alphaF, 
+	     trigger.bin, nStartPad, 
 	     trigger.nfast); 
              line++;
     }

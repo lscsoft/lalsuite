@@ -62,14 +62,14 @@ fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau0\"          
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau3\"                Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau0_sim\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau3_sim\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_x\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_y\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_z\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_x\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_y\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_z\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:theta0\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phi0\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_x\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_y\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_z\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_x\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_y\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_z\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:theta0\"              Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phi0\"                Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ffinal\"              Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ffinal_sim\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass1_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
@@ -77,7 +77,7 @@ fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass2_sim\"     
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phase_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:snr\"                 Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:snr_at_ta\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phase\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phase\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:alpha_f\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:time\"                Type=\"int_4s\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:time_sim\"            Type=\"int_4s\"/>\n", fp) == EOF ||  \
@@ -176,13 +176,6 @@ fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"         
 
 
 #define BANKEFFICIENCY_PRINTPROTO_FILEXML	"BE_Proto.xml"	/* print the result (xml file)  */
-#define BANKEFFICIENCY_READXMLBANK	        "InputBank.xml"	/* print the result (xml file)  */
-
-
-/* --- temporary flag for the sampling of real psd --- */
-#define None 512
-#define RealNoise 511
-
 
 #define BEASCII2XML_INPUT1 "Trigger.dat"
 #define BEASCII2XML_INPUT2 "BE_Proto.xml"
@@ -223,40 +216,6 @@ typedef enum{
     EGO
 } DetectorName;
 
-/* what detectors (real noise only )*/
-typedef enum{
-  L1,
-  H1,
-  H2,
-  V1,
-  G1
-}
-DetectorFlag;
-
-
-typedef enum{
-  S1,S2,S3,S4,S5,S6
-}
-RunFlag;
-
-
-typedef struct{ 
-  CHAR *calCacheName;
-  CHAR *frInCacheName;
-}
-DataFileIn;
-
-
-typedef struct{ 
-  DataFileIn S2, S3, S4, S5, S6;
-} 
-ScientificRunIn;
-
-typedef struct{
-  CHAR *chanName;
-  ScientificRunIn dataFile;
-}
-DetectorParamIn;
 
 typedef struct{
   AlphaConstraint alphaFConstraint;     /* force alpha_F to be constriant between 0 and 1 */
@@ -275,31 +234,21 @@ typedef struct{
   INT4 printResultXml;
   INT4 printPrototype;
   INT4 printPsd;                        /* print the psd used in <x|x>          */
-  INT4 realNoise;
   BinaryInjection binaryInjection;      /*injection will be set by the mass-range*/
   INT4 printBestOverlap, printBestTemplate, extraFinalPrinting ;
 
   INT4 faithfulness;
   INT4 snrAtCoaTime;
-  double m1,m2, psi0,psi3, tau0, tau3, template_m1, template_m2;
+  double m1,m2, psi0,psi3, tau0, tau3;
   DetectorName noiseModel;
   REAL4   maxTotalMass;
   REAL4   minTotalMass;
-  char *chanName;
-  CHAR *calCacheName;
-  CHAR *frInCacheName;
   INT4 startTime;
-  DetectorParamIn L1;
-  DetectorParamIn H1;
-  DetectorParamIn H2;
   INT4 numSeconds;
-  DetectorFlag detector;
-  RunFlag run;
   REAL4 signalfFinal;
   INT4 startPhase;
   CHAR *inputPSD;
-  INT4 useed;
-  INT4 dataCheckPoint;
+  INT4 useed;  
 }
 UserParametersIn;
 
