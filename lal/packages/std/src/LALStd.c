@@ -36,6 +36,7 @@ prone to buffer-overflow problems.
 #include <stdlib.h>
 #include <stdarg.h>
 
+#include <lal/LALRCSID.h>
 NRCSID (LALSTDC,"$Id$");
 
 #ifdef HAVE_VSNPRINTF
