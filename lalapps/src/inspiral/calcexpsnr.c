@@ -156,10 +156,10 @@ int main( int argc, char *argv[] )
  
   /* vars required to make freq series */
   LIGOTimeGPS                   epoch = { 0, 0 };
-  LIGOTimeGPS                   wvfStartTime = {0, 0}; 
   LIGOTimeGPS                   gpsStartTime = {0, 0}; 
   REAL8                         f0 = 0.;
   REAL8                         offset = 0.;
+  INT8                          waveformStartTime = 0;
 
   /* files contain PSD info */
   CHAR                         *injectionFile = NULL;         
@@ -562,8 +562,7 @@ int main( int argc, char *argv[] )
 
      /* create the waveform, amp, freq phase etc */
      LAL_CALL( LALGenerateInspiral(&status, &waveform, thisInjection, &ppnParams), &status);
-     fprintf( stdout, "ppnParams.tc %e\n ", ppnParams.tc);
-     /* do i need to subtract this value from wvfStartTime */
+     if (vrbflg) fprintf( stdout, "ppnParams.tc %e\n ", ppnParams.tc);
 
     statValue = 0.;
   
@@ -594,30 +593,31 @@ int main( int argc, char *argv[] )
         case 1:
            if ( vrbflg ) fprintf( stdout, "looking at H1 \n");
            thisSpec = specH1;
-           wvfStartTime.gpsSeconds     = thisInjection->h_end_time.gpsSeconds;
-           wvfStartTime.gpsNanoSeconds = thisInjection->h_end_time.gpsNanoSeconds;
            break;
         case 2:
            if ( vrbflg ) fprintf( stdout, "looking at H2 \n");
            thisSpec = specH2;
-           wvfStartTime.gpsSeconds     = thisInjection->h_end_time.gpsSeconds;
-           wvfStartTime.gpsNanoSeconds = thisInjection->h_end_time.gpsNanoSeconds;
            break;
         case 3:
            if ( vrbflg ) fprintf( stdout, "looking at L1 \n");
            thisSpec = specL1;
-           wvfStartTime.gpsSeconds     = thisInjection->l_end_time.gpsSeconds;
-           wvfStartTime.gpsNanoSeconds = thisInjection->l_end_time.gpsNanoSeconds;
            break;
         default:
            fprintf( stderr, "Error: ifoNumber %d does not correspond to H1, H2 or L1: \n", ifoNumber );
            exit( 1 );
         }
 
+        /* get the gps start time of the signal to inject */
+        LALGPStoINT8( &status, &waveformStartTime, 
+          &(thisInjection->geocent_end_time) );
+        waveformStartTime -= (INT8) ( 1000000000.0 * ppnParams.tc );
+
         offset = (chan->data->length / 2.0) * chan->deltaT;
-        gpsStartTime.gpsSeconds = wvfStartTime.gpsSeconds - offset;
-        gpsStartTime.gpsNanoSeconds = wvfStartTime.gpsNanoSeconds;
+        gpsStartTime.gpsSeconds     = thisInjection->geocent_end_time.gpsSeconds - offset;
+        gpsStartTime.gpsNanoSeconds = thisInjection->geocent_end_time.gpsNanoSeconds;
         chan->epoch = gpsStartTime;
+
+           
 
        if (vrbflg) fprintf(stdout, "offset start time of injection by %f seconds \n", offset ); 
        
@@ -626,7 +626,8 @@ int main( int argc, char *argv[] )
 
        XLALUnitInvert( &(detector.transfer->sampleUnits), &(resp->sampleUnits) );
 
-       waveform.a->epoch = wvfStartTime;
+       /* set the start times for injection */
+       LALINT8toGPS( &status, &(waveform.a->epoch), &waveformStartTime );
        memcpy(&(waveform.f->epoch), &(waveform.a->epoch), sizeof(LIGOTimeGPS) );
        memcpy(&(waveform.phi->epoch), &(waveform.a->epoch), sizeof(LIGOTimeGPS) );
  
