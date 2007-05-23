@@ -1156,8 +1156,9 @@ class candidateList:
             g=float(lineInfo.printStopFreq())
             try:
                 evalResult=eval(testExp)
-            except ValueError:
+            except :
                 print "Error with expression string syntax."
+                print "Received string:  ",str(testExp).upper()
                 os.abort()
             if evalResult:
                 resultsList.append(lineInfo)
