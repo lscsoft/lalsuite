@@ -1141,6 +1141,8 @@ int local_sin_cos_2PI_LUT_7R4tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
 /* Not used or tested (yet). This features a table construction so
    that the calculation that can easily be vectorized (might help...) */
 
+#if 0
+
 int local_sin_cos_2PI_LUT_7R4V2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
 
   /* Lookup tables for fast sin/cos calculation */
@@ -1158,6 +1160,7 @@ int local_sin_cos_2PI_LUT_7R4V2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
   REAL8 dummy; /* dummy for modf */
 #endif
   REAL4 sincos[2];
+  int ve;
 
   /* res=10*(params->mCohSFT); */
   /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
@@ -1196,11 +1199,11 @@ int local_sin_cos_2PI_LUT_7R4V2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
   i = x * LUT_RES + .5; /* round-to-nearest */
   d = x - diVal[i];
 #if 1
-  for (int ve=0; ve<2; ve++)
+  for (ve=0; ve<2; ve++)
     sincos[ve] = scTab[i][ve] + d * (scTab2PI[i][ve] + d * scTab2PIPI[i][ve]);
 #else
   d2 = d*d;
-  for (int ve=0; ve<2; ve++)
+  for (ve=0; ve<2; ve++)
     sincos[ve] = scTab[i][ve] + d * scTab2PI[i][ve] + d2 * scTab2PIPI[i][ve];
 #endif
 
@@ -1209,3 +1212,5 @@ int local_sin_cos_2PI_LUT_7R4V2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
 
   return XLAL_SUCCESS;
 }
+
+#endif /* #if 0 */
