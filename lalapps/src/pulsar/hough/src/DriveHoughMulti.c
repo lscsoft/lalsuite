@@ -84,7 +84,9 @@
 
 
 #include "./DriveHoughColor.h"
-
+/* lalapps includes */
+#include <lalapps.h>
+#include <DopplerScan.h>
 
 RCSID( "$Id$");
 
@@ -117,6 +119,8 @@ BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, 
 #define FBAND 0.05   /* search frequency band  */
 #define NFSIZE  21   /* n-freq. span of the cylinder, to account for spin-down search */
 #define BLOCKSRNGMED 101 /* Running median window size */
+
+#define SKYREGION "allsky" /**< default sky region to search over -- just a single point*/
 
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -191,6 +195,9 @@ int main(int argc, char *argv[]){
   /* skypatch info */
   REAL8  *skyAlpha, *skyDelta, *skySizeAlpha, *skySizeDelta; 
   INT4   nSkyPatches, skyCounter=0; 
+  static DopplerSkyScanInit scanInit;   /* init-structure for DopperScanner */
+  DopplerSkyScanState thisScan = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
+  static PulsarDopplerParams dopplerpos;	       /* current search-parameters */
 
   /* output filenames and filepointers */
   CHAR   filehisto[ MAXFILENAMELENGTH ]; 
@@ -227,6 +234,7 @@ int main(int argc, char *argv[]){
   REAL8    uvar_startTime, uvar_endTime;
   REAL8    uvar_pixelFactor;
   REAL8    uvar_f0, uvar_peakThreshold, uvar_houghThreshold, uvar_fSearchBand;
+  REAL8    uvar_dAlpha, uvar_dDelta; /* resolution for isotropic sky-grid */
   CHAR     *uvar_earthEphemeris=NULL;
   CHAR     *uvar_sunEphemeris=NULL;
   CHAR     *uvar_sftDir=NULL;
@@ -234,6 +242,7 @@ int main(int argc, char *argv[]){
   CHAR     *uvar_fbasenameOut=NULL;
   CHAR     *uvar_skyfile=NULL;
   CHAR     *uvar_timeStampsFile=NULL;
+  CHAR     *uvar_skyRegion=NULL;
   LALStringVector *uvar_linefiles=NULL;
 
 
@@ -264,6 +273,8 @@ int main(int argc, char *argv[]){
   uvar_printWeights = FALSE;
   uvar_binsHisto = 1000;
   uvar_pixelFactor = PIXELFACTOR;
+  uvar_dAlpha = 0.2;
+  uvar_dDelta = 0.2;
 
   uvar_earthEphemeris = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
@@ -281,38 +292,40 @@ int main(int argc, char *argv[]){
   strcpy(uvar_skyfile,SKYFILE);
 
   /* register user input variables */
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",                    &uvar_help),            &status);  
-  LAL_CALL( LALRegisterREALUserVar(   &status, "f0",              'f', UVAR_OPTIONAL, "Start search frequency",                &uvar_f0),              &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "fSearchBand",     'b', UVAR_OPTIONAL, "Search frequency band",                 &uvar_fSearchBand),     &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "startTime",        0,  UVAR_OPTIONAL, "GPS start time of observation",         &uvar_startTime),        &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "endTime",          0,  UVAR_OPTIONAL, "GPS end time of observation",           &uvar_endTime),          &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "timeStampsFile",   0,  UVAR_OPTIONAL, "Input time-stamps file",                &uvar_timeStampsFile),   &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyfile",          0,  UVAR_OPTIONAL, "Input skypatch file",                   &uvar_skyfile),         &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "peakThreshold",    0,  UVAR_OPTIONAL, "Peak selection threshold",              &uvar_peakThreshold),   &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighAM",          0,  UVAR_OPTIONAL, "Use amplitude modulation weights",      &uvar_weighAM),         &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighNoise",       0,  UVAR_OPTIONAL, "Use SFT noise weights",                 &uvar_weighNoise),      &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printLog",         0,  UVAR_OPTIONAL, "Print Log file",                        &uvar_printLog),        &status);  
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",                  &uvar_earthEphemeris),  &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",                    &uvar_sunEphemeris),    &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",          'D', UVAR_REQUIRED, "SFT filename pattern",                  &uvar_sftDir),          &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "dirnameOut",      'o', UVAR_OPTIONAL, "Output directory",                      &uvar_dirnameOut),      &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fbasenameOut",     0,  UVAR_OPTIONAL, "Output file basename",                  &uvar_fbasenameOut),    &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",        0,  UVAR_OPTIONAL, "Print Hough maps",                      &uvar_printMaps),       &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printTemplates",   0,  UVAR_OPTIONAL, "Print templates file",                  &uvar_printTemplates),  &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "houghThreshold",   0,  UVAR_OPTIONAL, "Hough threshold (No. of sigmas)",       &uvar_houghThreshold),  &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printEvents",      0,  UVAR_OPTIONAL, "Print events above threshold",          &uvar_printEvents),     &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",       0,  UVAR_OPTIONAL, "Print Hough statistics",                &uvar_printStats),      &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printSigma",       0,  UVAR_OPTIONAL, "Print expected number count stdev.",    &uvar_printSigma),      &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "binsHisto",        0,  UVAR_OPTIONAL, "No. of bins for histogram",             &uvar_binsHisto),  &status);
-  LAL_CALL( LALRegisterLISTUserVar(   &status, "linefiles",        0,  UVAR_OPTIONAL, "Comma separated List of linefiles (filenames must contain IFO name)",  
-	      &uvar_linefiles),       &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "nfSizeCylinder",   0,  UVAR_OPTIONAL, "Size of cylinder of PHMDs",             &uvar_nfSizeCylinder),  &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "pixelFactor",     'p', UVAR_OPTIONAL, "sky resolution=1/v*pixelFactor*f*Tcoh", &uvar_pixelFactor),     &status);
+  LAL_CALL( LALRegisterBOOLUserVar( &status, "help",             'h',  UVAR_HELP,     "Print this message", &uvar_help), &status);  
+  LAL_CALL( LALRegisterREALUserVar( &status, "f0",               'f',  UVAR_OPTIONAL, "Start search frequency", &uvar_f0), &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "fSearchBand",      'b',  UVAR_OPTIONAL, "Search frequency band", &uvar_fSearchBand), &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "startTime",          0,  UVAR_OPTIONAL, "GPS start time of observation", &uvar_startTime),        &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "endTime",          0,  UVAR_OPTIONAL, "GPS end time of observation", &uvar_endTime), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "timeStampsFile",   0,  UVAR_OPTIONAL, "Input time-stamps file", &uvar_timeStampsFile),   &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",        0,  UVAR_OPTIONAL, "sky-region polygon (or 'allsky')", &uvar_skyRegion), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha",           0,  UVAR_OPTIONAL, "Resolution for flat or isotropic coarse grid (rad)", &uvar_dAlpha), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",           0,  UVAR_OPTIONAL, "Resolution for flat or isotropic coarse grid (rad)", &uvar_dDelta), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyfile",          0,  UVAR_OPTIONAL, "Alternative: input skypatch file", &uvar_skyfile),         &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "peakThreshold",    0,  UVAR_OPTIONAL, "Peak selection threshold", &uvar_peakThreshold),   &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighAM",          0,  UVAR_OPTIONAL, "Use amplitude modulation weights", &uvar_weighAM),         &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighNoise",       0,  UVAR_OPTIONAL, "Use SFT noise weights", &uvar_weighNoise), &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printLog",         0,  UVAR_OPTIONAL, "Print Log file", &uvar_printLog), &status);  
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",  &uvar_earthEphemeris),  &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file", &uvar_sunEphemeris), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",          'D', UVAR_REQUIRED, "SFT filename pattern", &uvar_sftDir), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "dirnameOut",      'o', UVAR_OPTIONAL, "Output directory", &uvar_dirnameOut), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fbasenameOut",     0,  UVAR_OPTIONAL, "Output file basename", &uvar_fbasenameOut), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",        0,  UVAR_OPTIONAL, "Print Hough maps", &uvar_printMaps), &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printTemplates",   0,  UVAR_OPTIONAL, "Print templates file", &uvar_printTemplates),  &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "houghThreshold",   0,  UVAR_OPTIONAL, "Hough threshold (No. of sigmas)", &uvar_houghThreshold),  &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printEvents",      0,  UVAR_OPTIONAL, "Print events above threshold", &uvar_printEvents),     &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",       0,  UVAR_OPTIONAL, "Print Hough statistics", &uvar_printStats), &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printSigma",       0,  UVAR_OPTIONAL, "Print expected number count stdev.", &uvar_printSigma),      &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "binsHisto",        0,  UVAR_OPTIONAL, "No. of bins for histogram", &uvar_binsHisto),  &status);
+  LAL_CALL( LALRegisterLISTUserVar(   &status, "linefiles",        0,  UVAR_OPTIONAL, "Comma separated List of linefiles (filenames must contain IFO name)", &uvar_linefiles), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "nfSizeCylinder",   0,  UVAR_OPTIONAL, "Size of cylinder of PHMDs", &uvar_nfSizeCylinder),  &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "pixelFactor",     'p', UVAR_OPTIONAL, "sky resolution=1/v*pixelFactor*f*Tcoh", &uvar_pixelFactor), &status);
 
   /* developer input variables */
-  LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",     0, UVAR_DEVELOPER, "Running Median block size",             &uvar_blocksRngMed),    &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "maxBinsClean",     0, UVAR_DEVELOPER, "Maximum number of bins in cleaning",    &uvar_maxBinsClean),    &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printWeights",     0, UVAR_DEVELOPER, "Print relative noise weights of ifos",  &uvar_printWeights),    &status);  
+  LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",     0, UVAR_DEVELOPER, "Running Median block size", &uvar_blocksRngMed), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "maxBinsClean",     0, UVAR_DEVELOPER, "Maximum number of bins in cleaning", &uvar_maxBinsClean), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printWeights",     0, UVAR_DEVELOPER, "Print relative noise weights of ifos", &uvar_printWeights), &status);  
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -354,42 +367,87 @@ int main(int argc, char *argv[]){
 
   /***** start main calculations *****/
 
-  /* read skypatch info */
-  {
-    FILE   *fpsky = NULL; 
-    INT4   r;
-    REAL8  temp1, temp2, temp3, temp4;
+  /* set up skypatches */
+
+  /* if user specified skyRegion then use DopplerScan function
+     to construct an isotropic grid. Otherwise use skypatch file. */
+
+  if (uvar_skyRegion ) {
+
+    scanInit.dAlpha = uvar_dAlpha;
+    scanInit.dDelta = uvar_dDelta;
+    scanInit.gridType = GRID_ISOTROPIC;
+    scanInit.metricType =  LAL_PMETRIC_NONE;
+    /* scanInit.metricMismatch = 0; */
+    /* scanInit.projectMetric = TRUE; */
+    /* scanInit.obsDuration = tStack; */
+    /* scanInit.obsBegin = tMidGPS; */
+    /* scanInit.Detector = &(stackMultiDetStates.data[0]->data[0]->detector); */
+    /* scanInit.ephemeris = edat; */
+    /* scanInit.skyGridFile = uvar_skyGridFile; */
+    scanInit.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
+    strcpy (scanInit.skyRegionString, uvar_skyRegion);
+    /*   scanInit.Freq = usefulParams.spinRange_midTime.fkdot[0] +  usefulParams.spinRange_midTime.fkdotBand[0]; */
     
-    if ( (fpsky = fopen(uvar_skyfile, "r")) == NULL)
-      {
-	fprintf(stderr, "Unable to find skyfile %s\n", uvar_skyfile);
-	return DRIVEHOUGHCOLOR_EFILE;
-      }
-        
-    nSkyPatches = 0;
-    do 
-      {
-	r = fscanf(fpsky,"%lf%lf%lf%lf\n", &temp1, &temp2, &temp3, &temp4);
-	/* make sure the line has the right number of entries or is EOF */
-	if (r==4) nSkyPatches++;
-      } while ( r != EOF);
-    rewind(fpsky);
+    /* set up the grid */
+    LAL_CALL ( InitDopplerSkyScan ( &status, &thisScan, &scanInit), &status); 
+    
+    nSkyPatches = thisScan.numSkyGridPoints;
     
     skyAlpha = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));
     skyDelta = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));     
     skySizeAlpha = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));
     skySizeDelta = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));     
+        
+    /* loop over skygrid points */  
+    XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
     
-    for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++)
-      {
-	r = fscanf(fpsky,"%lf%lf%lf%lf\n", skyAlpha + skyCounter, skyDelta + skyCounter, 
-		   skySizeAlpha + skyCounter,  skySizeDelta + skyCounter);
-      }
-    
-    fclose(fpsky);     
-  } /* end skyfile reading block */
+    skyCounter = 0; 
+    while(thisScan.state != STATE_FINISHED) {
+      
+      skyAlpha[skyCounter] = dopplerpos.Alpha;
+      skyDelta[skyCounter] = dopplerpos.Delta;
+      skySizeAlpha[skyCounter] = uvar_dAlpha;
+      skySizeDelta[skyCounter] = uvar_dDelta;
+      
+    } /* end while loop over skygrid */
+  } else {
 
-
+    /* read skypatch info */
+    {
+      FILE   *fpsky = NULL; 
+      INT4   r;
+      REAL8  temp1, temp2, temp3, temp4;
+      
+      if ( (fpsky = fopen(uvar_skyfile, "r")) == NULL)
+	{
+	  fprintf(stderr, "Unable to find skyfile %s\n", uvar_skyfile);
+	  return DRIVEHOUGHCOLOR_EFILE;
+	}
+      
+      nSkyPatches = 0;
+      do 
+	{
+	  r = fscanf(fpsky,"%lf%lf%lf%lf\n", &temp1, &temp2, &temp3, &temp4);
+	  /* make sure the line has the right number of entries or is EOF */
+	  if (r==4) nSkyPatches++;
+	} while ( r != EOF);
+      rewind(fpsky);
+      
+      skyAlpha = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));
+      skyDelta = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));     
+      skySizeAlpha = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));
+      skySizeDelta = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));     
+      
+      for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++)
+	{
+	  r = fscanf(fpsky,"%lf%lf%lf%lf\n", skyAlpha + skyCounter, skyDelta + skyCounter, 
+		     skySizeAlpha + skyCounter,  skySizeDelta + skyCounter);
+	}
+      
+      fclose(fpsky);     
+    } /* end skypatchfile reading block */    
+  } /* end setting up of skypatches */
 
   /* read sft Files and set up weights and nstar vector */
   {
@@ -1199,6 +1257,13 @@ int main(int argc, char *argv[]){
   LALFree(skySizeDelta);
 
   LALFree( nStarEventVec.event );
+
+  /* free dopplerscan stuff */
+  LAL_CALL ( FreeDopplerSkyScan(&status, &thisScan), &status);
+  if ( scanInit.skyRegionString )
+    LALFree ( scanInit.skyRegionString );
+
+
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
 
