@@ -410,10 +410,10 @@ int main(int argc, char *argv[]){
       skySizeAlpha[skyCounter] = uvar_dAlpha;
       skySizeDelta[skyCounter] = uvar_dDelta;
       
-      if (dopplerpos.Delta>0)
+      if ((dopplerpos.Delta>0) && (dopplerpos.Delta < atan(4*LAL_PI/uvar_dAlpha/uvar_dDelta) ))
         skySizeAlpha[skyCounter] = uvar_dAlpha*cos(dopplerpos.Delta -0.5*uvar_dDelta)/cos(dopplerpos.Delta);
 
-      if (dopplerpos.Delta<0)
+      if ((dopplerpos.Delta<0) && (dopplerpos.Delta > -atan(4*LAL_PI/uvar_dAlpha/uvar_dDelta) ))
         skySizeAlpha[skyCounter] = uvar_dAlpha*cos(dopplerpos.Delta +0.5*uvar_dDelta)/cos(dopplerpos.Delta);
       
       XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
