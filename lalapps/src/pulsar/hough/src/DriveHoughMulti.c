@@ -609,7 +609,8 @@ int main(int argc, char *argv[]){
     MultiPSDVector *multPSD = NULL;  
     INT4 tmpLeap;
     UINT4 iIFO, iSFT, numsft, j;
-    LALLeapSecFormatAndAcc lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
+    /*     LALLeapSecFormatAndAcc lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT}; */
+    LALLeapSecFormatAndAcc lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_LOOSE};
 
     /*  get ephemeris  */
     edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
