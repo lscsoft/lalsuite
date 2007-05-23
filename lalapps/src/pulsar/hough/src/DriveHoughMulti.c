@@ -195,7 +195,7 @@ int main(int argc, char *argv[]){
   /* skypatch info */
   REAL8  *skyAlpha, *skyDelta, *skySizeAlpha, *skySizeDelta; 
   INT4   nSkyPatches, skyCounter=0; 
-  static DopplerSkyScanInit scanInit;   /* init-structure for DopperScanner */
+  DopplerSkyScanInit scanInit = empty_DopplerSkyScanInit;   /* init-structure for DopperScanner */
   DopplerSkyScanState thisScan = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
   static PulsarDopplerParams dopplerpos;	       /* current search-parameters */
 
@@ -410,6 +410,8 @@ int main(int argc, char *argv[]){
       skySizeAlpha[skyCounter] = uvar_dAlpha;
       skySizeDelta[skyCounter] = uvar_dDelta;
       
+      XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
+
     } /* end while loop over skygrid */
   } else {
 
