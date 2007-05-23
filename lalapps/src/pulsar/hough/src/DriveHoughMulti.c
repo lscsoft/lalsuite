@@ -410,6 +410,12 @@ int main(int argc, char *argv[]){
       skySizeAlpha[skyCounter] = uvar_dAlpha;
       skySizeDelta[skyCounter] = uvar_dDelta;
       
+      if (dopplerpos.Delta>0)
+        skySizeAlpha[skyCounter] = uvar_dAlpha*cos(dopplerpos.Delta -0.5*uvar_dDelta)/cos(dopplerpos.Delta);
+
+      if (dopplerpos.Delta<0)
+        skySizeAlpha[skyCounter] = uvar_dAlpha*cos(dopplerpos.Delta +0.5*uvar_dDelta)/cos(dopplerpos.Delta);
+      
       XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
 
     } /* end while loop over skygrid */
