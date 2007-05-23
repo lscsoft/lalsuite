@@ -1040,11 +1040,11 @@ int local_sin_cos_2PI_LUT_7tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
   x = xin - floor(xin);
 #else
 #if defined(SINCOS_INT4)
-  xt = x-(INT4)x;  /* xt in (-1, 1) */
+  x = xin-(INT4)xin;  /* xt in (-1, 1) */
 #elif defined(SINCOS_INT8)
-  xt = x-(INT8)x;  /* xt in (-1, 1) */
+  x = xin-(INT8)xin;  /* xt in (-1, 1) */
 #else
-  xt = modf(x, &dummy); /* xt in (-1, 1) */
+  x = modf(xin, &dummy); /* xt in (-1, 1) */
 #endif
   if ( x < 0.0 )
     x += 1.0;
@@ -1113,11 +1113,11 @@ int local_sin_cos_2PI_LUT_7R4tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
   x = xin - floor(xin);
 #else
 #if defined(SINCOS_INT4)
-  xt = x-(INT4)x;  /* xt in (-1, 1) */
+  x = xin-(INT4)xin;  /* xt in (-1, 1) */
 #elif defined(SINCOS_INT8)
-  xt = x-(INT8)x;  /* xt in (-1, 1) */
+  x = xin-(INT8)xin;  /* xt in (-1, 1) */
 #else
-  xt = modf(x, &dummy); /* xt in (-1, 1) */
+  x = modf(xin, &dummy); /* xt in (-1, 1) */
 #endif
   if ( x < 0.0 )
     x += 1.0;
@@ -1183,11 +1183,11 @@ int local_sin_cos_2PI_LUT_7R4V2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
   x = xin - floor(xin);
 #else
 #if defined(SINCOS_INT4)
-  xt = x-(INT4)x;  /* xt in (-1, 1) */
+  x = xin-(INT4)xin;  /* xt in (-1, 1) */
 #elif defined(SINCOS_INT8)
-  xt = x-(INT8)x;  /* xt in (-1, 1) */
+  x = xin-(INT8)xin;  /* xt in (-1, 1) */
 #else
-  xt = modf(x, &dummy); /* xt in (-1, 1) */
+  x = modf(xin, &dummy); /* xt in (-1, 1) */
 #endif
   if ( x < 0.0 )
     x += 1.0;
