@@ -929,7 +929,9 @@ local_sin_cos_2PI_LUT_2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
   INT4 i0;
   REAL8 d, d2;
   REAL8 ts, tc;
+#if !(defined(SINCOS_FLOOR) || defined(SINCOS_INT4) || defined(SINCOS_INT8))
   REAL8 dummy;
+#endif
 
   static BOOLEAN firstCall = TRUE;
   static REAL4 sinVal[LUT_RES+1], cosVal[LUT_RES+1];
@@ -940,14 +942,10 @@ local_sin_cos_2PI_LUT_2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
     {
       UINT4 k;
 
-      /* printf("initializing...\n"); */
-
       for (k=0; k <= LUT_RES; k++)
         {
           sinVal[k] = sin( LAL_TWOPI * k * oo_lut_res );
           cosVal[k] = cos( LAL_TWOPI * k * oo_lut_res );
-
-	  /* printf("%f\t%f\n",sinVal[k],cosVal[k]); */
         }
       firstCall = FALSE;
     }
@@ -962,7 +960,13 @@ local_sin_cos_2PI_LUT_2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 #ifdef SINCOS_FLOOR
   xt = x - floor(x);
 #else
-  xt = modf(x, &dummy);/* xt in (-1, 1) */
+#if defined(SINCOS_INT4)
+  xt = x-(INT4)x;  /* xt in (-1, 1) */
+#elif defined(SINCOS_INT8)
+  xt = x-(INT8)x;  /* xt in (-1, 1) */
+#else
+  xt = modf(x, &dummy); /* xt in (-1, 1) */
+#endif
   if ( xt < 0.0 )
     xt += 1.0; /* xt in [0, 1) */
 #endif
@@ -1008,14 +1012,14 @@ int local_sin_cos_2PI_LUT_7tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
   UINT4 i; /* array index */
   REAL8 d, d2; /* intermediate value  */
   REAL8 x; /* x limited to [0..1) */
+#if !(defined(SINCOS_FLOOR) || defined(SINCOS_INT4) || defined(SINCOS_INT8))
   REAL8 dummy; /* dummy for modf */
+#endif
 
   /* res=10*(params->mCohSFT); */
   /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
   /* using three tables with values including PI is simply faster */
   if ( tabs_empty ) {
-    printf("initializing...\n");
-
     for (i=0; i <= LUT_RES; i++) {
       sinVal[i]      = sin((LAL_TWOPI*i)/(LUT_RES));
       sinVal2PI[i]   = sinVal[i]    * LAL_TWOPI;
@@ -1023,8 +1027,6 @@ int local_sin_cos_2PI_LUT_7tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
       cosVal[i]      = cos((LAL_TWOPI*i)/(LUT_RES));
       cosVal2PI[i]   = cosVal[i]    * LAL_TWOPI;
       cosVal2PIPI[i] = cosVal2PI[i] * LAL_PI;
-
-      printf("%f\t%f\n",sinVal[i],cosVal[i]);
     }
 
     /* this additional table saves another "costly" division in sin/cos calculation */
@@ -1037,7 +1039,13 @@ int local_sin_cos_2PI_LUT_7tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
 #ifdef SINCOS_FLOOR
   x = xin - floor(xin);
 #else
-  x = modf(xin, &dummy);
+#if defined(SINCOS_INT4)
+  xt = x-(INT4)x;  /* xt in (-1, 1) */
+#elif defined(SINCOS_INT8)
+  xt = x-(INT8)x;  /* xt in (-1, 1) */
+#else
+  xt = modf(x, &dummy); /* xt in (-1, 1) */
+#endif
   if ( x < 0.0 )
     x += 1.0;
 #endif
@@ -1058,6 +1066,8 @@ int local_sin_cos_2PI_LUT_7tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
 
 
 
+/* Single-precision version, to be validated */
+
 int local_sin_cos_2PI_LUT_7R4tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
 
   /* Lookup tables for fast sin/cos calculation */
@@ -1074,13 +1084,14 @@ int local_sin_cos_2PI_LUT_7R4tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
   UINT4 i; /* array index */
   REAL4 d, d2; /* intermediate value  */
   REAL4 x; /* x limited to [0..1) */
-  REAL4 dummy; /* dummy for modf */
+#if !(defined(SINCOS_FLOOR) || defined(SINCOS_INT4) || defined(SINCOS_INT8))
+  REAL8 dummy; /* dummy for modf */
+#endif
 
   /* res=10*(params->mCohSFT); */
   /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
   /* using three tables with values including PI is simply faster */
   if ( tabs_empty ) {
-    printf("initializing...\n");
 
     for (i=0; i <= LUT_RES; i++) {
       sinVal[i]      = sin((LAL_TWOPI*i)/(LUT_RES));
@@ -1089,8 +1100,6 @@ int local_sin_cos_2PI_LUT_7R4tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
       cosVal[i]      = cos((LAL_TWOPI*i)/(LUT_RES));
       cosVal2PI[i]   = cosVal[i]    * LAL_TWOPI;
       cosVal2PIPI[i] = cosVal2PI[i] * LAL_PI * -1.0;
-
-      printf("%f\t%f\n",sinVal[i],cosVal[i]);
     }
 
     /* this additional table saves another "costly" division in sin/cos calculation */
@@ -1103,7 +1112,13 @@ int local_sin_cos_2PI_LUT_7R4tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
 #ifdef SINCOS_FLOOR
   x = xin - floor(xin);
 #else
-  x = modf(xin, &dummy);
+#if defined(SINCOS_INT4)
+  xt = x-(INT4)x;  /* xt in (-1, 1) */
+#elif defined(SINCOS_INT8)
+  xt = x-(INT8)x;  /* xt in (-1, 1) */
+#else
+  xt = modf(x, &dummy); /* xt in (-1, 1) */
+#endif
   if ( x < 0.0 )
     x += 1.0;
 #endif
@@ -1118,6 +1133,79 @@ int local_sin_cos_2PI_LUT_7R4tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
   (*sin2pix) = sinVal[i] + d * cosVal2PI[i] + d2 * sinVal2PIPI[i];
   (*cos2pix) = cosVal[i] + d * sinVal2PI[i] + d2 * cosVal2PIPI[i];
 #endif
+
+  return XLAL_SUCCESS;
+}
+
+
+/* Not used or tested (yet). This features a table construction so
+   that the calculation that can easily be vectorized (might help...) */
+
+int local_sin_cos_2PI_LUT_7R4V2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
+
+  /* Lookup tables for fast sin/cos calculation */
+  static REAL4 scTab[LUT_RES+1][2];
+  static REAL4 scTab2PI[LUT_RES+1][2];
+  static REAL4 scTab2PIPI[LUT_RES+1][2];
+  static REAL4 diVal[LUT_RES+1];
+
+  static BOOLEAN tabs_empty = 1; /* reset after initializing the sin/cos tables */
+
+  UINT4 i; /* array index */
+  REAL4 d, d2; /* intermediate value  */
+  REAL4 x; /* x limited to [0..1) */
+#if !(defined(SINCOS_FLOOR) || defined(SINCOS_INT4) || defined(SINCOS_INT8))
+  REAL8 dummy; /* dummy for modf */
+#endif
+  REAL4 sincos[2];
+
+  /* res=10*(params->mCohSFT); */
+  /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
+  /* using three tables with values including PI is simply faster */
+  if ( tabs_empty ) {
+    REAL4 r_lut_res = 1.0f / (REAL4)(LUT_RES);
+
+    for (i=0; i <= LUT_RES; i++) {
+      scTab[i][0]      = sin((LAL_TWOPI*i)/(LUT_RES));
+      scTab2PI[i][1]   = scTab[i][0]    * LAL_TWOPI * -1.0;
+      scTab2PIPI[i][0] = scTab2PI[i][1] * LAL_PI;
+      scTab[i][1]      = cos((LAL_TWOPI*i)/(LUT_RES));
+      scTab2PI[i][0]   = scTab[i][1]    * LAL_TWOPI;
+      scTab2PIPI[i][1] = scTab2PI[i][0] * LAL_PI * -1.0;
+
+      diVal[i] = (REAL4)i * r_lut_res;
+    }
+
+    tabs_empty = 0;
+  }
+
+#ifdef SINCOS_FLOOR
+  x = xin - floor(xin);
+#else
+#if defined(SINCOS_INT4)
+  xt = x-(INT4)x;  /* xt in (-1, 1) */
+#elif defined(SINCOS_INT8)
+  xt = x-(INT8)x;  /* xt in (-1, 1) */
+#else
+  xt = modf(x, &dummy); /* xt in (-1, 1) */
+#endif
+  if ( x < 0.0 )
+    x += 1.0;
+#endif
+
+  i = x * LUT_RES + .5; /* round-to-nearest */
+  d = x - diVal[i];
+#if 1
+  for (int ve=0; ve<2; ve++)
+    sincos[ve] = scTab[i][ve] + d * (scTab2PI[i][ve] + d * scTab2PIPI[i][ve]);
+#else
+  d2 = d*d;
+  for (int ve=0; ve<2; ve++)
+    sincos[ve] = scTab[i][ve] + d * scTab2PI[i][ve] + d2 * scTab2PIPI[i][ve];
+#endif
+
+  (*sin2pix) = sincos[0];
+  (*cos2pix) = sincos[1];
 
   return XLAL_SUCCESS;
 }
