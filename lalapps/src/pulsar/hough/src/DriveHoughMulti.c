@@ -417,6 +417,7 @@ int main(int argc, char *argv[]){
         skySizeAlpha[skyCounter] = uvar_dAlpha*cos(dopplerpos.Delta +0.5*uvar_dDelta)/cos(dopplerpos.Delta);
       
       XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
+      skyCounter++;
 
     } /* end while loop over skygrid */
   } else {
