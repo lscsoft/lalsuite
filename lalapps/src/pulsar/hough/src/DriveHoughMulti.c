@@ -87,6 +87,7 @@
 /* lalapps includes */
 #include <lalapps.h>
 #include <DopplerScan.h>
+#include <gsl/gsl_permutation.h>
 
 RCSID( "$Id$");
 
@@ -174,6 +175,8 @@ int main(int argc, char *argv[]){
   /* vector of weights */
   REAL8Vector weightsV, weightsNoise;
 
+  UINT4 *sortedSFTIndex=NULL;
+
   /* ephemeris */
   EphemerisData    *edat=NULL;
 
@@ -231,6 +234,7 @@ int main(int argc, char *argv[]){
   /* user input variables */
   BOOLEAN  uvar_help, uvar_weighAM, uvar_weighNoise, uvar_printLog, uvar_printWeights;
   INT4     uvar_blocksRngMed, uvar_nfSizeCylinder, uvar_maxBinsClean, uvar_binsHisto;  
+
   REAL8    uvar_startTime, uvar_endTime;
   REAL8    uvar_pixelFactor;
   REAL8    uvar_f0, uvar_peakThreshold, uvar_houghThreshold, uvar_fSearchBand;
@@ -589,12 +593,14 @@ int main(int argc, char *argv[]){
 
     LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
 
-    /* set up weights -- this should be done before normalizing the sfts */
+    /* allocate noise and AMweights vectors */
     weightsV.length = mObsCoh;
-    weightsV.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
+    weightsV.data = (REAL8 *)LALCalloc(1, mObsCoh*sizeof(REAL8));
 
     weightsNoise.length = mObsCoh;
-    weightsNoise.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
+    weightsNoise.data = (REAL8 *)LALCalloc(1, mObsCoh*sizeof(REAL8));
+
+    sortedSFTIndex = LALCalloc(1,mObsCoh*sizeof(UINT4));
 
     /* initialize all weights to unity */
     LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsNoise), &status);
@@ -820,6 +826,15 @@ int main(int argc, char *argv[]){
 
 	XLALDestroyMultiAMCoeffs ( multiAMcoef );
       }
+
+
+      /* sort weights vector to get the best sfts */
+      if ( uvar_weighAM || uvar_weighNoise ) {
+	
+	gsl_sort_index( sortedSFTIndex, weightsV.data, 1, weightsV.length);
+
+      }
+
 
       /* calculate the sum of the weights squared */
       sumWeightSquare = 0.0;
@@ -1273,7 +1288,7 @@ int main(int argc, char *argv[]){
   if ( scanInit.skyRegionString )
     LALFree ( scanInit.skyRegionString );
 
-
+  LALFree(sortedSFTIndex);
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
 
