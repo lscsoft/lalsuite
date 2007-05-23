@@ -149,6 +149,7 @@ int main( int argc, char *argv[] )
   INT4                          numPoints       = 524288;
   REAL4                         fSampling       = 2048.;
   REAL4                         fLow            = 70.;
+  REAL4                         fLowInj         = 40.;
   REAL8                         deltaT          = 1./fSampling;
   REAL8                         deltaF          = fSampling / numPoints;
 
@@ -560,6 +561,12 @@ int main( int argc, char *argv[] )
      /* reset chan structure */
      memset( chan->data->data, 0, chan->data->length * sizeof(REAL4) );
 
+     if (thisInjection->f_lower == 0){
+        fprintf( stdout, "WARNING: f_lower in sim_inpiral = 0, ");
+        fprintf( stdout, "changing this to %e\n ", fLowInj);
+        thisInjection->f_lower = fLowInj;
+     }
+
      /* create the waveform, amp, freq phase etc */
      LAL_CALL( LALGenerateInspiral(&status, &waveform, thisInjection, &ppnParams), &status);
      if (vrbflg) fprintf( stdout, "ppnParams.tc %e\n ", ppnParams.tc);
@@ -635,25 +642,25 @@ int main( int argc, char *argv[] )
        LAL_CALL( LALSimulateCoherentGW(&status, chan, &waveform, &detector ), &status); 
  
        /* write out channel  */
-       switch ( ifoNumber )
-       {
-       case 1:
-           LALSPrintTimeSeries(chan, "chanTest_H1.dat" );
-           fprintf( stdout, "written out H1 chan\n" );
-           break;
-       case 2:
-           LALSPrintTimeSeries(chan, "chanTest_H2.dat" );
-           fprintf( stdout, "written out H2 chan\n" );
-           break;
-       case 3:
-           LALSPrintTimeSeries(chan, "chanTest_L1.dat" );
-           fprintf( stdout, "written out L1 chan\n" );
-           break;
-        default:
-           fprintf( stderr, "Error: ifoNumber %d does not correspond to H1, H2 or L1: \n", ifoNumber );
-           exit( 1 );
-       }  
-
+       /*switch ( ifoNumber )
+       *{
+       *case 1:
+       *    LALSPrintTimeSeries(chan, "chanTest_H1.dat" );
+       *    fprintf( stdout, "written out H1 chan\n" );
+       *    break;
+       *case 2:
+       *    LALSPrintTimeSeries(chan, "chanTest_H2.dat" );
+       *    fprintf( stdout, "written out H2 chan\n" );
+       *    break;
+       *case 3:
+       *    LALSPrintTimeSeries(chan, "chanTest_L1.dat" );
+       *    fprintf( stdout, "written out L1 chan\n" );
+       *    break;
+       * default:
+       *    fprintf( stderr, "Error: ifoNumber %d does not correspond to H1, H2 or L1: \n", ifoNumber );
+       *    exit( 1 );
+       *}  
+       */
       LAL_CALL( LALCreateForwardRealFFTPlan( &status, &pfwd, chan->data->length, 0), &status);
 
       LAL_CALL( LALCreateCOMPLEX8FrequencySeries( &status, &fftData, chan->name, chan->epoch, f0, deltaF, 
@@ -719,12 +726,17 @@ int main( int argc, char *argv[] )
   
     destroyCoherentGW( &waveform );
 
-    /* stored sum of squares snr in eff_dist_t */
+    /* store inverse eff snrs in eff_dist columns */
+    thisInjection->eff_dist_h = 1./snrVec[1];
+    thisInjection->eff_dist_g = 1./snrVec[2];
+    thisInjection->eff_dist_l = 1./snrVec[3];
+
+    /* store inverse sum of squares snr in eff_dist_t */
     thisCombSnr = pow(statValue, 0.5);
     if ( vrbflg ) fprintf( stdout, "thisCombSnr %e\n", thisCombSnr);
     thisInjection->eff_dist_t = 1./thisCombSnr;
 
-    /* calc bittenL snr for H1H2 and store in eff_dist_v */
+    /* calc inverse bittenL snr for H1H2 and store in eff_dist_v */
     thisCombSnr_H1H2 = 0.;
     sum = snrVec[1] * snrVec[1] + snrVec[2] * snrVec[2];
     bitten_H1 = 3 * snrVec[1] -3;
