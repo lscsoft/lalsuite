@@ -225,6 +225,7 @@ int main(int argc, char *argv[]){
   BOOLEAN  uvar_help, uvar_weighAM, uvar_weighNoise, uvar_printLog, uvar_printWeights;
   INT4     uvar_blocksRngMed, uvar_nfSizeCylinder, uvar_maxBinsClean, uvar_binsHisto;  
   REAL8    uvar_startTime, uvar_endTime;
+  REAL8    uvar_pixelFactor;
   REAL8    uvar_f0, uvar_peakThreshold, uvar_houghThreshold, uvar_fSearchBand;
   CHAR     *uvar_earthEphemeris=NULL;
   CHAR     *uvar_sunEphemeris=NULL;
@@ -262,6 +263,7 @@ int main(int argc, char *argv[]){
   uvar_maxBinsClean = 100;
   uvar_printWeights = FALSE;
   uvar_binsHisto = 1000;
+  uvar_pixelFactor = PIXELFACTOR;
 
   uvar_earthEphemeris = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
@@ -305,6 +307,7 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterLISTUserVar(   &status, "linefiles",        0,  UVAR_OPTIONAL, "Comma separated List of linefiles (filenames must contain IFO name)",  
 	      &uvar_linefiles),       &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nfSizeCylinder",   0,  UVAR_OPTIONAL, "Size of cylinder of PHMDs",             &uvar_nfSizeCylinder),  &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "pixelFactor",     'p', UVAR_OPTIONAL, "sky resolution=1/v*pixelFactor*f*Tcoh", &uvar_pixelFactor),     &status);
 
   /* developer input variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",     0, UVAR_DEVELOPER, "Running Median block size",             &uvar_blocksRngMed),    &status);
@@ -891,7 +894,7 @@ int main(int argc, char *argv[]){
       parRes.deltaF = deltaF;
       parRes.patchSkySizeX  = patchSizeX;
       parRes.patchSkySizeY  = patchSizeY;
-      parRes.pixelFactor = PIXELFACTOR;
+      parRes.pixelFactor = uvar_pixelFactor;
       parRes.pixErr = PIXERR;
       parRes.linErr = LINERR;
       parRes.vTotC = VTOT;
