@@ -1076,7 +1076,7 @@ void ComputeFiducialTimeFrequency( LALStatus *lalStatus,
 
       }
 
-      S_ParamValue = CList[iindex].F1dot / deltaf + ( cos(CList[iindex].Alpha)*cos(CList[iindex].Delta)*acc1 + sin(CList[iindex].Alpha)*cos(CList[iindex].Delta)*acc2 + sin(CList[iindex].Delta)*acc3  ) / deltaf;
+      S_ParamValue = CList[iindex].F1dot / deltaf + ( cos(CList[iindex].Alpha)*cos(CList[iindex].Delta)*acc1 + sin(CList[iindex].Alpha)*cos(CList[iindex].Delta)*acc2 + sin(CList[iindex].Delta)*acc3  ) * CList[iindex].f / deltaf;
 
       if( fabs(S_ParamValue*characTime) < S_Thres ) {
 	CList[iindex].Sveto = 1;
