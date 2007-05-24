@@ -1028,7 +1028,7 @@ void ComputeFiducialTimeFrequency( LALStatus *lalStatus,
       CList[iindex].f = f_fiducial;
 
       /* S vetoing*/
-      S_Thres = 1.5;
+      S_Thres = 3.5;
 
       if( CList[iindex].f < 300.0 ){
 	deltaf = 0.00077;
