@@ -37,13 +37,14 @@ from candidateUtils import *
 
 #################### Internal Methods #################
 
-def buildCandidateGlob(fileList):
+def buildCandidateGlob(fileList,verboseSwitch=False):
     #Build glob var from filelist.  Memory friendly
     #Returns copy of results
     canList=fileList
     if canList.__len__() == 1:
-        print "Globbing is not possible only one file found!"
-        print "Returning the result as that entry!"
+        if verboseSwitch:
+            print "Globbing is not possible only one file found!"
+            print "Returning the result as that entry!"
         tmpObject=candidateList()
         #tmpObject.loadfile(canList.pop(0))
         tmpObject.__loadfileQuick__(canList.pop(0))
@@ -53,14 +54,13 @@ def buildCandidateGlob(fileList):
         #newCandidateObject.loadfile(canList.pop(0))
         newCandidateObject.__loadfileQuick__(canList.pop(0))
     for entry in canList:
+        if verboseSwitch:
             print " "
             print "Loading candidate list file: ",entry
-            tmpCandidate=candidateList()
-            #tmpCandidate.loadfile(entry)
-            tmpCandidate.__loadfileQuick__(entry)
-            print "Globing file:",entry
-            newCandidateObject=newCandidateObject.globList(tmpCandidate,True)
-            del tmpCandidate
+        tmpCandidate=candidateList()
+        tmpCandidate.__loadfileQuick__(entry)
+        newCandidateObject=newCandidateObject.globList(tmpCandidate,True)
+        del tmpCandidate
     return copy.deepcopy(newCandidateObject)
 #End method
 
@@ -98,18 +98,14 @@ parser.add_option("-c","--clobber",dest="clobberFilename",
                    default="",
                    help="This is a file or directory/mask of all files that should be globbed together then checked against the globbed list from --file option.  Entries candidates in FILE with reside in list CLOBBER will be deleted from list FILE and written to disk along with an globbed list which is not clobbered.The filename will be like CLOBBER:Start:00000000,0:Stop:00000000,0:TF:000:000:AND:Start:00000000,0:Stop:00000000,0:TF:000:000:.candidates.  This option can not be used with glob, we assume specified --file are globs of candidates.   We glob the --clobber option if neccessary to perform the clobber."
                    )
-parser.add_option("-t","--threshold",dest="thresholdString",
-                  default="",
-                  help="This is the the thresholding options that can be done to an already complete candidate list.  We can reprocess the list via the following syntax, 1.0,>,and,=,7  so this would be written like -t 1.0,>,and,=,7 which would logically translated to: The power for the curve should be greater than 1.0 and the length of the curve should equal 7 to pass our threshold.  Please read the comments in this python script for a better explaination."
-                  )
 parser.add_option("-T","--expression_threshold",dest="expThreshold",
                   default="",
-                  help="This is a more flexible thresholding interface.  We are allowed to manipulate variables to build expressions. Variables allowed are:\n P ,power \n L ,pixel length \n D , time duration in seconds \n B , frequency bandwith of kurve \n  T, start time float\n S, stop time float\n F, start Freq \n, G, stop Freq \n See the help for the candidateList class for better explaination of the valid syntax allowed. ENCLOSE THE EXPRESSION IN DOUBLE QUOTES!",
+                  help="This is a flexible thresholding interface.  We are allowed to manipulate variables to build expressions. Variables allowed are:\n P ,power \n L ,pixel length \n D , time duration in seconds \n B , frequency bandwith of kurve \n  T, start time float\n S, stop time float\n F, start Freq \n, G, stop Freq \n See the help for the candidateList class for better explaination of the valid syntax allowed. You can impose multiple threshold expresssions for one file operation.  This saves time lost to IO of running candidateHandler.py multiple times.  Use the comma as a delimiter B>10,L<100 would apply to thresholds and save them in two appropriately marked files. ENCLOSE THE EXPRESSION IN DOUBLE QUOTES",
                   )
 parser.add_option("-s","--write_summary",dest="dumpSummaryDisk",
                   default=False,
                   action="store_true",
-                  help="This will write the summary information for the candidate file(s) opened. The filename scheme replaces candidate with summary. The data store is Length Pixels,Power,Duration Sec,Bandwidth Hz"
+                  help="This will write the summary information for the candidate file(s) opened. The filename scheme replaces candidate with summary. The data store is Length Pixels,Power,Duration Sec,Bandwidth Hz.  This option can be invoked along with the thresholding option to write out summary files of the results immediately after thresholding the data."
                   )
 parser.add_option("-d","--display_summary",dest="dumpSummaryScreen",
                   default=False,
@@ -134,7 +130,6 @@ parser.add_option("-v","--verbose",dest="verbose",
 filename=str(options.filename)
 glob=options.glob
 clobberFilename=str(options.clobberFilename)
-threshold=str(options.thresholdString)
 expThreshold=str(options.expThreshold)
 printFile=options.print2file
 outfile=str(options.outfile)
@@ -160,18 +155,19 @@ if (glob and (canList.__len__() >= 1)):
         outName=newGlobFile.__filemaskGlob__()
     #If file preexists erase it first!
     if os.path.isfile(outName):
-        print "Prexisting file found:",outName
-        print "Removing!"
+        if verboseSwitch:
+            print "Prexisting file found:",outName
+            print "Removing!"
         os.unlink(outName)
     #Create new globbed candidate structure to write to disk!
-    newGlobFile=buildCandidateGlob(canList)
+    newGlobFile=buildCandidateGlob(canList,verboseSwitch)
     #SECTION TO DO THE CLOBBERING OF A CANDIDATE FILE WITH ANOTHER
 elif (clobberFilename != '') and (canList.__len__() == 1):
     #Create clobberer
     #Load file(s) to clobber with
     clobberList=generateFileList(clobberFilename)
     #If there is more than one file we need to glob them first
-    newCandidateClobberObject=buildCandidateGlob(clobberList)
+    newCandidateClobberObject=buildCandidateGlob(clobberList,verboseSwitch)
     #Create candidate list to clobber.
     clobberVictim=candidateList(verboseSwitch)
     clobberVictim.__loadfileQuick__(canList[0])
@@ -186,7 +182,8 @@ elif (clobberFilename != '') and (canList.__len__() == 1):
     #SECTION 4 PRINTING
 elif ((canList.__len__() >= 1) and (printFile)):
     #Iterate of files creating plotable graphic for each!
-    print "Preparing for printing :",canList.__len__()," files."
+    if verboseSwitch:
+        print "Preparing for printing :",canList.__len__()," files."
     for entry in canList:
         candidateObject=candidateList(verboseSwitch)
         candidateObject.__loadfileQuick__(entry)
@@ -202,31 +199,45 @@ elif ((canList.__len__() >= 1) and (printFile)):
 
     #SECTION APPLY ABITRARY THRESHOLDS
 elif ((expThreshold != "") and (canList.__len__() >=1)):
-    #Carry out thresholding
+    #Carry out thresholding on all entries in canList
     for entry in canList:
         candidateObject=candidateList(verboseSwitch)
         candidateObject.__loadfileQuick__(entry)
-        candidateResults=candidateObject.applyArbitraryThresholds(expThreshold)
-        expThresholdName=str(expThreshold).replace('(','--').replace(')','--')
-        pathName=''
-        if (outfile != "") and (canList.__len__() == 1):
-            candidateResults.writefile(outfile)
-        else:
-            pathName=os.path.dirname(entry)
-            saveFiles=pathName+'/Threshold:'+str(expThresholdName)+':'+os.path.basename(entry)
-            print "Writing file :",saveFiles
-            candidateResults.writefile(saveFiles)        
+        #Build Threshold list
+        expThresholdLIST=str(expThreshold).split(',')
+        for singleThreshold in expThresholdLIST:
+            candidateResults=candidateObject.applyArbitraryThresholds(singleThreshold)
+            singleThresholdName=str(singleThreshold).replace('(','--').replace(')','--')
+            pathName=''
+            if (outfile != "") and (canList.__len__() == 1):
+                #Prepend Threshold label to outfile
+                if expThresholdList.__len__()>1:
+                    outfile=singleThreshold+outfile
+                candidateResults.writefile(outfile)
+                if verboseSwitch:
+                    print "Incompatible combintation of summary flag and multile thresholds. Summary not written."
+            else:
+                pathName=os.path.dirname(entry)
+                saveFiles=pathName+'/Threshold:'+str(singleThresholdName)+':'+os.path.basename(entry)
+                if verboseSwitch:
+                    print "Wrote file :",saveFiles
+                candidateResults.writefile(saveFiles)
+            if dumpSummaryDisk:
+                candidateResults.writeSummary()
+            del candidateResults
         del entry
-        del candidateResults
-        del candidateObject
-    #SECTION TO DUMP SUMMARY TO DISK OR SCREEN
-elif ((canList.__len__() >=1) and dumpSummaryDisk):
+    del candidateObject
+
+    #SECTION TO DUMP SUMMARY TO DISK WHEN NO THRESHOLDING REQD
+elif ((canList.__len__() >=1) and dumpSummaryDisk and (expThreshold =="") ):
     for entry in canList:
         candidateObject=candidateList(verboseSwitch)
+        if verboseSwitch:
+            print "Processing:",entry
         candidateObject.__loadfileQuick__(entry)
         candidateObject.writeSummary()
         del candidateObject
-        
+    #SECTION TO DUMP SUMMARY TO SCREEN        
 elif ((canList.__len__() >=1) and dumpSummaryScreen):
     for entry in canList:
         candidateObject=candidateList(verboseSwitch)

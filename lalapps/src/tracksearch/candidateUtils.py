@@ -492,18 +492,22 @@ class candidateList:
         Reads in a candidate list from the disk with a given filename
         """
         try:
+            if self.verboseMode:
+                print "Trying to open file."
             input_fp=open(inputFilename,'r')
         except IOError:
             print "File IO error"
             print "Check : ",inputFilename
             print ""
             return
+        if self.verboseMode:
+            print "Open successful."
         self.filename=[str(inputFilename)]
         line=str(' ')
         curveCount=0
         try:
-            #Extra code for user enterainment! Progress SPINNER :)
-            progress=progressSpinner(self.verboseMode)
+            spinner=progressSpinner(self.verboseMode)
+            spinner.setTag('Reading')
             while line:
                 line=input_fp.readline()
                 if not (line.startswith('#') or line.startswith('\n')):
@@ -522,14 +526,16 @@ class candidateList:
                                 )
                         #Update spinner character
                         curveCount+=1
-                        progress.updateSpinner()
+                        spinner.updateSpinner()
                         del tmpLine
-            progress.closeSpinner()
+            spinner.closeSpinner()
         except MemoryError:
             print "Consumed maximum allow OS memory!"
             print "Candidates file to large to process properly."
             print "Only manages to load ",curveCount," lines before failing."
             print "Try using text editor or shell to break this file down into smaller sets."
+            print "If using Linux/UNIX try:"
+            print "grep -v # FILE.candidates > FILE2.candidates; split -n -a 2 -l ",int(curveCount/10)," FILE2.candidates"
             print "File in question is:",inputFilename
             print "Returning empty structure!"
             input_fp.close()
@@ -565,6 +571,8 @@ class candidateList:
         output_fp.write(textLine)
         output_fp.write('# Legend: Col,Row;gpsSec,gpsNanoSec,Freq,depth\n')
         output_fp.write('#\n')
+        spinner=progressSpinner(self.verboseMode)
+        spinner.setTag('Writing')
         for entry in self.curves:
             CurveId,Length,Power=entry.getKurveHeader()
             text="Curve number,length,power:"+str(CurveId)+','+str(Length)+','+str(Power)+'\n'
@@ -572,10 +580,12 @@ class candidateList:
             text=""
             data=[]
             for elements in entry.getKurveDataBlock():
+                spinner.updateSpinner()
                 data.append(str(elements[0])+','+str(elements[1])+\
                       ';'+str(elements[2].__diskPrint__())+','\
                       +str(elements[3])+','+str(elements[4]))
             output_fp.write(str(':').join(data)+'\n')
+        spinner.closeSpinner()
     #End writefile method
 
     def sortList(self):
@@ -1279,11 +1289,23 @@ class progressSpinner:
     def __init__(self,verbose=False):
         self.verbose=verbose
         self.timesCalled=0
+        self.frameCount=0
+        self.spinTag=''
+        self.timeNow=0
+        self.timeLast=0
         self.spinnerString="-|/-\|/"
         self.spinnerFrames=[]
         for frame in self.spinnerString:
             self.spinnerFrames.append(frame)
     #End __init__
+
+    def setTag(self,txtTag):
+        """
+        Method sets text string as a spinner tag
+        """
+        self.spinTag=txtTag
+        return
+    
     def updateSpinner(self):
         """
         Method updates the icon.  If it is first invokation it
@@ -1291,12 +1313,14 @@ class progressSpinner:
         indicator
         """
         if self.verbose:
-            if self.timesCalled == 0:
-                sys.stderr.writelines('\n')
-                sys.stderr.flush()
+            #if self.timesCalled == 0:
+            #    sys.stderr.writelines('\n')
+            #    sys.stderr.flush()
             sys.stderr.writelines('\r')
+            sys.stderr.flush()
             pos=self.timesCalled%self.spinnerFrames.__len__()
-            sys.stderr.writelines(self.spinnerFrames[pos])
+            sys.stderr.writelines(self.spinTag+self.spinnerFrames[pos])
+            sys.stderr.flush()
             self.timesCalled+=1
     #End updateSpinner method
     def resetSpinner(self):
