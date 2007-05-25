@@ -145,9 +145,9 @@ int main(int argc, char *argv[]){
   UINT4     binsSFT;
 
   /* vector of weights */
-  REAL8Vector      weightsV, weightsNoise;
-  REAL8Vector     *weightsAMskyV = NULL;
-  REAL8      alphaPeak, meanN, sigmaN, significance;
+  REAL8Vector      weightsV, weightsNoise, weightsAM;
+  REAL8      alphaPeak, meanN, sigmaN; 
+  /* REAL8      significance;*/
   
   REAL4TimeSeries   *signalTseries = NULL;
   static PulsarSignalParams  params;
@@ -171,7 +171,7 @@ int main(int argc, char *argv[]){
   INT4 MCloopId;
   INT4 h0loop;
 
-  INT4 k , j ;
+  /*UINT4 k , j ;*/
   
   FILE  *fpPar = NULL;
   FILE  *fpH0 = NULL;
@@ -200,7 +200,7 @@ int main(int argc, char *argv[]){
   CHAR   *uvar_fnameOut=NULL;
   CHAR   *uvar_skyfile=NULL;
   LALStringVector *uvar_linefiles=NULL;
-  INT4     uvar_p;
+  UINT4   uvar_p;
 
   /******************************************************************/ 
   /*  set up the default parameters  */
@@ -842,7 +842,59 @@ int main(int argc, char *argv[]){
        }
      }   
    }
-   	     
+
+
+   /******************************************************************/ 
+  /* initialize all weights to unity */
+  /******************************************************************/ 
+  
+  /* set up weights -- this should be done before normalizing the sfts */
+  weightsV.length = mObsCoh;
+  weightsV.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
+  
+  weightsNoise.length = mObsCoh;
+  weightsNoise.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
+
+  
+  /* initialize all weights to unity */
+  LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsNoise), &status);
+  LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsV), &status);
+    
+ /******************************************************************/ 
+  /*   setting the weights considering only the AM coefficients to be only
+       computed just where we need*/ 
+  /******************************************************************/ 
+  if (uvar_weighAM){
+    SkyPosition      skypos;
+    UINT4            iIFO, iSFT;
+    UINT4 	      k, numsft;
+    
+    weightsAM.length = mObsCoh;
+    weightsAM.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
+    skypos.system = COORDINATESYSTEM_EQUATORIAL;
+    
+    MultiAMCoeffs   *multiAMcoef = NULL;
+       
+    skypos.longitude = pulsarInject.longitude;
+    skypos.latitude  = pulsarInject.latitude;
+    LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, mdetStates, skypos), &status);
+      
+    /* loop over the weights and set them by the appropriate AM coefficients */
+    for ( k = 0, iIFO = 0; iIFO < numifo; iIFO++) {	  
+      numsft = mdetStates->data[iIFO]->length;	
+      for ( iSFT = 0; iSFT < numsft; iSFT++, k++) {	  
+	REAL8 a, b;
+	  
+	a = multiAMcoef->data[iIFO]->a->data[iSFT];
+	b = multiAMcoef->data[iIFO]->b->data[iSFT];    
+	weightsAM.data[k] = (a*a + b*b);
+      } /* loop over SFTs */
+    } /* loop over IFOs */
+      
+    XLALDestroyMultiAMCoeffs ( multiAMcoef );
+      
+  }
+	     
    /* ****************************************************************/
    /*  HERE THE LOOP FOR DIFFERENT h0 VALUES */
 	     
@@ -850,7 +902,8 @@ int main(int argc, char *argv[]){
 	     
     for(h0loop=0; h0loop <uvar_nh0; ++h0loop){
       
-      UINT4       j, index, itemplate; 
+/*      UINT4       index;*/
+      UINT4       j, itemplate; 
       UINT4       iIFO, numsft, iSFT;
       COMPLEX8   *noiseSFT;
       COMPLEX8   *signalSFT;
@@ -912,60 +965,6 @@ int main(int argc, char *argv[]){
 	  fclose(fpRand);
 	} /* end cleaning */
       
-   
-  /******************************************************************/ 
-  /* initialize all weights to unity */
-  /******************************************************************/ 
-  
-  /* set up weights -- this should be done before normalizing the sfts */
-  weightsV.length = mObsCoh;
-  weightsV.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
-  
-  weightsNoise.length = mObsCoh;
-  weightsNoise.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
-  
-  /* initialize all weights to unity */
-  LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsNoise), &status);
-  LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsV), &status);
-    
- /******************************************************************/ 
-  /*   setting the weights considering only the AM coefficients to be only
-       computed just where we need*/ 
-  /******************************************************************/ 
-  if (uvar_weighAM){
-    SkyPosition      skypos;
-    UINT4            iIFO, iSFT;
-    UINT4 	      k, numsft;
-    
-    weightsAMskyV = (REAL8Vector *)LALCalloc(uvar_nh0, sizeof(REAL8Vector));
-    skypos.system = COORDINATESYSTEM_EQUATORIAL;
-    
-    MultiAMCoeffs   *multiAMcoef = NULL;
-      
-    weightsAMskyV[h0loop].length = mObsCoh;    
-    weightsAMskyV[h0loop].data = NULL;
-    weightsAMskyV[h0loop].data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
-      
-    skypos.longitude = pulsarInject.longitude;
-    skypos.latitude  = pulsarInject.latitude;
-    LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, mdetStates, skypos), &status);
-      
-    /* loop over the weights and set them by the appropriate AM coefficients */
-    for ( k = 0, iIFO = 0; iIFO < numifo; iIFO++) {	  
-      numsft = mdetStates->data[iIFO]->length;	
-      for ( iSFT = 0; iSFT < numsft; iSFT++, k++) {	  
-	REAL8 a, b;
-	  
-	a = multiAMcoef->data[iIFO]->a->data[iSFT];
-	b = multiAMcoef->data[iIFO]->b->data[iSFT];    
-	weightsAMskyV[h0loop].data[k] = (a*a + b*b);
-      } /* loop over SFTs */
-    } /* loop over IFOs */
-      
-    XLALDestroyMultiAMCoeffs ( multiAMcoef );
-      
-  }
-
   
       /* ****************************************************************/
       /* normalize sfts compute weights */
@@ -1006,7 +1005,7 @@ int main(int argc, char *argv[]){
 	
 	if (uvar_weighAM) {
 	  for (j=0; j<mObsCoh; j++){
-	    weightsV.data[j] = weightsV.data[j]*weightsAMskyV[h0loop].data[j];
+	    weightsV.data[j] = weightsV.data[j]*weightsAM.data[j];
 	  }
 	}
 	
@@ -1028,7 +1027,7 @@ int main(int argc, char *argv[]){
 
       /* block for calculating peakgram and number count */  
       {
-       UINT4 iIFO, iSFT, ii, numberSFTp;
+       UINT4 iIFO, iSFT, ii, numberSFTp, k;
        INT4 index;
        SFTtype  *sft;
 
@@ -1036,7 +1035,7 @@ int main(int argc, char *argv[]){
 
       /* ****************************************************************/
       /* loop over SFT, generate peakgram and get number count */
-     {
+     
         
 	 j=0;
 	 iIFO=0;
@@ -1079,7 +1078,7 @@ int main(int argc, char *argv[]){
        	  
 	 } /* loop over blocks */	
 
-      }
+     
      }  
       /* ****************************************************************/
       /*check the max number count */
@@ -1101,7 +1100,7 @@ int main(int argc, char *argv[]){
 {
       REAL8   eta;                /* Auxiliar variable */ 
       REAL8   nj, sumWeightj, sumWeightSquarej;
-                     
+      UINT4   k;               
 
       numberCountTotal=0;
       chi2=0;
@@ -1214,17 +1213,13 @@ int main(int argc, char *argv[]){
 
   LALFree(weightsV.data);
   LALFree(weightsNoise.data); 
-   
-  if (uvar_weighAM){
-    for (h0loop = 0; h0loop < uvar_nh0; h0loop++){
-        LALFree(weightsAMskyV[h0loop].data);
-      }
-    LALFree(weightsAMskyV);
-  }
-  
+  LALFree(weightsAM.data); 
+
+ 
   LALFree(chi2Params.numberSFTp);
   LALFree(chi2Params.sumWeight);
   LALFree(chi2Params.sumWeightSquare);
+  LALFree(numberCountVec.data);
 
   LAL_CALL(LALDestroyMultiSFTVector(&status, &inputSFTs),&status );
   LAL_CALL(LALDestroyMultiSFTVector(&status, &sumSFTs),&status );
