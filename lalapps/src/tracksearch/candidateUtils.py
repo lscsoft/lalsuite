@@ -360,7 +360,8 @@ class candidateList:
     Provides basic IO for manipulation of candidate lists
     """
 
-    def __init__(self):
+    def __init__(self,verboseMode=False):
+        self.verboseMode=verboseMode
         self.totalCount=int(0)
         self.filename=list()
         self.numFbins=int(-1)
@@ -499,23 +500,38 @@ class candidateList:
             return
         self.filename=[str(inputFilename)]
         line=str(' ')
-        while line:
-            line=input_fp.readline()
-            if not (line.startswith('#') or line.startswith('\n')):
-                if line.startswith('Curve'):
-                    [A,B,C]=str(str(line).split(':')[1]).split(',')
-                    self.curves.append(kurve(A,B,C))
-                    #Advance to next data line expected!
-                    line=input_fp.readline()
-                    if not line.__contains__(';'):
-                        print "Data file seems corrupted:",inputFilename
-                    tmpLine=str(line).replace(';',',').split(':')
-                    for pixel in tmpLine:
-                        [a,b,c,d,e,f]=str(pixel).split(',')
-                        self.curves[self.curves.__len__()-1].appendPixel(\
-                            int(A),int(b),gpsInt(c,d),float(e),float(f)\
-                            )
-                    del tmpLine
+        curveCount=0
+        try:
+            #Extra code for user enterainment! Progress SPINNER :)
+            progress=progressSpinner(self.verboseMode)
+            while line:
+                line=input_fp.readline()
+                if not (line.startswith('#') or line.startswith('\n')):
+                    if line.startswith('Curve'):
+                        [A,B,C]=str(str(line).split(':')[1]).split(',')
+                        self.curves.append(kurve(A,B,C))
+                        #Advance to next data line expected!
+                        line=input_fp.readline()
+                        if not line.__contains__(';'):
+                            print "Data file seems corrupted:",inputFilename
+                        tmpLine=str(line).replace(';',',').split(':')
+                        for pixel in tmpLine:
+                            [a,b,c,d,e,f]=str(pixel).split(',')
+                            self.curves[self.curves.__len__()-1].appendPixel(\
+                                int(A),int(b),gpsInt(c,d),float(e),float(f)\
+                                )
+                        #Update spinner character
+                        curveCount+=1
+                        progress.updateSpinner()
+                        del tmpLine
+            progress.closeSpinner()
+        except MemoryError:
+            print "Consumed maximum allow OS memory!"
+            print "Candidates file to large to process properly."
+            print "Only manages to load ",curveCount," lines before failing."
+            print "Try using text editor or shell to break this file down into smaller sets."
+            input_fp.close()
+            os.abort()
         input_fp.close()
         if self.curves.__len__() < 1:
             print "Error no lines in file?"
@@ -1368,6 +1384,58 @@ class candidateList:
         #End method writePixelList()
 #End candidateList class
 
+#Misc Utility classes
+class progressSpinner:
+    """
+    Provides makeshift spinner status text icon for user fun!
+    Defaults input verbose arguement to TRUE.  Use the spinner.
+    Send a false to __init__ causes all spinner methods do nothing!
+    """
+    def __init__(self,verbose=False):
+        self.verbose=verbose
+        self.timesCalled=0
+        self.spinnerString="-|/-\|/"
+        self.spinnerFrames=[]
+        for frame in self.spinnerString:
+            self.spinnerFrames.append(frame)
+    #End __init__
+    def updateSpinner(self):
+        """
+        Method updates the icon.  If it is first invokation it
+        submits a carriage return and then starts the progress
+        indicator
+        """
+        if self.verbose:
+            if self.timesCalled == 0:
+                sys.stderr.writelines('\n')
+                sys.stderr.flush()
+            sys.stderr.writelines('\r')
+            pos=self.timesCalled%self.spinnerFrames.__len__()
+            sys.stderr.writelines(self.spinnerFrames[pos])
+            self.timesCalled+=1
+    #End updateSpinner method
+    def resetSpinner(self):
+        if self.verbose:
+            self.timesCalled=0;
+    #End resetSpinner
+    def getSpinCounts(self):
+        """
+        Gets integer value of calls to updateSpinner since
+        either init or resetSpinner was called
+        """
+        if self.verbose:
+            return self.timesCalled
+        else:
+            return -1
+    #End getSpinCounts
+    def closeSpinner(self):
+        """
+        Method that you call when you don't need spinner any longer!
+        """
+        if self.verbose:
+            sys.stderr.writelines('\n')
+            sys.stderr.flush()
+    #End closeSpinner
 #Misc methods
 
 def generateFileList(inputTXT):

@@ -126,6 +126,10 @@ parser.add_option("-x","--stats",dest="stats",
                   action="store_true",
                   help="Determines the stats of the candidates present in the file it returns to the screen: meanP, meanL, stdP, stdL, minL,minP,minP,maxP. Found in the specified candidate file."
                   )
+parser.add_option("-v","--verbose",dest="verbose",
+                  default=False,
+                  action="store_true",
+                  help="Sets up the verbose features. Prints diagnostic messages and progress meters where appropriate.")
 (options,args)=parser.parse_args()
 filename=str(options.filename)
 glob=options.glob
@@ -136,7 +140,10 @@ printFile=options.print2file
 outfile=str(options.outfile)
 dumpSummaryScreen=bool(options.dumpSummaryScreen)
 dumpSummaryDisk=bool(options.dumpSummaryDisk)
-
+verboseSwitch=bool(options.verbose)
+if verboseSwitch:
+    print "Setting verbose mode to candidateHandler call."
+    
 if filename == "":
     print "Filename argument either not specified or invalid!"
     os.abort()
@@ -166,8 +173,7 @@ elif (clobberFilename != '') and (canList.__len__() == 1):
     #If there is more than one file we need to glob them first
     newCandidateClobberObject=buildCandidateGlob(clobberList)
     #Create candidate list to clobber.
-    clobberVictim=candidateList()
-    #clobberVictim.loadfile(canList[0])
+    clobberVictim=candidateList(verboseSwitch)
     clobberVictim.__loadfileQuick__(canList[0])
     #Clobber the Victim
     newClobberedList=clobberVictim.clusterClobberWith(newCandidateClobberObject)
@@ -177,30 +183,12 @@ elif (clobberFilename != '') and (canList.__len__() == 1):
     else:
         newClobberedList.writefile(clobberVictim.__filemaskClob__(newCandidateClobberObject))
 
-    #SECTION TO APPLY THRESHOLD DO NOT USE THIS ANYMORE
-elif ((threshold != "") and (canList.__len__() >= 1)):
-    #Apply specified thresholds to --file argument!
-    args=str(threshold).split(',')
-    for entry in canList:
-        candidateObject=candidateList()
-        #candidateObject.loadfile(entry)
-        candidateObject.__loadfileQuick__(entry)
-        candidateObject.applyNewThresholds(args[0],args[1],args[2],args[3],args[4])
-    pathName=''
-    if outfile != "":
-        print "Sorry can not just use 1 filename for multiple file saves!"
-        print "Taking path information and saving collection of files there."
-        pathName=os.path.basename(outfile)
-    saveFiles=pathName+'Threshold:'+str(threshold)+':'+candidateObject.filename[0]
-    candidateObject.writefile(saveFiles)
-
     #SECTION 4 PRINTING
 elif ((canList.__len__() >= 1) and (printFile)):
     #Iterate of files creating plotable graphic for each!
     print "Preparing for printing :",canList.__len__()," files."
     for entry in canList:
-        candidateObject=candidateList()
-        #candidateObject.loadfile(entry)
+        candidateObject=candidateList(verboseSwitch)
         candidateObject.__loadfileQuick__(entry)
         if (outfile != "") and (canList.__len__() == 1):
             candidateObject.writePixelList(outfile,'tf+time')
@@ -216,8 +204,7 @@ elif ((canList.__len__() >= 1) and (printFile)):
 elif ((expThreshold != "") and (canList.__len__() >=1)):
     #Carry out thresholding
     for entry in canList:
-        candidateObject=candidateList()
-        #candidateObject.loadfile(entry)
+        candidateObject=candidateList(verboseSwitch)
         candidateObject.__loadfileQuick__(entry)
         candidateResults=candidateObject.applyArbitraryThresholds(expThreshold)
         expThresholdName=str(expThreshold).replace('(','--').replace(')','--')
@@ -235,16 +222,14 @@ elif ((expThreshold != "") and (canList.__len__() >=1)):
     #SECTION TO DUMP SUMMARY TO DISK OR SCREEN
 elif ((canList.__len__() >=1) and dumpSummaryDisk):
     for entry in canList:
-        candidateObject=candidateList()
-#        candidateObject.loadfile(entry)
+        candidateObject=candidateList(verboseSwitch)
         candidateObject.__loadfileQuick__(entry)
         candidateObject.writeSummary()
         del candidateObject
         
 elif ((canList.__len__() >=1) and dumpSummaryScreen):
     for entry in canList:
-        candidateObject=candidateList()
-        #candidateObject.loadfile(entry)
+        candidateObject=candidateList(verboseSwitch)
         candidateObject.__loadfileQuick__(entry)
         candidateObject.printSummary()
         del entry
@@ -261,4 +246,5 @@ else:
     print options
     print "Corresponding argument values."
     print args
+    print "Candidates files found :",canList.__len__()
     os.abort()
