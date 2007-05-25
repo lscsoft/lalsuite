@@ -787,15 +787,17 @@ def make_datafind_stage(dag, seglistdict, verbose = False):
 	#
 
 	nodes = []
-	for instrument, seglist in seglistdict.iteritems():
+	for instrument, seglist in filled.iteritems():
 		for seg in seglist:
 			if verbose:
 				print >>sys.stderr, "making datafind job for %s spanning %s" % (instrument, seg)
-			nodes += make_datafind_fragment(dag, instrument, seg)
+			new_nodes = make_datafind_fragment(dag, instrument, seg)
+			nodes += new_nodes
 
 			# add a post script to check the file list
-			required_segs = seglistdict[instrument] & segmentlist([seg])
-			nodes[-1].set_post_script(datafindjob.get_config_file().get("condor", "LSCdataFindcheck") + " --dagman-return $RETURN --stat --gps-segment-list %s %s" % (",".join(segmentsUtils.to_range_strings(required_segs)), node.get_output()))
+			required_segs_string = ",".join(segmentsUtils.to_range_strings(seglistdict[instrument] & segments.segmentlist([seg])))
+			for node in new_nodes:
+				node.set_post_script(datafindjob.get_config_file().get("condor", "LSCdataFindcheck") + " --dagman-return $RETURN --stat --gps-segment-list %s %s" % (required_segs_string, node.get_output()))
 
 	#
 	# Sort by instrument, then by start time.
