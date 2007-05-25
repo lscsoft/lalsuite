@@ -530,8 +530,12 @@ class candidateList:
             print "Candidates file to large to process properly."
             print "Only manages to load ",curveCount," lines before failing."
             print "Try using text editor or shell to break this file down into smaller sets."
+            print "File in question is:",inputFilename
+            print "Returning empty structure!"
             input_fp.close()
-            os.abort()
+            del self.curves
+            del line
+            return 
         input_fp.close()
         if self.curves.__len__() < 1:
             print "Error no lines in file?"
@@ -1156,6 +1160,10 @@ class candidateList:
         F<3 and D >= 8
         (D > 10 and L = 3) and F < 4
         """
+        #If the variable self.curves is empty just return nothing!
+        if self.curves.__len__() < 1:
+            print "Warning no information to threshold."
+            return self
         #There is no error checking.  We rely on eval to do this for us!
         testExp=expressionString
         #Convert everything to lower case
@@ -1185,129 +1193,6 @@ class candidateList:
         return self
     #end applyAbitraryThresholds method
     
-    def applyNewThresholds(self,powerEq,pVal,conjunction,lengthEq,lVal):
-        """
-        DO NOT USE!
-        Parse these three options to determine a course of action for
-        additional thresholds to apply to the candidate lists. Valid options
-        are:
-        Power Equalities allowed:
-        P>float
-        P<float
-        P=float
-        Length Equalities allowed:
-        L>integer
-        L<integer
-        L=integer
-        Conjunctions allowed:
-        AND  ... Power and Length
-        OR   ... Power or Length
-        AND! ... A and NOT B
-        !AND ... NOT A and B
-        myObject.applyNewThresholds('>',3.4,'and','=',8)
-        Which means -> ((Power > 3.4) && (Length == 8))
-        This method will return an instance of the candidate list which
-        fufills the requested criteria.
-        NOTE:method __sec2pixel__() is of some use to help turn real units
-        seconds to pixels long.
-        """
-        peq=str(powerEq).lower().lstrip().rstrip()
-        pVal=float(pVal)
-        Conj=str(conjunction).lower().lstrip().rstrip()
-        leq=str(lengthEq).lower().lstrip().rstrip()
-        lVal=int(lVal)
-        testExpression=peq+Conj+leq
-        #>and> ### Power>pVal AND Length>lVal
-        newCurveList=[]
-        if testExpression == '>and>':
-            for lineInfo in self.curves:
-                curveID,trackLength,trackPower=lineInfo.getKurveHeader()
-                if ((trackPower>pVal)and(trackLength>lVal)):
-                    newCurveList.append(lineInfo)
-        elif testExpression == '<and>':
-            for lineInfo in self.curves:
-                curveID,trackLength,trackPower=lineInfo.getKurveHeader()
-                if ((trackPower<pVal)and(trackLength>lVal)):
-                    newCurveList.append(lineInfo)
-        elif testExpression == '<and<':
-            for lineInfo in self.curves:
-                curveID,trackLength,trackPower=lineInfo.getKurveHeader()
-                if ((trackPower<pVal)and(trackLength<lVal)):
-                    newCurveList.append(lineInfo)
-        elif testExpression == '=and=':
-            for lineInfo in self.curves:
-                curveID,trackLength,trackPower=lineInfo.getKurveHeader()
-                if ((trackPower==pVal)and(trackLength==lVal)):
-                    newCurveList.append(lineInfo)
-        elif testExpression == '>or>':
-            for lineInfo in self.curves:
-                curveID,trackLength,trackPower=lineInfo.getKurveHeader()
-                if ((trackPower>pVal)or(trackLength>lVal)):
-                    newCurveList.append(lineInfo)
-        elif testExpression == '<or>':
-            for lineInfo in self.curves:
-                curveID,trackLength,trackPower=lineInfo.getKurveHeader()
-                if ((trackPower<pVal)or(trackLength>lVal)):
-                    newCurveList.append(lineInfo)
-        elif testExpression == '<or>':
-            for lineInfo in self.curves:
-                curveID,trackLength,trackPower=lineInfo.getKurveHeader()
-                if ((trackPower<pVal)or(trackLength<lVal)):
-                    newCurveList.append(lineInfo)
-        elif testExpression == '=or=':
-            for lineInfo in self.curves:
-                curveID,trackLength,trackPower=lineInfo.getKurveHeader()
-                if ((trackPower==pVal)or(trackLength==lVal)):
-                    newCurveList.append(lineInfo)
-        elif testExpression == '>and!>':
-            for lineInfo in self.curves:
-                curveID,trackLength,trackPower=lineInfo.getKurveHeader()
-                if ((trackPower>pVal)and not(trackLength>lVal)):
-                    newCurveList.append(lineInfo)
-        elif testExpression == '<and!>':
-            for lineInfo in self.curves:
-                curveID,trackLength,trackPower=lineInfo.getKurveHeader()
-                if ((trackPower<pVal)and not(trackLength>lVal)):
-                    newCurveList.append(lineInfo)
-        elif testExpression == '<and!<':
-            for lineInfo in self.curves:
-                curveID,trackLength,trackPower=lineInfo.getKurveHeader()
-                if ((trackPower<pVal)and not(trackLength<lVal)):
-                    newCurveList.append(lineInfo)
-        elif testExpression == '=and!=':
-            for lineInfo in self.curves:
-                curveID,trackLength,trackPower=lineInfo.getKurveHeader()
-                if ((trackPower==pVal)and not(trackLength==lVal)):
-                    newCurveList.append(lineInfo)
-        elif testExpression == '>!and>':
-            for lineInfo in self.curves:
-                curveID,trackLength,trackPower=lineInfo.getKurveHeader()
-                if (not(trackPower>pVal)and(trackLength>lVal)):
-                    newCurveList.append(lineInfo)
-        elif testExpression == '<!and>':
-            for lineInfo in self.curves:
-                curveID,trackLength,trackPower=lineInfo.getKurveHeader()
-                if (not(trackPower<pVal)and(trackLength>lVal)):
-                    newCurveList.append(lineInfo)
-        elif testExpression == '<!and>':
-            for lineInfo in self.curves:
-                curveID,trackLength,trackPower=lineInfo.getKurveHeader()
-                if (not(trackPower<pVal)and(trackLength<lVal)):
-                    newCurveList.append(lineInfo)
-        elif testExpression == '=!and=':
-            for lineInfo in self.curves:
-                curveID,trackLength,trackPower=lineInfo.getKurveHeader()
-                if (not(trackPower==pVal)and(trackLength==lVal)):
-                    newCurveList.append(lineInfo)
-        else:
-            print 'Error parsing the requested test equalities:',testExpression
-            os.abort()
-        outputList=self
-        outputList.totalCount=newCurveList.__len__()
-        outputList.curves=copy.deepcopy(newCurveList)
-        return outputList
-    #End applyNewThresholds method
-
     def getPixelList(self):
         """
         Method to get a 3C list of all pixels from this candidate file.  It is
