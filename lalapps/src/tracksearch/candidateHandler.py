@@ -219,9 +219,9 @@ elif ((expThreshold != "") and (canList.__len__() >=1)):
             else:
                 pathName=os.path.dirname(entry)
                 saveFiles=pathName+'/Threshold:'+str(singleThresholdName)+':'+os.path.basename(entry)
+                candidateResults.writefile(saveFiles)
                 if verboseSwitch:
                     print "Wrote file :",saveFiles
-                candidateResults.writefile(saveFiles)
             if dumpSummaryDisk:
                 candidateResults.writeSummary()
             del candidateResults

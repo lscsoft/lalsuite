@@ -1154,16 +1154,6 @@ class candidateList:
         L     Curve Length in Pixels
         D     Time Duration in Seconds
         F     Frequency Bandwidth in Hertz
-        Valid logical operators are:
-        and
-        or
-        <=
-        >=
-        <
-        >
-        =
-        (
-        )
         Example:
         P>10 and L < 5
         D >=2 or P>12
@@ -1196,11 +1186,12 @@ class candidateList:
                 os.abort()
             if evalResult:
                 resultsList.append(lineInfo)
-        #Return the a modified structure wit self.curves
+        #Return the a modified structure with self.curves
         #made only of passing candidates
-        self.totalCount=resultsList.__len__()
-        self.curves=copy.deepcopy(resultsList)
-        return self
+        outputObject=copy.deepcopy(self)
+        outputObject.curves=copy.deepcopy(resultsList)
+        outputObject.totalCount=resultsList.__len__()
+        return outputObject
     #end applyAbitraryThresholds method
     
     def getPixelList(self):
@@ -1293,6 +1284,8 @@ class progressSpinner:
         self.spinTag=''
         self.timeNow=0
         self.timeLast=0
+        self.spinnerString=".:^ "
+        self.spinnerString=".oO0Oo. "
         self.spinnerString="-|/-\|/"
         self.spinnerFrames=[]
         for frame in self.spinnerString:
