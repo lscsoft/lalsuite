@@ -60,11 +60,13 @@ RCSID("$Id$");
  * ============================================================================
  */
 
+
 enum population {
 	POPULATION_GALACTIC_CORE,
 	POPULATION_UNIFORM_SKY,
 	POPULATION_ZENITH
 };
+
 
 enum strain_dist {
 	STRAIN_DIST_NONE,
@@ -76,6 +78,7 @@ enum strain_dist {
 	STRAIN_DIST_PRESET_HPEAK
 };
 
+
 enum freq_dist {
 	FREQ_DIST_NONE,
 	FREQ_DIST_STRING_CUSP,
@@ -83,6 +86,7 @@ enum freq_dist {
 	FREQ_DIST_MONO_GEOMETRIC,
 	FREQ_DIST_RANDOM_GEOMETRIC
 };
+
 
 struct options {
 	INT8 gps_start_time;
@@ -281,7 +285,7 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 			XLALStrToGPS(&tmp, optarg, NULL);
 			options.gps_end_time = XLALGPSToINT8NS(&tmp);
 		}
-		if(xlalErrno || (options.gps_end_time < LAL_INT8_C(441417609000000000)) || (options.gps_end_time > LAL_INT8_C(999999999000000000))) {
+		if(xlalErrno) {
 			fprintf(stderr, "invalid --%s (%s specified)\n", long_options[option_index].name, optarg);
 			exit(1);
 		}
@@ -295,7 +299,7 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 			XLALStrToGPS(&tmp, optarg, NULL);
 			options.gps_start_time = XLALGPSToINT8NS(&tmp);
 		}
-		if(xlalErrno || (options.gps_start_time < LAL_INT8_C(441417609000000000)) || (options.gps_start_time > LAL_INT8_C(999999999000000000))) {
+		if(xlalErrno) {
 			fprintf(stderr, "invalid --%s (%s specified)\n", long_options[option_index].name, optarg);
 			exit(1);
 		}
@@ -529,17 +533,20 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
  * ============================================================================
  */
 
+
 static double tau_from_q_and_f(double Q, double f)
 {
 	/* compute duration from Q and frequency */
 	return Q / (sqrt(2.0) * LAL_PI * f);
 }
 
+
 static double hrss_from_tau_and_hpeak(double tau, double hpeak)
 {
 	/* compute root-sum-square strain from duration and peak strain */
 	return sqrt(sqrt(2.0 * LAL_PI) * tau / 4.0) * hpeak;
 }
+
 
 static double hpeak_from_tau_and_hrss(double tau, double hrss)
 {
@@ -589,6 +596,7 @@ static LIGOTimeGPS horizon_arrival_time(LALDetector detector, LIGOTimeGPS geocen
  * ============================================================================
  */
 
+
 static double Log10Deviate(RandomParams *params, double log10_min, double log10_max)
 {
 	return pow(10.0, log10_min + (log10_max - log10_min) * XLALUniformDeviate(params));
@@ -601,10 +609,12 @@ static double Log10Deviate(RandomParams *params, double log10_min, double log10_
  * ============================================================================
  */
 
+
 /*
  * String cusps.  What's distributed uniformly is theta^2, the square of
  * the angle the line of sight makes with direction of the cusp.
  */
+
 
 static double freq_dist_string_cusp_next(struct options options)
 {
@@ -619,6 +629,7 @@ static double freq_dist_string_cusp_next(struct options options)
 /*
  * Monotonically increasing arithmetic sequence.
  */
+
 
 static double freq_dist_monotonic_arithmetic_next(struct options options)
 {
@@ -636,6 +647,7 @@ static double freq_dist_monotonic_arithmetic_next(struct options options)
  * Monotonically increasing geometric sequence.
  */
 
+
 static double freq_dist_monotonic_geometric_next(struct options options)
 {
 	static int i = 0;
@@ -652,14 +664,16 @@ static double freq_dist_monotonic_geometric_next(struct options options)
  * Logarithmically-distributed random(ish) sequence.
  */
 
+
 static double freq_dist_random_geometric_next(RandomParams *randparams, struct options options)
 {
-	const double sqrtratio = sqrt(options.fratio);
-	double freq = freq_dist_monotonic_geometric_next(options) * sqrtratio;
-	if(freq > options.fhigh)
-		freq = freq_dist_monotonic_geometric_next(options) * sqrtratio;
-
-	return Log10Deviate(randparams, log10(freq / sqrtratio), log10(freq * sqrtratio));
+	static double random_factor = 1.0;
+	double freq = freq_dist_monotonic_geometric_next(options);
+	if(freq * options.fratio > options.fhigh)
+		freq = freq_dist_monotonic_geometric_next(options);
+	if(freq == options.flow)
+		random_factor = Log10Deviate(randparams, 0.0, log10(options.fratio));
+	return freq * random_factor;
 }
 
 
@@ -668,6 +682,7 @@ static double freq_dist_random_geometric_next(RandomParams *randparams, struct o
  *                               h_peak Presets
  * ============================================================================
  */
+
 
 static double hpeak_preset_next(RandomParams *params)
 {
@@ -683,13 +698,19 @@ static double hpeak_preset_next(RandomParams *params)
 	return presets[i];
 }
 
+
 /* 
  * ============================================================================
  *                                   Output
  * ============================================================================
  */
 
-/* LIGO LW XML of MDC injections */
+
+/*
+ * LIGO LW XML of MDC injections
+ */
+
+
 static void write_mdc_xml(MetadataTable mdcinjections)
 {
 	LALStatus status = blank_status;
@@ -708,7 +729,11 @@ static void write_mdc_xml(MetadataTable mdcinjections)
 }
 
 
-/* LIGO LW XML */
+/*
+ * LIGO LW XML
+ */
+
+
 static void write_xml(MetadataTable proctable, MetadataTable procparams, MetadataTable searchsumm, MetadataTable injections, struct options options)
 {
 	LALStatus status = blank_status;
@@ -756,6 +781,7 @@ static void write_xml(MetadataTable proctable, MetadataTable procparams, Metadat
  * ============================================================================
  */
 
+
 int main(int argc, char *argv[])
 {
 	struct options options;
@@ -771,23 +797,29 @@ int main(int argc, char *argv[])
 	MetadataTable mdcinjections;
 	SimBurstTable *this_sim_burst = NULL;
 
+
 	/*
 	 * Initialize debug handler
 	 */
 
+
 	lal_errhandler = LAL_ERR_EXIT;
 	set_debug_level("LALMSGLVL2");
+
 
 	/*
 	 * Process params table and command line.
 	 */
 
+
 	procparams.processParamsTable = NULL;
 	options = parse_command_line(&argc, &argv, &procparams);
+
 
 	/*
 	 * Process table
 	 */
+
 
 	proctable.processTable = calloc(1, sizeof(*proctable.processTable));
 	XLALGPSTimeNow(&proctable.processTable->start_time);
@@ -796,9 +828,11 @@ int main(int argc, char *argv[])
 	if(options.user_tag)
 		snprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, "%s", options.user_tag);
 
+
 	/*
 	 * Search summary table
 	 */
+
 
 	searchsumm.searchSummaryTable = calloc(1, sizeof(*searchsumm.searchSummaryTable));
 	if(options.user_tag)
@@ -814,11 +848,14 @@ int main(int argc, char *argv[])
 	 * Initialize random number generator
 	 */
 
+
 	randParams = XLALCreateRandomParams(options.seed);
+
 
 	/*
 	 * Main loop
 	 */
+
 
 	for(tinj = options.gps_start_time; tinj <= options.gps_end_time; tinj += options.time_step) {
 		/* allocate the injection */
@@ -962,11 +999,10 @@ int main(int argc, char *argv[])
 		this_sim_burst->zm_number = options.simwaveform_min_number + (options.simwaveform_max_number - options.simwaveform_min_number) * XLALUniformDeviate(randParams);
 	}
 
-	/* if using the MDC signal frames for injections:
-	 * then read in the ascii file of inj. parameters
-	 * and write a sim burst table out of that. However
-	 * currently all the fields are not filled.[20040430: SKRM]
-	 */
+	/* if using the MDC signal frames for injections: then read in the
+	 * ascii file of inj. parameters and write a sim burst table out of
+	 * that. However currently all the fields are not filled.[20040430:
+	 * SKRM] */
 	if(options.mdc) {
 		INT4 n = 0;
 		INT4 nn, x, rc;
@@ -981,9 +1017,9 @@ int main(int argc, char *argv[])
 
 		SimBurstTable *this_mdcsim_burst = NULL;
 
-		/*read in the ascii file containing the injection parameters 
-		 *the ascii file is assumed to be present in the working dir. 
-		 */
+		/* read in the ascii file containing the injection
+		 * parameters the ascii file is assumed to be present in
+		 * the working dir. */
 		snprintf(mdcSimfile, 20, "mdcsim_%d.dat", 1);
 		fp = fopen(mdcSimfile, "r");
 		if(fp == NULL) {
@@ -1006,16 +1042,15 @@ int main(int argc, char *argv[])
 		phi = ll = (float *) malloc(n * sizeof(float));
 		psi = mm = (float *) malloc(n * sizeof(float));
 		hrss = rr = (float *) malloc(n * sizeof(float));
-		qq = (char *) malloc((n * 10) * sizeof(char));	/*memory allocation may need to be 
-								 *changed if the name of waveform
-								 *changes in the mdc file 
-								 */
+		qq = (char *) malloc((n * 10) * sizeof(char));
+		/* memory allocation may need to be changed if the name of
+		 * waveform changes in the mdc file */
 		waveform = (char **) malloc(n * 10 * sizeof(char));
-
 		/* reads in the diff. parameters from the text file */
 		nn = 0;
 		while((rc = fscanf(fp, "%d %d %d %d %e %e %e %e %e %e %e %s %e", cc++, dd++, ee++, ff++, gg++, hh++, ii++, jj++, kk++, ll++, mm++, qq, rr++)) == 13) {
-			waveform[nn++] = qq;	/* scans the name of the waveform */
+			/* scans the name of the waveform */
+			waveform[nn++] = qq;
 			qq = qq + 10;
 			continue;
 		}
@@ -1026,8 +1061,7 @@ int main(int argc, char *argv[])
 		fclose(fp);
 
 		/* create the first injection */
-		this_mdcsim_burst = mdcinjections.simBurstTable = (SimBurstTable *)
-		    calloc(1, sizeof(SimBurstTable));
+		this_mdcsim_burst = mdcinjections.simBurstTable = (SimBurstTable *) calloc(1, sizeof(SimBurstTable));
 		/*create the corresponding simburst table */
 		for(x = 0; x < n; x++) {
 			this_mdcsim_burst->geocent_peak_time.gpsSeconds = gps[x];	/* wrong value */
@@ -1041,16 +1075,16 @@ int main(int argc, char *argv[])
 			this_mdcsim_burst->polarization = psi[x];
 			this_mdcsim_burst->hrss = hrss[x];
 
-			/*rip off the frequency from the name of the waveform */
+			/* rip off the frequency from the name of the
+			 * waveform */
 			waveform[x] = waveform[x] + 2;
 			y = (char *) malloc(10 * sizeof(char));
 			strncpy(y, waveform[x], 3);
-			this_mdcsim_burst->freq = atof(y);	/*freq of the SineGaussian */
+			/* freq of the SineGaussian */
+			this_mdcsim_burst->freq = atof(y);
 			free(y);
-			this_mdcsim_burst = this_mdcsim_burst->next = (SimBurstTable *)
-			    calloc(1, sizeof(SimBurstTable));
+			this_mdcsim_burst = this_mdcsim_burst->next = (SimBurstTable *) calloc(1, sizeof(SimBurstTable));
 		}
-
 
 		free(gps);
 		free(tH);
