@@ -45,9 +45,12 @@
 
 #define MAXIFO 2
 #define BANKEFFICIENCY_PARAMS_ROW \
-"         %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%u"
+"        %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%u"
+
+
 #define BANKEFFICIENCY_PARAMS_ROW_SPACE \
-"         %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %u "
+"         %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %u"
+
 
 /*do not use capital here for future mysql migration */
 #define PRINT_LIGOLW_XML_BANKEFFICIENCY(fp) ( \
@@ -62,14 +65,22 @@ fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau0\"          
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau3\"                Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau0_sim\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau3_sim\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_x_sim\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_y_sim\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_z_sim\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_x_sim\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_y_sim\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_z_sim\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:orbit_theta0_sim\"    Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:orbit_phi0_sim\"      Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_x\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_y\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_z\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_x\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_y\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_z\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:theta0\"              Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phi0\"                Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:orbit_theta0\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:orbit_phi0\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ffinal\"              Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ffinal_sim\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass1_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
@@ -262,9 +273,13 @@ typedef struct{
   INT4   layer;
   INT4   templateNumber;
   InspiralTemplate bestTemplate;
-
+  REAL4 spin1_x, spin1_y,spin1_z;
+  REAL4 spin2_x, spin2_y,spin2_z;
+  REAL4 orbitTheta0, orbitPhi0;
   InspiralTemplate bestUTemplate;
-  REAL4 snrAtCoaTime;
+  REAL4 snrAtCoaTime; 
+  
+
 } OverlapOutputIn;
 
 /* structure to output the results */
@@ -290,7 +305,11 @@ typedef struct{
   REAL4 phase;
   UINT4 ntrial;
   UINT4 nfast;
-  REAL4 snrAtCoaTime;
+  REAL4 snrAtCoaTime; 
+  REAL4 spin1_x, spin1_y,spin1_z;
+  REAL4 spin2_x, spin2_y,spin2_z;
+  REAL4 orbitTheta0, orbitPhi0;
+
 } ResultIn;
 
 
@@ -319,7 +338,8 @@ typedef struct{
  * */
 void
 KeepHighestValues(OverlapOutputIn in , 
-		  OverlapOutputIn *out
+		  OverlapOutputIn *out,
+		  InspiralTemplate insptmplt
 		  );
 
 
@@ -502,7 +522,9 @@ Help(void);
 void
 PrintResults(
     ResultIn                    result,
-    RandomInspiralSignalIn      randIn);
+    RandomInspiralSignalIn      randIn,
+    INT4                        n,
+    INT4                        N);
 
 
 
