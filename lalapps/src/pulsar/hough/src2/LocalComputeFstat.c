@@ -33,7 +33,7 @@
 #include <lal/AVFactories.h>
 #include <lal/ComputeFstat.h>
 
-NRCSID( COMPUTEFSTATC, "$Id$");
+NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 
 /*---------- local DEFINES ----------*/
 #define TRUE (1==1)
@@ -95,7 +95,7 @@ int local_sin_cos_2PI_LUT_7R4tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x);
 
 
 /** Function to compute a vector of Fstatistic values for a number of frequency bins.
-    This function is simply a wrapper for ComputeFstat() which is called repeatedly for
+    This function is simply a wrapper for LocalComputeFstat() which is called repeatedly for
     every frequency value.  The output, i.e. fstatVector must be properly allocated
     before this function is called.  The values of the start frequency, the step size
     in the frequency and the number of frequency values for which the Fstatistic is 
@@ -118,7 +118,7 @@ void LocalComputeFStatFreqBand ( LALStatus *status,
   PulsarDopplerParams thisPoint;
   ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
 
-  INITSTATUS( status, "ComputeFStatFreqBand", COMPUTEFSTATC );
+  INITSTATUS( status, "LocalComputeFStatFreqBand", LOCALCOMPUTEFSTATC );
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( multiSFTs, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
@@ -154,8 +154,8 @@ void LocalComputeFStatFreqBand ( LALStatus *status,
   /* loop over frequency values and fill up values in fstatVector */
   for ( k = 0; k < numBins; k++) {
  
-    TRY (ComputeFStat ( status->statusPtr, &Fstat, &thisPoint, multiSFTs, multiWeights, 
-			multiDetStates, params, &cfBuffer ), status);
+    TRY (LocalComputeFStat ( status->statusPtr, &Fstat, &thisPoint, multiSFTs, multiWeights, 
+			     multiDetStates, params, &cfBuffer ), status);
 
     fstatVector->data->data[k] = Fstat.F;
       
@@ -202,7 +202,7 @@ LocalComputeFStat ( LALStatus *status,
   MultiAMCoeffs *multiAMcoef = NULL;
   REAL8 Ad, Bd, Cd, Dd_inv;
 
-  INITSTATUS( status, "ComputeFStat", COMPUTEFSTATC );
+  INITSTATUS( status, "LocalComputeFStat", LOCALCOMPUTEFSTATC );
   ATTATCHSTATUSPTR (status);
 
   /* check input */
@@ -289,14 +289,14 @@ LocalComputeFStat ( LALStatus *status,
 	{
 	  if ( LocalXLALComputeFaFb (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSB->data[X], multiAMcoef->data[X], params) != 0)
 	    {
-	      LALPrintError ("\nXALComputeFaFb() failed\n");
+	      LALPrintError ("\nLocalXALComputeFaFb() failed\n");
 	      ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
 	    }
 	}
 
 #ifndef LAL_NDEBUG
       if ( !finite(FcX.Fa.re) || !finite(FcX.Fa.im) || !finite(FcX.Fb.re) || !finite(FcX.Fb.im) ) {
-	LALPrintError("XLALComputeFaFb() returned non-finite: Fa=(%f,%f), Fb=(%f,%f)\n", 
+	LALPrintError("LocalXLALComputeFaFb() returned non-finite: Fa=(%f,%f), Fb=(%f,%f)\n", 
 		      FcX.Fa.re, FcX.Fa.im, FcX.Fb.re, FcX.Fb.im );
 	ABORT (status,  COMPUTEFSTATC_EIEEE,  COMPUTEFSTATC_MSGEIEEE);
       }
@@ -336,7 +336,7 @@ LocalComputeFStat ( LALStatus *status,
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
-} /* ComputeFStat() */
+} /* LocalComputeFStat() */
 
 
 /** Revamped version of LALDemod() (based on TestLALDemod() in CFS).
@@ -370,31 +370,31 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 #ifndef LAL_NDEBUG
   if ( !FaFb ) {
     LALPrintError ("\nOutput-pointer is NULL !\n\n");
-    XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
+    XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EINVAL);
   }
 
   if ( !sfts || !sfts->data ) {
     LALPrintError ("\nInput SFTs are NULL!\n\n");
-    XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
+    XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EINVAL);
   }
   
   if ( !tSSB || !tSSB->DeltaT || !tSSB->Tdot || !amcoe || !amcoe->a || !amcoe->b || !params)
     {
       LALPrintError ("\nIllegal NULL in input !\n\n");
-      XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
+      XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EINVAL);
     }
 
   if ( PULSAR_MAX_SPINS > NUM_FACT )
     {
       LALPrintError ("\nInverse factorials table only up to order s=%d, can't handle %d spin-order\n\n",
 		     NUM_FACT, PULSAR_MAX_SPINS - 1 );
-      XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
+      XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EINVAL);
     }
 #endif
 
   if ( params->upsampling > 1 ) {
-    fprintf (stderr, "\n===== WARNING: XLALComputeFaFb() should not be used with upsampled-SFTs!\n");
-    XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
+    fprintf (stderr, "\n===== WARNING: LocalXLALComputeFaFb() should not be used with upsampled-SFTs!\n");
+    XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EINVAL);
   }
 
   /* ----- prepare convenience variables */
@@ -468,7 +468,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	
 	/* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
 	if ( local_sin_cos_2PI_LUT ( &imagQ, &realQ, - lambda_alpha ) ) {
-	  XLAL_ERROR ( "XLALComputeFaFb", XLAL_EFUNC);
+	  XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
 	}
 
 	kstar = (INT4) (Dphi_alpha + 0.5);	/* k* = round(Dphi_alpha*chi) for positive Dphi */
@@ -482,7 +482,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  {
 	    LALPrintError ("Required frequency-bins [%d, %d] not covered by SFT-interval [%d, %d]\n\n",
 			   k0, k1, freqIndex0, freqIndex1 );
-	    XLAL_ERROR("XLALComputeFaFb", XLAL_EDOM);
+	    XLAL_ERROR("LocalXLALComputeFaFb", XLAL_EDOM);
 	  }
 
       } /* compute kappa_star, lambda_alpha */
@@ -895,7 +895,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
   return XLAL_SUCCESS;
 
-} /* XLALComputeFaFb() */
+} /* LocalXLALComputeFaFb() */
 
 
 
