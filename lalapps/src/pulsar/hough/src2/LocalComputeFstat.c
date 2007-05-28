@@ -86,6 +86,7 @@ int local_sin_cos_2PI_LUT_7R4tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x);
 /* probably the fastest version on all platforms */
 #define local_sin_cos_2PI_LUT local_sin_cos_2PI_LUT_7tab
 
+/* definitely fastest on PowerPC */
 #if (EAH_OPTIMIZATION == 2)
 #define SINCOS_FLOOR
 #endif
@@ -1153,13 +1154,17 @@ int local_sin_cos_2PI_LUT_7R4V2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
 
   static BOOLEAN tabs_empty = 1; /* reset after initializing the sin/cos tables */
 
+#ifndef SINCOS_VE
+#define SINCOS_VE 2
+#endif
+
   UINT4 i; /* array index */
   REAL4 d, d2; /* intermediate value  */
   REAL4 x; /* x limited to [0..1) */
 #if !(defined(SINCOS_FLOOR) || defined(SINCOS_INT4) || defined(SINCOS_INT8))
   REAL8 dummy; /* dummy for modf */
 #endif
-  REAL4 sincos[2];
+  REAL4 sincos[SINCOS_VE];
   int ve;
 
   /* res=10*(params->mCohSFT); */
@@ -1199,11 +1204,11 @@ int local_sin_cos_2PI_LUT_7R4V2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
   i = x * LUT_RES + .5; /* round-to-nearest */
   d = x - diVal[i];
 #if 1
-  for (ve=0; ve<2; ve++)
+  for (ve=0; ve < SINCOS_VE; ve++)
     sincos[ve] = scTab[i][ve] + d * (scTab2PI[i][ve] + d * scTab2PIPI[i][ve]);
 #else
   d2 = d*d;
-  for (ve=0; ve<2; ve++)
+  for (ve=0; ve < SINCOS_VE; ve++)
     sincos[ve] = scTab[i][ve] + d * scTab2PI[i][ve] + d2 * scTab2PIPI[i][ve];
 #endif
 
