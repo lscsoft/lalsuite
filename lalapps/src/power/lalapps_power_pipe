@@ -227,7 +227,7 @@ def group_coinc_parents(parents, time_slides, verbose = False):
 
 	# for each cache, get the set of the nodes whose output files it
 	# contains.  note that a parent node is allowed to provide more
-	# than out output file, and thus can be listed in more than one
+	# than one output file, and thus can be listed in more than one
 	# group
 	if verbose:
 		print >>sys.stderr, "Matching jobs to caches ..."
