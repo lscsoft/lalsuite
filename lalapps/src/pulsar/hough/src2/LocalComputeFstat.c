@@ -80,13 +80,13 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 #elif defined(SINCOS_INT4)
 #define SINCOS_TRIM_X(y,x) \
   y = x-(INT4)x; \
-  if ( y < 0.0 ) { y += 1.0 }
+  if ( y < 0.0 ) { y += 1.0; }
 #define SINCOS_ROUND_METHOD 4
 
 #elif defined(SINCOS_INT8)
 #define SINCOS_TRIM_X(y,x) \
   y = x-(INT8)x; \
-  if ( y < 0.0 ) { y += 1.0 }
+  if ( y < 0.0 ) { y += 1.0; }
 #define SINCOS_ROUND_METHOD 8
 
 #else
