@@ -39,12 +39,22 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-
 #define LD_SMALL4       (1.0e-6)		/**< "small" number for REAL4*/ 
 #define OOTWOPI         (1.0 / LAL_TWOPI)	/**< 1/2pi */
 
 #define TWOPI_FLOAT     6.28318530717958f  	/**< single-precision 2*pi */
 #define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)	/**< single-precision 1 / (2pi) */ 
+
+
+/*---------- optimization dependant switches ----------*/
+
+/* probably the fastest version on all platforms */
+#define local_sin_cos_2PI_LUT local_sin_cos_2PI_LUT_7tab
+
+/* definitely fastest on PowerPC */
+#if (EAH_OPTIMIZATION == 2)
+#define SINCOS_FLOOR
+#endif
 
 
 /*----- Macros ----- */
@@ -57,6 +67,37 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 #define SCALAR(u,v) ((u)[0]*(v)[0] + (u)[1]*(v)[1] + (u)[2]*(v)[2])
 
 #define SQ(x) ( (x) * (x) )
+
+/* the way of trimming x to the interval [0..1) gives significant differences
+   in speed, so we provide some ways here to use in the sin_cos_LUT functions.
+   We also record the way we are using for logging */
+
+#if defined(SINCOS_FLOOR)
+#define SINCOS_TRIM_X(y,x) \
+  y = x - floor(x);
+#define SINCOS_ROUND_METHOD 0
+
+#elif defined(SINCOS_INT4)
+#define SINCOS_TRIM_X(y,x) \
+  y = x-(INT4)x; \
+  if ( y < 0.0 ) { y += 1.0 }
+#define SINCOS_ROUND_METHOD 4
+
+#elif defined(SINCOS_INT8)
+#define SINCOS_TRIM_X(y,x) \
+  y = x-(INT8)x; \
+  if ( y < 0.0 ) { y += 1.0 }
+#define SINCOS_ROUND_METHOD 8
+
+#else
+#define SINCOS_TRIM_X(y,x) \
+{ \
+  REAL8 dummy; \
+  y = modf(x, &dummy); \
+  if ( y < 0.0 ) { y += 1.0; } \
+}
+#define SINCOS_ROUND_METHOD 2
+#endif
 
 /*----- SWITCHES -----*/
 
@@ -72,6 +113,11 @@ static const LALStatus empty_status;
 /*---------- internal prototypes ----------*/
 int finite(double x);
 
+void LocalComputeFStat ( LALStatus*, Fcomponents*, const PulsarDopplerParams*,
+			 const MultiSFTVector*, const MultiNoiseWeights*,
+			 const MultiDetectorStateSeries*, const ComputeFParams*,
+			 ComputeFBuffer*);
+
 int LocalXLALComputeFaFb (Fcomponents*, const SFTVector*, const PulsarSpins,
 			  const SSBtimes*, const AMCoeffs*, const ComputeFParams*);
 
@@ -79,17 +125,6 @@ int local_sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x);
 int local_sin_cos_2PI_LUT_2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x);
 int local_sin_cos_2PI_LUT_7tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x);
 int local_sin_cos_2PI_LUT_7R4tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x);
-
-
-/*---------- optimization dependant switches ----------*/
-
-/* probably the fastest version on all platforms */
-#define local_sin_cos_2PI_LUT local_sin_cos_2PI_LUT_7tab
-
-/* definitely fastest on PowerPC */
-#if (EAH_OPTIMIZATION == 2)
-#define SINCOS_FLOOR
-#endif
 
 
 /*==================== FUNCTION DEFINITIONS ====================*/
@@ -137,7 +172,8 @@ void LocalComputeFStatFreqBand ( LALStatus *status,
   {
     static int first = !0;
     if (first) {
-      fprintf(stderr,"\n$Id$ E@HOPT:%d\n", EAH_OPTIMIZATION);
+      fprintf(stderr,"\n$Id$ E@HOPT:%d SCTRIM:%d\n",
+	      EAH_OPTIMIZATION,SINCOS_ROUND_METHOD);
       first = 0;
     }
   }
@@ -930,9 +966,6 @@ local_sin_cos_2PI_LUT_2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
   INT4 i0;
   REAL8 d, d2;
   REAL8 ts, tc;
-#if !(defined(SINCOS_FLOOR) || defined(SINCOS_INT4) || defined(SINCOS_INT8))
-  REAL8 dummy;
-#endif
 
   static BOOLEAN firstCall = TRUE;
   static REAL4 sinVal[LUT_RES+1], cosVal[LUT_RES+1];
@@ -958,19 +991,8 @@ local_sin_cos_2PI_LUT_2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
    * for saftey we therefore rather use modf(), even if that 
    * will be somewhat slower... 
    */
-#ifdef SINCOS_FLOOR
-  xt = x - floor(x);
-#else
-#if defined(SINCOS_INT4)
-  xt = x-(INT4)x;  /* xt in (-1, 1) */
-#elif defined(SINCOS_INT8)
-  xt = x-(INT8)x;  /* xt in (-1, 1) */
-#else
-  xt = modf(x, &dummy); /* xt in (-1, 1) */
-#endif
-  if ( xt < 0.0 )
-    xt += 1.0; /* xt in [0, 1) */
-#endif
+
+  SINCOS_TRIM_X (xt,x);
 
 #ifndef LAL_NDEBUG
   if ( xt < 0.0 || xt > 1.0 )
@@ -1013,9 +1035,6 @@ int local_sin_cos_2PI_LUT_7tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
   UINT4 i; /* array index */
   REAL8 d, d2; /* intermediate value  */
   REAL8 x; /* x limited to [0..1) */
-#if !(defined(SINCOS_FLOOR) || defined(SINCOS_INT4) || defined(SINCOS_INT8))
-  REAL8 dummy; /* dummy for modf */
-#endif
 
   /* res=10*(params->mCohSFT); */
   /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
@@ -1037,19 +1056,7 @@ int local_sin_cos_2PI_LUT_7tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
     tabs_empty = 0;
   }
 
-#ifdef SINCOS_FLOOR
-  x = xin - floor(xin);
-#else
-#if defined(SINCOS_INT4)
-  x = xin-(INT4)xin;  /* xt in (-1, 1) */
-#elif defined(SINCOS_INT8)
-  x = xin-(INT8)xin;  /* xt in (-1, 1) */
-#else
-  x = modf(xin, &dummy); /* xt in (-1, 1) */
-#endif
-  if ( x < 0.0 )
-    x += 1.0;
-#endif
+  SINCOS_TRIM_X (x,xin);
 
   i = x * LUT_RES + .5; /* round-to-nearest */
   d = x - diVal[i];
@@ -1085,9 +1092,6 @@ int local_sin_cos_2PI_LUT_7R4tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
   UINT4 i; /* array index */
   REAL4 d, d2; /* intermediate value  */
   REAL4 x; /* x limited to [0..1) */
-#if !(defined(SINCOS_FLOOR) || defined(SINCOS_INT4) || defined(SINCOS_INT8))
-  REAL8 dummy; /* dummy for modf */
-#endif
 
   /* res=10*(params->mCohSFT); */
   /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
@@ -1110,19 +1114,7 @@ int local_sin_cos_2PI_LUT_7R4tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
     tabs_empty = 0;
   }
 
-#ifdef SINCOS_FLOOR
-  x = xin - floor(xin);
-#else
-#if defined(SINCOS_INT4)
-  x = xin-(INT4)xin;  /* xt in (-1, 1) */
-#elif defined(SINCOS_INT8)
-  x = xin-(INT8)xin;  /* xt in (-1, 1) */
-#else
-  x = modf(xin, &dummy); /* xt in (-1, 1) */
-#endif
-  if ( x < 0.0 )
-    x += 1.0;
-#endif
+  SINCOS_TRIM_X (x,xin);
 
   i = x * LUT_RES + .5; /* round-to-nearest */
   d = x - diVal[i];
@@ -1161,9 +1153,6 @@ int local_sin_cos_2PI_LUT_7R4V2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
   UINT4 i; /* array index */
   REAL4 d, d2; /* intermediate value  */
   REAL4 x; /* x limited to [0..1) */
-#if !(defined(SINCOS_FLOOR) || defined(SINCOS_INT4) || defined(SINCOS_INT8))
-  REAL8 dummy; /* dummy for modf */
-#endif
   REAL4 sincos[SINCOS_VE];
   int ve;
 
@@ -1187,19 +1176,7 @@ int local_sin_cos_2PI_LUT_7R4V2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
     tabs_empty = 0;
   }
 
-#ifdef SINCOS_FLOOR
-  x = xin - floor(xin);
-#else
-#if defined(SINCOS_INT4)
-  x = xin-(INT4)xin;  /* xt in (-1, 1) */
-#elif defined(SINCOS_INT8)
-  x = xin-(INT8)xin;  /* xt in (-1, 1) */
-#else
-  x = modf(xin, &dummy); /* xt in (-1, 1) */
-#endif
-  if ( x < 0.0 )
-    x += 1.0;
-#endif
+  SINCOS_TRIM_X (x,xin);
 
   i = x * LUT_RES + .5; /* round-to-nearest */
   d = x - diVal[i];
