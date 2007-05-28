@@ -300,7 +300,7 @@ static void print_usage(const char *program)
 "	[--calibration-cache <cache file>]\n" \
 "	 --channel-name <string>\n" \
 "	 --confidence-threshold <confidence>\n" \
-"	[--debug-level <level>]\n" \
+"	[--debug-level info|warn|error|off]\n" \
 "	[--dump-diagnostics <xml filename>]\n" \
 "	[--enable-over-whitening]\n" \
 "	 --filter-corruption <samples>\n" \
@@ -471,8 +471,10 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, c
  */
 
 
-static void parse_command_line_debug(int argc, char *argv[])
+static int parse_command_line_debug(int argc, char *argv[])
 {
+	char msg[240];
+	int args_are_bad = FALSE;
 	int c;
 	int option_index;
 	struct option long_options[] = {
@@ -481,8 +483,14 @@ static void parse_command_line_debug(int argc, char *argv[])
 	};
 
 	/*
+	 * Default == print only error messages.
+	 */
+
+	lalDebugLevel = LALERROR;
+
+	/*
 	 * Find and parse only the debug level command line options.  Must
-	 * jump through this hoop because we cannot call set_debug_level()
+	 * jump through this hoop because we cannot edit lalDebugLevel
 	 * after any calls to LALMalloc() and friends.
 	 */
 
@@ -490,11 +498,26 @@ static void parse_command_line_debug(int argc, char *argv[])
 	optind = 0;		/* start scanning from argv[0] */
 	do switch(c = getopt_long(argc, argv, "-", long_options, &option_index)) {
 	case 'D':
-		/* only set the debug level in this pass */
-		set_debug_level(optarg);
+		if(!strcmp(optarg, "info"))
+			lalDebugLevel = LALINFO | LALWARNING | LALERROR;
+		else if(!strcmp(optarg, "warn"))
+			lalDebugLevel = LALWARNING | LALERROR;
+		else if(!strcmp(optarg, "error"))
+			lalDebugLevel = LALERROR;
+		else if(!strcmp(optarg, "off"))
+			lalDebugLevel = 0;
+		else {
+			sprintf(msg, "must be one of \"info\", \"warn\", \"error\", or \"off\"");
+			print_bad_argument(argv[0], long_options[option_index].name, msg);
+			args_are_bad = TRUE;
+		}
+		break;
+
 	default:
 		break;
 	} while(c != -1);
+
+	return args_are_bad ? -1 : 0;
 }
 
 
@@ -1714,8 +1737,8 @@ int main(int argc, char *argv[])
 
 	memset(&stat, 0, sizeof(stat));
 	lal_errhandler = LAL_ERR_EXIT;
-	set_debug_level("3");
-	parse_command_line_debug(argc, argv);
+	if(parse_command_line_debug(argc, argv) < 0)
+		exit(1);
 
 	/*
 	 * Create the process and process params tables.

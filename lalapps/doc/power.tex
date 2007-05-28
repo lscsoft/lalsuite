@@ -174,7 +174,7 @@ simulated data.
 [\option{--calibration-cache}~\parm{cache file}] \newline \hspace*{0.5in}
 \option{--channel-name}~\parm{string} \newline \hspace*{0.5in}
 \option{--confidence-threshold}~\parm{threshold} \newline \hspace*{0.5in}
-[\option{--debug-level}~\parm{level}] \newline \hspace*{0.5in}
+[\option{--debug-level}~\option{info|warn|error|off}] \newline \hspace*{0.5in}
 [\option{--dump-diagnostics~\parm{XML filename}}] \newline \hspace*{0.5in}
 \option{--filter-corruption}~\parm{samples} \newline \hspace*{0.5in}
 \option{--frame-cache}~\parm{cache file} \newline \hspace*{0.5in}
@@ -293,11 +293,10 @@ probability of \(\ee^{-30}\) of being found in stationary Gaussian white
 noise.  LIGO strain outputs are not stationary, and so a typical,
 practical, threshold is 70 or higher.
 
-\item[\option{--debug-level} \parm{level}]
-Sets the LAL debug level to \parm{level}.  The default value is
-\texttt{LALMSGLVL2}.  A useful setting is 65 which turns off memory
-padding, but keeps memory tracking and error messages.  If you want to turn
-off memory tracking completely, then use 33.
+\item[\option{--debug-level} \option{info|warn|error|off}]
+Sets the level of verbosity:  \option{info} = print all messages,
+\option{warn} = print only warnings and errors, \option{error} = print only
+errors, and \option{off} = be silent.  The default value is \option{error}.
 
 \item[\option{--dump-diagnostics \parm{XML filename}}]
 Dump diagnostic snapshots of internal time and frequency series data to a
