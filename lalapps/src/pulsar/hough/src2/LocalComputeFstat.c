@@ -713,13 +713,13 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 #elif (EAH_OPTIMIZATION == 3)
 
         {
-          COMPLEX8 XSums;              /* sums of Xa.re and Xa.im for SSE */
+          COMPLEX8 XSums __attribute__ ((aligned (16))); /* sums of Xa.re and Xa.im for SSE */
 
-	  REAL4 kappa_m   = kappa_max; /* single precision version of kappa_max */
+	  REAL4 kappa_m = kappa_max; /* single precision version of kappa_max */
 
           /* vector constants */
           /* having these not aligned will crash the assembler code */
-          static REAL4 V1100[4] __attribute__ ((aligned (16))) = { 1,1,0,0 };
+          static REAL4 V0011[4] __attribute__ ((aligned (16))) = { 0,0,1,1 };
           static REAL4 V2222[4] __attribute__ ((aligned (16))) = { 2,2,2,2 };
 
 	  /* hand-coded SSE version from Akos */
@@ -734,7 +734,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	     "MOVHPS	8(%[Xa]),%%xmm1   	\n\t"	/* X1: Y01 X01 Y00 X00 */
 	     "SHUFPS	$0,%%xmm2,%%xmm2   	\n\t"	/* X2:  C   C   C   C */
 	     "MOVAPS	%[V2222],%%xmm7   	\n\t"	/* X7:  2   2   2   2 */
-	     "SUBPS	%[V1100],%%xmm2   	\n\t"	/* X2: C-1 C-1  C   C */
+	     "SUBPS	%[V0011],%%xmm2   	\n\t"	/* X2: C-1 C-1  C   C */
 	     /* -------------------------------------------------------------------; */
 	     "MOVAPS	%%xmm2,%%xmm0   	\n\t"	/* X0: C-1 C-1  C   C */
 	     /* -------------------------------------------------------------------; */
@@ -846,7 +846,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	     [kappa_m]     "m"  (kappa_m),
 
 	     /* constants */
-	     [V1100]       "m"  (V1100[0]),
+	     [V0011]       "m"  (V0011[0]),
 	     [V2222]       "m"  (V2222[0])
 
 	     :
@@ -860,6 +860,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  imagXP = c_alpha * XSums.re + s_alpha * XSums.im;
 
 	}
+
 #else
 
 	{ 
@@ -890,8 +891,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
 	  realXP = s_alpha * U_alpha - c_alpha * V_alpha;
 	  imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
-	  
 	}
+
 #endif
 
       /* if |remainder| > LD_SMALL4 */
