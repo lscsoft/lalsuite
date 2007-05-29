@@ -59,7 +59,7 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
    6: "6-table" version as derived from old CFS code used up to S5R1
    3: "vectorized" version based on "6-table", combined them into 3
 */
-#define SINCOS_VERSION 6
+#define SINCOS_VERSION 2
 #endif
 
 /*----- Macros ----- */
@@ -173,8 +173,8 @@ void LocalComputeFStatFreqBand ( LALStatus *status,
   {
     static int first = !0;
     if (first) {
-      fprintf(stderr,"\n$Revision$ OPT:%d SCV: %d, SCTRIM:%d\n",
-	      EAH_OPTIMIZATION,SINCOS_VERSION,SINCOS_ROUND_METHOD);
+      fprintf(stderr,"\n$Revision$ OPT:%d SCV:%d, SCTRIM:%d\n",
+	      EAH_OPTIMIZATION, SINCOS_VERSION, SINCOS_ROUND_METHOD);
       first = 0;
     }
   }
