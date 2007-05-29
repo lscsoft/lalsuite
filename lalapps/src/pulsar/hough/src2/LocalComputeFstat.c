@@ -48,14 +48,19 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 
 /*---------- optimization dependant switches ----------*/
 
-/* probably the fastest version on all platforms */
-#define local_sin_cos_2PI_LUT local_sin_cos_2PI_LUT_7tab
-
 /* definitely fastest on PowerPC */
 #if (EAH_OPTIMIZATION == 2)
 #define SINCOS_FLOOR
 #endif
 
+#ifndef SINCOS_VERSION
+/* select one of these:
+   2: "original" two-table version like in LAL
+   6: "6-table" version as derived from old CFS code used up to S5R1
+   3: "vectorized" version based on "6-table", combined them into 3
+*/
+#define SINCOS_VERSION 6
+#endif
 
 /*----- Macros ----- */
 /** convert GPS-time to REAL8 */
@@ -122,10 +127,6 @@ int LocalXLALComputeFaFb (Fcomponents*, const SFTVector*, const PulsarSpins,
 			  const SSBtimes*, const AMCoeffs*, const ComputeFParams*);
 
 int local_sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
-int local_sin_cos_2PI_LUT_2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x);
-int local_sin_cos_2PI_LUT_7tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x);
-int local_sin_cos_2PI_LUT_7R4tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x);
-
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -172,8 +173,8 @@ void LocalComputeFStatFreqBand ( LALStatus *status,
   {
     static int first = !0;
     if (first) {
-      fprintf(stderr,"\n$Id$ E@HOPT:%d SCTRIM:%d\n",
-	      EAH_OPTIMIZATION,SINCOS_ROUND_METHOD);
+      fprintf(stderr,"\n$Revision$ OPT:%d SCV: %d, SCTRIM:%d\n",
+	      EAH_OPTIMIZATION,SINCOS_VERSION,SINCOS_ROUND_METHOD);
       first = 0;
     }
   }
@@ -948,14 +949,17 @@ local_sin_cos_LUT_2tab (REAL4 *sinx, REAL4 *cosx, REAL8 x)
 
 
 
-#define LUT_RES         64      /* resolution of lookup-table */
 #define LUT_RES_F	(1.0 * LUT_RES)
 #define OO_LUT_RES	(1.0 / LUT_RES)
 
 #define X_TO_IND	(1.0 * LUT_RES * OOTWOPI )
 #define IND_TO_X	(LAL_TWOPI * OO_LUT_RES)
+
+#if (SINCOS_VERSION == 2)
+
+#define LUT_RES         64      /* resolution of lookup-table */
 int
-local_sin_cos_2PI_LUT_2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
+local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 {
   REAL8 xt;
   INT4 i0;
@@ -1012,66 +1016,10 @@ local_sin_cos_2PI_LUT_2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 } /* local_sin_cos_2PI_LUT() */
 
 
+#elif (SINCOS_VERSION == 6)
 
-
-int local_sin_cos_2PI_LUT_7tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
-
-  /* Lookup tables for fast sin/cos calculation */
-  static REAL8 sinVal[LUT_RES+1];
-  static REAL8 sinVal2PI[LUT_RES+1];
-  static REAL8 sinVal2PIPI[LUT_RES+1];
-  static REAL8 cosVal[LUT_RES+1];
-  static REAL8 cosVal2PI[LUT_RES+1];
-  static REAL8 cosVal2PIPI[LUT_RES+1];
-  static REAL8 diVal[LUT_RES+1];
-
-  static BOOLEAN tabs_empty = 1; /* reset after initializing the sin/cos tables */
-
-  UINT4 i; /* array index */
-  REAL8 d, d2; /* intermediate value  */
-  REAL8 x; /* x limited to [0..1) */
-
-  /* res=10*(params->mCohSFT); */
-  /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
-  /* using three tables with values including PI is simply faster */
-  if ( tabs_empty ) {
-    for (i=0; i <= LUT_RES; i++) {
-      sinVal[i]      = sin((LAL_TWOPI*i)/(LUT_RES));
-      sinVal2PI[i]   = sinVal[i]    * LAL_TWOPI;
-      sinVal2PIPI[i] = sinVal2PI[i] * LAL_PI;
-      cosVal[i]      = cos((LAL_TWOPI*i)/(LUT_RES));
-      cosVal2PI[i]   = cosVal[i]    * LAL_TWOPI;
-      cosVal2PIPI[i] = cosVal2PI[i] * LAL_PI;
-    }
-
-    /* this additional table saves another "costly" division in sin/cos calculation */
-    for (i=0; i <= LUT_RES; i++)
-      diVal[i] = (REAL8)i/(REAL8)(LUT_RES);
-
-    tabs_empty = 0;
-  }
-
-  SINCOS_TRIM_X (x,xin);
-
-  i = x * LUT_RES + .5; /* round-to-nearest */
-  d = x - diVal[i];
-#if 1
-  (*sin2pix) = sinVal[i] + d * (cosVal2PI[i] - d * sinVal2PIPI[i]);
-  (*cos2pix) = cosVal[i] - d * (sinVal2PI[i] + d * cosVal2PIPI[i]);
-#else
-  d2 = d*d;
-  (*sin2pix) = sinVal[i] + d * cosVal2PI[i] - d2 * sinVal2PIPI[i];
-  (*cos2pix) = cosVal[i] - d * sinVal2PI[i] - d2 * cosVal2PIPI[i];
-#endif
-
-  return XLAL_SUCCESS;
-}
-
-
-
-/* Single-precision version, to be validated */
-
-int local_sin_cos_2PI_LUT_7R4tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
+#define LUT_RES 63
+int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
 
   /* Lookup tables for fast sin/cos calculation */
   static REAL4 sinVal[LUT_RES+1];
@@ -1080,13 +1028,13 @@ int local_sin_cos_2PI_LUT_7R4tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
   static REAL4 cosVal[LUT_RES+1];
   static REAL4 cosVal2PI[LUT_RES+1];
   static REAL4 cosVal2PIPI[LUT_RES+1];
-  static REAL4 diVal[LUT_RES+1];
 
   static BOOLEAN tabs_empty = 1; /* reset after initializing the sin/cos tables */
 
   UINT4 i; /* array index */
   REAL4 d, d2; /* intermediate value  */
   REAL4 x; /* x limited to [0..1) */
+  static REAL4 const oo_lut_res = OO_LUT_RES;
 
   /* res=10*(params->mCohSFT); */
   /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
@@ -1102,17 +1050,13 @@ int local_sin_cos_2PI_LUT_7R4tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
       cosVal2PIPI[i] = cosVal2PI[i] * LAL_PI * -1.0;
     }
 
-    /* this additional table saves another "costly" division in sin/cos calculation */
-    for (i=0; i <= LUT_RES; i++)
-      diVal[i] = (REAL4)i/(REAL4)(LUT_RES);
-
     tabs_empty = 0;
   }
 
   SINCOS_TRIM_X (x,xin);
 
   i = x * LUT_RES + .5; /* round-to-nearest */
-  d = x - diVal[i];
+  d = x - i * oo_lut_res;
 #if 1
   (*sin2pix) = sinVal[i] + d * (cosVal2PI[i] + d * sinVal2PIPI[i]);
   (*cos2pix) = cosVal[i] + d * (sinVal2PI[i] + d * cosVal2PIPI[i]);
@@ -1126,12 +1070,12 @@ int local_sin_cos_2PI_LUT_7R4tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
 }
 
 
+#elif (SINCOS_VERSION == 3)
+
 /* Not used or tested (yet). This features a table construction so
    that the calculation that can easily be vectorized (might help...) */
 
-#if 0
-
-int local_sin_cos_2PI_LUT_7R4V2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
+int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
 
   /* Lookup tables for fast sin/cos calculation */
   static REAL4 scTab[LUT_RES+1][2];
@@ -1190,4 +1134,6 @@ int local_sin_cos_2PI_LUT_7R4V2tab (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
   return XLAL_SUCCESS;
 }
 
-#endif /* #if 0 */
+#else  /* SINCOS_VERSION */
+#error no valid SINCOS_VERSION specified
+#endif /* SINCOS_VERSION */
