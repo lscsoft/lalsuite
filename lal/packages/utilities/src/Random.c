@@ -29,7 +29,7 @@ The routine \verb+LALUniformDeviate()+ returns a single random deviate
 distributed uniformly between zero and unity.  
 
 The routine \verb+LALNormalDeviates()+ fills a vector with normal (Gaussian)
-deviates with zero mean and unit variance.
+     deviates with zero mean and unit variance, whereas the function\verb+XLALNormalDeviate+ just returns one normal distributed random number.
 
 \subsubsection*{Operating Instructions}
 
@@ -229,6 +229,28 @@ int XLALNormalDeviates( REAL4Vector *deviates, RandomParams *params )
   return 0;
 }
 
+REAL4 XLALNormalDeviate( RandomParams *params )
+{
+  static const char *func = "XLALNormalDeviate";
+  static LALStatus status;
+  REAL4Vector *deviates=NULL;
+  REAL4 deviate;
+
+  if ( ! params )
+    XLAL_ERROR( func, XLAL_EFAULT );
+
+  /* create a vector */
+  LALSCreateVector( &status, &deviates, 1 );
+
+  /* call the actual function */
+  XLALNormalDeviates( deviates, params );
+  deviate = deviates->data[0];
+
+  /* destroy the vector */
+  LALSDestroyVector( &status, &deviates );
+
+  return deviate;
+}
 
 /*
  *

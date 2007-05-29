@@ -23,6 +23,7 @@
 #define _RANDOM_H
 
 #include <lal/LALDatatypes.h>
+#include <lal/AVFactories.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -110,6 +111,7 @@ RandomParams * XLALCreateRandomParams( INT4 seed );
 void XLALDestroyRandomParams( RandomParams *params );
 REAL4 XLALUniformDeviate( RandomParams *params );
 int XLALNormalDeviates( REAL4Vector *deviates, RandomParams *params );
+REAL4 XLALNormalDeviate( RandomParams *params );
 
 void
 LALCreateRandomParams (
