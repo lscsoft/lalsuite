@@ -250,7 +250,7 @@ int main( int argc, char *argv[] )
     {"inj-file",                required_argument, 0,                'd'},
     {"comment",                 required_argument, 0,                'e'},
     {"output-file",             required_argument, 0,                'f'},
-    {"coire-flag",              required_argument, &coireflg,         1 },
+    {"coire-flag",              no_argument,       &coireflg,         1 },
     {"ligo-srd",                no_argument,       &ligosrd,          1 },
     {"debug-level",             required_argument, 0,                'z'}, 
     {0, 0, 0, 0}
@@ -497,9 +497,11 @@ int main( int argc, char *argv[] )
   XLALCCVectorDivide( detTransDummy->data, unity, resp->data );
   XLALDestroyCOMPLEX8Vector( unity );
 
-  LALCPrintFrequencySeries ( detTransDummy, "transTest.dat" );
-  LALCPrintFrequencySeries ( resp, "respTest.dat" );
-  
+  /*
+  *LALCPrintFrequencySeries ( detTransDummy, "transTest.dat" );
+  *LALCPrintFrequencySeries ( resp, "respTest.dat" );
+  */
+ 
   /* read in injections from injection file */
   /* set endtime to 0 so that we read in all events */
   if ( vrbflg ) fprintf( stdout, "Reading sim_inspiral table of %s\n", injectionFile );
@@ -587,7 +589,6 @@ int main( int argc, char *argv[] )
     }
 
     /* loop over ifo */
-        
     for ( ifoNumber = 1; ifoNumber < 4; ifoNumber++ )
     {
         /* allocate memory and copy the parameters describing the freq series */
@@ -624,7 +625,6 @@ int main( int argc, char *argv[] )
         gpsStartTime.gpsNanoSeconds = thisInjection->geocent_end_time.gpsNanoSeconds;
         chan->epoch = gpsStartTime;
 
-           
 
        if (vrbflg) fprintf(stdout, "offset start time of injection by %f seconds \n", offset ); 
        
@@ -706,12 +706,15 @@ int main( int argc, char *argv[] )
 
        thisSnrsq *= 4*fftData->deltaF;
        thisSnr    = pow(thisSnrsq, 0.5);
-       snrVec[ifoNumber] = thisSnr; 
+       /* Note indexing on snrVec, ifoNumber runs from 1..3 to get source correct,
+        * we must index snrVec 0..2 
+        */ 
+       snrVec[ifoNumber-1] = thisSnr; 
        LAL_CALL( LALDestroyCOMPLEX8FrequencySeries( &status, fftData), &status );
 
        if ( vrbflg ){
           fprintf( stdout, "thisSnrsq %e\n", thisSnrsq );
-          fprintf( stdout, "snrVec    %e\n", snrVec[ifoNumber] );
+          fprintf( stdout, "snrVec    %e\n", snrVec[ifoNumber-1] );
           fflush( stdout );
        }
 
@@ -727,9 +730,9 @@ int main( int argc, char *argv[] )
     destroyCoherentGW( &waveform );
 
     /* store inverse eff snrs in eff_dist columns */
-    thisInjection->eff_dist_h = 1./snrVec[1];
-    thisInjection->eff_dist_g = 1./snrVec[2];
-    thisInjection->eff_dist_l = 1./snrVec[3];
+    thisInjection->eff_dist_h = 1./snrVec[0];
+    thisInjection->eff_dist_g = 1./snrVec[1];
+    thisInjection->eff_dist_l = 1./snrVec[2];
 
     /* store inverse sum of squares snr in eff_dist_t */
     thisCombSnr = pow(statValue, 0.5);
@@ -738,9 +741,9 @@ int main( int argc, char *argv[] )
 
     /* calc inverse bittenL snr for H1H2 and store in eff_dist_v */
     thisCombSnr_H1H2 = 0.;
-    sum = snrVec[1] * snrVec[1] + snrVec[2] * snrVec[2];
-    bitten_H1 = 3 * snrVec[1] -3;
-    bitten_H2 = 3 * snrVec[2] -3;
+    sum = snrVec[0] * snrVec[0] + snrVec[1] * snrVec[1];
+    bitten_H1 = 3 * snrVec[0] -3;
+    bitten_H2 = 3 * snrVec[1] -3;
 
     if (sum < bitten_H1){
        thisCombSnr_H1H2 = sum;
