@@ -553,45 +553,39 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
 #if (EAH_OPTIMIZATION == 1)
 	/* vectorization with common denominator */
-	{ 
 
-	  REAL4 *Xal;
-	  REAL4 U_alpha, V_alpha;
-	  UINT4 l, ve;
-	  REAL4 STn[4];
-	  REAL4 pn[4];
-	  REAL4 qn[4];
-	  REAL4 q_n;
+	{
+	  UINT4 l,ve;
+	  REAL4 *Xal   = (REAL4*)(Xalpha_l+1);
+	  REAL4 STn[4] = {0.0f, 0.0f, Xalpha_l[0].re, Xalpha_l[0].im};
+	  REAL4 pn[4]  = {kappa_max-1.0f, kappa_max-1.0f, kappa_max-2.0f, kappa_max-2.0f};
+	  REAL4 qn[4]  = {1.0f, 1.0f, kappa_max, kappa_max};
 
-          Xal = (REAL4*)(Xalpha_l + 1);
-          STn[0] = Xalpha_l[0].re;
-          STn[1] = Xalpha_l[0].im;
-          STn[2] = Xalpha_l[1].re;
-          STn[3] = Xalpha_l[1].im;
-          pn[0] = kappa_max;
-          pn[1] = kappa_max;
-          pn[2] = kappa_max - 1.0f;
-          pn[3] = kappa_max - 1.0f;
-
-	  for( ve=0; ve<4; ve++ )
-            qn[ve] = pn[ve];
-
-	  for ( l = 1; l <= Dterms; l++ ) {
-	    for( ve=0; ve<4; ve++ ) {
-	      pn[ve] = pn[ve] - 1.0f;                        /* p_(n+1) */
-	      STn[ve] = pn[ve] * STn[ve] + qn[ve] * Xal[ve]; /* S_(n+1) */
-	      qn[ve] *= pn[ve];		                     /* q_(n+1) */
-	    }
+	  for ( l = 0; l < Dterms - 1; l ++ ) {
+	    for ( ve = 0; ve < 4; ve++) {
+	      STn[ve] = pn[ve] * STn[ve] + qn[ve] * Xal[ve];
+	      qn[ve] *= pn[ve];
+	      pn[ve] -= 2.0f;
+            }
 	    Xal += 4;
-          }
+	  }
+	  for ( ve = 0; ve < 4; ve++) {
+	    STn[ve] = pn[ve] * STn[ve] + qn[ve] * Xal[ve];
+	    qn[ve] *= pn[ve];
+	  }
 	  
-	  q_n = qn[0] * qn[2];
-	  U_alpha = (STn[0] * qn[2] + STn[2] * qn[0]) / q_n;
-	  V_alpha = (STn[1] * qn[2] + STn[3] * qn[0]) / q_n;
+	  {
+	    REAL4 U_alpha, V_alpha;
 
-	  realXP = s_alpha * U_alpha - c_alpha * V_alpha;
-	  imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
-	  
+	    for ( ve = 0; ve < 4; ve++)
+	      STn[ve] /= qn[ve];
+
+	    U_alpha = (STn[0] + STn[2]);
+	    V_alpha = (STn[1] + STn[3]);
+
+	    realXP = s_alpha * U_alpha - c_alpha * V_alpha;
+	    imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
+	  }
 	}
 
 #elif (EAH_OPTIMIZATION == 2)
