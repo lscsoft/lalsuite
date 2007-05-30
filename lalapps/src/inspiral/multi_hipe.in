@@ -16,16 +16,9 @@ runs.
 
 Coming soon:
 
-  1.  read in the standard hipe config file to determine parameters,
-  etc.  Modify as needed for particular epoch and write back out in
-  the relevant directory
+  *  write a log file
 
-  2.  set up dags for zero-lag and injection runs in each of the
-  epochs. 
-
-  3.  write a log file
-
-  4.  write a super-dag which would submit the other sub-dags.
+  *  write a super-dag which would submit the other sub-dags.
 
 """
 
@@ -53,7 +46,7 @@ from pylal import readMeta
 def cleanlist(seglist, min_length):
   removals = segments.segmentlist()
   for seg in seglist:
-    if seg.duration() < min_length:
+    if seg.__abs__() < min_length:
       removals.append(seg)
   seglist = seglist - removals
 
