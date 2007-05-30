@@ -1,7 +1,7 @@
 /* ****************************************************************
  * Author: Cokelaer, T., Harry, I. and Sathyaprakash, B. S.
  * ************************************************************** */
-#include "BankEfficiency.h"
+#include "TestRandomBank.h"
 
 /* --- version information --- */
 NRCSID( BANKEFFICIENCYC, "$Id$");
