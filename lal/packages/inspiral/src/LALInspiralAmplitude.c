@@ -62,17 +62,13 @@ LALInspiralRestrictedAmplitude (LALStatus        *status,
   
   ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT((INT4)params->massChoice >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT((INT4)params->massChoice <= 13, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE); 
+  ASSERT((INT4)params->massChoice <= 14, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE); 
   
   if (params->massChoice != totalMassAndEta) 
     {
       LALInspiralParameterCalc(status->statusPtr, params );
       CHECKSTATUSPTR(status);
     }
-  
-  ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT((INT4)params->massChoice >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT((INT4)params->massChoice <= 13, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   
 
   params->signalAmplitude = 4. * params->totalMass  * params->eta   /  (LAL_PC_SI * 1e6 *params->distance / LAL_MRSUN_SI); 
