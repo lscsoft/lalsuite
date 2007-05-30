@@ -40,7 +40,7 @@ from pylal import readMeta
 def cleanlist(seglist, min_length):
   removals = segments.segmentlist()
   for seg in seglist:
-    if seg.duration() < min_length:
+    if abs(seg) < min_length:
       removals.append(seg)
   seglist = seglist - removals
 
@@ -150,6 +150,8 @@ parser.add_option("-S","--source-file",action="store",type="string",\
   default=None, metavar=" SOURCE_FILE", help="external trigger source file" )
 # read in the config file
 parser.add_option("-f","--config-file",action="store",type="string",\
+  default=None, metavar=" FILE", help="use configuration file FILE" )
+parser.add_option("-g","--injection-config",action="store",type="string",\
   default=None, metavar=" FILE", help="use configuration file FILE" )
 parser.add_option("-p", "--log-path",action="store",type="string",\
     metavar=" PATH",help="directory to write condor log file")
@@ -296,28 +298,47 @@ for trigger in opts.triggers:
   os.chdir("../../")
 
   ############################################################################
-  # set up the injection dag for this interval
-  for inj in range(1,opts.ninjections + 1):
+  # create the config parser object and read in the ini file
+  if opts.injection_config:
+    cpinj = ConfigParser.ConfigParser()
+    cpinj.read(opts.injection_config)
+    
+    ############################################################################
+    # set up the injection dag for this interval
+    for injrun in cpinj.sections():
+  
+      # make the injection directory
+      injectiondir = idirectory+"/"+injrun
+      os.mkdir(injectiondir)
+      os.chdir(injectiondir)
+  
+      # update parameters in the config file and write out
+      for ifo in ifolist:
+        cp.set('input',ifo.lower()+'-segments',"../"+ifo+"-injsegs.txt")
+  
+      # set num slides to zero
+      cp.set('input','num-slides','')
+  
+      # set the start and stop seeds from the injection config file
+      for opt in ['exttrig-inj-start','exttrig-inj-stop']:
+        value = cpinj.get(injrun,opt)
+        cp.set('pipeline',opt,value)
+        cpinj.remove_option(injrun,opt)
+  
+      # set the rest of the values that should go into section inspinj
+      for (opt,value) in cpinj.items(injrun):
+        cp.set('inspinj',opt,value)
 
-    # make the injection directory
-    injectiondir = idirectory+"/injections%02d" % inj
-    os.mkdir(injectiondir)
-    os.chdir(injectiondir)
+      # the start and ent time for the injections that are made
+      # should be a segment adjacent to the on-source segment. It's
+      # convenient to do this here since it needs a calculation
+      cp.set('inspinj','gps-start-time',(trigger-120-180))
+      cp.set('inspinj','gps-end-time',(trigger-120))
+      cp.write(file("config.ini",'w'))
 
-    # update parameters in the config file and write out
-    for ifo in ifolist:
-      cp.set('input',ifo.lower()+'-segments',"../"+ifo+"-injsegs.txt")
-    cp.set('input','num-slides','')
-    cp.set('pipeline','exttrig-inj-start',1)
-    cp.set('pipeline','exttrig-inj-stop',1000)
-    cp.set('inspinj','gps-start-time',(trigger-120-180))
-    cp.set('inspinj','gps-end-time',(trigger-120))
-    cp.set('inspinj','source-file',"../"+opts.source_file)
-    cp.write(file("config.ini",'w'))
-
-    # generate the dag
-    os.system("lalapps_inspiral_hipe " + hipe_arguments)
-    os.chdir("../../")
+      # generate the dag
+      os.system("lalapps_inspiral_hipe " + hipe_arguments)
+      os.chdir("../../")
 
   # Ultimately, we would like to construct a dag to allow running
   # these sub dags. For now,  we'll do it by hand .....
