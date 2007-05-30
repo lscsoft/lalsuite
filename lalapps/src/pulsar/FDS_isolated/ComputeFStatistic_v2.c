@@ -109,6 +109,7 @@ typedef struct {
   AntennaPatternMatrix Mmunu;		/**< antenna-pattern matrix Mmunu = 0.5* Sinv*Tsft * [ Ad, Cd; Cd; Bd ] */
 } FstatCandidate;
 
+
 /** moving 'Scanline window' of candidates on the scan-line,
  * which is used to find local 1D maxima.
  */
@@ -250,8 +251,6 @@ int main(int argc,char *argv[])
   Fcomponents Fstat = empty_Fcomponents;
   PulsarDopplerParams dopplerpos = empty_PulsarDopplerParams;		/* current search-parameters */
   FstatCandidate loudestFCand = empty_FstatCandidate, thisFCand = empty_FstatCandidate;
-  FstatCandidate scanLineBuffer[3];
-  FstatCandidate *writeCand;
 
   ConfigVariables GV = empty_ConfigVariables;		/**< global container for various derived configuration settings */
 
@@ -308,7 +307,6 @@ int main(int argc,char *argv[])
   tickCounter = 0;
   clock0 = time(NULL);
 
-  memset ( scanLineBuffer, 0, sizeof ( scanLineBuffer ) );
   while ( XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0 )
     {
       /* main function call: compute F-statistic for this template */
@@ -369,6 +367,8 @@ int main(int argc,char *argv[])
       if ( XLALCenterIsLocalMax ( GV.scanlineWindow ) 					/* must be 1D local maximum */
 	   && (2.0 * GV.scanlineWindow->center->Fstat.F >= uvar_TwoFthreshold) )	/* fixed threshold */
 	{
+	  FstatCandidate *writeCand = GV.scanlineWindow->center;
+
 	  /* insert this into toplist if requested */
 	  if ( GV.FstatToplist  )			/* dynamic threshold */
 	    {
