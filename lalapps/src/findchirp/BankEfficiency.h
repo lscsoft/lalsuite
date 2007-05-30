@@ -45,42 +45,23 @@
 
 #define MAXIFO 2
 #define BANKEFFICIENCY_PARAMS_ROW \
-"        %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%u"
+"         %f,%f,,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%u"
 
 
 #define BANKEFFICIENCY_PARAMS_ROW_SPACE \
-"         %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %u"
-
+"         %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %u "
 
 /*do not use capital here for future mysql migration */
 #define PRINT_LIGOLW_XML_BANKEFFICIENCY(fp) ( \
 fputs( "   <Table Name=\"bankefficiencygroup:bankefficiency:table\">\n", fp) == EOF || \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi0\"                Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi3\"                Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:beta\"                Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi0_sim\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi3_sim\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:beta_sim\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau0\"                Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau3\"                Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau0_sim\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau3_sim\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_x_sim\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_y_sim\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_z_sim\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_x_sim\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_y_sim\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_z_sim\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:orbit_theta0_sim\"    Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:orbit_phi0_sim\"      Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_x\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_y\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_z\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_x\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_y\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_z\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:orbit_theta0\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:orbit_phi0\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ffinal\"              Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ffinal_sim\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass1_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
@@ -290,8 +271,6 @@ typedef struct{
   REAL4 tau3_trigger;
   REAL4 psi0_trigger;
   REAL4 psi3_trigger;
-  REAL4 beta_trigger;
-  REAL4 beta_inject;
   REAL4 psi0_inject;
   REAL4 psi3_inject;
   REAL4 fend_trigger;
@@ -338,8 +317,7 @@ typedef struct{
  * */
 void
 KeepHighestValues(OverlapOutputIn in , 
-		  OverlapOutputIn *out,
-		  InspiralTemplate insptmplt
+		  OverlapOutputIn *out
 		  );
 
 
@@ -360,16 +338,6 @@ LALCreateBCVFilters(REAL4Vector 	*Filter1,
 		    REAL4 		psi0,
 		    REAL4 		psi3);
 
-void 
-LALCreateBCVSpinFilters(REAL4Vector 	*FilterBCVSpin1,
-			REAL4Vector 	*FilterBCVSpin2,
-			REAL4Vector 	*FilterBCVSpin3,
-			InspiralWaveOverlapIn   *overlapin,
-			BEPowerVector  *powerVector,
-			BEMoments      *moments,
-			UINT4 		kMin,
-			UINT4 		kMax);
-		
 void 
 LALBankPrintAscii(MetadataTable          templateBank ,
 		  UINT4                  numCoarse,
@@ -413,17 +381,6 @@ LALWaveOverlapBCV(LALStatus 		  *status,
 		  UserParametersIn        userParam, 
 		  OverlapOutputIn         *OverlapOutput,
 		  BEMoments               *moments);
-
-void
-LALWaveOverlapBCVSpin(LALStatus 		  *status,
-		      REAL4Vector             *correlation,
-		      InspiralWaveOverlapIn   *overlapin,
-		      REAL4Vector             *Filter1, 
-		      REAL4Vector             *Filter2,
-		      REAL4Vector             *Filter3,
-		      UserParametersIn        userParam, 
-		      OverlapOutputIn         *OverlapOutput
-		      );
 
 
 /* Function to store the moments needed by the BCV overlap process 
@@ -644,23 +601,6 @@ LALInspiralOverlapBCV(
     OverlapOutputIn             *output,
     REAL4Vector                 *correlation,
     BEMoments                   *moments);
-
-void 
-LALInspiralOverlapBCVSpin(
-    LALStatus                   *status,
-    InspiralTemplate            *list,
-    BEPowerVector               *powerVector,
-    UserParametersIn            *userParam, 
-    RandomInspiralSignalIn      *randIn,
-    REAL4Vector                 *Filter1,
-    REAL4Vector                 *Filter2,
-    REAL4Vector                 *Filter3,
-    InspiralWaveOverlapIn       *overlapin,
-    OverlapOutputIn             *output,
-    REAL4Vector                 *correlation,
-    BEMoments                   *moments);
-
-
 
 
 void BEParseGetInt( CHAR **argv, INT4 *index, INT4 *data);
