@@ -193,10 +193,11 @@ int main( int argc, char *argv[] )
   REAL4TimeSeries               *chan          = NULL;
   RealFFTPlan                   *pfwd          = NULL;
   COMPLEX8FrequencySeries       *fftData       = NULL;
-  REAL4                          thisSnrsq     = 0;
-  REAL4                          thisSnr       = 0;
-  REAL4                          thisCombSnr   = 0;
-  REAL4                          snrVec[3];
+  REAL8                          thisSnrsq     = 0;
+  REAL8                          thisSnr       = 0;
+  REAL8                          thisCombSnr   = 0;
+  REAL8                          snrVec[3];
+  REAL8                          dynRange      = 1./(3.0e-23);
 
   /* needed for inj */
   CoherentGW                 waveform;
@@ -683,26 +684,25 @@ int main( int argc, char *argv[] )
            REAL8 sim_psd_value;
            freq = fftData->deltaF * k;
            LALLIGOIPsd( NULL, &sim_psd_value, freq ); 
-           sim_psd_value *= 9.0e-46; 
 
-           thisSnrsq += fftData->data->data[k].re * fftData->data->data[k].re / sim_psd_value;
-           thisSnrsq += fftData->data->data[k].im * fftData->data->data[k].im / sim_psd_value;
-           /*thisSnrsq += fftData->data->data[k].re * fftData->data->data[k].re * (pow(10,46)/9.) / sim_psd_value;
-           *thisSnrsq += fftData->data->data[k].im * fftData->data->data[k].im * (pow(10,46)/9.) / sim_psd_value;
-           */
+           thisSnrsq += ((fftData->data->data[k].re * dynRange) * 
+                      (fftData->data->data[k].re * dynRange)) / sim_psd_value;
+           thisSnrsq += ((fftData->data->data[k].im * dynRange) * 
+                      (fftData->data->data[k].im * dynRange)) / sim_psd_value;
            }
        }
        else {
           if (vrbflg) fprintf( stdout, "using input spectra \n");
           for ( k = kLow; k < kHi; k++ )
           {
-           thisSnrsq += fftData->data->data[k].re * fftData->data->data[k].re  /
-              thisSpec->data->data[k];
-           thisSnrsq += fftData->data->data[k].im * fftData->data->data[k].im /
-              thisSpec->data->data[k];
-          } 
+           thisSnrsq += ((fftData->data->data[k].re * dynRange) * 
+              (fftData->data->data[k].re * dynRange))  /
+              (thisSpec->data->data[k] * dynRange * dynRange);
+           thisSnrsq += ((fftData->data->data[k].im * dynRange) * 
+              (fftData->data->data[k].im * dynRange)) /
+              (thisSpec->data->data[k] * dynRange * dynRange);
+        } 
       }
-
 
        thisSnrsq *= 4*fftData->deltaF;
        thisSnr    = pow(thisSnrsq, 0.5);
@@ -832,8 +832,10 @@ int main( int argc, char *argv[] )
      LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, sngl_inspiral_table), &status);
      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputTable, sngl_inspiral_table), &status);
      LAL_CALL( LALEndLIGOLwXMLTable  ( &status, &xmlStream), &status);
-     LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlStream), &status);
   } 
+
+  /* close the xml file */ 
+  LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlStream), &status);
 
   /* Freeing memory */
   LAL_CALL( LALDestroyREAL4TimeSeries( &status, chan), &status );
