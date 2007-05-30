@@ -872,6 +872,8 @@ parser.add_option("-o", "--output-segs",action="store_true",default=False,\
 
 parser.add_option("-x","--dax", action="store_true", default=False,\
     help="create a dax instead of a dag")
+parser.add_option("-w", "--write-script", action="store_true", default=False,
+  help="write the workflow to a locally executable script")
 
 command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
@@ -1668,6 +1670,9 @@ for ifos in ifo_coincs:
 # Step 10: Write out the DAG, help message and log file
 dag.write_sub_files()
 dag.write_dag()
+
+if opts.write_script:
+  dag.write_script()
 
 ##############################################################################  
 # write a message telling the user that the DAG has been written
