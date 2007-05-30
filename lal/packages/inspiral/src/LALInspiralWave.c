@@ -167,7 +167,7 @@ LALInspiralWave(
            CHECKSTATUSPTR(status);
 	   break;
       case TaylorF2:
-	   LALInspiralStationaryPhaseApprox2(status->statusPtr, signal, params); 
+           LALInspiralStationaryPhaseApprox2(status->statusPtr, signal, params); 
            CHECKSTATUSPTR(status);
 	   break;
       case PadeF1:
