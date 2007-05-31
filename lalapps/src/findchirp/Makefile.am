@@ -30,8 +30,8 @@ INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 EXTRA_DIST = 	exc_resp.c ivana.c inspmultiawg.c chirplen.c TestRandomBank.c BankEfficiency.c BankEfficiency.h \
-		BE_create_script.py TestRandonBank.h
-
+		BE_create_script.py TestRandomBank.h
+                
 CLEANFILES = 	lalapps_BankEfficiency  \
 		lalapps_InspiralOverlap
 
