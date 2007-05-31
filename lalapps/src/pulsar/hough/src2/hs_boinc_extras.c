@@ -279,7 +279,10 @@ static int is_zipped ( const char *fname ) {
   char file_header[4];
 
   if ( (fp = fopen( fname, "rb")) == NULL ) {
-    LogPrintf (LOG_CRITICAL, "Failed to open '%s' for reading.\n", fname);
+    LogPrintf (LOG_CRITICAL, "Failed to open '%s' for reading: %d: %s\n", fname,errno,strerror(errno));
+#ifdef _MSC_VER
+      LogPrintf (LOG_CRITICAL, "Windows system call returned: %d\n", _doserrno);
+#endif
     return -1;
   }
   if ( 4 != fread ( file_header, sizeof(char), 4, fp ) ) {
@@ -946,13 +949,13 @@ int init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
   fclose(fp);
 
   if (scanned != 6) {
-    LogPrintf (LOG_DEBUG,  "ERROR reading checkpoint\n");
+    LogPrintf (LOG_DEBUG,  "ERROR reading checkpoint (read %d of 6 values)\n", scanned);
     remove(cptfilename);
     return(-1);
   }
 
   if (total_read != total) {
-    LogPrintf (LOG_DEBUG,  "ERROR reading checkpoint\n");
+    LogPrintf (LOG_DEBUG,  "ERROR reading checkpoint: skypoints inconsistent (%ul != %ul)\n", total_read, total);
     remove(cptfilename);
     return(-1);
   }
@@ -1002,7 +1005,11 @@ static void write_checkpoint () {
 	    cptf->checksum, cptf->bytes);
     fclose(fp);
   } else {
-    LogPrintf (LOG_CRITICAL,  "ERROR: Couldn't write checkpoint file %s\n", cptfilename);
+    LogPrintf (LOG_CRITICAL,  "ERROR: Couldn't write checkpoint file %s: %d: %s\n",
+	       cptfilename,errno,strerror(errno));
+#ifdef _MSC_VER
+      LogPrintf (LOG_CRITICAL, "Windows system call returned: %d\n", _doserrno);
+#endif
   }
 }
 
