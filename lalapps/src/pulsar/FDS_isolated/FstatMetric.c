@@ -405,21 +405,40 @@ main(int argc, char *argv[])
 	  {
 	    REAL8 dkX, dkY, dom0, dom1; 	/* 'canonical' Doppler-variables */
 	    gsl_vector *dopplerOffsetCanon;
-	    REAL8 dnx, dny, dnz, dnX, dnY;
-	    REAL8 sind, sina, cosd, cosa, sineps, coseps;
+	    REAL8 n1x, n1y, n1z, n2x, n2y, n2z, dnx, dny, dnz, dnX, dnY;
+	    REAL8 sind1, sina1, cosd1, cosa1, sind2, sina2, cosd2, cosa2;
+	    REAL8 sineps, coseps;
 	    REAL8 Tspan = uvar.duration;
 	    REAL8 VT = LAL_TWOPI * LAL_AU_SI /  LAL_YRSID_SI * Tspan;
 
 	    /* ----- translate Doppler-offsets into 'canonical coords ----- */
+	    if ( config.edat->leap < 0 )	/* signals that we're dealing with LISA */
+	      {
+		sineps = 0; coseps = 1;	/* already working in ecliptic coords */
+	      }
+	    else
+	      {
+		sineps = sin ( LAL_IEARTH ); coseps = cos ( LAL_IEARTH );
+	      }
 
-	    sind = sin(uvar.Delta); cosd = cos(uvar.Delta);
-	    sina = sin(uvar.Alpha); cosa = cos(uvar.Alpha);
-	    sineps = sin ( LAL_IEARTH ); coseps = cos ( LAL_IEARTH );
+	    sind1 = sin(uvar.Delta); cosd1 = cos(uvar.Delta);
+	    sina1 = sin(uvar.Alpha); cosa1 = cos(uvar.Alpha);
 
-	    /* sky-pos offset in equatorial coords */
-	    dnx = - cosd * sina * uvar.dAlpha - sind * cosa * uvar.dDelta;
-	    dny =   cosd * cosa * uvar.dAlpha - sind * sina * uvar.dDelta;
-	    dnz =   cosd * uvar.dDelta;
+	    sind2 = sin(uvar.Delta + uvar.dDelta); cosd2 = cos(uvar.Delta + uvar.dDelta);
+	    sina2 = sin(uvar.Alpha + uvar.dAlpha); cosa2 = cos(uvar.Alpha + uvar.dAlpha);
+
+
+	    n1x = cosa1 * cosd1;
+	    n1y = sina1 * cosd1;
+	    n1z = sind1;
+
+	    n2x = cosa2 * cosd2;
+	    n2y = sina2 * cosd2;
+	    n2z = sind2;
+	    /* sky-pos offset in input sky-coords */
+	    dnx = n2x - n1x;
+	    dny = n2y - n1y;
+	    dnz = n2z - n1z;
 
 	    /* translate into ecliptic corrds */
 	    dnX = dnx;
