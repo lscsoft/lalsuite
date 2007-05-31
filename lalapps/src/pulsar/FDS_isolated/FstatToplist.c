@@ -646,7 +646,7 @@ int fstat_cpt_file_read (FStatCheckpointFile*cptf, UINT4 checksum_should, UINT4 
 	       checksum_should, checksum_read);
     rewind(cptf->fp);
     clear_toplist(cptf->list);
-    return(bytes);
+    return(-1);
   }
 
   if (ftell(cptf->fp) > bytes) {
