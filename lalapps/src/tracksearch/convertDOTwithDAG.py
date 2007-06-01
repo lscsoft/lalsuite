@@ -83,3 +83,4 @@ for entry in newDotData:
     newDot_fp.write(entry+'\n')
 newDot_fp.close()    
         
+ 

@@ -180,3 +180,4 @@ void QuickDump_Data(TSSearchParams,TrackSearchOut,CHAR*);
 void fakeDataGeneration(LALStatus*,REAL4TimeSeries*,INT4,INT4);
 
 #endif
+ 

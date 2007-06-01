@@ -1386,3 +1386,4 @@ def generateFileList(inputTXT):
         print "Error with getting candidate information from: ",absPathFilename
         objList=[]
     return objList
+ 

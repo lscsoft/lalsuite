@@ -423,3 +423,4 @@ while (index1 <= jobSetCache.__len__()-1):
     fp.close()
     index1=index1+setSize
 print 'Done writing TSA map sets!'
+ 
