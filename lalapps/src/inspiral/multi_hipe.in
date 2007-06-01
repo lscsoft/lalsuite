@@ -16,9 +16,16 @@ runs.
 
 Coming soon:
 
-  *  write a log file
+  1.  read in the standard hipe config file to determine parameters,
+  etc.  Modify as needed for particular epoch and write back out in
+  the relevant directory
 
-  *  write a super-dag which would submit the other sub-dags.
+  2.  set up dags for zero-lag and injection runs in each of the
+  epochs. 
+
+  3.  write a log file
+
+  4.  write a super-dag which would submit the other sub-dags.
 
 """
 
@@ -136,7 +143,7 @@ that we need with a note about its current status:
 """
 parser = OptionParser( usage )
 
-parser.add_option("-v", "--verbose", action="store_true",default=False,\
+parser.add_option("-q", "--verbose", action="store_true",default=False,\
   help="make things verbose" )
 parser.add_option("-H","--h1-segments",action="store",type="string",\
   default=None, metavar=" H1_SEGMENTS", help="H1 input segment to read" )
@@ -144,26 +151,100 @@ parser.add_option("-K","--h2-segments",action="store",type="string",\
   default=None, metavar=" H2_SEGMENTS", help="H2 input segment to read" )
 parser.add_option("-L","--l1-segments",action="store",type="string",\
   default=None, metavar=" L1_SEGMENTS", help="L1 input segment to read" )
-parser.add_option("-s","--start-time",action="store",type="int",\
+parser.add_option("-m","--start-time",action="store",type="int",\
     default=None, metavar=" START TIME",\
     help="start time of search")
 parser.add_option("-e","--end-time",action="store",type="int",\
     default=None, metavar=" END TIME",\
     help="end time of search")
-parser.add_option("-i","--interval",action="store",type="int",\
+parser.add_option("-n","--interval",action="store",type="int",\
     default=None, metavar=" INTERVAL",\
     help="length of each interval to be analyzed separately")
-parser.add_option("-j","--ninjections",action="store",type="int",\
+parser.add_option("-y","--ninjections",action="store",type="int",\
     default=0, metavar=" NINJ",\
     help="Number of injection runs to set up")
 # read in the config file
-parser.add_option("-f","--config-file",action="store",type="string",\
+parser.add_option("-f","--multi-hipe-config-file",action="store",type="string",\
   default=None, metavar=" FILE", help="use configuration file FILE" )
+#parser.add_option("-p", "--log-path",action="store",type="string",\
+    #metavar=" PATH",help="directory to write condor log file")
+# Add some plotting capabilities to check things
+parser.add_option("-Y", "--plot-segments", action="store_true",default=False,\
+  help="plot segments for each interval with original segments" )
+parser.add_option("-v", "--version",action="store_true",default=False,\
+    help="print version information and exit")
+
+parser.add_option("-u", "--user-tag",action="store",type="string",\
+    default=None,metavar=" USERTAG",\
+    help="tag the jobs with USERTAG (overrides value in ini file)")
+
+parser.add_option("-g", "--g1-data",action="store_true",default=False,\
+    help="analyze g1 data")
+parser.add_option("-a", "--h1-data",action="store_true",default=False,\
+    help="analyze h1 data")
+parser.add_option("-b", "--h2-data",action="store_true",default=False,\
+    help="analyze h2 data")
+parser.add_option("-l", "--l1-data",action="store_true",default=False,\
+    help="analyze l1 data")
+
+parser.add_option("-S", "--one-ifo",action="store_true",default=False,\
+    help="analyze single ifo data (not usable for GEO)")
+parser.add_option("-D", "--two-ifo",action="store_true",default=False,\
+    help="analyze two interferometer data")
+parser.add_option("-T", "--three-ifo",action="store_true",default=False,\
+    help="analyze three interferometer data")
+parser.add_option("-Q", "--four-ifo",action="store_true",default=False,\
+    help="analyze four intereferometer data")
+
+parser.add_option("-A", "--analyze-all",action="store_true",default=False,\
+    help="analyze all ifos and all data (over-rides above)")
+
+parser.add_option("-d", "--datafind",action="store_true",default=False,\
+    help="run LSCdataFind to create frame cache files")
+parser.add_option("-t", "--template-bank",action="store_true",default=False,\
+    help="run lalapps_tmpltbank to generate template banks")
+parser.add_option("-i", "--inspiral" ,action="store_true",default=False,\
+    help="run lalapps_inspiral (or lalapps_ring) to generate triggers")
+parser.add_option("-r", "--ringdown" ,action="store_true",default=False,\
+    help="run lalapps_ring insted of lalapps_inspiral")
+parser.add_option("-c", "--coincidence",action="store_true",default=False,\
+    help="run lalapps_thinca to test for coincidence")
+parser.add_option("-U", "--td-follow-bank", action="store_true",default=False,\
+    help="Run tmpltbank for TD follow-up")
+parser.add_option("-B", "--trigbank",action="store_true",default=False,\
+    help="run lalapps_trigbank for banks of coinc triggers")
+parser.add_option("-V", "--inspiral-veto",action="store_true",default=False,\
+    help="run lalapps_inspiral with vetos")
+parser.add_option("-W", "--td-follow-inspiral",action="store_true",\
+    default=False,help="run lalapps_inspiral for TD follow-up")
+parser.add_option("-C", "--second-coinc" ,action="store_true",default=False,\
+    help="run lalapps_thinca on the inspiral veto triggers")
+parser.add_option("-j", "--coherent-bank",action="store_true",default=False,\
+    help="run lalapps_coherentbank to make coherent bank")
+parser.add_option("-k", "--coherent-inspiral",action="store_true",
+    default=False,help="run lalapps_coherent_inspiral for coherent analysis")
+parser.add_option("-s", "--sire",action="store_true",default=False,\
+    help="do sires to sweep up triggers")
+
+parser.add_option("-R", "--read-cache",action="store_true",default=False,\
+    help="read cache file from ini-file (if LSCDataFind is broken)")
+
+parser.add_option("-P", "--priority",action="store",type="int",\
+    metavar=" PRIO",help="run jobs with condor priority PRIO")
+
+
+#parser.add_option("-f", "--config-file",action="store",type="string",\
+   # metavar=" FILE",help="use configuration file FILE")
+
 parser.add_option("-p", "--log-path",action="store",type="string",\
     metavar=" PATH",help="directory to write condor log file")
-# Add some plotting capabilities to check things
-parser.add_option("-P", "--plot-segments", action="store_true",default=False,\
-  help="plot segments for each interval with original segments" )
+
+parser.add_option("-o", "--output-segs",action="store_true",default=False,\
+    help="output the segment lists of analyzed data")
+
+parser.add_option("-x","--dax", action="store_true", default=False,\
+    help="create a dax instead of a dag")
+
 
 ( opts , args ) = parser.parse_args()
 
@@ -171,7 +252,7 @@ parser.add_option("-P", "--plot-segments", action="store_true",default=False,\
 ##############################################################################
 # create the config parser object and read in the ini file
 cp = ConfigParser.ConfigParser()
-cp.read(opts.config_file)
+cp.read(opts.multi_hipe_config_file)
 
 ##############################################################################
 # get the pad and chunk lengths from the values in the ini file
@@ -218,6 +299,16 @@ if opts.l1_segments:
   tmplist = segmentsUtils.fromsegwizard(file(opts.l1_segments))
   segdict["L1"] = cleanlist(tmplist, minsciseg)
   ifolist.append("L1")
+################################################################################
+# Setting the options for lalapps_inspiral_hipe 
+################################################################################
+multi_hipe_options = ["verbose", "h1_segments", "h2_segments", "l1_segments", "start_time", "end_time", "interval", "ninjections", "multi_hipe_config_file", "plot_segments"]
+
+
+hipe_arguments_tmp=" ".join("--%s %s" % (name.replace("_","-"), value) for name, value in opts.__dict__.items() if value is not None and value is not False and name not in multi_hipe_options)
+
+hipe_arguments=hipe_arguments_tmp + " --config-file config.ini"
+print hipe_arguments
 
 ##############################################################################
 # loop over the intervals, constructing overlapping segment lists,
@@ -309,11 +400,11 @@ for interval in search_epochs:
   # sub-directory and then run the dag generation script.  The exact
   # arguments to that script could be a problem, but we'll deal with
   # that later.  For now, we want to try it.
-  hipe_arguments = " --h1-data --h2-data --l1-data --two-ifo --three-ifo"
-  hipe_arguments += " --output-segs --log-path " + opts.log_path
-  hipe_arguments += " --config-file config.ini --datafind --template-bank"
-  hipe_arguments += " --inspiral --coincidence --trigbank --inspiral-veto"
-  hipe_arguments += " --second-coinc"
+  #hipe_arguments = " --h1-data --h2-data --l1-data --two-ifo --three-ifo"
+  #hipe_arguments += " --output-segs --log-path " + opts.log_path
+  #hipe_arguments += " --config-file config.ini --datafind --template-bank"
+  #hipe_arguments += " --inspiral --coincidence --trigbank --inspiral-veto"
+  #hipe_arguments += " --second-coinc"
 
   cp.set('input','h1-segments',"../H1_selectedsegs.txt")
   cp.set('input','h2-segments',"../H2_selectedsegs.txt")
