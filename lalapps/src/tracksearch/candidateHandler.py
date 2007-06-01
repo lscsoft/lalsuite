@@ -118,9 +118,8 @@ parser.add_option("-p","--print",dest="print2file",
                   help="This option states that files specified with the --file option should be printed to a similiar list of coordinate pairs that may be plotted using some external X interface, such as gnuplot. To show you a visual representation of the candidates found.  THIS OPTION NOT YET IMPLEMENTED!"
                   )
 parser.add_option("-x","--stats",dest="stats",
-                  default=False,
-                  action="store_true",
-                  help="Determines the stats of the candidates present in the file it returns to the screen: meanP, meanL, stdP, stdL, minL,minP,minP,maxP. Found in the specified candidate file."
+                  default='',
+                  help="Determine the specified stats for all candidates in input file for variable in question.  See the -T options variable labels for explaination.  This result is written out to the screen as mean,min,max,std.  To measure stats of more than one trait use a comma seperated list P,L as input args. FUNCTIONALITY NOT IMPLEMENTED YET!"
                   )
 parser.add_option("-v","--verbose",dest="verbose",
                   default=False,
@@ -136,6 +135,7 @@ outfile=str(options.outfile)
 dumpSummaryScreen=bool(options.dumpSummaryScreen)
 dumpSummaryDisk=bool(options.dumpSummaryDisk)
 verboseSwitch=bool(options.verbose)
+measureStats=str(options.stats)
 if verboseSwitch:
     print "Setting verbose mode to candidateHandler call."
     
@@ -211,11 +211,11 @@ elif ((expThreshold != "") and (canList.__len__() >=1)):
             pathName=''
             if (outfile != "") and (canList.__len__() == 1):
                 #Prepend Threshold label to outfile
-                if expThresholdList.__len__()>1:
+                if expThresholdLIST.__len__()>1:
                     outfile=singleThreshold+outfile
                 candidateResults.writefile(outfile)
-                if verboseSwitch:
-                    print "Incompatible combintation of summary flag and multile thresholds. Summary not written."
+                if dumpSummaryDisk:
+                    candidateResults.writeSummary(outfile)
             else:
                 pathName=os.path.dirname(entry)
                 saveFiles=pathName+'/Threshold:'+str(singleThresholdName)+':'+os.path.basename(entry)

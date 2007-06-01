@@ -329,9 +329,9 @@ class tracksearchTimeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
                 self.add_ini_opts(cp,sec)
             self.injectFile=cp.get('tracksearchinjection','inject_file')
             self.add_opt('inject_file',os.path.basename(self.injectFile))
-            self.add_condor_cmd('should_transfer_files','yes')
-            self.add_condor_cmd('when_to_transfer_output','on_exit')
             self.add_condor_cmd('transfer_input_files',self.injectFile)
+        self.add_condor_cmd('should_transfer_files','yes')
+        self.add_condor_cmd('when_to_transfer_output','on_exit')
         #Read expected job sampling rate
         sampleRate=float(cp.get('tracksearchtime','sample_rate'))
         #Read expected TF overlapping percentage

@@ -105,8 +105,10 @@ for block in allData:
     tracksearchBlock.writePipelineDAG()
         
 print "We prepared "+str(allData.__len__())+" search DAGs."
+print "They should be found in :",cp.get('filelayout','dagpath')
 if allData.__len__() == 0:
     print "Please check your segment list."
+    print "Also check INI files option in section [layerconfig]"
     os.abort()
 sys.exit(0)
 
