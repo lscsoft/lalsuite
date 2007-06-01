@@ -692,6 +692,9 @@ class candidateList:
         self.freqWidth=float(avgF)
         ans=str("%9.9f"%float(avgT)).split('.')
         self.gpsWidth=gpsInt(ans[0],ans[1])
+        if self.verboseMode:
+            outString='Found: FRes %2.3f TRes %s'%(self.freqWidth,self.gpsWidth.display())
+            print outString
     #End def newFindBinWidths
     
     def OLD_findBinWidths(self):
@@ -1111,12 +1114,15 @@ class candidateList:
         return summary
     #End dumpCandidateKurveSummary()
 
-    def writeSummary(self):
+    def writeSummary(self,override=''):
         """
         Methods to write summary to disk for viewing
         Start Time, Stop Time, Start F, Stop F, Length,Power,Duration,Bandwidth
         """
-        sourceFile=self.filename[0]
+        if override=='':
+            sourceFile=self.filename[0]
+        else:
+            sourceFile=override
         outRoot,outExt=os.path.splitext(sourceFile)
         outFile=outRoot+'.summary'
         summaryData=self.dumpCandidateKurveSummary()
@@ -1252,13 +1258,13 @@ class candidateList:
             for line in self.getGnuplotPixelList(0):
                 output_fp.write(format2C%(line[0],line[1]))
         elif style.lower() == 'tf+time':
-            #Take candidate object recorded filename
-            fTime=str(os.path.basename(self.filename[0]).split(':')[2])
+            fTime=str(pixelList[0][0])
+            A=0
+            B=0
             if fTime.__contains__(','):
                 [A,B]=fTime.split(',')
-            elif fTime.isdigit():
-                A=fTime
-                B=0
+            elif fTime.__contains__('.'):
+                [A,B]=fTime.split('.')
             else:
                 A=0
                 B=0

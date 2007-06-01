@@ -240,7 +240,10 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
   const LALUnit     strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
   const LIGOTimeGPS        gps_zero = LIGOTIMEGPSZERO;
 
-
+  /* 31May07
+   * Note to self: Tina please double check that data in units
+   * structure is properly migrated though function call...
+   */
   if (params.verbosity == printFiles)
     {
       print_lalUnit(dataSet->sampleUnits,"EntireInputDataSet_Units.diag");
@@ -467,10 +470,19 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
   if (injectSet != NULL)
     {
       if (params.verbosity > quiet)
-	printf("Making requested injections.\n");
+	{
+	  printf("Making requested injections.\n");
+	  fprintf(stderr,"If frame was REAL8 data converted to REAL4 data.\n");
+	  fprintf(stderr,"Potential problem with possibly prefactored input data.");
+	}
       if (params.verbosity >= printFiles)
 	print_real4tseries(dataSet,"PreInjectDataSet.diag");
-
+      /*
+       * NOTE TO SELF: Tina add code to compare any factor in the dataSet
+       * units structure and factor the injected data appropriately to
+       * match the input data (dataSet).  This is bug affected by the
+       * REAL8->REAL4 conversions in frame reading code only. (So far)
+       */
       for (i=0,j=0;
 	   ((i<injectSet->data->length)&&(j<dataSet->data->length));
 	   i++,j++)
@@ -1693,6 +1705,12 @@ void LALappsGetFrameData(LALStatus*          status,
 	    {
 	      print_real8tseries(convertibleREAL8Data,"FRAME_READER_2_PreFactoredREAL8.diag");
 	      print_lalUnit(convertibleREAL8Data->sampleUnits,"FRAME_READER_2_PreFactoredREAL8_Units.diag");
+	    }
+	  if (params->verbosity >= verbose)
+	    {	    
+	      fprintf(stderr,"We are factoring the input data for casting.\n");
+	      fprintf(stderr,"Factoring out : 10e20\n");
+	      fprintf(stderr,"Factor place in data units structure.\n");
 	    }
 	  /* Factoring out 10^-20 and to unitsstructure! */
 	  for (i=0;i<convertibleREAL8Data->data->length;i++)

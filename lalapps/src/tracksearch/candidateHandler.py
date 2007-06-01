@@ -223,7 +223,7 @@ elif ((expThreshold != "") and (canList.__len__() >=1)):
                 if verboseSwitch:
                     print "Wrote file :",saveFiles
             if dumpSummaryDisk:
-                candidateResults.writeSummary()
+                candidateResults.writeSummary(saveFiles)
             del candidateResults
         del entry
     del candidateObject
