@@ -354,7 +354,7 @@ dag.set_dag_file(os.path.splitext(filenames[0])[0])
 if options.do_injections:
 	if options.verbose:
 		print >>sys.stderr, "Building lalapps_binj jobs ..."
-	binjnodes = power.make_multibinj_fragment(dag, injection_seglistdict.extent_all(), "INJECTIONS_%s" % options.tag)
+	binjnodes = power.make_multibinj_fragment(dag, injection_seglistdict.extent_all(), "INJECTIONS")
 else:
 	binjnodes = []
 
@@ -375,12 +375,12 @@ datafinds = power.make_datafind_stage(dag, injection_seglistdict | background_se
 
 # injections
 
-inj_pwr_nodes = power.make_single_instrument_injections_stage(dag, datafinds, binjnodes, injection_seglistdict, "INJECTIONS_%s" % options.tag, options.psds_per_injection, verbose = options.verbose)
+inj_pwr_nodes = power.make_single_instrument_injections_stage(dag, datafinds, binjnodes, injection_seglistdict, "INJECTIONS", options.psds_per_injection, verbose = options.verbose)
 
 
 # non-injections
 
-pwr_nodes = power.make_single_instrument_stage(dag, datafinds, background_seglistdict, options.tag, options.psds_per_power, verbose = options.verbose)
+pwr_nodes = power.make_single_instrument_stage(dag, datafinds, background_seglistdict, "FOREGROUND", options.psds_per_power, verbose = options.verbose)
 
 
 #
@@ -393,8 +393,8 @@ pwr_nodes = power.make_single_instrument_stage(dag, datafinds, background_seglis
 inj_coinc_nodes = []
 for parents, seg in group_coinc_parents(inj_pwr_nodes, injection_time_slides, verbose = options.verbose):
 	if options.enable_clustering:
-		parents = power.make_lladded_bucluster_fragment(dag, parents, seg, "INJECTIONS_%s" % options.tag)
-	inj_coinc_nodes += power.make_coinc_fragment(dag, parents, seg, "INJECTIONS_%s" % options.tag, options.injection_time_slides, binjnodes = binjnodes)
+		parents = power.make_lladded_bucluster_fragment(dag, parents, seg, "INJECTIONS")
+	inj_coinc_nodes += power.make_coinc_fragment(dag, parents, seg, "INJECTIONS", options.injection_time_slides, binjnodes = binjnodes)
 
 
 # non-injections
@@ -402,9 +402,9 @@ for parents, seg in group_coinc_parents(inj_pwr_nodes, injection_time_slides, ve
 coinc_nodes = []
 for parents, seg in group_coinc_parents(pwr_nodes, background_time_slides_all, verbose = options.verbose):
 	if options.enable_clustering:
-		parents = power.make_lladded_bucluster_fragment(dag, parents, seg, options.tag)
+		parents = power.make_lladded_bucluster_fragment(dag, parents, seg, "FOREGROUND")
 	for n, time_slide_filename in enumerate(options.background_time_slides):
-		coinc_nodes += power.make_coinc_fragment(dag, parents, seg, "%s_%d" % (options.tag, n), time_slide_filename)
+		coinc_nodes += power.make_coinc_fragment(dag, parents, seg, "FOREGROUND_%d" % n, time_slide_filename)
 
 
 #
@@ -414,7 +414,7 @@ for parents, seg in group_coinc_parents(pwr_nodes, background_time_slides_all, v
 
 if options.verbose:
 	print >>sys.stderr, "Adding injection identification nodes"
-inj_coinc_nodes = make_binjfind_stage(dag, inj_coinc_nodes, "INJECTIONS_%s" % options.tag, verbose = options.verbose)
+inj_coinc_nodes = make_binjfind_stage(dag, inj_coinc_nodes, "INJECTIONS", verbose = options.verbose)
 
 
 #
@@ -426,27 +426,3 @@ if options.verbose:
 	print >>sys.stderr, "writing dag ..."
 dag.write_sub_files()
 dag.write_dag()
-
-
-#
-# =============================================================================
-#
-#                               DAG Verification
-#
-# =============================================================================
-#
-
-
-def check_caches_against_segwizard(segwizard_filename, cache_filenames):
-	"""
-	Check that the segments in the segwizard file span the files in the
-	given caches.  This ensures that no job has been created that
-	analyzes data outside of the given input segment lists.
-	"""
-	segwizard_list = segmentsUtils.fromsegwizard(file(segwizard_filename), coltype = LIGOTimeGPS).coalesce()
-	cache_list = segments.segmentlist()
-	for cache_filename in cache_filenames:
-		cache_list |= segmentsUtils.fromlalcache(file(cache_filename), coltype = LIGOTimeGPS).coalesce()
-	extra = cache - segwizard
-	if extra:
-		raise ValueError, "caches span these times not spanned by segwizard: %s" % str(extra)
