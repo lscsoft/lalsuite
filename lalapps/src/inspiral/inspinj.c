@@ -80,6 +80,10 @@
 "                            masses if MDISTR=gaussian\n"\
 "  [--stdev-mass2 MSTD]     set the standard deviation for mass2 if \n"\
 "                           MDISTR=gaussian\n"\
+"  [--min-spin1 MIN]        set the minimum spin1 to MIN (0.0)\n"\
+"  [--max-spin1 MAX]        set the maximum spin1 to MAX (0.0)\n"\
+"  [--min-spin2 MIN]        set the minimum spin2 to MIN (0.0)\n"\
+"  [--max-spin2 MAX]        set the maximum spin2 to MAX (0.0)\n"\
 "  [--output NAME]          set the output filename \n"\
 "\n"
 
@@ -127,7 +131,8 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
 }
 
 enum { mTotElem, etaElem, distElem, incElem, phiElem, lonElem, latElem,
-  psiElem, m1Elem, m2Elem, numElem };
+  psiElem, m1Elem, m2Elem, s1xElem, s1yElem, s1zElem, s2xElem, s2yElem, 
+  s2zElem, sflgElem, numElem };
 enum dDistTag {sourceD, uniform, logten, volume} dDistr;
 enum mDistrTag {sourceM, totalMass, componentMass, gaussian} mDistr;
 enum lDistrTag {sourceL, randomLoc} lDistr;
@@ -160,6 +165,10 @@ float massStdev1=-1.0;
 float massStdev2=-1.0;
 float inclPeak=1;
 int flagInclPeak=0;
+float minSpin1=0.0;
+float maxSpin1=0.0;
+float minSpin2=0.0;
+float maxSpin2=0.0;
 
 static LALStatus status;
 static RandomParams* randParams;
@@ -645,7 +654,18 @@ int inj_params( double *injPar, char *source )
   double deltaM1=0, deltaM2=0;
   double mtotal=0;
   double minMass=0, maxMass=0;
-
+  double spin1[3];
+  double spin2[3];
+  double spin1Mag = 0;
+  double spin2Mag = 0;
+  double spin1Magxy = 0;
+  double spin2Magxy = 0;
+  double spin1Phi = 0;
+  double spin2Phi = 0;
+  /* minimum inclination angle used with spinning systems, used to avoid
+   * singularities 
+   */ 
+  double spinMinInc = 0.01; 
 
   if (massFileName) 
   {
@@ -662,7 +682,7 @@ int inj_params( double *injPar, char *source )
   /* use the user-specified parameters to calculate the masses */
   if ( mDistr!=sourceM )
   {
-    /* mass range, per component */
+  /* mass range, per component */
     deltaM1 = maxMass1 - minMass1;
     deltaM2 = maxMass2 - minMass2;
 
@@ -715,8 +735,35 @@ int inj_params( double *injPar, char *source )
     } while (maxMtotal>0 && (m1+m2)>maxMtotal);
   }
 
-  /* use the user-specified parameters to calculate the distance */
+  /* use the user-specified parameters to calculate the spins */
+  /* first of all set magnitudes of the spins */
+  u = my_urandom();
+  spin1Mag = minSpin1 + u * (maxSpin1 - minSpin1);
+  u = my_urandom();
+  spin2Mag = minSpin2 + u * (maxSpin2 - minSpin2);
 
+  /* next set z component of spins */
+  u = my_urandom();
+  spin1[2] = (u - 0.5) * 2 * (spin1Mag);
+  u = my_urandom();
+  spin2[2] = (u - 0.5) * 2 * (spin2Mag);
+
+  /* find mag of xy components of spins */
+  spin1Magxy = pow( ((spin1Mag * spin1Mag) - (spin1[2] * spin1[2])) , 0.5);  
+  spin2Magxy = pow( ((spin2Mag * spin2Mag) - (spin2[2] * spin2[2])) , 0.5);  
+  
+  /* choose random angle to set x and y components of spin */
+  u = my_urandom();
+  spin1Phi = u * LAL_TWOPI;
+  spin1[0] = spin1Magxy * cos(spin1Phi);
+  spin1[1] = spin1Magxy * sin(spin1Phi);
+
+  u = my_urandom();
+  spin2Phi = u * LAL_TWOPI;
+  spin2[0] = spin2Magxy * cos(spin2Phi);
+  spin2[1] = spin2Magxy * sin(spin2Phi);
+
+  /* use the user-specified parameters to calculate the distance */
   if ( lDistr == sourceL )
   {
     /* get sky position */
@@ -769,6 +816,12 @@ int inj_params( double *injPar, char *source )
   injPar[m2Elem] = m2;
   injPar[mTotElem] = m1 + m2;
   injPar[etaElem]  = m1 * m2 / ( ( m1 + m2 ) * ( m1 + m2 ) );
+  injPar[s1xElem]  = spin1[0];
+  injPar[s1yElem]  = spin1[1];
+  injPar[s1zElem]  = spin1[2];
+  injPar[s2xElem]  = spin2[0];
+  injPar[s2yElem]  = spin2[1];
+  injPar[s2zElem]  = spin2[2];
 
   if (flagInclPeak) 
   {
@@ -777,8 +830,18 @@ int inj_params( double *injPar, char *source )
   } 
   else 
   {
-    injPar[incElem]  = acos( -1.0 + 2.0 * my_urandom() );
+     /* avoid singularities with spinning inj caused by inclination = 0 or multiples of PI */
+     if (injPar[sflgElem] == 1)
+     {
+        injPar[incElem] = acos( cos(spinMinInc) + my_urandom() *(cos(LAL_PI-spinMinInc) - cos(spinMinInc)));   
+     }
+     else
+     {
+        injPar[incElem]  = acos( -1.0 + 2.0 * my_urandom() );
+     }
   }
+
+
   injPar[phiElem]  = 2 * LAL_PI * my_urandom();
   injPar[psiElem]  = 2 * LAL_PI * my_urandom();
   injPar[distElem] = dist;
@@ -871,6 +934,10 @@ int main( int argc, char *argv[] )
     {"output",                  required_argument, 0,                'P'},
     {"lal-eff-dist",                  no_argument, &lalEffDist,       1 },
     {"ilwd",                          no_argument, &ilwd,             1 },
+    {"min-spin1",               required_argument, 0,                'g'},
+    {"max-spin1",               required_argument, 0,                'G'},
+    {"min-spin2",               required_argument, 0,                'u'},
+    {"max-spin2",               required_argument, 0,                'U'},
     {0, 0, 0, 0}
   };
   int c;
@@ -902,7 +969,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "hf:m:a:b:t:s:w:i:M:", long_options, &option_index );
+        "hf:m:a:b:t:s:w:i:M:g:G:u:U:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -1307,6 +1374,35 @@ int main( int argc, char *argv[] )
         exit( 1 );
         break;
 
+      case 'g':
+        minSpin1 = atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%le", minSpin1 );
+        break;
+
+      case 'G':
+        maxSpin1 = atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%le", maxSpin1 );
+        break;
+
+      case 'u':
+        minSpin2 = atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%le", minSpin2 );
+        break;
+
+      case 'U':
+        maxSpin2 = atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%le", maxSpin2 );
+        break;
+
+
       default:
         fprintf( stderr, "unknown error while parsing options\n" );
         fprintf( stderr, USAGE );
@@ -1380,6 +1476,24 @@ int main( int argc, char *argv[] )
     massStdev2=massStdev1;
   }
 
+  /* check that spins are in range 0 - 1 */
+  if (minSpin1 < 0. || minSpin2 < 0. || maxSpin1 > 1. || maxSpin2 > 1.)
+  {
+    fprintf( stderr, 
+        "Spins can only take values between 0 and 1\n" );
+    fprintf( stderr, USAGE );
+    exit( 1 );
+  }
+
+  /* check max and mins are the correct way around */
+  if (minSpin1 > maxSpin1 || minSpin2 > maxSpin2 )
+  {
+    fprintf( stderr, 
+        "Minimal spins must be less than maximal spins\n" );
+    fprintf( stderr, USAGE );
+    exit( 1 );
+  }
+
   seed_random( rand_seed );
 
   /* set up the gsl random number generator */
@@ -1395,6 +1509,15 @@ int main( int argc, char *argv[] )
     /* default to Tev's GeneratePPNInspiral as used in */
     LALSnprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), 
         "GeneratePPNtwoPN" );
+  }
+
+  if (!strcmp(waveform,"SpinTaylorthreePointFivePN") )
+  {
+     injPar[sflgElem]=1;
+  }
+  else
+  {
+     injPar[sflgElem]=0;
   }
 
   /* store the lalEffDist argument */
@@ -1582,6 +1705,12 @@ int main( int argc, char *argv[] )
     this_sim_insp->inclination = injPar[incElem];
     this_sim_insp->coa_phase = injPar[phiElem];
     this_sim_insp->polarization = injPar[psiElem];
+    this_sim_insp->spin1x = injPar[s1xElem];
+    this_sim_insp->spin1y = injPar[s1yElem];
+    this_sim_insp->spin1z = injPar[s1zElem];
+    this_sim_insp->spin2x = injPar[s2xElem];
+    this_sim_insp->spin2y = injPar[s2yElem];
+    this_sim_insp->spin2z = injPar[s2zElem];
 
     /* populate the site specific information */
     LAL_CALL(LALPopulateSimInspiralSiteInfo( &status, this_sim_insp ), 
