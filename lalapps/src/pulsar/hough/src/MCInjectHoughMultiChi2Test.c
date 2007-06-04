@@ -184,7 +184,6 @@ int main(int argc, char *argv[]){
   REAL8  numberCountTotal;   /* Sum over all the numberCounts */
   REAL8  chi2;
 
-
   /******************************************************************/ 
   /*    user input variables   */
   /******************************************************************/ 
@@ -341,6 +340,10 @@ int main(int argc, char *argv[]){
   chi2Params.sumWeight = (REAL8 *)LALMalloc( uvar_p*sizeof(REAL8));
   chi2Params.sumWeightSquare = (REAL8 *)LALMalloc( uvar_p*sizeof(REAL8));
 
+ /* memory for number Count Vector */
+  numberCountVec.length = uvar_p;
+  numberCountVec.data = NULL;
+  numberCountVec.data = (REAL8 *)LALMalloc( uvar_p*sizeof(REAL8));
 
   /******************************************************************/ 
   /* read skypatch info */
@@ -847,15 +850,14 @@ int main(int argc, char *argv[]){
    /******************************************************************/ 
   /* initialize all weights to unity */
   /******************************************************************/ 
-  
-  /* set up weights -- this should be done before normalizing the sfts */
+   
+ /* set up weights -- this should be done before normalizing the sfts */
   weightsV.length = mObsCoh;
   weightsV.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
   
   weightsNoise.length = mObsCoh;
   weightsNoise.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
 
-  
   /* initialize all weights to unity */
   LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsNoise), &status);
   LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsV), &status);
@@ -1020,11 +1022,6 @@ int main(int argc, char *argv[]){
         sigmaN = sqrt(sumWeightSquare * alphaPeak * (1.0 - alphaPeak));	
       }
       
-      /* memory for number Count Vector */
-      numberCountVec.length = uvar_p;
-      numberCountVec.data = NULL;
-      numberCountVec.data = (REAL8 *)LALMalloc( uvar_p*sizeof(REAL8));
-
       /* block for calculating peakgram and number count */  
       {
        UINT4 iIFO, iSFT, ii, numberSFTp, k;
@@ -1040,7 +1037,7 @@ int main(int argc, char *argv[]){
 	 j=0;
 	 iIFO=0;
 	 iSFT=0;
-   
+	 
 	 numsft = mdetStates->data[iIFO]->length;
   
      
@@ -1051,7 +1048,7 @@ int main(int argc, char *argv[]){
 
 	     for (ii=0 ; (ii < numberSFTp)&&(iIFO<numifo) ; ii++) {
 	   
-		 sft = inputSFTs->data[iIFO]->data + iSFT;
+		 sft = sumSFTs->data[iIFO]->data + iSFT;
 
 		 LAL_CALL (SFTtoUCHARPeakGram( &status, &pg1, sft, uvar_peakThreshold), &status);	    
 
@@ -1143,6 +1140,12 @@ int main(int argc, char *argv[]){
     /* ****************************************************************/   
     fprintf(fpPar,"  %d %d \n",  controlN, controlNH );
     
+  LALFree(weightsV.data);
+  LALFree(weightsNoise.data);
+  if (uvar_weighAM){ 
+      LALFree(weightsAM.data); 
+  }
+
   } /* Closing MC loop */
   
   /******************************************************************/
@@ -1210,12 +1213,6 @@ int main(int argc, char *argv[]){
   LALFree(skySizeAlpha);
   LALFree(skySizeDelta);
   
-
-  LALFree(weightsV.data);
-  LALFree(weightsNoise.data); 
-  LALFree(weightsAM.data); 
-
- 
   LALFree(chi2Params.numberSFTp);
   LALFree(chi2Params.sumWeight);
   LALFree(chi2Params.sumWeightSquare);
