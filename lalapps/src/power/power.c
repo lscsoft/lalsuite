@@ -451,7 +451,7 @@ static int all_required_arguments_present(char *prog, struct option *long_option
 
 static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, const char *type, const char *param, const char *value)
 {
-	*proc_param = LALCalloc(1, sizeof(**proc_param));
+	*proc_param = XLALCalloc(1, sizeof(**proc_param));
 	(*proc_param)->next = NULL;
 	snprintf((*proc_param)->program, LIGOMETA_PROGRAM_MAX, PROGRAM_NAME);
 	snprintf((*proc_param)->type, LIGOMETA_TYPE_MAX, type);
@@ -491,7 +491,7 @@ static int parse_command_line_debug(int argc, char *argv[])
 	/*
 	 * Find and parse only the debug level command line options.  Must
 	 * jump through this hoop because we cannot edit lalDebugLevel
-	 * after any calls to LALMalloc() and friends.
+	 * after any calls to XLALMalloc() and friends.
 	 */
 
 	opterr = 0;		/* silence error messages */
@@ -1267,7 +1267,7 @@ static REAL4TimeSeries *add_burst_injections(LALStatus *stat, char *filename, RE
 	while(injections) {
 		SimBurstTable *thisEvent = injections;
 		injections = injections->next;
-		LALFree(thisEvent);
+		XLALFree(thisEvent);
 	}
 
 	return series;
@@ -1315,7 +1315,7 @@ static REAL4TimeSeries *add_inspiral_injections(LALStatus *stat, char *filename,
 	while(injections) {
 		SimInspiralTable *thisEvent = injections;
 		injections = injections->next;
-		LALFree(thisEvent);
+		XLALFree(thisEvent);
 	}
 
 	return series;
@@ -1404,7 +1404,7 @@ static void add_sim_injections(LALStatus *stat, REAL4TimeSeries *series, COMPLEX
 
 	/* allocate memory */
 	memset(&detector, 0, sizeof(DetectorResponse));
-	transfer = (COMPLEX8FrequencySeries *) LALCalloc(1, sizeof(COMPLEX8FrequencySeries));
+	transfer = (COMPLEX8FrequencySeries *) XLALCalloc(1, sizeof(COMPLEX8FrequencySeries));
 	if(!transfer) {
 		XLALPrintError("add_sim_injections(): detector.transfer not allocated\n");
 		exit(1);
@@ -1431,7 +1431,7 @@ static void add_sim_injections(LALStatus *stat, REAL4TimeSeries *series, COMPLEX
 		LALWarning(stat, "computing waveform for GEO600.");
 		break;
 	default:
-		LALFree(detector.site);
+		XLALFree(detector.site);
 		detector.site = NULL;
 		tmpDetector = NULL;
 		LALWarning(stat, "Unknown detector site, computing plus mode " "waveform with no time delay");
@@ -1581,13 +1581,13 @@ static void add_sim_injections(LALStatus *stat, REAL4TimeSeries *series, COMPLEX
 	LAL_CALL(LALCDestroyVector(stat, &(transfer->data)), stat);
 
 	if(detector.site)
-		LALFree(detector.site);
-	LALFree(transfer);
+		XLALFree(detector.site);
+	XLALFree(transfer);
 
 	while(injections) {
 		SimBurstTable *thisEvent = injections;
 		injections = injections->next;
-		LALFree(thisEvent);
+		XLALFree(thisEvent);
 	}
 }
 #endif
@@ -1744,7 +1744,7 @@ int main(int argc, char *argv[])
 	 * Create the process and process params tables.
 	 */
 
-	_process_table.processTable = LALCalloc(1, sizeof(ProcessTable));
+	_process_table.processTable = XLALCalloc(1, sizeof(ProcessTable));
 	LAL_CALL(LALGPSTimeNow(&stat, &(_process_table.processTable->start_time), &accuracy), &stat);
 	LAL_CALL(populate_process_table(&stat, _process_table.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE), &stat);
 	_process_params_table.processParamsTable = NULL;
@@ -1762,7 +1762,7 @@ int main(int argc, char *argv[])
 	 * standalone job is always 1
 	 */
 
-	_search_summary_table.searchSummaryTable = LALCalloc(1, sizeof(SearchSummaryTable));
+	_search_summary_table.searchSummaryTable = XLALCalloc(1, sizeof(SearchSummaryTable));
 	snprintf(_search_summary_table.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, "%s", options->comment);
 	_search_summary_table.searchSummaryTable->nnodes = 1;
 	_search_summary_table.searchSummaryTable->in_start_time = options->gps_start;
@@ -1959,19 +1959,19 @@ int main(int argc, char *argv[])
 
 	XLALDestroyRandomParams(rparams);
 	XLALDestroyREAL4Window(params.window);
-	LALFree(_process_table.processTable);
-	LALFree(_search_summary_table.searchSummaryTable);
+	XLALFree(_process_table.processTable);
+	XLALFree(_search_summary_table.searchSummaryTable);
 
 	while(_process_params_table.processParamsTable) {
 		ProcessParamsTable *table = _process_params_table.processParamsTable;
 		_process_params_table.processParamsTable = table->next;
-		LALFree(table);
+		XLALFree(table);
 	}
 
 	while(burstEvent) {
 		SnglBurstTable *event = burstEvent;
 		burstEvent = burstEvent->next;
-		LALFree(event);
+		XLALFree(event);
 	}
 
 	if(options->diagnostics)

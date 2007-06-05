@@ -180,7 +180,7 @@ static void print_usage(const char *prog)
 
 static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, const char *type, const char *param, const char *value)
 {
-	*proc_param = LALCalloc(1, sizeof(**proc_param));
+	*proc_param = XLALCalloc(1, sizeof(**proc_param));
 	(*proc_param)->next = NULL;
 	snprintf((*proc_param)->program, LIGOMETA_PROGRAM_MAX, PROGRAM_NAME);
 	snprintf((*proc_param)->type, LIGOMETA_TYPE_MAX, type);
