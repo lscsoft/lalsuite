@@ -235,16 +235,19 @@ class qscanNode(pipeline.CondorDAGNode):
   """
   Runs an instance of a qscan job
   """
-  def __init__(self,job,time,cp,dir):
+  def __init__(self,job,time,cp,dir,trig):
     """
     job = A CondorDAGJob that can run an instance of qscan.
     """
     pipeline.CondorDAGNode.__init__(self,job)
     self.add_var_arg(str(time))
-    #self.add_macro("macrogpsstarttime",str(time))
+    self.add_macro("macrogpsstarttime",str(time))
     self.add_file_arg(string.strip(cp.get('qscan','config-file')))
     self.add_file_arg(string.strip(cp.get('qscan','cache-file')))
-    self.add_var_arg(dir)
+    self.container = HTMLcontainer(trig,"QSCAN",'index')
+    self.add_var_arg(dir+"/"+self.container.name+"/")
+  def getContainer(self):
+    return self.container
 
 ##############################################################################
 #
@@ -425,9 +428,11 @@ for trig in followuptrigs:
     # SETUP QSCAN JOBS
     if qFlag and trig.gpsTime[ifo] and opts.qscan:
       try: 
-        dag.add_node(qscanNode(qscanJob,trig.gpsTime[ifo],cp,trig.summarydir))
+        qNode = qscanNode(qscanJob,trig.gpsTime[ifo],cp,trig.summarydir)
+        dag.add_node(qNode)
         qFlag = False
         qscanJobCnt+=1
+        summaryHTML.containers.append( qNode.getContainer() )
       except: print "couldn't add qscan job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
       
     # SETUP TRIGBANK JOBS
