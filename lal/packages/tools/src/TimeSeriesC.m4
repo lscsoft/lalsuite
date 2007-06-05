@@ -7,7 +7,7 @@ void `XLALDestroy'SERIESTYPE (
 {
 	if(series)
 		`XLALDestroy'SEQUENCETYPE (series->data);
-	LALFree(series);
+	XLALFree(series);
 }
 
 
@@ -35,10 +35,10 @@ SERIESTYPE *`XLALCreate'SERIESTYPE (
 	SERIESTYPE *new;
 	SEQUENCETYPE *sequence;
 
-	new = LALMalloc(sizeof(*new));
+	new = XLALMalloc(sizeof(*new));
 	sequence = `XLALCreate'SEQUENCETYPE (length);
 	if(!new || !sequence) {
-		LALFree(new);
+		XLALFree(new);
 		`XLALDestroy'SEQUENCETYPE (sequence);
 		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 	}
@@ -92,10 +92,10 @@ SERIESTYPE *`XLALCut'SERIESTYPE (
 	if(!series || !series->data)
 		return(NULL);
 
-	new = LALMalloc(sizeof(*new));
+	new = XLALMalloc(sizeof(*new));
 	sequence = `XLALCut'SEQUENCETYPE (series->data, first, length);
 	if(!new || !sequence) {
-		LALFree(new);
+		XLALFree(new);
 		`XLALDestroy'SEQUENCETYPE (sequence);
 		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 	}

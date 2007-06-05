@@ -5,8 +5,8 @@ void `XLALDestroy'SEQUENCETYPE (
 )
 {
 	if(sequence)
-		LALFree(sequence->data);
-	LALFree(sequence);
+		XLALFree(sequence->data);
+	XLALFree(sequence);
 }
 
 
@@ -18,11 +18,11 @@ SEQUENCETYPE *`XLALCreate'SEQUENCETYPE (
 	SEQUENCETYPE *new;
 	DATATYPE *data;
 
-	new = LALMalloc(sizeof(*new));
-	data = LALMalloc(length * sizeof(*data));
+	new = XLALMalloc(sizeof(*new));
+	data = XLALMalloc(length * sizeof(*data));
 	if(!new || !data) {
-		LALFree(new);
-		LALFree(data);
+		XLALFree(new);
+		XLALFree(data);
 		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 	}
 
@@ -95,7 +95,7 @@ size_t `XLALResize'SEQUENCETYPE (
 
 	if(length > sequence->length) {
 		/* need to increase memory */
-		sequence->data = LALRealloc(sequence->data, length * sizeof(*sequence->data));
+		sequence->data = XLALRealloc(sequence->data, length * sizeof(*sequence->data));
 
 		if(sequence->data) {
 			memset(sequence->data + sequence->length, 0, (length - sequence->length) * sizeof(*sequence->data));
@@ -106,7 +106,7 @@ size_t `XLALResize'SEQUENCETYPE (
 	} else {
 		/* do not need to increase memory */
 		`XLALShift'SEQUENCETYPE (sequence, -first);
-		sequence->data = LALRealloc(sequence->data, length * sizeof(*sequence->data));
+		sequence->data = XLALRealloc(sequence->data, length * sizeof(*sequence->data));
 		if(sequence->data)
 			sequence->length = length;
 		else
