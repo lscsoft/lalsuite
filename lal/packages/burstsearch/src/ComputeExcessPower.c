@@ -1,12 +1,30 @@
-/******** <lalVerbatim file="ComputeExcessPowerCV"> ********
-Author: Flanagan, E. and Cannon, K.
-$Id$
-********* </lalVerbatim> ********/
+/*
+ * $Id$
+ *
+ * Copyright (C) 2007  Kipp Cannon and Flanagan, E
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+ * Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 
 #include <math.h>
 #include <lal/LALRCSID.h>
 
+
 NRCSID (COMPUTEEXCESSPOWERC, "$Id$");
+
 
 #include <lal/Sequence.h>
 #include <lal/TFTransform.h>
@@ -56,28 +74,4 @@ int XLALComputeExcessPower(
 
 	/* success */
 	return 0;
-}
-
-
-/******** <lalVerbatim file="ComputeLikelihoodCP"> ********/
-REAL8 XLALComputeLikelihood(
-	TFTiling *tiling
-)
-/******** </lalVerbatim> ********/
-{
-	REAL8 avglambda = 0.0;
-	REAL8 rho4;
-	TFTile *tile;
-	size_t i;
-
-	for(i = 0, tile = tiling->tile; i < tiling->numtiles; i++, tile++) {
-		rho4 = tile->excessPower * tile->excessPower;
-		avglambda += XLALTFTileDegreesOfFreedom(tile) / rho4 * exp(tile->lnweight - tile->confidence);
-	}
-
-	/* compute the likelihood averaged over TF tiles */
-	avglambda /= tiling->numtiles;
-
-	/* return value of statistic */
-	return avglambda;
 }

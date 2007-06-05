@@ -1,10 +1,27 @@
-/********************************** <lalVerbatim file="TFTransformHV">
-Author: Flanagan, E., Kipp Cannon
-$Id$
-**************************************************** </lalVerbatim> */
+/*
+ * $Id$
+ *
+ * Copyright (C) 2007  Kipp Cannon and Flanagan, E
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+ * Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 
 #ifndef _TFTRANSFORM_H
 #define _TFTRANSFORM_H
+
 
 #include <lal/LALDatatypes.h>
 #include <lal/Window.h>
@@ -12,9 +29,11 @@ $Id$
 #include <lal/LALRCSID.h>
 #include <lal/Sequence.h>
 
+
 #ifdef  __cplusplus		/* C++ protection. */
 extern "C" {
 #endif
+
 
 NRCSID(TFTRANSFORMH, "$Id$");
 
@@ -50,14 +69,12 @@ typedef struct tagTFTiling {
 } TFTiling;
 
 
-REAL8
-XLALTFTileDegreesOfFreedom(
+REAL8 XLALTFTileDegreesOfFreedom(
 	const TFTile *tile
 );
 
 
-TFTiling *
-XLALCreateTFTiling(
+TFTiling *XLALCreateTFTiling(
 	UINT4 plane_length,
 	REAL8 plane_deltaT,
 	REAL8 plane_flow,
@@ -70,14 +87,7 @@ XLALCreateTFTiling(
 );
 
 
-void
-XLALDestroyTFTiling(
-	TFTiling *tiling
-);
-
-
-REAL8
-XLALComputeLikelihood(
+void XLALDestroyTFTiling(
 	TFTiling *tiling
 );
 
@@ -114,8 +124,7 @@ typedef struct tagREAL4TimeFrequencyPlane {
 } REAL4TimeFrequencyPlane;
 
 
-REAL4TimeFrequencyPlane *
-XLALCreateTFPlane(
+REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	UINT4 tseries_length,
 	REAL8 tseries_deltaT,
 	UINT4 channels,
@@ -128,14 +137,12 @@ XLALCreateTFPlane(
 );
 
 
-void
-XLALDestroyTFPlane(
+void XLALDestroyTFPlane(
 	REAL4TimeFrequencyPlane *plane
 );
 
 
-int
-XLALFreqSeriesToTFPlane(
+int XLALFreqSeriesToTFPlane(
 	REAL4TimeFrequencyPlane *tfplane,
 	const COMPLEX8FrequencySeries *fseries,
 	const REAL4FrequencySeries *psd,
@@ -144,8 +151,7 @@ XLALFreqSeriesToTFPlane(
 );
 
 
-int
-XLALComputeExcessPower(
+int XLALComputeExcessPower(
 	const REAL4TimeFrequencyPlane *plane
 );
 

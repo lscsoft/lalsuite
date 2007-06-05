@@ -1,12 +1,30 @@
-/******** <lalVerbatim file="CreateTFTilingCV"> ********
-Author: Eanna Flanagan, and Cannon, K.
-$Id$
-********* </lalVerbatim> **********/
+/*
+ * $Id$
+ *
+ * Copyright (C) 2007  Kipp Cannon and Flanagan, E
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+ * Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 
 #include <math.h>
 #include <lal/LALRCSID.h>
 
+
 NRCSID(CREATETFTILINGC, "$Id$");
+
 
 #include <lal/LALStdlib.h>
 #include <lal/TFTransform.h>
@@ -16,6 +34,7 @@ NRCSID(CREATETFTILINGC, "$Id$");
 /*
  * The number of degrees of freedom in a tile.
  */
+
 
 REAL8 XLALTFTileDegreesOfFreedom(const TFTile *tile)
 {
@@ -29,11 +48,13 @@ REAL8 XLALTFTileDegreesOfFreedom(const TFTile *tile)
  * places the loop is done.
  */
 
+
 #define FOR_EACH_TILE \
 	for(tbins = min_tbins; tbins <= max_tbins; tbins *= 2) \
 		for(channels = 1 / (tbins * plane_deltaT * plane_deltaF); channels <= max_channels; channels *= 2) \
 			for(tstart = tiling_tstart; tstart + tbins <= tmax; tstart += tbins / inv_fractional_stride) \
 				for(channel0 = 0; channel0 + channels <= plane_num_channels; channel0 += channels / inv_fractional_stride)
+
 
 
 /******** <lalVerbatim file="CreateTFTilingCP"> ********/
@@ -126,8 +147,7 @@ TFTiling *XLALCreateTFTiling(
 
 
 /******** <lalVerbatim file="DestroyTFTilingCP"> ********/
-void
-XLALDestroyTFTiling(
+void XLALDestroyTFTiling(
 	TFTiling *tiling
 )
 /******** </lalVerbatim> ********/

@@ -1,10 +1,27 @@
-/********************************** <lalVerbatim file="ExcessPowerHV">
-Author: Flanagan, E
-$Id$
-**************************************************** </lalVerbatim> */
+/*
+ * $Id$
+ *
+ * Copyright (C) 2007  Kipp Cannon and Flanagan, E
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+ * Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 
 #ifndef _EPSEARCH_H
 #define _EPSEARCH_H
+
 
 #include <lal/LALDatatypes.h>
 #include <lal/LALRCSID.h>
@@ -13,9 +30,11 @@ $Id$
 #include <lal/TimeFreqFFT.h>
 #include <lal/Window.h>
 
+
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {
 #endif
+
 
 NRCSID(EPSEARCHH, "$Id$");
 
@@ -30,6 +49,7 @@ NRCSID(EPSEARCHH, "$Id$");
  * from liblalsupport, so here it has to be refered to as a void *.
  */
 
+
 struct XLALEPSearchDiagnostics {
 	void *LIGOLwXMLStream;
 	int (*XLALWriteLIGOLwXMLArrayREAL4FrequencySeries)(void *, const char *, const REAL4FrequencySeries *);
@@ -38,8 +58,7 @@ struct XLALEPSearchDiagnostics {
 };
 
 
-typedef struct
-tagEPSearchParams {
+typedef struct tagEPSearchParams {
 	struct XLALEPSearchDiagnostics *diagnostics;
 	REAL4Window          *window;
 	UINT4                 windowShift;
@@ -57,15 +76,13 @@ tagEPSearchParams {
 } EPSearchParams;
 
 
-SnglBurstTable *
-XLALEPSearch(
+SnglBurstTable *XLALEPSearch(
 	const REAL4TimeSeries  *tseries,
 	EPSearchParams   *params
 );
 
 
-int
-XLALEPConditionData(
+int XLALEPConditionData(
 	REAL4TimeSeries  *series,
 	REAL8             flow,
 	REAL8             resampledeltaT,
