@@ -275,8 +275,7 @@ int main(int argc,char *argv[])
 
      XLALClusterSnglBurstTable(&events, XLALCompareStringBurstByTime, XLALCompareStringBurstByTime, XLALStringBurstCluster);
 
-     LALSortSnglBurst(&status, &events, XLALCompareSnglBurstByPeakTimeAndSNR);
-     TESTSTATUS( &status );
+     XLALSortSnglBurst(&events, XLALCompareSnglBurstByPeakTimeAndSNR);
    }
 
  XLALSnglBurstAssignIDs(events);
@@ -620,13 +619,10 @@ int FindStringBurst(struct CommandLineArgsTag CLA)
 	}
     }
 
- /* sort events in time; if there are any */
- if (events) 
-   {
-     /* first sort list in increasing GPS peak time */
-     LALSortSnglBurst(&status, &events, XLALCompareSnglBurstByPeakTimeAndSNR);
-     TESTSTATUS( &status );
-   }
+  /* sort events in time; if there are any */
+  if (events) 
+    /* first sort list in increasing GPS peak time */
+    XLALSortSnglBurst(&events, XLALCompareSnglBurstByPeakTimeAndSNR);
   
   LALSDestroyVector( &status, &vector );
   TESTSTATUS( &status );
