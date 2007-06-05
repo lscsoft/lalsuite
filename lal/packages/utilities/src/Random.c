@@ -75,6 +75,8 @@ This is an implementation of the random number generators \verb+ran1+ and
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/Random.h>
+#include <lal/Sequence.h>
+#include <lal/XLALError.h>
 
 NRCSID (RANDOMC, "$Id$");
 
@@ -107,7 +109,7 @@ RandomParams * XLALCreateRandomParams( INT4 seed )
   RandomParams *params;
   UINT4 n;
 
-  params = LALMalloc( sizeof( *params) );
+  params = XLALMalloc( sizeof( *params) );
   if ( ! params )
     XLAL_ERROR_NULL( func, XLAL_ENOMEM );
 
@@ -134,8 +136,7 @@ RandomParams * XLALCreateRandomParams( INT4 seed )
 
 void XLALDestroyRandomParams( RandomParams *params )
 {
-  LALFree( params );
-  return;
+  XLALFree( params );
 }
 
 
@@ -232,22 +233,23 @@ int XLALNormalDeviates( REAL4Vector *deviates, RandomParams *params )
 REAL4 XLALNormalDeviate( RandomParams *params )
 {
   static const char *func = "XLALNormalDeviate";
-  static LALStatus status;
-  REAL4Vector *deviates=NULL;
+  REAL4Sequence *deviates;
   REAL4 deviate;
 
   if ( ! params )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR_REAL4( func, XLAL_EFAULT );
 
   /* create a vector */
-  LALSCreateVector( &status, &deviates, 1 );
+  deviates = XLALCreateREAL4Sequence(1);
+  if(!deviates)
+    XLAL_ERROR_REAL4( func, XLAL_EFUNC );
 
   /* call the actual function */
   XLALNormalDeviates( deviates, params );
   deviate = deviates->data[0];
 
   /* destroy the vector */
-  LALSDestroyVector( &status, &deviates );
+  XLALDestroyREAL4Sequence(deviates);
 
   return deviate;
 }
