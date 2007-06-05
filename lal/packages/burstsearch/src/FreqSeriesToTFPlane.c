@@ -221,10 +221,10 @@ int XLALFreqSeriesToTFPlane(
 		XLAL_ERROR(func, XLAL_EDATA);
 
 	/* create temporary vectors */
-	filter = LALMalloc(plane->channels * sizeof(*filter));
+	filter = XLALMalloc(plane->channels * sizeof(*filter));
 	fcorr = XLALCreateCOMPLEX8Sequence(fseries->data->length);
 	if(!filter || !fcorr) {
-		LALFree(filter);
+		XLALFree(filter);
 		XLALDestroyCOMPLEX8Sequence(fcorr);
 		XLAL_ERROR(func, XLAL_EFUNC);
 	}
@@ -235,7 +235,7 @@ int XLALFreqSeriesToTFPlane(
 		if(!filter[i]) {
 			while(--i)
 				XLALDestroyCOMPLEX8FrequencySeries(filter[i]);
-			LALFree(filter);
+			XLALFree(filter);
 			XLALDestroyCOMPLEX8Sequence(fcorr);
 			XLAL_ERROR(func, XLAL_EFUNC);
 		}
@@ -257,7 +257,7 @@ int XLALFreqSeriesToTFPlane(
 		if(XLALREAL4ReverseFFT(plane->channel[i], fcorr, reverseplan)) {
 			for(i = 0; i < plane->channels; i++)
 				XLALDestroyCOMPLEX8FrequencySeries(filter[i]);
-			LALFree(filter);
+			XLALFree(filter);
 			XLALDestroyCOMPLEX8Sequence(fcorr);
 			XLAL_ERROR(func, XLAL_EFUNC);
 		}
@@ -269,7 +269,7 @@ int XLALFreqSeriesToTFPlane(
 	/* clean up */
 	for(i = 0; i < plane->channels; i++)
 		XLALDestroyCOMPLEX8FrequencySeries(filter[i]);
-	LALFree(filter);
+	XLALFree(filter);
 	XLALDestroyCOMPLEX8Sequence(fcorr);
 
 	/* set the name and epoch of the TF plane */

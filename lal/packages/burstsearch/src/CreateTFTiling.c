@@ -89,13 +89,13 @@ TFTiling *XLALCreateTFTiling(
 		XLAL_ERROR_NULL(func, XLAL_EINVAL);
 
 	/* allocate memory */
-	tiling = LALMalloc(sizeof(*tiling));
-	tile = LALMalloc(numtiles * sizeof(*tile));
-	weight = LALCalloc(maxDOF + 1, sizeof(*weight));
+	tiling = XLALMalloc(sizeof(*tiling));
+	tile = XLALMalloc(numtiles * sizeof(*tile));
+	weight = XLALCalloc(maxDOF + 1, sizeof(*weight));
 	if(!tiling || !tile || !weight) {
-		LALFree(tiling);
-		LALFree(tile);
-		LALFree(weight);
+		XLALFree(tiling);
+		XLALFree(tile);
+		XLALFree(weight);
 		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 	}
 	tiling->tile = tile;
@@ -119,7 +119,7 @@ TFTiling *XLALCreateTFTiling(
 	/* determine the weighting for each tile */
 	for(tile = tiling->tile; numtiles; numtiles--, tile++)
 		tile->lnweight = log(weight[(int) XLALTFTileDegreesOfFreedom(tile)]);
-	LALFree(weight);
+	XLALFree(weight);
 
 	return(tiling);
 }
@@ -133,6 +133,6 @@ XLALDestroyTFTiling(
 /******** </lalVerbatim> ********/
 {
 	if(tiling)
-		LALFree(tiling->tile);
-	LALFree(tiling);
+		XLALFree(tiling->tile);
+	XLALFree(tiling);
 }

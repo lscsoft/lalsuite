@@ -38,7 +38,7 @@ static void XLALDestroySnglBurstTable(SnglBurstTable *head)
 	while(head) {
 		event = head;
 		head = head->next;
-		LALFree(event);
+		XLALFree(event);
 	}
 }
 
@@ -55,7 +55,7 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 )
 {
 	const char func[] = "XLALTFTileToBurstEvent";
-	SnglBurstTable *event = LALCalloc(1, sizeof(*event));
+	SnglBurstTable *event = XLALCalloc(1, sizeof(*event));
 	if(!event)
 		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 

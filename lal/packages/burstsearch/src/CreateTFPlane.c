@@ -59,16 +59,16 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	 * Allocate memory and construct the tiling.
 	 */
 
-	plane = LALMalloc(sizeof(*plane));
+	plane = XLALMalloc(sizeof(*plane));
 	channel_overlap = XLALCreateREAL8Sequence(channels - 1);
 	channel_rms = XLALCreateREAL8Sequence(channels);
-	channel = LALMalloc(channels * sizeof(*channel));
+	channel = XLALMalloc(channels * sizeof(*channel));
 	tiling = XLALCreateTFTiling(tseries_length, tseries_deltaT, flow, deltaF, channels, tiling_start, tiling_inv_fractional_stride, tiling_max_bandwidth, tiling_max_duration);
 	if(!plane || !channel_overlap || !channel_rms || !channel || !tiling) {
-		LALFree(plane);
+		XLALFree(plane);
 		XLALDestroyREAL8Sequence(channel_overlap);
 		XLALDestroyREAL8Sequence(channel_rms);
-		LALFree(channel);
+		XLALFree(channel);
 		XLALDestroyTFTiling(tiling);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
@@ -77,10 +77,10 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 		if(!channel[i]) {
 			while(--i)
 				XLALDestroyREAL4Sequence(channel[i]);
-			LALFree(plane);
+			XLALFree(plane);
 			XLALDestroyREAL8Sequence(channel_overlap);
 			XLALDestroyREAL8Sequence(channel_rms);
-			LALFree(channel);
+			XLALFree(channel);
 			XLALDestroyTFTiling(tiling);
 			XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 		}
@@ -124,8 +124,8 @@ XLALDestroyTFPlane(
 		XLALDestroyREAL8Sequence(plane->channel_rms);
 		for(i = 0; i < plane->channels; i++)
 			XLALDestroyREAL4Sequence(plane->channel[i]);
-		LALFree(plane->channel);
+		XLALFree(plane->channel);
 		XLALDestroyTFTiling(plane->tiling);
 	}
-	LALFree(plane);
+	XLALFree(plane);
 }
