@@ -32,7 +32,7 @@ install-exec-local:
 	@echo "";\
 echo "=================================================================";\
 echo "";\
-echo "	LAL has now been successfully installed.";\
+echo "	LALApps has now been successfully installed.";\
 echo "";\
 echo "	Now you may want to setup your environment:";\
 echo "";\
