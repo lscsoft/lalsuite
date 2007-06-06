@@ -1,14 +1,41 @@
+/*
+ * $Id$
+ *
+ * Copyright (C) 2007  Jolien Creighton and Kipp Cannon
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+ * Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
 
+
 #include <lal/LALRCSID.h>
 NRCSID (XLALTIMEC,"$Id$");
+
 
 #define XLAL_BILLION_INT8 LAL_INT8_C( 1000000000 )
 #define XLAL_BILLION_REAL8 1e9
 
-/* mostly internal functions */
+
+/*
+ * mostly internal functions
+ */
+
 
 /** Converts GPS time to nano seconds stored as an INT8. */
 INT8 XLALGPSToINT8NS( const LIGOTimeGPS *epoch )
@@ -19,6 +46,7 @@ INT8 XLALGPSToINT8NS( const LIGOTimeGPS *epoch )
   return ns;
 }
 
+
 /** Converts nano seconds stored as an INT8 to GPS time. */
 LIGOTimeGPS * XLALINT8NSToGPS( LIGOTimeGPS *epoch, INT8 ns )
 {
@@ -26,6 +54,7 @@ LIGOTimeGPS * XLALINT8NSToGPS( LIGOTimeGPS *epoch, INT8 ns )
   epoch->gpsNanoSeconds = (INT4)( ns % XLAL_BILLION_INT8 );
   return epoch;
 }
+
 
 /** Sets GPS time given GPS integer seconds and residual nanoseconds. */
 LIGOTimeGPS * XLALGPSSet( LIGOTimeGPS *epoch, INT4 gpssec, INT4 gpsnan )
@@ -36,6 +65,7 @@ LIGOTimeGPS * XLALGPSSet( LIGOTimeGPS *epoch, INT4 gpssec, INT4 gpsnan )
   return epoch;
 }
 
+
 /** Sets GPS time given GPS seconds as a REAL8. */
 LIGOTimeGPS * XLALGPSSetREAL8( LIGOTimeGPS *epoch, REAL8 t )
 {
@@ -45,13 +75,18 @@ LIGOTimeGPS * XLALGPSSetREAL8( LIGOTimeGPS *epoch, REAL8 t )
   return epoch;
 }
 
+
 /** Returns the GPS time as a REAL8. */
 REAL8 XLALGPSGetREAL8( const LIGOTimeGPS *epoch )
 {
   return XLALGPSToINT8NS( epoch ) / XLAL_BILLION_REAL8;
 }
 
-/* general purpose functions */
+
+/*
+ * general purpose functions
+ */
+
 
 /** Adds dt to a GPS time. */
 LIGOTimeGPS * XLALGPSAdd( LIGOTimeGPS *epoch, REAL8 dt )
@@ -63,6 +98,7 @@ LIGOTimeGPS * XLALGPSAdd( LIGOTimeGPS *epoch, REAL8 dt )
   return epoch;
 }
 
+
 /** Difference between two GPS times. */
 REAL8 XLALGPSDiff( const LIGOTimeGPS *t1, const LIGOTimeGPS *t0 )
 {
@@ -72,6 +108,7 @@ REAL8 XLALGPSDiff( const LIGOTimeGPS *t1, const LIGOTimeGPS *t0 )
   dt = (REAL8)ns / XLAL_BILLION_REAL8; 
   return dt;
 }
+
 
 /** Compares two GPS times.
  * Returns:
@@ -93,6 +130,7 @@ int XLALGPSCmp( const LIGOTimeGPS *t0, const LIGOTimeGPS *t1 )
     return 0;
 }
 
+
 /** Multiply a GPS time by a number. */
 LIGOTimeGPS *XLALGPSMultiply( LIGOTimeGPS *gps, REAL8 x )
 {
@@ -109,6 +147,7 @@ LIGOTimeGPS *XLALGPSMultiply( LIGOTimeGPS *gps, REAL8 x )
 
   return gps;
 }
+
 
 /** Divide a GPS time by a number. */
 LIGOTimeGPS *XLALGPSDivide( LIGOTimeGPS *gps, REAL8 x )

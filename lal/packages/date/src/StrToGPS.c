@@ -1,9 +1,31 @@
+/*
+ * $Id$
+ *
+ * Copyright (C) 2007  Kipp Cannon
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+ * Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+
 #include <ctype.h>
 #include <errno.h>
 #include <locale.h>
 #include <stdlib.h>
 #include <lal/Date.h>
 #include <lal/LALDatatypes.h>
+
 
 #include <lal/LALRCSID.h>
 NRCSID (STRTOGPSC,"$Id$");
@@ -13,6 +35,7 @@ NRCSID (STRTOGPSC,"$Id$");
  * Check for a base 10 or base 16 number.
  */
 
+
 static int isbase10(const char *s, int radix)
 {
 	if(*s == radix)
@@ -21,6 +44,7 @@ static int isbase10(const char *s, int radix)
 		return(1);
 	return(0);
 }
+
 
 static int isbase16(const char *s, int radix)
 {
@@ -42,6 +66,7 @@ static int isbase16(const char *s, int radix)
  * Check that a string contains an exponent.
  */
 
+
 static int isdecimalexp(const char *s)
 {
 	if(*s == 'E' || *s == 'e') {
@@ -53,6 +78,7 @@ static int isdecimalexp(const char *s)
 	}
 	return(0);
 }
+
 
 static int isbinaryexp(const char *s)
 {
@@ -70,6 +96,7 @@ static int isbinaryexp(const char *s)
 /*
  * Parse an ASCII string into a LIGOTimeGPS structure.
  */
+
 
 int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 {
