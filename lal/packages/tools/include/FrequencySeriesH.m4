@@ -75,17 +75,6 @@ size_t `XLALShrink'SERIESTYPE (
 );
 /* </lalVerbatim> */
 
-/* <lalLaTeX file="FrequencySeriesShrinkP">
-\idx{`LALShrink'SERIESTYPE ()}
-</lalLaTeX> <lalVerbatim file="FrequencySeriesShrinkP"> */
-void `LALShrink'SERIESTYPE (
-	LALStatus *status,
-	SERIESTYPE *series,
-	size_t first,
-	size_t length
-);
-/* </lalVerbatim> */
-
 /* <lalLaTeX file="FrequencySeriesAddP">
 \idx{`XLALAdd'SERIESTYPE ()}
 </lalLaTeX> <lalVerbatim file="FrequencySeriesAddP"> */

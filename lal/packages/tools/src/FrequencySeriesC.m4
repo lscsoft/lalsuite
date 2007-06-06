@@ -149,29 +149,6 @@ size_t `XLALShrink'SERIESTYPE (
 }
 
 
-void `LALShrink'SERIESTYPE (
-	LALStatus *status,
-	SERIESTYPE *series,
-	size_t first,
-	size_t length
-)
-{
-	size_t new_length;
-
-	INITSTATUS(status, "`LALShrink'SERIESTYPE", FREQUENCYSERIESC);
-
-	ASSERT(series != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(series->data != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(first + length <= series->data->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
-	new_length = `XLALShrink'SERIESTYPE (series, first, length);
-	if(new_length != length) {
-		XLALClearErrno();
-		ABORT(status, LAL_FAIL_ERR, LAL_FAIL_MSG);
-	}
-	RETURN(status);
-}
-
-
 SERIESTYPE *`XLALAdd'SERIESTYPE (
 	SERIESTYPE *arg1,
 	const SERIESTYPE *arg2
