@@ -27,7 +27,7 @@ sys.path.append('@PYTHONLIBDIR@')
 # import the modules we need to build the pipeline
 from glue import pipeline
 from glue import lal
-from pylab import *
+#from pylab import *
 from glue import segments 
 from glue import segmentsUtils
 from glue.ligolw import ligolw
@@ -235,17 +235,31 @@ class qscanNode(pipeline.CondorDAGNode):
   """
   Runs an instance of a qscan job
   """
-  def __init__(self,job,time,cp,dir,trig):
+  def __init__(self,job,time,cp,dir,trig,ifo):
     """
     job = A CondorDAGJob that can run an instance of qscan.
     """
     pipeline.CondorDAGNode.__init__(self,job)
     self.add_var_arg(str(time))
     self.add_macro("macrogpsstarttime",str(time))
-    self.add_file_arg(string.strip(cp.get('qscan','config-file')))
-    self.add_file_arg(string.strip(cp.get('qscan','cache-file')))
-    self.container = HTMLcontainer(trig,"QSCAN",'index')
-    self.add_var_arg(dir+"/"+self.container.name+"/")
+    if (ifo == 'H1') or (ifo == 'H2'):
+      self.add_file_arg(string.strip(cp.get('qscan','Hconfig-file')))
+      self.add_file_arg(string.strip(cp.get('qscan','Hcache-file')))
+    if (ifo == 'L1'):
+      self.add_file_arg(string.strip(cp.get('qscan','Lconfig-file')))
+      self.add_file_arg(string.strip(cp.get('qscan','Lcache-file')))
+    self.container = HTMLcontainer(trig,"QSCAN")
+#   self.add_var_arg(dir+"/"+self.container.name+"/")
+    self.add_var_arg(string.strip(cp.get('qscan','output')))
+    tableFile = open(self.container.locallink,'a')
+    writeIULHeader(tableFile)
+    tableFile.write('<h3>Follow up of trigger [' +str(trig.eventID) +']</h3>\n')
+    tableFile.write('<a href="http://ldas-jobs.ligo.caltech.edu/~channa/' + \
+                    str(time) + '/">' + str(ifo) + \
+                    ' QScan of trigger [' +str(trig.eventID) +']</a>\n')
+    self.container.text = "click here for QScans"
+    tableFile.close()
+
   def getContainer(self):
     return self.container
 
@@ -355,19 +369,19 @@ subsuffix = '.sub'
 
 ##############################################################################
 #Decide if we are actually reading any trigger files
+page = string.strip(cp.get('output','page'))
 
 if not opts.read_triggers and not opts.write_to_iulgroup:
   sys.exit(0)
   # We are done here
 if not opts.read_triggers and opts.write_to_iulgroup:
-  publishToIULGroup(opts.page)
+  publishToIULGroup(page)
   # don't overwrite anything, just publish what we have
   sys.exit(0)
 
 # Since we are continuing get useful stuff from the ini file.
 xml_glob = string.strip(cp.get('triggers','xml-glob'))
 numtrigs = string.strip(cp.get('triggers','num-trigs'))
-page = string.strip(cp.get('output','page'))
 statistic =  string.strip(cp.get('triggers','statistic'))
 bla =  string.strip(cp.get('triggers','bitten-l-a'))
 blb =  string.strip(cp.get('triggers','bitten-l-b'))
@@ -426,13 +440,13 @@ for trig in followuptrigs:
     except: continue
 
     # SETUP QSCAN JOBS
-    if qFlag and trig.gpsTime[ifo] and opts.qscan:
+    if trig.gpsTime[ifo] and opts.qscan:
       try: 
-        qNode = qscanNode(qscanJob,trig.gpsTime[ifo],cp,trig.summarydir,trig)
+        qNode = qscanNode(qscanJob,trig.gpsTime[ifo],cp,trig.summarydir,trig,ifo)
         dag.add_node(qNode)
         qFlag = False
         qscanJobCnt+=1
-        summaryHTML.containers.append( qNode.getContainer() )
+        #summaryHTML.containers.append( qNode.getContainer() )
       except: print "couldn't add qscan job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
       
     # SETUP TRIGBANK JOBS
@@ -451,7 +465,7 @@ for trig in followuptrigs:
       try:
         inspiralNode = inspiralFollowUpNode(inspJob,trig.gpsTime[ifo],\
            inspiral_process_params[ifo],opts,trigNode.output_file_name)
-        if trigNode: # only add a parent if it exists
+        if trigNode and opts.trig_bank: # only add a parent if it exists
           inspiralNode.add_parent(trigNode)
         if opts.inspiral:
           dag.add_node(inspiralNode)
@@ -467,15 +481,17 @@ for trig in followuptrigs:
       plotNode = plotSNRCHISQNode(plotJob,trig.gpsTime[ifo],inspiralNode.output_file_name,trig,page)
       try:
         plotNode = plotSNRCHISQNode(plotJob,trig.gpsTime[ifo],inspiralNode.output_file_name,trig,page)
-        if inspiralNode:
+        if inspiralNode and opts.inspiral:
           plotNode.add_parent(inspiralNode)
         if opts.plots:
           dag.add_node(plotNode)
           plotJobCnt+=1
-        summaryHTML.containers.append( plotNode.getContainer() )
+        #summaryHTML.containers.append( plotNode.getContainer() )
       except:
         print "couldn't add plot job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
-
+  
+  if qNode: summaryHTML.containers.append( qNode.getContainer() )
+  if plotNode: summaryHTML.containers.append( plotNode.getContainer() )
   summaryHTMLlist.append(summaryHTML)
     
 
@@ -490,7 +506,7 @@ dag.write_dag()
 
 writeHTMLTables(summaryHTMLlist)
 if opts.write_to_iulgroup:
-  publishToIULGroup(opts.page)
+  publishToIULGroup(page)
 
 sys.exit(0)
 
