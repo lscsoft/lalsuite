@@ -257,7 +257,7 @@ main (INT4 argc, CHAR **argv )
       /* -- !! here the approximant is overwritten. Later, we will populate
       the approximant again with userParam.template into overlapin.appoximant */     
       insptmplt = randIn.param;   
-      filter_processed = sizeBank;
+      filter_processed = 0;
 
 
       /* -- and enter in the bank */
@@ -369,7 +369,7 @@ main (INT4 argc, CHAR **argv )
 	      {
 	        if (userParam.fastSimulation == 1 && match <.5)
 	        { 		  
-  		  filter_processed--;
+/*  		  filter_processed--;*/
 	        }		
 	        else
 	        {
@@ -386,6 +386,7 @@ main (INT4 argc, CHAR **argv )
 		  OverlapOutputThisTemplate.templateNumber = thisTemplateIndex;
 		  insptmplt.fFinal = overlapin.param.fFinal;
 		  OverlapOutputThisTemplate.snrAtCoaTime  =  correlation.data[randIn.param.nStartPad];
+  		  filter_processed++;
 	  
 		}
 	      }
