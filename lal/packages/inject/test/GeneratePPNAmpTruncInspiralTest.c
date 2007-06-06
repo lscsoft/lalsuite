@@ -71,7 +71,7 @@ int lalDebugLevel = 1;
 #define M1    (1.4)
 #define M2    (1.4)
 #define DIST  (100000)
-#define INC   (0.0)
+#define INC   (90.0)
 #define PHI   (0.0)
 #define FMIN  (40.0)
 #define FMAX  (1000.0)
@@ -192,6 +192,7 @@ main(int argc, char **argv)
   REAL8 deltat = 0.0;           /* wave sampling interval */
   INT4 order = ORDER;           /* PN order */
   UINT4 wlength = 0;
+  UINT4 flength = 0;
 
   /* Other variables. */
   UINT4 i;                      /* index */
@@ -425,7 +426,7 @@ main(int argc, char **argv)
    ********************************************************************************************************/
  
   wlength = waveform.h->data->length; 	
-  UINT4 flength = waveform.f->data->length;
+  flength = waveform.f->data->length;
 
   fprintf(stderr," fFinal = %e\n", waveform.f->data->data[flength -1]);
 
@@ -554,6 +555,10 @@ main(int argc, char **argv)
   printf("\n  Writing FFT data to fourier file...\n\n");
 #endif  
  
+  /* Write output. */
+  if ( ( fourier = fopen( fftout, "w" ) ) == NULL ) 
+    fftout = "fftout";
+    
   fourier = fopen(fftout, "w");
   for(i = 0; i < wlength/2+1; i++, f+=Hf.deltaF) 
     fprintf(fourier," %f %10.3e %10.3e\n", f, Hf.data->data[i].re, Hf.data->data[i].im);	  
