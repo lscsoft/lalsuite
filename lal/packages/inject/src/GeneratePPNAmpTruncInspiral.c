@@ -297,7 +297,10 @@ LALGeneratePPNAmpTruncInspiral( LALStatus     *stat,
   /* Set PN parameters for amplitude */
   for (i= 0; i < 6; i++)
     q[i] = 1.0;
-  
+
+  /* Set this to 1.0 and the q[1-5] = 0 for restricted waveform */
+  q[0] = 1.0;
+
   /* Switch on all harmonics */
   for (i = 0; i < NUMHARMONICS; i++)
     s[i] = 1.0;
@@ -565,7 +568,9 @@ LALGeneratePPNAmpTruncInspiral( LALStatus     *stat,
         + 6848.0/105.0*log(4*pow(f2aFac*yStart, 1.0/3.0));
   g7 = (-15419335.0/127008.0 - 75703.0/756.0*eta + 14809.0/378.0*eta*eta)*LAL_PI;
    
-  t0 = eta/(5.0*mTot)*5.0*mu/(pow(eta, 2.0)*256.0*pow(f2aFac*yStart,8.0/3.0))*(g0 + g1*pow(f2aFac*yStart,1.0/3.0) + g2*pow(f2aFac*yStart,2.0/3.0) + g3*f2aFac*yStart + g4*pow(f2aFac*yStart,4.0/3.0) + g5*pow(f2aFac*yStart,5.0/3.0) + g6*pow(f2aFac*yStart,2.0) + g7*pow(f2aFac*yStart,7.0/3.0));  
+  t0 = eta/(5.0*mTot)*5.0*mu/(pow(eta, 2.0)*256.0*pow(f2aFac*yStart,8.0/3.0))*(g0 + g1*pow(f2aFac*yStart,1.0/3.0) 
+		  + g2*pow(f2aFac*yStart,2.0/3.0) + g3*f2aFac*yStart + g4*pow(f2aFac*yStart,4.0/3.0) 
+		  + g5*pow(f2aFac*yStart,5.0/3.0) + g6*pow(f2aFac*yStart,2.0) + g7*pow(f2aFac*yStart,7.0/3.0));  
 
   /*xMax */
   xMax = LAL_SQRT1_2;
