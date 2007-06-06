@@ -327,7 +327,6 @@ int MAIN( int argc, char *argv[]) {
   DopplerSkyScanState thisScan = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
   static PulsarDopplerParams dopplerpos;	       /* current search-parameters */
   static PulsarDopplerParams thisPoint; 
-  REAL8  initialPatchSizeY;
 
   /* temporary storage for spinrange vector */
   static PulsarSpinRange spinRange_Temp;
@@ -849,8 +848,6 @@ int MAIN( int argc, char *argv[]) {
     semiCohPar.patchSizeY = 1.0 / ( tStack * usefulParams.spinRange_midTime.fkdot[0] * VEPI ); 
   }
     
-  initialPatchSizeY = semiCohPar.patchSizeY;
-  
   LogPrintf(LOG_DETAIL,"Hough/Stackslide patchsize is %frad x %frad\n", 
 	    semiCohPar.patchSizeX, semiCohPar.patchSizeY); 
 
@@ -928,17 +925,6 @@ int MAIN( int argc, char *argv[]) {
 
       semiCohPar.alpha = thisPoint.Alpha;
       semiCohPar.delta = thisPoint.Delta;
-      
-      semiCohPar.patchSizeY = initialPatchSizeY;
-      
-      if( (semiCohPar.delta > 0) && (semiCohPar.delta< 0.5*(LAL_PI -semiCohPar.patchSizeX) ) )
-         semiCohPar.patchSizeY = initialPatchSizeY*cos(semiCohPar.delta - 0.5*semiCohPar.patchSizeX)/cos(semiCohPar.delta);
-
-      if( (semiCohPar.delta < 0) && (semiCohPar.delta> 0.5*(-LAL_PI +semiCohPar.patchSizeX) ) )
-         semiCohPar.patchSizeY = initialPatchSizeY*cos(semiCohPar.delta + 0.5*semiCohPar.patchSizeX)/cos(semiCohPar.delta);
-
-      /* assuming semiCohPar.delta \in [-pi/2, pi/2], otherwise the conditions should be more robust */
-
       
       /* initialize weights to unity */
       LAL_CALL( LALHOUGHInitializeWeights( &status, weightsV), &status);
