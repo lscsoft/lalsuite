@@ -14,6 +14,9 @@
 NRCSID(HSBOINCEXTRASHRCSID,"$Id$");
 #include "FstatToplist.h"
 
+#define EAH_LOGLEVEL 1        /* LOG_DEBUG */
+#define EAH_LALDEBUGLEVEL 33  /* DebugLevel = 1, but without time-consuming memory debugging */
+
 /* linking proper functions to the hooks in HierarchicalSearch.c */
 
 /* use a local copy of ComputeFStatFreqBand() and realted functions for E@H-specific optimizations */
