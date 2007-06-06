@@ -65,6 +65,10 @@ RCSID( "$Id$" );
 "  --maximum-mass MAX       set the maximum componenet mass to MAX (236.8)\n"\
 "  --minimum-spin AMIN      set the minimum component of the dimensionless spin parameter (0)\n"\
 "  --maximum-spin AMAX      set the maximum component of the dimensionless spin parameter (0.994)\n"\
+"  --minimum-quality MIN    set minimum quality factor to MIN (1000)\n"\
+"  --maximum-quality MAX    set maximum quality factor to MAX (10000)\n"\
+"  --minimum-frequency MIN  set minimum frequency to MIN (45)\n"\
+"  --maximum-frequency MAX  set maximum frequency to MAX (2500)\n"\
 "  --minimum-distance DMIN  set the minimum distance to DMIN kpc (1)\n"\
 "  --max-distance DMAX      set the maximum distance to DMAX kpc (200000)\n"\
 "  --epsilon EPS            amount of energy radiated as gravitational waves (0.01)\n"\
@@ -111,8 +115,8 @@ int main( int argc, char *argv[] )
   /* command line options */
   LIGOTimeGPS   gpsStartTime;
   LIGOTimeGPS   gpsEndTime;
-  REAL8         meanTimeStep = 2630 / LAL_PI;
-  REAL8         timeInterval = 0;
+  REAL8         meanTimeStep = 7000 / LAL_PI;
+  REAL8         timeInterval = 250;
   REAL8         tstep = 0;
   UINT4         randSeed = 1;
   CHAR         *userTag = NULL;
@@ -120,13 +124,17 @@ int main( int argc, char *argv[] )
   REAL4         maxMass = 236.8;
   REAL4         minSpin = 0;
   REAL4         maxSpin = 0.994;
+  REAL4         minFreq = 45.0;
+  REAL4         maxFreq = 2500.0;
+  REAL4         minQuality = 2;
+  REAL4         maxQuality = 22.0;
   REAL4         dmin = 1;
   REAL4         dmax = 200000;
   REAL4         epsilon = 0.010;
   
   /* program variables */
   RandomParams *randParams = NULL;
-  REAL4  u, exponent;
+  REAL4  u, exponent, expt;
   REAL4  deltaM;
   LALMSTUnitsAndAcc     gmstUnits = { MST_HRS, LALLEAPSEC_STRICT };
   LALGPSandAcc          gpsAndAcc;
@@ -171,6 +179,10 @@ int main( int argc, char *argv[] )
     {"maximum-mass",            required_argument, 0,                'B'},
     {"minimum-spin",            required_argument, 0,                'P'},
     {"maximum-spin",            required_argument, 0,                'Q'},
+    {"minimum-frequency",       required_argument, 0,                'C'},
+    {"maximum-frequency",       required_argument, 0,                'D'},
+    {"minimum-quality",         required_argument, 0,                'E'},
+    {"maximum-quality",         required_argument, 0,                'F'},
     {"minimum-distance",        required_argument, 0,                'V'},
     {"maximum-distance",        required_argument, 0,                'W'},
     {"epsilon",                 required_argument, 0,                'r'},
@@ -187,6 +199,9 @@ int main( int argc, char *argv[] )
   REAL4 lmax;
   REAL4 deltaL;
   REAL4 deltaA;
+  REAL4 fmin;
+  REAL4 fmax;
+  REAL4 deltaf;
 
   /* set up inital debugging values */
   lal_errhandler = LAL_ERR_EXIT;
@@ -228,7 +243,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:A:b:B:h:P:Q:r:s:t:V:W:vz:Z:", long_options, &option_index );
+        "a:A:b:B:C:D:E:F:h:P:Q:r:s:t:V:W:vz:Z:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -402,6 +417,69 @@ int main( int argc, char *argv[] )
           next_process_param( long_options[option_index].name, 
               "float", "%e", maxSpin );
         break;
+
+      case 'C':
+        minFreq = (REAL4) atof( optarg );
+        if ( minFreq <= 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "miniumum frequency must be > 0: "
+              "(%f Hz specified)\n",
+              long_options[option_index].name, minFreq );
+          exit( 1 );
+        }
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%e", minFreq );
+        break;
+
+      case 'D':
+        maxFreq = (REAL4) atof( optarg );
+        if ( maxFreq <= 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "maxiumum frequency must be > 0: "
+              "(%f Hz specified)\n",
+              long_options[option_index].name, maxFreq );
+          exit( 1 );
+        }
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%e", maxFreq );
+        break;
+
+      case 'E':
+        /* minimum quality factor */
+        minQuality = (REAL4) atof( optarg );
+        if ( minQuality < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "the minimum quality factor must be > 0: "
+              "(%f specified)\n",
+              long_options[option_index].name, minQuality );
+          exit( 1 );
+        }
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%e", minQuality );
+        break;
+
+      case 'F':
+        /* maximum quality factor */
+        maxQuality = (REAL4) atof( optarg );
+        if ( maxQuality < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "the maximum quality factor must be > 0: "
+              "(%f specified)\n",
+              long_options[option_index].name, maxQuality );
+          exit( 1 );
+        }
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%e", maxQuality );
+        break;
+
        
       case 'V':
         /* minimum distance from earth */
@@ -589,13 +667,10 @@ int main( int argc, char *argv[] )
       REAL8 randstep;
       if ( vrbflg )
         fprintf( stdout, "gps-start-time outside of playground, ... shifting to next playground interval\n");
-/*      REAL8 nextplay;*/
-/*      nextplay = step(gpsStartTime);*/  /*find start of next playground interval*/
       LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
       randstep = step(gpsStartTime) + u * 600;  /* find a random time within this 600s */
       LAL_CALL( LALAddFloatToGPS( &status, &gpsStartTime, &gpsStartTime,
             randstep ), &status );  /* add this to the old gpsStartTime */
-          
     }
   }
 
@@ -627,10 +702,8 @@ int main( int argc, char *argv[] )
                 sizeof(CHAR));
     
     this_inj->epsilon = epsilon;
-    /* set the geocentric start time of the injection */
-    /* XXX CHECK XXX */
     
-  
+    /* set the geocentric start time of the injection */
     this_inj->geocent_start_time = gpsStartTime;
     if ( timeInterval )
     {
@@ -639,7 +712,26 @@ int main( int argc, char *argv[] )
           &(this_inj->geocent_start_time), u * timeInterval ), &status );
     }    
 
+ 
+    /* set frequency, f0, and quality factor Q */
+    fmin = log10(minFreq);
+    fmax = log10(maxFreq);
+    deltaf = fmax - fmin;
+    LAL_CALL(  LALUniformDeviate(&status,&u,randParams),&status );
+    expt = fmin + deltaf * u;
+    this_inj->frequency = pow(10.0,(REAL4) expt);
 
+/*  LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );*/
+/*  this_inj->frequency = minFreq + u * (maxFreq - minFreq);*/
+    LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
+    this_inj->quality = minQuality + u * (maxQuality - minQuality);
+
+    /* calculate M and a from f and Q */
+    this_inj->spin = 1 - pow( (this_inj->quality / 2.0), ( - 20.0 / 9.0 ) );
+    this_inj->mass = pow( LAL_C_SI, 3) / LAL_G_SI / LAL_MSUN_SI / 2.0 / LAL_PI
+                      * ( 1.0 - 0.63 * pow( ( this_inj->quality /2.0 ), (-2.0/3.0))); 
+
+#if 0
     /* mass distribution */
     LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
     this_inj->mass = minMass + u * deltaM;
@@ -651,6 +743,7 @@ int main( int argc, char *argv[] )
     this_inj->frequency = pow( LAL_C_SI, 3) / LAL_G_SI / LAL_MSUN_SI / 2.0 / LAL_PI
       * ( 1.0 - 0.63 * pow( ( 1.0 - this_inj->spin ), 0.3 ) ) / this_inj->mass;
     this_inj->quality = 2.0 * pow( ( 1.0 - this_inj->spin ), -0.45 );
+#endif
             
     /* spatial distribution */
     /* compute random longitude and latitude */ 
@@ -738,9 +831,6 @@ int main( int argc, char *argv[] )
     /* compute the effective distance for LHO */
     this_inj->eff_dist_h /= sqrt( splus*splus*resp.plus*resp.plus +
         scross*scross*resp.cross*resp.cross );
-
-    /* fprintf( stdout, "antenna factor = %e\n",sqrt( splus*splus*resp.plus*resp.plus +
-        scross*scross*resp.cross*resp.cross ) );    */
 
     /* compute hrss at LHO */ 
     this_inj->hrss_h = this_inj->amplitude * pow ( ( 
