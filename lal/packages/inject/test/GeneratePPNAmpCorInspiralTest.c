@@ -543,7 +543,10 @@ main(int argc, char **argv)
   printf("\n\n h(t)length = %d\n H(F)length = %d\n ", wlength, Hf.data->length);
   printf("\n  Writing FFT data to fourier file...\n\n");
 #endif  
- 
+
+  if( ( fourier = fopen(fftout, "w")) == NULL)
+    fftout = "fftout";	  
+
   fourier = fopen(fftout, "w");
   for(i = 0; i < wlength/2+1; i++, f+=Hf.deltaF) 
     fprintf(fourier," %f %10.3e %10.3e\n", f, Hf.data->data[i].re, Hf.data->data[i].im);	  
