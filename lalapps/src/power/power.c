@@ -486,7 +486,7 @@ static int parse_command_line_debug(int argc, char *argv[])
 	 * Default == print only error messages.
 	 */
 
-	lalDebugLevel = LALERROR;
+	lalDebugLevel = LALERROR | LALNMEMDBG | LALNMEMPAD | LALNMEMTRK;
 
 	/*
 	 * Find and parse only the debug level command line options.  Must
@@ -499,13 +499,13 @@ static int parse_command_line_debug(int argc, char *argv[])
 	do switch(c = getopt_long(argc, argv, "-", long_options, &option_index)) {
 	case 'D':
 		if(!strcmp(optarg, "info"))
-			lalDebugLevel = LALINFO | LALWARNING | LALERROR;
+			lalDebugLevel = LALINFO | LALWARNING | LALERROR | LALNMEMDBG | LALNMEMPAD | LALNMEMTRK;
 		else if(!strcmp(optarg, "warn"))
-			lalDebugLevel = LALWARNING | LALERROR;
+			lalDebugLevel = LALWARNING | LALERROR | LALNMEMDBG | LALNMEMPAD | LALNMEMTRK;
 		else if(!strcmp(optarg, "error"))
-			lalDebugLevel = LALERROR;
+			lalDebugLevel = LALERROR | LALNMEMDBG | LALNMEMPAD | LALNMEMTRK;
 		else if(!strcmp(optarg, "off"))
-			lalDebugLevel = 0;
+			lalDebugLevel = LALNMEMDBG | LALNMEMPAD | LALNMEMTRK;
 		else {
 			sprintf(msg, "must be one of \"info\", \"warn\", \"error\", or \"off\"");
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
