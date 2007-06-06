@@ -402,9 +402,14 @@ int MAIN( int argc, char *argv[]) {
 
   /*---------------------------------------------------------------*/
   /* set defaults, read user variables, log user variables and log cvs tags */
+
   /* LALDebugLevel must be called before anything else */
+#ifdef EAH_LALDEBUGLEVEL
+  lalDebugLevel = EAH_LALDEBUGLEVEL;
+#else
   lalDebugLevel = 0;
   LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
+#endif
 
   /* now set the other defaults */
   uvar_help = FALSE;
@@ -520,7 +525,11 @@ int MAIN( int argc, char *argv[]) {
     return(0); 
 
   /* set log-level */
+#ifdef EAH_LOGLEVEL
+  LogSetLevel ( EAH_LOGLEVEL );
+#else
   LogSetLevel ( lalDebugLevel );
+#endif
 
   /* some basic sanity checks on user vars */
   if ( (uvar_method != 0) && (uvar_method != 1) && (uvar_method != -1)) {
