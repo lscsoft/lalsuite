@@ -37,7 +37,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include <lal/LALErrno.h>
 #include <lal/LALStdlib.h>
 #include <lal/Thresholds.h>
 

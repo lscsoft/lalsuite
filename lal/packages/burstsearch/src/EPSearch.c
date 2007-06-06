@@ -26,7 +26,6 @@
 #include <lal/EPSearch.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALDatatypes.h>
-#include <lal/LALErrno.h>
 #include <lal/LALRCSID.h>
 #include <lal/LALStatusMacros.h>
 #include <lal/LALStdlib.h>
