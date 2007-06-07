@@ -70,7 +70,7 @@ RCSID( "$Id$" );
 "  --minimum-frequency MIN  set minimum frequency to MIN (45)\n"\
 "  --maximum-frequency MAX  set maximum frequency to MAX (2500)\n"\
 "  --minimum-distance DMIN  set the minimum distance to DMIN kpc (1)\n"\
-"  --max-distance DMAX      set the maximum distance to DMAX kpc (200000)\n"\
+"  --maximum-distance DMAX      set the maximum distance to DMAX kpc (200000)\n"\
 "  --epsilon EPS            amount of energy radiated as gravitational waves (0.01)\n"\
 "  --waveform WVF           set the injection waveform to WVF\n"\
 "\n"
