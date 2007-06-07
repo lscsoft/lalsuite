@@ -1,0 +1,92 @@
+Requirements
+============
+
+The HierarchicalSearch scans the whole sky point by point.
+After finishing the analysis for a particular skypoint,
+the candidates that have been found are put into a "toplist"
+that keeps track of the n top rated canditates of the
+analysis of all skypoints so far.
+
+This list is written to a file after all skypoints had been
+looked at. Up to that moment, this toplist is kept in RAM only.
+
+Checkpointing should allow this process to be interrupted and
+picked up anywhere in the middle of the analysis run. It therefore
+should provide a way to externally (i.e. in a file on disk) store
+information about the state of the analysis (e.g. loop counters).
+In particular it needs to provide an external representation
+of the toplist of candidates (in a file), that is consistant with the
+toplist in memory at any time. This file should not grow arbitrary
+large, there should be possibility to limit its size during the
+analysis run. Checkpointing code should also provide support for
+picking up from a previously written checkpoint, i.e. restore the
+toplist and loop counters from the checkpoint. As the application
+is meant to run on potentially unattended or faulty machines,
+broken checkpoint information should be detected and dealt with.
+
+The modifications necessary for the checkpointing to the main
+program should be kept to a minimum to not affect readability and
+maintainability.
+
+
+Data structures (Files)
+=======================
+
+The external representation of the toplist is a file that has a
+format similar to that of the final output file. It is referred
+to as "previous output" or "checkpointed file".
+
+The checkpointing code periodically writes a "checkpoint file".
+It contains the current value of the skypoint loop counter,
+the total number of skypoints of the current analysis run,
+the current sky location and a checksum of the current
+checkpointed file.
+
+
+Interface
+=========
+
+Checkpointing is implemented by means of four functions:
+
+- init_and_read_checkpoint()
+
+This funcion initializes the data structures for checkpointing,
+and looks for a previous checkpoint file. If it finds one, it
+tries to read the previous output back into memory and returns
+information to resume from the checkpoint.
+
+- add_checkpoint_candidate()
+
+Whenever a candiadate has been found, this function not only adds
+it to the "toplist" in memory; it also 
+
+- set_checkpoint()
+- write_and_close_checkpointed_file()
+
+
+Modules
+=======
+
+The "toplist" named above is actually kept as an "FstatToplist", as the
+candidates of the HierarchicalSearch have the same parameters
+and thus format than the candidates of the "FStat Search" this code
+was originally developed for. The Toplist itself is stored and managed
+in a heap structure that allows efficient manipulation of the data
+(almost every operation can be performed in O(log(n))).
+
+The generic code for manipulating a toplist (i.e. independent of
+a particular data type) is implemented in HeapToplist.h/c.
+
+Everything specifc to the candidate format, includeing functions to
+add a candidate to the toplist or even file I/O, can be found in
+FstatToplis.h/c. 
+
+The implementation of the interface named above as well as the
+funtions related to the checkpoint file are kept in
+hs_boinc_extras.h/c . One reason for that is that they require
+some functionality of BOINC to e.g. know about when it's
+"time to checkpoint" based on the preferences the user has set.
+
+
+Functions
+=========
