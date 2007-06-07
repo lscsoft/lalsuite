@@ -49,7 +49,7 @@
 
 
 #define BANKEFFICIENCY_PARAMS_ROW_SPACE \
-"         %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %u "
+"         %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %u"
 
 /*do not use capital here for future mysql migration */
 #define PRINT_LIGOLW_XML_BANKEFFICIENCY(fp) ( \

@@ -644,7 +644,8 @@ void
 PrintResults(   ResultIn result, 
                 RandomInspiralSignalIn randIn, INT4 n, INT4 N)
 {
-
+  n=N;/*to avoid warnings*/
+  
   fprintf(stdout, " %e %e %e %e ",  
 	  result.psi0_trigger, 
 	  result.psi3_trigger,
@@ -665,14 +666,14 @@ PrintResults(   ResultIn result,
 	  randIn.param.startPhase);
 
   
-  fprintf(stdout, " %e %7.5f  %e   %e %d %d %d %d/%d\n",
+  fprintf(stdout, " %e %7.5f  %e   %e %d %d %d \n",
 	  result.rho_final, 
 	  result.snrAtCoaTime,
 	  result.phase, 
 	  result.alphaF,
 	  result.bin , 
 	  randIn.param.nStartPad, 
-	  result.nfast, n, N);
+	  result.nfast);
 
   fflush(stdout);
 }
@@ -3444,18 +3445,17 @@ void Help(void)
 void 
 BEAscii2Xml(void)
 {
-  UINT4 line = 0;
+  UINT4 countline = 0;
   UINT8  id = 0;
-  UINT4 start = 0;
   ResultIn trigger;
   REAL4 tau0, tau3, tau0I, tau3I, psi0, psi3,phaseI; 
   FILE *input1, *input2, *bank;
-  FILE *output;      
+  FILE *output;     
 
   SnglInspiralTable     *inputData = NULL;
   INT4 numFileTriggers = 0, nStartPad;
 
-  char sbuf[512];
+  char sbuf[2048];
   
   /* Main program starts here */
   /* First we open the file containing the ascii results */
@@ -3482,7 +3482,7 @@ BEAscii2Xml(void)
     {
       /* read prototype and save in outputfile */
       fprintf(stderr,"parsing the prototype  -- ");
-      while(fgets(sbuf,1024,input2) !=NULL)
+      while(fgets(sbuf, 2048, input2) !=NULL)
 	fputs(sbuf, output);
       fprintf(stderr," done\n");
     }
@@ -3574,36 +3574,31 @@ BEAscii2Xml(void)
   fprintf(stderr,"done\n");
   /* read ascii input and save in xml format */
   fprintf(stderr,"reading the ascii file -- and saving xml file");
-  do  
-    {
-      fscanf(input1,BANKEFFICIENCY_PARAMS_ROW_SPACE,
-	     &trigger.psi0_trigger, &trigger.psi3_trigger, 
-	     &psi0, &psi3,  &tau0, &tau3, &tau0I, &tau3I, 
-	     &trigger.fend_trigger, &trigger.fend_inject,
-	     &trigger.mass1_inject, &trigger.mass2_inject,
-	     &phaseI, &trigger.rho_final, &trigger.snrAtCoaTime, &trigger.phase,
-	     &trigger.alphaF, &trigger.bin, &nStartPad, &trigger.nfast); 
+  while   ((fgets(sbuf, 2048, input1))!= NULL)
+  {
+    sscanf(sbuf,BANKEFFICIENCY_PARAMS_ROW_SPACE,
+        &trigger.psi0_trigger, &trigger.psi3_trigger, 
+	&psi0, &psi3,  &tau0, &tau3, &tau0I, &tau3I, 
+	&trigger.fend_trigger, &trigger.fend_inject,
+	&trigger.mass1_inject, &trigger.mass2_inject,
+	&phaseI, &trigger.rho_final, &trigger.snrAtCoaTime, &trigger.phase,
+	&trigger.alphaF, &trigger.bin, &nStartPad, &trigger.nfast); 
 
-     if (start==0){
-	      start+=1;
-      }
-      else 
-      {
-	      fprintf(output,",\n");
-      }
-      fprintf(output, BANKEFFICIENCY_PARAMS_ROW,
-	     trigger.psi0_trigger, trigger.psi3_trigger,
-	      psi0, psi3,  
-	     tau0, tau3, tau0I, tau3I,
-             trigger.fend_trigger, trigger.fend_inject,
-	     trigger.mass1_inject, trigger.mass2_inject,
-	     phaseI, trigger.rho_final, trigger.snrAtCoaTime, 
-	     trigger.phase, trigger.alphaF, trigger.bin, nStartPad, trigger.nfast); 
-             line++;
-    }
-   while(!feof(input1));
+      
+    fprintf(output, BANKEFFICIENCY_PARAMS_ROW,
+        trigger.psi0_trigger, trigger.psi3_trigger,
+	psi0, psi3, tau0, tau3, tau0I, tau3I,
+        trigger.fend_trigger, trigger.fend_inject,
+	trigger.mass1_inject, trigger.mass2_inject,
+	phaseI, trigger.rho_final, trigger.snrAtCoaTime, trigger.phase, 
+        trigger.alphaF, trigger.bin, nStartPad, trigger.nfast); 
+    fprintf(output,",\n");
+      
+    countline++;
+  }
 
-  fprintf(stderr,"read %d lines...done\n", line);
+
+  fprintf(stderr,"read %d lines...done\n", countline);
   PRINT_LIGOLW_XML_TABLE_FOOTER(output);
   PRINT_LIGOLW_XML_FOOTER(output);
 
