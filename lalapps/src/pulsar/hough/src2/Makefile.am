@@ -8,7 +8,7 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 ## not usable before automake-1.6:
 ## AM_LDFLAGS = -all-static
 
-bin_PROGRAMS = HoughValidateAM HoughMismatch HierarchicalSearch
+bin_PROGRAMS = HoughValidateAM HoughMismatch HierarchicalSearch HierarchicalSearch_v2
 
 HoughValidateAM_SOURCES = HoughValidateAM.c ../src/MCInjectHoughS2.h \
 	                  ../src/SFTbin.h ../src/SFTbin.c \
@@ -25,3 +25,8 @@ HierarchicalSearch_SOURCES = HierarchicalSearch.c HierarchicalSearch.h StackSlid
 			  ../../FDS_isolated/HeapToplist.c ../../FDS_isolated/HeapToplist.h \
 			  ../../FDS_isolated/ComputeFStatistic.h
 
+HierarchicalSearch_v2_SOURCES = HierarchicalSearch_v2.c HierarchicalSearch.h StackSlideFstat.c StackSlideFstat.h \
+			  ../../FDS_isolated/DopplerScan.c ../../FDS_isolated/DopplerScan.h \
+			  ../../FDS_isolated/FstatToplist.c ../../FDS_isolated/FstatToplist.h \
+			  ../../FDS_isolated/HeapToplist.c ../../FDS_isolated/HeapToplist.h \
+			  ../../FDS_isolated/ComputeFStatistic.h
