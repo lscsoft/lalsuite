@@ -63,7 +63,7 @@ endif
 
 if HAVE_PYTHON
 bin_SCRIPTS = lalapps_inspiral_pipe lalapps_inspiral_hipe \
-	      lalapps_multi_hipe \
+	      lalapps_multi_hipe lalapps_trigger_hipe\
               lalapps_inspiral_online_pipe \
               lalapps_inspiral_online_pipe_inject \
               lalapps_check_hipe_times
@@ -84,6 +84,9 @@ lalapps_inspiral_hipe: $(srcdir)/inspiral_hipe.in python_config.sed
 lalapps_multi_hipe: $(srcdir)/multi_hipe.in python_config.sed
 	sed -f python_config.sed $(srcdir)/multi_hipe.in > lalapps_multi_hipe
 	chmod +x lalapps_multi_hipe
+lalapps_trigger_hipe: $(srcdir)/trigger_hipe.in python_config.sed
+	sed -f python_config.sed $(srcdir)/trigger_hipe.in > lalapps_trigger_hipe
+	chmod +x lalapps_trigger_hipe
 lalapps_check_hipe_times: $(srcdir)/check_hipe_times.in python_config.sed
 	sed -f python_config.sed $(srcdir)/check_hipe_times.in > lalapps_check_hipe_times
 	chmod +x lalapps_check_hipe_times
@@ -100,7 +103,7 @@ EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(INCASRC) $(COHERESRC) $(INSPINJSRC) \
              $(SPLITBANKSRC) inspiral.py inspiral_pipe.in \
              inspiral_online_pipe.in inspiral_hipe.in \
-	     multi_hipe.in \
+	     multi_hipe.in trigger_hipe.in\
              inspiral_online_pipe_inject.in check_hipe_times.in \
              $(DATA)
 
@@ -108,7 +111,7 @@ INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 CLEANFILES = lalapps_inspiral_pipe lalapps_inspiral_hipe \
-	     lalapps_multi_hipe \
+	     lalapps_multi_hipe lalapps_trigger_hipe\
              lalapps_inspiral_online_pipe \
              lalapps_inspiral_online_pipe_inject python_config.sed \
              lalapps_check_hipe_times
