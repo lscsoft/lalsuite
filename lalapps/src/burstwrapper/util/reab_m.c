@@ -1,4 +1,23 @@
 /*
+*  Copyright (C) 2007 Julien Sylvestre
+*
+*  This program is free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License
+*  along with with program; see the file COPYING. If not, write to the
+*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+*  MA  02111-1307  USA
+*/
+
+/*
 gcc -c ReadBurstBin.c -O
 gcc -c  -I/home/jsylvest/pro/include -I/apps/matlab/extern/include -I/apps/matlab/simulink/include -DMATLAB_MEX_FILE -fPIC  -O -DNDEBUG reab_m.c
 gcc -c  -I/home/jsylvest/pro/include -I/apps/matlab/extern/include -I/apps/matlab/simulink/include -DMATLAB_MEX_FILE -fPIC  -O -DNDEBUG /apps/matlab/extern/src/mexversion.c

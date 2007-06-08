@@ -1,3 +1,22 @@
+/*
+*  Copyright (C) 2007 Julien Sylvestre, Kipp Cannon
+*
+*  This program is free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License
+*  along with with program; see the file COPYING. If not, write to the
+*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+*  MA  02111-1307  USA
+*/
+
 /* [start_time_s,start_time_ns,duration,central_freq,bandwidth] = LALBurst(n,0,1/16384,'tfclusters','test','string',0.08,'float',1,'int',0,'int',0,'int',0.125,'float',8,'float',8184,'float',0.5,'float',5,'int',0,'int',0,'int',0,'int',0,'int',0,'int',0,'int',2,'int',3,'int',4,'int',4,'int'); */
 
 #include "mex.h"
