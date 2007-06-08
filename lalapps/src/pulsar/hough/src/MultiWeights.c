@@ -104,9 +104,7 @@ int main(int argc, char *argv[]){
 
  /* vector of weights */
   REAL8Vector weightsV;
-   
-  MultiPSDVector *multPSD = NULL;  
-  
+     
   UINT4 iIFO, iSFT, numsft;
   INT4 k,j;
  
@@ -117,6 +115,7 @@ int main(int argc, char *argv[]){
   /* user input variables */
   BOOLEAN  uvar_help, uvar_printLog;
   BOOLEAN  uvar_weighAM, uvar_weighNoise;
+  BOOLEAN  uvar_dumpAllW, uvar_dumpRelW, uvar_dumpNoise;
   CHAR     *uvar_sftDir=NULL;
   REAL8    uvar_startTime, uvar_endTime;
   CHAR     *uvar_timeStampsFile=NULL;
@@ -138,7 +137,10 @@ int main(int argc, char *argv[]){
   uvar_help = FALSE;
   uvar_printLog = FALSE;
   uvar_weighAM = TRUE;
-  uvar_weighNoise = TRUE;
+  uvar_weighNoise = TRUE; 
+  uvar_dumpAllW = FALSE;
+  uvar_dumpRelW = FALSE;
+  uvar_dumpNoise= FALSE;
   uvar_blocksRngMed = BLOCKSRNGMED;
   uvar_f0 = F0;
   uvar_fSearchBand = FBAND;
@@ -149,8 +151,7 @@ int main(int argc, char *argv[]){
   /* nfsizecylinder is really not required here but retained
      just to make sure that the number of bins read in the sft
      is the same as in the driver */
-  uvar_nfSizeCylinder = NFSIZE; 
-  
+  uvar_nfSizeCylinder = NFSIZE;  
   uvar_AlphaWeight = 1.0;
   uvar_DeltaWeight = 1.0;
 
@@ -162,10 +163,7 @@ int main(int argc, char *argv[]){
 
   uvar_sunEphemeris = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_sunEphemeris,SUNEPHEMERIS);
-
-
   
-
   /* register user input variables */
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",                    &uvar_help),            &status);  
   LAL_CALL( LALRegisterREALUserVar(   &status, "f0",              'f', UVAR_OPTIONAL, "Start search frequency",                &uvar_f0),              &status);
@@ -177,8 +175,11 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterREALUserVar(   &status, "startTime",        0,  UVAR_OPTIONAL, "GPS start time of observation",         &uvar_startTime),        &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "endTime",          0,  UVAR_OPTIONAL, "GPS end time of observation",           &uvar_endTime),          &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "timeStampsFile",   0,  UVAR_OPTIONAL, "Input time-stamps file",                &uvar_timeStampsFile),  &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighAM",          0,  UVAR_OPTIONAL, "Use amplitude modulation weights",      &uvar_weighAM),         &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighNoise",       0,  UVAR_OPTIONAL, "Use SFT noise weights",                 &uvar_weighNoise),      &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weightAM",          0,  UVAR_OPTIONAL, "Use amplitude modulation weights",      &uvar_weighAM),         &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weightNoise",       0,  UVAR_OPTIONAL, "Use SFT noise weights",                 &uvar_weighNoise),      &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "dumpAllWeights",    0,  UVAR_OPTIONAL, "Dump all weights",                 &uvar_dumpAllW),      &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "dumpRelativeWeights", 0,  UVAR_OPTIONAL, "Dump IFO relative weights",       &uvar_dumpRelW),      &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "dumpNoise",    0,       UVAR_OPTIONAL, "Dump Noise estimate",                 &uvar_dumpNoise),      &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",                  &uvar_earthEphemeris),  &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",                    &uvar_sunEphemeris),    &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "AlphaWeight",      0,  UVAR_OPTIONAL, "sky Alpha for weight calculation",       &uvar_AlphaWeight),        &status);
@@ -264,7 +265,7 @@ int main(int argc, char *argv[]){
     LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, catalog, fmin, fmax), &status);
 
     /* find number of sfts */     
-    /* mObsCoh = catalog->length; /* not always correct number of sfts */   
+    /* mObsCoh = catalog->length; not always correct number of sfts */   
     /* loop over ifos and calculate number of sfts */
     /* note that we can't use the catalog to determine the number of SFTs
        because SFTs might be segmented in frequency */
@@ -335,18 +336,12 @@ int main(int argc, char *argv[]){
        mid-time of the SFTs -- should not make any difference */
     LAL_CALL ( LALGetMultiDetectorStates ( &status, &mdetStates, inputSFTs, edat), &status);
 
+    /* normalize sfts */
+    LAL_CALL( LALNormalizeMultiSFTVect (&status, &multPSD, inputSFTs, uvar_blocksRngMed), &status); 
 
-    if ( uvar_weighNoise ) {
-       
-      /* normalize sfts */
-      LAL_CALL( LALNormalizeMultiSFTVect (&status, &multPSD, inputSFTs, uvar_blocksRngMed), &status); 
- 
+    if ( uvar_weighNoise ) {      
       /* compute multi noise weights if required */ 
       LAL_CALL ( LALComputeMultiNoiseWeights ( &status, &multweight, multPSD, uvar_blocksRngMed, 0), &status);
- 
-      /* we are now done with the psd */
-      LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multPSD), &status);
-
       /* copy the weights */
       for (j = 0, iIFO = 0; iIFO < numifo; iIFO++ ) {
         numsft = mdetStates->data[iIFO]->length;     
@@ -355,10 +350,36 @@ int main(int argc, char *argv[]){
         } /* loop over SFTs */
       } /* loop over IFOs */
 
-      LAL_CALL( LALHOUGHNormalizeWeights( &status, &weightsV), &status);
-      
+      LAL_CALL( LALHOUGHNormalizeWeights( &status, &weightsV), &status);     
       LAL_CALL ( LALDestroyMultiNoiseWeights ( &status, &multweight), &status);
     }
+ 
+    if (uvar_dumpNoise)  { /* calculate sum of 1/Sn where Sn is avg psd of each sft */ 
+      REAL8 sumSn, sumSnInv=0.0;
+      INT8 binsSFT;
+
+      for ( iIFO = 0; iIFO < numifo; iIFO++ ) {
+        numsft = multPSD->data[iIFO]->length;
+      
+        for ( iSFT = 0; iSFT < numsft; iSFT++) {	
+	  binsSFT = multPSD->data[iIFO]->data[iSFT].data->length;
+	  sumSn = 0.0;
+	  /* use a scale to make numbers closer to unity */
+	  for ( j = 0; j < binsSFT; j++)
+	    sumSn += scalepow * multPSD->data[iIFO]->data[iSFT].data->data[j];
+	  
+	  sumSnInv += binsSFT * binsSFT / (sumSn * sumSn);
+        } /* end loop over sfts */     
+      } /* end loop over IFOs */
+       
+      sumSnInv = sqrt(sumSnInv);
+      sumSnInv *= scalepow;
+      sumSnInv = sqrt(sumSnInv);  
+      fprintf(stdout, "%f  %g\n", uvar_f0, 1.0/sumSnInv);
+    } /* end block for 1/Sn calculation */
+
+    /* we are now done with the psd */
+    LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multPSD), &status);
 
   } /* end block for noise weights, velocity and time */
   
@@ -396,77 +417,41 @@ int main(int argc, char *argv[]){
     } /* end AM weights calculation */
 
   /*******************************************************/
-
-
-  {
-    FILE *fp=NULL;
+  /* dump weight vector if required */
+  if (uvar_dumpAllW) 
+    {
+      FILE *fp=NULL;
        
-    fp = fopen(uvar_outfile   , "w");
-    for (k=0; k<mObsCoh; k++){
-      fprintf(fp, "%g  \n", weightsV.data[k]);
+      fp = fopen(uvar_outfile   , "w");
+      for (k=0; k < (INT4)mObsCoh; k++){
+        fprintf(fp, "%g  \n", weightsV.data[k]);
+      }
+      fclose(fp);
     }
-    fclose(fp);
-  }
-
-
-
-
-
-  /*******************************************************/
-          
-  /* normalize sfts and compute psds */
-  LAL_CALL( LALNormalizeMultiSFTVect (&status, &multPSD, inputSFTs, uvar_blocksRngMed), &status);
-
-  /* calculate sum of 1/Sn where Sn is avg psd of each sft */
-  {
-    REAL8 sumSn, sumSnInv=0.0;
-    INT8 binsSFT;
-
-    for ( iIFO = 0; iIFO < numifo; iIFO++ ) {
-      numsft = multPSD->data[iIFO]->length;
-      
-      for ( iSFT = 0; iSFT < numsft; iSFT++) {
-	
-	binsSFT = multPSD->data[iIFO]->data[iSFT].data->length;
-	sumSn = 0.0;
-	/* use a scale to make numbers closer to unity */
-	for ( j = 0; j < binsSFT; j++)
-	  sumSn += scalepow * multPSD->data[iIFO]->data[iSFT].data->data[j];
-
-	sumSnInv += binsSFT * binsSFT / (sumSn * sumSn);
-      } /* end loop over sfts */
-      
-    } /* end loop over IFOs */
-       
-    sumSnInv = sqrt(sumSnInv);
-    sumSnInv *= scalepow;
-    sumSnInv = sqrt(sumSnInv);
-
-    fprintf(stdout, "%f  %g\n", uvar_f0, 1.0/sumSnInv);
-  } /* end block for 1/Sn calculation */
-
-  /*******************************************************/
  
-  {
-    /* print relative weights of ifos to stdout */ 
-    REAL8 *sumweights=NULL;    
-    sumweights = (REAL8 *)LALCalloc(1, numifo*sizeof(REAL8));
+  /*******************************************************/
 
-    for (j=0, iIFO = 0; iIFO < numifo; iIFO++ ) {      
-      numsft = mdetStates->data[iIFO]->length;
-      
-      for ( iSFT = 0; iSFT < numsft; iSFT++, j++) 	  
-	sumweights[iIFO] += weightsV.data[j];
-      
-    } /* end loop over IFOs */
+   /* print relative weights of ifos to stdout if required */ 
+   if (uvar_dumpRelW) 
+    {
+      REAL8 *sumweights=NULL;    
+      sumweights = (REAL8 *)LALCalloc(1, numifo*sizeof(REAL8));
 
-    /*print relative sum of weights */
-    for ( iIFO = 0; iIFO < numifo; iIFO++ )
-      fprintf(stdout, "%s  %f\n", inputSFTs->data[iIFO]->data[0].name, sumweights[iIFO]/mObsCoh);
+      for (j=0, iIFO = 0; iIFO < numifo; iIFO++ ) {      
+        numsft = mdetStates->data[iIFO]->length;
+      
+        for ( iSFT = 0; iSFT < numsft; iSFT++, j++) 	  
+	  sumweights[iIFO] += weightsV.data[j];
+      
+      } /* end loop over IFOs */
+
+      /*print relative sum of weights */
+      for ( iIFO = 0; iIFO < numifo; iIFO++ )
+        fprintf(stdout, "%s  %f\n", inputSFTs->data[iIFO]->data[0].name, sumweights[iIFO]/mObsCoh);
     
-    LALFree(sumweights);
+      LALFree(sumweights);
       
-  } /* end printing of relative weights */
+    } /* end printing of relative weights */
 
   /*******************************************************/
 
@@ -481,8 +466,6 @@ int main(int argc, char *argv[]){
   LALFree(uvar_outfile);
    
   LAL_CALL (LALDestroyMultiSFTVector(&status, &inputSFTs), &status );
-
-  LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multPSD), &status);  				      
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
 
