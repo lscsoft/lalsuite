@@ -108,9 +108,9 @@ static void write_checkpoint (void);
 
 /** FUNCTIONS **/
 
-/* freaking LAL's REPORTSTATUS just won't work with any of NDEBUG or 
- * LAL_NDEBUG set, so it's time to use our own...
- */
+/** freaking LAL's REPORTSTATUS just won't work with any of NDEBUG or 
+ ** LAL_NDEBUG set, so it's time to use our own...
+ **/
 void ReportStatus( LALStatus *status )
 { /* </lalVerbatim> */
   LALStatus *ptr;                                                    
@@ -133,7 +133,7 @@ void ReportStatus( LALStatus *status )
 
 }
 
-/* LALApps error handler */
+/** LALApps error handler */
 int BOINC_LAL_ErrHand (LALStatus  *stat, const char *func, const char *file, const int line, volatile const char *id) {
   if (stat->statusCode) {
     fprintf(stderr,
@@ -150,7 +150,7 @@ int BOINC_LAL_ErrHand (LALStatus  *stat, const char *func, const char *file, con
 }
 
 
-/*
+/**
   sighandler()
 */
 #ifdef __GLIBC__
@@ -211,13 +211,15 @@ static void sighandler(int sig){
 
 
 
-/*
-  show_progress()
-
+/**
   this just sets some variables,
   so should be pretty fast and can be called several times a second
  */
-void show_progress(double rac, double dec, UINT4 count, UINT4 total) {
+void show_progress(double rac,
+		   double dec,
+		   UINT4 count,
+		   UINT4 total
+		   ) {
   double fraction = (double)count / (double)total;
 
   /* set globals for checkpoint */
@@ -242,13 +244,12 @@ void show_progress(double rac, double dec, UINT4 count, UINT4 total) {
 
 
 
-/*
-  register_output_file()
-
+/**
   this registers a new output file to be zipped into the archive that is returned
   to the server as a result file
  */
-void register_output_file(char*filename) {
+void register_output_file(char*filename /**< name of the output file to 'register' */
+			  ) {
   int len = strlen(filename)+1;
   outfiles = (char**)realloc(outfiles,(noutfiles+1)*sizeof(char*));
   if (outfiles == NULL) {
@@ -267,13 +268,12 @@ void register_output_file(char*filename) {
 
 
 
-/*
-  is_zipped()
-  
+/**
   check if given file is a zip archive by looking for the zip-magic header 'PK\003\044'
   RETURN: 1 = true, 0 = false, -1 = error
  */
-static int is_zipped ( const char *fname ) {
+static int is_zipped ( const char *fname /**< name of the file to check for being zipped */
+		       ) {
   FILE *fp;
   char zip_magic[] = {'P', 'K', 3, 4 };
   char file_header[4];
@@ -299,12 +299,13 @@ static int is_zipped ( const char *fname ) {
 
 
 
-/*
-  resolve_and_unzip()
-
+/**
   prepare an input file for the program, i.e. boinc_resolve and/or unzip it
  */
-static int resolve_and_unzip(const char*filename, char*resfilename, const size_t size) {
+static int resolve_and_unzip(const char*filename, /**< filename toresolve */
+			     char*resfilename,    /**< resolved filename */
+			     const size_t size    /**< size of the buffer for resolved name */
+			     ) {
   int zipped;
 
   if (boinc_resolve_filename(filename,resfilename,size)) {
@@ -372,25 +373,23 @@ static int resolve_and_unzip(const char*filename, char*resfilename, const size_t
 
 
 
-/*
-  worker()
-
+/**
   The worker() ist called either from main() directly or from boinc_init_graphics
   (in a separate thread). It does some funny things to the command line (mostly
   boinc-resolving filenames), then calls MAIN() (from HierarchicalSearch.c), and
   finally handles the output / result file before properly exiting with boinc_finish().
 */
 static void worker (void) {
-  int argc    = global_argc;   /* as worker is defined void worker(void), ... */
-  char**argv  = global_argv;   /* ...  take argc and argv from global variables */
-  int rargc   = global_argc;   /* argc and ... */
-  char**rargv = NULL;          /* ... argv values for calling the MAIN() function of the worker */
-  int arg, rarg;               /* current command-line argument */
-  int i;                       /* loop counter */
-  int l;                       /* length of matched string */
-  int res = 0;                 /* return value of function call */
-  char *startc,*endc,*appc;    /* pointers for parsing a command-line argument */
-  int output_help = 0;         /* flag: should we write out an additional help string? */
+  int argc    = global_argc;   /**< as worker is defined void worker(void), ... */
+  char**argv  = global_argv;   /**< ...  take argc and argv from global variables */
+  int rargc   = global_argc;   /**< argc and ... */
+  char**rargv = NULL;          /**< ... argv values for calling the MAIN() function of the worker */
+  int arg, rarg;               /**< current command-line argument */
+  int i;                       /**< loop counter */
+  int l;                       /**< length of matched string */
+  int res = 0;                 /**< return value of function call */
+  char *startc,*endc,*appc;    /**< pointers for parsing a command-line argument */
+  int output_help = 0;         /**< flag: should we write out an additional help string? */
 
   boinc_init_diagnostics(BOINC_DIAG_DUMPCALLSTACKENABLED |
                          BOINC_DIAG_HEAPCHECKENABLED |
@@ -731,9 +730,7 @@ static void worker (void) {
 
 
 
-/*
-  main()
-
+/**
   the main function of the BOINC App
   deals with boinc_init(_graphics) and calls the worker
 */
@@ -898,9 +895,14 @@ int main(int argc, char**argv) {
 
 /* CHECKPOINTING FUNCTIONS */
 
-/* inits checkpointing and read a checkpoint if already there */
-int init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
-			      UINT4 total, char*outputname, char*cptname) {
+/** inits checkpointing and read a checkpoint if already there */
+int init_and_read_checkpoint(toplist_t*toplist, /**< the toplist to checkpoint */
+			     UINT4*count,       /**< returns the skypoint counter if a checkpoint was found */
+			     UINT4 total,       /**< total number of skypoints */
+			     char*outputname,   /**< name of checkpointed output file */
+			     char*cptname       /**< name of checkpoint file */
+			     ) {
+
   FILE*fp;
   unsigned int  checksum, bytes;
   unsigned long count_read, total_read;
@@ -980,10 +982,13 @@ int init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
 }
 
 
-/* adds a candidate to the toplist and to the ccheckpointing file, too, if it was actually inserted.
-   compacting, if necessary, is NOT done here, but in set_checkpoint() - doing it here would lead to
-   inconsistent state on disk until the next set_checkpoint call. */
-int add_checkpoint_candidate (toplist_t*toplist, FstatOutputEntry cand) {
+/** adds a candidate to the toplist and to the ccheckpointing file, too, if it was actually inserted.
+    compacting, if necessary, is NOT done here, but in set_checkpoint() - doing it here would lead to
+    inconsistent state on disk until the next set_checkpoint call.
+*/
+int add_checkpoint_candidate (toplist_t*toplist,    /**< the toplist */
+			      FstatOutputEntry cand /**< the candidate to insert into the toplist */
+			      ) {
   if(toplist != cptf->list) {
     LogPrintf (LOG_CRITICAL,  "ERROR: wrong toplist passed to add_checkpoint_candidate()\n", cptfilename);
     return(-2);
@@ -993,12 +998,12 @@ int add_checkpoint_candidate (toplist_t*toplist, FstatOutputEntry cand) {
 }
 
 
-/* actually writes a checkpoint
-   single point to contain the checkpoint format string
-   called only from 2 places in set_checkpoint() */
-static void write_checkpoint () {
-  FILE* fp;
-  fp = fopen(cptfilename,"w");
+/** actually writes a checkpoint.
+    single point to contain the checkpoint format string.
+    called only from 2 places in set_checkpoint()
+*/
+static void write_checkpoint (void) {
+  FILE* fp = fopen(cptfilename,"w");
   if (fp) {
     fprintf(fp,"%lf,%lf,%u,%u,%u,%u\n",
 	    last_rac, last_dec, last_count, last_total,
@@ -1014,11 +1019,13 @@ static void write_checkpoint () {
 }
 
 
-/* sets a checkpoint.
-   It also "compacts" the output file, i.e. completely rewrites it from
-   the toplist in memory, when it has reached the maximum size. When doing
-   so it also writes another checkpoint for consistency. */
-void set_checkpoint () {
+/** sets a checkpoint.
+    It also "compacts" the output file, i.e. completely rewrites it from
+    the toplist in memory, when it has reached the maximum size. When doing
+    so it also writes another checkpoint for consistency, regardles of whether
+    it's time to checkpoint or not.
+*/
+void set_checkpoint (void) {
 #ifndef FORCE_CHECKPOINTING
   if (boinc_time_to_checkpoint())
 #endif
@@ -1046,7 +1053,9 @@ void set_checkpoint () {
 #endif
 }
 
-
+/** finally writes a minimal (compacted) version of the toplist and cleans up
+    all structures related to the toplist. After that, the toplist is invalid.
+ */
 void write_and_close_checkpointed_file (void) {
   fstat_cpt_file_close(cptf);
   fstat_cpt_file_destroy(&cptf);
