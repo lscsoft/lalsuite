@@ -89,6 +89,8 @@ corresponding error message is printed.
 #include <lal/AVFactories.h>
 #include <lal/Window.h>
 #include <lal/PrintVector.h>
+#include <lal/StreamInput.h>
+#include <lal/LALStdio.h>
 
 NRCSID ( WINDOWTESTC, "$Id$");
 
