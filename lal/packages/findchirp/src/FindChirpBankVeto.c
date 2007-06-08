@@ -299,10 +299,10 @@ XLALFindChirpSortTemplates( InspiralTemplate *bankHead, UINT4 num ){
 
 static int compareTemplate (const void * a, const void * b)
 {
-  REAL4 mVal1 =   (*((InspiralTemplate**)a))->mass1 +
-                  (*((InspiralTemplate**)a))->mass2 ;
-  REAL4 mVal2 =   (*((InspiralTemplate**)b))->mass1 +
-                  (*((InspiralTemplate**)b))->mass2 ;
+  REAL4 mVal1 =   (*((const InspiralTemplate**)a))->mass1 +
+                  (*((const InspiralTemplate**)a))->mass2 ;
+  REAL4 mVal2 =   (*((const InspiralTemplate**)b))->mass1 +
+                  (*((const InspiralTemplate**)b))->mass2 ;
 
   if ( mVal1 > mVal2 ) return 1;
   if ( mVal1 == mVal2 ) return 0;
