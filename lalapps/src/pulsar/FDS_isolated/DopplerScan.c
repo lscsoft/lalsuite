@@ -1129,7 +1129,7 @@ writeSkyGridFile (LALStatus *status,
   node = skyGrid;
   while (node)
     {
-      fprintf (fp, "%g %g \n", node->Alpha, node->Delta);
+      fprintf (fp, "%15.9f %+15.9f \n", node->Alpha, node->Delta);
       node = node->next;
     }
   
