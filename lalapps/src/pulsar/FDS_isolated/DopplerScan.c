@@ -275,13 +275,6 @@ InitDopplerSkyScan( LALStatus *status,
       node = node->next;
     }
 
-  if (lalDebugLevel >= 4)
-    {
-      LogPrintf (LOG_NORMAL, "DEBUG: plotting sky-grid into file 'mesh_debug.agr' ...");
-      TRY( plotSkyGrid (status->statusPtr, skyScan->skyGrid, &(skyScan->skyRegion), init), status);
-      LogPrintfVerbatim (LOG_NORMAL, " done.\n");
-    }
-
   /* ----------
    * determine spacings in frequency and spindowns
    * NOTE: this is only meaningful if these spacings
@@ -1521,18 +1514,6 @@ getGridSpacings( LALStatus *status,
       if ( params->projectMetric ) {
 	TRY ( LALProjectMetric( status->statusPtr, metric, 0 ), status);
       }
-      if ( lalDebugLevel >= 3 ) 
-	{
-	  LALPrintError ("\ngetGridSpacing(): using the %s metric\n", 
-			 params->projectMetric ? "projected" : "unprojected");
-	  LALPrintError (" %g \n", g_f0_f0);
-	  LALPrintError (" %g  %g\n", metric->data[INDEX_f0_A], metric->data[INDEX_A_A]);
-	  LALPrintError (" %g  %g  %g\n", 
-			 metric->data[INDEX_f0_D], metric->data[INDEX_A_D], metric->data[INDEX_D_D]);
-	  LALPrintError (" %g  %g  %g  %g\n\n",
-			 metric->data[INDEX_f0_f1], metric->data[INDEX_A_f1], metric->data[INDEX_D_f1],
-			 metric->data[INDEX_f1_f1]);
-	}
 
       gamma_f1_f1 = metric->data[INDEX_f1_f1];
       spacings->fkdot[1] = 2.0 * gridpoint.fkdot[0] * sqrt( params->metricMismatch / gamma_f1_f1 );
