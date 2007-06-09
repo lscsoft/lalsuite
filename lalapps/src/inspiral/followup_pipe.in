@@ -63,8 +63,6 @@ class trigBankFollowUpJob(pipeline.CondorDAGJob):
     self.__executable = string.strip(cp.get('trig-bank','executable'))
     self.__universe = "standard"
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-#    self.tag_base = tag_base
-#    self.options = options
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
     self.set_stdout_file('logs/futrigbank-$(macrogpsstarttime)-$(cluster)-$(process).out')
@@ -97,7 +95,9 @@ class trigBankFollowUpNode(pipeline.CondorDAGNode):
         self.end_time = row.value
 
     self.add_var_opt("user-tag",self.output_user_tag)
-    self.add_file_arg(xml_glob)
+    fStr = os.popen('ls ' + xml_glob).readlines() 
+    for inFile in fStr:
+      self.add_file_arg(string.strip(inFile))
     self.output_file_name = self.input_ifo + "-TRIGBANK_" + self.ifo_tag + \
       "_" + self.output_user_tag + "-" + self.start_time + "-" + \
       str(eval(self.end_time)-eval(self.start_time)) + ".xml"
@@ -134,6 +134,8 @@ class inspiralFollowUpNode(pipeline.CondorDAGNode):
     self.output_user_tag = "FOLLOWUP_" + str(time)
     self.add_rsq_veto = 1
     for row in proc:
+      if row.param[2:] == 'minimal-match':
+        continue
       if row.param[2:] == 'bank-file':
         continue
       if row.param[2:] == 'trig-start-time':
@@ -247,19 +249,26 @@ class qscanNode(pipeline.CondorDAGNode):
     pipeline.CondorDAGNode.__init__(self,job)
     self.add_var_arg(str(time))
     self.add_macro("macrogpsstarttime",str(time))
+    self.container = HTMLcontainer(trig,"QSCAN")
+    if qFlag: self.initializeHTML(trig)
+    tableFile = open(self.container.locallink,'a')
     if (ifo == 'H1') or (ifo == 'H2'):
       self.add_file_arg(string.strip(cp.get('qscan','Hconfig-file')))
       #self.add_file_arg(string.strip(cp.get('qscan','Hcache-file')))
       self.add_file_arg('Hq.cache')
+      self.add_var_arg(string.strip(cp.get('qscan','Houtput')))
+      tableFile.write('<a href="' + string.strip(cp.get('qscan','Hweb')) + \
+                    str(time) + '/">' + str(ifo) + \
+                    ' QScan of trigger [' +str(trig.eventID) +']</a><br>\n')
     if (ifo == 'L1'):
       self.add_file_arg(string.strip(cp.get('qscan','Lconfig-file')))
       #self.add_file_arg(string.strip(cp.get('qscan','Lcache-file')))
       self.add_file_arg('Lq.cache')
-    self.container = HTMLcontainer(trig,"QSCAN")
+      self.add_var_arg(string.strip(cp.get('qscan','Loutput')))
+      tableFile.write('<a href="' + string.strip(cp.get('qscan','Hconfig-file')) + \
+                    str(time) + '/">' + str(ifo) + \
+                    ' QScan of trigger [' +str(trig.eventID) +']</a><br>\n')
 #   self.add_var_arg(dir+"/"+self.container.name+"/")
-    self.add_var_arg(string.strip(cp.get('qscan','output')))
-    if qFlag: self.initializeHTML(trig)
-    tableFile = open(self.container.locallink,'a')
 #   writeIULHeader(tableFile)
     tableFile.write('<a href="http://ldas-jobs.ligo.caltech.edu/~channa/' + \
                     str(time) + '/">' + str(ifo) + \
@@ -304,19 +313,15 @@ class segNode(pipeline.CondorDAGNode):
     """
     pipeline.CondorDAGNode.__init__(self,job)
     scirun = string.strip(cp.get('hipe-cache','science-run'))
-    self.add_var_arg( scirun )
-    if scirun == "S4" or scirun == "S3":
-      self.add_var_arg('00')
-    self.add_var_arg(str(ifo).lower())
-    self.add_var_arg('nearest')
-    self.add_var_arg( str(int(eval(str(time)))) )
+    self.add_var_opt('run', scirun )
+    self.add_var_opt('interferometer', str(ifo).lower())
+    window =  string.strip(cp.get('seg','window'))
+    self.add_var_opt('gps-end-time', str( int(eval(str(time))) + int(eval(window)) ))
+    self.add_var_opt('gps-start-time', str( int(eval(str(time))) - int(eval(window)) ))
     self.add_macro("macrogpsstarttime",str(time))
-#   self.add_input_file( string.strip(cp.get('seg','tclshexe')) )
     self.container = HTMLcontainer(trig,"DATA_QUALITY")
-#   self.add_var_arg(dir+"/"+self.container.name+"/")
     if sFlag: self.initializeHTML(trig)
     tableFile = open(self.container.locallink,'a')
-#   writeIULHeader(tableFile)
     tableFile.write('<a href="http://www.lsc-group.phys.uwm.edu/iulgroup/' + \
               string.strip(cp.get("output","page")) + "/followuptrigs/" + \
               'seg-' + str(time) + '.out">' + str(ifo) + \
@@ -380,11 +385,11 @@ parser.add_option("-p", "--plots",action="store_true",default=False,\
 parser.add_option("-w", "--write-to-iulgroup",action="store_true", \
     default=False, help="publish the page to the iulgroup")
 
-parser.add_option("-c", "--cache-path",action="store",type="string",\
-    default="./.",metavar=" PATH",help="directory to find  all hipe XML files")
+#parser.add_option("-c", "--cache-path",action="store",type="string",\
+#    default="./.",metavar=" PATH",help="directory to find  all hipe XML files")
 
-parser.add_option("-s", "--science-run", action="store",type="string",\
-    default="S5", metavar=" RUN", help="name of science run")
+#parser.add_option("-s", "--science-run", action="store",type="string",\
+#    default="S5", metavar=" RUN", help="name of science run")
 
 command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
@@ -398,15 +403,15 @@ if opts.datafind and not opts.read_triggers:
   print >> sys.stderr, "Use --read-triggers XML to specify triggers to followup"
   sys.exit(1)
 
-if not opts.cache_path:
-  print >> sys.stderr, "No cache path specified."
-  print >> sys.stderr, "Use --cache-path PATH to specify a location."
-  sys.exit(1)
+#if not opts.cache_path:
+#  print >> sys.stderr, "No cache path specified."
+#  print >> sys.stderr, "Use --cache-path PATH to specify a location."
+#  sys.exit(1)
 
-if not opts.science_run:
-  print >> sys.stderr, "No science run specified."
-  print >> sys.stderr, "Use --science-run RUN to specify a run."
-  sys.exit(1)
+#if not opts.science_run:
+#  print >> sys.stderr, "No science run specified."
+#  print >> sys.stderr, "Use --science-run RUN to specify a run."
+#  sys.exit(1)
 
 ## READ IN THE CONFIG (.ini) FILE
 cp = ConfigParser.ConfigParser()
@@ -424,6 +429,11 @@ if opts.generate_cache:
   for n, t in cache.nameMaps:
     print >> sys.stderr, " * " + n + " [" + str(len(cache[t])) + "]"
 
+command = "ln -s " + string.strip(cp.get('hipe-cache','hipe-cache-path')) + \
+          " cache"
+# link datafind for inspiral jobs...
+try: os.system(command)
+except: pass
 
 ##############################################################################
 # create a log file that the Condor jobs will write to
@@ -467,7 +477,7 @@ found, coincs = readFiles(xml_glob,getstatistic(statistic,bla,blb))
 missed = None
 followuptrigs = getfollowuptrigs(numtrigs,page,coincs,missed)
 
-print "\n.......Found " + str(len(coincs)) + " trigs to follow up" 
+print "\n.......Found " + str(len(followuptrigs)) + " trigs to follow up" 
 
 ################ DO DATA FINDING ##############################################
 if opts.datafind:
@@ -543,9 +553,6 @@ for trig in followuptrigs:
   summaryHTML.containers.append(writeXMLparams(trig))
 
   # TRY GETTING TRIG BANK PROCESS PARAMS
-  trig_process_params = cache.getProcessParamsFromCache( \
-                     cache.filesMatchingGPS(trig.gpsTime,'TRIGBANK'), \
-                     trig.gpsTime)
   try: 
     trig_process_params = cache.getProcessParamsFromCache( \
                      cache.filesMatchingGPS(trig.gpsTime,'TRIGBANK'), \
@@ -577,7 +584,7 @@ for trig in followuptrigs:
     except: continue
 
     # SETUP DATA QUALITY JOBS
-    if trig.gpsTime[ifo]:
+    if 0:
       try:
         sNode = segNode(segJob,trig.gpsTime[ifo],cp,trig.summarydir,trig,ifo,sFlag)
         if opts.data_quality: 
@@ -641,8 +648,9 @@ for trig in followuptrigs:
           plotJobCnt+=1
         #summaryHTML.containers.append( plotNode.getContainer() )
       except:
+        plotNode = 0
         print "couldn't add plot job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
-  
+    else: plotNode = 0  
   if sNode: summaryHTML.containers.append( sNode.getContainer() )
   if qNode: summaryHTML.containers.append( qNode.getContainer() )
   if plotNode: summaryHTML.containers.append( plotNode.getContainer() )
