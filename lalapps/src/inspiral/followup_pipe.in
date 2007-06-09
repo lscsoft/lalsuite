@@ -265,14 +265,11 @@ class qscanNode(pipeline.CondorDAGNode):
       #self.add_file_arg(string.strip(cp.get('qscan','Lcache-file')))
       self.add_file_arg('Lq.cache')
       self.add_var_arg(string.strip(cp.get('qscan','Loutput')))
-      tableFile.write('<a href="' + string.strip(cp.get('qscan','Hconfig-file')) + \
+      tableFile.write('<a href="' + string.strip(cp.get('qscan','Lweb')) + \
                     str(time) + '/">' + str(ifo) + \
                     ' QScan of trigger [' +str(trig.eventID) +']</a><br>\n')
 #   self.add_var_arg(dir+"/"+self.container.name+"/")
 #   writeIULHeader(tableFile)
-    tableFile.write('<a href="http://ldas-jobs.ligo.caltech.edu/~channa/' + \
-                    str(time) + '/">' + str(ifo) + \
-                    ' QScan of trigger [' +str(trig.eventID) +']</a><br>\n')
     self.container.text = "click here for QScans"
     tableFile.close()
 
