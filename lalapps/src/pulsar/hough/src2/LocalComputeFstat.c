@@ -40,17 +40,9 @@
 
 #include <lal/ExtrapolatePulsarSpins.h>
 
-/* GSL includes */
-#include <lal/LALGSL.h>
-#include <gsl/gsl_vector.h>
-#include <gsl/gsl_matrix.h>
-#include <gsl/gsl_blas.h>
-#include <gsl/gsl_permutation.h>
-#include <gsl/gsl_linalg.h>
-
-
 #include <lal/AVFactories.h>
 #include <lal/ComputeFstat.h>
+#include <lal/LogPrintf.h>
 
 NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 
@@ -537,7 +529,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	k1 = k0 + 2 * Dterms;
 	if ( (k0 < freqIndex0) || (k1 > freqIndex1) ) 
 	  {
-	    LALPrintError ("Required frequency-bins [%d, %d] not covered by SFT-interval [%d, %d]\n\n",
+	    LogPrintf(LOG_CRITICAL, "Required frequency-bins [%d, %d] not covered by SFT-interval [%d, %d]\n\n",
 			   k0, k1, freqIndex0, freqIndex1 );
 	    XLAL_ERROR("LocalXLALComputeFaFb", XLAL_EDOM);
 	  }
