@@ -51,6 +51,7 @@ NRCSID( LISASPECIFICSC, "$Id$");
 /*---------- internal types ----------*/
 
 /*---------- empty initializers ---------- */
+const LALDetector empty_LALDetector;
 
 /*---------- Global variables ----------*/
 
@@ -58,6 +59,7 @@ NRCSID( LISASPECIFICSC, "$Id$");
 int XLALgetLISAtwoArmIFO ( DetectorTensor *detT, LIGOTimeGPS tGPS, LISAarmT armA, LISAarmT armB );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
+
 
 /** Set up the \em LALDetector struct representing LISA X, Y, Z TDI observables.
  * INPUT: channelNum = '1', '2', '3', '4', '5', '6': detector-tensor corresponding to TDIs X, Y, Z, Y-Z, Z-X, X-Y respectively.
@@ -68,7 +70,7 @@ XLALcreateLISA (LALDetector *Detector,	/**< [out] LALDetector */
 		CHAR channelNum		/**< [in] which TDI observable: '1' = X, '2'= Y, '3' = Z, '4' = Y-Z, '5' = Z-X, '6' = X-Y */
 		)
 {
-  LALDetector Detector1;
+  LALDetector Detector1 = empty_LALDetector;
 
   if ( !Detector )
     return -1;
@@ -115,6 +117,13 @@ XLALcreateLISA (LALDetector *Detector,	/**< [out] LALDetector */
   Detector1.frDetector.yArmAzimuthRadians = 0;
 
   Detector1.type = LALDETECTORTYPE_ABSENT;
+
+  /* however: need to be careful to put some non-zero numbers for location
+   * otherwise LALBarycenter() will spit out NaNs ... 
+   */
+  Detector1.location[0] = 1;
+  Detector1.location[1] = 1;
+  Detector1.location[2] = 1;
 
   (*Detector) = Detector1;
 
