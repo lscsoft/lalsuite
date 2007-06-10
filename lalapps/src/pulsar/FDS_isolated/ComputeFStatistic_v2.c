@@ -179,7 +179,7 @@ REAL8 uvar_metricMismatch;
 CHAR *uvar_skyRegion;
 CHAR *uvar_DataFiles;
 BOOLEAN uvar_help;
-CHAR *uvar_outputLabel;
+CHAR *uvar_outputLogfile;
 CHAR *uvar_outputFstat;
 CHAR *uvar_outputLoudest;
 
@@ -205,7 +205,7 @@ void initUserVars (LALStatus *);
 void InitFStat ( LALStatus *, ConfigVariables *cfg );
 void Freemem(LALStatus *,  ConfigVariables *cfg);
 
-void WriteFStatLog (LALStatus *, CHAR *argv[]);
+void WriteFStatLog (LALStatus *, CHAR *argv[], const CHAR *log_fname);
 void checkUserInputConsistency (LALStatus *);
 int outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSeries *detStates );
 void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch, BOOLEAN isLISA);
@@ -274,7 +274,9 @@ int main(int argc,char *argv[])
   LogSetLevel ( lalDebugLevel );
 
   /* keep a log-file recording all relevant parameters of this search-run */
-  LAL_CALL (WriteFStatLog (&status, argv), &status);
+  if ( uvar_outputLogfile ) {
+    LAL_CALL (WriteFStatLog ( &status, argv, uvar_outputLogfile ), &status );
+  }
 
   /* do some sanity checks on the user-input before we proceed */
   LAL_CALL ( checkUserInputConsistency(&status), &status);
@@ -530,7 +532,7 @@ initUserVars (LALStatus *status)
   uvar_metricMismatch = 0.02;
 
   uvar_help = FALSE;
-  uvar_outputLabel = NULL;
+  uvar_outputLogfile = NULL;
 
   uvar_outputFstat = NULL;
 
@@ -583,7 +585,7 @@ initUserVars (LALStatus *status)
   LALregINTUserVar(status, 	gridType,	 0 , UVAR_OPTIONAL, "Grid: 0=flat, 1=isotropic, 2=metric, 3=skygrid-file, 6=grid-file, 7=An*lattice");
   LALregINTUserVar(status, 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
   LALregREALUserVar(status, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal allowed mismatch for metric tiling");
-  LALregSTRINGUserVar(status,	outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
+  LALregSTRINGUserVar(status,	outputLogfile,	 0,  UVAR_OPTIONAL, "Name of log-file identifying the code + search performed");
   LALregSTRINGUserVar(status,	gridFile,	 0,  UVAR_OPTIONAL, "Load grid from this file: sky-grid or full-grid depending on --gridType.");
   LALregREALUserVar(status,	refTime,	 0,  UVAR_OPTIONAL, "SSB reference time for pulsar-paramters [Default: startTime]");
   LALregREALUserVar(status, 	dopplermax, 	'q', UVAR_OPTIONAL, "Maximum doppler shift expected");  
@@ -1029,65 +1031,50 @@ getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg )
 
 /***********************************************************************/
 /** Log the all relevant parameters of the present search-run to a log-file.
- * The name of the log-file is "Fstats{uvar_outputLabel}.log".
+ * The name of the log-file is log_fname
  * <em>NOTE:</em> Currently this function only logs the user-input and code-versions.
  */
 void
-WriteFStatLog (LALStatus *status, char *argv[])
+WriteFStatLog (LALStatus *status, char *argv[], const CHAR *log_fname )
 {
-    CHAR *logstr = NULL;
-    const CHAR *head = "Fstats";
-    CHAR command[512] = "";
-    UINT4 len;
-    CHAR *fname = NULL;
-    FILE *fplog;
+  CHAR *logstr = NULL;
+  CHAR command[512] = "";
+  FILE *fplog;
 
-    INITSTATUS (status, "WriteFStatLog", rcsid);
-    ATTATCHSTATUSPTR (status);
+  INITSTATUS (status, "WriteFStatLog", rcsid);
+  ATTATCHSTATUSPTR (status);
 
-    /* prepare log-file for writing */
-    len = strlen(head) + strlen(".log") +10;
-    if (uvar_outputLabel)
-      len += strlen(uvar_outputLabel);
+  if ( !log_fname )	/* no logfile given */
+    return;
 
-    if ( (fname=LALCalloc(len,1)) == NULL) {
-      ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM);
-    }
-    strcpy (fname, head);
-    if (uvar_outputLabel)
-      strcat (fname, uvar_outputLabel);
-    strcat (fname, ".log");
+  /* prepare log-file for writing */
+  if ( (fplog = fopen(log_fname, "wb" )) == NULL) {
+    LogPrintf ( LOG_CRITICAL , "Failed to open log-file '%s' for writing.\n\n", log_fname );
+    ABORT (status, COMPUTEFSTATISTIC_ESYS, COMPUTEFSTATISTIC_MSGESYS);
+  }
 
-    if ( (fplog = fopen(fname, "w" )) == NULL) {
-      LALPrintError ("\nFailed to open log-file '%f' for writing.\n\n", fname);
-      LALFree (fname);
-      ABORT (status, COMPUTEFSTATISTIC_ESYS, COMPUTEFSTATISTIC_MSGESYS);
-    }
+  /* write out a log describing the complete user-input (in cfg-file format) */
+  TRY (LALUserVarGetLog (status->statusPtr, &logstr,  UVAR_LOGFMT_CFGFILE), status);
 
-    /* write out a log describing the complete user-input (in cfg-file format) */
-    TRY (LALUserVarGetLog (status->statusPtr, &logstr,  UVAR_LOGFMT_CFGFILE), status);
+  fprintf (fplog, "%%%% LOG-FILE of ComputeFStatistic run\n\n");
+  fprintf (fplog, "%% User-input:\n");
+  fprintf (fplog, "%%----------------------------------------------------------------------\n\n");
 
-    fprintf (fplog, "%%%% LOG-FILE of ComputeFStatistic run\n\n");
-    fprintf (fplog, "%% User-input:\n");
-    fprintf (fplog, "%%----------------------------------------------------------------------\n\n");
+  fprintf (fplog, logstr);
+  LALFree (logstr);
 
-    fprintf (fplog, logstr);
-    LALFree (logstr);
-
-    /* append an ident-string defining the exact CVS-version of the code used */
-    fprintf (fplog, "\n\n%% CVS-versions of executable:\n");
-    fprintf (fplog, "%% ----------------------------------------------------------------------\n");
-    fclose (fplog);
+  /* append an ident-string defining the exact CVS-version of the code used */
+  fprintf (fplog, "\n\n%% CVS-versions of executable:\n");
+  fprintf (fplog, "%% ----------------------------------------------------------------------\n");
+  fclose (fplog);
     
-    sprintf (command, "ident %s 2> /dev/null | sort -u >> %s", argv[0], fname);
-    system (command);	/* we don't check this. If it fails, we assume that */
+  sprintf (command, "ident %s 2> /dev/null | sort -u >> %s", argv[0], log_fname);
+  system (command);	/* we don't check this. If it fails, we assume that */
     			/* one of the system-commands was not available, and */
     			/* therefore the CVS-versions will not be logged */
 
-    LALFree (fname);
-
-    DETATCHSTATUSPTR (status);
-    RETURN(status);
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
 
 } /* WriteFStatLog() */
 
