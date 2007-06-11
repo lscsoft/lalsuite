@@ -133,14 +133,13 @@ static SnglBurstTable *XLALTFTilesToSnglBurstTable(SnglBurstTable *head, const R
 
 
 /******** <lalVerbatim file="EPSearchCP"> ********/
-SnglBurstTable *
-XLALEPSearch(
-	const REAL4TimeSeries  *tseries,
-	EPSearchParams   *params
+SnglBurstTable *XLALEPSearch(
+	const REAL4TimeSeries *tseries,
+	EPSearchParams *params
 )
 /******** </lalVerbatim> ********/
 { 
-	const char func[] = "EPSearch";
+	const char func[] = "XLALEPSearch";
 	SnglBurstTable *head = NULL;
 	int errorcode = 0;
 	int start_sample;
@@ -336,7 +335,7 @@ int XLALEPConditionData(
 /* </lalVerbatim> */
 {
 	const char func[] = "XLALEPConditionData";
-	const REAL8         epsilon = 1.0e-8;
+	const REAL8         epsilon = 1.0e-3;
 	PassBandParamStruc  highpassParam;
 	size_t              newlength;
 
@@ -344,7 +343,7 @@ int XLALEPConditionData(
 	 * Resample the time series if necessary
 	 */
 
-	if(fabs(resampledeltaT - series->deltaT) >= epsilon)
+	if(fabs(resampledeltaT - series->deltaT) / series->deltaT >= epsilon)
 		if(XLALResampleREAL4TimeSeries(series, resampledeltaT))
 			XLAL_ERROR(func, XLAL_EFUNC);
 
