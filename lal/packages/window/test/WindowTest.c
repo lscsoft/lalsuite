@@ -1,21 +1,22 @@
 /*
-*  Copyright (C) 2007 Bruce Allen, Duncan Brown, Jolien Creighton, Kipp Cannon, Teviet Creighton
-*
-*  This program is free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  This program is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
-*  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
-*/
+ * Copyright (C) 2007 Bruce Allen, Duncan Brown, Jolien Creighton, Kipp
+ * Cannon, Teviet Creighton
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with with program; see the file COPYING. If not, write to the Free
+ * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ * 02111-1307 USA
+ */
 
 /******************************** <lalVerbatim file="WindowTestCV">
 Authora:Allen, B., Brown, D. A., and Creighton, T.
@@ -111,7 +112,7 @@ corresponding error message is printed.
 #include <lal/StreamInput.h>
 #include <lal/LALStdio.h>
 
-NRCSID ( WINDOWTESTC, "$Id$");
+NRCSID(WINDOWTESTC, "$Id$");
 
 /* modify this value to get a stack trace of test */
 int lalDebugLevel = 0;
@@ -146,256 +147,247 @@ do {                                                                 \
 
 
 
-int
-main( int argc, char **argv )
+int main(int argc, char **argv)
 {
-  int arg = 1;                 /* counter over input arguments */
-  FILE *fp;                    /* input/output file pointer */
-  BOOLEAN pOption = 0;         /* whether to use REAL8 windows */
-  BOOLEAN bOption = 0;         /* whether beta was user-specified */
-  CHAR *infile = NULL;         /* input filename */
-  CHAR outfile[LALNameLength]; /* output filename */
-  UINT4 i;                     /* index over data */
-  UINT4 npts = NPOINTS;        /* number of points in output */
-  UINT4 width = NPOINTS;       /* width of window function */
-  UINT4 flag = (UINT4)( -1 );  /* mask of windows to apply */
-  REAL8 beta;                  /* window shape parameter */
-  static LALStatus status;     /* top-level status structure */
-  REAL4Vector *sVector = NULL; /* input data vector (single-precision) */
-  REAL8Vector *dVector = NULL; /* input data vector (double-precision) */
-  REAL4Window *sWindow = NULL; /* window to apply (single-precision) */
-  REAL8Window *dWindow = NULL; /* window to apply (double-precision) */
-  LALWindowParams params;      /* window creation parameters */
-  WindowType wintype;          /* window type */
-  REAL8 testsquares[] =        /* sum of squares for NPOINTS=1024: */
-  { 1024.0,                /* rectangular */
-    384.0,                 /* Hann */
-    546.0+2.0/15.0,        /* Welch */
-    341.333984375,         /* Bartlett */
-    276.1142857152779,     /* Parzen */
-    300.357781729967622,   /* Papoulis */
-    406.9376,              /* Hamming */
-    375.544713725875234,   /* Kaiser */
-    393.028878331734330};  /* Creighton */
+	int arg = 1;		/* counter over input arguments */
+	FILE *fp;		/* input/output file pointer */
+	BOOLEAN pOption = 0;	/* whether to use REAL8 windows */
+	BOOLEAN bOption = 0;	/* whether beta was user-specified */
+	CHAR *infile = NULL;	/* input filename */
+	CHAR outfile[LALNameLength];	/* output filename */
+	UINT4 i;		/* index over data */
+	UINT4 npts = NPOINTS;	/* number of points in output */
+	UINT4 width = NPOINTS;	/* width of window function */
+	UINT4 flag = (UINT4) (-1);	/* mask of windows to apply */
+	REAL8 beta;		/* window shape parameter */
+	static LALStatus status;	/* top-level status structure */
+	REAL4Vector *sVector = NULL;	/* input data vector (single-precision) */
+	REAL8Vector *dVector = NULL;	/* input data vector (double-precision) */
+	REAL4Window *sWindow = NULL;	/* window to apply (single-precision) */
+	REAL8Window *dWindow = NULL;	/* window to apply (double-precision) */
+	LALWindowParams params;	/* window creation parameters */
+	WindowType wintype;	/* window type */
+	REAL8 testsquares[] = {	/* sum of squares for NPOINTS=1024: */
+		1024.0,		/* rectangular */
+		384.0,		/* Hann */
+		546.0 + 2.0 / 15.0,	/* Welch */
+		341.333984375,	/* Bartlett */
+		276.1142857152779,	/* Parzen */
+		300.357781729967622,	/* Papoulis */
+		406.9376,	/* Hamming */
+		375.544713725875234,	/* Kaiser */
+		393.028878331734330	/* Creighton */
+	};
 
 
-  /* Read command line arguments. */
-  while ( arg < argc ) {
+	/* Read command line arguments. */
+	while(arg < argc) {
 
-    /* Parse debug level option. */
-    if ( !strcmp( argv[arg], "-d" ) ) {
-      if ( argc > arg + 1 ) {
-	arg++;
-	lalDebugLevel = atoi( argv[arg++] );
-      } else {
-	ERROR( WINDOWTESTC_EARG, WINDOWTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
-        return WINDOWTESTC_EARG;
-      }
-    }
+		/* Parse debug level option. */
+		if(!strcmp(argv[arg], "-d")) {
+			if(argc > arg + 1) {
+				arg++;
+				lalDebugLevel = atoi(argv[arg++]);
+			} else {
+				ERROR(WINDOWTESTC_EARG, WINDOWTESTC_MSGEARG, 0);
+				LALPrintError(USAGE, *argv);
+				return WINDOWTESTC_EARG;
+			}
+		}
 
-    /* Parse window flags option. */
-    else if ( !strcmp( argv[arg], "-w" ) ) {
-      if ( argc > arg + 1 ) {
-	arg++;
-	flag = (UINT4)( atoi( argv[arg++] ) );
-      } else {
-	ERROR( WINDOWTESTC_EARG, WINDOWTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
-        return WINDOWTESTC_EARG;
-      }
-    }
+		/* Parse window flags option. */
+		else if(!strcmp(argv[arg], "-w")) {
+			if(argc > arg + 1) {
+				arg++;
+				flag = (UINT4) (atoi(argv[arg++]));
+			} else {
+				ERROR(WINDOWTESTC_EARG, WINDOWTESTC_MSGEARG, 0);
+				LALPrintError(USAGE, *argv);
+				return WINDOWTESTC_EARG;
+			}
+		}
 
-    /* Parse precision option. */
-    else if ( !strcmp( argv[arg], "-p" ) ) {
-      arg++;
-      pOption = 1;
-    }
+		/* Parse precision option. */
+		else if(!strcmp(argv[arg], "-p")) {
+			arg++;
+			pOption = 1;
+		}
 
-    /* Parse window size option. */
-    else if ( !strcmp( argv[arg], "-b" ) ) {
-      if ( argc > arg + 1 ) {
-	arg++;
-	beta = atof( argv[arg++] );
-	bOption = 1;
-      } else {
-	ERROR( WINDOWTESTC_EARG, WINDOWTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
-        return WINDOWTESTC_EARG;
-      }
-    }
+		/* Parse window size option. */
+		else if(!strcmp(argv[arg], "-b")) {
+			if(argc > arg + 1) {
+				arg++;
+				beta = atof(argv[arg++]);
+				bOption = 1;
+			} else {
+				ERROR(WINDOWTESTC_EARG, WINDOWTESTC_MSGEARG, 0);
+				LALPrintError(USAGE, *argv);
+				return WINDOWTESTC_EARG;
+			}
+		}
 
-    /* Parse window size option. */
-    else if ( !strcmp( argv[arg], "-i" ) ) {
-      if ( argc > arg + 1 ) {
-	arg++;
-	infile = argv[arg++];
-      } else {
-	ERROR( WINDOWTESTC_EARG, WINDOWTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
-        return WINDOWTESTC_EARG;
-      }
-    }
+		/* Parse window size option. */
+		else if(!strcmp(argv[arg], "-i")) {
+			if(argc > arg + 1) {
+				arg++;
+				infile = argv[arg++];
+			} else {
+				ERROR(WINDOWTESTC_EARG, WINDOWTESTC_MSGEARG, 0);
+				LALPrintError(USAGE, *argv);
+				return WINDOWTESTC_EARG;
+			}
+		}
 
-    /* Parse window size option. */
-    else if ( !strcmp( argv[arg], "-n" ) ) {
-      if ( argc > arg + 2 ) {
-	arg++;
-	width = atoi( argv[arg++] );
-	npts = atoi( argv[arg++] );
-      } else {
-	ERROR( WINDOWTESTC_EARG, WINDOWTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
-        return WINDOWTESTC_EARG;
-      }
-    }
+		/* Parse window size option. */
+		else if(!strcmp(argv[arg], "-n")) {
+			if(argc > arg + 2) {
+				arg++;
+				width = atoi(argv[arg++]);
+				npts = atoi(argv[arg++]);
+			} else {
+				ERROR(WINDOWTESTC_EARG, WINDOWTESTC_MSGEARG, 0);
+				LALPrintError(USAGE, *argv);
+				return WINDOWTESTC_EARG;
+			}
+		}
 
-    /* Check for unrecognized arguments. */
-    else {
-      ERROR( WINDOWTESTC_EARG, WINDOWTESTC_MSGEARG, 0 );
-      LALPrintError( USAGE, *argv );
-      return WINDOWTESTC_EARG;
-    }
-  }
+		/* Check for unrecognized arguments. */
+		else {
+			ERROR(WINDOWTESTC_EARG, WINDOWTESTC_MSGEARG, 0);
+			LALPrintError(USAGE, *argv);
+			return WINDOWTESTC_EARG;
+		}
+	}
 
-  /* Do argument-list-level tests. */
+	/* Do argument-list-level tests. */
 #ifndef LAL_NDEBUG
-  if ( ! lalNoDebug ) {
-    params.type = Rectangular;
-    params.length = NPOINTS;
-    params.beta = 1.0;
+	if(!lalNoDebug) {
+		params.type = Rectangular;
+		params.length = NPOINTS;
+		params.beta = 1.0;
 
-    /* Test behavior for non-positive length  */
-    params.length=0;
-    sWindow = XLALCreateREAL4Window(params.length, params.type, params.beta);
-    if (sWindow) {
-      ERROR(0, "XLALCreateREAL4Window() failed to detect 0 length", NULL);
-      return 1;
-    }
+		/* Test behavior for non-positive length  */
+		params.length = 0;
+		sWindow = XLALCreateREAL4Window(params.length, params.type, params.beta);
+		if(sWindow) {
+			ERROR(0, "XLALCreateREAL4Window() failed to detect 0 length", NULL);
+			return 1;
+		}
 
-    /* Test failures for undefined window type on lower and upper bounds */
-    params.type=-1;
-    sWindow = XLALCreateREAL4Window(params.length, params.type, params.beta);
-    if (sWindow) {
-      ERROR(0, "XLALCreateREAL4Window() failed to detect out-of-bound type", NULL);
-      return 1;
-    }
-    params.type=NumberWindowTypes;
-    sWindow = XLALCreateREAL4Window(params.length, params.type, params.beta);
-    if (sWindow) {
-      ERROR(0, "XLALCreateREAL4Window() failed to detect out-of-bound type", NULL);
-      return 1;
-    }
-  }
+		/* Test failures for undefined window type on lower and upper bounds */
+		params.type = -1;
+		sWindow = XLALCreateREAL4Window(params.length, params.type, params.beta);
+		if(sWindow) {
+			ERROR(0, "XLALCreateREAL4Window() failed to detect out-of-bound type", NULL);
+			return 1;
+		}
+		params.type = NumberWindowTypes;
+		sWindow = XLALCreateREAL4Window(params.length, params.type, params.beta);
+		if(sWindow) {
+			ERROR(0, "XLALCreateREAL4Window() failed to detect out-of-bound type", NULL);
+			return 1;
+		}
+	}
 #endif
 
 
-  /* Read input file, if any. */
-  if ( infile ) {
-    fp = fopen( infile, "r" );
-    if ( !fp ) {
-      ERROR( WINDOWTESTC_EFILE, WINDOWTESTC_MSGEFILE, infile );
-      return WINDOWTESTC_EFILE;
-    }
-    if ( pOption )
-      SUB( LALDReadSequence( &status, &dVector, fp ), &status );
-    else
-      SUB( LALSReadSequence( &status, &sVector, fp ), &status );
-    fclose( fp );
-    fp = NULL;
-  }
-
-
-  /* Compute (and apply) windows. */
-  params.length = width;
-  for ( wintype = 0; wintype < NumberWindowTypes; wintype++ ) {
-    if ( flag & ( 1 << wintype ) ) {
-
-      /* Create window. */
-      params.type = wintype;
-      if ( !bOption ) {
-	if ( wintype == Kaiser )
-	  params.beta = 6.0;
-	else if ( wintype == Creighton )
-	  params.beta = 2.0;
-      }
-      if ( pOption ) {
-      	dWindow = XLALCreateREAL8Window(params.length, params.type, params.beta);
-	params.sumofsquares = dWindow->sumofsquares;
-      } else {
-      	sWindow = XLALCreateREAL4Window(params.length, params.type, params.beta);
-	params.sumofsquares = sWindow->sumofsquares;
-      }
-
-      /* Check sum of squares. */
-      if ( width == NPOINTS )
-	if ( ( wintype != Kaiser || params.beta == 6.0 ) &&
-	     ( wintype != Creighton || params.beta == 2.0 ) &&
-	     ( wintype != Tukey ) ) {
-	  if ( fabs( params.sumofsquares - testsquares[(int)wintype] )
-	       > 1.e-5 ) {
-	    printf("FAIL: Window type %d appears incorrect.\n",
-		   params.type );
-	    printf("Expected %16.12f, got %16.12f\n",
-		   testsquares[(int)wintype], params.sumofsquares );
-	    return 1;
-	  }
+	/* Read input file, if any. */
+	if(infile) {
+		fp = fopen(infile, "r");
+		if(!fp) {
+			ERROR(WINDOWTESTC_EFILE, WINDOWTESTC_MSGEFILE, infile);
+			return WINDOWTESTC_EFILE;
+		}
+		if(pOption)
+			SUB(LALDReadSequence(&status, &dVector, fp), &status);
+		else
+			SUB(LALSReadSequence(&status, &sVector, fp), &status);
+		fclose(fp);
+		fp = NULL;
 	}
 
-      /* Apply/print window. */
-      LALSnprintf( outfile, LALNameLength, "PrintVector.%03u",
-		   (UINT4)( wintype ) );
-      if ( !( fp = fopen( outfile, "w" ) ) ) {
-	ERROR( WINDOWTESTC_EFILE, WINDOWTESTC_MSGEFILE, outfile );
-	return WINDOWTESTC_EFILE;
-      }
 
-      /* Double-precision window: */
-      if ( pOption ) {
-	if ( infile ) {
-	  for ( i = 0; i < dVector->length && i < width; i++ )
-	    fprintf( fp, "%23.16e\n",
-		     dVector->data[i]*dWindow->data->data[i] );
-	  if ( i++ < npts && i < dVector->length )
-	    fprintf( fp, "%23.16e\n",
-		     dVector->data[i]*dWindow->data->data[0] );
-	  SUB( LALDDestroyVector( &status, &dVector ), &status );
-	} else {
-	  for ( i = 0; i < width; i++ )
-	    fprintf( fp, "%23.16e\n", dWindow->data->data[i] );
-	  if ( i++ < npts )
-	    fprintf( fp, "%23.16e\n", dWindow->data->data[0] );
+	/* Compute (and apply) windows. */
+	params.length = width;
+	for(wintype = 0; wintype < NumberWindowTypes; wintype++) {
+		if(flag & (1 << wintype)) {
+
+			/* Create window. */
+			params.type = wintype;
+			if(!bOption) {
+				if(wintype == Kaiser)
+					params.beta = 6.0;
+				else if(wintype == Creighton)
+					params.beta = 2.0;
+			}
+			if(pOption) {
+				dWindow = XLALCreateREAL8Window(params.length, params.type, params.beta);
+				params.sumofsquares = dWindow->sumofsquares;
+			} else {
+				sWindow = XLALCreateREAL4Window(params.length, params.type, params.beta);
+				params.sumofsquares = sWindow->sumofsquares;
+			}
+
+			/* Check sum of squares. */
+			if(width == NPOINTS)
+				if((wintype != Kaiser || params.beta == 6.0) && (wintype != Creighton || params.beta == 2.0) && (wintype != Tukey)) {
+					if(fabs(params.sumofsquares - testsquares[(int) wintype]) > 1.e-5) {
+						printf("FAIL: Window type %d appears incorrect.\n", params.type);
+						printf("Expected %16.12f, got %16.12f\n", testsquares[(int) wintype], params.sumofsquares);
+						return 1;
+					}
+				}
+
+			/* Apply/print window. */
+			LALSnprintf(outfile, LALNameLength, "PrintVector.%03u", (UINT4) (wintype));
+			if(!(fp = fopen(outfile, "w"))) {
+				ERROR(WINDOWTESTC_EFILE, WINDOWTESTC_MSGEFILE, outfile);
+				return WINDOWTESTC_EFILE;
+			}
+
+			/* Double-precision window: */
+			if(pOption) {
+				if(infile) {
+					for(i = 0; i < dVector->length && i < width; i++)
+						fprintf(fp, "%23.16e\n", dVector->data[i] * dWindow->data->data[i]);
+					if(i++ < npts && i < dVector->length)
+						fprintf(fp, "%23.16e\n", dVector->data[i] * dWindow->data->data[0]);
+					SUB(LALDDestroyVector(&status, &dVector), &status);
+				} else {
+					for(i = 0; i < width; i++)
+						fprintf(fp, "%23.16e\n", dWindow->data->data[i]);
+					if(i++ < npts)
+						fprintf(fp, "%23.16e\n", dWindow->data->data[0]);
+				}
+				XLALDestroyREAL8Window(dWindow);
+				for(; i < npts; i++)
+					fprintf(fp, "%23.16e\n", 0.0);
+			}
+
+			/* Single-precision window: */
+			else {
+				if(infile) {
+					for(i = 0; i < sVector->length && i < width; i++)
+						fprintf(fp, "%16.9e\n", sVector->data[i] * sWindow->data->data[i]);
+					if(i++ < npts && i < sVector->length)
+						fprintf(fp, "%16.9e\n", sVector->data[i] * sWindow->data->data[0]);
+					SUB(LALSDestroyVector(&status, &sVector), &status);
+				} else {
+					for(i = 0; i < width; i++)
+						fprintf(fp, "%16.9e\n", sWindow->data->data[i]);
+					if(i++ < npts)
+						fprintf(fp, "%16.9e\n", sWindow->data->data[0]);
+				}
+				XLALDestroyREAL4Window(sWindow);
+				for(; i < npts; i++)
+					fprintf(fp, "%16.9e\n", 0.0);
+			}
+
+			/* Done. */
+			fclose(fp);
+			fp = NULL;
+		}
 	}
-	XLALDestroyREAL8Window(dWindow);
-	for ( ; i < npts; i++ )
-	  fprintf( fp, "%23.16e\n", 0.0 );
-      }
 
-      /* Single-precision window: */
-      else {
-	if ( infile ) {
-	  for ( i = 0; i < sVector->length && i < width; i++ )
-	    fprintf( fp, "%16.9e\n",
-		     sVector->data[i]*sWindow->data->data[i] );
-	  if ( i++ < npts && i < sVector->length )
-	    fprintf( fp, "%16.9e\n",
-		     sVector->data[i]*sWindow->data->data[0] );
-	  SUB( LALSDestroyVector( &status, &sVector ), &status );
-	} else {
-	  for ( i = 0; i < width; i++ )
-	    fprintf( fp, "%16.9e\n", sWindow->data->data[i] );
-	  if ( i++ < npts )
-	    fprintf( fp, "%16.9e\n", sWindow->data->data[0] );
-	}
-	XLALDestroyREAL4Window(sWindow);
-	for ( ; i < npts; i++ )
-	  fprintf( fp, "%16.9e\n", 0.0 );
-      }
-
-      /* Done. */
-      fclose( fp );
-      fp = NULL;
-    }
-  }
-  return 0;
+	return 0;
 }
