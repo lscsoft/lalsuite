@@ -49,7 +49,7 @@ DeltaWeight=1.0;
 
 system("mkdir -p ./MultiWeightsDump");
 
-cmdline = sprintf("/xxx./MultiWeights  --sftDir=%s \
+cmdline = sprintf("/home/all64/lscsoft/lalapps/src/pulsar/hough/src/MultiWeights  --sftDir=%s \
          --earthEphemeris=%s  --sunEphemeris= %s \
          --f0=%.12g --fSearchBand=%.12g  \
 	 --AlphaWeight=%.12g --DeltaWeight=%.12g 
