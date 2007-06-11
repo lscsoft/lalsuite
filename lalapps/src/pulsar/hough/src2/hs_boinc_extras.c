@@ -1025,7 +1025,7 @@ int add_checkpoint_candidate (toplist_t*toplist,    /**< the toplist */
     single point to contain the checkpoint format string.
     called only from 2 places in set_checkpoint()
 */
-static void write_checkpoint (void) {
+static void write_checkpoint (char*cptfilename) {
   FILE* fp = fopen(cptfilename,"w");
   if (fp) {
     fprintf(fp,"%lf,%lf,%u,%u,%u,%u\n",
@@ -1036,7 +1036,7 @@ static void write_checkpoint (void) {
     LogPrintf (LOG_CRITICAL,  "ERROR: Couldn't write checkpoint file %s: %d: %s\n",
 	       cptfilename,errno,strerror(errno));
 #ifdef _MSC_VER
-      LogPrintf (LOG_CRITICAL, "Windows system call returned: %d\n", _doserrno);
+    LogPrintf (LOG_CRITICAL, "Windows system call returned: %d\n", _doserrno);
 #endif
   }
 }
@@ -1055,13 +1055,18 @@ void set_checkpoint (void) {
     {
       if ((cptf->maxsize > 0) && (cptf->bytes >= cptf->maxsize)) {
 	fstat_cpt_file_compact(cptf);
+	write_checkpoint(cptfilename);
       } else {
 	fstat_cpt_file_flush(cptf);
+#define TEMPCHECKPOINT "checkpoint.tmp"
+	write_checkpoint(TEMPCHECKPOINT);
+	if( boinc_rename(TEMPCHECKPOINT,cptfilename) ) {
+	  LogPrintf (LOG_CRITICAL, "ERROR: Couldn't rename checkpoint file\n", filename);
+	}
       }
-      write_checkpoint();
       boinc_checkpoint_completed();
       fprintf(stderr,"c\n");
-      LogPrintf(LOG_DETAIL,"set_checkpt(): bytes: %u, file: %d\n", cptf->bytes, ftell(cptf->fp));
+      LogPrintf(LOG_DETAIL,"\nset_checkpt(): bytes: %u, file: %d\n", cptf->bytes, ftell(cptf->fp));
     }
 #ifndef FORCE_CHECKPOINTING
   else if (cptf->bytes >= cptf->maxsize)
@@ -1069,9 +1074,10 @@ void set_checkpoint (void) {
       boinc_begin_critical_section();
       if (cptf->maxsize > 0)
 	fstat_cpt_file_compact(cptf);
-      write_checkpoint();
+      write_checkpoint(cptfilename);
       boinc_end_critical_section();
-      LogPrintf(LOG_DEBUG,"set_checkpt(): bytes: %u, file: %d\n", cptf->bytes, ftell(cptf->fp));
+      fprintf(stderr,"C\n");
+      LogPrintf(LOG_DETAIL,"\nset_checkpt(): bytes: %u, file: %d\n", cptf->bytes, ftell(cptf->fp));
     }
 #endif
 }
