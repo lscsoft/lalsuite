@@ -423,6 +423,8 @@ int main(int argc, char *argv[]){
       FILE *fp=NULL;
        
       fp = fopen(uvar_outfile   , "w");
+      setvbuf(fp, (char *)NULL, _IOLBF, 0);
+      
       for (k=0; k < (INT4)mObsCoh; k++){
         fprintf(fp, "%g  \n", weightsV.data[k]);
       }
