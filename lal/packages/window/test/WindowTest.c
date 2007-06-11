@@ -292,7 +292,7 @@ main( int argc, char **argv )
 
   /* Read input file, if any. */
   if ( infile ) {
-    FILE *fp = fopen( infile, "r" );
+    fp = fopen( infile, "r" );
     if ( !fp ) {
       ERROR( WINDOWTESTC_EFILE, WINDOWTESTC_MSGEFILE, infile );
       return WINDOWTESTC_EFILE;
@@ -302,6 +302,7 @@ main( int argc, char **argv )
     else
       SUB( LALSReadSequence( &status, &sVector, fp ), &status );
     fclose( fp );
+    fp = NULL;
   }
 
 
@@ -321,11 +322,9 @@ main( int argc, char **argv )
       if ( pOption ) {
       	dWindow = XLALCreateREAL8Window(params.length, params.type, params.beta);
 	params.sumofsquares = dWindow->sumofsquares;
-	params.windowname = dWindow->windowname;
       } else {
       	sWindow = XLALCreateREAL4Window(params.length, params.type, params.beta);
 	params.sumofsquares = sWindow->sumofsquares;
-	params.windowname = sWindow->windowname;
       }
 
       /* Check sum of squares. */
@@ -335,8 +334,8 @@ main( int argc, char **argv )
 	     ( wintype != Tukey ) ) {
 	  if ( fabs( params.sumofsquares - testsquares[(int)wintype] )
 	       > 1.e-5 ) {
-	    printf("FAIL: Window %s appears incorrect.\n",
-		   params.windowname );
+	    printf("FAIL: Window type %d appears incorrect.\n",
+		   params.type );
 	    printf("Expected %16.12f, got %16.12f\n",
 		   testsquares[(int)wintype], params.sumofsquares );
 	    return 1;
@@ -395,6 +394,7 @@ main( int argc, char **argv )
 
       /* Done. */
       fclose( fp );
+      fp = NULL;
     }
   }
   return 0;
