@@ -52,7 +52,7 @@ system("mkdir -p ./MultiWeightsDump");
 cmdline = sprintf("/home/all64/lscsoft/lalapps/src/pulsar/hough/src/MultiWeights  --sftDir=%s \
          --earthEphemeris=%s  --sunEphemeris= %s \
          --f0=%.12g --fSearchBand=%.12g  \
-	 --AlphaWeight=%.12g --DeltaWeight=%.12g 
+	 --AlphaWeight=%.12g --DeltaWeight=%.12g \
 	 --weightAM=%.12g --weightNoise=%.12g \
 	 --dumpAllWeights=%.12g --dumpRelativeWeights=%.12g --dumpNoise=%.12g -d 0",\
        DataFiles, EarthE, SunE, fStart, fBand,  AlphaWeight, DeltaWeight,\
