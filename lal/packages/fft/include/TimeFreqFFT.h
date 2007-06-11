@@ -108,16 +108,6 @@ NRCSID( TIMEFREQFFTH, "$Id$" );
 
 /**** </lalErrTable> */
 
-/* XXX this should be removed XXX */
-typedef struct tagRealDFTParams
-{
-  WindowType               windowType;
-  REAL4Vector              *window;
-  REAL4                    sumofsquares;
-  RealFFTPlan              *plan;
-}
-RealDFTParams;
-
 /* <lalLaTeX>
 \subsection*{Types}
 
@@ -194,17 +184,6 @@ AverageSpectrumParams;
  * \newpage\input{TimeFreqFFTC}
  * \newpage\input{TimeFreqFFTTestC}
  **** </lalLaTeX> */
-
-/* XXX this should be removed XXX */
-void
-LALCreateRealDFTParams ( 
-        LALStatus                         *status, 
-        RealDFTParams                  **dftParams, 
-        LALWindowParams                   *params,
-        INT2                           sign
-        );
-
-/* XXX this should be removed XXX */
 
 /*
  *
@@ -322,14 +301,6 @@ COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(
     REAL8                        fmax
     );
 
-
-
-
-void
-LALDestroyRealDFTParams (
-        LALStatus                        *status, 
-        RealDFTParams                 **dftParams
-        );
 
 void
 LALTimeFreqRealFFT(
