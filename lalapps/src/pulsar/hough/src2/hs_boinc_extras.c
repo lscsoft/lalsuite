@@ -956,27 +956,31 @@ int init_and_read_checkpoint(toplist_t*toplist, /**< the toplist to checkpoint *
   fp = fopen(cptfilename,"r");
   
   if (!fp) {
-    LogPrintf (LOG_DEBUG,  "Couldn't open checkpoint - starting from beginning\n");
+    LogPrintf (LOG_DEBUG,  "Couldn't open checkpoint (%d) - starting from beginning\n", errno);
     return(0);
   }
 
   LogPrintf (LOG_DEBUG,  "Found checkpoint - reading...\n");
 
   scanned = fscanf(fp,"%lf,%lf,%lu,%lu,%u,%u\n",
-		  &last_rac, &last_dec,
-		  &count_read, &total_read,
-		  &checksum, &bytes);
-
-  fclose(fp);
+		   &last_rac, &last_dec,
+		   &count_read, &total_read,
+		   &checksum, &bytes);
 
   if (scanned != 6) {
-    LogPrintf (LOG_DEBUG,  "ERROR reading checkpoint (read %d of 6 values)\n", scanned);
+    LogPrintf (LOG_CRITICAL, "ERROR reading checkpoint %s (scanned: %d(6), ferror: %d, errno: %d:%s)\n",
+	       cptfilename,scanned,ferror(fp),errno,strerror(errno));
+#ifdef _MSC_VER
+    LogPrintf (LOG_CRITICAL, "Windows system call returned: %d\n", _doserrno);
+#endif
+    fclose(fp);
     remove(cptfilename);
     return(-1);
   }
+  fclose(fp);
 
   if (total_read != total) {
-    LogPrintf (LOG_DEBUG,  "ERROR reading checkpoint: skypoints inconsistent (%ul != %ul)\n", total_read, total);
+    LogPrintf (LOG_DEBUG,  "ERROR reading checkpoint: n.o. skypoints inconsistent (%ul != %ul)\n", total_read, total);
     remove(cptfilename);
     return(-1);
   }
