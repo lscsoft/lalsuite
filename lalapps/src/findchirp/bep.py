@@ -159,7 +159,7 @@ def create_finalise_script(BE, options):
         fp.write('#!/bin/sh\n')
         fp.write('rm -f Trigger.dat ; find . -name "out_*" | awk \'{print "cat  " $1 ">> Trigger.dat"}\' > script.sh; chmod 755 script.sh ; ./script.sh; \n')
         fp.write('cp TMPLTBANK.xml BE_Bank.xml\n')
-        fp.write(path+executable_name +' --ascii2xml --template EOB --signal EOB\n')
+        fp.write(path+executable_name +' --ascii2xml \n')
         fp.write('mv Trigger.xml Trigger_' + BE['noise-model'] +'_'+str(BE['fl'])+'_'+options.search+'_'+BE['bank-grid-spacing']+'_'+BE['template'])
         fp.write('_'+str(BE['template-order']))
         fp.write('_'+BE['signal']+'_'+str(BE['signal-order'])+'_'+str(BE['sampling'])+'_'+str(BE['mm'])+'.xml')
@@ -271,7 +271,7 @@ def main():
 	BE['bank-ffinal'] = options.bank_ffinal
     
     #[some other default values]
-    others = ' --print-result-xml  --debug 33 --print-bank '
+    others = ' --print-xml  --debug 33 --print-bank '
     # options  without arguments 
     
     if options.fast_simulation==True:
