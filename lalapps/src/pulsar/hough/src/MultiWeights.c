@@ -138,8 +138,8 @@ int main(int argc, char *argv[]){
   uvar_printLog = FALSE;
   uvar_weighAM = TRUE;
   uvar_weighNoise = TRUE; 
-  uvar_dumpAllW = FALSE;
-  uvar_dumpRelW = FALSE;
+  uvar_dumpAllW = TRUE;
+  uvar_dumpRelW = TRUE;
   uvar_dumpNoise= FALSE;
   uvar_blocksRngMed = BLOCKSRNGMED;
   uvar_f0 = F0;

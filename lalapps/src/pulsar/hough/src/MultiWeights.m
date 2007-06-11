@@ -34,6 +34,9 @@ DataFiles="/sft/S5-links/*.sft";
 EarthE="/home/sintes/earth05-09.dat";
 SunE="/home/sintes/sun05-09.dat";
 
+## startT=815410983.0;
+## stopT=816335150.0;
+
 DumpAllWeights=1;
 DumpRelativeW=1;
 DumpNoise=0;
@@ -51,6 +54,7 @@ system("mkdir -p ./MultiWeightsDump");
 
 cmdline = sprintf("/home/all64/lscsoft/lalapps/src/pulsar/hough/src/MultiWeights  --sftDir=%s \
          --earthEphemeris=%s  --sunEphemeris= %s \
+	 --startTime=815410983.0 --endTime=816335150.0 \
          --f0=%.12g --fSearchBand=%.12g  \
 	 --AlphaWeight=%.12g --DeltaWeight=%.12g \
 	 --weightAM=%.12g --weightNoise=%.12g \
