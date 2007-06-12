@@ -29,6 +29,43 @@ program should be kept to a minimum to not affect readability and
 maintainability.
 
 
+Solution Outline
+================
+
+- the function that inserts a candidate into the toplist should
+return whether it actually inserted the candidate or neglected it
+because it is "smaller" than the "smallest" element of the list.
+
+- when a candidate is actually inserted into the toplist (in memory),
+it is also appended to the "previous output" file. Simply reading
+this file line by line and inserting each line / candidate into an 
+initailly empty toplist should result in a toplist equal to that
+at time of writing the last checkpoint.
+
+- a local file buffer is assigned to the "previous output" that is
+only flushed just before writing a new checkpint. This ensures that
+the file is never shorter than what the information in the
+checkpoint file referrs to, while minimizing the necessary disk
+accesses (e.g. for laptops with appropriate settings of time
+between checkpoints).
+
+- with the method mentioned above, the "previous output" file
+would be growing continously with every candidate that's inserted
+into the toplist. To avoid this, the file is "compacted", i.e.
+effectively overwritten by a new, clean dump of the current
+toplist, when the filesize crosses a certain limit. To ensure
+consistency with the checkpoint this is done when writing a
+checkpoint, and not when adding a candidate to the output
+file.
+
+- the interface of the funtions that make up the checkpointed 
+version of the toplist is compatible to the functions that
+manipulate the non-checkpointing toplist, so one can simply
+replace the non-checkpointing toplist functions with their
+checkpointing pendants in the calling program to get a
+checkpointig application.
+
+
 Data structures (Files)
 =======================
 
