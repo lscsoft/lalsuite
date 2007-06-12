@@ -564,9 +564,8 @@ main(int argc, char **argv)
 #endif  
 
   if( ( fourier = fopen(fftout, "w")) == NULL)
-    fftout = "fftout";	  
-
-  fourier = fopen(fftout, "w");
+      fourier = fopen("fftout", "w");
+  
   for(i = 0; i < wlength/2+1; i++, f+=Hf.deltaF) 
     fprintf(fourier," %f %10.3e %10.3e\n", f, Hf.data->data[i].re, Hf.data->data[i].im);	  
   fclose(fourier);
