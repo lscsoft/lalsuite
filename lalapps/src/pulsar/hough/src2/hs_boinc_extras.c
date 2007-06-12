@@ -118,10 +118,9 @@ static UINT4 last_count, last_total;      /* last template count, see last_rac *
 /** PROTOTYPES **/
 static void worker (void);
 static void sighandler(int);
-static void write_checkpoint(void);
+static void write_checkpoint(char*);
 static int  is_zipped(const char *);
 static int  resolve_and_unzip(const char*, char*, const size_t);
-static void write_checkpoint (void);
 
 
 
@@ -1061,7 +1060,7 @@ void set_checkpoint (void) {
 #define TEMPCHECKPOINT "checkpoint.tmp"
 	write_checkpoint(TEMPCHECKPOINT);
 	if( boinc_rename(TEMPCHECKPOINT,cptfilename) ) {
-	  LogPrintf (LOG_CRITICAL, "ERROR: Couldn't rename checkpoint file\n", filename);
+	  LogPrintf (LOG_CRITICAL, "ERROR: Couldn't rename checkpoint file\n", cptfilename);
 	}
       }
       boinc_checkpoint_completed();
