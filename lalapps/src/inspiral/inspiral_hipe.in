@@ -157,7 +157,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
     data_opts = 'ligo-data'
     try: 
       type = cp.get('input','ligo-type')
-      if (type == 'RDS_R_L4') or ('LX' in type):
+      if (type == 'RDS_R_L4') or ('RDS_C' in type):
         type = ifo_name + '_' + type
     except: type = None
     channel = cp.get('input','ligo-channel')
@@ -1246,6 +1246,14 @@ except:
   num_slides = None
 
 
+##############################################################################
+# read in the maximum length of a science segment for thinca from the ini file
+try:
+  max_thinca_segment = int(cp.get('input','max-thinca-segment'))
+except:
+  max_thinca_segment = None
+
+
 #############################################################################
 # read in playground data mask from ini file 
 # set the playground_only option and add to inca and sire jobs
@@ -1460,6 +1468,9 @@ for ifos in ifo_combinations:
     analyzed_data[ifos] = generate_segments(selected_data[0], 
         selected_data[1], selected_data[2], selected_data[3])
 
+    if max_thinca_segment:
+      analyzed_data[ifos].split(max_thinca_segment)
+
   
 ##############################################################################
 # Step 3: Compute the Science Segments to analyze
@@ -1538,7 +1549,7 @@ for ifos in ifo_coincs:
         analyzed_data[ifos],thinca_slide_jobs[ifos],dag,opts.coincidence,
         opts.inspiral,exttrigInjections,usertag,ifotag,num_slides)
 
-  
+ 
   # Step 6 sire: Run sire triggers
   # Do sire with all coincidenct triggers, and clustered sires for each ifo
   if opts.sire and len(analyzed_data[ifos]):
