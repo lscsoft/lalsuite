@@ -53,15 +53,47 @@ Checkpointing is implemented by means of four functions:
 This funcion initializes the data structures for checkpointing,
 and looks for a previous checkpoint file. If it finds one, it
 tries to read the previous output back into memory and returns
-information to resume from the checkpoint.
+information to resume from the checkpoint. Its Interface is such
+that it can simply replace a fstat_toplist_init() call in a
+non-checkpointing version of the program.
 
 - add_checkpoint_candidate()
 
 Whenever a candiadate has been found, this function not only adds
-it to the "toplist" in memory; it also 
+it to the "toplist" in memory; it also appends it to the
+checkpointed file on disk in case it was actually inserted into
+the toplist, i.e. if it was "larger" than the "smallest" element
+in the toplist. Note that actually the candidate is appended to a
+file buffer in memory, which will be flushed (i.e. written to disk)
+when writing a checkpoint. Its Interface is such
+that it can simply replace a fstat_toplist_add() call in a
+non-checkpointing version of the program.
 
 - set_checkpoint()
+
+Actually writes a checkpoint (file). When it's "time to checkpoint",
+the checkpointed file is flushed, i.e. the candidates in the file
+buffer (put there by add_checkpoint_candidate()) are actually wrtten
+to disk. If the file has reached te maximum size, it is "compacted",
+i.e. completely rewritten from the toplist in memory. Then a new
+checkpoint file is written, containing the skypoint counter and the
+length and checksum of the checkpointed file. For consistency checks
+and a poissibly external progress counter, also the total number of
+skypoints and the current sky position (rac,dec) is recorded.
+
 - write_and_close_checkpointed_file()
+
+After all operations on the toplist and the checkpointed file have
+been performed, this fuction should be called to finally write the
+toplist to a file. It actually does this "compacted", i.e. writes
+it completely from scratch, containing only the candidates that
+are in the toplist at this moment. It adds an end marker ("%DONE")
+to the checkpointed file and cleans up all structures used for
+the toplist and checkpointing. Note that the checkpoint file itself
+is not removed by this function, this is purposefully left to the
+BOINC Clinet. Its Interface is such
+that it can simply replace a fstat_toplist_add() call in a
+non-checkpointing version of the program.
 
 
 Modules
