@@ -215,7 +215,6 @@ LALInspiralCreateBCVBank (
         metric.g00, metric.g11, metric.theta );
     LALPrintError( "dp0=%e dp1=%e\n", dx0, dx1 );
   }
-  metric.g11/=64*2;
 
   /* We have the metric, which is constant. Now we need to place 
    * the templates in the parameter space which is define as follows by 
