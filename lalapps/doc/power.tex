@@ -204,7 +204,6 @@ simulated data.
 [\option{--enable-over-whitening}] \newline \hspace*{0.5in}
 [\option{--user-tag}~\parm{comment}] \newline \hspace*{0.5in}
 \option{--window-length}~\parm{samples} \newline \hspace*{0.5in}
-\option{--window-shift}~\parm{samples}
 
 \item[Description] 
 \prog{lalapps\_power} performs an excess power analysis on real or
@@ -466,12 +465,6 @@ analyze the data in 1 second windows, you need to set this parameter to the
 number of samples corresponding to 2 seconds of data.  This parameter must
 be a power of 2.
 
-\item[\option{--window-shift} \parm{samples}]
-Set the number of samples each analysis window is shifted with respect to
-the previous window to \parm{samples}.  This is typically set to one
-quarter of the window length (i.e.\ half the length of data that is
-actually analyzed).
-
 \end{entry}
 
 
@@ -495,8 +488,7 @@ lalapps_power \
 --tile-stride-fraction 0.5 \
 --user-tag testing \
 --verbose \
---window-length 32768 \
---window-shift 8192
+--window-length 32768
 \end{verbatim}
 For this to succeed, the current directory must contain the file
 \texttt{H-754008315-754008931.cache} describing the locations of the

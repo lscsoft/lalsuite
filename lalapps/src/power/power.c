@@ -420,10 +420,6 @@ static int all_required_arguments_present(char *prog, struct option *long_option
 			arg_is_missing = !options->psd_length;
 			break;
 
-		case 'd':
-			arg_is_missing = !params->windowShift;
-			break;
-
 		case 'e':
 			arg_is_missing = !options->resample_rate;
 			break;
@@ -597,7 +593,6 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		{"tile-stride-fraction", required_argument, NULL, 'f'},
 		{"user-tag", required_argument, NULL, 'h'},
 		{"window-length", required_argument, NULL, 'W'},
-		{"window-shift", required_argument, NULL, 'd'},
 		{NULL, 0, NULL, 0}
 	};
 
@@ -819,11 +814,6 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		ADD_PROCESS_PARAM("int");
 		break;
 
-	case 'd':
-		params->windowShift = atoi(optarg);
-		ADD_PROCESS_PARAM("int");
-		break;
-
 	case 'e':
 		options->resample_rate = atoi(optarg);
 		if(options->resample_rate < 2 || options->resample_rate > 16384 || !is_power_of_2(options->resample_rate)) {
@@ -962,6 +952,8 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		print_bad_argument(argv[0], "window-length", msg);
 		args_are_bad = TRUE;
 	}
+
+	params->windowShift = options->window_length / 2;
 
 	/*
 	 * Check the order of the start and stop times.
@@ -1630,14 +1622,14 @@ static void add_sim_injections(LALStatus *stat, REAL4TimeSeries *series, COMPLEX
  */
 
 
-static SnglBurstTable **analyze_series(SnglBurstTable **addpoint, REAL4TimeSeries *series, size_t psdlength, size_t window_length, EPSearchParams *params)
+static SnglBurstTable **analyze_series(SnglBurstTable **addpoint, REAL4TimeSeries *series, size_t psdlength, EPSearchParams *params)
 {
 	REAL4TimeSeries *interval;
 	size_t i, start;
-	size_t overlap = window_length - params->windowShift;
+	size_t overlap = params->window->data->length - params->windowShift;
 
 	if(psdlength > series->data->length) {
-		psdlength = block_commensurate(series->data->length, window_length, params->windowShift);
+		psdlength = block_commensurate(series->data->length, params->window->data->length, params->windowShift);
 		XLALPrintInfo("analyze_series(): warning: PSD average length exceeds available data --- reducing PSD average length to %zu samples\n", psdlength);
 		if(!psdlength) {
 			XLALPrintInfo("analyze_series(): warning: cowardly refusing to analyze 0 samples... skipping series\n");
@@ -1795,7 +1787,7 @@ int main(int argc, char *argv[])
 	 * set the outer loop's upper bound
 	 */
 
-	overlap = options->window_length - params.windowShift;
+	overlap = params.window->data->length - params.windowShift;
 	XLALPrintInfo("%s: time series overlap is %zu samples (%.9lf s)\n", argv[0], overlap, overlap / (double) options->resample_rate);
 
 	boundepoch = options->gps_end;
@@ -1917,16 +1909,16 @@ int main(int argc, char *argv[])
 
 		if(!_search_summary_table.searchSummaryTable->out_start_time.gpsSeconds) {
 			_search_summary_table.searchSummaryTable->out_start_time = series->epoch;
-			XLALGPSAdd(&_search_summary_table.searchSummaryTable->out_start_time, series->deltaT * (options->window_length / 2 - params.windowShift));
+			XLALGPSAdd(&_search_summary_table.searchSummaryTable->out_start_time, series->deltaT * (params.window->data->length / 2 - params.windowShift));
 		}
 		_search_summary_table.searchSummaryTable->out_end_time = series->epoch;
-		XLALGPSAdd(&_search_summary_table.searchSummaryTable->out_end_time, series->deltaT * (series->data->length - (options->window_length / 2 - params.windowShift)));
+		XLALGPSAdd(&_search_summary_table.searchSummaryTable->out_end_time, series->deltaT * (series->data->length - (params.window->data->length / 2 - params.windowShift)));
 
 		/*
 		 * Analyze the data
 		 */
 
-		EventAddPoint = analyze_series(EventAddPoint, series, options->psd_length, options->window_length, &params);
+		EventAddPoint = analyze_series(EventAddPoint, series, options->psd_length, &params);
 
 		/*
 		 * Reset for next run
