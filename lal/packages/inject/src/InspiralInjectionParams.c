@@ -1,22 +1,3 @@
-/*
-*  Copyright (C) 2007 Bernd Machenschalk, Stephen Fairhurst
-*
-*  This program is free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  This program is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
-*  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
-*/
-
 /** \file InspiralInjectionParams.c
  *  \ingroup InspiralInjectionParams
  *  \author D. Brown, J. Creighton, S. Fairhurst, G. Jones, E. Messaritaki
@@ -98,13 +79,14 @@ SimInspiralTable* XLALRandomInspiralDistance(
     REAL4 deltad2 = d2max - d2min ;
     REAL4 d2;
     d2 = d2min + deltad2 * XLALUniformDeviate( randParams );
-    inj->distance = pow(d2, 1.0/3.0);     
+    inj->distance = sqrt( d2 );
   }    
   return ( inj );
 } 
 
 
-/** Generates a random sky location (theta, phi) for an inspiral injection */
+/** Generates a random sky location (right ascension=longitude,
+     delta=latitude) for an inspiral injection */
 SimInspiralTable* XLALRandomInspiralSkyLocation( 
     SimInspiralTable *inj,  /**< injection for which sky location will be set*/
     RandomParams *randParams/**< random parameter details*/
@@ -115,6 +97,54 @@ SimInspiralTable* XLALRandomInspiralSkyLocation(
   return ( inj );
 }
 
+/** Generates a location within the Milky Way
+     for an inspiral injection */
+SimInspiralTable* XLALRandomInspiralMilkywayLocation( 
+    SimInspiralTable *inj,  /**< injection for which sky location will be set*/
+    RandomParams *randParams/**< random parameter details*/
+    )
+{
+  static LALStatus status;
+  SkyPosition galacticPos, equatorialPos;
+  const REAL8 h_scale = 1.5; /* scales in kpc */
+  const REAL8 r_scale = 4.0;
+  const REAL8 r_sun   = 8.5;
+  REAL8 r, z, phi, rho2, dist;
+  REAL4 u;
+
+   /* draw the radial position in the galactic plane */ 
+  r = r_scale * sqrt( -2 * log( XLALUniformDeviate(randParams) ) );
+
+  /* draw the height */
+  u = XLALUniformDeviate(randParams);
+  if ( u > 0.5)
+  {
+    z = -h_scale * log( 2 * ( 1 - u ) );
+  }
+  else
+  {
+    z = h_scale * log( 2 * u );
+  }
+  phi = LAL_TWOPI * XLALUniformDeviate(randParams);
+
+  /* calculate the distace from the sun */
+  rho2 = r_sun * r_sun + r * r - 2 * r_sun * r * cos( phi );
+  dist = sqrt( z * z + rho2 );
+
+  /* convert galactic coordinates into equatorial coordinates */
+  galacticPos.longitude = atan2( r * sin( phi ), r_sun - r * cos( phi ) );
+  galacticPos.latitude  = asin( z /  dist );
+  galacticPos.system    = COORDINATESYSTEM_GALACTIC;
+
+  /* convert the coordinates */
+  LALGalacticToEquatorial( &status, &equatorialPos, &galacticPos);
+
+  inj->latitude = equatorialPos.latitude;
+  inj->longitude = equatorialPos.longitude;
+  inj->distance = dist/1000.0; /* convert to Mpc */
+
+  return ( inj );
+}
 
 /** Generates a random orientation (polarization, inclination, coa_phase)
  * for an inspiral injection.  If inclinationPeak is non-zero, then peak the 
@@ -122,23 +152,18 @@ SimInspiralTable* XLALRandomInspiralSkyLocation(
 SimInspiralTable* XLALRandomInspiralOrientation( 
     SimInspiralTable *inj,   /**< injection for which orientation will be set*/
     RandomParams *randParams,/**< random parameter details*/
+    InclDistribution iDist,  /**< requested inclination distribution */
     REAL4   inclinationPeak /**< width of the peak of the inclination */
     )
 {       
-  if ( !inclinationPeak )
+  if ( iDist == uniformInclDist )
   {
     inj->inclination = acos( 2.0 * XLALUniformDeviate( randParams ) 
         - 1.0 );
   }
-  else
+  else if ( iDist == gaussianInclDist )
   {
-    REAL4Vector *normalDev;
-
-    normalDev = XLALCreateREAL4Vector( 1 );
-    XLALNormalDeviates(normalDev, randParams);
-    inj->inclination = inclinationPeak * normalDev->data[0];
-    XLALDestroyVector( normalDev );
-
+    inj->inclination = inclinationPeak * XLALNormalDeviate( randParams );
   }
 
   inj->polarization = LAL_TWOPI * XLALUniformDeviate( randParams ) ;
@@ -156,12 +181,13 @@ SimInspiralTable* XLALRandomInspiralMasses(
     REAL4  mass1Max,         /**< maximum mass for first component */
     REAL4  mass2Min,         /**< minimum mass for second component */
     REAL4  mass2Max,         /**< maximum mass for second component */
+    REAL4  minTotalMass,     /**< minimum total mass of binaty */
     REAL4  maxTotalMass      /**< maximum total mass of binary */
     )
 {       
   REAL4 mTotal = maxTotalMass +1;
 
-  while ( mTotal > maxTotalMass )
+  while ( mTotal < minTotalMass || mTotal > maxTotalMass )
   {
 
     if ( mDist == uniformComponentMass )
@@ -209,22 +235,32 @@ SimInspiralTable* XLALRandomInspiralMasses(
 SimInspiralTable* XLALGaussianInspiralMasses( 
     SimInspiralTable *inj,   /**< injection for which masses will be set*/
     RandomParams *randParams,/**< random parameter details*/
+    REAL4  mass1Min,	     /**< minimum mass for first component */
+    REAL4  mass1Max,         /**< maximum mass for first component */
     REAL4  mass1Mean,        /**< mean value for mass1 */
     REAL4  mass1Std,         /**< standard deviation of mass1 */
+    REAL4  mass2Min,	     /**< minimum mass for second component */
+    REAL4  mass2Max,         /**< maximum mass for second component */
     REAL4  mass2Mean,        /**< mean value of mass2 */
     REAL4  mass2Std          /**< standard deviation of mass2 */
     )
 {       
-  REAL4Vector *normalDev;
-  REAL4 mtotal;
+  REAL4 m1, m2, mtotal;
+  
+  m1 = 0.0;
+  while ( (m1-mass1Max)*(m1-mass1Min) > 0 )
+  {
+    m1 = mass1Mean + mass1Std * XLALNormalDeviate( randParams );
+  }
+  m2 = 0.0;
+  while ( (m2-mass2Max)*(m2-mass2Min) > 0 )
+  {
+    m2 = mass2Mean + mass2Std * XLALNormalDeviate( randParams );
+  }
 
-  normalDev = XLALCreateREAL4Vector( 2 );
-  XLALNormalDeviates(normalDev, randParams);
-  inj->mass1 = mass1Mean + mass1Std * normalDev->data[0];
-  inj->mass2 = mass1Mean + mass1Std * normalDev->data[1];
-  mtotal = inj->mass1 + inj->mass2;
-  XLALDestroyVector( normalDev );
-
+  mtotal = m1 + m2;
+  inj->mass1 = m1;
+  inj->mass2 = m2;
   inj->eta = inj->mass1 * inj->mass2 / ( mtotal * mtotal );
   inj->mchirp = mtotal * pow(inj->eta, 0.6);
 
