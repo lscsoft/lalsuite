@@ -963,12 +963,6 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		args_are_bad = TRUE;
 	}
 
-	if(options->window_length / 2 < params->windowShift) {
-		sprintf(msg, "must be >= 2 * --window-shift = %u (%u specified)", 2 * params->windowShift, options->window_length);
-		print_bad_argument(argv[0], "window-length", msg);
-		args_are_bad = TRUE;
-	}
-
 	/*
 	 * Check the order of the start and stop times.
 	 */
