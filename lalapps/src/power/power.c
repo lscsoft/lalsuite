@@ -1,24 +1,27 @@
 /*
-*  Copyright (C) 2007 Denny Mackin, Duncan Brown, Ik Siong Heng, Jolien Creighton, Kipp Cannon, Mark Williamsen, Patrick Brady, Robert Adam Mercer, Saikat Ray-Majumder, Stephen Fairhurst
+*  Copyright (C) 2007 Denny Mackin, Duncan Brown, Ik Siong Heng, Jolien
+*  Creighton, Kipp Cannon, Mark Williamsen, Patrick Brady, Robert Adam
+*  Mercer, Saikat Ray-Majumder, Stephen Fairhurst
 *
-*  This program is free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*  This program is free software; you can redistribute it and/or modify it
+*  under the terms of the GNU General Public License as published by the
+*  Free Software Foundation; either version 2 of the License, or (at your
+*  option) any later version.
 *
-*  This program is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*  This program is distributed in the hope that it will be useful, but
+*  WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+*  General Public License for more details.
 *
-*  You should have received a copy of the GNU General Public License
-*  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  You should have received a copy of the GNU General Public License along
+*  with with program; see the file COPYING. If not, write to the Free
+*  Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+*  02111-1307  USA
 */
 
 #include <getopt.h>
 #include <lalapps.h>
+#include <math.h>
 #include <processtable.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -61,6 +64,8 @@
 #include <lal/VectorOps.h>
 #include <lal/Window.h>
 
+/* ARGH!  allow the code to be C99!  Obsession with C89 will cause bugs */
+double trunc(double);
 int snprintf(char *str, size_t size, const char *format, ...);
 int vsnprintf(char *str, size_t size, const char *format, va_list ap);
 
@@ -124,6 +129,25 @@ static size_t block_commensurate(size_t length, size_t block_length, size_t bloc
 static int is_power_of_2(int x)
 {
 	return !((x - 1) & x);
+}
+
+
+/*
+ * Return TRUE if the given double is an integer power of 2.
+ */
+
+
+static int double_is_power_of_2(double x)
+{
+	if(x <= 0)
+		return FALSE;
+	if(x - trunc(x) == 0)
+		/* is an integer */
+		return is_power_of_2(x);
+	if(x < 1)
+		/* is less than 1 */
+		return double_is_power_of_2(1 / x);
+	return 0;
 }
 
 
@@ -611,7 +635,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	case 'A':
 		options->bandwidth = atoi(optarg);
 		if(options->bandwidth <= 0 || !is_power_of_2(options->bandwidth)) {
-			sprintf(msg, "must be > 0 and a power of 2(%i specified)", options->bandwidth);
+			sprintf(msg, "must be > 0 and a power of 2 (%i specified)", options->bandwidth);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -809,7 +833,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		break;
 
 	case 'e':
-		options->resample_rate = (INT4) atoi(optarg);
+		options->resample_rate = atoi(optarg);
 		if(options->resample_rate < 2 || options->resample_rate > 16384 || !is_power_of_2(options->resample_rate)) {
 			sprintf(msg, "must be a power of 2 in the rage [2,16384] (%d specified)", options->resample_rate);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -820,7 +844,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 
 	case 'f':
 		params->inv_fractional_stride = 1.0 / atof(optarg);
-		if(params->inv_fractional_stride < 0 || !is_power_of_2(params->inv_fractional_stride)) {
+		if(params->inv_fractional_stride < 0 || !double_is_power_of_2(params->inv_fractional_stride)) {
 			sprintf(msg, "must be 2^-n, n integer, (%g specified)", 1.0 / params->inv_fractional_stride);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
@@ -855,8 +879,8 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 
 	case 'l':
 		params->maxTileBandwidth = atof(optarg);
-		if((params->maxTileBandwidth <= 0) || !is_power_of_2(params->maxTileBandwidth)) {
-			sprintf(msg, "must be a power of 2 greater than 0 (%f specified)", params->maxTileBandwidth);
+		if((params->maxTileBandwidth <= 0) || !double_is_power_of_2(params->maxTileBandwidth)) {
+			sprintf(msg, "must be greater than 0 and a power of 2 (%f specified)", params->maxTileBandwidth);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -866,8 +890,8 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	case 'm':
 		params->maxTileDuration = atof(optarg);
 		params->tf_deltaF = 1 / (2 * params->maxTileDuration);
-		if((params->maxTileDuration > 1.0) || !is_power_of_2(1 / params->maxTileDuration)) {
-			sprintf(msg, "must be a power of 2 not greater than 1.0 (%f specified)", params->maxTileDuration);
+		if((params->maxTileDuration <= 0) || !double_is_power_of_2(params->maxTileDuration)) {
+			sprintf(msg, "must be greater than 0 and a power of 2 (%f specified)", params->maxTileDuration);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
