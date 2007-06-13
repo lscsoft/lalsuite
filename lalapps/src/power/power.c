@@ -101,7 +101,7 @@ static size_t min(size_t a, size_t b)
  * block_length, each shifted by block_shift with respect to its
  * neighbours, fits into the result.  This is used to ensure that an
  * integer number of analysis windows fits into the PSD length, and also
- * that an integer number of PSD lenghts fits into the RAM limit length.
+ * that an integer number of PSD lengths fits into the RAM limit length.
  */
 
 
@@ -124,22 +124,6 @@ static size_t block_commensurate(size_t length, size_t block_length, size_t bloc
 static int is_power_of_2(int x)
 {
 	return !((x - 1) & x);
-}
-
-
-/*
- * Count the events in a SnglBurstTable.
- */
-
-
-static int SnglBurstTableLength(const SnglBurstTable *list)
-{
-	int i;
-
-	for(i = 0; list; i++)
-		list = list->next;
-
-	return i;
 }
 
 
@@ -1704,7 +1688,7 @@ static void output_results(LALStatus *stat, char *file, const char *ifo, Metadat
 	 */
 
 	snprintf(_search_summary_table->searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
-	_search_summary_table->searchSummaryTable->nevents = XLALCountSnglBurst(burstEvent);
+	_search_summary_table->searchSummaryTable->nevents = XLALSnglBurstTableLength(burstEvent);
 	LAL_CALL(LALBeginLIGOLwXMLTable(stat, &xml, search_summary_table), stat);
 	LAL_CALL(LALWriteLIGOLwXMLTable(stat, &xml, *_search_summary_table, search_summary_table), stat);
 	LAL_CALL(LALEndLIGOLwXMLTable(stat, &xml), stat);
@@ -1961,7 +1945,7 @@ int main(int argc, char *argv[])
 	 * Check event rate limit.
 	 */
 
-	if((options->max_event_rate > 0) && (SnglBurstTableLength(burstEvent) > XLALGPSDiff(&_search_summary_table.searchSummaryTable->out_end_time, &_search_summary_table.searchSummaryTable->out_start_time) * options->max_event_rate)) {
+	if((options->max_event_rate > 0) && (XLALSnglBurstTableLength(burstEvent) > XLALGPSDiff(&_search_summary_table.searchSummaryTable->out_end_time, &_search_summary_table.searchSummaryTable->out_start_time) * options->max_event_rate)) {
 		XLALPrintError("%s: event rate limit exceeded!", argv[0]);
 		exit(1);
 	}
