@@ -44,7 +44,7 @@ DumpNoise=0;
 WeightAM=1;
 WeightNoise=1;
 
-fStart=310;
+fStart=93.5;
 fBand=0.05;
 
 AlphaWeight=0.0;
@@ -54,16 +54,34 @@ system("mkdir -p ./MultiWeightsDump");
 
 cmdline = sprintf("/home/all64/lscsoft/lalapps/src/pulsar/hough/src/MultiWeights  --sftDir='%s' \
          --earthEphemeris=%s  --sunEphemeris=%s \
-	 --startTime=815410983.0 --endTime=816335150.0 \
          --f0=%.12g --fSearchBand=%.12g  \
 	 --AlphaWeight=%.12g --DeltaWeight=%.12g \
 	 --weightAM=%.12g --weightNoise=%.12g \
 	 --dumpAllWeights=%.12g --dumpRelativeWeights=%.12g --dumpNoise=%.12g -d 0",\
        DataFiles, EarthE, SunE, fStart, fBand,  AlphaWeight, DeltaWeight,\
-       WeightAM, WeightNoise, DumpAllWeights, DumpAllWeights,DumpAllWeights); 
+       WeightAM, WeightNoise, DumpAllWeights, DumpRelativeW,DumpNoise); 
 
 system ( cmdline );
 
-cat = "cat ./tempout >> ./MultiWeightsDump/whatever_out";
+cat = "cat ./tempout >> ./MultiWeightsDump/MultiWeights_f93.5_N1AM1_delta1.0.txt";
+system (cat);
+system("rm -f ./tempout");
+
+
+
+WeightAM=0;
+
+cmdline = sprintf("/home/all64/lscsoft/lalapps/src/pulsar/hough/src/MultiWeights  --sftDir='%s' \
+         --earthEphemeris=%s  --sunEphemeris=%s \
+         --f0=%.12g --fSearchBand=%.12g  \
+	 --AlphaWeight=%.12g --DeltaWeight=%.12g \
+	 --weightAM=%.12g --weightNoise=%.12g \
+	 --dumpAllWeights=%.12g --dumpRelativeWeights=%.12g --dumpNoise=%.12g -d 0",\
+       DataFiles, EarthE, SunE, fStart, fBand,  AlphaWeight, DeltaWeight,\
+       WeightAM, WeightNoise, DumpAllWeights, DumpRelativeW,DumpNoise); 
+
+system ( cmdline );
+
+cat = "cat ./tempout >> ./MultiWeightsDump/MultiWeights_f93.5_N1AM0.txt";
 system (cat);
 system("rm -f ./tempout");
