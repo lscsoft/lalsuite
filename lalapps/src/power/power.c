@@ -953,7 +953,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		args_are_bad = TRUE;
 	}
 
-	params->windowShift = options->window_length / 2;
+	params->windowShift = options->window_length / 4;
 
 	/*
 	 * Check the order of the start and stop times.
