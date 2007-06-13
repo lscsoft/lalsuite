@@ -60,19 +60,19 @@ struct XLALEPSearchDiagnostics {
 
 typedef struct tagEPSearchParams {
 	struct XLALEPSearchDiagnostics *diagnostics;
-	REAL4Window          *window;
-	UINT4                 windowShift;
-	REAL8                 confidence_threshold;
-	AvgSpecMethod         method;
+	REAL4Window *window;
+	UINT4 windowShift;
+	REAL8 confidence_threshold;
+	AvgSpecMethod method;
 	/* time-frequency plane parameters */
-	int                   useOverWhitening;	
-	INT4                  tf_freqBins;
-	REAL8                 tf_deltaF;
-	REAL8                 tf_flow;
+	int useOverWhitening;	
+	INT4 tf_freqBins;
+	REAL8 tf_deltaF;
+	REAL8 tf_flow;
 	/* t.f. plane tiling parameters */
-	INT4                  inv_fractional_stride;
-	REAL8                 maxTileBandwidth;
-	REAL8                 maxTileDuration;
+	REAL8 fractional_stride;
+	REAL8 maxTileBandwidth;
+	REAL8 maxTileDuration;
 } EPSearchParams;
 
 

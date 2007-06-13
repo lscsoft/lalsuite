@@ -65,7 +65,7 @@ TFTiling *XLALCreateTFTiling(
 	REAL8 plane_deltaF,
 	UINT4 plane_num_channels,
 	UINT4 tiling_tstart,
-	UINT4 inv_fractional_stride,
+	REAL8 fractional_stride,
 	REAL8 maxTileBandwidth,
 	REAL8 maxTileDuration
 )
@@ -92,6 +92,13 @@ TFTiling *XLALCreateTFTiling(
 	const unsigned min_channels = 1 / (max_tbins * plane_deltaT * plane_deltaF);
 	const unsigned max_channels = maxTileBandwidth / plane_deltaF;
 	const int maxDOF = (2 * max_tbins * max_channels) * plane_deltaT * plane_deltaF;
+
+	/* stride */
+	const unsigned inv_fractional_stride = 1 / fractional_stride;
+
+	/* FIXME:  move tiling parameter checks from lalapps_power into
+	 * this function, so that any code that uses this function will
+	 * have its input validated */
 
 	/* check the tile size limits */
 	if((min_tbins < inv_fractional_stride) ||

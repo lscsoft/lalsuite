@@ -81,7 +81,7 @@ TFTiling *XLALCreateTFTiling(
 	REAL8 plane_deltaF,
 	UINT4 plane_num_channels,
 	UINT4 tiling_tstart,
-	UINT4 inv_fractional_stride,
+	REAL8 fractional_stride,
 	REAL8 maxTileBandwidth,
 	REAL8 maxTileDuration
 );
@@ -131,7 +131,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	REAL8 deltaF,
 	REAL8 flow,
 	UINT4 tiling_start,
-	INT4 tiling_inv_fractional_stride,
+	REAL8 tiling_fractional_stride,
 	REAL8 tiling_max_bandwidth,
 	REAL8 tiling_max_duration
 );

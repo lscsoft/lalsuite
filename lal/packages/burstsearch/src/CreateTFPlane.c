@@ -47,7 +47,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	/* sample at which to start the tiling */
 	UINT4 tiling_start,
 	/* overlap of adjacent tiles */
-	INT4 tiling_inv_fractional_stride,
+	REAL8 tiling_fractional_stride,
 	/* largest tile's bandwidth */
 	REAL8 tiling_max_bandwidth,
 	/* largest tile's duration */
@@ -81,7 +81,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	channel_overlap = XLALCreateREAL8Sequence(channels - 1);
 	channel_rms = XLALCreateREAL8Sequence(channels);
 	channel = XLALMalloc(channels * sizeof(*channel));
-	tiling = XLALCreateTFTiling(tseries_length, tseries_deltaT, flow, deltaF, channels, tiling_start, tiling_inv_fractional_stride, tiling_max_bandwidth, tiling_max_duration);
+	tiling = XLALCreateTFTiling(tseries_length, tseries_deltaT, flow, deltaF, channels, tiling_start, tiling_fractional_stride, tiling_max_bandwidth, tiling_max_duration);
 	if(!plane || !channel_overlap || !channel_rms || !channel || !tiling) {
 		XLALFree(plane);
 		XLALDestroyREAL8Sequence(channel_overlap);
