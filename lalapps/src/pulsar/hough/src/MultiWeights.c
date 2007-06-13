@@ -253,7 +253,8 @@ int main(int argc, char *argv[]){
     
     /* catalog is ordered in time so we can get start, end time and tObs*/
     firstTimeStamp = catalog->data[0].header.epoch;
-    lastTimeStamp = catalog->data[mObsCoh - 1].header.epoch;    
+    mObsCoh = catalog->length; /* not always correct number of sfts */ 
+    lastTimeStamp = catalog->data[mObsCoh - 1].header.epoch;    /* irrelevant here */
     deltaF = catalog->data->header.deltaF;  /* frequency resolution */
   
     /* add wings for Doppler modulation and running median block size*/
@@ -263,6 +264,7 @@ int main(int argc, char *argv[]){
 
     /* read the sfts */
     LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, catalog, fmin, fmax), &status);
+    numifo = inputSFTs->length;
 
     /* find number of sfts */     
     /* mObsCoh = catalog->length; not always correct number of sfts */   
@@ -299,8 +301,6 @@ int main(int argc, char *argv[]){
 	fclose(fpRand);
       } /* end cleaning */
 
-    /* SFT info -- assume all SFTs have same length */
-    numifo = inputSFTs->length;
     LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
     
   } /* end of sft reading block */
