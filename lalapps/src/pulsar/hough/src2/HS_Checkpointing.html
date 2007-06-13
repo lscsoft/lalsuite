@@ -1,15 +1,23 @@
-Requirements
-============
+<html>
+<body>
+<h1>Checkpointing the HierarchicalSearch</h1>
+<hr>
+Bernd Machenschalk
 
+<br><br>
+
+<br><h2>Requirements</h2>
+<p>
 The HierarchicalSearch scans the whole sky point by point.
 After finishing the analysis for a particular skypoint,
 the candidates that have been found are put into a "toplist"
 that keeps track of the n top rated canditates of the
 analysis of all skypoints so far.
-
-This list is written to a file after all skypoints had been
-looked at. Up to that moment, this toplist is kept in RAM only.
-
+</p><p>
+Without checkpointing this list is written to a file after all
+skypoints had been looked at. Up to that moment, this toplist
+is kept in RAM only.
+</p><p>
 Checkpointing should allow this process to be interrupted and
 picked up anywhere in the middle of the analysis run. It therefore
 should provide a way to externally (i.e. in a file on disk) store
@@ -23,33 +31,33 @@ picking up from a previously written checkpoint, i.e. restore the
 toplist and loop counters from the checkpoint. As the application
 is meant to run on potentially unattended or faulty machines,
 broken checkpoint information should be detected and dealt with.
-
+</p><p>
 The modifications necessary for the checkpointing to the main
 program should be kept to a minimum to not affect readability and
 maintainability.
+</p>
 
 
-Solution Outline
-================
-
-- the function that inserts a candidate into the toplist should
+<br><h2>Solution Outline</h2>
+<ul><li>
+ the function that inserts a candidate into the toplist should
 return whether it actually inserted the candidate or neglected it
 because it is "smaller" than the "smallest" element of the list.
-
-- when a candidate is actually inserted into the toplist (in memory),
+</li><br><li>
+ when a candidate is actually inserted into the toplist (in memory),
 it is also appended to the "previous output" file. Simply reading
 this file line by line and inserting each line / candidate into an 
 initailly empty toplist should result in a toplist equal to that
 at time of writing the last checkpoint.
-
-- a local file buffer is assigned to the "previous output" that is
+</li><br><li>
+ a local file buffer is assigned to the "previous output" that is
 only flushed just before writing a new checkpint. This ensures that
 the file is never shorter than what the information in the
 checkpoint file referrs to, while minimizing the necessary disk
 accesses (e.g. for laptops with appropriate settings of time
 between checkpoints).
-
-- with the method mentioned above, the "previous output" file
+</li><br><li>
+ with the method mentioned above, the "previous output" file
 would be growing continously with every candidate that's inserted
 into the toplist. To avoid this, the file is "compacted", i.e.
 effectively overwritten by a new, clean dump of the current
@@ -57,45 +65,47 @@ toplist, when the filesize crosses a certain limit. To ensure
 consistency with the checkpoint this is done when writing a
 checkpoint, and not when adding a candidate to the output
 file.
-
-- the interface of the funtions that make up the checkpointed 
+</li><br><li>
+ the interface of the funtions that make up the checkpointed 
 version of the toplist is compatible to the functions that
 manipulate the non-checkpointing toplist, so one can simply
 replace the non-checkpointing toplist functions with their
 checkpointing pendants in the calling program to get a
-checkpointig application.
+checkpointig application. Information needed beyond what's
+available in the toplist function interfaces is kept locally
+to the module the checkpoint functions are implemented in.
+</li><br></ul>
 
 
-Data structures (Files)
-=======================
-
+<br><h2>Data structures and files</h2>
+<p>
 The external representation of the toplist is a file that has a
 format similar to that of the final output file. It is referred
 to as "previous output" or "checkpointed file".
-
+</p><p>
 The checkpointing code periodically writes a "checkpoint file".
 It contains the current value of the skypoint loop counter,
 the total number of skypoints of the current analysis run,
 the current sky location and a checksum of the current
 checkpointed file.
+</p>
 
 
-Interface
-=========
-
+<br><h2>Interface</h2>
+<p>
 Checkpointing is implemented by means of four functions:
-
+</p><p>
 - init_and_read_checkpoint()
-
+</p><p>
 This funcion initializes the data structures for checkpointing,
 and looks for a previous checkpoint file. If it finds one, it
 tries to read the previous output back into memory and returns
 information to resume from the checkpoint. Its Interface is such
 that it can simply replace a fstat_toplist_init() call in a
 non-checkpointing version of the program.
-
+</p><p>
 - add_checkpoint_candidate()
-
+</p><p>
 Whenever a candiadate has been found, this function not only adds
 it to the "toplist" in memory; it also appends it to the
 checkpointed file on disk in case it was actually inserted into
@@ -105,9 +115,9 @@ file buffer in memory, which will be flushed (i.e. written to disk)
 when writing a checkpoint. Its Interface is such
 that it can simply replace a fstat_toplist_add() call in a
 non-checkpointing version of the program.
-
+</p><p>
 - set_checkpoint()
-
+</p><p>
 Actually writes a checkpoint (file). When it's "time to checkpoint",
 the checkpointed file is flushed, i.e. the candidates in the file
 buffer (put there by add_checkpoint_candidate()) are actually wrtten
@@ -117,9 +127,9 @@ checkpoint file is written, containing the skypoint counter and the
 length and checksum of the checkpointed file. For consistency checks
 and a poissibly external progress counter, also the total number of
 skypoints and the current sky position (rac,dec) is recorded.
-
+</p><p>
 - write_and_close_checkpointed_file()
-
+</p><p>
 After all operations on the toplist and the checkpointed file have
 been performed, this fuction should be called to finally write the
 toplist to a file. It actually does this "compacted", i.e. writes
@@ -131,31 +141,40 @@ is not removed by this function, this is purposefully left to the
 BOINC Clinet. Its Interface is such
 that it can simply replace a fstat_toplist_add() call in a
 non-checkpointing version of the program.
+</p>
 
 
-Modules
-=======
+<br><h2>Implementation Levels</h2>
+<p>
+The implementation of toplist and checkpointing features five levels:
+</p><p>
+1. Heap Toplist (Heaptoplist.h/c): generic functions for manipulating
+toplists independent of a certain type (void* and function*)
+</p><p>
+2. FStatToplist: An incarnation of HeapToplist that adds a tupe for
+an FStat candidate and a comparison function to order objects of this
+type.
+</p><p>
+3. FStat File I/O: Functions for Reading and writing FStatToplist(s),
+defines a file format for an FStatToplist. 
+</p><p>
+4. Checkpointed File I/O: Functions for managing a checkponted
+FstatToplist file. 
+</p><p>
+5. Interface (hs_boinc_extras.c): implementation of the interface
+listed above, in particular functions to write and read the actual
+"checkpoint file".
+</p><p>
+[sorting]
+</p><p>
+The HeapToplist is implemented in the module HeapToplist.h/c
+(lalapps/src/pulsar/FDS_isolated). the interface functions
+are located in hs_boinc_extras.h/c (lalapps/src/pulsar/hough/src2),
+the other levels make up the module FstatToplist.h/c
+(lalapps/src/pulsar/FDS_isolated).
+</p>
+[call graph]
 
-The "toplist" named above is actually kept as an "FstatToplist", as the
-candidates of the HierarchicalSearch have the same parameters
-and thus format than the candidates of the "FStat Search" this code
-was originally developed for. The Toplist itself is stored and managed
-in a heap structure that allows efficient manipulation of the data
-(almost every operation can be performed in O(log(n))).
 
-The generic code for manipulating a toplist (i.e. independent of
-a particular data type) is implemented in HeapToplist.h/c.
-
-Everything specifc to the candidate format, includeing functions to
-add a candidate to the toplist or even file I/O, can be found in
-FstatToplis.h/c. 
-
-The implementation of the interface named above as well as the
-funtions related to the checkpoint file are kept in
-hs_boinc_extras.h/c . One reason for that is that they require
-some functionality of BOINC to e.g. know about when it's
-"time to checkpoint" based on the preferences the user has set.
-
-
-Functions
-=========
+</body>
+</html>
