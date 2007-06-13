@@ -74,7 +74,6 @@ TFTiling *XLALCreateTFTiling(
 	const char func[] = "XLALCreateTFTiling";
 	TFTiling *tiling;
 	TFTile *tile;
-	int *weight;
 	int numtiles;
 
 	/* coordinates of a TF tile */
@@ -91,7 +90,6 @@ TFTiling *XLALCreateTFTiling(
 	const unsigned max_tbins = maxTileDuration / plane_deltaT;
 	const unsigned min_channels = 1 / (max_tbins * plane_deltaT * plane_deltaF);
 	const unsigned max_channels = maxTileBandwidth / plane_deltaF;
-	const int maxDOF = (2 * max_tbins * max_channels) * plane_deltaT * plane_deltaF;
 
 	/* stride */
 	const unsigned inv_fractional_stride = 1 / fractional_stride;
@@ -119,11 +117,9 @@ TFTiling *XLALCreateTFTiling(
 	/* allocate memory */
 	tiling = XLALMalloc(sizeof(*tiling));
 	tile = XLALMalloc(numtiles * sizeof(*tile));
-	weight = XLALCalloc(maxDOF + 1, sizeof(*weight));
-	if(!tiling || !tile || !weight) {
+	if(!tiling || !tile) {
 		XLALFree(tiling);
 		XLALFree(tile);
-		XLALFree(weight);
 		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 	}
 	tiling->tile = tile;
@@ -140,14 +136,8 @@ TFTiling *XLALCreateTFTiling(
 		tile->deltaF = plane_deltaF;
 		tile->excessPower = XLAL_REAL8_FAIL_NAN;
 		tile->confidence = XLAL_REAL8_FAIL_NAN;
-		weight[(int) XLALTFTileDegreesOfFreedom(tile)]++;
 		tile++;
 	}
-
-	/* determine the weighting for each tile */
-	for(tile = tiling->tile; numtiles; numtiles--, tile++)
-		tile->lnweight = log(weight[(int) XLALTFTileDegreesOfFreedom(tile)]);
-	XLALFree(weight);
 
 	return(tiling);
 }
