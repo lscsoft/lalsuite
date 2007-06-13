@@ -112,12 +112,10 @@ static REAL4 lo_freq(const SnglBurstTable *x)
 
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
-void XLALFreeSnglBurst(
-	SnglBurstTable *event
-)
+void XLALFreeSnglBurst(SnglBurstTable *event)
 /* </lalVerbatim> */
 {
-	LALFree(event);
+	XLALFree(event);
 }
 
 
@@ -144,9 +142,7 @@ void XLALSnglBurstAssignIDs(SnglBurstTable *head)
 
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
-int XLALCountSnglBurst(
-	SnglBurstTable *head
-)
+int XLALSnglBurstTableLength(SnglBurstTable *head)
 /* </lalVerbatim> */
 {
 	int length;
@@ -176,8 +172,8 @@ void XLALSortSnglBurst(
 		return;
 
 	/* construct an array of pointers into the list */
-	length = XLALCountSnglBurst(*head);
-	array = LALCalloc(length, sizeof(*array));
+	length = XLALSnglBurstTableLength(*head);
+	array = XLALCalloc(length, sizeof(*array));
 	for(i = 0, event = *head; event; event = event->next)
 		array[i++] = event;
 
@@ -190,7 +186,7 @@ void XLALSortSnglBurst(
 	*head = NULL;
 
 	/* free the array */
-	LALFree(array);
+	XLALFree(array);
 }
 
 

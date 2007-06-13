@@ -1088,13 +1088,13 @@ XLALCoincSimInspiralTest (
  */
 
 void
-XLALFreeSnglBurst (
-    SnglBurstTable *event
+XLALFreeSnglBurst(
+	SnglBurstTable *event
 );
 
-INT4 
-XLALCountSnglBurst( 
-    SnglBurstTable *head 
+int 
+XLALSnglBurstTableLength( 
+	SnglBurstTable *head 
 );
 
 void
