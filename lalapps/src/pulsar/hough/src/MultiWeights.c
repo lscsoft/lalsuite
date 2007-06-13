@@ -464,9 +464,7 @@ int main(int argc, char *argv[]){
   LALFree(edat->ephemE);
   LALFree(edat->ephemS);
   LALFree(edat);
-   
-  LALFree(uvar_outfile);
-   
+    
   LAL_CALL (LALDestroyMultiSFTVector(&status, &inputSFTs), &status );
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
