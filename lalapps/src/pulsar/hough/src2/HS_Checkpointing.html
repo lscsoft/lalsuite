@@ -39,7 +39,18 @@ maintainability.
 
 
 <br><h2>Solution Outline</h2>
+
 <ul><li>
+The external representation of the toplist is a file that has a
+format similar to that of the final output file. It is referred
+to as "previous output" or "checkpointed file".
+</li><br><li>
+The checkpointing code periodically writes a "checkpoint file".
+It contains the current value of the skypoint loop counter,
+the total number of skypoints of the current analysis run,
+the current sky location and a checksum of the current
+checkpointed file.
+</li><br><li>
  the function that inserts a candidate into the toplist should
 return whether it actually inserted the candidate or neglected it
 because it is "smaller" than the "smallest" element of the list.
@@ -66,7 +77,7 @@ consistency with the checkpoint this is done when writing a
 checkpoint, and not when adding a candidate to the output
 file.
 </li><br><li>
- the interface of the funtions that make up the checkpointed 
+the interface of the funtions that make up the checkpointed 
 version of the toplist is compatible to the functions that
 manipulate the non-checkpointing toplist, so one can simply
 replace the non-checkpointing toplist functions with their
@@ -74,28 +85,27 @@ checkpointing pendants in the calling program to get a
 checkpointig application. Information needed beyond what's
 available in the toplist function interfaces is kept locally
 to the module the checkpoint functions are implemented in.
+</li><br><li>
+the list is interneally kept (partially) sorted by "relevance"
+according to a comparison function. However at the very end it
+should be sorted by different criteria (frequency, sky position,
+spindown). However reading back in the previously written values
+limits the prcision, so values that have been calculated identical
+aren't neccessarily after reading one of them from a checkpoint.
+Thus all elements in the toplist are treated as if they have
+actually been written to a file to limit their precision
+before the final sorting.
+(NOTE: Shouldn't we do this with all candidates (or at least the
+FStat value) already during the run to ensure the same sorting
+order? Sure the validator does take care of it)
 </li><br></ul>
-
-
-<br><h2>Data structures and files</h2>
-<p>
-The external representation of the toplist is a file that has a
-format similar to that of the final output file. It is referred
-to as "previous output" or "checkpointed file".
-</p><p>
-The checkpointing code periodically writes a "checkpoint file".
-It contains the current value of the skypoint loop counter,
-the total number of skypoints of the current analysis run,
-the current sky location and a checksum of the current
-checkpointed file.
-</p>
 
 
 <br><h2>Interface</h2>
 <p>
 Checkpointing is implemented by means of four functions:
 </p><p>
-- init_and_read_checkpoint()
+<a href=http://www.lsc-group.phys.uwm.edu/lal/slug/nightly/doxygen/html/hs__boinc__extras_8c.html#83cf13b8cf9aa58546ca1b436abe729c>init_and_read_checkpoint</a>()
 </p><p>
 This funcion initializes the data structures for checkpointing,
 and looks for a previous checkpoint file. If it finds one, it
@@ -104,7 +114,7 @@ information to resume from the checkpoint. Its Interface is such
 that it can simply replace a fstat_toplist_init() call in a
 non-checkpointing version of the program.
 </p><p>
-- add_checkpoint_candidate()
+<a href=http://www.lsc-group.phys.uwm.edu/lal/slug/nightly/doxygen/html/hs__boinc__extras_8c.html#063c7d14098e819e3be5811d3310634a>add_checkpoint_candidate</a>()
 </p><p>
 Whenever a candiadate has been found, this function not only adds
 it to the "toplist" in memory; it also appends it to the
@@ -116,7 +126,7 @@ when writing a checkpoint. Its Interface is such
 that it can simply replace a fstat_toplist_add() call in a
 non-checkpointing version of the program.
 </p><p>
-- set_checkpoint()
+<a href=http://www.lsc-group.phys.uwm.edu/lal/slug/nightly/doxygen/html/hs__boinc__extras_8c.html#3456798a8996c66031cb3dafc05781f5>set_checkpoint</a>()
 </p><p>
 Actually writes a checkpoint (file). When it's "time to checkpoint",
 the checkpointed file is flushed, i.e. the candidates in the file
@@ -128,7 +138,7 @@ length and checksum of the checkpointed file. For consistency checks
 and a poissibly external progress counter, also the total number of
 skypoints and the current sky position (rac,dec) is recorded.
 </p><p>
-- write_and_close_checkpointed_file()
+<a href=http://www.lsc-group.phys.uwm.edu/lal/slug/nightly/doxygen/html/hs__boinc__extras_8c.html#6a41f413964523eb5acec70727ecd67b>write_and_close_checkpointed_file</a>()
 </p><p>
 After all operations on the toplist and the checkpointed file have
 been performed, this fuction should be called to finally write the
@@ -165,16 +175,83 @@ FstatToplist file.
 listed above, in particular functions to write and read the actual
 "checkpoint file".
 </p><p>
-[sorting]
-</p><p>
 The HeapToplist is implemented in the module HeapToplist.h/c
 (lalapps/src/pulsar/FDS_isolated). the interface functions
 are located in hs_boinc_extras.h/c (lalapps/src/pulsar/hough/src2),
 the other levels make up the module FstatToplist.h/c
 (lalapps/src/pulsar/FDS_isolated).
 </p>
-[call graph]
 
+<IMG SRC="HS_Cpt_Callgraph.gif" USEMAP="#HS_Cpt_Callgraph">
+<MAP NAME="HS_Cpt_Callgraph">
+<AREA COORDS="1461,531,1621,561" HREF="qsort_toplist" ALT="qsort_toplist">
+<AREA COORDS="1271,531,1441,561" HREF="go_through_toplist" ALT="go_through_toplist">
+<AREA COORDS="1431,421,1581,451" HREF="fstat_toplist_qsort_function" ALT="fstat_toplist_qsort_function">
+<AREA COORDS="1231,421,1381,451" HREF="reduce_fstat_precision" ALT="reduce_fstat_precision">
+<AREA COORDS="1481,181,1621,211" HREF="sort_fstat_toplist" ALT="sort_fstat_toplist">
+<AREA COORDS="1481,61,1621,91" HREF="fstat_cpt_file_destro" ALT="fstat_cpt_file_destro">
+<AREA COORDS="1341,1,1541,31" HREF="write_and-close_checkpointed_file" ALT="write_and-close_checkpointed_file">
+<AREA COORDS="1111,121,1271,151" HREF="fstat_cpt_file_open" ALT="fstat_cpt_file_open">
+<AREA COORDS="1111,61,1271,91" HREF="fstat_cpt_file_flush" ALT="fstat_cpt_file_flush">
+<AREA COORDS="931,421,1091,451" HREF="print_fstat_line_to_st" ALT="print_fstat_line_to_st">
+<AREA COORDS="921,361,1101,391" HREF="write_fstat_toplist_item_to_fp" ALT="write_fstat_toplist_item_to_fp">
+<AREA COORDS="931,301,1091,331" HREF="write_fstat_toplist_to_fp" ALT="write_fstat_toplist_to_fp">
+<AREA COORDS="911,241,1111,271" HREF="_atomic_write_fstat_toplist_to_file" ALT="_atomic_write_fstat_toplist_to_file">
+<AREA COORDS="911,181,1111,211" HREF="atomic_write_fstat_toplist_to_file" ALT="atomic_write_fstat_toplist_to_file">
+<AREA COORDS="931,61,1091,91" HREF="fstat_cpt_file_compact" ALT="fstat_cpt_file_compact">
+<AREA COORDS="931,1,1091,31" HREF="set_checkpoint" ALT="set_checkpoint">
+<AREA COORDS="751,61,911,91" HREF="write_checkpoint" ALT="write_checkpoint">
+<AREA COORDS="571,61,731,91" HREF="fstat_cpt_file_add" ALT="fstat_cpt_file_add">
+<AREA COORDS="481,541,641,571" HREF="insert_into_toplist" ALT="insert_into_toplist">
+<AREA COORDS="481,481,641,511" HREF="insert_into_fstat_toplist" ALT="insert_into_fstat_toplist">
+<AREA COORDS="391,181,551,211" HREF="read_fstat_toplist_from_fp" ALT="read_fstat_toplist_from_fp">
+<AREA COORDS="391,61,551,91" HREF="fstat_cpt_file_read" ALT="fstat_cpt_file_read">
+<AREA COORDS="211,61,371,91" HREF="fstat_cpt_file_open" ALT="fstat_cpt_file_open">
+<AREA COORDS="211,1,371,31" HREF="init_and_read_checkpoint" ALT="init_and_read_checkpoint">
+<AREA COORDS="31,61,191,91" HREF="fstat_cpt_file_create.html" ALT="fstat_cpt_file_create.html">
+<AREA COORDS="1291,61,1461,91" HREF="fstat_cpt_file_close" ALT="fstat_cpt_file_close">
+<AREA COORDS="1281,181,1461,211" HREF="reduce_fstat_toplist_precision" ALT="reduce_fstat_toplist_precision">
+</MAP>
+
+<P ALIGN="CENTER">
+<A HREF="qsort_toplist">qsort_toplist</A>
+ | <A HREF="go_through_toplist">go_through_toplist</A>
+ | <A HREF="fstat_toplist_qsort_function">fstat_toplist_qsort_function</A>
+<BR>
+<A HREF="reduce_fstat_precision">reduce_fstat_precision</A>
+ | <A HREF="sort_fstat_toplist">sort_fstat_toplist</A>
+ | <A HREF="fstat_cpt_file_destro">fstat_cpt_file_destro</A>
+<BR>
+<A HREF="write_and-close_checkpointed_file">write_and-close_checkpointed_file</A>
+ | <A HREF="fstat_cpt_file_open">fstat_cpt_file_open</A>
+<BR>
+<A HREF="fstat_cpt_file_flush">fstat_cpt_file_flush</A>
+ | <A HREF="print_fstat_line_to_st">print_fstat_line_to_st</A>
+ | <A HREF="write_fstat_toplist_item_to_fp">write_fstat_toplist_item_to_fp</A>
+<BR>
+<A HREF="write_fstat_toplist_to_fp">write_fstat_toplist_to_fp</A>
+ | <A HREF="_atomic_write_fstat_toplist_to_file">_atomic_write_fstat_toplist_to_file</A>
+<BR>
+<A HREF="atomic_write_fstat_toplist_to_file">atomic_write_fstat_toplist_to_file</A>
+ | <A HREF="fstat_cpt_file_compact">fstat_cpt_file_compact</A>
+<BR>
+<A HREF="set_checkpoint">set_checkpoint</A>
+ | <A HREF="write_checkpoint">write_checkpoint</A>
+ | <A HREF="fstat_cpt_file_add">fstat_cpt_file_add</A>
+<BR>
+<A HREF="insert_into_toplist">insert_into_toplist</A>
+ | <A HREF="insert_into_fstat_toplist">insert_into_fstat_toplist</A>
+ | <A HREF="read_fstat_toplist_from_fp">read_fstat_toplist_from_fp</A>
+<BR>
+<A HREF="fstat_cpt_file_read">fstat_cpt_file_read</A>
+ | <A HREF="fstat_cpt_file_open">fstat_cpt_file_open</A>
+ | <A HREF="init_and_read_checkpoint">init_and_read_checkpoint</A>
+<BR>
+<A HREF="fstat_cpt_file_create.html">fstat_cpt_file_create.html</A>
+ | <A HREF="fstat_cpt_file_close">fstat_cpt_file_close</A>
+<BR>
+<A HREF="reduce_fstat_toplist_precision">reduce_fstat_toplist_precision</A>
+</P>
 
 </body>
 </html>
