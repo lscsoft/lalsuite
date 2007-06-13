@@ -429,7 +429,7 @@ static int all_required_arguments_present(char *prog, struct option *long_option
 			break;
 
 		case 'f':
-			arg_is_missing = !params->inv_fractional_stride;
+			arg_is_missing = !params->fractional_stride;
 			break;
 
 		case 'g':
@@ -621,7 +621,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	params->tf_flow = -1.0;	/* impossible */
 	params->maxTileBandwidth = 0;	/* impossible */
 	params->maxTileDuration = 0;	/* impossible */
-	params->inv_fractional_stride = 0;	/* impossible */
+	params->fractional_stride = 0;	/* impossible */
 	params->windowShift = 0;	/* impossible */
 	params->useOverWhitening = FALSE;	/* default */
 
@@ -749,8 +749,8 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 
 	case 'W':
 		options->window_length = atoi(optarg);
-		if((options->window_length <= 0) || !is_power_of_2(options->window_length)) {
-			sprintf(msg, "must be greater than 0 and a power of 2 (%i specified)", options->window_length);
+		if((options->window_length < 2) || !is_power_of_2(options->window_length)) {
+			sprintf(msg, "must be greater than or equal to 2 and a power of 2 (%i specified)", options->window_length);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -835,17 +835,14 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		break;
 
 	case 'f':
-		{
-		double arg = atof(optarg);
-		if(arg > 1 || !double_is_power_of_2(arg)) {
-			sprintf(msg, "must be less than or equal to 1 and a power of 2 (%g specified)", arg);
+		params->fractional_stride = atof(optarg);
+		if(params->fractional_stride > 1 || !double_is_power_of_2(params->fractional_stride)) {
+			sprintf(msg, "must be less than or equal to 1 and a power of 2 (%g specified)", params->fractional_stride);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		params->inv_fractional_stride = 1.0 / arg;
 		ADD_PROCESS_PARAM("float");
 		break;
-		}
 
 	case 'g':
 		params->confidence_threshold = atof(optarg);
@@ -947,10 +944,26 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	} while(c != -1);
 
 	/*
+	 * Check for missing command line arguments.
+	 */
+
+	if(!all_required_arguments_present(argv[0], long_options, options, params))
+		args_are_bad = TRUE;
+
+	/*
 	 * Make sure windowShift and window_length are OK.
 	 */
 
-	if(options->window_length < 2 * params->windowShift) {
+	/* FIXME: check that params->maxTileDuration *
+	 * params->fractional_stride yields an allowed delta t */
+
+	if(options->window_length / 2 != block_commensurate(options->window_length / 2, params->maxTileDuration * options->resample_rate, params->maxTileDuration * params->fractional_stride * options->resample_rate)) {
+		sprintf(msg, "an integer number of the largest tiles (duration = %g s) must fit into 1/2 of the window length", params->maxTileDuration);
+		print_bad_argument(argv[0], "window-length", msg);
+		args_are_bad = TRUE;
+	}
+
+	if(options->window_length / 2 < params->windowShift) {
 		sprintf(msg, "must be >= 2 * --window-shift = %u (%u specified)", 2 * params->windowShift, options->window_length);
 		print_bad_argument(argv[0], "window-length", msg);
 		args_are_bad = TRUE;
@@ -966,11 +979,16 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	}
 
 	/*
-	 * Check for missing command line arguments.
+	 * Warn if calibration cache is not provided that a unit response
+	 * will be used for injections and h_rss.
 	 */
 
-	if(!all_required_arguments_present(argv[0], long_options, options, params))
+	if(!options->cal_cache_filename) {
+		XLALPrintWarning("warning: no calibration cache is provided:  software injections and hrss will be computed with unit response\n");
+	} else if(options->calibrated) {
+		XLALPrintError("error: calibration cache provided for use with calibrated data!\n");
 		args_are_bad = TRUE;
+	}
 
 	/*
 	 * Exit if anything was wrong with the command line.
@@ -978,6 +996,21 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 
 	if(args_are_bad)
 		exit(1);
+
+	/*
+	 * Ensure psd_length is comensurate with the analysis window length
+	 * and its shift.
+	 */
+
+	options->psd_length = block_commensurate(options->psd_length, options->window_length, params->windowShift);
+
+	/*
+	 * Ensure RAM limit is comensurate with the psd_length and its
+	 * shift.
+	 */
+
+	if(options->max_series_length)
+		options->max_series_length = block_commensurate(options->max_series_length, options->psd_length, options->psd_length - (options->window_length - params->windowShift));
 
 	/*
 	 * Generate time-domain window function.
@@ -988,33 +1021,6 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		XLALPrintError("%s: failure generating Hann window\n", argv[0]);
 		exit(1);
 	}
-
-	/*
-	 * Ensure psd_length is comensurate with the analysis window length
-	 * and its shift.
-	 */
-
-	options->psd_length = block_commensurate(options->psd_length, options->window_length, params->windowShift);
-
-	/*
-	 * Warn if calibration cache is not provided that a unit response
-	 * will be used for injections and h_rss.
-	 */
-
-	if(!options->cal_cache_filename) {
-		XLALPrintWarning("warning: no calibration cache is provided:  software injections and hrss will be computed with unit response\n");
-	} else if(options->calibrated) {
-		XLALPrintError("error: calibration cache provided for use with calibrated data!\n");
-		exit(1);
-	}
-
-	/*
-	 * Ensure RAM limit is comensurate with the psd_length and its
-	 * shift.
-	 */
-
-	if(options->max_series_length)
-		options->max_series_length = block_commensurate(options->max_series_length, options->psd_length, options->psd_length - (options->window_length - params->windowShift));
 
 	/*
 	 * Sanitize filter frequencies.
