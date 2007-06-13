@@ -42,6 +42,7 @@ GeneratePPNAmpTruncInspiralTest [-m m1 m2] [-r dist] [-i inc phii] [-f fmin fmax
 #define GENERATEPPNINSPIRALTESTC_EFILE  4
 #define GENERATEPPNINSPIRALTESTC_EPRINT 5
 #define DEBUG 1
+#define DEBUG2 0
 #define BUFFSIZE 1024     /* Number of timesteps buffered */
 
 #define GENERATEPPNINSPIRALTESTC_MSGENORM  "Normal exit"
@@ -98,7 +99,7 @@ int lalDebugLevel = 1;
 #define ORDER (7)
 
 /* Usage format string. */
-#define USAGE "Usage: %s [-g fourierfile REQUIRED] [-m m1 m2] [-r dist] [-i inc phii]\n\t[-f fmin fmax] [-t dt] [-w deltat] [-p order] [-d debuglevel] [-o outfile]\n"
+#define USAGE "Usage: %s [-g fftoutfile] [-m m1 m2] [-r dist] [-i inc phii]\n\t[-f fmin fmax] [-t dt] [-w deltat] [-p order] [-d debuglevel] [-o outfile]\n"
 
 /* Maximum output message length. */
 #define MSGLENGTH (1024)
@@ -447,8 +448,9 @@ main(int argc, char **argv)
   wlength = waveform.h->data->length; 	
   flength = waveform.f->data->length;
 
+#if DEBUG  
   fprintf(stderr," fFinal = %e\n", waveform.f->data->data[flength -1]);
-
+#endif
   /* ************************************************** */
   /* Before we do anything let's taper hplus and hcross */
   /* This is a very inefficient interface for LALInspiralWaveTaper */
@@ -516,6 +518,7 @@ main(int argc, char **argv)
                                 &det_and_pulsar,
                                 &time_info);
   
+#if DEBUG2
   printf("\n  Done computing AM response vectors\n");
   printf("  am_response_series.pPlus->data->length = %d\n",
           am_response_series.pPlus->data->length);
@@ -523,8 +526,9 @@ main(int argc, char **argv)
           am_response_series.pCross->data->length);
   printf("  am_response_series.pScalar->data->length = %d\n",
           am_response_series.pScalar->data->length);
+#endif
 
-#if DEBUG
+#if DEBUG2
   printf("\n Check data length = %d\n\n", wlength);
   
 
@@ -539,7 +543,7 @@ main(int argc, char **argv)
   for ( i = 0; i < wlength; i++){
     hoft[i] = waveform.h->data->data[2*i]*am_response_series.pPlus->data->data[i] +
               waveform.h->data->data[2*i+1]*am_response_series.pCross->data->data[i];
-#if DEBUG
+#if DEBUG2
     if(i <5){
       printf("\n\n  hplus = %e   hcross = %e    pplus = %e    pcross = %e \n", 
               waveform.h->data->data[2*i],
@@ -576,9 +580,8 @@ main(int argc, char **argv)
  
   /* Write output. */
   if ( ( fourier = fopen( fftout, "w" ) ) == NULL ) 
-    fftout = "fftout";
-    
-  fourier = fopen(fftout, "w");
+    fourier = fopen("fftout", "w");
+  
   for(i = 0; i < wlength/2+1; i++, f+=Hf.deltaF) 
     fprintf(fourier," %f %10.3e %10.3e\n", f, Hf.data->data[i].re, Hf.data->data[i].im);	  
   fclose(fourier);
