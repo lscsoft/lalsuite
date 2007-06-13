@@ -50,7 +50,7 @@
 
    - Interferometer (optional)
 
-   - List of linefiles containing information about known spectral disturbances
+   - List of linefiles containing information about known spectral disturbanclves
 
    - Location of output directory and basename of output files.
 
@@ -141,13 +141,21 @@ int PrintHmap2file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap);
 
 void ReadTimeStampsFile (LALStatus *status, LIGOTimeGPSVector *ts, CHAR *filename);
 
-void LALHoughHistogramSignificance(LALStatus      *status,
-				   UINT8Vector    *out,
-				   HOUGHMapTotal  *in,
-				   REAL8          mean,
-				   REAL8          sigma,
-				   REAL8          minSignificance,
-				   REAL8          maxSignificance);
+void LALHoughHistogramSignificance(LALStatus *status, UINT8Vector *out, HOUGHMapTotal *in, 
+				   REAL8 mean, REAL8 sigma, REAL8 minSignificance, REAL8 maxSignificance);
+
+void GetSFTVelTime(LALStatus *status, REAL8Cart3CoorVector *velV, LIGOTimeGPSVector *timeV, MultiDetectorStateSeries *in);
+
+void GetSFTNoiseWeights(LALStatus *status, REAL8Vector *out, MultiNoiseWeights  *in);
+
+void GetPeakGramFromMultSFTVector(LALStatus *status, HOUGHPeakGramVector *out, MultiSFTVector *in, REAL8 thr);
+
+void SetUpSkyPatches(LALStatus           *status,
+		     HoughSkyPatchesInfo *out,
+		     CHAR                *skyFileName,
+		     CHAR                *skyRegion,
+		     REAL8               dAlpha,
+		     REAL8               dDelta);
 
 
 /******************************************/
@@ -159,21 +167,22 @@ int main(int argc, char *argv[]){
   
   /* time and velocity  */
   static LIGOTimeGPSVector    timeV;
-  static REAL8Cart3CoorVector velV;
-  static REAL8Vector          timeDiffV;
+  static REAL8Cart3CoorVector velV, velVbest;
+  static REAL8Vector          timeDiffV, timeDiffVbest;
   LIGOTimeGPS firstTimeStamp, lastTimeStamp;
   REAL8 tObs;
 
   /* standard pulsar sft types */ 
   MultiSFTVector *inputSFTs = NULL;
   UINT4 binsSFT;
+  UINT4 numSearchBins;
   
   /* information about all the ifos */
   MultiDetectorStateSeries *mdetStates = NULL;
   UINT4 numifo;
 
   /* vector of weights */
-  REAL8Vector weightsV, weightsNoise;
+  REAL8Vector weightsV, weightsNoise, weightsVBest;
 
   UINT4 *sortedSFTIndex=NULL;
 
@@ -196,11 +205,9 @@ int main(int argc, char *argv[]){
   static HoughStats      stats;  /* statistical information about a Hough map */
 
   /* skypatch info */
-  REAL8  *skyAlpha, *skyDelta, *skySizeAlpha, *skySizeDelta; 
+  REAL8  *skyAlpha=NULL, *skyDelta=NULL, *skySizeAlpha=NULL, *skySizeDelta=NULL; 
   INT4   nSkyPatches, skyCounter=0; 
-  DopplerSkyScanInit scanInit = empty_DopplerSkyScanInit;   /* init-structure for DopperScanner */
-  DopplerSkyScanState thisScan = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
-  static PulsarDopplerParams dopplerpos;	       /* current search-parameters */
+  static HoughSkyPatchesInfo skyInfo;
 
   /* output filenames and filepointers */
   CHAR   filehisto[ MAXFILENAMELENGTH ]; 
@@ -219,7 +226,7 @@ int main(int argc, char *argv[]){
 
   /* miscellaneous */
   INT4   iHmap, nSpin1Max;
-  UINT4  mObsCoh;
+  UINT4  mObsCoh, mObsCohBest;
   INT8   f0Bin, fLastBin, fBin;
   REAL8  alpha, delta, timeBase, deltaF, f1jump;
   REAL8  patchSizeX, patchSizeY;
@@ -234,7 +241,7 @@ int main(int argc, char *argv[]){
   /* user input variables */
   BOOLEAN  uvar_help, uvar_weighAM, uvar_weighNoise, uvar_printLog, uvar_printWeights;
   INT4     uvar_blocksRngMed, uvar_nfSizeCylinder, uvar_maxBinsClean, uvar_binsHisto;  
-
+  INT4     uvar_keepBestSFTs=1;
   REAL8    uvar_startTime, uvar_endTime;
   REAL8    uvar_pixelFactor;
   REAL8    uvar_f0, uvar_peakThreshold, uvar_houghThreshold, uvar_fSearchBand;
@@ -309,6 +316,9 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterREALUserVar(   &status, "peakThreshold",    0,  UVAR_OPTIONAL, "Peak selection threshold", &uvar_peakThreshold),   &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighAM",          0,  UVAR_OPTIONAL, "Use amplitude modulation weights", &uvar_weighAM),         &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighNoise",       0,  UVAR_OPTIONAL, "Use SFT noise weights", &uvar_weighNoise), &status);  
+  LAL_CALL( LALRegisterINTUserVar(    &status, "keepBestSFTs",     0,  UVAR_OPTIONAL, "Number of best SFTs to use (default--keep all)", &uvar_keepBestSFTs),  &status);
+
+
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printLog",         0,  UVAR_OPTIONAL, "Print Log file", &uvar_printLog), &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",  &uvar_earthEphemeris),  &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file", &uvar_sunEphemeris), &status);
@@ -363,6 +373,11 @@ int main(int argc, char *argv[]){
     exit(1);
   }
 
+  if ( uvar_keepBestSFTs < 1 ) {
+    fprintf(stderr, "must keep at least 1 SFT\n");
+    exit(1);
+  }
+
   /* write log file with command line arguments, cvs tags, and contents of skypatch file */
   if ( uvar_printLog ) {
     LAL_CALL( PrintLogFile( &status, uvar_dirnameOut, uvar_fbasenameOut, uvar_skyfile, uvar_linefiles, argv[0]), &status);
@@ -372,95 +387,14 @@ int main(int argc, char *argv[]){
   /***** start main calculations *****/
 
   /* set up skypatches */
+  LAL_CALL( SetUpSkyPatches( &status, &skyInfo, uvar_skyfile, uvar_skyRegion, uvar_dAlpha, uvar_dDelta), &status);
+  nSkyPatches = skyInfo.numSkyPatches;
+  skyAlpha = skyInfo.alpha;
+  skyDelta = skyInfo.delta;
+  skySizeAlpha = skyInfo.alphaSize;
+  skySizeDelta = skyInfo.deltaSize;
 
-  /* if user specified skyRegion then use DopplerScan function
-     to construct an isotropic grid. Otherwise use skypatch file. */
 
-  if (uvar_skyRegion ) {
-
-    scanInit.dAlpha = uvar_dAlpha;
-    scanInit.dDelta = uvar_dDelta;
-    scanInit.gridType = GRID_ISOTROPIC;
-    scanInit.metricType =  LAL_PMETRIC_NONE;
-    /* scanInit.metricMismatch = 0; */
-    /* scanInit.projectMetric = TRUE; */
-    /* scanInit.obsDuration = tStack; */
-    /* scanInit.obsBegin = tMidGPS; */
-    /* scanInit.Detector = &(stackMultiDetStates.data[0]->data[0]->detector); */
-    /* scanInit.ephemeris = edat; */
-    /* scanInit.skyGridFile = uvar_skyGridFile; */
-    scanInit.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
-    strcpy (scanInit.skyRegionString, uvar_skyRegion);
-    /*   scanInit.Freq = usefulParams.spinRange_midTime.fkdot[0] +  usefulParams.spinRange_midTime.fkdotBand[0]; */
-    
-    /* set up the grid */
-    LAL_CALL ( InitDopplerSkyScan ( &status, &thisScan, &scanInit), &status); 
-    
-    nSkyPatches = thisScan.numSkyGridPoints;
-    
-    skyAlpha = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));
-    skyDelta = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));     
-    skySizeAlpha = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));
-    skySizeDelta = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));     
-        
-    /* loop over skygrid points */  
-    XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
-    
-    skyCounter = 0; 
-    while(thisScan.state != STATE_FINISHED) {
-      
-      skyAlpha[skyCounter] = dopplerpos.Alpha;
-      skyDelta[skyCounter] = dopplerpos.Delta;
-      skySizeAlpha[skyCounter] = uvar_dAlpha;
-      skySizeDelta[skyCounter] = uvar_dDelta;
-      
-      if ((dopplerpos.Delta>0) && (dopplerpos.Delta < atan(4*LAL_PI/uvar_dAlpha/uvar_dDelta) ))
-        skySizeAlpha[skyCounter] = uvar_dAlpha*cos(dopplerpos.Delta -0.5*uvar_dDelta)/cos(dopplerpos.Delta);
-
-      if ((dopplerpos.Delta<0) && (dopplerpos.Delta > -atan(4*LAL_PI/uvar_dAlpha/uvar_dDelta) ))
-        skySizeAlpha[skyCounter] = uvar_dAlpha*cos(dopplerpos.Delta +0.5*uvar_dDelta)/cos(dopplerpos.Delta);
-      
-      XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
-      skyCounter++;
-
-    } /* end while loop over skygrid */
-  } else {
-
-    /* read skypatch info */
-    {
-      FILE   *fpsky = NULL; 
-      INT4   r;
-      REAL8  temp1, temp2, temp3, temp4;
-      
-      if ( (fpsky = fopen(uvar_skyfile, "r")) == NULL)
-	{
-	  fprintf(stderr, "Unable to find skyfile %s\n", uvar_skyfile);
-	  return DRIVEHOUGHCOLOR_EFILE;
-	}
-      
-      nSkyPatches = 0;
-      do 
-	{
-	  r = fscanf(fpsky,"%lf%lf%lf%lf\n", &temp1, &temp2, &temp3, &temp4);
-	  /* make sure the line has the right number of entries or is EOF */
-	  if (r==4) nSkyPatches++;
-	} while ( r != EOF);
-      rewind(fpsky);
-      
-      skyAlpha = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));
-      skyDelta = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));     
-      skySizeAlpha = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));
-      skySizeDelta = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));     
-      
-      for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++)
-	{
-	  r = fscanf(fpsky,"%lf%lf%lf%lf\n", skyAlpha + skyCounter, skyDelta + skyCounter, 
-		     skySizeAlpha + skyCounter,  skySizeDelta + skyCounter);
-	}
-      
-      fclose(fpsky);     
-    } /* end skypatchfile reading block */    
-  } /* end setting up of skypatches */
 
   /* read sft Files and set up weights and nstar vector */
   {
@@ -469,7 +403,6 @@ int main(int argc, char *argv[]){
     static SFTConstraints constraints;
 
     REAL8 doppWings, fmin, fmax;
-    INT4 length;
     INT4 k;
 
     /* set detector constraint */
@@ -504,12 +437,12 @@ int main(int argc, char *argv[]){
 
 
 
-    /* firsr some sft parameters */
+    /* first some sft parameters */
     deltaF = catalog->data[0].header.deltaF;  /* frequency resolution */
     timeBase= 1.0/deltaF; /* coherent integration time */
     f0Bin = floor( uvar_f0 * timeBase + 0.5); /* initial search frequency */
-    length =  uvar_fSearchBand * timeBase; /* total number of search bins - 1 */
-    fLastBin = f0Bin + length;   /* final frequency bin to be analyzed */
+    numSearchBins =  uvar_fSearchBand * timeBase; /* total number of search bins - 1 */
+    fLastBin = f0Bin + numSearchBins;   /* final frequency bin to be analyzed */
     
 
     /* read sft files making sure to add extra bins for running median */
@@ -531,37 +464,24 @@ int main(int argc, char *argv[]){
       mObsCoh += inputSFTs->data[k]->length;
     } 
     
+
+    /* set number of SFTs to be kept */
+    if ( LALUserVarWasSet( &uvar_keepBestSFTs ) ) {
+      if ( (UINT4)uvar_keepBestSFTs > mObsCoh ) {
+	/* fprintf(stdout, "Keeping all SFTs\n"); */
+	mObsCohBest = mObsCoh; 
+      }
+    } 
+    else {
+      mObsCohBest = uvar_keepBestSFTs; 
+    }
+
     /* catalog is ordered in time so we can get start, end time and tObs*/
     firstTimeStamp = catalog->data[0].header.epoch;
     lastTimeStamp = catalog->data[mObsCoh - 1].header.epoch;
     tObs = XLALGPSDiff( &lastTimeStamp, &firstTimeStamp ) + timeBase;
 
-    /* using value of length, allocate memory for most significant event nstar, fstar etc. */
-    nStarEventVec.length = length + 1;
-    nStarEventVec.event = NULL;
-    nStarEventVec.event = (HoughSignificantEvent *)LALCalloc( length+1, sizeof(HoughSignificantEvent));
-    /* initialize nstar significance value
-       -- this should be sufficiently small so that the maximum significance is 
-       always found */
-    for ( k = 0; k < nStarEventVec.length; k++) {
-      nStarEventVec.event[k].nStarSignificance = -sqrt( mObsCoh * alphaPeak / (1-alphaPeak));
-    }
 
-    /* allocate memory for velocity vector */
-    velV.length = mObsCoh;
-    velV.data = NULL;
-    velV.data = (REAL8Cart3Coor *)LALCalloc(mObsCoh, sizeof(REAL8Cart3Coor));
-
-    /* allocate memory for timestamps vector */
-    timeV.length = mObsCoh;
-    timeV.data = NULL;
-    timeV.data = (LIGOTimeGPS *)LALCalloc( mObsCoh, sizeof(LIGOTimeGPS));
-
-    /* allocate memory for vector of time differences from start */
-    timeDiffV.length = mObsCoh;
-    timeDiffV.data = NULL; 
-    timeDiffV.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
-  
     /* clean sfts if required */
     if ( LALUserVarWasSet( &uvar_linefiles ) )
       {
@@ -593,29 +513,65 @@ int main(int argc, char *argv[]){
 
     LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
 
-    /* allocate noise and AMweights vectors */
-    weightsV.length = mObsCoh;
-    weightsV.data = (REAL8 *)LALCalloc(1, mObsCoh*sizeof(REAL8));
-
-    weightsNoise.length = mObsCoh;
-    weightsNoise.data = (REAL8 *)LALCalloc(1, mObsCoh*sizeof(REAL8));
-
-    sortedSFTIndex = LALCalloc(1,mObsCoh*sizeof(UINT4));
-
-    /* initialize all weights to unity */
-    LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsNoise), &status);
-    LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsV), &status);
-
   } /* end of sft reading block */
 
 
 
+  /** some memory allocations */
+
+  /* using value of length, allocate memory for most significant event nstar, fstar etc. */
+  nStarEventVec.length = numSearchBins + 1;
+  nStarEventVec.event = NULL;
+  nStarEventVec.event = (HoughSignificantEvent *)LALCalloc( numSearchBins+1, sizeof(HoughSignificantEvent));
+  /* initialize nstar significance value
+     -- this should be sufficiently small so that the maximum significance is 
+     always found */
+  { 
+    INT4 k;
+    for ( k = 0; k < nStarEventVec.length; k++) {
+      nStarEventVec.event[k].nStarSignificance = -sqrt( mObsCoh * alphaPeak / (1-alphaPeak));
+    }
+  }
+
+  /* allocate memory for velocity vector */
+  velV.length = mObsCoh;
+  velV.data = NULL;
+  velV.data = (REAL8Cart3Coor *)LALCalloc(mObsCoh, sizeof(REAL8Cart3Coor));
+  
+  /* allocate memory for timestamps vector */
+  timeV.length = mObsCoh;
+  timeV.data = NULL;
+  timeV.data = (LIGOTimeGPS *)LALCalloc( mObsCoh, sizeof(LIGOTimeGPS));
+  
+  /* allocate memory for vector of time differences from start */
+  timeDiffV.length = mObsCoh;
+  timeDiffV.data = NULL; 
+  timeDiffV.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
+  
+  /* allocate noise and AMweights vectors */
+  weightsV.length = mObsCoh;
+  weightsV.data = (REAL8 *)LALCalloc(1, mObsCoh*sizeof(REAL8));
+  
+  weightsVBest.length = mObsCoh;
+  weightsVBest.data = (REAL8 *)LALCalloc(1, mObsCoh*sizeof(REAL8));
+  
+  weightsNoise.length = mObsCoh;
+  weightsNoise.data = (REAL8 *)LALCalloc(1, mObsCoh*sizeof(REAL8));
+
+  /* initialize all weights to unity */
+  LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsNoise), &status);
+  LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsV), &status);
+  
+  sortedSFTIndex = LALCalloc(1,mObsCoh*sizeof(UINT4));  
+  
+
+  
   /* get detector velocities weights vector, and timestamps */
   { 
     MultiNoiseWeights *multweight = NULL;    
     MultiPSDVector *multPSD = NULL;  
     INT4 tmpLeap;
-    UINT4 iIFO, iSFT, numsft, j;
+    UINT4 j;
     /*     LALLeapSecFormatAndAcc lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT}; */
     LALLeapSecFormatAndAcc lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_LOOSE};
 
@@ -644,39 +600,19 @@ int main(int argc, char *argv[]){
        mid-time of the SFTs -- should not make any difference */
     LAL_CALL ( LALGetMultiDetectorStates ( &status, &mdetStates, inputSFTs, edat), &status);
 
+    LAL_CALL ( GetSFTVelTime( &status, &velV, &timeV, mdetStates), &status);
 
-    /* copy the timestamps, weights, and velocity vector */
-    for (j = 0, iIFO = 0; iIFO < numifo; iIFO++ ) {
-
-      numsft = mdetStates->data[iIFO]->length;
-      
-      for ( iSFT = 0; iSFT < numsft; iSFT++, j++) {
-
-	velV.data[j].x = mdetStates->data[iIFO]->data[iSFT].vDetector[0];
-	velV.data[j].y = mdetStates->data[iIFO]->data[iSFT].vDetector[1];
-	velV.data[j].z = mdetStates->data[iIFO]->data[iSFT].vDetector[2];
-
-	if ( uvar_weighNoise )
-	  weightsNoise.data[j] = multweight->data[iIFO]->data[iSFT];
-
-	/* mid time of sfts */
-	timeV.data[j] = mdetStates->data[iIFO]->data[iSFT].tGPS;
-
-      } /* loop over SFTs */
-
-    } /* loop over IFOs */
-
+    /* copy the noise-weights vector if required*/
     if ( uvar_weighNoise ) {
-      LAL_CALL( LALHOUGHNormalizeWeights( &status, &weightsNoise), &status);
-    }
 
-    /* compute the time difference relative to startTime for all SFT */
-    for(j = 0; j < mObsCoh; j++)
-      timeDiffV.data[j] = XLALGPSDiff( timeV.data + j, &firstTimeStamp );
+      LAL_CALL ( GetSFTNoiseWeights( &status, &weightsNoise, multweight), &status);
 
-    if ( uvar_weighNoise ) {    
       LAL_CALL ( LALDestroyMultiNoiseWeights ( &status, &multweight), &status);
     }
+
+    /* compute the time difference relative to startTime for all SFTs */
+    for(j = 0; j < mObsCoh; j++)
+      timeDiffV.data[j] = XLALGPSDiff( timeV.data + j, &firstTimeStamp );
 
   } /* end block for weights, velocity and time */
   
@@ -704,55 +640,16 @@ int main(int argc, char *argv[]){
       
     } /* end debugging */
   
-    
-
- 
+     
   /* generating peakgrams  */  
   pgV.length = mObsCoh;
   pgV.pg = NULL;
   pgV.pg = (HOUGHPeakGram *)LALCalloc(mObsCoh, sizeof(HOUGHPeakGram));
 
-  { 
-    SFTtype  *sft;
-    UCHARPeakGram     pg1;
-    INT4   nPeaks;
-    UINT4  iIFO, iSFT, numsft, j; 
-  
+  LAL_CALL( GetPeakGramFromMultSFTVector( &status, &pgV, inputSFTs, uvar_peakThreshold), &status);
 
-    pg1.length = binsSFT;
-    pg1.data = NULL;
-    pg1.data = (UCHAR *)LALCalloc( binsSFT, sizeof(UCHAR));
-
-    /* loop over sfts and select peaks */
-    for ( j = 0, iIFO = 0; iIFO < numifo; iIFO++){
-
-      numsft = mdetStates->data[iIFO]->length;
-      
-      for ( iSFT = 0; iSFT < numsft; iSFT++, j++) {
-
-      sft = inputSFTs->data[iIFO]->data + iSFT;
-
-      LAL_CALL (SFTtoUCHARPeakGram( &status, &pg1, sft, uvar_peakThreshold), &status);
-      
-      nPeaks = pg1.nPeaks;
-
-      /* compress peakgram */      
-      pgV.pg[j].length = nPeaks;
-      pgV.pg[j].peak = NULL;
-      pgV.pg[j].peak = (INT4 *)LALCalloc(nPeaks, sizeof(INT4));
-
-      LAL_CALL( LALUCHAR2HOUGHPeak( &status, &(pgV.pg[j]), &pg1), &status );
-    
-      } /* loop over SFTs */
-
-    } /* loop over IFOs */
-
-    /* we are done with the sfts and ucharpeakgram now */
-    LAL_CALL (LALDestroyMultiSFTVector(&status, &inputSFTs), &status );
-    LALFree(pg1.data);
-
-  }/* end block for selecting peaks */
-
+  /* we are done with the sfts and ucharpeakgram now */
+  LAL_CALL (LALDestroyMultiSFTVector(&status, &inputSFTs), &status );
 
 
   /* if we want to print expected sigma for each skypatch */
@@ -772,8 +669,8 @@ int main(int argc, char *argv[]){
 
 
   /* min and max values significance that are possible */
-  minSignificance = -sqrt(mObsCoh*alphaPeak/(1-alphaPeak));
-  maxSignificance = sqrt(mObsCoh*(1-alphaPeak)/alphaPeak);
+  minSignificance = -sqrt(mObsCohBest*alphaPeak/(1-alphaPeak));
+  maxSignificance = sqrt(mObsCohBest*(1-alphaPeak)/alphaPeak);
       
 
   /* loop over sky patches */
@@ -831,10 +728,12 @@ int main(int argc, char *argv[]){
       /* sort weights vector to get the best sfts */
       if ( uvar_weighAM || uvar_weighNoise ) {
 	
-	gsl_sort_index( sortedSFTIndex, weightsV.data, 1, weightsV.length);
+	gsl_sort_index( sortedSFTIndex, weightsV.data, 1, weightsV.length);	
 
+	weightsVBest.length = mObsCohBest;
+	weightsVBest.data = (REAL8 *)LALCalloc(1, mObsCoh*sizeof(REAL8));	
       }
-
+      
 
       /* calculate the sum of the weights squared */
       sumWeightSquare = 0.0;
@@ -1269,6 +1168,7 @@ int main(int argc, char *argv[]){
 
   LALFree(weightsV.data);
   LALFree(weightsNoise.data);  
+  LALFree(weightsVBest.data);
 
   XLALDestroyMultiDetectorStateSeries ( mdetStates );
 
@@ -1282,11 +1182,6 @@ int main(int argc, char *argv[]){
   LALFree(skySizeDelta);
 
   LALFree( nStarEventVec.event );
-
-  /* free dopplerscan stuff */
-  LAL_CALL ( FreeDopplerSkyScan(&status, &thisScan), &status);
-  if ( scanInit.skyRegionString )
-    LALFree ( scanInit.skyRegionString );
 
   LALFree(sortedSFTIndex);
 
@@ -1781,3 +1676,286 @@ void LALHoughHistogramSignificance(LALStatus      *status,
   RETURN (status);
 }
 
+
+
+void GetSFTVelTime(LALStatus                *status,
+		   REAL8Cart3CoorVector     *velV,
+		   LIGOTimeGPSVector        *timeV, 
+		   MultiDetectorStateSeries *in)
+{
+
+  UINT4 numifo, numsft, iIFO, iSFT, j;  
+  
+  INITSTATUS (status, "GetSFTVelTime", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT (in, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (in->length > 0, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+
+  ASSERT (velV, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (velV->length > 0, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (velV->data, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+
+  ASSERT (timeV, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (timeV->length > 0, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (timeV->data, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+
+  ASSERT (velV->length == timeV->length, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+
+  numifo = in->length;
+  
+  /* copy the timestamps, weights, and velocity vector */
+  for (j = 0, iIFO = 0; iIFO < numifo; iIFO++ ) {
+
+    ASSERT (in->data[iIFO], status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);    
+    
+    numsft = in->data[iIFO]->length;    
+    ASSERT (numsft > 0, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);    
+
+    for ( iSFT = 0; iSFT < numsft; iSFT++, j++) {
+      
+      velV->data[j].x = in->data[iIFO]->data[iSFT].vDetector[0];
+      velV->data[j].y = in->data[iIFO]->data[iSFT].vDetector[1];
+      velV->data[j].z = in->data[iIFO]->data[iSFT].vDetector[2];
+      
+      /* mid time of sfts */
+      timeV->data[j] = in->data[iIFO]->data[iSFT].tGPS;
+      
+    } /* loop over SFTs */
+    
+  } /* loop over IFOs */
+  
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+}
+
+
+
+
+void GetSFTNoiseWeights(LALStatus          *status,
+			REAL8Vector        *out,
+			MultiNoiseWeights  *in)
+{
+
+  UINT4 numifo, numsft, iIFO, iSFT, j;  
+  
+  INITSTATUS (status, "GetSFTNoiseWeights", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT (in, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (in->length > 0, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+
+  ASSERT (out, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (out->length > 0, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (out->data, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+
+  numifo = in->length;
+  
+  /* copy the timestamps, weights, and velocity vector */
+  for (j = 0, iIFO = 0; iIFO < numifo; iIFO++ ) {
+
+    ASSERT (in->data[iIFO], status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);    
+    
+    numsft = in->data[iIFO]->length;    
+    ASSERT (numsft > 0, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);    
+
+    for ( iSFT = 0; iSFT < numsft; iSFT++, j++) {
+
+      out->data[j] = in->data[iIFO]->data[iSFT];      
+      
+    } /* loop over SFTs */
+    
+  } /* loop over IFOs */
+
+  TRY( LALHOUGHNormalizeWeights( status->statusPtr, out), status);
+  
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+}
+
+
+
+/** Loop over SFTs and set a threshold to get peakgrams.  SFTs must be normalized.  */
+void GetPeakGramFromMultSFTVector(LALStatus           *status,
+				  HOUGHPeakGramVector *out, /**< Output peakgrams */
+				  MultiSFTVector      *in,  /**< Input SFTs */
+				  REAL8               thr   /**< Threshold on SFT power */)  
+{
+
+  SFTtype  *sft;
+  UCHARPeakGram  pg1;
+  INT4   nPeaks;
+  UINT4  iIFO, iSFT, numsft, numifo, j, binsSFT; 
+  
+  INITSTATUS (status, "GetSFTNoiseWeights", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  numifo = in->length;
+  binsSFT = in->data[0]->data->data->length;
+  
+  pg1.length = binsSFT;
+  pg1.data = NULL;
+  pg1.data = (UCHAR *)LALCalloc( 1, binsSFT*sizeof(UCHAR));
+  
+  /* loop over sfts and select peaks */
+  for ( j = 0, iIFO = 0; iIFO < numifo; iIFO++){
+    
+    numsft = in->data[iIFO]->length;
+    
+    for ( iSFT = 0; iSFT < numsft; iSFT++, j++) {
+      
+      sft = in->data[iIFO]->data + iSFT;
+      
+      TRY (SFTtoUCHARPeakGram( status->statusPtr, &pg1, sft, thr), status);
+      
+      nPeaks = pg1.nPeaks;
+
+      /* compress peakgram */      
+      out->pg[j].length = nPeaks;
+      out->pg[j].peak = NULL;
+      out->pg[j].peak = (INT4 *)LALCalloc( 1, nPeaks*sizeof(INT4));
+      
+      TRY( LALUCHAR2HOUGHPeak( status->statusPtr, &(out->pg[j]), &pg1), status );
+      
+    } /* loop over SFTs */
+
+  } /* loop over IFOs */
+
+  LALFree(pg1.data);
+
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+
+}
+
+
+/** Set up location of skypatch centers and sizes 
+    If user specified skyRegion then use DopplerScan function
+    to construct an isotropic grid. Otherwise use skypatch file. */
+void SetUpSkyPatches(LALStatus           *status,
+		     HoughSkyPatchesInfo *out,   /**< output skypatches info */
+		     CHAR                *skyFileName, /**< name of skypatch file */
+		     CHAR                *skyRegion,  /**< skyregion (if isotropic grid is to be constructed) */
+		     REAL8               dAlpha,      /**< alpha resolution (if isotropic grid is to be constructed) */
+		     REAL8               dDelta)  /**< delta resolution (if isotropic grid is to be constructed) */
+{
+
+  DopplerSkyScanInit scanInit = empty_DopplerSkyScanInit;   /* init-structure for DopperScanner */
+  DopplerSkyScanState thisScan = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
+  UINT4 nSkyPatches, skyCounter;
+  PulsarDopplerParams dopplerpos;	  
+  
+  INITSTATUS (status, "SetUpSkyPatches", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT (out, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (dAlpha > 0, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+  ASSERT (dDelta > 0, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+
+  if (skyRegion ) {
+    
+    scanInit.dAlpha = dAlpha;
+    scanInit.dDelta = dDelta;
+    scanInit.gridType = GRID_ISOTROPIC;
+    scanInit.metricType =  LAL_PMETRIC_NONE;
+    /* scanInit.metricMismatch = 0; */
+    /* scanInit.projectMetric = TRUE; */
+    /* scanInit.obsDuration = tStack; */
+    /* scanInit.obsBegin = tMidGPS; */
+    /* scanInit.Detector = &(stackMultiDetStates.data[0]->data[0]->detector); */
+    /* scanInit.ephemeris = edat; */
+    /* scanInit.skyGridFile = uvar_skyGridFile; */
+    scanInit.skyRegionString = (CHAR*)LALCalloc(1, strlen(skyRegion)+1);
+    strcpy (scanInit.skyRegionString, skyRegion);
+    /*   scanInit.Freq = usefulParams.spinRange_midTime.fkdot[0] +  usefulParams.spinRange_midTime.fkdotBand[0]; */
+    
+    /* set up the grid */
+    TRY ( InitDopplerSkyScan ( status->statusPtr, &thisScan, &scanInit), status); 
+    
+    nSkyPatches = out->numSkyPatches = thisScan.numSkyGridPoints;
+    
+    out->alpha = (REAL8 *)LALCalloc(1, nSkyPatches*sizeof(REAL8));
+    out->delta = (REAL8 *)LALCalloc(1, nSkyPatches*sizeof(REAL8));     
+    out->alphaSize = (REAL8 *)LALCalloc(1, nSkyPatches*sizeof(REAL8));
+    out->deltaSize = (REAL8 *)LALCalloc(1, nSkyPatches*sizeof(REAL8));     
+        
+    /* loop over skygrid points */  
+    XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
+    
+    skyCounter = 0; 
+    while(thisScan.state != STATE_FINISHED) {
+      
+      out->alpha[skyCounter] = dopplerpos.Alpha;
+      out->delta[skyCounter] = dopplerpos.Delta;
+      out->alphaSize[skyCounter] = dAlpha;
+      out->deltaSize[skyCounter] = dDelta;
+      
+      if ((dopplerpos.Delta>0) && (dopplerpos.Delta < atan(4*LAL_PI/dAlpha/dDelta) ))
+        out->alphaSize[skyCounter] = dAlpha*cos(dopplerpos.Delta -0.5*dDelta)/cos(dopplerpos.Delta);
+
+      if ((dopplerpos.Delta<0) && (dopplerpos.Delta > -atan(4*LAL_PI/dAlpha/dDelta) ))
+        out->alphaSize[skyCounter] = dAlpha*cos(dopplerpos.Delta +0.5*dDelta)/cos(dopplerpos.Delta);
+      
+      XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
+      skyCounter++;
+      
+    } /* end while loop over skygrid */
+      
+    /* free dopplerscan stuff */
+    TRY ( FreeDopplerSkyScan( status->statusPtr, &thisScan), status);
+    if ( scanInit.skyRegionString )
+      LALFree ( scanInit.skyRegionString );
+
+  } else {
+
+    /* read skypatch info */
+    {
+      FILE   *fpsky = NULL; 
+      INT4   r;
+      REAL8  temp1, temp2, temp3, temp4;
+
+      ASSERT (skyFileName, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+      
+      if ( (fpsky = fopen(skyFileName, "r")) == NULL)
+	{
+	  ABORT ( status, DRIVEHOUGHCOLOR_EFILE, DRIVEHOUGHCOLOR_MSGEFILE );
+	}
+      
+      nSkyPatches = 0;
+      do 
+	{
+	  r = fscanf(fpsky,"%lf%lf%lf%lf\n", &temp1, &temp2, &temp3, &temp4);
+	  /* make sure the line has the right number of entries or is EOF */
+	  if (r==4) nSkyPatches++;
+	} while ( r != EOF);
+      rewind(fpsky);
+
+      out->numSkyPatches = nSkyPatches;      
+      out->alpha = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));
+      out->delta = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));     
+      out->alphaSize = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));
+      out->deltaSize = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));     
+      
+      for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++)
+	{
+	  r = fscanf(fpsky,"%lf%lf%lf%lf\n", out->alpha + skyCounter, out->delta + skyCounter, 
+		     out->alphaSize + skyCounter,  out->deltaSize + skyCounter);
+	}
+      
+      fclose(fpsky);     
+    } /* end skypatchfile reading block */    
+  } /* end setting up of skypatches */
+
+
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+
+}

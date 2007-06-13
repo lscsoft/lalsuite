@@ -169,7 +169,16 @@ char *lalWatch;
     INT4  length;
     HoughSignificantEvent *event;
   } HoughSignificantEventVector;
-  
+
+
+  typedef struct tagHoughSkyPatchesInfo{
+    UINT4 numSkyPatches;
+    REAL8 *alpha;
+    REAL8 *delta;
+    REAL8 *alphaSize;
+    REAL8 *deltaSize;
+  } HoughSkyPatchesInfo;
+    
 /*
  *  Functions Declarations (i.e., prototypes).
  */
