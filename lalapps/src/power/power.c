@@ -635,7 +635,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	case 'A':
 		options->bandwidth = atoi(optarg);
 		if(options->bandwidth <= 0 || !is_power_of_2(options->bandwidth)) {
-			sprintf(msg, "must be > 0 and a power of 2 (%i specified)", options->bandwidth);
+			sprintf(msg, "must be greater than 0 and a power of 2 (%i specified)", options->bandwidth);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -681,7 +681,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	case 'J':
 		options->calibrated = TRUE;
 		options->cal_high_pass = atof(optarg);
-		if(options->cal_high_pass < 0.0) {
+		if(options->cal_high_pass < 0) {
 			sprintf(msg, "must not be negative (%f Hz specified)", options->cal_high_pass);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
@@ -694,10 +694,6 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 			sprintf(msg, "range error parsing \"%s\"", optarg);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
-		} else if(XLALGPSToINT8NS(&options->gps_end) < LAL_INT8_C(441417609000000000) || XLALGPSToINT8NS(&options->gps_end) > LAL_INT8_C(999999999000000000)) {
-			sprintf(msg, "must be in the range [Jan 01 1994 00:00:00 UTC, Sep 14 2011 01:46:26 UTC] (%d.%09u specified)", options->gps_end.gpsSeconds, options->gps_end.gpsNanoSeconds);
-			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
 		}
 		ADD_PROCESS_PARAM("string");
 		break;
@@ -705,10 +701,6 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	case 'M':
 		if(XLALStrToGPS(&options->gps_start, optarg, NULL)) {
 			sprintf(msg, "range error parsing \"%s\"", optarg);
-			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
-		} else if(XLALGPSToINT8NS(&options->gps_start) < LAL_INT8_C(441417609000000000) || XLALGPSToINT8NS(&options->gps_start) > LAL_INT8_C(999999999000000000)) {
-			sprintf(msg, "must be in the range [Jan 01 1994 00:00:00 UTC, Sep 14 2011 01:46:26 UTC] (%d.%09u specified)", options->gps_start.gpsSeconds, options->gps_start.gpsNanoSeconds);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -727,7 +719,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 
 	case 'Q':
 		params->tf_flow = atof(optarg);
-		if((params->tf_flow < 0.0)) {
+		if(params->tf_flow < 0) {
 			sprintf(msg, "must not be negative (%f Hz specified)", params->tf_flow);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
@@ -748,7 +740,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	case 'V':
 		options->noise_rms = atof(optarg);
 		if(options->noise_rms <= 0.0) {
-			sprintf(msg, "must be > 0.0 (%f specified)", options->noise_rms);
+			sprintf(msg, "must be greater than 0 (%f specified)", options->noise_rms);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -758,7 +750,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	case 'W':
 		options->window_length = atoi(optarg);
 		if((options->window_length <= 0) || !is_power_of_2(options->window_length)) {
-			sprintf(msg, "must be a power of 2 greater than 0 (%i specified)", options->window_length);
+			sprintf(msg, "must be greater than 0 and a power of 2 (%i specified)", options->window_length);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -805,7 +797,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		 */
 		options->max_series_length = atoi(optarg) * 1024 * 1024 / (8 * sizeof(REAL4));
 		if(options->max_series_length <= 0) {
-			sprintf(msg, "must be > 0 (%i specified)", atoi(optarg));
+			sprintf(msg, "must be greater than 0 (%i specified)", atoi(optarg));
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -820,7 +812,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	case 'c':
 		options->seed = atoi(optarg);
 		if(options->seed <= 0) {
-			sprintf(msg, "must be > 0 (%i specified)", options->seed);
+			sprintf(msg, "must be greater than 0 (%i specified)", options->seed);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -843,19 +835,22 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		break;
 
 	case 'f':
-		params->inv_fractional_stride = 1.0 / atof(optarg);
-		if(params->inv_fractional_stride < 0 || !double_is_power_of_2(params->inv_fractional_stride)) {
-			sprintf(msg, "must be 2^-n, n integer, (%g specified)", 1.0 / params->inv_fractional_stride);
+		{
+		double arg = atof(optarg);
+		if(arg > 1 || !double_is_power_of_2(arg)) {
+			sprintf(msg, "must be less than or equal to 1 and a power of 2 (%g specified)", arg);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
+		params->inv_fractional_stride = 1.0 / arg;
 		ADD_PROCESS_PARAM("float");
 		break;
+		}
 
 	case 'g':
 		params->confidence_threshold = atof(optarg);
 		if(params->confidence_threshold < 0) {
-			sprintf(msg, "must be >= 0 (%g specified)", params->confidence_threshold);
+			sprintf(msg, "must not be negative (%g specified)", params->confidence_threshold);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -870,7 +865,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	case 'j':
 		options->filter_corruption = atoi(optarg);
 		if(options->filter_corruption < 0) {
-			sprintf(msg, "must be >= 0 (%d specified)", options->filter_corruption);
+			sprintf(msg, "must not be negative (%d specified)", options->filter_corruption);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -889,18 +884,18 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 
 	case 'm':
 		params->maxTileDuration = atof(optarg);
-		params->tf_deltaF = 1 / (2 * params->maxTileDuration);
 		if((params->maxTileDuration <= 0) || !double_is_power_of_2(params->maxTileDuration)) {
 			sprintf(msg, "must be greater than 0 and a power of 2 (%f specified)", params->maxTileDuration);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
+		params->tf_deltaF = 1 / (2 * params->maxTileDuration);
 		ADD_PROCESS_PARAM("float");
 		break;
 
 	case 'o':
 		options->high_pass = atof(optarg);
-		if(options->high_pass < 0.0) {
+		if(options->high_pass < 0) {
 			sprintf(msg, "must not be negative (%f Hz specified)", options->high_pass);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
@@ -920,8 +915,8 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 
 	case 'u':
 		options->sim_distance = atof(optarg);
-		if(options->sim_distance <= 0.0) {
-			sprintf(msg, "must not be zero/negative (%f Kpc specified), check the specification file for the generation of the sim waveforms to get the distance value", options->sim_distance);
+		if(options->sim_distance <= 0) {
+			sprintf(msg, "must be greater than 0 (%f kpc specified), check the specification file for the generation of the sim waveforms to get the distance value", options->sim_distance);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
