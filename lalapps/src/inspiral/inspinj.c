@@ -1358,6 +1358,22 @@ int main( int argc, char *argv[] )
     }
   }
    
+  if ( userTag )
+  {
+    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
+		 rand_seed, userTag, gpsStartTime.gpsSeconds, 
+		 gpsDuration);
+  }
+  else
+  {
+    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%ld.xml", 
+        rand_seed, gpsStartTime, gpsDuration );
+  }
+  if ( outputFileName ) 
+  {
+    LALSnprintf( fname, sizeof(fname), "%s", 
+        outputFileName);
+  }
 
   /* set up the LAL random number generator */
   LALCreateRandomParams( &status, &randParams, rand_seed );
@@ -1395,13 +1411,13 @@ int main( int argc, char *argv[] )
     { 
       simTable=XLALGaussianInspiralMasses( simTable, randParams,
                                            minMass1, maxMass1,
-					                                 meanMass1, massStdev1,
+					   meanMass1, massStdev1,
                                            minMass2, maxMass2, 
-					                                 meanMass2, massStdev2);
+					   meanMass2, massStdev2);
     } else {
       simTable=XLALRandomInspiralMasses( simTable, randParams, mDistr,
-					                               minMass1, maxMass1,
-					                               minMass2, maxMass2, 
+					 minMass1, maxMass1,
+					 minMass2, maxMass2, 
                                          minMtotal, maxMtotal);
     }
 
@@ -1465,23 +1481,6 @@ int main( int argc, char *argv[] )
   LAL_CALL(  LALDestroyRandomParams( &status, &randParams ), &status);
 
   memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
-
-  if ( userTag )
-  {
-    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
-		 rand_seed, userTag, gpsStartTime.gpsSeconds, 
-		 gpsDuration);
-  }
-  else
-  {
-    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
-        rand_seed, gpsStartTime, gpsDuration );
-  }
-  if ( outputFileName ) 
-  {
-    LALSnprintf( fname, sizeof(fname), "%s", 
-        outputFileName);
-  }
 
  
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlfp, fname), &status );
