@@ -184,7 +184,6 @@ struct options {
 	 */
 
 	int bandwidth;
-	unsigned window_length;
 	/* number of samples to use for PSD    */
 	size_t psd_length;
 	/* set non-zero to generate noise      */
@@ -300,7 +299,6 @@ static struct options *options_new(void)
 		.cal_high_pass = -1.0,	/* impossible */
 		.max_event_rate = 0,	/* default */
 		.output_filename = NULL,	/* impossible */
-		.window_length = 0,	/* impossible */
 		.sim_distance = 10000.0,	/* default (10 Mpc) */
 		.sim_cache_filename = NULL,	/* default */
 		.sim_burst_filename = NULL,	/* default == disable */
@@ -422,7 +420,7 @@ static int all_required_arguments_present(char *prog, struct option *long_option
 			break;
 
 		case 'W':
-			arg_is_missing = !options->window_length;
+			arg_is_missing = !params->window;
 			break;
 
 		case 'Y':
@@ -632,6 +630,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	params->fractional_stride = 0;	/* impossible */
 	params->windowShift = 0;	/* impossible */
 	params->useOverWhitening = FALSE;	/* default */
+	params->window = NULL;	/* impossible */
 
 	/*
 	 * Parse command line.
@@ -756,13 +755,23 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		break;
 
 	case 'W':
-		options->window_length = atoi(optarg);
-		if((options->window_length < 2) || !is_power_of_2(options->window_length)) {
-			sprintf(msg, "must be greater than or equal to 2 and a power of 2 (%i specified)", options->window_length);
+		{
+		int window_length = atoi(optarg);
+		if((window_length < 2) || !is_power_of_2(window_length)) {
+			sprintf(msg, "must be greater than or equal to 2 and a power of 2 (%i specified)", window_length);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
+		params->window = XLALCreateHannREAL4Window(window_length);
+		if(!params->window) {
+			sprintf(msg, "failure generating %d sample Hann window", window_length);
+			print_bad_argument(argv[0], long_options[option_index].name, msg);
+			args_are_bad = TRUE;
+			/* silence "missing required argument" message */
+			params->window = (void *) 1;
+		}
 		ADD_PROCESS_PARAM("int");
+		}
 		break;
 
 	case 'X':
@@ -959,19 +968,19 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	 */
 
 	if(!double_is_int_multiple_of(params->maxTileDuration * params->fractional_stride * options->resample_rate, 1)) {
-		sprintf(msg, "max tile duration * fractional stride (= %g s) must be an integer number of samples (= %g s)", params->maxTileDuration * params->fractional_stride, 1 / options->resample_rate);
+		sprintf(msg, "max tile duration * fractional stride (= %g s) must be an integer number of samples (= %g s)", params->maxTileDuration * params->fractional_stride, 1.0 / options->resample_rate);
 		print_bad_argument(argv[0], "max-tileduration", msg);
 		args_are_bad = TRUE;
 	}
 
-	if(options->window_length / 2 != block_commensurate(options->window_length / 2, params->maxTileDuration * options->resample_rate, params->maxTileDuration * params->fractional_stride * options->resample_rate)) {
+	if(params->window->data->length / 2 != block_commensurate(params->window->data->length / 2, params->maxTileDuration * options->resample_rate, params->maxTileDuration * params->fractional_stride * options->resample_rate)) {
 		sprintf(msg, "an integer number of the largest tiles (duration = %g s) must fit into 1/2 of the window length", params->maxTileDuration);
 		print_bad_argument(argv[0], "window-length", msg);
 		args_are_bad = TRUE;
 	}
 
-	/*params->windowShift = options->window_length / 2 - (1 - params->fractional_stride) * params->maxTileDuration * options->resample_rate;*/
-	params->windowShift = options->window_length / 4;
+	/*params->windowShift = params->window->data->length / 2 - (1 - params->fractional_stride) * params->maxTileDuration * options->resample_rate;*/
+	params->windowShift = params->window->data->length / 4;
 
 	/*
 	 * Check the order of the start and stop times.
@@ -1006,7 +1015,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	 * and its shift.
 	 */
 
-	options->psd_length = block_commensurate(options->psd_length, options->window_length, params->windowShift);
+	options->psd_length = block_commensurate(options->psd_length, params->window->data->length, params->windowShift);
 
 	/*
 	 * Ensure RAM limit is comensurate with the psd_length and its
@@ -1014,17 +1023,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	 */
 
 	if(options->max_series_length)
-		options->max_series_length = block_commensurate(options->max_series_length, options->psd_length, options->psd_length - (options->window_length - params->windowShift));
-
-	/*
-	 * Generate time-domain window function.
-	 */
-
-	params->window = XLALCreateHannREAL4Window(options->window_length);
-	if(!params->window) {
-		XLALPrintError("%s: failure generating Hann window\n", argv[0]);
-		exit(1);
-	}
+		options->max_series_length = block_commensurate(options->max_series_length, options->psd_length, options->psd_length - (params->window->data->length - params->windowShift));
 
 	/*
 	 * Sanitize filter frequencies.
