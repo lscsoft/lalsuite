@@ -152,6 +152,19 @@ static int double_is_power_of_2(double x)
 
 
 /*
+ * Return TRUE if a is an integer multiple of b.
+ */
+
+
+static int double_is_int_multiple_of(double a, double b)
+{
+	const double epsilon = 0;
+	int n = a / b;
+	return fabs(1 - n * b / a) <= epsilon;
+}
+
+
+/*
  * ============================================================================
  *
  *                       Initialize and parse arguments
@@ -941,11 +954,15 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		args_are_bad = TRUE;
 
 	/*
-	 * Make sure windowShift and window_length are OK.
+	 * Make sure maxTileDuration and window_length are OK, and set
+	 * windowShift.
 	 */
 
-	/* FIXME: check that params->maxTileDuration *
-	 * params->fractional_stride yields an allowed delta t */
+	if(!double_is_int_multiple_of(params->maxTileDuration * params->fractional_stride * options->resample_rate, 1)) {
+		sprintf(msg, "max tile duration * fractional stride (= %g s) must be an integer number of samples (= %g s)", params->maxTileDuration * params->fractional_stride, 1 / options->resample_rate);
+		print_bad_argument(argv[0], "max-tileduration", msg);
+		args_are_bad = TRUE;
+	}
 
 	if(options->window_length / 2 != block_commensurate(options->window_length / 2, params->maxTileDuration * options->resample_rate, params->maxTileDuration * params->fractional_stride * options->resample_rate)) {
 		sprintf(msg, "an integer number of the largest tiles (duration = %g s) must fit into 1/2 of the window length", params->maxTileDuration);
@@ -953,6 +970,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		args_are_bad = TRUE;
 	}
 
+	/*params->windowShift = options->window_length / 2 - (1 - params->fractional_stride) * params->maxTileDuration * options->resample_rate;*/
 	params->windowShift = options->window_length / 4;
 
 	/*
