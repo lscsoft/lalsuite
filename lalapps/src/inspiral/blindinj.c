@@ -139,6 +139,7 @@ REAL4         minNSMass = 1.0;     /* minimum NS component mass */
 REAL4         maxNSMass = 2.0;     /* maximum NS component mass */
 REAL4         minBHMass = 2.0;     /* minimum BH component mass */
 REAL4         maxBHMass = 30.0;    /* maximum BH component mass */
+REAL4         minTotalMass = 0.0;  /* minimum total mass */
 REAL4         maxTotalMass = 35.0; /* maximum total mass */
 
 REAL4         minNSSpin = 0.0;     /* minimum NS component spin */
@@ -712,7 +713,7 @@ int main( int argc, char *argv[] )
     {
       if ( vrbflg ) fprintf( stdout, "Generating a BNS injection\n" );
       inj = XLALRandomInspiralMasses( inj, randParams, mDist,
-          minNSMass, maxNSMass, minNSMass, maxNSMass, maxTotalMass );
+          minNSMass, maxNSMass, minNSMass, maxNSMass, minTotalMass, maxTotalMass );
       inj = XLALRandomInspiralSpins( inj, randParams, minNSSpin,
           maxNSSpin, minNSSpin, maxNSSpin );
       desiredSnr = bnsSnrMean + bnsSnrStd * normalDev->data[0]; 
@@ -721,7 +722,7 @@ int main( int argc, char *argv[] )
     {
       if ( vrbflg ) fprintf( stdout, "Generating a BBH injection\n" );
       inj = XLALRandomInspiralMasses( inj, randParams, mDist,
-          minBHMass, maxBHMass, minBHMass, maxBHMass, maxTotalMass );
+          minBHMass, maxBHMass, minBHMass, maxBHMass, minTotalMass, maxTotalMass );
       inj = XLALRandomInspiralSpins( inj, randParams, minBHSpin,
           maxBHSpin, minBHSpin, maxBHSpin );
       desiredSnr = snrMean + snrStd * normalDev->data[0]; 
@@ -730,7 +731,7 @@ int main( int argc, char *argv[] )
     {
       if ( vrbflg ) fprintf( stdout, "Generating an NS - BH injection\n" );
       inj = XLALRandomInspiralMasses( inj, randParams, mDist,
-          minNSMass, maxNSMass, minBHMass, maxBHMass, maxTotalMass );
+          minNSMass, maxNSMass, minBHMass, maxBHMass, minTotalMass, maxTotalMass );
       inj = XLALRandomInspiralSpins( inj, randParams, minNSSpin,
           maxNSSpin, minBHSpin, maxBHSpin );
       desiredSnr = snrMean + snrStd * normalDev->data[0]; 
@@ -739,8 +740,9 @@ int main( int argc, char *argv[] )
 
 
     /* set the sky location */
+    InclDistribution iDist = uniformInclDist ;
     inj = XLALRandomInspiralSkyLocation( inj, randParams );
-    inj = XLALRandomInspiralOrientation( inj, randParams, 0);
+    inj = XLALRandomInspiralOrientation( inj, randParams, iDist, 0);
 
     /* set the source and waveform fields */
     LALSnprintf( inj->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR), "???" );
