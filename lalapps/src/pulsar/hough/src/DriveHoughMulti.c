@@ -470,13 +470,12 @@ int main(int argc, char *argv[]){
 
     /* set number of SFTs to be kept */
     if ( LALUserVarWasSet( &uvar_keepBestSFTs ) ) {
-      if ( (UINT4)uvar_keepBestSFTs > mObsCoh ) {
-	/* fprintf(stdout, "Keeping all SFTs\n"); */
-	mObsCohBest = mObsCoh; 
-      }
-    } 
+      mObsCohBest = uvar_keepBestSFTs;
+      if ( mObsCohBest > mObsCoh )
+	mObsCohBest = mObsCoh;
+      } 
     else {
-      mObsCohBest = uvar_keepBestSFTs; 
+      mObsCohBest = mObsCoh; 
     }
 
     /* catalog is ordered in time so we can get start, end time and tObs*/
