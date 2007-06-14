@@ -174,7 +174,7 @@ SnglBurstTable *XLALEPSearch(
 	fplan = XLALCreateForwardREAL4FFTPlan(params->window->data->length, 1);
 	rplan = XLALCreateReverseREAL4FFTPlan(params->window->data->length, 1);
 	psd = XLALCreateREAL4FrequencySeries("PSD", &tseries->epoch, 0, 0, &lalDimensionlessUnit, params->window->data->length / 2 + 1);
-	tfplane = XLALCreateTFPlane(params->window->data->length, tseries->deltaT, params->tf_freqBins, params->tf_deltaF, params->tf_flow, params->window->data->length / 4, params->fractional_stride, params->maxTileBandwidth, params->maxTileDuration);
+	tfplane = XLALCreateTFPlane(params->window->data->length, tseries->deltaT, params->flow, params->bandwidth, params->window->data->length / 4, params->fractional_stride, params->maxTileBandwidth, params->maxTileDuration);
 	tukey = XLALCreateTukeyREAL4Window(params->window->data->length, 0.5);
 	if(!fplan || !rplan || !psd || !tfplane || !tukey) {
 		errorcode = XLAL_EFUNC;

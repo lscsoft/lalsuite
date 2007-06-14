@@ -126,9 +126,8 @@ typedef struct tagREAL4TimeFrequencyPlane {
 REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	UINT4 tseries_length,
 	REAL8 tseries_deltaT,
-	UINT4 channels,
-	REAL8 deltaF,
 	REAL8 flow,
+	REAL8 bandwidth,
 	UINT4 tiling_start,
 	REAL8 tiling_fractional_stride,
 	REAL8 tiling_max_bandwidth,

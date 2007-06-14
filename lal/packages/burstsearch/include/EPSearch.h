@@ -66,9 +66,8 @@ typedef struct tagEPSearchParams {
 	AvgSpecMethod method;
 	/* time-frequency plane parameters */
 	int useOverWhitening;	
-	INT4 tf_freqBins;
-	REAL8 tf_deltaF;
-	REAL8 tf_flow;
+	REAL8 flow;
+	REAL8 bandwidth;
 	/* t.f. plane tiling parameters */
 	REAL8 fractional_stride;
 	REAL8 maxTileBandwidth;

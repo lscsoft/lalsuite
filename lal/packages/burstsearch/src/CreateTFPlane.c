@@ -38,12 +38,10 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	UINT4 tseries_length,
 	/* sample rate of time series */
 	REAL8 tseries_deltaT,
-	/* number of frequency channels in TF plane */
-	UINT4 channels,
-	/* frequency resolution of the plane */
-	REAL8 deltaF,
 	/* minimum frequency to search for */
 	REAL8 flow,
+	/* bandwidth of TF plane */
+	REAL8 bandwidth,
 	/* sample at which to start the tiling */
 	UINT4 tiling_start,
 	/* overlap of adjacent tiles */
@@ -56,6 +54,8 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 /******** </lalVerbatim> ********/
 {
 	static const char func[] = "XLALCreateTFPlane";
+	REAL8 deltaF = 1 / (2 * tiling_max_duration);
+	INT4 channels = bandwidth / deltaF;
 	REAL4TimeFrequencyPlane *plane;
 	REAL8Sequence *channel_overlap;
 	REAL8Sequence *channel_rms;
