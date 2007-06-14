@@ -85,11 +85,12 @@ TFTiling *XLALCreateTFTiling(
 	/* coordinate limits */
 	const unsigned tmax = plane_length - tiling_tstart;
 
-	/* tile size limits */
-	const unsigned min_tbins = 1.0 / maxTileBandwidth / plane_deltaT;
+	/* tile size limits (note: order of operations relies on integer
+	 * arithmetic for rounding) */
 	const unsigned max_tbins = maxTileDuration / plane_deltaT;
 	const unsigned min_channels = 1 / (max_tbins * plane_deltaT * plane_deltaF);
 	const unsigned max_channels = maxTileBandwidth / plane_deltaF;
+	const unsigned min_tbins = 1 / (max_channels * plane_deltaF * plane_deltaT);
 
 	/* stride */
 	const unsigned inv_fractional_stride = 1 / fractional_stride;
