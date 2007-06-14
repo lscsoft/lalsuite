@@ -32,6 +32,7 @@ if test "x$GCC" = "xyes"; then
   fi
 fi
 
+AC_CHECK_PROGS(PDFLATEX, pdflatex, echo)
 AC_ARG_WITH(docdir,[AC_HELP_STRING([--with-docdir=dir],[Location of documentation])],[docdir="$withval"],[docdir='${prefix}/share/doc/${PACKAGE}-${VERSION}'])
 AC_SUBST(docdir)
 
