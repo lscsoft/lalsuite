@@ -354,7 +354,8 @@ SimInspiralTable *XLALInspiralSiteTimeAndDist(
   /* calculate the detector end time */
   tDelay = XLALTimeDelayFromEarthCenter( detector->location, inj->longitude,
       inj->latitude, &(inj->geocent_end_time) );
-  *endTime = *XLALGPSAdd( &(inj->geocent_end_time), tDelay );
+  *endTime = inj->geocent_end_time;
+  *endTime = *XLALGPSAdd( endTime, tDelay );
 
   /* initialize distance with real distance and compute splus and scross */
   *effDist = 2.0 * inj->distance;
