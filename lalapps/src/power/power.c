@@ -183,7 +183,6 @@ struct options {
 	 * search parameters
 	 */
 
-	int bandwidth;
 	/* number of samples to use for PSD    */
 	size_t psd_length;
 	/* set non-zero to generate noise      */
@@ -281,7 +280,6 @@ static struct options *options_new(void)
 		return NULL;
 
 	*options = (struct options) {
-		.bandwidth = 0,	/* impossible */
 		.cal_cache_filename = NULL,	/* default == disable */
 		.channel_name = NULL,	/* impossible */
 		.comment = default_comment,	/* default = "" */
@@ -400,7 +398,7 @@ static int all_required_arguments_present(char *prog, struct option *long_option
 	for(index = 0; long_options[index].name; index++) {
 		switch(long_options[index].val) {
 		case 'A':
-			arg_is_missing = !options->bandwidth;
+			arg_is_missing = !params->bandwidth;
 			break;
 
 		case 'C':
@@ -416,7 +414,7 @@ static int all_required_arguments_present(char *prog, struct option *long_option
 			break;
 
 		case 'Q':
-			arg_is_missing = params->tf_flow < 0.0;
+			arg_is_missing = params->flow < 0.0;
 			break;
 
 		case 'W':
@@ -622,9 +620,8 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	params->diagnostics = NULL;	/* default == disable */
 	params->confidence_threshold = XLAL_REAL8_FAIL_NAN;	/* impossible */
 	params->method = -1;	/* impossible */
-	params->tf_freqBins = 0;	/* impossible */
-	params->tf_deltaF = 0;	/* impossible */
-	params->tf_flow = -1.0;	/* impossible */
+	params->bandwidth = 0;	/* impossible */
+	params->flow = -1;	/* impossible */
 	params->maxTileBandwidth = 0;	/* impossible */
 	params->maxTileDuration = 0;	/* impossible */
 	params->fractional_stride = 0;	/* impossible */
@@ -640,9 +637,9 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	optind = 0;		/* start scanning from argv[0] */
 	do switch (c = getopt_long(argc, argv, "", long_options, &option_index)) {
 	case 'A':
-		options->bandwidth = atoi(optarg);
-		if(options->bandwidth <= 0 || !is_power_of_2(options->bandwidth)) {
-			sprintf(msg, "must be greater than 0 and a power of 2 (%i specified)", options->bandwidth);
+		params->bandwidth = atof(optarg);
+		if(params->bandwidth <= 0 || !double_is_power_of_2(params->bandwidth)) {
+			sprintf(msg, "must be greater than 0 and a power of 2 (%g specified)", params->bandwidth);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -725,9 +722,9 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		break;
 
 	case 'Q':
-		params->tf_flow = atof(optarg);
-		if(params->tf_flow < 0) {
-			sprintf(msg, "must not be negative (%f Hz specified)", params->tf_flow);
+		params->flow = atof(optarg);
+		if(params->flow < 0) {
+			sprintf(msg, "must not be negative (%f Hz specified)", params->flow);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -898,7 +895,6 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		params->tf_deltaF = 1 / (2 * params->maxTileDuration);
 		ADD_PROCESS_PARAM("float");
 		break;
 
@@ -1029,11 +1025,11 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	 * Sanitize filter frequencies.
 	 */
 
-	if(options->cal_high_pass > params->tf_flow)
-		XLALPrintWarning("%s: warning: calibrated data quantization high-pass frequency (%f Hz) greater than TF plane low frequency (%f Hz)\n", argv[0], options->cal_high_pass, params->tf_flow);
+	if(options->cal_high_pass > params->flow)
+		XLALPrintWarning("%s: warning: calibrated data quantization high-pass frequency (%f Hz) greater than TF plane low frequency (%f Hz)\n", argv[0], options->cal_high_pass, params->flow);
 
-	if(options->high_pass > params->tf_flow - 10.0)
-		XLALPrintWarning("%s: warning: data conditioning high-pass frequency (%f Hz) greater than 10 Hz below TF plane low frequency (%f Hz)\n", argv[0], options->high_pass, params->tf_flow);
+	if(options->high_pass > params->flow - 10.0)
+		XLALPrintWarning("%s: warning: data conditioning high-pass frequency (%f Hz) greater than 10 Hz below TF plane low frequency (%f Hz)\n", argv[0], options->high_pass, params->flow);
 
 	/*
 	 * Set output filename to default value if needed.
@@ -1062,7 +1058,6 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	 * Miscellaneous chores.
 	 */
 
-	params->tf_freqBins = options->bandwidth / params->tf_deltaF;
 	XLALPrintInfo("%s: using --psd-average-points %zu\n", argv[0], options->psd_length);
 	if(options->max_series_length)
 		XLALPrintInfo("%s: available RAM limits analysis to %d samples\n", argv[0], options->max_series_length);
