@@ -366,7 +366,7 @@ int main( int argc, char *argv[] )
         if (vrbflg) fprintf( stdout, "H2 channel: %s\n",
            cDataChanNames->chanNameH2 );
 
-        kidx = LAL_IFO_H1;
+        kidx =  LAL_IFO_H1;
       }
 
 #if 0
@@ -492,7 +492,7 @@ int main( int argc, char *argv[] )
           /* if ( vrbflg ) fprintf( stdout, "error\n" ); */
           frStream = XLALFrOpen( NULL, ifoframefile[j] ); 
           if ( vrbflg ) fprintf( stdout, 
-             "Getting the c-data time series for %s.\n",
+                 "Getting the c-data time series for %s.\n",
                  thisCoinc->snglInspiral[j]->ifo );
 
           if (!frStream)
@@ -502,7 +502,7 @@ int main( int argc, char *argv[] )
             goto cleanexit;
           }
 
-          /* the next two statements must be replaced by sth more sensible */
+          /* assign the channel names */
           if ( j == LAL_IFO_H1 ) 
           {
             strcpy( CVec->cData[j]->name, &(cDataChanNames->chanNameH1) ); 
@@ -528,9 +528,18 @@ int main( int argc, char *argv[] )
           XLALFrClose( frStream );
  
           /* set sigma-squared */
+          /* this gives the same sigma-sq for both H1 and H2              */
+          /* this is clearly wrong!                                       */
+          /* the problem is possibly that when coh-bank is created ,      */
+          /* identical parameters are kept for H1 and H2 in sngl_inspiral */
+          /* how do we fix this ???                                       */
+          if (vrbflg) fprintf( stdout, "sigma-sq for %s: %f \n", 
+                               thisCoinc->snglInspiral[j]->ifo, 
+                               thisCoinc->snglInspiral[j]->sigmasq );
           nullStatParams->sigmasq[j] = thisCoinc->snglInspiral[j]->sigmasq;
           nullStatInputParams->CData->cData[j] = CVec->cData[j];
-          j++;
+          
+          if (j == 2) j = LAL_NUM_IFO+1;
         }
         else
         {
@@ -547,16 +556,16 @@ int main( int argc, char *argv[] )
        */
 
       /* calculation of the null statistic for this coincident event */
-      XLALComputeNullStatistic( &thisEvent, nullStatInputParams, 
-         nullStatParams);
+      if (vrbflg) fprintf( stdout, "error \n" );
+      XLALComputeNullStatistic(&thisEvent, nullStatInputParams, nullStatParams);
 
       if ( nullStatOut )
       {
-        LALSnprintf( nullStatStr, LALNameLength*sizeof(CHAR),
-                     "NULL_STAT_%d", numNullStatFr++ );
+        LALSnprintf( nullStatStr, LALNameLength*sizeof(CHAR), "NULL_STAT_%d", 
+                     numNullStatFr++ );
         strcpy( nullStatParams->nullStatVec->name, "NullStatistic");
         outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
-                      nullStatParams->nullStatVec, "none", nullStatStr);
+                     nullStatParams->nullStatVec, "none", nullStatStr);
       }
 
       if ( !eventsOut )
