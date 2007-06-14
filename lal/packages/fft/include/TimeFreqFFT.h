@@ -301,6 +301,12 @@ COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(
     REAL8                        fmax
     );
 
+COMPLEX16FrequencySeries *XLALWhitenCOMPLEX16FrequencySeries(
+    COMPLEX16FrequencySeries    *fseries,
+    const REAL8FrequencySeries  *psd,
+    REAL8                        fmin,
+    REAL8                        fmax
+);
 
 void
 LALTimeFreqRealFFT(

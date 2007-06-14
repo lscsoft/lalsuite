@@ -788,3 +788,54 @@ COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeri
 
   return fseries;
 }
+
+
+/*
+ * Double-precision version of XLALWhitenCOMPLEX8FrequencySeries().
+ */
+
+
+COMPLEX16FrequencySeries *XLALWhitenCOMPLEX16FrequencySeries(COMPLEX16FrequencySeries *fseries, const REAL8FrequencySeries *psd, REAL8 fmin, REAL8 fmax)
+{
+  static const char func[] = "XLALWhitenCOMPLEX16FrequencySeries";
+  COMPLEX16 *fdata = fseries->data->data;
+  REAL8 *pdata = psd->data->data;
+  REAL8 factor;
+  unsigned i;	/* fseries index */
+  unsigned j;	/* psd index */
+
+  if((psd->deltaF != fseries->deltaF) ||
+     (fseries->f0 < psd->f0))
+    /* resolution mismatch, or PSD does not span fseries at low end */
+    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+
+  j = (fseries->f0 - psd->f0) / psd->deltaF;
+  if(j * psd->deltaF + psd->f0 != fseries->f0)
+    /* fseries does not start on an integer PSD sample */
+    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+  if(j + fseries->data->length > psd->data->length)
+    /* PSD does not span fseries at high end */
+    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+
+  for(i = 0; i < fseries->data->length; i++, j++)
+  {
+    if(pdata[j] == 0)
+    {
+      /* PSD has a 0 in it */
+      REAL8 f = fseries->f0 + i * fseries->deltaF;
+      if((fmin <= f) && (f < fmax))
+        /* ignore, zero the output */
+        factor = 0;
+      else
+        /* error */
+        XLAL_ERROR_NULL(func, XLAL_EFPDIV0);
+    }
+    else
+      factor = sqrt(2 * fseries->deltaF / pdata[j]);
+    fdata[i].re *= factor;
+    fdata[i].im *= factor;
+  }
+
+  return fseries;
+}
+
