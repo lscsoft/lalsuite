@@ -173,9 +173,9 @@ int main( int argc, char *argv[] )
   REAL4  dynRange       = 0.0;
 
   /* variables for initializing tempTime to account for time-slides */
-  UINT8  triggerNumber  = 0;
+  /*UINT8  triggerNumber  = 0;
   UINT8  slideNumber    = 0;
-  UINT8  slideSign      = 0;
+  UINT8  slideSign      = 0; */
 
   /* counters and other variables */
   INT4   j, k, l;
@@ -481,16 +481,19 @@ int main( int argc, char *argv[] )
 #endif
 
       CVec = nullStatInputParams->CData;
-      if ( vrbflg ) fprintf( stdout, "error\n" );
+      /* if ( vrbflg ) fprintf( stdout, "error\n" ); */
 
       /* Read in the snippets associated with thisCoinc trigger */
-      for ( j=0; j<LAL_NUM_IFO; j++ )
+      for ( j=1; j<LAL_NUM_IFO; j++ )
       {
         if ( (j == LAL_IFO_H1) || (j == LAL_IFO_H2) ) 
         { 
-          if ( vrbflg ) fprintf( stdout, "error\n" );
-          if ( vrbflg ) fprintf( stdout, "Getting the c-data time series.\n" );
+          if (vrbflg) fprintf(stdout, " j = %d \n", j );
+          /* if ( vrbflg ) fprintf( stdout, "error\n" ); */
           frStream = XLALFrOpen( NULL, ifoframefile[j] ); 
+          if ( vrbflg ) fprintf( stdout, 
+             "Getting the c-data time series for %s.\n",
+                 thisCoinc->snglInspiral[j]->ifo );
 
           if (!frStream)
           {  
@@ -501,10 +504,18 @@ int main( int argc, char *argv[] )
 
           /* the next two statements must be replaced by sth more sensible */
           if ( j == LAL_IFO_H1 ) 
-              *(CVec->cData[j]->name) = (*cDataChanNames).chanNameH1; 
+          {
+            strcpy( CVec->cData[j]->name, &(cDataChanNames->chanNameH1) ); 
+            if ( vrbflg ) fprintf( stdout, "H1 channel name: %s \n",
+                CVec->cData[j]->name );
+          }
 
           if ( j == LAL_IFO_H2 )               
-              *(CVec->cData[j]->name) = *(cDataChanNames->chanNameH2);
+          {
+            strcpy( CVec->cData[j]->name, &(cDataChanNames->chanNameH2) );
+            if ( vrbflg ) fprintf( stdout, "H2 channel name: %s \n",
+                CVec->cData[j]->name );
+          }
 
           XLALFrGetCOMPLEX8TimeSeries( CVec->cData[j], frStream );
 
