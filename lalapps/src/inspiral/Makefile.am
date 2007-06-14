@@ -26,7 +26,7 @@ if LALMETAIO
 bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank \
                lalapps_inca lalapps_sire lalapps_coire lalapps_siva \
                lalapps_inspinj lalapps_splitbank \
-               lalapps_minj lalapps_bbhinj \
+               lalapps_minj lalapps_bbhinj lalapps_blindinj \
                lalapps_inspfrinj lalapps_gwf2xml \
                lalapps_thinca lalapps_trigbank \
                lalapps_spininj lalapps_coherent_inspiral \
@@ -45,7 +45,7 @@ lalapps_siva_SOURCES 		= $(SIVASRC)
 lalapps_inspinj_SOURCES 	= $(INSPINJSRC)
 lalapps_minj_SOURCES 		= $(MINJSRC)
 lalapps_bbhinj_SOURCES 		= $(BBHINJSRC)
-#lalapps_blindinj_SOURCES 		= $(BLINDINJSRC)
+lalapps_blindinj_SOURCES 		= $(BLINDINJSRC)
 lalapps_splitbank_SOURCES 	= $(SPLITBANKSRC)
 lalapps_trigbank_SOURCES 	= $(TRIGBANKSRC)
 lalapps_spininj_SOURCES 	= $(SPININJSRC)
@@ -105,7 +105,7 @@ EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              inspiral_online_pipe.in inspiral_hipe.in \
 	     multi_hipe.in trigger_hipe.in\
              inspiral_online_pipe_inject.in check_hipe_times.in \
-             $(DATA) $(BLINDINJSRC)
+             $(DATA)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
