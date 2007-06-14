@@ -49,10 +49,8 @@ typedef struct tagTFTile {
 	UINT4 channels;
 	UINT4 tstart;
 	UINT4 tend;
-	/* time-frequency plane parameters for reconstructing tile dimensions */
-	REAL8 flow;
-	REAL8 deltaT;
-	REAL8 deltaF;
+	/* number of degrees of freedom in this tile */
+	REAL8 dof;
 	/* computed tile properties */
 	REAL8 excessPower;
 	REAL8 hrss;
@@ -68,21 +66,15 @@ typedef struct tagTFTiling {
 } TFTiling;
 
 
-REAL8 XLALTFTileDegreesOfFreedom(
-	const TFTile *tile
-);
-
-
 TFTiling *XLALCreateTFTiling(
-	UINT4 plane_length,
+	UINT4 tiling_t_start,
+	UINT4 tiling_t_length,
+	UINT4 tiling_n_channels,
 	REAL8 plane_deltaT,
-	REAL8 plane_flow,
 	REAL8 plane_deltaF,
-	UINT4 plane_num_channels,
-	UINT4 tiling_tstart,
 	REAL8 fractional_stride,
-	REAL8 maxTileBandwidth,
-	REAL8 maxTileDuration
+	REAL8 max_tile_bandwidth,
+	REAL8 max_tile_duration
 );
 
 

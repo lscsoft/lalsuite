@@ -25,11 +25,25 @@
 NRCSID(CREATETFPLANEC, "$Id$");
 
 
+#include <math.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALStdlib.h>
 #include <lal/TFTransform.h>
 #include <lal/Sequence.h>
 #include <lal/XLALError.h>
+
+
+/*
+ * Return TRUE if a is an integer multiple of b.
+ */
+
+
+static int double_is_int_multiple_of(double a, double b)
+{
+	const double epsilon = 0;
+	int n = a / b;
+	return fabs(1 - n * b / a) <= epsilon;
+}
 
 
 /******** <lalVerbatim file="CreateTFPlaneCP"> ********/
@@ -54,23 +68,26 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 /******** </lalVerbatim> ********/
 {
 	static const char func[] = "XLALCreateTFPlane";
-	REAL8 deltaF = 1 / (2 * tiling_max_duration);
+	REAL8 fseries_deltaF = 1.0 / (tseries_length * tseries_deltaT);
+	REAL8 deltaF = 1 / tiling_max_duration * tiling_fractional_stride;
 	INT4 channels = bandwidth / deltaF;
 	REAL4TimeFrequencyPlane *plane;
 	REAL8Sequence *channel_overlap;
 	REAL8Sequence *channel_rms;
 	REAL4Sequence **channel;
 	TFTiling *tiling;
-	unsigned i;
+	int i;
 
 	/*
 	 * Make sure that input parameters are reasonable
 	 */
 
 	if((flow < 0) ||
+	   (bandwidth < 0) ||
 	   (deltaF <= 0.0) ||
+	   (!double_is_int_multiple_of(deltaF, fseries_deltaF)) ||
 	   (tseries_deltaT <= 0.0) ||
-	   (channels < 1))
+	   (channels * deltaF != bandwidth))
 		XLAL_ERROR_NULL(func, XLAL_EINVAL);
 
 	/*
@@ -81,7 +98,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	channel_overlap = XLALCreateREAL8Sequence(channels - 1);
 	channel_rms = XLALCreateREAL8Sequence(channels);
 	channel = XLALMalloc(channels * sizeof(*channel));
-	tiling = XLALCreateTFTiling(tseries_length, tseries_deltaT, flow, deltaF, channels, tiling_start, tiling_fractional_stride, tiling_max_bandwidth, tiling_max_duration);
+	tiling = XLALCreateTFTiling(tiling_start, tseries_length / 2, channels, tseries_deltaT, deltaF, tiling_fractional_stride, tiling_max_bandwidth, tiling_max_duration);
 	if(!plane || !channel_overlap || !channel_rms || !channel || !tiling) {
 		XLALFree(plane);
 		XLALDestroyREAL8Sequence(channel_overlap);

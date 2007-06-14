@@ -67,9 +67,8 @@ static void XLALDestroySnglBurstTable(SnglBurstTable *head)
 
 
 static SnglBurstTable *XLALTFTileToBurstEvent(
-	const TFTile *tile,
-	const char *channelName,
-	const LIGOTimeGPS *epoch
+	const REAL4TimeFrequencyPlane *plane,
+	const TFTile *tile
 )
 {
 	const char func[] = "XLALTFTileToBurstEvent";
@@ -78,21 +77,21 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 
 	event->next = NULL;
-	strncpy(event->ifo, channelName, 2);
+	strncpy(event->ifo, plane->name, 2);
 	event->ifo[2] = '\0';
 	strncpy(event->search, "excesspower", LIGOMETA_SEARCH_MAX);
 	event->search[LIGOMETA_SEARCH_MAX] = '\0';
-	strncpy(event->channel, channelName, LIGOMETA_CHANNEL_MAX);
+	strncpy(event->channel, plane->name, LIGOMETA_CHANNEL_MAX);
 	event->channel[LIGOMETA_CHANNEL_MAX] = '\0';
 
-	event->start_time = *epoch; 
+	event->start_time = plane->epoch; 
  
-	XLALGPSAdd(&event->start_time, tile->tstart * tile->deltaT);
-	event->duration = (tile->tend - tile->tstart) * tile->deltaT;
+	XLALGPSAdd(&event->start_time, tile->tstart * plane->deltaT);
+	event->duration = (tile->tend - tile->tstart) * plane->deltaT;
 	event->peak_time = event->start_time;
 	XLALGPSAdd(&event->peak_time, 0.5 * event->duration);
-	event->bandwidth = tile->channels * tile->deltaF;
-	event->central_freq = tile->flow + tile->channel0 * tile->deltaF + (0.5 * event->bandwidth);
+	event->bandwidth = tile->channels * plane->deltaF;
+	event->central_freq = plane->flow + tile->channel0 * plane->deltaF + (0.5 * event->bandwidth);
 	/* FIXME: put hrss into the "hrss" column */
 	event->amplitude = tile->hrss;
 	event->snr = tile->excessPower;
@@ -108,19 +107,25 @@ static SnglBurstTable *XLALTFTilesToSnglBurstTable(SnglBurstTable *head, const R
 {
 	const char func[] = "XLALTFTilesToSnglBurstTable";
 	SnglBurstTable *oldhead;
-	TFTile *tile;
 	size_t i;
 
-	for(i = 0, tile = tiling->tile; i < tiling->numtiles; i++, tile++) {
+	for(i = 0; i < tiling->numtiles; i++) {
+		TFTile *tile = &tiling->tile[i];
+
+		/* test confidence */
 		if(tile->confidence >= confidence_threshold) {
 			oldhead = head;
-			head = XLALTFTileToBurstEvent(tile, plane->name, &plane->epoch); 
+			head = XLALTFTileToBurstEvent(plane, tile); 
 			if(!head) {
 				XLALDestroySnglBurstTable(oldhead);
 				XLAL_ERROR_NULL(func, XLAL_EFUNC);
 			}
 			head->next = oldhead;
 		}
+
+		/* reset for safety */
+		tile->excessPower = XLAL_REAL8_FAIL_NAN;
+		tile->confidence = XLAL_REAL8_FAIL_NAN;
 	}
 
 	return(head);
@@ -252,7 +257,7 @@ SnglBurstTable *XLALEPSearch(
 		 */
 
 		XLALPrintInfo("XLALEPSearch(): normalizing to the average spectrum\n");
-		if(!XLALWhitenCOMPLEX8FrequencySeries(fseries, psd, tfplane->flow, fseries->f0 + fseries->data->length * fseries->deltaF)) {
+		if(!XLALWhitenCOMPLEX8FrequencySeries(fseries, psd, params->flow, fseries->f0 + fseries->data->length * fseries->deltaF)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}

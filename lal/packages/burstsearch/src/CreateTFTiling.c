@@ -32,17 +32,6 @@ NRCSID(CREATETFTILINGC, "$Id$");
 
 
 /*
- * The number of degrees of freedom in a tile.
- */
-
-
-REAL8 XLALTFTileDegreesOfFreedom(const TFTile *tile)
-{
-	return((2 * (tile->tend - tile->tstart) * tile->channels) * tile->deltaT * tile->deltaF);
-}
-
-
-/*
  * Macro for looping over all tiles.  This is ugly but it ensures that the
  * initialization, increment, and terminate statements are the same in the two
  * places the loop is done.
@@ -52,22 +41,21 @@ REAL8 XLALTFTileDegreesOfFreedom(const TFTile *tile)
 #define FOR_EACH_TILE \
 	for(tbins = min_tbins; tbins <= max_tbins; tbins *= 2) \
 		for(channels = 1 / (tbins * plane_deltaT * plane_deltaF); channels <= max_channels; channels *= 2) \
-			for(tstart = tiling_tstart; tstart + tbins <= tmax; tstart += tbins / inv_fractional_stride) \
-				for(channel0 = 0; channel0 + channels <= plane_num_channels; channel0 += channels / inv_fractional_stride)
+			for(tstart = tiling_t_start; tstart + tbins <= tmax; tstart += tbins / inv_fractional_stride) \
+				for(channel0 = 0; channel0 + channels <= tiling_n_channels; channel0 += channels / inv_fractional_stride)
 
 
 
 /******** <lalVerbatim file="CreateTFTilingCP"> ********/
 TFTiling *XLALCreateTFTiling(
-	UINT4 plane_length,
+	UINT4 tiling_t_start,
+	UINT4 tiling_t_length,
+	UINT4 tiling_n_channels,
 	REAL8 plane_deltaT,
-	REAL8 plane_flow,
 	REAL8 plane_deltaF,
-	UINT4 plane_num_channels,
-	UINT4 tiling_tstart,
 	REAL8 fractional_stride,
-	REAL8 maxTileBandwidth,
-	REAL8 maxTileDuration
+	REAL8 max_tile_bandwidth,
+	REAL8 max_tile_duration
 )
 /******** </lalVerbatim> *********/
 {
@@ -82,18 +70,17 @@ TFTiling *XLALCreateTFTiling(
 	unsigned tstart;
 	unsigned tbins;
 
-	/* coordinate limits */
-	const unsigned tmax = plane_length - tiling_tstart;
-
-	/* tile size limits (note: order of operations relies on integer
-	 * arithmetic for rounding) */
-	const unsigned max_tbins = maxTileDuration / plane_deltaT;
-	const unsigned min_channels = 1 / (max_tbins * plane_deltaT * plane_deltaF);
-	const unsigned max_channels = maxTileBandwidth / plane_deltaF;
-	const unsigned min_tbins = 1 / (max_channels * plane_deltaF * plane_deltaT);
-
 	/* stride */
 	const unsigned inv_fractional_stride = 1 / fractional_stride;
+
+	/* coordinate limits */
+	const unsigned tmax = tiling_t_start + tiling_t_length;
+
+	/* tile size limits */
+	const unsigned min_tbins = (1 / max_tile_bandwidth) / plane_deltaT;
+	const unsigned max_tbins = max_tile_duration / plane_deltaT;
+	const unsigned min_channels = inv_fractional_stride;
+	const unsigned max_channels = max_tile_bandwidth / plane_deltaF;
 
 	/* FIXME:  move tiling parameter checks from lalapps_power into
 	 * this function, so that any code that uses this function will
@@ -101,9 +88,8 @@ TFTiling *XLALCreateTFTiling(
 
 	/* check the tile size limits */
 	if((min_tbins < inv_fractional_stride) ||
-	   (min_channels < inv_fractional_stride) ||
-	   (tmax < tiling_tstart + max_tbins) ||
-	   (plane_num_channels < max_channels))
+	   (tmax < tiling_t_start + max_tbins) ||
+	   (max_tbins > tiling_t_length))
 		XLAL_ERROR_NULL(func, XLAL_EINVAL);
 
 	/* Count the tiles */
@@ -132,9 +118,7 @@ TFTiling *XLALCreateTFTiling(
 		tile->channels = channels;
 		tile->tstart = tstart;
 		tile->tend = tstart + tbins;
-		tile->flow = plane_flow;
-		tile->deltaT = plane_deltaT;
-		tile->deltaF = plane_deltaF;
+		tile->dof = ((tile->tend - tile->tstart) * tile->channels) * 2 * plane_deltaT * plane_deltaF;
 		tile->excessPower = XLAL_REAL8_FAIL_NAN;
 		tile->confidence = XLAL_REAL8_FAIL_NAN;
 		tile++;
