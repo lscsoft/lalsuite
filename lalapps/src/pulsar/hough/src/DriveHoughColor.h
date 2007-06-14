@@ -179,12 +179,14 @@ char *lalWatch;
     REAL8 *deltaSize;
   } HoughSkyPatchesInfo;
     
-
+  /** struct fo storing all the variables affected by the 
+      selection of a subset of SFTs */
   typedef struct tagBestVariables{
-    UINT4 length;
-    REAL8Vector *weightsV;
-    REAL8Vector *timeDiffV;
-    REAL8Cart3CoorVector *velV;
+    UINT4 length;   /**< the number of SFTs to be selected */
+    REAL8Vector *weightsV; /**< noise and AM weights */
+    REAL8Vector *timeDiffV; /**< the vector of time diffs */
+    REAL8Cart3CoorVector *velV; /**< vector of detector velocities */
+    HOUGHPeakGramVector *pgV; /**< the vector of peakgrams */
   } BestVariables;
 
 

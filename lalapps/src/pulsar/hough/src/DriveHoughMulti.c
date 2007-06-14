@@ -169,8 +169,8 @@ int main(int argc, char *argv[]){
   
   /* time and velocity  */
   static LIGOTimeGPSVector    timeV;
-  static REAL8Cart3CoorVector velV, velVbest;
-  static REAL8Vector          timeDiffV, timeDiffVbest;
+  static REAL8Cart3CoorVector velV;
+  static REAL8Vector          timeDiffV;
   LIGOTimeGPS firstTimeStamp, lastTimeStamp;
   REAL8 tObs;
 
@@ -184,12 +184,13 @@ int main(int argc, char *argv[]){
   UINT4 numifo;
 
   /* vector of weights */
-  REAL8Vector weightsV, weightsNoise, weightsVBest;
-
-
+  REAL8Vector weightsV, weightsNoise;
 
   /* ephemeris */
   EphemerisData    *edat=NULL;
+
+  /* struct containing subset of weights, timediff, velocity and peakgrams */
+  static BestVariables best;
 
   /* hough structures */
   static HOUGHptfLUTVector   lutV; /* the Look Up Table vector*/
@@ -553,10 +554,7 @@ int main(int argc, char *argv[]){
   /* allocate noise and AMweights vectors */
   weightsV.length = mObsCoh;
   weightsV.data = (REAL8 *)LALCalloc(1, mObsCoh*sizeof(REAL8));
-  
-  weightsVBest.length = mObsCohBest;
-  weightsVBest.data = (REAL8 *)LALCalloc(1, mObsCoh*sizeof(REAL8));
-  
+    
   weightsNoise.length = mObsCoh;
   weightsNoise.data = (REAL8 *)LALCalloc(1, mObsCoh*sizeof(REAL8));
 
@@ -670,14 +668,14 @@ int main(int argc, char *argv[]){
 
 
   /* min and max values significance that are possible */
-  minSignificance = -sqrt(mObsCohBest*alphaPeak/(1-alphaPeak));
-  maxSignificance = sqrt(mObsCohBest*(1-alphaPeak)/alphaPeak);
+  minSignificance = -sqrt(mObsCoh*alphaPeak/(1-alphaPeak));
+  maxSignificance = sqrt(mObsCoh*(1-alphaPeak)/alphaPeak);
       
 
   /* loop over sky patches -- main Hough calculations */
   for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++)
     {
-      UINT4 k, numsft;
+      UINT4 k;
       REAL8 sumWeightSquare;
       REAL8  meanN, sigmaN;
 
@@ -698,6 +696,16 @@ int main(int argc, char *argv[]){
       
       /* sort weights vector to get the best sfts */
       if ( uvar_weighAM || uvar_weighNoise ) {
+
+	BestVariables temp;
+
+	temp.length = mObsCoh;
+	temp.weightsV = &weightsV;
+	temp.timeDiffV = &timeDiffV;
+	temp.velV = &velV;
+	temp.pgV = &pgV;
+
+	LAL_CALL( SelectBestStuff( &status, &best, &temp, mObsCohBest), &status);
 	
       }
       
@@ -1135,7 +1143,6 @@ int main(int argc, char *argv[]){
 
   LALFree(weightsV.data);
   LALFree(weightsNoise.data);  
-  LALFree(weightsVBest.data);
 
   XLALDestroyMultiDetectorStateSeries ( mdetStates );
 
@@ -1149,6 +1156,15 @@ int main(int argc, char *argv[]){
   LALFree(skySizeDelta);
 
   LALFree( nStarEventVec.event );
+
+  LALFree(best.weightsV->data);
+  LALFree(best.weightsV);
+  LALFree(best.timeDiffV->data);
+  LALFree(best.timeDiffV);
+  LALFree(best.velV->data);
+  LALFree(best.velV);
+  LALFree(best.pgV->pg);
+  LALFree(best.pgV);
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
 
@@ -1987,54 +2003,77 @@ void SelectBestStuff(LALStatus      *status,
 
   UINT4 *index=NULL;
   UINT4 k, mObsCoh;
-  REAL8Vector weightsV, timeDiffV;
-  REAL8Cart3CoorVector velV;
 
   INITSTATUS (status, "SelectBestStuff", rcsid);
   ATTATCHSTATUSPTR (status);
 
+  /* check consistency of input */
   ASSERT (out, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
-  ASSERT (in, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
-  ASSERT (in->length, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
-  ASSERT (in->weightsV, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
-  ASSERT (in->timeDiffV, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
-  ASSERT (in->velV, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
-  ASSERT (mObsCohBest > 0, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
 
+  ASSERT (in, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (in->length > 0, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
   mObsCoh = in->length;
 
-  /* memory allocation for output */
+  ASSERT (in->weightsV, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (in->weightsV->length == mObsCoh, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+
+  ASSERT (in->timeDiffV, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (in->timeDiffV->length == mObsCoh, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+
+  ASSERT (in->velV, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (in->velV->length == mObsCoh, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+
+  ASSERT (mObsCohBest > 0, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+  ASSERT (mObsCohBest <= in->length, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+
+  /* memory allocation for output -- use reallocs because this 
+     function may be called within the loop over sky positions, so memory might
+     already have been allocated previously */
   out->length = mObsCohBest;
 
-  weightsV.length = mObsCohBest;
-  weightsV.data = (REAL8 *)LALCalloc(1, mObsCohBest*sizeof(REAL8));	
 
-  timeDiffV.length = mObsCohBest;
-  timeDiffV.data = (REAL8 *)LALCalloc(1, mObsCohBest*sizeof(REAL8));	
+  if (out->weightsV == NULL) {
+    out->weightsV = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
+    out->weightsV->length = mObsCohBest;
+    out->weightsV->data = (REAL8 *)LALCalloc(1, mObsCohBest*sizeof(REAL8));	
+  }
 
-  velV.length = mObsCohBest;
-  velV.data = (REAL8Cart3Coor *)LALCalloc(1, mObsCohBest*sizeof(REAL8Cart3Coor));
+  if (out->timeDiffV == NULL) {
+    out->timeDiffV = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
+    out->timeDiffV->length = mObsCohBest;
+    out->timeDiffV->data = (REAL8 *)LALCalloc(1, mObsCohBest*sizeof(REAL8));	
+  }
+
+  if (out->velV == NULL) {
+    out->velV =  (REAL8Cart3CoorVector *)LALCalloc(1, sizeof(REAL8Cart3CoorVector));
+    out->velV->length = mObsCohBest;
+    out->velV->data = (REAL8Cart3Coor *)LALCalloc(1, mObsCohBest*sizeof(REAL8Cart3Coor));
+  }
+
+  if (out->pgV == NULL) {
+    out->pgV = (HOUGHPeakGramVector *)LALCalloc(1, sizeof(HOUGHPeakGramVector));
+    out->pgV->length = mObsCohBest;
+    out->pgV->pg = (HOUGHPeakGram *)LALCalloc(1, mObsCoh*sizeof(HOUGHPeakGram));
+  }
 
   index = LALCalloc(1, mObsCohBest*sizeof(UINT4));  
   gsl_sort_largest_index( index, mObsCohBest, in->weightsV->data, 1, mObsCoh);	
 
   for ( k = 0; k < mObsCohBest; k++) {
 
-    weightsV.data[k] = in->weightsV->data[index[k]];    
-    timeDiffV.data[k] = in->timeDiffV->data[index[k]];    
+    out->weightsV->data[k] = in->weightsV->data[index[k]];    
+    out->timeDiffV->data[k] = in->timeDiffV->data[index[k]];    
 
-    velV.data[k].x = in->velV->data[index[k]].x;
-    velV.data[k].y = in->velV->data[index[k]].y;
-    velV.data[k].z = in->velV->data[index[k]].z;
+    out->velV->data[k].x = in->velV->data[index[k]].x;
+    out->velV->data[k].y = in->velV->data[index[k]].y;
+    out->velV->data[k].z = in->velV->data[index[k]].z;
+
+    /* this copies the pointers to the peakgram data from the input */
+    out->pgV->pg[k] = in->pgV->pg[index[k]];
 
   }
 
-
-  gsl_sort_index( index, timeDiffV.data, 1, mObsCohBest);	
-
-  out->weightsV = &weightsV;
-  out->timeDiffV = &timeDiffV;
-  out->velV = &velV;
+  /*   gsl_sort_index( index, timeDiffV.data, 1, mObsCohBest);	 */
   
   LALFree(index);
 
