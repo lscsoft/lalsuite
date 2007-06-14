@@ -253,10 +253,12 @@ XLALComputeNullStatistic (
   {
     for (m=0; m<(INT4)numPoints; m++)
     {
-      nullStatRe = cData[h1idx]->data->data[m].re / params->sigmasq[h1idx]
-                 - cData[h2idx]->data->data[m].re / params->sigmasq[h2idx];
-      nullStatIm = cData[h1idx]->data->data[m].im / params->sigmasq[h1idx]
-                 - cData[h2idx]->data->data[m].im / params->sigmasq[h2idx];
+      nullStatRe = 
+          (cData[LAL_IFO_H1]->data->data[m].re / params->sigmasq[LAL_IFO_H1])
+        - (cData[LAL_IFO_H2]->data->data[m].re / params->sigmasq[LAL_IFO_H2]);
+      nullStatIm = 
+          (cData[LAL_IFO_H1]->data->data[m].im / params->sigmasq[LAL_IFO_H1])
+        - (cData[LAL_IFO_H2]->data->data[m].im / params->sigmasq[LAL_IFO_H2]);
       nullStatVec->data->data[m] = 
          ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / norm ;
     }
@@ -264,10 +266,12 @@ XLALComputeNullStatistic (
   }
   else
   {
-    nullStatRe = cData[h1idx]->data->data[idx].re / params->sigmasq[h1idx]
-               - cData[h2idx]->data->data[idx].re / params->sigmasq[h2idx] ;
-    nullStatIm = cData[h1idx]->data->data[idx].im / params->sigmasq[h1idx]
-               - cData[h2idx]->data->data[idx].im / params->sigmasq[h2idx] ;
+    nullStatRe = 
+        (cData[1]->data->data[idx].re / params->sigmasq[1])
+      - (cData[2]->data->data[idx].re / params->sigmasq[2]);
+    nullStatIm = 
+        (cData[LAL_IFO_H1]->data->data[idx].im / params->sigmasq[LAL_IFO_H1])
+      - (cData[LAL_IFO_H2]->data->data[idx].im / params->sigmasq[LAL_IFO_H2]);
     eventNullStat = ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / norm ;
   }
 
