@@ -320,8 +320,6 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighAM",          0,  UVAR_OPTIONAL, "Use amplitude modulation weights", &uvar_weighAM),         &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighNoise",       0,  UVAR_OPTIONAL, "Use SFT noise weights", &uvar_weighNoise), &status);  
   LAL_CALL( LALRegisterINTUserVar(    &status, "keepBestSFTs",     0,  UVAR_OPTIONAL, "Number of best SFTs to use (default--keep all)", &uvar_keepBestSFTs),  &status);
-
-
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printLog",         0,  UVAR_OPTIONAL, "Print Log file", &uvar_printLog), &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",  &uvar_earthEphemeris),  &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file", &uvar_sunEphemeris), &status);
@@ -667,8 +665,8 @@ int main(int argc, char *argv[]){
 
 
   /* min and max values significance that are possible */
-  minSignificance = -sqrt(mObsCoh*alphaPeak/(1-alphaPeak));
-  maxSignificance = sqrt(mObsCoh*(1-alphaPeak)/alphaPeak);
+  minSignificance = -sqrt(mObsCohBest * alphaPeak/(1-alphaPeak));
+  maxSignificance = sqrt(mObsCohBest * (1-alphaPeak)/alphaPeak);
       
 
   /* loop over sky patches -- main Hough calculations */
@@ -708,15 +706,13 @@ int main(int argc, char *argv[]){
 	
       }
       
-
       /* calculate the sum of the weights squared */
       sumWeightSquare = 0.0;
-      for ( k = 0; k < mObsCoh; k++)
-	sumWeightSquare += weightsV.data[k] * weightsV.data[k];
-
+      for ( k = 0; k < mObsCohBest; k++)
+	sumWeightSquare += best.weightsV->data[k] * best.weightsV->data[k];
 
       /* probability of selecting a peak expected mean and standard deviation for noise only */
-      meanN = mObsCoh* alphaPeak; 
+      meanN = mObsCohBest * alphaPeak; 
       sigmaN = sqrt(sumWeightSquare * alphaPeak * (1.0 - alphaPeak));
 
       if ( uvar_printSigma )
@@ -819,20 +815,20 @@ int main(int argc, char *argv[]){
 
 
       /****  general parameter settings and 1st memory allocation ****/      
-      lutV.length    = mObsCoh;
+      lutV.length    = mObsCohBest;
       lutV.lut = NULL;
-      lutV.lut = (HOUGHptfLUT *)LALCalloc(mObsCoh, sizeof(HOUGHptfLUT));
+      lutV.lut = (HOUGHptfLUT *)LALCalloc(mObsCohBest, sizeof(HOUGHptfLUT));
       
-      phmdVS.length  = mObsCoh;
+      phmdVS.length  = mObsCohBest;
       phmdVS.nfSize  = uvar_nfSizeCylinder;
       phmdVS.deltaF  = deltaF;
       phmdVS.phmd = NULL;
-      phmdVS.phmd=(HOUGHphmd *)LALCalloc(mObsCoh*uvar_nfSizeCylinder, sizeof(HOUGHphmd));
+      phmdVS.phmd=(HOUGHphmd *)LALCalloc(1, mObsCohBest*uvar_nfSizeCylinder*sizeof(HOUGHphmd));
       
       freqInd.deltaF = deltaF;
-      freqInd.length = mObsCoh;
+      freqInd.length = mObsCohBest;
       freqInd.data = NULL;
-      freqInd.data =  ( UINT8 *)LALCalloc(mObsCoh, sizeof(UINT8));
+      freqInd.data =  ( UINT8 *)LALCalloc(1, mObsCohBest*sizeof(UINT8));
       
 
       /* for non-demodulated data (SFT input)*/
@@ -931,10 +927,10 @@ int main(int argc, char *argv[]){
 	}
 	
 	/* ************* create all the LUTs at fBin ********************  */  
-	for (j=0;j< mObsCoh;++j){  /* create all the LUTs */
-	  parDem.veloC.x = velV.data[j].x;
-	  parDem.veloC.y = velV.data[j].y;
-	  parDem.veloC.z = velV.data[j].z;      
+	for (j = 0; j < mObsCohBest; ++j){  /* create all the LUTs */
+	  parDem.veloC.x = best.velV->data[j].x;
+	  parDem.veloC.y = best.velV->data[j].y;
+	  parDem.veloC.z = best.velV->data[j].z;      
 	  /* calculate parameters needed for buiding the LUT */
 	  LAL_CALL( LALNDHOUGHParamPLUT( &status, &parLut, &parSize, &parDem),&status );
 	  /* build the LUT */
@@ -944,15 +940,15 @@ int main(int argc, char *argv[]){
         
 	/************* build the set of  PHMD centered around fBin***********/     
 	phmdVS.fBinMin = fBin - floor( uvar_nfSizeCylinder/2. );
-	LAL_CALL( LALHOUGHConstructSpacePHMD(&status, &phmdVS, &pgV, &lutV), &status );
+	LAL_CALL( LALHOUGHConstructSpacePHMD(&status, &phmdVS, best.pgV, &lutV), &status );
 	if (uvar_weighAM || uvar_weighNoise) {
-	  LAL_CALL( LALHOUGHWeighSpacePHMD(&status, &phmdVS, &weightsV), &status);
+	  LAL_CALL( LALHOUGHWeighSpacePHMD(&status, &phmdVS, best.weightsV), &status);
 	}
 	
 	/* ************ initializing the Total Hough map space *********** */   
 	ht.xSide = xSide;
 	ht.ySide = ySide;
-	ht.mObsCoh = mObsCoh;
+	ht.mObsCoh = mObsCohBest;
 	ht.deltaF = deltaF;
 	ht.map   = NULL;
 	ht.map   = (HoughTT *)LALCalloc(xSide*ySide, sizeof(HoughTT));
@@ -987,8 +983,8 @@ int main(int argc, char *argv[]){
 	      ht.spinRes.data[0] =  f1dis * deltaF;
 
 	      /* construct path in time-freq plane */	      
-	      for (j=0;j< mObsCoh;++j){
-		freqInd.data[j] = fBinSearch + floor(timeDiffV.data[j]*f1dis + 0.5);
+	      for (j = 0 ; j < mObsCohBest; ++j){
+		freqInd.data[j] = fBinSearch + floor(best.timeDiffV->data[j]*f1dis + 0.5);
 	      }
 	      
 	      if (uvar_weighAM || uvar_weighNoise) {
@@ -1053,10 +1049,10 @@ int main(int argc, char *argv[]){
 	    /***** shift the search freq. & PHMD structure 1 freq.bin ****** */
 	    ++fBinSearch;
 	    
-	    LAL_CALL( LALHOUGHupdateSpacePHMDup(&status, &phmdVS, &pgV, &lutV), &status );
+	    LAL_CALL( LALHOUGHupdateSpacePHMDup(&status, &phmdVS, best.pgV, &lutV), &status );
 	    
 	    if (uvar_weighAM || uvar_weighNoise) {
-	      LAL_CALL( LALHOUGHWeighSpacePHMD( &status, &phmdVS, &weightsV), &status);	    
+	      LAL_CALL( LALHOUGHWeighSpacePHMD( &status, &phmdVS, best.weightsV), &status);	    
 	    }
 
 	  }   /* ********>>>>>>  closing second while  <<<<<<<<**********<  */
