@@ -179,6 +179,15 @@ char *lalWatch;
     REAL8 *deltaSize;
   } HoughSkyPatchesInfo;
     
+
+  typedef struct tagBestVariables{
+    UINT4 length;
+    REAL8Vector *weightsV;
+    REAL8Vector *timeDiffV;
+    REAL8Cart3CoorVector *velV;
+  } BestVariables;
+
+
 /*
  *  Functions Declarations (i.e., prototypes).
  */

@@ -150,12 +150,14 @@ void GetSFTNoiseWeights(LALStatus *status, REAL8Vector *out, MultiNoiseWeights  
 
 void GetPeakGramFromMultSFTVector(LALStatus *status, HOUGHPeakGramVector *out, MultiSFTVector *in, REAL8 thr);
 
-void SetUpSkyPatches(LALStatus           *status,
-		     HoughSkyPatchesInfo *out,
-		     CHAR                *skyFileName,
-		     CHAR                *skyRegion,
-		     REAL8               dAlpha,
-		     REAL8               dDelta);
+void SetUpSkyPatches(LALStatus *status, HoughSkyPatchesInfo *out, CHAR *skyFileName, CHAR *skyRegion, REAL8 dAlpha, REAL8 dDelta);
+
+void GetAMWeights(LALStatus *status, REAL8Vector *out, MultiDetectorStateSeries *mdetStates, REAL8 alpha, REAL8 delta);
+
+void SelectBestStuff(LALStatus      *status,
+		     BestVariables  *out,
+		     BestVariables  *in,		  
+		     UINT4          mObsCohBest);
 
 
 /******************************************/
@@ -184,7 +186,7 @@ int main(int argc, char *argv[]){
   /* vector of weights */
   REAL8Vector weightsV, weightsNoise, weightsVBest;
 
-  UINT4 *sortedSFTIndex=NULL;
+
 
   /* ephemeris */
   EphemerisData    *edat=NULL;
@@ -536,23 +538,23 @@ int main(int argc, char *argv[]){
   /* allocate memory for velocity vector */
   velV.length = mObsCoh;
   velV.data = NULL;
-  velV.data = (REAL8Cart3Coor *)LALCalloc(mObsCoh, sizeof(REAL8Cart3Coor));
+  velV.data = (REAL8Cart3Coor *)LALCalloc(1, mObsCoh*sizeof(REAL8Cart3Coor));
   
   /* allocate memory for timestamps vector */
   timeV.length = mObsCoh;
   timeV.data = NULL;
-  timeV.data = (LIGOTimeGPS *)LALCalloc( mObsCoh, sizeof(LIGOTimeGPS));
+  timeV.data = (LIGOTimeGPS *)LALCalloc( 1, mObsCoh*sizeof(LIGOTimeGPS));
   
   /* allocate memory for vector of time differences from start */
   timeDiffV.length = mObsCoh;
   timeDiffV.data = NULL; 
-  timeDiffV.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
+  timeDiffV.data = (REAL8 *)LALCalloc(1, mObsCoh*sizeof(REAL8));
   
   /* allocate noise and AMweights vectors */
   weightsV.length = mObsCoh;
   weightsV.data = (REAL8 *)LALCalloc(1, mObsCoh*sizeof(REAL8));
   
-  weightsVBest.length = mObsCoh;
+  weightsVBest.length = mObsCohBest;
   weightsVBest.data = (REAL8 *)LALCalloc(1, mObsCoh*sizeof(REAL8));
   
   weightsNoise.length = mObsCoh;
@@ -562,9 +564,8 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsNoise), &status);
   LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsV), &status);
   
-  sortedSFTIndex = LALCalloc(1,mObsCoh*sizeof(UINT4));  
-  
 
+ 
   
   /* get detector velocities weights vector, and timestamps */
   { 
@@ -673,13 +674,12 @@ int main(int argc, char *argv[]){
   maxSignificance = sqrt(mObsCohBest*(1-alphaPeak)/alphaPeak);
       
 
-  /* loop over sky patches */
+  /* loop over sky patches -- main Hough calculations */
   for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++)
     {
       UINT4 k, numsft;
       REAL8 sumWeightSquare;
       REAL8  meanN, sigmaN;
-      SkyPosition skypos;
 
       /* set sky positions and skypatch sizes */
       alpha = skyAlpha[skyCounter];
@@ -690,48 +690,15 @@ int main(int argc, char *argv[]){
       /* copy noise weights if required */
       if ( uvar_weighNoise )
 	memcpy(weightsV.data, weightsNoise.data, mObsCoh * sizeof(REAL8));
-      
+
       /* calculate amplitude modulation weights if required */
       if (uvar_weighAM) {
-
-	MultiAMCoeffs *multiAMcoef = NULL;
-	UINT4 iIFO, iSFT;
-
-	/* get the amplitude modulation coefficients */
-	skypos.longitude = alpha;
-	skypos.latitude = delta;
-	skypos.system = COORDINATESYSTEM_EQUATORIAL;
-	LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, mdetStates, skypos), &status);
-
-	/* loop over the weights and multiply them by the appropriate
-	   AM coefficients */
-	for ( k = 0, iIFO = 0; iIFO < numifo; iIFO++) {
-	  
-	  numsft = mdetStates->data[iIFO]->length;
-	
-	  for ( iSFT = 0; iSFT < numsft; iSFT++, k++) {	  
-
-	    REAL8 a, b;
-	    
-	    a = multiAMcoef->data[iIFO]->a->data[iSFT];
-	    b = multiAMcoef->data[iIFO]->b->data[iSFT];    
-	    weightsV.data[k] *= (a*a + b*b);
-	  } /* loop over SFTs */
-	} /* loop over IFOs */
-	  
-	LAL_CALL( LALHOUGHNormalizeWeights( &status, &weightsV), &status);
-
-	XLALDestroyMultiAMCoeffs ( multiAMcoef );
+	LAL_CALL( GetAMWeights( &status, &weightsV, mdetStates, alpha, delta), &status);
       }
-
-
+      
       /* sort weights vector to get the best sfts */
       if ( uvar_weighAM || uvar_weighNoise ) {
 	
-	gsl_sort_index( sortedSFTIndex, weightsV.data, 1, weightsV.length);	
-
-	weightsVBest.length = mObsCohBest;
-	weightsVBest.data = (REAL8 *)LALCalloc(1, mObsCoh*sizeof(REAL8));	
       }
       
 
@@ -1182,8 +1149,6 @@ int main(int argc, char *argv[]){
   LALFree(skySizeDelta);
 
   LALFree( nStarEventVec.event );
-
-  LALFree(sortedSFTIndex);
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
 
@@ -1952,6 +1917,126 @@ void SetUpSkyPatches(LALStatus           *status,
     } /* end skypatchfile reading block */    
   } /* end setting up of skypatches */
 
+
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+
+}
+
+
+void GetAMWeights(LALStatus                *status,
+		  REAL8Vector              *out,
+		  MultiDetectorStateSeries *mdetStates,		  
+		  REAL8                    alpha,
+		  REAL8                    delta)
+{
+
+  MultiAMCoeffs *multiAMcoef = NULL;
+  UINT4 iIFO, iSFT, k, numsft, numifo;
+  REAL8 a, b;
+  SkyPosition skypos;
+  
+  INITSTATUS (status, "GetAMWeights", rcsid);
+  ATTATCHSTATUSPTR (status);
+  
+  /* get the amplitude modulation coefficients */
+  skypos.longitude = alpha;
+  skypos.latitude = delta;
+  skypos.system = COORDINATESYSTEM_EQUATORIAL;
+  TRY ( LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, mdetStates, skypos), status);
+
+  numifo = mdetStates->length;
+  
+  /* loop over the weights and multiply them by the appropriate
+     AM coefficients */
+  for ( k = 0, iIFO = 0; iIFO < numifo; iIFO++) {
+    
+    numsft = mdetStates->data[iIFO]->length;
+    
+    for ( iSFT = 0; iSFT < numsft; iSFT++, k++) {	  
+            
+      a = multiAMcoef->data[iIFO]->a->data[iSFT];
+      b = multiAMcoef->data[iIFO]->b->data[iSFT];    
+      out->data[k] *= (a*a + b*b);
+
+    } /* loop over SFTs */
+
+  } /* loop over IFOs */
+  
+  TRY( LALHOUGHNormalizeWeights( status->statusPtr, out), status);
+  
+  XLALDestroyMultiAMCoeffs ( multiAMcoef );
+  
+
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+
+}
+
+
+
+void SelectBestStuff(LALStatus      *status,
+		     BestVariables  *out,
+		     BestVariables  *in,		  
+		     UINT4          mObsCohBest)
+{
+
+  UINT4 *index=NULL;
+  UINT4 k, mObsCoh;
+  REAL8Vector weightsV, timeDiffV;
+  REAL8Cart3CoorVector velV;
+
+  INITSTATUS (status, "SelectBestStuff", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT (out, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (in, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (in->length, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+  ASSERT (in->weightsV, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (in->timeDiffV, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (in->velV, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (mObsCohBest > 0, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+
+  mObsCoh = in->length;
+
+  /* memory allocation for output */
+  out->length = mObsCohBest;
+
+  weightsV.length = mObsCohBest;
+  weightsV.data = (REAL8 *)LALCalloc(1, mObsCohBest*sizeof(REAL8));	
+
+  timeDiffV.length = mObsCohBest;
+  timeDiffV.data = (REAL8 *)LALCalloc(1, mObsCohBest*sizeof(REAL8));	
+
+  velV.length = mObsCohBest;
+  velV.data = (REAL8Cart3Coor *)LALCalloc(1, mObsCohBest*sizeof(REAL8Cart3Coor));
+
+  index = LALCalloc(1, mObsCohBest*sizeof(UINT4));  
+  gsl_sort_largest_index( index, mObsCohBest, in->weightsV->data, 1, mObsCoh);	
+
+  for ( k = 0; k < mObsCohBest; k++) {
+
+    weightsV.data[k] = in->weightsV->data[index[k]];    
+    timeDiffV.data[k] = in->timeDiffV->data[index[k]];    
+
+    velV.data[k].x = in->velV->data[index[k]].x;
+    velV.data[k].y = in->velV->data[index[k]].y;
+    velV.data[k].z = in->velV->data[index[k]].z;
+
+  }
+
+
+  gsl_sort_index( index, timeDiffV.data, 1, mObsCohBest);	
+
+  out->weightsV = &weightsV;
+  out->timeDiffV = &timeDiffV;
+  out->velV = &velV;
+  
+  LALFree(index);
 
   DETATCHSTATUSPTR (status);
 	
