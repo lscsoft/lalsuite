@@ -738,9 +738,10 @@ int XLALREAL4SpectrumInvertTruncate(
  *
  * The input PSD is allowed to span a larger frequency band than the input
  * frequency series, but the frequency resolutions of the two must be the
- * same.  The return value is the input frequency series pointer on
- * success, or NULL on error.
- *
+ * same.  The frequency series is modified in place.  The return value is
+ * the input frequency series pointer on success, or NULL on error.  When
+ * an error occurs, the contents of the input frequency series are
+ * undefined.
  */
 
 
@@ -755,10 +756,15 @@ COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeri
 
   if((psd->deltaF != fseries->deltaF) ||
      (fseries->f0 < psd->f0))
+    /* resolution mismatch, or PSD does not span fseries at low end */
     XLAL_ERROR_NULL(func, XLAL_EINVAL);
 
   j = (fseries->f0 - psd->f0) / psd->deltaF;
+  if(j * psd->deltaF + psd->f0 != fseries->f0)
+    /* fseries does not start on an integer PSD sample */
+    XLAL_ERROR_NULL(func, XLAL_EINVAL);
   if(j + fseries->data->length > psd->data->length)
+    /* PSD does not span fseries at high end */
     XLAL_ERROR_NULL(func, XLAL_EINVAL);
 
   for(i = 0; i < fseries->data->length; i++, j++)
