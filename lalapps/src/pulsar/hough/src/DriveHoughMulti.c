@@ -480,7 +480,7 @@ int main(int argc, char *argv[]){
 
     /* catalog is ordered in time so we can get start, end time and tObs*/
     firstTimeStamp = catalog->data[0].header.epoch;
-    lastTimeStamp = catalog->data[mObsCoh - 1].header.epoch;
+    lastTimeStamp = catalog->data[catalog->length - 1].header.epoch;
     tObs = XLALGPSDiff( &lastTimeStamp, &firstTimeStamp ) + timeBase;
 
 
