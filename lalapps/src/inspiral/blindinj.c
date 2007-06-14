@@ -814,7 +814,7 @@ int main( int argc, char *argv[] )
           LALLIGOIPsd( NULL, &sim_psd_value, freq );
           thisSnrsq += fftData->data->data[k].re * fftData->data->data[k].re /
             sim_psd_value;
-          thisSnrsq += fftData->data->data[k].re * fftData->data->data[k].re /
+          thisSnrsq += fftData->data->data[k].im * fftData->data->data[k].im /
             sim_psd_value;
         }
         thisSnrsq *= 4*fftData->deltaF;
