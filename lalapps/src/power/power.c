@@ -282,32 +282,32 @@ static struct options *options_new(void)
 
 	*options = (struct options) {
 		.bandwidth = 0,	/* impossible */
-		.cal_cache_filename = NULL,	/* default */
+		.cal_cache_filename = NULL,	/* default == disable */
 		.channel_name = NULL,	/* impossible */
-		.comment = default_comment,	/* default */
+		.comment = default_comment,	/* default = "" */
 		.filter_corruption = -1,	/* impossible */
 		.mdc_cache_filename = NULL,	/* default == disable */
-		.mdc_channel_name = NULL,	/* default */
+		.mdc_channel_name = NULL,	/* impossible */
 		.noise_rms = -1.0,	/* default == disable */
 		.diagnostics = NULL,	/* default == disable */
 		.psd_length = 0,	/* impossible */
 		.resample_rate = 0,	/* impossible */
 		.seed = 1,	/* default */
-		.max_series_length = 0,	/* default */
+		.max_series_length = 0,	/* default == disable */
 		.calibrated = FALSE,	/* default */
 		.high_pass = -1.0,	/* impossible */
 		.cal_high_pass = -1.0,	/* impossible */
-		.max_event_rate = 0,	/* default */
+		.max_event_rate = 0,	/* default == disable */
 		.output_filename = NULL,	/* impossible */
 		.sim_distance = 10000.0,	/* default (10 Mpc) */
-		.sim_cache_filename = NULL,	/* default */
+		.sim_cache_filename = NULL,	/* default == disable */
 		.sim_burst_filename = NULL,	/* default == disable */
 		.simInjectionFile = NULL,	/* default == disable */
 		.sim_inspiral_filename = NULL,	/* default == disable */
 		.cache_filename = NULL,	/* default == disable */
 	};
 
-	memset(options->ifo, 0, sizeof(options->ifo));	/* empty */
+	memset(options->ifo, 0, sizeof(options->ifo));	/* default = "" */
 	XLALINT8NSToGPS(&options->gps_start, 0);	/* impossible */
 	XLALINT8NSToGPS(&options->gps_end, 0);	/* impossible */
 
@@ -757,8 +757,8 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	case 'W':
 		{
 		int window_length = atoi(optarg);
-		if((window_length < 2) || !is_power_of_2(window_length)) {
-			sprintf(msg, "must be greater than or equal to 2 and a power of 2 (%i specified)", window_length);
+		if((window_length < 4) || !is_power_of_2(window_length)) {
+			sprintf(msg, "must be greater than or equal to 4 and a power of 2 (%i specified)", window_length);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
