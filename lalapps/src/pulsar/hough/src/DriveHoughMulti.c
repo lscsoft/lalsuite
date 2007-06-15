@@ -99,7 +99,7 @@ RCSID( "$Id$");
 extern int lalDebugLevel;
 
 /* boolean global variables for controlling output */
-BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, uvar_printSigma;
+BOOLEAN uvar_printEvents, uvar_printMaps, uvar_printStats, uvar_printSigma;
 
 /* #define EARTHEPHEMERIS "./earth05-09.dat" */
 /* #define SUNEPHEMERIS "./sun05-09.dat"    */
@@ -216,10 +216,8 @@ int main(int argc, char *argv[]){
   CHAR   filehisto[ MAXFILENAMELENGTH ]; 
   CHAR   filestats[ MAXFILENAMELENGTH ]; 
   CHAR   fileEvents[ MAXFILENAMELENGTH ];
-  CHAR   fileTemplates[ MAXFILENAMELENGTH ];
   CHAR   fileMaps[ MAXFILENAMELENGTH ];
   CHAR   fileSigma[ MAXFILENAMELENGTH ];
-  FILE   *fpTemplates = NULL;
   FILE   *fpEvents = NULL;
   FILE   *fp1 = NULL;
   FILE   *fpSigma = NULL;
@@ -279,7 +277,6 @@ int main(int argc, char *argv[]){
   uvar_peakThreshold = THRESHOLD;
   uvar_houghThreshold = HOUGHTHRESHOLD;
   uvar_printEvents = FALSE;
-  uvar_printTemplates = FALSE;
   uvar_printMaps = FALSE;
   uvar_printStats = FALSE;
   uvar_printSigma = FALSE;
@@ -327,7 +324,6 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "dirnameOut",      'o', UVAR_OPTIONAL, "Output directory", &uvar_dirnameOut), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "fbasenameOut",     0,  UVAR_OPTIONAL, "Output file basename", &uvar_fbasenameOut), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",        0,  UVAR_OPTIONAL, "Print Hough maps", &uvar_printMaps), &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printTemplates",   0,  UVAR_OPTIONAL, "Print templates file", &uvar_printTemplates),  &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "houghThreshold",   0,  UVAR_OPTIONAL, "Hough threshold (No. of sigmas)", &uvar_houghThreshold),  &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printEvents",      0,  UVAR_OPTIONAL, "Print events above threshold", &uvar_printEvents),     &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",       0,  UVAR_OPTIONAL, "Print Hough statistics", &uvar_printStats), &status);  
@@ -733,7 +729,7 @@ int main(int argc, char *argv[]){
       /* opening the output statistics and event files */
 
       /*  create directory fnameout/skypatch_$j using mkdir if required */
-      if ( uvar_printStats || uvar_printEvents || uvar_printTemplates || uvar_printMaps )
+      if ( uvar_printStats || uvar_printEvents || uvar_printMaps )
 	{
 
 	  /* create the directory name uvar_dirnameOut/skypatch_$j */
@@ -763,13 +759,10 @@ int main(int argc, char *argv[]){
 	  strcat( filestats, uvar_fbasenameOut);
 	  strcpy( filehisto, filestats);
 
-	}  /* if ( uvar_printStats || uvar_printEvents || uvar_printTemplates || uvar_printMaps ) */
+	}  /* if ( uvar_printStats || uvar_printEvents || uvar_printMaps ) */
 
       if ( uvar_printEvents )
 	strcpy( fileEvents, filestats);
-
-      if ( uvar_printTemplates )
-	strcpy(fileTemplates, filestats);
 
       if ( uvar_printMaps )
 	strcpy(fileMaps, filestats);
@@ -798,19 +791,6 @@ int main(int argc, char *argv[]){
 	    }
 	  setvbuf(fpEvents, (char *)NULL, _IOLBF, 0);      
 	  /*setlinebuf(fpEvents);*/ /*line buffered on */  
-	}
-
-      if ( uvar_printTemplates )
-	{
-	  /* create and open templates file */
-	  strcat( fileTemplates, "templates");
-	  if ( (fpTemplates = fopen(fileTemplates, "w")) == NULL)
-	    {
-	      fprintf(stderr, "Unable to create file %s\n", fileTemplates);
-	      return DRIVEHOUGHCOLOR_EFILE;
-	    }
-	  setvbuf(fpTemplates, (char *)NULL, _IOLBF, 0);      
-	  /*setlinebuf(fpTemplates);*/ /*line buffered on */   
 	}
 
 
@@ -1037,9 +1017,6 @@ int main(int argc, char *argv[]){
 		LAL_CALL( PrintHoughEvents (&status, fpEvents, uvar_houghThreshold, &ht,
 					    &patch, &parDem, meanN, sigmaN), &status );
 
-	      if ( uvar_printTemplates )
-		LAL_CALL( PrintHoughEvents (&status, fpTemplates, 0.0, &ht, &patch, &parDem, meanN, sigmaN), &status);
-
 	      ++iHmap;
 	    } /* end loop over spindown values */ 
 	    
@@ -1096,8 +1073,7 @@ int main(int argc, char *argv[]){
       if ( uvar_printEvents )
 	fclose(fpEvents);
 
-      if ( uvar_printTemplates )
-	fclose(fpTemplates);
+
      
 
       /******************************************************************/
