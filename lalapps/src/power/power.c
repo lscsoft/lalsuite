@@ -152,19 +152,6 @@ static int double_is_power_of_2(double x)
 
 
 /*
- * Return TRUE if a is an integer multiple of b.
- */
-
-
-static int double_is_int_multiple_of(double a, double b)
-{
-	const double epsilon = 0;
-	int n = a / b;
-	return fabs(1 - n * b / a) <= epsilon;
-}
-
-
-/*
  * ============================================================================
  *
  *                       Initialize and parse arguments
@@ -962,8 +949,8 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	 * Set windowShift.
 	 */
 
-	/*params->windowShift = params->window->data->length / 2 - (1 - params->fractional_stride) * params->maxTileDuration * options->resample_rate;*/
-	params->windowShift = params->window->data->length / 4;
+	params->windowShift = params->window->data->length / 2 - (1 - params->fractional_stride) * params->maxTileDuration * options->resample_rate;
+	/*params->windowShift = params->window->data->length / 4;*/
 
 	/*
 	 * Check the order of the start and stop times.
