@@ -1,28 +1,27 @@
-% $Id$
+% $Id$ making up 0.25 
 
-%prefix='/local_data/sintes/S4/MultiMC_100_199_500/MCfreq_';
-prefix='/local_data/sintes/S4/MultiMC/MultiMC_100_599_500/MCfreq_';
-fileoutput = 'MultiMC_100_600';
+%prefix='/local_data/sintes/S4/MultiMC/MultiMC_100_1000_500/MCfreq_';
+prefix='/local_data/sintes/S4/MultiMC/MultiMC/MCfreq_';
+
+%fileoutput = 'MultiMC_100_1000.25_500';
+fileoutput = 'MultiMC_50_100.25_500';
 fid = fopen(fileoutput, 'w');
 
-
 % file with driver output
-file = 'SigMax1Hz.mat';
+%file = 'SigMax25.mat';
+file = 'MultiSigMax25_50_100W.mat';
 load(file);
 
 Bands = BandList(:,1);
-%Nbands = length(Bands);
-Nbands = 500;
+Nbands = length(Bands);
 
-
-%fshift=100;
-fshift=0;
-%Nbands = 400-fshift;
+fshift=0;   
 
 for bandnumber = fshift+1:(fshift+Nbands); %the  current frequency band
    fmin = BandList(bandnumber, 1);
    fmax = BandList(bandnumber, 2);
-   basestring = strcat(prefix, int2str( fmin ) );
+      
+   basestring = strcat(prefix, num2str( fmin ) );
    h0string = strcat(basestring, '_h0');
    ncstring = strcat(basestring, '_nc');
    Ncount = load(ncstring);
@@ -41,7 +40,6 @@ for bandnumber = fshift+1:(fshift+Nbands); %the  current frequency band
       fprintf(fid,' %d %d ', h0val(h0num), CH(h0num) );
    end
    
-
    h0vec =h0val;
    CLvec = CH;
    UL=0;
@@ -87,8 +85,7 @@ for bandnumber = fshift+1:(fshift+Nbands); %the  current frequency band
      large = find(CH > 0.955);
      h0max = h0val(large(1));
    end
-
-   
+ 
    fprintf(fid,' %d  %d %d \n', h0min, h0max, UL);
    bandnumber
 

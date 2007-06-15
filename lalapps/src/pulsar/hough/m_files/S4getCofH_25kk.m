@@ -1,28 +1,38 @@
-% $Id$
+% $Id$ making up 0.25 % UL using the old run
 
 %prefix='/local_data/sintes/S4/MultiMC_100_199_500/MCfreq_';
-prefix='/local_data/sintes/S4/MultiMC/MultiMC_100_599_500/MCfreq_';
-fileoutput = 'MultiMC_100_600';
+%prefix='/local_data/sintes/S4/MultiMC/MultiMC_100_599_500/MCfreq_';
+prefix='/local_data/sintes/S4/MultiMC/MultiMC_600_999.5_500/MCfreq_';
+
+%fileoutput = 'MultiMC_100_600.25_coarse';
+fileoutput = 'MultiMC_600_1000.25_coarse';
+
 fid = fopen(fileoutput, 'w');
 
-
 % file with driver output
-file = 'SigMax1Hz.mat';
+file = 'SigMax25.mat';
 load(file);
 
 Bands = BandList(:,1);
 %Nbands = length(Bands);
-Nbands = 500;
 
+%The first 100-600Hz
+%Nbands = 2000; %valid for 100-600 Hz
 
-%fshift=100;
-fshift=0;
-%Nbands = 400-fshift;
+%The 600-1000 Hz
+Nbands = 1600; %valid for 600-1000 Hz
+
+%fshift=0;   %valid for 100-600 Hz
+fshift=2000; %valid for 600-1000 Hz
 
 for bandnumber = fshift+1:(fshift+Nbands); %the  current frequency band
    fmin = BandList(bandnumber, 1);
    fmax = BandList(bandnumber, 2);
-   basestring = strcat(prefix, int2str( fmin ) );
+   
+   %fminNum= floor(fmin); %valid for 100-600 Hz
+   fminNum= floor(fmin*2)/2; %valid for 600-1000 Hz
+   
+   basestring = strcat(prefix, num2str( fminNum ) );
    h0string = strcat(basestring, '_h0');
    ncstring = strcat(basestring, '_nc');
    Ncount = load(ncstring);

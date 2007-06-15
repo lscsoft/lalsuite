@@ -1,12 +1,11 @@
-%kk=load('./nstar_100_1000.txt');
-kk=load('./nstarMulti_50_100.txt');
+kk=load('./nstar_800_900_noweights.txt');
 significance=kk(:,2);
 FreqValues=kk(:,3);
 
 clear kk
 
-BandList(:,1) = 50:0.25:99.75;
-BandList(:,2) = BandList(:,1)+ 0.25;
+BandList(:,1) = 800:0.5:899.5;
+BandList(:,2) = BandList(:,1)+ 0.5;
 
 Nbands = length(BandList);
 
@@ -15,13 +14,8 @@ for bandnumber = 1:Nbands; %the  current frequency band
    fmax = BandList(bandnumber, 2);
 
    indices = find (FreqValues >= fmin & FreqValues <=fmax);
-   if (length(indices)>0)
-     Sigmax(bandnumber) = max( significance(indices));
-   else
-     Sigmax(bandnumber) = NaN ;
-   end
-   
+   Sigmax(bandnumber) = max( significance(indices));
 end
 
-save MultiSigMax25_50_100W BandList Sigmax
+save SigMaxNoW800 BandList Sigmax
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

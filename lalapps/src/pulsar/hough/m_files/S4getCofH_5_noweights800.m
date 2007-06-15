@@ -1,28 +1,27 @@
 % $Id$
 
 %prefix='/local_data/sintes/S4/MultiMC_100_199_500/MCfreq_';
-prefix='/local_data/sintes/S4/MultiMC/MultiMC_100_599_500/MCfreq_';
-fileoutput = 'MultiMC_100_600';
+prefix='/local_data/sintes/S4/MultiMC/MultiMC_800_900_noweights/MCfreq_';
+fileoutput = 'MultiMC_800_900.5_noweights';
 fid = fopen(fileoutput, 'w');
 
 
 % file with driver output
-file = 'SigMax1Hz.mat';
+file = 'SigMaxNoW800.mat';
 load(file);
 
 Bands = BandList(:,1);
 %Nbands = length(Bands);
-Nbands = 500;
+Nbands = 200;
 
-
-%fshift=100;
 fshift=0;
-%Nbands = 400-fshift;
+
+%fshift=1000;
 
 for bandnumber = fshift+1:(fshift+Nbands); %the  current frequency band
    fmin = BandList(bandnumber, 1);
    fmax = BandList(bandnumber, 2);
-   basestring = strcat(prefix, int2str( fmin ) );
+   basestring = strcat(prefix, num2str( fmin ) );
    h0string = strcat(basestring, '_h0');
    ncstring = strcat(basestring, '_nc');
    Ncount = load(ncstring);
