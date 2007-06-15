@@ -118,7 +118,8 @@ TFTiling *XLALCreateTFTiling(
 	 * no need to test them all.  likewise for the bandwidths.
 	 */
 
-	if((min_length < inv_fractional_stride) ||
+	if((inv_fractional_stride * fractional_stride != 1) ||
+	   !is_int_multiple_of(min_length, inv_fractional_stride) ||
 	   !is_int_multiple_of(tiling_t_length, min_length) ||
 	   !is_int_multiple_of(tiling_t_length, max_length) ||
 	   !is_int_multiple_of(tiling_n_channels, min_channels) ||
@@ -155,11 +156,26 @@ TFTiling *XLALCreateTFTiling(
 	 */
 
 	FOR_EACH_TILE {
+		/*
+		 * co-ordinates
+		 */
+
 		tile->channel0 = channel_start;
 		tile->channels = channels;
 		tile->tstart = t_start;
 		tile->tend = t_start + t_length;
-		tile->dof = ((tile->tend - tile->tstart) * tile->channels) * 2 * plane_deltaT * plane_deltaF;
+
+		/*
+		 * t_length * channels = # of pixels in tile
+		 * 2 * deltaT * deltaF = degrees of freedom in 1 pixel
+		 */
+
+		tile->dof = (t_length * channels) * 2 * plane_deltaT * plane_deltaF;
+
+		/*
+		 * for safety
+		 */
+
 		tile->excessPower = XLAL_REAL8_FAIL_NAN;
 		tile->confidence = XLAL_REAL8_FAIL_NAN;
 		tile++;
