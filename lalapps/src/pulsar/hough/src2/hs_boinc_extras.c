@@ -548,6 +548,17 @@ static void worker (void) {
 	  LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve input file '%s'\n", startc);
 	}
 
+#ifdef _WIN32
+	/* The SFTfileIO library in LAL of course doesn't use boinc_fopen etc., so
+	   for Windows, we have to translate the path separator '/' to '\' */
+	{
+	  char *c = appc;
+	  while((*c != '\0') && (c < appc+255)) {
+	    if(*c == '/') *c = '\\';
+	    c++;
+	  }
+	}
+#endif
 	/* append a ';' to resolved string */
 	appc = appc + strlen(appc) + 1;
 	*(appc-1) = ';';
@@ -561,6 +572,16 @@ static void worker (void) {
       if (boinc_resolve_filename(startc,appc,255)) {
 	LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve input file '%s'\n", startc);
       }
+
+#ifdef _WIN32
+      {
+	char *c = appc;
+	while((*c != '\0') && (c < appc+255)) {
+	  if(*c == '/') *c = '\\';
+	  c++;
+	}
+      }
+#endif
     }
 
     /* output file */
