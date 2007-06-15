@@ -41,8 +41,8 @@ echo job $1 running as process $process owned by $iam on `hostname`
 # choose detector 
 # L is L1 and H is H1
 #det=L1
-det=H1
-#det=H2
+#det=H1
+det=H2
 
 # the detector option in the hough driver is a number and choose harmonicsfile
 # 2 is L1 and 3 is H1
@@ -75,42 +75,35 @@ mkdir -p $tempworkdir
 # change to temporary working dir
 cd $tempworkdir
 
-# create temporary directory to write the output
-tempoutdir=${tempworkdir}/${det}
-mkdir -p $tempoutdir
-
 # ----------------------------------
 # copy files from some central place
 # ----------------------------------
 
-rsync -a ${startdir}/sun00-04.dat .
-rsync -a ${startdir}/earth00-04.dat .
-rsync -a ${startdir}/MCInjectS2 .
-rsync -a ${startdir}/${det}_h0range.run .
+rsync -a $startdir/sun00-04.dat .
+rsync -a $startdir/earth00-04.dat .
+rsync -a $startdir/MCInjectS2 .
 rsync -a ${startdir}/${harmonicsfile} .
 echo finished copying stuff
 
-# choose freq band
-startfreq=200.0
-freq=`add $1 $startfreq` 
+#set h0 range and frequency band
+lowh0=8.15e-23
+highh0=8.35e-23
+freq=258
 band=1.0
 echo frequency range is from $freq Hz with bandwidth $band Hz
 
-# choose range for h0
-h0rangeinfo=`./${det}_h0range.run $freq`
-lowh0=`echo $h0rangeinfo | awk '{print $1}'`
-highh0=`echo $h0rangeinfo | awk '{print $2}'`
-echo range of h0 is from $lowh0 to $highh0
+# create temporary directory to write the output
+tempoutdir=${tempworkdir}/Band${freq}_${det}
+mkdir -p $tempoutdir
 
 # now run MCInject
-./MCInjectS2 -d 0 -i ${detnum} -f $freq -b 1.0 -E ./earth00-04.dat -S ./sun00-04.dat -D $sftdir -o ${tempoutdir}/MC_${det}_$freq -N 5000 -m $lowh0 -M $highh0 -n 10 -H $harmonicsfile
+./MCInjectS2 -d 0 -i ${detnum} -f $freq -b 1.0 -E ./earth00-04.dat -S ./sun00-04.dat -D $sftdir -o ${tempoutdir}/MC_${det}_$1 -N 1000 -m $lowh0 -M $highh0 -n 10 -H $harmonicsfile
 
 echo finished running injections
 
 sleep 30
 
 # create the output directory
-mkdir -p $startdir/$det
 rsync -a $tempoutdir $startdir
 
 echo done!

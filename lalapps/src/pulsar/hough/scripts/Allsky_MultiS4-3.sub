@@ -1,10 +1,10 @@
 universe   = vanilla
-executable = /home/sintes/S4/MCscript_Multi-2.sh
-#input      = inMultiMC-1.$(Process)
-output     = outMultiMC-1.$(Process)
-error      = errMultiMC-1.$(Process)
-log        = logMultiMC-1.$(Process)
-initialdir = /home/sintes/S4
+executable = /home/badkri/S4/Allsky_MultiS4-3.sh
+#input      = inMulti-3.$(Process)
+output     = outMulti-3.$(Process)
+error      = errMulti-3.$(Process)
+log        = logMulti-3.$(Process)
+initialdir = /home/badkri/S4
 +Prio = "42"
 notification = Never
 arguments  =  $(Process)
