@@ -949,8 +949,8 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	 * Set windowShift.
 	 */
 
-	params->windowShift = params->window->data->length / 2 - (1 - params->fractional_stride) * params->maxTileDuration * options->resample_rate;
-	/*params->windowShift = params->window->data->length / 4;*/
+	/*params->windowShift = params->window->data->length / 2 - (1 - params->fractional_stride) * params->maxTileDuration * options->resample_rate;*/
+	params->windowShift = params->window->data->length / 4;
 
 	/*
 	 * Check the order of the start and stop times.
