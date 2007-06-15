@@ -34,19 +34,6 @@ NRCSID(CREATETFPLANEC, "$Id$");
 
 
 /*
- * Return TRUE if a is an integer multiple of b.
- */
-
-
-static int double_is_int_multiple_of(double a, double b)
-{
-	const double epsilon = 0;
-	int n = a / b;
-	return fabs(1 - n * b / a) <= epsilon;
-}
-
-
-/*
  * Return TRUE if a is an integer multiple of b
  */
 
@@ -58,6 +45,19 @@ static int is_int_multiple_of(int a, int b)
 		return 0;
 	n = a / b;
 	return n * b == a;
+}
+
+
+/*
+ * Return TRUE if a is an integer multiple of b.
+ */
+
+
+static int double_is_int_multiple_of(double a, double b)
+{
+	const double epsilon = 0;
+	int n = a / b;
+	return fabs(1 - n * b / a) <= epsilon;
 }
 
 
@@ -76,7 +76,11 @@ static int is_int_multiple_of(int a, int b)
 
 
 
-/******** <lalVerbatim file="CreateTFTilingCP"> ********/
+/*
+ * Allocate and initialize a tiling of the time-frequency plane.
+ */
+
+
 TFTiling *XLALCreateTFTiling(
 	UINT4 tiling_t_start,
 	UINT4 tiling_t_length,
@@ -87,11 +91,10 @@ TFTiling *XLALCreateTFTiling(
 	REAL8 max_tile_bandwidth,
 	REAL8 max_tile_duration
 )
-/******** </lalVerbatim> *********/
 {
 	const char func[] = "XLALCreateTFTiling";
 	TFTiling *tiling;
-	TFTile *tile;
+	TFTile *tiles;
 	int numtiles;
 
 	/*
@@ -134,6 +137,7 @@ TFTiling *XLALCreateTFTiling(
 	 */
 
 	if((inv_fractional_stride * fractional_stride != 1) ||
+	   (min_length * plane_deltaT != (1 / max_tile_bandwidth)) ||
 	   !is_int_multiple_of(min_length, inv_fractional_stride) ||
 	   !is_int_multiple_of(tiling_t_length, min_length) ||
 	   !is_int_multiple_of(tiling_t_length, max_length) ||
@@ -157,13 +161,13 @@ TFTiling *XLALCreateTFTiling(
 	 */
 
 	tiling = XLALMalloc(sizeof(*tiling));
-	tile = XLALMalloc(numtiles * sizeof(*tile));
-	if(!tiling || !tile) {
+	tiles = XLALMalloc(numtiles * sizeof(*tiles));
+	if(!tiling || !tiles) {
 		XLALFree(tiling);
-		XLALFree(tile);
+		XLALFree(tiles);
 		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 	}
-	tiling->tile = tile;
+	tiling->tiles = tiles;
 	tiling->numtiles = numtiles;
 
 	/*
@@ -175,44 +179,57 @@ TFTiling *XLALCreateTFTiling(
 		 * co-ordinates
 		 */
 
-		tile->channel0 = channel_start;
-		tile->channels = channels;
-		tile->tstart = t_start;
-		tile->tend = t_start + t_length;
+		tiles->channel0 = channel_start;
+		tiles->channels = channels;
+		tiles->tstart = t_start;
+		tiles->tend = t_start + t_length;
 
 		/*
 		 * t_length * channels = # of pixels in tile
 		 * 2 * deltaT * deltaF = degrees of freedom in 1 pixel
 		 */
 
-		tile->dof = (t_length * channels) * 2 * plane_deltaT * plane_deltaF;
+		tiles->dof = (t_length * channels) * 2 * plane_deltaT * plane_deltaF;
 
 		/*
 		 * for safety
 		 */
 
-		tile->excessPower = XLAL_REAL8_FAIL_NAN;
-		tile->confidence = XLAL_REAL8_FAIL_NAN;
-		tile++;
+		tiles->excess_power = XLAL_REAL8_FAIL_NAN;
+		tiles->confidence = XLAL_REAL8_FAIL_NAN;
+		tiles->h_rss = XLAL_REAL8_FAIL_NAN;
+
+		/*
+		 * Next
+		 */
+
+		tiles++;
 	}
 
 	return(tiling);
 }
 
 
-/******** <lalVerbatim file="DestroyTFTilingCP"> ********/
+/*
+ * Free a tiling of the time-frequency plane.
+ */
+
+
 void XLALDestroyTFTiling(
 	TFTiling *tiling
 )
-/******** </lalVerbatim> ********/
 {
 	if(tiling)
-		XLALFree(tiling->tile);
+		XLALFree(tiling->tiles);
 	XLALFree(tiling);
 }
 
 
-/******** <lalVerbatim file="CreateTFPlaneCP"> ********/
+/*
+ * Create and initialize a time-frequency plane object.
+ */
+
+
 REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	/* length of time series from which TF plane will be computed */
 	UINT4 tseries_length,
@@ -233,7 +250,6 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	/* largest tile's duration */
 	REAL8 tiling_max_duration
 )
-/******** </lalVerbatim> ********/
 {
 	static const char func[] = "XLALCreateTFPlane";
 	REAL8 fseries_deltaF = 1.0 / (tseries_length * tseries_deltaT);
@@ -314,11 +330,14 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 }
 
 
-/******** <lalVerbatim file="DestroyTFPlaneCP"> ********/
+/*
+ * Free a time-frequency plane object.
+ */
+
+
 void XLALDestroyTFPlane(
 	REAL4TimeFrequencyPlane *plane
 )
-/******** </lalVerbatim> ********/
 {
 	unsigned i;
 

@@ -42,7 +42,7 @@ int XLALComputeExcessPower(
 	size_t i;
 
 	for(i = 0; i < plane->tiling->numtiles; i++) {
-		TFTile *tile = &plane->tiling->tile[i];
+		TFTile *tile = &plane->tiling->tiles[i];
 		const double channel_overlap = XLALREAL8SequenceSum(plane->channel_overlap, tile->channel0, tile->channels - 1);
 		const double pixel_mean_square = XLALREAL8SequenceSumSquares(plane->channel_rms, tile->channel0, tile->channels) / (tile->channels + channel_overlap);
 		const unsigned tstep = (tile->tend - tile->tstart) / tile->dof;
@@ -64,8 +64,8 @@ int XLALComputeExcessPower(
 			hsumsquares += hsum * hsum / (tile->channels + channel_overlap);
 		}
 
-		tile->excessPower = sumsquares - tile->dof;
-		tile->hrss = sqrt(hsumsquares - tile->dof * pixel_mean_square);
+		tile->excess_power = sumsquares - tile->dof;
+		tile->h_rss = sqrt(hsumsquares - tile->dof * pixel_mean_square);
 		tile->confidence = -XLALlnOneMinusChisqCdf(sumsquares, tile->dof);
 		if(XLALIsREAL8FailNaN(tile->confidence))
 			XLAL_ERROR(func, XLAL_EFUNC);

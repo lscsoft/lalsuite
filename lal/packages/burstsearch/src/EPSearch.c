@@ -92,9 +92,9 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 	XLALGPSAdd(&event->peak_time, 0.5 * event->duration);
 	event->bandwidth = tile->channels * plane->deltaF;
 	event->central_freq = plane->flow + tile->channel0 * plane->deltaF + (0.5 * event->bandwidth);
-	/* FIXME: put hrss into the "hrss" column */
-	event->amplitude = tile->hrss;
-	event->snr = tile->excessPower;
+	/* FIXME: put h_rss into the "hrss" column */
+	event->amplitude = tile->h_rss;
+	event->snr = tile->excess_power;
 	event->confidence = tile->confidence;
 	event->string_cluster_t = XLAL_REAL4_FAIL_NAN;
 	event->event_id = 0;
@@ -103,14 +103,14 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 }
 
 
-static SnglBurstTable *XLALTFTilesToSnglBurstTable(SnglBurstTable *head, const REAL4TimeFrequencyPlane *plane, const TFTiling *tiling, REAL8 confidence_threshold)
+static SnglBurstTable *XLALTFTilesToSnglBurstTable(SnglBurstTable *head, const REAL4TimeFrequencyPlane *plane, REAL8 confidence_threshold)
 {
 	const char func[] = "XLALTFTilesToSnglBurstTable";
 	SnglBurstTable *oldhead;
 	size_t i;
 
-	for(i = 0; i < tiling->numtiles; i++) {
-		TFTile *tile = &tiling->tile[i];
+	for(i = 0; i < plane->tiling->numtiles; i++) {
+		TFTile *tile = &plane->tiling->tiles[i];
 
 		/* test confidence */
 		if(tile->confidence >= confidence_threshold) {
@@ -124,7 +124,7 @@ static SnglBurstTable *XLALTFTilesToSnglBurstTable(SnglBurstTable *head, const R
 		}
 
 		/* reset for safety */
-		tile->excessPower = XLAL_REAL8_FAIL_NAN;
+		tile->excess_power = XLAL_REAL8_FAIL_NAN;
 		tile->confidence = XLAL_REAL8_FAIL_NAN;
 	}
 
@@ -154,7 +154,7 @@ SnglBurstTable *XLALEPSearch(
 	RealFFTPlan *rplan;
 	REAL4FrequencySeries *psd;
 	REAL4TimeSeries *cuttseries;
-	REAL4TimeFrequencyPlane *tfplane;
+	REAL4TimeFrequencyPlane *plane;
 
 	/*
 	 * FreqSeriesToTFPlane() is passed a frequency series, and it needs
@@ -179,9 +179,9 @@ SnglBurstTable *XLALEPSearch(
 	fplan = XLALCreateForwardREAL4FFTPlan(params->window->data->length, 1);
 	rplan = XLALCreateReverseREAL4FFTPlan(params->window->data->length, 1);
 	psd = XLALCreateREAL4FrequencySeries("PSD", &tseries->epoch, 0, 0, &lalDimensionlessUnit, params->window->data->length / 2 + 1);
-	tfplane = XLALCreateTFPlane(params->window->data->length, params->window->data->length / 4, params->window->data->length / 2, tseries->deltaT, params->flow, params->bandwidth, params->fractional_stride, params->maxTileBandwidth, params->maxTileDuration);
+	plane = XLALCreateTFPlane(params->window->data->length, params->window->data->length / 4, params->window->data->length / 2, tseries->deltaT, params->flow, params->bandwidth, params->fractional_stride, params->maxTileBandwidth, params->maxTileDuration);
 	tukey = XLALCreateTukeyREAL4Window(params->window->data->length, 0.5);
-	if(!fplan || !rplan || !psd || !tfplane || !tukey) {
+	if(!fplan || !rplan || !psd || !plane || !tukey) {
 		errorcode = XLAL_EFUNC;
 		goto error;
 	}
@@ -270,7 +270,7 @@ SnglBurstTable *XLALEPSearch(
 		 */
 
 		XLALPrintInfo("XLALEPSearch(): computing the time-frequency decomposition\n");
-		if(XLALFreqSeriesToTFPlane(tfplane, fseries, psd, rplan, params->useOverWhitening)) {
+		if(XLALFreqSeriesToTFPlane(plane, fseries, psd, rplan, params->useOverWhitening)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
@@ -283,7 +283,7 @@ SnglBurstTable *XLALEPSearch(
 		 */
 
 		XLALPrintInfo("XLALEPSearch(): computing the excess power for each tile\n");
-		if(XLALComputeExcessPower(tfplane)) {
+		if(XLALComputeExcessPower(plane)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
@@ -297,7 +297,7 @@ SnglBurstTable *XLALEPSearch(
 
 		XLALPrintInfo("XLALEPSearch(): converting tiles to trigger list\n");
 		XLALClearErrno();
-		head = XLALTFTilesToSnglBurstTable(head, tfplane, tfplane->tiling, params->confidence_threshold);
+		head = XLALTFTilesToSnglBurstTable(head, plane, params->confidence_threshold);
 		if(xlalErrno) {
 			errorcode = XLAL_EFUNC;
 			goto error;
@@ -315,7 +315,7 @@ SnglBurstTable *XLALEPSearch(
 	XLALDestroyREAL4FFTPlan(rplan);
 	XLALDestroyREAL4FrequencySeries(psd);
 	XLALDestroyCOMPLEX8FrequencySeries(fseries);
-	XLALDestroyTFPlane(tfplane);
+	XLALDestroyTFPlane(plane);
 	XLALDestroyREAL4Window(tukey);
 	if(errorcode) {
 		XLALDestroySnglBurstTable(head);

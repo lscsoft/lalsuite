@@ -52,16 +52,15 @@ typedef struct tagTFTile {
 	/* number of degrees of freedom in this tile */
 	REAL8 dof;
 	/* computed tile properties */
-	REAL8 excessPower;
-	REAL8 hrss;
+	REAL8 excess_power;
+	REAL8 h_rss;
 	/* -ln P(event | stationary Gaussian white noise) */
 	REAL8 confidence;
 } TFTile;
 
 
 typedef struct tagTFTiling {
-	/* array of tiles */
-	TFTile *tile;
+	TFTile *tiles;
 	size_t numtiles;
 } TFTiling;
 
