@@ -959,21 +959,8 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		args_are_bad = TRUE;
 
 	/*
-	 * Make sure maxTileDuration and window_length are OK, and set
-	 * windowShift.
+	 * Set windowShift.
 	 */
-
-	if(!double_is_int_multiple_of(params->maxTileDuration * params->fractional_stride * options->resample_rate, 1)) {
-		sprintf(msg, "max tile duration * fractional stride (= %g s) must be an integer number of samples (= %g s)", params->maxTileDuration * params->fractional_stride, 1.0 / options->resample_rate);
-		print_bad_argument(argv[0], "max-tileduration", msg);
-		args_are_bad = TRUE;
-	}
-
-	if(params->window->data->length / 2 != block_commensurate(params->window->data->length / 2, params->maxTileDuration * options->resample_rate, params->maxTileDuration * params->fractional_stride * options->resample_rate)) {
-		sprintf(msg, "an integer number of the largest tiles (duration = %g s) must fit into 1/2 of the window length", params->maxTileDuration);
-		print_bad_argument(argv[0], "window-length", msg);
-		args_are_bad = TRUE;
-	}
 
 	/*params->windowShift = params->window->data->length / 2 - (1 - params->fractional_stride) * params->maxTileDuration * options->resample_rate;*/
 	params->windowShift = params->window->data->length / 4;
