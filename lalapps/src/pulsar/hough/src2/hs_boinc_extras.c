@@ -58,11 +58,11 @@ NRCSID(HSBOINCEXTRASCRCSID,"$Id$");
 
 
 
-/** MACROS **/
+/*^* MACROS *^*/
 
 #define MAX_PATH_LEN 512
 
-/* don't want to include LAL headers for PI */
+/** don't want to include LAL headers for PI */
 #define LAL_PI 3.1415926535897932384626433832795029  /**< pi */
 
 #define BOINC_TRY(test,code,mess) \
@@ -72,50 +72,60 @@ NRCSID(HSBOINCEXTRASCRCSID,"$Id$");
   }
     
 
-/* compare strings s1 and s2 up to the length of s1 (w/o the '\0'!!)
-   and set l to the length */
+/** compare strings s1 and s2 up to the length of s1 (w/o the '\0'!!)
+    and set l to the length */
 #define MATCH_START(s1,s2,l) (0 == strncmp(s1,s2,(l=strlen(s1))-1))
 
 
-/** global VARIABLES **/
+/*^* global VARIABLES *^*/
 
-/* program might have multiple output file(s) */
-static char **outfiles = NULL;        /* the names  of the output files */
-static int  noutfiles  = 0;           /* the number of the output files */
-static char resultfile[MAX_PATH_LEN]; /* the name of the file / zip archive to return */
+/** The program might have multiple output file(s) that are to be zipped into the archive
+    to be returned. A program can "register" files to be finally sent back by calling
+    register_output_file(). The function stores the information it gets in the following
+    variables (global within this module)
+*/
+static char **outfiles = NULL;        /**< the names  of the output files */
+static int  noutfiles  = 0;           /**< the number of the output files */
+static char resultfile[MAX_PATH_LEN]; /**< the name of the file / zip archive to return */
 
-/* FLOPS estimation */
+/** FLOPS estimation - may be set by command line option --WUfpops=.
+    When set, ((skypoint_counter / total_skypoints) * estimated_flops) is periodically
+    reported to the BOINC Client as the number of flops, so that together with information
+    from the Workunit Genrator, Scheduler and Validator leads to claiming the Credit that
+    the system intends to grant for a Workunit
+ **/
 static double estimated_flops = -1;
 
-/* hooks for communication with the graphics thread */
-void (*set_search_pos_hook)(float,float) = NULL;
-int (*boinc_init_graphics_hook)(void (*worker)(void)) = NULL;
-double *fraction_done_hook = NULL;
+/** hooks for communication with the graphics thread */
+int (*boinc_init_graphics_hook)(void (*worker)(void)) = NULL; /**< boinc_init_graphics hook -
+								 no graphics if this can't be loaded */
+void (*set_search_pos_hook)(float,float) = NULL; /**< updates the search position on the starsphere */
+double *fraction_done_hook = NULL; /**< hooks the "fraction done" counter of the graphics */
 
-/* declare graphics stuff here if we don't get it from a dynamic library */
+/** if we don't get these symbols from a dynamic library (BOINC_GRAPHICS==2) we declare them here */
 #if (BOINC_GRAPHICS == 1)
 extern double fraction_done;
 extern void set_search_pos(float RAdeg, float DEdeg);
 extern int boinc_init_graphics(void (*worker)(void));
 #endif
 
-/* worker() doesn't take arguments, so we have to pass them as (mol) global vars :-( */
+/** worker() doesn't take arguments, so we have to pass it argv/c as global vars :-( */
 static int global_argc;
 static char **global_argv;
 
-/* variables for checkpointing */
-static char* cptfilename;                 /* name of the checkpoint file */
-static FStatCheckpointFile* cptf = NULL;  /* FStatCheckpointFile structure */
-static UINT4 bufsize = 8*1024;            /* size of output file buffer */
-static UINT4 maxsize = 1024*1024;         /* maximal size of the output file */
-static double last_rac, last_dec;         /* last sky position, set by show_progress(),
-					     used by set_checkpoint() */
-static UINT4 last_count, last_total;      /* last template count, see last_rac */
+/** variables for checkpointing */
+static char* cptfilename;                 /**< name of the checkpoint file */
+static FStatCheckpointFile* cptf = NULL;  /**< FStatCheckpointFile structure */
+static UINT4 bufsize = 8*1024;            /**< size of output file buffer */
+static UINT4 maxsize = 1024*1024;         /**< maximal size of the output file */
+static double last_rac, last_dec;         /**< last sky position, set by show_progress(),
+					       used by set_checkpoint() */
+static UINT4 last_count, last_total;      /**< last template count, see last_rac */
 
 
 
 
-/** PROTOTYPES **/
+/*^* LOCAL FUNCTION PROTOTYPES *^*/
 static void worker (void);
 static void sighandler(int);
 static void write_checkpoint(char*);
@@ -124,35 +134,35 @@ static int  resolve_and_unzip(const char*, char*, const size_t);
 
 
 
-/** FUNCTIONS **/
+/*^* FUNCTIONS *^*/
 
 /** freaking LAL's REPORTSTATUS just won't work with any of NDEBUG or 
- ** LAL_NDEBUG set, so it's time to use our own...
- **/
-void ReportStatus( LALStatus *status )
+    LAL_NDEBUG set, so we write our own function that dumps the LALStatus
+    based on LogPrintf()
+ */
+void ReportStatus(LALStatus *status)
 { /* </lalVerbatim> */
-  LALStatus *ptr;                                                    
-  for ( ptr = status; ptr ; ptr = ptr->statusPtr )                  
-  {                                                           
-    LogPrintf ( LOG_NORMAL, "\nLevel %i: %s\n", ptr->level, ptr->Id );    
-    if ( ptr->statusCode )                                    
-    {                                                      
-      LogPrintf ( LOG_NORMAL, "\tStatus code %i: %s\n", ptr->statusCode,      
-                     ptr->statusDescription );                      
-    }                                                            
-    else                                                        
-    {                                                          
-      LogPrintf ( LOG_NORMAL, "\tStatus code 0: Nominal\n" );            
-    }                                                        
-    LogPrintf ( LOG_NORMAL, "\tfunction %s, file %s, line %i\n",      
-                   ptr->function, ptr->file, ptr->line );      
-  }                                                       
+  LALStatus *ptr;
+  for ( ptr = status; ptr ; ptr = ptr->statusPtr ) {                                         
+    LogPrintf ( LOG_NORMAL, "\nLevel %i: %s\n", ptr->level, ptr->Id );
+    if ( ptr->statusCode ) {
+      LogPrintf ( LOG_NORMAL, "\tStatus code %i: %s\n", ptr->statusCode,
+		  ptr->statusDescription );
+    } else {
+      LogPrintf ( LOG_NORMAL, "\tStatus code 0: Nominal\n" );
+    }
+    LogPrintf ( LOG_NORMAL, "\tfunction %s, file %s, line %i\n",
+                   ptr->function, ptr->file, ptr->line );
+  }
   return;
-
 }
 
-/** LALApps error handler */
-int BOINC_LAL_ErrHand (LALStatus  *stat, const char *func, const char *file, const int line, volatile const char *id) {
+/** BOINC-compatible LAL(Apps) error handler */
+int BOINC_LAL_ErrHand (LALStatus  *stat,
+		       const char *func,
+		       const char *file,
+		       const int line,
+		       volatile const char *id) {
   if (stat->statusCode) {
     fprintf(stderr,
             "Level 0: %s\n"
@@ -169,7 +179,7 @@ int BOINC_LAL_ErrHand (LALStatus  *stat, const char *func, const char *file, con
 
 
 /**
-  sighandler()
+  our own signal handler
 */
 #ifdef __GLIBC__
   /* needed to define backtrace() which is glibc specific*/
@@ -233,26 +243,26 @@ static void sighandler(int sig){
   this just sets some variables,
   so should be pretty fast and can be called several times a second
  */
-void show_progress(double rac,
-		   double dec,
-		   UINT4 count,
-		   UINT4 total
+void show_progress(double rac,  /**< right ascension */
+		   double dec,  /**< declination */
+		   UINT4 count, /**< current skypoint counter */
+		   UINT4 total  /**< total number of skypoints */
 		   ) {
   double fraction = (double)count / (double)total;
 
-  /* set globals for checkpoint */
+  /* set globals to be written into next checkpoint */
   last_rac = rac;
   last_dec = dec;
   last_count = count;
   last_total = total;
 
-  /* tell graphics thread */
+  /* tell graphics thread about fraction done and sky position */
   if (fraction_done_hook)
     *fraction_done_hook = fraction;
   if (set_search_pos_hook)
     set_search_pos_hook(rac * 180.0/LAL_PI, dec * 180.0/LAL_PI);
 
-  /* tell BOINC client */
+  /* tell BOINC client about fraction done and flops so far (faked from estimation) */
   boinc_fraction_done(fraction);
   if (estimated_flops >= 0)
     boinc_ops_cumulative( estimated_flops * fraction, 0 /*ignore IOPS*/ );
@@ -288,7 +298,7 @@ void register_output_file(char*filename /**< name of the output file to 'registe
 
 /**
   check if given file is a zip archive by looking for the zip-magic header 'PK\003\044'
-  RETURN: 1 = true, 0 = false, -1 = error
+  returns 1 if true, 0 if false, -1 if an error occurred
  */
 static int is_zipped ( const char *fname /**< name of the file to check for being zipped */
 		       ) {
@@ -318,7 +328,7 @@ static int is_zipped ( const char *fname /**< name of the file to check for bein
 
 
 /**
-  prepare an input file for the program, i.e. boinc_resolve and/or unzip it
+  prepare an input file for the program, i.e. boinc_resolve and/or unzip it if necessary
  */
 static int resolve_and_unzip(const char*filename, /**< filename toresolve */
 			     char*resfilename,    /**< resolved filename */
@@ -395,27 +405,32 @@ static int resolve_and_unzip(const char*filename, /**< filename toresolve */
   The worker() ist called either from main() directly or from boinc_init_graphics
   (in a separate thread). It does some funny things to the command line (mostly
   boinc-resolving filenames), then calls MAIN() (from HierarchicalSearch.c), and
-  finally handles the output / result file before properly exiting with boinc_finish().
+  finally handles the output / result file(s) before exiting with boinc_finish().
 */
 static void worker (void) {
   int argc    = global_argc;   /**< as worker is defined void worker(void), ... */
   char**argv  = global_argv;   /**< ...  take argc and argv from global variables */
-  int rargc   = global_argc;   /**< argc and ... */
-  char**rargv = NULL;          /**< ... argv values for calling the MAIN() function of the worker */
+  char**rargv = NULL;          /**< argv and ... */
+  int rargc   = global_argc;   /**< ... argc values for calling the MAIN() function of
+				    HierarchicalSearch.c. Until we know better, we expect to
+				    pass the same number of arguments / options than we got */
   int arg, rarg;               /**< current command-line argument */
   int i;                       /**< loop counter */
   int l;                       /**< length of matched string */
-  int res = 0;                 /**< return value of function call */
+  int res = 0;                 /**< return value of a function call */
   char *startc,*endc,*appc;    /**< pointers for parsing a command-line argument */
-  int output_help = 0;         /**< flag: should we write out an additional help string? */
+  int output_help = 0;         /**< flag: should we write out an additional help string?
+				    describing additional command-line arguments handled
+			            only by this BOINC-wrapper? */
 
+  /* init BOINC diagnostics */
   boinc_init_diagnostics(BOINC_DIAG_DUMPCALLSTACKENABLED |
                          BOINC_DIAG_HEAPCHECKENABLED |
                          BOINC_DIAG_ARCHIVESTDERR |
                          BOINC_DIAG_REDIRECTSTDERR |
                          BOINC_DIAG_TRACETOSTDERR);
 
-  /* try to load the graphics library and set the hooks if successful */
+  /* try to load the graphics library and, if succeeded, hook the symbols */
 #if (BOINC_GRAPHICS == 2) 
   if (graphics_lib_handle) {
     if (!(set_search_pos_hook = dlsym(graphics_lib_handle,"set_search_pos"))) {
@@ -439,13 +454,19 @@ static void worker (void) {
      before passing them to the main function.
      We will also look if input files are possibly zipped and unzip
      them as needed. Output filename(s) will be recorded (resolved
-     and unresolved) and the flops estimation will be dealt with.
+     and unresolved) and the flops estimation, if present,
+     will be stored for later use.
   */
+
+  /* allocate space for the argument vector. None of the operations
+     below adds an argument, so it's safe to allocate space for as
+     many arguments as we got */
   rargv = (char**)calloc(1,argc*sizeof(char*));
   if(!rargv){
     LogPrintf(LOG_CRITICAL, "Out of memory\n");
     boinc_finish(HIERARCHICALSEARCH_EMEM);
   }
+
   rargv[0] = argv[0];
   rarg = 1;
 
@@ -513,7 +534,7 @@ static void worker (void) {
       appc = rargv[rarg]+13;
       startc = argv[arg]+13;
 
-      /* skip single quotes if and only if they are surrounding the complete path-string */
+      /* skip one set of single quotes if and only if they are surrounding the complete path-string */
       if ((*startc == '\'') && (*(startc+(strlen(startc)-1)) == '\'')) {
         LogPrintf (LOG_DEBUG, "DEBUG: removing quotes from path %s\n", argv[arg]);
 	*(startc+strlen(startc)-1) = '\0';
@@ -526,18 +547,6 @@ static void worker (void) {
 	if (boinc_resolve_filename(startc,appc,255)) {
 	  LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve input file '%s'\n", startc);
 	}
-
-#ifdef _WIN32
-	/* The SFTfileIO library in LAL of course doesn't use boinc_fopen etc., so
-	   for Windows, we have to translate the path separator '/' to '\' */
-	{
-	  char *c = appc;
-	  while((*c != '\0') && (c < appc+255)) {
-	    if(*c == '/') *c = '\\';
-	    c++;
-	  }
-	}
-#endif
 
 	/* append a ';' to resolved string */
 	appc = appc + strlen(appc) + 1;
@@ -552,16 +561,6 @@ static void worker (void) {
       if (boinc_resolve_filename(startc,appc,255)) {
 	LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve input file '%s'\n", startc);
       }
-
-#ifdef _WIN32
-	{
-	  char *c = appc;
-	  while((*c != '\0') && (c < appc+255)) {
-	    if(*c == '/') *c = '\\';
-	    c++;
-	  }
-	}
-#endif
     }
 
     /* output file */
@@ -668,17 +667,18 @@ static void worker (void) {
       rarg--; rargc--; /* this argument is not passed to the main worker function */
     }
 
-    /* add help for additional BOINC options? */
+    /* help (for additional command-line options)? */
     else if ((0 == strncmp("--help",argv[arg],strlen("--help"))) ||
 	     (0 == strncmp("-h",argv[arg],strlen("--help")))) {
       output_help = 1;
       rargv[rarg] = argv[arg];
     }
 
-    /* any other argument */
+    /* any other argument - simply pass unchanged */
     else 
       rargv[rarg] = argv[arg];
 
+    /* next argument */
     rarg++;
   } /* for all command line arguments */
 

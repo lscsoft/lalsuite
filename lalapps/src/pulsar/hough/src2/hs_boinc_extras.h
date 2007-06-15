@@ -142,8 +142,10 @@ extern int add_candidate_and_checkpoint (toplist_t*toplist, FstatOutputEntry can
 
 /** replacement for add_candidate_and_checkpoint() */
 extern int add_checkpoint_candidate (toplist_t*toplist, FstatOutputEntry cand);
-extern void set_checkpoint(void);
 
+/** actually writes a checkpoint only if it's "boinc time to checkpoint"
+    and compacts the output file if necessary */
+extern void set_checkpoint(void);
 
 /** does the final (compact) write of the file and cleans up checkpointing stuff
     The checkpoint file remains there in case the App gets inteerupted afterwards
