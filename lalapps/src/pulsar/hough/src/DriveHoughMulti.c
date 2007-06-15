@@ -1150,16 +1150,28 @@ int main(int argc, char *argv[]){
   LALFree(skySizeAlpha);
   LALFree(skySizeDelta);
 
-  LALFree( nStarEventVec.event );
+  LALFree(nStarEventVec.event);
 
-  LALFree(best.weightsV->data);
-  LALFree(best.weightsV);
-  LALFree(best.timeDiffV->data);
-  LALFree(best.timeDiffV);
-  LALFree(best.velV->data);
-  LALFree(best.velV);
-  LALFree(best.pgV->pg);
-  LALFree(best.pgV);
+
+  if(best.weightsV) {
+    LALFree(best.weightsV->data);
+    LALFree(best.weightsV);
+  }
+
+  if (best.timeDiffV) {
+    LALFree(best.timeDiffV->data);
+    LALFree(best.timeDiffV);
+  }
+
+  if ( best.velV) {
+    LALFree(best.velV->data);
+    LALFree(best.velV);
+  }
+
+  if (best.pgV) {
+    LALFree(best.pgV->pg);
+    LALFree(best.pgV);
+  }
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
 
