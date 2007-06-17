@@ -131,34 +131,6 @@ INT4 XLALEPGetTimingParameters(
 
 
 /*
- * Return TRUE if a is an integer multiple of b
- */
-
-
-static int is_int_multiple_of(int a, int b)
-{
-	int n;
-	if(a == 0 || b == 0)
-		return 0;
-	n = a / b;
-	return n * b == a;
-}
-
-
-/*
- * Return TRUE if a is an integer multiple of b.
- */
-
-
-static int double_is_int_multiple_of(double a, double b)
-{
-	const double epsilon = 0;
-	int n = a / b;
-	return fabs(1 - n * b / a) <= epsilon;
-}
-
-
-/*
  * Macro for looping over all tiles.  This is ugly but it ensures that the
  * initialization, increment, and terminate statements are the same in the two
  * places the loop is done.
@@ -235,11 +207,11 @@ TFTiling *XLALCreateTFTiling(
 
 	if((inv_fractional_stride * fractional_stride != 1) ||
 	   (min_length * plane_deltaT != (1 / max_tile_bandwidth)) ||
-	   !is_int_multiple_of(min_length, inv_fractional_stride) ||
-	   !is_int_multiple_of(tiling_t_length, min_length) ||
-	   !is_int_multiple_of(tiling_t_length, max_length) ||
-	   !is_int_multiple_of(tiling_n_channels, min_channels) ||
-	   !is_int_multiple_of(tiling_n_channels, max_channels)) {
+	   (min_length % inv_fractional_stride != 0) ||
+	   (tiling_t_length % min_length != 0) ||
+	   (tiling_t_length % max_length != 0) ||
+	   (tiling_n_channels % min_channels != 0) ||
+	   (tiling_n_channels % max_channels != 0)) {
 	   	XLALPrintError("unable to construct time-frequency tiling from input parameters\n");
 		XLAL_ERROR_NULL(func, XLAL_EINVAL);
 	}
@@ -368,7 +340,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	   (bandwidth <= 0) ||
 	   (deltaF <= 0) ||
 	   (tiling_start + tiling_length > tseries_length) ||
-	   (!double_is_int_multiple_of(deltaF, fseries_deltaF)) ||
+	   (fmod(deltaF, fseries_deltaF) != 0.0) ||
 	   (tseries_deltaT <= 0) ||
 	   (channels * deltaF != bandwidth))
 		XLAL_ERROR_NULL(func, XLAL_EINVAL);
