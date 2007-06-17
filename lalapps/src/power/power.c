@@ -157,8 +157,11 @@ struct options {
 	int psd_length;
 	/* number of samples separating PSD starts */
 	int psd_shift;
-	/* number of samples not tiled in each analysis window */
+	/* number of samples not tiled at the start of each analysis window
+	 * */
 	int window_pad;
+	/* time-frequency plane stride */
+	int window_shift;
 	/* set non-zero to generate noise */
 	int seed;
 
@@ -600,7 +603,6 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	params->maxTileBandwidth = 0;	/* impossible */
 	params->maxTileDuration = 0;	/* impossible */
 	params->fractional_stride = 0;	/* impossible */
-	params->windowShift = 0;	/* impossible */
 	params->useOverWhitening = FALSE;	/* default */
 	params->window = NULL;	/* impossible */
 
@@ -965,7 +967,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	 * Compute timing parameters.
 	 */
 
-	if(XLALEPGetTimingParameters(params->window->data->length, params->maxTileDuration * options->resample_rate, params->fractional_stride, &options->psd_length, &options->psd_shift, &params->windowShift, &options->window_pad) < 0) {
+	if(XLALEPGetTimingParameters(params->window->data->length, params->maxTileDuration * options->resample_rate, params->fractional_stride, &options->psd_length, &options->psd_shift, &options->window_shift, &options->window_pad, NULL) < 0) {
 		XLALPrintError("calculation of timing parameters failed\n");
 		exit(1);
 	}
@@ -1591,13 +1593,13 @@ static void add_sim_injections(LALStatus *stat, REAL4TimeSeries *series, COMPLEX
  */
 
 
-static SnglBurstTable **analyze_series(SnglBurstTable **addpoint, REAL4TimeSeries *series, int psd_length, int psd_shift, EPSearchParams *params)
+static SnglBurstTable **analyze_series(SnglBurstTable **addpoint, REAL4TimeSeries *series, int psd_length, int psd_shift, int window_shift, EPSearchParams *params)
 {
 	REAL4TimeSeries *interval;
 	size_t i;
 
 	if((unsigned) psd_length > series->data->length) {
-		psd_length = XLALOverlappedSegmentsCommensurate(series->data->length, params->window->data->length, params->windowShift);
+		psd_length = XLALOverlappedSegmentsCommensurate(series->data->length, params->window->data->length, window_shift);
 		XLALPrintInfo("analyze_series(): warning: PSD average length exceeds available data, reducing PSD average length to %zu samples\n", psd_length);
 		if(!psd_length) {
 			XLALPrintInfo("analyze_series(): warning: cowardly refusing to analyze 0 samples, skipping series\n");
@@ -1757,7 +1759,7 @@ int main(int argc, char *argv[])
 	 * set the outer loop's upper bound
 	 */
 
-	overlap = params.window->data->length - params.windowShift;
+	overlap = params.window->data->length - options->window_shift;
 	XLALPrintInfo("%s: time series overlap is %zu samples (%.9lf s)\n", argv[0], overlap, overlap / (double) options->resample_rate);
 
 	boundepoch = options->gps_end;
@@ -1888,7 +1890,7 @@ int main(int argc, char *argv[])
 		 * Analyze the data
 		 */
 
-		EventAddPoint = analyze_series(EventAddPoint, series, options->psd_length, options->psd_shift, &params);
+		EventAddPoint = analyze_series(EventAddPoint, series, options->psd_length, options->psd_shift, options->window_shift, &params);
 		if(!EventAddPoint)
 			exit(1);
 
