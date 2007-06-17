@@ -64,6 +64,8 @@ INT4 XLALOverlappedSegmentsCommensurate(
 
 /*
  * Compute and return the timing parameters for an excess power analysis.
+ * Pass NULL for any optional pointer to not compute and return that
+ * parameter.
  *
  * Input:
  * 	window_length:
@@ -77,24 +79,24 @@ INT4 XLALOverlappedSegmentsCommensurate(
  * 		fractional amount by which the start of a tile is shifted
  * 		from the tile preceding it
  *
- * 	psd_length:
+ * 	psd_length (optional, required for psd_shift):
  * 		user's desired number of samples to use in computing a PSD
  * 		estimate
  *
  * Output:
- * 	psd_length:
+ * 	psd_length (optional):
  * 		actual number of samples to use in computing a PSD estimate
  * 		(rounded down to be comensurate with the windowing)
  *
- *	psd_shift:
+ *	psd_shift (optional):
  *		number of samples by which the start of a PSD is shifted
  *		from the start of the PSD that preceded it
  *
- *	window_shift:
+ *	window_shift (optional):
  *		number of samples by which the start of a time-frequency
  *		plane window is shifted from the window preceding it
  *
- *	window_pad:
+ *	window_pad (optional):
  *		how many samples at the start and end of each window are
  *		treated as padding, and will not be covered by the tiling
  */
@@ -111,20 +113,33 @@ INT4 XLALEPGetTimingParameters(
 )
 {
 	static const char func[] = "XLALEPGetTimingParameters";
+	int wshift;
 
 	if((max_tile_length < 1) ||
 	   (fractional_tile_stride < 0))
 		XLAL_ERROR(func, XLAL_EINVAL);
 
 	/* it is assumed that the middle 1/2 of the window is analyzed */
-	*window_pad = window_length / 4;
-	*window_shift = window_length / 2 - (1 - fractional_tile_stride) * max_tile_length;
+	wshift = window_length / 2 - (1 - fractional_tile_stride) * max_tile_length;
+	if(window_shift)
+		*window_shift = wshift;
+	if(window_pad)
+		*window_pad = window_length / 4;
 
-	*psd_length = XLALOverlappedSegmentsCommensurate(*psd_length, window_length, *window_shift);
-	if(*psd_length < 0)
-		XLAL_ERROR(func, XLAL_EFUNC);
+	/* compute the adjusted PSD length if desired */
+	if(psd_length) {
+		*psd_length = XLALOverlappedSegmentsCommensurate(*psd_length, window_length, wshift);
+		if(*psd_length < 0)
+			XLAL_ERROR(func, XLAL_EFUNC);
 
-	*psd_shift = *psd_length - (window_length - *window_shift);
+		if(psd_shift)
+			*psd_shift = *psd_length - (window_length - wshift);
+	} else if(psd_shift) {
+		/* for safety */
+		*psd_shift = -1;
+		/* can't compute psd_shift without psd_length input */
+		XLAL_ERROR(func, XLAL_EFAULT);
+	}
 
 	return 0;
 }
