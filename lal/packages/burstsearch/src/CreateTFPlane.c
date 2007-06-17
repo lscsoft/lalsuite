@@ -49,12 +49,29 @@ INT4 XLALOverlappedSegmentsCommensurate(
 	static const char func[] = "XLALOverlappedSegmentsCommensurate";
 	UINT4 segments;
 
-	if((segment_length < 1) || (segment_shift < 1))
-		XLAL_ERROR(func, XLAL_EINVAL);
+	/*
+	 * check input
+	 */
 
-	/* trivial case */
+	if(segment_length < 1) {
+		XLALPrintError("segment_length < 1");
+		XLAL_ERROR(func, XLAL_EINVAL);
+	}
+	if(segment_shift < 1) {
+		XLALPrintError("segment_shift < 1");
+		XLAL_ERROR(func, XLAL_EINVAL);
+	}
+
+	/*
+	 * trivial case
+	 */
+
 	if(target_length < segment_length)
 		return 0;
+
+	/*
+	 * do the arithmetic
+	 */
 
 	segments = (target_length - segment_length) / segment_shift;
 
@@ -117,31 +134,76 @@ INT4 XLALEPGetTimingParameters(
 )
 {
 	static const char func[] = "XLALEPGetTimingParameters";
+	int wpad;
+	int tlength;
 	int wshift;
 
-	if((window_length % 4 != 0) ||	/* check window_pad */
-	   (window_length % 2 != 0) ||	/* check tiling_length */
-	   (max_tile_length < 1) ||
-	   (fractional_tile_stride < 0))
-		XLAL_ERROR(func, XLAL_EINVAL);
+	/*
+	 * check input parameters
+	 */
 
-	/* it is assumed that the middle 1/2 of the window is analyzed */
-	wshift = window_length / 2 - (1 - fractional_tile_stride) * max_tile_length;
+	if(window_length % 4 != 0) {
+		XLALPrintError("window_length is not a multiple of 4");
+		XLAL_ERROR(func, XLAL_EINVAL);
+	}
+	if(max_tile_length < 1) {
+		XLALPrintError("max_tile_length < 1");
+		XLAL_ERROR(func, XLAL_EINVAL);
+	}
+	if(fractional_tile_stride <= 0) {
+		XLALPrintError("fractional_tile_stride <= 0");
+		XLAL_ERROR(func, XLAL_EINVAL);
+	}
+
+	/*
+	 * discard first and last 1/4 of the window
+	 */
+
+	wpad = window_length / 4;
+	if(window_pad)
+		*window_pad = wpad;
+
+	/*
+	 * tiling covers the remainder
+	 */
+
+	tlength = window_length - 2 * wpad;
+	if(tlength < 1) {
+		XLALPrintError("tiling_length < 1");
+		XLAL_ERROR(func, XLAL_EINVAL);
+	}
+	if(tiling_length)
+		*tiling_length = tlength;
+
+	/*
+	 * adjacent tilings overlap so that their largest tiles overlap the
+	 * same as within each tiling
+	 */
+
+	wshift = tlength - (1 - fractional_tile_stride) * max_tile_length;
+	if(wshift < 1) {
+		XLALPrintError("window_shift < 1");
+		XLAL_ERROR(func, XLAL_EINVAL);
+	}
 	if(window_shift)
 		*window_shift = wshift;
-	if(window_pad)
-		*window_pad = window_length / 4;
-	if(tiling_length)
-		*tiling_length = window_length / 2;
 
-	/* compute the adjusted PSD length if desired */
+	/*
+	 * compute the adjusted PSD length if desired
+	 */
+
 	if(psd_length) {
 		*psd_length = XLALOverlappedSegmentsCommensurate(*psd_length, window_length, wshift);
 		if(*psd_length < 0)
 			XLAL_ERROR(func, XLAL_EFUNC);
 
-		if(psd_shift)
+		if(psd_shift) {
 			*psd_shift = *psd_length - (window_length - wshift);
+			if(*psd_shift < 1) {
+				XLALPrintError("psd_shift < 1");
+				XLAL_ERROR(func, XLAL_EINVAL);
+			}
+		}
 	} else if(psd_shift) {
 		/* for safety */
 		*psd_shift = -1;
@@ -377,7 +439,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	 * Compute timeing parameters
 	 */
 
-	if(XLALEPGetTimingParameters(tseries_length, tiling_max_duration * tseries_deltaT, tiling_fractional_stride, NULL, NULL, &window_shift, &tiling_start, &tiling_length) < 0)
+	if(XLALEPGetTimingParameters(tseries_length, tiling_max_duration / tseries_deltaT, tiling_fractional_stride, NULL, NULL, &window_shift, &tiling_start, &tiling_length) < 0)
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
 	/*
