@@ -330,10 +330,6 @@ void XLALDestroyTFTiling(
 REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	/* length of time series from which TF plane will be computed */
 	UINT4 tseries_length,
-	/* sample at which to start the tiling */
-	UINT4 tiling_start,
-	/* length of tiling */
-	UINT4 tiling_length,
 	/* sample rate of time series */
 	REAL8 tseries_deltaT,
 	/* minimum frequency to search for */
@@ -349,6 +345,10 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 )
 {
 	static const char func[] = "XLALCreateTFPlane";
+	/* sample at which to start the tiling */
+	UINT4 tiling_start = tseries_length / 4;
+	/* length of tiling */
+	UINT4 tiling_length = tseries_length / 2;
 	REAL8 fseries_deltaF = 1.0 / (tseries_length * tseries_deltaT);
 	REAL8 deltaF = 1 / tiling_max_duration * tiling_fractional_stride;
 	INT4 channels = bandwidth / deltaF;

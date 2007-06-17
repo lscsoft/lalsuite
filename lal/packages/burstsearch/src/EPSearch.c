@@ -153,19 +153,6 @@ SnglBurstTable *XLALEPSearch(
 	REAL4TimeFrequencyPlane *plane;
 
 	/*
-	 * FreqSeriesToTFPlane() is passed a frequency series, and it needs
-	 * to know how many samples the time series from which it was
-	 * generated contained.  This can only be done if you assume the
-	 * number of samples was even (or odd, but you have to pick one).
-	 * So we need to make sure that's true.
-	 */
-
-	if(params->window->data->length & 1) {
-		/* window length is odd */
-		XLAL_ERROR_NULL(func, XLAL_EINVAL);
-	}
-
-	/*
 	 * Construct forward and reverse FFT plans, storage for the PSD,
 	 * the time-frequency plane, and a tiling.  Note that the flat part
 	 * of the Tukey window needs to match the locations of the tiles as
@@ -175,7 +162,7 @@ SnglBurstTable *XLALEPSearch(
 	fplan = XLALCreateForwardREAL4FFTPlan(params->window->data->length, 1);
 	rplan = XLALCreateReverseREAL4FFTPlan(params->window->data->length, 1);
 	psd = XLALCreateREAL4FrequencySeries("PSD", &tseries->epoch, 0, 0, &lalDimensionlessUnit, params->window->data->length / 2 + 1);
-	plane = XLALCreateTFPlane(params->window->data->length, params->window->data->length / 4, params->window->data->length / 2, tseries->deltaT, params->flow, params->bandwidth, params->fractional_stride, params->maxTileBandwidth, params->maxTileDuration);
+	plane = XLALCreateTFPlane(params->window->data->length, tseries->deltaT, params->flow, params->bandwidth, params->fractional_stride, params->maxTileBandwidth, params->maxTileDuration);
 	if(!fplan || !rplan || !psd || !plane) {
 		errorcode = XLAL_EFUNC;
 		goto error;
@@ -183,15 +170,24 @@ SnglBurstTable *XLALEPSearch(
 
 	/*
 	 * Compute the average spectrum.
+	 *
+	 * FIXME: is using windowShift here correct?  we have to, otherwise
+	 * the time series' lengths are inconsistent
 	 */
 
 	switch(params->method) {
 	case useMean:
-		XLALREAL4AverageSpectrumWelch(psd, tseries, params->window->data->length, params->windowShift, params->window, fplan);
+		if(XLALREAL4AverageSpectrumWelch(psd, tseries, params->window->data->length, params->windowShift, params->window, fplan) < 0) {
+			errorcode = XLAL_EFUNC;
+			goto error;
+		}
 		break;
 
 	case useMedian:
-		XLALREAL4AverageSpectrumMedian(psd, tseries, params->window->data->length, params->windowShift, params->window, fplan);
+		if(XLALREAL4AverageSpectrumMedian(psd, tseries, params->window->data->length, params->windowShift, params->window, fplan) < 0) {
+			errorcode = XLAL_EFUNC;
+			goto error;
+		}
 		break;
 
 	default:
