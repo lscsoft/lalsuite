@@ -34,6 +34,103 @@ NRCSID(CREATETFPLANEC, "$Id$");
 
 
 /*
+ * Round target_length down so that an integer number of intervals of
+ * length segment_length, each shifted by segment_shift with respect to the
+ * interval preceding it, fits into the result.
+ */
+
+
+INT4 XLALOverlappedSegmentsCommensurate(
+	INT4 target_length,
+	INT4 segment_length,
+	INT4 segment_shift
+)
+{
+	static const char func[] = "XLALOverlappedSegmentsCommensurate";
+	UINT4 segments;
+
+	if((segment_length < 1) || (segment_shift < 1))
+		XLAL_ERROR(func, XLAL_EINVAL);
+
+	/* trivial case */
+	if(target_length < segment_length)
+		return 0;
+
+	segments = (target_length - segment_length) / segment_shift;
+
+	return segments * segment_shift + segment_length;
+}
+
+
+/*
+ * Compute and return the timing parameters for an excess power analysis.
+ *
+ * Input:
+ * 	window_length:
+ * 		number of samples in a window used for the time-frequency
+ * 		plane
+ *
+ * 	max_tile_length:
+ * 		number of samples in the tile of longest duration
+ *
+ * 	fractional_tile_stride:
+ * 		fractional amount by which the start of a tile is shifted
+ * 		from the tile preceding it
+ *
+ * 	psd_length:
+ * 		user's desired number of samples to use in computing a PSD
+ * 		estimate
+ *
+ * Output:
+ * 	psd_length:
+ * 		actual number of samples to use in computing a PSD estimate
+ * 		(rounded down to be comensurate with the windowing)
+ *
+ *	psd_shift:
+ *		number of samples by which the start of a PSD is shifted
+ *		from the start of the PSD that preceded it
+ *
+ *	window_shift:
+ *		number of samples by which the start of a time-frequency
+ *		plane window is shifted from the window preceding it
+ *
+ *	window_pad:
+ *		how many samples at the start and end of each window are
+ *		treated as padding, and will not be covered by the tiling
+ */
+
+
+INT4 XLALEPGetTimingParameters(
+	INT4 window_length,
+	INT4 max_tile_length,
+	REAL8 fractional_tile_stride,
+	INT4 *psd_length,
+	INT4 *psd_shift,
+	INT4 *window_shift,
+	INT4 *window_pad
+)
+{
+	static const char func[] = "XLALEPGetTimingParameters";
+
+	if((max_tile_length < 1) ||
+	   (fractional_tile_stride < 0))
+		XLAL_ERROR(func, XLAL_EINVAL);
+
+	/* it is assumed that the middle 1/2 of the window is analyzed */
+	*window_pad = window_length / 4;
+	*window_shift = window_length / 2 - (1 - fractional_tile_stride) * max_tile_length;
+
+	*psd_length = XLALOverlappedSegmentsCommensurate(*psd_length, window_length, *window_shift);
+	if(*psd_length < 0)
+		XLAL_ERROR(func, XLAL_EFUNC);
+
+	*psd_shift = *psd_length - (window_length - *window_shift);
+
+	return 0;
+}
+
+
+/*
  * Return TRUE if a is an integer multiple of b
  */
 

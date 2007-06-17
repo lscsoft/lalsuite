@@ -146,6 +146,25 @@ int XLALComputeExcessPower(
 );
 
 
+INT4 XLALOverlappedSegmentsCommensurate(
+	INT4 target_length,
+	INT4 segment_length,
+	INT4 segment_shift
+);
+
+
+INT4 XLALEPGetTimingParameters(
+	INT4 window_length,
+	INT4 max_tile_length,
+	REAL8 fractional_tile_stride,
+	INT4 *psd_length,
+	INT4 *psd_shift,
+	INT4 *window_shift,
+	INT4 *window_pad
+);
+
+
+
 #ifdef  __cplusplus
 }
 #endif				/* C++ protection. */
