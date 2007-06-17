@@ -356,6 +356,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	REAL8Sequence *channel_overlap;
 	REAL8Sequence *channel_rms;
 	REAL4Sequence **channel;
+	REAL4Window *tukey;
 	TFTiling *tiling;
 	int i;
 
@@ -381,12 +382,14 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	channel_rms = XLALCreateREAL8Sequence(channels);
 	channel = XLALMalloc(channels * sizeof(*channel));
 	tiling = XLALCreateTFTiling(tiling_start, tiling_length, channels, tseries_deltaT, deltaF, tiling_fractional_stride, tiling_max_bandwidth, tiling_max_duration);
-	if(!plane || !channel_overlap || !channel_rms || !channel || !tiling) {
+	tukey = XLALCreateTukeyREAL4Window(tseries_length, 0.5);
+	if(!plane || !channel_overlap || !channel_rms || !channel || !tiling || !tukey) {
 		XLALFree(plane);
 		XLALDestroyREAL8Sequence(channel_overlap);
 		XLALDestroyREAL8Sequence(channel_rms);
 		XLALFree(channel);
 		XLALDestroyTFTiling(tiling);
+		XLALDestroyREAL4Window(tukey);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 	for(i = 0; i < channels; i++) {
@@ -399,9 +402,19 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 			XLALDestroyREAL8Sequence(channel_rms);
 			XLALFree(channel);
 			XLALDestroyTFTiling(tiling);
+			XLALDestroyREAL4Window(tukey);
 			XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 		}
 	}
+
+	/*
+	 * Adjust the Tukey window's normalization so that it is
+	 * RMS-preserving in the flat portion.  This is done by setting its
+	 * normalization to be equal to that of a rectangular window
+	 * (pretend the tapers aren't present).
+	 */
+
+	tukey->sumofsquares = tukey->data->length;
 
 	/* 
 	 * Initialize the structure
@@ -418,6 +431,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	plane->channel_rms = channel_rms;
 	plane->channel = channel;
 	plane->tiling = tiling;
+	plane->tukey = tukey;
 
 	/*
 	 * Success
@@ -445,6 +459,7 @@ void XLALDestroyTFPlane(
 			XLALDestroyREAL4Sequence(plane->channel[i]);
 		XLALFree(plane->channel);
 		XLALDestroyTFTiling(plane->tiling);
+		XLALDestroyREAL4Window(plane->tukey);
 	}
 	XLALFree(plane);
 }

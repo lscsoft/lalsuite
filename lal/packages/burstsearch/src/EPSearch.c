@@ -36,7 +36,6 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
-#include <lal/Window.h>
 #include <lal/XLALError.h>
 
 
@@ -137,19 +136,16 @@ static SnglBurstTable *XLALTFTilesToSnglBurstTable(SnglBurstTable *head, const R
  */
 
 
-/******** <lalVerbatim file="EPSearchCP"> ********/
 SnglBurstTable *XLALEPSearch(
 	const REAL4TimeSeries *tseries,
 	EPSearchParams *params
 )
-/******** </lalVerbatim> ********/
 { 
 	const char func[] = "XLALEPSearch";
 	SnglBurstTable *head = NULL;
 	int errorcode = 0;
 	int start_sample;
 	COMPLEX8FrequencySeries *fseries = NULL;
-	REAL4Window *tukey;
 	RealFFTPlan *fplan;
 	RealFFTPlan *rplan;
 	REAL4FrequencySeries *psd;
@@ -180,20 +176,10 @@ SnglBurstTable *XLALEPSearch(
 	rplan = XLALCreateReverseREAL4FFTPlan(params->window->data->length, 1);
 	psd = XLALCreateREAL4FrequencySeries("PSD", &tseries->epoch, 0, 0, &lalDimensionlessUnit, params->window->data->length / 2 + 1);
 	plane = XLALCreateTFPlane(params->window->data->length, params->window->data->length / 4, params->window->data->length / 2, tseries->deltaT, params->flow, params->bandwidth, params->fractional_stride, params->maxTileBandwidth, params->maxTileDuration);
-	tukey = XLALCreateTukeyREAL4Window(params->window->data->length, 0.5);
-	if(!fplan || !rplan || !psd || !plane || !tukey) {
+	if(!fplan || !rplan || !psd || !plane) {
 		errorcode = XLAL_EFUNC;
 		goto error;
 	}
-
-	/*
-	 * Adjust the Tukey window's normalization so that it is
-	 * RMS-preserving in the flat portion.  This is done by setting its
-	 * normalization to be equal to that of a rectangular window
-	 * (pretend the tapers aren't present).
-	 */
-
-	tukey->sumofsquares = tukey->data->length;
 
 	/*
 	 * Compute the average spectrum.
@@ -236,7 +222,7 @@ SnglBurstTable *XLALEPSearch(
 			params->diagnostics->XLALWriteLIGOLwXMLArrayREAL4TimeSeries(params->diagnostics->LIGOLwXMLStream, NULL, cuttseries);
 
 		XLALPrintInfo("XLALEPSearch(): computing the Fourier transform\n");
-		fseries = XLALWindowedREAL4ForwardFFT(cuttseries, tukey, fplan);
+		fseries = XLALWindowedREAL4ForwardFFT(cuttseries, plane->tukey, fplan);
 		XLALDestroyREAL4TimeSeries(cuttseries);
 		if(!fseries) {
 			errorcode = XLAL_EFUNC;
@@ -316,7 +302,6 @@ SnglBurstTable *XLALEPSearch(
 	XLALDestroyREAL4FrequencySeries(psd);
 	XLALDestroyCOMPLEX8FrequencySeries(fseries);
 	XLALDestroyTFPlane(plane);
-	XLALDestroyREAL4Window(tukey);
 	if(errorcode) {
 		XLALDestroySnglBurstTable(head);
 		XLAL_ERROR_NULL(func, errorcode);
@@ -330,14 +315,12 @@ SnglBurstTable *XLALEPSearch(
  */
 
 
-/* <lalVerbatim file="EPConditionDataCP"> */
 int XLALEPConditionData(
 	REAL4TimeSeries  *series,
 	REAL8             flow,
 	REAL8             resampledeltaT,
 	INT4              corruption
 )
-/* </lalVerbatim> */
 {
 	const char func[] = "XLALEPConditionData";
 	const REAL8         epsilon = 1.0e-3;

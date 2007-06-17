@@ -111,6 +111,8 @@ typedef struct tagREAL4TimeFrequencyPlane {
 	REAL4Sequence **channel;
 	/* time-frequency plane's tiling */
 	TFTiling *tiling;
+	/* window applied to input time series to taper edges to 0 */
+	REAL4Window *tukey;
 } REAL4TimeFrequencyPlane;
 
 
