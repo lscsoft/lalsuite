@@ -177,14 +177,14 @@ SnglBurstTable *XLALEPSearch(
 
 	switch(params->method) {
 	case useMean:
-		if(XLALREAL4AverageSpectrumWelch(psd, tseries, params->window->data->length, params->windowShift, params->window, fplan) < 0) {
+		if(XLALREAL4AverageSpectrumWelch(psd, tseries, params->window->data->length, plane->window_shift, params->window, fplan) < 0) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
 		break;
 
 	case useMedian:
-		if(XLALREAL4AverageSpectrumMedian(psd, tseries, params->window->data->length, params->windowShift, params->window, fplan) < 0) {
+		if(XLALREAL4AverageSpectrumMedian(psd, tseries, params->window->data->length, plane->window_shift, params->window, fplan) < 0) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
@@ -202,7 +202,7 @@ SnglBurstTable *XLALEPSearch(
 	 * Loop over data applying excess power method.
 	 */
 
-	for(start_sample = 0; start_sample + params->window->data->length <= tseries->data->length; start_sample += params->windowShift) {
+	for(start_sample = 0; start_sample + params->window->data->length <= tseries->data->length; start_sample += plane->window_shift) {
 		/*
 		 * Extract a window-length of data from the time series,
 		 * compute its DFT, then free it.

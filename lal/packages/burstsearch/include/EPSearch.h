@@ -61,7 +61,6 @@ struct XLALEPSearchDiagnostics {
 typedef struct tagEPSearchParams {
 	struct XLALEPSearchDiagnostics *diagnostics;
 	REAL4Window *window;
-	INT4 windowShift;
 	REAL8 confidence_threshold;
 	AvgSpecMethod method;
 	/* time-frequency plane parameters */

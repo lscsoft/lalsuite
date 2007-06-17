@@ -102,17 +102,27 @@ typedef struct tagREAL4TimeFrequencyPlane {
 	REAL8 flow;
 	/* inner product of filters for neighbouring channels;
 	 * channel_overlap[0] is the inner product of the filters for
-	 * channels 0 and 1, and so on */
+	 * channels 0 and 1, and so on (for n channels, there are n - 1
+	 * channel_overlaps) */
 	REAL8Sequence *channel_overlap;
 	/* predicted root mean square for the time series in each channel */
 	REAL8Sequence *channel_rms;
-	/* channel data;  channel[j]->data[i] corresponds to time epoch + i
-	 * * deltaT and frequency flow + j * deltaF */
+	/* channel data.  channel[j]->data[i] corresponds to time
+	 *
+	 * epoch + i * deltaT
+	 *
+	 * and the frequency band
+	 *
+	 * [flow + j * deltaF, flow + (j + 1) * deltaF)
+	 */
 	REAL4Sequence **channel;
 	/* time-frequency plane's tiling */
 	TFTiling *tiling;
 	/* window applied to input time series to taper edges to 0 */
 	REAL4Window *tukey;
+	/* by how many samples a window's start should be shifted from the
+	 * start of the window preceding it */
+	INT4 window_shift;
 } REAL4TimeFrequencyPlane;
 
 
@@ -160,7 +170,8 @@ INT4 XLALEPGetTimingParameters(
 	INT4 *psd_length,
 	INT4 *psd_shift,
 	INT4 *window_shift,
-	INT4 *window_pad
+	INT4 *window_pad,
+	INT4 *tiling_length
 );
 
 
