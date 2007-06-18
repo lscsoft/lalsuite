@@ -186,8 +186,8 @@ simulated data.
 [\option{--inspiralinjection-file}~\parm{file name}] \newline \hspace*{0.5in}
 \option{--low-freq-cutoff}~\parm{Hz} \newline \hspace*{0.5in}
 [\option{--max-event-rate}~\parm{Hz}] \newline \hspace*{0.5in}
-\option{--max-tileband}~\parm{Hz} \newline \hspace*{0.5in}
-\option{--max-tileduration}~\parm{sec.s} \newline \hspace*{0.5in}
+\option{--max-tile-bandwidth}~\parm{Hz} \newline \hspace*{0.5in}
+\option{--max-tile-duration}~\parm{seconds} \newline \hspace*{0.5in}
 [\option{--mdc-cache}~\parm{cache file}] \newline \hspace*{0.5in}
 [\option{--mdc-channel}~\parm{channel name}] \newline \hspace*{0.5in}
 [\option{--output}~\parm{file name}] \newline \hspace*{0.5in}
@@ -360,16 +360,14 @@ segment, exceeds this limit.  This provides a safety valve to prevent the
 code from filling up disks if the threshold is set improperly.  A value of
 0 (the default) disables this feature.
 
-\item[\option{--max-tileband} \parm{Hz}]
-This specifies the max frequency bandwidth (\(B\)) that a tile can have.
-This also fixes the minimum time duration of the tiles, $\Delta t = 1/B $.
-This must be an integer power of 2.
+\item[\option{--max-tile-bandwidth} \parm{Hz}]
+This specifies the maximum frequency bandwidth (\(B\)) that a tile can
+have.  This also fixes the minimum time duration of the tiles, $\Delta t =
+1/B $.  This must be an integer power of 2.
 
-\item[\option{--max-tileduration} \parm{s}]
+\item[\option{--max-tile-duration} \parm{s}]
 This specifies the maximum duration that a tile can have.  This also fixes
-the minimum bandwidth of the tiles.  This must be a non-positive integer
-power of 2 (i.e.\ \unit{1}{\second}, \unit{0.5}{\second},
-\unit{0.25}{\second}, etc.).
+the minimum bandwidth of the tiles.  This must be an integer power of 2.
 
 \item[\option{--mdc-cache} \parm{cache file}]
 Use \parm{cache file} as a LAL format frame cache file describing the
@@ -472,28 +470,30 @@ be a power of 2.
 To run the program, type:
 \begin{verbatim}
 lalapps_power \
---bandwidth 1024 \
---channel-name "H1:LSC-AS_Q" \
---filter-corruption 8192 \
+--bandwidth 2048 \
+--calibrated-data 40.0 \
+--channel-name "H1:LSC-STRAIN" \
+--debug-level info \
+--enable-over-whitening \
+--filter-corruption 4096 \
 --frame-cache H-754008315-754008371.cache \
---frame-sample-rate 16384 \
 --gps-end-time 754008363 \
 --gps-start-time 754008323 \
---high-pass 120.0 \
---low-freq-cutoff 130.0 \
+--high-pass 60.0 \
+--low-freq-cutoff 70.0 \
+--max-event-rate 10000 \
 --psd-average-method useMedian \
---psd-average-points 548864 \
---target-sample-rate 16384 \
---lnthreshold -80.0 \
+--psd-average-points 274432 \
+--ram-limit 1024 \
+--resample-rate 8192 \
 --tile-stride-fraction 0.5 \
 --user-tag testing \
---verbose \
---window-length 32768
+--window-length 16384
 \end{verbatim}
 For this to succeed, the current directory must contain the file
 \texttt{H-754008315-754008931.cache} describing the locations of the
-\texttt{.gwf} frame files with channel \verb|H1:LSC-AS_Q| data at 16384
-samples per second for the GPS times 754008323.0 s through 754008363.0 s.
+\texttt{.gwf} frame files containing the channel \verb|H1:LSC-STRAIN|
+spanning the GPS times 754008323.0 s through 754008363.0 s.
 
 \item[Authors]
 Patrick Brady, Saikat Ray-Majumder and Kipp Cannon.  

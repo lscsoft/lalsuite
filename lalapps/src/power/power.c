@@ -328,8 +328,8 @@ fprintf(stderr,
 "	[--inspiralinjection-file <file name>]\n" \
 "	 --low-freq-cutoff <Hz>\n" \
 "	[--max-event-rate <Hz>]\n" \
-"	 --max-tileband <Hz>\n" \
-"	 --max-tileduration <samples>\n" \
+"	 --max-tile-bandwidth <Hz>\n" \
+"	 --max-tile-duration <seconds>\n" \
 "	[--mdc-cache <cache file>]\n" \
 "	[--mdc-channel <channel name>]\n" \
 "	[--output <filename>]\n" \
@@ -564,8 +564,8 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		{"inspiralinjection-file", required_argument, NULL, 'I'},
 		{"low-freq-cutoff", required_argument, NULL, 'Q'},
 		{"max-event-rate", required_argument, NULL, 'F'},
-		{"max-tileband", required_argument, NULL, 'l'},
-		{"max-tileduration", required_argument, NULL, 'm'},
+		{"max-tile-bandwidth", required_argument, NULL, 'l'},
+		{"max-tile-duration", required_argument, NULL, 'm'},
 		{"mdc-cache", required_argument, NULL, 'R'},
 		{"mdc-channel", required_argument, NULL, 'S'},
 		{"output", required_argument, NULL, 'b'},
