@@ -167,9 +167,13 @@ main ( void )
    coarseIn = (InspiralCoarseBankIn *)LALMalloc(sizeof(InspiralCoarseBankIn));
    fineIn = (InspiralFineBankIn *)LALMalloc(sizeof(InspiralFineBankIn));
 
+<<<<<<< CoarseTest.c
+   coarseIn->gridSpacing = Hexagonal;
+=======
    /* fill the coarseBankIn structure */
+>>>>>>> 1.25
    coarseIn->mMin = 1.0;
-   coarseIn->mMax = 20.0;
+   coarseIn->mMax = 30.0;
    coarseIn->MMax = coarseIn->mMax * 2.0;
    coarseIn->massRange = MinComponentMassMaxTotalMass;
    /* coarseIn->massRange = MinMaxComponentMass; */

@@ -65,7 +65,7 @@ int
 main(int argc, char **argv)
 {
   /* top-level status structure */
- UINT4   numPSDpts=1025;
+ UINT4   numPSDpts=8193;
   static LALStatus status;     
   static InspiralCoarseBankIn coarseIn;
   void *noisemodel = LALLIGOIPsd;
@@ -86,7 +86,7 @@ main(int argc, char **argv)
   coarseIn.tSampling = 4096.L;
   coarseIn.order = twoPN;
   coarseIn.mmCoarse = 0.90;
-  coarseIn.mmFine = 0.97;
+  coarseIn.mmFine = 0.90;
   coarseIn.iflso = 0.0L;
   coarseIn.mMin = 3.0;
   coarseIn.mMax = 20.0;
@@ -97,13 +97,13 @@ main(int argc, char **argv)
   coarseIn.etamin = coarseIn.mMin * ( coarseIn.MMax - coarseIn.mMin) / pow(coarseIn.MMax,2.);
   coarseIn.psi0Min = 1.0e4;
   coarseIn.psi0Max = 6.0e5;
-  coarseIn.psi3Min = -3.0e3;
-  coarseIn.psi3Max = -1.0e1;
+  coarseIn.psi3Min = -5.0e3;
+  coarseIn.psi3Max = 1.0e1;
   coarseIn.alpha = 0.L;
-  coarseIn.numFcutTemplates = 4;
-  coarseIn.betaMin = 0.0;
-  coarseIn.betaMax = 800.;
-  coarseIn.spinBank = 1;
+  coarseIn.numFcutTemplates = 1;
+  coarseIn.betaMin = 10.0;
+  coarseIn.betaMax = 700.;
+  coarseIn.spinBank = 2;
   coarseIn.gridSpacing = Hexagonal;
   coarseIn.insidePolygon = True;
 
@@ -116,9 +116,12 @@ main(int argc, char **argv)
   coarseIn.approximant = BCVSpin;
   coarseIn.space       = Psi0Psi3;
   
-  // LALInspiralBCVSpinBank (&status, &tiles, &nlist1, &coarseIn);
+  /*
+  LALInspiralBCVSpinBank (&status, &tiles, &nlist1, &coarseIn);
+  */
   LALInspiralBankGeneration(&status, &coarseIn, &tiles, &nlist1);
-  fprintf (fpr, "#numtemplaes=%d\n", nlist1);
+
+  fprintf (fpr, "#numtemplaes=%d %e %e %e %e %e %e\n", nlist1, coarseIn.psi0Min, coarseIn.psi0Max, coarseIn.psi3Min, coarseIn.psi3Max, coarseIn.betaMin, coarseIn.betaMax);
   beta = tiles->beta;
   for (j=0; j<nlist1; j++)
   {
