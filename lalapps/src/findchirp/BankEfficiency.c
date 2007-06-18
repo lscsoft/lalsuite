@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Duncan Brown, Eirini Messaritaki, Robert Adam Mercer, B.S. Sathyaprakash, Craig Robinson , Thomas Cokelaer
+*  Copyright (C) 2007 Thomas Cokelaer
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -18,7 +18,6 @@
 */
 
 #include "BankEfficiency.h"
-
 /* --- version information --- */
 NRCSID( BANKEFFICIENCYC, "$Id$");
 RCSID(  "$Id$");
@@ -31,7 +30,21 @@ RCSID(  "$Id$");
 #define CVS_DATE_C           "$Date$"
 #define PROGRAM_NAME         "BankEfficiency"
 
+void
+LALInspiralBankGeneration2(
+     LALStatus *status,
+     InspiralCoarseBankIn *input,
+     SnglInspiralTable **first,
+     INT4 *ntiles,
+     UserParametersIn *userParam);
 
+void
+LALInspiralCreateFineBank2(
+    LALStatus  *status,
+    InspiralTemplateList **outlist,
+    INT4                 *nlist,
+    InspiralFineBankIn   fineIn, 
+    UserParametersIn *param);
 static int vrbflg = 0;
 
 RandomParams *randParams = NULL;
@@ -43,7 +56,7 @@ int
 main (INT4 argc, CHAR **argv ) 
 {
   INT4          ntrials = 0;
-  INT4 	        i, thisTemplateIndex;
+  INT4 	        i, thisTemplateIndex, j;
   Approximant   tempOrder; 
 
   /* --- input --- */
@@ -85,15 +98,13 @@ main (INT4 argc, CHAR **argv )
 
   /*fast option variables*/
   REAL4 dt0, dt3, g00, g11, g01, match;
-
+  gsl_histogram * histogramNoise = gsl_histogram_alloc (200);  
+  gsl_matrix *amb1;
   /* --- START main code --- */
   
-  /* --- init some histogram structure --- */
-  gsl_histogram * histogramNoise = gsl_histogram_alloc (200);  
-  gsl_histogram_set_ranges_uniform (histogramNoise, 0.,20.);
     
   /* --- Some initialization --- */ 
-
+  gsl_histogram_set_ranges_uniform (histogramNoise, 0.,20.);
   lal_errhandler = LAL_ERR_EXIT;
   lalDebugLevel = 0;
   templateBank.snglInspiralTable = NULL;
@@ -172,22 +183,38 @@ main (INT4 argc, CHAR **argv )
   }
   
   /* --- Create the template bank --- */
- if ( vrbflg )
+  if ( vrbflg )
   {
     fprintf( stdout, "generating template bank parameters... " );
     fflush( stdout );
   }
 
  
- /* make sure the pointer to the first template is null */
- templateBank.snglInspiralTable = NULL;
+  /* make sure the pointer to the first template is null */
+  templateBank.snglInspiralTable = NULL;
   
- LAL_CALL( LALInspiralBankGeneration( &status, &coarseBankIn, &tmpltHead, &sizeBank),
-	   &status );
- if ( sizeBank )
- {
-   templateBank.snglInspiralTable = tmpltHead;
- }
+  /*Let us replace the template bank with a fine template bank*/
+  if (userParam.t0FineBin > 0)
+  {
+    LAL_CALL( LALInspiralBankGeneration2( &status, &coarseBankIn, &tmpltHead, &sizeBank, &userParam),
+ 	   &status );  
+  }
+  else
+  {
+    LAL_CALL( LALInspiralBankGeneration( &status, &coarseBankIn, &tmpltHead, &sizeBank),
+ 	   &status );
+  }
+  
+  amb1 = gsl_matrix_alloc(4,sizeBank);/*allocated t0,t3,max*/
+  for (i=0;i<4; i++)
+  for (j=0;j<sizeBank; j++)
+    gsl_matrix_set(amb1, i, j, 0.);      
+  
+  if ( sizeBank )
+  {
+    templateBank.snglInspiralTable = tmpltHead;
+  }
+  
  
  if (userParam.printBank)
  {
@@ -306,7 +333,8 @@ main (INT4 argc, CHAR **argv )
 		insptmplt = randIn.param;
 		overlapin.param              = randIn.param;
 		overlapin.param.approximant  = userParam.template;
-		sizeBank                     = 1;  /* we dont need the whole bank for checking */ 
+		sizeBank                     = 1;  /* we dont need the whole bank for checking */
+                insptmplt.fFinal = randIn.param.fFinal;
 	      }
 	 
 	      LAL_CALL(LALInspiralOverlapBCV(&status, 
@@ -384,11 +412,14 @@ main (INT4 argc, CHAR **argv )
 	      match = 1 - (g00*dt0*dt0 + 2*g01*dt0*dt3 + g11*dt3*dt3);
 
 	
-
 	      {
-	        if (userParam.fastSimulation == 1 && match <.5)
+	        if (userParam.fastSimulation == 1 && (match <userParam.eMatch )  )
 	        { 		  
 /*  		  filter_processed--;*/
+                  gsl_matrix_set(amb1,2,thisTemplateIndex, 0); 
+                  gsl_matrix_set(amb1,3,thisTemplateIndex, 0); 
+                  gsl_matrix_set(amb1,0,thisTemplateIndex, insptmplt.t0); 
+                  gsl_matrix_set(amb1,1,thisTemplateIndex, insptmplt.t3); 
 	        }		
 	        else
 	        {
@@ -396,6 +427,10 @@ main (INT4 argc, CHAR **argv )
 						  &correlation,
 						  &overlapout,
 						  &overlapin), &status);
+                  gsl_matrix_set(amb1,2,thisTemplateIndex, gsl_matrix_get(amb1,2,thisTemplateIndex) + overlapout.max); 
+                  gsl_matrix_set(amb1,3,thisTemplateIndex, gsl_matrix_get(amb1,3,thisTemplateIndex) + correlation.data[randIn.param.nStartPad]); 
+                  gsl_matrix_set(amb1,0,thisTemplateIndex, insptmplt.t0); 
+                  gsl_matrix_set(amb1,1,thisTemplateIndex, insptmplt.t3); 
 
 		  OverlapOutputThisTemplate.rhoMax = overlapout.max;
 		  OverlapOutputThisTemplate.templateNumber = currentTemplate;
@@ -513,9 +548,22 @@ main (INT4 argc, CHAR **argv )
     fclose(Foutput);
   }
 
-
+  {
+    CHAR str[512];
+    sprintf(str, "ambiguity_%d.dat", userParam.useed);
+    
+   Foutput=  fopen(str,"w");
+    for (j=0; j<sizeBank; j++)
+      fprintf(Foutput, "%e %e %e %e\n", 
+          gsl_matrix_get(amb1,0,j),
+          gsl_matrix_get(amb1,1,j),
+          gsl_matrix_get(amb1,2,j),
+          gsl_matrix_get(amb1,3,j)
+          );
+    fclose(Foutput);
+    gsl_matrix_free(amb1);
+  }
   
-  /* --- destroy the plans, correlation and signal --- */
 
   while ( templateBank.snglInspiralTable )
   {
@@ -523,7 +571,8 @@ main (INT4 argc, CHAR **argv )
     templateBank.snglInspiralTable = templateBank.snglInspiralTable->next;
     LALFree( tmpltHead );
   }
-
+  
+  /* --- destroy the plans, correlation and signal --- */
   LALDestroyRandomParams(&status, &randParams );
   
   if (userParam.template == BCV)
@@ -677,7 +726,7 @@ PrintResults(   ResultIn result,
 	  randIn.param.t0,
 	  randIn.param.t3);
   
-  fprintf(stdout, "%7.2f %7.2f   %e %e %e ", 
+  fprintf(stdout, "%e %e   %e %e %e ", 
 	  result.fend_trigger, 
 	  randIn.param.fFinal,
 	  randIn.param.mass1,
@@ -685,7 +734,7 @@ PrintResults(   ResultIn result,
 	  randIn.param.startPhase);
 
   
-  fprintf(stdout, " %e %7.5f  %e   %e %d %d %d \n",
+  fprintf(stdout, " %e %e  %e   %e %d %d %d \n",
 	  result.rho_final, 
 	  result.snrAtCoaTime,
 	  result.phase, 
@@ -1492,8 +1541,6 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
       randIn.NoiseAmp);
   ADD_PROCESS_PARAM("string", "%s","--noise-model",
       GetStringFromNoiseModel(userParam.noiseModel));
-  ADD_PROCESS_PARAM("int","%d","--bank-number-fcut",	        
-      coarseBankIn.numFcutTemplates);
   ADD_PROCESS_PARAM("int","%d","--num-seconds",
       userParam.numSeconds);
   ADD_PROCESS_PARAM("float","%f","--psi0",	
@@ -1532,9 +1579,17 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
       userParam.tau0);
   ADD_PROCESS_PARAM("float","%e","--tau3",	
       userParam.tau3);
+  ADD_2PROCESS_PARAM("float","%f %f","--t0-fine-range",
+      userParam.t0FineMin, userParam.t0FineMax);
+  ADD_2PROCESS_PARAM("float","%f %f","--t3-fine-range",
+      userParam.t3FineMin, userParam.t3FineMax);
+  ADD_PROCESS_PARAM("float","%f","--t0-fine-bin",
+      userParam.t0FineBin);
+  ADD_PROCESS_PARAM("float","%f","--t3-fine-bin",
+      userParam.t3FineBin);
 
   if (userParam.printResultXml){
-    ADD_PROCESS_PARAM("float", "%s", "--print-result-xml"," ");
+    ADD_PROCESS_PARAM("float", "%s", "--print-xml"," ");
   }
   if (!userParam.startPhase){
     ADD_PROCESS_PARAM("float", "%s", "--no-start-phase"," ");
@@ -2081,7 +2136,7 @@ void BEGenerateInputData(LALStatus *status,
   if (userParam.startPhase == 1){
     LALUniformDeviate( status->statusPtr, &u, randParams);
     CHECKSTATUSPTR(status);
-    randIn->param.startPhase = u * LAL_PI;
+    randIn->param.startPhase = u * (2*LAL_PI) - LAL_PI;
   }
   else{
     randIn->param.startPhase = 0;
@@ -2507,7 +2562,6 @@ void InitInspiralCoarseBankIn(InspiralCoarseBankIn *coarseBankIn)
   coarseBankIn->tSampling 	= BANKEFFICIENCY_TSAMPLING;
   coarseBankIn->space     	= BANKEFFICIENCY_SPACE;
   coarseBankIn->mmCoarse  	= BANKEFFICIENCY_MMCOARSE;
-  coarseBankIn->mmFine    	= BANKEFFICIENCY_MMFINE;
   coarseBankIn->iflso           = BANKEFFICIENCY_IFLSO ;
   coarseBankIn->mMin      	= BANKEFFICIENCY_MMIN;
   coarseBankIn->mMax      	= BANKEFFICIENCY_MMAX;
@@ -2579,6 +2633,7 @@ void InitUserParametersIn(UserParametersIn *userParam)
 {
   userParam->alphaFConstraint   = ALPHAFConstraint;
   userParam->extraFinalPrinting = 0; 
+  userParam->eMatch = 0.5; 
   userParam->template		= BANKEFFICIENCY_TEMPLATE;
   /*By default, this value is empty and will be populate with the sampling frequency later*/
   userParam->signalfFinal       =  0.;
@@ -2589,6 +2644,13 @@ void InitUserParametersIn(UserParametersIn *userParam)
   userParam->psi0         	= -1;
   userParam->psi3         	= -1;
   userParam->tau0         	= -1;
+  userParam->tau3         	= -1;
+  userParam->t0FineMin         	= 0;
+  userParam->t0FineMax         	= 0;
+  userParam->t3FineMin         	= 0;
+  userParam->t3FineMax         	= 0;
+  userParam->t0FineBin         	= 0;
+  userParam->t3FineBin         	= 0;
   userParam->tau3         	= -1;
   userParam->printBestOverlap 	= BANKEFFICIENCY_PRINTBESTOVERLAP;
   userParam->printBestTemplate 	= BANKEFFICIENCY_PRINTBESTTEMPLATE;
@@ -2691,6 +2753,9 @@ ParseParameters(	INT4 			*argc,
       }
       else if (!strcmp(argv[i],"--debug")) {
         BEParseGetInt(argv,  &i, &(lalDebugLevel)); 
+      }
+      else if (!strcmp(argv[i], "--e-match")){
+        BEParseGetDouble(argv,  &i, &(userParam->eMatch));     
       }
       else if (!strcmp(argv[i],"--fl-signal")) {
         BEParseGetDouble(argv,  &i, &(randIn->param.fLower));
@@ -2859,6 +2924,18 @@ ParseParameters(	INT4 			*argc,
 	fprintf(stderr, "unknow simulation-type after --simulation-type. try --help \n");
 	exit(0);
 	}
+      }
+      else if (!strcmp(argv[i], "--t0-fine-range")){
+        BEParseGetDouble2(argv,  &i, &(userParam->t0FineMin), &(userParam->t0FineMax));
+      }
+      else if (!strcmp(argv[i], "--t3-fine-range")){
+        BEParseGetDouble2(argv,  &i, &(userParam->t3FineMin), &(userParam->t3FineMax));
+      }
+      else if (!strcmp(argv[i], "--t0-fine-bin")){
+        BEParseGetDouble(argv,  &i, &(userParam->t0FineBin));
+      }
+      else if (!strcmp(argv[i], "--t3-fine-bin")){
+        BEParseGetDouble(argv,  &i, &(userParam->t3FineBin));
       }
       else if (!strcmp(argv[i], "--no-start-phase")){
 	userParam->startPhase = 0;
@@ -3624,5 +3701,204 @@ BEAscii2Xml(void)
   fclose(output);
   fprintf(stderr,"closing xml file\n");
 }
+
+
+
+/* 
+ * These two next functions are hack version of InspiralBankGeneration and
+ * FineBank so that we can call a hybrid version of fineBank as if it was
+ * available in BankGenerarion. Therefore, hardly any change is needed both in
+ * lal and BankEfficiency. Once the code with this fine option is fully
+ * tested, one can incorporate the change within lal. 
+ * */
+
+void
+LALInspiralBankGeneration2(
+     LALStatus *status,
+     InspiralCoarseBankIn *input,
+     SnglInspiralTable **first,
+     INT4 *ntiles, 
+     UserParametersIn *userParam)
+{
+  InspiralTemplateList *coarseList = NULL;
+  InspiralTemplateList *fineList = NULL;
+  InspiralFineBankIn *fineIn = NULL;
+  SnglInspiralTable *bank;
+  INT4 cnt = 0, flist =0;
+  
+  INITSTATUS(status, "LALInspiralBankGeneration2", BANKEFFICIENCYC);
+  ATTATCHSTATUSPTR(status);
+    
+  ASSERT( input != NULL, status, LALINSPIRALBANKH_ENULL,
+          LALINSPIRALBANKH_MSGENULL );
+  ASSERT( *first == NULL, status, LALINSPIRALBANKH_ENULL,
+          LALINSPIRALBANKH_MSGENULL );
+
+  /* For nonspinning approximants, call LALInspiralCreateCoarseBank(). */
+  switch( input->approximant )
+  {
+  case BCV:
+  case EOB:
+  case PadeT1:
+  case PadeF1:
+  case TaylorF1:
+  case TaylorF2:
+  case TaylorT1:
+  case TaylorT2:
+  case TaylorT3:
+  case AmpCorPPN:
+
+    /* Use LALInspiralCreateCoarseBank(). */
+    TRY( LALInspiralCreateCoarseBank( status->statusPtr, &coarseList, ntiles,
+         *input ), status );
+    
+    fineIn = (InspiralFineBankIn *)LALMalloc(sizeof(InspiralFineBankIn));
+    fineIn->coarseIn = *input;
+    fineIn->templateList = coarseList[0];
+    fineIn->templateList.params.t0 = 0.9384;
+    fineIn->templateList.params.t3 = 0.235;
+    
+    TRY( LALInspiralCreateFineBank2(status->statusPtr, &fineList, &flist, *fineIn, userParam), status);
+    if (fineIn!=NULL) 
+      LALFree(fineIn);           
+
+    /* Convert output data structure. */
+    bank = (SnglInspiralTable *) LALCalloc(1, sizeof(SnglInspiralTable));
+    if (bank == NULL){
+      ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
+    }
+    *first = bank;
+    for( cnt = 0; cnt < flist; cnt++ )
+    {
+      bank = bank->next = (SnglInspiralTable *) LALCalloc( 1, sizeof(
+             SnglInspiralTable ) );
+      if (bank == NULL)
+      {
+        ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
+      }
+      bank->mass1 = fineList[cnt].params.mass1;
+      bank->mass2 = fineList[cnt].params.mass2;
+      bank->mchirp = fineList[cnt].params.chirpMass;
+      bank->mtotal = fineList[cnt].params.totalMass;
+      bank->eta = fineList[cnt].params.eta;
+      bank->tau0 = fineList[cnt].params.t0;
+      bank->tau2 = fineList[cnt].params.t2;
+      bank->tau3 = fineList[cnt].params.t3;
+      bank->tau4 = fineList[cnt].params.t4;
+      bank->tau5 = fineList[cnt].params.t5;
+      bank->ttotal = fineList[cnt].params.tC;
+      bank->psi0 = fineList[cnt].params.psi0;
+      bank->psi3 = fineList[cnt].params.psi3;
+      bank->f_final = fineList[cnt].params.fFinal;
+      bank->eta = fineList[cnt].params.eta;
+      bank->beta = fineList[cnt].params.beta;
+      
+      /* Copy the 10 metric co-efficients ... */
+      memcpy (bank->Gamma, fineList[cnt].metric.Gamma, 10*sizeof(REAL4));
+      
+    }
+    /* Free first template, which is blank. */
+    bank = (*first)->next;
+    LALFree( *first );
+    *first = bank;
+    /* free the coarse list returned by create coarse bank */
+    LALFree( fineList );
+    LALFree( coarseList );
+    break;
+
+  default:
+    ABORT( status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE );
+
+  }
+
+  *ntiles = flist; 
+  DETATCHSTATUSPTR(status);
+  RETURN(status); 
+}
+
+
+void LALInspiralCreateFineBank2(LALStatus  *status,
+                               InspiralTemplateList **outlist,
+                               INT4                 *nlist,
+                               InspiralFineBankIn   fineIn, 
+                               UserParametersIn *userParam)
+{ /* </lalVerbatim> */
+
+  REAL8  x0FineMin, x1FineMin, x0FineMax, x1FineMax;
+  INT4  i, j, validPars, bins0, bins1;
+  InspiralTemplate   *tempPars=NULL;
+  InspiralBankParams *bankPars=NULL;
+
+
+  INITSTATUS (status, "LALInspiralCreateFineBank", BANKEFFICIENCYC);
+  ATTATCHSTATUSPTR(status);
+  ASSERT ((INT4)fineIn.coarseIn.space>=0,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+  ASSERT ((INT4)fineIn.coarseIn.space<=1,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+  ASSERT ((REAL8)fineIn.templateList.params.t0 > 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+
+  *nlist = 0;
+
+  tempPars = (InspiralTemplate *) LALCalloc(1, sizeof(InspiralTemplate));
+  bankPars = (InspiralBankParams *) LALCalloc(1, sizeof(InspiralBankParams));
+  *tempPars = fineIn.templateList.params;
+  switch (fineIn.coarseIn.space) 
+  {
+    case Tau0Tau2:
+      ASSERT (fineIn.templateList.params.t2 > 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+      bankPars->x0 = fineIn.templateList.params.t0;
+      bankPars->x1 = fineIn.templateList.params.t2;
+      break;
+    case Tau0Tau3:
+      ASSERT (fineIn.templateList.params.t3 > 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+      bankPars->x0 = fineIn.templateList.params.t0;
+      bankPars->x1 = fineIn.templateList.params.t3;
+      break;
+    default: /* JC: DEFAULT CASE ADDED HERE */
+      ABORT( status, 9999, "Default case in switch." );
+  }
+  
+  x0FineMin = userParam->t0FineMin;
+  x0FineMax = userParam->t0FineMax;
+  x1FineMin = userParam->t3FineMin;
+  x1FineMax = userParam->t3FineMax;
+  bins0 = userParam->t0FineBin;
+  bins1 = userParam->t3FineBin;
+  bankPars->dx0 = (x0FineMax - x0FineMin)/((float)bins0 -1);
+  bankPars->dx1 = (x1FineMax - x1FineMin)/((float)bins1 -1);
+
+  
+ 
+  bankPars->x1 = x1FineMin;
+  for(i=0; i<=bins1; i++) {
+    bankPars->x0 = x0FineMin;
+    for(j=0; j<=bins0; j++) {
+      LALInspiralValidTemplate(status->statusPtr, &validPars, *bankPars, fineIn.coarseIn);
+      CHECKSTATUSPTR(status);
+      if (validPars) {
+        LALInspiralComputeParams(status->statusPtr, tempPars, *bankPars, fineIn.coarseIn);
+        CHECKSTATUSPTR(status);
+        
+        if (!(*outlist = (InspiralTemplateList*)
+              LALRealloc(*outlist, sizeof(InspiralTemplateList)*(*nlist+1)))) {
+          ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+          outlist = NULL;
+        }
+        memset( *outlist + *nlist, 0, sizeof(InspiralTemplateList) );
+        (*outlist)[*nlist].params = *tempPars;
+        ++(*nlist);
+      }
+      bankPars->x0+=bankPars->dx0;
+    }
+    bankPars->x1+=bankPars->dx1;
+  }
+  
+  if (tempPars!=NULL) LALFree(tempPars);
+  if (bankPars!=NULL) LALFree(bankPars);
+  
+  DETATCHSTATUSPTR(status);
+  RETURN (status);
+}
+
+
 
 

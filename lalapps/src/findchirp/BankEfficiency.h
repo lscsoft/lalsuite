@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Craig Robinson , Thomas Cokelaer
+*  Copyright (C) 2007 Thomas Cokelaer
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 #include <processtable.h>
 #include <stdio.h>
 #include <gsl/gsl_histogram.h>
+#include <gsl/gsl_matrix.h>
 #include <lalapps.h>
 
 #include <lal/LALNoiseModels.h>
@@ -259,7 +260,10 @@ typedef struct{
   REAL4 signalfFinal;
   INT4 startPhase;
   CHAR *inputPSD;
-  INT4 useed;  
+  INT4 useed;
+  REAL8 eMatch;
+  REAL8 mmFine;
+  REAL8 t0FineMin, t0FineMax, t3FineMin, t3FineMax, t0FineBin, t3FineBin; 
 }
 UserParametersIn;
 
