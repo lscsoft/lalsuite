@@ -120,6 +120,7 @@ def parse_config_file(options):
 
 	options.psds_per_power = config.getint("pipeline", "psds_per_power")
 	options.psds_per_injection = config.getint("pipeline", "psds_per_injection")
+	options.timing_params = power.get_timing_parameters(config)
 
 	return seglistdict, config
 
@@ -133,18 +134,18 @@ def parse_config_file(options):
 #
 
 
-def remove_too_short_segments(seglistdict, powerjob):
+def remove_too_short_segments(seglistdict, timing_params):
 	"""
 	Remove segments from seglistdict that are too short to analyze.
 	"""
 	# CAUTION:  this function modifies seglistdict in place.
 	for seglist in seglistdict.itervalues():
 		for i in xrange(len(seglist) - 1, -1, -1):
-			if not power.segment_ok(powerjob, seglist[i]):
+			if not power.segment_ok(timing_params, seglist[i]):
 				del seglist[i]
 
 
-def compute_segment_lists(seglistdict, time_slides, minimum_gap, full_segments = True, verbose = False):
+def compute_segment_lists(seglistdict, time_slides, minimum_gap, timing_params, full_segments = True, verbose = False):
 	if verbose:
 		print >>sys.stderr, "constructing segment list ..."
 
@@ -156,7 +157,7 @@ def compute_segment_lists(seglistdict, time_slides, minimum_gap, full_segments =
 		# the speed of the llwapp.get_coincident_segmentlistdict()
 		# function when the input segmentlists have had many data
 		# quality holes poked out of them
-		remove_too_short_segments(seglistdict, power.powerjob)
+		remove_too_short_segments(seglistdict, timing_params)
 
 		# extract the segments that are coincident under the time
 		# slides
@@ -166,7 +167,7 @@ def compute_segment_lists(seglistdict, time_slides, minimum_gap, full_segments =
 		# number of PSDs
 		for seglist in new.itervalues():
 			# count the number of PSDs in each segment
-			psds = [power.psds_from_job_length(power.powerjob, float(abs(seg))) for seg in seglist]
+			psds = [power.psds_from_job_length(timing_params, float(abs(seg))) for seg in seglist]
 
 			# round up to the nearest integer.
 			# FIXME: if psds is < 1, it means the coincident
@@ -181,7 +182,7 @@ def compute_segment_lists(seglistdict, time_slides, minimum_gap, full_segments =
 			psds = [int(math.ceil(max(n, 1.0))) for n in psds]
 
 			# compute the duration of each job
-			durations = [power.job_length_from_psds(power.powerjob, n) for n in psds]
+			durations = [power.job_length_from_psds(timing_params, n) for n in psds]
 
 			# update segment list
 			for i, seg in enumerate(seglist):
@@ -195,7 +196,7 @@ def compute_segment_lists(seglistdict, time_slides, minimum_gap, full_segments =
 		seglistdict &= new
 
 	# remove segments that are too short
-	remove_too_short_segments(seglistdict, power.powerjob)
+	remove_too_short_segments(seglistdict, timing_params)
 
 	# done
 	return seglistdict
@@ -319,7 +320,7 @@ if options.do_noninjections:
 	background_seglistdict = segments.segmentlistdict()
 	for background_time_slide_filename in options.background_time_slides:
 		background_time_slides.append(ligolw_tisi.load_time_slides(background_time_slide_filename, verbose = options.verbose, gz = background_time_slide_filename[-3:] == ".gz").values())
-		background_seglistdict |= compute_segment_lists(seglistdict, background_time_slides[-1], options.minimum_gap, full_segments = options.full_segments, verbose = options.verbose)
+		background_seglistdict |= compute_segment_lists(seglistdict, background_time_slides[-1], options.minimum_gap, options.timing_params, full_segments = options.full_segments, verbose = options.verbose)
 else:
 	background_time_slides = [[]]
 	background_seglistdict = segments.segmentlistdict()
@@ -330,7 +331,7 @@ background_time_slides_all = reduce(lambda a, b: a + b, background_time_slides)
 
 if options.do_injections:
 	injection_time_slides = ligolw_tisi.load_time_slides(options.injection_time_slides, verbose = options.verbose, gz = options.injection_time_slides[-3:] == ".gz").values()
-	injection_seglistdict = compute_segment_lists(seglistdict, injection_time_slides, options.minimum_gap, full_segments = options.full_segments, verbose = options.verbose)
+	injection_seglistdict = compute_segment_lists(seglistdict, injection_time_slides, options.minimum_gap, options.timing_params, full_segments = options.full_segments, verbose = options.verbose)
 else:
 	injection_time_slides = []
 	injection_seglistdict = segments.segmentlistdict()
@@ -375,12 +376,12 @@ datafinds = power.make_datafind_stage(dag, injection_seglistdict | background_se
 
 # injections
 
-inj_pwr_nodes = power.make_single_instrument_injections_stage(dag, datafinds, binjnodes, injection_seglistdict, "INJECTIONS_%s" % options.tag, options.psds_per_injection, verbose = options.verbose)
+inj_pwr_nodes = power.make_single_instrument_injections_stage(dag, datafinds, binjnodes, injection_seglistdict, "INJECTIONS_%s" % options.tag, options.timing_params, options.psds_per_injection, verbose = options.verbose)
 
 
 # non-injections
 
-pwr_nodes = power.make_single_instrument_stage(dag, datafinds, background_seglistdict, options.tag, options.psds_per_power, verbose = options.verbose)
+pwr_nodes = power.make_single_instrument_stage(dag, datafinds, background_seglistdict, options.tag, options.timing_params, options.psds_per_power, verbose = options.verbose)
 
 
 #

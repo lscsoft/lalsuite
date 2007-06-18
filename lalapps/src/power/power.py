@@ -40,6 +40,7 @@ from glue import segmentsUtils
 from glue import pipeline
 from glue.lal import CacheEntry
 from pylal.date import LIGOTimeGPS
+from pylal.xlal import burstsearch
 
 
 __author__ = "Duncan Brown <duncan@gravity.phys.uwm.edu>, Kipp Cannon <kipp@gravity.phys.uwm.edu>"
@@ -87,6 +88,38 @@ def get_parents_per_bucluster(config_parser):
 
 def get_parents_per_bucut(config_parser):
 	return config_parser.getint("pipeline", "parents_per_bucut")
+
+
+class TimingParameters(object):
+	pass
+
+
+def get_timing_parameters(config_parser):
+	# initialize data structure
+	params = TimingParameters()
+
+	# retrieve parameters from config file
+	params.filter_corruption = config_parser.getint("lalapps_power", "filter-corruption")
+	params.max_tile_bandwidth = config_parser.getfloat("lalapps_power", "max-tile-bandwidth")
+	params.max_tile_duration = config_parser.getfloat("lalapps_power", "max-tile-duration")
+	params.psd_length = config_parser.getint("lalspps_power", "psd-average-points")
+	params.resample_rate = config_parser.getfloat("lalapps_power", "resample-rate")
+	params.tile_stride_fraction = config_parser.getfloat("lalapps_power", "tile-stride-fraction")
+	params.window_length = config_parser.getint("lalapps_power", "window-length")
+
+	# compute derived parameters using library code in LAL
+	computed = burstsearch.XLALEPGetTimingParameters(params.window_length, int(params.max_tile_duration * params.resample_rate), params.tile_stride_fraction, params.psd_length)
+
+	params.psd_length = computed["psd_length"]
+	params.psd_shift = computed["psd_shift"]
+	params.window_shift = computed["window_shift"]
+	params.window_pad = computed["window_pad"]
+	params.tiling_lenght = compute["tiling_length"]
+
+	# NOTE:  in previous code, psd_length, window_length, window_shift,
+	# filter_corruption, and psd_overlap were all floats in units of
+	# seconds
+	return params
 
 
 #
@@ -200,13 +233,6 @@ class PowerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "power-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "power-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err"))
 		self.set_sub_file("lalapps_power.sub")
-
-		# pre-evaluate some segmentation parameters
-		self.psd_length = float(self.get_opts()["psd-average-points"]) / float(self.get_opts()["resample-rate"])
-		self.window_length = float(self.get_opts()["window-length"]) / float(self.get_opts()["resample-rate"])
-		self.window_shift = float(self.get_opts()["window-shift"]) / float(self.get_opts()["resample-rate"])
-		self.filter_corruption = float(self.get_opts()["filter-corruption"]) / float(self.get_opts()["resample-rate"])
-		self.psd_overlap = self.window_length - self.window_shift
 
 
 class PowerNode(pipeline.AnalysisNode):
@@ -568,34 +594,43 @@ def init_job_types(config_parser, types = ["datafind", "binj", "power", "lladd",
 #
 
 
-def psds_from_job_length(powerjob, t):
+def psds_from_job_length(timing_params, t):
 	"""
 	Return the number of PSDs that can fit into a job of length t
 	seconds.  In general, the return value is a non-integer.
 	"""
-	if t < 0.0:
+	if t < 0:
 		raise ValueError, t
-	return (t - 2 * powerjob.filter_corruption - powerjob.psd_overlap) / (powerjob.psd_length - powerjob.psd_overlap)
+	# convert to samples, and remove filter corruption
+	t = t * timing_params.resample_rate - 2 * timing_params.filter_corruption
+	if t < timing_params.psd_length:
+		return 0
+	return (t - timing_params.psd_length) / timing_params.psd_shift + 1
 
 
-def job_length_from_psds(powerjob, psds):
+def job_length_from_psds(timing_params, psds):
 	"""
 	From the analysis parameters and a count of PSDs, return the length
 	of the job in seconds.
 	"""
 	if psds < 1:
 		raise ValueError, psds
-	return psds * (powerjob.psd_length - powerjob.psd_overlap) + powerjob.psd_overlap + 2 * powerjob.filter_corruption
+	# number of samples
+	result = (psds - 1) * timing_params.psd_shift + timing_params.psd_length
+	# add filter corruption
+	result += 2 * timing_params.filter_corruption
+	# convert to seconds
+	return result / timing_params.resample_rate
 
 
-def split_segment(powerjob, segment, psds_per_job):
+def split_segment(timing_params, segment, psds_per_job):
 	"""
 	Split the data segment into correctly-overlaping segments.  We try
 	to have the numbers of PSDs in each segment be equal to
 	psds_per_job, but with a short segment at the end if needed.
 	"""
-	joblength = job_length_from_psds(powerjob, psds_per_job)
-	joboverlap = 2 * powerjob.filter_corruption + powerjob.psd_overlap
+	joblength = job_length_from_psds(timing_params, psds_per_job)
+	joboverlap = 2 * timing_params.filter_corruption + (timing_params.psd_length - timing_params.psd_shift)
 
 	segs = segments.segmentlist()
 	t = segment[0]
@@ -603,17 +638,17 @@ def split_segment(powerjob, segment, psds_per_job):
 		segs.append(segments.segment(t, t + joblength) & segment)
 		t += joblength - joboverlap
 
-	extra_psds = int(psds_from_job_length(powerjob, float(segment[1] - t)))
+	extra_psds = int(psds_from_job_length(timing_params, float(segment[1] - t)))
 	if extra_psds:
-		segs.append(segments.segment(t, t + job_length_from_psds(powerjob, extra_psds)))
+		segs.append(segments.segment(t, t + job_length_from_psds(timing_params, extra_psds)))
 	return segs
 
 
-def segment_ok(powerjob, segment):
+def segment_ok(timing_params, segment):
 	"""
 	Return True if the segment can be analyzed using lalapps_power.
 	"""
-	return psds_from_job_length(powerjob, float(abs(segment))) >= 1.0
+	return psds_from_job_length(timing_params, float(abs(segment))) >= 1.0
 
 
 #
@@ -841,7 +876,7 @@ def make_multibinj_fragment(dag, seg, tag):
 #
 
 
-def make_power_segment_fragment(dag, datafindnodes, instrument, segment, tag, psds_per_job, verbose = False):
+def make_power_segment_fragment(dag, datafindnodes, instrument, segment, tag, timing_params, psds_per_job, verbose = False):
 	"""
 	Construct a DAG fragment for an entire segment, splitting the
 	segment into multiple power jobs.
@@ -849,7 +884,7 @@ def make_power_segment_fragment(dag, datafindnodes, instrument, segment, tag, ps
 	if len(datafindnodes) != 1:
 		raise ValueError, "must set exactly one datafind parent per power job, got %d" % len(datafindnodes)
 	framecache = datafindnodes[0].get_output()
-	seglist = split_segment(powerjob, segment, psds_per_job)
+	seglist = split_segment(timing_params, segment, psds_per_job)
 	if verbose:
 		print >>sys.stderr, "Segment split: " + str(seglist)
 	nodes = []
@@ -863,14 +898,14 @@ def make_power_segment_fragment(dag, datafindnodes, instrument, segment, tag, ps
 #
 
 
-def make_injection_segment_fragment(dag, datafindnodes, binjnodes, instrument, segment, tag, psds_per_job, verbose = False):
+def make_injection_segment_fragment(dag, datafindnodes, binjnodes, instrument, segment, tag, timing_params, psds_per_job, verbose = False):
 	if len(datafindnodes) != 1:
 		raise ValueError, "must set exactly one datafind parent per power job, got %d" % len(datafindnodes)
 	framecache = datafindnodes[0].get_output()
 	if len(binjnodes) != 1:
 		raise ValueError, "must set exactly one binj parent per power job, got %d" % len(binjnodes)
 	simfile = binjnodes[0].get_output_cache()[0].path()
-	seglist = split_segment(powerjob, segment, psds_per_job)
+	seglist = split_segment(timing_params, segment, psds_per_job)
 	if verbose:
 		print >>sys.stderr, "Injections split: " + str(seglist)
 	nodes = []
@@ -893,7 +928,7 @@ def make_injection_segment_fragment(dag, datafindnodes, binjnodes, instrument, s
 #
 
 
-def make_single_instrument_stage(dag, datafinds, seglistdict, tag, psds_per_job, verbose = False):
+def make_single_instrument_stage(dag, datafinds, seglistdict, tag, timing_params, psds_per_job, verbose = False):
 	nodes = []
 	for instrument, seglist in seglistdict.iteritems():
 		for seg in seglist:
@@ -907,7 +942,7 @@ def make_single_instrument_stage(dag, datafinds, seglistdict, tag, psds_per_job,
 				raise ValueError, "error, not exactly 1 datafind is suitable for power job at %s in %s" % (str(seg), instrument)
 
 			# power jobs
-			nodes += make_power_segment_fragment(dag, dfnodes, instrument, seg, tag, psds_per_job, verbose = verbose)
+			nodes += make_power_segment_fragment(dag, dfnodes, instrument, seg, tag, timing_params, psds_per_job, verbose = verbose)
 
 	# done
 	return nodes
@@ -918,7 +953,7 @@ def make_single_instrument_stage(dag, datafinds, seglistdict, tag, psds_per_job,
 #
 
 
-def make_single_instrument_injections_stage(dag, datafinds, binjnodes, seglistdict, tag, psds_per_job, verbose = False):
+def make_single_instrument_injections_stage(dag, datafinds, binjnodes, seglistdict, tag, timing_params, psds_per_job, verbose = False):
 	nodes = []
 	for instrument, seglist in seglistdict.iteritems():
 		for seg in seglist:
@@ -932,7 +967,7 @@ def make_single_instrument_injections_stage(dag, datafinds, binjnodes, seglistdi
 				raise ValueError, "error, not exactly 1 datafind is suitable for power job at %s in %s" % (str(seg), instrument)
 
 			# power jobs
-			nodes += make_injection_segment_fragment(dag, dfnodes, binjnodes, instrument, seg, tag, psds_per_job, verbose = verbose)
+			nodes += make_injection_segment_fragment(dag, dfnodes, binjnodes, instrument, seg, tag, timing_params, psds_per_job, verbose = verbose)
 
 	# done
 	return nodes
