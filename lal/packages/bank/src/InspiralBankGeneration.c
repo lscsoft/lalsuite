@@ -118,10 +118,18 @@ LALInspiralBankGeneration(
     else if (input->spinBank==1)
     {
     /* For extended bank use LALInspiralBCVSpinBank() */
-/*
+    /*
     TRY( LALInspiralBCVSpinBank( status->statusPtr, first, ntiles, input ),
          status );   
-*/
+    */
+    }
+    else if (input->spinBank==2)
+    {
+    /* For extended bank use LALInspiralBCVSpinBank() */
+    /*
+    TRY( LALInspiralBCVSpinRandomBank( status->statusPtr, first, ntiles, input ),
+         status );   
+    */
     }
     else
     {
