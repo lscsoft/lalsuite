@@ -40,7 +40,7 @@ from glue import segmentsUtils
 from glue import pipeline
 from glue.lal import CacheEntry
 from pylal.date import LIGOTimeGPS
-from pylal.xlal import burstsearch
+from pylal import burstsearch
 
 
 __author__ = "Duncan Brown <duncan@gravity.phys.uwm.edu>, Kipp Cannon <kipp@gravity.phys.uwm.edu>"
@@ -90,31 +90,20 @@ def get_parents_per_bucut(config_parser):
 	return config_parser.getint("pipeline", "parents_per_bucut")
 
 
-class TimingParameters(object):
-	pass
-
-
 def get_timing_parameters(config_parser):
 	# initialize data structure
-	params = TimingParameters()
+	resample_rate = config_parser.getfloat("lalapps_power", "resample-rate")
+	params = burstsearch.XLALEPGetTimingParameters(
+		window_length = config_parser.getint("lalapps_power", "window-length"),
+		max_tile_length = config_parser.getfloat("lalapps_power", "max-tile-duration") * resample_rate,
+		tile_stride_fraction = config_parser.getfloat("lalapps_power", "tile-stride-fraction"),
+		psd_length = config_parser.getint("lalspps_power", "psd-average-points")
+	)
+	params.resample_rate = resample_rate
 
-	# retrieve parameters from config file
+	# retrieve additional parameters from config file
 	params.filter_corruption = config_parser.getint("lalapps_power", "filter-corruption")
 	params.max_tile_bandwidth = config_parser.getfloat("lalapps_power", "max-tile-bandwidth")
-	params.max_tile_duration = config_parser.getfloat("lalapps_power", "max-tile-duration")
-	params.psd_length = config_parser.getint("lalspps_power", "psd-average-points")
-	params.resample_rate = config_parser.getfloat("lalapps_power", "resample-rate")
-	params.tile_stride_fraction = config_parser.getfloat("lalapps_power", "tile-stride-fraction")
-	params.window_length = config_parser.getint("lalapps_power", "window-length")
-
-	# compute derived parameters using library code in LAL
-	computed = burstsearch.XLALEPGetTimingParameters(params.window_length, int(params.max_tile_duration * params.resample_rate), params.tile_stride_fraction, params.psd_length)
-
-	params.psd_length = computed["psd_length"]
-	params.psd_shift = computed["psd_shift"]
-	params.window_shift = computed["window_shift"]
-	params.window_pad = computed["window_pad"]
-	params.tiling_lenght = compute["tiling_length"]
 
 	# NOTE:  in previous code, psd_length, window_length, window_shift,
 	# filter_corruption, and psd_overlap were all floats in units of
