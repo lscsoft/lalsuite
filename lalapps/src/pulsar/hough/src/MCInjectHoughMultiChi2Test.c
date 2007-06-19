@@ -756,6 +756,10 @@ int main(int argc, char *argv[]){
   /* ****************************************************************/
   /*  HERE SHOULD START THE MONTE-CARLO */
   
+      FILE *fp=NULL;
+      fp = fopen("./outChi2Test" , "w");
+      setvbuf(fp, (char *)NULL, _IOLBF, 0);
+
   for(MCloopId=0; MCloopId < uvar_nMCloop; ++MCloopId){
     
     controlN=uvar_nh0; /* checks if near template corresponds to max number count*/
@@ -1147,12 +1151,10 @@ int main(int argc, char *argv[]){
       /******************************************************************/
       /* printing the significance and Chi2Test in the proper file */
       /******************************************************************/
-      FILE *fp=NULL;
-      fp = fopen("./outChi2Test" , "w");
-      setvbuf(fp, (char *)NULL, _IOLBF, 0);
+
       fprintf(fp, "%g  %g  %g  %g \n", (numberCountTotal - meanN)/sigmaN, meanN ,sigmaN, chi2);
       fprintf(stdout, "%g  %g  %g  %g \n", (numberCountTotal - meanN)/sigmaN, meanN ,sigmaN, chi2);
-      fclose(fp);
+      
       
     } /* closing loop for different h0 values */
     fprintf(fpNc, " \n");
@@ -1173,7 +1175,9 @@ int main(int argc, char *argv[]){
   }
 
   } /* Closing MC loop */
-  
+ 
+      fclose(fp);
+ 
   /******************************************************************/
   /* Closing files */
   /******************************************************************/  
