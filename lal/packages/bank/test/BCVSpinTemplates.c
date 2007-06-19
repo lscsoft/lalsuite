@@ -96,14 +96,17 @@ main(int argc, char **argv)
   /* minimum value of eta */
   coarseIn.etamin = coarseIn.mMin * ( coarseIn.MMax - coarseIn.mMin) / pow(coarseIn.MMax,2.);
   coarseIn.psi0Min = 1.0e4;
-  coarseIn.psi0Max = 6.0e5;
-  coarseIn.psi3Min = -5.0e3;
+  coarseIn.psi0Max = 6.0e4;
+  coarseIn.psi3Min = -5.0e2;
   coarseIn.psi3Max = 1.0e1;
   coarseIn.alpha = 0.L;
   coarseIn.numFcutTemplates = 1;
   coarseIn.betaMin = 10.0;
   coarseIn.betaMax = 700.;
   coarseIn.spinBank = 2;
+  coarseIn.iseed = 9295883;
+  coarseIn.nTIni = 10000;
+  coarseIn.ShMaxSz = 1024;
   coarseIn.gridSpacing = Hexagonal;
   coarseIn.insidePolygon = True;
 
@@ -125,12 +128,14 @@ main(int argc, char **argv)
   beta = tiles->beta;
   for (j=0; j<nlist1; j++)
   {
-	  fprintf(fpr, "%e %e %e\n", tiles->psi0, tiles->psi3, beta);
+	  fprintf(fpr, "%7.3f %e %e\n", beta, tiles->psi0, tiles->psi3);
 	  tiles = tiles->next;
 	  if (tiles != NULL && beta != tiles->beta)
 	  {
 		  beta = tiles->beta;
+		  /*
 		  fprintf(fpr, "&\n");
+		  */
 	  }
   }
 

@@ -51,7 +51,7 @@ LALInspiralBCVSpinRandomBank(
 /* </lalVerbatim> */
 
 {
-  INT4 SnMaxSz, N, i, j, k;
+  INT4 ShMaxSz, N, i, j, k;
   double *Sn;
   REAL8Vector newSn;
   MCBankIn bankIn;
@@ -75,11 +75,11 @@ LALInspiralBCVSpinRandomBank(
 
   /* The seed should be initialized to a more meaningful random number! */
   bankIn.error = 0.;
-  bankIn.seed = 204.9208571;
+  bankIn.seed = coarseIn->iseed;
   bankIn.dim=3;
   bankIn.verbose=0;
-  bankIn.nIni=100000; 
-  SnMaxSz = 2048;
+  bankIn.nIni=coarseIn->nTIni;
+  ShMaxSz = coarseIn->ShMaxSz;
   /*
   EstimateNumberOfTemplates(thisMetric, &bankIn);
   */
@@ -120,10 +120,10 @@ LALInspiralBCVSpinRandomBank(
 
 
 #if 1
-  if (N>SnMaxSz)
+  if (N>ShMaxSz)
   {
     int ratio, i;
-    ratio = N/SnMaxSz;
+    ratio = N/ShMaxSz;
     N = N / ratio;
     LALInfo(status,  "entering BCVSpin metric computation using the smooth PSD \n");
     newSn.length= N;
@@ -154,25 +154,19 @@ else
   MonteCarloBank(thisMetric, &bankIn, MCbank);
 
 
-	if (!bankIn.verbose)
-	{
-                fprintf(stdout, "Numtemplates=%d MaxMismatch=%e\n", bankIn.nFin, bankIn.MM); 
-		for (i=0; i<bankIn.nIni; i++)
-		{
-			if ((int)MCbank[i*(bankIn.dim+1)+bankIn.dim])
-			{
-				for (j=0; j<bankIn.dim; j++)
-					fprintf(stdout, "%e ", MCbank[i*(bankIn.dim+1)+j]);
-				fprintf(stdout, "\n");
-			}
-		}
-        }
-	else
-	{
-		/* Print out the results */
-		fprintf(stdout, "Numtemplates=%d MaxMismatch=%e\n", bankIn.nFin, bankIn.MM);
-	}
-
+	
+  if (bankIn.verbose)
+  {
+    fprintf(stdout, "Numtemplates=%d MaxMismatch=%e\n", bankIn.nFin, bankIn.MM); 
+    for (i=0; i<bankIn.nIni; i++)
+    {
+       if ((int)MCbank[i*(bankIn.dim+1)+bankIn.dim])
+       {
+	 for (j=0; j<bankIn.dim; j++) fprintf(stdout, "%e ", MCbank[i*(bankIn.dim+1)+j]);
+         fprintf(stdout, "\n");
+       }
+     }
+   }
   /* Convert output data structure. */
 
   tmpBank = bank = (SnglInspiralTable *) LALCalloc(1, sizeof(SnglInspiralTable));

@@ -609,18 +609,49 @@ tagInspiralCoarseBankIn
   REAL8				betaMax;
 
   REAL8FrequencySeries          shf;
+  /* Maximum size of the power spectral density array for use in
+   * the computation of the metric in SBBH; typical values that
+   * assures that the code runs quickly are 1024-8192.
+   */ 
+  UINT4				ShMaxSz;
 
+  /* See for random number generation in RandomBank algorithm */
+  UINT4				iseed;
+  /* nTIni is an estimate for the number of templates that might 
+   * be required; this is used in the random bank generation
+   * routine with a seed number of templates = nTIni*sqrt(nTIni)
+   */
+  UINT4				nTIni;
+  /* iflso is an integer that tells whether to compute the moments
+   * using an upper limit defined by flso; this is not used anywhere
+   * at the moment
+   */
   INT4                          iflso;          
-  INT4                          spinBank;  
   /* spinBank=0:use Owen+Hanna bank*/
   /* spinBank=1:use extended bank by AEI/Cardiff/Osaka */
+  /* spinBank=2:use random bank algorithm */
+  INT4                          spinBank;  
+  /* Number of templates required in the fCut (upper cutoff)
+   * dimension and the value of upper and lower cutoffs
+   */
+
   UINT4                         numFcutTemplates;
   REAL4				HighGM;
   REAL4				LowGM;
 
+  /* Type of gridspacing required: 
+  1=SquareNotOriented, 
+  2=Square,
+  3=HexagonalNotOriented,
+  4=Hexagonal, 
+  5=HybridHexagonal, 
+  6=S2BCV
+  */
   GridSpacing                   gridSpacing;
+  /* post-Newtonian order and approximation */
   Order                         order;        
   Approximant                   approximant;  
+
   InsidePolygon                 insidePolygon;  
 }
 InspiralCoarseBankIn;

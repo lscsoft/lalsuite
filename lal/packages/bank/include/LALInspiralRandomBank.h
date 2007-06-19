@@ -9,7 +9,7 @@ tagMCBankIn
 	float *pMax;   /* max values in the range of parameters */
 	float *pMin;   /* min values in the range of parameters */
 	float *p;      /* coordinates of an arbitrary pt on the parameter space */
-	float seed;    /* random seed for random bank */
+	int   seed;    /* random seed for random bank */
 	float error;   /* error condition */
 	double *Sn;    /* power spectral density of the detector noise background */
 	int   Npsd;    /* length of the spectral density array, normally N/2+1, where */
