@@ -784,6 +784,13 @@ int main(int argc, char *argv[]){
 	     
    /* ****************************************************************/
    /* Computing the frequency path f(t) = f0(t)* (1+v/c.n)  for all the different templates */
+
+   /* We want pulsarTemplate to have the exact parameters of the injection.*/
+
+    pulsarTemplate.f0=pulsarInject.f0;
+    pulsarTemplate.longitude=pulsarInject.longitude;
+    pulsarTemplate.latitude=pulsarInject.latitude;
+    pulsarTemplate.spindown=pulsarInject.spindown;
 	     
    /* the geometrically nearest template */
    LAL_CALL( ComputeFoft(&status, &foft,&pulsarTemplate,&timeDiffV,&velV, timeBase), &status);

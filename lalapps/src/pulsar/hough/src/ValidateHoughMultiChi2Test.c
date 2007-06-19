@@ -548,7 +548,7 @@ int main(int argc, char *argv[]){
     INT4 index;
     REAL8 sumWeightSquare;
     SFTtype  *sft;        
-
+  
     /* compute mean and sigma for noise only */    
     /* first calculate the sum of the weights squared */
     sumWeightSquare = 0.0;
@@ -587,8 +587,8 @@ int main(int argc, char *argv[]){
             LAL_CALL (SFTtoUCHARPeakGram( &status, &pg1, sft, uvar_peakThreshold), &status);	    
 
             index = floor( foft.data[j]*timeBase - sftFminBin + 0.5); 
-
-            numberCount += pg1.data[index]*weightsV.data[j];
+            
+	    numberCount += pg1.data[index]*weightsV.data[j];
 	    
 	    j++;
 
