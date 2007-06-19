@@ -120,6 +120,10 @@ INT4 XLALOverlappedSegmentsCommensurate(
  *
  *	tiling_length (options):
  *		how many samples will be covered by the tiling
+ *
+ * NOTE:  this function is wrapped in the pyLAL package to teach the
+ * Python-based DAG construction scripts how the search code's internal
+ * timing works.  If you change this function, you need to update pyLAL.
  */
 
 
