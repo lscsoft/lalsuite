@@ -794,7 +794,8 @@ int main(int argc, char *argv[]){
     pulsarTemplate.f0=pulsarInject.f0;
     pulsarTemplate.longitude=pulsarInject.longitude;
     pulsarTemplate.latitude=pulsarInject.latitude;
-    pulsarTemplate.spindown=pulsarInject.spindown;
+    pulsarTemplate.spindown.length=pulsarInject.spindown.length;
+    *pulsarTemplate.spindown.data=*pulsarInject.spindown.data;
 	     
    /* the geometrically nearest template */
    LAL_CALL( ComputeFoft(&status, &foft,&pulsarTemplate,&timeDiffV,&velV, timeBase), &status);
@@ -1233,6 +1234,7 @@ int main(int argc, char *argv[]){
   LALFree(injectPar.spnFmax.data);
   LALFree(pulsarInject.spindown.data);
   LALFree(pulsarTemplate.spindown.data);
+  
    
   LALFree(edat->ephemE);
   LALFree(edat->ephemS);
