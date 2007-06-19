@@ -95,7 +95,9 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 	event->amplitude = tile->h_rss;
 	event->snr = tile->excess_power;
 	event->confidence = tile->confidence;
+	/* for safety */
 	event->string_cluster_t = XLAL_REAL4_FAIL_NAN;
+	/* will be set correctly later */
 	event->event_id = 0;
 
 	return(event);
@@ -105,7 +107,6 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 static SnglBurstTable *XLALTFTilesToSnglBurstTable(SnglBurstTable *head, const REAL4TimeFrequencyPlane *plane, REAL8 confidence_threshold)
 {
 	const char func[] = "XLALTFTilesToSnglBurstTable";
-	SnglBurstTable *oldhead;
 	size_t i;
 
 	for(i = 0; i < plane->tiling->numtiles; i++) {
@@ -113,7 +114,7 @@ static SnglBurstTable *XLALTFTilesToSnglBurstTable(SnglBurstTable *head, const R
 
 		/* test confidence */
 		if(tile->confidence >= confidence_threshold) {
-			oldhead = head;
+			SnglBurstTable *oldhead = head;
 			head = XLALTFTileToBurstEvent(plane, tile); 
 			if(!head) {
 				XLALDestroySnglBurstTable(oldhead);
@@ -125,6 +126,7 @@ static SnglBurstTable *XLALTFTilesToSnglBurstTable(SnglBurstTable *head, const R
 		/* reset for safety */
 		tile->excess_power = XLAL_REAL8_FAIL_NAN;
 		tile->confidence = XLAL_REAL8_FAIL_NAN;
+		tile->h_rss = XLAL_REAL8_FAIL_NAN;
 	}
 
 	return(head);
