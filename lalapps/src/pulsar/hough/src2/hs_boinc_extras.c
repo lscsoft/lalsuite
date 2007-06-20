@@ -422,6 +422,7 @@ static void worker (void) {
   int output_help = 0;         /**< flag: should we write out an additional help string?
 				    describing additional command-line arguments handled
 			            only by this BOINC-wrapper? */
+  int breakpoint = 0;          /**< stop at breakpoint? (for testing the Windows Runtime Debugger) */
 
   /* init BOINC diagnostics */
   boinc_init_diagnostics(BOINC_DIAG_DUMPCALLSTACKENABLED |
@@ -429,6 +430,10 @@ static void worker (void) {
                          BOINC_DIAG_ARCHIVESTDERR |
                          BOINC_DIAG_REDIRECTSTDERR |
                          BOINC_DIAG_TRACETOSTDERR);
+
+#ifdef _WIN32
+  diagnostics_set_symstore("http://einstein.phys.uwm.edu/symstore");
+#endif
 
   /* try to load the graphics library and, if succeeded, hook the symbols */
 #if (BOINC_GRAPHICS == 2) 
@@ -688,6 +693,12 @@ static void worker (void) {
       rarg--; rargc--; /* this argument is not passed to the main worker function */
     }
 
+    /* fire up debugger at breakpoint */
+    else if (MATCH_START("--BreakPoint",argv[arg],l)) {
+      breakpoint = -1;
+      rarg--; rargc--; /* this argument is not passed to the main worker function */
+    }
+
     /* help (for additional command-line options)? */
     else if ((0 == strncmp("--help",argv[arg],strlen("--help"))) ||
 	     (0 == strncmp("-h",argv[arg],strlen("--help")))) {
@@ -724,6 +735,12 @@ static void worker (void) {
     boinc_finish(res);
   }
 
+  /* test the debugger (and symbol loading) here if we were told to */
+#ifdef _MSC_VER
+  if (breakpoint)
+    DebugBreak();
+#endif
+
 
   /* CALL WORKER's MAIN()
    */
@@ -738,6 +755,7 @@ static void worker (void) {
     printf("      --WUfpops         REAL     \"flops estimation\", passed to the BOINC client as the number of Flops\n");
     printf("      --MaxFileSize     INT      maximum size the outpufile may grow to befor compacted (in 1k)\n");
     printf("      --OutputBufSize   INT      size of the output file buffer (in 1k)\n");
+    printf("      --BreakPoint      BOOL     fire up the Windows Runtime Debugger at internal breakpoint (WIN32 only)\n");
     boinc_finish(0);
   }
 
