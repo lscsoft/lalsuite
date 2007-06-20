@@ -18,376 +18,482 @@
  * 02111-1307 USA
  */
 
-/******************************** <lalVerbatim file="WindowTestCV">
-Authora:Allen, B., Brown, D. A., and Creighton, T.
-Revision: $Id$
-**************************************************** </lalVerbatim> */
-/********************************************************** <lalLaTeX>
-\subsection{Program \texttt{WindowTest.c}}
-\label{s:WindowTest.c}
-
-
-Tests the routines in \verb@Window.h@.
-
-
-\subsubsection*{Usage}
-\begin{verbatim}
-WindowTest [-d debuglevel] [-w flag] [-p] [-b beta] [-i infile] [-n width npts]
-\end{verbatim}
-
-\subsubsection*{Description}
-
-This program writes output files \verb@PrintVector.@$nnn$, where $nnn$
-is an integer from 0 to \verb@NumberWindowTypes@$-1$, each containing
-the corresponding window function (along with a header of metadata
-lines beginning with \verb@#@).  The following option flags are
-accepted:
-\begin{itemize}
-\item[\texttt{-d}] Sets the debug level to \verb@debuglevel@ (default
-0).
-\item[\texttt{-w}] Restricts which window is used according to the
-integer \verb@flag@, which is interpreted as a bit mask for turning on
-each individual window type: the value of \verb@flag@ is a sum of
-powers $2^{nnn}$, where $nnn$ is the number of the desired window in
-the enumeration of window types (starting with rectangular at
-$nnn=0$).  The default behaviour is equivalent to \verb@-w -1@, i.e.\
-all available windows are used.  \textbf{NOTE:} This will need to
-change if the number of windows grows to more than 31.
-\item[\texttt{-p}] Switches to double-precision windowing.
-\item[\texttt{-b}] Sets the window-dependent shape parameter $\beta$
-equal to \verb@beta@.  By default, $\beta=6$ for a Kaiser window, 2
-for a Creighton window, and is ignored by other windows.
-\item[\texttt{-i}] Instead of simply printing out the window function,
-the window is \emph{applied} to data read from \verb@infile@, which is
-read using \verb@LALSReadSequence()@ or \verb@LALDReadSequence()@.
-\item[\texttt{-n}] Sets the width of the window to \verb@width@, and
-zero-pads the output out to a total length of \verb@npts@.  This is
-useful to generate oversampled frequency spectra such as in
-Fig.~\ref{fig:window-pectra}.  If not specified, the width and length
-are taken to be 1024, or the length of data read with the \verb@-i@
-option.
-\end{itemize}
-The output files simply columns of window(ed) data.  The window files
-can be viewed for example by using the public domain graphing program
-\verb@xmgr@ by typing:
-\begin{verbatim}
-xmgr PrintVector.*
-\end{verbatim}
-
-\verb@WindowTest@ also tests all error conditions, and, if the default
-window size (1024 points) and $\beta$ parameter (6 for Kaiser, 2 for
-Creighton) are used, checks that the sum of these windows squared add
-to the correct values.  If there is an error in execution, the
-corresponding error message is printed.
-
-\subsubsection*{Exit codes}
-****************************************** </lalLaTeX><lalErrTable> */
-#define WINDOWTESTC_ENORM 0
-#define WINDOWTESTC_ESUB  1
-#define WINDOWTESTC_EARG  2
-#define WINDOWTESTC_ETEST 3
-#define WINDOWTESTC_EFILE 4
-
-#define WINDOWTESTC_MSGENORM "Normal exit"
-#define WINDOWTESTC_MSGESUB  "Subroutine failed"
-#define WINDOWTESTC_MSGEARG  "Error parsing arguments"
-#define WINDOWTESTC_MSGETEST "Window creation function failed a test"
-#define WINDOWTESTC_MSGEFILE "Could not open file"
-/******************************************** </lalErrTable><lalLaTeX>
-
-\vfill{\footnotesize\input{WindowTestCV}}
-
-********************************************************** </lalLaTeX> */
-
-
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include <string.h>
 #include <lal/LALDatatypes.h>
-#include <lal/AVFactories.h>
 #include <lal/Window.h>
-#include <lal/PrintVector.h>
-#include <lal/StreamInput.h>
-#include <lal/LALStdio.h>
+
 
 NRCSID(WINDOWTESTC, "$Id$");
 
-/* modify this value to get a stack trace of test */
-int lalDebugLevel = 0;
 
-/* modify this to turn on printing windows into files for checking */
-#define PRINT 1
-
-/* default number of points */
-#define NPOINTS 1024
-
-/* Usage format string. */
-#define USAGE "Usage: %s [-d debuglevel] [-w flag] [-p] [-i infile] [-n width npts]"
-
-/* Macros for printing errors and testing subroutines. */
-#define ERROR( code, msg, statement )                                \
-do {                                                                 \
-  if ( lalDebugLevel & LALERROR )                                    \
-    LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
-                   "        %s %s\n", (code), *argv, __FILE__,       \
-                   __LINE__, WINDOWTESTC, statement ? statement :    \
-                   "", (msg) );                                      \
-} while (0)
-
-#define SUB( func, statusptr )                                       \
-do {                                                                 \
-  if ( (func), (statusptr)->statusCode ) {                           \
-    ERROR( WINDOWTESTC_ESUB, WINDOWTESTC_MSGESUB,                    \
-           "Function call \"" #func "\" failed:" );                  \
-    return WINDOWTESTC_ESUB;                                         \
-  }                                                                  \
-} while (0)
+#define NWINDOWS 11
 
 
+const char *names[] = {
+	"rectangle",
+	"Hann",
+	"Welch",
+	"Bartlett",
+	"Parzen",
+	"Papoulis",
+	"Hamming",
+	"Kaiser",
+	"Creighton",
+	"Tukey",
+	"Gauss"
+};
 
-int main(int argc, char **argv)
+
+static void create_single_windows(REAL4Window **windows, int length, double kaiser_beta, double creighton_beta, double tukey_beta, double gauss_beta)
 {
-	int arg = 1;		/* counter over input arguments */
-	FILE *fp;		/* input/output file pointer */
-	BOOLEAN pOption = 0;	/* whether to use REAL8 windows */
-	BOOLEAN bOption = 0;	/* whether beta was user-specified */
-	CHAR *infile = NULL;	/* input filename */
-	CHAR outfile[LALNameLength];	/* output filename */
-	UINT4 i;		/* index over data */
-	UINT4 npts = NPOINTS;	/* number of points in output */
-	UINT4 width = NPOINTS;	/* width of window function */
-	UINT4 flag = (UINT4) (-1);	/* mask of windows to apply */
-	REAL8 beta;		/* window shape parameter */
-	static LALStatus status;	/* top-level status structure */
-	REAL4Vector *sVector = NULL;	/* input data vector (single-precision) */
-	REAL8Vector *dVector = NULL;	/* input data vector (double-precision) */
-	REAL4Window *sWindow = NULL;	/* window to apply (single-precision) */
-	REAL8Window *dWindow = NULL;	/* window to apply (double-precision) */
-	LALWindowParams params;	/* window creation parameters */
-	WindowType wintype;	/* window type */
-	REAL8 testsquares[] = {	/* sum of squares for NPOINTS=1024: */
-		1024.0,		/* rectangular */
-		384.0,		/* Hann */
-		546.0 + 2.0 / 15.0,	/* Welch */
-		341.333984375,	/* Bartlett */
-		276.1142857152779,	/* Parzen */
-		300.357781729967622,	/* Papoulis */
-		406.9376,	/* Hamming */
-		375.544713725875234,	/* Kaiser */
-		393.028878331734330	/* Creighton */
-	};
+	windows[0] = XLALCreateRectangularREAL4Window(length);
+	windows[1] = XLALCreateHannREAL4Window(length);
+	windows[2] = XLALCreateWelchREAL4Window(length);
+	windows[3] = XLALCreateBartlettREAL4Window(length);
+	windows[4] = XLALCreateParzenREAL4Window(length);
+	windows[5] = XLALCreatePapoulisREAL4Window(length);
+	windows[6] = XLALCreateHammingREAL4Window(length);
+	windows[7] = XLALCreateKaiserREAL4Window(length, kaiser_beta);
+	windows[8] = XLALCreateCreightonREAL4Window(length, creighton_beta);
+	windows[9] = XLALCreateTukeyREAL4Window(length, tukey_beta);
+	windows[10] = XLALCreateGaussREAL4Window(length, gauss_beta);
+}
 
 
-	/* Read command line arguments. */
-	while(arg < argc) {
-
-		/* Parse debug level option. */
-		if(!strcmp(argv[arg], "-d")) {
-			if(argc > arg + 1) {
-				arg++;
-				lalDebugLevel = atoi(argv[arg++]);
-			} else {
-				ERROR(WINDOWTESTC_EARG, WINDOWTESTC_MSGEARG, 0);
-				LALPrintError(USAGE, *argv);
-				return WINDOWTESTC_EARG;
-			}
-		}
-
-		/* Parse window flags option. */
-		else if(!strcmp(argv[arg], "-w")) {
-			if(argc > arg + 1) {
-				arg++;
-				flag = (UINT4) (atoi(argv[arg++]));
-			} else {
-				ERROR(WINDOWTESTC_EARG, WINDOWTESTC_MSGEARG, 0);
-				LALPrintError(USAGE, *argv);
-				return WINDOWTESTC_EARG;
-			}
-		}
-
-		/* Parse precision option. */
-		else if(!strcmp(argv[arg], "-p")) {
-			arg++;
-			pOption = 1;
-		}
-
-		/* Parse window size option. */
-		else if(!strcmp(argv[arg], "-b")) {
-			if(argc > arg + 1) {
-				arg++;
-				beta = atof(argv[arg++]);
-				bOption = 1;
-			} else {
-				ERROR(WINDOWTESTC_EARG, WINDOWTESTC_MSGEARG, 0);
-				LALPrintError(USAGE, *argv);
-				return WINDOWTESTC_EARG;
-			}
-		}
-
-		/* Parse window size option. */
-		else if(!strcmp(argv[arg], "-i")) {
-			if(argc > arg + 1) {
-				arg++;
-				infile = argv[arg++];
-			} else {
-				ERROR(WINDOWTESTC_EARG, WINDOWTESTC_MSGEARG, 0);
-				LALPrintError(USAGE, *argv);
-				return WINDOWTESTC_EARG;
-			}
-		}
-
-		/* Parse window size option. */
-		else if(!strcmp(argv[arg], "-n")) {
-			if(argc > arg + 2) {
-				arg++;
-				width = atoi(argv[arg++]);
-				npts = atoi(argv[arg++]);
-			} else {
-				ERROR(WINDOWTESTC_EARG, WINDOWTESTC_MSGEARG, 0);
-				LALPrintError(USAGE, *argv);
-				return WINDOWTESTC_EARG;
-			}
-		}
-
-		/* Check for unrecognized arguments. */
-		else {
-			ERROR(WINDOWTESTC_EARG, WINDOWTESTC_MSGEARG, 0);
-			LALPrintError(USAGE, *argv);
-			return WINDOWTESTC_EARG;
-		}
-	}
-
-	/* Do argument-list-level tests. */
-#ifndef LAL_NDEBUG
-	if(!lalNoDebug) {
-		params.type = Rectangular;
-		params.length = NPOINTS;
-		params.beta = 1.0;
-
-		/* Test behavior for non-positive length  */
-		params.length = 0;
-		sWindow = XLALCreateREAL4Window(params.length, params.type, params.beta);
-		if(sWindow) {
-			ERROR(0, "XLALCreateREAL4Window() failed to detect 0 length", NULL);
-			return 1;
-		}
-
-		/* Test failures for undefined window type on lower and upper bounds */
-		params.type = -1;
-		sWindow = XLALCreateREAL4Window(params.length, params.type, params.beta);
-		if(sWindow) {
-			ERROR(0, "XLALCreateREAL4Window() failed to detect out-of-bound type", NULL);
-			return 1;
-		}
-		params.type = NumberWindowTypes;
-		sWindow = XLALCreateREAL4Window(params.length, params.type, params.beta);
-		if(sWindow) {
-			ERROR(0, "XLALCreateREAL4Window() failed to detect out-of-bound type", NULL);
-			return 1;
-		}
-	}
-#endif
+static void free_single_windows(REAL4Window **windows)
+{
+	int i;
+	for(i = 0; i < NWINDOWS; i++)
+		XLALDestroyREAL4Window(windows[i]);
+}
 
 
-	/* Read input file, if any. */
-	if(infile) {
-		fp = fopen(infile, "r");
-		if(!fp) {
-			ERROR(WINDOWTESTC_EFILE, WINDOWTESTC_MSGEFILE, infile);
-			return WINDOWTESTC_EFILE;
-		}
-		if(pOption)
-			SUB(LALDReadSequence(&status, &dVector, fp), &status);
-		else
-			SUB(LALSReadSequence(&status, &sVector, fp), &status);
-		fclose(fp);
-		fp = NULL;
-	}
+static void create_double_windows(REAL8Window **windows, int length, double kaiser_beta, double creighton_beta, double tukey_beta, double gauss_beta)
+{
+	windows[0] = XLALCreateRectangularREAL8Window(length);
+	windows[1] = XLALCreateHannREAL8Window(length);
+	windows[2] = XLALCreateWelchREAL8Window(length);
+	windows[3] = XLALCreateBartlettREAL8Window(length);
+	windows[4] = XLALCreateParzenREAL8Window(length);
+	windows[5] = XLALCreatePapoulisREAL8Window(length);
+	windows[6] = XLALCreateHammingREAL8Window(length);
+	windows[7] = XLALCreateKaiserREAL8Window(length, kaiser_beta);
+	windows[8] = XLALCreateCreightonREAL8Window(length, creighton_beta);
+	windows[9] = XLALCreateTukeyREAL8Window(length, tukey_beta);
+	windows[10] = XLALCreateGaussREAL8Window(length, gauss_beta);
+}
 
 
-	/* Compute (and apply) windows. */
-	params.length = width;
-	for(wintype = 0; wintype < NumberWindowTypes; wintype++) {
-		if(flag & (1 << wintype)) {
+static void free_double_windows(REAL8Window **windows)
+{
+	int i;
+	for(i = 0; i < NWINDOWS; i++)
+		XLALDestroyREAL8Window(windows[i]);
+}
 
-			/* Create window. */
-			params.type = wintype;
-			if(!bOption) {
-				if(wintype == Kaiser)
-					params.beta = 6.0;
-				else if(wintype == Creighton)
-					params.beta = 2.0;
-			}
-			if(pOption) {
-				dWindow = XLALCreateREAL8Window(params.length, params.type, params.beta);
-				params.sumofsquares = dWindow->sumofsquares;
-			} else {
-				sWindow = XLALCreateREAL4Window(params.length, params.type, params.beta);
-				params.sumofsquares = sWindow->sumofsquares;
-			}
 
-			/* Check sum of squares. */
-			if(width == NPOINTS)
-				if((wintype != Kaiser || params.beta == 6.0) && (wintype != Creighton || params.beta == 2.0) && (wintype != Tukey)) {
-					if(fabs(params.sumofsquares - testsquares[(int) wintype]) > 1.e-5) {
-						printf("FAIL: Window type %d appears incorrect.\n", params.type);
-						printf("Expected %16.12f, got %16.12f\n", testsquares[(int) wintype], params.sumofsquares);
-						return 1;
-					}
-				}
-
-			/* Apply/print window. */
-			LALSnprintf(outfile, LALNameLength, "PrintVector.%03u", (UINT4) (wintype));
-			if(!(fp = fopen(outfile, "w"))) {
-				ERROR(WINDOWTESTC_EFILE, WINDOWTESTC_MSGEFILE, outfile);
-				return WINDOWTESTC_EFILE;
-			}
-
-			/* Double-precision window: */
-			if(pOption) {
-				if(infile) {
-					for(i = 0; i < dVector->length && i < width; i++)
-						fprintf(fp, "%23.16e\n", dVector->data[i] * dWindow->data->data[i]);
-					if(i++ < npts && i < dVector->length)
-						fprintf(fp, "%23.16e\n", dVector->data[i] * dWindow->data->data[0]);
-					SUB(LALDDestroyVector(&status, &dVector), &status);
-				} else {
-					for(i = 0; i < width; i++)
-						fprintf(fp, "%23.16e\n", dWindow->data->data[i]);
-					if(i++ < npts)
-						fprintf(fp, "%23.16e\n", dWindow->data->data[0]);
-				}
-				XLALDestroyREAL8Window(dWindow);
-				for(; i < npts; i++)
-					fprintf(fp, "%23.16e\n", 0.0);
-			}
-
-			/* Single-precision window: */
-			else {
-				if(infile) {
-					for(i = 0; i < sVector->length && i < width; i++)
-						fprintf(fp, "%16.9e\n", sVector->data[i] * sWindow->data->data[i]);
-					if(i++ < npts && i < sVector->length)
-						fprintf(fp, "%16.9e\n", sVector->data[i] * sWindow->data->data[0]);
-					SUB(LALSDestroyVector(&status, &sVector), &status);
-				} else {
-					for(i = 0; i < width; i++)
-						fprintf(fp, "%16.9e\n", sWindow->data->data[i]);
-					if(i++ < npts)
-						fprintf(fp, "%16.9e\n", sWindow->data->data[0]);
-				}
-				XLALDestroyREAL4Window(sWindow);
-				for(; i < npts; i++)
-					fprintf(fp, "%16.9e\n", 0.0);
-			}
-
-			/* Done. */
-			fclose(fp);
-			fp = NULL;
-		}
-	}
-
+static double fractional_difference(double a, double b)
+{
+	if(a != 0)
+		/* plan A */
+		return fabs((a - b) / a);
+	if(b != 0)
+		/* plan B */
+		return fabs((a - b) / b);
+	/* both are 0 */
 	return 0;
+}
+
+
+/*
+ * Sum-of-squares test.
+ */
+
+
+static int _test_sum_of_squares(const double *correct, int length, double kaiser_beta, double creighton_beta, double tukey_beta, double gauss_beta)
+{
+	const double max_error = 1e-12;
+	REAL4Window *windows1[NWINDOWS];
+	REAL8Window *windows2[NWINDOWS];
+	int fail = 0;
+	int i;
+
+	create_single_windows(windows1, length, kaiser_beta, creighton_beta, tukey_beta, gauss_beta);
+	create_double_windows(windows2, length, kaiser_beta, creighton_beta, tukey_beta, gauss_beta);
+
+	for(i = 0; i < NWINDOWS; i++) {
+		if(fractional_difference(windows1[i]->sumofsquares, correct[i]) > max_error) {
+			fprintf(stderr, "error: single-precision %d-sample %s window fails sum-of-squares test:  expected %.17g, got %.17g\n", length, names[i], correct[i], windows1[i]->sumofsquares);
+			fail = 1;
+		}
+		if(fractional_difference(windows2[i]->sumofsquares, correct[i]) > max_error) {
+			fprintf(stderr, "error: double-precision %d-sample %s window fails sum-of-squares test:  expected %.17g, got %.17g\n", length, names[i], correct[i], windows1[i]->sumofsquares);
+			fail = 1;
+		}
+	}
+
+	free_single_windows(windows1);
+	free_double_windows(windows2);
+
+	return fail;
+}
+
+
+static int test_sum_of_squares(void)
+{
+	double correct_1024[] = {
+		1024.0,			/* rectangle */
+		383.625,		/* Hann */
+		545.6,			/* Welch */
+		340.9996741609645,	/* Bartlett */
+		275.84464285585898,	/* Parzen */
+		300.06446358192244,	/* Papoulis */
+		406.5466,		/* Hamming */
+		375.17819205246843,	/* Kaiser */
+		392.64506106773848,	/* Creighton */
+		703.625,		/* Tukey */
+		451.20289927038817	/* Gauss */
+	};
+	double correct_1025[] = {
+		1025.0,			/* rectangle */
+		384,			/* Hann */
+		546.0 + 2.0 / 15.0,	/* Welch */
+		341.333984375,		/* Bartlett */
+		276.1142857152779,	/* Parzen */
+		300.35778172967611,	/* Papoulis */
+		406.944,		/* Hamming */
+		375.544934942032,	/* Kaiser */
+		393.028878331734330,	/* Creighton */
+		704,			/* Tukey */
+		451.64394001239367	/* Gauss */
+	};
+	int fail = 0;
+
+	if(_test_sum_of_squares(correct_1024, 1024, 6, 2, 0.5, 2))
+		fail = 1;
+	if(_test_sum_of_squares(correct_1025, 1025, 6, 2, 0.5, 2))
+		fail = 1;
+
+	return fail;
+}
+
+
+/*
+ * Test end- and mid-points.
+ */
+
+
+static int _test_end_and_midpoints(int length, double kaiser_beta, double creighton_beta, double tukey_beta, double gauss_beta)
+{
+	const double max_error = 1e-16;
+	double correct_end[] = {
+		1,			/* rectangle */
+		0,			/* Hann */
+		0,			/* Welch */
+		0,			/* Bartlett */
+		0,			/* Parzen */
+		0,			/* Papoulis */
+		0.08,			/* Hamming */
+		0.014873337104763204,	/* Kaiser (to be adjusted below) */
+		0,			/* Creighton (to be adjusted below) */
+		0,			/* Tukey (to be adjusted below) */
+		0			/* Gauss (to be adjusted below) */
+	};
+	double correct_mid[] = {
+		1,	/* rectangle */
+		1,	/* Hann */
+		1,	/* Welch */
+		1,	/* Bartlett */
+		1,	/* Parzen */
+		1,	/* Papoulis */
+		1,	/* Hamming */
+		1,	/* Kaiser */
+		1,	/* Creighton */
+		1,	/* Tukey */
+		1	/* Gauss */
+	};
+	REAL4Window *windows1[NWINDOWS];
+	REAL8Window *windows2[NWINDOWS];
+	int fail = 0;
+	int i;
+
+	/* set end value of Kaiser window */
+	correct_end[7] = kaiser_beta == 0 ? 1 : kaiser_beta == 1.0 / 0 ? 0 : correct_end[7];
+
+	/* set end value of Creighton window */
+	correct_end[8] = creighton_beta == 0 ? 1 : correct_end[8];
+
+	/* set end value of Tukey window */
+	correct_end[9] = tukey_beta == 0 ? 1 : correct_end[9];
+
+	/* set end value of Gauss window */
+	correct_end[10] = exp(-0.5 * gauss_beta * gauss_beta);
+
+	create_single_windows(windows1, length, kaiser_beta, creighton_beta, tukey_beta, gauss_beta);
+	create_double_windows(windows2, length, kaiser_beta, creighton_beta, tukey_beta, gauss_beta);
+
+	for(i = 0; i < NWINDOWS; i++) {
+		/* if length < 2, then there are no end samples */
+		if(length >= 2) {
+			if(fabs(windows1[i]->data->data[0] - (float) correct_end[i]) > max_error) {
+				fprintf(stderr, "error: single-precision %d-sample %s window fails end-point test:  expected %.17g, got %.17g\n", length, names[i], correct_end[i], windows1[i]->data->data[0]);
+				fail = 1;
+			}
+			if(fabs(windows2[i]->data->data[0] - correct_end[i]) > max_error) {
+				fprintf(stderr, "error: double-precision %d-sample %s window fails end-point test:  expected %.17g, got %.17g\n", length, names[i], correct_end[i], windows2[i]->data->data[0]);
+				fail = 1;
+			}
+			if(fabs(windows1[i]->data->data[length - 1] - (float) correct_end[i]) > max_error) {
+				fprintf(stderr, "error: single-precision %d-sample %s window fails end-point test:  expected %.17g, got %.17g\n", length, names[i], correct_end[i], windows1[i]->data->data[length - 1]);
+				fail = 1;
+			}
+			if(fabs(windows2[i]->data->data[length - 1] - correct_end[i]) > max_error) {
+				fprintf(stderr, "error: double-precision %d-sample %s window fails end-point test:  expected %.17g, got %.17g\n", length, names[i], correct_end[i], windows2[i]->data->data[length - 1]);
+				fail = 1;
+			}
+		}
+		/* even-lengthed windows have no middle sample */
+		if(length & 1) {
+			if(windows1[i]->data->data[length / 2] != (float) correct_mid[i]) {
+				fprintf(stderr, "error: single-precision %d-sample %s window fails mid-point test:  expected %.17g, got %.17g\n", length, names[i], correct_mid[i], windows1[i]->data->data[length / 2]);
+				fail = 1;
+			}
+			if(windows2[i]->data->data[length / 2] != correct_mid[i]) {
+				fprintf(stderr, "error: double-precision %d-sample %s window fails mid-point test:  expected %.17g, got %.17g\n", length, names[i], correct_mid[i], windows1[i]->data->data[length / 2]);
+				fail = 1;
+			}
+		}
+	}
+
+	free_single_windows(windows1);
+	free_double_windows(windows2);
+
+	return fail;
+}
+
+
+static int test_end_and_midpoints(void)
+{
+	int fail = 0;
+
+	if(_test_end_and_midpoints(1025, 1.0 / 0, 1.0 / 0, 1, 1.0 / 0))
+		fail = 1;
+	if(_test_end_and_midpoints(1025, 6, 2, 0.5, 2))
+		fail = 1;
+	if(_test_end_and_midpoints(1025, 0, 0, 0, 0))
+		fail = 1;
+	if(_test_end_and_midpoints(1024, 1.0 / 0, 1.0 / 0, 1, 1.0 / 0))
+		fail = 1;
+	if(_test_end_and_midpoints(1024, 6, 2, 0.5, 2))
+		fail = 1;
+	if(_test_end_and_midpoints(1024, 0, 0, 0, 0))
+		fail = 1;
+	if(_test_end_and_midpoints(3, 1.0 / 0, 1.0 / 0, 1, 1.0 / 0))
+		fail = 1;
+	if(_test_end_and_midpoints(3, 6, 2, 0.5, 2))
+		fail = 1;
+	if(_test_end_and_midpoints(3, 0, 0, 0, 0))
+		fail = 1;
+	if(_test_end_and_midpoints(1, 1.0 / 0, 1.0 / 0, 1, 1.0 / 0))
+		fail = 1;
+	if(_test_end_and_midpoints(1, 6, 2, 0.5, 2))
+		fail = 1;
+	if(_test_end_and_midpoints(1, 0, 0, 0, 0))
+		fail = 1;
+
+	return fail;
+}
+
+
+/*
+ * Input parameter safety
+ */
+
+
+static int test_parameter_safety(void)
+{
+	REAL4Window *window1;
+	REAL8Window *window2;
+	int fail = 0;
+
+	window1 = XLALCreateKaiserREAL4Window(10, -1);
+	if(window1) {
+		fprintf(stderr, "error: single-precision Kaiser window accepted out-of-range parameter\n");
+		XLALDestroyREAL4Window(window1);
+		fail = 1;
+	}
+
+	window2 = XLALCreateKaiserREAL8Window(10, -1);
+	if(window1) {
+		fprintf(stderr, "error: double-precision Kaiser window accepted out-of-range parameter\n");
+		XLALDestroyREAL8Window(window2);
+		fail = 1;
+	}
+
+	window1 = XLALCreateCreightonREAL4Window(10, -1);
+	if(window1) {
+		fprintf(stderr, "error: single-precision Creighton window accepted out-of-range parameter\n");
+		XLALDestroyREAL4Window(window1);
+		fail = 1;
+	}
+
+	window2 = XLALCreateCreightonREAL8Window(10, -1);
+	if(window1) {
+		fprintf(stderr, "error: double-precision Creighton window accepted out-of-range parameter\n");
+		XLALDestroyREAL8Window(window2);
+		fail = 1;
+	}
+
+	window1 = XLALCreateTukeyREAL4Window(10, -1);
+	if(window1) {
+		fprintf(stderr, "error: single-precision Tukey window accepted out-of-range parameter\n");
+		XLALDestroyREAL4Window(window1);
+		fail = 1;
+	}
+
+	window1 = XLALCreateTukeyREAL4Window(10, 2);
+	if(window1) {
+		fprintf(stderr, "error: single-precision Tukey window accepted out-of-range parameter\n");
+		XLALDestroyREAL4Window(window1);
+		fail = 1;
+	}
+
+	window2 = XLALCreateTukeyREAL8Window(10, -1);
+	if(window1) {
+		fprintf(stderr, "error: double-precision Tukey window accepted out-of-range parameter\n");
+		XLALDestroyREAL8Window(window2);
+		fail = 1;
+	}
+
+	window2 = XLALCreateTukeyREAL8Window(10, 2);
+	if(window1) {
+		fprintf(stderr, "error: double-precision Tukey window accepted out-of-range parameter\n");
+		XLALDestroyREAL8Window(window2);
+		fail = 1;
+	}
+
+	window1 = XLALCreateGaussREAL4Window(10, -1);
+	if(window1) {
+		fprintf(stderr, "error: single-precision Gauss window accepted out-of-range parameter\n");
+		XLALDestroyREAL4Window(window1);
+		fail = 1;
+	}
+
+	window2 = XLALCreateGaussREAL8Window(10, -1);
+	if(window1) {
+		fprintf(stderr, "error: double-precision Gauss window accepted out-of-range parameter\n");
+		XLALDestroyREAL8Window(window2);
+		fail = 1;
+	}
+
+	return fail;
+}
+
+
+/*
+ * Display sample windows.
+ */
+
+
+static void _display(int n, double kaiser_beta, double creighton_beta, double tukey_beta, double gauss_beta)
+{
+	REAL8Window *rectangle = XLALCreateRectangularREAL8Window(n);
+	REAL8Window *hann = XLALCreateHannREAL8Window(n);
+	REAL8Window *welch = XLALCreateWelchREAL8Window(n);
+	REAL8Window *bartlett = XLALCreateBartlettREAL8Window(n);
+	REAL8Window *parzen = XLALCreateParzenREAL8Window(n);
+	REAL8Window *papoulis = XLALCreatePapoulisREAL8Window(n);
+	REAL8Window *hamming = XLALCreateHammingREAL8Window(n);
+	REAL8Window *kaiser = XLALCreateKaiserREAL8Window(n, kaiser_beta);
+	REAL8Window *creighton = XLALCreateCreightonREAL8Window(n, creighton_beta);
+	REAL8Window *tukey = XLALCreateTukeyREAL8Window(n, tukey_beta);
+	REAL8Window *gauss = XLALCreateGaussREAL8Window(n, gauss_beta);
+	int i;
+
+	printf("n = %d\n", n);
+	printf("kaiser beta = %g\n", kaiser_beta);
+	printf("creighton beta = %g\n", creighton_beta);
+	printf("tukey beta = %g\n", tukey_beta);
+	printf("gaussian beta = %g\n", gauss_beta);
+
+	printf("  rect     hann     welch  bartlett  parzen  papoulis  hamming  kaiser   creight   tukey    gauss\n");
+	for(i = 0; i < n; i++) {
+		printf("%8.6f", rectangle->data->data[i]);
+		printf(" %8.6f", hann->data->data[i]);
+		printf(" %8.6f", welch->data->data[i]);
+		printf(" %8.6f", bartlett->data->data[i]);
+		printf(" %8.6f", parzen->data->data[i]);
+		printf(" %8.6f", papoulis->data->data[i]);
+		printf(" %8.6f", hamming->data->data[i]);
+		printf(" %8.6f", kaiser->data->data[i]);
+		printf(" %8.6f", creighton->data->data[i]);
+		printf(" %8.6f", tukey->data->data[i]);
+		printf(" %8.6f", gauss->data->data[i]);
+		printf("\n");
+	}
+	printf("\n");
+
+	XLALDestroyREAL8Window(rectangle);
+	XLALDestroyREAL8Window(hann);
+	XLALDestroyREAL8Window(welch);
+	XLALDestroyREAL8Window(bartlett);
+	XLALDestroyREAL8Window(parzen);
+	XLALDestroyREAL8Window(papoulis);
+	XLALDestroyREAL8Window(hamming);
+	XLALDestroyREAL8Window(kaiser);
+	XLALDestroyREAL8Window(creighton);
+	XLALDestroyREAL8Window(tukey);
+	XLALDestroyREAL8Window(gauss);
+}
+
+
+static void display(void)
+{
+	_display(14, 0, 0, 0, 0);
+	_display(15, 0, 0, 0, 0);
+	_display(14, 6, 2, 0.5, 2);
+	_display(15, 6, 2, 0.5, 2);
+	_display(14, 1.0 / 0, 1.0 / 0, 1, 1.0 / 0);
+	_display(15, 1.0 / 0, 1.0 / 0, 1, 1.0 / 0);
+	_display(5, 6, 2, 0.5, 2);
+	_display(4, 6, 2, 0.5, 2);
+	_display(3, 6, 2, 0.5, 2);
+	_display(2, 6, 2, 0.5, 2);
+	_display(1, 0, 0, 0, 0);
+	_display(1, 6, 2, 0.5, 2);
+	_display(1, 1.0 / 0, 1.0 / 0, 1.0, 1.0 / 0);
+}
+
+
+/*
+ * Entry point.
+ */
+
+
+int main(void)
+{
+	int fail = 0;
+
+	/* Numerical tests:  assume that if the end-points, mid-points, and
+	 * sum-of-squares are all as expected, then the window functions
+	 * are correct */
+
+	if(test_end_and_midpoints())
+		fail = 1;
+	if(test_sum_of_squares())
+		fail = 1;
+
+	/* Test parameter safety */
+
+	if(test_parameter_safety())
+		fail = 1;
+
+	/* Verbosity */
+
+	display();
+
+	return fail;
 }

@@ -1,1254 +1,820 @@
 /*
-*  Copyright (C) 2007 Bruce Allen, Duncan Brown, Jolien Creighton, Kipp Cannon, Patrick Brady, Teviet Creighton
-*
-*  This program is free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  This program is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
-*  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
-*/
+ * Copyright (C) 2007 Bruce Allen, Duncan Brown, Jolien Creighton, Kipp
+ * Cannon, Patrick Brady, Teviet Creighton
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with with program; see the file COPYING. If not, write to the Free
+ * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ * 02111-1307  USA
+ */
 
-/************************************************* <lalVerbatim file=WindowCV>
-Authors: Allen, B., Brown, D. A., and Creighton, T.
-$Id$
-****************************************************** </lalVerbatim>*/
-/****************************************************** <lalLaTeX>
 
-\subsection{Module \texttt{Window.c}}
-\label{ss:Window.c}
+/*
+ * ============================================================================
+ *
+ *                                  Preamble
+ *
+ * ============================================================================
+ */
 
-Creates and destroys a window structure.
-
-\subsubsection*{Prototypes}
-\input{WindowCP}
-\idx{LALWindow()}
-Note that the the function \verb|LALWindow()| is depricated and will soon be
-deleted. Windows should be created and destroyed by calles to the 
-\verb|LALCreateREAL4Window()| and \verb|LALDestroyREAL4Window()| functions.
-
-\subsubsection*{Description}
-These functions create or destroy a time-domain window function in a vector of
-specified length.  Note that this function was not written to be
-particularly efficient.  If you need a window lots of times, calculate
-it once then save it, please.  See the \verb|Window.h| header
-discussion for a list of available windows and their definitions.
-
-These window functions are shown in Fig.~\ref{f:window-t}.
-
-****************************************************** </lalLaTeX> */
 
 #include <math.h>
+#include <string.h>
+#include <gsl/gsl_sf_bessel.h>
 #include <lal/LALConstants.h>
-#include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
-#include <lal/AVFactories.h>
+#include <lal/Sequence.h>
 #include <lal/Window.h>
+#include <lal/XLALError.h>
 
-NRCSID (WINDOWC, "$Id$");
 
-static const char *WindowTypeNames[] = WINDOWNAMELIST;
+NRCSID(WINDOWC, "$Id$");
 
-static REAL8 BesselI0( REAL8 x )
+
+/*
+ * ============================================================================
+ *
+ *                             Private utilities
+ *
+ * ============================================================================
+ */
+
+
+/*
+ * Allocates a new REAL8Window.
+ */
+
+
+static REAL8Window *REAL8WindowNew(UINT4 length)
 {
-  /*
-   * 
-   * Calculates the value of the 0th order, modified Bessel function of the 
-   * first kind using a power series expansion. (See "Handbook of Math.
-   * Functions," eds. Abramowitz and Stegun, 9.6.12 for details.) NOTE: the
-   * accuracy of the expansion is chosen to be 2e-9. Stolen from Philip.
-   *
-   */
+	REAL8Window *window;
+	REAL8Sequence *data;
 
+	window = XLALMalloc(sizeof(*window));
+	data = XLALCreateREAL8Sequence(length);
+	if(!window || !data) {
+		XLALFree(window);
+		XLALDestroyREAL8Sequence(data);
+		return NULL;
+	}
 
-  REAL8 ds = 1.0;
-  REAL8 d  = 0.0;
-  REAL8 s  = 1.0;
+	window->data = data;
+	/* for safety */
+	window->sumofsquares = XLAL_REAL8_FAIL_NAN;
+	window->sum = XLAL_REAL8_FAIL_NAN;
 
-  do 
-  { 
-    d  += 2.0; 
-    ds *= x*x/(d*d); 
-    s  += ds; 
-  } 
-  while (ds > 2e-9); 
-
-  return s; 
-} 
-
-/* <lalVerbatim file="WindowCP"> */
-void 
-LALWindow( LALStatus       *status, 
-           REAL4Vector     *vector, 
-           LALWindowParams *parameters ) 
-     /* </lalVerbatim> */
-{
-  UINT4 i;
-  UINT4 length;
-  INT4 windowtype;
-  REAL8 wss;    /* window summed and squared */
-  REAL8 win;
-  REAL8 x,y,z;
-  REAL8 beta = 0, betaI0 = 0;
-
-  /* Initialize status structure   */
-  INITSTATUS(status,"LALWindow Function",WINDOWC);
-
-  /* Check that parameter block is there. */ 
-  ASSERT(parameters!=NULL,status,WINDOWH_ENULLPARAM,WINDOWH_MSGENULLPARAM);
-
-  /* check that the vector is not null */
-  ASSERT(vector!=NULL,status,WINDOWH_ENULLHANDLE,WINDOWH_MSGENULLHANDLE);
-
-  /* Check that window length is reasonable. */ 
-  length=parameters->length;
-  ASSERT(length>0,status,WINDOWH_EELENGTH,WINDOWH_MSGEELENGTH);
-
-  /* Make sure that window is of a known type */
-  windowtype=parameters->type;
-  ASSERT(windowtype>=Rectangular && windowtype<NumberWindowTypes,status,
-         WINDOWH_ETYPEUNKNOWN,WINDOWH_MSGETYPEUNKNOWN);
-
-  /* vector is apparently already allocated.  Check length, data area */
-  ASSERT(vector->length==length,status,
-         WINDOWH_EWRONGLENGTH,WINDOWH_MSGEWRONGLENGTH);
-  ASSERT(vector->data!=NULL,status,WINDOWH_ENULLDATA,WINDOWH_MSGENULLDATA);
-
-  /* check that if the case of a Kaiser or Creighton window, beta is
-     positive */
-  if ( windowtype == Kaiser || windowtype == Creighton )
-  {
-    ASSERT(parameters->beta >= 0,status, WINDOWH_EBETA,WINDOWH_MSGEBETA);
-    beta = parameters->beta;
-    if ( windowtype == Kaiser )
-      betaI0 = BesselI0( beta );
-  }
-
-  wss=0.0;
-  for (i=0;i<length;i++)
-  {
-    x=(2.0*LAL_PI*i)/length;
-    y=fabs(2.0*i/length-1.0);
-
-    switch (windowtype)
-    {
-    /* rectangular (no) window */
-    case Rectangular:
-      win=1.0;
-      break;
-
-    /* Hann window */
-    case Hann:
-      win=0.5*(1.0-cos(x));
-      break;
-
-    /* Welch window */
-    case Welch:
-      win=1.0-y*y;
-      break;
-
-    /* Bartlett window */
-    case Bartlett:
-      win=1.0-y;
-      break;
-
-    /* Parzen window */
-    case Parzen:
-      z=1.0-y;
-      if (y<=0.5)
-        win=1.0-6.0*y*y*z;
-      else
-        win=2.0*z*z*z;
-      break;
-
-    /* Papoulis window */
-    case Papoulis:
-      win=1.0/LAL_PI*sin(LAL_PI*y)+(1.0-y)*cos(LAL_PI*y);
-      break;
-
-    case Hamming:
-      win=1.0-0.46*(1.0+cos(x));
-      break;
-
-    case Kaiser:
-      {
-        REAL8 kai = (i - (length-1.0)/2.0)*2.0/((REAL8)length-1.0);
-        win = BesselI0( beta * sqrt(1.0 - kai*kai) )/betaI0;
-      }
-      break;
-
-    case Creighton:
-      if ( y == 0.0 )
-	win = 1.0;
-      else if ( y >= 1.0 )
-	win = 0.0;
-      else
-	win = exp( beta/( 1.0 - 1.0/(y*y) ) );
-      break;
-
-    /* Default case -- this will NEVER happen -- it is trapped above! */
-    default:
-      ABORT(status,WINDOWH_ETYPEUNKNOWN,WINDOWH_MSGETYPEUNKNOWN);
-      break;
-    }
-    wss+=win*win;
-    vector->data[i]=(REAL4)win;
-  }
-  parameters->sumofsquares=wss;
-  parameters->windowname=WindowTypeNames[parameters->type];
-
-  RETURN(status);
+	return window;
 }
 
 
 /*
- *
- * XLAL Routines.
- *
+ * Constructs a REAL4Window from a REAL8Window by quantizing the
+ * double-precision data to single-precision.  The REAL8Window is freed
+ * unconditionally.  Intended to be used as a wrapper, to convert any
+ * function that constructs a REAL8Window into a function to construct a
+ * REAL4Window.
  */
 
 
-REAL4Window * XLALCreateREAL4Window( UINT4 length, WindowType type, REAL4 beta )
+static REAL4Window *XLALREAL4Window_from_REAL8Window(REAL8Window *orig)
 {
-  static const char *func = "XLALCreateREAL4Window";
-  REAL8 betaI0 = 0;     /* I_0( beta ) */
-  REAL8 dy, pidy, y, w; /* dy=2/N, pidy = pi*dy, y=|j*dy - 1|, w=w(y) */
-  REAL8 z;              /* generic intermediate variable */
-  REAL8 wss = 0.0;      /* sum of squares of window values */
-  REAL4 *data1, *data2; /* pointers to window data */
-  REAL4Window *window;
-  INT4 i, j;
+	static const char func[] = "XLALREAL4Window_from_REAL8Window";
+	REAL4Window *new;
+	REAL4Sequence *data;
+	UINT4 i;
 
-  if ( ! length )
-    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+	if(!orig)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		
+	new = XLALMalloc(sizeof(*new));
+	data = XLALCreateREAL4Sequence(orig->data->length);
 
-  /* Set and check value of beta, if it is used. */
-  if ( type == Kaiser || type == Creighton)
-  {
-    if ( beta < 0 )
-      XLAL_ERROR_NULL( func, XLAL_EDOM );
-    if ( type == Kaiser )
-      betaI0 = BesselI0( beta );
-  }
+	if(!new || !data) {
+		XLALDestroyREAL8Window(orig);
+		XLALFree(new);
+		XLALDestroyREAL4Sequence(data);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	}
 
-  window = LALCalloc( 1, sizeof( *window ) );
-  if ( ! window )
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+	for(i = 0; i < data->length; i++)
+		data->data[i] = orig->data->data[i];
+	new->data = data;
+	new->sumofsquares = orig->sumofsquares;
+	new->sum = orig->sum;
 
-  window->data = XLALCreateREAL4Vector( length );
-  if ( ! window->data )
-  {
-    LALFree( window );
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
-  }
+	XLALDestroyREAL8Window(orig);
 
-  window->type = type;
-  window->beta = beta;
-
-  dy    = 2.0/(REAL4)( length );
-  pidy  = LAL_PI*dy;
-  data1 = window->data->data;
-  data2 = window->data->data + length - 1;
-
-  /* Set initial datum y = -1. */
-  switch ( type ) {
-  case Rectangular:
-    *(data1++) = w = 1.0;
-    break;
-  case Hamming:
-    *(data1++) = w = 0.08;
-    break;
-  case Kaiser:
-    *(data1++) = w = 1.0/betaI0;
-    break;
-  default:
-    *(data1++) = w = 0.0;
-    break;
-  }
-  wss = 0.5*w*w;
-
-  /* Set (symmetric) data for 0 < |y| < 1. */
-  j = 1;
-  i = ( length - 1 )/2;
-  switch ( type ) {
-
-    case Rectangular:
-      while ( i-- ) {
-        *(data1++) = *(data2--) = 1.0;
-        wss += 1.0;
-      }
-      break;
-
-    case Hann:
-      while ( i-- ) {
-        *(data1++) = *(data2--) = w = 0.5*( 1.0 - cos( pidy*(j++) ) );
-        wss += w*w;
-      }
-      break;
-
-    case Welch:
-      while ( i-- ) {
-        y = dy*(j++) - 1.0;
-        *(data1++) = *(data2--) = w = 1.0 - y*y;
-        wss += w*w;
-      }
-      break;
-
-    case Bartlett:
-      while ( i-- ) {
-        *(data1++) = *(data2--) = w = dy*(j++);
-        wss += w*w;
-      }
-      break;
-
-    case Parzen:
-      i /= 2;
-      while ( i-- ) {
-        z = dy*(j++);
-        *(data1++) = *(data2--) = w = 2.0*z*z*z;
-        wss += w*w;
-      }
-      i = ( length + 1 )/4;
-      while ( i-- ) {
-        y = 1.0 - dy*(j++);
-        *(data1++) = *(data2--) = w = 1.0 - 6.0*y*y*( 1.0 - y );
-        wss += w*w;
-      }
-      break;
-
-    case Papoulis:
-      while ( i-- ) {
-        y = 1.0 - dy*(j++);
-        z = LAL_PI*y;
-        *(data1++) = *(data2--) = w = LAL_1_PI*sin( z )
-          + ( 1.0 - y )*cos( z );
-        wss += w*w;
-      }
-      break;
-
-    case Hamming:
-      while ( i-- ) {
-        *(data1++) = *(data2--) = w = 1.0
-          - 0.46*( 1.0 + cos( pidy*(j++) ) );
-        wss += w*w;
-      }
-      break;
-
-    case Kaiser:
-      while ( i-- ) {
-        y = 1.0 - dy*(j++);
-        *(data1++) = *(data2--) = w = BesselI0( beta*sqrt( 1.0 - y*y ) )/betaI0;
-        wss += w*w;
-      }
-      break;
-
-    case Creighton:
-      while ( i-- ) {
-        y = 1.0 - dy*(j++);
-        *(data1++) = *(data2--) = w = exp( beta/( 1.0 - 1.0/(y*y) ) );
-        wss += w*w;
-      }
-      break;
-
-    case Tukey:
-      while ( i-- ) {
-        y = 1.0 - dy*(j++);
-        *(data1++) = *(data2--) = w = (y >= 1 - beta) ? pow(sin(LAL_PI_2 * (y - 1) / beta), 2.0) : 1;
-        wss += w*w;
-      }
-      break;
-
-      /* Default case -- unknown window */
-    default:
-      XLALDestroyREAL4Vector( window->data );
-      LALFree( window );
-      XLAL_ERROR_NULL( func, XLAL_ETYPE );
-  }
-
-  /* NOTE: At present, all windows are symmetric.  If asymmetric
-     windows are ever added, this will need to be changed. */
-  wss *= 2.0;
-
-  /* NOTE: At present, all windows are normalized to 1 at y=0.  If
-     non-normalized windows are ever added, this will need to be
-     changed. */
-  if ( data1 == data2 ) {
-    *data1 = 1.0;
-    wss += 1.0;
-  }
-
-  /* Set sum of squares, name, and exit. */
-  window->sumofsquares = wss;
-  LALSnprintf( window->windowname, sizeof( window->windowname ), "%s",
-      WindowTypeNames[window->type] );
-  return window;
+	return new;
 }
-
-
-REAL8Window * XLALCreateREAL8Window( UINT4 length, WindowType type, REAL4 beta )
-{
-  static const char *func = "XLALCreateREAL8Window";
-  REAL8 betaI0 = 0;     /* I_0( beta ) */
-  REAL8 dy, pidy, y, w; /* dy=2/N, pidy = pi*dy, y=|j*dy - 1|, w=w(y) */
-  REAL8 z;              /* generic intermediate variable */
-  REAL8 wss = 0.0;      /* sum of squares of window values */
-  REAL8 *data1, *data2; /* pointers to window data */
-  REAL8Window *window;
-  INT4 i, j;    /* length of window, and indecies */
-
-  if ( ! length )
-    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
-
-  /* Set and check value of beta, if it is used. */
-  if ( type == Kaiser || type == Creighton)
-  {
-    if ( beta < 0 )
-      XLAL_ERROR_NULL( func, XLAL_EDOM );
-    if ( type == Kaiser )
-      betaI0 = BesselI0( beta );
-  }
-  
-  window = LALCalloc( 1, sizeof( *window ) );
-  if ( ! window )
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
-
-  window->data = XLALCreateREAL8Vector( length );
-  if ( ! window->data )
-  {
-    LALFree( window );
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
-  }
-
-  window->type = type;
-  window->beta = beta;
-
-  dy    = 2.0/(REAL8)( length );
-  pidy  = LAL_PI*dy;
-  data1 = window->data->data;
-  data2 = window->data->data + length - 1;
-
-  /* Set initial datum y = -1. */
-  switch ( type ) {
-  case Rectangular:
-    *(data1++) = w = 1.0;
-    break;
-  case Hamming:
-    *(data1++) = w = 0.08;
-    break;
-  case Kaiser:
-    *(data1++) = w = 1.0/betaI0;
-    break;
-  default:
-    *(data1++) = w = 0.0;
-    break;
-  }
-  wss = 0.5*w*w;
-
-  /* Set (symmetric) data for 0 < |y| < 1. */
-  j = 1;
-  i = ( length - 1 )/2;
-  switch ( type ) {
-
-    case Rectangular:
-      while ( i-- ) {
-        *(data1++) = *(data2--) = 1.0;
-        wss += 1.0;
-      }
-      break;
-
-    case Hann:
-      while ( i-- ) {
-        *(data1++) = *(data2--) = w = 0.5*( 1.0 - cos( pidy*(j++) ) );
-        wss += w*w;
-      }
-      break;
-
-    case Welch:
-      while ( i-- ) {
-        y = dy*(j++) - 1.0;
-        *(data1++) = *(data2--) = w = 1.0 - y*y;
-        wss += w*w;
-      }
-      break;
-
-    case Bartlett:
-      while ( i-- ) {
-        *(data1++) = *(data2--) = w = dy*(j++);
-        wss += w*w;
-      }
-      break;
-
-    case Parzen:
-      i /= 2;
-      while ( i-- ) {
-        z = dy*(j++);
-        *(data1++) = *(data2--) = w = 2.0*z*z*z;
-        wss += w*w;
-      }
-      i = ( length + 1 )/4;
-      while ( i-- ) {
-        y = 1.0 - dy*(j++);
-        *(data1++) = *(data2--) = w = 1.0 - 6.0*y*y*( 1.0 - y );
-        wss += w*w;
-      }
-      break;
-
-    case Papoulis:
-      while ( i-- ) {
-        y = 1.0 - dy*(j++);
-        z = LAL_PI*y;
-        *(data1++) = *(data2--) = w = LAL_1_PI*sin( z )
-          + ( 1.0 - y )*cos( z );
-        wss += w*w;
-      }
-      break;
-
-    case Hamming:
-      while ( i-- ) {
-        *(data1++) = *(data2--) = w = 1.0
-          - 0.46*( 1.0 + cos( pidy*(j++) ) );
-        wss += w*w;
-      }
-      break;
-
-    case Kaiser:
-      while ( i-- ) {
-        y = 1.0 - dy*(j++);
-        *(data1++) = *(data2--) = w = BesselI0( beta*sqrt( 1.0 - y*y ) )/betaI0;
-        wss += w*w;
-      }
-      break;
-
-    case Creighton:
-      while ( i-- ) {
-        y = 1.0 - dy*(j++);
-        *(data1++) = *(data2--) = w = exp( beta/( 1.0 - 1.0/(y*y) ) );
-        wss += w*w;
-      }
-      break;
-
-    case Tukey:
-      while ( i-- ) {
-        y = 1.0 - dy*(j++);
-        *(data1++) = *(data2--) = w = (y >= 1 - beta) ? pow(sin(LAL_PI_2 * (y - 1) / beta), 2.0) : 1;
-        wss += w*w;
-      }
-      break;
-
-      /* Default case -- unknown window */
-    default:
-      XLALDestroyREAL8Vector( window->data );
-      LALFree( window );
-      XLAL_ERROR_NULL( func, XLAL_ETYPE );
-  }
-
-  /* NOTE: At present, all windows are symmetric.  If asymmetric
-     windows are ever added, this will need to be changed. */
-  wss *= 2.0;
-
-  /* NOTE: At present, all windows are normalized to 1 at y=0.  If
-     non-normalized windows are ever added, this will need to be
-     changed. */
-  if ( data1 == data2 ) {
-    *data1 = 1.0;
-    wss += 1.0;
-  }
-
-  /* Set sum of squares, name, and exit. */
-  window->sumofsquares = wss;
-  LALSnprintf( window->windowname, sizeof( window->windowname ), "%s",
-      WindowTypeNames[window->type] );
-  return window;
-}
-
-
-REAL4Window * XLALCreateRectangularREAL4Window( UINT4 length )
-{
-  static const char *func = "XLALCreateRectangularREAL4Window";
-  REAL4Window *window;
-  window = XLALCreateREAL4Window( length, Rectangular, 0 );
-  if ( ! window )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
-  return window;
-}
-
-REAL4Window * XLALCreateHannREAL4Window( UINT4 length )
-{
-  static const char *func = "XLALCreateHannREAL4Window";
-  REAL4Window *window;
-  window = XLALCreateREAL4Window( length, Hann, 0 );
-  if ( ! window )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
-  return window;
-}
-
-REAL4Window * XLALCreateWelchREAL4Window( UINT4 length )
-{
-  static const char *func = "XLALCreateWelchREAL4Window";
-  REAL4Window *window;
-  window = XLALCreateREAL4Window( length, Welch, 0 );
-  if ( ! window )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
-  return window;
-}
-
-REAL4Window * XLALCreateBartlettREAL4Window( UINT4 length )
-{
-  static const char *func = "XLALCreateBartlettREAL4Window";
-  REAL4Window *window;
-  window = XLALCreateREAL4Window( length, Bartlett, 0 );
-  if ( ! window )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
-  return window;
-}
-
-REAL4Window * XLALCreateParzenREAL4Window( UINT4 length )
-{
-  static const char *func = "XLALCreateParzenREAL4Window";
-  REAL4Window *window;
-  window = XLALCreateREAL4Window( length, Parzen, 0 );
-  if ( ! window )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
-  return window;
-}
-
-REAL4Window * XLALCreatePapoulisREAL4Window( UINT4 length )
-{
-  static const char *func = "XLALCreatePapoulisREAL4Window";
-  REAL4Window *window;
-  window = XLALCreateREAL4Window( length, Papoulis, 0 );
-  if ( ! window )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
-  return window;
-}
-
-REAL4Window * XLALCreateHammingREAL4Window( UINT4 length )
-{
-  static const char *func = "XLALCreateHammingREAL4Window";
-  REAL4Window *window;
-  window = XLALCreateREAL4Window( length, Hamming, 0 );
-  if ( ! window )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
-  return window;
-}
-
-REAL4Window * XLALCreateKaiserREAL4Window( UINT4 length, REAL4 beta )
-{
-  static const char *func = "XLALCreateKaiserREAL4Window";
-  REAL4Window *window;
-  window = XLALCreateREAL4Window( length, Kaiser, beta );
-  if ( ! window )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
-  return window;
-}
-
-REAL4Window * XLALCreateCreightonREAL4Window( UINT4 length, REAL4 beta )
-{
-  static const char *func = "XLALCreateCreightonREAL4Window";
-  REAL4Window *window;
-  window = XLALCreateREAL4Window( length, Creighton, beta );
-  if ( ! window )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
-  return window;
-}
-
-REAL4Window * XLALCreateTukeyREAL4Window( UINT4 length, REAL4 beta )
-{
-  static const char *func = "XLALCreateTukeyREAL4Window";
-  REAL4Window *window;
-  window = XLALCreateREAL4Window( length, Tukey, beta );
-  if ( ! window )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
-  return window;
-}
-
-
-REAL8Window * XLALCreateRectangularREAL8Window( UINT4 length )
-{
-  static const char *func = "XLALCreateRectangularREAL8Window";
-  REAL8Window *window;
-  window = XLALCreateREAL8Window( length, Rectangular, 0 );
-  if ( ! window )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
-  return window;
-}
-
-REAL8Window * XLALCreateHannREAL8Window( UINT4 length )
-{
-  static const char *func = "XLALCreateHannREAL8Window";
-  REAL8Window *window;
-  window = XLALCreateREAL8Window( length, Hann, 0 );
-  if ( ! window )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
-  return window;
-}
-
-REAL8Window * XLALCreateWelchREAL8Window( UINT4 length )
-{
-  static const char *func = "XLALCreateWelchREAL8Window";
-  REAL8Window *window;
-  window = XLALCreateREAL8Window( length, Welch, 0 );
-  if ( ! window )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
-  return window;
-}
-
-REAL8Window * XLALCreateBartlettREAL8Window( UINT4 length )
-{
-  static const char *func = "XLALCreateBartlettREAL8Window";
-  REAL8Window *window;
-  window = XLALCreateREAL8Window( length, Bartlett, 0 );
-  if ( ! window )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
-  return window;
-}
-
-REAL8Window * XLALCreateParzenREAL8Window( UINT4 length )
-{
-  static const char *func = "XLALCreateParzenREAL8Window";
-  REAL8Window *window;
-  window = XLALCreateREAL8Window( length, Parzen, 0 );
-  if ( ! window )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
-  return window;
-}
-
-REAL8Window * XLALCreatePapoulisREAL8Window( UINT4 length )
-{
-  static const char *func = "XLALCreatePapoulisREAL8Window";
-  REAL8Window *window;
-  window = XLALCreateREAL8Window( length, Papoulis, 0 );
-  if ( ! window )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
-  return window;
-}
-
-REAL8Window * XLALCreateHammingREAL8Window( UINT4 length )
-{
-  static const char *func = "XLALCreateHammingREAL8Window";
-  REAL8Window *window;
-  window = XLALCreateREAL8Window( length, Hamming, 0 );
-  if ( ! window )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
-  return window;
-}
-
-REAL8Window * XLALCreateKaiserREAL8Window( UINT4 length, REAL4 beta )
-{
-  static const char *func = "XLALCreateKaiserREAL8Window";
-  REAL8Window *window;
-  window = XLALCreateREAL8Window( length, Kaiser, beta );
-  if ( ! window )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
-  return window;
-}
-
-REAL8Window * XLALCreateCreightonREAL8Window( UINT4 length, REAL4 beta )
-{
-  static const char *func = "XLALCreateCreightonREAL8Window";
-  REAL8Window *window;
-  window = XLALCreateREAL8Window( length, Creighton, beta );
-  if ( ! window )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
-  return window;
-}
-
-REAL8Window * XLALCreateTukeyREAL8Window( UINT4 length, REAL4 beta )
-{
-  static const char *func = "XLALCreateTukeyREAL8Window";
-  REAL8Window *window;
-  window = XLALCreateREAL8Window( length, Tukey, beta );
-  if ( ! window )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
-  return window;
-}
-
-
-void XLALDestroyREAL4Window( REAL4Window *window )
-{
-  if ( window )
-  {
-    if ( window->data )
-      XLALDestroyREAL4Vector( window->data );
-    LALFree( window );
-  }
-  return;
-}
-
-
-void XLALDestroyREAL8Window( REAL8Window *window )
-{
-  if ( window )
-  {
-    if ( window->data )
-      XLALDestroyREAL8Vector( window->data );
-    LALFree( window );
-  }
-  return;
-}
-
 
 
 /*
+ * Maps the length of a window and the offset within the window to the "y"
+ * co-ordinate of the LAL documentation.
  *
- * LAL Routines.
+ * Input:
+ * length > 0,
+ * 0 <= i < length
  *
+ * e.g., if length = 5 (odd), then 0 <= i < 3,
+ * if length = 6 (even), then 0 <= i < 3
+ *
+ * Output:
+ * length < 2 --> return 0.0
+ * i == 0 --> return -1.0
+ * i == length / 2 --> return 0.0
+ * i == length - 1 --> return +1.0
+ *
+ * e.g., length = 5 (odd), then i == 2 --> return 0.0
+ * if length = 6 (even), then i == 2.5 --> return 0.0
  */
 
 
-
-
-/* <lalVerbatim file="WindowCP"> */
-void LALCreateREAL4Window ( LALStatus       *status,
-			    REAL4Window     **output,
-			    LALWindowParams *params )
-{ /* </lalVerbatim> */
-
-  /*
-   *
-   * FIXME: should call the XLAL routine!!!
-   *
-   */
-
-  INT4 length, i, j;    /* length of window, and indecies */
-  REAL8 beta, betaI0;   /* beta parameter, and I_0( beta ) */
-  REAL8 dy, pidy, y, w; /* dy=2/N, pidy = pi*dy, y=|j*dy - 1|, w=w(y) */
-  REAL8 z;              /* generic intermediate variable */
-  REAL8 wss = 0.0;      /* sum of squares of window values */
-  REAL4 *data1, *data2; /* pointers to window data */
-  WindowType type;      /* window type */
-
-  INITSTATUS( status, "LALCreateREAL4Window", WINDOWC );
-  ATTATCHSTATUSPTR( status );
-
-  /* Dummy assignments so compiler won't complain. */
-  beta = betaI0 = 0.0;
-
-  /* Check input parameters. */
-  ASSERT( output, status, WINDOWH_ENULLHANDLE, WINDOWH_MSGENULLHANDLE );
-  ASSERT( !*output, status, WINDOWH_ENNUL, WINDOWH_MSGENNUL );
-  ASSERT( params, status, WINDOWH_ENULLPARAM, WINDOWH_MSGENULLPARAM );
-  type = params->type;
-  ASSERT( type < NumberWindowTypes, status, WINDOWH_ETYPEUNKNOWN,
-	  WINDOWH_MSGETYPEUNKNOWN );
-  ASSERT( (int)type >= 0, status, WINDOWH_ETYPEUNKNOWN,
-	  WINDOWH_MSGETYPEUNKNOWN );
-  length = params->length;
-  ASSERT( length > 0, status, WINDOWH_EELENGTH, WINDOWH_MSGEELENGTH );
-  dy = 2.0/(REAL4)( length );
-  pidy = LAL_PI*dy;
-
-  /* Set and check value of beta, if it is used. */
-  if ( type == Kaiser || type == Creighton) {
-    beta = params->beta;
-    ASSERT( beta >= 0, status, WINDOWH_EBETA, WINDOWH_MSGEBETA );
-    if ( type == Kaiser )
-      betaI0 = BesselI0( beta );
-  }
-
-  /* Allocate the storage for the window vector */
-  *output = (REAL4Window *) LALCalloc( 1, sizeof(REAL4Window) );
-  if ( ! *output ) {
-    ABORT( status, WINDOWH_EEALLOCATE, WINDOWH_MSGEEALLOCATE );
-  }
-  LALSCreateVector( status->statusPtr, &((*output)->data), length );
-  BEGINFAIL( status ) {
-    LALFree( *output );
-    *output = NULL;
-  } ENDFAIL( status );
-
-  /* Create window. */
-  (*output)->type = type;
-  (*output)->beta = beta;
-  LALSnprintf( (*output)->windowname, LALNameLength, "%s",
-	       WindowTypeNames[type] );
-  params->windowname = WindowTypeNames[type];
-  data1 = (*output)->data->data;
-  data2 = (*output)->data->data + length - 1;
-
-  /* Set initial datum y = -1. */
-  switch ( type ) {
-  case Rectangular:
-    *(data1++) = w = 1.0;
-    break;
-  case Hamming:
-    *(data1++) = w = 0.08;
-    break;
-  case Kaiser:
-    *(data1++) = w = 1.0/betaI0;
-    break;
-  default:
-    *(data1++) = w = 0.0;
-    break;
-  }
-  wss = 0.5*w*w;
-
-  /* Set (symmetric) data for 0 < |y| < 1. */
-  j = 1;
-  i = ( length - 1 )/2;
-  switch ( type ) {
-
-  case Rectangular:
-    while ( i-- ) {
-      *(data1++) = *(data2--) = 1.0;
-      wss += 1.0;
-    }
-    break;
-
-  case Hann:
-    while ( i-- ) {
-      *(data1++) = *(data2--) = w = 0.5*( 1.0 - cos( pidy*(j++) ) );
-      wss += w*w;
-    }
-    break;
-
-  case Welch:
-    while ( i-- ) {
-      y = dy*(j++) - 1.0;
-      *(data1++) = *(data2--) = w = 1.0 - y*y;
-      wss += w*w;
-    }
-    break;
-
-  case Bartlett:
-    while ( i-- ) {
-      *(data1++) = *(data2--) = w = dy*(j++);
-      wss += w*w;
-    }
-    break;
-
-  case Parzen:
-    i /= 2;
-    while ( i-- ) {
-      z = dy*(j++);
-      *(data1++) = *(data2--) = w = 2.0*z*z*z;
-      wss += w*w;
-    }
-    i = ( length + 1 )/4;
-    while ( i-- ) {
-      y = 1.0 - dy*(j++);
-      *(data1++) = *(data2--) = w = 1.0 - 6.0*y*y*( 1.0 - y );
-      wss += w*w;
-    }
-    break;
-
-  case Papoulis:
-    while ( i-- ) {
-      y = 1.0 - dy*(j++);
-      z = LAL_PI*y;
-      *(data1++) = *(data2--) = w = LAL_1_PI*sin( z )
-	+ ( 1.0 - y )*cos( z );
-      wss += w*w;
-    }
-    break;
-
-  case Hamming:
-    while ( i-- ) {
-      *(data1++) = *(data2--) = w = 1.0
-	- 0.46*( 1.0 + cos( pidy*(j++) ) );
-      wss += w*w;
-    }
-    break;
-
-  case Kaiser:
-    while ( i-- ) {
-      y = 1.0 - dy*(j++);
-      *(data1++) = *(data2--) = w = BesselI0( beta*sqrt( 1.0 - y*y ) )
-	/betaI0;
-      wss += w*w;
-    }
-    break;
-
-  case Creighton:
-    while ( i-- ) {
-      y = 1.0 - dy*(j++);
-      *(data1++) = *(data2--) = w = exp( beta/( 1.0 - 1.0/(y*y) ) );
-      wss += w*w;
-    }
-    break;
-
-    /* Default case -- this will NEVER happen -- it is trapped above! */
-  default:
-    TRY( LALSDestroyVector( status, &((*output)->data) ), status );
-    LALFree( *output );
-    *output = NULL;
-    ABORT( status, WINDOWH_ETYPEUNKNOWN, WINDOWH_MSGETYPEUNKNOWN );
-    break;
-  }
-
-  /* NOTE: At present, all windows are symmetric.  If asymmetric
-     windows are ever added, this will need to be changed. */
-  wss *= 2.0;
-
-  /* NOTE: At present, all windows are normalized to 1 at y=0.  If
-     non-normalized windows are ever added, this will need to be
-     changed. */
-  if ( data1 == data2 ) {
-    *data1 = 1.0;
-    wss += 1.0;
-  }
-
-  /* Set sum of squares and exit. */
-  (*output)->sumofsquares = params->sumofsquares = wss;
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
+static double Y(int length, int i)
+{
+	length -= 1;
+	return length > 0 ? (2 * i - length) / (double) length : 0;
 }
 
 
-/* <lalVerbatim file="WindowCP"> */
-void LALCreateREAL8Window ( LALStatus       *status,
-			    REAL8Window     **output,
-			    LALWindowParams *params )
-{ /* </lalVerbatim> */
-
-  /*
-   *
-   * FIXME: should call the XLAL routine!!!
-   *
-   */
-
-  INT4 length, i, j;    /* length of window, and indecies */
-  REAL8 beta, betaI0;   /* beta parameter, and I_0( beta ) */
-  REAL8 dy, pidy, y, w; /* dy=2/N, pidy = pi*dy, y=|j*dy - 1|, w=w(y) */
-  REAL8 z;              /* generic intermediate variable */
-  REAL8 wss = 0.0;      /* sum of squares of window values */
-  REAL8 *data1, *data2; /* pointers to window data */
-  WindowType type;      /* window type */
-
-  INITSTATUS( status, "LALCreateREAL8Window", WINDOWC );
-  ATTATCHSTATUSPTR( status );
-
-  /* Dummy assignments so compiler won't complain. */
-  beta = betaI0 = 0.0;
-
-  /* Check input parameters. */
-  ASSERT( output, status, WINDOWH_ENULLHANDLE, WINDOWH_MSGENULLHANDLE );
-  ASSERT( !*output, status, WINDOWH_ENNUL, WINDOWH_MSGENNUL );
-  ASSERT( params, status, WINDOWH_ENULLPARAM, WINDOWH_MSGENULLPARAM );
-  type = params->type;
-  ASSERT( type < NumberWindowTypes, status, WINDOWH_ETYPEUNKNOWN,
-	  WINDOWH_MSGETYPEUNKNOWN );
-  length = params->length;
-  ASSERT( length > 0, status, WINDOWH_EELENGTH, WINDOWH_MSGEELENGTH );
-  dy = 2.0/(REAL8)( length );
-  pidy = LAL_PI*dy;
-
-  /* Set and check value of beta, if it is used. */
-  if ( type == Kaiser || type == Creighton) {
-    beta = params->beta;
-    ASSERT( beta >= 0, status, WINDOWH_EBETA, WINDOWH_MSGEBETA );
-    if ( type == Kaiser )
-      betaI0 = BesselI0( beta );
-  }
-
-  /* Allocate the storage for the window vector */
-  *output = (REAL8Window *) LALCalloc( 1, sizeof(REAL8Window) );
-  if ( ! *output ) {
-    ABORT( status, WINDOWH_EEALLOCATE, WINDOWH_MSGEEALLOCATE );
-  }
-  LALDCreateVector( status->statusPtr, &((*output)->data), length );
-  BEGINFAIL( status ) {
-    LALFree( *output );
-    *output = NULL;
-  } ENDFAIL( status );
-
-  /* Create window. */
-  (*output)->type = type;
-  (*output)->beta = beta;
-  LALSnprintf( (*output)->windowname, LALNameLength, "%s",
-	       WindowTypeNames[type] );
-  params->windowname = WindowTypeNames[type];
-  data1 = (*output)->data->data;
-  data2 = (*output)->data->data + length - 1;
-
-  /* Set initial datum y = -1. */
-  switch ( type ) {
-  case Rectangular:
-    *(data1++) = w = 1.0;
-    break;
-  case Hamming:
-    *(data1++) = w = 0.08;
-    break;
-  case Kaiser:
-    *(data1++) = w = 1.0/betaI0;
-    break;
-  default:
-    *(data1++) = w = 0.0;
-    break;
-  }
-  wss = 0.5*w*w;
-
-  /* Set (symmetric) data for 0 < |y| < 1. */
-  j = 1;
-  i = ( length - 1 )/2;
-  switch ( type ) {
-
-  case Rectangular:
-    while ( i-- ) {
-      *(data1++) = *(data2--) = 1.0;
-      wss += 1.0;
-    }
-    break;
-
-  case Hann:
-    while ( i-- ) {
-      *(data1++) = *(data2--) = w = 0.5*( 1.0 - cos( pidy*(j++) ) );
-      wss += w*w;
-    }
-    break;
-
-  case Welch:
-    while ( i-- ) {
-      y = dy*(j++) - 1.0;
-      *(data1++) = *(data2--) = w = 1.0 - y*y;
-      wss += w*w;
-    }
-    break;
-
-  case Bartlett:
-    while ( i-- ) {
-      *(data1++) = *(data2--) = w = dy*(j++);
-      wss += w*w;
-    }
-    break;
-
-  case Parzen:
-    i /= 2;
-    while ( i-- ) {
-      z = dy*(j++);
-      *(data1++) = *(data2--) = w = 2.0*z*z*z;
-      wss += w*w;
-    }
-    i = ( length + 1 )/4;
-    while ( i-- ) {
-      y = 1.0 - dy*(j++);
-      *(data1++) = *(data2--) = w = 1.0 - 6.0*y*y*( 1.0 - y );
-      wss += w*w;
-    }
-    break;
-
-  case Papoulis:
-    while ( i-- ) {
-      y = 1.0 - dy*(j++);
-      z = LAL_PI*y;
-      *(data1++) = *(data2--) = w = LAL_1_PI*sin( z )
-	+ ( 1.0 - y )*cos( z );
-      wss += w*w;
-    }
-    break;
-
-  case Hamming:
-    while ( i-- ) {
-      *(data1++) = *(data2--) = w = 1.0
-	- 0.46*( 1.0 + cos( pidy*(j++) ) );
-      wss += w*w;
-    }
-    break;
-
-  case Kaiser:
-    while ( i-- ) {
-      y = 1.0 - dy*(j++);
-      *(data1++) = *(data2--) = w = BesselI0( beta*sqrt( 1.0 - y*y ) )
-	/betaI0;
-      wss += w*w;
-    }
-    break;
-
-  case Creighton:
-    while ( i-- ) {
-      y = 1.0 - dy*(j++);
-      *(data1++) = *(data2--) = w = exp( beta/( 1.0 - 1.0/(y*y) ) );
-      wss += w*w;
-    }
-    break;
-
-    /* Default case -- this will NEVER happen -- it is trapped above! */
-  default:
-    TRY( LALDDestroyVector( status, &((*output)->data) ), status );
-    LALFree( *output );
-    *output = NULL;
-    ABORT( status, WINDOWH_ETYPEUNKNOWN, WINDOWH_MSGETYPEUNKNOWN );
-    break;
-  }
-
-  /* NOTE: At present, all windows are symmetric.  If asymmetric
-     windows are ever added, this will need to be changed. */
-  wss *= 2.0;
-
-  /* NOTE: At present, all windows are normalized to 1 at y=0.  If
-     non-normalized windows are ever added, this will need to be
-     changed. */
-  if ( data1 == data2 ) {
-    *data1 = 1.0;
-    wss += 1.0;
-  }
-
-  /* Set sum of squares and exit. */
-  (*output)->sumofsquares = params->sumofsquares = wss;
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
-}
+/*
+ * Computes the sum of squares, and sum, of the samples in a window
+ * function.
+ *
+ * Two techniques are employed to achieve accurate results.  Firstly, the
+ * loop iterates from the edges to the centre.  Generally, window functions
+ * have smaller values at the edges and larger values in the middle, so
+ * adding them in this order avoids adding small numbers to big numbers.
+ * The loops also implement Kahan's compensated summation algorithm in
+ * which a second variable is used to accumulate round-off errors and fold
+ * them into later iterations.
+ */
 
 
-/* <lalVerbatim file="WindowCP"> */
-void LALDestroyREAL4Window ( LALStatus *status, REAL4Window **output )
-/* </lalVerbatim> */
+static REAL8 sum_squares(REAL8 *start, int length)
 {
 
-  /*
-   *
-   * FIXME: should call the XLAL routine!!!
-   *
-   */
+	REAL8 sum = 0.0;
+	REAL8 e = 0.0;
+	REAL8 *end = start + length - 1;
 
-  INITSTATUS( status, "LALDestroyREAL4Window", WINDOWC );
-  ATTATCHSTATUSPTR( status );
+	for(; start < end; start++, end--) {
+		REAL8 temp = sum;
+		REAL8 x = *start * *start + *end * *end + e;
+		sum += x;
+		e = temp - sum;
+		e += x;
+	}
 
-  ASSERT( output, status, WINDOWH_ENULL, WINDOWH_MSGENULL );
-  ASSERT( *output, status, WINDOWH_ENULL, WINDOWH_MSGENULL );
+	if(start == end)
+		/* length is odd, get middle sample */
+		sum += *start * *start + e;
 
-  /* destroy the window */
-  LALSDestroyVector( status->statusPtr, &((*output)->data) );
-  CHECKSTATUSPTR( status );
-  LALFree( *output );
-  *output = NULL;
+	return sum;
+}
 
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
+
+static REAL8 sum_samples(REAL8 *start, int length)
+{
+
+	REAL8 sum = 0.0;
+	REAL8 e = 0.0;
+	REAL8 *end = start + length - 1;
+
+	for(; start < end; start++, end--) {
+		REAL8 temp = sum;
+		REAL8 x = *start + *end + e;
+		sum += x;
+		e = temp - sum;
+		e += x;
+	}
+
+	if(start == end)
+		/* length is odd, get middle sample */
+		sum += *start + e;
+
+	return sum;
+}
+
+
+/*
+ * ============================================================================
+ *
+ *                                REAL8Window
+ *
+ * ============================================================================
+ */
+
+
+/* <lalVerbatim file="WindowCP"> */
+REAL8Window *XLALCreateRectangularREAL8Window(UINT4 length)
+/* </lalVerbatim> */
+{
+	static const char func[] = "XLALCreateRectangularREAL8Window";
+	REAL8Window *window;
+	UINT4 i;
+
+	window = REAL8WindowNew(length);
+	if(!window)
+		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+
+	/* flat, box-car, top-hat, rectangle, whatever */
+	for(i = 0; i < length; i++)
+		window->data->data[i] = 1;
+
+	window->sumofsquares = length;
+	window->sum = length;
+
+	return window;
 }
 
 
 /* <lalVerbatim file="WindowCP"> */
-void LALDestroyREAL8Window ( LALStatus *status, REAL8Window **output )
+REAL8Window *XLALCreateHannREAL8Window(UINT4 length)
 /* </lalVerbatim> */
 {
+	static const char func[] = "XLALCreateHannREAL8Window";
+	REAL8Window *window;
+	UINT4 i;
 
-  /*
-   *
-   * FIXME: should call the XLAL routine!!!
-   *
-   */
+	window = REAL8WindowNew(length);
+	if(!window)
+		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 
-  INITSTATUS( status, "LALDestroyREAL8Window", WINDOWC );
-  ATTATCHSTATUSPTR( status );
+	/* cos^2, zero at both end points, 1 in the middle */
+	for(i = 0; i < (length + 1) / 2; i++)
+		window->data->data[i] = window->data->data[length - 1 - i] = pow(cos(LAL_PI_2 * Y(length, i)), 2);
 
-  ASSERT( output, status, WINDOWH_ENULL, WINDOWH_MSGENULL );
-  ASSERT( *output, status, WINDOWH_ENULL, WINDOWH_MSGENULL );
+	window->sumofsquares = sum_squares(window->data->data, window->data->length);
+	window->sum = sum_samples(window->data->data, window->data->length);
 
-  /* destroy the window */
-  LALDDestroyVector( status->statusPtr, &((*output)->data) );
-  CHECKSTATUSPTR( status );
-  LALFree( *output );
-  *output = NULL;
+	return window;
+}
 
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
+
+/* <lalVerbatim file="WindowCP"> */
+REAL8Window *XLALCreateWelchREAL8Window(UINT4 length)
+/* </lalVerbatim> */
+{
+	static const char func[] = "XLALCreateWelchREAL8Window";
+	REAL8Window *window;
+	UINT4 i;
+
+	window = REAL8WindowNew(length);
+	if(!window)
+		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+
+	/* downward-opening parabola, zero at both end points, 1 in the
+	 * middle */
+	for(i = 0; i < (length + 1) / 2; i++)
+		window->data->data[i] = window->data->data[length - 1 - i] = 1 - pow(Y(length, i), 2.0);
+
+	window->sumofsquares = sum_squares(window->data->data, window->data->length);
+	window->sum = sum_samples(window->data->data, window->data->length);
+
+	return window;
+}
+
+
+/* <lalVerbatim file="WindowCP"> */
+REAL8Window *XLALCreateBartlettREAL8Window(UINT4 length)
+/* </lalVerbatim> */
+{
+	static const char func[] = "XLALCreateBartlettREAL8Window";
+	REAL8Window *window;
+	UINT4 i;
+
+	window = REAL8WindowNew(length);
+	if(!window)
+		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+
+	/* downward-opening triangle, zero at both end points (non-zero end
+	 * points is a different window called the "triangle" window), 1 in
+	 * the middle */
+	for(i = 0; i < (length + 1) / 2; i++)
+		window->data->data[i] = window->data->data[length - 1 - i] = 1 + Y(length, i);
+
+	window->sumofsquares = sum_squares(window->data->data, window->data->length);
+	window->sum = sum_samples(window->data->data, window->data->length);
+
+	return window;
+}
+
+
+/* <lalVerbatim file="WindowCP"> */
+REAL8Window *XLALCreateParzenREAL8Window(UINT4 length)
+/* </lalVerbatim> */
+{
+	static const char func[] = "XLALCreateParzenREAL8Window";
+	REAL8Window *window;
+	UINT4 i;
+
+	window = REAL8WindowNew(length);
+	if(!window)
+		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+
+	/* ?? Copied from LAL Software Description */
+	for(i = 0; i < (length + 1) / 4; i++)
+		window->data->data[i] = window->data->data[length - 1 - i] = 2 * pow(1 + Y(length, i), 3);
+	for(; i < (length + 1) / 2; i++) {
+		double y = Y(length, i);
+		window->data->data[i] = window->data->data[length - 1 - i] = 1 - 6 * y * y * (1 + y);
+	}
+
+	window->sumofsquares = sum_squares(window->data->data, window->data->length);
+	window->sum = sum_samples(window->data->data, window->data->length);
+
+	return window;
+}
+
+
+/* <lalVerbatim file="WindowCP"> */
+REAL8Window *XLALCreatePapoulisREAL8Window(UINT4 length)
+/* </lalVerbatim> */
+{
+	static const char func[] = "XLALCreatePapoulisREAL8Window";
+	REAL8Window *window;
+	UINT4 i;
+
+	window = REAL8WindowNew(length);
+	if(!window)
+		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+
+	/* ?? Copied from LAL Software Description */
+	for(i = 0; i < (length + 1) / 2; i++) {
+		double y = Y(length, i);
+		window->data->data[i] = window->data->data[length - 1 - i] = (1 + y) * cos(LAL_PI * y) - sin(LAL_PI * y) / LAL_PI;
+	}
+
+	window->sumofsquares = sum_squares(window->data->data, window->data->length);
+	window->sum = sum_samples(window->data->data, window->data->length);
+
+	return window;
+}
+
+
+/* <lalVerbatim file="WindowCP"> */
+REAL8Window *XLALCreateHammingREAL8Window(UINT4 length)
+/* </lalVerbatim> */
+{
+	static const char func[] = "XLALCreateHammingREAL8Window";
+	REAL8Window *window;
+	UINT4 i;
+
+	window = REAL8WindowNew(length);
+	if(!window)
+		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+
+	/* cos^2, like Hann window, but with a bias of 0.08 */
+	for(i = 0; i < (length + 1) / 2; i++)
+		window->data->data[i] = window->data->data[length - 1 - i] = 0.08 + 0.92 * pow(cos(LAL_PI_2 * Y(length, i)), 2);
+
+	window->sumofsquares = sum_squares(window->data->data, window->data->length);
+	window->sum = sum_samples(window->data->data, window->data->length);
+
+	return window;
+}
+
+
+/* <lalVerbatim file="WindowCP"> */
+REAL8Window *XLALCreateKaiserREAL8Window(UINT4 length, REAL8 beta)
+/* </lalVerbatim> */
+{
+	static const char func[] = "XLALCreateKaiserREAL8Window";
+	REAL8Window *window;
+	REAL8 I0beta;
+	UINT4 i;
+
+	if(beta < 0)
+		XLAL_ERROR_NULL(func, XLAL_ERANGE);
+
+	window = REAL8WindowNew(length);
+	if(!window)
+		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+
+	/* pre-compute I0(beta) */
+	if(beta < 705)
+		I0beta = gsl_sf_bessel_I0(beta);
+
+	/* I0(beta sqrt(1 - y^2)) / I0(beta)
+	 *
+	 * note that in many places the window is defined with pi
+	 * multiplying beta in the numerator and denominator, but not here.
+	 *
+	 * The asymptotic forms for large beta is derived from the
+	 * asymptotic form of I0(x) which is
+	 *
+	 * I0(x) --> exp(x) / sqrt(2 pi x)
+	 *
+	 * Although beta may be large, beta sqrt(1 - y^2) can be small
+	 * (when y ~= +/- 1), so there is a need for two asymptotic forms:
+	 * one for large beta alone, and one for large beta sqrt(1 - y^2).
+	 *
+	 * When beta alone is large,
+	 *
+	 * w(y) = I0(beta sqrt(1 - y^2)) sqrt(2 pi beta) / exp(beta)
+	 *
+	 * and when beta sqrt(1 - y^2) is large,
+	 *
+	 * w(y) = exp(-beta * (1 - sqrt(1 - y^2))) / sqrt(1 - y^2)
+	 *
+	 * As a function of beta, the asymptotic approximation and the
+	 * "exact" form are found to disagree by about 20% in the y = +/- 1
+	 * bins near the edge of the "exact" form's domain of validity.  To
+	 * smooth this out, a linear transition to the asymptotic form
+	 * occurs between beta = 695 and beta = 705. */
+
+	for(i = 0; i < (length + 1) / 2; i++) {
+		double y = Y(length, i);
+		double x = sqrt(1 - y * y);
+		double w1, w2;
+
+		if(beta < 705)
+			w1 = gsl_sf_bessel_I0(beta * x) / I0beta;
+		if(beta >= 695) {
+			/* FIXME:  should an interpolation be done across
+			 * the transition from small beta x to large beta
+			 * x? */
+			/* Note:  the inf * 0 when beta = inf and y = +/- 1
+			 * needs to be hard-coded */
+			if(beta * x < 700)
+				w2 = y == 0 ? 1 : gsl_sf_bessel_I0(beta * x) * sqrt(LAL_2_PI * beta) / exp(beta);
+			else
+				/* Note:  when beta = inf, the inf * 0 in
+				 * the y = 0 sample must be hard-coded,
+				 * which we do by simply testing for y = 0.
+				 * And when beta = inf and x = 0 (y = +/-
+				 * 1), the conditional goes onto this
+				 * branch, and results in a 0/0 which we
+				 * have to hard-code */
+				w2 = y == 0 ? 1 : x == 0 ? 0 : exp(-beta * (1 - x)) / sqrt(x);
+		}
+
+		if(beta < 695)
+			window->data->data[i] = window->data->data[length - 1 - i] = w1;
+		else if(beta < 705) {
+			double r = (beta - 695) / (705 - 695);
+			window->data->data[i] = window->data->data[length - 1 - i] = (1 - r) * w1 + r * w2;
+		} else
+			window->data->data[i] = window->data->data[length - 1 - i] = w2;
+	}
+
+	window->sumofsquares = sum_squares(window->data->data, window->data->length);
+	window->sum = sum_samples(window->data->data, window->data->length);
+
+	return window;
+}
+
+
+/* <lalVerbatim file="WindowCP"> */
+REAL8Window *XLALCreateCreightonREAL8Window(UINT4 length, REAL8 beta)
+/* </lalVerbatim> */
+{
+	static const char func[] = "XLALCreateCreightonREAL8Window";
+	REAL8Window *window;
+	UINT4 i;
+
+	if(beta < 0)
+		XLAL_ERROR_NULL(func, XLAL_ERANGE);
+
+	window = REAL8WindowNew(length);
+	if(!window)
+		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+
+	/* ?? Copied from LAL Software Description */
+	for(i = 0; i < (length + 1) / 2; i++) {
+		double y = Y(length, i);
+		/* NOTE:  divide-by-zero when i = 0 seems to work out OK.
+		 * It's well-defined algebraically, but I'm surprised the
+		 * FPU doesn't complain.  The 0/0 when beta = i = 0 has to
+		 * be hard-coded, as does the inf * 0 when beta = inf and y
+		 * = 0 (which is done by just checking for y = 0). */
+		window->data->data[i] = window->data->data[length - 1 - i] = (beta == 0 && y == -1) || y == 0 ? 1 : exp(-beta * y * y / (1 - y * y));
+	}
+
+	window->sumofsquares = sum_squares(window->data->data, window->data->length);
+	window->sum = sum_samples(window->data->data, window->data->length);
+
+	return window;
+}
+
+
+/* <lalVerbatim file="WindowCP"> */
+REAL8Window *XLALCreateTukeyREAL8Window(UINT4 length, REAL8 beta)
+/* </lalVerbatim> */
+{
+	static const char func[] = "XLALCreateTukeyREAL8Window";
+	REAL8Window *window;
+	UINT4 transition_length = beta * length + 0.5;
+	UINT4 i;
+
+	if(beta < 0 || beta > 1)
+		XLAL_ERROR_NULL(func, XLAL_ERANGE);
+
+	window = REAL8WindowNew(length);
+	if(!window)
+		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+
+	/* 1.0 and flat in the middle, cos^2 transition at each end, zero
+	 * at end points, 0.0 <= beta <= 1.0 sets what fraction of the
+	 * window is transition (0 --> rectangle window, 1 --> Hann window)
+	 * */
+	for(i = 0; i < (transition_length + 1) / 2; i++)
+		window->data->data[i] = window->data->data[length - 1 - i] = pow(cos(LAL_PI_2 * Y(transition_length, i)), 2);
+	for(; i < (length + 1) / 2; i++)
+		window->data->data[i] = window->data->data[length - 1 - i] = 1;
+
+	window->sumofsquares = sum_squares(window->data->data, window->data->length);
+	window->sum = sum_samples(window->data->data, window->data->length);
+
+	return window;
+}
+
+
+/* <lalVerbatim file="WindowCP"> */
+REAL8Window *XLALCreateGaussREAL8Window(UINT4 length, REAL8 beta)
+/* </lalVerbatim> */
+{
+	static const char func[] = "XLALCreateGaussREAL8Window";
+	REAL8Window *window;
+	UINT4 i;
+
+	if(beta < 0)
+		XLAL_ERROR_NULL(func, XLAL_ERANGE);
+
+	window = REAL8WindowNew(length);
+	if(!window)
+		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+
+	/* pre-compute -1/2 beta^2 */
+	beta = -0.5 * beta * beta;
+
+	/* exp(-1/2 beta^2 y^2) */
+	for(i = 0; i < (length + 1) / 2; i++) {
+		double y = Y(length, i);
+		/* Note:  we have to hard-code the 0 * inf when y = 0 and
+		 * beta = inf, which we do by simply checking for y = 0 */
+		window->data->data[i] = window->data->data[length - 1 - i] = y == 0 ? 1 : exp(y * y * beta);
+	}
+
+	window->sumofsquares = sum_squares(window->data->data, window->data->length);
+	window->sum = sum_samples(window->data->data, window->data->length);
+
+	return window;
+}
+
+
+/* <lalVerbatim file="WindowCP"> */
+void XLALDestroyREAL8Window(REAL8Window * window)
+/* </lalVerbatim> */
+{
+	if(window)
+		XLALDestroyREAL8Sequence(window->data);
+	XLALFree(window);
+}
+
+
+/*
+ * ============================================================================
+ *
+ *                                REAL4Window
+ *
+ * ============================================================================
+ */
+
+
+/* <lalVerbatim file="WindowCP"> */
+REAL4Window *XLALCreateRectangularREAL4Window(UINT4 length)
+/* </lalVerbatim> */
+{
+	return XLALREAL4Window_from_REAL8Window(XLALCreateRectangularREAL8Window(length));
+}
+
+
+/* <lalVerbatim file="WindowCP"> */
+REAL4Window *XLALCreateHannREAL4Window(UINT4 length)
+/* </lalVerbatim> */
+{
+	return XLALREAL4Window_from_REAL8Window(XLALCreateHannREAL8Window(length));
+}
+
+
+/* <lalVerbatim file="WindowCP"> */
+REAL4Window *XLALCreateWelchREAL4Window(UINT4 length)
+/* </lalVerbatim> */
+{
+	return XLALREAL4Window_from_REAL8Window(XLALCreateWelchREAL8Window(length));
+}
+
+
+/* <lalVerbatim file="WindowCP"> */
+REAL4Window *XLALCreateBartlettREAL4Window(UINT4 length)
+/* </lalVerbatim> */
+{
+	return XLALREAL4Window_from_REAL8Window(XLALCreateBartlettREAL8Window(length));
+}
+
+
+/* <lalVerbatim file="WindowCP"> */
+REAL4Window *XLALCreateParzenREAL4Window(UINT4 length)
+/* </lalVerbatim> */
+{
+	return XLALREAL4Window_from_REAL8Window(XLALCreateParzenREAL8Window(length));
+}
+
+
+/* <lalVerbatim file="WindowCP"> */
+REAL4Window *XLALCreatePapoulisREAL4Window(UINT4 length)
+/* </lalVerbatim> */
+{
+	return XLALREAL4Window_from_REAL8Window(XLALCreatePapoulisREAL8Window(length));
+}
+
+
+/* <lalVerbatim file="WindowCP"> */
+REAL4Window *XLALCreateHammingREAL4Window(UINT4 length)
+/* </lalVerbatim> */
+{
+	return XLALREAL4Window_from_REAL8Window(XLALCreateHammingREAL8Window(length));
+}
+
+
+/* <lalVerbatim file="WindowCP"> */
+REAL4Window *XLALCreateKaiserREAL4Window(UINT4 length, REAL4 beta)
+/* </lalVerbatim> */
+{
+	return XLALREAL4Window_from_REAL8Window(XLALCreateKaiserREAL8Window(length, beta));
+}
+
+
+/* <lalVerbatim file="WindowCP"> */
+REAL4Window *XLALCreateCreightonREAL4Window(UINT4 length, REAL4 beta)
+/* </lalVerbatim> */
+{
+	return XLALREAL4Window_from_REAL8Window(XLALCreateCreightonREAL8Window(length, beta));
+}
+
+
+/* <lalVerbatim file="WindowCP"> */
+REAL4Window *XLALCreateTukeyREAL4Window(UINT4 length, REAL4 beta)
+/* </lalVerbatim> */
+{
+	return XLALREAL4Window_from_REAL8Window(XLALCreateTukeyREAL8Window(length, beta));
+}
+
+
+/* <lalVerbatim file="WindowCP"> */
+REAL4Window *XLALCreateGaussREAL4Window(UINT4 length, REAL4 beta)
+/* </lalVerbatim> */
+{
+	return XLALREAL4Window_from_REAL8Window(XLALCreateGaussREAL8Window(length, beta));
+}
+
+
+/* <lalVerbatim file="WindowCP"> */
+void XLALDestroyREAL4Window(REAL4Window * window)
+/* </lalVerbatim> */
+{
+	if(window)
+		XLALDestroyREAL4Sequence(window->data);
+	XLALFree(window);
+}
+
+
+/*
+ * ============================================================================
+ *
+ *                                LEGACY CODE
+ *
+ * ============================================================================
+ *
+ * DO NOT USE!!!!!
+ *
+ * FIXME:  REMOVE AS SOON AS POSSIBLE.
+ */
+
+
+#define WINDOWH_EEALLOCATE 4
+#define WINDOWH_MSGEEALLOCATE "unable to allocate vector to store window"
+
+
+static REAL4Window *XLALCreateREAL4Window(UINT4 length, WindowType type, REAL4 beta)
+{
+	static const char func[] = "XLALCreateREAL4Window";
+	REAL4Window *window;
+
+	switch (type) {
+	case Rectangular:
+		window = XLALCreateRectangularREAL4Window(length);
+		break;
+
+	case Hann:
+		window = XLALCreateHannREAL4Window(length);
+		break;
+
+	case Welch:
+		window = XLALCreateWelchREAL4Window(length);
+		break;
+
+	case Bartlett:
+		window = XLALCreateBartlettREAL4Window(length);
+		break;
+
+	case Parzen:
+		window = XLALCreateParzenREAL4Window(length);
+		break;
+
+	case Papoulis:
+		window = XLALCreatePapoulisREAL4Window(length);
+		break;
+
+	case Hamming:
+		window = XLALCreateHammingREAL4Window(length);
+		break;
+
+	case Kaiser:
+		window = XLALCreateKaiserREAL4Window(length, beta);
+		break;
+
+	case Creighton:
+		window = XLALCreateCreightonREAL4Window(length, beta);
+		break;
+
+	case Tukey:
+		window = XLALCreateTukeyREAL4Window(length, beta);
+		break;
+
+	default:
+		XLAL_ERROR_NULL(func, XLAL_ETYPE);
+	}
+
+	if(!window)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	return window;
+}
+
+
+void LALWindow(
+	LALStatus * status,
+	REAL4Vector * vector,
+	LALWindowParams * parameters
+)
+{
+	/* emulate legacy code */
+	REAL4Window *window;
+
+	INITSTATUS(status, "LALWindow", WINDOWC);
+	ATTATCHSTATUSPTR(status);
+
+	window = XLALCreateREAL4Window(parameters->length, parameters->type, parameters->beta);
+	if(!window) {
+		ABORT(status, WINDOWH_EEALLOCATE, WINDOWH_MSGEEALLOCATE);
+	}
+	memcpy(vector->data, window->data->data, vector->length * sizeof(*vector->data));
+	XLALDestroyREAL4Window(window);
+
+	DETATCHSTATUSPTR(status);
+	RETURN(status);
+}
+
+
+void LALCreateREAL4Window(
+	LALStatus * status,
+	REAL4Window ** output,
+	LALWindowParams * params
+)
+{
+	/* emulate legacy code */
+	INITSTATUS(status, "LALCreateREAL4Window", WINDOWC);
+	ATTATCHSTATUSPTR(status);
+
+	*output = XLALCreateREAL4Window(params->length, params->type, params->beta);
+	if(!*output) {
+		ABORT(status, WINDOWH_EEALLOCATE, WINDOWH_MSGEEALLOCATE);
+	}
+
+	DETATCHSTATUSPTR(status);
+	RETURN(status);
+}
+
+
+void LALDestroyREAL4Window(
+	LALStatus * status,
+	REAL4Window ** output
+)
+{
+	/* emulate legacy code */
+	status = status;	/* silence compiler warning */
+	XLALDestroyREAL4Window(*output);
+	*output = NULL;
 }
