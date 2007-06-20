@@ -503,11 +503,11 @@ static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
   INT4 ifailPlus  = 1; /* =1 (ok, continue to next bin), =0 (stop) */
   INT4 ifailMinus = 1; /* =1 (ok, continue to previous bin), =0 (stop) */
 
-  INT4 directionPlus;  /* = +1,or -1 */
-  INT4 directionPlusZero;  /* = +1,or -1 */
+  INT4 directionPlus=-1;  /* = +1,or -1 */
+  INT4 directionPlusZero=-1;  /* = +1,or -1 */
   INT4 directionMinus; /* = +1,or -1 */
 
-  INT4 pathology;   /* =1 (normal), =0 (anormal case) */
+  INT4 pathology=1;   /* =1 (normal), =0 (anormal case) */
   INT4 lineCase;    /* =1 line Case, =0 circle case */
   INT4 nBinPos;
   
@@ -552,6 +552,7 @@ static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
   
   if(cosPhiMax > 0.99999999){ /* avoid points or small circles */
     ifailPlus = 0;            /* do not go to the next bin */
+    directionPlus = -1;
   } else{
     
     phi  = acos(cosPhiMax);   /* in the interval (0,PI) */
