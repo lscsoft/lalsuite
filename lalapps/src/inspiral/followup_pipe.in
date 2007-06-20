@@ -85,15 +85,24 @@ class trigBankFollowUpNode(pipeline.CondorDAGNode):
     for row in proc:
       self.add_var_opt(row.param[2:],row.value)
       if row.param[2:] == 'gps-start-time':
-        self.add_macro("macrogpsstarttime",row.value)
-        self.start_time = row.value
+        pass
+        #self.add_macro("macrogpsstarttime",row.value)
+        #self.start_time = row.value
       if row.param[2:] == 'input-ifo':
         self.input_ifo = row.value
       if row.param[2:] == 'ifo-tag':
         self.ifo_tag = row.value
       if row.param[2:] == 'gps-end-time':
-        self.end_time = row.value
-
+        pass
+        #self.end_time = row.value
+        
+    # be careful that the clustering time must be larger than 2s, we should fix this.
+    self.start_time = str(eval(time)-1))
+    self.end_time = str(eval(time)+1))
+    self.add_var_opt("gps-start-time",self.start_time)
+    self.add_var_opt("gps-end-time",self.end_time)
+    self.add_macro("macrogpsstarttime",self.start_time)
+    
     self.add_var_opt("user-tag",self.output_user_tag)
     fStr = os.popen('ls ' + xml_glob).readlines() 
     for inFile in fStr:
