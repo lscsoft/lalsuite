@@ -67,7 +67,6 @@ some information on stderr.
 </ol>
 
 
-
   @author Xavier Siemens,  Bruce Allen,  Bernd Machenschalk,  Yousuke Itoh , Holger Pletsch
   $Id$ 
 */
@@ -107,7 +106,7 @@ some information on stderr.
 /*
    To use unzip, you need to have unzip-5.5x from, say,  the InfoZip webpage, 
    and readzipfile_util.h and .c. from yousuke.
-   ( not needed any more, will be done by combiner_v2.py ) 
+   ( not needed any more in S4 , will be done by combiner_v4.py ) 
 #define USE_UNZIP  
 */
 
@@ -360,6 +359,7 @@ void sortFreqCells2(INT4 *data, INT4 left, INT4 right);
 
 CandidateList *SortedC = NULL; /* need to be global to access them in compare functions for qsort */
 CellData *cell = NULL;
+
 /*
 ListForSort *SortedCList = NULL;
 ListForSort *cellList = NULL;
