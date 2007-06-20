@@ -48,7 +48,7 @@
 /*   WUDIR = ${LALAPPS_SRC}/pulsar/FDS_isolated                                                                            */
 /*   CFLAGS := $(CFLAGS) $(CXXFLAGS) -g -O3 $(warnLevel)                                                                   */
 /*                                                                                                                         */
-/*   bin_PROGRAMS = ... FreqFiducialTime dumpWUparams                                                                      */
+/*   bin_PROGRAMS = ... FreqFiducialTime                                                                                   */
 /*                                                                                                                         */
 /*   CFS_S4R2_setup_CFLAGS := $(CFLAGS) -DDEFAULT_INSTANCE=\"$(INSTANCE)\"                                                 */
 /*   CFS_S4R2_setup_SOURCES = CFS_S4R2_setup.C WU_generator_daemon.h                                                       */
