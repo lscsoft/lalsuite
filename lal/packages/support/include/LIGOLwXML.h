@@ -52,6 +52,7 @@ LIGO light weight XML files.
 #define _LIGOLWXML_H
 
 #include <stdio.h>
+#include <lal/FileIO.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LIGOMetadataTables.h>
 
@@ -105,7 +106,7 @@ extern "C" {
 typedef struct
 tagLIGOLwXMLStream
 {
-  FILE                 *fp;
+  LALFILE              *fp;
   INT4                  first;
   UINT8                 rowCount;
   MetadataTableType     table;

@@ -35,15 +35,27 @@ $Id$
 </lalVerbatim> 
 #endif
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
+#include <lal/FileIO.h>
 #include <lal/LALVersion.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
+
+#ifdef fputs
+#	undef fputs
+#endif
+#define fputs XLALFilePuts
+#ifdef fprintf
+#	undef fprintf
+#endif
+#define fprintf XLALFilePrintf
 #include <lal/LIGOLwXMLHeaders.h>
 #include <lal/LIGOLwXMLInspiralHeaders.h>
+
 
 NRCSID( LIGOLWXMLC, "$Id$" );
 
@@ -174,7 +186,8 @@ LALOpenLIGOLwXMLFile (
   INITSTATUS( status, "LALOpenLIGOLwXMLFile", LIGOLWXMLC );
   ASSERT( xml, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   ASSERT( ! xml->fp, status, LIGOLWXMLH_ENNUL, LIGOLWXMLH_MSGENNUL );
-  if ( ! (xml->fp = fopen( path, "w" )) )
+  xml->fp = XLALFileOpen( path, "w" );
+  if ( ! xml->fp )
   {
     ABORT( status, LIGOLWXMLH_EOPEN, LIGOLWXMLH_MSGEOPEN );
   }
@@ -200,7 +213,7 @@ LALCloseLIGOLwXMLFile (
     ABORT( status, LIGOLWXMLH_ECLOS, LIGOLWXMLH_MSGECLOS );
   }
   myfprintf( xml->fp, LIGOLW_XML_FOOTER );
-  fclose( xml->fp );
+  XLALFileClose( xml->fp );
   xml->fp = NULL;
   RETURN( status );
 }

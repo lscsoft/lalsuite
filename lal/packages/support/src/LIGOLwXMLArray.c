@@ -71,12 +71,19 @@
  */
 
 
+#include <stdarg.h>
 #include <stdio.h>
+#include <lal/LALStdio.h>
+#include <lal/FileIO.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LALDatatypes.h>
 #include <lal/Units.h>
 #include <lal/XLALError.h>
 #include <lal/LIGOLwXMLArray.h>
+
+#define FILE LALFILE
+#define fprintf XLALFilePrintf
+
 
 NRCSID(LIGOLWXMLARRAYC, "$Id$");
 
