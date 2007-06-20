@@ -154,10 +154,9 @@ void SetUpSkyPatches(LALStatus *status, HoughSkyPatchesInfo *out, CHAR *skyFileN
 
 void GetAMWeights(LALStatus *status, REAL8Vector *out, MultiDetectorStateSeries *mdetStates, REAL8 alpha, REAL8 delta);
 
-void SelectBestStuff(LALStatus      *status,
-		     BestVariables  *out,
-		     BestVariables  *in,		  
-		     UINT4          mObsCohBest);
+void SelectBestStuff(LALStatus *status, BestVariables *out, BestVariables  *in,	UINT4 mObsCohBest);
+
+void DuplicateBestStuff(LALStatus *status, BestVariables *out, BestVariables *in);
 
 
 /******************************************/
@@ -461,16 +460,19 @@ int main(int argc, char *argv[]){
       mObsCoh += inputSFTs->data[k]->length;
     } 
     
-
     /* set number of SFTs to be kept */
-    if ( LALUserVarWasSet( &uvar_keepBestSFTs ) ) {
+    /* currently mobscohbest is set equal to mobscoh if no weights are used 
+       -- this probably will be changed in the future */
+    if ( LALUserVarWasSet( &uvar_keepBestSFTs ) && (uvar_weighNoise||uvar_weighAM)) {
       mObsCohBest = uvar_keepBestSFTs;
+
+      /* set to mobscoh if it is more than number of sfts */
       if ( mObsCohBest > mObsCoh )
 	mObsCohBest = mObsCoh;
-      } 
-    else {
-      mObsCohBest = mObsCoh; 
-    }
+      }  
+    else 
+      mObsCohBest = mObsCoh;  
+
 
     /* catalog is ordered in time so we can get start, end time and tObs*/
     firstTimeStamp = catalog->data[0].header.epoch;
@@ -671,6 +673,7 @@ int main(int argc, char *argv[]){
       UINT4 k;
       REAL8 sumWeightSquare;
       REAL8  meanN, sigmaN;
+      BestVariables temp;
 
       /* set sky positions and skypatch sizes */
       alpha = skyAlpha[skyCounter];
@@ -688,18 +691,17 @@ int main(int argc, char *argv[]){
       }
       
       /* sort weights vector to get the best sfts */
+      temp.length = mObsCoh;
+      temp.weightsV = &weightsV;
+      temp.timeDiffV = &timeDiffV;
+      temp.velV = &velV;
+      temp.pgV = &pgV;
+
       if ( uvar_weighAM || uvar_weighNoise ) {
-
-	BestVariables temp;
-
-	temp.length = mObsCoh;
-	temp.weightsV = &weightsV;
-	temp.timeDiffV = &timeDiffV;
-	temp.velV = &velV;
-	temp.pgV = &pgV;
-
-	LAL_CALL( SelectBestStuff( &status, &best, &temp, mObsCohBest), &status);
-	
+	LAL_CALL( SelectBestStuff( &status, &best, &temp, mObsCohBest), &status);	
+      }
+      else {
+	LAL_CALL( DuplicateBestStuff( &status, &best, &temp), &status);	
       }
       
       /* calculate the sum of the weights squared */
@@ -1109,10 +1111,13 @@ int main(int argc, char *argv[]){
   
   LALFree(timeV.data);
   LALFree(timeDiffV.data);
+  
 
   LALFree(velV.data);
 
   LALFree(weightsV.data);
+  weightsV.data = NULL;
+
   LALFree(weightsNoise.data);  
 
   XLALDestroyMultiDetectorStateSeries ( mdetStates );
@@ -1129,25 +1134,20 @@ int main(int argc, char *argv[]){
   LALFree(nStarEventVec.event);
 
 
-  if(best.weightsV) {
-    LALFree(best.weightsV->data);
-    LALFree(best.weightsV);
-  }
 
-  if (best.timeDiffV) {
-    LALFree(best.timeDiffV->data);
-    LALFree(best.timeDiffV);
-  }
+  LALFree(best.weightsV->data);
+  
+  LALFree(best.weightsV);
+  
 
-  if ( best.velV) {
-    LALFree(best.velV->data);
-    LALFree(best.velV);
-  }
+  
+  LALFree(best.timeDiffV->data);
+  LALFree(best.timeDiffV);
+  LALFree(best.velV->data);
+  LALFree(best.velV);
+  LALFree(best.pgV->pg);
+  LALFree(best.pgV);
 
-  if (best.pgV) {
-    LALFree(best.pgV->pg);
-    LALFree(best.pgV);
-  }
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
 
@@ -2060,6 +2060,75 @@ void SelectBestStuff(LALStatus      *status,
   
   LALFree(index);
 
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+
+}
+
+
+/* copy data in BestVariables struct */
+void DuplicateBestStuff(LALStatus      *status,
+			BestVariables  *out,
+			BestVariables  *in)
+{
+
+  UINT4 mObsCoh;
+
+  INITSTATUS (status, "SelectBestStuff", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  /* check consistency of input */
+  ASSERT (out, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+
+  ASSERT (in, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (in->length > 0, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+  mObsCoh = in->length;
+
+  ASSERT (in->weightsV, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (in->weightsV->length == mObsCoh, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+
+  ASSERT (in->timeDiffV, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (in->timeDiffV->length == mObsCoh, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+
+  ASSERT (in->velV, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (in->velV->length == mObsCoh, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+
+  /* memory allocation for output -- check output is null because
+     function may be called within the loop over sky positions, so memory might
+     already have been allocated previously */
+  out->length = mObsCoh;
+
+  if (out->weightsV == NULL) {
+    out->weightsV = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
+    out->weightsV->length = mObsCoh;
+    out->weightsV->data = (REAL8 *)LALCalloc(1, mObsCoh*sizeof(REAL8));	
+  }
+
+  if (out->timeDiffV == NULL) {
+    out->timeDiffV = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
+    out->timeDiffV->length = mObsCoh;
+    out->timeDiffV->data = (REAL8 *)LALCalloc(1, mObsCoh*sizeof(REAL8));	
+  }
+
+  if (out->velV == NULL) {
+    out->velV =  (REAL8Cart3CoorVector *)LALCalloc(1, sizeof(REAL8Cart3CoorVector));
+    out->velV->length = mObsCoh;
+    out->velV->data = (REAL8Cart3Coor *)LALCalloc(1, mObsCoh*sizeof(REAL8Cart3Coor));
+  }
+
+  if (out->pgV == NULL) {
+    out->pgV = (HOUGHPeakGramVector *)LALCalloc(1, sizeof(HOUGHPeakGramVector));
+    out->pgV->length = mObsCoh;
+    out->pgV->pg = (HOUGHPeakGram *)LALCalloc(1, mObsCoh*sizeof(HOUGHPeakGram));
+  }
+
+  memcpy(out->weightsV->data, in->weightsV->data, mObsCoh * sizeof(REAL8));
+  memcpy(out->timeDiffV->data, in->timeDiffV->data, mObsCoh * sizeof(REAL8));
+  memcpy(out->velV->data, in->velV->data, mObsCoh * sizeof(REAL8Cart3Coor));
+  memcpy(out->pgV->pg, in->pgV->pg, mObsCoh * sizeof(HOUGHPeakGram));
+  
   DETATCHSTATUSPTR (status);
 	
   /* normal exit */	
