@@ -127,8 +127,10 @@ LALInspiralBankGeneration(
     {
     /* For extended bank use LALInspiralBCVSpinBank() */
     
+    /*
     TRY( LALInspiralBCVSpinRandomBank( status->statusPtr, first, ntiles, input ),
          status );   
+     */
      
     }
     else
