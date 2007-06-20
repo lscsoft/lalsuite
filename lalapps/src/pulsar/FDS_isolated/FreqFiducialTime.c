@@ -1,3 +1,22 @@
+/*
+ *  Copyright (C) 2007  Holger Pletsch
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ *  MA  02111-1307  USA
+ */
+
 /********************************************************************************************/
 /*      FreqFiducialTime - shifting frequency parameters of Einstein at Home result files   */
 /*              to a fixed fiducial time for post-processing coincidence analysis           */
@@ -8,10 +27,38 @@
 /* This code simply shifts all frequency parameters of a combined result file generated
    by combiner_v2.py, to a fixed fiducial GPS time for later coincidence analysis. 
    Note: The code makes use of the current Einstein at Home setup file.
-   (i.e. 'CFS_S4run_setup.h')  
+   (i.e. 'CFS_S4R2_setup.h')  
 */
 
 
+/***************************************************************************************************************************/
+/*   INSTRUCTIONS for building "FreqFiducialTime" under LALApps                                                            */
+/*                                                                                                                         */
+/*   Files from Einstein@Home Workunit Generator that are needed from:                                                     */
+/*   http://www.lsc-group.phys.uwm.edu/cgi-bin/cvs/viewcvs.cgi/einsteinathome/CFS/workunit_generator/?cvsroot=lscsoft      */
+/*                                                                                                                         */
+/*   - CFS_S4R2_setup.C (version 1.4, 2006/07/21)                                                                          */
+/*   - WU_generator_misc.C (version 1.2, 2006/06/08)                                                                       */
+/*   - WU_generator_daemon.h (version 1.6, 2006/07/21)                                                                     */
+/*                                                                                                                         */
+/*   Add the following lines to Makefile.am:                                                                               */
+/*                                                                                                                         */
+/*   INSTANCE = a                                                                                                          */
+/*   warnLevel = -Wall -W -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Waggregate-return -fno-common */
+/*   WUDIR = ${LALAPPS_SRC}/pulsar/FDS_isolated                                                                            */
+/*   CFLAGS := $(CFLAGS) $(CXXFLAGS) -g -O3 $(warnLevel)                                                                   */
+/*                                                                                                                         */
+/*   bin_PROGRAMS = ... FreqFiducialTime dumpWUparams                                                                      */
+/*                                                                                                                         */
+/*   CFS_S4R2_setup_CFLAGS := $(CFLAGS) -DDEFAULT_INSTANCE=\"$(INSTANCE)\"                                                 */
+/*   CFS_S4R2_setup_SOURCES = CFS_S4R2_setup.C WU_generator_daemon.h                                                       */
+/*   WU_generator_misc_CFLAGS := $(CFLAGS) $(CXXFLAGS) -g $(warnLevel)                                                     */
+/*   WU_generator_misc_SOURCES = WU_generator_misc.C WU_generator_daemon.h                                                 */
+/*   FreqFiducialTime_IFLAGS = -I$(WUDIR)                                                                                  */
+/*   FreqFiducialTime_CFLAGS = $(CXXFLAGS) -Wall -g                                                                        */
+/*   FreqFiducialTime_SOURCES = FreqFiducialTime.c CFS_S4R2_setup.C WU_generator_misc.C WU_generator_daemon.h              */
+/*                                                                                                                         */
+/***************************************************************************************************************************/
 /* $Id$  */
 
 /* ----------------------------------------------------------------------------- */
