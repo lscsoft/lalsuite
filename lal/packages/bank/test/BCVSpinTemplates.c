@@ -119,8 +119,8 @@ main(int argc, char **argv)
   coarseIn.approximant = BCVSpin;
   coarseIn.space       = Psi0Psi3;
   
-  /*
-  LALInspiralBCVSpinBank (&status, &tiles, &nlist1, &coarseIn);
+  
+  LALInspiralBCVSpinRandomBank (&status, &tiles, &nlist1, &coarseIn);
   LALInspiralBankGeneration(&status, &coarseIn, &tiles, &nlist1);
 
   fprintf (fpr, "#numtemplaes=%d %e %e %e %e %e %e\n", nlist1, coarseIn.psi0Min, coarseIn.psi0Max, coarseIn.psi3Min, coarseIn.psi3Max, coarseIn.betaMin, coarseIn.betaMax);
@@ -134,7 +134,7 @@ main(int argc, char **argv)
 		  beta = tiles->beta;
 	  }
   }
-  */
+ 
 
   fclose(fpr);
   LALDDestroyVector( &status, &(coarseIn.shf.data) );

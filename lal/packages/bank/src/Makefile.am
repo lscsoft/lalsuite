@@ -6,6 +6,7 @@ InspiralSpinBank.c\
 LALDeterminant3.c\
 LALInsidePolygon.c\
 LALInspiralBCVBank.c\
+LALInspiralBCVSpinRandomBank.c\
 LALInspiralBankList.c\
 LALInspiralBankUtils.c\
 LALInspiralComputeMetric.c\
