@@ -216,11 +216,6 @@ typedef struct PolkaConfigVarsTag
   REAL8 ShiftAlpha;  /*  Parallel shift of Alpha of cell */
   REAL8 ShiftDelta;  /*  Parallel shift of Delta of cell */
   REAL8 ShiftF1dot;  /*  Parallel shift of F1dot spindown of cell */
-  REAL8 fMIN;
-  REAL8 F1dotMIN;
-  REAL8 AlphaMIN;
-  REAL8 DeltaMIN;
-  INT4 FileIDMIN;
   CHAR *FstatsFile;  /*  Names of Fstat files to be read in */
   CHAR *OutputFile;  /*  Names of output file */
   CHAR *InputDir;    /*  Directory name of input files */
@@ -408,11 +403,6 @@ int main(INT4 argc,CHAR *argv[])
 
   PolkaConfigVars PCV;
   REAL8 DeltaDeltaFlex;
-
-  PCV.fMIN=10000000.0;
-  PCV.F1dotMIN=10000000.0;
-  PCV.AlphaMIN=10000000.0;
-  PCV.DeltaMIN=10000000.0;
 
   LALStatus *lalStatus = &global_status;
   lalDebugLevel = 0 ;  
@@ -2401,28 +2391,6 @@ ReadOneCandidateFile( LALStatus *lalStatus,
                      &(cl->FileID), &(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->F1dot), &(cl->TwoF), &newline );
 
       
-      /* keep track of minimum values */ 	 
-       if ( cl->f < CLA->fMIN){ 	 
-         CLA->fMIN = cl->f; 	 
-       } 	 
-  	 
-       if ( cl->F1dot < CLA->F1dotMIN){ 	 
-         CLA->F1dotMIN = cl->F1dot; 	 
-       } 	 
-  	 
-       if ( cl->Alpha < CLA->AlphaMIN){ 	 
-         CLA->AlphaMIN = cl->Alpha; 	 
-       } 	 
-  	 
-       if ( cl->Delta < CLA->DeltaMIN){ 	 
-         CLA->DeltaMIN = cl->Delta; 	 
-       } 	 
-  	 
-       if ( cl->FileID < CLA->FileIDMIN){ 	 
-         CLA->FileIDMIN = cl->FileID; 	 
-       } 	 
- 
-
       /* find number of candidates that are above the 2F threshold. */
       if ( cl->TwoF > myFthr ) {
 	numlinesFthr++;
