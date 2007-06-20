@@ -34,7 +34,7 @@ BCVTemplatesFlatMesh_LDADD = $(top_builddir)/packages/support/src/liblalsupport.
 BCVSpinTemplates_SOURCES = BCVSpinTemplates.c
 BCVSpinTemplates_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
-InspiralSpinBankTest_SOURCES = InspiralBCVSpinBankTest.c
+InspiralSpinBankTest_SOURCES = InspiralSpinBankTest.c
 if METAIO
 InspiralSpinBankTest_LDADD = $(top_builddir)/packages/support/src/liblalmetaio.la $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 else
