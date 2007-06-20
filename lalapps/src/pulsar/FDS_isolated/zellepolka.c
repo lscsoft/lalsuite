@@ -30,13 +30,15 @@
 
 /*! 
    @file
-   @brief the pulsar coincidence analysis code for einstein at home post-process --- counting
-    number of events in cells construcetd in parameters space.
+   @brief The pulsar coincidence analysis code for einstein at home post-processing --- counting
+    number of events in cells construcetd in 4D parameters space.
 
 <li>Inputs and outputs
 <ul>   
-<li> This code takes one single file generated from the EaH zipped result files by a python code combiner_v2.py in 
-lalapps/src/pulsar/FDS_isolated.
+<li> This code takes one single file generated from the EaH zipped result files by a python code combiner_v4.py,
+to be found at:
+http://www.lsc-group.phys.uwm.edu/cgi-bin/cvs/viewcvs.cgi/einsteinathome/CFS/post_processing/combiner_v4.py?cvsroot=lscsoft
+
 <li> This code outputs one output file whose name is specified by the user, five files with default names, and 
 some information on stderr.
 <ol>
@@ -45,25 +47,26 @@ some information on stderr.
 <li> One file outputs cell information of some significant outliers
 <li> One file outputs time variation of 2F of some coincident outliers.
 <li> One file outputs cell information of some coincident outliers
-<li> One file outputs the cell info of the maximum coincident event over each Frequency cell but all over the sky.
+<li> One file outputs the cell info of the maximum coincident event over each Frequency cell but all over the sky and spin-down.
 <li> Outputs summary table on stderr. This table shows how many cells have how many counts. 
      (e.g. 2 cells have 10 coincidences.)
+<li> Outputs most coincident cell with its events.
 </ol>
 </ul>
 
 <li>Algorithm
 <ol>
 <li> First construct a grid in four dimensional parameters space (frequency, right ascension, declination and f1dot).
-   We take an adaptive grid in the sky location according to the metric used in the search
+   A varying cell width in declination is used according to the metric-grid used in the E@H S4 search
    (the actual implementation uses a Gaussian declination-model, with maximum around the equator),
-   a uniform grid in the frequency and spin-down.
-   We can change the grid spacing of the each parameter, and shift the grid as a whole for 
+   a uniform cell-grid in the frequency and spin-down.
+   We can change the cell-grid spacing of the each parameter, and shift the cell-grid as a whole for 
   each parameter.  <br> 
-<li>  Then we count how many candidate events are in each cell.
+<li>  Then we count how many candidate events are found in each cell.
   Even if a file has more than one event in a cell, we say we have one event from that file, 
   and take the largest F statistic event among the events in the cell from that file.
-  Therefore, the greatest number counts in a cell is the number of data-stretches from
-  which the result files have originated.
+  Therefore, the greatest number counts in a cell is the total number of data-stretches from
+  which the result files may have originated.
 </ol>
 
 
