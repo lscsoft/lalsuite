@@ -1,22 +1,3 @@
-/*
-*  Copyright (C) 2007  Holger Pletsch
-*
-*  This program is free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  This program is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
-*  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
-*/
-
 /********************************************************************************************/
 /*      FreqFiducialTime - shifting frequency parameters of Einstein at Home result files   */
 /*              to a fixed fiducial time for post-processing coincidence analysis           */
@@ -120,7 +101,7 @@ typedef struct FiducialTimeConfigVarsTag
 
 typedef struct CandidateListTag
 {
-  INT2 Sveto;        /*  Value of the S vetotesting */
+
   REAL8 f;           /*  Frequency of the candidate */
   REAL8 Alpha;       /*  right ascension of the candidate */
   REAL8 Delta;       /*  declination  of the candidate */
@@ -138,10 +119,6 @@ typedef struct CandidateListTag
 /* Function declarelations */
 void ReadCommandLineArgs( LALStatus *, INT4 argc, CHAR *argv[], FiducialTimeConfigVars *CLA ); 
 void ReadCombinedFile( LALStatus *lalStatus, CandidateList **CList, FiducialTimeConfigVars *CLA, long *candlen );
-
-int compareINT4arrays(const INT4 *idata1, const INT4 *idata2, size_t s); /* compare two INT4 arrays of size s.*/
-int compareREAL8arrays(const REAL8 *rdata1, const REAL8 *rdata2, size_t s); /* compare two REAL8 arrays of size s.*/
-int compareCandidates(const void *ip, const void *jp);
 
 void ComputeFiducialTimeFrequency( LALStatus *,	FiducialTimeConfigVars *CLA, CandidateList *CList, INT4 candlen );
 
@@ -201,9 +178,6 @@ int main(INT4 argc,CHAR *argv[])
   /* Compute shifting of frequency parameters */
   LAL_CALL( ComputeFiducialTimeFrequency( lalStatus, &FTCV, AllmyC, CLength),lalStatus );
  
-  /* sort arrays of candidates, not needed anymore! */
-  /* qsort(AllmyC, (size_t)CLength, sizeof(CandidateList), compareCandidates);*/
-
   /* -----------------------------------------------------------------------------------------*/      
   /* Output result file */
   LAL_CALL( PrintResultFile( lalStatus, &FTCV, AllmyC, CLength),lalStatus );
@@ -264,16 +238,13 @@ void PrintResultFile(LALStatus *lalStatus, const FiducialTimeConfigVars *CLA, Ca
   
   while(iindex < candlen) 
     {
-      /* S vetoing */
-      if(CList[iindex].Sveto == 0){
-	fprintf(fp,"%" LAL_INT4_FORMAT " %.13g %.7g %.7g %.5g %.6g\n",
-		CList[iindex].DataStretch, 
-		CList[iindex].f, 
-		CList[iindex].Alpha, 
-		CList[iindex].Delta, 
-		CList[iindex].F1dot, 
-		CList[iindex].TwoF );
-      }
+      fprintf(fp,"%" LAL_INT4_FORMAT " %.13g %.7g %.7g %.5g %.6g\n",
+	      CList[iindex].DataStretch, 
+	      CList[iindex].f, 
+	      CList[iindex].Alpha, 
+	      CList[iindex].Delta, 
+	      CList[iindex].F1dot, 
+	      CList[iindex].TwoF );
       iindex++;
     }
 
@@ -319,69 +290,6 @@ void FreeConfigVars(LALStatus *lalStatus, FiducialTimeConfigVars *CLA )
 
   RETURN (lalStatus);
 } /* FreeCOnfigVars */
-
-
-/* ########################################################################################## */
-
-
-
-int compareCandidates(const void *a, const void *b)
-{
-  const CandidateList *ip = a;
-  const CandidateList *jp = b;
-  int res;
-  
-  INT4 ap[2], bp[2];
-
-  ap[0]=ip->DataStretch;
-  ap[1]=ip->FileID;
-
-  bp[0]=jp->DataStretch;
-  bp[1]=jp->FileID;
-  
-  res=compareINT4arrays( ap, bp, 2 );
-  if( res == 0 ){
-    REAL8 F1, F2;
-    F1=ip->TwoF;
-    F2=jp->TwoF;
-    /* I put F1 and F2 inversely, because I would like to get decreasingly-ordered set. */
-    res = compareREAL8arrays( &F2,  &F1, 1);
-  }
-
-  return res;
-
-} /* int compareCandidates() */
-
-
-int
-compareINT4arrays(const INT4 *ap, const INT4 *bp, size_t n)
-{
-  if( (*ap) == (*bp) ) {
-    if ( n > 1 ){
-      return compareINT4arrays( ap+1, bp+1, n-1 );
-    } else {
-      return 0;
-    }
-  }
-  if ( (*ap) < (*bp) )
-    return -1;
-  return 1;
-} /* int compareINT4arrays() */
-
-int
-compareREAL8arrays(const REAL8 *ap, const REAL8 *bp, size_t n)
-{
-  if( (*ap) == (*bp) ) {
-    if ( n > 1 ){
-      return compareREAL8arrays( ap+1, bp+1, n-1 );
-    } else {
-      return 0;
-    }
-  }
-  if ( (*ap) < (*bp) )
-    return -1;
-  return 1;
-} /* int compareREAL8arrays() */
 
 
 /* ########################################################################################## */
@@ -557,7 +465,6 @@ void ReadCombinedFile( LALStatus *lalStatus,
 	nread = sscanf (line1,
 			"%s %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT, 
 			&(cl->resultfname), &(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->F1dot), &(cl->TwoF) );
-	cl->Sveto=0;
 
 	if(cl->TwoF >= CLA->ThrTwoF) {
 	  /* check that values that are read in are sensible, 
@@ -867,128 +774,6 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
 
 
 /* ########################################################################################## */
-  
-#if 0
-void ComputeFiducialTimeFrequency( LALStatus *lalStatus,
-				   FiducialTimeConfigVars *CLA,
-				   CandidateList *CList, 
-				   INT4 candlen)
-{
-  REAL8 f_CFS;
-  REAL8 F1dot_CFS;
-  REAL8 f_fiducial;
-  REAL8 deltaT;
-  INT4 iindex;
-  INT4 MinNumJobs4Freq=9999999;
-  WU_search_params_t wparams, wparams2;
-  CHAR myWUname[256];
-
-
-  INITSTATUS( lalStatus, "ComputeFiducialTimeFrequency", rcsid );
-  ATTATCHSTATUSPTR (lalStatus);
-  printf("Frequency values are shifted to fixed fiducial GPS time: %f\n", FIXED_FIDUCIAL_TIME);
-
-  CLA->CandThr=0;
-  f_CFS=0;
-  f_fiducial=0;
-  F1dot_CFS=0;
-  iindex=0;
-  deltaT=0;
-  
-
-  while( iindex < candlen )
-    {
-      f_CFS = CList[iindex].f;
-      F1dot_CFS = CList[iindex].F1dot;
-      
-      /* get search parameters from Einstein at Home setup library */
-      findSearchParams4Result( CList[iindex].resultfname, &wparams );
-      
-      CList[iindex].DataStretch = (INT4)(wparams.endTime / (wparams.endTime - wparams.startTime));
-      CList[iindex].WUCandThr = (INT4)( 0.5 / wparams.fBand );
-      
-
-      if (strcmp(wparams.DetName,"LHO")==0)
-	{
-	  /*CList[iindex].resultfname[0] = 'z';*/
-	  sprintf( myWUname, "z1_%c%c%c%c%c%c__0_S4R2a_0_0", CList[iindex].resultfname[3],
-		   CList[iindex].resultfname[4],
-		   CList[iindex].resultfname[5],
-		   CList[iindex].resultfname[6],
-		   CList[iindex].resultfname[7],
-		   CList[iindex].resultfname[8]);
-	  findSearchParams4Result( myWUname, &wparams2 );
-	}
-      else if (strcmp(wparams.DetName,"LLO")==0)
-	{
-	  /*CList[iindex].resultfname[0] = 'r';*/
-	  sprintf( myWUname, "r1_%c%c%c%c%c%c__0_S4R2a_0_0", CList[iindex].resultfname[3],
-                   CList[iindex].resultfname[4],
-                   CList[iindex].resultfname[5],
-                   CList[iindex].resultfname[6],
-                   CList[iindex].resultfname[7],
-                   CList[iindex].resultfname[8]);
-          findSearchParams4Result( myWUname, &wparams2 );
-	}
-
-
-      if( wparams2.minNumJobs < wparams.minNumJobs )
-	{
-	  MinNumJobs4Freq = wparams2.minNumJobs;
-	}
-      else
-	{
-	  MinNumJobs4Freq = wparams.minNumJobs;
-	}
-	
-
-      /* fixed fiducial time = e.g. GPS time of first SFT in S4 */
-      deltaT = wparams.startTime - FIXED_FIDUCIAL_TIME;  
-
-      /* compute new frequency values at fixed fiducial time */
-      f_fiducial = f_CFS - (F1dot_CFS * deltaT);
-     
-      /* replace f values by the new ones, that all refer to the same */
-      CList[iindex].f = f_fiducial;
- 
-      /* compute quality function */
-      
-      
-      f_CFS = 0;
-      f_fiducial = 0;
-      F1dot_CFS = 0;
-      deltaT=0;
-
-      iindex++;
-
-    } /* while( iindex < candlen)  */
-
-  
-  if(CLA->CandThrInput == 0)
-    {
-      CLA->CandThr = MinNumJobs4Freq * 13000;
-    }
-  else
-    {
-      CLA->CandThr = CLA->CandThrInput;
-    }
-
-  /* printf("Number of candidates kept per data-stretch: %d\n", CLA->CandThr); */
-
-  iindex=0;
-  while(iindex < candlen)
-    {
-      CList[iindex].WUCandThr = (INT4)( (CLA->CandThr) / (CList[iindex].WUCandThr) );
-      /*printf("%d\n",CList[iindex].WUCandThr);*/
-      iindex++;
-    }
-  /*printf("%d\n", CLA->CandThr);*/
-  DETATCHSTATUSPTR (lalStatus);
-  RETURN (lalStatus);
-
-} /* ComputeFiducialTimeFrequencies () */
-#endif 
-
 
 
 /*----------------------------------------------------- */
@@ -997,15 +782,10 @@ void ComputeFiducialTimeFrequency( LALStatus *lalStatus,
 				   CandidateList *CList, 
 				   INT4 candlen)
 {
-  INT4 characTime;
-  REAL8 S_Thres;
-  REAL8 S_ParamValue;
   REAL8 f_CFS;
   REAL8 F1dot_CFS;
   REAL8 f_fiducial;
   REAL8 deltaT;
-  REAL8 deltaf;
-  REAL8 acc1, acc2, acc3;
   INT4 iindex;
   WU_search_params_t wparams;
 
@@ -1013,97 +793,34 @@ void ComputeFiducialTimeFrequency( LALStatus *lalStatus,
   INITSTATUS( lalStatus, "ComputeFiducialTimeFrequency", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
   /* printf("Frequency values are shifted to fixed fiducial GPS time: %f\n", FIXED_FIDUCIAL_TIME); */
-  
-  characTime=2122735;
+
   f_CFS=0;
   f_fiducial=0;
   F1dot_CFS=0;
   iindex=0;
   deltaT=0;
-  S_ParamValue=0;
-  S_Thres=0;
-  deltaf=0;
-  acc1=0; acc2=0; acc3=0;
-
+  
 
   while( iindex < candlen )
     {
       f_CFS = CList[iindex].f;
       F1dot_CFS = CList[iindex].F1dot;
       
-      /* get search parameters from Einstein at Home setup library */
+      /* Get search parameters from Einstein at Home setup library */
       findSearchParams4Result( CList[iindex].resultfname, &wparams );
 
-      /* Compute Data-StrtchID */
+      /* Compute Data-StretchID */
       CList[iindex].DataStretch = (INT4)(wparams.endTime / (wparams.endTime - wparams.startTime));
       
-      /* fixed fiducial time = e.g. GPS time of first SFT in S4 */
+      /* Fixed fiducial time = e.g. GPS time of first SFT in S4 */
       deltaT = wparams.startTime - FIXED_FIDUCIAL_TIME;  
 
-      /* compute new frequency values at fixed fiducial time */
+      /* Compute new frequency values at fixed fiducial time */
       f_fiducial = f_CFS - (F1dot_CFS * deltaT);
      
-      /* replace f values by the new ones, that all refer to the same */
+      /* Replace f values by the new ones, that all refer to the same */
       CList[iindex].f = f_fiducial;
-
-      /* S vetoing*/
-      S_Thres = 5.0;
-
-      if( CList[iindex].f < 300.0 ){
-	deltaf = 0.00077;
-      }
-      else{
-	deltaf = 0.00108;
-      }
-      
-      switch (CList[iindex].DataStretch){
-
-      case 6537:
-	acc1=1.98765e-11; acc2=-3.09986e-12; acc3=-1.34916e-12;
-      case 6497:
-	acc1=1.99615e-11; acc2=-2.08814e-12; acc3=-9.02488e-13;
-      case 5828:
-	acc1=1.99304e-11; acc2=-4.49618e-13; acc3=-1.85197e-13;
-      case 6120:
-	acc1=1.88245e-11; acc2=-6.4156e-12; acc3=-2.78244e-12;
-      case 5955:
-	acc1=1.98118e-11; acc2=7.67637e-13; acc3=3.41142e-13;
-      case 5613:
-	acc1=1.93602e-11; acc2=-5.08227e-12; acc3=-2.21408e-12;
-      case 6126:
-	acc1=1.99692e-11; acc2=-1.43645e-12; acc3=-6.16034e-13;
-      case 5946:
-	acc1=1.97161e-11; acc2=-3.9366e-12; acc3=-1.71737e-12;
-      case 6130:
-	acc1=1.99318e-11; acc2=-2.59456e-12; acc3=-1.12595e-12;
-      case 5515:
-	acc1=1.91308e-11; acc2=-5.67761e-12; acc3=-2.46859e-12;
-      case 6341:
-	acc1=1.9787e-11; acc2=9.61532e-13; acc3=4.24398e-13;
-      case 6102:
-	acc1=1.99387e-11; acc2=-5.8096e-13; acc3=-2.42329e-13;
-      case 5813:
-	acc1=1.98462e-11; acc2=4.78541e-13; acc3=2.16693e-13;
-      case 5783:
-	acc1=1.99443e-11; acc2=-2.42165e-12; acc3=-1.0496e-12;
-      case 5538:
-	acc1=1.95108e-11; acc2=-4.64902e-12; acc3=-2.02744e-12;
-      case 6514:
-	acc1=1.96723e-11; acc2=-4.10891e-12; acc3=-1.79274e-12;
-      case 5653:
-	acc1=1.99692e-11; acc2=-1.45367e-12; acc3=-6.23589e-13;
-
-      }
-
-      S_ParamValue = CList[iindex].F1dot / deltaf + ( cos(CList[iindex].Alpha)*cos(CList[iindex].Delta)*acc1 + sin(CList[iindex].Alpha)*cos(CList[iindex].Delta)*acc2 + sin(CList[iindex].Delta)*acc3  ) * CList[iindex].f / deltaf;
-
-      if( fabs(S_ParamValue*characTime) < S_Thres ) {
-	CList[iindex].Sveto = 1;
-      }
-      else {
-	CList[iindex].Sveto = 0;
-      }
-
+ 
       f_CFS = 0;
       f_fiducial = 0;
       F1dot_CFS = 0;
