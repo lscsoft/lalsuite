@@ -509,16 +509,12 @@ LALBurstInjectSignals(
   CHECKSTATUSPTR( stat );
 
   /* loop over list of waveforms and inject into data stream */
-  simBurst = injections;
-  while ( simBurst )
+  for ( simBurst = injections; simBurst; simBurst = simBurst->next; )
   {
     /* only do the work if the burst is in injection zone */
     if( (injStartTime - simBurst->geocent_peak_time.gpsSeconds) *
         (injStopTime - simBurst->geocent_peak_time.gpsSeconds) > 0 )
-    {
-      simBurst = simBurst->next;
       continue;
-    }
 
     /* set the burt params */
     burstParam.deltaT = series->deltaT;
@@ -592,9 +588,6 @@ LALBurstInjectSignals(
 
     /* reset the detector site information in case it changed */
     detector.site = tmpDetector;
-
-    /* move on to next one */
-    simBurst = simBurst->next;
   }
 
   /* destroy the signal */
