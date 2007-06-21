@@ -69,6 +69,7 @@ LALSnprintf()
 #include <lal/VectorOps.h>
 #include <lal/Inject.h>
 #include <lal/SimulateCoherentGW.h>
+#include <lal/TimeFreqFFT.h>
 #include <lal/GenerateBurst.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/RealFFT.h>
