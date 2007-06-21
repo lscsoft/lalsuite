@@ -542,6 +542,10 @@ static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
   lambda = 2* delta -LAL_PI*0.5;
   rCritic = 2* cos(lambda) /(1 - sin(lambda) );
 
+  /* Initializing variables to irrelevant values, 
+     since these values should never be used */
+  rcOldPlus = rCritic;
+  rcOldMinus = rCritic;
   /********************************************************/
   /*  starting with the (central) bin corresponding to:   */
   /*            Delta_f(t) =0 (k=0), border cosPhiMax     */
@@ -603,7 +607,7 @@ static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
     cosPhiMax = cosPhiMax + cosDelta;
     /* or cosPhiMax = MIN(1,cosPhiMax + cosDelta ); */
 
-    if( cosPhiMax > 0.999999){ /* check appropiate value */
+    if( cosPhiMax > 0.99999999){ /* check appropiate value */
       ifailPlus = 0;
     } else {
 
@@ -709,7 +713,7 @@ static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
 
     cosPhiMin = cosPhiMin - cosDelta;
 
-    if( cosPhiMin < -0.999999){ /* check appropiate value */
+    if( cosPhiMin < -0.99999999){ /* check appropiate value */
       ifailMinus = 0;
     } else {
 
