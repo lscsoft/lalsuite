@@ -104,19 +104,19 @@ SnglBurstTable *XLALComputeExcessPower(
 	double h_rss;
 	double confidence;
 
-	for(t_length = tiling->min_length; t_length <= tiling->max_length; t_length *= 2)
 	for(t_channels = tiling->min_channels; t_channels <= tiling->max_channels; t_channels *= 2)
-	for(t_start = tiling->tiling_t_start; t_start + t_length <= tiling->tiling_t_end; t_start += t_length / tiling->inv_fractional_stride)
 	for(t_channel_start = 0; t_channel_start + t_channels <= tiling->tiling_n_channels; t_channel_start += t_channels / tiling->inv_fractional_stride) {
-		/* number of degrees of freedom in tile */
-		double t_dof = (t_length * t_channels) * tiling->dof_per_pixel;
 		/* sum of inner products of all pairs of channels
 		 * contributing to this tile's "virtual channel" */
 		const double channel_overlap = XLALREAL8SequenceSum(plane->channel_overlap, t_channel_start, t_channels - 1);
 		/* mean square for this tile's "virtual channel" */
 		const double pixel_mean_square = XLALREAL8SequenceSumSquares(plane->channel_rms, t_channel_start, t_channels) / (t_channels + channel_overlap);
+	for(t_length = tiling->min_length; t_length <= tiling->max_length; t_length *= 2) {
+		/* number of degrees of freedom in tile */
+		double t_dof = (t_length * t_channels) * tiling->dof_per_pixel;
 		/* distance between tile's time bins */
 		const unsigned tstep = t_length / t_dof;
+	for(t_start = tiling->tiling_t_start; t_start + t_length <= tiling->tiling_t_end; t_start += t_length / tiling->inv_fractional_stride) {
 		double sumsquares = 0.0;
 		double hsumsquares = 0.0;
 		unsigned t;
@@ -153,6 +153,8 @@ SnglBurstTable *XLALComputeExcessPower(
 				XLAL_ERROR_NULL(func, XLAL_EFUNC);
 			head->next = oldhead;
 		}
+	}
+	}
 	}
 
 	/* success */
