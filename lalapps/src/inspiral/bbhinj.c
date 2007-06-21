@@ -75,6 +75,7 @@ RCSID( "$Id$" );
 "  --help                   display this message\n"\
 "  --version                print version information and exit\n"\
 "  --verbose                print mass and galactocentic cartesian coordinates\n"\
+"  --write-compress         write a compressed xml file\n"\
 "  --f-lower FREQUENCY      lower cut-off frequency.\n"\
 "                           If so, LAL code will use 40Hz by default.\n"\
 "  --gps-start-time TIME    start injections at GPS time TIME (729273613)\n"\
@@ -196,12 +197,14 @@ int main( int argc, char *argv[] )
   ProcessParamsTable   *this_proc_param;
   SimInspiralTable     *this_inj = NULL;
   LIGOLwXMLStream       xmlfp;
+  UINT4                 outCompress = 0;
 
   /* getopt arguments */
   struct option long_options[] =
   {
     {"help",                    no_argument,       0,                'h'},
     {"verbose",                 no_argument,       &vrbflg,           1 },
+    {"write-compress",          no_argument,       &outCompress,      1 },
     {"version",                 no_argument,       0,                'V'},
     {"f-lower",        		required_argument, 0,                'f'},
     {"gps-start-time",          required_argument, 0,                'a'},
@@ -578,16 +581,28 @@ int main( int argc, char *argv[] )
   injections.simInspiralTable = NULL;
 
   /* create the output file name */
-  if ( userTag )
+  if ( userTag && outCompress )
   {
-    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
-        randSeed, userTag, gpsStartTime.gpsSeconds, 
+    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml.gz",
+        randSeed, userTag, gpsStartTime.gpsSeconds,
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+  }
+  else if ( userTag && !outCompress )
+  {
+    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml",
+        randSeed, userTag, gpsStartTime.gpsSeconds,
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+  }
+  else if ( !userTag && outCompress )
+  {
+    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml.gz",
+        randSeed, gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else
   {
-    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
-        randSeed, gpsStartTime.gpsSeconds, 
+    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml",
+        randSeed, gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
 
@@ -807,7 +822,7 @@ int main( int argc, char *argv[] )
 
   /* open the xml file */
   memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
-  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlfp, fname), &status );
+  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlfp, fname ), &status );
 
   /* write the process table */
   LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "H1H2L1" );
