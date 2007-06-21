@@ -121,6 +121,7 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --inj-file    FILE       xml FILE contains injections \n"\
 "  --coire-flag             use this if inj file is a coire file \n"\
 "  --output-file FILE       FILE for output \n"\
+"  --f-lower     FREQ       freq at which to begin integration \n"\
 "\n"
 
 static void destroyCoherentGW( CoherentGW *waveform );
@@ -278,8 +279,9 @@ int main( int argc, char *argv[] )
     {"output-file",             required_argument, 0,                'f'},
     {"coire-flag",              no_argument,       &coireflg,         1 },
     {"ligo-srd",                no_argument,       &ligosrd,          1 },
-    {"write-chan",              no_argument,       &writechan,          1 },
+    {"write-chan",              no_argument,       &writechan,        1 },
     {"inject-overhead",         no_argument,       &injoverhead,      1 },
+    {"f-lower",                 required_argument, 0,                'g'},
     {"debug-level",             required_argument, 0,                'z'}, 
     {0, 0, 0, 0}
   };
@@ -295,7 +297,7 @@ int main( int argc, char *argv[] )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only( argc, argv, "a:b:c:d:e:f:z:hV", long_options, &option_index );
+    c = getopt_long_only( argc, argv, "a:b:c:d:e:f:g:z:hV", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -363,6 +365,19 @@ int main( int argc, char *argv[] )
         memcpy( outputFile, optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
+    
+      case 'g':
+        fLow = (INT4) atof( optarg );
+        if ( fLow < 40 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "f-lower must be > 40Hz (%e specified)\n",
+              long_options[option_index].name, fLow );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", fLow );
+        break;
+
 
      case 'e':
         if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
