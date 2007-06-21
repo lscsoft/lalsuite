@@ -509,7 +509,7 @@ LALBurstInjectSignals(
   CHECKSTATUSPTR( stat );
 
   /* loop over list of waveforms and inject into data stream */
-  for ( simBurst = injections; simBurst; simBurst = simBurst->next; )
+  for ( simBurst = injections; simBurst; simBurst = simBurst->next )
   {
     /* only do the work if the burst is in injection zone */
     if( (injStartTime - simBurst->geocent_peak_time.gpsSeconds) *
