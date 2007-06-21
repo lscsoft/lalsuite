@@ -116,6 +116,8 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --spectrum-H2 FILE       FILE contains PSD info for H2\n"\
 "  --spectrum-L1 FILE       FILE contains PSD info for L1\n"\
 "  --ligo-srd               use LIGOI SRD curve\n"\
+"  --inject-overhead        inject signals from overhead detector\n"\
+"  --write-chan             write out time series showing inspiral waveform\n"\
 "  --inj-file    FILE       xml FILE contains injections \n"\
 "  --coire-flag             use this if inj file is a coire file \n"\
 "  --output-file FILE       FILE for output \n"\
@@ -156,6 +158,8 @@ static void destroyCoherentGW( CoherentGW *waveform )
 
 extern int vrbflg;           /* verbocity of lal function    */
 int ligosrd;                 /* whether to use ligo srd      */
+int writechan;               /* whether to write chan txt files  */
+int injoverhead;             /* perform inj overhead if this option is set  */
 int coireflg;                /* is input file coire (1) or inj (null) */
 
 int main( int argc, char *argv[] )
@@ -234,6 +238,8 @@ int main( int argc, char *argv[] )
   CHAR                  comment[LIGOMETA_COMMENT_MAX];
   ProcessParamsTable   *this_proc_param = NULL;
 
+  CHAR   chanfilename[FILENAME_MAX];
+
   REAL4 sum = 0;
   REAL4 bitten_H1 = 0;
   REAL4 bitten_H2 = 0;
@@ -272,6 +278,8 @@ int main( int argc, char *argv[] )
     {"output-file",             required_argument, 0,                'f'},
     {"coire-flag",              no_argument,       &coireflg,         1 },
     {"ligo-srd",                no_argument,       &ligosrd,          1 },
+    {"write-chan",              no_argument,       &writechan,          1 },
+    {"inject-overhead",         no_argument,       &injoverhead,      1 },
     {"debug-level",             required_argument, 0,                'z'}, 
     {0, 0, 0, 0}
   };
@@ -473,13 +481,6 @@ int main( int argc, char *argv[] )
      }
   }
 
-  /* write out spectrum test */
-  /*LALDPrintFrequencySeries(specH1, "Test.dat" );
-  fprintf( stdout, "written H1 spec file\n" );
-  fflush( stdout );
-  */
-
- 
   LAL_CALL( LALCreateREAL4TimeSeries( &status, &chan, "", epoch, f0, deltaT, 
                                      lalADCCountUnit, numPoints ), &status );
 
@@ -517,11 +518,6 @@ int main( int argc, char *argv[] )
   XLALCCVectorDivide( detTransDummy->data, unity, resp->data );
   XLALDestroyCOMPLEX8Vector( unity );
 
-  /*
-  *LALCPrintFrequencySeries ( detTransDummy, "transTest.dat" );
-  *LALCPrintFrequencySeries ( resp, "respTest.dat" );
-  */
- 
   /* read in injections from injection file */
   /* set endtime to 0 so that we read in all events */
   if ( vrbflg ) fprintf( stdout, "Reading sim_inspiral table of %s\n", injectionFile );
@@ -542,25 +538,7 @@ int main( int argc, char *argv[] )
      if ( vrbflg ) fprintf( stdout, " done\n");
   }
 
-  /* do we ever need this table */
-  /*if ( vrbflg ) {
-   *     fprintf( stdout, "Reading summ_value table of %s ...", injectionFile );
-   *     fflush( stdout );
-   *     }
-   * LAL_CALL( SummValueTableFromLIGOLw (&summValueHead, injectionFile), &status );
-   * if ( vrbflg ) fprintf( stdout, " done\n");
-   */
-
-
-/*  for ( thisInjection = injectionHead; thisInjection; thisInjection = thisInjection->next )
- * {
- */    /* set the time of the injection to zero so it is injected in  */
-     /* the middle of the data segment: the other times are ignored */
- 
- /*   thisInjection->geocent_end_time.gpsSeconds = 0;
-  *  thisInjection->geocent_end_time.gpsNanoSeconds = 0;
-  *}
-  */
+ /* make sure we start at head of linked list */
  thisInjection = injectionHead;
 
   /* setting fixed waveform injection parameters */
@@ -614,8 +592,18 @@ int main( int argc, char *argv[] )
         /* allocate memory and copy the parameters describing the freq series */
         memset( &detector, 0, sizeof( DetectorResponse ) );
         detector.site = (LALDetector *) LALMalloc( sizeof(LALDetector) );
-        XLALReturnDetector( detector.site, ifoNumber );
- 
+
+        if (injoverhead){ 
+           if ( vrbflg ) fprintf( stdout, "WARNING: perform overhead injections\n");
+           /* setting detector.site to NULL causes SimulateCoherentGW to
+            * perform overhead injections */  
+           detector.site = NULL; 
+        }
+        else {
+           /* if not overhead, set detector.site using ifonumber */  
+           XLALReturnDetector( detector.site, ifoNumber );
+        } 
+
         switch ( ifoNumber )
         {
         case 1:
@@ -660,27 +648,33 @@ int main( int argc, char *argv[] )
  
        /* perform the injection */
        LAL_CALL( LALSimulateCoherentGW(&status, chan, &waveform, &detector ), &status); 
- 
-       /* write out channel  */
-       /*switch ( ifoNumber )
-       *{
-       *case 1:
-       *    LALSPrintTimeSeries(chan, "chanTest_H1.dat" );
-       *    fprintf( stdout, "written out H1 chan\n" );
-       *    break;
-       *case 2:
-       *    LALSPrintTimeSeries(chan, "chanTest_H2.dat" );
-       *    fprintf( stdout, "written out H2 chan\n" );
-       *    break;
-       *case 3:
-       *    LALSPrintTimeSeries(chan, "chanTest_L1.dat" );
-       *    fprintf( stdout, "written out L1 chan\n" );
-       *    break;
-       * default:
-       *    fprintf( stderr, "Error: ifoNumber %d does not correspond to H1, H2 or L1: \n", ifoNumber );
-       *    exit( 1 );
-       *}  
-       */
+
+       if (writechan){ 
+          /* write out channel data */
+          if (vrbflg) fprintf(stdout, "writing channel data to file... \n" ); 
+          switch ( ifoNumber )
+          {
+          case 1:
+             LALSnprintf( chanfilename, FILENAME_MAX, "chanTest_H1_inj%d.dat", injSimCount+1);
+             if (vrbflg) fprintf( stdout, "writing H1 channel time series out to %s\n", chanfilename );
+             LALSPrintTimeSeries(chan, chanfilename );
+             break;
+          case 2:
+             LALSnprintf( chanfilename, FILENAME_MAX, "chanTest_H2_inj%d.dat", injSimCount+1);
+             if (vrbflg) fprintf( stdout, "writing H2 channel time series out to %s\n", chanfilename );
+             LALSPrintTimeSeries(chan, chanfilename );
+             break;
+          case 3:
+             LALSnprintf( chanfilename, FILENAME_MAX, "chanTest_L1_inj%d.dat", injSimCount+1);
+             if (vrbflg) fprintf( stdout, "writing L1 channel time series out to %s\n", chanfilename );
+             LALSPrintTimeSeries(chan, chanfilename );
+             break;
+         default:
+             fprintf( stderr, "Error: ifoNumber %d does not correspond to H1, H2 or L1: \n", ifoNumber );
+             exit( 1 );
+         }  
+      } 
+
       LAL_CALL( LALCreateForwardRealFFTPlan( &status, &pfwd, chan->data->length, 0), &status);
 
       LAL_CALL( LALCreateCOMPLEX8FrequencySeries( &status, &fftData, chan->name, chan->epoch, f0, deltaF, 
@@ -787,10 +781,6 @@ int main( int argc, char *argv[] )
   } while ( ++injSimCount < numInjections ); 
   /* end loop over injections */
 
-  /*fprintf( stdout, "out of loop\n" );
-   *fflush( stdout );
-   */
-    
   /* try opening, writing and closing an xml file */
 
   /* open the output xml file */
@@ -829,14 +819,6 @@ int main( int argc, char *argv[] )
      LAL_CALL( LALEndLIGOLwXMLTable  ( &status, &xmlStream), &status);
    }
 
-  /* write the summ value table */
-  /*if ( vrbflg ) fprintf( stdout, "summ_value... " );
-   *outputTable.summValueTable = summValueHead;
-   *LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, summ_value_table), &status);
-   *LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputTable, summ_value_table), &status);
-   *LAL_CALL( LALEndLIGOLwXMLTable  ( &status, &xmlStream), &status);
-   */
-
   /* write the sim inspiral table */
   if ( vrbflg ) fprintf( stdout, "sim_inspiral... " );
   outputTable.simInspiralTable = injectionHead;
@@ -873,11 +855,6 @@ int main( int argc, char *argv[] )
   specFileL1 = NULL;
   free( injectionFile ); 
   injectionFile = NULL;
-
-  /* try these lines here */
-  /*LAL_CALL( LALDestroyCOMPLEX8FrequencySeries( &status, detector.transfer), &status );*/
- 
-
 
   /* free the process params */
   while( procparams.processParamsTable )
