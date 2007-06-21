@@ -21,8 +21,8 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <lal/LALAtomicDatatypes.h>
 #include <lal/BandPassTimeSeries.h>
-#include <lal/Date.h>
 #include <lal/EPSearch.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALDatatypes.h>
@@ -56,80 +56,6 @@ static void XLALDestroySnglBurstTable(SnglBurstTable *head)
 		head = head->next;
 		XLALFree(event);
 	}
-}
-
-
-/*
- * Convert an array of tiles to a linked list of burst events.  The
- * threshold cut is applied here.
- */
-
-
-static SnglBurstTable *XLALTFTileToBurstEvent(
-	const REAL4TimeFrequencyPlane *plane,
-	const TFTile *tile
-)
-{
-	const char func[] = "XLALTFTileToBurstEvent";
-	SnglBurstTable *event = XLALCalloc(1, sizeof(*event));
-	if(!event)
-		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
-
-	event->next = NULL;
-	strncpy(event->ifo, plane->name, 2);
-	event->ifo[2] = '\0';
-	strncpy(event->search, "excesspower", LIGOMETA_SEARCH_MAX);
-	event->search[LIGOMETA_SEARCH_MAX] = '\0';
-	strncpy(event->channel, plane->name, LIGOMETA_CHANNEL_MAX);
-	event->channel[LIGOMETA_CHANNEL_MAX] = '\0';
-
-	event->start_time = plane->epoch; 
- 
-	XLALGPSAdd(&event->start_time, tile->tstart * plane->deltaT);
-	event->duration = (tile->tend - tile->tstart) * plane->deltaT;
-	event->peak_time = event->start_time;
-	XLALGPSAdd(&event->peak_time, 0.5 * event->duration);
-	event->bandwidth = tile->channels * plane->deltaF;
-	event->central_freq = plane->flow + tile->channel0 * plane->deltaF + (0.5 * event->bandwidth);
-	/* FIXME: put h_rss into the "hrss" column */
-	event->amplitude = tile->h_rss;
-	event->snr = tile->excess_power;
-	event->confidence = tile->confidence;
-	/* for safety */
-	event->string_cluster_t = XLAL_REAL4_FAIL_NAN;
-	/* will be set correctly later */
-	event->event_id = 0;
-
-	return(event);
-}
-
-
-static SnglBurstTable *XLALTFTilesToSnglBurstTable(SnglBurstTable *head, const REAL4TimeFrequencyPlane *plane, REAL8 confidence_threshold)
-{
-	const char func[] = "XLALTFTilesToSnglBurstTable";
-	size_t i;
-
-	for(i = 0; i < plane->tiling->numtiles; i++) {
-		TFTile *tile = &plane->tiling->tiles[i];
-
-		/* test confidence */
-		if(tile->confidence >= confidence_threshold) {
-			SnglBurstTable *oldhead = head;
-			head = XLALTFTileToBurstEvent(plane, tile); 
-			if(!head) {
-				XLALDestroySnglBurstTable(oldhead);
-				XLAL_ERROR_NULL(func, XLAL_EFUNC);
-			}
-			head->next = oldhead;
-		}
-
-		/* reset for safety */
-		tile->excess_power = XLAL_REAL8_FAIL_NAN;
-		tile->confidence = XLAL_REAL8_FAIL_NAN;
-		tile->h_rss = XLAL_REAL8_FAIL_NAN;
-	}
-
-	return(head);
 }
 
 
@@ -220,7 +146,7 @@ SnglBurstTable *XLALEPSearch(
 			params->diagnostics->XLALWriteLIGOLwXMLArrayREAL4TimeSeries(params->diagnostics->LIGOLwXMLStream, NULL, cuttseries);
 
 		XLALPrintInfo("XLALEPSearch(): computing the Fourier transform\n");
-		fseries = XLALWindowedREAL4ForwardFFT(cuttseries, plane->tukey, fplan);
+		fseries = XLALWindowedREAL4ForwardFFT(cuttseries, plane->window, fplan);
 		XLALDestroyREAL4TimeSeries(cuttseries);
 		if(!fseries) {
 			errorcode = XLAL_EFUNC;
@@ -263,25 +189,16 @@ SnglBurstTable *XLALEPSearch(
 
 		/*
 		 * Compute the excess power for each time-frequency tile
-		 * using the data in the time-frequency plane.
+		 * using the data in the time-frequency plane, and add
+		 * those whose confidence is above threshold to the trigger
+		 * list.  Note that because it is possible for there to be
+		 * 0 triggers found, we can't check for errors by testing
+		 * for head == NULL.
 		 */
 
 		XLALPrintInfo("XLALEPSearch(): computing the excess power for each tile\n");
-		if(XLALComputeExcessPower(plane)) {
-			errorcode = XLAL_EFUNC;
-			goto error;
-		}
-
-		/*
-		 * Convert the TFTiles into sngl_burst events for output.
-		 * Note that because it is possible for there to be 0
-		 * triggers found, we can't check for errors by testing for
-		 * head == NULL
-		 */
-
-		XLALPrintInfo("XLALEPSearch(): converting tiles to trigger list\n");
 		XLALClearErrno();
-		head = XLALTFTilesToSnglBurstTable(head, plane, params->confidence_threshold);
+		head = XLALComputeExcessPower(plane, head, params->confidence_threshold);
 		if(xlalErrno) {
 			errorcode = XLAL_EFUNC;
 			goto error;
@@ -314,10 +231,10 @@ SnglBurstTable *XLALEPSearch(
 
 
 int XLALEPConditionData(
-	REAL4TimeSeries  *series,
-	REAL8             flow,
-	REAL8             resampledeltaT,
-	INT4              corruption
+	REAL4TimeSeries *series,
+	REAL8 flow,
+	REAL8 resampledeltaT,
+	INT4 corruption
 )
 {
 	const char func[] = "XLALEPConditionData";

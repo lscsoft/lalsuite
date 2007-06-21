@@ -26,6 +26,7 @@ NRCSID(CREATETFPLANEC, "$Id$");
 
 
 #include <math.h>
+#include <lal/LALAtomicDatatypes.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALStdlib.h>
 #include <lal/TFTransform.h>
@@ -107,18 +108,22 @@ INT4 XLALOverlappedSegmentsCommensurate(
  * 		(rounded down to be comensurate with the windowing)
  *
  *	psd_shift (optional):
- *		number of samples by which the start of a PSD is shifted
- *		from the start of the PSD that preceded it
+ *		number of samples by which the start of a PSD is to be
+ *		shifted from the start of the PSD that preceded it in order
+ *		that the tiling pattern continue smoothly across the
+ *		boundary
  *
  *	window_shift (optional):
  *		number of samples by which the start of a time-frequency
- *		plane window is shifted from the window preceding it
+ *		plane window is shifted from the window preceding it in
+ *		order that the tiling pattern continue smoothly across the
+ *		boundary
  *
  *	window_pad (optional):
  *		how many samples at the start and end of each window are
  *		treated as padding, and will not be covered by the tiling
  *
- *	tiling_length (options):
+ *	tiling_length (optional):
  *		how many samples will be covered by the tiling
  *
  * NOTE:  this function is wrapped in the pyLAL package to teach the
@@ -170,10 +175,23 @@ INT4 XLALEPGetTimingParameters(
 	}
 
 	/*
-	 * discard first and last 1/4 of the window
+	 * discard first and last 4096 samples
+	 *
+	 * FIXME.  this should be tied to the sample frequency and
+	 * time-frequency plane's channel spacing.  multiplying the time
+	 * series by a window has the effect of convolving the Fourier
+	 * transform of the data by the F.T. of the window, and we don't
+	 * want this to blur the spectrum by an amount larger than 1
+	 * channel --- a delta function in the spectrum should remain
+	 * confined to a single bin.  a channel width of 2 Hz means the
+	 * notch feature created in the time series by the window must be
+	 * at least .5 s long to not result in undesired leakage.  at a
+	 * sample frequency of 8192 samples / s, it must be at least 4096
+	 * samples long (2048 samples at each end of the time series).  to
+	 * be safe, we double that to 4096 samples.
 	 */
 
-	wpad = window_length / 4;
+	wpad = 4096;
 
 	/*
 	 * tiling covers the remainder, rounded down to fit an integer
@@ -190,7 +208,7 @@ INT4 XLALEPGetTimingParameters(
 		*tiling_length = tlength;
 
 	/*
-	 * now re-compute window_pad from tiling_length
+	 * now re-compute window_pad from rounded-off tiling_length
 	 */
 
 	wpad = (window_length - tlength) / 2;
@@ -242,21 +260,6 @@ INT4 XLALEPGetTimingParameters(
 
 
 /*
- * Macro for looping over all tiles.  This is ugly but it ensures that the
- * initialization, increment, and terminate statements are the same in the two
- * places the loop is done.
- */
-
-
-#define FOR_EACH_TILE \
-	for(t_length = min_length; t_length <= max_length; t_length *= 2) \
-		for(channels = min_channels; channels <= max_channels; channels *= 2) \
-			for(t_start = tiling_t_start; t_start + t_length <= tiling_t_end; t_start += t_length / inv_fractional_stride) \
-				for(channel_start = 0; channel_start + channels <= tiling_n_channels; channel_start += channels / inv_fractional_stride)
-
-
-
-/*
  * Allocate and initialize a tiling of the time-frequency plane.
  */
 
@@ -272,10 +275,8 @@ TFTiling *XLALCreateTFTiling(
 	REAL8 max_tile_duration
 )
 {
-	const char func[] = "XLALCreateTFTiling";
+	static const char func[] = "XLALCreateTFTiling";
 	TFTiling *tiling;
-	TFTile *tiles;
-	int numtiles;
 
 	/*
 	 * stride
@@ -288,15 +289,6 @@ TFTiling *XLALCreateTFTiling(
 	 */
 
 	const unsigned tiling_t_end = tiling_t_start + tiling_t_length;
-
-	/*
-	 * coordinates of a TF tile
-	 */
-
-	unsigned channel_start;
-	unsigned channels;
-	unsigned t_start;
-	unsigned t_length;
 
 	/*
 	 * tile size limits
@@ -328,63 +320,30 @@ TFTiling *XLALCreateTFTiling(
 	}
 
 	/*
-	 * count the tiles
-	 */
-
-	numtiles = 0;
-	FOR_EACH_TILE {
-		numtiles++;
-	}
-
-	/*
-	 * allocate memory
+	 * allocate
 	 */
 
 	tiling = XLALMalloc(sizeof(*tiling));
-	tiles = XLALMalloc(numtiles * sizeof(*tiles));
-	if(!tiling || !tiles) {
-		XLALFree(tiling);
-		XLALFree(tiles);
+	if(!tiling)
 		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
-	}
-	tiling->tiles = tiles;
-	tiling->numtiles = numtiles;
 
 	/*
-	 * initialize each tile
+	 * initialize
 	 */
 
-	FOR_EACH_TILE {
-		/*
-		 * co-ordinates
-		 */
+	tiling->min_length = min_length;
+	tiling->max_length = max_length;
+	tiling->min_channels = min_channels;
+	tiling->max_channels = max_channels;
+	tiling->tiling_t_start = tiling_t_start;
+	tiling->tiling_t_end = tiling_t_end;
+	tiling->tiling_n_channels = tiling_n_channels;
+	tiling->inv_fractional_stride = inv_fractional_stride;
+	tiling->dof_per_pixel = 2 * plane_deltaT * plane_deltaF;
 
-		tiles->channel0 = channel_start;
-		tiles->channels = channels;
-		tiles->tstart = t_start;
-		tiles->tend = t_start + t_length;
-
-		/*
-		 * t_length * channels = # of pixels in tile
-		 * 2 * deltaT * deltaF = degrees of freedom in 1 pixel
-		 */
-
-		tiles->dof = (t_length * channels) * 2 * plane_deltaT * plane_deltaF;
-
-		/*
-		 * for safety
-		 */
-
-		tiles->excess_power = XLAL_REAL8_FAIL_NAN;
-		tiles->confidence = XLAL_REAL8_FAIL_NAN;
-		tiles->h_rss = XLAL_REAL8_FAIL_NAN;
-
-		/*
-		 * Next
-		 */
-
-		tiles++;
-	}
+	/*
+	 * done
+	 */
 
 	return(tiling);
 }
@@ -399,8 +358,6 @@ void XLALDestroyTFTiling(
 	TFTiling *tiling
 )
 {
-	if(tiling)
-		XLALFree(tiling->tiles);
 	XLALFree(tiling);
 }
 
@@ -462,7 +419,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 		XLAL_ERROR_NULL(func, XLAL_EINVAL);
 
 	/*
-	 * Compute timeing parameters
+	 * Compute timing parameters
 	 */
 
 	if(XLALEPGetTimingParameters(tseries_length, tiling_max_duration / tseries_deltaT, tiling_fractional_stride, NULL, NULL, &window_shift, &tiling_start, &tiling_length) < 0)
@@ -510,6 +467,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	 */
 
 	tukey->sumofsquares = tukey->data->length;
+	tukey->sum = tukey->data->length;
 
 	/* 
 	 * Initialize the structure
@@ -526,7 +484,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	plane->channel_rms = channel_rms;
 	plane->channel = channel;
 	plane->tiling = tiling;
-	plane->tukey = tukey;
+	plane->window = tukey;
 	plane->window_shift = window_shift;
 
 	/*
@@ -555,7 +513,7 @@ void XLALDestroyTFPlane(
 			XLALDestroyREAL4Sequence(plane->channel[i]);
 		XLALFree(plane->channel);
 		XLALDestroyTFTiling(plane->tiling);
-		XLALDestroyREAL4Window(plane->tukey);
+		XLALDestroyREAL4Window(plane->window);
 	}
 	XLALFree(plane);
 }

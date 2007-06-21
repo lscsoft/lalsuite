@@ -27,6 +27,7 @@
 #include <lal/Window.h>
 #include <lal/RealFFT.h>
 #include <lal/LALRCSID.h>
+#include <lal/LIGOMetadataTables.h>
 #include <lal/Sequence.h>
 
 
@@ -43,25 +44,16 @@ NRCSID(TFTRANSFORMH, "$Id$");
  */
 
 
-typedef struct tagTFTile {
-	/* tile specification as indexes into time-frequency plane data */
-	UINT4 channel0;
-	UINT4 channels;
-	UINT4 tstart;
-	UINT4 tend;
-	/* number of degrees of freedom in this tile */
-	REAL8 dof;
-	/* computed tile properties */
-	REAL8 excess_power;
-	REAL8 h_rss;
-	/* -ln P(event | stationary Gaussian white noise) */
-	REAL8 confidence;
-} TFTile;
-
-
 typedef struct tagTFTiling {
-	TFTile *tiles;
-	size_t numtiles;
+	unsigned min_length;
+	unsigned max_length;
+	unsigned min_channels;
+	unsigned max_channels;
+	unsigned tiling_t_start;
+	unsigned tiling_t_end;
+	unsigned tiling_n_channels;
+	unsigned inv_fractional_stride;
+	double dof_per_pixel;
 } TFTiling;
 
 
@@ -119,7 +111,7 @@ typedef struct tagREAL4TimeFrequencyPlane {
 	/* time-frequency plane's tiling */
 	TFTiling *tiling;
 	/* window applied to input time series to taper edges to 0 */
-	REAL4Window *tukey;
+	REAL4Window *window;
 	/* by how many samples a window's start should be shifted from the
 	 * start of the window preceding it */
 	INT4 window_shift;
@@ -151,8 +143,10 @@ int XLALFreqSeriesToTFPlane(
 );
 
 
-int XLALComputeExcessPower(
-	const REAL4TimeFrequencyPlane *plane
+SnglBurstTable *XLALComputeExcessPower(
+	const REAL4TimeFrequencyPlane *plane,
+	SnglBurstTable *head,
+	double confidence_threshold
 );
 
 
@@ -173,7 +167,6 @@ INT4 XLALEPGetTimingParameters(
 	INT4 *window_pad,
 	INT4 *tiling_length
 );
-
 
 
 #ifdef  __cplusplus

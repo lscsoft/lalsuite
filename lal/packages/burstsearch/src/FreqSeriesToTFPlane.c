@@ -54,7 +54,7 @@ static COMPLEX8FrequencySeries *generate_filter(
 	const REAL4FrequencySeries *psd
 )
 {
-	const char func[] = "generate_filter";
+	static const char func[] = "generate_filter";
 	char filter_name[100];
 	REAL4Window *hann;
 	COMPLEX8FrequencySeries *filter;
@@ -65,7 +65,16 @@ static COMPLEX8FrequencySeries *generate_filter(
 
 	/*
 	 * Channel filter is a Hann window twice the channel's width,
-	 * centred on the channel's centre frequency.
+	 * centred on the channel's centre frequency.  This makes a sum
+	 * across channels equivalent to constructing a Tukey window
+	 * spanning the same frequency band.  This trick is one of the
+	 * ingredients that allows us to accomplish a multi-resolution
+	 * tiling using a single frequency channel projection.  Really,
+	 * there's no need for the "effective window" resulting from
+	 * summing across channels to be something that has a name, any
+	 * channel filter at all would do, but this way the code's
+	 * behaviour is more easily understood --- it's easy to say "the
+	 * channel filter is a Tukey window of variable centre width".
 	 */
 
 	filter = XLALCreateCOMPLEX8FrequencySeries(filter_name, &template->epoch, channel_flow - channel_width / 2, template->deltaF, &lalDimensionlessUnit, 2 * channel_width / template->deltaF);
@@ -99,10 +108,10 @@ static COMPLEX8FrequencySeries *generate_filter(
 	 * frequency components positive and negative.  since we are
 	 * dealing with real data, our frequency series and this filter
 	 * contain only the positive frequency components (the negative
-	 * frequency components being known as the complex conjugates of
-	 * the positive frequencies).  therefore the sum squares function
-	 * is only summing the positive frequencies, and so the value
-	 * returned needs to be doubled;  hence the factor of 2.
+	 * frequency components being the complex conjugates of the
+	 * positive frequencies).  therefore the sum squares function is
+	 * only summing the positive frequencies, and so the value it
+	 * returns needs to be doubled;  hence the factor of 2.
 	 */
 
 	norm = sqrt(2 * XLALCOMPLEX8SequenceSumSquares(filter->data, 0, filter->data->length));
@@ -120,9 +129,9 @@ static COMPLEX8FrequencySeries *generate_filter(
 
 
 /*
- * Compute the magnitude of the inner product of neighbouring channel
- * filters.  assumes filter2->f0 >= filter1->f0, and that the highest
- * numbered sample in filter1 is not past the end of filter2.
+ * Compute the magnitude of the inner product of two channel filters.
+ * assumes filter2->f0 >= filter1->f0, and that the highest numbered sample
+ * in filter1 is not past the end of filter2.
  */
 
 
@@ -161,7 +170,7 @@ static COMPLEX8Sequence *apply_filter(
 	const COMPLEX8FrequencySeries *filterseries
 )
 {
-	const char func[] = "apply_filter";
+	static const char func[] = "apply_filter";
 	int fstart = (filterseries->f0 - inputseries->f0) / filterseries->deltaF;
 	COMPLEX8 *output = outputseq->data + (fstart < 0 ? 0 : fstart);
 	const COMPLEX8 *input = inputseries->data->data + (fstart < 0 ? 0 : fstart);
@@ -189,8 +198,13 @@ static COMPLEX8Sequence *apply_filter(
 
 /*
  * Compute the mean square for a channel from the PSD and the channel's
- * filter.  PSD's computed by LAL obey the convention that for Gaussian
- * noise, the mean square of a frequency bin is psd[k] / (2 * deltaF);
+ * filter.  PSDs computed by LAL obey the convention that for Gaussian
+ * noise, the mean square of a frequency bin is psd[k] / (2 deltaF).
+ * Therefore, the mean square of a frequency bin after being multiplied by
+ * the channel filter, c[k], is psd[k] |c[k]|^2 / (2 deltaF).  The mean
+ * square for the channel is the sum of mean squares for the bins within
+ * it, if separate frequency bins are statistically independent so that
+ * there are no cross terms.  This is true for stationary noise.
  */
 
 
@@ -207,8 +221,6 @@ static REAL8 channel_mean_square(
 	for(i = 0; i < filter->data->length; i++, pdata++, fdata++)
 		sum += *pdata * (fdata->re * fdata->re + fdata->im * fdata->im);
 
-	/* FIXME:  is the factor of 2 correct?  I had originally not
-	 * included it.  Why? */
 	return sum / (2 * psd->deltaF);
 }
 
@@ -223,7 +235,7 @@ int XLALFreqSeriesToTFPlane(
 )
 /******** </lalVerbatim> ********/
 {
-	const char func[] = "XLALFreqSeriesToTFPlane";
+	static const char func[] = "XLALFreqSeriesToTFPlane";
 	COMPLEX8FrequencySeries **filter;
 	COMPLEX8Sequence *fcorr;
 	unsigned i;
