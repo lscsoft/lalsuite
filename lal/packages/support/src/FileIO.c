@@ -381,7 +381,7 @@ char * XLALFileGets( char * s, int size, LALFILE *file )
 	return c;
 }
 
-int XLALFilePuts( char * s, LALFILE *file )
+int XLALFilePuts( const char * s, LALFILE *file )
 {
 	static const char *func = "XLALFilePuts";
 	if ( ! file )

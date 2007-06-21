@@ -77,7 +77,7 @@ size_t XLALFileWrite( const void *ptr, size_t size, size_t nobj, LALFILE *file )
 int XLALFileGetc( LALFILE *file );
 int XLALFilePutc( int c, LALFILE *file );
 char * XLALFileGets( char * s, int size, LALFILE *file );
-int XLALFilePuts( char * s, LALFILE *file );
+int XLALFilePuts( const char * s, LALFILE *file );
 int XLALFileVPrintf( LALFILE *file, const char *fmt, va_list ap );
 int XLALFilePrintf( LALFILE *file, const char *fmt, ... );
 int XLALFileFlush( LALFILE *file );
