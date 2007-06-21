@@ -97,8 +97,8 @@ class trigBankFollowUpNode(pipeline.CondorDAGNode):
         #self.end_time = row.value
         
     # be careful that the clustering time must be larger than 2s, we should fix this.
-    self.start_time = str(eval(time)-1))
-    self.end_time = str(eval(time)+1))
+    self.start_time = str( eval(str(time)) - 1 )
+    self.end_time = str( eval(str(time)) + 1 )
     self.add_var_opt("gps-start-time",self.start_time)
     self.add_var_opt("gps-end-time",self.end_time)
     self.add_macro("macrogpsstarttime",self.start_time)
@@ -108,8 +108,8 @@ class trigBankFollowUpNode(pipeline.CondorDAGNode):
     for inFile in fStr:
       self.add_file_arg(string.strip(inFile))
     self.output_file_name = self.input_ifo + "-TRIGBANK_" + self.ifo_tag + \
-      "_" + self.output_user_tag + "-" + self.start_time + "-" + \
-      str(eval(self.end_time)-eval(self.start_time)) + ".xml"
+      "_" + self.output_user_tag + "-" + str(int(eval(self.start_time))) + "-" + \
+      "2" + ".xml"
 
 class inspiralFollowUpJob(pipeline.CondorDAGJob):
   """
