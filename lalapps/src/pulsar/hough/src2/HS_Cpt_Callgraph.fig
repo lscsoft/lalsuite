@@ -138,7 +138,7 @@ Single
 # HREF="write_fstat_toplist_item_to_fp" ALT="write_fstat_toplist_item_to_fp"
 2 2 0 1 0 7 50 -1 -1 0.000 0 0 -1 0 0 5
 	 13800 5700 16500 5700 16500 6150 13800 6150 13800 5700
-# HREF="print_fstat_line_to_st" ALT="print_fstat_line_to_st"
+# HREF="print_fstatline_to_str" ALT="print_fstatline_to_str"
 2 2 0 1 0 7 50 -1 -1 0.000 0 0 -1 0 0 5
 	 13950 6600 16350 6600 16350 7050 13950 7050 13950 6600
 # HREF="fstat_cpt_file_flush" ALT="fstat_cpt_file_flush"
@@ -147,10 +147,10 @@ Single
 # HREF="fstat_cpt_file_open" ALT="fstat_cpt_file_open"
 2 2 0 1 0 7 50 -1 -1 0.000 0 0 -1 0 0 5
 	 16650 2100 19050 2100 19050 2550 16650 2550 16650 2100
-# HREF=write_and-close_checkpointed_file" ALT=write_and-close_checkpointed_file"
+# HREF="write_and_close_checkpointed_file" ALT="write_and_close_checkpointed_file"
 2 2 0 1 0 7 50 -1 -1 0.000 0 0 -1 0 0 5
 	 20100 300 23100 300 23100 750 20100 750 20100 300
-# HREF="fstat_cpt_file_destro" ALT="fstat_cpt_file_destro"
+# HREF="fstat_cpt_file_destroy" ALT="fstat_cpt_file_destroy"
 2 2 0 1 0 7 50 -1 -1 0.000 0 0 -1 0 0 5
 	 22200 1200 24300 1200 24300 1650 22200 1650 22200 1200
 # HREF="sort_fstat_toplist" ALT="sort_fstat_toplist"
@@ -159,7 +159,7 @@ Single
 2 1 0 1 0 7 50 -1 -1 4.000 0 0 -1 1 0 2
 	0 0 1.00 60.00 120.00
 	 20550 750 20550 1200
-# HREF="reduce_fstat_precision" ALT="reduce_fstat_precision"
+# HREF="reduce_fstat_toplist_precision" ALT="reduce_fstat_toplist_precision"
 2 2 0 1 0 7 50 -1 -1 0.000 0 0 -1 0 0 5
 	 18450 6600 20700 6600 20700 7050 18450 7050 18450 6600
 # HREF="fstat_toplist_qsort_function" ALT="fstat_toplist_qsort_function"
@@ -196,7 +196,7 @@ Single
 4 1 0 50 -1 0 12 0.0000 4 180 2820 15150 4200 _atomic_write_fstat_toplist_to_file()\001
 4 1 0 50 -1 0 12 0.0000 4 180 2040 15150 5100 write_fstat_toplist_to_fp()\001
 4 1 0 50 -1 0 12 0.0000 4 180 2460 15150 6000 write_fstat_toplist_item_to_fp()\001
-4 1 0 50 -1 0 12 0.0000 4 180 1845 15150 6900 print_fstat_line_to_str()\001
+4 1 0 50 -1 0 12 0.0000 4 180 1845 15150 6900 print_fstatline_to_str()\001
 4 1 0 50 -1 0 12 0.0000 4 180 1620 17850 2400 fstat_cpt_file_open()\001
 4 1 0 50 -1 0 12 0.0000 4 180 1470 23250 3300 sort_fstat_toplist()\001
 4 1 0 50 -1 0 12 0.0000 4 180 1740 1650 1500 fstat_cpt_file_create()\001
@@ -209,7 +209,7 @@ Single
 4 1 0 50 -1 0 10 0.0000 4 150 1395 17850 1500 fstat_cpt_file_flush()\001
 4 1 0 50 -1 0 12 0.0000 4 180 2790 21600 600 write_and-close_checkpointed_file()\001
 4 1 0 50 -1 0 12 0.0000 4 180 1830 23250 1500 fstat_cpt_file_destroy()\001
-4 1 0 50 -1 0 12 0.0000 4 180 1890 19650 6900 reduce_fstat_precision()\001
+4 1 0 50 -1 0 12 0.0000 4 180 1890 19650 6900 reduce_fstat_toplist_precision()\001
 4 1 0 50 -1 0 12 0.0000 4 180 2265 22650 6900 fstat_toplist_qsort_function()\001
 4 1 0 50 -1 0 12 0.0000 4 180 1560 20250 8550 go_through_toplist()\001
 4 1 0 50 -1 0 12 0.0000 4 180 1110 23100 8550 qsort_toplist()\001
