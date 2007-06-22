@@ -38,18 +38,19 @@
 #include "graphics_lib.h"
 #endif
 
-/* this includes patches for chdir() and sleep() */
+/* our own win_lib includes patches for chdir() and sleep() */
 #ifdef _WIN32
 #include "win_lib.h"
 #endif
 
+/* headers of our own code */
 #include "hs_boinc_extras.h"
 #include "HierarchicalSearch.h"
 #include <lal/LogPrintf.h>
 
 NRCSID(HSBOINCEXTRASCRCSID,"$Id$");
 
-/* probably already included by previous headers, but anyway */
+/* probably already included by previous headers, but make sure they are included */
 #include <stdlib.h>
 #include <string.h>
 #if (BOINC_GRAPHICS == 2)
@@ -62,15 +63,9 @@ NRCSID(HSBOINCEXTRASCRCSID,"$Id$");
 
 #define MAX_PATH_LEN 512
 
-/** don't want to include LAL headers for PI */
+/** don't want to include LAL headers just for PI */
 #define LAL_PI 3.1415926535897932384626433832795029  /**< pi */
 
-#define BOINC_TRY(test,code,mess) \
-  if (test) { \
-    LogPrintf (LOG_CRITICAL, "ERROR %d: %s\n", code, mess); \
-    boinc_finish(code); \
-  }
-    
 
 /** compare strings s1 and s2 up to the length of s1 (w/o the '\0'!!)
     and set l to the length */
@@ -240,7 +235,7 @@ static void sighandler(int sig){
 
 
 /**
-  this just sets some variables,
+  show_progress() just sets some variables,
   so should be pretty fast and can be called several times a second
  */
 void show_progress(double rac,  /**< right ascension */
@@ -432,10 +427,11 @@ static void worker (void) {
                          BOINC_DIAG_TRACETOSTDERR);
 
 #ifdef _WIN32
+  /* point the Windows Runtime Debugger to the Symbol Store on einstein */
   diagnostics_set_symstore("http://einstein.phys.uwm.edu/symstore");
 #endif
 
-  /* try to load the graphics library and, if succeeded, hook the symbols */
+  /* try to load the graphics shared object and, if succeeded, hook the symbols */
 #if (BOINC_GRAPHICS == 2) 
   if (graphics_lib_handle) {
     if (!(set_search_pos_hook = dlsym(graphics_lib_handle,"set_search_pos"))) {
@@ -463,22 +459,23 @@ static void worker (void) {
      will be stored for later use.
   */
 
-  /* allocate space for the argument vector. None of the operations
-     below adds an argument, so it's safe to allocate space for as
-     many arguments as we got */
+  /* allocate space for the vectorof arguments passed to MAIN() of
+     HierarchicalSearch. None of the operations below _adds_ an argument,
+     so it's safe to allocate space for as many arguments as we got */
   rargv = (char**)calloc(1,argc*sizeof(char*));
   if(!rargv){
     LogPrintf(LOG_CRITICAL, "Out of memory\n");
     boinc_finish(HIERARCHICALSEARCH_EMEM);
   }
 
+  /* the program name (argv[0]) remains the same in any case */
   rargv[0] = argv[0];
   rarg = 1;
 
   /* for all args in the command line (except argv[0]) */
   for (arg=1; arg<argc; arg++) {
     
-    /* config file */
+    /* a possible config file is boinc_resolved, but filenames contained in it are not! */
     if (argv[arg][0] == '@') {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
@@ -491,7 +488,7 @@ static void worker (void) {
       }
     }
 
-    /* skygrid file */
+    /* boinc_resolve and unzip skygrid file */
     else if (MATCH_START("--skyGridFile=",argv[arg],l)) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
@@ -503,7 +500,7 @@ static void worker (void) {
 	res = HIERARCHICALSEARCH_EFILE;
     }
 
-    /* ephermeris files */
+    /* boinc_resolve and unzip ephermeris files */
     else if (MATCH_START("--ephemE=",argv[arg],l)) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
@@ -526,7 +523,7 @@ static void worker (void) {
     }
 
 
-    /* SFT files (no unzipping, but dealing with multiple files separated by ';' */
+    /* boinc_resolve SFT files (no unzipping, but dealing with multiple files separated by ';' */
     else if (0 == strncmp("--DataFiles",argv[arg],11)) {
       rargv[rarg] = (char*)calloc(1024,sizeof(char));
       if(!rargv[rarg]){
@@ -554,8 +551,7 @@ static void worker (void) {
 	}
 
 #ifdef _WIN32
-	/* The SFTfileIO library in LAL of course doesn't use boinc_fopen etc., so
-	   for Windows, we have to translate the path separator '/' to '\' */
+	/* for Windows, we have to translate the path separator '/' to '\' */
 	{
 	  char *c = appc;
 	  while((*c != '\0') && (c < appc+255)) {
@@ -573,7 +569,7 @@ static void worker (void) {
 	startc = endc+1;
       }
 
-      /* handle last (or only) filename */
+      /* handle last (or only) filename (comments see above) */
       if (boinc_resolve_filename(startc,appc,255)) {
 	LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve input file '%s'\n", startc);
       }
@@ -589,7 +585,8 @@ static void worker (void) {
 #endif
     }
 
-    /* output file */
+    /* handle output file:
+       these are two similar but not equal cases (long and short option name) */
 #define OUTPUT_EXT ".zip"
     else if (MATCH_START("--fnameout=",argv[arg],l)) {
       int s;
@@ -675,31 +672,31 @@ static void worker (void) {
       }
     }
 
-    /* flops estimation */
+    /* set the "flops estimation" */
     else if (MATCH_START("--WUfpops=",argv[arg],l)) {
       estimated_flops = atof(argv[arg]+l);
       rarg--; rargc--; /* this argument is not passed to the main worker function */
     }
 
-    /* maximal output filesize (roughly - can grow beyond this until the next checkpoint) */
+    /* set maximal output filesize (roughly - can grow beyond this until the next checkpoint) */
     else if (MATCH_START("--MaxFileSize=",argv[arg],l)) {
       maxsize = 1024*atoi(argv[arg]+l);
       rarg--; rargc--; /* this argument is not passed to the main worker function */
     }
 
-    /* size of output file buffer */
+    /* set size of output file buffer */
     else if (MATCH_START("--OutputBufSize=",argv[arg],l)) {
       bufsize = 1024*atoi(argv[arg]+l);
       rarg--; rargc--; /* this argument is not passed to the main worker function */
     }
 
-    /* fire up debugger at breakpoint */
+    /* fire up debugger at breakpoint, solely for testing the debugger (and symbols) */
     else if (MATCH_START("--BreakPoint",argv[arg],l)) {
       breakpoint = -1;
       rarg--; rargc--; /* this argument is not passed to the main worker function */
     }
 
-    /* help (for additional command-line options)? */
+    /* record a help otion (to later write help for additional command-line options) */
     else if ((0 == strncmp("--help",argv[arg],strlen("--help"))) ||
 	     (0 == strncmp("-h",argv[arg],strlen("--help")))) {
       output_help = 1;
@@ -749,13 +746,13 @@ static void worker (void) {
     LogPrintf (LOG_CRITICAL, "ERROR: MAIN() returned with error '%d'\n",res);
   }
 
-
+  /* if the program was called for help, we write out usage for command-line options this wrapper adds to it and exit */
   if(output_help) {
     printf("Additional options the BOINC version understands:\n");
     printf("      --WUfpops         REAL     \"flops estimation\", passed to the BOINC client as the number of Flops\n");
     printf("      --MaxFileSize     INT      maximum size the outpufile may grow to befor compacted (in 1k)\n");
     printf("      --OutputBufSize   INT      size of the output file buffer (in 1k)\n");
-    printf("      --BreakPoint      BOOL     fire up the Windows Runtime Debugger at internal breakpoint (WIN32 only)\n");
+    printf("      --BreakPoint       -       if present fire up the Windows Runtime Debugger at internal breakpoint (WIN32 only)\n");
     boinc_finish(0);
   }
 
