@@ -124,12 +124,12 @@ static int double_is_power_of_2(double x)
 {
 	if(x <= 0)
 		return FALSE;
-	if(x - trunc(x) == 0)
+	if(x < 1)
+		/* might be a -ve power */
+		return double_is_power_of_2(1 / x);
+	if(x != trunc(x))
 		/* is an integer */
 		return is_power_of_2(x);
-	if(x < 1)
-		/* is less than 1 */
-		return double_is_power_of_2(1 / x);
 	return 0;
 }
 
@@ -1083,7 +1083,7 @@ static REAL4TimeSeries *get_calibrated_data(FrStream *stream, const char *chname
 
 static REAL4TimeSeries *get_time_series(const char *cachefilename, const char *chname, LIGOTimeGPS start, LIGOTimeGPS end, size_t lengthlimit, int getcaltimeseries, double quantize_high_pass)
 {
-	const char func[] = "get_time_series";
+	static const char func[] = "get_time_series";
 	double duration = XLALGPSDiff(&end, &start);
 	FrCache *cache;
 	FrStream *stream;
@@ -1182,7 +1182,7 @@ static void gaussian_noise(REAL4TimeSeries *series, REAL4 rms, RandomParams *rpa
 
 static COMPLEX8FrequencySeries *generate_response(LALStatus *stat, const char *calcachefile, char *ifo, const char *channel_name, REAL8 deltaT, LIGOTimeGPS epoch, size_t length)
 {
-	const char func[] = "generate_response";
+	static const char func[] = "generate_response";
 	COMPLEX8FrequencySeries *response;
 	size_t i;
 	const LALUnit strainPerCount = { 0, {0, 0, 0, 0, 0, 1, -1}, {0, 0, 0, 0, 0, 0, 0} };
@@ -1318,7 +1318,7 @@ static REAL4TimeSeries *add_inspiral_injections(LALStatus *stat, char *filename,
 
 static REAL4TimeSeries *add_mdc_injections(const char *mdccachefile, const char *channel_name, REAL4TimeSeries *series, LIGOTimeGPS epoch, LIGOTimeGPS stopepoch, size_t lengthlimit)
 {
-	const char func[] = "add_mdc_injections";
+	static const char func[] = "add_mdc_injections";
 	REAL4TimeSeries *mdc;
 	size_t i;
 
@@ -1595,24 +1595,22 @@ static void add_sim_injections(LALStatus *stat, REAL4TimeSeries *series, COMPLEX
 
 static SnglBurstTable **analyze_series(SnglBurstTable **addpoint, REAL4TimeSeries *series, int psd_length, int psd_shift, int window_shift, EPSearchParams *params)
 {
-	REAL4TimeSeries *interval;
-	size_t i;
+	static const char func[] = "analyze_series";
+	unsigned i;
 
 	if((unsigned) psd_length > series->data->length) {
-		psd_length = XLALOverlappedSegmentsCommensurate(series->data->length, params->window->data->length, window_shift);
-		XLALPrintInfo("analyze_series(): warning: PSD average length exceeds available data, reducing PSD average length to %zu samples\n", psd_length);
-		if(!psd_length) {
-			XLALPrintInfo("analyze_series(): warning: cowardly refusing to analyze 0 samples, skipping series\n");
-			return addpoint;
-		}
+		XLALPrintWarning("%s(): warning: PSD average length exceeds available data, skipping series\n", func);
+		return addpoint;
 	}
 
 	for(i = 0; i + psd_length < series->data->length + psd_shift; i += psd_shift) {
 		int start = min(i, series->data->length - psd_length);
+		REAL4TimeSeries *interval = XLALCutREAL4TimeSeries(series, start, psd_length);
 
-		interval = XLALCutREAL4TimeSeries(series, start, psd_length);
+		if(!interval)
+			XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
-		XLALPrintInfo("analyze_series(): analyzing samples %zu -- %zu (%.9lf s -- %.9lf s)\n", start, start + interval->data->length, start * interval->deltaT, (start + interval->data->length) * interval->deltaT);
+		XLALPrintInfo("%s(): analyzing samples %zu -- %zu (%.9lf s -- %.9lf s)\n", func, start, start + interval->data->length, start * interval->deltaT, (start + interval->data->length) * interval->deltaT);
 
 		*addpoint = XLALEPSearch(interval, params);
 		while(*addpoint)
@@ -1620,10 +1618,8 @@ static SnglBurstTable **analyze_series(SnglBurstTable **addpoint, REAL4TimeSerie
 
 		XLALDestroyREAL4TimeSeries(interval);
 
-		if(xlalErrno) {
-			XLAL_ERROR_NULL("analyze_series", XLAL_EFUNC);
-			return NULL;
-		}
+		if(xlalErrno)
+			XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
 	}
 
@@ -1844,7 +1840,7 @@ int main(int argc, char *argv[])
 				/*add_sim_injections(&stat, series, response, options->max_series_length);*/
 			}
 
-			/*clean up */
+			/* clean up */
 			XLALDestroyCOMPLEX8FrequencySeries(response);
 		}
 
@@ -1859,7 +1855,8 @@ int main(int argc, char *argv[])
 		 * Condition the time series data.
 		 */
 
-		/* Scale the time series if calibrated data */
+		/* Scale the time series if calibrated data.  Note, the
+		 * same factor must be removed after, see below */
 		if(options->calibrated) {
 			const double scale = 1e10;
 			unsigned i;
@@ -1909,7 +1906,8 @@ int main(int argc, char *argv[])
 	}
 
 	/*
-	 * Unscale the h_{rss} estimates if calibrated data
+	 * Unscale the h_{rss} estimates if calibrated data.  Note:  this
+	 * must be the same factor as was put in above.
 	 */
 
 	if(options->calibrated) {
