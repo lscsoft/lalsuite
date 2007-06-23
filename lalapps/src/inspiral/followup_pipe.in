@@ -189,6 +189,7 @@ class plotSNRCHISQJob(pipeline.CondorDAGJob):
     self.__universe = "vanilla"
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    self.add_condor_cmd('getenv','True')
     self.set_stdout_file('logs/fuplotsnrchisq-$(macrogpsstarttime)-$(cluster)-$(process).out')
     self.set_stderr_file('logs/fuplotsnrchisq-$(macrogpsstarttime)-$(cluster)-$(process).err')
     self.set_sub_file('fuplotsnrchisq.sub')
