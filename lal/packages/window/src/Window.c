@@ -168,11 +168,18 @@ static REAL8 sum_squares(REAL8 *start, int length)
 	REAL8 e = 0.0;
 	REAL8 *end = start + length - 1;
 
+	/* Note:  don't try to simplify this loop, the statements must be
+	 * done like this to induce the C compiler to perform the
+	 * arithmetic in the correct order. */
 	for(; start < end; start++, end--) {
 		REAL8 temp = sum;
+		/* what we want to add */
 		REAL8 x = *start * *start + *end * *end + e;
+		/* add */
 		sum += x;
+		/* negative of what was actually added */
 		e = temp - sum;
+		/* what didn't get added, add next time */
 		e += x;
 	}
 
@@ -191,11 +198,18 @@ static REAL8 sum_samples(REAL8 *start, int length)
 	REAL8 e = 0.0;
 	REAL8 *end = start + length - 1;
 
+	/* Note:  don't try to simplify this loop, the statements must be
+	 * done like this to induce the C compiler to perform the
+	 * arithmetic in the correct order. */
 	for(; start < end; start++, end--) {
 		REAL8 temp = sum;
+		/* what we want to add */
 		REAL8 x = *start + *end + e;
+		/* add */
 		sum += x;
+		/* negative of what was actually added */
 		e = temp - sum;
+		/* what didn't get added, add next time */
 		e += x;
 	}
 
