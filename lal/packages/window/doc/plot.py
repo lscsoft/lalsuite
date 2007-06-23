@@ -32,8 +32,6 @@ def make_windows(n, kaiser_beta, creighton_beta, tukey_beta, gauss_beta):
 		"Gauss": XLALCreateGaussREAL8Window(n, gauss_beta)
 	}
 
-x = numpy.arange(1001, dtype = "float64") / 500.5 - 1
-
 fig = figure.Figure()
 FigureCanvas(fig)
 fig.set_size_inches(6.5, 6.5 / ((1 + math.sqrt(5)) / 2))
@@ -42,7 +40,9 @@ axes.grid(True)
 axes.set_xlabel("$y$")
 axes.set_ylabel("$w(y)$")
 
-windows = make_windows(1001, 6, 2, 0.5, 3)
+L = 1001
+x = numpy.arange(L) / ((L - 1) / 2.0) - 1
+windows = make_windows(L, 6, 2, 0.5, 3)
 
 for window in windows.values():
 	axes.plot(x, window.data)
