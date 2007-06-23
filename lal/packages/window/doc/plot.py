@@ -15,7 +15,7 @@ from matplotlib import figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import numpy
 
-from pylal.xlal.window import *
+from pylal.window import *
 
 def make_windows(n, kaiser_beta, creighton_beta, tukey_beta, gauss_beta):
 	return {
