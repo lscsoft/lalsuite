@@ -127,7 +127,7 @@ static int double_is_power_of_2(double x)
 	if(x < 1)
 		/* might be a -ve power */
 		return double_is_power_of_2(1 / x);
-	if(x != trunc(x))
+	if(x == trunc(x))
 		/* is an integer */
 		return is_power_of_2(x);
 	return 0;
