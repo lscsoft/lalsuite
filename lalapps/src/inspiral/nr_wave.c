@@ -1,31 +1,22 @@
 /*
-*  Copyright (C) 2007 Badri Krishnan, Chad Hanna, Lucia Santamaria Lara, Robert Adam Mercer, Stephen Fairhurst
-*
-*  This program is free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  This program is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
-*  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
-*/
-
-/*-----------------------------------------------------------------------
+ * Copyright (C) 2007 Badri Krishnan, Chad Hanna, Lucia Santamaria Lara, Robert Adam Mercer, Stephen Fairhurst
  *
- * File Name: nr_wave.c
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- * Author: S.Fairhurst, B. Krishnan, L.Santamaria
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with with program; see the file COPYING. If not, write to the
+ * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA  02111-1307  USA
  *
  * Revision: $Id$
- *
- *-----------------------------------------------------------------------
  */
 
 #include <math.h>
@@ -114,7 +105,10 @@ INT4 main( INT4 argc, CHAR *argv[] )
   INT4 ifosFlag  = 0;                     /* injections for all ifos?       */
   INT4 frameFlag = 0;                     /* write h(t) to a frame?         */
   int c;
-  lalDebugLevel = 5;
+
+  /* default debug level */
+  lal_errhandler = LAL_ERR_EXIT;
+  set_debug_level( "5" );
 
   /* getopt arguments */
   struct option long_options[] =
@@ -133,6 +127,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
     {"ifo",                     required_argument, 0,                'i'},
     {"modeL-lo",                required_argument, 0,                'L'},
     {"modeL-hi",                required_argument, 0,                'H'},
+    {"debug-level",             required_argument, 0,                'D'},
     {"help",                    no_argument,       0,                'h'},
     {"version",                 no_argument,       0,                'V'},
     {0, 0, 0, 0}
@@ -304,6 +299,11 @@ INT4 main( INT4 argc, CHAR *argv[] )
               long_options[option_index].name, modeLhi );
           exit( 1 );
         }
+        break;
+
+      case 'D':
+        /* set debug level */
+        set_debug_level( optarg );
         break;
 
       case '?':
@@ -528,6 +528,7 @@ static void print_usage( CHAR *program )
       "  [--help]                      display this message\n"\
       "  [--verbose]                   print progress information\n"\
       "  [--version]                   print version information and exit\n"\
+      "  --debug-level     lvl         set debug level to 'lvl'\n"\
       "  --injection-file  inj_file    read injection details from inj_file\n"\
       "  --ifo             ifo         IFO for which to generate injections\n"\
       "  --all-ifos                    create injections for all IFOs\n"\
