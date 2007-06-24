@@ -14,6 +14,7 @@ matplotlib.rcParams.update({
 from matplotlib import figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import numpy
+from scipy import fftpack
 
 from pylal.window import *
 
@@ -32,20 +33,47 @@ def make_windows(n, kaiser_beta, creighton_beta, tukey_beta, gauss_beta):
 		"Gauss": XLALCreateGaussREAL8Window(n, gauss_beta)
 	}
 
-fig = figure.Figure()
-FigureCanvas(fig)
-fig.set_size_inches(6.5, 6.5 / ((1 + math.sqrt(5)) / 2))
-axes = fig.gca()
-axes.grid(True)
-axes.set_xlabel("$y$")
-axes.set_ylabel("$w(y)$")
+def plot_windows_t(x, windows):
+	fig = figure.Figure()
+	FigureCanvas(fig)
+	fig.set_size_inches(6.5, 6.5 / ((1 + math.sqrt(5)) / 2))
+	axes = fig.gca()
+	axes.grid(True)
+	axes.set_xlabel(r"$y$")
+	axes.set_ylabel(r"$w(y)$")
+
+	for window in windows.values():
+		axes.plot(x, window.data)
+	axes.legend(windows.keys())
+
+	return fig
+
+def plot_windows_f(x, windows):
+	fig = figure.Figure()
+	FigureCanvas(fig)
+	fig.set_size_inches(6.5, 6.5 / ((1 + math.sqrt(5)) / 2))
+	axes = fig.gca()
+	axes.grid(True)
+	axes.loglog()
+	axes.set_xlabel(r"$y^{-1}$")
+	axes.set_ylabel(r"$\tilde{w}(y^{-1})$")
+
+	L = len(x)
+	padding = 100 * L
+	for window in windows.values():
+		w = window.data
+		w = numpy.hstack((w, numpy.zeros((padding,))))
+		w = fftpack.fft(w)[:4 * L]
+		axes.plot(numpy.arange(0, len(w), dtype = "float64") / (padding / L), numpy.abs(w))
+	axes.set_xlim([1e-1, 1e+2])
+	axes.set_ylim([1e-4, 1e+3])
+	axes.legend(windows.keys())
+
+	return fig
 
 L = 1001
 x = numpy.arange(L) / ((L - 1) / 2.0) - 1
 windows = make_windows(L, 6, 2, 0.5, 3)
 
-for window in windows.values():
-	axes.plot(x, window.data)
-axes.legend(windows.keys())
-
-fig.savefig("window_t.eps")
+plot_windows_t(x, windows).savefig("window_t.eps")
+plot_windows_f(x, windows).savefig("window_f.eps")
