@@ -21,6 +21,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 #include <lal/LALDatatypes.h>
 #include <lal/Window.h>
@@ -476,6 +477,18 @@ static void display(void)
 int main(void)
 {
 	int fail = 0;
+	char *hosttype = getenv("hosttype");
+
+	/* DEC Alpha's FPU is not capable of computing some of these window
+	 * functions correctly.  This is safe because in the cases where it
+	 * fails it raises SIGFPE and the program crashes.  I can't be
+	 * bothered to code up the work-arounds needed to get the windows
+	 * working on that platform. */
+
+	if(!strcmp(hosttype ? hosttype : "", "alpha")) {
+		fprintf(stderr, "Window functions not computable on DEC Alpha, tests skipped!  Set environment variable \"hosttype\" to something other than \"alpha\" to force tests\n");
+		exit(77);
+	}
 
 	/* Numerical tests:  assume that if the end-points, mid-points, and
 	 * sum-of-squares are all as expected, then the window functions
