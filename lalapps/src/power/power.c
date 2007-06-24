@@ -1593,7 +1593,7 @@ static void add_sim_injections(LALStatus *stat, REAL4TimeSeries *series, COMPLEX
  */
 
 
-static SnglBurstTable **analyze_series(SnglBurstTable **addpoint, REAL4TimeSeries *series, int psd_length, int psd_shift, int window_shift, EPSearchParams *params)
+static SnglBurstTable **analyze_series(SnglBurstTable **addpoint, REAL4TimeSeries *series, int psd_length, int psd_shift, EPSearchParams *params)
 {
 	static const char func[] = "analyze_series";
 	unsigned i;
@@ -1887,7 +1887,7 @@ int main(int argc, char *argv[])
 		 * Analyze the data
 		 */
 
-		EventAddPoint = analyze_series(EventAddPoint, series, options->psd_length, options->psd_shift, options->window_shift, &params);
+		EventAddPoint = analyze_series(EventAddPoint, series, options->psd_length, options->psd_shift, &params);
 		if(!EventAddPoint)
 			exit(1);
 
