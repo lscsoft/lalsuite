@@ -508,12 +508,19 @@ REAL8Window *XLALCreateCreightonREAL8Window(UINT4 length, REAL8 beta)
 	/* ?? Copied from LAL Software Description */
 	for(i = 0; i < (length + 1) / 2; i++) {
 		double y = Y(length, i);
-		/* NOTE:  divide-by-zero when i = 0 seems to work out OK.
-		 * It's well-defined algebraically, but I'm surprised the
-		 * FPU doesn't complain.  The 0/0 when beta = i = 0 has to
-		 * be hard-coded, as does the inf * 0 when beta = inf and y
-		 * = 0 (which is done by just checking for y = 0). */
-		window->data->data[i] = window->data->data[length - 1 - i] = (beta == 0 && y == -1) || y == 0 ? 1 : exp(-beta * y * y / (1 - y * y));
+		/* NOTE:  divide-by-zero in y^2 / (1 - y^2) when i = 0
+		 * seems to work out OK.  It's well-defined algebraically,
+		 * but I'm surprised the FPU doesn't complain.  The 0/0
+		 * when beta = i = 0 has to be hard-coded, as does the inf
+		 * * 0 when beta = inf and y = 0 (which is done by just
+		 * checking for y = 0). The fabs() is there because Macs,
+		 * with optimizations turned on, incorrectly state that
+		 * 1-y^2 = -0 when y = 1, which converts the argument of
+		 * exp() from -inf to +inf, and causes the window to
+		 * evaluate to +inf instead of 0 at the end points. See
+		 * also the -0 at the end points of the Welch window on
+		 * Macs. */
+		window->data->data[i] = window->data->data[length - 1 - i] = (beta == 0 && y == -1) || y == 0 ? 1 : exp(-beta * y * y / fabs(1 - y * y));
 	}
 
 	window->sumofsquares = sum_squares(window->data->data, window->data->length);
