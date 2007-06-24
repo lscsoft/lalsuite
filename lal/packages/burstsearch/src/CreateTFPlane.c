@@ -188,7 +188,7 @@ INT4 XLALEPGetTimingParameters(
 	 * at least .5 s long to not result in undesired leakage.  at a
 	 * sample frequency of 8192 samples / s, it must be at least 4096
 	 * samples long (2048 samples at each end of the time series).  to
-	 * be safe, we double that to 4096 samples.
+	 * be safe, we double that to 4096 samples at each end.
 	 */
 
 	wpad = 4096;
@@ -260,109 +260,6 @@ INT4 XLALEPGetTimingParameters(
 
 
 /*
- * Allocate and initialize a tiling of the time-frequency plane.
- */
-
-
-TFTiling *XLALCreateTFTiling(
-	UINT4 tiling_t_start,
-	UINT4 tiling_t_length,
-	UINT4 tiling_n_channels,
-	REAL8 plane_deltaT,
-	REAL8 plane_deltaF,
-	REAL8 fractional_stride,
-	REAL8 max_tile_bandwidth,
-	REAL8 max_tile_duration
-)
-{
-	static const char func[] = "XLALCreateTFTiling";
-	TFTiling *tiling;
-
-	/*
-	 * stride
-	 */
-
-	const unsigned inv_fractional_stride = 1 / fractional_stride;
-
-	/*
-	 * coordinate limits
-	 */
-
-	const unsigned tiling_t_end = tiling_t_start + tiling_t_length;
-
-	/*
-	 * tile size limits
-	 */
-
-	const unsigned min_length = (1 / max_tile_bandwidth) / plane_deltaT;
-	const unsigned max_length = max_tile_duration / plane_deltaT;
-	const unsigned min_channels = inv_fractional_stride;
-	const unsigned max_channels = max_tile_bandwidth / plane_deltaF;
-
-	/*
-	 * check the tile size limits.  note that because all tile
-	 * durations are integer multiples of the smallest duration, if the
-	 * largest duration fits an integer number of times in the tiling
-	 * length, and the smallest duration does as well, then all tile
-	 * sizes in between also fit an integer number of times so there's
-	 * no need to test them all.  likewise for the bandwidths.
-	 */
-
-	if((inv_fractional_stride * fractional_stride != 1) ||
-	   (min_length * plane_deltaT != (1 / max_tile_bandwidth)) ||
-	   (min_length % inv_fractional_stride != 0) ||
-	   (tiling_t_length % min_length != 0) ||
-	   (tiling_t_length % max_length != 0) ||
-	   (tiling_n_channels % min_channels != 0) ||
-	   (tiling_n_channels % max_channels != 0)) {
-	   	XLALPrintError("unable to construct time-frequency tiling from input parameters\n");
-		XLAL_ERROR_NULL(func, XLAL_EINVAL);
-	}
-
-	/*
-	 * allocate
-	 */
-
-	tiling = XLALMalloc(sizeof(*tiling));
-	if(!tiling)
-		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
-
-	/*
-	 * initialize
-	 */
-
-	tiling->min_length = min_length;
-	tiling->max_length = max_length;
-	tiling->min_channels = min_channels;
-	tiling->max_channels = max_channels;
-	tiling->tiling_t_start = tiling_t_start;
-	tiling->tiling_t_end = tiling_t_end;
-	tiling->tiling_n_channels = tiling_n_channels;
-	tiling->inv_fractional_stride = inv_fractional_stride;
-	tiling->dof_per_pixel = 2 * plane_deltaT * plane_deltaF;
-
-	/*
-	 * done
-	 */
-
-	return(tiling);
-}
-
-
-/*
- * Free a tiling of the time-frequency plane.
- */
-
-
-void XLALDestroyTFTiling(
-	TFTiling *tiling
-)
-{
-	XLALFree(tiling);
-}
-
-
-/*
  * Create and initialize a time-frequency plane object.
  */
 
@@ -379,68 +276,123 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	/* overlap of adjacent tiles */
 	REAL8 tiling_fractional_stride,
 	/* largest tile's bandwidth */
-	REAL8 tiling_max_bandwidth,
+	REAL8 max_tile_bandwidth,
 	/* largest tile's duration */
-	REAL8 tiling_max_duration
+	REAL8 max_tile_duration
 )
 {
 	static const char func[] = "XLALCreateTFPlane";
-	/* sample on which tiling starts */
-	int tiling_start;
-	/* length of tiling */
-	int tiling_length;
-	/* window shift */
-	int window_shift;
-	/* resolution of FT of input time series */
-	double fseries_deltaF = 1.0 / (tseries_length * tseries_deltaT);
-	/* time-frequency plane's channel spacing */
-	double deltaF = 1 / tiling_max_duration * tiling_fractional_stride;
-	/* total number of channels */
-	int channels = bandwidth / deltaF;
 	REAL4TimeFrequencyPlane *plane;
 	REAL8Sequence *channel_overlap;
 	REAL8Sequence *channel_rms;
 	REAL4Sequence **channel;
 	REAL4Window *tukey;
-	TFTiling *tiling;
 	int i;
 
 	/*
-	 * Make sure that input parameters are reasonable
+	 * resolution of FT of input time series
+	 */
+
+	const double fseries_deltaF = 1.0 / (tseries_length * tseries_deltaT);
+
+	/*
+	 * time-frequency plane's channel spacing
+	 */
+
+	const double deltaF = 1 / max_tile_duration * tiling_fractional_stride;
+
+	/*
+	 * total number of channels
+	 */
+
+	const int channels = bandwidth / deltaF;
+
+	/*
+	 * stride
+	 */
+
+	const unsigned inv_fractional_stride = 1 / tiling_fractional_stride;
+
+	/*
+	 * tile size limits
+	 */
+
+	const unsigned min_length = (1 / max_tile_bandwidth) / tseries_deltaT;
+	const unsigned max_length = max_tile_duration / tseries_deltaT;
+	const unsigned min_channels = inv_fractional_stride;
+	const unsigned max_channels = max_tile_bandwidth / deltaF;
+
+	/*
+	 * sample on which tiling starts
+	 */
+
+	int tiling_start;
+
+	/*
+	 * length of tiling
+	 */
+
+	int tiling_length;
+
+	/*
+	 * window shift
+	 */
+
+	int window_shift;
+
+	/*
+	 * Compute window_shift, tiling_start, and tiling_length.
+	 */
+
+	if(XLALEPGetTimingParameters(tseries_length, max_tile_duration / tseries_deltaT, tiling_fractional_stride, NULL, NULL, &window_shift, &tiling_start, &tiling_length) < 0)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+
+	/*
+	 * Make sure that input parameters are reasonable, and that a
+	 * complete tiling is possible.
+	 *
+	 * Note that because all tile durations are integer power of two
+	 * multiples of the smallest duration, if the largest duration fits
+	 * an integer number of times in the tiling length, then all tile
+	 * sizes do so there's no need to test them all.  Likewise for the
+	 * bandwidths.
+	 *
+	 * FIXME:  these tests require an integer number of non-overlapping
+	 * tiles to fit, which is stricter than required;  only need an
+	 * integer number of overlapping tiles to fit, but then probably
+	 * have to test all sizes separately.
 	 */
 
 	if((flow < 0) ||
 	   (bandwidth <= 0) ||
 	   (deltaF <= 0) ||
-	   (fmod(tiling_max_duration, tseries_deltaT) != 0) ||
+	   (inv_fractional_stride * tiling_fractional_stride != 1) ||
+	   (fmod(max_tile_duration, tseries_deltaT) != 0) ||
 	   (fmod(deltaF, fseries_deltaF) != 0) ||
 	   (tseries_deltaT <= 0) ||
-	   (channels * deltaF != bandwidth))
+	   (channels * deltaF != bandwidth) ||
+	   (min_length * tseries_deltaT != (1 / max_tile_bandwidth)) ||
+	   (min_length % inv_fractional_stride != 0) ||
+	   (tiling_length % max_length != 0) ||
+	   (channels % max_channels != 0)) {
+		XLALPrintError("unable to construct time-frequency tiling from input parameters\n");
 		XLAL_ERROR_NULL(func, XLAL_EINVAL);
+	}
 
 	/*
-	 * Compute timing parameters
-	 */
-
-	if(XLALEPGetTimingParameters(tseries_length, tiling_max_duration / tseries_deltaT, tiling_fractional_stride, NULL, NULL, &window_shift, &tiling_start, &tiling_length) < 0)
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
-
-	/*
-	 * Allocate memory and construct the tiling.
+	 * Allocate memory.
 	 */
 
 	plane = XLALMalloc(sizeof(*plane));
 	channel_overlap = XLALCreateREAL8Sequence(channels - 1);
 	channel_rms = XLALCreateREAL8Sequence(channels);
 	channel = XLALMalloc(channels * sizeof(*channel));
-	tiling = XLALCreateTFTiling(tiling_start, tiling_length, channels, tseries_deltaT, deltaF, tiling_fractional_stride, tiling_max_bandwidth, tiling_max_duration);
 	tukey = XLALCreateTukeyREAL4Window(tseries_length, (tseries_length - tiling_length) / (double) tseries_length);
-	if(!plane || !channel_overlap || !channel_rms || !channel || !tiling || !tukey) {
+	if(!plane || !channel_overlap || !channel_rms || !channel || !tukey) {
 		XLALFree(plane);
 		XLALDestroyREAL8Sequence(channel_overlap);
 		XLALDestroyREAL8Sequence(channel_rms);
 		XLALFree(channel);
-		XLALDestroyTFTiling(tiling);
 		XLALDestroyREAL4Window(tukey);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
@@ -453,7 +405,6 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 			XLALDestroyREAL8Sequence(channel_overlap);
 			XLALDestroyREAL8Sequence(channel_rms);
 			XLALFree(channel);
-			XLALDestroyTFTiling(tiling);
 			XLALDestroyREAL4Window(tukey);
 			XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 		}
@@ -483,7 +434,14 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	plane->channel_overlap = channel_overlap;
 	plane->channel_rms = channel_rms;
 	plane->channel = channel;
-	plane->tiling = tiling;
+	plane->tiles.min_length = min_length;
+	plane->tiles.max_length = max_length;
+	plane->tiles.min_channels = min_channels;
+	plane->tiles.max_channels = max_channels;
+	plane->tiles.tiling_start = tiling_start;
+	plane->tiles.tiling_end = tiling_start + tiling_length;
+	plane->tiles.inv_fractional_stride = inv_fractional_stride;
+	plane->tiles.dof_per_pixel = 2 * tseries_deltaT * deltaF;
 	plane->window = tukey;
 	plane->window_shift = window_shift;
 
@@ -512,7 +470,6 @@ void XLALDestroyTFPlane(
 		for(i = 0; i < plane->channels; i++)
 			XLALDestroyREAL4Sequence(plane->channel[i]);
 		XLALFree(plane->channel);
-		XLALDestroyTFTiling(plane->tiling);
 		XLALDestroyREAL4Window(plane->window);
 	}
 	XLALFree(plane);

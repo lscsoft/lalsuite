@@ -40,41 +40,6 @@ NRCSID(TFTRANSFORMH, "$Id$");
 
 
 /*
- * A tiling of the time-frequency plane
- */
-
-
-typedef struct tagTFTiling {
-	unsigned min_length;
-	unsigned max_length;
-	unsigned min_channels;
-	unsigned max_channels;
-	unsigned tiling_t_start;
-	unsigned tiling_t_end;
-	unsigned tiling_n_channels;
-	unsigned inv_fractional_stride;
-	double dof_per_pixel;
-} TFTiling;
-
-
-TFTiling *XLALCreateTFTiling(
-	UINT4 tiling_t_start,
-	UINT4 tiling_t_length,
-	UINT4 tiling_n_channels,
-	REAL8 plane_deltaT,
-	REAL8 plane_deltaF,
-	REAL8 fractional_stride,
-	REAL8 max_tile_bandwidth,
-	REAL8 max_tile_duration
-);
-
-
-void XLALDestroyTFTiling(
-	TFTiling *tiling
-);
-
-
-/*
  * A time-frequency plane
  */
 
@@ -108,9 +73,18 @@ typedef struct tagREAL4TimeFrequencyPlane {
 	 * [flow + j * deltaF, flow + (j + 1) * deltaF)
 	 */
 	REAL4Sequence **channel;
-	/* time-frequency plane's tiling */
-	TFTiling *tiling;
-	/* window applied to input time series to taper edges to 0 */
+	/* time-frequency plane's tiling information */
+	struct TFTiling {
+		unsigned min_length;
+		unsigned max_length;
+		unsigned min_channels;
+		unsigned max_channels;
+		unsigned tiling_start;
+		unsigned tiling_end;
+		unsigned inv_fractional_stride;
+		double dof_per_pixel;
+	} tiles;
+	/* window applied to input time series for tapering edges to 0 */
 	REAL4Window *window;
 	/* by how many samples a window's start should be shifted from the
 	 * start of the window preceding it */

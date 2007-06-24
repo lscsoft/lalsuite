@@ -42,17 +42,18 @@ NRCSID (COMPUTEEXCESSPOWERC, "$Id$");
 
 static SnglBurstTable *XLALTFTileToBurstEvent(
 	const REAL4TimeFrequencyPlane *plane,
-	unsigned t_start,
-	unsigned t_length,
-	unsigned t_channel_start,
-	unsigned t_channels,
+	unsigned tile_start,
+	unsigned tile_length,
+	unsigned tile_channel,
+	unsigned tile_channels,
 	double h_rss,
 	double excess_power,
 	double confidence
 )
 {
-	const char func[] = "XLALTFTileToBurstEvent";
+	static const char func[] = "XLALTFTileToBurstEvent";
 	SnglBurstTable *event = XLALCalloc(1, sizeof(*event));
+
 	if(!event)
 		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 
@@ -63,15 +64,13 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 	event->search[LIGOMETA_SEARCH_MAX] = '\0';
 	strncpy(event->channel, plane->name, LIGOMETA_CHANNEL_MAX);
 	event->channel[LIGOMETA_CHANNEL_MAX] = '\0';
-
 	event->start_time = plane->epoch; 
- 
-	XLALGPSAdd(&event->start_time, t_start * plane->deltaT);
-	event->duration = t_length * plane->deltaT;
+	XLALGPSAdd(&event->start_time, tile_start * plane->deltaT);
+	event->duration = tile_length * plane->deltaT;
 	event->peak_time = event->start_time;
 	XLALGPSAdd(&event->peak_time, 0.5 * event->duration);
-	event->bandwidth = t_channels * plane->deltaF;
-	event->central_freq = plane->flow + t_channel_start * plane->deltaF + (0.5 * event->bandwidth);
+	event->bandwidth = tile_channels * plane->deltaF;
+	event->central_freq = plane->flow + tile_channel * plane->deltaF + (0.5 * event->bandwidth);
 	/* FIXME: put h_rss into the "hrss" column */
 	event->amplitude = h_rss;
 	event->snr = excess_power;
@@ -94,65 +93,78 @@ SnglBurstTable *XLALComputeExcessPower(
 )
 /******** </lalVerbatim> ********/
 {
-	const char func[] = "XLALComputeExcessPower";
-	const TFTiling *tiling = plane->tiling;
-	unsigned t_channel_start;
-	unsigned t_channels;
-	unsigned t_start;
-	unsigned t_length;
+	static const char func[] = "XLALComputeExcessPower";
+	unsigned start;
+	unsigned length;
+	unsigned end;
+	unsigned channel;
+	unsigned channels;
+	unsigned channel_end;
 	double excess_power;
 	double h_rss;
 	double confidence;
 
-	for(t_channels = tiling->min_channels; t_channels <= tiling->max_channels; t_channels *= 2)
-	for(t_channel_start = 0; t_channel_start + t_channels <= tiling->tiling_n_channels; t_channel_start += t_channels / tiling->inv_fractional_stride) {
+	for(channels = plane->tiles.min_channels; channels <= plane->tiles.max_channels; channels *= 2) {
+	for(channel_end = (channel = 0) + channels; channel_end <= plane->channels; channel_end = (channel += channels / plane->tiles.inv_fractional_stride) + channels) {
 		/* sum of inner products of all pairs of channels
 		 * contributing to this tile's "virtual channel" */
-		const double channel_overlap = XLALREAL8SequenceSum(plane->channel_overlap, t_channel_start, t_channels - 1);
+		const double channel_overlap = XLALREAL8SequenceSum(plane->channel_overlap, channel, channels - 1);
 		/* mean square for this tile's "virtual channel" */
-		const double pixel_mean_square = XLALREAL8SequenceSumSquares(plane->channel_rms, t_channel_start, t_channels) / (t_channels + channel_overlap);
-	for(t_length = tiling->min_length; t_length <= tiling->max_length; t_length *= 2) {
-		/* number of degrees of freedom in tile */
-		double t_dof = (t_length * t_channels) * tiling->dof_per_pixel;
-		/* distance between tile's time bins */
-		const unsigned tstep = t_length / t_dof;
-	for(t_start = tiling->tiling_t_start; t_start + t_length <= tiling->tiling_t_end; t_start += t_length / tiling->inv_fractional_stride) {
+		const double pixel_mean_square = XLALREAL8SequenceSumSquares(plane->channel_rms, channel, channels) / (channels + channel_overlap);
+	for(length = plane->tiles.min_length; length <= plane->tiles.max_length; length *= 2) {
+		/* number of degrees of freedom in tile = number of
+		 * "virtual pixels" in tile */
+		double tile_dof = (length * channels) * plane->tiles.dof_per_pixel;
+		/* distance between tile's "virtual pixels" */
+		const unsigned tstep = length / tile_dof;
+	for(end = (start = plane->tiles.tiling_start) + length; end <= plane->tiles.tiling_end; end = (start += length / plane->tiles.inv_fractional_stride) + length) {
 		double sumsquares = 0.0;
 		double hsumsquares = 0.0;
+		unsigned c;
 		unsigned t;
 
-		/* compute sum of squares, and de-whitened sum of squares
-		 * */
-		for(t = t_start + tstep / 2; t < t_start + t_length; t += tstep) {
-			unsigned channel;
+		/* compute sum of snr squares (for excess power), and sum
+		 * of energies (for h_rss) */
+		for(t = start + tstep / 2; t < end; t += tstep) {
 			double sum = 0.0;
 			double hsum = 0.0;
 
-			for(channel = t_channel_start; channel < t_channel_start + t_channels; channel++) {
-				sum += plane->channel[channel]->data[t];
-				hsum += plane->channel[channel]->data[t] * plane->channel_rms->data[channel];
+			/* compute snr and dewhitened amplitude for this
+			 * "virtual pixel". */
+			for(c = channel; c < channel_end; c++) {
+				sum += plane->channel[c]->data[t];
+				hsum += plane->channel[c]->data[t] * plane->channel_rms->data[c];
 			}
 
-			sumsquares += sum * sum / (t_channels + channel_overlap);
-			hsumsquares += hsum * hsum / (t_channels + channel_overlap);
+			sumsquares += sum * sum;
+			hsumsquares += hsum * hsum;
 		}
+		/* normalization to give each "virtual pixel" a mean square
+		 * snr of 1.0 */
+		sumsquares /= channels + channel_overlap;
+		hsumsquares /= channels + channel_overlap;
 
-		/* compute excess power, de-whitened root-sum-squares, and
-		 * statistical confidence */
-		excess_power = sumsquares - t_dof;
-		h_rss = sqrt(hsumsquares - t_dof * pixel_mean_square);
-		confidence = -XLALlnOneMinusChisqCdf(sumsquares, t_dof);
+		/* compute statistical confidence, see if it's above
+		 * threshold */
+		confidence = -XLALlnOneMinusChisqCdf(sumsquares, tile_dof);
 		if(XLALIsREAL8FailNaN(confidence))
 			XLAL_ERROR_NULL(func, XLAL_EFUNC);
-
-		/* test confidence */
 		if(confidence >= confidence_threshold) {
-			SnglBurstTable *oldhead = head;
-			head = XLALTFTileToBurstEvent(plane, t_start, t_length, t_channel_start, t_channels, h_rss, excess_power, confidence);
+			SnglBurstTable *oldhead;
+
+			/* compute excess power and h_rss */
+			excess_power = sumsquares - tile_dof;
+			h_rss = sqrt(hsumsquares - tile_dof * pixel_mean_square);
+
+			/* add new event to head of linked list */
+			oldhead = head;
+			head = XLALTFTileToBurstEvent(plane, start, length, channel, channels, h_rss, excess_power, confidence);
 			if(!head)
 				XLAL_ERROR_NULL(func, XLAL_EFUNC);
 			head->next = oldhead;
+
 		}
+	}
 	}
 	}
 	}
