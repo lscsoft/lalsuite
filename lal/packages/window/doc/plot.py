@@ -56,17 +56,26 @@ def plot_windows_f(x, windows):
 	axes.grid(True)
 	axes.loglog()
 	axes.set_xlabel(r"$y^{-1}$")
-	axes.set_ylabel(r"$\tilde{w}(y^{-1})$")
+	axes.set_ylabel(r"$\left| \tilde{w}(y^{-1}) \right| / L$")
 
 	L = len(x)
-	padding = 100 * L
+	pad_factor = 100
+	padding = numpy.zeros(((pad_factor - 1) * L,))
 	for window in windows.values():
-		w = window.data
-		w = numpy.hstack((w, numpy.zeros((padding,))))
+		# get window data, and pad with zeros to make its length
+		# pad_factor * L
+		w = numpy.hstack((window.data, padding))
+
+		# Fourier transform, and extract the bit to plot
 		w = fftpack.fft(w)[:4 * L]
-		axes.plot(numpy.arange(0, len(w), dtype = "float64") / (padding / L), numpy.abs(w))
+
+		# compute the horizontal co-ordinate
+		yinv = numpy.arange(0, len(w), dtype = "float64") / pad_factor
+
+		# plot
+		axes.plot(yinv, numpy.abs(w) / L)
 	axes.set_xlim([1e-1, 1e+2])
-	axes.set_ylim([1e-4, 1e+3])
+	axes.set_ylim([1e-7, 1e+0])
 	axes.legend(windows.keys())
 
 	return fig
