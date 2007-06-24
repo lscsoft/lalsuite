@@ -1443,7 +1443,8 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
-	             rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);
+		floor( yc/patch->deltaY + patch->ySide*0.5);
+	           /*  rint( yc/patch->deltaY + patch->ySide*0.5 -0.5); */
 	DrawLeftCircle(xc,yc,radius,yymin,yymax,
 		       &lut->border[lastBorder].xPixel[0] , patch);
 	lut->bin[0].rightB1= lastBorder;
@@ -1465,7 +1466,8 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
-	             rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);
+	              floor( yc/patch->deltaY + patch->ySide*0.5);
+		      /*rint( yc/patch->deltaY + patch->ySide*0.5 -0.5); */
 	DrawRightCircle(xc,yc,radius,yymin,yymax,
 		       &lut->border[lastBorder].xPixel[0], patch );
 	lut->bin[0].leftB2  = lastBorder;
@@ -1501,7 +1503,8 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
-	             rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);
+	            floor( yc/patch->deltaY + patch->ySide*0.5);
+		    /* rint( yc/patch->deltaY + patch->ySide*0.5 -0.5); */
 	DrawLeftCircle(xc,yc,radius,yymin,yymax,
 		       &lut->border[lastBorder].xPixel[0] , patch);
        
@@ -1524,7 +1527,8 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
-	             rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);
+	            floor( yc/patch->deltaY + patch->ySide*0.5);
+		    /*  rint( yc/patch->deltaY + patch->ySide*0.5 -0.5); */
 	DrawRightCircle(xc,yc,radius,yymin,yymax,
 		       &lut->border[lastBorder].xPixel[0], patch );
 	
@@ -1637,7 +1641,8 @@ static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
-	             rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);
+	           floor( yc/patch->deltaY + patch->ySide*0.5);
+		   /*   rint( yc/patch->deltaY + patch->ySide*0.5 -0.5); */
 	DrawLeftCircle(xc,yc,radius,yymin,yymax,
 		       &lut->border[lastBorder].xPixel[0] , patch);
 	if ( pathology ){
@@ -1663,7 +1668,8 @@ static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
-	             rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);
+	             floor( yc/patch->deltaY + patch->ySide*0.5);
+		     /* rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);*/
 	DrawRightCircle(xc,yc,radius,yymin,yymax,
 		       &lut->border[lastBorder].xPixel[0], patch );
 	if ( pathology ){
@@ -1703,7 +1709,8 @@ static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
-	             rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);
+	           floor( yc/patch->deltaY + patch->ySide*0.5);
+		   /*   rint( yc/patch->deltaY + patch->ySide*0.5 -0.5); */
 	DrawLeftCircle(xc,yc,radius,yymin,yymax,
 		       &lut->border[lastBorder].xPixel[0] , patch);
        
@@ -1726,7 +1733,8 @@ static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
-	             rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);
+	           floor( yc/patch->deltaY + patch->ySide*0.5 );
+		   /*  rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);*/
 	DrawRightCircle(xc,yc,radius,yymin,yymax,
 		       &lut->border[lastBorder].xPixel[0], patch );
 	
@@ -1834,7 +1842,8 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
-	             rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);
+	           floor( yc/patch->deltaY + patch->ySide*0.5);
+		   /*   rint( yc/patch->deltaY + patch->ySide*0.5 -0.5); */
 	DrawLeftCircle(xc,yc,radius,yymin,yymax,
 		       &lut->border[lastBorder].xPixel[0] , patch);
 	lut->bin[currentBin].rightB1  = lastBorder;
@@ -1856,7 +1865,8 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
-	             rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);
+	            floor( yc/patch->deltaY + patch->ySide*0.5 );
+		    /*  rint( yc/patch->deltaY + patch->ySide*0.5 -0.5); */
 	DrawRightCircle(xc,yc,radius,yymin,yymax,
 		       &lut->border[lastBorder].xPixel[0], patch );
 	lut->bin[currentBin].leftB2    = lastBorder;
@@ -1900,7 +1910,8 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
-	             rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);
+	           floor( yc/patch->deltaY + patch->ySide*0.5 );
+		   /*   rint( yc/patch->deltaY + patch->ySide*0.5 -0.5); */
 	DrawLeftCircle(xc,yc,radius,yymin,yymax,
 		       &lut->border[lastBorder].xPixel[0] , patch);
 	if( pathology ){
@@ -1927,7 +1938,8 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
-	             rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);
+	             floor( yc/patch->deltaY + patch->ySide*0.5 );
+		     /*  rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);*/
 	DrawRightCircle(xc,yc,radius,yymin,yymax,
 		       &lut->border[lastBorder].xPixel[0] , patch);
 	if( pathology ){
