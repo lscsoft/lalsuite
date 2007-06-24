@@ -222,7 +222,7 @@ static int _test_end_and_midpoints(int length, double kaiser_beta, double creigh
 	int i;
 
 	/* set end value of Kaiser window */
-	correct_end[7] = kaiser_beta == 0 ? 1 : kaiser_beta == 1.0 / 0 ? 0 : correct_end[7];
+	correct_end[7] = kaiser_beta == 0 ? 1 : kaiser_beta == HUGE_VAL ? 0 : correct_end[7];
 
 	/* set end value of Creighton window */
 	correct_end[8] = creighton_beta == 0 ? 1 : correct_end[8];
@@ -280,25 +280,25 @@ static int test_end_and_midpoints(void)
 {
 	int fail = 0;
 
-	if(_test_end_and_midpoints(1025, 1.0 / 0, 1.0 / 0, 1, 1.0 / 0))
+	if(_test_end_and_midpoints(1025, HUGE_VAL, HUGE_VAL, 1, HUGE_VAL))
 		fail = 1;
 	if(_test_end_and_midpoints(1025, 6, 2, 0.5, 2))
 		fail = 1;
 	if(_test_end_and_midpoints(1025, 0, 0, 0, 0))
 		fail = 1;
-	if(_test_end_and_midpoints(1024, 1.0 / 0, 1.0 / 0, 1, 1.0 / 0))
+	if(_test_end_and_midpoints(1024, HUGE_VAL, HUGE_VAL, 1, HUGE_VAL))
 		fail = 1;
 	if(_test_end_and_midpoints(1024, 6, 2, 0.5, 2))
 		fail = 1;
 	if(_test_end_and_midpoints(1024, 0, 0, 0, 0))
 		fail = 1;
-	if(_test_end_and_midpoints(3, 1.0 / 0, 1.0 / 0, 1, 1.0 / 0))
+	if(_test_end_and_midpoints(3, HUGE_VAL, HUGE_VAL, 1, HUGE_VAL))
 		fail = 1;
 	if(_test_end_and_midpoints(3, 6, 2, 0.5, 2))
 		fail = 1;
 	if(_test_end_and_midpoints(3, 0, 0, 0, 0))
 		fail = 1;
-	if(_test_end_and_midpoints(1, 1.0 / 0, 1.0 / 0, 1, 1.0 / 0))
+	if(_test_end_and_midpoints(1, HUGE_VAL, HUGE_VAL, 1, HUGE_VAL))
 		fail = 1;
 	if(_test_end_and_midpoints(1, 6, 2, 0.5, 2))
 		fail = 1;
@@ -457,15 +457,15 @@ static void display(void)
 	_display(15, 0, 0, 0, 0);
 	_display(14, 6, 2, 0.5, 2);
 	_display(15, 6, 2, 0.5, 2);
-	_display(14, 1.0 / 0, 1.0 / 0, 1, 1.0 / 0);
-	_display(15, 1.0 / 0, 1.0 / 0, 1, 1.0 / 0);
+	_display(14, HUGE_VAL, HUGE_VAL, 1, HUGE_VAL);
+	_display(15, HUGE_VAL, HUGE_VAL, 1, HUGE_VAL);
 	_display(5, 6, 2, 0.5, 2);
 	_display(4, 6, 2, 0.5, 2);
 	_display(3, 6, 2, 0.5, 2);
 	_display(2, 6, 2, 0.5, 2);
 	_display(1, 0, 0, 0, 0);
 	_display(1, 6, 2, 0.5, 2);
-	_display(1, 1.0 / 0, 1.0 / 0, 1.0, 1.0 / 0);
+	_display(1, HUGE_VAL, HUGE_VAL, 1.0, HUGE_VAL);
 }
 
 
