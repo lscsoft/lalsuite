@@ -30,7 +30,7 @@ Generates a parametrized post-Newtonian inspiral waveform.
 \subsubsection*{Usage}
 \begin{verbatim}
 GeneratePPNAmpCorInspiralTest [-m m1 m2] [-r dist] [-i inc phii] [-f fmin fmax]
-                        [-t dt] [-w deltat] [-p order] [-d debuglevel] [-o outfile] [-g fftoutfile]
+                        [-t dt] [-p order] [-d debuglevel] [-o outfile] [-g FF FFTfile]
 \end{verbatim}
 
 ****************************************** </lalLaTeX><lalErrTable> */
@@ -89,15 +89,15 @@ int lalDebugLevel = 1;
 #define M1    (1.4)
 #define M2    (1.4)
 #define DIST  (100000)
-#define INC   (0.0)
+#define INC   (90.0)
 #define PHI   (0.0)
 #define FMIN  (40.0)
-#define FMAX  (1000.0)
-#define DT    (0.0005)
+#define FMAX  (0.0) /* This means Flso */
+#define DT    (0.00048828125) /* 1/2048 */
 #define ORDER (7)
 
 /* Usage format string. */
-#define USAGE "Usage: %s [-g fourierfile REQUIRED] [-m m1 m2] [-r dist] [-i inc phii]\n\t[-f fmin fmax] [-t dt] [-w deltat] [-p order] [-d debuglevel] [-o outfile]\n"
+#define USAGE "Usage: %s [-g FFToutfile] [-m m1 m2] [-r dist] [-i inc phii]\n\t[-f fmin fmax] [-t dt] [-p order] [-d debuglevel] [-o outfile]\n"
 
 /* Maximum output message length. */
 #define MSGLENGTH (1024)
@@ -207,10 +207,7 @@ main(int argc, char **argv)
   REAL4 inc = 0.0, phii = 0.0;  /* inclination and coalescence phase */
   REAL4 fmin = FMIN, fmax=FMAX; /* start and stop frequencies */
   REAL8 dt = DT;                /* sampling interval */
-  REAL8 deltat = 0.0;           /* wave sampling interval */
   INT4 order = ORDER;           /* PN order */
-  UINT4 wlength = 0;
-  UINT4 flength = 0;
 
   /* Other variables. */
   UINT4 i;                      /* index */
@@ -218,8 +215,7 @@ main(int argc, char **argv)
   PPNParamStruc params;         /* input parameters */
   CoherentGW waveform;          /* output waveform */
   FILE *fp;                     /* output file pointer */
-  REAL4 *hoft;
-  static REAL4Vector *htaper1, *htaper2; /* For LALInspiralWaveTaper */ 
+  static REAL4Vector	    *hoft;
   LALDetAMResponseSeries    am_response_series = {NULL,NULL,NULL};
   REAL4TimeSeries           plus_series, cross_series, scalar_series;
   LALTimeIntervalAndNSample time_info;
@@ -231,6 +227,7 @@ main(int argc, char **argv)
   static COMPLEX8FrequencySeries Hf;
   RealFFTPlan    *fwdRealPlan    = NULL;
   RealFFTPlan    *revRealPlan    = NULL;
+  REAL8 t = 0.0; /* time */
   REAL8 f = 0.0; 
 
 
@@ -304,18 +301,6 @@ main(int argc, char **argv)
         return GENERATEPPNINSPIRALTESTC_EARG;
       }
     }
-    /* Parse waveform sampling time option. */
-    else if ( !strcmp( argv[arg], "-w" ) ) {
-      if ( argc > arg + 1 ) {
-	arg++;
-	deltat = atof( argv[arg++] );
-      }else{
-	ERROR( GENERATEPPNINSPIRALTESTC_EARG,
-	       GENERATEPPNINSPIRALTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
-        return GENERATEPPNINSPIRALTESTC_EARG;
-      }
-    }
     /* Parse PN order option. */
     else if ( !strcmp( argv[arg], "-p" ) ) {
       if ( argc > arg + 1 ) {
@@ -340,7 +325,7 @@ main(int argc, char **argv)
         return GENERATEPPNINSPIRALTESTC_EARG;
       }
     }
-    /* EXPANSION Parse output file option. */
+    /* EXPANSION Parse FFToutput file option. */
     else if ( !strcmp( argv[arg], "-g" ) ) {
       if ( argc > arg + 1 ) {
 	arg++;
@@ -376,8 +361,6 @@ main(int argc, char **argv)
   /* Make sure that values won't crash the system or anything. */
   CHECKVAL( order, -1, 8 );
   CHECKVAL( dt, LAL_REAL4_MIN, LAL_REAL4_MAX );
-  CHECKVAL( deltat, 0.0, LAL_REAL4_MAX );
-
 
   /*******************************************************************
    * INPUT SETUP                                                     *
@@ -420,8 +403,8 @@ main(int argc, char **argv)
   SUB( LALGeneratePPNAmpCorInspiral( &stat, &waveform, &params ), &stat );
 #if DEBUG
   fprintf(stderr,"\n  Left GeneratePPNAmpCorInspiral  \n\n");
+  fprintf(stderr," fFinal = %e\n", waveform.f->data->data[waveform.f->data->length - 1]);
 #endif
-
   /**********************************************
    *                                            *
    *   EXPANSION  to produce h(t), H(f)         *
@@ -432,36 +415,12 @@ main(int argc, char **argv)
    *                                                                                                      *
    * The output now has hPlus, hCross instead of aPlus and aCross. It also has h(t), ReH(f) and ImH(f)    *
    ********************************************************************************************************/
- 
-  wlength = waveform.h->data->length; 	
-  flength = waveform.f->data->length;
-
-  fprintf(stderr," fFinal = %e\n", waveform.f->data->data[flength -1]);
-
-  /* ************************************************** */
-  /* Before we do anything let's taper hplus and hcross */
-  /* This is a very inefficient interface for LALInspiralWaveTaper */
-  LALCreateVector(&stat, &htaper1, wlength);
-  LALCreateVector(&stat, &htaper2, wlength);
-
-  for(i = 0; i < wlength; i++){
-    htaper1->data[i] = waveform.h->data->data[2*i];
-    htaper2->data[i] = waveform.h->data->data[2*i+1];
-  }
-
-  LALInspiralWaveTaper(&stat, htaper1, 4, 3);
-  LALInspiralWaveTaper(&stat, htaper2, 4, 3);
-
-  for(i = 0; i < wlength; i++){
-    waveform.h->data->data[2*i] = htaper1->data[i];
-    waveform.h->data->data[2*i+1] = htaper2->data[i];
-  }
 
   /*************************** h(t)*/
- 
-  hoft = malloc(wlength*sizeof(REAL4));
+  LALCreateVector( &stat, &hoft, waveform.h->data->length);
  
   /* fake detector */
+  /* This one is overhead */
   detector.location[0] = 0.;
   detector.location[1] = 0.;
   detector.location[2] = LAL_AWGS84_SI;
@@ -497,7 +456,7 @@ main(int argc, char **argv)
   time_info.epoch.gpsSeconds     = 61094;
   time_info.epoch.gpsNanoSeconds = 640000000;
   time_info.deltaT               = dt;
-  time_info.nSample              = wlength;
+  time_info.nSample              = waveform.h->data->length;
   time_info.accuracy             = LALLEAPSEC_STRICT;
 
   LALComputeDetAMResponseSeries(&stat,
@@ -505,6 +464,7 @@ main(int argc, char **argv)
                                 &det_and_pulsar,
                                 &time_info);
   
+#if DEBUG
   printf("\n  Done computing AM response vectors\n");
   printf("  am_response_series.pPlus->data->length = %d\n",
           am_response_series.pPlus->data->length);
@@ -513,9 +473,7 @@ main(int argc, char **argv)
   printf("  am_response_series.pScalar->data->length = %d\n",
           am_response_series.pScalar->data->length);
 
-#if DEBUG
-  printf("\n Check data length = %d\n\n", wlength);
-  
+  printf("\n Check data length = %d\n\n", waveform.h->data->length);
 
   printf("  TimeSeries data written to files plus_series.txt, ");
   printf("  cross_series.txt, and scalar_series.txt\n");
@@ -525,9 +483,9 @@ main(int argc, char **argv)
   LALSPrintTimeSeries(am_response_series.pScalar, "  scalar_series.txt");
 #endif
 
-  for ( i = 0; i < wlength; i++){
-    hoft[i] = waveform.h->data->data[2*i]*am_response_series.pPlus->data->data[i] +
-              waveform.h->data->data[2*i+1]*am_response_series.pCross->data->data[i];
+  for ( i = 0; i < waveform.h->data->length; i++){
+    hoft->data[i] = waveform.h->data->data[2*i]*am_response_series.pPlus->data->data[i] +
+                        waveform.h->data->data[2*i+1]*am_response_series.pCross->data->data[i];
 #if DEBUG
     if(i <5){
       printf("\n\n  hplus = %e   hcross = %e    pplus = %e    pcross = %e \n", 
@@ -535,38 +493,41 @@ main(int argc, char **argv)
               waveform.h->data->data[2*i+1],
               am_response_series.pPlus->data->data[i],
               am_response_series.pCross->data->data[i]);		  
-      printf("  hoft %e", hoft[i]);
+      printf("  hoft %e", hoft->data[i]);
     } 
 #endif
   }	
+
+  /* Taper hoft */
+  LALInspiralWaveTaper(&stat, hoft, 4, 3);
 
   /*********************** End h(t)*/
   
   /*************************** H(F)*/
 
 
-  LALSCreateVector( &stat, &ht.data, wlength );
-  LALCCreateVector( &stat, &Hf.data, wlength / 2 + 1 );
+  LALSCreateVector( &stat, &ht.data, waveform.h->data->length );
+  LALCCreateVector( &stat, &Hf.data, waveform.h->data->length / 2 + 1 );
   
-  LALCreateForwardRealFFTPlan( &stat, &fwdRealPlan, wlength, 0 );
-  LALCreateReverseRealFFTPlan( &stat, &revRealPlan, wlength, 0 );
+  LALCreateForwardRealFFTPlan( &stat, &fwdRealPlan, waveform.h->data->length, 0 );
+  LALCreateReverseRealFFTPlan( &stat, &revRealPlan, waveform.h->data->length, 0 );
   
   ht.f0 = 0;
   ht.deltaT = dt;
-  for( i = 0; i < wlength ; i++)
-    ht.data->data[i] = hoft[i];
+  for( i = 0; i < waveform.h->data->length ; i++)
+    ht.data->data[i] = hoft->data[i];
     
   LALTimeFreqRealFFT( &stat, &Hf, &ht, fwdRealPlan );
 
 #if DEBUG
-  printf("\n\n h(t)length = %d\n H(F)length = %d\n ", wlength, Hf.data->length);
+  printf("\n\n h(t)length = %d\n H(F)length = %d\n ", waveform.h->data->length, Hf.data->length);
   printf("\n  Writing FFT data to fourier file...\n\n");
 #endif  
 
   if( ( fourier = fopen(fftout, "w")) == NULL)
-      fourier = fopen("fftout", "w");
-  
-  for(i = 0; i < wlength/2+1; i++, f+=Hf.deltaF) 
+    fourier = fopen("fftout", "w");
+
+  for(i = 0; i < waveform.h->data->length/ 2 + 1; i++, f+=Hf.deltaF) 
     fprintf(fourier," %f %10.3e %10.3e\n", f, Hf.data->data[i].re, Hf.data->data[i].im);	  
   fclose(fourier);
 
@@ -587,11 +548,11 @@ main(int argc, char **argv)
 	       params.termDescription );
   INFO( message );
 
-  /* Print coalescence phase.
+  /* Print coalescence phase.*/
   LALSnprintf( message, MSGLENGTH,
 	       "Waveform ends %.3f cycles before coalescence",
 	       -waveform.phi->data->data[waveform.phi->data->length-1]
-	       / (REAL4)( LAL_TWOPI ) ); */
+	       / (REAL4)( LAL_TWOPI ) ); 
   {
     INT4 code = sprintf( message,
 			 "Waveform ends %.3f cycles before coalescence",
@@ -614,12 +575,6 @@ main(int argc, char **argv)
     WARNING( message );
   }
 
-  /* Shift phase. 
-  phii -= waveform.phi->data->data[0];
-  for ( i = 0; i < waveform.phi->data->length; i++ )
-    waveform.phi->data->data[i] += phii;
-    */
-
   /* Write output. */
   if ( outfile ) {
     if ( ( fp = fopen( outfile, "w" ) ) == NULL ) {
@@ -629,41 +584,15 @@ main(int argc, char **argv)
     }
 
     /* t phi f h+ hx ht Hfre Hfim ht? */
-    if ( deltat == 0.0 ) {
-      REAL8 t = 0.0; /* time */
-      for ( i = 0; i < waveform.h->data->length; i++, t += dt )
-	fprintf( fp, "%f %.3e %10.3e %10.3e %10.3e %10.3e %10.3e\n", t,
-	         waveform.phi->data->data[i],
-		 waveform.f->data->data[i],
-		 waveform.h->data->data[2*i],
-		 waveform.h->data->data[2*i+1],
-		 hoft[i],
-		 ht.data->data[i]);
-    }
-
-    /* Waveform: */
-    else {
-    /*REAL8 t = 0.0;
-      REAL8 x = 0.0;
-      REAL8 dx = deltat/dt;
-      REAL8 xMax = waveform.a->data->length - 1;
-      REAL8 *phiData = waveform.phi->data->data;
-      REAL4 *fData = waveform.f->data->data;
-      REAL4 *hData = waveform.h->data->data;
-      for ( ; x < xMax; x += dx, t += deltat ) {
-	UINT4 j = floor( x );
-	REAL8 frac = x - j;
-	REAL8 p = frac*phiData[j+1] + ( 1.0 - frac )*phiData[j];
-	REAL8 f = frac*fData[j+1] + ( 1.0 - frac )*fData[j];
-	REAL8 ap = frac*aData[2*j+2] + ( 1.0 - frac )*aData[2*j];
-	REAL8 ac = frac*aData[2*j+3] + ( 1.0 - frac )*aData[2*j+1];
-
-	fprintf( fp, "%f %.3f %10.3e %10.3e %10.3e\n", t, p, f,
-		 ap*cos( p ), ac*sin( p ) );
-	fflush( fp );
-      }*/
-    }
-
+    for ( i = 0; i < waveform.h->data->length; i++, t += dt )
+      fprintf( fp, "%f %.3e %10.3e %10.3e %10.3e %10.3e %10.3e\n", t,
+                  waveform.phi->data->data[i],
+		  waveform.f->data->data[i],
+		  waveform.h->data->data[2*i],
+		  waveform.h->data->data[2*i+1],
+		  hoft->data[i],
+		  ht.data->data[i]);
+    
     fclose( fp );
   }
 
@@ -681,9 +610,7 @@ main(int argc, char **argv)
   LALFree( waveform.phi );
 
   /* Housekeeping of the extension */
-  free(hoft);
-  LALDestroyVector(&stat, &htaper1);
-  LALDestroyVector(&stat, &htaper2);
+  LALDestroyVector(&stat, &hoft);
   LALSDestroyVector(&stat, &(am_response_series.pPlus->data));
   LALSDestroyVector(&stat, &(am_response_series.pCross->data));
   LALSDestroyVector(&stat, &(am_response_series.pScalar->data));
