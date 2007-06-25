@@ -214,7 +214,6 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   /* Integration parameters. */
   UINT4 i;         /* index over PN terms */
   UINT4 j;         /* index of leading nonzero PN term */
-  UINT4 k;         /* index over harmonics */
   UINT4 n, nMax;   /* index over timesteps, and its maximum + 1 */
   UINT4 nNext;     /* index where next buffer starts */
   REAL8 t, t0, dt; /* dimensionless time, start time, and increment */
@@ -303,7 +302,8 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   for(i = 0; i < 6; i++){
     q[i] = 1.0;
   }
-  
+  q[0] = 1.0;
+
   /* Switch on all harmonics */
   for (i = 0; i < NUMHARMONICS; i++)
     s[i] = 1.0;
@@ -508,13 +508,10 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   /* First, find the normalized start frequency, and the best guess as
      to the start times from each term.  We require the
      frequency to be increasing. */
-  yStart =  params->fStartIn / fFac;
+  yStart =  2.0/((REAL4)(NUMHARMONICS))*params->fStartIn / fFac;
   
-  /* Compute starting frequency for highest harmonic */  
-  yStart = 2.0*yStart/((REAL4)(NUMHARMONICS));
-    
   if ( params->fStopIn == 0.0 )
-    yMax = LAL_REAL4_MAX;
+    yMax = 1.0/(LAL_PI*pow(6.0, 1.5)*mTot*LAL_MTSUN_SI) / fFac;
   else {
     ASSERT( fabs( params->fStopIn ) > params->fStartIn, stat,
 	    GENERATEPPNINSPIRALH_EFBAD, GENERATEPPNINSPIRALH_MSGEFBAD );
@@ -527,7 +524,7 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   }
 
   xStart = pow( yStart/c[j], 1.0/( j + 3.0 ) );
-  xMax = LAL_SQRT1_2;
+  xMax = LAL_SQRT2;
     
   /* The above is exact if the leading-order term is the only one in
    the expansion.  Check to see if there are any other terms. */
@@ -539,17 +536,6 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
     REAL4 xLow, xHigh; /* ultimately these will bracket xStart */
     REAL4 yLow, yHigh; /* the normalized frequency at these times */
 
-    /* If necessary, revise the estimate of the cutoff where we know
-       the PN approximation goes bad, and revise our initial guess to
-       lie well within the valid regime. */
-    for ( i = j + 1; i < MAXORDER; i++ )
-      if ( b[i] != 0 ) {
-        x = pow( fabs( c[j]/c[i] ), 1.0/(REAL4)( i - j ) );
-        if ( x < xMax ){
-	  xMax = x;
-	}
-      } 
-    
     if ( xStart > 0.39*xMax )
       xStart = 0.39*xMax;
 
@@ -579,8 +565,8 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
       FREQ( yHigh, xHigh );
       /* Check for PN breakdown. */
       if ( ( yHigh < yLow ) || ( xHigh > xMax ) ) {
-      	  yHigh = yStart;	      	
-	  xStart = 100000.0;
+        ABORT( stat, GENERATEPPNINSPIRALH_EFBAD,
+	       GENERATEPPNINSPIRALH_MSGEFBAD );
       }
     }
 
@@ -712,7 +698,6 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
      if ( y - yOld > dyMax )
        dyMax = y - yOld;
      *(f++) = fFac*y;
-
 
      /* Compute the phase. */
      if ( b0 )
