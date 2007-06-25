@@ -125,39 +125,6 @@ do {                                                                 \
   (f) *= x3;                                                         \
 } while (0)
 
-/* Definition of a data structure used by FreqDiff() below. */
-typedef struct tagFreqDiffParamStruc {
-  REAL4 *c;   /* PN coefficients of frequency series */
-  BOOLEAN *b; /* whether to include each PN term */
-  REAL4 y0;   /* normalized frequency being sought */
-} FreqDiffParamStruc;
-
-/* A function to compute the difference between the current and
-   requested normalized frequency, used by the root bisector. */
-static void
-FreqDiff( LALStatus *stat, REAL4 *y, REAL4 x, void *p )
-{
-  INT4 i;     /* index over PN coefficients */
-  REAL4 f;    /* normalized frequency */
-  REAL4 *c;   /* PN coefficients of frequency series */
-  BOOLEAN *b; /* whether to include each PN term */
-
-  INITSTATUS( stat, "FreqDiff", GENERATEPPNAMPTRUNCINSPIRALC );
-  ASSERT( p, stat, 1, "Null pointer" );
-
-  c = ( (FreqDiffParamStruc *)p )->c;
-  b = ( (FreqDiffParamStruc *)p )->b;
-  f = 0.0;
-  for ( i = 0; i < MAXORDER; i++ )
-    if ( b[i] ){
-      f += c[i]*pow( x, i + 3.0 );
-      if (i == 6)
-	f += ( -107.0/2240.0*(-8.0)*log(2.0*x))*pow( x, i + 3.0);
-    }	
-  *y = f - ( (FreqDiffParamStruc *)p )->y0;
-  RETURN( stat );
-}
-
 /* Definition of a data buffer list for storing the waveform. */
 typedef struct tagPPNInspiralBuffer {
   REAL4 h[2*BUFFSIZE];               /* polarisation data */
@@ -209,7 +176,6 @@ LALGeneratePPNAmpTruncInspiral( LALStatus     *stat,
   REAL4 sinI, sin2I, sin4I; /* sine of system inclination */
   REAL4 fFac;          /* SI normalization for f and t */
   REAL4 f2aFac;        /* factor multiplying f in amplitude function */
-  REAL4 fthree, ffour, ffive, fsix, fseven; /* powers in f2a to speed up waveform construction */
   REAL4 preFac;        /* Overall prefactor in waveforms */
   REAL4 delta;         /* relative mass difference */
   REAL4 sd, scd;       /* sinI*delta, sd*cosI*/
@@ -217,7 +183,6 @@ LALGeneratePPNAmpTruncInspiral( LALStatus     *stat,
   /* Integration parameters. */
   UINT4 i;         /* index over PN terms */
   UINT4 j;         /* index of leading nonzero PN term */
-  UINT4 k;         /* index over harmonics */
   UINT4 n, nMax;   /* index over timesteps, and its maximum + 1 */
   UINT4 nNext;     /* index where next buffer starts */
   REAL8 t, t0, dt; /* dimensionless time, start time, and increment */
@@ -295,6 +260,7 @@ LALGeneratePPNAmpTruncInspiral( LALStatus     *stat,
     ASSERT( params->ppn->data, stat, GENERATEPPNINSPIRALH_ENUL, 
 		    GENERATEPPNINSPIRALH_MSGENUL );
     j = params->ppn->length;
+  
     if ( j > MAXORDER )
       j = MAXORDER;
     for ( i = 0; i < j; i++ )
@@ -519,6 +485,7 @@ LALGeneratePPNAmpTruncInspiral( LALStatus     *stat,
 	         -55.0/16.0*(-11831.0/9240.0))
 	  + eta*eta*(154565.0/1835008.0 - eta*1179625.0/1769472.0));
   d7 = -c7*5.0/2.0;
+
   e0 = c0*3.0;
   e1 = c1*4.0;
   e2 = c2*5.0;
@@ -553,15 +520,11 @@ LALGeneratePPNAmpTruncInspiral( LALStatus     *stat,
   /* First, find the normalized start frequencies, and the best guess as
      to the start times from each term.  We require the
      frequency to be increasing. */
-  yStart =  params->fStartIn / fFac;
+  yStart =  2.0/((REAL4)(NUMHARMONICS))*params->fStartIn / fFac;
   
-  /* If the line below is commented out the start time will be when the dominant harmonic 
-   * enters the detector bandwidth rather than the highest harmonic */
-  yStart = 2.0*yStart/((REAL4)(NUMHARMONICS));
-    
   /* Compute starting time */ 
   if ( params->fStopIn == 0.0 )
-    yMax = LAL_REAL4_MAX;
+    yMax = 1.0/(LAL_PI*pow(6.0, 1.5)*mTot*LAL_MTSUN_SI) / fFac;
   else {
     ASSERT( fabs( params->fStopIn ) > params->fStartIn, stat,
 	    GENERATEPPNINSPIRALH_EFBAD, GENERATEPPNINSPIRALH_MSGEFBAD );
@@ -592,19 +555,8 @@ LALGeneratePPNAmpTruncInspiral( LALStatus     *stat,
 		  + g5*pow(f2aFac*yStart,5.0/3.0) + g6*pow(f2aFac*yStart,2.0) + g7*pow(f2aFac*yStart,7.0/3.0));  
 
   /*xMax */
-  xMax = LAL_SQRT1_2;
-         
-  /* If necessary, revise the estimate of the cutoff where we know
-     the PN approximation goes bad, and revise our initial guess to
-     lie well within the valid regime. */ 
-  for ( i = j + 1; i < MAXORDER; i++ )
-   if ( b[i] != 0 ) {
-     x = pow( fabs( c[j]/c[i] ), 1.0/(REAL4)( i - j ) );
-     if ( x < xMax ){
-        xMax = x;
-     }
-  } 
-        
+  xMax = LAL_SQRT2;
+
   if ( params->fStopIn < 0.0 ) {
     xMax = LAL_REAL4_MAX;
     tStop = 0.0;
@@ -655,8 +607,6 @@ LALGeneratePPNAmpTruncInspiral( LALStatus     *stat,
   y = yOld = 0.0;
   x = xStart;
 
-
-  
   while ( 1 ) {
     while ( n < nNext ) {
       REAL4 f2a; /* value inside 2/3 power in amplitude functions */
@@ -667,7 +617,7 @@ LALGeneratePPNAmpTruncInspiral( LALStatus     *stat,
       if ( x > xMax ) {
 	params->termCode = GENERATEPPNINSPIRALH_EPNFAIL;
 	params->termDescription = GENERATEPPNINSPIRALH_MSGEPNFAIL;
-	goto terminate;
+	goto terminate; 
       }
 
      /* Compute the normalized frequency.  This also computes the
@@ -801,7 +751,7 @@ LALGeneratePPNAmpTruncInspiral( LALStatus     *stat,
 
      
      n++;
-     t = t0 + n*dt;
+     t = t0 + n*dt;        
      yOld = y;
      if ( t <= tStop ) {
        params->termCode = GENERATEPPNINSPIRALH_ERTOOSMALL;
@@ -842,8 +792,7 @@ LALGeneratePPNAmpTruncInspiral( LALStatus     *stat,
 
  }
 
-
-  /*******************************************************************
+   /*******************************************************************
    * CLEANUP                                                         *
    *******************************************************************/
 
