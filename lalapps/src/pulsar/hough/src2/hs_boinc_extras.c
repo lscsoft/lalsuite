@@ -734,6 +734,15 @@ static void worker (void) {
 
   /* test the debugger (and symbol loading) here if we were told to */
 #ifdef _MSC_VER
+  /* break on file present */
+#define DEBUG_BREAKPOINT_FNAME "EAH_MSC_BREAKPOINT"
+  {
+    FILE*fp_debug;
+    if ((fp_debug=fopen("..\\..\\" DEBUG_BREAKPOINT_FNAME, "r")) || (fp_debug=fopen(DEBUG_BREAKPOINT_FNAME, "r")) ) 
+      DebugBreak();
+  }
+
+  /* break on command-line option present */
   if (breakpoint)
     DebugBreak();
 #endif
@@ -779,8 +788,6 @@ static void worker (void) {
 
   boinc_finish(res);
 } /* worker() */
-
-
 
 
 
