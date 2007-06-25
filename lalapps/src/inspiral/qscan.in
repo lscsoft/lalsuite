@@ -43,12 +43,8 @@ class qscanJob(pipeline.CondorDAGJob):
     self.__universe = "vanilla"
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     self.tag_base = tag_base
-    self.options = options
-    self.okay_to_add_options = True
-#   self.add_arg(gps)
-#   self.add_file_arg(options.config_file)
-#   self.add_file_arg(options.cache_file)
-#   self.add_arg(options.output_path)
+    # self.options = options
+    # self.okay_to_add_options = True
 
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
@@ -56,12 +52,12 @@ class qscanJob(pipeline.CondorDAGJob):
     self.set_stderr_file('logs/qscan-$(macrogpsstarttime)-$(cluster)-$(process).err')
     self.set_sub_file('qscan.sub')
 
-  def add_options(self):
-    if self.okay_to_add_options:
-      self.add_file_arg(self.options.config_file)
-      self.add_file_arg(self.options.cache_file)
-      self.add_arg(self.options.output_path)
-      self.okay_to_add_options = False
+#  def add_options(self):
+#    if self.okay_to_add_options:
+#      self.add_file_arg(self.options.config_file)
+#      self.add_file_arg(self.options.cache_file)
+#      self.add_arg(self.options.output_path)
+#      self.okay_to_add_options = False
 
 
 ##############################################################################
@@ -71,24 +67,36 @@ class qscanNode(pipeline.CondorDAGNode):
   """
   Runs an instance of a qscan job
   """
-  def __init__(self,job,time):
+#  def __init__(self,job,time):
+#    """
+#    job = A CondorDAGJob that can run an instance of qscan.
+#    """
+#    pipeline.CondorDAGNode.__init__(self,job)
+#    self.set_start(time)
+#    job.add_options()
+#  
+#  def set_start(self,time):
+#    """
+#    Set the GPS start time of the analysis node by setting a --gps-start-time
+#    option to the node when it is executed. We override the default method to
+#    cope with the data padding.
+#    @param time: GPS start time of job.
+#    """
+#    self.add_var_arg(str(time))
+#    self.add_macro("macrogpsstarttime",str(time))
+
+  def __init__(self,job,time,cp,options):
     """
-    job = A CondorDAGJob that can run an instance of qscan.
     """
     pipeline.CondorDAGNode.__init__(self,job)
-    self.set_start(time)
-    job.add_options()
-  
-  def set_start(self,time):
-    """
-    Set the GPS start time of the analysis node by setting a --gps-start-time
-    option to the node when it is executed. We override the default method to
-    cope with the data padding.
-    @param time: GPS start time of job.
-    """
     self.add_var_arg(str(time))
     self.add_macro("macrogpsstarttime",str(time))
-
+    self.add_file_arg(options.config_file)
+    if string.strip(cp.get('datafind','site')) == 'H':
+      self.add_file_arg('Hq.cache')
+    if string.strip(cp.get('datafind','site')) == 'L':
+      self.add_file_arg('Lq.cache')
+    self.add_var_arg(options.output_path)
 
 
 ##############################################################################
@@ -110,8 +118,20 @@ parser.add_option("-f", "--config-file",action="store",type="string",\
 parser.add_option("-p", "--log-path",action="store",type="string",\
     metavar=" PATH",help="directory to write condor log file")
 
-parser.add_option("-c", "--cache-file",action="store",type="string",\
-    metavar=" FILE",help="use cache file FILE")
+parser.add_option("-d", "--datafind",action="store_true",\
+    default=False, help="use datafind to get qscan data")
+
+parser.add_option("-m", "--datafind-config",action="store",type="string",\
+    metavar=" FILE", help="use the configuration file FILE for datafind")
+
+# parser.add_option("-l", "--dataset",action="store",type="string",\
+#    metavar=" STRING", help="use data set STRING")
+
+# parser.add_option("-s", "--site",action="store",type="string",\
+#    metavar=" STRING", help="use this site name")
+
+# parser.add_option("-c", "--cache-file",action="store",type="string",\
+#    metavar=" FILE",help="use cache file FILE")
 
 parser.add_option("-g", "--gps-list",action="store",type="string",\
     metavar=" FILE",help="use gps list FILE")
@@ -145,10 +165,30 @@ if not opts.log_path:
   print >> sys.stderr, "Use --log-path PATH to specify a location."
   sys.exit(1)
 
-if not opts.cache_file:
-  print >> sys.stderr, "No cache specified."
-  print >> sys.stderr, "Use --cache-file FILE to specify a cache file."
+#if not opts.cache_file:
+#  print >> sys.stderr, "No cache specified"
+#  print >> sys.stderr, "Use --cache-file FILE to specify a cache file"
+#  sys.exit(1)
+
+#if not opts.datafind:
+#  print >> sys.stderr, "The datafind option is not specified"
+#  print >> sys.stderr, "Use --datafind to use this option to find the data"
+#  sys.exit(1)
+
+if not opts.datafind_config:
+  print >> sys.stderr, "No configuration file specified for the datafind function"
+  print >> sys.stderr, "Use --datafind-config to specify the configuration file"
   sys.exit(1)
+
+#if opts.datafind and not opts.dataset:
+#  print >> sys.stderr, "The dataset is not specified"
+#  print >> sys.stderr, "Use --dataset STRING to specify a dataset (example: RDS_R_L1)"
+#  sys.exit(1)
+
+#if opts.datafind and not opts.site:
+#  print >> sys.stderr, "The site is not specified"
+#  print >> sys.stderr, "Use --site STRING to specify a site (example: H,L, or all)"
+#  sys.exit(1)
 
 if not opts.gps_list:
   print >> sys.stderr, "No gps list specified."
@@ -164,6 +204,12 @@ if not opts.executable:
   print >> sys.stderr, "No executable specified."
   print >> sys.stderr, "Use --executable PATH to specify an executable."
   sys.exit(1)
+
+
+## READ IN THE CONFIG (.ini) FILE
+cp = ConfigParser.ConfigParser()
+cp.read(opts.datafind_config)
+
 
 GPSfile = open(opts.gps_list,"r")
 GPStimes = []
@@ -199,11 +245,63 @@ dag = pipeline.CondorDAG(logfile)
 dag.set_dag_file( basename )
 subsuffix = '.sub'
 
+################ DO DATA FINDING ##############################################
+if opts.datafind:
+  GPStime.sort()
+  startTime = int( GPStime[0] - eval(string.strip(cp.get('datafind','window')))/2 )   
+  endTime =  int( GPStime[-1] + eval(string.strip(cp.get('datafind','window')))/2 ) + 1
+
+  if string.strip(cp.get('datafind','site')) == 'H':
+    command = string.strip(cp.get('datafind','executable')) + \
+	    " --observatory=H" + \
+	    " --type=" + string.strip(cp.get('datafind','dataset')) + \
+	    " --gps-start-time=" + str(startTime) + \
+	    " --gps-end-time=" + str(endTime)+ \
+	    " --url-type=file" + " --lal-cache > " + \
+	    "Hq.cache.tmp"
+
+    print "....Finding Qscan LHO data ["+str(startTime)+"-"+str(endTime)+"]\n"
+    os.system(command)
+    Hq = open('Hq.cache.tmp','r')
+    lines = Hq.readlines()
+    Hqout = open('Hq.cache','w')
+    for line in lines:
+      total = line.replace("file://localhost","").split("/")[0:-1]
+      first = total[0].split()
+      first.insert(-1,str(eval(first[-1]) + eval(first[-2])))
+      total[0] = " ".join(first)
+      total[0] += " "
+      Hqout.write("/".join(total)+'\n')
+
+  if string.strip(cp.get('datafind','site')) == 'L':
+    command = string.strip(cp.get('datafind','executable')) + \
+	    " --observatory=L" + \
+	    " --type=" + string.strip(cp.get('datafind','dataset')) + \
+	    " --gps-start-time=" + str(startTime) + \
+	    " --gps-end-time=" + str(endTime)+ \
+	    " --url-type=file" + " --lal-cache > " + \
+	    "Lq.cache.tmp"
+
+    print "....Finding Qscan LLO data ["+str(startTime)+"-"+str(endTime)+"]\n"
+    os.system(command)
+    Lq = open('Lq.cache.tmp','r')
+    lines = Lq.readlines()
+    Lqout = open('Lq.cache','w')
+    for line in lines:
+      total = line.replace("file://localhost","").split("/")[0:-1]
+      first = total[0].split()
+      first.insert(-1,str(eval(first[-1]) + eval(first[-2])))
+      total[0] = " ".join(first)
+      total[0] += " "
+      Lqout.write("/".join(total)+'\n')
+
+
 ##############################################################################
 # create the Condor jobs that will be used in the DAG
-qscan_job = qscanJob(opts,  tag_base='QSCAN')
+qscan_job = qscanJob(opts)
+
 for time in GPStime:
-  dag.add_node(qscanNode(qscan_job,time))
+  dag.add_node(qscanNode(qscan_job,time,cp,opts))
 
 dag.write_sub_files()
 dag.write_dag()
