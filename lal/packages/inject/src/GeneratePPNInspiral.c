@@ -532,7 +532,7 @@ LALGeneratePPNInspiral( LALStatus     *stat,
 	   GENERATEPPNINSPIRALH_MSGEPBAD );
   }
   xStart = pow( yStart/c[j], 1.0/( j + 3.0 ) );
-  xMax = LAL_SQRT1_2;
+  xMax = LAL_SQRT2;
 
   /* The above is exact if the leading-order term is the only one in
      the expansion.  Check to see if there are any other terms. */
