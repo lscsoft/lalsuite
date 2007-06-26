@@ -96,21 +96,15 @@ this dialog at a more concrete level, and to start incorporating
 numerical relativity results within various LSC data analysis
 software.
 
-The aim of this document is to spell out the formats for data exchange
+The aim of this document is to suggest formats for data exchange
 between numerical relativists and the LSC.  It is clear that there are
 still outstanding conceptual and numerical issues remaining in these
 numerical simulations; the goal of this document is not to resolve
-them.  The goal is twofold: (i) To spell out the technical details of
-the waveform data so that they can be incorporated seamlessly within
-the data analysis software currently being developed within the LSC,
-and (ii) to facilitate the exchange of information between the
-numerical relativity and data analysis groups.  We do hope that this
-closer interaction will eventually help in resolving some of the open
-issues which could be relevant for the detection of gravitational
-radiation.
-
-The relevant software development is being carried out as part of the
-LSC Algorithms Library \footnote{Available from
+them.  The goal is primarily to spell out the technical details of the
+waveform data so that they can be incorporated seamlessly within the
+data analysis software currently being developed within the LSC.  The
+relevant software development is being carried out as part of the LSC
+Algorithms Library \footnote{Available from
   \texttt{http://www.lsc-group.phys.uwm.edu/daswg/projects/lal.html}}
 which contains core routines for gravitational wave data analysis
 written in ANSI C89, and is distributed under the GNU General Public
@@ -122,11 +116,9 @@ The remainder of this document is structured as follows.  Section
 \ref{sec:multipoles} describes our conventions for decomposing the
 gravitational wave data in terms of spherical harmonics, section
 \ref{sec:format} specifies the data formats for binary black hole
-simulations, section \ref{sec:openissues} enumerates some open issues in
-binary black hole simulations which could be topics of further
-discussion between data analysts and numerical relativists, and finally
-section \ref{sec:authorship} discusses the authorship and other issues
-related to the use of numerical relativity data.
+simulations, and finally section \ref{sec:openissues} enumerates some
+open issues in binary black hole simulations which could be topics of
+further discussion between data analysts and numerical relativists.
 
 
 
@@ -196,7 +188,6 @@ transverse traceless basis tensors is}
     -\,&\xhat&\,\sin\phi \,&+&\, \yhat\,\cos\phi\,.
   \end{alignat}
 \end{subequations}
-Note in particular that $\phihat$ is perpendicular to $\zhat$.
 In the transverse traceless gauge, $h_{ij}$ is has two independent
 polarizations 
 \begin{equation}
@@ -283,15 +274,7 @@ $h_\times^{(\ell m)}$ as
   rh_+^{(\ell m)}(t) -irh_\times^{(\ell m)}(t) := MH_{\ell m}(t)\,.  
 \end{equation}
 It is these modes $rh_{+,\times}^{(\ell m)}$ of $rh_+$ and $rh_\times$
-that must be provided as functions of time in units of $M$.
-% The waveforms are easily reconstructed
-% from the modes:
-% \begin{equation}
-%   \label{eq:8}
-%   rh_+(r,\theta,\phi) - i rh_\times(x,\theta,\phi)
-%   = \sum_{lm} \Ytwo_{lm}(\theta,\phi)\left[ H_+^{(\ell m)}(x) - i
-%   H_\times^{(\ell m)}\right]
-% \end{equation}
+that we suggest to be provided as functions of time in units of $M$.
 
 
 
@@ -303,54 +286,55 @@ that must be provided as functions of time in units of $M$.
 Let us now specialize to simulations of binary black hole coalescence.
 A numerical relativity simulation has many parameters which need to be
 specified, and many of which may not be directly relevant to the data
-analysis problem.  We need to specify which parameters of the numerical
-simulation will be significantly useful for the astrophysics of a binary
-black hole system in a circular orbit.  For our purposes, a single
-numerical waveform is defined by at least seven parameters: the mass
-ratio $q = M_1/M_2$, and the three components of the individual spins
-$\vec{S}_1$ and $\vec{S}_2$.  These parameters will be referred to as
-the ``metadata'' for a waveform; more parameters can be added as
-necessary. We use the convention that $M_1$ denotes the larger of the
-two masses so that $q\geq 1$.  The choice of precisely how $M_1$, $M_2$
-and the spins are calculated is left up to the individual numerical
-relativity groups.  
+analysis problem.  We need to specify which parameters of the
+numerical simulation will be significantly useful for the astrophysics
+of a binary black hole system in a circular orbit.  For our purposes,
+a single numerical waveform is defined by at least seven parameters:
+the mass ratio $q = M_1/M_2$, and the three components of the
+individual spins $\vec{S}_1$ and $\vec{S}_2$.  These parameters will
+be referred to as the ``metadata'' for a waveform; more parameters can
+be added as necessary. We use the convention that $M_1$ denotes the
+larger of the two masses so that $q\geq 1$.  The choice of precisely
+how $M_1$, $M_2$ and the spins are calculated is left up to the
+individual numerical relativity groups.  We suggest the data for a
+single mode $rh_{+,\times}^{(\ell m)}$ to be written as a plain text
+file in three columns for the time $t$, $rh_+^{(\ell m)}$ and
+$rh_\times^{(\ell m)}$ respectively.  For a given simulation,
+numerical groups may wish to decide the maximum value of $\ell =
+\ell_{\rm max}$ to which they will provide the waveform. From the data
+analysis standpoint, it is most useful that for every $\ell <=
+\ell_{\rm max}$, waveforms are provided for all values of $m = -\ell,
+\ldots, \ell - 1, \ell$, irrespective of any symmetries that may be
+present in the simulation.  If there are certain modes which, due to
+small amplitude, cannot be accurately determined, these can be set to
+zero.  Numerical groups often extract the waveform from the simulation
+at several different radii and then use Richardson extrapolation to
+determine the most accurate waveform.  For data analysis purposes, we
+do not consider waveforms from different radii as distinct, and would
+prefer only the most accurate determination of the waveform from any
+given simulation.
 
-The data for a single mode $rh_{+,\times}^{(\ell m)}$ is to be written
-as a plain text file in three columns for the time $t$, $rh_+^{(\ell
-m)}$ and $rh_\times^{(\ell m)}$ respectively.  For a given simulation,
-we leave it to the numerical groups to decide the maximum value of $\ell
-= \ell_{max}$ to which they will provide the waveform.  We require that
-for every $\ell \le \ell_{max}$ they provide the waveform for all values
-of $m=-\ell,\ldots,\ell-1,\ell$.  This must be done irrespective of any
-symmetries that may be present in the simulation.  If there are certain
-modes which, due to small amplitude, cannot be accurately determined,
-these can be set to zero.  Numerical groups often extract the waveform
-from the simulation at several different radii and then use Richardson
-extrapolation to determine the most accurate waveform.  We would not
-consider waveforms from different radii as distinct, and would prefer
-only the most accurate determination of the waveform from any given
-simulation.
+It is natural to use the total mass $M$ of the binary as the unit for
+the time and strain columns.  However, there can be subtleties in the
+choice of $M$.  It could be the ADM mass of the spacetime, an
+approximation to the ADM mass measured at the wave-extraction sphere,
+or it could be the sum of the individual masses.  Again, the choice is
+left up to the numerical relativity group which produced the waveform,
+and it depends on whatever best represents the time coordinate and the
+scale of $h_{ij}$ in the particular simulation.
 
-The time and strain columns must be in units of the total mass $M$ of
-the binary.  There can be subtleties in the choice of $M$.  It could be
-the ADM mass of the spacetime, an approximation to the ADM mass measured
-at the wave-extraction sphere, or it could be the sum of the individual
-masses.  Again, the choice is left up to the numerical relativity group
-which produced the waveform.  It should be whatever best represents the
-time coordinate and the scale of $h_{ij}$ in the particular simulation.
-
-For data analysis purposes, the sampling in time must be uniform in
-units of $M$.  If the result of a simulation or set of simulations
-yields a waveform sampled non-uniformly, we ask that the NR group
-interpolate to give a uniformly sampled waveform.  A sampling rate of
-$1\times M$ is usually sufficient for our purposes, but this is not a
-requirement.  The strain multiplied by the distance will also be in
+For data analysis purposes, we would prefer the sampling in time to be
+uniform.  If the result of a simulation or set of simulations yields a
+waveform sampled non-uniformly, we ask that the NR group performs an
+interpolation to give a uniformly sampled waveform.  A sampling rate
+of $1\times M$ is usually sufficient for our purposes, but this is not
+a requirement.  The strain multiplied by the distance will also be in
 units of the total mass $M$ of the binary.  There can be any number of
 comment lines at the top of the file and it is envisioned that the
 details of the simulation and the mode contained in the file will be
 held in the comment lines.
 
-This is an example of a data file:
+This could be an example of a data file:
 
 \begin{verbatim}
 # numerical waveform from ....
@@ -378,12 +362,12 @@ This is an example of a data file:
 \end{verbatim}
 
 The metadata information for the different datafiles will be stored in a
-separate file.  This metadata file must contain (at least) two sections,
+separate file.  This metadata can contain (at least) two sections,
 one for the simulation metadata, and the other listing the filenames
 which correspond to the various $(\ell,m)$ modes of the waveform.  There
 will be a separate metadata file for each waveform.
 
-This is an example of a metadata file:
+This could be an example of a metadata file:
 
 \begin{verbatim}
 [metadata]
@@ -406,31 +390,31 @@ spin2z = 0.0
 2,-2 = example1_2-2.dat
 \end{verbatim}
 
-It would be desirable if the waveform data are reproducible at
-a later date if necessary.  For this purpose, the numerical relativity
-groups are required to submit a file with the parameters of the
-simulation.  There is no requirement on the format of this file.  
-The \texttt{simulation-details} line will contain the name of the file
+It would be desirable if the waveform data are reproducible at a later
+date if necessary.  For this purpose, the numerical relativity groups
+can submit a file with the parameters of the simulation.  There is no
+requirement on the format of this file.  The
+\texttt{simulation-details} line will contain the name of the file
 describing the parameters used to describe the NR simulation.  In
 addition, we ask for the numerical relativity groups to provide a
 \texttt{nr-group} name and a contact \texttt{email}.
 
-The remainder of the entries in the \texttt{[metadata]} section describe
-the physical parameters of the waveform.  To begin with, for
+The remainder of the entries in the \texttt{[metadata]} section
+describe the physical parameters of the waveform.  To begin with, for
 non-spinning waveforms, the only required parameter is the mass ratio.
 For waveforms with spin, the initial spins of the two black holes (in
 the co-ordinates discussed in the previous section) must also be
-specified. It should be emphasized that when necessary, we will add more
+specified. We emphasize that whenever necessary, we will add more
 parameters such as, for example, the eccentricity of the orbit. Lines
 starting with a $\%$ or $\#$ will be taken to be comment lines; there
 can be an arbitrary number of comment lines.
 
 The section \texttt{[ht-data]} contains one line for each $(\ell,m)$
 mode.  These give the file names containing the corresponding modes.
-The filenames must give the relative paths to the data files starting
-from the location of the metadata file.  Thus, if the datafiles are
-stored in a sub-directory called \texttt{data}, then the metadata file
-would read:
+The filenames can be specified as relative paths to the data files
+starting from the location of the metadata file.  Thus, if the
+datafiles are stored in a sub-directory called \texttt{data}, then the
+metadata file would read:
 \begin{verbatim}
 [ht-data]
 2,2  = data/example1_22.dat
@@ -446,7 +430,7 @@ and imaginary parts of $\Psi_4$ also be provided in the same format as
 for the waveforms, i.e. three columns which are respectively time, real
 part of $\Psi_4$ and imaginary part of $\Psi_4$.  Again there can be an
 arbitrary number of comment lines, but in this case there does not need
-to be a metadata file.  This data should be referenced in the metadata
+to be a metadata file.  This data can be referenced in the metadata
 file in an additional section:
 
 \begin{verbatim}
@@ -494,7 +478,7 @@ angular momentum.
   but it can be ambiguous in many situations, especially when the spin
   of the black holes causes the orbital plane to precess significantly.
   In such cases, it is left to the numerical relativity group to decide
-  what the best choice of the ``orbital plane'' should be. 
+  what the best choice of the ``orbital plane'' is. 
 \end{itemize}
 What is the right choice for parameters such as the individual masses,
 the total mass and the spins?  Here are some possibilities:
@@ -515,8 +499,8 @@ the total mass and the spins?  Here are some possibilities:
   where $J$ is an appropriately defined spin for the individual black
   holes.  The calculation of $J$ is again left up to the numerical
   relativity group.
-\item For the total mass $M$, should we use the sum of individual
-  horizon masses (including the effect of angular momentum), or should
+\item For the total mass $M$, is it better to use the sum of individual
+  horizon masses (including the effect of angular momentum), or could
   it be the total ADM mass or rather, an approximation to the ADM mass
   calculated at the sphere where the waves are extracted.  This could
   be specified in the metadata file.  For example, additional lines
@@ -527,9 +511,9 @@ the total mass and the spins?  Here are some possibilities:
 \end{itemize}
 What is the best choice for the radiation extraction sphere?
 \begin{itemize}
-\item How far away should the sphere be?  Is it sufficient to take the
-  sphere to be a coordinate sphere, or do we need some further gauge
-  conditions?
+\item How far away do we need to take the sphere?  Is it sufficient to
+  take the sphere to be a coordinate sphere, or do we need some
+  further gauge conditions?
 \end{itemize}
 How important is the choice of initial data?
 \begin{itemize}
@@ -548,44 +532,5 @@ How large are the error-bars on the numerical results?
 Numerical relativity groups are welcome to raise any other issues that
 might be important.
 
-
-\section{Exchange of Waveform Data}
-\label{sec:authorship}
-
-As well as laying down technical standards for data exchange, this
-document is intended to foster communication and collaboration between
-the LIGO Scientific Collaboration and the numerical relativity
-community. The LSC appreciates the large amount of effort that the
-numerical community has put into generating waveforms and looks
-forward to closer ties between experimentalists, data analysis and
-numerical source modelers to further the science of gravitational wave
-astronomy. In this section, we touch upon issues related to the use of
-numerical relativity data by the LSC. Together with the numerical
-community, the LSC plans to evolve a policy on the use and publication
-of results from numerical groups to ensure that: (i) appropriate
-credit is given for use of any numerical data, (ii) the providers of
-the data consent to the way in which the data is being used, and (iii)
-as far as possible, all numerical relativity groups are treated
-equally and fairly.
-
-One immediatly forseeable use of numerical relativity waveforms is to inject
-them into LIGO, VIRGO, GEO, or simulated data in order to test existing LSC
-data analysis algorithms and pipelines.  Numerical groups may not wish to be
-directly involved in these data analysis activities themselves, however.  To
-allow such a method of collaboration, the LSC proposes to set up a web page
-where waveform data can be uploaded in the format described in this document.
-Access to this web page will be open to any numerical group that wishes to
-provide waveform data to the LSC for the purpose of data analysis pipeline
-development. Data submitted to the LSC in this manner will be tagged with the
-name of the group and contact information, and remains the intellectual
-property of the group which generated the data. Prior to public release of any
-results derived from data provided by numerical relativity groups, the LSC
-will contact the group for technical review and approval.  Submission of data
-to the LSC in such a manner does not preclude use of the data by numerical
-groups and their collaborators for other purposes.
-
-The LSC looks forward to deeper collaborations with the numerical relativity
-community and it is hoped that this document will provide a suitable starting
-point.  
 
 \end{document}
