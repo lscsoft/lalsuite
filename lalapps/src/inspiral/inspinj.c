@@ -72,6 +72,8 @@ char *sourceFileName = NULL;
 char *outputFileName = NULL;
 char *exttrigFileName = NULL;
 
+UINT4 outCompress = 0;
+
 float mwLuminosity = -1;
 REAL4 dmin= -1;
 REAL4 dmax= -1;
@@ -583,6 +585,7 @@ int main( int argc, char *argv[] )
     {"output",                  required_argument, 0,                'P'},
     {"enable-spin",             no_argument,       &spinInjections,    1},
     {"disable-spin",            no_argument,       &spinInjections,    0},
+    {"write-compress",          no_argument,       &outCompress,       1},
     {0, 0, 0, 0}
   };
   int c;
@@ -1357,12 +1360,21 @@ int main( int argc, char *argv[] )
       exit( 1 );
     }
   }
-   
-  if ( userTag )
+
+  if ( userTag && outCompress )
+  {
+    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml.gz",
+        rand_seed, userTag, gpsStartTime, gpsDuration );
+  }
+  else if ( userTag && !outCompress )
   {
     LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
-		 rand_seed, userTag, gpsStartTime.gpsSeconds, 
-		 gpsDuration);
+        rand_seed, userTag, gpsStartTime, gpsDuration );
+  }
+  else if ( !userTag && outCompress )
+  {
+    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml.gz",
+        rand_seed, gpsStartTime, gpsDuration );
   }
   else
   {
@@ -1483,7 +1495,7 @@ int main( int argc, char *argv[] )
   memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
 
  
-  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlfp, fname), &status );
+  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlfp, fname ), &status );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
 			    &accuracy ), &status );
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, process_table ), 

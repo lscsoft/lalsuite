@@ -246,6 +246,7 @@ UINT4 ccFlag = 0;
 CHAR  *userTag          = NULL;         /* string the user can tag with */
 CHAR  *ifoTag           = NULL;         /* string to tag parent IFOs    */
 CHAR   fileName[FILENAME_MAX];          /* name of output files         */
+UINT4  outCompress      = 0;
 INT4   maximizationInterval = 0;        /* Max over template in this    */ 
                                         /* maximizationInterval Nanosec */ 
                                         /* interval                     */
@@ -2662,15 +2663,30 @@ int main( int argc, char *argv[] )
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
   if ( outputPath[0] )
   {
-    LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml", 
-        outputPath, fileName );
+    if ( outCompress )
+    {
+      LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml.gz",
+          outputPath, fileName );
+    }
+    else
+    {
+      LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml",
+          outputPath, fileName );
+    }
   }
   else
   {
-    LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s.xml", fileName );
+    if ( outCompress )
+    {
+      LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s.xml.gz", fileName );
+    }
+     else
+    {
+      LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s.xml", fileName );
+    }
   }
   if ( vrbflg ) fprintf( stdout, "writing XML data to %s...\n", fname );
-  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname), &status );
+  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname ), &status );
 
   /* write the process table */
   if ( vrbflg ) fprintf( stdout, "  process table...\n" );
@@ -3069,6 +3085,7 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --enable-output              write the results to a LIGO LW XML file\n"\
 "  --output-mask MASK           write the output sngl_inspiral table\n"\
 "                                 with optional MASK (bns|bcv)\n"\
+"  --write-compress             write a compressed xml file\n"\
 "  --disable-output             do not write LIGO LW XML output file\n"\
 "  --trig-start-time SEC        only output triggers after GPS time SEC\n"\
 "  --trig-end-time SEC          only output triggers before GPS time SEC\n"\
@@ -3110,6 +3127,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     /* these options set a flag */
     {"verbose",                 no_argument,       &vrbflg,           1 },
     {"enable-output",           no_argument,       &enableOutput,     1 },
+    {"write-compress",          no_argument,       &outCompress,      1 },
     {"disable-output",          no_argument,       &enableOutput,     0 },
     {"disable-high-pass",       no_argument,       &highPass,         0 },
     {"inject-overhead",         no_argument,       &injectOverhead,   1 },
