@@ -46,6 +46,8 @@
 /* 01/09/06 gam; Add make-tmp-file, -Z option; write SFT to .*.tmp file, then move to final file name. */
 /* 01/10/07 gam; Add -u --frame-struct-type option; specified the input data type in the frames (default ADC_REAL4) */
 /* 01/14/07 gam; Add -i --ifo option to specify the ifo independent of the channel name which can begin with H0, L0, or G0. */
+/* 06/26/07 gam; Write all command line arguments to commentField of version 2 SFTs, based on /lalapps/src/calibration/ComputeStrainDriver.c */
+/* 06/26/07 gam; Use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values, based on sftlib/SFTvalidate.c */
 
 #include <config.h>
 #if !defined HAVE_LIBGSL || !defined HAVE_LIBLALFRAME
@@ -95,6 +97,9 @@ extern int optind, opterr, optopt;
 /* print the first NUMTOPRINT, middle NUMTOPRINT, and last NUMTOPRINT input/ouput data at various stages */
 #define PRINTEXAMPLEDATA 0
 #define NUMTOPRINT       2
+
+/* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
+#define CHECKFORINFINITEANDNANS 1
 
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
@@ -179,6 +184,7 @@ COMPLEX16Vector *fftDataDouble = NULL;
 REAL4FFTPlan *fftPlanSingle;           /* 11/19/05 gam; fft plan and data container, single precision case */
 COMPLEX8Vector *fftDataSingle = NULL;
 
+CHAR allargs[16384]; /* 06/26/07 gam; copy all command line args into commentField, based on /lalapps/src/calibration/ComputeStrainDriver.c */
 /***************************************************************************/
 
 /* FUNCTION PROTOTYPES */
@@ -500,6 +506,7 @@ int main(int argc,char *argv[])
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 {
   INT4 errflg=0;
+  INT4 i;              /* 06/26/07 gam */
   struct option long_options[] = {
     {"high-pass-freq",       required_argument, NULL,          'f'},
     {"sft-duration",         required_argument, NULL,          't'},
@@ -547,6 +554,14 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->useSingle = 0; /* 11/19/05 gam; default is to use double precision, not single. */
   CLA->frameStructType=NULL; /* 01/10/07 gam */
 
+  strcat(allargs, "Command line args: "); /* 06/26/07 gam; copy all command line args into commentField */
+  for(i = 0; i < argc; i++)
+  {
+      strcat(allargs,argv[i]);
+      strcat(allargs, " ");
+  }
+  CLA->commentField=allargs;
+      
   /* Scan through list of command line arguments */
   while ( 1 )
   {
@@ -610,7 +625,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     case 'c':
       /* 12/28/05 gam; comment for version 2 SFTs */
-      CLA->commentField=optarg;
+      /* CLA->commentField=optarg; */ /* 06/26/07 gam */
+      strcat(CLA->commentField, " Additional comment: "); /* 06/26/07 gam; copy all command line args into commentField */      
+      strcat(CLA->commentField,optarg);
       break;
     case 'X':
       /* 12/28/05 gam; misc. part of the SFT description field in the filename (also used if makeGPSDirs > 0) */
@@ -1550,6 +1567,13 @@ int WriteSFT(struct CommandLineArgsTag CLA)
 	* fftDataSingle->data[k+firstbin].re;
       ipw=((REAL4)(((REAL8)DF)/(0.5*(REAL8)(1/dataSingle.deltaT))))
 	* fftDataSingle->data[k+firstbin].im;
+      /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
+      #if CHECKFORINFINITEANDNANS
+        if (!finite(rpw) || !finite(ipw)) {
+          fprintf(stderr, "Infinite or NaN data at freq bin %d.\n", k);
+          return 7;
+        }
+      #endif
       errorcode1=fwrite((void*)&rpw, sizeof(REAL4),1,fpsft);
       errorcode2=fwrite((void*)&ipw, sizeof(REAL4),1,fpsft);
     }
@@ -1569,6 +1593,13 @@ int WriteSFT(struct CommandLineArgsTag CLA)
 	* fftDataDouble->data[k+firstbin].re;
       ipw=(((REAL8)DF)/(0.5*(REAL8)(1/dataDouble.deltaT))) 
 	* fftDataDouble->data[k+firstbin].im;
+      /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
+      #if CHECKFORINFINITEANDNANS
+        if (!finite(rpw) || !finite(ipw)) {
+          fprintf(stderr, "Infinite or NaN data at freq bin %d.\n", k);
+          return 7;
+        }
+      #endif
       errorcode1=fwrite((void*)&rpw, sizeof(REAL4),1,fpsft);
       errorcode2=fwrite((void*)&ipw, sizeof(REAL4),1,fpsft);
     }
@@ -1673,6 +1704,13 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
     {
       oneSFT->data->data[k].re = singleDeltaT*fftDataSingle->data[k+firstbin].re;
       oneSFT->data->data[k].im = singleDeltaT*fftDataSingle->data[k+firstbin].im;
+      /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
+      #if CHECKFORINFINITEANDNANS
+        if (!finite(oneSFT->data->data[k].re) || !finite(oneSFT->data->data[k].im)) {
+          fprintf(stderr, "Infinite or NaN data at freq bin %d.\n", k);
+          return 7;
+        }
+      #endif      
     }
     #if PRINTEXAMPLEDATA
         printf("\nExample real and imaginary SFT values going to file from fftDataSingle in WriteVersion2SFT:\n"); printExampleVersion2SFTDataGoingToFile(CLA,oneSFT);
@@ -1688,6 +1726,13 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
     {
       oneSFT->data->data[k].re = doubleDeltaT*fftDataDouble->data[k+firstbin].re;
       oneSFT->data->data[k].im = doubleDeltaT*fftDataDouble->data[k+firstbin].im;
+      /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
+      #if CHECKFORINFINITEANDNANS
+        if (!finite(oneSFT->data->data[k].re) || !finite(oneSFT->data->data[k].im)) {
+          fprintf(stderr, "Infinite or NaN data at freq bin %d.\n", k);
+          return 7;
+        }
+      #endif
     }
     #if PRINTEXAMPLEDATA
         printf("\nExample real and imaginary SFT values going to file from fftDataDouble in WriteVersion2SFT:\n"); printExampleVersion2SFTDataGoingToFile(CLA,oneSFT);
