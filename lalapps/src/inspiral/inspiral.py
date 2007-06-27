@@ -26,7 +26,7 @@ class TmpltBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   runs in the universe specfied in the ini file. The path to the executable
   is determined from the ini file.
   """
-  def __init__(self,cp,dax=False,tag_base='TMPLTBANK'):
+  def __init__(self,cp,dax=False,tag_base='TMPLTBANK',doZip=False):
     """
     cp = ConfigParser object from which options are read.
     """
@@ -37,7 +37,7 @@ class TmpltBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.tag_base = tag_base
 
     for sec in ['data','tmpltbank']:
-      self.add_ini_opts(cp,sec)
+      self.add_ini_opts(cp,sec,doZip)
   
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
@@ -54,7 +54,7 @@ class InspInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   job runs in the universe specified in the ini file. The path to the
   executable is determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp,dax=False,doZip=False):
     """
     cp = ConfigParser object from which options are read.
     """
@@ -66,7 +66,7 @@ class InspInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.__listNodes=[]
 
     for sec in ['inspinj']:
-      self.add_ini_opts(cp,sec)
+      self.add_ini_opts(cp,sec,doZip)
 
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
@@ -169,7 +169,7 @@ class InspiralJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   runs in the universe specfied in the ini file. The path to the executable
   is determined from the ini file.
   """
-  def __init__(self,cp,dax=False,tag_base='INSPIRAL'):
+  def __init__(self,cp,dax=False,tag_base='INSPIRAL',doZip=False):
     """
     cp = ConfigParser object from which options are read.
     """
@@ -180,7 +180,7 @@ class InspiralJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.tag_base = tag_base
 
     for sec in ['data','inspiral']:
-      self.add_ini_opts(cp,sec)
+      self.add_ini_opts(cp,sec,doZip)
 
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
@@ -197,7 +197,7 @@ class TrigToTmpltJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   always runs in the scheduler universe. The path to the executable is
   determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp,dax=False,doZip=False):
     """
     cp = ConfigParser object from which options are read.
     """
@@ -207,7 +207,7 @@ class TrigToTmpltJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     pipeline.AnalysisJob.__init__(self,cp,dax)
     
     for sec in ['trigtotmplt']:
-      self.add_ini_opts(cp,sec)
+      self.add_ini_opts(cp,sec,doZip)
 
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
     
@@ -223,7 +223,7 @@ class IncaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   the job are directed to the logs directory.  The path to the executable is 
   determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp,dax=False,doZip=False):
     """
     cp = ConfigParser object from which options are read.
     """
@@ -233,7 +233,7 @@ class IncaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     pipeline.AnalysisJob.__init__(self,cp,dax)
     
     for sec in ['inca']:
-      self.add_ini_opts(cp,sec)
+      self.add_ini_opts(cp,sec,doZip)
 
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
@@ -249,7 +249,7 @@ class ThincaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   the job are directed to the logs directory.  The path to the executable is 
   determined from the ini file.
   """
-  def __init__(self,cp,dax=False,tag_base='THINCA'):
+  def __init__(self,cp,dax=False,tag_base='THINCA',doZip=False):
     """
     cp = ConfigParser object from which options are read.
     """
@@ -260,7 +260,7 @@ class ThincaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.tag_base = tag_base
     
     for sec in ['thinca']:
-      self.add_ini_opts(cp,sec)
+      self.add_ini_opts(cp,sec,doZip)
 
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
@@ -317,7 +317,7 @@ class CohBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   stderr from the job are directed to the logs directory.  The path to the
   executable is determined from the ini file.
   """
-  def __init__(self,cp):
+  def __init__(self,cp,doZip=False):
     """
     cp = ConfigParser object from which options are read.
     """
@@ -327,7 +327,7 @@ class CohBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     pipeline.AnalysisJob.__init__(self,cp)
     
     for sec in ['cohbank']:
-      self.add_ini_opts(cp,sec)
+      self.add_ini_opts(cp,sec,doZip)
 
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
@@ -342,7 +342,7 @@ class ChiaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   stderr from the job are directed to the logs directory.  The path to the
   executable is determined from the ini file.
   """
-  def __init__(self,cp):
+  def __init__(self,cp,doZip=False):
     """
     cp = ConfigParser object from which options are read.
     """
@@ -352,7 +352,7 @@ class ChiaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     pipeline.AnalysisJob.__init__(self,cp)
     
     for sec in ['chia']:
-      self.add_ini_opts(cp,sec)
+      self.add_ini_opts(cp,sec,doZip)
 
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
@@ -437,7 +437,7 @@ class BbhInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.add_var_opt('seed',seed)
     self.__seed = seed
 
-  def get_output(self):
+  def get_output(self,zip=False):
     """
     Returns the file name of output from the injection generation code. This 
     must be kept synchronized with the name of the output file in bbhinj.c.
@@ -455,6 +455,9 @@ class BbhInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     else:
       bbhinject = 'HL-INJECTIONS-' + str(self.get_start()) + '-'
       bbhinject = bbhinject + str(self.get_end()-self.get_start()) + '.xml'
+
+    if zip:
+      bbhinject += '.gz'
 
     self.add_output_file(bbhinject)
 
@@ -499,7 +502,7 @@ class TmpltBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     pad = int(self.job().get_config('data','pad-data'))
     pipeline.AnalysisNode.set_data_end(self,time + pad)
 
-  def get_output(self):
+  def get_output(self,zip=False):
     """
     Returns the file name of output from the template bank code. This must
     be kept synchronized with the name of the output file in tmpltbank.c.
@@ -520,6 +523,9 @@ class TmpltBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
       bank = self.get_ifo() + '-' + tag_base + '-' + str(self.get_start())
     bank = bank + '-' + str(self.get_end() - self.get_start()) + '.xml'
 
+    if zip:
+      bank += '.gz'
+
     self.add_output_file(bank)
 
     return bank
@@ -538,7 +544,7 @@ class RandomBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     pipeline.AnalysisNode.__init__(self)
     self.__usertag = job.get_config('pipeline','user-tag')
 
-  def get_output(self):
+  def get_output(self,zip=False):
     """
     Returns the file name of output from the template bank code. This must
     be kept synchronized with the name of the output file in randombank.c.
@@ -551,6 +557,9 @@ class RandomBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     else:
       bank = 'P-TMPLTBANK-' + str(self.get_start())
     bank = bank + '-' + str(self.get_end() - self.get_start()) + '.xml'
+
+    if zip:
+      bank += '.gz'
 
     self.add_output_file(bank)
 
@@ -654,7 +663,7 @@ class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   def get_user_tag(self):
     return self.__usertag
 
-  def get_output(self):
+  def get_output(self,zip=False):
     """
     Returns the file name of output from the inspiral code. This must be kept
     synchronized with the name of the output file in inspiral.c.
@@ -672,6 +681,9 @@ class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
     filename = basename + '-' + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) + '.xml'
+
+    if zip:
+      filename += '.gz'
 
     self.add_output_file(filename)
 
@@ -723,7 +735,7 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     return self.__usertag
 
   def make_trigbank(self,chunk,max_slide,source_ifo,dest_ifo,
-    usertag=None,ifo_tag=None):
+    usertag=None,ifo_tag=None,zip=False):
     """
     Sets the name of triggered template bank file.
     chunk = the analysis chunk that is being 
@@ -753,6 +765,8 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     if usertag:
       outfile += '_' + usertag 
     outfile += '-' + str(chunk.start()) + '-' + str(chunk.dur()) + '.xml'
+    if zip:
+      outfile += '.gz'
     self.__output = outfile
     self.add_var_opt('triggered-bank',outfile)
 
@@ -777,7 +791,7 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.add_output_file(self.__output)
     return self.__output
 
-  def get_trig_out(self):
+  def get_trig_out(self,zip=False):
     """
     Returns the name of the output file from lalapps_trigbank
     """
@@ -793,6 +807,10 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
     trigbank_name = basename + '-' + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) + '.xml'
+
+    if zip:
+      trigbank_name += '.gz'
+
     self.add_output_file(trigbank_name)
     return trigbank_name
 
@@ -853,7 +871,7 @@ class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     return self.__usertag
 
-  def get_output_a(self):
+  def get_output_a(self,zip=False):
     """
     Returns the file name of output from inca for ifo a. This must be kept
     synchronized with the name of the output file in inca.c.
@@ -870,10 +888,14 @@ class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
     filename = basename + '-' + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) + '.xml'
+
+    if zip:
+      filename += '.gz'
+
     self.add_output_file(filename)
     return filename
 
-  def get_output_b(self):
+  def get_output_b(self,zip=False):
     """
     Returns the file name of output from inca for ifo b. This must be kept
     synchronized with the name of the output file in inca.c.
@@ -890,6 +912,10 @@ class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
     filename = basename + '-' + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) + '.xml'
+
+    if zip:
+      filename += '.gz'
+
     self.add_output_file(filename)
     return filename
 
@@ -1034,7 +1060,7 @@ class ThincaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     return self.__ifotag
 
-  def get_output(self):
+  def get_output(self,zip=False):
     """
     Returns the file name of output from thinca.  This must be kept
     synchronized with the name of the output file in thinca.c.
@@ -1056,6 +1082,10 @@ class ThincaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
     filename = basename + '-' + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) + '.xml'
+
+    if zip:
+      filename += '.gz'
+
     self.add_output_file(filename)
     return filename
 
@@ -1074,7 +1104,8 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.__ifo = None
     self.__usertag = job.get_config('pipeline','user-tag')
 
-  def set_outputs(self,out_name,usertag=None,cluster=None,slide_time=None):
+  def set_outputs(self,out_name,zip=False,usertag=None,cluster=None,
+    slide_time=None):
     """
     Sets the name of the sire output file.
     out_name = name of sire output file
@@ -1098,11 +1129,15 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.add_var_opt('summary',summ_file)
     
     outfile += '.xml'
+
+    if zip:
+      outfile += '.gz'
+
     self.__output = outfile
     self.add_var_opt('output',outfile)
 
-  def set_inj_outputs(self,out_name,inj_coinc,usertag=None,cluster=None,
-    slide_time=None):
+  def set_inj_outputs(self,out_name,inj_coinc,zip=False,usertag=None,
+    cluster=None,slide_time=None):
     """
     Sets the name of the sire output file.
     out_name = name of sire output file
@@ -1124,6 +1159,10 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
       else: outfile += '_SLIDE' + str(slide_time)
     
     missed_file = outfile + '_MISSED' + str(inj_coinc) + '.xml'
+
+    if zip:
+      missed_file += '.gz'
+
     self.add_var_opt('missed-injections',missed_file)
     
     outfile += '_FOUND' + str(inj_coinc)
@@ -1132,6 +1171,10 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.add_var_opt('summary',summ_file)
     
     outfile += '.xml'
+
+    if zip:
+      outfile += '.gz'
+
     self.__output = outfile
     self.add_var_opt('output',outfile)
     self.add_var_opt
@@ -1214,7 +1257,7 @@ class CohBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   def get_ifos(self):
     return self.__ifos
     
-  def get_output(self):
+  def get_output(self,zip=False):
     """
     Returns the file name of output from the coherent bank. 
     """
@@ -1229,6 +1272,9 @@ class CohBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
     filename = basename + '-' + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) + '.xml'
+
+    if zip:
+      filename += '.gz'
 
     self.add_output_file(filename)
 
