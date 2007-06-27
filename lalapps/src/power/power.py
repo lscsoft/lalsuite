@@ -618,8 +618,12 @@ def split_segment(timing_params, segment, psds_per_job):
 	to have the numbers of PSDs in each segment be equal to
 	psds_per_job, but with a short segment at the end if needed.
 	"""
+	# in seconds
 	joblength = job_length_from_psds(timing_params, psds_per_job)
+	# in samples
 	joboverlap = 2 * timing_params.filter_corruption + (timing_params.psd_length - timing_params.psd_shift)
+	# in seconds
+	joboverlap /= timing_params.resample_rate
 
 	segs = segments.segmentlist()
 	t = segment[0]
