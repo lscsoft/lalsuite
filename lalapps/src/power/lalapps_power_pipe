@@ -212,6 +212,10 @@ def compute_segment_lists(seglistdict, time_slides, minimum_gap, timing_params, 
 
 
 def group_coinc_parents(parents, time_slides, verbose = False):
+	if not time_slides:
+		# no-op
+		return []
+
 	if verbose:
 		print >>sys.stderr, "Grouping jobs for coincidence analysis:"
 
