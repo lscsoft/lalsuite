@@ -97,7 +97,7 @@ def get_timing_parameters(config_parser):
 		window_length = config_parser.getint("lalapps_power", "window-length"),
 		max_tile_length = config_parser.getfloat("lalapps_power", "max-tile-duration") * resample_rate,
 		tile_stride_fraction = config_parser.getfloat("lalapps_power", "tile-stride-fraction"),
-		psd_length = config_parser.getint("lalspps_power", "psd-average-points")
+		psd_length = config_parser.getint("lalapps_power", "psd-average-points")
 	)
 	params.resample_rate = resample_rate
 
