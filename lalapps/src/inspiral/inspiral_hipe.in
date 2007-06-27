@@ -118,7 +118,7 @@ def generate_segments(ifo1_data, ifo2_data, ifo3_data, ifo4_data):
 ##############################################################################
 # function to set up datafind, template bank and inspiral jobs for an ifo  
 def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
-  prev_df,dag, exttrigInjections, usertag=None):
+  prev_df,dag, exttrigInjections, zip, usertag=None):
   """
   Analyze the data from a single IFO.  Since the way we treat all this data is
   the same, this function is the same for all interferometers. Returns the last
@@ -134,6 +134,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
   dag = the DAG to attach the nodes to
   exttrigInjections = specifies the number of external trigger injections 
                       in the same data seg.
+  zip = write files ending in .xml.gz
   usertag = the usertag to add to the job names
   """
 
@@ -263,7 +264,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
              if GeoBank:
                 insp.set_bank(GeoBank)
              else:
-                insp.set_bank(bank.get_output())
+                insp.set_bank(bank.get_output(zip))
              if opts.datafind: insp.add_parent(df)
              if (opts.template_bank and not GeoBank): insp.add_parent(bank)
              if inj>0:  
@@ -279,7 +280,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
 ##############################################################################
 # function to do inca on single IFO data  
 def single_coinc(ifo_analyzed,ifo_name,ifo_single,single_coinc_job,dag,
-  usertag=None):
+  zip=False, usertag=None):
   """
   Run inca on the single coincident times from each of the IFOs. Since the way 
   we treat all this data is the same, this function is the same for all cases.
@@ -289,6 +290,7 @@ def single_coinc(ifo_analyzed,ifo_name,ifo_single,single_coinc_job,dag,
   ifo_single = the single IFO science segments 
   single_coinc_job = the condor job to do single IFO inca
   dag = the DAG to attach the nodes to
+  zip = write files ending in .xml.gz
   """
 
   single_coinc_analyzed = []
@@ -302,7 +304,7 @@ def single_coinc(ifo_analyzed,ifo_name,ifo_single,single_coinc_job,dag,
     # add all master chunks that overlap with segment to input
     for ifo_done in ifo_analyzed:
       if inspiral.overlap_test(ifo_done.get_chunk(),seg):
-        sinca.add_file_arg(ifo_done.get_dag_node().get_output())
+        sinca.add_file_arg(ifo_done.get_dag_node().get_output(zip))
         if opts.inspiral: sinca.add_parent(ifo_done.get_dag_node())
     
     if opts.coincidence: dag.add_node(sinca)
@@ -313,7 +315,8 @@ def single_coinc(ifo_analyzed,ifo_name,ifo_single,single_coinc_job,dag,
 ##############################################################################
 # function to do thinca on coincident IFO data  
 def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
-    dag,do_coinc,do_insp, exttrigInjections, usertag=None,ifotag=None,slides=None):
+    dag,do_coinc,do_insp,exttrigInjections,zip=False,usertag=None,
+    ifotag=None,slides=None):
   """
   Run thinca on the coincident times from each of the sets of IFOs. 
   Since the way we treat all this data is the same, this function is the same 
@@ -328,6 +331,7 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
   do_insp  = whether previous inspiral jobs are in the dag
   exttrigInjections = specifies the number of external trigger injections 
                       in the same data seg.
+  zip = write files ending in .xml.gz
   usertag = the usertag to add to the output file name
   ifotag = the ifotag to add to the output file name
   slides = number of time slides req'd, used as a boolean
@@ -366,7 +370,7 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
                     (done.get_inj()==0 or done.get_inj()==inj):
 
                   # set special user-tag first
-                  thinca.add_file_arg(done.get_dag_node().get_output())
+                  thinca.add_file_arg(done.get_dag_node().get_output(zip))
                   if do_insp: thinca.add_parent(done.get_dag_node())
 
          if do_coinc: dag.add_node(thinca)
@@ -380,7 +384,7 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
 ##############################################################################
 # function to set up trigbank and inspiral jobs for an ifo  
 def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
-                  insp_veto_job,dag, exttrigInjections, usertag=None):
+                  insp_veto_job,dag,exttrigInjections,zip=False,usertag=None):
 
   """
   Perform the trigbank and second inspiral steps for the single ifo data.  
@@ -396,6 +400,7 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
   dag = the DAG to attach the nodes to
   exttrigInjections = specifies the number of external trigger injections  
                       in the same data seg.
+  zip = write files ending in .xml.gz
   usertag = the usertag to add to the job names
   """
 
@@ -473,7 +478,7 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
                 insp.set_cache(seg.get_df_node().get_output())
               else: insp.set_cache(cp.get('datafind',ifo_name+'-cache')) 
               if not calibrated: insp.calibration()
-              insp.set_bank(trigbank.get_trig_out())
+              insp.set_bank(trigbank.get_trig_out(zip))
               if opts.datafind: insp.add_parent(seg.get_df_node())
               if opts.trigbank: insp.add_parent(trigbank)
               if opts.inspiral_veto: dag.add_node(insp)
@@ -482,7 +487,7 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
               trig_chunks_analyzed.append(AnalyzedIFOData(chunk,insp,inj))
 
             # jobs already set up, just add the var_arg and parent to trigbank
-            trigbank.add_file_arg(coinc_done.get_dag_node().get_output())
+            trigbank.add_file_arg(coinc_done.get_dag_node().get_output(zip))
             if opts.coincidence: 
                 trigbank.add_parent(coinc_done.get_dag_node())
 
@@ -492,7 +497,8 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
 ##############################################################################
 # function to TD follow-up tmpltbank and inspiral jobs for an ifo  
 def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
-                  insp_veto_job,dag,approximant=None,usertag=None,banks=None):
+                  insp_veto_job,dag,zip=False,approximant=None,\
+                  usertag=None,banks=None):
 
   """
   Perform the tmpltbank and second inspiral steps for the single ifo data.  
@@ -506,6 +512,7 @@ def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
   trig_job = the triggered bank job we should use 
   insp_veto_job = the condor job that we should use to analyze data
   dag = the DAG to attach the nodes to
+  zip = write files ending in .xml.gz
   usertag = the usertag to add to the job names
   """
 
@@ -591,7 +598,7 @@ def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
               insp.set_cache(seg.get_df_node().get_output())
             else: insp.set_cache(cp.get('datafind',ifo_name+'-cache')) 
             if not calibrated: insp.calibration()
-            insp.set_bank(bank.get_output())
+            insp.set_bank(bank.get_output(zip))
             if approximant: insp.add_var_opt('approximant', approximant)
             if opts.datafind: insp.add_parent(seg.get_df_node())
             if opts.td_follow_bank: insp.add_parent(bank)
@@ -604,26 +611,26 @@ def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
             # and inspiral-veto 
           if 'macrotdfollowup' in insp.get_opts().keys():
             insp.add_var_opt('td-follow-up', insp.get_opts()['macrotdfollowup'] +
-                ' ' + coinc_done.get_dag_node().get_output())
+                ' ' + coinc_done.get_dag_node().get_output(zip))
           else:
             insp.add_var_opt('td-follow-up',
-                coinc_done.get_dag_node().get_output())
+                coinc_done.get_dag_node().get_output(zip))
 
           if not banks: 
             if 'macrotdfollowup' in bank.get_opts().keys():
               bank.add_var_opt('td-follow-up', bank.get_opts()['macrotdfollowup'] +
-                  ' ' + coinc_done.get_dag_node().get_output())
+                  ' ' + coinc_done.get_dag_node().get_output(zip))
             else:
               bank.add_var_opt('td-follow-up',
-                  coinc_done.get_dag_node().get_output())
+                  coinc_done.get_dag_node().get_output(zip))
             if opts.coincidence: bank.add_parent(coinc_done.get_dag_node())
 
   return follow_chunks_analyzed, bankList
 
 ##############################################################################
 # function to sweep up data using sire  
-def sire_segs(segments,output,file_name,sire_job,dag,do_input,usertag=None,
-  cluster=None,ifo_cut=None):
+def sire_segs(segments,output,file_name,sire_job,dag,do_input,zip=False,
+  usertag=None,cluster=None,ifo_cut=None):
 
   """
   Do a sire to sweep up all the triggers of a specific kind
@@ -634,6 +641,7 @@ def sire_segs(segments,output,file_name,sire_job,dag,do_input,usertag=None,
   sire_job  = sire job to use for the analysis
   dag       = name of the dag
   do_input  = whether the files to be sired were produced by this dag
+  zip       = write files ending in .xml.gz
   usertag   = the usertag to add to the output file name
   cluster   = whether we should add the cluster arguments
   ifo_cut   = keep triggers from only this ifo (if None, keep all)
@@ -656,11 +664,11 @@ def sire_segs(segments,output,file_name,sire_job,dag,do_input,usertag=None,
   for seg in segments:
     if do_input: sire.add_parent(seg.get_dag_node())
     if output == 'output':
-      f.write('%s\n' % seg.get_dag_node().get_output())
+      f.write('%s\n' % seg.get_dag_node().get_output(zip))
     if output == 'output_a':
-      f.write('%s\n' % seg.get_dag_node().get_output_a())
+      f.write('%s\n' % seg.get_dag_node().get_output_a(zip))
     if output == 'output_b':
-      f.write('%s\n' % seg.get_dag_node().get_output_b())
+      f.write('%s\n' % seg.get_dag_node().get_output_b(zip))
   f.close()
  
   # add the input file name to sire
@@ -668,10 +676,10 @@ def sire_segs(segments,output,file_name,sire_job,dag,do_input,usertag=None,
   
   # set the output files names for sire
   if inj_coinc:
-    sire.set_inj_outputs(file_name,inj_coinc,usertag)
+    sire.set_inj_outputs(file_name,inj_coinc,zip,usertag)
     
   else:
-    sire.set_outputs(file_name,usertag)
+    sire.set_outputs(file_name,zip,usertag)
 
   if do_input: dag.add_node(sire) 
 
@@ -679,7 +687,7 @@ def sire_segs(segments,output,file_name,sire_job,dag,do_input,usertag=None,
 # function to set up the cohbank and cohinspiral jobs for a network of ifos
 
 def coherent_analysis(ifos,single_ifo_segments,coinc_nodes,cb_job,
-                      trig_coh_jobs,insp_coh_jobs,cohinsp_job,dag):
+                      trig_coh_jobs,insp_coh_jobs,cohinsp_job,dag,zip=False):
   """
   Do a coherent analysis
 
@@ -691,6 +699,7 @@ def coherent_analysis(ifos,single_ifo_segments,coinc_nodes,cb_job,
   insp_coh_jobs       = dictionary of inspiral jobs to produce c-data 
   cohinsp_job         = the coherent_inspiral job
   dag                 = name of the dag
+  zip                 = write files ending in .xml.gz
   """
 
   data_opts = {}
@@ -717,7 +726,7 @@ def coherent_analysis(ifos,single_ifo_segments,coinc_nodes,cb_job,
   for coinc_done in coinc_nodes:
     # set up cohbank
     cohbank = inspiral.CohBankNode( cb_job )
-    cohbank.set_bank(coinc_done.get_dag_node().get_output())
+    cohbank.set_bank(coinc_done.get_dag_node().get_output(zip))
     cohbank.set_start(coinc_done.get_chunk().start())
     cohbank.set_end(coinc_done.get_chunk().end())
     cohbank.set_ifos(ifos) 
@@ -726,7 +735,7 @@ def coherent_analysis(ifos,single_ifo_segments,coinc_nodes,cb_job,
     
     # set up cohinsp
     cohinsp = inspiral.ChiaNode(cohinsp_job)
-    cohinsp.set_bank(cohbank.get_output())
+    cohinsp.set_bank(cohbank.get_output(zip))
     cohinsp.set_start(coinc_done.get_chunk().start())
     cohinsp.set_end(coinc_done.get_chunk().end())
     cohinsp.add_var_opt('ifo-tag',ifotag)
@@ -755,7 +764,7 @@ def coherent_analysis(ifos,single_ifo_segments,coinc_nodes,cb_job,
               trigbank.set_input_ifo(ifo)
               trigbank.set_start(chunk.start())
               trigbank.set_end(chunk.end())
-              trigbank.add_file_arg(cohbank.get_output())
+              trigbank.add_file_arg(cohbank.get_output(zip))
               if opts.coherent_bank: trigbank.add_parent(cohbank)
               if opts.coherent_bank: dag.add_node(trigbank)
 
@@ -774,7 +783,7 @@ def coherent_analysis(ifos,single_ifo_segments,coinc_nodes,cb_job,
               if not opts.read_cache: 
                 insp.set_cache(seg.get_df_node().get_output())
               else: insp.set_cache(cp.get('datafind',ifo + "-cache"))
-              insp.set_bank(trigbank.get_trig_out())
+              insp.set_bank(trigbank.get_trig_out(zip))
               frjoin.add_file_arg( insp.get_froutput() )
 
               if opts.coherent_bank: insp.add_parent(trigbank)
@@ -870,6 +879,9 @@ parser.add_option("-p", "--log-path",action="store",type="string",\
 parser.add_option("-o", "--output-segs",action="store_true",default=False,\
     help="output the segment lists of analyzed data")
 
+parser.add_option("-z", "--enable-compression",action="store_true",\
+    default=False,help="write compressed xml files")
+
 parser.add_option("-x","--dax", action="store_true", default=False,\
     help="create a dax instead of a dag")
 
@@ -930,6 +942,11 @@ if not opts.datafind and not opts.template_bank and \
   sys.exit(1)
    
 ifo_list = ['H1','H2','L1','G1']
+
+if opts.enable_compression:
+  zip = True
+else:
+  zip = False
 
 ifotag = None
 inj_coinc = 0
@@ -1072,13 +1089,13 @@ tmplt_jobs = {}
 
 for ifo in ifo_list:
   if opts.ringdown:
-    tmplt_jobs[ifo] = inspiral.TmpltBankJob(cp,opts.dax,'RINGBANK')
+    tmplt_jobs[ifo] = inspiral.TmpltBankJob(cp,opts.dax,'RINGBANK',doZip=zip)
   else:
-    tmplt_jobs[ifo] = inspiral.TmpltBankJob(cp,opts.dax)
+    tmplt_jobs[ifo] = inspiral.TmpltBankJob(cp,opts.dax,doZip=zip)
   tmplt_jobs[ifo].set_sub_file( basename + '.tmpltbank' + subsuffix )
 
 # inspinj:
-inspinj_job = inspiral.InspInjJob(cp) 
+inspinj_job = inspiral.InspInjJob(cp,doZip=zip) 
 inspinj_job.set_sub_file( basename + '.inspinj' + subsuffix )
 
 # inspiral:
@@ -1086,13 +1103,13 @@ insp_jobs = {}
 
 for ifo in ifo_list:
   if opts.ringdown:
-    insp_jobs[ifo] = inspiral.InspiralJob(cp,opts.dax,'RING')
+    insp_jobs[ifo] = inspiral.InspiralJob(cp,opts.dax,'RING',doZip=zip)
   else:
-    insp_jobs[ifo] = inspiral.InspiralJob(cp,opts.dax)
+    insp_jobs[ifo] = inspiral.InspiralJob(cp,opts.dax,doZip=zip)
   insp_jobs[ifo].set_sub_file( basename + '.inspiral_' + ifo + subsuffix )
 
 # single_inca:
-single_inca_job = inspiral.IncaJob(cp)
+single_inca_job = inspiral.IncaJob(cp,doZip=zip)
 single_inca_job.set_sub_file( basename + '.s_inca' + subsuffix )
 
 # thinca:
@@ -1100,9 +1117,9 @@ thinca_jobs = {}
 
 for ifos in ifo_coincs:
   if opts.ringdown:
-    thinca_jobs[ifos] = inspiral.ThincaJob(cp,opts.dax,'RINCA')
+    thinca_jobs[ifos] = inspiral.ThincaJob(cp,opts.dax,'RINCA',doZip=zip)
   else:
-    thinca_jobs[ifos] = inspiral.ThincaJob(cp)
+    thinca_jobs[ifos] = inspiral.ThincaJob(cp,doZip=zip)
   thinca_jobs[ifos].set_sub_file(basename + '.thinca_' + ifos + 
       subsuffix )
 
@@ -1111,9 +1128,9 @@ thinca_slide_jobs = {}
 
 for ifos in ifo_coincs:
   if opts.ringdown:
-    thinca_slide_jobs[ifos] = inspiral.ThincaJob(cp,opts.dax,'RINCA')
+    thinca_slide_jobs[ifos] = inspiral.ThincaJob(cp,opts.dax,'RINCA',doZip=zip)
   else:
-    thinca_slide_jobs[ifos] = inspiral.ThincaJob(cp)
+    thinca_slide_jobs[ifos] = inspiral.ThincaJob(cp,doZip=zip)
   thinca_slide_jobs[ifos].set_sub_file(basename + '.thinca_slides_' + 
       ifos + subsuffix )
 
@@ -1121,19 +1138,19 @@ for ifos in ifo_coincs:
 tmplt_follow_jobs = {}
 
 for ifo in ifo_list:
-  tmplt_follow_jobs[ifo] = inspiral.TmpltBankJob(cp,opts.dax)
+  tmplt_follow_jobs[ifo] = inspiral.TmpltBankJob(cp,opts.dax,doZip=zip)
   tmplt_follow_jobs[ifo].set_sub_file( basename + '.followup_tmpltbank' + \
       subsuffix )
 
 # trigbank:
-trig_job = inspiral.TrigToTmpltJob(cp)
+trig_job = inspiral.TrigToTmpltJob(cp,doZip=zip)
 trig_job.set_sub_file( basename + '.trigbank' + subsuffix )
 
 # inspiral veto:
 insp_veto_jobs = {}
 
 for ifo in ifo_list:
-  insp_veto_jobs[ifo] = inspiral.InspiralJob(cp,opts.dax)
+  insp_veto_jobs[ifo] = inspiral.InspiralJob(cp,opts.dax,doZip=zip)
   insp_veto_jobs[ifo].set_sub_file( basename + '.inspiral_veto' + ifo +
     subsuffix )
 
@@ -1141,7 +1158,7 @@ for ifo in ifo_list:
 thinca2_jobs = {}
 
 for ifos in ifo_coincs:
-  thinca2_jobs[ifos] = inspiral.ThincaJob(cp)
+  thinca2_jobs[ifos] = inspiral.ThincaJob(cp,doZip=zip)
   thinca2_jobs[ifos].set_sub_file(basename + '.thinca2_' + ifos + 
       subsuffix )
 
@@ -1149,19 +1166,19 @@ for ifos in ifo_coincs:
 thinca2_slide_jobs = {}
 
 for ifos in ifo_coincs:
-  thinca2_slide_jobs[ifos] = inspiral.ThincaJob(cp)
+  thinca2_slide_jobs[ifos] = inspiral.ThincaJob(cp,doZip=zip)
   thinca2_slide_jobs[ifos].set_sub_file(basename + '.thinca2_slides_' + 
       ifos + subsuffix )
 
 # coherent bank:
-cb_job = inspiral.CohBankJob(cp)
+cb_job = inspiral.CohBankJob(cp,doZip=zip)
 cb_job.set_sub_file( basename + '.cohbank' + subsuffix )
 
 # trigbank coherent:
 trig_coh_jobs = {}
 
 for ifo in ifo_list:
-  trig_coh_jobs[ifo] = inspiral.TrigToTmpltJob(cp)
+  trig_coh_jobs[ifo] = inspiral.TrigToTmpltJob(cp,doZip=zip)
   trig_coh_jobs[ifo].set_sub_file( basename + '.trigbank_coherent_' + ifo + 
       subsuffix )
 
@@ -1169,7 +1186,7 @@ for ifo in ifo_list:
 insp_coh_jobs = {}
 
 for ifo in ifo_list:
-  insp_coh_jobs[ifo] = inspiral.InspiralJob(cp,opts.dax)
+  insp_coh_jobs[ifo] = inspiral.InspiralJob(cp,opts.dax,doZip=zip)
   insp_coh_jobs[ifo].set_sub_file( basename + '.insp_coh_' + ifo +
     subsuffix )
 
@@ -1180,7 +1197,7 @@ frjoin_job.set_sub_file( basename + '.frjoin' + subsuffix )
 # coherent_inspiral:
 cohinsp_jobs = {}
 for ifos in ifo_coincs:
-  cohinsp_jobs[ifos] = inspiral.ChiaJob(cp)
+  cohinsp_jobs[ifos] = inspiral.ChiaJob(cp,doZip=zip)
   cohinsp_jobs[ifos].set_sub_file(basename + '.cohinspiral_' + ifos + 
       subsuffix )
 
@@ -1496,12 +1513,13 @@ for ifo in ifo_list:
   sys.stdout.flush()
 
   (prev_df,chunks_analyzed[ifo]) = analyze_ifo(ifo,data[ifo],data_to_do[ifo],  
-      tmplt_jobs[ifo],insp_jobs[ifo],df_job,prev_df,dag,exttrigInjections,usertag)
+      tmplt_jobs[ifo],insp_jobs[ifo],df_job,prev_df,dag,exttrigInjections,zip,
+      usertag)
   
   # Step 4S: Run sire on the single ifo triggers
   if opts.sire and len(chunks_analyzed[ifo]):   
     sire_segs(chunks_analyzed[ifo],'output',ifo + '-INSPIRAL',sire_clust_job,
-        dag,opts.inspiral,usertag,do_clust,ifo)
+        dag,opts.inspiral,zip,usertag,do_clust,ifo)
 
   print "done" 
 
@@ -1516,12 +1534,12 @@ single_coinc_nodes = {}
 for ifo in ifo_list:
   single_coinc_nodes[ifo] = []
   single_coinc_nodes[ifo] = single_coinc(chunks_analyzed[ifo],ifo,
-     analyzed_data[ifo],single_inca_job,dag,usertag)
+     analyzed_data[ifo],single_inca_job,dag,zip,usertag)
   
   # Step 5S: Run sire on the single ifo triggers
   if opts.sire and do[ifo] and len(analyzed_data[ifo]):
     sire_segs(single_coinc_nodes[ifo],'output_a',ifo + '-SIRE_SINGLE_IFO',
-        sire_clust_job,dag,opts.coincidence,usertag,do_clust,ifo)
+        sire_clust_job,dag,opts.coincidence,zip,usertag,do_clust,ifo)
 
 print "done"
   
@@ -1539,7 +1557,7 @@ for ifos in ifo_coincs:
   thinca_jobs[ifos].add_ini_opts(cp, 'thinca-1')
   coinc_nodes[ifos] = thinca_coinc(ifos,chunks_analyzed,analyzed_data[ifos],
       thinca_jobs[ifos],dag,opts.coincidence,opts.inspiral,exttrigInjections,
-      usertag)
+      zip,usertag)
 
   # Step 6 slide: Time slides 
   coinc_slide_nodes[ifos] = []
@@ -1547,18 +1565,18 @@ for ifos in ifo_coincs:
     thinca_slide_jobs[ifos].add_ini_opts(cp, 'thinca-1')
     coinc_slide_nodes[ifos] = thinca_coinc(ifos,chunks_analyzed,
         analyzed_data[ifos],thinca_slide_jobs[ifos],dag,opts.coincidence,
-        opts.inspiral,exttrigInjections,usertag,ifotag,num_slides)
+        opts.inspiral,exttrigInjections,zip,usertag,ifotag,num_slides)
 
- 
+  
   # Step 6 sire: Run sire triggers
   # Do sire with all coincidenct triggers, and clustered sires for each ifo
   if opts.sire and len(analyzed_data[ifos]):
     sire_segs(coinc_nodes[ifos],'output',ifos + '-SIRE',sire_job,dag,
-        opts.coincidence,usertag)
+        opts.coincidence,zip,usertag)
     for ifo in ifo_list: 
       if ifo in ifos:
         sire_segs(coinc_nodes[ifos],'output',ifo + '-SIRE_' + ifos,sire_job,
-            dag,opts.coincidence,usertag,ifo)
+            dag,opts.coincidence,zip,usertag,ifo)
   
   # Concatenate the zerolag and slide nodes
   coinc_nodes[ifos] = coinc_nodes[ifos] + coinc_slide_nodes[ifos]
@@ -1614,7 +1632,7 @@ for ifos in ifo_coincs:
       else:
         analyzed_coinc_data[ifos][ifo] = trig_inspiral(data[ifo],ifo,
             coinc_nodes[ifos],ifos,trig_job,insp_veto_jobs[ifo],dag,
-            exttrigInjections,usertag)
+            exttrigInjections,zip,usertag)
 
       print "done"
 
@@ -1635,11 +1653,12 @@ for ifos in ifo_coincs:
       this_approx = this_approx.strip()
       coinc2_nodes[ifos] = thinca_coinc(ifos,analyzed_coinc_data[ifos],
           analyzed_data[ifos],thinca2_jobs[ifos],dag,opts.second_coinc,
-          opts.td_follow_inspiral,exttrigInjections,usertag,ifos+"_"+this_approx)
+          opts.td_follow_inspiral,exttrigInjections,zip,usertag,
+          ifos+"_"+this_approx)
   else:
     coinc2_nodes[ifos] = thinca_coinc(ifos,analyzed_coinc_data[ifos],
       analyzed_data[ifos],thinca2_jobs[ifos],dag,opts.second_coinc,
-      opts.inspiral_veto,exttrigInjections,usertag,ifos)
+      opts.inspiral_veto,exttrigInjections,zip,usertag,ifos)
 
   # Step 8slide: Time slides on the data
   if num_slides:
@@ -1651,23 +1670,23 @@ for ifos in ifo_coincs:
         coinc2_slide_nodes[ifos] = thinca_coinc(ifos,
           analyzed_coinc_data[ifos],analyzed_data[ifos],
           thinca2_slide_jobs[ifos],dag,opts.second_coinc,opts.inspiral_veto,
-          exttrigInjections,usertag,ifos+'_'+this_approx,num_slides)
+          exttrigInjections,zip,usertag,ifos+'_'+this_approx,num_slides)
     else:
       coinc2_slide_nodes[ifos] = thinca_coinc(ifos,
         analyzed_coinc_data[ifos],analyzed_data[ifos],thinca2_slide_jobs[ifos],
-        dag,opts.second_coinc,opts.inspiral_veto,exttrigInjections,usertag,ifos,
-        num_slides)
+        dag,opts.second_coinc,opts.inspiral_veto,exttrigInjections,zip,usertag,
+        ifos,num_slides)
 
   # Step 8 sire: Run sire triggers
   # Do sire with all coincidenct triggers, and clustered sires for each ifo
   if opts.sire and len(analyzed_data[ifos]):
     sire_segs(coinc_nodes[ifos],'output',ifos + '-SIRE_VETO_',sire_job,dag,
-    opts.second_coinc,usertag)
+    opts.second_coinc,zip,usertag)
   
     for ifo in ifo_list: 
       if ifo in ifos:
         sire_segs(coinc_nodes[ifos],'output',ifo + '-SIRE_VETO_' + ifos,
-            sire_job,dag,opts.second_coinc,usertag,ifo)
+            sire_job,dag,opts.second_coinc,zip,usertag,ifo)
   
   print "done"
 
@@ -1680,7 +1699,7 @@ for ifos in ifo_coincs:
   sys.stdout.flush()
   
   coherent_analysis(ifos,data,coinc2_nodes[ifos],cb_job,
-      trig_coh_jobs,insp_coh_jobs,cohinsp_jobs[ifos],dag)
+      trig_coh_jobs,insp_coh_jobs,cohinsp_jobs[ifos],dag,zip)
 
   print "done"
 
