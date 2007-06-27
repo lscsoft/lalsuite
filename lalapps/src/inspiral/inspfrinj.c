@@ -144,6 +144,7 @@ int    writeRawData     = 0;            /* write the raw data to frame  */
 int    writeInjOnly     = 0;            /* write the inj data to frame  */
 int    writeRawPlusInj  = 0;            /* write raw plus inj to frame  */
 int    writeReal8Frame  = 0;            /* write frames as real 8       */
+UINT4  outCompress = 0;
 /* other command line args */
 CHAR comment[LIGOMETA_COMMENT_MAX];     /* process param comment        */
 
@@ -688,10 +689,22 @@ int main( int argc, char *argv[] )
 
   /* open the output xml file */
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
-  if( userTag )
+  if( userTag && outCompress )
   {
     LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), 
-        "%s_%s-%d-%d.xml", outfileName, userTag, gpsStartTime.gpsSeconds, 
+        "%s_%s-%d-%d.xml.gz", outfileName, userTag, gpsStartTime.gpsSeconds, 
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+  }
+  else if( userTag && !outCompress )
+  {
+    LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR),
+        "%s_%s-%d-%d.xml", outfileName, userTag, gpsStartTime.gpsSeconds,
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+  }
+  else if( !userTag && outCompress )
+  {
+    LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR),
+        "%s-%d-%d.xml.gz", outfileName, gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else
@@ -703,7 +716,7 @@ int main( int argc, char *argv[] )
   }
 
   if ( vrbflg ) fprintf( stdout, "writing XML data to %s...\n", fname );
-  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname), &status );
+  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname ), &status );
 
   /* write the process table */
   if ( vrbflg ) fprintf( stdout, "  process table...\n" );
@@ -871,6 +884,7 @@ static void print_usage(char *program)
       " [--output-frame-length]  len        length of output frames\n"\
       " [--output-file-name]     out        set file names to out-gpstime-length.gwf\n"\
       "                      if not set, default to ifo-inspfrinj-gpstime-length.gwf\n"\
+      " [--write-compress]                  write compressed xml files\n"\
       "\n"\
       " [--ifo]                  ifo        specify the ifo (if not reading frames)\n"\
       " [--sample-rate]          rate       data sample rate (if not reading frames)\n"\
@@ -884,6 +898,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   {
     /* these options set a flag */
     {"verbose",                 no_argument,       &vrbflg,           1 },
+    {"write-compress",          no_argument,       &outCompress,      1 },
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
     {"write-inj-only",          no_argument,       &writeInjOnly,     1 },
     {"write-raw-plus-inj",      no_argument,       &writeRawPlusInj,  1 },
