@@ -92,6 +92,7 @@ static void print_usage(char *program)
       "  [--user-tag]      usertag     set the process_params usertag\n"\
       "  [--ifo-tag]       ifotag      set the ifo-tag - for file naming\n"\
       "  [--comment]       string      set the process table comment\n"\
+      "  [--write-compress]            write a compressed xml file\n"\
       "   --gps-start-time start_time  GPS second of data start time\n"\
       "   --gps-end-time   end_time    GPS second of data end time\n"\
       "  [--check-times]               Check that all times were analyzed\n"\
@@ -146,6 +147,7 @@ int main( int argc, char *argv[] )
   MetadataTable         inspiralTable;
   ProcessParamsTable   *this_proc_param = NULL;
   LIGOLwXMLStream       xmlStream;
+  UINT4                 outCompress = 0;
 
   INT4                  i;
 
@@ -154,6 +156,7 @@ int main( int argc, char *argv[] )
   {
     {"verbose",                no_argument,     &vrbflg,                  1 },
     {"check-times",            no_argument, &checkTimes,                  1 },
+    {"write-compress",         no_argument,           &outCompress,       1 },
     {"input-ifo",              required_argument,     0,                 'a'},
     {"output-ifo",             required_argument,     0,                 'b'},
     {"parameter-test",         required_argument,     0,                 'A'},
@@ -599,20 +602,40 @@ cleanexit:
   if ( vrbflg ) fprintf( stdout, "writing output file... " );
 
   /* set the file name correctly */
-  if ( userTag && ifoTag )
+  if ( userTag && ifoTag && !outCompress )
   {
     LALSnprintf( fileName, FILENAME_MAX, "%s-TRIGBANK_%s_%s-%d-%d.xml", 
         outputIFO, ifoTag, userTag, startTime, endTime - startTime );
   }
-  else if ( userTag )
+  else if ( userTag && !ifoTag && !outCompress )
   {
     LALSnprintf( fileName, FILENAME_MAX, "%s-TRIGBANK_%s-%d-%d.xml", 
         outputIFO, userTag, startTime, endTime - startTime );
   }
-  else if ( ifoTag )
+  else if ( !userTag && ifoTag && !outCompress )
   {
     LALSnprintf( fileName, FILENAME_MAX, "%s-TRIGBANK_%s-%d-%d.xml", 
         outputIFO, ifoTag, startTime, endTime - startTime );
+  }
+  else if ( userTag && ifoTag && outCompress )
+  {
+    LALSnprintf( fileName, FILENAME_MAX, "%s-TRIGBANK_%s_%s-%d-%d.xml.gz",
+        outputIFO, ifoTag, userTag, startTime, endTime - startTime );
+  }
+  else if ( userTag && !ifoTag && outCompress )
+  {
+    LALSnprintf( fileName, FILENAME_MAX, "%s-TRIGBANK_%s-%d-%d.xml.gz",
+        outputIFO, userTag, startTime, endTime - startTime );
+  }
+  else if ( !userTag && ifoTag && outCompress )
+  {
+    LALSnprintf( fileName, FILENAME_MAX, "%s-TRIGBANK_%s-%d-%d.xml.gz",
+        outputIFO, ifoTag, startTime, endTime - startTime );
+  }
+  else if ( !userTag && !ifoTag && outCompress )
+  {
+    LALSnprintf( fileName, FILENAME_MAX, "%s-TRIGBANK-%d-%d.xml.gz",
+        outputIFO, startTime, endTime - startTime );
   }
   else 
   {
@@ -622,7 +645,7 @@ cleanexit:
 
 
   memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
-  LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileName), 
+  LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileName ), 
       &status );
 
   /* write process table */
