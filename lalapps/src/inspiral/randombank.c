@@ -90,6 +90,7 @@ INT4  randomSeed        = 0;            /* value of sim rand seed       */
 
 /* output parameters */
 CHAR  *userTag          = NULL;
+UINT4                 outCompress = 0;
 
 int main ( int argc, char *argv[] )
 {
@@ -277,10 +278,22 @@ int main ( int argc, char *argv[] )
 
   /* open the output xml file */
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
-  if ( userTag )
+  if ( userTag && !outCompress )
   {
     LALSnprintf( fname, sizeof(fname), "P1-TMPLTBANK_%s-%d-%d.xml",
         userTag, gpsStartTime.gpsSeconds,
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+  }
+  else if ( userTag && outCompress )
+  {
+    LALSnprintf( fname, sizeof(fname), "P1-TMPLTBANK_%s-%d-%d.xml.gz",
+        userTag, gpsStartTime.gpsSeconds,
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+  }
+  else if ( !userTag && outCompress )
+  {
+    LALSnprintf( fname, sizeof(fname), "P1-TMPLTBANK-%d-%d.xml.gz",
+        gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else
@@ -289,7 +302,7 @@ int main ( int argc, char *argv[] )
         gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
-  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname), &status );
+  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname ), &status );
 
   /* write the process table */
   LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFO_MAX, "P1" );
@@ -387,6 +400,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --number-of-template N       create N random templatess of bank to MASS\n"\
 "  --random-seed SEED           set random number seed for injections to SEED\n"\
   "                                 (urandom|integer)\n"\
+"  --write-compress             write a compressed xml file\n"\
   "\n"
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
@@ -396,6 +410,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   {
     /* these options set a flag */
     {"verbose",                 no_argument,       &vrbflg,           1 },
+    {"write-compress",          no_argument,       &outCompress,      1 },
     {"help",                    no_argument,       0,                'h'},
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
