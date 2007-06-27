@@ -111,6 +111,7 @@ RCSID("$Id$");
 "  --playground-only         only use triggers that are in playground\n"\
 "  --all-data                use all triggers\n"\
 "  --write-uniq-triggers     make sure triggers from IFO A are unique\n" \
+"  --write-compress          write a compressed xml file\n" \
 "\n"\
 "[LIGOLW XML input files] list of the input trigger files.\n"\
 "\n"
@@ -146,6 +147,7 @@ int main( int argc, char *argv[] )
   CHAR  fileName[FILENAME_MAX];
   CHAR *trigBankFile = NULL;
   CHAR *xmlFileName;
+  UINT4 outCompress = 0;
 
   LIGOTimeGPS slideData = {0,0};
   INT8  slideDataNS = 0;
@@ -196,6 +198,7 @@ int main( int argc, char *argv[] )
   struct option long_options[] =
   {
     {"verbose",                 no_argument,       &vrbflg,           1 },
+    {"write-compress",          no_argument,       &outCompress,      1 },
     {"write-uniq-triggers",     no_argument,       &writeUniqTrigs,   1 },
     {"ifo-b-range-cut",         no_argument,       &useRangeCut,      1 },
     {"single-ifo",              no_argument,       &singleIfo,        1 },
@@ -1593,19 +1596,42 @@ cleanexit:
     }
     else
     {
-      if ( userTag && ifoTag )
+      if ( userTag && ifoTag && outCompress )
+      {
+        LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s_%s-%d-%d.xml.gz",
+            ifoName[j], ifoTag, userTag, startCoincidence,
+            endCoincidence - startCoincidence );
+      }
+      else if ( userTag && !ifoTag && outCompress )
+      {
+        LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml.gz",
+            ifoName[j], userTag, startCoincidence,
+            endCoincidence - startCoincidence );
+      }
+      else if ( !userTag && ifoTag && outCompress )
+      {
+        LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml.gz",
+            ifoName[j], ifoTag, startCoincidence,
+            endCoincidence - startCoincidence );
+      }
+      else if ( !userTag && !ifoTag && outCompress )
+      {
+        LALSnprintf( fileName, FILENAME_MAX, "%s-INCA-%d-%d.xml.gz",
+            ifoName[j], startCoincidence, endCoincidence - startCoincidence );
+      }
+      else if ( userTag && ifoTag && !outCompress )
       {
         LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s_%s-%d-%d.xml", 
             ifoName[j], ifoTag, userTag, startCoincidence, 
             endCoincidence - startCoincidence );
       }
-      else if ( userTag && !ifoTag )
+      else if ( userTag && !ifoTag && !outCompress )
       {
         LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml", 
             ifoName[j], userTag, startCoincidence, 
             endCoincidence - startCoincidence );
       }
-      else if ( !userTag && ifoTag )
+      else if ( !userTag && ifoTag && !outCompress )
       {
         LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml", 
             ifoName[j], ifoTag, startCoincidence, 
@@ -1623,7 +1649,7 @@ cleanexit:
     searchsumm.searchSummaryTable->nevents = numTriggers[j];
 
     memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
-    LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, xmlFileName), 
+    LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, xmlFileName ), 
         &status );
 
     /* write process table */
