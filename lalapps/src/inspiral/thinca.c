@@ -113,6 +113,7 @@ static void print_usage(char *program)
       "  [--user-tag]      usertag     set the process_params usertag\n"\
       "  [--ifo-tag]       ifotag      set the ifo-tag - for file naming\n"\
       "  [--comment]       string      set the process table comment to STRING\n"\
+      "  [--write-compress]            write a compressed xml file\n"\
       "\n"\
       "   --gps-start-time start_time  GPS second of data start time\n"\
       "   --gps-end-time   end_time    GPS second of data end time\n"\
@@ -326,6 +327,7 @@ int main( int argc, char *argv[] )
   UINT4  numQuadruples = 0;
   UINT4  numTrigs[LAL_NUM_IFO];
   UINT4  N = 0;
+  UINT4  outCompress = 0;
 
   LALDetector          aDet;
 
@@ -384,6 +386,7 @@ int main( int argc, char *argv[] )
   struct option long_options[] =
   {
     {"verbose",             no_argument,   &vrbflg,                   1 },
+    {"write-compress",      no_argument,   &outCompress,              1 },
     {"g1-triggers",         no_argument,   &(haveTrig[LAL_IFO_G1]),   1 },
     {"h1-triggers",         no_argument,   &(haveTrig[LAL_IFO_H1]),   1 },
     {"h2-triggers",         no_argument,   &(haveTrig[LAL_IFO_H2]),   1 },
@@ -2147,7 +2150,7 @@ cleanexit:
 
   if ( vrbflg ) fprintf( stdout, "writing output file... " );
 
-  if ( userTag && ifoTag)
+  if ( userTag && ifoTag && !outCompress )
   {
     LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s_%s-%d-%d.xml", 
         ifos, ifoTag, userTag, startCoincidence, 
@@ -2156,19 +2159,48 @@ cleanexit:
         ifos, ifoTag, userTag, startCoincidence, 
         endCoincidence - startCoincidence );
   }
-  else if ( ifoTag )
+  else if ( !userTag && ifoTag && !outCompress )
   {
     LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s-%d-%d.xml", ifos,
         ifoTag, startCoincidence, endCoincidence - startCoincidence );
     LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s-%d-%d.xml", ifos,
         ifoTag, startCoincidence, endCoincidence - startCoincidence );
   }
-  else if ( userTag )
+  else if ( userTag && !ifoTag && !outCompress )
   {
     LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s-%d-%d.xml", 
         ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
     LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s-%d-%d.xml", 
         ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
+  }
+  else if ( userTag && ifoTag && outCompress )
+  {     LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s_%s-%d-%d.xml.gz",
+        ifos, ifoTag, userTag, startCoincidence,
+        endCoincidence - startCoincidence );
+    LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s_%s-%d-%d.xml.gz",
+        ifos, ifoTag, userTag, startCoincidence,
+        endCoincidence - startCoincidence );
+  }
+  else if ( !userTag && ifoTag && outCompress )
+  {
+    LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s-%d-%d.xml.gz", ifos,
+        ifoTag, startCoincidence, endCoincidence - startCoincidence );
+    LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s-%d-%d.xml.gz",
+        ifos, ifoTag, startCoincidence, endCoincidence - startCoincidence );
+  }
+  else if ( userTag && !ifoTag && outCompress )
+  {
+    LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s-%d-%d.xml.gz",
+        ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
+    LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s-%d-%d.xml.gz",
+        ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
+  }
+  else if ( !userTag && !ifoTag && outCompress )
+  {
+    LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA-%d-%d.xml.gz", ifos,
+        startCoincidence, endCoincidence - startCoincidence );
+    LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE-%d-%d.xml.gz", ifos,
+        startCoincidence, endCoincidence - startCoincidence );
   }
   else
   {
@@ -2183,12 +2215,12 @@ cleanexit:
 
   if ( !numSlides )
   {
-    LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileName), 
+    LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileName ), 
         &status );
   }
   else
   {
-    LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileSlide), 
+    LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileSlide ), 
         &status );
   }
   /* write process table */
