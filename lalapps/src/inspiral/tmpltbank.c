@@ -170,6 +170,7 @@ int    writeRawData     = 0;            /* write the raw data to a file */
 int    writeResponse    = 0;            /* write response function used */
 int    writeSpectrum    = 0;            /* write computed psd to file   */
 int    writeStrainSpec  = 0;            /* write computed stain spec    */
+UINT4  outCompress      = 0;
 
 /* other command line args */
 CHAR comment[LIGOMETA_COMMENT_MAX];     /* process param comment        */
@@ -1066,22 +1067,46 @@ int main ( int argc, char *argv[] )
 cleanExit:
   /* open the output xml file */
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
-  if ( userTag && ifoTag )
+  if ( userTag && ifoTag && !outCompress)
   {
     LALSnprintf( fname, sizeof(fname), "%s-TMPLTBANK_%s_%s-%d-%d.xml",
         ifo, ifoTag, userTag, gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
-  else if (userTag && !ifoTag)
+  else if (userTag && !ifoTag && !outCompress)
   {
     LALSnprintf( fname, sizeof(fname), "%s-TMPLTBANK_%s-%d-%d.xml",
         ifo, userTag, gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
-  else if (!userTag && ifoTag)
+  else if (!userTag && ifoTag && !outCompress)
   {
     LALSnprintf( fname, sizeof(fname), "%s-TMPLTBANK_%s-%d-%d.xml",
         ifo, ifoTag, gpsStartTime.gpsSeconds,
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+  }
+  else if ( userTag && ifoTag && outCompress)
+  {
+    LALSnprintf( fname, sizeof(fname), "%s-TMPLTBANK_%s_%s-%d-%d.xml.gz",
+        ifo, ifoTag, userTag, gpsStartTime.gpsSeconds,
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+  }
+  else if (userTag && !ifoTag && outCompress)
+  {
+    LALSnprintf( fname, sizeof(fname), "%s-TMPLTBANK_%s-%d-%d.xml.gz",
+        ifo, userTag, gpsStartTime.gpsSeconds,
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+  }
+  else if (!userTag && ifoTag && outCompress)
+  {
+    LALSnprintf( fname, sizeof(fname), "%s-TMPLTBANK_%s-%d-%d.xml.gz",
+        ifo, ifoTag, gpsStartTime.gpsSeconds,
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+  }
+  else if (!userTag && !ifoTag && outCompress)
+  {
+    LALSnprintf( fname, sizeof(fname), "%s-TMPLTBANK-%d-%d.xml.gz",
+        ifo, gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else
@@ -1090,7 +1115,7 @@ cleanExit:
         ifo, gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
-  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname), &status );
+  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname ), &status );
 
   /* write the process table */
   LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFO_MAX, "%s", ifo );
@@ -1208,6 +1233,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --user-tag STRING            set the process_params usertag to STRING\n"\
 "  --ifo-tag STRING             set the ifotag to STRING - for file naming\n"\
 "  --comment STRING             set the process table comment to STRING\n"\
+"  --write-compress             write a compressed xml file\n"\
 "\n"\
 "  --gps-start-time SEC         GPS second of data start time\n"\
 "  --gps-end-time SEC           GPS second of data end time\n"\
@@ -1290,6 +1316,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   {
     /* these options set a flag */
     {"verbose",                 no_argument,       &vrbflg,           1 },
+    {"write-compress",          no_argument,       &outCompress,      1 },
     {"disable-high-pass",       no_argument,       &highPass,         0 },
     {"standard-candle",         no_argument,       &computeCandle,    1 },
     {"glob-frame-data",         no_argument,       &globFrameData,    1 },
