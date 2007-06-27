@@ -137,6 +137,8 @@ INT4   verbose              = 0;
 CHAR   outputPath[FILENAME_MAX];
 CHAR  *frInType         = NULL;         /* type of data frames          */
 
+UINT4 outCompress = 0;
+
 INT8  gpsStartTimeNS   = 0;         /* input data GPS start time ns */
 LIGOTimeGPS gpsStartTime;           /* input data GPS start time    */
 INT8  gpsEndTimeNS     = 0;         /* input data GPS end time ns   */
@@ -989,14 +991,28 @@ int main( int argc, char *argv[] )
       memset( &results, 0, sizeof(LIGOLwXMLStream) );
       if ( outputPath[0] )
 	{
-	  LALSnprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml", outputPath, fileName);
+	  if ( outCompress )
+	  {
+		  LALSnprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml.gz", outputPath, fileName);
+	  }
+	  else
+	  {
+		  LALSnprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml", outputPath, fileName);
+	  }
 	}
       else 
 	{
-	  LALSnprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml", fileName );
+	  if ( outCompress )
+	  {
+		  LALSnprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml.gz", fileName );
+	  }
+	  else
+	  {
+		  LALSnprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml", fileName );
+	  }
 	}
       if ( vrbflg ) fprintf( stdout, "writing XML data to %s...\n", xmlname );
-      LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, xmlname), &status );
+      LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, xmlname ), &status );
       
       /* write the process table */
       if ( vrbflg ) fprintf( stdout, "  process table...\n" );
@@ -1127,6 +1143,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --write-events               write events\n"\
 "  --write-cohsnr               write cohsnr\n"\
 "  --output-path                write files here\n"\
+"  --write-compress             write compressed xml files\n"\
 "  --H1-framefile               frame data for H1\n"\
 "  --H2-framefile               frame data for H2\n"\
 "  --L1-framefile                frame data for L\n"\
@@ -1140,6 +1157,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
    struct option long_options[] = 
      {
      {"verbose",                  no_argument,       &vrbflg,            1 },
+     {"write-compress",           no_argument,       &outCompress,       1 },
      {"help",                     no_argument,       0,                 'h'},
      {"version",                  no_argument,       0,                 'v'},
      {"debug-level",              required_argument, 0,                 'd'},
