@@ -85,6 +85,7 @@ static void print_usage(char *program)
       " [--debug-level]   level       set the LAL debug level to LEVEL\n"\
       " [--user-tag]      usertag     set the process_params usertag\n"\
       " [--comment]       string      set the process table comment\n"\
+      " [--write-compress]            write a compressed xml file\n"\
       "  --bank-file      file        the input trigger file.\n"\
       "  --ifos           ifos        list of ifos for which we have data\n"\
       "  --gps-start-time start_time  start time of the job\n"\
@@ -138,6 +139,7 @@ int main( int argc, char *argv[] )
   MetadataTable         inspiralTable;
   ProcessParamsTable   *this_proc_param = NULL;
   LIGOLwXMLStream       xmlStream;
+  UINT4                 outCompress = 0;
 
 
   /* getopt arguments */
@@ -146,6 +148,7 @@ int main( int argc, char *argv[] )
     {"verbose",                no_argument,     &vrbflg,                  1 },
     {"enable-all-ifo",         no_argument,     &allIFO,                  1 },
     {"disable-all-ifo",        no_argument,     &allIFO,                  0 },
+    {"write-compress",         no_argument,     &outCompress,             1 },
     {"comment",                required_argument,     0,                 'x'},
     {"user-tag",               required_argument,     0,                 'Z'},
     {"help",                   no_argument,           0,                 'h'}, 
@@ -520,10 +523,20 @@ int main( int argc, char *argv[] )
   if ( vrbflg ) fprintf( stdout, "writing output file... " );
 
   /* set the file name correctly */
-  if ( userTag )
+  if ( userTag && !outCompress )
   {
     LALSnprintf( fileName, FILENAME_MAX, "%s-COHBANK_%s-%d-%d.xml", 
         ifos, userTag, startTime, endTime - startTime );  
+  }
+  else if ( userTag && outCompress )
+  {
+    LALSnprintf( fileName, FILENAME_MAX, "%s-COHBANK_%s-%d-%d.xml.gz",
+        ifos, userTag, startTime, endTime - startTime );
+  }
+  else if ( !userTag && outCompress )
+  {
+    LALSnprintf( fileName, FILENAME_MAX, "%s-COHBANK-%d-%d.xml.gz",
+        ifos, startTime, endTime - startTime );
   }
   else
   {
@@ -531,7 +544,7 @@ int main( int argc, char *argv[] )
         ifos, startTime, endTime - startTime );
   }
   memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
-  LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileName), 
+  LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileName ), 
       &status );
 
   /* write process table */
