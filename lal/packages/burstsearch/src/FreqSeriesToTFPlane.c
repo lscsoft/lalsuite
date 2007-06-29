@@ -264,6 +264,7 @@ int XLALFreqSeriesToTFPlane(
 		XLAL_ERROR(func, XLAL_EFUNC);
 	}
 
+	XLALPrintInfo("XLALFreqSeriesToTFPlane(): generating channel filters\n");
 	/* generate the frequency domain filter functions */
 	for(i = 0; i < plane->channels; i++) {
 		filter[i] = generate_filter(fseries, plane->flow + i * plane->deltaF, plane->deltaF, enable_over_whitening ? psd : NULL);
@@ -280,6 +281,7 @@ int XLALFreqSeriesToTFPlane(
 	for(i = 0; i < plane->channels - 1; i++)
 		plane->twice_channel_overlap->data[i] = 2 * filter_overlap(filter[i], filter[i + 1]);
 
+	XLALPrintInfo("XLALFreqSeriesToTFPlane(): projecting data onto time-frequency plane\n");
 	/* loop over time-frequency plane's channels */
 	for(i = 0; i < plane->channels; i++) {
 		/* cross correlate the input data against the channel
