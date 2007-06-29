@@ -278,7 +278,7 @@ int XLALFreqSeriesToTFPlane(
 
 	/* compute the channel overlaps */
 	for(i = 0; i < plane->channels - 1; i++)
-		plane->channel_overlap->data[i] = filter_overlap(filter[i], filter[i + 1]);
+		plane->twice_channel_overlap->data[i] = 2 * filter_overlap(filter[i], filter[i + 1]);
 
 	/* loop over time-frequency plane's channels */
 	for(i = 0; i < plane->channels; i++) {

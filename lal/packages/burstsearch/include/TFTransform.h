@@ -57,11 +57,11 @@ typedef struct tagREAL4TimeFrequencyPlane {
 	REAL8 deltaF;
 	/* low frequency boundary of TF plane */
 	REAL8 flow;
-	/* inner product of filters for neighbouring channels;
-	 * channel_overlap[0] is the inner product of the filters for
-	 * channels 0 and 1, and so on (for n channels, there are n - 1
-	 * channel_overlaps) */
-	REAL8Sequence *channel_overlap;
+	/* twice the inner product of filters for neighbouring channels;
+	 * twice_channel_overlap[0] is twice the inner product of the
+	 * filters for channels 0 and 1, and so on (for n channels, there
+	 * are n - 1 channel_overlaps) */
+	REAL8Sequence *twice_channel_overlap;
 	/* predicted root mean square for the time series in each channel */
 	REAL8Sequence *channel_rms;
 	/* channel data.  channel[j]->data[i] corresponds to time

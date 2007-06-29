@@ -108,9 +108,9 @@ SnglBurstTable *XLALComputeExcessPower(
 	for(channel_end = (channel = 0) + channels; channel_end <= plane->channels; channel_end = (channel += channels / plane->tiles.inv_fractional_stride) + channels) {
 		/* sum of inner products of all pairs of channels
 		 * contributing to this tile's "virtual channel" */
-		const double channel_overlap = XLALREAL8SequenceSum(plane->channel_overlap, channel, channels - 1);
+		const double twice_channel_overlap = XLALREAL8SequenceSum(plane->twice_channel_overlap, channel, channels - 1);
 		/* mean square for this tile's "virtual channel" */
-		const double pixel_mean_square = XLALREAL8SequenceSumSquares(plane->channel_rms, channel, channels) / (channels + channel_overlap);
+		const double pixel_mean_square = XLALREAL8SequenceSumSquares(plane->channel_rms, channel, channels) / (channels + twice_channel_overlap);
 	for(length = plane->tiles.min_length; length <= plane->tiles.max_length; length *= 2) {
 		/* number of degrees of freedom in tile = number of
 		 * "virtual pixels" in tile */
@@ -141,8 +141,8 @@ SnglBurstTable *XLALComputeExcessPower(
 		}
 		/* normalization to give each "virtual pixel" a mean square
 		 * snr of 1.0 */
-		sumsquares /= channels + channel_overlap;
-		hsumsquares /= channels + channel_overlap;
+		sumsquares /= channels + twice_channel_overlap;
+		hsumsquares /= channels + twice_channel_overlap;
 
 		/* compute statistical confidence, see if it's above
 		 * threshold */

@@ -283,7 +283,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 {
 	static const char func[] = "XLALCreateTFPlane";
 	REAL4TimeFrequencyPlane *plane;
-	REAL8Sequence *channel_overlap;
+	REAL8Sequence *twice_channel_overlap;
 	REAL8Sequence *channel_rms;
 	REAL4Sequence **channel;
 	REAL4Window *tukey;
@@ -384,13 +384,13 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	 */
 
 	plane = XLALMalloc(sizeof(*plane));
-	channel_overlap = XLALCreateREAL8Sequence(channels - 1);
+	twice_channel_overlap = XLALCreateREAL8Sequence(channels - 1);
 	channel_rms = XLALCreateREAL8Sequence(channels);
 	channel = XLALMalloc(channels * sizeof(*channel));
 	tukey = XLALCreateTukeyREAL4Window(tseries_length, (tseries_length - tiling_length) / (double) tseries_length);
-	if(!plane || !channel_overlap || !channel_rms || !channel || !tukey) {
+	if(!plane || !twice_channel_overlap || !channel_rms || !channel || !tukey) {
 		XLALFree(plane);
-		XLALDestroyREAL8Sequence(channel_overlap);
+		XLALDestroyREAL8Sequence(twice_channel_overlap);
 		XLALDestroyREAL8Sequence(channel_rms);
 		XLALFree(channel);
 		XLALDestroyREAL4Window(tukey);
@@ -402,23 +402,13 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 			while(--i)
 				XLALDestroyREAL4Sequence(channel[i]);
 			XLALFree(plane);
-			XLALDestroyREAL8Sequence(channel_overlap);
+			XLALDestroyREAL8Sequence(twice_channel_overlap);
 			XLALDestroyREAL8Sequence(channel_rms);
 			XLALFree(channel);
 			XLALDestroyREAL4Window(tukey);
 			XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 		}
 	}
-
-	/*
-	 * Adjust the Tukey window's normalization so that it is
-	 * RMS-preserving in the flat portion.  This is done by setting its
-	 * normalization to be equal to that of a rectangular window
-	 * (pretend the tapers aren't present).
-	 */
-
-	tukey->sumofsquares = tukey->data->length;
-	tukey->sum = tukey->data->length;
 
 	/* 
 	 * Initialize the structure
@@ -431,7 +421,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	plane->channels = channels;
 	plane->deltaF = deltaF;
 	plane->flow = flow;
-	plane->channel_overlap = channel_overlap;
+	plane->twice_channel_overlap = twice_channel_overlap;
 	plane->channel_rms = channel_rms;
 	plane->channel = channel;
 	plane->tiles.min_length = min_length;
@@ -465,7 +455,7 @@ void XLALDestroyTFPlane(
 	unsigned i;
 
 	if(plane) {
-		XLALDestroyREAL8Sequence(plane->channel_overlap);
+		XLALDestroyREAL8Sequence(plane->twice_channel_overlap);
 		XLALDestroyREAL8Sequence(plane->channel_rms);
 		for(i = 0; i < plane->channels; i++)
 			XLALDestroyREAL4Sequence(plane->channel[i]);
