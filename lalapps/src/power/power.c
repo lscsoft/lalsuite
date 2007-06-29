@@ -1858,7 +1858,7 @@ int main(int argc, char *argv[])
 		/* Scale the time series if calibrated data.  Note, the
 		 * same factor must be removed after, see below */
 		if(options->calibrated) {
-			const double scale = 1e10;
+			const double scale = 1e15;
 			unsigned i;
 			for(i = 0; i < series->data->length; i++)
 				series->data->data[i] *= scale;
@@ -1911,7 +1911,7 @@ int main(int argc, char *argv[])
 	 */
 
 	if(options->calibrated) {
-		const double scale = 1e10;
+		const double scale = 1e15;
 		SnglBurstTable *event;
 		for(event = burstEvent; event; event = event->next)
 			event->amplitude /= scale;
