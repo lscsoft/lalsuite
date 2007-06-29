@@ -80,7 +80,7 @@ COMPLEX8FrequencySeries *XLALWindowedREAL4ForwardFFT(
 	/* apply normalized window to time series data;  emulate a
 	 * rectangular window (all 1s) if none was supplied */
 	if(window) {
-		A = sqrt(tseries->data->length / window->sumofsquares) * tseries->deltaT;
+		A = tseries->deltaT / sqrt(window->sumofsquares / window->data->length);
 		for(i = 0; i < tmp->length; i++)
 			tmp->data[i] *= A * window->data->data[i];
 	} else {
