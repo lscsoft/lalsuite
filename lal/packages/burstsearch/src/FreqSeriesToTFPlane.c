@@ -75,9 +75,14 @@ static COMPLEX8FrequencySeries *generate_filter(
 	 * channel filter at all would do, but this way the code's
 	 * behaviour is more easily understood --- it's easy to say "the
 	 * channel filter is a Tukey window of variable centre width".
+	 *
+	 * Note:  the number of samples in the window is odd, being one
+	 * more than the number of frequency bins in twice the channel
+	 * width.  This gets the Hann windows to super-impose to form a
+	 * Tukey window.  (you'll have to draw yourself a picture).
 	 */
 
-	filter = XLALCreateCOMPLEX8FrequencySeries(filter_name, &template->epoch, channel_flow - channel_width / 2, template->deltaF, &lalDimensionlessUnit, 2 * channel_width / template->deltaF);
+	filter = XLALCreateCOMPLEX8FrequencySeries(filter_name, &template->epoch, channel_flow - channel_width / 2, template->deltaF, &lalDimensionlessUnit, 2 * channel_width / template->deltaF + 1);
 	hann = XLALCreateHannREAL4Window(filter->data->length);
 	if(!filter || !hann) {
 		XLALDestroyCOMPLEX8FrequencySeries(filter);
