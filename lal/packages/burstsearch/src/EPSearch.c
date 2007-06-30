@@ -105,14 +105,14 @@ SnglBurstTable *XLALEPSearch(
 
 	switch(params->method) {
 	case useMean:
-		if(XLALREAL4AverageSpectrumWelch(psd, tseries, params->window->data->length, plane->window_shift, params->window, fplan) < 0) {
+		if(XLALREAL4AverageSpectrumWelch(psd, tseries, plane->window->data->length, plane->window_shift, plane->window, fplan) < 0) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
 		break;
 
 	case useMedian:
-		if(XLALREAL4AverageSpectrumMedian(psd, tseries, params->window->data->length, plane->window_shift, params->window, fplan) < 0) {
+		if(XLALREAL4AverageSpectrumMedian(psd, tseries, plane->window->data->length, plane->window_shift, plane->window, fplan) < 0) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
@@ -130,13 +130,13 @@ SnglBurstTable *XLALEPSearch(
 	 * Loop over data applying excess power method.
 	 */
 
-	for(start_sample = 0; start_sample + params->window->data->length <= tseries->data->length; start_sample += plane->window_shift) {
+	for(start_sample = 0; start_sample + plane->window->data->length <= tseries->data->length; start_sample += plane->window_shift) {
 		/*
 		 * Extract a window-length of data from the time series,
 		 * compute its DFT, then free it.
 		 */
 
-		cuttseries = XLALCutREAL4TimeSeries(tseries, start_sample, params->window->data->length);
+		cuttseries = XLALCutREAL4TimeSeries(tseries, start_sample, plane->window->data->length);
 		if(!cuttseries) {
 			errorcode = XLAL_EFUNC;
 			goto error;
@@ -179,7 +179,6 @@ SnglBurstTable *XLALEPSearch(
 		 * series.
 		 */
 
-		XLALPrintInfo("XLALEPSearch(): computing the time-frequency decomposition\n");
 		if(XLALFreqSeriesToTFPlane(plane, fseries, psd, rplan, params->useOverWhitening)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
