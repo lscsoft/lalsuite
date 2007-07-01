@@ -424,7 +424,6 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	plane->twice_channel_overlap = twice_channel_overlap;
 	plane->channel_rms = channel_rms;
 	plane->channel = channel;
-	plane->tiles.min_length = min_length;
 	plane->tiles.max_length = max_length;
 	plane->tiles.min_channels = min_channels;
 	plane->tiles.max_channels = max_channels;

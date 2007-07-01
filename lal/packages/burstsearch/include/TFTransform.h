@@ -75,7 +75,6 @@ typedef struct tagREAL4TimeFrequencyPlane {
 	REAL4Sequence **channel;
 	/* time-frequency plane's tiling information */
 	struct TFTiling {
-		unsigned min_length;
 		unsigned max_length;
 		unsigned min_channels;
 		unsigned max_channels;
