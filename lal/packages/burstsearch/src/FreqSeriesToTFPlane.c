@@ -282,7 +282,7 @@ int XLALFreqSeriesToTFPlane(
 		plane->twice_channel_overlap->data[i] = 2 * filter_overlap(filter[i], filter[i + 1]);
 
 	XLALPrintInfo("XLALFreqSeriesToTFPlane(): projecting data onto time-frequency plane\n");
-	/* loop over time-frequency plane's channels */
+	/* loop over the time-frequency plane's channels */
 	for(i = 0; i < plane->channels; i++) {
 		/* cross correlate the input data against the channel
 		 * filter by taking their product in the frequency domain
@@ -297,6 +297,13 @@ int XLALFreqSeriesToTFPlane(
 			XLALFree(filter);
 			XLALDestroyCOMPLEX8Sequence(fcorr);
 			XLAL_ERROR(func, XLAL_EFUNC);
+		}
+		{
+		/* correct for bias resulting from time-domain window used
+		 * to put tapers on time series */
+		unsigned j;
+		for(j = 0; j < plane->channel[i]->length; j++)
+			plane->channel[i]->data[j] *= sqrt(plane->window->sumofsquares / plane->window->data->length);
 		}
 
 		/* Store the expected root mean square for this channel */
