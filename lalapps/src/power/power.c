@@ -1019,7 +1019,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 
 	XLALPrintInfo("%s: using --psd-average-points %zu\n", argv[0], options->psd_length);
 	if(options->max_series_length)
-		XLALPrintInfo("%s: available RAM limits analysis to %d samples\n", argv[0], options->max_series_length);
+		XLALPrintInfo("%s: available RAM limits analysis to %d samples (%g s)\n", argv[0], options->max_series_length, options->max_series_length / (double) options->resample_rate);
 
 	return options;
 }
