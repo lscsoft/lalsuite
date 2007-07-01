@@ -774,11 +774,11 @@ COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeri
       /* PSD has a 0 in it */
       REAL8 f = fseries->f0 + i * fseries->deltaF;
       if((fmin <= f) && (f < fmax))
-        /* ignore, zero the output */
-        factor = 0;
-      else
-        /* error */
+        /* f is in band:  error */
         XLAL_ERROR_NULL(func, XLAL_EFPDIV0);
+      else
+        /* f is out of band:  ignore, zero the output */
+        factor = 0;
     }
     else
       factor = sqrt(2 * fseries->deltaF / pdata[j]);
@@ -824,11 +824,11 @@ COMPLEX16FrequencySeries *XLALWhitenCOMPLEX16FrequencySeries(COMPLEX16FrequencyS
       /* PSD has a 0 in it */
       REAL8 f = fseries->f0 + i * fseries->deltaF;
       if((fmin <= f) && (f < fmax))
-        /* ignore, zero the output */
-        factor = 0;
-      else
-        /* error */
+        /* f is in band:  error */
         XLAL_ERROR_NULL(func, XLAL_EFPDIV0);
+      else
+        /* f is out of band:  ignore, zero the output */
+        factor = 0;
     }
     else
       factor = sqrt(2 * fseries->deltaF / pdata[j]);
