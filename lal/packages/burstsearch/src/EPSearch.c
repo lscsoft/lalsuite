@@ -155,15 +155,6 @@ SnglBurstTable *XLALEPSearch(
 
 		/*
 		 * Normalize the frequency series to the average PSD.
-		 * FIXME: the psd has been computed from data that was
-		 * windowed in the time domain with a different window than
-		 * has been used in optaining fseries.  This means that
-		 * whatever spectral leakage is induced by windowing has
-		 * not occured identically in the two.  The windows are
-		 * pretty close to each other (Hann vs. 50% Tukey) so it's
-		 * almost certainly not an issue, but it might be worth one
-		 * day reassuring ourselves that the PSD is a good PSD for
-		 * the fseries.
 		 */
 
 		XLALPrintInfo("XLALEPSearch(): normalizing to the average spectrum\n");
