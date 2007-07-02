@@ -1282,7 +1282,7 @@ static UINT4 base[LUT_RES+LUT_RES/4] =
     0x03F7FF51A,
     0x03F7FFB45,
     0x03F7FFEF9
-  }
+  };
 
 
 static UINT4 diff[LUT_RES+LUT_RES/4] =
@@ -2567,4 +2567,4 @@ static UINT4 diff[LUT_RES+LUT_RES/4] =
     0x031C56250,
     0x0316CDDE6,
     0x0309DE9C6
-  }
+  };
