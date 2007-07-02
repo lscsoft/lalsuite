@@ -1095,6 +1095,9 @@ int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x) {
 
 #include "InitSinCosTabs.c"
 
+  static REAL4* cbase = ((REAL4*)base) + (LUT_RES/4);
+  static REAL4* cdiff = ((REAL4*)diff) + (LUT_RES/4);
+
   INT4  i,n;
   INT8  ix;
 
@@ -1111,8 +1114,8 @@ int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x) {
   i = ix & SINCOS_MASK1;
   i = i >> 10;
 
-  (*sin2pix) = ((REAL4*)base)[i] + n * ((REAL4*)diff)[i];
-  (*cos2pix) = ((REAL4*)base)[i+(LUT_RES/4)] + n * ((REAL4*)diff)[i+(LUT_RES/4)];
+  (*sin2pix) = ((REAL4*)base)[i]  + n * ((REAL4*)diff)[i];
+  (*cos2pix) = ((REAL4*)cbase)[i] + n * ((REAL4*)cdiff)[i];
 
   return XLAL_SUCCESS;
 }
