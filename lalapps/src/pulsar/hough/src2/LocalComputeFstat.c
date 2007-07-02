@@ -1099,14 +1099,15 @@ int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x) {
   INT8  ix;
 
 #define SINCOS_ADD  25769803776.0
-#define SINCOS_MASK1 0x3FFFF /* binary 00001111 */
-#define SINCOS_MASK2 0x3FF /* binary 00001111 */
+#define SINCOS_MASK1 0x3FFFF
+#define SINCOS_MASK2 0x3FF
 #define SINCOS_SHIFT
 
 
   x += SINCOS_ADD;
   ix = *(INT8*)(&x);
   n = ix & SINCOS_MASK2;
+  n = n << 6;
   i = ix & SINCOS_MASK1;
   i = i >> 10;
 
