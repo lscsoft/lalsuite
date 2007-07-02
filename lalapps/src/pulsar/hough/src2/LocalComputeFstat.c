@@ -69,8 +69,9 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
    2: "original" two-table version like in LAL
    6: "6-table" version as derived from old CFS code used up to S5R1
    3: "vectorized" version based on "6-table", combined them into 3
+   9: Liear interpolation from Akos
 */
-#define SINCOS_VERSION 2
+#define SINCOS_VERSION 9
 #endif
 
 /*----- Macros ----- */
@@ -138,6 +139,7 @@ int LocalXLALComputeFaFb (Fcomponents*, const SFTVector*, const PulsarSpins,
 			  const SSBtimes*, const AMCoeffs*, const ComputeFParams*);
 
 int local_sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
+int local_sin_cos_2PI_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -1076,6 +1078,38 @@ int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
   (*sin2pix) = sinVal[i] + d * cosVal2PI[i] + d2 * sinVal2PIPI[i];
   (*cos2pix) = cosVal[i] + d * sinVal2PI[i] + d2 * cosVal2PIPI[i];
 #endif
+
+  return XLAL_SUCCESS;
+}
+
+
+#elif (SINCOS_VERSION == 9)
+
+#define LUT_RES 256
+int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x) {
+
+  /* Lookup tables for fast sin/cos calculation */
+  /* static REAL4 base[LUT_RES+LUT_RES/4];
+     static REAL4 diff[LUT_RES+LUT_RES/4];
+     static BOOLEAN tabs_empty = 1; /* reset after initializing the sin/cos tables */
+
+#include "InitSinCosTabs.c"
+
+  INT4  i,n;
+
+#define SINCOS_ADD  25769803776.0
+#define SINCOS_MASK1 0x3FFFF /* binary 00001111 */
+#define SINCOS_MASK2 0x3FF /* binary 00001111 */
+#define SINCOS_SHIFT
+
+
+  x += SINCOS_ADD;
+  n = (INT8)x & SINCOS_MASK2;
+  i = (INT8)x & SINCOS_MASK1;
+  i = i >> 10;
+
+  (*sin2pix) = base[i] + n * diff[i];
+  (*cos2pix) = base[i+(LUT_RES/4)] + n * diff[i+(LUT_RES/4)];
 
   return XLAL_SUCCESS;
 }
