@@ -200,6 +200,8 @@ typedef struct
   
   INT4 metricType;	/**< metric to compute: F-, phase-, orbital-, Ptole- metric */
   INT4 unitsType;	/**< which units to use for 't' and 'rX/c': SI vs natural */
+
+  INT4 projection;     /**< project metric onto surface */
 } UserVariables_t;
 
 
@@ -228,7 +230,8 @@ int computeFstatMetric ( gsl_matrix *gF_ij, gsl_matrix *gFav_ij,
 			 ConfigVariables *cfg );
 int computePhaseMetric ( gsl_matrix *g_ij, const PhaseDerivs *dphi, const REAL8Vector *GLweights );
 
-int outer_product (gsl_matrix *ret_ij, const gsl_vector *u_i, const gsl_vector *v_j );
+int project_metric( gsl_matrix *ret_ij, gsl_matrix *g_ij, const INT4 coordinate );
+int outer_product ( gsl_matrix *ret_ij, const gsl_vector *u_i, const gsl_vector *v_j );
 int symmetrize ( gsl_matrix *mat );
 REAL8 quad_form ( const gsl_matrix *mat, const gsl_vector *vec );
 
@@ -254,8 +257,8 @@ main(int argc, char *argv[])
   gsl_matrix *gF_ij, *gFav_ij;
   REAL8 m1, m2, m3;
   REAL8 mF, mFav, disc, mMin, mMax;
-  gsl_matrix *g_ij, *gFlat_ij;
-  REAL8 mm;
+  gsl_matrix *g_ij, *gFlat_ij, *gamma_ij;
+  REAL8 mm, mm_projected;
   UserVariables_t uvar = empty_UserVariables;
 
   FILE *fpMetric = 0;
@@ -294,6 +297,7 @@ main(int argc, char *argv[])
   m3_ij = gsl_matrix_calloc ( METRIC_DIM, METRIC_DIM );
   g_ij = gsl_matrix_calloc ( METRIC_DIM, METRIC_DIM );
   gFlat_ij = gsl_matrix_calloc ( METRIC_DIM, METRIC_DIM );
+  gamma_ij = gsl_matrix_calloc ( METRIC_DIM, METRIC_DIM );
 
   LAL_CALL ( InitCode(&status, &config, &uvar), &status);
 
@@ -388,6 +392,13 @@ main(int argc, char *argv[])
 	    {
 	      const CHAR *gprefix, *mprefix;
 	      if ( metricType == METRIC_PHASE ) {
+		if ( uvar.projection > 0 ) {
+		  project_metric(gamma_ij, g_ij, (uvar.projection - 1) );
+		  mm_projected = quad_form ( gamma_ij, config.dopplerOffset );
+		  gprefix = "gPh_projected_ij = \\\n"; mprefix = "mPh_projected = ";
+		  fprintf ( fpMetric, gprefix ); XLALfprintfGSLmatrix ( fpMetric, "%.6g", gamma_ij );
+		  fprintf ( fpMetric, "\n%s %.16g;\n\n", mprefix, mm_projected );
+		} 
 		gprefix = "gPh_ij = \\\n"; mprefix = "mPh = ";
 	      } else if ( metricType == METRIC_ORBITAL ) {
 		gprefix = "gOrb_ij = \\\n"; mprefix = "mOrb = ";
@@ -498,6 +509,7 @@ main(int argc, char *argv[])
   gsl_matrix_free ( gFav_ij );
   gsl_matrix_free ( g_ij );
   gsl_matrix_free ( gFlat_ij );
+  gsl_matrix_free ( gamma_ij );
 
   gsl_matrix_free ( m1_ij );
   gsl_matrix_free ( m2_ij );
@@ -917,6 +929,8 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
   uvar->metricType = METRIC_ALL;
   uvar->unitsType = UNITS_SI;
 
+  uvar->projection = 0;
+
   /* register all our user-variable */
 
   LALregBOOLUserStruct(status,	help,		'h', UVAR_HELP,		"Print this help/usage message");
@@ -942,6 +956,7 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
   LALregSTRINGUserStruct(status, outputMetric,	 0, UVAR_OPTIONAL,	"Output the metric components (in octave format) into this file.");
   LALregINTUserStruct(status,  	metricType,	 0,  UVAR_OPTIONAL,	"Type of metric: 0=ALL, 1=mF, 2=mPh, 3=mOrb, 4=mPtole, 5=flat");
   LALregINTUserStruct(status,  	unitsType,	 0,  UVAR_OPTIONAL,	"Which units to use for metric components: 0=SI, 1=natural (order-1)");
+  LALregINTUserStruct(status,   projection,      0,  UVAR_OPTIONAL,     "Coordinate of metric projection: 0=none, 1=f, 2=Alpha, 3=Delta, 4=f1dot");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1406,6 +1421,41 @@ FreeMem ( LALStatus *status, ConfigVariables *cfg )
 
 } /* FreeMem() */
 
+
+/** Calculate the projected metric onto the subspace of 'c' given by                                                                                                   
+ * ret_ij = g_ij - ( g_ic * g_jc / g_cc ) , where c is the value of the projected coordinate
+ * The output-matrix ret must be allocated                                                                                              
+ *                                                                                                                                                                              
+ * return 0 = OK, -1 on error.                                                                                                                                                  
+ */
+int 
+project_metric( gsl_matrix *ret_ij, gsl_matrix * g_ij, const INT4 c )
+{
+  UINT4 i,j;
+
+  if ( c < 0 )
+    return -1;
+
+  if ( !ret_ij )
+    return -1;
+
+  if ( (ret_ij->size1 != ret_ij->size2) )
+    return -1;
+
+  for ( i=0; i < ret_ij->size1; i ++) {
+    for ( j=0; j < ret_ij->size2; j ++ ) {
+      if ( i==c || j==c ) {
+	gsl_matrix_set ( ret_ij, i, j, 0.0 );
+      }
+      else {
+	gsl_matrix_set ( ret_ij, i, j, ( gsl_matrix_get(g_ij, i, j) - (gsl_matrix_get(g_ij, i, c) * gsl_matrix_get(g_ij, j, c) / gsl_matrix_get(g_ij, c, c)) ));
+      }
+    }
+  }
+  return 0;
+}
+
+
 /** Calculate the outer product ret_ij of vectors u_i and v_j, given by
  * ret_ij = u_i v_j 
  * The output-matrix ret must be allocated and have dimensions len(u) x len(v) 
@@ -1459,6 +1509,7 @@ symmetrize ( gsl_matrix *mat )
 
 } /* symmetrize() */
 
+
 /* compute the quadratic form = vec.mat.vec
  */
 REAL8 
@@ -1484,6 +1535,7 @@ quad_form ( const gsl_matrix *mat, const gsl_vector *vec )
 /** Get Ptolemaic position and velocity at time tGPS 
  * cut-down version of LALDTBaryPtolemaic()
  */
+
 void
 getPtolePosVel( PosVel_t *posvel, REAL8 tGPS, REAL8 tAutumnGPS )
 {
