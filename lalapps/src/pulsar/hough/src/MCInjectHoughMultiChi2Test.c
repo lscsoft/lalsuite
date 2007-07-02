@@ -778,12 +778,12 @@ int main(int argc, char *argv[]){
        MCloopId  I.f0 H.f0 I.f1 H.f1 I.alpha H.alpha I.delta H.delta I.phi0  I.psi
        (not cos iota)  */
 	     
-    fprintf(fpPar," %d %f %f %g %g %f %f %f %f %f %f ", 
+    fprintf(fpPar," %d %f %f %g %g %f %f %f %f %f %f %f", 
 	    MCloopId, pulsarInject.f0, pulsarTemplate.f0,
 	    pulsarInject.spindown.data[0], pulsarTemplate.spindown.data[0],
 	    pulsarInject.longitude, pulsarTemplate.longitude,
 	    pulsarInject.latitude, pulsarTemplate.latitude,
-	    pulsarInject.phi0, pulsarInject.psi
+	    pulsarInject.phi0, pulsarInject.psi, (pulsarInject.aCross)/injectPar.h0
 	    );
 	     
    /* ****************************************************************/
