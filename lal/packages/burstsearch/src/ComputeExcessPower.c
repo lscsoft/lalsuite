@@ -111,11 +111,12 @@ SnglBurstTable *XLALComputeExcessPower(
 		const double twice_channel_overlap = XLALREAL8SequenceSum(plane->twice_channel_overlap, channel, channels - 1);
 		/* mean square for this tile's "virtual channel" */
 		const double pixel_mean_square = XLALREAL8SequenceSumSquares(plane->channel_rms, channel, channels) / (channels + twice_channel_overlap);
+	/* start with at least 2 degrees of freedom */
 	for(length = 2 / (channels * plane->tiles.dof_per_pixel); length <= plane->tiles.max_length; length *= 2) {
+		const double tile_dof = (length * channels) * plane->tiles.dof_per_pixel;
 		/* number of degrees of freedom in tile = number of
-		 * "virtual pixels" in tile */
-		double tile_dof = (length * channels) * plane->tiles.dof_per_pixel;
-		/* distance between tile's "virtual pixels" */
+		 * "virtual pixels" in tile.  compute distance between
+		 * tile's "virtual pixels" */
 		const unsigned tstep = length / tile_dof;
 	for(end = (start = plane->tiles.tiling_start) + length; end <= plane->tiles.tiling_end; end = (start += length / plane->tiles.inv_fractional_stride) + length) {
 		double sumsquares = 0.0;
