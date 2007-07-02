@@ -96,6 +96,30 @@ SnglBurstTable *XLALEPSearch(
 		goto error;
 	}
 
+#if 0
+	/* diagnostic code to replace the input time series with stationary
+	 * Gaussian white noise.  the normalization is such that it yields
+	 * unit variance frequency components without a call to the
+	 * whitening function. */
+	{
+	unsigned i;
+	static RandomParams *rparams = NULL;
+	if(!rparams)
+		rparams = XLALCreateRandomParams(0);
+	XLALNormalDeviates(tseries->data, rparams);
+	for(i = 0; i < tseries->data->length; i++)
+		tseries->data->data[i] *= sqrt(0.5 / tseries->deltaT);
+	}
+#endif
+#if 0
+	/* diagnostic code to disable the tapering window */
+	{
+	unsigned i = plane->window->data->length;
+	XLALDestroyREAL4Window(plane->window);
+	plane->window = XLALCreateRectangularREAL4Window(i);
+	}
+#endif
+
 	/*
 	 * Compute the average spectrum.
 	 *
@@ -158,7 +182,7 @@ SnglBurstTable *XLALEPSearch(
 		 */
 
 		XLALPrintInfo("XLALEPSearch(): normalizing to the average spectrum\n");
-		if(!XLALWhitenCOMPLEX8FrequencySeries(fseries, psd, params->flow, fseries->f0 + fseries->data->length * fseries->deltaF)) {
+		if(!XLALWhitenCOMPLEX8FrequencySeries(fseries, psd, plane->flow, plane->flow + plane->channels * plane->deltaF)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
