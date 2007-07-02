@@ -1085,7 +1085,6 @@ int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
 
 #elif (SINCOS_VERSION == 9)
 
-#define LUT_RES 256
 int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x) {
 
   /* Lookup tables for fast sin/cos calculation */
