@@ -336,6 +336,11 @@ int XLALFreqSeriesToTFPlane(
 		{
 		/* correct for bias resulting from time-domain window used
 		 * to put tapers on time series */
+		/* FIXME:  fix this properly, the real reason is
+		 * correlations in the spectrum.  it turns out the average
+		 * effect is to shift a single channel's normalization by
+		 * the sum-of-squares of the window, but this doesn't
+		 * account for interchannel correlations properly */
 		unsigned j;
 		for(j = 0; j < plane->channel[i]->length; j++)
 			plane->channel[i]->data[j] *= sqrt(plane->window->sumofsquares / plane->window->data->length);
