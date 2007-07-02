@@ -264,6 +264,41 @@ int XLALFreqSeriesToTFPlane(
 		XLAL_ERROR(func, XLAL_EFUNC);
 	}
 
+#if 0
+	/* diagnostic code to dump data for the s_{k} histogram */
+	{
+	unsigned k;
+	FILE *f = fopen("sk.dat", "a");
+	for(k = plane->flow / fseries->deltaF; k < (plane->flow + plane->channels * plane->deltaF) / fseries->deltaF; k++)
+		fprintf(f, "%g\n%g\n", fseries->data->data[k].re, fseries->data->data[k].im);
+	fclose(f);
+	}
+#endif
+#if 0
+	/* diagnostic code to dump data for the s_{k} s^{*}_{k'} histogram
+	 * */
+	{
+	unsigned k, dk;
+	FILE *f = fopen("sksk.dat", "a");
+	for(dk = 0; dk < 100; dk++) {
+		double avg_r = 0;
+		double avg_i = 0;
+	for(k = plane->flow / fseries->deltaF; k + dk < (plane->flow + plane->channels * plane->deltaF) / fseries->deltaF; k++) {
+		double dr = fseries->data->data[k].re;
+		double di = fseries->data->data[k].im;
+		double dkr = fseries->data->data[k + dk].re;
+		double dki = fseries->data->data[k + dk].im;
+		avg_r += dr * dkr + di * dki;
+		avg_i += di * dkr - dr * dki;
+	}
+		avg_r /= k - plane->flow / fseries->deltaF;
+		avg_i /= k - plane->flow / fseries->deltaF;
+		fprintf(f, "%d %g %g\n", dk, avg_r, avg_i);
+	}
+	fclose(f);
+	}
+#endif
+
 	XLALPrintInfo("XLALFreqSeriesToTFPlane(): generating channel filters\n");
 	/* generate the frequency domain filter functions */
 	for(i = 0; i < plane->channels; i++) {
