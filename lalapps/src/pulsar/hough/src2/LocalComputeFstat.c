@@ -1095,24 +1095,36 @@ int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x) {
 
 #include "InitSinCosTabs.c"
 
+  INT4  i,n;
+  INT8  ix;
   static REAL4* cbase = ((REAL4*)base) + (LUT_RES/4);
   static REAL4* cdiff = ((REAL4*)diff) + (LUT_RES/4);
 
-  INT4  i,n;
-  INT8  ix;
-
-#define SINCOS_ADD  25769803776.0
-#define SINCOS_MASK1 0x3FFFF
-#define SINCOS_MASK2 0x3FF
+#define SINCOS_ADDS  402653184.0
+#define SINCOS_ADDB  25769803776.0 
+#define SINCOS_MASK1 0xFFFFFF
+#define SINCOS_MASK2 0x00FFFF
+#define SINCOS_MASK3 0x03FFFF
+#define SINCOS_MASK4 0x0003FF
 #define SINCOS_SHIFT
 
-
-  x += SINCOS_ADD;
-  ix = *(INT8*)(&x);
-  n = ix & SINCOS_MASK2;
-  n = n << 6;
-  i = ix & SINCOS_MASK1;
-  i = i >> 10;
+  if ( (x*x) < 100000000000000.0 )
+  {
+    x += SINCOS_ADDS;
+    ix = *(INT8*)(&x);
+    i = ix & SINCOS_MASK1;
+    n = ix & SINCOS_MASK2;
+    i = i >> 16;
+  }
+  else
+  {
+    x += SINCOS_ADDB;
+    ix = *(INT8*)(&x);
+    i = ix & SINCOS_MASK3;
+    n = ix & SINCOS_MASK4;
+    i = i >> 10;
+    n = n << 6;
+  }
 
   (*sin2pix) = ((REAL4*)base)[i]  + n * ((REAL4*)diff)[i];
   (*cos2pix) = ((REAL4*)cbase)[i] + n * ((REAL4*)cdiff)[i];
