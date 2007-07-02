@@ -181,6 +181,7 @@ SnglBurstTable *XLALEPSearch(
 		 * Normalize the frequency series to the average PSD.
 		 */
 
+#if 1
 		XLALPrintInfo("XLALEPSearch(): normalizing to the average spectrum\n");
 		if(!XLALWhitenCOMPLEX8FrequencySeries(fseries, psd, plane->flow, plane->flow + plane->channels * plane->deltaF)) {
 			errorcode = XLAL_EFUNC;
@@ -188,6 +189,7 @@ SnglBurstTable *XLALEPSearch(
 		}
 		if(params->diagnostics)
 			params->diagnostics->XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries(params->diagnostics->LIGOLwXMLStream, "whitened", fseries);
+#endif
 
 		/*
 		 * Compute the time-frequency plane from the frequency
