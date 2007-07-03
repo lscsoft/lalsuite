@@ -58,7 +58,7 @@ SERIESTYPE *`XLALCut'SERIESTYPE (
 /* <lalLaTeX file="TimeSeriesResizeP">
 \idx{`XLALResize'SERIESTYPE ()}
 </lalLaTeX> <lalVerbatim file="TimeSeriesResizeP"> */
-size_t `XLALResize'SERIESTYPE (
+SERIESTYPE *`XLALResize'SERIESTYPE (
 	SERIESTYPE *series,
 	int first,
 	size_t length
@@ -79,7 +79,7 @@ void `LALResize'SERIESTYPE (
 /* <lalLaTeX file="TimeSeriesResizeP">
 \idx{`XLALShrink'SERIESTYPE ()}
 </lalLaTeX> <lalVerbatim file="TimeSeriesResizeP"> */
-size_t `XLALShrink'SERIESTYPE (
+SERIESTYPE *`XLALShrink'SERIESTYPE (
 	SERIESTYPE *series,
 	size_t first,
 	size_t length

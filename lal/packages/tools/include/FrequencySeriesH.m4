@@ -58,7 +58,7 @@ SERIESTYPE *`XLALCut'SERIESTYPE (
 /* <lalLaTeX file="FrequencySeriesShrinkP">
 \idx{`XLALResize'SERIESTYPE ()}
 </lalLaTeX> <lalVerbatim file="FrequencySeriesShrinkP"> */
-size_t `XLALResize'SERIESTYPE (
+SERIESTYPE *`XLALResize'SERIESTYPE (
 	SERIESTYPE *series,
 	int first,
 	size_t length
@@ -68,7 +68,7 @@ size_t `XLALResize'SERIESTYPE (
 /* <lalLaTeX file="FrequencySeriesShrinkP">
 \idx{`XLALShrink'SERIESTYPE ()}
 </lalLaTeX> <lalVerbatim file="FrequencySeriesShrinkP"> */
-size_t `XLALShrink'SERIESTYPE (
+SERIESTYPE *`XLALShrink'SERIESTYPE (
 	SERIESTYPE *series,
 	size_t first,
 	size_t length

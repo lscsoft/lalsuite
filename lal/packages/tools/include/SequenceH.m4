@@ -46,7 +46,7 @@ void `XLALShift'SEQUENCETYPE (
 /* <lalLaTeX file="SequenceResizeP">
 \idx{`XLALResize'SEQUENCETYPE ()}
 </lalLaTeX> <lalVerbatim file="SequenceResizeP"> */
-size_t `XLALResize'SEQUENCETYPE (
+SEQUENCETYPE *`XLALResize'SEQUENCETYPE (
 	SEQUENCETYPE *sequence,
 	int first,
 	size_t length
@@ -56,7 +56,7 @@ size_t `XLALResize'SEQUENCETYPE (
 /* <lalLaTeX file="SequenceResizeP">
 \idx{`XLALShrink'SEQUENCETYPE ()}
 </lalLaTeX> <lalVerbatim file="SequenceResizeP"> */
-size_t `XLALShrink'SEQUENCETYPE (
+SEQUENCETYPE *`XLALShrink'SEQUENCETYPE (
 	SEQUENCETYPE *sequence,
 	size_t first,
 	size_t length

@@ -31,7 +31,7 @@ SEQUENCETYPE *`XLALCreate'SEQUENCETYPE (
 	size_t length
 )
 {
-	static const char *func = "`XLALCreate'SEQUENCETYPE";
+	static const char func[] = "`XLALCreate'SEQUENCETYPE";
 	SEQUENCETYPE *new;
 	DATATYPE *data;
 
@@ -46,7 +46,7 @@ SEQUENCETYPE *`XLALCreate'SEQUENCETYPE (
 	new->data = data;
 	new->length = length;
 
-	return(new);
+	return new;
 }
 
 
@@ -56,17 +56,13 @@ SEQUENCETYPE *`XLALCut'SEQUENCETYPE (
 	size_t length
 )
 {
-	static const char *func = "`XLALCut'SEQUENCETYPE";
-	SEQUENCETYPE *new = NULL;
+	static const char func[] = "`XLALCut'SEQUENCETYPE";
+	SEQUENCETYPE *new = `XLALCreate'SEQUENCETYPE (length);
+	if(!new)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	memcpy(new->data, sequence->data + first, length * sizeof(*new->data));
 
-	if(sequence && sequence->data) {
-		new = `XLALCreate'SEQUENCETYPE (length);
-		if(!new)
-			XLAL_ERROR_NULL(func, XLAL_EFUNC);
-		memcpy(new->data, sequence->data + first, length * sizeof(*new->data));
-	}
-
-	return(new);
+	return new;
 }
 
 
@@ -74,7 +70,7 @@ SEQUENCETYPE *`XLALCopy'SEQUENCETYPE (
 	SEQUENCETYPE *sequence
 )
 {
-	return(`XLALCut'SEQUENCETYPE (sequence, 0, sequence->length));
+	return `XLALCut'SEQUENCETYPE (sequence, 0, sequence->length);
 }
 
 
@@ -83,7 +79,7 @@ void `XLALShift'SEQUENCETYPE (
 	int count
 )
 {
-	if(!sequence || !sequence->data || !count)
+	if(!count)
 		return;
 
 	memshift(sequence->data, sequence->length * sizeof(*sequence->data), count * (int) sizeof(*sequence->data));
@@ -99,48 +95,48 @@ void `XLALShift'SEQUENCETYPE (
 /* FIXME: this function does not take care to move and zero the least
  * number of bytes possible.  A performance gain would be realized by being
  * more careful. */
-/* FIXME: this function does not conform to the XLAL error reporting
- * convention. */
-size_t `XLALResize'SEQUENCETYPE (
+SEQUENCETYPE *`XLALResize'SEQUENCETYPE (
 	SEQUENCETYPE *sequence,
 	int first,
 	size_t length
 )
 {
-	if(!sequence || !sequence->data)
-		return(0);
+	static const char func[] = "`XLALResize'SEQUENCETYPE";
+	DATATYPE *new_data;
 
 	if(length > sequence->length) {
 		/* need to increase memory */
-		sequence->data = XLALRealloc(sequence->data, length * sizeof(*sequence->data));
+		new_data = XLALRealloc(sequence->data, length * sizeof(*sequence->data));
 
-		if(sequence->data) {
+		if(new_data) {
+			sequence->data = new_data;
 			memset(sequence->data + sequence->length, 0, (length - sequence->length) * sizeof(*sequence->data));
 			sequence->length = length;
 			`XLALShift'SEQUENCETYPE (sequence, -first);
 		} else
-			sequence->length = 0;
+			XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 	} else {
 		/* do not need to increase memory */
 		`XLALShift'SEQUENCETYPE (sequence, -first);
-		sequence->data = XLALRealloc(sequence->data, length * sizeof(*sequence->data));
-		if(sequence->data)
+		new_data = XLALRealloc(sequence->data, length * sizeof(*sequence->data));
+		if(new_data) {
+			sequence->data = new_data;
 			sequence->length = length;
-		else
-			sequence->length = 0;
+		} else
+			XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 	}
 
-	return(sequence->length);
+	return sequence;
 }
 
 
-size_t `XLALShrink'SEQUENCETYPE (
+SEQUENCETYPE *`XLALShrink'SEQUENCETYPE (
 	SEQUENCETYPE *sequence,
 	size_t first,
 	size_t length
 )
 {
-	return(`XLALResize'SEQUENCETYPE (sequence, first, length));
+	return `XLALResize'SEQUENCETYPE (sequence, first, length);
 }
 
 
@@ -171,7 +167,7 @@ DATATYPE `XLAL'DATATYPE`Sum' (
 		sum += *data;)
 	}
 
-	return(sum);
+	return sum;
 }
 #endif
 
@@ -193,7 +189,7 @@ SQUAREDATATYPE `XLAL'DATATYPE`SumSquares' (
 		sum += *data * *data;)
 	}
 
-	return(sum);
+	return sum;
 }
 
 
@@ -207,10 +203,10 @@ DATATYPE `XLAL'SEQUENCETYPE`Sum' (
 )
 {
 	if(first >= sequence->length)
-		return(0);
+		return 0;
 	if(first + count > sequence->length)
 		count = sequence->length - first;
-	return(`XLAL'DATATYPE`Sum' (sequence->data, first, count));
+	return `XLAL'DATATYPE`Sum' (sequence->data, first, count);
 }
 #endif
 
@@ -222,10 +218,10 @@ SQUAREDATATYPE `XLAL'SEQUENCETYPE`SumSquares' (
 )
 {
 	if(first >= sequence->length)
-		return(0);
+		return 0;
 	if(first + count > sequence->length)
 		count = sequence->length - first;
-	return(`XLAL'DATATYPE`SumSquares' (sequence->data, first, count));
+	return `XLAL'DATATYPE`SumSquares' (sequence->data, first, count);
 }
 
 
@@ -239,7 +235,7 @@ SEQUENCETYPE *`XLALConjugate'SEQUENCETYPE (
 	for(i = 0; i < sequence->length; i++)
 		sequence->data[i].im = -sequence->data[i].im;
 
-	return(sequence);
+	return sequence;
 }
 , DATATYPE, COMPLEX16,
 SEQUENCETYPE *`XLALConjugate'SEQUENCETYPE (
@@ -251,6 +247,6 @@ SEQUENCETYPE *`XLALConjugate'SEQUENCETYPE (
 	for(i = 0; i < sequence->length; i++)
 		sequence->data[i].im = -sequence->data[i].im;
 
-	return(sequence);
+	return sequence;
 }
 ,)

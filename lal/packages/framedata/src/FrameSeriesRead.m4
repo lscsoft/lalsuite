@@ -655,7 +655,7 @@ STYPE *`XLALFrRead'STYPE (
 	length = duration / series->deltaT;
 	if(lengthlimit && (lengthlimit < length))
 		length = lengthlimit;
-	if(`XLALResize'STYPE (series, 0, length) != length) {
+	if(!`XLALResize'STYPE (series, 0, length)) {
 		`XLALDestroy'STYPE (series);
 		XLAL_ERROR_NULL (func, XLAL_EFUNC);
 	}

@@ -254,9 +254,8 @@ int XLALEPConditionData(
 )
 {
 	const char func[] = "XLALEPConditionData";
-	const REAL8         epsilon = 1.0e-3;
-	PassBandParamStruc  highpassParam;
-	size_t              newlength;
+	const REAL8 epsilon = 1.0e-3;
+	PassBandParamStruc highpassParam;
 
 	/*
 	 * Resample the time series if necessary
@@ -282,8 +281,7 @@ int XLALEPConditionData(
 	 * The filter corrupts the ends of the time series.  Chop them off.
 	 */
 
-	newlength = series->data->length - 2 * corruption;
-	if(XLALShrinkREAL4TimeSeries(series, corruption, newlength) != newlength)
+	if(!XLALShrinkREAL4TimeSeries(series, corruption, series->data->length - 2 * corruption))
 		XLAL_ERROR(func, XLAL_EFUNC);
 
 	return(0);

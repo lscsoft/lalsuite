@@ -48,7 +48,7 @@ SERIESTYPE *`XLALCreate'SERIESTYPE (
 	size_t length
 )
 {
-	static const char *func = "`XLALCreate'SERIESTYPE";
+	static const char func[] = "`XLALCreate'SERIESTYPE";
 	SERIESTYPE *new;
 	SEQUENCETYPE *sequence;
 
@@ -102,12 +102,9 @@ SERIESTYPE *`XLALCut'SERIESTYPE (
 	size_t length
 )
 {
-	static const char *func = "`XLALCut'SERIESTYPE";
+	static const char func[] = "`XLALCut'SERIESTYPE";
 	SERIESTYPE *new;
 	SEQUENCETYPE *sequence;
-
-	if(!series || !series->data)
-		return(NULL);
 
 	new = XLALMalloc(sizeof(*new));
 	sequence = `XLALCut'SEQUENCETYPE (series->data, first, length);
@@ -125,17 +122,19 @@ SERIESTYPE *`XLALCut'SERIESTYPE (
 }
 
 
-size_t `XLALResize'SERIESTYPE (
+SERIESTYPE *`XLALResize'SERIESTYPE (
 	SERIESTYPE *series,
 	int first,
 	size_t length
 )
 {
-	if(!series)
-		return(0);
+	static const char func[] = "`XLALResize'SERIESTYPE";
 
+	if(!`XLALResize'SEQUENCETYPE (series->data, first, length))
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	XLALGPSAdd(&series->epoch, first * series->deltaT);
-	return(`XLALResize'SEQUENCETYPE (series->data, first, length));
+
+	return series;
 }
 
 
@@ -146,14 +145,11 @@ void `LALResize'SERIESTYPE (
 	size_t length
 )
 {
-	size_t new_length;
-
 	INITSTATUS(status, "`LALResize'SERIESTYPE", TIMESERIESC);
 
 	ASSERT(series != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	ASSERT(series->data != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	new_length = `XLALResize'SERIESTYPE (series, first, length);
-	if(new_length != length) {
+	if(!`XLALResize'SERIESTYPE (series, first, length)) {
 		XLALClearErrno();
 		ABORT(status, LAL_FAIL_ERR, LAL_FAIL_MSG);
 	}
@@ -161,12 +157,17 @@ void `LALResize'SERIESTYPE (
 }
 
 
-size_t `XLALShrink'SERIESTYPE (
+SERIESTYPE *`XLALShrink'SERIESTYPE (
 	SERIESTYPE *series,
 	size_t first,
 	size_t length
 )
 {
-	return(`XLALResize'SERIESTYPE (series, first, length));
+	static const char func[] = "`XLALShrink'SERIESTYPE";
+
+	if(!`XLALResize'SERIESTYPE (series, first, length))
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+
+	return series;
 }
 
