@@ -71,7 +71,7 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
    3: "vectorized" version based on "6-table", combined them into 3
    9: Liear interpolation from Akos
 */
-#define SINCOS_VERSION 9
+#define SINCOS_VERSION 2
 #endif
 
 /*----- Macros ----- */
