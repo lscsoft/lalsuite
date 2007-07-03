@@ -1435,11 +1435,13 @@ project_metric( gsl_matrix *ret_ij, gsl_matrix * g_ij, const INT4 c )
 
   if ( c < 0 )
     return -1;
-
   if ( !ret_ij )
     return -1;
-
+  if ( !g_ij )
+    return -1;
   if ( (ret_ij->size1 != ret_ij->size2) )
+    return -1;
+  if ( (g_ij->size1 != g_ij->size2) )
     return -1;
 
   for ( i=0; i < ret_ij->size1; i ++) {
