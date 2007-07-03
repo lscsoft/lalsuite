@@ -750,7 +750,6 @@ COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeri
   static const char func[] = "XLALWhitenCOMPLEX8FrequencySeries";
   COMPLEX8 *fdata = fseries->data->data;
   REAL4 *pdata = psd->data->data;
-  REAL4 factor;
   unsigned i;	/* fseries index */
   unsigned j;	/* psd index */
 
@@ -777,13 +776,18 @@ COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeri
         /* f is in band:  error */
         XLAL_ERROR_NULL(func, XLAL_EFPDIV0);
       else
-        /* f is out of band:  ignore, zero the output */
-        factor = 0;
+      {
+        /* f is out of band:  ignore, NaN the output */
+        fdata[i].re = XLAL_REAL4_FAIL_NAN;
+        fdata[i].im = XLAL_REAL4_FAIL_NAN;
+      }
     }
     else
-      factor = sqrt(2 * fseries->deltaF / pdata[j]);
-    fdata[i].re *= factor;
-    fdata[i].im *= factor;
+    {
+      REAL4 factor = sqrt(2 * fseries->deltaF / pdata[j]);
+      fdata[i].re *= factor;
+      fdata[i].im *= factor;
+    }
   }
 
   return fseries;
@@ -800,7 +804,6 @@ COMPLEX16FrequencySeries *XLALWhitenCOMPLEX16FrequencySeries(COMPLEX16FrequencyS
   static const char func[] = "XLALWhitenCOMPLEX16FrequencySeries";
   COMPLEX16 *fdata = fseries->data->data;
   REAL8 *pdata = psd->data->data;
-  REAL8 factor;
   unsigned i;	/* fseries index */
   unsigned j;	/* psd index */
 
@@ -827,13 +830,18 @@ COMPLEX16FrequencySeries *XLALWhitenCOMPLEX16FrequencySeries(COMPLEX16FrequencyS
         /* f is in band:  error */
         XLAL_ERROR_NULL(func, XLAL_EFPDIV0);
       else
-        /* f is out of band:  ignore, zero the output */
-        factor = 0;
+      {
+        /* f is out of band:  ignore, NaN the output */
+        fdata[i].re = XLAL_REAL4_FAIL_NAN;
+        fdata[i].im = XLAL_REAL4_FAIL_NAN;
+      }
     }
     else
-      factor = sqrt(2 * fseries->deltaF / pdata[j]);
-    fdata[i].re *= factor;
-    fdata[i].im *= factor;
+    {
+      REAL8 factor = sqrt(2 * fseries->deltaF / pdata[j]);
+      fdata[i].re *= factor;
+      fdata[i].im *= factor;
+    }
   }
 
   return fseries;
