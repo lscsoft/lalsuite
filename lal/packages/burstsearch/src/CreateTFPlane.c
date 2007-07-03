@@ -29,8 +29,9 @@ NRCSID(CREATETFPLANEC, "$Id$");
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALStdlib.h>
-#include <lal/TFTransform.h>
+#include <lal/RealFFT.h>
 #include <lal/Sequence.h>
+#include <lal/TFTransform.h>
 #include <lal/XLALError.h>
 
 
@@ -260,6 +261,55 @@ INT4 XLALEPGetTimingParameters(
 
 
 /*
+ * Compute the two-point spectral correlation function for the whitened
+ * frequency series from the window applied to the original time series.
+ * The indices of the output sequence are |k - k'|.  The window is, by
+ * construction, an even function of the sample index, so the Fourier
+ * transform is real-valued (contains only cosine components).
+ */
+
+
+static REAL4Sequence *compute_two_point_spectral_correlation(
+	const REAL4Window *window
+)
+{
+	REAL4Sequence *w_squared = XLALCopyREAL4Sequence(window->data);
+	COMPLEX8Sequence *tmp = XLALCreateCOMPLEX8Sequence(window->data->length / 2 + 1);
+	REAL4Sequence *correlation = XLALCreateREAL4Sequence(window->data->length / 2 + 1);
+	RealFFTPlan *plan = XLALCreateForwardREAL4FFTPlan(window->data->length, 0);
+	unsigned i;
+
+	if(!w_squared || !tmp || !correlation || !plan) {
+		XLALDestroyREAL4Sequence(w_squared);
+		XLALDestroyCOMPLEX8Sequence(tmp);
+		XLALDestroyREAL4Sequence(correlation);
+		XLALDestroyREAL4FFTPlan(plan);
+		return NULL;
+	}
+
+	/* square and normalize the window */
+	for(i = 0; i < w_squared->length; i++)
+		w_squared->data[i] *= w_squared->data[i] / window->sumofsquares;
+
+	/* Fourier transform */
+	if(XLALREAL4ForwardFFT(tmp, w_squared, plan)) {
+		XLALDestroyREAL4Sequence(correlation);
+		correlation = NULL;
+	} else {
+		/* extract real components */
+		for(i = 0; i < correlation->length; i++)
+			correlation->data[i] = tmp->data[i].re;
+	}
+
+	XLALDestroyREAL4Sequence(w_squared);
+	XLALDestroyCOMPLEX8Sequence(tmp);
+	XLALDestroyREAL4FFTPlan(plan);
+
+	return correlation;
+}
+
+
+/*
  * Create and initialize a time-frequency plane object.
  */
 
@@ -287,6 +337,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	REAL8Sequence *channel_rms;
 	REAL4Sequence **channel;
 	REAL4Window *tukey;
+	REAL4Sequence *correlation;
 	int i;
 
 	/*
@@ -388,12 +439,14 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	channel_rms = XLALCreateREAL8Sequence(channels);
 	channel = XLALMalloc(channels * sizeof(*channel));
 	tukey = XLALCreateTukeyREAL4Window(tseries_length, (tseries_length - tiling_length) / (double) tseries_length);
-	if(!plane || !twice_channel_overlap || !channel_rms || !channel || !tukey) {
+	correlation = tukey ? compute_two_point_spectral_correlation(tukey) : NULL;
+	if(!plane || !twice_channel_overlap || !channel_rms || !channel || !tukey || !correlation) {
 		XLALFree(plane);
 		XLALDestroyREAL8Sequence(twice_channel_overlap);
 		XLALDestroyREAL8Sequence(channel_rms);
 		XLALFree(channel);
 		XLALDestroyREAL4Window(tukey);
+		XLALDestroyREAL4Sequence(correlation);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 	for(i = 0; i < channels; i++) {
@@ -406,6 +459,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 			XLALDestroyREAL8Sequence(channel_rms);
 			XLALFree(channel);
 			XLALDestroyREAL4Window(tukey);
+			XLALDestroyREAL4Sequence(correlation);
 			XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 		}
 	}
@@ -433,6 +487,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	plane->tiles.dof_per_pixel = 2 * tseries_deltaT * deltaF;
 	plane->window = tukey;
 	plane->window_shift = window_shift;
+	plane->two_point_spectral_correlation = correlation;
 
 	/*
 	 * Success
@@ -451,15 +506,15 @@ void XLALDestroyTFPlane(
 	REAL4TimeFrequencyPlane *plane
 )
 {
-	unsigned i;
-
 	if(plane) {
+		unsigned i;
 		XLALDestroyREAL8Sequence(plane->twice_channel_overlap);
 		XLALDestroyREAL8Sequence(plane->channel_rms);
 		for(i = 0; i < plane->channels; i++)
 			XLALDestroyREAL4Sequence(plane->channel[i]);
 		XLALFree(plane->channel);
 		XLALDestroyREAL4Window(plane->window);
+		XLALDestroyREAL4Sequence(plane->two_point_spectral_correlation);
 	}
 	XLALFree(plane);
 }

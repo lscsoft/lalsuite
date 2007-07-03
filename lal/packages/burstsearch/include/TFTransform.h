@@ -88,6 +88,9 @@ typedef struct tagREAL4TimeFrequencyPlane {
 	/* by how many samples a window's start should be shifted from the
 	 * start of the window preceding it */
 	INT4 window_shift;
+	/* two-point spectral correlation of the whitened frequency series,
+	 * computed from the time-domain window function */
+	REAL4Sequence *two_point_spectral_correlation;
 } REAL4TimeFrequencyPlane;
 
 

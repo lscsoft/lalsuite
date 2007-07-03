@@ -37,6 +37,42 @@ NRCSID(FREQSERIESTOTFPLANEC, "$Id$");
 
 
 /*
+ * Compute the magnitude of the inner product of two arbitrary channel
+ * filters.  Note that the sums are done over only the positive frequency
+ * components, so this function multiplies by the required factor of 2.
+ * The result is the *full* inner product, not the half inner product.  It
+ * is safe to pass the same filter as both arguments.
+ */
+
+
+static REAL8 filter_inner_product(
+	const COMPLEX8FrequencySeries *filter1,
+	const COMPLEX8FrequencySeries *filter2,
+	const REAL4Sequence *correlation
+)
+{
+	const int k10 = filter1->f0 / filter1->deltaF;
+	const int k20 = filter2->f0 / filter2->deltaF;
+	int k1, k2;
+	COMPLEX16 sum = {0, 0};
+
+	for(k1 = 0; k1 < (int) filter1->data->length; k1++) {
+		const COMPLEX8 *f1data = &filter1->data->data[k1];
+		for(k2 = 0; k2 < (int) filter2->data->length; k2++) {
+			const COMPLEX8 *f2data = &filter2->data->data[k2];
+			const unsigned delta_k = abs(k10 + k1 - k20 - k2);
+			const double sksk = (delta_k & 1 ? -1 : +1) * (delta_k < correlation->length ? correlation->data[delta_k] : 0);
+
+			sum.re += sksk * (f1data->re * f2data->re + f1data->im * f2data->im);
+			sum.im += sksk * (f1data->im * f2data->re - f1data->re * f2data->im);
+		}
+	}
+
+	return 2 * sqrt(sum.re * sum.re + sum.im * sum.im);
+}
+
+
+/*
  * Generate the frequency domain channel filter function.  The filter is
  * nominally a Hann window twice the channel's width, centred on the
  * channel's centre frequency.  The filter is normalized so that its sum
@@ -51,7 +87,8 @@ static COMPLEX8FrequencySeries *generate_filter(
 	const COMPLEX8FrequencySeries *template,
 	REAL8 channel_flow,
 	REAL8 channel_width,
-	const REAL4FrequencySeries *psd
+	const REAL4FrequencySeries *psd,
+	const REAL4Sequence *correlation
 )
 {
 	static const char func[] = "generate_filter";
@@ -109,17 +146,10 @@ static COMPLEX8FrequencySeries *generate_filter(
 
 	/*
 	 * normalize the filter.  the filter needs to be normalized so that
-	 * it's sum squares is 1, but where the sum is done over all
-	 * frequency components positive and negative.  since we are
-	 * dealing with real data, our frequency series and this filter
-	 * contain only the positive frequency components (the negative
-	 * frequency components being the complex conjugates of the
-	 * positive frequencies).  therefore the sum squares function is
-	 * only summing the positive frequencies, and so the value it
-	 * returns needs to be doubled;  hence the factor of 2.
+	 * it's inner product with itself is 1.
 	 */
 
-	norm = sqrt(2 * XLALCOMPLEX8SequenceSumSquares(filter->data, 0, filter->data->length));
+	norm = sqrt(filter_inner_product(filter, filter, correlation));
 	for(i = 0; i < filter->data->length; i++) {
 		filter->data->data[i].re /= norm;
 		filter->data->data[i].im /= norm;
@@ -130,37 +160,6 @@ static COMPLEX8FrequencySeries *generate_filter(
 	 */
 
 	return filter;
-}
-
-
-/*
- * Compute the magnitude of the inner product of two channel filters.
- * assumes filter2->f0 >= filter1->f0, and that the highest numbered sample
- * in filter1 is not past the end of filter2.
- */
-
-
-static REAL8 filter_overlap(
-	const COMPLEX8FrequencySeries *filter1,
-	const COMPLEX8FrequencySeries *filter2
-)
-{
-	const COMPLEX8 *f1data = filter1->data->data + (int) ((filter2->f0 - filter1->f0) / filter1->deltaF);
-	const COMPLEX8 *f1end = filter1->data->data + filter1->data->length;
-	const COMPLEX8 *f2data = filter2->data->data;
-	COMPLEX16 sum = {0, 0};
-
-	if((filter1->f0 > filter2->f0) || ((f1end - f1data) > (int) filter2->data->length) || (filter1->deltaF != filter2->deltaF))
-		return XLAL_REAL8_FAIL_NAN;
-
-	/* sum filter1 * conj(filter2) */
-	for(; f1data < f1end; f1data++, f2data++) {
-		sum.re += f1data->re * f2data->re + f1data->im * f2data->im;
-		sum.im += f1data->im * f2data->re - f1data->re * f2data->im;
-	}
-
-	/* return | sum filter1 * conj(filter2) | */
-	return sqrt(sum.re * sum.re + sum.im * sum.im);
 }
 
 
@@ -302,7 +301,7 @@ int XLALFreqSeriesToTFPlane(
 	XLALPrintInfo("XLALFreqSeriesToTFPlane(): generating channel filters\n");
 	/* generate the frequency domain filter functions */
 	for(i = 0; i < plane->channels; i++) {
-		filter[i] = generate_filter(fseries, plane->flow + i * plane->deltaF, plane->deltaF, enable_over_whitening ? psd : NULL);
+		filter[i] = generate_filter(fseries, plane->flow + i * plane->deltaF, plane->deltaF, enable_over_whitening ? psd : NULL, plane->two_point_spectral_correlation);
 		if(!filter[i]) {
 			while(--i)
 				XLALDestroyCOMPLEX8FrequencySeries(filter[i]);
@@ -314,7 +313,7 @@ int XLALFreqSeriesToTFPlane(
 
 	/* compute the channel overlaps */
 	for(i = 0; i < plane->channels - 1; i++)
-		plane->twice_channel_overlap->data[i] = 2 * filter_overlap(filter[i], filter[i + 1]);
+		plane->twice_channel_overlap->data[i] = 2 * filter_inner_product(filter[i], filter[i + 1], plane->two_point_spectral_correlation);
 
 	XLALPrintInfo("XLALFreqSeriesToTFPlane(): projecting data onto time-frequency plane\n");
 	/* loop over the time-frequency plane's channels */
@@ -332,18 +331,6 @@ int XLALFreqSeriesToTFPlane(
 			XLALFree(filter);
 			XLALDestroyCOMPLEX8Sequence(fcorr);
 			XLAL_ERROR(func, XLAL_EFUNC);
-		}
-		{
-		/* correct for bias resulting from time-domain window used
-		 * to put tapers on time series */
-		/* FIXME:  fix this properly, the real reason is
-		 * correlations in the spectrum.  it turns out the average
-		 * effect is to shift a single channel's normalization by
-		 * the sum-of-squares of the window, but this doesn't
-		 * account for interchannel correlations properly */
-		unsigned j;
-		for(j = 0; j < plane->channel[i]->length; j++)
-			plane->channel[i]->data[j] *= sqrt(plane->window->sumofsquares / plane->window->data->length);
 		}
 
 		/* Store the expected root mean square for this channel */
