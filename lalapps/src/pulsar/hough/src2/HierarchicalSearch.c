@@ -1545,7 +1545,7 @@ void ComputeFstatHoughMap(LALStatus *status,
     /* set number of freq. bins for which LUTs will be calculated */
     /* this sets the range of residual spindowns values */
     /* phmdVS.nfSize  = 2*nfdotBy2 + 1; */
-    phmdVS.nfSize  = 2 * floor((nfdot-1) * dfdot * maxTimeDiff / deltaF + 0.5) + 1; 
+    phmdVS.nfSize  = 2 * floor((nfdot-1) * (REAL4)(dfdot * maxTimeDiff / deltaF) + 0.5f) + 1; 
   }
 
   phmdVS.deltaF  = deltaF;
@@ -1759,7 +1759,7 @@ void ComputeFstatHoughMap(LALStatus *status,
 	  ht.spinRes.data[0] =  n*dfdot; 
 	  
 	  for (j=0; j < (UINT4)nStacks; j++) {
-	    freqInd.data[j] = fBinSearch + floor(timeDiffV->data[j]*n*dfdot/deltaF + 0.5);
+	    freqInd.data[j] = fBinSearch + floor( (REAL4)(timeDiffV->data[j]*n*dfdot/deltaF) + 0.5f);
 	  }
 
 	  TRY( LALHOUGHConstructHMT_W(status->statusPtr, &ht, &freqInd, &phmdVS),status );
@@ -1918,7 +1918,7 @@ void FstatVectToPeakGram (LALStatus *status,
     /* loop over Fstat vector, count peaks, and set upg values */
     nPeaks = 0;
     for(j=0; j<nSearchBins; j++) {
-      if ( pV[j] > thr ) {
+      if ( (REAL4)(pV[j]) > (REAL4)thr ) {
 	nPeaks++;	
 	upg[j] = 1; 
       }
@@ -1934,7 +1934,7 @@ void FstatVectToPeakGram (LALStatus *status,
     pgV->pg[k].deltaF = FstatVect->data[k].deltaF;
     f0 = FstatVect->data[k].f0;
     deltaF = FstatVect->data[k].deltaF;
-    pgV->pg[k].fBinIni = floor( f0/deltaF + 0.5);
+    pgV->pg[k].fBinIni = (UINT4)( f0/deltaF + 0.5);
     pgV->pg[k].fBinFin = pgV->pg[k].fBinIni + nSearchBins - 1;
 
     /* do loop again and fill peakgram vector */
