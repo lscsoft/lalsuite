@@ -43,13 +43,6 @@
 #include "win_lib.h"
 #endif
 
-/* headers of our own code */
-#include "hs_boinc_extras.h"
-#include "HierarchicalSearch.h"
-#include <lal/LogPrintf.h>
-
-NRCSID(HSBOINCEXTRASCRCSID,"$Id$");
-
 /* probably already included by previous headers, but make sure they are included */
 #include <stdlib.h>
 #include <string.h>
@@ -57,6 +50,12 @@ NRCSID(HSBOINCEXTRASCRCSID,"$Id$");
 #include <dlfcn.h>
 #endif
 
+/* headers of our own code */
+#include "HierarchicalSearch.h"
+#include <lal/LogPrintf.h>
+#include "hs_boinc_extras.h"
+
+NRCSID(HSBOINCEXTRASCRCSID,"$Id$");
 
 
 /*^* MACROS *^*/
