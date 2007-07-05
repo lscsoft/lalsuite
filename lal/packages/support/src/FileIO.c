@@ -253,9 +253,9 @@ LALFILE * XLALFileOpenRead( const char *path )
 		XLAL_ERROR_NULL( func, XLAL_ENOMEM );
 	file->compression = compression;
 #	ifdef ZLIB_ENABLED
-	file->fp = compression ? gzopen( path, "r" ) : fopen( path, "r" );
+	file->fp = compression ? gzopen( path, "rb" ) : fopen( path, "rb" );
 #	else
-	file->fp = fopen( path, mode );
+	file->fp = fopen( path, "rb" );
 #	endif
 	if ( ! file->fp ) {
 		XLALFree( file );
@@ -271,13 +271,13 @@ LALFILE * XLALFileOpenWrite( const char *path, int compression )
 	if ( ! ( file = XLALMalloc( sizeof(*file ) ) ) )
 		XLAL_ERROR_NULL( func, XLAL_ENOMEM );
 #	ifdef ZLIB_ENABLED
-	file->fp = compression ? gzopen( path, "w" ) : fopen( path, "w" );
+	file->fp = compression ? gzopen( path, "wb" ) : fopen( path, "wb" );
 #	else
 	if ( compression ) {
 		XLALPrintWarning( "XLAL Warning - %s: Compression not supported\n", func );
 		compression = 0;
 	}
-	file->fp = fopen( path, mode );
+	file->fp = fopen( path, "wb" );
 #	endif
 	file->compression = compression;
 	if ( ! file->fp ) {
@@ -339,7 +339,7 @@ size_t XLALFileRead( void *ptr, size_t size, size_t nobj, LALFILE *file )
 #	else
 	c = fread( ptr, size, nobj, file->fp );
 #	endif
-	if ( c == (size_t)(-1) || (file->compression == 0 && ferror(file->fp)) )
+	if ( c == (size_t)(-1) || (file->compression == 0 && ferror((FILE*)(file->fp))) )
 		XLAL_ERROR( func, XLAL_EIO );
 	return c;
 }
@@ -353,9 +353,9 @@ size_t XLALFileWrite( const void *ptr, size_t size, size_t nobj, LALFILE *file )
 #	ifdef ZLIB_ENABLED
 	c = file->compression ? (size_t)gzwrite( file->fp, ptr, size * nobj ) : fwrite( ptr, size, nobj, file->fp );
 #	else
-	c = fwrite( ptr, size, nobj, file->fp );
+	c = fwrite( ptr, size, nobj, (FILE*)(file->fp) );
 #	endif
-	if ( c == 0 || (file->compression == 0 && ferror(file->fp)) )
+	if ( c == 0 || (file->compression == 0 && ferror((FILE*)(file->fp))) )
 		XLAL_ERROR( func, XLAL_EIO );
 	return c;
 }
@@ -383,7 +383,7 @@ int XLALFilePutc( int c, LALFILE *file )
 #	ifdef ZLIB_ENABLED
 	result = file->compression ? gzputc(file->fp, c) : fputc(c, file->fp);
 #	else
-	result = fputc(c, file->fp);
+	result = fputc(c, (FILE*)(file->fp));
 #	endif
 	if ( result == -1 )
 		XLAL_ERROR( func, XLAL_EIO );
@@ -529,7 +529,7 @@ int XLALFileEOF( LALFILE *file )
 #	ifdef ZLIB_ENABLED
 	c = file->compression ? gzeof(file->fp) : feof(file->fp);
 #	else
-	c = feof(file->fp);
+	c = feof((FILE*)(file->fp));
 #	endif
 	return c;
 }
