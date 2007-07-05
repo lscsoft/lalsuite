@@ -336,6 +336,7 @@ static int resolve_and_unzip(const char*filename, /**< filename toresolve */
     zipped = is_zipped (filename);
 
     if (zipped<0) {
+      LogPrintf (LOG_DEBUG, "ERROR: Couldn't open '%s'\n", filename);
       return(-1);
 
     } else if (zipped) { 
@@ -344,22 +345,15 @@ static int resolve_and_unzip(const char*filename, /**< filename toresolve */
 	 unzip file to "filename.uz", then replace original file with "filename.uz" */
       LogPrintf (LOG_NORMAL, "WARNING: Unzipping '%s' in-place\n", filename);
       strncpy(resfilename,filename,size);
-      strncat(resfilename,".uz",size);
-      boinc_delete_file(resfilename);
-      if( boinc_zip(UNZIP_IT,filename,resfilename) ) {
+      strncat(resfilename,".zip",size);
+      if( boinc_rename(resfilename,filename) ) {
+	LogPrintf (LOG_CRITICAL, "ERROR: Couldn't rename '%s' to '%s'\n", resfilename, filename);
+	return(-1);
+      }
+      if( boinc_zip(UNZIP_IT,resfilename,".") ) {
 	LogPrintf (LOG_CRITICAL, "ERROR: Couldn't unzip '%s'\n", filename);
 	return(-1);
       }
-/* critcal> */
-      if( boinc_delete_file(filename) ) {
-	LogPrintf (LOG_CRITICAL, "ERROR: Couldn't delete '%s'\n", filename);
-	return(-1);
-      }
-      if( boinc_rename(resfilename,filename) ) {
-	LogPrintf (LOG_CRITICAL, "ERROR: Couldn't rename to '%s'\n", filename);
-	return(-1);
-      }
-/* <critical */
     }
 
     /* copy the filename into resfile as if boinc_resove() had succeeded */
@@ -382,7 +376,7 @@ static int resolve_and_unzip(const char*filename, /**< filename toresolve */
   }
 
   /* unzip */
-  if ( boinc_zip(UNZIP_IT,resfilename,filename) ) {
+  if ( boinc_zip(UNZIP_IT,resfilename,".") ) {
     LogPrintf (LOG_CRITICAL, "ERROR: Couldn't unzip '%s'\n", resfilename);
     return(-1);
   }
