@@ -47,7 +47,8 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 	unsigned tile_channel,
 	unsigned tile_channels,
 	double h_rss,
-	double excess_power,
+	double E,
+	double d,
 	double confidence
 )
 {
@@ -73,7 +74,7 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 	event->central_freq = plane->flow + tile_channel * plane->deltaF + (0.5 * event->bandwidth);
 	/* FIXME: put h_rss into the "hrss" column */
 	event->amplitude = h_rss;
-	event->snr = excess_power;
+	event->snr = E / d - 1;
 	/* -ln P(event | stationary Gaussian white noise) */
 	event->confidence = confidence;
 	/* for safety */
@@ -100,17 +101,29 @@ SnglBurstTable *XLALComputeExcessPower(
 	unsigned channel;
 	unsigned channels;
 	unsigned channel_end;
-	double excess_power;
 	double h_rss;
 	double confidence;
 
 	for(channels = plane->tiles.min_channels; channels <= plane->tiles.max_channels; channels *= 2) {
 	for(channel_end = (channel = 0) + channels; channel_end <= plane->channels; channel_end = (channel += channels / plane->tiles.inv_fractional_stride) + channels) {
-		/* sum of inner products of all pairs of channels
-		 * contributing to this tile's "virtual channel" */
-		const double twice_channel_overlap = XLALREAL8SequenceSum(plane->twice_channel_overlap, channel, channels - 1);
-		/* mean square for this tile's "virtual channel" */
-		const double pixel_mean_square = XLALREAL8SequenceSumSquares(plane->channel_rms, channel, channels) / (channels + twice_channel_overlap);
+		/* the mean square of the "virtual channel" */
+		const double sum_mean_square = channels * plane->deltaF / plane->fseries_deltaF + XLALREAL8SequenceSum(plane->twice_channel_overlap, channel, channels - 1);
+		/* the mean square of the "uwsum" quantity computed below,
+		 * which is proportional to an approximation of the
+		 * unwhitened time series. */
+		double uwsum_mean_square;
+		/* true unwhitened mean square for this channel.  the ratio
+		 * of this to uwsum_mean_square is the correction factor to
+		 * be applied to uwsum^{2} to convert it to an
+		 * approximation of the square of the unwhitened channel */
+		const double unwhitened_mean_square = XLALREAL8SequenceSumSquares(plane->unwhitened_rms, channel, channels) + XLALREAL8SequenceSum(plane->unwhitened_cross, channel, channels - 1);
+		unsigned c;
+
+		/* compute uwsum_mean_square */
+		uwsum_mean_square = XLALREAL8SequenceSumSquares(plane->unwhitened_rms, channel, channels);
+		for(c = channel; c < channel_end - 1; c++)
+			uwsum_mean_square += plane->twice_channel_overlap->data[c] * plane->unwhitened_rms->data[c] * plane->unwhitened_rms->data[c + 1] * plane->fseries_deltaF / plane->deltaF;
+
 	/* start with at least 2 degrees of freedom */
 	for(length = 2 / (channels * plane->tiles.dof_per_pixel); length <= plane->tiles.max_length; length *= 2) {
 		const double tile_dof = (length * channels) * plane->tiles.dof_per_pixel;
@@ -119,36 +132,32 @@ SnglBurstTable *XLALComputeExcessPower(
 		 * tile's "virtual pixels" */
 		const unsigned tstep = length / tile_dof;
 	for(end = (start = plane->tiles.tiling_start) + length; end <= plane->tiles.tiling_end; end = (start += length / plane->tiles.inv_fractional_stride) + length) {
-		double sumsquares = 0.0;
-		double hsumsquares = 0.0;
-		unsigned c;
+		double sumsquares = 0;
+		double uwsumsquares = 0;
 		unsigned t;
 
-		/* compute sum of snr squares (for excess power), and sum
-		 * of energies (for h_rss) */
+		/* compute sum of squares, and unwhitened sum of squares */
 		for(t = start + tstep / 2; t < end; t += tstep) {
-			double sum = 0.0;
-			double hsum = 0.0;
+			double sum = 0;
+			double uwsum = 0;
 
 			/* compute snr and dewhitened amplitude for this
 			 * "virtual pixel". */
 			for(c = channel; c < channel_end; c++) {
 				sum += plane->channel[c]->data[t];
-				hsum += plane->channel[c]->data[t] * plane->channel_rms->data[c];
+				uwsum += plane->channel[c]->data[t] * plane->unwhitened_rms->data[c] * sqrt(plane->fseries_deltaF / plane->deltaF);
 			}
 
 			sumsquares += sum * sum;
-			hsumsquares += hsum * hsum;
+			uwsumsquares += uwsum * uwsum;
 		}
-		/* normalization to give each "virtual pixel" a mean square
-		 * snr of 1.0 */
-		sumsquares /= channels + twice_channel_overlap;
-		hsumsquares /= channels + twice_channel_overlap;
+		/* normalization to give each pixel a mean square of 1.0 */
+		sumsquares /= sum_mean_square;
 
 		/* compute statistical confidence, see if it's above
 		 * threshold */
-		/* FIXME:  the 0.65 is an impirically determined
-		 * degree-of-freedom fudge factor.  figure out what it's
+		/* FIXME:  the 0.65 is an empirically determined
+		 * degree-of-freedom fudge factor.  figure out what its
 		 * origin is, and account for it correctly.  it's most
 		 * likely due to the time-frequency plane pixels not being
 		 * independent of one another as a consequence of a
@@ -160,13 +169,16 @@ SnglBurstTable *XLALComputeExcessPower(
 		if(confidence >= confidence_threshold) {
 			SnglBurstTable *oldhead;
 
-			/* compute excess power and h_rss */
-			excess_power = sumsquares - tile_dof;
-			h_rss = sqrt(hsumsquares - tile_dof * pixel_mean_square);
+			/* normalization to give each unwhitened pixel a
+			 * mean square of 1.0 */
+			uwsumsquares /= uwsum_mean_square;
+
+			/* compute h_rss */
+			h_rss = sqrt((uwsumsquares - tile_dof) * unwhitened_mean_square * tstep * plane->deltaT);
 
 			/* add new event to head of linked list */
 			oldhead = head;
-			head = XLALTFTileToBurstEvent(plane, start, length, channel, channels, h_rss, excess_power, confidence);
+			head = XLALTFTileToBurstEvent(plane, start, length, channel, channels, h_rss, sumsquares, tile_dof, confidence);
 			if(!head)
 				XLAL_ERROR_NULL(func, XLAL_EFUNC);
 			head->next = oldhead;

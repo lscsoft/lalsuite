@@ -334,7 +334,8 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	static const char func[] = "XLALCreateTFPlane";
 	REAL4TimeFrequencyPlane *plane;
 	REAL8Sequence *twice_channel_overlap;
-	REAL8Sequence *channel_rms;
+	REAL8Sequence *unwhitened_rms;
+	REAL8Sequence *unwhitened_cross;
 	REAL4Sequence **channel;
 	REAL4Window *tukey;
 	REAL4Sequence *correlation;
@@ -436,14 +437,16 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 
 	plane = XLALMalloc(sizeof(*plane));
 	twice_channel_overlap = XLALCreateREAL8Sequence(channels - 1);
-	channel_rms = XLALCreateREAL8Sequence(channels);
+	unwhitened_rms = XLALCreateREAL8Sequence(channels);
+	unwhitened_cross = XLALCreateREAL8Sequence(channels - 1);
 	channel = XLALMalloc(channels * sizeof(*channel));
 	tukey = XLALCreateTukeyREAL4Window(tseries_length, (tseries_length - tiling_length) / (double) tseries_length);
 	correlation = tukey ? compute_two_point_spectral_correlation(tukey) : NULL;
-	if(!plane || !twice_channel_overlap || !channel_rms || !channel || !tukey || !correlation) {
+	if(!plane || !twice_channel_overlap || !unwhitened_rms || !unwhitened_cross || !channel || !tukey || !correlation) {
 		XLALFree(plane);
 		XLALDestroyREAL8Sequence(twice_channel_overlap);
-		XLALDestroyREAL8Sequence(channel_rms);
+		XLALDestroyREAL8Sequence(unwhitened_rms);
+		XLALDestroyREAL8Sequence(unwhitened_cross);
 		XLALFree(channel);
 		XLALDestroyREAL4Window(tukey);
 		XLALDestroyREAL4Sequence(correlation);
@@ -456,7 +459,8 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 				XLALDestroyREAL4Sequence(channel[i]);
 			XLALFree(plane);
 			XLALDestroyREAL8Sequence(twice_channel_overlap);
-			XLALDestroyREAL8Sequence(channel_rms);
+			XLALDestroyREAL8Sequence(unwhitened_rms);
+			XLALDestroyREAL8Sequence(unwhitened_cross);
 			XLALFree(channel);
 			XLALDestroyREAL4Window(tukey);
 			XLALDestroyREAL4Sequence(correlation);
@@ -472,11 +476,13 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	plane->epoch.gpsSeconds = 0;
 	plane->epoch.gpsNanoSeconds = 0;
 	plane->deltaT = tseries_deltaT;
+	plane->fseries_deltaF = fseries_deltaF;
 	plane->channels = channels;
 	plane->deltaF = deltaF;
 	plane->flow = flow;
 	plane->twice_channel_overlap = twice_channel_overlap;
-	plane->channel_rms = channel_rms;
+	plane->unwhitened_rms = unwhitened_rms;
+	plane->unwhitened_cross = unwhitened_cross;
 	plane->channel = channel;
 	plane->tiles.max_length = max_length;
 	plane->tiles.min_channels = min_channels;
@@ -509,7 +515,8 @@ void XLALDestroyTFPlane(
 	if(plane) {
 		unsigned i;
 		XLALDestroyREAL8Sequence(plane->twice_channel_overlap);
-		XLALDestroyREAL8Sequence(plane->channel_rms);
+		XLALDestroyREAL8Sequence(plane->unwhitened_rms);
+		XLALDestroyREAL8Sequence(plane->unwhitened_cross);
 		for(i = 0; i < plane->channels; i++)
 			XLALDestroyREAL4Sequence(plane->channel[i]);
 		XLALFree(plane->channel);

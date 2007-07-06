@@ -42,6 +42,15 @@ NRCSID(FREQSERIESTOTFPLANEC, "$Id$");
  * components, so this function multiplies by the required factor of 2.
  * The result is the *full* inner product, not the half inner product.  It
  * is safe to pass the same filter as both arguments.
+ *
+ * The second version computes the PSD-weighted inner product.  This is
+ * used in reconstructing h_rss.
+ *
+ * NOTE:  checks are not done to ensure that the delta fs are all equal,
+ * and that the PSD spans the frequency range of the two filters.   these
+ * things are implicit in the code that calls these functions so it would
+ * just burn CPU time to do them, but be aware of these requirements if
+ * this code is copied and used somewhere else!
  */
 
 
@@ -72,14 +81,46 @@ static REAL8 filter_inner_product(
 }
 
 
+static REAL8 psd_weighted_filter_inner_product(
+	const COMPLEX8FrequencySeries *filter1,
+	const COMPLEX8FrequencySeries *filter2,
+	const REAL4Sequence *correlation,
+	const REAL4FrequencySeries *psd
+)
+{
+	const int k10 = filter1->f0 / filter1->deltaF;
+	const int k20 = filter2->f0 / filter2->deltaF;
+	const REAL4 *pdata = psd->data->data - (int) (psd->f0 / psd->deltaF);
+	int k1, k2;
+	COMPLEX16 sum = {0, 0};
+
+	for(k1 = 0; k1 < (int) filter1->data->length; k1++) {
+		const COMPLEX8 *f1data = &filter1->data->data[k1];
+		for(k2 = 0; k2 < (int) filter2->data->length; k2++) {
+			const COMPLEX8 *f2data = &filter2->data->data[k2];
+			const unsigned delta_k = abs(k10 + k1 - k20 - k2);
+			double sksk = (delta_k & 1 ? -1 : +1) * (delta_k < correlation->length ? correlation->data[delta_k] : 0);
+			
+			sksk *= sqrt(pdata[k10 + k1] * pdata[k20 + k2]);
+
+			sum.re += sksk * (f1data->re * f2data->re + f1data->im * f2data->im);
+			sum.im += sksk * (f1data->im * f2data->re - f1data->re * f2data->im);
+		}
+	}
+
+	return 2 * sqrt(sum.re * sum.re + sum.im * sum.im);
+}
+
+
 /*
  * Generate the frequency domain channel filter function.  The filter is
  * nominally a Hann window twice the channel's width, centred on the
- * channel's centre frequency.  The filter is normalized so that its sum
- * squares is 1.  If the psd parameter is not NULL, then the filter is
- * divided by the square root of this frequency series prior to
- * normalilization.  This has the effect of de-emphasizing frequency bins
- * with high noise content, and is called "over whitening".
+ * channel's centre frequency.  The filter is normalized so that its
+ * "magnitude" as defined by the inner product function above is N.  If the
+ * psd parameter is not NULL, then the filter is divided by the square root
+ * of this frequency series prior to normalilization.  This has the effect
+ * of de-emphasizing frequency bins with high noise content, and is called
+ * "over whitening".
  */
 
 
@@ -111,7 +152,7 @@ static COMPLEX8FrequencySeries *generate_filter(
 	 * summing across channels to be something that has a name, any
 	 * channel filter at all would do, but this way the code's
 	 * behaviour is more easily understood --- it's easy to say "the
-	 * channel filter is a Tukey window of variable centre width".
+	 * channel filter is a Tukey window of variable central width".
 	 *
 	 * Note:  the number of samples in the window is odd, being one
 	 * more than the number of frequency bins in twice the channel
@@ -146,13 +187,14 @@ static COMPLEX8FrequencySeries *generate_filter(
 
 	/*
 	 * normalize the filter.  the filter needs to be normalized so that
-	 * it's inner product with itself is 1.
+	 * it's inner product with itself is (width / delta F), the width
+	 * of the filter in bins.
 	 */
 
-	norm = sqrt(filter_inner_product(filter, filter, correlation));
+	norm = sqrt((channel_width / filter->deltaF) / filter_inner_product(filter, filter, correlation));
 	for(i = 0; i < filter->data->length; i++) {
-		filter->data->data[i].re /= norm;
-		filter->data->data[i].im /= norm;
+		filter->data->data[i].re *= norm;
+		filter->data->data[i].im *= norm;
 	}
 
 	/*
@@ -164,8 +206,22 @@ static COMPLEX8FrequencySeries *generate_filter(
 
 
 /*
- * Multiply the data by the filter.
+ * Multiply the data by the filter.  The check that the frequency
+ * resolutions are compatible is omitted because it is implied by the
+ * calling code.
  */
+
+
+static double min(double a, double b)
+{
+	return a < b ? a : b;
+}
+
+
+static double max(double a, double b)
+{
+	return a > b ? a : b;
+}
 
 
 static COMPLEX8Sequence *apply_filter(
@@ -175,14 +231,13 @@ static COMPLEX8Sequence *apply_filter(
 )
 {
 	static const char func[] = "apply_filter";
-	int fstart = (filterseries->f0 - inputseries->f0) / filterseries->deltaF;
-	COMPLEX8 *output = outputseq->data + (fstart < 0 ? 0 : fstart);
-	const COMPLEX8 *input = inputseries->data->data + (fstart < 0 ? 0 : fstart);
-	const COMPLEX8 *filter = filterseries->data->data + (fstart < 0 ? -fstart : 0);
-	/* an extra 1 is subtracted to ensure the Nyquist is set to 0 */
-	size_t fbins = outputseq->length - (fstart < 0 ? 0 : fstart) - 1;
-	if(filterseries->data->length - (fstart < 0 ? -fstart : 0) < fbins)
-		fbins = filterseries->data->length - (fstart < 0 ? -fstart : 0);
+	/* find bounds of common frequencies */
+	const double flo = max(filterseries->f0, inputseries->f0);
+	const double fhi = min(filterseries->f0 + filterseries->data->length * filterseries->deltaF, inputseries->f0 + inputseries->data->length * inputseries->deltaF);
+	COMPLEX8 *output = outputseq->data + (int) ((flo - inputseries->f0) / inputseries->deltaF);
+	COMPLEX8 *last = outputseq->data + (int) ((fhi - inputseries->f0) / inputseries->deltaF);
+	const COMPLEX8 *input = inputseries->data->data + (int) ((flo - inputseries->f0) / inputseries->deltaF);
+	const COMPLEX8 *filter = filterseries->data->data + (int) ((flo - filterseries->f0) / filterseries->deltaF);
 
 	if(outputseq->length != inputseries->data->length)
 		XLAL_ERROR_NULL(func, XLAL_EBADLEN);
@@ -190,42 +245,17 @@ static COMPLEX8Sequence *apply_filter(
 	/* zero the product vector */
 	memset(outputseq->data, 0, outputseq->length * sizeof(*outputseq->data));
 
+	if(fhi < flo)
+		/* no op */
+		return outputseq;
+
 	/* output = inputseries * conj(filter) */
-	for(; fbins--; output++, input++, filter++) {
+	for(; output < last; output++, input++, filter++) {
 		output->re = input->re * filter->re + input->im * filter->im;
 		output->im = input->im * filter->re - input->re * filter->im;
 	}
 
 	return outputseq;
-}
-
-
-/*
- * Compute the mean square for a channel from the PSD and the channel's
- * filter.  PSDs computed by LAL obey the convention that for Gaussian
- * noise, the mean square of a frequency bin is psd[k] / (2 deltaF).
- * Therefore, the mean square of a frequency bin after being multiplied by
- * the channel filter, c[k], is psd[k] |c[k]|^2 / (2 deltaF).  The mean
- * square for the channel is the sum of mean squares for the bins within
- * it, if separate frequency bins are statistically independent so that
- * there are no cross terms.  This is true for stationary noise.
- */
-
-
-static REAL8 channel_mean_square(
-	const REAL4FrequencySeries *psd,
-	const COMPLEX8FrequencySeries *filter
-)
-{
-	const REAL4 *pdata = psd->data->data + (int) ((filter->f0 - psd->f0) / psd->deltaF);
-	const COMPLEX8 *fdata = filter->data->data;
-	double sum = 0.0;
-	unsigned i;
-
-	for(i = 0; i < filter->data->length; i++, pdata++, fdata++)
-		sum += *pdata * (fdata->re * fdata->re + fdata->im * fdata->im);
-
-	return sum / (2 * psd->deltaF);
 }
 
 
@@ -309,11 +339,17 @@ int XLALFreqSeriesToTFPlane(
 			XLALDestroyCOMPLEX8Sequence(fcorr);
 			XLAL_ERROR(func, XLAL_EFUNC);
 		}
+
+		/* compute the unwhitened root mean square for this channel */
+		plane->unwhitened_rms->data[i] = sqrt(psd_weighted_filter_inner_product(filter[i], filter[i], plane->two_point_spectral_correlation, psd) * fseries->deltaF / 2);
 	}
 
-	/* compute the channel overlaps */
-	for(i = 0; i < plane->channels - 1; i++)
+	/* compute the cross terms for the channel normalizations and
+	 * unwhitened mean squares */
+	for(i = 0; i < plane->channels - 1; i++) {
 		plane->twice_channel_overlap->data[i] = 2 * filter_inner_product(filter[i], filter[i + 1], plane->two_point_spectral_correlation);
+		plane->unwhitened_cross->data[i] = psd_weighted_filter_inner_product(filter[i], filter[i + 1], plane->two_point_spectral_correlation, psd) * fseries->deltaF;
+	}
 
 	XLALPrintInfo("XLALFreqSeriesToTFPlane(): projecting data onto time-frequency plane\n");
 	/* loop over the time-frequency plane's channels */
@@ -322,8 +358,8 @@ int XLALFreqSeriesToTFPlane(
 		 * filter by taking their product in the frequency domain
 		 * and then inverse transforming to the time domain to
 		 * obtain an SNR time series.  Note that
-		 * XLALREAL4ReverseFFT() omits the factor of 1/N in the
-		 * inverse transform. */
+		 * XLALREAL4ReverseFFT() omits the factor of 1 / (N Delta
+		 * t) in the inverse transform. */
 		apply_filter(fcorr, fseries, filter[i]);
 		if(XLALREAL4ReverseFFT(plane->channel[i], fcorr, reverseplan)) {
 			for(i = 0; i < plane->channels; i++)
@@ -332,9 +368,6 @@ int XLALFreqSeriesToTFPlane(
 			XLALDestroyCOMPLEX8Sequence(fcorr);
 			XLAL_ERROR(func, XLAL_EFUNC);
 		}
-
-		/* Store the expected root mean square for this channel */
-		plane->channel_rms->data[i] = sqrt(channel_mean_square(psd, filter[i]));
 	}
 
 	/* clean up */

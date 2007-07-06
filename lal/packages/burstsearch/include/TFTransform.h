@@ -51,6 +51,8 @@ typedef struct tagREAL4TimeFrequencyPlane {
 	LIGOTimeGPS epoch;
 	/* time resolution of the plane */
 	REAL8 deltaT;
+	/* input frequency series' resolution */
+	REAL8 fseries_deltaF;
 	/* Number of frequency channels in TF plane */
 	UINT4 channels;
 	/* TF plane's frequency resolution (channel spacing) */
@@ -62,8 +64,11 @@ typedef struct tagREAL4TimeFrequencyPlane {
 	 * filters for channels 0 and 1, and so on (for n channels, there
 	 * are n - 1 channel_overlaps) */
 	REAL8Sequence *twice_channel_overlap;
-	/* predicted root mean square for the time series in each channel */
-	REAL8Sequence *channel_rms;
+	/* root mean square for the unwhitened time series corresponding to
+	 * each channel, and the mean square cross terms for wide channels
+	 * (indices same as for twice_channel_overlap) */
+	REAL8Sequence *unwhitened_rms;
+	REAL8Sequence *unwhitened_cross;
 	/* channel data.  channel[j]->data[i] corresponds to time
 	 *
 	 * epoch + i * deltaT
