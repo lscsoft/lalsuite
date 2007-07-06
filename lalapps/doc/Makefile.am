@@ -7,7 +7,7 @@ TEXSOURCEFILES = lalapps.tex lalapps.bib lalapps.bst \
 		 findchirp.tex hello.tex  inspinj.tex inspiral-module.tex 
 		 inspiral.tex InspiralInjection.tex\
                  stochastic.tex olapredfcn.tex \
-                 pipeline-module.tex power.tex ring.tex
+                 pipeline-module.tex ring.tex
 
 ## Don't edit below here (unless you know what you're doing)
 INSTALLFILES = lalapps.pdf lalapps.dvi lalapps.ps

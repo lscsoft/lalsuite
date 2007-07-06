@@ -1,16 +1,48 @@
+\documentclass{article}
+\usepackage{fullpage}
+\usepackage{kcannon0}
+
 \DeclareGraphicsRule{.fig.pdf}{pdf}{.fig.pdf}{}
 
-\chapter{Burst Search Programs}
-\label{chapter:powertools}
+
+\newcommand\lal{\textsc{lal}}
+\newcommand\lalapps{\textsc{lalapps}}
+\newcommand\ligotools{\textsc{ligotools}}
+
+\newcommand{\prog}[1]{\texttt{#1}}
+\newcommand{\function}[1]{\texttt{#1}}
+\newcommand{\option}[1]{\texttt{#1}}
+\newcommand{\parm}[1]{$<$\textit{#1}$>$}
+
+
+\newenvironment{entry}%
+  {\begin{list}{}{\renewcommand{\makelabel}[1]%
+    {\parbox[b]{\labelwidth}{\makebox[0pt][l]{\textbf{##1}}\\}}%
+    \setlength{\labelwidth}{1em}%
+    \setlength{\labelsep}{1em}%
+    \setlength{\leftmargin}{2em}%
+    \setlength{\topsep}{\medskipamount}%
+    \setlength{\itemsep}{\medskipamount}%
+    \setlength{\parsep}{\medskipamount}%
+    \setlength{\listparindent}{0pt}}}
+  {\end{list}}
+
+
+
+\title{Burst Search Programs}
+\author{Patrick Brady, Duncan Brown, Kipp Cannon, Saikat Ray-Majumder}
+\date{2007-7-6}
+
+
+\begin{document}
+\maketitle
 
  
-\clearpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % RUNNING A PIPELINE
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Running the power code under Condor}
 \label{subsection:running_power}
-\idx[Running]{power}
 
 %
 % FIXME: this section is obsolete
@@ -22,10 +54,8 @@ This section is under construction!
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % subsection: power pipeline script
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\clearpage
 \section{Program \prog{lalapps\_power\_pipe}}
 \label{program:lalapps-power-pipe}
-\idx[Program]{\prog{lalapps\_power\_pipe}}
 
 \begin{entry}
 
@@ -149,16 +179,13 @@ lalapps_power_pipe -f power_pipe.ini -d -r -H -L -b -c -j sim -l /people/saikat/
 \item[Author]
 Duncan Brown, Patrick Brady and Saikat Ray-Majumder
 \end{entry}
-\clearpage
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % section: power code
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\clearpage
 \section{Program \prog{lalapps\_power}}
 \label{program:lalapps-power}
-\idx[Program]{\prog{lalapps\_power}}
 
 \begin{entry}
 
@@ -498,366 +525,756 @@ spanning the GPS times 754008323.0 s through 754008363.0 s.
 \item[Authors]
 Patrick Brady, Saikat Ray-Majumder and Kipp Cannon.  
 \end{entry}
-\clearpage
 
 \subsection{Algorithmic Implementation}
+
+
+\subsubsection{Overview}
 
 The Excess Power search method is motivated by the classical theory of
 signal detection in Gaussian noise.  The method is the optimal search
 strategy~\cite{Anderson:2000yy} having only knowledge of the time duration
-and frequency band of the expected signal,  but having no other
-information about the power distribution in advance of detection. 
+and frequency band of the expected signal,  but having no other information
+about the power distribution in advance of detection.
 
-Consider a sampled time-series $s_j$ consisting of $N$ data points
-sampled once per $\Delta$ seconds.  In our case,  this data has been
-high-pss filtered using a Butterworth filter as described in
-Sec.~\ref{section:Butterworth} but this does not change the algorithm,  so
-we ignore it here.  This data is then windowed (using a user specified
-window) and transformed into the frequency domain
-\begin{equation}
-\tilde{s}_{k}
-   = \frac{\Delta}{\sigma_{w}} \sum_{j = 0}^{N - 1} w_{j} s_{j} \ee^{-2 \pi
-   \aye j k / N}
-\end{equation}
-where $w_{j}$ is the window function, and $\sigma_{w}$ is  
+The algorithm amounts to projecting the data onto a basis of test
+functions, each of which is a prototype for the waveforms being sought in
+the data.  The projection procedure is the following.  The input time
+series is passed through a comb of frequency-domain filters, generating
+several output time series, one each for a number of frequency channels.
+Summing the squares of the samples in any one of these channels amounts to
+summing the ``energy'' in the corresponding frequency band.  Summing only
+the samples from a range of times produces a number that is interpreted as
+the energy in that frequency band for that period of time --- the energy in
+a time-frequency tile whose bandwidth is that of the frequency channel, and
+whose duration is the length of the sum.
+
+The search is a multi-resolution search, so tiles of many different
+bandwidths and durations are scanned.  For performance purposes, only a
+single frequency channel decomposition is used.  ``Virtual'' wide bandwidth
+channels are constructed by summing the samples from multiple channels, and
+correcting for the overlap between adjacent channel filters.
+
+Once the energy in a tile has been measured, a threshold is applied to
+select the ``important'' tiles.  The quantity thresholded on is the
+probability of measuring at least that much energy in a tile with that
+bandwidth and that duration in Gaussian noise.  The procedure employed to
+assess this probability is to first whiten and normalize the data, to
+transform it into what is then assumed to be stationary white unit-variance
+Gaussian noise, and then read off the probability of the observed energy
+from a theoretical distribution derived from that assumption.
+
+
+\subsubsection{The Whitening Procedure}
+
+Consider a discretely-sampled time-series of \(N\) samples, \(s_j\) where
+\(0 \leq j < N\) and the sample period is \(\Delta t\).  Much of the signal
+processing to be described below is done in the frequency domain, so the
+first step is to multiply the time series by a window function, \(w_{j}\),
+tapering it to 0 at the start and end to reduce the noise arising from the
+data's aperiodicity at its boundary.  The mean square of the tapering
+window's samples is
 \begin{equation}
 \sigma_{w}^{2}
    = \frac{1}{N} \sum_{j = 0}^{N - 1} w_{j}^2.
 \end{equation}
-Finally,  the data is whitened
+Following multiplication by the tapering window, the data is Fourier
+transformed to the frequency domain.  The complex amplitude of the
+frequency bin \(k\) is
+\begin{equation}
+\tilde{s}_{k}
+   = \frac{\Delta t}{\sigma_{w}} \sum_{j = 0}^{N - 1} w_{j} s_{j} \ee^{-2
+   \pi \aye j k / N},
+\end{equation}
+where \(0 \leq k < N\).  The frequency bins \(\lfloor N / 2 \rfloor < k <
+N\) correspond to negative frequency components, and are not stored because
+the input time series is real-valued and so the negative frequency
+components are redundant (they are the complex conjugates of the positive
+frequency components).  For the non-negative frequencies, bin \(k\)
+corresponds to frequency
+\begin{equation}
+f_{k}
+   = k \Delta f,
+\end{equation}
+where the bin spacing is \(\Delta f = (N \Delta t)^{-1}\).  Defining the
+power spectral density as
+\begin{equation}
+P_{k}
+   = \Delta f \mean{\magnitude{\tilde{s}_{k}}^{2} + \magnitude{\tilde{s}_{N
+   - k}}^{2}}
+   = 2 \Delta f \mean{\magnitude{\tilde{s}_{k}}^{2}},
+\end{equation}
+for \(0 \leq k < \lfloor N / 2 \rfloor\), the ``whitened'' frequency series
+is
 \begin{equation}
 \hat{s}_{k}
-   = 2 \sqrt{\frac{\Delta f}{P_{k}}} \tilde{s}_{k}
+   = \sqrt{\frac{2 \Delta f}{P_{k}}} \tilde{s}_{k}
 \end{equation}
-where $\Delta f = 1 / N \Delta$ is the sampling frequency interval and
-$P_{k} = 2 \Delta f \mean{\magnitude{\tilde{s}_{k}^2}}$ is the power
-spectral estimate.  This spectrum is estimated using the median power at
-each frequency for a number of overlapping segments.  The use of the median
-avoids bias in the spectrum caused by the presence of a gravitational wave
-or other large non-astrophysical transients present in any of the segments.
-Notice that
+so that
 \begin{equation}
+\label{eqn3}
 \mean{\magnitude{\hat{s}_{k}}^2}
-   = 2.
+   = 1.
 \end{equation}
-If the original time series contains only Gaussian noise,  this
-construction makes the real and imaginary parts of each frequency component
-a unit variance Gaussian random variable. 
-
-\subsubsection{The filter}
-
-The excess-power method relies on having a time-frequency decomposition of
-the the incoming data.   Consider construction of the the time-frequency
-plane in a pass-band $f_{0} < f < f_{0} + b$.  A naive construction would
-set all Fourier components outside of this band to zero and inverse
-transform.  A major problem with this approach is that the band-pass
-filter,  when viewed in the time-domain, has infinite extent(as shown in
-Figure~\ref{fig:timedomainfilter} in a wrap around fashion) and can lead to
-data corruption of the band-passed data stream when contructed as described
-above. 
-\begin{figure}
-\begin{center}
-\includegraphics[width=0.9\textwidth]{figures/timedomainfilter}
-\caption{Filter in the time domain in a wrapped around fashion}
-\label{fig:timedomainfilter}
-\end{center}
-\end{figure}
- 
-We can, however, start from this and construct a filter which
-preferentially passes the appropriate frequencies \emph{and} has finite
-duration in the time domain (Figure~\ref{fig:timedomainfilter_1} \&
-Figure~\ref{fig:freqdomainfilter_1}).
-\begin{figure}
-\begin{center}
-\includegraphics[width=0.8\textwidth]{figures/timedomainfilter_1}
-\caption{Filter in the time domain}
-\label{fig:timedomainfilter_1}
-\end{center}
-\end{figure}
-\begin{figure}
-\begin{center}
-\includegraphics[width=0.8\textwidth]{figures/freqdomainfilter_1}
-\caption{Filter in the frequency domain}
-\label{fig:freqdomainfilter_1}
-\end{center}
-\end{figure}
-Consider the rectangular band-pass in the frequency domain
+The definition of the power spectral density is such that
 \begin{align}
-G(t)
-   & = \int_{-f_{0} - b}^{-f_{0}} \ee^{2 \pi \aye f t} \diff f  +
-   \int_{f_{0}}^{f_{0} + b} \ee^{2 \pi \aye f t} \diff f \\
-   & = 2 \int_{f_{0}}^{f_{0} + b} \cos (2 \pi f t) \diff f \\
-   & = \frac{\sin[2 \pi (f_{0} + b) t] - \sin[2 \pi f_{0} t]}{\pi t}.
+\mean{s_{j}^{2}}
+   & = \frac{1}{N^{2} \Delta t^{2}} \sum_{k = 0}^{N - 1} \sum_{k' = 0}^{N -
+   1} \mean{\tilde{s}_{k} \conj{\tilde{s}}_{k'}} \ee^{2 \pi \aye j (k - k')
+   / N}
+   \\
+   & = \frac{1}{2 N \Delta t} \sum_{k = 0}^{N - 1} P_{k},
 \end{align}
-This is just the sum of a sine and cosine at frequency $f_{0}$ modulated at
-frequency $b$.  Consequently,  the amplitude modulation has its first zero
-at $t = 1 / (2 b)$ and we can use a truncated time-domain filter
+when the frequency components are independent (the input time series is a
+stationary process).
+
+If the original time series is stationary Gaussian noise, this construction
+makes each frequency bin's real and imaginary parts Gaussian random
+variables with variances of 0.5.  The definition of the power spectral
+density and of the Fourier transform shown above both match those of the
+LIGO Algorithm Library, as documented in LIGO-T010095-00-Z.  Figure
+\ref{fig:shistogram} shows the distribution of the real and imaginary
+components of \(\hat{s}_{k}\) obtained from a sample of \(h(t)\) taken from
+the LIGO L1 instrument during S4.
+\begin{figure}
+\begin{center}
+\resizebox{5.5in}{!}{\includegraphics{figures/sk_histogram.png}}
+\end{center}
+\caption{The distribution of the real and imaginary components of
+\(\hat{s}_{k}\) obtained from a sample of \(h(t)\) taken from the LIGO L1
+instrument during S4.  The aparent bias away from the expected
+normalization (actually non-Gaussianity) and the two horn features, are the
+result of correlations between the power spectrum and the data.  Recall
+that the power spectrum is estimated from the same data it is used to
+whiten.}
+\label{fig:shistogram}
+\end{figure}
+
+If the input time series is a stationary random process, then the
+components of its Fourier transform are uncorrelated, and we would find
+that \(\mean{\hat{s}_{k} \conj{\hat{s}}_{k'}} = \delta_{k k'}\).  However,
+because we have windowed the time series (which is equivalent to convolving
+its Fourier transform with that of the window), the frequency components
+are now correlated.  We can compute \(\mean{\hat{s}_{k}
+\conj{\hat{s}}_{k'}}\) by assuming the whitened time series consists of
+independently-distributed random variables, because then the
+Wiener-Khinchin theorem tells us that its two-point spectral correlation
+function is the Fourier transform of its variance which we'll assume is
+proportional to the square of the tapering window function.  Therefore,
 \begin{equation}
-\label{eq:filter}
-\Theta(t - t_0; f_0 , b)
-   = \begin{cases}
-   \frac{\sin[2 \pi (f_{0} + b) (t - t_{0})] - \sin[2 \pi f_{0} (t -
-   t_{0})]}{\pi (t - t_{0})} & \magnitude{t - t_{0}} < 1/b \\
-   0 & \text{Otherwise}
+\mean{\hat{s}_{k} \conj{\hat{s}}_{k'}}
+   \propto \sum_{j = 0}^{N - 1} w_{j}^{2} \ee^{-2 \pi \aye j (k - k') / N}.
+\end{equation}
+The proportionality constant is obtained from \eqref{eqn3}, which tells us
+that
+\begin{equation}
+\label{eqn4}
+\mean{\hat{s}_{k} \conj{\hat{s}}_{k'}}
+   = \frac{1}{\sigma_{w}^{2}} \sum_{j = 0}^{N - 1} w_{j}^{2} \ee^{-2 \pi
+   \aye j (k - k') / N}.
+\end{equation}
+A comparison of this prediction to the observed two-point spectral
+correlation in \(\hat{s}_{k}\) obtained from \(h(t)\) recorded at the LIGO
+L1 instrument during S4 is shown in Figure \ref{fig:sksk}.
+\begin{figure}
+\begin{center}
+\resizebox{5.5in}{!}{\includegraphics{figures/sksk.png}}
+\end{center}
+\caption{The two-point spectral correlation in the whitened data when a
+Tukey window with 50\% flat top is used to taper the input time series.
+The ``expected'' curve is what is expected in the limit of an average over
+an infinite number of measurements.  Since a finite number of measurements
+were made, a residual ``floor'' is expected, and it should go as
+\((\text{number of measurements})^{-1/2}\).  Approximately 4 million
+samples were averaged in each bin so the floor, which is
+\(\mean{\hat{s}_{k} \conj{\hat{s}}_{k'}} \sim 2000^{-1}\), is consistent
+with what is expected.}
+\label{fig:sksk}
+\end{figure}
+
+The power spectral density is estimated using the median power at each
+frequency for a number of overlapping segments.  The use of the median
+avoids bias in the spectrum caused by the presence of a gravitational wave
+or other large non-astrophysical transients present in any of the segments. 
+
+
+\subsubsection{The Channel Filter}
+\label{sec:channelfilter}
+
+The choice of the channel filter is mostly irrelevant, except that it
+correspond in some meaningful way to a particular frequency band.  We'll
+denote the channel filter spanning frequencyes \(f_{1} \leq f_{k} < f_{2}\)
+as \(\tilde{\Theta}_{k}(f_{1}, B)\), where the bandwidth of the filter is
+\(B = f_{2} - f_{1}\).  If \(b\) is the bandwidth of the narrowest channel,
+excess power achieves a multi-resolution search by computing only the
+narrowest channels, and choosing
+\begin{equation}
+\tilde{\Theta}_{k}(f_{1}, n b)
+   = \sum_{i = 0}^{n - 1} \Theta_{k}(f_{1} + i b, b),
+\end{equation}
+where \(B = n b\).  That is, the filters for wide band channels are chosen
+to be the sums of adjacent filters from narrower bands.  The specific
+choice made in excess power is to use Hann windows for the narrowest
+channels.  The narrow channels are all the same width, and the Hann windows
+are adjusted to be centred on their channel and extend over a range of
+frequencies twice the width of the channel,
+\begin{equation}
+\tilde{\Theta}_{k}(f_{1}, b)
+   \propto \begin{cases}
+   \sin^{2} \frac{\pi}{2 b} (f_{k} - f_{1} + \frac{b}{2}), & f_{1} -
+   \frac{b}{2} \leq f_{k} < f_{1} + \frac{3 b}{2} \\
+   0, & \text{othewise}.
    \end{cases}
 \end{equation}
-which covers a time frequency volume $V = b (1 / b) = 1$ and has its peak
-at time $t_{0}$.  Notice that
+In this way, when the filters for two adjacent channels are summed the
+result is a Tukey window --- a window with a flat top in the middle and
+\(\sin^{2}\) tapers at each end.
+
+All windows are real-valued, so that they are phase preserving.  The
+narrowest channel filters, the filters of bandwidth \(b\),  are normalized
+so that
 \begin{equation}
-\lim_{t \rightarrow t_{0}} \Theta(t - t_{0}; f_{0} , b)
-   = b.
+\label{eqn5}
+\sum_{k = 0}^{N - 1} \sum_{k' = 0}^{N - 1} -1^{(k - k')} \mean{\hat{s}_{k}
+\conj{\hat{s}}_{k'}} \conj{\tilde{\Theta}}_{k}(f_{1}, b)
+\tilde{\Theta}_{k'}(f_{1}, b)
+   = \frac{b}{\Delta f},
+\end{equation}
+where the two-point spectral correlation is given in \eqref{eqn4}.  The
+reason for this choice will become clear later.  For convenience, let us
+introduce the notation
+\begin{equation}
+\left\{ \tilde{X}, \tilde{Y} \right\}
+   = \sum_{k = 0}^{N - 1} \sum_{k' = 0}^{N - 1} -1^{(k - k')}
+   \mean{\hat{s}_{k} \conj{\hat{s}}_{k'}} \conj{\tilde{X}}_{k}
+   \tilde{Y}_{k'},
+\end{equation}
+so
+\begin{equation}
+\left\{ \tilde{\Theta}(f_{1}, b), \tilde{\Theta}(f_{1}, b) \right\}
+   = \frac{b}{\Delta f}.
+\end{equation}
+Notice that if the two-point spectral correlation is a Kroniker \(\delta\)
+(the input data is not windowed), and the channel filter is flat,
+\(\tilde{\Theta}_{k} = \tilde{\Theta}\), and spans the entire frequency
+band from DC to Nyquist, \(b / \Delta f = N\), then the normalization would
+lead to
+\begin{equation}
+\tilde{\Theta}
+   = 1.
 \end{equation}
 
-
-\subsubsection{The Signal-to-Noise}
-
-The signal to noise for a filter determined by $f_0$ and $b$ can be written
-as a function of the peak time $t_0$ as
+In the LIGO Algorithm Library, the Fourier transforms of real-valued time
+series contain only postive frequency components (the negative frequency
+components being the complex conjugates of these), and so the channel
+filters are also stored as only positive frequency components.  Since the
+two-point spectral correlation function is usually strongly-peaked around
+\(k - k' = 0\), and since the channel filters all go to zero far from the
+DC and Nyquist components, in practice it is safe to sum over only the
+positive frequency components, and require the sum to be
 \begin{equation}
-\rho(t_{0})
-   = \frac{z(t_{0})}{\sigma}
+2 \sum_{k = 0}^{\lfloor N / 2 \rfloor + 1} \sum_{k' = 0}^{\lfloor N / 2
+\rfloor + 1} -1^{(k - k')} \mean{\hat{s}_{k} \conj{\hat{s}}_{k'}}
+\conj{\tilde{\Theta}}_{k}(f_{1}, b) \tilde{\Theta}_{k'}(f_{1}, b)
+   = \frac{b}{\Delta f}.
 \end{equation}
-where
+So the argument is that in practice this normalization is identical to
+\eqref{eqn5}, but it is easier to implement because these are the only
+components stored in memory.
+
+For wide channels, channels formed by summing the filters from two or more
+narrow channels, the ``magnitude'' of the channel filter will not be \(n b
+/ \Delta f\).  For example,
 \begin{equation}
-z(t_{0})
-   = \int_{-\infty}^{\infty} \hat{s}(t) \Theta(t - t_{0}; f_{0}, b) \diff t
+\tilde{\Theta}_{k}(f_{1}, 2 b)
+   = \tilde{\Theta}_{k}(f_{1}, b) + \tilde{\Theta}_{k}(f_{1} + b, b),
 \end{equation}
-and $\sigma^{2} = \mean{ \magnitude{z(t_{0})}^2 }$.  The time series
-$z(t_{0})$ is most conveniently computed using Fourier transforms,
+and using the symmetry of \(\mean{\hat{s}_{k} \conj{\hat{s}}_{k'}}\) the
+magnitude of this channel filter is found to be
+\begin{align}
+\left\{ \tilde{\Theta}(f_{1}, 2 b), \tilde{\Theta}(f_{1}, 2 b) \right\}
+   & = \frac{2 b}{\Delta f} + 2 \left\{ \tilde{\Theta}(f_{1}, b),
+   \tilde{\Theta}(f_{1} + b, b) \right\}.
+\end{align}
+The channel construction described above, with Hann windows for the
+narrowest channels yielding Tukey windows for wider channels, allows us to
+make the approximation that only adjacent channel filters have sufficient
+overlap that their inner products are non-zero, and so the cross terms from
+adjacent channels are the only ones that need to be accounted for.
+Therefore, in general, a filter spanning \(n\) channels is
+\begin{equation}
+\tilde{\Theta}_{k}(f_{1}, n b)
+   = \sum_{i = 0}^{n - 1} \tilde{\Theta}_{k}(f_{1} + i b, b),
+\end{equation}
+and its magnitude is
+\begin{equation}
+\left\{ \tilde{\Theta}(f_{1}, n b), \tilde{\Theta}(f_{1}, n b) \right\}
+   = \frac{n b}{\Delta f} + 2 \sum_{i = 0}^{n - 2} \left\{
+   \tilde{\Theta}(f_{1} + i b, b), \tilde{\Theta}(f_{1} + (i + 1) b, b)
+   \right\}.
+\end{equation}
+Let us denote this magnitude as \(\mu^{2}(f_{1}, n b)\),
+\begin{equation}
+\label{eqn2}
+\mu^{2}(f_{1}, n b)
+   = \frac{n b}{\Delta f} + 2 \sum_{i = 0}^{n - 2} \sum_{k = 0}^{N - 1}
+   \sum_{k' = 0}^{N - 1} -1^{(k - k')} \mean{\hat{s}_{k}
+   \conj{\hat{s}}_{k'}} \tilde{\Theta}_{k}(f_{1} + i b, b)
+   \conj{\tilde{\Theta}}_{k'}(f_{1} + (i + 1) b, b).
+\end{equation}
+When \(n = 1\), \(\mu^{2} = b / \Delta f\).
+
+Figure \ref{fig:freqdomainfilter} illustrates the construction of a
+\(\unit{16}{\hertz}\) channel filter from four \(\unit{4}{\hertz}\) channel
+filters when \(\mean{\hat{s}_{k} \conj{\hat{s}}_{k'}} = \delta_{k k'}\).
+\begin{figure}
+\begin{center}
+\includegraphics{figures/freqdomainfilter.pdf}
+\end{center}
+\caption{Summing narrow Hann channel filters to obtain wide-band Tukey
+filters.}
+\label{fig:freqdomainfilter}
+\end{figure}
+The \(\unit{16}{\hertz}\) channel filter has had its normalization adjusted
+by the factor in \eqref{eqn2} to illustrate the relative amplitudes of the
+channel filters when all are normalized to have magnitudes of 1.  This
+figure also shows how the approximation that only adjacent channels have
+non-zero overlap becomes exact in the limit of a two-point spectral
+correlation function that is a Kroniker \(\delta\) (the ``tapering'' window
+is flat, \(w_{j} = 1\)), because the third channel filter can only overlap
+the first when there is mixing between \(k\).  The time-domain versions of
+two sample channel filters are shown in Figure \ref{fig:timedomainfilter}.
+\begin{figure}
+\begin{center}
+\includegraphics{figures/timedomainfilter_04hz.pdf}
+\includegraphics{figures/timedomainfilter_16hz.pdf}
+\end{center}
+\caption{Two examples of channel filters in the time domain.}
+\label{fig:timedomainfilter}
+\end{figure}
+
+
+\subsubsection{The Channel Time Series}
+
+The time series for a channel is extracted by multiplying the whitened
+frequency-domain input data by the channel filter, and transforming the
+result back to the time domain.  The time series for the channel of
+bandwidth \(b\) starting at frequency \(f_{1}\) is
+\begin{equation}
+\label{eqn1}
+z_{j}(f_{1}, b)
+   = \frac{1}{N \Delta t} \sum_{k = 0}^{N - 1} \hat{s}_{k}
+   \conj{\tilde{\Theta}}_{k}(f_{1}, b) \ee^{2 \pi \aye j k / N},
+\end{equation}
+and the mean square is
+\begin{equation}
+\mean{z_{j}^{2}(f_{1}, b)}
+   = \frac{1}{N^{2} \Delta t^{2}} \sum_{k = 0}^{N - 1} \sum_{k' = 0}^{N -
+   1} \mean{\hat{s}_{k} \conj{\hat{s}}_{k'}}
+   \conj{\tilde{\Theta}}_{k}(f_{1}, b) \tilde{\Theta}_{k'}(f_{1}, b) \ee^{2
+   \pi \aye j (k - k') / N}.
+\end{equation}
+The mean square is sample-dependent (depends on \(j\)) because the original
+time series had the window \(w_{j}\) applied to it.  We will now require
+that the window be of a kind with a flat portion in the middle, so that
+\begin{equation}
+w_{j}
+   = \begin{cases}
+   1 & \text{if \(0 \leq j_{1} \leq j < j_{2} \leq N\)},
+   \\
+   \leq 1 & \text{otherwise}.
+   \end{cases}
+\end{equation}
+For example, a Tukey window is suitable.  In that case, the mean square of
+\(z_{j}(f_{1}, b)\) should be independent of \(j\) when \(j_{1} \leq j <
+j_{2}\).  If we further require the flat portion of the window to be in the
+middle, in other words require \(j_{1}\) and \(j_{2}\) to be such that
+\(j_{1} \leq N / 2 < j_{2}\), then we can pick \(j = N / 2\) as
+representative of the mean square of \(z_{j}(f_{1}, b)\) in the flat
+portion of the window.  Therefore,
+\begin{equation}
+\mean{z_{j}^{2}(f_{1}, b)}
+   = \frac{1}{N^{2} \Delta t^{2}} \sum_{k = 0}^{N - 1} \sum_{k' = 0}^{N -
+   1} -1^{(k - k')} \mean{\hat{s}_{k} \conj{\hat{s}}_{k'}}
+   \conj{\tilde{\Theta}}_{k}(f_{1}, b) \tilde{\Theta}_{k'}(f_{1}, b).
+\end{equation}
+From the normalization of the channel filters (the motivation for the
+formulation of which is now seen), the sum is \(b / \Delta f\), and
 therefore
 \begin{equation}
-z(t_{0})
-   = \int_{-\infty}^{\infty} \hat{s}(f) \tilde{\Theta}^{*}(f) \ee^{2 \pi
-   \aye f t_{0}} \diff f.
+\mean{z_{j}^{2}(f_{1}, b)}
+   = \frac{1}{N^{2} \Delta t^{2}} \frac{b}{\Delta f},
 \end{equation}
+for \(j_{1} \leq j < j_{2}\).
 
-The Excess Power search then identifies triggers which may be gravitational
-wave bursts using the following algorithm.  We construct a single time
-frequency plane and then search over all possible tiles of different time
-durations and frequency bands.  One first decides the maximum frequency
-band and the maximum time duration that are to be tolerated in the search.
-The maximum frequency band determines the minimum duration a tile requiring
-the time-frequency volume be $1$ and similarly the maximum time duration
-determines the minimum frequency band of the tile.  The time frequency
-plane is then constructed with a time-frequency resolution finer by at
-least a factor of $2$ compared to the minimum resolutions of the tiles.  As
-a concrete example,  suppose the maximum allowed time duration of a tile is
-$\Delta T = \unit{2^{-(a + 1)}}{\second}$  and the maximum frequency band
-is $\Delta F = \unit{2^{(b - 1)}}{\hertz}$.  This implies the minimum
-duration of a tile in the search will be  $\Delta t_{\text{tile}} =
-\unit{2^{-(b-1)}}{\second}$  and the minimum frequency band will be $\Delta
-f_{\text{tile}} = \unit{2^{(a+1)}}{\hertz}$.  The time-frequency plane is
-then constructed with a timing resolution of $\delta t =
-\unit{2^{-b}}{\second}$ and a frequency resolution of $\delta f =
-\unit{2^a}{\hertz}$.
-
-For each whitened segment $\hat{s}_k$, one constructs multiple channels,
-each of which is an inverse Fourier tranform of a bandwidth $\delta f$ of
-data.  Now suppose the bandwidth over which we want to search is $F$ and
-the time duration is $T$. Therefore there will be $n_{\text{chan}} =
-\frac{F}{\delta f}$ channels and $n_{\text{time bins}} = \frac{T}{\delta
-t}$ time bins in each channel.  $n_{\text{time bins}} \times
-n_{\text{chan}}$ number of elements will then represent this time-frequency
-plane.
-
-If we consider a channel whose low frequency index is $k_{0}$ (where $k_{0}
-= \frac{f_{\text{low}}}{\delta f}$,  $f_{\text{low}}$ being the low
-frequency of the channel) and the channel width in number of sample points
-is $b = \frac{\delta f}{\Delta f}$ ($\Delta f$ is the frequency resolution
-of the fully sampled frequency series), it's elements can be represented
-as
+The LIGO Algorithm Library's \texttt{XLALREAL4ReverseFFT()} function
+computes the inverse transform omitting the factor of \(\Delta f = 1 / (N
+\Delta t)\) that appears in \eqref{eqn1}.  The time series returned by this
+function is
 \begin{equation}
-\label{eq:tfplanecountspoints}
-z_{j}(k_{0}, b)
-   = \sum_{k = 0}^{N - 1} \hat{s}_{k} \tilde{\Theta}_{k}^{*}(k_{0}, b)
-   \ee^{2 \pi \aye j k / N},
+Z_{j}(f_{1}, b)
+   = N \Delta t z_{j}(f_{1}, b),
 \end{equation}
-where $j = 0, \ldots, N - 1$.  Note, the timing resolution of $z_{j}(k_{0},
-b)$ is equal to that of the sampled detector data $s_{j}$.  The elements of
-the time-frequency plane corresponding to this particular channel
-$z_{j}(k_{0}, b)$ will then be 
+and the mean squares of the samples in the time series are
 \begin{equation}
-Z_{J}(k_{0}, b)
-   = z_{J n_{t}}(k_{0}, b),
+\mean{Z_{j}^{2}(f_{1}, b)}
+   = \frac{b}{\Delta f},
 \end{equation}
-where $n_{t} = \frac{\delta t}{\Delta}$ are the number of sample points in
-one time-frequency plane time bin ($\Delta$ being the full sampling rate of
-the timing series) and $J = 0, \ldots, n_{\text{time bins}} - 1$.
-
-Each channel is normalised so that a sample in the channel is a real
-Gaussian random variable with zero mean and unit variance. The
-normalisation constant is given by
-\begin{equation}
-\sigma^{2}(k_{0}, b)
-   = \mean{z_{j}^{2}(k_{0}, b)}
-   = \sum_{k = 0}^{N - 1} \sum_{l = 0}^{N - 1} \mean{\hat{s}_{k}
-   \hat{s}_{l}^{*}} \tilde{\Theta}_{k}^{*}(k_{0}, b)
-   \tilde{\Theta}_{l}(k_{0}, b) \ee^{2 \pi \aye j (k - l) / N}.
-\end{equation}
-If the input time series is stationary, the Fourier modes are independant
-so $\mean{\hat{s}_{k} \hat{s}_{l}^{*}} = 2 \delta_{k - l}$, and the
-normalisation simplifies to 
-\begin{equation}
-\sigma^{2}(k_{0}, b)
-   = 2 \sum_{k = 0}^{N - 1} \magnitude{\tilde{\Theta}_{k}^{2}(k_{0}, b)}.
-\end{equation}
-
-Now suppose we have a channel with the same low frequency $k_{0}$ but twice
-the frequency band,  i.e.\ $2 b$ compared to the previous channel.  We
-therefore have 
-\begin{equation}
-z_{j}(k_{0}, 2 b)
-   = \sum_{k = 0}^{N - 1} \hat{s}_{k} \tilde{\Theta}_{k}^{*}(k_{0}, 2 b)
-   \ee^{2 \pi \aye j k / N},
-\end{equation}
-where $\tilde{\Theta}_{k}^{*}(k_{0}, 2 b)$ from \eqref{eq:filter} is given
-by
-\begin{equation}
-\tilde{\Theta}(k_{0}, 2 b)
-   = \sum_{j = 0}^{N - 1} \frac{\sin[2 \pi / N (k_{0} + 2 b) j] - \sin[2
-   \pi / N k_{0} j]}{\pi j \Delta} \ee^{-12 \pi j k / N}
-\end{equation}
-However we can write
-\begin{multline}
-\label{eq:sines}
-\sin[2 \pi / N (k_{0} + 2 b) j] - \sin[2 \pi / N k_{0} j]
-   = \\ \sin[2 \pi / N(k_{0} + b) j] - \sin[2 \pi / N k_{0} j] + \sin[2 \pi
-   / N (k_{0} + 2 b) j] - \sin[2 \pi / N (k_{0} + b) j]
-\end{multline}
-and hence we get
-\begin{equation}
-\tilde{\Theta}(k_{0}, 2 b)
-   = \tilde{\Theta}(k_{0}, b) + \tilde{\Theta}(k_{0} + b, b)
-\end{equation}
-which implies
-\begin{equation}
-z_{j}(k_{0}, 2 b)
-   = z_{j}(k_{0}, b) + z_{j}(k_{0} + b, b).
-\end{equation}
-This is shown in Fig~\ref{fig:sumfilters}.  
-\begin{figure}
-\begin{center}
-\includegraphics[width=0.9\textwidth]{figures/sumoffilters}
-\caption{Response to a $\unit{4}{\hertz}$ wide filter compared to the sum
-of two $\unit{2}{\hertz}$ wide filters}
-\label{fig:sumfilters}
-\end{center}
-\end{figure}
-The data used to generate this plot is a delta function in the time domain
-(so that it is a flat line in the frequency domain, as shown by the green
-curve in the Fig~\ref{fig:sumfilters}). The black curve shows the output
-when the channel width is $\unit{4}{\hertz}$, while the red curve shows the
-sum of the output of two $\unit{2}{\hertz}$ wide channels.  The
-corresponding normalisation is
-\begin{equation}
-\label{eq:norm}
-\sigma^{2}(k_{0}, 2 b)
-   = \sigma^{2}(k_{0}, b) + \sigma^{2}(k_{0} + b, b) + 2 \sum_{k = 0}^{N -
-   1} \tilde{\Theta}_{k}^{*}(k_{0}, b) \tilde{\Theta}_{k}(k_{0} + b, b)
-\end{equation}
-The filter being orthogonal (almost), the cross term in \eqref{eq:norm}
-will be negligible.  
-
-A tile in this plane can be denoted as $\tau = \{J_{1}, \Delta n_{t},
-K_{1}, \Delta n_{f}\}$,  where $J_{1}$ and $K_{1}$ represent the indices
-corresponding to the start time and start frequency of the tile
-respectively while $\Delta n_{t}$ and $\Delta n_{f}$ are respectively the
-time and frequency bins.  The degrees of freedom assosciated with $\tau$
-will then be $d = 2 n_{t} \Delta t n_{f} \Delta f$.  Requiring that there
-are at least two sample points in the unit time-frequency volume tile we
-see that the time-frequency sample points have to be picked at every
-$\Delta t_{\text{tile}} = 1 / (2 n_{f} \delta f)$,  where $\delta f$ is the
-time-frequency plane frequency resolution.  In terms of sample points then
-every $\Delta t_{\text{tile}} / \delta t$ sample point has to be considered
-while calculating the power of the tile.  Now,  $\Delta t_{\text{tile}} /
-\delta t = \frac{1}{(2 n_{f} \delta f) \delta t} = n_{t} / d$ and the power
-in the tile will then be
-\begin{equation}
-\varepsilon_{\tau}
-   = \sum_{n = 0}^{d - 1} \frac{\left( \sum_{k = K_{1}}^{\Delta n_{f} - 1}
-   Z_{[J_{1} + n \frac{n_{t}}{d}]}(k, b) \right)^{2}}{\sum_{k =
-   K_{1}}^{\Delta n_{f} -1} \sigma^{2}(k, b)}.
-\end{equation}
-
-In Gaussian noise, the power in a given tile is $\chi^2$-distributed with
-$2 V$ degrees of freedom where $V$ is the time-frequency volume of the
-tile.  A burst trigger is identified if the probability of obtaining the
-excess power in a tile from Gaussian noise is smaller than some threshold
-$\alpha$.  For large bursts in the data stream, many tiles can be
-identified as triggers with different sizes and aspect ratios.
-
-
-\subsubsection{$h_{\text{rss}}$ Estimation}
-
-The way we estimate $h_{\text{rss}}$ corresponding to a tile $\tau$ is
-described here.  By definition,
-\begin{equation}
-h_{\text{rss}}^{2}
-   = \int h^{2}(t) \diff t
-   = \sum h^{2}_{j} \delta t,
-\end{equation}
-where $h_j$ is the gravitational wave strain data.  This in the frequency
-domain is related to the data in counts units (which has been used for all
-the documentation till now) by: 
-\begin{equation}
-\tilde{h}_{k}
-   = R_{k} \tilde{s}_{k},
-\end{equation}  
-where $R_k$ is the detector response function with units strain / count
-while the unit of $h_{k}$ is strain and of $s_{k}$ is counts.  In terms of
-the normalised data:
-\begin{equation}
-\tilde{h}_k
-   = \frac{R_{k} \sqrt{P_{k}}}{2 \sqrt{\Delta f}} \hat{s}_{k}.
-\end{equation}
-The corresponding time-frequency plane points are 
+for \(j_{1} \leq j < j_{2}\).  For a channel spanning \(n\) narrow
+channels,
 \begin{align}
-H_{j}(k_{0}, b)
-   & = \frac{1}{N} \sum_{k = 0}^{N - 1} \tilde{h}_k
-   \tilde{\Theta}_{k}^{*}(k_{0}, b) \ee^{\aye 2 \pi j k / N} \\
-   &= \frac{1}{N} \sum_{k = 0}^{N - 1} \frac{R_{k}(k_{0}, b)
-   \sqrt{P_{k}(k_{0}, b)}}{2 \sqrt{\Delta f}} \hat{s}_{k}
-   \tilde{\Theta}_{k}^{*}(k_{0}, b) \ee^{\aye 2 \pi j k / N}.
+Z_{j}(f_{1}, n b)
+   & = \sum_{k = 0}^{N - 1} \hat{s}_{k} \conj{\tilde{\Theta}}_{k}(f_{1}, n
+   b) \ee^{2 \pi \aye j k / N}
+   \\
+   & = \sum_{k = 0}^{N - 1} \hat{s}_{k} \left( \sum_{i = 0}^{n - 1}
+   \conj{\tilde{\Theta}}_{k}(f_{1} + i b, b) \right) \ee^{2 \pi \aye j k /
+   N}
+   \\
+   & = \sum_{i = 0}^{n - 1} Z_{j}(f_{1} + i b, b),
 \end{align}
-For the present implementation we have assumed 
-\begin{itemize}
-\item the response and the average spectrum can be replaced by their average 
-values over the channel width and 
-\item effect of the response phase is negligible.  
-\end{itemize}
-So we can pull their contributions out of the sum and let us denote that by
+and so the samples in the time series for a wide channel are obtained by
+summing the samples from the appropriate narrow channel time series.  The
+mean squares of the samples of a wide channel's time series are given by
+the quantity in \eqref{eqn2},
 \begin{equation}
-F(k_{0}, b)
-   = \frac{R_{k}(k_{0}, b) \sqrt{P_{k}(k_{0}, b)}}{2 N \sqrt{\Delta f}}.
+\mean{Z_{j}^{2}(f_{1}, n b)}
+   = \mu^{2}(f_{1}, n b).
 \end{equation}
-Therefore we get 
-\begin{equation}
-H_{j}(k_{0}, b)
-   = F(k_{0}, b) z_{j}(k_{0}, b), 
-\end{equation} 
-where $z_{j}$ are the time-frequency sample points obtained by using the
-data in counts as given in \eqref{eq:tfplanecountspoints}.  The
-$h_{\text{rss}}$ corresponding to the tile $\tau$ will then be 
-\begin{equation}
-h_{\text{rss}}^2
-   = \sum_{n = 0}^{d - 1} \left( \sum_{k = K_{1}}^{\Delta n_{f} - 1} F(k,b)
-   Z_{[J_{1} + n \frac{n_{t}}{d}]}(k, b) \right)^{2} \Delta
-   t_{\text{tile}}.
-\end{equation}
-How well can we estimate the $h_{\text{rss}}$ under the above assumptions
-are shown by Fig~\ref{fig:hrss}.  We have plotted the injected
-$h_{\text{rss}}$ on the x-axis and the estimated $h_{\text{rss}}$ on the
-y-axis. Ideally we would expect them to lie on a straight line at 45
-degrees with the x-axis(as marked by the red line in the plot). 
+
+Figure \ref{fig:Zhistogram} shows the distribution of \(Z_{j}(f_{1}, B)\)
+observed in the same data used to measure the \(\hat{s}_{k}\) distribution
+in Figure \ref{fig:shistogram}.
 \begin{figure}
 \begin{center}
-\includegraphics[width=0.9\textwidth]{figures/inj_det_hrss}
-\caption{Injected vs Detected $h_{\text{rss}}$}
-\label{fig:hrss}
+\resizebox{5.5in}{!}{\includegraphics{figures/Z_histogram.png}}
 \end{center}
+\caption{The distribution of \(Z_{j}(f_{1}, B) / \sqrt{\mu^{2}(f_{1}, B)}\)
+observed in data derived from a sample of \(h(t)\) taken from the LIGO L1
+instrument during S4.  This distribution is measured from all samples used
+to form time-frequency tiles.}
+\label{fig:Zhistogram}
 \end{figure}
-\clearpage
- 
+This distribution appears more Gaussian than does the distribution of the
+real and imaginary components of the whitened frequency series, and
+generally exhibits better agreement with its expected behaviour.
+Presumably this is a result of the central limit theorem:  the real and
+imaginary components of the whitened frequency series may not be Gaussian,
+but they do have unit variance, and since the time-domain samples of
+\(Z_{j}\) are computed from many thousands of frequency bins, they end up
+being unit variance Gaussian random variables.
+
+
+\subsubsection{Excess Power (Energy)}
+
+
+Having projected the whitened input time series onto a comb of frequency
+channels, including channels with a variety of widths, we now procede to
+measure the signal energy in a variety of time-frequency tiles.  For this,
+we need to know that the number of degrees of freedom in a tile of
+bandwidth \(B\) and duration \(T\) is
+\begin{equation}
+d
+   = 2 B T.
+\end{equation}
+This can be understood as follows.  A real-valued signal with a bandwidth
+of \(B\) can be represented without loss of information as a discrete
+real-valued time series with a sample rate equal to the Nyquist frequency
+\(2 B\) (the time series may be a heterodyned version of the signal).
+Therefore, \(2 B T\) real-valued samples are sufficient to encode all the
+information contained in a signal of bandwidth \(B\) and duration \(T\).
+We require the number of degrees of freedom to be an integer not less than
+2.
+
+We define the whitened energy contained in the tile spanning the
+frequencies \(f_{1} \leq f < f_{1} + B\) and the times \(t_{1} \leq t <
+t_{1} + T\) as
+\begin{equation}
+\label{eqn6}
+E
+   = \frac{1}{\mu^{2}(f_{1}, B)} \sum_{i = 0}^{d - 1} Z_{j_{1} + (i +
+   \frac{1}{2}) \Delta j}^{2}(f_{1}, B),
+\end{equation}
+where \(j_{1} = t_{1} / \Delta t\) is the time series index corresponding
+to the start of the tile, and \(\Delta j = T / (d \Delta t)\) is the number
+of time series samples separating pixels in the time-frequency tile.
+
+When the input time series is stationary Gaussian noise, \(E\) is the sum
+of the squares of \(d\) Gaussian random variables each of whose mean is 0
+and whose mean square is 1 (the factor of \(\mu^{2}\) normalizes them).
+Therefore, \(E\) should be a \(\chi^{2}\)-distributed random variable of
+\(d\) degrees of freedom.  Having measured an \(E\) for a tile, we can
+calculate the probability that a tile would be found with at least that
+\(E\) in stationary Gaussian noise, and threshold on this probability.  We
+discard all tiles except those for which this probability is close to 0.
+The tiling results in a large number of tiles being tested in every second
+of data, and so a practical threshold is \(P(\geq E) \sim 10^{-7}\),
+yielding an event rate of \(\unit{\order(\text{few})}{\hertz}\).  Figure
+\ref{fig:ehistogram} shows a histogram of whitened tile energies observed
+in the data used to generate Figures \ref{fig:shistogram} and
+\ref{fig:Zhistogram}.
+\begin{figure}
+\begin{center}
+\resizebox{5.5in}{!}{\includegraphics{figures/tiles_histogram.png}}
+\resizebox{3.5in}{!}{\includegraphics{figures/tiles_histogram_adjusted.png}}
+\end{center}
+\caption{The distribution of tile energies observed in a sample of \(h(t)\)
+data collected from LIGO's L1 instrument during S4, the same data used to
+obtain Figure \ref{fig:Zhistogram}.  The curves, in left-to-right order,
+correspond to tiles with \(d = 2\), 4, 8, 16, 32, 64, and 128 degrees of
+freedom.  The means appear to agree well with the expected values, but the
+variances are little higher than expected.  This is consistent with the
+tiles possessing fewer degrees of freedom than believed, which is
+demonstrated in the smaller image where the energies and number of degrees
+of freedom have been multiplied by 0.65, and the agreement has improved.
+This is likely the result of the overlap of the channel responses in the
+time domain.}
+\label{fig:ehistogram}
+\end{figure}
+
+When a tile is identified as being unusual, the event is recorded in the
+output file, and several properties of the event are measured and recorded.
+One property is the ``confidence'', defined as
+\begin{equation}
+\text{confidence}
+   = -\ln P(\geq E),
+\end{equation}
+the negative of the natural logarithm of the probability of observing a
+tile with a whitened energy of \(E\) or greater in stationary Gaussian
+noise.  This probability is typically close to 0, so the natural logarithm
+is a large negative number, and the confidence a large positive number.
+Larger ``confidence'' means a tile less like one would find in stationary
+Gaussian noise.  A second quantity recorded for each event is the
+signal-to-noise ratio (SNR).  The ``excess power'' (really excess energy),
+of an event is
+\begin{equation}
+\text{excess power}
+   = E - d.
+\end{equation}
+The expectation value of the whitened energy is \(\mean{E} = d\), so \(E -
+d\) is the amount of whitened energy in the time-frequency tile beyond what
+was expected --- the ``signal''.  Since the expected whitened energy is
+\(d\), the SNR is
+\begin{equation}
+\rho
+   = \frac{E - d}{d}.
+\end{equation}
+
+
+\subsubsection{Estimating \(h_{\text{rss}}\)}
+
+The final quantity recorded for each event is the root-sum-squared strain,
+or \(h_{\text{rss}}\).  We want the \(h_{\text{rss}}\) associated with a
+particular time-frequency tile, and to do this we would like to have the
+strain time series for the channel from which the time-frequency tile has
+been constructed, \(h_{j}(f_{1}, B)\).  Unfortunately, we don't have this
+information because we don't know what of the data is noise and what is
+gravitational wave strain.  However, if we assume that the strain time
+series and the noise time series are independent of one another, then the
+mean square of data time series is the sum of the mean squares of the
+strain and gravitational wave time series,
+\begin{equation}
+\mean{s_{j}^{2}(f_{1}, B)}
+   = \mean{h_{j}^{2}(f_{1}, B)} + \mean{n_{j}^{2}(f_{1}, B)}.
+\end{equation}
+This is true on average, but we can use it to estimate the sum-of-squares
+of \(h\) by summing the squares of \(s\) and subtracing the estimate of the
+sum-of-squares of \(n\) derived from the measured power spectral density.
+Essentially, we measure the ``energy'' in a time-frequency tile, and
+subtract the mean noise energy to leave us with the gravitational wave
+strain energy.  Therefore,
+\begin{align}
+\sum_{d} h_{j}^{2}(f_{1}, B)
+   & = \left( \sum_{d} s_{j}^{2}(f_{1}, B) \right) - d
+   \mean{n_{j}^{2}(f_{1}, B)}
+   \\
+   & = \left( \sum_{d} s_{j}^{2}(f_{1}, B) \right) - d
+   \mean{s_{j}^{2}(f_{1}, B)}.
+\end{align}
+In this last line the notation has gotten a little confusing.  There is the
+actual sum of squares of the data, and there is the expected sum of
+squares.  We are using the (measured) mean square of the data in place of
+the mean square of the noise on the assumption that it is noise that
+dominates this quantity.  Also, \(\sum_{d}\) indicates the sum of \(d\)
+time samples whose indices are the same as was used in \eqref{eqn6}.
+
+The unwhitened time series corresponding to a single frequency channel is
+the inverse Fourier transform of the unwhitened frequency series input data
+multiplied by the corresponding channel filter,
+\begin{align}
+s_{j}(f_{1}, b)
+   & = \frac{1}{N \Delta t} \sum_{k = 0}^{N - 1} \tilde{s}_{k}
+   \conj{\tilde{\Theta}}_{k}(f_{1}, b) \ee^{2 \pi \aye j k / N}
+   \\
+   & = \frac{1}{N \Delta t \sqrt{2 \Delta f}} \sum_{k = 0}^{N - 1}
+   \sqrt{P_{k}} \hat{s}_{k} \conj{\tilde{\Theta}}_{k}(f_{1}, b) \ee^{2 \pi
+   \aye j k / N}
+   \\
+\label{eqn7}
+   & = \frac{1}{\sqrt{2 N \Delta t}} \sum_{k = 0}^{N - 1} \sqrt{P_{k}}
+   \hat{s}_{k} \conj{\tilde{\Theta}}_{k}(f_{1}, b) \ee^{2 \pi \aye j k /
+   N}.
+\end{align}
+For a wide channel, \(\tilde{\Theta}_{k}(f_{1}, n b)\), we find just as for
+\(Z_{j}(f_{1}, n b)\), that
+\begin{equation}
+s_{j}(f_{1}, n b)
+   = \sum_{i = 0}^{n - 1} s_{j}(f_{1} + i b, b).
+\end{equation}
+The mean square of the unwhitened time series for a single channel is
+\begin{equation}
+\mean{s_{j}^{2}(f_{1}, b)}
+   = \frac{1}{2 N \Delta t} \sum_{k = 0}^{N - 1} \sum_{k' = 0}^{N - 1}
+   \sqrt{P_{k} P_{k'}} \mean{\hat{s}_{k} \conj{\hat{s}}_{k'}}
+   \conj{\tilde{\Theta}}_{k}(f_{1}, b) \tilde{\Theta}_{k'}(f_{1}, b)
+   \ee^{2 \pi \aye j (k - k') / N}.
+\end{equation}
+Making the same assumption as before, that the time series' mean square is
+independent of the sample index \(j\) in the flat part of the input
+tapering window, we can set \(j = N / 2\) inside the sum to leave us with
+\begin{equation}
+\mean{s_{j}^{2}(f_{1}, b)}
+   = \frac{1}{2 N \Delta t} \sum_{k = 0}^{N - 1} \sum_{k' = 0}^{N - 1}
+   -1^{(k - k')} \sqrt{P_{k} P_{k'}} \mean{\hat{s}_{k} \conj{\hat{s}}_{k'}}
+   \conj{\tilde{\Theta}}_{k}(f_{1}, b) \tilde{\Theta}_{k'}(f_{1}, b).
+\end{equation}
+The double sum is a spectral density weighted version of the inner product
+defined earlier for channel filters.  Introducing the notation
+\begin{equation}
+\left\{ X, Y; P \right\}
+   = \sum_{k = 0}^{N - 1} \sum_{k' = 0}^{N - 1} -1^{(k - k')} \sqrt{P_{k}
+   P_{k'}} \mean{\hat{s}_{k} \conj{\hat{s}}_{k'}} \conj{X}_{k} Y_{k},
+\end{equation}
+we can write the mean square as
+\begin{equation}
+\mean{s_{j}^{2}(f_{1}, b)}
+   = \frac{1}{2 N \Delta t} \left\{ \tilde{\Theta}(f_{1}, b),
+   \tilde{\Theta}(f_{1}, b); P \right\}.
+\end{equation}
+If we again make the assumption that only adjacent channels have any
+significant non-zero overlap, then the mean square of the samples in an
+unwhitened wide channel is
+\begin{equation}
+\mean{s_{j}^{2}(f_{1}, n b)}
+   = \sum_{i = 0}^{n - 1} \mean{s_{j}^{2}(f_{1} + i b, b)} + \frac{1}{N
+   \Delta t} \sum_{i = 0}^{n - 2} \left\{ \tilde{\Theta}(f_{1} + i b, b),
+   \tilde{\Theta}(f_{1} + (i + 1) b, b) ; P \right\}.
+\end{equation}
+
+We need the \(s_{j}(f_{1}, n b)\) time series in order to compute the
+unwhitened sum-of-squares for a particular tile, but constructing this time
+series explicitly with the likes of \eqref{eqn7} incurs a factor of 2 cost
+in both time and memory.  An approximation that works well in practice is
+to assume that single channels of bandwidth \(b\) are sufficiently narrow
+that the power spectral density is approximately constant in each one.
+This allows \(P_{k}\) in \eqref{eqn7} to be replaced with some sort of
+average and factored out of the sum to leave
+\begin{equation}
+s_{j}(f_{1}, b)
+   \propto Z_{j}(f_{1}, b).
+\end{equation}
+The constant of proportionality is obtained from the known mean squares of
+\(s_{j}(f_{1}, b)\) and \(Z_{j}(f_{1}, b)\), both of which are computed
+(almost) without approximation.  Therefore,
+\begin{equation}
+s_{j}(f_{1}, b)
+   \approx \sqrt{\frac{\Delta f}{b}} \sqrt{\mean{s_{j}^{2}(f_{1}, b)}}
+   Z_{j}(f_{1}, b).
+\end{equation}
+We compute \(s_{j}(f_{1}, n b)\) for a wide channel by summing samples
+across narrow channels,
+\begin{equation}
+s_{j}(f_{1}, n b)
+   = \sum_{i = 0}^{n -1} s_{j}(f_{1} + i b, b) \propto \sqrt{\frac{\Delta
+   f}{b}} \sum_{i = 0}^{n -1} \sqrt{\mean{s_{j}^{2}(f_{1} + i b, b)}}
+   Z_{j}(f_{1} + i b, b),
+\end{equation}
+and again we solve for the proportionality constant from the ratio of the
+mean squares of the left- and right-hand sides.  The mean square of the
+left-hand side is given above, and that of the right-hand side is
+\begin{multline}
+\mean{\left( \sqrt{\frac{\Delta f}{b}} \sum_{i = 0}^{n -1}
+\sqrt{\mean{s_{j}^{2}(f_{1} + i b, b)}} Z_{j}(f_{1} + i b, b) \right)^{2}}
+   = \sum_{i = 0}^{n -1} \mean{s_{j}^{2}(f_{1} + i b, b)} \\+ \frac{2
+   \Delta f}{b} \sum_{i = 0}^{n - 2} \sqrt{\mean{s_{j}^{2}(f_{1} + i b, b)}
+   \mean{s_{j}^{2}(f_{1} + (i + 1) b, b)}} \left\{ \tilde{\Theta}(f_{1} + i
+   b, b), \tilde{\Theta}(f_{1} + (i + 1) b, b) \right\}.
+\end{multline}
+Denoting the ratio as
+\begin{equation}
+\Upsilon^{2}(f_{1}, n b)
+   = \mean{s_{j}^{2}(f_{1}, n b)} \mean{\left( \sum_{i = 0}^{n -1}
+   \sqrt{\mean{s_{j}^{2}(f_{1} + i b, b)}} Z_{j}(f_{1} + i b, b)
+   \right)^{2}}^{-1},
+\end{equation}
+the approximate unwhitened time series is
+\begin{equation}
+s_{j}(f_{1}, n b)
+   \approx \sqrt{\Upsilon^{2}(f_{1}, n b)} \sqrt{\frac{\Delta f}{b}}
+   \sum_{i = 0}^{n -1} \sqrt{\mean{s_{j}^{2}(f_{1}, b)}} Z_{j}(f_{1}, b).
+\end{equation}
+Figure \ref{fig:sjhistogram} shows a comparison of the distribution
+observed in the samples of the approximate unwhitened time series
+\(s_{j}(f_{1}, n b)\) values, for all bandwidths, as derived from the same
+sample of \(h(t)\) recorded at the LIGO Livingston L1 instrument during S4
+that has been used for the other plots.
+\begin{figure}
+\begin{center}
+\resizebox{5.5in}{!}{\includegraphics{figures/h_histogram.png}}
+\end{center}
+\caption{The distribution of samples observed in the approximate unwhitened
+time series (of varying bandwidths) normalized to the expected root mean
+square value.}
+\label{fig:sjhistogram}
+\end{figure}
+
+Finally,
+\begin{equation}
+\sum_{j} h_{j}^{2}(f_{1}, n b) \Delta t
+   = \sum_{j} s_{j}^{2}(f_{1}, n b) \Delta t - d \mean{s_{j}^{2}(f_{1}, n
+   b)} \Delta t,
+\end{equation}
+so,
+\begin{equation}
+h_{\text{rss}}
+   = \sqrt{\sum_{j} s_{j}^{2}(f_{1}, n b) \Delta t - d
+   \mean{s_{j}^{2}(f_{1}, n b)} \Delta t}.
+\end{equation}
+
+
+\subsubsection{Over-Whitening}
+
+Section \ref{sec:channelfilter} began with the comment that the choice of
+channel filter is mostly irrelevant, so long as there is some sense in
+which it corresponds to a particular frequency band.  In the derivations
+that followed, the approximation was made that only adjacent channel
+filters have any appreciable overlap.  A particular choice of channel
+filter was described, but other choices are possible.  One improvement that
+can be made is to identify lines in the spectral density, and add notches
+to the channel filters to remove them.  Often these spectral line features
+are the result of noise processes in the instrument or its environment.
+For example, suspension wire resonances, harmonics of the
+\(\unit{60}{\hertz}\) power line frequency, and optic resonances are all
+prominently visible in the spectrum of LIGO interfermeter.  The effect of
+adding notches at these frequencies is to cause the search to measure the
+energy in the time-frequency tiles preferentially from those frequency
+bands less contaminated by these noise sources.
+
+A simple way of deweighting contaminated frequency bands is to divide the
+channel filters by some power of the power spectral density,
+\begin{equation}
+\tilde{\Theta}_{k}'(f_{1}, B)
+   \propto P_{k}^{-a} \tilde{\Theta}_{k}(f_{1}, B).
+\end{equation}
+The modified channel filters are normalized as before.  When \(a =
+\frac{1}{2}\), that is the nominal channel filters are divided by the
+square root of the power spectral density, the procedure is called ``over
+whitening''.  There are, aparently, theoretical reasons to make this
+choice.  Over-whitening is found to significantly improve the ability of
+the excess power search to reject noise, and so the actual channel filters
+used by the search are not only the Hann windows described above but also
+contain one inverse power of the square root of the power spectral density.
+
 
 \subsection{Time Domain Segmentation}
 
@@ -876,7 +1293,7 @@ that is analyzed.  Only results from the central half of the window are
 retained, with the first and last quarters of each window being discarded.
 The arrangement is shown in the following diagram.
 \begin{center}
-\input{figures/power/windows.fig}
+\input{figures/windows.fig}
 \end{center}
 Here we see a discrete time series (represented by the bottom-most
 horizontal line) that contains 57344 samples.  It has been divided into a
@@ -932,7 +1349,7 @@ $(\mbox{\parm{window length}} - \mbox{\parm{window shift}})$ samples before
 the end of the former series.  The arrangement is shown in the following
 figure.
 \begin{center}
-\input{figures/power/psds.fig}
+\input{figures/psds.fig}
 \end{center}
 Here we see two of the time series from the first diagram above, each of
 which is to be passed to \function{EPSearch()} for analysis.  To see why
@@ -948,7 +1365,7 @@ effects in the filter, an amount of data set by the command line option
 begining and end of the time series.  The arrangement is shown in the
 following diagram.
 \begin{center}
-\input{figures/power/conditioning.fig}
+\input{figures/conditioning.fig}
 \end{center}
 The bottom-most line in this diagram represents the time series as read
 into memory from disk.  In this example we have read 106496 samples into
@@ -990,17 +1407,17 @@ secs) of the high passed data.  This average spectrum is then used to
 whiten and normalise the data.   Figure ~\ref{fig:gaussianfreqseries} shows
 such a whitened and normalised frequency series of two seconds of data
 (normalisation and whitening will be described in other sections).
-\begin{figure}[h]
+\begin{figure}
 \begin{center}
-\includegraphics[width=0.9\textwidth]{figures/averagespec_psd}
+\resizebox{.9\linewidth}{!}{\includegraphics{figures/averagespec_psd}}
 \caption{Average Spectrum}
 \label{fig:gaussianspectrum}
 \end{center}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}
 \begin{center}
-\includegraphics[width=0.9\textwidth]{figures/freqseries_psd}
+\resizebox{.9\linewidth}{!}{\includegraphics{figures/freqseries_psd}}
 \caption{Frequency series}
 \label{fig:gaussianfreqseries}
 \end{center}
@@ -1014,26 +1431,11 @@ actually follow the right distribution we did the following:
 \begin{itemize}
 \item Selected a tile with degrees of freedom $dof_{\tau} = 2$ and $dof_{\tau} = 4$
 \item Printed out the power in the tile from for each iteration.
-\item Plotted the power distribution for these tiles and compared that to the plot
-      of the theoretical $\chi^2$ distributed data with the corresponding degrees of freedom. 
+\item Plotted the power distribution for these tiles and compared that to
+the plot of the theoretical $\chi^2$ distributed data with the
+corresponding degrees of freedom. 
 \end{itemize}
 
-Figure~\ref{fig:compchisquarenew} shows the result of our tests. 
-The blue curve is the measured power distribution of the tiles with $dof_{\tau} = 2$ 
-and the black curve is for $dof_{\tau} = 4$ while the green 
-curve is the theoretical $\chi^2$ distribution with $2$ degrees of freedom
-and the red curve is for $4$ degrees of freedom.  
-\begin{figure}[h]
-\begin{center}
-\includegraphics[width=0.9\textwidth]{figures/compchisquarenew2_4}
-\caption{Comparison of the measured and theoretical distributions for the
-  new time-frequency plane}
-\label{fig:compchisquarenew}
-\end{center}
-\end{figure}     
-
-
-\clearpage
 
 \subsection{Butterworth Filter used in Excess Power Search}
 \label{section:Butterworth}
@@ -1047,10 +1449,10 @@ Of primary interest to us is the impulse response and frequency response
 of the filter. Figure~\ref{fig:checkbuttertimeseries} shows the 
 time series containing a $\delta$ function before and after the 
 application of the high pass filter:
-\begin{figure}[h]
+\begin{figure}
 \begin{center}
-\includegraphics[width=0.9\textwidth]{figures/checkbuttertimeseries}
-\includegraphics[width=0.9\textwidth]{figures/butter894comptimeseries}
+\resizebox{.9\linewidth}{!}{\includegraphics{figures/checkbuttertimeseries}}
+\resizebox{.9\linewidth}{!}{\includegraphics{figures/butter894comptimeseries}}
 \caption{Top panel: Time series before Butterworth and 
 Bottom 2 panels: Time series after Butterworth} \label{fig:checkbuttertimeseries}
 \end{center}
@@ -1075,10 +1477,10 @@ parameters to specify the filter:
 
 The frequency response of the filter is shown in Figure~\ref{fig:butterworthtest4} 
 where the chosen parameters were $f2 = 120Hz$, $a2 = 0.1$ and $nMax = 4$.
-\begin{figure}[h]
+\begin{figure}
 \centering
-\includegraphics[width=0.9\textwidth]{figures/butterworthtest4}
-\includegraphics[width=0.9\textwidth]{figures/testattenuation4}
+\resizebox{.9\linewidth}{!}{\includegraphics{figures/butterworthtest4}}
+\resizebox{.9\linewidth}{!}{\includegraphics{figures/testattenuation4}}
 \caption{Frequency response of the high pass filter} \label{fig:butterworthtest4} 
 \end{figure}
 The red dotted line shows the spectrum which was measured without
@@ -1102,13 +1504,12 @@ The frequency response of such a filter with $f2 = 120 Hz$ is shown in
 Figure~\ref{fig:testattenuation8_9} 
 \begin{figure}
 \centering
-\includegraphics[width=0.9\textwidth]{figures/testattenuation8_9}
-\includegraphics[width=0.9\textwidth]{figures/testattenuation8_9zoomed}
+\resizebox{.9\linewidth}{!}{\includegraphics{figures/testattenuation8_9}}
+\resizebox{.9\linewidth}{!}{\includegraphics{figures/testattenuation8_9zoomed}}
 \caption{Comparison of the spectra: Filter order 8 and attenuation 0.9}
 \label{fig:testattenuation8_9}
 \end{figure}
 
-\clearpage
 
 \subsection{Clustering in Excess Power Search}
 \label{section:clustering}
@@ -1155,7 +1556,7 @@ peak  times of the triggers(before clustering)  lie within $10  secs$ of
 each other.
 \begin{figure}
 \centering
-\includegraphics[width=1.0\textwidth]{figures/checkclustering_dt10nsec10sec}
+\resizebox{.9\linewidth}{!}{\includegraphics{figures/checkclustering_dt10nsec10sec}}
 \caption{Clustering in Excess Power}
 \label{fig:checkcluster}
 \end{figure}
@@ -1197,7 +1598,6 @@ no. & start time(sec) & peak time(sec) & duration(sec) & central freq(Hz) & band
 Thus from this set of clustered triggers it is quite clear what we have been 
 discussing till now.
 
-\clearpage
 
 \subsection{Tuning the excess power pipeline}
 \label{section:tuning}
@@ -1345,9 +1745,9 @@ perform the tuning and the confidence thresholds are
 $\{-30.0, -35.0, -40.0, -45.0, -50.0, -55.0, -60.0, -65.0, -70.0, -80.0, 
 -90.0, -100.0, -150.0, -200.0\}$. How the efficiency and the false rate 
 depend on the thresholds are shown in Fig~\ref{fig:dt125df128tune}: 
-\begin{figure}[h]
+\begin{figure}
 \begin{center}
-\includegraphics[width=1.0\textwidth]{figures/H1_L1_dt125_df128}
+\resizebox{.9\linewidth}{!}{\includegraphics{figures/H1_L1_dt125_df128}}
 \caption{Efficiency vs. False rate for different |thresholds|}
 \label{fig:dt125df128tune}
 \end{center}
@@ -1403,9 +1803,9 @@ in the sense that we estimated the false rates and efficiencies
 for a number of window sizes: $\{400 ms, 300ms, 200ms, 150 ms, 130ms,
 110ms, 90ms, 70ms, 50ms, 30ms, 15ms\} $.  Fig~\ref{fig:tuneburcawindow}
 shows the results of that experiment:   
-\begin{figure}[h]
+\begin{figure}
 \begin{center}
-\includegraphics[width=1.0\textwidth]{figures/tune_burca_window}
+\resizebox{.9\linewidth}{!}{\includegraphics{figures/tune_burca_window}}
 \caption{Efficiency vs. False rate for different coincidence windows}
 \label{fig:tuneburcawindow}
 \end{center}
@@ -1430,38 +1830,36 @@ $Q9$ SineGaussians at $235 Hz$. The $h_{rss}$ 50 p.c. is at $1.12e-21$.
 \item Fig~\ref{fig:eobeff} shows the efficiency of the pipeline to 
 EOB waveforms. The $50 p.c.$ efficiency is at $66.5 Mpc$ effective distance.   
 \end{itemize}.
-\begin{figure}[h]
+\begin{figure}
 \begin{center}
-\includegraphics[width=1.0\textwidth]{figures/eventsvstimelag_20050829_1}
+\resizebox{.9\linewidth}{!}{\includegraphics{figures/eventsvstimelag_20050829_1}}
 \caption{No. of false triggers at different time lags}
 \label{fig:eventsvstimelag}
 \end{center}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}
 \begin{center}
-\includegraphics[width=1.0\textwidth]{figures/H1L1_eff_sg235q9_20050829_2.pdf}
+\resizebox{.9\linewidth}{!}{\includegraphics{figures/H1L1_eff_sg235q9_20050829_2.pdf}}
 \caption{Efficiency to Q9 SineGausians at 235 Hz}
 \label{fig:sg235q9eff}
 \end{center}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}
 \begin{center}
-\includegraphics[width=1.0\textwidth]{figures/H1L1_eff_eob_20050829_3.pdf}
+\resizebox{.9\linewidth}{!}{\includegraphics{figures/H1L1_eff_eob_20050829_3.pdf}}
 \caption{Efficiency to EOB waveforms}
 \label{fig:eobeff}
 \end{center}
 \end{figure}
 
-\clearpage
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % BINJ:  injection generation code
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Program \prog{lalapps\_binj}}
 \label{program:lalapps-binj}
-\idx[Program]{\prog{lalapps\_binj}}
 
 \begin{entry}
 \item[Name]
@@ -1710,3 +2108,5 @@ lalapps_binj \
 Jolien Creighton, Patrick Brady, Duncan Brown, Saikat Ray-Majumder, Kipp
 Cannon
 \end{entry}
+
+\end{document}
