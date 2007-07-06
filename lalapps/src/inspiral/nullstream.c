@@ -119,6 +119,8 @@ INT4 V1file = 0;
 REAL8  slideStep[LAL_NUM_IFO]        = {0.0,0.0,0.0,0.0,0.0,0.0};
 int    bankDuration        = 0;
 CHAR  *cohbankFileName     = NULL;   /* name of input template bank  */
+CHAR  *xmlFileNameH1       = NULL;   /* name of H1 inspiral trigger file */
+CHAR  *xmlFileNameH2       = NULL;   /* name of H2 inspiral trigger file */
 int    nullStatOut         = 0;      /* default is not to write frame */
 int    eventsOut           = 0;      /* default is not to write events */
 REAL4  nullStatThresh      = -1;
@@ -755,8 +757,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --sample-rate RATE          set data sample rate to RATE\n"\
 "  --segment-length LEN        set LEN to same value used in inspiral.c\n"\
 "  --dynamic-range-exponent N  set N to same value used in inspiral.c\n"\
-"  [--h1-slide] H1_SLIDE       Slide H1 data by multiples of H1_SLIDE\n"\
-"  [--h2-slide] H2_SLIDE       Slide H2 data by multiples of H2_SLIDE\n"\
+"  [--h1-slide H1_SLIDE        Slide H1 data by multiples of H1_SLIDE]\n"\
+"  [--h2-slide H2_SLIDE        Slide H2 data by multiples of H2_SLIDE]\n"\
 "  --frame-type TAG            input data is contained in frames of type TAG\n"\
 "\n"
 #define USAGE3 \
@@ -765,6 +767,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --output-path               write files here\n"\
 "  --h1-framefile              frame data for H1\n"\
 "  --h2-framefile              frame data for H2\n"\
+"  --h1-xml-file               H1 inspiral triggers\n"\
+"  --h2-xml-file               H2 inspiral triggers\n"\
 "\n"
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
@@ -788,6 +792,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      {"output-path",            required_argument, 0,                 'P'},
      {"h1-framefile",           required_argument, 0,                 'A'},
      {"h2-framefile",           required_argument, 0,                 'Z'},
+     {"h1-xml-file",            required_argument, 0,                 'a'},
+     {"h2-xml-file",            required_argument, 0,                 'b'},
      {"frame-type",             required_argument, 0,                 'S'},
      {0, 0, 0, 0}
    };
@@ -801,7 +807,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      int option_index = 0;
      size_t optarg_len;
 
-     c = getopt_long_only( argc, argv, "A:B:S:I:l:e:W:X:P:Z:d:h:r:u:v:",
+     c = getopt_long_only( argc, argv, "A:B:S:I:l:e:W:X:P:Z:d:h:r:u:v:a:b:",
          long_options, &option_index );
 
      if ( c == -1 )
@@ -838,7 +844,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
          break;
 
        case 'B':
-         /* create storage for the ifo-tag */
+         /* create storage for the user tag */
          optarg_len = strlen( optarg ) + 1;
          userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
          memcpy( userTag, optarg, optarg_len );
@@ -911,10 +917,25 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
          duration = NULL;
          break;
 
-       /* Read in time-slide steps for all detectors */
+       case 'a':
+         /*create storage for the H1 inspiral xml file name */
+         optarg_len = strlen( optarg ) + 1;
+         xmlFileNameH1 = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+         memcpy( xmlFileNameH1, optarg, optarg_len );
+         ADD_PROCESS_PARAM( "string", "%s", xmlFileNameH1 );
+         break;
 
-        /* Read in time-slide step for H1 */
+       case 'b':
+         /*create storage for the H2 inspiral xml file name */
+         optarg_len = strlen( optarg ) + 1;
+         xmlFileNameH2 = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+         memcpy( xmlFileNameH2, optarg, optarg_len );
+         ADD_PROCESS_PARAM( "string", "%s", xmlFileNameH2 );
+         break;
+         
+
        case 'W':
+         /* Read in time-slide step for H1 */
          slideStep[1] = atof(optarg);
          ADD_PROCESS_PARAM("float", "%e", slideStep[1]);
          break;
