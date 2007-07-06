@@ -1003,11 +1003,17 @@ int init_and_read_checkpoint(toplist_t*toplist, /**< the toplist to checkpoint *
 		   &checksum, &bytes);
 
   if (scanned != 6) {
-    LogPrintf (LOG_CRITICAL, "ERROR reading checkpoint %s (scanned: %d(6), ferror: %d, errno: %d:%s)\n",
-	       cptfilename,scanned,ferror(fp),errno,strerror(errno));
-#ifdef _MSC_VER
-    LogPrintf (LOG_CRITICAL, "Windows system call returned: %d\n", _doserrno);
+    if (scanned == EOF) {
+      LogPrintf (LOG_CRITICAL, "ERROR reading checkpoint %s: EOF encountered\n", cptfilename);
+    } else {
+#ifndef _MSC_VER
+      LogPrintf (LOG_CRITICAL, "ERROR reading checkpoint %s (scanned: %d(6), ferror: %d, errno: %d:%s)\n",
+		 cptfilename,scanned,ferror(fp),errno,strerror(errno));
+#else
+      LogPrintf (LOG_CRITICAL, "ERROR reading checkpoint %s (scanned: %d(6), doserrno: %d. ferror: %d, errno: %d:%s)\n",
+		 cptfilename,scanned,_doserrno,ferror(fp),errno,strerror(errno));
 #endif
+    }
     fclose(fp);
     remove(cptfilename);
     return(-1);
