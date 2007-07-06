@@ -1066,18 +1066,20 @@ int add_checkpoint_candidate (toplist_t*toplist,    /**< the toplist */
     single point to contain the checkpoint format string.
     called only from 2 places in set_checkpoint()
 */
-static void write_checkpoint (char*cptfilename) {
-  FILE* fp = fopen(cptfilename,"w");
+static void write_checkpoint (char*filename) {
+  FILE* fp = fopen(filename,"w");
   if (fp) {
     fprintf(fp,"%lf,%lf,%u,%u,%u,%u\n",
 	    last_rac, last_dec, last_count, last_total,
 	    cptf->checksum, cptf->bytes);
     fclose(fp);
   } else {
-    LogPrintf (LOG_CRITICAL,  "ERROR: Couldn't write checkpoint file %s: %d: %s\n",
-	       cptfilename,errno,strerror(errno));
 #ifdef _MSC_VER
-    LogPrintf (LOG_CRITICAL, "Windows system call returned: %d\n", _doserrno);
+    LogPrintf (LOG_CRITICAL,  "ERROR: Couldn't write checkpoint file %s: %d/%d: %s\n",
+	       filename,_doserrno,errno,strerror(errno));
+#else
+    LogPrintf (LOG_CRITICAL,  "ERROR: Couldn't write checkpoint file %s: %d: %s\n",
+	       filename,errno,strerror(errno));
 #endif
   }
 }
