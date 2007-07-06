@@ -267,8 +267,8 @@ XLALComputeNullStatistic (
   else
   {
     nullStatRe = 
-        (cData[1]->data->data[idx].re / params->sigmasq[1])
-      - (cData[2]->data->data[idx].re / params->sigmasq[2]);
+        (input->CData->cData[1]->data->data[idx].re / params->sigmasq[1])
+      - (input->CData->cData[2]->data->data[idx].re / params->sigmasq[2]);
     nullStatIm = 
         (cData[LAL_IFO_H1]->data->data[idx].im / params->sigmasq[LAL_IFO_H1])
       - (cData[LAL_IFO_H2]->data->data[idx].im / params->sigmasq[LAL_IFO_H2]);
