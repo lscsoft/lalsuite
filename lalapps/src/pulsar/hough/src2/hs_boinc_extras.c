@@ -122,7 +122,7 @@ static UINT4 last_count, last_total;      /**< last template count, see last_rac
 /*^* LOCAL FUNCTION PROTOTYPES *^*/
 static void worker (void);
 static void sighandler(int);
-static void write_checkpoint(char*);
+static int write_checkpoint(char*);
 static int  is_zipped(const char *);
 static int  resolve_and_unzip(const char*, char*, const size_t);
 
@@ -949,6 +949,16 @@ int main(int argc, char**argv) {
 
 /* CHECKPOINTING FUNCTIONS */
 
+#ifdef _MSC_VER
+#define LOGIOERROR(mess,filename) \
+    LogPrintf(LOG_CRITICAL, "ERROR: %s %s: d:%d, f:%d, %d: %s\n",\
+	      mess,filename,_doserrno,ferror(fp),errno,strerror(errno))
+#else
+#define LOGIOERROR(mess,filename) \
+    LogPrintf(LOG_CRITICAL, "ERROR: %s %s: f:%d, %d: %s\n",\
+	      mess,filename,ferror(fp),errno,strerror(errno))
+#endif
+
 /** inits checkpointing and read a checkpoint if already there */
 int init_and_read_checkpoint(toplist_t*toplist, /**< the toplist to checkpoint */
 			     UINT4*count,       /**< returns the skypoint counter if a checkpoint was found */
@@ -1004,15 +1014,15 @@ int init_and_read_checkpoint(toplist_t*toplist, /**< the toplist to checkpoint *
 
   if (scanned != 6) {
     if (scanned == EOF) {
-      LogPrintf (LOG_CRITICAL, "ERROR reading checkpoint %s: EOF encountered\n", cptfilename);
+      LogPrintf (LOG_CRITICAL, "ERROR reading checkpoint %s: EOF\n", cptfilename);
     } else {
-#ifndef _MSC_VER
-      LogPrintf (LOG_CRITICAL, "ERROR reading checkpoint %s (scanned: %d(6), ferror: %d, errno: %d:%s)\n",
-		 cptfilename,scanned,ferror(fp),errno,strerror(errno));
-#else
-      LogPrintf (LOG_CRITICAL, "ERROR reading checkpoint %s (scanned: %d(6), doserrno: %d. ferror: %d, errno: %d:%s)\n",
-		 cptfilename,scanned,_doserrno,ferror(fp),errno,strerror(errno));
-#endif
+      int c;
+      LOGIOERROR("Could't parse checkpoint", cptfilename);
+      LogPrintf(LOG_CRITICAL,"scanned %d/6, checkpoint was:'");
+      rewind(fp);
+      while((c=fgetc(fp)) != EOF)
+	fputc(c,stderr);
+      fprintf(stderr,"'\n");
     }
     fclose(fp);
     remove(cptfilename);
@@ -1066,22 +1076,32 @@ int add_checkpoint_candidate (toplist_t*toplist,    /**< the toplist */
     single point to contain the checkpoint format string.
     called only from 2 places in set_checkpoint()
 */
-static void write_checkpoint (char*filename) {
+static int write_checkpoint (char*filename) {
+  int ret;
   FILE* fp = fopen(filename,"w");
-  if (fp) {
-    fprintf(fp,"%lf,%lf,%u,%u,%u,%u\n",
-	    last_rac, last_dec, last_count, last_total,
-	    cptf->checksum, cptf->bytes);
-    fclose(fp);
-  } else {
-#ifdef _MSC_VER
-    LogPrintf (LOG_CRITICAL,  "ERROR: Couldn't write checkpoint file %s: %d/%d: %s\n",
-	       filename,_doserrno,errno,strerror(errno));
-#else
-    LogPrintf (LOG_CRITICAL,  "ERROR: Couldn't write checkpoint file %s: %d: %s\n",
-	       filename,errno,strerror(errno));
-#endif
+
+  if (fp == NULL) {
+    LOGIOERROR("Couldn't open checkpoint file",filename);
+    return(-1);
   }
+
+  ret = fprintf(fp,"%lf,%lf,%u,%u,%u,%u\n",
+		last_rac, last_dec, last_count, last_total,
+		cptf->checksum, cptf->bytes);
+  if (ret <= 0) {
+    LOGIOERROR("Couldn't write checkpoint",filename);
+    fclose(fp);
+    return(ret);
+  }
+
+  ret = fclose(fp);
+  if (ret != 0) {
+    LOGIOERROR("Couldn't close checkpoint",filename);
+    fclose(fp);
+    return(ret);
+  }
+  
+  return(0);
 }
 
 
@@ -1098,13 +1118,17 @@ void set_checkpoint (void) {
     {
       if ((cptf->maxsize > 0) && (cptf->bytes >= cptf->maxsize)) {
 	fstat_cpt_file_compact(cptf);
-	write_checkpoint(cptfilename);
+	if (write_checkpoint(cptfilename))
+	  LogPrintf (LOG_CRITICAL, "ERROR: Couldn't write checkpoint file\n", cptfilename);
       } else {
 	fstat_cpt_file_flush(cptf);
 #define TEMPCHECKPOINT "checkpoint.tmp"
-	write_checkpoint(TEMPCHECKPOINT);
-	if( boinc_rename(TEMPCHECKPOINT,cptfilename) ) {
-	  LogPrintf (LOG_CRITICAL, "ERROR: Couldn't rename checkpoint file\n", cptfilename);
+	if (write_checkpoint(TEMPCHECKPOINT)) {
+	  LogPrintf (LOG_CRITICAL, "ERROR: Couldn't write checkpoint file\n", cptfilename);
+	} else {
+	  if(boinc_rename(TEMPCHECKPOINT,cptfilename) ) {
+	    LogPrintf (LOG_CRITICAL, "ERROR: Couldn't rename checkpoint file\n", cptfilename);
+	  }
 	}
       }
       boinc_checkpoint_completed();
@@ -1117,7 +1141,8 @@ void set_checkpoint (void) {
       boinc_begin_critical_section();
       if (cptf->maxsize > 0)
 	fstat_cpt_file_compact(cptf);
-      write_checkpoint(cptfilename);
+      if (write_checkpoint(cptfilename))
+	LogPrintf (LOG_CRITICAL, "ERROR: Couldn't write checkpoint file\n", cptfilename);
       boinc_end_critical_section();
       fprintf(stderr,"C\n");
       LogPrintf(LOG_DETAIL,"\nset_checkpt(): bytes: %u, file: %d\n", cptf->bytes, ftell(cptf->fp));
