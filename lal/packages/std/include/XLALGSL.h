@@ -51,4 +51,8 @@ extern pthread_mutex_t lalGSLPthreadMutex;
         } while (0)
 
 
+#ifdef  __cplusplus
+}
+#endif
+
 #endif /* XLALGSL_H */
