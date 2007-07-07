@@ -214,7 +214,7 @@ static REAL8 Ft6(REAL8 v, expnCoeffs *ak)
    v8 = v4*v4;
    v10 = v8*v2;
    flux = ak->FTaN * v10 * (1.+ ak->FTa2*v2 + ak->FTa3*v2*v + ak->FTa4*v4 
-        + ak->FTa5*v4*v + (ak->FTa6 + ak->FTl6*log(4.*v))*v6);
+        + ak->FTa5*v4*v + (ak->FTa6 + ak->FTl6*log(v))*v6);
    return (flux);
 }
 
@@ -228,7 +228,7 @@ static REAL8 Ft7(REAL8 v, expnCoeffs *ak)
    v8 = v4*v4;
    v10 = v8*v2;
    flux = ak->FTaN * v10 * (1.+ ak->FTa2*v2 + ak->FTa3*v2*v + ak->FTa4*v4 
-        + ak->FTa5*v4*v + (ak->FTa6 + ak->FTl6*log(4.*v))*v6 + ak->FTa7*v6*v);
+        + ak->FTa5*v4*v + (ak->FTa6 + ak->FTl6*log(v))*v6 + ak->FTa7*v6*v);
    return (flux);
 }
 
