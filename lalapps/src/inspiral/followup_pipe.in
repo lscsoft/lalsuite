@@ -41,6 +41,8 @@ from pylal import Fr
 ##############################################################################
 # redefine the columns of interest
 ##############################################################################
+lsctables.SearchSummaryTable.loadcolumns = ["ifos","in_start_time","in_start_time_ns","in_end_time","in_end_time_ns","out_start_time","out_start_time_ns","out_end_time","out_end_time_ns"]
+
 lsctables.SimInspiralTable.loadcolumns = ["waveform","geocent_end_time",
     "geocent_end_time_ns","h_end_time","h_end_time_ns","l_end_time",
     "l_end_time_ns","source","mass1","mass2","mchirp","eta","distance",
@@ -88,7 +90,7 @@ class trigBankFollowUpNode(pipeline.CondorDAGNode):
         pass
         #self.add_macro("macrogpsstarttime",row.value)
         #self.start_time = row.value
-      if row.param[2:] == 'input-ifo':
+      if row.param[2:] == 'input-ifo': 
         self.input_ifo = row.value
       if row.param[2:] == 'ifo-tag':
         self.ifo_tag = row.value
@@ -465,7 +467,7 @@ if not opts.read_triggers and not opts.write_to_iulgroup:
   sys.exit(0)
   # We are done here
 if not opts.read_triggers and opts.write_to_iulgroup:
-  publishToIULGroup(page)
+  publishOnHydra(page)
   # don't overwrite anything, just publish what we have
   sys.exit(0)
 
@@ -480,9 +482,9 @@ blb =  string.strip(cp.get('triggers','bitten-l-b'))
 print string.strip(cp.get('hipe-cache','TMPLTBANK')) 
 ############# READ IN THE COIRE FILES #########################################
 
-found, coincs = readFiles(xml_glob,getstatistic(statistic,bla,blb))
+found, coincs, search = readFiles(xml_glob,getstatistic(statistic,bla,blb))
 missed = None
-followuptrigs = getfollowuptrigs(numtrigs,page,coincs,missed)
+followuptrigs = getfollowuptrigs(numtrigs,page,coincs,missed,search)
 
 print "\n.......Found " + str(len(followuptrigs)) + " trigs to follow up" 
 
@@ -560,24 +562,29 @@ for trig in followuptrigs:
   summaryHTML.containers.append(writeXMLparams(trig))
 
   # TRY GETTING TRIG BANK PROCESS PARAMS
-  try: 
-    trig_process_params = cache.getProcessParamsFromCache( \
-                     cache.filesMatchingGPS(trig.gpsTime,'TRIGBANK'), \
-                     trig.gpsTime) 
-  except: 
-    print "couldn't get trigbank process params for " + str(trig.eventID)
-    trig_process_params = []
+  #try: 
+  #  trig_process_params = cache.getProcessParamsFromCache( \
+  #                   cache.filesMatchingGPS(trig.gpsTime,'TRIGBANK'), \
+  #                   trig.gpsTime) 
+  #except: 
+  #  print "couldn't get trigbank process params for " + str(trig.eventID)
+  #  trig_process_params = []
 
   # TRY GETTING INSPIRAL PROCESS PARAMS
+  print trig.ifoTag
+  print trig.gpsTime
   try: 
     inspiral_process_params = cache.getProcessParamsFromCache( \
                      cache.filesMatchingGPS(trig.gpsTime,'INSPIRAL_'), \
-                     trig.gpsTime)
+                     trig.ifoTag, trig.gpsTime)
+    #inspiral_process_params = cache.getProcessParamsFromCache( \
+    #                 cache.filesMatchingGPS(trig.gpsTime,'INSPIRAL_'), \
+    #                 trig.gpsTime)
   except: 
     print "couldn't get inspiral process params for " + str(trig.eventID)
     inspiral_process_params = []
 
-  # currently this assumes you will be getting trig bank jobs...fix this!
+  # currently this assumes you will be getting inspiral jobs...fix this!
   if opts.qscan: qFlag = 1
   else: qFlag = 0
   if opts.plots: plotsFlag = 1
@@ -586,7 +593,8 @@ for trig in followuptrigs:
   else: sFlag = 0
 
 
-  for ifo in trig_process_params:
+  # for ifo in trig_process_params:
+  for ifo in inspiral_process_params:
     try: trig.gpsTime[ifo]
     except: continue
 
@@ -616,16 +624,46 @@ for trig in followuptrigs:
         print "couldn't add qscan job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
         qNode = 0
     else: qNode = 0
-    # SETUP TRIGBANK JOBS
+
+
+    # TRY GETTING THE TRIG BANK PROCESS PARAMS
     if trig.gpsTime[ifo]:
+      # TRY TO FIND THE --BANK-FILE ARGUMENT IN THE INSPIRAL PROCESS PARAMS TABLE
+      trigBankFile = 0
       try:
-        trigNode = trigBankFollowUpNode(trigJob,trig.gpsTime[ifo],trig_process_params[ifo],opts,xml_glob)
+        for row in inspiral_process_params[ifo]:
+          if row.param[2:] == 'bank-file':
+            trigBankFile = row.value
+            print trigBankFile
+            break
+      except:
+        print "could not find the --bank-file argument in the inspiral process params table for " + str(ifo) + "@"+ str(trig.gpsTime[ifo])
+      # THEN GET THE TRIG BANK PROCESS PARAMS
+      if trigBankFile:
+        try: 
+          trig_process_params_ifo = cache.getProcessParamsFromMatchingFile(trigBankFile,'TRIGBANK')
+          foundTrigBankTable = 1
+        except:
+          print "couldn't get trigbank process params for " + str(trig.eventID)
+          foundTrigBankTable = 0
+      else:
+        print "couldn't get trigbank process params for " + str(trig.eventID)
+        foundTrigBankTable = 0
+        print "passed in the else loop"
+ 
+    # SETUP TRIGBANK JOBS
+    if trig.gpsTime[ifo] and foundTrigBankTable:
+      try:
+        # trigNode = trigBankFollowUpNode(trigJob,trig.gpsTime[ifo],inspiral_process_params[ifo],opts,xml_glob)
+        trigNode = trigBankFollowUpNode(trigJob,trig.gpsTime[ifo],trig_process_params_ifo,opts,xml_glob)
         if opts.trig_bank:
           dag.add_node(trigNode)
           trigJobCnt+=1
       except:
         trigNode = 0
         print "couldn't add trigbank job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
+    else:
+      trigNode = 0
 
     # SETUP INSPIRAL JOBS
     if trig.gpsTime[ifo] and trigNode:
@@ -676,7 +714,7 @@ dag.write_dag()
 
 writeHTMLTables(summaryHTMLlist)
 if opts.write_to_iulgroup:
-  publishToIULGroup(page)
+  publishOnHydra(page)
 
 sys.exit(0)
 
