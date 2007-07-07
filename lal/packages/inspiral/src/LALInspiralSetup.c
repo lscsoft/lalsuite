@@ -201,15 +201,14 @@ LALInspiralSetup (
    ak->FTa2 = -1247./336.-35.*ieta*eta/12.;
    ak->FTa3 = 4.*LAL_PI;
    ak->FTa4 = -44711./9072.+9271.*ieta*eta/504.+65.*ieta*eta*eta/18.;
-   ak->FTa5 = -(8191./672.+535./24.*ieta*eta)*LAL_PI;
+   ak->FTa5 = -(8191./672.+583./24.*ieta*eta)*LAL_PI;
    ak->FTl6 = -1712./105.;
    ak->FTa6 = 6643739519./69854400. + 16.*LAL_PI*LAL_PI/3. + ak->FTl6 * log (4.L)
             - 1712./105.*ak->EulerC+ (-11497453./272160. + 41.*LAL_PI*LAL_PI/48.
                + 176./9. * ak->lambda - 88.*ak->theta/3.) * ieta*eta
             - 94403./3024. * ieta*eta*eta - 775./324. * ieta * eta*eta*eta;
-   ak->FTl6 = -1712./105.;
-   ak->FTa7 = LAL_PI * (-16285./504. + 176419./1512. * ieta*eta
-               + 19897./378.* ieta*eta*eta);
+   ak->FTa7 = LAL_PI * (-16285./504. + 214745./1728. * ieta*eta
+               + 193385./3024.* ieta*eta*eta);
 
 /* Initialize members of the structures which get fed into 
    phasing3() and frequency3(). 
