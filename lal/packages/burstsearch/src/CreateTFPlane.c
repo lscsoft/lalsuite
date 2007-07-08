@@ -26,6 +26,7 @@ NRCSID(CREATETFPLANEC, "$Id$");
 
 
 #include <math.h>
+#include <lal/FrequencySeries.h>
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALStdlib.h>
@@ -333,6 +334,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 {
 	static const char func[] = "XLALCreateTFPlane";
 	REAL4TimeFrequencyPlane *plane;
+	COMPLEX8FrequencySeries **filter;
 	REAL8Sequence *twice_channel_overlap;
 	REAL8Sequence *unwhitened_rms;
 	REAL8Sequence *unwhitened_cross;
@@ -436,14 +438,16 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	 */
 
 	plane = XLALMalloc(sizeof(*plane));
+	filter = XLALMalloc(channels * sizeof(*filter));
 	twice_channel_overlap = XLALCreateREAL8Sequence(channels - 1);
 	unwhitened_rms = XLALCreateREAL8Sequence(channels);
 	unwhitened_cross = XLALCreateREAL8Sequence(channels - 1);
 	channel = XLALMalloc(channels * sizeof(*channel));
 	tukey = XLALCreateTukeyREAL4Window(tseries_length, (tseries_length - tiling_length) / (double) tseries_length);
 	correlation = tukey ? compute_two_point_spectral_correlation(tukey) : NULL;
-	if(!plane || !twice_channel_overlap || !unwhitened_rms || !unwhitened_cross || !channel || !tukey || !correlation) {
+	if(!plane || !filter || !twice_channel_overlap || !unwhitened_rms || !unwhitened_cross || !channel || !tukey || !correlation) {
 		XLALFree(plane);
+		XLALFree(filter);
 		XLALDestroyREAL8Sequence(twice_channel_overlap);
 		XLALDestroyREAL8Sequence(unwhitened_rms);
 		XLALDestroyREAL8Sequence(unwhitened_cross);
@@ -453,11 +457,13 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 	for(i = 0; i < channels; i++) {
+		filter[i] = NULL;
 		channel[i] = XLALCreateREAL4Sequence(tseries_length);
 		if(!channel[i]) {
 			while(--i)
 				XLALDestroyREAL4Sequence(channel[i]);
 			XLALFree(plane);
+			XLALFree(filter);
 			XLALDestroyREAL8Sequence(twice_channel_overlap);
 			XLALDestroyREAL8Sequence(unwhitened_rms);
 			XLALDestroyREAL8Sequence(unwhitened_cross);
@@ -480,6 +486,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	plane->channels = channels;
 	plane->deltaF = deltaF;
 	plane->flow = flow;
+	plane->filter = filter;
 	plane->twice_channel_overlap = twice_channel_overlap;
 	plane->unwhitened_rms = unwhitened_rms;
 	plane->unwhitened_cross = unwhitened_cross;
@@ -517,8 +524,11 @@ void XLALDestroyTFPlane(
 		XLALDestroyREAL8Sequence(plane->twice_channel_overlap);
 		XLALDestroyREAL8Sequence(plane->unwhitened_rms);
 		XLALDestroyREAL8Sequence(plane->unwhitened_cross);
-		for(i = 0; i < plane->channels; i++)
+		for(i = 0; i < plane->channels; i++) {
+			XLALDestroyCOMPLEX8FrequencySeries(plane->filter[i]);
 			XLALDestroyREAL4Sequence(plane->channel[i]);
+		}
+		XLALFree(plane->filter);
 		XLALFree(plane->channel);
 		XLALDestroyREAL4Window(plane->window);
 		XLALDestroyREAL4Sequence(plane->two_point_spectral_correlation);

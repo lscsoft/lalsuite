@@ -270,7 +270,6 @@ int XLALFreqSeriesToTFPlane(
 /******** </lalVerbatim> ********/
 {
 	static const char func[] = "XLALFreqSeriesToTFPlane";
-	COMPLEX8FrequencySeries **filter;
 	COMPLEX8Sequence *fcorr;
 	unsigned i;
 
@@ -285,10 +284,8 @@ int XLALFreqSeriesToTFPlane(
 		XLAL_ERROR(func, XLAL_EDATA);
 
 	/* create temporary vectors */
-	filter = XLALMalloc(plane->channels * sizeof(*filter));
 	fcorr = XLALCreateCOMPLEX8Sequence(fseries->data->length);
-	if(!filter || !fcorr) {
-		XLALFree(filter);
+	if(!fcorr) {
 		XLALDestroyCOMPLEX8Sequence(fcorr);
 		XLAL_ERROR(func, XLAL_EFUNC);
 	}
@@ -331,24 +328,25 @@ int XLALFreqSeriesToTFPlane(
 	XLALPrintInfo("XLALFreqSeriesToTFPlane(): generating channel filters\n");
 	/* generate the frequency domain filter functions */
 	for(i = 0; i < plane->channels; i++) {
-		filter[i] = generate_filter(fseries, plane->flow + i * plane->deltaF, plane->deltaF, enable_over_whitening ? psd : NULL, plane->two_point_spectral_correlation);
-		if(!filter[i]) {
-			while(--i)
-				XLALDestroyCOMPLEX8FrequencySeries(filter[i]);
-			XLALFree(filter);
+		plane->filter[i] = generate_filter(fseries, plane->flow + i * plane->deltaF, plane->deltaF, enable_over_whitening ? psd : NULL, plane->two_point_spectral_correlation);
+		if(!plane->filter[i]) {
+			while(--i) {
+				XLALDestroyCOMPLEX8FrequencySeries(plane->filter[i]);
+				plane->filter[i] = NULL;
+			}
 			XLALDestroyCOMPLEX8Sequence(fcorr);
 			XLAL_ERROR(func, XLAL_EFUNC);
 		}
 
 		/* compute the unwhitened root mean square for this channel */
-		plane->unwhitened_rms->data[i] = sqrt(psd_weighted_filter_inner_product(filter[i], filter[i], plane->two_point_spectral_correlation, psd) * fseries->deltaF / 2);
+		plane->unwhitened_rms->data[i] = sqrt(psd_weighted_filter_inner_product(plane->filter[i], plane->filter[i], plane->two_point_spectral_correlation, psd) * fseries->deltaF / 2);
 	}
 
 	/* compute the cross terms for the channel normalizations and
 	 * unwhitened mean squares */
 	for(i = 0; i < plane->channels - 1; i++) {
-		plane->twice_channel_overlap->data[i] = 2 * filter_inner_product(filter[i], filter[i + 1], plane->two_point_spectral_correlation);
-		plane->unwhitened_cross->data[i] = psd_weighted_filter_inner_product(filter[i], filter[i + 1], plane->two_point_spectral_correlation, psd) * fseries->deltaF;
+		plane->twice_channel_overlap->data[i] = 2 * filter_inner_product(plane->filter[i], plane->filter[i + 1], plane->two_point_spectral_correlation);
+		plane->unwhitened_cross->data[i] = psd_weighted_filter_inner_product(plane->filter[i], plane->filter[i + 1], plane->two_point_spectral_correlation, psd) * fseries->deltaF;
 	}
 
 	XLALPrintInfo("XLALFreqSeriesToTFPlane(): projecting data onto time-frequency plane\n");
@@ -360,20 +358,22 @@ int XLALFreqSeriesToTFPlane(
 		 * obtain an SNR time series.  Note that
 		 * XLALREAL4ReverseFFT() omits the factor of 1 / (N Delta
 		 * t) in the inverse transform. */
-		apply_filter(fcorr, fseries, filter[i]);
+		apply_filter(fcorr, fseries, plane->filter[i]);
 		if(XLALREAL4ReverseFFT(plane->channel[i], fcorr, reverseplan)) {
-			for(i = 0; i < plane->channels; i++)
-				XLALDestroyCOMPLEX8FrequencySeries(filter[i]);
-			XLALFree(filter);
+			for(i = 0; i < plane->channels; i++) {
+				XLALDestroyCOMPLEX8FrequencySeries(plane->filter[i]);
+				plane->filter[i] = NULL;
+			}
 			XLALDestroyCOMPLEX8Sequence(fcorr);
 			XLAL_ERROR(func, XLAL_EFUNC);
 		}
 	}
 
 	/* clean up */
-	for(i = 0; i < plane->channels; i++)
-		XLALDestroyCOMPLEX8FrequencySeries(filter[i]);
-	XLALFree(filter);
+	for(i = 0; i < plane->channels; i++) {
+		XLALDestroyCOMPLEX8FrequencySeries(plane->filter[i]);
+		plane->filter[i] = NULL;
+	}
 	XLALDestroyCOMPLEX8Sequence(fcorr);
 
 	/* set the name and epoch of the TF plane */
