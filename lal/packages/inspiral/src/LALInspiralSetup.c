@@ -237,7 +237,7 @@ LALInspiralSetup (
            + 3.71*ieta*eta*eta/20.48;
   ak->fta5 = -(7.729/21.504 - 13./256.*ieta*eta) * LAL_PI;
   ak->fta6 = (-7.20817631400877/2.88412611379200 + (53./200.) * LAL_PI*LAL_PI
-           + 1.07/2.80 * ak->EulerC + 1.07/2.90 * log(2.)
+           + 1.07/2.80 * ak->EulerC + 1.07/2.80 * log(2.)
            + (1.23292747421/.20808990720 - 4.51/20.48 * LAL_PI*LAL_PI
            - 77./48. * ak->lambda + 11./16. * ak->theta) * ieta*eta
            - 3.0913/183.5008 * ieta*eta*eta 
