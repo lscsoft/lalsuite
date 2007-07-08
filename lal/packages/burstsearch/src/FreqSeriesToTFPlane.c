@@ -150,7 +150,6 @@ int XLALFreqSeriesToTFPlane(
 	}
 #endif
 
-	XLALPrintInfo("XLALFreqSeriesToTFPlane(): projecting data onto time-frequency plane\n");
 	/* loop over the time-frequency plane's channels */
 	for(i = 0; i < plane->channels; i++) {
 		/* cross correlate the input data against the channel

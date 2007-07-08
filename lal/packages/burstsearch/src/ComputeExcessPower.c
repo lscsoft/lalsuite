@@ -35,8 +35,16 @@ NRCSID (COMPUTEEXCESSPOWERC, "$Id$");
 
 
 /*
- * Convert an array of tiles to a linked list of burst events.  The
- * threshold cut is applied here.
+ * ============================================================================
+ *
+ *                                   Output
+ *
+ * ============================================================================
+ */
+
+
+/*
+ * Convert time-frequency tile info to a SnglBurstTable row.
  */
 
 
@@ -86,8 +94,19 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 }
 
 
+
+/*
+ * ============================================================================
+ *
+ *                               Tile Analysis
+ *
+ * ============================================================================
+ */
+
+
 /******** <lalVerbatim file="ComputeExcessPowerCP"> ********/
 SnglBurstTable *XLALComputeExcessPower(
+	const COMPLEX8FrequencySeries *template,
 	const REAL4TimeFrequencyPlane *plane,
 	SnglBurstTable *head,
 	double confidence_threshold

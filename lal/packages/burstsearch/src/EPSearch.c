@@ -209,12 +209,11 @@ SnglBurstTable *XLALEPSearch(
 		 * series.
 		 */
 
+		XLALPrintInfo("XLALEPSearch(): projecting data onto time-frequency plane\n");
 		if(XLALFreqSeriesToTFPlane(plane, fseries, rplan)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
-		XLALDestroyCOMPLEX8FrequencySeries(fseries);
-		fseries = NULL;
 
 		/*
 		 * Compute the excess power for each time-frequency tile
@@ -227,11 +226,13 @@ SnglBurstTable *XLALEPSearch(
 
 		XLALPrintInfo("XLALEPSearch(): computing the excess power for each tile\n");
 		XLALClearErrno();
-		head = XLALComputeExcessPower(plane, head, params->confidence_threshold);
+		head = XLALComputeExcessPower(fseries, plane, head, params->confidence_threshold);
 		if(xlalErrno) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
+		XLALDestroyCOMPLEX8FrequencySeries(fseries);
+		fseries = NULL;
 	}
 
 	/*
