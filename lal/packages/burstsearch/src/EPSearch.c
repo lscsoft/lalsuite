@@ -192,11 +192,24 @@ SnglBurstTable *XLALEPSearch(
 #endif
 
 		/*
+		 * Construct the time-frequency plane's channel filters.
+		 *
+		 * FIXME:  this could be moved out of the loop for a
+		 * performance boost.
+		 */
+
+		XLALPrintInfo("XLALEPSearch(): constructing channel filters ...\n");
+		if(XLALTFPlaneMakeChannelFilters(fseries, plane, psd, params->useOverWhitening)) {
+			errorcode = XLAL_EFUNC;
+			goto error;
+		}
+
+		/*
 		 * Compute the time-frequency plane from the frequency
 		 * series.
 		 */
 
-		if(XLALFreqSeriesToTFPlane(plane, fseries, psd, rplan, params->useOverWhitening)) {
+		if(XLALFreqSeriesToTFPlane(plane, fseries, rplan)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}

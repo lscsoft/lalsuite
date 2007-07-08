@@ -117,12 +117,18 @@ void XLALDestroyTFPlane(
 );
 
 
+INT4 XLALTFPlaneMakeChannelFilters(
+	const COMPLEX8FrequencySeries *template,
+	REAL4TimeFrequencyPlane *plane,
+	const REAL4FrequencySeries *psd,
+	int over_whitened
+);
+
+
 int XLALFreqSeriesToTFPlane(
 	REAL4TimeFrequencyPlane *tfplane,
 	const COMPLEX8FrequencySeries *fseries,
-	const REAL4FrequencySeries *psd,
-	const REAL4FFTPlan *reverseplan,
-	INT4 enable_over_whitening
+	const REAL4FFTPlan *reverseplan
 );
 
 
