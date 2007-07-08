@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 David Churches, B.S. Sathyaprakash
+*  Copyright (C) 2007 David Churches, B.S. Sathyaprakash, Duncan Brown
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -252,7 +252,7 @@ LALInspiralFrequency3_6PN (
              + ak->fta3*theta3
              + ak->fta4*theta4
              + ak->fta5*theta5
-             + (ak->fta6 + ak->ftl6*log(2.*theta))*theta6);
+             + (ak->fta6 + ak->ftl6*log(td))*theta6);
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
@@ -288,7 +288,7 @@ LALInspiralFrequency3_7PN (
              + ak->fta3*theta3
              + ak->fta4*theta4
              + ak->fta5*theta5
-             + (ak->fta6 + ak->ftl6*log(theta))*theta6
+             + (ak->fta6 + ak->ftl6*log(td))*theta6
              + ak->fta7*theta7);
   DETATCHSTATUSPTR(status);
   RETURN(status);
