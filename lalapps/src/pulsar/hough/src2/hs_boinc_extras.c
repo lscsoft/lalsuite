@@ -324,14 +324,44 @@ static int is_zipped ( const char *fname /**< name of the file to check for bein
 /**
   prepare an input file for the program, i.e. boinc_resolve and/or unzip it if necessary
  */
-static int resolve_and_unzip(const char*filename, /**< filename toresolve */
+/* better: if the file is a BOINC symlink to a zipped file, (boinc_resolve succeeds),
+   first rename the link, then unzip the file, then remove the renamed link.
+   Thus, at the beginning, if the file couldn't be found (i.e. resolved), try to resolve
+   the renamed link, and upon success, unzip the file and remove the link.
+*/
+#define ZIPPED_EXT ".zip"
+#define LINKED_EXT ".lnk"
+static int resolve_and_unzip(const char*filename, /**< filename to resolve */
 			     char*resfilename,    /**< resolved filename */
 			     const size_t size    /**< size of the buffer for resolved name */
 			     ) {
-  int zipped;
+  char buf[size+4]; /**< buffer for filename modifications */
+  int zipped; /**< flag: is the file zipped? */
 
   if (boinc_resolve_filename(filename,resfilename,size)) {
     LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve file '%s'\n", filename);
+
+    strncpy(buf,filename,sizeof(buf));
+    strncat(buf,LINKED_EXT,sizeof(buf));
+    if (!boinc_resolve_filename(buf,resfilename,size)) {
+      /* this could only be the remainder of a previous interrupted unzip */
+      LogPrintf (LOG_NORMAL, "WARNING: found old link file '%s'\n", buf);
+
+      /* unzip */
+      if (boinc_zip(UNZIP_IT,resfilename,".") ) {
+	LogPrintf (LOG_CRITICAL, "ERROR: Couldn't unzip '%s'\n", resfilename);
+	return(-1);
+      }
+
+      /* delete the link to avoid later confusion */
+      if(boinc_delete_file(buf)) {
+	LogPrintf (LOG_CRITICAL, "WARNING: Couldn't delete link '%s'\n", buf);
+      }
+
+      /* the new resolved filename is the unzipped file */
+      strncpy(resfilename,filename,size);
+      return(0);
+    }
 
     zipped = is_zipped (filename);
 
@@ -341,11 +371,10 @@ static int resolve_and_unzip(const char*filename, /**< filename toresolve */
 
     } else if (zipped) { 
 
-      /* unzip in-place:
-	 unzip file to "filename.uz", then replace original file with "filename.uz" */
+      /** unzip in-place: rename file to file.zip, then unzip it */
       LogPrintf (LOG_NORMAL, "WARNING: Unzipping '%s' in-place\n", filename);
       strncpy(resfilename,filename,size);
-      strncat(resfilename,".zip",size);
+      strncat(resfilename,ZIPPED_EXT,size);
       if( boinc_rename(resfilename,filename) ) {
 	LogPrintf (LOG_CRITICAL, "ERROR: Couldn't rename '%s' to '%s'\n", resfilename, filename);
 	return(-1);
@@ -361,17 +390,18 @@ static int resolve_and_unzip(const char*filename, /**< filename toresolve */
     return(0);
   }
 
-  /* we end up here if boinc_resolve was successful */
+  /** we end up here if boinc_resolve was successful */
   zipped = is_zipped (resfilename);
 
-  /* return if not zipped or couldn't find out */
+  /** return if not zipped or couldn't find out because of an error */
   if (zipped <= 0)
     return(zipped);
 
-/* critical> */
-  /* delete the local link so we can unzip to that name */
-  if( boinc_delete_file(filename) ) {
-    LogPrintf (LOG_CRITICAL, "ERROR: Couldn't delete '%s'\n", filename);
+  /** rename the local link so we can unzip to that name */
+  strncpy(buf,filename,sizeof(buf));
+  strncat(buf,LINKED_EXT,sizeof(buf));
+  if( boinc_rename(filename,buf) ) {
+    LogPrintf (LOG_CRITICAL, "ERROR: Couldn't rename '%s' to '%s'\n", filename, buf);
     return(-1);
   }
 
@@ -380,7 +410,11 @@ static int resolve_and_unzip(const char*filename, /**< filename toresolve */
     LogPrintf (LOG_CRITICAL, "ERROR: Couldn't unzip '%s'\n", resfilename);
     return(-1);
   }
-/* <critical */
+
+  /* delete the link to avoid later confusion */
+  if(boinc_delete_file(buf)) {
+    LogPrintf (LOG_CRITICAL, "WARNING: Couldn't delete link '%s'\n", buf);
+  }
 
   /* the new resolved filename is the unzipped file */
   strncpy(resfilename,filename,size);
