@@ -335,7 +335,7 @@ static int resolve_and_unzip(const char*filename, /**< filename to resolve */
 			     char*resfilename,    /**< resolved filename */
 			     const size_t size    /**< size of the buffer for resolved name */
 			     ) {
-  char buf[size+4]; /**< buffer for filename modifications */
+  char buf[MAX_PATH_LEN]; /**< buffer for filename modifications */
   int zipped; /**< flag: is the file zipped? */
 
   if (boinc_resolve_filename(filename,resfilename,size)) {
