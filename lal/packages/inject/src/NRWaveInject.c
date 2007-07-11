@@ -589,11 +589,14 @@ void LALInjectStrainGW( LALStatus                 *status,
 			REAL4TimeSeries           *injData,
 			REAL4TimeVectorSeries     *strain,
 			SimInspiralTable          *thisInj,
-			CHAR                      *ifo)
+			CHAR                      *ifo,
+			REAL8                     dynRange)
 {
 
   REAL8 sampleRate;
   REAL4TimeSeries *htData = NULL;
+  FILE *out;
+  int  k;
 
   INITSTATUS (status, "LALNRInject",  NRWAVEINJECTC);
   ATTATCHSTATUSPTR (status); 
@@ -602,15 +605,30 @@ void LALInjectStrainGW( LALStatus                 *status,
     
   /*compute strain for given sky location*/
   htData = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate );
+
+  /* multiply the input data by dynRange */
+  for ( k = 0 ; k < htData->data->length ; ++k )
+  {
+    htData->data->data[k] *= dynRange;
+  }
+
+  out=fopen("htData.dat","w");
   
+  for (k = 0; k < htData->data->length; k++)
+    {
+      fprintf(out, "%i %e\n", k, htData->data->data[k]);
+    }
+  fclose(out);
+
   /* inject the htData into injection time stream */
   TRY( LALSSInjectTimeSeries( status->statusPtr, injData, htData ),
        status );
   
   /* set channel name */
-  LALSnprintf( injData->name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
-	       "%s:STRAIN", ifo );
-  
+  /*LALSnprintf( injData->name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
+    "%s:STRAIN", ifo ); */
+
+  printf("channel name: %s\n", injData->name);
 
   XLALDestroyREAL4Vector ( htData->data);
   LALFree(htData);

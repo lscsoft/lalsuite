@@ -110,6 +110,7 @@ typedef struct
   INT4 modeLlo;
   INT4 modeLhi;
   CHAR *ifo;
+  REAL8 dynRange;
 } NumRelInjectParams;
 
 

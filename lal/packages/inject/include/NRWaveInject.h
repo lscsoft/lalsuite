@@ -98,8 +98,7 @@ XLALSumStrain(
     REAL4TimeVectorSeries *strain          /**< variable to add  */);
 
 
-void LALInjectStrainGW( LALStatus *status, REAL4TimeSeries *injData, REAL4TimeVectorSeries *strain, 
-			SimInspiralTable *thisInj, CHAR *ifo);
+void LALInjectStrainGW( LALStatus *status, REAL4TimeSeries *injData, REAL4TimeVectorSeries *strain, SimInspiralTable *thisInj, CHAR *ifo, REAL8 dynRange);
 
 
 #ifdef  __cplusplus
