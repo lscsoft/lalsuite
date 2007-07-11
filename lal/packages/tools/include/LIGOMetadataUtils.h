@@ -1510,6 +1510,22 @@ XLALCountCoincRingdown(
     CoincRingdownTable *head
     );
 
+
+/* inspiral param accuracy */
+
+void
+XLALPopulateAccuracyParams(
+       InspiralAccuracyList  *accuracyParams
+);
+
+void
+XLALPopulateAccuracyParamsExt(
+       InspiralAccuracyList  *accuracyParams,
+       const LIGOTimeGPS     *gpstime,
+       const REAL8            ra_deg,
+       const REAL8            dec_deg
+);
+
 #if 0
 <lalLaTeX>
 \vfill{\footnotesize\input{LIGOMetadataUtilsHV}}
