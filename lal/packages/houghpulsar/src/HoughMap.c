@@ -306,6 +306,7 @@ void LALHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
   COORType     *xPixel;
   HOUGHBorder  *borderP;
   HoughDT    weight;
+  INT4       sidx; /* pre-calcuted array index for sanity check */
 
    /* --------------------------------------------- */
   INITSTATUS (status, "LALHOUGHAddPHMD2HD_W", HOUGHMAPC);
@@ -346,7 +347,13 @@ void LALHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
     xPixel =  &( (*borderP).xPixel[0] );
 
     for(j=yLower; j<=yUpper;++j){
-      hd->map[j *(xSide+1) + xPixel[j] ] += weight;
+      sidx = j *(xSide+1) + xPixel[j];
+      if ((sidx < 0) || (sidx >= ySide*(xSide+1))) {
+	fprintf(stderr,"\nERROR: %s %d: Array Index out of bounds: %d [0..%d] j:%d xp[j]:%d\n",
+		__FILE__,__LINE__,sidx,ySide*(xSide+1),j,xPixel[j] );
+	ABORT(status, LALHOUGHAddPHMD2HD_W, HOUGHMAPH_MSGESIZE);
+      }
+      hd->map[sidx] += weight;
     }
   }
 
@@ -364,7 +371,13 @@ void LALHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
     xPixel =  &( (*borderP).xPixel[0] );
 
     for(j=yLower; j<=yUpper;++j){
-      hd->map[j*(xSide+1) + xPixel[j] ] -= weight;
+      sidx = j*(xSide+1) + xPixel[j];
+      if ((sidx < 0) || (sidx >= ySide*(xSide+1))) {
+	fprintf(stderr,"\nERROR: %s %d: Array Index out of bounds: %d [0..%d] j:%d xp[j]:%d\n",
+		__FILE__,__LINE__,sidx,ySide*(xSide+1),j,xPixel[j] );
+	ABORT(status, LALHOUGHAddPHMD2HD_W, HOUGHMAPH_MSGESIZE);
+      }
+      hd->map[sidx] -= weight;
     }
   }
 
