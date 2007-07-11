@@ -922,7 +922,7 @@ int MAIN( int argc, char *argv[]) {
 #ifdef SKYPOS_PRECISION
       /* reduce precision of sky position */
       dopplerpos.Alpha = ((REAL4)((INT4)(dopplerpos.Alpha * SKYPOS_PRECISION))) / ((REAL4)SKYPOS_PRECISION);
-      dopplerpos.Delta = ((REAL4)((INT4)(dopplerpos.DELTA * SKYPOS_PRECISION))) / ((REAL4)SKYPOS_PRECISION);
+      dopplerpos.Delta = ((REAL4)((INT4)(dopplerpos.Delta * SKYPOS_PRECISION))) / ((REAL4)SKYPOS_PRECISION);
 #endif
 
       SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta,
