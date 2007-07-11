@@ -501,13 +501,16 @@ if opts.datafind:
     except: pass
     if time: times.append(time)
   times.sort()
+  # 1s is substracted to the expected startTime to make sure the window will be large enough. This is to be sure to handle the rouding to the next sample.
+  startTime = int( times[0] - eval(string.strip(cp.get('datafind','qscan-searchTimeRange')))/2 ) - 1
+  endTime =  int( times[-1] + eval(string.strip(cp.get('datafind','qscan-searchTimeRange')))/2 ) + 2
   command = string.strip(cp.get('datafind','executable')) + \
           " --observatory=L" + " --type=" + \
           string.strip(cp.get('datafind','qscan-level')) + \
-          " --gps-start-time=" + str(times[0]) + " --gps-end-time=" + \
-          str(times[-1]) + " --url-type=file" + " --lal-cache > Lq.cache.tmp"
+          " --gps-start-time=" + str(startTime) + " --gps-end-time=" + \
+          str(endTime) + " --url-type=file" + " --lal-cache > Lq.cache.tmp"
 
-  print "....Finding Qscan LLO data ["+str(times[0])+"-"+str(times[-1])+"]\n"
+  print "....Finding Qscan LLO data ["+str(startTime)+"-"+str(endTime)+"]\n"
   os.system(command)
   Lq = open('Lq.cache.tmp','r')
   lines = Lq.readlines()
@@ -523,9 +526,9 @@ if opts.datafind:
   command = string.strip(cp.get('datafind','executable')) + \
           " --observatory=H" + " --type=" + \
           string.strip(cp.get('datafind','qscan-level')) + \
-          " --gps-start-time=" + str(times[0]) + " --gps-end-time=" + \
-          str(times[-1]) + " --url-type=file" + " --lal-cache > Hq.cache.tmp" 
-  print "....Finding Qscan LHO data ["+str(times[0])+"-"+str(times[-1])+"]\n"
+          " --gps-start-time=" + str(startTime) + " --gps-end-time=" + \
+          str(endTime) + " --url-type=file" + " --lal-cache > Hq.cache.tmp" 
+  print "....Finding Qscan LHO data ["+str(startTime)+"-"+str(endTime)+"]\n"
   os.system(command)
   Hq = open('Hq.cache.tmp','r')
   lines = Hq.readlines()
