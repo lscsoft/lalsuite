@@ -351,7 +351,7 @@ void LALHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
       if ((sidx < 0) || (sidx >= ySide*(xSide+1))) {
 	fprintf(stderr,"\nERROR: %s %d: Array Index out of bounds: %d [0..%d] j:%d xp[j]:%d\n",
 		__FILE__,__LINE__,sidx,ySide*(xSide+1),j,xPixel[j] );
-	ABORT(status, LALHOUGHAddPHMD2HD_W, HOUGHMAPH_MSGESIZE);
+	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
       }
       hd->map[sidx] += weight;
     }
@@ -375,7 +375,7 @@ void LALHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
       if ((sidx < 0) || (sidx >= ySide*(xSide+1))) {
 	fprintf(stderr,"\nERROR: %s %d: Array Index out of bounds: %d [0..%d] j:%d xp[j]:%d\n",
 		__FILE__,__LINE__,sidx,ySide*(xSide+1),j,xPixel[j] );
-	ABORT(status, LALHOUGHAddPHMD2HD_W, HOUGHMAPH_MSGESIZE);
+	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
       }
       hd->map[sidx] -= weight;
     }
