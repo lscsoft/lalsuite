@@ -903,6 +903,10 @@ int MAIN( int argc, char *argv[]) {
       XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
   }
   
+#ifdef SKYPOS_PRECISION
+  LogPrintf(LOG_DEBUG, "SKYPOS_PRECISION: %20f\n", (REAL4)SKYPOS_PRECISION);
+#endif
+
   LogPrintf(LOG_DEBUG, "Total skypoints = %d. Progress: ", thisScan.numSkyGridPoints);
 
 #ifdef OUTPUT_TIMING
@@ -915,10 +919,10 @@ int MAIN( int argc, char *argv[]) {
       UINT4 ifdot;  /* counter for spindown values */
       SkyPosition skypos;
 
-#ifdef REDUCE_DOPPLERPOS_PRECISION
+#ifdef SKYPOS_PRECISION
       /* reduce precision of sky position */
-      dopplerpos.Alpha = (REAL4) dopplerpos.Alpha;
-      dopplerpos.Delta = (REAL4) dopplerpos.Delta;
+      dopplerpos.Alpha = ((REAL4)((INT4)(dopplerpos.Alpha * SKYPOS_PRECISION))) / ((REAL4)SKYPOS_PRECISION);
+      dopplerpos.Delta = ((REAL4)((INT4)(dopplerpos.DELTA * SKYPOS_PRECISION))) / ((REAL4)SKYPOS_PRECISION);
 #endif
 
       SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta,
