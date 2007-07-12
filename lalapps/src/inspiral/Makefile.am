@@ -20,7 +20,7 @@ GWF2XMLSRC 	= gwf2xml.c
 SPININJSRC 	= spininj.c
 COINEXTSRC 	= coinext.c
 RANDOMBANKSRC 	= randombank.c
-NRWAVESRC = nr_wave.c
+NRWAVESRC	= nr_wave.c
 if LALFRAME
 if LALMETAIO
 bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank \
@@ -45,7 +45,7 @@ lalapps_siva_SOURCES 		= $(SIVASRC)
 lalapps_inspinj_SOURCES 	= $(INSPINJSRC)
 lalapps_minj_SOURCES 		= $(MINJSRC)
 lalapps_bbhinj_SOURCES 		= $(BBHINJSRC)
-lalapps_blindinj_SOURCES 		= $(BLINDINJSRC)
+lalapps_blindinj_SOURCES 	= $(BLINDINJSRC)
 lalapps_splitbank_SOURCES 	= $(SPLITBANKSRC)
 lalapps_trigbank_SOURCES 	= $(TRIGBANKSRC)
 lalapps_spininj_SOURCES 	= $(SPININJSRC)
@@ -53,7 +53,7 @@ lalapps_inspfrinj_SOURCES 	= $(INSPFRINJSRC)
 lalapps_gwf2xml_SOURCES 	= $(GWF2XMLSRC)
 lalapps_coinext_SOURCES         = $(COINEXTSRC)
 lalapps_randombank_SOURCES 	= $(RANDOMBANKSRC)
-lalapps_nr_wave_SOURCES = $(NRWAVESRC)
+lalapps_nr_wave_SOURCES		= $(NRWAVESRC)
 else
 bin_PROGRAMS = 
 endif
@@ -66,7 +66,7 @@ bin_SCRIPTS = lalapps_inspiral_pipe lalapps_inspiral_hipe \
 	      lalapps_multi_hipe lalapps_trigger_hipe\
               lalapps_inspiral_online_pipe \
               lalapps_inspiral_online_pipe_inject \
-              lalapps_check_hipe_times
+              lalapps_check_hipe_times lalapps_ihope
 pkgpython_DATA = inspiral.py
 endif
 
@@ -81,6 +81,9 @@ lalapps_inspiral_pipe: $(srcdir)/inspiral_pipe.in python_config.sed
 lalapps_inspiral_hipe: $(srcdir)/inspiral_hipe.in python_config.sed
 	sed -f python_config.sed $(srcdir)/inspiral_hipe.in > lalapps_inspiral_hipe
 	chmod +x lalapps_inspiral_hipe
+lalapps_ihope: $(srcdir)/ihope.in python_config.sed
+	sed -f python_config.sed $(srcdir)/ihope.in > lalapps_ihope
+	chmod +x lalapps_ihope
 lalapps_multi_hipe: $(srcdir)/multi_hipe.in python_config.sed
 	sed -f python_config.sed $(srcdir)/multi_hipe.in > lalapps_multi_hipe
 	chmod +x lalapps_multi_hipe
@@ -97,13 +100,13 @@ lalapps_inspiral_online_pipe_inject: $(srcdir)/inspiral_online_pipe_inject.in py
 	sed -f python_config.sed $(srcdir)/inspiral_online_pipe_inject.in > lalapps_inspiral_online_pipe_inject
 	chmod +x lalapps_inspiral_online_pipe_inject
 
-pkgdata_DATA = BNSMasses.dat inspsrcs100Mpc.complete inspsrcs100Mpc.errors inspiral_pipe.ini inspiral_hipe.ini online.ini online_inject_bbh.ini
+pkgdata_DATA = BNSMasses.dat inspsrcs100Mpc.complete inspsrcs100Mpc.errors inspiral_pipe.ini inspiral_hipe.ini online.ini online_inject_bbh.ini ihope.ini
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(SIRESRC) $(COIRESRC) $(SIVASRC) $(MINJSRC) \
              $(INCASRC) $(COHERESRC) $(INSPINJSRC) \
              $(SPLITBANKSRC) inspiral.py inspiral_pipe.in \
              inspiral_online_pipe.in inspiral_hipe.in \
-	     multi_hipe.in trigger_hipe.in\
+	     multi_hipe.in trigger_hipe.in ihope.in\
              inspiral_online_pipe_inject.in check_hipe_times.in \
              $(DATA)
 
@@ -114,7 +117,7 @@ CLEANFILES = lalapps_inspiral_pipe lalapps_inspiral_hipe \
 	     lalapps_multi_hipe lalapps_trigger_hipe\
              lalapps_inspiral_online_pipe \
              lalapps_inspiral_online_pipe_inject python_config.sed \
-             lalapps_check_hipe_times
+             lalapps_check_hipe_times lalapps_ihope
 
 MOSTLYCLEANFILES = *INSPIRAL*.xml *INSPIRAL*.gwf \
                    *TMPLTBANK*.gwf *TMPLTBANK*.xml
