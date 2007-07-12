@@ -116,6 +116,10 @@ extern void gzclearerr (gzFile file);
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 
+/* use boinc_fopen() instead of fopen() for Einstein@Home/BOINC */
+#ifdef EAH_BOINC
+#define fopen boinc_fopen
+#endif
 
 NRCSID (FILEIOC,"$Id$");
 
