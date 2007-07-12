@@ -65,8 +65,15 @@ static void XLALDestroySnglBurstTable(SnglBurstTable *head)
 
 
 SnglBurstTable *XLALEPSearch(
+	struct XLALEPSearchDiagnostics *diagnostics,
 	const REAL4TimeSeries *tseries,
-	EPSearchParams *params
+	REAL4Window *window,
+	REAL8 flow,
+	REAL8 bandwidth,
+	REAL8 confidence_threshold,
+	REAL8 fractional_stride,
+	REAL8 maxTileBandwidth,
+	REAL8 maxTileDuration
 )
 { 
 	const char func[] = "XLALEPSearch";
@@ -87,10 +94,10 @@ SnglBurstTable *XLALEPSearch(
 	 * specified by the tiling_start parameter of XLALCreateTFPlane.
 	 */
 
-	fplan = XLALCreateForwardREAL4FFTPlan(params->window->data->length, 1);
-	rplan = XLALCreateReverseREAL4FFTPlan(params->window->data->length, 1);
-	psd = XLALCreateREAL4FrequencySeries("PSD", &tseries->epoch, 0, 0, &lalDimensionlessUnit, params->window->data->length / 2 + 1);
-	plane = XLALCreateTFPlane(params->window->data->length, tseries->deltaT, params->flow, params->bandwidth, params->fractional_stride, params->maxTileBandwidth, params->maxTileDuration);
+	fplan = XLALCreateForwardREAL4FFTPlan(window->data->length, 1);
+	rplan = XLALCreateReverseREAL4FFTPlan(window->data->length, 1);
+	psd = XLALCreateREAL4FrequencySeries("PSD", &tseries->epoch, 0, 0, &lalDimensionlessUnit, window->data->length / 2 + 1);
+	plane = XLALCreateTFPlane(window->data->length, tseries->deltaT, flow, bandwidth, fractional_stride, maxTileBandwidth, maxTileDuration);
 	if(!fplan || !rplan || !psd || !plane) {
 		errorcode = XLAL_EFUNC;
 		goto error;
@@ -132,8 +139,8 @@ SnglBurstTable *XLALEPSearch(
 		goto error;
 	}
 
-	if(params->diagnostics)
-		params->diagnostics->XLALWriteLIGOLwXMLArrayREAL4FrequencySeries(params->diagnostics->LIGOLwXMLStream, NULL, psd);
+	if(diagnostics)
+		diagnostics->XLALWriteLIGOLwXMLArrayREAL4FrequencySeries(diagnostics->LIGOLwXMLStream, NULL, psd);
 
 	/*
 	 * Loop over data applying excess power method.
@@ -151,8 +158,8 @@ SnglBurstTable *XLALEPSearch(
 			goto error;
 		}
 		XLALPrintInfo("XLALEPSearch(): analyzing %u samples (%.9lf s) at offset %u (%.9lf s) from epoch %d.%09u s\n", cuttseries->data->length, cuttseries->data->length * cuttseries->deltaT, start_sample, start_sample * cuttseries->deltaT, tseries->epoch.gpsSeconds, tseries->epoch.gpsNanoSeconds);
-		if(params->diagnostics)
-			params->diagnostics->XLALWriteLIGOLwXMLArrayREAL4TimeSeries(params->diagnostics->LIGOLwXMLStream, NULL, cuttseries);
+		if(diagnostics)
+			diagnostics->XLALWriteLIGOLwXMLArrayREAL4TimeSeries(diagnostics->LIGOLwXMLStream, NULL, cuttseries);
 
 		XLALPrintInfo("XLALEPSearch(): computing the Fourier transform\n");
 		fseries = XLALWindowedREAL4ForwardFFT(cuttseries, plane->window, fplan);
@@ -172,8 +179,8 @@ SnglBurstTable *XLALEPSearch(
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
-		if(params->diagnostics)
-			params->diagnostics->XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries(params->diagnostics->LIGOLwXMLStream, "whitened", fseries);
+		if(diagnostics)
+			diagnostics->XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries(diagnostics->LIGOLwXMLStream, "whitened", fseries);
 #endif
 
 		/*
@@ -213,7 +220,7 @@ SnglBurstTable *XLALEPSearch(
 
 		XLALPrintInfo("XLALEPSearch(): computing the excess power for each tile\n");
 		XLALClearErrno();
-		head = XLALComputeExcessPower(plane, head, params->confidence_threshold);
+		head = XLALComputeExcessPower(plane, head, confidence_threshold, rplan);
 		if(xlalErrno) {
 			errorcode = XLAL_EFUNC;
 			goto error;

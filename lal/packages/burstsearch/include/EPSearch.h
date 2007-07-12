@@ -58,22 +58,17 @@ struct XLALEPSearchDiagnostics {
 };
 
 
-typedef struct tagEPSearchParams {
-	struct XLALEPSearchDiagnostics *diagnostics;
-	REAL4Window *window;
-	REAL8 confidence_threshold;
-	REAL8 flow;
-	REAL8 bandwidth;
-	/* t.f. plane tiling parameters */
-	REAL8 fractional_stride;
-	REAL8 maxTileBandwidth;
-	REAL8 maxTileDuration;
-} EPSearchParams;
-
-
 SnglBurstTable *XLALEPSearch(
+	struct XLALEPSearchDiagnostics *diagnostics,
 	const REAL4TimeSeries  *tseries,
-	EPSearchParams   *params
+	REAL4Window *window,
+	REAL8 flow,
+	REAL8 bandwidth,
+	REAL8 confidence_threshold,
+	/* t.f. plane tiling parameters */
+	REAL8 fractional_stride,
+	REAL8 maxTileBandwidth,
+	REAL8 maxTileDuration
 );
 
 
