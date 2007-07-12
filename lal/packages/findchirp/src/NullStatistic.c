@@ -176,6 +176,17 @@ XLALNullStatisticParamsInit(
       XLALPrintError("could not allocate memory for nullStatVec.");
       XLAL_ERROR(func, XLAL_ENOMEM);
     }
+#if 0
+    outputPtr->nullStatVec->data = 
+          XLALCreateVector( (init->numPoints * sizeof(REAL4Sequence)) );
+    outputPtr->nullStatVec->data->data = 
+          XLALCreateVector( (init->numPoints * sizeof(REAL4)) );
+#endif
+
+/*    outputPtr->nullStatVec->data = (REAL4Sequence *)
+       LALCalloc(1, sizeof(REAL4Sequence) ); */
+    outputPtr->nullStatVec->data->data = (REAL4 *)
+       LALCalloc(1, init->numPoints*sizeof(REAL4) );
   }
 
   /* populate the output structure */
