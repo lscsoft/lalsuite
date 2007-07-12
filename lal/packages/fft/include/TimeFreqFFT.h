@@ -246,6 +246,13 @@ int XLALREAL4ModifiedPeriodogram(
     const REAL4FFTPlan          *plan
     );
 
+int XLALREAL8ModifiedPeriodogram(
+    REAL8FrequencySeries        *periodogram,
+    const REAL8TimeSeries       *tseries,
+    const REAL8Window           *window,
+    const REAL8FFTPlan          *plan
+    );
+
 int XLALREAL4AverageSpectrumWelch(
     REAL4FrequencySeries        *spectrum,
     const REAL4TimeSeries       *tseries,
@@ -253,6 +260,15 @@ int XLALREAL4AverageSpectrumWelch(
     UINT4                        stride,
     const REAL4Window           *window,
     const REAL4FFTPlan          *plan
+    );
+
+int XLALREAL8AverageSpectrumWelch(
+    REAL8FrequencySeries        *spectrum,
+    const REAL8TimeSeries       *tseries,
+    UINT4                        seglen,
+    UINT4                        stride,
+    const REAL8Window           *window,
+    const REAL8FFTPlan          *plan
     );
 
 REAL8 XLALMedianBias( UINT4 nn );
@@ -266,6 +282,15 @@ int XLALREAL4AverageSpectrumMedian(
     const REAL4FFTPlan          *plan
     );
 
+int XLALREAL8AverageSpectrumMedian(
+    REAL8FrequencySeries        *spectrum,
+    const REAL8TimeSeries       *tseries,
+    UINT4                        seglen,
+    UINT4                        stride,
+    const REAL8Window           *window,
+    const REAL8FFTPlan          *plan
+    );
+
 int XLALREAL4AverageSpectrumMedianMean(
     REAL4FrequencySeries        *spectrum,
     const REAL4TimeSeries       *tseries,
@@ -275,6 +300,15 @@ int XLALREAL4AverageSpectrumMedianMean(
     const REAL4FFTPlan          *plan
     );
 
+int XLALREAL8AverageSpectrumMedianMean(
+    REAL8FrequencySeries        *spectrum,
+    const REAL8TimeSeries       *tseries,
+    UINT4                        seglen,
+    UINT4                        stride,
+    const REAL8Window           *window,
+    const REAL8FFTPlan          *plan
+    );
+
 int XLALREAL4SpectrumInvertTruncate(
     REAL4FrequencySeries        *spectrum,
     REAL4                        lowfreq,
@@ -282,6 +316,15 @@ int XLALREAL4SpectrumInvertTruncate(
     UINT4                        trunclen,
     REAL4FFTPlan                *fwdplan,
     REAL4FFTPlan                *revplan
+    );
+
+int XLALREAL8SpectrumInvertTruncate(
+    REAL8FrequencySeries        *spectrum,
+    REAL8                        lowfreq,
+    UINT4                        seglen,
+    UINT4                        trunclen,
+    REAL8FFTPlan                *fwdplan,
+    REAL8FFTPlan                *revplan
     );
 
 REAL4TimeSeries *XLALRespFilt(

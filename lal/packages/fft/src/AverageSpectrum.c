@@ -32,7 +32,9 @@
 NRCSID (AVERAGESPECTRUMC,"$Id$");
 
 
-/*
+
+
+/**
  *
  * Compute a "modified periodogram," i.e., the power spectrum of a windowed
  * time series.
@@ -121,8 +123,97 @@ int XLALREAL4ModifiedPeriodogram(
   return 0;
 }
 
+/**
+ *
+ * Compute a "modified periodogram," i.e., the power spectrum of a windowed
+ * time series.
+ *
+ */
+int XLALREAL8ModifiedPeriodogram(
+    REAL8FrequencySeries        *periodogram,
+    const REAL8TimeSeries       *tseries,
+    const REAL8Window           *window,
+    const REAL8FFTPlan          *plan
+    )
+{
+  static const char *func = "XLALREAL8ModifiedPeriodogram";
+  REAL8Sequence *work;
+  REAL8 normfac;
+  UINT4 k;
+  int result;
 
-/* 
+  if ( ! periodogram || ! tseries || ! plan )
+      XLAL_ERROR( func, XLAL_EFAULT );
+  if ( ! periodogram->data || ! tseries->data )
+      XLAL_ERROR( func, XLAL_EINVAL );
+  if ( tseries->deltaT <= 0.0 )
+      XLAL_ERROR( func, XLAL_EINVAL );
+  if ( periodogram->data->length != tseries->data->length/2 + 1 )
+      XLAL_ERROR( func, XLAL_EBADLEN );
+  if ( window )
+  {
+    if ( ! window->data )
+      XLAL_ERROR( func, XLAL_EINVAL );
+    if ( window->sumofsquares <= 0.0 )
+      XLAL_ERROR( func, XLAL_EINVAL );
+    if ( window->data->length != tseries->data->length )
+      XLAL_ERROR( func, XLAL_EBADLEN );
+  }
+
+  /* if the window has been specified, apply it to data */
+  if ( window )
+  {
+    UINT4 j;
+
+    /* make a working copy */
+    work = XLALCutREAL8Sequence( tseries->data, 0, tseries->data->length );
+    if ( ! work )
+      XLAL_ERROR( func, XLAL_EFUNC );
+
+    /* apply windowing to data */
+    for ( j = 0; j < tseries->data->length; ++j )
+      work->data[j] *= window->data->data[j];
+  }
+  else
+    /* point to original data */
+    work = tseries->data;
+
+  /* compute the power spectrum of the (windowed) timeseries */
+  /* CHECKME: are DC and Nyquist right? */
+  result = XLALREAL8PowerSpectrum( periodogram->data, work, plan );
+  /* destroy the workspace if it was created */
+  if ( window )
+    XLALDestroyREAL8Sequence( work );
+  /* check for errors from the PowerSpectrum call */
+  if ( result == XLAL_FAILURE )
+    XLAL_ERROR( func, XLAL_EFUNC );
+
+  /* normalize power spectrum to give correct units */
+  /* CHECKME: is this the right factor? */
+  if ( window )
+    normfac = tseries->deltaT / window->sumofsquares;
+  else
+    normfac = tseries->deltaT / tseries->data->length;
+  for ( k = 0; k < periodogram->data->length; ++k )
+    periodogram->data->data[k] *= normfac;
+
+  /* now set rest of metadata */
+  periodogram->epoch  = tseries->epoch;
+  periodogram->f0     = tseries->f0; /* FIXME: is this right? */
+  periodogram->deltaF = 1.0 / ( tseries->data->length * tseries->deltaT );
+
+  /* compute units */
+  if ( ! XLALUnitSquare( &periodogram->sampleUnits, &tseries->sampleUnits ) )
+    XLAL_ERROR( func, XLAL_EFUNC );
+  if ( ! XLALUnitMultiply( &periodogram->sampleUnits,
+                           &periodogram->sampleUnits, &lalSecondUnit ) )
+    XLAL_ERROR( func, XLAL_EFUNC );
+
+  return 0;
+}
+
+
+/**
  *
  * Use Welch's method to compute the average power spectrum of a time series.
  *
@@ -221,14 +312,109 @@ int XLALREAL4AverageSpectrumWelch(
   return 0;
 }
 
+/**
+ *
+ * Use Welch's method to compute the average power spectrum of a time series.
+ *
+ * See: Peter D. Welch "The Use of Fast Fourier Transform for the Estimation
+ * of Power Spectra: A Method Based on Time Averaging Over Short, Modified
+ * Periodograms"  IEEE Transactions on Audio and Electroacoustics,
+ * Vol. AU-15, No. 2, June 1967.
+ *
+ */
+int XLALREAL8AverageSpectrumWelch(
+    REAL8FrequencySeries        *spectrum,
+    const REAL8TimeSeries       *tseries,
+    UINT4                        seglen,
+    UINT4                        stride,
+    const REAL8Window           *window,
+    const REAL8FFTPlan          *plan
+    )
+{
+  static const char *func = "XLALREAL8AverageSpectrumWelch";
+  REAL8FrequencySeries *work; /* workspace */
+  REAL8Sequence sequence; /* working copy of input time series data */
+  REAL8TimeSeries tseriescopy; /* working copy of input time series */
+  UINT4 numseg;
+  UINT4 seg;
+  UINT4 k;
+
+  if ( ! spectrum || ! tseries || ! plan )
+      XLAL_ERROR( func, XLAL_EFAULT );
+  if ( ! spectrum->data || ! tseries->data )
+      XLAL_ERROR( func, XLAL_EINVAL );
+  if ( tseries->deltaT <= 0.0 )
+      XLAL_ERROR( func, XLAL_EINVAL );
+
+  /* construct local copy of time series */
+  sequence = *tseries->data;
+  tseriescopy = *tseries;
+  tseriescopy.data = &sequence;
+  tseriescopy.data->length = seglen;
+
+  numseg = 1 + (tseries->data->length - seglen)/stride;
+
+  /* consistency check for lengths: make sure that the segments cover the
+   * data record completely */
+  if ( (numseg - 1)*stride + seglen != tseries->data->length )
+    XLAL_ERROR( func, XLAL_EBADLEN );
+  if ( spectrum->data->length != seglen/2 + 1 )
+    XLAL_ERROR( func, XLAL_EBADLEN );
+
+  /* make sure window, if present, is appropriate */
+  if ( window )
+  {
+    if ( ! window->data )
+      XLAL_ERROR( func, XLAL_EINVAL );
+    if ( window->sumofsquares <= 0.0 )
+      XLAL_ERROR( func, XLAL_EINVAL );
+    if ( window->data->length != seglen )
+      XLAL_ERROR( func, XLAL_EBADLEN );
+  }
+
+  /* clear spectrum data */
+  memset( spectrum->data->data, 0,
+      spectrum->data->length * sizeof( *spectrum->data->data ) );
+
+  /* create frequency series data workspace */
+  work = XLALCutREAL8FrequencySeries( spectrum, 0, spectrum->data->length );
+  if( ! work )
+    XLAL_ERROR( func, XLAL_EFUNC );
+
+  for ( seg = 0; seg < numseg; seg++, tseriescopy.data->data += stride )
+  {
+    /* compute the modified periodogram; clean up and exit on failure */
+    if ( XLALREAL8ModifiedPeriodogram( work, &tseriescopy, window, plan ) == XLAL_FAILURE )
+    {
+      XLALDestroyREAL8FrequencySeries( work );
+      XLAL_ERROR( func, XLAL_EFUNC );
+    }
+
+    /* add the periodogram to the running sum */
+    for ( k = 0; k < spectrum->data->length; ++k )
+      spectrum->data->data[k] += work->data->data[k];
+  }
+
+  /* set metadata */
+  spectrum->epoch       = work->epoch;
+  spectrum->f0          = work->f0;
+  spectrum->deltaF      = work->deltaF;
+  spectrum->sampleUnits = work->sampleUnits;
+
+  /* divide spectrum data by the number of segments in average */
+  for ( k = 0; k < spectrum->data->length; ++k )
+    spectrum->data->data[k] /= numseg;
+
+  /* clean up */
+  XLALDestroyREAL8FrequencySeries( work );
+
+  return 0;
+}
+
 
 /* 
  *
- * Median Method: use median average rather than mean.  Note: this will
- * cause a bias if the segments overlap, i.e., if the stride is less than
- * the segment length -- even though the median bias for Gaussian noise
- * is accounted for -- because the segments are not independent and their
- * correlation is non-zero.
+ * Median Method: use median average rather than mean.
  *
  */
 
@@ -253,7 +439,7 @@ REAL8 XLALMedianBias( UINT4 nn )
 }
 
 /* cleanup temporary workspace... ignore xlal errors */
-static void median_cleanup( REAL4FrequencySeries *work, UINT4 n )
+static void median_cleanup_REAL4( REAL4FrequencySeries *work, UINT4 n )
 {
   int saveErrno = xlalErrno;
   UINT4 i;
@@ -264,20 +450,42 @@ static void median_cleanup( REAL4FrequencySeries *work, UINT4 n )
   xlalErrno = saveErrno;
   return;
 }
+static void median_cleanup_REAL8( REAL8FrequencySeries *work, UINT4 n )
+{
+  int saveErrno = xlalErrno;
+  UINT4 i;
+  for ( i = 0; i < n; ++i )
+    if ( work[i].data )
+      XLALDestroyREAL8Vector( work[i].data );
+  LALFree( work );
+  xlalErrno = saveErrno;
+  return;
+}
 
 /* comparison for floating point numbers */
-static int compare_float( const void *p1, const void *p2 )
+static int compare_REAL4( const void *p1, const void *p2 )
 {
-  REAL4 delta = *(const REAL4 *) p1 - *(const REAL4 *) p2;
-  if(delta < 0.0)
-    return -1;
-  if(delta > 0.0)
-    return +1;
-  return 0;
+  REAL4 x1 = *(const REAL4 *)p1;
+  REAL4 x2 = *(const REAL4 *)p2;
+  return (x1 > x2) - (x1 < x2);
+}
+static int compare_REAL8( const void *p1, const void *p2 )
+{
+  REAL8 x1 = *(const REAL8 *)p1;
+  REAL8 x2 = *(const REAL8 *)p2;
+  return (x1 > x2) - (x1 < x2);
 }
 
 
-/* here is the median method */
+/**
+ *
+ * Median Method: use median average rather than mean.  Note: this will
+ * cause a bias if the segments overlap, i.e., if the stride is less than
+ * the segment length -- even though the median bias for Gaussian noise
+ * is accounted for -- because the segments are not independent and their
+ * correlation is non-zero.
+ *
+ */
 int XLALREAL4AverageSpectrumMedian(
     REAL4FrequencySeries        *spectrum,
     const REAL4TimeSeries       *tseries,
@@ -334,7 +542,7 @@ int XLALREAL4AverageSpectrumMedian(
     work[seg].data = XLALCreateREAL4Vector( spectrum->data->length );
     if ( ! work[seg].data )
     {
-      median_cleanup( work, numseg ); /* cleanup */
+      median_cleanup_REAL4( work, numseg ); /* cleanup */
       XLAL_ERROR( func, XLAL_EFUNC );
     }
   }
@@ -360,7 +568,7 @@ int XLALREAL4AverageSpectrumMedian(
     /* now check for failure of the XLAL routine */
     if ( code == XLAL_FAILURE )
     {
-      median_cleanup( work, numseg ); /* cleanup */
+      median_cleanup_REAL4( work, numseg ); /* cleanup */
       XLAL_ERROR( func, XLAL_EFUNC );
     }
   }
@@ -369,7 +577,7 @@ int XLALREAL4AverageSpectrumMedian(
   bin = LALMalloc( numseg * sizeof( *bin ) );
   if ( ! bin )
   {
-    median_cleanup( work, numseg ); /* cleanup */
+    median_cleanup_REAL4( work, numseg ); /* cleanup */
     XLAL_ERROR( func, XLAL_ENOMEM );
   }
 
@@ -387,7 +595,7 @@ int XLALREAL4AverageSpectrumMedian(
       bin[seg] = work[seg].data->data[k];
 
     /* sort them and find median */
-    qsort( bin, numseg, sizeof( *bin ), compare_float );
+    qsort( bin, numseg, sizeof( *bin ), compare_REAL4 );
     if ( numseg % 2 ) /* odd number of evens */
       spectrum->data->data[k] = bin[numseg/2];
     else /* even number... take average */
@@ -405,7 +613,148 @@ int XLALREAL4AverageSpectrumMedian(
 
   /* free the workspace data */
   LALFree( bin );
-  median_cleanup( work, numseg );
+  median_cleanup_REAL4( work, numseg );
+
+  return 0;
+}
+
+/**
+ *
+ * Median Method: use median average rather than mean.  Note: this will
+ * cause a bias if the segments overlap, i.e., if the stride is less than
+ * the segment length -- even though the median bias for Gaussian noise
+ * is accounted for -- because the segments are not independent and their
+ * correlation is non-zero.
+ *
+ */
+int XLALREAL8AverageSpectrumMedian(
+    REAL8FrequencySeries        *spectrum,
+    const REAL8TimeSeries       *tseries,
+    UINT4                        seglen,
+    UINT4                        stride,
+    const REAL8Window           *window,
+    const REAL8FFTPlan          *plan
+    )
+{
+  static const char *func = "XLALREAL8AverageSpectrumMedian";
+  REAL8FrequencySeries *work; /* array of frequency series */
+  REAL8 *bin; /* array of bin values */
+  REAL8 biasfac; /* median bias factor */
+  REAL8 normfac; /* normalization factor */
+  UINT4 reclen; /* length of entire data record */
+  UINT4 numseg;
+  UINT4 seg;
+  UINT4 k;
+
+  if ( ! spectrum || ! tseries || ! plan )
+      XLAL_ERROR( func, XLAL_EFAULT );
+  if ( ! spectrum->data || ! tseries->data )
+      XLAL_ERROR( func, XLAL_EINVAL );
+  if ( tseries->deltaT <= 0.0 )
+      XLAL_ERROR( func, XLAL_EINVAL );
+
+  reclen = tseries->data->length;
+  numseg = 1 + (reclen - seglen)/stride;
+
+  /* consistency check for lengths: make sure that the segments cover the
+   * data record completely */
+  if ( (numseg - 1)*stride + seglen != reclen )
+    XLAL_ERROR( func, XLAL_EBADLEN );
+  if ( spectrum->data->length != seglen/2 + 1 )
+    XLAL_ERROR( func, XLAL_EBADLEN );
+
+  /* make sure window, if present, is appropriate */
+  if ( window )
+  {
+    if ( ! window->data )
+      XLAL_ERROR( func, XLAL_EINVAL );
+    if ( window->sumofsquares <= 0.0 )
+      XLAL_ERROR( func, XLAL_EINVAL );
+    if ( window->data->length != seglen )
+      XLAL_ERROR( func, XLAL_EBADLEN );
+  }
+
+  /* create frequency series data workspaces */
+  work = LALCalloc( numseg, sizeof( *work ) );
+  if ( ! work )
+    XLAL_ERROR( func, XLAL_ENOMEM );
+  for ( seg = 0; seg < numseg; ++seg )
+  {
+    work[seg].data = XLALCreateREAL8Vector( spectrum->data->length );
+    if ( ! work[seg].data )
+    {
+      median_cleanup_REAL8( work, numseg ); /* cleanup */
+      XLAL_ERROR( func, XLAL_EFUNC );
+    }
+  }
+
+  for ( seg = 0; seg < numseg; ++seg )
+  {
+    REAL8Vector savevec; /* save the time series data vector */
+    int code;
+
+    /* save the time series data vector */
+    savevec = *tseries->data;
+
+    /* set the data vector to be appropriate for the even segment */
+    tseries->data->length  = seglen;
+    tseries->data->data   += seg * stride;
+
+    /* compute the modified periodogram for the even segment */
+    code = XLALREAL8ModifiedPeriodogram( work + seg, tseries, window, plan );
+    
+    /* restore the time series data vector to its original state */
+    *tseries->data = savevec;
+
+    /* now check for failure of the XLAL routine */
+    if ( code == XLAL_FAILURE )
+    {
+      median_cleanup_REAL8( work, numseg ); /* cleanup */
+      XLAL_ERROR( func, XLAL_EFUNC );
+    }
+  }
+
+  /* create array to hold a particular frequency bin data */
+  bin = LALMalloc( numseg * sizeof( *bin ) );
+  if ( ! bin )
+  {
+    median_cleanup_REAL8( work, numseg ); /* cleanup */
+    XLAL_ERROR( func, XLAL_ENOMEM );
+  }
+
+  /* compute median bias factor */
+  biasfac = XLALMedianBias( numseg );
+
+  /* normaliztion takes into account bias */
+  normfac = 1.0 / biasfac;
+
+  /* now loop over frequency bins and compute the median-mean */
+  for ( k = 0; k < spectrum->data->length; ++k )
+  {
+    /* assign array of even segment values to bin array for this freq bin */
+    for ( seg = 0; seg < numseg; ++seg )
+      bin[seg] = work[seg].data->data[k];
+
+    /* sort them and find median */
+    qsort( bin, numseg, sizeof( *bin ), compare_REAL8 );
+    if ( numseg % 2 ) /* odd number of evens */
+      spectrum->data->data[k] = bin[numseg/2];
+    else /* even number... take average */
+      spectrum->data->data[k] = 0.5*(bin[numseg/2-1] + bin[numseg/2]);
+
+    /* remove median bias */
+    spectrum->data->data[k] *= normfac;
+  }
+
+  /* set metadata */
+  spectrum->epoch       = work->epoch;
+  spectrum->f0          = work->f0;
+  spectrum->deltaF      = work->deltaF;
+  spectrum->sampleUnits = work->sampleUnits;
+
+  /* free the workspace data */
+  LALFree( bin );
+  median_cleanup_REAL8( work, numseg );
 
   return 0;
 }
@@ -413,17 +762,13 @@ int XLALREAL4AverageSpectrumMedian(
 
 /* 
  *
- * Median-Mean Method: divide overlapping segments into "even" and "odd"
- * segments; compute the bin-by-bin median of the "even" segments and the
- * "odd" segments, and then take the bin-by-bin average of these two median
- * averages.
+ * Median-Mean Method
  *
  */
 
 
 /* cleanup temporary workspace... ignore xlal errors */
-static void median_mean_cleanup( REAL4FrequencySeries *even,
-    REAL4FrequencySeries *odd, UINT4 n )
+static void median_mean_cleanup_REAL4( REAL4FrequencySeries *even, REAL4FrequencySeries *odd, UINT4 n )
 {
   int saveErrno = xlalErrno;
   UINT4 i;
@@ -439,8 +784,31 @@ static void median_mean_cleanup( REAL4FrequencySeries *even,
   xlalErrno = saveErrno;
   return;
 }
+static void median_mean_cleanup_REAL8( REAL8FrequencySeries *even, REAL8FrequencySeries *odd, UINT4 n )
+{
+  int saveErrno = xlalErrno;
+  UINT4 i;
+  for ( i = 0; i < n; ++i )
+  {
+    if ( even[i].data )
+      XLALDestroyREAL8Vector( even[i].data );
+    if ( odd[i].data )
+      XLALDestroyREAL8Vector( odd[i].data );
+  }
+  LALFree( even );
+  LALFree( odd );
+  xlalErrno = saveErrno;
+  return;
+}
 
-/* here is the median-mean-method */
+/**
+ *
+ * Median-Mean Method: divide overlapping segments into "even" and "odd"
+ * segments; compute the bin-by-bin median of the "even" segments and the
+ * "odd" segments, and then take the bin-by-bin average of these two median
+ * averages.
+ *
+ */
 int XLALREAL4AverageSpectrumMedianMean(
     REAL4FrequencySeries        *spectrum,
     const REAL4TimeSeries       *tseries,
@@ -509,7 +877,7 @@ int XLALREAL4AverageSpectrumMedianMean(
     odd[seg].data  = XLALCreateREAL4Vector( spectrum->data->length );
     if ( ! even[seg].data || ! odd[seg].data )
     {
-      median_mean_cleanup( even, odd, halfnumseg ); /* cleanup */
+      median_mean_cleanup_REAL4( even, odd, halfnumseg ); /* cleanup */
       XLAL_ERROR( func, XLAL_EFUNC );
     }
   }
@@ -533,7 +901,7 @@ int XLALREAL4AverageSpectrumMedianMean(
     if ( code == XLAL_FAILURE )
     {
       *tseries->data = savevec;
-      median_mean_cleanup( even, odd, halfnumseg ); /* cleanup */
+      median_mean_cleanup_REAL4( even, odd, halfnumseg ); /* cleanup */
       XLAL_ERROR( func, XLAL_EFUNC );
     }
 
@@ -547,7 +915,7 @@ int XLALREAL4AverageSpectrumMedianMean(
     if ( code == XLAL_FAILURE )
     {
       *tseries->data = savevec;
-      median_mean_cleanup( even, odd, halfnumseg ); /* cleanup */
+      median_mean_cleanup_REAL4( even, odd, halfnumseg ); /* cleanup */
       XLAL_ERROR( func, XLAL_EFUNC );
     }
 
@@ -559,7 +927,7 @@ int XLALREAL4AverageSpectrumMedianMean(
   bin = LALMalloc( halfnumseg * sizeof( *bin ) );
   if ( ! bin )
   {
-    median_mean_cleanup( even, odd, halfnumseg ); /* cleanup */
+    median_mean_cleanup_REAL4( even, odd, halfnumseg ); /* cleanup */
     XLAL_ERROR( func, XLAL_ENOMEM );
   }
 
@@ -581,7 +949,7 @@ int XLALREAL4AverageSpectrumMedianMean(
       bin[seg] = even[seg].data->data[k];
 
     /* sort them and find median */
-    qsort( bin, halfnumseg, sizeof( *bin ), compare_float );
+    qsort( bin, halfnumseg, sizeof( *bin ), compare_REAL4 );
     if ( halfnumseg % 2 ) /* odd number of evens */
       evenmedian = bin[halfnumseg/2];
     else /* even number... take average */
@@ -592,7 +960,7 @@ int XLALREAL4AverageSpectrumMedianMean(
       bin[seg] = odd[seg].data->data[k];
 
     /* sort them and find median */
-    qsort( bin, halfnumseg, sizeof( *bin ), compare_float );
+    qsort( bin, halfnumseg, sizeof( *bin ), compare_REAL4 );
     if ( halfnumseg % 2 ) /* odd number of odds */
       oddmedian = bin[halfnumseg/2];
     else /* even number... take average */
@@ -610,10 +978,193 @@ int XLALREAL4AverageSpectrumMedianMean(
 
   /* free the workspace data */
   LALFree( bin );
-  median_mean_cleanup( even, odd, halfnumseg );
+  median_mean_cleanup_REAL4( even, odd, halfnumseg );
 
   return 0;
 }
+
+/**
+ *
+ * Median-Mean Method: divide overlapping segments into "even" and "odd"
+ * segments; compute the bin-by-bin median of the "even" segments and the
+ * "odd" segments, and then take the bin-by-bin average of these two median
+ * averages.
+ *
+ */
+int XLALREAL8AverageSpectrumMedianMean(
+    REAL8FrequencySeries        *spectrum,
+    const REAL8TimeSeries       *tseries,
+    UINT4                        seglen,
+    UINT4                        stride,
+    const REAL8Window           *window,
+    const REAL8FFTPlan          *plan
+    )
+{
+  static const char *func = "XLALREAL8AverageSpectrumMedianMean";
+  REAL8FrequencySeries *even; /* array of even frequency series */
+  REAL8FrequencySeries *odd;  /* array of odd frequency series */
+  REAL8 *bin; /* array of bin values */
+  REAL8 biasfac; /* median bias factor */
+  REAL8 normfac; /* normalization factor */
+  UINT4 reclen; /* length of entire data record */
+  UINT4 numseg;
+  UINT4 halfnumseg;
+  UINT4 seg;
+  UINT4 k;
+
+  if ( ! spectrum || ! tseries || ! plan )
+      XLAL_ERROR( func, XLAL_EFAULT );
+  if ( ! spectrum->data || ! tseries->data )
+      XLAL_ERROR( func, XLAL_EINVAL );
+  if ( tseries->deltaT <= 0.0 )
+      XLAL_ERROR( func, XLAL_EINVAL );
+
+  reclen = tseries->data->length;
+  numseg = 1 + (reclen - seglen)/stride;
+
+  /* consistency check for lengths: make sure that the segments cover the
+   * data record completely */
+  if ( (numseg - 1)*stride + seglen != reclen )
+    XLAL_ERROR( func, XLAL_EBADLEN );
+  if ( spectrum->data->length != seglen/2 + 1 )
+    XLAL_ERROR( func, XLAL_EBADLEN );
+
+  /* for median-mean to work, the number of segments must be even and
+   * the stride must be greater-than or equal-to half of the seglen */
+  halfnumseg = numseg/2;
+  if ( numseg%2 || stride < seglen/2 )
+    XLAL_ERROR( func, XLAL_EBADLEN );
+
+  /* make sure window, if present, is appropriate */
+  if ( window )
+  {
+    if ( ! window->data )
+      XLAL_ERROR( func, XLAL_EINVAL );
+    if ( window->sumofsquares <= 0.0 )
+      XLAL_ERROR( func, XLAL_EINVAL );
+    if ( window->data->length != seglen )
+      XLAL_ERROR( func, XLAL_EBADLEN );
+  }
+
+  /* create frequency series data workspaces */
+  even = LALCalloc( halfnumseg, sizeof( *even ) );
+  if ( ! even )
+    XLAL_ERROR( func, XLAL_ENOMEM );
+  odd = LALCalloc( halfnumseg, sizeof( *odd ) );
+  if ( ! odd )
+    XLAL_ERROR( func, XLAL_ENOMEM );
+  for ( seg = 0; seg < halfnumseg; ++seg )
+  {
+    even[seg].data = XLALCreateREAL8Vector( spectrum->data->length );
+    odd[seg].data  = XLALCreateREAL8Vector( spectrum->data->length );
+    if ( ! even[seg].data || ! odd[seg].data )
+    {
+      median_mean_cleanup_REAL8( even, odd, halfnumseg ); /* cleanup */
+      XLAL_ERROR( func, XLAL_EFUNC );
+    }
+  }
+
+  for ( seg = 0; seg < halfnumseg; ++seg )
+  {
+    REAL8Vector savevec; /* save the time series data vector */
+    int code;
+
+    /* save the time series data vector */
+    savevec = *tseries->data;
+
+    /* set the data vector to be appropriate for the even segment */
+    tseries->data->length  = seglen;
+    tseries->data->data   += 2 * seg * stride;
+
+    /* compute the modified periodogram for the even segment */
+    code = XLALREAL8ModifiedPeriodogram( even + seg, tseries, window, plan );
+    
+    /* now check for failure of the XLAL routine */
+    if ( code == XLAL_FAILURE )
+    {
+      *tseries->data = savevec;
+      median_mean_cleanup_REAL8( even, odd, halfnumseg ); /* cleanup */
+      XLAL_ERROR( func, XLAL_EFUNC );
+    }
+
+    /* set the data vector to be appropriate for the odd segment */
+    tseries->data->data += stride;
+
+    /* compute the modified periodogram for the odd segment */
+    code = XLALREAL8ModifiedPeriodogram( odd + seg, tseries, window, plan );
+
+    /* now check for failure of the XLAL routine */
+    if ( code == XLAL_FAILURE )
+    {
+      *tseries->data = savevec;
+      median_mean_cleanup_REAL8( even, odd, halfnumseg ); /* cleanup */
+      XLAL_ERROR( func, XLAL_EFUNC );
+    }
+
+    /* restore the time series data vector to its original state */
+    *tseries->data = savevec;
+  }
+
+  /* create array to hold a particular frequency bin data */
+  bin = LALMalloc( halfnumseg * sizeof( *bin ) );
+  if ( ! bin )
+  {
+    median_mean_cleanup_REAL8( even, odd, halfnumseg ); /* cleanup */
+    XLAL_ERROR( func, XLAL_ENOMEM );
+  }
+
+  /* compute median bias factor */
+  biasfac = XLALMedianBias( halfnumseg );
+
+  /* normaliztion takes into account bias and a factor of two from averaging
+   * the even and the odd */
+  normfac = 1.0 / ( 2.0 * biasfac );
+
+  /* now loop over frequency bins and compute the median-mean */
+  for ( k = 0; k < spectrum->data->length; ++k )
+  {
+    REAL8 evenmedian;
+    REAL8 oddmedian;
+
+    /* assign array of even segment values to bin array for this freq bin */
+    for ( seg = 0; seg < halfnumseg; ++seg )
+      bin[seg] = even[seg].data->data[k];
+
+    /* sort them and find median */
+    qsort( bin, halfnumseg, sizeof( *bin ), compare_REAL8 );
+    if ( halfnumseg % 2 ) /* odd number of evens */
+      evenmedian = bin[halfnumseg/2];
+    else /* even number... take average */
+      evenmedian = 0.5*(bin[halfnumseg/2-1] + bin[halfnumseg/2]);
+
+    /* assign array of odd segment values to bin array for this freq bin */
+    for ( seg = 0; seg < halfnumseg; ++seg )
+      bin[seg] = odd[seg].data->data[k];
+
+    /* sort them and find median */
+    qsort( bin, halfnumseg, sizeof( *bin ), compare_REAL8 );
+    if ( halfnumseg % 2 ) /* odd number of odds */
+      oddmedian = bin[halfnumseg/2];
+    else /* even number... take average */
+      oddmedian = 0.5*(bin[halfnumseg/2-1] + bin[halfnumseg/2]);
+
+    /* spectrum for this bin is the mean of the medians */
+    spectrum->data->data[k] = normfac * (evenmedian + oddmedian);
+  }
+
+  /* set metadata */
+  spectrum->epoch       = even->epoch;
+  spectrum->f0          = even->f0;
+  spectrum->deltaF      = even->deltaF;
+  spectrum->sampleUnits = even->sampleUnits;
+
+  /* free the workspace data */
+  LALFree( bin );
+  median_mean_cleanup_REAL8( even, odd, halfnumseg );
+
+  return 0;
+}
+
 
 int XLALREAL4SpectrumInvertTruncate(
     REAL4FrequencySeries        *spectrum,
@@ -713,8 +1264,106 @@ int XLALREAL4SpectrumInvertTruncate(
   return 0;
 }
 
+int XLALREAL8SpectrumInvertTruncate(
+    REAL8FrequencySeries        *spectrum,
+    REAL8                        lowfreq,
+    UINT4                        seglen,
+    UINT4                        trunclen,
+    REAL8FFTPlan                *fwdplan,
+    REAL8FFTPlan                *revplan
+    )
+{
+  static const char *func = "XLALREAL8SpectrumInvertTruncate";
+  UINT4 cut;
+  UINT4 k;
 
-/*
+  if ( ! spectrum )
+    XLAL_ERROR( func, XLAL_EFAULT );
+  if ( ! spectrum->data )
+    XLAL_ERROR( func, XLAL_EINVAL );
+  if ( spectrum->deltaF <= 0.0 )
+    XLAL_ERROR( func, XLAL_EINVAL );
+  if ( lowfreq < 0 )
+    XLAL_ERROR( func, XLAL_EINVAL );
+  if ( ! seglen || spectrum->data->length != seglen/2 + 1 )
+    XLAL_ERROR( func, XLAL_EBADLEN );
+  if ( trunclen && ! revplan )
+    XLAL_ERROR( func, XLAL_EFAULT );
+
+  cut = lowfreq / spectrum->deltaF;
+  if ( cut < 1 ) /* need to get rid of DC at least */
+    cut = 1;
+
+  if ( trunclen ) /* truncate while inverting */
+  {
+    COMPLEX16Vector *vtilde; /* frequency-domain vector workspace */
+    REAL8Vector    *vector; /* time-domain vector workspace */
+    REAL8           normfac;
+
+    vector = XLALCreateREAL8Vector( seglen );
+    vtilde = XLALCreateCOMPLEX16Vector( seglen / 2 + 1 );
+
+    /* clear the low frequency components */
+    memset( vtilde->data, 0, cut * sizeof( *vtilde->data ) );
+
+    /* stick the root-inv-spectrum into the complex frequency-domain vector */
+    for ( k = cut; k < vtilde->length - 1; ++k )
+    {
+      vtilde->data[k].re = 1.0 / sqrt( spectrum->data->data[k] );
+      vtilde->data[k].im = 0.0; /* purely real */
+    }
+
+    /* no Nyquist */
+    vtilde->data[vtilde->length - 1].re = 0.0;
+    vtilde->data[vtilde->length - 1].im = 0.0;
+
+    /* construct time-domain version of root-inv-spectrum */
+    XLALREAL8ReverseFFT( vector, vtilde, revplan );
+
+    /* now truncate it: zero time from trunclen/2 to length - trunclen/2 */
+    memset( vector->data + trunclen/2, 0,
+        (vector->length - trunclen) * sizeof( *vector->data ) );
+
+    /* reconstruct spectrum */
+    XLALREAL8PowerSpectrum( spectrum->data, vector, fwdplan );
+
+    /* clear the low frequency components... again, and Nyquist too */
+    memset( spectrum->data->data, 0, cut * sizeof( *spectrum->data->data ) );
+    spectrum->data->data[spectrum->data->length - 1] = 0.0;
+
+    /* rescale spectrum: 0.5 to undo factor of two from REAL8PowerSpectrum */
+    /* seglen^2 for the reverse fft (squared because power spectrum) */
+    /* Note: cast seglen to real so that seglen*seglen is a real rather */
+    /* than a four-byte integer which might overflow... */
+    normfac = 0.5 / ( ((REAL8)seglen) * ((REAL8)seglen) );
+    for ( k = cut; k < spectrum->data->length - 1; ++k )
+      spectrum->data->data[k] *= normfac;
+
+    /* cleanup workspace */
+    XLALDestroyCOMPLEX16Vector( vtilde );
+    XLALDestroyREAL8Vector( vector );
+  }
+  else /* otherwise just invert the spectrum */
+  {
+    /* clear the low frequency components */
+    memset( spectrum->data->data, 0, cut * sizeof( *spectrum->data->data ) );
+
+    /* invert the high frequency (non-Nyquist) components */
+    for ( k = cut; k < spectrum->data->length - 1; ++k )
+      spectrum->data->data[k] = 1.0 / spectrum->data->data[k];
+
+    /* zero Nyquist */
+    spectrum->data->data[spectrum->data->length - 1] = 0.0;
+  }
+
+  /* now correct the units */
+  XLALUnitRaiseINT2( &spectrum->sampleUnits, &spectrum->sampleUnits, -1 );
+
+  return 0;
+}
+
+
+/**
  *
  * Normalize a COMPLEX8 frequency series to a REAL4 average PSD.  If the
  * frequency series is the Fourier transform of (coloured) Gaussian random
@@ -743,8 +1392,6 @@ int XLALREAL4SpectrumInvertTruncate(
  * an error occurs, the contents of the input frequency series are
  * undefined.
  */
-
-
 COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries *fseries, const REAL4FrequencySeries *psd, REAL8 fmin, REAL8 fmax)
 {
   static const char func[] = "XLALWhitenCOMPLEX8FrequencySeries";
@@ -794,11 +1441,9 @@ COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeri
 }
 
 
-/*
+/**
  * Double-precision version of XLALWhitenCOMPLEX8FrequencySeries().
  */
-
-
 COMPLEX16FrequencySeries *XLALWhitenCOMPLEX16FrequencySeries(COMPLEX16FrequencySeries *fseries, const REAL8FrequencySeries *psd, REAL8 fmin, REAL8 fmax)
 {
   static const char func[] = "XLALWhitenCOMPLEX16FrequencySeries";
