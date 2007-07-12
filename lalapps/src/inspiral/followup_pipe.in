@@ -62,7 +62,7 @@ class trigBankFollowUpJob(pipeline.CondorDAGJob):
   def __init__(self, options, cp, tag_base='TRIGBANK_FOLLOWUP'):
     """
     """
-    self.__executable = string.strip(cp.get('trig-bank','executable'))
+    self.__executable = string.strip(cp.get('condor','trigtotmplt'))
     self.__universe = "standard"
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
@@ -120,7 +120,7 @@ class inspiralFollowUpJob(pipeline.CondorDAGJob):
   def __init__(self, options, cp, tag_base='INSPIRAL_FOLLOWUP'):
     """
     """
-    self.__executable = string.strip(cp.get('inspiral','executable'))
+    self.__executable = string.strip(cp.get('condor','inspiral'))
     self.__universe = "standard"
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     self.tag_base = tag_base
@@ -187,7 +187,7 @@ class plotSNRCHISQJob(pipeline.CondorDAGJob):
   def __init__(self, options, cp, tag_base='PLOT_FOLLOWUP'):
     """
     """
-    self.__executable = string.strip(cp.get('plots','executable'))
+    self.__executable = string.strip(cp.get('condor','plotsnrchisq'))
     self.__universe = "vanilla"
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
@@ -238,7 +238,7 @@ class qscanJob(pipeline.CondorDAGJob):
   def __init__(self, opts, cp, tag_base='QSCAN'):
     """
     """
-    self.__executable = string.strip(cp.get('qscan','executable'))
+    self.__executable = string.strip(cp.get('condor','qscan'))
     self.__universe = "vanilla"
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     self.tag_base = tag_base
@@ -299,7 +299,7 @@ class segJob(pipeline.CondorDAGJob):
   def __init__(self, opts, cp, tag_base='SEG'):
     """
     """
-    self.__executable = string.strip(cp.get('seg','executable'))
+    self.__executable = string.strip(cp.get('condor','dataqual'))
     self.__universe = "local"
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     self.tag_base = tag_base
@@ -477,9 +477,7 @@ numtrigs = string.strip(cp.get('triggers','num-trigs'))
 statistic =  string.strip(cp.get('triggers','statistic'))
 bla =  string.strip(cp.get('triggers','bitten-l-a'))
 blb =  string.strip(cp.get('triggers','bitten-l-b'))
-
-
-print string.strip(cp.get('hipe-cache','TMPLTBANK')) 
+ 
 ############# READ IN THE COIRE FILES #########################################
 
 found, coincs, search = readFiles(xml_glob,getstatistic(statistic,bla,blb))
@@ -504,7 +502,7 @@ if opts.datafind:
   # 1s is substracted to the expected startTime to make sure the window will be large enough. This is to be sure to handle the rouding to the next sample.
   startTime = int( times[0] - eval(string.strip(cp.get('datafind','qscan-searchTimeRange')))/2 ) - 1
   endTime =  int( times[-1] + eval(string.strip(cp.get('datafind','qscan-searchTimeRange')))/2 ) + 2
-  command = string.strip(cp.get('datafind','executable')) + \
+  command = string.strip(cp.get('condor','datafind')) + \
           " --observatory=L" + " --type=" + \
           string.strip(cp.get('datafind','qscan-level')) + \
           " --gps-start-time=" + str(startTime) + " --gps-end-time=" + \
@@ -523,7 +521,7 @@ if opts.datafind:
     total[0] += " "
     Lqout.write("/".join(total)+'\n')
 
-  command = string.strip(cp.get('datafind','executable')) + \
+  command = string.strip(cp.get('condor','datafind')) + \
           " --observatory=H" + " --type=" + \
           string.strip(cp.get('datafind','qscan-level')) + \
           " --gps-start-time=" + str(startTime) + " --gps-end-time=" + \
