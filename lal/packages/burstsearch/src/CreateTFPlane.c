@@ -646,11 +646,10 @@ static REAL8 psd_weighted_filter_inner_product(
  * Generate the frequency domain channel filter function.  The filter is
  * nominally a Hann window twice the channel's width, centred on the
  * channel's centre frequency.  The filter is normalized so that its
- * "magnitude" as defined by the inner product function above is N.  If the
- * psd parameter is not NULL, then the filter is divided by the square root
- * of this frequency series prior to normalilization.  This has the effect
- * of de-emphasizing frequency bins with high noise content, and is called
- * "over whitening".
+ * "magnitude" as defined by the inner product function above is N.  Then
+ * the filter is divided by the square root of the PSD frequency series
+ * prior to normalilization.  This has the effect of de-emphasizing
+ * frequency bins with high noise content, and is called "over whitening".
  */
 
 
@@ -666,8 +665,12 @@ static COMPLEX8FrequencySeries *generate_filter(
 	char filter_name[100];
 	REAL4Window *hann;
 	COMPLEX8FrequencySeries *filter;
+	REAL4 *pdata;
 	unsigned i;
 	REAL4 norm;
+
+	if(psd->deltaF != template->deltaF)
+		XLAL_ERROR_NULL(func, XLAL_EINVAL);
 
 	sprintf(filter_name, "channel %g +/- %g Hz", channel_flow + channel_width / 2, channel_width / 2);
 
@@ -704,15 +707,13 @@ static COMPLEX8FrequencySeries *generate_filter(
 	XLALDestroyREAL4Window(hann);
 
 	/*
-	 * divide by square root of PSD if needed
+	 * divide by square root of PSD to "overwhiten".
 	 */
 
-	if(psd) {
-		REAL4 *pdata = psd->data->data + (int) ((filter->f0 - psd->f0) / psd->deltaF);
-		for(i = 0; i < filter->data->length; i++) {
-			filter->data->data[i].re /= sqrt(pdata[i]);
-			filter->data->data[i].im /= sqrt(pdata[i]);
-		}
+	pdata = psd->data->data + (int) ((filter->f0 - psd->f0) / psd->deltaF);
+	for(i = 0; i < filter->data->length; i++) {
+		filter->data->data[i].re /= sqrt(pdata[i]);
+		filter->data->data[i].im /= sqrt(pdata[i]);
 	}
 
 	/*
@@ -740,17 +741,14 @@ static COMPLEX8FrequencySeries *generate_filter(
  * filters for the time-frequency plane.  The template frequency series is
  * used only to obtain meta-data about the frequency series that will
  * eventually be used to construct the time-frequency plane:  heterodyne
- * frequency, resolution, etc.  If over_whitened in non-zero, then the
- * channel filters are divided by the square root of the power spectral
- * density.
+ * frequency, resolution, etc.
  */
 
 
 INT4 XLALTFPlaneMakeChannelFilters(
 	const COMPLEX8FrequencySeries *template,
 	REAL4TimeFrequencyPlane *plane,
-	const REAL4FrequencySeries *psd,
-	int over_whitened
+	const REAL4FrequencySeries *psd
 )
 {
 	static const char func[] = "XLALTFPlaneMakeChannelFilters";
@@ -760,7 +758,7 @@ INT4 XLALTFPlaneMakeChannelFilters(
 		if(plane->filter[i])
 			XLALDestroyCOMPLEX8FrequencySeries(plane->filter[i]);
 
-		plane->filter[i] = generate_filter(template, plane->flow + i * plane->deltaF, plane->deltaF, over_whitened ? psd : NULL, plane->two_point_spectral_correlation);
+		plane->filter[i] = generate_filter(template, plane->flow + i * plane->deltaF, plane->deltaF, psd, plane->two_point_spectral_correlation);
 		if(!plane->filter[i]) {
 			while(i--) {
 				XLALDestroyCOMPLEX8FrequencySeries(plane->filter[i]);

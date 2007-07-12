@@ -62,9 +62,6 @@ typedef struct tagEPSearchParams {
 	struct XLALEPSearchDiagnostics *diagnostics;
 	REAL4Window *window;
 	REAL8 confidence_threshold;
-	AvgSpecMethod method;
-	/* time-frequency plane parameters */
-	int useOverWhitening;	
 	REAL8 flow;
 	REAL8 bandwidth;
 	/* t.f. plane tiling parameters */

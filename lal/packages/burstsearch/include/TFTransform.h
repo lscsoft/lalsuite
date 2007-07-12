@@ -120,8 +120,7 @@ void XLALDestroyTFPlane(
 INT4 XLALTFPlaneMakeChannelFilters(
 	const COMPLEX8FrequencySeries *template,
 	REAL4TimeFrequencyPlane *plane,
-	const REAL4FrequencySeries *psd,
-	int over_whitened
+	const REAL4FrequencySeries *psd
 );
 
 
@@ -133,7 +132,6 @@ int XLALFreqSeriesToTFPlane(
 
 
 SnglBurstTable *XLALComputeExcessPower(
-	const COMPLEX8FrequencySeries *template,
 	const REAL4TimeFrequencyPlane *plane,
 	SnglBurstTable *head,
 	double confidence_threshold

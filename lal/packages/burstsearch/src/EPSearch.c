@@ -127,23 +127,8 @@ SnglBurstTable *XLALEPSearch(
 	 * the time series' lengths are inconsistent
 	 */
 
-	switch(params->method) {
-	case useMean:
-		if(XLALREAL4AverageSpectrumWelch(psd, tseries, plane->window->data->length, plane->window_shift, plane->window, fplan) < 0) {
-			errorcode = XLAL_EFUNC;
-			goto error;
-		}
-		break;
-
-	case useMedian:
-		if(XLALREAL4AverageSpectrumMedian(psd, tseries, plane->window->data->length, plane->window_shift, plane->window, fplan) < 0) {
-			errorcode = XLAL_EFUNC;
-			goto error;
-		}
-		break;
-
-	default:
-		errorcode = XLAL_EINVAL;
+	if(XLALREAL4AverageSpectrumMedian(psd, tseries, plane->window->data->length, plane->window_shift, plane->window, fplan) < 0) {
+		errorcode = XLAL_EFUNC;
 		goto error;
 	}
 
@@ -199,7 +184,7 @@ SnglBurstTable *XLALEPSearch(
 		 */
 
 		XLALPrintInfo("XLALEPSearch(): constructing channel filters ...\n");
-		if(XLALTFPlaneMakeChannelFilters(fseries, plane, psd, params->useOverWhitening)) {
+		if(XLALTFPlaneMakeChannelFilters(fseries, plane, psd)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
@@ -214,6 +199,8 @@ SnglBurstTable *XLALEPSearch(
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
+		XLALDestroyCOMPLEX8FrequencySeries(fseries);
+		fseries = NULL;
 
 		/*
 		 * Compute the excess power for each time-frequency tile
@@ -226,13 +213,11 @@ SnglBurstTable *XLALEPSearch(
 
 		XLALPrintInfo("XLALEPSearch(): computing the excess power for each tile\n");
 		XLALClearErrno();
-		head = XLALComputeExcessPower(fseries, plane, head, params->confidence_threshold);
+		head = XLALComputeExcessPower(plane, head, params->confidence_threshold);
 		if(xlalErrno) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
-		XLALDestroyCOMPLEX8FrequencySeries(fseries);
-		fseries = NULL;
 	}
 
 	/*

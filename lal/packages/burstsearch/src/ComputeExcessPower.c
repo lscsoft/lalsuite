@@ -106,7 +106,6 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 
 /******** <lalVerbatim file="ComputeExcessPowerCP"> ********/
 SnglBurstTable *XLALComputeExcessPower(
-	const COMPLEX8FrequencySeries *template,
 	const REAL4TimeFrequencyPlane *plane,
 	SnglBurstTable *head,
 	double confidence_threshold
