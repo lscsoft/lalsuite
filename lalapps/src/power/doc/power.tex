@@ -38,11 +38,8 @@
 \maketitle
 
  
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% RUNNING A PIPELINE
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Running the power code under Condor}
-\label{subsection:running_power}
+
 
 %
 % FIXME: this section is obsolete
@@ -51,11 +48,8 @@
 This section is under construction!
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% subsection: power pipeline script
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Program \prog{lalapps\_power\_pipe}}
-\label{program:lalapps-power-pipe}
+
 
 \begin{entry}
 
@@ -181,11 +175,8 @@ Duncan Brown, Patrick Brady and Saikat Ray-Majumder
 \end{entry}
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% section: power code
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Program \prog{lalapps\_power}}
-\label{program:lalapps-power}
+
 
 \begin{entry}
 
@@ -218,7 +209,6 @@ simulated data.
 [\option{--mdc-cache}~\parm{cache file}] \newline \hspace*{0.5in}
 [\option{--mdc-channel}~\parm{channel name}] \newline \hspace*{0.5in}
 [\option{--output}~\parm{file name}] \newline \hspace*{0.5in}
-\option{--psd-average-method}~\parm{method} \newline \hspace*{0.5in}
 \option{--psd-average-points}~\parm{samples} \newline \hspace*{0.5in}
 [\option{--ram-limit}~\parm{MebiBytes}] \newline \hspace*{0.5in}
 \option{--resample-rate}~\parm{Hz} \newline \hspace*{0.5in}
@@ -228,7 +218,6 @@ simulated data.
 [\option{--seed}~\parm{seed}] \newline \hspace*{0.5in}
 \option{--target-sample-rate}~\parm{Hz} \newline \hspace*{0.5in}
 \option{--tile-stride-fraction}~\parm{fraction} \newline \hspace*{0.5in}
-[\option{--enable-over-whitening}] \newline \hspace*{0.5in}
 [\option{--user-tag}~\parm{comment}] \newline \hspace*{0.5in}
 \option{--window-length}~\parm{samples} \newline \hspace*{0.5in}
 
@@ -414,11 +403,6 @@ analyzed, and \parm{comment} is obtained from the command line.
 line, and \parm{duration} is the difference of the integer parts of the
 GPS start and end times from the command line.
 
-\item[\option{--psd-average-method} \parm{method}]
-Set the averaging method used in determining the average power spectral
-density to \parm{method}.  This can be one of ``useMean'', or
-``useMedian''.
-
 \item[\option{--psd-average-points} \parm{samples}]
 Use \parm{samples} samples from the input time series to estimate the
 average power spectral density of the detector's noise.  The average PSD is
@@ -469,12 +453,6 @@ of the same size overlap one-another.  This numeric parameter must be \(=
 which causes each tile to overlap its neighbours in time by \(\frac{1}{2}\)
 its duration and in frequency by \(\frac{1}{2}\) its bandwidth.
 
-\item[\option{--enable-over-whitening}]
-Turn on over whitening.  The channel filters used to construct the
-time-frequency plane will be weighted by the inverse of the noise power
-spectral density, causing the pixels in the time-frequency plane to be
-constructed preferentially from low-noise frequency bins.
-
 \item[\option{--user-tag} \parm{comment}]
 Set the user tag to the string \parm{comment}.  This string must not
 contain spaces or dashes (``-'').  This string will appear in the name of
@@ -501,7 +479,6 @@ lalapps_power \
 --calibrated-data 40.0 \
 --channel-name "H1:LSC-STRAIN" \
 --debug-level info \
---enable-over-whitening \
 --filter-corruption 4096 \
 --frame-cache H-754008315-754008371.cache \
 --gps-end-time 754008363 \
@@ -509,7 +486,6 @@ lalapps_power \
 --high-pass 60.0 \
 --low-freq-cutoff 70.0 \
 --max-event-rate 10000 \
---psd-average-method useMedian \
 --psd-average-points 274432 \
 --ram-limit 1024 \
 --resample-rate 8192 \
@@ -526,10 +502,12 @@ spanning the GPS times 754008323.0 s through 754008363.0 s.
 Patrick Brady, Saikat Ray-Majumder and Kipp Cannon.  
 \end{entry}
 
+
 \subsection{Algorithmic Implementation}
 
 
 \subsubsection{Overview}
+
 
 The Excess Power search method is motivated by the classical theory of
 signal detection in Gaussian noise.  The method is the optimal search
@@ -566,6 +544,7 @@ from a theoretical distribution derived from that assumption.
 
 
 \subsubsection{The Whitening Procedure}
+
 
 Consider a discretely-sampled time-series of \(N\) samples, \(s_j\) where
 \(0 \leq j < N\) and the sample period is \(\Delta t\).  Much of the signal
@@ -700,6 +679,7 @@ or other large non-astrophysical transients present in any of the segments.
 
 \subsubsection{The Channel Filter}
 \label{sec:channelfilter}
+
 
 The choice of the channel filter is mostly irrelevant, except that it
 correspond in some meaningful way to a particular frequency band.  We'll
@@ -856,6 +836,7 @@ two sample channel filters are shown in Figure \ref{fig:timedomainfilter}.
 
 \subsubsection{The Channel Time Series}
 
+
 The time series for a channel is extracted by multiplying the whitened
 frequency-domain input data by the channel filter, and transforming the
 result back to the time domain.  The time series for the channel of
@@ -965,14 +946,14 @@ but they do have unit variance, and since the time-domain samples of
 being unit variance Gaussian random variables.
 
 
-\subsubsection{Excess Power (Energy)}
+\subsubsection{The Time-Frequency Tile}
 
 
 Having projected the whitened input time series onto a comb of frequency
 channels, including channels with a variety of widths, we now procede to
-measure the signal energy in a variety of time-frequency tiles.  For this,
-we need to know that the number of degrees of freedom in a tile of
-bandwidth \(B\) and duration \(T\) is
+project it onto a collection of time-frequency tiles.  For this, we need to
+know that the number of degrees of freedom in a tile of bandwidth \(B\) and
+duration \(T\) is
 \begin{equation}
 d
    = 2 B T.
@@ -983,18 +964,106 @@ real-valued time series with a sample rate equal to the Nyquist frequency
 \(2 B\) (the time series may be a heterodyned version of the signal).
 Therefore, \(2 B T\) real-valued samples are sufficient to encode all the
 information contained in a signal of bandwidth \(B\) and duration \(T\).
-We require the number of degrees of freedom to be an integer not less than
-2.
+We will require the number of degrees of freedom to be an even integer not
+less than 2.
+
+To construct the time-frequency tile spanning the frequencies \(f_{1} \leq
+f < f_{1} + B\), and the times \(t_{1} \leq t < t_{1} + T\), we will use
+the samples from the channel time series \(Z_{j}(f_{1}, B)\).  The channel
+time series' sample period is \(\Delta t\), the same sample period as the
+original input time series, but because the channel time series corresponds
+to a more narrow frequency band than does the original input time series
+(except in the special case of a channel spanning the entire input band),
+there are more samples per unit time in the channel time series than there
+are degrees of freedom per unit time --- the channel time series is over
+sampled.  To obtain a time series with the correct sample rate, a sample
+rate matching the actual number of degrees of freedom per second, we need
+to down-sample the channel time series.
+
+Let \(j_{1} = t_{1} / \Delta t\) be the time series sample index
+corresponding to the start time of the tile.  The tile's duration spans a
+total of \(T / \Delta t\) samples in the channel time series, but the tile
+has \(d\) degrees of freedom so we need to down-sample the channel time
+series so that from the \(T / \Delta t\) samples starting at \(j_{1}\) we
+are left with \(d\) linearly independent numbers.  A simple down sampling
+procedure is to select \(d\) evenly-spaced samples from the \(T / \Delta
+t\) samples starting at \(j_{1}\).  Let these be the \(d\) samples at the
+indices
+\begin{equation}
+\label{eqn8}
+j
+   = j_{1} + (i + \frac{1}{2}) \Delta j,
+\end{equation}
+where \(i = 0, \ldots, d - 1\), and \(\Delta j = T / (d \Delta t)\).  These
+samples are linearly independent in the sense that it is not possible to
+compute any one of them from the \(d - 1\) other samples, but they are
+correlated because of the impulse response of the channel filter in the
+time domain.  See, for example, Figure \ref{fig:timedomainfilter}.  In what
+follows we will need the \(d\) samples forming the time-frequency tile to
+be independent Gaussian random variables when the input time series is
+stationary Gaussian noise.
+
+Let us say that our \(d\) samples are the result of convolving the channel
+impulse response with the ``real'' samples, and assume that if we
+deconvolve the channel's impulse response from our samples we will be left
+with \(d\) independent random variables.  The impulse response is
+proportional to the inverse Fourier transform of the channel filter,
+\begin{equation}
+\Theta_{j}(f_{1}, B)
+   = \frac{1}{N \Delta t} \sum_{k = 0}^{N - 1} \tilde{\Theta}_{k}(f_{1}, B)
+   \ee^{2 \pi \aye j k / N}.
+\end{equation}
+Labeling the ``real'' samples as \(Z_{j}'(f_{1}, B)\), our assumption is
+that our samples are derived from them by
+\begin{equation}
+\begin{bmatrix}
+\vdots \\
+Z_{j}(f_{1}, B) \\
+\vdots
+\end{bmatrix}
+   \propto \begin{bmatrix}
+   & \vdots & \\
+   \cdots & \Theta_{j - j'}(f_{1}, B) & \cdots \\
+   & \vdots &
+   \end{bmatrix}
+   \begin{bmatrix}
+   \vdots \\
+   Z_{j'}'(f_{1}, B) \\
+   \vdots
+   \end{bmatrix},
+\end{equation}
+where the \(j\) and \(j'\) indices are taken from \eqref{eqn8}.  Let's
+write this matrix equation as
+\begin{equation}
+\vec{Z}(f_{1}, B)
+   \propto \bar{\Theta}(f_{1}, B) \cdot \vec{Z}'(f_{1}, B).
+\end{equation}
+Inverting the equation gives the ``real'' samples in terms of our measured
+samples,
+\begin{equation}
+\vec{Z}'(f_{1}, B)
+   \propto \bar{\Theta}^{-1}(f_{1}, B) \cdot \vec{Z}(f_{1}, B).
+\end{equation}
+The proportionality constant is obtained by demanding that
+\(\mean{Z_{j'}'^{2}(f_{1}, B)} = 1\).
+
+
+\subsubsection{Excess Power (Energy)}
+
 
 We define the whitened energy contained in the tile spanning the
 frequencies \(f_{1} \leq f < f_{1} + B\) and the times \(t_{1} \leq t <
-t_{1} + T\) as
-\begin{equation}
-\label{eqn6}
+t_{1} + T\) as the sum of the squares of the down-sampled channel time
+series
+\begin{align}
 E
-   = \frac{1}{\mu^{2}(f_{1}, B)} \sum_{i = 0}^{d - 1} Z_{j_{1} + (i +
+   & = \frac{1}{\mu^{2}(f_{1}, B)} \vec{Z}(f_{1}, B) \cdot \vec{Z}(f_{1},
+   B)
+   \\
+\label{eqn6}
+   & = \frac{1}{\mu^{2}(f_{1}, B)} \sum_{i = 0}^{d - 1} Z_{j_{1} + (i +
    \frac{1}{2}) \Delta j}^{2}(f_{1}, B),
-\end{equation}
+\end{align}
 where \(j_{1} = t_{1} / \Delta t\) is the time series index corresponding
 to the start of the tile, and \(\Delta j = T / (d \Delta t)\) is the number
 of time series samples separating pixels in the time-frequency tile.
@@ -1011,7 +1080,7 @@ The tiling results in a large number of tiles being tested in every second
 of data, and so a practical threshold is \(P(\geq E) \sim 10^{-7}\),
 yielding an event rate of \(\unit{\order(\text{few})}{\hertz}\).  Figure
 \ref{fig:ehistogram} shows a histogram of whitened tile energies observed
-in the data used to generate Figures \ref{fig:shistogram} and
+in the same strain data used to generate Figures \ref{fig:shistogram} and
 \ref{fig:Zhistogram}.
 \begin{figure}
 \begin{center}
@@ -1062,6 +1131,7 @@ was expected --- the ``signal''.  Since the expected whitened energy is
 
 
 \subsubsection{Estimating \(h_{\text{rss}}\)}
+
 
 The final quantity recorded for each event is the root-sum-squared strain,
 or \(h_{\text{rss}}\).  We want the \(h_{\text{rss}}\) associated with a
@@ -1259,6 +1329,7 @@ injected.}
 
 \subsubsection{Over-Whitening}
 
+
 Section \ref{sec:channelfilter} began with the comment that the choice of
 channel filter is mostly irrelevant, so long as there is some sense in
 which it corresponds to a particular frequency band.  In the derivations
@@ -1292,6 +1363,7 @@ contain one inverse power of the square root of the power spectral density.
 
 
 \subsection{Time Domain Segmentation}
+
 
 The excess power analysis code does not process the input data as a
 continuous time series;  rather the time series is split into a sequence of
@@ -1408,8 +1480,9 @@ this condition, the next data to be read into memory should start $(2
 \mbox{\parm{window shift}})$ samples prior to the end of the previous data
 to have been read.
 
+
 \subsection{Performance on Gaussian data}
-\label{section:Gaussian}
+
 
 In this section we will describe the performance of Excess Power algorithm  
 on Gaussian data.  Instead of reading in real data from frame files we
@@ -1454,6 +1527,7 @@ corresponding degrees of freedom.
 
 \subsection{Butterworth Filter used in Excess Power Search}
 \label{section:Butterworth}
+
 
 The LIGO data is dominated by noise at low frequencies. We 
 therefore apply a Butterworth high pass filter to get rid off these 
@@ -1527,7 +1601,7 @@ Figure~\ref{fig:testattenuation8_9}
 
 
 \subsection{Clustering in Excess Power Search}
-\label{section:clustering}
+
 
 %
 % FIXME: this section is obsolete
@@ -1615,7 +1689,7 @@ discussing till now.
 
 
 \subsection{Tuning the excess power pipeline}
-\label{section:tuning}
+
 
 The excess power search identifies time-frequency tiles as events when the 
 probability of getting power in the tile from Gaussian noise alone
@@ -1634,8 +1708,10 @@ summarize the parameters to tune in the excess power search are:
 In the following sections we will go over the tuning of the different 
 parameters in more details.
 
+
 \subsubsection{Tuning the size of the tiles}
 \label{section:tunetilesize}
+
 
 The size(duration and bandwidth) of the tiles are largely guided by the
 time-frequency content of the gravitational waves one is searching for.
@@ -1661,7 +1737,6 @@ According to the estimates of FH, binary black hole systems with total
 mass $M \leq 30M_{\odot}$ are best searched for via their inspiral waves
 while systems with $M > 30M_{\odot}$ must be searched via their
 merger waves and/or their well understood ringdown waves.  
-
 
 FH has estimated a conservative value for the merger frequency given
 by 
@@ -1742,8 +1817,10 @@ a single tile in the search,  which does not preclude us from searching
 for longer or broader signals since we can always sum up the power
 from multiple tiles triggered by the particular signal. 
     
+
 \subsubsection{Deciding on the probability thresholds}
-\label{section:tunethreshold}
+
+
 We saw in Sec~\ref{section:tunetilesize} that the sizes of the tiles
 are mainly guided by the rough expectations about the signals that 
 we are interested in.  However, the threshold on the probability
@@ -1796,8 +1873,10 @@ These thresholds were so chosen so that the false rate after
 coincidence between H1 and L1 triggers is $\approx 2 mHz$ while 
 the $ h_{rss}$ is $\approx 1.12e-21$.
 
+
 \subsubsection{Choosing the coincidence window(W)}
-\label{section:tunewindow}
+
+
 The coincidence window(W) is given in milliseconds(ms).  When we 
 have a trigger and want to find if there are triggers in the 
 other instrument which are 
@@ -1870,11 +1949,9 @@ EOB waveforms. The $50 p.c.$ efficiency is at $66.5 Mpc$ effective distance.
 \end{figure}
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% BINJ:  injection generation code
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Program \prog{lalapps\_binj}}
 \label{program:lalapps-binj}
+
 
 \begin{entry}
 \item[Name]

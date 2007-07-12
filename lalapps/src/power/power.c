@@ -316,7 +316,6 @@ static void print_usage(const char *program)
 "	 --confidence-threshold <confidence>\n" \
 "	[--debug-level info|warn|error|off]\n" \
 "	[--dump-diagnostics <xml filename>]\n" \
-"	[--enable-over-whitening]\n" \
 "	 --filter-corruption <samples>\n" \
 "	 --frame-cache <cache file>\n", program);
 fprintf(stderr,
@@ -333,7 +332,6 @@ fprintf(stderr,
 "	[--mdc-cache <cache file>]\n" \
 "	[--mdc-channel <channel name>]\n" \
 "	[--output <filename>]\n" \
-"	 --psd-average-method <method>\n" \
 "	 --psd-average-points <samples>\n");
 fprintf(stderr,
 "	[--ram-limit <MebiBytes>]\n" \
@@ -397,10 +395,6 @@ static int all_required_arguments_present(char *prog, struct option *long_option
 
 		case 'W':
 			arg_is_missing = !params->window;
-			break;
-
-		case 'Y':
-			arg_is_missing = params->method == (unsigned) -1;
 			break;
 
 		case 'Z':
@@ -553,7 +547,6 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		{"confidence-threshold", required_argument, NULL, 'g'},
 		{"debug-level", required_argument, NULL, 'D'},
 		{"dump-diagnostics", required_argument, NULL, 'X'},
-		{"enable-over-whitening", no_argument, &params->useOverWhitening, TRUE},
 		{"filter-corruption", required_argument, NULL, 'j'},
 		{"frame-cache", required_argument, NULL, 'G'},
 		{"gaussian-noise-rms", required_argument, NULL, 'V'},
@@ -569,7 +562,6 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		{"mdc-cache", required_argument, NULL, 'R'},
 		{"mdc-channel", required_argument, NULL, 'S'},
 		{"output", required_argument, NULL, 'b'},
-		{"psd-average-method", required_argument, NULL, 'Y'},
 		{"psd-average-points", required_argument, NULL, 'Z'},
 		{"ram-limit", required_argument, NULL, 'a'},
 		{"resample-rate", required_argument, NULL, 'e'},
@@ -597,13 +589,11 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 
 	params->diagnostics = NULL;	/* default == disable */
 	params->confidence_threshold = XLAL_REAL8_FAIL_NAN;	/* impossible */
-	params->method = -1;	/* impossible */
 	params->bandwidth = 0;	/* impossible */
 	params->flow = -1;	/* impossible */
 	params->maxTileBandwidth = 0;	/* impossible */
 	params->maxTileDuration = 0;	/* impossible */
 	params->fractional_stride = 0;	/* impossible */
-	params->useOverWhitening = FALSE;	/* default */
 	params->window = NULL;	/* impossible */
 
 	/*
@@ -760,19 +750,6 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		params->diagnostics->XLALWriteLIGOLwXMLArrayREAL4FrequencySeries = XLALWriteLIGOLwXMLArrayREAL4FrequencySeries;
 		params->diagnostics->XLALWriteLIGOLwXMLArrayREAL4TimeSeries = XLALWriteLIGOLwXMLArrayREAL4TimeSeries;
 		params->diagnostics->XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries = XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries;
-		break;
-
-	case 'Y':
-		if(!strcmp(optarg, "useMean"))
-			params->method = useMean;
-		else if(!strcmp(optarg, "useMedian"))
-			params->method = useMedian;
-		else {
-			sprintf(msg, "must be \"useMean\", or \"useMedian\"");
-			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
-		}
-		ADD_PROCESS_PARAM("string");
 		break;
 
 	case 'Z':
