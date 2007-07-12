@@ -904,7 +904,7 @@ int MAIN( int argc, char *argv[]) {
   }
   
 #ifdef SKYPOS_PRECISION
-  LogPrintf(LOG_DEBUG, "SKYPOS_PRECISION: %20f\n", (REAL4)SKYPOS_PRECISION);
+  LogPrintf(LOG_DEBUG, "SKYPOS_PRECISION: %15f (0x%x)\n", (REAL4)SKYPOS_PRECISION,(INT8)SKYPOS_PRECISION);
 #endif
 
   LogPrintf(LOG_DEBUG, "Total skypoints = %d. Progress: ", thisScan.numSkyGridPoints);
