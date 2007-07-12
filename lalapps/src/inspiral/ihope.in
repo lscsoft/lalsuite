@@ -250,6 +250,7 @@ def write_rescue():
       "  DAG=${2#*/}\n" +  \
       "  mv ${2} ${2}.orig\n" +  \
       "  mv ${DAG}.rescue ${2}\n" + \
+      "  exit ${1}\n" + \
       "fi")
   f.close()
   os.chmod("rescue.sh", 0744)
