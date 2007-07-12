@@ -219,6 +219,18 @@ struct options {
 	char *sim_inspiral_filename;
 
 	/*
+	 * XLALEPSearch() parmaters
+	 */
+
+	double confidence_threshold;
+	double bandwidth;
+	double flow;
+	double maxTileBandwidth;
+	double maxTileDuration;
+	double fractional_stride;
+	REAL4Window *window;
+
+	/*
 	 * WTF
 	 */
 
@@ -244,7 +256,7 @@ struct options {
 	 */
 
 	/* diagnostics call back for passing to LAL (NULL = disable) */
-	LIGOLwXMLStream *diagnostics;
+	struct XLALEPSearchDiagnostics *diagnostics;
 };
 
 
@@ -281,6 +293,13 @@ static struct options *options_new(void)
 		.simInjectionFile = NULL,	/* default == disable */
 		.sim_inspiral_filename = NULL,	/* default == disable */
 		.cache_filename = NULL,	/* default == disable */
+		.confidence_threshold = XLAL_REAL8_FAIL_NAN,	/* impossible */
+		.bandwidth = 0,	/* impossible */
+		.flow = -1,	/* impossible */
+		.maxTileBandwidth = 0,	/* impossible */
+		.maxTileDuration = 0,	/* impossible */
+		.fractional_stride = 0,	/* impossible */
+		.window = NULL,	/* impossible */
 	};
 
 	memset(options->ifo, 0, sizeof(options->ifo));	/* default = "" */
@@ -293,6 +312,9 @@ static struct options *options_new(void)
 
 static void options_free(struct options *options)
 {
+	if(options) {
+		XLALDestroyREAL4Window(options->window);
+	}
 	free(options);
 }
 
@@ -365,7 +387,7 @@ static void print_missing_argument(const char *prog, const char *arg)
  */
 
 
-static int all_required_arguments_present(char *prog, struct option *long_options, const struct options *options, const EPSearchParams *params)
+static int all_required_arguments_present(char *prog, struct option *long_options, const struct options *options)
 {
 	int index;
 	int got_all_arguments = TRUE;
@@ -374,7 +396,7 @@ static int all_required_arguments_present(char *prog, struct option *long_option
 	for(index = 0; long_options[index].name; index++) {
 		switch(long_options[index].val) {
 		case 'A':
-			arg_is_missing = !params->bandwidth;
+			arg_is_missing = !options->bandwidth;
 			break;
 
 		case 'C':
@@ -390,11 +412,11 @@ static int all_required_arguments_present(char *prog, struct option *long_option
 			break;
 
 		case 'Q':
-			arg_is_missing = params->flow < 0.0;
+			arg_is_missing = options->flow < 0.0;
 			break;
 
 		case 'W':
-			arg_is_missing = !params->window;
+			arg_is_missing = !options->window;
 			break;
 
 		case 'Z':
@@ -406,11 +428,11 @@ static int all_required_arguments_present(char *prog, struct option *long_option
 			break;
 
 		case 'f':
-			arg_is_missing = !params->fractional_stride;
+			arg_is_missing = !options->fractional_stride;
 			break;
 
 		case 'g':
-			arg_is_missing = params->confidence_threshold == XLAL_REAL8_FAIL_NAN;
+			arg_is_missing = options->confidence_threshold == XLAL_REAL8_FAIL_NAN;
 			break;
 
 		case 'j':
@@ -418,11 +440,11 @@ static int all_required_arguments_present(char *prog, struct option *long_option
 			break;
 
 		case 'l':
-			arg_is_missing = !params->maxTileBandwidth;
+			arg_is_missing = !options->maxTileBandwidth;
 			break;
 
 		case 'm':
-			arg_is_missing = !params->maxTileDuration;
+			arg_is_missing = !options->maxTileDuration;
 			break;
 
 		case 'o':
@@ -530,7 +552,7 @@ static int parse_command_line_debug(int argc, char *argv[])
  */
 
 
-static struct options *parse_command_line(int argc, char *argv[], EPSearchParams *params, MetadataTable *_process_params_table)
+static struct options *parse_command_line(int argc, char *argv[], MetadataTable *_process_params_table)
 {
 	struct options *options;
 	char msg[240];
@@ -584,19 +606,6 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		return NULL;
 
 	/*
-	 * Set parameter defaults
-	 */
-
-	params->diagnostics = NULL;	/* default == disable */
-	params->confidence_threshold = XLAL_REAL8_FAIL_NAN;	/* impossible */
-	params->bandwidth = 0;	/* impossible */
-	params->flow = -1;	/* impossible */
-	params->maxTileBandwidth = 0;	/* impossible */
-	params->maxTileDuration = 0;	/* impossible */
-	params->fractional_stride = 0;	/* impossible */
-	params->window = NULL;	/* impossible */
-
-	/*
 	 * Parse command line.
 	 */
 
@@ -604,9 +613,9 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	optind = 0;		/* start scanning from argv[0] */
 	do switch (c = getopt_long(argc, argv, "", long_options, &option_index)) {
 	case 'A':
-		params->bandwidth = atof(optarg);
-		if(params->bandwidth <= 0 || !double_is_power_of_2(params->bandwidth)) {
-			sprintf(msg, "must be greater than 0 and a power of 2 (%g specified)", params->bandwidth);
+		options->bandwidth = atof(optarg);
+		if(options->bandwidth <= 0 || !double_is_power_of_2(options->bandwidth)) {
+			sprintf(msg, "must be greater than 0 and a power of 2 (%g specified)", options->bandwidth);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -689,9 +698,9 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		break;
 
 	case 'Q':
-		params->flow = atof(optarg);
-		if(params->flow < 0) {
-			sprintf(msg, "must not be negative (%f Hz specified)", params->flow);
+		options->flow = atof(optarg);
+		if(options->flow < 0) {
+			sprintf(msg, "must not be negative (%f Hz specified)", options->flow);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -726,30 +735,29 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		params->window = XLALCreateHannREAL4Window(window_length);
-		if(!params->window) {
+		options->window = XLALCreateHannREAL4Window(window_length);
+		if(!options->window) {
 			sprintf(msg, "failure generating %d sample Hann window", window_length);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 			/* silence "missing required argument" message */
-			params->window = (void *) 1;
+			options->window = (void *) 1;
 		}
 		ADD_PROCESS_PARAM("int");
 		}
 		break;
 
 	case 'X':
+		options->diagnostics = malloc(sizeof(*options->diagnostics));
 		{
 		LALStatus stat;
 		memset(&stat, 0, sizeof(stat));
-		options->diagnostics = calloc(1, sizeof(*options->diagnostics));
-		LALOpenLIGOLwXMLFile(&stat, options->diagnostics, optarg);
+		options->diagnostics->LIGOLwXMLStream = calloc(1, sizeof(*options->diagnostics));
+		LALOpenLIGOLwXMLFile(&stat, options->diagnostics->LIGOLwXMLStream, optarg);
 		}
-		params->diagnostics = malloc(sizeof(*params->diagnostics));
-		params->diagnostics->LIGOLwXMLStream = options->diagnostics;
-		params->diagnostics->XLALWriteLIGOLwXMLArrayREAL4FrequencySeries = XLALWriteLIGOLwXMLArrayREAL4FrequencySeries;
-		params->diagnostics->XLALWriteLIGOLwXMLArrayREAL4TimeSeries = XLALWriteLIGOLwXMLArrayREAL4TimeSeries;
-		params->diagnostics->XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries = XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries;
+		options->diagnostics->XLALWriteLIGOLwXMLArrayREAL4FrequencySeries = XLALWriteLIGOLwXMLArrayREAL4FrequencySeries;
+		options->diagnostics->XLALWriteLIGOLwXMLArrayREAL4TimeSeries = XLALWriteLIGOLwXMLArrayREAL4TimeSeries;
+		options->diagnostics->XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries = XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries;
 		break;
 
 	case 'Z':
@@ -798,9 +806,9 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		break;
 
 	case 'f':
-		params->fractional_stride = atof(optarg);
-		if(params->fractional_stride > 1 || !double_is_power_of_2(params->fractional_stride)) {
-			sprintf(msg, "must be less than or equal to 1 and a power of 2 (%g specified)", params->fractional_stride);
+		options->fractional_stride = atof(optarg);
+		if(options->fractional_stride > 1 || !double_is_power_of_2(options->fractional_stride)) {
+			sprintf(msg, "must be less than or equal to 1 and a power of 2 (%g specified)", options->fractional_stride);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -808,9 +816,9 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		break;
 
 	case 'g':
-		params->confidence_threshold = atof(optarg);
-		if(params->confidence_threshold < 0) {
-			sprintf(msg, "must not be negative (%g specified)", params->confidence_threshold);
+		options->confidence_threshold = atof(optarg);
+		if(options->confidence_threshold < 0) {
+			sprintf(msg, "must not be negative (%g specified)", options->confidence_threshold);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -833,9 +841,9 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		break;
 
 	case 'l':
-		params->maxTileBandwidth = atof(optarg);
-		if((params->maxTileBandwidth <= 0) || !double_is_power_of_2(params->maxTileBandwidth)) {
-			sprintf(msg, "must be greater than 0 and a power of 2 (%f specified)", params->maxTileBandwidth);
+		options->maxTileBandwidth = atof(optarg);
+		if((options->maxTileBandwidth <= 0) || !double_is_power_of_2(options->maxTileBandwidth)) {
+			sprintf(msg, "must be greater than 0 and a power of 2 (%f specified)", options->maxTileBandwidth);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -843,9 +851,9 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 		break;
 
 	case 'm':
-		params->maxTileDuration = atof(optarg);
-		if((params->maxTileDuration <= 0) || !double_is_power_of_2(params->maxTileDuration)) {
-			sprintf(msg, "must be greater than 0 and a power of 2 (%f specified)", params->maxTileDuration);
+		options->maxTileDuration = atof(optarg);
+		if((options->maxTileDuration <= 0) || !double_is_power_of_2(options->maxTileDuration)) {
+			sprintf(msg, "must be greater than 0 and a power of 2 (%f specified)", options->maxTileDuration);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -909,7 +917,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	 * Check for missing command line arguments.
 	 */
 
-	if(!all_required_arguments_present(argv[0], long_options, options, params))
+	if(!all_required_arguments_present(argv[0], long_options, options))
 		args_are_bad = TRUE;
 
 	/*
@@ -944,7 +952,7 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	 * Compute timing parameters.
 	 */
 
-	if(XLALEPGetTimingParameters(params->window->data->length, params->maxTileDuration * options->resample_rate, params->fractional_stride, &options->psd_length, &options->psd_shift, &options->window_shift, &options->window_pad, NULL) < 0) {
+	if(XLALEPGetTimingParameters(options->window->data->length, options->maxTileDuration * options->resample_rate, options->fractional_stride, &options->psd_length, &options->psd_shift, &options->window_shift, &options->window_pad, NULL) < 0) {
 		XLALPrintError("calculation of timing parameters failed\n");
 		exit(1);
 	}
@@ -961,11 +969,11 @@ static struct options *parse_command_line(int argc, char *argv[], EPSearchParams
 	 * Sanitize filter frequencies.
 	 */
 
-	if(options->cal_high_pass > params->flow)
-		XLALPrintWarning("%s: warning: calibrated data quantization high-pass frequency (%f Hz) greater than TF plane low frequency (%f Hz)\n", argv[0], options->cal_high_pass, params->flow);
+	if(options->cal_high_pass > options->flow)
+		XLALPrintWarning("%s: warning: calibrated data quantization high-pass frequency (%f Hz) greater than TF plane low frequency (%f Hz)\n", argv[0], options->cal_high_pass, options->flow);
 
-	if(options->high_pass > params->flow - 10.0)
-		XLALPrintWarning("%s: warning: data conditioning high-pass frequency (%f Hz) greater than 10 Hz below TF plane low frequency (%f Hz)\n", argv[0], options->high_pass, params->flow);
+	if(options->high_pass > options->flow - 10.0)
+		XLALPrintWarning("%s: warning: data conditioning high-pass frequency (%f Hz) greater than 10 Hz below TF plane low frequency (%f Hz)\n", argv[0], options->high_pass, options->flow);
 
 	/*
 	 * Set output filename to default value if needed.
@@ -1570,7 +1578,7 @@ static void add_sim_injections(LALStatus *stat, REAL4TimeSeries *series, COMPLEX
  */
 
 
-static SnglBurstTable **analyze_series(SnglBurstTable **addpoint, REAL4TimeSeries *series, int psd_length, int psd_shift, EPSearchParams *params)
+static SnglBurstTable **analyze_series(SnglBurstTable **addpoint, REAL4TimeSeries *series, int psd_length, int psd_shift, struct options *options)
 {
 	static const char func[] = "analyze_series";
 	unsigned i;
@@ -1589,7 +1597,17 @@ static SnglBurstTable **analyze_series(SnglBurstTable **addpoint, REAL4TimeSerie
 
 		XLALPrintInfo("%s(): analyzing samples %zu -- %zu (%.9lf s -- %.9lf s)\n", func, start, start + interval->data->length, start * interval->deltaT, (start + interval->data->length) * interval->deltaT);
 
-		*addpoint = XLALEPSearch(interval, params);
+		*addpoint = XLALEPSearch(
+			options->diagnostics,
+			interval,
+			options->window,
+			options->flow,
+			options->bandwidth,
+			options->confidence_threshold,
+			options->fractional_stride,
+			options->maxTileBandwidth,
+			options->maxTileDuration
+		);
 		while(*addpoint)
 			addpoint = &(*addpoint)->next;
 
@@ -1676,7 +1694,6 @@ int main(int argc, char *argv[])
 	LALStatus stat;
 	LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
 	struct options *options;
-	EPSearchParams params;
 	LIGOTimeGPS epoch;
 	LIGOTimeGPS boundepoch;
 	int overlap;
@@ -1712,7 +1729,7 @@ int main(int argc, char *argv[])
 	 * Parse arguments and fill _process_params_table table.
 	 */
 
-	options = parse_command_line(argc, argv, &params, &_process_params_table);
+	options = parse_command_line(argc, argv, &_process_params_table);
 	snprintf(_process_table.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", options->ifo);
 	snprintf(_process_table.processTable->comment, LIGOMETA_COMMENT_MAX, "%s", options->comment);
 
@@ -1732,7 +1749,7 @@ int main(int argc, char *argv[])
 	 * set the outer loop's upper bound
 	 */
 
-	overlap = params.window->data->length - options->window_shift;
+	overlap = options->window->data->length - options->window_shift;
 	XLALPrintInfo("%s: time series overlap is %zu samples (%.9lf s)\n", argv[0], overlap, overlap / (double) options->resample_rate);
 
 	boundepoch = options->gps_end;
@@ -1864,7 +1881,7 @@ int main(int argc, char *argv[])
 		 * Analyze the data
 		 */
 
-		EventAddPoint = analyze_series(EventAddPoint, series, options->psd_length, options->psd_shift, &params);
+		EventAddPoint = analyze_series(EventAddPoint, series, options->psd_length, options->psd_shift, options);
 		if(!EventAddPoint)
 			exit(1);
 
@@ -1921,7 +1938,6 @@ int main(int argc, char *argv[])
 	 */
 
 	XLALDestroyRandomParams(rparams);
-	XLALDestroyREAL4Window(params.window);
 	XLALFree(_process_table.processTable);
 	XLALFree(_search_summary_table.searchSummaryTable);
 
@@ -1938,7 +1954,7 @@ int main(int argc, char *argv[])
 	}
 
 	if(options->diagnostics)
-		LAL_CALL(LALCloseLIGOLwXMLFile(&stat, options->diagnostics), &stat);
+		LAL_CALL(LALCloseLIGOLwXMLFile(&stat, options->diagnostics->LIGOLwXMLStream), &stat);
 	options_free(options);
 
 	LALCheckMemoryLeaks();
