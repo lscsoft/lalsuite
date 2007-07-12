@@ -185,19 +185,29 @@ int main( int argc, char *argv[] )
   UINT4  numDetectors    = 0;
   REAL8  tempTime[LAL_NUM_IFO]     = {0.0,0.0,0.0,0.0,0.0,0.0}; 
   INT4   numTriggers     = 0;
+  INT4   numTrigsH1      = 0;
+  INT4   numTrigsH2      = 0;
   INT4   numCoincs       = 0;
   INT4   numEvents       = 0;
 
   FrCache              *frInCache        = NULL;
 
   SnglInspiralTable    *currentTrigger   = NULL;
+  SnglInspiralTable    *currentTrigH1    = NULL;
+  SnglInspiralTable    *currentTrigH2    = NULL;
   SnglInspiralTable    *cohbankEventList = NULL;
+  SnglInspiralTable    *trigListH1       = NULL;
+  SnglInspiralTable    *trigListH2       = NULL;
 
   CoincInspiralTable   *coincHead = NULL;
   CoincInspiralTable   *thisCoinc = NULL;
 
-  SearchSummvarsTable  *inputFiles     = NULL;
-  SearchSummaryTable   *searchSummList = NULL;
+  SearchSummvarsTable  *inputFiles       = NULL;
+  SearchSummvarsTable  *inputFilesH1     = NULL;
+  SearchSummvarsTable  *inputFilesH2     = NULL;
+  SearchSummaryTable   *searchSummList   = NULL;
+  SearchSummaryTable   *searchSummListH1 = NULL;
+  SearchSummaryTable   *searchSummListH2 = NULL;
 
 
   NullStatInitParams      *nullStatInitParams   = NULL;
@@ -272,8 +282,15 @@ int main( int argc, char *argv[] )
   /* currentTrigger is the last trigger */
   numTriggers = XLALReadInspiralTriggerFile( &cohbankEventList, 
        &currentTrigger, &searchSummList, &inputFiles, cohbankFileName );
-
   fprintf(stdout,"Reading templates from %s.\n",cohbankFileName);
+
+  numTrigsH1 = XLALReadInspiralTriggerFile( &trigListH1, &currentTrigH1,
+        &searchSummListH1, &inputFilesH1, xmlFileNameH1);
+  fprintf(stdout,"Read %d H1 triggers from %s.\n", numTrigsH1, xmlFileNameH1);
+
+  numTrigsH2 = XLALReadInspiralTriggerFile( &trigListH2, &currentTrigH2,
+        &searchSummListH2, &inputFilesH2, xmlFileNameH2);
+  fprintf(stdout,"Read %d H2 triggers from %s.\n", numTrigsH2, xmlFileNameH2);
 
   if ( numTriggers < 0 )  /* no triggers found */
   {
@@ -284,17 +301,15 @@ int main( int argc, char *argv[] )
   {
     if ( vrbflg )
     {
-      fprintf( stdout,
-               "%s contains no triggers - the coherent bank will be empty.\n",
-               cohbankFileName );
+      fprintf( stdout, "%s contains no triggers - the cohbank will be empty.\n",
+         cohbankFileName );
     }
   }
   else  /* triggers do exist */
   {
     if ( vrbflg )
     {
-      fprintf( stdout,
-               "Read in %d triggers from the file %s.\n", numTriggers,
+      fprintf( stdout, "Read in %d triggers from the file %s.\n", numTriggers,
                cohbankFileName );
     }
 
@@ -483,7 +498,6 @@ int main( int argc, char *argv[] )
 #endif
 
       CVec = nullStatInputParams->CData;
-      /* if ( vrbflg ) fprintf( stdout, "error\n" ); */
 
       /* Read in the snippets associated with thisCoinc trigger */
       for ( j=1; j<LAL_NUM_IFO; j++ )
@@ -491,7 +505,6 @@ int main( int argc, char *argv[] )
         if ( (j == LAL_IFO_H1) || (j == LAL_IFO_H2) ) 
         { 
           if (vrbflg) fprintf(stdout, " j = %d \n", j );
-          /* if ( vrbflg ) fprintf( stdout, "error\n" ); */
           frStream = XLALFrOpen( NULL, ifoframefile[j] ); 
           if ( vrbflg ) fprintf( stdout, 
                  "Getting the c-data time series for %s.\n",
@@ -510,6 +523,9 @@ int main( int argc, char *argv[] )
             strcpy( CVec->cData[j]->name, &(cDataChanNames->chanNameH1) ); 
             if ( vrbflg ) fprintf( stdout, "H1 channel name: %s \n",
                 CVec->cData[j]->name );
+            nullStatParams->sigmasq[j] = trigListH1->sigmasq;
+            if ( vrbflg ) fprintf( stdout, "sigma-sq for H1: %f \n",
+                 nullStatParams->sigmasq[j]);
           }
 
           if ( j == LAL_IFO_H2 )               
@@ -517,6 +533,9 @@ int main( int argc, char *argv[] )
             strcpy( CVec->cData[j]->name, &(cDataChanNames->chanNameH2) );
             if ( vrbflg ) fprintf( stdout, "H2 channel name: %s \n",
                 CVec->cData[j]->name );
+            nullStatParams->sigmasq[j] = trigListH2->sigmasq;
+            if ( vrbflg ) fprintf( stdout, "sigma-sq for H2: %f \n",
+                 nullStatParams->sigmasq[j]);
           }
 
           XLALFrGetCOMPLEX8TimeSeries( CVec->cData[j], frStream );
@@ -529,18 +548,6 @@ int main( int argc, char *argv[] )
  
           XLALFrClose( frStream );
  
-          /* set sigma-squared */
-          /* this gives the same sigma-sq for both H1 and H2              */
-          /* this is clearly wrong!                                       */
-          /* the problem is possibly that when coh-bank is created ,      */
-          /* identical parameters are kept for H1 and H2 in sngl_inspiral */
-          /* how do we fix this ???                                       */
-          if (vrbflg) fprintf( stdout, "sigma-sq for %s: %f \n", 
-                               thisCoinc->snglInspiral[j]->ifo, 
-                               thisCoinc->snglInspiral[j]->sigmasq );
-          nullStatParams->sigmasq[j] = thisCoinc->snglInspiral[j]->sigmasq;
-          nullStatInputParams->CData->cData[j] = CVec->cData[j];
-          
           if (j == 2) j = LAL_NUM_IFO+1;
         }
         else
@@ -558,8 +565,8 @@ int main( int argc, char *argv[] )
        */
 
       /* calculation of the null statistic for this coincident event */
-      if (vrbflg) fprintf( stdout, "error \n" );
       XLALComputeNullStatistic(&thisEvent, nullStatInputParams, nullStatParams);
+      if (vrbflg) fprintf( stdout, "error \n" );
 
       if ( nullStatOut )
       {
