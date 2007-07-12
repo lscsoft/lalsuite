@@ -320,7 +320,7 @@ void LALDriveNRInject( LALStatus *status,
       TRY( LALAddStrainModes(status->statusPtr, &sumStrain, params->nrCatalog,
 				  params->modeLlo, params->modeLhi, thisInj), status);
       
-      TRY( LALInjectStrainGW( status->statusPtr, injData, sumStrain, thisInj, params->ifo), status);
+      TRY( LALInjectStrainGW( status->statusPtr, injData, sumStrain, thisInj, params->ifo, 1.0), status);
       
       XLALDestroyREAL4VectorSequence ( sumStrain->data );
       LALFree( sumStrain );
