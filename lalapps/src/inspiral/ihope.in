@@ -98,7 +98,7 @@ def generate_segments(ifo):
   # if not generating segments, all we need is the name of the segment file
   if not opts.generate_segments: return segFile
 
-  # run segFind
+  # run segFind to determine science segments
   print "Running LSCsegFind to determine science segments for " + ifo
   segFindCall = "LSCsegFind --interferometer=" + ifo + \
       " --type=" + cp.get("segments","analyze") + \
@@ -108,33 +108,37 @@ def generate_segments(ifo):
   make_external_call(segFindCall)
   sfSegs = segmentsUtils.fromsegwizard(file(segFindFile)).coalesce()
 
-  # run dataFind
-  print "Running LSCdataFind to determine available data from " + type + \
-      " frames for " + ifo
-  dataFindCall = "LSCdataFind --observatory=" + ifo[0] + \
-      " --type=" + ifo_type + \
-      " --gps-start-time=" + str(opts.gps_start_time) + \
-      " --gps-end-time=" + str(opts.gps_end_time) + " --show-times > " + \
-      dataFindFile
-  make_external_call(dataFindCall)
-  dfSegs = segmentsUtils.fromsegwizard(file(dataFindFile)).coalesce()
+  # Determine the available data (if requested)
+  if opts.use_available_data:
+    # run dataFind
+    print "Running LSCdataFind to determine available data from " + type + \
+        " frames for " + ifo
+    dataFindCall = "LSCdataFind --observatory=" + ifo[0] + \
+        " --type=" + ifo_type + \
+        " --gps-start-time=" + str(opts.gps_start_time) + \
+        " --gps-end-time=" + str(opts.gps_end_time) + " --show-times > " + \
+        dataFindFile
+    make_external_call(dataFindCall)
+    dfSegs = segmentsUtils.fromsegwizard(file(dataFindFile)).coalesce()
 
   # generate the analyzed segments
-  analyzedSegs = sfSegs.__and__(dfSegs)
-  analyzedSegs = dfSegs
+  if opts.use_available_data: analyzedSegs = sfSegs.__and__(dfSegs)
+  else: analyzedSegs = sfSegs
+
   segmentsUtils.tosegwizard(file(segFile,"w"), analyzedSegs)
   print "Writing " + ifo + " segments of total time " + \
       str(analyzedSegs.__abs__()) + "s to file: " + \
       segFile
 
-  missedSegs = sfSegs.__and__(dfSegs.__invert__()) 
-  segmentsUtils.tosegwizard(file(missedFile,"w"), missedSegs)
-  print "Writing " + ifo + " segments which cannot be analyzed to file " + \
-      missedFile
-  print "Not analyzing %d s, representing %.2f percent of time" %  \
-     (missedSegs.__abs__(), 
-     100. * missedSegs.__abs__() / analyzedSegs.__abs__() )
-  print
+  if opts.use_available_data:
+    missedSegs = sfSegs.__and__(dfSegs.__invert__()) 
+    segmentsUtils.tosegwizard(file(missedFile,"w"), missedSegs)
+    print "Writing " + ifo + " segments which cannot be analyzed to file " + \
+        missedFile
+    print "Not analyzing %d s, representing %.2f percent of time" %  \
+       (missedSegs.__abs__(), 
+       100. * missedSegs.__abs__() / analyzedSegs.__abs__() )
+    print
 
   return segFile
 
@@ -175,7 +179,6 @@ def hipe_setup(hipeDir, injFile=None, dfOnly = False):
   # return to the directory, write ini file and run hipe
   os.chdir(analysisDirectory + "/" + hipeDir)
   iniFile = "inspiral_hipe." + hipeDir + ".ini"
-
   hipecp.write(file(iniFile,"w"))
   
   print "Running hipe in directory " + hipeDir 
@@ -205,7 +208,6 @@ def hipe_setup(hipeDir, injFile=None, dfOnly = False):
     os.rmdir("cache")
     os.symlink("../datafind/cache", "cache")
 
-
   # add job to dag
   hipeJob = pipeline.CondorDAGManJob(
       hipeDir + "/" + iniFile.rstrip("ini") + "dag")
@@ -232,24 +234,25 @@ def fix_rescue(dagNode):
   dagNode.add_post_script_arg( 
       dagNode.job().get_sub_file().rstrip(".condor.sub") )
 
+
 def write_rescue():
   # Write the rescue post-script
   f = open("rescue.sh", "w")
   f.write("#! /bin/bash\n" + \
       "if [ ! -n \"${2}\" ]\n" + \
       "then\n" + \
-      "  echo \"Usage: `basename $0` DAGfile DAGreturn\"\n" + \
+      "  echo \"Usage: `basename $0` DAGreturn DAGfile\"\n" + \
       "  exit \n" + \
       "fi\n" +  \
       "\n" +  \
-      "if (( ${2}>0 )) \n" + \
+      "if (( ${1}>0 )) \n" + \
       "then\n" + \
-      "  DAG=${1#*/}\n" +  \
-      "  mv ${1} ${1}.orig\n" +  \
-      "  mv ${DAG}.rescue ${1}" + \
+      "  DAG=${2#*/}\n" +  \
+      "  mv ${2} ${2}.orig\n" +  \
+      "  mv ${DAG}.rescue ${2}" + \
       "fi")
   f.close()
-  os.chmod("rescue.sh", 744)
+  os.chmod("rescue.sh", 0744)
 
 
 
@@ -277,7 +280,10 @@ parser.add_option("-e", "--gps-end-time",action="store",type="int",\
     metavar=" GPS_END", help="end analysis at GPS_END")
 
 parser.add_option("-S", "--generate-segments",action="store_true",\
-    default=False, help="create directory structure, generate segments")
+    default=False, help="generate segments for analysis")
+
+parser.add_option("-D", "--use-available-data",action="store_true",\
+    default=False, help="analyze only the data available on the cluster")
 
 parser.add_option("-A", "--run-analysis",action="store_true",\
     default=False, help="run the inspiral analysis")
