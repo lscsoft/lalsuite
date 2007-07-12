@@ -256,9 +256,6 @@ LALAddStrainModes(
           tempStrain = XLALOrientNRWave( tempStrain, thisMetaData.mode[0],
               thisMetaData.mode[1], thisInj->inclination, thisInj->coa_phase );
 
-	  fprintf(stdout, "Elemento de strain= %e\n", tempStrain->data->data[0]);
-
-
 	  if (sumStrain == NULL) {
 
 	    sumStrain = LALCalloc(1, sizeof(*sumStrain));	    
@@ -277,7 +274,7 @@ LALAddStrainModes(
 	    sumStrain = XLALSumStrain( sumStrain, tempStrain );
 	  }
 
-	  fprintf(stdout, "Elemento de sumStrain= %e\n", sumStrain->data->data[0]);
+	  fprintf(stdout, "\nInjecting NR waveform from file %s", thisMetaData.filename);
 
           /* clear memory for strain */
           XLALDestroyREAL4VectorSequence ( tempStrain->data );
@@ -288,6 +285,7 @@ LALAddStrainModes(
 
       } /* end loop over modeL values */
 
+  fprintf(stdout, "\nNR injections done\n");
 
   *outStrain = sumStrain;
       
@@ -316,11 +314,11 @@ void LALDriveNRInject( LALStatus *status,
   /* loop over injections */
   for ( thisInj = injections; thisInj; thisInj = thisInj->next )
     {
-      
+
       TRY( LALAddStrainModes(status->statusPtr, &sumStrain, params->nrCatalog,
 				  params->modeLlo, params->modeLhi, thisInj), status);
       
-      TRY( LALInjectStrainGW( status->statusPtr, injData, sumStrain, thisInj, params->ifo, 1.0), status);
+      TRY( LALInjectStrainGW( status->statusPtr, injData, sumStrain, thisInj, params->ifo, params->dynRange), status);
       
       XLALDestroyREAL4VectorSequence ( sumStrain->data );
       LALFree( sumStrain );
