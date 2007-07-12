@@ -1,0 +1,404 @@
+#!/usr/bin/env @PYTHONPROG@
+"""
+ihope.in - weekly automate pipeline driver script
+
+$Id$
+
+This script generates the condor DAG necessary to analyze a given amount
+of LIGO and GEO data.  It takes in the start and end times, generates the
+segment lists, runs the zero-lag, time shift and injection analyses, generates
+summary information and plots and follows up the loudest events.
+"""
+__author__ = 'Stephen Fairhurst <sfairhur@gravity.phys.uwm.edu>'
+__date__ = '$Date$'
+__version__ = '$Revision$'[11:-2]
+
+##############################################################################
+# import standard modules and append the lalapps prefix to the python path
+import os, sys, copy
+import ConfigParser
+import optparse
+import tempfile
+sys.path.append('@PYTHONLIBDIR@')
+
+##############################################################################
+# import the modules we need to build the pipeline
+from glue import segments
+from glue import segmentsUtils
+from glue import pipeline
+
+
+##############################################################################
+# Functions used in setting up the dag:
+
+def make_external_call(command, show_stdout=False, show_command=False):
+  """
+  Run a program on the shell and print informative messages on failure.
+  """
+  if show_command: print command
+    
+  stdin, out, err = os.popen3(command)
+  pid, status = os.wait()
+
+  if status != 0:
+      print >>sys.stderr, "External call failed."
+      print >>sys.stderr, "  status: %d" % status
+      print >>sys.stderr, "  stdout: %s" % out.read()
+      print >>sys.stderr, "  stderr: %s" % err.read()
+      print >>sys.stderr, "  command: %s" % command
+      sys.exit(status)
+  if show_stdout:
+      print out.read()
+  stdin.close()
+  out.close()
+  err.close()
+
+def mkdir( newdir ):
+  """
+  Create a directory, don't complain if it exists
+  
+  newdir = name of directory to be created
+  """
+  if os.path.isdir(newdir): pass
+  elif os.path.isfile(newdir):
+    raise OSError("a file with the same name as the desired " \
+                  "dir, '%s', already exists." % newdir)
+  else: os.mkdir(newdir)
+ 
+def link_executables(directory):
+  """
+  link executables to given directory
+  """
+  for (job, executable) in cp.items("condor"):
+    if job != "universe":
+      if executable[0] != "/": executable = "../../" + executable
+      exec_link = analysisDirectory + "/" + directory + "/" + \
+          executable.split("/")[-1]
+      try: os.symlink(executable, exec_link)
+      except: pass
+      cp.set("condor", job, exec_link.split("/")[-1] )
+
+def generate_segments(ifo):
+  """
+  generate the segments for the specified ifo
+  """
+  ligoIfos = ["H1","H2","L1"]
+
+  if ifo in ligoIfos: type = cp.get("input","ligo-type")
+  elif ifo == "G1": type =   cp.get("input","geo-type")
+ 
+  ifo_type = ifo + "_" + type
+  dataFindFile = ifo_type + "-" + str(opts.gps_start_time) + "-" + \
+      str(opts.gps_end_time - opts.gps_start_time) + ".txt"
+  segFindFile = ifo + "_SCI_SEGS-" + str(opts.gps_start_time) + "-" + \
+      str(opts.gps_end_time - opts.gps_start_time) + ".txt"
+  segFile = ifo + "_selectedsegs.txt"
+  missedFile = ifo + "_missedsegs.txt"
+
+  # if not generating segments, all we need is the name of the segment file
+  if not opts.generate_segments: return segFile
+
+  # run segFind
+  print "Running LSCsegFind to determine science segments for " + ifo
+  segFindCall = "LSCsegFind --interferometer=" + ifo + \
+      " --type=" + cp.get("segments","analyze") + \
+      " --gps-start-time=" + str(opts.gps_start_time) + \
+      " --gps-end-time=" + str(opts.gps_end_time) + " > " + \
+      segFindFile
+  make_external_call(segFindCall)
+  sfSegs = segmentsUtils.fromsegwizard(file(segFindFile)).coalesce()
+
+  # run dataFind
+  print "Running LSCdataFind to determine available data from " + type + \
+      " frames for " + ifo
+  dataFindCall = "LSCdataFind --observatory=" + ifo[0] + \
+      " --type=" + ifo_type + \
+      " --gps-start-time=" + str(opts.gps_start_time) + \
+      " --gps-end-time=" + str(opts.gps_end_time) + " --show-times > " + \
+      dataFindFile
+  make_external_call(dataFindCall)
+  dfSegs = segmentsUtils.fromsegwizard(file(dataFindFile)).coalesce()
+
+  # generate the analyzed segments
+  analyzedSegs = sfSegs.__and__(dfSegs)
+  analyzedSegs = dfSegs
+  segmentsUtils.tosegwizard(file(segFile,"w"), analyzedSegs)
+  print "Writing " + ifo + " segments of total time " + \
+      str(analyzedSegs.__abs__()) + "s to file: " + \
+      segFile
+
+  missedSegs = sfSegs.__and__(dfSegs.__invert__()) 
+  segmentsUtils.tosegwizard(file(missedFile,"w"), missedSegs)
+  print "Writing " + ifo + " segments which cannot be analyzed to file " + \
+      missedFile
+  print "Not analyzing %d s, representing %.2f percent of time" %  \
+     (missedSegs.__abs__(), 
+     100. * missedSegs.__abs__() / analyzedSegs.__abs__() )
+  print
+
+  return segFile
+
+
+def hipe_setup(hipeDir, injFile=None, dfOnly = False):
+  """
+  run lalapps_inspiral_hipe and add job to dag
+  
+  hipeDir = directory in which to run inspiral hipe
+  injFile = injection file to use when running
+  dfOnly  = only run the datafind step of the pipeline
+  """
+
+  # make the directory for running hipe
+  mkdir(hipeDir)
+  os.chdir("..")
+
+  # link the executables 
+  link_executables(hipeDir)
+
+  if injFile:
+    # link the injection file
+    if injFile[0] != "/": injFile = "../../" + injFile
+    inj_link = analysisDirectory + "/" + hipeDir + "/" + \
+          injFile.split("/")[-1]
+    if not os.path.isfile(inj_link):
+      os.symlink(injFile, inj_link)
+
+    # add the options to the ini file
+    hipecp.set("input", "injection-file", injFile.split("/")[-1] )
+    hipecp.set("input", "num-slides", "")
+
+  else: 
+    # add the options to the ini file
+    hipecp.set("input","num-slides", cp.get("input","num-slides") )
+    hipecp.set("input", "injection-file", "" )
+
+  # return to the directory, write ini file and run hipe
+  os.chdir(analysisDirectory + "/" + hipeDir)
+  iniFile = "inspiral_hipe." + hipeDir + ".ini"
+
+  hipecp.write(file(iniFile,"w"))
+  
+  print "Running hipe in directory " + hipeDir 
+  if injFile: 
+    print "Injection file: " + hipecp.get("input", "injection-file") 
+  else: print "No injections, " + str(hipecp.get("input","num-slides")) + \
+      " time slides"
+  print
+
+  # work out the hipe call:
+  hipeCommand = cp.get("condor","hipe")
+  hipeCommand += " --log-path " + opts.log_path
+  hipeCommand += " --config-file " + iniFile
+  for item in cp.items("ifo-details"):
+      hipeCommand += " --" + item[0] + " " + item[1]
+
+  if dfOnly: hipeCommand += " --datafind"
+  else:
+    for item in cp.items("hipe-arguments"):
+      if item[0] != "datafind": hipeCommand += " --" + item[0] + " " + item[1]
+
+  # run lalapps_inspiral_hipe
+  make_external_call(hipeCommand) 
+  os.chdir("..")
+
+  # add job to dag
+  hipeJob = pipeline.CondorDAGManJob(
+      hipeDir + "/" + iniFile.rstrip("ini") + "dag")
+  hipeNode = pipeline.CondorDAGNode(hipeJob)
+
+  # add postscript to deal with rescue dag
+  fix_rescue(hipeNode)
+  dag.add_node(hipeNode)
+
+  return hipeNode
+
+
+def fix_rescue(dagNode):
+  """
+  add a postscript to deal with the rescue dag correctly
+ 
+  dagNode = the node for the subdag
+  """
+  dagNode.set_post_script( "rescue.sh")
+  dagNode.add_post_script_arg( 
+      dagNode.job().get_sub_file().rstrip(".condor.sub") )
+
+def write_rescue():
+  # Write the rescue post-script
+  f = open("rescue.sh", "w")
+  f.write("#! /bin/bash\n" + \
+      "if [ ! -n \"${1}\" ]\n" + \
+      "then\n" + \
+      "  echo \"Usage: `basename $0` DAGfile\"\n" + \
+      "fi\n" +  \
+      "\n" +  \
+      "DAG=${1#*/}\n" +  \
+      "mv ${1} ${1}.orig\n" +  \
+      "mv ${DAG}.rescue ${1}")
+  f.close()
+
+
+
+##############################################################################
+#
+#  MAIN PROGRAM
+#
+##############################################################################
+usage = """usage: %prog [options] 
+"""
+
+parser = optparse.OptionParser( usage )
+
+# arguments
+parser.add_option("-f", "--config-file",action="store",type="string",\
+    metavar=" FILE", help="use configuration file FILE")
+
+parser.add_option("-p", "--log-path",action="store",type="string",\
+    metavar=" PATH", help="directory to write condor log file")
+
+parser.add_option("-s", "--gps-start-time",action="store",type="int",\
+    metavar=" GPS_START", help="begin analysis at GPS_START")
+
+parser.add_option("-e", "--gps-end-time",action="store",type="int",\
+    metavar=" GPS_END", help="end analysis at GPS_END")
+
+parser.add_option("-S", "--generate-segments",action="store_true",\
+    default=False, help="create directory structure, generate segments")
+
+parser.add_option("-A", "--run-analysis",action="store_true",\
+    default=False, help="run the inspiral analysis")
+
+parser.add_option("-F", "--run-followup",action="store_true",\
+    default=False, help="run the inspiral followup")
+
+(opts,args) = parser.parse_args()
+
+##############################################################################
+# Sanity check of input arguments
+if not opts.config_file:
+  print >> sys.stderr, "No configuration file specified."
+  print >> sys.stderr, "Use --config-file FILE to specify location."
+  sys.exit(1)
+
+if not opts.log_path:
+  print >> sys.stderr, "No log file path specified."
+  print >> sys.stderr, "Use --log-path PATH to specify a location."
+  sys.exit(1)
+
+if not opts.gps_start_time:
+  print >> sys.stderr, "No GPS start time specified for the analysis"
+  print >> sys.stderr, "Use --gps-start-time GPS_START to specify a location."
+  sys.exit(1)
+
+if not opts.gps_end_time:
+  print >> sys.stderr, "No GPS end time specified for the analysis"
+  print >> sys.stderr, "Use --gps-end-time GPS_END to specify a location."
+  sys.exit(1)
+
+if opts.gps_end_time < opts.gps_start_time:
+  print >> sys.stderr, "The GPS end time must be after the GPS start time"
+  sys.exit(1)
+
+##############################################################################
+# parse the ini file:
+cp = ConfigParser.ConfigParser()
+cp.read(opts.config_file)
+
+# set up the analysis directory
+analysisDirectory = str(opts.gps_start_time) + "-" + str(opts.gps_end_time)
+
+mkdir(analysisDirectory)
+os.chdir(analysisDirectory)
+
+# create the hipe ini file
+hipecp = copy.deepcopy(cp)
+hipecp.remove_section("injections")
+hipecp.remove_section("hipe-arguments")
+hipecp.remove_option("condor","hipe")
+hipecp.remove_option("condor","follow")
+hipecp.remove_section("segments")
+
+##############################################################################
+# Set up the IFOs and get the appropriate segments
+
+ifos = []
+for option in ["g1-data","h1-data","h2-data","l1-data"]:
+  if cp.has_option("ifo-details",option): ifos.append(option[0:2].upper() )
+
+if cp.has_option("ifo-details","analyze-all"): 
+  ifos = ["G1", "H1", "H2", "L1"]
+
+print "Setting up an analysis for " + str(ifos) + " from " + \
+    str(opts.gps_start_time) + " to "  + str(opts.gps_end_time)
+print
+
+# Run LSCsegFind and LSCdataFind to determine the segments to analyze
+for ifo in ifos:
+  segFile = generate_segments(ifo)
+  hipecp.set("input",ifo.lower() + "-segments","../" + segFile)
+
+##############################################################################
+# create a log file that the Condor jobs will write to
+basename = opts.config_file.rstrip(".ini")
+logname = basename + '.dag.log.'
+tempfile.tempdir = opts.log_path
+logfile = tempfile.mktemp(prefix=logname)
+fh = open( logfile, "w" )
+fh.close()
+
+##############################################################################
+# create the DAG writing the log to the specified directory
+dag = pipeline.CondorDAG(logfile)
+dag.set_dag_file(basename)
+
+# write the file to handle the rescue dags
+write_rescue()
+
+##############################################################################
+# Run lalapps_inspiral_hipe for datafind
+print "Running inspiral hipe for datafind run"
+hipeDfNode = hipe_setup("datafind", dfOnly = True)
+
+
+##############################################################################
+# Set up the directories for each run and run lalapps_inspiral_hipe
+print "Running inspiral hipe for analysis and injection runs"
+
+injNodes = []
+for (injDir, injFile) in cp.items("injections"):
+  injNodes.append( hipe_setup(injDir, injFile))
+
+for node in injNodes: node.add_parent(hipeDfNode) 
+
+analysisNode = hipe_setup("analysis")
+analysisNode.add_parent(hipeDfNode)
+
+
+##############################################################################
+# Write the dag and sub files
+dag.write_sub_files()
+dag.write_dag()
+
+print 
+print "  Created a DAG file which can be submitted by executing"
+print "\n    cd " + analysisDirectory
+print "    condor_submit_dag " + dag.get_dag_file()
+print """\n  from a condor submit machine
+  Before submitting the dag, you must execute
+
+    export _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR=FALSE
+
+  If you are running LSCdataFind jobs, do not forget to initialize your grid
+  proxy certificate on the condor submit machine by running the commands
+  
+    unset X509_USER_PROXY
+    grid-proxy-init -hours 72
+  
+  Enter your pass phrase when promted. The proxy will be valid for 72 hours.
+  If you expect the LSCdataFind jobs to take longer to complete, increase the
+  time specified in the -hours option to grid-proxy-init. You can check that
+  the grid proxy has been sucessfully created by executing the command:
+  
+    grid-cert-info -all -file /tmp/x509up_u`id -u`
+  
+  This will also give the expiry time of the proxy."""
