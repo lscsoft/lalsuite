@@ -86,3 +86,21 @@ SERIESTYPE *`XLALShrink'SERIESTYPE (
 );
 /* </lalVerbatim> */
 
+/* <lalLaTeX file="TimeSeriesAddP">
+\idx{`XLALAdd'SERIESTYPE ()}
+</lalLaTeX> <lalVerbatim file="TimeSeriesAddP"> */
+SERIESTYPE *`XLALAdd'SERIESTYPE (
+	SERIESTYPE *arg1,
+	const SERIESTYPE *arg2
+);
+/* </lalVerbatim> */
+
+/* <lalLaTeX file="TimeSeriesSubtractP">
+\idx{`XLALSubtract'SERIESTYPE ()}
+</lalLaTeX> <lalVerbatim file="TimeSeriesSubtractP"> */
+SERIESTYPE *`XLALSubtract'SERIESTYPE (
+	SERIESTYPE *arg1,
+	const SERIESTYPE *arg2
+);
+/* </lalVerbatim> */
+

@@ -28,6 +28,7 @@
 #include <lal/LALError.h>
 #include <lal/Sequence.h>
 #include <lal/TimeSeries.h>
+#include <lal/Units.h>
 #include <lal/XLALError.h>
 
 
