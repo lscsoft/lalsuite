@@ -66,8 +66,8 @@ static void XLALDestroySnglBurstTable(SnglBurstTable *head)
 
 SnglBurstTable *XLALEPSearch(
 	struct XLALEPSearchDiagnostics *diagnostics,
-	const REAL4TimeSeries *tseries,
-	REAL4Window *window,
+	const REAL8TimeSeries *tseries,
+	REAL8Window *window,
 	REAL8 flow,
 	REAL8 bandwidth,
 	REAL8 confidence_threshold,
@@ -80,12 +80,12 @@ SnglBurstTable *XLALEPSearch(
 	SnglBurstTable *head = NULL;
 	int errorcode = 0;
 	int start_sample;
-	COMPLEX8FrequencySeries *fseries = NULL;
-	RealFFTPlan *fplan;
-	RealFFTPlan *rplan;
-	REAL4FrequencySeries *psd;
-	REAL4TimeSeries *cuttseries;
-	REAL4TimeFrequencyPlane *plane;
+	COMPLEX16FrequencySeries *fseries = NULL;
+	REAL8FFTPlan *fplan;
+	REAL8FFTPlan *rplan;
+	REAL8FrequencySeries *psd;
+	REAL8TimeSeries *cuttseries;
+	REAL8TimeFrequencyPlane *plane;
 
 	/*
 	 * Construct forward and reverse FFT plans, storage for the PSD,
@@ -94,9 +94,9 @@ SnglBurstTable *XLALEPSearch(
 	 * specified by the tiling_start parameter of XLALCreateTFPlane.
 	 */
 
-	fplan = XLALCreateForwardREAL4FFTPlan(window->data->length, 1);
-	rplan = XLALCreateReverseREAL4FFTPlan(window->data->length, 1);
-	psd = XLALCreateREAL4FrequencySeries("PSD", &tseries->epoch, 0, 0, &lalDimensionlessUnit, window->data->length / 2 + 1);
+	fplan = XLALCreateForwardREAL8FFTPlan(window->data->length, 1);
+	rplan = XLALCreateReverseREAL8FFTPlan(window->data->length, 1);
+	psd = XLALCreateREAL8FrequencySeries("PSD", &tseries->epoch, 0, 0, &lalDimensionlessUnit, window->data->length / 2 + 1);
 	plane = XLALCreateTFPlane(window->data->length, tseries->deltaT, flow, bandwidth, fractional_stride, maxTileBandwidth, maxTileDuration);
 	if(!fplan || !rplan || !psd || !plane) {
 		errorcode = XLAL_EFUNC;
@@ -122,8 +122,8 @@ SnglBurstTable *XLALEPSearch(
 	/* diagnostic code to disable the tapering window */
 	{
 	unsigned i = plane->window->data->length;
-	XLALDestroyREAL4Window(plane->window);
-	plane->window = XLALCreateRectangularREAL4Window(i);
+	XLALDestroyREAL8Window(plane->window);
+	plane->window = XLALCreateRectangularREAL8Window(i);
 	}
 #endif
 
@@ -134,13 +134,13 @@ SnglBurstTable *XLALEPSearch(
 	 * the time series' lengths are inconsistent
 	 */
 
-	if(XLALREAL4AverageSpectrumMedian(psd, tseries, plane->window->data->length, plane->window_shift, plane->window, fplan) < 0) {
+	if(XLALREAL8AverageSpectrumMedian(psd, tseries, plane->window->data->length, plane->window_shift, plane->window, fplan) < 0) {
 		errorcode = XLAL_EFUNC;
 		goto error;
 	}
 
 	if(diagnostics)
-		diagnostics->XLALWriteLIGOLwXMLArrayREAL4FrequencySeries(diagnostics->LIGOLwXMLStream, NULL, psd);
+		diagnostics->XLALWriteLIGOLwXMLArrayREAL8FrequencySeries(diagnostics->LIGOLwXMLStream, NULL, psd);
 
 	/*
 	 * Loop over data applying excess power method.
@@ -152,18 +152,18 @@ SnglBurstTable *XLALEPSearch(
 		 * compute its DFT, then free it.
 		 */
 
-		cuttseries = XLALCutREAL4TimeSeries(tseries, start_sample, plane->window->data->length);
+		cuttseries = XLALCutREAL8TimeSeries(tseries, start_sample, plane->window->data->length);
 		if(!cuttseries) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
 		XLALPrintInfo("XLALEPSearch(): analyzing %u samples (%.9lf s) at offset %u (%.9lf s) from epoch %d.%09u s\n", cuttseries->data->length, cuttseries->data->length * cuttseries->deltaT, start_sample, start_sample * cuttseries->deltaT, tseries->epoch.gpsSeconds, tseries->epoch.gpsNanoSeconds);
 		if(diagnostics)
-			diagnostics->XLALWriteLIGOLwXMLArrayREAL4TimeSeries(diagnostics->LIGOLwXMLStream, NULL, cuttseries);
+			diagnostics->XLALWriteLIGOLwXMLArrayREAL8TimeSeries(diagnostics->LIGOLwXMLStream, NULL, cuttseries);
 
 		XLALPrintInfo("XLALEPSearch(): computing the Fourier transform\n");
-		fseries = XLALWindowedREAL4ForwardFFT(cuttseries, plane->window, fplan);
-		XLALDestroyREAL4TimeSeries(cuttseries);
+		fseries = XLALWindowedREAL8ForwardFFT(cuttseries, plane->window, fplan);
+		XLALDestroyREAL8TimeSeries(cuttseries);
 		if(!fseries) {
 			errorcode = XLAL_EFUNC;
 			goto error;
@@ -175,12 +175,12 @@ SnglBurstTable *XLALEPSearch(
 
 #if 1
 		XLALPrintInfo("XLALEPSearch(): normalizing to the average spectrum\n");
-		if(!XLALWhitenCOMPLEX8FrequencySeries(fseries, psd, plane->flow, plane->flow + plane->channels * plane->deltaF)) {
+		if(!XLALWhitenCOMPLEX16FrequencySeries(fseries, psd, plane->flow, plane->flow + plane->channels * plane->deltaF)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
 		if(diagnostics)
-			diagnostics->XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries(diagnostics->LIGOLwXMLStream, "whitened", fseries);
+			diagnostics->XLALWriteLIGOLwXMLArrayCOMPLEX16FrequencySeries(diagnostics->LIGOLwXMLStream, "whitened", fseries);
 #endif
 
 		/*
@@ -206,7 +206,7 @@ SnglBurstTable *XLALEPSearch(
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
-		XLALDestroyCOMPLEX8FrequencySeries(fseries);
+		XLALDestroyCOMPLEX16FrequencySeries(fseries);
 		fseries = NULL;
 
 		/*
@@ -234,10 +234,10 @@ SnglBurstTable *XLALEPSearch(
 	XLALPrintInfo("XLALEPSearch(): done\n");
 
 	error:
-	XLALDestroyREAL4FFTPlan(fplan);
-	XLALDestroyREAL4FFTPlan(rplan);
-	XLALDestroyREAL4FrequencySeries(psd);
-	XLALDestroyCOMPLEX8FrequencySeries(fseries);
+	XLALDestroyREAL8FFTPlan(fplan);
+	XLALDestroyREAL8FFTPlan(rplan);
+	XLALDestroyREAL8FrequencySeries(psd);
+	XLALDestroyCOMPLEX16FrequencySeries(fseries);
 	XLALDestroyTFPlane(plane);
 	if(errorcode) {
 		XLALDestroySnglBurstTable(head);
@@ -253,7 +253,7 @@ SnglBurstTable *XLALEPSearch(
 
 
 int XLALEPConditionData(
-	REAL4TimeSeries *series,
+	REAL8TimeSeries *series,
 	REAL8 flow,
 	REAL8 resampledeltaT,
 	INT4 corruption
@@ -268,7 +268,7 @@ int XLALEPConditionData(
 	 */
 
 	if(fabs(resampledeltaT - series->deltaT) / series->deltaT >= epsilon)
-		if(XLALResampleREAL4TimeSeries(series, resampledeltaT))
+		if(XLALResampleREAL8TimeSeries(series, resampledeltaT))
 			XLAL_ERROR(func, XLAL_EFUNC);
 
 	/*
@@ -280,14 +280,14 @@ int XLALEPConditionData(
 	highpassParam.f1 = -1.0;
 	highpassParam.a2 = 0.9;
 	highpassParam.a1 = -1.0;
-	if(XLALButterworthREAL4TimeSeries(series, &highpassParam))
+	if(XLALButterworthREAL8TimeSeries(series, &highpassParam))
 		XLAL_ERROR(func, XLAL_EFUNC);
 
 	/*
 	 * The filter corrupts the ends of the time series.  Chop them off.
 	 */
 
-	if(!XLALShrinkREAL4TimeSeries(series, corruption, series->data->length - 2 * corruption))
+	if(!XLALShrinkREAL8TimeSeries(series, corruption, series->data->length - 2 * corruption))
 		XLAL_ERROR(func, XLAL_EFUNC);
 
 	return(0);

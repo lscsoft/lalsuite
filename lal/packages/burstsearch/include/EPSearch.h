@@ -52,16 +52,16 @@ NRCSID(EPSEARCHH, "$Id$");
 
 struct XLALEPSearchDiagnostics {
 	void *LIGOLwXMLStream;
-	int (*XLALWriteLIGOLwXMLArrayREAL4FrequencySeries)(void *, const char *, const REAL4FrequencySeries *);
-	int (*XLALWriteLIGOLwXMLArrayREAL4TimeSeries)(void *, const char *, const REAL4TimeSeries *);
-	int (*XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries)(void *, const char *, const COMPLEX8FrequencySeries *);
+	int (*XLALWriteLIGOLwXMLArrayREAL8FrequencySeries)(void *, const char *, const REAL8FrequencySeries *);
+	int (*XLALWriteLIGOLwXMLArrayREAL8TimeSeries)(void *, const char *, const REAL8TimeSeries *);
+	int (*XLALWriteLIGOLwXMLArrayCOMPLEX16FrequencySeries)(void *, const char *, const COMPLEX16FrequencySeries *);
 };
 
 
 SnglBurstTable *XLALEPSearch(
 	struct XLALEPSearchDiagnostics *diagnostics,
-	const REAL4TimeSeries  *tseries,
-	REAL4Window *window,
+	const REAL8TimeSeries  *tseries,
+	REAL8Window *window,
 	REAL8 flow,
 	REAL8 bandwidth,
 	REAL8 confidence_threshold,
@@ -73,7 +73,7 @@ SnglBurstTable *XLALEPSearch(
 
 
 int XLALEPConditionData(
-	REAL4TimeSeries  *series,
+	REAL8TimeSeries  *series,
 	REAL8             flow,
 	REAL8             resampledeltaT,
 	INT4              corruption
@@ -91,20 +91,6 @@ COMPLEX16FrequencySeries *XLALWindowedREAL8ForwardFFT(
 	const REAL8TimeSeries *tseries,
 	const REAL8Window *window,
 	const REAL8FFTPlan *plan
-);
-
-
-REAL4Sequence *XLALREAL4AddWhiteNoise(
-	REAL4Sequence *sequence,
-	REAL4 rms,
-	RandomParams *params
-);
-
-
-COMPLEX8Sequence *XLALCOMPLEX8AddWhiteNoise(
-	COMPLEX8Sequence *sequence,
-	REAL8 rms,
-	RandomParams *params
 );
 
 

@@ -60,7 +60,7 @@ typedef struct tagREAL4TimeFrequencyPlane {
 	/* low frequency boundary of TF plane */
 	REAL8 flow;
 	/* channel filters */
-	COMPLEX8FrequencySeries **filter;
+	COMPLEX16FrequencySeries **filter;
 	/* twice the inner product of filters for neighbouring channels;
 	 * twice_channel_overlap[0] is twice the inner product of the
 	 * filters for channels 0 and 1, and so on (for n channels, there
@@ -79,7 +79,7 @@ typedef struct tagREAL4TimeFrequencyPlane {
 	 *
 	 * [flow + j * deltaF, flow + (j + 1) * deltaF)
 	 */
-	REAL4Sequence **channel;
+	REAL8Sequence **channel;
 	/* time-frequency plane's tiling information */
 	struct TFTiling {
 		unsigned max_length;
@@ -91,17 +91,17 @@ typedef struct tagREAL4TimeFrequencyPlane {
 		double dof_per_pixel;
 	} tiles;
 	/* window applied to input time series for tapering edges to 0 */
-	REAL4Window *window;
+	REAL8Window *window;
 	/* by how many samples a window's start should be shifted from the
 	 * start of the window preceding it */
 	INT4 window_shift;
 	/* two-point spectral correlation of the whitened frequency series,
 	 * computed from the time-domain window function */
-	REAL4Sequence *two_point_spectral_correlation;
-} REAL4TimeFrequencyPlane;
+	REAL8Sequence *two_point_spectral_correlation;
+} REAL8TimeFrequencyPlane;
 
 
-REAL4TimeFrequencyPlane *XLALCreateTFPlane(
+REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	UINT4 tseries_length,
 	REAL8 tseries_deltaT,
 	REAL8 flow,
@@ -113,28 +113,29 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 
 
 void XLALDestroyTFPlane(
-	REAL4TimeFrequencyPlane *plane
+	REAL8TimeFrequencyPlane *plane
 );
 
 
 INT4 XLALTFPlaneMakeChannelFilters(
-	const COMPLEX8FrequencySeries *template,
-	REAL4TimeFrequencyPlane *plane,
-	const REAL4FrequencySeries *psd
+	const COMPLEX16FrequencySeries *template,
+	REAL8TimeFrequencyPlane *plane,
+	const REAL8FrequencySeries *psd
 );
 
 
 int XLALFreqSeriesToTFPlane(
-	REAL4TimeFrequencyPlane *tfplane,
-	const COMPLEX8FrequencySeries *fseries,
-	const REAL4FFTPlan *reverseplan
+	REAL8TimeFrequencyPlane *tfplane,
+	const COMPLEX16FrequencySeries *fseries,
+	const REAL8FFTPlan *reverseplan
 );
 
 
 SnglBurstTable *XLALComputeExcessPower(
-	const REAL4TimeFrequencyPlane *plane,
+	const REAL8TimeFrequencyPlane *plane,
 	SnglBurstTable *head,
-	double confidence_threshold
+	double confidence_threshold,
+	REAL8FFTPlan *reverseplan
 );
 
 

@@ -51,20 +51,20 @@ static double max(double a, double b)
 }
 
 
-static COMPLEX8Sequence *apply_filter(
-	COMPLEX8Sequence *outputseq,
-	const COMPLEX8FrequencySeries *inputseries,
-	const COMPLEX8FrequencySeries *filterseries
+static COMPLEX16Sequence *apply_filter(
+	COMPLEX16Sequence *outputseq,
+	const COMPLEX16FrequencySeries *inputseries,
+	const COMPLEX16FrequencySeries *filterseries
 )
 {
 	static const char func[] = "apply_filter";
 	/* find bounds of common frequencies */
 	const double flo = max(filterseries->f0, inputseries->f0);
 	const double fhi = min(filterseries->f0 + filterseries->data->length * filterseries->deltaF, inputseries->f0 + inputseries->data->length * inputseries->deltaF);
-	COMPLEX8 *output = outputseq->data + (int) ((flo - inputseries->f0) / inputseries->deltaF);
-	COMPLEX8 *last = outputseq->data + (int) ((fhi - inputseries->f0) / inputseries->deltaF);
-	const COMPLEX8 *input = inputseries->data->data + (int) ((flo - inputseries->f0) / inputseries->deltaF);
-	const COMPLEX8 *filter = filterseries->data->data + (int) ((flo - filterseries->f0) / filterseries->deltaF);
+	COMPLEX16 *output = outputseq->data + (int) ((flo - inputseries->f0) / inputseries->deltaF);
+	COMPLEX16 *last = outputseq->data + (int) ((fhi - inputseries->f0) / inputseries->deltaF);
+	const COMPLEX16 *input = inputseries->data->data + (int) ((flo - inputseries->f0) / inputseries->deltaF);
+	const COMPLEX16 *filter = filterseries->data->data + (int) ((flo - filterseries->f0) / filterseries->deltaF);
 
 	if(outputseq->length != inputseries->data->length)
 		XLAL_ERROR_NULL(func, XLAL_EBADLEN);
@@ -88,14 +88,14 @@ static COMPLEX8Sequence *apply_filter(
 
 /******** <lalVerbatim file="FreqSeriesToTFPlaneCP"> ********/
 int XLALFreqSeriesToTFPlane(
-	REAL4TimeFrequencyPlane *plane,
-	const COMPLEX8FrequencySeries *fseries,
-	const REAL4FFTPlan *reverseplan
+	REAL8TimeFrequencyPlane *plane,
+	const COMPLEX16FrequencySeries *fseries,
+	const REAL8FFTPlan *reverseplan
 )
 /******** </lalVerbatim> ********/
 {
 	static const char func[] = "XLALFreqSeriesToTFPlane";
-	COMPLEX8Sequence *fcorr;
+	COMPLEX16Sequence *fcorr;
 	unsigned i;
 
 	/* check input parameters */
@@ -109,9 +109,9 @@ int XLALFreqSeriesToTFPlane(
 		XLAL_ERROR(func, XLAL_EDATA);
 
 	/* create temporary vectors */
-	fcorr = XLALCreateCOMPLEX8Sequence(fseries->data->length);
+	fcorr = XLALCreateCOMPLEX16Sequence(fseries->data->length);
 	if(!fcorr) {
-		XLALDestroyCOMPLEX8Sequence(fcorr);
+		XLALDestroyCOMPLEX16Sequence(fcorr);
 		XLAL_ERROR(func, XLAL_EFUNC);
 	}
 
@@ -159,14 +159,14 @@ int XLALFreqSeriesToTFPlane(
 		 * XLALREAL4ReverseFFT() omits the factor of 1 / (N Delta
 		 * t) in the inverse transform. */
 		apply_filter(fcorr, fseries, plane->filter[i]);
-		if(XLALREAL4ReverseFFT(plane->channel[i], fcorr, reverseplan)) {
-			XLALDestroyCOMPLEX8Sequence(fcorr);
+		if(XLALREAL8ReverseFFT(plane->channel[i], fcorr, reverseplan)) {
+			XLALDestroyCOMPLEX16Sequence(fcorr);
 			XLAL_ERROR(func, XLAL_EFUNC);
 		}
 	}
 
 	/* clean up */
-	XLALDestroyCOMPLEX8Sequence(fcorr);
+	XLALDestroyCOMPLEX16Sequence(fcorr);
 
 	/* set the name and epoch of the TF plane */
 	strncpy(plane->name, fseries->name, LALNameLength);

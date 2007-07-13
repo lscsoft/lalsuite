@@ -290,21 +290,21 @@ INT4 XLALEPGetTimingParameters(
  */
 
 
-static REAL4Sequence *compute_two_point_spectral_correlation(
-	const REAL4Window *window
+static REAL8Sequence *compute_two_point_spectral_correlation(
+	const REAL8Window *window
 )
 {
-	REAL4Sequence *w_squared = XLALCopyREAL4Sequence(window->data);
-	COMPLEX8Sequence *tmp = XLALCreateCOMPLEX8Sequence(window->data->length / 2 + 1);
-	REAL4Sequence *correlation = XLALCreateREAL4Sequence(window->data->length / 2 + 1);
-	RealFFTPlan *plan = XLALCreateForwardREAL4FFTPlan(window->data->length, 0);
+	REAL8Sequence *w_squared = XLALCopyREAL8Sequence(window->data);
+	COMPLEX16Sequence *tmp = XLALCreateCOMPLEX16Sequence(window->data->length / 2 + 1);
+	REAL8Sequence *correlation = XLALCreateREAL8Sequence(window->data->length / 2 + 1);
+	REAL8FFTPlan *plan = XLALCreateForwardREAL8FFTPlan(window->data->length, 0);
 	unsigned i;
 
 	if(!w_squared || !tmp || !correlation || !plan) {
-		XLALDestroyREAL4Sequence(w_squared);
-		XLALDestroyCOMPLEX8Sequence(tmp);
-		XLALDestroyREAL4Sequence(correlation);
-		XLALDestroyREAL4FFTPlan(plan);
+		XLALDestroyREAL8Sequence(w_squared);
+		XLALDestroyCOMPLEX16Sequence(tmp);
+		XLALDestroyREAL8Sequence(correlation);
+		XLALDestroyREAL8FFTPlan(plan);
 		return NULL;
 	}
 
@@ -313,8 +313,8 @@ static REAL4Sequence *compute_two_point_spectral_correlation(
 		w_squared->data[i] *= w_squared->data[i] / window->sumofsquares;
 
 	/* Fourier transform */
-	if(XLALREAL4ForwardFFT(tmp, w_squared, plan)) {
-		XLALDestroyREAL4Sequence(correlation);
+	if(XLALREAL8ForwardFFT(tmp, w_squared, plan)) {
+		XLALDestroyREAL8Sequence(correlation);
 		correlation = NULL;
 	} else {
 		/* extract real components */
@@ -322,9 +322,9 @@ static REAL4Sequence *compute_two_point_spectral_correlation(
 			correlation->data[i] = tmp->data[i].re;
 	}
 
-	XLALDestroyREAL4Sequence(w_squared);
-	XLALDestroyCOMPLEX8Sequence(tmp);
-	XLALDestroyREAL4FFTPlan(plan);
+	XLALDestroyREAL8Sequence(w_squared);
+	XLALDestroyCOMPLEX16Sequence(tmp);
+	XLALDestroyREAL8FFTPlan(plan);
 
 	return correlation;
 }
@@ -335,7 +335,7 @@ static REAL4Sequence *compute_two_point_spectral_correlation(
  */
 
 
-REAL4TimeFrequencyPlane *XLALCreateTFPlane(
+REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	/* length of time series from which TF plane will be computed */
 	UINT4 tseries_length,
 	/* sample rate of time series */
@@ -353,14 +353,14 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 )
 {
 	static const char func[] = "XLALCreateTFPlane";
-	REAL4TimeFrequencyPlane *plane;
-	COMPLEX8FrequencySeries **filter;
+	REAL8TimeFrequencyPlane *plane;
+	COMPLEX16FrequencySeries **filter;
 	REAL8Sequence *twice_channel_overlap;
 	REAL8Sequence *unwhitened_rms;
 	REAL8Sequence *unwhitened_cross;
-	REAL4Sequence **channel;
-	REAL4Window *tukey;
-	REAL4Sequence *correlation;
+	REAL8Sequence **channel;
+	REAL8Window *tukey;
+	REAL8Sequence *correlation;
 	int i;
 
 	/*
@@ -463,7 +463,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	unwhitened_rms = XLALCreateREAL8Sequence(channels);
 	unwhitened_cross = XLALCreateREAL8Sequence(channels - 1);
 	channel = XLALMalloc(channels * sizeof(*channel));
-	tukey = XLALCreateTukeyREAL4Window(tseries_length, (tseries_length - tiling_length) / (double) tseries_length);
+	tukey = XLALCreateTukeyREAL8Window(tseries_length, (tseries_length - tiling_length) / (double) tseries_length);
 	correlation = tukey ? compute_two_point_spectral_correlation(tukey) : NULL;
 	if(!plane || !filter || !twice_channel_overlap || !unwhitened_rms || !unwhitened_cross || !channel || !tukey || !correlation) {
 		XLALFree(plane);
@@ -472,24 +472,24 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 		XLALDestroyREAL8Sequence(unwhitened_rms);
 		XLALDestroyREAL8Sequence(unwhitened_cross);
 		XLALFree(channel);
-		XLALDestroyREAL4Window(tukey);
-		XLALDestroyREAL4Sequence(correlation);
+		XLALDestroyREAL8Window(tukey);
+		XLALDestroyREAL8Sequence(correlation);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 	for(i = 0; i < channels; i++) {
 		filter[i] = NULL;
-		channel[i] = XLALCreateREAL4Sequence(tseries_length);
+		channel[i] = XLALCreateREAL8Sequence(tseries_length);
 		if(!channel[i]) {
 			while(--i)
-				XLALDestroyREAL4Sequence(channel[i]);
+				XLALDestroyREAL8Sequence(channel[i]);
 			XLALFree(plane);
 			XLALFree(filter);
 			XLALDestroyREAL8Sequence(twice_channel_overlap);
 			XLALDestroyREAL8Sequence(unwhitened_rms);
 			XLALDestroyREAL8Sequence(unwhitened_cross);
 			XLALFree(channel);
-			XLALDestroyREAL4Window(tukey);
-			XLALDestroyREAL4Sequence(correlation);
+			XLALDestroyREAL8Window(tukey);
+			XLALDestroyREAL8Sequence(correlation);
 			XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 		}
 	}
@@ -536,7 +536,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 
 
 void XLALDestroyTFPlane(
-	REAL4TimeFrequencyPlane *plane
+	REAL8TimeFrequencyPlane *plane
 )
 {
 	if(plane) {
@@ -545,13 +545,13 @@ void XLALDestroyTFPlane(
 		XLALDestroyREAL8Sequence(plane->unwhitened_rms);
 		XLALDestroyREAL8Sequence(plane->unwhitened_cross);
 		for(i = 0; i < plane->channels; i++) {
-			XLALDestroyCOMPLEX8FrequencySeries(plane->filter[i]);
-			XLALDestroyREAL4Sequence(plane->channel[i]);
+			XLALDestroyCOMPLEX16FrequencySeries(plane->filter[i]);
+			XLALDestroyREAL8Sequence(plane->channel[i]);
 		}
 		XLALFree(plane->filter);
 		XLALFree(plane->channel);
-		XLALDestroyREAL4Window(plane->window);
-		XLALDestroyREAL4Sequence(plane->two_point_spectral_correlation);
+		XLALDestroyREAL8Window(plane->window);
+		XLALDestroyREAL8Sequence(plane->two_point_spectral_correlation);
 	}
 	XLALFree(plane);
 }
@@ -585,9 +585,9 @@ void XLALDestroyTFPlane(
 
 
 static REAL8 filter_inner_product(
-	const COMPLEX8FrequencySeries *filter1,
-	const COMPLEX8FrequencySeries *filter2,
-	const REAL4Sequence *correlation
+	const COMPLEX16FrequencySeries *filter1,
+	const COMPLEX16FrequencySeries *filter2,
+	const REAL8Sequence *correlation
 )
 {
 	const int k10 = filter1->f0 / filter1->deltaF;
@@ -596,9 +596,9 @@ static REAL8 filter_inner_product(
 	COMPLEX16 sum = {0, 0};
 
 	for(k1 = 0; k1 < (int) filter1->data->length; k1++) {
-		const COMPLEX8 *f1data = &filter1->data->data[k1];
+		const COMPLEX16 *f1data = &filter1->data->data[k1];
 		for(k2 = 0; k2 < (int) filter2->data->length; k2++) {
-			const COMPLEX8 *f2data = &filter2->data->data[k2];
+			const COMPLEX16 *f2data = &filter2->data->data[k2];
 			const unsigned delta_k = abs(k10 + k1 - k20 - k2);
 			const double sksk = (delta_k & 1 ? -1 : +1) * (delta_k < correlation->length ? correlation->data[delta_k] : 0);
 
@@ -612,22 +612,22 @@ static REAL8 filter_inner_product(
 
 
 static REAL8 psd_weighted_filter_inner_product(
-	const COMPLEX8FrequencySeries *filter1,
-	const COMPLEX8FrequencySeries *filter2,
-	const REAL4Sequence *correlation,
-	const REAL4FrequencySeries *psd
+	const COMPLEX16FrequencySeries *filter1,
+	const COMPLEX16FrequencySeries *filter2,
+	const REAL8Sequence *correlation,
+	const REAL8FrequencySeries *psd
 )
 {
 	const int k10 = filter1->f0 / filter1->deltaF;
 	const int k20 = filter2->f0 / filter2->deltaF;
-	const REAL4 *pdata = psd->data->data - (int) (psd->f0 / psd->deltaF);
+	const REAL8 *pdata = psd->data->data - (int) (psd->f0 / psd->deltaF);
 	int k1, k2;
 	COMPLEX16 sum = {0, 0};
 
 	for(k1 = 0; k1 < (int) filter1->data->length; k1++) {
-		const COMPLEX8 *f1data = &filter1->data->data[k1];
+		const COMPLEX16 *f1data = &filter1->data->data[k1];
 		for(k2 = 0; k2 < (int) filter2->data->length; k2++) {
-			const COMPLEX8 *f2data = &filter2->data->data[k2];
+			const COMPLEX16 *f2data = &filter2->data->data[k2];
 			const unsigned delta_k = abs(k10 + k1 - k20 - k2);
 			double sksk = (delta_k & 1 ? -1 : +1) * (delta_k < correlation->length ? correlation->data[delta_k] : 0);
 			
@@ -653,21 +653,21 @@ static REAL8 psd_weighted_filter_inner_product(
  */
 
 
-static COMPLEX8FrequencySeries *generate_filter(
-	const COMPLEX8FrequencySeries *template,
+static COMPLEX16FrequencySeries *generate_filter(
+	const COMPLEX16FrequencySeries *template,
 	REAL8 channel_flow,
 	REAL8 channel_width,
-	const REAL4FrequencySeries *psd,
-	const REAL4Sequence *correlation
+	const REAL8FrequencySeries *psd,
+	const REAL8Sequence *correlation
 )
 {
 	static const char func[] = "generate_filter";
 	char filter_name[100];
-	REAL4Window *hann;
-	COMPLEX8FrequencySeries *filter;
-	REAL4 *pdata;
+	REAL8Window *hann;
+	COMPLEX16FrequencySeries *filter;
+	REAL8 *pdata;
 	unsigned i;
-	REAL4 norm;
+	REAL8 norm;
 
 	if(psd->deltaF != template->deltaF)
 		XLAL_ERROR_NULL(func, XLAL_EINVAL);
@@ -693,18 +693,18 @@ static COMPLEX8FrequencySeries *generate_filter(
 	 * Tukey window.  (you'll have to draw yourself a picture).
 	 */
 
-	filter = XLALCreateCOMPLEX8FrequencySeries(filter_name, &template->epoch, channel_flow - channel_width / 2, template->deltaF, &lalDimensionlessUnit, 2 * channel_width / template->deltaF + 1);
-	hann = XLALCreateHannREAL4Window(filter->data->length);
+	filter = XLALCreateCOMPLEX16FrequencySeries(filter_name, &template->epoch, channel_flow - channel_width / 2, template->deltaF, &lalDimensionlessUnit, 2 * channel_width / template->deltaF + 1);
+	hann = XLALCreateHannREAL8Window(filter->data->length);
 	if(!filter || !hann) {
-		XLALDestroyCOMPLEX8FrequencySeries(filter);
-		XLALDestroyREAL4Window(hann);
+		XLALDestroyCOMPLEX16FrequencySeries(filter);
+		XLALDestroyREAL8Window(hann);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 	for(i = 0; i < filter->data->length; i++) {
 		filter->data->data[i].re = hann->data->data[i];
 		filter->data->data[i].im = 0.0;
 	}
-	XLALDestroyREAL4Window(hann);
+	XLALDestroyREAL8Window(hann);
 
 	/*
 	 * divide by square root of PSD to "overwhiten".
@@ -746,9 +746,9 @@ static COMPLEX8FrequencySeries *generate_filter(
 
 
 INT4 XLALTFPlaneMakeChannelFilters(
-	const COMPLEX8FrequencySeries *template,
-	REAL4TimeFrequencyPlane *plane,
-	const REAL4FrequencySeries *psd
+	const COMPLEX16FrequencySeries *template,
+	REAL8TimeFrequencyPlane *plane,
+	const REAL8FrequencySeries *psd
 )
 {
 	static const char func[] = "XLALTFPlaneMakeChannelFilters";
@@ -756,12 +756,12 @@ INT4 XLALTFPlaneMakeChannelFilters(
 
 	for(i = 0; i < plane->channels; i++) {
 		if(plane->filter[i])
-			XLALDestroyCOMPLEX8FrequencySeries(plane->filter[i]);
+			XLALDestroyCOMPLEX16FrequencySeries(plane->filter[i]);
 
 		plane->filter[i] = generate_filter(template, plane->flow + i * plane->deltaF, plane->deltaF, psd, plane->two_point_spectral_correlation);
 		if(!plane->filter[i]) {
 			while(i--) {
-				XLALDestroyCOMPLEX8FrequencySeries(plane->filter[i]);
+				XLALDestroyCOMPLEX16FrequencySeries(plane->filter[i]);
 				plane->filter[i] = NULL;
 			}
 			XLAL_ERROR(func, XLAL_EFUNC);
