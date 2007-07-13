@@ -188,7 +188,7 @@ simulated data.
 \prog{lalapps\_power} \newline \hspace*{0.5in}
 \option{--bandwidth}~\parm{Hz} \newline \hspace*{0.5in}
 [\option{--burstinjection-file}~\parm{file name}] \newline \hspace*{0.5in}
-[\option{--calibrated-data}~\parm{high pass frequency}] \newline \hspace*{0.5in}
+[\option{--calibrated-data}] \newline \hspace*{0.5in}
 [\option{--calibration-cache}~\parm{cache file}] \newline \hspace*{0.5in}
 \option{--channel-name}~\parm{string} \newline \hspace*{0.5in}
 \option{--confidence-threshold}~\parm{threshold} \newline \hspace*{0.5in}
@@ -275,18 +275,14 @@ which is used to set information about the types of burst injections to be
 made.  This file may be constructed by hand, the \verb+lalapps_binj+
 program described in Section \ref{program:lalapps-binj}.
 
-\item[\option{--calibrated-data} \parm{high pass frequency}]
+\item[\option{--calibrated-data}]
 When the \option{--calibrated-data} option is supplied, input time series
 data is read as IEEE double-precision samples.  Calibrated data, for
-example from the GEO detector, is stored in double-precision rather than
-single-precision format.
-
-This program uses IEEE single-precision internally, so double-precision
-data must be quantized prior to processing.  It is typically necessary to
-remove low-frequency noise from the signal prior to quantization in order
-to reduce the loss of fidelity.  \parm{high pass frequency} sets the
-cut-off frequency, in Hertz, of the high-pass filter applied to the time
-series prior to quantization to single-precision.
+example from the GEO detector, or from LIGO's \(h(t)\) frames, is stored in
+double-precision rather than single-precision format.  The default is to
+read the data as IEEE single-precision samples, although internally the
+code uses double precision throughout (single-precision input data is
+re-quantized to double precision prior to processing).
 
 \item[\option{--calibration-cache} \parm{cache file}]
 Specify the location of calibration information.  \parm{cache file} gives
@@ -476,7 +472,7 @@ To run the program, type:
 \begin{verbatim}
 lalapps_power \
 --bandwidth 2048 \
---calibrated-data 40.0 \
+--calibrated-data \
 --channel-name "H1:LSC-STRAIN" \
 --debug-level info \
 --filter-corruption 4096 \

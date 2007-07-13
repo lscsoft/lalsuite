@@ -27,6 +27,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
 
 #include <lal/AVFactories.h>
 #include <lal/Date.h>
@@ -189,8 +191,6 @@ struct options {
 
 	/* flag indicating that input is double-precision h(t) */
 	int calibrated;
-	/* high pass filter cut-off for double --> single quantization */
-	double cal_high_pass;
 
 	/*
 	 * data conditioning
@@ -228,7 +228,7 @@ struct options {
 	double maxTileBandwidth;
 	double maxTileDuration;
 	double fractional_stride;
-	REAL4Window *window;
+	REAL8Window *window;
 
 	/*
 	 * WTF
@@ -284,7 +284,6 @@ static struct options *options_new(void)
 		.max_series_length = 0,	/* default == disable */
 		.calibrated = FALSE,	/* default */
 		.high_pass = -1.0,	/* impossible */
-		.cal_high_pass = -1.0,	/* impossible */
 		.max_event_rate = 0,	/* default == disable */
 		.output_filename = NULL,	/* impossible */
 		.sim_distance = 10000.0,	/* default (10 Mpc) */
@@ -313,7 +312,7 @@ static struct options *options_new(void)
 static void options_free(struct options *options)
 {
 	if(options) {
-		XLALDestroyREAL4Window(options->window);
+		XLALDestroyREAL8Window(options->window);
 	}
 	free(options);
 }
@@ -332,7 +331,7 @@ static void print_usage(const char *program)
 "required.\n" \
 "	 --bandwidth <bandwidth>\n" \
 "	[--burstinjection-file <file name>]\n" \
-"	[--calibrated-data <high pass frequency>]\n" \
+"	[--calibrated-data]\n" \
 "	[--calibration-cache <cache file>]\n" \
 "	 --channel-name <string>\n" \
 "	 --confidence-threshold <confidence>\n" \
@@ -563,7 +562,7 @@ static struct options *parse_command_line(int argc, char *argv[], MetadataTable 
 	struct option long_options[] = {
 		{"bandwidth", required_argument, NULL, 'A'},
 		{"burstinjection-file", required_argument, NULL, 'P'},
-		{"calibrated-data", required_argument, NULL, 'J'},
+		{"calibrated-data", no_argument, NULL, 'J'},
 		{"calibration-cache", required_argument, NULL, 'B'},
 		{"channel-name", required_argument, NULL, 'C'},
 		{"confidence-threshold", required_argument, NULL, 'g'},
@@ -660,13 +659,7 @@ static struct options *parse_command_line(int argc, char *argv[], MetadataTable 
 
 	case 'J':
 		options->calibrated = TRUE;
-		options->cal_high_pass = atof(optarg);
-		if(options->cal_high_pass < 0) {
-			sprintf(msg, "must not be negative (%f Hz specified)", options->cal_high_pass);
-			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
-		}
-		ADD_PROCESS_PARAM("double");
+		ADD_PROCESS_PARAM("string");
 		break;
 
 	case 'K':
@@ -735,7 +728,7 @@ static struct options *parse_command_line(int argc, char *argv[], MetadataTable 
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		options->window = XLALCreateHannREAL4Window(window_length);
+		options->window = XLALCreateHannREAL8Window(window_length);
 		if(!options->window) {
 			sprintf(msg, "failure generating %d sample Hann window", window_length);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -755,9 +748,9 @@ static struct options *parse_command_line(int argc, char *argv[], MetadataTable 
 		options->diagnostics->LIGOLwXMLStream = calloc(1, sizeof(*options->diagnostics));
 		LALOpenLIGOLwXMLFile(&stat, options->diagnostics->LIGOLwXMLStream, optarg);
 		}
-		options->diagnostics->XLALWriteLIGOLwXMLArrayREAL4FrequencySeries = XLALWriteLIGOLwXMLArrayREAL4FrequencySeries;
-		options->diagnostics->XLALWriteLIGOLwXMLArrayREAL4TimeSeries = XLALWriteLIGOLwXMLArrayREAL4TimeSeries;
-		options->diagnostics->XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries = XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries;
+		options->diagnostics->XLALWriteLIGOLwXMLArrayREAL8FrequencySeries = XLALWriteLIGOLwXMLArrayREAL8FrequencySeries;
+		options->diagnostics->XLALWriteLIGOLwXMLArrayREAL8TimeSeries = XLALWriteLIGOLwXMLArrayREAL8TimeSeries;
+		options->diagnostics->XLALWriteLIGOLwXMLArrayCOMPLEX16FrequencySeries = XLALWriteLIGOLwXMLArrayCOMPLEX16FrequencySeries;
 		break;
 
 	case 'Z':
@@ -969,9 +962,6 @@ static struct options *parse_command_line(int argc, char *argv[], MetadataTable 
 	 * Sanitize filter frequencies.
 	 */
 
-	if(options->cal_high_pass > options->flow)
-		XLALPrintWarning("%s: warning: calibrated data quantization high-pass frequency (%f Hz) greater than TF plane low frequency (%f Hz)\n", argv[0], options->cal_high_pass, options->flow);
-
 	if(options->high_pass > options->flow - 10.0)
 		XLALPrintWarning("%s: warning: data conditioning high-pass frequency (%f Hz) greater than 10 Hz below TF plane low frequency (%f Hz)\n", argv[0], options->high_pass, options->flow);
 
@@ -1019,60 +1009,13 @@ static struct options *parse_command_line(int argc, char *argv[], MetadataTable 
  */
 
 
-static REAL4TimeSeries *get_calibrated_data(FrStream *stream, const char *chname, LIGOTimeGPS *start, double duration, size_t lengthlimit, double quantize_high_pass)
-{
-	static const char func[] = "get_calibrated_data";
-	REAL8TimeSeries *calibrated;
-	REAL4TimeSeries *series;
-	PassBandParamStruc highpassParam;
-	unsigned int i;
-
-	/*
-	 * retrieve calibrated data as REAL8 time series
-	 */
-
-	calibrated = XLALFrReadREAL8TimeSeries(stream, chname, start, duration, lengthlimit);
-	if(!calibrated)
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
-
-	/*
-	 * high pass filter before casting REAL8 to REAL4
-	 */
-
-	highpassParam.nMax = 4;
-	highpassParam.f2 = quantize_high_pass;
-	highpassParam.f1 = -1.0;
-	highpassParam.a2 = 0.9;
-	highpassParam.a1 = -1.0;
-	if(XLALButterworthREAL8TimeSeries(calibrated, &highpassParam) < 0) {
-		XLALDestroyREAL8TimeSeries(calibrated);
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
-	}
-
-	/*
-	 * copy data into a REAL4 time series
-	 */
-
-	series = XLALCreateREAL4TimeSeries(calibrated->name, &calibrated->epoch, calibrated->f0, calibrated->deltaT, &calibrated->sampleUnits, calibrated->data->length);
-	if(!series) {
-		XLALDestroyREAL8TimeSeries(calibrated);
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
-	}
-	for(i = 0; i < series->data->length; i++)
-		series->data->data[i] = calibrated->data->data[i];
-
-	XLALDestroyREAL8TimeSeries(calibrated);
-	return series;
-}
-
-
-static REAL4TimeSeries *get_time_series(const char *cachefilename, const char *chname, LIGOTimeGPS start, LIGOTimeGPS end, size_t lengthlimit, int getcaltimeseries, double quantize_high_pass)
+static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *chname, LIGOTimeGPS start, LIGOTimeGPS end, size_t lengthlimit, int getcaltimeseries)
 {
 	static const char func[] = "get_time_series";
 	double duration = XLALGPSDiff(&end, &start);
 	FrCache *cache;
 	FrStream *stream;
-	REAL4TimeSeries *series;
+	REAL8TimeSeries *series;
 
 	if(duration < 0)
 		XLAL_ERROR_NULL(func, XLAL_EINVAL);
@@ -1099,10 +1042,25 @@ static REAL4TimeSeries *get_time_series(const char *cachefilename, const char *c
 	 * Get the data.
 	 */
 
-	if(getcaltimeseries)
-		series = get_calibrated_data(stream, chname, &start, duration, lengthlimit, quantize_high_pass);
-	else
-		series = XLALFrReadREAL4TimeSeries(stream, chname, &start, duration, lengthlimit);
+	if(getcaltimeseries) {
+		series = XLALFrReadREAL8TimeSeries(stream, chname, &start, duration, lengthlimit);
+		if(!series)
+			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	} else {
+		/* read data as single-precision, and convert to double */
+		REAL4TimeSeries *tmp = XLALFrReadREAL4TimeSeries(stream, chname, &start, duration, lengthlimit);
+		unsigned i;
+		if(!tmp)
+			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		series = XLALCreateREAL8TimeSeries(tmp->name, &tmp->epoch, tmp->f0, tmp->deltaT, &tmp->sampleUnits, tmp->data->length);
+		if(!series) {
+			XLALDestroyREAL4TimeSeries(tmp);
+			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		}
+		for(i = 0; i < tmp->data->length; i++)
+			series->data->data[i] = tmp->data->data[i];
+		XLALDestroyREAL4TimeSeries(tmp);
+	}
 
 	/*
 	 * Check for missing data.
@@ -1110,7 +1068,7 @@ static REAL4TimeSeries *get_time_series(const char *cachefilename, const char *c
 
 	if(stream->state & LAL_FR_GAP) {
 		XLALPrintError("get_time_series(): error: gap in data detected between GPS times %d.%09u s and %d.%09u s\n", start.gpsSeconds, start.gpsNanoSeconds, end.gpsSeconds, end.gpsNanoSeconds);
-		XLALDestroyREAL4TimeSeries(series);
+		XLALDestroyREAL8TimeSeries(series);
 		XLAL_ERROR_NULL(func, XLAL_EDATA);
 	}
 
@@ -1146,13 +1104,12 @@ static REAL4TimeSeries *get_time_series(const char *cachefilename, const char *c
  */
 
 
-static void gaussian_noise(REAL4TimeSeries *series, REAL4 rms, RandomParams *rparams)
+static void gaussian_noise(REAL8TimeSeries *series, REAL8 rms, gsl_rng *rng)
 {
 	unsigned i;
 
-	XLALNormalDeviates(series->data, rparams);
 	for(i = 0; i < series->data->length; i++)
-		series->data->data[i] *= rms;
+		series->data->data[i] = gsl_ran_gaussian(rng, rms);
 }
 
 
@@ -1212,14 +1169,29 @@ static COMPLEX8FrequencySeries *generate_response(LALStatus *stat, const char *c
  */
 
 
-static REAL4TimeSeries *add_burst_injections(LALStatus *stat, char *filename, REAL4TimeSeries *series, COMPLEX8FrequencySeries *response)
+/*
+ * LAL can only generate single-precision injections so we have to do the
+ * injections into a temporary array of zeros, and then add it into the
+ * double-precision time series
+ */
+
+
+static REAL8TimeSeries *add_burst_injections(LALStatus *stat, char *filename, REAL8TimeSeries *series, COMPLEX8FrequencySeries *response)
 {
+	static const char func[] = "add_burst_injections";
 	const INT4 start_time = series->epoch.gpsSeconds;
 	const INT4 stop_time = start_time + series->data->length * series->deltaT;
 	const INT4 calType = 0;
+	REAL4TimeSeries *zeroes = XLALCreateREAL4TimeSeries(series->name, &series->epoch, series->f0, series->deltaT, &series->sampleUnits, series->data->length);
 	SimBurstTable *injections = NULL;
+	unsigned i;
+
+	if(!zeroes)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	memset(zeroes->data->data, 0, zeroes->data->length * sizeof(*zeroes->data->data));
 
 	if(!response) {
+		XLALDestroyREAL4TimeSeries(zeroes);
 		XLALPrintError("add_burst_injections(): must supply calibration information for injections\n");
 		exit(1);
 	}
@@ -1230,7 +1202,7 @@ static REAL4TimeSeries *add_burst_injections(LALStatus *stat, char *filename, RE
 
 	XLALPrintInfo("add_burst_injections(): injecting signals into time series\n");
 
-	LAL_CALL(LALBurstInjectSignals(stat, series, injections, response, calType), stat);
+	LAL_CALL(LALBurstInjectSignals(stat, zeroes, injections, response, calType), stat);
 
 	XLALPrintInfo("add_burst_injections(): finished making the injections\n");
 
@@ -1239,6 +1211,10 @@ static REAL4TimeSeries *add_burst_injections(LALStatus *stat, char *filename, RE
 		injections = injections->next;
 		XLALFree(thisEvent);
 	}
+
+	for(i = 0; i < series->data->length; i++)
+		series->data->data[i] += zeroes->data->data[i];
+	XLALDestroyREAL4TimeSeries(zeroes);
 
 	return series;
 }
@@ -1253,15 +1229,29 @@ static REAL4TimeSeries *add_burst_injections(LALStatus *stat, char *filename, RE
  */
 
 
-static REAL4TimeSeries *add_inspiral_injections(LALStatus *stat, char *filename, REAL4TimeSeries *series, COMPLEX8FrequencySeries *response)
+/*
+ * LAL can only generate single-precision injections so we have to do the
+ * injections into a temporary array of zeros, and then add it into the
+ * double-precision time series
+ */
+
+
+static REAL8TimeSeries *add_inspiral_injections(LALStatus *stat, char *filename, REAL8TimeSeries *series, COMPLEX8FrequencySeries *response)
 {
+	static const char func[] = "add_inspiral_injections";
 	INT4 start_time = series->epoch.gpsSeconds;
 	INT4 stop_time = start_time + series->data->length * series->deltaT;
 	SimInspiralTable *injections = NULL;
-
+	REAL4TimeSeries *zeroes = XLALCreateREAL4TimeSeries(series->name, &series->epoch, series->f0, series->deltaT, &series->sampleUnits, series->data->length);
 	INT4 numInjections = 0;
+	unsigned i;
+
+	if(!zeroes)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	memset(zeroes->data->data, 0, zeroes->data->length * sizeof(*zeroes->data->data));
 
 	if(!response) {
+		XLALDestroyREAL4TimeSeries(zeroes);
 		XLALPrintError("add_inspiral_injections(): must supply calibration information for injections\n");
 		exit(1);
 	}
@@ -1271,6 +1261,7 @@ static REAL4TimeSeries *add_inspiral_injections(LALStatus *stat, char *filename,
 	numInjections = SimInspiralTableFromLIGOLw(&injections, filename, start_time, stop_time);
 
 	if(numInjections < 0) {
+		XLALDestroyREAL4TimeSeries(zeroes);
 		XLALPrintError("add_inspiral_injections():error:cannot read injection file\n");
 		exit(1);
 	}
@@ -1278,7 +1269,7 @@ static REAL4TimeSeries *add_inspiral_injections(LALStatus *stat, char *filename,
 	XLALPrintInfo("add_inspiral_injections(): injecting signals into time series\n");
 
 	if(numInjections > 0)
-		LAL_CALL(LALFindChirpInjectSignals(stat, series, injections, response), stat);
+		LAL_CALL(LALFindChirpInjectSignals(stat, zeroes, injections, response), stat);
 
 	XLALPrintInfo("add_inspiral_injections(): finished making the injections\n");
 
@@ -1287,6 +1278,10 @@ static REAL4TimeSeries *add_inspiral_injections(LALStatus *stat, char *filename,
 		injections = injections->next;
 		XLALFree(thisEvent);
 	}
+
+	for(i = 0; i < series->data->length; i++)
+		series->data->data[i] += zeroes->data->data[i];
+	XLALDestroyREAL4TimeSeries(zeroes);
 
 	return series;
 }
@@ -1301,34 +1296,22 @@ static REAL4TimeSeries *add_inspiral_injections(LALStatus *stat, char *filename,
  */
 
 
-static REAL4TimeSeries *add_mdc_injections(const char *mdccachefile, const char *channel_name, REAL4TimeSeries *series, LIGOTimeGPS epoch, LIGOTimeGPS stopepoch, size_t lengthlimit)
+static REAL8TimeSeries *add_mdc_injections(const char *mdccachefile, const char *channel_name, REAL8TimeSeries *series, LIGOTimeGPS epoch, LIGOTimeGPS stopepoch, size_t lengthlimit)
 {
 	static const char func[] = "add_mdc_injections";
-	REAL4TimeSeries *mdc;
-	size_t i;
+	REAL8TimeSeries *mdc;
+	unsigned i;
 
 	XLALPrintInfo("add_mdc_injections(): mixing data from MDC frames\n");
 
-	/*
-	 * note: quantization high pass at 40.0 Hz
-	 */
-
-	mdc = get_time_series(mdccachefile, channel_name, epoch, stopepoch, lengthlimit, TRUE, 40.0);
+	mdc = get_time_series(mdccachefile, channel_name, epoch, stopepoch, lengthlimit, TRUE);
 	if(!mdc)
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
-
-	/*
-	 * add the mdc signal to the given time series
-	 */
 
 	for(i = 0; i < series->data->length; i++)
 		series->data->data[i] += mdc->data->data[i];
 
-	/*
-	 * clean up
-	 */
-
-	XLALDestroyREAL4TimeSeries(mdc);
+	XLALDestroyREAL8TimeSeries(mdc);
 
 	return series;
 }
@@ -1578,7 +1561,7 @@ static void add_sim_injections(LALStatus *stat, REAL4TimeSeries *series, COMPLEX
  */
 
 
-static SnglBurstTable **analyze_series(SnglBurstTable **addpoint, REAL4TimeSeries *series, int psd_length, int psd_shift, struct options *options)
+static SnglBurstTable **analyze_series(SnglBurstTable **addpoint, REAL8TimeSeries *series, int psd_length, int psd_shift, struct options *options)
 {
 	static const char func[] = "analyze_series";
 	unsigned i;
@@ -1590,7 +1573,7 @@ static SnglBurstTable **analyze_series(SnglBurstTable **addpoint, REAL4TimeSerie
 
 	for(i = 0; i + psd_length < series->data->length + psd_shift; i += psd_shift) {
 		int start = min(i, series->data->length - psd_length);
-		REAL4TimeSeries *interval = XLALCutREAL4TimeSeries(series, start, psd_length);
+		REAL8TimeSeries *interval = XLALCutREAL8TimeSeries(series, start, psd_length);
 
 		if(!interval)
 			XLAL_ERROR_NULL(func, XLAL_EFUNC);
@@ -1611,7 +1594,7 @@ static SnglBurstTable **analyze_series(SnglBurstTable **addpoint, REAL4TimeSerie
 		while(*addpoint)
 			addpoint = &(*addpoint)->next;
 
-		XLALDestroyREAL4TimeSeries(interval);
+		XLALDestroyREAL8TimeSeries(interval);
 
 		if(xlalErrno)
 			XLAL_ERROR_NULL(func, XLAL_EFUNC);
@@ -1697,7 +1680,7 @@ int main(int argc, char *argv[])
 	LIGOTimeGPS epoch;
 	LIGOTimeGPS boundepoch;
 	int overlap;
-	REAL4TimeSeries *series = NULL;
+	REAL8TimeSeries *series = NULL;
 	SnglBurstTable *burstEvent = NULL;
 	SnglBurstTable **EventAddPoint = &burstEvent;
 	/* the ugly underscores are because some badger put global symbols
@@ -1705,7 +1688,7 @@ int main(int argc, char *argv[])
 	MetadataTable _process_table;
 	MetadataTable _process_params_table;
 	MetadataTable _search_summary_table;
-	RandomParams *rparams = NULL;
+	gsl_rng *rng = NULL;
 
 	/*
 	 * Command line
@@ -1780,7 +1763,7 @@ int main(int argc, char *argv[])
 			 * Read from frame files
 			 */
 
-			series = get_time_series(options->cache_filename, options->channel_name, epoch, options->gps_end, options->max_series_length, options->calibrated, options->cal_high_pass);
+			series = get_time_series(options->cache_filename, options->channel_name, epoch, options->gps_end, options->max_series_length, options->calibrated);
 			if(!series) {
 				XLALPrintError("%s: error: failure reading input data\n", argv[0]);
 				exit(1);
@@ -1793,14 +1776,16 @@ int main(int argc, char *argv[])
 			unsigned length = XLALGPSDiff(&options->gps_end, &epoch) * options->resample_rate;
 			if(options->max_series_length)
 				length = min(options->max_series_length, length);
-			series = XLALCreateREAL4TimeSeries(options->channel_name, &epoch, 0.0, (REAL8) 1.0 / options->resample_rate, &lalADCCountUnit, length);
+			series = XLALCreateREAL8TimeSeries(options->channel_name, &epoch, 0.0, (REAL8) 1.0 / options->resample_rate, &lalADCCountUnit, length);
 			if(!series) {
 				XLALPrintError("%s: error: failure allocating data for Gaussian noise\n", argv[0]);
 				exit(1);
 			}
-			if(!rparams)
-				rparams = XLALCreateRandomParams(options->seed);
-			gaussian_noise(series, options->noise_rms, rparams);
+			if(!rng) {
+				rng = gsl_rng_alloc(gsl_rng_ranlxd1);
+				gsl_rng_set(rng, options->seed);
+			}
+			gaussian_noise(series, options->noise_rms, rng);
 		} else {
 			/*
 			 * Should never get here.
@@ -1849,15 +1834,6 @@ int main(int argc, char *argv[])
 		 * Condition the time series data.
 		 */
 
-		/* Scale the time series if calibrated data.  Note, the
-		 * same factor must be removed after, see below */
-		if(options->calibrated) {
-			const double scale = 1e15;
-			unsigned i;
-			for(i = 0; i < series->data->length; i++)
-				series->data->data[i] *= scale;
-		}
-
 		if(XLALEPConditionData(series, options->high_pass, (REAL8) 1.0 / options->resample_rate, options->filter_corruption)) {
 			XLALPrintError("%s: XLALEPConditionData() failed.\n", argv[0]);
 			exit(1);
@@ -1896,19 +1872,7 @@ int main(int argc, char *argv[])
 		 */
 
 		XLALGPSAdd(&epoch, (series->data->length - overlap) * series->deltaT);
-		XLALDestroyREAL4TimeSeries(series);
-	}
-
-	/*
-	 * Unscale the h_{rss} estimates if calibrated data.  Note:  this
-	 * must be the same factor as was put in above.
-	 */
-
-	if(options->calibrated) {
-		const double scale = 1e15;
-		SnglBurstTable *event;
-		for(event = burstEvent; event; event = event->next)
-			event->amplitude /= scale;
+		XLALDestroyREAL8TimeSeries(series);
 	}
 
 	/*
@@ -1937,7 +1901,8 @@ int main(int argc, char *argv[])
 	 * Final cleanup.
 	 */
 
-	XLALDestroyRandomParams(rparams);
+	if(rng)
+		gsl_rng_free(rng);
 	XLALFree(_process_table.processTable);
 	XLALFree(_search_summary_table.searchSummaryTable);
 
