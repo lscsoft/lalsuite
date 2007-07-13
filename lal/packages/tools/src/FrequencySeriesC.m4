@@ -169,7 +169,7 @@ SERIESTYPE *`XLALAdd'SERIESTYPE (
 	/* FIXME: generalize to relax this requirement */
 	if((arg2->f0 < arg1->f0) || (offset + arg2->data->length > arg1->data->length))
 		XLAL_ERROR_NULL(func, XLAL_EBADLEN);
-	
+
 	/* add arg2 to arg1, adjusting the units */
 	for(i = 0; i < arg2->data->length; i++) {
 		ifelse(DATATYPE, COMPLEX8,
@@ -202,7 +202,7 @@ SERIESTYPE *`XLALSubtract'SERIESTYPE (
 	/* FIXME: generalize to relax this requirement */
 	if((arg2->f0 < arg1->f0) || (offset + arg2->data->length > arg1->data->length))
 		XLAL_ERROR_NULL(func, XLAL_EBADLEN);
-	
+
 	/* subtract arg2 from arg1, adjusting the units */
 	for(i = 0; i < arg2->data->length; i++) {
 		ifelse(DATATYPE, COMPLEX8,
