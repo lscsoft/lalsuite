@@ -98,7 +98,7 @@ class trigBankFollowUpNode(pipeline.CondorDAGNode):
         pass
         #self.end_time = row.value
         
-    # be careful that the clustering time must be larger than 2s, we should fix this.
+    # be careful that the clustering time must be larger than 2 s, we should fix this.
     self.start_time = str( eval(str(time)) - 1 )
     self.end_time = str( eval(str(time)) + 1 )
     self.add_var_opt("gps-start-time",self.start_time)
@@ -110,8 +110,8 @@ class trigBankFollowUpNode(pipeline.CondorDAGNode):
     for inFile in fStr:
       self.add_file_arg(string.strip(inFile))
     self.output_file_name = self.input_ifo + "-TRIGBANK_" + self.ifo_tag + \
-      "_" + self.output_user_tag + "-" + str(int(eval(self.start_time))) + "-" + \
-      "2" + ".xml"
+      "_" + self.output_user_tag + "-" + self.start_time + "-" + \
+      "0.001" + ".xml"
 
 class inspiralFollowUpJob(pipeline.CondorDAGJob):
   """
@@ -228,6 +228,7 @@ class plotSNRCHISQNode(pipeline.CondorDAGNode):
     writeIULHeader(tableFile)
     tableFile.write('<h3>Follow up of trigger [' +str(trig.eventID) +']</h3>\n')
     tableFile.close()
+
 ##############################################################################
 # qscan class for qscan jobs
 
@@ -373,8 +374,8 @@ parser.add_option("-g", "--generate-cache",action="store_true",\
 parser.add_option("-m", "--datafind",action="store_true",\
     default=False, help="use datafind to get qscan/trends data")
 
-parser.add_option("-r","--read-triggers",action="store_true",default=False,\
-    help="Read the followup trigger XML (COIRE FILE)" )
+#parser.add_option("-r","--read-triggers",action="store_true",default=False,\
+#    help="Read the followup trigger XML (COIRE FILE)" )
 
 parser.add_option("-q", "--qscan",action="store_true",default=False,\
     help="do qscans")
@@ -407,10 +408,10 @@ if opts.version:
   print "$Id$"
   sys.exit(0)
 
-if opts.datafind and not opts.read_triggers:
-  print >> sys.stderr, "Must read triggers for datafind step"
-  print >> sys.stderr, "Use --read-triggers XML to specify triggers to followup"
-  sys.exit(1)
+#if opts.datafind and not opts.read_triggers:
+#  print >> sys.stderr, "Must read triggers for datafind step"
+#  print >> sys.stderr, "Use --read-triggers XML to specify triggers to followup"
+#  sys.exit(1)
 
 #if not opts.cache_path:
 #  print >> sys.stderr, "No cache path specified."
@@ -430,19 +431,22 @@ cp.read(opts.config_file)
 setupdirs()
 
 ############# TURN THE HIPE OUTPUT INTO LAL CACHE FILES #######################
+
+cache = getCache(opts)
 if opts.generate_cache:
-  cache = getCache(opts)
   cache.getCacheAll(cp)
   cache.writeCacheAll()
   print >> sys.stderr, "\nHIPE CACHE FILES WRITTEN TO:"
   for n, t in cache.nameMaps:
     print >> sys.stderr, " * " + n + " [" + str(len(cache[t])) + "]"
 
-command = "ln -s " + string.strip(cp.get('hipe-cache','hipe-cache-path')) + \
+  command = "ln -s " + string.strip(cp.get('hipe-cache','hipe-cache-path')) + \
           " cache"
-# link datafind for inspiral jobs...
-try: os.system(command)
-except: pass
+  # link datafind for inspiral jobs...
+  try: os.system(command)
+  except: pass
+else:
+  print >> sys.stderr, "\nOption --generate-cache NOT specified, it will be assumed that the hipe cache files already exists... "
 
 ##############################################################################
 # create a log file that the Condor jobs will write to
@@ -463,10 +467,12 @@ subsuffix = '.sub'
 #Decide if we are actually reading any trigger files
 page = string.strip(cp.get('output','page'))
 
-if not opts.read_triggers and not opts.write_to_iulgroup:
-  sys.exit(0)
+#if not opts.read_triggers and not opts.write_to_iulgroup:
+#  sys.exit(0)
   # We are done here
-if not opts.read_triggers and opts.write_to_iulgroup:
+
+#if not opts.read_triggers and opts.write_to_iulgroup:
+if opts.write_to_iulgroup:
   publishOnHydra(page)
   # don't overwrite anything, just publish what we have
   sys.exit(0)
@@ -547,7 +553,6 @@ plotJob = plotSNRCHISQJob(opts,cp)
 qscanJob = qscanJob(opts,cp)
 segJob = segJob(opts,cp)
 
-
 trigJobCnt = 0
 inspJobCnt = 0
 plotJobCnt = 0
@@ -576,7 +581,8 @@ for trig in followuptrigs:
   print trig.gpsTime
   try: 
     inspiral_process_params = cache.getProcessParamsFromCache( \
-                     cache.filesMatchingGPS(trig.gpsTime,'INSPIRAL_'), \
+                     cache.filesMatchingGPSinCache(trig.gpsTime,\
+                     "second_inspiral.cache"), \
                      trig.ifoTag, trig.gpsTime)
     #inspiral_process_params = cache.getProcessParamsFromCache( \
     #                 cache.filesMatchingGPS(trig.gpsTime,'INSPIRAL_'), \
@@ -642,7 +648,7 @@ for trig in followuptrigs:
       # THEN GET THE TRIG BANK PROCESS PARAMS
       if trigBankFile:
         try: 
-          trig_process_params_ifo = cache.getProcessParamsFromMatchingFile(trigBankFile,'TRIGBANK')
+          trig_process_params_ifo = cache.getProcessParamsFromMatchingFileInCache(trigBankFile,'trigbank.cache')
           foundTrigBankTable = 1
         except:
           print "couldn't get trigbank process params for " + str(trig.eventID)
