@@ -143,7 +143,7 @@ extern int lalDebugLevel;
 
 BOOLEAN uvar_printMaps; /**< global variable for printing Hough maps */
 BOOLEAN uvar_printStats; /**< global variable for calculating Hough map stats */
-
+BOOLEAN uvar_dumpLUT;  /**< global variable for printing Hough look-up-tables for debugging */
 
 #define HSMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define HSMIN(x,y) ( (x) < (y) ? (x) : (y) )
@@ -219,6 +219,7 @@ void GetSemiCohToplist(LALStatus *status, toplist_t *list, SemiCohCandidateList 
 
 void ComputeNumExtraBins(LALStatus *status, SemiCoherentParams *par, REAL8 fdot, REAL8 f0, REAL8 deltaF);
 
+void DumpLUT2file(LALStatus *status, HOUGHptfLUT *lut, HOUGHPatchGrid *patch, CHAR *basename, INT4 index);
 
 /* default values for input variables */
 #define EARTHEPHEMERIS 		"earth05-09.dat"
@@ -416,6 +417,7 @@ int MAIN( int argc, char *argv[]) {
   uvar_method = -1;
   uvar_followUp = FALSE;
   uvar_printMaps = FALSE;
+  uvar_dumpLUT = FALSE;
   uvar_printStats = FALSE;
   uvar_printCand1 = FALSE;
   uvar_printFstat1 = FALSE;
@@ -508,7 +510,8 @@ int MAIN( int argc, char *argv[]) {
   /* developer user variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed", 0, UVAR_DEVELOPER, "RngMed block size", &uvar_blocksRngMed), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision", 0, UVAR_DEVELOPER, "Precision for SSB transform.", &uvar_SSBprecision),    &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",    0, UVAR_DEVELOPER, "Print Hough maps", &uvar_printMaps), &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",    0, UVAR_DEVELOPER, "Print Hough maps -- for debugging", &uvar_printMaps), &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "dumpLUT",      0, UVAR_DEVELOPER, "Print Hough look-up-tables -- for debugging", &uvar_dumpLUT), &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",   0, UVAR_DEVELOPER, "Print Hough map statistics", &uvar_printStats), &status);  
   LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",       0, UVAR_DEVELOPER, "No.of terms to keep in Dirichlet Kernel", &uvar_Dterms ), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dopplerMax",   0, UVAR_DEVELOPER, "Max Doppler shift",  &uvar_dopplerMax), &status);
@@ -1716,10 +1719,15 @@ void ComputeFstatHoughMap(LALStatus *status,
       parDem.timeDiff = timeDiffV->data[j];
 
       /* calculate parameters needed for buiding the LUT */
-      TRY( LALHOUGHParamPLUT( status->statusPtr, &parLut, &parSize, &parDem),status );
+      TRY( LALHOUGHParamPLUT( status->statusPtr, &parLut, &parSize, &parDem), status);
+
       /* build the LUT */
-      TRY( LALHOUGHConstructPLUT( status->statusPtr, &(lutV.lut[j]), &patch, &parLut ),
-	   status );
+      TRY( LALHOUGHConstructPLUT( status->statusPtr, &(lutV.lut[j]), &patch, &parLut ), status);
+
+      /* for debugging */
+      if ( uvar_dumpLUT) {
+	TRY( DumpLUT2file( status->statusPtr, &(lutV.lut[j]), &patch, params->outBaseName, j), status);	
+      }
     }
     
     /*--------- build the set of  PHMD centered around fBin -------------*/     
@@ -2047,7 +2055,6 @@ void SetUpStacks(LALStatus *status,
 } /* SetUpStacks() */
 
 
-
 /** Print single Hough map to a specified output file */
 void PrintHmap2file(LALStatus *status,
 		    HOUGHMapTotal *ht, 
@@ -2086,6 +2093,110 @@ void PrintHmap2file(LALStatus *status,
   DETATCHSTATUSPTR (status);
   RETURN(status);
 }
+
+
+
+/** Print single Hough map to a specified output file */
+void DumpLUT2file(LALStatus       *status,
+		  HOUGHptfLUT     *lut,
+		  HOUGHPatchGrid  *patch,
+		  CHAR            *basename,
+		  INT4            index)
+{
+
+  FILE  *fp=NULL;
+  CHAR filename[256], filenumber[16]; 
+  INT4  k, j, i;
+  INT8  f0Bin;
+  UINT2 xSide, ySide, maxNBins, maxNBorders;
+
+  HOUGHPeakGram  pg;
+  HOUGHphmd      phmd;
+  HOUGHMapDeriv  hd;
+  HOUGHMapTotal  ht;
+  
+  INITSTATUS( status, "DumpLUT2file", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  strcpy(  filename, basename);
+  strcat(  filename, ".lut");
+  sprintf( filenumber, ".%06d",index); 
+  strcat(  filename, filenumber);
+
+  fp=fopen(filename,"w");  
+  ASSERT ( fp != NULL, status, HIERARCHICALSEARCH_EFILE, HIERARCHICALSEARCH_MSGEFILE );
+ 
+  maxNBins = lut->maxNBins;
+  maxNBorders = lut->maxNBorders;
+  f0Bin = lut->f0Bin;
+
+  xSide = patch->xSide;
+  ySide = patch->ySide;
+
+  pg.deltaF = lut->deltaF;
+  pg.fBinIni = f0Bin - maxNBins;
+  pg.fBinFin = f0Bin + 5*maxNBins;
+  pg.length = maxNBins;
+  pg.peak = NULL;
+  pg.peak = (INT4 *)LALCalloc(1, pg.length*sizeof(INT4));
+
+  phmd.fBin = f0Bin;
+  phmd.maxNBorders = maxNBorders;	 
+  phmd.leftBorderP = (HOUGHBorder **)LALMalloc(maxNBorders*sizeof(HOUGHBorder *));
+  phmd.rightBorderP =  (HOUGHBorder **)LALMalloc(maxNBorders*sizeof(HOUGHBorder *));
+
+  phmd.ySide = ySide;
+  phmd.firstColumn = NULL;
+  phmd.firstColumn = (UCHAR *)LALMalloc(ySide*sizeof(UCHAR));
+  
+  ht.xSide = xSide;
+  ht.ySide = ySide;
+  ht.map   = (HoughTT *)LALMalloc(xSide*ySide*sizeof(HoughTT));
+  
+  hd.xSide = xSide;
+  hd.ySide = ySide;
+  hd.map   = (HoughDT *)LALMalloc((xSide+1)*ySide*sizeof(HoughDT));
+
+  /* construct a fake peakgram to print all borders
+     -- peakgram should be 1,0,1,0,1,0.... */
+  for (k = 0; k < pg.length; ++k){  
+    pg.peak[k] = 2*k;  
+  }
+  
+  TRY( LALHOUGHPeak2PHMD(status->statusPtr, &phmd, lut, &pg ), status );
+ 
+  TRY( LALHOUGHInitializeHT(status->statusPtr, &ht, patch ), status ); 
+
+  TRY( LALHOUGHInitializeHD(status->statusPtr, &hd), status ); 
+
+  TRY( LALHOUGHAddPHMD2HD(status->statusPtr, &hd, &phmd ), status );
+
+  TRY( LALHOUGHIntegrHD2HT(status->statusPtr, &ht, &hd ), status ); 
+ 
+  for(j = ySide-1; j >= 0;  --j){
+    for(i = 0; i < xSide; ++i){
+      fprintf(fp ," %f", ht.map[j*xSide +i]);
+      fflush(fp);
+    }
+    fprintf(fp," \n");
+    fflush(fp);
+  }
+  
+  LALFree(pg.peak);
+      
+  LALFree(phmd.leftBorderP);
+  LALFree(phmd.rightBorderP);
+  LALFree(phmd.firstColumn);
+  
+  LALFree(ht.map);
+  LALFree(hd.map);
+
+  fclose(fp);  
+ 
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+}
+
 
 
 /** Get Hough candidates as a toplist */
@@ -3059,6 +3170,8 @@ void ComputeNumExtraBins(LALStatus            *status,
 
 
 }   /*ComputeNumExtraBins()*/
+
+
 
 
 
