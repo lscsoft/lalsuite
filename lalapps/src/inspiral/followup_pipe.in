@@ -114,8 +114,8 @@ class trigBankFollowUpNode(pipeline.CondorDAGNode):
     for inFile in fStr:
       self.add_file_arg(string.strip(inFile))
     self.output_file_name = self.input_ifo + "-TRIGBANK_" + self.ifo_tag + \
-      "_" + self.output_user_tag + "-" + self.start_time + "-" + \
-      "0.001" + ".xml"
+      "_" + self.output_user_tag + "-" + str(int(eval(self.start_time))) + "-"\
+      + "2" + ".xml"
 
 class inspiralFollowUpJob(pipeline.CondorDAGJob):
   """
@@ -489,7 +489,7 @@ parser.add_option("-q", "--qscan",action="store_true",default=False,\
     help="do qscans")
 
 parser.add_option("-d", "--data-quality",action="store_true",default=False,\
-    help="do data quality lookup- CURRENTLY BROKEN, DO NOT USE IT")
+    help="do data quality lookup - CURRENTLY BROKEN, DO NOT USE IT")
 
 parser.add_option("-t", "--trig-bank",action="store_true",default=False,\
     help="do trigbanks for single triggers")
