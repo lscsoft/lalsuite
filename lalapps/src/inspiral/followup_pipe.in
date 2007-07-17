@@ -489,7 +489,7 @@ parser.add_option("-q", "--qscan",action="store_true",default=False,\
     help="do qscans")
 
 parser.add_option("-d", "--data-quality",action="store_true",default=False,\
-    help="do data quality lookup")
+    help="do data quality lookup- CURRENTLY BROKEN, DO NOT USE IT")
 
 parser.add_option("-t", "--trig-bank",action="store_true",default=False,\
     help="do trigbanks for single triggers")
