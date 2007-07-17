@@ -551,6 +551,205 @@ LALFrGetTimeSeriesType(
 }
 
 
+static int copy_FrVect_to_REAL8( REAL8 *data, struct FrVect *vect, size_t ncpy, size_t offset )
+{
+	size_t i;
+	if ( ncpy + offset > vect->nData )
+		return -1;
+	switch ( vect->type ) {
+		case FR_VECT_C:
+			for ( i = 0; i < ncpy; ++i )
+			       	data[i] = vect->data[offset + i];
+			break;
+		case FR_VECT_1U:
+			for ( i = 0; i < ncpy; ++i )
+			       	data[i] = vect->dataU[offset + i];
+			break;
+		case FR_VECT_2U:
+			for ( i = 0; i < ncpy; ++i )
+			       	data[i] = vect->dataUS[offset + i];
+			break;
+		case FR_VECT_4U:
+			for ( i = 0; i < ncpy; ++i )
+			       	data[i] = vect->dataUI[offset + i];
+			break;
+		case FR_VECT_8U:
+			for ( i = 0; i < ncpy; ++i )
+			       	data[i] = vect->dataUL[offset + i];
+			break;
+		case FR_VECT_2S:
+			for ( i = 0; i < ncpy; ++i )
+			       	data[i] = vect->dataS[offset + i];
+			break;
+		case FR_VECT_4S:
+			for ( i = 0; i < ncpy; ++i )
+			       	data[i] = vect->dataI[offset + i];
+			break;
+		case FR_VECT_8S:
+			for ( i = 0; i < ncpy; ++i )
+			       	data[i] = vect->dataL[offset + i];
+			break;
+		case FR_VECT_4R:
+			for ( i = 0; i < ncpy; ++i )
+			       	data[i] = vect->dataF[offset + i];
+			break;
+		case FR_VECT_8R:
+			for ( i = 0; i < ncpy; ++i )
+			       	data[i] = vect->dataD[offset + i];
+			break;
+		default:
+			return -1;
+	}
+	return ncpy;
+}
+
+REAL8TimeSeries * XLALFrInputREAL8TimeSeries( FrStream *stream, const char *channel, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit )
+{
+	static const char *func = "XLALFrInputREAL8TimeSeries";
+	const REAL8 fuzz = 0.1 / 16384.0; /* smallest discernable unit of time */
+	struct FrVect *vect;
+	REAL8TimeSeries *series;
+	LIGOTimeGPS epoch;
+	UINT4  need;
+	UINT4  noff;
+	UINT4  ncpy;
+	REAL8 *dest;
+	INT8   tnow;
+	INT8   tbeg;
+	INT8   tend;
+	REAL8  rate;
+	int    code;
+
+	if ( stream->state & LAL_FR_ERR )
+		XLAL_ERROR_NULL( func, XLAL_EIO );
+	if ( stream->state & LAL_FR_END )
+		XLAL_ERROR_NULL( func, XLAL_EIO ); 
+
+	/* seek to the correct place */
+	if ( XLALFrSeek( stream, start ) )
+		XLAL_ERROR_NULL( func, XLAL_EIO ); 
+
+	vect = loadFrVect( stream, channel );
+	if ( ! vect || ! vect->data )
+		XLAL_ERROR_NULL( func, XLAL_ENAME ); /* couldn't find channel */
+
+	tnow = EPOCH_TO_I8TIME( stream->epoch );
+#	if defined FR_VERS && FR_VERS >= 5000
+	tbeg = 1e9 * vect->GTime;
+#	else
+	tbeg = SECNAN_TO_I8TIME( vect->GTimeS, vect->GTimeN );
+#	endif
+	if ( tnow + 1000 < tbeg ) { /* added 1000 ns to account for double precision */
+		FrVectFree(vect);
+		XLAL_ERROR_NULL( func, XLAL_ETIME ); /* invalid time offset */
+	}
+
+	/* compute number of points offset very carefully:
+	 * if current time is within fuzz of a sample, get that sample;
+	 * otherwise get the sample just after the requested time */
+	rate = 1.0 / vect->dx[0];
+	noff = ceil( ( 1e-9 * ( tnow - tbeg ) - fuzz ) * rate ); 
+	if ( noff > vect->nData ) {
+		FrVectFree(vect);
+		XLAL_ERROR_NULL( func, XLAL_ETIME ); /* invalid time offset */
+	}
+	need = duration * rate;
+	if ( lengthlimit && (lengthlimit < need) )
+		need = lengthlimit;
+
+	/* adjust current time to be exactly the first sample
+	 * (rounded to nearest nanosecond) */
+	tnow = tbeg + floor( 1e9 * noff * vect->dx[0] + 0.5 );
+	SET_EPOCH( &epoch, tnow );
+
+	series = XLALCreateREAL8TimeSeries( channel, &epoch, 0.0, vect->dx[0], &lalADCCountUnit, need );
+	if ( ! series )
+		XLAL_ERROR_NULL( func, XLAL_EFUNC );
+	dest = series->data->data;
+
+	/* number of points to copy */
+	ncpy = ( vect->nData - noff < need ) ? ( vect->nData - noff ) : need;
+	code = copy_FrVect_to_REAL8( dest, vect, ncpy, noff );
+	if ( code < 0 ) { /* fails if vect has complex data type */
+		if(vect) FrVectFree(vect);	
+		XLALDestroyREAL8TimeSeries( series );
+		XLAL_ERROR_NULL( func, XLAL_ETYPE ); /* data has wrong type */
+	}
+
+	FrVectFree(vect);
+	vect = NULL;
+
+	dest += ncpy;
+	need -= ncpy;
+
+	/* if still data remaining */
+	while ( need ) {
+		if ( XLALFrNext( stream ) < 0 ) {
+			if(vect) FrVectFree(vect);	
+			XLALDestroyREAL8TimeSeries( series );
+			XLAL_ERROR_NULL( func, XLAL_EFUNC );
+		}
+		if ( stream->state & LAL_FR_END ) {
+			if(vect) FrVectFree(vect);	
+			XLALDestroyREAL8TimeSeries( series );
+			XLAL_ERROR_NULL( func, XLAL_EIO );
+		}
+
+		/* load more data */
+		vect = loadFrVect( stream, series->name );
+		if ( ! vect || ! vect->data ) { /* channel missing */
+			XLALDestroyREAL8TimeSeries( series );
+			XLAL_ERROR_NULL( func, XLAL_ENAME );
+		}
+
+		if ( stream->state & LAL_FR_GAP ) { /* failure: gap in data */
+			if(vect) FrVectFree(vect);	
+			XLALDestroyREAL8TimeSeries( series );
+			XLAL_ERROR_NULL( func, XLAL_ETIME );
+		}
+
+		/* copy data */
+		ncpy = vect->nData < need ? vect->nData : need;
+		code = copy_FrVect_to_REAL8( dest, vect, ncpy, 0 );
+		if ( code < 0 ) { /* fails if vect has complex data type */
+			if(vect) FrVectFree(vect);	
+			XLALDestroyREAL8TimeSeries( series );
+			XLAL_ERROR_NULL( func, XLAL_ETYPE );
+		}
+
+		FrVectFree(vect);
+		vect=NULL;
+
+		dest += ncpy;
+		need -= ncpy;
+	}
+
+	/* update stream start time very carefully:
+	 * start time must be the exact time of the next sample, rounded to the
+	 * nearest nanosecond */
+	SET_EPOCH( &stream->epoch, EPOCH_TO_I8TIME( series->epoch ) + (INT8)floor( 1e9 * series->data->length * series->deltaT + 0.5 ) );
+
+	/* check to see that we are still within current frame */
+	tend  = SECNAN_TO_I8TIME( stream->file->toc->GTimeS[stream->pos], stream->file->toc->GTimeN[stream->pos] );
+	tend += (INT8)floor( 1e9 * stream->file->toc->dt[stream->pos] );
+	if ( tend <= EPOCH_TO_I8TIME( stream->epoch ) ) {
+		LIGOTimeGPS keep;
+		keep = stream->epoch;
+		/* advance a frame -- failure is benign */
+		XLALFrNext( stream );
+		if ( ! stream->state & LAL_FR_GAP )
+			stream->epoch = keep;
+	}
+
+	if ( stream->state & LAL_FR_ERR ) {
+		XLALDestroyREAL8TimeSeries( series );
+		XLAL_ERROR_NULL( func, XLAL_EIO );
+	}
+
+	return series;
+}
+
+
 define(`TYPE',`COMPLEX16')
 include(`FrameSeriesRead.m4')
 include(`FrameSeriesWrite.m4')

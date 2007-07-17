@@ -299,6 +299,8 @@ REAL8TimeSeries *XLALFrReadREAL8TimeSeries( FrStream *stream, const char *chname
 COMPLEX8TimeSeries *XLALFrReadCOMPLEX8TimeSeries( FrStream *stream, const char *chname, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit );
 COMPLEX16TimeSeries *XLALFrReadCOMPLEX16TimeSeries( FrStream *stream, const char *chname, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit );
 
+REAL8TimeSeries * XLALFrInputREAL8TimeSeries( FrStream *stream, const char *channel, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit );
+
 
 /*
  *
