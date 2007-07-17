@@ -25,6 +25,9 @@ sys.path.append('@PYTHONLIBDIR@')
 
 ##############################################################################
 # import the modules we need to build the pipeline
+#from pyGlobus import security
+#from glue import LDRdataFindClient
+#from glue import gsiserverutils
 from glue import pipeline
 from glue import lal
 #from pylab import *
@@ -38,6 +41,7 @@ from pylal import CoincInspiralUtils
 from pylal.fu_utils import *
 from pylal.fu_writeXMLparams import * 
 from pylal import Fr      
+
 ##############################################################################
 # redefine the columns of interest
 ##############################################################################
@@ -115,7 +119,7 @@ class trigBankFollowUpNode(pipeline.CondorDAGNode):
 
 class inspiralFollowUpJob(pipeline.CondorDAGJob):
   """
-  A followup trig bank job
+  A followup inspiral job
   """
   def __init__(self, options, cp, tag_base='INSPIRAL_FOLLOWUP'):
     """
@@ -134,11 +138,11 @@ class inspiralFollowUpJob(pipeline.CondorDAGJob):
 
 class inspiralFollowUpNode(pipeline.CondorDAGNode):
   """
-  Runs an instance of a trig bank followup job
+  Runs an instance of an inspiral followup job
   """
   def __init__(self,job,time,proc,opts,bankFile):
     """
-    job = A CondorDAGJob that can run an instance of trigbank followup.
+    job = A CondorDAGJob that can run an instance of inspiral followup.
     """
     pipeline.CondorDAGNode.__init__(self,job)
     self.output_file_name = ""
@@ -182,7 +186,7 @@ class inspiralFollowUpNode(pipeline.CondorDAGNode):
     
 class plotSNRCHISQJob(pipeline.CondorDAGJob):
   """
-  A followup trig bank job
+  A followup plotting job for snr and chisq time series 
   """
   def __init__(self, options, cp, tag_base='PLOT_FOLLOWUP'):
     """
@@ -199,11 +203,11 @@ class plotSNRCHISQJob(pipeline.CondorDAGJob):
 
 class plotSNRCHISQNode(pipeline.CondorDAGNode):
   """
-  Runs an instance of a trig bank followup job
+  Runs an instance of a plotSNRCHISQ followup job
   """
   def __init__(self,job,time,fileName,trig,page,plotFlag):
     """
-    job = A CondorDAGJob that can run an instance of trigbank followup.
+    job = A CondorDAGJob that can run an instance of plotSNRCHISQ followup.
     """
     pipeline.CondorDAGNode.__init__(self,job)
     self.output_file_name = ""
@@ -211,23 +215,120 @@ class plotSNRCHISQNode(pipeline.CondorDAGNode):
     self.add_var_opt("gps",time)
     self.add_var_opt("inspiral-xml-file",fileName)
     self.container = HTMLcontainer(trig,"SNR_and_CHISQ_plots")
+    self.container2 = HTMLcontainer(trig,"Calibrated_Spectrum")
     self.add_var_opt("output-html-file",self.container.locallink)
     self.add_var_opt("output-path","followuptrigs/"+self.container.name+"/")
     self.add_var_opt("image-file", self.container.localimage)
+    self.add_var_opt("output-html-file2",self.container2.locallink)
+    self.add_var_opt("output-path2","followuptrigs/"+self.container2.name+"/")
+    self.add_var_opt("image-file2", self.container2.localimage)
     self.add_var_opt("page", page)
     if plotFlag: self.initializeHTML()
 #    tableFile = open(self.container.locallink,'w')
 #    writeIULHeader(tableFile)
 #    tableFile.write('<h3>Follow up of trigger [' +str(trig.eventID) +']</h3>\n')
     self.container.text = "click here for SNR and CHISQ plots"
+    self.container2.text = "click here for calibrated spectra"
 #    tableFile.close()
   def getContainer(self):
     return self.container
+  def getContainer2(self):
+    return self.container2
   def initializeHTML(self):
     tableFile = open(self.container.locallink,'w')
     writeIULHeader(tableFile)
     tableFile.write('<h3>Follow up of trigger [' +str(trig.eventID) +']</h3>\n')
     tableFile.close()
+    tableFile2 = open(self.container2.locallink,'w')
+    writeIULHeader(tableFile2)
+    tableFile2.write('<h3>Follow up of trigger [' +str(trig.eventID) +']</h3>\n')
+    tableFile2.close()
+
+#############################################################################
+# class for LSCdataFind jobs
+
+class dataFindJob(pipeline.CondorDAGJob):
+  """
+  A LCSdataFind job
+  """
+  def __init__(self, options, cp, tag_base='DATAFIND_FOLLOWUP'):
+    """
+    """
+    self.__executable = string.strip(cp.get('condor','datafind'))
+    #self.__universe = "scheduler"
+    self.__universe = "local"
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    self.tag_base = tag_base
+    self.add_opt('lal-cache','')
+    self.add_opt('url-type','file')
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    self.add_condor_cmd('getenv','True')
+    self.set_stdout_file('datafind_cache/$(macroobservatory)-$(macrotype)-$(macrogpsstarttime)-$(macrogpsendtime).cache.tmp')
+    self.set_stderr_file('logs/fudatafind-$(macrogpsstarttime)-$(cluster)-$(process).err')
+    self.set_sub_file('fudatafind.sub')
+
+#############################################################################
+# class for LSCdataFind Node
+
+class dataFindNode(pipeline.CondorDAGNode):
+  """
+  Runs an instance of a datafind job
+  """
+  def __init__(self,job,start,end,type,ifo):
+    """
+    job = A CondorDAGJob that can run an instance of datafind job.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+   
+    self.add_var_opt('gps-start-time',start)
+    self.add_macro("macrogpsstarttime",start)
+    self.add_var_opt('gps-end-time',end)
+    self.add_macro("macrogpsendtime",end)
+
+    self.add_var_opt('observatory',ifo[0:1])
+    self.add_macro("macroobservatory",ifo[0:1])
+    
+    self.add_var_opt('type',type)
+    self.add_macro("macrotype",type)
+
+##############################################################################
+# convertCacheJob class for convertlalcache jobs
+
+class convertCacheJob(pipeline.CondorDAGJob):
+  """
+  A convertlalcache job
+  """
+  def __init__(self, options, cp, tag_base='CVCACHE_FOLLOWUP'):
+    """
+    """
+    self.__executable = string.strip(cp.get('condor','convertcache'))
+    self.__universe = "vanilla"
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    self.tag_base = tag_base
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    #self.add_condor_cmd('getenv','True')
+    self.set_stdout_file('logs/fuconvertcache-$(macrogpsstarttime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/fuconvertcache-$(macrogpsstarttime)-$(cluster)-$(process).err')
+    self.set_sub_file('fuconvertcache.sub')
+
+##############################################################################
+# convertCacheNode class for convertlalcache Node
+
+class convertCacheNode(pipeline.CondorDAGNode):
+  """
+  Runs an instance of a convertlalcache job
+  """
+  def __init__(self,job,start,end,type,ifo):
+    """
+    job = A CondorDAGJob that can run an instance of convertCacheNode.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    self.add_macro("macrogpsstarttime",start)
+    lalcache = 'datafind_cache/' + ifo[0:1] + '-' + type + '-' + str(start) + '-' + str(end) + '.cache.tmp'    
+    self.add_var_arg(lalcache)
+    framecache = 'datafind_cache/' + ifo[0:1] + '-' + type + '-' + str(start) + '-' + str(end) + '.cache'
+    self.add_var_arg(framecache)
+
 
 ##############################################################################
 # qscan class for qscan jobs
@@ -255,7 +356,8 @@ class qscanNode(pipeline.CondorDAGNode):
   """
   Runs an instance of a qscan job
   """
-  def __init__(self,job,time,cp,dir,trig,ifo,qFlag):
+  #def __init__(self,job,time,cp,dir,trig,ifo,qFlag):
+  def __init__(self,job,time,cp,start,end,type,trig,ifo,qFlag):
     """
     job = A CondorDAGJob that can run an instance of qscan.
     """
@@ -265,10 +367,11 @@ class qscanNode(pipeline.CondorDAGNode):
     self.container = HTMLcontainer(trig,"QSCAN")
     if qFlag: self.initializeHTML(trig)
     tableFile = open(self.container.locallink,'a')
+    qscanCache = 'datafind_cache/' + ifo[0:1] + '-' + type + '-' + str(start) + '-' + str(end) + '.cache'    
     if (ifo == 'H1') or (ifo == 'H2'):
       self.add_file_arg(string.strip(cp.get('qscan','Hconfig-file')))
       #self.add_file_arg(string.strip(cp.get('qscan','Hcache-file')))
-      self.add_file_arg('Hq.cache')
+      self.add_file_arg(qscanCache)
       self.add_var_arg(string.strip(cp.get('qscan','Houtput')))
       tableFile.write('<a href="' + string.strip(cp.get('qscan','Hweb')) + \
                     str(time) + '/">' + str(ifo) + \
@@ -276,7 +379,7 @@ class qscanNode(pipeline.CondorDAGNode):
     if (ifo == 'L1'):
       self.add_file_arg(string.strip(cp.get('qscan','Lconfig-file')))
       #self.add_file_arg(string.strip(cp.get('qscan','Lcache-file')))
-      self.add_file_arg('Lq.cache')
+      self.add_file_arg(qscanCache)
       self.add_var_arg(string.strip(cp.get('qscan','Loutput')))
       tableFile.write('<a href="' + string.strip(cp.get('qscan','Lweb')) + \
                     str(time) + '/">' + str(ifo) + \
@@ -292,6 +395,7 @@ class qscanNode(pipeline.CondorDAGNode):
     tableFile = open(self.container.locallink,'w')
     writeIULHeader(tableFile)   
     tableFile.write('<h3>Follow up of trigger [' +str(trig.eventID) +']</h3>\n')
+    tableFile.close()
 
 class segJob(pipeline.CondorDAGJob):
   """
@@ -353,7 +457,7 @@ class segNode(pipeline.CondorDAGNode):
 #
 ##############################################################################
 
-###### OPTION PARSING AND SANITY CHECKS #####################################
+######################## OPTION PARSING  #####################################
 usage = """usage: %prog [options]
 """
 
@@ -373,6 +477,10 @@ parser.add_option("-g", "--generate-cache",action="store_true",\
 
 parser.add_option("-m", "--datafind",action="store_true",\
     default=False, help="use datafind to get qscan/trends data")
+
+parser.add_option("-c", "--convertlalcache",action="store_true",\
+    default=False, help="use convertlalcache to translate LAL cache files\
+                         to qscan cache files ")
 
 #parser.add_option("-r","--read-triggers",action="store_true",default=False,\
 #    help="Read the followup trigger XML (COIRE FILE)" )
@@ -408,22 +516,30 @@ if opts.version:
   print "$Id$"
   sys.exit(0)
 
-#if opts.datafind and not opts.read_triggers:
-#  print >> sys.stderr, "Must read triggers for datafind step"
-#  print >> sys.stderr, "Use --read-triggers XML to specify triggers to followup"
-#  sys.exit(1)
+####################### SANITY CHECKS #####################################
 
-#if not opts.cache_path:
-#  print >> sys.stderr, "No cache path specified."
-#  print >> sys.stderr, "Use --cache-path PATH to specify a location."
-#  sys.exit(1)
+if not opts.config_file:
+  print >> sys.stderr, "No configuration file specified."
+  print >> sys.stderr, "Use --config-file FILE to specify location" 
+  sys.exit(1)
 
-#if not opts.science_run:
-#  print >> sys.stderr, "No science run specified."
-#  print >> sys.stderr, "Use --science-run RUN to specify a run."
-#  sys.exit(1)
+if not opts.log_path and not opts.write_to_iulgroup:
+  print >> sys.stderr, "No log file path specified"
+  print >> sys.stderr, "Use --log-path PATH to specify a location"
+  sys.exit(1)
 
-## READ IN THE CONFIG (.ini) FILE
+if not opts.write_to_iulgroup and not opts.generate_cache and \
+  not opts.datafind and not opts.qscan and not opts.trig_bank and \
+  not opts.inspiral and not opts.plots:
+  print >> sys.stderr, "No steps of the pipeline specified."
+  print >> sys.stderr, "Please specify at least one of"
+  print >> sys.stderr, "--generate-cache, --trig-bank, --inspiral, --plots,"
+  print >> sys.stderr, "--datafind, --convertlalcache, --qscan"
+  print >> sys.stderr, "or --write-to-iulgroup (use this option alone for now)"  
+  sys.exit(1)
+
+
+#################### READ IN THE CONFIG (.ini) FILE ########################
 cp = ConfigParser.ConfigParser()
 cp.read(opts.config_file)
 
@@ -493,71 +609,75 @@ followuptrigs = getfollowuptrigs(numtrigs,page,coincs,missed,search)
 print "\n.......Found " + str(len(followuptrigs)) + " trigs to follow up" 
 
 ################ DO DATA FINDING ##############################################
-if opts.datafind:
-  times = []
-  for trigs in followuptrigs:
-    time = 0
-    try: time = trigs.gpsTime['H1']
-    except: pass
-    try: time = trigs.gpsTime['H2']
-    except: pass
-    try: time = trigs.gpsTime['L1']
-    except: pass
-    if time: times.append(time)
-  times.sort()
+#if opts.datafind:
+#  times = []
+#  for trigs in followuptrigs:
+#    time = 0
+#    try: time = trigs.gpsTime['H1']
+#    except: pass
+#    try: time = trigs.gpsTime['H2']
+#    except: pass
+#    try: time = trigs.gpsTime['L1']
+#    except: pass
+#    if time: times.append(time)
+#  times.sort()
   # 1s is substracted to the expected startTime to make sure the window will be large enough. This is to be sure to handle the rouding to the next sample.
-  startTime = int( times[0] - eval(string.strip(cp.get('datafind','qscan-searchTimeRange')))/2 ) - 1
-  endTime =  int( times[-1] + eval(string.strip(cp.get('datafind','qscan-searchTimeRange')))/2 ) + 2
-  command = string.strip(cp.get('condor','datafind')) + \
-          " --observatory=L" + " --type=" + \
-          string.strip(cp.get('datafind','qscan-level')) + \
-          " --gps-start-time=" + str(startTime) + " --gps-end-time=" + \
-          str(endTime) + " --url-type=file" + " --lal-cache > Lq.cache.tmp"
+#  startTime = int( times[0] - eval(string.strip(cp.get('datafind','qscan-searchTimeRange')))/2 ) - 1
+#  endTime =  int( times[-1] + eval(string.strip(cp.get('datafind','qscan-searchTimeRange')))/2 ) + 2
+#  command = string.strip(cp.get('condor','datafind')) + \
+#          " --observatory=L" + " --type=" + \
+#          string.strip(cp.get('datafind','qscan-level')) + \
+#          " --gps-start-time=" + str(startTime) + " --gps-end-time=" + \
+#          str(endTime) + " --url-type=file" + " --lal-cache > Lq.cache.tmp"
 
-  print "....Finding Qscan LLO data ["+str(startTime)+"-"+str(endTime)+"]\n"
-  os.system(command)
-  Lq = open('Lq.cache.tmp','r')
-  lines = Lq.readlines()
-  Lqout = open('Lq.cache','w')
-  for line in lines:
-    total = line.replace("file://localhost","").split("/")[0:-1]
-    first = total[0].split()
-    first.insert(-1,str(eval(first[-1]) + eval(first[-2])))
-    total[0] = " ".join(first)
-    total[0] += " "
-    Lqout.write("/".join(total)+'\n')
+#  print "....Finding Qscan LLO data ["+str(startTime)+"-"+str(endTime)+"]\n"
+#  os.system(command)
+#  Lq = open('Lq.cache.tmp','r')
+#  lines = Lq.readlines()
+#  Lqout = open('Lq.cache','w')
+#  for line in lines:
+#    total = line.replace("file://localhost","").split("/")[0:-1]
+#    first = total[0].split()
+#    first.insert(-1,str(eval(first[-1]) + eval(first[-2])))
+#    total[0] = " ".join(first)
+#    total[0] += " "
+#    Lqout.write("/".join(total)+'\n')
 
-  command = string.strip(cp.get('condor','datafind')) + \
-          " --observatory=H" + " --type=" + \
-          string.strip(cp.get('datafind','qscan-level')) + \
-          " --gps-start-time=" + str(startTime) + " --gps-end-time=" + \
-          str(endTime) + " --url-type=file" + " --lal-cache > Hq.cache.tmp" 
-  print "....Finding Qscan LHO data ["+str(startTime)+"-"+str(endTime)+"]\n"
-  os.system(command)
-  Hq = open('Hq.cache.tmp','r')
-  lines = Hq.readlines()
-  Hqout = open('Hq.cache','w')
-  for line in lines:
-    total = line.replace("file://localhost","").split("/")[0:-1]
-    first = total[0].split()
-    first.insert(-1,str(eval(first[-1]) + eval(first[-2])))
-    total[0] = " ".join(first)
-    total[0] += " "
-    Hqout.write("/".join(total)+'\n')
+#  command = string.strip(cp.get('condor','datafind')) + \
+#          " --observatory=H" + " --type=" + \
+#          string.strip(cp.get('datafind','qscan-level')) + \
+#          " --gps-start-time=" + str(startTime) + " --gps-end-time=" + \
+#          str(endTime) + " --url-type=file" + " --lal-cache > Hq.cache.tmp" 
+#  print "....Finding Qscan LHO data ["+str(startTime)+"-"+str(endTime)+"]\n"
+#  os.system(command)
+#  Hq = open('Hq.cache.tmp','r')
+#  lines = Hq.readlines()
+#  Hqout = open('Hq.cache','w')
+#  for line in lines:
+#    total = line.replace("file://localhost","").split("/")[0:-1]
+#    first = total[0].split()
+#    first.insert(-1,str(eval(first[-1]) + eval(first[-2])))
+#    total[0] = " ".join(first)
+#    total[0] += " "
+#    Hqout.write("/".join(total)+'\n')
 
 
 ############ SET UP THE REQUESTED JOBS ########################################
-trigJob = trigBankFollowUpJob(opts,cp)
-inspJob = inspiralFollowUpJob(opts,cp)
-plotJob = plotSNRCHISQJob(opts,cp)
-qscanJob = qscanJob(opts,cp)
-segJob = segJob(opts,cp)
+trigJob    = trigBankFollowUpJob(opts,cp)
+inspJob    = inspiralFollowUpJob(opts,cp)
+plotJob    = plotSNRCHISQJob(opts,cp)
+dataJob    = dataFindJob(opts,cp)
+cvcacheJob = convertCacheJob(opts,cp)
+qscanJob   = qscanJob(opts,cp)
+segJob     = segJob(opts,cp)
 
-trigJobCnt = 0
-inspJobCnt = 0
-plotJobCnt = 0
-qscanJobCnt = 0
-segJobCnt = 0
+trigJobCnt    = 0
+inspJobCnt    = 0
+plotJobCnt    = 0
+dataJobCnt    = 0
+cvcacheJobCnt = 0
+qscanJobCnt   = 0
+segJobCnt     = 0
 summaryHTMLlist = []
 
 print "\n.......Setting up pipeline jobs"
@@ -567,18 +687,10 @@ for trig in followuptrigs:
   summaryHTML = summaryHTMLTable(trig)
   summaryHTML.containers.append(writeXMLparams(trig))
 
-  # TRY GETTING TRIG BANK PROCESS PARAMS
-  #try: 
-  #  trig_process_params = cache.getProcessParamsFromCache( \
-  #                   cache.filesMatchingGPS(trig.gpsTime,'TRIGBANK'), \
-  #                   trig.gpsTime) 
-  #except: 
-  #  print "couldn't get trigbank process params for " + str(trig.eventID)
-  #  trig_process_params = []
-
-  # TRY GETTING INSPIRAL PROCESS PARAMS
   print trig.ifoTag
   print trig.gpsTime
+
+  # TRY GETTING INSPIRAL PROCESS PARAMS... currently done even if the inspiral jobs are not requested... should be fixed
   try: 
     inspiral_process_params = cache.getProcessParamsFromCache( \
                      cache.filesMatchingGPSinCache(trig.gpsTime,\
@@ -591,7 +703,7 @@ for trig in followuptrigs:
     print "couldn't get inspiral process params for " + str(trig.eventID)
     inspiral_process_params = []
 
-  # currently this assumes you will be getting inspiral jobs...fix this!
+  # flag initialization: for html page purposes...
   if opts.qscan: qFlag = 1
   else: qFlag = 0
   if opts.plots: plotsFlag = 1
@@ -599,9 +711,10 @@ for trig in followuptrigs:
   if opts.data_quality: sFlag = 1
   else: sFlag = 0
 
+  # Build the list of ifos in which this trigger was found - this is assuming that an ifo name is made of 2 characters, such as "L1"...  
+  ifo_list = [trig.ifoList[i:i+2] for i in range(0,len(trig.ifoList),2)]
 
-  # for ifo in trig_process_params:
-  for ifo in inspiral_process_params:
+  for ifo in ifo_list:
     try: trig.gpsTime[ifo]
     except: continue
 
@@ -614,23 +727,71 @@ for trig in followuptrigs:
           segJobCnt+=1
         sFlag = False
       except:
-        print "couldn't add data quality  job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
+        print "couldn't add data quality job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
         sNode = 0
     else: sNode = 0
 
-    # SETUP QSCAN JOBS
-    if trig.gpsTime[ifo]:
-      try:
-        qNode = qscanNode(qscanJob,trig.gpsTime[ifo],cp,trig.summarydir,trig,ifo,qFlag)
-        if opts.qscan: 
-          dag.add_node(qNode)
-          qscanJobCnt+=1
-        qFlag = False
-        #summaryHTML.containers.append( qNode.getContainer() )
-      except: 
-        print "couldn't add qscan job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
-        qNode = 0
-    else: qNode = 0
+    # Don't need to setup datafind and qscan jobs for both H1 and H2
+    if ifo == 'H2' and trig.ifoList.find('H1') >= 0:
+      setupDataFind = 0
+    else: setupDataFind = 1
+
+    if setupDataFind:
+
+      # SETUP DATAFIND JOBS
+      if trig.gpsTime[ifo]:
+      
+        # 1s is substracted to the expected startTime to make sure the window will be large enough. This is to be sure to handle the rouding to the next sample done by qscan.
+        df_start_time = int( trig.gpsTime[ifo] - eval(string.strip(cp.get('datafind','qscan-searchTimeRange')))/2 ) - 1
+        df_end_time = int( trig.gpsTime[ifo] + eval(string.strip(cp.get('datafind','qscan-searchTimeRange')))/2 ) + 1
+        df_type = string.strip(cp.get('datafind','qscan-level'))
+      
+        try:
+          dNode = dataFindNode(dataJob,df_start_time,df_end_time,df_type,ifo)
+          try:
+            if prev_dNode and opts.datafind: 
+              dNode.add_parent(prev_dNode)
+          except:
+            pass  
+          if opts.datafind:
+            dag.add_node(dNode)
+            dataJobCnt+=1
+          prev_dNode = dNode
+        except:
+          print "couldn't add datafind job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
+          dNode = 0
+      else: dNode = 0
+
+      # SETUP CONVERTLALCACHE JOBS
+      if trig.gpsTime[ifo] and dNode:
+        try:
+          cvNode = convertCacheNode(cvcacheJob,df_start_time,df_end_time,df_type,ifo)
+          if dNode and opts.datafind: # only add a parent if it exists
+            cvNode.add_parent(dNode)
+          if opts.convertlalcache:
+            dag.add_node(cvNode)
+            cvcacheJobCnt+=1
+        except:
+          print "couldn't add convertlalcache job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
+          cvNode = 0
+      else: cvNode = 0
+
+      # SETUP QSCAN JOBS
+      if trig.gpsTime[ifo] and cvNode:
+        try:
+          # qNode = qscanNode(qscanJob,trig.gpsTime[ifo],cp,trig.summarydir,trig,ifo,qFlag)
+          qNode = qscanNode(qscanJob,trig.gpsTime[ifo],cp,df_start_time,df_end_time,df_type,trig,ifo,qFlag)
+          if cvNode and opts.convertlalcache: # only add a parent if it exists
+            qNode.add_parent(cvNode)          
+          if opts.qscan:
+            dag.add_node(qNode)
+            qscanJobCnt+=1
+          qFlag = False
+          #summaryHTML.containers.append( qNode.getContainer() )
+        except: 
+          print "couldn't add qscan job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
+          qNode = 0
+      else: qNode = 0
 
 
     # TRY GETTING THE TRIG BANK PROCESS PARAMS
@@ -641,7 +802,6 @@ for trig in followuptrigs:
         for row in inspiral_process_params[ifo]:
           if row.param[2:] == 'bank-file':
             trigBankFile = row.value
-            print trigBankFile
             break
       except:
         print "could not find the --bank-file argument in the inspiral process params table for " + str(ifo) + "@"+ str(trig.gpsTime[ifo])
@@ -668,7 +828,7 @@ for trig in followuptrigs:
           trigJobCnt+=1
       except:
         trigNode = 0
-        print "couldn't add trigbank job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
+        print "couldn't add trigbank job for " + ifo + "@ "+ str(trig.gpsTime[ifo])
     else:
       trigNode = 0
 
@@ -705,15 +865,19 @@ for trig in followuptrigs:
     else: plotNode = 0  
   if sNode: summaryHTML.containers.append( sNode.getContainer() )
   if qNode: summaryHTML.containers.append( qNode.getContainer() )
-  if plotNode: summaryHTML.containers.append( plotNode.getContainer() )
+  if plotNode: 
+    summaryHTML.containers.append( plotNode.getContainer() )
+    summaryHTML.containers.append( plotNode.getContainer2() )
   summaryHTMLlist.append(summaryHTML)
     
 
-print "\nFound " + str(trigJobCnt) + " trig bank jobs" 
-print "\nFound " + str(inspJobCnt) + " inspiral Jobs" 
-print "\nFound " +  str(plotJobCnt) + " plot jobs"
-print "\nFound " +  str(qscanJobCnt) + " qscan jobs"
-print "\nFound " +  str(segJobCnt) + " data quality jobs"
+print "\nFound " +  str(trigJobCnt)    + " trig bank jobs" 
+print "\nFound " +  str(inspJobCnt)    + " inspiral Jobs" 
+print "\nFound " +  str(plotJobCnt)    + " plot jobs"
+print "\nFound " +  str(dataJobCnt)    + " datafind jobs"
+print "\nFound " +  str(cvcacheJobCnt) + " convertlalcache jobs"
+print "\nFound " +  str(qscanJobCnt)   + " qscan jobs"
+print "\nFound " +  str(segJobCnt)     + " data quality jobs"
 print "\n.......Writing DAG"
 
 dag.write_sub_files()
