@@ -20,12 +20,6 @@
 
 
 #include <math.h>
-/* FIXME: decide what to do about this
-#include <gsl/gsl_matrix.h>
-#include <gsl/gsl_permutation.h>
-#include <gsl/gsl_linalg.h>
-#include <gsl/gsl_vector.h>
-*/
 
 
 #include <lal/LALRCSID.h>
@@ -254,86 +248,6 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 /*
  * ============================================================================
  *
- *                         Time-Domain Decorrelation
- *
- * ============================================================================
- */
-
-
-/* FIXME:  decide what to do about this */
-#if 0
-static REAL8Sequence *impulse_response(unsigned N, COMPLEX16FrequencySeries **filter, unsigned channel, unsigned channels, REAL8FFTPlan *reverseplan)
-{
-	COMPLEX16Sequence *f = XLALCreateCOMPLEX16Sequence(N / 2 + 1);
-	REAL8Sequence *impulse = XLALCreateREAL8Sequence(N);
-	unsigned i, k;
-
-	if(!f || !impulse) {
-		XLALDestroyCOMPLEX16Sequence(f);
-		XLALDestroyREAL8Sequence(impulse);
-		return NULL;
-	}
-
-	/* sum the channel filters */
-	memset(f->data, 0, f->length * sizeof(*f->data));
-	for(i = channel; i < channel + channels; i++) {
-		unsigned k0 = filter[i]->f0 / filter[i]->deltaF;
-		for(k = 0; k < filter[i]->data->length; k++) {
-			f->data[k0 + k].re += filter[i]->data->data[k].re;
-			f->data[k0 + k].im += filter[i]->data->data[k].im;
-		}
-	}
-
-	/* inverse transform */
-	if(XLALREAL8ReverseFFT(impulse, f, reverseplan)) {
-		XLALDestroyREAL8Sequence(impulse);
-		impulse = NULL;
-	}
-
-	/* done */
-	XLALDestroyCOMPLEX16Sequence(f);
-	return impulse;
-}
-
-
-static int impulse_response_matrix_lu(gsl_matrix *m, gsl_permutation *p, unsigned stride, unsigned N, COMPLEX16FrequencySeries **filter, unsigned channel, unsigned channels, REAL8FFTPlan *reverseplan)
-{
-	REAL8Sequence *impulse = impulse_response(N, filter, channel, channels, reverseplan);
-	double norm;
-	int ignored[8192];
-	int i, j;
-
-	if(!impulse) {
-		XLALDestroyREAL8Sequence(impulse);
-		return -1;
-	}
-
-	/* calculate normalization factor:  sum of squares across each row
-	 * of convolution matrix must be 1 */
-	norm = 0;
-	for(j = 0; (j < (int) m->size2) && (j * stride < impulse->length); j++)
-		norm += impulse->data[j * stride] * impulse->data[j * stride];
-	norm = sqrt(norm);
-
-	for(i = 0; i < (int) m->size1; i++)
-		for(j = 0; j < (int) m->size2; j++) {
-			unsigned k = abs(i - j) * stride;
-			gsl_matrix_set(m, i, j, k < impulse->length ? impulse->data[k] / norm : 0);
-		}
-
-	if(gsl_linalg_LU_decomp(m, p, ignored))
-		XLALPrintError("gsl_linalg_LU_decomp() failed!\n");
-
-	XLALDestroyREAL8Sequence(impulse);
-	return 0;
-}
-#endif
-
-
-
-/*
- * ============================================================================
- *
  *                               Tile Analysis
  *
  * ============================================================================
@@ -358,12 +272,6 @@ SnglBurstTable *XLALComputeExcessPower(
 	unsigned channel_end;
 	double h_rss;
 	double confidence;
-	/* FIXME: decide what to do about this */
-#if 0
-	gsl_vector *samples = NULL;
-	gsl_matrix *deconv = NULL;
-	gsl_permutation *deconvp = NULL;
-#endif
 
 	for(channels = plane->tiles.min_channels; channels <= plane->tiles.max_channels; channels *= 2) {
 	for(channel_end = (channel = 0) + channels; channel_end <= plane->channels; channel_end = (channel += channels / plane->tiles.inv_fractional_stride) + channels) {
@@ -393,16 +301,6 @@ SnglBurstTable *XLALComputeExcessPower(
 		 * tile's "virtual pixels" */
 		const unsigned stride = length / tile_dof;
 
-		/* LU factorization of channel's normalized time-domain
-		 * impulse response convolution matrix */
-		/* FIXME: decide what to do about this */
-#if 0
-		samples = gsl_vector_alloc(tile_dof);
-		deconv = gsl_matrix_alloc(tile_dof, tile_dof);
-		deconvp = gsl_permutation_alloc(tile_dof);
-		impulse_response_matrix_lu(deconv, deconvp, stride, plane->window->data->length, plane->filter, channel, channels, reverseplan);
-#endif
-
 	for(end = (start = plane->tiles.tiling_start) + length; end <= plane->tiles.tiling_end; end = (start += length / plane->tiles.inv_fractional_stride) + length) {
 		double sumsquares = 0;
 		double uwsumsquares = 0;
@@ -419,21 +317,12 @@ SnglBurstTable *XLALComputeExcessPower(
 				sum += plane->channel[c]->data[t];
 				uwsum += plane->channel[c]->data[t] * plane->unwhitened_rms->data[c] * sqrt(plane->fseries_deltaF / plane->deltaF);
 			}
-			/* FIXME: deicide what to do about this */
-#if 0
-			gsl_vector_set(samples, (t - start - stride / 2) / stride, sum);
-#endif
 
 			sumsquares += sum * sum;
 			uwsumsquares += uwsum * uwsum;
 		}
 		/* normalization to give each pixel a mean square of 1.0 */
 		sumsquares /= sum_mean_square;
-
-		/* FIXME: decide what to do about this */
-#if 0
-		gsl_linalg_LU_svx(deconv, deconvp, samples);
-#endif
 
 		/* compute statistical confidence, see if it's above
 		 * threshold */
@@ -466,15 +355,6 @@ SnglBurstTable *XLALComputeExcessPower(
 
 		}
 	}
-		/* FIXME: decide what to do about this */
-#if 0
-		gsl_vector_free(samples);
-		gsl_matrix_free(deconv);
-		gsl_permutation_free(deconvp);
-		samples = NULL;
-		deconv = NULL;
-		deconvp = NULL;
-#endif
 	}
 	}
 	}
