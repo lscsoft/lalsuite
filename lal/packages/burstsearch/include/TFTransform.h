@@ -44,7 +44,7 @@ NRCSID(TFTRANSFORMH, "$Id$");
  */
 
 
-typedef struct tagREAL4TimeFrequencyPlane {
+typedef struct tagREAL8TimeFrequencyPlane {
 	/* name of data from which this was computed */
 	CHAR name[LALNameLength];
 	/* epoch of data from which this was computed */
