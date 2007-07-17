@@ -159,7 +159,7 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
 	fclose(fp2);
 	LALFree(edat->ephemE);
 	LALFree(edat->ephemS);
-	LALPrintError("couldn't parse line of %s: %d\n", edat->ephiles.earthEphemeris, ret);
+	LALPrintError("couldn't parse line %d of %s: %d\n", j+2, edat->ephiles.earthEphemeris, ret);
 	ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
       }
     }
@@ -176,7 +176,7 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
 	fclose(fp2);
 	LALFree(edat->ephemE);
 	LALFree(edat->ephemS);
-	LALPrintError("couldn't parse line of %s: %d\n", edat->ephiles.sunEphemeris, ret);
+	LALPrintError("couldn't parse line %d of %s: %d\n", j+2, edat->ephiles.sunEphemeris, ret);
 	ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
       }
     }
