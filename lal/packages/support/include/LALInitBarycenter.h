@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Reinhard Prix, Teviet Creighton
+*  Copyright (C) 2007 Curt Cutler, Reinhard Prix, Teviet Creighton, Bernd Machenschalk
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -56,11 +56,12 @@ extern "C" {
 NRCSID (LALINITBARYCENTERH,"$Id$");
 
 /* <lalErrTable file="LALInitBarycenterHErrorTable"> */
-#define LALINITBARYCENTERH_EOPEN 1
-
+#define LALINITBARYCENTERH_EOPEN    1
+#define LALINITBARYCENTERH_EMEM     2
 #define LALINITBARYCENTERH_EEPHFILE 32
 
-#define LALINITBARYCENTERH_MSGEOPEN "Could not open ephemeris file"
+#define LALINITBARYCENTERH_MSGEOPEN    "Could not open ephemeris file"
+#define LALINITBARYCENTERH_MSGEMEM     "Out of memory"
 #define LALINITBARYCENTERH_MSGEEPHFILE "Error in reading an ephemeris file"
 /* </lalErrTable> */
 

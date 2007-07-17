@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Jolien Creighton, Reinhard Prix, Teviet Creighton
+*  Copyright (C) 2007 Curt Cutler, Jolien Creighton, Reinhard Prix, Teviet Creighton, Bernd Machenschalk
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -86,10 +86,11 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
     FILE *fp1, *fp2; /* fp1 is table of Earth location; fp2 is for Sun*/
 
     INT4 j; /*dummy index*/
-    INT4 gpsYr;  /*gpsYr + leap is the time on the GPS clock
+    INT4 gpsYr; /*gpsYr + leap is the time on the GPS clock
                           at first instant of new year, UTC; equivalently
                           leap is # of leap secs added between Jan.6, 1980 and
                           Jan. 2 of given year */
+    INT4 ret; /* return value for checking */
 
     INITSTATUS(stat,"LALInitBarycenter",LALINITBARYCENTERC);
     ATTATCHSTATUSPTR(stat);
@@ -108,65 +109,97 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
 	LALSnprintf (errmsg, ERRMSGLEN, "%s '%s'\n", LALINITBARYCENTERH_MSGEOPEN, 
 		     fp1 == NULL ? edat->ephiles.earthEphemeris : edat->ephiles.sunEphemeris);
 	errmsg[ERRMSGLEN-1] = 0;
+	if (fp1) close (fp1);
+	if (fp2) close (fp2);
 	ABORT (stat, LALINITBARYCENTERH_EOPEN, errmsg);
       }
     
-/*reading first line of each file */
+    /* reading first line of each file */
 
-	 fscanf(fp1,"%d %le %d\n", &gpsYr, &edat->dtEtable, &edat->nentriesE);
-	 fscanf(fp2,"%d %le %d\n", &gpsYr, &edat->dtStable, &edat->nentriesS);
-    
-     edat->ephemE  = (PosVelAcc *)LALMalloc(edat->nentriesE*sizeof(PosVelAcc)); 
-     edat->ephemS  = (PosVelAcc *)LALMalloc(edat->nentriesS*sizeof(PosVelAcc)); 
-
-/*first column in earth.dat or sun.dat is gps time--one long integer
-  giving the number of secs that have ticked since start of GPS epoch
-  +  on 1980 Jan. 6 00:00:00 UTC 
-*/
-       for (j=0; j < edat->nentriesE; ++j){
-
-	 /* check return value of fscanf */
-	 fscanf(fp1,"%le %le %le %le %le %le %le %le %le %le\n",
-		&edat->ephemE[j].gps,&edat->ephemE[j].pos[0],
-		&edat->ephemE[j].pos[1],&edat->ephemE[j].pos[2],
-		&edat->ephemE[j].vel[0],&edat->ephemE[j].vel[1],
-		&edat->ephemE[j].vel[2],&edat->ephemE[j].acc[0],
-		&edat->ephemE[j].acc[1],
-		&edat->ephemE[j].acc[2] );
-       }
-
-       for (j=0; j < edat->nentriesS; ++j){
-	 fscanf(fp2,"%le %le %le %le %le %le %le %le %le %le\n",
-		&edat->ephemS[j].gps,&edat->ephemS[j].pos[0],
-		&edat->ephemS[j].pos[1],&edat->ephemS[j].pos[2],
-		&edat->ephemS[j].vel[0],&edat->ephemS[j].vel[1],
-		&edat->ephemS[j].vel[2],&edat->ephemS[j].acc[0],
-		&edat->ephemS[j].acc[1],
-		&edat->ephemS[j].acc[2] );
-       }
-       
-       
-/*Test to make sure last entries for gpsE,S are 
-  reasonable numbers; specifically, checking that they are 
-  of same order as t2000 
-  --within factor e  
-Machine dependent: to be fixed!
-
-    if ( (fabs(log(1.e0*(edat->ephemE[edat->nentriesE -1].gps)/t2000)) > 1.e0) 
-        ||(fabs(log(1.e0*(edat->ephemS[edat->nentriesS -1].gps)/t2000)) > 1.e0) ){
-      LALFree(edat->ephemE);
-      LALFree(edat->ephemS);
-      ABORT(stat,LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE); 
+    ret = fscanf(fp1,"%d %le %d\n", &gpsYr, &edat->dtEtable, &edat->nentriesE);
+    if (ret != 3) {
+      fclose(fp1);
+      fclose(fp2);
+      LALPrintError("couldn't parse first line of %s: %d\n", edat->ephiles.earthEphemeris, ret);
+      ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
     }
-*/
-	fclose(fp1); 
-        fclose(fp2);       
-	
-	/*curt: is below the right return???*/
-	DETATCHSTATUSPTR(stat);
-	RETURN(stat);
+    ret = fscanf(fp2,"%d %le %d\n", &gpsYr, &edat->dtStable, &edat->nentriesS);
+    if (ret != 3) {
+      fclose(fp1);
+      fclose(fp2);
+      LALPrintError("couldn't parse first line of %s: %d\n", edat->ephiles.sunEphemeris, ret);
+      ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
+    }
+    
+    edat->ephemE  = (PosVelAcc *)LALMalloc(edat->nentriesE*sizeof(PosVelAcc)); 
+    if (edat->ephemE == NULL) {
+      ABORT(stat, LALINITBARYCENTERH_EMEM, LALINITBARYCENTERH_MSGEMEM);
+    }
+    edat->ephemS  = (PosVelAcc *)LALMalloc(edat->nentriesS*sizeof(PosVelAcc)); 
+    if (edat->ephemS == NULL) {
+      LALFree(edat->ephemE);
+      ABORT(stat, LALINITBARYCENTERH_EMEM, LALINITBARYCENTERH_MSGEMEM);
+    }
+
+    
+    /* first column in earth.dat or sun.dat is gps time--one long integer
+       giving the number of secs that have ticked since start of GPS epoch
+       +  on 1980 Jan. 6 00:00:00 UTC 
+    */
+
+    for (j=0; j < edat->nentriesE; ++j) {
+      ret = fscanf(fp1,"%le %le %le %le %le %le %le %le %le %le\n",
+		   &edat->ephemE[j].gps,    &edat->ephemE[j].pos[0],
+		   &edat->ephemE[j].pos[1], &edat->ephemE[j].pos[2],
+		   &edat->ephemE[j].vel[0], &edat->ephemE[j].vel[1],
+		   &edat->ephemE[j].vel[2], &edat->ephemE[j].acc[0],
+		   &edat->ephemE[j].acc[1], &edat->ephemE[j].acc[2]);
+      if (ret != 10) {
+	fclose(fp1);
+	fclose(fp2);
+	LALFree(edat->ephemE);
+	LALFree(edat->ephemS);
+	LALPrintError("couldn't parse line of %s: %d\n", edat->ephiles.earthEphemeris, ret);
+	ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
+      }
+    }
+
+    for (j=0; j < edat->nentriesS; ++j) {
+      ret = fscanf(fp2,"%le %le %le %le %le %le %le %le %le %le\n",
+		   &edat->ephemS[j].gps,    &edat->ephemS[j].pos[0],
+		   &edat->ephemS[j].pos[1], &edat->ephemS[j].pos[2],
+		   &edat->ephemS[j].vel[0], &edat->ephemS[j].vel[1],
+		   &edat->ephemS[j].vel[2], &edat->ephemS[j].acc[0],
+		   &edat->ephemS[j].acc[1], &edat->ephemS[j].acc[2]);
+      if (ret != 10) {
+	fclose(fp1);
+	fclose(fp2);
+	LALFree(edat->ephemE);
+	LALFree(edat->ephemS);
+	LALPrintError("couldn't parse line of %s: %d\n", edat->ephiles.sunEphemeris, ret);
+	ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
+      }
+    }
+       
+       
+    /* Test to make sure last entries for gpsE,S are 
+       reasonable numbers; specifically, checking that they are 
+       of same order as t2000 
+       --within factor e  
+       Machine dependent: to be fixed!
+      
+       if ( (fabs(log(1.e0*(edat->ephemE[edat->nentriesE -1].gps)/t2000)) > 1.e0) 
+       ||(fabs(log(1.e0*(edat->ephemS[edat->nentriesS -1].gps)/t2000)) > 1.e0) ){
+       LALFree(edat->ephemE);
+       LALFree(edat->ephemS);
+       ABORT(stat,LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE); 
+       }
+    */
+
+    fclose(fp1); 
+    fclose(fp2);       
+    
+    /*curt: is below the right return???*/
+    DETATCHSTATUSPTR(stat);
+    RETURN(stat);
 }
-
-
-
-
