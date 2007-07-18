@@ -1,6 +1,8 @@
 /*
- * Copyright (C) 2006 Reinhard Prix
+ * Copyright (C) 2007 Deepak Khurana
+ * Copyright (C) 2006, 2007 Reinhard Prix, John T Whelan
  *
+ * 
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -19,7 +21,7 @@
 
 
 /**
- * \author Reinhard Prix and John Whelan
+ * \author Reinhard Prix, John T Whelan, Deepak Khurana
  * \date 2006
  * \file 
  * \brief Read in MLDC timeseries-files and produce SFTs (v2) for them
@@ -84,6 +86,7 @@ static const LALUnit empty_LALUnit;
 /* User variables */
 BOOLEAN uvar_help;
 BOOLEAN uvar_lisasim;
+BOOLEAN uvar_raCorrections;
 BOOLEAN uvar_makeX;
 BOOLEAN uvar_makeY;
 BOOLEAN uvar_makeZ;
@@ -99,6 +102,8 @@ CHAR *uvar_miscField;
 /*---------- internal prototypes ----------*/
 void initUserVars (LALStatus *status);
 void ConvertLISAtimeseries2LAL ( LALStatus *status, MultiREAL4TimeSeries **lalTimeSeries, const TimeSeries *lisaTimeSeries );
+void compute_R_f(int rigid_adiabatic,int flag,COMPLEX8 *R_f,REAL4 fourpifL);
+void compute_sft_data_data_fidx(COMPLEX8 *h_f,COMPLEX8 R_f);
 
 CHAR *assembleDescription ( const CHAR *name, const CHAR *miscField );
 
@@ -118,10 +123,11 @@ main(int argc, char *argv[])
   UINT4 ifo, sidx, fidx;
   COMPLEX8FrequencySeries *sft = NULL;
   REAL4 fourpifL;
-  COMPLEX8 ztmp;
+  COMPLEX8 R_f,h_f;
   SFTVector **SFTVectList;
   SFTVector *SFTvect;
   BOOLEAN writeTDI[3];
+  int flag =0,rigid_adiabatic=0;
 
   lalDebugLevel = 0;
 
@@ -228,18 +234,36 @@ main(int argc, char *argv[])
 	    {
 	      fourpifL = (2.0*LAL_TWOPI*LISA_ARM_LENGTH_SECONDS)
 		* (sft->f0 + fidx * sft->deltaF);
-	      if (uvar_lisasim)
+
+	      if(uvar_raCorrections)
 		{
-		  /* divide by    - 4 pi i f L */
-		  ztmp = sft->data->data[fidx];
-		  sft->data->data[fidx].re = - ztmp.im / fourpifL;
-		  sft->data->data[fidx].im = ztmp.re / fourpifL;
+		  rigid_adiabatic=1;
+		  if (uvar_lisasim)
+		    {
+		      flag=1;
+		      compute_R_f(rigid_adiabatic,flag,&R_f,fourpifL);
+		    }
+		  else
+		    {
+		      compute_R_f(rigid_adiabatic,flag,&R_f,fourpifL);
+		    }
 		}
 	      else
 		{
-		  sft->data->data[fidx].re /= (fourpifL * fourpifL);
-		  sft->data->data[fidx].im /= (fourpifL * fourpifL);
+		  if (uvar_lisasim)
+		    {
+		      flag=1;
+		      compute_R_f(rigid_adiabatic,flag,&R_f,fourpifL);
+		    }
+		  else
+		    {
+		      compute_R_f(rigid_adiabatic,flag,&R_f,fourpifL);
+		    }
 		}
+
+	      h_f=sft->data->data[fidx];
+	      compute_sft_data_data_fidx(&h_f,R_f);
+	      sft->data->data[fidx]=h_f;
 	    } /* for fidx < sft->data->length */
 	} /* for sidx < SFTvect->length */
 
@@ -371,6 +395,9 @@ initUserVars (LALStatus *status)
   uvar_makeZminusX = 0;
   uvar_makeXminusY = 0;
 
+  uvar_lisasim = FALSE;
+  uvar_raCorrections = FALSE;
+
   /* now register all our user-variable */
   LALregSTRINGUserVar(status, inputXML,		'i', UVAR_REQUIRED, "XML file describing the LISA timeseries data");
   LALregREALUserVar(status,   Tsft,		'T', UVAR_OPTIONAL, "Length of SFTs to produce (in seconds)");
@@ -379,6 +406,8 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status, miscField,	'm', UVAR_OPTIONAL, "User-specifiable portion of the SFT-filename ('misc' field)");
   
   LALregBOOLUserVar(status,   lisasim,		's', UVAR_OPTIONAL, "TDI data are from LISA Simulator");
+
+  LALregBOOLUserVar(status,   raCorrections,	 0,  UVAR_OPTIONAL, "Use rigid adiabatic approximation");
 
   LALregBOOLUserVar(status,   makeX,		'X', UVAR_OPTIONAL, "Produce X");
   LALregBOOLUserVar(status,   makeY,		'Y', UVAR_OPTIONAL, "Produce Y");
@@ -512,3 +541,43 @@ assembleDescription ( const CHAR *name, const CHAR *miscField )
   return desc;
 
 } /* assembleDescription() */
+
+
+void compute_R_f(int rigid_adiabatic,int flag,COMPLEX8 *R_f,REAL4 fourpifL)
+{
+  if(rigid_adiabatic==1)
+    {
+      if(flag==0)
+	{
+	  R_f->re=cos(fourpifL)/(fourpifL*fourpifL)/(sin(fourpifL/2)/(fourpifL/2));
+	  R_f->im=sin(fourpifL)/(fourpifL*fourpifL)/(sin(fourpifL/2)/(fourpifL/2));
+	}
+      else
+	{
+	  R_f->re=-sin(fourpifL)/(fourpifL)/(sin(fourpifL/2)/(fourpifL/2));
+	  R_f->im=cos(fourpifL)/(fourpifL)/(sin(fourpifL/2)/(fourpifL/2));
+	}
+    }
+  else
+    {
+       if(flag==0)
+	{
+	  R_f->re=1.0/(fourpifL*fourpifL);                               
+	  R_f->im=0;
+	}
+      else
+	{
+	  R_f->re=0;                                                      
+	  R_f->im=1.0/(fourpifL);
+	}
+    }
+}
+
+void compute_sft_data_data_fidx(COMPLEX8 *h_f,COMPLEX8 R_f)
+{ 
+  COMPLEX8 a;
+  a.re=h_f->re;
+  a.im=h_f->im;
+  h_f->re=a.re * R_f.re - a.im * R_f.im;/*multiplication of two complex number*/
+  h_f->im=a.re * R_f.im + a.im * R_f.re;/*(a+ib)(c+id)=(ac-bd)+i(ad+bc)*/
+}
