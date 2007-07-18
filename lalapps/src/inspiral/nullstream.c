@@ -517,6 +517,8 @@ int main( int argc, char *argv[] )
             goto cleanexit;
           }
 
+          if ( vrbflg ) fprintf( stdout, "error");
+
           /* assign the channel names */
           if ( j == LAL_IFO_H1 ) 
           {
@@ -528,6 +530,7 @@ int main( int argc, char *argv[] )
                  nullStatParams->sigmasq[j]);
           }
 
+
           if ( j == LAL_IFO_H2 )               
           {
             strcpy( CVec->cData[j]->name, &(cDataChanNames->chanNameH2) );
@@ -538,7 +541,9 @@ int main( int argc, char *argv[] )
                  nullStatParams->sigmasq[j]);
           }
 
+          if ( vrbflg ) fprintf( stdout, "error");
           XLALFrGetCOMPLEX8TimeSeries( CVec->cData[j], frStream );
+          if ( vrbflg ) fprintf( stdout, "error");
 
           /* Need to worry about WRAPPING of time-slides             */
           /* tempTime is the start time of cData plus - (time slide) */

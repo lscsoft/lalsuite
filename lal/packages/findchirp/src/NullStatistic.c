@@ -123,6 +123,37 @@ XLALNullStatisticInputInit (
     }
   }
 
+  for (m=0; m<LAL_NUM_IFO; m++)
+  {
+    cVecPtr->cData[m]->data = (COMPLEX8Sequence *)
+      LALCalloc(1, sizeof(COMPLEX8Sequence) );
+
+    if ( !(&(cVecPtr->cData[m]->data)) )
+    {
+      XLALPrintError("could not allocate memory for cData->data vector");
+      XLAL_ERROR(func, XLAL_ENOMEM);
+    }
+  }
+
+
+  for (m=0; m<LAL_NUM_IFO; m++)
+  {
+    cVecPtr->cData[m]->data->data = (COMPLEX8 *) 
+         LALCalloc(1, sizeof(COMPLEX8) );
+
+    if ( !(&(cVecPtr->cData[m]->data->data)) )
+    {
+      XLALPrintError("could not allocate memory for cData->data->data vector");
+      XLAL_ERROR(func, XLAL_ENOMEM);
+    }
+  }
+
+  for (m=0; m<LAL_NUM_IFO; m++)
+  {
+    cVecPtr->cData[m]->data->length = init->numPoints;
+  }
+
+
   return( 0 );
 }
 
@@ -246,6 +277,7 @@ XLALComputeNullStatistic (
 
   norm = ( 1.0 / ( params->sigmasq[h1idx] * params->sigmasq[h1idx] ) ) + 
          ( 1.0 / ( params->sigmasq[h2idx] * params->sigmasq[h2idx] ) );
+
   /* read in the c-data for multiple detectors */
   for (n=0; n<LAL_NUM_IFO; n++)
   {
@@ -277,9 +309,14 @@ XLALComputeNullStatistic (
   }
   else
   {
+#if 0
     nullStatRe = 
         (input->CData->cData[1]->data->data[idx].re / params->sigmasq[1])
       - (input->CData->cData[2]->data->data[idx].re / params->sigmasq[2]);
+#endif
+    nullStatRe = 
+        (cData[LAL_IFO_H1]->data->data[idx].re / params->sigmasq[LAL_IFO_H1])
+      - (cData[LAL_IFO_H2]->data->data[idx].re / params->sigmasq[LAL_IFO_H2]);
     nullStatIm = 
         (cData[LAL_IFO_H1]->data->data[idx].im / params->sigmasq[LAL_IFO_H1])
       - (cData[LAL_IFO_H2]->data->data[idx].im / params->sigmasq[LAL_IFO_H2]);
