@@ -290,6 +290,31 @@ class SireJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stderr_file('logs/sire-$(macroifo)-$(cluster)-$(process).err')
     self.set_sub_file('sire.sub')
 
+
+class CoireJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A lalapps_coire job used by the inspiral pipeline. The stdout and stderr from
+  the job are directed to the logs directory. The path to the executable is
+  determined from the ini file.
+  """
+  def __init__(self,cp,dax=False):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','coire')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp,dax)
+
+    for sec in ['coire']:
+      self.add_ini_opts(cp,sec)
+
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    self.set_stdout_file('logs/coire-$(macroifo)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/coire-$(macroifo)-$(cluster)-$(process).err')
+    self.set_sub_file('coire.sub')
+
+
 class FrJoinJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A lalapps_frjoin job used by the inspiral pipeline. The path to the
@@ -1116,89 +1141,308 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
   """
   def __init__(self,job):
     """
-    job = A CondorDAGJob that can run an instance of lalapps_inca.
+    job = A CondorDAGJob that can run an instance of lalapps_sire.
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
-    self.__ifo = None
-    self.__usertag = job.get_config('pipeline','user-tag')
+    self.__ifo  = None
+    self.__ifotag = None
+    self.__start = None
+    self.__end   = None
+    self.__injection_file = None
+    self.__usertag      = job.get_config('pipeline','user-tag')
+    try:
+      self.__zip_output = job.get_config('coire','write-compress')
+      self.__zip_output = True
+    except:
+      self.__zip_output = False
 
-  def set_outputs(self,out_name,zip=False,usertag=None,cluster=None,
-    slide_time=None):
+  def set_ifo(self, ifo):
     """
-    Sets the name of the sire output file.
-    out_name = name of sire output file
-    usertag = usertag to tag the output filename with
-    cluster = cluster time (ms)
-    slide_time = slide time (sec)
+    Add the list of interferometers 
     """
-    outfile = out_name
-    
-    if usertag:
-      outfile += '_' + usertag
-    
-    if cluster:
-      outfile += '_CLUSTER' + str(cluster)
-      
-    if slide_time:
-      if slide_time < 0: outfile += '_SLIDEneg' + str(abs(slide_time))
-      else: outfile += '_SLIDE' + str(slide_time)
-    
-    summ_file = outfile + '.txt' 
-    self.add_var_opt('summary',summ_file)
-    
-    outfile += '.xml'
+    self.__ifo = ifo
+    self.add_var_opt('ifo-cut',ifo)
 
-    self.__output = outfile
-    self.add_var_opt('output',outfile)
-
-  def set_inj_outputs(self,out_name,inj_coinc,zip=False,usertag=None,
-    cluster=None,slide_time=None):
+  def get_ifo(self):
     """
-    Sets the name of the sire output file.
-    out_name = name of sire output file
-    inj_coinc = injection coincidence window (ms)
-    usertag = usertag to tag the output filename with
-    cluster = cluster time (ms)
-    slide_time = slide time (sec)
+    Returns the ifos
     """
-    outfile = out_name
-    
-    if usertag:
-      outfile += '_' + usertag
-    
-    if cluster:
-      outfile += '_CLUSTER' + str(cluster)
-    
-    if slide_time:
-      if slide_time < 0: outfile += '_SLIDEneg' + str(abs(slide_time))
-      else: outfile += '_SLIDE' + str(slide_time)
-    
-    missed_file = outfile + '_MISSED' + str(inj_coinc) + '.xml'
+    return self.__ifo
 
-    self.add_var_opt('missed-injections',missed_file)
-    
-    outfile += '_FOUND' + str(inj_coinc)
-    
-    summ_file = outfile + '.txt' 
-    self.add_var_opt('summary',summ_file)
-    
-    outfile += '.xml'
+  def set_inj_file(self, file):
+    """
+    Sets the injection file
+    """
+    self.__injection_file = file
+    self.add_var_opt('injection-file', file)
 
-    if zip:
-      outfile += '.gz'
+  def get_inj_file(self, file):
+    """
+    Sets the injection file
+    """
+    return self.__injection_file
 
-    self.__output = outfile
-    self.add_var_opt('output',outfile)
-    self.add_var_opt
+  def set_ifotag( self, ifotag):
+    """
+    Set the ifotag
+    """
+    self.__ifotag = ifotag
 
+  def get_ifotag( self ):
+    """
+    get the ifotag
+    """
+    return self.__ifotag
+
+  def set_start(self, start):
+    """
+    Sets GPS start time
+    """
+    self.__start = start
+
+  def get_start(self):
+    """
+    Returns GPS start time
+    """
+    return self.__start
+
+  def set_end(self, end):
+    """
+    Sets GPS end time
+    """
+    self.__end = end
+
+  def get_end(self):
+    """
+    Returns GPS end time
+    """
+    return self.__end
+
+  def set_glob(self, file_glob):
+    """
+    test
+    """
+    self.add_var_opt('glob',file_glob)
+
+  def set_input(self, input_file):
+    """
+    test
+    """
+    self.add_var_opt('input',input_file)
+
+  def set_user_tag(self,usertag):
+    """
+    Set the usertag for a given job
+    """
+    self.__usertag = usertag
+    self.add_var_opt('user-tag',usertag)
+
+  def get_user_tag(self):
+    """
+    Returns the usertag of the job
+    """
+    return self.__usertag
 
   def get_output(self):
     """
-    Returns the name of the sire output.
+    get the name of the output file
     """
-    self.add_output_file(self.__output)
-    return self.__output
+    if not self.get_ifo():
+      raise InspiralError, "ifos have not been set"
+
+    fname = self.__ifo + "-SIRE"
+    if self.__ifotag: fname += "_" + self.__ifotag
+    if self.__injection_file:
+      fname += self.__injection_file.split("-")[1]
+      fname += "_FOUND"
+
+    if (self.__start and not self.__end) or (self.__end and not self.__start):
+      raise InspiralError, "If one of start and end is set, both must be"
+
+    if (self.__start):
+      duration=self.__end - self.__start
+      fname += "-" + str(self.__start) + "-" + str(duration)
+
+    fname += ".xml"
+
+    return fname
+
+  def finalize(self):
+    """
+    set the output options
+    """
+    output = self.get_output()
+ 
+    self.add_var_opt("output", output)
+    self.add_var_opt("summary", output.replace("xml", "txt"))
+
+    if self.__injection_file:
+      self.add_var_opt('injection-file', self.__injection_file)
+      self.add_var_opt('missed-injections', output.replace("FOUND", "MISSED") )
+
+
+class CoireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
+  """
+  A CoireNode runs an instance of the inspiral coire code in a Condor
+  DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of lalapps_coire.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.__ifos  = None
+    self.__ifotag = None
+    self.__start = None
+    self.__end   = None
+    self.__num_slides = None
+    self.__injection_file = None
+    self.__usertag      = job.get_config('pipeline','user-tag')
+    try:
+      self.__zip_output = job.get_config('coire','write-compress')
+      self.__zip_output = True
+    except:
+      self.__zip_output = False
+
+  def set_ifos(self, ifos):
+    """
+    Add the list of interferometers 
+    """
+    self.__ifos = ifos
+    self.add_var_opt('coinc-cut',ifos)
+
+  def get_ifos(self):
+    """
+    Returns the ifos
+    """
+    return self.__ifos
+
+  def set_slides(self, slides):
+    """
+    Add the number of time slides
+    """
+    self.__num_slides = slides 
+    self.add_var_opt('num-slides',slides)
+
+  def get_slides(self):
+    """
+    Returns the ifos
+    """
+    return self.__num_slides
+
+  def set_ifotag( self, ifotag):
+    """
+    Set the ifotag
+    """
+    self.__ifotag = ifotag
+
+  def get_ifotag( self ):
+    """
+    get the ifotag
+    """
+    return self.__ifotag
+
+  def set_inj_file(self, file):
+    """
+    Sets the injection file
+    """
+    self.__injection_file = file
+    self.add_var_opt('injection-file', file)
+
+  def get_inj_file(self, file):
+    """
+    Sets the injection file
+    """
+    return self.__injection_file
+
+  def set_start(self, start):
+    """
+    Sets GPS start time
+    """
+    self.__start = start
+
+  def get_start(self):
+    """
+    Returns GPS start time
+    """
+    return self.__start
+
+  def set_end(self, end):
+    """
+    Sets GPS end time
+    """
+    self.__end = end
+
+  def get_end(self):
+    """
+    Returns GPS end time
+    """
+    return self.__end
+
+  def set_glob(self, file_glob):
+    """
+    test
+    """
+    self.add_var_opt('glob',file_glob)
+
+  def set_input(self, input_file):
+    """
+    test
+    """
+    self.add_var_opt('input',input_file)
+
+  def set_user_tag(self,usertag):
+    """
+    Set the usertag for a given job
+    """
+    self.__usertag = usertag
+    self.add_var_opt('user-tag',usertag)
+
+  def get_user_tag(self):
+    """
+    Returns the usertag of the job
+    """
+    return self.__usertag
+
+  def get_output(self):
+    """
+    get the name of the output file
+    """
+    if not self.get_ifos():
+      raise InspiralError, "ifos have not been set"
+
+    fname = self.__ifos + "-COIRE"
+    if self.__num_slides: fname += "_SLIDE"
+    if self.__ifotag: fname += "_" + self.__ifotag
+    if self.__injection_file:
+      fname += self.__injection_file.split("-")[1]
+      fname += "_FOUND"
+
+    if (self.__start and not self.__end) or (self.__end and not self.__start):
+      raise InspiralError, "If one of start and end is set, both must be"
+
+    if (self.__start):
+      duration=self.__end - self.__start
+      fname += "-" + str(self.__start) + "-" + str(duration)
+
+    fname += ".xml"
+
+    return fname
+
+  def finalize(self):
+    """
+    set the output options
+    """
+    output = self.get_output()
+ 
+    self.add_var_opt("output", output)
+    self.add_var_opt("summary", output.replace("xml", "txt"))
+
+    if self.__injection_file:
+      self.add_var_opt('injection-file', self.__injection_file)
+      self.add_var_opt('missed-injections', output.replace("FOUND", "MISSED") )
 
 
 class FrJoinNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
