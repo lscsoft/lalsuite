@@ -109,7 +109,7 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
     ret = fscanf(fp1,"%d %le %d\n", &gpsYr, &edat->dtEtable, &edat->nentriesE);
     if (ret != 3) {
       fclose(fp1);
-      LALPrintError("couldn't parse first line of %s: %d\n", edat->ephiles.sunEphemeris, ret);
+      LALPrintError("couldn't parse first line of %s: %d\n", edat->ephiles.earthEphemeris, ret);
       ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
     }
 
@@ -133,12 +133,40 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
 		   &edat->ephemE[j].vel[0], &edat->ephemE[j].vel[1],
 		   &edat->ephemE[j].vel[2], &edat->ephemE[j].acc[0],
 		   &edat->ephemE[j].acc[1], &edat->ephemE[j].acc[2]);
+
+      /* check number of scanned items */
       if (ret != 10) {
 	fclose(fp1);
 	LALFree(edat->ephemE);
-	LALPrintError("couldn't parse line %d of %s: %d\n", j+2, edat->ephiles.earthEphemeris, ret);
+	LALPrintError("Couldn't parse line %d of %s: %d\n", j+2, edat->ephiles.earthEphemeris, ret);
 	ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
       }
+
+      /* check timestamps */
+      if(j == 0) {
+	if (gpsYr - edat->ephemE[j].gps > 3600 * 24 * 365) {
+	  LALPrintError("Wrong timestamp in line %d of %s: %d/%le\n",
+			j+2, edat->ephiles.earthEphemeris, gpsYr, edat->ephemE[j].gps);
+	  fclose(fp1);
+	  LALFree(edat->ephemE);
+	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
+	}	  
+      } else {
+	if (edat->ephemE[j].gps != edat->ephemE[j-1].gps + edat->dtEtable) {
+	  LALPrintError("Wrong timestamp in line %d of %s: %le/%le\n",
+			j+2, edat->ephiles.earthEphemeris, edat->ephemE[j].gps, edat->ephemE[j-1].gps + edat->dtEtable);
+	  fclose(fp1);
+	  LALFree(edat->ephemE);
+	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
+	}
+      }
+    }
+
+    if (fscanf(fp1,"%c") != EOF) {
+      LALPrintError("Garbage at end of ephemeris file %s\n", edat->ephiles.earthEphemeris);
+      fclose(fp1);
+      LALFree(edat->ephemE);
+      ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
     }
 
     /* close earth file */
@@ -161,11 +189,11 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
     if (ret != 3) {
       LALFree(edat->ephemE);
       fclose(fp2);
-      LALPrintError("couldn't parse first line of %s: %d\n", edat->ephiles.sunEphemeris, ret);
+      LALPrintError("Couldn't parse first line of %s: %d\n", edat->ephiles.sunEphemeris, ret);
       ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
     }
     
-    /* allocate space */
+    /* allocate memory for ephemeris info */
     edat->ephemS  = (PosVelAcc *)LALMalloc(edat->nentriesS*sizeof(PosVelAcc)); 
     if (edat->ephemS == NULL) {
       fclose(fp2);
@@ -181,13 +209,44 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
 		   &edat->ephemS[j].vel[0], &edat->ephemS[j].vel[1],
 		   &edat->ephemS[j].vel[2], &edat->ephemS[j].acc[0],
 		   &edat->ephemS[j].acc[1], &edat->ephemS[j].acc[2]);
+
+      /* check number of scanned items */
       if (ret != 10) {
 	fclose(fp2);
 	LALFree(edat->ephemE);
 	LALFree(edat->ephemS);
-	LALPrintError("couldn't parse line %d of %s: %d\n", j+2, edat->ephiles.sunEphemeris, ret);
+	LALPrintError("Couldn't parse line %d of %s: %d\n", j+2, edat->ephiles.sunEphemeris, ret);
 	ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
       }
+
+      /* check timestamps */
+      if(j == 0) {
+	if (gpsYr - edat->ephemS[j].gps > 3600 * 24 * 365) {
+	  LALPrintError("Wrong timestamp in line %d of %s: %d/%le\n",
+			j+2, edat->ephiles.sunEphemeris, gpsYr, edat->ephemS[j].gps);
+	  fclose(fp2);
+	  LALFree(edat->ephemE);
+	  LALFree(edat->ephemS);
+	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
+	}	  
+      } else {
+	if (edat->ephemS[j].gps != edat->ephemS[j-1].gps + edat->dtStable) {
+	  LALPrintError("Wrong timestamp in line %d of %s: %le/%le\n",
+			j+2, edat->ephiles.sunEphemeris, edat->ephemS[j].gps, edat->ephemS[j-1].gps + edat->dtStable);
+	  fclose(fp2);
+	  LALFree(edat->ephemE);
+	  LALFree(edat->ephemS);
+	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
+	}
+      }
+    }
+
+    if (fscanf(fp2,"%c") != EOF) {
+      LALPrintError("Garbage at end of ephemeris file %s\n", edat->ephiles.sunEphemeris);
+      fclose(fp2);
+      LALFree(edat->ephemE);
+      LALFree(edat->ephemS);
+      ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
     }
        
     /* close the file */       
