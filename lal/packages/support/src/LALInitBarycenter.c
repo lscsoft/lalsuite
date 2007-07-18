@@ -95,58 +95,37 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
     INITSTATUS(stat,"LALInitBarycenter",LALINITBARYCENTERC);
     ATTATCHSTATUSPTR(stat);
 
+    /* open earth file */
     fp1 = LALOpenDataFile(edat->ephiles.earthEphemeris);  
-    fp2 = LALOpenDataFile(edat->ephiles.sunEphemeris);  
 
-    /*
-    fp1 = fopen(edat->ephiles.earthEphemeris,"r");  
-    fp2 = fopen(edat->ephiles.sunEphemeris,"r");  
-    */
+    /* check that we could open the file */
+    if ( fp1 == NULL ) {
+      LALSnprintf (errmsg, ERRMSGLEN, "%s '%s'\n", LALINITBARYCENTERH_MSGEOPEN, edat->ephiles.earthEphemeris);
+      errmsg[ERRMSGLEN-1] = '\0';
+      ABORT (stat, LALINITBARYCENTERH_EOPEN, errmsg);
+    }
 
-    /* CHECK THAT fp1 and fp2 are not NULL: */
-    if ( ( fp1 == NULL ) || ( fp2 == NULL ) ) 
-      {
-	LALSnprintf (errmsg, ERRMSGLEN, "%s '%s'\n", LALINITBARYCENTERH_MSGEOPEN, 
-		     fp1 == NULL ? edat->ephiles.earthEphemeris : edat->ephiles.sunEphemeris);
-	errmsg[ERRMSGLEN-1] = 0;
-	if (fp1) close (fp1);
-	if (fp2) close (fp2);
-	ABORT (stat, LALINITBARYCENTERH_EOPEN, errmsg);
-      }
-    
-    /* reading first line of each file */
-
+    /* read first line */
     ret = fscanf(fp1,"%d %le %d\n", &gpsYr, &edat->dtEtable, &edat->nentriesE);
     if (ret != 3) {
       fclose(fp1);
-      fclose(fp2);
-      LALPrintError("couldn't parse first line of %s: %d\n", edat->ephiles.earthEphemeris, ret);
-      ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
-    }
-    ret = fscanf(fp2,"%d %le %d\n", &gpsYr, &edat->dtStable, &edat->nentriesS);
-    if (ret != 3) {
-      fclose(fp1);
-      fclose(fp2);
       LALPrintError("couldn't parse first line of %s: %d\n", edat->ephiles.sunEphemeris, ret);
       ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
     }
-    
+
+    /* allocate memory for ephemeris info */
     edat->ephemE  = (PosVelAcc *)LALMalloc(edat->nentriesE*sizeof(PosVelAcc)); 
     if (edat->ephemE == NULL) {
-      ABORT(stat, LALINITBARYCENTERH_EMEM, LALINITBARYCENTERH_MSGEMEM);
-    }
-    edat->ephemS  = (PosVelAcc *)LALMalloc(edat->nentriesS*sizeof(PosVelAcc)); 
-    if (edat->ephemS == NULL) {
-      LALFree(edat->ephemE);
+      fclose(fp1);
       ABORT(stat, LALINITBARYCENTERH_EMEM, LALINITBARYCENTERH_MSGEMEM);
     }
 
-    
     /* first column in earth.dat or sun.dat is gps time--one long integer
        giving the number of secs that have ticked since start of GPS epoch
        +  on 1980 Jan. 6 00:00:00 UTC 
     */
 
+    /* read the remaining lines */
     for (j=0; j < edat->nentriesE; ++j) {
       ret = fscanf(fp1,"%le %le %le %le %le %le %le %le %le %le\n",
 		   &edat->ephemE[j].gps,    &edat->ephemE[j].pos[0],
@@ -156,14 +135,45 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
 		   &edat->ephemE[j].acc[1], &edat->ephemE[j].acc[2]);
       if (ret != 10) {
 	fclose(fp1);
-	fclose(fp2);
 	LALFree(edat->ephemE);
-	LALFree(edat->ephemS);
 	LALPrintError("couldn't parse line %d of %s: %d\n", j+2, edat->ephiles.earthEphemeris, ret);
 	ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
       }
     }
 
+    /* close earth file */
+    fclose(fp1); 
+
+
+    /* open sun file */
+    fp2 = LALOpenDataFile(edat->ephiles.sunEphemeris);  
+
+    /* check that we could open the file */
+    if ( fp2 == NULL ) {
+      LALFree(edat->ephemE);
+      LALSnprintf (errmsg, ERRMSGLEN, "%s '%s'\n", LALINITBARYCENTERH_MSGEOPEN, edat->ephiles.sunEphemeris);
+      errmsg[ERRMSGLEN-1] = 0;
+      ABORT (stat, LALINITBARYCENTERH_EOPEN, errmsg);
+    }
+    
+    /* read first line */
+    ret = fscanf(fp2,"%d %le %d\n", &gpsYr, &edat->dtStable, &edat->nentriesS);
+    if (ret != 3) {
+      LALFree(edat->ephemE);
+      fclose(fp2);
+      LALPrintError("couldn't parse first line of %s: %d\n", edat->ephiles.sunEphemeris, ret);
+      ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
+    }
+    
+    /* allocate space */
+    edat->ephemS  = (PosVelAcc *)LALMalloc(edat->nentriesS*sizeof(PosVelAcc)); 
+    if (edat->ephemS == NULL) {
+      fclose(fp2);
+      LALFree(edat->ephemE);
+      ABORT(stat, LALINITBARYCENTERH_EMEM, LALINITBARYCENTERH_MSGEMEM);
+    }
+
+    /* read the remaining lines */
     for (j=0; j < edat->nentriesS; ++j) {
       ret = fscanf(fp2,"%le %le %le %le %le %le %le %le %le %le\n",
 		   &edat->ephemS[j].gps,    &edat->ephemS[j].pos[0],
@@ -172,7 +182,6 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
 		   &edat->ephemS[j].vel[2], &edat->ephemS[j].acc[0],
 		   &edat->ephemS[j].acc[1], &edat->ephemS[j].acc[2]);
       if (ret != 10) {
-	fclose(fp1);
 	fclose(fp2);
 	LALFree(edat->ephemE);
 	LALFree(edat->ephemS);
@@ -181,25 +190,10 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
       }
     }
        
-       
-    /* Test to make sure last entries for gpsE,S are 
-       reasonable numbers; specifically, checking that they are 
-       of same order as t2000 
-       --within factor e  
-       Machine dependent: to be fixed!
-      
-       if ( (fabs(log(1.e0*(edat->ephemE[edat->nentriesE -1].gps)/t2000)) > 1.e0) 
-       ||(fabs(log(1.e0*(edat->ephemS[edat->nentriesS -1].gps)/t2000)) > 1.e0) ){
-       LALFree(edat->ephemE);
-       LALFree(edat->ephemS);
-       ABORT(stat,LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE); 
-       }
-    */
-
-    fclose(fp1); 
+    /* close the file */       
     fclose(fp2);       
     
-    /*curt: is below the right return???*/
+    /* successful return */
     DETATCHSTATUSPTR(stat);
     RETURN(stat);
 }
