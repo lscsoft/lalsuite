@@ -134,8 +134,7 @@ int XLALFreqSeriesToTFPlane(
 SnglBurstTable *XLALComputeExcessPower(
 	const REAL8TimeFrequencyPlane *plane,
 	SnglBurstTable *head,
-	double confidence_threshold,
-	REAL8FFTPlan *reverseplan
+	double confidence_threshold
 );
 
 
@@ -155,6 +154,44 @@ INT4 XLALEPGetTimingParameters(
 	INT4 *window_shift,
 	INT4 *window_pad,
 	INT4 *tiling_length
+);
+
+
+/*
+ * An excess power "template bank"
+ */
+
+
+struct ExcessPowerTemplateBank {
+	struct ExcessPowerTemplate {
+		COMPLEX16FrequencySeries *filter;
+		REAL8 f_centre;
+		REAL8 bandwidth;
+		REAL8 unwhitened_mean_square;
+	} *templates;
+	int n_templates;
+};
+
+
+struct ExcessPowerTemplateBank *XLALCreateExcessPowerTemplateBank(
+	const COMPLEX16FrequencySeries *template,
+	const REAL8TimeFrequencyPlane *plane,
+	const REAL8FrequencySeries *psd
+);
+
+
+void XLALDestroyExcessPowerTemplateBank(
+	struct ExcessPowerTemplateBank *bank
+);
+
+
+SnglBurstTable *XLALExcessPowerProject(
+	const COMPLEX16FrequencySeries *fseries,
+	REAL8TimeFrequencyPlane *plane,
+	const struct ExcessPowerTemplateBank *bank,
+	SnglBurstTable *head,
+	double confidence_threshold,
+	const REAL8FFTPlan *reverseplan
 );
 
 

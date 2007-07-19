@@ -38,6 +38,13 @@ NRCSID(FREQSERIESTOTFPLANEC, "$Id$");
 #include <lal/XLALError.h>
 
 
+/*
+ * ============================================================================
+ *
+ *                      Time-Frequency Plane Projection
+ *
+ * ============================================================================
+ */
 
 
 /*
@@ -94,6 +101,11 @@ static COMPLEX16Sequence *apply_filter(
 }
 
 
+/*
+ * Proeject a frequency series onto the comb of channel filters
+ */
+
+
 /******** <lalVerbatim file="FreqSeriesToTFPlaneCP"> ********/
 int XLALFreqSeriesToTFPlane(
 	REAL8TimeFrequencyPlane *plane,
@@ -118,10 +130,8 @@ int XLALFreqSeriesToTFPlane(
 
 	/* create temporary vectors */
 	fcorr = XLALCreateCOMPLEX16Sequence(fseries->data->length);
-	if(!fcorr) {
-		XLALDestroyCOMPLEX16Sequence(fcorr);
+	if(!fcorr)
 		XLAL_ERROR(func, XLAL_EFUNC);
-	}
 
 #if 0
 	/* diagnostic code to dump data for the s_{k} histogram */
@@ -203,8 +213,8 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 	const REAL8TimeFrequencyPlane *plane,
 	unsigned tile_start,
 	unsigned tile_length,
-	unsigned tile_channel,
-	unsigned tile_channels,
+	double f_centre,
+	double bandwidth,
 	double h_rss,
 	double E,
 	double d,
@@ -229,8 +239,8 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 	event->duration = tile_length * plane->deltaT;
 	event->peak_time = event->start_time;
 	XLALGPSAdd(&event->peak_time, 0.5 * event->duration);
-	event->bandwidth = tile_channels * plane->deltaF;
-	event->central_freq = plane->flow + tile_channel * plane->deltaF + (0.5 * event->bandwidth);
+	event->bandwidth = bandwidth;
+	event->central_freq = f_centre;
 	/* FIXME: put h_rss into the "hrss" column */
 	event->amplitude = h_rss;
 	event->snr = E / d - 1;
@@ -258,8 +268,7 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 SnglBurstTable *XLALComputeExcessPower(
 	const REAL8TimeFrequencyPlane *plane,
 	SnglBurstTable *head,
-	double confidence_threshold,
-	REAL8FFTPlan *reverseplan
+	double confidence_threshold
 )
 /******** </lalVerbatim> ********/
 {
@@ -348,7 +357,7 @@ SnglBurstTable *XLALComputeExcessPower(
 
 			/* add new event to head of linked list */
 			oldhead = head;
-			head = XLALTFTileToBurstEvent(plane, start, length, channel, channels, h_rss, sumsquares, tile_dof, confidence);
+			head = XLALTFTileToBurstEvent(plane, start, length, plane->flow + (channel + .5 * channels) * plane->deltaF, channels * plane->deltaF, h_rss, sumsquares, tile_dof, confidence);
 			if(!head)
 				XLAL_ERROR_NULL(func, XLAL_EFUNC);
 			head->next = oldhead;
@@ -358,6 +367,162 @@ SnglBurstTable *XLALComputeExcessPower(
 	}
 	}
 	}
+
+	/* success */
+	return(head);
+}
+
+
+/*
+ * ============================================================================
+ *
+ *                              Experimentation
+ *
+ * ============================================================================
+ */
+
+
+static void heterodyne_channel(
+	COMPLEX16Sequence *fdata,
+	unsigned k0,
+	unsigned bandwidth
+)
+{
+	unsigned half_width = (bandwidth + 1) / 2;
+	unsigned k_centre = k0 + half_width - 1;
+	unsigned k;
+
+	for(k = 0; k < half_width; k++) {
+		fdata->data[k_centre + k].re += fdata->data[k_centre - k].re;
+		fdata->data[k_centre + k].im -= fdata->data[k_centre - k].im;
+	}
+
+	memmove(fdata->data, &fdata->data[k_centre], half_width * sizeof(*fdata->data));
+	memset(&fdata->data[half_width], 0, (fdata->length - half_width) * sizeof(*fdata->data));
+	/* floating point rules allow (x-x) to equal -0.0 rather than +0.0,
+	 * but some tests check that the DC component's imaginary part is
+	 * +0.0, and will fail if it is -0.0 */
+	fdata->data[0].im = 0;
+}
+
+
+SnglBurstTable *XLALExcessPowerProject(
+	const COMPLEX16FrequencySeries *fseries,
+	REAL8TimeFrequencyPlane *plane,
+	const struct ExcessPowerTemplateBank *bank,
+	SnglBurstTable *head,
+	double confidence_threshold,
+	const REAL8FFTPlan *reverseplan
+)
+{
+	static const char func[] = "XLALExcessPowerProject";
+	COMPLEX16Sequence *fcorr;
+	REAL8Sequence *channel;
+	unsigned start;
+	unsigned length;
+	unsigned end;
+	int template;
+	double h_rss;
+	double confidence;
+
+	/* check input parameters */
+	if((fmod(plane->deltaF, fseries->deltaF) != 0.0) ||
+	   (fmod(plane->flow - fseries->f0, fseries->deltaF) != 0.0))
+		XLAL_ERROR_NULL(func, XLAL_EINVAL);
+
+	/* make sure the frequency series spans an appropriate band */
+	if((plane->flow < fseries->f0) ||
+	   (plane->flow + plane->channels * plane->deltaF > fseries->f0 + fseries->data->length * fseries->deltaF))
+		XLAL_ERROR_NULL(func, XLAL_EDATA);
+
+	/* create temporary vectors */
+	fcorr = XLALCreateCOMPLEX16Sequence(fseries->data->length);
+	channel = XLALCreateREAL8Sequence(plane->window->data->length);
+	if(!fcorr || !channel) {
+		XLALDestroyCOMPLEX16Sequence(fcorr);
+		XLALDestroyREAL8Sequence(channel);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	}
+
+	/* set the name and epoch of the TF plane for tile construction */
+	strncpy(plane->name, fseries->name, LALNameLength);
+	plane->epoch = fseries->epoch;
+
+	/* loop over time-frequency tiles */
+	for(template = 0; template < bank->n_templates; template++) {
+		const double sum_mean_square = bank->templates[template].bandwidth / plane->fseries_deltaF;
+
+		/* cross correlate the input data against the channel
+		 * filter by taking their product in the frequency domain
+		 * and then inverse transforming to the time domain to
+		 * obtain an SNR time series.  Note that
+		 * XLALREAL4ReverseFFT() omits the factor of 1 / (N Delta
+		 * t) in the inverse transform. */
+		apply_filter(fcorr, fseries, bank->templates[template].filter);
+		heterodyne_channel(fcorr, bank->templates[template].filter->f0 / bank->templates[template].filter->deltaF, bank->templates[template].filter->data->length);
+		if(XLALREAL8ReverseFFT(channel, fcorr, reverseplan)) {
+			XLALDestroyCOMPLEX16Sequence(fcorr);
+			XLALDestroyREAL8Sequence(channel);
+			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		}
+
+	/* 2 * template bandwidth == channel samples (degrees of freedom)
+	 * per second
+	 *
+	 * channel samples per second * (seconds per tseries sample) ==
+	 * degrees of freedom per tseries sample
+	 *
+	 * 2 degrees of freedom / (degrees of freedom per tseries sample)
+	 * == tseries samples for a 2 d-o-f tile
+	 */
+	for(length =  2 / (2 * bank->templates[template].bandwidth * plane->deltaT); length <= plane->tiles.max_length; length *= 2) {
+		const double tile_dof = length * (2 * bank->templates[template].bandwidth * plane->deltaT);
+		/* number of degrees of freedom in tile = number of
+		 * "virtual pixels" in tile.  compute distance between
+		 * tile's "virtual pixels" */
+		const unsigned stride = length / tile_dof;
+
+	for(end = (start = plane->tiles.tiling_start) + length; end <= plane->tiles.tiling_end; end = (start += length / plane->tiles.inv_fractional_stride) + length) {
+		double sumsquares = 0;
+		unsigned t;
+
+		/* compute sum of squares */
+		for(t = start + stride / 2; t < end; t += stride)
+			sumsquares += channel->data[t] * channel->data[t];
+		/* normalization to give each pixel a mean square of 1.0 */
+		sumsquares /= sum_mean_square;
+
+		/* compute statistical confidence, see if it's above
+		 * threshold */
+		confidence = -XLALlnOneMinusChisqCdf(sumsquares, tile_dof);
+		if(XLALIsREAL8FailNaN(confidence)) {
+			XLALDestroyCOMPLEX16Sequence(fcorr);
+			XLALDestroyREAL8Sequence(channel);
+			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		}
+		if(confidence >= confidence_threshold) {
+			SnglBurstTable *oldhead;
+
+			/* compute h_rss */
+			h_rss = sqrt((sumsquares - tile_dof) * bank->templates[template].unwhitened_mean_square * stride * plane->deltaT);
+
+			/* add new event to head of linked list */
+			oldhead = head;
+			head = XLALTFTileToBurstEvent(plane, start, length, bank->templates[template].f_centre, bank->templates[template].bandwidth, h_rss, sumsquares, tile_dof, confidence);
+			if(!head) {
+				XLALDestroyCOMPLEX16Sequence(fcorr);
+				XLALDestroyREAL8Sequence(channel);
+				XLAL_ERROR_NULL(func, XLAL_EFUNC);
+			}
+			head->next = oldhead;
+		}
+	}
+	}
+	}
+
+	/* clean up */
+	XLALDestroyCOMPLEX16Sequence(fcorr);
+	XLALDestroyREAL8Sequence(channel);
 
 	/* success */
 	return(head);

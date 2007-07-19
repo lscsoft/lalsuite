@@ -694,7 +694,9 @@ static COMPLEX16FrequencySeries *generate_filter(
 	 */
 
 	filter = XLALCreateCOMPLEX16FrequencySeries(filter_name, &template->epoch, channel_flow - channel_width / 2, template->deltaF, &lalDimensionlessUnit, 2 * channel_width / template->deltaF + 1);
+	/* FIXME:  decide what to do about this */
 	hann = XLALCreateHannREAL8Window(filter->data->length);
+	/*hann = XLALCreateTukeyREAL8Window(filter->data->length, 2 / ((channel_width / 2.0) + 1));*/
 	if(!filter || !hann) {
 		XLALDestroyCOMPLEX16FrequencySeries(filter);
 		XLALDestroyREAL8Window(hann);
@@ -780,4 +782,77 @@ INT4 XLALTFPlaneMakeChannelFilters(
 
 	/* done */
 	return 0;
+}
+
+
+/*
+ * ============================================================================
+ *
+ *                              Experimentation
+ *
+ * ============================================================================
+ */
+
+
+struct ExcessPowerTemplateBank *XLALCreateExcessPowerTemplateBank(
+	const COMPLEX16FrequencySeries *template,
+	const REAL8TimeFrequencyPlane *plane,
+	const REAL8FrequencySeries *psd
+)
+{
+	static const char func[] = "XLALCreateExcessPowerTemplateBank";
+	struct ExcessPowerTemplateBank *new;
+	struct ExcessPowerTemplate *templates;
+	unsigned channels, channel, channel_end;
+	int i;
+
+	i = 0;
+	for(channels = plane->tiles.min_channels; channels <= plane->tiles.max_channels; channels *= 2)
+		for(channel_end = (channel = 0) + channels; channel_end <= plane->channels; channel_end = (channel += channels / plane->tiles.inv_fractional_stride) + channels)
+			i++;
+
+	new = malloc(sizeof(*new));
+	templates = malloc(i * sizeof(*templates));
+	if(!new || !templates) {
+		free(new);
+		free(templates);
+		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+	}
+
+	new->templates = templates;
+	new->n_templates = i;
+
+	i = 0;
+	for(channels = plane->tiles.min_channels; channels <= plane->tiles.max_channels; channels *= 2)
+		for(channel_end = (channel = 0) + channels; channel_end <= plane->channels; channel_end = (channel += channels / plane->tiles.inv_fractional_stride) + channels) {
+			templates[i].filter = generate_filter(template, plane->flow + channel * plane->deltaF, channels * plane->deltaF, psd, plane->two_point_spectral_correlation);
+			if(!templates[i].filter) {
+				while(i--)
+					XLALDestroyCOMPLEX16FrequencySeries(templates[i].filter);
+				free(new);
+				free(templates);
+				XLAL_ERROR_NULL(func, XLAL_EFUNC);
+			}
+			templates[i].unwhitened_mean_square = psd_weighted_filter_inner_product(templates[i].filter, templates[i].filter, plane->two_point_spectral_correlation, psd) * template->deltaF / 2;
+			templates[i].bandwidth = channels * plane->deltaF;
+			templates[i].f_centre = plane->flow + channel * plane->deltaF + templates[i].bandwidth / 2;
+			i++;
+		}
+
+	return new;
+}
+
+
+void XLALDestroyExcessPowerTemplateBank(
+	struct ExcessPowerTemplateBank *bank
+)
+{
+	if(bank) {
+		int i;
+		for(i = 0; i < bank->n_templates; i++)
+			XLALDestroyCOMPLEX16FrequencySeries(bank->templates[i].filter);
+		free(bank->templates);
+	}
+
+	free(bank);
 }

@@ -86,6 +86,7 @@ SnglBurstTable *XLALEPSearch(
 	REAL8FrequencySeries *psd;
 	REAL8TimeSeries *cuttseries;
 	REAL8TimeFrequencyPlane *plane;
+	struct ExcessPowerTemplateBank *template_bank = NULL;
 
 	/*
 	 * Construct forward and reverse FFT plans, storage for the PSD,
@@ -201,6 +202,7 @@ SnglBurstTable *XLALEPSearch(
 		 * series.
 		 */
 
+#if 1
 		XLALPrintInfo("XLALEPSearch(): projecting data onto time-frequency plane\n");
 		if(XLALFreqSeriesToTFPlane(plane, fseries, rplan)) {
 			errorcode = XLAL_EFUNC;
@@ -220,11 +222,44 @@ SnglBurstTable *XLALEPSearch(
 
 		XLALPrintInfo("XLALEPSearch(): computing the excess power for each tile\n");
 		XLALClearErrno();
-		head = XLALComputeExcessPower(plane, head, confidence_threshold, rplan);
+		head = XLALComputeExcessPower(plane, head, confidence_threshold);
 		if(xlalErrno) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
+#else
+		/* FIXME: decide what to do about this */
+
+		/*
+		 * Construct the template bank
+		 *
+		 * FIXME:  this could be moved out of the loop for a
+		 * performance boost.
+		 */
+
+		XLALPrintInfo("XLALEPSearch(): constructing template bank\n");
+		template_bank = XLALCreateExcessPowerTemplateBank(fseries, plane, psd);
+		if(!template_bank) {
+			errorcode = XLAL_EFUNC;
+			goto error;
+		}
+
+		/*
+		 * Project frequency series onto templates
+		 */
+
+		XLALPrintInfo("XLALEPSearch(): projecting frequency series onto template bank\n");
+		XLALClearErrno();
+		head = XLALExcessPowerProject(fseries, plane, template_bank, head, confidence_threshold, rplan);
+		if(xlalErrno) {
+			errorcode = XLAL_EFUNC;
+			goto error;
+		}
+		XLALDestroyCOMPLEX16FrequencySeries(fseries);
+		fseries = NULL;
+		XLALDestroyExcessPowerTemplateBank(template_bank);
+		template_bank = NULL;
+#endif
 	}
 
 	/*
@@ -238,6 +273,7 @@ SnglBurstTable *XLALEPSearch(
 	XLALDestroyREAL8FFTPlan(rplan);
 	XLALDestroyREAL8FrequencySeries(psd);
 	XLALDestroyCOMPLEX16FrequencySeries(fseries);
+	XLALDestroyExcessPowerTemplateBank(template_bank);
 	XLALDestroyTFPlane(plane);
 	if(errorcode) {
 		XLALDestroySnglBurstTable(head);
