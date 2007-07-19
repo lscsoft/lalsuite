@@ -32,7 +32,10 @@
 
 /* ---------- includes ---------- */
 #include <unistd.h>
-
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <errno.h>
+#include <string.h>
 
 #include <lalapps.h>
 
@@ -150,6 +153,18 @@ main(int argc, char *argv[])
 
   if (uvar_help) 	/* help requested: we're done */
     exit (0);
+
+  /* ----- make sure output directory exists ---------- */
+  {
+    int ret;
+    ret = mkdir ( uvar_outputDir, 0777);
+    if ( (ret == -1) && ( errno != EEXIST ) )
+      {
+	int errsv = errno;
+	LogPrintf (LOG_CRITICAL, "Failed to create directory '%s': %s\n", uvar_outputDir, strerror(errsv) );
+	return -1;
+      }
+  }
 
   /* -- unfortunately getTDIdata() only works if xml-file is in local directory! ==> we need to cd there */
   {
