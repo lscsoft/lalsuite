@@ -222,7 +222,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
           if opts.datafind: bank.add_parent(df)
           if (opts.template_bank and not GeoBank): dag.add_node(bank)
                   
-          # loop ober the ext-trig injections
+          # loop over the ext-trig injections
           for inj in range(exttrigInjections[0], exttrigInjections[1]+1):
              if inj>0: 
                 # set the appropriate user-tag and the injection filename
@@ -345,60 +345,42 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
 
   # loop over the exttrig injections
   for inj in range(exttrigInjections[0], exttrigInjections[1]+1):
-      if inj>0:
-         # set the appropriate user-tag and the injection filename
-         exttrigUserTag=usertag+str(inj)
+    if inj>0:
+      # set the appropriate user-tag and the injection filename
+      exttrigUserTag=usertag+str(inj)
 
-      for seg in coinc_segs:
-         thinca = inspiral.ThincaNode(coinc_job)
-         if inj>0: thinca.set_user_tag(exttrigUserTag)
-         thinca.set_start(seg.start())
-         thinca.set_end(seg.end())
-         if ifotag:
-           thinca.set_ifo_tag(ifotag)
-         if slides:
-           thinca.set_num_slides(slides)
+    for seg in coinc_segs:
+      thinca = inspiral.ThincaNode(coinc_job)
+      if inj>0: thinca.set_user_tag(exttrigUserTag)
+      thinca.set_start(seg.start())
+      thinca.set_end(seg.end())
+      if ifotag: thinca.set_ifo_tag(ifotag)
+      if slides: thinca.set_num_slides(slides)
 
-         # add a coire node to each thinca node
-         if coire_job:
-           coire = inspiral.CoireNode(coire_job)
-           if do_coinc:
-             coire.add_parent(thinca)
-             
-         # scroll through ifos, adding the appropriate ones
-         for ifo in ifo_list:
-           if ifo in ifos:
-              thinca.set_ifo(ifo)
+      # scroll through ifos, adding the appropriate ones
+      for ifo in ifo_list:
+        if ifo in ifos:
+          thinca.set_ifo(ifo)
                 
-              # add all IFO A master chunks that overlap with segment to input
-              for done in single_data_analyzed[ifo]:
+          # add all IFO A master chunks that overlap with segment to input
+          for done in single_data_analyzed[ifo]:
 
-                if inspiral.overlap_test(done.get_chunk(),seg) and \
-                    (done.get_inj()==0 or done.get_inj()==inj):
-                  # set special user-tag first
-                  thinca.add_file_arg(done.get_dag_node().get_output())
-                  if do_insp: thinca.add_parent(done.get_dag_node())
+            if inspiral.overlap_test(done.get_chunk(),seg) and \
+                (done.get_inj()==0 or done.get_inj()==inj):
+              # set special user-tag first
+              thinca.add_file_arg(done.get_dag_node().get_output())
+              if do_insp: thinca.add_parent(done.get_dag_node())
 
-                  # set the injection file for this coire
-                  coire.set_inj_file(done.get_dag_node().get_injections())
+              # set the injection file for this coire
+              inj_file = done.get_dag_node().get_injections()
 
-         if do_coinc: dag.add_node(thinca)
-         coinc_analyzed.append(AnalyzedIFOData(seg,thinca,inj))
+      if do_coinc: dag.add_node(thinca)
+      coinc_analyzed.append(AnalyzedIFOData(seg,thinca,inj))
 
-         if coire_job:
-           # specialize this coire node
-           coire.set_ifos(ifos)
-           coire.set_start(seg.start())
-           coire.set_end(seg.end())
-           coire.set_ifotag( ifotag )
-           if slides: coire.set_slides( slides )
-
-           # set the input file 
-           coire.set_glob(thinca.get_output())
-           coire.finalize()
-
-           # and add to DAG (if required)
-           if do_coire: dag.add_node(coire)               
+      if do_coire and inj > 0: 
+        coire_segs([seg], coire_job, dag, do_coinc, ifos, 
+            GPSstart=seg.start(), GPSend=seg.end(), inj_file=inj_file, 
+            num_slides=slides, ifotag=ifotag, usertag=exttrigUserTag)
 
   return coinc_analyzed
 
