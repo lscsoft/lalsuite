@@ -249,8 +249,8 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
              # make an inspiral job for the master chunk
              insp = inspiral.InspiralNode(insp_job)
              if inj>0:
-                insp.add_var_opt('injection-file',injectionFile)
-                insp.set_user_tag(exttrigUserTag)
+               insp.set_injections(injectionFile)
+               insp.set_user_tag(exttrigUserTag)
              insp.set_start(chunk.start())
              insp.set_end(chunk.end())
              insp.set_trig_start(chunk.trig_start())
@@ -313,8 +313,8 @@ def single_coinc(ifo_analyzed,ifo_name,ifo_single,single_coinc_job,dag,
 ##############################################################################
 # function to do thinca on coincident IFO data  
 def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
-    dag,do_coinc,do_insp,exttrigInjections,usertag=None,
-    ifotag=None,slides=None):
+    dag,do_coinc,do_insp, exttrigInjections, usertag=None, coire_job=None,
+    do_coire=None,ifotag=None,slides=None):
   """
   Run thinca on the coincident times from each of the sets of IFOs. 
   Since the way we treat all this data is the same, this function is the same 
@@ -325,11 +325,13 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
   coinc_segs = the double coincident IFO science segments 
   coinc_job = the condor job to do two IFO thinca
   dag = the DAG to attach the nodes to
-  do_coinc = whether we should add these jobs to the dag
+  do_coinc = whether we should add the thinca jobs to the dag
   do_insp  = whether previous inspiral jobs are in the dag
   exttrigInjections = specifies the number of external trigger injections 
                       in the same data seg.
   usertag = the usertag to add to the output file name
+  coire_job = coire node to join to the output of each thinca node
+  do_coire  = whether we should add the coire jobs to the dag
   ifotag = the ifotag to add to the output file name
   slides = number of time slides req'd, used as a boolean
   """
@@ -340,7 +342,7 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
     
   coinc_analyzed = []
 
-  # loop ober the exttrig injections
+  # loop over the exttrig injections
   for inj in range(exttrigInjections[0], exttrigInjections[1]+1):
       if inj>0:
          # set the appropriate user-tag and the injection filename
@@ -355,7 +357,13 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
            thinca.set_ifo_tag(ifotag)
          if slides:
            thinca.set_num_slides(slides)
-    
+
+         # add a coire node to each thinca node
+         if coire_job:
+           coire = inspiral.CoireNode(coire_job)
+           if do_coinc:
+             coire.add_parent(thinca)
+             
          # scroll through ifos, adding the appropriate ones
          for ifo in ifo_list:
            if ifo in ifos:
@@ -363,17 +371,34 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
                 
               # add all IFO A master chunks that overlap with segment to input
               for done in single_data_analyzed[ifo]:
+
                 if inspiral.overlap_test(done.get_chunk(),seg) and \
                     (done.get_inj()==0 or done.get_inj()==inj):
-
                   # set special user-tag first
                   thinca.add_file_arg(done.get_dag_node().get_output())
                   if do_insp: thinca.add_parent(done.get_dag_node())
 
+                  # set the injection file for this coire
+                  coire.set_inj_file(done.get_dag_node().get_injections())
+
          if do_coinc: dag.add_node(thinca)
          coinc_analyzed.append(AnalyzedIFOData(seg,thinca,inj))
 
-        
+         if coire_job:
+           # specialize this coire node
+           coire.set_ifos(ifos)
+           coire.set_start(seg.start())
+           coire.set_end(seg.end())
+           coire.set_ifotag( ifotag )
+           if slides: coire.set_slides( slides )
+
+           # set the input file 
+           coire.set_glob(thinca.get_output())
+           coire.finalize()
+
+           # and add to DAG (if required)
+           if do_coire: dag.add_node(coire)               
+
   return coinc_analyzed
 
 
@@ -381,7 +406,7 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
 ##############################################################################
 # function to set up trigbank and inspiral jobs for an ifo  
 def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
-                  insp_veto_job,dag,exttrigInjections,usertag=None):
+                  insp_veto_job,dag, exttrigInjections, usertag=None):
 
   """
   Perform the trigbank and second inspiral steps for the single ifo data.  
@@ -624,8 +649,8 @@ def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
 
 ##############################################################################
 # function to sweep up data using sire  
-def sire_segs(segments,output,file_name,sire_job,dag,do_input,
-  usertag=None,cluster=None,ifo_cut=None):
+def sire_segs(segments,output,file_name,sire_job,dag,do_input,usertag=None,
+  cluster=None,ifo_cut=None):
 
   """
   Do a sire to sweep up all the triggers of a specific kind
@@ -676,6 +701,7 @@ def sire_segs(segments,output,file_name,sire_job,dag,do_input,
     sire.set_outputs(file_name,usertag)
 
   if do_input: dag.add_node(sire) 
+
 
 ##############################################################################
 # function to set up the cohbank and cohinspiral jobs for a network of ifos
@@ -855,6 +881,10 @@ parser.add_option("-k", "--coherent-inspiral",action="store_true",
     default=False,help="run lalapps_coherent_inspiral for coherent analysis")
 parser.add_option("-s", "--sire",action="store_true",default=False,\
     help="do sires to sweep up triggers")
+parser.add_option("-y", "--coire",action="store_true",default=False,\
+    help="do coires to sweep up coincident triggers")
+parser.add_option("-Y", "--second-coire",action="store_true",default=False,\
+    help="do coires to sweep up second coincident triggers")
 
 parser.add_option("-R", "--read-cache",action="store_true",default=False,\
     help="read cache file from ini-file (if LSCDataFind is broken)")
@@ -922,12 +952,12 @@ if not opts.datafind and not opts.template_bank and \
      not opts.trigbank and not opts.inspiral_veto and \
      not opts.td_follow_bank and not opts.td_follow_inspiral and \
      not opts.second_coinc and not opts.coherent_bank and \
-     not opts.coherent_inspiral:
+     not opts.coherent_inspiral and not opts.coire and not opts.second_coire:
   print >> sys.stderr, "No steps of the pipeline specified."
   print >> sys.stderr, "Please specify at least one of"
   print >> sys.stderr, "--datafind, --template-bank, --inspiral,"
   print >> sys.stderr, "--coincidence, --trigbank, --inspiral-veto,"
-  print >> sys.stderr, "--td-follow-bank, --td-follow-inspiral,"
+  print >> sys.stderr, "--td-follow-bank, --td-follow-inspiral, --coire, --second-coire,"
   print >> sys.stderr, "--second-coinc, --coherent-bank or --coherent-inspiral"
   sys.exit(1)
    
@@ -1064,7 +1094,7 @@ try:
 except:
   exttrigInjections=[0,0]
 
- 
+
 # datafind:
 df_job = pipeline.LSCDataFindJob('cache','logs',cp,opts.dax)
 df_job.set_sub_file( basename + '.datafind'+ subsuffix )
@@ -1193,9 +1223,14 @@ sire_job.set_sub_file( basename + '.sire' + subsuffix )
 sire_clust_job = inspiral.SireJob(cp)
 sire_clust_job.set_sub_file( basename + '.sire_clust' + subsuffix )
 
+#coire:
+coire_job = inspiral.CoireJob(cp)
+coire_job.set_sub_file( basename + '.coire' + subsuffix )
+coire_slides_job = inspiral.CoireJob(cp)
+coire_slides_job.set_sub_file( basename + '.coire_slides' + subsuffix )
 
 all_jobs = [inspinj_job, single_inca_job, trig_job, cb_job, sire_job, 
-  sire_clust_job]
+  sire_clust_job, coire_job, coire_slides_job]
 all_jobs.extend(tmplt_jobs.values())
 all_jobs.extend(insp_jobs.values())
 all_jobs.extend(thinca_jobs.values())
@@ -1216,6 +1251,7 @@ if usertag:
 
 all_jobs.append(df_job)
 all_jobs.append(frjoin_job)
+
 ##############################################################################
 # set the condor job priority
 if opts.priority:
@@ -1231,14 +1267,13 @@ except:
   inj_file = None
   
 if inj_file:
-  inj_jobs = [sire_job, sire_clust_job]
+  inj_jobs = [sire_job, sire_clust_job, coire_job, coire_slides_job]
   inj_jobs.extend(insp_jobs.values())
   inj_jobs.extend(insp_veto_jobs.values())
   inj_jobs.extend(insp_coh_jobs.values())
 
   for job in inj_jobs:
-    job.add_file_opt('injection-file',inj_file)
-
+    job.set_injections( inj_file )
 
 ##############################################################################
 # read in the number of time-slides from the ini file 
@@ -1247,6 +1282,8 @@ try:
 except:
   num_slides = None
 
+if num_slides:
+  coire_slides_job.add_opt('num-slides', str(num_slides))
 
 ##############################################################################
 # read in the maximum length of a science segment for thinca from the ini file
@@ -1254,7 +1291,7 @@ try:
   max_thinca_segment = int(cp.get('input','max-thinca-segment'))
 except:
   max_thinca_segment = None
-
+  	 
 
 #############################################################################
 # read in playground data mask from ini file 
@@ -1264,7 +1301,7 @@ try:
 except:
   play_data_mask = None
 
-play_jobs = [trig_job]
+play_jobs = [trig_job, coire_job, coire_slides_job]
 play_jobs.extend(thinca_jobs.values())
 play_jobs.extend(thinca_slide_jobs.values())
 play_jobs.extend(thinca2_jobs.values())
@@ -1472,7 +1509,6 @@ for ifos in ifo_combinations:
 
     if max_thinca_segment:
       analyzed_data[ifos].split(max_thinca_segment)
-
   
 ##############################################################################
 # Step 3: Compute the Science Segments to analyze
@@ -1498,8 +1534,7 @@ for ifo in ifo_list:
   sys.stdout.flush()
 
   (prev_df,chunks_analyzed[ifo]) = analyze_ifo(ifo,data[ifo],data_to_do[ifo],  
-      tmplt_jobs[ifo],insp_jobs[ifo],df_job,prev_df,dag,exttrigInjections,
-      usertag)
+      tmplt_jobs[ifo],insp_jobs[ifo],df_job,prev_df,dag,exttrigInjections,usertag)
   
   # Step 4S: Run sire on the single ifo triggers
   if opts.sire and len(chunks_analyzed[ifo]):   
@@ -1542,7 +1577,7 @@ for ifos in ifo_coincs:
   thinca_jobs[ifos].add_ini_opts(cp, 'thinca-1')
   coinc_nodes[ifos] = thinca_coinc(ifos,chunks_analyzed,analyzed_data[ifos],
       thinca_jobs[ifos],dag,opts.coincidence,opts.inspiral,exttrigInjections,
-      usertag)
+      usertag, coire_job=coire_job, do_coire=opts.coire)
 
   # Step 6 slide: Time slides 
   coinc_slide_nodes[ifos] = []
@@ -1550,7 +1585,8 @@ for ifos in ifo_coincs:
     thinca_slide_jobs[ifos].add_ini_opts(cp, 'thinca-1')
     coinc_slide_nodes[ifos] = thinca_coinc(ifos,chunks_analyzed,
         analyzed_data[ifos],thinca_slide_jobs[ifos],dag,opts.coincidence,
-        opts.inspiral,exttrigInjections,usertag,ifotag,num_slides)
+        opts.inspiral,exttrigInjections, usertag, coire_job=coire_slides_job, 
+        do_coire=opts.coire, ifotag=ifotag, slides=num_slides )
 
   
   # Step 6 sire: Run sire triggers
@@ -1636,14 +1672,16 @@ for ifos in ifo_coincs:
   if opts.td_follow_inspiral:
     for this_approx in approximants:
       this_approx = this_approx.strip()
-      coinc2_nodes[ifos] = thinca_coinc(ifos,analyzed_coinc_data[ifos],
-          analyzed_data[ifos],thinca2_jobs[ifos],dag,opts.second_coinc,
-          opts.td_follow_inspiral,exttrigInjections,usertag,
-          ifos+"_"+this_approx)
+      coinc2_nodes[ifos] = thinca_coinc(ifos, analyzed_coinc_data[ifos],
+          analyzed_data[ifos], thinca2_jobs[ifos], dag, opts.second_coinc,
+          opts.td_follow_inspiral, exttrigInjections, usertag=usertag,
+          coire_job=coire_job, do_coire=opts.second_coire, ifotag=ifos + "_" + this_approx)
+
   else:
-    coinc2_nodes[ifos] = thinca_coinc(ifos,analyzed_coinc_data[ifos],
-      analyzed_data[ifos],thinca2_jobs[ifos],dag,opts.second_coinc,
-      opts.inspiral_veto,exttrigInjections,usertag,ifos)
+    coinc2_nodes[ifos] = thinca_coinc(ifos, analyzed_coinc_data[ifos],
+      analyzed_data[ifos], thinca2_jobs[ifos], dag, opts.second_coinc,
+      opts.inspiral_veto, exttrigInjections, usertag=usertag,
+      coire_job=coire_job, do_coire=opts.second_coire, ifotag=ifos)
 
   # Step 8slide: Time slides on the data
   if num_slides:
@@ -1653,14 +1691,18 @@ for ifos in ifo_coincs:
       for this_approx in approximants:
         this_approx = this_approx.strip()
         coinc2_slide_nodes[ifos] = thinca_coinc(ifos,
-          analyzed_coinc_data[ifos],analyzed_data[ifos],
-          thinca2_slide_jobs[ifos],dag,opts.second_coinc,opts.inspiral_veto,
-          exttrigInjections,usertag,ifos+'_'+this_approx,num_slides)
-    else:
-      coinc2_slide_nodes[ifos] = thinca_coinc(ifos,
-        analyzed_coinc_data[ifos],analyzed_data[ifos],thinca2_slide_jobs[ifos],
-        dag,opts.second_coinc,opts.inspiral_veto,exttrigInjections,usertag,
-        ifos,num_slides)
+          analyzed_coinc_data[ifos], analyzed_data[ifos],
+          thinca2_slide_jobs[ifos], dag, opts.second_coinc,
+          opts.inspiral_veto, exttrigInjections, usertag=usertag,
+          coire_job=coire_slides_job, do_coire=opts.second_coire, 
+          ifotag=ifos+'_'+this_approx, slides=num_slides)
+    else: 
+     coinc2_slide_nodes[ifos] = thinca_coinc(ifos,
+        analyzed_coinc_data[ifos], analyzed_data[ifos],
+        thinca2_slide_jobs[ifos], dag, opts.second_coinc, opts.inspiral_veto,
+        exttrigInjections, usertag=usertag, coire_job=coire_slides_job,
+        do_coire=opts.second_coire,
+        ifotag=ifos, slides=num_slides)
 
   # Step 8 sire: Run sire triggers
   # Do sire with all coincidenct triggers, and clustered sires for each ifo
@@ -1674,6 +1716,7 @@ for ifos in ifo_coincs:
             sire_job,dag,opts.second_coinc,usertag,ifo)
   
   print "done"
+
 
 
 ##############################################################################
