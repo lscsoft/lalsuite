@@ -468,7 +468,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
     LAL_CALL( LALDriveNRInject( &status, injData[i], injections, &nrPar), &status );
 
     /* set strain as unit */
-    injData[0]->sampleUnits = lalStrainUnit;
+    injData[i]->sampleUnits = lalStrainUnit;
   }
 
   /* output frame */
