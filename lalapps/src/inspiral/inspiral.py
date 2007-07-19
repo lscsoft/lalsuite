@@ -779,42 +779,6 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
   def get_user_tag(self):
     return self.__usertag
 
-  def make_trigbank(self,chunk,max_slide,source_ifo,dest_ifo,
-    usertag=None,ifo_tag=None,zip=False):
-    """
-    Sets the name of triggered template bank file.
-    chunk = the analysis chunk that is being 
-    max_slide = the maximum length of a time slide for background estimation
-    source_ifo = the name of the ifo that the triggers come from
-    dest_ifo = the name of the ifo that the templates will be used for
-    usertag = usertag to tag the output filename with
-    ifo_tag = string to tag source interferometers, overrides the source_ifo
-    for naming files
-    """
-    if chunk.trig_start():
-      self.set_start(chunk.trig_start() - max_slide)
-    else:
-      self.set_start(chunk.start() - max_slide)
-    if chunk.trig_end():
-      self.set_end(chunk.trig_end() + max_slide)
-    else:
-      self.set_end(chunk.end() + max_slide)
-
-    self.add_var_opt('ifo-a',source_ifo)
-
-    outfile = dest_ifo + '-TRIGBANK_'
-    if ifo_tag:
-      outfile += ifo_tag
-    else:
-      outfile += source_ifo
-    if usertag:
-      outfile += '_' + usertag 
-    outfile += '-' + str(chunk.start()) + '-' + str(chunk.dur()) + '.xml'
-    if self.__zip_output:
-      outfile += '.gz'
-    self.__output = outfile
-    self.add_var_opt('triggered-bank',outfile)
-
   def set_input_ifo(self,ifo):
     self.add_var_opt('input-ifo', ifo)
     self.__input_ifo = ifo
@@ -830,13 +794,6 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     return self.__output_ifo
 
   def get_output(self):
-    """
-    Returns the name of the triggered template bank file.
-    """
-    self.add_output_file(self.__output)
-    return self.__output
-
-  def get_trig_out(self,zip=False):
     """
     Returns the name of the output file from lalapps_trigbank
     """
@@ -1311,7 +1268,8 @@ class CoireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.__end   = None
     self.__num_slides = None
     self.__injection_file = None
-    self.__usertag      = job.get_config('pipeline','user-tag')
+    self.__usertag = job.get_config('pipeline','user-tag')
+    self.__output_tag = None
     try:
       self.__zip_output = job.get_config('coire','write-compress')
       self.__zip_output = True
@@ -1419,6 +1377,18 @@ class CoireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     return self.__usertag
 
+  def set_output_tag(self):
+    fname = "COIRE"
+    if self.__num_slides: fname += "_SLIDE"
+    if self.__injection_file:
+      fname += "_" + self.__injection_file.split("-")[1]
+      fname += "_FOUND"
+    if self.__ifotag: fname += "_" + self.__ifotag
+    self.__output_tag = fname
+
+  def get_output_tag(self):
+    return self.__output_tag
+
   def get_output(self):
     """
     get the name of the output file
@@ -1426,14 +1396,8 @@ class CoireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     if not self.get_ifos():
       raise InspiralError, "ifos have not been set"
 
-    fname = self.__ifos + "-COIRE"
-    if self.__num_slides: fname += "_SLIDE"
-
-    if self.__injection_file:
-      fname += "_" + self.__injection_file.split("-")[1]
-      fname += "_FOUND"
-
-    if self.__ifotag: fname += "_" + self.__ifotag
+    self.set_output_tag()
+    fname = self.__ifos + '-' + self.__output_tag
 
     if (self.__start and not self.__end) or \
            (self.__end and not self.__start):
@@ -1536,7 +1500,7 @@ class CohBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   def get_ifos(self):
     return self.__ifos
     
-  def get_output(self,zip=False):
+  def get_output(self):
     """
     Returns the file name of output from the coherent bank. 
     """
