@@ -595,7 +595,6 @@ void LALInjectStrainGW( LALStatus                 *status,
 
   REAL8 sampleRate;
   REAL4TimeSeries *htData = NULL;
-  FILE *out;
   int  k;
 
   INITSTATUS (status, "LALNRInject",  NRWAVEINJECTC);
@@ -612,23 +611,13 @@ void LALInjectStrainGW( LALStatus                 *status,
     htData->data->data[k] *= dynRange;
   }
 
-  out=fopen("htData.dat","w");
-  
-  for (k = 0; k < htData->data->length; k++)
-    {
-      fprintf(out, "%i %e\n", k, htData->data->data[k]);
-    }
-  fclose(out);
-
   /* inject the htData into injection time stream */
   TRY( LALSSInjectTimeSeries( status->statusPtr, injData, htData ),
        status );
   
   /* set channel name */
-  /*LALSnprintf( injData->name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
-    "%s:STRAIN", ifo ); */
-
-  printf("channel name: %s\n", injData->name);
+  LALSnprintf( injData->name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
+    "%s:STRAIN", ifo ); 
 
   XLALDestroyREAL4Vector ( htData->data);
   LALFree(htData);
