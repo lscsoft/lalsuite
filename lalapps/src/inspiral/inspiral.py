@@ -1263,10 +1263,11 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
       raise InspiralError, "ifos have not been set"
 
     fname = self.__ifo + "-SIRE"
-    if self.__ifotag: fname += "_" + self.__ifotag
     if self.__injection_file:
       fname += "_" + self.__injection_file.split("-")[1]
       fname += "_FOUND"
+
+    if self.__ifotag: fname += "_" + self.__ifotag
 
     if (self.__start and not self.__end) or (self.__end and not self.__start):
       raise InspiralError, "If one of start and end is set, both must be"
@@ -1427,11 +1428,12 @@ class CoireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
     fname = self.__ifos + "-COIRE"
     if self.__num_slides: fname += "_SLIDE"
-    if self.__ifotag: fname += "_" + self.__ifotag
 
     if self.__injection_file:
       fname += "_" + self.__injection_file.split("-")[1]
       fname += "_FOUND"
+
+    if self.__ifotag: fname += "_" + self.__ifotag
 
     if (self.__start and not self.__end) or \
            (self.__end and not self.__start):
