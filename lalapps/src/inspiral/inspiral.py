@@ -1265,7 +1265,7 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     fname = self.__ifo + "-SIRE"
     if self.__ifotag: fname += "_" + self.__ifotag
     if self.__injection_file:
-      fname += self.__injection_file.split("-")[1]
+      fname += "_" + self.__injection_file.split("-")[1]
       fname += "_FOUND"
 
     if (self.__start and not self.__end) or (self.__end and not self.__start):
@@ -1430,7 +1430,7 @@ class CoireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     if self.__ifotag: fname += "_" + self.__ifotag
 
     if self.__injection_file:
-      fname += self.__injection_file.split("-")[1]
+      fname += "_" + self.__injection_file.split("-")[1]
       fname += "_FOUND"
 
     if (self.__start and not self.__end) or \
