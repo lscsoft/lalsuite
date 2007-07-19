@@ -680,7 +680,6 @@ def sire_segs(segments, sire_job, dag, do_input, ifo, GPSstart=None, \
   if usertag: sire.set_user_tag(usertag)
  
   # set up the input file
-  print sire.get_output()
   input_file = sire.get_output().replace(".xml", ".input") 
   f = open(input_file, 'w')
   for seg in segments:
