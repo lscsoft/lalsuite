@@ -237,21 +237,25 @@ def fix_rescue(dagNode):
 
 def write_rescue():
   # Write the rescue post-script
+  # XXX FIXME: This is a hack, required until condor is fixed XXX
   f = open("rescue.sh", "w")
-  f.write("#! /bin/bash\n" + \
-      "if [ ! -n \"${2}\" ]\n" + \
-      "then\n" + \
-      "  echo \"Usage: `basename $0` DAGreturn DAGfile\"\n" + \
-      "  exit \n" + \
-      "fi\n" +  \
-      "\n" +  \
-      "if (( ${1}>0 )) \n" + \
-      "then\n" + \
-      "  DAG=${2#*/}\n" +  \
-      "  mv ${2} ${2}.orig\n" +  \
-      "  mv ${DAG}.rescue ${2}\n" + \
-      "  exit ${1}\n" + \
-      "fi")
+  f.write("""#! /bin/bash
+  if [ ! -n "${2}" ]
+  then
+    echo "Usage: `basename $0` DAGreturn DAGfile"
+    exit
+  fi
+  
+  if (( ${1}>0 ))
+  then
+    DIR=${2%/*}
+    DAG=${2#*/}
+    echo $DIR
+    echo $DAG
+    mv ${2} ${2}.orig
+    `sed "s/DIR ${DIR}//g" ${2}.rescue > ${2}`
+    exit ${1}
+  fi""")
   f.close()
   os.chmod("rescue.sh", 0744)
 
