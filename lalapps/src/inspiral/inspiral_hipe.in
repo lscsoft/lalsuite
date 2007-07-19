@@ -4,10 +4,11 @@ inspiral_hipe.in - standalone inspiral pipeline driver script
 
 $Id$
 
-This script generates the condor DAG necessary to analyze LIGO and GEO data 
-through the inspiral pipeline.  The DAG does datafind, tmpltbank, inspiral, 
-inca and sire steps of the pipeline.  It analyzes the single, double, triple 
-and quadro ifo times accordingly.  It can also be run with injections.
+This script generates the condor DAG necessary to analyze LIGO and GEO
+data through the inspiral pipeline.  The DAG does datafind, tmpltbank,
+inspiral, inca and sire/coire steps of the pipeline.  It analyzes the
+single, double, triple and quadro ifo times accordingly.  It can also be
+run with injections.
 """
 
 __author__ = 'Stephen Fairhurst <sfairhur@gravity.phys.uwm.edu>'
@@ -630,7 +631,8 @@ def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
             # jobs already set up, just add the var_arg and parent to trigbank
             # and inspiral-veto 
           if 'macrotdfollowup' in insp.get_opts().keys():
-            insp.add_var_opt('td-follow-up', insp.get_opts()['macrotdfollowup'] +
+            insp.add_var_opt('td-follow-up', 
+                insp.get_opts()['macrotdfollowup'] +
                 ' ' + coinc_done.get_dag_node().get_output())
           else:
             insp.add_var_opt('td-follow-up',
@@ -638,7 +640,8 @@ def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
 
           if not banks: 
             if 'macrotdfollowup' in bank.get_opts().keys():
-              bank.add_var_opt('td-follow-up', bank.get_opts()['macrotdfollowup'] +
+              bank.add_var_opt('td-follow-up', 
+                  bank.get_opts()['macrotdfollowup'] +
                   ' ' + coinc_done.get_dag_node().get_output())
             else:
               bank.add_var_opt('td-follow-up',
@@ -648,59 +651,94 @@ def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
   return follow_chunks_analyzed, bankList
 
 ##############################################################################
-# function to sweep up data using sire  
-def sire_segs(segments,output,file_name,sire_job,dag,do_input,usertag=None,
-  cluster=None,ifo_cut=None):
-
+# function to sweep up data using coire  
+def sire_segs(segments, sire_job, dag, do_input, ifo, GPSstart=None, \
+  GPSend=None, inj_file=None, ifotag=None, usertag=None):
   """
   Do a sire to sweep up all the triggers of a specific kind
   
-  segments  = list of inca segments to use
-  output    = which output of inca/inspiral to use
-  file_name = output file name
-  sire_job  = sire job to use for the analysis
+  segments  = list of thinca segments to use
+  sire_job = coire job to use for the analysis
   dag       = name of the dag
-  do_input  = whether the files to be sired were produced by this dag
+  do_input  = whether the files to be coired were produced by this dag
+  ifo       = which ifo triggers to keep
+  GPSstart  = gps start time for file naming only
+  GPSend    = gps end time for file naming only
+  inj_file  = name of injection file
+  ifotag    = ifotag used in naming the file
   usertag   = the usertag to add to the output file name
-  cluster   = whether we should add the cluster arguments
-  ifo_cut   = keep triggers from only this ifo (if None, keep all)
   """
-  
   sire = inspiral.SireNode(sire_job)
 
-  if ifo_cut:
-    sire.add_var_opt('ifo-cut',ifo_cut)
-
-  # set the sire file name
-  fname = file_name
-  if usertag:
-    fname += '_' + usertag
-  fname += '.input'
+  # set the options:
+  sire.set_ifo(ifo)
+  if inj_file: 
+    sire.set_inj_file(inj_file)
+  if GPSstart: sire.set_start(GPSstart)
+  if GPSend: sire.set_end(GPSend)
+  if ifotag: sire.set_ifotag(ifotag)
+  if usertag: sire.set_user_tag(usertag)
  
- 
-  # add all the input files
-  f = open(fname, 'w')
+  # set up the input file
+  input_file = sire.get_output().replace(".xml", ".input") 
+  f = open(input_file, 'w')
   for seg in segments:
     if do_input: sire.add_parent(seg.get_dag_node())
-    if output == 'output':
+    if seg.get_dag_node().get_output():
       f.write('%s\n' % seg.get_dag_node().get_output())
-    if output == 'output_a':
+    else: 
       f.write('%s\n' % seg.get_dag_node().get_output_a())
-    if output == 'output_b':
-      f.write('%s\n' % seg.get_dag_node().get_output_b())
   f.close()
- 
-  # add the input file name to sire
-  sire.add_var_opt('input',fname)
-  
-  # set the output files names for sire
-  if inj_coinc:
-    sire.set_inj_outputs(file_name,inj_coinc,usertag)
-    
-  else:
-    sire.set_outputs(file_name,usertag)
 
-  if do_input: dag.add_node(sire) 
+  # add the input file name to coire 
+  sire.set_input(input_file)
+
+  dag.add_node(sire) 
+
+##############################################################################
+# function to sweep up data using coire  
+def coire_segs(segments, coire_job, dag, do_input, ifos, GPSstart=None, \
+  GPSend=None, inj_file=None, num_slides=0, ifotag=None, usertag=None):
+  """
+  Do a coire to sweep up all the triggers of a specific kind
+  
+  segments  = list of thinca segments to use
+  coire_job = coire job to use for the analysis
+  dag       = name of the dag
+  do_input  = whether the files to be coired were produced by this dag
+  ifos      = which ifos were analyzed
+  GPSstart  = gps start time for file naming only
+  GPSend    = gps end time for file naming only
+  inj_file  = name of injection file
+  cluster   = whether we should add the cluster arguments
+  num_slides = the number of time slides
+  usertag   = the usertag to add to the output file name
+  """
+
+  coire = inspiral.CoireNode(coire_job)
+
+  # set the options:
+  coire.set_ifos(ifos)
+  if inj_file: 
+    coire.set_inj_file(inj_file)
+  if GPSstart: coire.set_start(GPSstart)
+  if GPSend: coire.set_end(GPSend)
+  if ifotag: coire.set_ifotag(ifotag)
+  if num_slides: coire.set_slides(num_slides)
+  if usertag: coire.set_user_tag(usertag)
+ 
+  # set up the input file
+  input_file = coire.get_output().replace(".xml", ".input") 
+  f = open(input_file, 'w')
+  for seg in segments:
+    if do_input: coire.add_parent(seg.get_dag_node())
+    f.write('%s\n' % seg.get_dag_node().get_output())
+  f.close()
+
+  # add the input file name to coire 
+  coire.set_input(input_file)
+
+  dag.add_node(coire) 
 
 
 ##############################################################################
@@ -861,30 +899,32 @@ parser.add_option("-t", "--template-bank",action="store_true",default=False,\
     help="run lalapps_tmpltbank to generate template banks")
 parser.add_option("-i", "--inspiral" ,action="store_true",default=False,\
     help="run lalapps_inspiral (or lalapps_ring) to generate triggers")
+parser.add_option("-s", "--sire-inspiral",action="store_true",default=False,\
+    help="do sires to sweep up triggers")
 parser.add_option("-r", "--ringdown" ,action="store_true",default=False,\
     help="run lalapps_ring insted of lalapps_inspiral")
 parser.add_option("-c", "--coincidence",action="store_true",default=False,\
     help="run lalapps_thinca to test for coincidence")
+parser.add_option("-e", "--coire-coincidence",action="store_true",
+    default=False, help="do coires to sweep up triggers")
 parser.add_option("-U", "--td-follow-bank", action="store_true",default=False,\
     help="Run tmpltbank for TD follow-up")
 parser.add_option("-B", "--trigbank",action="store_true",default=False,\
     help="run lalapps_trigbank for banks of coinc triggers")
 parser.add_option("-V", "--inspiral-veto",action="store_true",default=False,\
     help="run lalapps_inspiral with vetos")
+parser.add_option("-m", "--sire-inspiral-veto",action="store_true",
+    default=False, help="do sires to sweep up triggers")
 parser.add_option("-W", "--td-follow-inspiral",action="store_true",\
     default=False,help="run lalapps_inspiral for TD follow-up")
 parser.add_option("-C", "--second-coinc" ,action="store_true",default=False,\
     help="run lalapps_thinca on the inspiral veto triggers")
+parser.add_option("-E", "--coire-second-coinc",action="store_true",
+    default=False, help="do coires to sweep up triggers")
 parser.add_option("-j", "--coherent-bank",action="store_true",default=False,\
     help="run lalapps_coherentbank to make coherent bank")
 parser.add_option("-k", "--coherent-inspiral",action="store_true",
     default=False,help="run lalapps_coherent_inspiral for coherent analysis")
-parser.add_option("-s", "--sire",action="store_true",default=False,\
-    help="do sires to sweep up triggers")
-parser.add_option("-y", "--coire",action="store_true",default=False,\
-    help="do coires to sweep up coincident triggers")
-parser.add_option("-Y", "--second-coire",action="store_true",default=False,\
-    help="do coires to sweep up second coincident triggers")
 
 parser.add_option("-R", "--read-cache",action="store_true",default=False,\
     help="read cache file from ini-file (if LSCDataFind is broken)")
@@ -948,23 +988,24 @@ if opts.inspiral_veto and opts.td_follow_inspiral:
   print >> sys.stderr, "--inspiral-veto, --td-follow-inspiral."
  
 if not opts.datafind and not opts.template_bank and \
-     not opts.inspiral and not opts.coincidence and \
+     not opts.inspiral and not opts.sire_inspiral and \
+     not opts.coincidence and not opts.coire_coincidence and \
      not opts.trigbank and not opts.inspiral_veto and \
-     not opts.td_follow_bank and not opts.td_follow_inspiral and \
-     not opts.second_coinc and not opts.coherent_bank and \
-     not opts.coherent_inspiral and not opts.coire and not opts.second_coire:
-  print >> sys.stderr, "No steps of the pipeline specified."
-  print >> sys.stderr, "Please specify at least one of"
-  print >> sys.stderr, "--datafind, --template-bank, --inspiral,"
-  print >> sys.stderr, "--coincidence, --trigbank, --inspiral-veto,"
-  print >> sys.stderr, "--td-follow-bank, --td-follow-inspiral, --coire, --second-coire,"
-  print >> sys.stderr, "--second-coinc, --coherent-bank or --coherent-inspiral"
+     not opts.sire_inspiral_veto and not opts.td_follow_bank and \
+     not opts.td_follow_inspiral and not opts.second_coinc and \
+     not opts.coire_second_coinc and not opts.coherent_bank and \
+     not opts.coherent_inspiral: 
+  print >> sys.stderr, """  No steps of the pipeline specified.
+  Please specify at least one of
+  --datafind, --template-bank, --inspiral, --sire-inspiral, --coincidence, 
+  --coire-coincidence, --trigbank, --inspiral-veto, --sire-inspiral-veto,
+  --td-follow-bank, --td-follow-inspiral, --second-coinc, 
+  --coire-second-coinc, --coherent-bank, --coherent-inspiral"""
   sys.exit(1)
    
 ifo_list = ['H1','H2','L1','G1']
 
 ifotag = None
-inj_coinc = 0
 do_clust = True
 #################################
 # store the values
@@ -1220,17 +1261,15 @@ for ifos in ifo_coincs:
 sire_job = inspiral.SireJob(cp)
 sire_job.set_sub_file( basename + '.sire' + subsuffix )
 
-sire_clust_job = inspiral.SireJob(cp)
-sire_clust_job.set_sub_file( basename + '.sire_clust' + subsuffix )
-
-#coire:
+# coire:
 coire_job = inspiral.CoireJob(cp)
 coire_job.set_sub_file( basename + '.coire' + subsuffix )
-coire_slides_job = inspiral.CoireJob(cp)
-coire_slides_job.set_sub_file( basename + '.coire_slides' + subsuffix )
+coire_slide_job = inspiral.CoireJob(cp)
+coire_slide_job.set_sub_file( basename + '.coire_slide' + subsuffix )
+
 
 all_jobs = [inspinj_job, single_inca_job, trig_job, cb_job, sire_job, 
-  sire_clust_job, coire_job, coire_slides_job]
+  coire_job, coire_slide_job]
 all_jobs.extend(tmplt_jobs.values())
 all_jobs.extend(insp_jobs.values())
 all_jobs.extend(thinca_jobs.values())
@@ -1267,7 +1306,7 @@ except:
   inj_file = None
   
 if inj_file:
-  inj_jobs = [sire_job, sire_clust_job, coire_job, coire_slides_job]
+  inj_jobs = [sire_job, coire_job, coire_slide_job]
   inj_jobs.extend(insp_jobs.values())
   inj_jobs.extend(insp_veto_jobs.values())
   inj_jobs.extend(insp_coh_jobs.values())
@@ -1301,7 +1340,7 @@ try:
 except:
   play_data_mask = None
 
-play_jobs = [trig_job, coire_job, coire_slides_job]
+play_jobs = [trig_job, sire_job, coire_job, coire_slide_job]
 play_jobs.extend(thinca_jobs.values())
 play_jobs.extend(thinca_slide_jobs.values())
 play_jobs.extend(thinca2_jobs.values())
@@ -1312,9 +1351,6 @@ if play_data_mask == 'playground_only':
   playground_only = 2
   
   single_inca_job.add_opt('playground-only',' ')
-  sire_job.add_opt('playground-only',' ')
-  sire_clust_job.add_opt('playground-only',' ')
-
   for job in play_jobs:
     job.add_opt('data-type','playground_only')
 
@@ -1322,9 +1358,6 @@ elif play_data_mask == 'exclude_playground':
   playground_only = 0
   
   single_inca_job.add_opt('no-playground',' ')
-  sire_job.add_opt('exclude-playground',' ')
-  sire_clust_job.add_opt('exclude-playground',' ')
-  
   for job in play_jobs:
     job.add_opt('data-type','exclude_play')
 
@@ -1333,9 +1366,6 @@ elif play_data_mask == 'all_data':
   playground_only = 0
 
   single_inca_job.add_opt('all-data',' ')
-  sire_job.add_opt('all-data',' ')
-  sire_clust_job.add_opt('all-data',' ')
-  
   for job in play_jobs:
     job.add_opt('data-type','all_data')
 
@@ -1347,13 +1377,10 @@ else:
 if inj_file:
   # add the injection coincidence to the sire jobs
   sire_job.add_ini_opts(cp,'sire-inj')
-  sire_clust_job.add_ini_opts(cp,'sire-inj')
+  coire_job.add_ini_opts(cp,'coire-inj')
+  coire_slide_job.add_ini_opts(cp,'coire-inj')
  
  
-############################################################################## 
-# add the clustering info to sire clust 
-sire_clust_job.add_ini_opts(cp,'sire-cluster')
-
 ##############################################################################
 # get the pad and chunk lengths from the values in the ini file
 pad = int(cp.get('data', 'pad-data'))
@@ -1537,9 +1564,9 @@ for ifo in ifo_list:
       tmplt_jobs[ifo],insp_jobs[ifo],df_job,prev_df,dag,exttrigInjections,usertag)
   
   # Step 4S: Run sire on the single ifo triggers
-  if opts.sire and len(chunks_analyzed[ifo]):   
-    sire_segs(chunks_analyzed[ifo],'output',ifo + '-INSPIRAL',sire_clust_job,
-        dag,opts.inspiral,usertag,do_clust,ifo)
+  if opts.sire_inspiral and len(chunks_analyzed[ifo]):   
+    sire_segs(chunks_analyzed[ifo], sire_job, dag, opts.inspiral, ifo, \
+        inj_file = inj_file, usertag = usertag)
 
   print "done" 
 
@@ -1555,11 +1582,11 @@ for ifo in ifo_list:
   single_coinc_nodes[ifo] = []
   single_coinc_nodes[ifo] = single_coinc(chunks_analyzed[ifo],ifo,
      analyzed_data[ifo],single_inca_job,dag,usertag)
-  
+   
   # Step 5S: Run sire on the single ifo triggers
-  if opts.sire and do[ifo] and len(analyzed_data[ifo]):
-    sire_segs(single_coinc_nodes[ifo],'output_a',ifo + '-SIRE_SINGLE_IFO',
-        sire_clust_job,dag,opts.coincidence,usertag,do_clust,ifo)
+  if opts.coire_coincidence and len(single_coinc_nodes[ifo]):
+    sire_segs(single_coinc_nodes[ifo], sire_job, dag, opts.inspiral, ifo, \
+        inj_file = inj_file, usertag = usertag, ifotag = ifo)
 
 print "done"
   
@@ -1577,7 +1604,14 @@ for ifos in ifo_coincs:
   thinca_jobs[ifos].add_ini_opts(cp, 'thinca-1')
   coinc_nodes[ifos] = thinca_coinc(ifos,chunks_analyzed,analyzed_data[ifos],
       thinca_jobs[ifos],dag,opts.coincidence,opts.inspiral,exttrigInjections,
-      usertag, coire_job=coire_job, do_coire=opts.coire)
+      usertag, coire_job=coire_job, do_coire=opts.coire_coincidence)
+
+  # Step 6 coire: Run coire on coinc triggers
+  if opts.coire_coincidence and len(coinc_nodes[ifos]):
+    coire_segs(coinc_nodes[ifos], coire_job, dag, opts.coincidence, 
+        ifos, inj_file = inj_file, usertag = usertag)
+  
+
 
   # Step 6 slide: Time slides 
   coinc_slide_nodes[ifos] = []
@@ -1586,19 +1620,13 @@ for ifos in ifo_coincs:
     coinc_slide_nodes[ifos] = thinca_coinc(ifos,chunks_analyzed,
         analyzed_data[ifos],thinca_slide_jobs[ifos],dag,opts.coincidence,
         opts.inspiral,exttrigInjections, usertag, coire_job=coire_slides_job, 
-        do_coire=opts.coire, ifotag=ifotag, slides=num_slides )
+        do_coire=opts.coire_coincidence, ifotag=ifotag, slides=num_slides )
 
-  
-  # Step 6 sire: Run sire triggers
-  # Do sire with all coincidenct triggers, and clustered sires for each ifo
-  if opts.sire and len(analyzed_data[ifos]):
-    sire_segs(coinc_nodes[ifos],'output',ifos + '-SIRE',sire_job,dag,
-        opts.coincidence,usertag)
-    for ifo in ifo_list: 
-      if ifo in ifos:
-        sire_segs(coinc_nodes[ifos],'output',ifo + '-SIRE_' + ifos,sire_job,
-            dag,opts.coincidence,usertag,ifo)
-  
+    if opts.coire_coincidence and len(coinc_slide_nodes[ifos]):
+      coire_segs(coinc_slide_nodes[ifos], coire_slide_job, dag, 
+          opts.coincidence, ifos, inj_file = inj_file, num_slides = num_slides,
+          usertag = usertag)
+
   # Concatenate the zerolag and slide nodes
   coinc_nodes[ifos] = coinc_nodes[ifos] + coinc_slide_nodes[ifos]
   
@@ -1654,6 +1682,11 @@ for ifos in ifo_coincs:
         analyzed_coinc_data[ifos][ifo] = trig_inspiral(data[ifo],ifo,
             coinc_nodes[ifos],ifos,trig_job,insp_veto_jobs[ifo],dag,
             exttrigInjections,usertag)
+      
+        if opts.sire_inspiral_veto and len(analyzed_coinc_data[ifos][ifo]):   
+          sire_segs(analyzed_coinc_data[ifos][ifo], sire_job, dag, 
+              opts.inspiral_veto, ifo, inj_file = inj_file, usertag = usertag, 
+              ifotag = ifos)
 
       print "done"
 
@@ -1675,13 +1708,17 @@ for ifos in ifo_coincs:
       coinc2_nodes[ifos] = thinca_coinc(ifos, analyzed_coinc_data[ifos],
           analyzed_data[ifos], thinca2_jobs[ifos], dag, opts.second_coinc,
           opts.td_follow_inspiral, exttrigInjections, usertag=usertag,
-          coire_job=coire_job, do_coire=opts.second_coire, ifotag=ifos + "_" + this_approx)
+          coire_job=coire_job, do_coire=opts.coire_second_coinc, 
+          ifotag=ifos + "_" + this_approx)
 
   else:
     coinc2_nodes[ifos] = thinca_coinc(ifos, analyzed_coinc_data[ifos],
       analyzed_data[ifos], thinca2_jobs[ifos], dag, opts.second_coinc,
       opts.inspiral_veto, exttrigInjections, usertag=usertag,
-      coire_job=coire_job, do_coire=opts.second_coire, ifotag=ifos)
+      coire_job=coire_job, do_coire=opts.coire_second_coinc, ifotag=ifos)
+    if opts.coire_second_coinc and len(coinc2_nodes[ifos]):
+      coire_segs(coinc2_nodes[ifos], coire_job, dag, opts.second_coinc, 
+          ifos, inj_file = inj_file, ifotag = ifos, usertag = usertag)
 
   # Step 8slide: Time slides on the data
   if num_slides:
@@ -1694,27 +1731,21 @@ for ifos in ifo_coincs:
           analyzed_coinc_data[ifos], analyzed_data[ifos],
           thinca2_slide_jobs[ifos], dag, opts.second_coinc,
           opts.inspiral_veto, exttrigInjections, usertag=usertag,
-          coire_job=coire_slides_job, do_coire=opts.second_coire, 
+          coire_job=coire_slides_job, do_coire=opts.coire_second_coinc, 
           ifotag=ifos+'_'+this_approx, slides=num_slides)
     else: 
      coinc2_slide_nodes[ifos] = thinca_coinc(ifos,
         analyzed_coinc_data[ifos], analyzed_data[ifos],
         thinca2_slide_jobs[ifos], dag, opts.second_coinc, opts.inspiral_veto,
         exttrigInjections, usertag=usertag, coire_job=coire_slides_job,
-        do_coire=opts.second_coire,
+        do_coire=opts.coire_second_coinc,
         ifotag=ifos, slides=num_slides)
 
-  # Step 8 sire: Run sire triggers
-  # Do sire with all coincidenct triggers, and clustered sires for each ifo
-  if opts.sire and len(analyzed_data[ifos]):
-    sire_segs(coinc_nodes[ifos],'output',ifos + '-SIRE_VETO_',sire_job,dag,
-    opts.second_coinc,usertag)
-  
-    for ifo in ifo_list: 
-      if ifo in ifos:
-        sire_segs(coinc_nodes[ifos],'output',ifo + '-SIRE_VETO_' + ifos,
-            sire_job,dag,opts.second_coinc,usertag,ifo)
-  
+     if opts.coire_second_coinc and len(coinc2_slide_nodes[ifos]):
+       coire_segs(coinc2_slide_nodes[ifos], coire_slide_job, dag, 
+           opts.second_coinc, ifos, inj_file = inj_file, 
+           num_slides = num_slides, ifotag = ifos, usertag = usertag)
+
   print "done"
 
 
