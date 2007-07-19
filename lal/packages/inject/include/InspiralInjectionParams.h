@@ -97,7 +97,10 @@ SimInspiralTable* XLALRandomInspiralDistance( SimInspiralTable *inj,
 SimInspiralTable* XLALRandomInspiralSkyLocation( SimInspiralTable *inj,
     RandomParams *randParams);
 
-SimInspiralTable* XLALRandomInspiralMilkywayLocation( SimInspiralTable *inj,
+void XLALRandomInspiralMilkywayLocation( 
+    REAL8 *rightAscension,
+    REAL8 *declination,
+    REAL8 *distance,
     RandomParams *randParams);
 
 SimInspiralTable* XLALRandomInspiralOrientation( SimInspiralTable *inj,

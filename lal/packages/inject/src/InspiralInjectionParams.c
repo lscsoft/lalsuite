@@ -117,8 +117,10 @@ SimInspiralTable* XLALRandomInspiralSkyLocation(
 
 /** Generates a location within the Milky Way
      for an inspiral injection */
-SimInspiralTable* XLALRandomInspiralMilkywayLocation( 
-    SimInspiralTable *inj,  /**< injection for which sky location will be set*/
+void XLALRandomInspiralMilkywayLocation( 
+    REAL8 *rightAscension,  /**< right ascension of the milky-way source */
+    REAL8 *declination,     /**< declination of the milky-way source */
+    REAL8 *distance,        /**< distance to the milky-way source */
     RandomParams *randParams/**< random parameter details*/
     )
 {
@@ -157,11 +159,10 @@ SimInspiralTable* XLALRandomInspiralMilkywayLocation(
   /* convert the coordinates */
   LALGalacticToEquatorial( &status, &equatorialPos, &galacticPos);
 
-  inj->latitude = equatorialPos.latitude;
-  inj->longitude = equatorialPos.longitude;
-  inj->distance = dist/1000.0; /* convert to Mpc */
+  *declination    = equatorialPos.latitude;
+  *rightAscension = equatorialPos.longitude;
+  *distance       = dist/1000.0; /* convert to Mpc */
 
-  return ( inj );
 }
 
 /** Generates a random orientation (polarization, inclination, coa_phase)
