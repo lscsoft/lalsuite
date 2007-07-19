@@ -680,6 +680,7 @@ def sire_segs(segments, sire_job, dag, do_input, ifo, GPSstart=None, \
   if usertag: sire.set_user_tag(usertag)
  
   # set up the input file
+  print sire.get_output()
   input_file = sire.get_output().replace(".xml", ".input") 
   f = open(input_file, 'w')
   for seg in segments:
@@ -1311,8 +1312,8 @@ if inj_file:
   inj_jobs.extend(insp_veto_jobs.values())
   inj_jobs.extend(insp_coh_jobs.values())
 
-  for job in inj_jobs:
-    job.set_injections( inj_file )
+  for job in inj_jobs:	
+     job.add_file_opt('injection-file',inj_file)
 
 ##############################################################################
 # read in the number of time-slides from the ini file 
@@ -1322,7 +1323,7 @@ except:
   num_slides = None
 
 if num_slides:
-  coire_slides_job.add_opt('num-slides', str(num_slides))
+  coire_slide_job.add_opt('num-slides', str(num_slides))
 
 ##############################################################################
 # read in the maximum length of a science segment for thinca from the ini file
@@ -1331,6 +1332,19 @@ try:
 except:
   max_thinca_segment = None
   	 
+##############################################################################
+# read in the GPS start and end times from the ini file
+# Only used to set the cache files and coire files.
+# XXX Should we use this to cut segments??
+try:
+  gps_start_time = cp.getint('input','gps-start-time')
+except:
+  gps_start_time = None
+
+try:
+  gps_end_time = cp.getint('input','gps-end-time')
+except:
+  gps_end_time = None
 
 #############################################################################
 # read in playground data mask from ini file 
@@ -1561,11 +1575,13 @@ for ifo in ifo_list:
   sys.stdout.flush()
 
   (prev_df,chunks_analyzed[ifo]) = analyze_ifo(ifo,data[ifo],data_to_do[ifo],  
-      tmplt_jobs[ifo],insp_jobs[ifo],df_job,prev_df,dag,exttrigInjections,usertag)
+      tmplt_jobs[ifo],insp_jobs[ifo],df_job,prev_df,dag,exttrigInjections,
+      usertag)
   
   # Step 4S: Run sire on the single ifo triggers
   if opts.sire_inspiral and len(chunks_analyzed[ifo]):   
-    sire_segs(chunks_analyzed[ifo], sire_job, dag, opts.inspiral, ifo, \
+    sire_segs(chunks_analyzed[ifo], sire_job, dag, opts.inspiral, ifo, 
+        GPSstart = gps_start_time, GPSend = gps_end_time, 
         inj_file = inj_file, usertag = usertag)
 
   print "done" 
@@ -1585,7 +1601,8 @@ for ifo in ifo_list:
    
   # Step 5S: Run sire on the single ifo triggers
   if opts.coire_coincidence and len(single_coinc_nodes[ifo]):
-    sire_segs(single_coinc_nodes[ifo], sire_job, dag, opts.inspiral, ifo, \
+    sire_segs(single_coinc_nodes[ifo], sire_job, dag, opts.inspiral, ifo, 
+        GPSstart = gps_start_time, GPSend = gps_end_time, 
         inj_file = inj_file, usertag = usertag, ifotag = ifo)
 
 print "done"
@@ -1609,7 +1626,8 @@ for ifos in ifo_coincs:
   # Step 6 coire: Run coire on coinc triggers
   if opts.coire_coincidence and len(coinc_nodes[ifos]):
     coire_segs(coinc_nodes[ifos], coire_job, dag, opts.coincidence, 
-        ifos, inj_file = inj_file, usertag = usertag)
+        ifos, inj_file = inj_file, usertag = usertag,
+        GPSstart = gps_start_time, GPSend = gps_end_time) 
   
 
 
@@ -1619,12 +1637,13 @@ for ifos in ifo_coincs:
     thinca_slide_jobs[ifos].add_ini_opts(cp, 'thinca-1')
     coinc_slide_nodes[ifos] = thinca_coinc(ifos,chunks_analyzed,
         analyzed_data[ifos],thinca_slide_jobs[ifos],dag,opts.coincidence,
-        opts.inspiral,exttrigInjections, usertag, coire_job=coire_slides_job, 
+        opts.inspiral,exttrigInjections, usertag, coire_job=coire_slide_job, 
         do_coire=opts.coire_coincidence, ifotag=ifotag, slides=num_slides )
 
     if opts.coire_coincidence and len(coinc_slide_nodes[ifos]):
       coire_segs(coinc_slide_nodes[ifos], coire_slide_job, dag, 
           opts.coincidence, ifos, inj_file = inj_file, num_slides = num_slides,
+          GPSstart = gps_start_time, GPSend = gps_end_time, 
           usertag = usertag)
 
   # Concatenate the zerolag and slide nodes
@@ -1686,7 +1705,7 @@ for ifos in ifo_coincs:
         if opts.sire_inspiral_veto and len(analyzed_coinc_data[ifos][ifo]):   
           sire_segs(analyzed_coinc_data[ifos][ifo], sire_job, dag, 
               opts.inspiral_veto, ifo, inj_file = inj_file, usertag = usertag, 
-              ifotag = ifos)
+              GPSstart = gps_start_time, GPSend = gps_end_time, ifotag = ifos)
 
       print "done"
 
@@ -1716,9 +1735,11 @@ for ifos in ifo_coincs:
       analyzed_data[ifos], thinca2_jobs[ifos], dag, opts.second_coinc,
       opts.inspiral_veto, exttrigInjections, usertag=usertag,
       coire_job=coire_job, do_coire=opts.coire_second_coinc, ifotag=ifos)
+
     if opts.coire_second_coinc and len(coinc2_nodes[ifos]):
       coire_segs(coinc2_nodes[ifos], coire_job, dag, opts.second_coinc, 
-          ifos, inj_file = inj_file, ifotag = ifos, usertag = usertag)
+          ifos, inj_file = inj_file, ifotag = ifos, usertag = usertag,
+          GPSstart = gps_start_time, GPSend = gps_end_time )
 
   # Step 8slide: Time slides on the data
   if num_slides:
@@ -1731,20 +1752,21 @@ for ifos in ifo_coincs:
           analyzed_coinc_data[ifos], analyzed_data[ifos],
           thinca2_slide_jobs[ifos], dag, opts.second_coinc,
           opts.inspiral_veto, exttrigInjections, usertag=usertag,
-          coire_job=coire_slides_job, do_coire=opts.coire_second_coinc, 
+          coire_job=coire_slide_job, do_coire=opts.coire_second_coinc, 
           ifotag=ifos+'_'+this_approx, slides=num_slides)
     else: 
      coinc2_slide_nodes[ifos] = thinca_coinc(ifos,
         analyzed_coinc_data[ifos], analyzed_data[ifos],
         thinca2_slide_jobs[ifos], dag, opts.second_coinc, opts.inspiral_veto,
-        exttrigInjections, usertag=usertag, coire_job=coire_slides_job,
+        exttrigInjections, usertag=usertag, coire_job=coire_slide_job,
         do_coire=opts.coire_second_coinc,
         ifotag=ifos, slides=num_slides)
 
      if opts.coire_second_coinc and len(coinc2_slide_nodes[ifos]):
        coire_segs(coinc2_slide_nodes[ifos], coire_slide_job, dag, 
            opts.second_coinc, ifos, inj_file = inj_file, 
-           num_slides = num_slides, ifotag = ifos, usertag = usertag)
+           num_slides = num_slides, ifotag = ifos, usertag = usertag,
+           GPSstart = gps_start_time, GPSend = gps_end_time )
 
   print "done"
 
