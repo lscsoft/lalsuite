@@ -250,10 +250,8 @@ def write_rescue():
   then
     DIR=${2%/*}
     DAG=${2#*/}
-    echo $DIR
-    echo $DAG
     mv ${2} ${2}.orig
-    `sed "s/DIR ${DIR}//g" ${2}.rescue > ${2}`
+    `sed "s/DIR ${DIR}//g" ${DAG}.rescue > ${2}`
     exit ${1}
   fi""")
   f.close()
