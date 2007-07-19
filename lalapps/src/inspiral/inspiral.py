@@ -1232,13 +1232,13 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
   def set_glob(self, file_glob):
     """
-    test
+    Sets the glob name
     """
     self.add_var_opt('glob',file_glob)
 
   def set_input(self, input_file):
     """
-    test
+    Sets the input file name
     """
     self.add_var_opt('input',input_file)
 
@@ -1429,6 +1429,10 @@ class CoireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     if self.__num_slides: fname += "_SLIDE"
     if self.__ifotag: fname += "_" + self.__ifotag
 
+    if self.__injection_file:
+      fname += self.__injection_file.split("-")[1]
+      fname += "_FOUND"
+
     if (self.__start and not self.__end) or \
            (self.__end and not self.__start):
       raise InspiralError, "If one of start and end is set, "\
@@ -1437,13 +1441,6 @@ class CoireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     if (self.__start):
       duration=self.__end - self.__start
       fname += "-" + str(self.__start) + "-" + str(duration)
-
-    if self.__injection_file:
-      
-      split=self.__injection_file.split(".")
-      if len(split)>2:
-        fname+="_"+split[1]
-      fname += "_FOUND"
 
     fname += ".xml"
 
