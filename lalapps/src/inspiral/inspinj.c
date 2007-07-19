@@ -1,3 +1,24 @@
+/*
+*  Copyright (C) 2007 Chad Hanna, Alexander Dietz, Duncan Brown, Gareth Jones, Jolien Creighton, Nickolas Fotopoulos, Patrick Brady, Stephen Fairhurst
+*
+*  This program is free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License
+*  along with with program; see the file COPYING. If not, write to the
+*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+*  MA  02111-1307  USA
+*/
+
+
+
 /*----------------------------------------------------------------------- 
  * 
  * File Name: inspinj.c
@@ -49,8 +70,7 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
 void printUsage(void);
 void read_mass_data( char* filename );
 void read_source_data( char* filename );
-void drawDistanceFromSource( SimInspiralTable* table );
-void drawLocationFromSource( SimInspiralTable* table );
+void drawFromSource( REAL8 *rightAscension, REAL8* declination, REAL8 *distance );
 void drawLocationFromExttrig( SimInspiralTable* table );
 void drawMassFromSource( SimInspiralTable* table );
 
@@ -419,7 +439,7 @@ void drawMassFromSource( SimInspiralTable* table )
  * functions to draw sky location from source distribution
  *
  */
-void drawLocationFromSource( SimInspiralTable* table )
+void drawFromSource( REAL8 *rightAscension, REAL8* declination, REAL8 *distance )
 {
   REAL4 u;
   int i;
@@ -432,15 +452,16 @@ void drawLocationFromSource( SimInspiralTable* table )
     if ( u < fracVec[i] )
     {
       /* put the parameters */
-      table->longitude = source_data[i].ra;
-      table->latitude  = source_data[i].dec;
+      *rightAscension = source_data[i].ra;
+      *declination    = source_data[i].dec;
+      *distance = source_data[i].dist/1000.0;
       return;
     }
   }
 
   /* now then, draw from MilkyWay
      WARNING: This sets location AND distance */
-  table=XLALRandomInspiralMilkywayLocation( table, randParams );
+  XLALRandomInspiralMilkywayLocation( rightAscension, declination, distance, randParams );
 }
 
 /*
@@ -450,8 +471,6 @@ void drawLocationFromSource( SimInspiralTable* table )
  */
 void drawLocationFromExttrig( SimInspiralTable* table )
 {
-  static LALStatus status;
-  
   LIGOTimeGPS timeGRB;  /* real time of the GRB */
   LALMSTUnitsAndAcc unitsAndAcc; 
   REAL4 ra_rad, de_rad;
@@ -478,33 +497,6 @@ void drawLocationFromExttrig( SimInspiralTable* table )
 }
 
 
-/*
- *
- * functions to draw distance from source distribution
- *
- */
-void drawDistanceFromSource( SimInspiralTable* table )
-{ 
-  REAL4 u;
-  int i;
- 
-  u=XLALUniformDeviate( randParams );
-
-  /* draw from the source table */
-  for ( i = 0; i < num_source; ++i )
-  {
-    if ( u < fracVec[i] )
-    {
-      /* put the parameters, convert to Mpc */
-      table->distance = source_data[i].dist/1000.0;
-      return;
-    }
-  }
-
-  /* now then, draw from MilkyWay
-     WARNING: This sets location AND distance */
-  table=XLALRandomInspiralMilkywayLocation( table, randParams );
-}
 
 /* 
  *
@@ -537,6 +529,10 @@ int main( int argc, char *argv[] )
   MetadataTable         injections;
   ProcessParamsTable   *this_proc_param;
   LIGOLwXMLStream       xmlfp;
+
+  REAL8 drawnDistance = 0.0;
+  REAL8 drawnRightAscension = 0.0;
+  REAL8 drawnDeclination = 0.0;
 
   status=blank_status;
   gpsStartTime.gpsSeconds=-1;
@@ -1433,10 +1429,13 @@ int main( int argc, char *argv[] )
                                          minMtotal, maxMtotal);
     }
 
+    /* draw location and distances */
+    drawFromSource( &drawnRightAscension, &drawnDeclination, &drawnDistance );
+
     /* popualate distances */
     if ( dDistr == distFromSourceFile )
     {
-      drawDistanceFromSource( simTable );
+      simTable->distance = drawnDistance;
     }
     else
     {
@@ -1447,7 +1446,8 @@ int main( int argc, char *argv[] )
     /* populate location */
     if ( lDistr == locationFromSourceFile )
     {
-      drawLocationFromSource( simTable );
+      simTable->longitude = drawnRightAscension;
+      simTable->latitude  = drawnDeclination;
     }
     else if ( lDistr == locationFromExttrigFile )
     {
