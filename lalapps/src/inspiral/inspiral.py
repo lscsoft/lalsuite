@@ -175,7 +175,6 @@ class InspiralJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     """
     self.__executable = cp.get('condor','inspiral')
     self.__universe = cp.get('condor','universe')
-    self.__injections=None
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     pipeline.AnalysisJob.__init__(self,cp,dax)
     self.tag_base = tag_base
@@ -190,19 +189,6 @@ class InspiralJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stderr_file('logs/inspiral-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('inspiral.sub')
 
-  def set_injections(self, injections):
-    """
-    Set the injection file for this job
-    """
-    self.__injections = injections
-    self.add_file_opt('injection-file',injections)
-
-  def get_injections(self):
-    """
-    Returns the injection file for this job
-    """
-    return self.__injections
-    
 
 class TrigToTmpltJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
@@ -296,7 +282,6 @@ class SireJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     """
     self.__executable = cp.get('condor','sire')
     self.__universe = cp.get('condor','universe')
-    self.__injections = None
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     pipeline.AnalysisJob.__init__(self,cp,dax)
 
@@ -307,19 +292,6 @@ class SireJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stderr_file('logs/sire-$(macroifo)-$(cluster)-$(process).err')
     self.set_sub_file('sire.sub')
 
-  def set_injections(self, injections):
-    """
-    Set the injection file for this job
-    """
-    self.__injections = injections
-    self.add_file_opt('injection-file',injections)
-
-  def get_injections(self):
-    """
-    Returns the injection file for this job
-    """
-    return self.__injections
-  
 class CoireJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A lalapps_coire job used by the inspiral pipeline. The stdout and stderr from
@@ -332,7 +304,6 @@ class CoireJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     """
     self.__executable = cp.get('condor','coire')
     self.__universe = cp.get('condor','universe')
-    self.__injections = None
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     pipeline.AnalysisJob.__init__(self,cp,dax)
 
@@ -344,19 +315,6 @@ class CoireJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stderr_file('logs/coire-$(macroifo)-$(cluster)-$(process).err')
     self.set_sub_file('coire.sub')
     
-  def set_injections(self, injections):
-    """
-    Set the injection file for this job
-    """
-    self.__injections = injections
-    self.add_file_opt('injection-file',injections)
-
-  def get_injections(self):
-    """
-    Returns the injection file for this job
-    """
-    return self.__injections
-
 class FrJoinJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A lalapps_frjoin job used by the inspiral pipeline. The path to the
@@ -689,7 +647,7 @@ class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
     self.__usertag = job.get_config('pipeline','user-tag')
-    self.__injections = job.get_injections()
+    self.__injections = None
     try:
       self.__zip_output = job.get_config('inspiral','write-compress')
       self.__zip_output = True
