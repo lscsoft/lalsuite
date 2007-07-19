@@ -1,0 +1,336 @@
+#!/usr/bin/env @PYTHONPROG@
+"""
+plot_inspiral_hipe.in - generates plots from ihope output
+
+$Id$
+
+This script generates a condor DAG to make plots that summarize the
+results of an inspiral search
+"""
+
+__author__ = 'Patrick Brady <patrick@gravity.phys.uwm.edu>'
+__date__ = '$Date$'
+__version__ = '$Revision$'[11:-2]
+
+##############################################################################
+# import standard modules and append the lalapps prefix to the python path
+import sys, os, copy, math
+import socket, time
+import re, string
+from optparse import *
+import tempfile
+import ConfigParser
+import urlparse
+sys.path.append('@PYTHONLIBDIR@')
+
+##############################################################################
+# import the modules we need to build the pipeline
+from glue import pipeline
+import inspiral
+
+class PlotInspiralJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A plotinspiral job. The static options are read from the section
+  [plotinspiral] in the ini file.  The stdout and stderr from the job
+  are directed to the logs directory.  The path to the executable is
+  determined from the ini file.
+  """
+  def __init__(self,cp,dax=False,tag_base='PLOTINSPIRAL'):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','plotinspiral')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp,False)
+    self.tag_base = tag_base
+    
+    for sec in ['plotinspiral']:
+      self.add_ini_opts(cp,sec)
+
+    self.set_stdout_file('logs/plotinspiral-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/plotinspiral-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_sub_file('plotinspiral.sub')
+
+class PlotInspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  A PlotInspiralNode runs an instance of the plotinspiral code in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of plotinspiral.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.__usertag = job.get_config('pipeline','user-tag')
+
+  def set_user_tag(self,usertag):
+    self.__usertag = usertag
+    self.add_var_opt('user-tag',usertag)
+
+  def get_user_tag(self):
+    return self.__usertag
+
+  def get_output(self):
+    """
+    Returns the file name of output from the inspiral code. This must be kept
+    synchronized with the name of the output file in inspiral.c.
+    """
+    if not self.get_start() or not self.get_end() or not self.get_ifo():
+      raise InspiralError, "Start time, end time or ifo has not been set"
+
+    tag_base = self.job().tag_base
+    basename = self.get_ifo() + '-' + tag_base
+
+    if self.get_ifo_tag():
+      basename += '_' + self.get_ifo_tag()
+    if self.__usertag:
+      basename += '_' + self.__usertag
+
+    filename = basename + '-' + str(self.get_start()) + '-' + \
+      str(self.get_end() - self.get_start()) + '.xml'
+
+    if self.__zip_output:
+      filename += '.gz'
+
+    self.add_output_file(filename)
+
+    return filename
+
+
+##############################################################################
+#
+#  MAIN PROGRAM
+#
+##############################################################################
+usage = """usage: %prog [options] 
+"""
+
+parser = OptionParser( usage )
+
+parser.add_option("-v", "--version",action="store_true",default=False,\
+    help="print version information and exit")
+    
+parser.add_option("-u", "--user-tag",action="store",type="string",\
+    default=None,metavar=" USERTAG",\
+    help="tag the jobs with USERTAG (overrides value in ini file)")
+
+parser.add_option("-g", "--g1-data",action="store_true",default=False,\
+    help="analyze g1 data")
+parser.add_option("-a", "--h1-data",action="store_true",default=False,\
+    help="analyze h1 data")
+parser.add_option("-b", "--h2-data",action="store_true",default=False,\
+    help="analyze h2 data")
+parser.add_option("-l", "--l1-data",action="store_true",default=False,\
+    help="analyze l1 data")
+
+parser.add_option("-S", "--one-ifo",action="store_true",default=False,\
+    help="analyze single ifo data (not usable for GEO)")
+parser.add_option("-D", "--two-ifo",action="store_true",default=False,\
+    help="analyze two interferometer data")
+parser.add_option("-T", "--three-ifo",action="store_true",default=False,\
+    help="analyze three interferometer data")
+parser.add_option("-Q", "--four-ifo",action="store_true",default=False,\
+    help="analyze four intereferometer data")
+  
+parser.add_option("-A", "--analyze-all",action="store_true",default=False,\
+    help="analyze all ifos and all data (over-rides above)")
+
+parser.add_option("-i", "--plotinspiral" ,action="store_true",default=False,\
+    help="run plotinspiral to summarize filtering output")
+
+parser.add_option("-f", "--config-file",action="store",type="string",\
+    metavar=" FILE",help="use configuration file FILE")
+
+parser.add_option("-p", "--log-path",action="store",type="string",\
+    metavar=" PATH",help="directory to write condor log file")
+
+command_line = sys.argv[1:]
+(opts,args) = parser.parse_args()
+
+
+
+#################################
+# if --version flagged
+if opts.version:
+  print "$Id$"
+  sys.exit(0)
+
+#################################
+# Sanity check of input arguments
+if not opts.config_file:
+  print >> sys.stderr, "No configuration file specified."
+  print >> sys.stderr, "Use --config-file FILE to specify location."
+  sys.exit(1)
+
+if not opts.log_path:
+  print >> sys.stderr, "No log file path specified."
+  print >> sys.stderr, "Use --log-path PATH to specify a location."
+  sys.exit(1)
+
+  
+if not opts.g1_data and not opts.h1_data and not opts.h2_data and \
+    not opts.l1_data and not opts.analyze_all:
+  print >> sys.stderr, "No ifos specified.  Please specify at least one of"
+  print >> sys.stderr, "--g1-data, --h1-data, --h2-data, --l1-data"
+  print >> sys.stderr, "or use --analyze-all to analyze all ifos all data"
+  sys.exit(1)
+
+if not opts.one_ifo and not opts.two_ifo and not opts.three_ifo and \
+    not opts.four_ifo and not opts.analyze_all:
+  print >> sys.stderr, "No number of ifos given. Please specify at least one of"
+  print >> sys.stderr, "--one-ifo, --two-ifo, --three-ifo, --four-ifo"
+  print >> sys.stderr, "or use --analyze-all to analyze all ifos all data"
+  sys.exit(1)
+ 
+if not opts.plotinspiral: 
+  print >> sys.stderr, """  No steps of the pipeline specified.
+  Please specify at least one of
+  --plotinspiral"""
+  sys.exit(1)
+   
+ifo_list = ['H1','H2','L1','G1']
+
+ifotag = None
+#################################
+# store the values
+do = {}
+do['G1'] = opts.g1_data
+do['H1'] = opts.h1_data
+do['H2'] = opts.h2_data
+do['L1'] = opts.l1_data
+
+#################################
+# analyze everything if --analyze-all set
+if opts.analyze_all:
+  for ifo in ifo_list:
+    do[ifo] = True
+  opts.one_ifo   = True
+  opts.two_ifo   = True
+  opts.three_ifo = True
+  opts.four_ifo  = True
+
+##############################################################################
+# try to make a directory to store the cache files and job logs
+try: os.mkdir('logs')
+except: pass
+
+##############################################################################
+# create the config parser object and read in the ini file
+cp = ConfigParser.ConfigParser()
+cp.read(opts.config_file)
+
+##############################################################################
+# if a usertag has been specified, override the config file
+if opts.user_tag:
+  usertag = opts.user_tag
+  cp.set('pipeline','user-tag',usertag)
+else:
+  try:
+    usertag = string.strip(cp.get('pipeline','user-tag'))
+  except:
+    usertag = None
+  
+##############################################################################
+# create a log file that the Condor jobs will write to
+basename = re.sub(r'\.ini',r'',opts.config_file)
+tempfile.tempdir = opts.log_path
+if usertag:
+  tempfile.template = basename + '.' + usertag + '.dag.log.'
+else:
+  tempfile.template = basename + '.dag.log.'
+logfile = tempfile.mktemp()
+fh = open( logfile, "w" )
+fh.close()
+
+##############################################################################
+# create the DAG writing the log to the specified directory
+dag = pipeline.CondorDAG(logfile)
+if usertag:
+  dag.set_dag_file(basename + '.' + usertag )
+else:
+  dag.set_dag_file(basename )
+
+# set better submit file names than the default
+if usertag:
+  subsuffix = '.' + usertag + '.sub'
+else:
+  subsuffix = '.sub'
+
+##############################################################################
+# create the Condor jobs that will be used in the DAG
+
+# inspiral:
+plotinspiral_jobs = {}
+
+for ifo in ifo_list:
+  plotinspiral_jobs[ifo] = PlotInspiralJob(cp)
+  plotinspiral_jobs[ifo].set_sub_file( basename + '.inspiral_' + ifo + subsuffix )
+
+all_jobs = []
+all_jobs.extend(plotinspiral_jobs.values())
+
+##############################################################################
+# set the usertag in the jobs
+if usertag:
+  for job in all_jobs:
+    job.add_opt('user-tag',usertag)
+
+##############################################################################
+#  The meat of the DAG generation comes below
+#
+##############################################################################
+
+for ifo in ifo_list:
+  dag.
+
+##############################################################################
+# Step 10: Write out the DAG, help message and log file
+dag.write_sub_files()
+dag.write_dag()
+
+##############################################################################  
+# write a message telling the user that the DAG has been written
+print "\nCreated a DAG file which can be submitted by executing"
+print "\n   condor_submit_dag", dag.get_dag_file()
+print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
+If you are running LSCdataFind jobs, do not forget to initialize your grid 
+proxy certificate on the condor submit machine by running the commands
+
+  unset X509_USER_PROXY
+  grid-proxy-init -hours 72
+
+Enter your pass phrase when promted. The proxy will be valid for 72 hours. 
+If you expect the LSCdataFind jobs to take longer to complete, increase the
+time specified in the -hours option to grid-proxy-init. You can check that 
+the grid proxy has been sucessfully created by executing the command:
+
+  grid-cert-info -all -file /tmp/x509up_u`id -u`
+
+This will also give the expiry time of the proxy. 
+"""
+
+##############################################################################
+# write out a log file for this script
+if usertag:
+  log_fh = open(basename + '.plotter.' + usertag + '.log', 'w')
+else:
+  log_fh = open(basename + '.plotter.log', 'w')
+  
+log_fh.write( "$Id$" + "\n" )
+log_fh.write( "$Name$" + "\n\n" )
+log_fh.write( "Invoked with arguments:" )
+for arg in command_line:
+  if arg[0] == '-':
+    log_fh.write( "\n" )
+  log_fh.write( arg + ' ')
+
+log_fh.write( "\n" )
+log_fh.write( "Config file has CVS strings:\n" )
+#log_fh.write( cp.get('pipeline','version') + "\n" )
+#log_fh.write( cp.get('pipeline','cvs-tag') + "\n\n" )
+
+log_fh.close()
+
+sys.exit(0)
+
