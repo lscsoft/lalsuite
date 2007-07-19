@@ -1151,13 +1151,13 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     return self.__injection_file
 
-  def set_ifotag( self, ifotag):
+  def set_ifo_tag( self, ifotag):
     """
     Set the ifotag
     """
     self.__ifotag = ifotag
 
-  def get_ifotag( self ):
+  def get_ifo_tag( self ):
     """
     get the ifotag
     """
@@ -1302,13 +1302,13 @@ class CoireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     return self.__num_slides
 
-  def set_ifotag( self, ifotag):
+  def set_ifo_tag( self, ifotag):
     """
     Set the ifotag
     """
     self.__ifotag = ifotag
 
-  def get_ifotag( self ):
+  def get_ifo_tag( self ):
     """
     get the ifotag
     """

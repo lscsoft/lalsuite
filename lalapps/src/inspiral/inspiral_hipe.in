@@ -660,7 +660,7 @@ def sire_segs(segments, sire_job, dag, do_input, ifo, GPSstart=None, \
     sire.set_inj_file(inj_file)
   if GPSstart: sire.set_start(GPSstart)
   if GPSend: sire.set_end(GPSend)
-  if ifotag: sire.set_ifotag(ifotag)
+  if ifotag: sire.set_ifo_tag(ifotag)
   if usertag: sire.set_user_tag(usertag)
  
   # set up the input file
@@ -707,7 +707,7 @@ def coire_segs(segments, coire_job, dag, do_input, ifos, GPSstart=None, \
     coire.set_inj_file(inj_file)
   if GPSstart: coire.set_start(GPSstart)
   if GPSend: coire.set_end(GPSend)
-  if ifotag: coire.set_ifotag(ifotag)
+  if ifotag: coire.set_ifo_tag(ifotag)
   if num_slides: coire.set_slides(num_slides)
   if usertag: coire.set_user_tag(usertag)
  
@@ -1787,6 +1787,11 @@ if gps_start_time is not None and gps_end_time is not None:
 
     if isinstance(node,inspiral.CoireNode):
       the_cache = output_data_cache
+    elif isinstance(node,inspiral.SireNode):
+      if node.get_ifo() == node.get_ifo_tag():
+        the_cache = output_data_cache
+      else:
+        the_cache = intermediate_data_cache
     else:
       the_cache = intermediate_data_cache
 
