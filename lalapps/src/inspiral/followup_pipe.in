@@ -53,9 +53,9 @@ lsctables.SimInspiralTable.loadcolumns = ["waveform","geocent_end_time",
     "spin1x","spin1y","spin1z","spin2x","spin2y","spin2z","eff_dist_h",
     "eff_dist_l","eff_dist_g","eff_dist_t","eff_dist_v"]
 
-lsctables.SnglInspiralTable.loadcolumns = ["ifo","end_time","end_time_ns",
-    "eff_distance","mass1","mass2","mchirp","eta","snr","chisq","chisq_dof",
-    "sigmasq","event_id"]
+#lsctables.SnglInspiralTable.loadcolumns = ["ifo","end_time","end_time_ns",
+#    "eff_distance","mass1","mass2","mchirp","eta","snr","chisq","chisq_dof",
+#    "sigmasq","event_id"]
 
 ################ TRIG BANK FROM SIRE FILE CONDOR DAG JOB ######################
 
@@ -329,7 +329,6 @@ class convertCacheNode(pipeline.CondorDAGNode):
     framecache = 'datafind_cache/' + ifo[0:1] + '-' + type + '-' + str(start) + '-' + str(end) + '.cache'
     self.add_var_arg(framecache)
 
-
 ##############################################################################
 # qscan class for qscan jobs
 
@@ -492,7 +491,7 @@ parser.add_option("-d", "--data-quality",action="store_true",default=False,\
     help="do data quality lookup - CURRENTLY BROKEN, DO NOT USE IT")
 
 parser.add_option("-t", "--trig-bank",action="store_true",default=False,\
-    help="do trigbanks for single triggers")
+    help="generate a pseudo trigbank xml file for single triggers")
 
 parser.add_option("-i", "--inspiral",action="store_true",default=False,\
     help="do inspirals for single triggers - output SNR/CHISQ/PSD")
@@ -529,8 +528,8 @@ if not opts.log_path and not opts.write_to_iulgroup:
   sys.exit(1)
 
 if not opts.write_to_iulgroup and not opts.generate_cache and \
-  not opts.datafind and not opts.qscan and not opts.trig_bank and \
-  not opts.inspiral and not opts.plots:
+  not opts.datafind and not opts.convertlalcache and not opts.qscan \
+  and not opts.trig_bank and not opts.inspiral and not opts.plots:
   print >> sys.stderr, "No steps of the pipeline specified."
   print >> sys.stderr, "Please specify at least one of"
   print >> sys.stderr, "--generate-cache, --trig-bank, --inspiral, --plots,"
@@ -604,7 +603,10 @@ blb =  string.strip(cp.get('triggers','bitten-l-b'))
 
 found, coincs, search = readFiles(xml_glob,getstatistic(statistic,bla,blb))
 missed = None
-followuptrigs = getfollowuptrigs(numtrigs,page,coincs,missed,search)
+
+if opts.trig_bank: trigbank_test = 1
+else: trigbank_test = 0  
+followuptrigs = getfollowuptrigs(numtrigs,page,coincs,missed,search,trigbank_test)
 
 print "\n.......Found " + str(len(followuptrigs)) + " trigs to follow up" 
 
@@ -663,7 +665,7 @@ print "\n.......Found " + str(len(followuptrigs)) + " trigs to follow up"
 
 
 ############ SET UP THE REQUESTED JOBS ########################################
-trigJob    = trigBankFollowUpJob(opts,cp)
+# trigJob    = trigBankFollowUpJob(opts,cp)
 inspJob    = inspiralFollowUpJob(opts,cp)
 plotJob    = plotSNRCHISQJob(opts,cp)
 dataJob    = dataFindJob(opts,cp)
@@ -671,7 +673,7 @@ cvcacheJob = convertCacheJob(opts,cp)
 qscanJob   = qscanJob(opts,cp)
 segJob     = segJob(opts,cp)
 
-trigJobCnt    = 0
+# trigJobCnt    = 0
 inspJobCnt    = 0
 plotJobCnt    = 0
 dataJobCnt    = 0
@@ -795,50 +797,52 @@ for trig in followuptrigs:
 
 
     # TRY GETTING THE TRIG BANK PROCESS PARAMS
-    if trig.gpsTime[ifo]:
+#    if trig.gpsTime[ifo]:
       # TRY TO FIND THE --BANK-FILE ARGUMENT IN THE INSPIRAL PROCESS PARAMS TABLE
-      trigBankFile = 0
-      try:
-        for row in inspiral_process_params[ifo]:
-          if row.param[2:] == 'bank-file':
-            trigBankFile = row.value
-            break
-      except:
-        print "could not find the --bank-file argument in the inspiral process params table for " + str(ifo) + "@"+ str(trig.gpsTime[ifo])
+#      trigBankFile = 0
+#      try:
+#        for row in inspiral_process_params[ifo]:
+#          if row.param[2:] == 'bank-file':
+#            trigBankFile = row.value
+#            break
+#      except:
+#        print "could not find the --bank-file argument in the inspiral process params table for " + str(ifo) + "@"+ str(trig.gpsTime[ifo])
       # THEN GET THE TRIG BANK PROCESS PARAMS
-      if trigBankFile:
-        try: 
-          trig_process_params_ifo = cache.getProcessParamsFromMatchingFileInCache(trigBankFile,'trigbank.cache')
-          foundTrigBankTable = 1
-        except:
-          print "couldn't get trigbank process params for " + str(trig.eventID)
-          foundTrigBankTable = 0
-      else:
-        print "couldn't get trigbank process params for " + str(trig.eventID)
-        foundTrigBankTable = 0
-        print "passed in the else loop"
+#      if trigBankFile:
+#        try: 
+#          trig_process_params_ifo = cache.getProcessParamsFromMatchingFileInCache(trigBankFile,'trigbank.cache')
+#          foundTrigBankTable = 1
+#        except:
+#          print "couldn't get trigbank process params for " + str(trig.eventID)
+#          foundTrigBankTable = 0
+#      else:
+#        print "couldn't get trigbank process params for " + str(trig.eventID)
+#        foundTrigBankTable = 0
+#        print "passed in the else loop"
  
     # SETUP TRIGBANK JOBS
-    if trig.gpsTime[ifo] and foundTrigBankTable:
-      try:
+#    if trig.gpsTime[ifo] and foundTrigBankTable:
+#      try:
         # trigNode = trigBankFollowUpNode(trigJob,trig.gpsTime[ifo],inspiral_process_params[ifo],opts,xml_glob)
-        trigNode = trigBankFollowUpNode(trigJob,trig.gpsTime[ifo],trig_process_params_ifo,opts,xml_glob)
-        if opts.trig_bank:
-          dag.add_node(trigNode)
-          trigJobCnt+=1
-      except:
-        trigNode = 0
-        print "couldn't add trigbank job for " + ifo + "@ "+ str(trig.gpsTime[ifo])
-    else:
-      trigNode = 0
+#        trigNode = trigBankFollowUpNode(trigJob,trig.gpsTime[ifo],trig_process_params_ifo,opts,xml_glob)
+#        if opts.trig_bank:
+#          dag.add_node(trigNode)
+#          trigJobCnt+=1
+#      except:
+#        trigNode = 0
+#        print "couldn't add trigbank job for " + ifo + "@ "+ str(trig.gpsTime[ifo])
+#    else:
+#      trigNode = 0
 
     # SETUP INSPIRAL JOBS
-    if trig.gpsTime[ifo] and trigNode:
+    if trig.gpsTime[ifo]:
+      # build the string of the relevant trigbank file name
+      trigbank_file_name = ifo + '-TRIGBANK_FOLLOWUP_' + str(trig.gpsTime[ifo]) + '.xml'
       try:
         inspiralNode = inspiralFollowUpNode(inspJob,trig.gpsTime[ifo],\
-           inspiral_process_params[ifo],opts,trigNode.output_file_name)
-        if trigNode and opts.trig_bank: # only add a parent if it exists
-          inspiralNode.add_parent(trigNode)
+           inspiral_process_params[ifo],opts,trigbank_file_name)
+        #if trigNode and opts.trig_bank: # only add a parent if it exists
+        #  inspiralNode.add_parent(trigNode)
         if opts.inspiral:
           dag.add_node(inspiralNode)
           inspJobCnt+=1
@@ -871,7 +875,7 @@ for trig in followuptrigs:
   summaryHTMLlist.append(summaryHTML)
     
 
-print "\nFound " +  str(trigJobCnt)    + " trig bank jobs" 
+#print "\nFound " +  str(trigJobCnt)    + " trig bank jobs" 
 print "\nFound " +  str(inspJobCnt)    + " inspiral Jobs" 
 print "\nFound " +  str(plotJobCnt)    + " plot jobs"
 print "\nFound " +  str(dataJobCnt)    + " datafind jobs"
