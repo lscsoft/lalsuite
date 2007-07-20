@@ -744,9 +744,9 @@ for trig in followuptrigs:
       if trig.gpsTime[ifo]:
       
         # 1s is substracted to the expected startTime to make sure the window will be large enough. This is to be sure to handle the rouding to the next sample done by qscan.
-        df_start_time = int( trig.gpsTime[ifo] - eval(string.strip(cp.get('datafind','qscan-searchTimeRange')))/2 ) - 1
-        df_end_time = int( trig.gpsTime[ifo] + eval(string.strip(cp.get('datafind','qscan-searchTimeRange')))/2 ) + 1
-        df_type = string.strip(cp.get('datafind','qscan-level'))
+        df_start_time = int( trig.gpsTime[ifo] - eval(string.strip(cp.get('q-datafind','search-time-range')))/2 ) - 1
+        df_end_time = int( trig.gpsTime[ifo] + eval(string.strip(cp.get('q-datafind','search-time-range')))/2 ) + 1
+        df_type = string.strip(cp.get('q-datafind','type'))
       
         try:
           dNode = dataFindNode(dataJob,df_start_time,df_end_time,df_type,ifo)
