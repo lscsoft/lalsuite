@@ -210,6 +210,13 @@ if opts.analyze_all:
   opts.three_ifo = True
   opts.four_ifo  = True
 
+################################
+# a list of the ifos to do plots for
+ifos = []
+for ifo in ifo_list:
+  if do[ifo]:
+    ifos.append(ifo)
+
 ##############################################################################
 # try to make a directory to store the cache files and job logs
 try: os.mkdir('logs')
@@ -281,7 +288,7 @@ if usertag:
 #
 ##############################################################################
 
-for ifo in ifo_list:
+for ifo in ifos:
   # add an plotinspiral job
   plotinspiral_node=PlotInspiralNode(plotinspiral_jobs[ifo])
   dag.add_node(plotinspiral_node)
