@@ -151,6 +151,8 @@ parser.add_option("-K","--h2-segments",action="store",type="string",\
   default=None, metavar=" H2_SEGMENTS", help="H2 input segment to read" )
 parser.add_option("-L","--l1-segments",action="store",type="string",\
   default=None, metavar=" L1_SEGMENTS", help="L1 input segment to read" )
+parser.add_option("-Z","--v1-segments",action="store",type="string",\
+  default=None, metavar=" V1_SEGMENTS", help="V1 input segment to read" )
 parser.add_option("-m","--start-time",action="store",type="int",\
     default=None, metavar=" START TIME",\
     help="start time of search")
@@ -186,6 +188,8 @@ parser.add_option("-b", "--h2-data",action="store_true",default=False,\
     help="analyze h2 data")
 parser.add_option("-l", "--l1-data",action="store_true",default=False,\
     help="analyze l1 data")
+parser.add_option("-X", "--v1-data",action="store_true",default=False,\
+    help="analyze v1 data")
 
 parser.add_option("-S", "--one-ifo",action="store_true",default=False,\
     help="analyze single ifo data (not usable for GEO)")
@@ -304,10 +308,15 @@ if opts.l1_segments:
   tmplist = segmentsUtils.fromsegwizard(file(opts.l1_segments))
   segdict["L1"] = cleanlist(tmplist, minsciseg)
   ifolist.append("L1")
+
+if opts.v1_segments:
+  tmplist = segmentsUtils.fromsegwizard(file(opts.v1_segments))
+  segdict["V1"] = cleanlist(tmplist, minsciseg)
+  ifolist.append("V1")
 ################################################################################
 # Setting the options for lalapps_inspiral_hipe 
 ################################################################################
-multi_hipe_options = ["verbose", "h1_segments", "h2_segments", "l1_segments", "start_time", "end_time", "interval", "ninjections", "multi_hipe_config_file", "plot_segments"]
+multi_hipe_options = ["verbose", "h1_segments", "h2_segments", "l1_segments", "v1_segments", "start_time", "end_time", "interval", "ninjections", "multi_hipe_config_file", "plot_segments"]
 
 
 hipe_arguments_tmp=" ".join("--%s %s" % (name.replace("_","-"), value) for name, value in opts.__dict__.items() if value is not None and value is not False and name not in multi_hipe_options)
@@ -414,6 +423,7 @@ for interval in search_epochs:
   cp.set('input','h1-segments',"../H1_selectedsegs.txt")
   cp.set('input','h2-segments',"../H2_selectedsegs.txt")
   cp.set('input','l1-segments',"../L1_selectedsegs.txt")
+  cp.set('input','v1-segments',"../V1_selectedsegs.txt")
   cp.set('input','num-slides',numslides)
   cp.set('input','injection-file','')
   analysisdir = idirectory+"/analysis"

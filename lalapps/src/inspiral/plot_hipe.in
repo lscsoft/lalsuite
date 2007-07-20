@@ -265,7 +265,7 @@ plotinspiral_jobs = {}
 
 for ifo in ifo_list:
   plotinspiral_jobs[ifo] = PlotInspiralJob(cp)
-  plotinspiral_jobs[ifo].set_sub_file( basename + '.inspiral_' + ifo + subsuffix )
+  plotinspiral_jobs[ifo].set_sub_file( basename + '.plotinspiral_' + ifo + subsuffix )
 
 all_jobs = []
 all_jobs.extend(plotinspiral_jobs.values())
