@@ -118,6 +118,7 @@ extern void gzclearerr (gzFile file);
 
 /* use boinc_fopen() instead of fopen() for Einstein@Home/BOINC */
 #ifdef EAH_BOINC
+extern FILE* boinc_fopen(const char* path, const char* mode);
 #define fopen boinc_fopen
 #endif
 
