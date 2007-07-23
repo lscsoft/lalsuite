@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2005 Badri Krishnan, Alicia Sintes  
+ *  Copyright (C) 2005 Badri Krishnan, Alicia Sintes, Bernd Machenschalk
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -259,8 +259,16 @@ void LALHOUGHAddPHMD2HD (LALStatus      *status, /**< the status pointer */
     xPixel =  &( (*borderP).xPixel[0] );
 
    
-    if (yLower<0) yLower=0;
-    if (yUpper >=ySide) yUpper=ySide-1;
+    if (yLower < 0) {
+      fprintf(stderr,"WARNING: Fixing yLower (%d -> 0) [HoughMap.c %d]\n",
+	      yLower, __LINE__);
+      yLower = 0;
+    }
+    if (yUpper >= ySide) {
+      fprintf(stderr,"WARNING: Fixing yUpper (%d -> %d) [HoughMap.c %d]\n",
+	      yUpper, ySide-1, __LINE__);
+      yUpper = ySide - 1;
+    }
 
     for(j=yLower; j<=yUpper;++j){
       hd->map[j *(xSide+1) + xPixel[j] ] += 1;
@@ -281,8 +289,16 @@ void LALHOUGHAddPHMD2HD (LALStatus      *status, /**< the status pointer */
     xPixel =  &( (*borderP).xPixel[0] );
 
    
-    if (yLower<0) yLower=0;
-    if (yUpper >=ySide) yUpper=ySide-1;
+    if (yLower < 0) {
+      fprintf(stderr,"WARNING: Fixing yLower (%d -> 0) [HoughMap.c %d]\n",
+	      yLower, __LINE__);
+      yLower = 0;
+    }
+    if (yUpper >= ySide) {
+      fprintf(stderr,"WARNING: Fixing yUpper (%d -> %d) [HoughMap.c %d]\n",
+	      yUpper, ySide-1, __LINE__);
+      yUpper = ySide - 1;
+    }
 
     for(j=yLower; j<=yUpper;++j){
       hd->map[j*(xSide+1) + xPixel[j] ] -= 1;
@@ -355,11 +371,13 @@ void LALHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
     xPixel =  &( (*borderP).xPixel[0] );
    
     if (yLower < 0) {
-      fprintf(stderr,"WARNING: Fixing left yLower (%d -> 0)\n", yLower);
+      fprintf(stderr,"WARNING: Fixing yLower (%d -> 0) [HoughMap.c %d]\n",
+	      yLower, __LINE__);
       yLower = 0;
     }
     if (yUpper >= ySide) {
-      fprintf(stderr,"WARNING: Fixing left yUpper (%d -> %d)\n", yUpper, ySide-1);
+      fprintf(stderr,"WARNING: Fixing yUpper (%d -> %d) [HoughMap.c %d]\n",
+	      yUpper, ySide-1, __LINE__);
       yUpper = ySide - 1;
     }
 
@@ -387,13 +405,15 @@ void LALHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
     yUpper = (*borderP).yUpper;
     xPixel =  &( (*borderP).xPixel[0] );
    
-    if (yLower<0) {
-      fprintf(stderr,"WARNING: Fixing right yLower (%d -> 0)\n", yLower);
-      yLower=0;
+    if (yLower < 0) {
+      fprintf(stderr,"WARNING: Fixing yLower (%d -> 0) [HoughMap.c %d]\n",
+	      yLower, __LINE__);
+      yLower = 0;
     }
-    if (yUpper >=ySide) {
-      fprintf(stderr,"WARNING: Fixing right yUpper (%d -> %d)\n", yUpper, ySide-1);
-      yUpper=ySide-1;
+    if (yUpper >= ySide) {
+      fprintf(stderr,"WARNING: Fixing yUpper (%d -> %d) [HoughMap.c %d]\n",
+	      yUpper, ySide-1, __LINE__);
+      yUpper = ySide - 1;
     }
 
     for(j=yLower; j<=yUpper;++j){

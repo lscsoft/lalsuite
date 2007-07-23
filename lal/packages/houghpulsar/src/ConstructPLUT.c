@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2005 Badri Krishnan, Alicia Sintes  
+e *  Copyright (C) 2005 Badri Krishnan, Alicia Sintes, Bernd Machenschalk
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -798,9 +798,17 @@ static void InitialLineCase(INT4  *lastBorderP, REAL8 alpha, REAL8  delta,
   }
   ++lastBorder;
 
-  if (yymin <0) yymin=0;
-  if (yymax >= patch->ySide) yymax = patch->ySide -1;
-  
+  if (yymin < 0) {
+    fprintf(stderr,"WARNING: Fixing yymin (%d -> 0) [ConstructPLUT.c %d]\n",
+	    yymin, __LINE__);
+    yymin = 0;
+  }
+  if (yymax >= patch->ySide) {
+    fprintf(stderr,"WARNING: Fixing yymax (%d -> %d) [ConstructPLUT.c %d]\n",
+	    yymax, patch->ySide-1, __LINE__);
+    yymax = patch->ySide - 1;
+  }
+
   lut->border[lastBorder].yUpper = yymax;
   lut->border[lastBorder].yLower = yymin;
 
@@ -908,9 +916,16 @@ static void SecondLineCase(INT4 currentBin, INT4  *lastBorderP,
   }
   ++lastBorder;
   
-  if (yymin <0) yymin=0;
-  if (yymax >= patch->ySide) yymax = patch->ySide -1;
- 
+  if (yymin < 0) {
+    fprintf(stderr,"WARNING: Fixing yymin (%d -> 0) [ConstructPLUT.c %d]\n",
+	    yymin, __LINE__);
+    yymin = 0;
+  }
+  if (yymax >= patch->ySide) {
+    fprintf(stderr,"WARNING: Fixing yymax (%d -> %d) [ConstructPLUT.c %d]\n",
+	    yymax, patch->ySide-1, __LINE__);
+    yymax = patch->ySide - 1;
+  }
 
   lut->border[lastBorder].yUpper = yymax;
   lut->border[lastBorder].yLower = yymin;
@@ -1020,9 +1035,17 @@ static void FollowLineCase(INT4 currentBin, INT4  *lastBorderP,
   }
   ++lastBorder;
 
-  if (yymin <0) yymin=0;
-  if (yymax >= patch->ySide) yymax = patch->ySide -1;
- 
+  if (yymin < 0) {
+    fprintf(stderr,"WARNING: Fixing yymin (%d -> 0) [ConstructPLUT.c %d]\n",
+	    yymin, __LINE__);
+    yymin = 0;
+  }
+  if (yymax >= patch->ySide) {
+    fprintf(stderr,"WARNING: Fixing yymax (%d -> %d) [ConstructPLUT.c %d]\n",
+	    yymax, patch->ySide-1, __LINE__);
+    yymax = patch->ySide - 1;
+  }
+
   lut->border[lastBorder].yUpper = yymax;
   lut->border[lastBorder].yLower = yymin;
 
@@ -1367,8 +1390,17 @@ static void DrawLine(REAL8 alpha, REAL8 xA, REAL8 yA,
    kkk =  xA/patch->deltaX-0.5;
    kkk += patch->xSide*0.5;
    xpixel = ceil(kkk);
-   if (xpixel <0) xpixel=0;
-   if (xpixel > patch->xSide) xpixel = patch->xSide;
+
+   if (xpixel < 0) {
+     fprintf(stderr,"WARNING: Fixing xpixel (%d -> 0) [ConstructPLUT.c %d]\n",
+	     xpixel, __LINE__);
+     xpixel = 0;
+   }
+   if (xpixel > patch->xSide) {
+     fprintf(stderr,"WARNING: Fixing xpixel (%d -> %d) [ConstructPLUT.c %d]\n",
+	     xpixel, patch->xSide, __LINE__);
+     xpixel = patch->xSide;
+   }
    
    for(jj=yymin;jj<=yymax;++jj){
      column[jj] = xpixel;
@@ -1389,8 +1421,17 @@ static void DrawLine(REAL8 alpha, REAL8 xA, REAL8 yA,
      kkk += patch->xSide*0.5;
      xpixel = ceil(kkk);
      
-       if (xpixel <0) xpixel=0;
-       if (xpixel > patch->xSide) xpixel = patch->xSide;
+     if (xpixel < 0) {
+       fprintf(stderr,"WARNING: Fixing xpixel (%d -> 0) [ConstructPLUT.c %d]\n",
+	       xpixel, __LINE__);
+       xpixel = 0;
+     }
+     if (xpixel > patch->xSide) {
+       fprintf(stderr,"WARNING: Fixing xpixel (%d -> %d) [ConstructPLUT.c %d]\n",
+	       xpixel, patch->xSide, __LINE__);
+       xpixel = patch->xSide;
+     }
+     
      column[jj] = xpixel; 
    }
  }
@@ -1478,9 +1519,17 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
 	++pieces;
 	++lastBorder;
 
-       if (yymin <0) yymin=0;
-       if (yymax >= patch->ySide) yymax = patch->ySide -1;
- 
+	if (yymin < 0) {
+	  fprintf(stderr,"WARNING: Fixing yymin (%d -> 0) [ConstructPLUT.c %d]\n",
+		  yymin, __LINE__);
+	  yymin = 0;
+	}
+	if (yymax >= patch->ySide) {
+	  fprintf(stderr,"WARNING: Fixing yymax (%d -> %d) [ConstructPLUT.c %d]\n",
+		  yymax, patch->ySide-1, __LINE__);
+	  yymax = patch->ySide - 1;
+	}
+
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
@@ -1504,9 +1553,17 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
 	++pieces;
 	++lastBorder;
 
-        if (yymin <0) yymin=0;
-        if (yymax >= patch->ySide) yymax = patch->ySide -1;
- 
+	if (yymin < 0) {
+	  fprintf(stderr,"WARNING: Fixing yymin (%d -> 0) [ConstructPLUT.c %d]\n",
+		  yymin, __LINE__);
+	  yymin = 0;
+	}
+	if (yymax >= patch->ySide) {
+	  fprintf(stderr,"WARNING: Fixing yymax (%d -> %d) [ConstructPLUT.c %d]\n",
+		  yymax, patch->ySide-1, __LINE__);
+	  yymax = patch->ySide - 1;
+	}
+
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
@@ -1544,9 +1601,17 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
 	++pieces;
 	++lastBorder;
 
-        if (yymin <0) yymin=0;
-        if (yymax >= patch->ySide) yymax = patch->ySide -1;
- 
+	if (yymin < 0) {
+	  fprintf(stderr,"WARNING: Fixing yymin (%d -> 0) [ConstructPLUT.c %d]\n",
+		  yymin, __LINE__);
+	  yymin = 0;
+	}
+	if (yymax >= patch->ySide) {
+	  fprintf(stderr,"WARNING: Fixing yymax (%d -> %d) [ConstructPLUT.c %d]\n",
+		  yymax, patch->ySide-1, __LINE__);
+	  yymax = patch->ySide - 1;
+	}
+
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
@@ -1571,9 +1636,17 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
 	++pieces;
 	++lastBorder;
 
-        if (yymin <0) yymin=0;
-        if (yymax >= patch->ySide) yymax = patch->ySide -1;
- 
+	if (yymin < 0) {
+	  fprintf(stderr,"WARNING: Fixing yymin (%d -> 0) [ConstructPLUT.c %d]\n",
+		  yymin, __LINE__);
+	  yymin = 0;
+	}
+	if (yymax >= patch->ySide) {
+	  fprintf(stderr,"WARNING: Fixing yymax (%d -> %d) [ConstructPLUT.c %d]\n",
+		  yymax, patch->ySide-1, __LINE__);
+	  yymax = patch->ySide - 1;
+	}
+
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
@@ -1688,9 +1761,17 @@ static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
 	++pieces;
 	++lastBorder;
 
-	 if (yymin <0) yymin=0;
-         if (yymax >= patch->ySide) yymax = patch->ySide -1;
- 
+	if (yymin < 0) {
+	  fprintf(stderr,"WARNING: Fixing yymin (%d -> 0) [ConstructPLUT.c %d]\n",
+		  yymin, __LINE__);
+	  yymin = 0;
+	}
+	if (yymax >= patch->ySide) {
+	  fprintf(stderr,"WARNING: Fixing yymax (%d -> %d) [ConstructPLUT.c %d]\n",
+		  yymax, patch->ySide-1, __LINE__);
+	  yymax = patch->ySide - 1;
+	}
+
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
@@ -1718,9 +1799,17 @@ static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
 	++pieces;
 	++lastBorder;
 
-	 if (yymin <0) yymin=0;
-         if (yymax >= patch->ySide) yymax = patch->ySide -1;
- 
+	if (yymin < 0) {
+	  fprintf(stderr,"WARNING: Fixing yymin (%d -> 0) [ConstructPLUT.c %d]\n",
+		  yymin, __LINE__);
+	  yymin = 0;
+	}
+	if (yymax >= patch->ySide) {
+	  fprintf(stderr,"WARNING: Fixing yymax (%d -> %d) [ConstructPLUT.c %d]\n",
+		  yymax, patch->ySide-1, __LINE__);
+	  yymax = patch->ySide - 1;
+	}
+
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
@@ -1762,9 +1851,17 @@ static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
 	++pieces;
 	++lastBorder;
 
-	 if (yymin <0) yymin=0;
-         if (yymax >= patch->ySide) yymax = patch->ySide -1;
- 
+	if (yymin < 0) {
+	  fprintf(stderr,"WARNING: Fixing yymin (%d -> 0) [ConstructPLUT.c %d]\n",
+		  yymin, __LINE__);
+	  yymin = 0;
+	}
+	if (yymax >= patch->ySide) {
+	  fprintf(stderr,"WARNING: Fixing yymax (%d -> %d) [ConstructPLUT.c %d]\n",
+		  yymax, patch->ySide-1, __LINE__);
+	  yymax = patch->ySide - 1;
+	}
+
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
@@ -1789,8 +1886,16 @@ static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
 	++pieces;
 	++lastBorder;
 
-	 if (yymin <0) yymin=0;
-         if (yymax >= patch->ySide) yymax = patch->ySide -1;
+	if (yymin < 0) {
+	  fprintf(stderr,"WARNING: Fixing yymin (%d -> 0) [ConstructPLUT.c %d]\n",
+		  yymin, __LINE__);
+	  yymin = 0;
+	}
+	if (yymax >= patch->ySide) {
+	  fprintf(stderr,"WARNING: Fixing yymax (%d -> %d) [ConstructPLUT.c %d]\n",
+		  yymax, patch->ySide-1, __LINE__);
+	  yymax = patch->ySide - 1;
+	}
  
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
@@ -1901,8 +2006,16 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
 	++pieces;
 	++lastBorder;
 	
-	 if (yymin <0) yymin=0;
-         if (yymax >= patch->ySide) yymax = patch->ySide -1;
+	if (yymin < 0) {
+	  fprintf(stderr,"WARNING: Fixing yymin (%d -> 0) [ConstructPLUT.c %d]\n",
+		  yymin, __LINE__);
+	  yymin = 0;
+	}
+	if (yymax >= patch->ySide) {
+	  fprintf(stderr,"WARNING: Fixing yymax (%d -> %d) [ConstructPLUT.c %d]\n",
+		  yymax, patch->ySide-1, __LINE__);
+	  yymax = patch->ySide - 1;
+	}
 
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
@@ -1927,8 +2040,16 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
 	++pieces;
 	++lastBorder;
 
-	 if (yymin <0) yymin=0;
-         if (yymax >= patch->ySide) yymax = patch->ySide -1;
+	if (yymin < 0) {
+	  fprintf(stderr,"WARNING: Fixing yymin (%d -> 0) [ConstructPLUT.c %d]\n",
+		  yymin, __LINE__);
+	  yymin = 0;
+	}
+	if (yymax >= patch->ySide) {
+	  fprintf(stderr,"WARNING: Fixing yymax (%d -> %d) [ConstructPLUT.c %d]\n",
+		  yymax, patch->ySide-1, __LINE__);
+	  yymax = patch->ySide - 1;
+	}
  
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
@@ -1975,9 +2096,17 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
 	++pieces;
 	++lastBorder;
 
-	 if (yymin <0) yymin=0;
-         if (yymax >= patch->ySide) yymax = patch->ySide -1;
- 
+	if (yymin < 0) {
+	  fprintf(stderr,"WARNING: Fixing yymin (%d -> 0) [ConstructPLUT.c %d]\n",
+		  yymin, __LINE__);
+	  yymin = 0;
+	}
+	if (yymax >= patch->ySide) {
+	  fprintf(stderr,"WARNING: Fixing yymax (%d -> %d) [ConstructPLUT.c %d]\n",
+		  yymax, patch->ySide-1, __LINE__);
+	  yymax = patch->ySide - 1;
+	}
+
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
@@ -2006,8 +2135,16 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
 	++pieces;
 	++lastBorder;
 
-	 if (yymin <0) yymin=0;
-         if (yymax >= patch->ySide) yymax = patch->ySide -1;
+	if (yymin < 0) {
+	  fprintf(stderr,"WARNING: Fixing yymin (%d -> 0) [ConstructPLUT.c %d]\n",
+		  yymin, __LINE__);
+	  yymin = 0;
+	}
+	if (yymax >= patch->ySide) {
+	  fprintf(stderr,"WARNING: Fixing yymax (%d -> %d) [ConstructPLUT.c %d]\n",
+		  yymax, patch->ySide-1, __LINE__);
+	  yymax = patch->ySide - 1;
+	}
  
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
