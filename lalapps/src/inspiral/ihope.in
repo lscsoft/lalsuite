@@ -217,7 +217,7 @@ def hipe_setup(hipeDir, config, injFile=None, dfOnly = False):
     os.symlink("../datafind/cache", "cache")
 
   # add job to dag
-  hipeJob = pipeline.CondorDAGManJob(iniFile.rstrip("ini") + "dag")
+  hipeJob = pipeline.CondorDAGManJob(hipeDir +"/"+ iniFile.rstrip("ini") + "dag")
   hipeNode = pipeline.CondorDAGNode(hipeJob)
 
   # add postscript to deal with rescue dag
