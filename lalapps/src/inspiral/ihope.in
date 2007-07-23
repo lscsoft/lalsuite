@@ -64,15 +64,15 @@ def mkdir( newdir ):
                   "dir, '%s', already exists." % newdir)
   else: os.mkdir(newdir)
  
-def link_executables(directory):
+def link_executables(directory, config):
   """
   link executables to given directory
   """
-  for (job, executable) in cp.items("condor"):
+  for (job, executable) in config.items("condor"):
     if job != "universe":
       if executable[0] != "/": 
         executable = "../../" + executable
-      cp.set("condor", job, executable)
+      config.set("condor", job, executable)
 
 ##############################################################################
 # Function to set up the segments for the analysis
@@ -154,36 +154,26 @@ def hipe_setup(hipeDir, config, injFile=None, dfOnly = False):
 
   # make the directory for running hipe
   mkdir(hipeDir)
-  os.chdir("..")
-
-  # link the executables 
-  link_executables(hipeDir)
 
   # create the hipe config parser, keep only relevant info
-  hipecp = copy.deepcopy(cp)
+  hipecp = copy.deepcopy(config)
   hipeSections = ['condor', 'pipeline', 'input', 'calibration', 'datafind',\
-      'ligo-data', 'geo-data', 'tmpltbank', 'tmpltbank-1', 'tmpltbank-2', \
-      'no-veto-inspiral', 'veto-inspiral', 'inspiral', 'h1-inspiral', \
-      'h2-inspiral', 'l1-inspiral', 'g1-inspiral', 'inspinj', 'thinca', \
-      'thinca-1', 'thinca-2', 'thinca-slide', 'trigtotmplt', 'sire', \
+      'ligo-data', 'geo-data', 'data', 'tmpltbank', 'tmpltbank-1', \
+      'tmpltbank-2', 'no-veto-inspiral', 'veto-inspiral', 'inspiral', \
+      'h1-inspiral', 'h2-inspiral', 'l1-inspiral', 'g1-inspiral', 'inspinj', \
+      'thinca', 'thinca-1', 'thinca-2', 'thinca-slide', 'trigtotmplt', 'sire', \
       'sire-inj', 'coire', 'coire-inj', 'cohbank', 'coh-trig', 'chia']
 
-  for seg in cp.sections():
-    if not seg in hipeSections: cp.remove_section(seg)
+  for seg in hipecp.sections():
+    if not seg in hipeSections: hipecp.remove_section(seg)
 
   hipecp.remove_option("condor","hipe")
   hipecp.remove_option("condor","follow")
 
   if injFile:
-    # link the injection file
-    if injFile[0] != "/": injFile = "../../" + injFile
-    inj_link = analysisDirectory + "/" + hipeDir + "/" + \
-          injFile.split("/")[-1]
-    if not os.path.isfile(inj_link):
-      os.symlink(injFile, inj_link)
-
     # add the options to the ini file
-    hipecp.set("input", "injection-file", injFile.split("/")[-1] )
+    if injFile[0] != "/": injFile = "../../" + injFile
+    hipecp.set("input", "injection-file", injFile )
     hipecp.set("input", "num-slides", "")
 
   else: 
@@ -191,8 +181,11 @@ def hipe_setup(hipeDir, config, injFile=None, dfOnly = False):
     hipecp.set("input","num-slides", config.get("input","num-slides") )
     hipecp.set("input", "injection-file", "" )
 
+  # link the executables 
+  link_executables(hipeDir, hipecp)
+
   # return to the directory, write ini file and run hipe
-  os.chdir(analysisDirectory + "/" + hipeDir)
+  os.chdir(hipeDir)
   iniFile = "inspiral_hipe_" + hipeDir + ".ini"
   hipecp.write(file(iniFile,"w"))
   
@@ -225,7 +218,6 @@ def hipe_setup(hipeDir, config, injFile=None, dfOnly = False):
 
   # add job to dag
   hipeJob = pipeline.CondorDAGManJob(iniFile.rstrip("ini") + "dag")
-  hipeJob.set_dir(hipeDir)
   hipeNode = pipeline.CondorDAGNode(hipeJob)
 
   # add postscript to deal with rescue dag
@@ -247,18 +239,14 @@ def followup_setup(followDir, config, hipeDir):
 
   # make the directory for followup pipe
   mkdir(followDir)
-  os.chdir("..")
-
-  # link the executables 
-  link_executables(hipeDir)
 
   # create the followup config parser, keep only relevant info
-  followcp = copy.deepcopy(cp)
+  followcp = copy.deepcopy(config)
   followSections = ['condor', 'hipe-cache', 'triggers', 'q-datafind', 'qscan', \
       'q-hoft-datafind', 'qscan-hoft', 'plots', 'output', 'seg']
 
-  for seg in cp.sections():
-    if not seg in followSections: cp.remove_section(seg)
+  for seg in followcp.sections():
+    if not seg in followSections: followcp.remove_section(seg)
 
   followcp.remove_option("condor","hipe")
   followcp.remove_option("condor","follow")
@@ -274,20 +262,23 @@ def followup_setup(followDir, config, hipeDir):
     followcp.set("hipe-cache", path, "../" + hipeDir)
 
   # set the xml-glob
-  followcp.set("xml-glob", "../" + hipeDir + "/*COIRE_*")
+  followcp.set("triggers", "xml-glob", "../" + hipeDir + "/*COIRE_*")
   # to here XXX
 
   # correct paths to qscan config files
-  for (opt, arg) in cp.items("qscan") + cp.items("qscan-hoft"):
+  for (opt, arg) in followcp.items("qscan") + followcp.items("qscan-hoft"):
     if "config-file" in opt:
       if arg[0] != "/": 
         arg = "../../" + arg
-      cp.set("condor", opt, arg)
+      followcp.set("condor", opt, arg)
+
+  # link the executables 
+  link_executables(followDir, config)
 
   # return to the directory, write ini file and run hipe
-  os.chdir(analysisDirectory + "/" + followDir)
+  os.chdir(followDir)
   iniFile = "followup_pipe_" + followDir + ".ini"
-  hipecp.write(file(iniFile,"w"))
+  followcp.write(file(iniFile,"w"))
   
   # link datafind output from original hipe
   os.symlink("../datafind/cache", "hipe_cache")
@@ -480,9 +471,9 @@ if opts.run_datafind: dag.add_node(hipeDfNode)
 # Set up the directories for each run and run lalapps_inspiral_hipe
 print "Running inspiral hipe for injection runs"
 
-injNodes = []
+hipeInjNodes = []
 for (injDir, injFile) in cp.items("injections"):
-  hipeInjNode = hipe_setup(injDir, injFile)
+  hipeInjNode = hipe_setup(injDir, cp, injFile)
   if opts.run_injections: 
     dag.add_node(hipeInjNode)
     if opts.run_datafind:
@@ -492,7 +483,7 @@ for (injDir, injFile) in cp.items("injections"):
 
 print "Running inspiral hipe for analysis run"
 
-hipeAnalysisNode = hipe_setup("analysis")
+hipeAnalysisNode = hipe_setup("analysis", cp)
 if opts.run_analysis: 
   dag.add_node(hipeAnalysisNode)
   if opts.run_datafind:
