@@ -798,6 +798,9 @@ static void InitialLineCase(INT4  *lastBorderP, REAL8 alpha, REAL8  delta,
   }
   ++lastBorder;
 
+  if (yymin <0) yymin=0;
+  if (yymax >= patch->ySide) yymax = patch->ySide -1;
+  
   lut->border[lastBorder].yUpper = yymax;
   lut->border[lastBorder].yLower = yymin;
 
@@ -904,6 +907,10 @@ static void SecondLineCase(INT4 currentBin, INT4  *lastBorderP,
     return;
   }
   ++lastBorder;
+  
+  if (yymin <0) yymin=0;
+  if (yymax >= patch->ySide) yymax = patch->ySide -1;
+ 
 
   lut->border[lastBorder].yUpper = yymax;
   lut->border[lastBorder].yLower = yymin;
@@ -1013,6 +1020,9 @@ static void FollowLineCase(INT4 currentBin, INT4  *lastBorderP,
   }
   ++lastBorder;
 
+  if (yymin <0) yymin=0;
+  if (yymax >= patch->ySide) yymax = patch->ySide -1;
+ 
   lut->border[lastBorder].yUpper = yymax;
   lut->border[lastBorder].yLower = yymin;
 
@@ -1460,6 +1470,9 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
 	++pieces;
 	++lastBorder;
 
+       if (yymin <0) yymin=0;
+       if (yymax >= patch->ySide) yymax = patch->ySide -1;
+ 
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
@@ -1483,6 +1496,9 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
 	++pieces;
 	++lastBorder;
 
+        if (yymin <0) yymin=0;
+        if (yymax >= patch->ySide) yymax = patch->ySide -1;
+ 
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
@@ -1520,6 +1536,9 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
 	++pieces;
 	++lastBorder;
 
+        if (yymin <0) yymin=0;
+        if (yymax >= patch->ySide) yymax = patch->ySide -1;
+ 
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
@@ -1544,6 +1563,9 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
 	++pieces;
 	++lastBorder;
 
+        if (yymin <0) yymin=0;
+        if (yymax >= patch->ySide) yymax = patch->ySide -1;
+ 
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
@@ -1658,6 +1680,9 @@ static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
 	++pieces;
 	++lastBorder;
 
+	 if (yymin <0) yymin=0;
+         if (yymax >= patch->ySide) yymax = patch->ySide -1;
+ 
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
@@ -1685,6 +1710,9 @@ static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
 	++pieces;
 	++lastBorder;
 
+	 if (yymin <0) yymin=0;
+         if (yymax >= patch->ySide) yymax = patch->ySide -1;
+ 
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
@@ -1726,6 +1754,9 @@ static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
 	++pieces;
 	++lastBorder;
 
+	 if (yymin <0) yymin=0;
+         if (yymax >= patch->ySide) yymax = patch->ySide -1;
+ 
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
@@ -1750,6 +1781,9 @@ static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
 	++pieces;
 	++lastBorder;
 
+	 if (yymin <0) yymin=0;
+         if (yymax >= patch->ySide) yymax = patch->ySide -1;
+ 
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
@@ -1858,6 +1892,9 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
       if(noIn){
 	++pieces;
 	++lastBorder;
+	
+	 if (yymin <0) yymin=0;
+         if (yymax >= patch->ySide) yymax = patch->ySide -1;
 
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
@@ -1882,6 +1919,9 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
 	++pieces;
 	++lastBorder;
 
+	 if (yymin <0) yymin=0;
+         if (yymax >= patch->ySide) yymax = patch->ySide -1;
+ 
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
@@ -1927,6 +1967,9 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
 	++pieces;
 	++lastBorder;
 
+	 if (yymin <0) yymin=0;
+         if (yymax >= patch->ySide) yymax = patch->ySide -1;
+ 
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
@@ -1955,6 +1998,9 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
 	++pieces;
 	++lastBorder;
 
+	 if (yymin <0) yymin=0;
+         if (yymax >= patch->ySide) yymax = patch->ySide -1;
+ 
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
 	lut->border[lastBorder].yCenter = 
