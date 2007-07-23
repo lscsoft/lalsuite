@@ -258,6 +258,10 @@ void LALHOUGHAddPHMD2HD (LALStatus      *status, /**< the status pointer */
     yUpper = (*borderP).yUpper;
     xPixel =  &( (*borderP).xPixel[0] );
 
+   
+    if (yLower<0) yLower=0;
+    if (yUpper >=ySide) yUpper=ySide-1;
+
     for(j=yLower; j<=yUpper;++j){
       hd->map[j *(xSide+1) + xPixel[j] ] += 1;
     }
@@ -275,6 +279,10 @@ void LALHOUGHAddPHMD2HD (LALStatus      *status, /**< the status pointer */
     yLower = (*borderP).yLower;
     yUpper = (*borderP).yUpper;
     xPixel =  &( (*borderP).xPixel[0] );
+
+   
+    if (yLower<0) yLower=0;
+    if (yUpper >=ySide) yUpper=ySide-1;
 
     for(j=yLower; j<=yUpper;++j){
       hd->map[j*(xSide+1) + xPixel[j] ] -= 1;
@@ -345,6 +353,9 @@ void LALHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
     yLower = (*borderP).yLower;
     yUpper = (*borderP).yUpper;
     xPixel =  &( (*borderP).xPixel[0] );
+   
+    if (yLower<0) yLower=0;
+    if (yUpper >=ySide) yUpper=ySide-1;
 
     for(j=yLower; j<=yUpper;++j){
       sidx = j *(xSide+1) + xPixel[j];
@@ -369,6 +380,10 @@ void LALHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
     yLower = (*borderP).yLower;
     yUpper = (*borderP).yUpper;
     xPixel =  &( (*borderP).xPixel[0] );
+   
+    if (yLower<0) yLower=0;
+    if (yUpper >=ySide) yUpper=ySide-1;
+
 
     for(j=yLower; j<=yUpper;++j){
       sidx = j*(xSide+1) + xPixel[j];
