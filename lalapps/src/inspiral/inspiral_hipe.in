@@ -380,7 +380,8 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
       coinc_analyzed.append(AnalyzedIFOData(seg,thinca,inj))
 
       if do_coire and inj > 0: 
-        coire_segs([seg], coire_job, dag, do_coinc, ifos, 
+        coire_segs([AnalyzedIFOData(seg,thinca,inj)],
+            coire_job, dag, do_coinc, ifos, 
             GPSstart=seg.start(), GPSend=seg.end(), inj_file=inj_file, 
             num_slides=slides, ifotag=ifotag, usertag=exttrigUserTag)
 
@@ -471,7 +472,7 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
               # make an inspiral job for the master chunk
               insp = inspiral.InspiralNode(insp_veto_job)
               if inj>0:
-                insp.add_var_opt('injection-file',injectionFile)
+                insp.set_injections(injectionFile)
                 insp.set_user_tag(exttrigUserTag)
               insp.set_start(chunk.start())
               insp.set_end(chunk.end())
@@ -721,7 +722,8 @@ def coire_segs(segments, coire_job, dag, do_input, ifos, GPSstart=None, \
 
   # add the input file name to coire 
   coire.set_input(input_file)
-
+  
+  coire.finalize()
   dag.add_node(coire) 
 
 
@@ -1119,8 +1121,11 @@ try:
     print >> sys.stderr, "exttrig-inj-stop must be larger than "\
                          "exttrig-inj-start."
     sys.exit(1)
+
+  doExtTrig = True
 except:
   exttrigInjections=[0,0]
+  doExtTrig = False
 
 
 # datafind:
@@ -1374,7 +1379,7 @@ else:
   sys.exit(1)
 
 ##############################################################################
-if inj_file:
+if inj_file or doExtTrig:
   # add the injection coincidence to the sire jobs
   sire_job.add_ini_opts(cp,'sire-inj')
   coire_job.add_ini_opts(cp,'coire-inj')
@@ -1610,7 +1615,8 @@ for ifos in ifo_coincs:
       usertag, coire_job=coire_job, do_coire=opts.coire_coincidence)
 
   # Step 6 coire: Run coire on coinc triggers
-  if opts.coire_coincidence and len(coinc_nodes[ifos]):
+  if opts.coire_coincidence and len(coinc_nodes[ifos])\
+         and not doExtTrig:
     coire_segs(coinc_nodes[ifos], coire_job, dag, opts.coincidence, 
         ifos, inj_file = inj_file, usertag = usertag,
         GPSstart = gps_start_time, GPSend = gps_end_time) 
@@ -1626,7 +1632,8 @@ for ifos in ifo_coincs:
         opts.inspiral,exttrigInjections, usertag, coire_job=coire_slide_job, 
         do_coire=opts.coire_coincidence, ifotag=ifotag, slides=num_slides )
 
-    if opts.coire_coincidence and len(coinc_slide_nodes[ifos]):
+    if opts.coire_coincidence and len(coinc_slide_nodes[ifos]) \
+           and not doExtTrig:
       coire_segs(coinc_slide_nodes[ifos], coire_slide_job, dag, 
           opts.coincidence, ifos, inj_file = inj_file, num_slides = num_slides,
           GPSstart = gps_start_time, GPSend = gps_end_time, 
@@ -1722,7 +1729,8 @@ for ifos in ifo_coincs:
       opts.inspiral_veto, exttrigInjections, usertag=usertag,
       coire_job=coire_job, do_coire=opts.coire_second_coinc, ifotag=ifos)
 
-    if opts.coire_second_coinc and len(coinc2_nodes[ifos]):
+    if opts.coire_second_coinc and len(coinc2_nodes[ifos])\
+           and not doExtTrig :
       coire_segs(coinc2_nodes[ifos], coire_job, dag, opts.second_coinc, 
           ifos, inj_file = inj_file, ifotag = ifos, usertag = usertag,
           GPSstart = gps_start_time, GPSend = gps_end_time )
@@ -1748,7 +1756,8 @@ for ifos in ifo_coincs:
         do_coire=opts.coire_second_coinc,
         ifotag=ifos, slides=num_slides)
 
-     if opts.coire_second_coinc and len(coinc2_slide_nodes[ifos]):
+     if opts.coire_second_coinc and len(coinc2_slide_nodes[ifos])\
+            and not doExtTrig:
        coire_segs(coinc2_slide_nodes[ifos], coire_slide_job, dag, 
            opts.second_coinc, ifos, inj_file = inj_file, 
            num_slides = num_slides, ifotag = ifos, usertag = usertag,

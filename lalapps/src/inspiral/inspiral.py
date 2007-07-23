@@ -311,8 +311,8 @@ class CoireJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
       self.add_ini_opts(cp,sec)
 
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
-    self.set_stdout_file('logs/coire-$(macroifo)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/coire-$(macroifo)-$(cluster)-$(process).err')
+    self.set_stdout_file('logs/coire-$(macrocoinccut)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/coire-$(macrocoinccut)-$(cluster)-$(process).err')
     self.set_sub_file('coire.sub')
     
 class FrJoinJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
@@ -1381,7 +1381,7 @@ class CoireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     fname = "COIRE"
     if self.__num_slides: fname += "_SLIDE"
     if self.__injection_file:
-      fname += "_" + self.__injection_file.split("-")[1]
+      fname += "_" + self.__injection_file.split("-")[1][:-4]
       fname += "_FOUND"
     if self.__ifotag: fname += "_" + self.__ifotag
     self.__output_tag = fname
