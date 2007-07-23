@@ -491,11 +491,11 @@ if opts.run_analysis:
 
 ##############################################################################
 # Set up the directories for followup and run lalapps_followup_pipe
-followupNode = followup_setup("followup", cp, "analysis" )
-if opts.run_followup:
-  dag.add_node(followupNode)
-  if opts.run_analysis:
-    followupNode.add_parent(hipeAnalysisNode)
+#followupNode = followup_setup("followup", cp, "analysis" )
+#if opts.run_followup:
+#  dag.add_node(followupNode)
+#  if opts.run_analysis:
+#    followupNode.add_parent(hipeAnalysisNode)
 
 
 ##############################################################################
