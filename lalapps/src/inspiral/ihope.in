@@ -213,8 +213,10 @@ def hipe_setup(hipeDir, config, injFile=None, dfOnly = False):
 
   # link datafind
   if not dfOnly:
-    os.rmdir("cache")
-    os.symlink("../datafind/cache", "cache")
+    try:
+      os.rmdir("cache")
+      os.symlink("../datafind/cache", "cache")
+    except: pass
 
   # add job to dag
   hipeJob = pipeline.CondorDAGManJob(hipeDir +"/"+ iniFile.rstrip("ini") + "dag")
@@ -230,60 +232,60 @@ def hipe_setup(hipeDir, config, injFile=None, dfOnly = False):
 
 ##############################################################################
 # Function to set up lalapps_followup_pipe
-def followup_setup(followDir, config, hipeDir):
+def followup_setup(followupDir, config, hipeDir):
   """
   run lalapps_followup_pipe and add job to dag
-  followDir = directory to output the followup
+  followupDir = directory to output the followup
   config    = config file 
   """
 
   # make the directory for followup pipe
-  mkdir(followDir)
+  mkdir(followupDir)
 
   # create the followup config parser, keep only relevant info
-  followcp = copy.deepcopy(config)
-  followSections = ['condor', 'hipe-cache', 'triggers', 'q-datafind', 'qscan', \
+  followupcp = copy.deepcopy(config)
+  followupSections = ['condor', 'hipe-cache', 'triggers', 'q-datafind', 'qscan', \
       'q-hoft-datafind', 'qscan-hoft', 'plots', 'output', 'seg']
 
-  for seg in followcp.sections():
-    if not seg in followSections: followcp.remove_section(seg)
+  for seg in followupcp.sections():
+    if not seg in followupSections: followupcp.remove_section(seg)
 
-  followcp.remove_option("condor","hipe")
-  followcp.remove_option("condor","follow")
+  followupcp.remove_option("condor","hipe")
+  followupcp.remove_option("condor","follow")
 
 
   # XXX this should be replaced by getting the information from the hipe cache
   # set the cache paths
-  followcp.add_section("hipe-cache")
-  followcp.set("hipe-cache", "hipe-cache-path", "hipe_cache")
+  followupcp.add_section("hipe-cache")
+  followupcp.set("hipe-cache", "hipe-cache-path", "hipe_cache")
 
   for path in ["tmpltbank-path", "trigbank-path", "first-inspiral-path", \
       "second-inspiral-path", "first-coinc-path", "second-coinc-path"]: 
-    followcp.set("hipe-cache", path, "../" + hipeDir)
+    followupcp.set("hipe-cache", path, "../" + hipeDir)
 
   # set the xml-glob
-  followcp.set("triggers", "xml-glob", "../" + hipeDir + "/*COIRE_*")
+  followupcp.set("triggers", "xml-glob", "../" + hipeDir + "/*COIRE_*")
   # to here XXX
 
   # correct paths to qscan config files
-  for (opt, arg) in followcp.items("qscan") + followcp.items("qscan-hoft"):
+  for (opt, arg) in followupcp.items("qscan") + followupcp.items("qscan-hoft"):
     if "config-file" in opt:
       if arg[0] != "/": 
         arg = "../../" + arg
-      followcp.set("condor", opt, arg)
+      followupcp.set("condor", opt, arg)
 
   # link the executables 
-  link_executables(followDir, config)
+  link_executables(followupDir, config)
 
   # return to the directory, write ini file and run hipe
-  os.chdir(followDir)
-  iniFile = "followup_pipe_" + followDir + ".ini"
-  followcp.write(file(iniFile,"w"))
+  os.chdir(followupDir)
+  iniFile = "followup_pipe_" + followupDir + ".ini"
+  followupcp.write(file(iniFile,"w"))
   
   # link datafind output from original hipe
-  os.symlink("../datafind/cache", "hipe_cache")
-
-  print "Running followup pipe in directory " + followDir 
+  try: os.symlink("../datafind/cache", "hipe_cache")
+  except: pass
+  print "Running followup pipe in directory " + followupDir 
 
   # work out the followup_pipe call:
   followupCommand = config.get("condor","follow")
@@ -293,12 +295,24 @@ def followup_setup(followDir, config, hipeDir):
   for item in config.items("followup-arguments"):
     followupCommand += " --" + item[0] + " " + item[1]
 
-  # run lalapps_followup_pipe
-  make_external_call(followupCommand) 
+  # set up a fake followup dag -- the real one can't be generated until the
+  # analysis is done
+  followupDag = iniFile.rstrip("ini") + "dag"
+  f = open(followupDag,"w")
+  f.write("\n")
+  f.close()
 
   # add job to dag
-  followupJob = pipeline.CondorDAGManJob(iniFile.rstrip("ini") + "dag")
+  followupJob = pipeline.CondorDAGManJob(followupDir + "/" + followupDag)
   followupNode = pipeline.CondorDAGNode(followupJob)
+
+  # write the pre-script to run lalapps_followup_pipe at the appropriate time
+  f = open(followupDag + ".pre","w")
+  f.write("#! /bin/bash\n")
+  f.write(followupCommand)
+  f.close()
+  os.chmod(followupDag + ".pre", 0744)
+  followupNode.set_pre_script(followupDir + "/" + followupDag + ".pre")
 
   # add postscript to deal with rescue dag
   fix_rescue(followupNode)
@@ -463,39 +477,38 @@ write_rescue()
 
 ##############################################################################
 # Run lalapps_inspiral_hipe for datafind
-print "Running inspiral hipe for datafind run"
-hipeDfNode = hipe_setup("datafind", cp, dfOnly = True)
-if opts.run_datafind: dag.add_node(hipeDfNode)
+if opts.run_datafind:
+  print "Running inspiral hipe for datafind run"
+  hipeDfNode = hipe_setup("datafind", cp, dfOnly = True)
+  dag.add_node(hipeDfNode)
 
 ##############################################################################
 # Set up the directories for each run and run lalapps_inspiral_hipe
-print "Running inspiral hipe for injection runs"
-
 hipeInjNodes = []
-for (injDir, injFile) in cp.items("injections"):
-  hipeInjNode = hipe_setup(injDir, cp, injFile)
-  if opts.run_injections: 
+
+if opts.run_injections:
+  print "Running inspiral hipe for injection runs"
+  for (injDir, injFile) in cp.items("injections"):
+    hipeInjNode = hipe_setup(injDir, cp, injFile)
+    hipeInjNodes.append( hipeInjNode )
     dag.add_node(hipeInjNode)
     if opts.run_datafind:
       hipeInjNode.add_parent(hipeDfNode)
 
-  hipeInjNodes.append( hipeInjNode )
-
-print "Running inspiral hipe for analysis run"
-
-hipeAnalysisNode = hipe_setup("analysis", cp)
-if opts.run_analysis: 
+if opts.run_analysis:
+  print "Running inspiral hipe for analysis run"
+  hipeAnalysisNode = hipe_setup("analysis", cp)
   dag.add_node(hipeAnalysisNode)
   if opts.run_datafind:
     hipeAnalysisNode.add_parent(hipeDfNode)
 
 ##############################################################################
 # Set up the directories for followup and run lalapps_followup_pipe
-#followupNode = followup_setup("followup", cp, "analysis" )
-#if opts.run_followup:
-#  dag.add_node(followupNode)
-#  if opts.run_analysis:
-#    followupNode.add_parent(hipeAnalysisNode)
+if opts.run_followup:
+  followupNode = followup_setup("followup", cp, "analysis" )
+  dag.add_node(followupNode)
+  if opts.run_analysis:
+    followupNode.add_parent(hipeAnalysisNode)
 
 
 ##############################################################################
