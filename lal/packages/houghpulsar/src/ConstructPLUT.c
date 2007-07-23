@@ -1367,6 +1367,9 @@ static void DrawLine(REAL8 alpha, REAL8 xA, REAL8 yA,
    kkk =  xA/patch->deltaX-0.5;
    kkk += patch->xSide*0.5;
    xpixel = ceil(kkk);
+   if (xpixel <0) xpixel=0;
+   if (xpixel > patch->xSide) xpixel = patch->xSide;
+   
    for(jj=yymin;jj<=yymax;++jj){
      column[jj] = xpixel;
    }
@@ -1375,7 +1378,8 @@ static void DrawLine(REAL8 alpha, REAL8 xA, REAL8 yA,
    /* remaining cases */
    REAL8 tanalpha;
    REAL8 xofy;
-
+   INT4  xpixel;
+   
    tanalpha = tan(alpha);
 
    for(jj=yymin;jj<=yymax;++jj){  
@@ -1383,7 +1387,11 @@ static void DrawLine(REAL8 alpha, REAL8 xA, REAL8 yA,
      xofy = xA + tanalpha*( yA- patch->yCoor[jj] );
      kkk =  xofy/patch->deltaX-0.5;
      kkk += patch->xSide*0.5;
-     column[jj] = ceil(kkk);
+     xpixel = ceil(kkk);
+     
+       if (xpixel <0) xpixel=0;
+       if (xpixel > patch->xSide) xpixel = patch->xSide;
+     column[jj] = xpixel; 
    }
  }
   
@@ -2481,6 +2489,8 @@ static void DrawLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
     kkk += 0.5*patch->xSide;
     myindex = ceil(kkk);
     if( myindex<0 ) myindex=0;
+    if (myindex > patch->xSide) myindex = patch->xSide;
+
     column[jj] = myindex;
   }
  
@@ -2513,6 +2523,7 @@ static void DrawRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
     kkk =  realx/patch->deltaX-0.5;
     kkk += 0.5*patch->xSide;
     myindex = ceil(kkk);
+    if( myindex<0 ) myindex=0;
     if( myindex > patch->xSide-1 ) myindex=patch->xSide;
     column[jj] = myindex;
   }
