@@ -1262,7 +1262,7 @@ static void CheckLineIntersection(REAL8 alpha, REAL8 xA, REAL8 yA,
 		      HOUGHPatchGrid  *patch){
  
   INT4 yymin,yymax,noIn;
-  REAL4 kkk;
+  volatile REAL4 kkk;
 
   yymin = 0;
   yymax = 0;
@@ -1341,7 +1341,7 @@ static void DrawLine(REAL8 alpha, REAL8 xA, REAL8 yA,
 	      HOUGHPatchGrid  *patch){
 
   INT4 jj;
-  REAL4 kkk;
+  volatile REAL4 kkk;
   
   column[yymin] = patch->xSide;
   column[yymax] = patch->xSide;
@@ -2026,7 +2026,7 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   INT4 noIn, noIn1, noIn2;
   REAL8 ylower;
   REAL8 yupper,kkpos;
-  REAL4 kkk;
+  volatile REAL4 kkk;
  
  
   /*********************************************************/
@@ -2220,7 +2220,7 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   INT4 yymin,yymax;
   INT4 noIn, noIn1, noIn2;
   REAL8 ylower;
-  REAL4 kkk;
+  volatile REAL4 kkk;
   REAL8 yupper, kkpos;
  
   
