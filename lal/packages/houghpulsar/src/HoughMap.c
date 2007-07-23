@@ -354,13 +354,19 @@ void LALHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
     yUpper = (*borderP).yUpper;
     xPixel =  &( (*borderP).xPixel[0] );
    
-    if (yLower<0) yLower=0;
-    if (yUpper >=ySide) yUpper=ySide-1;
+    if (yLower < 0) {
+      fprintf(stderr,"WARNING: Fixing left yLower (%d -> 0)\n", yLower);
+      yLower = 0;
+    }
+    if (yUpper >= ySide) {
+      fprintf(stderr,"WARNING: Fixing left yUpper (%d -> %d)\n", yUpper, ySide-1);
+      yUpper = ySide - 1;
+    }
 
     for(j=yLower; j<=yUpper;++j){
       sidx = j *(xSide+1) + xPixel[j];
       if ((sidx < 0) || (sidx >= ySide*(xSide+1))) {
-	fprintf(stderr,"\nERROR: %s %d: Array Index out of bounds: %d [0..%d] j:%d xp[j]:%d\n",
+	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d\n",
 		__FILE__,__LINE__,sidx,ySide*(xSide+1),j,xPixel[j] );
 	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
       }
@@ -381,14 +387,19 @@ void LALHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
     yUpper = (*borderP).yUpper;
     xPixel =  &( (*borderP).xPixel[0] );
    
-    if (yLower<0) yLower=0;
-    if (yUpper >=ySide) yUpper=ySide-1;
-
+    if (yLower<0) {
+      fprintf(stderr,"WARNING: Fixing right yLower (%d -> 0)\n", yLower);
+      yLower=0;
+    }
+    if (yUpper >=ySide) {
+      fprintf(stderr,"WARNING: Fixing right yUpper (%d -> %d)\n", yUpper, ySide-1);
+      yUpper=ySide-1;
+    }
 
     for(j=yLower; j<=yUpper;++j){
       sidx = j*(xSide+1) + xPixel[j];
       if ((sidx < 0) || (sidx >= ySide*(xSide+1))) {
-	fprintf(stderr,"\nERROR: %s %d: Array Index out of bounds: %d [0..%d] j:%d xp[j]:%d\n",
+	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d\n",
 		__FILE__,__LINE__,sidx,ySide*(xSide+1),j,xPixel[j] );
 	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
       }
