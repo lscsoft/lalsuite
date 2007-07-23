@@ -1392,13 +1392,9 @@ static void DrawLine(REAL8 alpha, REAL8 xA, REAL8 yA,
    xpixel = ceil(kkk);
 
    if (xpixel < 0) {
-     fprintf(stderr,"WARNING: Fixing xpixel (%d -> 0) [ConstructPLUT.c %d]\n",
-	     xpixel, __LINE__);
      xpixel = 0;
    }
    if (xpixel > patch->xSide) {
-     fprintf(stderr,"WARNING: Fixing xpixel (%d -> %d) [ConstructPLUT.c %d]\n",
-	     xpixel, patch->xSide, __LINE__);
      xpixel = patch->xSide;
    }
    
@@ -1422,13 +1418,9 @@ static void DrawLine(REAL8 alpha, REAL8 xA, REAL8 yA,
      xpixel = ceil(kkk);
      
      if (xpixel < 0) {
-       fprintf(stderr,"WARNING: Fixing xpixel (%d -> 0) [ConstructPLUT.c %d]\n",
-	       xpixel, __LINE__);
        xpixel = 0;
      }
      if (xpixel > patch->xSide) {
-       fprintf(stderr,"WARNING: Fixing xpixel (%d -> %d) [ConstructPLUT.c %d]\n",
-	       xpixel, patch->xSide, __LINE__);
        xpixel = patch->xSide;
      }
      
