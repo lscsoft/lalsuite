@@ -229,7 +229,9 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
              if inj>0: 
                 # set the appropriate user-tag and the injection filename
                 exttrigUserTag=usertag+str(inj)
-                injectionFile='HL-INJECTION.'+str(inj)+'.xml' 
+                injectionFile='HL-INJECTION.'+str(inj)+'-'\
+                  +str(chunk.start())+'-'+str(chunk.end()-chunk.start())\
+                  +'.xml' 
 
                 # check if the inspinj job has already be made
                 inspinj=inspinj_job.check_node(inj)              
