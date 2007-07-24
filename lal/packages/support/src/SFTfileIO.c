@@ -192,7 +192,7 @@ LALSFTdataFind (LALStatus *status,
   if ( constraints && constraints->detector )
     if ( strncmp(constraints->detector, "??", 2) && !is_valid_detector(constraints->detector) ) 
       {
-	if ( lalDebugLevel ) LALPrintError( "\nInvalid detector-constraint '%s'\n\n", constraints->detector );
+	XLALPrintError( "\nInvalid detector-constraint '%s'\n\n", constraints->detector );
 	ABORT ( status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
       }
 
@@ -203,7 +203,7 @@ LALSFTdataFind (LALStatus *status,
 
   /* find matching filenames */
   if ( (fnames = find_files (file_pattern)) == NULL) {
-    if ( lalDebugLevel ) LALPrintError ("\nFailed to get filelist for pattern '%s'.\n\n", file_pattern);
+    XLALPrintError ("\nFailed to get filelist for pattern '%s'.\n\n", file_pattern);
     ABORT (status, SFTFILEIO_EGLOB, SFTFILEIO_MSGEGLOB);
   }
   numFiles = fnames->length;
@@ -226,14 +226,14 @@ LALSFTdataFind (LALStatus *status,
 
       if ( ( fp = LALFopen( fname, "rb" ) ) == NULL )
 	{
-	  LALPrintError ( "\nFailed to open matched file '%s'\n\n", fname );
+	  XLALPrintError ( "\nFailed to open matched file '%s'\n\n", fname );
 	  LALDestroyStringVector ( status->statusPtr, &fnames );
 	  LALDestroySFTCatalog ( status->statusPtr, &ret );
 	  ABORT( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	}
       if ( (file_len = get_file_len(fp)) == 0 )
 	{
-	  LALPrintError ( "\nGot file-len == 0 for '%s'\n\n", fname );
+	  XLALPrintError ( "\nGot file-len == 0 for '%s'\n\n", fname );
 	  LALDestroyStringVector ( status->statusPtr, &fnames );
 	  LALDestroySFTCatalog ( status->statusPtr, &ret );
 	  fclose(fp);
@@ -253,7 +253,7 @@ LALSFTdataFind (LALStatus *status,
 	  long this_filepos;
 	  if ( (this_filepos = ftell(fp)) == -1 )
 	    {
-	      LALPrintError ("\nftell() failed for '%s'\n\n", fname );
+	      XLALPrintError ("\nftell() failed for '%s'\n\n", fname );
 	      LALDestroyStringVector ( status->statusPtr, &fnames );
 	      LALDestroySFTCatalog ( status->statusPtr, &ret );
 	      fclose (fp);
@@ -263,8 +263,7 @@ LALSFTdataFind (LALStatus *status,
 	  if ( read_sft_header_from_fp (fp, &this_header, &this_version, &this_crc, 
 					&endian, &this_comment, &this_nsamples ) != 0 )
 	    {
-	      if ( lalDebugLevel ) 
-		LALPrintError ("\nERROR:File-block '%s:%ld' is not a valid SFT!\n\n", fname, ftell(fp) );
+	      XLALPrintError ("\nERROR:File-block '%s:%ld' is not a valid SFT!\n\n", fname, ftell(fp));
 	      LALDestroyStringVector ( status->statusPtr, &fnames );
 	      if ( this_comment ) LALFree ( this_comment );
 	      LALDestroySFTCatalog ( status->statusPtr, &ret );
@@ -278,8 +277,7 @@ LALSFTdataFind (LALStatus *status,
 	      if ( ! consistent_mSFT_header ( mprev_header, mprev_version, mprev_nsamples, 
 					      this_header, this_version, this_nsamples ) )
 		{
-		  if ( lalDebugLevel ) 
-		    LALPrintError ("merged SFT-file '%s' contains inconsistent SFT-blocks!\n\n", fname);
+		  XLALPrintError ("merged SFT-file '%s' contains inconsistent SFT-blocks!\n\n", fname);
 		  if ( this_comment ) LALFree ( this_comment );
 		  LALDestroyStringVector ( status->statusPtr, &fnames );
 		  LALDestroySFTCatalog ( status->statusPtr, &ret );
@@ -295,8 +293,7 @@ LALSFTdataFind (LALStatus *status,
 	  /* seek to end of SFT data-entries in file  */
 	  if ( fseek ( fp, this_nsamples * 8 , SEEK_CUR ) == -1 )
 	    {
-	      if ( lalDebugLevel ) 
-		LALPrintError ( "\nFailed to skip DATA field for SFT '%s': %s\n", fname, strerror(errno) );
+	      XLALPrintError ( "\nFailed to skip DATA field for SFT '%s': %s\n", fname, strerror(errno) );
 	      if ( this_comment ) LALFree ( this_comment );
 	      LALDestroyStringVector ( status->statusPtr, &fnames );
 	      LALDestroySFTCatalog ( status->statusPtr, &ret );
@@ -345,6 +342,8 @@ LALSFTdataFind (LALStatus *status,
 		  ret->data = LALRealloc ( ret->data, (ret->length + REALLOC_BLOCKSIZE) * sizeof( *(ret->data) ) );
 		  if ( ret->data == NULL )
 		    {
+		      XLALPrintError("Memeory reallocation for SFTs failed: nSFT:%d, length:%d, add:%d\n",
+				     numSFTs, ret->length, REALLOC_BLOCKSIZE);
 		      LALDestroyStringVector ( status->statusPtr, &fnames );
 		      LALDestroySFTCatalog ( status->statusPtr, &ret );
 		      if ( this_comment ) LALFree ( this_comment );
@@ -429,10 +428,9 @@ LALSFTdataFind (LALStatus *status,
 	}
       if ( numRequested != ret->length )
 	{
-	  if ( lalDebugLevel ) 
-	    LALPrintError ("\nERROR: found %s SFTs (%d) than given timestamps within [%f, %f] (%d)\n\n",
-			   (ret->length < numRequested )?"fewer":"more", 
-			   ret->length, t0, t1, numRequested );
+	  XLALPrintError ("\nERROR: found %s SFTs (%d) than given timestamps within [%f, %f] (%d)\n\n",
+			  (ret->length < numRequested )?"fewer":"more", 
+			  ret->length, t0, t1, numRequested );
 	  ABORT ( status, SFTFILEIO_ECONSTRAINTS, SFTFILEIO_MSGECONSTRAINTS );
 	}
     } /* if constraints->timestamps */
@@ -451,9 +449,8 @@ LALSFTdataFind (LALStatus *status,
 	  if ( !strncmp ( this_header.name, "??", 2 ) )
 	    {
 	      LALDestroySFTCatalog ( status->statusPtr, &ret );
-	      if ( lalDebugLevel ) 
-		LALPrintError ("\nERROR: '%s' matched v1-SFTs but no detector-constraint given!\n\n",
-			       file_pattern);
+	      XLALPrintError ("\nERROR: '%s' matched v1-SFTs but no detector-constraint given!\n\n",
+			      file_pattern);
 	      ABORT ( status, SFTFILEIO_EDETECTOR, SFTFILEIO_MSGEDETECTOR );
 	    }
 	} /* if detector-constraint was not '??' */
@@ -461,7 +458,7 @@ LALSFTdataFind (LALStatus *status,
       if ( this_header.deltaF != first_header.deltaF ) 
 	{
 	  LALDestroySFTCatalog ( status->statusPtr, &ret );
-	  LALPrintError("\nERROR: file-pattern '%s' matched SFTs with inconsistent Tsft!\n\n",
+	  XLALPrintError("\nERROR: file-pattern '%s' matched SFTs with inconsistent Tsft!\n\n",
 			file_pattern);
 	  ABORT ( status, SFTFILEIO_EDIFFTSFT, SFTFILEIO_MSGEDIFFTSFT );	  
 	}
@@ -725,7 +722,7 @@ LALLoadSFTs ( LALStatus *status,
 	{
 	  /* deltaF consistency check */
 	  if ( deltaF != catalog->data[catFile].header.deltaF ) {
-	    LALPrintError ( "Frequency spacing dosn't match in SFT '%s (%f %f)\n",
+	    XLALPrintError ( "Frequency spacing dosn't match in SFT '%s (%f %f)\n",
 			    XLALshowSFTLocator ( catalog->data[catFile].locator ),
 			    deltaF, catalog->data[catFile].header.deltaF );
 	    LALDestroySFTVector (status->statusPtr, &sfts);
@@ -748,7 +745,7 @@ LALLoadSFTs ( LALStatus *status,
 	    /* issue an error if the file neither contains firstbin nor starts with nextbin */
 	    if (( firstbin < firstInSFT ) &&
 		( nextbin != firstInSFT )) {
-	      LALPrintError ( "Starting frequency %f not contained in SFT '%s'\n"
+	      XLALPrintError ( "Starting frequency %f not contained in SFT '%s'\n"
 			      "   (or sequence broken at this last file)\n", 
 			      fMin, XLALshowSFTLocator ( catalog->data[catFile].locator ) );
 	      LALDestroySFTVector (status->statusPtr, &sfts);
@@ -757,7 +754,7 @@ LALLoadSFTs ( LALStatus *status,
 
 	    /* read from nextbin to lastbin */
 	    if ( (fp = fopen_SFTLocator ( catalog->data[catFile].locator )) == NULL ) {
-	      LALPrintError ( "Failed to open locator '%s'\n", 
+	      XLALPrintError ( "Failed to open locator '%s'\n", 
 			      XLALshowSFTLocator ( catalog->data[catFile].locator ) );
 	      LALDestroySFTVector (status->statusPtr, &sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
@@ -765,7 +762,7 @@ LALLoadSFTs ( LALStatus *status,
 	    read_sft_bins_from_fp (status->statusPtr, &onesft, &binsread, nextbin, lastbin, fp);
 	    fclose(fp);
 	    if ( status->statusPtr->statusCode ) {
-	      LALPrintError ( "Failed to read from locator '%s'\n",
+	      XLALPrintError ( "Failed to read from locator '%s'\n",
 			      XLALshowSFTLocator ( catalog->data[catFile].locator ) );
 	      LALDestroySFTVector (status->statusPtr, &sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
@@ -787,7 +784,7 @@ LALLoadSFTs ( LALStatus *status,
 		     ( firstbin <= lastInSFT  )) {
 	    /* read from firstbin to end */
 	    if ( (fp = fopen_SFTLocator ( catalog->data[catFile].locator )) == NULL ) {
-	      LALPrintError ( "Failed to open locator '%s'\n", 
+	      XLALPrintError ( "Failed to open locator '%s'\n", 
 			      XLALshowSFTLocator ( catalog->data[catFile].locator ) );
 	      LALDestroySFTVector (status->statusPtr, &sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
@@ -795,7 +792,7 @@ LALLoadSFTs ( LALStatus *status,
 	    read_sft_bins_from_fp (status->statusPtr, &onesft, &binsread, firstbin, lastbin, fp);
 	    fclose(fp);
 	    if ( status->statusPtr->statusCode ) {
-	      LALPrintError ( "Failed to read from locator '%s'\n", 
+	      XLALPrintError ( "Failed to read from locator '%s'\n", 
 			      XLALshowSFTLocator ( catalog->data[catFile].locator ) );
 	      LALDestroySFTVector (status->statusPtr, &sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
@@ -815,7 +812,7 @@ LALLoadSFTs ( LALStatus *status,
 	  } else if ( nextbin == firstInSFT) {
 	    /* read whole file */
 	    if ( (fp = fopen_SFTLocator ( catalog->data[catFile].locator )) == NULL ) {
-	      LALPrintError ( "Failed to open locator '%s'\n", 
+	      XLALPrintError ( "Failed to open locator '%s'\n", 
 			      XLALshowSFTLocator ( catalog->data[catFile].locator ) );
 	      LALDestroySFTVector (status->statusPtr, &sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
@@ -824,7 +821,7 @@ LALLoadSFTs ( LALStatus *status,
 
 	    fclose(fp);
 	    if ( status->statusPtr->statusCode ) {
-	      LALPrintError ( "Failed to read from locator '%s'\n", 
+	      XLALPrintError ( "Failed to read from locator '%s'\n", 
 			      XLALshowSFTLocator ( catalog->data[catFile].locator ) );
 	      LALDestroySFTVector (status->statusPtr, &sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
@@ -849,7 +846,7 @@ LALLoadSFTs ( LALStatus *status,
 
 	  /* if none of the above applies, something must be wrong with this sequence */
 	  } else {
-	    LALPrintError ( "Error in SFT sequence at locator '%s'\n"
+	    XLALPrintError ( "Error in SFT sequence at locator '%s'\n"
 			    "  (expected bin:%u, SFT has bins %u to %u)\n", 
 			    XLALshowSFTLocator ( catalog->data[catFile].locator ),
 			    nextbin, firstInSFT, lastInSFT);
@@ -862,7 +859,7 @@ LALLoadSFTs ( LALStatus *status,
 
       /* last check: did we find fMax at all? */
       if ( lastbin > lastInSFT) {
-	LALPrintError ( "Ending frequency %f not contained in SFT (sequence)\n"
+	XLALPrintError ( "Ending frequency %f not contained in SFT (sequence)\n"
 			"  (expected bin: %u, last bin in SFT sequence: %u)\n", 
 			fMax, lastbin, lastInSFT);
 	ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
@@ -1123,7 +1120,7 @@ LALCheckSFTs ( LALStatus *status,
 
   if ( constraints && constraints->detector && ! is_valid_detector(constraints->detector) ) 
     {
-      if ( lalDebugLevel ) LALPrintError( "\nInvalid detector-constraint '%s'\n\n", constraints->detector );
+      XLALPrintError( "\nInvalid detector-constraint '%s'\n\n", constraints->detector );
       ABORT ( status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
     }
 
@@ -1144,14 +1141,14 @@ LALCheckSFTs ( LALStatus *status,
 	case 2:
 	  if ( (fp = fopen_SFTLocator ( catalog->data[i].locator )) == NULL )
 	    {
-	      LALPrintError ( "Failed to open locator '%s'\n", 
+	      XLALPrintError ( "Failed to open locator '%s'\n", 
 			      XLALshowSFTLocator ( catalog->data[i].locator ) );
 	      (*check_result) = SFTFILEIO_EFILE;
 	      goto sft_failed;
 	    }
 	  if ( ! has_valid_v2_crc64 ( fp ) != 0 )
 	    {
-	      LALPrintError ( "CRC64 checksum failure for SFT '%s'\n", 
+	      XLALPrintError ( "CRC64 checksum failure for SFT '%s'\n", 
 			      XLALshowSFTLocator ( catalog->data[i].locator ) );
 	      (*check_result) = SFTFILEIO_ECRC64;
 	      goto sft_failed;
@@ -1159,7 +1156,7 @@ LALCheckSFTs ( LALStatus *status,
 	  break;
 
 	default:
-	  LALPrintError ( "Illegal SFT-version encountered : %d\n", catalog->data[i].version );
+	  XLALPrintError ( "Illegal SFT-version encountered : %d\n", catalog->data[i].version );
 	  (*check_result) = SFTFILEIO_EVERSION;
 	  goto sft_failed;
 	  break;
@@ -1195,7 +1192,7 @@ LALReadTimestampsFile (LALStatus* status, LIGOTimeGPSVector **timestamps, const 
   ASSERT (*timestamps == NULL, status, SFTFILEIO_ENONULL,  SFTFILEIO_MSGENONULL);
 
   if ( (fp = fopen( fname, "r")) == NULL) {
-    LALPrintError("\nUnable to open timestampsname file %s\n\n", fname);
+    XLALPrintError("\nUnable to open timestampsname file %s\n\n", fname);
     ABORT (status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE);
   }
 
@@ -1211,7 +1208,7 @@ LALReadTimestampsFile (LALStatus* status, LIGOTimeGPSVector **timestamps, const 
 	break;
 
       if ( ( secs < 0 ) || ( ns < 0 ) ) {
-	LALPrintError ("\nERROR: timestamps-file contained negative time-entry in line %d \n\n",
+	XLALPrintError ("\nERROR: timestamps-file contained negative time-entry in line %d \n\n",
 		       ts->length);
 	ABORT ( status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
       }
@@ -1275,14 +1272,14 @@ LALWriteSFT2file (LALStatus *status,
   ASSERT (fname, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL); 
 
   if ( !is_valid_detector(sft->name) ) {
-    if ( lalDebugLevel ) LALPrintError ("\nInvalid detector prefix '%c%c'\n\n", sft->name[0], sft->name[1] );
+    XLALPrintError ("\nInvalid detector prefix '%c%c'\n\n", sft->name[0], sft->name[1] );
     ABORT ( status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
   }
 
   /* open SFT-file for writing */
   if ( (fp = LALFopen ( fname, "wb" )) == NULL )
     {
-      if ( lalDebugLevel ) LALPrintError ("\nFailed to open file '%s' for writing: %s\n\n", fname, strerror(errno));
+      XLALPrintError ("\nFailed to open file '%s' for writing: %s\n\n", fname, strerror(errno));
       ABORT ( status, SFTFILEIO_ESFTWRITE, SFTFILEIO_MSGESFTWRITE );      
     }
 
@@ -1595,7 +1592,7 @@ LALWriteSFTfile (LALStatus  *status,
   if (fp == NULL) {
     LALFree (rawheader);
     LALFree (rawdata);
-    LALPrintError ("\nFailed to open file '%s' for writing!\n\n", outfname );
+    XLALPrintError ("\nFailed to open file '%s' for writing!\n\n", outfname );
     ABORT (status, SFTFILEIO_EFILE,  SFTFILEIO_MSGEFILE);
   }
 
@@ -2081,13 +2078,13 @@ fopen_SFTLocator ( const struct tagSFTLocator *locator )
   fname = locator->fname;
   if ( (fp = LALFopen( fname, "rb" )) == NULL )
     {
-      LALPrintError ("\nFailed to open SFT '%s' for reading: %s\n\n", fname, strerror(errno) );
+      XLALPrintError ("\nFailed to open SFT '%s' for reading: %s\n\n", fname, strerror(errno) );
       return NULL;
     }
       
   if ( fseek( fp, locator->offset, SEEK_SET ) == -1 )
     {
-      LALPrintError ("\nFailed to set fp-offset to '%ld': %s\n\n", locator->offset, strerror(errno) );
+      XLALPrintError ("\nFailed to set fp-offset to '%ld': %s\n\n", locator->offset, strerror(errno) );
       fclose(fp);
       return NULL;
     }
@@ -2116,14 +2113,14 @@ has_valid_v2_crc64 ( FILE *fp )
   /* input consistency */
   if ( !fp ) 
     {
-      LALPrintError ("\nhas_valid_v2_crc64() was called with NULL filepointer!\n\n");
+      XLALPrintError ("\nhas_valid_v2_crc64() was called with NULL filepointer!\n\n");
       return FALSE;
     }
   
   /* store fileposition for restoring in case of failure */
   if ( ( save_filepos = ftell(fp) ) == -1 )
     {
-      LALPrintError ("\nERROR: ftell() failed: %s\n\n", strerror(errno) );
+      XLALPrintError ("\nERROR: ftell() failed: %s\n\n", strerror(errno) );
       return -1;
     }
 
@@ -2132,7 +2129,7 @@ has_valid_v2_crc64 ( FILE *fp )
 
   if ( version != 2 ) 
     {
-      LALPrintError ("\nhas_valid_v2_crc64() was called on non-v2 SFT.\n\n");
+      XLALPrintError ("\nhas_valid_v2_crc64() was called on non-v2 SFT.\n\n");
       return -1;
     }
 
@@ -2153,7 +2150,7 @@ has_valid_v2_crc64 ( FILE *fp )
       int toread = (BLOCKSIZE < data_len) ? BLOCKSIZE : data_len;
       if (toread != (int)fread ( block, 1, toread, fp) ) 
 	{
-	  LALPrintError ("\nFailed to read all frequency-bins from SFT.\n\n");
+	  XLALPrintError ("\nFailed to read all frequency-bins from SFT.\n\n");
 	  return FALSE;
 	}
       data_len -= toread;
@@ -2203,7 +2200,7 @@ LALReadSFTheader (LALStatus  *status,
   /* read version-number */
   if  (fread (inVersion, sizeof(inVersion), 1, fp) != 1) {
     fclose (fp);
-    if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
+    if (lalDebugLevel) XLALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
     ABORT (status, SFTFILEIO_EHEADER,  SFTFILEIO_MSGEHEADER);
   }
 
@@ -2216,7 +2213,7 @@ LALReadSFTheader (LALStatus  *status,
     /* fail if still not true */
     if(memcmp(inVersion,&version,sizeof(version))){
       fclose (fp);
-      if (lalDebugLevel) LALPrintError ("\nOnly v1-SFTs supported at the moment!: %s\n\n", fname);
+      if (lalDebugLevel) XLALPrintError ("\nOnly v1-SFTs supported at the moment!: %s\n\n", fname);
       ABORT (status, SFTFILEIO_EHEADER,  SFTFILEIO_MSGEHEADER);
     }
   }
@@ -2232,7 +2229,7 @@ LALReadSFTheader (LALStatus  *status,
   if (fread( rawheader, sizeof(_SFT_header_v1_t), 1, fp) != 1) {
     fclose (fp);
     LALFree (rawheader);
-    if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
+    if (lalDebugLevel) XLALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
     ABORT (status, SFTFILEIO_EHEADER,  SFTFILEIO_MSGEHEADER);
   }
 
@@ -2268,25 +2265,25 @@ LALReadSFTheader (LALStatus  *status,
 
   /* gps_sec and gps_nsec >= 0 */
   if ( (header1.gpsSeconds < 0) || (header1.gpsNanoSeconds <0) ) {
-    if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
+    if (lalDebugLevel) XLALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
     ABORT (status, SFTFILEIO_EHEADER,  SFTFILEIO_MSGEHEADER);
   }
 
   /* tbase > 0 */
   if ( header1.timeBase <= 0 ) {
-    if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
+    if (lalDebugLevel) XLALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
     ABORT (status, SFTFILEIO_EHEADER,  SFTFILEIO_MSGEHEADER);
   }
 
   /* fminindex >= 0 */
   if (header1.fminBinIndex < 0) {
-    if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
+    if (lalDebugLevel) XLALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
     ABORT (status, SFTFILEIO_EHEADER,  SFTFILEIO_MSGEHEADER);
   }
   
   /* nsamples >= 0 */
   if (header1.length < 0) {
-    if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
+    if (lalDebugLevel) XLALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
     ABORT (status, SFTFILEIO_EHEADER,  SFTFILEIO_MSGEHEADER);
   }
 
@@ -2352,7 +2349,7 @@ LALReadSFTdata(LALStatus *status,
   /* read version-number */
   if  (fread (inVersion, sizeof(inVersion), 1, fp) != 1) {
     fclose (fp);
-    if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
+    if (lalDebugLevel) XLALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
     ABORT (status, SFTFILEIO_EHEADER,  SFTFILEIO_MSGEHEADER);
   }
 
@@ -2378,7 +2375,7 @@ LALReadSFTdata(LALStatus *status,
   /* fail if the version is invalid */
   if (version < 0) {
     fclose (fp);
-    if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
+    if (lalDebugLevel) XLALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
     ABORT (status, SFTFILEIO_EHEADER,  SFTFILEIO_MSGEHEADER);
   }
 
@@ -2476,42 +2473,42 @@ consistent_mSFT_header ( SFTtype header1, UINT4 version1, UINT4 nsamples1, SFTty
   /* 1) identical detector */
   if ( (header1.name[0] != header2.name[0]) || (header1.name[1] != header2.name[1]) )
     {
-      if ( lalDebugLevel ) LALPrintError ("\nInvalid merged SFT: non-identical detectors\n\n");
+      XLALPrintError ("\nInvalid merged SFT: non-identical detectors\n\n");
       return FALSE;
     }
 
   /* 2) identical version-number */
   if ( version1 != version2 )
     {
-      if ( lalDebugLevel ) LALPrintError ("\nInvalid merged SFT: non-identical version-numbers\n\n");
+      XLALPrintError ("\nInvalid merged SFT: non-identical version-numbers\n\n");
       return FALSE;
     }
 
   /* 3) increasing GPS-times */
   if ( GPS2REAL8 ( header1.epoch ) >= GPS2REAL8 ( header2.epoch ) )
     {
-      if ( lalDebugLevel ) LALPrintError ("\nInvalid merged SFT: non-increasing GPS epochs \n\n" );
+      XLALPrintError ("\nInvalid merged SFT: non-increasing GPS epochs \n\n" );
       return FALSE;
     }
 
   /* 4) identical tbase */
   if ( header1.deltaF != header2.deltaF )
     {
-      if ( lalDebugLevel ) LALPrintError ("\nInvalid merged SFT: non-identical time baselines\n\n");
+      XLALPrintError ("\nInvalid merged SFT: non-identical time baselines\n\n");
       return FALSE;
     }
 
   /* 5) identical start-frequency */
   if ( header1.f0 != header2.f0 )
     {
-      if ( lalDebugLevel ) LALPrintError ("\nInvalid merged SFT: non-identical start-frequencies\n\n");
+      XLALPrintError ("\nInvalid merged SFT: non-identical start-frequencies\n\n");
       return FALSE;
     }
 
   /* 6) identical number of frequency-bins */
   if ( nsamples1 != nsamples2 )
     {
-      if ( lalDebugLevel ) LALPrintError ("\nInvalid merged SFT: non-identical number of frequency-bins\n\n" );
+      XLALPrintError ("\nInvalid merged SFT: non-identical number of frequency-bins\n\n" );
       return FALSE;
     }
 
@@ -2558,7 +2555,7 @@ read_one_sft_from_fp (  LALStatus *status, SFTtype **sft, REAL8 fMin, REAL8 fMax
 
   if ( read_sft_header_from_fp (fp, ret, &version, &crc64, &swapEndian, NULL, &numSFTbins ) != 0 )
     {
-      if ( lalDebugLevel ) LALPrintError ("\nFailed to read SFT-header!\n\n");
+      XLALPrintError ("\nFailed to read SFT-header!\n\n");
       LALDestroySFTtype ( status->statusPtr, &ret );
       ABORT ( status, SFTFILEIO_EHEADER, SFTFILEIO_MSGEHEADER ); 
     }
@@ -2591,7 +2588,7 @@ read_one_sft_from_fp (  LALStatus *status, SFTtype **sft, REAL8 fMin, REAL8 fMax
   if ( firstBin2read > lastBin2read )
     {
       if ( lalDebugLevel ) 
-	LALPrintError ("\nEmpty frequency-interval requested [%d, %d] bins\n\n", 
+	XLALPrintError ("\nEmpty frequency-interval requested [%d, %d] bins\n\n", 
 		       firstBin2read, lastBin2read );
       ABORT ( status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
     }
@@ -2600,7 +2597,7 @@ read_one_sft_from_fp (  LALStatus *status, SFTtype **sft, REAL8 fMin, REAL8 fMax
   if ( firstBin2read < firstSFTbin )
     {
       if ( lalDebugLevel ) 
-	LALPrintError ( "\nRequested fMin=%f is not contained in SFT! (%d < %d)\n\n", 
+	XLALPrintError ( "\nRequested fMin=%f is not contained in SFT! (%d < %d)\n\n", 
 			fMin, firstBin2read, firstSFTbin );
       LALDestroySFTtype ( status->statusPtr, &ret );
       ABORT ( status, SFTFILEIO_EFREQBAND, SFTFILEIO_MSGEFREQBAND );
@@ -2608,7 +2605,7 @@ read_one_sft_from_fp (  LALStatus *status, SFTtype **sft, REAL8 fMin, REAL8 fMax
   if ( lastBin2read > lastSFTbin )
     {
       if ( lalDebugLevel ) 
-	LALPrintError ( "\nRequested fMax=%f is not contained in SFT! (%d > %d)\n\n", 
+	XLALPrintError ( "\nRequested fMax=%f is not contained in SFT! (%d > %d)\n\n", 
 			fMax, lastBin2read, lastSFTbin );
       LALDestroySFTtype ( status->statusPtr, &ret );
       ABORT ( status, SFTFILEIO_EFREQBAND, SFTFILEIO_MSGEFREQBAND );
@@ -2621,7 +2618,7 @@ read_one_sft_from_fp (  LALStatus *status, SFTtype **sft, REAL8 fMin, REAL8 fMax
   if ( fseek ( fp, offsetBytes, SEEK_CUR ) != 0 )
     {
       if ( lalDebugLevel ) 
-	LALPrintError ( "\nFailed to fseek() to first frequency-bin %d: %s\n\n", 
+	XLALPrintError ( "\nFailed to fseek() to first frequency-bin %d: %s\n\n", 
 			firstBin2read, strerror(errno) );
       LALDestroySFTtype ( status->statusPtr, &ret );
       ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
@@ -2634,7 +2631,7 @@ read_one_sft_from_fp (  LALStatus *status, SFTtype **sft, REAL8 fMin, REAL8 fMax
 
   if ( numBins2read != fread ( ret->data->data, 2*sizeof( REAL4 ), numBins2read, fp ) )
     {
-      if (lalDebugLevel) LALPrintError ("\nFailed to read %d bins from SFT!\n\n", numBins2read );
+      if (lalDebugLevel) XLALPrintError ("\nFailed to read %d bins from SFT!\n\n", numBins2read );
       LALDestroySFTtype ( status->statusPtr, &ret );
       ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
     }
@@ -2712,7 +2709,7 @@ read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, UINT4
 
   if ( read_sft_header_from_fp (fp, ret, &version, &crc64, &swapEndian, NULL, &numSFTbins ) != 0 )
     {
-      if ( lalDebugLevel ) LALPrintError ("\nFailed to read SFT-header!\n\n");
+      XLALPrintError ("\nFailed to read SFT-header!\n\n");
       LALDestroySFTtype ( status->statusPtr, &ret );
       ABORT ( status, SFTFILEIO_EHEADER, SFTFILEIO_MSGEHEADER ); 
     }
@@ -2724,7 +2721,7 @@ read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, UINT4
   if ( firstBin2read > lastBin2read )
     {
       if ( lalDebugLevel ) 
-	LALPrintError ("\nEmpty frequency-interval requested [%d, %d] bins\n\n", 
+	XLALPrintError ("\nEmpty frequency-interval requested [%d, %d] bins\n\n", 
 		       firstBin2read, lastBin2read );
       ABORT ( status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
     }
@@ -2733,7 +2730,7 @@ read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, UINT4
   if ( firstBin2read < firstSFTbin )
     {
       if ( lalDebugLevel ) 
-	LALPrintError ( "\nRequested bin is not contained in SFT! (%d < %d)\n\n", 
+	XLALPrintError ( "\nRequested bin is not contained in SFT! (%d < %d)\n\n", 
 			firstBin2read, firstSFTbin );
       LALDestroySFTtype ( status->statusPtr, &ret );
       ABORT ( status, SFTFILEIO_EFREQBAND, SFTFILEIO_MSGEFREQBAND );
@@ -2749,7 +2746,7 @@ read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, UINT4
   if ( fseek ( fp, offsetBytes, SEEK_CUR ) != 0 )
     {
       if ( lalDebugLevel ) 
-	LALPrintError ( "\nFailed to fseek() to first frequency-bin %d: %s\n\n", 
+	XLALPrintError ( "\nFailed to fseek() to first frequency-bin %d: %s\n\n", 
 			firstBin2read, strerror(errno) );
       LALDestroySFTtype ( status->statusPtr, &ret );
       ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
@@ -2762,7 +2759,7 @@ read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, UINT4
 
   if ( numBins2read != fread ( ret->data->data, 2*sizeof( REAL4 ), numBins2read, fp ) )
     {
-      if (lalDebugLevel) LALPrintError ("\nFailed to read %d bins from SFT!\n\n", numBins2read );
+      if (lalDebugLevel) XLALPrintError ("\nFailed to read %d bins from SFT!\n\n", numBins2read );
       LALDestroySFTtype ( status->statusPtr, &ret );
       ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
     }
@@ -2822,7 +2819,7 @@ read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, UINT4
  * We do basic checking of compliance with the SFT-spec (<tt>LIGO-T04164-01-Z</tt>)
  * as far as a single header is concerned.
  *
- * NOTE: fatal errors will produce a LALPrintError() error-message, but
+ * NOTE: fatal errors will produce a XLALPrintError() error-message, but
  * non-fatal 'SFT-format'-errors will only output error-messages if lalDebugLevel > 0.
  * --> this function can therefore be used to check if a given file actually contains SFTs
  * 
@@ -2843,19 +2840,19 @@ read_sft_header_from_fp (FILE *fp, SFTtype  *header, UINT4 *version, UINT8 *crc6
 
   if ( !header || !version || !numBins || !fp  )
     {
-      LALPrintError ("\nERROR read_sft_header_from_fp(): called with NULL input\n\n");
+      XLALPrintError ("\nERROR read_sft_header_from_fp(): called with NULL input\n\n");
       return -1;
     }
   if ( comment && ((*comment) != NULL) )
     {
-      LALPrintError ("\nERROR: Comment-string passed to read_sft_header_from_fp() is not empty!\n\n");
+      XLALPrintError ("\nERROR: Comment-string passed to read_sft_header_from_fp() is not empty!\n\n");
       return -1;
     }
 
   /* store fileposition for restoring in case of failure */
   if ( ( save_filepos = ftell(fp) ) == -1 )
     {
-      LALPrintError ("\nftell() failed: %s\n\n", strerror(errno) );
+      XLALPrintError ("\nftell() failed: %s\n\n", strerror(errno) );
       return -1;
     }
 
@@ -2879,7 +2876,7 @@ read_sft_header_from_fp (FILE *fp, SFTtype  *header, UINT4 *version, UINT8 *crc6
       break;
       
     default:
-      LALPrintError ("\nUnsupported SFT-version %d.\n\n", ver);
+      XLALPrintError ("\nUnsupported SFT-version %d.\n\n", ver);
       goto failed;
       break;
     } /* switch(ver) */
@@ -2888,20 +2885,20 @@ read_sft_header_from_fp (FILE *fp, SFTtype  *header, UINT4 *version, UINT8 *crc6
   /* ----- some general SFT-header consistency-checks */
   if ( (head.epoch.gpsSeconds < 0 ) || ( head.epoch.gpsNanoSeconds < 0 ) || ( head.epoch.gpsNanoSeconds >= 1000000000)  )
     {
-      if ( lalDebugLevel ) LALPrintError ("\nInvalid GPS-epoch in SFT : [%d, %d]!\n\n", 
+      XLALPrintError ("\nInvalid GPS-epoch in SFT : [%d, %d]!\n\n", 
 					  head.epoch.gpsSeconds, head.epoch.gpsNanoSeconds );
       goto failed;
     }
 
   if ( head.deltaF <= 0 ) 
     {
-      if ( lalDebugLevel ) LALPrintError ("\nNegative frequency-spacing in SFT!\n\n");
+      XLALPrintError ("\nNegative frequency-spacing in SFT!\n\n");
       goto failed;
     }
       
   if ( head.f0 < 0 )
     {
-      if ( lalDebugLevel ) LALPrintError ("\nNegative start-frequency in SFT!\n\n");
+      XLALPrintError ("\nNegative start-frequency in SFT!\n\n");
       goto failed;
     }
       
@@ -2923,7 +2920,7 @@ read_sft_header_from_fp (FILE *fp, SFTtype  *header, UINT4 *version, UINT8 *crc6
  failed:
   /* restore filepointer initial position  */
   if ( fseek ( fp, save_filepos, SEEK_SET ) == -1 )
-    LALPrintError ("\nfseek() failed to return to intial fileposition: %s\n\n", strerror(errno) );
+    XLALPrintError ("\nfseek() failed to return to intial fileposition: %s\n\n", strerror(errno) );
   
   /* free comment  if we allocated one */
   if ( comm )
@@ -2941,7 +2938,7 @@ read_sft_header_from_fp (FILE *fp, SFTtype  *header, UINT4 *version, UINT8 *crc6
  * set fp to initial position if it fails.
  * RETURN: 0 = OK, -1 = ERROR 
  *
- * NOTE: fatal errors will produce a LALPrintError() error-message, but
+ * NOTE: fatal errors will produce a XLALPrintError() error-message, but
  * non-fatal 'SFT-format'-errors will only output error-messages if lalDebugLevel > 0.
  * 
  */
@@ -2957,26 +2954,26 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
   /* check input-consistency */
   if ( !fp || !header || !nsamples || !comment )
     {
-      LALPrintError ( "\nERROR read_v2_header_from_fp(): called with NULL input!\n\n");
+      XLALPrintError ( "\nERROR read_v2_header_from_fp(): called with NULL input!\n\n");
       return -1;
     }
   if ( comment && (*comment != NULL) )
     {
-      LALPrintError ("\nERROR: Comment-string passed to read_v2_header_from_fp() is not NULL!\n\n");
+      XLALPrintError ("\nERROR: Comment-string passed to read_v2_header_from_fp() is not NULL!\n\n");
       return -1;
     }
   
   /* store fileposition for restoring in case of failure */
   if ( ( save_filepos = ftell(fp) ) == -1 )
     {
-      LALPrintError ("\nERROR: ftell() failed: %s\n\n", strerror(errno) );
+      XLALPrintError ("\nERROR: ftell() failed: %s\n\n", strerror(errno) );
       return -1;
     }
 
   /* read the whole header */
   if (fread( &rawheader, sizeof(rawheader), 1, fp) != 1) 
     {
-      if (lalDebugLevel) LALPrintError ("\nCould not read v2-header. %s\n\n", strerror(errno) );
+      if (lalDebugLevel) XLALPrintError ("\nCould not read v2-header. %s\n\n", strerror(errno) );
       goto failed;
     }
 
@@ -3016,32 +3013,32 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
   /* double-check version-number */
   if ( rawheader.version != 2 )
     {
-      if ( lalDebugLevel ) LALPrintError ("\nWrong SFT-version %d in read_v2_header_from_fp()\n\n", rawheader.version );
+      XLALPrintError ("\nWrong SFT-version %d in read_v2_header_from_fp()\n\n", rawheader.version );
       goto failed;
     }
 
   if ( rawheader.nsamples <= 0 )
     {
-      if ( lalDebugLevel ) LALPrintError ("\nNon-positive number of samples in SFT!\n\n");
+      XLALPrintError ("\nNon-positive number of samples in SFT!\n\n");
       goto failed;
     }
 
   /* ----- v2-specific consistency-checks ----- */
   if ( rawheader.comment_length < 0 )
     {
-      if ( lalDebugLevel ) LALPrintError ("\nNegative comment-length in SFT!\n\n");
+      XLALPrintError ("\nNegative comment-length in SFT!\n\n");
       goto failed;
     }
 
   if ( rawheader.comment_length % 8 != 0 )
     {
-      if ( lalDebugLevel ) LALPrintError ("\nComment-length must be multiple of 8 bytes!\n\n");
+      XLALPrintError ("\nComment-length must be multiple of 8 bytes!\n\n");
       goto failed;
     }
 
   if ( ! is_valid_detector ( rawheader.detector ) )
     {
-      if ( lalDebugLevel ) LALPrintError ("\nIllegal detector-name in SFT: '%c%c'\n\n", 
+      XLALPrintError ("\nIllegal detector-name in SFT: '%c%c'\n\n", 
 					  rawheader.detector[0], rawheader.detector[1] );
       goto failed;
     }
@@ -3053,19 +3050,19 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
       CHAR *ptr;
       if ( (comm = LALCalloc(1, rawheader.comment_length )) == NULL )
 	{
-	  LALPrintError ("\nFATAL: out of memory ...\n\n");
+	  XLALPrintError ("\nFATAL: out of memory ...\n\n");
 	  goto failed;
 	}
       if ( (size_t)rawheader.comment_length != fread ( comm, 1, rawheader.comment_length, fp ) )
 	{
-	  if ( lalDebugLevel ) LALPrintError ("\nCould not read %d-bytes comment\n\n");
+	  XLALPrintError ("\nCould not read %d-bytes comment\n\n");
 	  goto failed;
 	}
 
       /* check that comment is 0-terminated */
       if ( comm[ rawheader.comment_length - 1] != 0 )
 	{
-	  if ( lalDebugLevel ) LALPrintError ("\nComment is not properly 0-terminated!\n\n");
+	  XLALPrintError ("\nComment is not properly 0-terminated!\n\n");
 	  goto failed;
 	}
 
@@ -3074,7 +3071,7 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
       while ( ptr < (comm + rawheader.comment_length - 1) )
 	if ( *ptr++ != 0 )
 	  {
-	    if ( lalDebugLevel ) LALPrintError ("\nNon-NULL bytes found after comment-end!\n\n");
+	    XLALPrintError ("\nNon-NULL bytes found after comment-end!\n\n");
 	    goto failed;
 	  }
 
@@ -3118,7 +3115,7 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
  failed:
   /* restore filepointer initial position  */
   if ( fseek ( fp, save_filepos, SEEK_SET ) == -1 )
-    LALPrintError ("\nfseek() failed to return to intial fileposition: %s\n\n", strerror(errno) );
+    XLALPrintError ("\nfseek() failed to return to intial fileposition: %s\n\n", strerror(errno) );
 
   /* free comment  if we allocated one */
   if ( comm )
@@ -3135,7 +3132,7 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
  * set fp to initial position if it fails.
  * RETURN: 0 = OK, -1 = ERROR 
  *
- * NOTE: fatal errors will produce a LALPrintError() error-message, but
+ * NOTE: fatal errors will produce a XLALPrintError() error-message, but
  * non-fatal 'SFT-format'-errors will only output error-messages if lalDebugLevel > 0.
  *
  */
@@ -3147,21 +3144,21 @@ read_v1_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, BOOLEAN swa
 
   if ( !fp || !header || !nsamples)
     {
-      LALPrintError ( "\nERROR read_v1_header_from_fp(): called with NULL input!\n\n");
+      XLALPrintError ( "\nERROR read_v1_header_from_fp(): called with NULL input!\n\n");
       return -1;
     }
   
   /* store fileposition for restoring in case of failure */
   if ( ( save_filepos = ftell(fp) ) == -1 )
     {
-      LALPrintError ("\nftell() failed: %s\n\n", strerror(errno) );
+      XLALPrintError ("\nftell() failed: %s\n\n", strerror(errno) );
       return -1;
     }
 
   /* read the whole header */
   if (fread( &rawheader, sizeof(rawheader), 1, fp) != 1) 
     {
-      if (lalDebugLevel) LALPrintError ("\nCould not read v1-header. %s\n\n", strerror(errno) );
+      if (lalDebugLevel) XLALPrintError ("\nCould not read v1-header. %s\n\n", strerror(errno) );
       goto failed;
     }
 
@@ -3178,13 +3175,13 @@ read_v1_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, BOOLEAN swa
   /* double-check version-number */
   if ( rawheader.version != 1 )
     {
-      if ( lalDebugLevel ) LALPrintError ("\nWrong SFT-version %d in read_v1_header_from_fp()\n\n", rawheader.version );
+      XLALPrintError ("\nWrong SFT-version %d in read_v1_header_from_fp()\n\n", rawheader.version );
       goto failed;
     }
 
   if ( rawheader.nsamples <= 0 )
     {
-      if ( lalDebugLevel ) LALPrintError ("\nNon-positive number of samples in SFT!\n\n");
+      XLALPrintError ("\nNon-positive number of samples in SFT!\n\n");
       goto failed;
     }
 
@@ -3207,7 +3204,7 @@ read_v1_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, BOOLEAN swa
  failed:
   /* restore filepointer initial position  */
   if ( fseek ( fp, save_filepos, SEEK_SET ) == -1 )
-    LALPrintError ("\nfseek() failed to return to intial fileposition: %s\n\n", strerror(errno) );
+    XLALPrintError ("\nfseek() failed to return to intial fileposition: %s\n\n", strerror(errno) );
 
   return -1;
 
@@ -3443,7 +3440,7 @@ find_files (const CHAR *globdir)
 #ifndef _MSC_VER
       /* now go through the file-list in this directory */
       if ( (dir = opendir(dname)) == NULL) {
-	LALPrintError ("Can't open data-directory `%s`\n", dname);
+	XLALPrintError ("Can't open data-directory `%s`\n", dname);
 	LALFree (dname);
 	return (NULL);
       }
@@ -3454,7 +3451,7 @@ find_files (const CHAR *globdir)
       dir = _findfirst(ptr3,&entry);
       LALFree(ptr3);
       if (dir == -1) {
-	LALPrintError ("Can't find file for pattern `%s`\n", ptr3);
+	XLALPrintError ("Can't find file for pattern `%s`\n", ptr3);
 	LALFree (dname);
 	return (NULL);
       }
@@ -3698,14 +3695,14 @@ read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp )
   /* store fileposition for restoring in case of failure */
   if ( ( save_filepos = ftell(fp) ) == -1 )
     {
-      LALPrintError ("\nftell() failed: %s\n\n", strerror(errno) );
+      XLALPrintError ("\nftell() failed: %s\n\n", strerror(errno) );
       return -1;
     }
 
   /* read version-number */
   if  ( 1 != fread ( &ver, sizeof( ver ), 1, fp) )
     {
-      if (lalDebugLevel) LALPrintError ("\nCould not read version-number from file\n\n");
+      if (lalDebugLevel) XLALPrintError ("\nCould not read version-number from file\n\n");
       goto failed;
     }
 
@@ -3727,7 +3724,7 @@ read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp )
   if ( *version < MIN_SFT_VERSION ) {
     if ( lalDebugLevel ) {
       unsigned char *v = (unsigned char*)(&ver);
-      LALPrintError( "\nERROR: illegal SFT-version (%X %X %X %X %X %X %X %X) not within [%.0f, %.0f]\n",
+      XLALPrintError( "\nERROR: illegal SFT-version (%X %X %X %X %X %X %X %X) not within [%.0f, %.0f]\n",
 		     v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],
 		     (float)MIN_SFT_VERSION, (float)MAX_SFT_VERSION );
     }
@@ -3737,7 +3734,7 @@ read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp )
   /* restore initial filepointer position */
   if ( fseek ( fp, save_filepos, SEEK_SET ) == -1 )
     {
-      LALPrintError ("\nfseek() failed to return to intial fileposition: %s\n\n", strerror(errno) );
+      XLALPrintError ("\nfseek() failed to return to intial fileposition: %s\n\n", strerror(errno) );
       goto failed;
     }
 
