@@ -1381,7 +1381,7 @@ class CoireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     fname = "COIRE"
     if self.__num_slides: fname += "_SLIDE"
     if self.__injection_file:
-      fname += "_" + self.__injection_file.split("-")[1][:-4]
+      fname += "_" + self.__injection_file.split("-")[1]
       fname += "_FOUND"
     if self.__ifotag: fname += "_" + self.__ifotag
     self.__output_tag = fname
