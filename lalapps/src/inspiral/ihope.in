@@ -170,6 +170,9 @@ def hipe_setup(hipeDir, config, injFile=None, dfOnly = False):
   hipecp.remove_option("condor","hipe")
   hipecp.remove_option("condor","follow")
 
+  hipecp.set("input", "gps-start-time", opts.gps_start_time)
+  hipecp.set("input", "gps-end-time", opts.gps_end_time)
+
   if injFile:
     # add the options to the ini file
     if injFile[0] != "/": injFile = "../../" + injFile
