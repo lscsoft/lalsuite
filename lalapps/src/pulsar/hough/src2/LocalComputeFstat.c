@@ -531,8 +531,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	k1 = k0 + 2 * Dterms;
 	if ( (k0 < freqIndex0) || (k1 > freqIndex1) ) 
 	  {
-	    LogPrintf(LOG_CRITICAL, "Required frequency-bins [%d, %d] not covered by SFT-interval [%d, %d]\n\n",
-			   k0, k1, freqIndex0, freqIndex1 );
+	    LogPrintf(LOG_CRITICAL, "Required frequency-bins [%d, %d] not covered by SFT-interval [%d, %d] (%e)\n\n",
+			   k0, k1, freqIndex0, freqIndex1, Dphi_alpha);
 	    XLAL_ERROR("LocalXLALComputeFaFb", XLAL_EDOM);
 	  }
 
