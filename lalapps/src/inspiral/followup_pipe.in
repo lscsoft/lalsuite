@@ -153,6 +153,8 @@ class inspiralFollowUpNode(pipeline.CondorDAGNode):
         continue
       if row.param[2:] == 'trig-end-time':
         continue
+      if (row.param[2:] == 'injection-file') and ( len(string.strip(cp.get('triggers','injection-file'))) > 0 ):
+        row.value = string.strip(cp.get('triggers','injection-file'))
       self.add_var_opt(row.param[2:],row.value)
       if row.param[2:] == 'gps-start-time':
         self.add_macro("macrogpsstarttime",row.value)
@@ -213,10 +215,10 @@ class plotSNRCHISQNode(pipeline.CondorDAGNode):
     self.container = HTMLcontainer(trig,"SNR_and_CHISQ_plots")
     self.container2 = HTMLcontainer(trig,"Calibrated_Spectrum")
     self.add_var_opt("output-html-file",self.container.locallink)
-    self.add_var_opt("output-path","followuptrigs/"+self.container.name+"/")
+    self.add_var_opt("output-path",self.container.localdetailpath)
     self.add_var_opt("image-file", self.container.localimage)
     self.add_var_opt("output-html-file2",self.container2.locallink)
-    self.add_var_opt("output-path2","followuptrigs/"+self.container2.name+"/")
+    self.add_var_opt("output-path2",self.container2.localdetailpath)
     self.add_var_opt("image-file2", self.container2.localimage)
     self.add_var_opt("page", page)
     if plotFlag: self.initializeHTML()
@@ -770,7 +772,7 @@ for trig in followuptrigs:
       # 1s is substracted to the expected startTime to make sure the window
       # will be large enough. This is to be sure to handle the rouding to the
       # next sample done by qscan.
-      q_time = cp.getint('q-datafind','search-time-range')/2 
+      q_time = cp.getint('q-hoft-datafind','search-time-range')/2 
       dNode = pipeline.LSCDataFindNode(dataJob)
       dNode.set_observatory(ifo[0])
       dNode.set_start(int( trig.gpsTime[ifo] - q_time - 1))
@@ -782,6 +784,7 @@ for trig in followuptrigs:
         dag.add_node(dNode)
         dataHoftJobCnt+=1
       prev_dNode = dNode
+    else: dNode = None
 
     # SETUP CONVERTLALCACHE JOBS FOR HOFT QSCANS
     if trig.gpsTime[ifo] and dNode:
