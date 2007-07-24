@@ -270,7 +270,7 @@ LocalComputeFStat ( LALStatus *status,
   }
 
   if ( doppler->orbit ) {
-    LALPrintError ("\nSorry, binary-pulsar search not yet implemented in LALComputeFStat()\n\n");
+    XLALPrintError ("\nSorry, binary-pulsar search not yet implemented in LALComputeFStat()\n\n");
     ABORT ( status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
   }
 
@@ -301,7 +301,7 @@ LocalComputeFStat ( LALStatus *status,
 
       /* noise-weigh Antenna-patterns and compute A,B,C */
       if ( XLALWeighMultiAMCoeffs ( multiAMcoef, multiWeights ) != XLAL_SUCCESS ) {
-	LALPrintError("\nXLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
+	XLALPrintError("\nXLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
 	ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
       }
 
@@ -332,7 +332,7 @@ LocalComputeFStat ( LALStatus *status,
 	{
 	  if ( XLALComputeFaFbXavie (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSB->data[X], multiAMcoef->data[X], params) != 0)
 	    {
-	      LALPrintError ("\nXALComputeFaFbXavie() failed\n");
+	      XLALPrintError ("\nXALComputeFaFbXavie() failed\n");
 	      ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
 	    }
 	}
@@ -340,14 +340,14 @@ LocalComputeFStat ( LALStatus *status,
 	{
 	  if ( LocalXLALComputeFaFb (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSB->data[X], multiAMcoef->data[X], params) != 0)
 	    {
-	      LALPrintError ("\nLocalXALComputeFaFb() failed\n");
+	      XLALPrintError ("\nLocalXALComputeFaFb() failed\n");
 	      ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
 	    }
 	}
 
 #ifndef LAL_NDEBUG
       if ( !finite(FcX.Fa.re) || !finite(FcX.Fa.im) || !finite(FcX.Fb.re) || !finite(FcX.Fb.im) ) {
-	LALPrintError("LocalXLALComputeFaFb() returned non-finite: Fa=(%f,%f), Fb=(%f,%f)\n", 
+	XLALPrintError("LocalXLALComputeFaFb() returned non-finite: Fa=(%f,%f), Fb=(%f,%f)\n", 
 		      FcX.Fa.re, FcX.Fa.im, FcX.Fb.re, FcX.Fb.im );
 	ABORT (status,  COMPUTEFSTATC_EIEEE,  COMPUTEFSTATC_MSGEIEEE);
       }
@@ -420,24 +420,24 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
   /* ----- check validity of input */
 #ifndef LAL_NDEBUG
   if ( !FaFb ) {
-    LALPrintError ("\nOutput-pointer is NULL !\n\n");
+    XLALPrintError ("\nOutput-pointer is NULL !\n\n");
     XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EINVAL);
   }
 
   if ( !sfts || !sfts->data ) {
-    LALPrintError ("\nInput SFTs are NULL!\n\n");
+    XLALPrintError ("\nInput SFTs are NULL!\n\n");
     XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EINVAL);
   }
   
   if ( !tSSB || !tSSB->DeltaT || !tSSB->Tdot || !amcoe || !amcoe->a || !amcoe->b || !params)
     {
-      LALPrintError ("\nIllegal NULL in input !\n\n");
+      XLALPrintError ("\nIllegal NULL in input !\n\n");
       XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EINVAL);
     }
 
   if ( PULSAR_MAX_SPINS > NUM_FACT )
     {
-      LALPrintError ("\nInverse factorials table only up to order s=%d, can't handle %d spin-order\n\n",
+      XLALPrintError ("\nInverse factorials table only up to order s=%d, can't handle %d spin-order\n\n",
 		     NUM_FACT, PULSAR_MAX_SPINS - 1 );
       XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EINVAL);
     }
@@ -1009,7 +1009,7 @@ local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 #ifndef LAL_NDEBUG
   if ( xt < 0.0 || xt > 1.0 )
     {
-      LALPrintError("\nFailed numerica in local_sin_cos_2PI_LUT(): xt = %f not in [0,1)\n\n", xt );
+      XLALPrintError("\nFailed numerica in local_sin_cos_2PI_LUT(): xt = %f not in [0,1)\n\n", xt );
       return XLAL_FAILURE;
     }
 #endif
