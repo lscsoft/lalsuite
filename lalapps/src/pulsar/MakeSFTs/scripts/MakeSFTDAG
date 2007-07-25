@@ -24,6 +24,7 @@ __version__ = '$Revision$'[11:-2]
 # 12/28/05 gam; Remove sample rate option
 # 01/09/06 gam; Add -Z option; write SFT to .*.tmp file, then move to final file name.
 # 01/14/07 gam; Add -u option to specify frame struct and type; add -i option to specify IFO name.
+# 07/24/07 gam; Add in -q option to read in list of nodes on which to output SFTs, -Q option to give node path, and -R option for number of jobs per node.
 
 # import standard modules and append the lalapps prefix to the python path
 import sys, os
@@ -79,6 +80,12 @@ Usage: MakeSFTDAG [options]
   -m, --max-num-per-node     maximum number of SFTs to generate on one node
   -L, --max-length-all-jobs  maximum total amount of data to process, in seconds (optional and unused if a segment file is given)
   -g, --segment-file         (optional) alternative file with segments to use, rather than the input times.
+  -q, --list-of-nodes        (optional) file with list of nodes on which to output SFTs.
+  -Q, --node-path            (optional) path to nodes to output SFTs; the node name is appended to this path, followed by path given by the -p option;
+                                        for example, if -q point to file with the list node1 node2 ... and the -Q /data/ -p /frames/S5/sfts/LHO options
+                                        are given, the first output file will go into /data/node1/frames/S5/sfts/LHO; the next node in the
+                                        list is used in constructing the path when the number of jobs given by the -R option reached, and so on.
+  -R, --output-jobs-per-node (optional) number of jobs to output per node in the list of nodes given with the -q option.
   -l, --min-seg-length       (optional) minimum length segments to process in seconds (used only if a segment file is given; default is 0)
   -S, --use-single           (optional) use single precision in MakeSFTs for windowing, plan and fft; filtering is always done in double precision. Use of double precision in MakeSFTs is the default.
   -H, --use-hot              (optional) input data is from h(t) calibrated frames (h of t = hot!) (0 or 1).
@@ -123,7 +130,7 @@ def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, c
 #
 
 # parse the command line options
-shortop = "s:e:a:b:f:t:G:d:x:M:k:T:p:C:O:o:N:i:w:P:u:v:c:F:B:D:X:m:L:g:l:hSHZ"
+shortop = "s:e:a:b:f:t:G:d:x:M:k:T:p:C:O:o:N:i:w:P:u:v:c:F:B:D:X:m:L:g:q:Q:R:l:hSHZ"
 longop = [
   "help",
   "gps-start-time=",
@@ -156,6 +163,9 @@ longop = [
   "max-num-per-node=",
   "max-length-all-jobs=",
   "segment-file=",
+  "list-of-nodes=",
+  "node-path=",
+  "output-jobs-per-node=",
   "min-seg-length=",
   "use-single=",  
   "use-hot",
@@ -199,6 +209,12 @@ miscDesc = None
 maxNumPerNode = None
 maxLengthAllJobs = None
 segmentFile = None
+nodeListFile = None
+nodePath = None
+outputJobsPerNode = 0L
+useNodeList = False
+nodeListIndex = 0L
+savedOutputSFTPath = None
 minSegLength = 0L
 useSingle = False
 useHoT = False
@@ -268,6 +284,12 @@ for o, a in opts:
     maxLengthAllJobs = long(a)
   elif o in ("-g", "--segment-file"):
     segmentFile = a
+  elif o in ("-q", "--list-of-nodes"):
+    nodeListFile = a
+  elif o in ("-Q", "--node-path"):
+    nodePath = a
+  elif o in ("-R", "--output-jobs-per-node"):
+    outputJobsPerNode = long(a)
   elif o in ("-l", "--min-seg-length"):
     minSegLength = long(a)
   elif o in ("-S", "--use-single"):
@@ -376,6 +398,36 @@ try: os.mkdir(logPath)
 except: pass
 try: os.mkdir(cachePath)
 except: pass
+
+# Check if list of nodes is given, on which to output SFTs.
+nodeList = [];
+if (nodeListFile != None):
+
+    if not nodePath:
+       print >> sys.stderr, "Node file list given, but no node path specified."
+       sys.exit(1)
+    
+    if (outputJobsPerNode < 1L):
+       print >> sys.stderr, "Node file list given, but invalid output jobs per node specified."
+       sys.exit(1)
+
+    try:
+         for line in open(nodeListFile):
+             # split the line get rid of the \n at the end
+             splitLine = line.split()
+             nodeList.append(splitLine[0])
+         # End for line in open(nodeListFile)
+         if (len(nodeList) < 1):
+             print >> sys.stderr, "No nodes found in node list file: %s." % nodeListFile
+             sys.exit(1)
+    except:
+         print >> sys.stderr, "Error reading or parsing node list file: %s." % nodeListFile
+         sys.exit(1)
+
+    # Set flag to use list of nodes in constructing output files
+    useNodeList = True
+    savedOutputSFTPath = outputSFTPath
+# END if (nodeListFile != None)
 
 # Check if segment file was given, else set up one segment from the command line
 segList = [];
@@ -538,6 +590,14 @@ for seg in segList:
             else:
                # write jobs to dag for this node
                nodeCount = nodeCount + 1
+
+               if (useNodeList):
+                  outputSFTPath = nodePath + nodeList[nodeListIndex] + savedOutputSFTPath
+                  if ((nodeCount % outputJobsPerNode) == 0L):
+                     nodeListIndex = nodeListIndex + 1L
+                  # END if ((nodeCount % outputJobsPerNode) == 0L)
+               # END if (useNodeList)
+
                if (nodeCount == 1): startTimeAllNodes = startTimeThisNode
                writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useSingle, useHoT, makeTmpFile, tagString, windowType, overlapFraction, sftVersion, makeGPSDirs, miscDesc, commentField, startFreq, freqBand, frameStructType, IFO)
                # Update for next node
@@ -553,6 +613,14 @@ for seg in segList:
          if (numThisNode > 0L):
             # write jobs to dag for this node
             nodeCount = nodeCount + 1
+
+            if (useNodeList):
+               outputSFTPath = nodePath + nodeList[nodeListIndex] + savedOutputSFTPath
+               if ((nodeCount % outputJobsPerNode) == 0L):
+                  nodeListIndex = nodeListIndex + 1L
+               # END if ((nodeCount % outputJobsPerNode) == 0L)
+            # END if (useNodeList)
+
             if (nodeCount == 1): startTimeAllNodes = startTimeThisNode
             writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useSingle, useHoT, makeTmpFile, tagString, windowType, overlapFraction, sftVersion, makeGPSDirs, miscDesc, commentField, startFreq, freqBand, frameStructType, IFO)
     # END while (endTimeAllNodes < analysisEndTime)
