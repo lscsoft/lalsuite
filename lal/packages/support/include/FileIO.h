@@ -67,6 +67,13 @@ FILE *
 LALOpenDataFile( const char * );
 
 typedef struct tagLALFILE { int compression; void *fp; } LALFILE;
+LALFILE *lalstdin(void);
+LALFILE *lalstdout(void);
+LALFILE *lalstderr(void);
+#define lalstdin (lalstdin())
+#define lalstdout (lalstdout())
+#define lalstderr (lalstderr())
+
 int XLALFileIsCompressed( const char *path );
 LALFILE * XLALFileOpenRead( const char *path );
 LALFILE * XLALFileOpenWrite( const char *path, int compression );

@@ -22,6 +22,7 @@ liblalsupport_la_SOURCES = FileIO.c PrintVector.c PrintFrequencySeries.c \
   StreamVectorInput.c StreamVectorSequenceInput.c StreamSequenceInput.c \
   StreamSeriesInput.c StreamSeriesOutput.c \
   StreamGridInput.c StreamGridOutput.c \
+  LALCache.c \
   LALInitBarycenter.c LALXMGRInterface.c \
   LIGOLwXML.c LIGOLwXMLArray.c SFTfileIO.c \
   LogPrintf.c UserInput.c ConfigFile.c getopt.c getopt.h getopt1.c \

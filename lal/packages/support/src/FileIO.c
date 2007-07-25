@@ -116,6 +116,34 @@ extern void gzclearerr (gzFile file);
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 
+#ifdef lalstdin
+#undef lalstdin
+#endif
+#ifdef lalstdout
+#undef lalstdout
+#endif
+#ifdef lalstderr
+#undef lalstderr
+#endif
+LALFILE * lalstdin( void )
+{
+	static LALFILE _lalstdin;
+	_lalstdin.fp = (void*)stdin;
+	return &_lalstdin;
+}
+LALFILE * lalstdout( void )
+{
+	static LALFILE _lalstdout;
+	_lalstdout.fp = (void*)stdout;
+	return &_lalstdout;
+}
+LALFILE * lalstderr( void )
+{
+	static LALFILE _lalstderr;
+	_lalstderr.fp = (void*)stderr;
+	return &_lalstderr;
+}
+
 /* use boinc_fopen() instead of fopen() for Einstein@Home/BOINC */
 #ifdef EAH_BOINC
 extern FILE* boinc_fopen(const char* path, const char* mode);

@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 pkginclude_HEADERS = FileIO.h PrintVector.h PrintFTSeries.h ReadFTSeries.h \
-                     StreamInput.h StreamOutput.h \
+                     StreamInput.h StreamOutput.h LALCache.h \
                      LALInitBarycenter.h LALXMGRInterface.h \
                      LIGOLwXML.h LIGOLwXMLHeaders.h LIGOLwXMLInspiralHeaders.h \
 		     LIGOLwXMLArray.h LIGOLwXMLRead.h ReadNoiseSpectrum.h \
