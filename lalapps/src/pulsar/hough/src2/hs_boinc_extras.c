@@ -985,11 +985,11 @@ int main(int argc, char**argv) {
 
 #ifdef _MSC_VER
 #define LOGIOERROR(mess,filename) \
-    LogPrintf(LOG_CRITICAL, "ERROR: %s %s: d:%d, f:%d, %d: %s\n",\
+    LogPrintf(LOG_CRITICAL, "ERROR: %s %s: doserr:%d, ferr:%d, errno:%d: %s\n",\
 	      mess,filename,_doserrno,ferror(fp),errno,strerror(errno))
 #else
 #define LOGIOERROR(mess,filename) \
-    LogPrintf(LOG_CRITICAL, "ERROR: %s %s: f:%d, %d: %s\n",\
+    LogPrintf(LOG_CRITICAL, "ERROR: %s %s: ferr:%d, errno:%d: %s\n",\
 	      mess,filename,ferror(fp),errno,strerror(errno))
 #endif
 
