@@ -1058,19 +1058,26 @@ int init_and_read_checkpoint(toplist_t*toplist, /**< the toplist to checkpoint *
 	LogPrintf(LOG_CRITICAL,"scanned %d/6, checkpoint was:'", scanned);
 	rewind(fp);
 	while((c=fgetc(fp)) != EOF)
-	  fputc(c,stderr);
+	  if(fputc(c,stderr) == EOF){
+	    LOGIOERROR("\nCouldn't write","stderr");
+	    break;
+	  }
 	fprintf(stderr,"'\n");
       }
     }
-    fclose(fp);
-    remove(cptfilename);
+    if(fclose(fp))
+      LOGIOERROR("Couldn't close checkpoint",filename);
+    if(remove(cptfilename))
+      LOGIOERROR("Couldn't remove broken checkpoint",filename);
     return(-1);
   }
-  fclose(fp);
+  if(fclose(fp))
+    LOGIOERROR("Couldn't close checkpoint",filename);
 
   if (total_read != total) {
     LogPrintf (LOG_DEBUG,  "ERROR reading checkpoint: n.o. skypoints inconsistent (%ul != %ul)\n", total_read, total);
-    remove(cptfilename);
+    if(remove(cptfilename))
+      LOGIOERROR("Couldn't remove broken checkpoint",filename);
     return(-1);
   }
 
@@ -1131,14 +1138,14 @@ static int write_checkpoint (char*filename) {
 		cptf->checksum, cptf->bytes);
   if (ret <= 0) {
     LOGIOERROR("Couldn't write checkpoint",filename);
-    fclose(fp);
+    if(fclose(fp))
+      LOGIOERROR("Couldn't close checkpoint",filename);
     return(ret);
   }
 
   ret = fclose(fp);
   if (ret != 0) {
     LOGIOERROR("Couldn't close checkpoint",filename);
-    fclose(fp);
     return(ret);
   }
   
