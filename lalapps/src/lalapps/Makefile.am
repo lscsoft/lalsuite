@@ -8,9 +8,10 @@ endif
 noinst_LTLIBRARIES = liblalapps.la
 liblalapps_la_SOURCES = lalapps.c lalapps.h getopt.c getopt1.c getopt.h \
                         processtable.c processtable.h $(FRAMESRCS)
-bin_PROGRAMS = lalapps_version lalapps_tconvert
+bin_PROGRAMS = lalapps_version lalapps_tconvert lalapps_cache
 lalapps_version_SOURCES = version.c lalapps.h
 lalapps_tconvert_SOURCES = tconvert.c getdate.c getdate.h
+lalapps_cache_SOURCES = cache.c
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 INCLUDES = -I$(top_srcdir)/src
 if HAVE_PYTHON
