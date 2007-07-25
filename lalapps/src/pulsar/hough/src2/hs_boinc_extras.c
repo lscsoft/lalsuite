@@ -1048,15 +1048,19 @@ int init_and_read_checkpoint(toplist_t*toplist, /**< the toplist to checkpoint *
 
   if (scanned != 6) {
     if (scanned == EOF) {
-      LogPrintf (LOG_CRITICAL, "ERROR reading checkpoint %s: EOF\n", cptfilename);
+      LOGIOERROR("ERROR: EOF reading checkpoint\n", cptfilename);
     } else {
       int c;
       LOGIOERROR("Could't parse checkpoint", cptfilename);
-      LogPrintf(LOG_CRITICAL,"scanned %d/6, checkpoint was:'");
-      rewind(fp);
-      while((c=fgetc(fp)) != EOF)
-	fputc(c,stderr);
-      fprintf(stderr,"'\n");
+      if(errno){
+	LogPrintf(LOG_CRITICAL,"scanned %d/6\n", scanned);
+      } else {
+	LogPrintf(LOG_CRITICAL,"scanned %d/6, checkpoint was:'", scanned);
+	rewind(fp);
+	while((c=fgetc(fp)) != EOF)
+	  fputc(c,stderr);
+	fprintf(stderr,"'\n");
+      }
     }
     fclose(fp);
     remove(cptfilename);
