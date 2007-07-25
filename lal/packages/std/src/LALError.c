@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Jolien Creighton
+*  Copyright (C) 2007 Jolien Creighton, Bernd Machenschalk
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -197,7 +197,12 @@ lalDebugLevel
 #undef LALTrace
 
 #ifdef LAL_NDEBUG
+/* sorry, but it looks like we have no other choice than a special treatment for Einstein@Home here.
+   we can neither afford to compile LAL in DEBUG mode nor losing valuable error information when
+   distributing executables to unsafe public computers.                         Bernd Machenschalk */
+#ifndef EAH_BOINC
 #define vfprintf( stream, fmt, ap ) 0
+#endif
 #endif
 
 NRCSID( LALERRORC, "$Id$" );
