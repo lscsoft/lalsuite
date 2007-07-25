@@ -31,6 +31,8 @@ NRCSID (LALCALIBRATIONC,"$Id$");
 
 void XLALDestroyCalData( LALCalData *caldata )
 {
+  XLALDestroyCOMPLEX8FrequencySeries( caldata->digitalFilterReference );
+  XLALDestroyCOMPLEX8FrequencySeries( caldata->actuationReference );
   XLALDestroyCOMPLEX8FrequencySeries( caldata->openLoopGainReference );
   XLALDestroyCOMPLEX8FrequencySeries( caldata->cavityGainReference );
   XLALDestroyCOMPLEX8FrequencySeries( caldata->responseReference );
