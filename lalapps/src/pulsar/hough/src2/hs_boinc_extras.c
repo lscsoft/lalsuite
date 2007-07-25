@@ -1048,7 +1048,7 @@ int init_and_read_checkpoint(toplist_t*toplist, /**< the toplist to checkpoint *
 
   if (scanned != 6) {
     if (scanned == EOF) {
-      LOGIOERROR("ERROR: EOF reading checkpoint\n", cptfilename);
+      LOGIOERROR("ERROR: EOF encountered reading checkpoint", cptfilename);
     } else {
       int c;
       LOGIOERROR("Could't parse checkpoint", cptfilename);
@@ -1085,9 +1085,12 @@ int init_and_read_checkpoint(toplist_t*toplist, /**< the toplist to checkpoint *
     return (2);
   }
 
-  /* make sure the point of next writing is where we stopped reading */
-  fseek(cptf->fp,cptf->bytes,SEEK_SET);
-
+  /* make sure the point of next writing is where we stopped reading -
+     apparently this isn't necessarily the case automatically with a buffered file on BSD */
+  if(fseek(cptf->fp,cptf->bytes,SEEK_SET)) {
+    LOGIOERROR("Could't seek to point of last reading", cptf->filename);
+    return(-1);
+  }
   *count = count_read;
 
   return(1);
