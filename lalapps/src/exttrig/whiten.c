@@ -60,7 +60,7 @@ REAL8TimeSeries *XLALMoveREAL8TimeSeries( REAL8TimeSeries *destination, const RE
 
 
 /* IN PLACE whitening */
-static int datacond1( REAL8TimeSeries *series, REAL8Window *window, REAL8FrequencySeries *psd1, REAL8FrequencySeries *psd2, COMPLEX16FrequencySeries *response, COMPLEX16FrequencySeries *work, REAL8FFTPlan *fwdplan, REAL8FFTPlan *revplan, REAL8 fmin, REAL8 flow, REAL8 fhigh, REAL8 fmax )
+static int datacond1( REAL8TimeSeries *series, REAL8Window *window, REAL8FrequencySeries *psd1, REAL8FrequencySeries *psd2, COMPLEX16FrequencySeries *condresp, COMPLEX16FrequencySeries *work, REAL8FFTPlan *fwdplan, REAL8FFTPlan *revplan, REAL8 fmin, REAL8 flow, REAL8 fhigh, REAL8 fmax )
 {
 
 	UINT4 seglen = series->data->length;
@@ -101,6 +101,7 @@ static int datacond1( REAL8TimeSeries *series, REAL8Window *window, REAL8Frequen
 	for ( k = kmax; k <= seglen/2; ++k )
 		LAL_SET_REAL( &work->data->data[k], 0.0 );
 
+#if 0
 	/* frequency domain band-pass filtering */
 	/* window from min to low and from max to high */
 	for ( k = kmin; k < klow; ++k )
@@ -109,9 +110,13 @@ static int datacond1( REAL8TimeSeries *series, REAL8Window *window, REAL8Frequen
 		work->data->data[k] = XLALCOMPLEX16MulReal( work->data->data[k], cos((LAL_PI*(k - khigh))/(2.0*(kmax - khigh))) );
 	
 	/* phase correction */
-	if ( response )
+	if ( condresp )
 		for ( k = kmin; k < kmax; ++k )
 			work->data->data[k] = XLALCOMPLEX16Mul(work->data->data[k],XLALCOMPLEX16Exp(XLALCOMPLEX16MulReal(LAL_COMPLEX16_I,XLALCOMPLEX16Arg(response->data->data[k]))));
+#endif
+	for ( k = 0; k < work->data->length; ++k )
+		work->data->data[k] = XLALCOMPLEX16Mul( work->data->data[k], condresp->data->data[k] );
+
 
 	XLALREAL8FreqTimeFFT( series, work, revplan );
 	return 0;
@@ -188,7 +193,58 @@ static int datacond2( REAL8TimeSeries *whitened, REAL8TimeSeries *unwhitened, RE
 }
 
 
-REAL8TimeSeries * XLALLeonorWhitenREAL8TimeSeries( REAL8TimeSeries *unwhitened, REAL8FFTPlan *fwdplan, REAL8FFTPlan *revplan, UINT4 seglen, COMPLEX16FrequencySeries *response )
+COMPLEX16FrequencySeries * condition_response( COMPLEX8FrequencySeries *response, REAL8 flow, REAL8 fhigh, REAL8 fmin, REAL8 fmax, UINT4 seglen, REAL8 deltaT )
+{
+	COMPLEX16FrequencySeries *condresp;
+	LIGOTimeGPS epoch = { 0 , 0 };  /* irrelevant */
+	REAL8 duration = seglen * deltaT;
+	UINT4 kmin  = fmin  * duration;
+	UINT4 klow  = flow  * duration;
+	UINT4 khigh = fhigh * duration;
+	UINT4 kmax  = fmax  * duration;
+	UINT4 k;
+
+	condresp = XLALCreateCOMPLEX16FrequencySeries( "CONDRESP", &epoch, 0.0, 1.0/duration, &lalDimensionlessUnit, seglen/2 + 1 );
+	if ( kmax > condresp->data->length )
+		kmax = condresp->data->length;
+	if ( khigh > condresp->data->length )
+		khigh = condresp->data->length;
+
+	/* frequency domain band-pass filtering */
+	/* window from min to low and from max to high */
+	for ( k = 0; k < kmin; ++k )
+		condresp->data->data[k] = LAL_COMPLEX16_ZERO;
+	for ( ; k < klow; ++k )
+		condresp->data->data[k] = XLALCOMPLEX16MulReal( LAL_COMPLEX16_ONE, cos((LAL_PI*(klow - k))/(2.0*(klow - kmin))) );
+	for ( ; k < khigh; ++k )
+		condresp->data->data[k] = LAL_COMPLEX16_ONE;
+	for ( ; k < kmax; ++k )
+		condresp->data->data[k] = XLALCOMPLEX16MulReal( LAL_COMPLEX16_ONE, cos((LAL_PI*(k - khigh))/(2.0*(kmax - khigh))) );
+	for ( ; k < condresp->data->length; ++k )
+		condresp->data->data[k] = LAL_COMPLEX16_ZERO;
+
+	/* if response present, extract phases */
+	if ( response ) {
+		/* TODO: check lengths */
+		for ( k = kmin; k < kmax; ++k ) {
+			COMPLEX16 phasefac;
+			COMPLEX16 phase;
+			COMPLEX16 r16;
+			COMPLEX8  r8;
+			r8 = response->data->data[k];
+		       	LAL_SET_COMPLEX( &r16, LAL_REAL(r8), LAL_IMAG(r8) );
+
+			phase = XLALCOMPLEX16MulReal(LAL_COMPLEX16_I,XLALCOMPLEX16Arg(r16));
+			phasefac = XLALCOMPLEX16Exp(phase);
+
+			condresp->data->data[k] = XLALCOMPLEX16Mul(condresp->data->data[k],phasefac);
+		}
+	}
+	return condresp;
+}
+
+
+REAL8TimeSeries * XLALLeonorWhitenREAL8TimeSeries( REAL8TimeSeries *unwhitened, REAL8FFTPlan *fwdplan, REAL8FFTPlan *revplan, UINT4 seglen, COMPLEX8FrequencySeries *response )
 {
 	const REAL8 beta  = 0.75;
 	const REAL8 flow  = 40.0;
@@ -198,14 +254,17 @@ REAL8TimeSeries * XLALLeonorWhitenREAL8TimeSeries( REAL8TimeSeries *unwhitened, 
 	UINT4 taperlen = floor( 0.5 + beta * seglen );
 	UINT4 stride = seglen - taperlen;
 
+	COMPLEX16FrequencySeries *condresp;
 	REAL8TimeSeries *whitened;
 	REAL8Window     *window;
 
 	window = XLALCreateTukeyREAL8Window( seglen, beta );
 	whitened = XLALCreateREAL8TimeSeries( unwhitened->name, &unwhitened->epoch, unwhitened->f0, unwhitened->deltaT, &unwhitened->sampleUnits, unwhitened->data->length );
 
-	datacond2( whitened, unwhitened, window, stride, response, fwdplan, revplan, fmin, flow, fhigh, fmax );
+	condresp = condition_response( response, flow, fhigh, fmin, fmax, seglen, unwhitened->deltaT );
+	datacond2( whitened, unwhitened, window, stride, condresp, fwdplan, revplan, fmin, flow, fhigh, fmax );
 
+	XLALDestroyCOMPLEX16FrequencySeries(condresp);
 	XLALDestroyREAL8Window( window );
 
 	/* first and last taperlen/2 points are zero ... remove them */

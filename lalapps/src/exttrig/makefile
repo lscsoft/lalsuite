@@ -13,3 +13,6 @@ all: lalapps_exttrig_crosscorr
 
 lalapps_exttrig_crosscorr: exttrig_crosscorr.o crosscorr.o whiten.o inject.o signal.o
 	$(LINK) -o $@ $^ $(LIBS)
+
+clean:
+	-rm -f *.o

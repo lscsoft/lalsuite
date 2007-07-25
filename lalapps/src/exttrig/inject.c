@@ -120,14 +120,20 @@ REAL8TimeSeries * XLALInjectionREAL8TimeSeries( REAL8TimeSeries *h, LIGOTimeGPS 
 	injtilde->data->data[injtilde->data->length-1] = LAL_COMPLEX16_ZERO;
 	for ( k = 1; k < injtilde->data->length - 1; ++k ) {
 		COMPLEX16 fac;
-		REAL8 phi = -LAL_TWOPI * k * injtilde->deltaF * dt;
+		REAL8 f = k * injtilde->deltaF;
+		REAL8 phi = -LAL_TWOPI * f * dt;
 		fac = XLALCOMPLEX16MulReal( LAL_COMPLEX16_I, phi );
 		fac = XLALCOMPLEX16Exp( fac );
 		if ( response ) {
-			COMPLEX8  r8  = response->data->data[k];
 			COMPLEX16 r16;
+			COMPLEX8  r8;
+			UINT4 k2;
+			k2 = f/response->deltaF;
+			if (k2 > response->data->length)
+				k2 = response->data->length;
+			r8 = response->data->data[k2];
 		       	LAL_SET_COMPLEX( &r16, LAL_REAL(r8), LAL_IMAG(r8) );
-			fac = XLALCOMPLEX16Mul( fac, r16 );
+			fac = XLALCOMPLEX16Div( fac, r16 );
 		}
 		injtilde->data->data[k] = XLALCOMPLEX16Mul( injtilde->data->data[k], fac );
 	}
@@ -139,6 +145,12 @@ REAL8TimeSeries * XLALInjectionREAL8TimeSeries( REAL8TimeSeries *h, LIGOTimeGPS 
 	XLALDestroyCOMPLEX16FrequencySeries( injtilde );
 
 	XLALResizeREAL8TimeSeries( injection, 0, length );
+
+	/*
+	 * TODO: for some reason, response doesn't have correct units.
+	if ( response )
+		XLALUnitDivide( &injection->sampleUnits, &injection->sampleUnits, &response->sampleUnits );
+		*/
 
 	return injection;
 }
