@@ -76,6 +76,8 @@
 #include <lal/FindChirpBCVSpin.h>
 #include <lal/FindChirpChisq.h>
 #include <lal/LALTrigScanCluster.h>
+#include <lal/NRWaveIO.h>
+#include <lal/NRWaveInject.h>
 
 RCSID( "$Id$" );
 
@@ -278,6 +280,16 @@ int    writeSpectrum    = 0;            /* write computed psd to file   */
 int    writeRhosq       = 0;            /* write rhosq time series      */
 int    writeChisq       = 0;            /* write chisq time series      */
 int    writeCData       = 0;            /* write complex time series c  */
+
+
+/* numerical relativity injection variables */
+CHAR *numrelMetaFile    = NULL;            /* name of file with nr meta info */
+CHAR *numrelDataDir     = NULL;            /* name of dir with nr waveform   */
+INT4 numrelModeLo = -1;                     /* lowest value of l to inject    */
+INT4 numrelModeHi = -1;                     /* highest values of l to inject  */
+NRWaveMetaData thisMetaData;           /* single NR wave metadata struct */
+NumRelInjectParams nrPar;
+NRWaveCatalog nrCatalog;               /* NR wave metadata struct        */
 
 /* other command line args */
 CHAR comment[LIGOMETA_COMMENT_MAX];     /* process param comment        */
@@ -541,7 +553,6 @@ int main( int argc, char *argv[] )
 
   /* create the dynamic range exponent */
   dynRange = pow( 2.0, dynRangeExponent );
-
 
   /*
    *
@@ -1239,8 +1250,33 @@ int main( int argc, char *argv[] )
         LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "ZENITH" );
       }
 
-      LAL_CALL( LALFindChirpInjectSignals( &status, &chan, injections, 
-            injRespPtr ), &status );
+      if (bankSimParams.approx == NumRel) 
+      {
+
+	/* get catalog of numrel waveforms from metadata file */
+	LAL_CALL( LALNRDataFind( &status, &nrCatalog, numrelDataDir, numrelMetaFile ),
+		  &status );
+
+	nrPar.modeLlo = numrelModeLo;
+	nrPar.modeLhi = numrelModeHi;
+	nrPar.nrCatalog = &nrCatalog;
+	nrPar.ifo = ifo;
+	nrPar.dynRange = dynRange;
+	
+	LAL_CALL(LALDriveNRInject( &status, &chan, injections, &nrPar), &status);
+
+	/* clear memory */
+	LALFree( nrCatalog.data );
+
+	if( numrelMetaFile ) free ( numrelMetaFile );
+	if( numrelDataDir) free  ( numrelDataDir );
+
+      }
+      else
+      {
+	LAL_CALL( LALFindChirpInjectSignals( &status, &chan, injections, 
+					       injRespPtr ), &status );
+      }
       LALSnprintf( chan.name,  LALNameLength * sizeof(CHAR), "%s", tmpChName );
 
       if ( vrbflg ) fprintf( stdout, "injected %d signals from %s into %s\n", 
@@ -3100,7 +3136,11 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --disable-bank-sim-max       do not maximize the match over the bank\n"\
 "  --sim-approximant APX        set approximant of the injected waveform to APX\n"\
 "                                 (TaylorT1|TaylorT2|TaylorT3|PadeT1|EOB|\n"\
-"                                  GeneratePPN|FrameFile)\n"\
+"                                  GeneratePPN|FrameFile|NumRel)\n"\
+"  --numrel-data-dir NRDir      directory where numerical waveforms are located\n"\
+"  --numrel-meta-file NRMeta    Numerical relativity waveform metadata file\n"\
+"  --numrel-modelo  modeLo      Lowest numerical relativity mode to inject\n"\
+"  --numrel-modehi  modeHi      Highest numerical relativity mode to inject\n"\
 "  --sim-frame-file F           read the bank sim waveform from frame named F\n"\
 "  --sim-frame-channel C        read the bank sim waveform from frame channel C\n"\
 "  --sim-minimum-mass M         set minimum mass of bank injected signal to M\n"\
@@ -3184,6 +3224,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"slide-time-ns",           required_argument, 0,                'Y'},
     {"bank-simulation",         required_argument, 0,                'K'},
     {"sim-approximant",         required_argument, 0,                'L'},
+    {"numrel-data-dir",         required_argument, 0,                '{'},
+    {"numrel-meta-file",        required_argument, 0,                '}'},
+    {"numrel-modelo",           required_argument, 0,                '='},
+    {"numrel-modehi",           required_argument, 0,                '+'},
     {"random-seed",             required_argument, 0,                'J'},
     {"sim-minimum-mass",        required_argument, 0,                'U'},
     {"sim-maximum-mass",        required_argument, 0,                'W'},
@@ -3230,6 +3274,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   INT4 haveApprox = 0;
   INT4 haveClusterMethod = 0;
   INT4 haveBankSimApprox = 0;
+  INT4 haveNumRelDir = 0;
+  INT4 haveNumRelMeta = 0;
+  INT4 haveNumRelModeLo = 0;
+  INT4 haveNumRelModeHi = 0; 
   ProcessParamsTable *this_proc_param = procparams.processParamsTable;
   LALStatus             status = blank_status;
 
@@ -3250,7 +3298,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     c = getopt_long_only( argc, argv, 
         "-A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VW:X:Y:Z:"
         "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:"
-        "0:1::2:3:4:567:8:9:*:>:<:(:):[:],:",
+        "0:1::2:3:4:567:8:9:*:>:<:(:):[:],:{:}:+:=:",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -3985,17 +4033,69 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           bankSimParams.approx = FrameFile;
         }
+	else if ( ! strcmp( "NumRel", optarg ) )
+	{
+	  bankSimParams.approx = NumRel;
+	}
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown order specified: %s\n(must be one of TaylorT1, "
-              "TaylorT2, TaylorT3, PadeT1, EOB, GeneratePPN, FrameFile)\n", 
+              "TaylorT2, TaylorT3, PadeT1, EOB, GeneratePPN, FrameFile, NumRel)\n", 
               long_options[option_index].name, optarg );
           exit( 1 );
         }
         haveBankSimApprox = 1;
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
+
+      case '{':
+        optarg_len = strlen( optarg ) + 1;
+	numrelDataDir = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+	memcpy( numrelDataDir, optarg, optarg_len );
+	haveNumRelDir = 1;
+	break;
+
+      case '}':
+        optarg_len = strlen( optarg ) + 1;
+	numrelMetaFile = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+	memcpy( numrelMetaFile, optarg, optarg_len );
+	haveNumRelMeta = 1;
+	break;
+
+      case '=':
+	numrelModeLo = (INT4)atoi( optarg );
+        if ( numrelModeLo < 2 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "l value must be greater than 1: "
+              "(%d specified) \n",
+              long_options[option_index].name, numrelModeLo );
+          exit( 1 );
+        }
+	haveNumRelModeLo = 1;
+	break;
+
+      case '+':
+	numrelModeHi = (INT4)atoi( optarg );
+        if ( numrelModeHi < 2 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "l value must be greater than 1: "
+              "(%d specified) \n",
+              long_options[option_index].name, numrelModeHi );
+          exit( 1 );
+        }
+	else if ( numrelModeHi < numrelModeLo )
+	{
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "--numrel-modelhi value must be greater or equal than --numrel-modelo: "
+              "(%d specified for modehi) \n",
+              long_options[option_index].name, numrelModeHi );
+          exit( 1 );
+	}
+	haveNumRelModeHi = 1;
+	break;
 
       case 'J':
         if ( ! strcmp( "urandom", optarg ) )
@@ -5069,6 +5169,31 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       exit( 1 );
     }
   }
+
+  /* check if the NR-dependent parameters are set */
+      if (bankSimParams.approx == NumRel) 
+      {
+ 	  if ( ! haveNumRelDir )
+	    {
+	      fprintf( stderr, "--numrel-data-dir must be specified when --sim-approximant is NumRel\n" );
+	      exit( 1 );
+	    }
+   	  if ( ! haveNumRelMeta )
+	    {
+	      fprintf( stderr, "--numrel-meta-file must be specified when --sim-approximant is NumRel\n" );
+	      exit( 1 );
+	    }
+ 	  if ( ! haveNumRelModeLo )
+	    {
+	      fprintf( stderr, "--numrel-modelo must be specified when --sim-approximant is NumRel\n" );
+	      exit( 1 );
+	    }
+ 	  if ( ! haveNumRelModeHi )
+	    {
+	      fprintf( stderr, "--numrel-modehi must be specified when --sim-approximant is NumRel\n" );
+	      exit( 1 );
+	    }
+      }
 
   return 0;
 }
