@@ -222,7 +222,8 @@ def hipe_setup(hipeDir, config, injFile=None, dfOnly = False):
     except: pass
 
   # add job to dag
-  hipeJob = pipeline.CondorDAGManJob(hipeDir +"/"+ iniFile.rstrip("ini") + "dag")
+  hipeJob = pipeline.CondorDAGManJob(hipeDir + "/" + iniFile.rstrip("ini") + \
+      "dag")
   hipeNode = pipeline.CondorDAGNode(hipeJob)
 
   # add postscript to deal with rescue dag
@@ -247,15 +248,15 @@ def followup_setup(followupDir, config, hipeDir):
 
   # create the followup config parser, keep only relevant info
   followupcp = copy.deepcopy(config)
-  followupSections = ['condor', 'hipe-cache', 'triggers', 'q-datafind', 'qscan', \
-      'q-hoft-datafind', 'qscan-hoft', 'plots', 'output', 'seg']
+  followupSections = ['condor', 'hipe-cache', 'triggers', 'datafind', 
+      'q-datafind', 'qscan', 'q-hoft-datafind', 'qscan-hoft', 
+      'plots', 'output', 'seg']
 
   for seg in followupcp.sections():
     if not seg in followupSections: followupcp.remove_section(seg)
 
   followupcp.remove_option("condor","hipe")
   followupcp.remove_option("condor","follow")
-
 
   # XXX this should be replaced by getting the information from the hipe cache
   # set the cache paths
@@ -267,7 +268,7 @@ def followup_setup(followupDir, config, hipeDir):
     followupcp.set("hipe-cache", path, "../" + hipeDir)
 
   # set the xml-glob
-  followupcp.set("triggers", "xml-glob", "../" + hipeDir + "/*COIRE_*")
+  followupcp.set("triggers", "xml-glob", "../" + hipeDir + "/*COIRE*H*xml")
   # to here XXX
 
   # correct paths to qscan config files
@@ -278,7 +279,7 @@ def followup_setup(followupDir, config, hipeDir):
       followupcp.set("condor", opt, arg)
 
   # link the executables 
-  link_executables(followupDir, config)
+  link_executables(followupDir, followupcp)
 
   # return to the directory, write ini file and run hipe
   os.chdir(followupDir)
@@ -312,7 +313,9 @@ def followup_setup(followupDir, config, hipeDir):
   # write the pre-script to run lalapps_followup_pipe at the appropriate time
   f = open(followupDag + ".pre","w")
   f.write("#! /bin/bash\n")
+  f.write("cd followup\n")
   f.write(followupCommand)
+  f.write("cd ..\n")
   f.close()
   os.chmod(followupDag + ".pre", 0744)
   followupNode.set_pre_script(followupDir + "/" + followupDag + ".pre")
@@ -391,7 +394,7 @@ parser.add_option("-D", "--use-available-data",action="store_true",\
     default=False, help="analyze only the data available on the cluster")
 
 parser.add_option("-B", "--run-datafind",action="store_true",\
-    default=False, help="run the inspiral analysis")
+    default=False, help="run the datafind step")
 
 parser.add_option("-A", "--run-analysis",action="store_true",\
     default=False, help="run the inspiral analysis")
