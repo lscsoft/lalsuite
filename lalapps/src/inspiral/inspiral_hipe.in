@@ -1811,7 +1811,7 @@ if gps_start_time is not None and gps_end_time is not None:
       # ignore datafind nodes, as their output is a cache file
       continue
 
-    if isinstance(node,inspiral.CoireNode) or \
+    if isinstance(node,inspiral.CoireNode):
       if node.get_ifos() == node.get_ifo_tag():
         the_cache = output_data_cache
       else:
