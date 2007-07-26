@@ -985,12 +985,12 @@ int main(int argc, char**argv) {
 
 #ifdef _MSC_VER
 #define LOGIOERROR(mess,filename) \
-    LogPrintf(LOG_CRITICAL, "ERROR: %s %s: doserr:%d, ferr:%d, errno:%d: %s\n",\
-	      mess,filename,_doserrno,ferror(fp),errno,strerror(errno))
+    LogPrintf(LOG_CRITICAL, "ERROR: %s %s: line:%d, doserr:%d, ferr:%d, errno:%d: %s\n",\
+	      mess,filename,__LINE__,_doserrno,ferror(fp),errno,strerror(errno))
 #else
 #define LOGIOERROR(mess,filename) \
-    LogPrintf(LOG_CRITICAL, "ERROR: %s %s: ferr:%d, errno:%d: %s\n",\
-	      mess,filename,ferror(fp),errno,strerror(errno))
+    LogPrintf(LOG_CRITICAL, "ERROR: %s %s: line:%d, ferr:%d, errno:%d: %s\n",\
+	      mess,filename,__LINE__,ferror(fp),errno,strerror(errno))
 #endif
 
 /** inits checkpointing and read a checkpoint if already there */
@@ -1066,18 +1066,18 @@ int init_and_read_checkpoint(toplist_t*toplist, /**< the toplist to checkpoint *
       }
     }
     if(fclose(fp))
-      LOGIOERROR("Couldn't close checkpoint",filename);
+      LOGIOERROR("Couldn't close checkpoint",cptfilename);
     if(remove(cptfilename))
-      LOGIOERROR("Couldn't remove broken checkpoint",filename);
+      LOGIOERROR("Couldn't remove broken checkpoint",cptfilename);
     return(-1);
   }
   if(fclose(fp))
-    LOGIOERROR("Couldn't close checkpoint",filename);
+    LOGIOERROR("Couldn't close checkpoint",cptfilename);
 
   if (total_read != total) {
     LogPrintf (LOG_DEBUG,  "ERROR reading checkpoint: n.o. skypoints inconsistent (%ul != %ul)\n", total_read, total);
     if(remove(cptfilename))
-      LOGIOERROR("Couldn't remove broken checkpoint",filename);
+      LOGIOERROR("Couldn't remove broken checkpoint",cptfilename);
     return(-1);
   }
 
