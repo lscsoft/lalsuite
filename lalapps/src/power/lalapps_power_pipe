@@ -115,14 +115,16 @@ def parse_config_file(options):
 	options.enable_clustering = config.getboolean("pipeline", "enable_clustering")
 
 	seglistdict = segments.segmentlistdict()
+	tiling_phase = {}
 	for ifo in config.get("pipeline", "ifos").split():
 		seglistdict[ifo] = segmentsUtils.fromsegwizard(file(config.get("pipeline", "seglist_%s" % ifo)), coltype = LIGOTimeGPS).coalesce()
+		tiling_phase[ifo] = config.getfloat("pipeline", "tiling_phase_%s" % ifo)
 
 	options.psds_per_power = config.getint("pipeline", "psds_per_power")
 	options.psds_per_injection = config.getint("pipeline", "psds_per_injection")
 	options.timing_params = power.get_timing_parameters(config)
 
-	return seglistdict, config
+	return seglistdict, tiling_phase, config
 
 
 #
@@ -300,7 +302,7 @@ options, filenames = parse_command_line()
 #
 
 
-seglistdict, config_parser = parse_config_file(options)
+seglistdict, tiling_phase, config_parser = parse_config_file(options)
 
 
 #
@@ -339,6 +341,10 @@ if options.do_injections:
 else:
 	injection_time_slides = []
 	injection_seglistdict = segments.segmentlistdict()
+
+# apply time shifts to segment lists to shift tiling phases
+background_seglistdict.offsets.update(tiling_phase)
+injection_seglistdict.offsets.update(tiling_phase)
 
 
 #
