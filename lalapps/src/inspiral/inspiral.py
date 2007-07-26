@@ -1231,6 +1231,15 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
     return fname
 
+  def get_missed(self):
+    """
+    get the name of the missed file
+    """
+    if self.__injection_file:
+      return self.get_output().replace("FOUND", "MISSED")
+    else:
+      return None
+
   def finalize(self):
     """
     set the output options
@@ -1242,7 +1251,7 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
     if self.__injection_file:
       self.add_var_opt('injection-file', self.__injection_file)
-      self.add_var_opt('missed-injections', output.replace("FOUND", "MISSED") )
+      self.add_var_opt('missed-injections', self.get_missed() )
 
 
 class CoireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
@@ -1406,6 +1415,15 @@ class CoireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
     return fname
 
+  def get_missed(self):
+    """
+    get the name of the missed file
+    """
+    if self.__injection_file:
+      return self.get_output().replace("FOUND", "MISSED")
+    else:
+      return None
+
   def finalize(self):
     """
     set the output options
@@ -1417,8 +1435,7 @@ class CoireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
     if self.__injection_file:
       self.add_var_opt('injection-file', self.__injection_file)
-      self.add_var_opt('missed-injections', output.replace("FOUND", "MISSED") )
-
+      self.add_var_opt('missed-injections', self.get_missed() )
 
 class FrJoinNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
