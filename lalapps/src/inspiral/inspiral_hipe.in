@@ -1812,11 +1812,17 @@ if gps_start_time is not None and gps_end_time is not None:
       continue
 
     if isinstance(node,inspiral.CoireNode) or \
-        isinstance(node,inspiral.SireNode):
-      if node.get_ifo() == node.get_ifo_tag():
+      if node.get_ifos() == node.get_ifo_tag():
         the_cache = output_data_cache
       else:
         the_cache = intermediate_data_cache
+
+    if isinstance(node,inspiral.SireNode):
+      if node.get_ifos() == node.get_ifo_tag():
+        the_cache = output_data_cache
+      else:
+        the_cache = intermediate_data_cache
+
     else:
       the_cache = intermediate_data_cache
 
