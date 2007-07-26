@@ -37,7 +37,8 @@ class TmpltBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.tag_base = tag_base
 
     for sec in ['data','tmpltbank']:
-      self.add_ini_opts(cp,sec)
+      try: self.add_ini_opts(cp,sec)
+      except: pass
   
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
@@ -66,7 +67,8 @@ class InspInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.__listNodes=[]
 
     for sec in ['inspinj']:
-      self.add_ini_opts(cp,sec)
+      try: self.add_ini_opts(cp,sec)
+      except: pass
 
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
@@ -102,7 +104,8 @@ class BbhInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     pipeline.AnalysisJob.__init__(self,cp,dax)
 
     for sec in ['bbhinj']:
-      self.add_ini_opts(cp,sec)
+      try: self.add_ini_opts(cp,sec)
+      except: pass
 
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
@@ -127,7 +130,8 @@ class RandomBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     pipeline.AnalysisJob.__init__(self,cp,dax)
 
-    self.add_ini_opts(cp,'randombank')
+    try: self.add_ini_opts(cp,'randombank')
+    except: pass
 
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
@@ -154,7 +158,8 @@ class SplitBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     pipeline.AnalysisJob.__init__(self,cp,dax)
 
     for sec in ['splitbank']:
-      self.add_ini_opts(cp,sec)
+      try: self.add_ini_opts(cp,sec)
+      except: pass
   
     self.set_stdout_file('logs/splitbank-$(macrobankfile)-$(cluster)-$(process).out')
     self.set_stderr_file('logs/splitbank-$(macrobankfile)-$(cluster)-$(process).err')
@@ -181,7 +186,8 @@ class InspiralJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 
 
     for sec in ['data','inspiral']:
-      self.add_ini_opts(cp,sec)
+      try: self.add_ini_opts(cp,sec)
+      except: pass
 
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
@@ -208,7 +214,8 @@ class TrigToTmpltJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     pipeline.AnalysisJob.__init__(self,cp,dax)
     
     for sec in ['trigtotmplt']:
-      self.add_ini_opts(cp,sec)
+      try: self.add_ini_opts(cp,sec)
+      except: pass
 
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
     
@@ -234,7 +241,8 @@ class IncaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     pipeline.AnalysisJob.__init__(self,cp,dax)
     
     for sec in ['inca']:
-      self.add_ini_opts(cp,sec)
+      try: self.add_ini_opts(cp,sec)
+      except: pass
 
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
@@ -261,7 +269,8 @@ class ThincaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.tag_base = tag_base
     
     for sec in ['thinca']:
-      self.add_ini_opts(cp,sec)
+      try: self.add_ini_opts(cp,sec)
+      except: pass
 
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
@@ -308,7 +317,8 @@ class CoireJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     pipeline.AnalysisJob.__init__(self,cp,dax)
 
     for sec in ['coire']:
-      self.add_ini_opts(cp,sec)
+      try: self.add_ini_opts(cp,sec)
+      except: pass
 
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
     self.set_stdout_file('logs/coire-$(macrocoinccut)-$(cluster)-$(process).out')
@@ -352,7 +362,8 @@ class CohBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     pipeline.AnalysisJob.__init__(self,cp)
     
     for sec in ['cohbank']:
-      self.add_ini_opts(cp,sec)
+      try: self.add_ini_opts(cp,sec)
+      except: pass
 
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
@@ -377,13 +388,16 @@ class ChiaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     pipeline.AnalysisJob.__init__(self,cp)
     
     for sec in ['chia']:
-      self.add_ini_opts(cp,sec)
+      try: self.add_ini_opts(cp,sec)
+      except: pass
 
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
     self.set_stdout_file('logs/chia-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
     self.set_stderr_file('logs/chia-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('chia.sub')   
+
+
 
 class InspInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
@@ -429,30 +443,6 @@ class BbhInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     pipeline.AnalysisNode.__init__(self)
     self.__usertag = job.get_config('pipeline','user-tag')
 
-  def set_start(self,time):
-    """
-    Set the GPS start time of the analysis node by setting a --gps-start-time
-    option to the node when it is executed. We override the default method to
-    cope with the data padding.
-    @param time:GPS start time of analysis segment
-    """
-    self.add_var_opt('gps-start-time',time)
-    pipeline.AnalysisNode.set_start(self,time)
-    pad = int(self.job().get_config('data','pad-data'))
-    pipeline.AnalysisNode.set_data_start(self,time - pad)
-
-  def set_end(self,time):
-    """
-    Set the GPS end time of the analysis node by setting a --gps-end-time
-    option to the node when it is executed. We override the default method to
-    cope with the data padding.
-    @param time: GPS end time of the job.
-    """
-    self.add_var_opt('gps-end-time',time)
-    pipeline.AnalysisNode.set_end(self,time)
-    pad = int(self.job().get_config('data','pad-data'))
-    pipeline.AnalysisNode.set_data_end(self,time + pad)
-
   def set_seed(self,seed):
     """
     Set the seed of the injection file by setting a --seed option to the
@@ -486,7 +476,6 @@ class BbhInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     return bbhinject
 
 
-
 class TmpltBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
   A TmpltBankNode runs an instance of the template bank generation job in a
@@ -500,34 +489,14 @@ class TmpltBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     pipeline.AnalysisNode.__init__(self)
     self.__usertag = job.get_config('pipeline','user-tag')
     try:
+      self.__pad_data = int(self.job().get_opts()['pad-data'])
+    except: 
+      self.__pad_data = None
+    try:
       self.__zip_output = job.get_config('tmpltbank','write-compress')
       self.__zip_output = True
     except:
       self.__zip_output = False
-
-  def set_start(self,time):
-    """
-    Set the GPS start time of the analysis node by setting a --gps-start-time
-    option to the node when it is executed. We override the default method to
-    cope with the data padding.
-    @param time: GPS start time of job.
-    """
-    self.add_var_opt('gps-start-time',time)
-    pipeline.AnalysisNode.set_start(self,time)
-    pad = int(self.job().get_config('data','pad-data'))
-    pipeline.AnalysisNode.set_data_start(self,time - pad)
-
-  def set_end(self,time):
-    """
-    Set the GPS end time of the analysis node by setting a --gps-end-time
-    option to the node when it is executed. We override the default method to
-    cope with the data padding.
-    @param time: GPS end time of job.
-    """
-    self.add_var_opt('gps-end-time',time)
-    pipeline.AnalysisNode.set_end(self,time)
-    pad = int(self.job().get_config('data','pad-data'))
-    pipeline.AnalysisNode.set_data_end(self,time + pad)
 
   def get_output(self):
     """
@@ -538,7 +507,8 @@ class TmpltBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     if not self.get_start() or not self.get_end() or not self.get_ifo():
       raise InspiralError, "Start time, end time or ifo has not been set"
     if self.__usertag and self.get_ifo_tag():
-      bank = self.get_ifo() + '-' + tag_base + '_' + self.get_ifo_tag() + "_" + self.__usertag + '-' 
+      bank = self.get_ifo() + '-' + tag_base + '_' + self.get_ifo_tag() + \
+          "_" + self.__usertag + '-' 
       bank = bank + str(self.get_start())
     elif self.__usertag:
       bank = self.get_ifo() + '-' + tag_base + '_' + self.__usertag + '-'  
@@ -557,6 +527,28 @@ class TmpltBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
     return bank
 
+  def set_pad_data(self, pad):
+    """
+    Set the pad data value for this node 
+    """
+    self.__pad_data = pad
+    self.add_var_opt('pad-data', pad)
+
+  def get_pad_data(self):
+    """
+    Returns the injection file
+    """
+    return self.__pad_data
+
+  def finalize(self):
+    """
+    set the data_start_time and data_end_time
+    """
+    if self.get_pad_data():
+      pipeline.AnalysisNode.set_data_start(self,self.get_start() - \
+          self.get_pad_data())
+      pipeline.AnalysisNode.set_data_end(self,self.get_end() + \
+          self.get_pad_data())
 
 class RandomBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
@@ -649,34 +641,14 @@ class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__usertag = job.get_config('pipeline','user-tag')
     self.__injections = None
     try:
+      self.__pad_data = int(self.job().get_opts()['pad-data'])
+    except: 
+      self.__pad_data = None
+    try:
       self.__zip_output = job.get_config('inspiral','write-compress')
       self.__zip_output = True
     except:
       self.__zip_output = False 
-
-  def set_start(self,time):
-    """
-    Set the GPS start time of the analysis node by setting a --gps-start-time
-    option to the node when it is executed. We override the default method to
-    cope with the data padding.
-    @param time: GPS start time of job.
-    """
-    self.add_var_opt('gps-start-time',time)
-    pipeline.AnalysisNode.set_start(self,time)
-    pad = int(self.job().get_config('data','pad-data'))
-    pipeline.AnalysisNode.set_data_start(self,time - pad)
-
-  def set_end(self,time):
-    """
-    Set the GPS end time of the analysis node by setting a --gps-end-time
-    option to the node when it is executed. We override the default method to
-    cope with the data padding.
-    @param time: GPS end time of job.
-    """
-    self.add_var_opt('gps-end-time',time)
-    pipeline.AnalysisNode.set_end(self,time)
-    pad = int(self.job().get_config('data','pad-data'))
-    pipeline.AnalysisNode.set_data_end(self,time + pad)
 
   def set_bank(self,bank):
     self.add_var_opt('bank-file', bank)
@@ -695,6 +667,19 @@ class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     Returns the injection file
     """
     return self.__injections
+
+  def set_pad_data(self, pad):
+    """
+    Set the pad data value for this node 
+    """
+    self.__pad_data = pad
+    self.add_var_opt('pad-data', pad)
+
+  def get_pad_data(self):
+    """
+    Returns the injection file
+    """
+    return self.__pad_data
 
   def set_user_tag(self,usertag):
     self.__usertag = usertag
@@ -750,6 +735,15 @@ class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
     return filename  
 
+  def finalize(self):
+    """
+    set the data_start_time and data_end_time
+    """
+    if self.get_pad_data():
+      pipeline.AnalysisNode.set_data_start(self,self.get_start() - \
+          self.get_pad_data())
+      pipeline.AnalysisNode.set_data_end(self,self.get_end() + \
+          self.get_pad_data())
 
 class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
   """
