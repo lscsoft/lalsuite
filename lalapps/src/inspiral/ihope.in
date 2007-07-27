@@ -34,9 +34,7 @@ def make_external_call(command, show_stdout=False, show_command=False):
   """
   Run a program on the shell and print informative messages on failure.
   """
-  if show_command: 
-    print command
-    return
+  if show_command: print command
 
   stdin, out, err = os.popen3(command)
   pid, status = os.wait()
