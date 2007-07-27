@@ -294,9 +294,11 @@ class SireJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     pipeline.AnalysisJob.__init__(self,cp,dax)
 
-    
-    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    for sec in ['sire']:
+      try: self.add_ini_opts(cp,sec)
+      except: pass
 
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
     self.set_stdout_file('logs/sire-$(macroifo)-$(cluster)-$(process).out')
     self.set_stderr_file('logs/sire-$(macroifo)-$(cluster)-$(process).err')
     self.set_sub_file('sire.sub')
