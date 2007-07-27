@@ -22,6 +22,9 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <config.h>
+
+#ifdef HAVE_REGEX_H
 /* hack to get around problem in regex.h */
 #ifdef __GLIBC__
 #ifdef __restrict_arr
@@ -30,7 +33,11 @@
 #define __restrict_arr
 #endif
 #include <regex.h>
+#endif
+
+#ifdef HAVE_GLOB_H
 #include <glob.h>
+#endif
 
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -245,6 +252,7 @@ LALCache * XLALCacheFileRead( LALFILE *fp )
 	return cache;
 }
 
+#ifdef HAVE_GLOB_H /* only use this if globbing is supported */
 static int XLALCacheFilenameParseEntry( LALCacheEntry *entry, const char *path )
 {
 	static const char *func = "XLALCacheFilenameParseEntry";
@@ -292,10 +300,12 @@ static int XLALCacheFilenameParseEntry( LALCacheEntry *entry, const char *path )
 
 	return 0;
 }
+#endif /* HAVE_GLOB_H */
 
 LALCache * XLALCacheGlob( const char *dirstr, const char *fnptrn )
 {
 	static const char *func = "XLALCacheGlob";
+#	ifdef HAVE_GLOB_H
 	LALCache *cache;
 	int globflags = 0;
 	glob_t g;
@@ -346,6 +356,12 @@ LALCache * XLALCacheGlob( const char *dirstr, const char *fnptrn )
 	globfree( &g );
 	XLALCacheSort( cache );
 	return cache;
+#	else /* no globbing: unsupported */
+	fnptrn = NULL;
+	dirstr = NULL;
+	XLALPrintError( "XLAL Error - %s: Glob is unsupported on non-posix system.\n", func );
+	XLAL_ERROR_NULL( func, XLAL_EFAILED );
+#	endif 
 }
 
 int XLALCacheFileWrite( LALFILE *fp, LALCache *cache )
@@ -475,6 +491,7 @@ int XLALCacheUniq( LALCache *cache )
 	return 0;
 }
 
+#ifdef HAVE_REGEX_H
 static int XLALCacheEntryMatch( LALCacheEntry *entry, INT4 t0, INT4 t1, regex_t *srcreg, regex_t *dscreg, regex_t *urlreg )
 {
 	if ( t1 > 0 && ! ( entry->t0 < t1 ) )
@@ -492,40 +509,72 @@ static int XLALCacheEntryMatch( LALCacheEntry *entry, INT4 t0, INT4 t1, regex_t 
 			return 0;
 	return 1; /* matches */
 }
+#else /* HAVE_REGEX_H undefined */
+/* can only attempt to match time range */
+static int XLALCacheEntryMatchTime( LALCacheEntry *entry, INT4 t0, INT4 t1 )
+{
+	if ( t1 > 0 && ! ( entry->t0 < t1 ) )
+		return 0;
+	if ( t0 > 0 && ! ( entry->t0 + entry->dt > t0 ) )
+		return 0;
+	return 1; /* matches */
+}
+#endif
 
 int XLALCacheSieve( LALCache *cache, INT4 t0, INT4 t1, const char *srcregex, const char *dscregex, const char *urlregex )
 {
 	static const char *func = "XLALCacheSieve";
+	UINT4 n = 0;
+	UINT4 i;
+#	ifdef HAVE_REGEX_H
 	regex_t srcreg;
 	regex_t dscreg;
 	regex_t urlreg;
-	UINT4 n = 0;
-	UINT4 i;
+#	else /* HAVE_REGEX_H undefined */
+	/* can only attempt to match time range */
+	if ( srcregex || dscregex || urlregex ) {
+		XLALPrintError( "XLAL Error - %s: Regular expression matching is not supported", func );
+		XLAL_ERROR( func, XLAL_EFAILED );
+	}
+#	endif
 
 	if ( ! cache )
 		XLAL_ERROR( func, XLAL_EFAULT );
 
+#	ifdef HAVE_REGEX_H
 	if ( srcregex )
 		regcomp( &srcreg, srcregex, REG_NOSUB );
 	if ( dscregex )
 		regcomp( &dscreg, dscregex, REG_NOSUB );
 	if ( urlregex )
 		regcomp( &urlreg, urlregex, REG_NOSUB );
+#	endif
 
-	for ( i = 0; i < cache->length; ++i )
-		if ( XLALCacheEntryMatch( cache->list + i, t0, t1, srcregex ? &srcreg : NULL, dscregex ? &dscreg : NULL, urlregex ? &urlreg : NULL ) ) {
+	for ( i = 0; i < cache->length; ++i ) {
+		int match;
+#		ifdef HAVE_REGEX_H
+		match = XLALCacheEntryMatch( cache->list + i, t0, t1, srcregex ? &srcreg : NULL, dscregex ? &dscreg : NULL, urlregex ? &urlreg : NULL );
+#		else
+		match = XLALCacheEntryMatchTime( cache->list + i, t0, t1 );
+#		endif
+		if ( match ) {
 			cache->list[n++] = cache->list[i];
 		} else {
 			XLALFree( cache->list[i].src );
 			XLALFree( cache->list[i].dsc );
 			XLALFree( cache->list[i].url );
 		}
+	}
+
+#	ifdef HAVE_REGEX_H
 	if ( srcregex )
 		regfree( &srcreg );
 	if ( dscregex )
 		regfree( &dscreg );
 	if ( urlregex )
 		regfree( &urlreg );
+#	endif
+
 	if ( cache->length != n ) {
 		cache->list = XLALRealloc( cache->list, n*sizeof(*cache->list) );
 		if ( n && ! cache->list )

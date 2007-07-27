@@ -354,7 +354,7 @@ fi
 
 dnl Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS(sys/time.h unistd.h getopt.h malloc.h zlib.h)
+AC_CHECK_HEADERS(sys/time.h unistd.h getopt.h malloc.h zlib.h regex.h glob.h)
 case "${host_os}" in
   solaris*) AC_CHECK_HEADERS(sunmath.h);;
 esac
