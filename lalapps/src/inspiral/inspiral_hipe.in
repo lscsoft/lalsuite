@@ -31,7 +31,7 @@ sys.path.append('@PYTHONLIBDIR@')
 from glue import pipeline
 from glue import segments as glue_segments
 from glue import lal
-import inspiral
+from lalapps import inspiral
 
 ##############################################################################
 # concrete dag setup functions
@@ -109,7 +109,7 @@ def AddFileToCache(file, cache):
     glue_segments.segment(int(file_name[2]), 
       int(file_name[2]) + int(file_name[3])),
     'file://' + socket.gethostbyaddr(socket.gethostname())[0] + \
-     os.getcwd() + '/' + output_file))
+     os.getcwd() + '/' + file))
 
 ##############################################################################
 # function to generate the coincident segments from four input segment lists
