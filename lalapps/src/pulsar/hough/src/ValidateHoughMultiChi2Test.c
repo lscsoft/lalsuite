@@ -642,7 +642,7 @@ int main(int argc, char *argv[]){
     fp = fopen(uvar_outfile , "w");
     setvbuf(fp, (char *)NULL, _IOLBF, 0);
     fprintf(fp, "%g  %g  %g  %g %g  %g  %g  %g \n", (numberCountTotal - meanN)/sigmaN, meanN ,sigmaN, chi2, uvar_Freq, uvar_Alpha, uvar_Delta, uvar_fdot);
-    fprintf(stdout, "%g  %g  %g  %g %g  %g  %g  %g \n", (numberCountTotal - meanN)/sigmaN, meanN ,sigmaN, chi2, uvar_Freq, uvar_Alpha, uvar_Delta, uvar_fdot);
+/*    fprintf(stdout, "%g  %g  %g  %g %g  %g  %g  %g \n", (numberCountTotal - meanN)/sigmaN, meanN ,sigmaN, chi2, uvar_Freq, uvar_Alpha, uvar_Delta, uvar_fdot);*/
     fclose(fp);
   
 
