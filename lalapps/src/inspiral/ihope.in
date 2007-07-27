@@ -34,8 +34,10 @@ def make_external_call(command, show_stdout=False, show_command=False):
   """
   Run a program on the shell and print informative messages on failure.
   """
-  if show_command: print command
-    
+  if show_command: 
+    print command
+    return
+
   stdin, out, err = os.popen3(command)
   pid, status = os.wait()
 
@@ -74,6 +76,42 @@ def link_executables(directory, config):
         executable = "../../" + executable
       config.set("condor", job, executable)
 
+
+##############################################################################
+# Function to generate segments
+def seg_find_call(ifo, seg_type, file_name):
+  """
+  Call LSC seg find to generate a segment list
+  """
+  segFindCall = "LSCsegFind --interferometer=" + ifo + \
+      " --type=\"" + seg_type + "\""\
+      " --gps-start-time=" + str(opts.gps_start_time) + \
+      " --gps-end-time=" + str(opts.gps_end_time) + " > " + file_name
+  make_external_call(segFindCall)
+  return segmentsUtils.fromsegwizard(file(file_name)).coalesce()
+
+##############################################################################
+# Function to set up the data quality segments
+def generate_veto_segs(ifo, category):
+  """
+  Generate the segments for a give veto category
+  """
+  segType = ''
+  for i in range(1, category + 1):
+    segType += cp.get("segments", "cat" + str(i) + "-veto-all") 
+    segType += cp.get("segments", "cat" + str(i) + "-veto-" + ifo.lower() ) 
+
+  if not segType: return segments.segmentlist()
+
+  veto_file = ifo + "-CATEGORY" + str(category) + "_VETO_SEGS-" + \
+      str(opts.gps_start_time) + "-" + \
+      str(opts.gps_end_time - opts.gps_start_time) + ".txt"
+  print "Running LSCsegFind to determine category " + str(category) + \
+      " veto segments for " + ifo
+  veto_segs = seg_find_call(ifo, segType, veto_file)
+
+  return veto_segs
+
 ##############################################################################
 # Function to set up the segments for the analysis
 def generate_segments(ifo):
@@ -98,13 +136,12 @@ def generate_segments(ifo):
 
   # run segFind to determine science segments
   print "Running LSCsegFind to determine science segments for " + ifo
-  segFindCall = "LSCsegFind --interferometer=" + ifo + \
-      " --type=" + cp.get("segments","analyze") + \
-      " --gps-start-time=" + str(opts.gps_start_time) + \
-      " --gps-end-time=" + str(opts.gps_end_time) + " > " + \
-      segFindFile
-  make_external_call(segFindCall)
-  sfSegs = segmentsUtils.fromsegwizard(file(segFindFile)).coalesce()
+  sfSegs = seg_find_call(ifo, cp.get("segments", "analyze"), segFindFile)
+
+  # don't analyze cat 1 vetoes
+  category_1_segs = generate_veto_segs(ifo, 1)
+  print "Excluding the category 1 veto times from the analysis segments"
+  sfSegs = sfSegs.__and__(category_1_segs.__invert__())
 
   # Determine the available data (if requested)
   if opts.use_available_data:
@@ -262,6 +299,7 @@ def followup_setup(followupDir, config, hipeDir):
   # set the cache paths
   followupcp.add_section("hipe-cache")
   followupcp.set("hipe-cache", "hipe-cache-path", "hipe_cache")
+  followupcp.set("hipe-cache", "science-run", "S5")
 
   for path in ["tmpltbank-path", "trigbank-path", "first-inspiral-path", \
       "second-inspiral-path", "first-coinc-path", "second-coinc-path"]: 
@@ -272,11 +310,11 @@ def followup_setup(followupDir, config, hipeDir):
   # to here XXX
 
   # correct paths to qscan config files
-  for (opt, arg) in followupcp.items("qscan") + followupcp.items("qscan-hoft"):
-    if "config-file" in opt:
-      if arg[0] != "/": 
+  for section in ["qscan", "qscan-hoft"]:
+    for (opt, arg) in followupcp.items(section):
+      if "config-file" in opt and arg[0] != "/": 
         arg = "../../" + arg
-      followupcp.set("condor", opt, arg)
+        followupcp.set(section, opt, arg)
 
   # link the executables 
   link_executables(followupDir, followupcp)
