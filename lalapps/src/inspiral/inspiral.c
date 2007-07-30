@@ -256,7 +256,7 @@ trigScanType trigScanMethod = trigScanNone;
                                         /* Switch for clustering        */
                                         /* triggers in template         */
                                         /* parameters and end time      */
-REAL8  trigScanDeltaEndTime = 0.0;      /* Use this interval (msec)     */
+REAL8  trigScanDeltaEndTime = -1.0;     /* Use this interval (msec)     */
                                         /* over trigger end time while  */
                                         /* using trigScanCluster        */
 REAL8  trigScanMetricScalingFac = -1.0;     
