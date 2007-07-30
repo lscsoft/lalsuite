@@ -104,7 +104,7 @@ def AddFileToCache(file, cache):
   """
   Add the given file to the lal.Cache
   """
-  file_name = os.path.splitext(file)[0].split('-')
+  file_name = file.split('.')[0].split('-')
   cache.append(lal.CacheEntry( file_name[0], file_name[1],
     glue_segments.segment(int(file_name[2]), 
       int(file_name[2]) + int(file_name[3])),
@@ -153,10 +153,12 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
   """
 
   # add the non veto inspiral options
-  insp_job.add_ini_opts(cp,'no-veto-inspiral')
+  if cp.has_section('no-veto-inspiral'): 
+    insp_job.add_ini_opts(cp,'no-veto-inspiral')
   
   # add the ifo specific options
-  insp_job.add_ini_opts(cp,ifo_name.lower() + '-inspiral')
+  if cp.has_section(ifo_name.lower() + '-inspiral'): 
+    insp_job.add_ini_opts(cp,ifo_name.lower() + '-inspiral')
 
   GeoBank = None
   if ifo_name == 'G1':
@@ -177,20 +179,20 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
     except: type = None
     channel = cp.get('input','ligo-channel')
   
-  tmplt_job.add_ini_opts(cp,data_opts)
-  tmplt_job.add_ini_opts(cp, 'tmpltbank-1')
-  insp_job.add_ini_opts(cp,data_opts)
+  if cp.has_section('tmpltbank-1'):
+    tmplt_job.add_ini_opts(cp, 'tmpltbank-1')
+  if cp.has_section(data_opts):
+    tmplt_job.add_ini_opts(cp,data_opts)
+    insp_job.add_ini_opts(cp,data_opts)
 
   tmplt_job.set_channel(channel)
   insp_job.set_channel(channel)
 
   # see if we are using calibrated data
-  calibrated = False
-  for opt in cp.options(data_opts):
-    if (opt.find('calibrated') >-1):
-      calibrated = True
-  if calibrated: print "we use calibrated data for ", ifo_name  
- 
+  if cp.has_section(data_opts) and cp.has_option(data_opts,'calibrated-data'):
+    calibrated = True
+    print "we use calibrated data for ", ifo_name 
+  else: calibrated = False
 
   chunks_analyzed = []
   # loop over the master science segments
@@ -426,9 +428,11 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
   """
 
   # add the veto option
-  insp_veto_job.add_ini_opts(cp,'veto-inspiral')
+  if cp.has_section('veto-inspiral'): 
+    insp_veto_job.add_ini_opts(cp,'veto-inspiral')
   # add ifo specific options
-  insp_veto_job.add_ini_opts(cp,ifo_name.lower() + '-inspiral')
+  if cp.has_section(ifo_name.lower() + '-inspiral'):
+    insp_veto_job.add_ini_opts(cp,ifo_name.lower() + '-inspiral')
   
   if ifo == 'G1':
     data_opts = 'geo-data'
@@ -437,15 +441,14 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
     data_opts = 'ligo-data'
     channel = cp.get('input','ligo-channel')
  
-  insp_veto_job.add_ini_opts(cp,data_opts)
+  if cp.has_section(data_opts): insp_veto_job.add_ini_opts(cp,data_opts)
   insp_veto_job.set_channel(channel)
   
      
-  calibrated = False
-  for opt in cp.options(data_opts):
-    if (opt.find('calibrated') >-1):
-      calibrated = True
-  
+  # see if we are using calibrated data
+  if cp.has_section(data_opts) and cp.has_option(data_opts,'calibrated-data'):
+    calibrated = True
+  else: calibrated = False
 
   trig_chunks_analyzed = []
 
@@ -540,9 +543,11 @@ def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
   bankList = {} 
 
   # add the veto option
-  insp_veto_job.add_ini_opts(cp,'veto-inspiral')
+  if cp.has_section('veto-inspiral'):
+    insp_veto_job.add_ini_opts(cp,'veto-inspiral')
   # add ifo specific options
-  insp_veto_job.add_ini_opts(cp,ifo_name.lower() + '-inspiral')
+  if cp.has_section(ifo_name.lower() + '-inspiral'):
+    insp_veto_job.add_ini_opts(cp,ifo_name.lower() + '-inspiral')
   
   if ifo == 'G1':
     data_opts = 'geo-data'
@@ -551,18 +556,19 @@ def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
     data_opts = 'ligo-data'
     channel = cp.get('input','ligo-channel')
  
-  insp_veto_job.add_ini_opts(cp,data_opts)
-  tmplt_follow_job.add_ini_opts(cp, data_opts)
-  tmplt_follow_job.add_ini_opts(cp, 'tmpltbank-2')
+  if cp.has_section(data_opts): 
+    insp_veto_job.add_ini_opts(cp,data_opts)
+    tmplt_follow_job.add_ini_opts(cp, data_opts)
+  if cp.has_section('tmpltbank-2'):
+    tmplt_follow_job.add_ini_opts(cp, 'tmpltbank-2')
   insp_veto_job.set_channel(channel)
   tmplt_follow_job.set_channel(channel)
   
      
-  calibrated = False
-  for opt in cp.options(data_opts):
-    if (opt.find('calibrated') >-1):
-      calibrated = True
-  
+  # see if we are using calibrated data
+  if cp.has_section(data_opts) and cp.has_option(data_opts,'calibrated-data'):
+    calibrated = True
+  else: calibrated = False
 
   follow_chunks_analyzed = []
   # loop over the master science segments
@@ -764,17 +770,21 @@ def coherent_analysis(ifos,single_ifo_segments,coinc_nodes,cb_job,
     if ifo in ifos:
       # set up the trigbanks
       
-      trig_coh_jobs[ifo].add_ini_opts(cp,'coh-trig')
+      if cp.has_section('coh-trig'):
+        trig_coh_jobs[ifo].add_ini_opts(cp,'coh-trig')
       # set up inspirals:
-      insp_coh_jobs[ifo].add_ini_opts(cp,'no-veto-inspiral')
-      insp_coh_jobs[ifo].add_ini_opts(cp,ifo.lower() + '-inspiral')
+      if cp.has_section('no-veto-inspiral'):
+        insp_coh_jobs[ifo].add_ini_opts(cp,'no-veto-inspiral')
+      if cp.has_section(ifo.lower() + '-inspiral'): 
+        insp_coh_jobs[ifo].add_ini_opts(cp,ifo.lower() + '-inspiral')
       if ifo == 'G1':
         data_opts[ifo] = 'geo-data'
         chan = cp.get('input','geo-channel')
       else:
         data_opts[ifo] = 'ligo-data'
         chan = cp.get('input','ligo-channel')
-      insp_coh_jobs[ifo].add_ini_opts(cp,data_opts[ifo])
+      if cp.has_section(data_opts[ifo]):
+        insp_coh_jobs[ifo].add_ini_opts(cp,data_opts[ifo])
       insp_coh_jobs[ifo].set_channel(chan)
 
       
@@ -832,11 +842,10 @@ def coherent_analysis(ifos,single_ifo_segments,coinc_nodes,cb_job,
               insp.set_ifo(ifo)
               insp.set_ifo_tag(ifotag)
               insp.add_var_opt('write-cdata','')
-              calibrated = False
-              for opt in cp.options(data_opts[ifo]):
-                if (opt.find('calibrated') >-1):
-                  calibrated = True
-              if not calibrated: insp.calibration()
+              # see if we are using calibrated data
+              if not cp.has_section(data_opts[ifo]) or \
+                  not cp.has_option(data_opts[ifo],'calibrated-data'):
+                insp.calibration()
               if not opts.read_cache: 
                 insp.set_cache(seg.get_df_node().get_output())
               else: insp.set_cache(cp.get('datafind',ifo + "-cache"))
@@ -1623,7 +1632,7 @@ for ifos in ifo_coincs:
   print "setting up thinca jobs on " + ifos + " data...",
   sys.stdout.flush()
 
-  thinca_jobs[ifos].add_ini_opts(cp, 'thinca-1')
+  if cp.has_section('thinca-1'): thinca_jobs[ifos].add_ini_opts(cp, 'thinca-1')
   coinc_nodes[ifos] = thinca_coinc(ifos,chunks_analyzed,analyzed_data[ifos],
       thinca_jobs[ifos],dag,opts.coincidence,opts.inspiral,exttrigInjections,
       usertag, coire_job=coire_job, do_coire=opts.coire_coincidence)
@@ -1640,7 +1649,8 @@ for ifos in ifo_coincs:
   # Step 6 slide: Time slides 
   coinc_slide_nodes[ifos] = []
   if num_slides:
-    thinca_slide_jobs[ifos].add_ini_opts(cp, 'thinca-1')
+    if cp.has_section('thinca-1'): 
+      thinca_slide_jobs[ifos].add_ini_opts(cp, 'thinca-1')
     coinc_slide_nodes[ifos] = thinca_coinc(ifos,chunks_analyzed,
         analyzed_data[ifos],thinca_slide_jobs[ifos],dag,opts.coincidence,
         opts.inspiral,exttrigInjections, usertag, coire_job=coire_slide_job, 
@@ -1727,7 +1737,8 @@ for ifos in ifo_coincs:
   print "setting up second thinca jobs on " + ifos + " data...",
   sys.stdout.flush()
 
-  thinca2_jobs[ifos].add_ini_opts(cp, 'thinca-2')
+  if cp.has_section('thinca-2'):
+    thinca2_jobs[ifos].add_ini_opts(cp, 'thinca-2')
   if opts.td_follow_inspiral:
     for this_approx in approximants:
       this_approx = this_approx.strip()
@@ -1751,7 +1762,8 @@ for ifos in ifo_coincs:
 
   # Step 8slide: Time slides on the data
   if num_slides:
-    thinca2_slide_jobs[ifos].add_ini_opts(cp, 'thinca-2')
+    if cp.has_section('thinca-2'): 
+      thinca2_slide_jobs[ifos].add_ini_opts(cp, 'thinca-2')
   
     if opts.td_follow_inspiral:
       for this_approx in approximants:
