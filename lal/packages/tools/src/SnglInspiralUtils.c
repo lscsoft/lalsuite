@@ -2215,4 +2215,66 @@ INT4 XLALCountSnglInspiral( SnglInspiralTable *head )
   return length;
 }
 
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+SnglInspiralTable *
+XLALMassCut(
+    SnglInspiralTable         *eventHead,
+    char                      *massCut,
+    REAL4                      massRangeLow,
+    REAL4                      massRangeHigh
+    )
+/* </lalVerbatim> */
+{
+  SnglInspiralTable    *inspiralEventList = NULL;
+  SnglInspiralTable    *thisEvent = NULL;
+  SnglInspiralTable    *prevEvent = NULL;
+
+  REAL4 massParam;
+  INT4 numTriggers;
+
+  /* Remove all the triggers which are not of the desired type */
+
+  numTriggers = 0;
+  thisEvent = eventHead;
+
+  while ( thisEvent )
+  {
+    SnglInspiralTable *tmpEvent = thisEvent;
+    thisEvent = thisEvent->next;
+    massParam = 0;
+
+    if ( ! strcmp(massCut,"mchirp") )
+    {
+      massParam = tmpEvent->mchirp;
+    }
+    else if ( ! strcmp(massCut,"mtotal") )
+    {
+      massParam = tmpEvent->mass1 + tmpEvent->mass2;
+    }
+
+    if ( (massParam >= massRangeLow) && ( massParam < massRangeHigh ) )
+    {
+      /* keep this trigger */
+      if ( ! inspiralEventList  )
+      {
+        inspiralEventList = tmpEvent;
+      }
+      else
+      {
+        prevEvent->next = tmpEvent;
+      }
+      tmpEvent->next = NULL;
+      prevEvent = tmpEvent;
+      ++numTriggers;
+    }
+    else
+    {
+      /* discard this template */
+      XLALFreeSnglInspiral ( &tmpEvent );
+    }
+  }
+
+  eventHead = inspiralEventList;
+  return(eventHead);
+}
 
