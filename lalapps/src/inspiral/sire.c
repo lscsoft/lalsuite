@@ -108,6 +108,10 @@ static void print_usage(char *program)
       "\n"\
       "Cuts and Vetos:\n"\
       " [--ifo-cut]       ifo         only keep triggers from specified ifo\n"\
+      " [--mass-cut]      masstype    keep only triggers in mass range of type\n"\
+      "                                (mchirp|mtotal)\n"\
+      " [--mass-range-low] lowmass    lower bound on mass range\n"\
+      " [--mass-range-high] highmass  upper bound on mass range\n"\
       " [--snr-threshold] snr_star    discard all triggers with snr less than snr_star\n"\
       " [--rsq-threshold] rsq_thresh  discard all triggers whose rsqveto_duration\n"\
       "                               exceeds rsq_thresh\n"\
@@ -165,6 +169,9 @@ int main( int argc, char *argv[] )
   char *missedFileName = NULL;
   char **inFileNameList;
   char line[MAX_PATH];
+  char *massCut = NULL;
+  REAL4 massRangeLow = -1;
+  REAL4 massRangeHigh = -1;
   REAL4 snrStar = -1;
   REAL4 rsqVetoThresh = -1;
   REAL4 rsqMaxSnr     = -1;
@@ -200,6 +207,7 @@ int main( int argc, char *argv[] )
   int                   numEvents = 0;
   int                   numEventsKept = 0;
   int                   numEventsInIFO = 0;
+  int                   numEventsInMassRange = 0;
   int                   numEventsAboveSNRThresh = 0;
   int                   numEventsBelowRsqThresh = 0;
   int                   numEventsSurvivingVeto = 0;
@@ -279,6 +287,9 @@ int main( int argc, char *argv[] )
       {"injection-file",          required_argument,      0,              'I'},
       {"injection-window",        required_argument,      0,              'T'},
       {"missed-injections",       required_argument,      0,              'm'},
+      {"mass-cut",                required_argument,      0,              'M'},
+      {"mass-range-low",          required_argument,      0,              'q'},
+      {"mass-range-high",         required_argument,      0,              'Q'},
       {0, 0, 0, 0}
     };
     int c;
@@ -288,7 +299,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only ( argc, argv, 
-        "c:d:g:hi:j:k:m:o:r:s:t:v:zC:DH:I:R:ST:VZ:", 
+        "c:d:g:hi:j:k:m:o:q:r:s:t:v:z:C:D:HI:M:Q:R:S:T:VZ:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -571,6 +582,24 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
+      case 'M':
+        /* create storage for the missed injection file name */
+        optarg_len = strlen( optarg ) + 1;
+        massCut = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( massCut, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case 'q':
+        massRangeLow = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg);
+        break;
+
+      case 'Q':
+        massRangeHigh = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg);
+        break;
+
       case '?':
         exit( 1 );
         break;
@@ -681,6 +710,28 @@ int main( int argc, char *argv[] )
   {
     fprintf( stderr, "--injection-file must be specified if "
         "--injection-coincidence is given\n" );
+    exit( 1 );
+  }
+
+  /* check that we have all the options to do a mass cut */
+  if ( ( massCut || massRangeLow >= 0 || massRangeHigh >= 0 ) &&
+       ! ( massCut && massRangeLow >= 0 && massRangeHigh >= 0 ) )
+  {
+    fprintf( stderr, "--mass-cut, --mass-range-low, and --mass-rang-high "
+        "must all be used together\n" );
+    exit( 1 );
+  }
+
+  if ( massCut && ( massRangeLow >= massRangeHigh ) )
+  {
+    fprintf( stderr, "--mass-range-low must be greater than "
+        "--mass-range-high\n" );
+    exit( 1 );
+  }
+
+  if ( massCut && strcmp( "mchirp", massCut ) && strcmp("mtotal", massCut) )
+  {
+    fprintf( stderr, "--mass-cut must be either mchirp or mtotal\n" );
     exit( 1 );
   }
 
@@ -839,6 +890,20 @@ int main( int argc, char *argv[] )
       if ( vrbflg ) fprintf( stdout, 
           "Have %d from ifo %s\n", numFileTriggers, ifoName );
       numEventsInIFO += numFileTriggers;
+    }
+
+    /* Do mass cut */
+    if ( massCut )
+    {
+      inspiralFileList = XLALMassCut( inspiralFileList,
+          massCut, massRangeLow, massRangeHigh );
+      /* count the triggers */
+      numFileTriggers = XLALCountSnglInspiral( inspiralFileList );
+
+      if ( vrbflg ) fprintf( stdout,
+          "Kept %d triggers in mass range %f to %f\n", numFileTriggers,
+            massRangeLow, massRangeHigh );
+      numEventsInMassRange += numFileTriggers;
     }
     
     /*  Do snr cut */
@@ -1170,6 +1235,12 @@ int main( int argc, char *argv[] )
           numEventsInIFO );
     }
 
+
+    if ( massCut )
+    {
+      fprintf( fp, "number of triggers in mass range %f to %f: %d \n",
+           massRangeLow, massRangeHigh, numEventsInMassRange );
+    }
 
     if ( snrStar > 0 )
     {
