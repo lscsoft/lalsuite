@@ -997,8 +997,16 @@ CoincInspiralTable *
 XLALMeanMassCut(
     CoincInspiralTable         *eventHead,
     char                       *massCut,
-    REAL4                      massRangeLow,
-    REAL4                      massRangeHigh
+    REAL4                       massRangeLow,
+    REAL4                       massRangeHigh
+    );
+
+SnglInspiralTable *
+XLALMassCut(
+    SnglInspiralTable          *eventHead,
+    char                       *massCut,
+    REAL4                       massRangeLow,
+    REAL4                       massRangeHigh
     );
 
 /* sim inspiral */
@@ -1055,6 +1063,27 @@ int
 XLALSimInspiralInSearchedData(
     SimInspiralTable         **eventHead,
     SearchSummaryTable       **summList
+    );
+
+int
+XLALSimInspiralChirpMassCut(
+    SimInspiralTable   **eventHead,
+    REAL4                minChirpMass,
+    REAL4                maxChirpMass
+    );
+
+int
+XLALSimInspiralCompMassCut(
+    SimInspiralTable   **eventHead,
+    REAL4                minCompMass,
+    REAL4                maxCompMass
+    );
+
+int
+XLALSimInspiralTotalMassCut(
+    SimInspiralTable   **eventHead,
+    REAL4                minTotalMass,
+    REAL4                maxTotalMass
     );
 
 INT8
