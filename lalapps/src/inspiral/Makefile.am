@@ -10,6 +10,7 @@ SIRESRC 	= sire.c
 COIRESRC 	= coire.c
 SIVASRC 	= siva.c
 INSPINJSRC 	= inspinj.c
+INJCUTSRC 	= injcut.c
 MINJSRC 	= minj.c
 BBHINJSRC 	= bbhinj.c
 BLINDINJSRC 	= blindinj.c
@@ -25,7 +26,7 @@ if LALFRAME
 if LALMETAIO
 bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank \
                lalapps_inca lalapps_sire lalapps_coire lalapps_siva \
-               lalapps_inspinj lalapps_splitbank \
+               lalapps_inspinj lalapps_injcut lalapps_splitbank \
                lalapps_minj lalapps_bbhinj lalapps_blindinj \
                lalapps_inspfrinj lalapps_gwf2xml \
                lalapps_thinca lalapps_trigbank \
@@ -43,6 +44,7 @@ lalapps_sire_SOURCES 		= $(SIRESRC)
 lalapps_coire_SOURCES 		= $(COIRESRC)
 lalapps_siva_SOURCES 		= $(SIVASRC)
 lalapps_inspinj_SOURCES 	= $(INSPINJSRC)
+lalapps_injcut_SOURCES 		= $(INJCUTSRC)
 lalapps_minj_SOURCES 		= $(MINJSRC)
 lalapps_bbhinj_SOURCES 		= $(BBHINJSRC)
 lalapps_blindinj_SOURCES 	= $(BLINDINJSRC)
