@@ -81,7 +81,7 @@
       \textbf{California Institute of Technology} &
       \textbf{Massachusetts Institute of Technology} \\
       \textbf{LIGO Project - MS 51-33} &
-      \textbf{LIGO Project - MS 20B-145} \\
+      \textbf{LIGO Project - MS NW22-295} \\
       \textbf{Pasadena CA 91125} &
       \textbf{Cambridge, MA 01239} \\
       Phone (626) 395-2129 & Phone (617) 253-4824 \\
