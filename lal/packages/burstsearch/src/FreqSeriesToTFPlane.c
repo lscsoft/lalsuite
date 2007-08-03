@@ -335,14 +335,14 @@ SnglBurstTable *XLALComputeExcessPower(
 
 		/* compute statistical confidence, see if it's above
 		 * threshold */
-		/* FIXME:  the 0.65 is an empirically determined
+		/* FIXME:  the 0.62 is an empirically determined
 		 * degree-of-freedom fudge factor.  figure out what its
 		 * origin is, and account for it correctly.  it's most
 		 * likely due to the time-frequency plane pixels not being
 		 * independent of one another as a consequence of a
 		 * non-zero inner product of the time-domain impulse
 		 * response of the channel filter for adjacent pixels */
-		confidence = -XLALlnOneMinusChisqCdf(sumsquares * .65, tile_dof * .65);
+		confidence = -XLALlnOneMinusChisqCdf(sumsquares * .62, tile_dof * .62);
 		if(XLALIsREAL8FailNaN(confidence))
 			XLAL_ERROR_NULL(func, XLAL_EFUNC);
 		if(confidence >= confidence_threshold) {
