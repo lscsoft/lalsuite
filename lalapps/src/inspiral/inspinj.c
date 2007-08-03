@@ -41,6 +41,7 @@
 #include <lal/Random.h>
 #include <lal/AVFactories.h>
 #include <lal/InspiralInjectionParams.h>
+#include <processtable.h>
 
 RCSID( "$Id$" );
 
@@ -70,7 +71,10 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
 void printUsage(void);
 void read_mass_data( char* filename );
 void read_source_data( char* filename );
-void drawFromSource( REAL8 *rightAscension, REAL8* declination, REAL8 *distance );
+void drawFromSource( REAL8 *rightAscension,
+                     REAL8 *declination,
+                     REAL8 *distance,
+                     CHAR  name[LIGOMETA_SOURCE_MAX] );
 void drawLocationFromExttrig( SimInspiralTable* table );
 void drawMassFromSource( SimInspiralTable* table );
 
@@ -92,7 +96,7 @@ char *sourceFileName = NULL;
 char *outputFileName = NULL;
 char *exttrigFileName = NULL;
 
-UINT4 outCompress = 0;
+INT4 outCompress = 0;
 
 float mwLuminosity = -1;
 REAL4 dmin= -1;
@@ -121,7 +125,7 @@ ExtTriggerTable   *exttrigHead = NULL;
 
 int num_source;
 struct {
-  char   name[20];
+  char   name[LIGOMETA_SOURCE_MAX];
   REAL8 ra;
   REAL8 dec;
   REAL8 dist;
@@ -129,6 +133,7 @@ struct {
   REAL8 fudge;
 } *source_data;
 
+char MW_name[LIGOMETA_SOURCE_MAX] = "MW";
 REAL8* fracVec  =NULL;
 REAL8* ratioVec = NULL;
 REAL8 norm=0;
@@ -243,12 +248,12 @@ void printUsage(void)
   printf("                           or gaussian (MDISTR=gaussian), \n");
   printf("                           or log in comonent mass (MDISTR=log),\n");
   printf("                           or using mass file (MDISTR=source)\n");
-  printf("  --mean-mass MASS         "
+  printf("  --mean-mass1 MASS         "
 	 "set the mean value for both mass components if \n");
   printf("                           MDISTR=gaussian\n");
   printf("  --mean-mass2 MASS        "
 	 "set the mean value for mass2 if MDISTR=gaussian\n");
-  printf("  --stdev-mass MSTD        "
+  printf("  --stdev-mass1 MSTD        "
 	 "set the standard deviation for both component\n");
   printf("                           masses if MDISTR=gaussian\n");
   printf("  --stdev-mass2 MSTD       "
@@ -439,7 +444,10 @@ void drawMassFromSource( SimInspiralTable* table )
  * functions to draw sky location from source distribution
  *
  */
-void drawFromSource( REAL8 *rightAscension, REAL8* declination, REAL8 *distance )
+void drawFromSource( REAL8 *rightAscension,
+                     REAL8 *declination,
+                     REAL8 *distance,
+                     CHAR   name[LIGOMETA_SOURCE_MAX] )
 {
   REAL4 u;
   int i;
@@ -455,6 +463,8 @@ void drawFromSource( REAL8 *rightAscension, REAL8* declination, REAL8 *distance 
       *rightAscension = source_data[i].ra;
       *declination    = source_data[i].dec;
       *distance = source_data[i].dist/1000.0;
+      memcpy( name, source_data[i].name,
+              sizeof(CHAR) * LIGOMETA_SOURCE_MAX );
       return;
     }
   }
@@ -462,6 +472,9 @@ void drawFromSource( REAL8 *rightAscension, REAL8* declination, REAL8 *distance 
   /* now then, draw from MilkyWay
      WARNING: This sets location AND distance */
   XLALRandomInspiralMilkywayLocation( rightAscension, declination, distance, randParams );
+  memcpy( name, MW_name,
+          sizeof(CHAR) * 30 );
+
 }
 
 /*
@@ -533,6 +546,7 @@ int main( int argc, char *argv[] )
   REAL8 drawnDistance = 0.0;
   REAL8 drawnRightAscension = 0.0;
   REAL8 drawnDeclination = 0.0;
+  CHAR  drawnSourceName[LIGOMETA_SOURCE_MAX];
 
   status=blank_status;
   gpsStartTime.gpsSeconds=-1;
@@ -1430,7 +1444,8 @@ int main( int argc, char *argv[] )
     }
 
     /* draw location and distances */
-    drawFromSource( &drawnRightAscension, &drawnDeclination, &drawnDistance );
+    drawFromSource( &drawnRightAscension, &drawnDeclination, &drawnDistance,
+                    drawnSourceName );
 
     /* popualate distances */
     if ( dDistr == distFromSourceFile )
@@ -1448,6 +1463,8 @@ int main( int argc, char *argv[] )
     {
       simTable->longitude = drawnRightAscension;
       simTable->latitude  = drawnDeclination;
+      memcpy( simTable->source, drawnSourceName,
+              sizeof(CHAR) * LIGOMETA_SOURCE_MAX );
     }
     else if ( lDistr == locationFromExttrigFile )
     {
