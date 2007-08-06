@@ -399,9 +399,10 @@ void LALHOUGHConstructPLUT(LALStatus       *status,
 
 static void  PLUTInitialize(HOUGHptfLUT  *lut){
   UINT4  i;
-  UINT4 maxNBins;
+  UINT4 maxNBins, maxNBorders;
   
   maxNBins = lut->maxNBins;
+  maxNBorders = lut->maxNBorders;
   
   for(i=0;i<maxNBins;++i){
     lut->bin[i].leftB1  = 0;
@@ -412,6 +413,11 @@ static void  PLUTInitialize(HOUGHptfLUT  *lut){
     lut->bin[i].piece1min = 0;
     lut->bin[i].piece2max = -1;
     lut->bin[i].piece2min = 0;
+  }
+  
+  for(i=0;i<maxNBorders;++i){
+    lut->border[i].yUpper = -1;
+    lut->border[i].yLower = 0;
   }
   return;
 }
