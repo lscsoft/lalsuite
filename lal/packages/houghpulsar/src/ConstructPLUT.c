@@ -601,14 +601,13 @@ static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
     pathology = 1;
     
     /* Some checks */
-#ifdef CHECKHOUGHINDEX
+    /* #ifdef CHECKHOUGHINDEX */
     if (currentBin > maxNBins || lastBorder>= maxNBorders ){ 
       fprintf(stderr,"currentBin=%d not in range 1 to maxNBins=%d\n"
-	      "or lastborder=%d >= maxNBorders=%d\n",
-	      currentBin,maxNBins,lastBorder,maxNBorders);
-      abort();
+	      "or lastborder=%d >= maxNBorders=%d [ConstructPLUT.c %d]\n",
+	      currentBin,maxNBins,lastBorder,maxNBorders, __LINE__);
     }
-#endif
+    /* #endif */
 
     cosPhiMax = cosPhiMax + cosDelta;
     /* or cosPhiMax = MIN(1,cosPhiMax + cosDelta ); */
@@ -707,14 +706,13 @@ static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
     pathology = 1;
     
     /* Some checks */
-#ifdef CHECKHOUGHINDEX
+    /* #ifdef CHECKHOUGHINDEX */
     if (currentBin > maxNBins || lastBorder>= maxNBorders ){ 
       fprintf(stderr,"currentBin=%d not in range 1 to maxNBins=%d\n"
-	      "or lastborder=%d >= maxNBorders=%d\n",
-	      currentBin,maxNBins,lastBorder,maxNBorders);
-      abort();
+	      "or lastborder=%d >= maxNBorders=%d [ConstructPLUT.c %d]\n",
+	      currentBin,maxNBins,lastBorder,maxNBorders, __LINE__);
     }
-#endif
+    /* #endif */
     
 
     cosPhiMin = cosPhiMin - cosDelta;
