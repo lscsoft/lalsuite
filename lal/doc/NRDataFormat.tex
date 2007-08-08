@@ -1,58 +1,51 @@
 %%%%$Id$%%%
 
-\documentclass[10pt]{ligodcc}
+% \documentclass[10pt]{ligodcc}
+\documentclass[prd,preprintnumbers,superscriptaddress,eqsecnum]{revtex4}
+
 \usepackage{hyperref}
 \usepackage{color}
 \usepackage{calc}
 \usepackage{amsmath,amssymb,graphicx,rcs}
-\usepackage{tensor}
+% \usepackage{tensor}
 
 % make verbatims and teletype font blue
-\let\keepverbatim\verbatim
-\def\verbatim{\color{blue}\small\keepverbatim}
-\makeatletter
-\def\verb{\relax\ifmmode\hbox\else\leavevmode\null\fi
-  \bgroup
-    \color{blue}\small
-    \verb@eol@error \let\do\@makeother \dospecials
-    \verbatim@font\@noligs
-    \@ifstar\@sverb\@verb}
-\makeatother
-\renewcommand{\texttt}[1]{{\ttfamily\color{blue}#1}}
-\DeclareOldFontCommand{\tt}{\normalfont\ttfamily\color{blue}}{\mathtt\color{blue}}
+% \let\keepverbatim\verbatim
+% \def\verbatim{\color{blue}\small\keepverbatim}
+% \makeatletter
+% \def\verb{\relax\ifmmode\hbox\else\leavevmode\null\fi
+%   \bgroup
+%     \color{blue}\small
+%     \verb@eol@error \let\do\@makeother \dospecials
+%     \verbatim@font\@noligs
+%     \@ifstar\@sverb\@verb}
+% \makeatother
+% \renewcommand{\texttt}[1]{{\ttfamily\color{blue}#1}}
+% \DeclareOldFontCommand{\tt}{\normalfont\ttfamily\color{blue}}{\mathtt\color{blue}}
 
-\newcommand{\opt}[1]{\ensuremath{\color{blue}\langle\textit{#1}\rangle}}
+% \newcommand{\opt}[1]{\ensuremath{\color{blue}\langle\textit{#1}\rangle}}
 
-\newsavebox{\fminibox}
-\newlength{\fminilength}
-\newenvironment{fminipage}[1][\linewidth]
-  {\setlength{\fminilength}{#1-2\fboxsep-2\fboxrule}%
-   \begin{lrbox}{\fminibox}\begin{minipage}{\fminilength}}
-  {\end{minipage}\end{lrbox}\noindent\fbox{\usebox{\fminibox}}}
-\newenvironment{lalrule}{\begin{quote}\color{red}\begin{fminipage}}
-  {\end{fminipage}\end{quote}}
+% \newsavebox{\fminibox}
+% \newlength{\fminilength}
+% \newenvironment{fminipage}[1][\linewidth]
+%   {\setlength{\fminilength}{#1-2\fboxsep-2\fboxrule}%
+%    \begin{lrbox}{\fminibox}\begin{minipage}{\fminilength}}
+%   {\end{minipage}\end{lrbox}\noindent\fbox{\usebox{\fminibox}}}
+% \newenvironment{lalrule}{\begin{quote}\color{red}\begin{fminipage}}
+%   {\end{fminipage}\end{quote}}
 
-\ligodoc{T070072-00}{Z}
-\ligodocdist{%
-LIGO Scientific Collaboration\\ Numerical Relativity Community\\
-\textbf{DRAFT}\\
-\bigskip
-}
-\title{Data formats for numerical relativity waves}
-\author{Duncan Brown, Stephen Fairhurst, Badri Krishnan, Adam Mercer,
-Kopparapu RaviKumar, Lucia Santamaria, John Whelan and others}
-\rcsid$Id$
+% \ligodoc{T070072-00}{Z}
+% \ligodocdist{%
+% LIGO Scientific Collaboration\\ Numerical Relativity Community\\
+% \textbf{DRAFT}\\
+% \bigskip
+% }
 
-\begin{document}
-\maketitle
-
-
-\tableofcontents
 
 \numberwithin{equation}{section}
 \newcommand{\Ys}{{{}^{-s}Y}}
 \newcommand{\Ytwo}{{{}^{-2}Y}}
-\newcommand{\tens}[1]{\tensor{#1}}
+\newcommand{\tens}[1]{\mathbf{#1}}
 \newcommand{\xhat}{\vec{e}_x}
 \newcommand{\yhat}{\vec{e}_y}
 \newcommand{\zhat}{\vec{e}_z}
@@ -64,8 +57,46 @@ Kopparapu RaviKumar, Lucia Santamaria, John Whelan and others}
 \newcommand{\eplus}{\tens{e}_+}
 \newcommand{\ecross}{\tens{e}_\times}
 
-\RCS $Date$
-\date{\RCSDate}
+
+% \rcsid$Id$
+% \RCS $Date$
+% \date{\RCSDate}l
+
+
+\begin{document}
+
+\newcommand*{\CIT}{Theoretical Astrophysics, California Institute of
+  Technology, Pasadena, California 91125, USA}\affiliation{\CIT}
+\newcommand*{\LIGO}{LIGO Laboratory, California Institute of
+  Technology, Pasadena, California 91125, USA}\affiliation{\LIGO}
+\newcommand*{\CU}{Cardiff University, Cardiff, CF2 3YB, United 
+  Kingdom}\affiliation{\CU}
+\newcommand*{\AEI}{Max-Planck-Institut f\"ur
+  Gravitationsphysik, Albert-Einstein-Institut, Am M\"uhlenberg 1,
+  D-14476 Golm, Germany}\affiliation{\AEI}
+\newcommand*{\UFL}{Department of Physics, University of Florida,
+  Gainesville, FL 32611, USA}\affiliation{\UFL}
+\newcommand*{\LSU}{Department of Physics and Astronomy, Louisiana State
+  University, Baton Rouge, LA 70803, USA}\affiliation{\LSU}
+\newcommand*{\Jena}{Theoretical Physics Institute, Uiversity of Jena,
+  07743 Jena, Germany}{\affiliation{\Jena}
+
+
+\title{Data formats for numerical relativity waves}
+
+\author{Duncan Brown}\email{dbrown@ligo.caltech.edu}\affiliation{\CIT}\affiliation{\LIGO}
+\author{Stephen Fairhurst}\email{fairhurst_s@ligo.caltech.edu}\affiliation{\CIT}\affiliation{\LIGO}\affiliation{\CU}
+\author{Badri Krishnan}\email{badri.krishnan@aei.mpg.de}\affiliation{\AEI}
+\author{Adam Mercer}\email{ram@phys.ufl.edu}\affiliation{\UFL}
+\author{Kopparapu RaviKumar}\email{kumar@theory.phys.lsu.edu}\affiliation{\LSU}
+\author{Lucia Santamaria}\email{lucia.santamaria@uni-jena.de}\affiliation{\Jena}
+\author{John Whelan}\email{john.whelan@aei.mpg.de}\affiliation{\AEI}
+
+
+% \author{Duncan Brown, Stephen Fairhurst, Badri Krishnan, Adam Mercer, 
+% Kopparapu RaviKumar, Lucia Santamaria, John Whelan}
+
+%\tableofcontents
 
 \begin{abstract}
   This document suggests possible data formats to further the
@@ -75,6 +106,11 @@ Kopparapu RaviKumar, Lucia Santamaria, John Whelan and others}
   various kinds of sources including binaries of compact objects and
   systems undergoing gravitational collapse.
 \end{abstract}
+
+\preprint{LIGO-T070072-00-Z}
+
+\maketitle
+
 
 \section{Introduction}
 \label{sec:intro}
@@ -531,6 +567,15 @@ How large are the error-bars on the numerical results?
 
 Numerical relativity groups are welcome to raise any other issues that
 might be important.
+
+
+\section*{Acknowledgements}
+
+We are grateful to various numerical relativists for valuable
+discussions and suggestions.  In particular, we would like to thank
+Harald Pfeiffer, Erik Schnetter, Luis Lehner, Lee Lindblom, Luciano
+Rezzolla, Peter Diener, Pablo Laguna, Deirdre Shoemaker, Manuela
+Campanelli, Carlos Lousto, ....
 
 
 \end{document}
