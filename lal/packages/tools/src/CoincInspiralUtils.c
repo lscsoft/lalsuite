@@ -2474,7 +2474,9 @@ XLALMeanMassCut(
     CoincInspiralTable         *eventHead,
     char                       *massCut,
     REAL4                      massRangeLow,
-    REAL4                      massRangeHigh
+    REAL4                      massRangeHigh,
+    REAL4                      mass2RangeLow,
+    REAL4                      mass2RangeHigh
     )
 /* </lalVerbatim> */
 {
@@ -2484,8 +2486,10 @@ XLALMeanMassCut(
 
   InterferometerNumber ifoNumber = 0;
   REAL4 meanMass = 0;
+  REAL4 meanMass2 = 0;
   INT4 numIfos = 0;
   INT4 numTriggers;
+  INT4 massBOOL;
 
   /* Remove all the triggers which are not of the desired type */
 
@@ -2498,6 +2502,7 @@ XLALMeanMassCut(
     thisEvent = thisEvent->next;
     numIfos = 0;
     meanMass = 0;
+    meanMass2 = 0;
 
     for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
     {
@@ -2510,15 +2515,45 @@ XLALMeanMassCut(
         else if ( ! strcmp(massCut,"mtotal") )
         {
           meanMass += tmpEvent->snglInspiral[ifoNumber]->mass1 +
-                       tmpEvent->snglInspiral[ifoNumber]->mass2;
+                      tmpEvent->snglInspiral[ifoNumber]->mass2;
+        }
+        else if ( ! strcmp(massCut,"mcomp") )
+        {
+          meanMass += tmpEvent->snglInspiral[ifoNumber]->mass1;
+          meanMass2 += tmpEvent->snglInspiral[ifoNumber]->mass2;
         }
         numIfos += 1;
       }
     }
 
     meanMass = meanMass/numIfos;
+    meanMass2 = meanMass2/numIfos;
 
-    if ( (meanMass >= massRangeLow) && ( meanMass < massRangeHigh ) )
+    if ( ! strcmp(massCut,"mcomp") )
+    {
+      if ( ( meanMass >= massRangeLow ) && ( meanMass < massRangeHigh ) &&
+           ( meanMass2 >= mass2RangeLow ) && ( meanMass2 < mass2RangeHigh ) )
+      {
+        massBOOL = 1;
+      }
+      else
+      {
+        massBOOL = 0;
+      }
+    }
+    else
+    {
+      if ( ( meanMass >= massRangeLow ) && ( meanMass < massRangeHigh ) )
+      {
+        massBOOL = 1;
+      }
+      else
+      {
+        massBOOL = 0;
+      }
+    }
+
+    if ( massBOOL )
     {
       /* keep this trigger */
       if ( ! coincEventList  )
