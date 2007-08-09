@@ -109,9 +109,11 @@ static void print_usage(char *program)
       "Cuts and Vetos:\n"\
       " [--ifo-cut]       ifo         only keep triggers from specified ifo\n"\
       " [--mass-cut]      masstype    keep only triggers in mass range of type\n"\
-      "                                (mchirp|mtotal)\n"\
+      "                                (mchirp|mtotal|mcomp)\n"\
       " [--mass-range-low] lowmass    lower bound on mass range\n"\
       " [--mass-range-high] highmass  upper bound on mass range\n"\
+      " [--mass2-range-low] lowmass   lower bound on mass2 range\n"\
+      " [--mass2-range-high] highmass upper bound on mass2 range\n"\
       " [--snr-threshold] snr_star    discard all triggers with snr less than snr_star\n"\
       " [--rsq-threshold] rsq_thresh  discard all triggers whose rsqveto_duration\n"\
       "                               exceeds rsq_thresh\n"\
@@ -172,6 +174,8 @@ int main( int argc, char *argv[] )
   char *massCut = NULL;
   REAL4 massRangeLow = -1;
   REAL4 massRangeHigh = -1;
+  REAL4 mass2RangeLow = -1;
+  REAL4 mass2RangeHigh = -1;
   REAL4 snrStar = -1;
   REAL4 rsqVetoThresh = -1;
   REAL4 rsqMaxSnr     = -1;
@@ -290,6 +294,8 @@ int main( int argc, char *argv[] )
       {"mass-cut",                required_argument,      0,              'M'},
       {"mass-range-low",          required_argument,      0,              'q'},
       {"mass-range-high",         required_argument,      0,              'Q'},
+      {"mass2-range-low",         required_argument,      0,              'u'},
+      {"mass2-range-high",        required_argument,      0,              'Q'},
       {0, 0, 0, 0}
     };
     int c;
@@ -299,7 +305,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only ( argc, argv, 
-        "c:d:g:hi:j:k:m:o:q:r:s:t:v:z:C:D:HI:M:Q:R:S:T:VZ:", 
+        "c:d:g:hi:j:k:m:o:q:r:s:t:v:u:z:C:D:HI:M:Q:R:S:T:U:VZ:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -600,6 +606,16 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "float", "%s", optarg);
         break;
 
+      case 'u':
+        mass2RangeLow = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg);
+        break;
+
+      case 'U':
+        mass2RangeHigh = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg);
+        break;
+
       case '?':
         exit( 1 );
         break;
@@ -724,14 +740,31 @@ int main( int argc, char *argv[] )
 
   if ( massCut && ( massRangeLow >= massRangeHigh ) )
   {
-    fprintf( stderr, "--mass-range-low must be greater than "
+    fprintf( stderr, "--mass-range-low must be less than "
         "--mass-range-high\n" );
     exit( 1 );
   }
 
-  if ( massCut && strcmp( "mchirp", massCut ) && strcmp("mtotal", massCut) )
+  if ( massCut && ( ! strcmp( "mcomp", massCut ) ) &&
+       ( mass2RangeLow < 0 || mass2RangeHigh <0 ) )
   {
-    fprintf( stderr, "--mass-cut must be either mchirp or mtotal\n" );
+    fprintf( stderr, "--mass2-range-low and --mass2-rang-high \n"
+        "must be specified if using --mass-cut mcomp\n" );
+    exit( 1 );
+  }
+
+  if ( massCut && ( ! strcmp( "mcomp", massCut ) ) &&
+       mass2RangeLow >= mass2RangeHigh )
+  {
+    fprintf( stderr, "--mass2-range-low must be less than "
+        "--mass2-range-high\n" );
+    exit( 1 );
+  }
+
+  if ( massCut && strcmp( "mchirp", massCut ) &&
+       strcmp("mtotal", massCut) && strcmp( "mcomp", massCut ) )
+  {
+    fprintf( stderr, "--mass-cut must be either mchirp, mtotal, or mcomp\n" );
     exit( 1 );
   }
 
@@ -895,8 +928,8 @@ int main( int argc, char *argv[] )
     /* Do mass cut */
     if ( massCut )
     {
-      inspiralFileList = XLALMassCut( inspiralFileList,
-          massCut, massRangeLow, massRangeHigh );
+      inspiralFileList = XLALMassCut( inspiralFileList, massCut,
+          massRangeLow, massRangeHigh, mass2RangeLow, mass2RangeHigh );
       /* count the triggers */
       numFileTriggers = XLALCountSnglInspiral( inspiralFileList );
 

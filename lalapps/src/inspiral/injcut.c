@@ -71,6 +71,8 @@ RCSID( "$Id$" );
 "                             MASS_TYPE (mtotal|mchirp|mcomp)\n"\
 " [--mass-range-low] MIN      set the minimum mass to MIN\n"\
 " [--mass-range-high] MAX     set the maximum mass to MAX\n"\
+" [--mass2-range-low] MIN     set the minimum mass2 to MIN\n"\
+" [--mass2-range-high] MAX    set the maximum mass2 to MAX\n"\
 "\n"
 
 
@@ -119,6 +121,8 @@ int main( int argc, char *argv[] )
   CHAR         *massCut = NULL;     /* mass cut type */
   REAL4         minMass = -1;       /* minimum mass */
   REAL4         maxMass = -1;       /* maximum mass */
+  REAL4         minMass2 = -1;       /* minimum mass2 */
+  REAL4         maxMass2 = -1;       /* maximum mass2 */
   CHAR         *injectFileName = NULL;
   CHAR         *outputFileName = NULL;
 
@@ -147,6 +151,8 @@ int main( int argc, char *argv[] )
     {"mass-cut",                required_argument, 0,                'M'},
     {"mass-range-low",          required_argument, 0,                't'},
     {"mass-range-high",         required_argument, 0,                'T'},
+    {"mass2-range-low",         required_argument, 0,                'r'},
+    {"mass2-range-high",        required_argument, 0,                'R'},
     {"output",                  required_argument, 0,                'o'},
     {0, 0, 0, 0}
   };
@@ -268,6 +274,38 @@ int main( int argc, char *argv[] )
               "float", "%e", maxMass );
         break;
 
+      case 'r':
+        /* minimum total mass2 */
+        minMass2 = (REAL4) atof( optarg );
+        if ( minMass2 <= 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "miniumum mass2 must be > 0: "
+              "(%f solar masses specified)\n",
+              long_options[option_index].name, minMass2 );
+          exit( 1 );
+        }
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%e", minMass2 );
+        break;
+
+      case 'R':
+        /* maximum total mass2 */
+        maxMass2 = (REAL4) atof( optarg );
+        if ( maxMass2 <= 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "maxiumum mass2 must be > 0: "
+              "(%f solar masses specified)\n",
+              long_options[option_index].name, maxMass2 );
+          exit( 1 );
+        }
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%e", maxMass2 );
+        break;
+
       case 'z':
         set_debug_level( optarg );
         this_proc_param = this_proc_param->next = 
@@ -319,6 +357,38 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
+  /* check that the mass inputs make sense */
+  if ( ( massCut || minMass >= 0 || maxMass >= 0 ) &&
+       ! ( massCut && minMass >= 0 && maxMass >= 0 ) )
+  {
+    fprintf( stderr, "--mass-cut, --mass-range-low, and --mass-rang-high "
+        "must all be used together\n" );
+    exit( 1 );
+  }
+
+  if ( massCut && ( minMass >= maxMass ) )
+  {
+    fprintf( stderr, "--mass-range-low must be less than "
+        "--mass-range-high\n" );
+    exit( 1 );
+  }
+
+  if ( massCut && ( ! strcmp( "mcomp", massCut ) ) &&
+       ( minMass2 < 0 || maxMass2 <0 ) )
+  {
+    fprintf( stderr, "--mass2-range-low and --mass2-rang-high \n"
+        "must be specified if using --mass-cut mcomp\n" );
+    exit( 1 );
+  }
+
+  if ( massCut && ( ! strcmp( "mcomp", massCut ) ) &&
+       minMass2 >= maxMass2 )
+  {
+    fprintf( stderr, "--mass2-range-low must be less than "
+        "--mass2-range-high\n" );
+    exit( 1 );
+  }
+
   /* null out the head of the linked list */
   injections.simInspiralTable = NULL;
 
@@ -358,10 +428,11 @@ int main( int argc, char *argv[] )
   }
 
   /* keep only injections in component mass range */
-  if ( ( minMass >= 0 ) && ( maxMass >= 0 ) && ! strcmp( "mcomp", massCut ) )
+  if ( ( minMass >= 0 ) && ( maxMass >= 0 ) &&
+       ( minMass2 >= 0 ) && ( maxMass2 >= 0 ) && ! strcmp( "mcomp", massCut ) )
   {
     numSimEvents = XLALSimInspiralCompMassCut( &simEventHead,
-        minMass, maxMass );
+        minMass, maxMass, minMass2, maxMass2 );
     if ( vrbflg )
     {
       fprintf( stdout, "kept %d injections component mass range %f to %f\n",
