@@ -323,7 +323,9 @@ int
 XLALSimInspiralCompMassCut(
     SimInspiralTable   **eventHead,
     REAL4                minCompMass,
-    REAL4                maxCompMass
+    REAL4                maxCompMass,
+    REAL4                minCompMass2,
+    REAL4                maxCompMass2
     )
 /* </lalVerbatim> */
 {
@@ -345,8 +347,8 @@ XLALSimInspiralCompMassCut(
 
     if ( ( tmpEvent->mass1 >= minCompMass ) &&
          ( tmpEvent->mass1 < maxCompMass ) &&
-         ( tmpEvent->mass2 >= minCompMass ) &&
-         ( tmpEvent->mass2 < maxCompMass ) )
+         ( tmpEvent->mass2 >= minCompMass2 ) &&
+         ( tmpEvent->mass2 < maxCompMass2 ) )
     {
       /* keep this trigger */
       if ( ! inspiralEventList  )
