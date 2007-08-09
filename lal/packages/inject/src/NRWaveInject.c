@@ -157,8 +157,8 @@ XLALCalculateNRStrain( REAL4TimeVectorSeries *strain, /**< h+, hx time series da
 
   for ( k = 0; k < vecLength; ++k )
   {
-    htData->data->data[k] = fplus * strain->data->data[k]  + 
-      fcross * strain->data->data[vecLength + k];
+    htData->data->data[k] = (fplus * strain->data->data[k]  + 
+			     fcross * strain->data->data[vecLength + k]) / inj->distance;
   }
 
   /*interpolate to given sample rate */
