@@ -2221,7 +2221,9 @@ XLALMassCut(
     SnglInspiralTable         *eventHead,
     char                      *massCut,
     REAL4                      massRangeLow,
-    REAL4                      massRangeHigh
+    REAL4                      massRangeHigh,
+    REAL4                      mass2RangeLow,
+    REAL4                      mass2RangeHigh
     )
 /* </lalVerbatim> */
 {
@@ -2230,7 +2232,9 @@ XLALMassCut(
   SnglInspiralTable    *prevEvent = NULL;
 
   REAL4 massParam;
+  REAL4 mass2Param;
   INT4 numTriggers;
+  INT4 massBOOL;
 
   /* Remove all the triggers which are not of the desired type */
 
@@ -2242,6 +2246,7 @@ XLALMassCut(
     SnglInspiralTable *tmpEvent = thisEvent;
     thisEvent = thisEvent->next;
     massParam = 0;
+    mass2Param = 0;
 
     if ( ! strcmp(massCut,"mchirp") )
     {
@@ -2251,8 +2256,37 @@ XLALMassCut(
     {
       massParam = tmpEvent->mass1 + tmpEvent->mass2;
     }
+    else if ( ! strcmp(massCut,"mcomp") )
+    {
+      massParam = tmpEvent->mass1;
+      mass2Param = tmpEvent->mass2;
+    }
 
-    if ( (massParam >= massRangeLow) && ( massParam < massRangeHigh ) )
+    if ( ! strcmp(massCut,"mcomp") )
+    {
+      if ( ( massParam >= massRangeLow ) && ( massParam < massRangeHigh ) &&
+           ( mass2Param >= mass2RangeLow ) && ( mass2Param < mass2RangeHigh ) )
+      {
+        massBOOL = 1;
+      }
+      else
+      {
+        massBOOL = 0;
+      }
+    }
+    else
+    {
+      if ( ( massParam >= massRangeLow ) && ( massParam < massRangeHigh ) )
+      {
+        massBOOL = 1;
+      }
+      else
+      {
+        massBOOL = 0;
+      }
+    }
+
+    if ( massBOOL )
     {
       /* keep this trigger */
       if ( ! inspiralEventList  )
