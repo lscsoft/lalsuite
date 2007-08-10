@@ -80,18 +80,21 @@ def link_executables(directory, config):
 
 ##############################################################################
 # Function to set up the segments for the analysis
-def science_segments(ifo):
+def science_segments(ifo, config):
   """
   generate the segments for the specified ifo
   """
-  segFindFile = ifo + "-SCI_SEGS-" + str(opts.gps_start_time) + "-" + \
+  segFindFile = ifo + "-SCIENCE_SEGMENTS-" + str(opts.gps_start_time) + "-" + \
       str(opts.gps_end_time - opts.gps_start_time) + ".txt"
 
   # if not generating segments, all we need is the name of the segment file
   if not opts.generate_segments: return segFindFile
 
+  executable = config.get("condor", "segfind")
+  if executable[0] != "/": executable = "../" + executable
+
   # run segFind to determine science segments
-  segFindCall = "LSCsegFind --interferometer=" + ifo + \
+  segFindCall = executable + " --interferometer=" + ifo + \
       " --type=\"" + cp.get("segments", "analyze") + "\""\
       " --gps-start-time=" + str(opts.gps_start_time) + \
       " --gps-end-time=" + str(opts.gps_end_time) + " > " + segFindFile 
@@ -100,62 +103,72 @@ def science_segments(ifo):
 
 ##############################################################################
 # Function to set up the segments for the analysis
-def veto_segments(ifo, segmentList):
+def veto_segments(ifo, config, segmentList, dqSegfile, categories):
   """
   generate veto segments for the given ifo
+  
+  ifo         = name of the ifo
+  segmentList = list of science mode segments
+  dqSegfile   = the file containing dq flags
+  categories  = list of veto categories 
   """
-  # download the dq segments to generate the veto files
-  fname = ifo + "-dq_segments.txt"
-  print "Downloading the latest daily dump of segment database to " \
-      + fname + " ...",
-  segFile, info = urllib.urlretrieve(dq_url_pattern % ifo, fname)
-  print "done"
-  combinedVeto = {}
-  for category in range(1, 4 + 1):
-    dqFile = cp.get("segments", ifo.lower() + "-cat-" + str(category) + \
+  executable = config.get("condor", "query_dq")
+  if executable[0] != "/": executable = "../" + executable
+
+  vetoFiles = {}
+
+  for category in categories:
+    dqFile = config.get("segments", ifo.lower() + "-cat-" + str(category) + \
         "-veto-file")
 
     vetoFile = ifo + "-CATEGORY_" + str(category) + "_VETO_SEGS-" + \
         str(opts.gps_start_time) + "-" + \
         str(opts.gps_end_time - opts.gps_start_time) + ".txt"
 
-    combinedFile = ifo + "-COMBINED_CAT_" + str(category) + "_VETO_SEGS-" + \
-        str(opts.gps_start_time) + "-" + \
-        str(opts.gps_end_time - opts.gps_start_time) + ".txt"
-
-    dqCall = "pylal_query_dq --ifo " + ifo + " --dq-segfile " + segFile + \
+    dqCall = executable + " --ifo " + ifo + " --dq-segfile " + dqSegFile + \
         " --segfile " + segmentList + " --flagfile ../" + dqFile + \
         " --outfile " + vetoFile
 
     # generate the segments
-    if opts.generate_segments:
-      make_external_call(dqCall)
+    make_external_call(dqCall)
+
+    # if there are previous vetoes, generate combined
+    try: previousSegs = \
+        segmentsUtils.fromsegwizard(open(vetoFiles[category-1]))
+    except: previousSegs = None
+
+    if previousSegs:
+      combinedFile = ifo + "-COMBINED_CAT_" + str(category) + "_VETO_SEGS-" + \
+          str(opts.gps_start_time) + "-" + \
+          str(opts.gps_end_time - opts.gps_start_time) + ".txt"
+
       vetoSegs = segmentsUtils.fromsegwizard(open(vetoFile)).coalesce()
-
-      if category > 1:
-        vetoSegs |= segmentsUtils.fromsegwizard(open(combinedVeto[category-1]))
-
+      vetoSegs |= previousSegs
       segmentsUtils.tosegwizard(file(combinedFile,"w"), vetoSegs)
+      vetoFiles[category] = combinedFile
 
-    combinedVeto[category] = combinedFile
+    else: vetoFiles[category] = vetoFile
 
-  return combinedVeto
+  return vetoFiles
       
 ##############################################################################
 # Function to set up the segments for the analysis
-def datafind_segments(ifo):
+def datafind_segments(ifo, config):
   ligoIfos = ["H1","H2","L1"]
 
   if ifo in ligoIfos: type = cp.get("input","ligo-type")
   elif ifo == "G1": type =   cp.get("input","geo-type")
  
+  executable = config.get("condor", "datafind")
+  if executable[0] != "/": executable = "../" + executable
+
   ifo_type = ifo + "_" + type
   dataFindFile = ifo_type + "-" + str(opts.gps_start_time) + "-" + \
       str(opts.gps_end_time - opts.gps_start_time) + ".txt"
 
   print "Running LSCdataFind to determine available data from " + type + \
       " frames for " + ifo
-  dataFindCall = "LSCdataFind --observatory=" + ifo[0] + \
+  dataFindCall = executable + " --observatory=" + ifo[0] + \
       " --type=" + ifo_type + \
       " --gps-start-time=" + str(opts.gps_start_time) + \
       " --gps-end-time=" + str(opts.gps_end_time) + " --show-times > " + \
@@ -167,26 +180,38 @@ def datafind_segments(ifo):
 
 ##############################################################################
 # Function to set up lalapps_inspiral_hipe
-def hipe_setup(hipeDir, config, injFile=None, dfOnly = False):
+def hipe_setup(hipeDir, config, injFile=None, dfOnly = False, playOnly = False,
+  vetoCat = None, vetoFiles = None):
   """
   run lalapps_inspiral_hipe and add job to dag
-  hipeDir = directory in which to run inspiral hipe
-  config  = config file 
-  injFile = injection file to use when running
-  dfOnly  = only run the datafind step of the pipeline
+  hipeDir   = directory in which to run inspiral hipe
+  config    = config file 
+  injFile   = injection file to use when running
+  dfOnly    = only run the datafind step of the pipeline
+  vetoCat   = run this category of veto
+  vetoFiles = dictionary of veto files
   """
+  global ifos
 
   # make the directory for running hipe
   mkdir(hipeDir)
 
   # create the hipe config parser, keep only relevant info
   hipecp = copy.deepcopy(config)
-  hipeSections = ['condor', 'pipeline', 'input', 'calibration', 'datafind',\
-      'ligo-data', 'geo-data', 'data', 'tmpltbank', 'tmpltbank-1', \
-      'tmpltbank-2', 'no-veto-inspiral', 'veto-inspiral', 'inspiral', \
-      'h1-inspiral', 'h2-inspiral', 'l1-inspiral', 'g1-inspiral', \
-      'thinca', 'thinca-1', 'thinca-2', 'thinca-slide', 'trigtotmplt', 'sire', \
-      'sire-inj', 'coire', 'coire-inj']
+  if dfOnly:
+    hipeSections = ['condor', 'pipeline', 'input', 'datafind','data',\
+        'ligo-data','inspiral']
+  elif vetoCat:
+    hipeSections = ['condor', 'pipeline', 'input', 'data', 'ligo-data', \
+        'inspiral', 'thinca', 'thinca-2', \
+        'thinca-slide', 'coire', 'coire-inj']
+  else:
+    hipeSections = ['condor', 'pipeline', 'input', 'calibration', 'datafind',\
+        'ligo-data', 'geo-data', 'data', 'tmpltbank', 'tmpltbank-1', \
+        'tmpltbank-2', 'no-veto-inspiral', 'veto-inspiral', 'inspiral', \
+        'h1-inspiral', 'h2-inspiral', 'l1-inspiral', 'g1-inspiral', \
+        'thinca', 'thinca-1', 'thinca-2', 'thinca-slide', 'trigtotmplt', \
+        'sire', 'sire-inj', 'coire', 'coire-inj']
 
   for seg in hipecp.sections():
     if not seg in hipeSections: hipecp.remove_section(seg)
@@ -197,30 +222,61 @@ def hipe_setup(hipeDir, config, injFile=None, dfOnly = False):
   hipecp.set("input", "gps-start-time", opts.gps_start_time)
   hipecp.set("input", "gps-end-time", opts.gps_end_time)
 
+  # set the data type
+  if playOnly:
+    hipecp.set("pipeline", "data-type", "playground_only")
+  else:
+    hipecp.set("pipeline", "data-type", "all_data")
+
+  # deal with vetoes
+  if vetoCat:
+    for section in ["thinca-2", "coire"]: 
+      hipecp.set(section, "user-tag","CAT_" + str(vetoCat) + "_VETO")
+    for ifo in ifos:
+      hipecp.set("thinca-2", ifo.lower() + "-veto-file", 
+          vetoFiles[ifo][vetoCat])
+      
   if injFile:
-    # add the options to the ini file
+    # add the injection options to the ini file
     if injFile[0] != "/": injFile = "../../" + injFile
     hipecp.set("input", "injection-file", injFile )
     hipecp.set("input", "num-slides", "")
-
   else: 
-    # add the options to the ini file
+    # add the time slide to the ini file
     hipecp.set("input","num-slides", config.get("input","num-slides") )
     hipecp.set("input", "injection-file", "" )
 
+    # sanity check of numSlides
+    maxLength = None
+    if playOnly: maxLength = 600
+    elif hipecp.has_option("input", "max-thinca-segment"):
+      maxLength = hipecp.getint("input", "max-thinca-segment")
+
+    if maxLength:
+      maxSlide = max([cp.getint("thinca-slide", ifo.lower() + "-slide") 
+          for ifo in ifos])
+      numSlides = (maxLength/2/maxSlide - 1)
+      if numSlides < hipecp.getint("input", "num-slides"):
+        print "Setting number of slides to " + str(numSlides) + \
+            " to avoid double wrapping"
+        hipecp.set("input","num-slides", str(numSlides))
+
   # link the executables 
-  link_executables(hipeDir, hipecp)
+  if not vetoCat: link_executables(hipeDir, hipecp)
 
   # return to the directory, write ini file and run hipe
   os.chdir(hipeDir)
-  iniFile = "inspiral_hipe_" + hipeDir + ".ini"
+  iniFile = "inspiral_hipe_" 
+  if vetoCat: iniFile += "_cat" + vetoCategory + "_veto_"
+  iniFile += hipeDir + ".ini"
+
   hipecp.write(file(iniFile,"w"))
   
   print "Running hipe in directory " + hipeDir 
-  if injFile: 
-    print "Injection file: " + hipecp.get("input", "injection-file") 
+  if injFile: print "Injection file: " + hipecp.get("input", "injection-file") 
   else: print "No injections, " + str(hipecp.get("input","num-slides")) + \
       " time slides"
+  if vetoCat: print "Running the category " + str(vetoCat) + " vetoes"
   print
 
   # work out the hipe call:
@@ -230,22 +286,23 @@ def hipe_setup(hipeDir, config, injFile=None, dfOnly = False):
   for item in config.items("ifo-details"):
       hipeCommand += " --" + item[0] + " " + item[1]
 
-  if dfOnly: hipeCommand += " --datafind"
-  else:
-    for item in config.items("hipe-arguments"):
-      if item[0] != "datafind": hipeCommand += " --" + item[0] + " " + item[1]
+  for item in config.items("hipe-arguments"):
+    if (dfOnly and item[0] == "datafind") or  \
+        (vetoCat and item[0] in ["second-coinc", "coire-second-coinc"]) or \
+        (not dfOnly and not vetoCat and item[0] != "datafind"):
+      hipeCommand += " --" + item[0] + " " + item[1]
 
   # run lalapps_inspiral_hipe
   make_external_call(hipeCommand) 
 
   # link datafind
-  if not dfOnly:
+  if not dfOnly and not vetoCat:
     try:
       os.rmdir("cache")
       os.symlink("../datafind/cache", "cache")
     except: pass
 
-  # add job to dag
+  # make hipe job/node
   hipeJob = pipeline.CondorDAGManJob(hipeDir + "/" + iniFile.rstrip("ini") + \
       "dag")
   hipeNode = pipeline.CondorDAGNode(hipeJob)
@@ -257,76 +314,6 @@ def hipe_setup(hipeDir, config, injFile=None, dfOnly = False):
   os.chdir("..")
 
   return hipeNode
-
-##############################################################################
-# Function to set up lalapps_inspiral_hipe
-def hipe_veto(hipeDir, config, vetoCategory, vetoFiles, injFile=None):
-  """
-  run lalapps_inspiral_hipe and add job to dag
-  hipeconfig  = config file 
-  injFile = injection file to use when running
-  """
-  # create the hipe config parser, keep only relevant info
-  vetocp = copy.deepcopy(config)
-  vetoSections = ['condor', 'pipeline', 'input', 'thinca', 'thinca-2', \
-      'thinca-slide', 'coire', 'coire-inj']
-
-  vetocp.remove_option("condor","hipe")
-  vetocp.remove_option("condor","follow")
-
-  vetocp.set("input", "gps-start-time", opts.gps_start_time)
-  vetocp.set("input", "gps-end-time", opts.gps_end_time)
-
-  for seg in vetocp.sections():
-    if not seg in vetoSections: vetocp.remove_section(seg)
-
-  if injFile:
-    # add the options to the ini file
-    if injFile[0] != "/": injFile = "../../" + injFile
-    vetocp.set("input", "injection-file", injFile )
-    vetocp.set("input", "num-slides", "")
-
-  else: 
-    # add the options to the ini file
-    vetocp.set("input","num-slides", config.get("input","num-slides") )
-    vetocp.set("input", "injection-file", "" )
-
-  for section in ["thinca", "coire"]: 
-    vetocp.set(section, "user-tag","CAT_" + str(vetoCategory) + "_VETO")
-
-  # return to the directory, write ini file and run hipe
-  os.chdir(hipeDir)
-  iniFile = "inspiral_hipe_cat" + vetoCategory + "_veto_" + hipeDir + ".ini"
-  vetocp.write(file(iniFile,"w"))
-  
-  print "Running hipe for category " + str(category) + " vetoes"
-
-  # work out the hipe call:
-  hipeCommand = config.get("condor","hipe")
-  hipeCommand += " --log-path " + opts.log_path
-  hipeCommand += " --config-file " + iniFile
-  for item in config.items("ifo-details"):
-      hipeCommand += " --" + item[0] + " " + item[1]
-
-  for item in config.items("hipe-arguments"):
-    if item[0] in ["second-coinc", "coire-second-coinc"]:
-      hipeCommand += " --" + item[0] + " " + item[1]
-
-  # run lalapps_inspiral_hipe
-  make_external_call(hipeCommand) 
-
-  # add job to dag
-  vetoJob = pipeline.CondorDAGManJob(hipeDir + "/" + iniFile.rstrip("ini") + \
-      "dag")
-  vetoNode = pipeline.CondorDAGNode(vetoJob)
-
-  # add postscript to deal with rescue dag
-  fix_rescue(vetoNode)
-
-  # return to the original directory
-  os.chdir("..")
-
-  return vetoNode
 
 ##############################################################################
 # Function to set up lalapps_followup_pipe
@@ -482,26 +469,35 @@ parser.add_option("-s", "--gps-start-time",action="store",type="int",\
 parser.add_option("-e", "--gps-end-time",action="store",type="int",\
     metavar=" GPS_END", help="end analysis at GPS_END")
 
-parser.add_option("-S", "--generate-segments",action="store_true",\
-    default=False, help="generate segments for analysis")
-
-parser.add_option("-Q", "--data-quality",action="store_true",\
-    default=False, help="generate dq veto segments and use in analysis ")
+parser.add_option("-S", "--skip-generate-segments",action="store_false",\
+    default=True, dest="generate_segments", \
+    help="skip generation segments for analysis")
 
 parser.add_option("-D", "--use-available-data",action="store_true",\
     default=False, help="analyze only the data available on the cluster")
 
-parser.add_option("-B", "--run-datafind",action="store_true",\
-    default=False, help="run the datafind step")
+parser.add_option("-B", "--skip-datafind",action="store_false",\
+    default=True, dest="run_datafind", help="skip the datafind step")
 
-parser.add_option("-A", "--run-analysis",action="store_true",\
-    default=False, help="run the inspiral analysis")
+parser.add_option("-A", "--skip-analysis",action="store_false",\
+    default=True, dest="run_analysis", help="skip the inspiral analysis")
 
-parser.add_option("-I", "--run-injections",action="store_true",\
-    default=False, help="run the inspiral analysis with injections")
+parser.add_option("-F", "--skip-full-data",action="store_false",\
+    default=True, dest="run_full_data", help="skip the full data + slides")
 
-parser.add_option("-F", "--run-followup",action="store_true",\
-    default=False, help="run the inspiral followup")
+parser.add_option("-P", "--skip-play-analysis",action="store_false",\
+    default=True, dest="run_play_analysis", help="skip the playground analysis")
+
+parser.add_option("-I", "--skip-injections",action="store_false",\
+    default=True, dest="run_injections", \
+    help="skip the inspiral analysis with injections")
+
+parser.add_option("-Q", "--skip-data-quality",action="store_false",\
+    default=True, dest="run_data_quality", \
+    help="skip generation dq veto segments and use in analysis ")
+
+parser.add_option("-U", "--skip-followup",action="store_true",\
+    default=True, dest="run_followup",  help="skip the inspiral followup")
 
 (opts,args) = parser.parse_args()
 
@@ -581,26 +577,37 @@ segFile = {}
 dqVetoes = {}
 
 for ifo in ifos:
-  segFile[ifo] = ifo + "_selectedsegs.txt"
-  missedFile = ifo + "_missedsegs.txt"
+  segFile[ifo] = ifo + "-SELECTED_SEGS.txt"
+  missedFile = ifo + "-MISSED_SEGS.txt"
+  dqSegFile = ifo + "-DQ_SEGMENTS.txt"
 
-  print "Generating science segments for " + ifo + " ...",
-  sys.stdout.flush()
-  sciSegFile = science_segments(ifo)
-  sciSegs = segmentsUtils.fromsegwizard(file(sciSegFile)).coalesce()
-  print " done."
-  sys.stdout.flush()
+  cp.set("input", ifo.lower() + "-segments", "../" + segFile[ifo])
 
-  if opts.data_quality:
-    print "Generating veto segments for " + ifo
+  if opts.generate_segments: 
+    print "Generating science segments for " + ifo + " ...",
     sys.stdout.flush()
-    dqVetoes[ifo] = veto_segments(ifo, sciSegFile) 
+  sciSegFile = science_segments(ifo, cp)
+  sciSegs = segmentsUtils.fromsegwizard(file(sciSegFile)).coalesce()
+  if opts.generate_segments: print " done."
 
-  if opts.generate_segments:
-    sciSegs = sciSegs.__and__(dqVetoes[1].__invert__())
+  # download the dq segments to generate the veto files
+  if opts.generate_segments: 
+    print "Downloading the latest daily dump of segment database to " \
+        + dqSegFile + " ...",
+    dqSegFile, info = urllib.urlretrieve(dq_url_pattern % ifo, dqSegFile)
+    print "done"
+
+    print "Generating cat 1 veto segments for " + ifo + " ...",
+    sys.stdout.flush()
+    vetoFiles = veto_segments(ifo, cp, sciSegFile, dqSegFile, [1]) 
+    print "done"
+
+    # remove cat 1 veto times
+    vetoSegs = segmentsUtils.fromsegwizard(open(vetoFiles[1])).coalesce()
+    sciSegs = sciSegs.__and__(vetoSegs.__invert__())
 
     if opts.use_available_data:
-      dfSegs = datafind_segments(ifo)
+      dfSegs = datafind_segments(ifo, cp)
       analyzedSegs = sciSegs.__and__(dfSegs)
       missedSegs = sciSegs.__and__(dfSegs.__invert__()) 
       segmentsUtils.tosegwizard(file(missedFile,"w"), missedSegs)
@@ -618,6 +625,12 @@ for ifo in ifos:
         str(analyzedSegs.__abs__()) + "s to file: " + segFile[ifo]
 
 
+  if opts.run_data_quality:
+    print "Generating veto segments for " + ifo + "...",
+    sys.stdout.flush()
+    dqVetoes[ifo] = veto_segments(ifo, cp, segFile[ifo], dqSegFile, [2,3,4]) 
+    print "done"
+
 ##############################################################################
 # Run lalapps_inspiral_hipe for datafind
 if opts.run_datafind:
@@ -625,31 +638,68 @@ if opts.run_datafind:
   hipeDfNode = hipe_setup("datafind", cp, dfOnly = True)
   dag.add_node(hipeDfNode)
 
+
 ##############################################################################
 # Set up the directories for each run and run lalapps_inspiral_hipe
-hipeInjNodes = []
-
-if opts.run_injections:
-  print "Running inspiral hipe for injection runs"
-  for (injDir, injFile) in cp.items("injections"):
-    hipeInjNode = hipe_setup(injDir, cp, injFile)
-    hipeInjNodes.append( hipeInjNode )
-    dag.add_node(hipeInjNode)
-    if opts.run_datafind:
-      hipeInjNode.add_parent(hipeDfNode)
-
-    if opts.data_quality:
-      for category in range(2, 4 + 1):
-        hipeInjVetoNode = hipe_veto_setup(injDir, cp, category, dqVetoes, \
-            injFile)
-
 if opts.run_analysis:
-  print "Running inspiral hipe for analysis run"
-  hipeAnalysisNode = hipe_setup("analysis", cp)
-  dag.add_node(hipeAnalysisNode)
-  if opts.run_datafind:
-    hipeAnalysisNode.add_parent(hipeDfNode)
+  if opts.run_play_analysis:
+    print "Running inspiral hipe for playground run"
+    hipePlayNode = hipe_setup("playground", cp, playOnly = True)
+    dag.add_node(hipePlayNode)
+    if opts.run_datafind:
+      hipePlayNode.add_parent(hipeDfNode)
 
+  if opts.run_full_data:
+    print "Running inspiral hipe for analysis run"
+    hipeAnalysisNode = hipe_setup("analysis", cp)
+    dag.add_node(hipeAnalysisNode)
+    if opts.run_datafind:
+      hipeAnalysisNode.add_parent(hipeDfNode)
+
+  if opts.run_injections:
+    hipeInjNode = {} 
+    print "Running inspiral hipe for injection runs"
+    for (injDir, injFile) in cp.items("injections"):
+      hipeInjNode[injDir] = hipe_setup(injDir, cp, injFile)
+      dag.add_node(hipeInjNode[injDir])
+      if opts.run_datafind:
+        hipeInjNode[injDir].add_parent(hipeDfNode)
+
+##############################################################################
+# Run the data quality vetoes
+if opts.run_data_quality:
+  hipePlayVetoNode = {}
+  hipeAnalysisVetoNode = {}
+  hipeInjVetoNode = {}
+
+  for category in [2,3,4]:
+    print "Setting up the category " + str(category) + " veto dags"
+
+    if opts.run_play_analysis:
+      print "Running inspiral hipe for play with vetoes"
+      hipePlayVetoNode[category] = hipe_setup("playground", cp, 
+          playOnly = True, vetoCat = category, vetoFiles = dqVetoes)
+      dag.add_node(hipePlayVetoNode[category])
+      if opts.run_play_analysis: 
+        hipeVetoPlayNode[category].add_parent(hipePlayNode)
+
+    if opts.run_full_data:
+      print "Running inspiral hipe for full data with vetoes"
+      hipeVetoNode[category] = hipe_setup("analysis", cp, vetoCat = category,
+          vetoFiles = dqVetoes)
+      dag.add_node(hipeVetoNode[category])
+      if opts.run_analysis: hipeVetoNode[category].add_parent(hipeAnalysisNode)
+
+    if opts.run_injections:
+      print "Running inspiral hipe for injections with vetoes"
+      for (injDir, injFile) in cp.items("injections"):
+        if category == 2: hipeInjVetoNode[injDir] = {}
+        hipeInjVetoNode[injDir][category] = hipe_setup("analysis", cp, 
+            injFile = cp.get("injections", "injDir"), 
+            vetoCat = category, vetoFiles = dqVetoes)
+        dag.add_node(hipeInjVetoNode[injDir][category])
+        if opts.run_injections: 
+          hipeInjVetoNode[injDir][category].add_parent(hipeVetoNode[injDir])
 
 ##############################################################################
 # Set up the directories for followup and run lalapps_followup_pipe
