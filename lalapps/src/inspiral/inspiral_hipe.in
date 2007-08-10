@@ -356,7 +356,7 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
   """
 
   # add time slide arguments if doing a slide
-  if slides:
+  if slides and cp.has_section('thinca-slide') :
     coinc_job.add_ini_opts(cp,'thinca-slide')
     
   coinc_analyzed = []
