@@ -254,33 +254,24 @@ int compare_abs_float(const float *a, const float *b){
 
 
 /** Function for calculating the coalescence time (defined to be the peak) of a NR wave */
-void
-LALFindNRCoalescenceTime(LALStatus             *status,
-			 LIGOTimeGPS           *tc,  /**< the coalescence time */ 
-			 const REAL4TimeSeries *in   /**< input strain time series */)
+INT4
+XLALFindNRCoalescenceTime(REAL8 *tc, 
+			  const REAL4TimeSeries *in   /**< input strain time series */)
 {
 
   UINT4 *index=NULL;
   UINT4 len;
-  LIGOTimeGPS ret;
-
-  INITSTATUS (status, "LALFindNRCoalescenceTime",  NRWAVEINJECTC);
-  ATTATCHSTATUSPTR (status); 
 
   len = in->data->length;
   index = LALCalloc(1, len*sizeof(UINT4));  
 
   gsl_heapsort_index( index, in->data, len, sizeof(REAL4), compare_abs_float);
 
-  TRY( LALAddFloatToGPS( status->statusPtr, &ret, &(in->epoch), index[len-1] * in->deltaT), status);
-
-  tc = &ret;
+  *tc = index[len-1] * in->deltaT;
 
   LALFree(index);
 
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-
+  return 0;
 }
 
 
@@ -643,7 +634,7 @@ void LALInjectStrainGW( LALStatus                 *status,
   REAL8 sampleRate;
   REAL4TimeSeries *htData = NULL;
   int  k;
-  LIGOTimeGPS tc;
+  REAL8 offset;
 
   INITSTATUS (status, "LALNRInject",  NRWAVEINJECTC);
   ATTATCHSTATUSPTR (status); 
@@ -659,7 +650,9 @@ void LALInjectStrainGW( LALStatus                 *status,
     htData->data->data[k] *= dynRange;
   }
 
-  TRY( LALFindNRCoalescenceTime( status->statusPtr, &tc, htData), status);
+  XLALFindNRCoalescenceTime( &offset, htData);
+
+  XLALAddFloatToGPS( &(htData->epoch), -offset);
 
   /* inject the htData into injection time stream */
   TRY( LALSSInjectTimeSeries( status->statusPtr, injData, htData ),

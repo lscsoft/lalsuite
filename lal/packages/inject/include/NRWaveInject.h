@@ -106,11 +106,9 @@ void LALInjectStrainGW( LALStatus *status,
 			REAL8 dynRange);
 
 
-void
-LALFindNRCoalescenceTime(LALStatus             *status,
-			 LIGOTimeGPS           *tc,  /**< the coalescence time */ 
-			 const REAL4TimeSeries *in   /**< input strain time series */);
-
+INT4
+XLALFindNRCoalescenceTime(REAL8 *tc, 
+			  const REAL4TimeSeries *in   /**< input strain time series */);
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */
