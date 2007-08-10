@@ -89,6 +89,7 @@ NRCSID (FINDCHIRPSPH, "$Id$");
 #define FINDCHIRPSPH_EDIVZ 11
 #define FINDCHIRPSPH_EMAPX 12
 #define FINDCHIRPSPH_EUAPX 13
+#define FINDCHIRPSPH_EORDR 14
 #define FINDCHIRPSPH_MSGENULL "Null pointer"
 #define FINDCHIRPSPH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPSPH_MSGEALOC "Memory allocation error"
@@ -102,6 +103,7 @@ NRCSID (FINDCHIRPSPH, "$Id$");
 #define FINDCHIRPSPH_MSGEDIVZ "Attempting to divide by zero"
 #define FINDCHIRPSPH_MSGEMAPX "Mismatch in waveform approximant"
 #define FINDCHIRPSPH_MSGEUAPX "Unknown approximant"
+#define FINDCHIRPSPH_MSGEORDR "Invalid post-Newtonian order"
 /* </lalErrTable> */
 
 #if 0

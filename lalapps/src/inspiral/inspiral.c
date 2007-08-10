@@ -211,6 +211,8 @@ Clustering clusterMethod;               /* chosen clustering algorithm  */
 REAL4 clusterWindow     = -1;           /* cluster over time window     */  
 Approximant approximant;                /* waveform approximant         */
 CHAR *approximantName   = NULL;         /* waveform approximant name    */
+Order order;                            /* pN order of waveform         */
+CHAR *orderName = NULL;                 /* pN order of the waveform     */
 INT4 bcvConstraint      = 0;            /* constraint BCV filter        */
 INT4 flagFilterInjOnly  = -1;           /* flag for filtering inj. only */ 
 
@@ -256,7 +258,11 @@ trigScanType trigScanMethod = trigScanNone;
                                         /* Switch for clustering        */
                                         /* triggers in template         */
                                         /* parameters and end time      */
+<<<<<<< inspiral.c
+REAL8  trigScanDeltaEndTime = -1.0;      /* Use this interval (msec)     */
+=======
 REAL8  trigScanDeltaEndTime = -1.0;     /* Use this interval (msec)     */
+>>>>>>> 1.250
                                         /* over trigger end time while  */
                                         /* using trigScanCluster        */
 REAL8  trigScanMetricScalingFac = -1.0;     
@@ -481,7 +487,7 @@ int main( int argc, char *argv[] )
       PROGRAM_NAME );
   filtertable.filterTable->start_time = gpsStartTime.gpsSeconds;
   LALSnprintf( filtertable.filterTable->filter_name, LIGOMETA_COMMENT_MAX,
-      "%stwoPN", approximantName );
+      "%s%s", approximantName, orderName );
 
   /* fill the comment, if a user has specified on, or leave it blank */
   if ( ! *comment )
@@ -498,10 +504,8 @@ int main( int argc, char *argv[] )
   }
 
   /* put the name of the search in the search_summary comment */ 
-  /* XXX note twoPN is hardwires and should be changed if we modify the    */
-  /* code to allow different PN orders to be specified on the command line */
   LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
-      "%stwoPN", approximantName );
+       "%s%s", approximantName, orderName );
 
   /* set the name of the output file */
   if ( userTag && ifoTag )
@@ -1688,6 +1692,7 @@ int main( int argc, char *argv[] )
   fcTmpltParams->deltaT = chan.deltaT;
   fcTmpltParams->fLow = fLow;
   fcTmpltParams->reverseChirpBank = reverseChirpBank;
+  fcTmpltParams->order = order;
 
   /* initialize findchirp filter functions */
   LAL_CALL( LALFindChirpFilterInit( &status, &fcFilterParams, fcInitParams ), 
@@ -2995,6 +3000,7 @@ int main( int argc, char *argv[] )
   }
   if ( condenseIn )  LALFree( condenseIn );
   if ( approximantName) free( approximantName );
+  if ( orderName )     free( orderName );
   if ( calCacheName )  free( calCacheName );
   if ( frInCacheName ) free( frInCacheName );
   if ( frInType )      free( frInType );
@@ -3090,6 +3096,9 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --approximant APPROX         set approximant of the waveform to APPROX\n"\
 "                               (FindChirpSP|BCV|BCVC|BCVSpin|TaylorT1|TaylorT2|\n"\
 "                                  TaylorT3|PadeT1|EOB|GeneratePPN)\n"\
+"  --order ORDER                set the pN order of the waveform to ORDER\n"\
+"                               (twoPN|twoPointFivePN|threePN|threePointFivePN|\n"\
+"                                  pseudoFourPN)\n"\
 "  --snr-threshold RHO          set signal-to-noise threshold to RHO\n"\
 "  --chisq-bins P               set number of chisq veto bins to P\n"\
 "  --chisq-delta DELTA          set chisq delta parameter to DELTA\n"\
@@ -3208,6 +3217,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"chisq-bins",              required_argument, 0,                'o'},
     {"calibration-cache",       required_argument, 0,                'p'},
     {"approximant",             required_argument, 0,                'F'},
+    {"order",                   required_argument, 0,                '^'},
     {"snr-threshold",           required_argument, 0,                'q'},
     {"chisq-threshold",         required_argument, 0,                'r'},
     {"resample-filter",         required_argument, 0,                'R'},
@@ -3272,6 +3282,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   int c;
   INT4 haveDynRange = 0;
   INT4 haveApprox = 0;
+  INT4 haveOrder = 0;
   INT4 haveClusterMethod = 0;
   INT4 haveBankSimApprox = 0;
   INT4 haveNumRelDir = 0;
@@ -3298,7 +3309,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     c = getopt_long_only( argc, argv, 
         "-A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VW:X:Y:Z:"
         "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:"
-        "0:1::2:3:4:567:8:9:*:>:<:(:):[:],:{:}:+:=:",
+        "0:1::2:3:4:567:8:9:*:>:<:(:):[:],:{:}:+:=:^:",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -3821,6 +3832,43 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           exit( 1 );
         }
         haveApprox = 1;
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case '^':
+        /* create storage for the order name */
+        optarg_len = strlen( optarg ) + 1;
+        orderName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( orderName, optarg, optarg_len );
+        if ( ! strcmp( "twoPN", optarg ) )
+        {
+          order = twoPN;
+        }
+        else if ( ! strcmp( "twoPointFivePN", optarg ) )
+        {
+          order = twoPointFivePN;
+        }
+        else if ( ! strcmp( "threePN", optarg ) )
+        {
+          order = threePN;
+        }
+        else if ( ! strcmp( "threePointFivePN", optarg ) )
+        {
+          order = threePointFivePN;
+        }
+        else if ( ! strcmp( "pseudoFourPN", optarg ) )
+        {
+          order = pseudoFourPN;
+        }
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown order specified: "
+              "%s (must be one of twoPN, twoPointFivePN, threePN, threePointFivePN, pseudoFourPN)\n", 
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        haveOrder = 1;
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
@@ -4806,6 +4854,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     fprintf( stderr, "--approximant must be specified\n" );
     exit( 1 );
   }
+
+  /* check that the pN order is specified */
+  if ( ! haveOrder )
+  {
+    fprintf( stderr, "--order must be specified\n" );
+    exit( 1 );
+  }
+
 
   /* check that a channel has been requested and fill the ifo */
   if ( ! fqChanName )

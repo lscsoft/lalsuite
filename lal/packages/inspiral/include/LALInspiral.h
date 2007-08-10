@@ -419,7 +419,8 @@ typedef enum {
    twoPN,
    twoPointFivePN,
    threePN,
-   threePointFivePN
+   threePointFivePN,
+   pseudoFourPN
  } Order;
 /* </lalVerbatim>  */
 

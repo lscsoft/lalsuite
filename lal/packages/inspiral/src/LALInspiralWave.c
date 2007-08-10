@@ -152,7 +152,7 @@ LALInspiralWave(
    ASSERT((INT4)params->approximant >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT((INT4)params->approximant <= 20, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT((int)params->order >= 0, status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER);
-   ASSERT(params->order <= 7, status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER);
+   ASSERT(params->order <= 8, status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER);
 
    switch (params->approximant) 
    {
@@ -186,6 +186,7 @@ LALInspiralWave(
            CHECKSTATUSPTR(status);
 	   break;
       case TaylorF2:
+      case FindChirpSP:
            LALInspiralStationaryPhaseApprox2(status->statusPtr, signal, params); 
            CHECKSTATUSPTR(status);
 	   break;
@@ -244,7 +245,7 @@ LALInspiralWaveTemplates(
    ASSERT((INT4)params->approximant >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT((INT4)params->approximant <= 20, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT((INT4)params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT((INT4)params->order <= 7, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT((INT4)params->order <= 8, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
    switch (params->approximant) 
    {
@@ -267,6 +268,7 @@ LALInspiralWaveTemplates(
            break;
       case TaylorF1:
       case TaylorF2:
+      case FindChirpSP:
       case PadeF1:
       case BCV:
       case BCVSpin:
@@ -331,6 +333,7 @@ LALInspiralWaveForInjection(
       case BCVSpin:
       case TaylorF1:
       case TaylorF2:
+      case FindChirpSP:
       case PadeF1:
            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
 	   break;

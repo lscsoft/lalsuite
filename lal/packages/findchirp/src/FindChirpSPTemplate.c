@@ -105,10 +105,10 @@ LALFindChirpSPTemplate (
   const REAL4   cannonDist = 1.0; /* Mpc */
 
   /* pn constants */
-  REAL4 c0, c10, c15, c20; 
+  REAL4 c0, c10, c15, c20, c25, c25Log, c30, c30Log, c35, c40P; 
 
   /* variables used to compute chirp time */
-  REAL4 c0T, c2T, c3T, c4T, xT, x2T, x3T, x4T, x8T;
+  REAL4 c0T, c2T, c3T, c4T, c5T, c6T, c6LogT, c7T, xT, x2T, x3T, x4T, x5T, x6T, x7T, x8T;
 
   /* chebychev coefficents for expansion of sin and cos */
   const REAL4 s2 = -0.16605;
@@ -175,6 +175,9 @@ LALFindChirpSPTemplate (
   /* set the waveform approximant */
   tmplt->approximant = params->approximant;
 
+  /* set the pN order of the template */
+  tmplt->order = params->order;
+
   /* zero output */
   memset( expPsi, 0, fcTmplt->data->length * sizeof(COMPLEX8) );
 
@@ -211,6 +214,12 @@ LALFindChirpSPTemplate (
   c10 = 3715.0/756.0 + eta*55.0/9.0;
   c15 = -16*LAL_PI;
   c20 = 15293365.0/508032.0 + eta*(27145.0/504.0 + eta*3085.0/72.0);
+  c25 = LAL_PI*38645.0/756.0 - LAL_PI*eta*65.0/9.0;
+  c25Log = 3*c25;
+  c30 = 11583231236531.0/4694215680.0 - LAL_GAMMA*6848.0/21.0 - LAL_PI*LAL_PI*640.0/3.0 + eta*(LAL_PI*LAL_PI*2255.0/12.0 - 15737765635.0/3048192.0) + eta*eta*76055.0/1728.0 - eta*eta*eta*127825.0/1296.0 - 6848.0*log(4.0)/21.0;
+  c30Log = -6848.0/21.0;
+  c35 = LAL_PI*(77096675.0/254016.0 + eta*378515.0/1512.0 - eta*eta*74055.0/756.0);
+  c40P = 3923.0;
 
   /* x1 */
   x1 = pow( LAL_PI * m * LAL_MTSUN_SI * deltaF, -1.0/3.0 );
@@ -222,11 +231,51 @@ LALFindChirpSPTemplate (
     tmplt->fFinal / deltaF : numPoints/2;
 
   /* compute psi0: used in range reduction */
-  {
-    REAL4 x = x1 * xfac[kmin];
-    REAL4 psi = c0 * x * ( c20 + x * ( c15 + x * (c10 + x * x ) ) );
-    psi0 = -2 * LAL_PI * ( floor ( 0.5 * psi / LAL_PI ) );
-  }
+
+  /* switch on PN order, compute psi0 for that order */
+
+switch( params->order )
+{
+   case twoPN:
+     {
+       REAL4 x = x1 * xfac[kmin];
+       REAL4 psi = c0 * x * ( c20 + x * ( c15 + x * (c10 + x * x ) ) );
+       psi0 = -2 * LAL_PI * ( floor ( 0.5 * psi / LAL_PI ) );
+     }
+     break;
+   case twoPointFivePN:
+     {
+       REAL4 x = x1 * xfac[kmin];
+       REAL4 psi = c0 * ( x * ( c20 + x * ( c15 + x * (c10 + x * x ) ) ) + c25 - c25Log * log(x) );
+       psi0 = -2 * LAL_PI * ( floor ( 0.5 * psi / LAL_PI ) );
+     }
+     break;
+   case threePN:
+     {
+       REAL4 x = x1 * xfac[kmin];
+       REAL4 psi = c0 * ( x * ( c20 + x * ( c15 + x * (c10 + x * x ) ) ) + c25 - c25Log * log(x) + (1.0/x) * ( c30 - c30Log * log(x) ) );
+       psi0 = -2 * LAL_PI * ( floor ( 0.5 * psi / LAL_PI ) );
+     }
+     break;
+   case threePointFivePN: 
+     {
+       REAL4 x = x1 * xfac[kmin];
+       REAL4 psi = c0 * ( x * ( c20 + x * ( c15 + x * (c10 + x * x ) ) ) + c25 - c25Log * log(x) + (1.0/x) * ( c30 - c30Log * log(x) + (1.0/x) * c35 ) );
+       psi0 = -2 * LAL_PI * ( floor ( 0.5 * psi / LAL_PI ) );
+     }
+     break;
+   case pseudoFourPN: 
+     {
+       REAL4 x = x1 * xfac[kmin];
+       REAL4 psi = c0 * ( x * ( c20 + x * ( c15 + x * (c10 + x * x ) ) ) + c25 - c25Log * log(x) + (1.0/x) * ( c30 - c30Log * log(x) + (1.0/x) * ( c35 - (1.0/x) * c40P * log(x) ) ) );
+       psi0 = -2 * LAL_PI * ( floor ( 0.5 * psi / LAL_PI ) );
+     }
+     break;
+   default: 
+     ABORT( status, FINDCHIRPSPH_EORDR, FINDCHIRPSPH_MSGEORDR );
+     break;
+}
+
 
 
   /*
@@ -235,8 +284,12 @@ LALFindChirpSPTemplate (
    *
    */
 
+  /* switch on PN order, calculate SPA phase for that order */
 
-  for ( k = kmin; k < kmax ; ++k )
+switch( params->order )
+{
+   case twoPN: 
+     for ( k = kmin; k < kmax ; ++k )
   {
     REAL4 x = x1 * xfac[k];
     REAL4 psi = c0 * x * ( c20 + x * ( c15 + x * (c10 + x * x ) ) );
@@ -287,6 +340,223 @@ LALFindChirpSPTemplate (
     }
 
   }
+     break;
+   case twoPointFivePN: 
+     for ( k = kmin; k < kmax ; ++k )
+  {
+    REAL4 x = x1 * xfac[k];
+    REAL4 psi = c0 * ( x * ( c20 + x * ( c15 + x * (c10 + x * x ) ) ) + c25 - c25Log * log(x) );
+    REAL4 psi1 = psi + psi0;
+    REAL4 psi2;
+
+    /* range reduction of psi1 */
+    while ( psi1 < -LAL_PI )
+    {
+      psi1 += 2 * LAL_PI;
+      psi0 += 2 * LAL_PI;
+    }
+    while ( psi1 > LAL_PI )
+    {
+      psi1 -= 2 * LAL_PI;
+      psi0 -= 2 * LAL_PI;
+    }
+
+    /* compute approximate sine and cosine of psi1 */
+    if ( psi1 < -LAL_PI/2 )
+    {
+      psi1 = -LAL_PI - psi1;
+      psi2 = psi1 * psi1;
+      /* XXX minus sign added because of new sign convention for fft */
+      expPsi[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
+      expPsi[k].re = -1 - psi2 * ( c2 + psi2 * c4 );
+    }
+    else if ( psi1 > LAL_PI/2 )
+    {
+      psi1 = LAL_PI - psi1;
+      psi2 = psi1 * psi1;
+      /* XXX minus sign added because of new sign convention for fft */
+      expPsi[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
+      expPsi[k].re = -1 - psi2 * ( c2 + psi2 * c4 );
+    }
+    else
+    {
+      psi2 = psi1 * psi1;
+      /* XXX minus sign added because of new sign convention for fft */
+      expPsi[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
+      expPsi[k].re = 1 + psi2 * ( c2 + psi2 * c4 );
+    }
+
+    /* if reverse chirp bank option selected, switch sign of imag. part */
+    if ( params->reverseChirpBank )
+    {
+      expPsi[k].im = - expPsi[k].im;
+    }
+
+  }
+     break;
+   case threePN: 
+     for ( k = kmin; k < kmax ; ++k )
+  {
+    REAL4 x = x1 * xfac[k];
+    REAL4 psi = c0 * ( x * ( c20 + x * ( c15 + x * (c10 + x * x ) ) ) + c25 - c25Log * log(x) + (1.0/x) * ( c30 - c30Log * log(x) ) );
+    REAL4 psi1 = psi + psi0;
+    REAL4 psi2;
+
+    /* range reduction of psi1 */
+    while ( psi1 < -LAL_PI )
+    {
+      psi1 += 2 * LAL_PI;
+      psi0 += 2 * LAL_PI;
+    }
+    while ( psi1 > LAL_PI )
+    {
+      psi1 -= 2 * LAL_PI;
+      psi0 -= 2 * LAL_PI;
+    }
+
+    /* compute approximate sine and cosine of psi1 */
+    if ( psi1 < -LAL_PI/2 )
+    {
+      psi1 = -LAL_PI - psi1;
+      psi2 = psi1 * psi1;
+      /* XXX minus sign added because of new sign convention for fft */
+      expPsi[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
+      expPsi[k].re = -1 - psi2 * ( c2 + psi2 * c4 );
+    }
+    else if ( psi1 > LAL_PI/2 )
+    {
+      psi1 = LAL_PI - psi1;
+      psi2 = psi1 * psi1;
+      /* XXX minus sign added because of new sign convention for fft */
+      expPsi[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
+      expPsi[k].re = -1 - psi2 * ( c2 + psi2 * c4 );
+    }
+    else
+    {
+      psi2 = psi1 * psi1;
+      /* XXX minus sign added because of new sign convention for fft */
+      expPsi[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
+      expPsi[k].re = 1 + psi2 * ( c2 + psi2 * c4 );
+    }
+
+    /* if reverse chirp bank option selected, switch sign of imag. part */
+    if ( params->reverseChirpBank )
+    {
+      expPsi[k].im = - expPsi[k].im;
+    }
+
+  }
+     break;
+   case threePointFivePN: 
+     for ( k = kmin; k < kmax ; ++k )
+  {
+    REAL4 x = x1 * xfac[k];
+    REAL4 psi = c0 * ( x * ( c20 + x * ( c15 + x * (c10 + x * x ) ) ) + c25 - c25Log * log(x) + (1.0/x) * ( c30 - c30Log * log(x) + (1.0/x) * c35 ) );
+    REAL4 psi1 = psi + psi0;
+    REAL4 psi2;
+
+    /* range reduction of psi1 */
+    while ( psi1 < -LAL_PI )
+    {
+      psi1 += 2 * LAL_PI;
+      psi0 += 2 * LAL_PI;
+    }
+    while ( psi1 > LAL_PI )
+    {
+      psi1 -= 2 * LAL_PI;
+      psi0 -= 2 * LAL_PI;
+    }
+
+    /* compute approximate sine and cosine of psi1 */
+    if ( psi1 < -LAL_PI/2 )
+    {
+      psi1 = -LAL_PI - psi1;
+      psi2 = psi1 * psi1;
+      /* XXX minus sign added because of new sign convention for fft */
+      expPsi[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
+      expPsi[k].re = -1 - psi2 * ( c2 + psi2 * c4 );
+    }
+    else if ( psi1 > LAL_PI/2 )
+    {
+      psi1 = LAL_PI - psi1;
+      psi2 = psi1 * psi1;
+      /* XXX minus sign added because of new sign convention for fft */
+      expPsi[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
+      expPsi[k].re = -1 - psi2 * ( c2 + psi2 * c4 );
+    }
+    else
+    {
+      psi2 = psi1 * psi1;
+      /* XXX minus sign added because of new sign convention for fft */
+      expPsi[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
+      expPsi[k].re = 1 + psi2 * ( c2 + psi2 * c4 );
+    }
+
+    /* if reverse chirp bank option selected, switch sign of imag. part */
+    if ( params->reverseChirpBank )
+    {
+      expPsi[k].im = - expPsi[k].im;
+    }
+
+  }
+     break;
+case pseudoFourPN: 
+     for ( k = kmin; k < kmax ; ++k )
+  {
+    REAL4 x = x1 * xfac[k];
+    REAL4 psi = c0 * ( x * ( c20 + x * ( c15 + x * (c10 + x * x ) ) ) + c25 - c25Log * log(x) + (1.0/x) * ( c30 - c30Log * log(x) + (1.0/x) * ( c35 - (1.0/x) * c40P * log(x) ) ) );
+    REAL4 psi1 = psi + psi0;
+    REAL4 psi2;
+
+    /* range reduction of psi1 */
+    while ( psi1 < -LAL_PI )
+    {
+      psi1 += 2 * LAL_PI;
+      psi0 += 2 * LAL_PI;
+    }
+    while ( psi1 > LAL_PI )
+    {
+      psi1 -= 2 * LAL_PI;
+      psi0 -= 2 * LAL_PI;
+    }
+
+    /* compute approximate sine and cosine of psi1 */
+    if ( psi1 < -LAL_PI/2 )
+    {
+      psi1 = -LAL_PI - psi1;
+      psi2 = psi1 * psi1;
+      /* XXX minus sign added because of new sign convention for fft */
+      expPsi[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
+      expPsi[k].re = -1 - psi2 * ( c2 + psi2 * c4 );
+    }
+    else if ( psi1 > LAL_PI/2 )
+    {
+      psi1 = LAL_PI - psi1;
+      psi2 = psi1 * psi1;
+      /* XXX minus sign added because of new sign convention for fft */
+      expPsi[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
+      expPsi[k].re = -1 - psi2 * ( c2 + psi2 * c4 );
+    }
+    else
+    {
+      psi2 = psi1 * psi1;
+      /* XXX minus sign added because of new sign convention for fft */
+      expPsi[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
+      expPsi[k].re = 1 + psi2 * ( c2 + psi2 * c4 );
+    }
+
+    /* if reverse chirp bank option selected, switch sign of imag. part */
+    if ( params->reverseChirpBank )
+    {
+      expPsi[k].im = - expPsi[k].im;
+    }
+
+  }
+     break;
+   default: 
+     ABORT( status, FINDCHIRPSPH_EORDR, FINDCHIRPSPH_MSGEORDR );
+     break;
+}
 
 
   /*
@@ -296,18 +566,48 @@ LALFindChirpSPTemplate (
    */
 
 
-  c0T = 5 * m * LAL_MTSUN_SI / (256 * eta);
+  c0T = 5.0 * m * LAL_MTSUN_SI / (256.0 * eta);
   c2T = 743.0/252.0 + eta * 11.0/3.0;
-  c3T = -32 * LAL_PI/3;
+  c3T = -32.0 * LAL_PI / 5.0;
   c4T = 3058673.0/508032.0 + eta * (5429.0/504.0 + eta * 617.0/72.0);
+  c5T = 13.0*LAL_PI*eta/3.0 - 7729.0/252.0;
+  c6T = LAL_GAMMA*6848.0/105.0 - 10052469856691.0/23471078400.0 + LAL_PI*LAL_PI*128.0/3.0 + eta*( 3147553127.0/3048192.0 - LAL_PI*LAL_PI*451.0/12.0 ) - eta*eta*15211.0/1728.0 + eta*eta*eta*25565.0/1296.0 + log(4.0)*6848.0/105.0;
+  c6LogT = 6848.0/105.0;
+  c7T = LAL_PI *(14809.0*eta*eta - 75703.0*eta/756.0 - 15419335.0/127008.0);
   xT  = pow( LAL_PI * m * LAL_MTSUN_SI * params->fLow, 1.0/3.0);
   x2T = xT * xT;
   x3T = xT * x2T;
   x4T = x2T * x2T;
+  x5T = x2T * x3T;
+  x6T = x3T * x3T;
+  x7T = x3T * x4T;
   x8T = x4T * x4T;
-  tmplt->tC = c0T * (1 + c2T * x2T + c3T * x3T + c4T * x4T) / x8T;
 
-  /* copy the template parameters to the finchirp template structure */
+/* switch on PN order, calculate chirp length for that order */
+
+switch( params->order )
+{
+   case twoPN: 
+     tmplt->tC = c0T * ( 1 + c2T*x2T + c3T*x3T + c4T*x4T ) / x8T;
+     break;
+   case twoPointFivePN: 
+     tmplt->tC = c0T * ( 1 + c2T*x2T + c3T*x3T + c4T*x4T + c5T*x5T ) / x8T;
+     break;
+   case threePN: 
+     tmplt->tC = c0T * ( 1 + c2T*x2T + c3T*x3T + c4T*x4T + c5T*x5T + ( c6T + c6LogT*log(xT) )*x6T ) / x8T;
+     break;
+   case threePointFivePN: 
+     tmplt->tC = c0T * ( 1 + c2T*x2T + c3T*x3T + c4T*x4T + c5T*x5T + ( c6T + c6LogT*log(xT) )*x6T + c7T*x7T ) / x8T;
+     break;
+   case pseudoFourPN: 
+     tmplt->tC = c0T * ( 1 + c2T*x2T + c3T*x3T + c4T*x4T + c5T*x5T + ( c6T + c6LogT*log(xT) )*x6T + c7T*x7T ) / x8T;
+     break;
+   default: 
+     ABORT( status, FINDCHIRPSPH_EORDR, FINDCHIRPSPH_MSGEORDR ); 
+     break;
+}
+
+  /* copy the template parameters to the findchirp template structure */
   memcpy( &(fcTmplt->tmplt), tmplt, sizeof(InspiralTemplate) );
 
   /* normal exit */
