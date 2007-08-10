@@ -1132,7 +1132,7 @@ int main( int argc, char *argv[] )
   }
 
   /* must set MW flag */
-  if ( mwLuminosity < 0 ) 
+  if ( mwLuminosity < 0  && dDistr == distFromSourceFile ) 
   {
     fprintf( stderr, 
 	     "Must specify either --enable-milkyway LUM or "
