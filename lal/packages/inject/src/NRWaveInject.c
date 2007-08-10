@@ -38,9 +38,12 @@
 #include <lal/SphericalHarmonics.h>
 #include <lal/Random.h>
 #include <lal/Inject.h>
-
+#include <gsl/gsl_heapsort.h> 
 
 NRCSID (NRWAVEINJECTC, "$Id$");
+
+
+int compare_abs_float(const float *a, const float *b);
 
 /** Takes a strain of h+ and hx data and stores it in a temporal
  *  strain in order to perform the sum over l and m modes **/
@@ -188,7 +191,6 @@ XLALInterpolateNRWave( REAL4TimeSeries *in,           /**< input strain time ser
   /* length of output vector */ 
   numPoints = (UINT4) (sampleRate * tObs);
 
-
   /* allocate memory */
   ret = LALCalloc(1, sizeof(*ret));
   if (!ret) 
@@ -236,6 +238,51 @@ XLALInterpolateNRWave( REAL4TimeSeries *in,           /**< input strain time ser
 
   return ret;
 }
+
+
+
+int compare_abs_float(const float *a, const float *b){
+
+  if ( *a > *b)
+    return 1;
+  else if  ( *a < *b)
+    return -1;
+  else 
+    return 0;
+}
+
+
+
+/** Function for calculating the coalescence time (defined to be the peak) of a NR wave */
+void
+LALFindNRCoalescenceTime(LALStatus             *status,
+			 LIGOTimeGPS           *tc,  /**< the coalescence time */ 
+			 const REAL4TimeSeries *in   /**< input strain time series */)
+{
+
+  UINT4 *index=NULL;
+  UINT4 len;
+  LIGOTimeGPS ret;
+
+  INITSTATUS (status, "LALFindNRCoalescenceTime",  NRWAVEINJECTC);
+  ATTATCHSTATUSPTR (status); 
+
+  len = in->data->length;
+  index = LALCalloc(1, len*sizeof(UINT4));  
+
+  gsl_heapsort_index( index, in->data, len, sizeof(REAL4), compare_abs_float);
+
+  TRY( LALAddFloatToGPS( status->statusPtr, &ret, &(in->epoch), index[len-1] * in->deltaT), status);
+
+  tc = &ret;
+
+  LALFree(index);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+
+}
+
 
 
 

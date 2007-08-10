@@ -98,7 +98,18 @@ XLALSumStrain(
     REAL4TimeVectorSeries *strain          /**< variable to add  */);
 
 
-void LALInjectStrainGW( LALStatus *status, REAL4TimeSeries *injData, REAL4TimeVectorSeries *strain, SimInspiralTable *thisInj, CHAR *ifo, REAL8 dynRange);
+void LALInjectStrainGW( LALStatus *status, 
+			REAL4TimeSeries *injData, 
+			REAL4TimeVectorSeries *strain, 
+			SimInspiralTable *thisInj, 
+			CHAR *ifo, 
+			REAL8 dynRange);
+
+
+void
+LALFindNRCoalescenceTime(LALStatus             *status,
+			 LIGOTimeGPS           *tc,  /**< the coalescence time */ 
+			 const REAL4TimeSeries *in   /**< input strain time series */);
 
 
 #ifdef  __cplusplus
