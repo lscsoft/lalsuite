@@ -224,9 +224,9 @@ def hipe_setup(hipeDir, config, injFile=None, dfOnly = False, playOnly = False,
 
   # set the data type
   if playOnly:
-    hipecp.set("pipeline", "data-type", "playground_only")
+    hipecp.set("pipeline", "playground-data-mask", "playground_only")
   else:
-    hipecp.set("pipeline", "data-type", "all_data")
+    hipecp.set("pipeline", "playground-data-mask", "all_data")
 
   # deal with vetoes
   if vetoCat:
@@ -292,6 +292,9 @@ def hipe_setup(hipeDir, config, injFile=None, dfOnly = False, playOnly = False,
         (not dfOnly and not vetoCat and item[0] != "datafind"):
       hipeCommand += " --" + item[0] + " " + item[1]
 
+  if playOnly: 
+    hipeCommand += " --priority 10"
+
   # run lalapps_inspiral_hipe
   make_external_call(hipeCommand) 
 
@@ -305,6 +308,7 @@ def hipe_setup(hipeDir, config, injFile=None, dfOnly = False, playOnly = False,
   # make hipe job/node
   hipeJob = pipeline.CondorDAGManJob(hipeDir + "/" + iniFile.rstrip("ini") + \
       "dag")
+  if vetoCat: hipeJob.add_opt("maxjobs", "5")
   hipeNode = pipeline.CondorDAGNode(hipeJob)
 
   # add postscript to deal with rescue dag
@@ -616,14 +620,13 @@ for ifo in ifos:
       print "Not analyzing %d s, representing %.2f percent of time" %  \
          (missedSegs.__abs__(), 
          100. * missedSegs.__abs__() / analyzedSegs.__abs__() )
-      print
 
     else: analyzedSegs = sciSegs
 
     segmentsUtils.tosegwizard(file(segFile[ifo],"w"), analyzedSegs)
     print "Writing " + ifo + " segments of total time " + \
         str(analyzedSegs.__abs__()) + "s to file: " + segFile[ifo]
-
+    print
 
   if opts.run_data_quality:
     print "Generating veto segments for " + ifo + "...",
@@ -682,6 +685,7 @@ if opts.run_data_quality:
       dag.add_node(hipePlayVetoNode[category])
       if opts.run_play_analysis: 
         hipeVetoPlayNode[category].add_parent(hipePlayNode)
+
 
     if opts.run_full_data:
       print "Running inspiral hipe for full data with vetoes"
