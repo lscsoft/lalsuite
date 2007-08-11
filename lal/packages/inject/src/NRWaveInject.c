@@ -31,6 +31,7 @@
 #include <lal/FileIO.h>
 #include <lal/NRWaveIO.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/LALConstants.h>
@@ -42,8 +43,8 @@
 
 NRCSID (NRWAVEINJECTC, "$Id$");
 
+int compare_abs_float(const void *a, const void *b);
 
-int compare_abs_float(const float *a, const float *b);
 
 /** Takes a strain of h+ and hx data and stores it in a temporal
  *  strain in order to perform the sum over l and m modes **/
@@ -241,11 +242,16 @@ XLALInterpolateNRWave( REAL4TimeSeries *in,           /**< input strain time ser
 
 
 
-int compare_abs_float(const float *a, const float *b){
+int compare_abs_float(const void *a, const void *b){
 
-  if ( fabs(*a) > fabs(*b))
+  float *af, *bf;
+
+  af = (float *)a;
+  bf = (float *)b;
+
+  if ( fabs(*af) > fabs(*bf))
     return 1;
-  else if  ( fabs(*a) < fabs(*b))
+  else if  ( fabs(*af) < fabs(*bf))
     return -1;
   else 
     return 0;
@@ -265,7 +271,7 @@ XLALFindNRCoalescenceTime(REAL8 *tc,
   len = in->data->length;
   index = LALCalloc(1, len*sizeof(UINT4));  
 
-  /*   gsl_heapsort_index( index, in->data->data, len, sizeof(REAL4), compare_abs_float); */
+  gsl_heapsort_index( index, in->data->data, len, sizeof(REAL4), compare_abs_float);
 
   *tc = index[len-1] * in->deltaT;
 
