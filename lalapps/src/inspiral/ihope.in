@@ -497,7 +497,7 @@ parser.add_option("-Q", "--skip-data-quality",action="store_false",\
     default=True, dest="run_data_quality", \
     help="skip generation dq veto segments and use in analysis ")
 
-parser.add_option("-U", "--skip-followup",action="store_true",\
+parser.add_option("-U", "--skip-followup",action="store_false",\
     default=True, dest="run_followup",  help="skip the inspiral followup")
 
 (opts,args) = parser.parse_args()
