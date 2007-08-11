@@ -292,9 +292,6 @@ def hipe_setup(hipeDir, config, injFile=None, dfOnly = False, playOnly = False,
         (not dfOnly and not vetoCat and item[0] != "datafind"):
       hipeCommand += " --" + item[0] + " " + item[1]
 
-  if playOnly: 
-    hipeCommand += " --priority 10"
-
   # run lalapps_inspiral_hipe
   make_external_call(hipeCommand) 
 
