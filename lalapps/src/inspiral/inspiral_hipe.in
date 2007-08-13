@@ -1310,7 +1310,7 @@ all_jobs.append(frjoin_job)
 # set the condor job priority
 if opts.priority:
   for job in all_jobs:
-    job.add_condor_cmd('priority',opts.priority)
+    job.add_condor_cmd('priority',str(opts.priority))
 
 ##############################################################################
 # read in the injection-file from the ini file 
