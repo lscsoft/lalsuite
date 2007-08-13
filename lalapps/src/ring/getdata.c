@@ -27,6 +27,7 @@
 #include <lal/Date.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/FrameStream.h>
+#include <lal/TimeSeries.h>
 #include <lal/Units.h>
 
 #include "lalapps.h"
@@ -383,21 +384,15 @@ int highpass_REAL8TimeSeries( REAL8TimeSeries *series, REAL8 frequency )
 
 
 /* trim padding from data */
-int trimpad_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 padData,
-    REAL8 sampleRate )
+int trimpad_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 padData )
 {
   char name[LALNameLength];
-  UINT4 padSamples = floor( padData * sampleRate + 0.5 );
+  UINT4 padSamples = floor( padData / series->deltaT + 0.5 );
   UINT4 blockSamples = series->data->length - 2 * padSamples;
 
   if ( padData > 0 )
   {
-    memmove( series->data->data, series->data->data + padSamples, 
-        blockSamples * sizeof(REAL4) );
-    series->data->data = (REAL4 *) LALRealloc( series->data->data, 
-        blockSamples * sizeof(REAL4) );
-    series->data->length = blockSamples;
-    XLALAddFloatToGPS( &series->epoch, padData );
+    series = XLALResizeREAL4TimeSeries(series, padSamples, blockSamples);
     strncpy( name, series->name, LALNameLength * sizeof(char) );
     LALSnprintf( series->name, sizeof( series->name ),
         "%s_STRIPPAD", name );
