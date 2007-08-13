@@ -200,7 +200,6 @@ ProcessTable *ring_create_process_table( struct ring_params *params )
 
 /* routine to create search summary table */
 /* FIXME: need to handle trigstarttime and trigendtime */
-/* FIXME: need to handle pad data for in start/end times */
 static SearchSummaryTable *ring_create_search_summary( struct ring_params *params )
 {
   SearchSummaryTable *searchSummary = NULL;
@@ -226,7 +225,9 @@ static SearchSummaryTable *ring_create_search_summary( struct ring_params *param
   searchSummary->in_start_time  = params->startTime;
   searchSummary->in_end_time    = params->endTime;
   searchSummary->out_start_time = outStartTime;
+  XLALAddFloatToGPS( &searchSummary->out_start_time, -1.0 * params->padData );
   searchSummary->out_end_time   = outEndTime;
+  XLALAddFloatToGPS( &searchSummary->out_end_time, 1.0 * params->padData);
   searchSummary->nevents        = params->numEvents;
 
   return searchSummary;
