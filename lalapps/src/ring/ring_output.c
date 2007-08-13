@@ -199,7 +199,6 @@ ProcessTable *ring_create_process_table( struct ring_params *params )
 
 
 /* routine to create search summary table */
-/* FIXME: need to handle trigstarttime and trigendtime */
 static SearchSummaryTable *ring_create_search_summary( struct ring_params *params )
 {
   SearchSummaryTable *searchSummary = NULL;
@@ -218,6 +217,12 @@ static SearchSummaryTable *ring_create_search_summary( struct ring_params *param
     + sec_to_ns( 0.5 * params->strideDuration );
   outEndTimeNS    = outStartTimeNS 
     + sec_to_ns( params->strideDuration * params->numOverlapSegments );
+  if( params->trigStartTimeNS && (params->trigStartTimeNS > outStartTimeNS))
+    outStartTimeNS = (outEndTimeNS < params->trigStartTimeNS) ?
+      outEndTimeNS : params->trigStartTimeNS;
+  if( params->trigEndTimeNS && (params->trigEndTimeNS < outEndTimeNS))
+    outEndTimeNS = (outStartTimeNS > params->trigEndTimeNS) ?
+      outStartTimeNS : params->trigEndTimeNS;
   ns_to_epoch( &outStartTime, outStartTimeNS );
   ns_to_epoch( &outEndTime, outEndTimeNS );
 
