@@ -18,7 +18,7 @@
 */
 
 /********************************* <lalVerbatim file="UnitsHV">
-Author: J. T. Whelan <jtwhelan@loyno.edu>
+Author: J. T. Whelan <john.whelan@ligo.org>
 $Id$
 ********************************** </lalVerbatim> */
 

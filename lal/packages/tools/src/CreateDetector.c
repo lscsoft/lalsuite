@@ -18,7 +18,7 @@
 */
 
 /************************************ <lalVerbatim file="CreateDetectorCV">
-Author: J. T. Whelan <jtwhelan@loyno.edu>
+Author: J. T. Whelan <john.whelan@ligo.org>
 $Id$
 ************************************* </lalVerbatim> */
 
@@ -491,238 +491,6 @@ NRCSID( CREATEDETECTORC, "$Id$" );
       xArmAltitudeRadians, xArmAzimuthRadians,
       yArmAltitudeRadians, yArmAzimuthRadians }   */
 
-#if 0
-const LALDetector lalCachedDetectors[LALNumCachedDetectors]
-= { { { -2.1614149e+06L, -3.8346952e+06L,   4.6003502e+06L },
-      { { -0.3926141, -0.0776130, -0.2473886 },
-        { -0.0776130,  0.3195244,  0.2279981 },
-        { -0.2473886,  0.2279981,  0.0730903 }
-      },
-      LALDETECTORTYPE_IFODIFF,
-      { "LIGO Hanford Observatory",
-	- (119.0L + 24.0L/60.0L + 27.5657L/3600.0L ) * LAL_PI_180,
-	(46.0L + 27.0L/60.0L + 18.528L/3600.0L) * LAL_PI_180,
-	142.554,
-	-6.195e-4,     (360.0L + 90.0L - 125.9994L) * LAL_PI_180,
-	1.25e-5,       (360.0L + 90.0L - 215.9994L) * LAL_PI_180
-      }
-    },
-    { { -74276.044L,     -5.496283721e+06L, 3.224257018e+06L },
-      { {  0.4112809,  0.1402097,  0.2472943 },
-        {  0.1402097, -0.1090056, -0.1816157 },
-        {  0.2472943, -0.1816157, -0.3022755 },
-      },
-      LALDETECTORTYPE_IFODIFF,
-      { "LIGO Livingston Observatory",
-	- (90.0L + 46.0L/60.0L + 27.2654L/3600.0L) * LAL_PI_180,
-	(30.0L + 33.0L/60.0L + 46.4196L/3600.0L) * LAL_PI_180,
-	-6.574,
-	-3.121e-4,   (360.0L + 90.0L - 197.7165L) * LAL_PI_180, 
-	-6.107e-4,   (360.0L + 90.0L - 287.7165L) * LAL_PI_180, 
-      }
-    },
-    { { 4.54637409863e+06L, 842989.697467L, 4.37857696275e+06L},
-      { {  0.2438740,  -0.0990838, -0.2325762},
-        { -0.0990838, - 0.4478258,  0.1878331},
-        { -0.2325762,   0.1878331,  0.2039518},
-      },
-      LALDETECTORTYPE_IFODIFF,
-      { "VIRGO Interferometer",
-	(10.0L + 30.0L/60.0L + 16.1878L/3600.0L) * LAL_PI_180,
-	(43.0L + 37.0L/60.0L + 53.0921L/3600.0L) * LAL_PI_180,
-	51.884,
-        0.0,           (90.0L - 70.5674L) * LAL_PI_180,
-        0.0,           (360.0L + 90.0L - 160.5674L) * LAL_PI_180
-      }
-    },
-    { { 3.85630994953e+06L,   666598.956352L,   5.01964141692e+06L},
-      { { -0.0968250, -0.3657823,   0.1221373},
-        { -0.3657823,  0.222968,    0.2497174},
-        {  0.1221373,  0.2497174,  -0.1261431},
-      },
-      LALDETECTORTYPE_IFODIFF,
-      { "GEO-600 Interferometer",
-	(9.0L + 48.0L/60.0L + 25.894L/3600.0L) * LAL_PI_180, 
-	(52.0L + 14.0L/60.0L + 42.528L/3600.0L) * LAL_PI_180,
-	114.425,
-	0.0,         (90.0L - 21.6117L) * LAL_PI_180,
-	0.0,         (360.0L + 90.0L - 115.9431L) * LAL_PI_180
-      }
-    },
-    { { -3.94640898771e+06L,  3.36625903242e+06L, 3.69915069189e+06L},
-      { {  0.1121397,  0.3308421, -0.1802193},
-        {  0.3308421,  0.2177940,  0.1537258},
-        { -0.1802193,  0.1537258, -0.3299337},
-      },
-      LALDETECTORTYPE_IFODIFF,
-      { "TAMA-300 Interferometer",
-	(139.0L + 32.0L/60.0L + 9.8L/3600.0L) * LAL_PI_180,
-	(35.0L + 40.0L/60.0L + 35.6L/3600.0L) * LAL_PI_180,
-	90,
-	0.0, (360.0L + 90.0L - 180.0L) * LAL_PI_180,
-	0.0, (360.0L + 90.0L - 270.0L) * LAL_PI_180
-      }
-    },
-    { { -2.49064958399e+06L,  -4.65869968229e+06L,  3.56206411337e+06L},
-      { { -0.3537959,  0.2734713, 0.1095458},
-        {  0.2734713,  0.0115214, 0.2049027},
-        {  0.1095458,  0.2049027, 0.3422745},
-      },
-      LALDETECTORTYPE_IFODIFF,
-      { "Caltech-40 Interferometer",
-	-118.13 * LAL_PI_180,
-	34.17 * LAL_PI_180, 
-	0,  
-	0.0,            (360.0L + 90.0L - 270.0L) * LAL_PI_180,
-	0.0,            (90.0L - 0.0L) * LAL_PI_180
-      }
-    }
-};
-
-const LALDetector lalCachedDetectors[LALNumCachedDetectors] =
-{
-  /* Cached Detector 0: LIGO Hanford Observatory */
-  {
-    /* detector position vector (m) */
-    { -2.16141490000e+06, -3.83469520000e+06, +4.60035020000e+06 },
-    /* detector response matrix */
-    {
-      { -0.39261409640, -0.07761300355, -0.24738860130 },
-      { -0.07761300355, +0.31952440739, +0.22799809277 },
-      { -0.24738860130, +0.22799809277, +0.07309029996 },
-    },
-    LALDETECTORTYPE_IFODIFF, 	/* detector type */
-    /* LALFrDetector structure */
-    {
-      "LIGO Hanford Observatory", 	/* detector name */
-      -2.08405676917, 	/* vertex longitude (rad) */
-      +0.81079526383, 	/* vertex latitude (rad) */
-      +142.554      , 	/* vertex elevation (m) */
-      -0.00061950000, 	/* x arm altitude (rad) */
-      +5.65487718582, 	/* x arm azimuth (rad) */
-      +0.00001250000, 	/* y arm altitude (rad) */
-      +4.08408069611  	/* y arm azimuth (rad) */
-    },
-  },
-  /* Cached Detector 1: LIGO Livingston Observatory */
-  {
-    /* detector position vector (m) */
-    { -7.42760440000e+04, -5.49628372100e+06, +3.22425701800e+06 },
-    /* detector response matrix */
-    {
-      { +0.41128090024, +0.14020970464, +0.24729430676 },
-      { +0.14020970464, -0.10900560021, -0.18161569536 },
-      { +0.24729430676, -0.18161569536, -0.30227550864 },
-    },
-    LALDETECTORTYPE_IFODIFF, 	/* detector type */
-    /* LALFrDetector structure */
-    {
-      "LIGO Livingston Observatory", 	/* detector name */
-      -1.58430937078, 	/* vertex longitude (rad) */
-      +0.53342313506, 	/* vertex latitude (rad) */
-      -6.574        , 	/* vertex elevation (m) */
-      -0.00031209999, 	/* x arm altitude (rad) */
-      +4.40317773819, 	/* x arm azimuth (rad) */
-      -0.00061069999, 	/* y arm altitude (rad) */
-      +2.83238148689  	/* y arm azimuth (rad) */
-    },
-  },
-  /* Cached Detector 2: VIRGO Interferometer */
-  {
-    /* detector position vector (m) */
-    { +4.54637409863e+06, +8.42989697467e+05, +4.37857696275e+06 },
-    /* detector response matrix */
-    {
-      { +0.24387399852, -0.09908380359, -0.23257620633 },
-      { -0.09908380359, -0.44782578945, +0.18783310056 },
-      { -0.23257620633, +0.18783310056, +0.20395180583 },
-    },
-    LALDETECTORTYPE_IFODIFF, 	/* detector type */
-    /* LALFrDetector structure */
-    {
-      "VIRGO Interferometer", 	/* detector name */
-      +0.18333805213, 	/* vertex longitude (rad) */
-      +0.76151183984, 	/* vertex latitude (rad) */
-      +51.884       , 	/* vertex elevation (m) */
-      +0.00000000000, 	/* x arm altitude (rad) */
-      +0.33916285634, 	/* x arm azimuth (rad) */
-      +0.00000000000, 	/* y arm altitude (rad) */
-      +5.05155181885  	/* y arm azimuth (rad) */
-    },
-  },
-  /* Cached Detector 3: GEO-600 Interferometer */
-  {
-    /* detector position vector (m) */
-    { +3.85630994953e+06, +6.66598956352e+05, +5.01964141692e+06 },
-    /* detector response matrix */
-    {
-      { -0.09682500362, -0.36578229070, +0.12213730067 },
-      { -0.36578229070, +0.22296799719, +0.24971739948 },
-      { +0.12213730067, +0.24971739948, -0.12614309788 },
-    },
-    LALDETECTORTYPE_IFODIFF, 	/* detector type */
-    /* LALFrDetector structure */
-    {
-      "GEO-600 Interferometer", 	/* detector name */
-      +0.17116780435, 	/* vertex longitude (rad) */
-      +0.91184982752, 	/* vertex latitude (rad) */
-      +114.425      , 	/* vertex elevation (m) */
-      +0.00000000000, 	/* x arm altitude (rad) */
-      +1.19360101223, 	/* x arm azimuth (rad) */
-      +0.00000000000, 	/* y arm altitude (rad) */
-      +5.83039283752  	/* y arm azimuth (rad) */
-    },
-  },
-  /* Cached Detector 4: TAMA-300 Interferometer */
-  {
-    /* detector position vector (m) */
-    { -3.94640898771e+06, +3.36625903242e+06, +3.69915069189e+06 },
-    /* detector response matrix */
-    {
-      { +0.11213970184, +0.33084210753, -0.18021929264 },
-      { +0.33084210753, +0.21779400110, +0.15372580290 },
-      { -0.18021929264, +0.15372580290, -0.32993370295 },
-    },
-    LALDETECTORTYPE_IFODIFF, 	/* detector type */
-    /* LALFrDetector structure */
-    {
-      "TAMA-300 Interferometer", 	/* detector name */
-      +2.43536359469, 	/* vertex longitude (rad) */
-      +0.62267336022, 	/* vertex latitude (rad) */
-      +90.000       , 	/* vertex elevation (m) */
-      +0.00000000000, 	/* x arm altitude (rad) */
-      +4.71238899231, 	/* x arm azimuth (rad) */
-      +0.00000000000, 	/* y arm altitude (rad) */
-      +3.14159274101  	/* y arm azimuth (rad) */
-    },
-  },
-  /* Cached Detector 5: Caltech-40 Interferometer */
-  {
-    /* detector position vector (m) */
-    { -2.49064958399e+06, -4.65869968229e+06, +3.56206411337e+06 },
-    /* detector response matrix */
-    {
-      { -0.35379588604, +0.27347129583, +0.10954579711 },
-      { +0.27347129583, +0.01152139995, +0.20490269363 },
-      { +0.10954579711, +0.20490269363, +0.34227448702 },
-    },
-    LALDETECTORTYPE_IFODIFF, 	/* detector type */
-    /* LALFrDetector structure */
-    {
-      "Caltech-40 Interferometer", 	/* detector name */
-      -2.06175744538, 	/* vertex longitude (rad) */
-      +0.59637900541, 	/* vertex latitude (rad) */
-      +0.000        , 	/* vertex elevation (m) */
-      +0.00000000000, 	/* x arm altitude (rad) */
-      +3.14159274101, 	/* x arm azimuth (rad) */
-      +0.00000000000, 	/* y arm altitude (rad) */
-      +1.57079637051  	/* y arm azimuth (rad) */
-    },
-  }
-};
-#endif
-
-
 /* New method for creating cached detectors:
  *
  * Construct the detector structures from the macros describing the
@@ -910,7 +678,7 @@ void getCartesianComponents( REAL4 u[3],
   REAL8 uRho = - sinLat * uNorth + cosLat * sinAlt;
   /* uLambda == uEast */
 
-#if DETECTORSITEH_PRINTF
+#if LALDETECTORSH_PRINTF
   printf("uNorth = %g\n",uNorth);
   printf("uEast = %g\n",uEast);
   printf("uUp = %g\n",sinAlt);
@@ -973,16 +741,16 @@ LALDetector * XLALCreateDetector( LALDetector *detector,
   latRad = frDetector->vertexLatitudeRadians;
   lonRad = frDetector->vertexLongitudeRadians;
 
-#if DETECTORSITEH_PRINTF
+#if LALDETECTORSH_PRINTF
   printf("LAT = %g radians, LON = %g radians\n", latRad, lonRad);
 #endif
 
   cosLat = cos(latRad); sinLat = sin(latRad);
-#if DETECTORSITEH_PRINTF
+#if LALDETECTORSH_PRINTF
   printf("cos(LAT) = %g, sin(LAT) = %g\n", cosLat, sinLat);
 #endif
   cosLon = cos(lonRad); sinLon = sin(lonRad);
-#if DETECTORSITEH_PRINTF
+#if LALDETECTORSH_PRINTF
   printf("cos(LON) = %g, sin(LON) = %g\n", cosLon, sinLon);
 #endif
 
@@ -1000,7 +768,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector,
     = sinLat * ( (LAL_BWGS84_SI * LAL_BWGS84_SI) / ellipsoidalDenominator
                  + (REAL8) frDetector->vertexElevation );
 
-#if DETECTORSITEH_PRINTF
+#if LALDETECTORSH_PRINTF
   printf("%d %d\n", type, LALDETECTORTYPE_IFODIFF);
 #endif
 
@@ -1013,7 +781,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector,
                              sin(frDetector->xArmAzimuthRadians),
                              cosLat, sinLat, cosLon, sinLon );
 
-#if DETECTORSITEH_PRINTF
+#if LALDETECTORSH_PRINTF
     printf("xArm = (%g, %g, %g)\n", xArm[0], xArm[1], xArm[2]);
 #endif
   }
@@ -1027,7 +795,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector,
                              sin(frDetector->yArmAzimuthRadians),
                              cosLat, sinLat, cosLon, sinLon );
 
-#if DETECTORSITEH_PRINTF
+#if LALDETECTORSH_PRINTF
     printf("yArm = (%g, %g, %g)\n", yArm[0], yArm[1], yArm[2]);
 #endif
   }
@@ -1114,18 +882,18 @@ void LALCreateDetector( LALStatus             *status,
 {
   INITSTATUS( status, "LALCreateDetector", CREATEDETECTORC );
 
-  ASSERT( input != NULL, status, DETECTORSITEH_ENULLP,
-          DETECTORSITEH_MSGENULLP );
+  ASSERT( input != NULL, status, LALDETECTORSH_ENULLP,
+          LALDETECTORSH_MSGENULLP );
 
-  ASSERT( output != NULL, status, DETECTORSITEH_ENULLP,
-          DETECTORSITEH_MSGENULLP );
+  ASSERT( output != NULL, status, LALDETECTORSH_ENULLP,
+          LALDETECTORSH_MSGENULLP );
 
   output = XLALCreateDetector( output, input, type );
   if ( ! output )
     switch ( XLALClearErrno() )
     {
       case XLAL_EINVAL:
-        ABORT( status, DETECTORSITEH_ETYPE, DETECTORSITEH_MSGETYPE );
+        ABORT( status, LALDETECTORSH_ETYPE, LALDETECTORSH_MSGETYPE );
         break;
       default:
         ABORTXLAL( status );
