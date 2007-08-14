@@ -175,6 +175,84 @@ class PlotThincaNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.add_output_file(filename)
 
     return filename
+#######################################################################################
+
+
+class PlotNumtemplatesJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A plotnumtemplates job. The static options are read from the section
+  [plotnumtemplates] in the ini file.  The stdout and stderr from the job
+  are directed to the logs directory.  The path to the executable is
+  determined from the ini file.
+  """
+  def __init__(self,cp,dax=False,tag_base='PLOTNUMTEMPLATES'):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','plotnumtemplates')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp,False)
+    self.tag_base = tag_base
+
+    for sec in ['plotnumtemplates']:
+      self.add_ini_opts(cp,sec)
+
+    self.set_stdout_file('logs/plotnumtemplates-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/plotnumtemplates-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_sub_file('plotnumtemplates.sub')
+
+    self.add_condor_cmd('getenv','True')
+
+
+
+
+
+class PlotNumtemplatesNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  A PlotNumtemplatesNode runs an instance of the plotinspiral code in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of plotinspiral.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.__usertag = job.get_config('pipeline','user-tag')
+
+  def set_user_tag(self,usertag):
+    self.__usertag = usertag
+    self.add_var_opt('user-tag',usertag)
+
+  def get_user_tag(self):
+    return self.__usertag
+
+  def get_output(self):
+    """
+    Returns the file name of output from the inspiral code. This must be kept
+    synchronized with the name of the output file in inspiral.c.
+    """
+    if not self.get_start() or not self.get_end() or not self.get_ifo():
+      raise InspiralError, "Start time, end time or ifo has not been set"
+
+    tag_base = self.job().tag_base
+    basename = self.get_ifo() + '-' + tag_base
+
+    if self.get_ifo_tag():
+      basename += '_' + self.get_ifo_tag()
+    if self.__usertag:
+      basename += '_' + self.__usertag
+
+    filename = basename + '-' + str(self.get_start()) + '-' + \
+      str(self.get_end() - self.get_start()) + '.xml'
+
+    if self.__zip_output:
+      filename += '.gz'
+    
+    self.add_output_file(filename)
+
+    return filename
+
 
 
 #############################################################################
@@ -221,6 +299,9 @@ parser.add_option("-i", "--plotinspiral" ,action="store_true",default=False,\
 parser.add_option("-t", "--plotthinca" ,action="store_true",default=False,\
     help="run plotthina to summarize coincidence")
 
+parser.add_option("-n", "--plotnumtemplates" ,action="store_true",default=False,\
+    help="run plotnumtemplates to plot trigbanks and templtbanks")
+
 parser.add_option("-f", "--config-file",action="store",type="string",\
     metavar=" FILE",help="use configuration file FILE")
 
@@ -265,17 +346,17 @@ if not opts.one_ifo and not opts.two_ifo and not opts.three_ifo and \
   print >> sys.stderr, "or use --analyze-all to analyze all ifos all data"
   sys.exit(1)
  
-if not opts.plotinspiral: 
-  print >> sys.stderr, """  No steps of the pipeline specified.
-  Please specify at least one of
-  --plotinspiral"""
-  sys.exit(1)
+#if not opts.plotinspiral: 
+#  print >> sys.stderr, """  No steps of the pipeline specified.
+#  Please specify at least one of
+#  --plotinspiral"""
+#  sys.exit(1)
 
-if not opts.plotthinca:
-  print >> sys.stderr, """  No steps of the pipeline specified.
-  Please specify at least one of
-  --plotthinca"""
-  sys.exit(1)
+#if not opts.plotthinca:
+#  print >> sys.stderr, """  No steps of the pipeline specified.
+#  Please specify at least one of
+#  --plotthinca"""
+#  sys.exit(1)
 
    
 ifo_list = ['H1','H2','L1','G1']
@@ -368,7 +449,7 @@ if opts.plotinspiral:
   all_jobs = []
   all_jobs.extend(plotinspiral_jobs.values())
 
-
+#plotthinca
 if opts.plotthinca:
    
   
@@ -381,10 +462,20 @@ if opts.plotthinca:
   all_jobs = []
   all_jobs.extend(plotthinca_jobs.values())
 
+#plotnumtemplates
+if opts.plotnumtemplates:
 
 
+  plotnumtemplates_jobs = {}
 
-##############################################################################
+  for ifo in ifo_list:
+    plotnumtemplates_jobs[ifo] = PlotNumtemplatesJob(cp)
+    plotnumtemplates_jobs[ifo].set_sub_file( basename + '.plotnumtemplates_' + ifo + subsuffix )
+
+  all_jobs = []
+  all_jobs.extend(plotnumtemplates_jobs.values())
+
+#############################################################################
 # set the usertag in the jobs
 if usertag:
   for job in all_jobs:
@@ -404,9 +495,19 @@ if opts.plotinspiral:
 
 if opts.plotthinca:
   for ifo in ifos:
-  # add an plotinspiral job
+  # add an plotthinca job
     plotthinca_node=PlotThincaNode(plotthinca_jobs[ifo])
     dag.add_node(plotthinca_node)
+
+
+if opts.plotnumtemplates:
+  for ifo in ifos:
+  # add an plotnumtemplates job
+    plotnumtemplates_node=PlotNumtemplatesNode(plotnumtemplates_jobs[ifo])
+    dag.add_node(plotnumtemplates_node)
+
+
+
 
 ##############################################################################
 # Step 10: Write out the DAG, help message and log file
