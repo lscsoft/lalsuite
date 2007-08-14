@@ -681,7 +681,7 @@ if opts.run_data_quality:
       hipePlayVetoNode[category] = hipe_setup("playground", cp, 
           playOnly = True, vetoCat = category, vetoFiles = dqVetoes)
       dag.add_node(hipePlayVetoNode[category])
-      if opts.run_play_analysis: 
+      if opts.run_analysis: 
         hipePlayVetoNode[category].add_parent(hipePlayNode)
 
 
