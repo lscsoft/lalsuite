@@ -7,7 +7,7 @@
 \usepackage{color}
 \usepackage{calc}
 \usepackage{amsmath,amssymb,graphicx,rcs}
-%\usepackage{tensor}
+\usepackage{tensor}
 
 % make verbatims and teletype font blue
 % \let\keepverbatim\verbatim
@@ -45,8 +45,9 @@
 \numberwithin{equation}{section}
 \newcommand{\Ys}{{{}^{-s}Y}}
 \newcommand{\Ytwo}{{{}^{-2}Y}}
-\newcommand{\tens}[1]{\mathbf{#1}}
-%\newcommand{\tens}[1]{\tensor{#1}}
+%\newcommand{\tens}[1]{\mathbf{#1}}
+%\newcommand{\tens}[1]{\overleftrightarrow{#1}}
+\newcommand{\tens}[1]{\mytensor{#1}}
 \newcommand{\xhat}{\vec{e}_x}
 \newcommand{\yhat}{\vec{e}_y}
 \newcommand{\zhat}{\vec{e}_z}
@@ -82,7 +83,7 @@
 \newcommand*{\LSU}{Department of Physics and Astronomy, Louisiana State
   University, Baton Rouge, LA 70803, USA}\affiliation{\LSU}
 \newcommand*{\Jena}{Theoretical Physics Institute, University of Jena,
-  07743 Jena, Germany}{\affiliation{\Jena}
+  07743 Jena, Germany}\affiliation{\Jena}
 
 
 \title{Data formats for numerical relativity waves}
