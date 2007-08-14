@@ -689,7 +689,7 @@ if opts.run_data_quality:
       print "Running inspiral hipe for full data with vetoes"
       hipeAnalysisVetoNode[category] = hipe_setup("analysis", cp, 
           vetoCat = category, vetoFiles = dqVetoes)
-      dag.add_node(hipeAnalysiVetoNode[category])
+      dag.add_node(hipeAnalysisVetoNode[category])
       if opts.run_analysis: 
         hipeAnalysisVetoNode[category].add_parent(hipeAnalysisNode)
 
