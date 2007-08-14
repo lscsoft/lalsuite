@@ -489,11 +489,16 @@ class TmpltBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
-    self.__usertag = job.get_config('pipeline','user-tag')
+    try:
+      self.__usertag = job.get_config('tmpltbank','user-tag')
+    except:
+      self.__usertag = job.get_config('pipeline','user-tag')
+
     try:
       self.__pad_data = int(self.job().get_opts()['pad-data'])
     except: 
       self.__pad_data = None
+
     try:
       self.__zip_output = job.get_config('tmpltbank','write-compress')
       self.__zip_output = True
@@ -563,7 +568,10 @@ class RandomBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
-    self.__usertag = job.get_config('pipeline','user-tag')
+    try:
+      self.__usertag = job.get_config('randombank','user-tag')
+    except:
+      self.__usertag = job.get_config('pipeline','user-tag')
 
   def get_output(self):
     """
@@ -595,7 +603,10 @@ class SplitBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
-    self.__usertag = job.get_config('pipeline','user-tag')
+    try:
+      self.__usertag = job.get_config('splitbank','user-tag')
+    except:
+      self.__usertag = job.get_config('pipeline','user-tag')
     self.__bankfile = None
     self.__numbanks = None
 
@@ -640,7 +651,11 @@ class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
-    self.__usertag = job.get_config('pipeline','user-tag')
+    try:
+      self.__usertag = job.get_config('inspiral','user-tag')
+    except:
+      self.__usertag = job.get_config('pipeline','user-tag')
+
     self.__injections = None
     try:
       self.__pad_data = int(self.job().get_opts()['pad-data'])
@@ -761,7 +776,10 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.__output = None
     self.__input_ifo = None
     self.__output_ifo = None
-    self.__usertag = job.get_config('pipeline','user-tag')
+    try:
+      self.__usertag = job.get_config('trigtotmplt','user-tag')
+    except:
+      self.__usertag = job.get_config('pipeline','user-tag')
     try:
       self.__zip_output = job.get_config('trigtotmplt','write-compress')
       self.__zip_output = True
@@ -826,7 +844,10 @@ class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     pipeline.AnalysisNode.__init__(self)
     self.__ifo_a = None
     self.__ifo_b = None
-    self.__usertag = job.get_config('pipeline','user-tag')
+    try:
+      self.__usertag = job.get_config('inca','user-tag')
+    except:
+      self.__usertag = job.get_config('pipeline','user-tag')
     try:
       self.__zip_output = job.get_config('inca','write-compress')
       self.__zip_output = True
@@ -941,7 +962,10 @@ class ThincaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.__ifo_t1 = None
     self.__ifo_v1 = None
     self.__num_slides = None
-    self.__usertag = job.get_config('pipeline','user-tag')
+    try:
+      self.__usertag = job.get_config('thinca','user-tag')
+    except:
+      self.__usertag = job.get_config('pipeline','user-tag')
     self.__ifotag = None
     try:
       self.__zip_output = job.get_config('thinca','write-compress')
@@ -1114,7 +1138,11 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.__start = None
     self.__end   = None
     self.__injection_file = None
-    self.__usertag      = job.get_config('pipeline','user-tag')
+    try:
+      self.__usertag = job.get_config('sire','user-tag')
+    except:
+      self.__usertag = job.get_config('pipeline','user-tag')
+
     try:
       self.__zip_output = job.get_config('coire','write-compress')
       self.__zip_output = True
@@ -1221,6 +1249,7 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
       fname += "_FOUND"
 
     if self.__ifotag: fname += "_" + self.__ifotag
+    if self.__usertag: fname += "_" + self.__usertag
 
     if (self.__start and not self.__end) or (self.__end and not self.__start):
       raise InspiralError, "If one of start and end is set, both must be"
@@ -1273,13 +1302,11 @@ class CoireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.__end   = None
     self.__num_slides = None
     self.__injection_file = None
-    self.__usertag = job.get_config('pipeline','user-tag')
     self.__output_tag = None
     try:
-      self.__zip_output = job.get_config('coire','write-compress')
-      self.__zip_output = True
+      self.__usertag = job.get_config('coire','user-tag')
     except:
-      self.__zip_output = False
+      self.__usertag = job.get_config('pipeline','user-tag')
 
   def set_ifos(self, ifos):
     """
@@ -1389,6 +1416,7 @@ class CoireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
       fname += "_" + self.__injection_file.split("-")[1]
       fname += "_FOUND"
     if self.__ifotag: fname += "_" + self.__ifotag
+    if self.__usertag: fname += "_" + self.__usertag
     self.__output_tag = fname
 
   def get_output_tag(self):
@@ -1476,7 +1504,10 @@ class CohBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
-    self.__usertag = job.get_config('pipeline','user-tag')
+    try:
+      self.__usertag = job.get_config('cohbank','user-tag')
+    except:
+      self.__usertag = job.get_config('pipeline','user-tag')
     self.__bank = None
     self.__ifos = None
     try:
