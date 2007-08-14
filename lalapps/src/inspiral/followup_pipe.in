@@ -353,19 +353,19 @@ class qscanNode(pipeline.CondorDAGNode):
     job = A CondorDAGJob that can run an instance of qscan.
     """
     pipeline.CondorDAGNode.__init__(self,job)
-    self.add_var_arg(str(time))
+    self.add_var_arg(repr(time))
     self.container = HTMLcontainer(trig,name)
     if qFlag: self.initializeHTML(trig)
     tableFile = open(self.container.locallink,'a')
     if name == 'HOFT_QSCAN':
       sectionName = 'qscan-hoft'
       qscanConfig = string.strip(cp.get(sectionName, ifo + 'config-file'))
+    if name == 'SEIS_QSCAN':
+      sectionName = 'qscan-seismic'
+      qscanConfig = string.strip(cp.get(sectionName, ifo[0] + 'config-file'))
     if name == 'QSCAN':
       sectionName = 'qscan'
-      if (ifo == 'H1') or (ifo == 'H2'):
-        qscanConfig = string.strip(cp.get(sectionName,'Hconfig-file'))
-      if (ifo == 'L1'):
-        qscanConfig = string.strip(cp.get(sectionName,'Lconfig-file'))
+      qscanConfig = string.strip(cp.get(sectionName, ifo[0] + 'config-file'))
     self.add_file_arg(qscanConfig)
     self.add_file_arg(qcache)
     if (ifo == 'H1') or (ifo == 'H2'):
@@ -481,6 +481,9 @@ parser.add_option("-q", "--qscan",action="store_true",default=False,\
 parser.add_option("-H", "--hoft-qscan",action="store_true",\
     default=False, help="do hoft qscans")
 
+parser.add_option("-s", "--seis-qscan",action="store_true",\
+    default=False, help="do seismic qscans")
+
 parser.add_option("-d", "--data-quality",action="store_true",default=False,\
     help="do data quality lookup - CURRENTLY BROKEN, DO NOT USE IT")
 
@@ -524,11 +527,11 @@ if not opts.log_path and not opts.write_to_iulgroup:
 if not opts.write_to_iulgroup and not opts.generate_cache and \
   not opts.datafind and not opts.qscan \
   and not opts.trig_bank and not opts.inspiral and not opts.plots and not \
-  opts.hoft_qscan:
+  opts.hoft_qscan and not opts.seis_qscan:
   print >> sys.stderr, "No steps of the pipeline specified."
   print >> sys.stderr, "Please specify at least one of"
   print >> sys.stderr, "--generate-cache, --trig-bank, --inspiral, --plots,"
-  print >> sys.stderr, "--datafind, --qscan, --hoft-qscan"
+  print >> sys.stderr, "--datafind, --qscan, --hoft-qscan, --seis-qscan"
   print >> sys.stderr, "or --write-to-iulgroup (use this option alone for now)"  
   sys.exit(1)
 
@@ -663,7 +666,7 @@ print "\n.......Found " + str(len(followuptrigs)) + " trigs to follow up"
 # trigJob      = trigBankFollowUpJob(opts,cp)
 inspJob        = inspiralFollowUpJob(opts,cp)
 plotJob        = plotSNRCHISQJob(opts,cp)
-dataJob        = pipeline.LSCDataFindJob('cache','logs',cp)
+dataJob        = pipeline.LSCDataFindJob('datafind_cache','logs',cp)
 #qconfJob       = qconfigureJob(opts,cp) 
 cvcacheJob     = convertCacheJob(opts,cp)
 qscanJob       = qscanJob(opts,cp)
@@ -679,8 +682,11 @@ cvcacheHoftJobCnt = 0
 #qconfigureJobCnt  = 0
 qscanJobCnt       = 0
 qscanHoftJobCnt   = 0
+qscanSeisJobCnt   = 0
 segJobCnt         = 0
 summaryHTMLlist = []
+
+prev_dNode = None
 
 # define dictionary for qconfigure jobs
 #qconfigureTest = {'H1':1,'H2':1,'L1':1,'G1':1,'V1':1,'T1':1}
@@ -713,6 +719,8 @@ for trig in followuptrigs:
   else: qFlag = 0
   if opts.hoft_qscan: hoftqFlag = 1
   else: hoftqFlag = 0
+  if opts.seis_qscan: seisqFlag = 1
+  else: seisqFlag = 0
   if opts.plots: plotsFlag = 1
   else: plotsFlag = 0
   if opts.data_quality: sFlag = 1
@@ -765,8 +773,6 @@ for trig in followuptrigs:
     else: sNode = 0
 
     # SETUP DATAFIND JOBS FOR HOFT QCANS
-    prev_dNode = None
-
     if trig.gpsTime[ifo]:
 
       # 1s is substracted to the expected startTime to make sure the window
@@ -888,6 +894,23 @@ for trig in followuptrigs:
       qFlag = False
     else: qNode = 0
 
+    # SETUP SEISMIC QSCAN JOBS
+    if trig.gpsTime[ifo] and cvNode:
+      try:
+        qSeisNode = qscanNode(qscanJob,trig.gpsTime[ifo],cp,trig,
+            cvNode.get_output(),ifo,"SEIS_QSCAN",seisqFlag)
+        if cvNode and opts.datafind: # only add a parent if it exists
+          qSeisNode.add_parent(cvNode)
+        if opts.seis_qscan:
+          dag.add_node(qSeisNode)
+          qscanSeisJobCnt+=1
+        seisqFlag = False
+        #summaryHTML.containers.append( qNode.getContainer() )
+      except:
+        print "couldn't add seis qscan job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
+        qSeisNode = 0
+    else: qSeisNode = 0
+
 
     # TRY GETTING THE TRIG BANK PROCESS PARAMS
 #    if trig.gpsTime[ifo]:
@@ -963,6 +986,7 @@ for trig in followuptrigs:
 
   if sNode:      summaryHTML.containers.append( sNode.getContainer() )
   if qHoftNode : summaryHTML.containers.append( qHoftNode.getContainer() )
+  if qSeisNode : summaryHTML.containers.append( qSeisNode.getContainer() )
   if qNode:      summaryHTML.containers.append( qNode.getContainer() )
   if plotNode: 
     summaryHTML.containers.append( plotNode.getContainer() )
@@ -980,6 +1004,7 @@ print "\nFound " +  str(cvcacheJobCnt)        + " convertlalcache jobs for regul
 print "\nFound " +  str(cvcacheHoftJobCnt)    + " convertlalcache jobs for hoft qscans"
 print "\nFound " +  str(qscanJobCnt)          + " regular qscan jobs"
 print "\nFound " +  str(qscanHoftJobCnt)      + " hoft qscan jobs"
+print "\nFound " +  str(qscanSeisJobCnt)      + " seismic qscan jobs"
 print "\nFound " +  str(segJobCnt)            + " data quality jobs"
 print "\n.......Writing DAG"
 
