@@ -203,7 +203,7 @@ def hipe_setup(hipeDir, config, injFile=None, dfOnly = False, playOnly = False,
         'ligo-data','inspiral']
   elif vetoCat:
     hipeSections = ['condor', 'pipeline', 'input', 'data', 'ligo-data', \
-        'inspiral', 'thinca', 'thinca-2', \
+        'inspiral', 'thinca', 'thinca-2', 'datafind', \
         'thinca-slide', 'coire', 'coire-inj']
   else:
     hipeSections = ['condor', 'pipeline', 'input', 'calibration', 'datafind',\
@@ -230,10 +230,10 @@ def hipe_setup(hipeDir, config, injFile=None, dfOnly = False, playOnly = False,
 
   # deal with vetoes
   if vetoCat:
-    for section in ["thinca-2", "coire"]: 
+    for section in ["thinca", "coire"]: 
       hipecp.set(section, "user-tag","CAT_" + str(vetoCat) + "_VETO")
     for ifo in ifos:
-      hipecp.set("thinca-2", ifo.lower() + "-veto-file", 
+      hipecp.set("thinca", ifo.lower() + "-veto-file", 
           vetoFiles[ifo][vetoCat])
       
   if injFile:
@@ -267,7 +267,7 @@ def hipe_setup(hipeDir, config, injFile=None, dfOnly = False, playOnly = False,
   # return to the directory, write ini file and run hipe
   os.chdir(hipeDir)
   iniFile = "inspiral_hipe_" 
-  if vetoCat: iniFile += "_cat" + vetoCategory + "_veto_"
+  if vetoCat: iniFile += "cat" + str(vetoCat) + "_veto_"
   iniFile += hipeDir + ".ini"
 
   hipecp.write(file(iniFile,"w"))
@@ -283,6 +283,7 @@ def hipe_setup(hipeDir, config, injFile=None, dfOnly = False, playOnly = False,
   hipeCommand = config.get("condor","hipe")
   hipeCommand += " --log-path " + opts.log_path
   hipeCommand += " --config-file " + iniFile
+  if playOnly: hipeCommand += " --priority 10"
   for item in config.items("ifo-details"):
       hipeCommand += " --" + item[0] + " " + item[1]
 
@@ -681,15 +682,16 @@ if opts.run_data_quality:
           playOnly = True, vetoCat = category, vetoFiles = dqVetoes)
       dag.add_node(hipePlayVetoNode[category])
       if opts.run_play_analysis: 
-        hipeVetoPlayNode[category].add_parent(hipePlayNode)
+        hipePlayVetoNode[category].add_parent(hipePlayNode)
 
 
     if opts.run_full_data:
       print "Running inspiral hipe for full data with vetoes"
       hipeVetoNode[category] = hipe_setup("analysis", cp, vetoCat = category,
           vetoFiles = dqVetoes)
-      dag.add_node(hipeVetoNode[category])
-      if opts.run_analysis: hipeVetoNode[category].add_parent(hipeAnalysisNode)
+      dag.add_node(hipeAnalysiVetoNode[category])
+      if opts.run_analysis: 
+        hipeAnalysisVetoNode[category].add_parent(hipeAnalysisNode)
 
     if opts.run_injections:
       print "Running inspiral hipe for injections with vetoes"
@@ -700,7 +702,7 @@ if opts.run_data_quality:
             vetoCat = category, vetoFiles = dqVetoes)
         dag.add_node(hipeInjVetoNode[injDir][category])
         if opts.run_injections: 
-          hipeInjVetoNode[injDir][category].add_parent(hipeVetoNode[injDir])
+          hipeInjVetoNode[injDir][category].add_parent(hipeInjNode[injDir])
 
 ##############################################################################
 # Set up the directories for followup and run lalapps_followup_pipe
