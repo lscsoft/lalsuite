@@ -698,7 +698,7 @@ if opts.run_data_quality:
       for (injDir, injFile) in cp.items("injections"):
         if category == 2: hipeInjVetoNode[injDir] = {}
         hipeInjVetoNode[injDir][category] = hipe_setup("analysis", cp, 
-            injFile = cp.get("injections", "injDir"), 
+            injFile = cp.get("injections", injDir), 
             vetoCat = category, vetoFiles = dqVetoes)
         dag.add_node(hipeInjVetoNode[injDir][category])
         if opts.run_injections: 
