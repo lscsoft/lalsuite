@@ -1,4 +1,5 @@
 #!/usr/bin/env @PYTHONPROG@
+# coding=utf-8
 """
 grb_hipe.in - grb inspiral pipeline driver script
 
@@ -7,7 +8,7 @@ $Id$
 This script uses master segment lists to determine a set of segment
 lists appropriate to running inspiral_hipe on time around a GRB. At
 present, the script only sets up directories and writes appropriate
-segment files to those directories.  
+segment files to those directories.
 
 It uses the same configuration file as the inspiral_hipe script to
 determine various parameters and then set up analysis and injection
@@ -21,62 +22,27 @@ __version__ = '$Revision$'[11:-2]
 
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path
+import copy
 import os
-import sys 
-import pylab
-import random
+import sys
 import shutil
-import string
 import ConfigParser
 from optparse import *
 from glue import segments
 from glue import segmentsUtils
-from pylal import readMeta
+from glue import pipeline
 
 ##############################################################################
 # define a few utility functions that make this job easier
 
-# remove all segments of size less than min_length
-def cleanlist(seglist, min_length):
-  removals = segments.segmentlist()
-  for seg in seglist:
-    if abs(seg) < min_length:
-      removals.append(seg)
-  seglist = seglist - removals
-
-  return seglist
-
-# return those segments which intersect the interval
-def getSegments ( seglistin, interval):
-
-  seglistout = segments.segmentlist([s for s in seglistin \
-      if (s[1] > interval[0] and s[0] < interval[1]) ])
-
-  return seglistout
-
-# Return the segment containing a particular time
-# FIXME: this can be written using one of Kipp's methods to identify the
-# segment number and should be replaced by that.
-def findSegment ( seglist, time ):
-
-  for seg in seglist:
-    if time in seg:
-      return seg
-
-  return None
-
-# Return the segment protracted symmetrically about on-source
 def buildOffSourceSegment ( scienceSegment, grbSegment, dt, ifo ):
-
+  """ Return the segment protracted symmetrically about on-source. """
   scienceSegment = scienceSegment.contract(72)
 
-  nplus = int ( ( scienceSegment[1] - grbSegment[1] ) / dt )
-  nminus = int ( ( grbSegment[0] - scienceSegment[0] ) / dt )
+  nplus = (scienceSegment[1] - grbSegment[1]) // dt 
+  nminus = (grbSegment[0] - scienceSegment[0]) // dt
 
-  if nplus < nminus:
-    nsegs = nplus
-  else:
-    nsegs = nminus
+  nsegs = min(nplus, nminus)
 
   tmpSegment = grbSegment.protract( nsegs * dt + 72 )
 
@@ -84,7 +50,103 @@ def buildOffSourceSegment ( scienceSegment, grbSegment, dt, ifo ):
 
   return tmpSegment
 
+def make_external_call(command, show_stdout=False, show_command=False):
+  """
+  Run a program on the shell and print informative messages on failure.
+  """
+  if show_command: print command
 
+  stdin, out, err = os.popen3(command)
+  pid, status = os.wait()
+
+  if status != 0:
+      print >>sys.stderr, "External call failed."
+      print >>sys.stderr, "  status: %d" % status
+      print >>sys.stderr, "  stdout: %s" % out.read()
+      print >>sys.stderr, "  stderr: %s" % err.read()
+      print >>sys.stderr, "  command: %s" % command
+      sys.exit(status)
+  if show_stdout:
+      print out.read()
+  stdin.close()
+  out.close()
+  err.close()
+
+class hipe_run(object):
+  """
+  This class is intended to represent single run of lalapps_inspiral_hipe.
+  """
+  def __init__(self, hipe_dir, base_cp, ifos, log_path):
+    self._hipe_dir = hipe_dir
+    self._cp = copy.copy(base_cp)
+    self._ifos = ifos
+  
+    self._hipe_args = ["--output-segs",
+      "--log-path=%s" % log_path, "--config-file=config.ini",
+      "--datafind", "--template-bank", "--inspiral", "--coincidence",
+      "--trigbank", "--inspiral-veto", "--second-coinc"]
+    
+    # determine how many ifos to analyze
+    n = len(self._ifos)
+    if n < 1 or n > 4:
+      raise ValueError, "cannot handle less than one or more than four IFOs"
+    number_words = {1: "one", 2: "two", 3: "three", 4: "four"}
+    for i in range(n):
+      self._hipe_args.append("--%s-ifo" % number_words[n+1])
+    
+    # set individual ifos to analyze
+    for ifo in self._ifos:
+      self._cp.set("input", "%s-segments" % ifo.lower(),
+        "../%s-selectedsegs.txt" % ifo)
+      self._hipe_args.append("--%s-data" % ifo.lower())
+  
+  def set_numslides(self, numslides):
+    if numslides == 0: numslides = ""
+    self._cp.set('input', 'num-slides', numslides)
+
+  def set_injections(self, cpinj, injrun):
+    """
+    Turn this analysis into an injection run, using the injrun section from
+    the config file cpinj.
+    """
+    cpinj = copy.copy(cpinj)
+    
+    # set the start and stop seeds from the injection config file
+    for opt in ['exttrig-inj-start','exttrig-inj-stop']:
+      self._cp.set('pipeline', opt, cpinj.get(injrun,opt))
+      cpinj.remove_option(injrun,opt)
+
+    # set the rest of the values that should go into section inspinj
+    for (opt,value) in cpinj.items(injrun):
+      self._cp.set('inspinj',opt,value)
+
+    # the start and ent time for the injections that are made
+    # should be a segment adjacent to the on-source segment. It's
+    # convenient to do this here since it needs a calculation.
+    # We are assuming that there exists one 180s segment before the trigger
+    # on-source interval.
+    self._cp.set('inspinj','gps-start-time',(trigger-120-180))
+    self._cp.set('inspinj','gps-end-time',(trigger-120))
+
+  def write_dag(self):
+    """
+    Create directory and run lalapps_inspiral_hipe to create the DAG.
+    """
+    if not os.path.isdir(self._hipe_dir):
+      os.mkdir(self._hipe_dir)
+    os.chdir(self._hipe_dir)
+    self._cp.write(file("config.ini",'w'))
+    make_external_call("lalapps_inspiral_hipe %s" % " ".join(self._hipe_args))
+    os.chdir("../../")
+  
+  def get_dag_node(self):
+    """
+    Return a tuple of (job, node), where these refer to this hipe_run's DAG.
+    """
+    job = pipeline.CondorDAGManJob("%s/config.dag" % self._hipe_dir)
+    node = pipeline.CondorDAGNode(job)
+    return node
+    
 ##############################################################################
 # define usage and command line options and arguments - parse
 usage = """usage: %prog ...
@@ -95,7 +157,7 @@ appropriate amount of data on each side of the reported GRB trigger.
 
 As of now, the code appears to do the right thing.  This code also
 uses the inspiral_hipe config file to determine information about
-segments and to insure that appropriate overlaps, etc are being done.  
+segments and to ensure that appropriate overlaps, etc are being done.  
 
 
 DIRECTORY HIERARCHY:
@@ -103,7 +165,7 @@ DIRECTORY HIERARCHY:
 The directory hierarchy that a search would have then follows:
 
 searchdir
-  grbYYMMDDxx
+  GRB<gpstime>
     analysis
     injection001
     injection002
@@ -179,23 +241,23 @@ overlap = o / r
 minsciseg = length + 2 * paddata
 
 ##############################################################################
-# Read in all the segment lists
-ifolist = []
+# Read in all the segment lists, filtering for sufficiently long segments
 segdict = {}
-if opts.h1_segments:
-  tmplist = segmentsUtils.fromsegwizard(file(opts.h1_segments)).coalesce()
-  segdict["H1"] = cleanlist(tmplist, minsciseg)
-  ifolist.append("H1")
 
-if opts.h2_segments:
-  tmplist = segmentsUtils.fromsegwizard(file(opts.h2_segments)).coalesce()
-  segdict["H2"] = cleanlist(tmplist, minsciseg)
-  ifolist.append("H2")
+for ifo in ["H1", "H2", "L1"]:
+  ifo_segfile = getattr(opts, "%s_segments" % ifo.lower())
+  if ifo_segfile is not None:
+    tmplist = segmentsUtils.fromsegwizard(open(ifo_segfile))
+    segdict[ifo] = segments.segmentlist([s for s in tmplist if abs(s) > minsciseg])
+ifolist = segdict.keys()
+ifolist.sort()
 
-if opts.l1_segments:
-  tmplist = segmentsUtils.fromsegwizard(file(opts.l1_segments))
-  segdict["L1"] = cleanlist(tmplist, minsciseg)
-  ifolist.append("L1")
+############################################################################
+# set up the über dag for all intervals and all injections
+
+tag = opts.config_file.rstrip(".ini")
+uberdag = pipeline.CondorDAG("%s/%s_uberdag.log" % (opts.log_path, tag))
+uberdag.set_dag_file("%s_uberdag" % tag)
 
 ##############################################################################
 # loop over the intervals, constructing overlapping segment lists,
@@ -210,7 +272,8 @@ for trigger in opts.triggers:
 
   # name and the directory
   idirectory = "GRB" + str(trigger)
-  os.mkdir(idirectory)
+  if not os.path.isdir(idirectory):
+    os.mkdir(idirectory)
   shutil.copy(opts.source_file,idirectory)
 
   ##############################################################################
@@ -218,12 +281,12 @@ for trigger in opts.triggers:
 
   # first step involves making the segment infinitely large
   offSourceSegment = \
-    segments.segment( -segments.infinity() , segments.infinity() )
+    segments.segment(segments.NegInfinity, segments.PosInfinity)
   
-  # for each ifo construct the maximal segment surrounding the grb, and
+  # for each ifo, construct the maximal segment surrounding the grb, and
   # then use the minimal length segment to actually do the analysis
   for ifo in ifolist:
-    trigger_segment = findSegment( segdict[ifo], trigger )
+    trigger_segment = segdict[ifo][segdict[ifo].find(trigger)]
     tmpOffSourceSegment = \
         buildOffSourceSegment(trigger_segment,onSourceSegment,180,ifo)
     if tmpOffSourceSegment in offSourceSegment:
@@ -246,6 +309,7 @@ for trigger in opts.triggers:
   
   # plot the segment lists
   if opts.plot_segments:
+    import pylab
     pylab.figure()
     pylab.hold(True)
     y = pylab.asarray([0,0])
@@ -278,25 +342,12 @@ for trigger in opts.triggers:
   # set up the analysis dag for this interval
   #
   # In doing this, we simply copy the configuration file into the
-  # sub-directory and then run the dag generation script.  The exact
-  # arguments to that script could be a problem, but we'll deal with
-  # that later.  For now, we want to try it.
-  hipe_arguments = " --two-ifo"
-  hipe_arguments += " --output-segs --log-path " + opts.log_path
-  hipe_arguments += " --config-file config.ini --datafind --template-bank"
-  hipe_arguments += " --inspiral --coincidence --trigbank --inspiral-veto"
-  hipe_arguments += " --second-coinc"
-
-  for ifo in ifolist:
-    cp.set('input',ifo.lower()+'-segments',"../"+ifo+"-selectedsegs.txt")
-    hipe_arguments += " --"+ifo.lower()+"-data"
-  analysisdir = idirectory+"/analysis"
-  os.mkdir(analysisdir)
-  os.chdir(analysisdir)
-  cp.write(file("config.ini",'w'))
-  os.system("lalapps_inspiral_hipe " + hipe_arguments)
-  os.chdir("../../")
-
+  # sub-directory and then run the dag generation script.
+  
+  basic_analysis = hipe_run("%s/analysis" % idirectory, cp, ifolist, opts.log_path)
+  basic_analysis.write_dag()
+  uberdag.add_node(basic_analysis.get_dag_node())
+  
   ############################################################################
   # create the config parser object and read in the ini file
   if opts.injection_config:
@@ -306,43 +357,11 @@ for trigger in opts.triggers:
     ############################################################################
     # set up the injection dag for this interval
     for injrun in cpinj.sections():
-  
-      # make the injection directory
-      injectiondir = idirectory+"/"+injrun
-      os.mkdir(injectiondir)
-      os.chdir(injectiondir)
-  
-      # update parameters in the config file and write out
-      for ifo in ifolist:
-        cp.set('input',ifo.lower()+'-segments',"../"+ifo+"-injsegs.txt")
-  
-      # set num slides to zero
-      cp.set('input','num-slides','')
-  
-      # set the start and stop seeds from the injection config file
-      for opt in ['exttrig-inj-start','exttrig-inj-stop']:
-        value = cpinj.get(injrun,opt)
-        cp.set('pipeline',opt,value)
-        cpinj.remove_option(injrun,opt)
-  
-      # set the rest of the values that should go into section inspinj
-      for (opt,value) in cpinj.items(injrun):
-        cp.set('inspinj',opt,value)
+      injection_analysis = hipe_run(injrun, injcp, ifos, opts.log_path)
+      injection_analysis.set_numslides(0)
+      injection_analysis.set_injections(cpinj, injrun)
+      injection_analysis.write_dag()
+      uberdag.add_node(injection_analysis.get_dag_node())
 
-      # the start and ent time for the injections that are made
-      # should be a segment adjacent to the on-source segment. It's
-      # convenient to do this here since it needs a calculation
-      cp.set('inspinj','gps-start-time',(trigger-120-180))
-      cp.set('inspinj','gps-end-time',(trigger-120))
-      cp.write(file("config.ini",'w'))
-
-      # generate the dag
-      os.system("lalapps_inspiral_hipe " + hipe_arguments)
-      os.chdir("../../")
-
-  # Ultimately, we would like to construct a dag to allow running
-  # these sub dags. For now,  we'll do it by hand .....
-
-sys.exit(0)
-
-
+uberdag.write_sub_files()
+uberdag.write_dag()
