@@ -128,11 +128,10 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
     /* read the remaining lines */
     for (j=0; j < edat->nentriesE; ++j) {
       ret = fscanf(fp1,"%le %le %le %le %le %le %le %le %le %le\n",
-		   &edat->ephemE[j].gps,    &edat->ephemE[j].pos[0],
-		   &edat->ephemE[j].pos[1], &edat->ephemE[j].pos[2],
-		   &edat->ephemE[j].vel[0], &edat->ephemE[j].vel[1],
-		   &edat->ephemE[j].vel[2], &edat->ephemE[j].acc[0],
-		   &edat->ephemE[j].acc[1], &edat->ephemE[j].acc[2]);
+		   &edat->ephemE[j].gps,
+		   &edat->ephemE[j].pos[0], &edat->ephemE[j].pos[1], &edat->ephemE[j].pos[2],
+		   &edat->ephemE[j].vel[0], &edat->ephemE[j].vel[1], &edat->ephemE[j].vel[2],
+		   &edat->ephemE[j].acc[0], &edat->ephemE[j].acc[1], &edat->ephemE[j].acc[2]);
 
       /* check number of scanned items */
       if (ret != 10) {
@@ -160,6 +159,54 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
 	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
 	}
       }
+
+      /* check position, velocity and acceleration */
+#ifndef SQR
+#define SQR(x) ((x)*(x))
+#endif
+      {
+	REAL8 length;
+	length = sqrt(SQR(edat->ephemE[j].pos[0]) + SQR(edat->ephemE[j].pos[1]) + SQR(edat->ephemE[j].pos[2]));
+	if (abs(499.0 - length) > 25) /* 5% */ {
+	  LALPrintError("earth position out of range in line %d of %s: %le %le %le: %le\n",
+			j+2, edat->ephiles.earthEphemeris,
+			edat->ephemE[j].pos[0], edat->ephemE[j].pos[1], edat->ephemE[j].pos[2], length);
+	  fclose(fp1);
+	  LALFree(edat->ephemE);
+	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
+	}
+	length = sqrt(SQR(edat->ephemE[j].vel[0]) + SQR(edat->ephemE[j].vel[1]) + SQR(edat->ephemE[j].vel[2]));
+	if (abs(1e-4 - length) > 1e-5) /* 10% */ {
+	  LALPrintError("earth velocity out of range in line %d of %s: %le %le %le: %le\n",
+			j+2, edat->ephiles.earthEphemeris,
+			edat->ephemE[j].vel[0], edat->ephemE[j].vel[1], edat->ephemE[j].vel[2], length);
+	  fclose(fp1);
+	  LALFree(edat->ephemE);
+	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
+	}
+	length = sqrt(SQR(edat->ephemE[j].acc[0]) + SQR(edat->ephemE[j].acc[1]) + SQR(edat->ephemE[j].acc[2]));
+	if (abs(2e-11 - length) > 3e-12) /* 15% */ {
+	  LALPrintError("earth acceleration out of range in line %d of %s: %le %le %le: %le\n",
+			j+2, edat->ephiles.earthEphemeris,
+			edat->ephemE[j].acc[0], edat->ephemE[j].acc[1], edat->ephemE[j].acc[2], length);
+	  fclose(fp1);
+	  LALFree(edat->ephemE);
+	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
+	}
+      }
+
+      /* debug
+      {
+	REAL8 length;
+	fprintf(stderr,"earth line: %d:  ");
+	length = SQR(edat->ephemE[j].pos[0]) + SQR(edat->ephemE[j].pos[1]) + SQR(edat->ephemE[j].pos[2]);
+	fprintf(stderr,"pos: %le (%le), ", sqrt(length), length);
+	length = SQR(edat->ephemE[j].vel[0]) + SQR(edat->ephemE[j].vel[1]) + SQR(edat->ephemE[j].vel[2]);
+	fprintf(stderr,"vel: %le (%le), ", sqrt(length), length);
+	length = SQR(edat->ephemE[j].acc[0]) + SQR(edat->ephemE[j].acc[1]) + SQR(edat->ephemE[j].acc[2]);
+	fprintf(stderr,"acc: %le (%le)\n", sqrt(length), length);
+      }
+      */
     }
 
     if (fscanf(fp1,"%c") != EOF) {
@@ -204,11 +251,10 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
     /* read the remaining lines */
     for (j=0; j < edat->nentriesS; ++j) {
       ret = fscanf(fp2,"%le %le %le %le %le %le %le %le %le %le\n",
-		   &edat->ephemS[j].gps,    &edat->ephemS[j].pos[0],
-		   &edat->ephemS[j].pos[1], &edat->ephemS[j].pos[2],
-		   &edat->ephemS[j].vel[0], &edat->ephemS[j].vel[1],
-		   &edat->ephemS[j].vel[2], &edat->ephemS[j].acc[0],
-		   &edat->ephemS[j].acc[1], &edat->ephemS[j].acc[2]);
+		   &edat->ephemS[j].gps,
+		   &edat->ephemS[j].pos[0], &edat->ephemS[j].pos[1], &edat->ephemS[j].pos[2],
+		   &edat->ephemS[j].vel[0], &edat->ephemS[j].vel[1], &edat->ephemS[j].vel[2],
+		   &edat->ephemS[j].acc[0], &edat->ephemS[j].acc[1], &edat->ephemS[j].acc[2]);
 
       /* check number of scanned items */
       if (ret != 10) {
@@ -239,6 +285,50 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
 	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
 	}
       }
+
+      /* check position, velocity and acceleration */
+      {
+	REAL8 length;
+	length = sqrt(SQR(edat->ephemS[j].pos[0]) + SQR(edat->ephemS[j].pos[1]) + SQR(edat->ephemS[j].pos[2]));
+	if ((1 > length) || (length > 10)) {
+	  LALPrintError("sun position out of range in line %d of %s: %f %f %f: %f\n",
+			j+2, edat->ephiles.earthEphemeris,
+			edat->ephemS[j].pos[0], edat->ephemS[j].pos[1], edat->ephemS[j].pos[2], length);
+	  fclose(fp2);
+	  LALFree(edat->ephemS);
+	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
+	}
+	length = sqrt(SQR(edat->ephemS[j].vel[0]) + SQR(edat->ephemS[j].vel[1]) + SQR(edat->ephemS[j].vel[2]));
+	if ((1e-8 > length) || (length > 1e-7)) {
+	  LALPrintError("sun velocity out of range in line %d of %s: %f %f %f: %f\n",
+			j+2, edat->ephiles.earthEphemeris,
+			edat->ephemS[j].vel[0], edat->ephemS[j].vel[1], edat->ephemS[j].vel[2], length);
+	  fclose(fp2);
+	  LALFree(edat->ephemS);
+	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
+	}
+	length = sqrt(SQR(edat->ephemS[j].acc[0]) + SQR(edat->ephemS[j].acc[1]) + SQR(edat->ephemS[j].acc[2]));
+	if ((1e-16 > length) || (length > 1e-14)) {
+	  LALPrintError("sun acceleration out of range in line %d of %s: %f %f %f: %f\n",
+			j+2, edat->ephiles.earthEphemeris,
+			edat->ephemS[j].acc[0], edat->ephemS[j].acc[1], edat->ephemS[j].acc[2], length);
+	  fclose(fp2);
+	  LALFree(edat->ephemS);
+	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
+	}
+      }
+      /* debug
+      {
+	REAL8 length;
+	fprintf(stderr,"sun line: %d:  ");
+	length = SQR(edat->ephemS[j].pos[0]) + SQR(edat->ephemS[j].pos[1]) + SQR(edat->ephemS[j].pos[2]);
+	fprintf(stderr,"pos: %le (%le), ", sqrt(length), length);
+	length = SQR(edat->ephemS[j].vel[0]) + SQR(edat->ephemS[j].vel[1]) + SQR(edat->ephemS[j].vel[2]);
+	fprintf(stderr,"vel: %le (%le), ", sqrt(length), length);
+	length = SQR(edat->ephemS[j].acc[0]) + SQR(edat->ephemS[j].acc[1]) + SQR(edat->ephemS[j].acc[2]);
+	fprintf(stderr,"acc: %le (%le)\n", sqrt(length), length);
+      }
+      */
     }
 
     if (fscanf(fp2,"%c") != EOF) {
