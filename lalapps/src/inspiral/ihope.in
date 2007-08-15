@@ -701,7 +701,7 @@ if opts.run_data_quality:
             injFile = cp.get("injections", injDir), 
             vetoCat = category, vetoFiles = dqVetoes)
         dag.add_node(hipeInjVetoNode[injDir][category])
-        if opts.run_injections: 
+        if opts.run_analysis: 
           hipeInjVetoNode[injDir][category].add_parent(hipeInjNode[injDir])
 
 ##############################################################################

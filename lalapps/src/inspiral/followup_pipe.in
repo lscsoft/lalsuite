@@ -49,138 +49,44 @@ lsctables.SimInspiralTable.loadcolumns = ["waveform","geocent_end_time",
     "spin1x","spin1y","spin1z","spin2x","spin2y","spin2z","eff_dist_h",
     "eff_dist_l","eff_dist_g","eff_dist_t","eff_dist_v"]
 
-#lsctables.SnglInspiralTable.loadcolumns = ["ifo","end_time","end_time_ns",
-#    "eff_distance","mass1","mass2","mchirp","eta","snr","chisq","chisq_dof",
-#    "sigmasq","event_id"]
-
 ################ TRIG BANK FROM SIRE FILE CONDOR DAG JOB ######################
 
-class trigBankFollowUpJob(pipeline.CondorDAGJob):
+def inspiralFollowup(inspJob, procParams, triggerTime, bankFile, injFile):
   """
-  A followup trig bank job
+  Set up an instance of an inspiral followup job
   """
-  def __init__(self, options, cp, tag_base='TRIGBANK_FOLLOWUP'):
-    """
-    """
-    self.__executable = string.strip(cp.get('condor','trigtotmplt'))
-    self.__universe = "standard"
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+  insp = InspiralNode(inspJob)
+  insp.add_var_opt("write-snrsq","")
+  insp.add_var_opt("write-chisq","")
+  insp.add_var_opt("write-spectrum","")
+  insp.set_bank(bankFile)
+  insp.set_user_tag("FOLLOWUP_" + str(time))
+  insp.set_trig_start( int(triggerTime) - 1) )
+  insp.set_trig_end( int(triggerTime) + 1 )
+  if injFile: insp.set_injection( injFile )
 
-    self.set_stdout_file('logs/futrigbank-$(macrogpsstarttime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/futrigbank-$(macrogpsstarttime)-$(cluster)-$(process).err')
-    self.set_sub_file('futrigbank.sub')
+  skipParams = ['bank-file', 'user-tag', 'injection-file', 'trig-start-time',
+                'trig-end-time', 'enable-rsq-veto', 'disable-rsq-veto']
 
-
-class trigBankFollowUpNode(pipeline.CondorDAGNode):
-  """
-  Runs an instance of a trig bank followup job
-  """
-  def __init__(self,job,time,proc,opts,xml_glob):
-    """
-    job = A CondorDAGJob that can run an instance of trigbank followup.
-    """
-    pipeline.CondorDAGNode.__init__(self,job)
-    self.output_file_name = ""
-    self.output_user_tag = "FOLLOWUP_" + str(time)
-
-    for row in proc:
-      self.add_var_opt(row.param[2:],row.value)
-      if row.param[2:] == 'gps-start-time':
-        pass
-        #self.add_macro("macrogpsstarttime",row.value)
-        #self.start_time = row.value
-      if row.param[2:] == 'input-ifo': 
-        self.input_ifo = row.value
-      if row.param[2:] == 'ifo-tag':
-        self.ifo_tag = row.value
-      if row.param[2:] == 'gps-end-time':
-        pass
-        #self.end_time = row.value
-        
-    # be careful that the clustering time must be larger than 2 s, we should fix this.
-    self.start_time = str( eval(str(time)) - 1 )
-    self.end_time = str( eval(str(time)) + 1 )
-    self.add_var_opt("gps-start-time",self.start_time)
-    self.add_var_opt("gps-end-time",self.end_time)
-    self.add_macro("macrogpsstarttime",self.start_time)
+  for row in proc:
+    param = row.param.strip("-")
+    value = row.value
     
-    self.add_var_opt("user-tag",self.output_user_tag)
-    fStr = os.popen('ls ' + xml_glob).readlines() 
-    for inFile in fStr:
-      self.add_file_arg(string.strip(inFile))
-    self.output_file_name = self.input_ifo + "-TRIGBANK_" + self.ifo_tag + \
-      "_" + self.output_user_tag + "-" + str(int(eval(self.start_time))) + "-"\
-      + "2" + ".xml"
+    if param in skipParams:
+      continue
 
-class inspiralFollowUpJob(pipeline.CondorDAGJob):
-  """
-  A followup inspiral job
-  """
-  def __init__(self, options, cp, tag_base='INSPIRAL_FOLLOWUP'):
-    """
-    """
-    self.__executable = string.strip(cp.get('condor','inspiral'))
-    self.__universe = "standard"
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    self.tag_base = tag_base
-    self.options = options
-    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    elif param == 'gps-end-time':
+      insp.set_end(value)
 
-    self.set_stdout_file('logs/fuinspiral-$(macrogpsstarttime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/fuinspiral-$(macrogpsstarttime)-$(cluster)-$(process).err')
-    self.set_sub_file('fuinspiral.sub')
+    elif param == 'gps-start-time':
+      insp.set_start(value)
 
+    elif param == 'ifo-tag' 
+      insp.set_ifo_tag(value)
 
-class inspiralFollowUpNode(pipeline.CondorDAGNode):
-  """
-  Runs an instance of an inspiral followup job
-  """
-  def __init__(self,job,time,proc,opts,bankFile):
-    """
-    job = A CondorDAGJob that can run an instance of inspiral followup.
-    """
-    pipeline.CondorDAGNode.__init__(self,job)
-    self.output_file_name = ""
-    self.output_user_tag = "FOLLOWUP_" + str(time)
-    self.add_rsq_veto = 1
-    for row in proc:
-      if row.param[2:] == 'minimal-match':
-        continue
-      if row.param[2:] == 'bank-file':
-        continue
-      if row.param[2:] == 'trig-start-time':
-        continue
-      if row.param[2:] == 'trig-end-time':
-        continue
-      if (row.param[2:] == 'injection-file') and ( len(string.strip(cp.get('triggers','injection-file'))) > 0 ):
-        row.value = string.strip(cp.get('triggers','injection-file'))
-      self.add_var_opt(row.param[2:],row.value)
-      if row.param[2:] == 'gps-start-time':
-        self.add_macro("macrogpsstarttime",row.value)
-        self.start_time = row.value
-      if row.param[2:] == 'channel-name':
-        self.input_ifo = row.value[0:2]
-      if row.param[2:] == 'ifo-tag':
-        self.ifo_tag = row.value
-      if row.param[2:] == 'gps-end-time':
-        self.end_time = row.value
-      if row.param[2:] == 'enable-rsq-veto':
-        self.add_rsq_veto = 0
-      if row.param[2:] == 'disable-rsq-veto':
-        self.add_rsq_veto = 0
-    self.add_var_opt("user-tag",self.output_user_tag)
-    self.add_var_opt("write-snrsq","")
-    self.add_var_opt("write-chisq","")
-    self.add_var_opt("write-spectrum","")
-    self.add_var_opt("bank-file",bankFile)
-    self.add_var_opt("trig-start-time", str( eval(str(time))-1.0) )
-    self.add_var_opt("trig-end-time", str( eval(str(time))+1.0) )
-    if self.add_rsq_veto:
-      self.add_var_opt("enable-rsq-veto","")
-    self.output_file_name = self.input_ifo + "-INSPIRAL_" + self.ifo_tag + \
-      "_" + self.output_user_tag + "-" + self.start_time + "-" +\
-      str(eval(self.end_time)-eval(self.start_time)) + ".xml"
+    elif param == 'channel-name':
+      insp.set_ifo(value[0:2])
+
     
 class plotSNRCHISQJob(pipeline.CondorDAGJob):
   """
