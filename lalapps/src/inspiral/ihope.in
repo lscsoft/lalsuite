@@ -695,7 +695,8 @@ if opts.run_data_quality:
       if category==2 and opts.run_analysis: 
         hipeAnalysisVetoNode[category].add_parent(hipeAnalysisNode)
       elif category>2: 
-        hipeAnalysisVetoNode[category].add_parent(hipeAnalysisVetoNode[category-1])
+        hipeAnalysisVetoNode[category].add_parent( \
+            hipeAnalysisVetoNode[category-1])
 
     if opts.run_injections:
       print "Running inspiral hipe for injections with vetoes"
@@ -708,7 +709,8 @@ if opts.run_data_quality:
         if category==2 and opts.run_analysis: 
           hipeInjVetoNode[injDir][category].add_parent(hipeInjNode[injDir])
         elif category>2: 
-          hipeInjVetoNode[category].add_parent(hipeInjVetoNode[category-1])
+          hipeInjVetoNode[injDir][category].add_parent(\
+              hipeInjVetoNode[injDir][category-1])
 
 ##############################################################################
 # Set up the directories for followup and run lalapps_followup_pipe
