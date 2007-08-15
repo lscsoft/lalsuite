@@ -384,6 +384,7 @@ int MAIN( int argc, char *argv[]) {
   INT4 uvar_gridType1;
   INT4 uvar_metricType1;
   INT4 uvar_sftUpsampling;
+  INT4 uvar_skyPointIndex;
 
   CHAR *uvar_ephemE=NULL;
   CHAR *uvar_ephemS=NULL;
@@ -449,7 +450,7 @@ int MAIN( int argc, char *argv[]) {
   uvar_dopplerMax = 1.05e-4;
 
   uvar_skyGridFile = NULL;
-
+  uvar_skyPointIndex = -1;
 
   uvar_ephemE = LALCalloc( strlen( EARTHEPHEMERIS ) + 1, sizeof(CHAR) );
   strcpy(uvar_ephemE, EARTHEPHEMERIS);
@@ -511,9 +512,10 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed", 0, UVAR_DEVELOPER, "RngMed block size", &uvar_blocksRngMed), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision", 0, UVAR_DEVELOPER, "Precision for SSB transform.", &uvar_SSBprecision),    &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",    0, UVAR_DEVELOPER, "Print Hough maps -- for debugging", &uvar_printMaps), &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "dumpLUT",      0, UVAR_DEVELOPER, "Print Hough look-up-tables -- for debugging", &uvar_dumpLUT), &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "dumpLUT",      0, UVAR_DEVELOPER, "Print Hough look-up-tables -- for debugging", &uvar_dumpLUT), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",   0, UVAR_DEVELOPER, "Print Hough map statistics", &uvar_printStats), &status);  
   LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",       0, UVAR_DEVELOPER, "No.of terms to keep in Dirichlet Kernel", &uvar_Dterms ), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "skyPointIndex",0, UVAR_DEVELOPER, "Only analyze this skypoint in grid", &uvar_skyPointIndex ), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dopplerMax",   0, UVAR_DEVELOPER, "Max Doppler shift",  &uvar_dopplerMax), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "sftUpsampling",0, UVAR_DEVELOPER, "Upsampling factor for fast LALDemod",  &uvar_sftUpsampling), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "useToplist1",  0, UVAR_DEVELOPER, "Use toplist for 1st stage candidates?", &uvar_useToplist1 ), &status);
@@ -905,6 +907,15 @@ int MAIN( int argc, char *argv[]) {
     for(skyGridCounter = 0; skyGridCounter < count; skyGridCounter++)
       XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
   }
+
+  /* spool forward if uvar_skyPointIndex is set
+     ---This probably doesn't make sense when checkpointing is turned on */
+  if ( LALUserVarWasSet(&uvar_skyPointIndex)) {
+    UINT4 count = uvar_skyPointIndex;
+    for(skyGridCounter = 0; (skyGridCounter < count)&&(thisScan.state != STATE_FINISHED) ; skyGridCounter++)
+      XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
+  }
+
   
 #ifdef SKYPOS_PRECISION
   LogPrintf(LOG_DEBUG, "SKYPOS_PRECISION: %15f (0x%x)\n", (REAL4)SKYPOS_PRECISION,(INT8)SKYPOS_PRECISION);
@@ -922,6 +933,10 @@ int MAIN( int argc, char *argv[]) {
       UINT4 ifdot;  /* counter for spindown values */
       SkyPosition skypos;
 
+
+      /* if (skyGridCounter == 25965) { */
+
+
 #ifdef SKYPOS_PRECISION
       /* reduce precision of sky position */
       dopplerpos.Alpha = (INT4)(dopplerpos.Alpha * SKYPOS_PRECISION) / (REAL4)SKYPOS_PRECISION;
@@ -930,7 +945,7 @@ int MAIN( int argc, char *argv[]) {
 
       SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta,
 		    skyGridCounter,thisScan.numSkyGridPoints);
-
+      
       LogPrintfVerbatim(LOG_DEBUG, "%d, ", skyGridCounter );
       
       /*------------- calculate F statistic for each stack --------------*/
@@ -938,18 +953,18 @@ int MAIN( int argc, char *argv[]) {
       /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
       thisPoint.Alpha = dopplerpos.Alpha;
       thisPoint.Delta = dopplerpos.Delta;   
-
+      
       /* get amplitude modulation weights */
       skypos.longitude = thisPoint.Alpha;
       skypos.latitude = thisPoint.Delta;
       skypos.system = COORDINATESYSTEM_EQUATORIAL;
-
+      
       semiCohPar.alpha = thisPoint.Alpha;
       semiCohPar.delta = thisPoint.Delta;
       
       /* initialize weights to unity */
       LAL_CALL( LALHOUGHInitializeWeights( &status, weightsV), &status);
-
+      
       if (uvar_useWeights) {
 	LAL_CALL( ComputeStackNoiseAndAMWeights( &status, weightsV, &stackMultiNoiseWeights,
 						 &stackMultiDetStates, skypos), &status);
@@ -960,15 +975,15 @@ int MAIN( int argc, char *argv[]) {
       for (k = 0; k < nStacks; k++) {
 	LogPrintf(LOG_DETAIL, "%f\n", weightsV->data[k]);
       }
-
-
+      
+      
       { /********Allocate fstat vector memory *****************/
-
+	
 	/* extra bins for fstat due to skypatch and spindowns */
 	UINT4 extraBinsfdot;
 	REAL8 freqHighest;
 	
-	/* experimental! */
+	/* calculate number of bins for fstat overhead */
 	freqHighest = usefulParams.spinRange_midTime.fkdot[0] + usefulParams.spinRange_midTime.fkdotBand[0];
 	ComputeNumExtraBins(&status, &semiCohPar, 0, freqHighest, dFreqStack);
 	
@@ -984,7 +999,7 @@ int MAIN( int argc, char *argv[]) {
 	extraBinsfdot = (UINT4)(tObs * (nf1dotRes - 1) * df1dotRes / dFreqStack + 0.5);
 	
 	semiCohPar.extraBinsFstat += extraBinsfdot;    
-            
+	
 	/* allocate fstat memory */
 	binsFstatSearch = (UINT4)(usefulParams.spinRange_midTime.fkdotBand[0]/dFreqStack + 1e-6) + 1;
 	binsFstat1 = binsFstatSearch + 2*semiCohPar.extraBinsFstat;
@@ -1007,24 +1022,24 @@ int MAIN( int argc, char *argv[]) {
 	} /* loop over stacks */
       } /* fstat memory allocation block */
       
-
-      /* loop over fdot values
-	 -- spindown range and resolutionhas been set earlier */
+      
+	/* loop over fdot values
+	   -- spindown range and resolutionhas been set earlier */
       for ( ifdot = 0; ifdot < nf1dot; ifdot++)
 	{
-
+	  
 	  LogPrintf(LOG_DETAIL, "Analyzing %d/%d Coarse sky grid points and %d/%d spindown values\n", 
-			    skyGridCounter, thisScan.numSkyGridPoints, ifdot+1, nf1dot);    
-	  	  
+		    skyGridCounter, thisScan.numSkyGridPoints, ifdot+1, nf1dot);    
+	  
 	  /* calculate the Fstatistic for each stack*/
 	  LogPrintf(LOG_DETAIL, "Starting Fstat calculation for each stack...");
 	  for ( k = 0; k < nStacks; k++) {
-
+	    
 	    /* set spindown value for Fstat calculation */
 	    thisPoint.fkdot[1] = usefulParams.spinRange_midTime.fkdot[1] + ifdot * df1dot;
 	    thisPoint.fkdot[0] = fstatVector.data[k].f0;
 	    /* thisPoint.fkdot[0] = usefulParams.spinRange_midTime.fkdot[0]; */
-
+	    
 	    /* this is the most costly function. We here allow for using an architecture-specific optimized
 	       function from e.g. a local file instead of the standard ComputeFStatFreqBand() from LAL */
 	    LAL_CALL( COMPUTEFSTATFREQBAND ( &status, fstatVector.data + k, &thisPoint, 
@@ -1039,84 +1054,97 @@ int MAIN( int argc, char *argv[]) {
 	      for (k = 0; k < nStacks; k++)
 		LAL_CALL( PrintFstatVec ( &status, fstatVector.data + k, fpFstat1, &thisPoint, refTimeGPS, k+1), &status); 
 	    }
-
+	  
 	  
 	  /*--------------- get candidates from a semicoherent search ---------------*/
-
+	  
 	  /* the input to this section is the set of fstat vectors fstatVector and the 
 	     parameters semiCohPar. The output is the list of candidates in semiCohCandList */
-
-
+	  
+	  
 	  /* set spindown for Hough grid -- same as for Fstat calculation */	  
 	  semiCohPar.fdot = thisPoint.fkdot[1];
- 
+	  
 	  /* the hough option */
 	  /* select peaks */ 	      
 	  if ( (uvar_method == 0) ) {
-
+	    
 	    LogPrintf(LOG_DETAIL, "Starting Hough calculation...\n");
 	    sumWeightSquare = 0.0;
 	    for ( k = 0; k < nStacks; k++)
 	      sumWeightSquare += weightsV->data[k] * weightsV->data[k];
-
+	    
 	    /* set number count threshold based on significance threshold */	    
 	    meanN = nStacks * alphaPeak; 
 	    sigmaN = sqrt(sumWeightSquare * alphaPeak * (1.0 - alphaPeak));
 	    semiCohPar.threshold = uvar_threshold1*sigmaN + meanN;	 
 	    LogPrintf(LOG_DETAIL, "Expected mean number count=%f, std=%f, threshold=%f\n", 
 		      meanN, sigmaN, semiCohPar.threshold);
-
+	    
 	    /* convert fstat vector to peakgrams using the Fstat threshold */
 	    LAL_CALL( FstatVectToPeakGram( &status, &pgV, &fstatVector, uvar_peakThrF), &status);
-	    	    
+	      
 	    /* get candidates */
 	    LAL_CALL ( ComputeFstatHoughMap ( &status, &semiCohCandList, &pgV, &semiCohPar), &status);
-	    
+	      
 	    /* free peakgrams -- we don't need them now because we have the Hough maps */
 	    for (k=0; k<nStacks; k++) 
 	      LALFree(pgV.pg[k].peak);
 	    LALFree(pgV.pg);
 	    LogPrintf(LOG_DETAIL, "...finished Hough calculation\n");
 	    
-	    /* end hough */
+	      /* end hough */
 	  } else if ( uvar_method == 1 ) {
-            /* --- stackslide option --------*/
-            LogPrintf(LOG_DETAIL, "Starting StackSlide calculation...\n");
+	    /* --- stackslide option --------*/
+	    LogPrintf(LOG_DETAIL, "Starting StackSlide calculation...\n");
 	    /* 12/18/06 gm; use threshold from command line as threshold on stackslide sum of F-stat values */
-            semiCohPar.threshold = uvar_threshold1; 
-            LAL_CALL( StackSlideVecF( &status, &semiCohCandList, &fstatVector, &semiCohPar), &status);
+	    semiCohPar.threshold = uvar_threshold1; 
+	    LAL_CALL( StackSlideVecF( &status, &semiCohCandList, &fstatVector, &semiCohPar), &status);
 	    LogPrintf(LOG_DETAIL, "...finished StackSlide calculation\n");
-          }
-
+	  }
+	  
 	  /* print candidates if desired */
 	  /* 	  if ( uvar_printCand1 ) { */
 	  /* 	    LAL_CALL ( PrintSemiCohCandidates ( &status, &semiCohCandList, fpSemiCoh, refTimeGPS), &status); */
 	  /* 	  } */
-
-
+	  
+	  
 	  if( uvar_semiCohToplist) {
 	    /* this is necessary here, because GetSemiCohToplist() might set
 	       a checkpoint that needs some information from here */
 	    SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta,
 			  skyGridCounter,thisScan.numSkyGridPoints);
-
+	    
 	    LogPrintf(LOG_DETAIL, "Selecting toplist from semicoherent candidates\n");
 	    LAL_CALL( GetSemiCohToplist(&status, semiCohToplist, &semiCohCandList, meanN, sigmaN), &status);
 	  }
 	  
 	} /* end loop over coarse grid fdot values */
 
-      skyGridCounter++;
-      
-      /* this is necessary here, because the checkpoint needs some information from here */
-      SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta,
-		    skyGridCounter,thisScan.numSkyGridPoints);
 
-      SET_CHECKPOINT;
+      /* continue forward till the end if uvar_skyPointIndex is set
+	 ---This probably doesn't make sense when checkpointing is turned on */
+      if ( LALUserVarWasSet(&uvar_skyPointIndex) ) 
+	{
+	  while(thisScan.state != STATE_FINISHED) {
+	    skyGridCounter++;
+	    XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
+	  }
+	}
+      else 
+	{      
+	  skyGridCounter++;
+	  
+	  /* this is necessary here, because the checkpoint needs some information from here */
+	  SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta,
+			skyGridCounter,thisScan.numSkyGridPoints);
+	  
+	  SET_CHECKPOINT;
+	  
+	  XLALNextDopplerSkyPos( &dopplerpos, &thisScan );
+	}
 
-      XLALNextDopplerSkyPos( &dopplerpos, &thisScan );
-
-    } /* end while loop over 1st stage coarse skygrid */
+	} /* end while loop over 1st stage coarse skygrid */
 
 #ifdef OUTPUT_TIMING
   {

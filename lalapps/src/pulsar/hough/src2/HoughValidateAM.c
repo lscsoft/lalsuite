@@ -398,8 +398,6 @@ int main( int argc, char *argv[]){
     }  
   }
 
-
-
   /* calculate weights based on amplitude modulation functions */
 
   /* allocate memory for weight */
