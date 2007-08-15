@@ -697,7 +697,7 @@ if opts.run_data_quality:
       print "Running inspiral hipe for injections with vetoes"
       for (injDir, injFile) in cp.items("injections"):
         if category == 2: hipeInjVetoNode[injDir] = {}
-        hipeInjVetoNode[injDir][category] = hipe_setup("analysis", cp, 
+        hipeInjVetoNode[injDir][category] = hipe_setup(injDir, cp, 
             injFile = cp.get("injections", injDir), 
             vetoCat = category, vetoFiles = dqVetoes)
         dag.add_node(hipeInjVetoNode[injDir][category])
