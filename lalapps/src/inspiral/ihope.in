@@ -262,7 +262,7 @@ def hipe_setup(hipeDir, config, injFile=None, dfOnly = False, playOnly = False,
         hipecp.set("input","num-slides", str(numSlides))
 
   # link the executables 
-  if not vetoCat: link_executables(hipeDir, hipecp)
+  link_executables(hipeDir, hipecp)
 
   # return to the directory, write ini file and run hipe
   os.chdir(hipeDir)
