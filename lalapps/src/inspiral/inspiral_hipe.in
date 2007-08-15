@@ -1404,9 +1404,13 @@ else:
 ##############################################################################
 if inj_file or doExtTrig:
   # add the injection coincidence to the sire jobs
-  sire_job.add_ini_opts(cp,'sire-inj')
-  coire_job.add_ini_opts(cp,'coire-inj')
-  coire_slide_job.add_ini_opts(cp,'coire-inj')
+  try: sire_job.add_ini_opts(cp,'sire-inj')
+  except: pass
+
+  try: 
+    coire_job.add_ini_opts(cp,'coire-inj')
+    coire_slide_job.add_ini_opts(cp,'coire-inj')
+  except: pass
  
  
 ##############################################################################
