@@ -30,10 +30,14 @@
  */
 
 /* ---------- includes ---------- */
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include <lalapps.h>
 
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
+#include <lal/LogPrintf.h>
 
 RCSID ("$Id$");
 
@@ -113,6 +117,18 @@ main(int argc, char *argv[])
 
   if (uvar_help) 	/* help requested: we're done */
     exit (0);
+
+  /* ----- make sure output directory exists ---------- */
+  {
+    int ret;
+    ret = mkdir ( uvar_outputDir, 0777);
+    if ( (ret == -1) && ( errno != EEXIST ) )
+      {
+	int errsv = errno;
+	LogPrintf (LOG_CRITICAL, "Failed to create directory '%s': %s\n", uvar_outputDir, strerror(errsv) );
+	return -1;
+      }
+  }
 
   /* use IFO-contraint if one given by the user */
   if ( LALUserVarWasSet ( &uvar_IFO ) ) {
