@@ -741,7 +741,7 @@ print """\n  from a condor submit machine
     unset X509_USER_PROXY
     grid-proxy-init -hours 72
   
-  Enter your pass phrase when promted. The proxy will be valid for 72 hours.
+  Enter your pass phrase when prompted. The proxy will be valid for 72 hours.
   If you expect the LSCdataFind jobs to take longer to complete, increase the
   time specified in the -hours option to grid-proxy-init. You can check that
   the grid proxy has been sucessfully created by executing the command:
