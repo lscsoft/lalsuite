@@ -78,6 +78,7 @@ class hipe_run(object):
   """
   def __init__(self, hipe_dir, base_cp, ifos, log_path):
     self._hipe_dir = hipe_dir
+    self._log_path = log_path
     self._cp = copy.copy(base_cp)
     self._ifos = ifos
   
@@ -92,7 +93,7 @@ class hipe_run(object):
       raise ValueError, "cannot handle less than one or more than four IFOs"
     number_words = {1: "one", 2: "two", 3: "three", 4: "four"}
     for i in range(n):
-      self._hipe_args.append("--%s-ifo" % number_words[n+1])
+      self._hipe_args.append("--%s-ifo" % number_words[i+1])
     
     # set individual ifos to analyze
     for ifo in self._ifos:
@@ -120,7 +121,7 @@ class hipe_run(object):
     for (opt,value) in cpinj.items(injrun):
       self._cp.set('inspinj',opt,value)
 
-    # the start and ent time for the injections that are made
+    # the start and end time for the injections that are made
     # should be a segment adjacent to the on-source segment. It's
     # convenient to do this here since it needs a calculation.
     # We are assuming that there exists one 180s segment before the trigger
@@ -135,6 +136,8 @@ class hipe_run(object):
     if not os.path.isdir(self._hipe_dir):
       os.mkdir(self._hipe_dir)
     os.chdir(self._hipe_dir)
+    if not os.path.isdir(self._log_path):  # in case of relative path
+      os.mkdir(self._log_path)
     self._cp.write(file("config.ini",'w'))
     make_external_call("lalapps_inspiral_hipe %s" % " ".join(self._hipe_args))
     os.chdir("../../")
@@ -205,9 +208,6 @@ parser.add_option("-L","--l1-segments",action="store",type="string",\
 parser.add_option("-t","--triggers",action="append",type="int",\
     default=None, metavar=" TRIGGER TIME",\
     help="time of the trigger for the analysis")
-parser.add_option("-j","--ninjections",action="store",type="int",\
-    default=0, metavar=" NINJ",\
-    help="Number of injection runs to set up")
 parser.add_option("-S","--source-file",action="store",type="string",\
   default=None, metavar=" SOURCE_FILE", help="external trigger source file" )
 # read in the config file
@@ -346,6 +346,7 @@ for trigger in opts.triggers:
   
   basic_analysis = hipe_run("%s/analysis" % idirectory, cp, ifolist, opts.log_path)
   basic_analysis.write_dag()
+  basic_analysis.write_script()
   uberdag.add_node(basic_analysis.get_dag_node())
   
   ############################################################################
@@ -357,10 +358,11 @@ for trigger in opts.triggers:
     ############################################################################
     # set up the injection dag for this interval
     for injrun in cpinj.sections():
-      injection_analysis = hipe_run(injrun, injcp, ifos, opts.log_path)
+      injection_analysis = hipe_run(os.path.join(idirectory, injrun), cp, ifolist, opts.log_path)
       injection_analysis.set_numslides(0)
       injection_analysis.set_injections(cpinj, injrun)
       injection_analysis.write_dag()
+      injection_analysis.write_script()
       uberdag.add_node(injection_analysis.get_dag_node())
 
 uberdag.write_sub_files()
