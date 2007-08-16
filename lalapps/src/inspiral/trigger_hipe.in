@@ -195,7 +195,7 @@ that we need with a note about its current status:
 * grb_summary: exists, but developmental
 
 """
-parser = OptionParser( usage )
+parser = OptionParser(usage, version="$Id$")
 
 parser.add_option("-v", "--verbose", action="store_true",default=False,\
   help="make things verbose" )
