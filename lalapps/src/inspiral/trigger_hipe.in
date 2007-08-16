@@ -85,7 +85,7 @@ class hipe_run(object):
     self._hipe_args = ["--output-segs",
       "--log-path=%s" % log_path, "--config-file=config.ini",
       "--datafind", "--template-bank", "--inspiral", "--coincidence",
-      "--trigbank", "--inspiral-veto", "--second-coinc"]
+      "--trigbank", "--inspiral-veto", "--second-coinc", "--write-script"]
     
     # determine how many ifos to analyze
     n = len(self._ifos)
@@ -346,7 +346,6 @@ for trigger in opts.triggers:
   
   basic_analysis = hipe_run("%s/analysis" % idirectory, cp, ifolist, opts.log_path)
   basic_analysis.write_dag()
-  basic_analysis.write_script()
   uberdag.add_node(basic_analysis.get_dag_node())
   
   ############################################################################
@@ -362,7 +361,6 @@ for trigger in opts.triggers:
       injection_analysis.set_numslides(0)
       injection_analysis.set_injections(cpinj, injrun)
       injection_analysis.write_dag()
-      injection_analysis.write_script()
       uberdag.add_node(injection_analysis.get_dag_node())
 
 uberdag.write_sub_files()
