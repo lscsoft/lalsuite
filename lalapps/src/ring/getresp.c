@@ -24,6 +24,7 @@
 #include <lal/LALStdio.h>
 #include <lal/AVFactories.h>
 #include <lal/FrameCache.h>
+#include <lal/FrequencySeries.h>
 #include <lal/FrameStream.h>
 #include <lal/Calibration.h>
 #include <lal/Units.h>
@@ -48,7 +49,8 @@ COMPLEX8FrequencySeries * get_response(
     REAL8        dataDuration,
     REAL8        dataSampleRate,
     REAL4        responseScale,
-    int          impulseResponse
+    int          impulseResponse,
+    const char  *channel_name
     )
 {
   COMPLEX8FrequencySeries *response;
@@ -58,7 +60,7 @@ COMPLEX8FrequencySeries * get_response(
         dataSampleRate, responseScale );
   else
     response = get_frame_response( cacheName, ifoName, epoch, dataDuration,
-        dataSampleRate, responseScale );
+        dataSampleRate, responseScale, channel_name );
 
   return response;
 }
@@ -109,7 +111,8 @@ COMPLEX8FrequencySeries * get_frame_response(
     LIGOTimeGPS *epoch,
     REAL8        dataDuration,
     REAL8        dataSampleRate,
-    REAL4        responseScale
+    REAL4        responseScale,
+    const char  *channel_name
     )
 {
   LALStatus                status   = blank_status;
@@ -124,21 +127,19 @@ COMPLEX8FrequencySeries * get_frame_response(
   char ifo[3];
   UINT4 npoints;
   UINT4 k;
+  static const char func[] = "generate_response";
+  memset(&calfacts, 0, sizeof(calfacts));
 
   /* create frequency series */
-  response = LALCalloc( 1, sizeof( *response ) );
-  if ( ! response )
-    return NULL;
-
-  /* allocate data memory and set metadata */
   npoints = floor( dataDuration * dataSampleRate + 0.5 ); /* round */
-  LALSnprintf( response->name, sizeof( response->name ),
-      "%s:CAL-RESPONSE", ifoName );
-  response->deltaF      = 1.0/dataDuration;
-  response->epoch       = *epoch;
-  response->sampleUnits = strainPerCount;
-  response->data        = XLALCreateCOMPLEX8Vector( npoints/2 + 1 );
+  response = XLALCreateCOMPLEX8FrequencySeries(channel_name, epoch, 0.0, 1.0 / dataDuration, &strainPerCount, npoints / 2 + 1);
 
+  if(!response) 
+  {
+    XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+    return NULL;
+  }
+    
   verbose("obtaining calibration information from cache file %s\n", cacheName);
 
   /* create cache from cachefile name */

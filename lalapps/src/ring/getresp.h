@@ -39,7 +39,8 @@ COMPLEX8FrequencySeries * get_response(
     REAL8        dataDuration,
     REAL8        dataSampleRate,
     REAL4        responseScale,
-    int          impulseResponse
+    int          impulseResponse,
+    const char  *channel_name
     );
 
 
@@ -60,7 +61,8 @@ COMPLEX8FrequencySeries * get_frame_response(
     LIGOTimeGPS *epoch,
     REAL8        dataDuration,
     REAL8        dataSampleRate,
-    REAL4        responseScale
+    REAL4        responseScale,
+    const char *channel_name
     );
 
 
