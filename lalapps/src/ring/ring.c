@@ -284,7 +284,7 @@ static REAL4TimeSeries *ring_get_data( struct ring_params *params )
     /* inject ring signals */
     if ( params->injectFile ) 
       inject_signal( channel, ring_inject, params->injectFile,
-          params->calibCache, 1.0 ); 
+          params->calibCache, 1.0, params->channel ); 
     if ( params->writeRawData )
        write_REAL4TimeSeries( channel );  
         
@@ -317,7 +317,7 @@ static COMPLEX8FrequencySeries *ring_get_response( struct ring_params *params )
   {
   response = get_response( params->calibCache, params->ifoName,
         &params->startTime, params->segmentDuration, params->sampleRate,
-        params->dynRangeFac, params->strainData ); 
+        params->dynRangeFac, params->strainData, params->channel ) ; 
     if ( params->writeResponse ) /* write response */
       write_COMPLEX8FrequencySeries( response );
   }

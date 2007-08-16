@@ -30,6 +30,6 @@
 
 typedef enum { ring_inject, inspiral_inject } inject_type;
 int inject_signal( REAL4TimeSeries *series, int injectSignalType, 
-    const char *injectFile, const char *calCacheFile, REAL4 responseScale );
+    const char *injectFile, const char *calCacheFile, REAL4 responseScale, const char  *channel_name );
 
 #endif /* INJSGNL_H */

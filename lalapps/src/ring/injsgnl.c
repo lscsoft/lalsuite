@@ -38,7 +38,7 @@ RCSID( "$Id$" );
 
 /* routine to inject a signal with parameters read from a LIGOLw-format file */
 int inject_signal( REAL4TimeSeries *series, int injectSignalType, 
-    const char *injectFile, const char *calCacheFile, REAL4 responseScale )
+    const char *injectFile, const char *calCacheFile, REAL4 responseScale, const char  *channel_name )
 {
   /* note: duration is only used for response, and can be relatively coarse */
   const REAL8 duration = 16; /* determines deltaF=1/dataDuration Hz*/
@@ -103,7 +103,7 @@ int inject_signal( REAL4TimeSeries *series, int injectSignalType,
 
     /* this gets an impulse response if we have strain data */
     response = get_response( calCacheFile, ifoName, &epoch, duration,
-        sampleRate, responseScale, strainData );
+        sampleRate, responseScale, strainData, channel_name );
 
     /* units must be counts for inject; reset below if they were strain */
     series->sampleUnits = lalADCCountUnit;
