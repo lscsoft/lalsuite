@@ -76,11 +76,12 @@ class hipe_run(object):
   """
   This class is intended to represent single run of lalapps_inspiral_hipe.
   """
-  def __init__(self, hipe_dir, base_cp, ifos, log_path):
+  def __init__(self, hipe_dir, base_cp, ifos, log_path, verbose=False):
     self._hipe_dir = hipe_dir
     self._log_path = log_path
     self._cp = copy.copy(base_cp)
     self._ifos = ifos
+    self._verbose = verbose
   
     self._hipe_args = ["--output-segs",
       "--log-path=%s" % log_path, "--config-file=config.ini",
@@ -139,7 +140,8 @@ class hipe_run(object):
     if not os.path.isdir(self._log_path):  # in case of relative path
       os.mkdir(self._log_path)
     self._cp.write(file("config.ini",'w'))
-    make_external_call("lalapps_inspiral_hipe %s" % " ".join(self._hipe_args))
+    make_external_call("lalapps_inspiral_hipe %s" % " ".join(self._hipe_args),
+      show_stdout=self._verbose, show_command=self._verbose)
     os.chdir("../../")
   
   def get_dag_node(self):
@@ -344,7 +346,7 @@ for trigger in opts.triggers:
   # In doing this, we simply copy the configuration file into the
   # sub-directory and then run the dag generation script.
   
-  basic_analysis = hipe_run("%s/analysis" % idirectory, cp, ifolist, opts.log_path)
+  basic_analysis = hipe_run("%s/analysis" % idirectory, cp, ifolist, opts.log_path, verbose=opts.verbose)
   basic_analysis.write_dag()
   uberdag.add_node(basic_analysis.get_dag_node())
   
@@ -357,7 +359,7 @@ for trigger in opts.triggers:
     ############################################################################
     # set up the injection dag for this interval
     for injrun in cpinj.sections():
-      injection_analysis = hipe_run(os.path.join(idirectory, injrun), cp, ifolist, opts.log_path)
+      injection_analysis = hipe_run(os.path.join(idirectory, injrun), cp, ifolist, opts.log_path, verbose=opts.verbose)
       injection_analysis.set_numslides(0)
       injection_analysis.set_injections(cpinj, injrun)
       injection_analysis.write_dag()
