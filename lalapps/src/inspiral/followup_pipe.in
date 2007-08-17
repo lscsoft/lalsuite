@@ -36,7 +36,8 @@ from glue.ligolw import utils
 from pylal import CoincInspiralUtils
 from pylal.fu_utils import *
 from pylal.fu_writeXMLparams import * 
-from pylal import Fr      
+from pylal import Fr
+from lalapps import inspiral      
 
 ##############################################################################
 # redefine the columns of interest
@@ -55,37 +56,50 @@ def inspiralFollowup(inspJob, procParams, triggerTime, bankFile, injFile):
   """
   Set up an instance of an inspiral followup job
   """
-  insp = InspiralNode(inspJob)
+  insp = inspiral.InspiralNode(inspJob)
   insp.add_var_opt("write-snrsq","")
   insp.add_var_opt("write-chisq","")
   insp.add_var_opt("write-spectrum","")
   insp.set_bank(bankFile)
-  insp.set_user_tag("FOLLOWUP_" + str(time))
-  insp.set_trig_start( int(triggerTime) - 1) )
+
+  insp.set_user_tag("FOLLOWUP_" + str(triggerTime))
+  insp.__usertag = "FOLLOWUP_" + str(triggerTime)
+
+  insp.set_trig_start( int(triggerTime) - 1)
   insp.set_trig_end( int(triggerTime) + 1 )
-  if injFile: insp.set_injection( injFile )
+  if injFile: insp.set_injections( injFile )
 
-  skipParams = ['bank-file', 'user-tag', 'injection-file', 'trig-start-time',
-                'trig-end-time', 'enable-rsq-veto', 'disable-rsq-veto']
+  skipParams = ['minimal-match', 'bank-file', 'user-tag', 'injection-file', 'trig-start-time', 'trig-end-time']
 
-  for row in proc:
+  for row in procParams:
     param = row.param.strip("-")
     value = row.value
     
     if param in skipParams:
       continue
 
-    elif param == 'gps-end-time':
-      insp.set_end(value)
+    insp.add_var_opt(param,value)
 
-    elif param == 'gps-start-time':
-      insp.set_start(value)
+    if param == 'gps-end-time':
+      #insp.set_end(value)
+      insp.__end = value
 
-    elif param == 'ifo-tag' 
-      insp.set_ifo_tag(value)
+    if param == 'gps-start-time':
+      #insp.set_start(value)
+      insp.__start = value
+      
+    if param == 'ifo-tag':
+      #insp.set_ifo_tag(value) 
+      insp.__ifotag = value
 
-    elif param == 'channel-name':
-      insp.set_ifo(value[0:2])
+    if param == 'channel-name':
+      #insp.set_ifo(value[0:2])
+      insp.inputIfo = value[0:2]
+
+  # the output_file_name is required by the child job (plotSNRCHISQNode) 
+  insp.output_file_name = insp.inputIfo + "-INSPIRAL_" + insp.__ifotag + "_" + insp.__usertag + "-" + insp.__start + "-" + str(int(insp.__end)-int(insp.__start)) + ".xml"
+
+  return insp
 
     
 class plotSNRCHISQJob(pipeline.CondorDAGJob):
@@ -570,7 +584,7 @@ print "\n.......Found " + str(len(followuptrigs)) + " trigs to follow up"
 
 ############ SET UP THE REQUESTED JOBS ########################################
 # trigJob      = trigBankFollowUpJob(opts,cp)
-inspJob        = inspiralFollowUpJob(opts,cp)
+inspJob        = inspiral.InspiralJob(cp)
 plotJob        = plotSNRCHISQJob(opts,cp)
 dataJob        = pipeline.LSCDataFindJob('datafind_cache','logs',cp)
 #qconfJob       = qconfigureJob(opts,cp) 
@@ -860,9 +874,13 @@ for trig in followuptrigs:
     if trig.gpsTime[ifo]:
       # build the string of the relevant trigbank file name
       trigbank_file_name = ifo + '-TRIGBANK_FOLLOWUP_' + str(trig.gpsTime[ifo]) + '.xml'
+      if len(string.strip(cp.get('triggers','injection-file'))) > 0:
+        injectionFile = string.strip(cp.get('triggers','injection-file'))
+      else:
+        injectionFile = None
       try:
-        inspiralNode = inspiralFollowUpNode(inspJob,trig.gpsTime[ifo],\
-           inspiral_process_params[ifo],opts,trigbank_file_name)
+        inspiralNode = inspiralFollowup(inspJob,inspiral_process_params[ifo],\
+           trig.gpsTime[ifo],trigbank_file_name,injectionFile)
         #if trigNode and opts.trig_bank: # only add a parent if it exists
         #  inspiralNode.add_parent(trigNode)
         if opts.inspiral:
