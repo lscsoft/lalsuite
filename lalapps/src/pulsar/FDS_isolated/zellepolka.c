@@ -391,21 +391,17 @@ int main(INT4 argc,CHAR *argv[])
 {
   setlocale(LC_ALL, "C");
   
-  INT4  CLength=0;
-  
-  INT4 *SortedCListi = NULL;
-  INT4 *cellListi = NULL;
-  /* 
-  CandidateList *SortedC = NULL;
-  CellData *cell = NULL;
-  */
-
+  PolkaConfigVars PCV; /* Configuration variables */
+  REAL8 DeltaDeltaFlex; /* Varying coincidence window in delta */
+  INT4  CLength=0; /* Length of the candidate-events list */
+  INT4 *SortedCListi = NULL; /* List of candidate-events INT-labels */
+  INT4 *cellListi = NULL;  /* List of cell INT-labels */
   INT4 icell, icand, ncell, icell2;
-  INT4 cc1,cc2,cc3,cc4,bb1,bb2,bb3,bb4,selectGrid;
-  INT4 sizecells;
-
-  PolkaConfigVars PCV;
-  REAL8 DeltaDeltaFlex;
+  INT4 cc1,cc2,cc3,cc4,bb1,bb2,bb3,bb4; /* cell-grid shifting variables */
+  INT4 selectGrid; /* denotes one of the 16 shifted cell-grid */
+  INT4 sizecells; /* Length of the cell list */
+  INT4 AlphaTwoPiIdx=0; /* Cell-index of an candidate events located at alpha=2*Pi*/
+  REAL8 epsmove=1e-5;
 
   LALStatus *lalStatus = &global_status;
   lalDebugLevel = 0 ;  
@@ -456,22 +452,36 @@ int main(INT4 argc,CHAR *argv[])
 	    LAL_CALL( PrepareCells( lalStatus, &cell, sizecells ), lalStatus);  
 
 	   
-	    
-	    for (icand=0;icand<CLength;icand++) {
+	    /* Assigning four indices to each candidate event */
+	    for (icand=0;icand<CLength;icand++) 
+	      {
+		/* Assign the FREQUENCY index to the candidate event */
 		SortedC[icand].iFreq=(INT4) ( ((SortedC[icand].f)/(PCV.Deltaf)) + (cc1 * 0.5)  );
-		
-		/* This was used for an isotropic sky-grid */
-		/*SortedC[icand].iDelta=(INT4)(SortedC[icand].Delta/(PCV.DeltaDelta)  + PCV.ShiftDelta ); */
-		
-		/* This is used for the anisotropic sky-grid produced by a metric. */
+	      
+		/* Assign the DELTA index to the candidate event */
+		  /* This was used for an isotropic sky-grid: */
+		  /* SortedC[icand].iDelta=(INT4)(SortedC[icand].Delta/(PCV.DeltaDelta)  + PCV.ShiftDelta ); */
+		  /* This is used for the anisotropic sky-grid produced by a metric. */
 		DeltaDeltaFlex = PCV.DeltaAlpha + PCV.DeltaDelta * exp( -(PCV.Kappa)*(SortedC[icand].Delta)*(SortedC[icand].Delta) ); 
 		SortedC[icand].iDelta=(INT4)floor(( ((SortedC[icand].Delta)/(DeltaDeltaFlex)) + (cc2 * 0.5)  )); 
 		
+		/* Assign the ALPHA index to the candidate event */
 		SortedC[icand].iAlpha=(INT4)( (SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
-		SortedC[icand].iF1dot=(INT4)floor(( ((SortedC[icand].F1dot)/(PCV.DeltaF1dot))  + (cc4 * 0.5)  ));
-		SortedC[icand].iCand=icand; /* Keep the original ordering before sort to refer the orignal data later. */
+		if ( cc3 == 1 ) {
+		  AlphaTwoPiIdx=(INT4)( (LAL_TWOPI*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
+		  if ( AlphaTwoPiIdx == SortedC[icand].iAlpha ) {
+		    SortedC[icand].Alpha = epsmove;
+		    SortedC[icand].iAlpha=(INT4)( (SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
+		  }
+		}
 
-		/*SortedCList[icand].nummer=icand; List for sorting purposes. */
+		/* Assign the F1DOT index to the candidate event */
+		SortedC[icand].iF1dot=(INT4)floor(( ((SortedC[icand].F1dot)/(PCV.DeltaF1dot))  + (cc4 * 0.5)  ));
+		
+		/* Keep the original ordering before sort to refer the orignal data later. */
+		SortedC[icand].iCand=icand;
+
+		/* List for sorting purposes, gives speed while rearranging items in memory */
 		SortedCListi[icand]=icand;
 	    }
 
@@ -801,7 +811,7 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
 
 
  
-
+  /* Allocate memory for the histogram of coincidences */
   if( (count = (INT4 *) LALCalloc( (size_t) (nmax + 1), sizeof(INT4))) == NULL ) {
     LALPrintError("Could not allocate Memory! \n");
     ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
@@ -825,7 +835,7 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
 #endif
 
 
-  /* number counts and find the most significant event. */
+  /* compute the histogram of coincidences and find the most significant cell */
   for(icell=0;icell<(*ncell);icell++) {
     nc=cell[CellListi[icell]].nCand;
     count[nc] += 1;
@@ -837,7 +847,8 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
 
 
   /* ------------------------------------------------------------- */
-  /* output summary table. */
+  /* output the summary table including the histogram of coincidences and 
+     candidate events of most coincident cell */
   if(lalDebugLevel < 3 ) {
     fprintf(stderr,"%% Most significant cell : freq [Hz]\tdec [rad]\tra [rad]  \tF1dot \t\t   #[events]\tSig" "\n");
     fprintf(stderr, "%%\t\t\t     ");
@@ -857,7 +868,7 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
       fprintf(stderr, "%7d",count[nc]);
     }
     
-    fprintf(stderr,"\n%%\n%% Candidates of most coincident cell : \n%% data-seg \tfreq [Hz]\tdec [rad]\tra [rad]  \tF1dot[Hz/s]\t\t2F" "\n");
+    fprintf(stderr,"\n%%\n%% Candidate events of most coincident cell : \n%% data-seg \tfreq [Hz]\tdec [rad]\tra [rad]  \tF1dot[Hz/s]\t\t2F" "\n");
     TRY( print_cand_of_most_coin_cell( lalStatus->statusPtr, &cell[idxmaxcoin], CList), lalStatus);
 
   
