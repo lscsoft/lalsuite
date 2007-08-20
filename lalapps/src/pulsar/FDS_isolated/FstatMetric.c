@@ -72,6 +72,8 @@ RCSID ("$Id$");
 /* uncomment the following to turn off range-checking in GSL vector-functions */
 /* #define GSL_RANGE_CHECK_OFF 1*/
 
+#define METRIC_FORMAT	"%.15g"		/* fprintf-format used for printing metric components */
+
 /*---------- local defines ---------- */
 #define TRUE 		(1==1)
 #define FALSE 		(1==0)
@@ -230,7 +232,7 @@ int computeFstatMetric ( gsl_matrix *gF_ij, gsl_matrix *gFav_ij,
 			 ConfigVariables *cfg );
 int computePhaseMetric ( gsl_matrix *g_ij, const PhaseDerivs *dphi, const REAL8Vector *GLweights );
 
-int project_metric( gsl_matrix *ret_ij, gsl_matrix *g_ij, const INT4 coordinate );
+int project_metric( gsl_matrix *ret_ij, gsl_matrix *g_ij, const UINT4 coordinate );
 int outer_product ( gsl_matrix *ret_ij, const gsl_vector *u_i, const gsl_vector *v_j );
 int symmetrize ( gsl_matrix *mat );
 REAL8 quad_form ( const gsl_matrix *mat, const gsl_vector *vec );
@@ -363,11 +365,11 @@ main(int argc, char *argv[])
 	      fprintf ( fpMetric, "\nA = %.16g; B = %.16g; C = %.16g; D = %.16g;\n",
 			config.Ad, config.Bd, config.Cd, config.Dd );
 	      
-	      fprintf ( fpMetric, "\ngF_ij = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, "%.6g",  gF_ij );
-	      fprintf ( fpMetric, "\ngFav_ij = \\\n");XLALfprintfGSLmatrix ( fpMetric, "%.6g",  gFav_ij );
-	      fprintf ( fpMetric, "\nm1_ij = \\\n");  XLALfprintfGSLmatrix ( fpMetric, "%.6g",  m1_ij );
-	      fprintf ( fpMetric, "\nm2_ij = \\\n");  XLALfprintfGSLmatrix ( fpMetric, "%.6g",  m2_ij );
-	      fprintf ( fpMetric, "\nm3_ij = \\\n");  XLALfprintfGSLmatrix ( fpMetric, "%.6g",  m3_ij );
+	      fprintf ( fpMetric, "\ngF_ij = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  gF_ij );
+	      fprintf ( fpMetric, "\ngFav_ij = \\\n");XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  gFav_ij );
+	      fprintf ( fpMetric, "\nm1_ij = \\\n");  XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  m1_ij );
+	      fprintf ( fpMetric, "\nm2_ij = \\\n");  XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  m2_ij );
+	      fprintf ( fpMetric, "\nm3_ij = \\\n");  XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  m3_ij );
 	      
 	      fprintf ( fpMetric, "\nmF = %.16g;\nmFav = %.16g;\nmMin = %.16g;\nmMax = %.16g;\n\n",
 			mF, mFav, mMin, mMax );
@@ -396,7 +398,7 @@ main(int argc, char *argv[])
 		  project_metric(gamma_ij, g_ij, (uvar.projection - 1) );
 		  mm_projected = quad_form ( gamma_ij, config.dopplerOffset );
 		  gprefix = "gPh_projected_ij = \\\n"; mprefix = "mPh_projected = ";
-		  fprintf ( fpMetric, gprefix ); XLALfprintfGSLmatrix ( fpMetric, "%.6g", gamma_ij );
+		  fprintf ( fpMetric, gprefix ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT, gamma_ij );
 		  fprintf ( fpMetric, "\n%s %.16g;\n\n", mprefix, mm_projected );
 		} 
 		gprefix = "gPh_ij = \\\n"; mprefix = "mPh = ";
@@ -405,7 +407,7 @@ main(int argc, char *argv[])
 	      } else if ( metricType == METRIC_PTOLE ) {
 		gprefix = "gPtole_ij = \\\n"; mprefix = "mPtole = ";
 	      }
-	      fprintf ( fpMetric, gprefix ); XLALfprintfGSLmatrix ( fpMetric, "%.6g", g_ij );
+	      fprintf ( fpMetric, gprefix ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT, g_ij );
 	      fprintf ( fpMetric, "\n%s %.16g;\n\n", mprefix, mm );
 	      
 	    } /* if fpMetric */
@@ -469,7 +471,7 @@ main(int argc, char *argv[])
 	    gsl_vector_set ( dopplerOffsetCanon, 2, dkY );
 	    gsl_vector_set ( dopplerOffsetCanon, 3, dom1 );
 
-	    LogPrintf (LOG_DETAIL, "Offsets: dom0 = %.6g, dkX = %.6g, dkY = %.6g, dom1 = %.6g\n", dom0, dkX, dkY, dom1 );
+	    LogPrintf (LOG_DETAIL, "Offsets: dom0 = %.15g, dkX = %.15g, dkY = %.15g, dom1 = %.15g\n", dom0, dkX, dkY, dom1 );
 
 	    if ( 0 != XLALFlatMetricCW ( gFlat_ij, config.refTime, config.startTime, Tspan, config.edat ) )
 	      {
@@ -483,7 +485,7 @@ main(int argc, char *argv[])
 		const CHAR *gprefix = "gFlat_ij = \\\n";
 		const CHAR *mprefix = "mFlat = ";
 		
-		fprintf ( fpMetric, gprefix); XLALfprintfGSLmatrix ( fpMetric, "%.6g", gFlat_ij );
+		fprintf ( fpMetric, gprefix); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT, gFlat_ij );
 		fprintf ( fpMetric, "\n%s %.16g;\n\n", mprefix, mm );
 	      } /* if fpMetric */
 	    
@@ -1429,12 +1431,10 @@ FreeMem ( LALStatus *status, ConfigVariables *cfg )
  * return 0 = OK, -1 on error.                                                                                                                                                  
  */
 int 
-project_metric( gsl_matrix *ret_ij, gsl_matrix * g_ij, const INT4 c )
+project_metric( gsl_matrix *ret_ij, gsl_matrix * g_ij, const UINT4 c )
 {
   UINT4 i,j;
 
-  if ( c < 0 )
-    return -1;
   if ( !ret_ij )
     return -1;
   if ( !g_ij )
