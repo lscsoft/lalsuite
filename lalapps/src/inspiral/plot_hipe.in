@@ -569,8 +569,9 @@ if opts.plotnumtemplates:
 
   plotnumtemplates_jobs = {}
 
-  plotnumtemplates_jobs = PlotNumtemplatesJob(cp)
-  plotnumtemplates_jobs.set_sub_file( basename + '.plotnumtemplates_' + subsuffix )
+  for ifo in ifo_list:
+    plotnumtemplates_jobs[ifo] = PlotNumtemplatesJob(cp)
+    plotnumtemplates_jobs[ifo].set_sub_file( basename + '.plotnumtemplates_' + subsuffix )
 
   all_jobs = []
   all_jobs.extend(plotnumtemplates_jobs.values())
@@ -589,7 +590,7 @@ if opts.plotinjnum:
   
   plotinjnum_jobs = {}
   
-  for ifo in ifocombos:
+  for ifo in ifo_combos:
     plotnumtemplates_jobs[ifo] = PlotNumtemplatesJob(cp) 
     plotnumtemplates_jobs[ifo].set_sub_file( basename + '.plotnumtemplates_' + ifo + subsuffix )
   all_jobs = []
