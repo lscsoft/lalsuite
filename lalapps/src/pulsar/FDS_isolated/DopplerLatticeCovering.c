@@ -192,8 +192,10 @@ InitDopplerLatticeScan ( LALStatus *status,
   if ( XLALFlatMetricCW ( gij, init->searchRegion.refTime, init->startTime, init->Tspan, init->ephemeris ) ) {
     ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );
   }
+#ifdef DEBUG_ANS
   fprintf ( stderr, "\ngij = ");
   XLALfprintfGSLmatrix ( stderr, "% 15.9e ", gij );
+#endif
 
   /* ----- reduce metric to subspace with actual nonzero search-bands !! ----- */
   if ( ( gijLattice = gsl_matrix_calloc ( ret->dimLattice, ret->dimLattice )) == NULL ) {
@@ -213,19 +215,23 @@ InitDopplerLatticeScan ( LALStatus *status,
 	} /* for j < dimLattice */
     } /* for i < dimLattice */
 
+#ifdef DEBUG_ANS
   fprintf ( stderr, "gijLattice = ");
   XLALfprintfGSLmatrix ( stderr, "% 15.9e ", gijLattice );
+#endif
 
   /* ----- compute generating matrix for the lattice ----- */
   if ( XLALFindCoveringGenerator (&(ret->latticeGenerator), LATTICE_TYPE_ANSTAR, sqrt(init->metricMismatch), gijLattice ) ) {
     ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );
   }
+#ifdef DEBUG_ANS
   fprintf ( stderr, "generator = ");
   XLALfprintfGSLmatrix ( stderr, "% 15.9e ", ret->latticeGenerator );
 
   fprintf ( stderr, "origin = ");
   XLALfprintfGSLvector ( stderr, "% .9e ", ret->canonicalOrigin );
   fprintf ( stderr, "\n");
+#endif
 
   /* ----- prepare Index-counters to generate lattice-points ----- */
   if ( (ret->latticeIndex = gsl_vector_int_calloc ( ret->dimLattice )) == NULL ) {
@@ -679,6 +685,7 @@ isDopplerInsideBoundary ( const dopplerParams_t *doppler,  const dopplerBoundary
   if ( (insideSky = vect2DInPolygon ( (const vect2D_t*)skyPoint, &(boundary->skyRegion) )) < 0 )
     return -1;
 
+#ifdef DEBUG_ANS
   /* ===== debug ===== */
   {
     FILE *fp = fopen ("gridpoints.dat", "ab");
@@ -686,6 +693,7 @@ isDopplerInsideBoundary ( const dopplerParams_t *doppler,  const dopplerBoundary
     fprintf_vect2D ( fp, (const vect2D_t*)skyPoint, boundary->hemisphere );
     fclose(fp);
   }
+#endif
 
   insideSpins = TRUE;
   for ( s=0; s < NUM_SPINS; s ++ )
@@ -795,6 +803,7 @@ setupSearchRegion ( LALStatus *status, DopplerLatticeScan *scan, const DopplerRe
     scan->boundary.skyRegion.data[i][1] = points3D->data[i][1];
   }
 
+#ifdef DEBUG_ANS
   /* ===== debug ===== */
   {
     FILE *fp = fopen ( "boundary.dat", "wb" );
@@ -807,7 +816,7 @@ setupSearchRegion ( LALStatus *status, DopplerLatticeScan *scan, const DopplerRe
 
     fclose ( fp );
   } 
-
+#endif
 
 
   /* ----- spins ----- */
