@@ -662,7 +662,7 @@ tagexpnCoeffs {
    /* Taylor expansion coefficents in f(t)*/
    REAL8 ftaN, fta2, fta3, fta4, fta5, fta6, fta7, ftl6; 
    /* Taylor expansion coefficents in psi(f) in the Fourier phase*/
-   REAL8 pfaN, pfa2, pfa3, pfa4, pfa5, pfa6, pfa7, pfl5; 
+   REAL8 pfaN, pfa2, pfa3, pfa4, pfa5, pfa6, pfa7, pfl5, pfl6; 
    /* Taylor expansion for the spinning case */
    REAL8 ST[9], thetahat ;
 
