@@ -65,67 +65,20 @@ the Running median method.
 
 */
 
-
-/*----------- laldoc documentation -------------- */
-
-/************************************ <lalVerbatim file="NormalizeSFTRngMedCV">
-Author: Krishnan, B.
-$Id$
-************************************* </lalVerbatim> */
-
-/* <lalLaTeX>  *******************************************************
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Module \texttt{NormalizeSFTRngMed.c}}
-\label{ss:NormalizeSFTRngMed.c}
-
-
-Normalizing SFTs using the Running median
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{NormalizeSFTRngMedD}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Description}
-
-Normalizing SFTs using the Running Median
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Uses}
-\begin{verbatim}
-LALHO()
-\end{verbatim}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Notes}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{NormalizeSFTRngMedCV}}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-*********************************************** </lalLaTeX> */
-
-
 #include <lal/NormalizeSFTRngMed.h>
-
 
 
 NRCSID (NORMALIZESFTRNGMEDC, "$Id$");
 
 
-/********************************* <lalVerbatim file="NormalizeSFTRngMedD"> */
-/** \brief Calculate the modulus square of a single SFT 
-    \param *SFT : pointer to a SFT
-    \param *periodo : pointer to REAL8FrequencySeries containing modulus square of SFT data 
-*/
-void LALSFTtoPeriodogram (LALStatus    *status,
-			  REAL8FrequencySeries    *periodo,
-			  const COMPLEX8FrequencySeries *SFT)
-{/*   *********************************************  </lalVerbatim> */
-
-
+/** Calculate the "periodogram" of an SFT, ie the modulus-squares of the SFT-data. 
+ */
+void 
+LALSFTtoPeriodogram (LALStatus    *status,
+		     REAL8FrequencySeries    *periodo,	/**< [out] mod squares of SFT data */
+		     const COMPLEX8FrequencySeries *SFT	/**< [in] input SFT */ 
+		     )
+{
   UINT4     length, j;
   REAL8    *out;
   COMPLEX8 *in;
@@ -144,6 +97,7 @@ void LALSFTtoPeriodogram (LALStatus    *status,
   ASSERT (SFT->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
 
   /* copy values from SFT */
+  strcpy ( periodo->name, SFT->name );
   periodo->epoch.gpsSeconds = SFT->epoch.gpsSeconds;
   periodo->epoch.gpsNanoSeconds = SFT->epoch.gpsNanoSeconds;
   periodo->f0 = SFT->f0;
@@ -172,20 +126,15 @@ void LALSFTtoPeriodogram (LALStatus    *status,
 } /* end LALSFTtoPeriodogram() */
 
 
-
-
-/* *******************************  <lalVerbatim file="NormalizeSFTRngMedD"> */
-/** \brief  Calculates running psd for a single periodogram using the running median
-    \param  *periodo : pointer to REAL8FrequencySeries containing square modulus of a SFT
-    \param blockSize : Running median block size
-    \param *psd : pointer to REAL8FrequencySeries containing psd estimate
-
+/** Calculates running median over a single periodogram.
 */
-void LALPeriodoToPSDRngMed (LALStatus  *status,
-			    REAL8FrequencySeries  *psd,
-			    const REAL8FrequencySeries  *periodo,
-			    UINT4                  blockSize)
-{/*   *********************************************  </lalVerbatim> */
+void 
+LALApplyRngMedToPeriodo (LALStatus  *status,
+			 REAL8FrequencySeries  *smoothedPeriodo,	/**< [out] resulting 'smoothed' periodogram */
+			 const REAL8FrequencySeries  *periodo,		/**< [in] input periodogram */
+			 UINT4 blockSize				/**< Running median block size */
+			 )
+{
   UINT4 blocks2;
   UINT4 j;
   UINT4 length;
@@ -201,22 +150,22 @@ void LALPeriodoToPSDRngMed (LALStatus  *status,
   ASSERT (periodo->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
   ASSERT (periodo->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
   ASSERT (periodo->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (psd, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);  
-  ASSERT (psd->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (psd->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
-  ASSERT (psd->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+  ASSERT (smoothedPeriodo, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);  
+  ASSERT (smoothedPeriodo->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+  ASSERT (smoothedPeriodo->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
+  ASSERT (smoothedPeriodo->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
   ASSERT (blockSize > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
 
 
   /* copy values from the periodogram */
-  psd->epoch.gpsSeconds = periodo->epoch.gpsSeconds;
-  psd->epoch.gpsNanoSeconds = periodo->epoch.gpsNanoSeconds;
-  psd->f0 = periodo->f0;
-  psd->deltaF = periodo->deltaF;
+  smoothedPeriodo->epoch.gpsSeconds = periodo->epoch.gpsSeconds;
+  smoothedPeriodo->epoch.gpsNanoSeconds = periodo->epoch.gpsNanoSeconds;
+  smoothedPeriodo->f0 = periodo->f0;
+  smoothedPeriodo->deltaF = periodo->deltaF;
 
   /* check lengths are same */
   length = periodo->data->length;
-  ASSERT (length == psd->data->length, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
+  ASSERT (length == smoothedPeriodo->data->length, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
   ASSERT (length > blockSize, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
 
   blocks2 = blockSize/2; /* integer division */
@@ -225,45 +174,41 @@ void LALPeriodoToPSDRngMed (LALStatus  *status,
   inputV.length = length;
   inputV.data = periodo->data->data;
   mediansV.length= length - blockSize + 1;
-  mediansV.data = psd->data->data + blocks2;    
+  mediansV.data = smoothedPeriodo->data->data + blocks2;    
 
   TRY( LALDRunningMedian2(status->statusPtr, &mediansV, &inputV, rngMedPar), status);
 
   /* copy values in the wings */
   for (j=0; j<blocks2; j++)
-    psd->data->data[j] = psd->data->data[blocks2];
+    smoothedPeriodo->data->data[j] = smoothedPeriodo->data->data[blocks2];
 
   for (j=blocks2+length-blockSize+1; j<length; j++)
-    psd->data->data[j] = psd->data->data[blocks2 + length-blockSize];
+    smoothedPeriodo->data->data[j] = smoothedPeriodo->data->data[blocks2 + length-blockSize];
 
   /* get the bias factor -- for estimating the mean from the median */
   TRY ( LALRngMedBias( status->statusPtr, &medianBias, blockSize ), status);
 
   /* normalize by the bias factor */
   for (j=0; j<length; j++)
-    psd->data->data[j] /= medianBias;
+    smoothedPeriodo->data->data[j] /= medianBias;
 
   DETATCHSTATUSPTR (status);
   /* normal exit */
   RETURN (status);
 
-} /* end LALPeriodoToPSDRngMed() */
+} /* LALApplyRngMedToPeriodo() */
 
 
-
-
-/* *******************************  <lalVerbatim file="NormalizeSFTRngMedD"> */
-/** \brief  Calculates running psd for a single sft using the running median
-    \param  *sft : pointer to COMPLEX8FrequencySeries (the SFT data)
-    \param blockSize : Running median block size
-    \param *psd : pointer to correctly allocated REAL8FrequencySeries containing psd estimate 
-*/
-void LALSFTtoPSDRngMed (LALStatus  *status,
-			REAL8FrequencySeries  *psd,
-			const COMPLEX8FrequencySeries *sft,
-			UINT4                  blockSize)
-{/*   *********************************************  </lalVerbatim> */
-
+/** Calculates estimate for 1-sided PSD of a single sft using the running median 
+ * over the periodogram.
+ */
+void 
+LALSFTtoPSDRngMed (LALStatus  *status,
+		   REAL8FrequencySeries  *psd,		/**< [out] running-median estimate of 1-sided PSD(f) [must be pre-allocated]*/
+		   const COMPLEX8FrequencySeries *sft,	/**< [in]  input SFT */
+		   UINT4 blockSize			/**< Running median block size */
+		   )
+{
   REAL8FrequencySeries periodo;
   INT4 length;
 
@@ -301,7 +246,7 @@ void LALSFTtoPSDRngMed (LALStatus  *status,
   } ENDFAIL (status);
 
   /* calculate the psd */
-  LALPeriodoToPSDRngMed (status->statusPtr, psd, &periodo, blockSize);
+  LALApplyRngMedToPeriodo (status->statusPtr, psd, &periodo, blockSize);
   BEGINFAIL (status) { 
     LALFree (periodo.data->data);
     LALFree (periodo.data);
@@ -319,19 +264,14 @@ void LALSFTtoPSDRngMed (LALStatus  *status,
 
 
 
-
-/* *******************************  <lalVerbatim file="NormalizeSFTRngMedD"> */
-/** \brief Normalizes a sft based on RngMed 
-    \param [out] psd estimate from sft using running median
-    \param *sft : pointer to a SFT which will be normalized
-    \param blockSize : Running median block size
-*/
-void LALNormalizeSFT (LALStatus            *status,
- 		      REAL8FrequencySeries *psd,     /**< [out] psd estimate from sft using running median */
-		      SFTtype              *sft,      /**< SFT to be normalized */
-		      UINT4                blockSize) /**< Running median block size for psd calculation */ 
-{/*   *********************************************  </lalVerbatim> */
-
+/** Normalize an sft based on RngMed estimated PSD.
+ */
+void
+LALNormalizeSFT (LALStatus            *status,
+		 REAL8FrequencySeries *psd,     	/**< [out] psd estimate from sft using running median */
+		 SFTtype              *sft,      	/**< SFT to be normalized */
+		 UINT4                blockSize) 	/**< Running median block size for psd calculation */ 
+{
   UINT4 j;
   REAL8 Sn;
 
@@ -373,21 +313,18 @@ void LALNormalizeSFT (LALStatus            *status,
   DETATCHSTATUSPTR (status);
   /* normal exit */
   RETURN (status);
+
 } /* end LALNormalizeSFT() */
 
 
-
-
-/* *******************************  <lalVerbatim file="NormalizeSFTRngMedD"> */
-/** \brief Function for normalizing a vector of SFTs
-    \param *sftVect  pointer to a vector of SFTs which will be normalized
-    \param blockSize : Running median window size
-*/
-void LALNormalizeSFTVect (LALStatus  *status,
-			  SFTVector  *sftVect,
-			  UINT4     blockSize)
-{/*   *********************************************  </lalVerbatim> */
-  /* normalizes a sft vector using RngMed */
+/** Function for normalizing a vector of SFTs.
+ */
+void
+LALNormalizeSFTVect (LALStatus  *status,
+		     SFTVector  *sftVect,	/**< [in/out] pointer to a vector of SFTs which will be normalized */
+		     UINT4     blockSize	/**< Running median window size */
+		     )
+{
   UINT4 j, lengthsft;
   REAL8FrequencySeries *psd = NULL;
 
@@ -463,15 +400,15 @@ void LALNormalizeSFTVect (LALStatus  *status,
 
 
 
-/** \brief Function for normalizing a multi vector of SFTs in a multi IFO search and also  calculates the PSDs
-    \param [out] **psdvect multi vector of PSD estimates of input SFTs using the running median
-    \param *MultiSFTVect  pointer to a vector of SFTs which will be normalized
-    \param [in] blockSize : Running median window size
-*/
-void LALNormalizeMultiSFTVect (LALStatus      *status,
-			       MultiPSDVector **out,
-			       MultiSFTVector *multsft,
-			       UINT4          blockSize)
+/** Function for normalizing a multi vector of SFTs in a multi IFO search and also 
+ * returns the PSD estimates based on the runnig median.
+ */
+void 
+LALNormalizeMultiSFTVect (LALStatus      *status,
+			  MultiPSDVector **out, 	/**< [out] multi PSD estimates (rngmed) of input SFTs */
+			  MultiSFTVector *multsft,	/**< [in/out] multi-vector of SFTs which will be normalized */
+			  UINT4          blockSize	/**< Running median window size */
+			  )
 {
 
   UINT4 k, j; /* k loops over IFOs and j over SFTs for each IFO */
@@ -581,22 +518,15 @@ void LALNormalizeMultiSFTVect (LALStatus      *status,
 } /* LALNormalizeMultiSFTVect() */
 
 
-
-
-
-
-
-/** \brief Calculate the cross-correlation periodogram from 2 SFTs 
-    \param *sft1 : pointer to first SFT
-    \param *sft2 : pointer to second SFT
-    \param *periodo : pointer to REAL8FrequencySeries containing modulus square of SFT data 
-*/
-void LALSFTstoCrossPeriodogram (LALStatus    *status,
-			  REAL8FrequencySeries    *periodo,
-			  const COMPLEX8FrequencySeries *sft1,
-			  const COMPLEX8FrequencySeries *sft2)
+/** Calculate the cross-correlation periodogram from 2 SFTs. 
+ */
+void
+LALSFTstoCrossPeriodogram (LALStatus    *status,
+			   REAL8FrequencySeries *periodo,	/**< [out] modulus square of SFT data  */
+			   const COMPLEX8FrequencySeries *sft1,	/**< [in] pointer to first SFT  */
+			   const COMPLEX8FrequencySeries *sft2	/**< [in] pointer to second SFT */
+			   )
 {
-
   UINT4     length, j;
   REAL8    *out;
   COMPLEX8 *in1, *in2;
