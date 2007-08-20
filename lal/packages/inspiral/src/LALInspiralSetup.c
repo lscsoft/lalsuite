@@ -48,6 +48,7 @@ The coefficients are used by the function \texttt{LALInspiralChooseModel} to def
 the energy and flux functions by accessing the structure {\tt ak} and are tabulated
 in the two Tables \ref{table:energy} and \ref{table:flux}.
 
+
 \subsubsection*{Algorithm}
 None.
 \subsubsection*{Uses}
@@ -256,7 +257,7 @@ LALInspiralSetup (
   ak->tva3 = -32./5. * LAL_PI;
   ak->tva4 = 30.58673/5.08032 + 54.29/5.04*ieta*eta + 61.7/7.2*ieta*eta*eta;
   ak->tva5 = -(77.29/2.52 + ieta*eta) * LAL_PI;
-  ak->tva6 = - 1005.2469856691/2.3471078400 + 136.96/1.05*log(2.) 
+  ak->tva6 = - 1005.2469856691/2.3471078400 
            + (128./3.- 451./12.*ieta*eta) * LAL_PI*LAL_PI 
            + 68.48/1.05*ak->EulerC
            + 1533.5597827/1.5240960 * ieta*eta
@@ -264,37 +265,59 @@ LALInspiralSetup (
            + 25.565/1.296*ieta*eta*eta*eta 
            + 352./3.*ieta*eta*ak->theta
            - 2464./9.*ieta*eta*ak->lambda;
-  ak->tva7 =  -154.19335/1.27008*LAL_PI + 7373./189.*ieta*eta*eta*LAL_PI
-           - 202.823/1.512*LAL_PI*eta;
-  ak->tvl6 = 68.48/3.15;
+  ak->tva7 =  (-154.19335/1.27008  - 75703./756.*ieta*eta 
+      +  14809./378.*ieta*eta*eta) * LAL_PI;
+  ak->tvl6 = 68.48/1.05;
 
   ak->pvaN = -1./(16.*eta);
   ak->pva2 = (3715./1008. + 55./12.*ieta*eta);
   ak->pva3 = -10.*LAL_PI;
   ak->pva4 = (15293365./1016064. + 27145./1008.*ieta*eta 
              + 3085./144.*ieta*eta*eta);
-  ak->pva5 = (38645./672. + 15./8. * ieta*eta) * LAL_PI;
+  ak->pva5 = (38645./672. - 65./8. * ieta*eta) * LAL_PI;
   ak->pva6 = 1234.8611926451/1.8776862720 - 160./3. * LAL_PI*LAL_PI 
            - 1712./21. * ak->EulerC
            + (-15335597827./12192768. + 2255./48. * LAL_PI*LAL_PI 
            + 3080./9.*ak->lambda - 440./3. * ak->theta) * ieta*eta  
            + 76055./6912. * ieta*eta*eta - 127825./5184. * ieta*eta*eta*eta;
-  ak->pva7 = (77096675./2032128. + 1014115./24192.*ieta*eta 
-           - 36865./3024.*ieta*eta*eta) * LAL_PI;
+  ak->pva7 = (77096675./2032128. + 378515./12096.*ieta*eta 
+           - 74045./6048.*ieta*eta*eta) * LAL_PI;
   ak->pvl6 = - 1712./21.;
 
 /*  
    Expansion coefficients for the Fourier domain phase of the usual
    stationary phase approximation
 */
+   
+  /* pfak equal 8/3* pvak - 5/3*tvak, which can be used to check that the
+    * coefficients that are coded here below are exact e.g., 
+   ak->pfa6 = 8./3. * ak->pva6 - 5./3. * ak->tva6;    
+   */
+
+  /* For TaylorT2 and TaylorF2, we used the following references : 
+   * PRD72,029901(E)2005 for the 7th order which completes (corrects) 
+   * PRD66,027502,2002, where there are typos in Eq 1.1, 1.2, 2.9, 2.10, and
+   * 2.11.. */
+   
    ak->pfaN = 3.L/(128.L * eta);
-   ak->pfa2 = 5.L*(743.L/84.L + 11.L* ieta*eta)/9.L;
+   ak->pfa2 = 5.L*(743.L/84.L + 11.L * ieta*eta)/9.L;
    ak->pfa3 = -16.L*LAL_PI;
    ak->pfa4 = 5.L*(3058.673L/7.056L + 5429.L/7.L * ieta*eta 
-		   + 617.L * ieta * eta * eta)/72.L;
-   ak->pfa5 = 5.L/3.L * (7729.L/252.L + ieta*eta) * LAL_PI;
-   ak->pfl5 = 8.L/3.L * (38645.L/672.L + 15.L/8.L * ieta*eta) * LAL_PI;
+		   + 617.L * ieta*eta*eta)/72.L;
+   ak->pfa5 = 5.L/9.L * (7729.L/84.L - 13.L * ieta*eta) * LAL_PI;
+   ak->pfl5 = 5.L/3.L * (7729.L/84.L - 13.L * ieta*eta) * LAL_PI;
 
+   ak->pfa6 = (11583.231236531L/4.694215680L - 640.L/3.L * LAL_PI * LAL_PI - 6848.L/21.L*ak->EulerC) 
+     + ieta*eta * (-15335.597827L/3.048192L + 2255./12. * LAL_PI * LAL_PI - 1760./3.*ak->theta +12320./9.*ak->lambda)
+    + ieta*eta*eta * 76055.L/1728.L 
+    - ieta*eta*eta*eta*  127825.L/1296.L ;
+   
+   ak->pfl6 = -6848.L/21.L;
+
+   ak->pfa7 = LAL_PI * 5.L/756.L * ( 15419335.L/336.L + 75703.L/2.L * ieta*eta - 14809.L * ieta*eta*eta);
+  
+    
+     
 /* 
   Taylor coefficients of f(v)=(1-v/vpole)F(v) 
 */

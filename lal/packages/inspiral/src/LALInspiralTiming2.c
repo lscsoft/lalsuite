@@ -293,7 +293,7 @@ LALInspiralTiming2_6PN (
         + toffIn->t3 * v3
         + toffIn->t4 * v4
         + toffIn->t5 * v5
-        + (toffIn->t6 + toffIn->tl6 * log(v)) * v6);
+        + (toffIn->t6 + toffIn->tl6 * log(4*v)) * v6);
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -338,7 +338,7 @@ LALInspiralTiming2_7PN (
         + toffIn->t3 * v3
         + toffIn->t4 * v4
         + toffIn->t5 * v5
-        + (toffIn->t6 + toffIn->tl6 * log(v)) * v6
+        + (toffIn->t6 + toffIn->tl6 * log(4*v)) * v6
         + toffIn->t7 * v7);
 
   DETATCHSTATUSPTR(status);

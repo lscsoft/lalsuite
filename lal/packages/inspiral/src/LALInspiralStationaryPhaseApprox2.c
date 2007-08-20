@@ -203,8 +203,7 @@ LALInspiralStationaryPhaseApprox2 (
 		 This is the reason why there is an extra m in the last equation above
 		 amp = amp0 * pow(-dEnergybyFlux(v)/v^2, 0.5) * v^2;
 		     = amp0 * pow(-dEnergybyFlux(v), 0.5) * v;
-		     
-	       */
+	      */
 	      amp = amp0 * pow(-func.dEnergy(v,&ak)/func.flux(v,&ak),0.5L) * v;
 	      signal->data[i] = (REAL4) (amp * cos(psi));
 	      signal->data[n-i] = (REAL4) (-amp * sin(psi));
@@ -272,12 +271,11 @@ static void LALInspiralTaylorF2Phasing6PN (REAL8 v, REAL8 *phase, expnCoeffs *ak
    x = v*v;
    y = x*x;
    z = y*x;
-   /*
-   fprintf(stderr, "This order is currently not implemented\n");
-   exit(0);
-   */
+   
    *phase = ak->pfaN * (1. + ak->pfa2 * x + ak->pfa3 * v*x + ak->pfa4 * y
-         + (ak->pfa5 + ak->pfl5 * log(v/ak->v0)) * y*v + ak->pfa6 * z)/pow(v,5.);
+         + (ak->pfa5 + ak->pfl5 * log(v/ak->v0)) * y*v 
+         + (ak->pfa6 + ak->pfl6 * log(4.*v) ) * z)
+     /pow(v,5.);
 }
 
 /*  <lalVerbatim file="LALInspiralTaylorF2Phasing7PNCP"> */
@@ -287,10 +285,10 @@ static void LALInspiralTaylorF2Phasing7PN (REAL8 v, REAL8 *phase, expnCoeffs *ak
    x = v*v;
    y = x*x;
    z = y*x;
-   /*
-   fprintf(stderr, "This order is currently not implemented\n");
-   exit(0);
-   */
+   
    *phase = ak->pfaN * (1. + ak->pfa2 * x + ak->pfa3 * v*x + ak->pfa4 * y
-         + (ak->pfa5 + ak->pfl5 * log(v/ak->v0)) * y*v + ak->pfa6 * z + ak->pfa7*z*v)/pow(v,5.);
+         + (ak->pfa5 + ak->pfl5 * log(v/ak->v0)) * y*v 
+         + (ak->pfa6 + ak->pfl6 * log(4.*v) ) * z
+         + ak->pfa7 * z*v)
+     /pow(v,5.);
 }
