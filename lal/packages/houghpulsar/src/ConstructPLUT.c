@@ -347,11 +347,27 @@ void LALHOUGHConstructPLUT(LALStatus       *status,
   /*  ATTATCHSTATUSPTR (status); */
 
   /*   Make sure the arguments are not NULL: */ 
-  ASSERT (lut, status, LUTH_ENULL, LUTH_MSGENULL);
-  ASSERT (patch, status, LUTH_ENULL, LUTH_MSGENULL);
-  ASSERT (par,  status, LUTH_ENULL, LUTH_MSGENULL);
+  /* use aborts instead of asserts */
+  if (lut == NULL) {
+    ABORT( status, LUTH_ENULL, LUTH_MSGENULL); 
+  }
+  /* ASSERT (lut, status, LUTH_ENULL, LUTH_MSGENULL); */
+
+  if (patch == NULL) {
+    ABORT( status, LUTH_ENULL, LUTH_MSGENULL); 
+  }
+  /* ASSERT (patch, status, LUTH_ENULL, LUTH_MSGENULL); */
+
+  if (par == NULL) {
+    ABORT( status, LUTH_ENULL, LUTH_MSGENULL); 
+  }
+  /* ASSERT (par,  status, LUTH_ENULL, LUTH_MSGENULL); */
   
-  ASSERT (par->deltaF == patch->deltaF,  status, LUTH_EVAL, LUTH_MSGEVAL);
+  if (  fabs((REAL4)par->deltaF - (REAL4)patch->deltaF) > 1.0e-6) {
+    ABORT( status, LUTH_EVAL, LUTH_MSGEVAL); 
+  }
+  /* ASSERT (par->deltaF == patch->deltaF,  status, LUTH_EVAL, LUTH_MSGEVAL); */
+
   /* -------------------------------------------   */
 
   f0Bin =  par->f0Bin;
@@ -369,8 +385,16 @@ void LALHOUGHConstructPLUT(LALStatus       *status,
  
   
   /* Make sure number of bins makes sense with the dimensions  */
-  ASSERT (lut->nBin >0, status, LUTH_ESIZE, LUTH_MSGESIZE);
-  ASSERT (lut->nBin <= lut->maxNBins, status, LUTH_ESIZE, LUTH_MSGESIZE);
+  if (lut->nBin <= 0) {
+    ABORT( status, LUTH_ESIZE, LUTH_MSGESIZE); 
+  }
+  /* ASSERT (lut->nBin >0, status, LUTH_ESIZE, LUTH_MSGESIZE); */
+
+  if (lut->nBin > lut->maxNBins) {
+    ABORT( status, LUTH_ESIZE, LUTH_MSGESIZE); 
+  }
+  /* ASSERT (lut->nBin <= lut->maxNBins, status, LUTH_ESIZE, LUTH_MSGESIZE); */
+
   
   /* -------------------------------------------   */
   /* DETATCHSTATUSPTR (status); */
@@ -405,6 +429,12 @@ static void  PLUTInitialize(HOUGHptfLUT  *lut){
   maxNBorders = lut->maxNBorders;
   
   for(i=0;i<maxNBins;++i){
+
+    /* check lut->bin is not null */
+    if ( lut->bin + i == NULL ) {
+      fprintf(stderr," pointer lut->bin+%d is null [ConstructPLUT.c %d]\n", i, __LINE__);
+    }
+
     lut->bin[i].leftB1  = 0;
     lut->bin[i].rightB1 = 0;
     lut->bin[i].leftB2  = 0;
@@ -416,6 +446,12 @@ static void  PLUTInitialize(HOUGHptfLUT  *lut){
   }
   
   for(i=0;i<maxNBorders;++i){
+
+    /* check lut->border is not null */
+    if ( lut->border + i == NULL ) {
+      fprintf(stderr," pointer lut->border+%d is null [ConstructPLUT.c %d]\n", i, __LINE__);
+    }
+
     lut->border[i].yUpper = -1;
     lut->border[i].yLower = 0;
   }
@@ -790,7 +826,25 @@ static void InitialLineCase(INT4  *lastBorderP, REAL8 alpha, REAL8  delta,
   REAL8 xRel, slope;
   INT4 noIn;   /* if no intersection occurs noIn=0 */
 
+  /* some paranoid error checking */
+  if (patch == NULL ) {
+    fprintf(stderr, "pointer patch is null [ConstructPLUT.c %d]\n", __LINE__);
+  }
+
+  if (lut == NULL ) {
+    fprintf(stderr, "pointer lut is null [ConstructPLUT.c %d]\n",__LINE__);
+  }
+
+  if (ifailP == NULL ) {
+    fprintf(stderr, "pointer ifailP is null [ConstructPLUT.c %d]\n",__LINE__);
+  }
+
+  if (lastBorderP == NULL ) {
+    fprintf(stderr, "pointer lastBorderP is null [ConstructPLUT.c %d]\n",__LINE__);
+  }
   lastBorder = *lastBorderP;
+
+
 
  /************************************************/
   FindLine(alpha, delta, eps, &xA, &yA);
@@ -908,6 +962,23 @@ static void SecondLineCase(INT4 currentBin, INT4  *lastBorderP,
   REAL8 xRel, slope;
   INT4 noIn;   /* if no intersection occurs noIn=0 */
 
+
+  /* some paranoid error checking */
+  if (patch == NULL ) {
+    fprintf(stderr, "pointer patch is null [ConstructPLUT.c %d]\n",__LINE__);
+  }
+
+  if (lut == NULL ) {
+    fprintf(stderr, "pointer lut is null [ConstructPLUT.c %d]\n",__LINE__);
+  }
+
+  if (ifailP == NULL ) {
+    fprintf(stderr, "pointer ifailP is null [ConstructPLUT.c %d]\n",__LINE__);
+  }
+
+  if (lastBorderP == NULL ) {
+    fprintf(stderr, "pointer lastBorderP is null [ConstructPLUT.c %d]\n",__LINE__);
+  }
   lastBorder = *lastBorderP;
 
  /************************************************/
@@ -1027,6 +1098,23 @@ static void FollowLineCase(INT4 currentBin, INT4  *lastBorderP,
   INT4 yymin,yymax;
   INT4 noIn;   /* if no intersection occurs noIn=0 */
 
+
+  /* some paranoid error checking */
+  if (patch == NULL ) {
+    fprintf(stderr, "pointer patch is null [ConstructPLUT.c %d]\n",__LINE__);
+  }
+
+  if (lut == NULL ) {
+    fprintf(stderr, "pointer lut is null [ConstructPLUT.c %d]\n",__LINE__);
+  }
+
+  if (ifailP == NULL ) {
+    fprintf(stderr, "pointer ifailP is null [ConstructPLUT.c %d]\n",__LINE__);
+  }
+
+  if (lastBorderP == NULL ) {
+    fprintf(stderr, "pointer lastBorderP is null [ConstructPLUT.c %d]\n",__LINE__);
+  }
   lastBorder = *lastBorderP;
 
   /************************************************/
@@ -1216,6 +1304,18 @@ static void CheckLineCase(REAL8 epsilon, REAL8 ang1, REAL8 ang2,
 
   REAL8 e1,e21,e22;
 
+
+  /* some paranoid error checking */
+  if (epsP == NULL ) {
+    fprintf(stderr, "pointer epsP is null [ConstructPLUT.c %d]\n",__LINE__);
+  }
+
+  if (lineCaseP == NULL ) {
+    fprintf(stderr, "pointer lineCaseP is null [ConstructPLUT.c %d]\n",__LINE__);
+  }
+
+
+
   e1  = ang1 - LAL_PI*0.5;
   e21 = ang2 - LAL_PI*0.5;
   e22 = e21 + 2*LAL_PI;
@@ -1257,6 +1357,10 @@ static void FindExactLine(REAL8 alpha, REAL8 delta,
   REAL8 lambda, rA;
   
   lambda =  2.*delta -LAL_PI*0.5;
+
+  if (fabs(1.-sin(lambda) < 1.0e-6) {
+    fprintf(stderr, "warning: possible division by 0 [ConstructPLUT.c %d]\n",__LINE__);
+  }
   rA = 2.* cos(lambda)/(1.-sin(lambda) ); 
   *xA = rA* cos(alpha);
   *yA = rA* sin(alpha);
