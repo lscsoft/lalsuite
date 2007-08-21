@@ -124,23 +124,23 @@ NRCSID (NORMALIZESFTRNGMEDH, "$Id$");
  */
 
 
-void LALSFTtoPeriodogram (LALStatus    *status,
-			  REAL8FrequencySeries    *periodo,
+void LALSFTtoPeriodogram (LALStatus *status,
+			  REAL8FrequencySeries *periodo,
 			  const COMPLEX8FrequencySeries *SFT);
 
 
-void LALApplyRngMedToPeriodo (LALStatus  *status,
-			      REAL8FrequencySeries  *smoothedPeriodo,
-			      const REAL8FrequencySeries  *periodo,
-			      UINT4 blockSize);
+void LALPeriodoToRngmed (LALStatus  *status,
+			 REAL8FrequencySeries  *rngmed,
+			 const REAL8FrequencySeries  *periodo,
+			 UINT4 blockSize);
 
-void LALSFTtoPSDRngMed (LALStatus  *status,
-			REAL8FrequencySeries  *psd,
-			const COMPLEX8FrequencySeries *SFT,
-			UINT4                  blockSize);
+void LALSFTtoRngmed (LALStatus  *status,
+		     REAL8FrequencySeries  *rngmed,
+		     const COMPLEX8FrequencySeries *SFT,
+		     UINT4                  blockSize);
 
 void LALNormalizeSFT (LALStatus            *status,
-		      REAL8FrequencySeries *out,		      
+		      REAL8FrequencySeries *rngmed,
 		      SFTtype              *sft,
 		      UINT4                blockSize);
 
@@ -149,7 +149,7 @@ void LALNormalizeSFTVect (LALStatus  *status,
 			  UINT4     blockSize);
 
 void LALNormalizeMultiSFTVect (LALStatus  *status,
-			       MultiPSDVector **mult,
+			       MultiPSDVector **multiRngmed,
 			       MultiSFTVector *multsft,
 			       UINT4     blockSize);
 
