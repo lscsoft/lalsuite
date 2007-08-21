@@ -217,10 +217,6 @@ void LALCreateMultiSFTVector ( LALStatus *status,
 } /* LALLoadMultiSFTs() */
 
 
-
-
-
-
 /** Destroy an SFT-struct.
  */
 void
@@ -1095,33 +1091,30 @@ void LALComputeNoiseWeights  (LALStatus        *status,
 
 /** Computes weight factors arising from MultiSFTs with different noise 
  * floors -- it multiplies an existing weight vector 
- * The 'normalization' returned is the factor by which the inverse PSD's S^-1_{X,a}
- * have been normalized to give the noise-weights w_{X,a}
  */
 void LALComputeMultiNoiseWeights  (LALStatus             *status, 
 				   MultiNoiseWeights     **out,
-				   const MultiPSDVector  *multipsd,
+				   const MultiPSDVector  *rngmed,
 				   UINT4                 blocksRngMed,
 				   UINT4                 excludePercentile) 
 {
   REAL8 Tsft_Sn=0.0, Tsft_sumSn=0.0;
   UINT4 Y, X, alpha, k, numifos, numsfts, lengthsft, numsftsTot;
-  UINT4 excludeIndex, halfLengthPSD, lengthPSD;
   MultiNoiseWeights *weights;
-  REAL8 Tsft = 1.0 / multipsd->data[0]->data[0].deltaF;
+  REAL8 Tsft = 1.0 / rngmed->data[0]->data[0].deltaF;
   REAL8 Tsft_calS;	/* overall noise-normalization */
 
   INITSTATUS (status, "LALComputeMultiNoiseWeights", SFTUTILSC);
   ATTATCHSTATUSPTR (status); 
 
-  ASSERT ( multipsd, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
-  ASSERT ( multipsd->data, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
-  ASSERT ( multipsd->length, status, SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
+  ASSERT ( rngmed, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
+  ASSERT ( rngmed->data, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
+  ASSERT ( rngmed->length, status, SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
 
   ASSERT ( out, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
   ASSERT ( *out == NULL, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
 
-  numifos = multipsd->length;
+  numifos = rngmed->length;
 
   if ( (weights = (MultiNoiseWeights *)LALCalloc(1, sizeof(MultiNoiseWeights))) == NULL ){
     ABORT (status,  SFTUTILS_EMEM,  SFTUTILS_MSGEMEM);
@@ -1135,7 +1128,7 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
   numsftsTot = 0;
   for ( X = 0; X < numifos; X++) 
     {
-      numsfts = multipsd->data[X]->length;
+      numsfts = rngmed->data[X]->length;
       numsftsTot += numsfts;
 
       /* create k^th weights vector */
@@ -1147,29 +1140,30 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
 	LALFree (weights);
       } ENDFAIL(status);
       
-      /* loop over psds and calculate weights -- one for each sft */
+      /* loop over rngmeds and calculate weights -- one for each sft */
       for ( alpha = 0; alpha < numsfts; alpha++) 
 	{
-	  REAL8FrequencySeries *psd;
+	  REAL8FrequencySeries *thisrm;
 	  UINT4 halfBlock = blocksRngMed/2;
+	  UINT4 excludeIndex, halfLength, length;
 	  
-	  psd = &(multipsd->data[X]->data[alpha]);
+	  thisrm = &(rngmed->data[X]->data[alpha]);
 	  
-	  lengthsft = psd->data->length;
+	  lengthsft = thisrm->data->length;
 	  if ( lengthsft < blocksRngMed ) {
 	    ABORT ( status, SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
 	  }
 
-	  lengthPSD = lengthsft - blocksRngMed + 1;
-	  halfLengthPSD = lengthPSD/2;
+	  length = lengthsft - blocksRngMed + 1;
+	  halfLength = length/2;
 
-	  /* calculate index in psd medians vector from which to calculate mean */
-	  excludeIndex =  excludePercentile * halfLengthPSD ; /* integer arithmetic */
+	  /* calculate index in power medians vector from which to calculate mean */
+	  excludeIndex =  excludePercentile * halfLength ; /* integer arithmetic */
 	  excludeIndex /= 100; /* integer arithmetic */
 
 	  Tsft_Sn = 0.0; 
 	  for ( k = halfBlock + excludeIndex; k < lengthsft - halfBlock - excludeIndex; k++)
-	    Tsft_Sn += psd->data->data[k];
+	    Tsft_Sn += thisrm->data->data[k];
 	  Tsft_Sn /= lengthsft - 2*halfBlock - 2*excludeIndex;
 
 	  Tsft_sumSn += Tsft_Sn; /* sumSn is just a normalization factor */
