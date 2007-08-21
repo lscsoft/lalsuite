@@ -511,8 +511,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  Tas *= DT_al;				/* now: DT^(s+1) */
 	  phi_alpha += fsdot * Tas * inv_fact[s+1];
 	  if (!finite(Dphi_alpha)) {
-	    LogPrintf(LOG_CRITICAL, "non-finite Dphi_alpha: %e, spind#:%d, fkdot:%e, Tas:%e, inv_fact[s]:%e, inv_fact[s+1]:%e\n",
-		      Dphi_alpha, s, fkdot[s], Tas, inv_fact[s], inv_fact[s+1]);
+	    LogPrintf(LOG_CRITICAL, "non-finite Dphi_alpha: %e, spind#:%d, fkdot:%e, Tas:%e, inv_fact[s]:%e, inv_fact[s+1]:%e, phi_alpha:%e. DT_al:%e\n",
+		      Dphi_alpha, s, fkdot[s], Tas, inv_fact[s], inv_fact[s+1], phi_alpha, DT_al);
 	    XLAL_ERROR("LocalXLALComputeFaFb", XLAL_EDOM);
 	  }
 	} /* for s <= spdnOrder */
