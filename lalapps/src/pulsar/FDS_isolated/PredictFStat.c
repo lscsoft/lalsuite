@@ -343,7 +343,7 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg )
 
   EphemerisData *edat = NULL;		    	/* ephemeris data */
   MultiAMCoeffs *multiAMcoef = NULL;
-  MultiPSDVector *multiPSDs = NULL;
+  MultiPSDVector *multiRngmed = NULL;
   MultiNoiseWeights *multiNoiseWeights = NULL;
   MultiSFTVector *multiSFTs = NULL;	    	/* multi-IFO SFT-vectors */
   MultiDetectorStateSeries *multiDetStates = NULL; /* pos, vel and LMSTs for detector at times t_i */
@@ -517,8 +517,8 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg )
     } 
   else
     {
-      TRY ( LALNormalizeMultiSFTVect(status->statusPtr, &multiPSDs, multiSFTs, uvar_RngMedWindow ), status);
-      TRY ( LALComputeMultiNoiseWeights (status->statusPtr, &multiNoiseWeights, multiPSDs, uvar_RngMedWindow, 0 ), status );
+      TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &multiRngmed, multiSFTs, uvar_RngMedWindow ), status);
+      TRY ( LALComputeMultiNoiseWeights (status->statusPtr, &multiNoiseWeights, multiRngmed, uvar_RngMedWindow, 0 ), status );
     }
 
   /* noise-weighting of Antenna-patterns and compute A,B,C */
@@ -531,7 +531,7 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg )
   cfg->Mmunu = multiAMcoef->Mmunu;
 
   /* free everything not needed any more */
-  TRY ( LALDestroyMultiPSDVector (status->statusPtr, &multiPSDs ), status );
+  TRY ( LALDestroyMultiPSDVector (status->statusPtr, &multiRngmed ), status );
   TRY ( LALDestroyMultiNoiseWeights (status->statusPtr, &multiNoiseWeights ), status );
   TRY ( LALDestroyMultiSFTVector (status->statusPtr, &multiSFTs ), status );
   XLALDestroyMultiDetectorStateSeries ( multiDetStates );
