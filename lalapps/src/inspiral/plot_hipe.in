@@ -21,12 +21,12 @@ from optparse import *
 import tempfile
 import ConfigParser
 import urlparse
+from pylal import CoincInspiralUtils
 sys.path.append('/scratch2/rahul/opt/lscsoft/lalapps//lib/python2.4/site-packages/lalapps')
 
 ##############################################################################
 # import the modules we need to build the pipeline
 from glue import pipeline
-
 
 class PlotInspiralJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
@@ -53,7 +53,6 @@ class PlotInspiralJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_sub_file('plotinspiral.sub')
 
     self.add_condor_cmd('getenv','True')
-
 
 class PlotInspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
@@ -100,7 +99,6 @@ class PlotInspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
     return filename
 
-
 ###########################################################################################
 
 class PlotThincaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
@@ -128,8 +126,6 @@ class PlotThincaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_sub_file('plotthinca.sub')
 
     self.add_condor_cmd('getenv','True')
-
-
 
 class PlotThincaNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
@@ -175,8 +171,8 @@ class PlotThincaNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.add_output_file(filename)
 
     return filename
-#######################################################################################
 
+#######################################################################################
 
 class PlotNumtemplatesJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
@@ -203,10 +199,6 @@ class PlotNumtemplatesJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_sub_file('plotnumtemplates.sub')
 
     self.add_condor_cmd('getenv','True')
-
-
-
-
 
 class PlotNumtemplatesNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
@@ -253,10 +245,7 @@ class PlotNumtemplatesNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
     return filename
 
-
 ##############################################################################
-
-
 
 class PlotInjnumJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
@@ -283,11 +272,6 @@ class PlotInjnumJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_sub_file('plotinjnum.sub')
 
     self.add_condor_cmd('getenv','True')
-
-
-
-
-
 
 class PlotInjnumNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
@@ -334,12 +318,152 @@ class PlotInjnumNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
     return filename
 
+#############################################################################
+
+class PlotEthincaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A plotethinca job. The static options are read from the section
+  [plotethinca] in the ini file.  The stdout and stderr from the job
+  are directed to the logs directory.  The path to the executable is
+  determined from the ini file.
+  """
+  def __init__(self,cp,dax=False,tag_base='PLOTETHINCA'):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','plotethinca')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp,False)
+    self.tag_base = tag_base
+
+    for sec in ['plotethinca']:
+      self.add_ini_opts(cp,sec)
+
+    self.set_stdout_file('logs/plotethinca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/plotethinca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_sub_file('plotethinca.sub')
+
+    self.add_condor_cmd('getenv','True')
+
+class PlotEthincaNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  A PlotEthincaNode runs an instance of the plotinspiral code in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of plotinjnum.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.__usertag = job.get_config('pipeline','user-tag')
+
+  def set_user_tag(self,usertag):
+    self.__usertag = usertag
+    self.add_var_opt('user-tag',usertag)
+
+  def get_user_tag(self):
+    return self.__usertag
+
+  def get_output(self):
+    """
+    Returns the file name of output from the inspiral code. This must be kept
+    synchronized with the name of the output file in inspiral.c.
+    """
+    if not self.get_start() or not self.get_end() or not self.get_ifo():
+      raise InspiralError, "Start time, end time or ifo has not been set"
+
+    tag_base = self.job().tag_base
+    basename = self.get_ifo() + '-' + tag_base
+
+    if self.get_ifo_tag():
+      basename += '_' + self.get_ifo_tag()
+    if self.__usertag:
+      basename += '_' + self.__usertag
+
+    filename = basename + '-' + str(self.get_start()) + '-' + \
+      str(self.get_end() - self.get_start()) + '.xml'
+
+    if self.__zip_output:
+      filename += '.gz'
+ 
+    self.add_output_file(filename)
+
+    return filename
 
 #############################################################################
 
+class PlotInspmissedJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A plotinspmissed job. The static options are read from the section
+  [plotinspmissed] in the ini file.  The stdout and stderr from the job
+  are directed to the logs directory.  The path to the executable is
+  determined from the ini file.
+  """
+  def __init__(self,cp,dax=False,tag_base='PLOTINSPMISSED'):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','plotinspmissed')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp,False)
+    self.tag_base = tag_base
+
+    for sec in ['plotinspmissed']:
+      self.add_ini_opts(cp,sec)
+
+    self.set_stdout_file('logs/plotinspmissed-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/plotinspmissed-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_sub_file('plotinspmissed.sub')
+
+    self.add_condor_cmd('getenv','True')
 
 
+class PlotInspmissedNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  A PlotInspmissedNode runs an instance of the plotinspiral code in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of plotinspmissed.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.__usertag = job.get_config('pipeline','user-tag')
 
+  def set_user_tag(self,usertag):
+    self.__usertag = usertag
+    self.add_var_opt('user-tag',usertag)
+
+  def get_user_tag(self):
+    return self.__usertag
+
+  def get_output(self):
+    """
+    Returns the file name of output from the inspiral code. This must be kept
+    synchronized with the name of the output file in inspiral.c.
+    """
+    if not self.get_start() or not self.get_end() or not self.get_ifo():
+      raise InspiralError, "Start time, end time or ifo has not been set"
+
+    tag_base = self.job().tag_base
+    basename = self.get_ifo() + '-' + tag_base
+
+    if self.get_ifo_tag():
+      basename += '_' + self.get_ifo_tag()
+    if self.__usertag:
+      basename += '_' + self.__usertag
+
+    filename = basename + '-' + str(self.get_start()) + '-' + \
+      str(self.get_end() - self.get_start()) + '.xml'
+
+    if self.__zip_output:
+      filename += '.gz'
+
+    self.add_output_file(filename)
+
+    return filename
 
 
 #############################################################################
@@ -389,8 +513,14 @@ parser.add_option("-t", "--plotthinca" ,action="store_true",default=False,\
 parser.add_option("-n", "--plotnumtemplates" ,action="store_true",default=False,\
     help="run plotnumtemplates to plot trigbanks and templtbanks")
 
-parser.add_option("-m", "--plotinjnum" ,action="store_true",default=False,\
+parser.add_option("-I", "--plotinjnum" ,action="store_true",default=False,\
     help="run plotinj")
+
+parser.add_option("-e", "--plotethinca" ,action="store_true",default=False,\
+    help="run plotethinca parameter for a pair of ifo combos")
+
+parser.add_option("-M", "--plotinspmissed" ,action="store_true",default=False,\
+    help="run plotinspmissed to plot missed triggers")
 
 parser.add_option("-f", "--config-file",action="store",type="string",\
     metavar=" FILE",help="use configuration file FILE")
@@ -403,7 +533,7 @@ command_line = sys.argv[1:]
 
 #################################
 #ALPHABETS USED IN THIS CODE.
-# b, f, g, i, l, m, n, p, t, u, v, A, D, S, T, Q
+# b, e, f, g, i, I, l, M, n, p, t, u, v, A, D, S, T, Q
 
 #################################
 # if --version flagged
@@ -431,8 +561,9 @@ if not opts.g1_data and not opts.h1_data and not opts.h2_data and \
   print >> sys.stderr, "or use --analyze-all to analyze all ifos all data"
   sys.exit(1)
 
-if opts.plotthinca and opt.plotinspiral and not opts.one_ifo and not opts.two_ifo and not opts.three_ifo and \
-    not opts.four_ifo and not opts.analyze_all:
+if opts.plotthinca and opts.plotinspiral and opts.plotinspmissed and not opts.one_ifo \
+    and not opts.two_ifo and not opts.three_ifo and not opts.four_ifo \
+    and not opts.analyze_all:
   print >> sys.stderr, "No number of ifos given. Please specify at least one of"
   print >> sys.stderr, "--one-ifo, --two-ifo, --three-ifo, --four-ifo"
   print >> sys.stderr, "or use --analyze-all to analyze all ifos all data"
@@ -455,9 +586,9 @@ if opts.plotthinca and opt.plotinspiral and not opts.one_ifo and not opts.two_if
 # This list constructs doubles, triples and quadraple 
 
 ifolist = [ifo for ifo in ("G1", "H1", "H2", "L1") \
-            if getattr(opts, "%s_triggers" % ifo.lower())]
+            if getattr(opts, "%s_data" % ifo.lower())]
 
-ifo_combos = CoincInspiralUtils.get_ifo_combos(ifolist)
+ifo_combos = ["H1H2", "H1L1", "H2L1", "H1H2L1"]
 #################################
    
 ifo_list = ['H1','H2','L1','G1']
@@ -553,10 +684,9 @@ if opts.plotinspiral:
 #plotthinca
 if opts.plotthinca:
    
-  
   plotthinca_jobs = {}
 
-  for ifo in ifo_list:
+  for ifo in ifo_combos:
     plotthinca_jobs[ifo] = PlotThincaJob(cp)
     plotthinca_jobs[ifo].set_sub_file( basename + '.plotthinca_' + ifo + subsuffix )
 
@@ -566,12 +696,11 @@ if opts.plotthinca:
 #plotnumtemplates
 if opts.plotnumtemplates:
 
-
   plotnumtemplates_jobs = {}
 
   for ifo in ifo_list:
     plotnumtemplates_jobs[ifo] = PlotNumtemplatesJob(cp)
-    plotnumtemplates_jobs[ifo].set_sub_file( basename + '.plotnumtemplates_' + subsuffix )
+    plotnumtemplates_jobs[ifo].set_sub_file( basename + '.plotnumtemplates_' + ifo + subsuffix )
 
   all_jobs = []
   all_jobs.extend(plotnumtemplates_jobs.values())
@@ -586,15 +715,41 @@ if opts.plotinjnum:
     print >> sys.stderr, "--two-ifo, --three-ifo, --four-ifo"
     print >> sys.stderr, "or use --analyze-all to analyze all ifos all data"
     sys.exit(1)
-
   
   plotinjnum_jobs = {}
   
   for ifo in ifo_combos:
-    plotnumtemplates_jobs[ifo] = PlotNumtemplatesJob(cp) 
-    plotnumtemplates_jobs[ifo].set_sub_file( basename + '.plotnumtemplates_' + ifo + subsuffix )
+    plotinjnum_jobs[ifo] = PlotInjnumJob(cp) 
+    plotinjnum_jobs[ifo].set_sub_file( basename + '.plotinjnum_' + ifo + subsuffix )
+  
   all_jobs = []
-  all_jobs.extend(plotnumtemplates_jobs.values())  
+  all_jobs.extend(plotinjnum_jobs.values())  
+
+# plotethinca
+if opts.plotethinca:
+
+  plotethinca_jobs = {}
+
+  for ifo in ifo_combos:
+    plotethinca_jobs[ifo] = PlotEthincaJob(cp)
+    plotethinca_jobs[ifo].set_sub_file( basename + '.plotethinca_' + ifo + subsuffix )
+
+  all_jobs = []
+  all_jobs.extend(plotethinca_jobs.values())
+
+#plotinspmissed
+if opts.plotinspmissed:
+
+  plotinspmissed_jobs = {}
+
+  for ifo in ifo_combos:
+    plotinspmissed_jobs[ifo] = PlotInspmissedJob(cp)
+    plotinspmissed_jobs[ifo].set_sub_file( basename + '.plotinspmissed_' + ifo + subsuffix )
+
+  all_jobs = []
+  all_jobs.extend(plotinspmissed_jobs.values())
+
+
 
 
 #############################################################################
@@ -616,24 +771,38 @@ if opts.plotinspiral:
 
 
 if opts.plotthinca:
-  for ifo in ifos:
+  for ifo in ifo_combos:
   # add an plotthinca job
     plotthinca_node=PlotThincaNode(plotthinca_jobs[ifo])
     dag.add_node(plotthinca_node)
 
 
 if opts.plotnumtemplates:
-  
+   
+  for ifo in ifos:
   # add an plotnumtemplates job
-  plotnumtemplates_node=PlotNumtemplatesNode(plotnumtemplates_jobs)
-  dag.add_node(plotnumtemplates_node)
+    plotnumtemplates_node=PlotNumtemplatesNode(plotnumtemplates_jobs[ifo])
+    dag.add_node(plotnumtemplates_node)
 
 if opts.plotinjnum:
-   for ifo in ifocombos:
-   # add an plotthinca job
-     plotthinca_node=PlotThincaNode(plotthinca_jobs[ifo])
-     dag.add_node(plotthinca_node)
+  for ifo in ifo_combos:
+  # add an plotthinca job
+    plotinjnum_node=PlotInjnumNode(plotinjnum_jobs[ifo])
+    dag.add_node(plotinjnum_node)
 
+
+if opts.plotethinca:
+  for ifo in ifo_combos:
+  # add an plotethinca job
+    plotethinca_node =PlotEthincaNode(plotethinca_jobs[ifo])
+    dag.add_node(plotethinca_node)
+
+if opts.plotinspmissed:
+   for ifo in ifo_combos:
+    print ifo
+  # add an plotethinca job
+    plotinspmissed_node =PlotInspmissedNode(plotinspmissed_jobs[ifo])
+    dag.add_node(plotinspmissed_node)
 
 
 ##############################################################################
