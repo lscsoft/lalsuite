@@ -826,11 +826,11 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     } 
   else 
     {
-      MultiPSDVector *psds = NULL;
+      MultiPSDVector *rngmed = NULL;
 
-      TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &psds, cfg->multiSFTs, uvar_RngMedWindow ), status );
-      TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &(cfg->multiNoiseWeights), psds, uvar_RngMedWindow, 0 ), status );
-      TRY ( LALDestroyMultiPSDVector (status->statusPtr, &psds ), status );
+      TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &rngmed, cfg->multiSFTs, uvar_RngMedWindow ), status );
+      TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &(cfg->multiNoiseWeights), rngmed, uvar_RngMedWindow, 0 ), status );
+      TRY ( LALDestroyMultiPSDVector (status->statusPtr, &rngmed ), status );
 
     } /* if ! SignalOnly */
 
