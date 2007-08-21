@@ -140,46 +140,51 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
   INITSTATUS (status, "LALHOUGHPeak2PHMD", PEAK2PHMDC);
   ATTATCHSTATUSPTR (status); 
 
+  /** lots of error checking of arguments -- asserts have been 
+      replaced by aborts */
+
   /*   Make sure the arguments are not NULL: */ 
   if (phmd == NULL) {
-    fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__);
+    /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
     ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL); 
   }
   /* ASSERT (phmd, status, PHMDH_ENULL, PHMDH_MSGENULL); */
 
   if (lut == NULL) {
-    fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__);
+    /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
     ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL); 
   }
   /* ASSERT (lut,  status, PHMDH_ENULL, PHMDH_MSGENULL); */
 
   if (pg == NULL) {
-    fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__);
+    /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
     ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL); 
   }
   /* ASSERT (pg,   status, PHMDH_ENULL, PHMDH_MSGENULL); */
 
   if (phmd->firstColumn == NULL) {
-    fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__);
+    /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
     ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL); 
   }
   /* ASSERT (phmd->firstColumn, status, PHMDH_ENULL, PHMDH_MSGENULL); */
   
   /*  Make sure there are elements in firstColumn */
   if (phmd->ySide == 0) {
-    fprintf(stderr,"phmd->ySide should be non-zero [Peak2PHMD.c %d]\n", __LINE__);
+    /* fprintf(stderr,"phmd->ySide should be non-zero [Peak2PHMD.c %d]\n", __LINE__); */
     ABORT( status, PHMDH_ESIZE, PHMDH_MSGESIZE); 
   }
   /* ASSERT (phmd->ySide, status, PHMDH_ESIZE, PHMDH_MSGESIZE); */
 
-
   /* Make sure peakgram and lut have same frequency discretization */
-  ASSERT ( (REAL4)lut->deltaF == (REAL4)pg->deltaF,  status, PHMDH_EVAL, PHMDH_MSGEVAL);
+  if ( fabs((REAL4)lut->deltaF - (REAL4)pg->deltaF) > 1.0e-6) {
+    ABORT( status, PHMDH_EVAL, PHMDH_MSGEVAL); 
+  }
+  /* ASSERT ( fabs((REAL4)lut->deltaF - (REAL4)pg->deltaF) < 1.0e-6,  status, PHMDH_EVAL, PHMDH_MSGEVAL); */
 
   /* Make sure phmd.fBin and lut are compatible */
   fBinDif = abs( (phmd->fBin) - (lut->f0Bin) );
   if ( fBinDif > lut->nFreqValid ) {
-    fprintf(stderr,"fBinDif > nFreqValid [Peak2PHMD.c %d]\n", __LINE__);
+    /* fprintf(stderr,"fBinDif > nFreqValid [Peak2PHMD.c %d]\n", __LINE__); */
     ABORT( status, PHMDH_EFREQ, PHMDH_MSGEFREQ); 
   }
   /* ASSERT (fBinDif < lut->nFreqValid, status, PHMDH_EFREQ, PHMDH_MSGEFREQ); */
@@ -305,7 +310,7 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
 	  
 	  if(lb1){
 	    if (  lut->border + lb1 == NULL ) { 
-	      fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__);
+	      /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
 	      ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL); 
 	    } 
 	    phmd->leftBorderP[lengthLeft] = &( lut->border[lb1] );
@@ -315,7 +320,7 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
 
 	  if(lb2){
 	    if (  lut->border + lb2 == NULL ) { 
-	      fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__);
+	      /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
 	      ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL); 
 	    } 
 	    phmd->leftBorderP[lengthLeft] = &( lut->border[lb2] );
@@ -324,7 +329,7 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
 	  
 	  if(rb1){
 	    if (  lut->border + rb1 == NULL ) { 
-	      fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__);
+	      /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
 	      ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL); 
 	    } 
 	    phmd->rightBorderP[lengthRight] = &( lut->border[rb1] );
@@ -333,7 +338,7 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
 
 	  if(rb2){
 	    if (  lut->border + rb2 == NULL ) { 
-	      fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__);
+	      /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
 	      ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL); 
 	    } 
 	    phmd->rightBorderP[lengthRight] = &( lut->border[rb2] );
@@ -343,7 +348,7 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
 	  /* correcting 1st column */
 	  for(j=min1; j<=max1; ++j) { 
 	    if (phmd->firstColumn + j == NULL) {
-	      fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__);
+	      /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
 	      ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL); 	      
 	    }
 	    phmd->firstColumn[j] = 1; 
@@ -351,7 +356,7 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
 
 	  for(j=min2; j<=max2; ++j) { 
 	    if (phmd->firstColumn + j == NULL) {
-	      fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__);
+	      /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
 	      ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL); 	      
 	    }
 	    phmd->firstColumn[j] = 1; 
