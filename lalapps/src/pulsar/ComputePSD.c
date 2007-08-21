@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Badri Krishnan, Iraj Gholami
+*  Copyright (C) 2007 Badri Krishnan, Iraj Gholami, Reinhard Prix
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -29,16 +29,6 @@
  *
  *-----------------------------------------------------------------------
  */
-/************************************ <lalVerbatim file="ComputePSDCV">
-Author: Krishnan, B. , Sintes, A.M. 
-$Id$
-************************************* </lalVerbatim> */
-
-/* <lalLaTeX>  *******************************************************
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-*********************************************** </lalLaTeX> */
-
-
 #include <glob.h> 
 #include <stdlib.h>
 #include <math.h>
@@ -57,19 +47,20 @@ $Id$
 #include <lal/LALInitBarycenter.h>
 #include <lal/SFTClean.h>
 
+#include <lal/LogPrintf.h>
+
 #include <lalapps.h>
 
 RCSID( "$Id$");
 
-/* Error codes and messages */
-
-/************** <lalErrTable file="ComputePSDCErrorTable"> */
+/* ---------- Error codes and messages ---------- */
 #define COMPUTEPSDC_ENORM 0
 #define COMPUTEPSDC_ESUB  1
 #define COMPUTEPSDC_EARG  2
 #define COMPUTEPSDC_EBAD  3
 #define COMPUTEPSDC_EFILE 4
 #define COMPUTEPSDC_ENULL 5
+#define COMPUTEPSDC_EMEM  6
 
 #define COMPUTEPSDC_MSGENORM "Normal exit"
 #define COMPUTEPSDC_MSGESUB  "Subroutine failed"
@@ -77,197 +68,135 @@ RCSID( "$Id$");
 #define COMPUTEPSDC_MSGEBAD  "Bad argument values"
 #define COMPUTEPSDC_MSGEFILE "Could not create output file"
 #define COMPUTEPSDC_MSGENULL "Null Pointer"
+#define COMPUTEPSDC_MSGEMEM  "Out of memory"
 
-/******************************************** </lalErrTable> */
-
-
-/* Default parameters. */
-
-extern INT4 lalDebugLevel;
-
-
-#define MAXFILENAMELENGTH 256
-/* defaults chosen for L1 */
-/*#define INPUTSFTDIR "/nfs/morbo/geo600/hannover/sft/S2-LIGO/S2_L1_Funky-v3Calv5DQ30MinSFTs"*/
-#define INPUTSFTDIR "/home/badkri/L1sfts/"
-/*#define OUTPUTSFTDIR "/nfs/morbo/geo600/hannover/sft/S2-LIGO-clean/S2_L1_Funky-v3Calv5DQ30MinSFTs-clean"*/
-#define OUTPUTPSDFILE "./psd"
-#define STARTFREQ 200.0
-#define BANDFREQ 20.0
-
+/*---------- local defines ---------- */
 
 #define TRUE (1==1)
 #define FALSE (1==0)
 
+/* ----- Macros ----- */
 
+/* ---------- local types ---------- */
+
+/** user input variables */
+typedef struct 
+{ 
+  BOOLEAN help;
+
+  CHAR *inputData;    /* directory for unclean sfts */
+  CHAR *outputPSD;   /* directory for cleaned sfts */
+  CHAR *outputSpectBname;
+  REAL8 fStart; 
+  REAL8 fBand;
+  REAL8 startTime; 
+  REAL8 endTime;
+  CHAR  *timeStampsFile;
+  LALStringVector *linefiles;
+  INT4 blocksRngMed;
+  INT4 maxBinsClean;
+
+  CHAR *outputFILE;   /* OBSOLETE: don't use. Superceded by outputPSD */
+} UserVariables_t;
+
+/*---------- empty structs for initializations ----------*/
+UserVariables_t empty_UserVariables;
+/* ---------- global variables ----------*/
+
+extern int vrbflg;
+extern INT4 lalDebugLevel;
+
+
+/* ---------- local prototypes ---------- */
+void initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar);
 void ReadTimeStampsFile (LALStatus *status, LIGOTimeGPSVector  *ts, CHAR *filename);
+void LALfwriteSpectrograms ( LALStatus *status, const CHAR *bname, const MultiPSDVector *multiPSD );
 
-int main(int argc, char *argv[]){ 
+/*============================================================
+ * FUNCTION definitions
+ *============================================================*/
+
+int 
+main(int argc, char *argv[]){ 
 
   static LALStatus       status;  /* LALStatus pointer */ 
+  UserVariables_t uvar = empty_UserVariables;
   
-  INT4 j, k, nBins, iIFO, iSFT, numsft; 
-  INT4 numifo;
-  REAL8 deltaF;
-  FILE *fpOut=NULL;
+  UINT4 k, numBins, numIFOs, X, iSFT;
+  REAL8 Freq0, dFreq, normPSD;
 
-  REAL8 **periodo=NULL;
-  REAL8 *periodoOut=NULL;
+  FILE *fpOut = NULL;
+
+  REAL8Vector *meanSn = NULL;	/* averaged PSD: arithmetic mean over SFTs and harmonic-mean over IFOs */ 
 
   SFTCatalog *catalog = NULL;
-  static SFTConstraints constraints;
-  MultiSFTVector *inputSFTs = NULL;
- 
+  SFTConstraints constraints = empty_SFTConstraints;
 
-  MultiPSDVector *multPSD = NULL;  
+  MultiSFTVector *inputSFTs = NULL;
+  MultiPSDVector *multiPSD = NULL;  
 
   LIGOTimeGPS startTimeGPS, endTimeGPS;
   LIGOTimeGPSVector inputTimeStampsVector;
   
-  /* log file and strings */
-  FILE   *fpLog=NULL;
-  CHAR   *fnameLog=NULL; 
-  CHAR   *logstr=NULL; 
-
-  /* user input variables */
-  BOOLEAN uvar_help;
-  CHAR *uvar_inputData;    /* directory for unclean sfts */
-  CHAR *uvar_outputPSDFILE;   /* directory for cleaned sfts */
-  REAL8 uvar_fStart, uvar_fBand;
-  BOOLEAN uvar_log; /* logging done if true */
-  REAL8   uvar_startTime, uvar_endTime;
-  CHAR   *uvar_timeStampsFile=NULL;
-  LALStringVector *uvar_linefiles=NULL;
-  INT4     uvar_blocksRngMed, uvar_maxBinsClean;
-
-
   /* LALDebugLevel must be called before anything else */
   lalDebugLevel = 0;
+  vrbflg = 1;	/* verbose error-messages */
+
+  /* set LAL error-handler */
+  lal_errhandler = LAL_ERR_EXIT;
+
   LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
-  /* set defaults */
-  uvar_help = FALSE;
-  uvar_log = FALSE;  
+  /* set log-level */
+  LogSetLevel ( lalDebugLevel );
 
-  uvar_maxBinsClean = 100;
-  uvar_blocksRngMed = 101;
-
-  uvar_startTime = 0.0;
-  uvar_endTime = 0.0;
-
-  uvar_inputData = (CHAR *)LALMalloc(256 * sizeof(CHAR));
-  strcpy(uvar_inputData, INPUTSFTDIR);
-
-  uvar_outputPSDFILE = (CHAR *)LALMalloc(256 * sizeof(CHAR));
-  strcpy(uvar_outputPSDFILE, OUTPUTPSDFILE);
-
-  uvar_fStart = STARTFREQ;
-  uvar_fBand = BANDFREQ;  
-
-
-  /* register user input variables */
-  LAL_CALL(LALRegisterBOOLUserVar(  &status, "help", 'h', UVAR_HELP,    "Print this message", &uvar_help), &status);  
-  LAL_CALL(LALRegisterSTRINGUserVar(&status, "inputData", 'i', UVAR_OPTIONAL, "Input SFT pattern", &uvar_inputData), &status);
-  LAL_CALL(LALRegisterSTRINGUserVar(&status, "outputFILE", 'o', UVAR_OPTIONAL, "Output PSD file", &uvar_outputPSDFILE), &status);
-  LAL_CALL(LALRegisterREALUserVar(  &status, "fStart", 'f', UVAR_OPTIONAL, "Frequency to start from", &uvar_fStart), &status);
-  LAL_CALL(LALRegisterREALUserVar(  &status, "fBand", 'b', UVAR_OPTIONAL, "Frequency Band", &uvar_fBand), &status);
-  LAL_CALL(LALRegisterREALUserVar(  &status, "startTime", 's', UVAR_OPTIONAL, "GPS start time", &uvar_startTime), &status);
-  LAL_CALL(LALRegisterREALUserVar(  &status, "endTime",  'e',  UVAR_OPTIONAL, "GPS end time", &uvar_endTime), &status);
-  LAL_CALL(LALRegisterSTRINGUserVar(&status, "timeStampsFile", 't', UVAR_OPTIONAL, "Time-stamps file", &uvar_timeStampsFile), &status);
-
-  LAL_CALL(LALRegisterINTUserVar(   &status, "blocksRngMed",  'w',  UVAR_OPTIONAL, "Running Median window size", &uvar_blocksRngMed), &status);
-  LAL_CALL(LALRegisterINTUserVar(   &status, "maxBinsClean", 'm', UVAR_OPTIONAL, "Maximum Cleaning Bins", &uvar_maxBinsClean), &status);
-
-  LAL_CALL( LALRegisterLISTUserVar(   &status, "linefiles", 0,  UVAR_OPTIONAL, "Comma separated List of linefiles (filenames must contain IFO name)", &uvar_linefiles), &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "log", 0,  UVAR_OPTIONAL, "Write log file", &uvar_log), &status);  
-
-
-  /* read all command line variables */
-  LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
+  LAL_CALL (initUserVars (&status, argc, argv, &uvar), &status);	  
 
   /* exit if help was required */
-  if (uvar_help)
+  if (uvar.help)
     exit(0); 
-
-  /********logging the user input variables*********************/
-
-  if (uvar_log) {
-    /* open log file for writing */
-    fnameLog = (CHAR *)LALMalloc( 512*sizeof(CHAR));
-    strcpy(fnameLog,uvar_outputPSDFILE);
-    strcat(fnameLog, "_log");
-    if ((fpLog = fopen(fnameLog, "w")) == NULL) {
-      fprintf(stderr, "Unable to open file %s for writing\n", fnameLog);
-      LALFree(fnameLog);
-      exit(1);
-    }
-    
-    /* get the log string */
-    LAL_CALL( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
-    
-    fprintf( fpLog, "## LOG FILE FOR SFT PSD COMPUTATION\n\n");
-    fprintf( fpLog, "# User Input:\n");
-    fprintf( fpLog, "#-------------------------------------------\n");
-    fprintf( fpLog, logstr);
-    LALFree(logstr);
-    
-    /* append an ident-string defining the exact CVS-version of the code used */
-    {
-      CHAR command[1024] = "";
-      fprintf (fpLog, "\n\n# CVS-versions of executable:\n");
-      fprintf (fpLog, "# -----------------------------------------\n");
-      fclose (fpLog);
-      
-      sprintf (command, "ident %s | sort -u >> %s", argv[0], fnameLog);
-      system (command);	/* we don't check this. If it fails, we assume that */
-    			/* one of the system-commands was not available, and */
-    			/* therefore the CVS-versions will not be logged */
-      
-      LALFree(fnameLog); 
-    }
-  } /* done with logging */
-
-
 
   /* set detector constraint */
   constraints.detector = NULL;
   
-  if ( LALUserVarWasSet( &uvar_startTime ) ) {
-    LAL_CALL ( LALFloatToGPS( &status, &startTimeGPS, &uvar_startTime), &status);
+  if ( LALUserVarWasSet( &uvar.startTime ) ) {
+    LAL_CALL ( LALFloatToGPS( &status, &startTimeGPS, &uvar.startTime), &status);
     constraints.startTime = &startTimeGPS;
   }
   
-  if ( LALUserVarWasSet( &uvar_endTime ) ) {
-    LAL_CALL ( LALFloatToGPS( &status, &endTimeGPS, &uvar_endTime), &status);
+  if ( LALUserVarWasSet( &uvar.endTime ) ) {
+    LAL_CALL ( LALFloatToGPS( &status, &endTimeGPS, &uvar.endTime), &status);
     constraints.endTime = &endTimeGPS;
   }
   
-  if ( LALUserVarWasSet( &uvar_timeStampsFile ) ) {
-    LAL_CALL ( ReadTimeStampsFile ( &status, &inputTimeStampsVector, uvar_timeStampsFile), &status);
+  if ( LALUserVarWasSet( &uvar.timeStampsFile ) ) {
+    LAL_CALL ( ReadTimeStampsFile ( &status, &inputTimeStampsVector, uvar.timeStampsFile), &status);
     constraints.timestamps = &inputTimeStampsVector;
   }
   
   /* get sft catalog */
-  LAL_CALL( LALSFTdataFind( &status, &catalog, uvar_inputData, &constraints), &status);
+  LogPrintf ( LOG_DEBUG, "Finding all SFTs to load ... ");
+  LAL_CALL( LALSFTdataFind( &status, &catalog, uvar.inputData, &constraints), &status);
+  LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
   if ( (catalog == NULL) || (catalog->length == 0) ) {
-    fprintf (stderr,"Unable to match any SFTs with pattern '%s'\n", uvar_inputData );
+    fprintf (stderr,"Unable to match any SFTs with pattern '%s'\n", uvar.inputData );
     exit(1);
   }
   
   /* now we can free the inputTimeStampsVector */
-  if ( LALUserVarWasSet( &uvar_timeStampsFile ) ) {
+  if ( LALUserVarWasSet( &uvar.timeStampsFile ) ) {
     LALFree( inputTimeStampsVector.data );
   }
 
   /* read the sfts */  
-  LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, catalog, uvar_fStart, uvar_fStart + uvar_fBand), &status);
+  LogPrintf (LOG_DEBUG, "Loading all SFTs ... ");
+  LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, catalog, uvar.fStart, uvar.fStart + uvar.fBand), &status);
+  LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
   LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
 
-
-
   /* clean sfts if required */
-  if ( LALUserVarWasSet( &uvar_linefiles ) )
+  if ( LALUserVarWasSet( &uvar.linefiles ) )
     {
       RandomParams *randPar=NULL;
       FILE *fpRand=NULL;
@@ -285,93 +214,84 @@ int main(int argc, char *argv[]){
       
       LAL_CALL ( LALCreateRandomParams (&status, &randPar, seed), &status );
       
-      LAL_CALL( LALRemoveKnownLinesInMultiSFTVector ( &status, inputSFTs, uvar_maxBinsClean, uvar_blocksRngMed, uvar_linefiles, randPar), &status);
-      
+      LAL_CALL( LALRemoveKnownLinesInMultiSFTVector ( &status, inputSFTs, uvar.maxBinsClean, uvar.blocksRngMed, uvar.linefiles, randPar), &status);
       LAL_CALL ( LALDestroyRandomParams (&status, &randPar), &status);
       fclose(fpRand);
     } /* end cleaning */
   
+  LogPrintf (LOG_DEBUG, "Computing spectrogram and mean-PSD ... ");
+  /* get power running-median rngmed[ |data|^2 ] from SFTs */
+  LAL_CALL( LALNormalizeMultiSFTVect (&status, &multiPSD, inputSFTs, uvar.blocksRngMed), &status);
+  /* Throw away SFTs, not needed any more */
+  LAL_CALL (LALDestroyMultiSFTVector(&status, &inputSFTs), &status );
 
-  /* normalize sfts */
-  LAL_CALL( LALNormalizeMultiSFTVect (&status, &multPSD, inputSFTs, uvar_blocksRngMed), &status);
+  Freq0 = multiPSD->data[0]->data[0].f0;
+  dFreq = multiPSD->data[0]->data[0].deltaF;
+  normPSD = 2.0 * dFreq;
 
+  numIFOs = multiPSD->length;
+  numBins = multiPSD->data[0]->data[0].data->length;
 
-  /* allocate memory for periodogram for all IFO */
-  deltaF = multPSD->data[0]->data->deltaF;
-  numifo = multPSD->length;
-  nBins = multPSD->data[0]->data->data->length;  
-  periodoOut = (REAL8 *)LALCalloc(1, nBins*sizeof(REAL8));
-  periodo = (REAL8 **)LALCalloc(1, numifo*sizeof(REAL8 *));
-  for (k = 0; k < numifo; k++) {
-    periodo[k] = (REAL8 *)LALCalloc(1,nBins*sizeof(REAL8));
+  if ( (meanSn = XLALCreateREAL8Vector ( numBins )) == NULL ) {
+    LogPrintf (LOG_CRITICAL, "Out of memory!\n");
+    exit (-1);
   }
 
-
-  for ( iIFO = 0; iIFO < numifo; iIFO++ ) {
-    
-    numsft = multPSD->data[iIFO]->length;
-    
-    for ( iSFT = 0; iSFT < numsft; iSFT++) {
-
-      for ( k = 0; k < nBins; k++) {       
-
-	periodo[iIFO][k] += multPSD->data[iIFO]->data[iSFT].data->data[k]/numsft;
-
-      } /* loop over frequency bins */
-
-    } /* loop over SFTs */
-    
-  } /* loop over IFOs */
-  
-
-  for ( k = 0; k < nBins; k++) {       
-    REAL8 temp = 0;
-    
-    for (iIFO = 0; iIFO < numifo; iIFO++) {
-      
-      temp += 1.0/periodo[iIFO][k];
-	
-    } /* loop over IFOs */
-    
-    periodoOut[k] = 1.0/temp;
-    
-  } /* look over frequency bins */
-  
-
-  
-  /* write periodo to the output file */
-  if (  (fpOut = fopen(uvar_outputPSDFILE, "w")) == NULL)
+  /* normalize rngmd(power) to get proper *single-sided* PSD: Sn = (2/Tsft) rngmed[|data|^2] 
+   * AND
+   * compute 'mean-Sn': arithmetic mean over SFTs, harmonic mean over IFOs, per freq-bin  
+   */
+  for ( k = 0; k < numBins; k ++ )
     {
-      fprintf(stderr, "Unable to open output file %s for writing...exiting \n", uvar_outputPSDFILE);
+      REAL8 sumSXinv = 0;
+      for ( X = 0; X < numIFOs; X ++ )
+	{
+	  UINT4 numSFTs = multiPSD->data[X]->length;
+	  REAL8 sumSn = 0;
+	  for ( iSFT = 0; iSFT < numSFTs; iSFT ++ )
+	    {
+	      multiPSD->data[X]->data[iSFT].data->data[k] *= normPSD;
+	      sumSn += multiPSD->data[X]->data[iSFT].data->data[k];
+	    } /* for iSFT < numSFTs */
+
+	  sumSXinv += numSFTs / sumSn;		/* 1 / mean[Sn(sft)] */
+
+	} /* for X < numIFOs */
+
+      meanSn->data[k] = 1.0 / sumSXinv;
+
+    } /* for k < numBins */
+  LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
+
+  /* output spectrograms */
+  if ( uvar.outputSpectBname ) {
+    LAL_CALL ( LALfwriteSpectrograms ( &status, uvar.outputSpectBname, multiPSD ), &status );
+  }
+
+  /* write mean-Sn to output file */
+  if (  (fpOut = fopen(uvar.outputPSD, "wb")) == NULL)
+    {
+      LogPrintf ( LOG_CRITICAL, "Unable to open output file %s for writing...exiting \n", uvar.outputPSD );
       exit(1);
     }
-  for (k = 0; k < nBins; k++)
-    fprintf(fpOut, "%f   %e\n", uvar_fStart + k*deltaF, periodoOut[k]);
+
+  for (k = 0; k < numBins; k++)
+    fprintf(fpOut, "%f   %e\n", Freq0 + k * dFreq, meanSn->data[k] );
 
   fclose(fpOut);
 
-
   /* we are now done with the psd */
-  LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multPSD), &status);
-  
-  /* we are done with the sfts and ucharpeakgram now */
-  LAL_CALL (LALDestroyMultiSFTVector(&status, &inputSFTs), &status );
+  LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multiPSD), &status);
     
   LAL_CALL (LALDestroyUserVars(&status), &status);
 
-  /* free periodo */
-  for (k = 0; k < numifo; k++) {
-    LALFree(periodo[k]);
-  }
-  LALFree(periodo);
-  LALFree(periodoOut);
+  XLALDestroyREAL8Vector ( meanSn );
 
   LALCheckMemoryLeaks(); 
 
-  /* INFO( COMPUTEPSDC_MSGENORM ); */
   return COMPUTEPSDC_ENORM;
-}
 
+} /* main() */
 
 
 
@@ -431,8 +351,169 @@ void ReadTimeStampsFile (LALStatus          *status,
 
 
 
+/** register all "user-variables" */
+void
+initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar)
+{
+  INITSTATUS( status, "initUserVars", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  /* set a few defaults */
+  uvar->help = FALSE;
+
+  uvar->maxBinsClean = 100;
+  uvar->blocksRngMed = 101;
+
+  uvar->startTime = 0.0;
+  uvar->endTime = 0.0;
+
+  uvar->inputData = NULL;
+
+  /* default: read all SFT bins */
+  uvar->fStart = -1;
+  uvar->fBand = 0;
+
+#define OUTPUTPSDFILE "./psd"
+  uvar->outputPSD = (CHAR *)LALMalloc(256 * sizeof(CHAR));
+  strcpy(uvar->outputPSD, OUTPUTPSDFILE);
+
+  /* register user input variables */
+  LALregBOOLUserStruct ( status, 	help, 		'h', UVAR_HELP,    	"Print this message" );
+  LALregSTRINGUserStruct ( status, 	inputData, 	'i', UVAR_REQUIRED, 	"Input SFT pattern");
+  LALregSTRINGUserStruct ( status, 	outputPSD, 	'o', UVAR_OPTIONAL, 	"Output PSD into this file");
+  LALregSTRINGUserStruct ( status,     outputSpectBname, 0,  UVAR_OPTIONAL, 	"Filename-base for (binary) spectrograms (one per IFO)");
+
+  LALregREALUserStruct ( status, 	fStart, 	'f', UVAR_OPTIONAL, 	"Frequency to start from (-1 = all freqs)");
+  LALregREALUserStruct ( status, 	fBand, 		'b', UVAR_OPTIONAL, 	"Frequency Band");
+  LALregREALUserStruct ( status, 	startTime, 	's', UVAR_OPTIONAL, 	"GPS start time");
+  LALregREALUserStruct ( status, 	endTime,  	'e', UVAR_OPTIONAL, 	"GPS end time");
+  LALregSTRINGUserStruct ( status, 	timeStampsFile, 't', UVAR_OPTIONAL, 	"Time-stamps file");
+
+  LALregINTUserStruct ( status, 	blocksRngMed,  	'w', UVAR_OPTIONAL, 	"Running Median window size");
+  LALregINTUserStruct ( status, 	maxBinsClean, 	'm', UVAR_OPTIONAL, 	"Maximum Cleaning Bins");
+
+  LALregLISTUserStruct ( status, 	linefiles, 	 0, UVAR_OPTIONAL, 	"Comma separated list of linefiles (names must contain IFO name)");
+  LALregSTRINGUserStruct ( status, 	outputFILE, 	 0, UVAR_DEVELOPER, 	"Output PSD file [OBSOLETE: use '--outputPSD' instead]");
+
+  /* read all command line variables */
+  TRY( LALUserVarReadAllInput(status->statusPtr, argc, argv), status);
+
+  /* check user-input consistency */
+  if ( LALUserVarWasSet ( &uvar->outputFILE ) )
+    {
+      LogPrintf (LOG_NORMAL, "Warning: --outputFILE is obsolete, use --outputPSD instead!\n");
+      if ( LALUserVarWasSet ( &uvar->outputPSD ) ) {
+	LogPrintf ( LOG_CRITICAL, "Both --outputFILE and --outputPSD was specified!\n" );
+	ABORT ( status, COMPUTEPSDC_EBAD, COMPUTEPSDC_MSGEBAD );
+      }
+      if ( uvar->outputPSD ) LALFree ( uvar->outputPSD );
+      if ( (uvar->outputPSD = LALMalloc ( strlen(uvar->outputFILE ) + 1)) == NULL ) {
+	ABORT ( status, COMPUTEPSDC_EMEM, COMPUTEPSDC_MSGEMEM );
+      }
+      strcpy ( uvar->outputPSD, uvar->outputFILE );
+    }
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+} /* initUserVars() */
 
 
+/** Write a multi-PSD into spectrograms for each IFO.
+ * Using gnuplot 'binary' matrix format
+ * The filename for each <IFO> is generated as 'bname-<IFO>'
+ */
+void
+LALfwriteSpectrograms ( LALStatus *status, const CHAR* bname, const MultiPSDVector *multiPSD )
+{
+  UINT4 X;
+  CHAR *fname;
+  float num, *row_data;		/* cast to float for writing (gnuplot binary format) */
+  FILE *fp;
+      
+  INITSTATUS( status, "LALfwriteSpectrograms", rcsid );
+  ATTATCHSTATUSPTR (status);
 
+  if ( !bname || !multiPSD || multiPSD->length == 0 ) {
+    ABORT ( status, COMPUTEPSDC_ENULL, COMPUTEPSDC_MSGENULL );
+  }
 
+  /* loop over IFOs */
+  for ( X = 0; X < multiPSD->length ; X ++ )
+    {
+      UINT4 len = strlen ( bname ) + 4;	/* append '-XN' to get IFO-specific filename */
+      UINT4 numSFTs, numBins;
+      UINT4 j, k;
+      const CHAR *tmp;
+      REAL8 f0, df;
 
+      numSFTs = multiPSD->data[X]->length;
+      numBins = multiPSD->data[X]->data[0].data->length;
+
+      /* allocate memory for data row-vector */
+      if ( ( row_data = LALMalloc ( numBins * sizeof(float) )) == NULL ) {
+	ABORT ( status, COMPUTEPSDC_EMEM, COMPUTEPSDC_MSGEMEM );
+      }
+
+      if ( ( fname = LALMalloc ( len * sizeof(CHAR) )) == NULL ) {
+	LALFree ( row_data );
+	ABORT ( status, COMPUTEPSDC_EMEM, COMPUTEPSDC_MSGEMEM );
+      }
+      tmp = multiPSD->data[X]->data[0].name;
+      sprintf ( fname, "%s-%c%c", bname, tmp[0], tmp[1] );
+
+      if ( ( fp = fopen( fname, "wb" ))  == NULL ) {
+	LogPrintf (LOG_CRITICAL, "Failed to open spectrogram file '%s' for writing!\n", fname );
+	goto failed;
+
+      }
+
+      /* write number of columns: i.e. frequency-bins */
+      num = (float)numBins;
+      if ((fwrite((char *) &num, sizeof(float), 1, fp)) != 1) {
+	LogPrintf (LOG_CRITICAL, "Failed to fwrite() to spectrogram file '%s'\n", fname );
+	goto failed;
+      }
+
+      /* write frequencies as column-titles */
+      f0 = multiPSD->data[X]->data[0].f0;
+      df = multiPSD->data[X]->data[0].deltaF;
+      for ( k=0; k < numBins; k ++ )
+	row_data[k] = (float) ( f0 + 1.0 * k * df );
+      if ( fwrite((char *) row_data, sizeof(float), numBins, fp) != numBins ) {
+	LogPrintf (LOG_CRITICAL, "Failed to fwrite() to spectrogram file '%s'\n", fname );
+	goto failed;
+      }
+
+      /* write PSDs of successive SFTs in rows, first column is GPS-time in seconds */
+      for ( j = 0; j < numSFTs ; j ++ )
+	{
+	  num = (float) multiPSD->data[X]->data[j].epoch.gpsSeconds;
+	  for ( k = 0; k < numBins; k ++ )
+	    row_data[k] = (float) sqrt ( multiPSD->data[X]->data[j].data->data[k] );
+
+	  if ( ( fwrite((char *) &num, sizeof(float), 1, fp) != 1 ) ||
+	       ( fwrite((char *) row_data, sizeof(float), numBins, fp) != numBins ) ) {
+	    LogPrintf (LOG_CRITICAL, "Failed to fwrite() to spectrogram file '%s'\n", fname );
+	    goto failed;
+	  }
+	  
+	} /* for j < numSFTs */
+
+      fclose ( fp );
+      LALFree ( fname );
+      LALFree ( row_data );
+
+    } /* for X < numIFOs */
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+  
+  /* cleanup and exit on write-error */
+ failed:
+  if ( fname ) LALFree ( fname );
+  if ( row_data ) LALFree ( row_data );
+  if ( fp ) fclose ( fp );
+  ABORT ( status, COMPUTEPSDC_EFILE, COMPUTEPSDC_MSGEFILE );
+
+} /* LALfwriteSpectrograms() */
