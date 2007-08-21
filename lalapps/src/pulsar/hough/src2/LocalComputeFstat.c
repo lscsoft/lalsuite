@@ -519,9 +519,10 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
 	/* Step 3: apply global factors to complete Dphi_alpha */
 	Dphi_alpha *= Tsft * (*Tdot_al);		/* guaranteed > 0 ! */
-	if (!finite(Dphi_alpha) {
+
+	if (!finite(Dphi_alpha)) {
 	  LogPrintf(LOG_CRITICAL, "non-finite Dphi_alpha: %e, Tsft:%e, Tkdot_al:%e\n",
-		    Dphi_alpha, Tsft, (*Tdot_al))
+		    Dphi_alpha, Tsft, (*Tdot_al));
 	  XLAL_ERROR("LocalXLALComputeFaFb", XLAL_EDOM);
 	}
 
