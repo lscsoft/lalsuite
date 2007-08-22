@@ -77,6 +77,7 @@ LALFILE *lalstderr(void);
 int XLALFileIsCompressed( const char *path );
 LALFILE * XLALFileOpenRead( const char *path );
 LALFILE * XLALFileOpenWrite( const char *path, int compression );
+LALFILE * XLALFileOpenAppend( const char *path, int compression );
 LALFILE * XLALFileOpen( const char *path, const char *mode );
 int XLALFileClose( LALFILE * file );
 size_t XLALFileRead( void *ptr, size_t size, size_t nobj, LALFILE *file );

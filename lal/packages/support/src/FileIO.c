@@ -297,6 +297,29 @@ LALFILE * XLALFileOpenRead( const char *path )
 	return file;
 }
 
+LALFILE * XLALFileOpenAppend( const char *path, int compression )
+{
+	static const char *func = "XLALFileOpenAppend";
+	LALFILE *file;
+	if ( ! ( file = XLALMalloc( sizeof(*file ) ) ) )
+		XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+#	ifdef ZLIB_ENABLED
+	file->fp = compression ? gzopen( path, "a+" ) : fopen( path, "a+" );
+#	else
+	if ( compression ) {
+		XLALPrintWarning( "XLAL Warning - %s: Compression not supported\n", func );
+		compression = 0;
+	}
+	file->fp = fopen( path, "a+" );
+#	endif
+	file->compression = compression;
+	if ( ! file->fp ) {
+		XLALFree( file );
+		XLAL_ERROR_NULL( func, XLAL_EIO );
+	}
+	return file;
+}
+
 LALFILE * XLALFileOpenWrite( const char *path, int compression )
 {
 	static const char *func = "XLALFileOpenWrite";
