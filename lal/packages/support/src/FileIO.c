@@ -583,7 +583,7 @@ int XLALFileEOF( LALFILE *file )
 	if ( ! file )
 		XLAL_ERROR( func, XLAL_EFAULT );
 #	ifdef ZLIB_ENABLED
-	c = file->compression ? gzeof(file->fp) : feof(file->fp);
+	c = file->compression ? gzeof(file->fp) : feof((FILE*)(file->fp));
 #	else
 	c = feof((FILE*)(file->fp));
 #	endif
