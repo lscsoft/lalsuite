@@ -34,7 +34,7 @@
 
 /* 
   Author:
-  $ Id: $
+  $Id$
 */
 
 #include <time.h>

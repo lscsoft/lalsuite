@@ -9,7 +9,7 @@
 
 /* 
   Author:
-  $ Id: $
+  $Id$
 */
 
 #ifndef _PULSAR_PARAMETER_ESTIMATION_H
