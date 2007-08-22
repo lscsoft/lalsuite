@@ -610,6 +610,11 @@ int MAIN( int argc, char *argv[]) {
   /* initialize ephemeris info */ 
 
   edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
+  if ( edat == NULL) {
+    fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
+    return(1);
+  }
+
   (*edat).ephiles.earthEphemeris = uvar_ephemE;
   (*edat).ephiles.sunEphemeris = uvar_ephemS;
   
@@ -624,6 +629,11 @@ int MAIN( int argc, char *argv[]) {
   if ( uvar_printCand1 )
     {
       fnameSemiCohCand = LALCalloc( strlen(uvar_fnameout) + 1, sizeof(CHAR) );
+      if ( fnameSemiCohCand == NULL) {
+	fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
+	return(1);
+      }
+
       strcpy(fnameSemiCohCand, uvar_fnameout);
     }
   
@@ -844,6 +854,11 @@ int MAIN( int argc, char *argv[]) {
   semiCohCandList.refTime = tMidGPS;
   semiCohCandList.nCandidates = 0; /* initialization */
   semiCohCandList.list = (SemiCohCandidate *)LALCalloc( 1, semiCohCandList.length * sizeof(SemiCohCandidate));
+  if ( semiCohCandList.list == NULL) {
+    fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
+    return(1);
+  }
+
 
 
   /* set semicoherent patch size */
@@ -868,6 +883,10 @@ int MAIN( int argc, char *argv[]) {
   fstatVector.length = nStacks;
   fstatVector.data = NULL;
   fstatVector.data = (REAL8FrequencySeries *)LALCalloc( 1, nStacks * sizeof(REAL8FrequencySeries));
+  if ( fstatVector.data == NULL) {
+    fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
+    return(1);
+  }
   
 
   /*-----------Create template grid for first stage ---------------*/
@@ -884,6 +903,11 @@ int MAIN( int argc, char *argv[]) {
   scanInit.ephemeris = edat;
   scanInit.skyGridFile = uvar_skyGridFile;
   scanInit.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
+  if ( scanInit.skyRegionString == NULL) {
+    fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
+    return(1);
+  }
+
   strcpy (scanInit.skyRegionString, uvar_skyRegion);
   scanInit.Freq = usefulParams.spinRange_midTime.fkdot[0] +  usefulParams.spinRange_midTime.fkdotBand[0];
 
@@ -1011,13 +1035,33 @@ int MAIN( int argc, char *argv[]) {
 	  fstatVector.data[k].f0 = usefulParams.spinRange_midTime.fkdot[0] - semiCohPar.extraBinsFstat * dFreqStack;
 	  if (fstatVector.data[k].data == NULL) {
 	    fstatVector.data[k].data = (REAL8Sequence *)LALCalloc( 1, sizeof(REAL8Sequence));
+	    if ( fstatVector.data[k].data == NULL) {
+	      fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
+	      return(1);
+	    }
+
 	    fstatVector.data[k].data->length = binsFstat1;
 	    fstatVector.data[k].data->data = (REAL8 *)LALCalloc( 1, binsFstat1 * sizeof(REAL8));
+	    if ( fstatVector.data[k].data->data == NULL) {
+	      fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
+	      return(1);
+	    }
+
 	  } 
 	  else {
 	    fstatVector.data[k].data = (REAL8Sequence *)LALRealloc( fstatVector.data[k].data, sizeof(REAL8Sequence));
+	    if ( fstatVector.data[k].data == NULL) {
+	      fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
+	      return(1);
+	    }
+
 	    fstatVector.data[k].data->length = binsFstat1;
 	    fstatVector.data[k].data->data = (REAL8 *)LALRealloc( fstatVector.data[k].data->data, binsFstat1 * sizeof(REAL8));
+	    if ( fstatVector.data[k].data->data == NULL) {
+	      fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
+	      return(1);
+	    }
+
 	  } 
 	} /* loop over stacks */
       } /* fstat memory allocation block */
@@ -1385,12 +1429,21 @@ void SetUpSFTs( LALStatus *status,
   /* finally memory for stack of multi sfts */
   stackMultiSFT->length = in->nStacks;
   stackMultiSFT->data = (MultiSFTVector **)LALCalloc(1, in->nStacks * sizeof(MultiSFTVector *));
-  
+  if ( stackMultiSFT->data == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }
+    
   stackMultiNoiseWeights->length = in->nStacks;
   stackMultiNoiseWeights->data = (MultiNoiseWeights **)LALCalloc(1, in->nStacks * sizeof(MultiNoiseWeights *));
-  
+  if ( stackMultiNoiseWeights->data == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
+
   stackMultiDetStates->length = in->nStacks;
   stackMultiDetStates->data = (MultiDetectorStateSeries **)LALCalloc(1, in->nStacks * sizeof(MultiDetectorStateSeries *));
+  if ( stackMultiDetStates->data == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }
 
   /* loop over stacks and read sfts */  
   for (k = 0; k < in->nStacks; k++) {
@@ -1517,9 +1570,29 @@ void ComputeFstatHoughMap(LALStatus *status,
   INITSTATUS( status, "ComputeFstatHoughMap", rcsid );
   ATTATCHSTATUSPTR (status);
 
-  ASSERT ( out != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-  ASSERT ( out->length > 0, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
-  ASSERT ( out->list != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );  
+  /* check input is not null */
+  if ( out == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
+  if ( out->length == 0 ) {
+    ABORT ( status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+  }  
+  if ( out->list == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+  }  
+  if ( pgV == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
+  if ( pgV->length == 0 ) {
+    ABORT ( status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+  }  
+  if ( pgV->pg == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
+  if ( params == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
+
 
 
   /* copy some parameters from peakgram vector */
@@ -1566,7 +1639,11 @@ void ComputeFstatHoughMap(LALStatus *status,
   lutV.length = nStacks;
   lutV.lut = NULL;
   lutV.lut = (HOUGHptfLUT *)LALCalloc(1,nStacks*sizeof(HOUGHptfLUT));
-  
+  if ( lutV.lut == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
+
+
   /* partial hough map derivative vector */
   phmdVS.length  = nStacks;
 
@@ -1586,27 +1663,42 @@ void ComputeFstatHoughMap(LALStatus *status,
   phmdVS.deltaF  = deltaF;
   phmdVS.phmd = NULL;
   phmdVS.phmd=(HOUGHphmd *)LALCalloc( 1,phmdVS.length * phmdVS.nfSize *sizeof(HOUGHphmd));
-  
+  if ( phmdVS.phmd == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }    
+
   /* residual spindown trajectory */
   freqInd.deltaF = deltaF;
   freqInd.length = nStacks;
   freqInd.data = NULL;
   freqInd.data =  ( UINT8 *)LALCalloc(1,nStacks*sizeof(UINT8));
+  if ( freqInd.data == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
    
   /* resolution in space of residual spindowns */
   ht.dFdot.length = 1;
   ht.dFdot.data = NULL;
   ht.dFdot.data = (REAL8 *)LALCalloc( 1, ht.dFdot.length * sizeof(REAL8));
+  if ( ht.dFdot.data == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
 
   /* the residual spindowns */
   ht.spinRes.length = 1;
   ht.spinRes.data = NULL;
   ht.spinRes.data = (REAL8 *)LALCalloc( 1, ht.spinRes.length*sizeof(REAL8));
+  if ( ht.spinRes.data == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
 
   /* the residual spindowns */
   ht.spinDem.length = 1;
   ht.spinDem.data = NULL;
   ht.spinDem.data = (REAL8 *)LALCalloc( 1, ht.spinRes.length*sizeof(REAL8));
+  if ( ht.spinDem.data == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
 
   /* the demodulation params */
   parDem.deltaF = deltaF;
@@ -1615,6 +1707,9 @@ void ComputeFstatHoughMap(LALStatus *status,
   parDem.spin.length = 1;
   parDem.spin.data = NULL;
   parDem.spin.data = (REAL8 *)LALCalloc(1, sizeof(REAL8));
+  if ( parDem.spin.data == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
   parDem.spin.data[0] = fdot;
 
   /* the skygrid resolution params */
@@ -1633,7 +1728,15 @@ void ComputeFstatHoughMap(LALStatus *status,
     hist.data = NULL;
     histTotal.data = NULL;
     hist.data = (UINT8 *)LALCalloc(1, (nStacks+1)*sizeof(UINT8));
+    if ( hist.data == NULL ) {
+      ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+    }  
+
     histTotal.data = (UINT8 *)LALCalloc(1, (nStacks+1)*sizeof(UINT8));
+    if ( histTotal.data == NULL ) {
+      ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+    }  
+
     { 
       UINT4   j;
       for(j=0; j< histTotal.length; ++j) 
@@ -1642,6 +1745,10 @@ void ComputeFstatHoughMap(LALStatus *status,
     {
       const CHAR *append = "stats";
       fileStats = LALCalloc(strlen(params->outBaseName) + strlen(append) + 1, sizeof(CHAR) );
+      if ( fileStats == NULL ) {
+	ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+      }  
+
       strcpy( fileStats, params->outBaseName);
       strcat( fileStats, append);
     }
@@ -1679,6 +1786,9 @@ void ComputeFstatHoughMap(LALStatus *status,
     if (out->length != numHmaps) {
       out->length = numHmaps;
       out->list = (SemiCohCandidate *)LALRealloc( out->list, out->length * sizeof(SemiCohCandidate));
+      if ( out->list == NULL ) {
+	ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+      }  
     }
   }
 
@@ -1707,33 +1817,57 @@ void ComputeFstatHoughMap(LALStatus *status,
     patch.xCoor = NULL;
     patch.yCoor = NULL;
     patch.xCoor = (REAL8 *)LALCalloc(1,xSide*sizeof(REAL8));
+    if ( patch.xCoor == NULL ) {
+      ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+    }  
+
     patch.yCoor = (REAL8 *)LALCalloc(1,ySide*sizeof(REAL8));
+    if ( patch.yCoor == NULL ) {
+      ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+    }  
     TRY( LALHOUGHFillPatchGrid( status->statusPtr, &patch, &parSize ), status );
     
     /*------------- other memory allocation and settings----------------- */
     for(j=0; j<lutV.length; ++j){
       lutV.lut[j].maxNBins = maxNBins;
       lutV.lut[j].maxNBorders = maxNBorders;
-      lutV.lut[j].border =
-	(HOUGHBorder *)LALCalloc(1,maxNBorders*sizeof(HOUGHBorder));
-      lutV.lut[j].bin =
-	(HOUGHBin2Border *)LALCalloc(1,maxNBins*sizeof(HOUGHBin2Border));
+      lutV.lut[j].border = (HOUGHBorder *)LALCalloc(1,maxNBorders*sizeof(HOUGHBorder));
+      if ( lutV.lut[j].border == NULL ) {
+	ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+      }  
+
+      lutV.lut[j].bin =	(HOUGHBin2Border *)LALCalloc(1,maxNBins*sizeof(HOUGHBin2Border));
+      if ( lutV.lut[j].bin == NULL ) {
+	ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+      }  
+
       for (i=0; i<maxNBorders; ++i){
 	lutV.lut[j].border[i].ySide = ySide;
-	lutV.lut[j].border[i].xPixel =
-	  (COORType *)LALCalloc(1,ySide*sizeof(COORType));
+	lutV.lut[j].border[i].xPixel = (COORType *)LALCalloc(1,ySide*sizeof(COORType));
+	if ( lutV.lut[j].border[i].xPixel == NULL ) {
+	  ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+	}  
       }
     }
 
     for(j = 0; j < phmdVS.length * phmdVS.nfSize; ++j){
       phmdVS.phmd[j].maxNBorders = maxNBorders;
-      phmdVS.phmd[j].leftBorderP =
-	(HOUGHBorder **)LALCalloc(1,maxNBorders*sizeof(HOUGHBorder *));
-      phmdVS.phmd[j].rightBorderP =
-	(HOUGHBorder **)LALCalloc(1,maxNBorders*sizeof(HOUGHBorder *));
+      phmdVS.phmd[j].leftBorderP = (HOUGHBorder **)LALCalloc(1,maxNBorders*sizeof(HOUGHBorder *));
+      if ( phmdVS.phmd[j].leftBorderP == NULL ) {
+	ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+      }  
+
+      phmdVS.phmd[j].rightBorderP = (HOUGHBorder **)LALCalloc(1,maxNBorders*sizeof(HOUGHBorder *));
+      if ( phmdVS.phmd[j].rightBorderP == NULL ) {
+	ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+      }  
+
       phmdVS.phmd[j].ySide = ySide;
       phmdVS.phmd[j].firstColumn = NULL;
       phmdVS.phmd[j].firstColumn = (UCHAR *)LALCalloc(1,ySide*sizeof(UCHAR));
+      if ( phmdVS.phmd[j].firstColumn == NULL ) {
+	ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+      }  
     }
     
     /*------------------- create all the LUTs at fBin ---------------------*/  
@@ -1776,6 +1910,10 @@ void ComputeFstatHoughMap(LALStatus *status,
     ht.dFdot.data[0] = dfdot;
     ht.map   = NULL;
     ht.map   = (HoughTT *)LALCalloc(1,xSide*ySide*sizeof(HoughTT));
+    if ( ht.map == NULL ) {
+      ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+    }  
+
     TRY( LALHOUGHInitializeHT( status->statusPtr, &ht, &patch), status); /*not needed */
     
     /*  Search frequency interval possible using the same LUTs */
@@ -1937,6 +2075,17 @@ void FstatVectToPeakGram (LALStatus *status,
   INITSTATUS( status, "FstatVectToPeakGram", rcsid );
   ATTATCHSTATUSPTR (status);
 
+  if ( FstatVect == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
+  if ( FstatVect->length == 0 ) {
+    ABORT ( status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+  }  
+  if ( FstatVect->data == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
+
+
   nStacks = FstatVect->length;
   nSearchBins = FstatVect->data->data->length;
 
@@ -1944,9 +2093,14 @@ void FstatVectToPeakGram (LALStatus *status,
   /* first memory allocation */  
   pgV->length = nStacks;
   pgV->pg = (HOUGHPeakGram *)LALCalloc( 1, nStacks * sizeof(HOUGHPeakGram));
-
+  if ( pgV->pg == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
 
   upg = (UCHAR *)LALCalloc( 1, nSearchBins * sizeof(UCHAR));
+  if ( upg == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
 
   /* loop over each stack and set peakgram */
   for (k=0; k<nStacks; k++) {
@@ -1969,6 +2123,10 @@ void FstatVectToPeakGram (LALStatus *status,
     /* fix length of peakgram and allocate memory appropriately */
     pgV->pg[k].length = nPeaks; 
     pgV->pg[k].peak = (INT4 *)LALCalloc( 1, nPeaks * sizeof(INT4)); 
+    if ( pgV->pg[k].peak == NULL ) {
+      ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+    }  
+
 
     /* fill up other peakgram parameters */
     pgV->pg[k].deltaF = FstatVect->data[k].deltaF;
@@ -2026,6 +2184,10 @@ void SetUpStacks(LALStatus *status,
   /* set memory of output catalog sequence to maximum possible length */
   out->length = nStacksMax;
   out->data = (SFTCatalog *)LALCalloc( 1, nStacksMax * sizeof(SFTCatalog));
+  if ( out->data == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
+
   
   Tsft = 1.0 / in->data[0].header.deltaF;
 
@@ -2053,6 +2215,10 @@ void SetUpStacks(LALStatus *status,
 	  
 	  /* realloc to increase length of catalog */    
 	  out->data[stackCounter].data = (SFTDescriptor *)LALRealloc( out->data[stackCounter].data, length * sizeof(SFTDescriptor));
+	  if ( out->data[stackCounter].data == NULL ) {
+	    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+	  }  
+
 	  out->data[stackCounter].data[length - 1] = in->data[j];   
 	}    
       else /* move onto the next stack */
@@ -2068,6 +2234,10 @@ void SetUpStacks(LALStatus *status,
 	  /* realloc to increase length of catalog and copy data */    
 	  out->data[stackCounter].length = 1;    /* first entry in new stack */
 	  out->data[stackCounter].data = (SFTDescriptor *)LALRealloc( out->data[stackCounter].data, sizeof(SFTDescriptor));
+	  if ( out->data[stackCounter].data == NULL ) {
+	    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+	  }  
+
 	  out->data[stackCounter].data[0] = in->data[j];   
 	} /* if new stack */
       
@@ -2076,6 +2246,9 @@ void SetUpStacks(LALStatus *status,
   /* realloc catalog sequence length to actual number of stacks */
   out->length = stackCounter + 1;
   out->data = (SFTCatalog *)LALRealloc( out->data, (stackCounter+1) * sizeof(SFTCatalog) );
+  if ( out->data == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
   
   DETATCHSTATUSPTR (status);
   RETURN(status);
