@@ -386,8 +386,8 @@ parser.add_option("-l", "--log-path",action="store",type="string",\
 parser.add_option("-f", "--config-file",action="store",type="string",\
     metavar=" FILE",help="ini file")
 
-parser.add_option("-g", "--generate-cache",action="store_true",\
-    default=False, help="write LAL cache")
+parser.add_option("-g", "--generate-fu-cache",action="store_true",\
+    default=False, help="create hipe caches")
 
 parser.add_option("-m", "--datafind",action="store_true",\
     default=False, help="use datafind to get qscan/trends data")
@@ -444,13 +444,13 @@ if not opts.log_path and not opts.write_to_iulgroup:
   print >> sys.stderr, "Use --log-path PATH to specify a location"
   sys.exit(1)
 
-if not opts.write_to_iulgroup and not opts.generate_cache and \
+if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
   not opts.datafind and not opts.qscan \
   and not opts.trig_bank and not opts.inspiral and not opts.plots and not \
   opts.hoft_qscan and not opts.seis_qscan:
   print >> sys.stderr, "No steps of the pipeline specified."
   print >> sys.stderr, "Please specify at least one of"
-  print >> sys.stderr, "--generate-cache, --trig-bank, --inspiral, --plots,"
+  print >> sys.stderr, "--generate-fu-cache, --trig-bank, --inspiral, --plots,"
   print >> sys.stderr, "--datafind, --qscan, --hoft-qscan, --seis-qscan"
   print >> sys.stderr, "or --write-to-iulgroup (use this option alone for now)"  
   sys.exit(1)
@@ -460,26 +460,29 @@ if not opts.write_to_iulgroup and not opts.generate_cache and \
 cp = ConfigParser.ConfigParser()
 cp.read(opts.config_file)
 
+## get the directory where the code is run
+currentPath = os.path.abspath('.')
+
 ## set up the local directories
 setupdirs()
 
 ############# TURN THE HIPE OUTPUT INTO LAL CACHE FILES #######################
 
 cache = getCache(opts)
-if opts.generate_cache:
-  cache.getCacheAll(cp)
-  cache.writeCacheAll()
-  print >> sys.stderr, "\nHIPE CACHE FILES WRITTEN TO:"
-  for n, t in cache.nameMaps:
-    print >> sys.stderr, " * " + n + " [" + str(len(cache[t])) + "]"
 
-  command = "ln -s " + string.strip(cp.get('hipe-cache','hipe-cache-path')) + \
-          " cache"
-  # link datafind for inspiral jobs...
-  try: os.system(command)
-  except: pass
-else:
-  print >> sys.stderr, "\nOption --generate-cache NOT specified, it will be assumed that the hipe cache files already exists... "
+if opts.generate_fu_cache:
+  print >> sys.stderr, "\nOption --generate-fu-cache is specified, it overwrites the hipe cache files  which already exist"
+  cache.getCacheAll(cp)
+  cache.writeCacheAll('fu_hipe.cache')
+  print >> sys.stderr, "\nHIPE CACHE FILE WRITTEN TO: fu_hipe.cache"
+  #for n, t in cache.nameMaps:
+  #  print >> sys.stderr, " * " + n + " [" + str(len(cache[t])) + "]"
+
+try:
+  os.chdir("cache")
+  os.chdir(currentPath)
+except:
+  os.symlink(string.strip(cp.get('hipe-cache','hipe-cache-path')), 'cache')
 
 ##############################################################################
 # create a log file that the Condor jobs will write to
@@ -511,7 +514,22 @@ if opts.write_to_iulgroup:
   sys.exit(0)
 
 # Since we are continuing get useful stuff from the ini file.
-xml_glob = string.strip(cp.get('triggers','xml-glob'))
+if cp.has_option('triggers','hipe-output-cache'):
+  triggerCacheString = string.strip(cp.get('triggers','hipe-output-cache'))
+else:
+  triggerCacheString = ''
+if cp.has_option('triggers','triggers-tag'):
+  triggerTag = string.strip(cp.get('triggers','triggers-tag'))
+else:
+  triggerTag = ''
+
+if len(triggerCacheString) == 0 or len(triggerTag) == 0:
+  xml_glob = string.strip(cp.get('triggers','xml-glob'))
+else:
+  triggerCache = cache.filesMatchingGPSinCache(triggerCacheString,None,triggerTag)
+  triggerList = cache.getListFromCache(triggerCache)
+  xml_glob = triggerList[0] 
+
 numtrigs = string.strip(cp.get('triggers','num-trigs'))
 statistic =  string.strip(cp.get('triggers','statistic'))
 bla =  string.strip(cp.get('triggers','bitten-l-a'))
@@ -614,6 +632,9 @@ prev_dNode = None
 print "\n.......Setting up pipeline jobs"
 
 for trig in followuptrigs:
+
+  prev_plotNode = None
+  
   # Set up HTML structs for web page
   summaryHTML = summaryHTMLTable(trig)
   summaryHTML.containers.append(writeXMLparams(trig))
@@ -622,10 +643,19 @@ for trig in followuptrigs:
   print trig.gpsTime
 
   # TRY GETTING INSPIRAL PROCESS PARAMS... currently done even if the inspiral jobs are not requested... should be fixed
+  if cp.has_option('hipe-cache','hipe-intermediate-cache'):
+    intermediateCache = string.strip(cp.get('hipe-cache','hipe-intermediate-cache'))
+  else:
+    intermediateCache = ''
+  if opts.generate_fu_cache or len(intermediateCache) == 0:
+    cacheFile = 'fu_hipe.cache'
+  else:
+    cacheFile = intermediateCache
+
   try: 
     inspiral_process_params = cache.getProcessParamsFromCache( \
-                     cache.filesMatchingGPSinCache(trig.gpsTime,\
-                     "second_inspiral.cache"), \
+                     cache.filesMatchingGPSinCache(cacheFile,\
+                     trig.gpsTime, "INSPIRAL_"), \
                      trig.ifoTag, trig.gpsTime)
     #inspiral_process_params = cache.getProcessParamsFromCache( \
     #                 cache.filesMatchingGPS(trig.gpsTime,'INSPIRAL_'), \
@@ -645,9 +675,6 @@ for trig in followuptrigs:
   else: plotsFlag = 0
   if opts.data_quality: sFlag = 1
   else: sFlag = 0
-
-  # Build the list of ifos in which this trigger was found - this is assuming that an ifo name is made of 2 characters, such as "L1"...  
-  ifo_list = [trig.ifoList[i:i+2] for i in range(0,len(trig.ifoList),2)]
 
   # If hoft-qscan is requested, get the cache file
 #  if opts.hoft_qscan:
@@ -675,7 +702,7 @@ for trig in followuptrigs:
 #      print "could not get the list of cache files for hoft qscan jobs, for trigger" + str(trig.eventID)
 
   # loop over ifos
-  for ifo in ifo_list:
+  for ifo in trig.ifolist_in_coinc:
     try: trig.gpsTime[ifo]
     except: continue
 
@@ -899,9 +926,12 @@ for trig in followuptrigs:
         plotsFlag = 0
         if inspiralNode and opts.inspiral:
           plotNode.add_parent(inspiralNode)
+        if prev_plotNode and opts.plots:
+          plotNode.add_parent(prev_plotNode)
         if opts.plots:
           dag.add_node(plotNode)
           plotJobCnt+=1
+        prev_plotNode = plotNode
         #summaryHTML.containers.append( plotNode.getContainer() )
       except:
         plotNode = 0
