@@ -312,6 +312,7 @@ typedef struct CellDataTag
 } CellData;
 #pragma pack(0)
 
+
 /* ----------------------------------------------------------------------------- */
 /* Function declarelations */
 void ReadCommandLineArgs( LALStatus *, INT4 argc, CHAR *argv[], PolkaConfigVars *CLA ); 
@@ -392,15 +393,19 @@ int main(INT4 argc,CHAR *argv[])
   setlocale(LC_ALL, "C");
   
   PolkaConfigVars PCV; /* Configuration variables */
-  REAL8 DeltaDeltaFlex; /* Varying coincidence window in delta */
+  REAL8 *LookupDelta = NULL;
+  REAL8 DeltaWin=0;
+  REAL8 DeltaBorder=0;
+  INT4  NumDeltaWins, idb;
+  INT4  DeltaDeltaStep=0;
   INT4  CLength=0; /* Length of the candidate-events list */
-  INT4 *SortedCListi = NULL; /* List of candidate-events INT-labels */
-  INT4 *cellListi = NULL;  /* List of cell INT-labels */
-  INT4 icell, icand, ncell, icell2;
-  INT4 cc1,cc2,cc3,cc4,bb1,bb2,bb3,bb4; /* cell-grid shifting variables */
-  INT4 selectGrid; /* denotes one of the 16 shifted cell-grid */
-  INT4 sizecells; /* Length of the cell list */
-  INT4 AlphaTwoPiIdx=0; /* Cell-index of an candidate events located at alpha=2*Pi*/
+  INT4  *SortedCListi = NULL; /* List of candidate-events INT-labels */
+  INT4  *cellListi = NULL;  /* List of cell INT-labels */
+  INT4  icell, icand, ncell, icell2;
+  INT4  cc1,cc2,cc3,cc4,bb1,bb2,bb3,bb4; /* cell-grid shifting variables */
+  INT4  selectGrid; /* denotes one of the 16 shifted cell-grid */
+  INT4  sizecells; /* Length of the cell list */
+  INT4  AlphaTwoPiIdx=0; /* Cell-index of an candidate events located at alpha=2*Pi*/
   REAL8 epsmove=1e-5;
 
   LALStatus *lalStatus = &global_status;
@@ -422,8 +427,32 @@ int main(INT4 argc,CHAR *argv[])
   /* --------------------------------------------------------------------------------*/      
   /* SortedCList = (ListForSort *) LALCalloc( CLength, sizeof(ListForSort) ); */
 
-  /* flexible declination window */
-  DeltaDeltaFlex = 0;
+  /* Compute the lookup table for the declination (delta) windows */
+  DeltaWin=PCV.DeltaAlpha + PCV.DeltaDelta;
+  DeltaBorder=DeltaWin/2;
+  NumDeltaWins=1;
+  /* Count cells in declination direction */
+  while ( DeltaBorder < (LAL_PI*0.5) ) {
+        DeltaWin = PCV.DeltaAlpha + PCV.DeltaDelta * exp( -(PCV.Kappa)*(DeltaBorder*DeltaBorder) );
+        DeltaBorder = DeltaBorder + DeltaWin;
+        //lookup=[lookup;xd];
+	NumDeltaWins++;
+  }
+  /* Allocate memory for the declination cell lookup table */
+  LookupDelta = (INT4 *) LALCalloc(2*NumDeltaWins+2, sizeof(REAL8) );
+
+  /* Compute the declination Lookup table */
+  idb=0;
+  DeltaWin=PCV.DeltaAlpha + PCV.DeltaDelta;
+  DeltaBorder=DeltaWin/2;
+  LookupDelta[idb]=DeltaBorder;
+  while ( DeltaBorder < (LAL_PI*0.5) ) {
+    idb++;
+    DeltaWin = PCV.DeltaAlpha + PCV.DeltaDelta * exp( -(PCV.Kappa)*(DeltaBorder*DeltaBorder) );
+    DeltaBorder = DeltaBorder + DeltaWin;
+    LookupDelta[idb]=DeltaBorder;
+  }
+
   selectGrid = 0;
   bb1=0; bb2=0; bb3=0; bb4=0;
   cc1=0; cc2=0; cc3=0; cc4=0;
@@ -459,12 +488,28 @@ int main(INT4 argc,CHAR *argv[])
 		SortedC[icand].iFreq=(INT4) ( ((SortedC[icand].f)/(PCV.Deltaf)) + (cc1 * 0.5)  );
 	      
 		/* Assign the DELTA index to the candidate event */
+		
 		  /* This was used for an isotropic sky-grid: */
 		  /* SortedC[icand].iDelta=(INT4)(SortedC[icand].Delta/(PCV.DeltaDelta)  + PCV.ShiftDelta ); */
-		  /* This is used for the anisotropic sky-grid produced by a metric. */
-		DeltaDeltaFlex = PCV.DeltaAlpha + PCV.DeltaDelta * exp( -(PCV.Kappa)*(SortedC[icand].Delta)*(SortedC[icand].Delta) ); 
-		SortedC[icand].iDelta=(INT4)floor(( ((SortedC[icand].Delta)/(DeltaDeltaFlex)) + (cc2 * 0.5)  )); 
+
+		  /* This was previously used for the anisotropic sky-grid produced by a metric. */
+		  /* DeltaDeltaFlex = PCV.DeltaAlpha + PCV.DeltaDelta * exp( -(PCV.Kappa)*(SortedC[icand].Delta)*(SortedC[icand].Delta) ); 
+		     SortedC[icand].iDelta=(INT4)floor(( ((SortedC[icand].Delta)/(DeltaDeltaFlex)) + (cc2 * 0.5)  )); */
 		
+		/* NOW assign Delta indices by using lookup table */
+		DeltaDeltaStep=0;
+		while ( LookupDelta[DeltaDeltaStep] < abs(SortedC[icand].Delta) ) { 
+		  DeltaDeltaStep++;
+		}
+        
+		if ( SortedC[icand].Delta < 0 ) {
+		  SortedC[icand].iDelta=-DeltaDeltaStep;
+		}
+		else {
+		  SortedC[icand].iDelta=DeltaDeltaStep;
+		}
+
+                		
 		/* Assign the ALPHA index to the candidate event */
 		SortedC[icand].iAlpha=(INT4)( (SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
 		if ( cc3 == 1 ) {
