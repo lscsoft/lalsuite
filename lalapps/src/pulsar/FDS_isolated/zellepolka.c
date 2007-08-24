@@ -394,6 +394,7 @@ int main(INT4 argc,CHAR *argv[])
   
   PolkaConfigVars PCV; /* Configuration variables */
   REAL8 *LookupDelta = NULL;
+  REAL8 *LookupDelta2 = NULL;
   REAL8 DeltaWin=0;
   REAL8 DeltaBorder=0;
   INT4  NumDeltaWins, idb;
@@ -452,6 +453,32 @@ int main(INT4 argc,CHAR *argv[])
     LookupDelta[idb]=DeltaBorder;
   }
 
+  /* Prepare 2nd (shifted) lookup table */
+  DeltaWin=PCV.DeltaAlpha + PCV.DeltaDelta;
+  DeltaBorder=DeltaWin;
+  NumDeltaWins=1;
+  /* Count cells in declination direction */
+  while ( DeltaBorder < (LAL_PI*0.5) ) {
+    DeltaWin = PCV.DeltaAlpha + PCV.DeltaDelta * exp( -(PCV.Kappa)*(DeltaBorder*DeltaBorder) );
+    DeltaBorder = DeltaBorder + DeltaWin;
+    NumDeltaWins++;
+  }
+  /* Allocate memory for the declination cell lookup table */
+  LookupDelta2 = (REAL8 *) LALCalloc(2*NumDeltaWins+2, sizeof(REAL8) );
+
+  /* Compute the declination Lookup table */
+  idb=0;
+  DeltaWin=PCV.DeltaAlpha + PCV.DeltaDelta;
+  DeltaBorder=DeltaWin;
+  LookupDelta2[idb]=DeltaBorder;
+  while ( DeltaBorder < (LAL_PI*0.5) ) {
+    idb++;
+    DeltaWin = PCV.DeltaAlpha + PCV.DeltaDelta * exp( -(PCV.Kappa)*(DeltaBorder*DeltaBorder) );
+    DeltaBorder = DeltaBorder + DeltaWin;
+    LookupDelta2[idb]=DeltaBorder;
+  }
+
+
   selectGrid = 0;
   bb1=0; bb2=0; bb3=0; bb4=0;
   cc1=0; cc2=0; cc3=0; cc4=0;
@@ -497,17 +524,29 @@ int main(INT4 argc,CHAR *argv[])
 		
 		/* NOW assign Delta indices by using lookup table */
 		DeltaDeltaStep=0;
-		while ( LookupDelta[DeltaDeltaStep] < abs(SortedC[icand].Delta) ) { 
-		  DeltaDeltaStep++;
+		
+		if (cc2 != 1) {
+		  while ( LookupDelta[DeltaDeltaStep] < abs(SortedC[icand].Delta) ) {
+		    DeltaDeltaStep++;
+		  }
+		  if ( SortedC[icand].Delta < 0 ) {
+		    SortedC[icand].iDelta=-DeltaDeltaStep;
+		  }
+		  else {
+		    SortedC[icand].iDelta=DeltaDeltaStep;
+		  }
+                }
+                else { /* cc2 == 1 */
+		  while ( LookupDelta2[DeltaDeltaStep] < abs(SortedC[icand].Delta) ) { 
+		    DeltaDeltaStep++;
+		  }
+		  if ( SortedC[icand].Delta < 0 ) {
+		    SortedC[icand].iDelta=-(DeltaDeltaStep+1);
+		  }
+		  else {
+		    SortedC[icand].iDelta=DeltaDeltaStep+1;
+		  }
 		}
-        
-		if ( SortedC[icand].Delta < 0 ) {
-		  SortedC[icand].iDelta=-DeltaDeltaStep;
-		}
-		else {
-		  SortedC[icand].iDelta=DeltaDeltaStep;
-		}
-
                 		
 		/* Assign the ALPHA index to the candidate event */
 		SortedC[icand].iAlpha=(INT4)( (SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
