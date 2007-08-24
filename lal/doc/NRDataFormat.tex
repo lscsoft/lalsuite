@@ -103,11 +103,11 @@
 
 \begin{abstract}
   This document suggests possible data formats to further the
-  interaction between gravitational wave source modeling groups and the
-  LIGO Scientific Collaboration. The aim is to have a simple format
-  which is nevertheless sufficiently general, and is applicable to
-  various kinds of sources including binaries of compact objects and
-  systems undergoing gravitational collapse.
+  interaction between gravitational wave source modeling groups and
+  the gravitational wave data analysis community. The aim is to have a
+  simple format which is nevertheless sufficiently general, and is
+  applicable to various kinds of sources including binaries of compact
+  objects and systems undergoing gravitational collapse.
 \end{abstract}
 
 \preprint{LIGO-T070072-00-Z}
@@ -118,9 +118,9 @@
 \section{Introduction}
 \label{sec:intro}
 
-Numerical relativity has made enormous progress within the last few years.
-Many numerical relativity groups now have sufficiently stable and
-accurate codes which can simulate the inspiral, merger, and
+Numerical relativity has made enormous progress within the last few
+years.  Many numerical relativity groups now have sufficiently stable
+and accurate codes which can simulate the inspiral, merger, and
 ringdown phases of binary black hole coalescence.  Similarly,
 significant progress has been made in the numerical simulation of
 stellar gravitational collapse and there now seems to be a much better
@@ -128,22 +128,22 @@ understanding of how supernova explosions happen.  All these processes
 are among the most promising sources of gravitational radiation and
 therefore, there is significant interest in using these numerical
 relativity results within various data analysis pipelines used within
-the LIGO Scientific Collaboration (LSC).  A dialog between numerical
-relativists and LSC data analysts was recently initiated in November
-2006 through a meeting in Boston. It seems appropriate to continue
-this dialog at a more concrete level, and to start incorporating
-numerical relativity results within various LSC data analysis
-software.
+the gravitational wave data analysis community.  A dialog between
+numerical relativists and data analysts from the LIGO Scientific
+Collaboration (LSC) was recently initiated in November 2006 through a
+meeting in Boston. It seems appropriate to continue this dialog at a
+more concrete level, and to start incorporating numerical relativity
+results within various LSC data analysis software.
 
 The aim of this document is to suggest formats for data exchange
-between numerical relativists and the LSC.  It is clear that there are
-still outstanding conceptual and numerical issues remaining in these
-numerical simulations; the goal of this document is not to resolve
-them.  The goal is primarily to spell out the technical details of the
-waveform data so that they can be incorporated seamlessly within the
-data analysis software currently being developed within the LSC.  The
-relevant software development is being carried out as part of the LSC
-Algorithms Library \footnote{Available from
+between numerical relativists and data analysts.  It is clear that
+there are still outstanding conceptual and numerical issues remaining
+in these numerical simulations; the goal of this document is not to
+resolve them.  The goal is primarily to spell out the technical
+details of the waveform data so that they can be incorporated
+seamlessly within the data analysis software currently being developed
+within the LSC.  The relevant software development is being carried
+out as part of the LSC Algorithms Library \footnote{Available from
   \texttt{http://www.lsc-group.phys.uwm.edu/daswg/projects/lal.html}}
 which contains core routines for gravitational wave data analysis
 written in ANSI C89, and is distributed under the GNU General Public
