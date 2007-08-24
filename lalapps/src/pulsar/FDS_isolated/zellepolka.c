@@ -435,11 +435,10 @@ int main(INT4 argc,CHAR *argv[])
   while ( DeltaBorder < (LAL_PI*0.5) ) {
         DeltaWin = PCV.DeltaAlpha + PCV.DeltaDelta * exp( -(PCV.Kappa)*(DeltaBorder*DeltaBorder) );
         DeltaBorder = DeltaBorder + DeltaWin;
-        //lookup=[lookup;xd];
 	NumDeltaWins++;
   }
   /* Allocate memory for the declination cell lookup table */
-  LookupDelta = (INT4 *) LALCalloc(2*NumDeltaWins+2, sizeof(REAL8) );
+  LookupDelta = (REAL8 *) LALCalloc(2*NumDeltaWins+2, sizeof(REAL8) );
 
   /* Compute the declination Lookup table */
   idb=0;
@@ -864,7 +863,7 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
   
 
 
-#if 0
+#if 1
   /* ------------------------------------------------------------- */
   /* Print out to the user-specified output file all the information in all the cell. 
      This file can be too huge to be tractable.*/
