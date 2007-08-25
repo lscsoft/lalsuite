@@ -252,14 +252,39 @@ class qscanJob(pipeline.CondorDAGJob):
   def __init__(self, opts, cp, tag_base='QSCAN'):
     """
     """
-    self.__executable = string.strip(cp.get('condor','qscan'))
+    if tag_base == 'QSCAN':
+      self.__executable = string.strip(cp.get('condor','qscan'))
+    if tag_base == 'QSCANLITE':
+      self.__executable = string.strip(cp.get('condor','qscanlite'))
     self.__universe = "vanilla"
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     self.tag_base = tag_base
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
     self.set_stdout_file('logs/qscan-$(macrogpsstarttime)-$(cluster)-$(process).out')     
     self.set_stderr_file('logs/qscan-$(macrogpsstarttime)-$(cluster)-$(process).err')
-    self.set_sub_file('qscan.sub')
+    if tag_base == 'QSCAN':
+      self.set_sub_file('qscan.sub')
+    if tag_base == 'QSCANLITE':
+      self.set_sub_file('qscanlite.sub')
+
+##############################################################################
+# qscan class for background qscan Node
+
+class qscanBgNode(pipeline.CondorDAGNode):
+  """
+  Runs an instance of a qscan job
+  """
+  def __init__(self,job,time,cp,qcache,ifo,name):
+    """
+    job = A CondorDAGJob that can run an instance of qscan.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    self.add_var_arg(repr(time))
+    qscanConfig = string.strip(cp.get(name[1], ifo[0] + 'config-file'))
+    self.add_file_arg(qscanConfig)
+    self.add_file_arg(qcache)
+    self.add_var_arg(string.strip(cp.get(name[1], ifo + 'output')))
+
 
 ##############################################################################
 # qscan class for qscan Node
@@ -398,11 +423,20 @@ parser.add_option("-m", "--datafind",action="store_true",\
 parser.add_option("-q", "--qscan",action="store_true",default=False,\
     help="do qscans")
 
-parser.add_option("-H", "--hoft-qscan",action="store_true",\
+parser.add_option("-Q", "--background-qscan",action="store_true",default=False,\
+    help="do qscans over a list of times")
+
+parser.add_option("-n", "--hoft-qscan",action="store_true",\
     default=False, help="do hoft qscans")
+
+parser.add_option("-N", "--background-hoft-qscan",action="store_true",\
+    default=False, help="do hoft qscans over a list of times")
 
 parser.add_option("-s", "--seis-qscan",action="store_true",\
     default=False, help="do seismic qscans")
+
+parser.add_option("-S", "--background-seis-qscan",action="store_true",\
+    default=False, help="do seismic qscans over a list of times")
 
 parser.add_option("-d", "--data-quality",action="store_true",default=False,\
     help="do data quality lookup - CURRENTLY BROKEN, DO NOT USE IT")
@@ -445,13 +479,16 @@ if not opts.log_path and not opts.write_to_iulgroup:
   sys.exit(1)
 
 if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
-  not opts.datafind and not opts.qscan \
+  not opts.datafind and not opts.qscan and not opts.background_qscan \
   and not opts.trig_bank and not opts.inspiral and not opts.plots and not \
-  opts.hoft_qscan and not opts.seis_qscan:
+  opts.hoft_qscan and not opts.seis_qscan and not opts.background_hoft_qscan \
+  and not opts.background_seis_qscan:
   print >> sys.stderr, "No steps of the pipeline specified."
   print >> sys.stderr, "Please specify at least one of"
   print >> sys.stderr, "--generate-fu-cache, --trig-bank, --inspiral, --plots,"
   print >> sys.stderr, "--datafind, --qscan, --hoft-qscan, --seis-qscan"
+  print >> sys.stderr, "--background-qscan, --background-hoft-qscan"
+  print >> sys.stderr, "--background-seis-qscan"
   print >> sys.stderr, "or --write-to-iulgroup (use this option alone for now)"  
   sys.exit(1)
 
@@ -607,7 +644,8 @@ plotJob        = plotSNRCHISQJob(opts,cp)
 dataJob        = pipeline.LSCDataFindJob('datafind_cache','logs',cp)
 #qconfJob       = qconfigureJob(opts,cp) 
 cvcacheJob     = convertCacheJob(opts,cp)
-qscanJob       = qscanJob(opts,cp)
+qscanFgJob     = qscanJob(opts,cp)
+qscanBgJob     = qscanJob(opts,cp,'QSCANLITE')
 segJob         = segJob(opts,cp)
 
 # trigJobCnt      = 0
@@ -623,14 +661,111 @@ qscanHoftJobCnt   = 0
 qscanSeisJobCnt   = 0
 segJobCnt         = 0
 summaryHTMLlist = []
+qscanBgJobCnt     = 0
 
 prev_dNode = None
 
-# define dictionary for qconfigure jobs
-#qconfigureTest = {'H1':1,'H2':1,'L1':1,'G1':1,'V1':1,'T1':1}
-
 print "\n.......Setting up pipeline jobs"
 
+ifos_list = ['H1','H2','L1','G1','V1','T1']
+qscanNames = ['HOFT_QSCAN','QSCAN','SEIS_QSCAN']
+backgroundSections = ['background-qscan-hoft','background-qscan','background-qscan-seismic']
+commandOptions = ['background_hoft_qscan','background_qscan','background_seismic_qscan']
+backgroundList = map(None,qscanNames,backgroundSections,commandOptions)
+
+# Prepare the qscan background
+for ifo in ifos_list:
+
+  if cp.has_option('background-qscan-times',ifo+'range'):
+    rangeString = string.strip(cp.get('background-qscan-times',ifo+'range')) 
+  else:
+    rangeString = ''
+  if cp.has_option('background-qscan-times',ifo+'segment-list'):
+    segmentListFile = string.strip(cp.get('background-qscan-times',ifo+'segment-list'))
+  else:
+    segmentListFile = ''
+  if cp.has_option('background-qscan-times',ifo+'time-list'):
+    timeListFile = string.strip(cp.get('background-qscan-times',ifo+'time-list'))
+  else:
+    timeListFile = ''
+
+  if len(rangeString) == 0 and len(segmentListFile) == 0 and len(timeListFile) == 0:
+    print "No qscan background specified for " + ifo
+  else:
+
+    # Use the time-list file if provided
+    if not len(timeListFile) == 0:
+      timeList = listFromFile(timeListFile)
+      if not timeList:
+        print >> sys.stderr, "the list of times in file " + timeListFile + " could not be found"
+        sys.exit(1)
+      times = stringToFloatList(timeList)
+
+    for time in times:
+
+      # SETUP DATAFIND JOBS FOR BACKGROUND QSCANS (REGULAR DATA SET)
+      q_time = cp.getint('q-datafind','search-time-range')/2
+      dNode = pipeline.LSCDataFindNode(dataJob)
+      dNode.set_observatory(ifo[0])
+      dNode.set_start(int(time - q_time - 1))
+      dNode.set_end(int(time + q_time + 1))
+      dNode.set_type( cp.get('q-datafind', 'type' ))
+      if prev_dNode and opts.datafind:
+        dNode.add_parent(prev_dNode)
+      if opts.datafind:
+        dag.add_node(dNode)
+        dataJobCnt+=1
+      prev_dNode = dNode
+
+      # SETUP CONVERTLALCACHE JOBS (REGULAR DATA SET)
+      cvNode = convertCacheNode(cvcacheJob)
+      cvNode.set_output( dNode.get_output() )
+      if dNode and opts.datafind: # only add a parent if it exists
+        cvNode.add_parent(dNode)
+      if opts.datafind:
+        dag.add_node(cvNode)
+        cvcacheJobCnt+=1
+
+      # SETUP DATAFIND JOBS FOR BACKGROUND QSCANS (HOFT)
+      q_time = cp.getint('q-hoft-datafind','search-time-range')/2
+      dNode = pipeline.LSCDataFindNode(dataJob)
+      dNode.set_observatory(ifo[0])
+      dNode.set_start(int(time - q_time - 1))
+      dNode.set_end(int(time + q_time + 1))
+      dNode.set_type(cp.get('q-hoft-datafind', ifo + '_type'))
+      if prev_dNode and opts.datafind:
+        dNode.add_parent(prev_dNode)
+      if opts.datafind:
+        dag.add_node(dNode)
+        dataJobCnt+=1
+      prev_dNode = dNode
+
+      # SETUP CONVERTLALCACHE JOBS (HOFT)
+      cvHoftNode = convertCacheNode(cvcacheJob)
+      cvHoftNode.set_output( dNode.get_output() )
+      if dNode and opts.datafind: # only add a parent if it exists
+        cvHoftNode.add_parent(dNode)
+      if opts.datafind:
+        dag.add_node(cvHoftNode)
+        cvcacheHoftJobCnt+=1
+
+      for qscan in backgroundList:
+       
+        # SETUP BACKGROUND QSCAN JOBS
+        if qscan[0] == "HOFT_QSCAN":
+          cv_node = cvHoftNode
+        else:
+          cv_node = cvNode
+        qBgNode = qscanBgNode(qscanBgJob,time,cp,cv_node.get_output(),ifo,qscan)
+        if cv_node and opts.datafind: # only add a parent if it exists
+          qBgNode.add_parent(cv_node)
+        try:
+          if eval('opts.' + qscan[2]):
+            dag.add_node(qBgNode)
+            qscanBgJobCnt+=1
+        except: pass
+
+# Prepare the followup jobs
 for trig in followuptrigs:
 
   prev_plotNode = None
@@ -781,7 +916,7 @@ for trig in followuptrigs:
     # SETUP HOFT QSCAN JOBS
     if trig.gpsTime[ifo] and cvHoftNode:
       try:
-        qHoftNode = qscanNode(qscanJob,trig.gpsTime[ifo],cp,trig,
+        qHoftNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,trig,
             cvHoftNode.get_output(),ifo,"HOFT_QSCAN",hoftqFlag)
         if cvHoftNode and opts.datafind: # only add a parent if it exists
           qHoftNode.add_parent(cvHoftNode)
@@ -831,7 +966,7 @@ for trig in followuptrigs:
 
     # SETUP QSCAN JOBS
     if trig.gpsTime[ifo] and cvNode:
-      qNode = qscanNode(qscanJob,trig.gpsTime[ifo],cp,trig, 
+      qNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,trig, 
           cvNode.get_output(),ifo,"QSCAN",qFlag)
       if cvNode and opts.datafind: # only add a parent if it exists
         qNode.add_parent(cvNode)          
@@ -844,7 +979,7 @@ for trig in followuptrigs:
     # SETUP SEISMIC QSCAN JOBS
     if trig.gpsTime[ifo] and cvNode:
       try:
-        qSeisNode = qscanNode(qscanJob,trig.gpsTime[ifo],cp,trig,
+        qSeisNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,trig,
             cvNode.get_output(),ifo,"SEIS_QSCAN",seisqFlag)
         if cvNode and opts.datafind: # only add a parent if it exists
           qSeisNode.add_parent(cvNode)
@@ -959,6 +1094,7 @@ print "\nFound " +  str(cvcacheHoftJobCnt)    + " convertlalcache jobs for hoft 
 print "\nFound " +  str(qscanJobCnt)          + " regular qscan jobs"
 print "\nFound " +  str(qscanHoftJobCnt)      + " hoft qscan jobs"
 print "\nFound " +  str(qscanSeisJobCnt)      + " seismic qscan jobs"
+print "\nFound " +  str(qscanBgJobCnt)        + " background qscan jobs"
 print "\nFound " +  str(segJobCnt)            + " data quality jobs"
 print "\n.......Writing DAG"
 
