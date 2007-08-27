@@ -244,10 +244,10 @@ XLALInterpolateNRWave( REAL4TimeSeries *in,           /**< input strain time ser
 
 int compare_abs_float(const void *a, const void *b){
 
-  float *af, *bf;
+  const float *af, *bf;
 
-  af = (float *)a;
-  bf = (float *)b;
+  af = (const float *)a;
+  bf = (const float *)b;
 
   if ( fabs(*af) > fabs(*bf))
     return 1;
@@ -265,17 +265,17 @@ XLALFindNRCoalescenceTime(REAL8 *tc,
 			  const REAL4TimeSeries *in   /**< input strain time series */)
 {
 
-  UINT4 *index=NULL;
-  UINT4 len;
+  size_t *ind=NULL;
+  size_t len;
 
   len = in->data->length;
-  index = LALCalloc(1, len*sizeof(UINT4));  
+  ind = LALCalloc(len, sizeof(*ind));  
 
-  gsl_heapsort_index( index, in->data->data, len, sizeof(REAL4), compare_abs_float);
+  gsl_heapsort_index( ind, in->data->data, len, sizeof(REAL4), compare_abs_float);
 
-  *tc = index[len-1] * in->deltaT;
+  *tc = ind[len-1] * in->deltaT;
 
-  LALFree(index);
+  LALFree(ind);
 
   return 0;
 }
@@ -639,7 +639,7 @@ void LALInjectStrainGW( LALStatus                 *status,
 
   REAL8 sampleRate;
   REAL4TimeSeries *htData = NULL;
-  int  k;
+  UINT4  k;
   REAL8 offset;
 
   INITSTATUS (status, "LALNRInject",  NRWAVEINJECTC);
