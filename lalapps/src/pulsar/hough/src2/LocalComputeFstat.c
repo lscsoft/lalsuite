@@ -508,18 +508,17 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	for (s=0; s <= spdnOrder; s++) {
 	  REAL8 fsdot = fkdot[s];
 	  Dphi_alpha += fsdot * Tas * inv_fact[s]; 	/* here: DT^s/s! */
-	  Tas *= DT_al;				/* now: DT^(s+1) */
-	  phi_alpha += fsdot * Tas * inv_fact[s+1];
 	  if (!finite(Dphi_alpha)) {
 	    LogPrintf(LOG_CRITICAL, "non-finite Dphi_alpha: %e, spind#:%d, fkdot:%e, Tas:%e, inv_fact[s]:%e, inv_fact[s+1]:%e, phi_alpha:%e. DT_al:%e\n",
 		      Dphi_alpha, s, fkdot[s], Tas, inv_fact[s], inv_fact[s+1], phi_alpha, DT_al);
 	    XLAL_ERROR("LocalXLALComputeFaFb", XLAL_EDOM);
 	  }
+	  Tas *= DT_al;				/* now: DT^(s+1) */
+	  phi_alpha += fsdot * Tas * inv_fact[s+1];
 	} /* for s <= spdnOrder */
 
 	/* Step 3: apply global factors to complete Dphi_alpha */
 	Dphi_alpha *= Tsft * (*Tdot_al);		/* guaranteed > 0 ! */
-
 	if (!finite(Dphi_alpha)) {
 	  LogPrintf(LOG_CRITICAL, "non-finite Dphi_alpha: %e, Tsft:%e, Tkdot_al:%e\n",
 		    Dphi_alpha, Tsft, (*Tdot_al));
