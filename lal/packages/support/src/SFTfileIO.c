@@ -59,9 +59,14 @@ NRCSID (SFTFILEIOC, "$Id$");
 
 /* use boinc_fopen() instead of fopen() for Einstein@Home/BOINC */
 #ifdef EAH_BOINC
+/* for Einstein@Home we know how many SFTs we're using, and realloc
+   apparently fragments the memory quite much on Windows */
+#define REALLOC_BLOCKSIZE 8000
 extern FILE* boinc_fopen(const char* path, const char* mode);
 #define fopen boinc_fopen
 #define LALFopen boinc_fopen
+#else
+#define REALLOC_BLOCKSIZE 100
 #endif
 
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
@@ -338,7 +343,6 @@ LALSFTdataFind (LALStatus *status,
 		  /* we realloc SFT-memory blockwise in order to 
 		   * improve speed in debug-mode (using LALMalloc/LALFree)
 		   */
-#define REALLOC_BLOCKSIZE 100
 		  ret->data = LALRealloc ( ret->data, (ret->length + REALLOC_BLOCKSIZE) * sizeof( *(ret->data) ) );
 		  if ( ret->data == NULL )
 		    {
