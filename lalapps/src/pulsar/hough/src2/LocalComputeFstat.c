@@ -460,7 +460,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
   /* find highest non-zero spindown-entry */
   for ( spdnOrder = PULSAR_MAX_SPINS - 1;  spdnOrder > 0 ; spdnOrder --  )
-    if ( fkdot[spdnOrder] == 0.0 )
+    if ( fkdot[spdnOrder] != 0.0 )
       break;
 
   f = fkdot[0];
