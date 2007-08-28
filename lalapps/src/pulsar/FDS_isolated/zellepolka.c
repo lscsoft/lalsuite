@@ -393,11 +393,14 @@ int main(INT4 argc,CHAR *argv[])
   setlocale(LC_ALL, "C");
   
   PolkaConfigVars PCV; /* Configuration variables */
-  REAL8 *LookupDelta = NULL;
+  REAL8 *LookupDelta1 = NULL;
   REAL8 *LookupDelta2 = NULL;
   REAL8 DeltaWin=0;
   REAL8 DeltaBorder=0;
+  REAL8 d0=0,a0=0;
   INT4  NumDeltaWins, idb;
+  INT4  iDeltaMax1=0;
+  INT4  iDeltaMax2=0;
   INT4  DeltaDeltaStep=0;
   INT4  CLength=0; /* Length of the candidate-events list */
   INT4  *SortedCListi = NULL; /* List of candidate-events INT-labels */
@@ -423,66 +426,83 @@ int main(INT4 argc,CHAR *argv[])
   /* Reads in candidare files, set CLength */
   LAL_CALL( ReadCandidateFiles(lalStatus, &SortedC, &PCV, &CLength), lalStatus);
 
+  /* More efficent sorting in memory by using an integer list */
   SortedCListi = (INT4 *) LALCalloc(CLength, sizeof(INT4) );
 
   /* --------------------------------------------------------------------------------*/      
-  /* SortedCList = (ListForSort *) LALCalloc( CLength, sizeof(ListForSort) ); */
 
-  /* Compute the lookup table for the declination (delta) windows */
-  DeltaWin=PCV.DeltaAlpha + PCV.DeltaDelta;
-  DeltaBorder=DeltaWin/2;
-  NumDeltaWins=1;
+  d0=PCV.DeltaDelta;
+  a0=PCV.DeltaAlpha;
+  
+  /* Construct the 1st lookup table for the declination coincidence windows */
+  DeltaWin = d0;
+  DeltaBorder = DeltaWin / 2; /* half width of first cell */
+  NumDeltaWins = 1;
   /* Count cells in declination direction */
   while ( DeltaBorder < (LAL_PI*0.5) ) {
-    DeltaWin = PCV.DeltaAlpha + (PCV.DeltaDelta-PCV.DeltaAlpha) * exp( -(PCV.Kappa)*(DeltaBorder*DeltaBorder) );
+    DeltaWin = (a0 / (fabs(sin(fabs(DeltaBorder) - (1.5 * a0)))));
+    if (DeltaWin > d0) {
+      DeltaWin = d0;
+    }
     DeltaBorder = DeltaBorder + DeltaWin;
     NumDeltaWins++;
   }
+  fprintf(stderr,"\nDelta-Cells: %d\n",NumDeltaWins);
   /* Allocate memory for the declination cell lookup table */
-  LookupDelta = (REAL8 *) LALCalloc(2*NumDeltaWins+2, sizeof(REAL8) );
-
-  /* Compute the declination lookup table */
+  LookupDelta1 = (REAL8 *) LALCalloc(2*NumDeltaWins+2, sizeof(REAL8) );
+  /* Finally calclate the 1st declination lookup table */
   idb=0;
-  DeltaWin=PCV.DeltaAlpha + PCV.DeltaDelta;
-  DeltaBorder=DeltaWin/2;
-  LookupDelta[idb]=DeltaBorder;
+  DeltaWin = d0;
+  DeltaBorder = DeltaWin / 2;
+  LookupDelta1[idb] = DeltaBorder;
   while ( DeltaBorder < (LAL_PI*0.5) ) {
     idb++;
-    DeltaWin = PCV.DeltaAlpha + (PCV.DeltaDelta-PCV.DeltaAlpha) * exp( -(PCV.Kappa)*(DeltaBorder*DeltaBorder) );
+    DeltaWin = (a0 / (fabs(sin(fabs(DeltaBorder) - (1.5 * a0)))));
+    if (DeltaWin > d0) {
+      DeltaWin = d0;
+    }
     DeltaBorder = DeltaBorder + DeltaWin;
-    LookupDelta[idb]=DeltaBorder;
+    LookupDelta1[idb] = DeltaBorder;
   }
+  iDeltaMax1 = idb;
 
-  /* Prepare 2nd (shifted) lookup table */
-  DeltaWin=PCV.DeltaAlpha + PCV.DeltaDelta;
-  DeltaBorder=DeltaWin;
-  NumDeltaWins=1;
+
+  /* Construct the 2nd lookup table for the declination coincidence windows */
+  DeltaWin = d0;
+  DeltaBorder = DeltaWin; /* split at equator */
+  NumDeltaWins = 1;
   /* Count cells in declination direction */
   while ( DeltaBorder < (LAL_PI*0.5) ) {
-    DeltaWin = PCV.DeltaAlpha + (PCV.DeltaDelta-PCV.DeltaAlpha) * exp( -(PCV.Kappa)*(DeltaBorder*DeltaBorder) );
+    DeltaWin = (a0 / (fabs(sin(fabs(DeltaBorder) - (1.5 * a0)))));
+    if (DeltaWin > d0) {
+      DeltaWin = d0;
+    }
     DeltaBorder = DeltaBorder + DeltaWin;
     NumDeltaWins++;
   }
   /* Allocate memory for the declination cell 2nd lookup table */
   LookupDelta2 = (REAL8 *) LALCalloc(2*NumDeltaWins+2, sizeof(REAL8) );
-
-  /* Compute the declination 2nd lookup table */
+  /* Finally calclate the 2nd declination lookup table */
   idb=0;
-  DeltaWin=PCV.DeltaAlpha + PCV.DeltaDelta;
-  DeltaBorder=DeltaWin;
-  LookupDelta2[idb]=DeltaBorder;
+  DeltaWin = d0;
+  DeltaBorder = DeltaWin;
+  LookupDelta2[idb] = DeltaBorder;
   while ( DeltaBorder < (LAL_PI*0.5) ) {
     idb++;
-    DeltaWin = PCV.DeltaAlpha + (PCV.DeltaDelta-PCV.DeltaAlpha) * exp( -(PCV.Kappa)*(DeltaBorder*DeltaBorder) );
+    DeltaWin = (a0 / (fabs(sin(fabs(DeltaBorder) - (1.5 * a0)))));
+    if (DeltaWin > d0) {
+      DeltaWin = d0;
+    }
     DeltaBorder = DeltaBorder + DeltaWin;
-    LookupDelta2[idb]=DeltaBorder;
+    LookupDelta2[idb] = DeltaBorder;
   }
+  iDeltaMax2 = idb;
 
-
+  
+  /* Loops for the 2^4 = 16 cell-grid shifts along the 4 different dimensions */
   selectGrid = 0;
   bb1=0; bb2=0; bb3=0; bb4=0;
   cc1=0; cc2=0; cc3=0; cc4=0;
-  
   
   for (bb1=0; bb1<2; bb1++) {
     for (bb2=0; bb2<2; bb2++) {
@@ -516,8 +536,10 @@ int main(INT4 argc,CHAR *argv[])
 		/* Assign the DELTA index to the candidate event */
 		DeltaDeltaStep=0;
 		if (cc2 != 1) {
-		  while ( LookupDelta[DeltaDeltaStep] < abs(SortedC[icand].Delta) ) {
+		  while ( LookupDelta1[DeltaDeltaStep] < abs(SortedC[icand].Delta) ) {
 		    DeltaDeltaStep++;
+		    if (DeltaDeltaStep > iDeltaMax1)
+		      break;
 		  }
 		  if ( SortedC[icand].Delta < 0 ) {
 		    SortedC[icand].iDelta=-DeltaDeltaStep;
@@ -529,6 +551,8 @@ int main(INT4 argc,CHAR *argv[])
                 else { /* cc2 == 1 */
 		  while ( LookupDelta2[DeltaDeltaStep] < abs(SortedC[icand].Delta) ) { 
 		    DeltaDeltaStep++;
+		    if (DeltaDeltaStep > iDeltaMax2)
+		      break;
 		  }
 		  if ( SortedC[icand].Delta < 0 ) {
 		    SortedC[icand].iDelta=-(DeltaDeltaStep+1);
@@ -537,7 +561,6 @@ int main(INT4 argc,CHAR *argv[])
 		    SortedC[icand].iDelta=DeltaDeltaStep+1;
 		  }
 		}
-		fprintf(stderr,"\n %d \n",DeltaDeltaStep);
                 		
 		/* Assign the ALPHA index to the candidate event */
 		SortedC[icand].iAlpha=(INT4)( (SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
