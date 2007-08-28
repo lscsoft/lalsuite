@@ -23,11 +23,13 @@
 #include <math.h>
 #include <string.h>
 #include <time.h>
-#include <unistd.h>
+//#include <unistd.h>
 #include<fftw3.h>
-#include<sys/types.h>
-#include<sys/stat.h>
-#include<glob.h>
+#include<zlib.h>
+#include<gsl/gsl_blas.h>
+//#include<sys/types.h>
+//#include<sys/stat.h>
+//#include<glob.h>
 
 
 
@@ -108,23 +110,6 @@ void ApplyWindow(fftw_complex* X,int N,int NW,WindowType W)
   free(left);
   free(right);
 }
-
-void heterodyne(fftw_complex *X,int len,double f,double dt)
-{
-  double SIN,COS;
-  double tempre,tempim;
-  int i;
-  for(i=0;i<len;i++)
-    {
-      SIN = sin(2*M_PI*f*dt*(double)i);
-      COS = cos(2*M_PI*f*dt*(double)i);
-      tempre = X[i][0]*COS-X[i][1]*SIN;
-      tempim = X[i][1]*SIN+X[i][0]*COS;
-      X[i][0] = tempre;
-      X[i][1] = tempim;
-    }
-}
-  
     
 int CSFTs(fftw_complex *L,REAL8 Fmin,REAL8 Fmax,int number,int startindex,REAL8 sTsft,LIGOTimeGPS ref, int Dterms)
 { 
@@ -212,7 +197,7 @@ int CSFTs(fftw_complex *L,REAL8 Fmin,REAL8 Fmax,int number,int startindex,REAL8 
 		imagP = 0.0;
 	      }	 
  
-	    sftIndex=k1+k-ifmin;
+	    sftIndex=k1+k-ifmin+1;
 
 	   
 	    /* these four lines compute P*xtilde */
@@ -267,13 +252,6 @@ void init()
 
 void reshuffle(fftw_complex *X, int N)
 {
-  int f = N/2.0+1;
-  fprintf(stderr,"\n\n Central Frequency = %g\n\n",((REAL8)f)/((REAL8)N)*(9.0)+0.5);
-  if(fmod(N,2.0) == 0)
-    {
-      fprintf(stderr,"Sorry, I need equal negative and positive parts\n");
-      exit(0);
-    }
   fftw_complex *Temp;
   Temp = (fftw_complex*) malloc(sizeof(fftw_complex)*N);
   int i,k = 0;
@@ -287,38 +265,21 @@ void reshuffle(fftw_complex *X, int N)
       Temp[k][0] = X[i][0];
       Temp[k++][1] = X[i][1];
     }
-  k--;
-  fprintf(stderr,"k = %d  N = %d\n",k,N);
   for(i=0;i<N;i++)
     {
       X[i][0] = Temp[i][0];
       X[i][1] = Temp[i][1];
     }
-  free(Temp);
+  fftw_free(Temp);
 }
-
-void addnegativeparts(fftw_complex *X,fftw_complex* X2,int N2)
-{
-  fftw_complex *temp;
-  int i,N=N2/2.0,n=N-1;
-  for(i=0;i<n;i++)
-    {
-      X2[i][0] = X[i][0];
-      X2[i][1] = X[i][1];
-      X2[i+N][0] = X[i][0];
-      X2[i+N][1] = -X[i][1];
-    }
-  X2[n][0] = X[n][0];
-  X2[n][1] = X[n][1];
-}
-      
+     
 
 int main(int argc, char **argv)
 {
-  int Dterms = 64;
+  int Dterms = 32;
   INT4 i,j,k=0;
   FILE *fp,*fp2;
-  REAL8 InputST = 1800.0;
+  REAL8 InputST = 500000.0;
   LALStatus status = empty_status;
 
   WindowType W = HANN;
@@ -329,11 +290,11 @@ int main(int argc, char **argv)
   LIGOTimeGPS startTime, endTime; 
   double avg;
   char outfile[128],outfile2[128];
-  if (argc!=7)
+  if (argc!=8)
   {
-   fprintf(stderr, "startGPS endGPS Detector F_min f_max where?\n"); 
+   fprintf(stderr, "startGPS endGPS Detector F_min f_max where InputST?\n"); 
    return(0);
-   }  
+  }  
   
   startTime.gpsSeconds = atoi(argv[1]);
   startTime.gpsNanoSeconds = 0;
@@ -343,15 +304,19 @@ int main(int argc, char **argv)
   endTime.gpsNanoSeconds = 0;
   constraints.endTime = &endTime;
   constraints.detector = argv[3];
+  
+  InputST = atof(argv[7]);
+  
   f_min = atof(argv[4]);
   f_max = atof(argv[5]);
   
-  f_min -= (REAL8)Dterms*1.0/InputST;
-  f_max += (REAL8)Dterms*1.0/InputST;
+  f_min -= (REAL8)Dterms/InputST;
+  f_max += (REAL8)Dterms/InputST;
 
   fprintf(stderr,"About to Find Files\n");
   
   LALSFTdataFind ( &status, &catalog, argv[6], &constraints );
+ 
   
   if(status.statusCode) 
     {
@@ -426,7 +391,7 @@ int main(int argc, char **argv)
   fftw_complex *TS,*TempT;
   REAL8 tdiff = (GPS2REAL(endTime)-GPS2REAL(startTime))*(f_max-f_min)+1;
   int Tlength = ceil(tdiff);
-  fftw_plan p;
+  
 
   REAL8 START = GPS2REAL(startTime);
   double dt = 1/(f_max-f_min);
@@ -439,7 +404,7 @@ int main(int argc, char **argv)
       TS[i][1] = 0;
     }
 
-  //printf(" %lf %d \n",sTsft,Tlength);
+  fprintf(stderr," %lf %d \n",sTsft,Tlength);
   
   
 	  
@@ -454,8 +419,8 @@ int main(int argc, char **argv)
       fprintf(stderr,"\n %d %g\n",C.cont[i],C.gap[i]);
 
       int N = (sTsft*C.cont[i]*(f_max-f_min))+1;
-      if(fmod(N,2.0)==0)
-	N++;
+      //if(fmod(N,2.0)==0)
+      //N++;
       L = (fftw_complex*)malloc(sizeof(fftw_complex)*N);
       TempT = (fftw_complex*)malloc(sizeof(fftw_complex)*N);
       
@@ -468,13 +433,22 @@ int main(int argc, char **argv)
 	{
 	  for(j=0;j<N;j++)
 	    {
+	      //printf("j = %d , Other = %d \n",j,j+Dterms+1);
 	      L[j][0] = sft_vect->data[i].data->data[j+Dterms].re;
 	      L[j][1] = sft_vect->data[i].data->data[j+Dterms].im;
 	    }
+	  
 	}
       
-      p = fftw_plan_dft_1d(N,L,TempT,FFTW_BACKWARD,FFTW_ESTIMATE);
+      for(j=0;j<N;j++)
+	{
+	  double F = (double)j/(double)(N-1)*(f_max-f_min)+f_min;
+	  //printf(" %g %g %g %g \n",F,L[j][0],L[j][1],sqrt(L[j][0]*L[j][0]+L[j][1]*L[j][1]));
+	}
+      
+      fftw_plan p = fftw_plan_dft_1d(N,L,TempT,FFTW_BACKWARD,FFTW_ESTIMATE);
       ApplyWindow(L,N,Dterms,W);
+      
       reshuffle(L,N);
       fftw_execute(p);
       startindex+=C.cont[i];
@@ -490,6 +464,7 @@ int main(int argc, char **argv)
 	  double F = (double)j/(double)(N-1)*(f_max-f_min)+f_min;
 	  //printf(" %g %g %g %g \n",F,L[j][0],L[j][1],sqrt(L[j][0]*L[j][0]+L[j][1]*L[j][1]));
 	}
+      
       if(C.gap[i] != 0)
 	{
 	  sftindex += (C.gap[i]-InputST)/dt;
@@ -497,8 +472,8 @@ int main(int argc, char **argv)
 	}
       
 //printf(" Real %g , Imag %g \n",sft_vect->data[0].data->data->re,sft_vect->data[0].data->data->im);
-      free(L);
-      free(TempT);
+      fftw_free(L);
+      fftw_free(TempT);
       fftw_destroy_plan(p);
     }
 
@@ -510,12 +485,14 @@ int main(int argc, char **argv)
 
   //heterodyne(TS,Tlength,-f_min,1.0/(f_max-f_min));
   for(i=0;i<Tlength;i++)
-    printf("%10.15g %g %g\n",START+dt*i,TS[i][0],TS[i][1]);    
+   printf("%10.15g %g %g\n",START+dt*i,TS[i][0],TS[i][1]);    
     //printf("%.18g %g %g\n",(REAL8)i/(f_max-f_min)/2.0+START,TS[i][0],TS[i][1]);
-   
+  
   fprintf(stderr, "nSFT = %d\t numBins = %d\t df = %f\n", nSFT, numBins,sft_vect->data->deltaF);
   
   free(TS);
+
+  
   
  LALDestroySFTVector (&status, &sft_vect );
 

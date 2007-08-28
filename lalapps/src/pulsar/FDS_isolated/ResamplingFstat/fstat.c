@@ -19,7 +19,7 @@
 
 /* TBary.c is a prototype program written to perform the calculation of the F-statistic via the use of the algorithm described in the JKS paper on pulsar data analysis. This program uses LAL, LALApps, GSL and FFTW. It also requires files which provide data on the location of the earth and sun during a desired interval of time.
 
-Authors - Pinkesh Patel,Xavier Siemens,Rejean Dupuis, Alan Weinstein
+Authors - Pinkesh Patel, Rejean Dupuis & Xavier Siemens
 References - Jaranowski,Krolak and Schutz, Phys Rev D. Numerical Recipes in C, FFTW and FFTW3, GNU Scientific Library. 
 */
 
@@ -43,14 +43,11 @@ References - Jaranowski,Krolak and Schutz, Phys Rev D. Numerical Recipes in C, F
 #include <time.h>
 #include <string.h>
 
-using namespace std;                       //Standard C++ line, in order to avoid annoying std::
+using namespace std;                      
 
-#define EARTHDATA "earth00-04.dat"         //The data file containing Earth's location and velocity for the years 2000-2004.
-#define SUNDATA "sun00-04.dat"             //The data file containing Sun's location and velocity for the years 2000-2004.
-
-#define T0  700000000 //751680000 //714153733
-
-// gettime(LIGOTimeGPS t) returns the GPS time in double format.
+#define EARTHDATA "/archive/home/ppatel/opt/lscsoft/lal/share/lal/earth00-04.dat"    
+#define SUNDATA "/archive/home/ppatel/opt/lscsoft/lal/share/lal/sun00-04.dat"     
+#define T0  700000000;//751680000 
 
 struct freq
 {
@@ -58,12 +55,20 @@ struct freq
   double *fk;
 };
 
+/*int LALSnprintf( char *str, size_t size, const char *fmt, ... )
+{
+  int n;
+  va_list ap;
+  va_start( ap, fmt );
+  n = vsnprintf( str, size, fmt, ap );
+  va_end( ap );
+  return n;
+}
+*/
 inline double gettime(LIGOTimeGPS t)
 {
   return t.gpsSeconds+t.gpsNanoSeconds*1e-9;
 }
-
-// gettime(double t) returns the corresponding time in GPS format.
 
 inline LIGOTimeGPS gettime(double t)
 {
@@ -73,48 +78,98 @@ inline LIGOTimeGPS gettime(double t)
   return(tgps);
 }
 
-//mag(fftw_complex f) returns the magnitude squared of the complex number f.
-
 double magsquare(fftw_complex f)
 {
   return(f[0]*f[0]+f[1]*f[1]);
 }
 
-
-
-
-/*innerprod(int n_steps, double dt, double *x, double *y) return the inner product of x(t),y(t) using the trapezoidal method of integration
-  The inner product between two variables is defined as 2/T Integrate[x(t)*y(t),{t,-T,T}] (written in mathematica format).*/
-
 double innerprod(int n_steps,double dt,double *x,double *y)
 {
-  double sum = 0;                                                // Integral
-  double t = n_steps*dt;                                         // Total time = steps * delta of time.
+  double sum = 0;                                               
+  double t = n_steps*dt;                                       
   for(int i=0;i<n_steps-1;i++)
     {
-      sum += dt/2*(x[i]*y[i]+x[i+1]*y[i+1]);                     // Integral calculated using trapezoidal rule.
+      sum += dt/2*(x[i]*y[i]+x[i+1]*y[i+1]);                     
     }
-  return(sum*2/t);                                               // Multiply with 2/(total time) to get the correct factors.
+  return(sum*2/t);                              
 }
 
 
-/* Stroboscopic Sampling function, Takes in start time, the delta time (1/freq) of both input data and output data, number of steps of each and the data streams themselves.*/
-/* Basic idea of the function is that it will pick the point nearest to the correct time for output stream, from the input stream. The error is a function of Input freq and Output freq and roughly scales as per (Input Freq)/(Output freq) */
-/* We can also use interpolation for this, I feel that interpolation will be better, since it will be very difficult and cumbersome to load lots of data */
-  	
-void strob(LIGOTimeGPS start,double xdt,double ydt,LIGOTimeGPS *tb,double *x,double *y,long int xsteps,long int ysteps)
+/********************************************************************/
+
+void interp_lin(LIGOTimeGPS start,double dt,long int inpsteps,long int n_steps,LIGOTimeGPS *tb,double *real,double *imag,fftw_complex *out)
 {
-  for(int i=0;i<ysteps;i++)
+  int count = 1;
+  double *t,t0 = gettime(start);
+  t = (double *)malloc(sizeof(double)*inpsteps);
+  for(double i=0;i<inpsteps;i++)
+    t[int(i)] = t0 + i*dt;
+  gsl_interp_accel *accl = gsl_interp_accel_alloc();
+  gsl_interp *lininter = gsl_interp_alloc(gsl_interp_linear,inpsteps);
+  gsl_interp_init(lininter,t,real,inpsteps);
+  double x,y;
+  for(int i=0;i<n_steps;i++)
     {
-      double dt = gettime(tb[i])-gettime(start);                 // Difference between points calculated in time. 
-      int j = int(dt/xdt);                                       // int(dt/xdt), gives us the index of the point closest to our time.
-      y[i] = x[j];                                               // assign the next value in the output stream. 
-      double DT = dt - ydt*double(i);
-      //cout<<i<<" "<<j<<" "<<DT<<endl;
+      x = gettime(tb[i]);
+      if(x>t[inpsteps-1])
+	cerr<<"extrapolating";
+      out[i][0] = gsl_interp_eval(lininter,t,real,x,accl);
+    }
+  gsl_interp_free(lininter);
+  gsl_interp_accel_free(accl);
+  accl = gsl_interp_accel_alloc();
+  lininter = gsl_interp_alloc(gsl_interp_linear,inpsteps);
+  gsl_interp_init(lininter,t,imag,inpsteps);
+  for(int i=0;i<n_steps;i++)
+    {
+      x = gettime(tb[i]);
+      if(x>t[inpsteps-1])
+	cerr<<"extrapolating";
+      out[i][1] = gsl_interp_eval(lininter,t,imag,x,accl);
+    }
+  gsl_interp_free(lininter);
+  gsl_interp_accel_free(accl);
+}
+
+/**************************************************************************/
+
+
+void interp_akima(LIGOTimeGPS start,double dt,long int inpsteps,long int n_steps,LIGOTimeGPS *tb,double *real,double *imag,fftw_complex *out)
+{
+  int count = 1;
+  double *t,t0 = gettime(start);
+  t = (double *)malloc(sizeof(double)*inpsteps);
+  for(double i=0;i<inpsteps;i++)
+    t[int(i)] = t0 + i*dt;
+  gsl_interp_accel *accl = gsl_interp_accel_alloc();
+  gsl_interp *akimainter = gsl_interp_alloc(gsl_interp_akima,inpsteps);
+  gsl_interp_init(akimainter,t,real,inpsteps);
+  double x,y;
+  for(int i=0;i<n_steps;i++)
+    {
+      x = gettime(tb[i]);
+      if(x>t[inpsteps-1])
+	cerr<<"extrapolating";
+      y = gsl_interp_eval(akimainter,t,real,x,accl);
+      out[i][0] = y;
+    }
+  gsl_interp_free(akimainter);
+  gsl_interp_accel_free(accl);
+  accl = gsl_interp_accel_alloc();
+  akimainter = gsl_interp_alloc(gsl_interp_akima,inpsteps);
+  gsl_interp_init(akimainter,t,imag,inpsteps);
+  for(int i=0;i<n_steps;i++)
+    {
+      x = gettime(tb[i]);
+      if(x>t[inpsteps-1])
+	cerr<<"extrapolating";
+      y = gsl_interp_eval(akimainter,t,imag,x,accl);
+      out[i][1] = y;
     }
 }
 
-void interp(LIGOTimeGPS start,double dt,long int inpsteps,long int n_steps,LIGOTimeGPS *tb,double *real,double *imag,fftw_complex *out)
+
+void interp_spline(LIGOTimeGPS start,double dt,long int inpsteps,long int n_steps,LIGOTimeGPS *tb,double *real,double *imag,fftw_complex *out)
 {
   int count = 1;
   double *t,t0 = gettime(start);
@@ -148,6 +203,63 @@ void interp(LIGOTimeGPS start,double dt,long int inpsteps,long int n_steps,LIGOT
     }
 }
 
+double sinc(double t)
+{
+  if(t == 0)
+    return 1.0;
+  else
+    return sin(M_PI*t)/t/M_PI;
+}
+
+void retband(double t0, double dt, double* t,double* x, double* y,int n,int size, int terms)
+{
+  int i,j;
+  double f_s = 1/dt;
+  double Value = 0;
+  int lterms = terms;
+  int rterms = terms;
+  for(i=0;i<size;i++)
+    {
+      Value = 0;
+      int index;
+      index = (int)((t[i]-t0)/dt);
+      if(index < terms)
+	lterms = index;
+      if(index > (n-terms))
+	rterms = (n-index);
+      for(j=0;j<lterms;j++)
+	Value += sinc(f_s*(t[i]-t0-(index-j)*dt))*x[index-j];
+      for(j=1;j<rterms;j++)
+	Value += sinc(f_s*(t[i]-t0-(index+j)*dt))*x[index+j];
+      y[i] = Value;
+    }
+}
+
+void interp_bandl(LIGOTimeGPS start,double dt,long int inpsteps,long int n_steps,LIGOTimeGPS *tb,double *real,double *imag,fftw_complex *out)
+{
+  int terms = 15,i = 0;
+  double t0 = gettime(start),*y,*t;
+  t = (double*)malloc(sizeof(double)*n_steps);
+  
+  for(i=0;i<n_steps;i++)
+    t[i] = gettime(tb[i]);
+  
+  y = (double *)malloc(sizeof(double)*n_steps);
+  retband(t0,dt,t,real,y,inpsteps,n_steps,terms);
+  for(i=0;i<n_steps;i++)
+    out[i][0] = y[i];
+  retband(t0,dt,t,imag,y,inpsteps,n_steps,terms);
+  for(i=0;i<n_steps;i++)
+    out[i][1] = y[i];
+}
+
+
+
+
+
+
+
+
 void getAandB(LIGOTimeGPS *tdout,long int n_steps,double* a,double* b, LALStatus status,LALDetAndSource both,double psi)
 {
   LIGOTimeGPS tgps;
@@ -159,7 +271,7 @@ void getAandB(LIGOTimeGPS *tdout,long int n_steps,double* a,double* b, LALStatus
   pGPSandAcc.gps.gpsNanoSeconds = 0;
   double t0 = gettime(tdout[0]);
   double tstop = gettime(tdout[n_steps-1]);
-  double coarse = 1800.0;
+  double coarse = 180.0;
   long int steps = long((tstop-t0)/coarse)+1;
   atemp = (double *)malloc(sizeof(double)*steps);
   btemp = (double *)malloc(sizeof(double)*steps);
@@ -180,31 +292,31 @@ void getAandB(LIGOTimeGPS *tdout,long int n_steps,double* a,double* b, LALStatus
       T[i] = t;
       i++;
     }
-  
+
   gsl_interp_accel *accl = gsl_interp_accel_alloc();
-  gsl_interp *lininter = gsl_interp_alloc(gsl_interp_linear,steps);
-  gsl_interp_init(lininter,T,atemp,steps);
+  gsl_spline *splineinter = gsl_spline_alloc(gsl_interp_cspline,steps);
+  gsl_spline_init(splineinter,T,atemp,steps);
   double x,y;
   for(int i=0;i<n_steps;i++)
     {
       x = gettime(tdout[i]);
-      y = gsl_interp_eval(lininter,T,atemp,x,accl);
+      y = gsl_spline_eval(splineinter,x,accl);
       a[i] = y;
     }
-  gsl_interp_free(lininter);
+  gsl_spline_free(splineinter);
   gsl_interp_accel_free(accl);
   accl = gsl_interp_accel_alloc();
-  lininter = gsl_interp_alloc(gsl_interp_linear,steps);
-  gsl_interp_init(lininter,T,atemp,steps);
+  splineinter = gsl_spline_alloc(gsl_interp_cspline,steps);
+  gsl_spline_init(splineinter,T,btemp,steps);
   for(int i=0;i<n_steps;i++)
     {
       x = gettime(tdout[i]);
-      y = gsl_interp_eval(lininter,T,btemp,x,accl);
+      y = gsl_spline_eval(splineinter,x,accl);
       b[i] = y;
     }
   //for(int i=0;i<n_steps;i++)
   //cout<<t0+double(i)*dt<<" "<<a[i]<<" "<<b[i]<<endl;
-  gsl_interp_free(lininter);
+  gsl_spline_free(splineinter);
   gsl_interp_accel_free(accl);
   free(atemp);
   free(btemp);
@@ -212,41 +324,19 @@ void getAandB(LIGOTimeGPS *tdout,long int n_steps,double* a,double* b, LALStatus
 
 }
 
-double getTB0(double time,LALStatus status,BarycenterInput baryinput,EphemerisData edata)
-{
-  LIGOTimeGPS tgps = gettime(time);
-  EarthState earth;
-  EmissionTime emit;
-  baryinput.tgps = tgps;
-  LALBarycenterEarth(&status,&earth,&baryinput.tgps,&edata);           // Calculates the earth variable.
-  if(status.statusCode) 
-    {
-      printf("Unexpectedly got error code %d and message %s\n",
-	     status.statusCode, status.statusDescription);
-    }
-  LALBarycenter(&status,&emit,&baryinput,&earth);           // Calculates the variable emit, which contains an object called te, or t_b.
-  if(status.statusCode) 
-    {
-      printf("Unexpectedly got error code %d and message %s\n",
-	     status.statusCode, status.statusDescription);
-    }
-  return(gettime(emit.te));
-}
-
-/* getTbary takes in a start time, delta t and number of steps in the detector frame and converts it to barycentric time by using LALBarycenter. After which, it interpolates t_d vs t_b and returns values of t_d, which are linear in t_b.   */
   
 void getTbary(LIGOTimeGPS*tdout,double *Phi_m,LIGOTimeGPS start,long int n_steps,double dt,LALStatus status,BarycenterInput baryinput,EphemerisData edata)
 {
   double tstart,tstop; 
   LIGOTimeGPS tgps;                         
-  double *tb,*tin,tout;                            // book-keeping variables; tb,tin are used in the interpolation.
-  EarthState earth;                                // Required for LALBarycenter.
-  EmissionTime emit;                               // Required for LALBarycenter.
-  int k = 0;                                       // Another book-keeping variable
+  double *tb,*tin,tout;          
+  EarthState earth;                   
+  EmissionTime emit;                              
+  int k = 0;                                       
   
   tstart = gettime(start);
   tstop = tstart + n_steps*dt;
-  double coarse = 1800.0;
+  double coarse = 180.0;
   //cerr<<"start "<<tstart<<" stop "<<tstop<<endl;
   long int steps = long((tstop-tstart)/coarse)+1;
   tb = (double *)malloc(sizeof(double)*steps);
@@ -256,13 +346,13 @@ void getTbary(LIGOTimeGPS*tdout,double *Phi_m,LIGOTimeGPS start,long int n_steps
       tgps = gettime(t); 
       baryinput.tgps = tgps;
       //cerr<<t<<endl;
-      LALBarycenterEarth(&status,&earth,&baryinput.tgps,&edata);           // Calculates the earth variable.
+      LALBarycenterEarth(&status,&earth,&baryinput.tgps,&edata);         
       if(status.statusCode) 
        {
          printf("Unexpectedly got error code %d and message %s\n",
 	 status.statusCode, status.statusDescription);
        }
-      LALBarycenter(&status,&emit,&baryinput,&earth);           // Calculates the variable emit, which contains an object called te, or t_b.
+      LALBarycenter(&status,&emit,&baryinput,&earth);         
       if(status.statusCode) 
        {
          printf("Unexpectedly got error code %d and message %s\n",
@@ -280,6 +370,7 @@ void getTbary(LIGOTimeGPS*tdout,double *Phi_m,LIGOTimeGPS start,long int n_steps
   gsl_spline_init(spline,tb,tin,steps);
   double x0 = tb[0];
   double x,y;
+  //cerr<<"here \n";
   for(int i=0;i<n_steps;i++)
     {
       x = x0 + double(i)*dt;
@@ -318,13 +409,23 @@ double max(double* x,int n_steps)
   return M;
 }
 
+double max2(double*x,int n_steps,int &index)
+{
+  double M = 0;
+  index = 0;
+  for(int i=0;i<n_steps;i++)
+    {
+      if(x[i]>M)
+	{
+	  M = x[i];
+	  index = i;
+	}
+    }
+  return M;
+}
 
 int main(int argc, char **argv)
 {
-  int count = 1; //Counting number of templates run through
-
-  cerr<<"5 "<<factorial(5)<<endl;
-  int DetIndex = 0;
   LALStatus status;
   static LALDetector detector;
   static EphemerisData edata;
@@ -335,52 +436,81 @@ int main(int argc, char **argv)
   EmissionTime emit;
 
   
-  REAL8 lat = 0;                                        // Latitude
-  REAL8 lon = 0;                                        // Longitude
-  REAL8 RA = 0;//4.88671*M_PI/180.0;                              // Right Ascension
-  REAL8 DEC = 0;//-0.217584*M_PI/180.0;                             // Declination  
-  REAL8 psi = 0;//LAL_PI/2.0;//0;//-0.647939;                                  // Psi - Source Orientation
+  REAL8 RA = 0;
+  REAL8 DEC = 0; 
+  REAL8 psi = 0;
+  REAL8 F_check = 0;
+  REAL8 fdot = 0;
   
-  double dt = 1.0/9.0;                                // dt = time between consecutive data points in used data
-  long int n_steps = 16000*9.0;                                  // Number of data points in used data
+  double dt = 1.0/2.0;                               
+  long int n_steps = (86400*10-500)*2.0;             
  
-  double inpdt = 1.0/9.0;                       // The time between data points in input data
-  long int inpsteps = 162001*9.0/10.0;            // Number of data points in input data
+  double inpdt = 1.0/2.0;              
+  long int inpsteps = 2000000;
+  int fileopen = 0;
   ifstream file;
   ifstream freqfile;
   ofstream ofile;
-  ofstream maxofile("max");
-  ofstream binofile("bin");
   
-  for(int i=1;i<argc;i++)                                // A loop over command line data  
+  for(int i=1;i<argc;i++)             
     {
-      if(argv[i][0] == '-')                              // '-' is required before input is accepted
-	switch(argv[i][1])                               // a character after that will put in a range of options
+      if(argv[i][0] == '-')     
+	switch(argv[i][1])           
 	  {
-	  case 'n': 
-	    n_steps = atoi(argv[i+1]);
+	  case 'a': 
+	    RA = atof(argv[i+1]);
 	    i++;
 	    break;
 
 	  case 'd':
+	    DEC = atof(argv[i+1]);
+	    i++;
+	    break;
+	    
+	  case 'p':
+	    psi = atof(argv[i+1]);
+	    i++;
+	    break;
+
+	  case 't':
 	    dt = atof(argv[i+1]);
 	    i++;
 	    break;
 	    
-	  case 'o':
-	    file.open(argv[i+1]);
+	  case 'n':
+	    inpsteps = atoi(argv[i+1]);
+	    n_steps = inpsteps - (long)(1000*dt);
 	    i++;
 	    break;
+
+	  case 'l':
+	    fdot = atof(argv[i+1]);
+	    i++;
+	    break;
+	    
+	  case 'f':
+	    F_check = atof(argv[i+1]);
+	    i++;
+	    break;
+	    
+	  case 'i':
+	    file.open(argv[i+1]);
+	    i++;
+	    fileopen = 1;
+	    break;
+
 	  }
     }
 
-  status.statusPtr=NULL;                                  // status is used to monitor errors while calling LAL routines.  
+  //cerr<<F_check<<" "<<RA<<" "<<DEC<<" "<<inpsteps<<" "<<dt<<" "<<n_steps<<endl;
+
+  status.statusPtr=NULL;                                    
   
-  detector = lalCachedDetectors[LALDetectorIndexLHODIFF]; // lalCachedDetectors[] is a precalculated detector.
-  edata.ephiles.earthEphemeris = EARTHDATA;               // setting up ephemeris earth data.
-  edata.ephiles.sunEphemeris = SUNDATA;                   // setting up ephemeris sun data.
-  edata.leap = 13;                                        // Number of leap seconds adjusted.
-  LALInitBarycenter( &status, &edata);                    // Initializing ephemeris data.
+  detector = lalCachedDetectors[LALDetectorIndexLHODIFF]; 
+  edata.ephiles.earthEphemeris = EARTHDATA;               
+  edata.ephiles.sunEphemeris = SUNDATA;                   
+  edata.leap = 13;                                        
+  LALInitBarycenter( &status, &edata);          
  
   if(status.statusCode) 
     {
@@ -390,28 +520,12 @@ int main(int argc, char **argv)
     }
 	
   
-  freqfile.open("freq1");
-  freq Fcorrect;
-  double *tempfk;
-  int tempint=0;
-  tempfk = (double *)malloc(sizeof(double)*15);
-  while(freqfile)
-    {
-      freqfile>>tempfk[tempint++];
-    }
-  Fcorrect.num = tempint;
-  Fcorrect.fk = (double *)malloc(sizeof(double)*tempint);
-  for(int i=0;i<tempint;i++)
-    {
-      Fcorrect.fk[i] = tempfk[i];
-    }
-  free(tempfk);
 
   ofile.open("output");
-  ofstream ofileX("X"),ofileY("Y"),ofileZ("Z");
   int doonce = 1;
   
-  file.open("plot");
+  if(!fileopen)
+    file.open("T");
   //file.open("data1",ios::binary);
 
 
@@ -429,70 +543,44 @@ int main(int argc, char **argv)
       file>>x_im[i];
       //file>>temp;
       //x_im[i] = 0;
-    } 
-  
-  /* for(int i=0;i<n_steps;i++)
-    {
-      double retemp,imtemp,shift = 0,DT = double(i)*dt+700000000-T0;
-      retemp = x_re[i];
-      imtemp = x_im[i];
-      
-      x_re[i] = retemp*cos(2*LAL_PI*fmod(shift*DT,1.0)) - imtemp*sin(2*LAL_PI*fmod(shift*DT,1.0));
-      x_im[i] = retemp*sin(2*LAL_PI*fmod(shift*DT,1.0)) + imtemp*cos(2*LAL_PI*fmod(shift*DT,1.0));
-      //cout<<x_re[i]<<" "<<retemp<<" "<<x_im[i]<<" "<<imtemp<<endl;
+      //cout<<i<<" "<<x_re[i]<<" "<<x_im[i]<<endl;
     }
-  */
+
+
   string si = "data", so = "output",s;
   for(int i=0;i<1;i++)
     for(int j=0;j<1;j++)
-      for(int k=1;k<2;k++)
+      for(int k=0;k<1;k++)
 	{
+	  //fprintf(stderr,"%d\n",k);
 	  freq F;
 	  F.num = 1;
 	  F.fk = (double*)malloc(sizeof(double));
-	  double m = 0.9/50;
-	  double c = 1/10.0;
-	  F.fk[0] = 0;//-2.54e-8 ;//* (m*double(k)+c);
-	  ofileX<<F.fk[0]<<endl;
+	  F.fk[0] = fdot;
 	  
 	  in1 = (fftw_complex *)malloc(sizeof(fftw_complex)*n_steps);
 	  in2 = (fftw_complex *)malloc(sizeof(fftw_complex)*n_steps);
 	  
 	  y = (fftw_complex *)malloc(sizeof(fftw_complex)*n_steps);
-	  char stemp[50];
-	  sprintf(stemp,"%d",k);
-	  s = si + stemp;
+	  //char stemp[50];
+	  //sprintf(stemp,"%d",k);
+	  //s = so + stemp;
+	  //cerr<<s<<" "<<inpsteps<<" "<<n_steps<<endl;
 	  
-	  
-	  s = so + stemp;
-	  
-
-	 
-	  
-	  
-	  
-	  //inpsteps = INPSTEPS/k;
-	  //n_steps = N_STEPS/k;
-	  
-	  
-
-
-	  cerr<<s<<" "<<inpsteps<<" "<<n_steps<<endl;
-	  
-	  REAL8 RA = 0;//4.88671*M_PI/180.0;                           
-	  DEC = 0;//-0.217584*M_PI/180.0; 
+	  //RA = .1*(i);//4.88671;                           
+	  //DEC = .01*(j);//0.217584; 
 	  LIGOTimeGPS t0;                                        
-	  t0.gpsSeconds = 700000000;                            
+	  t0.gpsSeconds = 700010000;                            
 	  t0.gpsNanoSeconds = 0;
-	  source.equatorialCoords.latitude = DEC;                // Setting up Source settings.
+	  source.equatorialCoords.latitude = DEC;                
 	  source.equatorialCoords.longitude = RA;                
 	  source.equatorialCoords.system=COORDINATESYSTEM_EQUATORIAL;
 	  source.orientation = psi;
 	    
-	  both.pSource = &source;                                // Det and Source variable both is initialized.
+	  both.pSource = &source;                    
 	  both.pDetector = &detector;
 	  
-	  baryinput.site.location[0] = detector.location[0]/LAL_C_SI; // Initializing baryinput.
+	  baryinput.site.location[0] = detector.location[0]/LAL_C_SI; 
 	  baryinput.site.location[1] = detector.location[1]/LAL_C_SI;
 	  baryinput.site.location[2] = detector.location[2]/LAL_C_SI;    
 	  
@@ -508,12 +596,12 @@ int main(int argc, char **argv)
 	  double dif;
 	  tdout = (LIGOTimeGPS *)malloc(sizeof(LIGOTimeGPS)*n_steps);
 	  Phi_m = (double *)malloc(sizeof(double)*n_steps);
+	  //cerr<<" here \n";
 	  getTbary(tdout,Phi_m,t0,n_steps,dt,status,baryinput,edata);
-	  
+	  //cerr<<" got here too \n";
 	  //for(int i=0;i<n_steps;i++)
 	  // tdout[i] = gettime(t+dt*double(i));
 	  
-	  cerr<<count++<<" Here\n"<<endl;
 	  //for(int i=0;i<inpsteps;i++)
 	  // cout<<x_re[i]<<endl;
 	  
@@ -527,7 +615,7 @@ int main(int argc, char **argv)
 	  // {
 	  //  printf("%15.15g %g %g\n",gettime(tdout[i])-Phi_m[i],a[i],b[i]);
 	  // }
-	  interp(t0,dt,inpsteps,n_steps,tdout,x_re,x_im,y);
+	  interp_spline(t0,dt,inpsteps,n_steps,tdout,x_re,x_im,y);
 
 	  
 	 
@@ -535,11 +623,11 @@ int main(int argc, char **argv)
 
 	  double y1_re,y1_im,y2_re,y2_im;
 	  double phi,sinphi,cosphi;
-	  //double TB0 = getTB0(T0,status,baryinput,edata);
-	  //cerr<<T0<<" "<<TB0<<endl;
+	  double Het = 106.0 + (double)k/1.0;	  
+
 	  for(int i=0;i<n_steps;i++)
 	    {
-	      double retemp,imtemp,shift = -5.0 ,DT = Phi_m[i];
+	      double retemp,imtemp,shift = Het ,DT = -Phi_m[i];
 	      retemp = y[i][0];
 	      imtemp = y[i][1];
 	      
@@ -547,7 +635,7 @@ int main(int argc, char **argv)
 	      y[i][1] = retemp*sin(2*LAL_PI*fmod(shift*DT,1.0)) + imtemp*cos(2*LAL_PI*fmod(shift*DT,1.0));
 	      //cout<<x_re[i]<<" "<<retemp<<" "<<x_im[i]<<" "<<imtemp<<endl;
 	    }
-	  
+
 	  for(int i=0;i<n_steps;i++)
 	    {
 	      double DT = gettime(tdout[i])+Phi_m[i]-T0;
@@ -608,7 +696,7 @@ int main(int argc, char **argv)
 	  Scalc = (double *) fftw_malloc(sizeof(double)*long(n_steps/Sfactor));
 	  
 	  for(int i=0;i<n_steps/Sfactor;i++)
-	    Scalc[i] = 2.0*dt;	    
+	    Scalc[i] = 2*dt;//3.22e-44;	    
 	  int check = 1;
 	  
 	  
@@ -631,17 +719,36 @@ int main(int argc, char **argv)
 		  ofileY<<double(i)/n_steps/dt<<endl;
 		}
 		ofileZ<<Fstat[i]<<" ";*/
-	      if(double(i)/n_steps/dt == 0.02)
-		binofile<<Fstat[i]<<endl;
 	    }
 	  //ofileZ<<endl;
-	  for(int i=0;i<n_steps*2.0/8.0;i++)
-	    ofile<<(double)i/(double)n_steps*9.0+5.0<<" "<<Fstat[i]<<endl;
-	  for(int i=n_steps-1;i>n_steps*6.0/8.0;i--)
-	    ofile<<5.0+(double)(i-n_steps)/(double)n_steps*9.0<<" "<<Fstat[i]<<endl;
+	  //cerr<<F_check<<endl;
+	  for(double i=0;i<n_steps/2.0;i++)
+	    //cerr<<(double)i/(double)n_steps/dt<<" "<<(double)(i+1)/(double)n_steps/dt<<endl;
+	    if(fabs(F_check-((double)i/(double)(n_steps)/dt+Het))< 1.0/n_steps/dt/2.0)
+	      printf("%g %g %6.10g %g %g\n",RA,F_check,(double)i/(double)(n_steps)/dt+Het,Fstat[(int)(i)],Fstat[(int)(i)]);
+	    
+	      for(double i=n_steps-1;i>n_steps/2.0;i--)
+		if(fabs(F_check-((double)(i-n_steps)/(double)(n_steps)/dt+Het)) < 1.0/n_steps/dt/2.0) 
+		printf("%g %g %6.10g %g %g\n",RA,F_check,(double)(i-n_steps)/(double)(n_steps)/dt+Het,Fstat[(int)(i)],Fstat[(int)(i)]);
 	  
-	  maxofile<<max(Fstat,n_steps)<<endl;
 	  
+	  /*-------------------------------------------------*/
+
+	  double MAX;
+	  int index;
+	  //MAX = max2(Fstat,n_steps,index);
+	  //if(index<n_steps/2)
+	  //  printf("%6.10g %g %6.10g \n",Het,MAX,(double)index/(double)(n_steps)/dt+105.0);
+	  // else
+	  //  printf("%6.10g %g %6.10g \n",Het,MAX,(double)(index-n_steps)/(double)(n_steps)/dt+105.0);
+
+
+
+
+
+
+
+
 	  int h_steps=100;
 	  double H[h_steps];
 	  double Hsum = 0;
@@ -658,7 +765,7 @@ int main(int argc, char **argv)
 	      if ( err > D_KS)
 		D_KS = err;
 	    }
-	  cerr<<RA<<" "<<DEC<<" "<<D_KS<<endl;
+	  //cerr<<RA<<" "<<DEC<<" "<<D_KS<<endl;
 	  fftw_destroy_plan(p1);
 	  fftw_destroy_plan(p2);
 	  fftw_free(Fstat);
