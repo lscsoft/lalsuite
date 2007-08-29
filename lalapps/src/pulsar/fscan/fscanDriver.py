@@ -609,7 +609,7 @@ while (thisEndFreq < endFreq):
         referenceFileName = '%s/spec_%d.00_%d.00_%s' % (htmlReferenceDir,thisStartFreq,thisEndFreq,htmlRefIFOEpoch)
      else:
         referenceFileName = 'none'
-     argList = '%s %s %s %d %d %d %d %d %d %d %d %d %d %s' % (inputFileName,outputFileName,channelName,analysisStartTime,analysisEndTime,thisStartFreq,thisEndFreq,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coincidenceDeltaF,referenceFileName)
+     argList = '%s %s %s %d %d %d %d %d %d %s' % (inputFileName,outputFileName,channelName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coincidenceDeltaF,referenceFileName)
      tagStringOut = '%s_%i' % (tagString, nodeCount)  
      dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(runMatlabPlotScriptJobName,argList,tagStringOut))
      dagFID.write('PARENT %s CHILD %s\n'%(specAvgJobName,runMatlabPlotScriptJobName))

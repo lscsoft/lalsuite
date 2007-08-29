@@ -1,13 +1,7 @@
-function plotSpecAvgOutput(inputFileName,outputFileName,chanName,tStart,tEnd,fStart,fEnd,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coinDF,referenceFile)
-% usage: plotSpecAvgOutput(inputFileName,outputFileName,chanName,tStart,tEnd,fStart,fEnd,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coinDF,referenceFile)
-% 
-% inputFileName  -- the name of the file with data to input; this file is the output from spec_avg.
-% outputFileName -- the name of the output plot to generate (this code adds .pdf and .png extensions and outputs these).
+function plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coinDF,referenceFile)
+%
+% fileName       -- the name of the file with data to input; this file is the output from spec_avg.
 % chanName       -- the name of the channel used to generate the spectrogram data.
-% tStart         -- the start time of the data.
-% tEnd           -- the end time of the data.
-% fStart         -- the start frequency of the data.
-% fEnd           -- the end frequency of the data.
 % effTBase       -- the effective time base line: 1/effTBase gives the frequency resolution of the plot.
 %                   so that a effTBase of 10 seconds means deltaF = 0.1 Hz.
 % deltaFTicks    -- the change in frequency between major tick marks (e.g., 5 Hz).
@@ -21,18 +15,6 @@ function plotSpecAvgOutput(inputFileName,outputFileName,chanName,tStart,tEnd,fSt
 % referenceFile  -- base name of the reference file output by spec_avg; will append _timeaverage to this name.
 
 % Convert relevant strings to numbers.
-if (ischar(tStart))
-    tStart=str2num(tStart);
-end
-if (ischar(tEnd))
-    tEnd=str2num(tEnd);
-end
-if (ischar(fStart))
-    fStart=str2num(fStart);
-end
-if (ischar(fEnd))
-    fEnd=str2num(fEnd);
-end
 if (ischar(effTBase))
     effTBase=str2num(effTBase);
 end
@@ -52,44 +34,58 @@ if (ischar(coinDF))
     coinDF=str2num(coinDF);
 end
 
-xIn = load(inputFileName);
 
-x = transpose(log10(xIn));
+xIn = load(filename);
+y = flipud(transpose((xIn)));
+   
+undrscr = findstr('_',filename);                                 
+fStart = str2num(filename((undrscr(1)+1):(undrscr(2)-1)));      % start frequency
+fEnd = str2num(filename((undrscr(2)+1):(undrscr(3)-1)));        % end frequency
+tStart = str2num(filename((undrscr(4)+1):(undrscr(5)-1)));      % start time
+tEnd = str2num(filename((undrscr(5)+1):end));                   % end time
 
+% calculate characteristic values   
+stdev   = std(std(y));
+meanval = mean(mean(y));
+%maximum = max(max(y));
+%minimum = min(min(y));
+     
+% replace every value more than three stddeviations away from mean-value
+
+for ii=1:length(y(:,1));
+       for jj=1:length(y(1,:));
+           if y(ii,jj)>=(meanval+(3*stdev));
+               y(ii,jj)=(meanval+(3*stdev));
+           end
+       end
+end
+
+% plot the spectrogram
 figure(1);
 if (taveFlag > 0)
    subplot(2,1,1)
 end
-imagesc(flipud(x));
+imagesc((y));
+xlabel('SFT number (see table for corresponding date)','FontSize',13)
+ylabel('frequency [Hz]','FontSize',13)
 % Show ticks every deltaFTicks Hz:
 deltaTicks = deltaFTicks*effTBase;
 numTicks = floor((fEnd - fStart)/deltaFTicks);
 vecTicks = 1 + deltaTicks*(0:numTicks);
 vecTicks(numTicks + 1) = vecTicks(numTicks + 1) - 1; % for purpose of plot, adjust last tick 
 vecFLabels = fStart + deltaFTicks*(0:numTicks);
-%set(gca, 'YTick', [ 1 51 101 151 201 251 301 351 401 451 500 ]);
-%set(gca, 'YTickLabel', fliplr([50 55 60 65 70 75 80 85 90 95 100 ]));
 set(gca, 'YTick', vecTicks);
 set(gca, 'YTickLabel', fliplr(vecFLabels));
-titleString = sprintf('Spectrogram for %s; GPS %d - %d s.',chanName,tStart,tEnd);
+titleString = sprintf('Spectrogram for %s; GPS %d - %d s.' ,chanName,tStart,tEnd);
 title(titleString,'Interpreter','none');
-xlabel('SFT number (see table for corresponding date)');
-ylabel('Frequency (Hz)');
-colorbar;
+colorbar('eastoutside');
 
 if (taveFlag > 0)
   subplot(2,1,2)
-  % Produce StackSlide style time average output without sliding:
-  timeaverageFileName = sprintf('%s_timeaverage',inputFileName);
+% Produce StackSlide style time average output without sliding:
+  timeaverageFileName = sprintf('%s_timeaverage',filename);
   [fk, xout] = textread(timeaverageFileName,'%f %f');
-  semilogy(fk,xout)
-  %set(gca, 'XTick', vecTicks);
-  %set(gca, 'XTickLabel', vecFLabels);
-  titleString = sprintf('Spectrum for %s; averaged over GPS %d - %d s.',chanName,tStart,tEnd);
-  title(titleString,'Interpreter','none');
-  ylabel('Normalized Average Power');
-  xlabel('Frequency (Hz)');
-  outputTextFile = sprintf('%s.txt',outputFileName);
+  outputTextFile = sprintf('%s.txt',filename);
   outputSortedTextFile = sprintf('%s_sorted.txt',outputFileName);
   [xoutSorted,iSorted] = sort(xout,'descend');
   fSorted = fk(iSorted);
@@ -100,10 +96,26 @@ if (taveFlag > 0)
       fprintf(fid,'%f %f\n',fk(k),xout(k));
       fprintf(fid2,'%f %f\n',fSorted(k),xoutSorted(k));
   end
+
+  stdev_xout = std(xout)
+  meanval_xout = mean(xout)
+  
+  for jj=1:length(xout);
+      if xout(jj)>=(meanval_xout+(3*stdev_xout));
+          xout(jj)=(meanval_xout+(3*stdev_xout));
+      end
+  end
+ 
+  plot(fk,xout)
+  titleString = sprintf('Spectrum for %s; averaged over GPS %d - %d s.',chanName,tStart,tEnd);
+  title(titleString,'Interpreter','none');
+  ylabel('Normalized Average Power');
+  xlabel('Frequency (Hz)');
+  
   fclose(fid);
   fclose(fid2);
   if (thresholdSNR > 0)
-   % input the reference file and look for coincidence lines above thresholdSNR.
+  % input the reference file and look for coincidence lines above thresholdSNR.
    timeaverageFileNameRef = sprintf('%s_timeaverage',referenceFile);
    [fRef, xRef] = textread(timeaverageFileNameRef,'%f %f');
    outputTextFileLines = sprintf('%s_lines.txt',outputFileName);
@@ -128,8 +140,7 @@ if (taveFlag > 0)
          jMin = j - coincidenceBins;
          if (jMin < 1); jMin = 1; end;
          jMax = j + coincidenceBins;
-         if (jMax > lengthSNRout); jMax = lengthSNRout; end;
-         [SNRoutmax, iMaxout] = max(SNRout(jMin:jMax));
+        [SNRoutmax, iMaxout] = max(SNRout(jMin:jMax));
          iMaxout = jMin + iMaxout - 1;
          [SNRRefmax, iMaxRef] = max(SNRRef(jMin:jMax));
          iMaxRef = jMin + iMaxRef - 1;
@@ -144,10 +155,13 @@ if (taveFlag > 0)
    fclose(fid3);
   end 
 end
-outputPDFFileName = sprintf('%s.pdf',outputFileName);
-saveas(1, outputPDFFileName);
-outputPNGFileName = sprintf('%s.png',outputFileName);
-saveas(1, outputPNGFileName);
+
+set(gcf, 'PaperOrientation', 'landscape');
+set(gcf, 'PaperPosition', [0 0 11 8.5]);
+print('-dpdf','-loose',[outputFileName '.pdf'])
+print('-dpng',[outputFileName '.png'])
+
 delete(1);
+
 
 return;
