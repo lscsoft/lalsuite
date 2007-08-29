@@ -1604,20 +1604,13 @@ def overlap_test(interval1, interval2, slide_sec=0):
   3)  Does interval 1 completely cover (the extended) interval 2, 
     ie is interval_1 start before (interval 2 start - slide_sec) AND 
     interval 1 end after (interval 2 end + slide_sec)
-  If any of the above conditions are satisfied then return 1, else 0.
+  If any of the above conditions are satisfied then return True, else False.
   """
-  if ( 
-    interval1.start() >= interval2.start() - slide_sec
-    and interval1.start() <= interval2.end() + slide_sec
-    ) or (
-    interval1.end() >= interval2.start() - slide_sec 
-    and interval1.end() <= interval2.end() + slide_sec
-    ) or (
-    interval1.start() <= interval2.start() - slide_sec    
-    and interval1.end() >= interval2.end() + slide_sec ):
-    return 1
-  else:
-    return 0
-
-
-
+  start1 = interval1.start()
+  end1 = interval1.end()
+  left = interval2.start() - slide_sec
+  right = interval2.end() + slide_sec
+  
+  return (start1 >= left and start1 <= right) or \
+         (end1 >= left and end1 <= right) or \
+         (start1 <= left and end1 >= right)
