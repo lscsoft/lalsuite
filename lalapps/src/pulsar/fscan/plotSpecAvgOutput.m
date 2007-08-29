@@ -101,8 +101,8 @@ if (taveFlag > 0)
   meanval_xout = mean(xout)
   
   for jj=1:length(xout);
-      if xout(jj)>=(meanval_xout+(3*stdev_xout));
-          xout(jj)=(meanval_xout+(3*stdev_xout));
+      if xout(jj)>=(meanval_xout+(5*stdev_xout));
+          xout(jj)=(meanval_xout+(5*stdev_xout));
       end
   end
  
@@ -156,10 +156,11 @@ if (taveFlag > 0)
   end 
 end
 
+print('-dpng',[outputFileName '.png'])
 set(gcf, 'PaperOrientation', 'landscape');
 set(gcf, 'PaperPosition', [0 0 11 8.5]);
 print('-dpdf','-loose',[outputFileName '.pdf'])
-print('-dpng',[outputFileName '.png'])
+
 
 delete(1);
 
