@@ -536,7 +536,7 @@ int main(INT4 argc,CHAR *argv[])
 		/* Assign the DELTA index to the candidate event */
 		DeltaDeltaStep=0;
 		if (cc2 != 1) {
-		  while ( LookupDelta1[DeltaDeltaStep] < abs(SortedC[icand].Delta) ) {
+		  while ( LookupDelta1[DeltaDeltaStep] < fabs(SortedC[icand].Delta) ) {
 		    DeltaDeltaStep++;
 		    if (DeltaDeltaStep > iDeltaMax1)
 		      break;
@@ -549,7 +549,7 @@ int main(INT4 argc,CHAR *argv[])
 		  }
                 }
                 else { /* cc2 == 1 */
-		  while ( LookupDelta2[DeltaDeltaStep] < abs(SortedC[icand].Delta) ) { 
+		  while ( LookupDelta2[DeltaDeltaStep] < fabs(SortedC[icand].Delta) ) { 
 		    DeltaDeltaStep++;
 		    if (DeltaDeltaStep > iDeltaMax2)
 		      break;
@@ -561,7 +561,7 @@ int main(INT4 argc,CHAR *argv[])
 		    SortedC[icand].iDelta=DeltaDeltaStep+1;
 		  }
 		}
-                		
+
 		/* Assign the ALPHA index to the candidate event */
 		SortedC[icand].iAlpha=(INT4)( (SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
 		if ( cc3 == 1 ) {
