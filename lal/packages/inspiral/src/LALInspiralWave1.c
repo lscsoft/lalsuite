@@ -505,7 +505,7 @@ LALInspiralWave1Engine(
      INT4 errNum = XLALClearErrno();
      LALFree(dummy.data);
 
-     if (errNum = XLAL_ENOMEM)
+     if (errNum == XLAL_ENOMEM)
        ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
      else
        ABORTXLAL( status );
@@ -522,7 +522,7 @@ LALInspiralWave1Engine(
    t = 0.0;
    do {
       /* Free up memory and abort if writing beyond the end of vector*/
-      if ((signal1 && count >= signal1->length) || (ff && count >= ff->length))
+      if ((signal1 && (UINT4)count >= signal1->length) || (ff && (UINT4)count >= ff->length))
       {
           XLALRungeKutta4Free( integrator );
           LALFree(dummy.data);

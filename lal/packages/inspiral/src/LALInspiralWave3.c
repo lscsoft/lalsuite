@@ -252,8 +252,6 @@ LALInspiralWave3ForInjection (
 {
   
   UINT4 count, i;
-  expnFunc func;
-  expnCoeffs ak;
   REAL4Vector *a=NULL;
   REAL4Vector *ff=NULL ;
   REAL8Vector *phiv=NULL;
@@ -464,15 +462,15 @@ LALInspiralWave3Engine(
   REAL8 temp, tempMax=0, tempMin = 0;
   
   /* Only used in injection case */
-  REAL8 unitHz;
-  REAL8 f2a;
-  REAL8 mu;
-  REAL8 mTot;
-  REAL8 cosI;/* cosine of system inclination */
-  REAL8 etab;
-  REAL8 fFac; /* SI normalization for f and t */
-  REAL8 f2aFac;/* factor multiplying f in amplitude function */
-  REAL8 apFac, acFac;/* extra factor in plus and cross amplitudes */
+  REAL8 unitHz = 0.;
+  REAL8 f2a = 0.;
+  REAL8 mu = 0.;
+  REAL8 mTot = 0.;
+  REAL8 cosI = 0.;/* cosine of system inclination */
+  REAL8 etab = 0.;
+  REAL8 fFac = 0.; /* SI normalization for f and t */
+  REAL8 f2aFac = 0.;/* factor multiplying f in amplitude function */
+  REAL8 apFac = 0., acFac = 0.;/* extra factor in plus and cross amplitudes */
 
 
   INITSTATUS (status, "LALInspiralWave3Engine", LALINSPIRALWAVE3TEMPLATESC);
@@ -611,7 +609,7 @@ LALInspiralWave3Engine(
   while (f < fHigh && t < tmax && f > fOld) 
   {
     /* Check we don't write past the end of the vector */
-    if ((output1 && (i >= output1->length)) || (ff && (count >= ff->length)))
+    if ((output1 && ((UINT4)i >= output1->length)) || (ff && ((UINT4)count >= ff->length)))
     {
         ABORT(status, LALINSPIRALH_EVECTOR, LALINSPIRALH_MSGEVECTOR);
     }

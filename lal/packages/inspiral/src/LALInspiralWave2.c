@@ -413,7 +413,6 @@ LALInspiralWave2Engine(
   REAL8 f2aFac = 0;/* factor multiplying f in amplitude function */
   REAL8 apFac = 0, acFac = 0;/* extra factor in plus and cross amplitudes */
                                                                                                                              
-  CHAR message[256];
                                                                                                                              
   INITSTATUS(status, "LALInspiralWave2Engine", LALINSPIRALWAVE2ENGINEC);
   ATTATCHSTATUSPTR(status);
@@ -523,7 +522,7 @@ LALInspiralWave2Engine(
     /*
     Check we're not writing past the end of the vector
     */
-    if ((output1 && (i >= output1->length)) || (ff && (count >= ff->length)))
+    if ((output1 && ((UINT4)i >= output1->length)) || (ff && ((UINT4)count >= ff->length)))
     {
         ABORT(status, LALINSPIRALH_EVECTOR, LALINSPIRALH_MSGEVECTOR);
     }
