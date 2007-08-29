@@ -1850,8 +1850,8 @@ if gps_start_time is not None and gps_end_time is not None:
         node.get_missed():
       AddFileToCache(node.get_missed(), the_cache)
 
-  output_data_cache.write(out_cache_fname)
-  intermediate_data_cache.write(int_cache_fname)
+  output_data_cache.tofile(open(out_cache_fname, "w"))
+  intermediate_data_cache.tofile(open(int_cache_fname, "w"))
   print "done"
 else:
   print "gps start and stop times not specified: cache files not generated"
