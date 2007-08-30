@@ -45,8 +45,12 @@ tStart = str2num(filename((undrscr(4)+1):(undrscr(5)-1)));      % start time
 tEnd = str2num(filename((undrscr(5)+1):end));                   % end time
 
 % calculate characteristic values   
-stdev   = std(std(y));
-meanval = mean(mean(y));
+
+y_temp = [ ];
+for ii=1:length(y(:,1));
+  y_temp = [y_temp,y(ii,:)];
+end
+meanval = median(y_temp)/log(2);
 %maximum = max(max(y));
 %minimum = min(min(y));
      
@@ -54,8 +58,8 @@ meanval = mean(mean(y));
 
 for ii=1:length(y(:,1));
        for jj=1:length(y(1,:));
-           if y(ii,jj)>=(meanval+(3*stdev));
-               y(ii,jj)=(meanval+(3*stdev));
+           if y(ii,jj)>=(4*meanval);
+               y(ii,jj)=(4*meanval);
            end
        end
 end
@@ -100,9 +104,15 @@ if (taveFlag > 0)
   stdev_xout = std(xout)
   meanval_xout = mean(xout)
   
+  cutoff = meanval_xout+(5*stdev_xout);
+  if cutoff > 4.0;
+    cutoff = 4.0;
+  end
+  
+  
   for jj=1:length(xout);
-      if xout(jj)>=(meanval_xout+(5*stdev_xout));
-          xout(jj)=(meanval_xout+(5*stdev_xout));
+      if xout(jj)>=cutoff;
+          xout(jj)=cutoff;
       end
   end
  
