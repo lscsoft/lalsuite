@@ -261,6 +261,7 @@ typedef struct{
   INT4 startPhase;
   CHAR *inputPSD;
   INT4 useed;
+  INT4 ambiguity;
   REAL8 eMatch;
   REAL8 mmFine;
   REAL8 t0FineMin, t0FineMax, t3FineMin, t3FineMax, t0FineBin, t3FineBin; 

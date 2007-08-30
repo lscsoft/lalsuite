@@ -427,7 +427,8 @@ main (INT4 argc, CHAR **argv )
 						  &correlation,
 						  &overlapout,
 						  &overlapin), &status);
-                  gsl_matrix_set(amb1,2,thisTemplateIndex, gsl_matrix_get(amb1,2,thisTemplateIndex) + overlapout.max); 
+                  /* we compute the averaged ambiguity function a t=ta and the averaged maximizaed ambiguity function over time*/
+		  gsl_matrix_set(amb1,2,thisTemplateIndex, gsl_matrix_get(amb1,2,thisTemplateIndex) + overlapout.max); 
                   gsl_matrix_set(amb1,3,thisTemplateIndex, gsl_matrix_get(amb1,3,thisTemplateIndex) + correlation.data[randIn.param.nStartPad]); 
                   gsl_matrix_set(amb1,0,thisTemplateIndex, insptmplt.t0); 
                   gsl_matrix_set(amb1,1,thisTemplateIndex, insptmplt.t3); 
@@ -548,23 +549,26 @@ main (INT4 argc, CHAR **argv )
     fclose(Foutput);
   }
 
+
+  /* we save the ambiguity in a file */
+  if (userParam.ambiguity)
   {
     CHAR str[512];
     sprintf(str, "ambiguity_%d.dat", userParam.useed);
     
-   Foutput=  fopen(str,"w");
+    Foutput=  fopen(str,"w");
     for (j=0; j<sizeBank; j++)
       fprintf(Foutput, "%e %e %e %e\n", 
           gsl_matrix_get(amb1,0,j),
           gsl_matrix_get(amb1,1,j),
-          gsl_matrix_get(amb1,2,j),
-          gsl_matrix_get(amb1,3,j)
+          gsl_matrix_get(amb1,2,j)/result.ntrial,
+          gsl_matrix_get(amb1,3,j)/result.ntrial
           );
     fclose(Foutput);
     gsl_matrix_free(amb1);
   }
   
-
+  /* free memory */
   while ( templateBank.snglInspiralTable )
   {
     tmpltHead = templateBank.snglInspiralTable;
@@ -1420,58 +1424,6 @@ BEPrintBank(	InspiralCoarseBankIn coarseBankIn,
 }
 
 
-#if 0
-  if ( numCoarse )
-    {
-      /* --- we save one line --- */
-      tmplt = templateBank.snglInspiralTable = (SnglInspiralTable *)
-	LALCalloc( 1, sizeof(SnglInspiralTable) );
-      LALSnprintf( tmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), ifo );
-      LALSnprintf( tmplt->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
-		   "BankEfficiency" );
-      LALSnprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
-		   channelName );
-      tmplt->mass1   = (REAL4) coarseList[0].params.mass1;
-      tmplt->mass2   = (REAL4) coarseList[0].params.mass2;
-      tmplt->mchirp  = (REAL4) coarseList[0].params.chirpMass;
-      tmplt->eta     = (REAL4) coarseList[0].params.eta;
-      tmplt->tau0    = (REAL4) coarseList[0].params.t0;
-      tmplt->tau3    = (REAL4) coarseList[0].params.t3;
-      tmplt->tau4    = (REAL4) coarseList[0].params.t4;
-      tmplt->tau5    = (REAL4) coarseList[0].params.t5;
-      tmplt->ttotal  = (REAL4) coarseList[0].params.tC;
-      tmplt->psi0    = (REAL4) coarseList[0].params.psi0;
-      tmplt->psi3    = (REAL4) coarseList[0].params.psi3;
-      tmplt->f_final = (REAL4) coarseList[0].params.fFinal;
-      
-      /* --- then the others --- */
-      for ( i = 1; i < numCoarse; ++i )
-	{
-	  tmplt = tmplt->next = (SnglInspiralTable *)
-	    LALCalloc( 1, sizeof(SnglInspiralTable) );
-	  LALSnprintf( tmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), ifo );
-	  LALSnprintf( tmplt->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
-		       "BankEfficiency" );
-	  LALSnprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
-		       channelName );
-	  tmplt->mass1   = (REAL4) coarseList[i].params.mass1;
-	  tmplt->mass2   = (REAL4) coarseList[i].params.mass2;
-	  tmplt->mchirp  = (REAL4) coarseList[i].params.chirpMass;
-	  tmplt->eta     = (REAL4) coarseList[i].params.eta;
-	  tmplt->tau0    = (REAL4) coarseList[i].params.t0;
-	  tmplt->tau3    = (REAL4) coarseList[i].params.t3;
-	  tmplt->tau4    = (REAL4) coarseList[i].params.t4;
-	  tmplt->tau5    = (REAL4) coarseList[i].params.t5;
-	  tmplt->ttotal  = (REAL4) coarseList[i].params.tC;
-	  tmplt->psi0    = (REAL4) coarseList[i].params.psi0;
-	  tmplt->psi3    = (REAL4) coarseList[i].params.psi3;
-	  tmplt->f_final = (REAL4) coarseList[i].params.fFinal;
-	}
-    }
-  
-#endif
-
-
 
 void 
 BEFillProc(
@@ -1808,80 +1760,79 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
     
     /* finally write sngl inspiral table */
     
-    PRINT_LIGOLW_XML_BANKEFFICIENCY(xmlStream.fp);
+    PRINT_LIGOLW_XML_BANKEFFICIENCY(xmlStream.fp->fp);
    
-    fprintf(xmlStream.fp,BANKEFFICIENCY_PARAMS_ROW,
-	    trigger.psi0_trigger,
-	    trigger.psi3_trigger,
-	    randIn.param.psi0, 
-	    randIn.param.psi3, 
-	    trigger.tau0_trigger,
-	    trigger.tau3_trigger,
-	    randIn.param.t0, 
-	    randIn.param.t3, 	    	    
-	    trigger.fend_trigger, 
-	    trigger.fend_inject,
-	    trigger.mass1_inject,
-	    trigger.mass2_inject,
-	    randIn.param.startPhase,
-	    trigger.rho_final,
-	    trigger.snrAtCoaTime,
-	    trigger.phase,
-	    trigger.alphaF, 
-	    trigger.bin,
-	    randIn.param.nStartPad,
-	    trigger.nfast
-	    );
+    fprintf(xmlStream.fp->fp,BANKEFFICIENCY_PARAMS_ROW,
+	trigger.psi0_trigger,
+	trigger.psi3_trigger,
+	randIn.param.psi0, 
+	randIn.param.psi3, 
+	trigger.tau0_trigger,
+	trigger.tau3_trigger,
+	randIn.param.t0, 
+	randIn.param.t3, 	    	    
+	trigger.fend_trigger, 
+	trigger.fend_inject,
+	trigger.mass1_inject,
+	trigger.mass2_inject,
+	randIn.param.startPhase,
+	trigger.rho_final,
+	trigger.snrAtCoaTime,
+	trigger.phase,
+	trigger.alphaF, 
+	trigger.bin,
+	randIn.param.nStartPad,
+	trigger.nfast
+	);
 	    
-     if (trigger.ntrial == (UINT4)userParam.ntrials){
-       PRINT_LIGOLW_XML_TABLE_FOOTER(xmlStream.fp);
-       PRINT_LIGOLW_XML_FOOTER(xmlStream.fp);
-     }
+      if (trigger.ntrial == (UINT4)userParam.ntrials){
+        PRINT_LIGOLW_XML_TABLE_FOOTER(xmlStream.fp->fp);
+        PRINT_LIGOLW_XML_FOOTER(xmlStream.fp->fp);
+      }
       else
-	{
-	  fprintf(xmlStream.fp, ",\n");
-	}
-     fclose( xmlStream.fp );
-     xmlStream.fp = NULL;
+      {
+        fprintf(xmlStream.fp->fp, ",\n");
+      }
+      XLALFileClose( xmlStream.fp );    
   }
   else 
     {
-      xmlStream.fp = fopen(fname,"a+");
+      /* append data in uncompressed mode */
+      xmlStream.fp = XLALFileOpenAppend(fname, 0);
       
-      fprintf(xmlStream.fp,BANKEFFICIENCY_PARAMS_ROW,
-	      trigger.psi0_trigger,
-	      trigger.psi3_trigger,
-	      randIn.param.psi0, 
-	      randIn.param.psi3, 
-	      trigger.tau0_trigger,
-	      trigger.tau3_trigger,
-	      randIn.param.t0, 
-	      randIn.param.t3, 
-	      trigger.fend_trigger, 
-	      trigger.fend_inject,
-	      trigger.mass1_inject,
-	      trigger.mass2_inject,
-	      randIn.param.startPhase,
-	      trigger.rho_final,
-	      trigger.snrAtCoaTime, 
-	      trigger.phase,
-	      trigger.alphaF, 
-	      trigger.bin,
-	      randIn.param.nStartPad,
-	      trigger.nfast);	
+      fprintf(xmlStream.fp->fp,BANKEFFICIENCY_PARAMS_ROW,
+	trigger.psi0_trigger,
+	trigger.psi3_trigger,
+	randIn.param.psi0, 
+	randIn.param.psi3, 
+	trigger.tau0_trigger,
+	trigger.tau3_trigger,
+	randIn.param.t0, 
+	randIn.param.t3, 
+	trigger.fend_trigger, 
+	trigger.fend_inject,
+	trigger.mass1_inject,
+	trigger.mass2_inject,
+	randIn.param.startPhase,
+	trigger.rho_final,
+	trigger.snrAtCoaTime, 
+	trigger.phase,
+	trigger.alphaF, 
+	trigger.bin,
+	randIn.param.nStartPad,
+	trigger.nfast
+	);	
 
       if (trigger.ntrial == (UINT4)userParam.ntrials){
-	PRINT_LIGOLW_XML_TABLE_FOOTER(xmlStream.fp );
-	PRINT_LIGOLW_XML_FOOTER(xmlStream.fp );
+	PRINT_LIGOLW_XML_TABLE_FOOTER(xmlStream.fp->fp );
+	PRINT_LIGOLW_XML_FOOTER(xmlStream.fp->fp );
       }
       else
 	{
-	  fprintf(xmlStream.fp, ",\n");
+	  fprintf(xmlStream.fp->fp, ",\n");
 	}
       
-      
-      fclose( xmlStream.fp );
-      xmlStream.fp = NULL;
+      XLALFileClose( xmlStream.fp );    
     }  
 }
 
@@ -1965,8 +1916,7 @@ BEPrintProtoXml(InspiralCoarseBankIn   coarseBankIn,
     /* finally write sngl inspiral table */
     
      
-      fclose( xmlStream.fp );
-      xmlStream.fp = NULL;
+  XLALFileClose( xmlStream.fp );
 #undef MAXIFO 
 
 
@@ -2668,6 +2618,7 @@ void InitUserParametersIn(UserParametersIn *userParam)
   userParam->startPhase         = 1;
   userParam->numSeconds   	= -1;
   userParam->inputPSD     	= NULL;
+  userParam->ambiguity     	= 0;
 }
 
 
@@ -2976,6 +2927,9 @@ ParseParameters(	INT4 			*argc,
         BEParseGetInt(argv,  &i, (INT4*)(&(coarseBankIn->order)));
       }      
       /* no user parameters requeste, only flags below*/               
+      else if (!strcmp(argv[i],"--ambiguity")) {
+        userParam->ambiguity = 1;
+      }
       else if (!strcmp(argv[i],"--alpha-constraint")) {
         userParam->alphaFConstraint       = ALPHAFConstraint;
       }
