@@ -50,7 +50,7 @@ y_temp = [ ];
 for ii=1:length(y(:,1));
   y_temp = [y_temp,y(ii,:)];
 end
-cutoffval = 2.0*median(y_temp)/log(2);
+cutoffval = median(y_temp)+5*(median(y_temp)/sqrt(180));
 %maximum = max(max(y));
 %minimum = min(min(y));
      
