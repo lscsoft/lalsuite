@@ -105,9 +105,15 @@ if (taveFlag > 0)
   meanval_xout = mean(xout)
   
   % Read in timestamps file to find the number of SFTs used:
-  timestampFileName = sprintf('%s__timestamps',filename);
+  timestampFileName = sprintf('%s_timestamps',filename);
   [ntmp, ttmp] = textread(timestampFileName,'%f %f');
+  % Computed expected 5 sigma cutoff for gaussian noise:
   cutoffmax = 1.0 + 5.0/sqrt(length(ntmp));
+  % avoid too small of a maximum cutoff:
+  if cutoffmax < 2;
+     cutoffmax = 2;
+  end
+  % compute cutoff from data, but do not exceed cutoffmax:
   cutoff = meanval_xout+(5*stdev_xout);
   if cutoff > cutoffmax;
     cutoff = cutoffmax;
