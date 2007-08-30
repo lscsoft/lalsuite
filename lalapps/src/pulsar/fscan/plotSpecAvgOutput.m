@@ -50,7 +50,7 @@ y_temp = [ ];
 for ii=1:length(y(:,1));
   y_temp = [y_temp,y(ii,:)];
 end
-meanval = median(y_temp)/log(2);
+cutoffval = 3.0*median(y_temp)/log(2);
 %maximum = max(max(y));
 %minimum = min(min(y));
      
@@ -58,8 +58,8 @@ meanval = median(y_temp)/log(2);
 
 for ii=1:length(y(:,1));
        for jj=1:length(y(1,:));
-           if y(ii,jj)>=(4*meanval);
-               y(ii,jj)=(4*meanval);
+           if y(ii,jj)>= cutoffval;
+               y(ii,jj)= cutoffval;
            end
        end
 end
@@ -105,8 +105,8 @@ if (taveFlag > 0)
   meanval_xout = mean(xout)
   
   cutoff = meanval_xout+(5*stdev_xout);
-  if cutoff > 4.0;
-    cutoff = 4.0;
+  if cutoff > 2.0;
+    cutoff = 2.0;
   end
   
   
