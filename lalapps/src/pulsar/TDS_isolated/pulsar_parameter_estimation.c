@@ -225,17 +225,10 @@ INT4 main(INT4 argc, CHAR *argv[]){
           inputs.mesh.minVals.h0)/(REAL8)(inputs.mesh.h0Steps - 1.);
       }
       
-      /* set the MCMC h0 proposal step size at stdh0/10 */
+      /* set the MCMC h0 proposal step size at stdh0/20 */
       if( inputs.mcmc.doMCMC != 0 )
-        inputs.mcmc.sigmas.h0 = stdh0/10.;
+        inputs.mcmc.sigmas.h0 = stdh0/20.;
     }
-    
-    fprintf(stderr, "sigmas: h0 = %le, psi = %lf, phi = %lf, ci = %lf.\n",
-inputs.mcmc.sigmas.h0, inputs.mcmc.sigmas.psi, inputs.mcmc.sigmas.phi0,
-inputs.mcmc.sigmas.ci);
-    fprintf(stderr, "h0 max = %lf.\n", inputs.mesh.maxVals.h0);  
-
-    fprintf(stderr, "k = %d.\n", k);
 
     /*========================================================================*/
     
@@ -314,12 +307,10 @@ inputs.mcmc.sigmas.ci);
     }
     /*========================================================================*/
     
-    fprintf(stderr, "about to perform MCMC.\n");
-    
     /*================== PERFORM THE MCMC ====================================*/
     if( inputs.mcmc.doMCMC != 0 )
       perform_mcmc(&data[k], inputs, 1, dets[i]);
-            
+              
     /*========================================================================*/
   }
   
@@ -373,23 +364,25 @@ inputs.mcmc.sigmas.ci);
     }
   }
   /*====================== FREE THE LIKELIHOOD MEMORY ========================*/
-  for( i = 0 ; i < inputs.mesh.phiSteps ; i++ ){
-    for( j = 0 ; j < inputs.mesh.ciotaSteps ; j++ ){
-      if( numDets > 1 )
-        free(jointLike[i][j]);
+  if( inputs.mcmc.doMCMC == 0 ){
+    for( i = 0 ; i < inputs.mesh.phiSteps ; i++ ){
+      for( j = 0 ; j < inputs.mesh.ciotaSteps ; j++ ){
+        if( numDets > 1 )
+          free(jointLike[i][j]);
         
-      free(singleLike[i][j]);
-    }
-    if( numDets > 1 )
-      free(jointLike[i]);
+        free(singleLike[i][j]);
+      }
+      if( numDets > 1 )
+        free(jointLike[i]);
       
-    free(singleLike[i]);
-  }
+      free(singleLike[i]);
+    }
   
-  if( numDets > 1 )
-    free(jointLike);
+    if( numDets > 1 )
+      free(jointLike);
     
-  free(singleLike);
+    free(singleLike);
+  }
   /*=========================================================================*/ 
                                             
   return 0;
@@ -494,17 +487,17 @@ y:g:K:N:X:O:" ;
   inputParams->priors.ciotaPrior = "uniform";
   
   /* default MCMC parameters */
-  inputParams->mcmc.sigmas.h0 = 0.;          /* estimate from data */
-  inputParams->mcmc.sigmas.phi0 = LAL_PI/5.; /* tenth of phi range */
-  inputParams->mcmc.sigmas.psi = LAL_PI/20.; /* tenth of psi range */
-  inputParams->mcmc.sigmas.ci = 0.2;         /* tenth of cosi range */
-  inputParams->mcmc.outputRate = 1;          /* output every sample */
+  inputParams->mcmc.sigmas.h0 = 0.;           /* estimate from data */
+  inputParams->mcmc.sigmas.phi0 = LAL_PI/10.; /* 20th of phi range */
+  inputParams->mcmc.sigmas.psi = LAL_PI/40.;  /* 20th of psi range */
+  inputParams->mcmc.sigmas.ci = 0.1;          /* 20th of cosi range */
+  inputParams->mcmc.outputRate = 1;           /* output every sample */
   
-  inputParams->mcmc.iterations = 10000;      /* default 10000 points */
-  inputParams->mcmc.temperature = 1;         /* default annealing */
-  inputParams->mcmc.burnIn = 1000;           /* default burn in time */
+  inputParams->mcmc.iterations = 10000;       /* default 10000 points */
+  inputParams->mcmc.temperature = 1;          /* default annealing */
+  inputParams->mcmc.burnIn = 1000;            /* default burn in time */
   
-  inputParams->mcmc.nGlitches = 0;           /* no glitches is default */
+  inputParams->mcmc.nGlitches = 0;            /* no glitches is default */
   
   /* parse input arguments */
   while( 1 ){
@@ -1511,24 +1504,27 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   INT4 below0=0;
   
   REAL4Vector *randNum=NULL; /* LAL random variable params */
-  UINT4 seed=1;
+  UINT4 seed=0;              /* set to get seed from clock time */
   RandomParams *randomParams;
   
   char *pos1=NULL, *pos2=NULL;
   INT4 i=0, j=0, k=0, n=0, count=0;
   
-  REAL8 *like1=NULL, *like2=NULL;
+  REAL8 like1[1], like2[1];
   REAL8 logL1=0., logL2=0.; /* log likelihoods */
-  REAL8 ratio; /* logL2 - logL1 */
+  REAL8 ratio;              /* logL2 - logL1 = log(L2/L1) */
   
   FILE *fp=NULL;
   CHAR outFile[256];
   
+  if( verbose ){
+    fprintf(stderr, "Performing an MCMC for %s with %d iterations.\n",
+      det, input.mcmc.iterations);
+  }  
+
   /* set up random parameters */
   randomParams = XLALCreateRandomParams( seed );
-  
-  fprintf(stderr, "num glitches = %d.\n", nGlitches);
-  
+ 
   /* work out how many glitches have been input */
   if( input.mcmc.nGlitches > 0 ){
     extraVars = calloc(nGlitches, sizeof(IntrinsicPulsarVariables));
@@ -1640,8 +1636,6 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     }
   }
   
-  fprintf(stderr, "set initial vars.\n");
-  
   /* set initial chain parameters */
   vars.h0 = input.mesh.minVals.h0 + (REAL8)XLALUniformDeviate(randomParams) *
              (input.mesh.maxVals.h0 - input.mesh.minVals.h0);
@@ -1688,6 +1682,15 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     fprintf(stderr, "Error... Can't open MCMC output chain file!\n");
     exit(0);
   }
+
+  /* write MCMC chain header info */
+  fprintf(fp, "%% MCMC for %s with %s data using %d iterations\n",
+    input.pulsar, det, input.mcmc.iterations);
+  fprintf(fp, "%% log(L)    \th0          \tphi0 (rads) \tcos(iota)\tpsi \
+(rads)");
+  for( j = 0 ; j < nGlitches ; j++ )
+    fprintf(fp, "\th0(%d)       \tphi0(%d) ", j+2, j+2);
+  fprintf(fp, "\n");
   
   /* create vector for random Gaussian numbers */
   randNum = XLALCreateREAL4Vector(4+2*nGlitches);
@@ -1719,9 +1722,9 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
        our prior range so the likelihood is always zero and this move always
        rejected */
     if( varsNew.h0 < 0. || below0 == 1 ){
-      if( fmod(input.mcmc.outputRate, count) == 0. && i > input.mcmc.burnIn ){
-        fprintf(fp, "%le\t%lf\t%lf\t%lf", vars.h0, vars.phi0, vars.ci,
-          vars.psi);
+      if( fmod(count, input.mcmc.outputRate) == 0. && i > input.mcmc.burnIn-1 ){
+        fprintf(fp, "%le\t%le\t%lf\t%lf\t%lf", logL1, vars.h0, vars.phi0,
+          vars.ci, vars.psi);
          
         for( j = 0 ; j < nGlitches ; j++ )
           fprintf(fp, "\t%le\t%lf", extraVars[j].h0, extraVars[j].h0);
@@ -1783,9 +1786,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
       extraVarsNew[j].Xccosphi_2 = 0.5*extraVarsNew[j].Xcross *
                                    cos(extraVarsNew[j].phi0);
     }
-    
-    fprintf(stderr, "I've set the new vars.\n"); 
-    
+   
     /* set single h0 value for log_likelihood function */
     input.mesh.h0Steps = 1;
     
@@ -1796,11 +1797,9 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
         /* first likelihood */
         if( nGlitches == 0 ){
           input.mesh.minVals.h0 = vars.h0;
-          fprintf(stderr, "About to get the likelihood.\n");
           
           log_likelihood(like1, data[k], vars, input.mesh);
-          
-          fprintf(stderr, "I've got the likelihood.\n");
+         
           logL1 += *like1;
         }
         else{
@@ -1841,7 +1840,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     
     /* accept new values if Lnew/Lold >=1 (or log(Lnew/Lold) >= 0) */
     /* include simulated annealing factor */
-    if( i < input.mcmc.burnIn ){
+    if( i < input.mcmc.burnIn-1 ){
       ratio = input.mcmc.temperature * exp( log(1./input.mcmc.temperature) *
               (double)i/(double)input.mcmc.burnIn) * (logL2 - logL1);
     }
@@ -1867,8 +1866,8 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     }
     
     /* printf out chains */
-    if( fmod(input.mcmc.outputRate, count) == 0. && i > input.mcmc.burnIn ){
-      fprintf(fp, "%le\t%lf\t%lf\t%lf", vars.h0, vars.phi0, vars.ci,
+    if( fmod(count, input.mcmc.outputRate) == 0. && i > input.mcmc.burnIn-1 ){
+      fprintf(fp, "%le\t%le\t%lf\t%lf\t%lf", logL1, vars.h0, vars.phi0, vars.ci,
         vars.psi);
          
       for( j = 0 ; j < nGlitches ; j++ )
@@ -1876,7 +1875,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
       
       fprintf(fp, "\n");
     }
-      
+    
     count++;
     logL2 = 0.;
   }
