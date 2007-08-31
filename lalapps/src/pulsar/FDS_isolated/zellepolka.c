@@ -410,8 +410,7 @@ int main(INT4 argc,CHAR *argv[])
   INT4  selectGrid; /* denotes one of the 16 shifted cell-grid */
   INT4  sizecells; /* Length of the cell list */
   INT4  AlphaTwoPiIdx=0; /* Cell-index of an candidate events located at alpha=2*Pi*/
-  REAL8 epsmove=1e-5;
-
+  
   LALStatus *lalStatus = &global_status;
   lalDebugLevel = 0 ;  
   vrbflg = 1;   /* verbose error-messages */
@@ -531,7 +530,7 @@ int main(INT4 argc,CHAR *argv[])
 	    for (icand=0;icand<CLength;icand++) 
 	      {
 		/* Assign the FREQUENCY index to the candidate event */
-		SortedC[icand].iFreq=(INT4) ( ((SortedC[icand].f)/(PCV.Deltaf)) + (cc1 * 0.5)  );
+		SortedC[icand].iFreq=(INT4)floor( ((SortedC[icand].f)/(PCV.Deltaf)) + (cc1 * 0.5)  );
 	      
 		/* Assign the DELTA index to the candidate event */
 		DeltaDeltaStep=0;
@@ -563,14 +562,23 @@ int main(INT4 argc,CHAR *argv[])
 		}
 
 		/* Assign the ALPHA index to the candidate event */
-		SortedC[icand].iAlpha=(INT4)( (SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
-		if ( cc3 == 1 ) {
+		SortedC[icand].iAlpha=(INT4)floor( (SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
+		if (cc3 == 1) {
 		  AlphaTwoPiIdx=(INT4)( (LAL_TWOPI*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
-		  if ( AlphaTwoPiIdx == SortedC[icand].iAlpha ) {
-		    SortedC[icand].Alpha = epsmove;
-		    SortedC[icand].iAlpha=(INT4)( (SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
+		  if ( SortedC[icand].iAlpha == 0 ) {
+		    SortedC[icand].Alpha = SortedC[icand].Alpha + LAL_TWOPI;
+		    SortedC[icand].iAlpha = AlphaTwoPiIdx;
 		  }
 		}
+		else { /* cc3 != 1 */
+		  AlphaTwoPiIdx=(INT4)( (LAL_TWOPI*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
+		  if ( SortedC[icand].iAlpha == AlphaTwoPiIdx ) {
+		    SortedC[icand].Alpha = SortedC[icand].Alpha - LAL_TWOPI;
+		    SortedC[icand].iAlpha = 0;
+		  }
+		}
+		
+		
 
 		/* Assign the F1DOT index to the candidate event */
 		SortedC[icand].iF1dot=(INT4)floor(( ((SortedC[icand].F1dot)/(PCV.DeltaF1dot))  + (cc4 * 0.5)  ));
@@ -1345,7 +1353,6 @@ void get_info_of_the_cell( LALStatus *lalStatus, CellData *cd, const CandidateLi
     p = p->next;
     ic++;
   }
-
   if( ic >  LINKEDSTR_MAX_DEPTH ) {
     LALPrintError("Maximum depth of linked structure reached!");
     exit(POLKA_EXIT_ERR);
@@ -1356,6 +1363,14 @@ void get_info_of_the_cell( LALStatus *lalStatus, CellData *cd, const CandidateLi
   cd->Delta /= cd->nCand;
   cd->Freq  /= cd->nCand;
   
+  if( cd->Alpha > LAL_TWOPI ) {
+    cd->Alpha = cd->Alpha - LAL_TWOPI;  
+  }
+  
+  if( cd->Alpha < 0 ) {
+    cd->Alpha = cd->Alpha + LAL_TWOPI;
+  }
+
   RETURN (lalStatus);
 } /* void get_info_of_the_cell() */
 
