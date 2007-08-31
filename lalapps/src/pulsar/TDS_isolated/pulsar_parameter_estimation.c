@@ -210,7 +210,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
        data set if doing MCMC */
     if( ( inputs.mesh.maxVals.h0 == 0 || inputs.mcmc.sigmas.h0 == 0 ) && (
           inputs.mcmc.doMCMC != 0 || i == 0 ) ){      
-      if( verbose ) fprintf(stderr, "Calculating h0 steps size.\n");
+      if( verbose ) fprintf(stderr, "Calculating h0 UL estimate: ");
       
       /* get the power spectral density power/bandwidth (1/60 Hz) */
       stdh0 = stdh0/((REAL8)j*(1./60.));
@@ -228,6 +228,8 @@ INT4 main(INT4 argc, CHAR *argv[]){
       /* set the MCMC h0 proposal step size at stdh0/20 */
       if( inputs.mcmc.doMCMC != 0 )
         inputs.mcmc.sigmas.h0 = stdh0/20.;
+      
+      if( verbose ) fprintf(stderr, "%le\n", stdh0);
     }
 
     /*========================================================================*/
@@ -775,6 +777,9 @@ void create_likelihood_grid(DataStructure data, REAL8 ****logLike,
   
   /* calculate likelihood array */
   for( i = 0 ; i < mesh.phiSteps ; i++ ){
+    if( verbose ) 
+      fprintf(stderr, "In phi0 loop %d of %d.\n", i+1, mesh.phiSteps);
+    
     vars.phi0 = mesh.minVals.phi0 + (REAL8)i*mesh.delta.phi0;
     cosphi = cos(vars.phi0);
     sinphi = sin(vars.phi0);
@@ -795,9 +800,6 @@ void create_likelihood_grid(DataStructure data, REAL8 ****logLike,
         log_likelihood(logLike[i][j][k], data, vars, mesh);
       }
     }
-
-    if( verbose ) 
-      fprintf(stderr, "In phi0 loop %d of %d.\n", i+1, mesh.phiSteps);
   }
 
   /* free memory */ 
@@ -1496,7 +1498,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   /* extra h0 and phase parameter required if a glitch is obsevered */
   IntrinsicPulsarVariables *extraVars=NULL, *extraVarsNew=NULL;
   REAL8 *glitchTimes=NULL;
-  CHAR gtimestr[256];
+  CHAR *gtimestr=NULL;
   INT4 nGlitches=input.mcmc.nGlitches;
   INT4 **g1=NULL, **g2=NULL; /* start - end positions of each glitch segment */
   DataStructure **glitchData=NULL;
@@ -1507,7 +1509,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   UINT4 seed=0;              /* set to get seed from clock time */
   RandomParams *randomParams;
   
-  char *pos1=NULL, *pos2=NULL;
+  CHAR *pos1=NULL, *pos2=NULL;
   INT4 i=0, j=0, k=0, n=0, count=0;
   
   REAL8 like1[1], like2[1];
@@ -1535,18 +1537,36 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     g1 = calloc(numDets, sizeof(INT4 *));
     g2 = calloc(numDets, sizeof(INT4 *));
     
+    for( j = 0 ; j < numDets ; j++ ){
+        g1[j] = calloc(nGlitches + 1, sizeof(INT4));
+        g2[j] = calloc(nGlitches + 1, sizeof(INT4));
+    }
+
     /* glitch times are seperated by commas so count them up */
     for( i = 0 ; i < nGlitches ; i++ ){
-      if( i == 0 )
-        pos1 = strchr(input.mcmc.glitchTimes, '"');/*string starts "*/
-      else  
-        pos1 = pos2; /* first position equals the previous value */
-      
-      /* values are delimited by commas , */
-      pos2 = strchr(pos1+1, ','); 
-      
-      strncpy(gtimestr, pos1+1, (pos2-pos1));
-      glitchTimes[i] = LALTDBMJDtoGPS(atof(gtimestr)); /* convert to GPS */
+      if( nGlitches == 1 )
+        glitchTimes[i] = LALTDBMJDtoGPS(atof(input.mcmc.glitchTimes));
+      else{
+        if( i == 0 )
+          pos1 = input.mcmc.glitchTimes;/*string starts "*/
+        else
+          pos1 = pos2+1; /* first position equals the previous value */
+        
+        gtimestr = NULL;
+        gtimestr = malloc(256*sizeof(CHAR));
+          
+        /* values are delimited by commas , */        
+        if( i < nGlitches - 1 ){
+          pos2 = strchr(pos1, ',');
+          XLALStringCopy(gtimestr, pos1, (pos2-pos1)+1);/*copy time of glitch*/
+        }
+        else
+          gtimestr = XLALStringDuplicate(pos1);
+         
+        glitchTimes[i] = LALTDBMJDtoGPS(atof(gtimestr)); /* convert to GPS */
+        
+        free(gtimestr);
+      }
       
       /* set initial values for extra params */
       extraVars[i].h0 = (REAL8)XLALUniformDeviate(randomParams) *
@@ -1554,18 +1574,8 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
       extraVars[i].phi0 = (REAL8)XLALUniformDeviate(randomParams) *
         (input.mesh.maxVals.phi0 - input.mesh.minVals.phi0);
       
-      extraVars[i].Xplus = 0.5*(1.+extraVars[i].ci*extraVars[i].ci);
-      extraVars[i].Xcross = extraVars[i].ci;
-      extraVars[i].Xpsinphi_2 = 0.5*extraVars[i].Xplus * sin(extraVars[i].phi0);
-      extraVars[i].Xcsinphi_2 = 0.5*extraVars[i].Xcross *sin(extraVars[i].phi0);
-      extraVars[i].Xpcosphi_2 = 0.5*extraVars[i].Xplus * cos(extraVars[i].phi0);
-      extraVars[i].Xccosphi_2 = 0.5*extraVars[i].Xcross *cos(extraVars[i].phi0);
-      
       /* find the position before and after the glitch +/- the cut-off time/2 */
-      for( j = 0 ; j < numDets ; j++ ){
-        g1[j] = calloc(nGlitches + 1, sizeof(INT4));
-        g2[j] = calloc(nGlitches + 1, sizeof(INT4)); 
-        
+      for( j = 0 ; j < numDets ; j++ ){        
         if( i == 0 )
           g1[j][i] = 0;
          
@@ -1579,7 +1589,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
           /* first point before current glitch */
           if( data[j].times->data[k] > glitchTimes[i] - 
             input.mcmc.glitchCut/2. ){
-            g2[j][i] = k-1;
+            g2[j][i] = k;
             
             if(i != nGlitches - 1)
               break;           
@@ -1590,7 +1600,8 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
              input.mcmc.glitchCut/2. && i == nGlitches - 1 ){
             g1[j][i+1] = k;
             g2[j][i+1] = data[j].times->length;
-            break;   
+            
+            break;
           }
         }
       }
@@ -1599,23 +1610,24 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     /* put each section of data into a new structure */
     glitchData = calloc(numDets, sizeof(DataStructure *));
     
-    for( i = 0 ; i < numDets + 1 ; i++ ){
-      glitchData[i] = calloc(nGlitches, sizeof(DataStructure *));
+    for( i = 0 ; i < numDets ; i++ ){
+      glitchData[i] = calloc(nGlitches + 1, sizeof(DataStructure));
       
       for( j = 0 ; j < nGlitches + 1 ; j++ ){
         glitchData[i][j].data = NULL;
-        glitchData[i][j].data = XLALCreateCOMPLEX16Vector(g2[i][j]-g1[i][j]);
+        glitchData[i][j].data = XLALCreateCOMPLEX16Vector(g2[i][j]-g1[i][j]+1);
         
         glitchData[i][j].times = NULL;
-        glitchData[i][j].times = XLALCreateREAL8Vector(g2[i][j]-g1[i][j]);
+        glitchData[i][j].times = XLALCreateREAL8Vector(g2[i][j]-g1[i][j]+1);
         
         glitchData[i][j].chunkLengths = NULL;
-        glitchData[i][j].chunkLengths = XLALCreateINT4Vector(g2[i][j]-g1[i][j]);
+        glitchData[i][j].chunkLengths =
+          XLALCreateINT4Vector(g2[i][j]-g1[i][j]+1);
         glitchData[i][j].chunkMin = data[i].chunkMin;
         glitchData[i][j].chunkMax = data[i].chunkMax;
         
         n=0;
-        for( k = g1[i][j] ; k < g2[i][j] + 1 ; k++ ){
+        for( k = g1[i][j] ; k < g2[i][j] ; k++ ){
           glitchData[i][j].data->data[n] = data[i].data->data[k];
           glitchData[i][j].times->data[n] = data[i].times->data[k];
           n++;
@@ -1652,6 +1664,14 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   vars.Xcsinphi_2 = 0.5*vars.Xcross*sin(vars.phi0);
   vars.Xpcosphi_2 = 0.5*vars.Xplus*cos(vars.phi0);
   vars.Xccosphi_2 = 0.5*vars.Xcross*cos(vars.phi0);
+  
+  for( i = 0 ; i < nGlitches ; i++ ){
+    extraVars[i].Xpsinphi_2 = 0.5*vars.Xplus * sin(extraVars[i].phi0);
+    extraVars[i].Xcsinphi_2 = 0.5*vars.Xcross * sin(extraVars[i].phi0);
+    extraVars[i].Xpcosphi_2 = 0.5*vars.Xplus * cos(extraVars[i].phi0);
+    extraVars[i].Xccosphi_2 = 0.5*vars.Xcross * cos(extraVars[i].phi0);
+    extraVars[i].psi = vars.psi;
+  }
   
   input.mesh.h0Steps = 1;
   input.mesh.phiSteps = 1;
@@ -1699,19 +1719,29 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   
   /*====================== MCMC LOOP =========================================*/
   for( i = 0 ; i < input.mcmc.iterations + input.mcmc.burnIn ; i++ ){
+    if( verbose ){ 
+      fprintf(stderr, "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+      fprintf(stderr, "%03.2lf%% complete", ((double)(i)+1.)*100. /
+        (double)(input.mcmc.iterations + input.mcmc.burnIn));
+    }
+      
     /* get new values of parameters using Gaussian proposal distributions */
     XLALNormalDeviates(randNum, randomParams);
     varsNew.h0 = vars.h0 + input.mcmc.sigmas.h0*randNum->data[0];
     
     below0 = 0;
     for( j = 0 ; j < nGlitches ; j++ ){
-      extraVarsNew[j].h0 = extraVars[i].h0 +
+      extraVarsNew[j].h0 = extraVars[j].h0 +
         input.mcmc.sigmas.h0*randNum->data[4+j];
       extraVarsNew[j].phi0 = extraVars[j].phi0 +
         input.mcmc.sigmas.phi0*randNum->data[4+j+1];
       
-      extraVarsNew[j].Xplus = 0.5*(1.+extraVarsNew[j].ci*extraVarsNew[j].ci);
-      extraVarsNew[j].Xcross = extraVarsNew[j].ci;
+      if( extraVarsNew[j].phi0 < 0. ){
+        extraVarsNew[j].phi0 = fmod(extraVarsNew[j].phi0, LAL_TWOPI);
+        extraVarsNew[j].phi0 += LAL_TWOPI;
+      }
+      else if( extraVarsNew[j].phi0 > LAL_TWOPI )
+        extraVarsNew[j].phi0 = fmod(extraVarsNew[j].phi0, LAL_TWOPI);
       
       /* if any of the h0 jump below zero then write out data below */
       if( extraVarsNew[j].h0 < 0. )
@@ -1735,7 +1765,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
       count++;
       continue;
     }
-           
+    
     varsNew.phi0 = vars.phi0 + input.mcmc.sigmas.phi0*randNum->data[1];
     varsNew.psi = vars.psi + input.mcmc.sigmas.psi*randNum->data[2];
     varsNew.ci = vars.ci + input.mcmc.sigmas.ci*randNum->data[3];
@@ -1777,16 +1807,17 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     varsNew.Xccosphi_2 = 0.5*varsNew.Xcross*cos(varsNew.phi0);
     
     for( j = 0 ; j < nGlitches ; j++ ){
-      extraVarsNew[j].Xpsinphi_2 = 0.5*extraVarsNew[j].Xplus *
+      extraVarsNew[j].Xpsinphi_2 = 0.5*varsNew.Xplus *
                                    sin(extraVarsNew[j].phi0);
-      extraVarsNew[j].Xcsinphi_2 = 0.5*extraVarsNew[j].Xcross *
+      extraVarsNew[j].Xcsinphi_2 = 0.5*varsNew.Xcross *
                                    sin(extraVarsNew[j].phi0);
-      extraVarsNew[j].Xpcosphi_2 = 0.5*extraVarsNew[j].Xplus *
+      extraVarsNew[j].Xpcosphi_2 = 0.5*varsNew.Xplus *
                                    cos(extraVarsNew[j].phi0);
-      extraVarsNew[j].Xccosphi_2 = 0.5*extraVarsNew[j].Xcross *
+      extraVarsNew[j].Xccosphi_2 = 0.5*varsNew.Xcross *
                                    cos(extraVarsNew[j].phi0);
+      extraVarsNew[j].psi = varsNew.psi;
     }
-   
+    
     /* set single h0 value for log_likelihood function */
     input.mesh.h0Steps = 1;
     
@@ -1799,18 +1830,22 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
           input.mesh.minVals.h0 = vars.h0;
           
           log_likelihood(like1, data[k], vars, input.mesh);
-         
+          
           logL1 += *like1;
         }
         else{
           for( j = 0 ; j < nGlitches + 1 ; j++ ){
-            if( j == 0)
+            if( j == 0){
               input.mesh.minVals.h0 = vars.h0;
-            else
-              input.mesh.minVals.h0 = extraVars[j-1].h0;
               
-            log_likelihood(like1, glitchData[k][j], extraVars[j-1], input.mesh);
-            logL1 += *like1;            
+              log_likelihood(like1, glitchData[k][j], vars, input.mesh);
+            }
+            else{
+              input.mesh.minVals.h0 = extraVars[j-1].h0;
+              log_likelihood(like1, glitchData[k][j], extraVars[j-1],
+                input.mesh);
+            }
+            logL1 += *like1;
           }
         }
       }
@@ -1823,13 +1858,15 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
       }
       else{
         for( j = 0 ; j < nGlitches + 1 ; j++ ){
-          if( j == 0)
+          if( j == 0){
             input.mesh.minVals.h0 = varsNew.h0;
-          else
+            log_likelihood(like2, glitchData[k][j], varsNew, input.mesh);
+          }
+          else{
             input.mesh.minVals.h0 = extraVarsNew[j-1].h0;
-              
-          log_likelihood(like2, glitchData[k][j], extraVarsNew[j-1],
-            input.mesh);
+            log_likelihood(like2, glitchData[k][j], extraVarsNew[j-1],
+              input.mesh);
+          }  
           logL2 += *like2;            
         }
       }
@@ -1881,6 +1918,8 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   }
   /*==========================================================================*/
   
+  if( verbose ) fprintf(stderr, "\n");
+  
   /* destroy vectors */
   XLALDestroyREAL4Vector(randNum);
  
@@ -1900,13 +1939,13 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
 /* function to get the lengths of consecutive chunks of data */
 void get_chunk_lengths(DataStructure data){
   INT4 i=0, j=0, count=0;
-  
+
   /* create vector of data segment length */
   while( 1 ){
-    count++; /* counter */ 
-
+    count++; /* counter */
+    
     /* break clause */
-    if( i > (INT4)data.data->length - 2 ){
+    if( i > data.data->length - 2 ){
       /* set final value of chunkLength */
       data.chunkLengths->data[j] = count;
       j++;
@@ -1925,6 +1964,6 @@ void get_chunk_lengths(DataStructure data){
       j++;
     }
   }
-      
+  
   data.chunkLengths = XLALResizeINT4Vector(data.chunkLengths, j);
 }
