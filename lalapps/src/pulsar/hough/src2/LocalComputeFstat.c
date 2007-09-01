@@ -23,17 +23,6 @@
  * $Id$
  */
 
-/* current EAH_OPTIMIZATION codes are
-   0: "original" version from LAL
-   1: Auto-vectorizing common-denominator loop
-   2: "mixed" (common-denominator / reciprocal estimate) vectorized AltiVec version
-   3: x86 Assembler-coded SSE hot-loop
-   4: x86 Assembler-coded SSE hot-loop 12 reciprocal estimates, 5 divisions
-*/
-
-#ifndef EAH_OPTIMIZATION
-#define EAH_OPTIMIZATION 0
-#endif
 
 /*---------- INCLUDES ----------*/
 #define __USE_ISOC99 1
@@ -47,6 +36,7 @@
 
 NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 
+
 /*---------- local DEFINES ----------*/
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -57,8 +47,24 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 #define TWOPI_FLOAT     6.28318530717958f  	/**< single-precision 2*pi */
 #define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)	/**< single-precision 1 / (2pi) */ 
 
+/* don't use finite() from win_lib.cpp here for prerformance reasons */
+#ifdef _MSC_VER
+#define finite _finite
+#endif
 
 /*---------- optimization dependant switches ----------*/
+
+/* current EAH_OPTIMIZATION codes are
+   0: "original" version from LAL
+   1: Auto-vectorizing common-denominator loop
+   2: "mixed" (common-denominator / reciprocal estimate) vectorized AltiVec version
+   3: x86 Assembler-coded SSE hot-loop
+   4: x86 Assembler-coded SSE hot-loop 12 reciprocal estimates, 5 divisions
+*/
+
+#ifndef EAH_OPTIMIZATION
+#define EAH_OPTIMIZATION 0
+#endif
 
 /* definitely fastest on PowerPC */
 #if (EAH_OPTIMIZATION == 2)
@@ -509,8 +515,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  REAL8 fsdot = fkdot[s];
 	  Dphi_alpha += fsdot * Tas * inv_fact[s]; 	/* here: DT^s/s! */
 	  if (!finite(Dphi_alpha)) {
-	    LogPrintf(LOG_CRITICAL, "non-finite Dphi_alpha: %e, spind#:%d, fkdot:%e, Tas:%e, inv_fact[s]:%e, inv_fact[s+1]:%e, phi_alpha:%e. DT_al:%e\n",
-		      Dphi_alpha, s, fkdot[s], Tas, inv_fact[s], inv_fact[s+1], phi_alpha, DT_al);
+	    LogPrintf(LOG_CRITICAL, "non-finite Dphi_alpha:%e, alpha:%d, spind#:%d, fkdot:%e, Tas:%e, inv_fact[s]:%e, inv_fact[s+1]:%e, phi_alpha:%e. DT_al:%e\n",
+		      Dphi_alpha, alpha, s, fkdot[s], Tas, inv_fact[s], inv_fact[s+1], phi_alpha, DT_al);
 	    XLAL_ERROR("LocalXLALComputeFaFb", XLAL_EDOM);
 	  }
 	  Tas *= DT_al;				/* now: DT^(s+1) */
@@ -520,8 +526,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	/* Step 3: apply global factors to complete Dphi_alpha */
 	Dphi_alpha *= Tsft * (*Tdot_al);		/* guaranteed > 0 ! */
 	if (!finite(Dphi_alpha)) {
-	  LogPrintf(LOG_CRITICAL, "non-finite Dphi_alpha: %e, Tsft:%e, Tkdot_al:%e\n",
-		    Dphi_alpha, Tsft, (*Tdot_al));
+	  LogPrintf(LOG_CRITICAL, "non-finite Dphi_alpha:%e, alpha:%d, Tsft:%e, Tkdot_al:%e\n",
+		    Dphi_alpha, alpha, Tsft, (*Tdot_al));
 	  XLAL_ERROR("LocalXLALComputeFaFb", XLAL_EDOM);
 	}
 
