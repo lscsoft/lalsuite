@@ -113,6 +113,9 @@ typedef struct
   INT4 randomSeed;		/**< random-seed for searchNeighbors grid randomization */
   
   CHAR *mergedSFTFile;		/**< dummy for CFS-compatibility */
+
+  INT4 numSkyPartitions;	/**< number of (roughly)equal partitions to split sky-grid into */
+  INT4 partitionIndex;		/**< 0<= index < numSkyPartitions: index of sky-partition to generate */
 } UserVariables_t;
 
 typedef struct 
@@ -192,6 +195,9 @@ main(int argc, char *argv[])
   scanInit.Detector = config.Detector;
   scanInit.ephemeris = config.ephemeris;       /* used by Ephemeris-based metric */
   scanInit.skyGridFile = uvar.skyGridFile;      /* if applicable */
+
+  scanInit.numPartitions = uvar.numSkyPartitions;
+  scanInit.partitionIndex = uvar.partitionIndex;
   
   /* figure out searchRegion from UserInput and possibly --searchNeighbors */
   config.searchRegion = empty_DopplerRegion;	/* set to empty first */
@@ -361,6 +367,12 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
   LALregREALUserStruct(status,	AlphaBand,      'z', UVAR_OPTIONAL, 	"Band in alpha (equatorial coordinates) in radians");
   LALregREALUserStruct(status,	DeltaBand,      'c', UVAR_OPTIONAL, 	"Band in delta (equatorial coordinates) in radians");
   LALregSTRINGUserStruct(status,skyRegion,      'R', UVAR_OPTIONAL, 	"ALTERNATIVE: sky-region polygon \"(a1,d1),(a2,d2),..(aN,dN)\"");
+
+  LALregINTUserStruct(status,	numSkyPartitions, 0, UVAR_OPTIONAL,	"Number of (equi-)partitions to split skygrid into");
+  LALregINTUserStruct(status,	partitionIndex,   0, UVAR_OPTIONAL,	"Index [0,numSkyPartitions-1] of sky-partition to generate");
+
+  LALregINTUserStruct(status,	metricType,     'M', UVAR_OPTIONAL,	"Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
+
   LALregREALUserStruct(status,	Freq, 		'f', UVAR_REQUIRED, 	"target frequency");
   LALregREALUserStruct(status,	f1dot, 		's', UVAR_OPTIONAL, 	"first spindown-value df/dt");
   LALregREALUserStruct(status,	FreqBand,       'b', UVAR_OPTIONAL, 	"Search frequency band in Hz");
