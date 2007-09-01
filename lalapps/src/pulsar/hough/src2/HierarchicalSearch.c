@@ -392,6 +392,9 @@ int MAIN( int argc, char *argv[]) {
   CHAR *uvar_fnameout=NULL;
   CHAR *uvar_skyGridFile=NULL;
   CHAR *uvar_skyRegion=NULL;
+  
+  INT4 uvar_numSkyPartitions;
+  INT4 uvar_partitionIndex;
 
   global_status = &status;
 
@@ -478,6 +481,9 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "followUp",     0,  UVAR_OPTIONAL, "Follow up stage?", &uvar_followUp), &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles1",   0,  UVAR_REQUIRED, "1st SFT file pattern", &uvar_DataFiles1), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",    0,  UVAR_OPTIONAL, "sky-region polygon (or 'allsky')", &uvar_skyRegion), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "numSkyPartitions",0,UVAR_OPTIONAL, "Number of (equi-)partitions to split skygrid into", &uvar_numSkyPartitions), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "partitionIndex",0,UVAR_OPTIONAL, "Index [0,numSkyPartitions-1] of sky-partition to generate", &uvar_partitionIndex), &status);
+
   LAL_CALL( LALRegisterREALUserVar(   &status, "Freq",        'f', UVAR_OPTIONAL, "Start search frequency", &uvar_Freq), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dFreq",        0,  UVAR_OPTIONAL, "Frequency resolution (default=1/Tstack)", &uvar_dFreq), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "FreqBand",    'b', UVAR_OPTIONAL, "Search frequency band", &uvar_FreqBand), &status);
@@ -907,8 +913,11 @@ int MAIN( int argc, char *argv[]) {
     fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
     return(1);
   }
-
   strcpy (scanInit.skyRegionString, uvar_skyRegion);
+
+  scanInit.numPartitions = uvar_numSkyPartitions;
+  scanInit.partitionIndex = uvar_partitionIndex;
+
   scanInit.Freq = usefulParams.spinRange_midTime.fkdot[0] +  usefulParams.spinRange_midTime.fkdotBand[0];
 
   /* initialize skygrid  */  
@@ -2307,7 +2316,8 @@ void DumpLUT2file(LALStatus       *status,
 
   FILE  *fp=NULL;
   CHAR filename[256], filenumber[16]; 
-  INT4  k, j, i;
+  INT4  j, i;
+  UINT4 k;
   INT8  f0Bin;
   UINT2 xSide, ySide, maxNBins, maxNBorders;
 
