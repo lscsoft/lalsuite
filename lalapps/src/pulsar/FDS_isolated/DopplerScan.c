@@ -264,11 +264,11 @@ InitDopplerSkyScan( LALStatus *status,
     } /* no points found inside of sky-region */
 
   /* extract sky-grid partition 'partitionIndex' if requested */
-  if ( init->numPartitions > 0 )
+  if ( init->numSkyPartitions > 0 )
     {
       DopplerSkyGrid *tmp;
       
-      if ( (tmp = XLALEquiPartitionSkygrid (skyScan->skyGrid, init->partitionIndex, init->numPartitions)) == NULL )
+      if ( (tmp = XLALEquiPartitionSkygrid (skyScan->skyGrid, init->partitionIndex, init->numSkyPartitions)) == NULL )
 	{
 	  LogPrintf ( LOG_CRITICAL, "Something failed in XLALEquiPartitionSkygrid()\n");
 	  ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );

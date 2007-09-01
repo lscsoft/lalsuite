@@ -196,7 +196,7 @@ main(int argc, char *argv[])
   scanInit.ephemeris = config.ephemeris;       /* used by Ephemeris-based metric */
   scanInit.skyGridFile = uvar.skyGridFile;      /* if applicable */
 
-  scanInit.numPartitions = uvar.numSkyPartitions;
+  scanInit.numSkyPartitions = uvar.numSkyPartitions;
   scanInit.partitionIndex = uvar.partitionIndex;
   
   /* figure out searchRegion from UserInput and possibly --searchNeighbors */

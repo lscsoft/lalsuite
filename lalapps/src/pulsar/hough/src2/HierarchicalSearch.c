@@ -915,7 +915,7 @@ int MAIN( int argc, char *argv[]) {
   }
   strcpy (scanInit.skyRegionString, uvar_skyRegion);
 
-  scanInit.numPartitions = uvar_numSkyPartitions;
+  scanInit.numSkyPartitions = uvar_numSkyPartitions;
   scanInit.partitionIndex = uvar_partitionIndex;
 
   scanInit.Freq = usefulParams.spinRange_midTime.fkdot[0] +  usefulParams.spinRange_midTime.fkdotBand[0];
