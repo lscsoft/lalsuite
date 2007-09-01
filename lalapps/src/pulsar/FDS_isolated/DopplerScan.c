@@ -263,6 +263,20 @@ InitDopplerSkyScan( LALStatus *status,
       
     } /* no points found inside of sky-region */
 
+  /* extract sky-grid partition 'partitionIndex' if requested */
+  if ( init->numPartitions > 0 )
+    {
+      DopplerSkyGrid *tmp;
+      
+      if ( (tmp = XLALEquiPartitionSkygrid (skyScan->skyGrid, init->partitionIndex, init->numPartitions)) == NULL )
+	{
+	  LogPrintf ( LOG_CRITICAL, "Something failed in XLALEquiPartitionSkygrid()\n");
+	  ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );
+	}
+      freeSkyGrid (skyScan->skyGrid);
+      skyScan->skyGrid = tmp;
+    } /* if numPartitions > 0 */
+
   /* initialize skygrid-pointer to first node in list */
   skyScan->skyNode = skyScan->skyGrid; 	
 
@@ -1745,3 +1759,70 @@ fprintfDopplerParams ( FILE *fp, const PulsarDopplerParams *params )
 
   return 0;
 } /* printfDopplerParams() */
+
+/** Equi-partition (approximately) a given skygrid into numPartitions, and return 
+ * partition 0<= partitionIndex < numPartitions
+ */
+DopplerSkyGrid * 
+XLALEquiPartitionSkygrid ( const DopplerSkyGrid *skygrid, UINT4 partitionIndex, UINT4 numPartitions )
+{
+  const CHAR *fn = "XLALEquiPartitionSkygrid";
+  UINT4 Nsky, Nt, dp;
+  UINT4 iMin, numPoints;
+  UINT4 counter;
+  const DopplerSkyGrid *node;
+  DopplerSkyGrid *newNode, newGrid = empty_DopplerSkyGrid;
+
+  if ( !skygrid || (numPartitions == 0) || (partitionIndex >= numPartitions) ) 
+    XLAL_ERROR_NULL( fn, XLAL_EINVAL );
+
+
+  /* ----- count total sky-grid */
+  Nsky = 1;
+  node = skygrid;
+  while ( (node = node->next) != NULL )
+    Nsky ++;
+
+  if ( Nsky < numPartitions )
+    XLAL_ERROR_NULL( fn, XLAL_EINVAL );
+
+  /* ----- determine integer equi-patitions (+/- 1) */
+  Nt = Nsky / numPartitions;		/* integer division! */
+  dp = Nsky - numPartitions * Nt;	/* dp = Nsky mod P : 0 <= dp < P */
+
+  /* first point in partion partitionIndex */
+  iMin = MIN ( partitionIndex, dp ) * ( Nt + 1 )  + MAX ( 0, ((INT4)partitionIndex - (INT4)dp) ) * Nt;	
+  numPoints = (partitionIndex < dp) ? (Nt + 1) : Nt ;	/* number of points in partition partitionIndex */
+  
+  /* ----- generate skygrid patch partitionIndex */
+  
+  /* spool forward to sky-grid point iMin */
+  counter = iMin;
+  node = skygrid;
+  while ( counter -- )	/* test, then decrement! */
+    node = node->next;
+
+  /* create new skygrid list for partition j */
+  newNode = &newGrid;	/* head remains empty! */
+  while ( numPoints -- )	/* test, then decrement! */
+    {
+      /* create next node */
+      if ( (newNode->next = LALMalloc ( sizeof(DopplerSkyGrid) )) == NULL )
+	{
+	  freeSkyGrid ( newGrid.next );
+	  XLAL_ERROR_NULL( fn, XLAL_ENOMEM );
+	}
+      newNode = newNode->next;
+	      
+      newNode->Alpha = node->Alpha;
+      newNode->Delta = node->Delta;
+
+      node = node->next;
+
+    } /* while numPoints */
+
+  /* return new skygrid-list proper [head stayed empty!] */
+  return newGrid.next;
+
+
+} /* XLALEquiPartitionSkygrid() */

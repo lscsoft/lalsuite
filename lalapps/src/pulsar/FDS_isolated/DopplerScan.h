@@ -142,6 +142,8 @@ typedef struct {
   const LALDetector *Detector; 	/**< Current detector */
   EphemerisData *ephemeris;	/**< ephemeris-data for "exact" metric */
   CHAR *skyGridFile;		/**< file containing a sky-grid (list of points) if GRID_FILE */
+  UINT4 numPartitions;		/**< number of (roughly) equal partitions to split sky-grid into */
+  UINT4 partitionIndex;		/**< index of requested sky-grid partition: in [0, numPartitions - 1] */
 } DopplerSkyScanInit;
 
 /** this structure reflects the current state of a DopplerSkyScan */
@@ -180,7 +182,7 @@ int XLALFreeDopplerSkyScan (DopplerSkyScanState *skyScan);
 
 void writeSkyGridFile(LALStatus *, const DopplerSkyGrid *grid, const CHAR *fname );
 
-/* ----- variout utility functions ----- */
+/* ----- various utility functions ----- */
 void ParseSkyRegionString (LALStatus *, SkyRegion *region, const CHAR *input);
 void SkySquare2String (LALStatus *, CHAR **string, REAL8 Alpha, REAL8 Delta, REAL8 AlphaBand, REAL8 DeltaBand);
 
@@ -188,6 +190,8 @@ void getMCDopplerCube (LALStatus *, DopplerRegion *cube, PulsarDopplerParams sig
 void getMetricEllipse(LALStatus *, MetricEllipse *ellipse, REAL8 mismatch, const REAL8Vector *metric, UINT4 dim0);
 
 int fprintfDopplerParams ( FILE *fp, const PulsarDopplerParams *params );
+
+DopplerSkyGrid *XLALEquiPartitionSkygrid ( const DopplerSkyGrid *skygrid, UINT4 jPart, UINT4 numPartitions );
 
 #ifdef  __cplusplus
 }
