@@ -1807,7 +1807,7 @@ XLALEquiPartitionSkygrid ( const DopplerSkyGrid *skygrid, UINT4 partitionIndex, 
   while ( numPoints -- )	/* test, then decrement! */
     {
       /* create next node */
-      if ( (newNode->next = LALMalloc ( sizeof(DopplerSkyGrid) )) == NULL )
+      if ( (newNode->next = LALCalloc ( 1, sizeof(DopplerSkyGrid) )) == NULL )
 	{
 	  freeSkyGrid ( newGrid.next );
 	  XLAL_ERROR_NULL( fn, XLAL_ENOMEM );
