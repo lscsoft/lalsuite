@@ -125,7 +125,7 @@ void gridFlipOrder ( meshNODE *grid );
 void buildFlatSkyGrid (LALStatus *, DopplerSkyGrid **skygrid, const SkyRegion *region, REAL8 dAlpha, REAL8 dDelta);
 void buildIsotropicSkyGrid (LALStatus *, DopplerSkyGrid **skygrid, const SkyRegion *skyRegion, REAL8 dAlpha, REAL8 dDelta);
 void buildMetricSkyGrid (LALStatus *, DopplerSkyGrid **skygrid, SkyRegion *skyRegion,  const DopplerSkyScanInit *init);
-void loadSkyGridFile (LALStatus *, DopplerSkyGrid **skygrid, const CHAR *fname, const SkyRegion *region );
+void loadSkyGridFile (LALStatus *, DopplerSkyGrid **skygrid, const CHAR *fname );
 
 void plotSkyGrid (LALStatus *, DopplerSkyGrid *skygrid, const SkyRegion *region, const DopplerSkyScanInit *init);
 void freeSkyGrid(DopplerSkyGrid *skygrid);
@@ -238,7 +238,7 @@ InitDopplerSkyScan( LALStatus *status,
       
     case GRID_METRIC_SKYFILE:
     case GRID_FILE_SKYGRID:
-      TRY ( loadSkyGridFile (status->statusPtr, &skyScan->skyGrid, init->skyGridFile, &skyScan->skyRegion), status);
+      TRY ( loadSkyGridFile (status->statusPtr, &skyScan->skyGrid, init->skyGridFile ), status);
       break;
       
     default:
@@ -1061,8 +1061,8 @@ buildMetricSkyGrid (LALStatus *status,
 void
 loadSkyGridFile (LALStatus *status, 
 		 DopplerSkyGrid **skyGrid, 
-		 const CHAR *fname, 
-		 const SkyRegion *region )   	/**< a sky-region for clipping */
+		 const CHAR *fname
+		 )
 {
   LALParsedDataFile *data = NULL;
   DopplerSkyGrid *node, head = empty_DopplerSkyGrid;
@@ -1075,7 +1075,6 @@ loadSkyGridFile (LALStatus *status,
   ASSERT ( skyGrid, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
   ASSERT ( *skyGrid == NULL, status, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL);
   ASSERT ( fname, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
-  ASSERT ( region, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
 
   TRY (LALParseDataFile (status->statusPtr, &data, fname), status);
 
@@ -1092,18 +1091,17 @@ loadSkyGridFile (LALStatus *status,
 	  freeSkyGrid (head.next);
 	  ABORT (status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
 	}
-      if (pointInPolygon (&thisPoint, region) )
+      /* if (pointInPolygon (&thisPoint, region) ) { */
+      /* prepare new list-entry */
+      if ( (node->next = LALCalloc (1, sizeof (DopplerSkyGrid))) == NULL)
 	{
-	  /* prepare new list-entry */
-	  if ( (node->next = LALCalloc (1, sizeof (DopplerSkyGrid))) == NULL)
-	    {
-	      freeSkyGrid (head.next);
-	      ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
-	    }
-	  node = node->next;
-	  node->Alpha = thisPoint.longitude;
-	  node->Delta = thisPoint.latitude;
-	} /* if pointInPolygon() */
+	  freeSkyGrid (head.next);
+	  ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
+	}
+      node = node->next;
+      node->Alpha = thisPoint.longitude;
+      node->Delta = thisPoint.latitude;
+      /* } */ /* if pointInPolygon() */
     
     } /* for i < nLines */
 
