@@ -348,6 +348,14 @@ typedef enum
 }
 SnglRingdownParameterTest;
 
+typedef enum 
+{ 
+  ring_inject, 
+  imr_inject, 
+  imr_ring_inject 
+} 
+inject_type;
+
 typedef struct
 tagSnglRingdownAccuracy
 {  
