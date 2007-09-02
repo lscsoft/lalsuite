@@ -29,6 +29,7 @@
 #include "errutil.h"
 #include "gpstime.h"
 #include "ring.h"
+#include "injsgnl.h"
 
 RCSID( "$Id$" );
 
@@ -73,7 +74,8 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
     { "bank-max-frequency",      required_argument, 0, 'F' },
     { "geo-highpass-frequency",  required_argument, 0, 'g' },
     { "geo-data-scale",          required_argument, 0, 'G' },
-    { "injection-file",             required_argument, 0, 'i' },
+    { "injection-type",          required_argument, 0, 'J' },
+    { "injection-file",          required_argument, 0, 'i' },
     { "inject-mdc-frame",        required_argument, 0, 'I' },
     { "bank-max-mismatch",       required_argument, 0, 'm' },
     { "maximize-duration",       required_argument, 0, 'M' },
@@ -96,7 +98,7 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
     { "pad-data",                required_argument, 0, 'W' },
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:hi:I:m:o:O:p:q:Q:r:R:s:S:t:T:u:U:Vw:W:";
+  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:hi:I:J:m:o:O:p:q:Q:r:R:s:S:t:T:u:U:Vw:W:";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -166,6 +168,27 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
         exit( 0 );
       case 'i': /* injection-file */
         localparams.injectFile = optarg;
+        break;
+      case 'J': /* injection type */
+        if( ! strcmp( "ringdown", optarg ) )
+        { 
+          localparams.injectType = 0;
+        }
+        else if( ! strcmp( "imr", optarg ) )
+        {
+          localparams.injectType = 1;
+        }
+        else if( ! strcmp( "imr_ringdown", optarg ) )
+        {
+          localparams.injectType = 2;
+        }
+        else
+        {
+          localparams.injectType = -1;
+          fprintf( stderr, "invalid --injection_type:\n"
+              "(must be ringdown, imr or imr_ringdown\n" );
+          exit( 1 );
+        }
         break;
       case 'I': /* inject-mdc-frame */
         error( "currently unsupported option: --inject-mdc-frame\n" );
@@ -280,6 +303,8 @@ static int ring_default_params( struct ring_params *params )
   params->getResponse = 1;
   params->getSpectrum = 1;
   params->doFilter    = 1;
+  
+  params->injectType  = -1;
 
   return 0;
 }
@@ -344,6 +369,13 @@ int ring_params_sanity_check( struct ring_params *params )
     sanity_check( validChannelIFO );
     sanity_check( params->ifoName );
 
+    /* check that injection type is specified if an injection file is given */
+
+    if ( params->injectFile ) /* geo data parameters */
+    {
+      sanity_check( params->injectType >= 0.0 );
+    }
+    
     /* will need response to do injections unless strain data */
     sanity_check( params->injectFile == NULL || params->strainData || params->getResponse );
 
@@ -464,7 +496,8 @@ static int ring_usage( const char *program )
   fprintf( stderr, "--sample-rate=srate        decimate data to be at sample rate srate (Hz)\n" );
 
   fprintf( stderr, "\nsimulated injection options:\n" );
-  fprintf( stderr, "--injection-file=injfile      XML file with injection parameters\n" );
+  fprintf( stderr, "--injection-type       type of injection, must be one of \n \t \t [ringdown, imr, imr_ringdown] \n \t and must be accompanied by the appropriate injection file\n" );
+  fprintf( stderr, "--injection-file=injfile      XML file with injection parameters\n \t \t should a sim_ringdown table for 'ringdown' injections \n \t \t and a sim_inspiral table for the other types\n" );
   fprintf( stderr, "--inject-mdc-frame=mdcframe  frame file with MDC-frame injections\n" );
 
   fprintf( stderr, "\ncalibration options:\n" );
