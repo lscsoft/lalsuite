@@ -960,6 +960,16 @@ LALFindChirpInjectSignals (
     COMPLEX8FrequencySeries    *resp
     );
 
+void
+LALFindChirpInjectIMR (
+    LALStatus                  *status,
+    REAL4TimeSeries            *chan,
+    SimInspiralTable           *events,
+    SimRingdownTable           *ringdownevents,
+    COMPLEX8FrequencySeries    *resp,
+    int                        injectSignalType
+    );
+
 INT4
 XLALFindChirpTagTemplateAndSegment (
     DataSegmentVector       *dataSegVec,
