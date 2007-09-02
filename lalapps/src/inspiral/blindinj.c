@@ -115,6 +115,7 @@ static void destroyCoherentGW( CoherentGW *waveform );
 static REAL4TimeSeries *injectWaveform( 
     LALStatus            *status,
     SimInspiralTable     *inspInj,
+    SimRingdownTable     *ringdownevents,
     ResponseFunction      responseType,
     InterferometerNumber  ifoNumber,
     LIGOTimeGPS           epoch);
@@ -221,6 +222,7 @@ static void destroyCoherentGW( CoherentGW *waveform )
 static REAL4TimeSeries *injectWaveform( 
     LALStatus            *status,
     SimInspiralTable     *inspInj,
+    SimRingdownTable     *ringdownevents,
     ResponseFunction      responseType,
     InterferometerNumber  ifoNumber,
     LIGOTimeGPS           epoch)
@@ -231,12 +233,14 @@ static REAL4TimeSeries *injectWaveform(
   CHAR                       name[LALNameLength];
   CHAR                       ifo[LIGOMETA_IFO_MAX];
   PPNParamStruc              ppnParams;
+  SimRingdownTable          *thisRingdownEvent = NULL;
 
   INT8                       waveformStartTime;
   DetectorResponse           detector;
   CoherentGW                 waveform, *wfm;
   ActuationParameters        actData = actuationParams[ifoNumber];
   UINT4 i,k;
+  int                        injectSignalType = 1; /* hardwire to imr waveform */
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
   FILE  *fp = NULL;
   char  fileName[FILENAME_MAX];
@@ -252,7 +256,9 @@ static REAL4TimeSeries *injectWaveform(
   }
 
   memset( chan->data->data, 0, chan->data->length * sizeof(REAL4) );
-
+ 
+  thisRingdownEvent = ringdownevents;
+  
   /*
    *
    * Generate the Waveforms
@@ -271,7 +277,8 @@ static REAL4TimeSeries *injectWaveform(
       status);
 
   /* add the ringdown */
-  wfm = XLALGenerateInspRing( &waveform, inspInj );
+  wfm = XLALGenerateInspRing( status, &waveform, inspInj, 
+      thisRingdownEvent, injectSignalType );
 
   if ( !wfm )
   {
@@ -443,8 +450,10 @@ int main( int argc, char *argv[] )
   MetadataTable         proctable;
   MetadataTable         procparams;
   MetadataTable         inspInjections;
+  MetadataTable         ringInjections;
   ProcessParamsTable   *this_proc_param;
   SimInspiralTable     *inj  = NULL;
+  SimRingdownTable     *ringList = NULL;
   LIGOLwXMLStream       xmlfp;
   FILE                 *fp = NULL;
 
@@ -674,7 +683,8 @@ int main( int argc, char *argv[] )
 
   /* null out the head of the linked list */
   memset( &inspInjections, 0, sizeof(MetadataTable) );
-
+  memset( &ringInjections, 0, sizeof(MetadataTable) );
+  
 
   /*
    *
@@ -685,7 +695,10 @@ int main( int argc, char *argv[] )
   /* create the sim_inspiral table */
   inspInjections.simInspiralTable = inj = (SimInspiralTable *)
     LALCalloc( 1, sizeof(SimInspiralTable) );
-
+  
+  ringInjections.simRingdownTable = ringList = (SimRingdownTable *) 
+    LALCalloc( 1, sizeof(SimRingdownTable) );
+  
 
   /* set the geocentric end time of the injection */
   earliestEndTime = gpsStartTime;
@@ -702,7 +715,7 @@ int main( int argc, char *argv[] )
   if ( vrbflg) fprintf(  stdout, 
       "Random variable to determine inj type = %f\n", 
       massPar);
-
+  
   while ( numInjections == 0 )
   {
 
@@ -778,8 +791,8 @@ int main( int argc, char *argv[] )
         ResponseFunction  responseType = unityResponse;
         REAL4             thisSnrsq = 0;
         UINT4             k;
-
-        chan = injectWaveform( &status, inj, responseType, ifoNumber, 
+        
+        chan = injectWaveform( &status, inj, ringList, responseType, ifoNumber, 
             gpsStartTime);
 
         if ( ! chan )
@@ -888,8 +901,8 @@ int main( int argc, char *argv[] )
             if (vrbflg ) fprintf( stdout, 
                 "Generating ETMY hardware injection for %s\n", ifo );
           }
-
-          chan = injectWaveform( &status, inj, injectionResponse, 
+          
+          chan = injectWaveform( &status, inj, ringList, injectionResponse, 
               ifoNumber, gpsStartTime);
 
           LALSnprintf( fname, FILENAME_MAX, 
@@ -924,6 +937,9 @@ int main( int argc, char *argv[] )
    * write output to LIGO_LW XML file
    *
    */
+
+fprintf( stdout,"mass1=%e, mass2=%e\n",inj->mass1,inj->mass2);
+fprintf( stdout,"mass=%e\n",ringList->mass);
 
   /* create the output file name */
   LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
@@ -977,12 +993,31 @@ int main( int argc, char *argv[] )
           sim_inspiral_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
   }
+
   while ( inspInjections.simInspiralTable )
   {
     inj = inspInjections.simInspiralTable;
     inspInjections.simInspiralTable = inspInjections.simInspiralTable->next;
     LALFree( inj );
   }
+
+   
+  /* write the sim_ringdown table */
+  if ( ringInjections.simRingdownTable )
+  {
+    LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_ringdown_table );
+    LALWriteLIGOLwXMLTable( &status, &xmlfp, ringInjections,
+        sim_ringdown_table );
+    LALEndLIGOLwXMLTable ( &status, &xmlfp );
+  }
+  
+  while ( ringInjections.simRingdownTable )
+  {
+    ringList=ringInjections.simRingdownTable;
+    ringInjections.simRingdownTable = ringInjections.simRingdownTable->next;
+    LALFree( ringList );
+  }
+
 
   /* close the injection file */
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlfp ), &status );
