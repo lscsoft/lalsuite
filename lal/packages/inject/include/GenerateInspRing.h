@@ -55,12 +55,14 @@ extern "C" {
 
 NRCSID( GENERATEINSPRING, "$Id$");
 
-CoherentGW *
+/*CoherentGW **/
 XLALGenerateInspRing(
+    LALStatus         *status,
     CoherentGW        *waveform,
-    SimInspiralTable  *thisEvent
+    SimInspiralTable  *thisEvent,
+    SimRingdownTable  *thisRingEvent,
+    int                injectSignalType
     );
-
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */
