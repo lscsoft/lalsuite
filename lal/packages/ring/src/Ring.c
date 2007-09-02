@@ -116,6 +116,10 @@ static REAL4 ring_spin_factor( REAL4 a )
   return 1.0 - 0.63 * pow( 1.0 - a, 3.0/10.0 );
 }
 
+static REAL4 ring_quality_fn( REAL4 Q )
+{
+    return  1.0 + 7.0/(24.0*Q*Q);
+}
 
 /*
  *
@@ -149,11 +153,26 @@ REAL4 XLALBlackHoleRingAmplitude( REAL4 f, REAL4 Q, REAL4 r, REAL4 epsilon )
   const REAL4 M = XLALBlackHoleRingMass( f, Q );
   const REAL4 a = XLALBlackHoleRingSpin( Q );
   const REAL4 g = ring_spin_factor( a );
-  const REAL4 F = 1.0 + 7.0/(24.0*Q*Q);
+  const REAL4 F = ring_quality_fn( Q );
 
   return sqrt(5.0/2.0 * epsilon) * 
     ( (LAL_G_SI * M * LAL_MSUN_SI) / ( c * c * r * 1.0e6 * LAL_PC_SI) ) *
     (1.0 / sqrt( Q * F * g) );
+}
+
+/* <lalVerbatim file="RingCP"> */
+REAL4 XLALBlackHoleRingEpsilon( REAL4 f, REAL4 Q, REAL4 r, REAL4 amplitude )
+  /* </lalVerbatim> */
+{
+  const REAL4 c = LAL_C_SI;
+  const REAL4 M = XLALBlackHoleRingMass( f, Q );
+  const REAL4 a = XLALBlackHoleRingSpin( Q );
+  const REAL4 g = ring_spin_factor( a );
+  const REAL4 F = ring_quality_fn( Q );
+
+  return (2.0/5.0 * amplitude * amplitude) *
+    pow( ( c * c * r * 1.0e6 * LAL_PC_SI) / (LAL_G_SI * M * LAL_MSUN_SI), 2 ) *
+    ( Q * F * g );
 }
 
 /* <lalVerbatim file="RingCP"> */
