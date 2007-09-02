@@ -42,6 +42,7 @@ struct ring_params {
   const char  *calibCache;
   const char  *dataCache;
   const char  *injectFile;
+  INT4         injectType;
   REAL8        sampleRate;
   REAL8        padData;
   REAL8        segmentDuration;
