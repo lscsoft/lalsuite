@@ -283,7 +283,7 @@ static REAL4TimeSeries *ring_get_data( struct ring_params *params )
     
     /* inject ring signals */
     if ( params->injectFile ) 
-      inject_signal( channel, ring_inject, params->injectFile,
+      inject_signal( channel, params->injectType, params->injectFile,
           params->calibCache, 1.0, params->channel ); 
     if ( params->writeRawData )
        write_REAL4TimeSeries( channel );  
