@@ -208,10 +208,13 @@ XLALGenerateInspRing(
     (inspiralInj->spin1x * inspiralInj->mass1 * inspiralInj->mass1 + 
      inspiralInj->spin2x * inspiralInj->mass2 * inspiralInj->mass2) / 
     (mTot * mTot) ;
-  Jy = orbAngMom * sin(inspiralInj->inclination) +
+  Jy = (inspiralInj->spin1y * inspiralInj->mass1 * inspiralInj->mass1 +
+      inspiralInj->spin2y * inspiralInj->mass2 * inspiralInj->mass2) /
+    (mTot * mTot) ;
+  /*Jy = orbAngMom * sin(inspiralInj->inclination) +
     (inspiralInj->spin1y * inspiralInj->mass1 * inspiralInj->mass1 + 
       inspiralInj->spin2y * inspiralInj->mass2 * inspiralInj->mass2) / 
-    (mTot * mTot) ;
+    (mTot * mTot) ;*/
   Jz = orbAngMom * cos(inspiralInj->inclination) + 
     (inspiralInj->spin1z * inspiralInj->mass1 * inspiralInj->mass1 + 
      inspiralInj->spin2z * inspiralInj->mass2 * inspiralInj->mass2) / 
