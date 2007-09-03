@@ -537,30 +537,30 @@ int main(INT4 argc,CHAR *argv[])
 	      
 		/* Assign the DELTA index to the candidate event */
 		DeltaDeltaStep=0;
-		if (cc2 != 1) {
+		if (cc2 == 0) { /* unshifted cell-grid */
 		  while ( LookupDelta1[DeltaDeltaStep] < fabs(SortedC[icand].Delta) ) {
 		    DeltaDeltaStep++;
 		    if (DeltaDeltaStep > iDeltaMax1)
 		      break;
 		  }
 		  if ( SortedC[icand].Delta < 0 ) {
-		    SortedC[icand].iDelta=-DeltaDeltaStep;
+		    SortedC[icand].iDelta = (-1.0) * (2 * DeltaDeltaStep);
 		  }
 		  else {
-		    SortedC[icand].iDelta=DeltaDeltaStep;
+		    SortedC[icand].iDelta = (2 * DeltaDeltaStep);
 		  }
                 }
-                else { /* cc2 == 1 */
+                else { /* shifted cell-grid */
 		  while ( LookupDelta2[DeltaDeltaStep] < fabs(SortedC[icand].Delta) ) { 
 		    DeltaDeltaStep++;
 		    if (DeltaDeltaStep > iDeltaMax2)
 		      break;
 		  }
 		  if ( SortedC[icand].Delta < 0 ) {
-		    SortedC[icand].iDelta=-(DeltaDeltaStep+1);
+		    SortedC[icand].iDelta = (-1.0) * ((2 * DeltaDeltaStep) + 1);
 		  }
 		  else {
-		    SortedC[icand].iDelta=DeltaDeltaStep+1;
+		    SortedC[icand].iDelta = ((2 * DeltaDeltaStep) + 1);
 		  }
 		}
 
