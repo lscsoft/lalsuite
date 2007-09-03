@@ -393,8 +393,8 @@ int MAIN( int argc, char *argv[]) {
   CHAR *uvar_skyGridFile=NULL;
   CHAR *uvar_skyRegion=NULL;
   
-  INT4 uvar_numSkyPartitions;
-  INT4 uvar_partitionIndex;
+  INT4 uvar_numSkyPartitions = 0;
+  INT4 uvar_partitionIndex = 0;
 
   global_status = &status;
 
