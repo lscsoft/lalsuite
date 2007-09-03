@@ -427,7 +427,9 @@ int main(INT4 argc,CHAR *argv[])
 
   /* More efficent sorting in memory by using an integer list */
   SortedCListi = (INT4 *) LALCalloc(CLength, sizeof(INT4) );
-
+  if( SortedCListi == NULL ) {
+    ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
+  }
   /* --------------------------------------------------------------------------------*/      
 
   d0=PCV.DeltaDelta;
@@ -446,9 +448,11 @@ int main(INT4 argc,CHAR *argv[])
     DeltaBorder = DeltaBorder + DeltaWin;
     NumDeltaWins++;
   }
-  fprintf(stderr,"\nDelta-Cells: %d\n",NumDeltaWins);
   /* Allocate memory for the declination cell lookup table */
-  LookupDelta1 = (REAL8 *) LALCalloc(2*NumDeltaWins+2, sizeof(REAL8) );
+  LookupDelta1 = (REAL8 *) LALCalloc(NumDeltaWins+1, sizeof(REAL8) );
+  if( LookupDelta1 == NULL ) {
+    ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
+  }
   /* Finally calclate the 1st declination lookup table */
   idb=0;
   DeltaWin = d0;
@@ -480,7 +484,10 @@ int main(INT4 argc,CHAR *argv[])
     NumDeltaWins++;
   }
   /* Allocate memory for the declination cell 2nd lookup table */
-  LookupDelta2 = (REAL8 *) LALCalloc(2*NumDeltaWins+2, sizeof(REAL8) );
+  LookupDelta2 = (REAL8 *) LALCalloc(NumDeltaWins+1, sizeof(REAL8) );
+  if( LookupDelta2 == NULL ) {
+    ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
+  }
   /* Finally calclate the 2nd declination lookup table */
   idb=0;
   DeltaWin = d0;
@@ -507,25 +514,21 @@ int main(INT4 argc,CHAR *argv[])
     for (bb2=0; bb2<2; bb2++) {
       for (bb3=0; bb3<2; bb3++) {
 	for (bb4=0; bb4<2; bb4++) {
-  
-	 
+  	 
 	  /*if (selectGrid == PCV.CellGrid) {*/
-
 	    cc1=bb1;
 	    cc2=bb2;
 	    cc3=bb3;
 	    cc4=bb4;
-
 	    /*}*/
 	    
 	    fprintf(stderr,"\n%% Selected CellGrid: %d %d %d %d\n", cc1,cc2,cc3,cc4);
-	    
+
 	     /* Prepare cells. */
 	    cell = NULL;
 	    sizecells = ADDITIONAL_MEM;
 	    LAL_CALL( PrepareCells( lalStatus, &cell, sizecells ), lalStatus);  
 
-	   
 	    /* Assigning four indices to each candidate event */
 	    for (icand=0;icand<CLength;icand++) 
 	      {
@@ -577,7 +580,6 @@ int main(INT4 argc,CHAR *argv[])
 		    SortedC[icand].iAlpha = 0;
 		  }
 		}
-		
 		
 
 		/* Assign the F1DOT index to the candidate event */
