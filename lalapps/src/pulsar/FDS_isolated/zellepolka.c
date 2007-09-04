@@ -397,7 +397,7 @@ int main(INT4 argc,CHAR *argv[])
   REAL8 *LookupDelta2 = NULL;
   REAL8 DeltaWin=0;
   REAL8 DeltaBorder=0;
-  REAL8 d0=0,a0=0;
+  REAL8 d0=0,a0=0,k0=0;
   INT4  NumDeltaWins, idb;
   INT4  iDeltaMax1=0;
   INT4  iDeltaMax2=0;
@@ -434,6 +434,7 @@ int main(INT4 argc,CHAR *argv[])
 
   d0=PCV.DeltaDelta;
   a0=PCV.DeltaAlpha;
+  k0=PCV.Kappa;
   
   /* Construct the 1st lookup table for the declination coincidence windows */
   DeltaWin = d0;
@@ -441,7 +442,7 @@ int main(INT4 argc,CHAR *argv[])
   NumDeltaWins = 1;
   /* Count cells in declination direction */
   while ( DeltaBorder < (LAL_PI*0.5) ) {
-    DeltaWin = (a0 / (fabs(sin(fabs(DeltaBorder) - (1.5 * a0)))));
+    DeltaWin = (a0 / (fabs(sin(fabs(DeltaBorder) - (k0 * a0)))));
     if (DeltaWin > d0) {
       DeltaWin = d0;
     }
@@ -460,7 +461,7 @@ int main(INT4 argc,CHAR *argv[])
   LookupDelta1[idb] = DeltaBorder;
   while ( DeltaBorder < (LAL_PI*0.5) ) {
     idb++;
-    DeltaWin = (a0 / (fabs(sin(fabs(DeltaBorder) - (1.5 * a0)))));
+    DeltaWin = (a0 / (fabs(sin(fabs(DeltaBorder) - (k0 * a0)))));
     if (DeltaWin > d0) {
       DeltaWin = d0;
     }
@@ -476,7 +477,7 @@ int main(INT4 argc,CHAR *argv[])
   NumDeltaWins = 1;
   /* Count cells in declination direction */
   while ( DeltaBorder < (LAL_PI*0.5) ) {
-    DeltaWin = (a0 / (fabs(sin(fabs(DeltaBorder) - (1.5 * a0)))));
+    DeltaWin = (a0 / (fabs(sin(fabs(DeltaBorder) - (k0 * a0)))));
     if (DeltaWin > d0) {
       DeltaWin = d0;
     }
@@ -495,7 +496,7 @@ int main(INT4 argc,CHAR *argv[])
   LookupDelta2[idb] = DeltaBorder;
   while ( DeltaBorder < (LAL_PI*0.5) ) {
     idb++;
-    DeltaWin = (a0 / (fabs(sin(fabs(DeltaBorder) - (1.5 * a0)))));
+    DeltaWin = (a0 / (fabs(sin(fabs(DeltaBorder) - (k0 * a0)))));
     if (DeltaWin > d0) {
       DeltaWin = d0;
     }
