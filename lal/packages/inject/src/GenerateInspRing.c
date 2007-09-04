@@ -53,7 +53,7 @@ NRCSID (GENERATEINSPRINGC,"$Id$");
 
 /** Takes an inspiral waveform, and a simInspiralTable and generates a ringdown
  * at an appropriate frequency and quality */
-/*CoherentGW **/
+CoherentGW *
 XLALGenerateInspRing(
     LALStatus           *status,
     CoherentGW		*waveform,    /**< the inspiral waveform */

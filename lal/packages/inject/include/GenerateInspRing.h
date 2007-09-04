@@ -55,7 +55,7 @@ extern "C" {
 
 NRCSID( GENERATEINSPRING, "$Id$");
 
-/*CoherentGW **/
+CoherentGW *
 XLALGenerateInspRing(
     LALStatus         *status,
     CoherentGW        *waveform,
