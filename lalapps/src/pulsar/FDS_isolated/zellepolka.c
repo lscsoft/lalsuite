@@ -926,7 +926,7 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
   
 
 
-#if 1
+#if 0
   /* ------------------------------------------------------------- */
   /* Print out to the user-specified output file all the information in all the cell. 
      This file can be too huge to be tractable.*/
