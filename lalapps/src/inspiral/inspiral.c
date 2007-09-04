@@ -230,8 +230,12 @@ REAL4 rsqVetoPow        = -1;           /* r^2 veto power               */
 enum { unset, urandom, user } randSeedType = unset;    /* sim seed type */
 INT4  randomSeed        = 0;            /* value of sim rand seed       */
 REAL4 gaussVar          = 64.0;         /* variance of gaussian noise   */
-INT4  gaussianNoise     = 0;            /* make input data gaussian     */
+INT4  whiteGaussian     = 0;            /* make input data gaussian     */
 INT4  unitResponse      = 0;            /* set the response to unity    */
+INT4  colorSpec         = 0;            /* set the spectrum for colored */ 
+                                        /* gaussian noise               */    
+INT4  coloredGaussian   = 0;            /* generate colored Gaussian    */
+                                        /* noise                        */
 
 /* template bank simulation params */
 INT4  bankSim           = 0;            /* number of template bank sims */
@@ -903,10 +907,11 @@ int main( int argc, char *argv[] )
   }
 
   /* replace the input data with gaussian noise if necessary */
-  if ( gaussianNoise )
+  if ( whiteGaussian )
   {
     if ( vrbflg ) fprintf( stdout, 
-        "setting input data to gaussian noise with variance %e... ", gaussVar );
+        "setting input data to white gaussian noise with variance %e... ", 
+        gaussVar );
     memset( chan.data->data, 0, chan.data->length * sizeof(REAL4) );
     LAL_CALL( LALNormalDeviates( &status, chan.data, randParams ), &status );
     for ( j = 0; j < chan.data->length; ++j )
@@ -920,6 +925,102 @@ int main( int argc, char *argv[] )
         &chan, "ct", "RAW_GAUSSIAN" );
   }
 
+  /* replace data with colored Gaussian noise if requested */
+  if ( coloredGaussian )
+  {
+    COMPLEX8Sequence *ntilde         = NULL;
+    REAL4Sequence    *ntilde_re      = NULL;
+    REAL4Sequence    *ntilde_im      = NULL;
+    REAL8Sequence    *spectrum       = NULL;
+    REAL4FFTPlan     *invPlan        = NULL;
+    INT4              length         = chan.data->length;
+    REAL8             deltaT         = chan.deltaT;
+    REAL8             deltaF         = 1.0 / (deltaT * (REAL8) length);
+    INT4              kmin           = strainHighPassFreq / deltaF > 1 ? 
+                                       strainHighPassFreq / deltaF : 1 ;
+    
+    if ( vrbflg ) fprintf( stdout, "Replacing data with colored Gaussian noise" );
+
+    /* Generate white Gaussian noise with unit variance */
+
+    LAL_CALL( LALSCreateVector( &status, &ntilde_re, length / 2 + 1 ), 
+        &status );
+    LAL_CALL( LALNormalDeviates( &status, ntilde_re, randParams ), &status );
+    LAL_CALL( LALSCreateVector( &status, &ntilde_im, length / 2 + 1 ), 
+        &status );
+    LAL_CALL( LALNormalDeviates( &status, ntilde_im, randParams ), &status );
+    
+    /* create storage for the frequency domain noise and psd*/
+    LAL_CALL( LALCCreateVector( &status, &ntilde, length / 2 + 1 ), 
+        &status );
+    LAL_CALL( LALDCreateVector( &status, &spectrum, length / 2 + 1 ), 
+        &status );
+    if (colorSpec == 3 )
+    {  
+      /* set the spectrum to the Initial LIGO design noise curve */
+      REAL8 psd_value;
+      LALLIGOIPsd( NULL, &psd_value, strainHighPassFreq );
+      for ( k = 0; k < kmin ; ++k )
+      {  
+        spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
+      }
+      for ( k = kmin; k < spectrum->length ; ++k )
+      {  
+        REAL8 psd_freq = (REAL8) k * deltaF;
+        LALLIGOIPsd( NULL, &psd_value, psd_freq );
+        spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
+      }
+    }
+    else if( colorSpec == 4)
+    {  
+      /* set the spectrum to the Advanced LIGO design noise curve */
+      REAL8 psd_value;
+      LALAdvLIGOPsd( NULL, &psd_value, strainHighPassFreq );
+      for ( k = 0; k < kmin ; ++k )
+      {  
+        spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
+      }
+      for ( k = kmin; k < spectrum->length ; ++k )
+      {  
+        REAL8 psd_freq = (REAL8) k * deltaF;
+        LALAdvLIGOPsd( NULL, &psd_value, psd_freq );
+        spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
+      }
+    }
+    
+    /* Color white noise with given psd */
+    for ( k=0; k < ntilde->length; k++ )
+    {   
+      ntilde->data[k].re = ntilde_re->data[k] * sqrt(( (REAL4) length * 0.25 /
+                           (REAL4) deltaT ) * (REAL4) spectrum->data[k] );
+      ntilde->data[k].im = ntilde_im->data[k] * sqrt(( (REAL4) length * 0.25 / 
+                           (REAL4) deltaT ) * (REAL4) spectrum->data[k] );
+    }  
+    /* setting d.c. and Nyquist to zero */
+    ntilde->data[0].im = ntilde->data[length / 2].im = 0.0;
+    
+    /* Fourier transform back in the time domain */
+    LAL_CALL( LALCreateReverseRealFFTPlan( &status, &invPlan, length, 0 ),
+        &status );
+    LAL_CALL( LALReverseRealFFT( &status, chan.data, ntilde, invPlan ), &status);
+    /* normalize the noise */
+    for ( j = 0; j < length; ++j )
+    {
+      chan.data->data[j] /= (REAL4) length ;
+    }
+    
+    if ( vrbflg ) fprintf( stdout, "done\n" );
+
+    /* write the simulated noise to frame file*/
+    if ( writeRawData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
+        &chan, "ct", "RAW_COLORED_GAUSSIAN" );
+
+    LALSDestroyVector( &status, &ntilde_re );
+    LALSDestroyVector( &status, &ntilde_im );
+    LALCDestroyVector( &status, &ntilde );
+    LALDDestroyVector( &status, &spectrum);
+    LALDestroyRealFFTPlan( &status, &invPlan);
+  }
 
   /*
    *
@@ -1025,7 +1126,7 @@ int main( int argc, char *argv[] )
   if ( unitResponse )
   {
     /* replace the response function with unity if */
-    /* we are filtering gaussian noise             */
+    /* we are filtering white gaussian noise             */
     if ( vrbflg ) fprintf( stdout, "setting response to unity... " );
     for ( k = 0; k < resp.data->length; ++k )
     {
@@ -1037,6 +1138,21 @@ int main( int argc, char *argv[] )
     if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
         outFrame, &resp, "strain/ct", "RESPONSE_UNITY" );
   }
+
+  if (specType == 3 | specType == 4)
+  {
+    /* replace the response function with 1/dynRange if we are using the */
+    /* design LIGO or AdvLIGO psd                                        */
+    if ( vrbflg ) fprintf( stdout, "setting response to unity... " );
+    for( k = 0; k < resp.data->length; ++k )
+    {
+      resp.data->data[k].re = (REAL4) (1.0 / dynRange);
+      resp.data->data[k].im = 0.0;
+    }
+    if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
+        outFrame, &resp, "strain/ct", "RESPONSE_UNITY" );
+  }
+
 
   /* slide the channel back to the fake time for background studies */
   chan.epoch.gpsSeconds += slideData.gpsSeconds;
@@ -1215,7 +1331,7 @@ int main( int argc, char *argv[] )
                 outFrame, &injResp, "strain/ct", "RESPONSE_INJ" );
         }
 
-        if ( gaussianNoise )
+        if ( whiteGaussian )
         {
           /* replace the response function with unity if */
           /* we are filtering gaussian noise             */
@@ -1543,16 +1659,11 @@ int main( int argc, char *argv[] )
 
   if ( specType == 2 )
   {
-    /* multiply the unit power spectrum to get a gaussian psd */
+    /* multiply the unit power spectrum by the variance to get the white psd */
     REAL4 gaussVarSq = gaussVar * gaussVar;
-    if ( resampleChan )
-    {
-      /* reduce the variance as we have resampled the data */
-      gaussVarSq *= inputDeltaT / chan.deltaT;
-    }
     for ( k = 0; k < spec.data->length; ++k )
     {
-      spec.data->data[k] *= 2.0 * gaussVarSq * (REAL4) chan.deltaT;
+      spec.data->data[k] *= 2.0 * gaussVarSq * (REAL4) inputDeltaT;
     }
 
     if ( vrbflg ) 
@@ -1561,27 +1672,45 @@ int main( int argc, char *argv[] )
   else if ( specType == 3 )
   {
     /* replace the spectrum with the Initial LIGO design noise curve */
-    for ( k = 0; k < spec.data->length; ++k )
-    {
-      REAL8 sim_psd_freq = (REAL8) k * spec.deltaF;
-      REAL8 sim_psd_value;
-      LALLIGOIPsd( NULL, &sim_psd_value, sim_psd_freq );
-      spec.data->data[k] = 9.0e-46 * sim_psd_value;
-    }
+    INT4  k_min          = strainHighPassFreq / spec.deltaF > 1 ? 
+                           strainHighPassFreq / spec.deltaF : 1 ;
+    REAL8 sim_psd_value, sim_psd_freq;
+    LALLIGOIPsd( NULL, &sim_psd_value, strainHighPassFreq );
     
+    for ( k = 0; k < k_min; ++k )
+    {
+      spec.data->data[k] = (REAL4) (9.0e-46 * sim_psd_value * dynRange * 
+                                    dynRange);
+    }
+    for ( k = k_min; k < spec.data->length; ++k )
+    {
+      sim_psd_freq = (REAL8) k * spec.deltaF;
+      LALLIGOIPsd( NULL, &sim_psd_value, sim_psd_freq );
+      spec.data->data[k] = (REAL4) (9.0e-46 * sim_psd_value * dynRange * 
+                                    dynRange);
+    }
     if ( vrbflg ) fprintf( stdout, "set psd to Initial LIGO design\n" );
   }
   else if ( specType == 4 )
   {
     /* replace the spectrum with the Advanced LIGO design noise curve */
-    for ( k = 0; k < spec.data->length; ++k )
-    {
-      REAL8 sim_psd_freq = (REAL8) k * spec.deltaF;
-      REAL8 sim_psd_value;
-      LALAdvLIGOPsd( NULL, &sim_psd_value, sim_psd_freq );
-      spec.data->data[k] = 9.0e-46 * sim_psd_value;
-    }
+    INT4  k_min          = strainHighPassFreq / spec.deltaF > 1 ? 
+                           strainHighPassFreq / spec.deltaF : 1 ;
+    REAL8 sim_psd_value, sim_psd_freq;
+    LALAdvLIGOPsd( NULL, &sim_psd_value, strainHighPassFreq );
     
+    for ( k = 0; k < k_min; ++k )
+    {
+      spec.data->data[k] = (REAL4) (9.0e-46 * sim_psd_value * dynRange * 
+                                    dynRange);
+    }
+    for ( k = k_min; k < spec.data->length; ++k )
+    {
+      sim_psd_freq = (REAL8) k * spec.deltaF;
+      LALAdvLIGOPsd( NULL, &sim_psd_value, sim_psd_freq );
+      spec.data->data[k] = (REAL4) (9.0e-46 * sim_psd_value * dynRange * 
+                                    dynRange);
+    }
     if ( vrbflg ) fprintf( stdout, "set psd to Advanced LIGO design\n" );
   }
 
@@ -3079,7 +3208,8 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --high-pass-order O          set the order of the high pass filter to O\n"\
 "  --high-pass-attenuation A    set the attenuation of the high pass filter to A\n"\
 "  --spectrum-type TYPE         use PSD estimator TYPE\n"\
-"                                 (mean|median|gaussian|LIGO|AdvLIGO)\n"\
+"                                 (mean|median|gaussian|white|LIGO|AdvLIGO)\n"\
+"                               TYPE 'gaussian' is equivalent to 'white' - deprecated option\n"\
 "\n"\
 "  --segment-length N           set data segment length to N points\n"\
 "  --number-of-segments N       set number of data segments to N\n"\
@@ -3131,7 +3261,11 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --trig-start-time SEC        only output triggers after GPS time SEC\n"\
 "  --trig-end-time SEC          only output triggers before GPS time SEC\n"\
 "\n"\
-"  --gaussian-noise VAR         replace data with gaussian noise of variance VAR\n"\
+"  --white-gaussian VAR         replace data with white gaussian noise of variance VAR\n"\
+"  --gaussian-noise VAR         same as --white-gaussian - deprecated option\n"\
+"  --colored-gaussian PSD       replace data with colored gaussian noise with psd PSD\n"\
+"                               (LIGO|AdvLIGO)\n"\
+"\n"\
 "  --random-seed SEED           set random number seed for injections to SEED\n"\
 "                                 (urandom|integer)\n"\
 "\n"\
@@ -3238,6 +3372,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"sim-minimum-mass",        required_argument, 0,                'U'},
     {"sim-maximum-mass",        required_argument, 0,                'W'},
     {"gaussian-noise",          required_argument, 0,                'G'},
+    {"white-gaussian",          required_argument, 0,                'G'},
+    {"colored-gaussian",        required_argument, 0,                '.'},
     {"checkpoint-path",         required_argument, 0,                'N'},
     {"output-path",             required_argument, 0,                'O'},
     {"debug-level",             required_argument, 0,                'z'},
@@ -3662,7 +3798,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           specType = 0;
           badMeanPsd = 1;
         }
-        else if ( ! strcmp( "gaussian", optarg ) )
+        else if ( (! strcmp( "gaussian", optarg )) || (! strcmp( "white", optarg )) )
         {
           specType = 2;
           fprintf( stderr,
@@ -3671,24 +3807,22 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         else if ( ! strcmp( "LIGO", optarg ) )
         {
           specType = 3;
-          unitResponse = 1;
           fprintf( stderr,
               "WARNING: replacing psd with Initial LIGO design spectrum\n"
-              "WARNING: replacing response function with unity\n" );
+              "WARNING: replacing response function with a constant\n" );
         }
         else if ( ! strcmp( "AdvLIGO", optarg ) )
         {
           specType = 4;
-          unitResponse = 1;
           fprintf( stderr,
               "WARNING: replacing psd with Advanced LIGO design spectrum\n"
-              "WARNING: replacing response function with unity\n" );
+              "WARNING: replacing response function with a constant\n" );
         }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown power spectrum type: "
-              "%s (must be mean, median or gaussian)\n", 
+              "%s (must be mean, median, gaussian, white, LIGO or AdvLIGO)\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -4192,11 +4326,35 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           exit( 1 );
         }
         ADD_PROCESS_PARAM( "float", "%e", gaussVar );
-        gaussianNoise = 1;
+        whiteGaussian = 1;
         unitResponse = 1;
         fprintf( stderr,
             "WARNING: replacing input data with white gaussian noise\n"
             "WARNING: replacing response function with unity\n" );
+        break;
+
+      case '.':
+        colorSpec = (INT4) atoi( optarg );
+        if ( ! strcmp( "LIGO", optarg ) )
+        {
+          colorSpec = 3;
+          fprintf( stderr,
+              "WARNING: replacing input data with colored Gaussian noise: " 
+              "psd = Initial LIGO\n");
+        }
+        else if ( ! strcmp( "AdvLIGO", optarg ) )
+        {
+          colorSpec = 4;
+          fprintf( stderr,
+              "WARNING: replacing input data with colored Gaussian noise: "
+              "psd = Advanced LIGO\n");
+        }
+        else
+        {
+          fprintf(stderr,"invalid power spectrum for colored Gaussian noise;"
+              "colorSpec must be either LIGO or advLIGO");
+        }
+        coloredGaussian = 1;
         break;
 
       case 'N':
@@ -4999,13 +5157,70 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   }
 
   /* check that a random seed for gaussian noise generation has been given */
-  if ( gaussianNoise && randSeedType == unset )
+  if ( (whiteGaussian || coloredGaussian ) && randSeedType == unset )
   {
     fprintf( stderr, "--random-seed must be specified if "
-        "--gaussian-noise is given\n" );
+     "--white-gaussian, --colored-gaussian or --gaussian-noise are given\n" );
     exit( 1 );
   }
 
+  
+  if (coloredGaussian)
+  {
+    /* check that --white-gaussian has not been specified */
+    if (whiteGaussian)
+    {
+      fprintf( stderr, "cannot specify options --white-gaussian (or "
+          " --gaussian-noise) and --colored-gaussian at the same time;" 
+          " spectrum must be either white or colored \n");
+      exit( 1 );
+    }
+ 
+    /* check that specType is either LIGO or advLIGO for colored Gaussian noise
+     */
+    if (specType == 2)
+    {
+      fprintf( stderr, "--spectrum-type cannot be white for " 
+                        "colored Gaussian noise: specify either LIGO, "
+                        "AdvLIGO, mean or median\n");
+      exit( 1 );
+    }
+    if (specType == 3 && colorSpec == 4) 
+    {
+      fprintf(stderr,"Error: if "
+        "--colored-gaussian is AdvLIGO --spectrum-type cannot be LIGO\n");
+      exit( 1 );
+    }
+    if (specType == 4 && colorSpec == 3) 
+    {
+      fprintf(stderr,"Error: if "
+        "--colored-gaussian is LIGO --spectrum-type cannot be AdvLIGO\n");
+      exit( 1 );
+    }
+     /* check that strain high pass parameters have been specified */
+    if ( strainHighPassFreq < 0 )
+    {
+      fprintf( stderr, 
+          "--strain-high-pass-freq must be specified for simulated colored " 
+          "Gaussian noise\n" );
+      exit( 1 );
+    }
+    if ( strainHighPassOrder < 0 )
+    {
+      fprintf( stderr, 
+          "--strain-high-pass-order must be specified for simulated colored " 
+          "Gaussian noise \n" );
+      exit( 1 );
+    }
+    if ( strainHighPassAtten < 0 )
+    {
+      fprintf( stderr, 
+          "--strain-high-pass-atten must be specified for simulated colored "
+          "Gaussian noise\n" );
+      exit( 1 );
+    }
+  }
+  
   /* check the bank simulation parameters */
   if ( bankSim )
   {
