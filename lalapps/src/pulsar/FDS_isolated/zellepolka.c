@@ -405,7 +405,7 @@ int main(INT4 argc,CHAR *argv[])
   INT4  CLength=0; /* Length of the candidate-events list */
   INT4  *SortedCListi = NULL; /* List of candidate-events INT-labels */
   INT4  *cellListi = NULL;  /* List of cell INT-labels */
-  INT4  icell, icand, ncell, icell2;
+  INT4  icell, icand, ncell;
   INT4  cc1,cc2,cc3,cc4,bb1,bb2,bb3,bb4; /* cell-grid shifting variables */
   INT4  selectGrid; /* denotes one of the 16 shifted cell-grid */
   INT4  sizecells; /* Length of the cell list */
