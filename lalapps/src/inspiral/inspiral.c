@@ -1143,7 +1143,7 @@ int main( int argc, char *argv[] )
   {
     /* replace the response function with 1/dynRange if we are using the */
     /* design LIGO or AdvLIGO psd                                        */
-    if ( vrbflg ) fprintf( stdout, "setting response to unity... " );
+    if ( vrbflg ) fprintf( stdout, "setting response to inverse dynRange... " );
     for( k = 0; k < resp.data->length; ++k )
     {
       resp.data->data[k].re = (REAL4) (1.0 / dynRange);
@@ -1247,7 +1247,7 @@ int main( int argc, char *argv[] )
         injResp.sampleUnits = strainPerCount;
         strcpy( injResp.name, chan.name );
 
-        if ( calData )
+        if ( calData || coloredGaussian )
         {
           /* if we are using calibrated data set the response to unity */
           if ( vrbflg ) fprintf( stdout, 
