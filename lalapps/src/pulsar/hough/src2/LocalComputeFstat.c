@@ -1,7 +1,7 @@
 /*
 *  Copyright (C) 2007 Bernd Machenschalk
-*  Copyright (C) 2006 John T. Whelan
-*  Copyright (C) 2005, 2006 Reinhard Prix
+*  Copyright (C) 2006 John T. Whelan, Badri Krishnan
+*  Copyright (C) 2005, 2006 Reinhard Prix 
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
