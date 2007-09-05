@@ -97,7 +97,7 @@ LALFree()
 NRCSID( FINDCHIRPIMRSIMULATIONC, "$Id$" );
 
 /* <lalVerbatim file="FindChirpIMRSimulationCP"> */
-void
+SimRingdownTable *
 LALFindChirpInjectIMR (
     LALStatus                  *status,
     REAL4TimeSeries            *chan,
@@ -287,7 +287,8 @@ LALFindChirpInjectIMR (
       }
       else exit ( 1 );
     }
-     
+    
+
     waveform = *wfm;
     
     LALInfo( status, ppnParams.termDescription );

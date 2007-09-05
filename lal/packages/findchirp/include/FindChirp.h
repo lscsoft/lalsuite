@@ -960,7 +960,7 @@ LALFindChirpInjectSignals (
     COMPLEX8FrequencySeries    *resp
     );
 
-void
+SimRingdownTable *
 LALFindChirpInjectIMR (
     LALStatus                  *status,
     REAL4TimeSeries            *chan,
