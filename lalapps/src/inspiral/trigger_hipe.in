@@ -122,12 +122,16 @@ class hipe_run(object):
     for (opt,value) in cpinj.items(injrun):
       self._cp.set('inspinj',opt,value)
 
+    # set injection segments
+    for ifo in self._ifos:
+        self._cp.set('input', ifo.lower() + '-segments', "../" + ifo + "-injsegs.txt")
+
     # the start and end time for the injections that are made
     # should be a segment adjacent to the on-source segment. It's
     # convenient to do this here since it needs a calculation.
     # We are assuming that there exists one 180s segment before the trigger
     # on-source interval.
-    self._cp.set('inspinj','gps-start-time',(trigger-120-180))
+    self._cp.set('inspinj','gps-start-time',(trigger-120))
     self._cp.set('inspinj','gps-end-time',(trigger-120))
 
   def write_dag(self):
@@ -359,6 +363,7 @@ for trigger in opts.triggers:
     ############################################################################
     # set up the injection dag for this interval
     for injrun in cpinj.sections():
+      if opts.verbose: print injrun
       injection_analysis = hipe_run(os.path.join(idirectory, injrun), cp, ifolist, opts.log_path, verbose=opts.verbose)
       injection_analysis.set_numslides(0)
       injection_analysis.set_injections(cpinj, injrun)
