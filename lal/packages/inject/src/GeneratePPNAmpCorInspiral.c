@@ -689,12 +689,13 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
        dydx2 += (e6 + (856.0/2240.0*(2.0 + 9.0*log(2.0*x))))*x6;
      if ( b7 )
        dydx2 += e7*x7;	
- 
-     if ( dydx2 < 0.0 ) {
+     
+    if ( dydx2 < 0.0 ) {
        params->termCode = GENERATEPPNINSPIRALH_EFNOTMON;
        params->termDescription = GENERATEPPNINSPIRALH_MSGEFNOTMON;
        goto terminate;
      }
+
      if ( y - yOld > dyMax )
        dyMax = y - yOld;
      *(f++) = fFac*y;
@@ -721,16 +722,16 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
      *(phi++) = phiC - phase;
            
      /* Compute hplus and hcross */
-     f2a = pow(f2aFac*y, TWOTHIRDS);
+     f2a = b2*pow(f2aFac*y, TWOTHIRDS);
      preFac = -2.0*mu*LAL_MRSUN_SI/params->d; 
      delta = pow((1-4*eta), 0.5); 
 
      /* powers of frequency */
-     fthree = pow(f2a, 1.5);
-     ffour  = pow(f2a, 2.0);
-     ffive  = pow(f2a, 2.5);
-     fsix   = pow(f2a, 3.0);
-     fseven = pow(f2a, 3.5);
+     fthree = b3*pow(f2a, 1.5);
+     ffour  = b4*pow(f2a, 2.0);
+     ffive  = b5*pow(f2a, 2.5);
+     fsix   = b6*pow(f2a, 3.0);
+     fseven = b7*pow(f2a, 3.5);
 
      /* PLUS */
      a1 = q[1]*a1Pthree*fthree + q[3]*a1Pfive*ffive + q[4]*a1Psix*fsix + q[5]*a1Pseven*fseven;  
