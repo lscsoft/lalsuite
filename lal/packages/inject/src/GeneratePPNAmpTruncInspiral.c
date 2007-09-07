@@ -538,17 +538,17 @@ LALGeneratePPNAmpTruncInspiral( LALStatus     *stat,
 
   /* Compute starting time using truncated expression for tau(f) */
 
-  g0 = 1.0;
-  g1 = 0.0;
-  g2 = 743.0/252.0+11.0/3.0*eta;
-  g3 = -32.0/5.0*LAL_PI;
-  g4 = 3058673.0/508032.0 + 5429.0/504.0*eta + 617.0/72.0*eta*eta;
-  g5 = -(7729.0/252.0 - 13.0/3.0*eta)*LAL_PI;
-  g6 = -10052469856691.0/23471078400.0 + 128.0/3.0*LAL_PI*LAL_PI 
+  g0 = b0*1.0;
+  g1 = b1*0.0;
+  g2 = b2*743.0/252.0+11.0/3.0*eta;
+  g3 = b3*(-32.0/5.0*LAL_PI);
+  g4 = b4*(3058673.0/508032.0 + 5429.0/504.0*eta + 617.0/72.0*eta*eta);
+  g5 = b5*(-(7729.0/252.0 - 13.0/3.0*eta)*LAL_PI);
+  g6 = b6*(-10052469856691.0/23471078400.0 + 128.0/3.0*LAL_PI*LAL_PI 
         + (15335597827.0/15240960.0 - 451.0/12.0*LAL_PI*LAL_PI + 352.0/3.0*LAL_THETA - 2464.0/9.0*LAL_LAMBDA)*eta
         + 6848.0/105.0*LAL_GAMMA - 15211.0/1728.0*eta*eta + 25565.0/1296.0*eta*eta*eta
-        + 6848.0/105.0*log(4*pow(f2aFac*yStart, 1.0/3.0));
-  g7 = (-15419335.0/127008.0 - 75703.0/756.0*eta + 14809.0/378.0*eta*eta)*LAL_PI;
+        + 6848.0/105.0*log(4*pow(f2aFac*yStart, 1.0/3.0)));
+  g7 = b7*(-15419335.0/127008.0 - 75703.0/756.0*eta + 14809.0/378.0*eta*eta)*LAL_PI;
    
   t0 = eta/(5.0*mTot)*5.0*mu/(pow(eta, 2.0)*256.0*pow(f2aFac*yStart,8.0/3.0))*(g0 + g1*pow(f2aFac*yStart,1.0/3.0) 
 		  + g2*pow(f2aFac*yStart,2.0/3.0) + g3*f2aFac*yStart + g4*pow(f2aFac*yStart,4.0/3.0) 
@@ -654,6 +654,7 @@ LALGeneratePPNAmpTruncInspiral( LALStatus     *stat,
        params->termDescription = GENERATEPPNINSPIRALH_MSGEFNOTMON;
        goto terminate;
      }
+
      if ( y - yOld > dyMax )
        dyMax = y - yOld;
      *(f++) = fFac*y;
@@ -688,12 +689,12 @@ LALGeneratePPNAmpTruncInspiral( LALStatus     *stat,
      vtrFac = 1.0/4.0*x2;
 
      /* Truncated powers of (2 Pi M f(t))^(1/3) = v(t) */
-     v2tr = vtrFac*(1.0 + v2tr2*x2 + v2tr3*x3 + v2tr4*x4 + v2tr5*x5); 
-     v3tr = pow(vtrFac, 1.5)*(1.0 + v3tr2*x2 + v3tr3*x3 + v3tr4*x4 + v4tr5*x5); 
-     v4tr = pow(vtrFac, 2.0)*(1.0 + v4tr2*x2 + v4tr3*x3 + v4tr4*x4 + v4tr5*x5); 
-     v5tr = pow(vtrFac, 2.5)*(1.0 + v5tr2*x2 + v5tr3*x3 + v5tr4*x4 + v5tr5*x5); 
-     v6tr = pow(vtrFac, 3.0)*(1.0 + v6tr2*x2 + v6tr3*x3 + v6tr4*x4 + v6tr5*x5); 
-     v7tr = pow(vtrFac, 3.5)*(1.0 + v7tr2*x2 + v7tr3*x3 + v7tr4*x4 + v7tr5*x5); 
+     v2tr = b2*vtrFac*(1.0 + v2tr2*x2 + v2tr3*x3 + v2tr4*x4 + v2tr5*x5); 
+     v3tr = b3*pow(vtrFac, 1.5)*(1.0 + v3tr2*x2 + v3tr3*x3 + v3tr4*x4 + v4tr5*x5); 
+     v4tr = b4*pow(vtrFac, 2.0)*(1.0 + v4tr2*x2 + v4tr3*x3 + v4tr4*x4 + v4tr5*x5); 
+     v5tr = b5*pow(vtrFac, 2.5)*(1.0 + v5tr2*x2 + v5tr3*x3 + v5tr4*x4 + v5tr5*x5); 
+     v6tr = b6*pow(vtrFac, 3.0)*(1.0 + v6tr2*x2 + v6tr3*x3 + v6tr4*x4 + v6tr5*x5); 
+     v7tr = b7*pow(vtrFac, 3.5)*(1.0 + v7tr2*x2 + v7tr3*x3 + v7tr4*x4 + v7tr5*x5); 
 
 
      /* PLUS */
