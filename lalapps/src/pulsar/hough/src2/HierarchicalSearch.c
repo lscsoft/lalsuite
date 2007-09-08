@@ -141,9 +141,9 @@ RCSID( "$Id$");
 
 extern int lalDebugLevel;
 
-BOOLEAN uvar_printMaps; /**< global variable for printing Hough maps */
-BOOLEAN uvar_printStats; /**< global variable for calculating Hough map stats */
-BOOLEAN uvar_dumpLUT;  /**< global variable for printing Hough look-up-tables for debugging */
+BOOLEAN uvar_printMaps = FALSE; /**< global variable for printing Hough maps */
+BOOLEAN uvar_printStats = FALSE;/**< global variable for calculating Hough map stats */
+BOOLEAN uvar_dumpLUT = FALSE;  	/**< global variable for printing Hough look-up-tables for debugging */
 
 #define HSMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define HSMIN(x,y) ( (x) < (y) ? (x) : (y) )
@@ -349,111 +349,65 @@ int MAIN( int argc, char *argv[]) {
   /*   UINT4 loopindex, loopcounter; */
   
   /* user variables */
-  BOOLEAN uvar_help; /* true if -h option is given */
-  BOOLEAN uvar_log; /* logging done if true */
-  BOOLEAN uvar_printCand1; /* if 1st stage candidates are to be printed */
-  BOOLEAN uvar_followUp;
-  BOOLEAN uvar_printFstat1;
-  BOOLEAN uvar_useToplist1;
-  BOOLEAN uvar_useWeights;
-  BOOLEAN uvar_semiCohToplist; /* if overall first stage candidates are to be output */
+  BOOLEAN uvar_help = FALSE; 	/* true if -h option is given */
+  BOOLEAN uvar_log = FALSE; 	/* logging done if true */
 
-  REAL8 uvar_dAlpha, uvar_dDelta; /* resolution for flat or isotropic grids -- coarse grid*/
-  REAL8 uvar_f1dot; /* first spindown value */
-  REAL8 uvar_f1dotBand; /* range of first spindown parameter */
-  REAL8 uvar_Freq, uvar_FreqBand;
-  REAL8 uvar_dFreq, uvar_df1dot; /* coarse grid frequency and spindown resolution */
-  REAL8 uvar_peakThrF; /* threshold of Fstat to select peaks */
-  REAL8 uvar_mismatch1; /* metric mismatch for first stage coarse grid */
-  REAL8 uvar_refTime;
-  REAL8 uvar_minStartTime1, uvar_maxEndTime1;
-  REAL8 uvar_dopplerMax;
-  REAL8 uvar_pixelFactor;
-  REAL8 uvar_semiCohPatchX, uvar_semiCohPatchY;
-  REAL8 uvar_threshold1;
-  REAL8 uvar_df1dotRes;
-  REAL8 uvar_tStack;
+  BOOLEAN uvar_printCand1 = FALSE; 	/* if 1st stage candidates are to be printed */
+  BOOLEAN uvar_followUp = FALSE;
+  BOOLEAN uvar_printFstat1 = FALSE;
+  BOOLEAN uvar_useToplist1 = FALSE;
+  BOOLEAN uvar_useWeights  = FALSE;
+  BOOLEAN uvar_semiCohToplist = FALSE; /* if overall first stage candidates are to be output */
 
-  INT4 uvar_method; /* hough = 0, stackslide = 1, -1 = pure fstat*/
-  INT4 uvar_nCand1; /* number of candidates to be followed up from first stage */
-  INT4 uvar_blocksRngMed;
-  INT4 uvar_nStacksMax;
-  INT4 uvar_Dterms;
-  INT4 uvar_SSBprecision;
-  INT4 uvar_nf1dotRes;
-  INT4 uvar_gridType1;
-  INT4 uvar_metricType1;
-  INT4 uvar_sftUpsampling;
-  INT4 uvar_skyPointIndex;
+  REAL8 uvar_dAlpha = DALPHA; 	/* resolution for flat or isotropic grids -- coarse grid*/
+  REAL8 uvar_dDelta = DDELTA; 		
+  REAL8 uvar_f1dot = FDOT; 	/* first spindown value */
+  REAL8 uvar_f1dotBand = DFDOT; /* range of first spindown parameter */
+  REAL8 uvar_Freq = FSTART;
+  REAL8 uvar_FreqBand = FBAND;
 
-  CHAR *uvar_ephemE=NULL;
-  CHAR *uvar_ephemS=NULL;
-  CHAR *uvar_DataFiles1=NULL;
-  CHAR *uvar_fnameout=NULL;
+  REAL8 uvar_dFreq = 0; 
+  REAL8 uvar_df1dot = 0; /* coarse grid frequency and spindown resolution */
+
+  REAL8 uvar_peakThrF = FSTATTHRESHOLD; /* threshold of Fstat to select peaks */
+  REAL8 uvar_mismatch1 = MISMATCH; /* metric mismatch for first stage coarse grid */
+
+  REAL8 uvar_pixelFactor = PIXELFACTOR;
+  REAL8 uvar_df1dotRes = 0;
+  REAL8 uvar_threshold1 = 0;
+  REAL8 uvar_minStartTime1 = 0;
+  REAL8 uvar_maxEndTime1 = LAL_INT4_MAX;
+  REAL8 uvar_dopplerMax = 1.05e-4;
+
+  REAL8 uvar_refTime = 0;
+  REAL8 uvar_semiCohPatchX = 0;
+  REAL8 uvar_semiCohPatchY = 0;
+  REAL8 uvar_tStack = 0;
+
+  INT4 uvar_method = -1; 	/* hough = 0, stackslide = 1, -1 = pure fstat*/
+  INT4 uvar_nCand1 = NCAND1; /* number of candidates to be followed up from first stage */
+
+  INT4 uvar_blocksRngMed = BLOCKSRNGMED;
+  INT4 uvar_nStacksMax = 1;
+  INT4 uvar_Dterms = DTERMS;
+  INT4 uvar_SSBprecision = SSBPREC_RELATIVISTIC;
+  INT4 uvar_nf1dotRes = 1;
+  INT4 uvar_metricType1 = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
+  INT4 uvar_gridType1 = GRID_METRIC;
+  INT4 uvar_sftUpsampling = 1;
+  INT4 uvar_skyPointIndex = -1;
+
+  CHAR *uvar_ephemE = NULL;
+  CHAR *uvar_ephemS = NULL;
+
+  CHAR *uvar_skyRegion = NULL;
+  CHAR *uvar_fnameout = NULL;
+  CHAR *uvar_DataFiles1 = NULL;
   CHAR *uvar_skyGridFile=NULL;
-  CHAR *uvar_skyRegion=NULL;
-  
   INT4 uvar_numSkyPartitions = 0;
   INT4 uvar_partitionIndex = 0;
 
   global_status = &status;
-
-  /* set LAL error-handler */
-#ifdef EAH_BOINC
-  lal_errhandler = BOINC_LAL_ErrHand;
-#else
-  lal_errhandler = LAL_ERR_EXIT;
-#endif
-
-  /*---------------------------------------------------------------*/
-  /* set defaults, read user variables, log user variables and log cvs tags */
-
-  /* LALDebugLevel must be called before anything else */
-  lalDebugLevel = 0;
-  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
-#ifdef EAH_LALDEBUGLEVEL
-  lalDebugLevel = EAH_LALDEBUGLEVEL;
-#endif
-
-  /* now set the other defaults */
-  uvar_help = FALSE;
-  uvar_log = FALSE;
-  uvar_method = -1;
-  uvar_followUp = FALSE;
-  uvar_printMaps = FALSE;
-  uvar_dumpLUT = FALSE;
-  uvar_printStats = FALSE;
-  uvar_printCand1 = FALSE;
-  uvar_printFstat1 = FALSE;
-  uvar_useToplist1 = FALSE;
-  uvar_useWeights = FALSE;
-  uvar_semiCohToplist = FALSE;
-  uvar_nStacksMax = 1;
-  uvar_Dterms = DTERMS;
-  uvar_dAlpha = DALPHA;
-  uvar_dDelta = DDELTA;
-  uvar_f1dot = FDOT;
-  uvar_f1dotBand = DFDOT;
-  uvar_Freq = FSTART;
-  uvar_FreqBand = FBAND;
-  uvar_blocksRngMed = BLOCKSRNGMED;
-  uvar_nf1dotRes = 1;
-  uvar_peakThrF = FSTATTHRESHOLD;
-  uvar_nCand1 = NCAND1;
-  uvar_SSBprecision = SSBPREC_RELATIVISTIC;
-  uvar_metricType1 = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
-  uvar_gridType1 = GRID_METRIC;
-  uvar_mismatch1 = MISMATCH;
-  uvar_pixelFactor = PIXELFACTOR;
-  uvar_threshold1 = 0;
-  uvar_minStartTime1 = 0;
-  uvar_maxEndTime1 = LAL_INT4_MAX;
-  uvar_sftUpsampling = 1;
-
-  uvar_dopplerMax = 1.05e-4;
-
-  uvar_skyGridFile = NULL;
-  uvar_skyPointIndex = -1;
 
   uvar_ephemE = LALCalloc( strlen( EARTHEPHEMERIS ) + 1, sizeof(CHAR) );
   strcpy(uvar_ephemE, EARTHEPHEMERIS);
@@ -464,13 +418,23 @@ int MAIN( int argc, char *argv[]) {
   uvar_skyRegion = LALCalloc( strlen(SKYREGION) + 1, sizeof(CHAR) );
   strcpy(uvar_skyRegion, SKYREGION);
 
-  uvar_DataFiles1 = NULL;
-
-  /* do not set default for DataFiles2 -- use only if user specifies */
-  /*   uvar_DataFiles2 = (CHAR *)LALMalloc(512*sizeof(CHAR)); */
-
   uvar_fnameout = LALCalloc( strlen(FNAMEOUT) + 1, sizeof(CHAR) );
   strcpy(uvar_fnameout, FNAMEOUT);
+
+
+  /* set LAL error-handler */
+#ifdef EAH_BOINC
+  lal_errhandler = BOINC_LAL_ErrHand;
+#else
+  lal_errhandler = LAL_ERR_EXIT;
+#endif
+
+  /* LALDebugLevel must be called before anything else */
+  lalDebugLevel = 0;
+  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
+#ifdef EAH_LALDEBUGLEVEL
+  lalDebugLevel = EAH_LALDEBUGLEVEL;
+#endif
 
   /* register user input variables */
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",        'h', UVAR_HELP,     "Print this message", &uvar_help), &status);  
