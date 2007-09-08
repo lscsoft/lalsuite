@@ -868,9 +868,11 @@ cleanConfig (CHARSequence *text)
   ptr = text->data;
   while (ptr < (text->data + text->length -1) )
     {
+      eol = strchr (ptr, '\n'); /* point to end-of-line */
+
       len = strspn (ptr, WHITESPACE); 
       if (len) memset ( (void*)ptr, '\n', len);
-      eol = strchr (ptr, '\n'); /* point to end-of-line */
+
       if (eol != NULL)
 	ptr = eol;
       else
