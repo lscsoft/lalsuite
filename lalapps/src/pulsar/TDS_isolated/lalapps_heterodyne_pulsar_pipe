@@ -56,16 +56,19 @@ Usage: lalapps_heterodyne_pulsar_pipe [options]
   -v, --version            print version information and exit
 
   -d, --datafind           run LSCdataFind to create frame cache files
-  -s, --seglist            if give as 0 the run LSCsegFind to create a science segment list
-                           otherwise read the segment list from the config file
+                           (required for coarse heterodyne)
+  -s, --seglist            run LSCsegFind to create a segment list (otherwise
+                           attempt to read the segment filename from the
+                           configuation file)
   -c, --coarse             run lalapps_heterodyne_pulsar in coarse mode
   -f, --fine               run lalapps_heterodyne_pulsar in fine mode
   -u, --update             run lalapps_heterodyne_pulsar in update mode
   -C, --calibrate          run lalapps_heterodyne_pulsar with calibration flag set
-  -b, --binary-input       run lalapps_heterodyne_pulsar to read in a binary data file
-  -O, --binary-output      run lalapps_heterodyne_pulsar to output to binary file
-  -V, --verbose            run lalapps_heterodyne_pulsar in verbose mode
-  
+  -b, --binary-input       run lalapps_heterodyne_pulsar to read in a binary
+                           data file (for fine/update heterodyne mode) 
+  -O, --binary-output      run lalapps_heterodyne_pulsar to output to binary
+                           file (for coarse, fine or update heterodyne mode) 
+  -V, --verbose            run lalapps_heterodyne_pulsar in verbose mode  
   -F, --config-file FILE   use configuration file FILE
   -l, --log-path PATH      directory to write condor log file
   """
@@ -77,7 +80,7 @@ longop = [
   "help",
   "version",
   "datafind",
-  "seglist=",
+  "seglist",
   "coarse",
   "fine",
   "update",
@@ -98,7 +101,7 @@ except getopt.GetoptError:
 # default options
 config_file = None
 do_datafind = None
-seglist = None
+do_seglist = None
 do_fine = None
 do_coarse = None
 do_update = None
@@ -120,7 +123,7 @@ for o, a in opts:
   elif o in ("-d", "--datafind"):
     do_datafind = 1
   elif o in ("-s", "--seglist"):
-    seglist = int(a)
+    do_seglist = 1
   elif o in ("-c", "--coarse"):
     do_coarse = 1
   elif o in ("-f", "--fine"):
@@ -257,7 +260,7 @@ H2, L1, G1 or GEO."""
   dag.add_node(df)
 
 # this bit is basically hacked from LSCsegFind
-if seglist == 0:
+if do_seglist:
   print >> sys.stderr, "I'm going to make a seglist"
   # run LSCsegFind - don't bother with a job just run it and create this list
   # set segment list and stuff
@@ -309,7 +312,7 @@ if seglist == 0:
     myClient = LSCsegFindClient.LSCsegFind(host, port)
 
   except Exception, e:
-    print >>sys.stderr, \
+    print >> sys.stderr, \
       "Unable to connect to LSCsegFindServer %s:%d" % (host, port)
     if gsiserverutils.checkCredentials():
       print >>sys.stderr, "Got the following error : " + str(e)
@@ -345,7 +348,7 @@ if seglist == 0:
     print >> sys.stderr, "Could not create segment list :("
     sys.exit(1)
   
-elif seglist == None:
+elif do_seglist == None:
   # set seglist file from value in the config file
   seg_list_file = cp.get('data','seg_list')
   
