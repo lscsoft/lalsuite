@@ -256,7 +256,7 @@ LALInspiralSetup (
   ak->tva2 = (743./252. + 11./3. * ieta * eta);
   ak->tva3 = -32./5. * LAL_PI;
   ak->tva4 = 30.58673/5.08032 + 54.29/5.04*ieta*eta + 61.7/7.2*ieta*eta*eta;
-  ak->tva5 = -(77.29/2.52 + ieta*eta) * LAL_PI;
+  ak->tva5 = -(77.29/2.52 -13./3.*ieta*eta) * LAL_PI;
   ak->tva6 = - 1005.2469856691/2.3471078400 
            + (128./3.- 451./12.*ieta*eta) * LAL_PI*LAL_PI 
            + 68.48/1.05*ak->EulerC
@@ -298,7 +298,12 @@ LALInspiralSetup (
    * PRD72,029901(E)2005 for the 7th order which completes (corrects) 
    * PRD66,027502,2002, where there are typos in Eq 1.1, 1.2, 2.9, 2.10, and
    * 2.11.. */
-   
+  
+
+       
+       
+       
+  
    ak->pfaN = 3.L/(128.L * eta);
    ak->pfa2 = 5.L*(743.L/84.L + 11.L * ieta*eta)/9.L;
    ak->pfa3 = -16.L*LAL_PI;
