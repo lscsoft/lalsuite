@@ -218,7 +218,7 @@ if (channel.find('STRAIN') > -1) | (channel.find('DER_DATA_H') > -1):
   high_pass = cp.get('input', 'high_pass')
   scale_fac = cp.get('input', 'scale_fac')
 
-  print >> sys.stderr, "Value of high-pass is %s, value of scale factor is %s" % high_pass, scale_fac
+  print >> sys.stderr, "Value of high-pass is %s, value of scale factor is %s" % (high_pass, scale_fac)
   print >> sys.stderr, "If these don't look sensible then rerun"
 
 # default
