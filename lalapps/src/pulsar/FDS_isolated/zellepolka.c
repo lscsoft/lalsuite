@@ -91,7 +91,18 @@ some information on stderr.
 
 #define ADDITIONAL_MEM 32768
 
-/* #define HOLGER */ /* testing purposes */
+/* testing purposes, should not be defined */
+/*
+#define HOLGER 
+*/
+
+
+/*                                                                                                                                                                      
+   To use unzip, you need to have unzip-5.5x from, say,  the InfoZip webpage,                                                                                                       
+   and readzipfile_util.h and .c. from yousuke.                                                                                                                  
+   ( not needed any more in S4 , will be done by combiner_v4.py )                                                                                                                   
+#define USE_UNZIP                                                                                                                                                                     
+*/
 
 /* ----------------------------------------------------------------------------- */
 /* file includes */
@@ -101,20 +112,7 @@ some information on stderr.
 #include <stdlib.h>
 #include "getopt.h"
 #include <math.h>
-
-
 #include <unistd.h>
-
-
-
-/*
-   To use unzip, you need to have unzip-5.5x from, say,  the InfoZip webpage, 
-   and readzipfile_util.h and .c. from yousuke.
-   ( not needed any more in S4 , will be done by combiner_v4.py ) 
-#define USE_UNZIP  
-*/
-
-
 
 
 #ifdef USE_UNZIP
@@ -535,7 +533,7 @@ int main(INT4 argc,CHAR *argv[])
 	    for (icand=0;icand<CLength;icand++) 
 	      {
 		/* Assign the FREQUENCY index to the candidate event */
-		SortedC[icand].iFreq=(INT4)floor( ((SortedC[icand].f)/(PCV.Deltaf)) + (cc1 * 0.5)  );
+		SortedC[icand].iFreq = floor( ((SortedC[icand].f)/(PCV.Deltaf)) + (cc1 * 0.5)  );
 	      
 		/* Assign the DELTA index to the candidate event */
 		DeltaDeltaStep=0;
@@ -566,25 +564,33 @@ int main(INT4 argc,CHAR *argv[])
 		  }
 		}
 
+		/* Check if Alpha has a correct value */
+		if( SortedC[icand].Alpha < 0 ) {
+		  SortedC[icand].Alpha = SortedC[icand].Alpha + LAL_TWOPI;
+		}
+		if( SortedC[icand].Alpha > LAL_TWOPI ) {
+                  SortedC[icand].Alpha = SortedC[icand].Alpha - LAL_TWOPI;
+                }
+		
 		/* Assign the ALPHA index to the candidate event */
-		SortedC[icand].iAlpha=(INT4)floor( (SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
+		SortedC[icand].iAlpha = floor( (SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
+
 		if (cc3 == 1) {
 		  if ( SortedC[icand].iAlpha == 0 ) {
 		    SortedC[icand].Alpha = SortedC[icand].Alpha + LAL_TWOPI;
-		    SortedC[icand].iAlpha =(INT4)floor( (LAL_TWOPI*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  ); /*it's AlphaTwoPiIdx*/
+		    SortedC[icand].iAlpha =floor( (LAL_TWOPI*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  ); /*it's AlphaTwoPiIdx*/
 		  }
 		}
 		else { /* cc3 != 1 */
-		  AlphaTwoPiIdx=(INT4)floor( (LAL_TWOPI*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
+		  AlphaTwoPiIdx = floor( (LAL_TWOPI*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
 		  if ( SortedC[icand].iAlpha == AlphaTwoPiIdx ) {
 		    SortedC[icand].Alpha = SortedC[icand].Alpha - LAL_TWOPI;
-		    SortedC[icand].iAlpha = 0;
+		    SortedC[icand].iAlpha = floor( (0*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
 		  }
 		}
-		fprintf(stderr,"\n---------- Alpha:%f  iAlpha:%d \n",SortedC[icand].Alpha,SortedC[icand].iAlpha);
 
 		/* Assign the F1DOT index to the candidate event */
-		SortedC[icand].iF1dot=(INT4)floor(( ((SortedC[icand].F1dot)/(PCV.DeltaF1dot))  + (cc4 * 0.5)  ));
+		SortedC[icand].iF1dot = floor(( ((SortedC[icand].F1dot)/(PCV.DeltaF1dot))  + (cc4 * 0.5)  ));
 		
 		/* Keep the original ordering before sort to refer the orignal data later. */
 		SortedC[icand].iCand=icand;
