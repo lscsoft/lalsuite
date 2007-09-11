@@ -4,7 +4,7 @@ if FRAME
 if LALFRAME
 if LALMETAIO
 RINGPROG = lalapps_ring lalapps_rinj lalapps_ringread lalapps_rinca \
-           lalapps_coincringread
+           lalapps_coincringread lalapps_collatesim
 else
 RINGPROG =
 endif
@@ -32,6 +32,7 @@ lalapps_rinj_SOURCES = rinj.c
 lalapps_ringread_SOURCES = ringread.c
 lalapps_rinca_SOURCES = rinca.c
 lalapps_coincringread_SOURCES = coincringread.c
+lalapps_collatesim_SOURCES = collatesim.c
 endif
 endif
 endif
