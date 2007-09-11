@@ -936,7 +936,8 @@ LALConvertSSB2GPS (LALStatus *status,
   LIGOTimeGPS GPSguess;
   INT4 iterations, E9=1000000000;
   INT8 delta, guess;
-
+  INT4 j = 0;
+  
   INITSTATUS( status, "ConvertSSB2GPS", GENERATEPULSARSIGNALC );
   ATTATCHSTATUSPTR (status);
 
@@ -959,10 +960,14 @@ LALConvertSSB2GPS (LALStatus *status,
       delta += SSBin.gpsNanoSeconds;
       delta -= SSBofguess.gpsNanoSeconds;
       
-      /* break if we've converged: let's be strict to < 1 ns ! */
-      if (delta == 0)
-	break;
+      /* if we are within 1ns of the result increment the flip-flop counter */
+      if (abs(delta) == 1) j++;
 
+      /* break if we've converged: let's be strict to < 1 ns ! */
+      /* also break if the flip-flop counter has reached 3 */
+      if ((delta == 0)||(j == 3))
+	break;
+      
       /* use delta to make next guess */
       guess  = GPSguess.gpsSeconds;
       guess *= E9;
@@ -972,12 +977,22 @@ LALConvertSSB2GPS (LALStatus *status,
       GPSguess.gpsSeconds = guess / E9;
       guess -= GPSguess.gpsSeconds * E9;	/* get ns remainder */
       GPSguess.gpsNanoSeconds = guess;
-
+      
     } /* for iterations < 100 */
 
   /* check for convergence of root finder */
   if (iterations == 100) {
     ABORT ( status, GENERATEPULSARSIGNALH_ESSBCONVERT, GENERATEPULSARSIGNALH_MSGESSBCONVERT);
+  }
+
+  /* if we exited because of flip-flop and final delta was +1 then round up to the higher value */
+  /* otherwise we are already at the higher value and we do nothing */
+  if ((j == 3)&&(delta == 1)) {
+    if (GPSguess.gpsNanoSeconds<(INT4)1E9-1) GPSguess.gpsNanoSeconds += 1;
+    else {
+      GPSguess.gpsSeconds += 1;
+      GPSguess.gpsNanoSeconds = 0;
+    }
   }
 
   /* Now that we've found the GPS time that corresponds to the given SSB time */
@@ -989,7 +1004,6 @@ LALConvertSSB2GPS (LALStatus *status,
 
 } /* LALConvertSSB2GPS() */
 
-
 
 /************************************************************************
  * the following are INTERNAL FUNCTIONS not to be called outside of this 
