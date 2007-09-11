@@ -722,7 +722,7 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
      *(phi++) = phiC - phase;
            
      /* Compute hplus and hcross */
-     f2a = b2*pow(f2aFac*y, TWOTHIRDS);
+     f2a = pow(f2aFac*y, TWOTHIRDS);
      preFac = -2.0*mu*LAL_MRSUN_SI/params->d; 
      delta = pow((1-4*eta), 0.5); 
 
