@@ -683,9 +683,6 @@ LALGeneratePPNAmpTruncInspiral( LALStatus     *stat,
            
      /* Compute hplus and hcross */
      f2a = pow(f2aFac*y, TWOTHIRDS);
-     preFac = -2.0*mu*LAL_MRSUN_SI/params->d; 
-     delta = pow((1-4*eta), 0.5); 
-
      vtrFac = 1.0/4.0*x2;
 
      /* Truncated powers of (2 Pi M f(t))^(1/3) = v(t) */
