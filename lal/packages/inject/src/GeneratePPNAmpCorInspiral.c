@@ -723,8 +723,6 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
            
      /* Compute hplus and hcross */
      f2a = pow(f2aFac*y, TWOTHIRDS);
-     preFac = -2.0*mu*LAL_MRSUN_SI/params->d; 
-     delta = pow((1-4*eta), 0.5); 
 
      /* powers of frequency */
      fthree = b3*pow(f2a, 1.5);
