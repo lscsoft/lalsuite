@@ -2116,44 +2116,48 @@ int main( int argc, char *argv[] )
      */
     
     /* only sort the bank if doing bank veto */
-    if (subBankSize > 1)   
-        bankHead = XLALFindChirpSortTemplates( bankHead, numTmplts );
+
+    if (!bankSimCount) /*just doing this once is fine*/
+    {
+      if (subBankSize > 1)   
+          bankHead = XLALFindChirpSortTemplates( bankHead, numTmplts );
  
-    if ( vrbflg ) fprintf( stdout, 
+      if ( vrbflg ) fprintf( stdout, 
         "splitting bank in to subbanks of size ~ %d\n", subBankSize );
     
-    subBankHead = XLALFindChirpCreateSubBanks( &maxSubBankSize,
+      subBankHead = XLALFindChirpCreateSubBanks( &maxSubBankSize,
         subBankSize, numTmplts, bankHead );
 
-    if ( vrbflg ) fprintf( stdout, "maximum subbank size = %d\n", 
+      if ( vrbflg ) fprintf( stdout, "maximum subbank size = %d\n", 
         maxSubBankSize );
 
-    bankVetoData.length = maxSubBankSize;
+      bankVetoData.length = maxSubBankSize;
 
-    /* free the existing qVec structure so that we can use the bankveto one */
-    XLALDestroyCOMPLEX8Vector( fcFilterParams->qVec );
-    fcFilterParams->qVec = NULL;
+      /* free the existing qVec structure so that we can use the bankveto one */
+      XLALDestroyCOMPLEX8Vector( fcFilterParams->qVec );
+      fcFilterParams->qVec = NULL;
 
-    /* create an array of fcFilterInput structs */
-    bankVetoData.qVecArray = (COMPLEX8Vector **)
-      LALCalloc( bankVetoData.length, sizeof(COMPLEX8Vector*) );
-    bankVetoData.fcInputArray = (FindChirpFilterInput **)
-      LALCalloc( bankVetoData.length, sizeof(FindChirpFilterInput*) );
-    /* create ccMat for bank veto */
-    bankVetoData.ccMat = 
-      XLALCreateVector( bankVetoData.length * bankVetoData.length );
-    /* bankVetoData.normMat = XLALCreateVector( bankVetoData.length ); */
+      /* create an array of fcFilterInput structs */
+      bankVetoData.qVecArray = (COMPLEX8Vector **)
+        LALCalloc( bankVetoData.length, sizeof(COMPLEX8Vector*) );
+      bankVetoData.fcInputArray = (FindChirpFilterInput **)
+        LALCalloc( bankVetoData.length, sizeof(FindChirpFilterInput*) );
+      /* create ccMat for bank veto */
+      bankVetoData.ccMat = 
+        XLALCreateVector( bankVetoData.length * bankVetoData.length );
+      /* bankVetoData.normMat = XLALCreateVector( bankVetoData.length ); */
    
-    /* point to response and spectrum */
-    bankVetoData.spec = spec.data;
-    bankVetoData.resp = resp.data;
+      /* point to response and spectrum */
+      bankVetoData.spec = spec.data;
+      bankVetoData.resp = resp.data;
      
-    for ( i = 0; i < bankVetoData.length; ++i )
-    {
-      bankVetoData.qVecArray[i] = 
-        XLALCreateCOMPLEX8Vector( fcInitParams->numPoints );
-      LAL_CALL( LALCreateFindChirpInput( &status, 
-            &(bankVetoData.fcInputArray[i]), fcInitParams ), &status );
+      for ( i = 0; i < bankVetoData.length; ++i )
+      {
+        bankVetoData.qVecArray[i] = 
+          XLALCreateCOMPLEX8Vector( fcInitParams->numPoints );
+        LAL_CALL( LALCreateFindChirpInput( &status, 
+              &(bankVetoData.fcInputArray[i]), fcInitParams ), &status );
+      }
     }
 
     /*
