@@ -91,6 +91,7 @@ some information on stderr.
 
 #define ADDITIONAL_MEM 32768
 
+/* #define HOLGER */ /* testing purposes */
 
 /* ----------------------------------------------------------------------------- */
 /* file includes */
@@ -568,20 +569,19 @@ int main(INT4 argc,CHAR *argv[])
 		/* Assign the ALPHA index to the candidate event */
 		SortedC[icand].iAlpha=(INT4)floor( (SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
 		if (cc3 == 1) {
-		  AlphaTwoPiIdx=(INT4)( (LAL_TWOPI*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
 		  if ( SortedC[icand].iAlpha == 0 ) {
 		    SortedC[icand].Alpha = SortedC[icand].Alpha + LAL_TWOPI;
-		    SortedC[icand].iAlpha = AlphaTwoPiIdx;
+		    SortedC[icand].iAlpha =(INT4)floor( (LAL_TWOPI*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  ); /*it's AlphaTwoPiIdx*/
 		  }
 		}
 		else { /* cc3 != 1 */
-		  AlphaTwoPiIdx=(INT4)( (LAL_TWOPI*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
+		  AlphaTwoPiIdx=(INT4)floor( (LAL_TWOPI*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
 		  if ( SortedC[icand].iAlpha == AlphaTwoPiIdx ) {
 		    SortedC[icand].Alpha = SortedC[icand].Alpha - LAL_TWOPI;
 		    SortedC[icand].iAlpha = 0;
 		  }
 		}
-		
+		fprintf(stderr,"\n---------- Alpha:%f  iAlpha:%d \n",SortedC[icand].Alpha,SortedC[icand].iAlpha);
 
 		/* Assign the F1DOT index to the candidate event */
 		SortedC[icand].iF1dot=(INT4)floor(( ((SortedC[icand].F1dot)/(PCV.DeltaF1dot))  + (cc4 * 0.5)  ));
@@ -870,7 +870,8 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
   CHAR fnameCoiCell[256];  /* Cell information of some coincident outliers*/
   /* The cell info of the maximum coincident event over each Frequency cell but all over the sky.*/
   CHAR fnameMaxOverSky[256]; 
-  
+  CHAR cgn[256];  /* Cell-grid number*/
+  CHAR fnameAllCells[256]; /* Output file to write all cell information to */
 
 
   FILE *fp = NULL, *fpSigTime = NULL, *fpSigCell = NULL, *fpCoiTime = NULL, *fpCoiCell = NULL;
@@ -891,6 +892,9 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
   sprintf(fnameCoiTime,"polka_coincident_outlier_2FofTime_%d", cellgridnum);
   sprintf(fnameCoiCell,"polka_coincident_outlier_CellData_%d", cellgridnum);
   sprintf(fnameMaxOverSky,"polka_maxcoincident_over_each_freqcell_and_allsky_%d", cellgridnum);
+  sprintf(cgn,"_%02d_cg", cellgridnum);
+  strcpy(fnameAllCells,CLA->OutputFile);
+  strcat(fnameAllCells,cgn);
   /* ------------------------------------------------------------- */
 
   
@@ -927,13 +931,13 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
   
 
 
-#if 0
+#ifdef HOLGER
   /* ------------------------------------------------------------- */
   /* Print out to the user-specified output file all the information in all the cell. 
      This file can be too huge to be tractable.*/
-  if( (fp = fopen(CLA->OutputFile,"w")) == NULL ) 
+  if( (fp = fopen(fnameAllCells,"w")) == NULL ) 
     {
-      LALPrintError("\n Cannot open file %s\n",CLA->OutputFile); 
+      LALPrintError("\n Cannot open file %s\n",fnameAllCells); 
       ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
     }
   /* output for all the cells */
@@ -1338,7 +1342,7 @@ void get_info_of_the_cell( LALStatus *lalStatus, CellData *cd, const CandidateLi
   REAL8 lfa;
   struct int4_linked_list *p;
 
-  INITSTATUS( lalStatus, "get_info_of_the_cellV2", rcsid );
+  INITSTATUS( lalStatus, "get_info_of_the_cell", rcsid );
   ASSERT( cd != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
   ASSERT( CList != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
 
@@ -1353,6 +1357,22 @@ void get_info_of_the_cell( LALStatus *lalStatus, CellData *cd, const CandidateLi
     cd->Alpha += CList[idx].Alpha;
     cd->Delta += CList[idx].Delta;
     cd->Freq += CList[idx].f;
+
+#ifdef HOLGER
+    /* HOLGER is testing here. */
+    if( cd->nCand >= 17 ) {
+      if( CList[idx].Alpha < 0 ) {
+	fprintf(stderr,"skypoint: %d %f %f\n",cd->CandID,CList[idx].Alpha + LAL_TWOPI,CList[idx].Delta);
+      }
+      else if( CList[idx].Alpha > LAL_TWOPI ) {
+	fprintf(stderr,"skypoint: %d %f %f\n",cd->CandID,CList[idx].Alpha - LAL_TWOPI,CList[idx].Delta);
+      }
+      else {
+	fprintf(stderr,"skypoint: %d %f %f\n",cd->CandID,CList[idx].Alpha,CList[idx].Delta);
+      }
+    }
+#endif
+
     p = p->next;
     ic++;
   }
@@ -1395,6 +1415,7 @@ void get_info_of_the_cell( LALStatus *lalStatus, CellData *cd, const CandidateLi
 void print_cand_of_most_coin_cell( LALStatus *lalStatus, CellData *cd, const CandidateList *CList )
 {
   INT4 idx, ic;
+  REAL8 AlphaTmp=0;
   struct int4_linked_list *p;
 
   INITSTATUS( lalStatus, "print_cand_of_most_coin_cell", rcsid );
@@ -1406,9 +1427,15 @@ void print_cand_of_most_coin_cell( LALStatus *lalStatus, CellData *cd, const Can
   ic = 0;
   while( p !=NULL && ic <= LINKEDSTR_MAX_DEPTH ) { 
     idx = p->data;
-
+    AlphaTmp = CList[idx].Alpha;
+    if( CList[idx].Alpha > LAL_TWOPI ) {
+      AlphaTmp = CList[idx].Alpha - LAL_TWOPI;
+    }
+    if( CList[idx].Alpha < 0 ) {
+      AlphaTmp = CList[idx].Alpha + LAL_TWOPI;
+    }
     fprintf(stderr,"  %" LAL_INT4_FORMAT "\t\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t% g" "\t\t%g \n", 
-	    CList[idx].FileID, CList[idx].f, CList[idx].Delta, CList[idx].Alpha, CList[idx].F1dot, CList[idx].TwoF);
+	    CList[idx].FileID, CList[idx].f, CList[idx].Delta, AlphaTmp, CList[idx].F1dot, CList[idx].TwoF);
     
     p = p->next;
     ic++;
