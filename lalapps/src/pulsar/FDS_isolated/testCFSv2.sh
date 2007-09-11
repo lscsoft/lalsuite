@@ -24,6 +24,7 @@ if [ -z "$LAL_DATA_PATH" ]; then
     exit 1
 fi
 
+Ftolerance=0.05
 # ---------- fixed parameter of our test-signal
 Tsft=1800;
 startTime=711595934
@@ -43,8 +44,6 @@ phi0=1.5
 
 Freq=100.12345
 mfd_fmin=$(echo $Freq $mfd_FreqBand | awk '{printf "%g", $1 - $2 / 2.0}');
-
-echo "mfd_fmin = $mfd_fmin"
 
 f1dot=-1e-10;
 
@@ -109,17 +108,17 @@ echo "----------------------------------------------------------------------"
 echo "STEP 2: run CFS_v1 with perfect match"
 echo "----------------------------------------------------------------------"
 echo
-
+outfile_v1="Fstat_v1.dat";
 ## common cmdline-options for v1 and v2    
 cfs_CL="--IFO=$IFO --Freq=$Freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --DataFiles='$SFTdir/testSFT*' --refTime=$refTime"
 if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
     
-cmdline="$cfs_code $cfs_CL  --outputFstat=Fstat_v1.dat --expLALDemod=1 --Fthreshold=0";
+cmdline="$cfs_code $cfs_CL  --outputFstat=$outfile_v1 --expLALDemod=0 --Fthreshold=0";
 echo $cmdline;
 
-if ! eval time $cmdline; then
+if ! eval $cmdline; then
     echo "Error.. something failed when running '$cfs_code' ..."
     exit 1
 fi
@@ -129,11 +128,18 @@ echo "----------------------------------------------------------------------"
 echo " STEP 3: run CFS_v2 with perfect match"
 echo "----------------------------------------------------------------------"
 echo
-cmdline="$cfsv2_code $cfs_CL --outputFstat=Fstat_v2.dat --TwoFthreshold=0 $extra_args";
-cmdline="$cmdline --outputLoudest=loudest.dat";
-echo $cmdline;
+outfile_v2NWon="Fstat_v2NWon.dat";
+cmdlineNoiseWeightsOn="$cfsv2_code $cfs_CL --outputFstat=$outfile_v2NWon --TwoFthreshold=0 --UnitNoiseWeight=false $extra_args";
+echo $cmdlineNoiseWeightsOn;
+if ! eval $cmdlineNoiseWeightsOn; then
+    echo "Error.. something failed when running '$cfs_code' ..."
+    exit 1;
+fi
 
-if ! eval time $cmdline; then
+outfile_v2NWoff="Fstat_v2NWoff.dat";
+cmdlineNoiseWeightsOff="$cfsv2_code $cfs_CL --outputFstat=$outfile_v2NWoff --TwoFthreshold=0 --UnitNoiseWeight=true $extra_args";
+echo $cmdlineNoiseWeightsOff;
+if ! eval $cmdlineNoiseWeightsOff; then
     echo "Error.. something failed when running '$cfs_code' ..."
     exit 1;
 fi
@@ -143,13 +149,16 @@ echo "----------------------------------------"
 echo " STEP 4: Comparing results: "
 echo "----------------------------------------"
 echo
-echo "Fstat_v1.dat: "
-cat Fstat_v1.dat
-echo "Fstat_v2.dat: "
-cat Fstat_v2.dat
+echo "----- CFS v1: "
+cat $outfile_v1 | sed -e"/^%.*/{d}"
+echo "----- CFS v2 WITH noise-weights: "
+cat $outfile_v2NWon | sed -e"/^%.*/{d}"
+echo "----- CFS v2 WITHOUT noise-weights: "
+cat $outfile_v2NWoff | sed -e"/^%.*/{d}"
+
 
 echo
-cmdline="$cmp_code -1 ./Fstat_v1.dat -2 ./Fstat_v2.dat --clusterFiles=0 --Ftolerance=0.1"
+cmdline="$cmp_code -1 $outfile_v1 -2 $outfile_v2NWoff --clusterFiles=0 --Ftolerance=$Ftolerance"
 echo $cmdline
 if ! eval $cmdline; then
     echo "OUCH... files differ. Something might be wrong..."
@@ -158,4 +167,12 @@ else
     echo "OK."
 fi
 
-echo
+cmdline="$cmp_code -1 $outfile_v1 -2 $outfile_v2NWon --clusterFiles=0 --Ftolerance=$Ftolerance"
+echo $cmdline
+if ! eval $cmdline; then
+    echo "OUCH... files differ. Something might be wrong..."
+    exit 2
+else
+    echo "OK."
+fi
+
