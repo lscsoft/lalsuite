@@ -107,6 +107,7 @@ extern int boinc_init_graphics(void (*worker)(void));
 static int global_argc;
 static char **global_argv;
 
+
 /** variables for checkpointing */
 static char* cptfilename;                 /**< name of the checkpoint file */
 static FStatCheckpointFile* cptf = NULL;  /**< FStatCheckpointFile structure */
@@ -835,8 +836,6 @@ int main(int argc, char**argv) {
   global_argc = argc;
   global_argv = argv;
 
-
-
   /* setup windows diagnostics (e.g. redirect stderr into a file!) */
 #ifdef _WIN32
   boinc_init_diagnostics(BOINC_DIAG_DUMPCALLSTACKENABLED |
@@ -1204,4 +1203,15 @@ void set_checkpoint (void) {
 void write_and_close_checkpointed_file (void) {
   fstat_cpt_file_close(cptf);
   fstat_cpt_file_destroy(&cptf);
+}
+
+/** attach gdb to the running process. */
+void attach_gdb() {
+#ifdef __GLIBC__
+  char cmd[256];
+  pid_t pid=getpid();
+  snprintf(cmd,"gdb %s %d", pid, global_argv[0], sizeof(cmd)); 
+  system(cmd);
+  sleep(20);
+#endif
 }

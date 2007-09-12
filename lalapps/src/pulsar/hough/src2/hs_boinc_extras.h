@@ -155,6 +155,7 @@ extern void write_and_close_checkpointed_file (void);
 /** LALApps error handler for BOINC */
 int BOINC_LAL_ErrHand (LALStatus*, const char*, const char*, const int, volatile const char*);
 
+void attach_gdb(void);
 
 /** the main() function of HierarchicalSerach.c becomes the extern MAIN(),
     the real main() function of the BOINC App is defined in boinc_extras.c
