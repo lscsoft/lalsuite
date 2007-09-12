@@ -1213,7 +1213,7 @@ void attach_gdb() {
 #ifdef __GLIBC__
   char cmd[256];
   pid_t pid=getpid();
-  snprintf(cmd, , sizeof(cmd), "gdb -pid %d -ex gcore --args %s", pid, global_argv[0]); 
+  snprintf(cmd, sizeof(cmd), "gdb -pid %d -ex gcore --args %s", pid, global_argv[0]); 
   system(cmd);
   sleep(20);
 #endif
