@@ -55,6 +55,8 @@
 #include <lal/FrequencySeries.h>
 #include <lal/RealFFT.h>
 #include <lal/ComplexFFT.h>
+#include <lal/SFTutils.h>
+#include <lal/LALString.h>
 
 /* frame headers */
 #include <FrIO.h>
@@ -236,7 +238,7 @@ frequency);
 of outliers removed */
 INT4 remove_outliers(COMPLEX16TimeSeries *data, REAL8Vector *times, REAL8 stddevthresh);
 
-void CreateFilterResponse( FilterResponse *filtresp, REAL8 filterKnee );
+void create_filter_response( FilterResponse *filtresp, REAL8 filterKnee );
 
 #ifdef  __cplusplus
 }
