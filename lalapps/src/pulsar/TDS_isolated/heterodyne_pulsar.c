@@ -60,6 +60,8 @@ int main(int argc, char *argv[]){
   
   FilterResponse filtresp; /* variable to hold the filter response function */
   
+  CHAR *pos=NULL;
+  
   /* get input options */
   get_input_args(&inputParams, argc, argv);
 
@@ -182,10 +184,14 @@ heterodyne stage.\n");
     set_filters(&iirFilters, inputParams.filterknee, inputParams.samplerate);
     if(inputParams.verbose){  fprintf(stderr, "I've set up the filters.\n");  }
   }
-    
+  
+  /* the outputdir string contains the GPS start and end time of the analysis
+     so use this in the filename */
+  pos = strrchr(inputParams.outputdir, '/');
+  
   if(inputParams.heterodyneflag == 0){
-    sprintf(outputfile, "%s/coarsehet_%s_%s_%d-%d", inputParams.outputdir, inputParams.pulsar,
-    inputParams.ifo, starts->data[0], stops->data[numSegs-1]);
+    sprintf(outputfile, "%s/coarsehet_%s_%s_%s", inputParams.outputdir,
+      inputParams.pulsar, inputParams.ifo, pos+1);
     if(inputParams.verbose){  fprintf(stderr, "I'm performing a coarse heterodyne.\n");  }
   }
   else{
@@ -1047,9 +1053,7 @@ calibrated h(t) */
       highpasspar.a1   = -1;
       highpasspar.f2   = highpass;
       highpasspar.a2   = 0.9; /* this means 10% attenuation at f2 */
-      
-      /* FIXME: I want to pad the data with ~1 minute so it's not 
-       * affected by the filter response */
+     
       XLALButterworthREAL8TimeSeries( dblseries, &highpasspar );
     }
   }
