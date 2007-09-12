@@ -773,6 +773,9 @@ static void worker (void) {
   /* break on command-line option present */
   if (breakpoint)
     DebugBreak();
+#elif defined(__GNUC__)
+  if (breakpoint)
+    attach_gdb();
 #endif
 
 
