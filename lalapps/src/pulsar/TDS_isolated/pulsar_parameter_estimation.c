@@ -88,29 +88,32 @@ INT4 main(INT4 argc, CHAR *argv[]){
   /* find the number of detectors being used */
   if( strstr(inputs.detectors, "H1") != NULL ){
     sprintf(dets[numDets], "H1");
-    detPos[numDets] = lalCachedDetectors[LALDetectorIndexLHODIFF];
+    detPos[numDets] = *XLALGetSiteInfo( dets[numDets] );
     numDets++;
   }
   if( strstr(inputs.detectors, "H2") != NULL ){
      sprintf(dets[numDets], "H2");
-     detPos[numDets] = lalCachedDetectors[LALDetectorIndexLHODIFF];
+     detPos[numDets] = *XLALGetSiteInfo( dets[numDets] );
      numDets++;
   }
   if( strstr(inputs.detectors, "L1") != NULL ){
      sprintf(dets[numDets], "L1");
-     detPos[numDets] = lalCachedDetectors[LALDetectorIndexLLODIFF];
+     detPos[numDets] = *XLALGetSiteInfo( dets[numDets] );
      numDets++;
   }
   if( strstr(inputs.detectors, "G1") != NULL ){
      sprintf(dets[numDets], "G1");
-     detPos[numDets] = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+     detPos[numDets] = *XLALGetSiteInfo( dets[numDets] );
      numDets++;
   }
   if( strstr(inputs.detectors, "V1") != NULL ){
      sprintf(dets[numDets], "V1");
-     detPos[numDets] = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
+     detPos[numDets] = *XLALGetSiteInfo( dets[numDets] );
      numDets++;
   }
+  
+  fprintf(stderr, "pos1 = %lf, pos2 = %lf, pos3 = %lf.\n",
+detPos[0].location[0], detPos[0].location[1], detPos[0].location[2]);
   
   if( verbose ){
     fprintf(stderr, "Analysing data from %d detector(s):\n  ", numDets);
@@ -1199,7 +1202,7 @@ Results marginalise_posterior(REAL8 ****logPost, PriorVals prior,
               evSum1[i][j][k] = PLUS(sumVal, evVal);
             }
           }
-/*          for( n = 0 ; n < numSteps4 ; n++ ){
+/*           for( n = 0 ; n < numSteps4 - 1 ; n++ ){
              if( strcmp( output.margParam, "h0" ) == 0 ){
               post1 = logPost[j][k][n][i];
  
@@ -1228,7 +1231,7 @@ Results marginalise_posterior(REAL8 ****logPost, PriorVals prior,
               sumVal = post1 + log(dval4);
               evSum1[i][j][k] = PLUS(sumVal, evVal);
             }
-         }*/
+          } */
         }
       }
     }
@@ -1250,11 +1253,11 @@ Results marginalise_posterior(REAL8 ****logPost, PriorVals prior,
           sumVal = log_trapezium(evSum1[i][j][k], evSum1[i][j][k+1], dval3);
           evSum2[i][j] = PLUS(sumVal, evVal);
         }
-/*       for( k = 0 ; k < numSteps3 ; k++ ){
-           evVal = evSum2[i][j];
-           sumVal = evSum1[i][j][k] + log(dval3);
-           evSum2[i][j] = PLUS(sumVal, evVal);
-         }*/
+/*        for( k = 0 ; k < numSteps3 - 1 ; k++ ){
+              evVal = evSum2[i][j];
+              sumVal = evSum1[i][j][k] + log(dval3);
+              evSum2[i][j] = PLUS(sumVal, evVal);
+          } */
       }
     }
   }
@@ -1273,11 +1276,11 @@ Results marginalise_posterior(REAL8 ****logPost, PriorVals prior,
         sumVal = log_trapezium(evSum2[i][j], evSum2[i][j+1], dval2);
         evSum3[i] = PLUS(sumVal, evVal);
       }
-/*      for( j = 0 ; j < numSteps2 ; j++ ){
-        evVal = evSum3[i];
-        sumVal = evSum2[i][j] + log(dval2);
-        evSum3[i] = PLUS(sumVal, evVal);
-      }*/
+/*       for( j = 0 ; j < numSteps2 - 1 ; j++ ){
+           evVal = evSum3[i];
+           sumVal = evSum2[i][j] + log(dval2);
+           evSum3[i] = PLUS(sumVal, evVal);
+         } */
     }
     
     if( evSum3[i] > maxPost )
@@ -1292,11 +1295,11 @@ Results marginalise_posterior(REAL8 ****logPost, PriorVals prior,
       sumVal = log_trapezium(evSum3[i], evSum3[i+1], dval1);
       evSum4 = PLUS(sumVal, evVal);
     }    
-/*    for( i = 0 ; i < numSteps1 ; i++ ){
-      evVal = evSum4;
-      sumVal = evSum3[i] + log(dval1);
-      evSum4 = PLUS(sumVal, evVal);
-    }*/
+/*     for( i = 0 ; i < numSteps1 - 1 ; i++ ){
+         evVal = evSum4;
+         sumVal = evSum3[i] + log(dval1);
+         evSum4 = PLUS(sumVal, evVal);
+       } */
   }
   
   /* create the file to output the marginalise posterior to */
@@ -1327,9 +1330,9 @@ Results marginalise_posterior(REAL8 ****logPost, PriorVals prior,
         cumsum[i] = 0.;
       }
       else{
-         cumsum[i] = cumsum[i-1] + exp(log_trapezium(evSum3[i-1], evSum3[i],
+        cumsum[i] = cumsum[i-1] + exp(log_trapezium(evSum3[i-1], evSum3[i],
 dval1) - evSum4); 
-/*        cumsum[i] = cumsum[i-1] + exp(evSum3[i-1] - evSum4) * dval1;*/
+/*         cumsum[i] = cumsum[i-1] + exp(evSum3[i-1] - evSum4) * dval1; */
       }
     }
     /* print out marginalised posterior */
@@ -1721,7 +1724,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   for( i = 0 ; i < input.mcmc.iterations + input.mcmc.burnIn ; i++ ){
     if( verbose ){ 
       fprintf(stderr, "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-      fprintf(stderr, "%03.2lf%% complete", ((double)(i)+1.)*100. /
+      fprintf(stderr, "%06.2lf%% complete", ((double)(i)+1.)*100. /
         (double)(input.mcmc.iterations + input.mcmc.burnIn));
     }
       
