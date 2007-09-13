@@ -410,7 +410,6 @@ int main( int argc, char *argv[] )
 
   /* template bank simulation variables */
   UINT4 bankSimCutLowIndex = 0;
-  UINT4 bankSimCutHighIndex = 0;
   INT4  bankSimCount = 0;
   REAL4 matchNorm = 0;
   SnglInspiralTable  *loudestEventHead = NULL;
@@ -1953,17 +1952,9 @@ int main( int argc, char *argv[] )
     {
       if ( vrbflg ) fprintf( stdout,
           "computing minimal match normalization... " );
-      /* compute the bankSimCutHighIndex based on the fFinal variable stored in bankSim. */
-      if ( (UINT4)(thisSimInspiral->f_final / spec.deltaF) < fcDataParams->wtildeVec->length )
-      {
-	bankSimCutHighIndex = (UINT4)(thisSimInspiral->f_final / spec.deltaF);
-      }
-      else
-      {
-	bankSimCutHighIndex = fcDataParams->wtildeVec->length;
-      }
+
       matchNorm = XLALFindChirpBankSimSignalNorm( fcDataParams, fcSegVec, 
-          bankSimCutLowIndex, bankSimCutHighIndex );
+          bankSimCutLowIndex );
 	
       if ( vrbflg ) fprintf( stdout, "%e\n", matchNorm );
     }
