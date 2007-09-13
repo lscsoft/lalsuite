@@ -25,7 +25,7 @@
 
 
 """
-Classes needed for the excess power analysis pipeline.
+Excess power pipeline construction tools.
 """
 
 
@@ -506,6 +506,57 @@ class BurcaNode(pipeline.CondorDAGNode):
 		raise NotImplementedError
 
 
+class SQLiteJob(pipeline.CondorDAGJob):
+	def __init__(self, config_parser):
+		pipeline.CondorDAGJob.__init__(self, "vanilla", get_executable(config_parser, "ligolw_sqlite"))
+		self.set_sub_file("ligolw_sqlite.sub")
+		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "ligolw_sqlite-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "ligolw_sqlite-$(cluster)-$(process).err"))
+		self.add_condor_cmd("getenv", "True")
+		self.add_ini_opts(config_parser, "ligolw_sqlite")
+
+
+class SQLiteNode(pipeline.CondorDAGNode):
+	def __init__(self, *args):
+		pipeline.CondorDAGNode.__init__(self, *args)
+		self.input_cache = []
+		self.output_cache = []
+
+	def add_input_cache(self, cache):
+		if self.output_cache:
+			raise AttributeError, "cannot change attributes after computing output cache"
+		self.input_cache.extend(cache)
+		for c in cache:
+			filename = c.path()
+			pipeline.CondorDAGNode.add_file_arg(self, filename)
+			self.add_output_file(filename)
+
+	def add_file_arg(self, filename):
+		raise NotImplementedError
+
+	def set_output(self, filename):
+		if self.output_cache:
+			raise AttributeError, "cannot change attributes after computing output cache"
+		self.add_macro("database", filename)
+
+	def get_output_cache(self):
+		if not self.output_cache:
+			instruments = set()
+			for c in self.input_cache:
+				if c.observatory is not None:
+					instruments |= set([ins for ins in c.observatory.split(",")])
+			instruments = list(instruments)
+			instruments.sort()
+			self.output_cache = [CacheEntry(",".join(instruments), None, segments.segmentlist([c.segment for c in self.input_cache if c.segment is not None]).extent(), "file://localhost" + os.path.abspath(self.get_opts()["database"]))]
+		return self.output_cache
+
+	def get_output_files(self):
+		raise NotImplementedError
+
+	def get_output(self):
+		raise NotImplementedError
+
+
 #
 # =============================================================================
 #
@@ -528,13 +579,14 @@ binjfindjob = None
 bucutjob = None
 buclusterjob = None
 burcajob = None
+sqlitejob = None
 
 
-def init_job_types(config_parser, types = ["datafind", "binj", "power", "lladd", "binjfind", "bucluster", "bucut", "burca"]):
+def init_job_types(config_parser, types = ["datafind", "binj", "power", "lladd", "binjfind", "bucluster", "bucut", "burca", "sqlite"]):
 	"""
 	Construct definitions of the submit files.
 	"""
-	global datafindjob, binjjob, powerjob, lladdjob, binjfindjob, buclusterjob, llb2mjob, bucutjob, burcajob
+	global datafindjob, binjjob, powerjob, lladdjob, binjfindjob, buclusterjob, llb2mjob, bucutjob, burcajob, sqlitejob
 
 	# LSCdataFind
 	if "datafind" in types:
@@ -572,6 +624,10 @@ def init_job_types(config_parser, types = ["datafind", "binj", "power", "lladd",
 	# ligolw_burca
 	if "burca" in types:
 		burcajob = BurcaJob(config_parser)
+
+	# ligolw_sqlite
+	if "sqlite" in types:
+		sqlitejob = SQLiteJob(config_parser)
 
 
 #
@@ -663,11 +719,12 @@ def make_datafind_fragment(dag, instrument, seg):
 	node.set_end(seg[1] + 1)
 	# FIXME: argh, shoot me, I need the node to know what instrument
 	# it's for, but can't call set_ifo() because that adds a
-	# --channel-name command line argument
+	# --channel-name command line argument (!?)
 	node._AnalysisNode__ifo = instrument
 	node.set_observatory(instrument[0])
 	if node.get_type() == None:
 		node.set_type(datafindjob.get_config_file().get("datafind", "type_%s" % instrument))
+	node.set_retry(3)
 	dag.add_node(node)
 	return [node]
 
@@ -679,6 +736,7 @@ def make_lladd_fragment(dag, parents, instrument, seg, tag, preserves = []):
 		node.add_parent(parent)
 		node.add_input_cache(parent.get_output_cache())
 	node.add_preserve_cache(preserves)
+	node.set_retry(3)
 	dag.add_node(node)
 	# NOTE:  code that calls this generally requires a single node to
 	# be returned;  if this behaviour changes, check and fix all
@@ -756,6 +814,7 @@ def make_bucluster_fragment(dag, parents, instrument, seg, tag):
 			node.add_parent(parent)
 			node.add_input_cache(parent.get_output_cache())
 		node.add_macro("macrocomment", tag)
+		node.set_retry(3)
 		dag.add_node(node)
 		nodes.append(node)
 	return nodes
@@ -1036,3 +1095,28 @@ def make_coinc_fragment(dag, parents, segment, tag, time_slides_filename, binjno
 
 	return make_burca_fragment(dag, nodes, "ALL", segment, tag)
 
+
+#
+# =============================================================================
+#
+#                             ligolw_sqlite stage
+#
+# =============================================================================
+#
+
+
+def make_sqlite_stage(dag, parents, tag, verbose = False):
+	if verbose:
+		print >>sys.stderr, "generating ligolw_sqlite stage for tag %s ..." % tag
+	nodes = []
+	for parent in parents:
+		for cache_entry in parent.get_output_cache():
+			node = SQLiteNode(sqlitejob)
+			node.set_name("ligolw_sqlite_%s_%d" % (tag, len(nodes)))
+			node.add_parent(parent)
+			node.add_input_cache([cache_entry])
+			node.set_output(cache_entry.path().replace(".xml.gz", ".sqlite"))
+			node.set_retry(3)
+			dag.add_node(node)
+			nodes.append(node)
+	return nodes
