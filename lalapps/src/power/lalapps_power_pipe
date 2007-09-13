@@ -429,6 +429,15 @@ inj_coinc_nodes = make_binjfind_stage(dag, inj_coinc_nodes, "INJECTIONS_%s" % op
 
 
 #
+# Conversion to SQLite database files
+#
+
+
+coinc_nodes = power.make_sqlite_stage(dag, coinc_nodes, options.tag, verbose = options.verbose)
+inj_coinc_nodes = power.make_sqlite_stage(dag, inj_coinc_nodes, "INJECTIONS_%s" % options.tag, verbose = options.verbose)
+
+
+#
 # Output
 #
 
