@@ -73,7 +73,7 @@ bin_SCRIPTS = lalapps_inspiral_pipe lalapps_inspiral_hipe \
               lalapps_inspiral_online_pipe_inject \
               lalapps_check_hipe_times lalapps_ihope \
               lalapps_followup_pipe lalapps_plot_hipe
-pkgpython_DATA = inspiral.py
+pkgpython_DATA = inspiral.py inspiralutils.py
 endif
 
 python_config.sed:
@@ -116,7 +116,7 @@ pkgdata_DATA = BNSMasses.dat inspsrcs100Mpc.complete inspsrcs100Mpc.errors inspi
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(SIRESRC) $(COIRESRC) $(SIVASRC) $(MINJSRC) \
              $(INCASRC) $(COHERESRC) $(INSPINJSRC) \
-             $(SPLITBANKSRC) inspiral.py inspiral_pipe.in \
+             $(SPLITBANKSRC) inspiral.py inspiralutils.py inspiral_pipe.in \
              inspiral_online_pipe.in inspiral_hipe.in \
 	     multi_hipe.in trigger_hipe.in ihope.in\
              inspiral_online_pipe_inject.in check_hipe_times.in \
