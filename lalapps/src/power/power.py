@@ -537,7 +537,7 @@ class SQLiteNode(pipeline.CondorDAGNode):
 	def set_output(self, filename):
 		if self.output_cache:
 			raise AttributeError, "cannot change attributes after computing output cache"
-		self.add_macro("database", filename)
+		self.add_macro("macrodatabase", filename)
 
 	def get_output_cache(self):
 		if not self.output_cache:
@@ -547,7 +547,7 @@ class SQLiteNode(pipeline.CondorDAGNode):
 					instruments |= set([ins for ins in c.observatory.split(",")])
 			instruments = list(instruments)
 			instruments.sort()
-			self.output_cache = [CacheEntry(",".join(instruments), None, segments.segmentlist([c.segment for c in self.input_cache if c.segment is not None]).extent(), "file://localhost" + os.path.abspath(self.get_opts()["database"]))]
+			self.output_cache = [CacheEntry(",".join(instruments), None, segments.segmentlist([c.segment for c in self.input_cache if c.segment is not None]).extent(), "file://localhost" + os.path.abspath(self.get_opts()["macrodatabase"]))]
 		return self.output_cache
 
 	def get_output_files(self):
