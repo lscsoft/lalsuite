@@ -31,6 +31,8 @@
 #include <lal/DetResponse.h>
 #include <lal/BinaryPulsarTiming.h>
 #include <lal/Random.h>
+#include <lal/LALString.h>
+#include <lal/SFTutils.h>
 
 #ifdef  __cplusplus
 extern "C" {
