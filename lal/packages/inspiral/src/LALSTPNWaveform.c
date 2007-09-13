@@ -1164,9 +1164,8 @@ LALSTPNWaveformEngine (
       params->spin2[0], params->spin2[1], params->spin2[2],
       params->inclination);
  } 
-
  /* if code stopped due to co-ord singularity write an error message */
- if (!(LNhz*LNhz < 1.0 - LNhztol)){
+ else if (!(LNhz*LNhz < 1.0 - LNhztol)){
      fprintf( stderr,
      "WARNING: Injection terminated, co-ord singularity. "
      "m1: %e, "
