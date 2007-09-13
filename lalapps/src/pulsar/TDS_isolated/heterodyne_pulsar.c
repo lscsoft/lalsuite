@@ -237,7 +237,7 @@ heterodyne.\n");  }
       
       /* if the seg list has segment before the start time of the available
          data frame then increment the segment and continue */
-      if( stops->data[count] >= cache.starttime[0] ){
+      if( stops->data[count] <= cache.starttime[0] ){
         count++;
         continue;
       }
