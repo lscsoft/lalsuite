@@ -1,21 +1,6 @@
-/*
-*  Copyright (C) 2007 Pinkesh Patel
-*
-*  This program is free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  This program is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
-*  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
-*/
+/* This code takes in SFTs as input and creates a heterodyned, downsampled time series out of them. It will fill in the gaps in SFTs with zeros and combine consecutive SFTs are combined coherently.*/
+
+
 
 #include <lal/SFTfileIO.h>
 #include <stdio.h>
@@ -23,25 +8,23 @@
 #include <math.h>
 #include <string.h>
 #include <time.h>
-//#include <unistd.h>
 #include<fftw3.h>
 #include<zlib.h>
 #include<gsl/gsl_blas.h>
-//#include<sys/types.h>
-//#include<sys/stat.h>
-//#include<glob.h>
 
 
 
 /*---------- empty initializers ---------- */
 LALStatus empty_status;
 SFTConstraints empty_constraints;
+
 /*---------- Global variables ----------*/
 
 INT4 lalDebugLevel = 1;
 SFTVector *sft_vect = NULL;
 REAL8 *sinVal,*cosVal;
 
+/*------ An alias for Windowtype --------*/
 typedef enum 
   {
     BARTLETT = 1, 
@@ -49,23 +32,34 @@ typedef enum
     RECTANGULAR,
     WELCH
   }WindowType;
-    
+ 
+/*------ Converts LIGO GPS times to real times ------*/   
 
 double GPS2REAL(LIGOTimeGPS time)
 {
   return(time.gpsSeconds+1e-9*time.gpsNanoSeconds);
 }
 
+/*------ A book-keeping structure which stores information about the continuity of the SFTs input along with the gaps in between each contiguous block ------*/
+          
 typedef struct 
 {
+  /*------- Number of contiguous blocks -------*/
   int length;
+  /*------- Number of SFTs in each continous blocks -------*/
   int cont[10000];
+  /*------- Gap between each block in seconds -------*/
   double gap[10000];
 }conti;
 
+/*------ Window gives you the values of the leading and falling edge of each window type. They rise from 0 to 1 and fall from 1 to 0 ------*/
+/******* WindowType W -> Type of Window ********/
+/******* left and right -> arrays corresponding to the leading and falling edge *******/
+/******* N -> Number of terms in left and right *******/
 void window(WindowType W,REAL8* left,REAL8* right,int N)
 {
   int i;
+  /****** y -> left and z -> right ******/
   REAL8 y,z;
   for(i=0;i<N;i++)
     {
@@ -91,6 +85,8 @@ void window(WindowType W,REAL8* left,REAL8* right,int N)
     }
 }
 
+/****** ApplyWindow applies a window to a complex array X, N -> number of terms in X and NW -> Number of terms to keep in the window, W -> Window Type ******/
+
 void ApplyWindow(fftw_complex* X,int N,int NW,WindowType W)
 {
   REAL8 *left,*right;
@@ -110,6 +106,9 @@ void ApplyWindow(fftw_complex* X,int N,int NW,WindowType W)
   free(left);
   free(right);
 }
+
+
+/****** CSFTs combines SFTs coherently to give a longer time baseline SFT, written by Xavier Siemens, modified by Pinkesh Patel ******/
     
 int CSFTs(fftw_complex *L,REAL8 Fmin,REAL8 Fmax,int number,int startindex,REAL8 sTsft,LIGOTimeGPS ref, int Dterms)
 { 
@@ -237,6 +236,7 @@ int CSFTs(fftw_complex *L,REAL8 Fmin,REAL8 Fmax,int number,int startindex,REAL8 
 
 }
 
+/****** Look-up table for sin and cos ******/
 void init()
 {
   int k = 0;
@@ -250,6 +250,7 @@ void init()
     }
 }
 
+/****** FFTW3 requires a format such that an array has the positive frequencies first followed by a ascending negative frequencies. This function inverts an array which has negative and positive frequencies lined up in the logical manner to this fftw3 manner ******/
 void reshuffle(fftw_complex *X, int N)
 {
   fftw_complex *Temp;
@@ -276,26 +277,46 @@ void reshuffle(fftw_complex *X, int N)
 
 int main(int argc, char **argv)
 {
+  /****** Number of Direchlet Terms used in combining the SFTs ******/
   int Dterms = 32;
+
+  /****** Book-keeping + loop variables ******/
   INT4 i,j,k=0;
-  FILE *fp,*fp2;
-  REAL8 InputST = 500000.0;
+  
+  //FILE *fp,*fp2;
+
+  /****** The time baseline of input SFTs default to 1800.0 seconds ******/
+  REAL8 InputST = 1800.0;
+
+  /****** LALStatus for debugging ******/
   LALStatus status = empty_status;
 
+  /****** Type of Window used (its not used for the whole data, but only at the edges, so its split in two parts and attached to ramp function) ******/
   WindowType W = HANN;
+
+  /****** Catalog of SFTs found at the given location ******/
   SFTCatalog *catalog = NULL;
+  
+  /****** Number of bins in each SFT and the number of total SFTs ******/
   UINT4 numBins, nSFT;
+ 
+  /****** Minimum and Maximum frequencies of the band of interest ******/
   double f_min,f_max; 
+  
+  /****** Internal LAL variable ******/
   SFTConstraints constraints=empty_constraints;
+  
+  /****** Start and End times of the time series to be outputted ******/ 
   LIGOTimeGPS startTime, endTime; 
-  double avg;
-  char outfile[128],outfile2[128];
+
+  /****** Hard Coded (BAD!!) argument variables ******/
   if (argc!=8)
   {
    fprintf(stderr, "startGPS endGPS Detector F_min f_max where InputST?\n"); 
    return(0);
   }  
   
+  /****** Assigning arguments and creating SFT constraints ******/
   startTime.gpsSeconds = atoi(argv[1]);
   startTime.gpsNanoSeconds = 0;
   constraints.startTime = &startTime; 
@@ -310,11 +331,13 @@ int main(int argc, char **argv)
   f_min = atof(argv[4]);
   f_max = atof(argv[5]);
   
+  /****** Padding up the f_min and f_max to take care of Dterms ******/
   f_min -= (REAL8)Dterms/InputST;
   f_max += (REAL8)Dterms/InputST;
 
   fprintf(stderr,"About to Find Files\n");
   
+  /****** Finding SFTs ******/
   LALSFTdataFind ( &status, &catalog, argv[6], &constraints );
  
   
@@ -327,6 +350,7 @@ int main(int argc, char **argv)
 
   fprintf(stderr,"Catalog made %d\n",catalog->length);
 
+  /****** Loading SFTs into sft_vect ******/
   LALLoadSFTs ( &status, &sft_vect, catalog, f_min, f_max);
   
   if(status.statusCode) 
@@ -338,14 +362,17 @@ int main(int argc, char **argv)
 
   fprintf(stderr,"SFTs loaded in\n");
 
+  /****** Readjusting f_min and f_max after loading in the SFTs ******/
   f_min += (REAL8)Dterms/InputST;
   f_max -= (REAL8)Dterms/InputST;
 
+  /****** Book-keeping variables to calculate the contiguity structure for the loaded SFTs ******/
   double contstarttime;
   double diff;
-  int stillcont = 1;
   int first = 1;
   int numcont = 1;
+  
+  /****** The contiguity structure ******/
   conti C;
   
   C.length = 0;
@@ -356,48 +383,72 @@ int main(int argc, char **argv)
   for(i=0;i<sft_vect->length;i++)
     {
       fprintf(stderr,"GPS Time %lf\n",GPS2REAL(sft_vect->data[i].epoch));
+      /****** If the SFT in question is the first one of a contiguous batch ******/
       if(first)
 	{
+	  /****** Record the starttime of this continuous bunch ******/
 	  contstarttime = GPS2REAL(sft_vect->data[i].epoch);
+	  /****** No longer first! ******/
 	  first = 0;
+	  /****** Number of SFTs in this continuous bunch is now 1 ******/
 	  numcont = 1;
 	}
       else
 	{
-	   diff = GPS2REAL(sft_vect->data[i].epoch)-GPS2REAL(sft_vect->data[i-1].epoch);
-	  //fprintf(stderr,"Diff = %lf\n Cont = %d\n",diff,numcont);
+	  /****** Calculate the difference between the times of this SFT from the one previous ******/
+	  diff = GPS2REAL(sft_vect->data[i].epoch)-GPS2REAL(sft_vect->data[i-1].epoch);
+
+	  /****** If the difference in time = time base line of SFT, then they are contiguous, therefore increase count by 1 ******/
 	  if(diff == InputST)
 	    numcont++;
-	      
+	  
+	  /****** If not, then this is a new block and so we restart with this SFT as being the first SFT of the next block ******/
 	  else
 	    {
-	      stillcont = 0;
+	      /****** New first SFT ******/
 	      first = 1;
+
+	      /****** We must restart the cycle and redo this SFT ******/
 	      i--;
+
+	      /****** Record the gap between these two blocks ******/
 	      C.gap[k] = diff;
+
+	      /****** Record the number of SFTs contiguous in this block ******/
 	      C.cont[k++] = numcont;
-	      
-	      //fprintf(stderr,"Diff = %lf\n Cont = %d\n",diff,numcont);
 	    }
 	}
     }
+
+  /****** Record the information for the last SFT ******/
   C.gap[k] = 0;
   C.cont[k++] = numcont;
   C.length = k;
 
+  /****** deltaF and 1/deltaF recorded directly from the SFTs ******/
   REAL8 sTsft = 1.0/sft_vect->data->deltaF;
   REAL8 deltaF = sft_vect->data->deltaF;
+
+  /****** L is the combined SFT for each contiguous block******/
   fftw_complex *L;
+  
+  /****** TS is the time series which will be output and TempT is the time series generated by each block which is then patched up along with the gaps to create TS ******/
   fftw_complex *TS,*TempT;
+  
+  /****** tdiff and Tlength are the number of points in TS ******/
   REAL8 tdiff = (GPS2REAL(endTime)-GPS2REAL(startTime))*(f_max-f_min)+1;
   int Tlength = ceil(tdiff);
   
-
+  /****** Start time of the time series ******/
   REAL8 START = GPS2REAL(startTime);
+
+  /****** Since the time series in inherectly complex, dt = 1/df and not dt = 1/(2.0 * df) [ for real time series, this would be the case ] ******/
   double dt = 1/(f_max-f_min);
   
+  /****** Assign Memory ******/
   TS = (fftw_complex*)malloc(sizeof(fftw_complex)*Tlength);
  
+  /****** Set initially to zeros, this takes care of all gaps and all one has to do now, is to calculate the time series for each continuous chunk, window it and put it in the appropraite place in TS ******/
   for(i=0;i<Tlength;i++)
     {
       TS[i][0] = 0;
@@ -409,69 +460,83 @@ int main(int argc, char **argv)
   
 	  
   //fprintf(stderr," Name %s GPSSeconds %lf ",sft_vect->data[i].name,sft_vect->data[i].epoch.gpsSeconds+1e-9*sft_vect->data[i].epoch.gpsNanoSeconds);
+
+  /****** Book-keeping variables for the loop over contiguous blocks ******/
   int startindex = 0;
   int sftindex = 0;
   int Tlapsed = 0;
   int err = 0;
 
+  /****** Loop over contiguous blocks in data ******/
   for(i=0;i<C.length;i++)
     {
       fprintf(stderr,"\n %d %g\n",C.cont[i],C.gap[i]);
 
+      /****** Number of data points in this continuous block ******/
       int N = (sTsft*C.cont[i]*(f_max-f_min))+1;
-      //if(fmod(N,2.0)==0)
-      //N++;
+
+      /****** Assign temporary memory to the SFT and Temporary time series ******/
       L = (fftw_complex*)malloc(sizeof(fftw_complex)*N);
       TempT = (fftw_complex*)malloc(sizeof(fftw_complex)*N);
       
-
-      //fprintf(stderr,"\n %lf %lf \n",(int)sTsft*C.cont[i]*(f_max-f_min)+1-N,N);
-
+      /****** Combine SFTs only if the number of SFTs > 1 ******/
       if(C.cont[i] >  1)
 	 err = CSFTs(L,f_min,f_max,C.cont[i],startindex,sTsft,startTime,Dterms);
+
+      /****** Else just assign the values to L ******/
       else
 	{
 	  for(j=0;j<N;j++)
 	    {
-	      //printf("j = %d , Other = %d \n",j,j+Dterms+1);
 	      L[j][0] = sft_vect->data[i].data->data[j+Dterms].re;
 	      L[j][1] = sft_vect->data[i].data->data[j+Dterms].im;
 	    }
 	  
 	}
       
-      for(j=0;j<N;j++)
-	{
-	  double F = (double)j/(double)(N-1)*(f_max-f_min)+f_min;
-	  //printf(" %g %g %g %g \n",F,L[j][0],L[j][1],sqrt(L[j][0]*L[j][0]+L[j][1]*L[j][1]));
-	}
-      
+      //for(j=0;j<N;j++)
+      //	{
+      // double F = (double)j/(double)(N-1)*(f_max-f_min)+f_min;
+      //printf(" %g %g %g %g \n",F,L[j][0],L[j][1],sqrt(L[j][0]*L[j][0]+L[j][1]*L[j][1]));
+      // }
+
+      /****** Create an FFTW3 Plan (Backward, since its an inverse fourier transform) ******/
       fftw_plan p = fftw_plan_dft_1d(N,L,TempT,FFTW_BACKWARD,FFTW_ESTIMATE);
+
+      /****** Apply a window to the SFT , before inverse transforming ******/
       ApplyWindow(L,N,Dterms,W);
       
+      /****** Reshuffle to get into the FFTW3 format ******/
       reshuffle(L,N);
+
+      /****** Run the IFFT ******/
       fftw_execute(p);
+
+      /****** Update the startindex, which keeps track of how many SFTs have already been processed ******/
       startindex+=C.cont[i];
       
       fprintf(stderr,"%d\n",N);
 
+      /****** Now apply a window to the data in the time domain, so that it fits into the gaps smoothly ******/
       ApplyWindow(TempT,N,10,W);
-      //if(i==0)
+
+      /****** Fit in the TempT in the right place in TS, the right place is kept in track by the variable sftindex ******/
       for(j=0;j<N;j++)
 	{
 	  TS[sftindex][0] = TempT[j][0]*deltaF/(REAL8)C.cont[i];
 	  TS[sftindex++][1] = TempT[j][1]*deltaF/(REAL8)C.cont[i];
-	  double F = (double)j/(double)(N-1)*(f_max-f_min)+f_min;
+	  //double F = (double)j/(double)(N-1)*(f_max-f_min)+f_min;
 	  //printf(" %g %g %g %g \n",F,L[j][0],L[j][1],sqrt(L[j][0]*L[j][0]+L[j][1]*L[j][1]));
 	}
       
+      /****** Update the sftindex to keep track of where in TS we are inserting the next TempT ******/
       if(C.gap[i] != 0)
 	{
 	  sftindex += (C.gap[i]-InputST)/dt;
 	  fprintf(stderr,"SFT Index Jump = %g",(C.gap[i]));
 	}
       
-//printf(" Real %g , Imag %g \n",sft_vect->data[0].data->data->re,sft_vect->data[0].data->data->im);
+      //printf(" Real %g , Imag %g \n",sft_vect->data[0].data->data->re,sft_vect->data[0].data->data->im);
       fftw_free(L);
       fftw_free(TempT);
       fftw_destroy_plan(p);
@@ -483,10 +548,8 @@ int main(int argc, char **argv)
   nSFT = sft_vect->length;
   
 
-  //heterodyne(TS,Tlength,-f_min,1.0/(f_max-f_min));
   for(i=0;i<Tlength;i++)
    printf("%10.15g %g %g\n",START+dt*i,TS[i][0],TS[i][1]);    
-    //printf("%.18g %g %g\n",(REAL8)i/(f_max-f_min)/2.0+START,TS[i][0],TS[i][1]);
   
   fprintf(stderr, "nSFT = %d\t numBins = %d\t df = %f\n", nSFT, numBins,sft_vect->data->deltaF);
   
