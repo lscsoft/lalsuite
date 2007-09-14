@@ -158,12 +158,6 @@ if not log_path:
   print >> sys.stderr, "Use --log-path PATH to specify a location."
   sys.exit(1)
 
-if ((do_coarse) and (do_datafind == None)):
-  print >> sys.stderr, "LSCdataFind is not selected."
-  print >> sys.stderr, "This is needed to get data for the heterodyne."
-  print >> sys.stderr, "Use --datafind to get a list of data frames for analysis"
-  sys.exit(1)
-  
 # try and make a directory to store the cache files and job logs
 try: os.mkdir('cache')
 except: pass
@@ -215,6 +209,18 @@ resample_rate = cp.get('input','resample_rate')
 channel = cp.get('input','channel')
 stddev_thresh = cp.get('input','stddev_thresh')
 freq_factor = cp.get('input', 'freq_factor')
+
+# check that if you're performing a coarse heterodyne, but you're not doing a
+# datafind that you have instead supplied a frame cache file
+if ((do_coarse) and (do_datafind == None)):
+  data_cache = cp.get('data','data_cache')
+  
+  # check that the file exists
+  if os.path.isfile(data_cache)==False:
+    print >> sys.stderr, """Can't find a frame cache file, either add
+data_cache to the [data] section of your configuration file, or rerun with
+the --datafind argument"""
+    sys.exit(1)
 
 if (channel.find('STRAIN') > -1) | (channel.find('DER_DATA_H') > -1):
   print >> sys.stderr, """You are looking at calibrated strain data, so read in high-pass frequency and scale factors"""
@@ -388,7 +394,13 @@ if do_coarse:
       coarse[j].set_filter_knee(filter_knee)
       coarse[j].set_sample_rate(sample_rate)
       coarse[j].set_resample_rate(resample_rate)
-      coarse[j].set_data_file(df.get_output()) # get frame cache from here!
+      
+      if do_datafind:
+        coarse[j].set_data_file(df.get_output()) # get frame cache from here!
+      else:
+        coarse[j].set_data_file(data_cache) # set frame cache to that given in
+                                            # config the file
+      
       coarse[j].set_seg_list(seg_list_file)
       coarse[j].set_channel(channel)
       
