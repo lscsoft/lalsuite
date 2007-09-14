@@ -359,10 +359,10 @@ int write_fstat_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
 }
 
 
-/* writes the given toplitst to a temporary file, then renames the
-   temporary file to filename. The name of the temporary file is
-   derived from the filename by appending ".tmp". Returns the number
-   of chars written or -1 if the temp file could not be opened. */
+/* writes the given toplitst to a temporary file, then renames the temporary file to filename.
+   The name of the temporary file is derived from the filename by appending ".tmp". Returns the
+   number of chars written or -1 if the temp file could not be opened.
+   This just calls _atomic_write_fstat_toplist_to_file() telling it not to write a %DONE marker*/
 int atomic_write_fstat_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum) {
   return(_atomic_write_fstat_toplist_to_file(l, filename, checksum, 0));
 }
@@ -437,7 +437,7 @@ static int _atomic_write_fstat_toplist_to_file(toplist_t *l, char *filename, UIN
 /* meant for the final writing of the toplist
    - reduces toplist precision
    - sorts the toplist
-   - the calls atomic_write_fstat_toplist_to_file() */
+   - then calls atomic_write_fstat_toplist_to_file() */
 int final_write_fstat_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum) {
   reduce_fstat_toplist_precision(l);
   sort_fstat_toplist(l);
@@ -603,7 +603,6 @@ int fstat_cpt_file_close(FStatCheckpointFile*cptf) {
 
 /* adds an item to the toplist and keeps the file consistent, i.e.
    adds the entry to the file if it was really inserted
-   and compacts the file if necessary
    returns 1 if the item was actually inserted, 0 if not,
    -1 in case of an error
  */
@@ -645,6 +644,7 @@ int fstat_cpt_file_read (FStatCheckpointFile*cptf, UINT4 checksum_should, UINT4 
     return(-1);
   }
 
+  /* the only actual call here, everything else is error handling */
   bytes = read_fstat_toplist_from_fp(cptf->list, cptf->fp, &checksum_read, maxbytes);
 
   LogPrintf (LOG_DEBUG, "DEBUG: read_fstat_toplist_from_fp() returned %d\n", bytes);
@@ -686,6 +686,7 @@ int fstat_cpt_file_read (FStatCheckpointFile*cptf, UINT4 checksum_should, UINT4 
 }
 
 
+/* compacts a checkpointed toplist, i.e. re-writes it from scratch from memory */
 int fstat_cpt_file_compact(FStatCheckpointFile*cptf) {
   INT4  bytes;
   UINT4 checksum;
