@@ -124,6 +124,7 @@ extern void show_progress(double rac, double dec, UINT4 count, UINT4 total);
     0 if no checkpoint could be found,
    -1 if a checkpoint was found but it or the previous output couldn't be read,
    -2 if an error occured (out of memory),
+   -3 if the output file could neither be read nor written (fstat_cpt_file_open() failed)
     1 if a checkpoint was found and previous output could be read
     2 a previously written end marker was detected
 */
