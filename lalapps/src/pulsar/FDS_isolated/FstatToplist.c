@@ -274,7 +274,7 @@ int read_fstat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxby
 
 
 /* Prints a Tooplist line to a string buffer.
-   Separate function to force consistency of output and reduced precision for sorting */
+   Separate function to assure consistency of output and reduced precision for sorting */
 static int print_fstatline_to_str(FstatOutputEntry fline, char* buf, int buflen) {
   return(LALSnprintf(buf, buflen,
 		  /* output precision: choose by following (generous!) significant-digit constraints:
@@ -490,7 +490,7 @@ int fstat_cpt_file_create (FStatCheckpointFile **cptf,
     }
   }
 
-  /* initializing */
+  /* initialization */
   strncpy((*cptf)->filename,filename,strlen(filename)+1);
 
   (*cptf)->bytes = 0;
@@ -527,16 +527,19 @@ int fstat_cpt_file_open (FStatCheckpointFile *cptf) {
     LogPrintf (LOG_CRITICAL, "ERROR: FStatCheckpointFile is NULL\n");
     return(-1);
   }
+  /* try open for appending if the file already exists */
   cptf->fp = fopen(cptf->filename, "rb+");
   if (!(cptf->fp)) {
-    LogPrintf (LOG_NORMAL, "ERROR: Couldn't open existing checkpointing toplist file %s\n",cptf->filename);
+    LogPrintf (LOG_NORMAL, "WARNING: Couldn't open existing checkpointing toplist file %s\n",cptf->filename);
+    /* that didn't work,'s try opening a new file for writing */
     cptf->fp = fopen(cptf->filename, "wb+");
   }
+  /* leave here if we couldn't open a checkpointed file at all */
   if (!(cptf->fp)) {
     LogPrintf (LOG_CRITICAL, "ERROR: Couldn't open new checkpointing toplist file %s\n",cptf->filename);
     return(-1);
   }
-  /* set a buffer large enough that no output is written to disk
+  /* attach a buffer large enough that no output is written to disk
    * unless we fflush(). Policy is fully buffered. */
   if (cptf->bufsize > 0)
     setvbuf(cptf->fp, cptf->buffer, _IOFBF, cptf->bufsize);
@@ -705,3 +708,34 @@ int fstat_cpt_file_compact(FStatCheckpointFile*cptf) {
 
   return(bytes);
 }
+
+#if(0)
+doxygen_callgraph_dummy(){
+  qsort_toplist();
+  go_through_toplist();
+  fstat_toplist_qsort_function();
+  reduce_fstat_toplist_precision();
+  sort_fstat_toplist();
+  fstat_cpt_file_destroy();
+  write_and_close_checkpointed_file();
+  fstat_cpt_file_open();
+  fstat_cpt_file_flush();
+  print_fstatline_to_str();
+  write_fstat_toplist_item_to_fp();
+  write_fstat_toplist_to_fp();
+  _atomic_write_fstat_toplist_to_file();
+  atomic_write_fstat_toplist_to_file();
+  fstat_cpt_file_compact();
+  set_checkpoint();
+  write_checkpoint("checkpoint");
+  fstat_cpt_file_add();
+  insert_into_toplist();
+  insert_into_fstat_toplist();
+  read_fstat_toplist_from_fp();
+  fstat_cpt_file_read();
+  fstat_cpt_file_open();
+  init_and_read_checkpoint();
+  fstat_cpt_file_create();
+  fstat_cpt_file_close();
+}
+#endif
