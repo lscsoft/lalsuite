@@ -67,7 +67,7 @@ if len(filenames)==0:
   print 'Assuming that ' + options.scandag + 'is the dag file you want to parse'
   filenames.append(options.scandag)
   
-print 'Parsing the dag files for status...'
+print 'Parsing the dag files for status...\n'
 ### we found some dag files hopefully
 
 time.sleep(1)
@@ -76,7 +76,7 @@ time.sleep(1)
 for i in xrange(0,len(filenames), 1):
   tag = filenames[i] 
   filename = tag +'.dagman.out'
-  print filename
-  print '=='+ tag +' status =='
-  print '--------------------------'
+  print '-->  '+ tag +' status '
+  print '------------------------------------------------------------------------'
   os.system('tail -n 100  '+filename+' | grep -v macro | grep -v Note | grep -v Event| grep -v Number | grep -v Node | grep -v Of | grep -v Submit | grep -v node | grep -v submit | grep -v assigned | tail -n 3 - ')
+  print '\n\n'
