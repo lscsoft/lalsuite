@@ -1760,7 +1760,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
           vars.ci, vars.psi);
          
         for( j = 0 ; j < nGlitches ; j++ )
-          fprintf(fp, "\t%le\t%lf", extraVars[j].h0, extraVars[j].h0);
+          fprintf(fp, "\t%le\t%lf", extraVars[j].h0, extraVars[j].phi0);
         
         fprintf(fp, "\n");
       }
