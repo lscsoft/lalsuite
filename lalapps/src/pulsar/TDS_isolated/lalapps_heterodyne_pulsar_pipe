@@ -217,15 +217,12 @@ if ((do_coarse) and (do_datafind == None)):
     data_cache = cp.get('data','data_cache')
   
   except:
-    print >> sys.stderr, """Can't find a frame cache file, either add
-data_cache to the [data] section of your configuration file, or rerun with
-the --datafind argument"""
+    print >> sys.stderr, """Can't find a frame cache file, either add data_cache to the [data] section of your configuration file, or rerun with the --datafind argument"""
     sys.exit(1)
   
   # check that the file exists
   if os.path.isfile(data_cache)==False:
-    print >> sys.stderr, """The specified data file %s does not exist!""" %
-data_cache
+    print >> sys.stderr, """The specified data file %s does not exist!""" % data_cache
     sys.exit(1)
 
 if (channel.find('STRAIN') > -1) | (channel.find('DER_DATA_H') > -1):
@@ -424,7 +421,8 @@ if do_coarse:
       if do_binoutput:
         coarse[j].set_binoutput()
      
-      coarse[j].add_parent(df)
+      if do_datafind:
+        coarse[j].add_parent(df)
       
       dag.add_node(coarse[j])
       j = j+1
