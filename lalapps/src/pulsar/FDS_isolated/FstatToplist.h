@@ -78,7 +78,7 @@ extern int atomic_write_fstat_toplist_to_file(toplist_t*list, char*filename, UIN
 /** meant for the final writing of the toplist
    - reduces toplist precision
    - sorts the toplist
-   - the calls atomic_write_fstat_toplist_to_file() */
+   - finally calls atomic_write_fstat_toplist_to_file() */
 extern int final_write_fstat_toplist_to_file(toplist_t*list, char*filename, UINT4*checksum);
 
 
@@ -121,7 +121,8 @@ extern int fstat_cpt_file_info (FStatCheckpointFile *cptf, CHAR**filename, UINT4
    and compacts the file if necessary */
 extern int fstat_cpt_file_add  (FStatCheckpointFile*cptf, FstatOutputEntry line);
 
-/** closes and compacts the file */
+/** closes the file, reduces the precision, sorts the toplist,
+    finally rewrites the file (sorted and compact) with end marker */
 extern int fstat_cpt_file_close(FStatCheckpointFile*cptf);
 
 /** reads a written checkpointed toplist back into memory */

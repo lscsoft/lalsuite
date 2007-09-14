@@ -18,7 +18,6 @@
 */
 
 /* Extras for BOINC compilation of HierarchicalSearch
-   Author: Bernd Machenschalk
 */
 
 #include <sys/types.h>

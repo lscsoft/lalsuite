@@ -18,7 +18,6 @@
 */
 
 /* Extras for building an Einstein@Home BOINC App from HierarchicalSearch
-   Bernd Machenschalk for Einstein@Home
 */
 
 /* TODO:
@@ -985,8 +984,8 @@ int main(int argc, char**argv) {
 
 /* CHECKPOINTING FUNCTIONS */
 
+/** log an I/O error, i.e. source code line no., ferror, errno and strerror, and doserrno on Windows, too */
 #ifdef _MSC_VER
-/* in case of running on Windoes, also write out the "doserrno" */
 #define LOGIOERROR(mess,filename) \
     LogPrintf(LOG_CRITICAL, "ERROR: %s %s: line:%d, doserr:%d, ferr:%d, errno:%d: %s\n",\
 	      mess,filename,__LINE__,_doserrno,ferror(fp),errno,strerror(errno))
