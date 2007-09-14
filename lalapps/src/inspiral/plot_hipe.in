@@ -22,6 +22,7 @@ import tempfile
 import ConfigParser
 import urlparse
 from pylal import CoincInspiralUtils
+from pylal import itertools
 sys.path.append('/scratch2/rahul/opt/lscsoft/lalapps//lib/python2.4/site-packages/lalapps')
 
 ##############################################################################
@@ -45,8 +46,7 @@ class PlotInspiralJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     pipeline.AnalysisJob.__init__(self,cp,False)
     self.tag_base = tag_base
     
-    for sec in ['plotinspiral']:
-      self.add_ini_opts(cp,sec)
+    self.add_ini_opts(cp, 'plotinspiral')
 
     self.set_stdout_file('logs/plotinspiral-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
     self.set_stderr_file('logs/plotinspiral-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
@@ -65,6 +65,10 @@ class PlotInspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
     self.__usertag = job.get_config('pipeline','user-tag')
+
+  def set_ifo(self, ifo):
+    self.add_var_opt("ifo-type", ifo)
+
 
   def set_user_tag(self,usertag):
     self.__usertag = usertag
@@ -556,9 +560,13 @@ class PlotSnrchiJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     pipeline.AnalysisJob.__init__(self,cp,False)
     self.tag_base = tag_base
-
+    
+    
     for sec in ['plotsnrchi']:
-      self.add_ini_opts(cp,sec)
+      if cp.has_section('figure_name'):
+         cp.set('figure_name' + tag_base)
+      else:
+         self.add_ini_opts(cp,sec)
 
     self.set_stdout_file('logs/plotsnrchi-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
     self.set_stderr_file('logs/plotsnrchi-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
@@ -622,7 +630,7 @@ usage = """usage: %prog [options]
 
 parser = OptionParser( usage )
 
-parser.add_option("-v", "--version",action="store_true",default=False,\
+parser.add_option("-V", "--version",action="store_true",default=False,\
     help="print version information and exit")
     
 parser.add_option("-u", "--user-tag",action="store",type="string",\
@@ -631,22 +639,34 @@ parser.add_option("-u", "--user-tag",action="store",type="string",\
 
 parser.add_option("-g", "--g1-data",action="store_true",default=False,\
     help="analyze g1 data")
+
 parser.add_option("-a", "--h1-data",action="store_true",default=False,\
     help="analyze h1 data")
+
 parser.add_option("-b", "--h2-data",action="store_true",default=False,\
     help="analyze h2 data")
+
 parser.add_option("-l", "--l1-data",action="store_true",default=False,\
     help="analyze l1 data")
 
+parser.add_option("-v", "--v2-data",action="store_true",default=False,\
+    help="analyze v2 data")
+
 parser.add_option("-S", "--one-ifo",action="store_true",default=False,\
     help="analyze single ifo data (not usable for GEO)")
+
 parser.add_option("-D", "--two-ifo",action="store_true",default=False,\
     help="analyze two interferometer data")
+
 parser.add_option("-T", "--three-ifo",action="store_true",default=False,\
     help="analyze three interferometer data")
+
 parser.add_option("-Q", "--four-ifo",action="store_true",default=False,\
     help="analyze four intereferometer data")
   
+parser.add_option("-R", "--five-ifo",action="store_true",default=False,\
+    help="analyze five intereferometer data")
+
 parser.add_option("-A", "--analyze-all",action="store_true",default=False,\
     help="analyze all ifos and all data (over-rides above)")
 
@@ -706,7 +726,7 @@ if not opts.log_path:
   sys.exit(1)
 
   
-if not opts.g1_data and not opts.h1_data and not opts.h2_data and \
+if not opts.v2_data and not opts.h1_data and not opts.h2_data and \
     not opts.l1_data and not opts.analyze_all:
   print >> sys.stderr, "No ifos specified.  Please specify at least one of"
   print >> sys.stderr, "--g1-data, --h1-data, --h2-data, --l1-data"
@@ -737,13 +757,24 @@ if opts.plotthinca and opts.plotinspiral and opts.plotinspmissed and opts.plotin
 ###############################
 # This list constructs doubles, triples and quadraple 
 
-ifolist = [ifo for ifo in ("G1", "H1", "H2", "L1") \
+ifolist = [ifo for ifo in ('G1','H1', 'H2', 'L1', 'V2') \
             if getattr(opts, "%s_data" % ifo.lower())]
 
-ifo_combos = ["H1H2", "H1L1", "H2L1", "H1H2L1"]
+  
+ifo_combos=CoincInspiralUtils.get_ifo_combos(ifolist)
+if opts.one_ifo:
+  ifo_combos=ifolist
+else:
+  ifo_combo=list(itertools.choices(ifolist,2))
+  ifo_combos = []
+  for ifo in ifo_combo:
+    ifo_combos.append(ifo[0]+ifo[1])
+
+
+
 #################################
    
-ifo_list = ['H1','H2','L1','G1']
+ifo_list = ['G1','H1','H2','L1','V2']
 
 ifotag = None
 #################################
@@ -753,6 +784,7 @@ do['G1'] = opts.g1_data
 do['H1'] = opts.h1_data
 do['H2'] = opts.h2_data
 do['L1'] = opts.l1_data
+do['V2'] = opts.v2_data
 
 #################################
 # analyze everything if --analyze-all set
@@ -763,7 +795,7 @@ if opts.analyze_all:
   opts.two_ifo   = True
   opts.three_ifo = True
   opts.four_ifo  = True
-
+  opts.five_ifo  = True
 ################################
 # a list of the ifos to do plots for
 ifos = []
@@ -827,6 +859,8 @@ if opts.plotinspiral:
   plotinspiral_jobs = {}
 
   for ifo in ifo_list:
+    cp.set('plotinspiral','figure-name','plotinspiral_' + ifo)
+    cp.set('plotinspiral','ifo-type',ifo)
     plotinspiral_jobs[ifo] = PlotInspiralJob(cp)
     plotinspiral_jobs[ifo].set_sub_file( basename + '.plotinspiral_' + ifo + subsuffix )
 
@@ -839,6 +873,7 @@ if opts.plotthinca:
   plotthinca_jobs = {}
 
   for ifo in ifo_combos:
+    cp.set('plotthinca','figure-name','plotthinca_' + ifo)
     plotthinca_jobs[ifo] = PlotThincaJob(cp)
     plotthinca_jobs[ifo].set_sub_file( basename + '.plotthinca_' + ifo + subsuffix )
 
@@ -869,6 +904,7 @@ if opts.plotinjnum:
   plotinjnum_jobs = {}
   
   for ifo in ifo_combos:
+    cp.set('plotinjnum','figure-name','plotinjnum_' + ifo)
     plotinjnum_jobs[ifo] = PlotInjnumJob(cp) 
     plotinjnum_jobs[ifo].set_sub_file( basename + '.plotinjnum_' + ifo + subsuffix )
   
@@ -881,6 +917,9 @@ if opts.plotethinca:
   plotethinca_jobs = {}
 
   for ifo in ifo_combos:
+    cp.set('plotethinca','figure-name','plotethinca_' + ifo)
+    cp.set('plotethinca','ifo-type', ifo)
+    cp.set('plotethinca','ifo-times',ifo)
     plotethinca_jobs[ifo] = PlotEthincaJob(cp)
     plotethinca_jobs[ifo].set_sub_file( basename + '.plotethinca_' + ifo + subsuffix )
 
@@ -893,6 +932,7 @@ if opts.plotinspmissed:
   plotinspmissed_jobs = {}
 
   for ifo in ifo_combos:
+    cp.set('plotinspmissed','figure-name','plotinspmissed_' + ifo)
     plotinspmissed_jobs[ifo] = PlotInspmissedJob(cp)
     plotinspmissed_jobs[ifo].set_sub_file( basename + '.plotinspmissed_' + ifo + subsuffix )
 
@@ -905,6 +945,7 @@ if opts.plotinspinj:
   plotinspinj_jobs = {}
 
   for ifo in ifo_list:
+    cp.set('plotinspinj','figure-name','plotinspinj_' + ifo)
     plotinspinj_jobs[ifo] = PlotInspinjJob(cp)
     plotinspinj_jobs[ifo].set_sub_file( basename + '.plotinspinj_' + ifo + subsuffix )
 
@@ -917,11 +958,12 @@ if opts.plotsnrchi:
   plotsnrchi_jobs = {}
 
   for ifo in ifo_list:
+    cp.set('plotsnrchi','figure-name','plotsnrchi_' + ifo)
     plotsnrchi_jobs[ifo] = PlotSnrchiJob(cp)
     plotsnrchi_jobs[ifo].set_sub_file( basename + '.plotsnrchi_' + ifo + subsuffix )
 
   all_jobs = []
-  all_jobs.extend(plotinspinj_jobs.values())
+  all_jobs.extend(plotsnrchi_jobs.values())
 
 
 #############################################################################
@@ -974,13 +1016,13 @@ if opts.plotinspmissed:
     dag.add_node(plotinspmissed_node)
 
 if opts.plotinspinj:
-   for ifo in ifos:
+   for ifo in ifo_list:
   # add an plotinspinj job
     plotinspinj_node =PlotInspinjNode(plotinspinj_jobs[ifo])
     dag.add_node(plotinspinj_node)
 
 if opts.plotsnrchi:
-   for ifo in ifos:
+   for ifo in ifo_list:
   # add an plotinspinj job
     plotsnrchi_node =PlotSnrchiNode(plotsnrchi_jobs[ifo])
     dag.add_node(plotsnrchi_node)
