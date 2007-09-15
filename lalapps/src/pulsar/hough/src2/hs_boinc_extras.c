@@ -337,10 +337,15 @@ static int resolve_and_unzip(const char*filename, /**< filename to resolve */
 			     ) {
   char buf[MAX_PATH_LEN]; /**< buffer for filename modifications */
   int zipped; /**< flag: is the file zipped? */
+  int ret; /** keep return values */
 
-  if (boinc_resolve_filename(filename,resfilename,size)) {
-    LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve file '%s'\n", filename);
-
+  ret = boinc_resolve_filename(filename,resfilename,size);
+  if (ret) {
+    LogPrintf(LOG_CRITICAL,"ERROR %d boinc_resolving file '%s'\n", ret, filename);
+    return(-1);
+  }
+  if (strncmp(filename,resfilename,size) == 0) {
+    /* filename wasn't a symbolic link */
     strncpy(buf,filename,sizeof(buf));
     strncat(buf,LINKED_EXT,sizeof(buf));
     if (!boinc_resolve_filename(buf,resfilename,size)) {
@@ -390,7 +395,7 @@ static int resolve_and_unzip(const char*filename, /**< filename to resolve */
     return(0);
   }
 
-  /** we end up here if boinc_resolve was successful */
+  /** we end up here if boinc_resolve found the filename to be a symlink */
   zipped = is_zipped (resfilename);
 
   /** return if not zipped or couldn't find out because of an error */
@@ -831,6 +836,10 @@ int main(int argc, char**argv) {
   int skipsighandler = 0;
 
   LogSetLevel(LOG_DETAIL); /* as long as we are debugging */
+
+  /* dummy for keeping the RCSIDs */
+  if(skipsighandler)
+    printf(stderr,"%s\n%s\n",HSBOINCEXTRASHRCSID,HSBOINCEXTRASCRCSID);
 
   LogPrintf(LOG_NORMAL, "Built at: " __DATE__ " " __TIME__ "\n");
 
