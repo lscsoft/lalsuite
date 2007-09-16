@@ -48,7 +48,7 @@ distributed is exponentially.
 \par Uses
 \code
 LALSFTtoPeriodogram ()
-LALPeriodoToPSDRngMed ()
+LALPeriodoToRngmed ()
 LALNormalizeSFT ()
 LALNormalizeSFTVect ()
 LALNormalizeMultiSFTVect ()
@@ -58,9 +58,9 @@ LALNormalizeMultiSFTVect ()
 The function LALNormalizeSFTVect() takes as input a vector of SFTs and normalizes
 them.  This function calls the functions LALNormalizeSFT() which normalizes a
 single SFT, LALSFTtoPeriodogram() which calculates the \f$ |\tilde{x}|^2 \f$ and 
-LALPeriodoToPSDRngMed() which applies the running median algorithm to find a vector
-of medians.  The function LALNormalizeMultiSFTVect() normalizes a multi-ifo collection 
-of SFT vectors and also returns a collection of PSD estimates for these vectors using
+LALPeriodoToRngmed () which applies the running median algorithm to find a vector
+of medians.  The function LALNormalizeMultiSFTVect() normalizes a multi-IFO collection 
+of SFT vectors and also returns a collection of power-estimates for these vectors using
 the Running median method. 
 
 */
