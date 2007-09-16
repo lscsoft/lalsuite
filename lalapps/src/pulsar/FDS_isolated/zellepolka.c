@@ -92,10 +92,7 @@ some information on stderr.
 #define ADDITIONAL_MEM 32768
 
 /* testing purposes, should not be defined */
-/*
-#define HOLGER 
-*/
-
+/* #define HOLGER */
 
 /*                                                                                                                                                                      
    To use unzip, you need to have unzip-5.5x from, say,  the InfoZip webpage,                                                                                                       
@@ -408,7 +405,7 @@ int main(INT4 argc,CHAR *argv[])
   INT4  cc1,cc2,cc3,cc4,bb1,bb2,bb3,bb4; /* cell-grid shifting variables */
   INT4  selectGrid; /* denotes one of the 16 shifted cell-grid */
   INT4  sizecells; /* Length of the cell list */
-  INT4  AlphaTwoPiIdx=0; /* Cell-index of an candidate events located at alpha=2*Pi*/
+  INT4  AlphaTwoPiIdx=0, AlphaZeroIdx=0; /* Cell-index of an candidate events located at alpha=2*Pi*/
   
   LALStatus *lalStatus = &global_status;
   lalDebugLevel = 0 ;  
@@ -540,27 +537,27 @@ int main(INT4 argc,CHAR *argv[])
 		if (cc2 == 0) { /* unshifted cell-grid */
 		  while ( LookupDelta1[DeltaDeltaStep] < fabs(SortedC[icand].Delta) ) {
 		    DeltaDeltaStep++;
-		    if (DeltaDeltaStep > iDeltaMax1)
+		    if (DeltaDeltaStep >= iDeltaMax1)
 		      break;
 		  }
 		  if ( SortedC[icand].Delta < 0 ) {
-		    SortedC[icand].iDelta = (-1.0) * (2 * DeltaDeltaStep);
+		    SortedC[icand].iDelta = -(INT4)(2 * DeltaDeltaStep);
 		  }
 		  else {
-		    SortedC[icand].iDelta = (2 * DeltaDeltaStep);
+		    SortedC[icand].iDelta = (INT4)(2 * DeltaDeltaStep);
 		  }
                 }
                 else { /* shifted cell-grid */
 		  while ( LookupDelta2[DeltaDeltaStep] < fabs(SortedC[icand].Delta) ) { 
 		    DeltaDeltaStep++;
-		    if (DeltaDeltaStep > iDeltaMax2)
+		    if (DeltaDeltaStep >= iDeltaMax2)
 		      break;
 		  }
 		  if ( SortedC[icand].Delta < 0 ) {
-		    SortedC[icand].iDelta = (-1.0) * ((2 * DeltaDeltaStep) + 1);
+		    SortedC[icand].iDelta = -(INT4)((2 * DeltaDeltaStep) + 1);
 		  }
 		  else {
-		    SortedC[icand].iDelta = ((2 * DeltaDeltaStep) + 1);
+		    SortedC[icand].iDelta = (INT4)((2 * DeltaDeltaStep) + 1);
 		  }
 		}
 
@@ -574,19 +571,20 @@ int main(INT4 argc,CHAR *argv[])
 		
 		/* Assign the ALPHA index to the candidate event */
 		SortedC[icand].iAlpha = floor( (SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
-
-		if (cc3 == 1) {
-		  if ( SortedC[icand].iAlpha == 0 ) {
-		    SortedC[icand].Alpha = SortedC[icand].Alpha + LAL_TWOPI;
-		    SortedC[icand].iAlpha =floor( (LAL_TWOPI*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  ); /*it's AlphaTwoPiIdx*/
-		  }
-		}
-		else { /* cc3 != 1 */
+		if (cc3 == 0) { /* unshifted grid */
 		  AlphaTwoPiIdx = floor( (LAL_TWOPI*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
-		  if ( SortedC[icand].iAlpha == AlphaTwoPiIdx ) {
-		    SortedC[icand].Alpha = SortedC[icand].Alpha - LAL_TWOPI;
-		    SortedC[icand].iAlpha = floor( (0*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
-		  }
+                  if ( SortedC[icand].iAlpha == AlphaTwoPiIdx ) {
+                    SortedC[icand].Alpha = SortedC[icand].Alpha - LAL_TWOPI;
+                    SortedC[icand].iAlpha = floor( (0.0000001*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
+                  }
+		}
+		else { /* shifted grid */
+		  AlphaZeroIdx = floor( (0.0000001*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
+		  if ( SortedC[icand].iAlpha == AlphaZeroIdx ) {
+                    SortedC[icand].Alpha = SortedC[icand].Alpha + LAL_TWOPI;
+                    SortedC[icand].iAlpha = floor( (LAL_TWOPI*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  ); /*it's AlphaTwoPiIdx*/
+                  }
+
 		}
 
 		/* Assign the F1DOT index to the candidate event */
@@ -1357,28 +1355,30 @@ void get_info_of_the_cell( LALStatus *lalStatus, CellData *cd, const CandidateLi
   ic = 0;
   while( p !=NULL && ic <= LINKEDSTR_MAX_DEPTH ) { 
     idx = p->data;
+
+#ifdef HOLGER
+    /* HOLGER is testing here. */
+    if( cd->nCand >= 17 ) {
+      if( CList[idx].Alpha < 0 ) {
+	fprintf(stderr,"skypoint: %d %g %g\n",CList[idx].FileID,CList[idx].Alpha + LAL_TWOPI,CList[idx].Delta);
+      }
+      else {
+	if( CList[idx].Alpha > LAL_TWOPI ) {
+	  fprintf(stderr,"skypoint: %d %g %g\n",CList[idx].FileID,CList[idx].Alpha - LAL_TWOPI,CList[idx].Delta);
+	}
+	else {
+	fprintf(stderr,"skypoint: %d %g %g\n",CList[idx].FileID,CList[idx].Alpha,CList[idx].Delta);
+	}
+      }
+    }
+#endif
+
     lfa = CList[idx].TwoF/2.0 - log(1.0 + CList[idx].TwoF/2.0);
     cd->significance += lfa;
     cd->F1dot += CList[idx].F1dot;
     cd->Alpha += CList[idx].Alpha;
     cd->Delta += CList[idx].Delta;
     cd->Freq += CList[idx].f;
-
-#ifdef HOLGER
-    /* HOLGER is testing here. */
-    if( cd->nCand >= 17 ) {
-      if( CList[idx].Alpha < 0 ) {
-	fprintf(stderr,"skypoint: %d %f %f\n",cd->CandID,CList[idx].Alpha + LAL_TWOPI,CList[idx].Delta);
-      }
-      else if( CList[idx].Alpha > LAL_TWOPI ) {
-	fprintf(stderr,"skypoint: %d %f %f\n",cd->CandID,CList[idx].Alpha - LAL_TWOPI,CList[idx].Delta);
-      }
-      else {
-	fprintf(stderr,"skypoint: %d %f %f\n",cd->CandID,CList[idx].Alpha,CList[idx].Delta);
-      }
-    }
-#endif
-
     p = p->next;
     ic++;
   }
