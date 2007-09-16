@@ -92,7 +92,7 @@ some information on stderr.
 #define ADDITIONAL_MEM 32768
 
 /* testing purposes, should not be defined */
-/* #define HOLGER */
+/* #define HOLGER */ 
 
 /*                                                                                                                                                                      
    To use unzip, you need to have unzip-5.5x from, say,  the InfoZip webpage,                                                                                                       
@@ -100,6 +100,8 @@ some information on stderr.
    ( not needed any more in S4 , will be done by combiner_v4.py )                                                                                                                   
 #define USE_UNZIP                                                                                                                                                                     
 */
+
+#define EPSEDGE 1e-6
 
 /* ----------------------------------------------------------------------------- */
 /* file includes */
@@ -393,6 +395,7 @@ int main(INT4 argc,CHAR *argv[])
   REAL8 *LookupDelta2 = NULL;
   REAL8 DeltaWin=0;
   REAL8 DeltaBorder=0;
+  REAL8 DeltaEdge=0;
   REAL8 d0=0,a0=0,k0=0;
   INT4  NumDeltaWins, idb;
   INT4  iDeltaMax1=0;
@@ -513,11 +516,11 @@ int main(INT4 argc,CHAR *argv[])
 	for (bb4=0; bb4<2; bb4++) {
   	 
 	  /*if (selectGrid == PCV.CellGrid) {*/
-	    cc1=bb1;
-	    cc2=bb2;
-	    cc3=bb3;
-	    cc4=bb4;
-	    /*}*/
+	  cc1=bb1; /* shift in f */
+	  cc2=bb2; /* shift in alpha */
+	  cc3=bb3; /* shift in delta */
+	  cc4=bb4; /* shift in f1dot */
+	  /*}*/
 	    
 	    fprintf(stderr,"\n%% Selected CellGrid: %d %d %d %d\n", cc1,cc2,cc3,cc4);
 
@@ -529,16 +532,57 @@ int main(INT4 argc,CHAR *argv[])
 	    /* Assigning four indices to each candidate event */
 	    for (icand=0;icand<CLength;icand++) 
 	      {
+		
 		/* Assign the FREQUENCY index to the candidate event */
-		SortedC[icand].iFreq = floor( ((SortedC[icand].f)/(PCV.Deltaf)) + (cc1 * 0.5)  );
-	      
+                SortedC[icand].iFreq = floor( ((SortedC[icand].f) / (PCV.Deltaf)) + (cc1 * 0.5)  );
+
+
+		/* Check if Alpha has a correct value and reset if necessary */
+                if( SortedC[icand].Alpha < 0.0 ) {
+                  SortedC[icand].Alpha = SortedC[icand].Alpha + LAL_TWOPI;
+                }
+                if( SortedC[icand].Alpha > LAL_TWOPI ) {
+                  SortedC[icand].Alpha = SortedC[icand].Alpha - LAL_TWOPI;
+                }
+
+		/* Assign the ALPHA index to the candidate event */
+                SortedC[icand].iAlpha = floor( (SortedC[icand].Alpha * cos(SortedC[icand].Delta) / (PCV.DeltaAlpha))  + (cc2 * 0.5)  );
+                AlphaTwoPiIdx = floor( ((LAL_TWOPI - EPSEDGE) * cos(SortedC[icand].Delta) / (PCV.DeltaAlpha))  + (cc2 * 0.5)  );
+                if (cc2 == 0) { /* unshifted grid */
+                  /* Enlarge the last cell no wrap-around */
+                  if ( SortedC[icand].iAlpha == AlphaTwoPiIdx ) {
+                    SortedC[icand].iAlpha = SortedC[icand].iAlpha - 1;
+                  }
+                }
+                else { /* shifted grid */
+                  /* Enlarge the last cell and do wrap-around */
+                  if ( SortedC[icand].iAlpha == AlphaTwoPiIdx ) {
+                    SortedC[icand].iAlpha = SortedC[icand].iAlpha - 1;
+                  }
+                  AlphaZeroIdx = floor( (EPSEDGE * cos(SortedC[icand].Delta) / (PCV.DeltaAlpha))  + (cc2 * 0.5)  );
+                  if ( SortedC[icand].iAlpha == AlphaZeroIdx ) {
+                    SortedC[icand].Alpha = SortedC[icand].Alpha + LAL_TWOPI;
+                    SortedC[icand].iAlpha = AlphaTwoPiIdx - 1;
+                  }
+                }
+
+
+		/* Compute the edge in coordinates (alpha*cos(delta), delta) */
+		DeltaEdge = acos(SortedC[icand].Alpha * cos(SortedC[icand].Delta) / LAL_TWOPI);
+		
 		/* Assign the DELTA index to the candidate event */
 		DeltaDeltaStep=0;
-		if (cc2 == 0) { /* unshifted cell-grid */
+		if (cc3 == 0) { /* unshifted cell-grid */
 		  while ( LookupDelta1[DeltaDeltaStep] < fabs(SortedC[icand].Delta) ) {
 		    DeltaDeltaStep++;
 		    if (DeltaDeltaStep >= iDeltaMax1)
 		      break;
+		  }
+		  /* check if domain edge is hit and eventually move event into previous cell */
+                  if ( DeltaDeltaStep > 0 ) {
+		    if ( (fabs(DeltaEdge) < LookupDelta1[DeltaDeltaStep]) || (SortedC[icand].Alpha > LAL_TWOPI) ) {
+		      DeltaDeltaStep--;
+		    }
 		  }
 		  if ( SortedC[icand].Delta < 0 ) {
 		    SortedC[icand].iDelta = -(INT4)(2 * DeltaDeltaStep);
@@ -553,6 +597,12 @@ int main(INT4 argc,CHAR *argv[])
 		    if (DeltaDeltaStep >= iDeltaMax2)
 		      break;
 		  }
+		  /* check if domain edge is hit and eventually move event into previous cell */
+		  if ( DeltaDeltaStep > 0 ) {
+		    if ( (fabs(DeltaEdge) < LookupDelta2[DeltaDeltaStep]) || (SortedC[icand].Alpha > LAL_TWOPI) ) {
+		      DeltaDeltaStep--;
+		    }
+		  }
 		  if ( SortedC[icand].Delta < 0 ) {
 		    SortedC[icand].iDelta = -(INT4)((2 * DeltaDeltaStep) + 1);
 		  }
@@ -561,34 +611,9 @@ int main(INT4 argc,CHAR *argv[])
 		  }
 		}
 
-		/* Check if Alpha has a correct value */
-		if( SortedC[icand].Alpha < 0 ) {
-		  SortedC[icand].Alpha = SortedC[icand].Alpha + LAL_TWOPI;
-		}
-		if( SortedC[icand].Alpha > LAL_TWOPI ) {
-                  SortedC[icand].Alpha = SortedC[icand].Alpha - LAL_TWOPI;
-                }
-		
-		/* Assign the ALPHA index to the candidate event */
-		SortedC[icand].iAlpha = floor( (SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
-		if (cc3 == 0) { /* unshifted grid */
-		  AlphaTwoPiIdx = floor( (LAL_TWOPI*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
-                  if ( SortedC[icand].iAlpha == AlphaTwoPiIdx ) {
-                    SortedC[icand].Alpha = SortedC[icand].Alpha - LAL_TWOPI;
-                    SortedC[icand].iAlpha = floor( (0.0000001*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
-                  }
-		}
-		else { /* shifted grid */
-		  AlphaZeroIdx = floor( (0.0000001*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
-		  if ( SortedC[icand].iAlpha == AlphaZeroIdx ) {
-                    SortedC[icand].Alpha = SortedC[icand].Alpha + LAL_TWOPI;
-                    SortedC[icand].iAlpha = floor( (LAL_TWOPI*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  ); /*it's AlphaTwoPiIdx*/
-                  }
-
-		}
 
 		/* Assign the F1DOT index to the candidate event */
-		SortedC[icand].iF1dot = floor(( ((SortedC[icand].F1dot)/(PCV.DeltaF1dot))  + (cc4 * 0.5)  ));
+		SortedC[icand].iF1dot = floor(( ((SortedC[icand].F1dot) / (PCV.DeltaF1dot))  + (cc4 * 0.5)  ));
 		
 		/* Keep the original ordering before sort to refer the orignal data later. */
 		SortedC[icand].iCand=icand;
@@ -1333,8 +1358,9 @@ void delete_int4_linked_list( LALStatus *lalStatus, struct int4_linked_list *lis
 
   We have indices of the candidate events contained in each cell 
   before the call of this function. This function computes the joint 
-  significance, average alpha, average delta, and average frequency 
-  of the events in each cell and stores them into cellData sturcture.
+  significance, average alpha, average delta, average spin-down 
+  and average frequency of the events in each cell and stores them 
+  into a CellData structure.
 
   @param[in,out] lalStatus   LALStatus* 
   @param[in,out] cd          CellData*
@@ -1355,30 +1381,20 @@ void get_info_of_the_cell( LALStatus *lalStatus, CellData *cd, const CandidateLi
   ic = 0;
   while( p !=NULL && ic <= LINKEDSTR_MAX_DEPTH ) { 
     idx = p->data;
-
-#ifdef HOLGER
-    /* HOLGER is testing here. */
-    if( cd->nCand >= 17 ) {
-      if( CList[idx].Alpha < 0 ) {
-	fprintf(stderr,"skypoint: %d %g %g\n",CList[idx].FileID,CList[idx].Alpha + LAL_TWOPI,CList[idx].Delta);
-      }
-      else {
-	if( CList[idx].Alpha > LAL_TWOPI ) {
-	  fprintf(stderr,"skypoint: %d %g %g\n",CList[idx].FileID,CList[idx].Alpha - LAL_TWOPI,CList[idx].Delta);
-	}
-	else {
-	fprintf(stderr,"skypoint: %d %g %g\n",CList[idx].FileID,CList[idx].Alpha,CList[idx].Delta);
-	}
-      }
-    }
-#endif
-
     lfa = CList[idx].TwoF/2.0 - log(1.0 + CList[idx].TwoF/2.0);
     cd->significance += lfa;
     cd->F1dot += CList[idx].F1dot;
     cd->Alpha += CList[idx].Alpha;
     cd->Delta += CList[idx].Delta;
     cd->Freq += CList[idx].f;
+
+#ifdef HOLGER
+    /* HOLGER is testing here. */
+    if( cd->nCand < 17 ) {
+      fprintf(stderr,"data-segment:%02d skypoint:alpha=%g delta=%g has indices: iAlpha=%d iDelta=%d \n",CList[idx].FileID,CList[idx].Alpha,CList[idx].Delta,CList[idx].iAlpha,CList[idx].iDelta);
+    }
+#endif
+
     p = p->next;
     ic++;
   }
