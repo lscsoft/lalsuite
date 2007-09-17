@@ -825,20 +825,19 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
 
   /* ----- normalize SFTs and calculate noise-weights ----- */
   if ( uvar_SignalOnly )
-      cfg->multiNoiseWeights = NULL; 
+      cfg->multiNoiseWeights = NULL;   /* noiseWeights == NULL is equivalent to unit noise-weights in ComputeFstat() */
   else 
     {
+      UINT4 X, alpha;
       MultiPSDVector *rngmed = NULL;
       cfg->multiNoiseWeights = NULL; 
-
       TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &rngmed, cfg->multiSFTs, uvar_RngMedWindow ), status );
-      if ( !uvar_UnitNoiseWeight ) {
-	TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &(cfg->multiNoiseWeights), rngmed, uvar_RngMedWindow, 0 ), status );
-      }
-      /* noiseWeights == NULL is equivalent to unit noise-weights in ComputeFstat() */
-	
+      TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &(cfg->multiNoiseWeights), rngmed, uvar_RngMedWindow, 0 ), status );
       TRY ( LALDestroyMultiPSDVector (status->statusPtr, &rngmed ), status );
-
+      if ( uvar_UnitNoiseWeight )
+	for ( X = 0; X < cfg->multiNoiseWeights->length; X ++ )
+	  for ( alpha = 0; alpha < cfg->multiNoiseWeights->data[X]->length; alpha ++ )
+	    cfg->multiNoiseWeights->data[X]->data[alpha] = 1.0;
     } /* if ! SignalOnly */
 
   /* ----- upsample SFTs ----- */
