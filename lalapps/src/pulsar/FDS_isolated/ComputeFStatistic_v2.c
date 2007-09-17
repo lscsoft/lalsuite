@@ -147,7 +147,7 @@ extern int vrbflg;		/**< defined in lalapps.c */
 INT4 uvar_Dterms;
 CHAR *uvar_IFO;
 BOOLEAN uvar_SignalOnly;
-BOOLEAN uvar_UnitNoiseWeight;
+BOOLEAN uvar_UseNoiseWeights;
 REAL8 uvar_Freq;
 REAL8 uvar_FreqBand;
 REAL8 uvar_dFreq;
@@ -509,7 +509,7 @@ initUserVars (LALStatus *status)
   strcpy (uvar_ephemDir, DEFAULT_EPHEMDIR);
 
   uvar_SignalOnly = FALSE;
-  uvar_UnitNoiseWeight = FALSE;
+  uvar_UseNoiseWeights = TRUE;
 
   uvar_f1dot     = 0.0;
   uvar_f1dotBand = 0.0;
@@ -583,7 +583,7 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
   LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
   LALregBOOLUserVar(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
-  LALregBOOLUserVar(status, 	UnitNoiseWeight,'W', UVAR_OPTIONAL, "Set the noise weights to UNITY");
+  LALregBOOLUserVar(status, 	UseNoiseWeights,'W', UVAR_OPTIONAL, "Use SFT-specific noise weights");
 
   LALregREALUserVar(status, 	TwoFthreshold,	'F', UVAR_OPTIONAL, "Set the threshold for selection of 2F");
   LALregINTUserVar(status, 	gridType,	 0 , UVAR_OPTIONAL, "Grid: 0=flat, 1=isotropic, 2=metric, 3=skygrid-file, 6=grid-file, 7=An*lattice");
@@ -834,7 +834,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
       TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &rngmed, cfg->multiSFTs, uvar_RngMedWindow ), status );
       TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &(cfg->multiNoiseWeights), rngmed, uvar_RngMedWindow, 0 ), status );
       TRY ( LALDestroyMultiPSDVector (status->statusPtr, &rngmed ), status );
-      if ( uvar_UnitNoiseWeight )
+      if ( !uvar_UseNoiseWeights )	/* in that case simply set weights to 1.0 */
 	for ( X = 0; X < cfg->multiNoiseWeights->length; X ++ )
 	  for ( alpha = 0; alpha < cfg->multiNoiseWeights->data[X]->length; alpha ++ )
 	    cfg->multiNoiseWeights->data[X]->data[alpha] = 1.0;
