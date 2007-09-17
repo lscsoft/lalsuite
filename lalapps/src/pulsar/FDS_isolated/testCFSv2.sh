@@ -129,7 +129,7 @@ echo " STEP 3: run CFS_v2 with perfect match"
 echo "----------------------------------------------------------------------"
 echo
 outfile_v2NWon="Fstat_v2NWon.dat";
-cmdlineNoiseWeightsOn="$cfsv2_code $cfs_CL --outputFstat=$outfile_v2NWon --TwoFthreshold=0 --UnitNoiseWeight=false $extra_args";
+cmdlineNoiseWeightsOn="$cfsv2_code $cfs_CL --outputFstat=$outfile_v2NWon --TwoFthreshold=0 --UseNoiseWeights=true $extra_args";
 echo $cmdlineNoiseWeightsOn;
 if ! eval $cmdlineNoiseWeightsOn; then
     echo "Error.. something failed when running '$cfs_code' ..."
@@ -137,7 +137,7 @@ if ! eval $cmdlineNoiseWeightsOn; then
 fi
 
 outfile_v2NWoff="Fstat_v2NWoff.dat";
-cmdlineNoiseWeightsOff="$cfsv2_code $cfs_CL --outputFstat=$outfile_v2NWoff --TwoFthreshold=0 --UnitNoiseWeight=true $extra_args";
+cmdlineNoiseWeightsOff="$cfsv2_code $cfs_CL --outputFstat=$outfile_v2NWoff --TwoFthreshold=0 --UseNoiseWeights=false $extra_args";
 echo $cmdlineNoiseWeightsOff;
 if ! eval $cmdlineNoiseWeightsOff; then
     echo "Error.. something failed when running '$cfs_code' ..."
