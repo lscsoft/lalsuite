@@ -1135,7 +1135,6 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  REAL4 pn = kappa_max;
 	  REAL4 qn = pn;
 	  REAL4 U_alpha, V_alpha;
- 	  UINT4 ind0;
 	  
 	  /* recursion with 2*Dterms steps */
 	  UINT4 l;
@@ -1152,12 +1151,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  U_alpha = Sn / qn;
 	  V_alpha = Tn / qn;
 
-   	  if ( kappa_star <= LD_SMALL4 )
-	    ind0 = Dterms - 1;
-   	  else
-	    ind0 = Dterms;
- 	  realXP = TWOPI_FLOAT * Xalpha_l[ind0].re;
- 	  imagXP = TWOPI_FLOAT * Xalpha_l[ind0].im;
+ 	  realXP = s_alpha * U_alpha - c_alpha * V_alpha;
+ 	  imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
 	}
 
 #endif
@@ -1165,8 +1160,13 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
       /* if |remainder| > LD_SMALL4 */
       else
 	{ /* otherwise: lim_{rem->0}P_alpha,k  = 2pi delta_{k,kstar} */
-	  realXP = TWOPI_FLOAT * Xalpha_l[Dterms].re;
-	  imagXP = TWOPI_FLOAT * Xalpha_l[Dterms].im;
+ 	  UINT4 ind0;
+   	  if ( kappa_star <= LD_SMALL4 )
+	    ind0 = Dterms - 1;
+   	  else
+	    ind0 = Dterms;
+ 	  realXP = TWOPI_FLOAT * Xalpha_l[ind0].re;
+ 	  imagXP = TWOPI_FLOAT * Xalpha_l[ind0].im;
 	} /* if |remainder| <= LD_SMALL4 */
       
       realQXP = realQ * realXP - imagQ * imagXP;
