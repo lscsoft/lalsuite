@@ -91,8 +91,15 @@ some information on stderr.
 
 #define ADDITIONAL_MEM 32768
 
-/* testing purposes, should not be defined */
-/* #define HOLGER */ 
+/* 
+This can be defined for testing purposes only. So it should not be defined 
+If defined, it does:
+ + output entire information about ALL cells
+ + output candidate events in cells which have less than 17 coincidences
+ + randomly set candidate events' 2F-values
+
+#define HOLGER  
+*/
 
 /*                                                                                                                                                                      
    To use unzip, you need to have unzip-5.5x from, say,  the InfoZip webpage,                                                                                                       
@@ -410,6 +417,7 @@ int main(INT4 argc,CHAR *argv[])
   INT4  sizecells; /* Length of the cell list */
   INT4  AlphaTwoPiIdx=0, AlphaZeroIdx=0; /* Cell-index of an candidate events located at alpha=2*Pi*/
   
+
   LALStatus *lalStatus = &global_status;
   lalDebugLevel = 0 ;  
   vrbflg = 1;   /* verbose error-messages */
@@ -516,10 +524,10 @@ int main(INT4 argc,CHAR *argv[])
 	for (bb4=0; bb4<2; bb4++) {
   	 
 	  /*if (selectGrid == PCV.CellGrid) {*/
-	  cc1=bb1; /* shift in f */
-	  cc2=bb2; /* shift in alpha */
-	  cc3=bb3; /* shift in delta */
-	  cc4=bb4; /* shift in f1dot */
+	    cc1=bb1; /* shift in f */
+	    cc2=bb2; /* shift in alpha */
+	    cc3=bb3; /* shift in delta */
+	    cc4=bb4; /* shift in f1dot */
 	  /*}*/
 	    
 	    fprintf(stderr,"\n%% Selected CellGrid: %d %d %d %d\n", cc1,cc2,cc3,cc4);
@@ -546,30 +554,27 @@ int main(INT4 argc,CHAR *argv[])
                 }
 
 		/* Assign the ALPHA index to the candidate event */
-                SortedC[icand].iAlpha = floor( (SortedC[icand].Alpha * cos(SortedC[icand].Delta) / (PCV.DeltaAlpha))  + (cc2 * 0.5)  );
-                AlphaTwoPiIdx = floor( ((LAL_TWOPI - EPSEDGE) * cos(SortedC[icand].Delta) / (PCV.DeltaAlpha))  + (cc2 * 0.5)  );
+                SortedC[icand].iAlpha = floor( ((SortedC[icand].Alpha) * (cos(SortedC[icand].Delta)) / (PCV.DeltaAlpha))  + (cc2 * 0.5) );
+                AlphaTwoPiIdx = floor( ((LAL_TWOPI - EPSEDGE) / (PCV.DeltaAlpha))  + (cc2 * 0.5)  );
                 if (cc2 == 0) { /* unshifted grid */
-                  /* Enlarge the last cell no wrap-around */
+                  /* Enlarge the last cell along equator, no wrap-around */
                   if ( SortedC[icand].iAlpha == AlphaTwoPiIdx ) {
                     SortedC[icand].iAlpha = SortedC[icand].iAlpha - 1;
                   }
                 }
                 else { /* shifted grid */
-                  /* Enlarge the last cell and do wrap-around */
-                  if ( SortedC[icand].iAlpha == AlphaTwoPiIdx ) {
-                    SortedC[icand].iAlpha = SortedC[icand].iAlpha - 1;
-                  }
-                  AlphaZeroIdx = floor( (EPSEDGE * cos(SortedC[icand].Delta) / (PCV.DeltaAlpha))  + (cc2 * 0.5)  );
+                  /* Do wrap-around */
+		  AlphaZeroIdx = floor( (EPSEDGE * cos(SortedC[icand].Delta) / (PCV.DeltaAlpha))  + (cc2 * 0.5)  );
                   if ( SortedC[icand].iAlpha == AlphaZeroIdx ) {
                     SortedC[icand].Alpha = SortedC[icand].Alpha + LAL_TWOPI;
-                    SortedC[icand].iAlpha = AlphaTwoPiIdx - 1;
+                    SortedC[icand].iAlpha = AlphaTwoPiIdx;
                   }
                 }
 
 
-		/* Compute the edge in coordinates (alpha*cos(delta), delta) */
-		DeltaEdge = acos(SortedC[icand].Alpha * cos(SortedC[icand].Delta) / LAL_TWOPI);
-		
+		/* Compute the edge in coordinates (alpha*cos(delta), delta) from left corner */
+	        DeltaEdge = acos( (SortedC[icand].iAlpha * PCV.DeltaAlpha) / LAL_TWOPI );  
+
 		/* Assign the DELTA index to the candidate event */
 		DeltaDeltaStep=0;
 		if (cc3 == 0) { /* unshifted cell-grid */
@@ -613,7 +618,7 @@ int main(INT4 argc,CHAR *argv[])
 
 
 		/* Assign the F1DOT index to the candidate event */
-		SortedC[icand].iF1dot = floor(( ((SortedC[icand].F1dot) / (PCV.DeltaF1dot))  + (cc4 * 0.5)  ));
+		SortedC[icand].iF1dot = floor( ((SortedC[icand].F1dot) / (PCV.DeltaF1dot))  + (cc4 * 0.5)  );
 		
 		/* Keep the original ordering before sort to refer the orignal data later. */
 		SortedC[icand].iCand=icand;
