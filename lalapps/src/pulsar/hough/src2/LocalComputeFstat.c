@@ -586,7 +586,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
       /* if no danger of denominator -> 0 */
       if ( ( kappa_star > LD_SMALL4 ) && (kappa_star < 1.0 - LD_SMALL4) )
 
-#if (EAH_OPTIMIZATION == 1)
+#if (EAH_OPTIMIZATION == 1) && FALSE
 	/* vectorization with common denominator */
 
 	{
@@ -623,7 +623,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  }
 	}
 
-#elif (EAH_OPTIMIZATION == 2)
+#elif (EAH_OPTIMIZATION == 2) && FALSE
 
         {
 	  /* THIS IS DANGEROUS!! It relies on current implementation of COMPLEX8 type!! */
@@ -739,7 +739,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  imagXP = c_alpha * XRes + s_alpha * XIms;
 	} /* if x cannot be close to 0 */
 
-#elif (EAH_OPTIMIZATION == 3)
+#elif (EAH_OPTIMIZATION == 3) && FALSE
 
         {
 
@@ -891,7 +891,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
 	}
 
-#elif (EAH_OPTIMIZATION == 4)
+#elif (EAH_OPTIMIZATION == 4) && FALSE
 
 	/** SSE version with reciprocal estimates */
 
@@ -1003,7 +1003,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  
 	}
 
-#elif (EAH_OPTIMIZATION == 5)
+#elif (EAH_OPTIMIZATION == 5) && FALSE
 
 	/** trying to improve SSE version with reciprocal estimates */
 
