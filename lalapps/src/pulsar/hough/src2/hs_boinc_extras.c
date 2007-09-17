@@ -1059,6 +1059,8 @@ int init_and_read_checkpoint(toplist_t*toplist, /**< the toplist to checkpoint *
 
   LogPrintf (LOG_DEBUG,  "Found checkpoint - reading...\n");
 
+  errno = 0;
+
   /* try to read and parse the checkpoint if we found one */
   scanned = fscanf(fp,"%lf,%lf,%lu,%lu,%u,%u\n",
 		   &last_rac, &last_dec,
@@ -1077,14 +1079,12 @@ int init_and_read_checkpoint(toplist_t*toplist, /**< the toplist to checkpoint *
 	/* file-I/O error */
 	LogPrintf(LOG_CRITICAL,"scanned %d/6\n", scanned);
       } else {
+	char buf[256];
 	/* unexpected file content - write it to stderr */
-	LogPrintf(LOG_CRITICAL,"scanned %d/6, checkpoint was:'", scanned);
+	LogPrintf(LOG_CRITICAL,"scanned %d/6, first 256 bytes were:'", scanned);
 	rewind(fp);
-	while((c=fgetc(fp)) != EOF)
-	  if(fputc(c,stderr) == EOF){
-	    LOGIOERROR("\nCouldn't write","stderr");
-	    break;
-	  }
+	bzero(buf,sizeof(buf));
+	fwrite(buf,sizeof(char),fread(buf,sizeof(char),sizeof(buf)-1,fp),stderr);
 	fprintf(stderr,"'\n");
       }
     }
