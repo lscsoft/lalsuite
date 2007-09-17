@@ -1083,7 +1083,7 @@ int init_and_read_checkpoint(toplist_t*toplist, /**< the toplist to checkpoint *
 	/* unexpected file content - write it to stderr */
 	LogPrintf(LOG_CRITICAL,"scanned %d/6, first 256 bytes were:'", scanned);
 	rewind(fp);
-	bzero(buf,sizeof(buf));
+	memset(buf,0,sizeof(buf));
 	fwrite(buf,sizeof(char),fread(buf,sizeof(char),sizeof(buf)-1,fp),stderr);
 	fprintf(stderr,"'\n");
       }
