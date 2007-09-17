@@ -380,12 +380,12 @@ static int resolve_and_unzip(const char*filename, /**< filename to resolve */
       LogPrintf (LOG_NORMAL, "WARNING: Unzipping '%s' in-place\n", filename);
       strncpy(resfilename,filename,size);
       strncat(resfilename,ZIPPED_EXT,size);
-      if( boinc_rename(resfilename,filename) ) {
-	LogPrintf (LOG_CRITICAL, "ERROR: Couldn't rename '%s' to '%s'\n", resfilename, filename);
+      if( boinc_rename(filename,resfilename) ) {
+	LogPrintf (LOG_CRITICAL, "ERROR: Couldn't rename '%s' to '%s'\n", filename, resfilename );
 	return(-1);
       }
       if( boinc_zip(UNZIP_IT,resfilename,".") ) {
-	LogPrintf (LOG_CRITICAL, "ERROR: Couldn't unzip '%s'\n", filename);
+	LogPrintf (LOG_CRITICAL, "ERROR: Couldn't unzip '%s'\n", resfilename);
 	return(-1);
       }
     }
