@@ -43,7 +43,7 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-#define LD_SMALL4       (1.0e-6)		/**< "small" number for REAL4*/ 
+#define LD_SMALL4       (2.0e-4)		/**< "small" number for REAL4*/ 
 #define OOTWOPI         (1.0 / LAL_TWOPI)	/**< 1/2pi */
 
 #define TWOPI_FLOAT     6.28318530717958f  	/**< single-precision 2*pi */
@@ -540,13 +540,13 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
 	}
 
-	kstar = (INT4) (Dphi_alpha + 0.5);	/* k* = round(Dphi_alpha*chi) for positive Dphi */
-	kappa_star = Dphi_alpha - 1.0 * kstar;
-	kappa_max = kappa_star + 1.0 * Dterms;
+	kstar = (INT4) (Dphi_alpha);	/* k* = floor(Dphi_alpha*chi) for positive Dphi */
+	kappa_star = Dphi_alpha - 1.0 * kstar;	/* remainder of Dphi_alpha: >= 0 ! */
+	kappa_max = kappa_star + 1.0 * Dterms - 1.0;
 
 	/* ----- check that required frequency-bins are found in the SFTs ----- */
-	k0 = kstar - Dterms;	
-	k1 = k0 + 2 * Dterms;
+	k0 = kstar - Dterms + 1;
+	k1 = k0 + 2 * Dterms - 1;
 	if ( (k0 < freqIndex0) || (k1 > freqIndex1) ) 
 	  {
 	    LogPrintf(LOG_CRITICAL,
@@ -584,7 +584,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
       imagXP = 0;
 
       /* if no danger of denominator -> 0 */
-      if ( ( kappa_star > LD_SMALL4 ) || (kappa_star < -LD_SMALL4) )	
+      if ( ( kappa_star > LD_SMALL4 ) && (kappa_star < 1.0 - LD_SMALL4) )
 
 #if (EAH_OPTIMIZATION == 1)
 	/* vectorization with common denominator */
@@ -1135,10 +1135,11 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  REAL4 pn = kappa_max;
 	  REAL4 qn = pn;
 	  REAL4 U_alpha, V_alpha;
+ 	  UINT4 ind0;
 	  
 	  /* recursion with 2*Dterms steps */
 	  UINT4 l;
-	  for ( l = 1; l <= 2*Dterms; l ++ )
+	  for ( l = 1; l < 2*Dterms; l ++ )
 	    {
 	      Xalpha_l ++;
 	      
@@ -1151,8 +1152,12 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  U_alpha = Sn / qn;
 	  V_alpha = Tn / qn;
 
-	  realXP = s_alpha * U_alpha - c_alpha * V_alpha;
-	  imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
+   	  if ( kappa_star <= LD_SMALL4 )
+	    ind0 = Dterms - 1;
+   	  else
+	    ind0 = Dterms;
+ 	  realXP = TWOPI_FLOAT * Xalpha_l[ind0].re;
+ 	  imagXP = TWOPI_FLOAT * Xalpha_l[ind0].im;
 	}
 
 #endif
