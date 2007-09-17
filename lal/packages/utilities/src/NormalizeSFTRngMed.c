@@ -169,7 +169,7 @@ LALPeriodoToRngmed (LALStatus  *status,
   ASSERT (length == rngmed->data->length, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
   ASSERT (length > blockSize, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
 
-  blocks2 = blockSize/2; /* integer division */
+  blocks2 = blockSize/2 - 1; /* integer division */
 
   rngMedPar.blocksize = (UINT4)blockSize;
   inputV.length = length;

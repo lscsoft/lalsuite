@@ -51,7 +51,7 @@ NRCSID( COMPUTEFSTATC, "$Id$");
 #define FALSE (1==0)
 
 
-#define LD_SMALL4       (1.0e-6)		/**< "small" number for REAL4*/ 
+#define LD_SMALL4       (2.0e-4)		/**< "small" number for REAL4*/ 
 #define OOTWOPI         (1.0 / LAL_TWOPI)	/**< 1/2pi */
 
 #define TWOPI_FLOAT     6.28318530717958f  	/**< single-precision 2*pi */
@@ -464,13 +464,13 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	  XLAL_ERROR ( "XLALComputeFaFb", XLAL_EFUNC);
 	}
 
-	kstar = (INT4) (Dphi_alpha + 0.5);	/* k* = round(Dphi_alpha*chi) for positive Dphi */
-	kappa_star = Dphi_alpha - 1.0 * kstar;
-	kappa_max = kappa_star + 1.0 * Dterms;
+	kstar = (INT4) (Dphi_alpha);	/* k* = floor(Dphi_alpha) for positive Dphi */
+	kappa_star = Dphi_alpha - 1.0 * kstar;	/* remainder of Dphi_alpha: >= 0 ! */
+	kappa_max = kappa_star + 1.0 * Dterms - 1.0;
 
 	/* ----- check that required frequency-bins are found in the SFTs ----- */
-	k0 = kstar - Dterms;	
-	k1 = k0 + 2 * Dterms;
+	k0 = kstar - Dterms + 1;	
+	k1 = k0 + 2 * Dterms - 1;
 	if ( (k0 < freqIndex0) || (k1 > freqIndex1) ) 
 	  {
 	    LALPrintError ("Required frequency-bins [%d, %d] not covered by SFT-interval [%d, %d]\n\n",
@@ -505,7 +505,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
       imagXP = 0;
 
       /* if no danger of denominator -> 0 */
-      if ( ( kappa_star > LD_SMALL4 ) || (kappa_star < -LD_SMALL4) )	
+      if ( ( kappa_star > LD_SMALL4 ) && (kappa_star < 1.0 - LD_SMALL4) )	
 	{ 
 	  /* improved hotloop algorithm by Fekete Akos: 
 	   * take out repeated divisions into a single common denominator,
@@ -519,10 +519,10 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	  
 	  /* recursion with 2*Dterms steps */
 	  UINT4 l;
-	  for ( l = 1; l <= 2*Dterms; l ++ )
+	  for ( l = 1; l < 2*Dterms; l ++ )
 	    {
 	      Xalpha_l ++;
-	      
+
 	      pn = pn - 1.0f; 			/* p_(n+1) */
 	      Sn = pn * Sn + qn * (*Xalpha_l).re;	/* S_(n+1) */
 	      Tn = pn * Tn + qn * (*Xalpha_l).im;	/* T_(n+1) */
@@ -545,7 +545,8 @@ XLALComputeFaFb ( Fcomponents *FaFb,
       else
 	{ /* otherwise: lim_{rem->0}P_alpha,k  = 2pi delta_{k,kstar} */
 	  UINT4 ind0;
-	  ind0 = Dterms;
+  	  if ( kappa_star <= LD_SMALL4 ) ind0 = Dterms - 1;
+  	  else ind0 = Dterms;
 	  realXP = TWOPI_FLOAT * Xalpha_l[ind0].re;
 	  imagXP = TWOPI_FLOAT * Xalpha_l[ind0].im;
 	} /* if |remainder| <= LD_SMALL4 */
