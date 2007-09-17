@@ -417,11 +417,25 @@ int main(INT4 argc,CHAR *argv[])
   INT4  sizecells; /* Length of the cell list */
   INT4  AlphaTwoPiIdx=0, AlphaZeroIdx=0; /* Cell-index of an candidate events located at alpha=2*Pi*/
   
-
   LALStatus *lalStatus = &global_status;
   lalDebugLevel = 0 ;  
   vrbflg = 1;   /* verbose error-messages */
 
+#ifdef HOLGER
+  /* Set the seed */
+  FILE *devrandom = NULL;
+  INT4 errorcode = 0;
+  INT4 seed = 0;
+  if (!(devrandom=fopen("/dev/urandom","r")))  {
+    fprintf(stderr,"Unable to open device /dev/urandom\n");
+  }
+  errorcode=fread((void*)&seed,sizeof(INT4),1,devrandom);
+  if (errorcode!=1)  {
+    fprintf(stderr, "Error reading /dev/random file!\n");
+  }
+  fclose(devrandom);
+  srand( seed );
+#endif
 
   /* Get the debuglevel from command line arg, then set laldebuglevel. */
   LAL_CALL (LALGetDebugLevel(lalStatus, argc, argv, 'v'), lalStatus);
@@ -1396,7 +1410,17 @@ void get_info_of_the_cell( LALStatus *lalStatus, CellData *cd, const CandidateLi
 #ifdef HOLGER
     /* HOLGER is testing here. */
     if( cd->nCand < 17 ) {
-      fprintf(stderr,"data-segment:%02d skypoint:alpha=%g delta=%g has indices: iAlpha=%d iDelta=%d \n",CList[idx].FileID,CList[idx].Alpha,CList[idx].Delta,CList[idx].iAlpha,CList[idx].iDelta);
+      if( CList[idx].Alpha > LAL_TWOPI ) {
+	fprintf(stderr,"skypointx %d %.6f %.6f\n",cd->nCand,CList[idx].Alpha - LAL_TWOPI,CList[idx].Delta);
+      }
+      else {
+	if( CList[idx].Alpha < 0 ) {
+	  fprintf(stderr,"skypointx %d %.6f %.6f\n",cd->nCand,CList[idx].Alpha + LAL_TWOPI,CList[idx].Delta);
+	}
+	else {
+	  fprintf(stderr,"skypointx %d %.6f %.6f\n",cd->nCand,CList[idx].Alpha,CList[idx].Delta);
+	}
+      }
     }
 #endif
 
@@ -2578,6 +2602,14 @@ ReadOneCandidateFile( LALStatus *lalStatus,
       if ( cl->TwoF > myFthr ) {
 	numlinesFthr++;
       }
+      
+#ifdef HOLGER
+      /* Pick a random values for the 2F-values */
+      cl->TwoF = (((float)rand()/RAND_MAX)*999)+1;
+      if ( cl->TwoF <= 0.0 ) {
+        cl->TwoF = EPSEDGE;
+      }
+#endif
 
       /* check that values that are read in are sensible */
       if (
@@ -2635,8 +2667,6 @@ ReadOneCandidateFile( LALStatus *lalStatus,
           fclose(fp);
 	  ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
         }
-
-
 
       i++;
     } /*  end of main while loop */
