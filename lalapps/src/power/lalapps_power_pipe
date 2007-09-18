@@ -263,7 +263,7 @@ def group_coinc_parents(parents, time_slides, verbose = False):
 		print >>sys.stderr, "Notice:  %d jobs (of %d) produce output that will not be used by a coincidence job" % (len(parents) - n_found, len(parents))
 
 	# done
-	return zip(parent_groups, segs)
+	return zip(caches, parent_groups, segs)
 
 
 #
@@ -322,17 +322,14 @@ if options.verbose:
 	print >>sys.stderr, "Computing segments for which lalapps_power jobs are required ..."
 
 if options.do_noninjections:
-	background_time_slides = []
+	background_time_slides = {}
 	background_seglistdict = segments.segmentlistdict()
-	for background_time_slide_filename in options.background_time_slides:
-		background_time_slides.append(ligolw_tisi.load_time_slides(background_time_slide_filename, verbose = options.verbose, gz = background_time_slide_filename[-3:] == ".gz").values())
-		background_seglistdict |= compute_segment_lists(seglistdict, background_time_slides[-1], options.minimum_gap, options.timing_params, full_segments = options.full_segments, verbose = options.verbose)
+	for filename in options.background_time_slides:
+		background_time_slides[filename] = ligolw_tisi.load_time_slides(background_time_slide_filename, verbose = options.verbose, gz = background_time_slide_filename[-3:] == ".gz").values()
+		background_seglistdict |= compute_segment_lists(seglistdict, background_time_slides[filename], options.minimum_gap, options.timing_params, full_segments = options.full_segments, verbose = options.verbose)
 else:
-	background_time_slides = [[]]
+	background_time_slides = {}
 	background_seglistdict = segments.segmentlistdict()
-
-# compute merged list of all background time slides
-background_time_slides_all = reduce(lambda a, b: a + b, background_time_slides)
 
 
 if options.do_injections:
@@ -342,9 +339,12 @@ else:
 	injection_time_slides = []
 	injection_seglistdict = segments.segmentlistdict()
 
-# apply time shifts to segment lists to shift tiling phases
+# apply time shifts to segment lists to shift tiling phases, but take
+# intersection with original segments to stay within allowed times
 background_seglistdict.offsets.update(tiling_phase)
+background_seglistdict &= seglistdict
 injection_seglistdict.offsets.update(tiling_phase)
+injection_seglistdict &= seglistdict
 
 
 #
@@ -384,14 +384,18 @@ datafinds = power.make_datafind_stage(dag, injection_seglistdict | background_se
 #
 
 
-# injections
-
-inj_pwr_nodes = power.make_single_instrument_injections_stage(dag, datafinds, binjnodes, injection_seglistdict, "INJECTIONS_%s" % options.tag, options.timing_params, options.psds_per_injection, verbose = options.verbose)
-
-
 # non-injections
 
 pwr_nodes = power.make_single_instrument_stage(dag, datafinds, background_seglistdict, options.tag, options.timing_params, options.psds_per_power, verbose = options.verbose)
+if options.enable_clustering:
+	pwr_nodes = power.make_bucluster_fragment(dag, pwr_nodes, options.tag)
+
+
+# injections
+
+inj_pwr_nodes = power.make_single_instrument_injections_stage(dag, datafinds, binjnodes, injection_seglistdict, "INJECTIONS_%s" % options.tag, options.timing_params, options.psds_per_injection, verbose = options.verbose)
+if options.enable_clustering:
+	inj_pwr_nodes = power.make_bucluster_fragment(dag, inj_pwr_nodes, "INJECTIONS_%s" % options.tag)
 
 
 #
@@ -399,23 +403,30 @@ pwr_nodes = power.make_single_instrument_stage(dag, datafinds, background_seglis
 #
 
 
-# injections
-
-inj_coinc_nodes = []
-for parents, seg in group_coinc_parents(inj_pwr_nodes, injection_time_slides, verbose = options.verbose):
-	if options.enable_clustering:
-		parents = power.make_lladded_bucluster_fragment(dag, parents, seg, "INJECTIONS_%s" % options.tag)
-	inj_coinc_nodes += power.make_coinc_fragment(dag, parents, seg, "INJECTIONS_%s" % options.tag, options.injection_time_slides, binjnodes = binjnodes)
-
-
 # non-injections
 
 coinc_nodes = []
-for parents, seg in group_coinc_parents(pwr_nodes, background_time_slides_all, verbose = options.verbose):
+for time_slides_filename, time_slides in background_time_slides:
+	extra_cache = [CacheEntry(None, None, None, "file://localhost" + os.path.abspath(time_slides_filename))]
+	for cache, parents, seg in group_coinc_parents(pwr_nodes, time_slides, verbose = options.verbose):
+		parents = power.make_pre_coinc_lladd(dag, parents, seg, options.tag, input_cache = cache + extra_cache)
+		if options.enable_clustering:
+			parents = power.make_bucluster_fragment(dag, parents, "%s_%d_%d" % (options.tag, int(seg[0]), int(abs(seg))))
+		coinc_nodes += power.make_burca_fragment(dag, parnets, "ALL", seg, options.tag)
+
+
+# injections
+
+
+inj_coinc_nodes = []
+extra_cache = [CacheEntry(None, None, None, "file://localhost" + os.path.abspath(options.injection_time_slides))]
+for node in binjnodes:
+	extra_cache += node.get_output_cache()
+for cache, parents, seg in group_coinc_parents(inj_pwr_nodes, injection_time_slides, verbose = options.verbose):
+	parents = power.make_pre_coinc_lladd(dag, parents + binjnodes, seg, "INJECTIONS_%s" % options.tag, input_cache = cache + extra_cache)
 	if options.enable_clustering:
-		parents = power.make_lladded_bucluster_fragment(dag, parents, seg, options.tag)
-	for n, time_slide_filename in enumerate(options.background_time_slides):
-		coinc_nodes += power.make_coinc_fragment(dag, parents, seg, "%s_%d" % (options.tag, n), time_slide_filename)
+		parents = power.make_bucluster_fragment(dag, parents, seg, "INJECTIONS_%s_%d_%d" % (options.tag, int(seg[0]), int(abs(seg))))
+	inj_coinc_nodes += power.make_burca_fragment(dag, parents, "ALL", seg, "INJECTIONS_%s" % options.tag)
 
 
 #

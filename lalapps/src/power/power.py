@@ -729,18 +729,25 @@ def make_datafind_fragment(dag, instrument, seg):
 	return [node]
 
 
-def make_lladd_fragment(dag, parents, instrument, seg, tag, preserves = []):
+def make_lladd_fragment(dag, parents, instrument, seg, tag, preserve_cache = [], input_cache = None):
 	node = LigolwAddNode(lladdjob)
 	node.set_name("lladd_%s_%s_%s_%s" % (instrument, tag, int(seg[0]), int(abs(seg))))
+	parent_output_cache = []
 	for parent in parents:
 		node.add_parent(parent)
+		parent_output_cache += parent.get_output_cache()
+	# if input_cache is None, use the parents' output caches as the
+	# source of input files
+	if input_cache is not None:
+		node.add_input_cache(input_cache)
+	else:
 		node.add_input_cache(parent.get_output_cache())
-	node.add_preserve_cache(preserves)
+	node.add_preserve_cache(preserve_cache)
 	node.set_retry(3)
 	dag.add_node(node)
 	# NOTE:  code that calls this generally requires a single node to
-	# be returned;  if this behaviour changes, check and fix all
-	# calling codes.
+	# be returned.  if this function is ever modified to return more
+	# than one node, check and fix all calling codes.
 	return [node]
 
 
@@ -803,12 +810,12 @@ def make_binjfind_fragment(dag, parents, tag):
 	return nodes
 
 
-def make_bucluster_fragment(dag, parents, instrument, seg, tag):
+def make_bucluster_fragment(dag, parents, tag):
 	parents = list(parents)
 	nodes = []
 	while parents:
 		node = BuclusterNode(buclusterjob)
-		node.set_name("ligolw_bucluster_%s_%s_%d_%d_%d" % (instrument, tag, int(seg[0]), int(abs(seg)), len(nodes)))
+		node.set_name("ligolw_bucluster_%s_%d" % (tag, len(nodes)))
 		for i in xrange(min(buclusterjob.parents_per_bucluster, len(parents))):
 			parent = parents.pop()
 			node.add_parent(parent)
@@ -1038,7 +1045,7 @@ def make_lladded_bucluster_fragment(dag, parents, segment, tag):
 	# make first-pass bucluster jobs (these are no-ops on files that
 	# don't contain sngl_burst tables).
 
-	nodes = make_bucluster_fragment(dag, parents, "ALL", segment, tag)
+	nodes = make_bucluster_fragment(dag, parents, "%s_%d_%d" % (tag, int(segment[0]), int(abs(segment))))
 
 	# make ligolw_add job.
 
@@ -1050,7 +1057,7 @@ def make_lladded_bucluster_fragment(dag, parents, segment, tag):
 
 	# add second-pass clustering
 
-	return make_bucluster_fragment(dag, nodes, "ALL", segment, "%s_POSTLLADD" % tag)
+	return make_bucluster_fragment(dag, nodes, "%s_%d_%d_POSTLLADD" % (tag, int(segment[0]), int(abs(segment))))
 
 
 #
@@ -1060,6 +1067,12 @@ def make_lladded_bucluster_fragment(dag, parents, segment, tag):
 #
 # =============================================================================
 #
+
+
+def make_pre_coinc_lladd(dag, parents, segment, tag, input_cache):
+	nodes = make_lladd_fragment(dag, parents, "ALL", segment, "%s_PRECOINC" % tag, input_cache = input_cache, preserve_cache = input_cache)
+	nodes[0].set_output("ALL-%s-%s-%s.xml.gz" % (tag, int(segment[0]), int(abs(segment))))
+	return nodes
 
 
 def make_coinc_fragment(dag, parents, segment, tag, time_slides_filename, binjnodes = []):
@@ -1081,7 +1094,7 @@ def make_coinc_fragment(dag, parents, segment, tag, time_slides_filename, binjno
 	# this and other branches of the DAG, and should not be deleted in
 	# the event that --remove-input is set
 
-	nodes = make_lladd_fragment(dag, parents, "ALL", segment, "%s_PREBURCA" % tag, preserves = preserve_cache)
+	nodes = make_lladd_fragment(dag, parents, "ALL", segment, "%s_PREBURCA" % tag, preserve_cache = preserve_cache)
 
 	# add the extra files to the input cache
 
