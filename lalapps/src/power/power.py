@@ -811,7 +811,12 @@ def make_binjfind_fragment(dag, parents, tag):
 
 
 def make_bucluster_fragment(dag, parents, tag):
+	# make a copy of the parents list so we can modify it, and then
+	# sort by start time.  sorting by start time tends to associate
+	# bucluster jobs with files that go together in subsequent coinc
+	# jobs, and so helps facilitate a depth-first submit order.
 	parents = list(parents)
+	parents.sort(lambda a, b: cmp(a.get_start(), b.get_start()))
 	nodes = []
 	while parents:
 		node = BuclusterNode(buclusterjob)

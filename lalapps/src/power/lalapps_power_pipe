@@ -118,7 +118,12 @@ def parse_config_file(options):
 	tiling_phase = {}
 	for ifo in config.get("pipeline", "ifos").split():
 		seglistdict[ifo] = segmentsUtils.fromsegwizard(file(config.get("pipeline", "seglist_%s" % ifo)), coltype = LIGOTimeGPS).coalesce()
-		tiling_phase[ifo] = config.getfloat("pipeline", "tiling_phase_%s" % ifo)
+		try:
+			offset = config.getfloat("pipeline", "tiling_phase_%s" % ifo)
+		except ConfigParser.NoOptionError:
+			offset = 0.0
+		if offset:
+			tiling_phase[ifo] = offset
 
 	options.psds_per_power = config.getint("pipeline", "psds_per_power")
 	options.psds_per_injection = config.getint("pipeline", "psds_per_injection")
@@ -168,19 +173,12 @@ def compute_segment_lists(seglistdict, time_slides, minimum_gap, timing_params, 
 		# adjust surviving segment lengths up to the next integer
 		# number of PSDs
 		for seglist in new.itervalues():
+			# Try Adjusting Upper Bounds:
+
 			# count the number of PSDs in each segment
 			psds = [power.psds_from_job_length(timing_params, float(abs(seg))) for seg in seglist]
 
 			# round up to the nearest integer.
-			# FIXME: if psds is < 1, it means the coincident
-			# segment is too short for even a single job, but
-			# the original single-instrument segments might be
-			# long enough to run a job in each instrument.
-			# Here, an attempt is made to search for extra data
-			# in the time following the coincident segment, but
-			# to maximize the chances of analyzing the data we
-			# should also try looking for data from the time
-			# preceding the coincident segment.
 			psds = [int(math.ceil(max(n, 1.0))) for n in psds]
 
 			# compute the duration of each job
@@ -189,6 +187,30 @@ def compute_segment_lists(seglistdict, time_slides, minimum_gap, timing_params, 
 			# update segment list
 			for i, seg in enumerate(seglist):
 				seglist[i] = segments.segment(seg[0], seg[0] + durations[i])
+
+			# and take intersection with original segments to
+			# not exceed original bounds
+			new &= seglistdict
+
+			# Try Adjusting Lower Bounds:
+
+			# count the number of PSDs in each segment
+			psds = [power.psds_from_job_length(timing_params, float(abs(seg))) for seg in seglist]
+
+			# round up to the nearest integer.
+			psds = [int(math.ceil(max(n, 1.0))) for n in psds]
+
+			# compute the duration of each job
+			durations = [power.job_length_from_psds(timing_params, n) for n in psds]
+
+			# update segment list
+			for i, seg in enumerate(seglist):
+				seglist[i] = segments.segment(seg[1] - durations[i], seg[1])
+
+			# and take intersection with original segments to
+			# not exceed original bounds
+			new &= seglistdict
+
 
 		# try to fill gaps between jobs
 		new.protract(minimum_gap / 2).contract(minimum_gap / 2)
@@ -325,7 +347,7 @@ if options.do_noninjections:
 	background_time_slides = {}
 	background_seglistdict = segments.segmentlistdict()
 	for filename in options.background_time_slides:
-		background_time_slides[filename] = ligolw_tisi.load_time_slides(background_time_slide_filename, verbose = options.verbose, gz = background_time_slide_filename[-3:] == ".gz").values()
+		background_time_slides[filename] = ligolw_tisi.load_time_slides(filename, verbose = options.verbose, gz = filename[-3:] == ".gz").values()
 		background_seglistdict |= compute_segment_lists(seglistdict, background_time_slides[filename], options.minimum_gap, options.timing_params, full_segments = options.full_segments, verbose = options.verbose)
 else:
 	background_time_slides = {}
@@ -340,10 +362,15 @@ else:
 	injection_seglistdict = segments.segmentlistdict()
 
 # apply time shifts to segment lists to shift tiling phases, but take
-# intersection with original segments to stay within allowed times
-background_seglistdict.offsets.update(tiling_phase)
+# intersection with original segments to stay within allowed times.  Note:
+# can't use segmentlistdict's offset mechanism to do this because we need
+# the offsets to still be 0 for coincidence testing later.
+for key, offset in tiling_phase.items():
+	if key in background_seglistdict:
+		background_seglistdict[key].shift(offset)
+	if key in injection_seglistdict:
+		injection_seglistdict[key].shift(offset)
 background_seglistdict &= seglistdict
-injection_seglistdict.offsets.update(tiling_phase)
 injection_seglistdict &= seglistdict
 
 
@@ -406,26 +433,30 @@ if options.enable_clustering:
 # non-injections
 
 coinc_nodes = []
-for time_slides_filename, time_slides in background_time_slides:
-	extra_cache = [CacheEntry(None, None, None, "file://localhost" + os.path.abspath(time_slides_filename))]
+for n, (time_slides_filename, time_slides) in enumerate(background_time_slides.iteritems()):
+	if options.verbose:
+		print >>sys.stderr, "non-injections %d/%d (%s):" % (n + 1, len(background_time_slides), time_slides_filename)
+	extra_cache = set([CacheEntry(None, None, None, "file://localhost" + os.path.abspath(time_slides_filename))])
 	for cache, parents, seg in group_coinc_parents(pwr_nodes, time_slides, verbose = options.verbose):
-		parents = power.make_pre_coinc_lladd(dag, parents, seg, options.tag, input_cache = cache + extra_cache)
+		parents = power.make_pre_coinc_lladd(dag, parents, seg, "%s_%d" % (options.tag, n), input_cache = cache | extra_cache)
 		if options.enable_clustering:
-			parents = power.make_bucluster_fragment(dag, parents, "%s_%d_%d" % (options.tag, int(seg[0]), int(abs(seg))))
-		coinc_nodes += power.make_burca_fragment(dag, parnets, "ALL", seg, options.tag)
+			parents = power.make_bucluster_fragment(dag, parents, "%s_%d_%d_%d" % (options.tag, n, int(seg[0]), int(abs(seg))))
+		coinc_nodes += power.make_burca_fragment(dag, parents, "ALL", seg, "%s_%d" % (options.tag, n))
 
 
 # injections
 
 
 inj_coinc_nodes = []
-extra_cache = [CacheEntry(None, None, None, "file://localhost" + os.path.abspath(options.injection_time_slides))]
+if options.verbose:
+	print >>sys.stderr, "injections 1/1 (%s):" % options.injection_time_slides
+extra_cache = set([CacheEntry(None, None, None, "file://localhost" + os.path.abspath(options.injection_time_slides))])
 for node in binjnodes:
-	extra_cache += node.get_output_cache()
+	extra_cache |= set(node.get_output_cache())
 for cache, parents, seg in group_coinc_parents(inj_pwr_nodes, injection_time_slides, verbose = options.verbose):
-	parents = power.make_pre_coinc_lladd(dag, parents + binjnodes, seg, "INJECTIONS_%s" % options.tag, input_cache = cache + extra_cache)
+	parents = power.make_pre_coinc_lladd(dag, parents | set(binjnodes), seg, "INJECTIONS_%s" % options.tag, input_cache = cache | extra_cache)
 	if options.enable_clustering:
-		parents = power.make_bucluster_fragment(dag, parents, seg, "INJECTIONS_%s_%d_%d" % (options.tag, int(seg[0]), int(abs(seg))))
+		parents = power.make_bucluster_fragment(dag, parents, "INJECTIONS_%s_%d_%d" % (options.tag, int(seg[0]), int(abs(seg))))
 	inj_coinc_nodes += power.make_burca_fragment(dag, parents, "ALL", seg, "INJECTIONS_%s" % options.tag)
 
 
