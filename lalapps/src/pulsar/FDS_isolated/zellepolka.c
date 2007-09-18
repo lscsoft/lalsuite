@@ -98,7 +98,7 @@ If defined, it does:
  + output candidate events in cells which have less than 17 coincidences
  + randomly set candidate events' 2F-values
 
-#define HOLGER  
+#define SKYTESTMODE  
 */
 
 /*                                                                                                                                                                      
@@ -421,7 +421,7 @@ int main(INT4 argc,CHAR *argv[])
   lalDebugLevel = 0 ;  
   vrbflg = 1;   /* verbose error-messages */
 
-#ifdef HOLGER
+#ifdef SKYTESTMODE
   /* Set the seed */
   FILE *devrandom = NULL;
   INT4 errorcode = 0;
@@ -536,7 +536,10 @@ int main(INT4 argc,CHAR *argv[])
     for (bb2=0; bb2<2; bb2++) {
       for (bb3=0; bb3<2; bb3++) {
 	for (bb4=0; bb4<2; bb4++) {
-  	 
+
+#ifdef SKYTESTMODE
+	  if (bb1 ==0 && bb4 == 0) {
+#endif
 	  /*if (selectGrid == PCV.CellGrid) {*/
 	    cc1=bb1; /* shift in f */
 	    cc2=bb2; /* shift in alpha */
@@ -738,7 +741,10 @@ int main(INT4 argc,CHAR *argv[])
 	    LALCheckMemoryLeaks(); 
 	    
 	    selectGrid++;
-	      
+
+#ifdef SKYTESTMODE
+	  }
+#endif
 	}
       }
     }
@@ -979,7 +985,7 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
   
 
 
-#ifdef HOLGER
+#ifdef SKYTESTMODE
   /* ------------------------------------------------------------- */
   /* Print out to the user-specified output file all the information in all the cell. 
      This file can be too huge to be tractable.*/
@@ -1407,8 +1413,8 @@ void get_info_of_the_cell( LALStatus *lalStatus, CellData *cd, const CandidateLi
     cd->Delta += CList[idx].Delta;
     cd->Freq += CList[idx].f;
 
-#ifdef HOLGER
-    /* HOLGER is testing here. */
+#ifdef SKYTESTMODE
+    /* Testing for sky-cells having less than 17 coincidences */
     if( cd->nCand < 17 ) {
       if( CList[idx].Alpha > LAL_TWOPI ) {
 	fprintf(stderr,"skypointx %d %.6f %.6f\n",cd->nCand,CList[idx].Alpha - LAL_TWOPI,CList[idx].Delta);
@@ -2603,8 +2609,9 @@ ReadOneCandidateFile( LALStatus *lalStatus,
 	numlinesFthr++;
       }
       
-#ifdef HOLGER
-      /* Pick a random values for the 2F-values */
+#ifdef SKYTESTMODE
+      /* Pick a random values for the 2F-values, so that for cells covering two or more sky-points from
+       the same data segment, each time pick a different sky-point from with in the cell. */
       cl->TwoF = (((float)rand()/RAND_MAX)*999)+1;
       if ( cl->TwoF <= 0.0 ) {
         cl->TwoF = EPSEDGE;
