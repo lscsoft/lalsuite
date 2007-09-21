@@ -123,12 +123,34 @@ static UINT4 last_count, last_total;      /**< last template count, see last_rac
 static void worker (void);
 static void sighandler(int);
 static int write_checkpoint(char*);
-static int  is_zipped(const char *);
-static int  resolve_and_unzip(const char*, char*, const size_t);
+static int is_zipped(const char *);
+static int resolve_and_unzip(const char*, char*, const size_t);
+static int load_graphics_dll();
 
 
 
 /*^* FUNCTIONS *^*/
+
+#ifdef _MSC_VER
+/** Attempt to load the dlls that are required to display graphics.
+   If any of them fail do not start the application in graphics mode.
+*/
+int load_graphics_dll() {
+  if (FAILED(__HrLoadAllImportsForDll("GDI32.dll"))) {
+    fprintf(stderr, "Failed to load GDI32.DLL\n" );
+    return false;
+  }
+  if (FAILED(__HrLoadAllImportsForDll("OPENGL32.dll"))) {
+    fprintf( stderr, "Failed to load OPENGL32.DLL\n" );
+    return false;
+  }
+  if (FAILED(__HrLoadAllImportsForDll("GLU32.dll"))) {
+    fprintf( stderr, "Failed to load GLU32.DLL\n" );
+    return false;
+  }
+  return(0);
+}
+
 
 /** freaking LAL's REPORTSTATUS just won't work with any of NDEBUG or 
     LAL_NDEBUG set, so we write our own function that dumps the LALStatus
@@ -958,33 +980,46 @@ int main(int argc, char**argv) {
 
 
   /* boinc_init variations */
-
-#if BOINC_GRAPHICS>0
+#if (BOINC_GRAPHICS==2) && defined(_MSC_VER)
+  /* We don't load an own DLL on Windows, but we check if we can (manually)
+     load the system DLLs necessary to do graphics on Windows, and will run
+     without graphics if this fails */
+  if(!load_graphics_dll) {
+    int retval;
+    set_search_pos_hook = set_search_pos;
+    fraction_done_hook = &fraction_done;
+    retval = boinc_init_graphics(worker);
+    LogPrintf (LOG_CRITICAL, "boinc_init_graphics() returned %d.\n", retval);
+    boinc_finish(HIERARCHICALSEARCH_EWORKER );
+  }
+#elif BOINC_GRAPHICS==2
+  /* Try loading screensaver-graphics as a dynamic library.  If this
+     succeeds then extern void* graphics_lib_handle is set, and can
+     be used with dlsym() to resolve symbols from that library as
+     needed. */
   {
     int retval;
-#if BOINC_GRAPHICS==2
-    /* Try loading screensaver-graphics as a dynamic library.  If this
-       succeeds then extern void* graphics_lib_handle is set, and can
-       be used with dlsym() to resolve symbols from that library as
-       needed. */
     retval = boinc_init_graphics_lib(worker, argv[0]);
-#endif /* BOINC_GRAPHICS==2 */
-#if BOINC_GRAPHICS==1
+    LogPrintf (LOG_CRITICAL, "ERROR: boinc_init_graphics_lib() returned %d.\n", retval);
+    boinc_finish(HIERARCHICALSEARCH_EWORKER );
+  }
+#elif BOINC_GRAPHICS==1
+  {
+    int retval;
     /* if we don't get them from the shared library, use variables local to here */
     set_search_pos_hook = set_search_pos;
     fraction_done_hook = &fraction_done;
     /* no dynamic library, just call boinc_init_graphics() */
     retval = boinc_init_graphics(worker);
-#endif /* BOINC_GRAPHICS==1 */
-    LogPrintf (LOG_CRITICAL,  "boinc_init_graphics[_lib]() returned %d. This indicates an error...\n", retval);
+    LogPrintf (LOG_CRITICAL, "ERROR: boinc_init_graphics() returned %d\n", retval);
     boinc_finish(HIERARCHICALSEARCH_EWORKER );
   }
-#endif /*  BOINC_GRAPHICS>0 */
-    
-  /* we end up hereo only if BOINC_GRAPHICS == 0 or a call to boinc_init_graphics failed */
+#endif /* BOINC_GRAPHICS== */
+
+  /* we end up here only if BOINC_GRAPHICS == 0 or a call to boinc_init_graphics failed */
   boinc_init();
   worker();
-  boinc_finish( HIERARCHICALSEARCH_ENORM );
+  boinc_finish(HIERARCHICALSEARCH_ENORM);
   /* boinc_init_graphics() or boinc_finish() ends the program, we never get here */
   return(0);
 }
