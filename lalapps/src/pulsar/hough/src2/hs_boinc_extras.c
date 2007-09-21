@@ -45,7 +45,7 @@
 /* probably already included by previous headers, but make sure they are included */
 #include <stdlib.h>
 #include <string.h>
-#if (BOINC_GRAPHICS == 2)
+#if (BOINC_GRAPHICS == 2) && !defined(_MSC_VER)
 #include <dlfcn.h>
 #endif
 
@@ -95,8 +95,8 @@ int (*boinc_init_graphics_hook)(void (*worker)(void)) = NULL; /**< boinc_init_gr
 void (*set_search_pos_hook)(float,float) = NULL; /**< updates the search position on the starsphere */
 double *fraction_done_hook = NULL; /**< hooks the "fraction done" counter of the graphics */
 
-/** if we don't get these symbols from a dynamic library (BOINC_GRAPHICS==2) we declare them here */
-#if (BOINC_GRAPHICS == 1)
+/** if we don't get these symbols from a dynamic library (BOINC_GRAPHICS == 2) we declare them here */
+#if (BOINC_GRAPHICS == 1) || ((BOINC_GRAPHICS == 2) && defined(_MSC_VER))
 extern double fraction_done;
 extern void set_search_pos(float RAdeg, float DEdeg);
 extern int boinc_init_graphics(void (*worker)(void));
@@ -125,7 +125,7 @@ static void sighandler(int);
 static int write_checkpoint(char*);
 static int is_zipped(const char *);
 static int resolve_and_unzip(const char*, char*, const size_t);
-static int load_graphics_dll();
+static int load_graphics_dll(void);
 
 
 
@@ -135,19 +135,22 @@ static int load_graphics_dll();
 /** Attempt to load the dlls that are required to display graphics.
    If any of them fail do not start the application in graphics mode.
 */
-int load_graphics_dll() {
+int load_graphics_dll(void) {
   if (FAILED(__HrLoadAllImportsForDll("GDI32.dll"))) {
-    fprintf(stderr, "Failed to load GDI32.DLL\n" );
-    return false;
-  }
+    LogPrintf(LOG_NORMAL, "WARNING: Failed to load GDI32.DLL - running w/o graphics\n" );
+    return(-1);
+  } else
+    LogPrintf(LOG_NORMAL, "INFO: GDI32.DLL loaded\n" );
   if (FAILED(__HrLoadAllImportsForDll("OPENGL32.dll"))) {
-    fprintf( stderr, "Failed to load OPENGL32.DLL\n" );
-    return false;
-  }
+    LogPrintf(LOG_NORMAL, "WARNING: Failed to load OPENGL32.DLL - running w/o graphics\n" );
+    return(-1);
+  } else
+    LogPrintf(LOG_NORMAL, "INFO: OPENGL32.DLL loaded\n" );
   if (FAILED(__HrLoadAllImportsForDll("GLU32.dll"))) {
-    fprintf( stderr, "Failed to load GLU32.DLL\n" );
-    return false;
-  }
+    LogPrintf(LOG_NORMAL, "WARNING: Failed to load GLU32.DLL - running w/o graphics\n" );
+    return(-1);
+  } else
+    LogPrintf(LOG_NORMAL, "INFO: GLU32.DLL loaded\n" );
   return(0);
 }
 #endif
@@ -486,7 +489,7 @@ static void worker (void) {
 #endif
 
   /* try to load the graphics shared object and, if succeeded, hook the symbols */
-#if (BOINC_GRAPHICS == 2) 
+#if (BOINC_GRAPHICS == 2) && !defined(_MSC_VER)
   if (graphics_lib_handle) {
     if (!(set_search_pos_hook = dlsym(graphics_lib_handle,"set_search_pos"))) {
       LogPrintf (LOG_CRITICAL,   "unable to resolve set_search_pos(): %s\n", dlerror());
@@ -944,7 +947,6 @@ int main(int argc, char**argv) {
 
 
   /* install signal handler */
-
 #ifndef _WIN32
   /* install signal-handler for SIGTERM, SIGINT and SIGABRT(?) 
    * NOTE: it is critical to catch SIGINT, because a user
@@ -980,11 +982,11 @@ int main(int argc, char**argv) {
 
 
   /* boinc_init variations */
-#if (BOINC_GRAPHICS==2) && defined(_MSC_VER)
+#if (BOINC_GRAPHICS == 2) && defined(_MSC_VER)
   /* We don't load an own DLL on Windows, but we check if we can (manually)
      load the system DLLs necessary to do graphics on Windows, and will run
      without graphics if this fails */
-  if(!load_graphics_dll) {
+  if(!load_graphics_dll()) {
     int retval;
     set_search_pos_hook = set_search_pos;
     fraction_done_hook = &fraction_done;
@@ -992,7 +994,7 @@ int main(int argc, char**argv) {
     LogPrintf (LOG_CRITICAL, "boinc_init_graphics() returned %d.\n", retval);
     boinc_finish(HIERARCHICALSEARCH_EWORKER );
   }
-#elif BOINC_GRAPHICS==2
+#elif BOINC_GRAPHICS == 2
   /* Try loading screensaver-graphics as a dynamic library.  If this
      succeeds then extern void* graphics_lib_handle is set, and can
      be used with dlsym() to resolve symbols from that library as
@@ -1003,7 +1005,7 @@ int main(int argc, char**argv) {
     LogPrintf (LOG_CRITICAL, "ERROR: boinc_init_graphics_lib() returned %d.\n", retval);
     boinc_finish(HIERARCHICALSEARCH_EWORKER );
   }
-#elif BOINC_GRAPHICS==1
+#elif BOINC_GRAPHICS == 1
   {
     int retval;
     /* if we don't get them from the shared library, use variables local to here */
