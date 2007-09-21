@@ -101,6 +101,8 @@ extern double fraction_done;
 extern void set_search_pos(float RAdeg, float DEdeg);
 extern int boinc_init_graphics(void (*worker)(void));
 #endif
+/** allow for telling apps with "dynamic graphics" to not use graphics */
+static int no_graphics = 0;
 
 /** worker() doesn't take arguments, so we have to pass it argv/c as global vars :-( */
 static int global_argc;
@@ -753,6 +755,12 @@ static void worker (void) {
       rarg--; rargc--; /* this argument is not passed to the main worker function */
     }
 
+    /* allow for telling apps with "dynamic graphics" to not use graphics */
+    else if (MATCH_START("--NoGraphics",argv[arg],l)) {
+      no_graphics = -1;
+      rarg--; rargc--; /* this argument is not passed to the main worker function */
+    }
+
     /* record a help otion (to later write help for additional command-line options) */
     else if ((0 == strncmp("--help",argv[arg],strlen("--help"))) ||
 	     (0 == strncmp("-h",argv[arg],strlen("--help")))) {
@@ -822,6 +830,7 @@ static void worker (void) {
     printf("      --MaxFileSize     INT      maximum size the outpufile may grow to befor compacted (in 1k)\n");
     printf("      --OutputBufSize   INT      size of the output file buffer (in 1k)\n");
     printf("      --BreakPoint       -       if present fire up the Windows Runtime Debugger at internal breakpoint (WIN32 only)\n");
+    printf("      --NoGraphics       -       if present Apps that dynamically look for graphics capabilities will run without graphics in any case\n");
     boinc_finish(0);
   }
 
@@ -986,7 +995,7 @@ int main(int argc, char**argv) {
   /* We don't load an own DLL on Windows, but we check if we can (manually)
      load the system DLLs necessary to do graphics on Windows, and will run
      without graphics if this fails */
-  if(!load_graphics_dll()) {
+  if((!no_graphics) || (!load_graphics_dll())) {
     int retval;
     set_search_pos_hook = set_search_pos;
     fraction_done_hook = &fraction_done;
@@ -999,7 +1008,7 @@ int main(int argc, char**argv) {
      succeeds then extern void* graphics_lib_handle is set, and can
      be used with dlsym() to resolve symbols from that library as
      needed. */
-  {
+  if (!no_graphics) {
     int retval;
     retval = boinc_init_graphics_lib(worker, argv[0]);
     LogPrintf (LOG_CRITICAL, "ERROR: boinc_init_graphics_lib() returned %d.\n", retval);
