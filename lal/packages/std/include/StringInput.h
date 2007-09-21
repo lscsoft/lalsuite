@@ -67,6 +67,7 @@ fully LAL-compliant and use only LAL types, so they are included in
 #define _STRINGINPUT_H
 
 #include <lal/LALStdlib.h>
+#include <lal/LALStdio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -144,72 +145,7 @@ Name & Usual value \\
 \end{tabular}
 \end{center}
 ******************************************************* </lalLaTeX> */
-#if 2 == LAL_SIZEOF_SHORT
-#define LAL_INT2_FORMAT "hd"
-#define LAL_UINT2_FORMAT "hu"
-#elif 2 == LAL_SIZEOF_INT
-#define LAL_INT2_FORMAT "d"
-#define LAL_UINT2_FORMAT "u"
-#elif 2 == LAL_SIZEOF_LONG
-#define LAL_INT2_FORMAT "ld"
-#define LAL_UINT2_FORMAT "lu"
-#elif 2 == LAL_SIZEOF_LONG_LONG
-#define LAL_INT2_FORMAT "lld"
-#define LAL_UINT2_FORMAT "llu"
-#else
-#define LAL_INT2_FORMAT "d"
-#define LAL_UINT2_FORMAT "u"
-#endif
 
-#if 4 == LAL_SIZEOF_SHORT
-#define LAL_INT4_FORMAT "hd"
-#define LAL_UINT4_FORMAT "hu"
-#elif 4 == LAL_SIZEOF_INT
-#define LAL_INT4_FORMAT "d"
-#define LAL_UINT4_FORMAT "u"
-#elif 4 == LAL_SIZEOF_LONG
-#define LAL_INT4_FORMAT "ld"
-#define LAL_UINT4_FORMAT "lu"
-#elif 4 == LAL_SIZEOF_LONG_LONG
-#define LAL_INT4_FORMAT "lld"
-#define LAL_UINT4_FORMAT "llu"
-#else
-#define LAL_INT4_FORMAT "d"
-#define LAL_UINT4_FORMAT "u"
-#endif
-
-#if 8 == LAL_SIZEOF_SHORT
-#define LAL_INT8_FORMAT "hd"
-#define LAL_UINT8_FORMAT "hu"
-#elif 8 == LAL_SIZEOF_INT
-#define LAL_INT8_FORMAT "d"
-#define LAL_UINT8_FORMAT "u"
-#elif 8 == LAL_SIZEOF_LONG
-#define LAL_INT8_FORMAT "ld"
-#define LAL_UINT8_FORMAT "lu"
-#elif 8 == LAL_SIZEOF_LONG_LONG
-#define LAL_INT8_FORMAT "lld"
-#define LAL_UINT8_FORMAT "llu"
-#else
-#define LAL_INT8_FORMAT "d"
-#define LAL_UINT8_FORMAT "u"
-#endif
-
-#if 4 == LAL_SIZEOF_FLOAT
-#define LAL_REAL4_FORMAT "f"
-#elif 4 == LAL_SIZEOF_DOUBLE
-#define LAL_REAL4_FORMAT "lf"
-#else
-#define LAL_REAL4_FORMAT "f"
-#endif
-
-#if 8 == LAL_SIZEOF_FLOAT
-#define LAL_REAL8_FORMAT "f"
-#elif 8 == LAL_SIZEOF_DOUBLE
-#define LAL_REAL8_FORMAT "lf"
-#else
-#define LAL_REAL8_FORMAT "f"
-#endif
 /********************************************************** <lalLaTeX>
 
 \subsection*{Types}

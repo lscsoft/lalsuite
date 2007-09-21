@@ -47,8 +47,14 @@ extern "C" {
 /** Records a time series as a .wav audio file */
 int XLALAudioWAVRecordREAL4TimeSeries( FILE *fp, REAL4TimeSeries *series );
 
+/** Records a time series as a .wav audio file */
+int XLALAudioWAVRecordREAL8TimeSeries( FILE *fp, REAL8TimeSeries *series );
+
 /** Records a time series as a .au audio file */
 int XLALAudioAURecordREAL4TimeSeries( FILE *fp, REAL4TimeSeries *series );
+
+/** Records a time series as a .au audio file */
+int XLALAudioAURecordREAL8TimeSeries( FILE *fp, REAL8TimeSeries *series );
 
 #ifdef __cplusplus
 #pragma {
