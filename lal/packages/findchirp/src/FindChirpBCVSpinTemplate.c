@@ -341,14 +341,14 @@ LALFindChirpBCVSpinTemplate (
   }
                                                                                                                              
   /* Taking multiplucation outside loop lessens cost */
-                                                                                                                             
+ 
   I *= 4*deltaF;
   J *= 4*deltaF;
   K *= 4*deltaF;
   L *= 2*deltaF;
   M *= 2*deltaF;
                                                                                                                          
-  /* To find absolute values of these moments multiply by (deltaT)^(-7/3)  */
+  /* To find absolute values of these moments multiply by (deltaT)^(7/3)  */
                                                                                                                              
   /* Expensive or well used quantities calc before loop */
  
@@ -373,10 +373,10 @@ LALFindChirpBCVSpinTemplate (
   A1Vec = fcTmplt->A1BCVSpin->data;
   A2Vec = fcTmplt->A2BCVSpin->data;
   A3Vec = fcTmplt->A3BCVSpin->data;
-  
-  memset( A1Vec, 0, ((numPoints/2)+1) * sizeof(REAL4) );
-  memset( A2Vec, 0, ((numPoints/2)+1) * sizeof(REAL4) );
-  memset( A3Vec, 0, ((numPoints/2)+1) * sizeof(REAL4) );
+ 
+  memset( A1Vec, 0, ((numPoints/2)+1) * sizeof(REAL8) );
+  memset( A2Vec, 0, ((numPoints/2)+1) * sizeof(REAL8) );
+  memset( A3Vec, 0, ((numPoints/2)+1) * sizeof(REAL8) );
   
   A1Vec[0] = 0;  
   A2Vec[0] = 0;
