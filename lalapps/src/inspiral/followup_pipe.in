@@ -37,7 +37,7 @@ from glue.ligolw import utils
 from pylal import CoincInspiralUtils
 from pylal.fu_utils import *
 from pylal.fu_writeXMLparams import * 
-from pylal import fu_Condor
+from pylal.fu_Condor import *
 from pylal import Fr
 from lalapps import inspiral
 from lalapps import inspiralutils
@@ -52,215 +52,6 @@ lsctables.SimInspiralTable.loadcolumns = ["waveform","geocent_end_time",
     "l_end_time_ns","source","mass1","mass2","mchirp","eta","distance",
     "spin1x","spin1y","spin1z","spin2x","spin2y","spin2z","eff_dist_h",
     "eff_dist_l","eff_dist_g","eff_dist_t","eff_dist_v"]
-
-################ TRIG BANK FROM SIRE FILE CONDOR DAG JOB ######################
-
-def inspiralFollowup(inspJob, procParams, triggerTime, bankFile, injFile):
-  """
-  Set up an instance of an inspiral followup job
-  """
-  insp = inspiral.InspiralNode(inspJob)
-  insp.add_var_opt("write-snrsq","")
-  insp.add_var_opt("write-chisq","")
-  insp.add_var_opt("write-spectrum","")
-  insp.set_bank(bankFile)
-
-  insp.set_user_tag("FOLLOWUP_" + str(triggerTime))
-  insp.__usertag = "FOLLOWUP_" + str(triggerTime)
-
-  insp.set_trig_start( int(triggerTime) - 1)
-  insp.set_trig_end( int(triggerTime) + 1 )
-  if injFile: insp.set_injections( injFile )
-
-  skipParams = ['minimal-match', 'bank-file', 'user-tag', 'injection-file', 'trig-start-time', 'trig-end-time']
-
-  for row in procParams:
-    param = row.param.strip("-")
-    value = row.value
-    
-    if param in skipParams:
-      continue
-
-    insp.add_var_opt(param,value)
-
-    if param == 'gps-end-time':
-      #insp.set_end(value)
-      insp.__end = value
-
-    if param == 'gps-start-time':
-      #insp.set_start(value)
-      insp.__start = value
-      
-    if param == 'ifo-tag':
-      #insp.set_ifo_tag(value) 
-      insp.__ifotag = value
-
-    if param == 'channel-name':
-      #insp.set_ifo(value[0:2])
-      insp.inputIfo = value[0:2]
-
-  # the output_file_name is required by the child job (plotSNRCHISQNode) 
-  insp.output_file_name = insp.inputIfo + "-INSPIRAL_" + insp.__ifotag + "_" + insp.__usertag + "-" + insp.__start + "-" + str(int(insp.__end)-int(insp.__start)) + ".xml"
-
-  return insp
-
-    
-class plotSNRCHISQJob(pipeline.CondorDAGJob):
-  """
-  A followup plotting job for snr and chisq time series 
-  """
-  def __init__(self, options, cp, tag_base='PLOT_FOLLOWUP'):
-    """
-    """
-    self.__executable = string.strip(cp.get('condor','plotsnrchisq'))
-    self.__universe = "vanilla"
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
-    self.add_condor_cmd('getenv','True')
-    self.set_stdout_file('logs/fuplotsnrchisq-$(macrogpsstarttime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/fuplotsnrchisq-$(macrogpsstarttime)-$(cluster)-$(process).err')
-    self.set_sub_file('fuplotsnrchisq.sub')
-
-
-class plotSNRCHISQNode(pipeline.CondorDAGNode):
-  """
-  Runs an instance of a plotSNRCHISQ followup job
-  """
-  def __init__(self,job,time,fileName,trig,page,plotFlag):
-    """
-    job = A CondorDAGJob that can run an instance of plotSNRCHISQ followup.
-    """
-    pipeline.CondorDAGNode.__init__(self,job)
-    self.output_file_name = ""
-    self.add_var_opt("frame-file",fileName.replace(".xml",".gwf"))
-    self.add_var_opt("gps",time)
-    self.add_var_opt("inspiral-xml-file",fileName)
-    self.container = HTMLcontainer(trig,"SNR_and_CHISQ_plots")
-    self.container2 = HTMLcontainer(trig,"Calibrated_Spectrum")
-    self.add_var_opt("output-html-file",self.container.locallink)
-    self.add_var_opt("output-path",self.container.localdetailpath)
-    self.add_var_opt("image-file", self.container.localimage)
-    self.add_var_opt("output-html-file2",self.container2.locallink)
-    self.add_var_opt("output-path2",self.container2.localdetailpath)
-    self.add_var_opt("image-file2", self.container2.localimage)
-    self.add_var_opt("page", page)
-    if plotFlag: self.initializeHTML()
-#    tableFile = open(self.container.locallink,'w')
-#    writeIULHeader(tableFile)
-#    tableFile.write('<h3>Follow up of trigger [' +str(trig.eventID) +']</h3>\n')
-    self.container.text = "click here for SNR and CHISQ plots"
-    self.container2.text = "click here for calibrated spectra"
-#    tableFile.close()
-  def getContainer(self):
-    return self.container
-  def getContainer2(self):
-    return self.container2
-  def initializeHTML(self):
-    tableFile = open(self.container.locallink,'w')
-    writeIULHeader(tableFile)
-    tableFile.write('<h3>Follow up of trigger [' +str(trig.eventID) +']</h3>\n')
-    tableFile.close()
-    tableFile2 = open(self.container2.locallink,'w')
-    writeIULHeader(tableFile2)
-    tableFile2.write('<h3>Follow up of trigger [' +str(trig.eventID) +']</h3>\n')
-    tableFile2.close()
-
-
-##############################################################################
-# qscan class for qscan Node
-
-#class qscanNode(pipeline.CondorDAGNode):
-#  """
-#  Runs an instance of a qscan job
-#  """
-#  def __init__(self,job,time,cp,trig,qcache,ifo,name,qFlag):
-#    """
-#    job = A CondorDAGJob that can run an instance of qscan.
-#    """
-#    pipeline.CondorDAGNode.__init__(self,job)
-#    self.add_var_arg(repr(time))
-#    self.container = HTMLcontainer(trig,name)
-#    if qFlag: self.initializeHTML(trig)
-#    tableFile = open(self.container.locallink,'a')
-#    if name == 'HOFT_QSCAN':
-#      sectionName = 'qscan-hoft'
-#      qscanConfig = string.strip(cp.get(sectionName, ifo + 'config-file'))
-#    if name == 'SEIS_QSCAN':
-#      sectionName = 'qscan-seismic'
-#      qscanConfig = string.strip(cp.get(sectionName, ifo + 'config-file'))
-#    if name == 'QSCAN':
-#      sectionName = 'qscan'
-#      qscanConfig = string.strip(cp.get(sectionName, ifo + 'config-file'))
-#    self.add_file_arg(qscanConfig)
-#    self.add_file_arg(qcache)
-#    self.add_var_arg(string.strip(cp.get(sectionName, ifo + 'output')))
-#    tableFile.write('<a href="' + string.strip(cp.get(sectionName, ifo +'web')) + str(time) + '/">' + str(ifo) + ' QScan of trigger [' +str(trig.eventID) +']</a><br>\n')
-#   self.add_var_arg(dir+"/"+self.container.name+"/")
-#   writeIULHeader(tableFile)
-#    self.container.text = "click here for QScans"
-#    tableFile.close()
-
-#  def getContainer(self):
-#    return self.container
-#  def initializeHTML(self,trig):
-#    tableFile = open(self.container.locallink,'w')
-#    writeIULHeader(tableFile)   
-#    tableFile.write('<h3>Follow up of trigger [' +str(trig.eventID) +']</h3>\n')
-#    tableFile.close()
-
-class segJob(pipeline.CondorDAGJob):
-  """
-  A segwizard job
-  """
-  def __init__(self, opts, cp, tag_base='SEG'):
-    """
-    """
-    self.__executable = string.strip(cp.get('condor','dataqual'))
-    self.__universe = "local"
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    self.tag_base = tag_base
-    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
-    self.add_condor_cmd('getenv','True')
-    self.set_stdout_file('followuptrigs/seg-$(macrogpsstarttime).out')
-    self.set_stderr_file('logs/seg-$(macrogpsstarttime)-$(cluster)-$(process).err')
-    self.set_sub_file('seg.sub')
-  #  self.add_condor_cmd("should_transfer_files","YES")
-  #  self.add_condor_cmd("when_to_transfer_output","ON_EXIT")
-  #  self.add_condor_cmd("transfer_input_files",string.strip(cp.get('seg','tclshexe')) )
-
-class segNode(pipeline.CondorDAGNode):
-  """
-  Runs an instance of a qscan job
-  """
-  def __init__(self,job,time,cp,dir,trig,ifo,sFlag):
-    """
-    job = A CondorDAGJob that can run an instance of qscan.
-    """
-    pipeline.CondorDAGNode.__init__(self,job)
-    scirun = string.strip(cp.get('hipe-cache','science-run'))
-    self.add_var_opt('run', scirun )
-    self.add_var_opt('interferometer', str(ifo).lower())
-    window =  string.strip(cp.get('seg','window'))
-    self.add_var_opt('gps-end-time', str( int(eval(str(time))) + int(eval(window)) ))
-    self.add_var_opt('gps-start-time', str( int(eval(str(time))) - int(eval(window)) ))
-    self.add_macro("macrogpsstarttime",str(time))
-    self.container = HTMLcontainer(trig,"DATA_QUALITY")
-    if sFlag: self.initializeHTML(trig)
-    tableFile = open(self.container.locallink,'a')
-    tableFile.write('<a href="http://www.lsc-group.phys.uwm.edu/iulgroup/' + \
-              string.strip(cp.get("output","page")) + "/followuptrigs/" + \
-              'seg-' + str(time) + '.out">' + str(ifo) + \
-              ' Data Quality of trigger [' +str(trig.eventID) +']</a><br>\n' )
-    self.container.text = "click here for Data Quality"
-    tableFile.close()
-
-  def getContainer(self):
-    return self.container
-  def initializeHTML(self,trig):
-    tableFile = open(self.container.locallink,'w')
-    writeIULHeader(tableFile)
-    tableFile.write('<h3>Follow up of trigger [' +str(trig.eventID) +']</h3>\n')
-
 
 ##############################################################################
 #
@@ -291,9 +82,6 @@ parser.add_option("-m", "--datafind",action="store_true",\
 
 parser.add_option("-M", "--hoft-datafind",action="store_true",\
     default=False, help="use datafind to get hoft data (for qscan)")
-
-#parser.add_option("-r","--read-triggers",action="store_true",default=False,\
-#    help="Read the followup trigger XML (COIRE FILE)" )
 
 parser.add_option("-q", "--qscan",action="store_true",default=False,\
     help="do qscans")
@@ -330,12 +118,6 @@ parser.add_option("-p", "--plots",action="store_true",default=False,\
 
 parser.add_option("-w", "--write-to-iulgroup",action="store_true", \
     default=False, help="publish the page to the iulgroup")
-
-#parser.add_option("-c", "--cache-path",action="store",type="string",\
-#    default="./.",metavar=" PATH",help="directory to find  all hipe XML files")
-
-#parser.add_option("-s", "--science-run", action="store",type="string",\
-#    default="S5", metavar=" RUN", help="name of science run")
 
 command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
@@ -381,7 +163,8 @@ cp.read(opts.config_file)
 currentPath = os.path.abspath('.')
 
 ## set up the local directories
-setupdirs()
+# THIS SHOULD BE DONE BY THE WEB THE DAG STUFF.
+#setupdirs()
 
 ############# TURN THE HIPE OUTPUT INTO LAL CACHE FILES #######################
 
@@ -402,18 +185,9 @@ except:
   os.symlink(string.strip(cp.get('hipe-cache','hipe-cache-path')), 'cache')
 
 ##############################################################################
-# create a log file that the Condor jobs will write to
-basename = re.sub(r'\.ini',r'',opts.config_file)
-tempfile.tempdir = opts.log_path
-tempfile.template = basename + '.dag.log.'
-logfile = tempfile.mktemp()
-fh = open( logfile, "w" )
-fh.close()
-
-##############################################################################
 # create the DAG writing the log to the specified directory
-dag = pipeline.CondorDAG(logfile)
-dag.set_dag_file( basename )
+dag = followUpDAG(opts.config_file, opts.log_path)
+dag.setupDAGWeb('followup web page','index.html')
 subsuffix = '.sub'
 
 ##############################################################################
@@ -467,11 +241,9 @@ print "\n.......Found " + str(len(followuptrigs)) + " trigs to follow up"
 
 inspJob        = inspiral.InspiralJob(cp)
 plotJob        = plotSNRCHISQJob(opts,cp)
-#dataJob        = pipeline.LSCDataFindJob('datafind_cache','logs',cp)
-dataJob        = fu_Condor.qscanDataFindJob('datafind_cache','logs',cp,'futrigs')
-qscanFgJob     = fu_Condor.qscanJob(opts,cp)
-qscanBgJob     = fu_Condor.qscanLiteJob(opts,cp)
-#qscanBgJob     = qscanJob(opts,cp,'QSCANLITE')
+dataJob        = qscanDataFindJob('datafind_cache','logs',cp,'futrigs')
+qscanFgJob     = qscanJob(opts,cp)
+qscanBgJob     = qscanLiteJob(opts,cp)
 
 inspJobCnt        = 0
 plotJobCnt        = 0
@@ -486,149 +258,35 @@ prev_dHoftNode = None
 
 print "\n.......Setting up pipeline jobs"
 
-# a bunch of variables required by the qscan jobs 
 dq_url_pattern = "http://ldas-cit.ligo.caltech.edu/segments/S5/%s/dq_segments.txt"
 
 segFile = {}
 ifos_list = ['H1','H2','L1','G1','V1','T1']
-qscanNames = ['HOFT_QSCAN','QSCAN','SEIS_QSCAN']
-foregroundSections = ['qscan-hoft','qscan','qscan-seismic']
-backgroundSections = ['background-qscan-hoft','background-qscan','background-qscan-seismic']
-foregroundCommandOptions = ['hoft_qscan','qscan','seis_qscan']
-backgroundCommandOptions = ['background_hoft_qscan','background_qscan','background_seis_qscan']
-foregroundList = map(None,qscanNames,foregroundSections,foregroundCommandOptions)
-backgroundList = map(None,qscanNames,backgroundSections,backgroundCommandOptions)
 
+
+############# LOOP OVER RANDOM BACKGROUND TIMES ###############################
 # Prepare the qscan background
 for ifo in ifos_list:
+  times = getQscanBackgroundTimes(cp,opts,ifo, dq_url_pattern,segFile)
+  for time in times:
+    # SETUP DATAFIND JOBS FOR BACKGROUND QSCANS (REGULAR DATA SET)
+    dNode = qscanDataFindNode(dataJob,'futrig','q-datafind',cp,time,ifo, opts, prev_dNode, dag, dataJobCnt)
 
-  if cp.has_option('background-qscan-times',ifo+'range'):
-    rangeString = string.strip(cp.get('background-qscan-times',ifo+'range')) 
-  else:
-    rangeString = ''
-  if cp.has_option('background-qscan-times',ifo+'segment-list'):
-    segmentListFile = string.strip(cp.get('background-qscan-times',ifo+'segment-list'))
-  else:
-    segmentListFile = ''
-  if cp.has_option('background-qscan-times',ifo+'time-list'):
-    timeListFile = string.strip(cp.get('background-qscan-times',ifo+'time-list'))
-  else:
-    timeListFile = ''
+    # SETUP DATAFIND JOBS FOR BACKGROUND QSCANS (HOFT)
+    dHoftNode = qscanDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,time,ifo,opts,prev_dHoftNode,dag,dataHoftJobCnt)
+    
+      # SETUP BACKGROUND QSCAN JOBS
+    qBgNode = qscanNode(qscanBgJob,time,cp,dHoftNode.outputFileName,ifo,'background-qscan-hoft',opts,dHoftNode,dag,qscanBgJobCnt,'hoft_datafind','background_hoft_qscan')
+    qBgNode = qscanNode(qscanBgJob,time,cp,dNode.outputFileName,ifo,'background-qscan',opts, dNode, dag, qscanBgJobCnt,'datafind','background_qscan')
+    qBgNode = qscanNode(qscanBgJob,time,cp,dNode.outputFileName,ifo,'background-qscan-seismic',opts, dNode, dag, qscanBgJobCnt,'datafind','background_seis_qscan')
 
-  if len(rangeString) == 0 and len(segmentListFile) == 0 and len(timeListFile) == 0:
-    print "No qscan background specified for " + ifo
-  else:
-
-    # Generate the list of science segments (excluding cat 1 vetoes) if a time range is provided in the ini file
-    if not len(rangeString) == 0:
-      epochStart = rangeString.split(',')[0]
-      epochEnd = rangeString.split(',')[1]
-      opts.gps_start_time = int(epochStart)
-      opts.gps_end_time = int(epochEnd)
-      opts.use_available_data = False
-      opts.run_data_quality = False
-      # overwrite the ini file if the field "analyze" in section [segments] exist...
-      cp.set("segments", "analyze", "Science")
-
-      inspiralutils.findSegmentsToAnalyze(cp,opts,ifo,dq_url_pattern,segFile)
-      segmentListFile = segFile[ifo]
-
-    # Use the segment list if provided, and generate a list of random times
-    if not len(segmentListFile) == 0:
-      segmentList = pipeline.ScienceData()
-      segmentMin = cp.getint('background-qscan-times','segment-min-len')
-      segmentList.read(segmentListFile,segmentMin)
-      segmentListLength = segmentList.__len__()
-      segmentListStart = segmentList.__getitem__(1).start()
-      segmentListEnd = segmentList.__getitem__(segmentListLength - 1).end()
-
-      seed = cp.getint('background-qscan-times','random-seed')
-      statistics = cp.getint('background-qscan-times','background-statistics')
-      
-      random.seed(seed)
-      counter = 0
-      times = []
-
-      while counter < statistics:
-        gps = float(segmentListStart) + float(segmentListEnd - segmentListStart)*random.random()
-        testList = copy.deepcopy(segmentList)
-        secondList = [pipeline.ScienceSegment(tuple([0,int(gps),int(gps)+1,1]))]
-        if testList.intersection(secondList):
-          times.append(gps)
-          counter = counter + 1
-        else:
-          continue
-      # Save the list of times in a file (for possibly re-using it later)
-      timeList = floatToStringList(times)
-      fileName = "timeList-" + ifo + "-" + repr(seed) + "-" + repr(statistics) + "-" + repr(segmentListStart) + "-" + repr(segmentListEnd) + ".txt"
-      saveRandomTimes(timeList,fileName)
-
-    # Use the time-list file if provided
-    if len(segmentListFile) == 0 and not len(timeListFile) == 0:
-      timeList = listFromFile(timeListFile)
-      if not timeList:
-        print >> sys.stderr, "the list of times in file " + timeListFile + " could not be found"
-        sys.exit(1)
-      times = stringToFloatList(timeList)
-
-    for time in times:
-
-      # SETUP DATAFIND JOBS FOR BACKGROUND QSCANS (REGULAR DATA SET)
-      try:
-        dNode = fu_Condor.qscanDataFindNode(dataJob,'futrig','q-datafind',cp,time,ifo)
-        if prev_dNode and opts.datafind:
-          dNode.add_parent(prev_dNode)
-        if opts.datafind:
-          dag.add_node(dNode)
-          dataJobCnt+=1
-        prev_dNode = dNode
-      except: 
-        dNode = None
-        print >> sys.stderr, "could not set up the datafind jobs for background qscans"
-
-      # SETUP DATAFIND JOBS FOR BACKGROUND QSCANS (HOFT)
-      try:
-        dHoftNode = fu_Condor.qscanDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,time,ifo)
-        if prev_dHoftNode and opts.hoft_datafind:
-          dHoftNode.add_parent(prev_dHoftNode)
-        if opts.hoft_datafind:
-          dag.add_node(dHoftNode)
-          dataHoftJobCnt+=1
-        prev_dHoftNode = dHoftNode
-      except: 
-        dHoftNode = None
-        print >> sys.stderr, "could not set up the datafind jobs for hoft background qscans"
-
-      for qscan in backgroundList:
-       
-        # SETUP BACKGROUND QSCAN JOBS
-        if qscan[0] == "HOFT_QSCAN":
-          d_node = dHoftNode
-          datafindCommand = 'hoft_datafind'
-        else:
-          d_node = dNode
-          datafindCommand = 'datafind'
-        try:
-          qBgNode = fu_Condor.qscanNode(qscanBgJob,time,cp,d_node.outputFileName,ifo,qscan)
-          if d_node and eval('opts.' + datafindCommand): # only add a parent if it exists
-            qBgNode.add_parent(d_node)
-
-          if eval('opts.' + qscan[2]):
-            dag.add_node(qBgNode)
-            qscanBgJobCnt+=1
-        except: 
-          qBgNode = None
-          print >> sys.stderr, "could not set up the background qscan jobs"
+################# LOOP OVER FOLLOWUP TRIGGERS #################################
 
 # Prepare the followup jobs
 for trig in followuptrigs:
 
-  prev_plotNode = None
-  
-  # Set up HTML structs for web page
-  summaryHTML = summaryHTMLTable(trig)
-  summaryHTML.containers.append(writeXMLparams(trig))
-
+  #Lets make a new section for this event
+  dag.webPage.appendSection(str(trig.event_id))  
   print trig.ifoTag
   print trig.gpsTime
 
@@ -651,154 +309,32 @@ for trig in followuptrigs:
     print "couldn't get inspiral process params for " + str(trig.eventID)
     inspiral_process_params = []
 
-  # flag initialization: for html page purposes...
-  if opts.qscan: qFlag = 1
-  else: qFlag = 0
-  if opts.hoft_qscan: hoftqFlag = 1
-  else: hoftqFlag = 0
-  if opts.seis_qscan: seisqFlag = 1
-  else: seisqFlag = 0
-  if opts.plots: plotsFlag = 1
-  else: plotsFlag = 0
-
   # loop over ifos
   for ifo in trig.ifolist_in_coinc:
+    
     try: trig.gpsTime[ifo]
     except: continue
+    
+    #Lets append a new subsection
+    dag.webPage.lastSection.appendSubSection(str(ifo)+' '+str(trig.event_id))
 
     # SETUP DATAFIND JOBS FOR HOFT QCANS
-    try:
-      dHoftNode = fu_Condor.qscanDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,trig.gpsTime[ifo],ifo)
-      if prev_dHoftNode and opts.hoft_datafind:
-        dHoftNode.add_parent(prev_dHoftNode)
-      if opts.hoft_datafind:
-        dag.add_node(dHoftNode)
-        dataHoftJobCnt+=1
-      prev_dHoftNode = dHoftNode
-    except: 
-      dHoftNode = None
-      print >> sys.stderr, "could not set up the datafind jobs for hoft foreground qscans"
+    dHoftNode = qscanDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,trig.gpsTime[ifo],ifo,opts, prev_dHoftNode, dag, dataHoftJobCnt)
 
     # SETUP DATAFIND JOBS FOR REGULAR QCANS
-    try:
-      dNode = fu_Condor.qscanDataFindNode(dataJob,'futrig','q-datafind',cp,trig.gpsTime[ifo],ifo)
-      if prev_dNode and opts.datafind:
-        dNode.add_parent(prev_dNode)
-      if opts.datafind:
-        dag.add_node(dNode)
-        dataJobCnt+=1
-      prev_dNode = dNode
-    except: 
-      dNode = None
-      print >> sys.stderr, "could not set up the datafind jobs for hoft foreground qscans"
-
-    for qscan in foregroundList:
-
+    dNode = qscanDataFindNode(dataJob,'futrig','q-datafind',cp,trig.gpsTime[ifo],opts, prev_dNode, dag, dataJobCnt)
+    
     # SETUP FOREGROUND QSCAN JOBS
-      if qscan[0] == "HOFT_QSCAN":
-        d_node = dHoftNode
-        datafindCommand = 'hoft_datafind'
-      else:
-        d_node = dNode
-        datafindCommand = 'datafind'
-      try:
-        qFgNode = fu_Condor.qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,d_node.outputFileName,ifo,qscan,trig,qFlag)
-        if d_node and eval('opts.' + datafindCommand): # only add a parent if it exists
-          qFgNode.add_parent(d_node)
-
-        if eval('opts.' + qscan[2]):
-          dag.add_node(qFgNode)
-          qscanFgJobCnt+=1
-      except: 
-        qFgNode = None
-        print >> sys.stderr, "could not set up the foreground qscan jobs"
-
-    # TRY GETTING THE TRIG BANK PROCESS PARAMS
-#    if trig.gpsTime[ifo]:
-      # TRY TO FIND THE --BANK-FILE ARGUMENT IN THE INSPIRAL PROCESS PARAMS TABLE
-#      trigBankFile = 0
-#      try:
-#        for row in inspiral_process_params[ifo]:
-#          if row.param[2:] == 'bank-file':
-#            trigBankFile = row.value
-#            break
-#      except:
-#        print "could not find the --bank-file argument in the inspiral process params table for " + str(ifo) + "@"+ str(trig.gpsTime[ifo])
-      # THEN GET THE TRIG BANK PROCESS PARAMS
-#      if trigBankFile:
-#        try: 
-#          trig_process_params_ifo = cache.getProcessParamsFromMatchingFileInCache(trigBankFile,'trigbank.cache')
-#          foundTrigBankTable = 1
-#        except:
-#          print "couldn't get trigbank process params for " + str(trig.eventID)
-#          foundTrigBankTable = 0
-#      else:
-#        print "couldn't get trigbank process params for " + str(trig.eventID)
-#        foundTrigBankTable = 0
-#        print "passed in the else loop"
- 
-    # SETUP TRIGBANK JOBS
-#    if trig.gpsTime[ifo] and foundTrigBankTable:
-#      try:
-        # trigNode = trigBankFollowUpNode(trigJob,trig.gpsTime[ifo],inspiral_process_params[ifo],opts,xml_glob)
-#        trigNode = trigBankFollowUpNode(trigJob,trig.gpsTime[ifo],trig_process_params_ifo,opts,xml_glob)
-#        if opts.trig_bank:
-#          dag.add_node(trigNode)
-#          trigJobCnt+=1
-#      except:
-#        trigNode = 0
-#        print "couldn't add trigbank job for " + ifo + "@ "+ str(trig.gpsTime[ifo])
-#    else:
-#      trigNode = 0
+    qFgNode = fu_Condor.qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,d_node.outputFileName,ifo,'qscan-hoft',opts,dHoftNode,dag,qscanFgJobCnt,'hoft_datafind','hoft_qscan',trig)
+    qFgNode = fu_Condor.qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,d_node.outputFileName,ifo,'qscan',opts,dNode,dag,qscanFgJobCnt,'datafind','qscan',trig)
+    qFgNode = fu_Condor.qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,d_node.outputFileName,ifo,'qscan-seismic',opts,dNode,dag,qscanFgJobCnt,'datafind','seis_qscan',qscan,trig)
 
     # SETUP INSPIRAL JOBS
-    if trig.gpsTime[ifo]:
-      # build the string of the relevant trigbank file name
-      trigbank_file_name = ifo + '-TRIGBANK_FOLLOWUP_' + str(trig.gpsTime[ifo]) + '.xml'
-      if len(string.strip(cp.get('triggers','injection-file'))) > 0:
-        injectionFile = string.strip(cp.get('triggers','injection-file'))
-      else:
-        injectionFile = None
-      try:
-        inspiralNode = inspiralFollowup(inspJob,inspiral_process_params[ifo],\
-           trig.gpsTime[ifo],trigbank_file_name,injectionFile)
-        #if trigNode and opts.trig_bank: # only add a parent if it exists
-        #  inspiralNode.add_parent(trigNode)
-        if opts.inspiral:
-          dag.add_node(inspiralNode)
-          inspJobCnt+=1
-      except: 
-        inspiralNode = 0
-        print "couldn't add inspiral job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
-    else: 
-      inspiralNode = 0
+    inspiralNode = followUpInspNode(inspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag, inspJobCnt)
 
     # SETUP PLOT JOBS
-    if trig.gpsTime[ifo] and inspiralNode:
-      try:
-        plotNode = plotSNRCHISQNode(plotJob,trig.gpsTime[ifo],inspiralNode.output_file_name,trig,page,plotsFlag)
-        plotsFlag = 0
-        if inspiralNode and opts.inspiral:
-          plotNode.add_parent(inspiralNode)
-        if prev_plotNode and opts.plots:
-          plotNode.add_parent(prev_plotNode)
-        if opts.plots:
-          dag.add_node(plotNode)
-          plotJobCnt+=1
-        prev_plotNode = plotNode
-        #summaryHTML.containers.append( plotNode.getContainer() )
-      except:
-        plotNode = 0
-        print "couldn't add plot job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
-    else: plotNode = 0  
+    plotNode = plotSNRCHISQNode(plotJob,trig.gpsTime[ifo],inspiralNode.output_file_name,trig,page,dag,inspiralNode,opts,plotJobCnt,prev_plotnode)
 
-  #if qHoftNode : summaryHTML.containers.append( qHoftNode.getContainer() )
-  #if qSeisNode : summaryHTML.containers.append( qSeisNode.getContainer() )
-  #if qNode:      summaryHTML.containers.append( qNode.getContainer() )
-  if plotNode: 
-    summaryHTML.containers.append( plotNode.getContainer() )
-    summaryHTML.containers.append( plotNode.getContainer2() )
-  summaryHTMLlist.append(summaryHTML)    
 
 print "\nFound " +  str(inspJobCnt)           + " inspiral Jobs" 
 print "\nFound " +  str(plotJobCnt)           + " plot jobs"
@@ -829,7 +365,6 @@ print "\n.......Writing DAG"
 dag.write_sub_files()
 dag.write_dag()
 
-writeHTMLTables(summaryHTMLlist)
 if opts.write_to_iulgroup:
   publishOnHydra(page)
 
