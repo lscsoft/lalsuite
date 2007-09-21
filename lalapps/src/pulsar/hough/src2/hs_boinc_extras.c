@@ -755,12 +755,6 @@ static void worker (void) {
       rarg--; rargc--; /* this argument is not passed to the main worker function */
     }
 
-    /* allow for telling apps with "dynamic graphics" to not use graphics */
-    else if (MATCH_START("--NoGraphics",argv[arg],l)) {
-      no_graphics = -1;
-      rarg--; rargc--; /* this argument is not passed to the main worker function */
-    }
-
     /* record a help otion (to later write help for additional command-line options) */
     else if ((0 == strncmp("--help",argv[arg],strlen("--help"))) ||
 	     (0 == strncmp("-h",argv[arg],strlen("--help")))) {
@@ -873,7 +867,7 @@ int main(int argc, char**argv) {
 
   /* dummy for keeping the RCSIDs */
   if(skipsighandler)
-    printf(stderr,"%s\n%s\n",HSBOINCEXTRASHRCSID,HSBOINCEXTRASCRCSID);
+    fprintf(stderr,"%s\n%s\n",HSBOINCEXTRASHRCSID,HSBOINCEXTRASCRCSID);
 
   LogPrintf(LOG_NORMAL, "Built at: " __DATE__ " " __TIME__ "\n");
 
@@ -895,11 +889,15 @@ int main(int argc, char**argv) {
   /* debugging support by files */
 
 #define DEBUG_LEVEL_FNAME "EAH_DEBUG_LEVEL"
+#define NO_GRAPHICS_FNAME "EAH_NO_GRAPHICS"
 #define DEBUG_DDD_FNAME   "EAH_DEBUG_DDD"
 
   LogPrintfVerbatim (LOG_NORMAL, "\n");
   LogPrintf (LOG_NORMAL, "Start of BOINC application '%s'.\n", argv[0]);
   
+  if ((fp_debug=fopen("../../" NO_GRAPHICS_FNAME, "r")) || (fp_debug=fopen("./" NO_GRAPHICS_FNAME, "r")))
+    no_graphics = -1;
+
   /* see if user has a DEBUG_LEVEL_FNAME file: read integer and set lalDebugLevel */
   if ((fp_debug=fopen("../../" DEBUG_LEVEL_FNAME, "r")) || (fp_debug=fopen("./" DEBUG_LEVEL_FNAME, "r")))
     {
@@ -995,7 +993,9 @@ int main(int argc, char**argv) {
   /* We don't load an own DLL on Windows, but we check if we can (manually)
      load the system DLLs necessary to do graphics on Windows, and will run
      without graphics if this fails */
-  if((!no_graphics) || (!load_graphics_dll())) {
+  if (no_graphics)
+    LogPrintf(LOG_NORMAL,"WARNING: graphics surpressed\n");
+  else if (!load_graphics_dll()) {
     int retval;
     set_search_pos_hook = set_search_pos;
     fraction_done_hook = &fraction_done;
@@ -1008,7 +1008,9 @@ int main(int argc, char**argv) {
      succeeds then extern void* graphics_lib_handle is set, and can
      be used with dlsym() to resolve symbols from that library as
      needed. */
-  if (!no_graphics) {
+  if (no_graphics)
+    LogPrintf(LOG_NORMAL,"WARNING: graphics surpressed\n");
+  else {
     int retval;
     retval = boinc_init_graphics_lib(worker, argv[0]);
     LogPrintf (LOG_CRITICAL, "ERROR: boinc_init_graphics_lib() returned %d.\n", retval);
