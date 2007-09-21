@@ -150,7 +150,7 @@ int load_graphics_dll() {
   }
   return(0);
 }
-
+#endif
 
 /** freaking LAL's REPORTSTATUS just won't work with any of NDEBUG or 
     LAL_NDEBUG set, so we write our own function that dumps the LALStatus
