@@ -106,12 +106,136 @@
  **** </lalLaTeX> */ 
 
 #include <math.h>
+#define LAL_USE_COMPLEX_SHORT_MACROS 1
+#include <lal/LALComplex.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/VectorOps.h>
 
 NRCSID (VECTORPOLARC, "$Id$");
  
+
+/** computes the magnitudes of a vector of complex numbers */
+int XLALCOMPLEX8VectorAbs( REAL4Vector *out, const COMPLEX8Vector *in )
+{
+	static const char *func = "XLALCOMPLEX8VectorAbs";
+	UINT4 i;
+	if ( ! out || ! in )
+		XLAL_ERROR( func, XLAL_EFAULT );
+	if ( ! out->data || ! in->data )
+		XLAL_ERROR( func, XLAL_EINVAL );
+	if ( out->length != in->length )
+		XLAL_ERROR( func, XLAL_EBADLEN );
+	for ( i = 0; i < in->length; ++i )
+		out->data[i] = cabsf( in->data[i] );
+	return 0;
+}
+
+/** computes the magnitudes of a vector of complex numbers */
+int XLALCOMPLEX16VectorAbs( REAL8Vector *out, const COMPLEX16Vector *in )
+{
+	static const char *func = "XLALCOMPLEX16VectorAbs";
+	UINT4 i;
+	if ( ! out || ! in )
+		XLAL_ERROR( func, XLAL_EFAULT );
+	if ( ! out->data || ! in->data )
+		XLAL_ERROR( func, XLAL_EINVAL );
+	if ( out->length != in->length )
+		XLAL_ERROR( func, XLAL_EBADLEN );
+	for ( i = 0; i < in->length; ++i )
+		out->data[i] = cabs( in->data[i] );
+	return 0;
+}
+
+
+/** computes the arguments of a vector of complex numbers */
+int XLALCOMPLEX8VectorArg( REAL4Vector *out, const COMPLEX8Vector *in )
+{
+	static const char *func = "XLALCOMPLEX8VectorArg";
+	UINT4 i;
+	if ( ! out || ! in )
+		XLAL_ERROR( func, XLAL_EFAULT );
+	if ( ! out->data || ! in->data )
+		XLAL_ERROR( func, XLAL_EINVAL );
+	if ( out->length != in->length )
+		XLAL_ERROR( func, XLAL_EBADLEN );
+	for ( i = 0; i < in->length; ++i )
+		out->data[i] = cargf( in->data[i] );
+	return 0;
+}
+
+/** computes the arguments of a vector of complex numbers */
+int XLALCOMPLEX16VectorArg( REAL8Vector *out, const COMPLEX16Vector *in )
+{
+	static const char *func = "XLALCOMPLEX16VectorArg";
+	UINT4 i;
+	if ( ! out || ! in )
+		XLAL_ERROR( func, XLAL_EFAULT );
+	if ( ! out->data || ! in->data )
+		XLAL_ERROR( func, XLAL_EINVAL );
+	if ( out->length != in->length )
+		XLAL_ERROR( func, XLAL_EBADLEN );
+	for ( i = 0; i < in->length; ++i )
+		out->data[i] = carg( in->data[i] );
+	return 0;
+}
+
+
+/** corrects the radian phase angles of a real vector by adding multiples of
+ * pi when the absolute jumps between consecutive angle elements are greater
+ * pi radians */
+int XLALREAL4VectorUnwrapAngle( REAL4Vector *out, const REAL4Vector *in )
+{
+	static const char *func = "XLALREAL4VectorUnwrapAngle";
+	REAL4 prev;
+	REAL4 diff;
+	INT4  wrap;
+	UINT4 i;
+	if ( ! out || ! in )
+		XLAL_ERROR( func, XLAL_EFAULT );
+	if ( ! out->data || ! in->data || in->length == 0 )
+		XLAL_ERROR( func, XLAL_EINVAL );
+	if ( out->length != in->length )
+		XLAL_ERROR( func, XLAL_EBADLEN );
+       	wrap = 0;
+	prev = out->data[0] = in->data[0];
+	for ( i = 1; i < in->length; ++i ) {
+		diff  = in->data[i] - prev;
+		prev  = in->data[i];
+		wrap += (diff < -LAL_PI) - (diff > LAL_PI);
+		out->data[i] = in->data[i] + wrap * LAL_TWOPI;
+	}
+	return 0;
+}
+  
+/** corrects the radian phase angles of a real vector by adding multiples of
+ * pi when the absolute jumps between consecutive angle elements are greater
+ * pi radians */
+int XLALREAL8VectorUnwrapAngle( REAL8Vector *out, const REAL8Vector *in )
+{
+	static const char *func = "XLALREAL8VectorUnwrapAngle";
+	REAL8 prev;
+	REAL8 diff;
+	INT4  wrap;
+	UINT4 i;
+	if ( ! out || ! in )
+		XLAL_ERROR( func, XLAL_EFAULT );
+	if ( ! out->data || ! in->data || in->length == 0 )
+		XLAL_ERROR( func, XLAL_EINVAL );
+	if ( out->length != in->length )
+		XLAL_ERROR( func, XLAL_EBADLEN );
+       	wrap = 0;
+	prev = out->data[0] = in->data[0];
+	for ( i = 1; i < in->length; ++i ) {
+		diff  = in->data[i] - prev;
+		prev  = in->data[i];
+		wrap += (diff < -LAL_PI) - (diff > LAL_PI);
+		out->data[i] = in->data[i] + wrap * LAL_TWOPI;
+	}
+	return 0;
+}
+
+
 /* <lalVerbatim file="VectorPolarCP"> */
 void
 LALCVectorAbs(
@@ -120,10 +244,6 @@ LALCVectorAbs(
     const COMPLEX8Vector *in
     )
 { /* </lalVerbatim> */
-  COMPLEX8 *a;
-  REAL4    *b;
-  INT4      n;
-
   INITSTATUS (status, "LALCVectorAbs", VECTORPOLARC);
   
   /* Make sure the arguments are not NULL: */
@@ -141,36 +261,7 @@ LALCVectorAbs(
   ASSERT (in->length == out->length, status,
           VECTOROPSH_ESZMM, VECTOROPSH_MSGESZMM);
 
-  a = in->data;
-  b = out->data;
-  n = out->length;
-
-  while (n-- > 0)
-  {
-    REAL4 ar = a->re;
-    REAL4 ai = a->im;
-
-    if (fabs(ar) > fabs(ai))
-    {
-      REAL4 ratio = ai/ar;
-      *b=fabs(ar)*sqrt(1.0 + ratio*ratio);
-    }
-    else
-    {
-      if (fabs(ai) < LAL_REAL4_MIN)
-      {
-         *b=0.0;   /* to avoid NaN */
-      }
-      else
-      {
-         REAL4 ratio = ar/ai;
-         *b=fabs(ai)*sqrt(1.0 + ratio*ratio);
-      }
-    }
-
-    ++a;
-    ++b;
-  }
+  XLALCOMPLEX8VectorAbs( out, in );
 
   RETURN (status);
 }
@@ -184,10 +275,6 @@ LALZVectorAbs(
     const COMPLEX16Vector *in
     )
 { /* </lalVerbatim> */
-  COMPLEX16 *a;
-  REAL8    *b;
-  INT4      n;
-
   INITSTATUS (status, "LALZVectorAbs", VECTORPOLARC);
   
   /* Make sure the arguments are not NULL: */
@@ -205,36 +292,7 @@ LALZVectorAbs(
   ASSERT (in->length == out->length, status,
           VECTOROPSH_ESZMM, VECTOROPSH_MSGESZMM);
 
-  a = in->data;
-  b = out->data;
-  n = out->length;
-
-  while (n-- > 0)
-  {
-    REAL8 ar = a->re;
-    REAL8 ai = a->im;
-
-    if (fabs(ar) > fabs(ai))
-    {
-      REAL8 ratio = ai/ar;
-      *b=fabs(ar)*sqrt(1.0 + ratio*ratio);
-    }
-    else
-    {
-      if (fabs(ai) < LAL_REAL8_MIN)
-      {
-         *b=0.0;   /* to avoid NaN */
-      }
-      else
-      {
-         REAL8 ratio = ar/ai;
-         *b=fabs(ai)*sqrt(1.0 + ratio*ratio);
-      }
-    }
-
-    ++a;
-    ++b;
-  }
+  XLALCOMPLEX16VectorAbs( out, in );
 
   RETURN (status);
 }
@@ -248,10 +306,6 @@ LALCVectorAngle (
     const COMPLEX8Vector *in
     )
 { /* </lalVerbatim> */
-  COMPLEX8 *a;
-  REAL4    *b;
-  INT4      n;
-
   INITSTATUS (status, "LALCVectorAngle", VECTORPOLARC);
   
   /* Make sure the arguments are not NULL: */
@@ -269,28 +323,7 @@ LALCVectorAngle (
   ASSERT (in->length == out->length, status,
           VECTOROPSH_ESZMM, VECTOROPSH_MSGESZMM);
 
-  a = in->data;
-  b = out->data;
-  n = out->length;
-
-  while (n-- > 0)
-  {
-    REAL4 ar = a->re;
-    REAL4 ai = a->im;
-    
-    if ((fabs(ar)<LAL_REAL4_MIN) && (fabs(ai)<LAL_REAL4_MIN))
-    {
-      *b=0.0;   /* to avoid NaN when ar=ai=0.0 */
-    }
-    else
-    {
-      *b= atan2(ai,ar);
-    }
-    
-
-    ++a;
-    ++b;
-  }
+  XLALCOMPLEX8VectorArg( out, in );
 
   RETURN (status);
 }
@@ -304,10 +337,6 @@ LALZVectorAngle (
     const COMPLEX16Vector  *in
     )
 { /* </lalVerbatim> */
-  COMPLEX16  *a;
-  REAL8      *b;
-  INT4        n;
-
   INITSTATUS (status, "LALZVectorAngle", VECTORPOLARC);
   
   /* Make sure the arguments are not NULL: */
@@ -325,34 +354,11 @@ LALZVectorAngle (
   ASSERT (in->length == out->length, status,
           VECTOROPSH_ESZMM, VECTOROPSH_MSGESZMM);
 
-  a = in->data;
-  b = out->data;
-  n = out->length;
-
-  while (n-- > 0)
-  {
-    REAL8 ar = a->re;
-    REAL8 ai = a->im;
-    
-    
-    if ((fabs(ar)<LAL_REAL8_MIN) && (fabs(ai)<LAL_REAL8_MIN))
-    {
-      *b=0.0;   /* to avoid NaN when ar=ai=0.0 */
-    }
-    else
-    {
-      *b= atan2(ai,ar);
-    }
-
-
-    ++a;
-    ++b;
-  }
+  XLALCOMPLEX16VectorArg( out, in );
 
   RETURN (status);
 }
 
-/* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>> */
 /* <lalVerbatim file="VectorPolarCP"> */
 void
 LALUnwrapREAL4Angle (
@@ -361,15 +367,6 @@ LALUnwrapREAL4Angle (
     const REAL4Vector    *in
     )
 { /* </lalVerbatim> */
-  REAL4    *a;
-  REAL4    *b;
-  INT4      n;
-  INT8      countPI;
-  /*  REAL4     cumsum; */
-  REAL4     phaseI;
-  REAL4     phaseII;
-  REAL4     diffph;
-  
   INITSTATUS (status, "LALUnwrapREAL4Angle", VECTORPOLARC );
   
   /* Make sure the arguments are not NULL: */
@@ -390,37 +387,11 @@ LALUnwrapREAL4Angle (
   /* Make sure the arguments are not pointing to the same memory location */
   ASSERT (out != in, status, VECTOROPSH_ESAME, VECTOROPSH_MSGESAME);
 
-
-  a = in->data;
-  b = out->data;
-  n = out->length;
-  
-  countPI = 0;
-  /* cumsum = 0.0;*/
-  phaseI = *a;
-  *b = phaseI;
-  --n;
-
-  while (n-- > 0)
-  {
-    ++a;
-    ++b;
-    phaseII = *a;
-    diffph = phaseII - phaseI;
-    phaseI = phaseII;
-    
-    /* cumsum += LAL_TWOPI*( (diffph < - LAL_PI) - (diffph > LAL_PI) ); */
-    countPI += (diffph < -LAL_PI) - (diffph >  LAL_PI);
-
-    /* *b= phaseII + cumsum; */
-    *b= phaseII + LAL_TWOPI*( countPI );
-
-  }
+  XLALREAL4VectorUnwrapAngle( out, in );
 
   RETURN (status);
 }
 
-/* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>> */
 /* <lalVerbatim file="VectorPolarCP"> */
 void
 LALUnwrapREAL8Angle (
@@ -429,15 +400,6 @@ LALUnwrapREAL8Angle (
     const REAL8Vector    *in
     )
 { /* </lalVerbatim> */
-  REAL8    *a;
-  REAL8    *b;
-  INT4      n;
-  INT8      countPI;
-  /* REAL8     cumsum;*/
-  REAL8     phaseI;
-  REAL8     phaseII;
-  REAL8     diffph;
-  
   INITSTATUS (status, "LALUnwrapREAL8Angle", VECTORPOLARC );
   
   /* Make sure the arguments are not NULL: */
@@ -458,32 +420,7 @@ LALUnwrapREAL8Angle (
   /* Make sure the arguments are not pointing to the same memory location */
   ASSERT (out != in, status, VECTOROPSH_ESAME, VECTOROPSH_MSGESAME);
 
-
-  a = in->data;
-  b = out->data;
-  n = out->length;
-  
-  countPI = 0;  
-  /* cumsum = 0.0;*/
-  phaseI = *a;
-  *b = phaseI;
-  --n;
-
-  while (n-- > 0)
-  {
-    ++a;
-    ++b;
-    phaseII = *a;
-    diffph = phaseII - phaseI;
-    phaseI = phaseII;
-    
-    /* cumsum += LAL_TWOPI*( (diffph < - LAL_PI) - (diffph > LAL_PI) ); */
-    countPI += (diffph < -LAL_PI) - (diffph >  LAL_PI);
-
-    /* *b= phaseII + cumsum; */
-    *b= phaseII + LAL_TWOPI*( countPI );
-
-  }
+  XLALREAL8VectorUnwrapAngle( out, in );
 
   RETURN (status);
 }

@@ -81,12 +81,21 @@ COMPLEX8Vector * XLALCCVectorMultiplyConjugate( COMPLEX8Vector *out, const COMPL
 COMPLEX8Vector * XLALSCVectorMultiply( COMPLEX8Vector *out, const REAL4Vector *in1, const COMPLEX8Vector *in2 );
 REAL4Vector * XLALSSVectorMultiply( REAL4Vector *out, const REAL4Vector *in1, const REAL4Vector *in2 );
 
+int XLALCOMPLEX8VectorAbs( REAL4Vector *out, const COMPLEX8Vector *in );
+int XLALCOMPLEX8VectorArg( REAL4Vector *out, const COMPLEX8Vector *in );
+int XLALREAL4VectorUnwrapAngle( REAL4Vector *out, const REAL4Vector *in );
+
+
 /* double precision */
 COMPLEX16Vector * XLALZZVectorDivide( COMPLEX16Vector *out, const COMPLEX16Vector *in1, const COMPLEX16Vector *in2 );
 COMPLEX16Vector * XLALZZVectorMultiply( COMPLEX16Vector *out, const COMPLEX16Vector *in1, const COMPLEX16Vector *in2 );
 COMPLEX16Vector * XLALZZVectorMultiplyConjugate( COMPLEX16Vector *out, const COMPLEX16Vector *in1, const COMPLEX16Vector *in2 );
 COMPLEX16Vector * XLALDZVectorMultiply( COMPLEX16Vector *out, const REAL8Vector *in1, const COMPLEX16Vector *in2 );
 REAL8Vector * XLALDDVectorMultiply( REAL8Vector *out, const REAL8Vector *in1, const REAL8Vector *in2 );
+
+int XLALCOMPLEX16VectorAbs( REAL8Vector *out, const COMPLEX16Vector *in );
+int XLALCOMPLEX16VectorArg( REAL8Vector *out, const COMPLEX16Vector *in );
+int XLALREAL8VectorUnwrapAngle( REAL8Vector *out, const REAL8Vector *in );
 
 /*
  *
