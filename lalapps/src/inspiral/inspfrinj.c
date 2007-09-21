@@ -57,6 +57,8 @@
 #include <lal/LALConstants.h>
 #include <lal/FrameStream.h>
 #include <lal/Calibration.h>
+#include <lal/LALCalibration.h>
+#include <lal/LALFrameIO.h>
 #include <lal/FrameCalibration.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
@@ -129,6 +131,7 @@ INT4   injectSafety     = 0;            /* safety length in injections  */
 UINT4  numFiles         = 0;            /* number of output files needed*/
 
 CHAR  *calCacheName     = NULL;         /* location of calibration data */
+CHAR  *calFileName      = NULL;         /* location of calibration file */
 CHAR  *injectionFile    = NULL;         /* name of file containing injs */
 CHAR  *injChanName      = NULL;         /* the injection channel name   */
 
@@ -203,6 +206,8 @@ int main( int argc, char *argv[] )
   /* set up inital debugging values */
   lal_errhandler = LAL_ERR_EXIT;
   set_debug_level( "33" );
+  XLALSetErrorHandler( XLALAbortErrorHandler );
+
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
@@ -457,7 +462,17 @@ int main( int argc, char *argv[] )
       injResp.deltaF = 1.0 / ( numRespPoints * inj.deltaT );
       strcpy( injResp.name, inj.name );
 
-      if ( calCacheName )
+      if ( calFileName )
+      {
+        REAL8 duration = XLALGPSDiff(&gpsEndTime, &gpsStartTime);
+        LALCalData *caldata;
+        caldata = XLALFrGetCalData( &inj.epoch, fqChanName, calFileName );
+        if ( duration < caldata->cavityFactors->deltaT )
+          duration = 0.0; /* must be a unity factor: don't bother averaging */
+        XLALUpdateResponse( &injResp, duration, caldata );
+        XLALDestroyCalData( caldata );
+      }
+      else if ( calCacheName )
       {
         /* generate the response function for the current time */
         if ( vrbflg ) fprintf( stdout, 
@@ -671,7 +686,7 @@ int main( int argc, char *argv[] )
 
     if( real8Output.data )
     { 
-      LAL_CALL( LALSDestroyVector( &status, &(real8Output.data) ), &status );
+      LAL_CALL( LALDDestroyVector( &status, &(real8Output.data) ), &status );
     }
   }
 
@@ -819,6 +834,7 @@ int main( int argc, char *argv[] )
   /* free the rest of the memory, check for memory leaks and exit */
   if ( injectionFile ) free ( injectionFile ); 
   if ( calCacheName ) free( calCacheName );
+  if ( calFileName ) free( calFileName );
   if ( frInCacheName ) free( frInCacheName );
   if ( fqChanName ) free( fqChanName );
 
@@ -863,6 +879,7 @@ static void print_usage(char *program)
       " [--gps-end-time-ns]      end_ns     GPS nanosecond of data end time\n"\
       "\n"\
       " [--frame-cache]          cache      frame cache with locations of data\n"\
+      " [--calibration-file]     cal_file   frame file containing calibration data\n"\
       " [--calibration-cache]    cal_cache  file with location of calibration data\n"\
       " [--calibrated-data]      type       calibrated data of type (real_4 | real_8)\n"\
       " [--num-resp-points]      N          num points to determine response function (4194304)\n"\
@@ -916,6 +933,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"dynamic-range-exponent",  required_argument, 0,                'l'},
     {"calibrated-data",         required_argument, 0,                'y'},
     {"calibration-cache",       required_argument, 0,                'p'},
+    {"calibration-file",        required_argument, 0,                'q'},
     {"num-resp-points",         required_argument, 0,                'N'},
     {"sample-rate",             required_argument, 0,                'r'},
     {"ifo",                     required_argument, 0,                'i'},
@@ -952,7 +970,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
     c = getopt_long_only( argc, argv, 
         "A:B:C:I:L:N:S:V:Z:"
-        "a:b:c:d:f:hi:l:p:r:s:u:w:y:z:",
+        "a:b:c:d:f:hi:l:p:q:r:s:u:w:y:z:",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -1143,6 +1161,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         optarg_len = strlen( optarg ) + 1;
         calCacheName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
         memcpy( calCacheName, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case 'q':
+        /* create storage for the calibration frame file name */
+        optarg_len = strlen( optarg ) + 1;
+        calFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( calFileName, optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
@@ -1507,21 +1533,29 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     }
   }
 
-  /* check that have one of: calibrated-data or a calibration-cache  */
-  if ( ! calCacheName && ! calData )
+  /* check that have one of: calibrated-data or a calibration-cache
+   * or a calibration frame file */
+  if ( ! (calCacheName || calFileName) && ! calData )
   {
     fprintf( stderr, "Either --calibration-cache must be specified,\n" 
         "or must run on --calibrated-data.\n");
     exit( 1 );
   }
-  else if ( calCacheName && calData )
+  else if ( (calCacheName && calData) || (calFileName && calData) || (calCacheName && calFileName) )
   {
     fprintf( stderr, 
-        "Only one of --calibration-cache and --calibrated-data\n"
+        "Only one of --calibration-cache and --calibration and --calibrated-data\n"
         "should be specified\n.");
     exit( 1 );
   }
 
+  /* if a calibration frame file, need to know which readout point is to
+   * be used (e.g., DARM_ERR or AS_Q) -- this is taken from a channel name */
+  if ( calFileName && ! fqChanName )
+  {
+    fprintf( stderr, "--channel-name must be specified\n" );
+    exit( 1 );
+  }
 
   /* check that we have then number of points to determine response fn */
   if ( numRespPoints < 0 )
