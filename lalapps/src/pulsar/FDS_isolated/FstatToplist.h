@@ -131,5 +131,40 @@ extern int fstat_cpt_file_read (FStatCheckpointFile*cptf, UINT4 checksum, UINT4 
 /** compact a toplist file if the length has reached maxbytes */
 extern int fstat_cpt_file_compact(FStatCheckpointFile*cptf);
 
+/** new, simpler checkpointing for HierarchicalSearch */
+
+
+/** writes a checkpoint:
+    - constructs temporary filename (by appending .TMP)
+    - dumps data to tempfile
+    - appends counter
+    - appends checksum (of data and counter)
+    - renames tempfile to final name
+    returns
+    -1 in case of an I/O error,
+    -2 if out of memory,
+     0 otherwise (successful)
+*/
+extern int write_hs_checkpoint(char*filename, toplist_t*tl, UINT4 counter);
+
+/** tries to read a checkpoint
+    - tries to open the file, returns 1 if no file found
+    - reads data, counter and checksum
+    - verifies checksum
+    - restores the heap by sorting
+    returns
+     0 if successfully read a checkpoint
+     1 if no checkpoint was found
+    -1 in case of an I/O error
+    -2 if the checksum was wrong
+*/
+extern int read_hs_checkpoint(char*filename, toplist_t*tl, UINT4*counter);
+
+/** write the final output file:
+    - re-sort the toplist into freq/alpha/delta/fdot order
+    - write out the toplist in ASCII format with end marker to a temporary file
+    - rename the file to the final name
+*/
+extern int write_hs_oputput(toplist_t*tl,char*filename);
 
 #endif /* FSTATTOPLIST_H - double inclusion protection */

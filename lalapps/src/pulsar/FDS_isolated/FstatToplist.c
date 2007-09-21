@@ -710,33 +710,179 @@ int fstat_cpt_file_compact(FStatCheckpointFile*cptf) {
   return(bytes);
 }
 
-#if(0)
-doxygen_callgraph_dummy(){
-  qsort_toplist();
-  go_through_toplist();
-  fstat_toplist_qsort_function();
-  reduce_fstat_toplist_precision();
-  sort_fstat_toplist();
-  fstat_cpt_file_destroy();
-  write_and_close_checkpointed_file();
-  fstat_cpt_file_open();
-  fstat_cpt_file_flush();
-  print_fstatline_to_str();
-  write_fstat_toplist_item_to_fp();
-  write_fstat_toplist_to_fp();
-  _atomic_write_fstat_toplist_to_file();
-  atomic_write_fstat_toplist_to_file();
-  fstat_cpt_file_compact();
-  set_checkpoint();
-  write_checkpoint("checkpoint");
-  fstat_cpt_file_add();
-  insert_into_toplist();
-  insert_into_fstat_toplist();
-  read_fstat_toplist_from_fp();
-  fstat_cpt_file_read();
-  fstat_cpt_file_open();
-  init_and_read_checkpoint();
-  fstat_cpt_file_create();
-  fstat_cpt_file_close();
-}
+
+
+/* New easier checkpointing - simply dump the whole toplist (plus a counter and
+   a checksum) into a binary file.
+   The heap structure array is hard to dump because it's based on pointers, so it
+   is restored after reding the data back in by sorting the list once.
+*/
+
+/** log an I/O error, i.e. source code line no., ferror, errno and strerror, and doserrno on Windows, too */
+#ifdef _MSC_VER
+#define LOGIOERROR(mess,filename) \
+    LogPrintf(LOG_CRITICAL, "ERROR: %s %s: line:%d, doserr:%d, ferr:%d, errno:%d: %s\n",\
+	      mess,filename,__LINE__,_doserrno,ferror(fp),errno,strerror(errno))
+#else
+#define LOGIOERROR(mess,filename) \
+    LogPrintf(LOG_CRITICAL, "ERROR: %s %s: line:%d, ferr:%d, errno:%d: %s\n",\
+	      mess,filename,__LINE__,ferror(fp),errno,strerror(errno))
 #endif
+
+/* dumps toplist to a temporary file, then renames the file to filename */
+int write_hs_checkpoint(char*filename, toplist_t*tl, UINT4 counter) {
+#define TMP_EXT ".tmp"
+  char*tmpfilename;
+  FILE*fp;
+  UINT4 len;
+  UINT4 checksum;
+
+  /* construct temporary filename */
+  len = strlen(filename)+strlen(TMP_EXT)+1;
+  tmpfilename=LALCalloc(len,sizeof(char));
+  if(!tmpfilename){
+    LogPrintf(LOG_CRITICAL,"Couldn't allocate tmpfilename\n");
+    return(-2);
+  }
+  strncpy(tmpfilename,filename,len);
+  strncat(tmpfilename,TMP_EXT,len);
+
+  /* calculate checksum */
+  checksum = 0;
+  for(len = 0; len < (tl->length * tl->size); len++)
+    checksum += *(((char*)tl->data) + len);
+  for(len = 0; len < sizeof(counter); len++)
+    checksum += *(((char*)&counter) + len);
+
+  /* open tempfile */
+  fp=fopen(tmpfilename,"wb");
+  if(!fp) {
+    LOGIOERROR("Couldn't open",tmpfilename);
+    return(-1);
+  }
+
+  /* write data */
+  len = fwrite(tl->data, tl->size, tl->length, fp);
+  if(len != tl->length) {
+    LOGIOERROR("Couldn't write data to ", tmpfilename);
+    LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %d\n", len, tl->length);
+    if(fclose(fp))
+      LOGIOERROR("In addition: couldn't close", tmpfilename);
+    return(-1);
+  }
+
+  /* write counter */
+  len = fwrite(&counter, sizeof(counter), 1, fp);
+  if(len != 1) {
+    LOGIOERROR("Couldn't write counter to ", tmpfilename);
+    LogPrintf(LOG_CRITICAL,"fwrite() returned %d, lengthe was %d\n",len,sizeof(counter));
+    if(fclose(fp))
+      LOGIOERROR("In addition: couldn't close", tmpfilename);
+    return(-1);
+  }
+
+  /* write checksum */
+  len = fwrite(&checksum, sizeof(checksum), 1, fp);
+  if(len != 1) {
+    LOGIOERROR("Couldn't write checksum to ", tmpfilename);
+    LogPrintf(LOG_CRITICAL,"fwrite() returned %d, lengthe was %d\n",len,sizeof(checksum));
+    if(fclose(fp))
+      LOGIOERROR("In addition: couldn't close", tmpfilename);
+    return(-1);
+  }
+
+  /* close tempfile */
+  if(fclose(fp)) {
+    LOGIOERROR("Couldn't close", tmpfilename);
+    return(-1);
+  }
+
+  /* rename to filename */
+  if(rename(tmpfilename,filename)) {
+    LOGIOERROR("Couldn't rename\n", tmpfilename);
+    return(-1);
+  }
+
+  /* all went well */
+  return(0);
+}
+
+
+int read_hs_checkpoint(char*filename, toplist_t*tl, UINT4*counter) {
+  FILE*fp;
+  UINT4 len;
+  UINT4 checksum;
+
+  /* counter should be 0 if we couldn't read a checkpoint */
+  *counter = 0;
+
+  /* try to open filename */
+  fp = fopen(filename, "wb");
+  if(!fp) {
+    LogPrintf(LOG_NORMAL,"INFO: Couldn't open checkpoint %s\n", filename);
+    clear_toplist(tl);
+    return(1);
+  }
+
+  /* read data */
+  len = fread(tl->data, tl->size, tl->length, fp);
+  if(len != tl->length) {
+    LOGIOERROR("Couldn't read data from ", filename);
+    LogPrintf(LOG_CRITICAL,"fread() returned %d, length was %d\n", len, tl->length);
+    if(fclose(fp))
+      LOGIOERROR("In addition: couldn't close", filename);
+    clear_toplist(tl);
+    return(-1);
+  }
+
+  /* read counter */
+  len = fread(counter, sizeof(*counter), 1, fp);
+  if(len != 1) {
+    LOGIOERROR("Couldn't read counter from ", filename);
+    LogPrintf(LOG_CRITICAL,"fread() returned %d, lengthe was %d\n", len, sizeof(*counter));
+    if(fclose(fp))
+      LOGIOERROR("In addition: couldn't close", filename);
+    clear_toplist(tl);
+    return(-1);
+  }
+
+  /* read checksum */
+  len = fread(&checksum, sizeof(checksum), 1, fp);
+  if(len != 1) {
+    LOGIOERROR("Couldn't read checksum to ", filename);
+    LogPrintf(LOG_CRITICAL,"fread() returned %d, lengthe was %d\n", len, sizeof(checksum));
+    if(fclose(fp))
+      LOGIOERROR("In addition: couldn't close", filename);
+    clear_toplist(tl);
+    return(-1);
+  }
+
+  /* close tempfile */
+  if(fclose(fp)) {
+    LOGIOERROR("Couldn't close", filename);
+    clear_toplist(tl);
+    return(-1);
+  }
+
+  /* verify checksum */
+  for(len = 0; len < (tl->length * tl->size); len++)
+    checksum -= *(((char*)tl->data) + len);
+  for(len = 0; len < sizeof(*counter); len++)
+    checksum -= *(((char*)counter) + len);
+  if(checksum) {
+    clear_toplist(tl);
+    return(-2);
+  }
+
+  /* restore Heap structure by sorting */
+  qsort_toplist_r(tl,fstat_smaller);
+
+  /* all went well */
+  return(0);
+}
+
+
+int write_hs_oputput(toplist_t*tl,char*filename) {
+  sort_fstat_toplist(tl);
+  return(_atomic_write_fstat_toplist_to_file(tl,filename,NULL,1));
+}
