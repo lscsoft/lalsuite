@@ -817,7 +817,7 @@ int read_hs_checkpoint(char*filename, toplist_t*tl, UINT4*counter) {
   *counter = 0;
 
   /* try to open filename */
-  fp = fopen(filename, "wb");
+  fp = fopen(filename, "rb");
   if(!fp) {
     LogPrintf(LOG_NORMAL,"INFO: Couldn't open checkpoint %s\n", filename);
     clear_toplist(tl);
@@ -884,5 +884,5 @@ int read_hs_checkpoint(char*filename, toplist_t*tl, UINT4*counter) {
 
 int write_hs_oputput(toplist_t*tl,char*filename) {
   sort_fstat_toplist(tl);
-  return(_atomic_write_fstat_toplist_to_file(tl,filename,NULL,1));
+  return(_atomic_write_fstat_toplist_to_file(tl, filename, NULL, 1));
 }
