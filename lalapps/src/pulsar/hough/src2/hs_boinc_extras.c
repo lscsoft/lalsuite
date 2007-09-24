@@ -1074,11 +1074,26 @@ int init_and_read_checkpoint(toplist_t*tl     , /**< the toplist to checkpoint *
   }
   strncpy(outfilename,outputname,s);
 
-  /* nothing to do if the output file already exists */
-  fp=fopen(outputname,"rb");
-  if(fp) {
-    fclose(fp);
-    return(2);
+  /* nothing to do if the output file already contains an end marker
+     (it always exists when running under BOINC) */
+  {
+    int alldone = 0;
+    fp=fopen(outputname,"rb");
+    if(fp) {
+      int len = strlen("%DONE\n");
+      if(!fseek(fp,-len,SEEK_END)) {
+	char *buf;
+	if(buf=(char*)LALCalloc(len+1,sizeof(char))) {
+	  if(len == fread(buf,sizeof(char),len,fp))
+	    if (0 == strcmp(buf,"%DONE\n"))
+		alldone = -1;
+	  LALFree(buf);
+	}
+      }
+      fclose(fp);
+    }
+    if(alldone)
+      return(2);
   }
 
   /* store the name of the checkpoint file in global cptfilename */
