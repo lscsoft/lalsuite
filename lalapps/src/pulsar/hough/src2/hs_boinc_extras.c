@@ -1103,7 +1103,7 @@ int init_and_read_checkpoint(toplist_t*tl     , /**< the toplist to checkpoint *
     strncat(cptfilename,CHECKPOINT_EXT,s);
   }
   
-  return(read_hs_checkpoint(cptname,toplist,count));
+  return(read_hs_checkpoint(cptfilename,toplist,count));
 }
 
 
