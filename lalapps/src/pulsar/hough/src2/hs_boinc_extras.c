@@ -112,7 +112,7 @@ static char **global_argv;
 /** variables for checkpointing */
 static char* cptfilename;                 /**< name of the checkpoint file */
 static char* outfilename;                 /**< name of the checkpoint file */
-static toplist_t*toplist;                 /**< the toplist we're checkpointing */
+static toplist_t* toplist;                /**< the toplist we're checkpointing */
 static UINT4 bufsize = 8*1024;            /**< size of output file buffer */
 static UINT4 maxsize = 1024*1024;         /**< maximal size of the output file */
 static double last_rac, last_dec;         /**< last sky position, set by show_progress(),
@@ -1066,13 +1066,15 @@ int init_and_read_checkpoint(toplist_t*tl     , /**< the toplist to checkpoint *
   toplist = tl;
 
   /* store the name of the output file in global outfilename */
-  int s = strlen(outputname)+1;
-  outfilename = (char*)calloc(s,sizeof(char));
-  if(!outfilename){
-    LogPrintf(LOG_CRITICAL, "Out of memory\n");
-    return(-2);
+  {
+    int s = strlen(outputname)+1;
+    outfilename = (char*)calloc(s,sizeof(char));
+    if(!outfilename){
+      LogPrintf(LOG_CRITICAL, "Out of memory\n");
+      return(-2);
+    }
+    strncpy(outfilename,outputname,s);
   }
-  strncpy(outfilename,outputname,s);
 
   /* nothing to do if the output file already contains an end marker
      (it always exists when running under BOINC) */
