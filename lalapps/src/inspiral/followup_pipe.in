@@ -226,7 +226,7 @@ prev_plotnode = None
 for trig in followuptrigs:
 
   #Lets make a new section for this event
-  dag.webPage.appendSection('Trigger ID = '+str(trig.eventID)+ ' Stat = '+str(trig.statValue))  
+  dag.appendSection('Trigger ID = '+str(trig.eventID)+ ' Stat = '+str(trig.statValue))  
 
   # TRY GETTING INSPIRAL PROCESS PARAMS... 
   # currently done even when inspiral jobs are not requested... fix?
@@ -238,8 +238,8 @@ for trig in followuptrigs:
     try: trig.gpsTime[ifo]
     except: continue
     
-    #Lets append a new subsection
-    dag.webPage.lastSection.appendSubSection(str(ifo)+' @ GPS '+str(trig.gpsTime[ifo]))
+    #Lets append a new subsection to the last section
+    dag.appendSubSection(str(ifo)+' @ GPS '+str(trig.gpsTime[ifo]))
 
     # SETUP DATAFIND JOBS FOR HOFT QCANS
     dHoftNode = qscanDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,trig.gpsTime[ifo],ifo,opts, prev_dHoftNode, dag)
