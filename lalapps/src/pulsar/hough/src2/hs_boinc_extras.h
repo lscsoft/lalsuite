@@ -77,6 +77,8 @@ LocalComputeFStatFreqBand ( LALStatus *status,
 #define HS_CHECKPOINTING 1
 #endif
 
+#define INSERT_INTO_FSTAT_TOPLIST insert_into_fstat_toplist
+
 #if (HS_CHECKPOINTING)
 #define GET_CHECKPOINT(toplist,total,count,outputname,cptname)\
   { int ret = init_and_read_checkpoint(toplist,total,count,outputname,cptname);\
@@ -88,12 +90,10 @@ LocalComputeFStatFreqBand ( LALStatus *status,
     }\
   }
 #define SET_CHECKPOINT set_checkpoint()
-#define INSERT_INTO_FSTAT_TOPLIST add_checkpoint_candidate
 
 #else
 #define SET_CHECKPOINT
 #define GET_CHECKPOINT(toplist,total,count,outputname,cptname) *total=0;
-#define INSERT_INTO_FSTAT_TOPLIST insert_into_fstat_toplist
 #endif
 
 #ifdef  __cplusplus
@@ -113,35 +113,21 @@ extern void register_output_file(char*filename);
 extern void show_progress(double rac, double dec, UINT4 count, UINT4 total);
 
 /** inits checkpointing for the toplist and reads the last checkpoint if present
-    This expects all passed variables (toplist, total, count) to be already initialized.
-    The variables are modified only if a previous checkpoint was found.
+    This expects all passed variables (toplist, total, count) to be already
+    initialized. In case of an error, the toplist is cleared and the count
+    is set to 0, total is effectivly ignored.
     If *cptname (name of the checkpoint file) is NULL,
     the name is constructed by appending ".cpt" to the output filename.
-    The FILE* should be the one that checpointed_fopen() above has returned.
 
     The function returns
     0 if no checkpoint could be found,
-   -1 if a checkpoint was found but it or the previous output couldn't be read,
+   -1 if a checkpoint was found but it couldn't be read,
    -2 if an error occured (out of memory),
-   -3 if the output file could neither be read nor written (fstat_cpt_file_open() failed)
     1 if a checkpoint was found and previous output could be read
-    2 a previously written end marker was detected
+    2 if nothing to do (previously written output file was found)
 */
 extern int init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
 				     UINT4 total, char*outputname, char*cptname);
-
-/** This corresponds to insert_into_fstat_toplist().
-    It inserts a candidate into the toplist, updates the file
-    and "compacts" it if necessary (i.e. bytes > maxsize).
-    NOTE that the toplist parameter is just a dummy to make the interface
-         compatible to insert_into_fstat_toplist(). The operation is
-         actually performed on the toplist passed to the least recent call
-         of init_and_read_checkpoint(), which, however, should be the same
-         in all reasonable cases. */
-extern int add_candidate_and_checkpoint (toplist_t*toplist, FstatOutputEntry cand);
-
-/** replacement for add_candidate_and_checkpoint() */
-extern int add_checkpoint_candidate (toplist_t*toplist, FstatOutputEntry cand);
 
 /** actually writes a checkpoint only if it's "boinc time to checkpoint"
     and compacts the output file if necessary */
@@ -155,6 +141,7 @@ extern void write_and_close_checkpointed_file (void);
 /** LALApps error handler for BOINC */
 int BOINC_LAL_ErrHand (LALStatus*, const char*, const char*, const int, volatile const char*);
 
+/** attach gdb to the running process; for debugging. */
 void attach_gdb(void);
 
 /** the main() function of HierarchicalSerach.c becomes the extern MAIN(),

@@ -28,7 +28,7 @@
 
 /** INCLUDES **/
 
-/* BOINC - needs to be before the #defines in hs_boinc_extras.h */
+/* BOINC includes - need to be before the #defines in hs_boinc_extras.h */
 #include "boinc_api.h"
 #include "diagnostics.h"
 #include "boinc_zip.h"
@@ -111,7 +111,8 @@ static char **global_argv;
 
 /** variables for checkpointing */
 static char* cptfilename;                 /**< name of the checkpoint file */
-static FStatCheckpointFile* cptf = NULL;  /**< FStatCheckpointFile structure */
+static char* outfilename;                 /**< name of the checkpoint file */
+static toplist_t*toplist;                 /**< the toplist we're checkpointing */
 static UINT4 bufsize = 8*1024;            /**< size of output file buffer */
 static UINT4 maxsize = 1024*1024;         /**< maximal size of the output file */
 static double last_rac, last_dec;         /**< last sky position, set by show_progress(),
@@ -1053,7 +1054,7 @@ int main(int argc, char**argv) {
 #endif
 
 /** init checkpointing and read a checkpoint if already there */
-int init_and_read_checkpoint(toplist_t*toplist, /**< the toplist to checkpoint */
+int init_and_read_checkpoint(toplist_t*tl     , /**< the toplist to checkpoint */
 			     UINT4*count,       /**< returns the skypoint counter if a checkpoint was found */
 			     UINT4 total,       /**< total number of skypoints */
 			     char*outputname,   /**< name of checkpointed output file */
@@ -1061,21 +1062,27 @@ int init_and_read_checkpoint(toplist_t*toplist, /**< the toplist to checkpoint *
 			     ) {
 
   FILE*fp;
-  unsigned int  checksum, bytes;
-  unsigned long count_read, total_read;
-  int scanned;
   int ret;
 
-  /* create data needed for checkpointing */
-  if (fstat_cpt_file_create (&cptf, outputname, bufsize, maxsize, toplist))
-    return(-2);
+  toplist = tl;
 
-  /* open the "checkpointed" (output) file for possible writing */
-  if (fstat_cpt_file_open(cptf))
-    return(-3);
+  /* store the name of the output file in global outfilename */
+  int s = strlen(outputname)+1;
+  outfilename = (char*)calloc(s,sizeof(char));
+  if(!outfilename){
+    LogPrintf(LOG_CRITICAL, "Out of memory\n");
+    return(-2);
+  }
+  strncpy(outfilename,outputname,s);
+
+  /* nothing to do if the output file already exists */
+  fp=fopen(outputname);
+  if(fp){
+    fclose(fp);
+    return(2);
 
   /* store the name of the checkpoint file in global cptfilename */
-  if(cptname) {
+  if(cptname) { 
     int s = strlen(cptname)+1;
     cptfilename = (char*)calloc(s,sizeof(char));
     if(!cptfilename){
@@ -1096,143 +1103,7 @@ int init_and_read_checkpoint(toplist_t*toplist, /**< the toplist to checkpoint *
     strncat(cptfilename,CHECKPOINT_EXT,s);
   }
 
-  /* now try to open an old checkpoint file with that name */
-  fp = fopen(cptfilename,"r");
-  
-  /* found no previous checkpoint - start from beginning, nothing more to do here */
-  if (!fp) {
-    LogPrintf (LOG_DEBUG,  "Couldn't open checkpoint (%d) - starting from beginning\n", errno);
-    return(0);
-  }
-
-  LogPrintf (LOG_DEBUG,  "Found checkpoint - reading...\n");
-
-  errno = 0;
-
-  /* try to read and parse the checkpoint if we found one */
-  scanned = fscanf(fp,"%lf,%lf,%lu,%lu,%u,%u\n",
-		   &last_rac, &last_dec,
-		   &count_read, &total_read,
-		   &checksum, &bytes);
-
-  /* that didn't work as expected - deal with various types of errors */
-  if (scanned != 6) {
-    if (scanned == EOF) {
-      /* file was empty */
-      LOGIOERROR("ERROR: EOF encountered reading checkpoint", cptfilename);
-    } else {
-      int c;
-      LOGIOERROR("Could't parse checkpoint", cptfilename);
-      if(errno){
-	/* file-I/O error */
-	LogPrintf(LOG_CRITICAL,"scanned %d/6\n", scanned);
-      } else {
-	char buf[256];
-	/* unexpected file content - write it to stderr */
-	LogPrintf(LOG_CRITICAL,"scanned %d/6, first 256 bytes were:'", scanned);
-	rewind(fp);
-	memset(buf,0,sizeof(buf));
-	fwrite(buf,sizeof(char),fread(buf,sizeof(char),sizeof(buf)-1,fp),stderr);
-	fprintf(stderr,"'\n");
-      }
-    }
- 
-    /* try to remove a broken checkpoint */
-    if(fclose(fp))
-      LOGIOERROR("Couldn't close checkpoint",cptfilename);
-    if(remove(cptfilename))
-      LOGIOERROR("Couldn't remove broken checkpoint",cptfilename);
-    return(-1);
-  }
-
-  /* close the checkpoint file after reading */
-  if(fclose(fp))
-    LOGIOERROR("Couldn't close checkpoint",cptfilename);
-
-  /* compare the number of skypoints read from the checkpoint with that determined from the program input */
-  if (total_read != total) {
-    LogPrintf (LOG_DEBUG,  "ERROR reading checkpoint: n.o. skypoints inconsistent (%ul != %ul)\n", total_read, total);
-    if(remove(cptfilename))
-      LOGIOERROR("Couldn't remove broken checkpoint",cptfilename);
-    return(-1);
-  }
-
-  /* checkpoint seems sensible - try to read the previous output back into the toplist */
-  LogPrintf (LOG_DEBUG,  "Read checkpoint - reading previous output...\n");
-
-  ret = fstat_cpt_file_read (cptf, checksum, bytes);
-
-  /* check if something went wrong */
-  if (ret < 0) {
-    LogPrintf (LOG_DEBUG,  "ERROR reading previous output\n");
-    return(-1);
-  } else if (ret == 1) {
-    return (2); /* "end marker" was found */
-  }
-
-  /* make sure the point of next writing is where we stopped reading -
-     apparently this isn't necessarily the case with a buffered file on BSD (MacOS) */
-  if(fseek(cptf->fp,cptf->bytes,SEEK_SET)) {
-    LOGIOERROR("Could't seek to point of last reading", cptf->filename);
-    return(-1);
-  }
-  *count = count_read;
-
-  return(1);
-}
-
-
-/** adds a candidate to the toplist and to the checkpointing file, too, if it was actually inserted
-    into the "toplist".
-    Compacting, if necessary, is NOT done here, but in set_checkpoint() - doing it here would lead to
-    inconsistent state on disk until the next set_checkpoint call.
-*/
-int add_checkpoint_candidate (toplist_t*toplist,    /**< the toplist */
-			      FstatOutputEntry cand /**< the candidate to insert into the toplist */
-			      ) {
-  if(toplist != cptf->list) {
-    LogPrintf (LOG_CRITICAL,  "ERROR: wrong toplist passed to add_checkpoint_candidate()\n", cptfilename);
-    return(-2);
-  }
-
-  return(fstat_cpt_file_add (cptf, cand));
-}
-
-
-/** actually writes a checkpoint.
-    single point to contain the checkpoint format string.
-    called only from 2 places in set_checkpoint()
-*/
-static int write_checkpoint (char*filename) {
-  int ret;
-
-  /* not much done here: open ... */
-  FILE* fp = fopen(filename,"w");
-
-  if (fp == NULL) {
-    LOGIOERROR("Couldn't open checkpoint file",filename);
-    return(-1);
-  }
-
-  /* ... write ... */
-  ret = fprintf(fp,"%lf,%lf,%u,%u,%u,%u\n",
-		last_rac, last_dec, last_count, last_total,
-		cptf->checksum, cptf->bytes);
-  if (ret <= 0) {
-    LOGIOERROR("Couldn't write checkpoint",filename);
-    if(fclose(fp))
-      LOGIOERROR("Couldn't close checkpoint",filename);
-    return(ret);
-  }
-
-  /* ... close */
-  ret = fclose(fp);
-  if (ret != 0) {
-    LOGIOERROR("Couldn't close checkpoint",filename);
-    return(ret);
-  }
-  
-  return(0);
+  return(read_hs_checkpoint(toplist,cptname,count));
 }
 
 
@@ -1248,59 +1119,23 @@ void set_checkpoint (void) {
   if (boinc_time_to_checkpoint())
 #endif
     {
-      /* It's time to checkpoint - should we compact, too? */
-      if ((cptf->maxsize > 0) && (cptf->bytes >= cptf->maxsize)) {
-	/* compact the file */
-	fstat_cpt_file_compact(cptf);
-	/* write a fresh checkpoint with the new checksum&length */
-	if (write_checkpoint(cptfilename))
-	  LogPrintf (LOG_CRITICAL, "ERROR: Couldn't write checkpoint file\n", cptfilename);
-	fprintf(stderr,"C\n");
-      } else {
-	/* just checkpoint w/o compacting */
-	fstat_cpt_file_flush(cptf);
-	/* write a temporary checkpoint, then (atomically) rename */
-#define TEMPCHECKPOINT "checkpoint.tmp"
-	if (write_checkpoint(TEMPCHECKPOINT)) {
-	  LogPrintf (LOG_CRITICAL, "ERROR: Couldn't write checkpoint file\n", cptfilename);
-	} else {
-	  if(boinc_rename(TEMPCHECKPOINT,cptfilename) ) {
-	    LogPrintf (LOG_CRITICAL, "ERROR: Couldn't rename checkpoint file\n", cptfilename);
-	  }
-	}
-	fprintf(stderr,"c\n");
-      }
-      /* checkpoint done */
+      write_hs_checkpoint(cptfilename,,last_count);
+      fprintf(stderr,"c\n");
       boinc_checkpoint_completed();
-      LogPrintf(LOG_DETAIL,"\nset_checkpt(): bytes: %u, file: %d\n", cptf->bytes, ftell(cptf->fp));
     }
-#ifndef FORCE_CHECKPOINTING
-  else if (cptf->bytes >= cptf->maxsize)
-    /* BOINC says it's not yet time for a checkpoint, but we need to compact the file */
-    {
-      /* don't let the Client interrupt us here */
-      boinc_begin_critical_section();
-      /* compact and write checkpoint (see above) */
-      if (cptf->maxsize > 0)
-	fstat_cpt_file_compact(cptf);
-      if (write_checkpoint(cptfilename))
-	LogPrintf (LOG_CRITICAL, "ERROR: Couldn't write checkpoint file\n", cptfilename);
-      boinc_end_critical_section();
-      fprintf(stderr,"C\n");
-      LogPrintf(LOG_DETAIL,"\nset_checkpt(): bytes: %u, file: %d\n", cptf->bytes, ftell(cptf->fp));
-    }
-#endif
 }
+
 
 /** finally writes a minimal (compacted) version of the toplist and cleans up
     all structures related to the toplist. After that, the toplist is invalid.
  */
 void write_and_close_checkpointed_file (void) {
-  fstat_cpt_file_close(cptf);
-  fstat_cpt_file_destroy(&cptf);
+  write_hs_oputput(toplist,outfilename);
 }
 
-/** attach gdb to the running process. */
+
+
+/** attach gdb to the running process; for debugging. */
 void attach_gdb() {
 #ifdef __GLIBC__
   char cmd[256];
