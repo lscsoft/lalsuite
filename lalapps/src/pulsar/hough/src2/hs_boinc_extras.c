@@ -1060,10 +1060,9 @@ int init_and_read_checkpoint(toplist_t*tl     , /**< the toplist to checkpoint *
 			     char*outputname,   /**< name of checkpointed output file */
 			     char*cptname       /**< name of checkpoint file */
 			     ) {
-
   FILE*fp;
-  int ret;
 
+  /* remember the toplist pointer */
   toplist = tl;
 
   /* store the name of the output file in global outfilename */
@@ -1076,10 +1075,11 @@ int init_and_read_checkpoint(toplist_t*tl     , /**< the toplist to checkpoint *
   strncpy(outfilename,outputname,s);
 
   /* nothing to do if the output file already exists */
-  fp=fopen(outputname);
-  if(fp){
+  fp=fopen(outputname,"rb");
+  if(fp) {
     fclose(fp);
     return(2);
+  }
 
   /* store the name of the checkpoint file in global cptfilename */
   if(cptname) { 
@@ -1102,8 +1102,8 @@ int init_and_read_checkpoint(toplist_t*tl     , /**< the toplist to checkpoint *
     strncpy(cptfilename,outputname,s);
     strncat(cptfilename,CHECKPOINT_EXT,s);
   }
-
-  return(read_hs_checkpoint(toplist,cptname,count));
+  
+  return(read_hs_checkpoint(cptname,toplist,count));
 }
 
 
@@ -1119,7 +1119,7 @@ void set_checkpoint (void) {
   if (boinc_time_to_checkpoint())
 #endif
     {
-      write_hs_checkpoint(cptfilename,,last_count);
+      write_hs_checkpoint(cptfilename,toplist,last_count);
       fprintf(stderr,"c\n");
       boinc_checkpoint_completed();
     }
