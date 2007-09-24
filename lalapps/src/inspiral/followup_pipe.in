@@ -43,17 +43,6 @@ from lalapps import inspiral
 from lalapps import inspiralutils
 
 ##############################################################################
-# redefine the columns of interest
-##############################################################################
-lsctables.SearchSummaryTable.loadcolumns = ["ifos","in_start_time","in_start_time_ns","in_end_time","in_end_time_ns","out_start_time","out_start_time_ns","out_end_time","out_end_time_ns"]
-
-lsctables.SimInspiralTable.loadcolumns = ["waveform","geocent_end_time",
-    "geocent_end_time_ns","h_end_time","h_end_time_ns","l_end_time",
-    "l_end_time_ns","source","mass1","mass2","mchirp","eta","distance",
-    "spin1x","spin1y","spin1z","spin2x","spin2y","spin2z","eff_dist_h",
-    "eff_dist_l","eff_dist_g","eff_dist_t","eff_dist_v"]
-
-##############################################################################
 #
 #  MAIN PROGRAM
 #
@@ -162,41 +151,18 @@ cp.read(opts.config_file)
 ## get the directory where the code is run
 currentPath = os.path.abspath('.')
 
-## set up the local directories
-# THIS SHOULD BE DONE BY THE WEB THE DAG STUFF.
-#setupdirs()
-
 ############# TURN THE HIPE OUTPUT INTO LAL CACHE FILES #######################
 
-cache = getCache(opts)
-
-if opts.generate_fu_cache:
-  print >> sys.stderr, "\nOption --generate-fu-cache is specified, it overwrites the hipe cache files  which already exist"
-  cache.getCacheAll(cp)
-  cache.writeCacheAll('fu_hipe.cache')
-  print >> sys.stderr, "\nHIPE CACHE FILE WRITTEN TO: fu_hipe.cache"
-  #for n, t in cache.nameMaps:
-  #  print >> sys.stderr, " * " + n + " [" + str(len(cache[t])) + "]"
-
-try:
-  os.chdir("cache")
-  os.chdir(currentPath)
-except:
-  os.symlink(string.strip(cp.get('hipe-cache','hipe-cache-path')), 'cache')
+cache = getCache(opts,cp,currentPath)
 
 ##############################################################################
 # create the DAG writing the log to the specified directory
 dag = followUpDAG(opts.config_file, opts.log_path)
 dag.setupDAGWeb('followup web page','index.html')
-subsuffix = '.sub'
 
 ##############################################################################
 #Decide if we are actually reading any trigger files
 page = string.strip(cp.get('output','page'))
-
-#if not opts.read_triggers and not opts.write_to_iulgroup:
-#  sys.exit(0)
-  # We are done here
 
 #if not opts.read_triggers and opts.write_to_iulgroup:
 if opts.write_to_iulgroup:
@@ -204,31 +170,9 @@ if opts.write_to_iulgroup:
   # don't overwrite anything, just publish what we have
   sys.exit(0)
 
-# Since we are continuing get useful stuff from the ini file.
-if cp.has_option('triggers','hipe-output-cache'):
-  triggerCacheString = string.strip(cp.get('triggers','hipe-output-cache'))
-else:
-  triggerCacheString = ''
-if cp.has_option('triggers','triggers-tag'):
-  triggerTag = string.strip(cp.get('triggers','triggers-tag'))
-else:
-  triggerTag = ''
-
-if len(triggerCacheString) == 0 or len(triggerTag) == 0:
-  xml_glob = string.strip(cp.get('triggers','xml-glob'))
-else:
-  triggerCache = cache.filesMatchingGPSinCache(triggerCacheString,None,triggerTag)
-  triggerList = cache.getListFromCache(triggerCache)
-  xml_glob = triggerList[0] 
-
-numtrigs = string.strip(cp.get('triggers','num-trigs'))
-statistic =  string.strip(cp.get('triggers','statistic'))
-bla =  string.strip(cp.get('triggers','bitten-l-a'))
-blb =  string.strip(cp.get('triggers','bitten-l-b'))
- 
 ############# READ IN THE COIRE FILES #########################################
 
-found, coincs, search = readFiles(xml_glob,getstatistic(statistic,bla,blb))
+numtrigs, found, coincs, search = cache.readTriggerFiles(cp)
 missed = None
 
 if opts.trig_bank: trigbank_test = 1
@@ -245,13 +189,6 @@ dataJob        = qscanDataFindJob('datafind_cache','logs',cp,'futrigs')
 qscanFgJob     = qscanJob(opts,cp)
 qscanBgJob     = qscanLiteJob(opts,cp)
 
-inspJobCnt        = 0
-plotJobCnt        = 0
-dataJobCnt        = 0
-dataHoftJobCnt    = 0
-qscanFgJobCnt     = 0
-qscanBgJobCnt     = 0
-summaryHTMLlist = []
 
 prev_dNode = None
 prev_dHoftNode = None
@@ -265,49 +202,35 @@ ifos_list = ['H1','H2','L1','G1','V1','T1']
 
 
 ############# LOOP OVER RANDOM BACKGROUND TIMES ###############################
+###############################################################################
 # Prepare the qscan background
 for ifo in ifos_list:
   times = getQscanBackgroundTimes(cp,opts,ifo, dq_url_pattern,segFile)
   for time in times:
     # SETUP DATAFIND JOBS FOR BACKGROUND QSCANS (REGULAR DATA SET)
-    dNode = qscanDataFindNode(dataJob,'futrig','q-datafind',cp,time,ifo, opts, prev_dNode, dag, dataJobCnt)
+    dNode = qscanDataFindNode(dataJob,'futrig','q-datafind',cp,time,ifo, opts, prev_dNode, dag)
 
     # SETUP DATAFIND JOBS FOR BACKGROUND QSCANS (HOFT)
-    dHoftNode = qscanDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,time,ifo,opts,prev_dHoftNode,dag,dataHoftJobCnt)
+    dHoftNode = qscanDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,time,ifo,opts,prev_dHoftNode,dag)
     
       # SETUP BACKGROUND QSCAN JOBS
-    qBgNode = qscanNode(qscanBgJob,time,cp,dHoftNode.outputFileName,ifo,'background-qscan-hoft',opts,dHoftNode,dag,qscanBgJobCnt,'hoft_datafind','background_hoft_qscan')
-    qBgNode = qscanNode(qscanBgJob,time,cp,dNode.outputFileName,ifo,'background-qscan',opts, dNode, dag, qscanBgJobCnt,'datafind','background_qscan')
-    qBgNode = qscanNode(qscanBgJob,time,cp,dNode.outputFileName,ifo,'background-qscan-seismic',opts, dNode, dag, qscanBgJobCnt,'datafind','background_seis_qscan')
+    qBgNode = qscanNode(qscanBgJob,time,cp,dHoftNode.outputFileName,ifo,'background-qscan-hoft',opts,dHoftNode,dag,'hoft_datafind','background_hoft_qscan')
+    qBgNode = qscanNode(qscanBgJob,time,cp,dNode.outputFileName,ifo,'background-qscan',opts, dNode, dag,'datafind','background_qscan')
+    qBgNode = qscanNode(qscanBgJob,time,cp,dNode.outputFileName,ifo,'background-qscan-seismic',opts, dNode, dag,'datafind','background_seis_qscan')
+
 
 ################# LOOP OVER FOLLOWUP TRIGGERS #################################
-
+###############################################################################
+prev_plotnode = None
 # Prepare the followup jobs
 for trig in followuptrigs:
 
   #Lets make a new section for this event
-  dag.webPage.appendSection(str(trig.event_id))  
-  print trig.ifoTag
-  print trig.gpsTime
+  dag.webPage.appendSection('Trigger ID = '+str(trig.eventID)+ ' Stat = '+str(trig.statValue))  
 
-  # TRY GETTING INSPIRAL PROCESS PARAMS... currently done even if the inspiral jobs are not requested... should be fixed
-  if cp.has_option('hipe-cache','hipe-intermediate-cache'):
-    intermediateCache = string.strip(cp.get('hipe-cache','hipe-intermediate-cache'))
-  else:
-    intermediateCache = ''
-  if opts.generate_fu_cache or len(intermediateCache) == 0:
-    cacheFile = 'fu_hipe.cache'
-  else:
-    cacheFile = intermediateCache
-
-  try: 
-    inspiral_process_params = cache.getProcessParamsFromCache( \
-                     cache.filesMatchingGPSinCache(cacheFile,\
-                     trig.gpsTime, "INSPIRAL_"), \
-                     trig.ifoTag, trig.gpsTime)
-  except: 
-    print "couldn't get inspiral process params for " + str(trig.eventID)
-    inspiral_process_params = []
+  # TRY GETTING INSPIRAL PROCESS PARAMS... 
+  # currently done even when inspiral jobs are not requested... fix?
+  inspiral_process_params = cache.processFollowupCache(cp, opts, trig)
 
   # loop over ifos
   for ifo in trig.ifolist_in_coinc:
@@ -316,42 +239,36 @@ for trig in followuptrigs:
     except: continue
     
     #Lets append a new subsection
-    dag.webPage.lastSection.appendSubSection(str(ifo)+' '+str(trig.event_id))
+    dag.webPage.lastSection.appendSubSection(str(ifo)+' @ GPS '+str(trig.gpsTime[ifo]))
 
     # SETUP DATAFIND JOBS FOR HOFT QCANS
-    dHoftNode = qscanDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,trig.gpsTime[ifo],ifo,opts, prev_dHoftNode, dag, dataHoftJobCnt)
+    dHoftNode = qscanDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,trig.gpsTime[ifo],ifo,opts, prev_dHoftNode, dag)
 
     # SETUP DATAFIND JOBS FOR REGULAR QCANS
-    dNode = qscanDataFindNode(dataJob,'futrig','q-datafind',cp,trig.gpsTime[ifo],opts, prev_dNode, dag, dataJobCnt)
+    dNode = qscanDataFindNode(dataJob,'futrig','q-datafind',cp,trig.gpsTime[ifo],ifo,opts, prev_dNode, dag)
     
     # SETUP FOREGROUND QSCAN JOBS
-    qFgNode = fu_Condor.qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,d_node.outputFileName,ifo,'qscan-hoft',opts,dHoftNode,dag,qscanFgJobCnt,'hoft_datafind','hoft_qscan',trig)
-    qFgNode = fu_Condor.qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,d_node.outputFileName,ifo,'qscan',opts,dNode,dag,qscanFgJobCnt,'datafind','qscan',trig)
-    qFgNode = fu_Condor.qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,d_node.outputFileName,ifo,'qscan-seismic',opts,dNode,dag,qscanFgJobCnt,'datafind','seis_qscan',qscan,trig)
+    qFgNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,dHoftNode.outputFileName,ifo,'qscan-hoft',opts,dHoftNode,dag,'hoft_datafind','hoft_qscan',trig)
+    qFgNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,dNode.outputFileName,ifo,'qscan',opts,dNode,dag,'datafind','qscan',trig)
+    qFgNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,dNode.outputFileName,ifo,'qscan-seismic',opts,dNode,dag,'datafind','seis_qscan',trig)
 
     # SETUP INSPIRAL JOBS
-    inspiralNode = followUpInspNode(inspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag, inspJobCnt)
+    inspiralNode = followUpInspNode(inspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag)
 
     # SETUP PLOT JOBS
-    plotNode = plotSNRCHISQNode(plotJob,trig.gpsTime[ifo],inspiralNode.output_file_name,trig,page,dag,inspiralNode,opts,plotJobCnt,prev_plotnode)
+    plotNode = plotSNRCHISQNode(plotJob,ifo,inspiralNode.output_file_name,trig,page,dag,inspiralNode,opts,prev_plotnode)
 
 
-print "\nFound " +  str(inspJobCnt)           + " inspiral Jobs" 
-print "\nFound " +  str(plotJobCnt)           + " plot jobs"
-print "\nFound " +  str(dataJobCnt)           + " datafind jobs for regular qscans"
-print "\nFound " +  str(dataHoftJobCnt)       + " datafind jobs for hoft qscans"
-print "\nFound " +  str(qscanFgJobCnt)        + " regular qscan jobs"
-print "\nFound " +  str(qscanBgJobCnt)        + " background qscan jobs"
-print "\n"
-
+# MOVE THIS INTO A DAG CLASS, THIS IS USEFUL FOR MORE THAN JUST QSCANS
 # Write out the cache files for the various output data
+###############################################################################
 
 if opts.qscan or opts.background_qscan or opts.hoft_qscan or opts.background_hoft_qscan or opts.seis_qscan or opts.background_seis_qscan:
   qscan_cache = qscanCache()
 
 for node in dag.get_nodes():
 
-  if isinstance(node,fu_Condor.qscanNode):
+  if isinstance(node,qscanNode):
     qscan_cache.addLine(node)
   
   else: continue
@@ -360,36 +277,8 @@ qscan_cache.writeCache()
 
 
 ##########################################################################
-print "\n.......Writing DAG"
-
-dag.write_sub_files()
-dag.write_dag()
-
-if opts.write_to_iulgroup:
-  publishOnHydra(page)
-
-print
-print "  Created a DAG file which can be submitted by executing"
-print "    condor_submit_dag " + dag.get_dag_file()
-print """\n  from a condor submit machine
-  Before submitting the dag, you must execute
-
-    export _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR=FALSE
-
-  If you are running LSCdataFind jobs, do not forget to initialize your grid
-  proxy certificate on the condor submit machine by running the commands
-
-    unset X509_USER_PROXY
-    grid-proxy-init -hours 72
-
-  Enter your pass phrase when prompted. The proxy will be valid for 72 hours.
-  If you expect the LSCdataFind jobs to take longer to complete, increase the
-  time specified in the -hours option to grid-proxy-init. You can check that
-  the grid proxy has been sucessfully created by executing the command:
-
-    grid-cert-info -all -file /tmp/x509up_u`id -u`
-
-  This will also give the expiry time of the proxy."""
-
+dag.writeAll()
 sys.exit(0)
 
+#  if opts.write_to_iulgroup:
+#  publishOnHydra(page)
