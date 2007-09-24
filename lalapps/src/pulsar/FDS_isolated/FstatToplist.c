@@ -764,7 +764,7 @@ int write_hs_checkpoint(char*filename, toplist_t*tl, UINT4 counter) {
   /* write data */
   len = fwrite(tl->data, tl->size, tl->length, fp);
   if(len != tl->length) {
-    LOGIOERROR("Couldn't write data to ", tmpfilename);
+    LOGIOERROR("Couldn't write data to", tmpfilename);
     LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %d\n", len, tl->length);
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", tmpfilename);
@@ -774,7 +774,7 @@ int write_hs_checkpoint(char*filename, toplist_t*tl, UINT4 counter) {
   /* write counter */
   len = fwrite(&counter, sizeof(counter), 1, fp);
   if(len != 1) {
-    LOGIOERROR("Couldn't write counter to ", tmpfilename);
+    LOGIOERROR("Couldn't write counter to", tmpfilename);
     LogPrintf(LOG_CRITICAL,"fwrite() returned %d, lengthe was %d\n",len,sizeof(counter));
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", tmpfilename);
@@ -784,7 +784,7 @@ int write_hs_checkpoint(char*filename, toplist_t*tl, UINT4 counter) {
   /* write checksum */
   len = fwrite(&checksum, sizeof(checksum), 1, fp);
   if(len != 1) {
-    LOGIOERROR("Couldn't write checksum to ", tmpfilename);
+    LOGIOERROR("Couldn't write checksum to", tmpfilename);
     LogPrintf(LOG_CRITICAL,"fwrite() returned %d, lengthe was %d\n",len,sizeof(checksum));
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", tmpfilename);
@@ -816,7 +816,7 @@ int read_hs_checkpoint(char*filename, toplist_t*tl, UINT4*counter) {
   /* counter should be 0 if we couldn't read a checkpoint */
   *counter = 0;
 
-  /* try to open filename */
+  /* try to open file */
   fp = fopen(filename, "rb");
   if(!fp) {
     LogPrintf(LOG_NORMAL,"INFO: Couldn't open checkpoint %s\n", filename);
@@ -827,7 +827,7 @@ int read_hs_checkpoint(char*filename, toplist_t*tl, UINT4*counter) {
   /* read data */
   len = fread(tl->data, tl->size, tl->length, fp);
   if(len != tl->length) {
-    LOGIOERROR("Couldn't read data from ", filename);
+    LOGIOERROR("Couldn't read data from", filename);
     LogPrintf(LOG_CRITICAL,"fread() returned %d, length was %d\n", len, tl->length);
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", filename);
@@ -838,7 +838,7 @@ int read_hs_checkpoint(char*filename, toplist_t*tl, UINT4*counter) {
   /* read counter */
   len = fread(counter, sizeof(*counter), 1, fp);
   if(len != 1) {
-    LOGIOERROR("Couldn't read counter from ", filename);
+    LOGIOERROR("Couldn't read counter from", filename);
     LogPrintf(LOG_CRITICAL,"fread() returned %d, length was %d\n", len, sizeof(*counter));
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", filename);
@@ -849,7 +849,7 @@ int read_hs_checkpoint(char*filename, toplist_t*tl, UINT4*counter) {
   /* read checksum */
   len = fread(&checksum, sizeof(checksum), 1, fp);
   if(len != 1) {
-    LOGIOERROR("Couldn't read checksum to ", filename);
+    LOGIOERROR("Couldn't read checksum to", filename);
     LogPrintf(LOG_CRITICAL,"fread() returned %d, length was %d\n", len, sizeof(checksum));
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", filename);
@@ -857,7 +857,7 @@ int read_hs_checkpoint(char*filename, toplist_t*tl, UINT4*counter) {
     return(-1);
   }
 
-  /* close tempfile */
+  /* close file */
   if(fclose(fp)) {
     LOGIOERROR("Couldn't close", filename);
     clear_toplist(tl);
