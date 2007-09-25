@@ -157,18 +157,15 @@ cache = getCache(opts,cp,currentPath)
 
 ##############################################################################
 # create the DAG writing the log to the specified directory
-dag = followUpDAG(opts.config_file, opts.log_path)
-dag.setupDAGWeb('followup web page','index.html')
-
-##############################################################################
-#Decide if we are actually reading any trigger files
 page = string.strip(cp.get('output','page'))
+dag = followUpDAG(opts.config_file, opts.log_path)
+dag.setupDAGWeb('followup web page','index.html',page)
 
 #if not opts.read_triggers and opts.write_to_iulgroup:
-if opts.write_to_iulgroup:
-  publishOnHydra(page)
+#if opts.write_to_iulgroup:
+#  publishOnHydra(page)
   # don't overwrite anything, just publish what we have
-  sys.exit(0)
+#  sys.exit(0)
 
 ############# READ IN THE COIRE FILES #########################################
 
@@ -183,9 +180,9 @@ print "\n.......Found " + str(len(followuptrigs)) + " trigs to follow up"
 
 ############ SET UP THE REQUESTED JOBS ########################################
 
-inspJob        = inspiral.InspiralJob(cp)
+inspJob        = followUpInspJob(cp)
 plotJob        = plotSNRCHISQJob(opts,cp)
-dataJob        = qscanDataFindJob('datafind_cache','logs',cp,'futrigs')
+dataJob        = qscanDataFindJob('datafind_cache','logs',cp,'futrig')
 qscanFgJob     = qscanJob(opts,cp)
 qscanBgJob     = qscanLiteJob(opts,cp)
 
@@ -264,21 +261,18 @@ for trig in followuptrigs:
 ###############################################################################
 
 if opts.qscan or opts.background_qscan or opts.hoft_qscan or opts.background_hoft_qscan or opts.seis_qscan or opts.background_seis_qscan:
+
   qscan_cache = qscanCache()
-
-for node in dag.get_nodes():
-
-  if isinstance(node,qscanNode):
-    qscan_cache.addLine(node)
-  
-  else: continue
-
-qscan_cache.writeCache()
+  for node in dag.get_nodes():
+    if isinstance(node,qscanNode):
+      qscan_cache.addLine(node)
+    else: continue
+  qscan_cache.writeCache()
 
 
 ##########################################################################
 dag.writeAll()
-sys.exit(0)
+if opts.write_to_iulgroup:
+  dag.publishToHydra()
 
-#  if opts.write_to_iulgroup:
-#  publishOnHydra(page)
+sys.exit(0)
