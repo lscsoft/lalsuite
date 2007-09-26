@@ -1147,7 +1147,7 @@ void set_checkpoint (void) {
     all structures related to the toplist. After that, the toplist is invalid.
  */
 void write_and_close_checkpointed_file (void) {
-  write_hs_oputput(toplist,outfilename);
+  write_hs_oputput(outfilename,toplist);
 }
 
 
