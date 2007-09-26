@@ -46,7 +46,7 @@
 RCSID( "$Id$" );
 
 #define CVS_REVISION "$Revision$"
-#define CVS_ID_STRING "$id: 1.52 $"
+#define CVS_ID_STRING "$Id$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
 #define CVS_NAME_STRING "$Name$"
