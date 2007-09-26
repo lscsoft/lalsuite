@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 if FRAME
-FRAMEPROGRAMS = lalapps_mkcalfac lalapps_mkcalref lalapps_makecalframe lalapps_readcalframe lalapps_dumpcalframe
+FRAMEPROGRAMS = lalapps_mkcalfac lalapps_mkcalref lalapps_makecalframe lalapps_readcalframe lalapps_dumpcalframe lalapps_getresp
 else
 FRAMEPROGRAMS = 
 endif
@@ -10,6 +10,7 @@ if FRAME
 lalapps_makecalframe_SOURCES = makecalframe.c LALASCIIFileRead.c LALASCIIFileRead.h
 lalapps_readcalframe_SOURCES = readcalframe.c
 lalapps_dumpcalframe_SOURCES = dumpcalframe.c
+lalapps_getresp_SOURCES = getresp.c
 lalapps_mkcalfac_SOURCES = mkcalfac.c
 lalapps_mkcalref_SOURCES = mkcalref.c
 endif
