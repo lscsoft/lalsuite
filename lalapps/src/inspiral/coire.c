@@ -56,6 +56,7 @@ RCSID("$Id$");
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
+#define CVS_NAME_STRING "$Name$"
 
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
   this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
@@ -404,7 +405,8 @@ int main( int argc, char *argv[] )
       case 'V':
         fprintf( stdout, "Coincident Inspiral Reader and Injection Analysis\n"
             "Steve Fairhurst\n"
-            "CVS Version: " CVS_ID_STRING "\n" );
+            "CVS Version: " CVS_ID_STRING "\n" 
+            "CVS Tag: " CVS_NAME_STRING "\n" );
         exit( 0 );
         break;
 
@@ -550,11 +552,11 @@ int main( int argc, char *argv[] )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
               "custer window must be > 0: "
-              "(%lld specified)\n",
+              "(%ld specified)\n",
               long_options[option_index].name, cluster_dt );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%lld", cluster_dt );
+        ADD_PROCESS_PARAM( "int", "%ld", cluster_dt );
         /* convert cluster time from ms to ns */
         cluster_dt *= 1000000LL;
         break;
@@ -590,7 +592,7 @@ int main( int argc, char *argv[] )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
               "injection coincidence window must be >= 0: "
-              "(%lld specified)\n",
+              "(%ld specified)\n",
               long_options[option_index].name, injectWindowNS );
           exit( 1 );
         }
