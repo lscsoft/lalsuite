@@ -136,35 +136,36 @@ extern int fstat_cpt_file_compact(FStatCheckpointFile*cptf);
 
 /** writes a checkpoint:
     - constructs temporary filename (by appending .TMP)
+    - writes number of elements ("elems") in toplist to tempfile
     - dumps data to tempfile
     - appends counter
-    - appends checksum (of data and counter)
+    - appends checksum (of elems, data and counter)
     - renames tempfile to final name
     returns
     -1 in case of an I/O error,
     -2 if out of memory,
      0 otherwise (successful)
 */
-extern int write_hs_checkpoint(char*filename, toplist_t*tl, UINT4 counter);
+extern int write_hs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter);
 
 /** tries to read a checkpoint
     - tries to open the file, returns 1 if no file found
-    - reads data, counter and checksum
+    - reads elems, data, counter and checksum
     - verifies checksum
     - restores the heap by sorting
     returns
      0 if successfully read a checkpoint
      1 if no checkpoint was found
     -1 in case of an I/O error
-    -2 if the checksum was wrong
+    -2 if the checksum was wrong or elems was unreasonable
 */
-extern int read_hs_checkpoint(char*filename, toplist_t*tl, UINT4*counter);
+extern int read_hs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter);
 
 /** write the final output file:
     - re-sort the toplist into freq/alpha/delta/fdot order
     - write out the toplist in ASCII format with end marker to a temporary file
     - rename the file to the final name
 */
-extern int write_hs_oputput(toplist_t*tl,char*filename);
+extern int write_hs_oputput(const char*filename, toplist_t*tl);
 
 #endif /* FSTATTOPLIST_H - double inclusion protection */

@@ -730,7 +730,7 @@ int fstat_cpt_file_compact(FStatCheckpointFile*cptf) {
 #endif
 
 /* dumps toplist to a temporary file, then renames the file to filename */
-int write_hs_checkpoint(char*filename, toplist_t*tl, UINT4 counter) {
+int write_hs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter) {
 #define TMP_EXT ".tmp"
   char*tmpfilename;
   FILE*fp;
@@ -820,7 +820,7 @@ int write_hs_checkpoint(char*filename, toplist_t*tl, UINT4 counter) {
 }
 
 
-int read_hs_checkpoint(char*filename, toplist_t*tl, UINT4*counter) {
+int read_hs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
   FILE*fp;
   UINT4 len;
   UINT4 checksum;
@@ -919,7 +919,7 @@ int read_hs_checkpoint(char*filename, toplist_t*tl, UINT4*counter) {
 }
 
 
-int write_hs_oputput(toplist_t*tl,char*filename) {
+int write_hs_oputput(const char*filename, toplist_t*tl) {
   sort_fstat_toplist(tl);
   return(_atomic_write_fstat_toplist_to_file(tl, filename, NULL, 1));
 }
