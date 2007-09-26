@@ -13,35 +13,23 @@ import time
 
 name = 'dagStatus'
 
-def help():
-  print name + '\n' 
-#+ __version__ + \'n' + __date__
-  print __author__
-  print """
-  [Purpose]
-  Parse a dag file and dagman.out files to obtain a brief summary of the dag status
-
-  [Usage]
-
-  -h, --help : this help
-  -D, --dag-ihope-file : the input dag file
-  -I, --ini-ihope-file : the ini file to parse the filename
-   """
-
-
 # let us parse the command line
 parser = OptionParser('%prog [options]\n' +__version__+'\n' + __author__ + '\n\n[Purpose] Parse one or several dagman.out file(s) to obtain a brief status summary of the dag run(s).\n\n[Example] First, you can parse a dag tht contains several dag such as ihope.dag : python %prog --ihope-dag-file ihope.dag\n If no sub-dag files are found within the file provide, the dagman.out is parsed %prog --dag-file hipe.dag')
+
 parser.add_option( "--dag-file", dest='scandag', default='ihope.dag', metavar='DAGFILE', help="The dag file to parse")
+parser.add_option( "--parse-n-lines", dest='nlines', default='1000', metavar='NLINES', help="The number of lines to parse (starting from the end)")
+parser.add_option( "--failed-status", dest='failed', default='1000', metavar='NLINES', help="Give a summary of the failed jobs")
 
 (options, args) = parser.parse_args()
 
 
 """ There are 2 possibilities. 
     First, the file provided is a dag file that ends in '.dag' that
-    contains other dag calls such as in ihope
-    Second, it is a pure dag file which might not even contain a dag by itself.
-
+    contains other dag calls such as in ihope.
+    Second, it is a pure dag file which might not even contain a dag
+    by itself, and in such case we search for the .dagman.out file.
 """
+
 print 'Parsing ' +options.scandag + '...'
 time.sleep(1)
 dagFile = open(options.scandag, 'r')
@@ -78,5 +66,13 @@ for i in xrange(0,len(filenames), 1):
   filename = tag +'.dagman.out'
   print '-->  '+ tag +' status '
   print '------------------------------------------------------------------------'
-  os.system('tail -n 100  '+filename+' | grep -v macro | grep -v Note | grep -v Event| grep -v Number | grep -v Node | grep -v Of | grep -v Submit | grep -v node | grep -v submit | grep -v assigned | tail -n 3 - ')
+  os.system('tail -n ' + options.nlines + ' '  + filename +' | grep -v macro | grep -v Note | grep -v Event| grep -v Number | grep -v Node | grep -v Of | grep -v Submit | grep -v node | grep -v submit | grep -v assigned | grep -v seconds | grep -v failed |tail -n 3 - ')
   print '\n\n'
+
+  os.system('grep ERROR '+filename + '> ' + filename + '.status')
+  
+  
+
+
+
+
