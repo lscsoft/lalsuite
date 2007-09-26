@@ -46,8 +46,10 @@
 RCSID( "$Id$" );
 
 #define CVS_REVISION "$Revision$"
+#define CVS_ID_STRING "$id: 1.52 $"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
+#define CVS_NAME_STRING "$Name$"
 #define PROGRAM_NAME "inspinj"
 
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
@@ -553,7 +555,7 @@ int main( int argc, char *argv[] )
   gpsEndTime.gpsSeconds=-1;
 
   /* getopt arguments */
-  /* available letters: c q v x y z C H Q R S T V W X Y  */
+  /* available letters: c q v x y z C H Q R S T W X Y  */
   struct option long_options[] =
   {
     {"help",                          no_argument, 0,                'h'},
@@ -593,6 +595,7 @@ int main( int argc, char *argv[] )
     {"min-spin2",               required_argument, 0,                'u'},
     {"max-spin2",               required_argument, 0,                'U'},
     {"output",                  required_argument, 0,                'P'},
+    {"version",                 no_argument,       0,                'V'},
     {"enable-spin",             no_argument,       &spinInjections,    1},
     {"disable-spin",            no_argument,       &spinInjections,    0},
     {"write-compress",          no_argument,       &outCompress,       1},
@@ -1113,6 +1116,14 @@ int main( int argc, char *argv[] )
            next_process_param( long_options[option_index].name,
                "float", "%le", maxSpin2 );
          break;
+       case 'V':
+         /* print version information and exit */
+         fprintf( stdout, "LIGO/LSC inspiral injection engine\n"
+            "The CBC group \n"
+            "CVS Version: " CVS_ID_STRING "\n"
+            "CVS Tag: " CVS_NAME_STRING "\n" );
+          exit( 0 );
+          break;
 
       case 'h':
         printUsage();
