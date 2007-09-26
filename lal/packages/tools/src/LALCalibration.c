@@ -18,10 +18,16 @@
 */
 
 #include <math.h>
+#include <string.h>
 
+#define LAL_USE_COMPLEX_SHORT_MACROS 1
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
+#include <lal/LALComplex.h>
+#include <lal/Units.h>
 #include <lal/Date.h>
+#include <lal/AVFactories.h>
+#include <lal/VectorOps.h>
 #include <lal/TimeSeries.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALCalibration.h>
@@ -42,29 +48,24 @@ void XLALDestroyCalData( LALCalData *caldata )
   return;
 }
 
-
-int XLALUpdateResponse( 
-    COMPLEX8FrequencySeries *response,  /**< response function to return */
-    REAL8 duration,                     /**< duration for averaging factors */
-    LALCalData *caldata                 /**< calibration reference data */
+int XLALAverageCalibrationFactors(
+    REAL8 *alpha,        /**< returned value of alpha factor */
+    REAL8 *gamma,        /**< returned value of gamma factor */
+    LIGOTimeGPS *epoch,  /**< epoch to begin averaging */
+    REAL8 duration,      /**< duration of averaging (0 = use just one point) */
+    LALCalData *caldata  /**< calibration reference data */
     )
 {
-  static const char *func = "XLALUpdateResponse";
+  static const char *func = "XLALAverageCalibrationFactors";
   const REAL4 tiny = 1e-6;
-  INT4 isDarmErr = 1;
   INT4 offset;
   INT4 npts;
   INT4 i;
-  UINT4 k;
 
-  REAL8 alpha;
-  REAL8 gamma;
-
-  if ( ! response || ! caldata )
+  /* check for invalid input */
+  if ( ! alpha || ! gamma || ! epoch || ! caldata )
     XLAL_ERROR( func, XLAL_EFAULT );
-  if ( ! caldata->cavityFactors || ! caldata->openLoopFactors 
-      || ! caldata->responseReference || ! caldata->cavityGainReference
-      || ! caldata->openLoopGainReference )
+  if (! caldata->cavityFactors || ! caldata->openLoopFactors || duration < 0.0)
     XLAL_ERROR( func, XLAL_EINVAL );
 
   /* make sure alpha and gamma factors have consistent interval */
@@ -79,200 +80,208 @@ int XLALUpdateResponse(
   if ( caldata->cavityFactors->data->length != caldata->openLoopFactors->data->length )
     XLAL_ERROR( func, XLAL_EBADLEN );
 
-  /* reference functions have to have same epoch */
-  if ( XLALGPSCmp( &caldata->cavityGainReference->epoch, &caldata->responseReference->epoch ) || XLALGPSCmp( &caldata->openLoopGainReference->epoch, &caldata->responseReference->epoch ) )
-    XLAL_ERROR( func, XLAL_ETIME );
-  /* reference functions have to have same frequencies */
-  if ( fabs( caldata->cavityGainReference->deltaF - caldata->responseReference->deltaF ) > tiny || fabs( caldata->openLoopGainReference->deltaF - caldata->responseReference->deltaF ) > tiny )
-    XLAL_ERROR( func, XLAL_EFREQ );
-  /* reference functions have to have same length */
-  if ( caldata->cavityGainReference->data->length != caldata->responseReference->data->length || caldata->openLoopGainReference->data->length != caldata->responseReference->data->length )
-    XLAL_ERROR( func, XLAL_EBADLEN );
-
-
-  /* requested epoch must be after reference function validity */
-  if ( XLALGPSCmp(&response->epoch,&caldata->responseReference->epoch) < 0 )
-    XLAL_ERROR( func, XLAL_ETIME );
-
-  /* determine if we are obtaining a response function for AS_Q or DARM_ERR */
-  if ( strstr( caldata->responseReference->name, "DARM_ERR" ) )
-    isDarmErr = 1;
-  else if ( strstr( caldata->responseReference->name, "AS_Q" ) )
-    isDarmErr = 0;
-  else
-    XLAL_ERROR( func, XLAL_ENAME );
-
-  /* figure out how many points of alpha and gamma to average */
-  if ( duration == 0 )
-    npts = 1;
-  else
-    npts = floor( duration / caldata->cavityFactors->deltaT + 0.5 );
-  if ( npts < 1 )
-    XLAL_ERROR( func, XLAL_ETIME );
-
-
   /* compute offset for averaging alpha and gamma */
   /* first point at or before the requested time */
-  offset = floor( XLALGPSDiff( &response->epoch, &caldata->cavityFactors->epoch ) / caldata->cavityFactors->deltaT );
+  offset = floor( XLALGPSDiff( epoch, &caldata->cavityFactors->epoch ) / caldata->cavityFactors->deltaT );
   if ( offset < 0 )
     XLAL_ERROR( func, XLAL_ETIME );
+
+  /* figure out how many points of alpha and gamma to average */
+  npts = floor( duration / caldata->cavityFactors->deltaT + 0.5 );
+  if ( npts < 1 )
+    npts = 1;
 
   /* make sure there is enough factors data */
   if ( offset + npts > (INT4)caldata->cavityFactors->data->length )
     XLAL_ERROR( func, XLAL_ESIZE );
 
   /* compute average alpha and gamma */
-  alpha = gamma = 0;
+  *alpha = *gamma = 0;
   for ( i = 0; i < npts; ++i )
   {
     REAL4 alp = caldata->cavityFactors->data->data[i+offset];
     REAL4 gam = caldata->openLoopFactors->data->data[i+offset];
     if ( alp < tiny || gam < tiny )
       XLALPrintWarning( "XLAL Warning - %s: Zero or negative factor found\n\talpha=%g gamma=%g\n", func, alp, gam );
-    alpha += alp;
-    gamma += gam;
+    *alpha += alp;
+    *gamma += gam;
   }
-  alpha /= npts;
-  gamma /= npts;
-  XLALPrintInfo( "XLAL Info - %s: Using calibration factors alpha=%g gamma=%g\n", func, alpha, gamma );
-
-  /* interpolate to requested frequencies */
-  for ( k = 0; k < response->data->length; ++k )
-  {
-    COMPLEX8 G;
-    COMPLEX8 C;
-    COMPLEX8 R1;
-    COMPLEX8 R2;
-    REAL8 x;
-    UINT4 j;
-
-    /* compute response at two points for interpolation */
-    x = k * response->deltaF / caldata->openLoopGainReference->deltaF;
-    j = floor( x );
-    if ( j > caldata->openLoopGainReference->data->length - 2 )
-      j = caldata->openLoopGainReference->data->length - 2;
-    x -= j;
-
-
-    /*
-     *
-     * First Point
-     *
-     */
-
-    C.re = caldata->cavityGainReference->data->data[j].re;
-    C.im = caldata->cavityGainReference->data->data[j].im;
-    G.re = caldata->openLoopGainReference->data->data[j].re;
-    G.im = caldata->openLoopGainReference->data->data[j].im;
-
-    /* update using averaged factors */
-    if ( isDarmErr )
-    {
-      C.re *= gamma;
-      C.im *= gamma;
-    }
-    else
-    {
-      C.re *= alpha;
-      C.im *= alpha;
-    }
-    G.re *= gamma;
-    G.im *= gamma;
-
-    /* now compute the response function */
-    /* first add one to G and then divide by C */
-    if ( C.re == 0 && C.im == 0 )
-      R1.re = R1.im = 0;
-    else
-    {
-      G.re += 1.0;
-      if ( fabs( C.re ) >= fabs( C.im ) )
-      {
-        REAL4 rat = C.im / C.re;
-        REAL4 den = C.re + rat * C.im;
-        R1.re = ( G.re + rat * G.im ) / den;
-        R1.im = ( G.im - rat * G.re ) / den;
-      }
-      else
-      {
-        REAL4 rat = C.re / C.im;
-        REAL4 den = C.im + rat * C.re;
-        R1.re = ( G.re * rat + G.im ) / den;
-        R1.im = ( G.im * rat - G.re ) / den;
-      }
-    }
-
-
-    /*
-     *
-     * Second Point
-     *
-     */
-
-    C.re = caldata->cavityGainReference->data->data[j+1].re;
-    C.im = caldata->cavityGainReference->data->data[j+1].im;
-    G.re = caldata->openLoopGainReference->data->data[j+1].re;
-    G.im = caldata->openLoopGainReference->data->data[j+1].im;
-
-    /* update using averaged factors */
-    if ( isDarmErr )
-    {
-      C.re *= gamma;
-      C.im *= gamma;
-    }
-    else
-    {
-      C.re *= alpha;
-      C.im *= alpha;
-    }
-    G.re *= gamma;
-    G.im *= gamma;
-
-    /* now compute the response function */
-    /* first add one to G and then divide by C */
-    if ( C.re == 0 && C.im == 0 )
-      R2.re = R2.im = 0;
-    else
-    {
-      G.re += 1.0;
-      if ( fabs( C.re ) >= fabs( C.im ) )
-      {
-        REAL4 rat = C.im / C.re;
-        REAL4 den = C.re + rat * C.im;
-        R2.re = ( G.re + rat * G.im ) / den;
-        R2.im = ( G.im - rat * G.re ) / den;
-      }
-      else
-      {
-        REAL4 rat = C.re / C.im;
-        REAL4 den = C.im + rat * C.re;
-        R2.re = ( G.re * rat + G.im ) / den;
-        R2.im = ( G.im * rat - G.re ) / den;
-      }
-    }
-
-
-    /*
-     *
-     * Now Interpolate
-     *
-     */
-
-    {
-      REAL8 rad1 = sqrt( R1.re * R1.re + R1.im * R1.im );
-      REAL8 rad2 = sqrt( R2.re * R2.re + R2.im * R2.im );
-      REAL8 arg1 = atan2( R1.im, R1.re );
-      REAL8 arg2 = atan2( R2.im, R2.re );
-      REAL8 rad;
-      REAL8 arg;
-      rad = rad1 + x * (rad2 - rad1);
-      arg = arg1 + x * (arg2 - arg1);
-      response->data->data[k].re = rad * cos( arg );
-      response->data->data[k].im = rad * sin( arg );
-    }
-
-  }
+  *alpha /= npts;
+  *gamma /= npts;
 
   return 0;
 }
 
+COMPLEX8FrequencySeries * XLALUpdateReferenceResponse(
+    LALCalData *caldata, /**< calibration reference data */
+    REAL8 alpha,         /**< value of the alpha factor */
+    REAL8 gamma          /**< value of the gamma factor */
+    )
+{
+  static const char *func = "XLALUpdateReferenceResponse";
+  enum { DARM_ERR, AS_Q } type;
+  COMPLEX8FrequencySeries *response;
+  const REAL4 tiny = 1e-6;
+  UINT4 k;
+
+  if ( ! caldata )
+    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+  if (!caldata->responseReference || !caldata->responseReference->data ||
+      !caldata->cavityGainReference || !caldata->cavityGainReference->data ||
+      !caldata->openLoopGainReference || !caldata->openLoopGainReference->data )
+    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+
+  /* reference functions have to have same epoch */
+  if ( XLALGPSCmp( &caldata->cavityGainReference->epoch, &caldata->responseReference->epoch ) || XLALGPSCmp( &caldata->openLoopGainReference->epoch, &caldata->responseReference->epoch ) )
+    XLAL_ERROR_NULL( func, XLAL_ETIME );
+  /* reference functions have to have same frequencies */
+  if ( fabs( caldata->cavityGainReference->deltaF - caldata->responseReference->deltaF ) > tiny || fabs( caldata->openLoopGainReference->deltaF - caldata->responseReference->deltaF ) > tiny )
+    XLAL_ERROR_NULL( func, XLAL_EFREQ );
+  /* reference functions have to have same length */
+  if ( caldata->cavityGainReference->data->length != caldata->responseReference->data->length || caldata->openLoopGainReference->data->length != caldata->responseReference->data->length )
+    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+
+  /* determine if we are obtaining a response function for AS_Q or DARM_ERR */
+  if ( strstr( caldata->responseReference->name, "DARM_ERR" ) )
+    type = DARM_ERR;
+  else if ( strstr( caldata->responseReference->name, "AS_Q" ) )
+    type = AS_Q;
+  else
+    XLAL_ERROR_NULL( func, XLAL_ENAME );
+
+  /* copy reference response */
+  response = XLALCutCOMPLEX8FrequencySeries( caldata->responseReference, 0, caldata->responseReference->data->length );
+  /* NOTE: epoch of returned response is the same as the reference response
+   * since there is no input here as to which epoch the response function
+   * should have had. */
+
+  /* update reference response with specified factors */
+  for ( k = 0; k < response->data->length; ++k )
+  {
+    COMPLEX8 C = caldata->cavityGainReference->data->data[k];
+    COMPLEX8 G = caldata->openLoopGainReference->data->data[k];
+    G = cmulrf( G, gamma );
+    C = cmulrf( C, type == DARM_ERR ? gamma : alpha );
+    response->data->data[k] = cisequal( C, czerof ) ? czerof : cdivf( caddrf( G, 1.0 ), C );
+  }
+
+  return response;
+}
+
+/* functional macros for procedures that get reused */
+
+#define GET_POLAR_RESPONSE( rad, phi, epoch, duration, caldata ) \
+  do { \
+    COMPLEX8FrequencySeries *rawresponse; \
+    REAL8 alpha, gamma; \
+    UINT4 k; \
+    rad = phi = NULL; \
+    if ( 0 > XLALAverageCalibrationFactors( &alpha, &gamma, epoch, duration, caldata ) ) break; \
+    XLALPrintInfo( "XLAL Info - %s: Using calibration factors alpha=%g gamma=%g\n", func, alpha, gamma ); \
+    if ( ! ( rawresponse = XLALUpdateReferenceResponse( caldata, alpha, gamma ) ) ) break; \
+    rad = XLALCreateREAL8FrequencySeries( "response magnitude", epoch, rawresponse->f0, rawresponse->deltaF, &rawresponse->sampleUnits, rawresponse->data->length ); \
+    phi = XLALCreateREAL8FrequencySeries( "response phase", epoch, rawresponse->f0, rawresponse->deltaF, &lalDimensionlessUnit, rawresponse->data->length ); \
+    if ( ! rad || ! phi ) break; \
+    for ( k = 0; k < rawresponse->data->length; ++k ) { \
+      rad->data->data[k] = cabsf( rawresponse->data->data[k] ); \
+      phi->data->data[k] = cargf( rawresponse->data->data[k] ); \
+    } \
+    XLALDestroyCOMPLEX8FrequencySeries( rawresponse ); \
+  } while (0)
+
+
+#define POLAR_INTERPOLATE_RESPONSE( response, rad, phi ) \
+  do { \
+    UINT4 j, k; \
+    XLALREAL8VectorUnwrapAngle( phi->data, phi->data ); \
+    for ( k = 0; k < response->data->length; ++k ) { \
+      REAL8 r, p, x; \
+      j = floor( x = k * response->deltaF / rad->deltaF ); \
+      if ( j > rad->data->length - 2 ) j = rad->data->length - 2; \
+      x -= j; \
+      r = (1.0 - x)*rad->data->data[j] + x*rad->data->data[j+1]; \
+      p = (1.0 - x)*phi->data->data[j] + x*phi->data->data[j+1]; \
+      LAL_SET_COMPLEX( &response->data->data[k], r*cos(p), r*sin(p) ); \
+    } \
+  } while (0)
+
+
+COMPLEX8FrequencySeries * XLALCreateCOMPLEX8Response(
+    LIGOTimeGPS *epoch,    /**< epoch of response function */
+    REAL8        duration, /**< duration of averaging (0 = use one point) */
+    REAL8        deltaF,   /**< frequency resolution of requested response */
+    UINT4        length,   /**< number of frequency bins in response */
+    LALCalData  *caldata   /**< calibration reference data */
+    )
+{
+  static const char *func = "XLALCreateCOMPLEX8Response";
+  COMPLEX8FrequencySeries *response;
+  REAL8FrequencySeries *rad;
+  REAL8FrequencySeries *phi;
+
+  GET_POLAR_RESPONSE( rad, phi, epoch, duration, caldata );
+  if ( ! rad || ! phi )
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+
+  response = XLALCreateCOMPLEX8FrequencySeries( "response", epoch, 0.0, deltaF, &rad->sampleUnits, length );
+
+  POLAR_INTERPOLATE_RESPONSE( response, rad, phi );
+
+  XLALDestroyREAL8FrequencySeries( phi );
+  XLALDestroyREAL8FrequencySeries( rad );
+
+  return response;
+}
+
+
+COMPLEX16FrequencySeries * XLALCreateCOMPLEX16Response(
+    LIGOTimeGPS *epoch,    /**< epoch of response function */
+    REAL8        duration, /**< duration of averaging (0 = use one point) */
+    REAL8        deltaF,   /**< frequency resolution of requested response */
+    UINT4        length,   /**< number of frequency bins in response */
+    LALCalData  *caldata   /**< calibration reference data */
+    )
+{
+  static const char *func = "XLALCreateCOMPLEX16Response";
+  COMPLEX16FrequencySeries *response;
+  REAL8FrequencySeries *rad;
+  REAL8FrequencySeries *phi;
+
+  GET_POLAR_RESPONSE( rad, phi, epoch, duration, caldata );
+  if ( ! rad || ! phi )
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+
+  response = XLALCreateCOMPLEX16FrequencySeries( "response", epoch, 0.0, deltaF, &rad->sampleUnits, length );
+
+  POLAR_INTERPOLATE_RESPONSE( response, rad, phi );
+
+  XLALDestroyREAL8FrequencySeries( phi );
+  XLALDestroyREAL8FrequencySeries( rad );
+
+  return response;
+}
+
+
+int XLALUpdateResponse( 
+    COMPLEX8FrequencySeries *response,  /**< response function to return */
+    REAL8 duration,                     /**< duration for averaging factors */
+    LALCalData *caldata                 /**< calibration reference data */
+    )
+{
+  static const char *func = "XLALUpdateResponse";
+  REAL8FrequencySeries *rad;
+  REAL8FrequencySeries *phi;
+
+  GET_POLAR_RESPONSE( rad, phi, &response->epoch, duration, caldata );
+  if ( ! rad || ! phi )
+    XLAL_ERROR( func, XLAL_EFUNC );
+
+  response->sampleUnits = rad->sampleUnits;
+
+  POLAR_INTERPOLATE_RESPONSE( response, rad, phi );
+
+  XLALDestroyREAL8FrequencySeries( phi );
+  XLALDestroyREAL8FrequencySeries( rad );
+
+  return 0;
+}

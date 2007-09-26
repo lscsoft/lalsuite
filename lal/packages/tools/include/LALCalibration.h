@@ -45,7 +45,44 @@ LALCalData;
 /** Destroys a calibration data structure. */
 void XLALDestroyCalData( LALCalData *caldata );
 
-/** Constructs a response function at a requested frequency resolution
+/** Averages calibration factors alpha and gamma for a specified period */
+int XLALAverageCalibrationFactors(
+    REAL8 *alpha,        /**< returned value of alpha factor */
+    REAL8 *gamma,        /**< returned value of gamma factor */
+    LIGOTimeGPS *epoch,  /**< epoch to begin averaging */
+    REAL8 duration,      /**< duration of averaging (0 = use just one point) */
+    LALCalData *caldata  /**< calibration reference data */
+    );
+
+/** Returns the reference response function updated with given values
+ * of alpha and gamma */
+COMPLEX8FrequencySeries * XLALUpdateReferenceResponse(
+    LALCalData *caldata, /**< calibration reference data */
+    REAL8 alpha,         /**< value of the alpha factor */
+    REAL8 gamma          /**< value of the gamma factor */
+    );
+
+/** Creates a response function at a requested frequency resolution
+ * that is valid at a requested epoch. */
+COMPLEX8FrequencySeries * XLALCreateCOMPLEX8Response(
+    LIGOTimeGPS *epoch,    /**< epoch of response function */
+    REAL8        duration, /**< duration of averaging (0 = use one point) */
+    REAL8        deltaF,   /**< frequency resolution of requested response */
+    UINT4        length,   /**< number of frequency bins in response */
+    LALCalData  *caldata   /**< calibration reference data */
+    );
+
+/** Creates a response function at a requested frequency resolution
+ * that is valid at a requested epoch. */
+COMPLEX16FrequencySeries * XLALCreateCOMPLEX16Response(
+    LIGOTimeGPS *epoch,    /**< epoch of response function */
+    REAL8        duration, /**< duration of averaging (0 = use one point) */
+    REAL8        deltaF,   /**< frequency resolution of requested response */
+    UINT4        length,   /**< number of frequency bins in response */
+    LALCalData  *caldata   /**< calibration reference data */
+    );
+
+/** Computes a response function at a requested frequency resolution
  * that is valid at a requested epoch. */
 int XLALUpdateResponse( 
     COMPLEX8FrequencySeries *response,  /**< response function to return */
