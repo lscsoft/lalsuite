@@ -187,8 +187,8 @@ LALBCVSpinWaveform(
  { /* </lalVerbatim>  */
 
   REAL8 f, df;
-  REAL8 shift, phi, psi, amp0, amp, beta, modphase;
-  REAL8 Sevenby6, Fiveby3, Twoby3, alpha1, alpha2;
+  REAL8 shift, phi, psi, amp0, ampRe, ampIm, modphase;
+  REAL8 Sevenby6, Fiveby3, Twoby3; 
   INT4 n, i;
 
   INITSTATUS(status, "LALBCVSpinWaveform", LALBCVWAVEFORMC);
@@ -206,14 +206,7 @@ LALBCVSpinWaveform(
   Sevenby6 = 7.L/6.L;
   Fiveby3 = 5.L/3.L;
 
-
-
-
   df = params->tSampling/(REAL8)n;
-
- 
-  alpha1 = params->alpha1;
-  alpha2 = params->alpha2;
 
   /*
   totalMass = params->totalMass * LAL_MTSUN_SI;
@@ -221,11 +214,11 @@ LALBCVSpinWaveform(
 		  - params->startTime - params->nStartPad/params->tSampling);
   */
   shift = -LAL_TWOPI * (params->nStartPad/params->tSampling);
+
+  /* use this to shift waveform start time by hand... */
+  /*shift = -LAL_TWOPI * (131072/params->tSampling);*/
       
-
   phi = - params->startPhase;    
-  beta = params->beta; 
-
 
   /*
   amp0 = params->signalAmplitude * pow(5./(384.*params->eta), 0.5) * 
@@ -233,13 +226,11 @@ LALBCVSpinWaveform(
 	   params->tSampling * (2. / signal->length); 
 
    */
-  amp0 = 1.0L;
+  amp0 = params->signalAmplitude;
   /*  Computing BCV waveform */
 
   signal->data[0] = 0.0;
   signal->data[n/2] = 0.0;
-
-
 
   for(i=1;i<n/2;i++)
   {
@@ -258,14 +249,19 @@ LALBCVSpinWaveform(
           /* What shall we put for sign phi? for uspa it must be "-" */
            
 	    psi = (shift*f + phi + params->psi0*pow(f,-Fiveby3) + params->psi3*pow(f,-Twoby3)); 
+	    modphase = params->beta * pow(f,-Twoby3);  
 	    
-	    modphase = beta * pow(f,-Twoby3);  
-	    
-	    amp = amp0 * (1. + (alpha1 * cos(modphase)) + (alpha2 * sin(modphase))) * pow(f,-Sevenby6);
-
+	    ampRe = amp0 * pow(f,-Sevenby6) 
+                         * (params->alpha1 
+                         + (params->alpha2 * cos(modphase)) 
+                         + (params->alpha3 * sin(modphase)));
+	    ampIm = amp0 * pow(f,-Sevenby6) 
+                         * (params->alpha4 
+                         + (params->alpha5 * cos(modphase)) 
+                         + (params->alpha6 * sin(modphase)));
 	      	      
-              signal->data[i] = (REAL4) (amp * cos(psi));
-              signal->data[n-i] = (REAL4) (-amp * sin(psi));
+            signal->data[i]   = (REAL4) ((ampRe * cos(psi)) - (ampIm * sin(psi)));
+            signal->data[n-i] = (REAL4) -1.*((ampRe * sin(psi)) + (ampIm * cos(psi)));
           }
   }
 
