@@ -1322,6 +1322,22 @@ injected.}
 \label{fig:h_rec_vs_inj}
 \end{figure}
 
+It must be remarked that this procedure can occasionally yield an estimated
+\(h_{\text{rss}}\) that is not real-valued.  This happens when the observed
+unwhitened energy, \(\sum_{j} s_{j}^{2} \Delta t\), proves to be less than
+the expected unwhitened energy, \(d \mean{s_{j}^{2}} \Delta t\).  The
+whitened energy is always greater than the expected amount by construction
+because we threshold on it, discarding any tiles below some cut-off.
+Another way of expressing this is to say that the whitened SNR is always
+greater than 1, but the unwhitened SNR need not be.  This should not be
+unexpected because the arithmetic by which the frequency-domain data is
+turned into a whitened and unwhitened sum-squares weights different
+frequency bins differently.  In particular, non-real \(h_{\text{rss}}\)
+values are seen more frequency in the vicinity of strong line features such
+as the violin modes, where the difference between the whitened and
+unwhitened spectra are the greatest.  The search code discards any tiles
+whose estimated \(h_{\text{rss}}\) is not real-valued.
+
 
 \subsubsection{Over-Whitening}
 
