@@ -79,11 +79,11 @@ int lalDebugLevel = 1;
 static InputDataType    inputDataType   = gaussian;
 static BOOLEAN          rhosqout        = 0;
 static BOOLEAN          verbose         = 0;
-static INT4             numPoints       = 32768; /*128; 32768;*/
+static INT4             numPoints       = 262144; /*128; 32768;*/
 static INT4             numSegments     = 8;
 static INT4             numTmplts       = 1; /* 8; */ 
 static INT4             numChisqBins    = 0;  /* changed default to zero */
-static INT4             srate           = 8192;
+static INT4             srate           = 2048;
 static REAL4            sigmasq         = 64.0;
 static INT4             invSpecTrunc    = 0;
 static REAL4            fLow            = 40.0;
@@ -92,9 +92,9 @@ static REAL4            chisqThresh     = 0.001;
 static REAL4            mass            = 1.4;
 static REAL4            dynRange        = 0.0; /* default = 1.0; */
 
-static REAL4            psi0            = 205008;
-static REAL4            psi3            = -1619;
-static REAL4            beta            = 0.0;
+static REAL4            psi0            = 205008.;
+static REAL4            psi3            = -1619.;
+static REAL4            beta            = 10.0;
 static REAL4            fFinal          = 1000.0;
 
 static INT4		loopCount       = 0;
@@ -436,7 +436,7 @@ main (int argc, char *argv[])
   dataParams->dynRange     = dynRange;
   dataParams->invSpecTrunc = invSpecTrunc;
 
-  LALFindChirpBCVSpinData (&status, fcSegVec, dataSegVec, dataParams);
+  LALFindChirpTDData (&status, fcSegVec, dataSegVec, dataParams);
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
 
