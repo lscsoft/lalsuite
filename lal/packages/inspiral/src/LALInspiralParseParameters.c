@@ -110,6 +110,10 @@ None
 
 #define  INSPIRALTEMPLATE_ALPHA1 	0.
 #define  INSPIRALTEMPLATE_ALPHA2 	0.
+#define  INSPIRALTEMPLATE_ALPHA3 	0.
+#define  INSPIRALTEMPLATE_ALPHA4 	0.
+#define  INSPIRALTEMPLATE_ALPHA5 	0.
+#define  INSPIRALTEMPLATE_ALPHA6 	0.
 #define  INSPIRALTEMPLATE_BETA 		0.
 
 #define  INSPIRALTEMPLATE_INCLINATION 	0.
@@ -227,6 +231,14 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	params->alpha1 = atof(argv[++i]); }
       else if (strcmp(argv[i],"--alpha2")==0){
 	params->alpha2 = atof(argv[++i]); }
+      else if (strcmp(argv[i],"--alpha3")==0){
+	params->alpha3 = atof(argv[++i]); }
+      else if (strcmp(argv[i],"--alpha4")==0){
+	params->alpha4 = atof(argv[++i]); }
+      else if (strcmp(argv[i],"--alpha5")==0){
+	params->alpha5 = atof(argv[++i]); }
+      else if (strcmp(argv[i],"--alpha6")==0){
+	params->alpha6 = atof(argv[++i]); }
       else if (strcmp(argv[i],"--beta")==0){
 	params->beta = atof(argv[++i]); }  
       else if (strcmp(argv[i],"--psi0")==0){
@@ -282,6 +294,7 @@ void LALInspiralITStructurePrint(LALStatus *status,
   printf("# distance    = %-15.12f\n", params.distance);
   printf("# startPhase  = %-15.12f\n", params.startPhase);
   printf("# startTime   = %-15.12f\n", params.startTime);
+  printf("# nStartPad   = %-15.12d\n", params.nStartPad);
 
   printf("# zeta2       = %-15.12f\n", params.Zeta2);
   printf("# omegaS      = %-15.12f\n", params.OmegaS);
@@ -291,6 +304,10 @@ void LALInspiralITStructurePrint(LALStatus *status,
   printf("# psi3        = %-15.12f\n", params.psi3);
   printf("# alpha1      = %-15.12f\n", params.alpha1);
   printf("# alpha2      = %-15.12f\n", params.alpha2);
+  printf("# alpha3      = %-15.12f\n", params.alpha3);
+  printf("# alpha4      = %-15.12f\n", params.alpha4);
+  printf("# alpha5      = %-15.12f\n", params.alpha5);
+  printf("# alpha6      = %-15.12f\n", params.alpha6);
   printf("# beta        = %-15.12f\n", params.beta);
 
   printf("# inclination = %-15.12f\n", params.inclination);
@@ -359,6 +376,10 @@ void LALInspiralITStructureSetDefault(LALStatus *status,
    
   params->alpha1       = INSPIRALTEMPLATE_ALPHA1;
   params->alpha2       = INSPIRALTEMPLATE_ALPHA2;
+  params->alpha3       = INSPIRALTEMPLATE_ALPHA3;
+  params->alpha4       = INSPIRALTEMPLATE_ALPHA4;
+  params->alpha5       = INSPIRALTEMPLATE_ALPHA5;
+  params->alpha6       = INSPIRALTEMPLATE_ALPHA6;
   params->beta         = INSPIRALTEMPLATE_BETA;
     
   params->inclination  = INSPIRALTEMPLATE_INCLINATION;
@@ -408,9 +429,13 @@ void LALInspiralITStructureHelp()
   fprintf(stderr,"--alpha       (BCV must be > 0)\n");
   fprintf(stderr,"--psi0        (BCV must be > 0)\n");
   fprintf(stderr,"--psi3        (BCV must be < 0)\n");
-  fprintf(stderr,"--alpha1      (BCVSPin)\n");
-  fprintf(stderr,"--alpha2      (BCVSPin)\n");
-  fprintf(stderr,"--beta        (BCVSPIN)\n");
+  fprintf(stderr,"--alpha1      (BCVSpin)\n");
+  fprintf(stderr,"--alpha2      (BCVSpin)\n");
+  fprintf(stderr,"--alpha3      (BCVSpin)\n");
+  fprintf(stderr,"--alpha4      (BCVSpin)\n");
+  fprintf(stderr,"--alpha5      (BCVSpin)\n");
+  fprintf(stderr,"--alpha6      (BCVSpin)\n");
+  fprintf(stderr,"--beta        (BCVSpin)\n");
 
   fprintf(stderr,"--inclination \n");
   fprintf(stderr,"--orbitTheta0 \n");
