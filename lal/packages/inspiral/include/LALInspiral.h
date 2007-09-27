@@ -515,6 +515,10 @@ tagInspiralTemplate
   REAL8 beta;
   REAL8 alpha1;
   REAL8 alpha2;
+  REAL8 alpha3;
+  REAL8 alpha4;
+  REAL8 alpha5;
+  REAL8 alpha6;
 
 /* Parameters for spinning BH waveform */
 
@@ -1118,12 +1122,10 @@ void LALBCVWaveform(
      REAL4Vector *signalvec, 
      InspiralTemplate *params);
 
-
 void LALBCVSpinWaveform(
      LALStatus *status,
      REAL4Vector *signalvec, 
      InspiralTemplate *params);
-
 
 /*  <lalLaTeX>
 \newpage\input{LALInspiralSpinningBHBinaryC}
