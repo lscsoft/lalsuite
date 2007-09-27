@@ -1590,6 +1590,600 @@ class ChiaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.add_input_file(bank)
 
     
+###################################################################################
+# Plotting Jobs and Nodes
+
+class PlotInspiralJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A plotinspiral job. The static options are read from the section
+  [plotinspiral] in the ini file.  The stdout and stderr from the job
+  are directed to the logs directory.  The path to the executable is
+  determined from the ini file.
+  """
+  def __init__(self,cp,dax=False,tag_base='PLOTINSPIRAL'):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','plotinspiral')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp,False)
+    self.tag_base = tag_base
+    
+    self.add_ini_opts(cp, 'plotinspiral')
+
+    self.set_stdout_file('logs/plotinspiral-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/plotinspiral-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_sub_file('plotinspiral.sub')
+
+    self.add_condor_cmd('getenv','True')
+
+class PlotInspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  A PlotInspiralNode runs an instance of the plotinspiral code in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of plotinspiral.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.__usertag = job.get_config('pipeline','user-tag')
+
+  def set_ifo(self, ifo):
+    self.add_var_opt("ifo-type", ifo)
+
+
+  def set_user_tag(self,usertag):
+    self.__usertag = usertag
+    self.add_var_opt('user-tag',usertag)
+
+  def get_user_tag(self):
+    return self.__usertag
+
+  def get_output(self):
+    """
+    Returns the file name of output from the inspiral code. This must be kept
+    synchronized with the name of the output file in inspiral.c.
+    """
+    if not self.get_start() or not self.get_end() or not self.get_ifo():
+      raise InspiralError, "Start time, end time or ifo has not been set"
+
+    tag_base = self.job().tag_base
+    basename = self.get_ifo() + '-' + tag_base
+
+    if self.get_ifo_tag():
+      basename += '_' + self.get_ifo_tag()
+    if self.__usertag:
+      basename += '_' + self.__usertag
+
+    filename = basename + '-' + str(self.get_start()) + '-' + \
+      str(self.get_end() - self.get_start()) + '.xml'
+
+    if self.__zip_output:
+      filename += '.gz'
+
+    self.add_output_file(filename)
+
+    return filename
+
+###########################################################################################
+
+class PlotThincaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A plotthinca job. The static options are read from the section
+  [plotthinca] in the ini file.  The stdout and stderr from the job
+  are directed to the logs directory.  The path to the executable is
+  determined from the ini file.
+  """
+  def __init__(self,cp,dax=False,tag_base='PLOTTHINCA'):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','plotthinca')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp,False)
+    self.tag_base = tag_base
+
+    for sec in ['plotthinca']:
+      self.add_ini_opts(cp,sec)
+
+    self.set_stdout_file('logs/plotthinca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/plotthinca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_sub_file('plotthinca.sub')
+
+    self.add_condor_cmd('getenv','True')
+
+class PlotThincaNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  A PlotThincaNode runs an instance of the plotthinca code in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of plotthinca.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.__usertag = job.get_config('pipeline','user-tag')
+
+  def set_user_tag(self,usertag):
+    self.__usertag = usertag
+    self.add_var_opt('user-tag',usertag)
+
+  def get_user_tag(self):
+    return self.__usertag
+
+  def get_output(self):
+    """
+    Returns the file name of output from the inspiral code. This must be kept
+    synchronized with the name of the output file in inspiral.c.
+    """
+    if not self.get_start() or not self.get_end() or not self.get_ifo():
+      raise InspiralError, "Start time, end time or ifo has not been set"
+
+    tag_base = self.job().tag_base
+    basename = self.get_ifo() + '-' + tag_base
+
+    if self.get_ifo_tag():
+      basename += '_' + self.get_ifo_tag()
+    if self.__usertag:
+      basename += '_' + self.__usertag
+
+    filename = basename + '-' + str(self.get_start()) + '-' + \
+      str(self.get_end() - self.get_start()) + '.xml'
+
+    if self.__zip_output:
+      filename += '.gz'
+
+    self.add_output_file(filename)
+
+    return filename
+
+#######################################################################################
+
+class PlotNumtemplatesJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A plotnumtemplates job. The static options are read from the section
+  [plotnumtemplates] in the ini file.  The stdout and stderr from the job
+  are directed to the logs directory.  The path to the executable is
+  determined from the ini file.
+  """
+  def __init__(self,cp,dax=False,tag_base='PLOTNUMTEMPLATES'):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','plotnumtemplates')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp,False)
+    self.tag_base = tag_base
+
+    for sec in ['plotnumtemplates']:
+      self.add_ini_opts(cp,sec)
+
+    self.set_stdout_file('logs/plotnumtemplates-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/plotnumtemplates-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_sub_file('plotnumtemplates.sub')
+
+    self.add_condor_cmd('getenv','True')
+
+class PlotNumtemplatesNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  A PlotNumtemplatesNode runs an instance of the plotinspiral code in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of plotnumtemplates.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.__usertag = job.get_config('pipeline','user-tag')
+
+  def set_user_tag(self,usertag):
+    self.__usertag = usertag
+    self.add_var_opt('user-tag',usertag)
+
+  def get_user_tag(self):
+    return self.__usertag
+
+  def get_output(self):
+    """
+    Returns the file name of output from the inspiral code. This must be kept
+    synchronized with the name of the output file in inspiral.c.
+    """
+    if not self.get_start() or not self.get_end() or not self.get_ifo():
+      raise InspiralError, "Start time, end time or ifo has not been set"
+
+    tag_base = self.job().tag_base
+    basename = self.get_ifo() + '-' + tag_base
+
+    if self.get_ifo_tag():
+      basename += '_' + self.get_ifo_tag()
+    if self.__usertag:
+      basename += '_' + self.__usertag
+
+    filename = basename + '-' + str(self.get_start()) + '-' + \
+      str(self.get_end() - self.get_start()) + '.xml'
+
+    if self.__zip_output:
+      filename += '.gz'
+    
+    self.add_output_file(filename)
+
+    return filename
+
+##############################################################################
+
+class PlotInjnumJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A plotinjnum job. The static options are read from the section
+  [plotinjnum] in the ini file.  The stdout and stderr from the job
+  are directed to the logs directory.  The path to the executable is
+  determined from the ini file.
+  """
+  def __init__(self,cp,dax=False,tag_base='PLOTINJNUM'):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','plotinjnum')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp,False)
+    self.tag_base = tag_base
+
+    for sec in ['plotinjnum']:
+      self.add_ini_opts(cp,sec)
+
+    self.set_stdout_file('logs/plotinjnum-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/plotinjnum-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_sub_file('plotinjnum.sub')
+
+    self.add_condor_cmd('getenv','True')
+
+class PlotInjnumNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  A PlotInjnumNode runs an instance of the plotinspiral code in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of plotinjnum.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.__usertag = job.get_config('pipeline','user-tag')
+
+  def set_user_tag(self,usertag):
+    self.__usertag = usertag
+    self.add_var_opt('user-tag',usertag)
+
+  def get_user_tag(self):
+    return self.__usertag
+
+  def get_output(self):
+    """
+    Returns the file name of output from the inspiral code. This must be kept
+    synchronized with the name of the output file in inspiral.c.
+    """
+    if not self.get_start() or not self.get_end() or not self.get_ifo():
+      raise InspiralError, "Start time, end time or ifo has not been set"
+
+    tag_base = self.job().tag_base
+    basename = self.get_ifo() + '-' + tag_base
+
+    if self.get_ifo_tag():
+      basename += '_' + self.get_ifo_tag()
+    if self.__usertag:
+      basename += '_' + self.__usertag
+
+    filename = basename + '-' + str(self.get_start()) + '-' + \
+      str(self.get_end() - self.get_start()) + '.xml'
+
+    if self.__zip_output:
+      filename += '.gz'
+
+    self.add_output_file(filename)
+
+    return filename
+
+#############################################################################
+
+class PlotEthincaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A plotethinca job. The static options are read from the section
+  [plotethinca] in the ini file.  The stdout and stderr from the job
+  are directed to the logs directory.  The path to the executable is
+  determined from the ini file.
+  """
+  def __init__(self,cp,dax=False,tag_base='PLOTETHINCA'):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','plotethinca')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp,False)
+    self.tag_base = tag_base
+
+    for sec in ['plotethinca']:
+      self.add_ini_opts(cp,sec)
+
+    self.set_stdout_file('logs/plotethinca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/plotethinca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_sub_file('plotethinca.sub')
+
+    self.add_condor_cmd('getenv','True')
+
+class PlotEthincaNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  A PlotEthincaNode runs an instance of the plotinspiral code in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of plotinjnum.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.__usertag = job.get_config('pipeline','user-tag')
+
+  def set_user_tag(self,usertag):
+    self.__usertag = usertag
+    self.add_var_opt('user-tag',usertag)
+
+  def get_user_tag(self):
+    return self.__usertag
+
+  def get_output(self):
+    """
+    Returns the file name of output from the inspiral code. This must be kept
+    synchronized with the name of the output file in inspiral.c.
+    """
+    if not self.get_start() or not self.get_end() or not self.get_ifo():
+      raise InspiralError, "Start time, end time or ifo has not been set"
+
+    tag_base = self.job().tag_base
+    basename = self.get_ifo() + '-' + tag_base
+
+    if self.get_ifo_tag():
+      basename += '_' + self.get_ifo_tag()
+    if self.__usertag:
+      basename += '_' + self.__usertag
+
+    filename = basename + '-' + str(self.get_start()) + '-' + \
+      str(self.get_end() - self.get_start()) + '.xml'
+
+    if self.__zip_output:
+      filename += '.gz'
+ 
+    self.add_output_file(filename)
+
+    return filename
+
+#############################################################################
+
+class PlotInspmissedJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A plotinspmissed job. The static options are read from the section
+  [plotinspmissed] in the ini file.  The stdout and stderr from the job
+  are directed to the logs directory.  The path to the executable is
+  determined from the ini file.
+  """
+  def __init__(self,cp,dax=False,tag_base='PLOTINSPMISSED'):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','plotinspmissed')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp,False)
+    self.tag_base = tag_base
+
+    for sec in ['plotinspmissed']:
+      self.add_ini_opts(cp,sec)
+
+    self.set_stdout_file('logs/plotinspmissed-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/plotinspmissed-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_sub_file('plotinspmissed.sub')
+
+    self.add_condor_cmd('getenv','True')
+
+
+class PlotInspmissedNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  A PlotInspmissedNode runs an instance of the plotinspiral code in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of plotinspmissed.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.__usertag = job.get_config('pipeline','user-tag')
+
+  def set_user_tag(self,usertag):
+    self.__usertag = usertag
+    self.add_var_opt('user-tag',usertag)
+
+  def get_user_tag(self):
+    return self.__usertag
+
+  def get_output(self):
+    """
+    Returns the file name of output from the inspiral code. This must be kept
+    synchronized with the name of the output file in inspiral.c.
+    """
+    if not self.get_start() or not self.get_end() or not self.get_ifo():
+      raise InspiralError, "Start time, end time or ifo has not been set"
+
+    tag_base = self.job().tag_base
+    basename = self.get_ifo() + '-' + tag_base
+
+    if self.get_ifo_tag():
+      basename += '_' + self.get_ifo_tag()
+    if self.__usertag:
+      basename += '_' + self.__usertag
+
+    filename = basename + '-' + str(self.get_start()) + '-' + \
+      str(self.get_end() - self.get_start()) + '.xml'
+
+    if self.__zip_output:
+      filename += '.gz'
+
+    self.add_output_file(filename)
+
+    return filename
+
+#############################################################################
+
+class PlotInspinjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A plotinspinj job. The static options are read from the section
+  [plotinspinj] in the ini file.  The stdout and stderr from the job
+  are directed to the logs directory.  The path to the executable is
+  determined from the ini file.
+  """
+  def __init__(self,cp,dax=False,tag_base='PLOTINSPINJ'):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','plotinspinj')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp,False)
+    self.tag_base = tag_base
+
+    for sec in ['plotinspinj']:
+      self.add_ini_opts(cp,sec)
+
+    self.set_stdout_file('logs/plotinspinj-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/plotinspinj-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_sub_file('plotinspinj.sub')
+
+    self.add_condor_cmd('getenv','True')
+
+class PlotInspinjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  A PlotInspinjNode runs an instance of the plotinspiral code in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of plotinspinj.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.__usertag = job.get_config('pipeline','user-tag')
+
+  def set_user_tag(self,usertag):
+    self.__usertag = usertag
+    self.add_var_opt('user-tag',usertag)
+
+  def get_user_tag(self):
+    return self.__usertag
+
+  def get_output(self):
+    """
+    Returns the file name of output from the inspiral code. This must be kept
+    synchronized with the name of the output file in inspiral.c.
+    """
+    if not self.get_start() or not self.get_end() or not self.get_ifo():
+      raise InspiralError, "Start time, end time or ifo has not been set"
+
+    tag_base = self.job().tag_base
+    basename = self.get_ifo() + '-' + tag_base
+
+    if self.get_ifo_tag():
+      basename += '_' + self.get_ifo_tag()
+    if self.__usertag:
+      basename += '_' + self.__usertag
+
+    filename = basename + '-' + str(self.get_start()) + '-' + \
+      str(self.get_end() - self.get_start()) + '.xml'
+
+    if self.__zip_output:
+      filename += '.gz'
+
+    self.add_output_file(filename)
+
+    return filename
+
+#############################################################################
+
+class PlotSnrchiJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A plotsnrchi job. The static options are read from the section
+  [plotsnrchi] in the ini file.  The stdout and stderr from the job
+  are directed to the logs directory.  The path to the executable is
+  determined from the ini file.
+  """
+  def __init__(self,cp,dax=False,tag_base='PLOTSNRCHI'):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','plotsnrchi')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp,False)
+    self.tag_base = tag_base
+    
+    
+    for sec in ['plotsnrchi']:
+      if cp.has_section('figure_name'):
+         cp.set('figure_name' + tag_base)
+      else:
+         self.add_ini_opts(cp,sec)
+
+    self.set_stdout_file('logs/plotsnrchi-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/plotsnrchi-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_sub_file('plotsnrchi.sub')
+
+    self.add_condor_cmd('getenv','True')
+
+class PlotSnrchiNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  A PlotSnrchiNode runs an instance of the plotinspiral code in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of plotsnrchi.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.__usertag = job.get_config('pipeline','user-tag')
+
+  def set_user_tag(self,usertag):
+    self.__usertag = usertag
+    self.add_var_opt('user-tag',usertag)
+
+  def get_user_tag(self):
+    return self.__usertag
+
+  def get_output(self):
+    """
+    Returns the file name of output from the inspiral code. This must be kept
+    synchronized with the name of the output file in inspiral.c.
+    """
+    if not self.get_start() or not self.get_end() or not self.get_ifo():
+      raise InspiralError, "Start time, end time or ifo has not been set"
+
+    tag_base = self.job().tag_base
+    basename = self.get_ifo() + '-' + tag_base
+
+    if self.get_ifo_tag():
+      basename += '_' + self.get_ifo_tag()
+    if self.__usertag:
+      basename += '_' + self.__usertag
+
+    filename = basename + '-' + str(self.get_start()) + '-' + \
+      str(self.get_end() - self.get_start()) + '.xml'
+
+    if self.__zip_output:
+      filename += '.gz'
+
+    self.add_output_file(filename)
+
+    return filename
+
+
 ##############################################################################
 # some functions to make life easier later
 
@@ -1614,3 +2208,4 @@ def overlap_test(interval1, interval2, slide_sec=0):
   return (start1 >= left and start1 <= right) or \
          (end1 >= left and end1 <= right) or \
          (start1 <= left and end1 >= right)
+
