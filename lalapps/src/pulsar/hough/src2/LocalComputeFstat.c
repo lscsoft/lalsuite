@@ -742,7 +742,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  imagXP = c_alpha * XRes + s_alpha * XIms;
 	} /* if x cannot be close to 0 */
 
-#elif (EAH_OPTIMIZATION == 3) && FALSE
+#elif (EAH_OPTIMIZATION == 3)
 
         {
 
@@ -766,7 +766,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	     "MOVLPS	0(%[Xa]),%%xmm1   	\n\t"	/* X1:  -   -  Y00 X00 */
 	     "MOVHPS	8(%[Xa]),%%xmm1   	\n\t"	/* X1: Y01 X01 Y00 X00 */
 	     "SHUFPS	$0,%%xmm2,%%xmm2   	\n\t"	/* X2:  C   C   C   C */
-	     "MOVAPS	%[V2222],%%xmm7   	\n\t"	/* X7:  2   2   2   2 */
+	     "MOVAPS	%[V2222],%%xmm4   	\n\t"	/* X7:  2   2   2   2 */
 	     "SUBPS	%[V0011],%%xmm2   	\n\t"	/* X2: C-1 C-1  C   C */
 	     /* -------------------------------------------------------------------; */
 	     "MOVAPS	%%xmm2,%%xmm0   	\n\t"	/* X0: C-1 C-1  C   C */
@@ -779,7 +779,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	     /*  Im3, Re3, Im2, Re2 */
 	     "MOVLPS	16(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y02 X02 */
 	     "MOVHPS	24(%[Xa]),%%xmm3   	\n\t"	/* X3: Y03 X03 Y02 X02 */
-	     "SUBPS	%%xmm7,%%xmm2   	\n\t"	/* X2: C-3 C-3 C-2 C-2 */
+	     "SUBPS	%%xmm4,%%xmm2   	\n\t"	/* X2: C-3 C-3 C-2 C-2 */
 	     "MULPS	%%xmm0,%%xmm3   	\n\t"	/* X3: Xnew*Ccol */
 	     "MULPS	%%xmm2,%%xmm1   	\n\t"	/* X1: Xold*Cnew */
 	     "MULPS	%%xmm2,%%xmm0   	\n\t"	/* X0: Ccol=Ccol*Cnew */
@@ -788,7 +788,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	     /*  Im5, Re5, Im4, Re4 */
 	     "MOVLPS	32(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y04 X04 */
 	     "MOVHPS	40(%[Xa]),%%xmm3   	\n\t"	/* X3: Y05 X05 Y04 X04 */
-	     "SUBPS	%%xmm7,%%xmm2   	\n\t"	/* X2: C-5 C-5 C-4 C-4 */
+	     "SUBPS	%%xmm4,%%xmm2   	\n\t"	/* X2: C-5 C-5 C-4 C-4 */
 	     "MULPS	%%xmm0,%%xmm3   	\n\t"	/* X3: Xnew*Ccol */
 	     "MULPS	%%xmm2,%%xmm1   	\n\t"	/* X1: Xold*Cnew */
 	     "MULPS	%%xmm2,%%xmm0   	\n\t"	/* X0: Ccol=Ccol*Cnew */
@@ -797,7 +797,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	     /*  Im7, Re7, Im6, Re6 */
 	     "MOVLPS	48(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y06 X06 */
 	     "MOVHPS	56(%[Xa]),%%xmm3   	\n\t"	/* X3: Y07 X07 Y06 X06 */
-	     "SUBPS	%%xmm7,%%xmm2   	\n\t"	/* X2: C-7 C-7 C-6 C-6 */
+	     "SUBPS	%%xmm4,%%xmm2   	\n\t"	/* X2: C-7 C-7 C-6 C-6 */
 	     "MULPS	%%xmm0,%%xmm3   	\n\t"	/* X3: Xnew*Ccol */
 	     "MULPS	%%xmm2,%%xmm1   	\n\t"	/* X1: Xold*Cnew */
 	     "MULPS	%%xmm2,%%xmm0   	\n\t"	/* X0: Ccol=Ccol*Cnew */
@@ -806,7 +806,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	     /*  Im9, Re9, Im8, Re8 */
 	     "MOVLPS	64(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y08 X08 */
 	     "MOVHPS	72(%[Xa]),%%xmm3   	\n\t"	/* X3: Y09 X09 Y08 X08 */
-	     "SUBPS	%%xmm7,%%xmm2   	\n\t"	/* X2: C-9 C-9 C-8 C-8 */
+	     "SUBPS	%%xmm4,%%xmm2   	\n\t"	/* X2: C-9 C-9 C-8 C-8 */
 	     "MULPS	%%xmm0,%%xmm3   	\n\t"	/* X3: Xnew*Ccol */
 	     "MULPS	%%xmm2,%%xmm1   	\n\t"	/* X1: Xold*Cnew */
 	     "MULPS	%%xmm2,%%xmm0   	\n\t"	/* X0: Ccol=Ccol*Cnew */
@@ -815,7 +815,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	     /*  Im11, Re11, Im10, Re10 */
 	     "MOVLPS	80(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y10 X10 */
 	     "MOVHPS	88(%[Xa]),%%xmm3   	\n\t"	/* X3: Y11 X11 Y10 X10 */
-	     "SUBPS	%%xmm7,%%xmm2   	\n\t"	/* X2: C11 C11 C10 C10 */
+	     "SUBPS	%%xmm4,%%xmm2   	\n\t"	/* X2: C11 C11 C10 C10 */
 	     "MULPS	%%xmm0,%%xmm3   	\n\t"	/* X3: Xnew*Ccol */
 	     "MULPS	%%xmm2,%%xmm1   	\n\t"	/* X1: Xold*Cnew */
 	     "MULPS	%%xmm2,%%xmm0   	\n\t"	/* X0: Ccol=Ccol*Cnew */
@@ -824,7 +824,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	     /*  Im13, Re13, Im12, Re12 */
 	     "MOVLPS	96(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y12 X12 */
 	     "MOVHPS	104(%[Xa]),%%xmm3   	\n\t"	/* X3: Y13 X13 Y12 X12 */
-	     "SUBPS	%%xmm7,%%xmm2   	\n\t"	/* X2: C13 C13 C12 C12 */
+	     "SUBPS	%%xmm4,%%xmm2   	\n\t"	/* X2: C13 C13 C12 C12 */
 	     "MULPS	%%xmm0,%%xmm3   	\n\t"	/* X3: Xnew*Ccol */
 	     "MULPS	%%xmm2,%%xmm1   	\n\t"	/* X1: Xold*Cnew */
 	     "MULPS	%%xmm2,%%xmm0   	\n\t"	/* X0: Ccol=Ccol*Cnew */
@@ -833,37 +833,18 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	     /*  Im15, Re15, Im14, Re14 */
 	     "MOVLPS	112(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y14 X14 */
 	     "MOVHPS	120(%[Xa]),%%xmm3   	\n\t"	/* X3: Y15 X15 Y14 X14 */
-	     "SUBPS	%%xmm7,%%xmm2   	\n\t"	/* X2: C15 C15 C14 C14 */
+	     "SUBPS	%%xmm4,%%xmm2   	\n\t"	/* X2: C15 C15 C14 C14 */
 	     "MULPS	%%xmm0,%%xmm3   	\n\t"	/* X3: Xnew*Ccol */
 	     "MULPS	%%xmm2,%%xmm1   	\n\t"	/* X1: Xold*Cnew */
 	     "MULPS	%%xmm2,%%xmm0   	\n\t"	/* X0: Ccol=Ccol*Cnew */
 	     "ADDPS	%%xmm3,%%xmm1   	\n\t"	/* X1: Xold=Xold*Cnew+Xnew*Ccol */
-	     /* -------------------------------------------------------------------; */
-	     /* Save the upper half, because the 18th element */
-	     /* operation will destroy the register content */
-	     "MOVHLPS   %%xmm0,%%xmm6   	\n\t"	/* X6:  -   -  SCh SCh */
-	     "MOVHLPS   %%xmm1,%%xmm5   	\n\t"	/* X5:  -   -  SYh SXh */
-	     /* -------------------------------------------------------------------; */
-	     /* The 17th element ( only a half of a pair ) */
-	     /*  dummy, dummy, Im16, Re16 */
-	     "MOVLPS	128(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y14 X14 */
-	     "SUBPS	%%xmm7,%%xmm2   	\n\t"	/* X2: C17 C17 C16 C16 */
-	     "MULPS	%%xmm0,%%xmm3   	\n\t"	/* X3: Xnew*Ccol */
-	     "MULPS	%%xmm2,%%xmm1   	\n\t"	/* X1: Xold*Cnew */
-	     "MULPS	%%xmm2,%%xmm0   	\n\t"	/* X0: Ccol=Ccol*Cnew */
-	     "ADDPS	%%xmm3,%%xmm1   	\n\t"	/* X1: Xold=Xold*Cnew+Xnew*Ccol */
-	     /* -------------------------------------------------------------------; */
-	     /* Prepare for double division */
-	     /* ( dual division on both half with their own common divisior ) */
-	     "MOVLHPS   %%xmm0,%%xmm6   	\n\t"	/* X6: SCl SCl SCh SCh; CD */
-	     "MOVLHPS   %%xmm1,%%xmm5   	\n\t"	/* X5: SYl SXl SYh SXh; MULADDS */
 	     /* -------------------------------------------------------------------; */
 	     /* Four divisions at once ( two for real parts and two for imaginary parts ) */
-	     "DIVPS	%%xmm6,%%xmm5   	\n\t"	/* X4: Y0G X0G Y1F X1F */
+	     "DIVPS	%%xmm0,%%xmm1   	\n\t"	/* X1: Y0G X0G Y1F X1F */
 	     /* -------------------------------------------------------------------; */
 	     /* So we have to add the two real and two imaginary parts */
-	     "MOVHLPS   %%xmm5,%%xmm4	        \n\t"	/* X3:  -   -  Y0G X0G */
-	     "ADDPS	%%xmm5,%%xmm4   	\n\t"	/* X3:  -   -  YOK XOK */
+	     "MOVHLPS   %%xmm1,%%xmm4	        \n\t"	/* X4:  -   -  Y0G X0G */
+	     "ADDPS	%%xmm1,%%xmm4   	\n\t"	/* X4:  -   -  YOK XOK */
 	     /* -------------------------------------------------------------------; */
 	     /* Save values for FPU part */
 	     "MOVLPS	%%xmm4,%[XSums]   	\n\t"	/*  */
@@ -878,14 +859,14 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	     [Xa]          "r"  (Xalpha_l),
 	     [kappa_m]     "m"  (kappa_m),
 
-	     /* constants */
+	     /* vector constants */
 	     [V0011]       "m"  (V0011[0]),
 	     [V2222]       "m"  (V2222[0])
 
 	     :
 	     /* clobbered registers */
 #ifndef IGNORE_XMM_REGISTERS
-	     "xmm0","xmm1","xmm2","xmm3","xmm4","xmm5","xmm6","xmm7"
+	     "xmm0","xmm1","xmm2","xmm3","xmm4"
 #endif
 	     );
 
