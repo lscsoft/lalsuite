@@ -528,8 +528,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	} /* for s <= spdnOrder */
 
 	/* Step 3: apply global factors to complete Dphi_alpha */
-#ifdef EAH_CHECK_FINITE_DPHI
 	Dphi_alpha *= Tsft * (*Tdot_al);		/* guaranteed > 0 ! */
+#ifdef EAH_CHECK_FINITE_DPHI
 	if (!finite(Dphi_alpha)) {
 	  LogPrintf(LOG_CRITICAL, "non-finite Dphi_alpha:%e, alpha:%d, Tsft:%e, Tkdot_al:%e\n",
 		    Dphi_alpha, alpha, Tsft, (*Tdot_al));
