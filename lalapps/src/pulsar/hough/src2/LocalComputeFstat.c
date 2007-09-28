@@ -49,7 +49,7 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 #define TWOPI_FLOAT     6.28318530717958f  	/**< single-precision 2*pi */
 #define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)	/**< single-precision 1 / (2pi) */ 
 
-/* don't use finite() from win_lib.cpp here for prerformance reasons */
+/* don't use finite() from win_lib.cpp here for performance reasons */
 #ifdef _MSC_VER
 #define finite _finite
 #endif
@@ -137,7 +137,7 @@ static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/2
 static const LALStatus empty_status;
 
 /*---------- internal prototypes ----------*/
-int finite(double x);
+extern int finite(double x);
 
 void LocalComputeFStat ( LALStatus*, Fcomponents*, const PulsarDopplerParams*,
 			 const MultiSFTVector*, const MultiNoiseWeights*,
@@ -516,23 +516,26 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	for (s=0; s <= spdnOrder; s++) {
 	  REAL8 fsdot = fkdot[s];
 	  Dphi_alpha += fsdot * Tas * inv_fact[s]; 	/* here: DT^s/s! */
+#ifdef EAH_CHECK_FINITE_DPHI
 	  if (!finite(Dphi_alpha)) {
 	    LogPrintf(LOG_CRITICAL, "non-finite Dphi_alpha:%e, alpha:%d, spind#:%d, fkdot:%e, Tas:%e, inv_fact[s]:%e, inv_fact[s+1]:%e, phi_alpha:%e. DT_al:%e\n",
 		      Dphi_alpha, alpha, s, fkdot[s], Tas, inv_fact[s], inv_fact[s+1], phi_alpha, DT_al);
 	    XLAL_ERROR("LocalXLALComputeFaFb", XLAL_EDOM);
 	  }
+#endif
 	  Tas *= DT_al;				/* now: DT^(s+1) */
 	  phi_alpha += fsdot * Tas * inv_fact[s+1];
 	} /* for s <= spdnOrder */
 
 	/* Step 3: apply global factors to complete Dphi_alpha */
+#ifdef EAH_CHECK_FINITE_DPHI
 	Dphi_alpha *= Tsft * (*Tdot_al);		/* guaranteed > 0 ! */
 	if (!finite(Dphi_alpha)) {
 	  LogPrintf(LOG_CRITICAL, "non-finite Dphi_alpha:%e, alpha:%d, Tsft:%e, Tkdot_al:%e\n",
 		    Dphi_alpha, alpha, Tsft, (*Tdot_al));
 	  XLAL_ERROR("LocalXLALComputeFaFb", XLAL_EDOM);
 	}
-
+#endif
 	lambda_alpha = phi_alpha - 0.5 * Dphi_alpha;
 	
 	/* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
