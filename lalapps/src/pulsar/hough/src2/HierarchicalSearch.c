@@ -409,6 +409,14 @@ int MAIN( int argc, char *argv[]) {
 
   global_status = &status;
 
+
+  /* LALDebugLevel must be called before any LALMallocs have been used */
+  lalDebugLevel = 0;
+  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
+#ifdef EAH_LALDEBUGLEVEL
+  lalDebugLevel = EAH_LALDEBUGLEVEL;
+#endif
+
   uvar_ephemE = LALCalloc( strlen( EARTHEPHEMERIS ) + 1, sizeof(CHAR) );
   strcpy(uvar_ephemE, EARTHEPHEMERIS);
 
@@ -421,19 +429,11 @@ int MAIN( int argc, char *argv[]) {
   uvar_fnameout = LALCalloc( strlen(FNAMEOUT) + 1, sizeof(CHAR) );
   strcpy(uvar_fnameout, FNAMEOUT);
 
-
   /* set LAL error-handler */
 #ifdef EAH_BOINC
   lal_errhandler = BOINC_LAL_ErrHand;
 #else
   lal_errhandler = LAL_ERR_EXIT;
-#endif
-
-  /* LALDebugLevel must be called before anything else */
-  lalDebugLevel = 0;
-  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
-#ifdef EAH_LALDEBUGLEVEL
-  lalDebugLevel = EAH_LALDEBUGLEVEL;
 #endif
 
   /* register user input variables */
