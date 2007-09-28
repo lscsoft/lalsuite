@@ -895,6 +895,12 @@ LALUserVarCheckRequired (LALStatus *status)
 } /* LALUserVarCheckRequired() */
 
 /** Handle the delicate setting of lalDebuglevel.
+ * 
+ * \note *NEVER* call this function after any LALMalloc/LALCalloc/LALRealloc 
+ * have been used. A change of lalDebugLevel can then lead to inconsistencies 
+ * in the LAL memory-checker. 
+ * You should therefore call this function very early on in main(), before any 
+ * LALMallocs ... 
  */
 void
 LALGetDebugLevel (LALStatus *status, int argc, char *argv[], CHAR optchar)
