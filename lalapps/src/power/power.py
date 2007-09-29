@@ -333,13 +333,12 @@ class LigolwAddNode(pipeline.LigolwAddNode):
 
 	def get_output_cache(self):
 		if not self.output_cache:
-			instruments = set()
+			seglists = segments.segmentlistdict()
 			for c in self.input_cache:
-				if c.observatory is not None:
-					instruments |= set([ins for ins in c.observatory.split(",")])
-			instruments = list(instruments)
+				seglists |= c.to_segmentlistdict()
+			instruments = seglists.keys()
 			instruments.sort()
-			self.output_cache = [CacheEntry(",".join(instruments), None, segments.segmentlist([c.segment for c in self.input_cache if c.segment is not None]).extent(), "file://localhost" + os.path.abspath(self._AnalysisNode__output))]
+			self.output_cache = [CacheEntry("+".join(instruments), None, seglists.extent_all(), "file://localhost" + os.path.abspath(self._AnalysisNode__output))]
 		return self.output_cache
 
 	def write_input_files(self, *args):
@@ -480,6 +479,16 @@ class BurcaJob(pipeline.CondorDAGJob):
 		self.add_ini_opts(config_parser, "ligolw_burca")
 
 
+class Burca2Job(pipeline.CondorDAGJob):
+	def __init__(self, config_parser):
+		pipeline.CondorDAGJob.__init__(self, "vanilla", get_executable(config_parser, "ligolw_burca"))
+		self.set_sub_file("ligolw_burca2.sub")
+		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "ligolw_burca2-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "ligolw_burca2-$(cluster)-$(process).err"))
+		self.add_condor_cmd("getenv", "True")
+		self.add_ini_opts(config_parser, "ligolw_burca2")
+
+
 class BurcaNode(pipeline.CondorDAGNode):
 	def __init__(self, *args):
 		pipeline.CondorDAGNode.__init__(self, *args)
@@ -541,14 +550,82 @@ class SQLiteNode(pipeline.CondorDAGNode):
 
 	def get_output_cache(self):
 		if not self.output_cache:
-			instruments = set()
+			seglists = segments.segmentlistdict()
 			for c in self.input_cache:
-				if c.observatory is not None:
-					instruments |= set([ins for ins in c.observatory.split(",")])
-			instruments = list(instruments)
+				seglists |= c.to_segmentlistdict()
+			instruments = seglists.keys()
 			instruments.sort()
-			self.output_cache = [CacheEntry(",".join(instruments), None, segments.segmentlist([c.segment for c in self.input_cache if c.segment is not None]).extent(), "file://localhost" + os.path.abspath(self.get_opts()["macrodatabase"]))]
+			self.output_cache = [CacheEntry("+".join(instruments), None, seglists.extent_all(), "file://localhost" + os.path.abspath(self.get_opts()["macrodatabase"]))]
 		return self.output_cache
+
+	def get_output_files(self):
+		raise NotImplementedError
+
+	def get_output(self):
+		raise NotImplementedError
+
+
+class BurcaTailorJob(pipeline.CondorDAGJob):
+	def __init__(self, config_parser):
+		pipeline.CondorDAGJob.__init__(self, "vanilla", get_executable(config_parser, "ligolw_burca_tailor"))
+		self.set_sub_file("ligolw_burca_tailor.sub")
+		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "ligolw_burca_tailor-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "ligolw_burca_tailor-$(cluster)-$(process).err"))
+		self.add_condor_cmd("getenv", "True")
+		self.add_ini_opts(config_parser, "ligolw_burca_tailor")
+
+
+class BurcaTailorNode(pipeline.CondorDAGNode):
+	def __init__(self, *args):
+		pipeline.CondorDAGNode.__init__(self, *args)
+		self.input_cache = []
+		self.output_cache = []
+
+	def set_name(self, *args):
+		pipeline.CondorDAGNode.set_name(self, *args)
+		self.cache_name = os.path.join(self._CondorDAGNode__job.cache_dir, "%s.cache" % self.get_name())
+
+	def add_input_cache(self, cache):
+		if self.output_cache:
+			raise AttributeError, "cannot change attributes after computing output cache"
+		self.input_cache.extend(cache)
+		for c in cache:
+			filename = c.path()
+			pipeline.CondorDAGNode.add_file_arg(self, filename)
+		self.add_output_file(filename)
+
+	def add_file_arg(self, filename):
+		raise NotImplementedError
+
+	def set_output(self, description):
+		if self.output_cache:
+			raise AttributeError, "cannot change attributes after computing output cache"
+		seglists = segments.segmentlistdict()
+		for c in self.input_cache:
+			seglists |= c.to_segmentlistdict()
+		instruments = seglists.keys()
+		instruments.sort()
+		instruments = "+".join(instruments)
+		seg = seglists.extent_all()
+		filename = "%s-%s-%d-%d.xml.gz" % (instruments, description, int(seg[0]), int(abs(seg)))
+		self.add_var_opt("output", filename)
+		self.output_cache = [CacheEntry(instruments, description, seg, "file://localhost" + os.path.abspath(filename))]
+		return filename
+
+	def get_output_cache(self):
+		if not self.output_cache:
+			raise AttributeError, "must call set_output(description) first"
+		return self.output_cache
+
+	def write_input_files(self, *args):
+		# oh.  my.  god.  this is fscked.
+		for arg in self.get_args():
+			if "--add-from-cache" in arg:
+				f = file(self.cache_name, "w")
+				for c in self.input_cache:
+					print >>f, str(c)
+				pipeline.CondorDAGNode.write_input_files(self, *args)
+				break
 
 	def get_output_files(self):
 		raise NotImplementedError
@@ -579,14 +656,16 @@ binjfindjob = None
 bucutjob = None
 buclusterjob = None
 burcajob = None
+burca2job = None
 sqlitejob = None
+burcatailorjob = None
 
 
-def init_job_types(config_parser, types = ["datafind", "binj", "power", "lladd", "binjfind", "bucluster", "bucut", "burca", "sqlite"]):
+def init_job_types(config_parser, types = ["datafind", "binj", "power", "lladd", "binjfind", "bucluster", "bucut", "burca", "burca2", "sqlite", "burcatailor"]):
 	"""
 	Construct definitions of the submit files.
 	"""
-	global datafindjob, binjjob, powerjob, lladdjob, binjfindjob, buclusterjob, llb2mjob, bucutjob, burcajob, sqlitejob
+	global datafindjob, binjjob, powerjob, lladdjob, binjfindjob, buclusterjob, llb2mjob, bucutjob, burcajob, burca2job, sqlitejob, burcatailorjob
 
 	# LSCdataFind
 	if "datafind" in types:
@@ -625,9 +704,18 @@ def init_job_types(config_parser, types = ["datafind", "binj", "power", "lladd",
 	if "burca" in types:
 		burcajob = BurcaJob(config_parser)
 
+	# ligolw_burca
+	if "burca2" in types:
+		burca2job = Burca2Job(config_parser)
+
 	# ligolw_sqlite
 	if "sqlite" in types:
 		sqlitejob = SQLiteJob(config_parser)
+
+	# ligolw_burca_tailor
+	if "burcatailor" in types:
+		burcatailorjob = BurcaTailorJob(config_parser)
+		burcatailorjob.cache_dir = get_cache_dir(config_parser)
 
 
 #
@@ -848,15 +936,61 @@ def make_bucut_fragment(dag, parents, tag):
 	return nodes
 
 
-def make_burca_fragment(dag, parents, instrument, seg, tag):
+def make_burca_fragment(dag, parents, seg, tag):
 	node = BurcaNode(burcajob)
-	node.set_name("ligolw_burca_%s_%s_%d_%d" % (instrument, tag, int(seg[0]), int(abs(seg))))
+	node.set_name("ligolw_burca_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
 	for parent in parents:
 		node.add_parent(parent)
 		node.add_input_cache(parent.get_output_cache())
 	node.add_macro("macrocomment", tag)
 	dag.add_node(node)
 	return [node]
+
+
+def make_burca_tailor_fragment(dag, input_cache, seg, tag):
+	input_cache = list(input_cache)
+	input_cache.sort(reverse = True)
+	nodes = []
+	while input_cache:
+		node = BurcaTailorNode(burcatailorjob)
+		node.set_name("ligolw_burca_tailor_%s_%d_%d_%d" % (tag, int(seg[0]), int(abs(seg)), len(nodes)))
+		cache = []
+		while input_cache and len(cache) < 5:
+			cache.append(input_cache.pop())
+		node.add_input_cache(cache)
+		node.set_output(tag)
+		dag.add_node(node)
+		nodes.append(node)
+	node = BurcaTailorNode(burcatailorjob)
+	node.set_name("ligolw_burca_tailor_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
+	for parent in nodes:
+		node.add_parent(parent)
+		node.add_input_cache(parent.get_output_cache())
+	del node.get_args()[:]
+	node.add_var_arg("--add-from-cache %s" % node.cache_name)
+	node.set_output(tag)
+	dag.add_node(node)
+	return [node]
+
+
+def make_burca2_fragment(dag, parents, input_cache, tag):
+	# This is screwy, but I can't be bothered...
+	input_cache = list(input_cache)
+	input_cache.sort(reverse = True)
+	nodes = []
+	while input_cache:
+		node = BurcaNode(burca2job)
+		node.set_name("ligolw_burca2_%s_%d" % (tag, len(nodes)))
+		node.add_macro("macrocomment", tag)
+		cache = []
+		while input_cache and len(cache) < 20:
+			cache.append(input_cache.pop())
+		node.add_input_cache(cache)
+		for parent in parents:
+			node.add_parent(parent)
+		nodes.append(node)
+		dag.add_node(node)
+	return nodes
 
 
 #
@@ -1111,7 +1245,7 @@ def make_coinc_fragment(dag, parents, segment, tag, time_slides_filename, binjno
 
 	# run ligolw_burca
 
-	return make_burca_fragment(dag, nodes, "ALL", segment, tag)
+	return make_burca_fragment(dag, nodes, segment, tag)
 
 
 #
