@@ -74,6 +74,7 @@
 #include <lal/FindChirpTD.h>
 #include <lal/FindChirpBCV.h>
 #include <lal/FindChirpBCVSpin.h>
+#include <lal/FindChirpPTF.h>
 #include <lal/FindChirpChisq.h>
 #include <lal/LALTrigScanCluster.h>
 #include <lal/NRWaveIO.h>
@@ -81,9 +82,6 @@
 
 RCSID( "$Id$" );
 
-#define CVS_ID_STRING "$Id$"
-#define CVS_NAME_STRING "$Name$"
-#define CVS_REVISION "$Revision$"
 #define CVS_ID_STRING "$Id$"
 #define CVS_NAME_STRING "$Name$"
 #define CVS_REVISION "$Revision$"
@@ -229,14 +227,13 @@ REAL4 rsqVetoPow        = -1;           /* r^2 veto power               */
 /* generic simulation parameters */
 enum { unset, urandom, user } randSeedType = unset;    /* sim seed type */
 INT4  randomSeed        = 0;            /* value of sim rand seed       */
-REAL4 gaussVar          = 64.0;         /* variance of gaussian noise   */
-INT4  whiteGaussian     = 0;            /* make input data gaussian     */
+REAL4 gaussVar          = 64.0;         /* variance of Gaussian noise   */
+INT4  whiteGaussian     = 0;            /* make input data Gaussian     */
 INT4  unitResponse      = 0;            /* set the response to unity    */
 INT4  colorSpec         = 0;            /* set the spectrum for colored */ 
-                                        /* gaussian noise               */    
+                                        /* Gaussian noise               */    
 INT4  coloredGaussian   = 0;            /* generate colored Gaussian    */
                                         /* noise                        */
-
 /* template bank simulation params */
 INT4  bankSim           = 0;            /* number of template bank sims */
 CHAR *bankSimFileName   = NULL;         /* file contining sim_inspiral  */
@@ -296,6 +293,7 @@ INT4 numrelModeHi = -1;                     /* highest values of l to inject  */
 NRWaveMetaData thisMetaData;           /* single NR wave metadata struct */
 NumRelInjectParams nrPar;
 NRWaveCatalog nrCatalog;               /* NR wave metadata struct        */
+
 
 /* other command line args */
 CHAR comment[LIGOMETA_COMMENT_MAX];     /* process param comment        */
@@ -905,11 +903,11 @@ int main( int argc, char *argv[] )
         &status );
   }
 
-  /* replace the input data with gaussian noise if necessary */
+  /* replace the input data with Gaussian noise if necessary */
   if ( whiteGaussian )
   {
     if ( vrbflg ) fprintf( stdout, 
-        "setting input data to white gaussian noise with variance %e... ", 
+        "setting input data to white Gaussian noise with variance %e... ", 
         gaussVar );
     memset( chan.data->data, 0, chan.data->length * sizeof(REAL4) );
     LAL_CALL( LALNormalDeviates( &status, chan.data, randParams ), &status );
@@ -923,7 +921,7 @@ int main( int argc, char *argv[] )
     if ( writeRawData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
         &chan, "ct", "RAW_GAUSSIAN" );
   }
-
+  
   /* replace data with colored Gaussian noise if requested */
   if ( coloredGaussian )
   {
@@ -938,7 +936,7 @@ int main( int argc, char *argv[] )
     INT4              kmin           = strainHighPassFreq / deltaF > 1 ? 
                                        strainHighPassFreq / deltaF : 1 ;
     
-    if ( vrbflg ) fprintf( stdout, "Replacing data with colored Gaussian noise" );
+    if ( vrbflg ) fprintf( stdout, "replacing data with colored Gaussian noise...." );
 
     /* Generate white Gaussian noise with unit variance */
 
@@ -1021,14 +1019,15 @@ int main( int argc, char *argv[] )
     LALDestroyRealFFTPlan( &status, &invPlan);
   }
 
+  
   /*
    *
    * generate the response function for the requested time
    *
    */
 
-
   /* create storage for the response function */
+  
   memset( &resp, 0, sizeof(COMPLEX8FrequencySeries) );
   LAL_CALL( LALCCreateVector( &status, &(resp.data), numPoints / 2 + 1 ), 
       &status );
@@ -1125,7 +1124,7 @@ int main( int argc, char *argv[] )
   if ( unitResponse )
   {
     /* replace the response function with unity if */
-    /* we are filtering white gaussian noise             */
+    /* we are filtering white Gaussian noise             */
     if ( vrbflg ) fprintf( stdout, "setting response to unity... " );
     for ( k = 0; k < resp.data->length; ++k )
     {
@@ -1137,7 +1136,6 @@ int main( int argc, char *argv[] )
     if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
         outFrame, &resp, "strain/ct", "RESPONSE_UNITY" );
   }
-
   if (specType == 3 | specType == 4)
   {
     /* replace the response function with 1/dynRange if we are using the */
@@ -1148,10 +1146,10 @@ int main( int argc, char *argv[] )
       resp.data->data[k].re = (REAL4) (1.0 / dynRange);
       resp.data->data[k].im = 0.0;
     }
+    if ( vrbflg ) fprintf( stdout, "done\n" );
     if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
         outFrame, &resp, "strain/ct", "RESPONSE_UNITY" );
   }
-
 
   /* slide the channel back to the fake time for background studies */
   chan.epoch.gpsSeconds += slideData.gpsSeconds;
@@ -1333,7 +1331,7 @@ int main( int argc, char *argv[] )
         if ( whiteGaussian )
         {
           /* replace the response function with unity if */
-          /* we are filtering gaussian noise             */
+          /* we are filtering white Gaussian noise             */
           if ( vrbflg ) fprintf( stdout, "setting response to unity... " );
           for ( k = 0; k < injResp.data->length; ++k )
           {
@@ -1655,7 +1653,7 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALDestroyREAL4Window( &status, &(avgSpecParams.window) ), 
       &status );
   strcpy( spec.name, chan.name );
-
+  
   if ( specType == 2 )
   {
     /* multiply the unit power spectrum by the variance to get the white psd */
@@ -1664,7 +1662,6 @@ int main( int argc, char *argv[] )
     {
       spec.data->data[k] *= 2.0 * gaussVarSq * (REAL4) inputDeltaT;
     }
-
     if ( vrbflg ) 
       fprintf( stdout, "set psd to constant value = %e\n", spec.data->data[0] );
   }
@@ -1916,8 +1913,9 @@ int main( int argc, char *argv[] )
       case GeneratePPN:
       case PadeT1:
       case EOB:
+      case FindChirpPTF:
         if ( vrbflg ) 
-          fprintf( stdout, "findchirp conditioning data for TD\n" );
+          fprintf( stdout, "findchirp conditioning data for TD or PTF\n" );
         LAL_CALL( LALFindChirpTDData( &status, fcSegVec, dataSegVec, 
               fcDataParams ), &status );
         break;
@@ -2213,6 +2211,11 @@ int main( int argc, char *argv[] )
                   fcTmpltParams, fcDataParams ), &status );
             break;
 
+          case FindChirpPTF:
+            LAL_CALL( LALFindChirpPTFTemplate( &status, fcFilterInput->fcTmplt,
+                  bankCurrent, fcTmpltParams ), &status );
+            break;
+
           default:
             fprintf( stderr, 
                 "error: unknown waveform template approximant \n" );
@@ -2357,6 +2360,14 @@ int main( int argc, char *argv[] )
                 LAL_CALL( LALFindChirpBCVSpinFilterSegment( &status,
                       &eventList, fcFilterInput, fcFilterParams, fcDataParams 
                       ), &status );
+                break;
+
+              case FindChirpPTF:
+                LAL_CALL( LALFindChirpPTFNormalize( &status, 
+                      fcFilterInput->fcTmplt, fcFilterInput->segment, 
+                      fcDataParams ), &status );
+                LAL_CALL( LALFindChirpPTFFilterSegment( &status, 
+                      &eventList, fcFilterInput, fcFilterParams ), &status ); 
                 break;
 
               default:
@@ -3216,7 +3227,7 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "\n"\
 "  --approximant APPROX         set approximant of the waveform to APPROX\n"\
 "                               (FindChirpSP|BCV|BCVC|BCVSpin|TaylorT1|TaylorT2|\n"\
-"                                  TaylorT3|PadeT1|EOB|GeneratePPN)\n"\
+"                                  TaylorT3|PadeT1|EOB|GeneratePPN|FindChirpPTF)\n"\
 "  --order ORDER                set the pN order of the waveform to ORDER\n"\
 "                               (twoPN|twoPointFivePN|threePN|threePointFivePN|\n"\
 "                                  pseudoFourPN)\n"\
@@ -3366,8 +3377,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"random-seed",             required_argument, 0,                'J'},
     {"sim-minimum-mass",        required_argument, 0,                'U'},
     {"sim-maximum-mass",        required_argument, 0,                'W'},
-    {"gaussian-noise",          required_argument, 0,                'G'},
     {"white-gaussian",          required_argument, 0,                'G'},
+    {"gaussian-noise",          required_argument, 0,                'G'},
     {"colored-gaussian",        required_argument, 0,                '.'},
     {"checkpoint-path",         required_argument, 0,                'N'},
     {"output-path",             required_argument, 0,                'O'},
@@ -3436,7 +3447,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     c = getopt_long_only( argc, argv, 
         "-A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VW:X:Y:Z:"
         "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:"
-        "0:1::2:3:4:567:8:9:*:>:<:(:):[:],:{:}:+:=:^:",
+        "0:1::2:3:4:567:8:9:*:>:<:(:):[:],:{:}:+:=:^:.:",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -3797,7 +3808,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           specType = 2;
           fprintf( stderr,
-              "WARNING: replacing psd with white gaussian spectrum\n" );
+              "WARNING: replacing psd with white Gaussian spectrum\n" );
         }
         else if ( ! strcmp( "LIGO", optarg ) )
         {
@@ -3948,11 +3959,16 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           approximant = BCVSpin;
         }
+        else if ( ! strcmp( "FindChirpPTF", optarg ) )
+        {
+          approximant = FindChirpPTF;
+        }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown order specified: "
-              "%s (must be either FindChirpSP or BCV or BCVC or BCVSpin)\n", 
+              "%s (must be either FindChirpSP, BCV, BCVC, BCVSpin, FindChirpPTF\n"
+              "TaylorT1, TaylorT2, TaylorT3, GeneratePPN, PadeT1 or EOB)\n", 
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -4315,7 +4331,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         if ( gaussVar < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "variance of gaussian noise must be >= 0: "
+              "variance of white Gaussian noise must be >= 0: "
               "(%f specified)\n",
               long_options[option_index].name, gaussVar );
           exit( 1 );
@@ -4324,7 +4340,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         whiteGaussian = 1;
         unitResponse = 1;
         fprintf( stderr,
-            "WARNING: replacing input data with white gaussian noise\n"
+            "WARNING: replacing input data with white Gaussian noise\n"
             "WARNING: replacing response function with unity\n" );
         break;
 
@@ -4817,8 +4833,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds );
     exit( 1 );
   }
+  
 
-  /* check trigger generation time is within input time */
+      /* check trigger generation time is within input time */
   if ( trigStartTimeNS )
   {
     if ( trigStartTimeNS < gpsStartTimeNS )
@@ -5155,11 +5172,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   if ( (whiteGaussian || coloredGaussian ) && randSeedType == unset )
   {
     fprintf( stderr, "--random-seed must be specified if "
-     "--white-gaussian, --colored-gaussian or --gaussian-noise are given\n" );
+        "--white-gaussian (--gaussian-noise) or --colored-gaussian are given\n" );
     exit( 1 );
   }
 
   
+  /* check that specType is either LIGO or advLIGO for colored Gaussian noise
+   */
   if (coloredGaussian)
   {
     /* check that --white-gaussian has not been specified */
