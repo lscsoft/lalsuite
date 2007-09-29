@@ -75,6 +75,7 @@ LALDestroyVector()
 
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
+#include <lal/SeqFactories.h>
 #include <lal/DataBuffer.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
@@ -191,6 +192,47 @@ LALFindChirpTemplateInit (
         xfac[k] = pow( (REAL4) k, exponent );
       break;
 
+    case FindChirpPTF:
+      /* create workspace memory for the time-domain Q vectors */
+      outputPtr->PTFQ = XLALCreateVectorSequence( 5, params->numPoints );
+      if ( ! outputPtr->PTFQ )
+      {
+        ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+      }
+
+      /* create workspace for the dynamical variables needed to */
+      /* compute the PTF Q(t) vectors                           */
+      outputPtr->PTFphi = XLALCreateVector( params->numPoints );
+      if ( ! outputPtr->PTFphi )
+      {
+        ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+      }
+      outputPtr->PTFomega_2_3 = XLALCreateVector( params->numPoints );
+      if ( ! outputPtr->PTFomega_2_3 )
+      {
+        ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+      }
+      outputPtr->PTFe1 = XLALCreateVectorSequence( 3, params->numPoints );
+      if ( ! outputPtr->PTFe1 )
+      {
+        ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+      }
+      outputPtr->PTFe2 = XLALCreateVectorSequence( 3, params->numPoints );
+      if ( ! outputPtr->PTFe2 )
+      {
+        ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+      }
+
+      /* create a forward FFT plan */
+      outputPtr->fwdPlan = 
+        XLALCreateForwardREAL4FFTPlan( params->numPoints, 0 );
+      if ( ! outputPtr->fwdPlan )
+      {
+        ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+      }
+
+      break;
+
     default:
       /* unknown approximant type */
       LALFree( outputPtr );
@@ -250,10 +292,36 @@ LALFindChirpTemplateFinalize (
     CHECKSTATUSPTR( status );
   }
 
-  /* destroy the vector used to store part of the template */
+  /* destroy the vector used to store part of the template if it exists */
+  if ( outputPtr->xfacVec )
+  {  
   LALDestroyVector( status->statusPtr, &(outputPtr->xfacVec) );
   CHECKSTATUSPTR( status );
+  }
 
+  /* destroy the vectors used for the PTF template if they exist */
+  if ( outputPtr->PTFQ )
+  {
+    XLALDestroyVectorSequence( outputPtr->PTFQ );
+  }
+  if ( outputPtr->PTFphi )
+  {
+    XLALDestroyVector( outputPtr->PTFphi );
+  }
+  if ( outputPtr->PTFomega_2_3 )
+  {
+    XLALDestroyVector( outputPtr->PTFomega_2_3 );
+  }
+  if ( outputPtr->PTFe1 )
+  {
+    XLALDestroyVectorSequence( outputPtr->PTFe1 );
+  }
+  if ( outputPtr->PTFe2 )
+  {
+    XLALDestroyVectorSequence( outputPtr->PTFe2 );
+  }
+ 
+  
   /* free the structure */
   LALFree( outputPtr );
   *output = NULL;

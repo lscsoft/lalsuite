@@ -114,7 +114,7 @@ LALFindChirpFilterSegment (
   UINT4                 numPoints;
   UINT4                 deltaEventIndex;
   UINT4                 ignoreIndex;
-  REAL4                 deltaT;
+  REAL8                 deltaT;
   REAL8                 deltaF;
   REAL4                 norm;
   REAL4                 modqsqThresh;
@@ -183,9 +183,11 @@ LALFindChirpFilterSegment (
         FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   }
 
-  /* if a chisqVec vector has been created, check we can store data in it */
-  if ( params->chisqVec ) 
+  /* if we are doing a chisq, check we can store the data */
+  if ( input->segment->chisqBinVec->length ) 
   {
+    ASSERT( params->chisqVec, status,
+        FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
     ASSERT( params->chisqVec->data, status,
         FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   }
@@ -241,7 +243,7 @@ LALFindChirpFilterSegment (
   inputData = input->segment->data->data->data;
   tmpltSignal = input->fcTmplt->data->data;
   deltaT = params->deltaT;
-  deltaF = 1.0 / ( (REAL4) params->deltaT * (REAL4) numPoints );
+  deltaF = 1.0 / ( params->deltaT * (REAL8) numPoints );
   kmax = input->fcTmplt->tmplt.fFinal / deltaF < numPoints/2 ? 
     input->fcTmplt->tmplt.fFinal / deltaF : numPoints/2;
 

@@ -515,6 +515,7 @@ LALCreateFindChirpSegmentVector (
     case PadeT1:
     case EOB:
     case FindChirpSP:
+    case FindChirpPTF:
     case BCV:
     case BCVSpin:
       break;
