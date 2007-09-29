@@ -114,6 +114,48 @@ LALFindChirpPTFNormalize(
 
 #if 0
 <lalLaTeX>
+\newpage\input{FindChirpPTFWaveformC}
+</lalLaTeX>
+#endif
+
+REAL4Vector*
+XLALPTFOmegaPNCoeffsOrbital( 
+    REAL4                m1, 
+    REAL4                m2
+    );
+
+REAL4Vector*
+XLALPTFOmegaPNCoeffsSpin( 
+    REAL4                m1, 
+    REAL4                m2,
+    REAL4                chi1, 
+    REAL4                chi2,
+    REAL4                Q1, 
+    REAL4                Q2
+    );
+
+REAL4Vector*
+XLALPTFOmegaPNCoeffsEnergy( 
+    REAL4                m1, 
+    REAL4                m2,
+    REAL4                chi1, 
+    REAL4                chi2,
+    REAL4                Q1, 
+    REAL4                Q2 
+    );
+
+INT4
+XLALFindChirpPTFWaveform(
+    REAL4Vector         *PTFphi,
+    REAL4Vector         *PTFomega_2_3,
+    REAL4VectorSequence *PTFe1,
+    REAL4VectorSequence *PTFe2,
+    InspiralTemplate    *tmplt,
+    REAL8                deltaT
+    );
+
+#if 0
+<lalLaTeX>
 \newpage\input{FindChirpPTFFilterC}
 </lalLaTeX>
 #endif

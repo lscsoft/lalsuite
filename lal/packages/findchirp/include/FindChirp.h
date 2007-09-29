@@ -144,6 +144,9 @@ NRCSID (FINDCHIRPH, "$Id$");
 #define FINDCHIRPH_EMASS 24
 #define FINDCHIRPH_EWVFM 25
 #define FINDCHIRPH_EBCVC 25
+#define FINDCHIRPH_EMAPX 26
+#define FINDCHIRPH_EPTFW 27
+#define FINDCHIRPH_EIGEN 28
 
 #define FINDCHIRPH_MSGENULL "Null pointer"
 #define FINDCHIRPH_MSGENNUL "Non-null pointer"
@@ -167,6 +170,9 @@ NRCSID (FINDCHIRPH, "$Id$");
 #define FINDCHIRPH_MSGEMASS "Invalid mass parameters for template generation"
 #define FINDCHIRPH_MSGEWVFM "Unknown injection waveform"
 #define FINDCHIRPH_MSGEBCVC "BCVC code: thetav not in [-pi, pi]."
+#define FINDCHIRPH_MSGEMAPX "Mismatch in waveform approximant"
+#define FINDCHIRPH_MSGEPTFW "Error generating PTF waveform"
+#define FINDCHIRPH_MSGEIGEN "Error computing eigenvalues"
 
 /* </lalErrTable> */
 
@@ -351,6 +357,11 @@ tagFindChirpTmpltParams
   REAL4                         fLow;
   REAL4                         dynRange;
   REAL4Vector                  *xfacVec;
+  REAL4VectorSequence          *PTFQ;
+  REAL4Vector                  *PTFphi;
+  REAL4Vector                  *PTFomega_2_3;
+  REAL4VectorSequence          *PTFe1;
+  REAL4VectorSequence          *PTFe2;
   RealFFTPlan                  *fwdPlan;
   Approximant                   approximant;
   Order                         order;
@@ -493,6 +504,10 @@ tagFindChirpFilterParams
   COMPLEX8Vector               *qtildeVecBCV;
   COMPLEX8Vector               *qtildeVecBCVSpin1;
   COMPLEX8Vector               *qtildeVecBCVSpin2;
+  COMPLEX8VectorSequence       *PTFqVec;
+  COMPLEX8Vector               *PTFsnrVec;
+  REAL4Array                   *PTFA;
+  REAL4Array                   *PTFMatrix;
   ComplexFFTPlan               *invPlan;
   REAL4TimeSeries              *rhosqVec;
   COMPLEX8TimeSeries           *cVec;

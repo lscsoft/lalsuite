@@ -8,6 +8,7 @@ pkginclude_HEADERS = FindChirpDatatypes.h \
                      FindChirpSP.h \
                      FindChirpTD.h \
                      FindChirpBCV.h \
+                     FindChirpPTF.h \
                      FindChirpBCVSpin.h \
                      CoherentInspiral.h
 MOSTLYCLEANFILES = .dvi-dep
