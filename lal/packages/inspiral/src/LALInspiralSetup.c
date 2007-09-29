@@ -462,9 +462,14 @@ LALInspiralSetup (
 
    ak->ST[twoPointFivePN] = ( -(1.0/672.0) * LAL_PI * (4159.0 + 15876.0*eta) );
    /* coefficient 15876 corrected (from 14532) according
-      to 2005 erratas for L. Blanchet, Phys. Rev. D 54, 1417 (1996) and
-      L. Blanchet, B. R. Iyer, and B. Joguet, Phys. Rev. D 65, 064005 (2002).
-      Compare with errata for Arun et al., Phys. Rev. D 71, 084008 (2005) */
+      to 2005 erratas for L. Blanchet, Phys. Rev. D 54, 1417 (1996)
+      (see Phys. Rev. D 71 129904 (E) (2005)) and L. Blanchet, 
+      B. R. Iyer, and B. Joguet, Phys. Rev. D 65, 064005 (2002)
+      (see Phys. Rev. D 71 129903 (E) (2005)). 
+      See errata for Arun et al., Phys. Rev. D 71, 084008 
+      (2005) (see  Phys. Rev. D 72 069903 (E) (2005)) 
+      for corrected coefficients
+   */
 
    /* both ak->ST[6] and [7] are stored for the threePN contribution */
 
@@ -478,9 +483,14 @@ LALInspiralSetup (
    /* sT[8] is the threePointFivePN contribution */
    ak->ST[8] = (LAL_PI/12096.0) * (-13245.0 + 717350.0*eta + 731960.0*eta*eta); 
    /* coefficients 717350 and 731960 corrected (from 661775 and 599156) according
-      to 2005 erratas for L. Blanchet, Phys. Rev. D 54, 1417 (1996) and
-      L. Blanchet, B. R. Iyer, and B. Joguet, Phys. Rev. D 65, 064005 (2002).
-      Compare with errata for Arun et al., Phys. Rev. D 71, 084008 (2005) */
+      to 2005 erratas for L. Blanchet, Phys. Rev. D 54, 1417 (1996) 
+      (see Phys. Rev. D 71 129904 (E) (2005)) and L. Blanchet,
+      B. R. Iyer, and B. Joguet, Phys. Rev. D 65, 064005 (2002)
+      (see Phys. Rev. D 71 129903 (E) (2005)).
+      See errata for Arun et al., Phys. Rev. D 71, 084008
+      (2005) (see  Phys. Rev. D 72 069903 (E) (2005)) 
+      for corrected coefficients   
+   */
 
 /*
    taylorcoeffs[0] = 1.;
