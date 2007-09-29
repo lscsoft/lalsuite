@@ -1,0 +1,192 @@
+#!/usr/bin/python
+#
+# $Id$
+#
+# Copyright (C) 2007  Kipp C. Cannon
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+
+"""
+Excess power offline pipeline's likelihood stage construction script.
+"""
+
+
+import ConfigParser
+import glob
+import math
+from optparse import OptionParser
+import os
+import sys
+import tempfile
+
+
+from glue import pipeline
+from glue import segments
+from glue import segmentsUtils
+from glue.lal import CacheEntry
+from pylal import ligolw_tisi
+from pylal import ligolw_cafe
+from pylal import llwapp
+from pylal.date import LIGOTimeGPS
+from lalapps import power
+
+
+__author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"
+__date__ = "$Date$"[5:-2]
+__version__ = "$Revision$"[11:-2]
+
+
+#
+# =============================================================================
+#
+#                                 Command Line
+#
+# =============================================================================
+#
+
+
+def parse_command_line():
+	parser = OptionParser(
+		version="%prog CVS $Id$"
+	)
+	parser.add_option("--condor-log-dir", metavar = "path", default = ".", help = "Set the directory for Condor log files (default = \".\").")
+	parser.add_option("--config-file", metavar = "filename", default = "power.ini", help = "Set .ini configuration file name (default = \"power.ini\").")
+	parser.add_option("--distribution-segments", metavar = "filename", help = "Read boundaries for distribution data intervals from this segwizard format segments file. (required)")
+	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
+	options, filenames = parser.parse_args()
+
+	if options.distribution_segments is None:
+		raise ValueError, "missing required argument --distribution-segments"
+
+	return options, (filenames or [])
+
+
+#
+# =============================================================================
+#
+#                                    Config
+#
+# =============================================================================
+#
+
+
+def parse_config_file(options):
+	if options.verbose:
+		print >>sys.stderr, "reading %s ..." % options.config_file
+	config = ConfigParser.SafeConfigParser()
+	config.read(options.config_file)
+
+	options.tag = config.get("pipeline", "user_tag")
+
+	return config
+
+
+#
+# =============================================================================
+#
+#                               DAG Construction
+#
+# =============================================================================
+#
+
+
+#
+# Command line
+#
+
+
+options, filenames = parse_command_line()
+
+
+#
+# Parse .ini file, input cache(s), and segment list.
+#
+
+
+config_parser = parse_config_file(options)
+input_cache = []
+for filename in filenames:
+	if options.verbose:
+		print >>sys.stderr, "reading %s ..." % filename
+	input_cache += map(CacheEntry, file(filename))
+if options.verbose:
+	print >>sys.stderr, "reading %s ..." % options.distribution_segments
+distribution_segments = segmentsUtils.fromsegwizard(file(options.distribution_segments), coltype = LIGOTimeGPS)
+if options.verbose:
+	print >>sys.stderr, "parameter distribution boundaries:", distribution_segments
+
+
+#
+# Define .sub files
+#
+
+
+power.init_job_types(config_parser)
+
+
+#
+# Start DAG
+#
+
+
+power.make_dag_directories(config_parser)
+dag = pipeline.CondorDAG(tempfile.mkstemp(".log", "power_likelihood_", options.condor_log_dir)[1])
+dag.set_dag_file("power_likelihood")
+
+
+#
+# Generate likelihood data
+#
+
+
+nodes = []
+likelihood_cache_file = file(config_parser.get("ligolw_burca2", "likelihood-data-cache"), "w")
+for seg in distribution_segments:
+	if options.verbose:
+		print >>sys.stderr, "generating distribution measurement jobs for %s ..." % str(seg)
+	seg_input_cache = set([entry for entry in input_cache if entry.to_segmentlistdict().intersects_segment(seg)])
+	nodes += power.make_burca_tailor_fragment(dag, seg_input_cache, seg, "LIKELIHOOD")
+for node in nodes:
+	for entry in node.get_output_cache():
+		print >>likelihood_cache_file, str(entry)
+
+
+#
+# Compute likelihood ratios for coincs
+#
+
+
+nodes = power.make_burca2_fragment(dag, nodes, input_cache, "LIKELIHOOD")
+
+
+#
+# Output
+#
+
+
+if options.verbose:
+	print >>sys.stderr, "writing dag ..."
+dag.write_sub_files()
+dag.write_dag()
