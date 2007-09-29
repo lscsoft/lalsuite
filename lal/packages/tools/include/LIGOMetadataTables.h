@@ -398,6 +398,8 @@ tagSnglInspiralTable
   REAL4         mchirp;
   REAL4         mtotal;
   REAL4         eta;
+  REAL4         kappa;
+  REAL4         chi;
   REAL4         tau0;
   REAL4         tau2;
   REAL4         tau3;

@@ -487,6 +487,8 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglInspiralTable->mchirp,
               tablePtr.snglInspiralTable->mtotal,
               tablePtr.snglInspiralTable->eta,
+              tablePtr.snglInspiralTable->kappa,
+              tablePtr.snglInspiralTable->chi,
               tablePtr.snglInspiralTable->tau0,
               tablePtr.snglInspiralTable->tau2,
               tablePtr.snglInspiralTable->tau3,

@@ -1071,6 +1071,8 @@ LALSnglInspiralTableFromLIGOLw (
     {"Gamma7",                  -1, 48},
     {"Gamma8",                  -1, 49},
     {"Gamma9",                  -1, 50},
+    {"kappa",                   -1, 51},
+    {"chi",                     -1, 52},
     {NULL,                       0, 0}
   };
 
@@ -1386,6 +1388,14 @@ LALSnglInspiralTableFromLIGOLw (
         {
           thisEvent->Gamma[9] = r4colData;
         }
+        else if ( tableDir[j].idx == 51 )
+        {
+          thisEvent->kappa = r4colData;
+        }
+        else if ( tableDir[j].idx == 52 )
+        {
+          thisEvent->chi = r4colData;
+        }        
         else
         {
           CLOBBER_EVENTS;
@@ -1471,6 +1481,8 @@ InspiralTmpltBankFromLIGOLw (
     {"Gamma7", -1, 25},
     {"Gamma8", -1, 26},
     {"Gamma9", -1, 27},
+    {"kappa", -1, 28},
+    {"chi", -1, 29},
     {NULL,      0, 0}
   };
 
@@ -1717,6 +1729,14 @@ InspiralTmpltBankFromLIGOLw (
         {
           thisTmplt->Gamma[9] = colData;
         }
+        else if ( tableDir[j].idx == 28 )
+        {
+          thisTmplt->kappa = colData;
+        }
+        else if ( tableDir[j].idx == 29 )
+        {
+          thisTmplt->chi = colData;
+        }        
         else
         {
           CLOBBER_BANK;
