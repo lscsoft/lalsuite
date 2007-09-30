@@ -295,7 +295,7 @@ SnglBurstTable *XLALComputeExcessPower(
 		 * of this to uwapprox_mean_square is the correction factor to
 		 * be applied to uwapprox^{2} to convert it to an
 		 * approximation of the square of the unwhitened channel */
-		const double unwhitened_mean_square = XLALREAL8SequenceSumSquares(plane->unwhitened_rms, channel, channels) + XLALREAL8SequenceSum(plane->unwhitened_cross, channel, channels - 1);
+		const double strain_mean_square = XLALREAL8SequenceSumSquares(plane->unwhitened_rms, channel, channels) + XLALREAL8SequenceSum(plane->unwhitened_cross, channel, channels - 1);
 		unsigned c;
 
 		/* compute uwapprox_mean_square */
@@ -359,13 +359,12 @@ SnglBurstTable *XLALComputeExcessPower(
 		/* record tiles whose statistical confidence is above
 		 * threshold and that have real-valued h_rss */
 		if((confidence >= confidence_threshold) && (uwsumsquares >= tile_dof)) {
-			SnglBurstTable *oldhead;
+			SnglBurstTable *oldhead = head;
 
 			/* compute h_rss */
-			h_rss = sqrt((uwsumsquares - tile_dof) * unwhitened_mean_square * stride * plane->deltaT);
+			h_rss = sqrt((uwsumsquares - tile_dof) * strain_mean_square * stride * plane->deltaT);
 
 			/* add new event to head of linked list */
-			oldhead = head;
 			head = XLALTFTileToBurstEvent(plane, start, length, plane->flow + (channel + .5 * channels) * plane->deltaF, channels * plane->deltaF, h_rss, sumsquares, tile_dof, confidence);
 			if(!head)
 				XLAL_ERROR_NULL(func, XLAL_EFUNC);
