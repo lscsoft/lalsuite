@@ -182,13 +182,11 @@ print "\n.......Found " + str(len(followuptrigs)) + " trigs to follow up"
 
 inspJob        = followUpInspJob(cp)
 plotJob        = plotSNRCHISQJob(opts,cp)
-dataJob        = qscanDataFindJob('datafind_cache','logs',cp,'futrig')
+dataJob        = qscanDataFindJob(cp,'futrig')
 qscanFgJob     = qscanJob(opts,cp)
 qscanBgJob     = qscanLiteJob(opts,cp)
 
-
 prev_dNode = None
-prev_dHoftNode = None
 
 print "\n.......Setting up pipeline jobs"
 
@@ -205,12 +203,14 @@ for ifo in ifos_list:
   times = getQscanBackgroundTimes(cp,opts,ifo, dq_url_pattern,segFile)
   for time in times:
     # SETUP DATAFIND JOBS FOR BACKGROUND QSCANS (REGULAR DATA SET)
-    dNode = qscanDataFindNode(dataJob,'futrig','q-datafind',cp,time,ifo, opts, prev_dNode, dag)
+    dNode = qscanDataFindNode(dataJob,'futrig','q-datafind',cp,time,ifo,opts,dag,prev_dNode,'datafind')
+    if dNode.validNode: prev_dNode = dNode
 
     # SETUP DATAFIND JOBS FOR BACKGROUND QSCANS (HOFT)
-    dHoftNode = qscanDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,time,ifo,opts,prev_dHoftNode,dag)
+    dHoftNode = qscanDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,time,ifo,opts,dag,prev_dNode,'hoft_datafind')
+    if dHoftNode.validNode: prev_dNode = dHoftNode
     
-      # SETUP BACKGROUND QSCAN JOBS
+    # SETUP BACKGROUND QSCAN JOBS
     qBgNode = qscanNode(qscanBgJob,time,cp,dHoftNode.outputFileName,ifo,'background-qscan-hoft',opts,dHoftNode,dag,'hoft_datafind','background_hoft_qscan')
     qBgNode = qscanNode(qscanBgJob,time,cp,dNode.outputFileName,ifo,'background-qscan',opts, dNode, dag,'datafind','background_qscan')
     qBgNode = qscanNode(qscanBgJob,time,cp,dNode.outputFileName,ifo,'background-qscan-seismic',opts, dNode, dag,'datafind','background_seis_qscan')
@@ -239,35 +239,23 @@ for trig in followuptrigs:
     dag.appendSubSection(str(ifo)+' @ GPS '+str(trig.gpsTime[ifo]))
 
     # SETUP DATAFIND JOBS FOR HOFT QCANS
-    dHoftNode = qscanDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,trig.gpsTime[ifo],ifo,opts, prev_dHoftNode, dag)
+    dHoftNode = qscanDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,trig.gpsTime[ifo],ifo,opts,dag,prev_dNode,'hoft_datafind')
+    if dHoftNode.validNode: prev_dNode = dHoftNode
 
     # SETUP DATAFIND JOBS FOR REGULAR QCANS
-    dNode = qscanDataFindNode(dataJob,'futrig','q-datafind',cp,trig.gpsTime[ifo],ifo,opts, prev_dNode, dag)
+    dNode = qscanDataFindNode(dataJob,'futrig','q-datafind',cp,trig.gpsTime[ifo],ifo,opts,dag,prev_dNode,'datafind')
+    if dNode.validNode: prev_dNode = dNode
     
     # SETUP FOREGROUND QSCAN JOBS
-    qFgNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,dHoftNode.outputFileName,ifo,'qscan-hoft',opts,dHoftNode,dag,'hoft_datafind','hoft_qscan',trig)
-    qFgNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,dNode.outputFileName,ifo,'qscan',opts,dNode,dag,'datafind','qscan',trig)
-    qFgNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,dNode.outputFileName,ifo,'qscan-seismic',opts,dNode,dag,'datafind','seis_qscan',trig)
+    qFgNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,dHoftNode.outputFileName,ifo,'foreground-qscan-hoft',opts,dHoftNode,dag,'hoft_datafind','hoft_qscan',trig)
+    qFgNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,dNode.outputFileName,ifo,'foreground-qscan',opts,dNode,dag,'datafind','qscan',trig)
+    qFgNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,dNode.outputFileName,ifo,'foreground-qscan-seismic',opts,dNode,dag,'datafind','seis_qscan',trig)
 
     # SETUP INSPIRAL JOBS
     inspiralNode = followUpInspNode(inspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag)
 
     # SETUP PLOT JOBS
     plotNode = plotSNRCHISQNode(plotJob,ifo,inspiralNode.output_file_name,trig,page,dag,inspiralNode,opts,prev_plotnode)
-
-
-# MOVE THIS INTO A DAG CLASS, THIS IS USEFUL FOR MORE THAN JUST QSCANS
-# Write out the cache files for the various output data
-###############################################################################
-
-if opts.qscan or opts.background_qscan or opts.hoft_qscan or opts.background_hoft_qscan or opts.seis_qscan or opts.background_seis_qscan:
-
-  qscan_cache = qscanCache()
-  for node in dag.get_nodes():
-    if isinstance(node,qscanNode):
-      qscan_cache.addLine(node)
-    else: continue
-  qscan_cache.writeCache()
 
 
 ##########################################################################
