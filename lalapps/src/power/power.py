@@ -31,6 +31,7 @@ Excess power pipeline construction tools.
 
 import math
 import os
+import random
 import sys
 import time
 
@@ -954,10 +955,8 @@ def make_burca_tailor_fragment(dag, input_cache, seg, tag):
 	while input_cache:
 		node = BurcaTailorNode(burcatailorjob)
 		node.set_name("ligolw_burca_tailor_%s_%d_%d_%d" % (tag, int(seg[0]), int(abs(seg)), len(nodes)))
-		cache = []
-		while input_cache and len(cache) < 5:
-			cache.append(input_cache.pop())
-		node.add_input_cache(cache)
+		node.add_input_cache(input_cache[-5:])
+		del input_cache[-5:]
 		node.set_output(tag)
 		dag.add_node(node)
 		nodes.append(node)
@@ -974,18 +973,23 @@ def make_burca_tailor_fragment(dag, input_cache, seg, tag):
 
 
 def make_burca2_fragment(dag, parents, input_cache, tag):
-	# This is screwy, but I can't be bothered...
+	# note that the likelihood data collection step immediately
+	# preceding this is a choke point in the pipeline, where all jobs
+	# must complete before anything else can begin, so there is no
+	# advantage in grouping files in time order at this stage.
+	# therefore, to load balance the jobs, we randomize the input
+	# files.
 	input_cache = list(input_cache)
-	input_cache.sort(reverse = True)
+	random.shuffle(input_cache)
 	nodes = []
+	# FIXME:  this whole function just isn't the way I want this to
+	# work.  I want to provide DAG nodes, not input files...
 	while input_cache:
 		node = BurcaNode(burca2job)
 		node.set_name("ligolw_burca2_%s_%d" % (tag, len(nodes)))
 		node.add_macro("macrocomment", tag)
-		cache = []
-		while input_cache and len(cache) < 20:
-			cache.append(input_cache.pop())
-		node.add_input_cache(cache)
+		node.add_input_cache(input_cache[-10:])
+		del input_cache[-10:]
 		for parent in parents:
 			node.add_parent(parent)
 		nodes.append(node)
