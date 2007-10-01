@@ -218,7 +218,6 @@ for ifo in ifos_list:
 
 ################# LOOP OVER FOLLOWUP TRIGGERS #################################
 ###############################################################################
-prev_plotnode = None
 # Prepare the followup jobs
 for trig in followuptrigs:
 
@@ -255,7 +254,7 @@ for trig in followuptrigs:
     inspiralNode = followUpInspNode(inspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag)
 
     # SETUP PLOT JOBS
-    plotNode = plotSNRCHISQNode(plotJob,ifo,inspiralNode.output_file_name,trig,page,dag,inspiralNode,opts,prev_plotnode)
+    plotNode = plotSNRCHISQNode(plotJob,ifo,inspiralNode.output_file_name,trig,page,dag,inspiralNode,opts)
 
 
 ##########################################################################
