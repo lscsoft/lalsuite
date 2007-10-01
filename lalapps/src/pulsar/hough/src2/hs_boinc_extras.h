@@ -144,6 +144,13 @@ int BOINC_LAL_ErrHand (LALStatus*, const char*, const char*, const int, volatile
 /** attach gdb to the running process; for debugging. */
 void attach_gdb(void);
 
+/** play with FPU status and control word
+    (BSD doesn't seem to have C99 fenv.h etc.) */
+typedef UINT2 fpuw_t;
+extern void  set_fpu_control_word(const UINT2 word);
+extern UINT2 get_fpu_control_word(void);
+extern UINT2 get_fpu_status(void);
+
 /** the main() function of HierarchicalSerach.c becomes the extern MAIN(),
     the real main() function of the BOINC App is defined in boinc_extras.c
 */

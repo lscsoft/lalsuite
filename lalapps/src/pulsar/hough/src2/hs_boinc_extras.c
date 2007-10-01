@@ -1085,7 +1085,7 @@ int init_and_read_checkpoint(toplist_t*tl     , /**< the toplist to checkpoint *
       int len = strlen("%DONE\n");
       if(!fseek(fp,-len,SEEK_END)) {
 	char *buf;
-	if(buf=(char*)LALCalloc(len+1,sizeof(char))) {
+	if((buf=((char*)LALCalloc(len+1,sizeof(char))))) {
 	  if(len == fread(buf,sizeof(char),len,fp))
 	    if (0 == strcmp(buf,"%DONE\n"))
 		alldone = -1;
@@ -1150,7 +1150,7 @@ void write_and_close_checkpointed_file (void) {
   write_hs_oputput(outfilename,toplist);
 }
 
-
+/* Experimental and / or debugging stuff */
 
 /** attach gdb to the running process; for debugging. */
 void attach_gdb() {
@@ -1160,5 +1160,34 @@ void attach_gdb() {
   snprintf(cmd, sizeof(cmd), "gdb -pid %d -ex gcore --args %s", pid, global_argv[0]); 
   system(cmd);
   sleep(20);
+#endif
+}
+
+/* throw a FP exception at an "illegal operation" (e.g. FPU stack overflow) */
+void set_fpu_control_word(const fpuw_t cword) {
+#if defined(__GNUC__)
+  static fpuw_t fpucw;
+  fpucw = cword;
+  __asm("fldcw %0\n\t" : : "m" (fpucw));
+#endif
+}
+
+fpuw_t get_fpu_control_word(void) {
+#if defined(__GNUC__)
+  static fpuw_t fpucw;
+  __asm("fstcw %0\n\t" : "=m" (fpucw));
+  return(fpucw);
+#else
+  return(-1);
+#endif
+}
+
+fpuw_t get_fpu_status(void) {
+#if defined(__GNUC__)
+  static fpuw_t fpusw;
+  __asm("fstsw %0\n\t" : "=m" (fpusw));
+  return(fpusw);
+#else
+  return(-1);
 #endif
 }
