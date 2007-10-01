@@ -234,6 +234,29 @@ static void sighandler(int sig){
       return;
   } /* termination signals */
 
+#if defined(__GNUC__) && __i386__
+  /* in case of a floating-point exception try to write out the FPU status */
+  if ( sig == SIGFPE ) {
+    fpuw_t fpstat = get_fpu_status;
+    fprintf(stderr,"FPU status flags: ");
+    if (fpstat & FPU_STATUS_INVALID)
+      fprintf(stderr,"INVALID ");
+    if (fpstat & FPU_STATUS_DENORMALIZED)
+      fprintf(stderr,"DENORMALIZED ");
+    if (fpstat & FPU_STATUS_ZERO_DIVIDE)
+      fprintf(stderr,"ZERO_DIVIDE ");
+    if (fpstat & FPU_STATUS_OVERFLOW)
+      fprintf(stderr,"OVERFLOW ");
+    if (fpstat & FPU_STATUS_UNDERFLOW)
+      fprintf(stderr,"UNDERFLOW ");
+    if (fpstat & FPU_STATUS_PRECISION)
+      fprintf(stderr,"PRECISION ");
+    if (fpstat & FPU_STATUS_STACK_FAULT)
+      fprintf(stderr,"STACK_FAULT ");
+      fprintf(stderr,"\n");
+  }
+#endif
+
   if (mystat)
     LogPrintf (LOG_CRITICAL,   "Stack trace of LAL functions in worker thread:\n");
   while (mystat) {
@@ -1180,7 +1203,7 @@ fpuw_t get_fpu_control_word(void) {
   __asm("fstcw %0\n\t" : "=m" (fpucw));
   return(fpucw);
 #else
-  return(-1);
+  return(0);
 #endif
 }
 
@@ -1191,6 +1214,6 @@ fpuw_t get_fpu_status(void) {
   __asm("fstsw %0\n\t" : "=m" (fpusw));
   return(fpusw);
 #else
-  return(-1);
+  return(0);
 #endif
 }
