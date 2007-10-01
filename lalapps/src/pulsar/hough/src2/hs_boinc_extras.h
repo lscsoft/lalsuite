@@ -45,29 +45,29 @@ NRCSID(HSBOINCEXTRASHRCSID,"$Id$");
 
 extern int
 LocalXLALComputeFaFb ( Fcomponents *FaFb,
-		  const SFTVector *sfts, 
-		  const PulsarSpins fkdot,
-		  const SSBtimes *tSSB,
-		  const AMCoeffs *amcoe,
-		  const ComputeFParams *params);
+                       const SFTVector *sfts, 
+                       const PulsarSpins fkdot,
+                       const SSBtimes *tSSB,
+                       const AMCoeffs *amcoe,
+                       const ComputeFParams *params);
 
 extern void
 LocalComputeFStat ( LALStatus *, Fcomponents *Fstat, 
-		    const PulsarDopplerParams *doppler,
-		    const MultiSFTVector *multiSFTs,
-		    const MultiNoiseWeights *multiWeights,
-		    const MultiDetectorStateSeries *multiDetStates,
-		    const ComputeFParams *params,
-		    ComputeFBuffer *cfBuffer );
+                    const PulsarDopplerParams *doppler,
+                    const MultiSFTVector *multiSFTs,
+                    const MultiNoiseWeights *multiWeights,
+                    const MultiDetectorStateSeries *multiDetStates,
+                    const ComputeFParams *params,
+                    ComputeFBuffer *cfBuffer );
 
 extern void
 LocalComputeFStatFreqBand ( LALStatus *status, 
-			    REAL8FrequencySeries *FstatVector,
-			    const PulsarDopplerParams *doppler,
-			    const MultiSFTVector *multiSFTs, 
-			    const MultiNoiseWeights *multiWeights,
-			    const MultiDetectorStateSeries *multiDetStates,
-			    const ComputeFParams *params);
+                            REAL8FrequencySeries *FstatVector,
+                            const PulsarDopplerParams *doppler,
+                            const MultiSFTVector *multiSFTs, 
+                            const MultiNoiseWeights *multiWeights,
+                            const MultiDetectorStateSeries *multiDetStates,
+                            const ComputeFParams *params);
 #endif
 
 #define SHOW_PROGRESS show_progress
@@ -127,7 +127,7 @@ extern void show_progress(double rac, double dec, UINT4 count, UINT4 total);
     2 if nothing to do (previously written output file was found)
 */
 extern int init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
-				     UINT4 total, char*outputname, char*cptname);
+                                     UINT4 total, char*outputname, char*cptname);
 
 /** actually writes a checkpoint only if it's "boinc time to checkpoint"
     and compacts the output file if necessary */
@@ -150,6 +150,15 @@ typedef UINT2 fpuw_t;
 extern void  set_fpu_control_word(const fpuw_t word);
 extern fpuw_t get_fpu_control_word(void);
 extern fpuw_t get_fpu_status(void);
+/* constants in FPU status word and control word mask */
+#define FPU_STATUS_INVALID      1
+#define FPU_STATUS_DENORMALIZED 2
+#define FPU_STATUS_ZERO_DIVIDE  4
+#define FPU_STATUS_OVERFLOW     8
+#define FPU_STATUS_UNDERFLOW   16
+#define FPU_STATUS_PRECISION   32
+#define FPU_STATUS_STACK_FAULT 64
+
 
 /** the main() function of HierarchicalSerach.c becomes the extern MAIN(),
     the real main() function of the BOINC App is defined in boinc_extras.c
@@ -159,4 +168,3 @@ extern int MAIN(int,char**);
 #ifdef  __cplusplus
 }
 #endif
-
