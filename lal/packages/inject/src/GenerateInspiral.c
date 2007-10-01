@@ -346,6 +346,10 @@ LALGetApproximantFromString(
   {
     *approximant = GeneratePPN;
   }
+  else if ( strstr(thisEvent, "NumRel" ) )
+  {
+    *approximant = NumRel;
+  }
   else
   {
     LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
