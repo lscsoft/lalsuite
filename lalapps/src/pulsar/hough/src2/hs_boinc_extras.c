@@ -1163,17 +1163,19 @@ void attach_gdb() {
 #endif
 }
 
-/* throw a FP exception at an "illegal operation" (e.g. FPU stack overflow) */
+/* set the control word - should be a modified fpuw_t
+   gotten from get_fpu_control_word */
 void set_fpu_control_word(const fpuw_t cword) {
-#if defined(__GNUC__)
+#if defined(__GNUC__) && __i386__
   static fpuw_t fpucw;
   fpucw = cword;
   __asm("fldcw %0\n\t" : : "m" (fpucw));
 #endif
 }
 
+/* get the fpu control word */
 fpuw_t get_fpu_control_word(void) {
-#if defined(__GNUC__)
+#if defined(__GNUC__) && __i386__
   static fpuw_t fpucw;
   __asm("fstcw %0\n\t" : "=m" (fpucw));
   return(fpucw);
@@ -1182,8 +1184,9 @@ fpuw_t get_fpu_control_word(void) {
 #endif
 }
 
+/* get the fpu status word */
 fpuw_t get_fpu_status(void) {
-#if defined(__GNUC__)
+#if defined(__GNUC__) && __i386__
   static fpuw_t fpusw;
   __asm("fstsw %0\n\t" : "=m" (fpusw));
   return(fpusw);
