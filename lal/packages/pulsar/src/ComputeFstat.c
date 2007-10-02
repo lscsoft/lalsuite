@@ -949,7 +949,7 @@ LALGetAMCoeffs(LALStatus *status,
  * coefficients in a preferred polarization basis.  (It is thereby
  * more general than the JKS expressions and could be used e.g., with
  * the response tensor of a bar detector with no further modification
- * needed.)  It is not currently in use.
+ * needed.)
  */ 
 void
 LALNewGetAMCoeffs(LALStatus *status,
