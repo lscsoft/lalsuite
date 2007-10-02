@@ -129,6 +129,9 @@ void XLALTrigScanGetEpsNeighbourhood (
         trigScanEpsSearchInput  *epsSearchIn
         )
 {
+
+    static const char *func = "XLALTrigScanGetEpsNeighbourhood";
+
     INT4              i;
     REAL8             distance;
     REAL8             q1[3], q2[3]; /* Position vectors */
@@ -191,11 +194,14 @@ void XLALTrigScanGetEpsNeighbourhood (
 
                 /* Figure out if the above ellipsoids overlap */
                 distance = XLALCheckOverlapOfEllipsoids (&(vq1.vector), &(vq2.vector), workSpace);
+                if ( XLAL_IS_REAL8_FAIL_NAN( distance ) )
+                {
+                  XLALFreeFContactWorkSpace( workSpace );
+                  XLAL_ERROR_VOID( func, XLAL_EFUNC );
+                }
 
-                /*fprintf (stderr, "%d %d distance = %e\n", seed, i,
-                 * distance);*/
 
-                if (distance > 0 && distance <= 1.) 
+                if ( distance <= 1.) 
                 {
                     /* set the clusterID to the currClusterID */
                     epsSearchIn->masterList[i].clusterID = epsSearchIn->clusterID; 
