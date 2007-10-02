@@ -151,13 +151,18 @@ extern void  set_fpu_control_word(const fpuw_t word);
 extern fpuw_t get_fpu_control_word(void);
 extern fpuw_t get_fpu_status(void);
 /* constants in FPU status word and control word mask */
-#define FPU_STATUS_INVALID      1
-#define FPU_STATUS_DENORMALIZED 2
-#define FPU_STATUS_ZERO_DIVIDE  4
-#define FPU_STATUS_OVERFLOW     8
-#define FPU_STATUS_UNDERFLOW   16
-#define FPU_STATUS_PRECISION   32
-#define FPU_STATUS_STACK_FAULT 64
+#define FPU_STATUS_INVALID      (1<<0)
+#define FPU_STATUS_DENORMALIZED (1<<1)
+#define FPU_STATUS_ZERO_DIVIDE  (1<<2)
+#define FPU_STATUS_OVERFLOW     (1<<3)
+#define FPU_STATUS_UNDERFLOW    (1<<4)
+#define FPU_STATUS_PRECISION    (1<<5)
+#define FPU_STATUS_STACK_FAULT  (1<<6)
+#define FPU_STATUS_ERROR_SUMM   (1<<7)
+#define FPU_STATUS_COND_0       (1<<8)
+#define FPU_STATUS_COND_1       (1<<9)
+#define FPU_STATUS_COND_2       (1<<10)
+#define FPU_STATUS_COND_3       (1<<14)
 
 
 /** the main() function of HierarchicalSerach.c becomes the extern MAIN(),
