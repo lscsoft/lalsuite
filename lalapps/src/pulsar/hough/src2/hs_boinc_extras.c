@@ -843,20 +843,20 @@ static void worker (void) {
 
     fpstat = get_fpu_control_word();
     fprintf(stderr,"FPU exception mask initial: %4x:",fpstat);
-    PRINT_FPU_STAT(fpstat);
+    PRINT_FPU_STAT_FLAGS(fpstat);
     fprintf(stderr,"\n");
     
     fpstat &= ~FPU_STATUS_INVALID;
 
     set_fpu_control_word(fpstat);
     fprintf(stderr,"FPU exception mask try set: %4x:",fpstat);
-    PRINT_FPU_STAT(fpstat);
+    PRINT_FPU_STAT_FLAGS(fpstat);
     fprintf(stderr,"\n");
     fpstat = 0;
 
     fpstat = get_fpu_control_word();
     fprintf(stderr,"FPU exception mask set to:  %4x:",fpstat);
-    PRINT_FPU_STAT(fpstat);
+    PRINT_FPU_STAT_FLAGS(fpstat);
     fprintf(stderr,"\n");
   }
 #endif
