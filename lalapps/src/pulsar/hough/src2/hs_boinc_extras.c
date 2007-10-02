@@ -158,6 +158,7 @@ static int write_checkpoint(char*);
 static int is_zipped(const char *);
 static int resolve_and_unzip(const char*, char*, const size_t);
 static int load_graphics_dll(void);
+static void drain_fpu_stack(void);
 
 
 
@@ -519,6 +520,7 @@ static void worker (void) {
 				    describing additional command-line arguments handled
 			            only by this BOINC-wrapper? */
   int breakpoint = 0;          /**< stop at breakpoint? (for testing the Windows Runtime Debugger) */
+  int crash_fpu = 0;
 
   /* init BOINC diagnostics */
   boinc_init_diagnostics(BOINC_DIAG_DUMPCALLSTACKENABLED |
@@ -797,6 +799,12 @@ static void worker (void) {
       rarg--; rargc--; /* this argument is not passed to the main worker function */
     }
 
+    /* fire up debugger at breakpoint, solely for testing the debugger (and symbols) */
+    else if (MATCH_START("--CrashFPU",argv[arg],l)) {
+      crash_fpu = -1;
+      rarg--; rargc--; /* this argument is not passed to the main worker function */
+    }
+
     /* record a help otion (to later write help for additional command-line options) */
     else if ((0 == strncmp("--help",argv[arg],strlen("--help"))) ||
 	     (0 == strncmp("-h",argv[arg],strlen("--help")))) {
@@ -884,6 +892,9 @@ static void worker (void) {
     PRINT_FPU_EXCEPTION_MASK(fpstat);
     fprintf(stderr,"\n");
   }
+
+  if(crash_fpu)
+    drain_fpu_stack();
 #endif
 
   /* CALL WORKER's MAIN()
@@ -1273,9 +1284,27 @@ fpuw_t get_fpu_control_word(void) {
 fpuw_t get_fpu_status(void) {
 #if defined(__GNUC__) && __i386__
   static fpuw_t fpusw;
-  __asm("fstsw %0\n\t" : "=m" (fpusw));
+  __asm("fnstsw %0\n\t" : "=m" (fpusw));
   return(fpusw);
 #else
   return(0);
+#endif
+}
+
+
+void drain_fpu_stack(void) {
+#if defined(__GNUC__) && __i386__
+  static double dummy;
+  __asm(
+	"fstpl %0\n\t"
+	"fstpl %0\n\t"
+	"fstpl %0\n\t"
+	"fstpl %0\n\t"
+	"fstpl %0\n\t"
+	"fstpl %0\n\t"
+	"fstpl %0\n\t"
+	"fstpl %0\n\t"
+	"fstpl %0\n\t"
+	: "=m" (dummy));
 #endif
 }
