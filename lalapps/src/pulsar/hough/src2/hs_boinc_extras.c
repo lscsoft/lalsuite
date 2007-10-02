@@ -69,6 +69,22 @@ NRCSID(HSBOINCEXTRASCRCSID,"$Id$");
     and set l to the length */
 #define MATCH_START(s1,s2,l) (0 == strncmp(s1,s2,(l=strlen(s1))-1))
 
+/** write the FPU status flags / exception mask bits to stderr */
+#define PRINT_FPU_STAT_FLAGS(fpstat) \
+    if (fpstat & FPU_STATUS_STACK_FAULT) \
+      fprintf(stderr," STACK_FAULT"); \
+    if (fpstat & FPU_STATUS_PRECISION) \
+      fprintf(stderr," PRECISION"); \
+    if (fpstat & FPU_STATUS_UNDERFLOW) \
+      fprintf(stderr," UNDERFLOW"); \
+    if (fpstat & FPU_STATUS_OVERFLOW) \
+      fprintf(stderr," OVERFLOW"); \
+    if (fpstat & FPU_STATUS_ZERO_DIVIDE) \
+      fprintf(stderr," ZERO_DIVIDE"); \
+    if (fpstat & FPU_STATUS_DENORMALIZED) \
+      fprintf(stderr," DENORMALIZED"); \
+    if (fpstat & FPU_STATUS_INVALID) \
+      fprintf(stderr," INVALID")
 
 /*^* global VARIABLES *^*/
 
@@ -239,21 +255,8 @@ static void sighandler(int sig){
   if ( sig == SIGFPE ) {
     fpuw_t fpstat = get_fpu_status;
     fprintf(stderr,"FPU status flags: ");
-    if (fpstat & FPU_STATUS_INVALID)
-      fprintf(stderr,"INVALID ");
-    if (fpstat & FPU_STATUS_DENORMALIZED)
-      fprintf(stderr,"DENORMALIZED ");
-    if (fpstat & FPU_STATUS_ZERO_DIVIDE)
-      fprintf(stderr,"ZERO_DIVIDE ");
-    if (fpstat & FPU_STATUS_OVERFLOW)
-      fprintf(stderr,"OVERFLOW ");
-    if (fpstat & FPU_STATUS_UNDERFLOW)
-      fprintf(stderr,"UNDERFLOW ");
-    if (fpstat & FPU_STATUS_PRECISION)
-      fprintf(stderr,"PRECISION ");
-    if (fpstat & FPU_STATUS_STACK_FAULT)
-      fprintf(stderr,"STACK_FAULT ");
-      fprintf(stderr,"\n");
+    PRINT_FPU_STAT_FLAGS(fpstat);
+    fprintf(stderr,"\n");
   }
 #endif
 
@@ -833,12 +836,43 @@ static void worker (void) {
     attach_gdb();
 #endif
 
+#if defined(__GNUC__) && __i386__
+  /* write out the masked FPU exceptions */
+  {
+    fpuw_t fpstat;
+
+    fpstat = get_fpu_control_word();
+    fprintf(stderr,"FPU exception mask initial: %4x:",fpstat);
+    PRINT_FPU_STAT(fpstat);
+    fprintf(stderr,"\n");
+    
+    fpstat &= ~FPU_STATUS_INVALID;
+
+    set_fpu_control_word(fpstat);
+    fprintf(stderr,"FPU exception mask try set: %4x:",fpstat);
+    PRINT_FPU_STAT(fpstat);
+    fprintf(stderr,"\n");
+    fpstat = 0;
+
+    fpstat = get_fpu_control_word();
+    fprintf(stderr,"FPU exception mask set to:  %4x:",fpstat);
+    PRINT_FPU_STAT(fpstat);
+    fprintf(stderr,"\n");
+  }
+#endif
 
   /* CALL WORKER's MAIN()
    */
   res = MAIN(rargc,rargv);
   if (res) {
     LogPrintf (LOG_CRITICAL, "ERROR: MAIN() returned with error '%d'\n",res);
+  }
+
+  {
+    fpuw_t fpstat = get_fpu_status;
+    fprintf(stderr,"FPU status flags: ");
+    PRINT_FPU_STAT_FLAGS(fpstat);
+    fprintf(stderr,"\n");
   }
 
   /* if the program was called for help, we write out usage for command-line options this wrapper adds to it and exit */
