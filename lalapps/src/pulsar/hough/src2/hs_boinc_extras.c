@@ -70,21 +70,34 @@ NRCSID(HSBOINCEXTRASCRCSID,"$Id$");
 #define MATCH_START(s1,s2,l) (0 == strncmp(s1,s2,(l=strlen(s1))-1))
 
 /** write the FPU status flags / exception mask bits to stderr */
-#define PRINT_FPU_STAT_FLAGS(fpstat) \
-    if (fpstat & FPU_STATUS_STACK_FAULT) \
-      fprintf(stderr," STACK_FAULT"); \
-    if (fpstat & FPU_STATUS_PRECISION) \
-      fprintf(stderr," PRECISION"); \
-    if (fpstat & FPU_STATUS_UNDERFLOW) \
-      fprintf(stderr," UNDERFLOW"); \
-    if (fpstat & FPU_STATUS_OVERFLOW) \
-      fprintf(stderr," OVERFLOW"); \
-    if (fpstat & FPU_STATUS_ZERO_DIVIDE) \
-      fprintf(stderr," ZERO_DIVIDE"); \
-    if (fpstat & FPU_STATUS_DENORMALIZED) \
-      fprintf(stderr," DENORMALIZED"); \
-    if (fpstat & FPU_STATUS_INVALID) \
-      fprintf(stderr," INVALID")
+#define PRINT_FPU_EXCEPTION_MASK(fpstat) \
+  if (fpstat & FPU_STATUS_PRECISION)	 \
+    fprintf(stderr," PRECISION");	 \
+  if (fpstat & FPU_STATUS_UNDERFLOW)	 \
+    fprintf(stderr," UNDERFLOW");	 \
+  if (fpstat & FPU_STATUS_OVERFLOW)	 \
+    fprintf(stderr," OVERFLOW");	 \
+  if (fpstat & FPU_STATUS_ZERO_DIVIDE)	 \
+    fprintf(stderr," ZERO_DIVIDE");	 \
+  if (fpstat & FPU_STATUS_DENORMALIZED)	 \
+    fprintf(stderr," DENORMALIZED");	 \
+  if (fpstat & FPU_STATUS_INVALID)	 \
+    fprintf(stderr," INVALID")
+
+#define PRINT_FPU_STATUS_FLAGS(fpstat) \
+  if (fpstat & FPU_STATUS_COND_3)      \
+    fprintf(stderr," COND_3");	       \
+  if (fpstat & FPU_STATUS_COND_2)      \
+    fprintf(stderr," COND_2");	       \
+  if (fpstat & FPU_STATUS_COND_1)      \
+    fprintf(stderr," COND_1");	       \
+  if (fpstat & FPU_STATUS_COND_0)      \
+    fprintf(stderr," COND_0");	       \
+  if (fpstat & FPU_STATUS_ERROR_SUMM)  \
+    fprintf(stderr," ERR_SUMM");       \
+  if (fpstat & FPU_STATUS_STACK_FAULT) \
+    fprintf(stderr," STACK_FAULT");    \
+  PRINT_FPU_EXCEPTION_MASK(fpstat)
 
 /*^* global VARIABLES *^*/
 
@@ -152,7 +165,7 @@ static int load_graphics_dll(void);
 
 #ifdef _MSC_VER
 /** Attempt to load the dlls that are required to display graphics.
-   If any of them fail do not start the application in graphics mode.
+    returns 0 if successful, -1 in case of a failure.
 */
 int load_graphics_dll(void) {
   if (FAILED(__HrLoadAllImportsForDll("GDI32.dll"))) {
@@ -174,7 +187,8 @@ int load_graphics_dll(void) {
 }
 #endif
 
-/** freaking LAL's REPORTSTATUS just won't work with any of NDEBUG or 
+
+/** LAL's REPORTSTATUS just won't work with any of NDEBUG or 
     LAL_NDEBUG set, so we write our own function that dumps the LALStatus
     based on LogPrintf()
  */
@@ -194,6 +208,7 @@ void ReportStatus(LALStatus *status)
   }
   return;
 }
+
 
 /** BOINC-compatible LAL(Apps) error handler */
 int BOINC_LAL_ErrHand (LALStatus  *stat,
@@ -253,9 +268,9 @@ static void sighandler(int sig){
 #if defined(__GNUC__) && __i386__
   /* in case of a floating-point exception try to write out the FPU status */
   if ( sig == SIGFPE ) {
-    fpuw_t fpstat = get_fpu_status;
+    fpuw_t fpstat = get_fpu_status();
     fprintf(stderr,"FPU status flags: ");
-    PRINT_FPU_STAT_FLAGS(fpstat);
+    PRINT_FPU_STATUS_FLAGS(fpstat);
     fprintf(stderr,"\n");
   }
 #endif
@@ -839,24 +854,34 @@ static void worker (void) {
 #if defined(__GNUC__) && __i386__
   /* write out the masked FPU exceptions */
   {
+    fpuw_t fpstat = get_fpu_status();
+    fprintf(stderr,"FPU status flags: ");
+    PRINT_FPU_STATUS_FLAGS(fpstat);
+    fprintf(stderr,"\n");
+  }
+
+  {
     fpuw_t fpstat;
 
     fpstat = get_fpu_control_word();
     fprintf(stderr,"FPU exception mask initial: %4x:",fpstat);
-    PRINT_FPU_STAT_FLAGS(fpstat);
+    PRINT_FPU_EXCEPTION_MASK(fpstat);
     fprintf(stderr,"\n");
     
+    /* throe an exception at an invalid operation */
     fpstat &= ~FPU_STATUS_INVALID;
-
     set_fpu_control_word(fpstat);
+
+    /* this is weird - on MacOS Intel this needs to be uncommented to work properly...
     fprintf(stderr,"FPU exception mask try set: %4x:",fpstat);
     PRINT_FPU_STAT_FLAGS(fpstat);
     fprintf(stderr,"\n");
     fpstat = 0;
+    */
 
     fpstat = get_fpu_control_word();
     fprintf(stderr,"FPU exception mask set to:  %4x:",fpstat);
-    PRINT_FPU_STAT_FLAGS(fpstat);
+    PRINT_FPU_EXCEPTION_MASK(fpstat);
     fprintf(stderr,"\n");
   }
 #endif
@@ -868,12 +893,14 @@ static void worker (void) {
     LogPrintf (LOG_CRITICAL, "ERROR: MAIN() returned with error '%d'\n",res);
   }
 
+#if defined(__GNUC__) && __i386__
   {
-    fpuw_t fpstat = get_fpu_status;
+    fpuw_t fpstat = get_fpu_status();
     fprintf(stderr,"FPU status flags: ");
-    PRINT_FPU_STAT_FLAGS(fpstat);
+    PRINT_FPU_STATUS_FLAGS(fpstat);
     fprintf(stderr,"\n");
   }
+#endif
 
   /* if the program was called for help, we write out usage for command-line options this wrapper adds to it and exit */
   if(output_help) {
@@ -1220,8 +1247,9 @@ void attach_gdb() {
 #endif
 }
 
-/* set the control word - should be a modified fpuw_t
-   gotten from get_fpu_control_word */
+/** sets the FPU control word.
+    The argument should be a (possibly modified) 
+    fpuw_t gotten from get_fpu_control_word() */
 void set_fpu_control_word(const fpuw_t cword) {
 #if defined(__GNUC__) && __i386__
   static fpuw_t fpucw;
@@ -1230,7 +1258,7 @@ void set_fpu_control_word(const fpuw_t cword) {
 #endif
 }
 
-/* get the fpu control word */
+/** returns the fpu control word */
 fpuw_t get_fpu_control_word(void) {
 #if defined(__GNUC__) && __i386__
   static fpuw_t fpucw;
@@ -1241,7 +1269,7 @@ fpuw_t get_fpu_control_word(void) {
 #endif
 }
 
-/* get the fpu status word */
+/** returns the fpu status word */
 fpuw_t get_fpu_status(void) {
 #if defined(__GNUC__) && __i386__
   static fpuw_t fpusw;
