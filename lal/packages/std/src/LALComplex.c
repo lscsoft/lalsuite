@@ -32,6 +32,15 @@ gh
 #define LAL_NO_COMPLEX_MACROS
 #include <lal/LALComplex.h>
 
+
+/* prototype non C89 functions -- they're probably in libm but
+ * compiling with -ansi will get rid of prototypes */
+
+double hypot(double x, double y);
+double log1p(double x);
+double acosh(double x);
+double atanh(double x);
+
 NRCSID (LALCOMPLEXC,"$Id$");
 
 
