@@ -1,22 +1,3 @@
-/*
-*  Copyright (C) 2007 Alexander Dietz, Drew Keppel, Duncan Brown, Eirini Messaritaki, Gareth Jones, Patrick Brady, Stephen Fairhurst, Craig Robinson , Thomas Cokelaer
-*
-*  This program is free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  This program is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
-*  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
-*/
-
 /*----------------------------------------------------------------------- 
  * 
  * File Name: thinca.c
@@ -92,8 +73,9 @@ int doBCVC = 0;
 int h1h2Consistency = 0;
 int doVeto = 0;
 int completeCoincs = 0;
-REAL4 ra_deg=-1; /* for specifying a certain location on the sky */
-REAL4 dec_deg=-100;   
+
+INT4 numExtTriggers = 0;
+ExtTriggerTable   *exttrigHead = NULL;
 
 /*
  * 
@@ -113,7 +95,6 @@ static void print_usage(char *program)
       "  [--user-tag]      usertag     set the process_params usertag\n"\
       "  [--ifo-tag]       ifotag      set the ifo-tag - for file naming\n"\
       "  [--comment]       string      set the process table comment to STRING\n"\
-      "  [--write-compress]            write a compressed xml file\n"\
       "\n"\
       "   --gps-start-time start_time  GPS second of data start time\n"\
       "   --gps-end-time   end_time    GPS second of data end time\n"\
@@ -235,48 +216,6 @@ static void print_usage(char *program)
       "\n", program);
 }
 
-/*
- * 
- * readSource
- *
- */
-
- /* read the source location in GRB mode,
-    returns the coordinates in radians  */
-static void readSource( char* sourceFile, REAL4* rec, REAL4* dec )
-{
-  FILE *fp;
-  char line[256];
-  char dummy[16]; 
-  char ra_sgn, dec_sgn;
-  double ra_h, ra_m, dec_d, dec_m;
-  int c;
-  
-  fp = fopen( sourceFile, "r" );
-  if (!fp) {
-    fprintf( stderr, "Error: Unable to open file %s.\n", sourceFile );
-    fprintf( stderr, "It does not exist or is read-permitted.\n ");
-    exit(1);
-  }
-
-  while ( fgets( line, sizeof( line ), fp ) )
-    if ( line[0] == '#' )
-      continue;
-    else
-      {
-	c = sscanf( line, "%s %c%le:%le %c%le:%le %s %s %s",
-		    &dummy, &ra_sgn, &ra_h, &ra_m, &dec_sgn, &dec_d, &dec_m,
-		    &dummy, &dummy, &dummy);
-	*rec=( ra_h + ra_m / 60.0 ) * 15.0; /* convert to degree */
-	*dec=( dec_d + dec_m / 60.0 ); /* already degree */
-	if ( ra_sgn == '-' )
-	  *rec *= -1;
-	if ( dec_sgn == '-' )
-	  *dec *= -1;
-      }
-  
-  fclose( fp );
-}
 
 /*
  * 
@@ -327,7 +266,6 @@ int main( int argc, char *argv[] )
   UINT4  numQuadruples = 0;
   UINT4  numTrigs[LAL_NUM_IFO];
   UINT4  N = 0;
-  UINT4  outCompress = 0;
 
   LALDetector          aDet;
 
@@ -372,9 +310,7 @@ int main( int argc, char *argv[] )
   /* by default we do not remove any triggers in the SNR Cut*/  
   
   REAL4                 snrCut = 0;   
- 
-  LIGOTimeGPS*   gpsTime;
-  char*          sourceFile=NULL;
+  char*                 sourceFile=NULL;
  
   const CHAR                  *ifoArg[LAL_NUM_IFO] = 
                                    {"g1-triggers", "h1-triggers", 
@@ -386,7 +322,6 @@ int main( int argc, char *argv[] )
   struct option long_options[] =
   {
     {"verbose",             no_argument,   &vrbflg,                   1 },
-    {"write-compress",      no_argument,   &outCompress,              1 },
     {"g1-triggers",         no_argument,   &(haveTrig[LAL_IFO_G1]),   1 },
     {"h1-triggers",         no_argument,   &(haveTrig[LAL_IFO_H1]),   1 },
     {"h2-triggers",         no_argument,   &(haveTrig[LAL_IFO_H2]),   1 },
@@ -1220,13 +1155,13 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;       
 
-      case '_':
-	/* specifying GRB source file */
+      case '_':  
+        /* specifying GRB source file */
         optarg_len = strlen(optarg) + 1;
         sourceFile = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
         memcpy( sourceFile, optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
-	accuracyParams.exttrig=1;
+      	accuracyParams.exttrig=1;
         break;
         
       default:
@@ -1541,12 +1476,6 @@ int main( int argc, char *argv[] )
   }
 
 
-  /* read the source location in GRB mode,
-     right ascension and declination read in radians */
-  if (sourceFile) {
-    readSource( sourceFile, &ra_deg, &dec_deg );   
-  }
-
   /* delete the first, empty process_params entry */
   this_proc_param = processParamsTable.processParamsTable;
   processParamsTable.processParamsTable = 
@@ -1817,15 +1746,34 @@ int main( int argc, char *argv[] )
 
   /* Populate the lightTravel matrix */
   if ( accuracyParams.exttrig )
-  {
-    gpsTime=(LIGOTimeGPS*) LALMalloc( sizeof(LIGOTimeGPS) );
-    gpsTime->gpsSeconds=
-      (INT4)( (endCoincidence+startCoincidence)/2.0 );
-    gpsTime->gpsNanoSeconds=0;
+  {  
+    LIGOTimeGPS timeTrigger;
 
-    XLALPopulateAccuracyParamsExt( &accuracyParams, gpsTime, ra_deg, dec_deg);
+    /* read the extTriggersTable from a file */
+    numExtTriggers=LALExtTriggerTableFromLIGOLw( &exttrigHead, sourceFile,
+                                                 0, 1);
+    printf("Number of triggers read from the external trigger file: %d\n",
+           numExtTriggers);
     
-    LALFree( gpsTime );
+    if (numExtTriggers>1)
+    {
+      printf("WARNING: Only 1 external trigger expected in the file '%s'",
+             sourceFile );
+    }
+    if (numExtTriggers==0)
+    {
+      printf("ERROR: No external trigger found in file '%s'",sourceFile );
+      exit(1);
+    } 
+
+    /* extract the exttrig-time */
+    timeTrigger.gpsSeconds     = exttrigHead->start_time;
+    timeTrigger.gpsNanoSeconds = exttrigHead->start_time_ns;
+    
+    /* populate the accuracy params table */
+    XLALPopulateAccuracyParamsExt( &accuracyParams, 
+                                   &timeTrigger, exttrigHead->event_ra, exttrigHead->event_dec );
+
   }
   else 
   {
@@ -2150,7 +2098,7 @@ cleanexit:
 
   if ( vrbflg ) fprintf( stdout, "writing output file... " );
 
-  if ( userTag && ifoTag && !outCompress )
+  if ( userTag && ifoTag)
   {
     LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s_%s-%d-%d.xml", 
         ifos, ifoTag, userTag, startCoincidence, 
@@ -2159,48 +2107,19 @@ cleanexit:
         ifos, ifoTag, userTag, startCoincidence, 
         endCoincidence - startCoincidence );
   }
-  else if ( !userTag && ifoTag && !outCompress )
+  else if ( ifoTag )
   {
     LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s-%d-%d.xml", ifos,
         ifoTag, startCoincidence, endCoincidence - startCoincidence );
     LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s-%d-%d.xml", ifos,
         ifoTag, startCoincidence, endCoincidence - startCoincidence );
   }
-  else if ( userTag && !ifoTag && !outCompress )
+  else if ( userTag )
   {
     LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s-%d-%d.xml", 
         ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
     LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s-%d-%d.xml", 
         ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
-  }
-  else if ( userTag && ifoTag && outCompress )
-  {     LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s_%s-%d-%d.xml.gz",
-        ifos, ifoTag, userTag, startCoincidence,
-        endCoincidence - startCoincidence );
-    LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s_%s-%d-%d.xml.gz",
-        ifos, ifoTag, userTag, startCoincidence,
-        endCoincidence - startCoincidence );
-  }
-  else if ( !userTag && ifoTag && outCompress )
-  {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s-%d-%d.xml.gz", ifos,
-        ifoTag, startCoincidence, endCoincidence - startCoincidence );
-    LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s-%d-%d.xml.gz",
-        ifos, ifoTag, startCoincidence, endCoincidence - startCoincidence );
-  }
-  else if ( userTag && !ifoTag && outCompress )
-  {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s-%d-%d.xml.gz",
-        ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
-    LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s-%d-%d.xml.gz",
-        ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
-  }
-  else if ( !userTag && !ifoTag && outCompress )
-  {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA-%d-%d.xml.gz", ifos,
-        startCoincidence, endCoincidence - startCoincidence );
-    LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE-%d-%d.xml.gz", ifos,
-        startCoincidence, endCoincidence - startCoincidence );
   }
   else
   {
@@ -2215,12 +2134,12 @@ cleanexit:
 
   if ( !numSlides )
   {
-    LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileName ), 
+    LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileName), 
         &status );
   }
   else
   {
-    LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileSlide ), 
+    LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileSlide), 
         &status );
   }
   /* write process table */
