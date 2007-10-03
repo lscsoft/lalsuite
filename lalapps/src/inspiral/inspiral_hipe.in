@@ -452,18 +452,21 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
 
   trig_chunks_analyzed = []
 
-  # loop ober the exttrig injections
-  for inj in range(exttrigInjections[0], exttrigInjections[1]+1):
-    if inj>0:
-      exttrigUserTag=usertag+str(inj)
-      injectionFile='HL-INJECTION.'+str(inj)+'.xml' 
-  
-    # loop over the master science segments
-    for seg in ifo_data:
+  # loop over the master science segments
+  for seg in ifo_data:
 
-      # loop over the master analysis chunks in the science segment
-      for chunk in seg:
+    # loop over the master analysis chunks in the science segment
+    for chunk in seg:
+
+      # loop over the exttrig injections
+      for inj in range(exttrigInjections[0], exttrigInjections[1]+1):
         done_this_chunk = 0
+        
+        if inj>0:
+          exttrigUserTag=usertag+str(inj)
+          injectionFile='HL-INJECTION.'+str(inj)+'-'\
+             +str(chunk.start())+'-'+str(chunk.end()-chunk.start())\
+             +'.xml' 
 
         # now loop over all the data that we need to filter
         for coinc_done in coinc_data:
