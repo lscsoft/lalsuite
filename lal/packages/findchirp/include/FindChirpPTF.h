@@ -100,7 +100,7 @@ void
 LALFindChirpPTFTemplate (
     LALStatus                  *status,
     FindChirpTemplate          *fcTmplt,
-    InspiralTemplate           *tmplt,
+    InspiralTemplate           *InspTmplt,
     FindChirpTmpltParams       *params
     );
 
@@ -150,9 +150,16 @@ XLALFindChirpPTFWaveform(
     REAL4Vector         *PTFomega_2_3,
     REAL4VectorSequence *PTFe1,
     REAL4VectorSequence *PTFe2,
-    InspiralTemplate    *tmplt,
+    InspiralTemplate    *InspTmplt,
     REAL8                deltaT
     );
+
+INT4 
+XLALPTFWaveformDerivatives(
+              REAL8  t, 
+        const REAL8  y[14], 
+              REAL8  dydt[14], 
+              void  *params );
 
 #if 0
 <lalLaTeX>

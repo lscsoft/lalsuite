@@ -40,6 +40,9 @@ $Id$
 \vfill{\footnotesize\input{FindChirpPTFFilterCV}}
 #endif
 
+#include <config.h>
+#include <stdlib.h>
+#include <math.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
@@ -48,10 +51,8 @@ $Id$
 #include <lal/AVFactories.h>
 #include <lal/FindChirp.h>
 #include <lal/LALInspiral.h>
-#include <lal/FindChirp.h>
-#include <config.h>
-#include <stdlib.h>
-#include <math.h>
+#include <lal/FindChirpPTF.h>
+#include <lal/MatrixUtils.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_blas.h>
@@ -96,8 +97,8 @@ typedef struct {
 } _gsl_eigen_francis_workspace;
 
 
-static        _gsl_eigen_francis_workspace * gsl_eigen_francis_alloc (void);
-int static    _gsl_eigen_francis_Z (gsl_matrix * H, gsl_vector_complex * eval,
+static        _gsl_eigen_francis_workspace * _gsl_eigen_francis_alloc (void);
+static int    _gsl_eigen_francis_Z (gsl_matrix * H, gsl_vector_complex * eval,
                             gsl_matrix * Z, _gsl_eigen_francis_workspace * w);
 static void   _gsl_eigen_francis_free (_gsl_eigen_francis_workspace * w);
 static void   _gsl_eigen_francis_T (const int compute_t,
@@ -550,17 +551,17 @@ _gsl_linalg_hessenberg_unpack_accum(gsl_matrix * H, gsl_vector * tau,
 /* exceptional shift coefficients - these values are from LAPACK DLAHQR */
 
 
-static inline void _francis_schur_decomp(gsl_matrix * H,
+static void _francis_schur_decomp(gsl_matrix * H,
                                          gsl_vector_complex * eval,
                                          _gsl_eigen_francis_workspace * w);
-static inline size_t _francis_search_subdiag_small_elements(gsl_matrix * A);
-static inline int _francis_qrstep(gsl_matrix * H,
+static size_t _francis_search_subdiag_small_elements(gsl_matrix * A);
+static int _francis_qrstep(gsl_matrix * H,
                                      _gsl_eigen_francis_workspace * w);
-static inline void _francis_schur_standardize(gsl_matrix *A,
+static void _francis_schur_standardize(gsl_matrix *A,
                                               gsl_complex *eval1,
                                               gsl_complex *eval2,
                                               _gsl_eigen_francis_workspace *w);
-static inline void _francis_get_submatrix(gsl_matrix *A, gsl_matrix *B,
+static void _francis_get_submatrix(gsl_matrix *A, gsl_matrix *B,
                                              size_t *top); 
 
 
@@ -575,7 +576,7 @@ static inline void _francis_get_submatrix(gsl_matrix *A, gsl_matrix *B,
  *                            Return: none
  *                            */
       
-static inline void
+static  void
 _francis_schur_decomp(gsl_matrix * H, gsl_vector_complex * eval,
                        _gsl_eigen_francis_workspace * w)
 {     
@@ -746,7 +747,7 @@ Notes: The matrix H must be "reduced", ie: have no tiny subdiagonal
 */
 
 
-static inline int
+static  int
 _francis_qrstep(gsl_matrix * H, _gsl_eigen_francis_workspace * w)
 {
   const size_t N = H->size1;
@@ -985,7 +986,7 @@ Notes: the first small element that is found (starting from bottom)
        is set to zero
 */
 
-static inline size_t
+static  size_t
 _francis_search_subdiag_small_elements(gsl_matrix * A)
 {
   const size_t N = A->size1;
@@ -1019,7 +1020,7 @@ _francis_search_subdiag_small_elements(gsl_matrix * A)
  * routine used is DLANV2.
  */
 
-static inline void _schur_standard_form(gsl_matrix *A, gsl_complex *eval1,
+static  void _schur_standard_form(gsl_matrix *A, gsl_complex *eval1,
                                        gsl_complex *eval2, double *cs,
                                        double *sn);
 
@@ -1185,7 +1186,7 @@ Inputs: A     - 2-by-2 matrix
 Notes: based on LAPACK routine DLANV2
 */
 
-static inline void
+static  void
 _schur_standard_form(gsl_matrix *A, gsl_complex *eval1, gsl_complex *eval2,
                     double *cs, double *sn)
 {
@@ -1363,7 +1364,7 @@ Inputs: A     - 2-by-2 matrix
         w     - francis workspace
 */
 
-static inline void
+static  void
 _francis_schur_standardize(gsl_matrix *A, gsl_complex *eval1,
                            gsl_complex *eval2,
                            _gsl_eigen_francis_workspace *w)
@@ -1386,7 +1387,7 @@ francis_get_submatrix()
 compute the indices in A of where the matrix B resides
 */
 
-static inline void
+static  void
 _francis_get_submatrix(gsl_matrix *A, gsl_matrix *B, size_t *top)
 {
   size_t diff;
@@ -1847,15 +1848,19 @@ LALFindChirpPTFFilterSegment (
   UINT4                 numPoints;
   UINT4                 deltaEventIndex;
   UINT4                 ignoreIndex;
-  UINT4                 haveEvent   = 0;
-  REAL4                 deltaT, sum, max_eigen, r, s, x, y;
-  REAL4                 deltaF, fFinal, norm, fmin, length;
-  REAL4                 snrThresh      = 0;
+  REAL4                 deltaT, max_eigen, r, s, x, y;
+  REAL4                 deltaF, fFinal, fmin, length;
   COMPLEX8             *snr            = NULL;
   COMPLEX8             *PTFQtilde, *qtilde, *PTFq, *inputData;
   COMPLEX8Vector        qVec;
   FindChirpBankVetoData clusterInput;
 
+  /* Define variables and allocate memory needed for gsl function */
+  _gsl_eigen_nonsymm_workspace *workspace = _gsl_eigen_nonsymm_alloc ( 5 );
+  gsl_matrix                  *PTFMatrix = gsl_matrix_alloc( 5, 5 );
+  gsl_vector_complex          *eigenvalues = gsl_vector_complex_alloc( 5 );
+  gsl_complex                  eval;
+  
   /*
    *
    * point local pointers to input and output pointers
@@ -1882,13 +1887,7 @@ LALFindChirpPTFFilterSegment (
   fmin   = (REAL4) input->fcTmplt->tmplt.fLower;
   kmax =  fFinal / deltaF < numPoints/2 ? fFinal / deltaF : numPoints/2;
   kmin =  fmin / deltaF > 1.0 ? fmin/ deltaF : 1;
-
-  /* Define variables and allocate memory needed for gsl function */
-  _gsl_eigen_nonsymm_workspace *workspace = _gsl_eigen_nonsymm_alloc ( 5 );
-  gsl_matrix                  *PTFMatrix = gsl_matrix_alloc( 5, 5 );
-  gsl_vector_complex          *eigenvalues = gsl_vector_complex_alloc( 5 );
-  gsl_complex                  eval;
-
+  
   /* Set parameters for the gsl function */
   _gsl_eigen_nonsymm_params( 0, 1, workspace);
   
@@ -2082,8 +2081,8 @@ LALFindChirpPTFFilterSegment (
     errcode = _gsl_eigen_nonsymm ( PTFMatrix, eigenvalues, workspace); 
     if ( errcode != GSL_SUCCESS )
     {
-      fprintf(stderr,"GSL eigenvalue error: singular matrix at time step %d\n",j);
-      break;
+      fprintf(stderr,"GSL eigenvalue error %d at time step %d\n",errcode,j);
+      ABORT( status, FINDCHIRPH_EIGEN, FINDCHIRPH_MSGEIGEN);
     }
     
     max_eigen = 0.0;

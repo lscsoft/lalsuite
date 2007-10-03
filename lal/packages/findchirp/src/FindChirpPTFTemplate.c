@@ -72,6 +72,8 @@ LALDestroyVector()
 #include <lal/DataBuffer.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
+#include <lal/FindChirpPTF.h>
+#include <lal/MatrixUtils.h>
 
 NRCSID(FINDCHIRPPTFTEMPLATEC, "$Id$");
 
@@ -80,14 +82,14 @@ void
 LALFindChirpPTFTemplate (
     LALStatus                  *status,
     FindChirpTemplate          *fcTmplt,
-    InspiralTemplate           *tmplt,
+    InspiralTemplate           *InspTmplt,
     FindChirpTmpltParams       *params
     )
 /* </lalVerbatim> */
 {
   UINT4 errcode;
   /* local variables */
-  UINT4 i, j, N;
+  UINT4 i, N;
   REAL4 phi, omega_2_3, e1x, e1y, e1z, e2x, e2y, e2z, sqrtoftwo, 
         onebysqrtoftwo, onebysqrtofsix;
   REAL4Vector Q[5];
@@ -137,7 +139,7 @@ LALFindChirpPTFTemplate (
       FINDCHIRPH_EDTZO, FINDCHIRPH_MSGEDTZO );
 
   /* check that the input exists */
-  ASSERT( tmplt, status, 
+  ASSERT( InspTmplt, status, 
       FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
   /* check that the parameter structure is set */
@@ -151,15 +153,15 @@ LALFindChirpPTFTemplate (
   fprintf( stderr, 
       "LALFindChirpPTFTemplate() called with "
       "m1 = %e, m2 = %e, chi = %e, kappa = %e\n", 
-      tmplt->mass1, tmplt->mass2, tmplt->chi, tmplt->kappa );
+      InspTmplt->mass1, InspTmplt->mass2, InspTmplt->chi, InspTmplt->kappa );
 
   /* copy the template parameters to the finchirp template structure */
-  memcpy( &(fcTmplt->tmplt), tmplt, sizeof(InspiralTemplate) );
+  memcpy( &(fcTmplt->tmplt), InspTmplt, sizeof(InspiralTemplate) );
   fcTmplt->tmplt.approximant = params->approximant;
 
   /* XXX delete this line if the low frequency cutoff XXX */
   /* XXX should be read from the template bank        XXX */
-  tmplt->fLower = fcTmplt->tmplt.fLower = params->fLow;
+  InspTmplt->fLower = fcTmplt->tmplt.fLower = params->fLow;
  
   /* Zero out the Q and Qtilde vectors */
   memset( params->PTFQ->data, 0, 5 * N * sizeof(REAL4) );
@@ -178,7 +180,7 @@ LALFindChirpPTFTemplate (
   /* call the waveform generation function */
 
   errcode = XLALFindChirpPTFWaveform( params->PTFphi, params->PTFomega_2_3,
-                                      params->PTFe1, params->PTFe2, tmplt,
+                                      params->PTFe1, params->PTFe2, InspTmplt,
                                       params->deltaT);
   if ( errcode != XLAL_SUCCESS )
   {
@@ -222,8 +224,8 @@ LALFindChirpPTFTemplate (
   }
 
   /* XXX set this to be the correct values XXX */
-  fcTmplt->tmplt.tC = tmplt->tC; /* length of template in seconds */
-  fcTmplt->tmplt.fFinal = tmplt->fFinal; /* upper freq of template in Hz */
+  fcTmplt->tmplt.tC = InspTmplt->tC; /* length of template in seconds */
+  fcTmplt->tmplt.fFinal = InspTmplt->fFinal; /* upper freq of template in Hz */
 
   /* normal exit */
   DETATCHSTATUSPTR( status );
@@ -286,7 +288,7 @@ LALFindChirpPTFNormalize(
   /* output is B_{IJ}^{-1} */
   fprintf( stderr, 
       "LALFindChirpPTFNormalize() called with wtilde at %p, PTFQtilde at %p\n",
-      wtilde, PTFQtilde );
+      (void*) wtilde, (void*) PTFQtilde );
 
   /*
    *
