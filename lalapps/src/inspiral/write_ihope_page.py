@@ -172,6 +172,8 @@ def write_title(page, text, tag):
   page.h2.close() 
   page.add("</a>")
   page.div(e.a("return to top", href="#toc" ), id="back")
+#  page.div(e.a("close all", href="#toc" ), id="back")
+
   return page
 
 
@@ -318,8 +320,8 @@ def write_upperlimit(page, opts):
   page.br()
   page.div(id="encadre")
   page.div(id="contenu")
-  page = write_title(page, html_sections[6], "hugo")
-  page.div(id="div_hugo", style='display:block')
+  page = write_title(page, html_sections[6], "zola")
+  page.div(id="div_zola", style='display:block')
   page.add("Upper Limit Results")
 
   # gaussian
@@ -363,11 +365,12 @@ def write_upperlimit(page, opts):
           caption="posterior and cumulative posterior in mass range " + \
           mlo + " to " + mhi)
   except:pass
+  page.div.close()# close the h3
   
   #---------------------------- loudest events
   page = add_input_h3(page, "loudest events")
   page.div(id="todo")
-  page.p( "list")
+  page.p( "to do : many things")
   page.div.close()# close the todo
   page.div.close()# close the h3
 
@@ -387,13 +390,12 @@ def write_tuning(page,opts):
   page.br()
   page.div(id="encadre")
   page.div(id="contenu")
-  page = write_title(page, html_sections[4], "hugo")
-  page.div(id="div_hugo", style='display:block')
-  page.add("This section summarizes the analysis of the playground data.<br/>")
+  page = write_title(page, html_sections[4], "ronsard")
+  page.div(id="div_ronsard", style='display:block')
+  page.add("This section summarizes the tuning .<br/>")
   
-  #table and venn diagramm
   #---------------------------- loudest events
-  page = add_input_h3(page, "loudest events")
+  page = add_input_h3(page, "injections and time slides")
   page.div(id="todo")
   page.p( "add list of loudest events. Not mix this with follow up")
   page.div.close()# close the todo
@@ -409,37 +411,87 @@ def write_tuning(page,opts):
 # ***************************************************************************
 # ***************************************************************************
 def write_fulldata(page,opts):
+  print "....Processing  full data section"
+
+  this_tag = "analysis"
   webdir = opts.webdir
   ini = opts.config_file
   ifos = get_ifos()
-  mkdir(opts.physdir+"/playground")
+  mkdir(opts.physdir+"/" +this_tag)
   page.br()
   page.div(id="encadre")
   page.div(id="contenu")
-  page = write_title(page, html_sections[5], "hugo")
-  page.div(id="div_hugo", style='display:block')
+  page = write_title(page, html_sections[5], "rabelais")
+  page.div(id="div_rabelais", style='display:block')
   page.add("This section summarizes the analysis of the full data.<br/>")
   
   #table and venn diagramm
-  #---------------------------- loudest events
-  page = add_input_h3(page, "loudest events")
-  page.div(id="todo")
-  page.p( "add list of loudest events. Not mix this with follow up")
-  page.div.close()# close the todo
-  page.div.close()# close the h3
+  page = add_input_h3(page, "General information")
+  page.table()
+  segs = get_segments()
+  keys = ("segments","H1","H2","L1","G1","V1","T1") 
+  page.add("The segment files above were created with no data quality flags set")
+  page.add("The times analyzed accoring to hipe are:")
+  coincs = get_coincident_segments(this_tag)  
+  ## here is the table. The first column is another table with the durations, 
+  ## and the second one is the venn diagram  
+  page.add("<table><tr><td>\n")
+  page.table()
+  page.tr(); page.td('coincidence'); page.td('duration(s)'); page.tr.close()
+  for key in coincs.keys():    
+    page.tr()
+    page.td(key) 
+    page.td(coincs.get(key))
+    page.tr.close()
+  page.table.close()
+  page.add("</td><td>\n")
+  #create figure for the venn diagram
+  data = ""
+  for coinc in ("H1","H1H2","H2","H2L1","L1","H1L1","H1H2L1"):
+      data = data +coincs.get(coinc) + " "
+  create_venn(data, this_tag)
+  # and incorporate into html
+  comment = "Venn diagramm showing distribution of"
+  for coinc in  coincs.keys():
+    comment = comment + " "+ coinc
+  page = add_figure(page, fnames =[this_tag+"/venn_"+this_tag+".png"], caption=comment, size="half")
+  page.add("</td></tr></table>")
+  page.add("here below is the detail of the data and ligo-data section of ihope.ini ")
+  page = add_config_section(page, "data")
+  page = add_config_section(page, "ligo-data")
+  page.div.close()  #end of h3
+ 
+  #----------------------------  The horizon distance   
+  page = add_input_h3(page, "Inspiral Horizon distance")
+  comment = "Inspiral Horizon Distance for a (1.4,1.4) system with a SNR=8"
+  page = add_figure(page, fnames =[\
+	this_tag+"/horizon_"+this_tag+"_range_hist.png", \
+	this_tag+"/horizon_"+this_tag+"_range_plot.png", \
+	this_tag+"/horizon_"+this_tag+"_range_mass.png"],
+  caption=comment, size="half")
+  page.div.close()#end of h3
+
+  #---------------------------- the number of templates
+  page = add_input_h3(page, "Variation in template bank and triggered template bank size")
+  page = add_config_section(page, "tmpltbank")
+  # add figures and summary files
+  comment = "Variation in template bank and triggered template bank size"
+  page = add_figure(page, fnames =[this_tag+"/plotnumtemplates.png"], caption=comment, size="half")
+  page.div.close() #end of h3
+
 
   # the end
   page.div.close()
   page.div.close()
   page.div.close()
+  print "....Processing  full data section over"
   return page
      
-# ***************************************************************************
-# ***************************************************************************
      
 # ***************************************************************************
 # ***************************************************************************
 def write_playground_summary(page,opts):
+  print "....Processing  playground section"
   webdir = opts.webdir
   ini = opts.config_file
   ifos = get_ifos()
@@ -490,7 +542,11 @@ def write_playground_summary(page,opts):
   #----------------------------  The horizon distance   
   page = add_input_h3(page, "Inspiral Horizon distance")
   comment = "Inspiral Horizon Distance for a (1.4,1.4) system with a SNR=8"
-  page = add_figure(page, fnames =["playground/horizon_range_hist.png", "playground/horizon_range_plot.png"], caption=comment, size="half")
+  page = add_figure(page, fnames =[\
+	"playground/horizon_playground_range_hist.png", \
+	"playground/horizon_playground_range_plot.png", \
+	"playground/horizon_playground_range_mass.png"],
+ caption=comment, size="half")
   page.div.close()
 
   #---------------------------- the number of templates
@@ -507,18 +563,21 @@ def write_playground_summary(page,opts):
   # add figures and summary files
   for ifo in get_ifos():
     page.h4(ifo)
+    summary = open(opts.datadir+"/"+ "playground"  +"/"+ifo+"-SIRE-"+opts.gps_start_time+"-"+opts.duration+".txt")
     comment = ifo+" snr versus time (left), and  cumulative snr (right) clustered case no veto"
-    page.p("The " +ifo + "inspiral files after the first inspiral stage are clustered (no veto \
+    comment += "<center><pre>-------------------summary file \n"  +summary.read()+"</pre></center>"
+    summary.close()
+    page.p("The " +ifo + " inspiral files after the first inspiral stage are clustered (no veto \
 	applied), and the results are shown here below in the next set of plots.")
     page = add_config_section(page, ifo.lower()+"-inspiral")
     page = add_figure(page, fnames = [\
 	"playground/plotinspiral_"+ifo+"_end_time_vs_snr.png", \
 	"playground/plotinspiral_veto"+ifo+"_end_time_vs_snr.png", \
-	"playground/plotinspiral_"+ifo+"_snr_cum_hist.png" \
+	"playground/plotinspiral_"+ifo+"_snr_cum_hist.png" ,\
 	"playground/plotinspiral_veto"+ifo+"_snr_cum_hist.png" \
 	], caption=comment, size="half")
   page.div(id="todo")
-  page.p("add the sire summary files?")
+  page.p("distribution in tau0, tau3 ? which tool")
   page.div.close()# close the todo
   page.div.close()# close the div openned in add_input_h3 function
   
@@ -530,19 +589,13 @@ def write_playground_summary(page,opts):
   fnames=[]
   for combi in ("H1H2L1", "H1H2", "H1L1", "H2L1"):
     fnames=[]
-    if combi=="H1H2L1":
-      fnames.append("first_coinc_H_vs_L1_snr.png") 
-      fnames.append("first_coinc_"+combi+"_plot_slide_trigs.png") 
-    elif combi=="H1H2":
-      fnames.append("first_coinc_H1_vs_H2_snr.png") 
-      fnames.append("first_coinc_"+combi+"_plot_slide_trigs.png") 
-    elif combi=="H1L1":
-      fnames.append("first_coinc_H1_vs_L1_snr.png") 
-      fnames.append("first_coinc_"+combi+"_plot_slide_trigs.png") 
-    elif combi=="H2L1":
-      fnames.append("first_coinc_H2_vs_L1_snr.png") 
-      fnames.append("first_coinc_"+combi+"_plot_slide_trigs.png") 
-    comment = "first stage coincidence" +combi + "case"
+    fnames.append("/playground/"+combi+"_first_coinc_playground_cum_hist_effective_snr.png") 
+    fnames.append("/playground/"+combi+"_first_coinc_playground_hist_slide_trigs.png") 
+    fnames.append("/playground/"+combi+"_first_coinc_playground_plot_slide_trigs.png") 
+    fnames.append("/playground/"+combi+"_first_coinc_playground_cum_hist_snr.png") 
+    
+
+    comment = "first stage coincidence" +combi + "case"    
     page = add_figure(page, fnames = fnames, caption=comment, size="half")
   page.div.close()# close the div openned in add_input_h3 function
   
@@ -606,6 +659,7 @@ def write_playground_summary(page,opts):
   page.div.close()
   page.div.close()
   page.div.close()
+  print "....Processing  playground section over"
   return page
 
 # ***************************************************************************
@@ -614,7 +668,7 @@ def write_injection(page, opts):
   webdir = opts.webdir
   ini = opts.config_file
   ifos = get_ifos()
-  mkdir(opts.physdir+"/playground")
+  mkdir(opts.physdir+"/injections")
   page.br()
 
   page.div(id="encadre")
@@ -623,14 +677,40 @@ def write_injection(page, opts):
   page.div(id="div_baudelaire", style='display:block')
   page.add("This section summarizes the analysis of the injection runs.<br/>")
 
-  #---------------------------- found and missed
-  page = add_input_h3(page, "found Found vesrsus missed plots")
-  page = add_figure(page, fnames = "H1H2L1-found_missed.png", caption="", size="half")
-  page = add_figure(page, fnames = "H1H2-found_missed.png", caption="", size="half")
-  page = add_figure(page, fnames = "H1L1-found_missed.png", caption="", size="half")
-  page = add_figure(page, fnames = "H2L1-found_missed.png", caption="", size="half")
+  #---------------------------- found and missedi first inspiral stage
+  page = add_input_h3(page, "Found versus missed plots (first inspiral stage)")
+  for injtag in ['bbh_inj', 'bns_inj', 'bhns_inj']:
+    page.h4(injtag)
+    for ifo in get_ifos():  
+      lists = glob.glob(opts.datadir+"/"+ injtag +"/"+ifo+"-SIRE_INJECTIONS_*FOUND-*.txt")
+      summary = open(lists[0])
+      caption = ifo +" Found and missed injections at the first stage of the inspiral analysis ("+injtag +"tag)."      
+      caption = caption + "<pre> -----------------------"+lists[0]+"\n" +summary.read()+"</pre>"
+      page = add_figure(page, fnames=  [\
+        "injections/"+ifo+"_first_insp_"+injtag+"_dist-mchirp.png", \
+        "injections/"+ifo+"_first_insp_"+injtag+"_time-dist.png"], \
+        caption=caption, size="half")
   page.div.close()
   
+  #---------------------------- found and missed first coinc stage
+  page = add_input_h3(page, "Found versus missed plots (first coincidence stage)")
+  for injtag in ['bbh_inj', 'bns_inj', 'bhns_inj']:
+    page.h4(injtag)
+    for combi in get_ifo_coinc():  
+      if len(combi)>2:
+        print opts.datadir+"/"+ injtag +"/"+combi+"-COIRE_INJECTIONS_*_FOUND_"+combi+"-*.txt"
+        lists = glob.glob(opts.datadir+"/"+ injtag +"/"+combi+"-COIRE_INJECTIONS_*_FOUND_"+combi+"-*.txt")
+        print lists
+        summary = open(lists[0])
+        caption = combi +" Found and missed injections at the first coincidence stage ("+injtag +"tag)."      
+        caption = caption + "<pre> -----------------------"+lists[0]+"\n" +summary.read()+"</pre>"
+        page = add_figure(page, fnames=  [\
+          "injections/"+combi+"_first_coinc_bbh_inj_missed_found_chirp_dist_vs_mchirp.png", \
+          "injections/"+combi+"_first_coinc_bbh_inj_missed_found_vs_end_time.png", \
+    	  "injections/"+combi+"_first_coinc_bbh_inj_missed_found_vs_mchirp.png"], \
+          caption=caption, size="half")
+  page.div.close()
+ 
   #---------------------------- close by missed
   page = add_input_h3(page, "close by missed")
   page = add_figure(page, fnames = "H1H2L1-found_missed.png", caption="", size="half")
@@ -643,6 +723,7 @@ def write_injection(page, opts):
   page = add_figure(page, fnames = "H1H2L1-found_missed.png", caption="", size="half")
   page = add_figure(page, fnames = "H1H2-found_missed.png", caption="", size="half")
   page = add_figure(page, fnames = "H1L1-found_missed.png", caption="", size="half")
+  page.div.close()
 
   
   # the end
@@ -651,6 +732,24 @@ def write_injection(page, opts):
   page.div.close()
 
   return page
+
+
+def write_about(page, opts):
+  webdir = opts.webdir
+  page.br()
+  page.div(id="encadre")
+  page.div(id="contenu")
+  page = write_title(page, html_sections[8], "balzac")
+  page.div(id="div_balzac", style='display:block')
+  page.p("This page was automatically generated with write_ihope_page using the following ini file")
+  tmp  = open(opts.config)
+  page.pre(tmp.read())
+  tmp.close() 
+  page.div.close()
+  page.div.close()
+  page.div.close()
+  return page
+
 
 # ***************************************************************************
 # ***************************************************************************
@@ -679,11 +778,25 @@ def add_input_h3(page, title):
   count_block=count_block+1
 
   page.add("<h3> "+title)
-  page.input(id="input_"+input, type="checkbox",checked="on", onclick="toggleVisible('"+input+"')")
+  page.input(id="input_"+input, type="checkbox", onclick="toggleVisible('"+input+"')")
   page.add("See details here</h3>")
   page.div(id="div_"+input , style='display:none')  
   return page
 
+# ***************************************************************************
+# ***************************************************************************
+def error_section(page, section):
+  page.br()
+  page.div(id="encadre")
+  page.div(id="contenu")
+  page.br()
+  page.div(id="todo")
+  page.p("Error(s) during the processing of " +section +" section. Skipping this section.")
+  page.div.close()
+  page.br()
+  page.div.close()
+  page.div.close()
+  return page
 
 # ***************************************************************************
 # ***************************************************************************
@@ -718,7 +831,7 @@ def create_venn(data, tag):
     mscript.write(" vennX(data\'/3600/24, 0.01);")
     mscript.write(" k=colormap(jet); k = [1 1 1; k];colormap(k); saveas(gcf,\'venn_"+tag+".png\')")
     mscript.close()
-    command=("matlab -nodisplay -nodesktop -nojvm -nosplash   < temp.m > /tmp/test ; rm -f temp.m; mv venn_"+tag+".png "+opts.physdir+"/playground/")
+    command=("matlab -nodisplay -nodesktop -nojvm -nosplash   < temp.m > /tmp/test ; rm -f temp.m; mv venn_"+tag+".png "+opts.physdir+"/"+tag+"/")
     make_external_call(command, 0, 0, True)    
   except:
     print """   The matlab command to create the venn diagram failed. 
@@ -747,7 +860,11 @@ def get_coincident_segments(tag):
   output={}
   ifo_coincs = get_ifo_coinc()  
   for coinc in ifo_coincs:
-    command = "awk \'{sum=sum+$4} END {print sum}\' "+opts.datadir+ tag +"/"+coinc+"_play_segs_analyzed.txt"
+    if tag=="playground":
+      command = "awk \'{sum=sum+$4} END {print sum}\' "+opts.datadir+ tag +"/"+coinc+"_play_segs_analyzed.txt"
+    elif tag=="analysis":
+      command = "awk \'{sum=sum+$4} END {print sum}\' "+opts.datadir+ tag +"/"+coinc+"_segs_analyzed.txt"
+
     output[coinc] = make_external_call(command, 0,0)
 
 
@@ -961,7 +1078,7 @@ Program to write webpage from upperlimit.py
 parser = OptionParser( usage = usage, version = "%prog CVS $Id$" )
 
 parser.add_option("-C","--config-file",action="store",type="string",\
-    default='', metavar=" INI File",\
+    default='write_ihope_page.ini', metavar=" INI File",\
     help="ini file with information about run directories" )
 
 
@@ -972,9 +1089,12 @@ parser.add_option("-C","--config-file",action="store",type="string",\
 #############################################################################
 fig_num = 0
 count_block = 0
+
 config   =  opts.config_file
+opts.config = config # save the name of the ini file
 configcp = ConfigParser.ConfigParser()
 configcp.read(config)
+
 # set the log file
 logfile = open('write_ihope_page.log', 'w')
 logfile.write("Parsing the ini file ("+opts.config_file+")... done\n")
@@ -997,6 +1117,7 @@ except:
   
 #sub-products of the ini file parsing
 opts.gpsdir =  '/'+str(opts.gps_start_time)+'-'+str(opts.gps_end_time)+'/'
+opts.duration = str(int(opts.gps_end_time) - int(opts.gps_start_time))
 opts.webdir = 'http://' + opts.url + '/~' + opts.username  + opts.gpsdir
 opts.datadir = opts.ihope_directory + opts.gpsdir
 opts.physdir = '/archive/home/'+opts.username+'/public_html/'+ opts.gpsdir
@@ -1043,7 +1164,8 @@ html_sections = ("General information",  \
 		"Tuning", \
 		"Full data", \
 		"Upper limit", \
-		"Openning the box")
+		"Openning the box",
+		"About this page")
 title = opts.title+ ": from "+str(opts.gps_start_time)+" to "+str(opts.gps_end_time) 
 script = {}
 script['javascript'] = 'toggle.js'
@@ -1055,15 +1177,28 @@ page.init(title=title, css=opts.style, script=script)
 page.h1(opts.title +" (" + opts.gps_start_time +"-" +opts.gps_end_time+")")
 
 ##### we write the toc, and general section
-page = write_toc(page, opts)
-page = write_general(page, opts)
-page = write_data_summary(page, opts)
-page = write_playground_summary(page, opts)
+try:  page = write_toc(page, opts)
+except: page.div("problem in toc section. skippingg this section. "); pass
+try:  page = write_general(page, opts)
+except: page.add("problem in "+html_sections[0]+" section. skipping this section. "); pass
+try:  page = write_data_summary(page, opts)
+except: page.add("problem in "+html_sections[1]+" section. skipping this section. "); pass
+try:  page = write_playground_summary(page, opts)
+except: page.add("problem in "+html_sections[2]+" section. skipping this section. "); pass
+#try:  page = write_injection(page, opts)
+#except: page.add("problem in "+html_sections[3]+" section. skipping this section. "); pass
 page = write_injection(page, opts)
-page = write_tuning(page, opts)
-page = write_fulldata(page, opts)
-page = write_upperlimit(page, opts)
-
+try:  page = write_tuning(page, opts)
+except: page.add("problem in "+html_sections[4]+" section. skipping this section. "); pass
+try:  page = write_fulldata(page, opts)
+except: page.add("problem in "+html_sections[5]+" section. skipping this section. "); pass
+try:  page = write_upperlimit(page, opts)
+except: page.add("problem in "+html_sections[6]+" section. skipping this section. "); pass
+try:  page = write_openbox(page, opts)
+except:   page = error_section(page, html_sections[7]); pass
+try:  page = write_about(page, opts)
+except:   page = error_section(page, html_sections[8]); pass
+ 
 
 ##### the end
 html_file.write(page(False))
