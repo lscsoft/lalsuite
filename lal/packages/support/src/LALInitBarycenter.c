@@ -84,7 +84,7 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
 { /* </lalVerbatim> */
 
     FILE *fp1, *fp2; /* fp1 is table of Earth location; fp2 is for Sun*/
-
+    CHAR dummy;
     INT4 j; /*dummy index*/
     INT4 gpsYr; /*gpsYr + leap is the time on the GPS clock
                           at first instant of new year, UTC; equivalently
@@ -209,7 +209,7 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
       */
     }
 
-    if (fscanf(fp1,"%c") != EOF) {
+    if (fscanf(fp1,"%c",&dummy) != EOF) {
       LALPrintError("Garbage at end of ephemeris file %s\n", edat->ephiles.earthEphemeris);
       fclose(fp1);
       LALFree(edat->ephemE);
@@ -331,7 +331,7 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
       */
     }
 
-    if (fscanf(fp2,"%c") != EOF) {
+    if (fscanf(fp2,"%c",&dummy) != EOF) {
       LALPrintError("Garbage at end of ephemeris file %s\n", edat->ephiles.sunEphemeris);
       fclose(fp2);
       LALFree(edat->ephemE);
