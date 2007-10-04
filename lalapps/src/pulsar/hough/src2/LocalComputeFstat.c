@@ -92,13 +92,27 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 /** Simple Euklidean scalar product for two 3-dim vectors in cartesian coords */
 #define SCALAR(u,v) ((u)[0]*(v)[0] + (u)[1]*(v)[1] + (u)[2]*(v)[2])
 
+/** square */
 #define SQ(x) ( (x) * (x) )
 
-/* the way of trimming x to the interval [0..1) gives significant differences
-   in speed, so we provide some ways here to use in the sin_cos_LUT functions.
-   We also record the way we are using for logging */
+#ifndef __GNUC__
+/** somehow the branch prediction of gcc-4.1.2 terribly failes
+    with the current case distinction in the hot-loop,
+    having a severe impact on runtime of the E@H Linux App.
+    So let's allow to give gcc a hint which path has a higher probablility */
+#define __builtin_expect(a,b) a
+#endif
 
-#if defined(SINCOS_FLOOR)
+/** the way of trimming x to the interval [0..1) for the sin_cos_LUT functions
+    give significant differences in speed, so we provide various ways here.
+    We also record the way we are using for logging */
+
+#if (SINCOS_VERSION == 9)
+/** no trimming required at all for this function */
+#define SINCOS_TRIM_X(y,x)
+#define SINCOS_ROUND_METHOD -1
+
+#elif defined(SINCOS_FLOOR)
 #define SINCOS_TRIM_X(y,x) \
   y = x - floor(x);
 #define SINCOS_ROUND_METHOD 0
@@ -153,14 +167,12 @@ void LocalComputeFStat ( LALStatus*, Fcomponents*, const PulsarDopplerParams*,
 int LocalXLALComputeFaFb (Fcomponents*, const SFTVector*, const PulsarSpins,
 			  const SSBtimes*, const AMCoeffs*, const ComputeFParams*);
 
-int local_sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
-int local_sin_cos_2PI_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
-#if (SINCOS_VERSION == 9)
-#define local_sin_cos_2PI_LUT_trimmed local_sin_cos_2PI_LUT
+#if (SINCOS_VERSION == 2)
+int local_sin_cos_2PI_LUT_inited (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
+int local_sin_cos_2PI_LUT_init (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
+int (*local_sin_cos_2PI_LUT_trimmed) (REAL4*, REAL4*, REAL8) = local_sin_cos_2PI_LUT_init;
 #else
 int local_sin_cos_2PI_LUT_trimmed (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
-int local_sin_cos_2PI_LUT_init (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
-int (*local_sin_cos_2PI_LUT_p) (REAL4*, REAL4*, REAL8) = local_sin_cos_2PI_LUT_init;
 #endif
 
 /*==================== FUNCTION DEFINITIONS ====================*/
@@ -555,7 +567,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	{
 	  REAL8 _lambda_alpha;
 	  SINCOS_TRIM_X (_lambda_alpha,(-lambda_alpha));
-	  if ( local_sin_cos_2PI_LUT_p ( &imagQ, &realQ, _lambda_alpha ) ) {
+	  if ( local_sin_cos_2PI_LUT_trimmed ( &imagQ, &realQ, _lambda_alpha ) ) {
 	    XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
 	  }
 	}
@@ -584,7 +596,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
        * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the 
        * closest to zero and will pose no numerical difficulties !
        */
-      local_sin_cos_2PI_LUT_p ( &s_alpha, &c_alpha, kappa_star );
+      local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
       c_alpha -= 1.0f; 
 
       /* ---------- calculate the (truncated to Dterms) sum over k ---------- */
@@ -604,14 +616,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
       imagXP = 0;
 
       /* if no danger of denominator -> 0 */
-#if defined(__GNUC__)
-      /* somehow the branch prediction of gcc-4.1.2 terribly failes now,
-	 having a severe impact on runtime of the E@H Linux App.
-	 So let's give a hint to gcc which path has a higher probablility */
       if (__builtin_expect((kappa_star > LD_SMALL4) && (kappa_star < 1.0 - LD_SMALL4), (0==0)))
-#else
-      if ( ( kappa_star > LD_SMALL4 ) && (kappa_star < 1.0 - LD_SMALL4) )
-#endif
 
 #if (EAH_OPTIMIZATION == 1) && FALSE
 	/* vectorization with common denominator */
@@ -887,9 +892,9 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	     [V0011]       "m"  (V0011[0]),
 	     [V2222]       "m"  (V2222[0])
 
+#ifndef IGNORE_XMM_REGISTERS
 	     :
 	     /* clobbered registers */
-#ifndef IGNORE_XMM_REGISTERS
 	     "xmm0","xmm1","xmm2","xmm3","xmm4"
 #endif
 	     );
@@ -1212,23 +1217,6 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
 
 
-/** Calculate sin(x) and cos(x) to roughly 1e-7 precision using 
- * a lookup-table and Taylor-expansion.
- *
- * NOTE: this function will fail for arguments larger than
- * |x| > INT4_MAX = 2147483647 ~ 2e9 !!!
- *
- * return = 0: OK, nonzero=ERROR
- */
-int
-local_sin_cos_LUT_2tab (REAL4 *sinx, REAL4 *cosx, REAL8 x)
-{
-  return local_sin_cos_2PI_LUT ( sinx, cosx, x * OOTWOPI );
-} /* local_sin_cos_LUT() */
-
-
-
-
 #define LUT_RES_F	(1.0 * LUT_RES)
 #define OO_LUT_RES	(1.0 / LUT_RES)
 
@@ -1236,21 +1224,6 @@ local_sin_cos_LUT_2tab (REAL4 *sinx, REAL4 *cosx, REAL8 x)
 #define IND_TO_X	(LAL_TWOPI * OO_LUT_RES)
 
 #if (SINCOS_VERSION == 2)
-
-inline int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
-{
-  REAL8 xt;
-  /* we only need the fractional part of 'x', which is number of cylces,
-   * this was previously done using
-   *   xt = x - (INT4)x;
-   * which is numerically unsafe for x > LAL_INT4_MAX ~ 2e9
-   * for saftey we therefore rather use modf(), even if that 
-   * will be somewhat slower... 
-   */
-
-  SINCOS_TRIM_X (xt,x);
-  return(local_sin_cos_2PI_LUT_trimmed (sin2pix,cos2pix,xt));
-}
 
 int local_sin_cos_2PI_LUT_init (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 {
@@ -1260,24 +1233,16 @@ int local_sin_cos_2PI_LUT_init (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
     sinLUT[k] = sin( LAL_TWOPI * k * oo_lut_res );
     cosLUT[k] = cos( LAL_TWOPI * k * oo_lut_res );
   }
-  local_sin_cos_2PI_LUT_p = local_sin_cos_2PI_LUT_trimmed;
-  return(local_sin_cos_2PI_LUT_p (sin2pix,cos2pix,x));
+  local_sin_cos_2PI_LUT_trimmed = local_sin_cos_2PI_LUT_inited;
+  return(local_sin_cos_2PI_LUT_trimmed (sin2pix,cos2pix,x));
 }
 
-int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
+inline int local_sin_cos_2PI_LUT_inited (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 {
   INT4 i0;
   REAL8 d, d2;
   REAL8 ts, tc;
-
-  static BOOLEAN firstCall = TRUE;
   static REAL8 const oo_lut_res = OO_LUT_RES;
-
-  /* the first time we get called, we set up the lookup-table */
-  if ( firstCall )
-    {
-      firstCall = FALSE;
-    }
 
 #ifndef LAL_NDEBUG
   if ( x < 0.0 || x > 1.0 )
@@ -1357,7 +1322,7 @@ int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
 
 
 #elif (SINCOS_VERSION == 9)
-int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x) {
+int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x) {
 
   /* Lookup tables for fast sin/cos calculation */
   /* static REAL4 base[LUT_RES+LUT_RES/4];
