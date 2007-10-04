@@ -29,6 +29,7 @@
 #include <math.h>
 
 #include <lal/LALStdlib.h>
+#include <lal/FileIO.h>
 #include <lal/DetectorSite.h>
 #include <lal/LALError.h>
 #include <lal/LatticeCovering.h>
@@ -488,12 +489,12 @@ loadFullGridFile ( LALStatus *status,
 		   DopplerFullScanState *scan, 
 		   const DopplerFullScanInit *init 
 		   )
-  {
-  LALParsedDataFile *data = NULL;
+{
   REAL8VectorList head = empty_REAL8VectorList;
   REAL8VectorList *tail = NULL;
   REAL8Vector *entry = NULL;
   UINT4 numTemplates, i;
+  FILE *fp;
 
   INITSTATUS( status, "loadFullGridFile", DOPPLERFULLSCANC );
   ATTATCHSTATUSPTR ( status );
@@ -503,19 +504,21 @@ loadFullGridFile ( LALStatus *status,
   ASSERT ( init->gridFile, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
   ASSERT ( scan->state == STATE_IDLE, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
 
-  TRY (LALParseDataFile (status->statusPtr, &data, init->gridFile), status);
-
-  numTemplates = data->lines->nTokens;
+  if ( (fp = LALOpenDataFile (init->gridFile)) == NULL) {
+    LALPrintError ("Could not open data-file: `%s`\n\n", init->gridFile);
+    ABORT (status, CONFIGFILEH_EFILE, CONFIGFILEH_MSGEFILE);
+  }
 
   if ( (entry = XLALCreateREAL8Vector ( 6 ) ) == NULL ) {
     ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
   }
 
   /* parse this list of lines into a full grid */
+  numTemplates = 0;
   tail = &head;	/* head will remain empty! */
-  for (i=0; i < numTemplates; i++)
+  while ( ! feof ( fp ) )
     {
-      if ( 6 != sscanf( data->lines->tokens[i], "%lf %lf %lf %lf %lf %lf", 
+      if ( 6 != fscanf( fp, "%lf %lf %lf %lf %lf %lf\n", 
 			entry->data + 0, entry->data + 1, entry->data + 2, entry->data + 3, entry->data + 4, entry->data + 5 ) )
 	{
 	  LogPrintf (LOG_CRITICAL,"ERROR: Failed to parse 6 REAL's from line %d in grid-file '%s'\n\n", i, init->gridFile);
@@ -530,10 +533,12 @@ loadFullGridFile ( LALStatus *status,
 	    XLALREAL8VectorListDestroy (head.next);
 	  ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );
 	}
-    
-    } /* for i < numTemplates */
 
-  TRY ( LALDestroyParsedDataFile (status->statusPtr, &data), status);
+      numTemplates ++ ;
+
+    } /* while !feof(fp) */
+
+  LALFree ( entry->data );
   LALFree ( entry );
 
   LogPrintf (LOG_DEBUG, "Template grid: nTot = %.0f\n", 1.0 * numTemplates );
