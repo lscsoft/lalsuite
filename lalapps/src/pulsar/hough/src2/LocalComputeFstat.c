@@ -587,7 +587,14 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
       imagXP = 0;
 
       /* if no danger of denominator -> 0 */
+#if defined(__GNUC__)
+      /* somehow the branch prediction of gcc-4.1.2 terribly failes now,
+	 having a severe impact on runtime of the E@H Linux App.
+	 So let's give a hint to gcc which path has a higher probablility */
+      if (__builtin_expect((kappa_star > LD_SMALL4) && (kappa_star < 1.0 - LD_SMALL4), (0==0)))
+#else
       if ( ( kappa_star > LD_SMALL4 ) && (kappa_star < 1.0 - LD_SMALL4) )
+#endif
 
 #if (EAH_OPTIMIZATION == 1) && FALSE
 	/* vectorization with common denominator */
