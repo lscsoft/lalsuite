@@ -149,6 +149,11 @@ int LocalXLALComputeFaFb (Fcomponents*, const SFTVector*, const PulsarSpins,
 
 int local_sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
 int local_sin_cos_2PI_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
+#if (SINCOS_VERSION == 9)
+#define local_sin_cos_2PI_LUT_trimmed local_sin_cos_2PI_LUT
+#else
+int local_sin_cos_2PI_LUT_trimmed (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
+#endif
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -567,7 +572,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
        * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the 
        * closest to zero and will pose no numerical difficulties !
        */
-      local_sin_cos_2PI_LUT ( &s_alpha, &c_alpha, kappa_star );
+      local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
       c_alpha -= 1.0f; 
 
       /* ---------- calculate the (truncated to Dterms) sum over k ---------- */
@@ -1220,11 +1225,24 @@ local_sin_cos_LUT_2tab (REAL4 *sinx, REAL4 *cosx, REAL8 x)
 
 #if (SINCOS_VERSION == 2)
 
-#define LUT_RES         64      /* resolution of lookup-table */
-int
-local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
+int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 {
   REAL8 xt;
+  /* we only need the fractional part of 'x', which is number of cylces,
+   * this was previously done using
+   *   xt = x - (INT4)x;
+   * which is numerically unsafe for x > LAL_INT4_MAX ~ 2e9
+   * for saftey we therefore rather use modf(), even if that 
+   * will be somewhat slower... 
+   */
+
+  SINCOS_TRIM_X (xt,x);
+  return(local_sin_cos_2PI_LUT_trimmed (sin2pix,cos2pix,xt));
+}
+
+#define LUT_RES         64      /* resolution of lookup-table */
+int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
+{
   INT4 i0;
   REAL8 d, d2;
   REAL8 ts, tc;
@@ -1246,26 +1264,16 @@ local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
       firstCall = FALSE;
     }
 
-  /* we only need the fractional part of 'x', which is number of cylces,
-   * this was previously done using
-   *   xt = x - (INT4)x;
-   * which is numerically unsafe for x > LAL_INT4_MAX ~ 2e9
-   * for saftey we therefore rather use modf(), even if that 
-   * will be somewhat slower... 
-   */
-
-  SINCOS_TRIM_X (xt,x);
-
 #ifndef LAL_NDEBUG
-  if ( xt < 0.0 || xt > 1.0 )
+  if ( x < 0.0 || x > 1.0 )
     {
-      XLALPrintError("\nFailed numerica in local_sin_cos_2PI_LUT(): xt = %f not in [0,1)\n\n", xt );
+      XLALPrintError("\nFailed numerica in local_sin_cos_2PI_LUT(): x = %f not in [0,1)\n\n", x );
       return XLAL_FAILURE;
     }
 #endif
 
-  i0 = (INT4)( xt * LUT_RES_F + 0.5 );	/* i0 in [0, LUT_RES ] */
-  d = d2 = LAL_TWOPI * (xt - oo_lut_res * i0);
+  i0 = (INT4)( x * LUT_RES_F + 0.5 );	/* i0 in [0, LUT_RES ] */
+  d = d2 = LAL_TWOPI * (x - oo_lut_res * i0);
   d2 *= 0.5 * d;
 
   ts = sinVal[i0];
@@ -1334,7 +1342,6 @@ int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
 
 
 #elif (SINCOS_VERSION == 9)
-
 int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x) {
 
   /* Lookup tables for fast sin/cos calculation */
