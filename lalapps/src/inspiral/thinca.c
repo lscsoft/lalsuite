@@ -1,3 +1,22 @@
+/*
+*  Copyright (C) 2007 Alexander Dietz, Drew Keppel, Duncan Brown, Eirini Messaritaki, Gareth Jones, Patrick Brady, Stephen Fairhurst, Craig Robinson , Thomas Cokelaer
+*
+*  This program is free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License
+*  along with with program; see the file COPYING. If not, write to the
+*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+*  MA  02111-1307  USA
+*/
+
 /*----------------------------------------------------------------------- 
  * 
  * File Name: thinca.c
@@ -95,6 +114,7 @@ static void print_usage(char *program)
       "  [--user-tag]      usertag     set the process_params usertag\n"\
       "  [--ifo-tag]       ifotag      set the ifo-tag - for file naming\n"\
       "  [--comment]       string      set the process table comment to STRING\n"\
+      "  [--write-compress]            write a compressed xml file\n"\
       "\n"\
       "   --gps-start-time start_time  GPS second of data start time\n"\
       "   --gps-end-time   end_time    GPS second of data end time\n"\
@@ -217,6 +237,7 @@ static void print_usage(char *program)
 }
 
 
+
 /*
  * 
  * MAIN
@@ -266,6 +287,7 @@ int main( int argc, char *argv[] )
   UINT4  numQuadruples = 0;
   UINT4  numTrigs[LAL_NUM_IFO];
   UINT4  N = 0;
+  UINT4  outCompress = 0;
 
   LALDetector          aDet;
 
@@ -322,6 +344,7 @@ int main( int argc, char *argv[] )
   struct option long_options[] =
   {
     {"verbose",             no_argument,   &vrbflg,                   1 },
+    {"write-compress",      no_argument,   &outCompress,              1 },
     {"g1-triggers",         no_argument,   &(haveTrig[LAL_IFO_G1]),   1 },
     {"h1-triggers",         no_argument,   &(haveTrig[LAL_IFO_H1]),   1 },
     {"h2-triggers",         no_argument,   &(haveTrig[LAL_IFO_H2]),   1 },
@@ -1155,7 +1178,7 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;       
 
-      case '_':  
+      case '_':
         /* specifying GRB source file */
         optarg_len = strlen(optarg) + 1;
         sourceFile = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
@@ -1163,7 +1186,7 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
       	accuracyParams.exttrig=1;
         break;
-        
+       
       default:
         fprintf( stderr, "Error: Unknown error while parsing options\n" );
         print_usage(argv[0]);
@@ -1746,7 +1769,7 @@ int main( int argc, char *argv[] )
 
   /* Populate the lightTravel matrix */
   if ( accuracyParams.exttrig )
-  {  
+  {
     LIGOTimeGPS timeTrigger;
 
     /* read the extTriggersTable from a file */
@@ -1772,8 +1795,8 @@ int main( int argc, char *argv[] )
     
     /* populate the accuracy params table */
     XLALPopulateAccuracyParamsExt( &accuracyParams, 
-                                   &timeTrigger, exttrigHead->event_ra, exttrigHead->event_dec );
-
+                                   &timeTrigger, exttrigHead->event_ra, 
+                                   exttrigHead->event_dec );
   }
   else 
   {
@@ -2098,7 +2121,7 @@ cleanexit:
 
   if ( vrbflg ) fprintf( stdout, "writing output file... " );
 
-  if ( userTag && ifoTag)
+  if ( userTag && ifoTag && !outCompress )
   {
     LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s_%s-%d-%d.xml", 
         ifos, ifoTag, userTag, startCoincidence, 
@@ -2107,19 +2130,48 @@ cleanexit:
         ifos, ifoTag, userTag, startCoincidence, 
         endCoincidence - startCoincidence );
   }
-  else if ( ifoTag )
+  else if ( !userTag && ifoTag && !outCompress )
   {
     LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s-%d-%d.xml", ifos,
         ifoTag, startCoincidence, endCoincidence - startCoincidence );
     LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s-%d-%d.xml", ifos,
         ifoTag, startCoincidence, endCoincidence - startCoincidence );
   }
-  else if ( userTag )
+  else if ( userTag && !ifoTag && !outCompress )
   {
     LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s-%d-%d.xml", 
         ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
     LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s-%d-%d.xml", 
         ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
+  }
+  else if ( userTag && ifoTag && outCompress )
+  {     LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s_%s-%d-%d.xml.gz",
+        ifos, ifoTag, userTag, startCoincidence,
+        endCoincidence - startCoincidence );
+    LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s_%s-%d-%d.xml.gz",
+        ifos, ifoTag, userTag, startCoincidence,
+        endCoincidence - startCoincidence );
+  }
+  else if ( !userTag && ifoTag && outCompress )
+  {
+    LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s-%d-%d.xml.gz", ifos,
+        ifoTag, startCoincidence, endCoincidence - startCoincidence );
+    LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s-%d-%d.xml.gz",
+        ifos, ifoTag, startCoincidence, endCoincidence - startCoincidence );
+  }
+  else if ( userTag && !ifoTag && outCompress )
+  {
+    LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s-%d-%d.xml.gz",
+        ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
+    LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s-%d-%d.xml.gz",
+        ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
+  }
+  else if ( !userTag && !ifoTag && outCompress )
+  {
+    LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA-%d-%d.xml.gz", ifos,
+        startCoincidence, endCoincidence - startCoincidence );
+    LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE-%d-%d.xml.gz", ifos,
+        startCoincidence, endCoincidence - startCoincidence );
   }
   else
   {
@@ -2134,12 +2186,12 @@ cleanexit:
 
   if ( !numSlides )
   {
-    LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileName), 
+    LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileName ), 
         &status );
   }
   else
   {
-    LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileSlide), 
+    LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileSlide ), 
         &status );
   }
   /* write process table */
