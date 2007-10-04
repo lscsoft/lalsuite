@@ -136,6 +136,12 @@ static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/2
 /* empty initializers  */
 static const LALStatus empty_status;
 
+/* sin/cos Lookup tables */
+#if (SINCOS_VERSION == 2)
+#define LUT_RES         64      /* resolution of lookup-table */
+static REAL4 sinLUT[LUT_RES+1], cosLUT[LUT_RES+1];
+#endif
+
 /*---------- internal prototypes ----------*/
 extern int finite(double x);
 
@@ -544,8 +550,12 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	lambda_alpha = phi_alpha - 0.5 * Dphi_alpha;
 	
 	/* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
-	if ( local_sin_cos_2PI_LUT ( &imagQ, &realQ, - lambda_alpha ) ) {
-	  XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
+	{
+	  REAL8 _lambda_alpha;
+	  SINCOS_TRIM_X (_lambda_alpha,(-lambda_alpha));
+	  if ( local_sin_cos_2PI_LUT_trimmed ( &imagQ, &realQ, _lambda_alpha ) ) {
+	    XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
+	  }
 	}
 
 	kstar = (INT4) (Dphi_alpha);	/* k* = floor(Dphi_alpha*chi) for positive Dphi */
@@ -1240,7 +1250,6 @@ inline int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
   return(local_sin_cos_2PI_LUT_trimmed (sin2pix,cos2pix,xt));
 }
 
-#define LUT_RES         64      /* resolution of lookup-table */
 inline int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 {
   INT4 i0;
@@ -1248,7 +1257,6 @@ inline int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 
   REAL8 ts, tc;
 
   static BOOLEAN firstCall = TRUE;
-  static REAL4 sinVal[LUT_RES+1], cosVal[LUT_RES+1];
   static REAL8 const oo_lut_res = OO_LUT_RES;
 
   /* the first time we get called, we set up the lookup-table */
@@ -1258,8 +1266,8 @@ inline int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 
 
       for (k=0; k <= LUT_RES; k++)
         {
-          sinVal[k] = sin( LAL_TWOPI * k * oo_lut_res );
-          cosVal[k] = cos( LAL_TWOPI * k * oo_lut_res );
+          sinLUT[k] = sin( LAL_TWOPI * k * oo_lut_res );
+          cosLUT[k] = cos( LAL_TWOPI * k * oo_lut_res );
         }
       firstCall = FALSE;
     }
@@ -1276,8 +1284,8 @@ inline int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 
   d = d2 = LAL_TWOPI * (x - oo_lut_res * i0);
   d2 *= 0.5 * d;
 
-  ts = sinVal[i0];
-  tc = cosVal[i0];
+  ts = sinLUT[i0];
+  tc = cosLUT[i0];
    
   /* use Taylor-expansions for sin/cos around LUT-points */
   (*sin2pix) = ts + d * tc - d2 * ts;
@@ -1293,12 +1301,12 @@ inline int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 
 int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
 
   /* Lookup tables for fast sin/cos calculation */
-  static REAL4 sinVal[LUT_RES+1];
-  static REAL4 sinVal2PI[LUT_RES+1];
-  static REAL4 sinVal2PIPI[LUT_RES+1];
-  static REAL4 cosVal[LUT_RES+1];
-  static REAL4 cosVal2PI[LUT_RES+1];
-  static REAL4 cosVal2PIPI[LUT_RES+1];
+  static REAL4 sinLUT[LUT_RES+1];
+  static REAL4 sinLUT2PI[LUT_RES+1];
+  static REAL4 sinLUT2PIPI[LUT_RES+1];
+  static REAL4 cosLUT[LUT_RES+1];
+  static REAL4 cosLUT2PI[LUT_RES+1];
+  static REAL4 cosLUT2PIPI[LUT_RES+1];
 
   static BOOLEAN tabs_empty = 1; /* reset after initializing the sin/cos tables */
 
@@ -1313,12 +1321,12 @@ int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
   if ( tabs_empty ) {
 
     for (i=0; i <= LUT_RES; i++) {
-      sinVal[i]      = sin((LAL_TWOPI*i)/(LUT_RES));
-      sinVal2PI[i]   = sinVal[i]    * LAL_TWOPI * -1.0;
-      sinVal2PIPI[i] = sinVal2PI[i] * LAL_PI;
-      cosVal[i]      = cos((LAL_TWOPI*i)/(LUT_RES));
-      cosVal2PI[i]   = cosVal[i]    * LAL_TWOPI;
-      cosVal2PIPI[i] = cosVal2PI[i] * LAL_PI * -1.0;
+      sinLUT[i]      = sin((LAL_TWOPI*i)/(LUT_RES));
+      sinLUT2PI[i]   = sinLUT[i]    * LAL_TWOPI * -1.0;
+      sinLUT2PIPI[i] = sinLUT2PI[i] * LAL_PI;
+      cosLUT[i]      = cos((LAL_TWOPI*i)/(LUT_RES));
+      cosLUT2PI[i]   = cosLUT[i]    * LAL_TWOPI;
+      cosLUT2PIPI[i] = cosLUT2PI[i] * LAL_PI * -1.0;
     }
 
     tabs_empty = 0;
@@ -1329,12 +1337,12 @@ int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
   i = x * LUT_RES + .5; /* round-to-nearest */
   d = x - i * oo_lut_res;
 #if 1
-  (*sin2pix) = sinVal[i] + d * (cosVal2PI[i] + d * sinVal2PIPI[i]);
-  (*cos2pix) = cosVal[i] + d * (sinVal2PI[i] + d * cosVal2PIPI[i]);
+  (*sin2pix) = sinLUT[i] + d * (cosLUT2PI[i] + d * sinLUT2PIPI[i]);
+  (*cos2pix) = cosLUT[i] + d * (sinLUT2PI[i] + d * cosLUT2PIPI[i]);
 #else
   d2 = d*d;
-  (*sin2pix) = sinVal[i] + d * cosVal2PI[i] + d2 * sinVal2PIPI[i];
-  (*cos2pix) = cosVal[i] + d * sinVal2PI[i] + d2 * cosVal2PIPI[i];
+  (*sin2pix) = sinLUT[i] + d * cosLUT2PI[i] + d2 * sinLUT2PIPI[i];
+  (*cos2pix) = cosLUT[i] + d * sinLUT2PI[i] + d2 * cosLUT2PIPI[i];
 #endif
 
   return XLAL_SUCCESS;
