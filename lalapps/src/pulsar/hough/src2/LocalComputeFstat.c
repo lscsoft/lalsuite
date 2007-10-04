@@ -148,11 +148,11 @@ int LocalXLALComputeFaFb (Fcomponents*, const SFTVector*, const PulsarSpins,
 			  const SSBtimes*, const AMCoeffs*, const ComputeFParams*);
 
 int local_sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
-int local_sin_cos_2PI_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
+inline int local_sin_cos_2PI_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
 #if (SINCOS_VERSION == 9)
 #define local_sin_cos_2PI_LUT_trimmed local_sin_cos_2PI_LUT
 #else
-int local_sin_cos_2PI_LUT_trimmed (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
+inline int local_sin_cos_2PI_LUT_trimmed (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
 #endif
 
 /*==================== FUNCTION DEFINITIONS ====================*/
@@ -1225,7 +1225,7 @@ local_sin_cos_LUT_2tab (REAL4 *sinx, REAL4 *cosx, REAL8 x)
 
 #if (SINCOS_VERSION == 2)
 
-int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
+inline int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 {
   REAL8 xt;
   /* we only need the fractional part of 'x', which is number of cylces,
@@ -1241,7 +1241,7 @@ int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 }
 
 #define LUT_RES         64      /* resolution of lookup-table */
-int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
+inline int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 {
   INT4 i0;
   REAL8 d, d2;
