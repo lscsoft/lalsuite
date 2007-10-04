@@ -154,11 +154,13 @@ int LocalXLALComputeFaFb (Fcomponents*, const SFTVector*, const PulsarSpins,
 			  const SSBtimes*, const AMCoeffs*, const ComputeFParams*);
 
 int local_sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
-inline int local_sin_cos_2PI_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
+int local_sin_cos_2PI_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
 #if (SINCOS_VERSION == 9)
 #define local_sin_cos_2PI_LUT_trimmed local_sin_cos_2PI_LUT
 #else
-inline int local_sin_cos_2PI_LUT_trimmed (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
+int local_sin_cos_2PI_LUT_trimmed (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
+int local_sin_cos_2PI_LUT_init (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
+int (*local_sin_cos_2PI_LUT_p) (REAL4*, REAL4*, REAL8) = local_sin_cos_2PI_LUT_init;
 #endif
 
 /*==================== FUNCTION DEFINITIONS ====================*/
@@ -553,7 +555,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	{
 	  REAL8 _lambda_alpha;
 	  SINCOS_TRIM_X (_lambda_alpha,(-lambda_alpha));
-	  if ( local_sin_cos_2PI_LUT_trimmed ( &imagQ, &realQ, _lambda_alpha ) ) {
+	  if ( local_sin_cos_2PI_LUT_p ( &imagQ, &realQ, _lambda_alpha ) ) {
 	    XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
 	  }
 	}
@@ -582,7 +584,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
        * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the 
        * closest to zero and will pose no numerical difficulties !
        */
-      local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
+      local_sin_cos_2PI_LUT_p ( &s_alpha, &c_alpha, kappa_star );
       c_alpha -= 1.0f; 
 
       /* ---------- calculate the (truncated to Dterms) sum over k ---------- */
@@ -1250,7 +1252,19 @@ inline int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
   return(local_sin_cos_2PI_LUT_trimmed (sin2pix,cos2pix,xt));
 }
 
-inline int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
+int local_sin_cos_2PI_LUT_init (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
+{
+  UINT4 k;
+  static REAL8 const oo_lut_res = OO_LUT_RES;
+  for (k=0; k <= LUT_RES; k++) {
+    sinLUT[k] = sin( LAL_TWOPI * k * oo_lut_res );
+    cosLUT[k] = cos( LAL_TWOPI * k * oo_lut_res );
+  }
+  local_sin_cos_2PI_LUT_p = local_sin_cos_2PI_LUT_trimmed;
+  return(local_sin_cos_2PI_LUT_p (sin2pix,cos2pix,x));
+}
+
+int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 {
   INT4 i0;
   REAL8 d, d2;
@@ -1262,13 +1276,6 @@ inline int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 
   /* the first time we get called, we set up the lookup-table */
   if ( firstCall )
     {
-      UINT4 k;
-
-      for (k=0; k <= LUT_RES; k++)
-        {
-          sinLUT[k] = sin( LAL_TWOPI * k * oo_lut_res );
-          cosLUT[k] = cos( LAL_TWOPI * k * oo_lut_res );
-        }
       firstCall = FALSE;
     }
 
