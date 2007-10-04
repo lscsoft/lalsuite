@@ -152,8 +152,12 @@ static UINT4 last_count, last_total;      /**< last template count, see last_rac
 
 
 /*^* LOCAL FUNCTION PROTOTYPES *^*/
-static void worker (void);
+#ifdef __GLIBC__
+static void sighandler(int, siginfo_t*, void*);
+#else
 static void sighandler(int);
+#endif
+static void worker (void);
 static int write_checkpoint(char*);
 static int is_zipped(const char *);
 static int resolve_and_unzip(const char*, char*, const size_t);
@@ -237,22 +241,34 @@ int BOINC_LAL_ErrHand (LALStatus  *stat,
 */
 #ifdef __GLIBC__
   /* needed to define backtrace() which is glibc specific*/
+#include <signal.h>
 #include <execinfo.h>
+/* get REG_EIP from ucontext.h, see
+   http://www.linuxjournal.com/article/6391 */
+#define __USE_GNU
+#include <ucontext.h>
 #endif /* __GLIBC__ */
 
-/* signal handlers */
-static void sighandler(int sig){
-  LALStatus *mystat = global_status;
+
+#ifdef __GLIBC__
+static void sighandler(int sig,
+		       siginfo_t *info,
+		       void *secret)
+#else
+static void sighandler(int sig)
+#endif /* __GLIBC__ */
+{
   static int killcounter = 0;
 #ifdef __GLIBC__
   /* for glibc stacktrace */
-  void *stackframes[64];
-  size_t nostackframes;
+  static void *stackframes[64];
+  static size_t nostackframes;
+  ucontext_t *uc = (ucontext_t *)secret;
 #endif
 
   /* lets start by ignoring ANY further occurences of this signal
      (hopefully just in THIS thread, if truly implementing POSIX threads */
-  LogPrintfVerbatim(LOG_CRITICAL, "\n");
+  LogPrintfVerbatim (LOG_CRITICAL, "\n");
   LogPrintf (LOG_CRITICAL, "APP DEBUG: Application caught signal %d.\n\n", sig );
 
   /* ignore TERM interrupts once  */
@@ -266,32 +282,31 @@ static void sighandler(int sig){
       return;
   } /* termination signals */
 
-#if defined(__GNUC__) && __i386__
-  /* in case of a floating-point exception try to write out the FPU status */
-  if ( sig == SIGFPE ) {
-    fpuw_t fpstat = get_fpu_status();
-    fprintf(stderr,"FPU status flags: ");
-    PRINT_FPU_STATUS_FLAGS(fpstat);
-    fprintf(stderr,"\n");
-  }
-#endif
-
-  if (mystat)
+  if (global_status)
     LogPrintf (LOG_CRITICAL,   "Stack trace of LAL functions in worker thread:\n");
-  while (mystat) {
-    LogPrintf (LOG_CRITICAL,   "%s at line %d of file %s\n", mystat->function, mystat->line, mystat->file);
-    if (!(mystat->statusPtr)) {
-      const char *p=mystat->statusDescription;
-      LogPrintf (LOG_CRITICAL,   "At lowest level status code = %d, description: %s\n", mystat->statusCode, p?p:"NO LAL ERROR REGISTERED");
+  while (global_status) {
+    LogPrintf (LOG_CRITICAL,   "%s at line %d of file %s\n", global_status->function, global_status->line, global_status->file);
+    if (!(global_status->statusPtr)) {
+      const char *p=global_status->statusDescription;
+      LogPrintf (LOG_CRITICAL,   "At lowest level status code = %d, description: %s\n", global_status->statusCode, p?p:"NO LAL ERROR REGISTERED");
     }
-    mystat=mystat->statusPtr;
+    global_status=global_status->statusPtr;
   }
   
 #ifdef __GLIBC__
+  /* in case of a floating-point exception write out the FPU status */
+  if ( sig == SIGFPE ) {
+    fpuw_t fpstat = uc->uc_mcontext.fpregs->sw;
+    fprintf(stderr,"FPU status word %x, flags: ", uc->uc_mcontext.fpregs->sw);
+    PRINT_FPU_STATUS_FLAGS(fpstat);
+    fprintf(stderr,"\n");
+  }
   /* now get TRUE stacktrace */
   nostackframes = backtrace (stackframes, 64);
   LogPrintf (LOG_CRITICAL,   "Obtained %zd stack frames for this thread.\n", nostackframes);
   LogPrintf (LOG_CRITICAL,   "Use gdb command: 'info line *0xADDRESS' to print corresponding line numbers.\n");
+  /* overwrite sigaction with caller's address */
+  stackframes[1] = (void *) uc->uc_mcontext.gregs[REG_EIP];
   backtrace_symbols_fd(stackframes, nostackframes, fileno(stderr));
 #endif /* __GLIBC__ */
   /* sleep a few seconds to let the OTHER thread(s) catch the signal too... */
@@ -872,7 +887,7 @@ static void worker (void) {
     fpuw_t fpstat;
 
     fpstat = get_fpu_control_word();
-    fprintf(stderr,"FPU exception mask initial: %4x:",fpstat);
+    fprintf(stderr,"FPU masked exceptions now: %4x:",fpstat);
     PRINT_FPU_EXCEPTION_MASK(fpstat);
     fprintf(stderr,"\n");
     
@@ -880,17 +895,20 @@ static void worker (void) {
     fpstat &= ~FPU_STATUS_INVALID;
     set_fpu_control_word(fpstat);
 
-    /* this is weird - on MacOS Intel this needs to be uncommented to work properly...
-    fprintf(stderr,"FPU exception mask try set: %4x:",fpstat);
-    PRINT_FPU_STAT_FLAGS(fpstat);
+    fprintf(stderr,"FPU masked exceptions set: %4x:",fpstat);
+    PRINT_FPU_EXCEPTION_MASK(fpstat);
     fprintf(stderr,"\n");
+
+    /* this is weird - somtimes gcc seems to cache the fpstat value
+       (e.g. on MacOS Intel), so the second reading of the control_word
+       doesn't seem to do what is expected
     fpstat = 0;
-    */
 
     fpstat = get_fpu_control_word();
     fprintf(stderr,"FPU exception mask set to:  %4x:",fpstat);
     PRINT_FPU_EXCEPTION_MASK(fpstat);
     fprintf(stderr,"\n");
+    */
   }
 
   if(crash_fpu)
@@ -1050,7 +1068,37 @@ int main(int argc, char**argv) {
 
 
   /* install signal handler */
-#ifndef _WIN32
+#ifdef _WIN32
+  signal(SIGTERM, sighandler);
+  signal(SIGABRT, sighandler);
+  if ( !skipsighandler ) {
+    signal(SIGINT,  sighandler);
+    signal(SIGSEGV, sighandler);
+    signal(SIGFPE,  sighandler);
+    signal(SIGILL,  sighandler);
+  }
+#elif __GLIBC__
+  /* this uses unsupported features of the glibc, so don't
+     use the (rather portable) boinc_set_signal_handler() here */
+  {
+    struct sigaction sa;
+
+    sa.sa_sigaction = (void *)sighandler;
+    sigemptyset (&sa.sa_mask);
+    sa.sa_flags = SA_RESTART | SA_SIGINFO;
+
+    sigaction(SIGTERM, &sa, NULL);
+    sigaction(SIGABRT, &sa, NULL);
+
+    if ( !skipsighandler ) {
+      sigaction(SIGINT,  &sa, NULL);
+      sigaction(SIGSEGV, &sa, NULL);
+      sigaction(SIGFPE,  &sa, NULL);
+      sigaction(SIGILL,  &sa, NULL);
+      sigaction(SIGBUS,  &sa, NULL);
+    }
+  }
+#else
   /* install signal-handler for SIGTERM, SIGINT and SIGABRT(?) 
    * NOTE: it is critical to catch SIGINT, because a user
    * pressing Ctrl-C under boinc should not directly kill the
@@ -1063,23 +1111,13 @@ int main(int argc, char**argv) {
   /* install signal handler (for ALL threads) for catching
    * Segmentation violations, floating point exceptions, Bus
    * violations and Illegal instructions */
-  if ( !skipsighandler )
-    {
+  if ( !skipsighandler ) {
       boinc_set_signal_handler(SIGINT,  sighandler);
       boinc_set_signal_handler(SIGSEGV, sighandler);
       boinc_set_signal_handler(SIGFPE,  sighandler);
       boinc_set_signal_handler(SIGILL,  sighandler);
       boinc_set_signal_handler(SIGBUS,  sighandler);
-    } /* if !skipsighandler */
-#else /* WIN32 */
-  signal(SIGTERM, sighandler);
-  signal(SIGABRT, sighandler);
-  if ( !skipsighandler ) {
-    signal(SIGINT,  sighandler);
-    signal(SIGSEGV, sighandler);
-    signal(SIGFPE,  sighandler);
-    signal(SIGILL,  sighandler);
-  }
+  } /* if !skipsighandler */
 #endif /* WIN32 */
 
 
