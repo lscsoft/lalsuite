@@ -4,7 +4,7 @@
 __author__ = "Thomas Cokelaer <thomas.cokelaer@astro.cf.ac.uk>"
 __version__ = "$Revision$"
 __date__ = "$Date$"
-__name__ = "$Name:"
+__name__ = "$Id"
 
 import sys
 import copy
@@ -725,7 +725,7 @@ def write_injection(page, opts):
   return page
 
 
-def write_about(page, opts):
+def write_about(page, opt):
   webdir = opts.webdir
   page.br()
   page.div(id="encadre")
@@ -736,13 +736,14 @@ def write_about(page, opts):
   tmp  = open(opts.config)
   page.pre(tmp.read())
   tmp.close() 
+
   page.p("and the following command line arguments:")
-  text =__name__ 
-  for arg in opts:
-    text += " " +  arg
+  text=""
+  for arg in sys.argv[:]:
+    text = text +  arg +" "
   page.pre( text )
   
-  page.p(__name__+", version "+__version__)
+  page.p(__name__+" "+__version__[1:len(__version__)-1])
   page.div.close()
   page.div.close()
   page.div.close()
@@ -1113,11 +1114,11 @@ parser.add_option("-D","--debug-mode",action="store_true",\
 #############################################################################
 fig_num = 0
 count_block = 0
-
 config   =  opts.config_file
-opts.config = config # save the name of the ini file
+opts.config = config # save the name of the ini file, why ?
 configcp = ConfigParser.ConfigParser()
 configcp.read(config)
+
 
 # set the log file
 logfile = open('write_ihope_page.log', 'w')
@@ -1201,38 +1202,62 @@ page.init(title=title, css=opts.style, script=script)
 page.h1(opts.title +" (" + opts.gps_start_time +"-" +opts.gps_end_time+")")
 
 ##### we write the toc, and general section
-try:  page = write_toc(page, opts)
-except: page.div("problem in toc section. skippingg this section. "); pass
+try: 
+  page = write_toc(page, opts)
+except:
+  page.div("problem in toc section. skippingg this section. "); 
+  pass
 
-try:  page = write_general(page, opts)
-except: page.add("problem in "+html_sections[0]+" section. skipping this section. "); pass
+try:
+  page = write_general(page, opts)
+except:
+  page.add("problem in "+html_sections[0]+" section. skipping this section. "); 
+  pass
 
-try:  page = write_data_summary(page, opts)
-except: page.add("problem in "+html_sections[1]+" section. skipping this section. "); pass
+try:
+  page = write_data_summary(page, opts)
+except: 
+  page.add("problem in "+html_sections[1]+" section. skipping this section. "); 
+  pass
 
-try:  page = write_playground_summary(page, opts)
-except: page.add("problem in "+html_sections[2]+" section. skipping this section. "); pass
-#try:  page = write_injection(page, opts)
-#except: page.add("problem in "+html_sections[3]+" section. skipping this section. "); pass
+try:
+  page = write_playground_summary(page, opts)
+except:
+  page.add("problem in "+html_sections[2]+" section. skipping this section. "); 
+  pass
+
 page = write_injection(page, opts)
 
 if opts.tuning:
-  try:  page = write_tuning(page, opts)
-  except: page.add("problem in "+html_sections[4]+" section. skipping this section. "); pass
+  try:
+    page = write_tuning(page, opts)
+  except: 
+    page.add("problem in "+html_sections[4]+" section. skipping this section. "); 
+    pass
 
 if opts.analysis:
-  try:  page = write_fulldata(page, opts)
-  except: page.add("problem in "+html_sections[5]+" section. skipping this section. "); pass
+  try:
+    page = write_fulldata(page, opts)
+  except: 
+    page.add("problem in "+html_sections[5]+" section. skipping this section. "); 
+    pass
 
 if opts.upperlimit:
-  try:  page = write_upperlimit(page, opts)
-  except: page.add("problem in "+html_sections[6]+" section. skipping this section. "); pass
+  try:
+    page = write_upperlimit(page, opts)
+  except:  
+    page.add("problem in "+html_sections[6]+" section. skipping this section. "); 
+    pass
 
-try:  page = write_openbox(page, opts)
-except:   page = error_section(page, html_sections[7]); pass
+try:
+  page = write_openbox(page, opts)
+except:
+  page = error_section(page, html_sections[7]);
+  pass
 
-try:  page = write_about(page, opts)
-except:   page = error_section(page, html_sections[8]); pass
+#try:
+page = write_about(page, opts)
+#except:   page = error_section(page, html_sections[8]); pass
  
 
 ##### the end
