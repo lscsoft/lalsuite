@@ -217,9 +217,6 @@ void LocalComputeFStatFreqBand ( LALStatus *status,
     if (first) {
       fprintf(stderr,"\n$Revision$ OPT:%d SCV:%d, SCTRIM:%d\n",
 	      EAH_OPTIMIZATION, SINCOS_VERSION, SINCOS_ROUND_METHOD);
-#if (SINCOS_VERSION == 2)
-      local_sin_cos_2PI_LUT_init();
-#endif
       first = 0;
     }
   }
@@ -1222,25 +1219,25 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
 #if (SINCOS_VERSION == 2)
 
-inline void local_sin_cos_2PI_LUT_init(void)
-{
-  UINT4 k;
-  static REAL8 const oo_lut_res = OO_LUT_RES;
-  for (k=0; k <= LUT_RES; k++) {
-    sinLUT[k] = sin( LAL_TWOPI * k * oo_lut_res );
-    cosLUT[k] = cos( LAL_TWOPI * k * oo_lut_res );
-  }
-}
-
-inline int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
+int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 {
   INT4 i0;
   REAL8 d, d2;
   REAL8 ts, tc;
   static REAL8 const oo_lut_res = OO_LUT_RES;
+  UINT4 k;
+  static int first = !0;
 
+  if (first) {
+    for (k=0; k <= LUT_RES; k++) {
+      sinLUT[k] = sin( LAL_TWOPI * k * oo_lut_res );
+      cosLUT[k] = cos( LAL_TWOPI * k * oo_lut_res );
+    }
+    first = 0;
+  }
+  
 #ifndef LAL_NDEBUG
-  if ( x < 0.0 || x > 1.0 )
+  if ( x < 0.0 || x >= 1.0 )
     {
       XLALPrintError("\nFailed numerica in local_sin_cos_2PI_LUT(): x = %f not in [0,1)\n\n", x );
       return XLAL_FAILURE;
