@@ -4,7 +4,11 @@
 __author__ = "Thomas Cokelaer <thomas.cokelaer@astro.cf.ac.uk>"
 __version__ = "$Revision$"
 __date__ = "$Date$"
-__name__ = "$Id"
+__id__ = "$Idi$"
+__thisauthor__"$Author$"
+__rcs__ = "$RCSfile$"
+__source__="$Source"$
+
 
 import sys
 import copy
