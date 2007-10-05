@@ -102,6 +102,9 @@ parser.add_option("-t", "--trig-bank",action="store_true",default=False,\
 parser.add_option("-i", "--inspiral",action="store_true",default=False,\
     help="do inspirals for single triggers - output SNR/CHISQ/PSD")
 
+parser.add_option("-F", "--frame-check",action="store_true",default=False,\
+    help="do FrCheck jobs on the frames used by the inspiral code")
+
 parser.add_option("-p", "--plots",action="store_true",default=False,\
     help="plot SNR/CHISQ from inspiral stage")
 
@@ -132,7 +135,7 @@ if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
   and not opts.trig_bank and not opts.inspiral and not opts.plots and not \
   opts.hoft_qscan and not opts.seis_qscan and not opts.background_hoft_qscan \
   and not opts.background_seis_qscan and not opts.hoft_datafind and not \
-  opts.generate_segments:
+  opts.generate_segments and not opts.frame_check:
   print >> sys.stderr, "No steps of the pipeline specified."
   print >> sys.stderr, "Please specify at least one of"
   print >> sys.stderr, "--generate-fu-cache, --trig-bank, --inspiral, --plots,"
@@ -185,6 +188,7 @@ plotJob        = plotSNRCHISQJob(opts,cp)
 dataJob        = qscanDataFindJob(cp,'futrig')
 qscanFgJob     = qscanJob(opts,cp)
 qscanBgJob     = qscanLiteJob(opts,cp)
+frcheckJob     = FrCheckJob(opts,cp)
 
 prev_dNode = None
 
@@ -255,6 +259,9 @@ for trig in followuptrigs:
 
     # SETUP PLOT JOBS
     plotNode = plotSNRCHISQNode(plotJob,ifo,inspiralNode.output_file_name,trig,page,dag,inspiralNode,opts)
+
+    # SETUP FRAME CHECK JOBS
+    frcheckNode = FrCheckNode(frcheckJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag)
 
 
 ##########################################################################
