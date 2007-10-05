@@ -2,8 +2,9 @@
 
 # $Id$
 __author__ = "Thomas Cokelaer <thomas.cokelaer@astro.cf.ac.uk>"
-__version__ = "$Revision$"[11:-2]
-__date__ = "$Date$"[7:-2]
+__version__ = "$Revision$"
+__date__ = "$Date$"
+__name__ = "$Name:"
 
 import sys
 import copy
@@ -61,17 +62,7 @@ def mkdir( newdir ):
 # ***************************************************************************
 def create_toggle():
   fname = open("toggle.js", "w")
-  fname.write("function showImage(gpsTime, channelName, timeRanges, imageType) {\n"+\
-    "  for (var timeRangeIndex in timeRanges) {\n"+\
-    "    var imageBaseName =\n"+\
-    "      gpsTime + " " + channelName + \"_\" + timeRanges[timeRangeIndex];\n"+\
-    "    document.getElementById(\"a_\" + imageBaseName).href =\n"+\
-    "      imageBaseName + \"_\" + imageType + \".png\";\n"+\
-    "    document.getElementById(\"img_\" + imageBaseName).src =\n"+\
-    "      imageBaseName + \"_\" + imageType + \"_thumbnail.png\";\n"+\
-    "  }\n"+\
-    " }\n"+\
-    "function toggleVisible(division) {\n"+\
+  fname.write("function toggleVisible(division) {\n"+\
     "  if (document.getElementById(\"div_\" + division).style.display == \"none\") {\n"+\
     "    document.getElementById(\"div_\" + division).style.display = \"block\";\n"+\
     "    document.getElementById(\"input_\" + division).checked = true;\n"+\
@@ -79,12 +70,7 @@ def create_toggle():
     "    document.getElementById(\"div_\" + division).style.display = \"none\";\n"+\
     "    document.getElementById(\"input_\" + division).checked = false;\n"+\
     "   }\n"+\
-    " }\n"+\
-    "function gotoSection(section) {\n"+\
-    "   document.getElementById(\"div_\" + section).style.display = \"block\";\n"+\
-    "   document.getElementById(\"input_\" + section).checked = true;\n"+\
-    "   window.location.hash = section;\n"+\
-    "}\n")
+    " }\n")
   fname.close()
 
 
@@ -97,7 +83,10 @@ def write_toc(page , opts):
   page.div(id="encadre")
   page.div(id="contenu")
   text = "Table of Contents"
-  page.a(e.h2(text), name="toc")
+  page.h2(" ")
+  page.a(text, name="toc")
+  page.h2.close() 
+#   page.a(e.h2(text), name="toc")
   page.ol()
   for this_item in items:
     page.li(e.a(this_item, href=dir+"/"+opts.output+'#'+this_item))
@@ -209,12 +198,8 @@ def write_data_summary(page,opts):
     i=i+1
     try:
       page.h3("Category " + str(i) + " veto segments")
-      page.add("<h4>")
-      input=cat+str(i)
-      page.input(id="input_"+input, type="checkbox",checked="on", onclick="toggleVisible('"+input+"')")
-      page.add("See details here</h4>")
-      page.add("<div id=\"div_"+input+"\", style=\'display:none\'>")
-
+      
+      page = heading(page, "", "See flags here", "h4")
       page.add("This category includes the following flags : ")
       for ifo in ifos:
         command = 'awk \'{print $1}\' ' +  datadir +'/../' + ifo + "cat"+str(i)+".txt"
@@ -222,7 +207,7 @@ def write_data_summary(page,opts):
         page.pre(flags)
       page.add("</div>")
 
-      page.add("<h4>The veto times (category "+str(i)+") according to hipe ( "+cat+") </h4>")
+      page = heading(page, "The veto times (category "+str(i)+") according to hipe ( "+cat+")", "see time tables here", "h4")
       page.table()
       segs = get_segments_tag(cat)
       keys = ("segments","H1","H2","L1","G1","V1","T1") 
@@ -233,6 +218,8 @@ def write_data_summary(page,opts):
            page.td(segs[key])
            page.tr.close()
       page.table.close()
+      page.add("</div>")
+
     except:
       print "Problems parsing category veto segment list "+str(i)
       page.add("unknown or not set. ")
@@ -540,14 +527,13 @@ def write_playground_summary(page,opts):
   page.div.close()  
  
   #----------------------------  The horizon distance   
-  page = add_input_h3(page, "Inspiral Horizon distance")
-  comment = "Inspiral Horizon Distance for a (1.4,1.4) system with a SNR=8"
-  page = add_figure(page, fnames =[\
-	"playground/horizon_playground_range_hist.png", \
-	"playground/horizon_playground_range_plot.png", \
-	"playground/horizon_playground_range_mass.png"],
- caption=comment, size="half")
-  page.div.close()
+  page.add("<!--#include virtual=\"range.html\"-->")
+
+	
+
+#"playground/horizon_playground_range_hist.png", \
+#	"playground/horizon_playground_range_plot.png", \
+#	"playground/horizon_playground_range_mass.png"],
 
   #---------------------------- the number of templates
   page = add_input_h3(page, "Variation in template bank and triggered template bank size")
@@ -559,7 +545,12 @@ def write_playground_summary(page,opts):
 
   #---------------------------- the inspiral results, first stage, no veto
   page = add_input_h3(page, "Inspiral jobs (first stage) no veto")
+  
+  page.p("This section summarizes the results of the first inspiral stage. First, let us look at the rate of triggers (unclustered, no veto)")
+  page = add_figure(page, fnames=["playground/plotnumtriggers_first_inspiral.png"], caption="Rate of triggers", size="half")
+  page.p("The parameters for the inspiral jobs are ")
   page = add_config_section(page, "inspiral")
+  page.p("We can look more closely at the first inspiral stage results, and in particular at the trigger distribution ")
   # add figures and summary files
   for ifo in get_ifos():
     page.h4(ifo)
@@ -745,6 +736,13 @@ def write_about(page, opts):
   tmp  = open(opts.config)
   page.pre(tmp.read())
   tmp.close() 
+  page.p("and the following command line arguments:")
+  text =__name__ 
+  for arg in opts:
+    text += " " +  arg
+  page.pre( text )
+  
+  page.p(__name__+", version "+__version__)
   page.div.close()
   page.div.close()
   page.div.close()
@@ -782,6 +780,18 @@ def add_input_h3(page, title):
   page.add("See details here</h3>")
   page.div(id="div_"+input , style='display:none')  
   return page
+
+def heading(page, title, label="Click here to see the details", heading="h3"):
+  #increment block number
+  global count_block 
+  input=str(count_block)
+  count_block=count_block+1
+
+  page.add("<"+heading+">"+ title)
+  page.input(id="input_"+input, type="checkbox", onclick="toggleVisible('"+input+"')")
+  page.add(label + "</"+heading+">")
+  page.div(id="div_"+input , style='display:none') 
+  return page 
 
 # ***************************************************************************
 # ***************************************************************************
@@ -827,16 +837,17 @@ def create_venn(data, tag):
   try:
     mscript = open("temp.m", "w")
     mscript.write("data = [")
-    mscript.write( data +"];" )
-    mscript.write(" vennX(data\'/3600/24, 0.01);")
+    mscript.write( data +"];" ) 
+    mscript.write(" vennX(data\'/3600/24,0.01);")
     mscript.write(" k=colormap(jet); k = [1 1 1; k];colormap(k); saveas(gcf,\'venn_"+tag+".png\')")
     mscript.close()
     command=("matlab -nodisplay -nodesktop -nojvm -nosplash   < temp.m > /tmp/test ; rm -f temp.m; mv venn_"+tag+".png "+opts.physdir+"/"+tag+"/")
-    make_external_call(command, 0, 0, True)    
+    if not opts.debug:
+      make_external_call(command, True, True, True)    
   except:
     print """   The matlab command to create the venn diagram failed. 
-		Check that matlab is properly,and vennX.m is available
-		(see matapps/src/searches/inspiral/matspiral/utilities")  
+                Check that matlab is properly set,and vennX.m is available
+                (see matapps/src/searches/inspiral/matspiral/utilities")  
           """
 
 # ***************************************************************************
@@ -1080,6 +1091,19 @@ parser = OptionParser( usage = usage, version = "%prog CVS $Id$" )
 parser.add_option("-C","--config-file",action="store",type="string",\
     default='write_ihope_page.ini', metavar=" INI File",\
     help="ini file with information about run directories" )
+parser.add_option("-A","--skip-analysis",action="store_false",\
+    default=True, dest="analysis",metavar="DOANALYSIS",\
+    help="" )
+parser.add_option("-T","--skip-tuning",action="store_false",\
+    default=True, dest="tuning",metavar="DOTUNING",\
+    help="" )
+parser.add_option("-U","--skip-upperlimit",action="store_false",\
+    default=True, dest="upperlimit",metavar="DOUPPERLIMIT",\
+    help="" )
+parser.add_option("-D","--debug-mode",action="store_true",\
+    default=False, dest="debug",metavar="DOUPPERLIMIT",\
+    help="" )
+
 
 
 (opts,args) = parser.parse_args()
@@ -1179,23 +1203,34 @@ page.h1(opts.title +" (" + opts.gps_start_time +"-" +opts.gps_end_time+")")
 ##### we write the toc, and general section
 try:  page = write_toc(page, opts)
 except: page.div("problem in toc section. skippingg this section. "); pass
+
 try:  page = write_general(page, opts)
 except: page.add("problem in "+html_sections[0]+" section. skipping this section. "); pass
+
 try:  page = write_data_summary(page, opts)
 except: page.add("problem in "+html_sections[1]+" section. skipping this section. "); pass
+
 try:  page = write_playground_summary(page, opts)
 except: page.add("problem in "+html_sections[2]+" section. skipping this section. "); pass
 #try:  page = write_injection(page, opts)
 #except: page.add("problem in "+html_sections[3]+" section. skipping this section. "); pass
 page = write_injection(page, opts)
-try:  page = write_tuning(page, opts)
-except: page.add("problem in "+html_sections[4]+" section. skipping this section. "); pass
-try:  page = write_fulldata(page, opts)
-except: page.add("problem in "+html_sections[5]+" section. skipping this section. "); pass
-try:  page = write_upperlimit(page, opts)
-except: page.add("problem in "+html_sections[6]+" section. skipping this section. "); pass
+
+if opts.tuning:
+  try:  page = write_tuning(page, opts)
+  except: page.add("problem in "+html_sections[4]+" section. skipping this section. "); pass
+
+if opts.analysis:
+  try:  page = write_fulldata(page, opts)
+  except: page.add("problem in "+html_sections[5]+" section. skipping this section. "); pass
+
+if opts.upperlimit:
+  try:  page = write_upperlimit(page, opts)
+  except: page.add("problem in "+html_sections[6]+" section. skipping this section. "); pass
+
 try:  page = write_openbox(page, opts)
 except:   page = error_section(page, html_sections[7]); pass
+
 try:  page = write_about(page, opts)
 except:   page = error_section(page, html_sections[8]); pass
  
