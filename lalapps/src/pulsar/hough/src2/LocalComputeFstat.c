@@ -152,8 +152,9 @@ static const LALStatus empty_status;
 
 /* sin/cos Lookup tables */
 #if (SINCOS_VERSION == 2)
-#define LUT_RES         64      /* resolution of lookup-table */
+#define LUT_RES 64      /* resolution of lookup-table */
 static REAL4 sinLUT[LUT_RES+1], cosLUT[LUT_RES+1];
+void local_sin_cos_2PI_LUT_init (void);
 #endif
 
 /*---------- internal prototypes ----------*/
@@ -167,13 +168,7 @@ void LocalComputeFStat ( LALStatus*, Fcomponents*, const PulsarDopplerParams*,
 int LocalXLALComputeFaFb (Fcomponents*, const SFTVector*, const PulsarSpins,
 			  const SSBtimes*, const AMCoeffs*, const ComputeFParams*);
 
-#if (SINCOS_VERSION == 2)
-int local_sin_cos_2PI_LUT_inited (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
-int local_sin_cos_2PI_LUT_init (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
-int (*local_sin_cos_2PI_LUT_trimmed) (REAL4*, REAL4*, REAL8) = local_sin_cos_2PI_LUT_init;
-#else
 int local_sin_cos_2PI_LUT_trimmed (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
-#endif
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -222,6 +217,9 @@ void LocalComputeFStatFreqBand ( LALStatus *status,
     if (first) {
       fprintf(stderr,"\n$Revision$ OPT:%d SCV:%d, SCTRIM:%d\n",
 	      EAH_OPTIMIZATION, SINCOS_VERSION, SINCOS_ROUND_METHOD);
+#if (SINCOS_VERSION == 2)
+      local_sin_cos_2PI_LUT_init();
+#endif
       first = 0;
     }
   }
@@ -1219,13 +1217,12 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
 #define LUT_RES_F	(1.0 * LUT_RES)
 #define OO_LUT_RES	(1.0 / LUT_RES)
-
 #define X_TO_IND	(1.0 * LUT_RES * OOTWOPI )
 #define IND_TO_X	(LAL_TWOPI * OO_LUT_RES)
 
 #if (SINCOS_VERSION == 2)
 
-int local_sin_cos_2PI_LUT_init (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
+inline void local_sin_cos_2PI_LUT_init(void)
 {
   UINT4 k;
   static REAL8 const oo_lut_res = OO_LUT_RES;
@@ -1233,11 +1230,9 @@ int local_sin_cos_2PI_LUT_init (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
     sinLUT[k] = sin( LAL_TWOPI * k * oo_lut_res );
     cosLUT[k] = cos( LAL_TWOPI * k * oo_lut_res );
   }
-  local_sin_cos_2PI_LUT_trimmed = local_sin_cos_2PI_LUT_inited;
-  return(local_sin_cos_2PI_LUT_trimmed (sin2pix,cos2pix,x));
 }
 
-inline int local_sin_cos_2PI_LUT_inited (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
+inline int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 {
   INT4 i0;
   REAL8 d, d2;
