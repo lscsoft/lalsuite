@@ -4,10 +4,9 @@
 __author__ = "Thomas Cokelaer <thomas.cokelaer@astro.cf.ac.uk>"
 __version__ = "$Revision$"
 __date__ = "$Date$"
-__id__ = "$Idi$"
-__thisauthor__"$Author$"
-__rcs__ = "$RCSfile$"
-__source__="$Source"$
+__Id__ = "$Id$"
+#__rcs__ = "$RCSfile$"
+#__source__="$Source$"
 
 
 import sys
@@ -147,7 +146,6 @@ def write_general(page,opts):
   page = add_config_section(page, "ifo-details")
   page.div.close()
 
-  page.div.close()
   page.div.close()
   page.div.close()
   
@@ -747,7 +745,7 @@ def write_about(page, opt):
     text = text +  arg +" "
   page.pre( text )
   
-  page.p(__name__+" "+__version__[1:len(__version__)-1])
+  page.p(__Id__[3:len(__Id__)-1])
   page.div.close()
   page.div.close()
   page.div.close()
