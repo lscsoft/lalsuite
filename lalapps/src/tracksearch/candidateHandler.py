@@ -30,6 +30,15 @@ import string
 import sys
 import time
 from candidateUtils import *
+disableGraphics=False
+try:
+    from pylab import *
+except RuntimeError,ImportError:
+    disableGraphics=True
+
+# Need to add import for pylab and if the import fails disable the
+# printing options available from the command line with error messages
+# to the user.
 
 #Begin MAIN part of this python code to actually manipulate the curve
 #lists
@@ -70,16 +79,19 @@ def gnuplotScriptFile(filename):
     plot to view the pixels found as part of a curve(s). Add a .plt
     extension to the filename specified
     """
-    txtTemplate='plot "%s" with lines\n set size 1.0,0.6\n set terminal postscript portrait enhanced mono dashed lw 1 "Helvetica" 14\n set output "%s.ps"\n replot\n set terminal x11\n set size 1,1\n'
+    txtTemplate='plot "%s" with lines\n set size 1.0,0.6\n set terminal postscript portrait enhanced mono dashed lw 1 "Helvetica" 14\n set output "%s.ps"\n replot\n set terminal x11\n set size 1,1\n set title "%s"\n'
     output_fp=open(filename+'.plt','w')
-    output_fp.write(txtTemplate%(filename,filename))
+    output_fp.write(txtTemplate%(filename,filename,os.path.basename(filename)))
     output_fp.close()
 #End method gnuplotScriptFile()
 
 ###################End internal methods #################
-
-parser = OptionParser()
-
+usage=''
+if disableGraphics:
+    usage = "X windows not detected graphing flags not available.\ncandidateHandler.py [args]"
+else:
+    usage = "candidateHandler.py [args]"
+parser = OptionParser(usage)
 parser.add_option("-f","--file",dest="filename",
                   default="",
                   help="This specifies the list of curve files to process contained in FILE, either rethresholding, globbing.  If the input is a directory then it is assumed that we will be working on all the seen files.  /PATH/*.ext is allowed.  Only one of the other following options should be specified at run-time.  Combining the following options will yield unpredictable results!",
@@ -100,7 +112,7 @@ parser.add_option("-c","--clobber",dest="clobberFilename",
                    )
 parser.add_option("-T","--expression_threshold",dest="expThreshold",
                   default="",
-                  help="This is a flexible thresholding interface.  We are allowed to manipulate variables to build expressions. Variables allowed are:\n P ,power \n L ,pixel length \n D , time duration in seconds \n B , frequency bandwith of kurve \n  T, start time float\n S, stop time float\n F, start Freq \n, G, stop Freq \n See the help for the candidateList class for better explaination of the valid syntax allowed. You can impose multiple threshold expresssions for one file operation.  This saves time lost to IO of running candidateHandler.py multiple times.  Use the comma as a delimiter B>10,L<100 would apply to thresholds and save them in two appropriately marked files. ENCLOSE THE EXPRESSION IN DOUBLE QUOTES",
+                  help="This is a flexible thresholding interface.  We are allowed to manipulate variables to build expressions. Variables allowed are:\n P ,power \n L ,curve length \n D , time duration in seconds \n B , frequency bandwith of kurve \n  T, start time float\n S, stop time float\n F, start Freq \n, G, stop Freq \n V, bright pixel frequency\n H, bright pixel time(float)\n J, power of bright pixel \n M, mean pixel power \n C, variance pixel power \n See the help for the candidateList class for better explaination of the valid syntax allowed. You can impose multiple threshold expresssions for one file operation.  This saves time lost to IO of running candidateHandler.py multiple times.  Use the comma as a delimiter B>10,L<100 would apply to thresholds and save them in two appropriately marked files. ENCLOSE THE EXPRESSION IN DOUBLE QUOTES",
                   )
 parser.add_option("-s","--write_summary",dest="dumpSummaryDisk",
                   default=False,
@@ -112,11 +124,13 @@ parser.add_option("-d","--display_summary",dest="dumpSummaryScreen",
                   action="store_true",
                   help="This will display the summary information for the candidate file(s) opened."
                   )
-parser.add_option("-p","--print",dest="print2file",
-                  default=False,
-                  action="store_true",
-                  help="This option states that files specified with the --file option should be printed to a similiar list of coordinate pairs that may be plotted using some external X interface, such as gnuplot. To show you a visual representation of the candidates found.  THIS OPTION NOT YET IMPLEMENTED!"
+parser.add_option("-p","--print",dest="imageFilemask",
+                  default='',
+                  help="This option states that files specified with the --file option should be printed to a similiar list of coordinate pairs that may be plotted using some external X interface, such as gnuplot. To show you a visual representation of the candidates found.  THIS OPTION NOT YET IMPLEMENTED! IT IS BEING REDONE DO NOT USE THIS OPTION! Should eventually take a filename as output arg!b"
                   )
+parser.add_option("-i","--image",dest="imageCount",
+                  default='0',
+                  help="This switch allows you to tell the candidateHandler to graph the data, if the input library is clobbered together from many candidate lists then specify the maximum number of figures you are willing to create.  The default is currently 1")
 parser.add_option("-x","--stats",dest="stats",
                   default='',
                   help="Determine the specified stats for all candidates in input file for variable in question.  See the -T options variable labels for explaination.  This result is written out to the screen as mean,min,max,std.  To measure stats of more than one trait use a comma seperated list P,L as input args. FUNCTIONALITY NOT IMPLEMENTED YET!"
@@ -130,7 +144,8 @@ filename=str(options.filename)
 glob=options.glob
 clobberFilename=str(options.clobberFilename)
 expThreshold=str(options.expThreshold)
-printFile=options.print2file
+graph2file=printFile=options.imageFilemask
+graph2screen=int(options.imageCount)
 outfile=str(options.outfile)
 dumpSummaryScreen=bool(options.dumpSummaryScreen)
 dumpSummaryDisk=bool(options.dumpSummaryDisk)
@@ -196,7 +211,18 @@ elif ((canList.__len__() >= 1) and (printFile)):
             gnuplotScriptFile(saveFiles)
         del entry
         del candidateObject
-
+    #Create a scatterplot on screen of the curves in the candidateList
+elif ((canList.__len__() >=1) and ((graph2screen>0) or (graph2file!=''))):
+    if (graph2screen < canList.__len__()):
+        print "Number of images to create exceeds your request!"
+        print "Estimate images in this data structure are ",canList.__len__()
+        #Needs continue anyway option here!
+        os.abort()
+    for entry in canList:
+        candidateObject=candidateList(verboseSwitch)
+        candidateObject.__loadfileQuick__(entry)
+        candidateObject.graphdata(graph2file)
+        del candidateObject
     #SECTION APPLY ABITRARY THRESHOLDS
 elif ((expThreshold != "") and (canList.__len__() >=1)):
     #Carry out thresholding on all entries in canList

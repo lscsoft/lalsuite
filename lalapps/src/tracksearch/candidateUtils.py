@@ -28,7 +28,11 @@ import string
 import sys
 import time
 import copy
-
+disableGraphics=False
+try:
+    import pylab
+except RuntimeError,ImportError:
+    disableGraphics=True
 
 """
 This file provides the class and methods needed to process candidate
@@ -64,7 +68,7 @@ class kurve:
         most cases.  It is invoked via the loadfile method in the candidateList
         class.
         Variable is a list of lists.  Each element is
-        [int(row),int(col),gpsInt(gpsStamp),float(freq),float(power)]
+        [int(row),int(col),printgpsInt(gpsStamp),float(freq),float(power)]
         """
         self.element.append([Row,Col,gpsStamp,Freq,Power])
         self.length=self.__len__()
@@ -241,6 +245,63 @@ class kurve:
                                 float(entry[4])])
         return tmpVariable
         #End getKurveDataBlock_HumanReadable
+
+    def getSortedByBrightness(self):
+        """
+        Method that gives you a sorted structure keyed by the
+        individual pixel brightness for the curve. The brightest pixel
+        will be the one with element [0].
+        """
+        currentIndex=0
+        keyedList=[]
+        dataBlock=self.getKurveDataBlock()
+        for entry in dataBlock:
+            newKey=[]
+            newKey.append(entry[4])
+            newKey.append(currentIndex)
+            currentIndex=currentIndex.__add__(1)
+            keyedList.append(newKey)
+        #End loop
+        keyedList.sort()
+        sortedData=[]
+        for entry in keyedList:
+            sortedData.append(dataBlock[entry[1]])
+        if sortedData.__len__() != dataBlock.__len__():
+            print "Fatal error sorting a curve by pixel brightness!"
+            os.abort()
+        return sortedData
+        #end getSortedByBrightness method
+        
+    def getBrightPixelAndStats(self):
+        """
+        Method gets a single ROW from self.getKurveDataBlock this
+        element should be the maximum brightness
+        gpsInt,Frequency,Power and in addition it also gives
+        mean Power in that curve, std dev of the power for that curve.
+        The output structure is then
+        X a single lement of self.element of the form described in
+        method self.appendPixel.
+        [X,mean,var]
+        """
+        dataBlock=self.getSortedByBrightness()
+        mean=float(0)
+        sum=float(0)
+        sumSqr=float(0)
+        var=float(0)
+        if dataBlock.__len__() < 1:
+            print "Fatel Error unexpected curve length of zero for this curve!"
+            os.abort()
+        brightestPixel=dataBlock[dataBlock.__len__()-1]
+        for entry in dataBlock:
+            #Add individual power elements
+            sum=sum.__add__(float(entry[4]))
+            sumSqr=sumSqr + (float(entry[4])*float(entry[4]))
+        n=dataBlock.__len__()
+        mean=float(sum.__div__(n))
+        var=float(sumSqr - float(sum*sum).__div__(n)).__div__(n-1)
+        return [brightestPixel,mean,var]
+        #End getBrightPixel method
+#End class kurve
         
 class gpsInt:
     """
@@ -373,6 +434,7 @@ class candidateList:
         self.sorted=False
         #Should be list of objects of class kurve
         self.curves=[]
+        self.summaryFormat="";
     #End init method
 
     def __sec2pixel__(self,seconds):
@@ -522,7 +584,7 @@ class candidateList:
                         for pixel in tmpLine:
                             [a,b,c,d,e,f]=str(pixel).split(',')
                             self.curves[self.curves.__len__()-1].appendPixel(\
-                                int(A),int(b),gpsInt(c,d),float(e),float(f)\
+                                int(a),int(b),gpsInt(c,d),float(e),float(f)\
                                 )
                         #Update spinner character
                         curveCount+=1
@@ -1093,31 +1155,67 @@ class candidateList:
 
     def dumpCandidateKurveSummary(self):
         """
-        This method scans the entries in the object.  Then
-        it uses it's filename and path to create a file called
-        /PATH/filename.summary.  It is here we will find the summary
-        information about the candidate file. As
-        #filename
-        PixelLength,Power,Duration,Bandwidth
+        This method creates a variable object that contains the
+        summary associated with all the elements in the input
+        structure self.curves.  This output can be used to write the
+        summary information to a .summary text file.  This method is
+        closely related to createSummaryStructure method.  We have as
+        output of this method
+        GPS start
+        GPS stop
+        F start
+        F stop
+        Curve Length
+        Integrate Power
+        Duration (secs)
+        Freq Band (Hz)
         """
         summary=[]
         for lineInfo in self.curves:
             curveID,l,p=lineInfo.getKurveHeader()
             #See notes in methods below for explaination
+            #Offsets in d,F are likely wrong...Tina-Thu-Oct-04-2007:200710041448 
             d=lineInfo.getCandidateDuration()+self.gpsWidth.getAsFloat()
             F=lineInfo.getCandidateBandwidth()+self.freqWidth
             t=float(lineInfo.printStartGPS())
             s=float(lineInfo.printStopGPS())
             f=float(lineInfo.printStartFreq())
             g=float(lineInfo.printStopFreq())
-            summary.append([t,s,f,g,l,p,d,F])
+            tmp=lineInfo.getBrightPixelAndStats()
+            v=tmp[0][3] #Freq of Bright Pixel
+            h=tmp[0][2].getAsFloat() #GPS time of Bright Pixel
+            j=tmp[0][4] #The pixel power value for brightest pixel
+            m=tmp[1] #Mean power of pixels in curve
+            s=tmp[2] #stddev^2 of pixel power in curve
+            #summary.append([t,s,f,g,l,p,d,F])
+            summary.append([t,s,f,g,l,p,d,F,v,h,m,s,j])
         return summary
     #End dumpCandidateKurveSummary()
 
+    def createSummaryStructure(self):
+        """
+        Method to build a summary structure for saving to file or
+        printing to screen.
+        The summary should contain the following fields
+        GPS start, Delta T, F start, F stop,F Band, T bright,F bright, Avg
+        brightness,Std dev brightness, Curve Length, Integrate Power
+        """
+        # Set the output formatting string here for all summary
+        # display calls
+        self.summaryFormat="%10.5f %10.5f %10.5f %10.5f %10.5f %10.5f %10.5f %10.5f %10.5f %10.5f %10.5f %10.5f\n" 
+        summaryData=self.dumpCandidateKurveSummary()
+        output=[]
+        for entry in summaryData:
+            outString=self.summaryFormat%(entry[0],entry[6],entry[2],entry[3],entry[7],entry[9],entry[8],entry[12],entry[10],entry[11],entry[4],entry[5])
+#            outString=self.summaryFormat%(entry[0],entry[1],entry[2],entry[3],entry[4],entry[5],entry[6],entry[7],entry[8],entry[9])
+            output.append(outString)
+        return output
+    #End createSummaryStructure method
+    
     def writeSummary(self,override=''):
         """
-        Methods to write summary to disk for viewing
-        Start Time, Stop Time, Start F, Stop F, Length,Power,Duration,Bandwidth
+        Method to write summary with formatting specified in
+        createSummaryStructure method to a file.
         """
         if override=='':
             sourceFile=self.filename[0]
@@ -1125,29 +1223,24 @@ class candidateList:
             sourceFile=override
         outRoot,outExt=os.path.splitext(sourceFile)
         outFile=outRoot+'.summary'
-        summaryData=self.dumpCandidateKurveSummary()
-        format = "%10.5f %10.5f %10.5f %10.5f %6.0i  %14.3f  %8.5f  %8.5f \n"
-        fp=open(outFile,'w')
-        for entry in summaryData:
-            outString=format%(entry[0],entry[1],entry[2],entry[3],entry[4],entry[5],entry[6],entry[7])
+        for entry in self.createSummaryStructure():
             fp.write(outString)
         fp.close()
     # End writeSummary method
 
     def printSummary(self):
         """
-        Methods to write summary to display for viewing
-        Start Time, Stop Time, Start F, Stop F, Length,Power,Duration,Bandwidth
+        Method to write summary with formatting specified in
+        createSummaryStructure method to the screen.
         """
-        summaryData=self.dumpCandidateKurveSummary()
         sourceFile=self.filename[0]
         print "#"
         print "#"+sourceFile
-        format = "%10.5f %10.5f %10.5f %10.5f %6.0i  %14.3f  %8.5f  %8.5f \n"
-        for entry in summaryData:
-            outString=format%(entry[0],entry[1],entry[2],entry[3],entry[4],entry[5],entry[6],entry[7])
-            print outString
-    # End writeSummary method
+        print "#The fields are:"
+        print "#GPS\t    dT\t    Fstart\t    Fstop\t    Fband\t   Tbright\t    Fbright\t    Pbright\t   AvgBright\t    STDBright\t    CL\t    IP\t"
+        for entry in self.createSummaryStructure():
+            print entry,
+    # End printSummary method
     
     def applyArbitraryThresholds(self,expressionString):
         """
@@ -1184,6 +1277,13 @@ class candidateList:
             s=float(lineInfo.printStopGPS())
             f=float(lineInfo.printStartFreq())
             g=float(lineInfo.printStopFreq())
+            #Additional eval stuff?
+            tmpBrightnessInfo=lineInfo.getBrightPixelAndStats()
+            v=float(tmpBrightnessInfo[0][3]) #Freq of Bright Pixel
+            h=float(tmpBrightnessInfo[0][2].getAsFloat()) #float Time of Bright Pixel
+            j=float(tmpBrightnessInfo[0][4]) #Power of Bright Pixel
+            m=float(tmpBrightnessInfo[1]) #Curve mean pixel brightness
+            c=float(tmpBrightnessInfo[2]) #Curve stddev of pixel brightness
             try:
                 evalResult=eval(testExp)
             except :
@@ -1273,7 +1373,67 @@ class candidateList:
             for line in self.getGnuplotPixelList(minVal):
                 output_fp.write(format2C%(line[0],line[1]))
         output_fp.close()
-        #End method writePixelList()
+    #End method writePixelList()
+
+    def graphdata(self,filename=''):
+        """
+        This method uses matplotlib.py to make plots of curves
+        contained in this list!  Currently all plotting functions
+        are hard wired to the method!
+        """
+        if (filename==''):
+            #This code creates a scatter plot in X windows
+            #If pylab loads Ok.
+            brightX=[]
+            brightY=[]
+            brightP=[]
+            minX=float(0)
+            line2plot=[]
+            brightSpotX=[]
+            brightSpotY=[]
+            brightSpotZ=[]
+            start=True
+            for element in self.curves:
+                for point in element.getKurveDataBlock_HumanReadable():
+                    if start:
+                        minX=float(point[0])
+                        start=False
+                    if minX > float(point[0]):
+                        minX = float(point[0])
+            for element in self.curves:
+                xtmp=[]
+                ytmp=[]
+                ztmp=[]
+                bP=element.getBrightPixelAndStats()
+                brightSpotX.append(bP[0][2].getAsFloat()-minX)
+                brightSpotY.append(bP[0][3])
+                brightSpotZ.append(float(bP[0][4]-bP[1]).__abs__()/bP[2])
+                for point in element.getKurveDataBlock_HumanReadable():
+                    xtmp.append(float(point[0])-minX)
+                    ytmp.append(float(point[1]))
+                    ztmp.append(float(point[2]))
+                line2plot.append([xtmp,ytmp,ztmp])
+                del xtmp
+                del ytmp
+                del ztmp
+            for entry in line2plot:
+                pylab.plot(entry[0],entry[1])
+            #Normalize the brightSpotZ max -> 0..5
+            normalizeZscoreTo=100
+            factor=normalizeZscoreTo/(max(brightSpotZ))
+            tmpZ=[]
+            for entry in brightSpotZ:
+                tmpZ.append(entry*factor)
+            brightSpotZ=tmpZ
+            pylab.scatter(brightSpotX,brightSpotY,brightSpotZ)
+            pylab.xlabel("Time (s)")
+            pylab.ylabel("Freq (Hz)")
+            pylab.title(str("GPS %f"%minX))
+            pylab.show()
+        else:
+            print "Writing graphic directly to disk!"
+            print "This option not yet completed!!!!"
+    #End method graph2screen
 #End candidateList class
 
 #Misc Utility classes

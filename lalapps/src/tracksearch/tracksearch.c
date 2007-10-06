@@ -86,7 +86,7 @@ int main (int argc, char *argv[])
   /*
    *Sleep for Attaching DDD 
    */
-  unsigned int doze = 0;
+  unsigned int doze = 10;
   pid_t myPID;
   myPID = getpid( );
   fprintf( stdout, "pid %d sleeping for %d seconds\n", myPID, doze );
