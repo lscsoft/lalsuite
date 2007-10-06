@@ -58,11 +58,23 @@ extern int lalDebugLevel;
 
 void SetUpRadiometerSkyPatches(LALStatus *status, SkyPatchesInfo *out,  CHAR *skyFileName, CHAR *skyRegion, REAL8 dAlpha, REAL8 dDelta);
 
-void CreateSFTPairs(LALStatus                *status,
-		    SFTPairs                 *pairs,
-		    MultiSFTVector           *inputSFTs,
-		    MultiDetectorStateSeries *mdetStates,
-		    SFTPairParams            *par);
+void CreateSFTPairs(LALStatus *status, SFTPairVec *pairs, MultiSFTVector *inputSFTs, MultiDetectorStateSeries *mdetStates, SFTPairParams *par);
+
+void CreateSFTPairsFrom2SFTvectors(LALStatus                 *status,
+				   SFTPairVec                  *out,
+				   const SFTVector           *in1,
+				   const SFTVector           *in2,
+				   const DetectorStateSeries *det1,
+				   const DetectorStateSeries *det2,
+				   SFTPairParams             *par);
+
+void FillSFTPair(LALStatus                 *status,
+		 SingleSFTpair             *out,
+		 COMPLEX8FrequencySeries   *sft1, 
+		 COMPLEX8FrequencySeries   *sft2, 
+		 DetectorState             *det1,
+		 DetectorState             *det2);
+
 
 int main(int argc, char *argv[]){
 
@@ -492,18 +504,13 @@ void SetUpRadiometerSkyPatches(LALStatus           *status,
 
 /** create pairs of sfts */
 void CreateSFTPairs(LALStatus                *status,
-		    SFTPairs                 *out,
+		    SFTPairVec               *out,
 		    MultiSFTVector           *inputSFTs,
 		    MultiDetectorStateSeries *mdetStates,
 		    SFTPairParams            *par)
-{
-  
-  UINT4 numifo, i, j, numsft1, numsft2, numPairs;
+{  
 
-  COMPLEX8FrequencySeries  *thisSFT1, *thisSFT2;	       
-  DetectorState *thisDetState1, *thisDetState2;
-  SingleSFTpair *thisPair;
-
+  UINT4 numifo;
 
   INITSTATUS (status, "CreateSFTPairs", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -519,77 +526,9 @@ void CreateSFTPairs(LALStatus                *status,
     ABORT ( status, RADIOMETER_EBAD, RADIOMETER_MSGEBAD );
   }
 
-  /* number of SFTs from the two ifos */
-  numsft1 = inputSFTs->data[0]->length;
-  numsft2 = inputSFTs->data[1]->length;
-  numPairs = 0;
-
-  for (i=0; i<numsft1; i++) {
-
-    thisSFT1 = inputSFTs->data[0]->data + i;
-    thisDetState1 = mdetStates->data[0]->data + i;
-
-    for (j=0; j<numsft2; j++) {
-
-      LIGOTimeGPS t1, t2;
-      REAL8 timeDiff;
-
-      thisSFT2 = inputSFTs->data[1]->data + j;
-      thisDetState2 = mdetStates->data[1]->data + i;
-
-      /* calculate time difference */      
-      t1 = thisSFT1->epoch;
-      t2 = thisSFT2->epoch;
-      timeDiff = XLALDeltaFloatGPS( &t1, &t2);
-
-      /* decide whether to create pair or not */
-      if ( fabs(timeDiff) < par->lag ) {
-	++numPairs;
-
-	if ( numPairs < out->numPairs) {
-
-	  thisPair = out->data + numPairs -1;
-
-	  thisPair->sft1 = thisSFT1;
-	  thisPair->sft2 = thisSFT2;
-	  
-	  thisPair->vel1[0] = thisDetState1->vDetector[0];
-	  thisPair->vel1[1] = thisDetState1->vDetector[1];
-	  thisPair->vel1[2] = thisDetState1->vDetector[2];
-
-	  thisPair->vel2[0] = thisDetState2->vDetector[0];
-	  thisPair->vel2[1] = thisDetState2->vDetector[1];
-	  thisPair->vel2[2] = thisDetState2->vDetector[2];
-
-	  thisPair->pos1[0] = thisDetState1->rDetector[0];
-	  thisPair->pos1[1] = thisDetState1->rDetector[1];
-	  thisPair->pos1[2] = thisDetState1->rDetector[2];
-
-	  thisPair->pos2[0] = thisDetState2->rDetector[0];
-	  thisPair->pos2[1] = thisDetState2->rDetector[1];
-	  thisPair->pos2[2] = thisDetState2->rDetector[2];
-
-	}
-
-      }
-
-    } /* end loop over second sft set */
-
-  } /* end loop over first sft set */ 
-
-
-
-  /*       velV->data[3*j] = in->data[iIFO]->data[iSFT].vDetector[0]; */
-  /*       velV->data[3*j+1] = in->data[iIFO]->data[iSFT].vDetector[1]; */
-  /*       velV->data[3*j+2] = in->data[iIFO]->data[iSFT].vDetector[2]; */
-  
-  /*       posV->data[3*j] = in->data[iIFO]->data[iSFT].rDetector[0]; */
-  /*       posV->data[3*j+1] = in->data[iIFO]->data[iSFT].rDetector[1]; */
-  /*       posV->data[3*j+2] = in->data[iIFO]->data[iSFT].rDetector[2]; */
-  
-  /*       /\* mid time of sfts *\/ */
-  /*       timeV->data[j] = in->data[iIFO]->data[iSFT].tGPS; */
-  
+  TRY( CreateSFTPairsFrom2SFTvectors(status->statusPtr, out, inputSFTs->data[0], 
+				     inputSFTs->data[1], mdetStates->data[0], 
+				     mdetStates->data[1], par), status);
 
 
   DETATCHSTATUSPTR (status);
@@ -598,3 +537,137 @@ void CreateSFTPairs(LALStatus                *status,
   RETURN (status);
 
 }
+
+
+
+/** create pairs of sfts from a pair of sft vectors*/
+void CreateSFTPairsFrom2SFTvectors(LALStatus                 *status,
+				   SFTPairVec                *out,
+				   const SFTVector           *in1,
+				   const SFTVector           *in2,
+				   const DetectorStateSeries *det1,
+				   const DetectorStateSeries *det2,
+				   SFTPairParams             *par)
+{
+  
+  UINT4 i, j, numsft1, numsft2, numPairs, numsftMin;
+
+  COMPLEX8FrequencySeries  *thisSFT1, *thisSFT2;	       
+  DetectorState *thisDetState1, *thisDetState2;
+  SingleSFTpair *thisPair;
+
+  INITSTATUS (status, "CreateSFTPairsFrom2SFTvectors", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT (out, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+  ASSERT (in1, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+  ASSERT (in2, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+  ASSERT (det1, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+  ASSERT (det2, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+  ASSERT (par, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+
+  /* number of SFTs from the two ifos */
+  numsft1 = in1->length;
+  numsft2 = in2->length;
+  numsftMin = (numsft1 < numsft2)? numsft1 : numsft2;
+
+  numPairs = out->length; /* initialization */
+  thisPair = out->data + numPairs - 1;
+
+  /* increase length of sftpair vector */
+  out->length += numsftMin;
+  out->data = LALRealloc(out->data, out->length * sizeof(out->data[0]));
+
+  /* go over all sfts in first vector */
+  for (i=0; i<numsft1; i++) {
+
+    thisSFT1 = in1->data + i;
+    thisDetState1 = det1->data + i;
+    
+    /* go over all sfts in second vector and check if it should be paired with thisSFT1 */
+    /* this can be made more efficient if necessary */
+    for (j=0; j<numsft2; j++) {
+
+      LIGOTimeGPS t1, t2;
+      REAL8 timeDiff;
+
+      thisSFT2 = in2->data + j;
+      thisDetState2 = det2->data + i;
+
+      /* calculate time difference */      
+      t1 = thisSFT1->epoch;
+      t2 = thisSFT2->epoch;
+      timeDiff = XLALDeltaFloatGPS( &t1, &t2);
+
+      /* decide whether to add this pair or not */
+      if ( fabs(timeDiff) < par->lag ) {
+	numPairs++;
+
+	if ( numPairs < out->length) {
+	  /* there is enough memory */
+	  thisPair++;
+	  TRY( FillSFTPair( status->statusPtr, thisPair, thisSFT1, thisSFT2, thisDetState1, thisDetState2), status);
+	} 
+	else {
+	  /* there not enough memory -- allocate memory and add the pair */
+
+	  out->length += numsftMin;
+	  out->data = LALRealloc(out->data, out->length * sizeof(out->data[0]));
+
+	  thisPair++;
+	  TRY( FillSFTPair( status->statusPtr, thisPair, thisSFT1, thisSFT2, thisDetState1, thisDetState2), status);	  
+	}
+      }
+    } /* end loop over second sft set */
+  } /* end loop over first sft set */ 
+
+
+  /* realloc memory */
+  out->length = numPairs;
+  out->data = LALRealloc(out->data, out->length * sizeof(out->data[0]));
+
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+
+}
+
+
+/** little helper function for filling up sft pair */
+void FillSFTPair(LALStatus                 *status,
+		 SingleSFTpair             *out,
+		 COMPLEX8FrequencySeries   *sft1, 
+		 COMPLEX8FrequencySeries   *sft2, 
+		 DetectorState             *det1,
+		 DetectorState             *det2)
+{  
+  INITSTATUS (status, "FillSFTPairs", rcsid);
+  ATTATCHSTATUSPTR (status);
+    
+  out->sft1 = sft1;
+  out->sft2 = sft2;
+  
+  out->vel1[0] = det1->vDetector[0];
+  out->vel1[1] = det1->vDetector[1];
+  out->vel1[2] = det1->vDetector[2];
+  
+  out->vel2[0] = det2->vDetector[0];
+  out->vel2[1] = det2->vDetector[1];
+  out->vel2[2] = det2->vDetector[2];
+  
+  out->pos1[0] = det1->rDetector[0];
+  out->pos1[1] = det1->rDetector[1];
+  out->pos1[2] = det1->rDetector[2];
+  
+  out->pos2[0] = det2->rDetector[0];
+  out->pos2[1] = det2->rDetector[1];
+  out->pos2[2] = det2->rDetector[2];
+  
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+
+}
+
