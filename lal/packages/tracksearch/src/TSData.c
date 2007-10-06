@@ -1074,7 +1074,7 @@ void DumpTFImage(
   static INT4 callCounter=0;
 
   /* Alloc for two filenames dat and pgm */
-  sprintf(newFilename,"%s_%i",filename,callCounter++);
+  sprintf(newFilename,"%s_%i_",filename,callCounter++);
   pgmfilename = (CHAR*)LALCalloc((strlen(newFilename)+strlen(PGM)+1),sizeof(CHAR));
   datfilename = (CHAR*)LALCalloc((strlen(newFilename)+strlen(DAT)+1),sizeof(CHAR));
   auxfilename = (CHAR*)LALCalloc((strlen(newFilename)+strlen(DAT)+1),sizeof(CHAR));

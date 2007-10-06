@@ -847,8 +847,6 @@ ConnectLinePoints(LALStatus *status,
 	powerHalfContourA = powerHalfContourA + out->curves[out->numberOfCurves].depth[i];
       }
       powerHalfContourB = 0;
-      /*ORIGINAL for(i=1;i<contour[1].n;i++){*/
-      /* Start a 1 since element zero should be equal to contour[0].n entry*/
       for(i=0;i<contour[1].n;i++){
 	out->curves[out->numberOfCurves].row[i+contour[0].n-1] = contour[1].row[i];     
 	out->curves[out->numberOfCurves].col[i+contour[0].n-1] = contour[1].col[i]; 
@@ -860,6 +858,10 @@ ConnectLinePoints(LALStatus *status,
         powerHalfContourB = powerHalfContourB + out->curves[out->numberOfCurves].depth[i+contour[0].n-1];
       }
       out->curves[out->numberOfCurves].totalPower = powerHalfContourA + powerHalfContourB;
+      out->curves[out->numberOfCurves].totalPower=0;
+            for(i=0;i<out->curves[out->numberOfCurves].n;i++)
+	      out->curves[out->numberOfCurves].totalPower=out->curves[out->numberOfCurves].totalPower+
+		out->curves[out->numberOfCurves].depth[i];
       if(contour[0].junction+contour[1].junction)
 	out->curves[out->numberOfCurves].junction=1;
       /* increment the number of curves */
