@@ -111,10 +111,10 @@ SnglRingdownTable * ring_filter(
     /* make template and fft it */
     XLALComputeRingTemplate( &signal, thisTmplt );
     LALSnprintf( signal.name, sizeof(signal.name), "TMPLT_%u", tmplt );
-    /*write_REAL4TimeSeries( &signal );*/
+/* write_REAL4TimeSeries( &signal ); */
     XLALREAL4TimeFreqFFT( &stilde, &signal, fwdPlan );
     LALSnprintf( stilde.name, sizeof(stilde.name), "TMPLT_%u_FFT", tmplt );
-/*    write_COMPLEX8FrequencySeries( &stilde );    */
+/* write_COMPLEX8FrequencySeries( &stilde ); */
 
     /* compute sigma for this template */
     sigma = sqrt( compute_template_variance( &stilde, invSpectrum,
@@ -129,7 +129,6 @@ SnglRingdownTable * ring_filter(
       filter_segment_template( &result, &rtilde, &stilde,
           &segments->sgmnt[sgmnt], revPlan );
 
-      
       /* search through results for threshold crossings and record events */
       events = find_events( events, &numEvents, &result, sigma,
           thisTmplt->frequency, thisTmplt->quality, params );
@@ -206,16 +205,14 @@ static int filter_segment_template(
   XLALCCVectorMultiplyConjugate( rtilde->data, segment->data, stilde->data );
   XLALUnitMultiply( &rtilde->sampleUnits, &segment->sampleUnits, &stilde->sampleUnits );
   rtilde->epoch = segment->epoch;
-  /*write_COMPLEX8FrequencySeries( rtilde );*/
+/* write_COMPLEX8FrequencySeries( rtilde ); */
 
   /* inverse fft to obtain result */
   XLALREAL4FreqTimeFFT( result, rtilde, plan );
- /*write_REAL4TimeSeries( result );*/
+/* write_REAL4TimeSeries( result ); */
   result->epoch = rtilde->epoch;
   return 0;
 }
-
-
 
 /* NOTE: numEvents must be number of events _FROM_CURRENT_TEMPLATE_ so far. */
 /* It must be set to zero when filtering against a new template is started. */
@@ -241,7 +238,6 @@ static SnglRingdownTable * find_events(
   UINT4 jmin;
   UINT4 jmax;
   UINT4 j;
-/*  LALStatus             status = blank_status;*/
  /* LALMSTUnitsAndAcc     gmstUnits = { MST_HRS, LALLEAPSEC_STRICT };*/
 
   /* compute filter duration: sum of rindown duration and spec trunc duration */
@@ -266,12 +262,15 @@ static SnglRingdownTable * find_events(
   /* compute modified threshold on filter output rather than snr */
   snrFactor = 2 * params->dynRangeFac / tmpltSigma;
   threshold = params->threshold / snrFactor;
-
+/* fprintf( stdout, "threshold = %e\n",threshold ); */
+  
   /* compute start and stop index for scanning time series */
   segmentStride = floor( params->strideDuration / result->deltaT + 0.5 );
   jmin = segmentStride/2;
   jmax = jmin + segmentStride;
 
+  INT8  t0;
+  INT8  tpeak;
   for ( j = jmin; j < jmax; ++j )
     if ( fabs( result->data->data[j] ) > threshold ) /* threshold crossing */
     {
@@ -290,7 +289,9 @@ static SnglRingdownTable * find_events(
         thisEvent = LALCalloc( 1, sizeof( *thisEvent ) );
         thisEvent->next = events;
         events = thisEvent;
-
+        t0 = timeNS;
+        tpeak = timeNS;
+        
         /* copy general information about the filter */
         strncpy( thisEvent->ifo, params->ifoName, sizeof( thisEvent->ifo ) );
         strncpy( thisEvent->channel, strchr( params->channel, ':') + 1, 
@@ -303,42 +304,40 @@ static SnglRingdownTable * find_events(
         
         thisEvent->frequency = tmpltFrequency;
         thisEvent->quality = tmpltQuality;
-        thisEvent->mass = ( 1.0 - 0.63 * pow( (2.0 / thisEvent->quality) , (2.0 / 3.0) ) ) *
-            pow( LAL_C_SI, 3.0) / LAL_G_SI / LAL_TWOPI / LAL_MSUN_SI / thisEvent->frequency; 
-        thisEvent->spin = 1.0 - pow( (2.0 / thisEvent->quality) , (20.0 / 9.0) );
+        thisEvent->mass = XLALBlackHoleRingMass( thisEvent->frequency, thisEvent->quality);
+        thisEvent->spin = XLALBlackHoleRingSpin( thisEvent->quality);
         
         /* specific information about this threshold crossing */
         ns_to_epoch( &thisEvent->start_time, timeNS );
         thisEvent->snr = snr;
 
-        
-        amp = sqrt( 5.0 / 2.0 * 0.01 )  * ( LAL_G_SI * thisEvent->mass * LAL_MSUN_SI / 
-            pow( LAL_C_SI, 2) * 2.0 / LAL_PC_SI /1000000.0 ) * pow( thisEvent->quality, -0.5 ) * 
-            pow( 1.0 + 7.0 / 24.0 / pow( thisEvent->quality, 2.0), -0.5 ) *
-            pow(  1.0 - 0.63 * pow( 1.0 - thisEvent->spin,0.3 ), -0.5);
+        amp = XLALBlackHoleRingAmplitude( thisEvent->frequency, thisEvent->quality, 0.5, 0.01 );
         sigma=tmpltSigma * amp;
         thisEvent->sigma_sq = pow(sigma, 2.0);
         thisEvent->eff_dist = sigma / thisEvent->snr;
         thisEvent->amplitude=amp;       
+        thisEvent->epsilon = 0.0;  /* borrowing these this column */
+        thisEvent->phase = 0.0;    /* and this one */
         ++eventCount;
+        
       }
       else if ( snr > thisEvent->snr ) /* maximize within a set of crossings */
       {
         /* update to specific information about this threshold crossing */
         ns_to_epoch( &thisEvent->start_time, timeNS );
-        thisEvent->snr        = snr;
+        tpeak=timeNS;
+        thisEvent->snr = snr;
 
-        amp = sqrt( 5.0 / 2.0 * 0.01 )  * ( LAL_G_SI * thisEvent->mass * LAL_MSUN_SI/
-            pow( LAL_C_SI, 2) * 2.0 / LAL_PC_SI /1000000.0 ) * pow( thisEvent->quality, -0.5 ) *
-          pow( 1.0 + 7.0 / 24.0 / pow( thisEvent->quality, 2.0), -0.5 ) *
-          pow(  1.0 - 0.63 * pow( 1.0 - thisEvent->spin,0.3 ), -0.5);
+        amp = XLALBlackHoleRingAmplitude( thisEvent->frequency, thisEvent->quality, 0.5, 0.01 );
         sigma=tmpltSigma * amp;
         thisEvent->eff_dist = sigma / thisEvent->snr;        
         thisEvent->amplitude = amp;
+        thisEvent->epsilon = ( timeNS - (REAL4)t0 ) / 1000000000; /* time clustered before the peak snr*/
       }
       
       /* update last threshold crossing time */
       lastTimeNS = timeNS;
+      thisEvent->phase =  ( timeNS - (REAL4)tpeak ) / 1000000000; /* time clustered after the peak snr*/ 
     }
 
   *numEvents += eventCount;
