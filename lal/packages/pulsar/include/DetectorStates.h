@@ -42,6 +42,7 @@ NRCSID( DETECTORSTATESH, "$Id$" );
 /*---------- exported INCLUDES ----------*/
 #include <lal/LALComputeAM.h>
 #include <lal/PulsarDataTypes.h>
+#include <lal/SeqFactories.h>
 
 /*---------- exported DEFINES ----------*/
 
@@ -132,7 +133,14 @@ void XLALDestroyDetectorStateSeries ( DetectorStateSeries *detStates );
 void LALDestroyDetectorStateSeries(LALStatus *, DetectorStateSeries **vect );
 void XLALDestroyMultiDetectorStateSeries ( MultiDetectorStateSeries *mdetStates );
 
+
 /* helpers */
+
+void LALGetMultiDetectorVelTimePos(LALStatus                *status,
+				   REAL8VectorSequence      **outVel,
+				   REAL8VectorSequence      **outPos,
+				   LIGOTimeGPSVector        **outTime, 
+				   MultiDetectorStateSeries *in);
 
 #ifdef  __cplusplus
 }

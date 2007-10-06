@@ -458,3 +458,75 @@ XLALDestroyMultiDetectorStateSeries ( MultiDetectorStateSeries *mdetStates )
 
 } /* XLALDestroyMultiDetectorStateSeries() */
 
+
+/** Helper funxtion to copy velocity, time and position vectors out of the 
+    multi-detector state series */ 
+void LALGetMultiDetectorVelTimePos(LALStatus                *status,
+				   REAL8VectorSequence      **outVel,
+				   REAL8VectorSequence      **outPos,
+				   LIGOTimeGPSVector        **outTime, 
+				   MultiDetectorStateSeries *in)
+{
+
+  UINT4 numifo, len, numsft, iIFO, iSFT, j;  
+  REAL8VectorSequence *velV = NULL;
+  REAL8VectorSequence *posV = NULL;
+  LIGOTimeGPSVector *timeV = NULL;
+  
+  INITSTATUS (status, "GetSFTVelTime", DETECTORSTATESC);
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT (in, status, DETECTORSTATES_ENULL, DETECTORSTATES_MSGENULL);
+  ASSERT (in->length > 0, status, DETECTORSTATES_ENULL, DETECTORSTATES_MSGENULL);
+
+  ASSERT (*outVel == NULL, status, DETECTORSTATES_ENONULL, DETECTORSTATES_MSGENONULL);
+  ASSERT (*outPos == NULL, status, DETECTORSTATES_ENONULL, DETECTORSTATES_MSGENONULL);
+  ASSERT (*outTime == NULL, status, DETECTORSTATES_ENONULL, DETECTORSTATES_MSGENONULL);
+
+  /* number of ifos */
+  numifo = in->length;
+
+  len = 0;
+  /* calculate total number of data points */
+  for (j = 0, iIFO = 0; iIFO < numifo; iIFO++ ) {  
+    ASSERT (in->data[iIFO], status, DETECTORSTATES_ENULL, DETECTORSTATES_MSGENULL);    
+    len += in->data[iIFO]->length;    
+  }
+
+  /* allocate memory for vectors */
+  velV =  XLALCreateREAL8VectorSequence ( len, 3 );
+  posV =  XLALCreateREAL8VectorSequence ( len, 3 );
+  TRY (LALCreateTimestampVector ( status->statusPtr, &timeV,  len), status);
+
+  /* copy the timestamps, weights, and velocity vector */
+  for (j = 0, iIFO = 0; iIFO < numifo; iIFO++ ) {
+
+    ASSERT (in->data[iIFO], status, DETECTORSTATES_ENULL, DETECTORSTATES_MSGENULL);    
+    
+    numsft = in->data[iIFO]->length;    
+    for ( iSFT = 0; iSFT < numsft; iSFT++, j++) {
+      
+      velV->data[3*j] = in->data[iIFO]->data[iSFT].vDetector[0];
+      velV->data[3*j+1] = in->data[iIFO]->data[iSFT].vDetector[1];
+      velV->data[3*j+2] = in->data[iIFO]->data[iSFT].vDetector[2];
+      
+      posV->data[3*j] = in->data[iIFO]->data[iSFT].rDetector[0];
+      posV->data[3*j+1] = in->data[iIFO]->data[iSFT].rDetector[1];
+      posV->data[3*j+2] = in->data[iIFO]->data[iSFT].rDetector[2];
+
+      /* mid time of sfts */
+      timeV->data[j] = in->data[iIFO]->data[iSFT].tGPS;
+      
+    } /* loop over SFTs */
+    
+  } /* loop over IFOs */
+
+  *outVel = velV;
+  *outPos = posV;
+  *outTime = timeV;
+  
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+}
