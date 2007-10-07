@@ -35,7 +35,6 @@ RCSID( "$Id$");
 extern int lalDebugLevel;
 
 
-
 #define EARTHEPHEMERIS "/home/badkri/lscsoft/share/lal/earth05-09.dat"
 #define SUNEPHEMERIS "/home/badkri/lscsoft/share/lal/sun05-09.dat"
 
@@ -55,25 +54,9 @@ extern int lalDebugLevel;
 #define FALSE (1==0)
 
 
-
-void SetUpRadiometerSkyPatches(LALStatus *status, SkyPatchesInfo *out,  CHAR *skyFileName, CHAR *skyRegion, REAL8 dAlpha, REAL8 dDelta);
-
-void CreateSFTPairs(LALStatus *status, SFTPairVec *pairs, MultiSFTVector *inputSFTs, MultiDetectorStateSeries *mdetStates, SFTPairParams *par);
-
-void CreateSFTPairsFrom2SFTvectors(LALStatus                 *status,
-				   SFTPairVec                  *out,
-				   const SFTVector           *in1,
-				   const SFTVector           *in2,
-				   const DetectorStateSeries *det1,
-				   const DetectorStateSeries *det2,
-				   SFTPairParams             *par);
-
-void FillSFTPair(LALStatus                 *status,
-		 SingleSFTpair             *out,
-		 COMPLEX8FrequencySeries   *sft1, 
-		 COMPLEX8FrequencySeries   *sft2, 
-		 DetectorState             *det1,
-		 DetectorState             *det2);
+void CorrelateSingleSFTPair(LALStatus           *status,
+			    SingleSFTpair       *out,
+			    PulsarDopplerParams *par);
 
 
 int main(int argc, char *argv[]){
@@ -86,14 +69,13 @@ int main(int argc, char *argv[]){
   REAL8 deltaF, timeBase; 
   INT8  fLastBin, f0Bin;
   UINT4 binsSFT, numSearchBins, numsft;
+
+  SFTPairVec sftPairs;
+  SFTPairParams pairParams;
   
   /* information about all the ifos */
   MultiDetectorStateSeries *mdetStates = NULL;
   UINT4 numifo;
-
-  REAL8VectorSequence *velV = NULL;
-  REAL8VectorSequence *posV = NULL;
-  LIGOTimeGPSVector   *timeV = NULL; 
 
   LIGOTimeGPS firstTimeStamp, lastTimeStamp;
   REAL8 tObs;
@@ -212,7 +194,7 @@ int main(int argc, char *argv[]){
     
     
 
-  /* read sft Files and set up weights and nstar vector */
+  /* read sfts */
   {
     /* new SFT I/O data types */
     SFTCatalog *catalog = NULL;
@@ -322,9 +304,6 @@ int main(int argc, char *argv[]){
        mid-time of the SFTs -- should not make any difference */
     LAL_CALL ( LALGetMultiDetectorStates ( &status, &mdetStates, inputSFTs, edat), &status);
 
-    /* LAL_CALL( LALGetMultiDetectorVelTimePos( &status, &velV, &posV, &timeV, mdetStates), &status); */
-
-
   } /* end block for position, velocity and time */
   
 
@@ -338,14 +317,16 @@ int main(int argc, char *argv[]){
       patchSizeX = skySizeDelta[skyCounter];
       patchSizeY = skySizeAlpha[skyCounter];
 
-
       /* get sft pairs */
-
-
+      pairParams.lag = uvar_maxlag;
+      LAL_CALL( CreateSFTPairs( &status, &sftPairs, inputSFTs, mdetStates, &pairParams), &status);
+      
       /* correlate sft pairs */
+      
 
 
       /* select candidates */
+
 
 
     } /* finish loop over skypatches */
@@ -354,12 +335,9 @@ int main(int argc, char *argv[]){
 
   /* free memory */
   LAL_CALL (LALDestroyMultiSFTVector(&status, &inputSFTs), &status );
+  LALFree(sftPairs.data);
 
   XLALDestroyMultiDetectorStateSeries ( mdetStates );
-
-  XLALDestroyREAL8VectorSequence( velV );
-  XLALDestroyREAL8VectorSequence( posV );
-  LAL_CALL ( LALDestroyTimestampVector ( &status, &timeV), &status);
 
   LALFree(edat->ephemE);
   LALFree(edat->ephemS);
@@ -369,7 +347,6 @@ int main(int argc, char *argv[]){
   LALFree(skyDelta);
   LALFree(skySizeAlpha);
   LALFree(skySizeDelta);
-
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
 
@@ -530,12 +507,10 @@ void CreateSFTPairs(LALStatus                *status,
 				     inputSFTs->data[1], mdetStates->data[0], 
 				     mdetStates->data[1], par), status);
 
-
   DETATCHSTATUSPTR (status);
 	
   /* normal exit */	
   RETURN (status);
-
 }
 
 
@@ -671,3 +646,69 @@ void FillSFTPair(LALStatus                 *status,
 
 }
 
+
+/** Correlate a single pair of SFT at a parameter space point*/
+void CorrelateSingleSFTPair(LALStatus           *status,
+			    SingleSFTpair       *in,
+			    PulsarDopplerParams *par)
+{  
+  UINT4 k;
+  REAL8 fhat1, fhat2, freq1, freq2;
+  REAL8 *vel1, *vel2, *pos1, *pos2;
+  REAL8 alpha, delta;
+  REAL8 timeDiff1, timeDiff2, factor1, factor2;
+  REAL8 vdotn1, vdotn2;
+
+  REAL8 deltaF;
+  UINT8 freqBin1, freqBin2;
+
+  COMPLEX8FrequencySeries  *sft1, *sft2; 
+
+  INITSTATUS (status, "CorrelateSingleSFTPair", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+
+  vel1 = in->vel1;
+  vel2 = in->vel2;
+  pos1 = in->pos1;
+  pos2 = in->pos2;
+  sft1 = in->sft1;
+  sft2 = in->sft2;
+
+  /* assume both sfts have the same freq. resolution */
+  deltaF = sft1->deltaF;
+
+  alpha = par->Alpha;
+  delta = par->Delta;
+
+
+  /* calculate the frequencies of the signal at the two IFOs */
+  vdotn1 = vel1[0]*cos(delta)*cos(alpha) + vel1[1]*cos(delta)*sin(alpha) + vel1[2]*sin(delta);
+  vdotn2 = vel2[0]*cos(delta)*cos(alpha) + vel2[1]*cos(delta)*sin(alpha) + vel2[2]*sin(delta);
+
+  timeDiff1 = XLALGPSDiff(&(sft1->epoch), &(par->refTime));
+  timeDiff2 = XLALGPSDiff(&(sft2->epoch), &(par->refTime));
+
+  fhat1 = fhat2 = par->fkdot[0];
+  factor1 = factor2 = 1.0;
+  for (k = 1;  k < PULSAR_MAX_SPINS; k++) {
+
+    factor1 *= timeDiff1 / k;
+    factor2 *= timeDiff2 / k;
+
+    fhat1 += par->fkdot[k] * factor1;
+    fhat2 += par->fkdot[k] * factor2;
+  }
+
+  freq1 = fhat1 * (1 + vdotn1);
+  freq2 = fhat2 * (1 + vdotn2);
+
+  freqBin1 = (UINT8)(freq1/deltaF);
+  freqBin2 = (UINT8)(freq2/deltaF);
+
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+
+}

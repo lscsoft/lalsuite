@@ -114,7 +114,10 @@ char *lalWatch;
     REAL8 *deltaSize;
   } SkyPatchesInfo;
 
-  /** A pair of SFTs which will be correlated */
+  /** A pair of SFTs which will be correlated 
+      -- this struct contains all information needed 
+      to calculate the cross correlation for some given 
+      parameter space point   */
   typedef struct tagSingleSFTpair{
     COMPLEX8FrequencySeries  *sft1; 
     COMPLEX8FrequencySeries  *sft2; 
