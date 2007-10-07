@@ -262,7 +262,7 @@ static SnglRingdownTable * find_events(
   /* compute modified threshold on filter output rather than snr */
   snrFactor = 2 * params->dynRangeFac / tmpltSigma;
   threshold = params->threshold / snrFactor;
-/* fprintf( stdout, "threshold = %e\n",threshold ); */
+ /*fprintf( stdout, "threshold = %e\n",threshold ); */
   
   /* compute start and stop index for scanning time series */
   segmentStride = floor( params->strideDuration / result->deltaT + 0.5 );
@@ -271,6 +271,7 @@ static SnglRingdownTable * find_events(
 
   INT8  t0;
   INT8  tpeak;
+  INT8  tmp;
   for ( j = jmin; j < jmax; ++j )
     if ( fabs( result->data->data[j] ) > threshold ) /* threshold crossing */
     {
@@ -332,12 +333,16 @@ static SnglRingdownTable * find_events(
         sigma=tmpltSigma * amp;
         thisEvent->eff_dist = sigma / thisEvent->snr;        
         thisEvent->amplitude = amp;
-        thisEvent->epsilon = ( timeNS - (REAL4)t0 ) / 1000000000; /* time clustered before the peak snr*/
+        /* time clustered before the peak snr*/
+        tmp = timeNS - t0;
+        thisEvent->epsilon =(REAL4)tmp /1000000000;
       }
       
       /* update last threshold crossing time */
       lastTimeNS = timeNS;
-      thisEvent->phase =  ( timeNS - (REAL4)tpeak ) / 1000000000; /* time clustered after the peak snr*/ 
+      /* time clustered after the peak snr*/ 
+      tmp = timeNS - tpeak;
+      thisEvent->phase = (REAL4)tmp / 1000000000;
     }
 
   *numEvents += eventCount;
