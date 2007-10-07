@@ -38,6 +38,7 @@ from pylal import CoincInspiralUtils
 from pylal.fu_utils import *
 from pylal.fu_writeXMLparams import * 
 from pylal.fu_Condor import *
+from pylal.webUtils import *
 from pylal import Fr
 from lalapps import inspiral
 from lalapps import inspiralutils
@@ -78,8 +79,8 @@ parser.add_option("-q", "--qscan",action="store_true",default=False,\
 parser.add_option("-G", "--generate-segments",action="store_true",\
     default=False, help="generate the science segments for background qscans")
 
-parser.add_option("-Q", "--background-qscan",action="store_true",default=False,\
-    help="do qscans over a list of times")
+parser.add_option("-Q", "--background-qscan",action="store_true",\
+    default=False, help="do qscans over a list of times")
 
 parser.add_option("-n", "--hoft-qscan",action="store_true",\
     default=False, help="do hoft qscans")
@@ -92,6 +93,15 @@ parser.add_option("-s", "--seis-qscan",action="store_true",\
 
 parser.add_option("-S", "--background-seis-qscan",action="store_true",\
     default=False, help="do seismic qscans over a list of times")
+
+parser.add_option("-a", "--analyse-qscan",action="store_true",\
+    default=False, help="run the analyseQscan script to interprete the qscan")
+
+parser.add_option("-b", "--analyse-seis-qscan",action="store_true",\
+    default=False, help="run the analyseQscan script to interprete the seismic qscan")
+
+parser.add_option("-e", "--analyse-hoft-qscan",action="store_true",\
+    default=False, help="run the analyseQscan script to interprete the hoft qscan")
 
 parser.add_option("-d", "--data-quality",action="store_true",default=False,\
     help="do data quality lookup - CURRENTLY BROKEN, DO NOT USE IT")
@@ -135,14 +145,18 @@ if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
   and not opts.trig_bank and not opts.inspiral and not opts.plots and not \
   opts.hoft_qscan and not opts.seis_qscan and not opts.background_hoft_qscan \
   and not opts.background_seis_qscan and not opts.hoft_datafind and not \
-  opts.generate_segments and not opts.frame_check:
+  opts.generate_segments and not opts.analyse_qscan and not \
+  opts.analyse_seis_qscan and not opts.analyse_hoft_qscan and not \
+  opts.frame_check:
   print >> sys.stderr, "No steps of the pipeline specified."
   print >> sys.stderr, "Please specify at least one of"
   print >> sys.stderr, "--generate-fu-cache, --trig-bank, --inspiral, --plots,"
-  print >> sys.stderr, "--datafind, --qscan, --hoft-qscan, --seis-qscan"
-  print >> sys.stderr, "--background-qscan, --background-hoft-qscan"
-  print >> sys.stderr, "--background-seis-qscan, --hoft-datafind"
-  print >> sys.stderr, "--generate-segments"
+  print >> sys.stderr, "--datafind, --qscan, --hoft-qscan, --seis-qscan,"
+  print >> sys.stderr, "--background-qscan, --background-hoft-qscan,"
+  print >> sys.stderr, "--background-seis-qscan, --hoft-datafind,"
+  print >> sys.stderr, "--generate-segments, --frame-check,"
+  print >> sys.stderr, "--analyse-qscan, --analyse-seis-qscan,"
+  print >> sys.stderr, "--analyse-hoft-qscan,"
   print >> sys.stderr, "or --write-to-iulgroup (use this option alone for now)"  
   sys.exit(1)
 
@@ -183,12 +197,13 @@ print "\n.......Found " + str(len(followuptrigs)) + " trigs to follow up"
 
 ############ SET UP THE REQUESTED JOBS ########################################
 
-inspJob        = followUpInspJob(cp)
-plotJob        = plotSNRCHISQJob(opts,cp)
-dataJob        = qscanDataFindJob(cp,'futrig')
-qscanFgJob     = qscanJob(opts,cp)
-qscanBgJob     = qscanLiteJob(opts,cp)
-frcheckJob     = FrCheckJob(opts,cp)
+inspJob         = followUpInspJob(cp)
+plotJob         = plotSNRCHISQJob(opts,cp)
+dataJob         = qscanDataFindJob(cp,'futrig')
+qscanFgJob      = qscanJob(opts,cp)
+qscanBgJob      = qscanLiteJob(opts,cp)
+anaQscanJob     = analyseQscanJob(opts,cp)
+frcheckJob      = FrCheckJob(opts,cp)
 
 prev_dNode = None
 
@@ -215,9 +230,9 @@ for ifo in ifos_list:
     if dHoftNode.validNode: prev_dNode = dHoftNode
     
     # SETUP BACKGROUND QSCAN JOBS
-    qBgNode = qscanNode(qscanBgJob,time,cp,dHoftNode.outputFileName,ifo,'background-qscan-hoft',opts,dHoftNode,dag,'hoft_datafind','background_hoft_qscan')
+    qBgNode = qscanNode(qscanBgJob,time,cp,dHoftNode.outputFileName,ifo,'background-hoft-qscan',opts,dHoftNode,dag,'hoft_datafind','background_hoft_qscan')
     qBgNode = qscanNode(qscanBgJob,time,cp,dNode.outputFileName,ifo,'background-qscan',opts, dNode, dag,'datafind','background_qscan')
-    qBgNode = qscanNode(qscanBgJob,time,cp,dNode.outputFileName,ifo,'background-qscan-seismic',opts, dNode, dag,'datafind','background_seis_qscan')
+    qBgNode = qscanNode(qscanBgJob,time,cp,dNode.outputFileName,ifo,'background-seismic-qscan',opts, dNode, dag,'datafind','background_seis_qscan')
 
 
 ################# LOOP OVER FOLLOWUP TRIGGERS #################################
@@ -250,9 +265,10 @@ for trig in followuptrigs:
     if dNode.validNode: prev_dNode = dNode
     
     # SETUP FOREGROUND QSCAN JOBS
-    qFgNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,dHoftNode.outputFileName,ifo,'foreground-qscan-hoft',opts,dHoftNode,dag,'hoft_datafind','hoft_qscan',trig)
+    qFgNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,dHoftNode.outputFileName,ifo,'foreground-hoft-qscan',opts,dHoftNode,dag,'hoft_datafind','hoft_qscan',trig)
     qFgNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,dNode.outputFileName,ifo,'foreground-qscan',opts,dNode,dag,'datafind','qscan',trig)
-    qFgNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,dNode.outputFileName,ifo,'foreground-qscan-seismic',opts,dNode,dag,'datafind','seis_qscan',trig)
+    qFgNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,dNode.outputFileName,ifo,'foreground-seismic-qscan',opts,dNode,dag,'datafind','seis_qscan',trig)
+
 
     # SETUP INSPIRAL JOBS
     inspiralNode = followUpInspNode(inspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag)
@@ -264,6 +280,15 @@ for trig in followuptrigs:
     frcheckNode = FrCheckNode(frcheckJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag)
 
 
+# Second loop for analyseQscan jobs (which must be children of all qscan jobs)
+for trig in followuptrigs:
+
+  for ifo in trig.ifolist_in_coinc:
+
+    anaQscanNode = analyseQscanNode(anaQscanJob,trig.gpsTime[ifo],ifo,'foreground-qscan','QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',cp,opts,dag,'analyse_qscan')
+    anaQscanNode = analyseQscanNode(anaQscanJob,trig.gpsTime[ifo],ifo,'foreground-seismic-qscan','QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',cp,opts,dag,'analyse_seis_qscan')
+    anaQscanNode = analyseQscanNode(anaQscanJob,trig.gpsTime[ifo],ifo,'foreground-hoft-qscan','QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',cp,opts,dag,'analyse_hoft_qscan')
+    
 ##########################################################################
 dag.writeAll()
 if opts.write_to_iulgroup:
