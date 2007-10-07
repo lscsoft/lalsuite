@@ -74,6 +74,8 @@ static void RegisterUserVar (LALStatus *, const CHAR *name, UserVarType type, CH
 
 static void UvarValue2String (LALStatus *, CHAR **outstr, LALUserVariable *uvar);
 CHAR *deblank_string ( const CHAR *start, UINT4 len );
+CHAR *copy_string_unquoted ( const CHAR *in );
+
 LALStringVector *XLALParseCSV2StringVector ( const CHAR *CSVlist );
 
 /*---------- Function definitions ---------- */
@@ -423,12 +425,9 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 	  strp = *(CHAR**)(ptr->varp);
 	  if ( strp != NULL) 	 /* something allocated here before? */
 	    LALFree ( strp );
-
-	  strp = LALCalloc (1, strlen(optarg) + 1);
-	  if (strp == NULL) {
-	    ABORT (status, USERINPUTH_EMEM, USERINPUTH_MSGEMEM);
+	  if ( (strp = copy_string_unquoted ( optarg )) == NULL ) {
+	    ABORT (status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL);
 	  }
-	  strcpy ( strp, optarg);
 	  /* return value */
 	  *(CHAR**)(ptr->varp) = strp;
 	  ptr->state |= UVAR_WAS_SET;
@@ -1218,3 +1217,54 @@ deblank_string ( const CHAR *start, UINT4 len )
   return ret;
 
 } /* deblank_string() */
+
+/** Copy (and allocate) string 'in', possibly with quotes \" or \' removed.
+ * If quotes are present at the beginning of 'in', they must have a matching 
+ * quote at the end of string, otherwise an error is printed and return=NULL
+ */
+CHAR *
+copy_string_unquoted ( const CHAR *in )
+{
+  CHAR *tmp, *out;
+  CHAR opening_quote = 0;
+  CHAR closing_quote = 0;
+  UINT4 inlen, outlen;
+
+  if ( !in )
+    return NULL;
+
+  inlen = strlen ( in );
+
+  if ( (in[0] == '\'') || (in[0] == '\"') )
+    opening_quote = in[0];
+  if ( (in[inlen-1] == '\'') || (in[inlen-1] == '\"') )
+    closing_quote = in[inlen-1];
+
+  /* check matching quotes */
+  if ( opening_quote != closing_quote )
+    {
+      LALPrintError ("Unmatched quotes in string [%s]\n", in );
+      return NULL;
+    }
+
+  if ( opening_quote )
+    {
+      tmp = in + 1;
+      outlen = inlen - 2;
+    }
+  else
+    {
+      tmp = in;
+      outlen = inlen;
+    }
+  
+  if ( (out = LALCalloc (1, outlen + 1)) == NULL ) {
+    LALPrintError ("Out of memory!\n");
+    return NULL;
+  }
+
+  strncpy ( out, tmp, outlen);
+  out[outlen] = 0;
+  return out;
+
+} /* copy_string_unquoted() */
