@@ -31,6 +31,14 @@ from glue import pipeline
 
 from lalapps import inspiral
 
+##############################
+# Convert ifo list to string
+def combo2str(combo):
+  ifo_list = ""
+  for ifo in combo:
+    ifo_list += ifo
+  return ifo_list
+
 #############################################################################
 #
 #  MAIN PROGRAM
@@ -181,29 +189,6 @@ elif opts.four_ifo:
 else: 
    ifo_combo=CoincInspiralUtils.get_ifo_combos(ifolist)
 
-##############################
-# Construct a function which returns a list of ifos specific to a particular plotting routine
-def combo2str(combo):
-  ifo_list = ""
-  for ifo in combo:
-    ifo_list += ifo
-  return ifo_list
-
-def plot_list(combo, dim = None):
-  """ This function takes a list of all possible
-      combination and returns a list of ifos for times
-      equal to and less than dim. for most plots dim =3.
-  """
-      
-  Ifo_list =[]
-  for ifos in combo:
-    if len(ifos) <= dim:
-      ifo_list = ""
-      for ifo in ifos:
-         ifo_list += ifo
-    else: pass   
-    Ifo_list.append(ifo_list)
-  return  Ifo_list
 
 #################################
    
@@ -301,9 +286,9 @@ if opts.plotinspiral:
     cp.set('plotinspiral','ifo-type',ifo)
     plotinspiral_jobs[ifo] = inspiral.PlotInspiralJob(cp)
     plotinspiral_jobs[ifo].set_sub_file( basename + '.plotinspiral_' + ifo + subsuffix )
-
   
   all_jobs.extend(plotinspiral_jobs.values())
+
 
 #plotthinca
 if opts.plotthinca:
@@ -315,9 +300,9 @@ if opts.plotthinca:
       plotthinca_jobs[combostring].add_opt(ifo.lower() + "-triggers","  ")
     plotthinca_jobs[combostring].add_opt("ifo-type",combostring)
     plotthinca_jobs[combostring].set_sub_file( basename + '.plotthinca_' + combostring + subsuffix )
-
   
   all_jobs.extend(plotthinca_jobs.values())
+
 
 #plotnumtemplates
 if opts.plotnumtemplates:
@@ -329,8 +314,8 @@ if opts.plotnumtemplates:
   plotnumtemplates_jobs = inspiral.PlotNumtemplatesJob(cp)
   plotnumtemplates_jobs.set_sub_file( basename + '.plotnumtemplates' + subsuffix)
 
-  
   all_jobs.append(plotnumtemplates_jobs)
+
 
 #plotinjnum
 if opts.plotinjnum:
@@ -346,30 +331,33 @@ if opts.plotinjnum:
       will return file: H1H2L1-COIRE_INJECTIONS_1_FOUND_H1H2L1-866088014-2592000.xml
 
   """
-  
   plotinjnum_jobs = {}
   
-  for ifo in plot_list(ifo_combo,3):
-    cp.set('plotinjnum','ifo-type', ifo)
-    cp.set('plotinjnum','figure-name','plotinjnum_' + ifo)
-    plotinjnum_jobs[ifo] = inspiral.PlotInjnumJob(cp) 
-    plotinjnum_jobs[ifo].set_sub_file( basename + '.plotinjnum_' + ifo + subsuffix )
+  for ifos in  ifo_combo:
+    combostring = combo2str(ifos)
+    cp.set('plotinjnum','ifo-type', combostring)
+    cp.set('plotinjnum','figure-name','plotinjnum_' + combostring)
+    plotinjnum_jobs[combostring] = inspiral.PlotInjnumJob(cp) 
+    plotinjnum_jobs[combostring].set_sub_file( basename + '.plotinjnum_' +  combostring + subsuffix )
   
   all_jobs.extend(plotinjnum_jobs.values())  
+
 
 # plotethinca
 if opts.plotethinca:
 
   plotethinca_jobs = {}
 
-  for ifo in ifo_combo:
-    cp.set('plotethinca','figure-name','plotethinca_' + ifo)
-    cp.set('plotethinca','ifo-type', ifo)
-    cp.set('plotethinca','ifo-times',ifo)
-    plotethinca_jobs[ifo] = inspiral.PlotEthincaJob(cp)
-    plotethinca_jobs[ifo].set_sub_file( basename + '.plotethinca_' + ifo + subsuffix )
+  for ifos in  ifo_combo:
+    combostring = combo2str(ifos)
+    plotethinca_jobs[combostring] = inspiral.PlotEThincaJob(cp)
+    for ifo in ifos:
+      plotethinca_jobs[combostring].add_opt("ifo",ifo)
+    plotethinca_jobs[combostring].add_opt("ifo-times",combostring)
+    plotethinca_jobs[combostring].set_sub_file( basename + '.plotethinca_' + combostring + subsuffix )
 
   all_jobs.extend(plotethinca_jobs.values())
+
 
 #plotinspmissed
 if opts.plotinspmissed:
@@ -382,6 +370,7 @@ if opts.plotinspmissed:
     plotinspmissed_jobs[ifo].set_sub_file( basename + '.plotinspmissed_' + ifo + subsuffix )
 
   all_jobs.extend(plotinspmissed_jobs.values())
+
 
 #plotinspmissed
 if opts.plotinspinj:
@@ -426,41 +415,47 @@ if opts.plotinspiral:
     dag.add_node(plotinspiral_node)
 
 
-if opts.plotthinca:
-   # add an plotthinca job
-   plotthinca_node=inspiral.PlotThincaNode(plotthinca_jobs)
-   dag.add_node(plotthinca_node)
-
-
 if opts.plotnumtemplates:
-   # add an plotnumtemplates job
-   plotnumtemplates_node=inspiral.PlotNumtemplatesNode(plotnumtemplates_jobs)
-   dag.add_node(plotnumtemplates_node)
+  # add an plotnumtemplates job
+  plotnumtemplates_node=inspiral.PlotNumtemplatesNode(plotnumtemplates_jobs)
+  dag.add_node(plotnumtemplates_node)
+
+
+if opts.plotthinca:
+  # add an plotthinca job
+  for ifos in ifo_combos:
+    combostring = combo2str(ifos)
+    plotthinca_node=inspiral.PlotThincaNode(plotthinca_jobs[combostring])
+    dag.add_node(plotthinca_node)
+
 
 if opts.plotinjnum:
-  for ifo in plot_list(ifo_combo,3):
-  # add an plotthinca job
-    plotinjnum_node=inspiral.PlotInjnumNode(plotinjnum_jobs[ifo])
+  for ifos in ifo_combos:
+    combostring = combo2str(ifos)
+    plotinjnum_node=inspiral.PlotInjnumNode(plotinjnum_jobs[combostring])
     dag.add_node(plotinjnum_node)
 
 
 if opts.plotethinca:
-  for ifo in ifo_combo:
-  # add an plotethinca job
-    plotethinca_node =inspiral.PlotEthincaNode(plotethinca_jobs[ifo])
+  for ifos in ifo_combos:
+    combostring = combo2str(ifos)
+    plotethinca_node =inspiral.PlotEthincaNode(plotethinca_jobs[combostring])
     dag.add_node(plotethinca_node)
 
+
 if opts.plotinspmissed:
-   for ifo in ifo_combo:
-  # add an plotinspmissed job
-    plotinspmissed_node =inspiral.PlotInspmissedNode(plotinspmissed_jobs[ifo])
+  for ifos in ifo_combos:
+    combostring = combo2str(ifos)
+    plotinspmissed_node =inspiral.PlotInspmissedNode(plotinspmissed_jobs[combostring])
     dag.add_node(plotinspmissed_node)
+
 
 if opts.plotinspinj:
    for ifo in ifolist:
   # add an plotinspinj job
     plotinspinj_node =inspiral.PlotInspinjNode(plotinspinj_jobs[ifo])
     dag.add_node(plotinspinj_node)
+
 
 if opts.plotsnrchi:
    for ifo in ifolist:
