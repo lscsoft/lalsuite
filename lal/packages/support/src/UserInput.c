@@ -76,6 +76,7 @@ static void RegisterUserVar (LALStatus *, const CHAR *name, UserVarType type, CH
 static void UvarValue2String (LALStatus *, CHAR **outstr, LALUserVariable *uvar);
 CHAR *deblank_string ( const CHAR *start, UINT4 len );
 CHAR *copy_string_unquoted ( const CHAR *in );
+void check_and_mark_as_set ( LALUserVariable *varp );
 
 LALStringVector *XLALParseCSV2StringVector ( const CHAR *CSVlist );
 
@@ -392,7 +393,7 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 	  /* only set if we properly parsed something */
 	  if (ans != -1) {
 	    *(BOOLEAN*)(ptr->varp)  = (BOOLEAN)ans;
-	    ptr->state |= UVAR_WAS_SET;
+	    check_and_mark_as_set ( ptr );
 	  }
 
 	  break;
@@ -404,7 +405,7 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 	      ABORT (status, USERINPUTH_ECMDLARG, USERINPUTH_MSGECMDLARG);
 	    }
 
-	  ptr->state |= UVAR_WAS_SET;
+	  check_and_mark_as_set ( ptr );
 	  break;
 
 	case UVAR_REAL8:
@@ -414,7 +415,7 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 	      ABORT (status, USERINPUTH_ECMDLARG, USERINPUTH_MSGECMDLARG);
 	    }
 
-	  ptr->state |= UVAR_WAS_SET;
+	  check_and_mark_as_set ( ptr );
 	  break;
 
 	case UVAR_STRING:
@@ -429,7 +430,7 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 	  }
 	  /* return value */
 	  *(CHAR**)(ptr->varp) = strp;
-	  ptr->state |= UVAR_WAS_SET;
+	  check_and_mark_as_set ( ptr );
 	  break; 
 
 	case UVAR_CSVLIST:	/* list of comma-separated values */
@@ -442,7 +443,7 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 	  }
 	  /* return value */
 	  *(LALStringVector**)(ptr->varp) = csv;
-	  ptr->state |= UVAR_WAS_SET;
+	  check_and_mark_as_set ( ptr );
 	  break;
 
 	default:
@@ -498,17 +499,17 @@ LALUserVarReadCfgfile (LALStatus *status,
 	case UVAR_BOOL:
 	  TRY(LALReadConfigBOOLVariable(status->statusPtr, ptr->varp, cfg, ptr->name, &wasRead), status);
 	  if (wasRead)
-	    ptr->state |= UVAR_WAS_SET;
+	    check_and_mark_as_set ( ptr );
 	  break;
 	case UVAR_INT4:
 	  TRY(LALReadConfigINT4Variable(status->statusPtr, ptr->varp, cfg, ptr->name, &wasRead),status);
 	  if (wasRead)
-	    ptr->state |= UVAR_WAS_SET;
+	    check_and_mark_as_set ( ptr );
 	  break;
 	case UVAR_REAL8:
 	  TRY(LALReadConfigREAL8Variable(status->statusPtr, ptr->varp, cfg, ptr->name, &wasRead),status);
 	  if (wasRead)
-	    ptr->state |= UVAR_WAS_SET;
+	    check_and_mark_as_set ( ptr );
 	  break;
 	case UVAR_STRING:
 	  stringbuf = NULL;
@@ -520,7 +521,7 @@ LALUserVarReadCfgfile (LALStatus *status,
 		LALFree ( strp ); 
 	      /* return value */
 	      *(CHAR**)(ptr->varp) = stringbuf;
-	      ptr->state |= UVAR_WAS_SET;
+	      check_and_mark_as_set ( ptr );
 	    } /* if stringbuf */
 	  break;
 
@@ -538,7 +539,7 @@ LALUserVarReadCfgfile (LALStatus *status,
 	      }
 	      LALFree ( stringbuf );
 	      *(LALStringVector**)(ptr->varp) = csv;
-	      ptr->state |= UVAR_WAS_SET;
+	      check_and_mark_as_set ( ptr );
 	    } /* if stringbuf */
 	  break;
 	default:
@@ -1224,7 +1225,8 @@ deblank_string ( const CHAR *start, UINT4 len )
 CHAR *
 copy_string_unquoted ( const CHAR *in )
 {
-  CHAR *tmp, *out;
+  const CHAR *tmp;
+  CHAR *out;
   CHAR opening_quote = 0;
   CHAR closing_quote = 0;
   UINT4 inlen, outlen;
@@ -1267,3 +1269,18 @@ copy_string_unquoted ( const CHAR *in )
   return out;
 
 } /* copy_string_unquoted() */
+
+/** Mark the user-variable as set, check if it has been 
+ * set previously and issue a warning if set more than once ...
+ */
+void
+check_and_mark_as_set ( LALUserVariable *varp )
+{
+  /* check if this variable had been set before ... */
+  if ( (varp->state & UVAR_WAS_SET) ) 
+    LogPrintf ( LOG_NORMAL, "Warning: user-variable '%s' was set more than once!\n", varp->name ? varp->name : "(NULL)" );
+
+  varp->state |= UVAR_WAS_SET;
+
+  return;
+} /* check_and_mark_as_set() */
