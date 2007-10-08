@@ -297,7 +297,6 @@ int XLALEPConditionData(
 {
 	const char func[] = "XLALEPConditionData";
 	const REAL8 epsilon = 1.0e-3;
-	PassBandParamStruc highpassParam;
 
 	/*
 	 * Resample the time series if necessary
@@ -311,16 +310,19 @@ int XLALEPConditionData(
 	 * High-pass filter the time series.
 	 */
 
-	highpassParam.nMax = 8;
-	highpassParam.f2 = flow;
-	highpassParam.f1 = -1.0;
-	highpassParam.a2 = 0.9;
-	highpassParam.a1 = -1.0;
-	if(XLALButterworthREAL8TimeSeries(series, &highpassParam))
-		XLAL_ERROR(func, XLAL_EFUNC);
+	if(flow > 0.0) {
+		PassBandParamStruc highpassParam;
+		highpassParam.nMax = 8;
+		highpassParam.f2 = flow;
+		highpassParam.f1 = -1.0;
+		highpassParam.a2 = 0.9;
+		highpassParam.a1 = -1.0;
+		if(XLALButterworthREAL8TimeSeries(series, &highpassParam))
+			XLAL_ERROR(func, XLAL_EFUNC);
+	}
 
 	/*
-	 * The filter corrupts the ends of the time series.  Chop them off.
+	 * Chop off the ends of the time series.
 	 */
 
 	if(!XLALShrinkREAL8TimeSeries(series, corruption, series->data->length - 2 * corruption))
