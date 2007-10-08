@@ -5,8 +5,6 @@ __author__ = "Thomas Cokelaer <thomas.cokelaer@astro.cf.ac.uk>"
 __version__ = "$Revision$"
 __date__ = "$Date$"
 __Id__ = "$Id$"
-#__rcs__ = "$RCSfile$"
-#__source__="$Source$"
 
 
 import sys
@@ -17,7 +15,6 @@ import glob
 import markup
 from markup import oneliner as e
 import ConfigParser
-
 
 
 # ***************************************************************************
@@ -73,7 +70,8 @@ def create_toggle():
     "    document.getElementById(\"div_\" + division).style.display = \"none\";\n"+\
     "    document.getElementById(\"input_\" + division).checked = false;\n"+\
     "   }\n"+\
-    " }\n")
+    " }\n"
+   )
   fname.close()
 
 
@@ -85,15 +83,13 @@ def write_toc(page , opts):
   items = html_sections 
   page.div(id="encadre")
   page.div(id="contenu")
-  text = "Table of Contents"
-  page.h2(" ")
-  page.a(text, name="toc")
-  page.h2.close() 
-#   page.a(e.h2(text), name="toc")
+  page.a(e.h2("Table of Contents"), name="toc")
   page.ol()
   for this_item in items:
     page.li(e.a(this_item, href=dir+"/"+opts.output+'#'+this_item))
   page.ol.close()
+
+  
   page.div.close()
   page.div.close()
   return page
@@ -105,12 +101,12 @@ def write_general(page,opts):
   ini = opts.config_file
 
   page.br()
-  page.add("<!-- beginning of the page with 2 divs-->")
+  page.add("<!-- beginning of the general section -->")
   page.div(id="encadre")
   page.div(id="contenu")
   page = write_title(page, html_sections[0], "rimbaud")
   page.div(id="div_rimbaud", style='display:block')
-  text = ("This page summarizes the analysis of the data segment from GPS time "+opts.gps_start_time+" up to "+opts.gps_end_time)
+  text=  'This page summarizes the analysis of the data segment from GPS time %s up to %s' % (opts.gps_start_time,  opts.gps_end_time)
   page.add(text)
 
   page.h3("The search used the following resources:")
@@ -142,10 +138,11 @@ def write_general(page,opts):
   page.ul.close()
   page.ol.close()
 
-  page = add_input_h3(page, "This search concerned the following combinaison of ifos")
+  page = heading(page, "This search concerned the following combinaison of ifos")
   page = add_config_section(page, "ifo-details")
   page.div.close()
 
+  page.div.close()
   page.div.close()
   page.div.close()
   
@@ -178,12 +175,19 @@ def write_data_summary(page,opts):
 
   page.br()
   page.add("<!-- beginning data summary section-->")
-  page.div(id="encadre")
-  page.div(id="contenu")
+  # starts with 2 divs that needs to be closed
+  page.div(id="encadre") #(1)
+  page.div(id="contenu") #(2)
+  # title with a div to toggle on/off the content 
   page = write_title(page, html_sections[1], "verlaine")
-  page.div(id="div_verlaine", style='display:block')
-  page.add("The segments files above were created with no data quality flags set<br/>")
-  page.add("The times analyzed according to hipe are (SELECTED_SEGS): <br/>")
+  page.div(id="div_verlaine", style='display:block') #(3)
+  # start an heading that opens a div (4)
+  page.p("This section summarizes the data segments information.")
+  page = heading(page, "Selected segments", "Switch details on/off", "h3") 
+  page.add("The segments files above were created with no data quality flags set")
+  page.br()
+  page.add("The times analyzed according to hipe are (SELECTED_SEGS):")
+  page.br()
   page.table()
   segs = get_segments()
   keys = ("segments","H1","H2","L1","G1","V1","T1") 
@@ -194,22 +198,21 @@ def write_data_summary(page,opts):
       page.td(segs[key])
       page.tr.close()
   page.table.close()
-  
+  page.div.close() #(3)
+
   i=0
   for cat in ("CATEGORY_1_VETO_SEGS","CATEGORY_2_VETO_SEGS","CATEGORY_3_VETO_SEGS","CATEGORY_4_VETO_SEGS"):
     i=i+1
     try:
-      page.h3("Category " + str(i) + " veto segments")
+      page = heading(page, "Category " + str(i) + " veto segments")  #(4)
       
-      page = heading(page, "", "See flags here", "h4")
       page.add("This category includes the following flags : ")
       for ifo in ifos:
         command = 'awk \'{print $1}\' ' +  datadir +'/../' + ifo + "cat"+str(i)+".txt"
         flags = make_external_call(command, 0, 0)
         page.pre(flags)
-      page.add("</div>")
 
-      page = heading(page, "The veto times (category "+str(i)+") according to hipe ( "+cat+")", "see time tables here", "h4")
+      page.add("The veto times (category "+str(i)+") according to hipe ( "+cat+")")
       page.table()
       segs = get_segments_tag(cat)
       keys = ("segments","H1","H2","L1","G1","V1","T1") 
@@ -220,14 +223,13 @@ def write_data_summary(page,opts):
            page.td(segs[key])
            page.tr.close()
       page.table.close()
-      page.add("</div>")
+      page.div.close() # (3)
 
     except:
       print "Problems parsing category veto segment list "+str(i)
       page.add("unknown or not set. ")
       
-## to do automatize these 2 sections
-  page.h3("Science segments ")
+  page = heading(page, "Science segments ") #(4)
   page.add("The science segments (category 1) according to hipe are (SCIENCE): <br/>")
   page.table()
   segs = get_segments_tag("SCIENCE_SEGMENTS")
@@ -239,9 +241,10 @@ def write_data_summary(page,opts):
       page.td(segs[key])
       page.tr.close()
   page.table.close()
+  page.div.close() #(3)
   
-  page.h3("RDS_C03_L2 ")
-  page.add("The science segments (category 1) according to hipe are (SCIENCE): <br/>")
+  page  = heading(page, "RDS_C03_L2 segments") #(4)
+  page.add("The RDS_C)3_L2 segments according to hipe are (SCIENCE): <br/>")
   page.table()
   segs = get_segments_tag("RDS_C03_L2")
   keys = ("segments","H1","H2","L1","G1","V1","T1") 
@@ -252,12 +255,12 @@ def write_data_summary(page,opts):
       page.td(segs[key])
       page.tr.close()
   page.table.close()
+  page.div.close() # (3)
 
 
-
-  page.div.close()
-  page.div.close()
-  page.div.close()
+  page.div.close() #(2)
+  page.div.close() #(1)
+  page.div.close() #(0)
   
   return page
 
@@ -314,7 +317,7 @@ def write_upperlimit(page, opts):
   page.add("Upper Limit Results")
 
   # gaussian
-  page = add_input_h3(page, "Gaussian Mass Distribution")
+  page = heading(page, "Gaussian Mass Distribution", "see details here", "h3")
   try:
     page.pre()
     page.add("Compute Posterior output")
@@ -485,6 +488,8 @@ def write_playground_summary(page,opts):
   ini = opts.config_file
   ifos = get_ifos()
   mkdir(opts.physdir+"/playground")
+
+
   page.br()
   page.div(id="encadre")
   page.div(id="contenu")
@@ -493,7 +498,7 @@ def write_playground_summary(page,opts):
   page.add("This section summarizes the analysis of the playground data.<br/>")
   
   #table and venn diagramm
-  page = add_input_h3(page, "General information")
+  page = heading(page, "General information", "see details here", "h3")
   page.table()
   segs = get_segments()
   keys = ("segments","H1","H2","L1","G1","V1","T1") 
@@ -528,46 +533,64 @@ def write_playground_summary(page,opts):
   page = add_config_section(page, "ligo-data")
   page.div.close()  
  
-  #----------------------------  The horizon distance   
-  page.add("<!--#include virtual=\"range.html\"-->")
-
-	
-
-#"playground/horizon_playground_range_hist.png", \
-#	"playground/horizon_playground_range_plot.png", \
-#	"playground/horizon_playground_range_mass.png"],
-
-  #---------------------------- the number of templates
-  page = add_input_h3(page, "Variation in template bank and triggered template bank size")
-  page = add_config_section(page, "tmpltbank")
-  # add figures and summary files
-  comment = "Variation in template bank and triggered template bank size"
-  page = add_figure(page, fnames =["playground/plotnumtemplates.png"], caption=comment, size="half")
+  #----------------------------  The horizon distance  
+  page = heading(page, "Inspiral range plots" )
+  page.add("")  
+  page.div(class_="figure")
+  page.add("<!--#include virtual=\"playground/plotinspiralrange_playground.html\"-->")
+  page = add_caption(page, "Inspiral Horizon distance for a \
+	(1.4,1.4) solar mass system with SNR=8 (first sub-figure), and \
+	histograms(second sub-figure). The last sub-figure shows the \
+	expected horizon distance for any total mass, using an SNR=8."   )
+  page.div.close()
   page.div.close()
 
-  #---------------------------- the inspiral results, first stage, no veto
-  page = add_input_h3(page, "Inspiral jobs (first stage) no veto")
+  #---------------------------- the number of templates
+  page = heading(page, "Variation in template bank and triggered template \
+	bank size")
+  page = add_config_section(page, "tmpltbank")
+  page.div(class_="figure")
+  page.add("<!--#include virtual=\"playground/plotnumtemplates_playground.html\"-->")
+  page = add_caption(page, "Variation in template bank and triggered \
+	 template bank size")
+  page.div.close()
+  page.div.close()
   
-  page.p("This section summarizes the results of the first inspiral stage. First, let us look at the rate of triggers (unclustered, no veto)")
-  page = add_figure(page, fnames=["playground/plotnumtriggers_first_inspiral.png"], caption="Rate of triggers", size="half")
+  #---------------------------- the inspiral results, first stage, no veto
+  page = heading(page, "Inspiral jobs (first stage)")
+  page.p("This section summarizes the results of the first inspiral stage. \
+	First, let us look at the rate of triggers (unclustered, no veto)")
+  #---------------------------- the inspiral trigger rate, no veto
+  page.div(class_="figure")
+  page.add("<!--#include virtual=\"playground/plotnumtriggers_playground.html\"-->")
+  page = add_caption(page, "Variation in inspiral file size")
+  page.div.close()
+  #---------------------------- the inspiral trigger rate, category 1 and 2
   page.p("The parameters for the inspiral jobs are ")
   page = add_config_section(page, "inspiral")
-  page.p("We can look more closely at the first inspiral stage results, and in particular at the trigger distribution ")
+  page.p("We can look more closely at the first inspiral stage results, and in \
+	particular at the trigger distribution (clustered, category veto 1 and 2")
   # add figures and summary files
   for ifo in get_ifos():
     page.h4(ifo)
     summary = open(opts.datadir+"/"+ "playground"  +"/"+ifo+"-SIRE-"+opts.gps_start_time+"-"+opts.duration+".txt")
     comment = ifo+" snr versus time (left), and  cumulative snr (right) clustered case no veto"
-    comment += "<center><pre>-------------------summary file \n"  +summary.read()+"</pre></center>"
+    comment += "<center><pre>-------------------summary file (category 1) \n"  +summary.read()+"</pre></center>"
     summary.close()
+    
+    summary = open(opts.datadir+"/"+ "playground"  +"/"+ifo+"-SIRE_CAT_2_VETO-"+opts.gps_start_time+"-"+opts.duration+".txt")
+    comment = ifo+" snr versus time (left), and  cumulative snr (right) clustered case no veto"
+    comment += "<center><pre>-------------------summary file (category 1) \n"  +summary.read()+"</pre></center>"
+    summary.close()
+
     page.p("The " +ifo + " inspiral files after the first inspiral stage are clustered (no veto \
 	applied), and the results are shown here below in the next set of plots.")
     page = add_config_section(page, ifo.lower()+"-inspiral")
     page = add_figure(page, fnames = [\
-	"playground/plotinspiral_"+ifo+"_end_time_vs_snr.png", \
-	"playground/plotinspiral_veto"+ifo+"_end_time_vs_snr.png", \
-	"playground/plotinspiral_"+ifo+"_snr_cum_hist.png" ,\
-	"playground/plotinspiral_veto"+ifo+"_snr_cum_hist.png" \
+	"playground/plotinspiral_playground_"+ifo+"_end_time_vs_snr.png", \
+	"playground/plotinspiral_playground_cat_2_"+ifo+"_end_time_vs_snr.png", \
+	"playground/plotinspiral_playground_"+ifo+"_snr_cum_hist.png" ,\
+	"playground/plotinspiral_playground_cat_2_"+ifo+"_snr_cum_hist.png" \
 	], caption=comment, size="half")
   page.div(id="todo")
   page.p("distribution in tau0, tau3 ? which tool")
@@ -575,7 +598,7 @@ def write_playground_summary(page,opts):
   page.div.close()# close the div openned in add_input_h3 function
   
   #---------------------------- the first coincidence stagee, no veto
-  page = add_input_h3(page, "First coincidence stage no veto")
+  page = heading(page, "First coincidence stage (no veto)")
   page = add_config_section(page, "thinca")
   page.add("the number of slide is "+get_numslide("./playground")+" time slides")
   page = add_config_section(page, "thinca-slide")
@@ -652,7 +675,7 @@ def write_playground_summary(page,opts):
   page.div.close()
   page.div.close()
   page.div.close()
-  print "....Processing  playground section over"
+  print "....Processing  playground section done"
   return page
 
 # ***************************************************************************
@@ -745,7 +768,7 @@ def write_about(page, opt):
     text = text +  arg +" "
   page.pre( text )
   
-  page.p(__Id__[3:len(__Id__)-1])
+  page.p(__Id__[4:len(__Id__)-5])
   page.div.close()
   page.div.close()
   page.div.close()
@@ -784,15 +807,18 @@ def add_input_h3(page, title):
   page.div(id="div_"+input , style='display:none')  
   return page
 
-def heading(page, title, label="Click here to see the details", heading="h3"):
+def heading(page, title="None", label="Switch details on/off", heading="h3"):
   #increment block number
   global count_block 
   input=str(count_block)
   count_block=count_block+1
 
   page.add("<"+heading+">"+ title)
-  page.input(id="input_"+input, type="checkbox", onclick="toggleVisible('"+input+"')")
-  page.add(label + "</"+heading+">")
+#  page.input(id="input_"+input, type="checkbox", onclick="toggleVisible('"+input+"')", size="4")
+  text = label 
+
+  page.input(id="input_"+input, type="button", onclick="toggleVisible('"+input+"')", value=text ,class_="toggle")
+  page.add("</"+heading+">")
   page.div(id="div_"+input , style='display:none') 
   return page 
 
@@ -813,18 +839,21 @@ def error_section(page, section):
 
 # ***************************************************************************
 # ***************************************************************************
+def add_caption(page, caption):
+  global fig_num
+  page.p("Figure "+str(fig_num) + ": "+caption)
+  fig_num = fig_num + 1
+  return page
 
 def add_figure(page,fnames, caption, size):
   global fig_num
   dir = opts.webdir
-  fig_num +=1
   page.add("<!-- insert a figure -->\n<div class=\"figure\">")
   for fnam in fnames:
     page.add("\t<a href=\"" + dir + "/" + fnam +"\">\n" + \
       "  <img class=\"" + size + "\" src=\"" + dir + "/" + fnam + "\"\>\n  </a>")
-    if os.path.isfile(dir)<0:
-      logfile.write("WARNING: this file ("+fnam+")was not found in "+dir)
   page.add("\t<p class=\"figure\">Figure " + str(fig_num) + ":  " + caption + "</p>\n</div>\n\n")
+  fig_num +=1
 
   #check that the file exsits. If not, returns an error message
   return page
@@ -1089,7 +1118,7 @@ usage =  """ %prog [options]
 Program to write webpage from upperlimit.py
 """
 
-parser = OptionParser( usage = usage, version = "%prog CVS $Id$" )
+parser = OptionParser( usage = usage, version = "%prog CVS "+__Id__ )
 
 parser.add_option("-C","--config-file",action="store",type="string",\
     default='write_ihope_page.ini', metavar=" INI File",\
@@ -1103,8 +1132,14 @@ parser.add_option("-T","--skip-tuning",action="store_false",\
 parser.add_option("-U","--skip-upperlimit",action="store_false",\
     default=True, dest="upperlimit",metavar="DOUPPERLIMIT",\
     help="" )
+parser.add_option("-S","--skip-summary",action="store_false",\
+    default=True, dest="summary",metavar="DOSUMMARY",\
+    help="" )
+parser.add_option("-P","--skip-playground",action="store_false",\
+    default=True, dest="playground",metavar="DOPLAYGROUND",\
+    help="" )
 parser.add_option("-D","--debug-mode",action="store_true",\
-    default=False, dest="debug",metavar="DOUPPERLIMIT",\
+    default=False, dest="debug",metavar="DODEBUG",\
     help="" )
 
 
@@ -1122,9 +1157,6 @@ configcp = ConfigParser.ConfigParser()
 configcp.read(config)
 
 
-# set the log file
-logfile = open('write_ihope_page.log', 'w')
-logfile.write("Parsing the ini file ("+opts.config_file+")... done\n")
 
 #parsing the ini file
 try:
@@ -1156,7 +1188,6 @@ except:
   print "WARNING::problem with the style file. (either not copied or not found)"
   raise
 
-logfile.write("Parsing the ini file (" + opts.config_file +")... done\n")
 html_file = file(opts.output,"w")
 
 
@@ -1214,21 +1245,29 @@ try:
   page = write_general(page, opts)
 except:
   page.add("problem in "+html_sections[0]+" section. skipping this section. "); 
-  pass
+  if opts.debug:
+    raise
+  else:
+    pass
 
-try:
-  page = write_data_summary(page, opts)
-except: 
-  page.add("problem in "+html_sections[1]+" section. skipping this section. "); 
-  pass
+if opts.summary:
+  try:
+    page = write_data_summary(page, opts)
+  except: 
+    page.add("problem in "+html_sections[1]+" section. skipping this section. "); 
+    pass
 
-try:
-  page = write_playground_summary(page, opts)
-except:
-  page.add("problem in "+html_sections[2]+" section. skipping this section. "); 
-  pass
-
-page = write_injection(page, opts)
+if opts.playground:
+  try:
+    page = write_playground_summary(page, opts)
+  except:
+    page = error_section(page, html_sections[2]); 
+    if opts.debug:
+      raise
+    else:
+      pass
+  
+#page = write_injection(page, opts)
 
 if opts.tuning:
   try:
@@ -1251,11 +1290,11 @@ if opts.upperlimit:
     page.add("problem in "+html_sections[6]+" section. skipping this section. "); 
     pass
 
-try:
-  page = write_openbox(page, opts)
-except:
-  page = error_section(page, html_sections[7]);
-  pass
+#try:
+#  page = write_openbox(page, opts)
+#except:
+#  page = error_section(page, html_sections[7]);
+#  pass
 
 #try:
 page = write_about(page, opts)
@@ -1265,13 +1304,14 @@ page = write_about(page, opts)
 ##### the end
 html_file.write(page(False))
 html_file.close()
+
+print 'html file created. Parsing to convert in nice html output'
+
+
+
 print '...Copying html documents in ' +opts.physdir
-make_external_call( 'mv '+opts.output + ' ' + opts.physdir, '', 'True')
+make_external_call('mv  '+opts.output +' ' + opts.physdir, '','',True)
 make_external_call( 'mv toggle.js '+ opts.physdir, '', 'True')
-
-
-logfile.close()
-print 'done'
 
 
 
