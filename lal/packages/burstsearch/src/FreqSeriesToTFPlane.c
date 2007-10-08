@@ -369,7 +369,6 @@ SnglBurstTable *XLALComputeExcessPower(
 			if(!head)
 				XLAL_ERROR_NULL(func, XLAL_EFUNC);
 			head->next = oldhead;
-
 		}
 	}
 	}
