@@ -359,6 +359,7 @@ int main(int argc,char *argv[])
 	  Fstat.Fa.re *= norm;  Fstat.Fa.im *= norm;
 	  Fstat.Fb.re *= norm;  Fstat.Fb.im *= norm;
 	  Fstat.F *= norm * norm;
+	  Fstat.F += 2;		/* compute E[2F]:= 4 + SNR^2 */
 	  thisFCand.Mmunu.Sinv_Tsft = 2.0 * GV.Tsft; 
 	} 
       thisFCand.Fstat   = Fstat;

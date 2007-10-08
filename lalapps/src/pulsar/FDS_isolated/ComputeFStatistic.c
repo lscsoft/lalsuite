@@ -1009,6 +1009,9 @@ int main(int argc,char *argv[])
 		  /* correct frequency back to reference-time: assume maximaly 1 spindown */
 		  REAL8 freq = GV.spinRange.fkdot[0] + i * thisScan.dfkdot[0] + GV.DeltaFreqRef; 
 
+		  if ( uvar_SignalOnly )
+		    Fval += 4;
+
 		  if ( Fval > uvar_Fthreshold )
 		    {
 		      /* candidate found: insert into Top-candidate list and output */
