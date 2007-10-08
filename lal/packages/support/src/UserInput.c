@@ -29,6 +29,7 @@
 
 #include <lal/LALStdio.h>
 #include <lal/UserInput.h>
+#include <lal/LogPrintf.h>
 
 NRCSID( USERINPUTC, "$Id$");
 
@@ -327,8 +328,8 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
   while ( (c = getopt_long(argc, argv, optstring, long_options, &longindex)) != -1 )
     {
       if (c == '?') {
-	LALPrintError ("\nERROR: unkown command-line option encountered\n");
-	LALPrintError ("see '%s --help' for usage-help\n\n", argv[0]);
+	LogPrintf ( LOG_CRITICAL, "ERROR: unkown command-line option encountered\n");
+	LogPrintf ( LOG_CRITICAL, "see '%s --help' for usage-help\n\n", argv[0]);
 	ABORT (status, USERINPUTH_EOPT, USERINPUTH_MSGEOPT);
       }
       if (c != 0) 	/* find short-option character */
@@ -348,7 +349,7 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 	} /* if long-option */
 
       if (ptr == NULL) {	/* should not be possible: nothing found at all... */
-	LALPrintError ("WARNING: failed to find option.. this points to a coding-error!\n");
+	LogPrintf ( LOG_CRITICAL, "ERROR: failed to find option.. this points to a coding-error!\n");
 	ABORT (status, USERINPUTH_EOPT, USERINPUTH_MSGEOPT);
       }
 
@@ -383,7 +384,7 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 	      else if ( !strcmp (optarg, "no") || !strcmp(optarg,"false") || !strcmp(optarg,"0") )
 		ans = 0;
 	      else {	/* failed to parse BOOL properly */
-		LALPrintError ("\nIllegal bool-value `%s`\n\n", optarg);
+		LogPrintf ( LOG_CRITICAL, "Illegal bool-value `%s`\n\n", optarg);
 		ABORT (status, USERINPUTH_ECMDLARG, USERINPUTH_MSGECMDLARG);
 	      }
 	    } /* parse bool-argument */
@@ -399,8 +400,7 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 	case UVAR_INT4:
 	  if ( 1 != sscanf ( optarg, "%" LAL_INT4_FORMAT, (INT4*)(ptr->varp)) )
 	    {
-	      LALPrintError ("\nIllegal INT4 commandline argument to --%s: '%s'\n\n", 
-			     ptr->name, optarg);
+	      LogPrintf (LOG_CRITICAL, "Illegal INT4 commandline argument to --%s: '%s'\n\n", ptr->name, optarg);
 	      ABORT (status, USERINPUTH_ECMDLARG, USERINPUTH_MSGECMDLARG);
 	    }
 
@@ -410,8 +410,7 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 	case UVAR_REAL8:
 	  if ( 1 != sscanf ( optarg, "%" LAL_REAL8_FORMAT, (REAL8*)(ptr->varp)) )
 	    {
-	      LALPrintError ("\nIllegal REAL8 commandline argument to --%s: '%s'\n\n", 
-			     ptr->name, optarg);
+	      LogPrintf (LOG_CRITICAL, "Illegal REAL8 commandline argument to --%s: '%s'\n\n", ptr->name, optarg);
 	      ABORT (status, USERINPUTH_ECMDLARG, USERINPUTH_MSGECMDLARG);
 	    }
 
@@ -447,7 +446,7 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 	  break;
 
 	default:
-	  LALPrintError ("ERROR: unkown UserVariable-type encountered... points to a coding error!\n");
+	  LogPrintf ( LOG_CRITICAL, "ERROR: unkown UserVariable-type encountered... points to a coding error!\n");
 	  ABORT (status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
 	  break;
 
@@ -543,7 +542,7 @@ LALUserVarReadCfgfile (LALStatus *status,
 	    } /* if stringbuf */
 	  break;
 	default:
-	  LALPrintError ("ERROR: unkown UserVariable-type encountered...points to a coding error!\n");
+	  LogPrintf (LOG_CRITICAL, "ERROR: unkown UserVariable-type encountered...points to a coding error!\n");
 	  ABORT (status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
 	  break;
 
@@ -861,7 +860,7 @@ LALUserVarWasSet (const void *cvar)
       break;
 
   if (ptr == NULL) {
-    LALPrintError ("Variable passed to UVARwasSet is not a registered Usser-variable\n");
+    LogPrintf (LOG_CRITICAL, "Variable passed to UVARwasSet is not a registered User-variable\n");
     return (-1);
   }
   
@@ -885,7 +884,7 @@ LALUserVarCheckRequired (LALStatus *status)
   while ( (ptr = ptr->next) != NULL) 
     if ( (ptr->state & UVAR_REQUIRED) && !(ptr->state & UVAR_WAS_SET))
       {
-	LALPrintError ("\nRequired user-variable `%s` has not been specified!\n\n", ptr->name);
+	LogPrintf (LOG_CRITICAL, "Required user-variable `%s` has not been specified!\n\n", ptr->name);
 	ABORT (status, USERINPUTH_ENOTSET, USERINPUTH_MSGENOTSET);
       }
 
@@ -939,7 +938,7 @@ LALGetDebugLevel (LALStatus *status, int argc, char *argv[], CHAR optchar)
 	    ptr = argv[i+1];
 
 	  if ( (ptr==NULL) || (sscanf ( ptr, "%d", &lalDebugLevel) != 1) ) {
-	    LALPrintError ("setting debug-level `-%c` requires an argument\n", optchar);
+	    LogPrintf (LOG_CRITICAL, "setting debug-level `-%c` requires an argument\n", optchar);
 	    ABORT (status, USERINPUTH_EOPT, USERINPUTH_MSGEOPT);
 	  }
 	  break;
@@ -1095,7 +1094,7 @@ UvarValue2String (LALStatus *status, CHAR **outstr, LALUserVariable *uvar)
       }
       break;
     default:
-      LALPrintError ("ERROR: unkown UserVariable-type encountered... this points to a coding error!\n");
+      LogPrintf (LOG_CRITICAL, "ERROR: unkown UserVariable-type encountered... this points to a coding error!\n");
       ABORT (status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
       break;
       
@@ -1243,7 +1242,7 @@ copy_string_unquoted ( const CHAR *in )
   /* check matching quotes */
   if ( opening_quote != closing_quote )
     {
-      LALPrintError ("Unmatched quotes in string [%s]\n", in );
+      LogPrintf (LOG_CRITICAL, "Unmatched quotes in string [%s]\n", in );
       return NULL;
     }
 
@@ -1259,7 +1258,7 @@ copy_string_unquoted ( const CHAR *in )
     }
   
   if ( (out = LALCalloc (1, outlen + 1)) == NULL ) {
-    LALPrintError ("Out of memory!\n");
+    LogPrintf (LOG_CRITICAL, "Out of memory!\n");
     return NULL;
   }
 
