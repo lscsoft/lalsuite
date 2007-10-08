@@ -126,94 +126,109 @@ if opts.version:
 
 #################################
 # Sanity check of input arguments
+################################
+
+# Checks for config file
 if not opts.config_file:
   print >> sys.stderr, "No configuration file specified."
   print >> sys.stderr, "Use --config-file FILE to specify location."
   sys.exit(1)
 
+# Checks for log path
 if not opts.log_path:
   print >> sys.stderr, "No log file path specified."
   print >> sys.stderr, "Use --log-path PATH to specify a location."
   sys.exit(1)
 
-  
-if not opts.v2_data and not opts.h1_data and not opts.h2_data and \
+# Checks for atleast one ifo is specified  
+if not opts.g1_data and not opts.h1_data and not opts.h2_data and \
     not opts.l1_data and not opts.analyze_all:
   print >> sys.stderr, "No ifos specified.  Please specify at least one of"
   print >> sys.stderr, "--g1-data, --h1-data, --h2-data, --l1-data"
   print >> sys.stderr, "or use --analyze-all to analyze all ifos all data"
   sys.exit(1)
 
-if opts.plotthinca and opts.plotinspiral and opts.plotinspmissed and opts.plotinspinj and opts.plotsnrchi and not opts.one_ifo \
-    and not opts.two_ifo and not opts.three_ifo and not opts.four_ifo \
-    and not opts.analyze_all:
-  print >> sys.stderr, "No number of ifos given. Please specify at least one of"
-  print >> sys.stderr, "--one-ifo, --two-ifo, --three-ifo, --four-ifo"
+# Checks for ifos dependind on plotting routine.
+# Checks for plots which require more than two ifos.
+if ((opts.plotthinca or opts.plotethinca or opts.plotinspmissed or opts.plotinjnum or opts.plotinspinj \
+    or opts.plotsnrchi ) and not (opts.two_ifo or opts.three_ifo or opts.four_ifo or opts.analyze_all)):
+  print >> sys.stderr, "No number of ifos given. Please specify at least two"
+  print >> sys.stderr, "--two-ifo, --three-ifo, --four-ifo"
   print >> sys.stderr, "or use --analyze-all to analyze all ifos all data"
   sys.exit(1)
  
-#if not opts.plotinspiral: 
-#  print >> sys.stderr, """  No steps of the pipeline specified.
-#  Please specify at least one of
-#  --plotinspiral"""
-#  sys.exit(1)
 
-#if not opts.plotthinca:
-#  print >> sys.stderr, """  No steps of the pipeline specified.
-#  Please specify at least one of
-#  --plotthinca"""
-#  sys.exit(1)
+if ((opts.plotnumtemplates or opts.plotinspiral) and not (opts.g1_data or opts.h1_data or opts.h2_data or\
+    opts.l1_data)):
+  print >> sys.stderr, "--g1-data, --h1-data, --h2-data, --l1-data"
+  sys.exit(1)
+ 
 
 
 ###############################
-# This list constructs doubles, triples and quadraple 
+# Construct list based on ifos supplied at command line
 
 ifolist = [ifo for ifo in ('G1','H1', 'H2', 'L1', 'V2') \
             if getattr(opts, "%s_data" % ifo.lower())]
 
-  
-ifo_combos=CoincInspiralUtils.get_ifo_combos(ifolist)
-if opts.one_ifo:
-  ifo_combos=ifolist
-else:
-  ifo_combo=list(itertools.choices(ifolist,2))
-  ifo_combos = []
-  for ifo in ifo_combo:
-    ifo_combos.append(ifo[0]+ifo[1])
+if opts.two_ifo:
+   ifo_combo=list(itertools.choices(ifolist,2))
+elif opts.three_ifo:
+   ifo_combo=list(itertools.choices(ifolist,2)) + list(itertools.choices(ifolist,3))
+elif opts.four_ifo:
+   ifo_combo=list(itertools.choices(ifolist,2)) + list(itertools.choices(ifolist,3)) + \
+             list(itertools.choices(ifolist,4))
+else: 
+   ifo_combo=CoincInspiralUtils.get_ifo_combos(ifolist)
 
+##############################
+# Construct a function which returns a list of ifos specific to a particular plotting routine
 
+def plot_list(combo, dim = None):
+  """ This function takes a list of all possible
+      combination and returns a list of ifos for times
+      equal to and less than dim. for most plots dim =3.
+  """
+      
+  Ifo_list =[]
+  for ifos in combo:
+    if len(ifos) <= dim:
+      ifo_list = ""
+      for ifo in ifos:
+         ifo_list += ifo
+    else: pass   
+    Ifo_list.append(ifo_list)
+  return  Ifo_list
 
 #################################
    
-ifo_list = ['G1','H1','H2','L1','V2']
+#ifo_list = ['G1','H1','H2','L1']
 
-ifotag = None
+#ifotag = None
 #################################
 # store the values
-do = {}
-do['G1'] = opts.g1_data
-do['H1'] = opts.h1_data
-do['H2'] = opts.h2_data
-do['L1'] = opts.l1_data
-do['V2'] = opts.v2_data
+#do = {}
+#do['G1'] = opts.g1_data
+#do['H1'] = opts.h1_data
+#do['H2'] = opts.h2_data
+#do['L1'] = opts.l1_data
+#do['V2'] = opts.v2_data
 
 #################################
 # analyze everything if --analyze-all set
-if opts.analyze_all:
-  for ifo in ifo_list:
-    do[ifo] = True
-  opts.one_ifo   = True
-  opts.two_ifo   = True
-  opts.three_ifo = True
-  opts.four_ifo  = True
-  opts.five_ifo  = True
+#if opts.analyze_all:
+ # for ifo in ifo_list:
+ #   do[ifo] = True
+ # opts.one_ifo   = True
+ # opts.two_ifo   = True
+ # opts.three_ifo = True
+ # opts.four_ifo  = True
 ################################
 # a list of the ifos to do plots for
-ifos = []
-for ifo in ifo_list:
-  if do[ifo]:
-    ifos.append(ifo)
-
+#ifos = []
+#for ifo in ifo_list:
+#  if do[ifo]:
+#    ifos.append(ifo)
 ##############################################################################
 # try to make a directory to store the cache files and job logs
 try: os.mkdir('logs')
@@ -266,10 +281,16 @@ else:
 
 # inspiral:
 if opts.plotinspiral:
-
+  
+  """ Plotinspiral is looped over all single ifos. Plotinspiral 
+      has now an option called opts.description, which sieves the 
+      cache file by description "SIRE" and an ifo by ifo-type namely 
+      "H1", "H2" or "L1". For a particular ifo file corresponding 
+      all times are sieved.
+  """
   plotinspiral_jobs = {}
 
-  for ifo in ifo_list:
+  for ifo in ifolist:
     cp.set('plotinspiral','figure-name','plotinspiral_' + ifo)
     cp.set('plotinspiral','ifo-type',ifo)
     plotinspiral_jobs[ifo] = inspiral.PlotInspiralJob(cp)
@@ -280,20 +301,23 @@ if opts.plotinspiral:
 
 #plotthinca
 if opts.plotthinca:
-   
-  plotthinca_jobs = {}
-
-  for ifo in ifo_combos:
-    cp.set('plotthinca','figure-name','plotthinca_' + ifo)
+  for ifos in  ifo_combo:
+    cp.remove_option('plotthinca','h1-triggers')
+    plotthinca_jobs = {}
     plotthinca_jobs[ifo] = inspiral.PlotThincaJob(cp)
-    plotthinca_jobs[ifo].set_sub_file( basename + '.plotthinca_' + ifo + subsuffix )
+    for ifo in ifos:
+      plotthinca_jobs[ifo].add_opt(ifo.lower() + "-triggers","  ")
+    plotthinca_jobs[ifo].set_sub_file( basename + '.plotthinca_' + subsuffix )
 
   all_jobs = []
-  all_jobs.extend(plotthinca_jobs.values())
+  all_jobs.append(plotthinca_jobs.values())
 
 #plotnumtemplates
 if opts.plotnumtemplates:
-
+  """ Plotnumtemplates needs no looping. This code now separates cache files
+      either by description = "TMPLTBANK" or "TRIGBANK". In this way TMPLTBANKS 
+      and TRIGBANKS for all ifos namely "H1", "H2" and "L1" are sieved together.
+  """
   plotnumtemplates_jobs = {}
   plotnumtemplates_jobs = inspiral.PlotNumtemplatesJob(cp)
   plotnumtemplates_jobs.set_sub_file( basename + '.plotnumtemplates' + subsuffix)
@@ -303,18 +327,23 @@ if opts.plotnumtemplates:
 
 #plotinjnum
 if opts.plotinjnum:
-  
-  if not opts.two_ifo and not opts.three_ifo and \
-    not opts.four_ifo and not opts.analyze_all:
+  """ Plotinjnum is now looped over all ifo times. Hence the figure names
+      are for times but they can be interchanged with coinc type because 
+      plotinjnum now has an option ( ifoexactmatch=True ) which can separate 
+      out COIRE files, according to double coincs in  double times, or triple 
+      coincs in triple times.
 
-    print >> sys.stderr, "No number of ifos given. Please specify at least one of"
-    print >> sys.stderr, "--two-ifo, --three-ifo, --four-ifo"
-    print >> sys.stderr, "or use --analyze-all to analyze all ifos all data"
-    sys.exit(1)
+      Example: sieve(ifos="H1H2",description="FOUND").sieve(ifoexactmatch=True)
+      will return files of type: H1H2-COIRE_INJECTIONS_1_FOUND_H1H2-866088014-2592000.xml etc.
+      and similarly sieve(ifos="H1H2L1",description="FOUND").sieve(ifoexactmatch=True) 
+      will return file: H1H2L1-COIRE_INJECTIONS_1_FOUND_H1H2L1-866088014-2592000.xml
+
+  """
   
   plotinjnum_jobs = {}
   
-  for ifo in ifo_combos:
+  for ifo in plot_list(ifo_combo,3):
+    cp.set('plotinjnum','ifo-type', ifo)
     cp.set('plotinjnum','figure-name','plotinjnum_' + ifo)
     plotinjnum_jobs[ifo] = inspiral.PlotInjnumJob(cp) 
     plotinjnum_jobs[ifo].set_sub_file( basename + '.plotinjnum_' + ifo + subsuffix )
@@ -327,7 +356,7 @@ if opts.plotethinca:
 
   plotethinca_jobs = {}
 
-  for ifo in ifo_combos:
+  for ifo in ifo_combo:
     cp.set('plotethinca','figure-name','plotethinca_' + ifo)
     cp.set('plotethinca','ifo-type', ifo)
     cp.set('plotethinca','ifo-times',ifo)
@@ -342,7 +371,7 @@ if opts.plotinspmissed:
 
   plotinspmissed_jobs = {}
 
-  for ifo in ifo_combos:
+  for ifo in ifo_combo:
     cp.set('plotinspmissed','figure-name','plotinspmissed_' + ifo)
     plotinspmissed_jobs[ifo] = inspiral.PlotInspmissedJob(cp)
     plotinspmissed_jobs[ifo].set_sub_file( basename + '.plotinspmissed_' + ifo + subsuffix )
@@ -355,7 +384,7 @@ if opts.plotinspinj:
 
   plotinspinj_jobs = {}
 
-  for ifo in ifo_list:
+  for ifo in ifolist:
     cp.set('plotinspinj','figure-name','plotinspinj_' + ifo)
     plotinspinj_jobs[ifo] = inspiral.PlotInspinjJob(cp)
     plotinspinj_jobs[ifo].set_sub_file( basename + '.plotinspinj_' + ifo + subsuffix )
@@ -368,7 +397,7 @@ if opts.plotsnrchi:
 
   plotsnrchi_jobs = {}
 
-  for ifo in ifo_list:
+  for ifo in ifolist:
     cp.set('plotsnrchi','figure-name','plotsnrchi_' + ifo)
     plotsnrchi_jobs[ifo] = inspiral.PlotSnrchiJob(cp)
     plotsnrchi_jobs[ifo].set_sub_file( basename + '.plotsnrchi_' + ifo + subsuffix )
@@ -389,17 +418,16 @@ if usertag:
 ##############################################################################
 
 if opts.plotinspiral:
-  for ifo in ifos:
+  for ifo in ifolist:
   # add an plotinspiral job
     plotinspiral_node=inspiral.PlotInspiralNode(plotinspiral_jobs[ifo])
     dag.add_node(plotinspiral_node)
 
 
 if opts.plotthinca:
-  for ifo in ifo_combos:
-  # add an plotthinca job
-    plotthinca_node=inspiral.PlotThincaNode(plotthinca_jobs[ifo])
-    dag.add_node(plotthinca_node)
+   # add an plotthinca job
+   plotthinca_node=inspiral.PlotThincaNode(plotthinca_jobs)
+   dag.add_node(plotthinca_node)
 
 
 if opts.plotnumtemplates:
@@ -408,32 +436,32 @@ if opts.plotnumtemplates:
    dag.add_node(plotnumtemplates_node)
 
 if opts.plotinjnum:
-  for ifo in ifo_combos:
+  for ifo in plot_list(ifo_combo,3):
   # add an plotthinca job
     plotinjnum_node=inspiral.PlotInjnumNode(plotinjnum_jobs[ifo])
     dag.add_node(plotinjnum_node)
 
 
 if opts.plotethinca:
-  for ifo in ifo_combos:
+  for ifo in ifo_combo:
   # add an plotethinca job
     plotethinca_node =inspiral.PlotEthincaNode(plotethinca_jobs[ifo])
     dag.add_node(plotethinca_node)
 
 if opts.plotinspmissed:
-   for ifo in ifo_combos:
+   for ifo in ifo_combo:
   # add an plotinspmissed job
     plotinspmissed_node =inspiral.PlotInspmissedNode(plotinspmissed_jobs[ifo])
     dag.add_node(plotinspmissed_node)
 
 if opts.plotinspinj:
-   for ifo in ifo_list:
+   for ifo in ifolist:
   # add an plotinspinj job
     plotinspinj_node =inspiral.PlotInspinjNode(plotinspinj_jobs[ifo])
     dag.add_node(plotinspinj_node)
 
 if opts.plotsnrchi:
-   for ifo in ifo_list:
+   for ifo in ifolist:
   # add an plotinspinj job
     plotsnrchi_node =inspiral.PlotSnrchiNode(plotsnrchi_jobs[ifo])
     dag.add_node(plotsnrchi_node)
