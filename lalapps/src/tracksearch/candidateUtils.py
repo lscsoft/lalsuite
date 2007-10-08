@@ -61,7 +61,27 @@ class kurve:
         """
         return self.element.__len__()
     #End __len__ method
-    
+
+    def __timeOrderCurve__(self):
+        """
+        Use the time stamps to order the input data accordingly.
+        LAL modules sometimes find curves in reverse order in TFR.
+        We use the gpsInt time structure repsentation of the time in
+        long integer form from method __makeInt__() to sort the entries.
+        """
+        keyList=[] # For [gpsInt.__makeInt__(),index]
+        index=0
+        for entry in self.element:
+            keyList.append([entry[2].__makeInt__(),index])
+            index=index.__add__(1)
+        keyList.sort()
+        sortedCurve=list()
+        for entry in keyList:
+            sortedCurve.append(self.element[entry[1]])
+        #Swap sorted data into element field.
+        self.element=sortedCurve
+    #End method __timeOrderCurve__()
+        
     def appendPixel(self,Row,Col,gpsStamp,Freq,Power):
         """
         Add a new pixel to our curve.  This should not be used manually in
@@ -326,6 +346,12 @@ class gpsInt:
     #End init method
 
     def __makeInt__(self):
+        """
+        This method attempts to express XXXXXXXXX.ZZZZZZZZZ as an integer
+        object for operations like comparing and sorting rather than
+        use the float representation that losses some information
+        during the conversion.
+        """
         secPartIn=str(self.gpsSeconds)
         nanoPartIn=str(str(self.gpsNanoSeconds).rjust(9)).replace(' ','0')
         try:
@@ -534,6 +560,8 @@ class candidateList:
                          int(tmpElement[0]),int(tmpElement[1]),\
                          gpsInt(tmpElement[2],tmpElement[3]),\
                          float(tmpElement[4]),float(tmpElement[5]))
+                     #Reorganize curve data chronologically for storage.
+                     self.curves[self.curves.__len__()-1].__timeOrderCurve__()
              #Determine the bin widths in this structure
              if self.totalCount > 0:
                  try: self.findBinWidths()
@@ -586,6 +614,8 @@ class candidateList:
                             self.curves[self.curves.__len__()-1].appendPixel(\
                                 int(a),int(b),gpsInt(c,d),float(e),float(f)\
                                 )
+                        #Reorganize curve data chronologically for storage.
+                        self.curves[self.curves.__len__()-1].__timeOrderCurve__()    
                         #Update spinner character
                         curveCount+=1
                         spinner.updateSpinner()
@@ -864,7 +894,7 @@ class candidateList:
             globList.filename.extend(iCL.filename)
             globList.curves.extend(iCL.curves)
             if (force == True):
-                print "Bin width differences (Hz,Time):",float(self.freqWidth-iCL.freqWidth),float(self.gpsWidth.getAsFloat()-iCL.gpsWidth.getAsFloat())
+                print "Avoiding:Bin width differences (Hz,Time):",float(self.freqWidth-iCL.freqWidth),float(self.gpsWidth.getAsFloat()-iCL.gpsWidth.getAsFloat())
             return globList
         elif ((self.freqWidth==0) or (int(self.gpsWidth.__makeInt__())==0)):
             globList.freqWidth=self.freqWidth
@@ -1223,8 +1253,9 @@ class candidateList:
             sourceFile=override
         outRoot,outExt=os.path.splitext(sourceFile)
         outFile=outRoot+'.summary'
+        fp=open(outFile,'w')
         for entry in self.createSummaryStructure():
-            fp.write(outString)
+            fp.write(entry)
         fp.close()
     # End writeSummary method
 

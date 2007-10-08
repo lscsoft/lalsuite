@@ -166,16 +166,20 @@ canList=generateFileList(filename)
 if (glob and (canList.__len__() >= 1)):
     if outfile != "":
         outName=outfile
-    else:
-        outName=newGlobFile.__filemaskGlob__()
-    #If file preexists erase it first!
-    if os.path.isfile(outName):
-        if verboseSwitch:
-            print "Prexisting file found:",outName
-            print "Removing!"
-        os.unlink(outName)
+        #If file preexists erase it first!
+        if os.path.isfile(outName):
+            if verboseSwitch:
+                print "Prexisting file found:",outName
+                print "Removing!"
+            os.unlink(outName)
     #Create new globbed candidate structure to write to disk!
     newGlobFile=buildCandidateGlob(canList,verboseSwitch)
+    # Write this globbed file to disk.
+    if outfile !="":
+        outName=outfile
+    else:
+        outName="Glob:"+newGlobFile.__filemaskGlob__()
+    newGlobFile.writefile(outName)
     #SECTION TO DO THE CLOBBERING OF A CANDIDATE FILE WITH ANOTHER
 elif (clobberFilename != '') and (canList.__len__() == 1):
     #Create clobberer
