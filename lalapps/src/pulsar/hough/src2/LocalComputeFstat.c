@@ -152,9 +152,8 @@ static const LALStatus empty_status;
 
 /* sin/cos Lookup tables */
 #if (SINCOS_VERSION == 2)
-#define LUT_RES 64      /* resolution of lookup-table */
+#define LUT_RES         64      /* resolution of lookup-table */
 static REAL4 sinLUT[LUT_RES+1], cosLUT[LUT_RES+1];
-void local_sin_cos_2PI_LUT_init (void);
 #endif
 
 /*---------- internal prototypes ----------*/
@@ -168,7 +167,10 @@ void LocalComputeFStat ( LALStatus*, Fcomponents*, const PulsarDopplerParams*,
 int LocalXLALComputeFaFb (Fcomponents*, const SFTVector*, const PulsarSpins,
 			  const SSBtimes*, const AMCoeffs*, const ComputeFParams*);
 
-int local_sin_cos_2PI_LUT_trimmed (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
+inline int local_sin_cos_2PI_LUT_trimmed (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
+#if (SINCOS_VERSION == 2)
+int local_sin_cos_2PI_LUT_init (void);
+#endif
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -215,6 +217,9 @@ void LocalComputeFStatFreqBand ( LALStatus *status,
   {
     static int first = !0;
     if (first) {
+#if (SINCOS_VERSION == 2)
+      local_sin_cos_2PI_LUT_init();
+#endif
       fprintf(stderr,"\n$Revision$ OPT:%d SCV:%d, SCTRIM:%d\n",
 	      EAH_OPTIMIZATION, SINCOS_VERSION, SINCOS_ROUND_METHOD);
       first = 0;
@@ -558,15 +563,6 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 #endif
 	lambda_alpha = phi_alpha - 0.5 * Dphi_alpha;
 	
-	/* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
-	{
-	  REAL8 _lambda_alpha;
-	  SINCOS_TRIM_X (_lambda_alpha,(-lambda_alpha));
-	  if ( local_sin_cos_2PI_LUT_trimmed ( &imagQ, &realQ, _lambda_alpha ) ) {
-	    XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
-	  }
-	}
-
 	kstar = (INT4) (Dphi_alpha);	/* k* = floor(Dphi_alpha*chi) for positive Dphi */
 	kappa_star = Dphi_alpha - 1.0 * kstar;	/* remainder of Dphi_alpha: >= 0 ! */
 	kappa_max = kappa_star + 1.0 * Dterms - 1.0;
@@ -591,7 +587,13 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
        * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the 
        * closest to zero and will pose no numerical difficulties !
        */
+#ifndef LAL_NDEBUG
+	if ( local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star ) ) {
+	  XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
+	}
+#else
       local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
+#endif
       c_alpha -= 1.0f; 
 
       /* ---------- calculate the (truncated to Dterms) sum over k ---------- */
@@ -1176,6 +1178,19 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
  	  realXP = TWOPI_FLOAT * Xalpha_l[ind0].re;
  	  imagXP = TWOPI_FLOAT * Xalpha_l[ind0].im;
 	} /* if |remainder| <= LD_SMALL4 */
+
+      /* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
+      {
+	REAL8 _lambda_alpha;
+	SINCOS_TRIM_X (_lambda_alpha,(-lambda_alpha));
+#ifndef LAL_NDEBUG
+	if ( local_sin_cos_2PI_LUT_trimmed ( &imagQ, &realQ, _lambda_alpha ) ) {
+	  XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
+	}
+#else
+	local_sin_cos_2PI_LUT_trimmed ( &imagQ, &realQ, _lambda_alpha );
+#endif
+      }
       
       realQXP = realQ * realXP - imagQ * imagXP;
       imagQXP = realQ * imagXP + imagQ * realXP;
@@ -1214,28 +1229,29 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
 #define LUT_RES_F	(1.0 * LUT_RES)
 #define OO_LUT_RES	(1.0 / LUT_RES)
+
 #define X_TO_IND	(1.0 * LUT_RES * OOTWOPI )
 #define IND_TO_X	(LAL_TWOPI * OO_LUT_RES)
 
 #if (SINCOS_VERSION == 2)
 
-int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
+int local_sin_cos_2PI_LUT_init (void)
+{
+  UINT4 k;
+  static REAL8 const oo_lut_res = OO_LUT_RES;
+  for (k=0; k <= LUT_RES; k++) {
+    sinLUT[k] = sin( LAL_TWOPI * k * oo_lut_res );
+    cosLUT[k] = cos( LAL_TWOPI * k * oo_lut_res );
+  }
+}
+
+inline int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 {
   INT4 i0;
   REAL8 d, d2;
   REAL8 ts, tc;
   static REAL8 const oo_lut_res = OO_LUT_RES;
-  UINT4 k;
-  static int first = !0;
 
-  if (first) {
-    for (k=0; k <= LUT_RES; k++) {
-      sinLUT[k] = sin( LAL_TWOPI * k * oo_lut_res );
-      cosLUT[k] = cos( LAL_TWOPI * k * oo_lut_res );
-    }
-    first = 0;
-  }
-  
 #ifndef LAL_NDEBUG
   if ( x < 0.0 || x >= 1.0 )
     {
