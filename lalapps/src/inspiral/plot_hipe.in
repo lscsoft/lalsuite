@@ -183,6 +183,11 @@ else:
 
 ##############################
 # Construct a function which returns a list of ifos specific to a particular plotting routine
+def combo2str(combo):
+  ifo_list = ""
+  for ifo in combo:
+    ifo_list += ifo
+  return ifo_list
 
 def plot_list(combo, dim = None):
   """ This function takes a list of all possible
@@ -278,6 +283,7 @@ else:
 
 ##############################################################################
 # create the Condor jobs that will be used in the DAG
+all_jobs = []
 
 # inspiral:
 if opts.plotinspiral:
@@ -296,21 +302,22 @@ if opts.plotinspiral:
     plotinspiral_jobs[ifo] = inspiral.PlotInspiralJob(cp)
     plotinspiral_jobs[ifo].set_sub_file( basename + '.plotinspiral_' + ifo + subsuffix )
 
-  all_jobs = []
+  
   all_jobs.extend(plotinspiral_jobs.values())
 
 #plotthinca
 if opts.plotthinca:
+  plotthinca_jobs = {}
   for ifos in  ifo_combo:
-    cp.remove_option('plotthinca','h1-triggers')
-    plotthinca_jobs = {}
-    plotthinca_jobs[ifo] = inspiral.PlotThincaJob(cp)
+    combostring = combo2str(ifos)
+    plotthinca_jobs[combostring] = inspiral.PlotThincaJob(cp)
     for ifo in ifos:
-      plotthinca_jobs[ifo].add_opt(ifo.lower() + "-triggers","  ")
-    plotthinca_jobs[ifo].set_sub_file( basename + '.plotthinca_' + subsuffix )
+      plotthinca_jobs[combostring].add_opt(ifo.lower() + "-triggers","  ")
+    plotthinca_jobs[combostring].add_opt("ifo-type",combostring)
+    plotthinca_jobs[combostring].set_sub_file( basename + '.plotthinca_' + combostring + subsuffix )
 
-  all_jobs = []
-  all_jobs.append(plotthinca_jobs.values())
+  
+  all_jobs.extend(plotthinca_jobs.values())
 
 #plotnumtemplates
 if opts.plotnumtemplates:
@@ -322,7 +329,7 @@ if opts.plotnumtemplates:
   plotnumtemplates_jobs = inspiral.PlotNumtemplatesJob(cp)
   plotnumtemplates_jobs.set_sub_file( basename + '.plotnumtemplates' + subsuffix)
 
-  all_jobs = []
+  
   all_jobs.append(plotnumtemplates_jobs)
 
 #plotinjnum
@@ -348,7 +355,6 @@ if opts.plotinjnum:
     plotinjnum_jobs[ifo] = inspiral.PlotInjnumJob(cp) 
     plotinjnum_jobs[ifo].set_sub_file( basename + '.plotinjnum_' + ifo + subsuffix )
   
-  all_jobs = []
   all_jobs.extend(plotinjnum_jobs.values())  
 
 # plotethinca
@@ -363,7 +369,6 @@ if opts.plotethinca:
     plotethinca_jobs[ifo] = inspiral.PlotEthincaJob(cp)
     plotethinca_jobs[ifo].set_sub_file( basename + '.plotethinca_' + ifo + subsuffix )
 
-  all_jobs = []
   all_jobs.extend(plotethinca_jobs.values())
 
 #plotinspmissed
@@ -376,7 +381,6 @@ if opts.plotinspmissed:
     plotinspmissed_jobs[ifo] = inspiral.PlotInspmissedJob(cp)
     plotinspmissed_jobs[ifo].set_sub_file( basename + '.plotinspmissed_' + ifo + subsuffix )
 
-  all_jobs = []
   all_jobs.extend(plotinspmissed_jobs.values())
 
 #plotinspmissed
@@ -389,7 +393,6 @@ if opts.plotinspinj:
     plotinspinj_jobs[ifo] = inspiral.PlotInspinjJob(cp)
     plotinspinj_jobs[ifo].set_sub_file( basename + '.plotinspinj_' + ifo + subsuffix )
 
-  all_jobs = []
   all_jobs.extend(plotinspinj_jobs.values())
 
 #plotsnrchi
@@ -402,7 +405,6 @@ if opts.plotsnrchi:
     plotsnrchi_jobs[ifo] = inspiral.PlotSnrchiJob(cp)
     plotsnrchi_jobs[ifo].set_sub_file( basename + '.plotsnrchi_' + ifo + subsuffix )
 
-  all_jobs = []
   all_jobs.extend(plotsnrchi_jobs.values())
 
 
