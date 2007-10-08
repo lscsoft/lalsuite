@@ -144,8 +144,8 @@ REAL8 XLALlnOneMinusChisqCdf(
 	 */
 
 	const char func[] = "XLALlnOneMinusChisqCdf";
-	REAL8 a = dof/2;
-	REAL8 x = chi2/2;
+	const REAL8 a = dof / 2;
+	const REAL8 x = chi2 / 2;
 	REAL8 ln_prob, term;
 	int i;
 
@@ -173,7 +173,7 @@ REAL8 XLALlnOneMinusChisqCdf(
 	if(ln_prob > 0.0)
 		XLAL_ERROR_REAL8(func, XLAL_ERANGE);
 
-	return(ln_prob);
+	return ln_prob;
 }
 
 
