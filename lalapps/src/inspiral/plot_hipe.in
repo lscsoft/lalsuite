@@ -350,7 +350,7 @@ if opts.plotethinca:
 
   for ifos in  ifo_combo:
     combostring = combo2str(ifos)
-    plotethinca_jobs[combostring] = inspiral.PlotEThincaJob(cp)
+    plotethinca_jobs[combostring] = inspiral.PlotEthincaJob(cp)
     for ifo in ifos:
       plotethinca_jobs[combostring].add_opt("ifo",ifo)
     plotethinca_jobs[combostring].add_opt("ifo-times",combostring)
@@ -423,28 +423,28 @@ if opts.plotnumtemplates:
 
 if opts.plotthinca:
   # add an plotthinca job
-  for ifos in ifo_combos:
+  for ifos in ifo_combo:
     combostring = combo2str(ifos)
     plotthinca_node=inspiral.PlotThincaNode(plotthinca_jobs[combostring])
     dag.add_node(plotthinca_node)
 
 
 if opts.plotinjnum:
-  for ifos in ifo_combos:
+  for ifos in ifo_combo:
     combostring = combo2str(ifos)
     plotinjnum_node=inspiral.PlotInjnumNode(plotinjnum_jobs[combostring])
     dag.add_node(plotinjnum_node)
 
 
 if opts.plotethinca:
-  for ifos in ifo_combos:
+  for ifos in ifo_combo:
     combostring = combo2str(ifos)
     plotethinca_node =inspiral.PlotEthincaNode(plotethinca_jobs[combostring])
     dag.add_node(plotethinca_node)
 
 
 if opts.plotinspmissed:
-  for ifos in ifo_combos:
+  for ifos in ifo_combo:
     combostring = combo2str(ifos)
     plotinspmissed_node =inspiral.PlotInspmissedNode(plotinspmissed_jobs[combostring])
     dag.add_node(plotinspmissed_node)
