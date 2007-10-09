@@ -108,7 +108,7 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
     We also record the way we are using for logging */
 
 #if (SINCOS_VERSION == 9) && FALSE
-/** no trimming required at all for this function */
+/** no trimming should be required for this function, but apparently still is */
 #define SINCOS_TRIM_X(y,x)
 #define SINCOS_ROUND_METHOD -1
 
@@ -1352,16 +1352,29 @@ int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x) {
 #define SINCOS_MASK4 0x0000FF
 #define SINCOS_SHIFT
 
-  /*
+  /* with trimming x to [0..1) externally we can drop this case distinction
+
   if ( (x*x) < 100000000000000.0 )
   {
   */
+  
+#ifndef LAL_NDEBUG
+    if(x > SINCOS_ADDS) {
+      LogPrintf(LOG_DEBUG,"sin_cos_LUT: x too large: %22f > %f\n",x,SINCOS_ADDS);
+      return XLAL_FAILURE;
+    } else if(x < -SINCOS_ADDS) {
+      LogPrintf(LOG_DEBUG,"sin_cos_LUT: x too small: %22f < %f\n",x,-SINCOS_ADDS);
+      return XLAL_FAILURE;
+    }
+#endif
+
     x += SINCOS_ADDS;
     ix = *(INT8*)(&x);
     i = ix & SINCOS_MASK1;
     n = ix & SINCOS_MASK2;
     i = i >> 14;
-    /*
+
+  /*
   }
   else
   {
