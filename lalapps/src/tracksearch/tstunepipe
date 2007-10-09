@@ -25,11 +25,8 @@ the pipes needed to tune the search algorithm.  This script will also
 require its own ini file to setup the analysis tuning.  The convention
 we want to follow for tuning ini files to give them the extens .tun
 """
-
-from candidateUtils import *
 from glue import pipeline
 from optparse import OptionParser
-from tracksearch import buildDir
 import ConfigParser
 import commands
 import copy
@@ -39,8 +36,11 @@ import os
 import string
 import sys
 import time
-import tracksearch
 import pickle
+import tracksearch
+from tsutils import *
+from tracksearch import buildDir
+
 
 #
 #

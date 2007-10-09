@@ -123,12 +123,21 @@ class tracksearchCheckIniFile:
     def checkOpts(self):
         #Check for existance of [condor] section files
         condorOptList=self.iniOpts.options('condor')
+        fileNotFound=False
         for entry in condorOptList:
             optValue=self.iniOpts.get('condor',entry)
             if str(optValue).__contains__('/'):
                 if not os.path.exists(str(optValue)):
                     self.errList.append('Can not find :'+str(entry)+':'+str(optValue))
-
+                    fileNotFound=True
+        if fileNotFound:
+            LALpath=os.getenv('PATH')
+            pathsToSearch=[]
+            self.errList.append('Try looking for [condor] program paths in:')
+            for entry in LALpath.split(':'):
+                if (entry.__contains__('lal') and entry.__contains__('bin')):
+                    self.errList.append(entry)
+                
         #Check [tracksearchbase] section
         lambdaH=0
         lambdaL=1

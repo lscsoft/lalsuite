@@ -1,8 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 #
-# Cristina
-#
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 if LALFRAME
 if LALMETAIO
@@ -23,8 +21,9 @@ bin_PROGRAMS =
 endif
 
 if HAVE_PYTHON
-bin_SCRIPTS = candidateHandler.py tracksearch_pipe.py tuneTSpipe.py 
-pkgpython_DATA = candidateUtils.py tracksearch.py
+bin_SCRIPTS = tshandler tspipe tshousekeper tstunepipe
+pkgpython_DATA = tsutils.py tracksearch.py
+#Consider merging tsutils.py into tracksearch.py
 endif
 
 EXTRA_DIST = $(TRACKSEARCHSRCS)

@@ -29,7 +29,8 @@ import os
 import string
 import sys
 import time
-from candidateUtils import *
+from tsutils import *
+
 disableGraphics=False
 try:
     from pylab import *
