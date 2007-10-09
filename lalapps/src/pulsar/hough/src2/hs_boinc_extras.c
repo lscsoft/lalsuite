@@ -913,6 +913,11 @@ static void worker (void) {
 
   if(crash_fpu)
     drain_fpu_stack();
+#elif defined(_MSC_VER)
+  _controlfp(_EM_INVALID,_MCW_EM);
+
+  if(crash_fpu)
+    drain_fpu_stack();
 #endif
 
   /* CALL WORKER's MAIN()
