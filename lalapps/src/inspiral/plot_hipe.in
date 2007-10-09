@@ -298,7 +298,8 @@ if opts.plotthinca:
     plotthinca_jobs[combostring] = inspiral.PlotThincaJob(cp)
     for ifo in ifos:
       plotthinca_jobs[combostring].add_opt(ifo.lower() + "-triggers","  ")
-    plotthinca_jobs[combostring].add_opt("ifo-type",combostring)
+    plotthinca_jobs[combostring].add_opt("ifo-times",combostring)
+    cp.set('plotthinca','figure-name', 'plotthinca' + combostring)
     plotthinca_jobs[combostring].set_sub_file( basename + '.plotthinca_' + combostring + subsuffix )
   
   all_jobs.extend(plotthinca_jobs.values())
@@ -354,6 +355,7 @@ if opts.plotethinca:
     for ifo in ifos:
       plotethinca_jobs[combostring].add_opt("ifo",ifo)
     plotethinca_jobs[combostring].add_opt("ifo-times",combostring)
+    cp.set('plotethinca', 'figure-name', 'plotethinca' + combostring)
     plotethinca_jobs[combostring].set_sub_file( basename + '.plotethinca_' + combostring + subsuffix )
 
   all_jobs.extend(plotethinca_jobs.values())
@@ -392,6 +394,7 @@ if opts.plotsnrchi:
   for ifo in ifolist:
     cp.set('plotsnrchi','figure-name','plotsnrchi_' + ifo)
     plotsnrchi_jobs[ifo] = inspiral.PlotSnrchiJob(cp)
+
     plotsnrchi_jobs[ifo].set_sub_file( basename + '.plotsnrchi_' + ifo + subsuffix )
 
   all_jobs.extend(plotsnrchi_jobs.values())
