@@ -222,7 +222,9 @@ def hipe_setup(hipeDir, config, opts, ifos, injFile=None, dfOnly = False, playOn
     for section in ["thinca", "coire"]:
       hipecp.set(section, "user-tag","CAT_" + str(vetoCat) + "_VETO")
     for ifo in ifos:
-      hipecp.set("thinca", ifo.lower() + "-veto-file", "../" + vetoFiles[ifo][vetoCat])
+      hipecp.set("thinca", ifo.lower() + "-veto-file", "../" + \
+          vetoFiles[ifo][vetoCat])
+    hipecp.set("thinca", "do-veto", "")
 
   if injFile:
     # add the injection options to the ini file

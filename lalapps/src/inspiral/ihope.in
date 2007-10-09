@@ -281,3 +281,26 @@ print """\n  from a condor submit machine
     grid-cert-info -all -file /tmp/x509up_u`id -u`
   
   This will also give the expiry time of the proxy."""
+
+##############################################################################
+# write out a log file for this script
+if usertag:
+  log_fh = open(basename + '.pipeline.' + usertag + '.log', 'w')
+else:
+  log_fh = open(basename + '.pipeline.log', 'w')
+  
+log_fh.write( "$Id$" \
+    + "\n" )
+log_fh.write( "$Name$" + "\n\n" )
+log_fh.write( "Invoked with arguments:" )
+for arg in command_line:
+  if arg[0] == '-':
+    log_fh.write( "\n" )
+  log_fh.write( arg + ' ')
+
+log_fh.write( "\n" )
+log_fh.write( "Config file has CVS strings:\n" )
+log_fh.write( cp.get('pipeline','version') + "\n" )
+log_fh.write( cp.get('pipeline','cvs-tag') + "\n\n" )
+
+##############################################################################
