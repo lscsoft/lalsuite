@@ -488,3 +488,8 @@ if options.verbose:
 	print >>sys.stderr, "writing dag ..."
 dag.write_sub_files()
 dag.write_dag()
+
+final_cache = file(os.path.splitext(filenames[0])[0] + "_output.cache", "w")
+for node in coinc_nodes + inj_coinc_nodes:
+	for entry in node.get_output_cache():
+		print >>final_cache, str(entry)
