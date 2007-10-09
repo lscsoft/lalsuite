@@ -299,14 +299,6 @@ int XLALEPConditionData(
 	const REAL8 epsilon = 1.0e-3;
 
 	/*
-	 * Resample the time series if necessary
-	 */
-
-	if(fabs(resampledeltaT - series->deltaT) / series->deltaT >= epsilon)
-		if(XLALResampleREAL8TimeSeries(series, resampledeltaT))
-			XLAL_ERROR(func, XLAL_EFUNC);
-
-	/*
 	 * High-pass filter the time series.
 	 */
 
@@ -320,6 +312,14 @@ int XLALEPConditionData(
 		if(XLALButterworthREAL8TimeSeries(series, &highpassParam))
 			XLAL_ERROR(func, XLAL_EFUNC);
 	}
+
+	/*
+	 * Resample the time series if necessary
+	 */
+
+	if(fabs(resampledeltaT - series->deltaT) / series->deltaT >= epsilon)
+		if(XLALResampleREAL8TimeSeries(series, resampledeltaT))
+			XLAL_ERROR(func, XLAL_EFUNC);
 
 	/*
 	 * Chop off the ends of the time series.
