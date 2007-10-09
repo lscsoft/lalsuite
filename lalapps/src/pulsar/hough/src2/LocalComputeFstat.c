@@ -1352,13 +1352,16 @@ int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x) {
 #define SINCOS_MASK4 0x0000FF
 #define SINCOS_SHIFT
 
+  /*
   if ( (x*x) < 100000000000000.0 )
   {
+  */
     x += SINCOS_ADDS;
     ix = *(INT8*)(&x);
     i = ix & SINCOS_MASK1;
     n = ix & SINCOS_MASK2;
     i = i >> 14;
+    /*
   }
   else
   {
@@ -1369,6 +1372,7 @@ int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x) {
     i = i >> 8;
     n = n << 6;
   }
+    */
 
   (*sin2pix) = ((REAL4*)base)[i]  + n * ((REAL4*)diff)[i];
   (*cos2pix) = ((REAL4*)cbase)[i] + n * ((REAL4*)cdiff)[i];
