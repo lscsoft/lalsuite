@@ -107,7 +107,7 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
     give significant differences in speed, so we provide various ways here.
     We also record the way we are using for logging */
 
-#if (SINCOS_VERSION == 9)
+#if (SINCOS_VERSION == 9) && FALSE
 /** no trimming required at all for this function */
 #define SINCOS_TRIM_X(y,x)
 #define SINCOS_ROUND_METHOD -1
