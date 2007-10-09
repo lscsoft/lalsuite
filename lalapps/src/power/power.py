@@ -112,6 +112,26 @@ def get_timing_parameters(config_parser):
 	return params
 
 
+def make_cache_entry(seglists, description, path):
+	# make a copy so we can trash it
+	seglists = segments.segmentlistdict(seglists)
+
+	# obtain instrument list
+	instruments = seglists.keys()
+	if None in instruments:
+		instruments.remove(None)
+	instruments.sort()
+
+	# remove empty segment lists to allow extent_all() to work
+	for instrument in seglists.keys():
+		if not seglists[instrument]:
+			del seglists[instrument]
+
+	# construct a cache entry from the instruments and
+	# segments that remain
+	return CacheEntry("+".join(instruments) or None, description, seglists.extent_all(), "file://localhost" + os.path.abspath(path))
+
+
 #
 # =============================================================================
 #
@@ -191,7 +211,7 @@ class BurstInjNode(pipeline.CondorDAGNode):
 				filename = "HL-INJECTIONS_%s-%d-%d.xml" % (self.__usertag, int(self.get_start()), int(self.get_end() - self.get_start()))
 			else:
 				filename = "HL-INJECTIONS-%d-%d.xml" % (int(self.get_start()), int(self.get_end() - self.get_start()))
-			self.output_cache = [CacheEntry("H1,H2,L1", self.__usertag, seg, "file://localhost" + os.path.abspath(filename))]
+			self.output_cache = [CacheEntry("H1+H2+L1", self.__usertag, seg, "file://localhost" + os.path.abspath(filename))]
 		return self.output_cache
 
 	def get_output_files(self):
@@ -325,7 +345,7 @@ class LigolwAddNode(pipeline.LigolwAddNode):
 
 	def add_input_cache(self, cache):
 		if self.output_cache:
-			raise AttributeError, "cannot change attributes after computing output cache"
+			raise AttributeError, "cannot modify input list after computing output cache"
 		self.input_cache.extend(cache)
 
 	def add_preserve_cache(self, cache):
@@ -337,9 +357,7 @@ class LigolwAddNode(pipeline.LigolwAddNode):
 			seglists = segments.segmentlistdict()
 			for c in self.input_cache:
 				seglists |= c.to_segmentlistdict()
-			instruments = seglists.keys()
-			instruments.sort()
-			self.output_cache = [CacheEntry("+".join(instruments), None, seglists.extent_all(), "file://localhost" + os.path.abspath(self._AnalysisNode__output))]
+			self.output_cache = [make_cache_entry(seglists, None, self._AnalysisNode__output)]
 		return self.output_cache
 
 	def write_input_files(self, *args):
@@ -554,9 +572,7 @@ class SQLiteNode(pipeline.CondorDAGNode):
 			seglists = segments.segmentlistdict()
 			for c in self.input_cache:
 				seglists |= c.to_segmentlistdict()
-			instruments = seglists.keys()
-			instruments.sort()
-			self.output_cache = [CacheEntry("+".join(instruments), None, seglists.extent_all(), "file://localhost" + os.path.abspath(self.get_opts()["macrodatabase"]))]
+			self.output_cache = [make_cache_entry(seglists, None, self.get_opts()["macrodatabase"])]
 		return self.output_cache
 
 	def get_output_files(self):
@@ -604,13 +620,11 @@ class BurcaTailorNode(pipeline.CondorDAGNode):
 		seglists = segments.segmentlistdict()
 		for c in self.input_cache:
 			seglists |= c.to_segmentlistdict()
-		instruments = seglists.keys()
-		instruments.sort()
-		instruments = "+".join(instruments)
-		seg = seglists.extent_all()
-		filename = "%s-%s-%d-%d.xml.gz" % (instruments, description, int(seg[0]), int(abs(seg)))
+		cache_entry = make_cache_entry(seglists, description, "")
+		filename = "%s-%s-%d-%d.xml.gz" % (cache_entry.observatory, cache_entry.description, int(cache_entry.segment[0]), int(abs(cache_entry.segment)))
 		self.add_var_opt("output", filename)
-		self.output_cache = [CacheEntry(instruments, description, seg, "file://localhost" + os.path.abspath(filename))]
+		cache_entry.url = "file://localhost" + os.path.abspath(filename)
+		self.output_cache = [cache_entry]
 		return filename
 
 	def get_output_cache(self):

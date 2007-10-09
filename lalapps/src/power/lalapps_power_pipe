@@ -441,7 +441,7 @@ for n, (time_slides_filename, time_slides) in enumerate(background_time_slides.i
 		parents = power.make_pre_coinc_lladd(dag, parents, seg, "%s_%d" % (options.tag, n), input_cache = cache | extra_cache)
 		if options.enable_clustering:
 			parents = power.make_bucluster_fragment(dag, parents, "%s_%d_%d_%d" % (options.tag, n, int(seg[0]), int(abs(seg))))
-		coinc_nodes += power.make_burca_fragment(dag, parents, "ALL", seg, "%s_%d" % (options.tag, n))
+		coinc_nodes += power.make_burca_fragment(dag, parents, seg, "%s_%d" % (options.tag, n))
 
 
 # injections
@@ -457,7 +457,7 @@ for cache, parents, seg in group_coinc_parents(inj_pwr_nodes, injection_time_sli
 	parents = power.make_pre_coinc_lladd(dag, parents | set(binjnodes), seg, "INJECTIONS_%s" % options.tag, input_cache = cache | extra_cache)
 	if options.enable_clustering:
 		parents = power.make_bucluster_fragment(dag, parents, "INJECTIONS_%s_%d_%d" % (options.tag, int(seg[0]), int(abs(seg))))
-	inj_coinc_nodes += power.make_burca_fragment(dag, parents, "ALL", seg, "INJECTIONS_%s" % options.tag)
+	inj_coinc_nodes += power.make_burca_fragment(dag, parents, seg, "INJECTIONS_%s" % options.tag)
 
 
 #
