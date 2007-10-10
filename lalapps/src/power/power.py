@@ -279,18 +279,7 @@ class PowerNode(pipeline.AnalysisNode):
 		be at least once.
 		"""
 		if not self.output_cache:
-			seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
-			filename = self.get_output()
-			# FIXME: condor's documentation claims that it will
-			# compress output files written by standard
-			# universe jobs.  I did what the documentation
-			# says, and the files were not compressed.  Why?
-			# Get rid of this post script when this gets
-			# figured out.
-			# Duncan says I need to add "want_remote_io = True"
-			# to the submit file to get compress_files working.
-			self.set_post_script("/usr/bin/gzip -9 -f %s" % os.path.abspath(filename))
-			self.output_cache = [CacheEntry(self.get_ifo(), self.__usertag, seg, "file://localhost" + os.path.abspath(filename + ".gz"))]
+			self.output_cache = [CacheEntry(self.get_ifo(), self.__usertag, segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end())), "file://localhost" + os.path.abspath(self.get_output()))]
 		return self.output_cache
 
 	def get_output_files(self):
@@ -301,7 +290,7 @@ class PowerNode(pipeline.AnalysisNode):
 			if None in (self.get_start(), self.get_end(), self.get_ifo(), self.__usertag):
 				raise ValueError, "start time, end time, ifo, or user tag has not been set"
 			seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
-			self.set_output("%s-POWER_%s-%d-%d.xml" % (self.get_ifo(), self.__usertag, int(self.get_start()), int(self.get_end()) - int(self.get_start())))
+			self.set_output("%s-POWER_%s-%d-%d.xml.gz" % (self.get_ifo(), self.__usertag, int(self.get_start()), int(self.get_end()) - int(self.get_start())))
 		return self._AnalysisNode__output
 
 	def set_mdccache(self, file):
