@@ -1336,8 +1336,8 @@ fpuw_t get_fpu_status(void) {
 
 
 void drain_fpu_stack(void) {
-#if defined(__GNUC__) && __i386__
   static double dummy;
+#if defined(__GNUC__) && __i386__
   __asm(
 	"fstpl %0\n\t"
 	"fstpl %0\n\t"
@@ -1349,5 +1349,17 @@ void drain_fpu_stack(void) {
 	"fstpl %0\n\t"
 	"fstpl %0\n\t"
 	: "=m" (dummy));
+#elif defined(_MSC_VER)
+  __asm {
+    fstp dummy;
+    fstp dummy;
+    fstp dummy;
+    fstp dummy;
+    fstp dummy;
+    fstp dummy;
+    fstp dummy;
+    fstp dummy;
+    fstp dummy;
+  }
 #endif
 }
