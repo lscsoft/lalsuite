@@ -402,6 +402,7 @@ class BuclusterJob(pipeline.CondorDAGJob):
 		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "ligolw_bucluster-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "ligolw_bucluster-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
+		self.add_condor_cmd("Requirements", "Memory > 1100")
 		self.add_ini_opts(config_parser, "ligolw_bucluster")
 
 
@@ -481,6 +482,7 @@ class BurcaJob(pipeline.CondorDAGJob):
 		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "ligolw_burca-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "ligolw_burca-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
+		self.add_condor_cmd("Requirements", "Memory > 1100")
 		self.add_ini_opts(config_parser, "ligolw_burca")
 
 
