@@ -236,10 +236,7 @@ class PowerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 		"""
 		pipeline.CondorDAGJob.__init__(self, get_universe(config_parser), get_executable(config_parser, "lalapps_power"))
 		pipeline.AnalysisJob.__init__(self, config_parser)
-		self.add_condor_cmd("compress_files", "*.xml.gz")
-
 		self.add_ini_opts(config_parser, "lalapps_power")
-
 		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "lalapps_power-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_power-$(cluster)-$(process).err"))
 		self.set_sub_file("lalapps_power.sub")
