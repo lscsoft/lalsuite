@@ -35,20 +35,14 @@ Excess power offline pipeline's likelihood stage construction script.
 
 import ConfigParser
 import glob
-import math
 from optparse import OptionParser
-import os
 import sys
 import tempfile
 
 
 from glue import pipeline
-from glue import segments
 from glue import segmentsUtils
 from glue.lal import CacheEntry
-from pylal import ligolw_tisi
-from pylal import ligolw_cafe
-from pylal import llwapp
 from pylal.date import LIGOTimeGPS
 from lalapps import power
 
@@ -69,7 +63,9 @@ __version__ = "$Revision$"[11:-2]
 
 def parse_command_line():
 	parser = OptionParser(
-		version="%prog CVS $Id$"
+		version = "%prog CVS $Id$",
+		usage = "%prog [options] --distribution-segments segments_file cache_file ...",
+		description = "Constructs the likelihood-ratio based coincidence stage for an excess power analysis.  The input consists of one or more LAL caches listing the sqlite database trigger files, and a list of segments giving the time intervals that should be considered to be independent.  The LAL caches list all trigger files together, that is injections, time slides, and zero-lag.  The individual trigger files are self-describing, so the analysis codes can autodetect their type.  Each segment will be analyzed using the files that intersect it:  the likelihood ratios will be constructed from the injections and time-lag triggers contained in files that intersect the segment, and that data used to assign likelihoods to the injections, time-lag, and zero-lag coincs in all files that intersect the same segment."
 	)
 	parser.add_option("--condor-log-dir", metavar = "path", default = ".", help = "Set the directory for Condor log files (default = \".\").")
 	parser.add_option("--config-file", metavar = "filename", default = "power.ini", help = "Set .ini configuration file name (default = \"power.ini\").")
