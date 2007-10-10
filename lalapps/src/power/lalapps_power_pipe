@@ -486,6 +486,7 @@ inj_coinc_nodes = power.make_sqlite_stage(dag, inj_coinc_nodes, "INJECTIONS_%s" 
 
 if options.verbose:
 	print >>sys.stderr, "writing dag ..."
+#dag.get_nodes().sort(lambda a, b: cmp(a.get_start(), b.get_start()))
 dag.write_sub_files()
 dag.write_dag()
 
