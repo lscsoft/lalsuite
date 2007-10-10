@@ -4,7 +4,10 @@
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 if LALFRAME
 if LALMETAIO
-bin_PROGRAMS = lalapps_tracksearch lalapps_TSDatagen lalapps_TSaverager lalapps_tfdat2pgm
+bin_PROGRAMS = lalapps_tracksearch \
+               lalapps_tracksearch_datagen \
+               lalapps_tracksearch_averager \
+               lalapps_tracksearch_dat2pgm
 TSUTILSRCS = tfdat2pgm.c tracksearchToolbox.c
 TRACKSEARCHSRCS = tracksearch.c tracksearchToolbox.c
 TSDATAGENSRCS = TSDatagen.c 
@@ -28,7 +31,8 @@ if HAVE_PYTHON
 bin_SCRIPTS = lalapps_tracksearch_handler \
 	      lalapps_tracksearch_pipe \
               lalapps_tracksearch_housekeeper \
-              lalapps_tracksearch_tune_pipe
+              lalapps_tracksearch_tune_pipe \
+              lalapps_tracksearch_mapcachebuilder
 pkgpython_DATA = tracksearchutils.py tracksearch.py
 endif
 
@@ -37,22 +41,24 @@ python_config.sed:
 	echo "s+@PYTHONLIBDIR@+@pkgpythondir@+g" > python_config.sed
 	echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
 
-lalapps_tracksearch_handler: $(srcdir)/tshandler python_config.sed
-	sed -f python_config.sed $(srcdir)/tshandler > lalapps_tracksearch_handler
+lalapps_tracksearch_handler: $(srcdir)/tsHandler.pyin python_config.sed
+	sed -f python_config.sed $(srcdir)/tsHandler.pyin > lalapps_tracksearch_handler
 	chmod +x lalapps_tracksearch_handler
 
-lalapps_tracksearch_pipe: $(srcdir)/tspipe python_config.sed
-	sed -f python_config.sed $(srcdir)/tspipe > lalapps_tracksearch_pipe
+lalapps_tracksearch_pipe: $(srcdir)/tsPipe.pyin python_config.sed
+	sed -f python_config.sed $(srcdir)/tsPipe.pyin > lalapps_tracksearch_pipe
 	chmod +x lalapps_tracksearch_pipe
 
-lalapps_tracksearch_housekeeper: $(srcdir)/tspipe python_config.sed
-	sed -f python_config.sed $(srcdir)/tspipe > lalapps_tracksearch_housekeeper
+lalapps_tracksearch_housekeeper: $(srcdir)/tsHousekeeper.pyin python_config.sed
+	sed -f python_config.sed $(srcdir)/tsHousekeeper.pyin > lalapps_tracksearch_housekeeper
 	chmod +x lalapps_tracksearch_housekeeper
 
-lalapps_tracksearch_tune_pipe: $(srcdir)/tstunepipe python_config.sed
-	sed -f python_config.sed $(srcdir)/tstunepipe > lalapps_tracksearch_tune_pipe
+lalapps_tracksearch_tune_pipe: $(srcdir)/tsTunePipe.pyin python_config.sed
+	sed -f python_config.sed $(srcdir)/tsTunePipe.pyin > lalapps_tracksearch_tune_pipe
 	chmod +x lalapps_tracksearch_tune_pipe
 
+lalapps_tracksearch_mapcachebuilder: $(srcdir)/tsMapCacheBuilder.pyin python_config.sed
+	sed -f python_config.sed $(srcdir)/tsMapCacheBuilder.pyin > lalapps_tracksearch_mapcachebuilder
 CLEANFILES =  lalapps_tracksearch_handler \
 	      lalapps_tracksearch_pipe \
               lalapps_tracksearch_housekeeper \
@@ -63,6 +69,7 @@ MOSTLYCLEANFILES = *.candidates \
                    *.pgm \
                    *.raw \
                    *.diag \
+                   *.pyc \
                    tsaMap* \
                    Candidate* \
                    Pre-*
