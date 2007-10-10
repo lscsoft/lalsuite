@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env @PYTHONPROG@
 """
   * Copyright (C) 2004, 2005 Cristina V. Torres
   *
@@ -38,7 +38,8 @@ import sys
 import time
 import pickle
 import tracksearch
-from tsutils import *
+sys.path.append('@PYTHONLIBDIR@')
+from tracksearchutils import *
 from tracksearch import buildDir
 
 
@@ -881,7 +882,8 @@ class tuneObject:
 # This is where the main body of the python script will reside.
 #
 #
-parser = OptionParser()
+usage="tstunepipe [args]"
+parser = OptionParser(usage)
 
 parser.add_option("-f","--file",dest="tunFile",
                   default="",

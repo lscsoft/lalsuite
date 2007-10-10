@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env @PYTHONPROG@
 """
   * Copyright (C) 2004, 2005 Cristina V. Torres
   *
@@ -28,6 +28,7 @@ from optparse import OptionParser
 import ConfigParser
 import time
 from glue import pipeline
+sys.path.append('@PYTHONLIBDIR@')
 import tracksearch
 
 #Parse the command line options and create help features
