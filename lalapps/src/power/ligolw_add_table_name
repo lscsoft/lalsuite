@@ -107,10 +107,10 @@ options, filenames = parse_command_line()
 
 for filename in filenames:
 	# read the file
-	xmldoc = utils.load_filename(filename, verbose = options.verbose, gz = filename[-3:] == ".gz")
+	xmldoc = utils.load_filename(filename, verbose = options.verbose, gz = filename.endswith(".gz"))
 
 	add_table_name(xmldoc)
 	add_ms_columns(table.get_table(xmldoc, lsctables.SnglBurstTable.tableName))
 
 	# write the file
-	utils.write_filename(xmldoc, filename, verbose = options.verbose, gz = filename[-3:] == ".gz")
+	utils.write_filename(xmldoc, filename, verbose = options.verbose, gz = filename.endswith(".gz"))
