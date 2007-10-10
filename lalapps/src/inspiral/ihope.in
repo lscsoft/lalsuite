@@ -27,7 +27,7 @@ sys.path.append('@PYTHONLIBDIR@')
 from glue import segments
 from glue import segmentsUtils
 from glue import pipeline
-from lalapps.inspiralutils import *
+import inspiralutils 
 
 dq_url_pattern = "http://ldas-cit.ligo.caltech.edu/segments/S5/%s/dq_segments.txt"
 
@@ -84,6 +84,7 @@ parser.add_option("-Q", "--skip-data-quality",action="store_false",\
 parser.add_option("-U", "--skip-followup",action="store_false",\
     default=True, dest="run_followup",  help="skip the inspiral followup")
 
+command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
 
 ##############################################################################
@@ -120,7 +121,7 @@ cp.read(opts.config_file)
 # set up the analysis directory
 analysisDirectory = str(opts.gps_start_time) + "-" + str(opts.gps_end_time)
 
-mkdir(analysisDirectory)
+inspiralutils.mkdir(analysisDirectory)
 os.chdir(analysisDirectory)
 
 ##############################################################################
@@ -138,7 +139,7 @@ dag = pipeline.CondorDAG(logfile)
 dag.set_dag_file(basename)
 
 # write the file to handle the rescue dags
-write_rescue()
+inspiralutils.write_rescue()
 
 
 ##############################################################################
@@ -162,13 +163,15 @@ segFile = {}
 dqVetoes = {}
 
 for ifo in ifos:
-  findSegmentsToAnalyze(cp,opts,ifo,dq_url_pattern,segFile,dqVetoes) 
+  inspiralutils.findSegmentsToAnalyze(cp, opts, ifo, dq_url_pattern, segFile, \
+      dqVetoes) 
 
 ##############################################################################
 # Run lalapps_inspiral_hipe for datafind
 if opts.run_datafind:
   print "Running inspiral hipe for datafind run"
-  hipeDfNode = hipe_setup("datafind", cp, opts, ifos, dfOnly = True)
+  hipeDfNode = inspiralutils.hipe_setup("datafind", cp, opts, ifos, \
+      dfOnly = True)
   dag.add_node(hipeDfNode)
 
 
@@ -177,14 +180,15 @@ if opts.run_datafind:
 if opts.run_analysis:
   if opts.run_play_analysis:
     print "Running inspiral hipe for playground run"
-    hipePlayNode = hipe_setup("playground", cp, opts, ifos, playOnly = True)
+    hipePlayNode = inspiralutils.hipe_setup("playground", cp, opts, ifos, \
+         playOnly = True)
     dag.add_node(hipePlayNode)
     if opts.run_datafind:
       hipePlayNode.add_parent(hipeDfNode)
 
   if opts.run_full_data:
     print "Running inspiral hipe for analysis run"
-    hipeAnalysisNode = hipe_setup("analysis", cp, opts, ifos)
+    hipeAnalysisNode = inspiralutils.hipe_setup("analysis", cp, opts, ifos)
     dag.add_node(hipeAnalysisNode)
     if opts.run_datafind:
       hipeAnalysisNode.add_parent(hipeDfNode)
@@ -193,7 +197,8 @@ if opts.run_analysis:
     hipeInjNode = {} 
     print "Running inspiral hipe for injection runs"
     for (injDir, injFile) in cp.items("injections"):
-      hipeInjNode[injDir] = hipe_setup(injDir, cp, opts, ifos, injFile)
+      hipeInjNode[injDir] = inspiralutils.hipe_setup(injDir, cp, opts, ifos, \
+           injFile)
       dag.add_node(hipeInjNode[injDir])
       if opts.run_datafind:
         hipeInjNode[injDir].add_parent(hipeDfNode)
@@ -210,8 +215,8 @@ if opts.run_data_quality:
 
     if opts.run_play_analysis:
       print "Running inspiral hipe for play with vetoes"
-      hipePlayVetoNode[category] = hipe_setup("playground", cp, opts, ifos,
-          playOnly = True, vetoCat = category, vetoFiles = dqVetoes)
+      hipePlayVetoNode[category] = inspiralutils.hipe_setup("playground", cp, \
+          opts, ifos, playOnly = True, vetoCat = category, vetoFiles = dqVetoes)
       dag.add_node(hipePlayVetoNode[category])
       if category==2 and opts.run_analysis: 
         hipePlayVetoNode[category].add_parent(hipePlayNode)
@@ -221,8 +226,8 @@ if opts.run_data_quality:
 
     if opts.run_full_data:
       print "Running inspiral hipe for full data with vetoes"
-      hipeAnalysisVetoNode[category] = hipe_setup("analysis", cp, opts, ifos,
-          vetoCat = category, vetoFiles = dqVetoes)
+      hipeAnalysisVetoNode[category] = inspiralutils.hipe_setup("analysis", \
+          cp, opts, ifos, vetoCat = category, vetoFiles = dqVetoes)
       dag.add_node(hipeAnalysisVetoNode[category])
       if category==2 and opts.run_analysis: 
         hipeAnalysisVetoNode[category].add_parent(hipeAnalysisNode)
@@ -234,8 +239,8 @@ if opts.run_data_quality:
       print "Running inspiral hipe for injections with vetoes"
       for (injDir, injFile) in cp.items("injections"):
         if category == 2: hipeInjVetoNode[injDir] = {}
-        hipeInjVetoNode[injDir][category] = hipe_setup(injDir, cp, opts, ifos,
-            injFile = cp.get("injections", injDir), 
+        hipeInjVetoNode[injDir][category] = inspiralutils.hipe_setup(injDir, \
+            cp, opts, ifos, injFile = cp.get("injections", injDir), 
             vetoCat = category, vetoFiles = dqVetoes)
         dag.add_node(hipeInjVetoNode[injDir][category])
         if category==2 and opts.run_analysis: 
@@ -247,7 +252,7 @@ if opts.run_data_quality:
 ##############################################################################
 # Set up the directories for followup and run lalapps_followup_pipe
 if opts.run_followup:
-  followupNode = followup_setup("followup", cp, opts, "analysis" )
+  followupNode = inspiralutils.followup_setup("followup", cp, opts, "analysis")
   dag.add_node(followupNode)
   if opts.run_analysis:
     followupNode.add_parent(hipeAnalysisNode)
@@ -284,10 +289,7 @@ print """\n  from a condor submit machine
 
 ##############################################################################
 # write out a log file for this script
-if usertag:
-  log_fh = open(basename + '.pipeline.' + usertag + '.log', 'w')
-else:
-  log_fh = open(basename + '.pipeline.log', 'w')
+log_fh = open(basename + '.pipeline.log', 'w')
   
 log_fh.write( "$Id$" \
     + "\n" )
