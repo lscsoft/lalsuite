@@ -23,7 +23,7 @@ import ConfigParser
 import urlparse
 from pylal import CoincInspiralUtils
 from pylal import itertools
-sys.path.append('/scratch2/rahul/opt/lscsoft/lalapps//lib/python2.4/site-packages/lalapps')
+sys.path.append('/scratch2/vaulin/opt/lib/python2.4/site-packages/lalapps')
 
 ##############################################################################
 # import the modules we need to build the pipeline
@@ -299,7 +299,7 @@ if opts.plotthinca:
     for ifo in ifos:
       plotthinca_jobs[combostring].add_opt(ifo.lower() + "-triggers","  ")
     plotthinca_jobs[combostring].add_opt("ifo-times",combostring)
-    cp.set('plotthinca','figure-name', 'plotthinca' + combostring)
+    plotthinca_jobs[combostring].add_opt('figure-name', combostring +'_plotthinca')
     plotthinca_jobs[combostring].set_sub_file( basename + '.plotthinca_' + combostring + subsuffix )
   
   all_jobs.extend(plotthinca_jobs.values())
