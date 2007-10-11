@@ -583,29 +583,45 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 27 )
       {
-        thisEvent->sigmasq = r8colData;
+        thisEvent->bank_chisq = r4colData;
       }
       else if ( tableDir[j].idx == 28 )
       {
-        thisEvent->ligo_axis_ra = r4colData;
+        thisEvent->bank_chisq_dof = i4colData;
       }
       else if ( tableDir[j].idx == 29 )
       {
-        thisEvent->ligo_axis_dec = r4colData;
+        thisEvent->cont_chisq = r4colData;
       }
       else if ( tableDir[j].idx == 30 )
       {
-        thisEvent->ligo_angle = r4colData;
+        thisEvent->cont_chisq_dof = i4colData;
       }
       else if ( tableDir[j].idx == 31 )
       {
-        thisEvent->ligo_angle_sig = r4colData;
+        thisEvent->sigmasq = r8colData;
       }
       else if ( tableDir[j].idx == 32 )
       {
-        thisEvent->inclination = r4colData;
+        thisEvent->ligo_axis_ra = r4colData;
       }
       else if ( tableDir[j].idx == 33 )
+      {
+        thisEvent->ligo_axis_dec = r4colData;
+      }
+      else if ( tableDir[j].idx == 34 )
+      {
+        thisEvent->ligo_angle = r4colData;
+      }
+      else if ( tableDir[j].idx == 35 )
+      {
+        thisEvent->ligo_angle_sig = r4colData;
+      }
+      else if ( tableDir[j].idx == 36 )
+      {
+        thisEvent->inclination = r4colData;
+      }
+      else if ( tableDir[j].idx == 37 )
       {
         thisEvent->polarization = r4colData;
       }
@@ -1058,21 +1074,25 @@ LALSnglInspiralTableFromLIGOLw (
     {"snr",                     -1, 35},
     {"chisq",                   -1, 36},
     {"chisq_dof",               -1, 37},
-    {"sigmasq",                 -1, 38},
-    {"rsqveto_duration",        -1, 39},
-    {"event_id",                -1, 40},
-    {"Gamma0",                  -1, 41},
-    {"Gamma1",                  -1, 42},
-    {"Gamma2",                  -1, 43},
-    {"Gamma3",                  -1, 44},
-    {"Gamma4",                  -1, 45},
-    {"Gamma5",                  -1, 46},
-    {"Gamma6",                  -1, 47},
-    {"Gamma7",                  -1, 48},
-    {"Gamma8",                  -1, 49},
-    {"Gamma9",                  -1, 50},
-    {"kappa",                   -1, 51},
-    {"chi",                     -1, 52},
+    {"bank_chisq",                   -1, 38},
+    {"bank_chisq_dof",               -1, 39},
+    {"cont_chisq",                   -1, 40},
+    {"cont_chisq_dof",               -1, 41},
+    {"sigmasq",                 -1, 42},
+    {"rsqveto_duration",        -1, 43},
+    {"event_id",                -1, 44},
+    {"Gamma0",                  -1, 45},
+    {"Gamma1",                  -1, 46},
+    {"Gamma2",                  -1, 47},
+    {"Gamma3",                  -1, 48},
+    {"Gamma4",                  -1, 49},
+    {"Gamma5",                  -1, 50},
+    {"Gamma6",                  -1, 51},
+    {"Gamma7",                  -1, 52},
+    {"Gamma8",                  -1, 53},
+    {"Gamma9",                  -1, 54},
+    {"kappa",                   -1, 55},
+    {"chi",                     -1, 56},
     {NULL,                       0, 0}
   };
 
@@ -1332,13 +1352,29 @@ LALSnglInspiralTableFromLIGOLw (
         }
         else if ( tableDir[j].idx == 38 )
         {
-          thisEvent->sigmasq = r8colData;
+          thisEvent->bank_chisq = r4colData;
         }
         else if ( tableDir[j].idx == 39 )
         {
-          thisEvent->rsqveto_duration = r4colData;
+          thisEvent->bank_chisq_dof = i4colData;
         }
         else if ( tableDir[j].idx == 40 )
+        {
+          thisEvent->cont_chisq = r4colData;
+        }
+        else if ( tableDir[j].idx == 41 )
+        {
+          thisEvent->cont_chisq_dof = i4colData;
+        }
+        else if ( tableDir[j].idx == 42 )
+        {
+          thisEvent->sigmasq = r8colData;
+        }
+        else if ( tableDir[j].idx == 43 )
+        {
+          thisEvent->rsqveto_duration = r4colData;
+        }
+        else if ( tableDir[j].idx == 44 )
         {
           if ( tableDir[j].pos > 0 && i8colData )
           {
@@ -1348,51 +1384,51 @@ LALSnglInspiralTableFromLIGOLw (
             thisEvent->event_id->snglInspiralTable = thisEvent;
           }
         }
-        else if ( tableDir[j].idx == 41 )
+        else if ( tableDir[j].idx == 45 )
         {
           thisEvent->Gamma[0] = r4colData;
         }
-        else if ( tableDir[j].idx == 42 )
+        else if ( tableDir[j].idx == 46 )
         {
           thisEvent->Gamma[1] = r4colData;
         }
-        else if ( tableDir[j].idx == 43 )
+        else if ( tableDir[j].idx == 47 )
         {
           thisEvent->Gamma[2] = r4colData;
         }
-        else if ( tableDir[j].idx == 44 )
+        else if ( tableDir[j].idx == 48 )
         {
           thisEvent->Gamma[3] = r4colData;
         }
-        else if ( tableDir[j].idx == 45 )
+        else if ( tableDir[j].idx == 49 )
         {
           thisEvent->Gamma[4] = r4colData;
         }
-        else if ( tableDir[j].idx == 46 )
+        else if ( tableDir[j].idx == 50 )
         {
           thisEvent->Gamma[5] = r4colData;
         }
-        else if ( tableDir[j].idx == 47 )
+        else if ( tableDir[j].idx == 51 )
         {
           thisEvent->Gamma[6] = r4colData;
         }
-        else if ( tableDir[j].idx == 48 )
+        else if ( tableDir[j].idx == 52 )
         {
           thisEvent->Gamma[7] = r4colData;
         }
-        else if ( tableDir[j].idx == 49 )
+        else if ( tableDir[j].idx == 53 )
         {
           thisEvent->Gamma[8] = r4colData;
         }
-        else if ( tableDir[j].idx == 50 )
+        else if ( tableDir[j].idx == 54 )
         {
           thisEvent->Gamma[9] = r4colData;
         }
-        else if ( tableDir[j].idx == 51 )
+        else if ( tableDir[j].idx == 55 )
         {
           thisEvent->kappa = r4colData;
         }
-        else if ( tableDir[j].idx == 52 )
+        else if ( tableDir[j].idx == 56 )
         {
           thisEvent->chi = r4colData;
         }        

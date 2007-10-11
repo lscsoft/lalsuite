@@ -509,6 +509,10 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglInspiralTable->snr,
               tablePtr.snglInspiralTable->chisq,
               tablePtr.snglInspiralTable->chisq_dof,
+              tablePtr.snglInspiralTable->bank_chisq,
+              tablePtr.snglInspiralTable->bank_chisq_dof,
+              tablePtr.snglInspiralTable->cont_chisq,
+              tablePtr.snglInspiralTable->cont_chisq_dof,
               tablePtr.snglInspiralTable->sigmasq,
 	      tablePtr.snglInspiralTable->rsqveto_duration,
 	      tablePtr.snglInspiralTable->Gamma[0],
@@ -552,6 +556,10 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglInspiralTable->snr,
               tablePtr.snglInspiralTable->chisq,
               tablePtr.snglInspiralTable->chisq_dof,
+              tablePtr.snglInspiralTable->bank_chisq,
+              tablePtr.snglInspiralTable->bank_chisq_dof,
+              tablePtr.snglInspiralTable->cont_chisq,
+              tablePtr.snglInspiralTable->cont_chisq_dof,
               tablePtr.snglInspiralTable->sigmasq,
 	      tablePtr.snglInspiralTable->rsqveto_duration );
         tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
@@ -581,6 +589,10 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglInspiralTable->snr,
               tablePtr.snglInspiralTable->chisq,
               tablePtr.snglInspiralTable->chisq_dof,
+              tablePtr.snglInspiralTable->bank_chisq,
+              tablePtr.snglInspiralTable->bank_chisq_dof,
+              tablePtr.snglInspiralTable->cont_chisq,
+              tablePtr.snglInspiralTable->cont_chisq_dof,
               tablePtr.snglInspiralTable->sigmasq,
 	      tablePtr.snglInspiralTable->rsqveto_duration );
         tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
@@ -654,6 +666,10 @@ LALWriteLIGOLwXMLTable (
               tablePtr.multiInspiralTable->snr,
               tablePtr.multiInspiralTable->chisq,
               tablePtr.multiInspiralTable->chisq_dof,
+              tablePtr.multiInspiralTable->bank_chisq,
+              tablePtr.multiInspiralTable->bank_chisq_dof,
+              tablePtr.multiInspiralTable->cont_chisq,
+              tablePtr.multiInspiralTable->cont_chisq_dof,
               tablePtr.multiInspiralTable->sigmasq,
               tablePtr.multiInspiralTable->ligo_axis_ra,
               tablePtr.multiInspiralTable->ligo_axis_dec,

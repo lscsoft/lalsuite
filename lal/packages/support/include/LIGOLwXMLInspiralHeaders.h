@@ -114,6 +114,10 @@ fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:f_final\" Type=\"r
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:snr\" Type=\"real_4\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:chisq\" Type=\"real_4\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:chisq_dof\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:bank_chisq\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:bank_chisq_dof\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:cont_chisq\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:cont_chisq_dof\" Type=\"int_4s\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:sigmasq\" Type=\"real_8\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:rsqveto_duration\" Type=\"real_4\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma0\" Type=\"real_4\"/>\n", fp ) == EOF || \
@@ -130,7 +134,7 @@ fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:event_id\" Type=\"
 fputs( "      <Stream Name=\"sngl_inspiralgroup:sngl_inspiral:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SNGL_INSPIRAL_ROW \
-"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%22.16e,%d,%d,%22.16e,%22.16e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%22.16e,%e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%lld"
+"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%22.16e,%d,%d,%22.16e,%22.16e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%e,%d,%e,%d,%22.16e,%e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%lld"
 
 #define PRINT_LIGOLW_XML_SNGL_INSPIRAL_BNS(fp) ( \
 fputs( "   <Table Name=\"sngl_inspiralgroup:sngl_inspiral:table\">\n", fp ) == EOF || \
@@ -156,12 +160,16 @@ fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:f_final\" Type=\"r
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:snr\" Type=\"real_4\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:chisq\" Type=\"real_4\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:chisq_dof\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:bank_chisq\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:bank_chisq_dof\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:cont_chisq\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:cont_chisq_dof\" Type=\"int_4s\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:sigmasq\" Type=\"real_8\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:rsqveto_duration\" Type=\"real_4\"/>\n", fp ) == EOF || \
 fputs( "      <Stream Name=\"sngl_inspiralgroup:sngl_inspiral:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SNGL_INSPIRAL_ROW_BNS \
-"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%22.16e,%22.16e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%22.16e,%e"
+"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%22.16e,%22.16e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%e,%d,%e,%d,%22.16e,%e"
 
 #define PRINT_LIGOLW_XML_SNGL_INSPIRAL_BCV(fp) ( \
 fputs( "   <Table Name=\"sngl_inspiralgroup:sngl_inspiral:table\">\n", fp ) == EOF || \
@@ -184,12 +192,16 @@ fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:f_final\" Type=\"r
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:snr\" Type=\"real_4\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:chisq\" Type=\"real_4\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:chisq_dof\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:bank_chisq\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:bank_chisq_dof\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:cont_chisq\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:cont_chisq_dof\" Type=\"int_4s\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:sigmasq\" Type=\"real_8\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:rsqveto_duration\" Type=\"real_4\"/>\n", fp ) == EOF || \
 fputs( "      <Stream Name=\"sngl_inspiralgroup:sngl_inspiral:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SNGL_INSPIRAL_ROW_BCV \
-"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%22.16e,%22.16e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%22.16e,%e"
+"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%22.16e,%22.16e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%e,%d,%e,%d,%22.16e,%e"
 
 #define PRINT_LIGOLW_XML_MULTI_INSPIRAL(fp) ( \
 fputs( "   <Table Name=\"multi_inspiralgroup:multi_inspiral:table\">\n" , fp ) == EOF || \
@@ -221,6 +233,10 @@ fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:ifo2_snr\" Type=
 fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:snr\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:chisq\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:chisq_dof\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:bank_chisq\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:bank_chisq_dof\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:cont_chisq\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:cont_chisq_dof\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:sigmasq\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:ligo_axis_ra\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:ligo_axis_dec\" Type=\"real_4\"/>\n" , fp ) == EOF || \
@@ -244,7 +260,7 @@ fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:t1quad_im\"  Typ
 fputs( "      <Stream Name=\"multi_inspiralgroup:multi_inspiral:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define MULTI_INSPIRAL_ROW \
-"         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%22.16e,%d,%d,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%e,%e,%e,%e,%e,%e,%e,%lld,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e"
+"         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%22.16e,%d,%d,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%e,%d,%e,%d,%e,%e,%e,%e,%e,%e,%e,%lld,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e"
 
 #define PRINT_LIGOLW_XML_SIM_INSPIRAL(fp) ( \
 fputs( "   <Table Name=\"sim_inspiralgroup:sim_inspiral:table\">\n" , fp ) == EOF || \

@@ -420,6 +420,10 @@ tagSnglInspiralTable
   REAL4         snr;
   REAL4         chisq;
   INT4          chisq_dof;
+  REAL4         bank_chisq;
+  INT4          bank_chisq_dof;
+  REAL4         cont_chisq;
+  INT4          cont_chisq_dof;
   REAL8         sigmasq;
   REAL4         rsqveto_duration;
   REAL4         Gamma[10];    /* metric co-efficients */
@@ -536,6 +540,10 @@ tagMultiInspiralTable
   REAL4         ifo2_snr;
   REAL4         chisq;
   INT4          chisq_dof;
+  REAL4         bank_chisq;
+  INT4          bank_chisq_dof;
+  REAL4         cont_chisq;
+  INT4          cont_chisq_dof;
   REAL4         sigmasq;
   REAL4         ligo_axis_ra;
   REAL4         ligo_axis_dec;
