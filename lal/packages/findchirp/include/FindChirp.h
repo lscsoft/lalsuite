@@ -682,6 +682,7 @@ typedef struct
 tagFindChirpBankVetoData
 {
   UINT4                   length;
+  COMPLEX8Vector        **qtildeVecArray;
   COMPLEX8Vector        **qVecArray;
   FindChirpFilterInput  **fcInputArray;
   REAL4Vector            *ccMat;
@@ -1087,6 +1088,18 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
                      UINT4 i,
                      UINT4 snrIX,
                      UINT4 *dof);
+
+REAL4
+XLALComputeFullChisq(
+    FindChirpBankVetoData      *bankVetoData,    
+    FindChirpFilterInput       *input,
+    FindChirpFilterParams      *params,
+    COMPLEX8                   *q,
+    UINT4                       i,
+    UINT4                       snrIX,
+    UINT4                      *dof,
+    REAL4                       norm
+);
 
 InspiralTemplate * 
 XLALFindChirpSortTemplates( InspiralTemplate *bankHead, UINT4 num );
