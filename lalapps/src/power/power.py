@@ -1008,7 +1008,7 @@ def make_burca2_fragment(dag, parents, input_cache, tag):
 #
 
 
-def make_datafind_stage(dag, seglistdict, verbose = False):
+def make_datafind_stage(dag, seglists, verbose = False):
 	if verbose:
 		print >>sys.stderr, "building LSCdataFind jobs ..."
 
@@ -1019,30 +1019,27 @@ def make_datafind_stage(dag, seglistdict, verbose = False):
 	# number of LSCdataFind nodes in the DAG.
 	#
 
-	filled = seglistdict.copy().protract(datafind_pad / 2).contract(datafind_pad / 2)
+	filled = seglists.copy().protract(datafind_pad / 2).contract(datafind_pad / 2)
 
 	#
-	# Build the nodes
+	# Build the nodes.  Do this in time order to assist depth-first job
+	# submission on clusters.
 	#
+
+	segs = [(seg, instrument) for seg in seglist for instrument, seglist in filled.iteritems()]
+	segs.sort()
 
 	nodes = []
-	for instrument, seglist in filled.iteritems():
-		for seg in seglist:
-			if verbose:
-				print >>sys.stderr, "making datafind job for %s spanning %s" % (instrument, seg)
-			new_nodes = make_datafind_fragment(dag, instrument, seg)
-			nodes += new_nodes
+	for seg, instrument in segs
+		if verbose:
+			print >>sys.stderr, "making datafind job for %s spanning %s" % (instrument, seg)
+		new_nodes = make_datafind_fragment(dag, instrument, seg)
+		nodes += new_nodes
 
-			# add a post script to check the file list
-			required_segs_string = ",".join(segmentsUtils.to_range_strings(seglistdict[instrument] & segments.segmentlist([seg])))
-			for node in new_nodes:
-				node.set_post_script(datafindjob.get_config_file().get("condor", "LSCdataFindcheck") + " --dagman-return $RETURN --stat --gps-segment-list %s %s" % (required_segs_string, node.get_output()))
-
-	#
-	# Sort by instrument, then by start time.
-	#
-
-	nodes.sort(lambda a, b: cmp(a.get_ifo(), b.get_ifo()) or cmp(a.get_start(), b.get_start()))
+		# add a post script to check the file list
+		required_segs_string = ",".join(segmentsUtils.to_range_strings(seglists[instrument] & segments.segmentlist([seg])))
+		for node in new_nodes:
+			node.set_post_script(datafindjob.get_config_file().get("condor", "LSCdataFindcheck") + " --dagman-return $RETURN --stat --gps-segment-list %s %s" % (required_segs_string, node.get_output()))
 
 	return nodes
 
