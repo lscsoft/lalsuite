@@ -352,10 +352,12 @@ if opts.plotethinca:
   for ifos in  ifo_combo:
     combostring = combo2str(ifos)
     plotethinca_jobs[combostring] = inspiral.PlotEthincaJob(cp)
-    for ifo in ifos:
-      plotethinca_jobs[combostring].add_opt("ifo",ifo)
-    plotethinca_jobs[combostring].add_opt("ifo-times",combostring)
-    cp.set('plotethinca', 'figure-name', 'plotethinca' + combostring)
+    ifosoption=ifos[0]
+    for i in range(1,len(ifos)):
+      ifosoption+=' --ifo '+ ifos[i]
+    plotethinca_jobs[combostring].add_opt("ifo", ifosoption)
+    plotethinca_jobs[combostring].add_opt("ifo-times", combostring)
+    plotethinca_jobs[combostring].add_opt("figure-name", combostring + '-plotethinca')
     plotethinca_jobs[combostring].set_sub_file( basename + '.plotethinca_' + combostring + subsuffix )
 
   all_jobs.extend(plotethinca_jobs.values())
