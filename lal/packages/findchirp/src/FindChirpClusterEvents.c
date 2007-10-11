@@ -70,6 +70,8 @@ LALFindChirpClusterEvents (
   UINT4                 eventStartIdx = 0;
   UINT4  		deltaEventIndex = 0;
   UINT4                 j, kmax;
+  UINT4 		doChisqFlag = 1;
+  UINT4			BVLen = 0;
   REAL4                 norm = 0;
   REAL4                 deltaT;
   REAL8                 deltaF;
@@ -81,6 +83,8 @@ LALFindChirpClusterEvents (
   CHAR                  searchName[LIGOMETA_SEARCH_MAX];
   UINT4			bvDOF = 0;
   REAL4			bvChisq = 0;
+  UINT4                 ccDOF = 0;
+  REAL4                 ccChisq = 0;
   INITSTATUS( status, "LALFindChirpClusterEvents", FINDCHIRPCLUSTEREVENTSC );
   ATTATCHSTATUSPTR( status );
 
@@ -162,7 +166,6 @@ LALFindChirpClusterEvents (
    * set up the variables needed to cluster
    *
    */
-
   
   q = params->qVec->data;
   numPoints = params->qVec->length;
@@ -174,9 +177,7 @@ LALFindChirpClusterEvents (
 
   /* normalisation */
   norm = input->fcTmplt->norm; 
-  /* 4.0 * (deltaT / (REAL4)numPoints) / 
-         input->segment->segNorm->data[kmax]; */
-
+  BVLen = bankVetoData->length;
 
   /* normalised snr threhold */
   modqsqThresh = params->rhosqThresh / norm;
@@ -185,6 +186,7 @@ LALFindChirpClusterEvents (
   /* number of chisq bins is (length - 1) or 0 if there are no boundaries   */
   numChisqBins = input->segment->chisqBinVec->length ?
     input->segment->chisqBinVec->length - 1 : 0;
+
 
   /* we threshold on the "modified" chisq threshold computed from       */
   /*   chisqThreshFac = chisqDelta * norm / p                           */
@@ -235,6 +237,36 @@ LALFindChirpClusterEvents (
     /* if snrsq exceeds threshold at any point */
     if ( modqsq > modqsqThresh )
     {
+      /* If it crosses the threshold see if we need to do a chisq test 
+         since this is no longer computed in FindChirpFilterSegment */
+      if ( input->segment->chisqBinVec->length && doChisqFlag)
+      {
+        /* compute the chisq vector for this segment */
+        memset( params->chisqVec->data, 0,
+          params->chisqVec->length * sizeof(REAL4) );
+
+        /* pointers to chisq input */
+        params->chisqInput->qtildeVec = params->qtildeVec;
+        params->chisqInput->qVec      = params->qVec;
+
+        /* pointer to the chisq bin vector in the segment */
+        params->chisqParams->chisqBinVec = input->segment->chisqBinVec;
+        params->chisqParams->norm        = norm;
+
+        /* compute the chisq bin boundaries for this template */
+        if ( ! params->chisqParams->chisqBinVec->data )
+        {
+          LALFindChirpComputeChisqBins( status->statusPtr,
+            params->chisqParams->chisqBinVec, input->segment, kmax );
+          CHECKSTATUSPTR( status );
+        }
+        
+        /* compute the chisq threshold: this is slow! */
+        LALFindChirpChisqVeto( status->statusPtr, params->chisqVec,
+          params->chisqInput, params->chisqParams );
+        CHECKSTATUSPTR (status);
+        doChisqFlag = 0;
+      }
 
       /* if we have don't have a chisq or the chisq drops below the       */
       /* modified chisq threshold, start processing events                */
@@ -242,80 +274,85 @@ LALFindChirpClusterEvents (
           params->chisqVec->data[j] < 
           (params->chisqThresh * ( 1.0 + modqsq * chisqThreshFac )) )
       {
-
-
-        /*
-         *
-         * find the local maximum of the event
-         *
-         */
-
-
-        if ( ! *eventList )
+        if (1) /* eventually check bank veto ! */
         {
-          /* store the start of the crossing */
-          eventStartIdx = j;
 
-          /* if this is the first event, start the list */
-          thisEvent = *eventList = (SnglInspiralTable *) 
-            LALCalloc( 1, sizeof(SnglInspiralTable) );
-          if ( ! thisEvent )
+          /*
+           *
+           * find the local maximum of the event
+           *
+           */
+
+
+          if ( ! *eventList )
           {
-            ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+            /* store the start of the crossing */
+            eventStartIdx = j;
+
+            /* if this is the first event, start the list */
+            thisEvent = *eventList = (SnglInspiralTable *) 
+              LALCalloc( 1, sizeof(SnglInspiralTable) );
+            if ( ! thisEvent )
+            {
+              ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+            }
+
+            /* record the data that we need for the clustering algorithm */
+            thisEvent->end_time.gpsSeconds = j;
+            thisEvent->snr = modqsq;
           }
-
-          /* record the data that we need for the clustering algorithm */
-          thisEvent->end_time.gpsSeconds = j;
-          thisEvent->snr = modqsq;
-        }
-        else if (  ! params->clusterMethod == noClustering  &&
-            j <= thisEvent->end_time.gpsSeconds + deltaEventIndex &&
-            modqsq > thisEvent->snr )
-        {
-          /* if this is the same event, update the maximum */
-          thisEvent->end_time.gpsSeconds = j;
-          thisEvent->snr = modqsq;
-        }
-        else if ( j > thisEvent->end_time.gpsSeconds + deltaEventIndex ||
-              params->clusterMethod == noClustering  )
-        {
-          /* clean up this event */
-          SnglInspiralTable *lastEvent;
-          if ( bankVetoData->length > 1 ) 
+          else if (  ! params->clusterMethod == noClustering  &&
+              j <= thisEvent->end_time.gpsSeconds + deltaEventIndex &&
+             modqsq > thisEvent->snr )
           {
-            bvChisq = XLALComputeBankVeto( bankVetoData, subBankIndex,
+            /* if this is the same event, update the maximum */
+            thisEvent->end_time.gpsSeconds = j;
+            thisEvent->snr = modqsq;
+          }
+          else if ( j > thisEvent->end_time.gpsSeconds + deltaEventIndex ||
+                params->clusterMethod == noClustering  )
+          {
+            /* clean up this event */
+            SnglInspiralTable *lastEvent;
+            if ( bankVetoData->length > 1 ) 
+            {
+              bvChisq = XLALComputeBankVeto( bankVetoData, subBankIndex,
                              thisEvent->end_time.gpsSeconds, &bvDOF);
+            }
+
+            ccChisq = XLALComputeFullChisq(bankVetoData,input,params,q,
+                subBankIndex, thisEvent->end_time.gpsSeconds, &ccDOF, norm);
+
+            LALFindChirpStoreEvent(status->statusPtr, input, params,
+                thisEvent, q, kmax, norm, eventStartIdx, numChisqBins, 
+                searchName );
+            CHECKSTATUSPTR( status );
+
+            /* Set bank_chisq and cont_chisq */
+            thisEvent->bank_chisq_dof = bvDOF;
+            thisEvent->bank_chisq = bvChisq;
+            thisEvent->cont_chisq_dof = ccDOF;
+            thisEvent->cont_chisq = ccChisq;
+
+            /* store the start of the crossing */
+            eventStartIdx = j;
+
+            /* allocate memory for the newEvent */
+            lastEvent = thisEvent;
+
+            lastEvent->next = thisEvent = (SnglInspiralTable *) 
+              LALCalloc( 1, sizeof(SnglInspiralTable) );
+            if ( ! lastEvent->next )
+            {
+              ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+            }
+ 
+            /* stick minimal data into the event */
+            thisEvent->end_time.gpsSeconds = j;
+            thisEvent->snr = modqsq;
           }
-
-          LALFindChirpStoreEvent(status->statusPtr, input, params,
-              thisEvent, q, kmax, norm, eventStartIdx, numChisqBins, 
-              searchName );
-          CHECKSTATUSPTR( status );
-
-          if ( bankVetoData->length > 1 )
-          {
-            thisEvent->chisq_dof = bvDOF;
-            thisEvent->chisq = bvChisq;
-          }
-
-          /* store the start of the crossing */
-          eventStartIdx = j;
-
-          /* allocate memory for the newEvent */
-          lastEvent = thisEvent;
-
-          lastEvent->next = thisEvent = (SnglInspiralTable *) 
-            LALCalloc( 1, sizeof(SnglInspiralTable) );
-          if ( ! lastEvent->next )
-          {
-            ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
-          }
-
-          /* stick minimal data into the event */
-          thisEvent->end_time.gpsSeconds = j;
-          thisEvent->snr = modqsq;
-        }
-      }
+        } /* end if bank veto */
+      } /* end if chisq */
     }
   }
 
@@ -333,15 +370,18 @@ LALFindChirpClusterEvents (
                              thisEvent->end_time.gpsSeconds, &bvDOF);
     }
 
+    ccChisq = XLALComputeFullChisq(bankVetoData, input,params,q,
+            subBankIndex, thisEvent->end_time.gpsSeconds, &ccDOF, norm);
+
     LALFindChirpStoreEvent(status->statusPtr, input, params,
          thisEvent, q, kmax, norm, eventStartIdx, numChisqBins, 
          searchName );
 
-    if ( bankVetoData->length > 1 )
-    {
-      thisEvent->chisq_dof = bvDOF;
-      thisEvent->chisq = bvChisq;
-    }
+    thisEvent->bank_chisq_dof = bvDOF;
+    thisEvent->bank_chisq = bvChisq;
+    thisEvent->cont_chisq_dof = ccDOF;
+    thisEvent->cont_chisq = ccChisq;
+
     CHECKSTATUSPTR( status );
   }
 
