@@ -51,7 +51,7 @@ $Id$
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
-
+#include <math.h>
 
 NRCSID (FINDCHIRPSPDATAC, "$Id$");
 
@@ -80,12 +80,25 @@ LALFindChirpSPData (
   COMPLEX8             *resp;
 
   COMPLEX8             *outputData;
-
   REAL4                 segNormSum;
 
+  /* stuff added for continous chisq test */
+  REAL4Vector          *dataPower = NULL;
+  REAL4		        PSDsum = 0;  
+  INT4 			startIX = 0;
+  INT4			endIX = 0;
+  INT4			sortFlag = 0;
+  FindChirpSegment     *fcSeg2;
+  COMPLEX8Vector       *fftVec = NULL;
+  REAL4 		specSum = 0;
+  REAL4			respSumRe = 0;
+  REAL4			respSumIm = 0;
+  FILE			*PSDFile = NULL;
+  CHAR			PSDFileName[16];
+  INT4			smoothWn = 128;
   FindChirpSegment     *fcSeg;
   DataSegment          *dataSeg;
-
+  
   INITSTATUS( status, "LALFindChirpSPData", FINDCHIRPSPDATAC );
   ATTATCHSTATUSPTR( status );
 
@@ -182,6 +195,10 @@ LALFindChirpSPData (
   wtilde     = params->wtildeVec->data;
   tmpltPower = params->tmpltPowerVec->data;
 
+  /* allocate memory to store some temporary info for the 
+     continous chisq test */
+  fcSeg        = &(fcSegVec->data[0]);  
+  fftVec = XLALCreateCOMPLEX8Vector( fcSeg->data->data->length );
 
   /*
    *
@@ -203,13 +220,14 @@ LALFindChirpSPData (
 
     dataSeg      = &(dataSegVec->data[i]);
     fcSeg        = &(fcSegVec->data[i]);
-
+  
     dataVec      = dataSeg->chan->data;
     spec         = dataSeg->spec->data->data;
     resp         = dataSeg->resp->data->data;
 
     outputData   = fcSeg->data->data->data;
-
+    dataPower    = fcSeg->dataPower->data;
+ 
     ASSERT( params->wtildeVec->length == fcSeg->data->data->length, status,
         FINDCHIRPSPH_EMISM, FINDCHIRPSPH_MSGEMISM );
 
@@ -258,17 +276,17 @@ LALFindChirpSPData (
 
     /* set inverse power spectrum to zero */
     memset( wtilde, 0, params->wtildeVec->length * sizeof(COMPLEX8) );
-
+    
     /* compute inverse of S_v */
     for ( k = cut; k < params->wtildeVec->length; ++k )
     {
       if ( spec[k] == 0 )
       {
+        
         ABORT( status, FINDCHIRPSPH_EDIVZ, FINDCHIRPSPH_MSGEDIVZ );
       }
       wtilde[k].re = 1.0 / spec[k];
     }
-
 
     /*
      *
@@ -351,6 +369,13 @@ LALFindChirpSPData (
       outputData[k].re = 0.0;
       outputData[k].im = 0.0;
     }
+    
+    for ( k = 0; k < cut; ++k )
+    {
+      fftVec->data[k].re = 0.0;
+      fftVec->data[k].im = 0.0;
+    }
+
 
     memset( tmpltPower, 0, params->tmpltPowerVec->length * sizeof(REAL4) );
     memset( fcSeg->segNorm->data, 0, fcSeg->segNorm->length * sizeof(REAL4) );
@@ -364,7 +389,35 @@ LALFindChirpSPData (
       segNormSum += tmpltPower[k];
       fcSeg->segNorm->data[k] = segNormSum;
     }
+  
+    /*  Compute whitened data for continous chisq test */
+    for ( k = 0; k < fcSeg->data->data->length; ++k )
+    {
+      fftVec->data[k].re  = outputData[k].re * sqrt( wtilde[k].re );
+      fftVec->data[k].im  = outputData[k].im * sqrt( wtilde[k].re );
+    }
 
+    /* get the whitened time series */
+    LALReverseRealFFT( status->statusPtr, dataPower, fftVec,
+          params->invPlan );
+    dataPower->data[0] = 0;
+
+    /* compute the cumulative power used for the continous
+       chisq test */
+    for ( k = 1; k < dataPower->length; k++ )
+      {
+      dataPower->data[k] =
+        dataPower->data[k-1] +
+        dataPower->data[k] * dataPower->data[k];
+      }
+    
+    /* hard wired to quarter segment !! */
+    startIX = floor(1.0/4.0 * (REAL4) dataPower->length + 0.5);
+    endIX = floor(3.0/4.0 * (REAL4) dataPower->length + 0.5);
+    /* compute the total power in the uncorrupted data */
+    dataPower->data[dataPower->length - 1 ] = 2.0 * 
+      (dataPower->data[endIX] - dataPower->data[startIX]);
+    
     for ( k = cut; k < fcSeg->data->data->length; ++k )
     {
       outputData[k].re  *= wtilde[k].re * amp[k];
@@ -393,6 +446,35 @@ LALFindChirpSPData (
   } /* end loop over data segments */
 
 
+  /* Find the min power from the whitened time series */
+  /* For the continuous chisq test */
+  fcSeg = &(fcSegVec->data[0]);
+  PSDsum = fcSeg->dataPower->data->data[fcSeg->dataPower->data->length - 1 ];
+  
+  for ( i = 1; i < dataSegVec->length; ++i )
+  {
+    fcSeg = &(fcSegVec->data[i]);
+    if (fcSeg->dataPower->data->data[fcSeg->dataPower->data->length - 1 ] <
+        PSDsum) 
+    {
+      PSDsum = fcSeg->dataPower->data->data[fcSeg->dataPower->data->length - 1 ]; 
+    }
+
+  }
+  
+  /* reset each dataPower's last element to the min power */
+/*  sortFlag = rint(dataSegVec->length / 2 + 1);*/
+  sortFlag = 0;
+  for ( i = 0; i < dataSegVec->length; ++i )
+  {
+    fcSeg = &(fcSegVec->data[i]);
+    fcSeg->dataPower->data->data[fcSeg->dataPower->data->length - 1 ] = PSDsum;
+
+  }
+
+  /* clean up the data used for the continous chisq test */
+  XLALDestroyCOMPLEX8Vector( fftVec );
+  
   /* normal exit */
   DETATCHSTATUSPTR( status );
   RETURN( status );
