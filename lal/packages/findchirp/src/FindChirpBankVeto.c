@@ -45,6 +45,7 @@ $Id$
 #include <lal/DataBuffer.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
+#include <math.h>
 
 NRCSID (FINDCHIRPBANKVETOC, "$Id$");
 
@@ -154,6 +155,48 @@ XLALFindChirpCreateSubBanks(
   return subBankHead;
 }
 
+
+REAL4 
+XLALComputeFullChisq(
+    FindChirpBankVetoData      *bankVetoData,
+    FindChirpFilterInput       *input,
+    FindChirpFilterParams      *params,
+    COMPLEX8                   *q,
+    UINT4 			i,
+    UINT4                       snrIX,
+    UINT4                      *dof,
+    REAL4                       norm
+)
+
+{
+  INT4 stIX, BVLen, fftIX; 
+  REAL4 fftNorm, powerNorm, signalPower, Sdothsq, chisq;
+
+  stIX = input->fcTmplt->tmplt.tC / params->deltaT  + 1.0;
+  BVLen = bankVetoData->length;
+  fftIX = input->segment->dataPower->data->length - 1;
+  fftNorm = (REAL4) fftIX;
+  /* The power norm is stored in the last point of each dataPower vector */
+  /* it is the minimum power of the ~15 segments used in the PSD */
+  /* this helps to avoid negative chisq values for short templates in crappy */
+  /* data */
+  powerNorm = input->segment->dataPower->data->data[fftIX] 
+                  / fftNorm / fftNorm ;
+  signalPower = (input->segment->dataPower->data->data[snrIX] -
+                       input->segment->dataPower->data->data[snrIX-stIX]) 
+                    / fftNorm / fftNorm;
+  /* this is just the snr squared */
+  Sdothsq = ( (q[snrIX].re * q[snrIX].re + q[snrIX].im * q[snrIX].im) );
+  /* I think their should be a factor of 4 difference in the power computed */
+  /* in the time domain and frequency domain because of the complex matched */
+  /* filter ?? I have used 0.25 * the SNR^2 */
+  chisq =  signalPower*fftNorm/powerNorm - 0.25 * (Sdothsq * norm);
+  
+  *dof = stIX; 
+  return chisq;
+
+}
+
 void 
 XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData, 
                     FindChirpSubBank *vetoBank,
@@ -165,23 +208,24 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 
 {
 
-  UINT4 i,j,k,iMax,jMax;
+  UINT4 i,j,k,iMax,jMax,correctFlag;
   UINT4 iSize = bankVetoData->length;
   UINT4 tmpLen = bankVetoData->fcInputArray[0]->fcTmplt->data->length;
   REAL4 ABr, ABi, Br, Bi, sqResp;
   UINT4 stIX = floor( fLow / deltaF );
-  
+
   for ( i = 0; i < iSize; i++ )
   {
+    correctFlag = 1;
     for ( j = i; j < iSize; j++ )
     {
-      if ( i >= vetoBank->subBankSize ) 
+      if ( i >= vetoBank->subBankSize )
       {
         bankVetoData->ccMat->data[i*iSize + j] = 0;
-        /* bankVetoData->normMat->data[j] = 0; */
       }
       else
       {
+        /* find the ending sample point of the templates */
         iMax = bankVetoData->fcInputArray[i]->fcTmplt->tmplt.fFinal / deltaF;
         jMax = bankVetoData->fcInputArray[j]->fcTmplt->tmplt.fFinal / deltaF;
         ABr = ABi = 0;
@@ -189,34 +233,41 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
         {
           /* This stops the integration */
           if ( (k > iMax) || (k > jMax) ) break;
-          /* remove it possibly */
-          sqResp = ( bankVetoData->resp->data[k].re * 
+          /* remove it possibly ? */
+          sqResp = ( bankVetoData->resp->data[k].re *
                      bankVetoData->resp->data[k].re +
                      bankVetoData->resp->data[k].im *
                      bankVetoData->resp->data[k].im ) * dynRange * dynRange;
 
           if ( bankVetoData->spec->data[k] != 0 && sqResp != 0 )
           {
-            Br = bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].re /
+            /* Convention is that i is 'in the data' */
+            Br = bankVetoData->fcInputArray[i]->fcTmplt->data->data[k].re /
                  ( bankVetoData->spec->data[k] * sqResp ) *
                  params->ampVec->data[k] * params->ampVec->data[k];
-            Bi = bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].im /
-                 ( bankVetoData->spec->data[k] * sqResp ) *
-                 params->ampVec->data[k] * params->ampVec->data[k];
-            ABr += bankVetoData->fcInputArray[i]->fcTmplt->data->data[k].re*Br+
-                   bankVetoData->fcInputArray[i]->fcTmplt->data->data[k].im*Bi;
-            ABi += bankVetoData->fcInputArray[i]->fcTmplt->data->data[k].re*Bi-
-                   bankVetoData->fcInputArray[i]->fcTmplt->data->data[k].im*Br; 
-          }
-        }  
 
-        bankVetoData->ccMat->data[i*iSize + j] = sqrt(ABr*ABr+ ABi*ABi); 
-        bankVetoData->ccMat->data[j*iSize + i] = sqrt(ABr*ABr + ABi*ABi);  
-        
+            Bi = bankVetoData->fcInputArray[i]->fcTmplt->data->data[k].im /
+                 ( bankVetoData->spec->data[k] * sqResp ) *
+                 params->ampVec->data[k] * params->ampVec->data[k];
+
+            ABr += bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].re*Br+
+                   bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].im*Bi;
+
+            ABi+=0.0-Br*bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].im
+                + Bi*bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].re;
+          }
+        }
+        bankVetoData->ccMat->data[i*iSize + j] = sqrt(ABr*ABr+ABi*ABi);
+        bankVetoData->ccMat->data[j*iSize + i] = sqrt(ABr*ABr+ABi*ABi);
+        /* This is hermitian so the imaginary flips sign */
+        bankVetoData->normMat->data[i*iSize + j] = atan2(-ABi, ABr);
+        /* the convention is that i is in the data */
+        bankVetoData->normMat->data[j*iSize + i] = atan2(ABi, ABr);
       }
     }
   }
 }
+
 
 REAL4
 XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
@@ -225,49 +276,47 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
                      UINT4 *dof)
 {
 
+
   REAL4 iSNR = 0;
   REAL4 jSNR = 0;
   REAL4 chisq = 0;
   UINT4 j = 0;
-  REAL4 ii,jj,ij,denomFac;
+  REAL4 ii,jj,ji,denomFac_r, denomFac_i, denomFac;
   UINT4 iSize = bankVetoData->length;
   
   iSNR = sqrt( ( bankVetoData->qVecArray[i]->data[snrIX].re *
                  bankVetoData->qVecArray[i]->data[snrIX].re +
                  bankVetoData->qVecArray[i]->data[snrIX].im *
-                 bankVetoData->qVecArray[i]->data[snrIX].im ) 
-               * bankVetoData->fcInputArray[i]->fcTmplt->norm ); 
+                 bankVetoData->qVecArray[i]->data[snrIX].im )
+               * bankVetoData->fcInputArray[i]->fcTmplt->norm );
+               
   *dof = 0;
   if (iSize == 1) return 0;
 
   for (j = 0; j < iSize; j++)
   {
-    ij = bankVetoData->ccMat->data[i*iSize + j];
+    ji = bankVetoData->ccMat->data[j*iSize + i];
     ii = bankVetoData->ccMat->data[i*iSize + i];
     jj = bankVetoData->ccMat->data[j*iSize + j];
-    
-    denomFac =  ij/sqrt(ii*jj) - sqrt(ii*jj)/ij ;
-               /* ij/sqrt(ii*jj) - sqrt(ii*jj)/ij */
-               /* ( (ij / ii) - (jj / ij) ) ; */
-               /* bankVetoData->fcInputArray[j]->fcTmplt->norm /
-               bankVetoData->fcInputArray[i]->fcTmplt->norm; */
-    if ( denomFac != 0.0 && ij != 0.0 && ii != 0 && jj != 0 )
+
+    denomFac =  1.0 - (ji * ji / ii / jj) ;
+
+    if ( denomFac != 0.0 && ji != 0.0 && ii != 0 && jj != 0 )
     {
       jSNR = sqrt( ( bankVetoData->qVecArray[j]->data[snrIX].re *
                      bankVetoData->qVecArray[j]->data[snrIX].re +
                      bankVetoData->qVecArray[j]->data[snrIX].im *
-                     bankVetoData->qVecArray[j]->data[snrIX].im ) 
+                     bankVetoData->qVecArray[j]->data[snrIX].im )
                    * bankVetoData->fcInputArray[j]->fcTmplt->norm );
 
-      chisq += (iSNR - sqrt(ii*jj) / ij * jSNR) / denomFac *
-               (iSNR - sqrt(ii*jj) / ij * jSNR) / denomFac;
+      chisq += (jSNR - ji / sqrt(ii*jj) * iSNR) *
+               (jSNR - ji / sqrt(ii*jj) * iSNR) / denomFac; 
 
       (*dof)++;
     }
   }
   return chisq;
 }
-
 
 InspiralTemplate * 
 XLALFindChirpSortTemplates( InspiralTemplate *bankHead, UINT4 num ){
@@ -307,5 +356,6 @@ static int compareTemplate (const void * a, const void * b)
   if ( mVal1 > mVal2 ) return 1;
   if ( mVal1 == mVal2 ) return 0;
   if ( mVal1 < mVal2 ) return -1;
+  return 0;
 }
 
