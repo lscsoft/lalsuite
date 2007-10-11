@@ -285,7 +285,6 @@ int    writeRhosq       = 0;            /* write rhosq time series      */
 int    writeChisq       = 0;            /* write chisq time series      */
 int    writeCData       = 0;            /* write complex time series c  */
 
-
 /* numerical relativity injection variables */
 CHAR *numrelMetaFile    = NULL;            /* name of file with nr meta info */
 CHAR *numrelDataDir     = NULL;            /* name of dir with nr waveform   */
@@ -327,6 +326,8 @@ int main( int argc, char *argv[] )
   REAL4TimeSeries               chan;
   REAL8TimeSeries               strainChan;
   REAL4FrequencySeries          spec;
+  REAL4				specSum;
+  REAL4Sequence			*tempSpec = NULL;
   COMPLEX8FrequencySeries       resp;
   DataSegmentVector            *dataSegVec = NULL;
   COMPLEX8TimeSeries           *coherentInputData = NULL;
@@ -1834,7 +1835,7 @@ int main( int argc, char *argv[] )
   /* create the findchirp data storage */
   LAL_CALL( LALCreateFindChirpSegmentVector( &status, &fcSegVec, 
         fcInitParams ), &status );
-
+  
   /* initialize the template functions */
   LAL_CALL( LALFindChirpTemplateInit( &status, &fcTmpltParams, 
         fcInitParams ), &status );
@@ -2153,19 +2154,24 @@ int main( int argc, char *argv[] )
       bankVetoData.length = maxSubBankSize;
 
       /* free the existing qVec structure so that we can use the bankveto one */
+      XLALDestroyCOMPLEX8Vector( fcFilterParams->qtildeVec );
+      fcFilterParams->qtildeVec = NULL;
       XLALDestroyCOMPLEX8Vector( fcFilterParams->qVec );
       fcFilterParams->qVec = NULL;
 
+
       /* create an array of fcFilterInput structs */
       bankVetoData.qVecArray = (COMPLEX8Vector **)
+        LALCalloc( bankVetoData.length, sizeof(COMPLEX8Vector*) );
+      bankVetoData.qtildeVecArray = (COMPLEX8Vector **)
         LALCalloc( bankVetoData.length, sizeof(COMPLEX8Vector*) );
       bankVetoData.fcInputArray = (FindChirpFilterInput **)
         LALCalloc( bankVetoData.length, sizeof(FindChirpFilterInput*) );
       /* create ccMat for bank veto */
       bankVetoData.ccMat = 
         XLALCreateVector( bankVetoData.length * bankVetoData.length );
-      /* bankVetoData.normMat = XLALCreateVector( bankVetoData.length ); */
-   
+      bankVetoData.normMat =
+        XLALCreateVector( bankVetoData.length * bankVetoData.length );
       /* point to response and spectrum */
       bankVetoData.spec = spec.data;
       bankVetoData.resp = resp.data;
@@ -2173,6 +2179,8 @@ int main( int argc, char *argv[] )
       for ( i = 0; i < bankVetoData.length; ++i )
       {
         bankVetoData.qVecArray[i] = 
+          XLALCreateCOMPLEX8Vector( fcInitParams->numPoints );
+        bankVetoData.qtildeVecArray[i] =
           XLALCreateCOMPLEX8Vector( fcInitParams->numPoints );
         LAL_CALL( LALCreateFindChirpInput( &status, 
               &(bankVetoData.fcInputArray[i]), fcInitParams ), &status );
@@ -2184,7 +2192,6 @@ int main( int argc, char *argv[] )
      * search engine
      *
      */
-
 
     for ( subBankCurrent = subBankHead, thisTemplateIndex = 0; 
         subBankCurrent; 
@@ -2337,7 +2344,8 @@ int main( int argc, char *argv[] )
             if ( vrbflg ) fprintf( stdout,
                 "Using template in fcInputArray[%d] at %p\n", subBankIndex,
                 fcFilterInput );
-            fcFilterParams->qVec = bankVetoData.qVecArray[subBankIndex];
+            fcFilterParams->qVec=bankVetoData.qVecArray[subBankIndex];
+            fcFilterParams->qtildeVec=bankVetoData.qtildeVecArray[subBankIndex];
             if ( vrbflg ) fprintf( stdout,
                 "Using qVec in qVecArray[%d] at %p\n", subBankIndex,
                 fcFilterParams->qVec );
@@ -2538,7 +2546,7 @@ int main( int argc, char *argv[] )
         /* If doing bank veto compute CC Matrix */
         /* I removed the ccFlag dependence - this is being computed
            for each segment now!!! */
-        if (ccFlag && (subBankCurrent->subBankSize > 1) && analyseTag)
+        if (ccFlag && (subBankCurrent->subBankSize > 0) && analyseTag)
         {
           if (vrbflg) fprintf(stderr, "doing ccmat\n");
           XLALBankVetoCCMat( &bankVetoData, subBankCurrent, fcDataParams,
@@ -2564,6 +2572,7 @@ int main( int argc, char *argv[] )
             if ( vrbflg ) fprintf( stdout,
                 "Finding Events - Using template in fcInputArray[%d] at %p\n", 
                 subBankIndex, fcFilterInput );
+            fcFilterParams->qtildeVec=bankVetoData.qtildeVecArray[subBankIndex];
             fcFilterParams->qVec = bankVetoData.qVecArray[subBankIndex];
             if ( vrbflg ) fprintf( stdout,
                 "Finding Events - Using qVec in qVecArray[%d] at %p\n", 
@@ -2752,17 +2761,23 @@ int main( int argc, char *argv[] )
   for ( i = 0; i < bankVetoData.length; ++i )
   {
     XLALDestroyCOMPLEX8Vector( bankVetoData.qVecArray[i] );
+    XLALDestroyCOMPLEX8Vector( bankVetoData.qtildeVecArray[i] ); 
     bankVetoData.qVecArray[i] = NULL;
+    bankVetoData.qtildeVecArray[i] = NULL;
     LAL_CALL( LALDestroyFindChirpInput( &status, 
           &(bankVetoData.fcInputArray[i]) ), &status );
     bankVetoData.fcInputArray[i] = NULL;
   }
+  fcFilterParams->qVec = NULL;
+  fcFilterParams->qtildeVec = NULL;
   LALFree( bankVetoData.qVecArray );
+  LALFree( bankVetoData.qtildeVecArray );
   LALFree( bankVetoData.fcInputArray );
   XLALDestroyVector( bankVetoData.ccMat );
+  XLALDestroyVector( bankVetoData.normMat );
   /* XLALDestroyVector( bankVetoData.normMat ); */
 
-  fcFilterParams->qVec = NULL;
+  fcFilterParams->qtildeVec = NULL;
 
   if ( fcFilterParams->filterOutputVetoParams ) 
   {
@@ -4747,7 +4762,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           subBankSize = (UINT4) subBankSizeArg;
         }
         break;
-
+  
       default:
         fprintf( stderr, "unknown error while parsing options (%d)\n", c );
         exit( 1 );
@@ -5446,14 +5461,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   }
   else
   {
-    if ( numChisqBins > 0 && subBankSize != 1 )
+    /*if ( numChisqBins > 0 && subBankSize != 1 )
     {
       fprintf( stderr, 
           "Template bank veto is incompatible with --num-chisq-bins %d\n"
           "Use --bank-veto-subbank-size 1 to disable template bank veto\n",
           numChisqBins );
       exit( 1 );
-    }
+    }*/
     if ( mmFast >= 0 )
     {
       fprintf( stderr, "Template bank veto is incompatible --fast %f\n"
