@@ -1026,7 +1026,7 @@ def make_datafind_stage(dag, seglists, verbose = False):
 	# submission on clusters.
 	#
 
-	segs = [(seg, instrument) for seg in seglist for instrument, seglist in filled.iteritems()]
+	segs = [(seg, instrument) for instrument, seglist in filled.iteritems() for seg in seglist]
 	segs.sort()
 
 	nodes = []
