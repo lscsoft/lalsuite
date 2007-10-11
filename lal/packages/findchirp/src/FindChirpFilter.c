@@ -319,6 +319,7 @@ LALFindChirpFilterSegment (
     qtilde[k].im = r*y + s*x;
   }
 
+
   /* inverse fft to get q */
   LALCOMPLEX8VectorFFT( status->statusPtr, params->qVec, params->qtildeVec, 
       params->invPlan );
@@ -376,7 +377,10 @@ LALFindChirpFilterSegment (
       params->cVec->data->data[j].im = sqrt(norm) * q[j].im;
     }
   }
+  
 
+  #if 0 
+  /* This is done in FindChirpClusterEvents now!!*/
   /* determine if we need to compute the chisq vector */
   if ( input->segment->chisqBinVec->length )
   {
@@ -420,6 +424,7 @@ LALFindChirpFilterSegment (
       CHECKSTATUSPTR (status); 
     }
   }
+  #endif
 
   /* normal exit */
   DETATCHSTATUSPTR( status );
