@@ -67,6 +67,9 @@ parser.add_option("-f", "--config-file",action="store",type="string",\
 parser.add_option("-g", "--generate-fu-cache",action="store_true",\
     default=False, help="create hipe caches")
 
+parser.add_option("-D", "--disable-followup",action="store_true",\
+    default=False, help="disable candidate followup (for running qscans only)")
+
 parser.add_option("-m", "--datafind",action="store_true",\
     default=False, help="use datafind to get qscan/trends data")
 
@@ -160,6 +163,8 @@ if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
   print >> sys.stderr, "or --write-to-iulgroup (use this option alone for now)"  
   sys.exit(1)
 
+if opts.disable_followup:
+  print >> sys.stderr, "Warning: this option disables any followup jobs, only qscan datafind and background qscan jobs will be run..."
 
 #################### READ IN THE CONFIG (.ini) FILE ########################
 cp = ConfigParser.ConfigParser()
@@ -170,7 +175,8 @@ currentPath = os.path.abspath('.')
 
 ############# TURN THE HIPE OUTPUT INTO LAL CACHE FILES #######################
 
-cache = getCache(opts,cp,currentPath)
+if not opts.disable_followup:
+  cache = getCache(opts,cp,currentPath)
 
 ##############################################################################
 # create the DAG writing the log to the specified directory
@@ -178,32 +184,29 @@ page = string.strip(cp.get('output','page'))
 dag = followUpDAG(opts.config_file, opts.log_path)
 dag.setupDAGWeb('followup web page','index.html',page)
 
-#if not opts.read_triggers and opts.write_to_iulgroup:
-#if opts.write_to_iulgroup:
-#  publishOnHydra(page)
-  # don't overwrite anything, just publish what we have
-#  sys.exit(0)
-
 ############# READ IN THE COIRE FILES #########################################
 
-numtrigs, found, coincs, search = cache.readTriggerFiles(cp)
-missed = None
+if not opts.disable_followup:
+  numtrigs, found, coincs, search = cache.readTriggerFiles(cp)
+  missed = None
 
-if opts.trig_bank: trigbank_test = 1
-else: trigbank_test = 0  
-followuptrigs = getfollowuptrigs(numtrigs,page,coincs,missed,search,trigbank_test)
+  if opts.trig_bank: trigbank_test = 1
+  else: trigbank_test = 0  
+  followuptrigs = getfollowuptrigs(numtrigs,page,coincs,missed,search,trigbank_test)
 
-print "\n.......Found " + str(len(followuptrigs)) + " trigs to follow up" 
+  print "\n.......Found " + str(len(followuptrigs)) + " trigs to follow up" 
 
 ############ SET UP THE REQUESTED JOBS ########################################
 
-inspJob         = followUpInspJob(cp)
-plotJob         = plotSNRCHISQJob(opts,cp)
+if not opts.disable_followup:
+  inspJob         = followUpInspJob(cp)
+  plotJob         = plotSNRCHISQJob(opts,cp)
+  qscanFgJob      = qscanJob(opts,cp)
+  anaQscanJob     = analyseQscanJob(opts,cp)
+  frcheckJob      = FrCheckJob(opts,cp)
+
 dataJob         = qscanDataFindJob(cp,'futrig')
-qscanFgJob      = qscanJob(opts,cp)
 qscanBgJob      = qscanLiteJob(opts,cp)
-anaQscanJob     = analyseQscanJob(opts,cp)
-frcheckJob      = FrCheckJob(opts,cp)
 
 prev_dNode = None
 
@@ -237,57 +240,60 @@ for ifo in ifos_list:
 
 ################# LOOP OVER FOLLOWUP TRIGGERS #################################
 ###############################################################################
-# Prepare the followup jobs
-for trig in followuptrigs:
 
-  #Lets make a new section for this event
-  dag.appendSection('Trigger ID = '+str(trig.eventID)+ ' Stat = '+str(trig.statValue))  
+if not opts.disable_followup:
 
-  # TRY GETTING INSPIRAL PROCESS PARAMS... 
-  # currently done even when inspiral jobs are not requested... fix?
-  inspiral_process_params = cache.processFollowupCache(cp, opts, trig)
+  # Prepare the followup jobs
+  for trig in followuptrigs:
 
-  # loop over ifos
-  for ifo in trig.ifolist_in_coinc:
+    #Lets make a new section for this event
+    dag.appendSection('Trigger ID = '+str(trig.eventID)+ ' Stat = '+str(trig.statValue))  
+
+    # TRY GETTING INSPIRAL PROCESS PARAMS... 
+    # currently done even when inspiral jobs are not requested... fix?
+    inspiral_process_params = cache.processFollowupCache(cp, opts, trig)
+
+    # loop over ifos
+    for ifo in trig.ifolist_in_coinc:
     
-    try: trig.gpsTime[ifo]
-    except: continue
+      try: trig.gpsTime[ifo]
+      except: continue
     
-    #Lets append a new subsection to the last section
-    dag.appendSubSection(str(ifo)+' @ GPS '+str(trig.gpsTime[ifo]))
+      #Lets append a new subsection to the last section
+      dag.appendSubSection(str(ifo)+' @ GPS '+str(trig.gpsTime[ifo]))
 
-    # SETUP DATAFIND JOBS FOR HOFT QCANS
-    dHoftNode = qscanDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,trig.gpsTime[ifo],ifo,opts,dag,prev_dNode,'hoft_datafind')
-    if dHoftNode.validNode: prev_dNode = dHoftNode
+      # SETUP DATAFIND JOBS FOR HOFT QCANS
+      dHoftNode = qscanDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,trig.gpsTime[ifo],ifo,opts,dag,prev_dNode,'hoft_datafind')
+      if dHoftNode.validNode: prev_dNode = dHoftNode
 
-    # SETUP DATAFIND JOBS FOR REGULAR QCANS
-    dNode = qscanDataFindNode(dataJob,'futrig','q-datafind',cp,trig.gpsTime[ifo],ifo,opts,dag,prev_dNode,'datafind')
-    if dNode.validNode: prev_dNode = dNode
+      # SETUP DATAFIND JOBS FOR REGULAR QCANS
+      dNode = qscanDataFindNode(dataJob,'futrig','q-datafind',cp,trig.gpsTime[ifo],ifo,opts,dag,prev_dNode,'datafind')
+      if dNode.validNode: prev_dNode = dNode
     
-    # SETUP FOREGROUND QSCAN JOBS
-    qFgNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,dHoftNode.outputFileName,ifo,'foreground-hoft-qscan',opts,dHoftNode,dag,'hoft_datafind','hoft_qscan',trig)
-    qFgNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,dNode.outputFileName,ifo,'foreground-qscan',opts,dNode,dag,'datafind','qscan',trig)
-    qFgNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,dNode.outputFileName,ifo,'foreground-seismic-qscan',opts,dNode,dag,'datafind','seis_qscan',trig)
+      # SETUP FOREGROUND QSCAN JOBS
+      qFgNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,dHoftNode.outputFileName,ifo,'foreground-hoft-qscan',opts,dHoftNode,dag,'hoft_datafind','hoft_qscan',trig)
+      qFgNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,dNode.outputFileName,ifo,'foreground-qscan',opts,dNode,dag,'datafind','qscan',trig)
+      qFgNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,dNode.outputFileName,ifo,'foreground-seismic-qscan',opts,dNode,dag,'datafind','seis_qscan',trig)
 
 
-    # SETUP INSPIRAL JOBS
-    inspiralNode = followUpInspNode(inspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag)
+      # SETUP INSPIRAL JOBS
+      inspiralNode = followUpInspNode(inspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag)
 
-    # SETUP PLOT JOBS
-    plotNode = plotSNRCHISQNode(plotJob,ifo,inspiralNode.output_file_name,trig,page,dag,inspiralNode,opts)
+      # SETUP PLOT JOBS
+      plotNode = plotSNRCHISQNode(plotJob,ifo,inspiralNode.output_file_name,trig,page,dag,inspiralNode,opts)
 
-    # SETUP FRAME CHECK JOBS
-    frcheckNode = FrCheckNode(frcheckJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag)
+      # SETUP FRAME CHECK JOBS
+      frcheckNode = FrCheckNode(frcheckJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag)
 
 
-# Second loop for analyseQscan jobs (which must be children of all qscan jobs)
-for trig in followuptrigs:
+  # Second loop for analyseQscan jobs (which must be children of all qscan jobs)
+  for trig in followuptrigs:
 
-  for ifo in trig.ifolist_in_coinc:
+    for ifo in trig.ifolist_in_coinc:
 
-    anaQscanNode = analyseQscanNode(anaQscanJob,trig.gpsTime[ifo],ifo,'foreground-qscan','QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',cp,opts,dag,'analyse_qscan')
-    anaQscanNode = analyseQscanNode(anaQscanJob,trig.gpsTime[ifo],ifo,'foreground-seismic-qscan','QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',cp,opts,dag,'analyse_seis_qscan')
-    anaQscanNode = analyseQscanNode(anaQscanJob,trig.gpsTime[ifo],ifo,'foreground-hoft-qscan','QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',cp,opts,dag,'analyse_hoft_qscan')
+      anaQscanNode = analyseQscanNode(anaQscanJob,trig.gpsTime[ifo],ifo,'foreground-qscan','QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',cp,opts,dag,'analyse_qscan')
+      anaQscanNode = analyseQscanNode(anaQscanJob,trig.gpsTime[ifo],ifo,'foreground-seismic-qscan','QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',cp,opts,dag,'analyse_seis_qscan')
+      anaQscanNode = analyseQscanNode(anaQscanJob,trig.gpsTime[ifo],ifo,'foreground-hoft-qscan','QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',cp,opts,dag,'analyse_hoft_qscan')
     
 ##########################################################################
 dag.writeAll()
