@@ -170,6 +170,11 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
     try: GeoBank = cp.get('input','geo-bank')
     except: GeoBank = None
     if GeoBank: print "For G1 we use bank ", GeoBank
+  elif ifo_name == 'V1':
+    data_opts = 'virgo-data'
+    try: type = cp.get('input','virgo-type')
+    except: type = None
+    channel = cp.get('input','virgo-channel')
   else:
     data_opts = 'ligo-data'
     try: 
@@ -437,6 +442,9 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
   if ifo == 'G1':
     data_opts = 'geo-data'
     channel = cp.get('input','geo-channel')
+  elif ifo == 'V1':
+    data_opts = 'virgo-data'
+    channel = cp.get('input','virgo-channel')
   else:
     data_opts = 'ligo-data'
     channel = cp.get('input','ligo-channel')
@@ -555,6 +563,9 @@ def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
   if ifo == 'G1':
     data_opts = 'geo-data'
     channel = cp.get('input','geo-channel')
+  elif ifo == 'V1':
+    data_opts = 'virgo-data'  
+    channel = cp.get('input','virgo-channel')
   else:
     data_opts = 'ligo-data'
     channel = cp.get('input','ligo-channel')
@@ -783,6 +794,9 @@ def coherent_analysis(ifos,single_ifo_segments,coinc_nodes,cb_job,
       if ifo == 'G1':
         data_opts[ifo] = 'geo-data'
         chan = cp.get('input','geo-channel')
+      elif ifo == 'V1':
+        data_opts[ifo] = 'virgo-data'
+        chan = cp.get('input','virgo-channel')
       else:
         data_opts[ifo] = 'ligo-data'
         chan = cp.get('input','ligo-channel')
@@ -892,6 +906,8 @@ parser.add_option("-b", "--h2-data",action="store_true",default=False,\
     help="analyze h2 data")
 parser.add_option("-l", "--l1-data",action="store_true",default=False,\
     help="analyze l1 data")
+parser.add_option("-n", "--v1-data",action="store_true",default=False,\
+    help="analyze v1 data")
 
 parser.add_option("-S", "--one-ifo",action="store_true",default=False,\
     help="analyze single ifo data (not usable for GEO)")
@@ -903,7 +919,8 @@ parser.add_option("-Q", "--four-ifo",action="store_true",default=False,\
     help="analyze four intereferometer data")
   
 parser.add_option("-A", "--analyze-all",action="store_true",default=False,\
-    help="analyze all ifos and all data (over-rides above)")
+    help="analyze all ifos and all data (over-rides above) (option not available since there are 5 instruments and the code only supports quadruple coincidence)")
+
 
 parser.add_option("-d", "--datafind",action="store_true",default=False,\
     help="run LSCdataFind to create frame cache files")
@@ -983,12 +1000,21 @@ if not opts.log_path:
   print >> sys.stderr, "Use --log-path PATH to specify a location."
   sys.exit(1)
 
-  
 if not opts.g1_data and not opts.h1_data and not opts.h2_data and \
-    not opts.l1_data and not opts.analyze_all:
+    not opts.l1_data and not opts.v1_data and not opts.analyze_all:
   print >> sys.stderr, "No ifos specified.  Please specify at least one of"
-  print >> sys.stderr, "--g1-data, --h1-data, --h2-data, --l1-data"
+  print >> sys.stderr, "--g1-data, --h1-data, --h2-data, --l1-data, --v1-data"
   print >> sys.stderr, "or use --analyze-all to analyze all ifos all data"
+  sys.exit(1)
+elif opts.analyze_all:
+  print >> sys.stderr, "The --analyze-all flag is currently not available."
+  print >> sys.stderr, "The code supports quadruple coincidence, so you can"
+  print >> sys.stderr, "choose at most four instruments to analyze."
+  sys.exit(1)
+
+if opts.g1_data and opts.h1_data and opts.h2_data and opts.l1_data \
+    and opts.v1_data:
+  print >> sys.stderr, "Too many IFOs specified. Please choose up to four IFOs, but not five."
   sys.exit(1)
 
 if not opts.one_ifo and not opts.two_ifo and not opts.three_ifo and \
@@ -997,7 +1023,13 @@ if not opts.one_ifo and not opts.two_ifo and not opts.three_ifo and \
   print >> sys.stderr, "--one-ifo, --two-ifo, --three-ifo, --four-ifo"
   print >> sys.stderr, "or use --analyze-all to analyze all ifos all data"
   sys.exit(1)
- 
+elif opts.analyze_all:
+  print >> sys.stderr, "The --analyze-all flag can not be used to specify the"
+  print >> sys.stderr, "number of ifos to analyze. The code supports quadruple"
+  print >> sys.stderr, "coincidence, so you can choose at most four instruments"
+  print >> sys.stderr, "to analyze."
+  sys.exit(1)
+
 if opts.inspiral_veto and opts.td_follow_inspiral:
   print >> sys.stderr, "Please specify only one of"
   print >> sys.stderr, "--inspiral-veto, --td-follow-inspiral."
@@ -1018,7 +1050,28 @@ if not opts.datafind and not opts.template_bank and \
   --coire-second-coinc, --coherent-bank, --coherent-inspiral"""
   sys.exit(1)
    
-ifo_list = ['H1','H2','L1','G1']
+ifo_list = ['H1','H2','L1','V1','G1']
+
+#################################################################
+# If using G1 data, rearrange ifo_list since it only uses
+# the first four ifos named in ifo_list for quadruple coincidence
+
+if opts.g1_data:
+
+        if not opts.h1_data and ifo_list[4]=='G1':
+                ifo_list[0]='G1'
+                ifo_list[4]='H1'
+        if not opts.h2_data and ifo_list[4]=='G1':
+                ifo_list[1]='G1'
+                ifo_list[4]='H2'
+        if not opts.l1_data and ifo_list[4]=='G1':
+                ifo_list[2]='G1'
+                ifo_list[4]='L1'
+        if not opts.v1_data and ifo_list[4]=='G1':
+                ifo_list[3]='G1'
+                ifo_list[4]='V1'
+
+        print "New ifolist is " + str(ifo_list)
 
 ifotag = None
 do_clust = True
@@ -1029,6 +1082,7 @@ do['G1'] = opts.g1_data
 do['H1'] = opts.h1_data
 do['H2'] = opts.h2_data
 do['L1'] = opts.l1_data
+do['V1'] = opts.v1_data
 
 #################################
 # analyze everything if --analyze-all set
@@ -1166,7 +1220,7 @@ for ifo in ifo_list:
     tmplt_jobs[ifo] = inspiral.TmpltBankJob(cp,opts.dax,'RINGBANK')
   else:
     tmplt_jobs[ifo] = inspiral.TmpltBankJob(cp,opts.dax)
-  tmplt_jobs[ifo].set_sub_file( basename + '.tmpltbank' + subsuffix )
+  tmplt_jobs[ifo].set_sub_file( basename + '.tmpltbank_' + ifo + subsuffix )
 
 # inspinj:
 inspinj_job = inspiral.InspInjJob(cp) 
