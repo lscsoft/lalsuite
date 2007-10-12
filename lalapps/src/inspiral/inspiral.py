@@ -18,7 +18,40 @@ class InspiralError(exceptions.Exception):
     self.args = args
 
 
-class TmpltBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+#############################################################################
+
+class InspiralAnalysisJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  An inspiral analysis job captures some of the common features of the specific
+  inspiral jobs that appear below.  Spcecifically, the universe and executable
+  are set, the stdout and stderr from the job are directed to the logs 
+  directory. The path to the executable is determined from the ini file.
+  """
+  def __init__(self,cp,sections,executable,dax=False):
+    """
+    cp = ConfigParser object from which options are read.
+    sections = sections of the ConfigParser that get added to the opts
+    executable = executable name in ConfigParser
+    """
+    self.__executable = cp.get('condor',executable)
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp,dax)
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+
+    for sec in sections:
+      try: self.add_ini_opts(cp,sec)
+      except: pass
+
+    self.set_stdout_file('logs/' + executable + \
+        '-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/' + executable + \
+        '-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_sub_file(executable + '.sub')
+
+#############################################################################
+
+class TmpltBankJob(InspiralAnalysisJob):
   """
   A lalapps_tmpltbank job used by the inspiral pipeline. The static options
   are read from the sections [data] and [tmpltbank] in the ini file. The
@@ -30,24 +63,13 @@ class TmpltBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     """
     cp = ConfigParser object from which options are read.
     """
-    self.__executable = cp.get('condor','tmpltbank')
-    self.__universe = cp.get('condor','universe')
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp,dax)
+    executable = 'tmpltbank'
+    sections = ['data','tmpltbank']
+    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
     self.tag_base = tag_base
 
-    for sec in ['data','tmpltbank']:
-      try: self.add_ini_opts(cp,sec)
-      except: pass
-  
-    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
-    self.set_stdout_file('logs/tmpltbank-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/tmpltbank-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
-    self.set_sub_file('tmpltbank.sub')
-
-
-class InspInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+class InspInjJob(InspiralAnalysisJob):
   """
   A lalapps_inspinj job used by the grb inspiral pipeline. The static options
   are read from the section [inspinj] in the ini file. The
@@ -59,21 +81,12 @@ class InspInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     """
     cp = ConfigParser object from which options are read.
     """
-    self.__executable = cp.get('condor','inspinj')
-    self.__universe = cp.get('condor','universe')
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp,dax)
+    executable = 'inspinj'
+    sections = ['inspinj']
+    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
+
     self.__listDone=[]
     self.__listNodes=[]
-
-    for sec in ['inspinj']:
-      try: self.add_ini_opts(cp,sec)
-      except: pass
-
-    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
-
-    self.set_stdout_file('logs/inspinj-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/inspinj-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
 
   def set_done(self, number, node):
     self.__listDone.append(number)
@@ -86,7 +99,7 @@ class InspInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     return None    
 
 
-class BbhInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+class BbhInjJob(InspiralAnalysisJob):
   """
   A lalapps_bbhinj job used by the online inspiral pipeline. The static options
   are read from the section [bbhinj] in the ini file. The
@@ -98,22 +111,12 @@ class BbhInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     """
     cp = ConfigParser object from which options are read.
     """
-    self.__executable = cp.get('condor','bbhinj')
-    self.__universe = cp.get('condor','universe')
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp,dax)
-
-    for sec in ['bbhinj']:
-      try: self.add_ini_opts(cp,sec)
-      except: pass
-
-    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
-
-    self.set_stdout_file('logs/bbhinj-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/bbhinj-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    executable = 'bbhinj'
+    sections = ['bbhinj']
+    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
 
 
-class RandomBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+class RandomBankJob(InspiralAnalysisJob):
   """
   A lalapps_randombank job used by the inspiral pipeline. The static options
   are read from the section [randombank] in the ini file. The stdout and
@@ -125,22 +128,12 @@ class RandomBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     """
     cp = ConfigParser object from which options are read.
     """
-    self.__executable = cp.get('condor','randombank')
-    self.__universe = cp.get('condor','universe')
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp,dax)
-
-    try: self.add_ini_opts(cp,'randombank')
-    except: pass
-
-    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
-
-    self.set_stdout_file('logs/randombank-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/randombank-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
-    self.set_sub_file('randombank.sub')
+    executable = 'randombank'
+    sections = ['randombank']
+    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
 
 
-class SplitBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+class SplitBankJob(InspiralAnalysisJob):
   """
   A lalapps_splitbank job used by the inspiral pipeline. The static options
   are read from the section [splitbank] in the ini file. The stdout and stderr
@@ -152,21 +145,12 @@ class SplitBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     """
     cp = ConfigParser object from which options are read.
     """
-    self.__executable = cp.get('condor','splitbank')
-    self.__universe = cp.get('condor','universe')
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp,dax)
+    executable = 'splitbank'
+    sections = ['splitbank']
+    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
 
-    for sec in ['splitbank']:
-      try: self.add_ini_opts(cp,sec)
-      except: pass
-  
-    self.set_stdout_file('logs/splitbank-$(macrobankfile)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/splitbank-$(macrobankfile)-$(cluster)-$(process).err')
-    self.set_sub_file('splitbank.sub')
-    
 
-class InspiralJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+class InspiralJob(InspiralAnalysisJob):
   """
   A lalapps_inspiral job used by the inspiral pipeline. The static options
   are read from the sections [data] and [inspiral] in the ini file. The
@@ -178,25 +162,13 @@ class InspiralJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     """
     cp = ConfigParser object from which options are read.
     """
-    self.__executable = cp.get('condor','inspiral')
-    self.__universe = cp.get('condor','universe')
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp,dax)
+    executable = 'inspiral'
+    sections = ['data','inspiral']
+    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
     self.tag_base = tag_base
 
 
-    for sec in ['data','inspiral']:
-      try: self.add_ini_opts(cp,sec)
-      except: pass
-
-    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
-
-    self.set_stdout_file('logs/inspiral-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/inspiral-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
-    self.set_sub_file('inspiral.sub')
-
-
-class TrigToTmpltJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+class TrigToTmpltJob(InspiralAnalysisJob):
   """
   A lalapps_trigtotmplt job used by the inspiral pipeline. The static
   options are read from the section [trigtotmplt] in the ini file.  The
@@ -208,23 +180,12 @@ class TrigToTmpltJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     """
     cp = ConfigParser object from which options are read.
     """
-    self.__executable = cp.get('condor','trigtotmplt')
-    self.__universe = cp.get('condor','universe')
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp,dax)
-    
-    for sec in ['trigtotmplt']:
-      try: self.add_ini_opts(cp,sec)
-      except: pass
-
-    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
-    
-    self.set_stdout_file('logs/trigtotmplt-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/trigtotmplt-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
-    self.set_sub_file('trigtotmplt.sub')
+    executable = 'trigtotmplt'
+    sections = ['trigtotmplt']
+    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
 
 
-class IncaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+class IncaJob(InspiralAnalysisJob):
   """
   A lalapps_inca job used by the inspiral pipeline. The static options are
   read from the section [inca] in the ini file.  The stdout and stderr from
@@ -235,23 +196,12 @@ class IncaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     """
     cp = ConfigParser object from which options are read.
     """
-    self.__executable = cp.get('condor','inca')
-    self.__universe = cp.get('condor','universe')
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp,dax)
-    
-    for sec in ['inca']:
-      try: self.add_ini_opts(cp,sec)
-      except: pass
-
-    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
-
-    self.set_stdout_file('logs/inca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/inca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
-    self.set_sub_file('inca.sub')
+    executable = 'inca'
+    sections = ['inca']
+    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
 
 
-class ThincaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+class ThincaJob(InspiralAnalysisJob):
   """
   A lalapps_thinca job used by the inspiral pipeline. The static options are
   read from the section [thinca] in the ini file.  The stdout and stderr from
@@ -262,24 +212,13 @@ class ThincaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     """
     cp = ConfigParser object from which options are read.
     """
-    self.__executable = cp.get('condor','thinca')
-    self.__universe = cp.get('condor','universe')
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp,False)
+    executable = 'thinca'
+    sections = ['thinca']
+    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
     self.tag_base = tag_base
-    
-    for sec in ['thinca']:
-      try: self.add_ini_opts(cp,sec)
-      except: pass
-
-    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
-
-    self.set_stdout_file('logs/thinca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/thinca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
-    self.set_sub_file('thinca.sub')
 
 
-class SireJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+class SireJob(InspiralAnalysisJob):
   """
   A lalapps_sire job used by the inspiral pipeline. The stdout and stderr from
   the job are directed to the logs directory. The path to the executable is 
@@ -289,21 +228,16 @@ class SireJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     """
     cp = ConfigParser object from which options are read.
     """
-    self.__executable = cp.get('condor','sire')
-    self.__universe = cp.get('condor','universe')
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp,dax)
+    executable = 'sire'
+    sections = ['sire']
+    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
 
-    for sec in ['sire']:
-      try: self.add_ini_opts(cp,sec)
-      except: pass
-
-    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    # sire currently doesn't take GPS start/end times
     self.set_stdout_file('logs/sire-$(macroifo)-$(cluster)-$(process).out')
     self.set_stderr_file('logs/sire-$(macroifo)-$(cluster)-$(process).err')
-    self.set_sub_file('sire.sub')
 
-class CoireJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+
+class CoireJob(InspiralAnalysisJob):
   """
   A lalapps_coire job used by the inspiral pipeline. The stdout and stderr from
   the job are directed to the logs directory. The path to the executable is
@@ -313,93 +247,66 @@ class CoireJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     """
     cp = ConfigParser object from which options are read.
     """
-    self.__executable = cp.get('condor','coire')
-    self.__universe = cp.get('condor','universe')
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp,dax)
+    executable = 'coire'
+    sections = ['coire']
+    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
 
-    for sec in ['coire']:
-      try: self.add_ini_opts(cp,sec)
-      except: pass
-
-    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
-    self.set_stdout_file('logs/coire-$(macrocoinccut)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/coire-$(macrocoinccut)-$(cluster)-$(process).err')
-    self.set_sub_file('coire.sub')
+    # coire currently doesn't take GPS start/end times
+    self.set_stdout_file('logs/coire-$(macroifo)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/coire-$(macroifo)-$(cluster)-$(process).err')
     
-class FrJoinJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+
+class FrJoinJob(InspiralAnalysisJob):
   """
   A lalapps_frjoin job used by the inspiral pipeline. The path to the
   executable is determined from the ini file.
   """
-  def __init__(self,cp):
+  def __init__(self,cp,dax=False):
     """
     cp = ConfigParser object from which options are read.
     """
-    self.__executable = cp.get('condor','frjoin')
-    self.__universe = cp.get('condor','universe')
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp)
-    
-    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    executable = 'frjoin'
+    sections = []
+    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
 
+    # frjoin currently doesn't take GPS start/end times
     self.set_stdout_file('logs/frjoin-$(cluster)-$(process).out')
     self.set_stderr_file('logs/frjoin-$(cluster)-$(process).err')
-    self.set_sub_file('frjoin.sub')
 
-class CohBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+
+class CohBankJob(InspiralAnalysisJob):
   """
   A lalapps_coherent_inspiral job used by the inspiral pipeline. The static
   options are read from the section [cohbank] in the ini file.  The stdout and
   stderr from the job are directed to the logs directory.  The path to the
   executable is determined from the ini file.
   """
-  def __init__(self,cp):
+  def __init__(self,cp,dax=False):
     """
     cp = ConfigParser object from which options are read.
     """
-    self.__executable = cp.get('condor','cohbank')
-    self.__universe = cp.get('condor','universe')
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp)
-    
-    for sec in ['cohbank']:
-      try: self.add_ini_opts(cp,sec)
-      except: pass
+    executable = 'cohbank'
+    sections = ['cohbank']
+    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
 
-    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
-    self.set_stdout_file('logs/cohbank-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/cohbank-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
-    self.set_sub_file('cohbank.sub')
-
-class ChiaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+class ChiaJob(InspiralAnalysisJob):
   """
   A lalapps_coherent_inspiral job used by the inspiral pipeline. The static
   options are read from the section [chia] in the ini file.  The stdout and
   stderr from the job are directed to the logs directory.  The path to the
   executable is determined from the ini file.
   """
-  def __init__(self,cp):
+  def __init__(self,cp,dax=False):
     """
     cp = ConfigParser object from which options are read.
     """
-    self.__executable = cp.get('condor','chia')
-    self.__universe = cp.get('condor','universe')
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp)
-    
-    for sec in ['chia']:
-      try: self.add_ini_opts(cp,sec)
-      except: pass
-
-    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
-
-    self.set_stdout_file('logs/chia-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/chia-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
-    self.set_sub_file('chia.sub')   
+    executable = 'chia'
+    sections = ['chia']
+    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
 
 
+#############################################################################
 
 class InspInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
