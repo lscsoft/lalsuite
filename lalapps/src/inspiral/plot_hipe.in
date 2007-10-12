@@ -286,7 +286,8 @@ if opts.plotinspiral:
     cp.set('plotinspiral','ifo-type',ifo)
     plotinspiral_jobs[ifo] = inspiral.PlotInspiralJob(cp)
     plotinspiral_jobs[ifo].set_sub_file( basename + '.plotinspiral_' + ifo + subsuffix )
-  
+
+ 
   all_jobs.extend(plotinspiral_jobs.values())
 
 
@@ -368,8 +369,10 @@ if opts.plotinspmissed:
 
   plotinspmissed_jobs = {}
 
-  for ifo in ifo_combo:
-    cp.set('plotinspmissed','figure-name','plotinspmissed_' + ifo)
+  for ifo in ifolist:
+    cp.set('plotinspmissed','fig-name','plotinspmissed_' + ifo)
+    cp.set('plotinspmissed','ifo-type',ifo)
+    cp.set('plotinspmissed','ifo',ifo)
     plotinspmissed_jobs[ifo] = inspiral.PlotInspmissedJob(cp)
     plotinspmissed_jobs[ifo].set_sub_file( basename + '.plotinspmissed_' + ifo + subsuffix )
 
@@ -449,9 +452,8 @@ if opts.plotethinca:
 
 
 if opts.plotinspmissed:
-  for ifos in ifo_combo:
-    combostring = combo2str(ifos)
-    plotinspmissed_node =inspiral.PlotInspmissedNode(plotinspmissed_jobs[combostring])
+  for ifo in ifolist:
+    plotinspmissed_node =inspiral.PlotInspmissedNode(plotinspmissed_jobs[ifo])
     dag.add_node(plotinspmissed_node)
 
 
