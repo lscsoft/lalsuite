@@ -118,6 +118,9 @@ parser.add_option("-i", "--inspiral",action="store_true",default=False,\
 parser.add_option("-F", "--frame-check",action="store_true",default=False,\
     help="do FrCheck jobs on the frames used by the inspiral code")
 
+parser.add_option("-I", "--ifo-status-check",action="store_true",default=False,\
+    help="download IFO summary plots")
+
 parser.add_option("-p", "--plots",action="store_true",default=False,\
     help="plot SNR/CHISQ from inspiral stage")
 
@@ -204,9 +207,11 @@ if not opts.disable_followup:
   qscanFgJob      = qscanJob(opts,cp)
   anaQscanJob     = analyseQscanJob(opts,cp)
   frcheckJob      = FrCheckJob(opts,cp)
+  statusJob      = IFOstatus_checkJob(opts,cp)
 
 dataJob         = qscanDataFindJob(cp,'futrig')
 qscanBgJob      = qscanLiteJob(opts,cp)
+anaQscanJob     = analyseQscanJob(opts,cp)
 
 prev_dNode = None
 
@@ -285,6 +290,8 @@ if not opts.disable_followup:
       # SETUP FRAME CHECK JOBS
       frcheckNode = FrCheckNode(frcheckJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag)
 
+      # SETUP STATUS SUMMARY PLOT JOBS
+      statusNode = IFOstatus_checkNode(statusJob, ifo, trig, cp, opts, dag)
 
   # Second loop for analyseQscan jobs (which must be children of all qscan jobs)
   for trig in followuptrigs:
