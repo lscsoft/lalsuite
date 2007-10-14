@@ -267,14 +267,14 @@ def write_data_summary(page,opts):
 
 # ***************************************************************************
 # ***************************************************************************
-def add_figure(fname,dir,fnames,size,caption):
-  global fig_num
-  fig_num +=1
-  fname.write("<div class=\"figure\"> \n<p>")
-  for fnam in fnames:
-    fname.write("<a href=\"" + "dir" + "/" + "fnam" +"\">" + \
-      "<img class=\"" + size + "\" src=\"" + "dir" + "/" + fnam + "\"></a>")
-  fname.write("<p>Figure " + str(fig_num) + ":  " + caption + "\n</div>\n\n")
+#def add_figure(fname,dir,fnames,size,caption):
+#  global fig_num
+#  fig_num +=1
+#  fname.write("<div class=\"figure\"> \n<p>")
+#  for fnam in fnames:
+#    fname.write("<a href=\"" + "dir" + "/" + "fnam" +"\">" + \
+#      "<img class=\"" + size + "\" src=\"" + "dir" + "/" + fnam + "\"></a>")
+#  fname.write("<p>Figure " + str(fig_num) + ":  " + caption + "\n</div>\n\n")
 
 
 # ***************************************************************************
@@ -572,16 +572,22 @@ def write_playground_summary(page,opts):
 	particular at the trigger distribution (clustered, category veto 1 and 2")
   # add figures and summary files
   for ifo in get_ifos():
-    page.h4(ifo)
-    summary = open(opts.datadir+"/"+ "playground"  +"/"+ifo+"-SIRE-"+opts.gps_start_time+"-"+opts.duration+".txt")
-    comment = ifo+" snr versus time (left), and  cumulative snr (right) clustered case no veto"
-    comment += "<center><pre>-------------------summary file (category 1) \n"  +summary.read()+"</pre></center>"
-    summary.close()
+    try :
+      page.h4(ifo)
+      summary = open(opts.datadir+"/"+ "playground"  +"/"+ifo+"-SIRE-"+opts.gps_start_time+"-"+opts.duration+".txt")
+      comment = ifo+" snr versus time (left-top), and  cumulative snr (left-bottom) clustered case no veto"
+      comment += "<center><pre>-------------------summary file (category 1) \n"  +summary.read()+"</pre></center>"
+      summary.close()
     
-    summary = open(opts.datadir+"/"+ "playground"  +"/"+ifo+"-SIRE_CAT_2_VETO-"+opts.gps_start_time+"-"+opts.duration+".txt")
-    comment = ifo+" snr versus time (left), and  cumulative snr (right) clustered case no veto"
-    comment += "<center><pre>-------------------summary file (category 1) \n"  +summary.read()+"</pre></center>"
-    summary.close()
+      summary = open(opts.datadir+"/"+ "playground"  +"/"+ifo+"-SIRE_CAT_2_VETO-"+opts.gps_start_time+"-"+opts.duration+".txt")
+      comment += ifo+" snr versus time (right-top), and  cumulative snr (right-bottom) clustered case no veto"
+      comment += "<center><pre>-------------------summary file (category 2) \n"  +summary.read()+"</pre></center>"
+      summary.close()
+    except:
+      page.div(id="todo")
+      page.p("summary file from sire not found")
+      page.div.close()
+      pass
 
     page.p("The " +ifo + " inspiral files after the first inspiral stage are clustered (no veto \
 	applied), and the results are shown here below in the next set of plots.")
@@ -592,8 +598,9 @@ def write_playground_summary(page,opts):
 	"playground/plotinspiral_playground_"+ifo+"_snr_cum_hist.png" ,\
 	"playground/plotinspiral_playground_cat_2_"+ifo+"_snr_cum_hist.png" \
 	], caption=comment, size="half")
+
   page.div(id="todo")
-  page.p("distribution in tau0, tau3 ? which tool")
+  page.p("todo:distribution in tau0, tau3 ? which tool")
   page.div.close()# close the todo
   page.div.close()# close the div openned in add_input_h3 function
   
@@ -604,17 +611,49 @@ def write_playground_summary(page,opts):
   page = add_config_section(page, "thinca-slide")
   fnames=[]
   for combi in ("H1H2L1", "H1H2", "H1L1", "H2L1"):
+    page.h4(combi)
     fnames=[]
-    fnames.append("/playground/"+combi+"_first_coinc_playground_cum_hist_effective_snr.png") 
-    fnames.append("/playground/"+combi+"_first_coinc_playground_hist_slide_trigs.png") 
-    fnames.append("/playground/"+combi+"_first_coinc_playground_plot_slide_trigs.png") 
-    fnames.append("/playground/"+combi+"_first_coinc_playground_cum_hist_snr.png") 
+    alt=[]
+    fname_prefix = "playground/plotthinca_playground_first_coinc_"
+    fname_suffix ="-"+ str(opts.gps_start_time)  +"-"+str(opts.duration)+".png"
+    alt.append(combi+"hist_slide_trigs")
+    fnames.append(fname_prefix + combi + "_hist_slide_trigs"+fname_suffix) 
+    alt.append(combi+"plot_slide_trigs")
+    fnames.append(fname_prefix + combi + "_plot_slide_trigs"+fname_suffix) 
+    alt.append(combi+"cum_slide_trigs")
+    fnames.append(fname_prefix + combi + "_cum_hist_snr"+fname_suffix) 
+    alt.append(combi+"snr versus snr")
+    if combi=="H1H2":
+      fnames.append(fname_prefix +  "H1_vs_H2_snr"+fname_suffix) 
+    if combi=="H1L1":
+      fnames.append(fname_prefix +  "H1_vs_L1_snr"+fname_suffix) 
+    if combi=="H2L1":
+      fnames.append(fname_prefix +  "H2_vs_L1_snr"+fname_suffix) 
     
 
-    comment = "first stage coincidence" +combi + "case"    
-    page = add_figure(page, fnames = fnames, caption=comment, size="half")
+    comment = "First stage coincidence " +combi + " case. From top to \
+	botton, and left to right, we have a histogram of the number \
+	of triggers in each slide, the distribution of number of triggers\
+	 in each slide and zero lag, the cumulative histogram of number of\
+	 events versus SNR, and the SNR scatter plots for 2 ifos."    
+    try :
+      print opts.datadir+"/"+ "playground"  +"/"+combi+"-COIRE-"+opts.gps_start_time+"-"+opts.duration+".txt"
+      summary = open(opts.datadir+"/"+ "playground"  +"/"+combi+"-COIRE-"+opts.gps_start_time+"-"+opts.duration+".txt")
+      comment += "<center><pre>-------------------coire summary file (category 1) \n"  +summary.read()+"</pre></center>"
+      #print summary.read()
+      summary.close()
+    except:
+      page.div(id="todo")
+      page.p("summary file from sire not found")
+      page.div.close()
+      pass
+    page = add_figure(page, fnames = fnames, caption=comment, size="half", alt=alt)
+  page.div(id="todo")
+  page.p("todo:add --html-output option in plotthinca, have the cache file forthe first coincidence stage available ")
+  page.div.close()# close the todo
   page.div.close()# close the div openned in add_input_h3 function
   
+
 
   #---------------------------- the second stage inspiral results, first stage, no veto
   page = add_input_h3(page, "Inspiral jobs (second stage) no veto")
@@ -641,28 +680,74 @@ def write_playground_summary(page,opts):
   
 
   #---------------------------- the second coincidence stagee, no veto
-  page = add_input_h3(page, "Second coincidence stage no veto")
+  page = heading(page, "Second coincidence stage (no veto)")
   page = add_config_section(page, "thinca-2")
   page.add("the number of slide is "+get_numslide("./playground")+" time slides")
   page = add_config_section(page, "thinca-slide")
   fnames=[]
   for combi in ("H1H2L1", "H1H2", "H1L1", "H2L1"):
+    page.h4(combi)
     fnames=[]
+    alt=[]
+    fname_prefix = "playground/plotthinca_playground_second_coinc_"
+    fname_suffix ="-"+ str(opts.gps_start_time)  +"-"+str(opts.duration)+".png"
+    alt.append(combi+"hist_slide_trigs")
+    fnames.append(fname_prefix + combi + "_hist_slide_trigs"+fname_suffix) 
+    alt.append(combi+"plot_slide_trigs")
+    fnames.append(fname_prefix + combi + "_plot_slide_trigs"+fname_suffix) 
+    alt.append(combi+"cum_slide_trigs")
+    fnames.append(fname_prefix + combi + "_cum_hist_effective_snr"+fname_suffix) 
+    alt.append(combi+"snr versus snr")
+    alt.append(combi+"effective snr versus effective snr")
+    if combi=="H1H2":
+      fnames.append(fname_prefix +  "H1_vs_H2_snr"+fname_suffix) 
+      fnames.append(fname_prefix +  "H1_vs_H2_effective_snr"+fname_suffix) 
+    if combi=="H1L1":
+      fnames.append(fname_prefix +  "H1_vs_L1_snr"+fname_suffix) 
+      fnames.append(fname_prefix +  "H1_vs_L1_effective_snr"+fname_suffix) 
+    if combi=="H2L1":
+      fnames.append(fname_prefix +  "H2_vs_L1_snr"+fname_suffix) 
+      fnames.append(fname_prefix +  "H2_vs_L1_effective_snr"+fname_suffix) 
     if combi=="H1H2L1":
-      fnames.append("second_coinc_H_vs_L1_snr.png") 
-      fnames.append("second_coinc_"+combi+"_plot_slide_trigs.png") 
-    elif combi=="H1H2":
-      fnames.append("second_coinc_H1_vs_H2_snr.png") 
-      fnames.append("second_coinc_"+combi+"_plot_slide_trigs.png") 
-    elif combi=="H1L1":
-      fnames.append("second_coinc_H1_vs_L1_snr.png") 
-      fnames.append("second_coinc_"+combi+"_plot_slide_trigs.png") 
-    elif combi=="H2L1":
-      fnames.append("second_coinc_H2_vs_L1_snr.png") 
-      fnames.append("second_coinc_"+combi+"_plot_slide_trigs.png") 
-    comment = "second stage coincidence" +combi + "case"
-    page = add_figure(page, fnames = fnames, caption=comment, size="half")
+      fnames.append(fname_prefix +  "H1H2L1_H1_vs_L1_snr"+fname_suffix) 
+      fnames.append(fname_prefix +  "H1H2L1_H1_vs_L1_effective_snr"+fname_suffix) 
+    
+
+    comment = "Second stage coincidence " +combi + " case. From top to \
+	botton, and left to right, we have a histogram of the number \
+	of triggers in each slide, the distribution of number of triggers\
+	 in each slide and zero lag, the cumulative histogram of number of\
+	 events versus SNR, and the SNR scatter plots for 2 ifos."    
+    try :
+      print opts.datadir+"/"+ "playground"  +"/"+combi+"-COIRE_"+combi+"-"+opts.gps_start_time+"-"+opts.duration+".txt"
+      summary =open(opts.datadir+"/"+ "playground"  +"/"+combi+"-COIRE_"+combi+"-"+opts.gps_start_time+"-"+opts.duration+".txt")
+      comment += "<center><pre>-------------------coire second stage, summary file (category 1) \n"  +summary.read()+"</pre></center>"
+      #print summary.read()
+      summary.close()
+    except:
+      page.div(id="todo")
+      page.p("summary file from sire not found")
+      page.div.close()
+      pass
+    page = add_figure(page, fnames = fnames, caption=comment, size="half", alt=alt)
+  page.div(id="todo")
+  page.p("todo:add --html-output option in plotthinca, have the cache file forthe first coincidence stage available ")
+  page.div.close()# close the todo
+
+  page.h4("All trigges together")
+  comment = "Cumulative histogram versus statistic (effective SNR) in top-left panel, SNR versus time (top right). slide histograms (bottom)"
+  page.p("The " +ifo + "inspiral files after the first inspiral stage are clustered (no veto \
+	applied), and the results are shown here below in the next set of plots.")
+  page = add_figure(page, fnames = [\
+	"playground/plotthinca_playground_second_coinc_cum_hist_effective_snr-847555570-2419200.png",\
+	"playground/plotthinca_playground_second_coinc_effective_snr_vs_time-847555570-2419200.png",\
+	"playground/plotthinca_playground_second_coinc_hist_slide_trigs-847555570-2419200.png",\
+	"playground/plotthinca_playground_second_coinc_plot_slide_trigs-847555570-2419200.png"\
+	], caption=comment, size="half")
+
   page.div.close()# close the div openned in add_input_h3 function
+  
+
   
   #---------------------------- loudest events
   page = add_input_h3(page, "loudest events")
@@ -694,19 +779,22 @@ def write_injection(page, opts):
   page.add("This section summarizes the analysis of the injection runs.<br/>")
 
   #---------------------------- found and missedi first inspiral stage
-  page = add_input_h3(page, "Found versus missed plots (first inspiral stage)")
-  for injtag in ['bbh_inj', 'bns_inj', 'bhns_inj']:
-    page.h4(injtag)
-    for ifo in get_ifos():  
-      lists = glob.glob(opts.datadir+"/"+ injtag +"/"+ifo+"-SIRE_INJECTIONS_*FOUND-*.txt")
-      summary = open(lists[0])
-      caption = ifo +" Found and missed injections at the first stage of the inspiral analysis ("+injtag +"tag)."      
-      caption = caption + "<pre> -----------------------"+lists[0]+"\n" +summary.read()+"</pre>"
-      page = add_figure(page, fnames=  [\
-        "injections/"+ifo+"_first_insp_"+injtag+"_dist-mchirp.png", \
-        "injections/"+ifo+"_first_insp_"+injtag+"_time-dist.png"], \
-        caption=caption, size="half")
-  page.div.close()
+  try:
+    page = add_input_h3(page, "Found versus missed plots (first inspiral stage)")
+    for injtag in ['bbh_inj', 'bns_inj', 'bhns_inj']:
+      page.h4(injtag)
+      for ifo in get_ifos():  
+        lists = glob.glob(opts.datadir+"/"+ injtag +"/"+ifo+"-SIRE_INJECTIONS_*FOUND-*.txt")
+        summary = open(lists[0])
+        caption = ifo +" Found and missed injections at the first stage of the inspiral analysis ("+injtag +"tag)."      
+        caption = caption + "<pre> -----------------------"+lists[0]+"\n" +summary.read()+"</pre>"
+        page = add_figure(page, fnames=  [\
+          "injections/"+ifo+"_first_insp_"+injtag+"_dist-mchirp.png", \
+          "injections/"+ifo+"_first_insp_"+injtag+"_time-dist.png"], \
+          caption=caption, size="half",alt=["", ""])
+    page.div.close()
+  except:
+    pass 
   
   #---------------------------- found and missed first coinc stage
   page = add_input_h3(page, "Found versus missed plots (first coincidence stage)")
@@ -724,21 +812,22 @@ def write_injection(page, opts):
           "injections/"+combi+"_first_coinc_bbh_inj_missed_found_chirp_dist_vs_mchirp.png", \
           "injections/"+combi+"_first_coinc_bbh_inj_missed_found_vs_end_time.png", \
     	  "injections/"+combi+"_first_coinc_bbh_inj_missed_found_vs_mchirp.png"], \
-          caption=caption, size="half")
+          caption=caption, size="half",alt=["", "", ""])
   page.div.close()
- 
+  print "test2" 
   #---------------------------- close by missed
   page = add_input_h3(page, "close by missed")
-  page = add_figure(page, fnames = "H1H2L1-found_missed.png", caption="", size="half")
-  page = add_figure(page, fnames = "H1H2-found_missed.png", caption="", size="half")
-  page = add_figure(page, fnames = "H1L1-found_missed.png", caption="", size="half")
+  page = add_figure(page, fnames = "H1H2L1-found_missed.png", caption="", size="half",alt=[" "])
+  page = add_figure(page, fnames = "H1H2-found_missed.png", caption="", size="half",alt=[" "])
+  page = add_figure(page, fnames = "H1L1-found_missed.png", caption="", size="half",alt=[" "])
   page.div.close()
+  print "test2" 
   
   #---------------------------- parameter efficiency
   page = add_input_h3(page, "Parameter efficiency")
-  page = add_figure(page, fnames = "H1H2L1-found_missed.png", caption="", size="half")
-  page = add_figure(page, fnames = "H1H2-found_missed.png", caption="", size="half")
-  page = add_figure(page, fnames = "H1L1-found_missed.png", caption="", size="half")
+  page = add_figure(page, fnames = "H1H2L1-found_missed.png", caption="", size="half",alt=[" "])
+  page = add_figure(page, fnames = "H1H2-found_missed.png", caption="", size="half",alt=[" "])
+  page = add_figure(page, fnames = "H1L1-found_missed.png", caption="", size="half",alt=[" "])
   page.div.close()
 
   
@@ -845,13 +934,23 @@ def add_caption(page, caption):
   fig_num = fig_num + 1
   return page
 
-def add_figure(page,fnames, caption, size):
+def add_figure(page,fnames="test", caption="add a caption", size="full", alt="no figure found"):
   global fig_num
   dir = opts.webdir
   page.add("<!-- insert a figure -->\n<div class=\"figure\">")
+  this_count = 0
+  print alt
+  print fnames
   for fnam in fnames:
-    page.add("\t<a href=\"" + dir + "/" + fnam +"\">\n" + \
-      "  <img class=\"" + size + "\" src=\"" + dir + "/" + fnam + "\"\>\n  </a>")
+    page.add("\t<a href=\"" + dir + "/" + fnam +"\">\n" )
+    source=dir+"/"+fnam
+    try:
+      page.img(class_=size ,src=fnam, alt=alt[this_count] )
+    except:
+      page.img(class_=size ,src=fnam )
+      
+    page.add("</a>")
+    this_count = this_count +1
   page.add("\t<p class=\"figure\">Figure " + str(fig_num) + ":  " + caption + "</p>\n</div>\n\n")
   fig_num +=1
 
@@ -1074,19 +1173,24 @@ def copy_segments():
     for file in cats:
       if file[0].startswith('analyze')<=0:
         command = 'cp '+ file[1] +' ' + location
+        print command
         try: 
-          make_external_call(command, 0,0)
-        except:pass
+          make_external_call(command, 1,1)
+        except:
+          print command
+          pass
   except:
     print "WARNING:: could not copy the category segment list. continuing..."
-  # the segment files
+ #  the segment files
   try :
     print '...Copying segment files '
     for this in get_ifos():
         seg = this +'-SELECTED_SEGS.txt'
         mkdir(opts.physdir+'/segments')
-        make_external_call('cp '+opts.datadir + seg + ' '+opts.physdir+'/segments/', 0,0)
+        command = 'cp '+opts.datadir + seg + ' '+opts.physdir+'/segments/'
+        make_external_call(command, True,True, True)
   except:
+    print command
     print "WARNING:: could not copy the segments list. continuing..."
 # ***************************************************************************
 # ***************************************************************************
