@@ -164,14 +164,27 @@ class tracksearchCheckIniFile:
         layerOpts.sort()
         layerTimes=[]
         layerTimesOrig=[]
+        layerTimesKey=[]
+        layerSetSizeKey=[]
+        topLayerBlock=LTBS
         for entry in layerOpts:
             optValue=float(self.iniOpts.get('layerconfig',entry))
-            if str(entry).__contains__('TimeScale'):
+            if str(entry).lower().__contains__('timescale'):
                 layerTimes.append(optValue)
                 layerTimesOrig.append(optValue)
+                layerTimesKey.append([int(str(entry).lower().strip("layer").strip("timescale")),optValue])
+            if str(entry).lower().__contains__('setsize'):
+                layerSetSizeKey.append([int(str(entry).lower().strip("layer").strip("setsize")),optValue])
         layerTimes.sort()
         if layerTimesOrig != layerTimes:
             self.errList.append('Error inconsistent layer time scales!')
+        #Check that the amount of work given is less than equal to available data in segment block
+        # know as the top layer block
+        layerSetSizeKey.sort()
+        layerTimesKey.sort()
+        for index in range(0,layerTimesKey.__len__()):
+            if float(layerSetSizeKey[index][1]) * float(layerTimesKey[index][1]) > topLayerBlock:
+                self.errList.append('Error inconsistent assigned workload for layerSetSize and layerTimeScale options. Level: '+str(index+1))
         #Check [pylibraryfiles] section
         condorOptList=self.iniOpts.options('pylibraryfiles')
         for entry in condorOptList:
@@ -225,31 +238,34 @@ class tracksearchConvertSegList:
     construct an analysis DAG for each line item.
     """
     def __init__(self,segmentFileName,newDuration):
-        tracksearchConvertSegList.origSegObject=pipeline.ScienceData()
-        tracksearchConvertSegList.newSegObject=pipeline.ScienceData()
-        tracksearchConvertSegList.newSegFilename=segmentFileName+'.revised'
-        tracksearchConvertSegList.segFilename=segmentFileName
-        tracksearchConvertSegList.duration=newDuration
+        self.origSegObject=pipeline.ScienceData()
+        self.newSegObject=pipeline.ScienceData()
+        self.newSegFilename=segmentFileName+'.revised'
+        self.segFilename=segmentFileName
+        self.duration=newDuration
 
     def writeSegList(self):
         #Read segents from file
-        tracksearchConvertSegList.origSegObject.read(tracksearchConvertSegList.segFilename,tracksearchConvertSegList.duration)
+        self.origSegObject.read(self.segFilename,self.duration)
+        if self.origSegObject._ScienceData__sci_segs.__len__() == 0:
+            print "Aborting Segment list is not formatted correctly!"
+            os.abort()
         #Read the file header
-        input_fp=open(tracksearchConvertSegList.segFilename,'r')
+        input_fp=open(self.segFilename,'r')
         newHeading=[]
         for headline in input_fp.readlines():
             if str(headline)[0] == '#':
                  newHeading.append(headline)
         newHeading.append('# This file is a reprocessed list at new intervals.\n')
         newHeading.append('# We drop sections were there is not enough of original data\n')
-        newHeading.append('# This file drawn from '+tracksearchConvertSegList.segFilename+'\n')
-        output_fp=open(tracksearchConvertSegList.newSegFilename,'w')
+        newHeading.append('# This file drawn from '+self.segFilename+'\n')
+        output_fp=open(self.newSegFilename,'w')
         for newHeadline in newHeading:
             output_fp.write(newHeadline)
         #Write redivided list to file
         index=0
-        for bigChunks in tracksearchConvertSegList.origSegObject:
-            bigChunks.make_chunks(tracksearchConvertSegList.duration)
+        for bigChunks in self.origSegObject:
+            bigChunks.make_chunks(self.duration)
             for newChunk in bigChunks:
                 index+=1
                 label="%d %d %d %d\n"%(index,newChunk.start(),newChunk.end(),newChunk.end()-newChunk.start())
@@ -258,7 +274,7 @@ class tracksearchConvertSegList:
 
     def getSegmentName(self):
         #Return a string containing the name of the revised segment list
-        return(tracksearchConvertSegList.newSegFilename)
+        return(self.newSegFilename)
 
 class tracksearchHousekeeperJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     """
@@ -880,9 +896,14 @@ class tracksearch:
         setSize=float(self.cp.get('layerconfig','layer1SetSize'))
         ifo=str(self.cp.get('datafind','observatory'))
         #Create the chunk list that we will makeing data find jobs for
-        #Give allowance for 1 extra map worth of data just in case
-        #self.sciSeg.make_chunks(setSize*mapTime+math.ceil(overlapTime),math.ceil(overlapTime))
         self.sciSeg.make_chunks(setSize*mapTime)
+        if ((self.sciSeg.dur()>=self.sciSeg.unused()) and (self.sciSeg.__len__() <= 1)):
+            print ""
+            print "WARNING: Set Size and Map Time(s) seem inconsistent!"
+            print "Set Size :",setSize
+            print "Map Time :",mapTime
+            print "Pipeline may be incorrectly constructed! Check your input options."
+            print ""
         #Setup time marker for entire run
         runStartTime=self.runStartTime
         #What is name of dagDir location of dags and sub files
@@ -923,10 +944,13 @@ class tracksearch:
             self.sciSeg._ScienceSegment__chunks.pop(0)
         else:
             print "Manipulating LSCdataFind jobs to be executed!"
-            print "See comment in tracksearch.py line 901."
+            print "See comment in tracksearch.py startingSearchLayer method Line:916"
             print "We are poping off first entry of _ScienceSegment_ to avoid 1 repeated job."
             print "This is due to our pipeline methodology."
             self.sciSeg._ScienceSegment__chunks.pop(0)
+        if (self.sciSeg._ScienceSegment__chunks.__len__() < 1):
+            print "WARNING: Data to be analyzed not properly divided or absent!"
+            print "The input options must be WRONG!"
         for chunk in self.sciSeg:
             df_node=pipeline.LSCDataFindNode(df_job)
             df_node.set_start(chunk.start())
@@ -1008,7 +1032,7 @@ class tracksearch:
             tracksearchThreshold_job=tracksearchThresholdJob(self.cp,self.blockID,self.dagDirectory)
             DLP=tracksearchThreshold_job.initialDir
             tracksearchThreshold_node=tracksearchThresholdNode(tracksearchThreshold_job)
-            tracksearchThreshold_node.add_var_opt('file',DLP+'*.candidates')
+            tracksearchThreshold_node.add_var_opt(os.path.normpath('file',DLP+'/*.candidates'))
             if nextJobList!=[]:
                 for parents in nextJobList:
                     tracksearchThreshold_node.add_parent(parents)

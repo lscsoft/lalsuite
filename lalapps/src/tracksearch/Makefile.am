@@ -13,9 +13,9 @@ TRACKSEARCHSRCS = tracksearch.c tracksearchToolbox.c
 TSDATAGENSRCS = TSDatagen.c 
 TRACKSEARCHAVGSRC = tracksearchAverager.c tracksearchToolbox.c
 lalapps_tracksearch_SOURCES = $(TRACKSEARCHSRCS)
-lalapps_TSDatagen_SOURCES = $(TSDATAGENSRCS)
-lalapps_TSaverager_SOURCES = $(TRACKSEARCHAVGSRC)
-lalapps_tfdat2pgm_SOURCES=$(TSUTILSRCS)
+lalapps_tracksearch_datagen_SOURCES = $(TSDATAGENSRCS)
+lalapps_tracksearch_averager_SOURCES = $(TRACKSEARCHAVGSRC)
+lalapps_tracksearch_dat2pgm_SOURCES=$(TSUTILSRCS)
 else
 bin_PROGRAMS =
 endif
@@ -59,6 +59,7 @@ lalapps_tracksearch_tune_pipe: $(srcdir)/tsTunePipe.pyin python_config.sed
 
 lalapps_tracksearch_mapcachebuilder: $(srcdir)/tsMapCacheBuilder.pyin python_config.sed
 	sed -f python_config.sed $(srcdir)/tsMapCacheBuilder.pyin > lalapps_tracksearch_mapcachebuilder
+
 CLEANFILES =  lalapps_tracksearch_handler \
 	      lalapps_tracksearch_pipe \
               lalapps_tracksearch_housekeeper \

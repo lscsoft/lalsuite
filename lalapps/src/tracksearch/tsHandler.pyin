@@ -102,7 +102,12 @@ parser.add_option("-f","--file",dest="filename",
 parser.add_option("-g","--glob",dest="glob",
                   default=False,
                   action="store_true",
-                  help="This option tells the code to glob all the lists together into one larger curve candidate listing.  The output be a single or sequence of files with GLOB:Start:00000000,0:Stop:00000000,0:TF:000:000:.candidates. This option can not be used with clobber",
+                  help="This option tells the code to glob all the lists together into one larger curve candidate listing.  The output be a single or sequence of files with GLOB:Start:00000000,0:Stop:00000000,0:TF:000:000:.candidates. This option can not be used with clobber. This is a RAM and CPU intensive task! A quicker option assuming the candidate files are generated with the same paramters is --glue.  To use this then invoke --glob --glue",
+                  )
+parser.add_option("-l","--glue",dest="glue",
+                  default=False,
+                  action="store_true",
+                  help="This only works if --glob has been invoked also.  It forces all found candidate files to be concatenated together.  This does not account for differently constructed candidate libraries.  In that case a measure of track frequency and time resolution must be made before trying to join multiple libraries."
                   )
 parser.add_option("-o","--outfile",dest="outfile",
                   default="",
@@ -153,6 +158,8 @@ dumpSummaryScreen=bool(options.dumpSummaryScreen)
 dumpSummaryDisk=bool(options.dumpSummaryDisk)
 verboseSwitch=bool(options.verbose)
 measureStats=str(options.stats)
+glue=bool(options.glue)
+
 if verboseSwitch:
     print "Setting verbose mode to candidateHandler call."
     
@@ -174,14 +181,25 @@ if (glob and (canList.__len__() >= 1)):
                 print "Prexisting file found:",outName
                 print "Removing!"
             os.unlink(outName)
-    #Create new globbed candidate structure to write to disk!
-    newGlobFile=buildCandidateGlob(canList,verboseSwitch)
-    # Write this globbed file to disk.
+    #Set output file name
     if outfile !="":
         outName=outfile
     else:
         outName="Glob:"+newGlobFile.__filemaskGlob__()
-    newGlobFile.writefile(outName)
+    #Depending on the presence of the --glue switch we actually read
+    #the data or just concatenate the files together.
+    #Thu-Oct-11-2007:200710111752 
+    if glue:
+        #Just join the files
+        nullLibrary=candidateList()
+        for libraryEntry in canList:
+            nullLibrary.globListFile(outName,libraryEntry)
+    else:
+        #Glob them through RAM allowing the proper adjustments to be made
+        newGlobFile=buildCandidateGlob(canList,verboseSwitch)
+        #Write this globbed file to disk.
+        newGlobFile.writefile(outName)
+
     #SECTION TO DO THE CLOBBERING OF A CANDIDATE FILE WITH ANOTHER
 elif (clobberFilename != '') and (canList.__len__() == 1):
     #Create clobberer
