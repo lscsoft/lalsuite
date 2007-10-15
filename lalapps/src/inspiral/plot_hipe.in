@@ -397,9 +397,10 @@ if opts.plotsnrchi:
   plotsnrchi_jobs = {}
 
   for ifo in ifolist:
-    cp.set('plotsnrchi','figure-name','plotsnrchi_' + ifo)
     plotsnrchi_jobs[ifo] = inspiral.PlotSnrchiJob(cp)
-
+    plotsnrchi_jobs[ifo].add_opt("figure-name", ifo + "-plotsnrchi")
+    plotsnrchi_jobs[ifo].add_opt("title", ifo)
+    plotsnrchi_jobs[ifo].add_opt("single-ifo", ifo)
     plotsnrchi_jobs[ifo].set_sub_file( basename + '.plotsnrchi_' + ifo + subsuffix )
 
   all_jobs.extend(plotsnrchi_jobs.values())
