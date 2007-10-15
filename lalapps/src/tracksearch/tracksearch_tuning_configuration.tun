@@ -1,3 +1,9 @@
+; EXAMPLE TEMPLATE OF TRACKSEARCH TUNING CONFIGURATION FILE
+; AUTHOR: Cristina V. Torres
+;
+; Available sections for this file:
+; Cont documenting from here...
+;
 ; tracksearch tuning initialization file
 ;
 ; holds all configuration options to perform a lh,ll space search
