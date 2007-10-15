@@ -1411,59 +1411,61 @@ class candidateList:
         This method uses matplotlib.py to make plots of curves
         contained in this list!  Currently all plotting functions
         are hard wired to the method!
-        """
+        """        
+        #This code creates a scatter plot in X windows
+        #If pylab loads Ok.
+        brightX=[]
+        brightY=[]
+        brightP=[]
+        minX=float(0)
+        line2plot=[]
+        brightSpotX=[]
+        brightSpotY=[]
+        brightSpotZ=[]
+        start=True
+        for element in self.curves:
+            for point in element.getKurveDataBlock_HumanReadable():
+                if start:
+                    minX=float(point[0])
+                    start=False
+                if minX >= float(point[0]):
+                    minX = float(point[0])
+        for element in self.curves:
+            xtmp=[]
+            ytmp=[]
+            ztmp=[]
+            bP=element.getBrightPixelAndStats()
+            brightSpotX.append(bP[0][2].getAsFloat()-minX)
+            brightSpotY.append(bP[0][3])
+            brightSpotZ.append(float(bP[0][4]-bP[1]).__abs__()/bP[2])
+            for point in element.getKurveDataBlock_HumanReadable():
+                xtmp.append(float(point[0])-minX)
+                ytmp.append(float(point[1]))
+                ztmp.append(float(point[2]))
+            line2plot.append([xtmp,ytmp,ztmp])
+            del xtmp
+            del ytmp
+            del ztmp
+        figure=pylab
+        for entry in line2plot:
+            figure.plot(entry[0],entry[1])
+        #Normalize the brightSpotZ max -> 0..5
+        normalizeZscoreTo=100
+        factor=normalizeZscoreTo/(max(brightSpotZ))
+        tmpZ=[]
+        for entry in brightSpotZ:
+            tmpZ.append(entry*factor)
+        brightSpotZ=tmpZ
+        figure.scatter(brightSpotX,brightSpotY,brightSpotZ)
+        figure.xlabel("Time (s)")
+        figure.ylabel("Freq (Hz)")
+        figure.title(str("GPS %f"%minX))
+        figure.grid(True)
         if (filename==''):
-            #This code creates a scatter plot in X windows
-            #If pylab loads Ok.
-            brightX=[]
-            brightY=[]
-            brightP=[]
-            minX=float(0)
-            line2plot=[]
-            brightSpotX=[]
-            brightSpotY=[]
-            brightSpotZ=[]
-            start=True
-            for element in self.curves:
-                for point in element.getKurveDataBlock_HumanReadable():
-                    if start:
-                        minX=float(point[0])
-                        start=False
-                    if minX > float(point[0]):
-                        minX = float(point[0])
-            for element in self.curves:
-                xtmp=[]
-                ytmp=[]
-                ztmp=[]
-                bP=element.getBrightPixelAndStats()
-                brightSpotX.append(bP[0][2].getAsFloat()-minX)
-                brightSpotY.append(bP[0][3])
-                brightSpotZ.append(float(bP[0][4]-bP[1]).__abs__()/bP[2])
-                for point in element.getKurveDataBlock_HumanReadable():
-                    xtmp.append(float(point[0])-minX)
-                    ytmp.append(float(point[1]))
-                    ztmp.append(float(point[2]))
-                line2plot.append([xtmp,ytmp,ztmp])
-                del xtmp
-                del ytmp
-                del ztmp
-            for entry in line2plot:
-                pylab.plot(entry[0],entry[1])
-            #Normalize the brightSpotZ max -> 0..5
-            normalizeZscoreTo=100
-            factor=normalizeZscoreTo/(max(brightSpotZ))
-            tmpZ=[]
-            for entry in brightSpotZ:
-                tmpZ.append(entry*factor)
-            brightSpotZ=tmpZ
-            pylab.scatter(brightSpotX,brightSpotY,brightSpotZ)
-            pylab.xlabel("Time (s)")
-            pylab.ylabel("Freq (Hz)")
-            pylab.title(str("GPS %f"%minX))
-            pylab.show()
+            figure.show()
         else:
-            print "Writing graphic directly to disk!"
-            print "This option not yet completed!!!!"
+            figure.savefig(filename)
+        del figure
     #End method graph2screen
 #End candidateList class
 

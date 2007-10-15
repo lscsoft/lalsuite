@@ -24,7 +24,9 @@ bin_PROGRAMS =
 endif
 
 EXTRA_DIST = $(TRACKSEARCHSRCS)
-pkgdata_DATA = tracksearchPipeline.ini tracksearchOpts.tun
+pkgdata_DATA = tracksearch_pipeline_configuration.ini \
+	       tracksearch_tuning_configuration.tun
+
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 if HAVE_PYTHON

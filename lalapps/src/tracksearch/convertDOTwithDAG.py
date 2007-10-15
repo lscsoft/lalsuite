@@ -61,10 +61,11 @@ dag_fp.close()
 
 #Scan the DAG file to make serial num and submit file key pairs
 dagJobs=[]
+color="white"
 for entry in dagData:
     if entry.__contains__('JOB '):
         tmpVar=entry.split(' ')
-        dagJobs.append([tmpVar[1],os.path.basename(tmpVar[2]).replace('\n','')])
+        dagJobs.append([tmpVar[1],os.path.basename(tmpVar[2]).replace('\n',''),str(color)])
 
 #Now we scan the DOT file we must quote all strings which are not
 #labels
@@ -73,9 +74,19 @@ for entry in dotData:
     for key in dagJobs:
         editLine=entry
         if editLine.__contains__(key[0]):
+            entry=str(editLine)
+            if str(entry).lower().__contains__('(done)'):
+                color="green"
+            elif str(entry).lower().__contains__('(r)'):
+                color="yellow"
+            elif str(entry).lower().__contains__('(i)'):
+                color="blue"
+            else:
+                color="red"
             editLine2=editLine.replace('="'+key[0],'="'+key[1])
             editLine3=editLine2.replace(key[0],'"'+key[0]+'"')
-            entry=editLine3
+            editLine4=editLine3.replace("]",' style=filled fillcolor='+color+']')
+            entry=editLine4
     newDotData.append(entry.replace('\n',''))
             
 newDot_fp=open(myoutfile,'w')

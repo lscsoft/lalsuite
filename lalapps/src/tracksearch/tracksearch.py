@@ -943,10 +943,10 @@ class tracksearch:
             # Only works on datafind_fixcache jobs!!!! (Temp fix)
             self.sciSeg._ScienceSegment__chunks.pop(0)
         else:
-            print "Manipulating LSCdataFind jobs to be executed!"
-            print "See comment in tracksearch.py startingSearchLayer method Line:916"
-            print "We are poping off first entry of _ScienceSegment_ to avoid 1 repeated job."
-            print "This is due to our pipeline methodology."
+#             print "Manipulating LSCdataFind jobs to be executed!"
+#             print "See comment in tracksearch.py startingSearchLayer method Line:916"
+#             print "We are poping off first entry of _ScienceSegment_ to avoid 1 repeated job."
+#             print "This is due to our pipeline methodology."
             self.sciSeg._ScienceSegment__chunks.pop(0)
         if (self.sciSeg._ScienceSegment__chunks.__len__() < 1):
             print "WARNING: Data to be analyzed not properly divided or absent!"
@@ -1032,7 +1032,7 @@ class tracksearch:
             tracksearchThreshold_job=tracksearchThresholdJob(self.cp,self.blockID,self.dagDirectory)
             DLP=tracksearchThreshold_job.initialDir
             tracksearchThreshold_node=tracksearchThresholdNode(tracksearchThreshold_job)
-            tracksearchThreshold_node.add_var_opt(os.path.normpath('file',DLP+'/*.candidates'))
+            tracksearchThreshold_node.add_var_opt('file',os.path.normpath(str(DLP+'/*.candidates')))
             if nextJobList!=[]:
                 for parents in nextJobList:
                     tracksearchThreshold_node.add_parent(parents)
@@ -1149,6 +1149,16 @@ class tracksearch:
         #This method lays out the dag files to a simple submission to condor
         self.dag.write_sub_files()
         self.dag.write_dag()
+        #Read in the resulting text file and prepend the DOT
+        #information writing the DAG back to disk.
+        dag2modify=self.dag.get_dag_file()
+        input_fp=open(dag2modify,'r')
+        contents=input_fp.readlines()
+        contents.insert(0,'DOT dagstatus.dot OVERWRITE\n');
+        input_fp.close()
+        output_fp=open(dag2modify,'w')
+        output_fp.writelines(contents)
+        output_fp.close()
     #End writeTracksearchTopBlockPipe
 #End Class
 
