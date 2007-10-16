@@ -1479,7 +1479,8 @@ class candidateList:
             figure.show()
         else:
             if (filename=='AUTO'):
-                filename=os.path.basename(self.filename[0])+'.png'
+                [fullpath,extension]=os.path.splitext(self.filename[0])
+                filename=os.path.basename(fullpath)+'.png'
             figure.savefig(filename)
         del figure
     #End method graph2screen

@@ -151,7 +151,7 @@ filename=str(options.filename)
 glob=options.glob
 clobberFilename=str(options.clobberFilename)
 expThreshold=str(options.expThreshold)
-graph2file=printFile=options.imageFilemask
+graph2file=options.imageFilemask
 graph2screen=int(options.imageCount)
 outfile=str(options.outfile)
 dumpSummaryScreen=bool(options.dumpSummaryScreen)
@@ -217,27 +217,9 @@ elif (clobberFilename != '') and (canList.__len__() == 1):
         newClobberedList.writefile(outfile)
     else:
         newClobberedList.writefile(clobberVictim.__filemaskClob__(newCandidateClobberObject))
-
-    #SECTION 4 PRINTING
-elif ((canList.__len__() >= 1) and (printFile)):
-    #Iterate of files creating plotable graphic for each!
-    if verboseSwitch:
-        print "Preparing for printing :",canList.__len__()," files."
-    for entry in canList:
-        candidateObject=candidateList(verboseSwitch)
-        candidateObject.__loadfileQuick__(entry)
-        if (outfile != "") and (canList.__len__() == 1):
-            candidateObject.writePixelList(outfile,'tf+time')
-        else:
-            pathName=os.path.dirname(candidateObject.filename[0])
-            saveFiles=pathName+'/ScatterPlot:'+os.path.basename(candidateObject.filename[0])
-            candidateObject.writePixelList(saveFiles,'tf+time')        
-            gnuplotScriptFile(saveFiles)
-        del entry
-        del candidateObject
     #Create a scatterplot on screen of the curves in the candidateList
 elif ((canList.__len__() >=1) and ((graph2screen>0) or (graph2file!=''))):
-    if (graph2screen < canList.__len__()):
+    if ((graph2screen < canList.__len__()) and (graph2file=='')):
         print "Number of images to create exceeds your request!"
         print "Estimate images in this data structure are ",canList.__len__()
         #Needs continue anyway option here!
