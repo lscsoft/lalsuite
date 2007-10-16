@@ -637,7 +637,7 @@ static void worker (void) {
 
     /* boinc_resolve SFT files (no unzipping, but dealing with multiple files separated by ';' */
     else if (0 == strncmp("--DataFiles",argv[arg],11)) {
-      rargv[rarg] = (char*)calloc(1024,sizeof(char));
+      rargv[rarg] = (char*)malloc(MAX_PATH_LEN+13);
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
 	boinc_finish(HIERARCHICALSEARCH_EMEM);
@@ -679,11 +679,25 @@ static void worker (void) {
 
 	/* skip the ';' in the original string */
 	startc = endc+1;
+
+	/* make sure the next file has MAX_PATH_LEN bytes to resolve the name */
+	rargv[rarg] = (char*)realloc(rargv[rarg],strlen(rargv[rarg])+MAX_PATH_LEN);
+	if(!rargv[rarg]){
+	  LogPrintf(LOG_CRITICAL, "Out of memory\n");
+	  boinc_finish(HIERARCHICALSEARCH_EMEM);
+	}
       }
 
       /* handle last (or only) filename (comments see above) */
       if (boinc_resolve_filename(startc,appc,255)) {
 	LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve input file '%s'\n", startc);
+      }
+
+      /* truncate allocated space to what is actually needed */
+      rargv[rarg] = (char*)realloc(rargv[rarg],strlen(rargv[rarg])+1);
+      if(!rargv[rarg]){
+	LogPrintf(LOG_CRITICAL, "Out of memory\n");
+	boinc_finish(HIERARCHICALSEARCH_EMEM);
       }
 
 #ifdef _WIN32
