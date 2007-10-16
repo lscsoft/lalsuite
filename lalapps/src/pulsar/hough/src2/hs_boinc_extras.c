@@ -282,17 +282,6 @@ static void sighandler(int sig)
       return;
   } /* termination signals */
 
-  if (global_status)
-    LogPrintf (LOG_CRITICAL,   "Stack trace of LAL functions in worker thread:\n");
-  while (global_status) {
-    LogPrintf (LOG_CRITICAL,   "%s at line %d of file %s\n", global_status->function, global_status->line, global_status->file);
-    if (!(global_status->statusPtr)) {
-      const char *p=global_status->statusDescription;
-      LogPrintf (LOG_CRITICAL,   "At lowest level status code = %d, description: %s\n", global_status->statusCode, p?p:"NO LAL ERROR REGISTERED");
-    }
-    global_status=global_status->statusPtr;
-  }
-  
 #ifdef __GLIBC__
   /* in case of a floating-point exception write out the FPU status */
   if ( sig == SIGFPE ) {
@@ -309,6 +298,18 @@ static void sighandler(int sig)
   stackframes[1] = (void *) uc->uc_mcontext.gregs[REG_EIP];
   backtrace_symbols_fd(stackframes, nostackframes, fileno(stderr));
 #endif /* __GLIBC__ */
+
+  if (global_status)
+    LogPrintf (LOG_CRITICAL,   "Stack trace of LAL functions in worker thread:\n");
+  while (global_status) {
+    LogPrintf (LOG_CRITICAL,   "%s at line %d of file %s\n", global_status->function, global_status->line, global_status->file);
+    if (!(global_status->statusPtr)) {
+      const char *p=global_status->statusDescription;
+      LogPrintf (LOG_CRITICAL,   "At lowest level status code = %d, description: %s\n", global_status->statusCode, p?p:"NO LAL ERROR REGISTERED");
+    }
+    global_status=global_status->statusPtr;
+  }
+  
   /* sleep a few seconds to let the OTHER thread(s) catch the signal too... */
   sleep(5);
   boinc_finish(COMPUTEFSTAT_EXIT_SIGNAL);
@@ -536,13 +537,6 @@ static void worker (void) {
 			            only by this BOINC-wrapper? */
   int breakpoint = 0;          /**< stop at breakpoint? (for testing the Windows Runtime Debugger) */
   int crash_fpu = 0;
-
-  /* init BOINC diagnostics */
-  boinc_init_diagnostics(BOINC_DIAG_DUMPCALLSTACKENABLED |
-                         BOINC_DIAG_HEAPCHECKENABLED |
-                         BOINC_DIAG_ARCHIVESTDERR |
-                         BOINC_DIAG_REDIRECTSTDERR |
-                         BOINC_DIAG_TRACETOSTDERR);
 
 #ifdef _WIN32
   /* point the Windows Runtime Debugger to the Symbol Store on einstein */
@@ -994,15 +988,12 @@ int main(int argc, char**argv) {
   global_argc = argc;
   global_argv = argv;
 
-  /* setup windows diagnostics (e.g. redirect stderr into a file!) */
-#ifdef _WIN32
+  /* init BOINC diagnostics */
   boinc_init_diagnostics(BOINC_DIAG_DUMPCALLSTACKENABLED |
                          BOINC_DIAG_HEAPCHECKENABLED |
                          BOINC_DIAG_ARCHIVESTDERR |
                          BOINC_DIAG_REDIRECTSTDERR |
                          BOINC_DIAG_TRACETOSTDERR);
-#endif
-
 
 
   /* debugging support by files */
@@ -1073,14 +1064,27 @@ int main(int argc, char**argv) {
 
 
   /* install signal handler */
+  /* the previous boinc_init_diagnostics() call should have installed boinc_catch_signal() for
+     SIGILL
+     SIGABRT
+     SIGBUS
+     SIGSEGV
+     SIGSYS
+     SIGPIPE
+     With the current debugging stuff now in boinc/diagnostic.C (for Windows & MacOS)
+     it's probably best to leave it that way on everything else but Linux (glibc), where
+     bactrace() would give messed up stacframes in the signal handler and we are
+     interested in the FPU status word, too.
+
+     NOTE: it is critical to catch SIGINT with our own handler, because a user
+     pressing Ctrl-C under boinc should not directly kill the app (which is attached to the
+     same terminal), but the app should wait for the client to send <quit/> and cleanly exit. 
+   */
 #ifdef _WIN32
   signal(SIGTERM, sighandler);
-  signal(SIGABRT, sighandler);
   if ( !skipsighandler ) {
     signal(SIGINT,  sighandler);
-    signal(SIGSEGV, sighandler);
     signal(SIGFPE,  sighandler);
-    signal(SIGILL,  sighandler);
   }
 #elif __GLIBC__
   /* this uses unsupported features of the glibc, so don't
@@ -1104,24 +1108,11 @@ int main(int argc, char**argv) {
     }
   }
 #else
-  /* install signal-handler for SIGTERM, SIGINT and SIGABRT(?) 
-   * NOTE: it is critical to catch SIGINT, because a user
-   * pressing Ctrl-C under boinc should not directly kill the
-   * app (which is attached to the same terminal), but the app 
-   * should wait for the client to send <quit/> and cleanly exit. 
-   */
+  /* install signal handler (generic unix) */
   boinc_set_signal_handler(SIGTERM, sighandler);
-  boinc_set_signal_handler(SIGABRT, sighandler);
-
-  /* install signal handler (for ALL threads) for catching
-   * Segmentation violations, floating point exceptions, Bus
-   * violations and Illegal instructions */
   if ( !skipsighandler ) {
       boinc_set_signal_handler(SIGINT,  sighandler);
-      boinc_set_signal_handler(SIGSEGV, sighandler);
       boinc_set_signal_handler(SIGFPE,  sighandler);
-      boinc_set_signal_handler(SIGILL,  sighandler);
-      boinc_set_signal_handler(SIGBUS,  sighandler);
   } /* if !skipsighandler */
 #endif /* WIN32 */
 
@@ -1140,7 +1131,7 @@ int main(int argc, char**argv) {
     fraction_done_hook = &fraction_done;
     retval = boinc_init_graphics(worker);
     LogPrintf (LOG_CRITICAL, "boinc_init_graphics() returned %d.\n", retval);
-    boinc_finish(HIERARCHICALSEARCH_EWORKER );
+    boinc_finish(HIERARCHICALSEARCH_EWORKER);
   }
 #elif BOINC_GRAPHICS == 2
   /* Try loading screensaver-graphics as a dynamic library.  If this
