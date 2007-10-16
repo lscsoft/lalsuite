@@ -920,6 +920,10 @@ int read_hs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
 
 
 int write_hs_oputput(const char*filename, toplist_t*tl) {
+  /* reduce the precision of the calculated values before doing the sort to
+     the precision we will write the result with. This should ensure a sorting
+     order that looks right to the validator, too */
+  reduce_fstat_toplist_precision(tl);
   sort_fstat_toplist(tl);
   return(_atomic_write_fstat_toplist_to_file(tl, filename, NULL, 1));
 }
