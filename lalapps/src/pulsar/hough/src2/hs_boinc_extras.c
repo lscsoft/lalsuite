@@ -173,11 +173,13 @@ static void drain_fpu_stack(void);
     returns 0 if successful, -1 in case of a failure.
 */
 int load_graphics_dll(void) {
-  if (FAILED(__HrLoadAllImportsForDll("GDI32.dll"))) {
+  /*
+    if (FAILED(__HrLoadAllImportsForDll("GDI32.dll"))) {
     LogPrintf(LOG_NORMAL, "WARNING: Failed to load GDI32.DLL - running w/o graphics\n" );
     return(-1);
   } else
     LogPrintf(LOG_NORMAL, "INFO: GDI32.DLL loaded\n" );
+  */
   if (FAILED(__HrLoadAllImportsForDll("OPENGL32.dll"))) {
     LogPrintf(LOG_NORMAL, "WARNING: Failed to load OPENGL32.DLL - running w/o graphics\n" );
     return(-1);
