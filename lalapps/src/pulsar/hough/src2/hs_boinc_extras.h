@@ -83,7 +83,7 @@ LocalComputeFStatFreqBand ( LALStatus *status,
 #define GET_CHECKPOINT(toplist,total,count,outputname,cptname)\
   { int ret = init_and_read_checkpoint(toplist,total,count,outputname,cptname);\
     if(ret < 0) {\
-      fprintf(stderr, HIERARCHICALSEARCH_MSGCHECKPT "\n");\
+      LogPrintf(LOG_CRITICAL, HIERARCHICALSEARCH_MSGCHECKPT " (%d)\n",ret);\
       return(HIERARCHICALSEARCH_ECHECKPT);\
     } else if (ret == 2) {\
       return(HIERARCHICALSEARCH_ENORM);\
