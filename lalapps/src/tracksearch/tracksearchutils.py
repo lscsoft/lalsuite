@@ -492,7 +492,21 @@ class candidateList:
         clobberVictim=str(str(os.path.basename(self.filename[0])).split('.')[0])
         clobberPerp=str(os.path.basename(clobWith.filename[0])).split('.')
         filename='CLOBBER:'+clobberVictim+clobberPerp
+    #end __filemaskClob__ method
 
+    def __len__(self):
+        """
+        Expected interface that gives a trigger count for the current
+        library.  It returns the value of self.totalCount
+        """
+        if self.curves.__len__() != self.totalCount:
+            sys.stderr.write("Inconsistency encountered!\n")
+            sys.stderr.write("Adjusting trigger count to number of records in memory.\n")
+            self.totalCount=self.curves.__len__()
+        return self.totalCount
+    #end method __len__()
+    
+    
     def loadfile(self,inputFilename):
         """
         Reads in a candidate list from the disk with a given filename
@@ -1464,6 +1478,8 @@ class candidateList:
         if (filename==''):
             figure.show()
         else:
+            if (filename=='AUTO'):
+                filename=os.path.basename(self.filename[0])+'.png'
             figure.savefig(filename)
         del figure
     #End method graph2screen

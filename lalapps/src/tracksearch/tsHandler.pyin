@@ -133,7 +133,7 @@ parser.add_option("-d","--display_summary",dest="dumpSummaryScreen",
                   )
 parser.add_option("-p","--print",dest="imageFilemask",
                   default='',
-                  help="This option states that files specified with the --file option should be printed to a similiar list of coordinate pairs that may be plotted using some external X interface, such as gnuplot. To show you a visual representation of the candidates found.  THIS OPTION NOT YET IMPLEMENTED! IT IS BEING REDONE DO NOT USE THIS OPTION! Should eventually take a filename as output arg!b"
+                  help="This option states that files specified with the --file option should be printed to a PNG file.  This method will name the file according to the directive given on the command line.  If more than one image will be created then depending on the --file option then the AUTO argument will be invoked by force to create multiple graphic files.  If the AUTO option is given then the image will have the same name as the candidate library file with the extension changed to PNG."
                   )
 parser.add_option("-i","--image",dest="imageCount",
                   default='0',
@@ -242,6 +242,8 @@ elif ((canList.__len__() >=1) and ((graph2screen>0) or (graph2file!=''))):
         print "Estimate images in this data structure are ",canList.__len__()
         #Needs continue anyway option here!
         os.abort()
+    if ((graph2file != 'AUTO') and (canList.__len__() > 1)):
+        graph2file='AUTO'
     for entry in canList:
         candidateObject=candidateList(verboseSwitch)
         candidateObject.__loadfileQuick__(entry)
