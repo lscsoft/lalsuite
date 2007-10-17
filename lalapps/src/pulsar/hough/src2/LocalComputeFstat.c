@@ -148,9 +148,9 @@ static const LALStatus empty_status;
 static REAL4 sinLUT[SINCOS_LUT_RES+1];
 static REAL4 cosLUT[SINCOS_LUT_RES+1];
 #elif (SINCOS_VERSION == 9)
-#define SINCOS_LUT_RES 1024
-static REAL4 sincosLUTbase[SINCOS_LUT_RES+SINCOS_LUT_RES/2];
-static REAL4 sincosLUTdiff[SINCOS_LUT_RES+SINCOS_LUT_RES/2];
+#define SINCOS_LUT_RES 1024 /* should be multiple of 4 */
+static REAL4 sincosLUTbase[SINCOS_LUT_RES+SINCOS_LUT_RES/4];
+static REAL4 sincosLUTdiff[SINCOS_LUT_RES+SINCOS_LUT_RES/4];
 #endif
 
 /*---------- internal prototypes ----------*/
@@ -1341,7 +1341,7 @@ void local_sin_cos_2PI_LUT_init (void)
   int i;
 
   start = 0.0; /* sin(0 * step) */
-  for( i = 0; i < SINCOS_LUT_RES + SINCOS_LUT_RES/2; i++ ) {
+  for( i = 0; i < SINCOS_LUT_RES + SINCOS_LUT_RES/4; i++ ) {
     true_mid = sin( ( i + 0.5 ) * step );
     end = sin( ( i + 1 ) * step );
     linear_mid = ( start + end ) * 0.5;
