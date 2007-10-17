@@ -1151,12 +1151,14 @@ class tracksearch:
         self.dag.write_dag()
         #Read in the resulting text file and prepend the DOT
         #information writing the DAG back to disk.
-        dag2modify=self.dag.get_dag_file()
-        input_fp=open(dag2modify,'r')
+        input_fp=open(self.dag.get_dag_file(),'r')
         contents=input_fp.readlines()
-        contents.insert(0,'DOT dagstatus.dot OVERWRITE\n');
+        #Determine dot file name as dagfilename.DOT
+        [dotfilename,extension]=os.path.splitext(os.path.abspath(sef.dat.get_dag_file()))
+        dotfilename=dotfilename+'.dot'
+        contents.insert(0,'DOT '+dotfilename+' OVERWRITE UPDATE\n');
         input_fp.close()
-        output_fp=open(dag2modify,'w')
+        output_fp=open(self.dag.get_dag_file(),'w')
         output_fp.writelines(contents)
         output_fp.close()
     #End writeTracksearchTopBlockPipe
