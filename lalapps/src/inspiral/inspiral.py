@@ -176,13 +176,14 @@ class TrigToTmpltJob(InspiralAnalysisJob):
   always runs in the scheduler universe. The path to the executable is
   determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp,dax=False,tag_base='TRIGBANK'):
     """
     cp = ConfigParser object from which options are read.
     """
     executable = 'trigtotmplt'
     sections = ['trigtotmplt']
     InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
+    self.tag_base = tag_base
 
 
 class IncaJob(InspiralAnalysisJob):
@@ -308,7 +309,117 @@ class ChiaJob(InspiralAnalysisJob):
 
 #############################################################################
 
-class InspInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+
+class InspiralAnalysisNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  An InspiralNode runs an instance of the inspiral code in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of lalapps_inspiral.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    try:
+      self.__usertag = job.get_opts()['user-tag']
+    except:
+      self.__usertag = job.get_config('pipeline','user-tag')
+
+    try:
+      self.__pad_data = int(self.job().get_opts()['pad-data'])
+    except: 
+      self.__pad_data = None
+
+    try:
+      self.__zip_output = job.get_opts()['write-compress']
+      self.__zip_output = True
+    except:
+      self.__zip_output = False 
+
+  def set_pad_data(self, pad):
+    """
+    Set the pad data value for this node 
+    """
+    self.__pad_data = pad
+    self.add_var_opt('pad-data', pad)
+
+  def get_pad_data(self):
+    """
+    Returns the injection file
+    """
+    return self.__pad_data
+
+  def set_zip_output(self,zip):
+    """
+    Set the zip output flag
+    """
+    self.__zip_output = zip
+
+  def get_zip_output(self):
+    """
+    Set the zip output flag
+    """
+    return self.__zip_output
+
+  def get_output(self):
+    """
+    Returns the file name of output from the inspiral code. This must be kept
+    synchronized with the name of the output file in inspiral.c.
+    """
+    if not self.get_start() or not self.get_end() or not self.get_ifo():
+      raise InspiralError, "Start time, end time or ifo has not been set"
+
+    basename = self.get_ifo() + '-' + self.job().tag_base
+
+    if self.get_ifo_tag():
+      basename += '_' + self.get_ifo_tag()
+    if self.get_user_tag():
+      basename += '_' + self._usertag()
+
+    filename = basename + '-' + str(self.get_start()) + '-' + \
+      str(self.get_end() - self.get_start()) + '.xml'
+
+    if self.get_zip_output():
+      filename += '.gz'
+
+    self.add_output_file(filename)
+
+    return filename
+
+  def get_froutput(self):
+    """
+    Returns the file name of output frame from the inspiral code. This
+    must be kept synchronized with the name of the output file in inspiral.c.
+    """
+    if not self.get_start() or not self.get_end() or not self.get_ifo():
+      raise InspiralError, "Start time, end time or ifo has not been set"
+
+    tag_base = self.job().tag_base
+    basename = self.get_ifo() + '-' + tag_base
+
+    if self.get_ifo_tag():
+      basename += '_' + self.get_ifo_tag()
+    if self.get_user_tag():
+      basename += '_' + self.get_user_tag()
+
+    filename = basename + '-' + str(self.get_start()) + '-' + \
+      str(self.get_end() - self.get_start()) + '.gwf'
+
+    return filename  
+
+  def finalize(self):
+    """
+    set the data_start_time and data_end_time
+    """
+    if self.get_pad_data():
+      pipeline.AnalysisNode.set_data_start(self,self.get_start() - \
+          self.get_pad_data())
+      pipeline.AnalysisNode.set_data_end(self,self.get_end() + \
+          self.get_pad_data())
+
+#############################################################################
+
+class InspInjNode(InspiralAnalysisNode):
   """
   A InspInjNode runs an instance of the inspinj generation job in a
   Condor DAG.
@@ -317,9 +428,7 @@ class InspInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     job = A CondorDAGJob that can run an instance of lalapps_inspinj.
     """
-    pipeline.CondorDAGNode.__init__(self,job)
-    pipeline.AnalysisNode.__init__(self)
-    self.__usertag = job.get_config('pipeline','user-tag')
+    InspiralAnalysisNode.__init__(self,job)
 
   def set_seed(self,seed):
     """
@@ -339,7 +448,8 @@ class InspInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.add_var_opt('output',outputName)
     self.__outputName = outputName
 
-class BbhInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+
+class BbhInjNode(InspiralAnalysisNode):
   """
   A BbhInjNode runs an instance of the bbhinj generation job in a 
   Condor DAG.
@@ -348,9 +458,7 @@ class BbhInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     job = A CondorDAGJob that can run an instance of lalapps_bbhinj.
     """
-    pipeline.CondorDAGNode.__init__(self,job)
-    pipeline.AnalysisNode.__init__(self)
-    self.__usertag = job.get_config('pipeline','user-tag')
+    InspiralAnalysisNode.__init__(self,job)
 
   def set_seed(self,seed):
     """
@@ -368,8 +476,8 @@ class BbhInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     if not self.get_start() or not self.get_end():
       raise InspiralError, "Start time or end time has not been set"
-    if self.__usertag:
-      bbhinject = 'HL-INJECTIONS_' + self.__usertag + '-'
+    if self.get_user_tag():
+      bbhinject = 'HL-INJECTIONS_' + self.get_usertag() + '-'
       bbhinject = bbhinject + str(self.get_start()) + '-'
       bbhinject = bbhinject + str(self.get_end()-self.get_start()) + '.xml'
     elif self.__seed:
@@ -385,7 +493,7 @@ class BbhInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     return bbhinject
 
 
-class TmpltBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+class TmpltBankNode(InspiralAnalysisNode):
   """
   A TmpltBankNode runs an instance of the template bank generation job in a
   Condor DAG.
@@ -394,77 +502,10 @@ class TmpltBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     job = A CondorDAGJob that can run an instance of lalapps_tmpltbank.
     """
-    pipeline.CondorDAGNode.__init__(self,job)
-    pipeline.AnalysisNode.__init__(self)
-    try:
-      self.__usertag = job.get_config('tmpltbank','user-tag')
-    except:
-      self.__usertag = job.get_config('pipeline','user-tag')
+    InspiralAnalysisNode.__init__(self,job)
 
-    try:
-      self.__pad_data = int(self.job().get_opts()['pad-data'])
-    except: 
-      self.__pad_data = None
 
-    try:
-      self.__zip_output = job.get_config('tmpltbank','write-compress')
-      self.__zip_output = True
-    except:
-      self.__zip_output = False
-
-  def get_output(self):
-    """
-    Returns the file name of output from the template bank code. This must
-    be kept synchronized with the name of the output file in tmpltbank.c.
-    """
-    tag_base = self.job().tag_base
-    if not self.get_start() or not self.get_end() or not self.get_ifo():
-      raise InspiralError, "Start time, end time or ifo has not been set"
-    if self.__usertag and self.get_ifo_tag():
-      bank = self.get_ifo() + '-' + tag_base + '_' + self.get_ifo_tag() + \
-          "_" + self.__usertag + '-' 
-      bank = bank + str(self.get_start())
-    elif self.__usertag:
-      bank = self.get_ifo() + '-' + tag_base + '_' + self.__usertag + '-'  
-      bank = bank + str(self.get_start())
-    elif self.get_ifo_tag():
-      bank = self.get_ifo() + '-' + tag_base + '_' + self.get_ifo_tag() + '-'  
-      bank = bank + str(self.get_start())
-    else:
-      bank = self.get_ifo() + '-' + tag_base + '-' + str(self.get_start())
-    bank = bank + '-' + str(self.get_end() - self.get_start()) + '.xml'
-
-    if self.__zip_output:
-      bank += '.gz'
-
-    self.add_output_file(bank)
-
-    return bank
-
-  def set_pad_data(self, pad):
-    """
-    Set the pad data value for this node 
-    """
-    self.__pad_data = pad
-    self.add_var_opt('pad-data', pad)
-
-  def get_pad_data(self):
-    """
-    Returns the injection file
-    """
-    return self.__pad_data
-
-  def finalize(self):
-    """
-    set the data_start_time and data_end_time
-    """
-    if self.get_pad_data():
-      pipeline.AnalysisNode.set_data_start(self,self.get_start() - \
-          self.get_pad_data())
-      pipeline.AnalysisNode.set_data_end(self,self.get_end() + \
-          self.get_pad_data())
-
-class RandomBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+class RandomBankNode(InspiralAnalysisNode):
   """
   A RandomBankNode runs an instance of the random bank generation job in a
   Condor DAG.
@@ -473,12 +514,7 @@ class RandomBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     job = A CondorDAGJob that can run an instance of lalapps_randombank.
     """
-    pipeline.CondorDAGNode.__init__(self,job)
-    pipeline.AnalysisNode.__init__(self)
-    try:
-      self.__usertag = job.get_config('randombank','user-tag')
-    except:
-      self.__usertag = job.get_config('pipeline','user-tag')
+    InspiralAnalysisNode.__init__(self,job)
 
   def get_output(self):
     """
@@ -487,8 +523,8 @@ class RandomBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     if not self.get_start() or not self.get_end():
       raise InspiralError, "Start time or end time has not been set"
-    if self.__usertag:
-      bank = 'P-TMPLTBANK_' + self.__usertag + '-' 
+    if self.get_user_tag():
+      bank = 'P-TMPLTBANK_' + self.get_user_tag() + '-' 
       bank = bank + str(self.get_start())
     else:
       bank = 'P-TMPLTBANK-' + str(self.get_start())
@@ -499,7 +535,7 @@ class RandomBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     return bank
 
 
-class SplitBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+class SplitBankNode(InspiralAnalysisNode):
   """
   A SplitBankNode runs an instance of the split template bank job in a
   Condor DAG.
@@ -508,12 +544,7 @@ class SplitBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     job = A CondorDAGJob that can run an instance of lalapps_tmpltbank.
     """
-    pipeline.CondorDAGNode.__init__(self,job)
-    pipeline.AnalysisNode.__init__(self)
-    try:
-      self.__usertag = job.get_config('splitbank','user-tag')
-    except:
-      self.__usertag = job.get_config('pipeline','user-tag')
+    InspiralAnalysisNode.__init__(self,job)
     self.__bankfile = None
     self.__numbanks = None
 
@@ -548,7 +579,7 @@ class SplitBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     return banks
 
 
-class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+class InspiralNode(InspiralAnalysisNode):
   """
   An InspiralNode runs an instance of the inspiral code in a Condor DAG.
   """
@@ -556,23 +587,8 @@ class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     job = A CondorDAGJob that can run an instance of lalapps_inspiral.
     """
-    pipeline.CondorDAGNode.__init__(self,job)
-    pipeline.AnalysisNode.__init__(self)
-    try:
-      self.__usertag = job.get_config('inspiral','user-tag')
-    except:
-      self.__usertag = job.get_config('pipeline','user-tag')
-
+    InspiralAnalysisNode.__init__(self,job)
     self.__injections = None
-    try:
-      self.__pad_data = int(self.job().get_opts()['pad-data'])
-    except: 
-      self.__pad_data = None
-    try:
-      self.__zip_output = job.get_config('inspiral','write-compress')
-      self.__zip_output = True
-    except:
-      self.__zip_output = False 
 
   def set_bank(self,bank):
     self.add_var_opt('bank-file', bank)
@@ -592,52 +608,6 @@ class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     return self.__injections
 
-  def set_pad_data(self, pad):
-    """
-    Set the pad data value for this node 
-    """
-    self.__pad_data = pad
-    self.add_var_opt('pad-data', pad)
-
-  def get_pad_data(self):
-    """
-    Returns the injection file
-    """
-    return self.__pad_data
-
-  def set_user_tag(self,usertag):
-    self.__usertag = usertag
-    self.add_var_opt('user-tag',usertag)
-
-  def get_user_tag(self):
-    return self.__usertag
-
-  def get_output(self):
-    """
-    Returns the file name of output from the inspiral code. This must be kept
-    synchronized with the name of the output file in inspiral.c.
-    """
-    if not self.get_start() or not self.get_end() or not self.get_ifo():
-      raise InspiralError, "Start time, end time or ifo has not been set"
-
-    tag_base = self.job().tag_base
-    basename = self.get_ifo() + '-' + tag_base
-
-    if self.get_ifo_tag():
-      basename += '_' + self.get_ifo_tag()
-    if self.__usertag:
-      basename += '_' + self.__usertag
-
-    filename = basename + '-' + str(self.get_start()) + '-' + \
-      str(self.get_end() - self.get_start()) + '.xml'
-
-    if self.__zip_output:
-      filename += '.gz'
-
-    self.add_output_file(filename)
-
-    return filename
-
   def get_froutput(self):
     """
     Returns the file name of output frame from the inspiral code. This
@@ -651,25 +621,16 @@ class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
     if self.get_ifo_tag():
       basename += '_' + self.get_ifo_tag()
-    if self.__usertag:
-      basename += '_' + self.__usertag
+    if self.get_user_tag():
+      basename += '_' + self.get_usertag()
 
     filename = basename + '-' + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) + '.gwf'
 
     return filename  
 
-  def finalize(self):
-    """
-    set the data_start_time and data_end_time
-    """
-    if self.get_pad_data():
-      pipeline.AnalysisNode.set_data_start(self,self.get_start() - \
-          self.get_pad_data())
-      pipeline.AnalysisNode.set_data_end(self,self.get_end() + \
-          self.get_pad_data())
 
-class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
+class TrigToTmpltNode(InspiralAnalysisNode):
   """
   A TrigToTmpltNode runs an instance of the triggered bank generator in a
   Condor DAG.
@@ -678,27 +639,8 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     job = A CondorDAGJob that can run an instance of inca in trigtotmplt mode.
     """
-    pipeline.CondorDAGNode.__init__(self,job)
-    pipeline.AnalysisNode.__init__(self)
-    self.__output = None
+    InspiralAnalysisNode.__init__(self,job)
     self.__input_ifo = None
-    self.__output_ifo = None
-    try:
-      self.__usertag = job.get_config('trigtotmplt','user-tag')
-    except:
-      self.__usertag = job.get_config('pipeline','user-tag')
-    try:
-      self.__zip_output = job.get_config('trigtotmplt','write-compress')
-      self.__zip_output = True
-    except:
-      self.__zip_output = False
-
-  def set_user_tag(self,usertag):
-    self.__usertag = usertag
-    self.add_var_opt('user-tag',usertag)
-
-  def get_user_tag(self):
-    return self.__usertag
 
   def set_input_ifo(self,ifo):
     self.add_var_opt('input-ifo', ifo)
@@ -709,36 +651,10 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
   def set_output_ifo(self,ifo):
     self.add_var_opt('output-ifo', ifo)
-    self.__output_ifo = ifo
-
-  def get_output_ifo(self):
-    return self.__output_ifo
-
-  def get_output(self):
-    """
-    Returns the name of the output file from lalapps_trigbank
-    """
-    if not self.get_start() or not self.get_end() or not self.get_output_ifo():
-      raise InspiralError, "Start time, end time or output ifo is not set"
-      
-    basename = self.get_output_ifo() + '-TRIGBANK'
-
-    if self.get_ifo_tag():
-      basename += '_' + self.get_ifo_tag()
-    if self.__usertag:
-      basename += '_' + self.__usertag 
-
-    trigbank_name = basename + '-' + str(self.get_start()) + '-' + \
-      str(self.get_end() - self.get_start()) + '.xml'
-
-    if self.__zip_output:
-      trigbank_name += '.gz'
-
-    self.add_output_file(trigbank_name)
-    return trigbank_name
+    self.set_ifo(ifo)
 
 
-class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
+class IncaNode(InspiralAnalysisNode):
   """
   An IncaNode runs an instance of the inspiral coincidence code in a Condor
   DAG.
@@ -747,19 +663,9 @@ class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     job = A CondorDAGJob that can run an instance of lalapps_inca.
     """
-    pipeline.CondorDAGNode.__init__(self,job)
-    pipeline.AnalysisNode.__init__(self)
+    InspiralAnalysisNode.__init__(self,job)
     self.__ifo_a = None
     self.__ifo_b = None
-    try:
-      self.__usertag = job.get_config('inca','user-tag')
-    except:
-      self.__usertag = job.get_config('pipeline','user-tag')
-    try:
-      self.__zip_output = job.get_config('inca','write-compress')
-      self.__zip_output = True
-    except:
-      self.__zip_output = False
 
   def set_ifo_a(self, ifo):
     """
@@ -789,19 +695,6 @@ class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     return self.__ifo_b
 
-  def set_user_tag(self,usertag):
-    """
-    Set the usertag for a given job
-    """
-    self.__usertag = usertag
-    self.add_var_opt('user-tag',usertag)
-
-  def get_user_tag(self):
-    """
-    Returns the usertag of the job
-    """
-    return self.__usertag
-
   def get_output_a(self):
     """
     Returns the file name of output from inca for ifo a. This must be kept
@@ -814,17 +707,20 @@ class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
     if self.get_ifo_tag():
       basename += '_' + self.get_ifo_tag()
-    if self.__usertag:
-      basename += '_' + self.__usertag 
+    if self.get_user_tag():
+      basename += '_' + self.get_usertag() 
 
     filename = basename + '-' + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) + '.xml'
 
-    if self.__zip_output:
+    if self.get_zip_output():
       filename += '.gz'
 
     self.add_output_file(filename)
     return filename
+
+  def get_output(self):
+    return self.get_output_a()
 
   def get_output_b(self):
     """
@@ -838,20 +734,20 @@ class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
     if self.get_ifo_tag():
       basename += '_' + self.get_ifo_tag()
-    if self.__usertag:
-      basename += '_' + self.__usertag 
+    if self.get_user_tag():
+      basename += '_' + self.get_usertag()
 
     filename = basename + '-' + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) + '.xml'
 
-    if self.__zip_output:
+    if self.get_zip_output():
       filename += '.gz'
 
     self.add_output_file(filename)
     return filename
 
 
-class ThincaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
+class ThincaNode(InspiralAnalysisNode):
   """
   A ThincaNode runs an instance of the inspiral coincidence code in a Condor
   DAG.
@@ -860,8 +756,7 @@ class ThincaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     job = A CondorDAGJob that can run an instance of lalapps_inca.
     """
-    pipeline.CondorDAGNode.__init__(self,job)
-    pipeline.AnalysisNode.__init__(self)
+    InspiralAnalysisNode.__init__(self,job)
     self.__ifo_g1 = None
     self.__ifo_h1 = None
     self.__ifo_h2 = None
@@ -869,16 +764,6 @@ class ThincaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.__ifo_t1 = None
     self.__ifo_v1 = None
     self.__num_slides = None
-    try:
-      self.__usertag = job.get_config('thinca','user-tag')
-    except:
-      self.__usertag = job.get_config('pipeline','user-tag')
-    self.__ifotag = None
-    try:
-      self.__zip_output = job.get_config('thinca','write-compress')
-      self.__zip_output = True
-    except:
-      self.__zip_output = False
 
   def set_ifo(self, ifo):
     """
@@ -973,32 +858,6 @@ class ThincaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     return self.__num_slides
 
-  def set_user_tag(self,usertag):
-    """
-    Set the usertag for a given job
-    """
-    self.__usertag = usertag
-    self.add_var_opt('user-tag',usertag)
-
-  def get_user_tag(self):
-    """
-    Returns the usertag of the job
-    """
-    return self.__usertag
-
-  def set_ifo_tag(self,ifotag):
-    """
-    Set the ifotag for a given job (for second thinca)
-    """
-    self.__ifotag = ifotag
-    self.add_var_opt('ifo-tag',ifotag)
-
-  def get_ifo_tag(self):
-    """
-    Returns the ifo tag of the job
-    """
-    return self.__ifotag
-
   def get_output(self):
     """
     Returns the file name of output from thinca.  This must be kept
@@ -1013,23 +872,23 @@ class ThincaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     else:
       basename = self.get_ifos() + '-' + tag_base
 
-    if self.__ifotag:
-      basename += '_' + self.__ifotag  
+    if self.get_ifo_tag():
+      basename += '_' + self.get_ifo_tag() 
 
-    if self.__usertag:
-      basename += '_' + self.__usertag
+    if self.get_user_tag():
+      basename += '_' + self.get_user_tag()
 
     filename = basename + '-' + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) + '.xml'
 
-    if self.__zip_output:
+    if self.get_zip_output():
       filename += '.gz'
 
     self.add_output_file(filename)
     return filename
 
 
-class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
+class SireNode(InspiralAnalysisNode):
   """
   A SireNode runs an instance of the single inspiral reader code in a Condor
   DAG.
@@ -1038,23 +897,9 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     job = A CondorDAGJob that can run an instance of lalapps_sire.
     """
-    pipeline.CondorDAGNode.__init__(self,job)
-    pipeline.AnalysisNode.__init__(self)
-    self.__ifo  = None
-    self.__ifotag = None
-    self.__start = None
-    self.__end   = None
+    InspiralAnalysisNode.__init__(self,job)
     self.__injection_file = None
-    try:
-      self.__usertag = job.get_config('sire','user-tag')
-    except:
-      self.__usertag = job.get_config('pipeline','user-tag')
-
-    try:
-      self.__zip_output = job.get_config('coire','write-compress')
-      self.__zip_output = True
-    except:
-      self.__zip_output = False
+    self.__ifo_tag = None
 
   def set_ifo(self, ifo):
     """
@@ -1065,7 +910,7 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
   def get_ifo(self):
     """
-    Returns the ifos
+    Returns the two letter IFO code for this node.
     """
     return self.__ifo
 
@@ -1076,23 +921,11 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.__injection_file = file
     self.add_var_opt('injection-file', file)
 
-  def get_inj_file(self, file):
+  def get_inj_file(self):
     """
-    Sets the injection file
+    Gets the injection file
     """
     return self.__injection_file
-
-  def set_ifo_tag( self, ifotag):
-    """
-    Set the ifotag
-    """
-    self.__ifotag = ifotag
-
-  def get_ifo_tag( self ):
-    """
-    get the ifotag
-    """
-    return self.__ifotag
 
   def set_start(self, start):
     """
@@ -1102,7 +935,7 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
   def get_start(self):
     """
-    Returns GPS start time
+    Gets GPS start time
     """
     return self.__start
 
@@ -1114,9 +947,22 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
   def get_end(self):
     """
-    Returns GPS end time
+    Gets GPS end time
     """
     return self.__end
+  
+  def set_ifo_tag(self,ifo_tag):
+    """
+    Set the ifo tag that is passed to the analysis code.
+    @param ifo_tag: a string to identify one or more IFOs
+    """
+    self.__ifo_tag = ifo_tag
+
+  def get_ifo_tag(self):
+    """
+    Returns the IFO tag string
+    """
+    return self.__ifo_tag
 
   def set_glob(self, file_glob):
     """
@@ -1130,19 +976,6 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     self.add_var_opt('input',input_file)
 
-  def set_user_tag(self,usertag):
-    """
-    Set the usertag for a given job
-    """
-    self.__usertag = usertag
-    self.add_var_opt('user-tag',usertag)
-
-  def get_user_tag(self):
-    """
-    Returns the usertag of the job
-    """
-    return self.__usertag
-
   def get_output(self):
     """
     get the name of the output file
@@ -1150,20 +983,21 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     if not self.get_ifo():
       raise InspiralError, "ifos have not been set"
 
-    fname = self.__ifo + "-SIRE"
-    if self.__injection_file:
-      fname += "_" + self.__injection_file.split("-")[1]
+    fname = self.get_ifo() + "-SIRE"
+    if self.get_inj_file():
+      fname += "_" + self.get_inj_file().split("-")[1]
       fname += "_FOUND"
 
-    if self.__ifotag: fname += "_" + self.__ifotag
-    if self.__usertag: fname += "_" + self.__usertag
+    if self.get_ifo_tag(): fname += "_" + self.get_ifo_tag()
+    if self.get_user_tag(): fname += "_" + self.get_user_tag()
 
-    if (self.__start and not self.__end) or (self.__end and not self.__start):
+    if (self.get_start() and not self.get_end()) or \
+        (self.get_end() and not self.get_start()):
       raise InspiralError, "If one of start and end is set, both must be"
 
-    if (self.__start):
-      duration=self.__end - self.__start
-      fname += "-" + str(self.__start) + "-" + str(duration)
+    if (self.get_start()):
+      duration=self.get_end()- self.get_start()
+      fname += "-" + str(self.get_start()) + "-" + str(duration)
 
     fname += ".xml"
 
@@ -1173,7 +1007,7 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     get the name of the missed file
     """
-    if self.__injection_file:
+    if self.get_inj_file():
       return self.get_output().replace("FOUND", "MISSED")
     else:
       return None
@@ -1187,12 +1021,12 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.add_var_opt("output", output)
     self.add_var_opt("summary", output.replace("xml", "txt"))
 
-    if self.__injection_file:
-      self.add_var_opt('injection-file', self.__injection_file)
+    if self.get_inj_file():
+      self.add_var_opt('injection-file', self.get_inj_file())
       self.add_var_opt('missed-injections', self.get_missed() )
 
 
-class CoireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
+class CoireNode(InspiralAnalysisNode):
   """
   A CoireNode runs an instance of the inspiral coire code in a Condor
   DAG.
@@ -1201,19 +1035,12 @@ class CoireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     job = A CondorDAGJob that can run an instance of lalapps_coire.
     """
-    pipeline.CondorDAGNode.__init__(self,job)
-    pipeline.AnalysisNode.__init__(self)
+    InspiralAnalysisNode.__init__(self,job)
     self.__ifos  = None
-    self.__ifotag = None
-    self.__start = None
-    self.__end   = None
+    self.__ifo_tag = None
     self.__num_slides = None
     self.__injection_file = None
     self.__output_tag = None
-    try:
-      self.__usertag = job.get_config('coire','user-tag')
-    except:
-      self.__usertag = job.get_config('pipeline','user-tag')
 
   def set_ifos(self, ifos):
     """
@@ -1237,21 +1064,9 @@ class CoireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
   def get_slides(self):
     """
-    Returns the ifos
+    Returns the number of slides
     """
     return self.__num_slides
-
-  def set_ifo_tag( self, ifotag):
-    """
-    Set the ifotag
-    """
-    self.__ifotag = ifotag
-
-  def get_ifo_tag( self ):
-    """
-    get the ifotag
-    """
-    return self.__ifotag
 
   def set_inj_file(self, file):
     """
@@ -1261,9 +1076,9 @@ class CoireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
       self.__injection_file = file
       self.add_var_opt('injection-file', file)
 
-  def get_inj_file(self, file):
+  def get_inj_file(self):
     """
-    Sets the injection file
+    Gets the injection file
     """
     return self.__injection_file
 
@@ -1275,7 +1090,7 @@ class CoireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
   def get_start(self):
     """
-    Returns GPS start time
+    Gets GPS start time
     """
     return self.__start
 
@@ -1287,9 +1102,22 @@ class CoireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
   def get_end(self):
     """
-    Returns GPS end time
+    Gets GPS end time
     """
     return self.__end
+
+  def set_ifo_tag(self,ifo_tag):
+    """
+    Set the ifo tag that is passed to the analysis code.
+    @param ifo_tag: a string to identify one or more IFOs
+    """
+    self.__ifo_tag = ifo_tag
+
+  def get_ifo_tag(self):
+    """
+    Returns the IFO tag string
+    """
+    return self.__ifo_tag
 
   def set_glob(self, file_glob):
     """
@@ -1303,27 +1131,14 @@ class CoireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     self.add_var_opt('input',input_file)
 
-  def set_user_tag(self,usertag):
-    """
-    Set the usertag for a given job
-    """
-    self.__usertag = usertag
-    self.add_var_opt('user-tag',usertag)
-
-  def get_user_tag(self):
-    """
-    Returns the usertag of the job
-    """
-    return self.__usertag
-
   def set_output_tag(self):
     fname = "COIRE"
-    if self.__num_slides: fname += "_SLIDE"
-    if self.__injection_file:
-      fname += "_" + self.__injection_file.split("-")[1]
+    if self.get_slides(): fname += "_SLIDE"
+    if self.get_inj_file():
+      fname += "_" + self.get_inj_file().split("-")[1]
       fname += "_FOUND"
-    if self.__ifotag: fname += "_" + self.__ifotag
-    if self.__usertag: fname += "_" + self.__usertag
+    if self.get_ifo_tag(): fname += "_" + self.get_ifo_tag()
+    if self.get_user_tag(): fname += "_" + self.get_user_tag()
     self.__output_tag = fname
 
   def get_output_tag(self):
@@ -1337,16 +1152,16 @@ class CoireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
       raise InspiralError, "ifos have not been set"
 
     self.set_output_tag()
-    fname = self.__ifos + '-' + self.__output_tag
+    fname = self.get_ifos() + '-' + self.get_output_tag()
 
-    if (self.__start and not self.__end) or \
-           (self.__end and not self.__start):
+    if (self.get_start() and not self.get_end()) or \
+           (self.get_end() and not self.get_start()):
       raise InspiralError, "If one of start and end is set, "\
             "both must be"
 
-    if (self.__start):
-      duration=self.__end - self.__start
-      fname += "-" + str(self.__start) + "-" + str(duration)
+    if (self.get_start()):
+      duration=self.get_end() - self.get_start()
+      fname += "-" + str(self.get_start()) + "-" + str(duration)
 
     fname += ".xml"
 
@@ -1356,7 +1171,7 @@ class CoireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     get the name of the missed file
     """
-    if self.__injection_file:
+    if self.get_inj_file():
       return self.get_output().replace("FOUND", "MISSED")
     else:
       return None
@@ -1370,11 +1185,12 @@ class CoireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.add_var_opt("output", output)
     self.add_var_opt("summary", output.replace("xml", "txt"))
 
-    if self.__injection_file:
-      self.add_var_opt('injection-file', self.__injection_file)
+    if self.get_inj_file():
+      self.add_var_opt('injection-file', self.get_inj_file())
       self.add_var_opt('missed-injections', self.get_missed() )
 
-class FrJoinNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+
+class FrJoinNode(InspiralAnalysisNode):
   """
   A FrJoinNode runs an instance of lalapps_frjoin in a Condor DAG
   """
@@ -1382,8 +1198,7 @@ class FrJoinNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     job = A CondorDAGJob that can run an instance of lalapps_frjoin.
     """
-    pipeline.CondorDAGNode.__init__(self,job)
-    pipeline.AnalysisNode.__init__(self)
+    InspiralAnalysisNode.__init__(self,job)
 
   def set_output(self, outputName):
     """
@@ -1400,8 +1215,7 @@ class FrJoinNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     return self.__outputName
 
 
-
-class CohBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+class CohBankNode(InspiralAnalysisNode):
   """
   A CohBankNode runs an instance of the coherent code in a Condor DAG.
   """
@@ -1409,32 +1223,9 @@ class CohBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     job = A CondorDAGJob that can run an instance of lalapps_coherent_inspiral.
     """
-    pipeline.CondorDAGNode.__init__(self,job)
-    pipeline.AnalysisNode.__init__(self)
-    try:
-      self.__usertag = job.get_config('cohbank','user-tag')
-    except:
-      self.__usertag = job.get_config('pipeline','user-tag')
+    InspiralAnalysisNode.__init__(self,job)
     self.__bank = None
     self.__ifos = None
-    try:
-      self.__zip_output = job.get_config('cohbank','write-compress')
-      self.__zip_output = True
-    except:
-      self.__zip_output = False
-
-  def set_user_tag(self,usertag):
-    """
-    Set the usertag for a given job
-    """
-    self.__usertag = usertag
-    self.add_var_opt('user-tag',usertag)
-
-  def get_user_tag(self):
-    """
-    Returns the usertag of the job
-    """
-    return self.__usertag     
     
   def set_bank(self,bank):
     self.add_var_opt('bank-file', bank)
@@ -1461,13 +1252,13 @@ class CohBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     
     basename = self.get_ifos() + '-COHBANK'
 
-    if self.__usertag:
-      basename += '_' + self.__usertag
+    if self.get_user_tag():
+      basename += '_' + self.get_user_tag()
 
     filename = basename + '-' + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) + '.xml'
 
-    if self.__zip_output:
+    if self.get_zip_output():
       filename += '.gz'
 
     self.add_output_file(filename)
@@ -1475,7 +1266,7 @@ class CohBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     return filename    
 
 
-class ChiaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
+class ChiaNode(InspiralAnalysisNode):
   """
   A ChiaNode runs an instance of the coherent_inspiral code in a Condor
   DAG.
@@ -1484,20 +1275,14 @@ class ChiaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     job = A CondorDAGJob that can run an instance of lalapps_coherent_inspiral.
     """
-    pipeline.CondorDAGNode.__init__(self,job)
-    pipeline.AnalysisNode.__init__(self)
-    try:
-      self.__zip_output = job.get_config('chia','write-compress')
-      self.__zip_output = True
-    except:
-      self.__zip_output = False
+    InspiralAnalysisNode.__init__(self,job)
 
   def set_bank(self,bank):
     self.add_var_opt('bank-file', bank)
     self.add_input_file(bank)
 
     
-###################################################################################
+##############################################################################
 # Plotting Jobs and Nodes
 
 class PlotInspiralJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
