@@ -314,7 +314,7 @@ static void sighandler(int sig)
   
   /* sleep a few seconds to let the OTHER thread(s) catch the signal too... */
   sleep(5);
-  boinc_finish(COMPUTEFSTAT_EXIT_SIGNAL);
+  boinc_finish(COMPUTEFSTAT_EXIT_SIGNAL + sig);
   return;
 } /* sighandler */
 
