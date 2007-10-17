@@ -40,6 +40,8 @@ and reheterodyne with this phase difference. */
 /* verbose global variable */
 INT4 verbose=0;
 
+INT4 lalDebugLevel=1;
+
 int main(int argc, char *argv[]){
   static LALStatus status;
 
@@ -91,7 +93,7 @@ message:\n\t%s.\n",
     fprintf(stderr, "f0 = %.1lf Hz, f1 = %.1e Hz/s, epoch = %.1lf.\n",
       hetParams.het.f0, hetParams.het.f1, hetParams.het.pepoch);
 
-    fprintf(stderr, "\nI'm looking for gravitational waves at %.2lf times the \
+    fprintf(stderr, "I'm looking for gravitational waves at %.2lf times the \
 pulsars spin frequency.\n", inputParams.freqfactor);
   }
 
@@ -162,6 +164,7 @@ message:\n\t%s.\n", status.statusCode, status.statusDescription);
       if(frcount++ >= MAXNUMFRAMES){
         fprintf(stderr, "Error... increase length of MAXNUMFRAMES or decrease \
 number of frame files to read in.\n");
+        return 1;
       }
     }
     fclose(fpin);
@@ -239,13 +242,16 @@ heterodyne.\n");  }
          data frame then increment the segment and continue */
       if( stops->data[count] <= cache.starttime[0] ){
         count++;
+        LALFree(data);
         continue;
       }
       /* if there are segments after the last available data from then break */
       if( cache.starttime[frcount-1] + cache.duration[frcount-1] <=
-          starts->data[count] )
+          starts->data[count] ){
+        LALFree(data);
         break;
-      
+      }
+        
       if((duration = stops->data[count] - starts->data[count]) > MAXDATALENGTH)
         duration = MAXDATALENGTH; /* if duration of science segment is large
                                      just get part of it */
@@ -257,6 +263,7 @@ heterodyne.\n");  }
       hetParams.length = inputParams.samplerate * duration;
       gpstime = (REAL8)starts->data[count];
 
+      smalllist = NULL;
       smalllist = set_frame_files(&starts->data[count], &stops->data[count],
         cache, frcount, &count);
 
@@ -276,6 +283,8 @@ heterodyne.\n");  }
           
           XLALDestroyCOMPLEX16Vector( data->data );
           LALFree(data);
+          
+          free(smalllist);
           
           continue;
         }
@@ -1093,12 +1102,16 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 time,
   if((frvect = FrFileIGetV(frfile, dblseries->name, time, (REAL8)duration)) ==
     NULL){
     FrFileIEnd(frfile);
+    XLALDestroyREAL8Vector(dblseries->data);
+    LALFree(dblseries);
     return NULL; /* couldn't read frame data */
   }
   
   /* check if there was missing data within the frame(s) */
   if(frvect->next){
     FrFileIEnd(frfile);
+    XLALDestroyREAL8Vector(dblseries->data);
+    LALFree(dblseries);
     return NULL; /* couldn't read frame data */
   }
     
