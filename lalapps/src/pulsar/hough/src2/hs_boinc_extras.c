@@ -158,12 +158,13 @@ static void sighandler(int, siginfo_t*, void*);
 static void sighandler(int);
 #endif
 static void worker (void);
-static int write_checkpoint(char*);
 static int is_zipped(const char *);
 static int resolve_and_unzip(const char*, char*, const size_t);
-static int load_graphics_dll(void);
 static void drain_fpu_stack(void);
-
+static REAL4 nan(void);
+#ifdef _MSC_VER
+static int load_graphics_dll(void);
+#endif
 
 
 /*^* FUNCTIONS *^*/
@@ -539,6 +540,7 @@ static void worker (void) {
 			            only by this BOINC-wrapper? */
   int breakpoint = 0;          /**< stop at breakpoint? (for testing the Windows Runtime Debugger) */
   int crash_fpu = 0;
+  int test_nan = 0;
 
 #ifdef _WIN32
   /* point the Windows Runtime Debugger to the Symbol Store on einstein */
@@ -824,9 +826,15 @@ static void worker (void) {
       rarg--; rargc--; /* this argument is not passed to the main worker function */
     }
 
-    /* fire up debugger at breakpoint, solely for testing the debugger (and symbols) */
+    /* drain fpu stack, solely for testing FPU exceptions */
     else if (MATCH_START("--CrashFPU",argv[arg],l)) {
       crash_fpu = -1;
+      rarg--; rargc--; /* this argument is not passed to the main worker function */
+    }
+
+    /* produce a NaN, solely for testing FPU exceptions */
+    else if (MATCH_START("--TestNaN",argv[arg],l)) {
+      test_nan = -1;
       rarg--; rargc--; /* this argument is not passed to the main worker function */
     }
 
@@ -929,6 +937,9 @@ static void worker (void) {
   if(crash_fpu)
     drain_fpu_stack();
 #endif
+
+  if(test_nan)
+    fprintf(stderr,"NaN:%f\n",2.0f*nan());
 
   /* CALL WORKER's MAIN()
    */
@@ -1342,7 +1353,7 @@ fpuw_t get_fpu_status(void) {
 }
 
 
-void drain_fpu_stack(void) {
+static void drain_fpu_stack(void) {
   static double dummy;
 #if defined(__GNUC__) && __i386__
   __asm(
@@ -1369,4 +1380,9 @@ void drain_fpu_stack(void) {
     fstp dummy;
   }
 #endif
+}
+
+static REAL4 nan(void) {
+  static const UINT4 inan = 0xFF8001FF; /* NaN palindrome */
+  return(*((REAL4*)&inan));
 }
