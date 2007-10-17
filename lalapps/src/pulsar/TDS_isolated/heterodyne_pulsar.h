@@ -104,11 +104,11 @@ extern "C" {
 "\n"
 
 #define MAXLENGTH 8400000 /* max number of lines in heterodyned data file */
-#define MAXDATALENGTH 1000 /* maximum length of data to be read from frames */
+#define MAXDATALENGTH 256 /* maximum length of data to be read from frames */
 #define MAXSTRLENGTH 100 /* maximum number of characters in a frame filename */
-#define MAXNUMFRAMES 25000 /* maximum number of frame files in input data file */
+#define MAXNUMFRAMES 35000 /* maximum number of frame files in data file */
 #define MAXLISTLENGTH 20000 /* maximum length of a list of frames files */
-#define MAXCALIBLENGTH 130000 /* maximum length of a calibration file */
+#define MAXCALIBLENGTH 350000 /* maximum length of a calibration file */
 
 #define ALPHAMIN 0.25 /* minimum acceptable value of alpha calib coefficient */
 #define ALPHAMAX 2.0 /* maximum acceptable value of alpha calib coefficient */
