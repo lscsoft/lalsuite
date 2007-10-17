@@ -840,7 +840,7 @@ int read_hs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
   len = fread(&(tl->elems), sizeof(tl->elems), 1, fp);
   if(len != 1) {
     LOGIOERROR("Couldn't read elems from", filename);
-    LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %d\n", len, 1);
+    LogPrintf(LOG_CRITICAL,"fread() returned %d, length was %d\n", len, 1);
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", filename);
     return(-1);
@@ -903,6 +903,7 @@ int read_hs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
   for(len = 0; len < sizeof(*counter); len++)
     checksum -= *(((char*)counter) + len);
   if(checksum) {
+    LogPrintf(LOG_CRITICAL,"Checksum error: %d\n", checksum);
     clear_toplist(tl);
     return(-2);
   }
