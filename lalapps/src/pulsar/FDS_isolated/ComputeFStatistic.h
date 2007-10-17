@@ -71,12 +71,12 @@ extern "C" {
 #define COMPUTEFSTAT_EXIT_NOPOLKADEL     19  /* no // found in command line */
 #define COMPUTEFSTAT_EXIT_USER           20  /* user asked for exit */
 #define COMPUTEFSTAT_EXIT_DEMOD          21  /* error in LAL-Demod */
-#define COMPUTEFSTAT_EXIT_SIGNAL         22  /* exited on signal */
 #define COMPUTEFSTAT_EXIT_BOINCRESOLVE   23  /* boinc_resolve_filename failed */
 #define COMPUTEFSTAT_EXIT_DLOPEN         24  /* problems with dynamic lib */
 #define COMPUTEFSTAT_EXIT_WORKER         25  /* can't start worker-thread */
-#define COMPUTEFSTAT_EXIT_UPSAMPLESFTFAIL     26  /* UpsampleSFT failed */
+#define COMPUTEFSTAT_EXIT_UPSAMPLESFTFAIL 26 /* UpsampleSFT failed */
 
+#define COMPUTEFSTAT_EXIT_SIGNAL         30  /* Exit code will be 30 + signal number */
 #define COMPUTEFSTAT_EXIT_LALCALLERROR  100  /* added to LAL status for BOINC exit value */
 
 /* Maximum fractional doppler shift */
