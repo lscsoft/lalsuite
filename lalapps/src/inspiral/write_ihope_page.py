@@ -78,20 +78,29 @@ def create_toggle():
 # ***************************************************************************
 # ***************************************************************************
 def write_toc(page , opts):
-  page.add("<!-- beginning of toc section-->")
-  dir = opts.webdir 
+  """ This function creates the table of contents, using the html_sections 
+      variable defined in the main part of this program.
+  """
+  # get the directory of the url
+  dir = opts.webdir +'/'
+
+  # and the section names
   items = html_sections 
+
+  # create a frame for the toc, and add contents 
+  page.add("<!-- beginning of toc section-->")
   page.div(id="encadre")
   page.div(id="contenu")
   page.a(e.h2("Table of Contents"), name="toc")
   page.ol()
+  # here, we set a tag (#this_item) to be used for internal link within 
+  # the html document
   for this_item in items:
-    page.li(e.a(this_item, href=dir+"/"+opts.output+'#'+this_item))
+    page.li(e.a(this_item, href=dir + opts.output + '#' + this_item))
   page.ol.close()
+  page.div.close()
+  page.div.close()
 
-  
-  page.div.close()
-  page.div.close()
   return page
 
 # ***************************************************************************
@@ -384,14 +393,46 @@ def write_tuning(page,opts):
   page.div(id="contenu")
   page = write_title(page, html_sections[4], "ronsard")
   page.div(id="div_ronsard", style='display:block')
-  page.add("This section summarizes the tuning .<br/>")
+  page.add("This section summarizes the tuning with e-thinca, r-sqaure, chi-square and h1-h2 cuts.<br/>")
   
-  #---------------------------- loudest events
-  page = add_input_h3(page, "injections and time slides")
-  page.div(id="todo")
-  page.p( "add list of loudest events. Not mix this with follow up")
-  page.div.close()# close the todo
-  page.div.close()# close the h3
+  #---------------------------- EThinca
+  page = heading(page, "E-thinca for injections") #(4)
+  for injtag in ['bns_inj', 'bhns_inj', 'bbh_inj']:
+    page.h4(injtag)
+    for combi in ["H1H2L1", "H1H2", "H1L1", "H2L1"]:
+      #lists = glob.glob(opts.datadir+"/"+ injtag +"/"+ifo+"-SIRE_INJECTIONS_*FOUND-*.txt")
+#      summary = open(lists[0])
+      caption = combi +" E-thinca parameter at the first stage of the coincidence analysis ("+injtag +"tag)."      
+#      caption = caption + "<pre> -----------------------"+lists[0]+"\n" +summary.read()+"</pre>"
+      if combi=="H1H2L1":
+        page = add_figure(page, fnames=  [\
+            "injections/ethinca/"+combi+"_first_coinc_"+injtag+"_H1_H2_ethinca_vs_H1_snr.png", \
+            "injections/ethinca/"+combi+"_second_coinc_"+injtag+"_H1_H2_ethinca_vs_H1_snr.png", \
+            "injections/ethinca/"+combi+"_second_coinc_"+injtag+"_H1_H2_ethinca_vs_H1_snr_andtotMass.png", \
+            "injections/ethinca/"+combi+"_first_coinc_"+injtag+"_H1_L1_ethinca_vs_H1_snr.png", \
+            "injections/ethinca/"+combi+"_second_coinc_"+injtag+"_H1_L1_ethinca_vs_H1_snr.png", \
+            "injections/ethinca/"+combi+"_second_coinc_"+injtag+"_H1_L1_ethinca_vs_H1_snr_andtotMass.png", \
+            "injections/ethinca/"+combi+"_first_coinc_"+injtag+"_H2_L1_ethinca_vs_H2_snr.png", \
+            "injections/ethinca/"+combi+"_second_coinc_"+injtag+"_H2_L1_ethinca_vs_H2_snr.png",\
+            "injections/ethinca/"+combi+"_second_coinc_"+injtag+"_H2_L1_ethinca_vs_H2_snr_andtotMass.png"], \
+            caption=caption, size="third",alt=["","","","","","", ""])
+      else:
+        print combi
+        page = add_figure(page, fnames=  [\
+            "injections/ethinca/"+combi+"_first_coinc_"+injtag+"_"+combi[0:2]+"_"+combi[2:4]+"_ethinca_vs_"+combi[0:2]+"_snr.png", \
+            "injections/ethinca/"+combi+"_second_coinc_"+injtag+"_"+combi[0:2]+"_"+combi[2:4]+"_ethinca_vs_"+combi[0:2]+"_snr.png",\
+            "injections/ethinca/"+combi+"_second_coinc_"+injtag+"_"+combi[0:2]+"_"+combi[2:4]+"_ethinca_vs_"+combi[0:2]+"_snr_andtotMass.png"],\
+            caption=caption, size="third",alt=["", ""])
+  page.div.close()
+
+
+  page = heading(page, "Chi-square tuning") #(4)
+  page.div.close()
+  page = heading(page, "R-square tuning") #(4)
+  page.div.close()
+  page = heading(page, "H1H2 distance cut") #(4)
+  page.div.close()
+
 
   # the end
   page.div.close()
@@ -482,12 +523,16 @@ def write_fulldata(page,opts):
      
 # ***************************************************************************
 # ***************************************************************************
-def write_playground_summary(page,opts):
-  print "....Processing  playground section"
+def write_playground_summary(page,opts, playground=True):
+  if playground==True:
+    thisSearch = 'playground'
+  else:
+    thisSearch = 'analysis'
+  print "....Processing  "+thisSearch+" section"
   webdir = opts.webdir
   ini = opts.config_file
   ifos = get_ifos()
-  mkdir(opts.physdir+"/playground")
+  mkdir(opts.physdir+"/"+thisSearch)
 
 
   page.br()
@@ -495,49 +540,61 @@ def write_playground_summary(page,opts):
   page.div(id="contenu")
   page = write_title(page, html_sections[2], "hugo")
   page.div(id="div_hugo", style='display:block')
-  page.add("This section summarizes the analysis of the playground data.<br/>")
+  page.add("This section summarizes the analysis of the "+thisSearch+" data.<br/>")
   
   #table and venn diagramm
-  page = heading(page, "General information", "see details here", "h3")
-  page.table()
-  segs = get_segments()
-  keys = ("segments","H1","H2","L1","G1","V1","T1") 
-  page.add("The segment files above were created with no data quality flags set")
-  page.add("The times analyzed accoring to hipe are:")
-  coincs = get_coincident_segments('playground')  
-  ## here is the table. The first column is another table with the durations, 
-  ## and the second one is the venn diagram  
-  page.add("<table><tr><td>\n")
-  page.table()
-  page.tr(); page.td('coincidence'); page.td('duration(s)'); page.tr.close()
-  for key in coincs.keys():    
-    page.tr()
-    page.td(key) 
-    page.td(coincs.get(key))
+  try:
+    page = heading(page, "General information", "see details here")
+    page.table()
+    segs = get_segments()
+    keys = ("segments","H1","H2","L1","G1","V1","T1") 
+    page.p("The segment files above were created with no data quality flags set")
+    page.p("The times analyzed accoring to hipe are:")
+    coincs = get_coincident_segments(thisSearch)  
+    ## here is the table. The first column is another table with the durations, 
+    ## and the second one is the venn diagram  
+    page.add("<table><tr><td>\n")
+    page.table()
+    page.tr();
+    page.td('coincidence'); 
+    page.td('duration(s)'); 
     page.tr.close()
-  page.table.close()
-  page.add("</td><td>\n")
-  #create figure for the venn diagram
-  data = ""
-  for coinc in ("H1","H1H2","H2","H2L1","L1","H1L1","H1H2L1"):
-      data = data +coincs.get(coinc) + " "
-  create_venn(data, "playground")
-  # and incorporate into html
-  comment = "Venn diagramm sihowing distribution of"
-  for coinc in  coincs.keys():
-    comment = comment + " "+ coinc
-  page = add_figure(page, fnames =["/playground/venn_playground.png"], caption=comment, size="half")
-  page.add("</td></tr></table>")
-  page.add("here below is the detail of the data and ligo-data section of ihope.ini ")
-  page = add_config_section(page, "data")
-  page = add_config_section(page, "ligo-data")
-  page.div.close()  
+    for key in coincs.keys():    
+      page.tr()
+      file = webdir +'/playground/'+key+"_play_segs_analyzed.txt"
+      page.td(e.a(key,href=file))
+  
+      page.td(coincs.get(key))
+      page.tr.close()
+    page.table.close()
+    page.add("</td><td>\n")
+    #create figure for the venn diagram
+    data = ""
+    for coinc in ("H1","H1H2","H2","H2L1","L1","H1L1","H1H2L1"):
+        data = data +coincs.get(coinc) + " "
+    create_venn(data, "playground")
+    # and incorporate into html
+    comment = "Venn diagramm sihowing distribution of"
+    for coinc in  coincs.keys():
+      comment = comment + " "+ coinc
+    page = add_figure(page, fnames =["playground/venn_playground.png"], caption=comment, size="half")
+    page.add("</td></tr></table>")
+    page.add("here below is the detail of the data and ligo-data section of ihope.ini ")
+    page = add_config_section(page, "data")
+    page = add_config_section(page, "ligo-data")
+    page.div.close()  
+  except:
+    print "Error(s) in General information section. skipping ..."
+    pass
+  
  
   #----------------------------  The horizon distance  
   page = heading(page, "Inspiral range plots" )
   page.add("")  
   page.div(class_="figure")
-  page.add("<!--#include virtual=\"playground/plotinspiralrange_playground.html\"-->")
+  filename = thisSearch +'/' + 'plotinspiralrange_'+thisSearch+\
+      '-'+opts.gps_start_time+'-'+opts.duration+'.html'
+  page.add("<!--#include virtual=\""+filename+"\"-->")
   page = add_caption(page, "Inspiral Horizon distance for a \
 	(1.4,1.4) solar mass system with SNR=8 (first sub-figure), and \
 	histograms(second sub-figure). The last sub-figure shows the \
@@ -585,7 +642,7 @@ def write_playground_summary(page,opts):
       summary.close()
     except:
       page.div(id="todo")
-      page.p("summary file from sire not found")
+      page.p("Summary file from sire not found")
       page.div.close()
       pass
 
@@ -746,11 +803,65 @@ def write_playground_summary(page,opts):
 	], caption=comment, size="half")
 
   page.div.close()# close the div openned in add_input_h3 function
-  
+
 
   
   #---------------------------- loudest events
-  page = add_input_h3(page, "loudest events")
+  page = heading(page, "Summary")
+  combis = ['H1H2L1', 'H1H2', 'H1L1', 'H2L1']
+  vetos = ['', '_CAT_2_VETO-', '_CAT_3_VETO-', '_CAT_4_VETO-']
+  try:
+    for combi in combis:  
+      page.table();
+      page.tr(e.td(combi, width=5))
+      page.tr()
+      page.td('');
+      page.td(vetos)
+      page.tr.close()
+      page.tr()
+      page.td('zero lag')    
+      for veto in vetos:
+        file = glob.glob(opts.datadir  + '/playground/'+ combi+'-COIRE_'+combi+veto+'*txt')
+        command = 'grep clusters  '+file[0] + '|awk \'{print $NF}\''
+        data = make_external_call(command, 0,0,0)
+        page.td(data)
+      page.tr.close()
+      page.tr()
+      page.td('time slides')    
+      for veto in vetos:
+        file = glob.glob(opts.datadir  + '/playground/'+ combi+'-COIRE_SLIDE_'+combi+veto+'*txt')
+        command = 'grep clusters  '+file[0] + '|awk \'{print $NF}\''
+        data = make_external_call(command, 0,0,0)
+        page.td(data)
+      page.tr.close()
+      page.table.close()
+  except:
+      page.div(id="todo")
+      page.p("Summary file from sire not found")
+      page.div.close()
+      pass
+     
+    
+
+
+  page.div.close()# close the h3
+  #page.add("<table><tr><td>\n")
+  #page.table()
+  #page.tr();
+  #page.td('coincidence'); 
+  #page.td('duration(s)'); 
+  #page.tr.close()
+  #for key in coincs.keys():    
+  #  page.tr()
+  #  file = webdir +'/playground/'+key+"_play_segs_analyzed.txt"
+  #  page.td(e.a(key,href=file))
+#  for file in files:
+#    command = 'grep clusters  '+opts.datadir+'/playground/'+file+'COIRE*txt | awk \'{print $NF}\''
+
+
+  
+  #---------------------------- loudest events
+  page = heading(page, "loudest events, and follow up")
   page.div(id="todo")
   page.p( "add list of loudest events. Not mix this with follow up")
   page.div.close()# close the todo
@@ -778,58 +889,77 @@ def write_injection(page, opts):
   page.div(id="div_baudelaire", style='display:block')
   page.add("This section summarizes the analysis of the injection runs.<br/>")
 
-  #---------------------------- found and missedi first inspiral stage
-  try:
-    page = add_input_h3(page, "Found versus missed plots (first inspiral stage)")
-    for injtag in ['bbh_inj', 'bns_inj', 'bhns_inj']:
-      page.h4(injtag)
-      for ifo in get_ifos():  
-        lists = glob.glob(opts.datadir+"/"+ injtag +"/"+ifo+"-SIRE_INJECTIONS_*FOUND-*.txt")
+  #---------------------------- found and missed first inspiral stage
+  page = heading(page, "Found versus missed plots (first inspiral stage)")
+  for injtag in ['bbh_inj', 'bns_inj', 'bhns_inj']:
+    page.h4(injtag)
+    for ifo in get_ifos():  
+      lists = glob.glob(opts.datadir+"/"+ injtag +"/"+ifo+"-SIRE_INJECTIONS_*FOUND-*.txt")
+      try:
         summary = open(lists[0])
-        caption = ifo +" Found and missed injections at the first stage of the inspiral analysis ("+injtag +"tag)."      
-        caption = caption + "<pre> -----------------------"+lists[0]+"\n" +summary.read()+"</pre>"
-        page = add_figure(page, fnames=  [\
-          "injections/"+ifo+"_first_insp_"+injtag+"_dist-mchirp.png", \
-          "injections/"+ifo+"_first_insp_"+injtag+"_time-dist.png"], \
-          caption=caption, size="half",alt=["", ""])
-    page.div.close()
-  except:
-    pass 
+        this = summary.read()
+      except:
+        this = "No summary file found"
+        lists = ["No summary file found"]
+        pass
+      caption = ifo +" Found and missed injections at the first stage of the inspiral analysis ("+injtag +"tag)."      
+      caption = caption + "<pre> -----------------------"+lists[0]+"\n" +this+"</pre>"
+      page = add_figure(page, fnames=  [\
+        "injections/"+ifo+"_first_insp_"+injtag+"_dist-mchirp.png", \
+        "injections/"+ifo+"_first_insp_"+injtag+"_time-dist.png"], \
+        caption=caption, size="half",alt=["", ""])
+  page.div.close()
   
   #---------------------------- found and missed first coinc stage
-  page = add_input_h3(page, "Found versus missed plots (first coincidence stage)")
+  page = heading(page, "Found versus missed plots (first coincidence stage)")
   for injtag in ['bbh_inj', 'bns_inj', 'bhns_inj']:
     page.h4(injtag)
     for combi in get_ifo_coinc():  
       if len(combi)>2:
         print opts.datadir+"/"+ injtag +"/"+combi+"-COIRE_INJECTIONS_*_FOUND_"+combi+"-*.txt"
         lists = glob.glob(opts.datadir+"/"+ injtag +"/"+combi+"-COIRE_INJECTIONS_*_FOUND_"+combi+"-*.txt")
-        print lists
-        summary = open(lists[0])
+        try:
+          summary = open(lists[0])
+          this = summary.read()
+        except:
+          this = "No summary file found"
+          lists = ["No summary file found"]
+          pass
         caption = combi +" Found and missed injections at the first coincidence stage ("+injtag +"tag)."      
-        caption = caption + "<pre> -----------------------"+lists[0]+"\n" +summary.read()+"</pre>"
+        caption = caption + "<pre> -----------------------"+lists[0]+"\n" +this+"</pre>"
         page = add_figure(page, fnames=  [\
           "injections/"+combi+"_first_coinc_bbh_inj_missed_found_chirp_dist_vs_mchirp.png", \
           "injections/"+combi+"_first_coinc_bbh_inj_missed_found_vs_end_time.png", \
     	  "injections/"+combi+"_first_coinc_bbh_inj_missed_found_vs_mchirp.png"], \
           caption=caption, size="half",alt=["", "", ""])
   page.div.close()
-  print "test2" 
   #---------------------------- close by missed
-  page = add_input_h3(page, "close by missed")
+  page = heading(page,  "close by missed")
   page = add_figure(page, fnames = "H1H2L1-found_missed.png", caption="", size="half",alt=[" "])
   page = add_figure(page, fnames = "H1H2-found_missed.png", caption="", size="half",alt=[" "])
   page = add_figure(page, fnames = "H1L1-found_missed.png", caption="", size="half",alt=[" "])
   page.div.close()
-  print "test2" 
   
   #---------------------------- parameter efficiency
-  page = add_input_h3(page, "Parameter efficiency")
-  page = add_figure(page, fnames = "H1H2L1-found_missed.png", caption="", size="half",alt=[" "])
-  page = add_figure(page, fnames = "H1H2-found_missed.png", caption="", size="half",alt=[" "])
-  page = add_figure(page, fnames = "H1L1-found_missed.png", caption="", size="half",alt=[" "])
+  page = heading(page, "Parameter efficiency, second coincidence stage, no veto")
+  tags = ['eff_dist_frac', 'end_time','end_time_vs_snr','end_time_vs_eff_dist', 'eta','eta_vs_snr', 'mchirp_vs_eff_dist','mchirp']
+  tags = ['eff_dist_frac', 'end_time_vs_snr','eta_vs_snr', 'mchirp_vs_snr']
+  for tag in tags:
+    page.h4(tag)
+    for combi in ['H1H2L1','H1H2','H1L1','H2L1']:
+    #for combi in ['H1H2L1']:
+      page.h5(combi)
+      fnames=[]
+      alt=[]
+      for injection_tag in ['bns_inj', 'bhns_inj', 'bbh_inj']:
+        this = 'plotinspinj_'+injection_tag +'_'+combi+'_'+tag+'_accuracy.png'
+        alt.append(this)
+        fnames.append('injections/plotinspinj/'+this)
+      page = add_figure(page, fnames =fnames, caption="test", size="third",alt=alt)
   page.div.close()
 
+  page = heading(page, "Efficiency, second coincidence stage, veto and no veto")
+  page.div.close()
   
   # the end
   page.div.close()
@@ -869,7 +999,7 @@ def write_about(page, opt):
 def get_numslide(run):
   print opts.datadir + "/" + run + "/inspiral_hipe_" + run
   return str(29)
-
+  
 
 # ***************************************************************************
 # ***************************************************************************
@@ -939,8 +1069,8 @@ def add_figure(page,fnames="test", caption="add a caption", size="full", alt="no
   dir = opts.webdir
   page.add("<!-- insert a figure -->\n<div class=\"figure\">")
   this_count = 0
-  print alt
-  print fnames
+#  print alt
+#  print fnames
   for fnam in fnames:
     page.add("\t<a href=\"" + dir + "/" + fnam +"\">\n" )
     source=dir+"/"+fnam
@@ -1253,7 +1383,7 @@ parser.add_option("-D","--debug-mode",action="store_true",\
 #############################################################################
 #  MAIN PART                                                                #
 #############################################################################
-fig_num = 0
+fig_num = 1
 count_block = 0
 config   =  opts.config_file
 opts.config = config # save the name of the ini file, why ?
@@ -1371,14 +1501,14 @@ if opts.playground:
     else:
       pass
   
-#page = write_injection(page, opts)
+page = write_injection(page, opts)
 
 if opts.tuning:
-  try:
-    page = write_tuning(page, opts)
-  except: 
-    page.add("problem in "+html_sections[4]+" section. skipping this section. "); 
-    pass
+#  try:
+  page = write_tuning(page, opts)
+#  except: 
+  page.add("problem in "+html_sections[4]+" section. skipping this section. "); 
+#    pass
 
 if opts.analysis:
   try:
