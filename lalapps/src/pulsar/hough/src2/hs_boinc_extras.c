@@ -964,7 +964,6 @@ static void worker (void) {
     printf("      --MaxFileSize     INT      maximum size the outpufile may grow to befor compacted (in 1k)\n");
     printf("      --OutputBufSize   INT      size of the output file buffer (in 1k)\n");
     printf("      --BreakPoint       -       if present fire up the Windows Runtime Debugger at internal breakpoint (WIN32 only)\n");
-    printf("      --NoGraphics       -       if present Apps that dynamically look for graphics capabilities will run without graphics in any case\n");
     boinc_finish(0);
   }
 
