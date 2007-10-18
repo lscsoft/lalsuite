@@ -5,7 +5,7 @@ __author__ = "Thomas Cokelaer <thomas.cokelaer@astro.cf.ac.uk>"
 __version__ = "$Revision$"
 __date__ = "$Date$"
 __Id__ = "$Id$"
-
+__name__ = "write_ihope_page"
 
 import sys
 import copy
@@ -19,6 +19,11 @@ import ConfigParser
 
 # ***************************************************************************
 # ***************************************************************************
+def blabla(logfile, text):
+  if opts.verbose is True:
+    print text 
+  logfile.write(text+'\n')
+
 def make_external_call(command, show_stdout=False, show_command=False, show_error=True):
   """
   Run a program on the shell and print informative messages on failure.
@@ -41,7 +46,7 @@ def make_external_call(command, show_stdout=False, show_command=False, show_erro
   stdin.close()
   out.close()
   err.close()  
-  return this_output
+  return this_output, status
 
 # ***************************************************************************
 # ***************************************************************************
@@ -118,38 +123,45 @@ def write_general(page,opts):
   text=  'This page summarizes the analysis of the data segment from GPS time %s up to %s' % (opts.gps_start_time,  opts.gps_end_time)
   page.add(text)
 
-  page.h3("The search used the following resources:")
-  page.br()
-  page.ol()
-  page.li("LAL/LALApps has "+get_version("inspiral"))
+  # The search parameters 
+  try:
+    executables = ("inspiral", "tmpltbank", "sire", "thinca", "trigbank", "coire" , "inspinj")
+    page.h3("The search used the following resources:")
+    page.ol()
+    page.li("LAL/LALApps "+get_version("inspiral"))
+    page.ul()
+    for exe in executables:
+      text = "<b>lalapps_"+exe+ "</b>    "+get_version(exe)
+      page.li(text)   
+    page.ul.close()
+    page.li("Segment information:")
+    page.ul()
+    for this in get_ifos():
+        seg = this +'-SELECTED_SEGS.txt'
+        this_ref = webdir + '/segments/'+seg
+        page.li(e.a(seg,href=this_ref) )
+    page.ul.close()
+    text=("The configuration is contained in the file <a href=\"" + \
+        webdir + "/" + ini + "\">" + ini + "</a>")
+    page.li(text)
+    text = "A list of category files stored in this directory ("  \
+   	+ "<a href=\""+ webdir + "/catlists/\"> catlists</a>"  +\
+  	"), and listed in the ini file."
+    page.li(text)
+    page.ul.close()
+    page.ol.close()
+  except:
+    blabla(logfile, """Problem with the executable: cannot find them ? """)
+    pass
+  else:
+    blabla(logfile,  "...Get the executables version...done")
 
-  executables = ("inspiral", "tmpltbank", "sire", "thinca", "trigbank", "coire" , "inspinj")
-  page.ul()
-  for exe in executables:
-    text = "<b>lalapps_"+exe+ "</b>:    "+get_version(exe)
-    page.li(text)   
-  page.ul.close()
 
-  page.li("Segment information:")
-  page.ul()
-  for this in get_ifos():
-      seg = this +'-SELECTED_SEGS.txt'
-      this_ref = webdir + '/segments/'+seg
-      page.li(e.a(seg,href=this_ref) )
-  page.ul.close()
-  text=("The configuration is contained in the file <a href=\"" + \
-      webdir + "/" + ini + "\">" + ini + "</a>")
-  page.li(text)
-  text = "A list of category files stored in this directory ("  \
-	+ "<a href=\""+ webdir + "/catlists/\"> catlists</a>"  +\
-	"), and listed in the ini file."
-  page.li(text)
-  page.ul.close()
-  page.ol.close()
-
+  # The ifo requested
   page = heading(page, "This search concerned the following combinaison of ifos")
   page = add_config_section(page, "ifo-details")
   page.div.close()
+
 
   page.div.close()
   page.div.close()
@@ -177,26 +189,24 @@ def write_title(page, text, tag):
 # ***************************************************************************
 # ***************************************************************************
 def write_data_summary(page,opts):
+  # first, get some information 
   webdir = opts.webdir
   datadir = opts.datadir
   ini = opts.config_file
   ifos = get_ifos()
-
-  page.br()
+  
+  page.br() # to put a space between different section
   page.add("<!-- beginning data summary section-->")
-  # starts with 2 divs that needs to be closed
   page.div(id="encadre") #(1)
   page.div(id="contenu") #(2)
   # title with a div to toggle on/off the content 
   page = write_title(page, html_sections[1], "verlaine")
   page.div(id="div_verlaine", style='display:block') #(3)
-  # start an heading that opens a div (4)
-  page.p("This section summarizes the data segments information.")
-  page = heading(page, "Selected segments", "Switch details on/off", "h3") 
-  page.add("The segments files above were created with no data quality flags set")
+  page = heading(page, "Selected segments", "Switch details on/off")  #(4)
+  page.add("""The segments files above were created with no data quality flags 
+set. The times analyzed according to hipe are (SELECTED_SEGS):""")
   page.br()
-  page.add("The times analyzed according to hipe are (SELECTED_SEGS):")
-  page.br()
+  page.p()
   page.table()
   segs = get_segments()
   keys = ("segments","H1","H2","L1","G1","V1","T1") 
@@ -207,6 +217,7 @@ def write_data_summary(page,opts):
       page.td(segs[key])
       page.tr.close()
   page.table.close()
+  page.p.close()
   page.div.close() #(3)
 
   i=0
@@ -218,7 +229,7 @@ def write_data_summary(page,opts):
       page.add("This category includes the following flags : ")
       for ifo in ifos:
         command = 'awk \'{print $1}\' ' +  datadir +'/../' + ifo + "cat"+str(i)+".txt"
-        flags = make_external_call(command, 0, 0)
+        flags, status = make_external_call(command, 0, 0)
         page.pre(flags)
 
       page.add("The veto times (category "+str(i)+") according to hipe ( "+cat+")")
@@ -235,36 +246,24 @@ def write_data_summary(page,opts):
       page.div.close() # (3)
 
     except:
-      print "Problems parsing category veto segment list "+str(i)
+      blabla(logfile, "Problems parsing category veto segment list "+str(i))
       page.add("unknown or not set. ")
-      
-  page = heading(page, "Science segments ") #(4)
-  page.add("The science segments (category 1) according to hipe are (SCIENCE): <br/>")
-  page.table()
-  segs = get_segments_tag("SCIENCE_SEGMENTS")
-  keys = ("segments","H1","H2","L1","G1","V1","T1") 
-  for key in keys:
-    if segs.has_key(key):
-      page.tr()
-      page.td(key)
-      page.td(segs[key])
-      page.tr.close()
-  page.table.close()
-  page.div.close() #(3)
-  
-  page  = heading(page, "RDS_C03_L2 segments") #(4)
-  page.add("The RDS_C)3_L2 segments according to hipe are (SCIENCE): <br/>")
-  page.table()
-  segs = get_segments_tag("RDS_C03_L2")
-  keys = ("segments","H1","H2","L1","G1","V1","T1") 
-  for key in keys:
-    if segs.has_key(key):
-      page.tr()
-      page.td(key)
-      page.td(segs[key])
-      page.tr.close()
-  page.table.close()
-  page.div.close() # (3)
+     
+
+  for tag in ["SCIENCE_SEGMENTS", "RDS_C03_L2"] :
+    page = heading(page, "Science segments ") #(4)
+    page.add("The science segments (category 1) according to hipe are "+tag+": <br/>")
+    page.table()
+    segs = get_segments_tag(tag)
+    keys = ("segments","H1","H2","L1","G1","V1","T1") 
+    for key in keys:
+      if segs.has_key(key):
+        page.tr()
+        page.td(key)
+        page.td(segs[key])
+        page.tr.close()
+    page.table.close()
+    page.div.close() #(3)
 
 
   page.div.close() #(2)
@@ -297,7 +296,7 @@ def write_injections_efficiencies(fname,dir):
     if "L" in ifos:
       plot_name = "plotnumgalaxies/" + ifos + "/" + ifos + "_" + \
           opts.x_value + "_" + opts.y_value
-      print plot_name
+      blabla(logfile, plot_name)
       add_figure(fname,dir,fnames=[plot_name + "_efficiency.png",\
           plot_name + "_mc_errors.png"],\
           size="half",caption="efficiency plot, and Monte Carlo errors")
@@ -415,14 +414,13 @@ def write_tuning(page,opts):
             "injections/ethinca/"+combi+"_first_coinc_"+injtag+"_H2_L1_ethinca_vs_H2_snr.png", \
             "injections/ethinca/"+combi+"_second_coinc_"+injtag+"_H2_L1_ethinca_vs_H2_snr.png",\
             "injections/ethinca/"+combi+"_second_coinc_"+injtag+"_H2_L1_ethinca_vs_H2_snr_andtotMass.png"], \
-            caption=caption, size="third",alt=["","","","","","", ""])
+            caption=caption, size="third",alt=["","","","","","","", "", ""])
       else:
-        print combi
         page = add_figure(page, fnames=  [\
             "injections/ethinca/"+combi+"_first_coinc_"+injtag+"_"+combi[0:2]+"_"+combi[2:4]+"_ethinca_vs_"+combi[0:2]+"_snr.png", \
             "injections/ethinca/"+combi+"_second_coinc_"+injtag+"_"+combi[0:2]+"_"+combi[2:4]+"_ethinca_vs_"+combi[0:2]+"_snr.png",\
             "injections/ethinca/"+combi+"_second_coinc_"+injtag+"_"+combi[0:2]+"_"+combi[2:4]+"_ethinca_vs_"+combi[0:2]+"_snr_andtotMass.png"],\
-            caption=caption, size="third",alt=["", ""])
+            caption=caption, size="third",alt=["", "", ""])
   page.div.close()
 
 
@@ -443,92 +441,8 @@ def write_tuning(page,opts):
 
 # ***************************************************************************
 # ***************************************************************************
-def write_fulldata(page,opts):
-  print "....Processing  full data section"
-
-  this_tag = "analysis"
-  webdir = opts.webdir
-  ini = opts.config_file
-  ifos = get_ifos()
-  mkdir(opts.physdir+"/" +this_tag)
-  page.br()
-  page.div(id="encadre")
-  page.div(id="contenu")
-  page = write_title(page, html_sections[5], "rabelais")
-  page.div(id="div_rabelais", style='display:block')
-  page.add("This section summarizes the analysis of the full data.<br/>")
+def write_analysis(page,opts, thisSearch='playground'):
   
-  #table and venn diagramm
-  page = add_input_h3(page, "General information")
-  page.table()
-  segs = get_segments()
-  keys = ("segments","H1","H2","L1","G1","V1","T1") 
-  page.add("The segment files above were created with no data quality flags set")
-  page.add("The times analyzed accoring to hipe are:")
-  coincs = get_coincident_segments(this_tag)  
-  ## here is the table. The first column is another table with the durations, 
-  ## and the second one is the venn diagram  
-  page.add("<table><tr><td>\n")
-  page.table()
-  page.tr(); page.td('coincidence'); page.td('duration(s)'); page.tr.close()
-  for key in coincs.keys():    
-    page.tr()
-    page.td(key) 
-    page.td(coincs.get(key))
-    page.tr.close()
-  page.table.close()
-  page.add("</td><td>\n")
-  #create figure for the venn diagram
-  data = ""
-  for coinc in ("H1","H1H2","H2","H2L1","L1","H1L1","H1H2L1"):
-      data = data +coincs.get(coinc) + " "
-  create_venn(data, this_tag)
-  # and incorporate into html
-  comment = "Venn diagramm showing distribution of"
-  for coinc in  coincs.keys():
-    comment = comment + " "+ coinc
-  page = add_figure(page, fnames =[this_tag+"/venn_"+this_tag+".png"], caption=comment, size="half")
-  page.add("</td></tr></table>")
-  page.add("here below is the detail of the data and ligo-data section of ihope.ini ")
-  page = add_config_section(page, "data")
-  page = add_config_section(page, "ligo-data")
-  page.div.close()  #end of h3
- 
-  #----------------------------  The horizon distance   
-  page = add_input_h3(page, "Inspiral Horizon distance")
-  comment = "Inspiral Horizon Distance for a (1.4,1.4) system with a SNR=8"
-  page = add_figure(page, fnames =[\
-	this_tag+"/horizon_"+this_tag+"_range_hist.png", \
-	this_tag+"/horizon_"+this_tag+"_range_plot.png", \
-	this_tag+"/horizon_"+this_tag+"_range_mass.png"],
-  caption=comment, size="half")
-  page.div.close()#end of h3
-
-  #---------------------------- the number of templates
-  page = add_input_h3(page, "Variation in template bank and triggered template bank size")
-  page = add_config_section(page, "tmpltbank")
-  # add figures and summary files
-  comment = "Variation in template bank and triggered template bank size"
-  page = add_figure(page, fnames =[this_tag+"/plotnumtemplates.png"], caption=comment, size="half")
-  page.div.close() #end of h3
-
-
-  # the end
-  page.div.close()
-  page.div.close()
-  page.div.close()
-  print "....Processing  full data section over"
-  return page
-     
-     
-# ***************************************************************************
-# ***************************************************************************
-def write_playground_summary(page,opts, playground=True):
-  if playground==True:
-    thisSearch = 'playground'
-  else:
-    thisSearch = 'analysis'
-  print "....Processing  "+thisSearch+" section"
   webdir = opts.webdir
   ini = opts.config_file
   ifos = get_ifos()
@@ -538,7 +452,10 @@ def write_playground_summary(page,opts, playground=True):
   page.br()
   page.div(id="encadre")
   page.div(id="contenu")
-  page = write_title(page, html_sections[2], "hugo")
+  if thisSearch=='playground':
+    page = write_title(page, html_sections[2], "hugo")
+  else:
+    page = write_title(page, html_sections[5], "hugo")
   page.div(id="div_hugo", style='display:block')
   page.add("This section summarizes the analysis of the "+thisSearch+" data.<br/>")
   
@@ -561,7 +478,10 @@ def write_playground_summary(page,opts, playground=True):
     page.tr.close()
     for key in coincs.keys():    
       page.tr()
-      file = webdir +'/playground/'+key+"_play_segs_analyzed.txt"
+      if thisSearch=='playground':
+        file = webdir +'/'+thisSearch +'/'+key+"_play_segs_analyzed.txt"
+      else:
+        file = webdir +'/'+thisSearch +'/'+key+"_segs_analyzed.txt"
       page.td(e.a(key,href=file))
   
       page.td(coincs.get(key))
@@ -572,19 +492,19 @@ def write_playground_summary(page,opts, playground=True):
     data = ""
     for coinc in ("H1","H1H2","H2","H2L1","L1","H1L1","H1H2L1"):
         data = data +coincs.get(coinc) + " "
-    create_venn(data, "playground")
+    create_venn(data, thisSearch)
     # and incorporate into html
     comment = "Venn diagramm sihowing distribution of"
     for coinc in  coincs.keys():
       comment = comment + " "+ coinc
-    page = add_figure(page, fnames =["playground/venn_playground.png"], caption=comment, size="half")
+    page = add_figure(page, fnames =[thisSearch+"/venn_"+thisSearch+".png"], caption=comment, size="half")
     page.add("</td></tr></table>")
     page.add("here below is the detail of the data and ligo-data section of ihope.ini ")
     page = add_config_section(page, "data")
     page = add_config_section(page, "ligo-data")
     page.div.close()  
   except:
-    print "Error(s) in General information section. skipping ..."
+    blabla(logfile, "WARNING: problem in General information section. skipping ...")
     pass
   
  
@@ -607,7 +527,9 @@ def write_playground_summary(page,opts, playground=True):
 	bank size")
   page = add_config_section(page, "tmpltbank")
   page.div(class_="figure")
-  page.add("<!--#include virtual=\"playground/plotnumtemplates_playground.html\"-->")
+  filename = thisSearch +'/' + 'plotnumtemplates_'+thisSearch+\
+      '-'+opts.gps_start_time+'-'+opts.duration+'.html'
+  page.add("<!--#include virtual=\""+filename+"\"-->")
   page = add_caption(page, "Variation in template bank and triggered \
 	 template bank size")
   page.div.close()
@@ -619,7 +541,9 @@ def write_playground_summary(page,opts, playground=True):
 	First, let us look at the rate of triggers (unclustered, no veto)")
   #---------------------------- the inspiral trigger rate, no veto
   page.div(class_="figure")
-  page.add("<!--#include virtual=\"playground/plotnumtriggers_playground.html\"-->")
+  filename = thisSearch +'/' + 'plotnumtriggers_'+thisSearch+\
+      '-'+opts.gps_start_time+'-'+opts.duration+'.html'
+  page.add("<!--#include virtual=\""+filename+"\"-->")
   page = add_caption(page, "Variation in inspiral file size")
   page.div.close()
   #---------------------------- the inspiral trigger rate, category 1 and 2
@@ -631,18 +555,28 @@ def write_playground_summary(page,opts, playground=True):
   for ifo in get_ifos():
     try :
       page.h4(ifo)
-      summary = open(opts.datadir+"/"+ "playground"  +"/"+ifo+"-SIRE-"+opts.gps_start_time+"-"+opts.duration+".txt")
+      summary = open(opts.datadir+"/"+ thisSearch  +"/"+ifo+"-SIRE-"+opts.gps_start_time+"-"+opts.duration+".txt")
       comment = ifo+" snr versus time (left-top), and  cumulative snr (left-bottom) clustered case no veto"
       comment += "<center><pre>-------------------summary file (category 1) \n"  +summary.read()+"</pre></center>"
       summary.close()
-    
-      summary = open(opts.datadir+"/"+ "playground"  +"/"+ifo+"-SIRE_CAT_2_VETO-"+opts.gps_start_time+"-"+opts.duration+".txt")
+    except:
+      blabla(logfile, 'WARNING SIRE files not found at first inspiral stage')
+      page.div(id="todo")
+      page.p("Summary file from sire not found")
+      page.div.close()
+      pass
+  
+    try: 
+      print opts.datadir+"/"+ thisSearch  +"/"+ifo+"-SIRE_CAT_2_VETO-"+opts.gps_start_time+"-"+opts.duration+".txt"
+      summary = open(opts.datadir+"/"+ thisSearch  +"/"+ifo+"-SIRE_CAT_2_VETO-"+opts.gps_start_time+"-"+opts.duration+".txt")
+     
       comment += ifo+" snr versus time (right-top), and  cumulative snr (right-bottom) clustered case no veto"
       comment += "<center><pre>-------------------summary file (category 2) \n"  +summary.read()+"</pre></center>"
       summary.close()
     except:
+      blabla(logfile, 'WARNING SIRE files not found at first inspiral stage (cat veto 2)')
       page.div(id="todo")
-      page.p("Summary file from sire not found")
+      page.p("Summary file from sire not found (cat2)")
       page.div.close()
       pass
 
@@ -650,10 +584,10 @@ def write_playground_summary(page,opts, playground=True):
 	applied), and the results are shown here below in the next set of plots.")
     page = add_config_section(page, ifo.lower()+"-inspiral")
     page = add_figure(page, fnames = [\
-	"playground/plotinspiral_playground_"+ifo+"_end_time_vs_snr.png", \
-	"playground/plotinspiral_playground_cat_2_"+ifo+"_end_time_vs_snr.png", \
-	"playground/plotinspiral_playground_"+ifo+"_snr_cum_hist.png" ,\
-	"playground/plotinspiral_playground_cat_2_"+ifo+"_snr_cum_hist.png" \
+	thisSearch+"/plotinspiral_"+thisSearch+"_"+ifo+"_end_time_vs_snr.png", \
+	thisSearch+"/plotinspiral_"+thisSearch+"_cat_2_"+ifo+"_end_time_vs_snr.png", \
+	thisSearch+"/plotinspiral_"+thisSearch+"_"+ifo+"_snr_cum_hist.png" ,\
+	thisSearch+"/plotinspiral_"+thisSearch+"_cat_2_"+ifo+"_snr_cum_hist.png" \
 	], caption=comment, size="half")
 
   page.div(id="todo")
@@ -664,14 +598,14 @@ def write_playground_summary(page,opts, playground=True):
   #---------------------------- the first coincidence stagee, no veto
   page = heading(page, "First coincidence stage (no veto)")
   page = add_config_section(page, "thinca")
-  page.add("the number of slide is "+get_numslide("./playground")+" time slides")
+  page.add("the number of slide is "+get_numslide("./"+thisSearch)+" time slides")
   page = add_config_section(page, "thinca-slide")
   fnames=[]
   for combi in ("H1H2L1", "H1H2", "H1L1", "H2L1"):
     page.h4(combi)
     fnames=[]
     alt=[]
-    fname_prefix = "playground/plotthinca_playground_first_coinc_"
+    fname_prefix = thisSearch+"/plotthinca_"+thisSearch+"_first_coinc_"
     fname_suffix ="-"+ str(opts.gps_start_time)  +"-"+str(opts.duration)+".png"
     alt.append(combi+"hist_slide_trigs")
     fnames.append(fname_prefix + combi + "_hist_slide_trigs"+fname_suffix) 
@@ -694,10 +628,9 @@ def write_playground_summary(page,opts, playground=True):
 	 in each slide and zero lag, the cumulative histogram of number of\
 	 events versus SNR, and the SNR scatter plots for 2 ifos."    
     try :
-      print opts.datadir+"/"+ "playground"  +"/"+combi+"-COIRE-"+opts.gps_start_time+"-"+opts.duration+".txt"
-      summary = open(opts.datadir+"/"+ "playground"  +"/"+combi+"-COIRE-"+opts.gps_start_time+"-"+opts.duration+".txt")
+      #blabla(logfile, opts.datadir+"/"+ thisSearch  +"/"+combi+"-COIRE-"+opts.gps_start_time+"-"+opts.duration+".txt")
+      summary = open(opts.datadir+"/"+ thisSearch  +"/"+combi+"-COIRE-"+opts.gps_start_time+"-"+opts.duration+".txt")
       comment += "<center><pre>-------------------coire summary file (category 1) \n"  +summary.read()+"</pre></center>"
-      #print summary.read()
       summary.close()
     except:
       page.div(id="todo")
@@ -713,7 +646,7 @@ def write_playground_summary(page,opts, playground=True):
 
 
   #---------------------------- the second stage inspiral results, first stage, no veto
-  page = add_input_h3(page, "Inspiral jobs (second stage) no veto")
+  page = heading(page, "Inspiral jobs (second stage) no veto")
   page = add_config_section(page, "inspiral")
   # add figures and summary files
   for ifo in get_ifos():
@@ -723,13 +656,10 @@ def write_playground_summary(page,opts, playground=True):
 	applied), and the results are shown here below in the next set of plots.")
     page = add_config_section(page, ifo.lower()+"-inspiral")
     page = add_figure(page, fnames = [\
-	"playground/plotinspiral_"+ifo+"_end_time_vs_snr.png", \
-	"playground/plotinspiral_veto"+ifo+"_end_time_vs_snr.png", \
-	"playground/plotinspiral_"+ifo+"_snr_vs_chisq.png", \
-	"playground/plotinspiral_"+ifo+"_snr_cum_hist.png" \
-	"playground/plotinspiral_veto"+ifo+"_snr_cum_hist.png" \
-	"playground/plotinspiral_"+ifo+"_snr_vs_chisq.png" \
-	], caption=comment, size="half")
+	"playground/plotinspiral_"+thisSearch+"_second_stage_"+ifo+"_end_time_vs_snr.png", \
+	"playground/plotinspiral_"+thisSearch+"_second_stage_"+ifo+"_snr_cum_hist.png", \
+	"playground/plotinspiral_"+thisSearch+"_second_stage_"+ifo+"_snr_over_chi_histogram.png"\
+	], caption=comment, size="third", alt=["end time versus SNR" , "snr cumulative histogram" ,"snr over chi-square histogram"])
   page.div(id="todo")
   page.p("add the sire summary files?")
   page.div.close()# close the todo
@@ -739,14 +669,14 @@ def write_playground_summary(page,opts, playground=True):
   #---------------------------- the second coincidence stagee, no veto
   page = heading(page, "Second coincidence stage (no veto)")
   page = add_config_section(page, "thinca-2")
-  page.add("the number of slide is "+get_numslide("./playground")+" time slides")
+  page.add("the number of slide is "+get_numslide("./"+thisSearch)+" time slides")
   page = add_config_section(page, "thinca-slide")
   fnames=[]
   for combi in ("H1H2L1", "H1H2", "H1L1", "H2L1"):
     page.h4(combi)
     fnames=[]
     alt=[]
-    fname_prefix = "playground/plotthinca_playground_second_coinc_"
+    fname_prefix = thisSearch +"/plotthinca_"+thisSearch+"_second_coinc_"
     fname_suffix ="-"+ str(opts.gps_start_time)  +"-"+str(opts.duration)+".png"
     alt.append(combi+"hist_slide_trigs")
     fnames.append(fname_prefix + combi + "_hist_slide_trigs"+fname_suffix) 
@@ -776,10 +706,9 @@ def write_playground_summary(page,opts, playground=True):
 	 in each slide and zero lag, the cumulative histogram of number of\
 	 events versus SNR, and the SNR scatter plots for 2 ifos."    
     try :
-      print opts.datadir+"/"+ "playground"  +"/"+combi+"-COIRE_"+combi+"-"+opts.gps_start_time+"-"+opts.duration+".txt"
-      summary =open(opts.datadir+"/"+ "playground"  +"/"+combi+"-COIRE_"+combi+"-"+opts.gps_start_time+"-"+opts.duration+".txt")
+      blabla(logfile, opts.datadir+"/"+ thisSearch  +"/"+combi+"-COIRE_"+combi+"-"+opts.gps_start_time+"-"+opts.duration+".txt")
+      summary =open(opts.datadir+"/"+ thisSearch  +"/"+combi+"-COIRE_"+combi+"-"+opts.gps_start_time+"-"+opts.duration+".txt")
       comment += "<center><pre>-------------------coire second stage, summary file (category 1) \n"  +summary.read()+"</pre></center>"
-      #print summary.read()
       summary.close()
     except:
       page.div(id="todo")
@@ -796,10 +725,10 @@ def write_playground_summary(page,opts, playground=True):
   page.p("The " +ifo + "inspiral files after the first inspiral stage are clustered (no veto \
 	applied), and the results are shown here below in the next set of plots.")
   page = add_figure(page, fnames = [\
-	"playground/plotthinca_playground_second_coinc_cum_hist_effective_snr-847555570-2419200.png",\
-	"playground/plotthinca_playground_second_coinc_effective_snr_vs_time-847555570-2419200.png",\
-	"playground/plotthinca_playground_second_coinc_hist_slide_trigs-847555570-2419200.png",\
-	"playground/plotthinca_playground_second_coinc_plot_slide_trigs-847555570-2419200.png"\
+	thisSearch+"/plotthinca_"+thisSearch+"_second_coinc_cum_hist_effective_snr-847555570-2419200.png",\
+	thisSearch+"/plotthinca_"+thisSearch+"_second_coinc_effective_snr_vs_time-847555570-2419200.png",\
+	thisSearch+"/plotthinca_"+thisSearch+"_second_coinc_hist_slide_trigs-847555570-2419200.png",\
+	thisSearch+"/plotthinca_"+thisSearch+"_second_coinc_plot_slide_trigs-847555570-2419200.png"\
 	], caption=comment, size="half")
 
   page.div.close()# close the div openned in add_input_h3 function
@@ -810,56 +739,48 @@ def write_playground_summary(page,opts, playground=True):
   page = heading(page, "Summary")
   combis = ['H1H2L1', 'H1H2', 'H1L1', 'H2L1']
   vetos = ['', '_CAT_2_VETO-', '_CAT_3_VETO-', '_CAT_4_VETO-']
-  try:
-    for combi in combis:  
-      page.table();
-      page.tr(e.td(combi, width=5))
-      page.tr()
-      page.td('');
-      page.td(vetos)
-      page.tr.close()
-      page.tr()
-      page.td('zero lag')    
-      for veto in vetos:
-        file = glob.glob(opts.datadir  + '/playground/'+ combi+'-COIRE_'+combi+veto+'*txt')
+ # try:
+  for combi in combis:  
+    page.table();
+    page.tr(e.td(combi, width=5))
+    page.tr()
+    page.td('');
+    page.td(vetos)
+    page.tr.close()
+    page.tr()
+    page.td('zero lag')    
+    for veto in vetos:
+      text = opts.datadir  + '/'+thisSearch+'/'+ combi+'-COIRE_'+combi+veto+'*txt'
+      file = glob.glob(text)
+      try:
         command = 'grep clusters  '+file[0] + '|awk \'{print $NF}\''
-        data = make_external_call(command, 0,0,0)
+        data, status = make_external_call(command, 0,0,0)
         page.td(data)
-      page.tr.close()
-      page.tr()
-      page.td('time slides')    
-      for veto in vetos:
-        file = glob.glob(opts.datadir  + '/playground/'+ combi+'-COIRE_SLIDE_'+combi+veto+'*txt')
+      except:
+        page.td('not found')
+        blabla(logfile, 'WARNING' + text +' not found') 
+    page.tr.close()
+    page.tr()
+    page.td('time slides')    
+    for veto in vetos:
+      try:
+        file = glob.glob(opts.datadir  + '/'+thisSearch+'/'+ combi+'-COIRE_SLIDE_'+combi+veto+'*txt')
         command = 'grep clusters  '+file[0] + '|awk \'{print $NF}\''
-        data = make_external_call(command, 0,0,0)
+        data, status = make_external_call(command, 0,0,0)
         page.td(data)
-      page.tr.close()
-      page.table.close()
-  except:
-      page.div(id="todo")
-      page.p("Summary file from sire not found")
-      page.div.close()
-      pass
-     
-    
+      except:
+        page.td('file not found')
+        blabla(logfile, 'WARNING' + text +' not found') 
 
-
+    page.tr.close()
+    page.table.close()
+#  except:
+#      page.div(id="todo")
+#      page.p("Summary file from sire not found")
+#      page.div.close()
+#      pass
   page.div.close()# close the h3
-  #page.add("<table><tr><td>\n")
-  #page.table()
-  #page.tr();
-  #page.td('coincidence'); 
-  #page.td('duration(s)'); 
-  #page.tr.close()
-  #for key in coincs.keys():    
-  #  page.tr()
-  #  file = webdir +'/playground/'+key+"_play_segs_analyzed.txt"
-  #  page.td(e.a(key,href=file))
-#  for file in files:
-#    command = 'grep clusters  '+opts.datadir+'/playground/'+file+'COIRE*txt | awk \'{print $NF}\''
 
-
-  
   #---------------------------- loudest events
   page = heading(page, "loudest events, and follow up")
   page.div(id="todo")
@@ -871,7 +792,6 @@ def write_playground_summary(page,opts, playground=True):
   page.div.close()
   page.div.close()
   page.div.close()
-  print "....Processing  playground section done"
   return page
 
 # ***************************************************************************
@@ -916,7 +836,7 @@ def write_injection(page, opts):
     page.h4(injtag)
     for combi in get_ifo_coinc():  
       if len(combi)>2:
-        print opts.datadir+"/"+ injtag +"/"+combi+"-COIRE_INJECTIONS_*_FOUND_"+combi+"-*.txt"
+#        blabla(logfile, opts.datadir+"/"+ injtag +"/"+combi+"-COIRE_INJECTIONS_*_FOUND_"+combi+"-*.txt")
         lists = glob.glob(opts.datadir+"/"+ injtag +"/"+combi+"-COIRE_INJECTIONS_*_FOUND_"+combi+"-*.txt")
         try:
           summary = open(lists[0])
@@ -935,9 +855,9 @@ def write_injection(page, opts):
   page.div.close()
   #---------------------------- close by missed
   page = heading(page,  "close by missed")
-  page = add_figure(page, fnames = "H1H2L1-found_missed.png", caption="", size="half",alt=[" "])
-  page = add_figure(page, fnames = "H1H2-found_missed.png", caption="", size="half",alt=[" "])
-  page = add_figure(page, fnames = "H1L1-found_missed.png", caption="", size="half",alt=[" "])
+  page = add_figure(page, fnames = ["H1H2L1-found_missed.png"], caption="", size="half",alt=[""])
+  page = add_figure(page, fnames = ["H1H2-found_missed.png"], caption="", size="half",alt=[""])
+  page = add_figure(page, fnames = ["H1L1-found_missed.png"], caption="", size="half",alt=[""])
   page.div.close()
   
   #---------------------------- parameter efficiency
@@ -997,7 +917,7 @@ def write_about(page, opt):
 # ***************************************************************************
 # ***************************************************************************
 def get_numslide(run):
-  print opts.datadir + "/" + run + "/inspiral_hipe_" + run
+  blabla(logfile, opts.datadir + "/" + run + "/inspiral_hipe_" + run)
   return str(29)
   
 
@@ -1039,6 +959,9 @@ def heading(page, title="None", label="Switch details on/off", heading="h3"):
   page.input(id="input_"+input, type="button", onclick="toggleVisible('"+input+"')", value=text ,class_="toggle")
   page.add("</"+heading+">")
   page.div(id="div_"+input , style='display:none') 
+
+
+  blabla(logfile, '      Enters sub-section: '+title )
   return page 
 
 # ***************************************************************************
@@ -1069,11 +992,12 @@ def add_figure(page,fnames="test", caption="add a caption", size="full", alt="no
   dir = opts.webdir
   page.add("<!-- insert a figure -->\n<div class=\"figure\">")
   this_count = 0
-#  print alt
-#  print fnames
+  
   for fnam in fnames:
-    page.add("\t<a href=\"" + dir + "/" + fnam +"\">\n" )
     source=dir+"/"+fnam
+    
+    title = " title=\""+alt[this_count]+"\""
+    page.add("\t<a href=\"" + source+"\"" +  title + ">\n" )
     try:
       page.img(class_=size ,src=fnam, alt=alt[this_count] )
     except:
@@ -1106,10 +1030,10 @@ def create_venn(data, tag):
     if not opts.debug:
       make_external_call(command, True, True, True)    
   except:
-    print """   The matlab command to create the venn diagram failed. 
+    blabla(logfile, """WARNING   The matlab command to create the venn diagram failed. 
                 Check that matlab is properly set,and vennX.m is available
                 (see matapps/src/searches/inspiral/matspiral/utilities")  
-          """
+          """)
 
 # ***************************************************************************
 # ***************************************************************************
@@ -1124,21 +1048,28 @@ def get_coincident_segments(tag):
   """
   return duration of coincident segments
   """
-  print "....Get "+ tag +" -------------------------------------------"
   ifos = get_ifos()
   thisdata = {}
   thisdata['segments'] = ['duration(days)' ,'duration (s)']
   duration = str((int(opts.gps_end_time) - int(opts.gps_start_time)))
   output={}
   ifo_coincs = get_ifo_coinc()  
-  for coinc in ifo_coincs:
-    if tag=="playground":
-      command = "awk \'{sum=sum+$4} END {print sum}\' "+opts.datadir+ tag +"/"+coinc+"_play_segs_analyzed.txt"
-    elif tag=="analysis":
-      command = "awk \'{sum=sum+$4} END {print sum}\' "+opts.datadir+ tag +"/"+coinc+"_segs_analyzed.txt"
 
-    output[coinc] = make_external_call(command, 0,0)
+  try:
+    for coinc in ifo_coincs:
+      if tag=="playground":
+        command = "awk \'{sum=sum+$4} END {print sum}\' "+opts.datadir+ tag +"/"+coinc+"_play_segs_analyzed.txt"
+      elif tag=="analysis":
+        command = "awk \'{sum=sum+$4} END {print sum}\' "+opts.datadir+ tag +"/"+coinc+"_segs_analyzed.txt"
 
+      output[coinc], status = make_external_call(command, 0,0)
+  except:
+    page.div(id="todo")
+    page.p( "Problem with the coincident segment")
+    page.div.close()# close the todo
+    blabla(logfile , 'WARNING problem(s) while parsnig the coincident segments')
+  else:
+    blabla(logfile, '...Get the analyzed segments duration...done')
 
   return output
 
@@ -1152,7 +1083,6 @@ def get_segments_tag(tag):
   reads segment files and return table of duration for each ifo
   """
   datadir = opts.datadir
-  print "....Get "+ tag +" -------------------------------------------"
   ifos = get_ifos()
   thisdata = {}
   thisdata['segments'] = ['duration(days)' ,'duration (s)']
@@ -1163,24 +1093,29 @@ def get_segments_tag(tag):
     this_tag  = '_' + tag + '-' + opts.gps_start_time + '-' + str(duration) + '.txt'
   
   command = 'awk \'{print NF}\' ' +  datadir +'/' + ifos[1] + this_tag
-  ncols = make_external_call(command, 0, 0)
-  ncols = ncols[len(ncols)-2]
-  if float(ncols)==4:  
-    for ifo in ifos:
-      print '......Get segment durations for '+ifo
-      command = 'awk \'{sum=sum+$4} END {print sum/3600/24}\' ' +  datadir +'/' + ifo + this_tag
-      output_days = make_external_call(command, 0, 0, False)
-      command = 'awk \'{sum=sum+$4} END {print sum}\' ' +  datadir +'/' + ifo + this_tag
-      output_seconds = make_external_call(command, 0, 0, False)
-      thisdata[ifo] = [ output_days, output_seconds]
-  elif float(ncols)==2:
-    for ifo in ifos:
-      print '......Get segment durations for '+ifo
-      command = 'awk \'{sum=sum+$2-$1} END {print sum/3600/24}\' ' +  datadir +'/' + ifo + this_tag
-      output_days = make_external_call(command, 0, 0, False)
-      command = 'awk \'{sum=sum+$2-$1} END {print sum}\' ' +  datadir +'/' + ifo + this_tag
-      output_seconds = make_external_call(command, 0, 0, False)
-      thisdata[ifo] = [ output_days, output_seconds]
+
+  try:
+    ncols, status = make_external_call(command, 0, 0)
+    ncols = ncols[len(ncols)-2]
+    if float(ncols)==4:  
+      for ifo in ifos:
+        command = 'awk \'{sum=sum+$4} END {print sum/3600/24}\' ' +  datadir +'/' + ifo + this_tag
+        output_days, status = make_external_call(command, 0, 0, False)
+        command = 'awk \'{sum=sum+$4} END {print sum}\' ' +  datadir +'/' + ifo + this_tag
+        output_seconds, status = make_external_call(command, 0, 0, False)
+        thisdata[ifo] = [ output_days, output_seconds]
+    elif float(ncols)==2:
+      for ifo in ifos:
+        command = 'awk \'{sum=sum+$2-$1} END {print sum/3600/24}\' ' +  datadir +'/' + ifo + this_tag
+        output_days, status = make_external_call(command, 0, 0, False)
+        command = 'awk \'{sum=sum+$2-$1} END {print sum}\' ' +  datadir +'/' + ifo + this_tag
+        output_seconds, status = make_external_call(command, 0, 0, False)
+        thisdata[ifo] = [ output_days, output_seconds]
+  except:
+    blabla(logfile,  'Error while parsing the segment duration files')
+  else:
+    blabla(logfile,  '...Get the segment duration for '+tag+'...done')
+
 
   return thisdata
 
@@ -1191,18 +1126,23 @@ def get_segments():
   """
   reads the segment lists. Same as get_segments_tag but filename are slightly different.
   """
-  print "....Get  selected segments ---------------------------------------------"
   datadir = opts.datadir
   ifos = get_ifos()
   thisdata = {}
   thisdata['segments'] = ['duration(days)' ,'duration (s)']
-  for ifo in ifos:
-    print '......Get segment durations for '+ifo
-    command = 'awk \'{sum=sum+$4} END {print sum/3600/24}\' ' +  datadir +'/'+ifo+'-SELECTED_SEGS.txt '
-    output_days = make_external_call(command, 0, 0)
-    command = 'awk \'{sum=sum+$4} END {print sum}\' ' +  datadir +'/'+ifo+'-SELECTED_SEGS.txt '
-    output_seconds = make_external_call(command, 0, 0)
-    thisdata[ifo] = [ output_days, output_seconds]
+  try:
+    for ifo in ifos:
+      command = 'awk \'{sum=sum+$4} END {print sum/3600/24}\' ' +  datadir +'/'+ifo+'-SELECTED_SEGS.txt '
+      output_days, status = make_external_call(command, 0, 0)
+      command = 'awk \'{sum=sum+$4} END {print sum}\' ' +  datadir +'/'+ifo+'-SELECTED_SEGS.txt '
+      output_seconds, status = make_external_call(command, 0, 0)
+      thisdata[ifo] = [ output_days, output_seconds]
+  except:
+    blabla(logfile,  'Error while parsing the selected segment')
+  else:
+    blabla(logfile,  '...Get the selected segment...done')
+
+
   return thisdata
 
 # ***************************************************************************
@@ -1265,6 +1205,7 @@ def get_ifos():
 # ***************************************************************************
 # ***************************************************************************
 def get_version(executable): 
+  output=[]
   try:
     if executable=="trigbank":
       pathname = hipecp.get("condor", "trigtotmplt") 
@@ -1275,7 +1216,7 @@ def get_version(executable):
       cmd = opts.ihope_directory + s[1] + '  --version'
     else:
       cmd = s[1] + ' --version '
-    output = make_external_call(cmd, False, False)
+    output,status = make_external_call(cmd, False, False, False)
   except:  
     output= '(not found)' 
     pass
@@ -1294,34 +1235,70 @@ def get_version(executable):
 # ***************************************************************************
 #### function to copy the segment files in the appropriate directory
 def copy_segments():
-  # First, we copy the file (style, data) that are needed to create the web page
-  try :
-    print '...Copying category files '
+
+  # the category files
+  try:
+    stdout ='...... 1 - the category files into /catlists'
     cats = hipecp.items("segments")
     location = opts.physdir+'/catlists/'
     mkdir(location)
     for file in cats:
       if file[0].startswith('analyze')<=0:
         command = 'cp '+ file[1] +' ' + location
-        print command
-        try: 
-          make_external_call(command, 1,1)
-        except:
-          print command
-          pass
+        dummy,status = make_external_call(command, False, False, False)
+        if status>0:
+          stdout += " WARNING:: could not copy a category segment list"
+          break
+    stdout+='...done'
   except:
-    print "WARNING:: could not copy the category segment list. continuing..."
+    stdout +=" WARNING:: problem while copying category segment list. passing..."    
+    blabla(logfile,  stdout)
+    pass
+  else: 
+    blabla(logfile,  stdout)
+
  #  the segment files
   try :
-    print '...Copying segment files '
+    stdout ='...... 2 - the segments files into /segments'
     for this in get_ifos():
         seg = this +'-SELECTED_SEGS.txt'
         mkdir(opts.physdir+'/segments')
         command = 'cp '+opts.datadir + seg + ' '+opts.physdir+'/segments/'
-        make_external_call(command, True,True, True)
+        dummy,status = make_external_call(command, False, False, False)
+        if status>0:
+          stdout += " WARNING:: could not copy a segment list"
+          break
+    stdout+='...done'
   except:
-    print command
-    print "WARNING:: could not copy the segments list. continuing..."
+    stdout +=" WARNING:: problem while copying segment list. passing..."    
+    blabla(logfile,  stdout)
+    pass
+  else: 
+    blabla(logfile,  stdout)
+
+ #  the selected segment files
+  for thisSearch in ['playground', 'analysis']:
+    try :
+      stdout ='...... 3 - the selected segments files into /'+thisSearch
+      for this in get_ifo_coinc():
+          if thisSearch=='playground':
+            seg = '/'+thisSearch+'/'+this +'_play_segs_analyzed.txt'
+          elif thisSearch=='analysis':
+            seg = '/'+thisSearch+'/'+this +'_segs_analyzed.txt'
+          mkdir(opts.physdir+'/'+thisSearch)
+          command = 'cp '+opts.datadir + seg + ' '+opts.physdir+'/' +thisSearch +'/'
+          dummy,status = make_external_call(command, False, False, False)
+          if status>0:
+            stdout += " WARNING:: could not copy a selected segment (playground)"
+            break
+      stdout+='...done'
+    except:
+      stdout +=" WARNING:: problem while copying a selected segment (playground). passing..."    
+      blabla(logfile,  stdout)
+      pass
+    else: 
+      blabla(logfile,  stdout)
+ 
 # ***************************************************************************
 # ***************************************************************************
 def set_style():
@@ -1375,6 +1352,9 @@ parser.add_option("-P","--skip-playground",action="store_false",\
 parser.add_option("-D","--debug-mode",action="store_true",\
     default=False, dest="debug",metavar="DODEBUG",\
     help="" )
+parser.add_option("-V","--verbose",action="store_true",\
+    default=False, dest="verbose",metavar="VERBOSE",\
+    help="" )
 
 
 
@@ -1390,7 +1370,11 @@ opts.config = config # save the name of the ini file, why ?
 configcp = ConfigParser.ConfigParser()
 configcp.read(config)
 
-
+try :
+  logfile = open(__name__+".log", "w")
+except:
+  print "Could not create the log file...quitting"
+  raise 
 
 #parsing the ini file
 try:
@@ -1419,7 +1403,7 @@ opts.physdir = '/archive/home/'+opts.username+'/public_html/'+ opts.gpsdir
 try:
   opts.style = set_style()
 except:
-  print "WARNING::problem with the style file. (either not copied or not found)"
+  blabla(logfile, "WARNING::problem with the style file. (either not copied or not found)")
   raise
 
 html_file = file(opts.output,"w")
@@ -1433,12 +1417,12 @@ if not os.path.isdir(opts.physdir):
   "%s is not a valid directory. Trying to create it." % opts.physdir
   try:
     os.mkdir(opts.physdir)
-    print "##Warning:: directory "+opts.physdir+" created"
+    blabla(logfile, "##Warning:: directory "+opts.physdir+" created")
   except: pass
 
 
 # now we can parse the ihope.ini file 
-print "...Parsing the ihope ini file" 
+blabla(logfile, "...Parsing the ihope ini file" )
 hipe   = opts.ihope_directory+'/'+opts.config_file
 hipecp = ConfigParser.ConfigParser()
 hipecp.read(hipe)
@@ -1448,7 +1432,6 @@ copy_segments()
 
 
 ###### create the section labels  
-print '...Creating html documents'
 html_sections = ("General information",  \
 		"Data summary", \
 		"Playground", \
@@ -1469,12 +1452,14 @@ page.init(title=title, css=opts.style, script=script)
 page.h1(opts.title +" (" + opts.gps_start_time +"-" +opts.gps_end_time+")")
 
 ##### we write the toc, and general section
+blabla(logfile, '---write the TOC section---')
 try: 
   page = write_toc(page, opts)
 except:
   page.div("problem in toc section. skippingg this section. "); 
   pass
 
+blabla(logfile, "---write the "+html_sections[0]+' section---------')
 try:
   page = write_general(page, opts)
 except:
@@ -1484,6 +1469,7 @@ except:
   else:
     pass
 
+blabla(logfile, '---write the '+html_sections[1]+' section---------')
 if opts.summary:
   try:
     page = write_data_summary(page, opts)
@@ -1491,9 +1477,10 @@ if opts.summary:
     page.add("problem in "+html_sections[1]+" section. skipping this section. "); 
     pass
 
+blabla(logfile, '---write the '+html_sections[2]+' section---------')
 if opts.playground:
   try:
-    page = write_playground_summary(page, opts)
+    page = write_analysis(page, opts, 'playground')
   except:
     page = error_section(page, html_sections[2]); 
     if opts.debug:
@@ -1501,8 +1488,10 @@ if opts.playground:
     else:
       pass
   
+blabla(logfile, '---write the '+html_sections[3]+' section---------')
 page = write_injection(page, opts)
 
+blabla(logfile, '---write the '+html_sections[4]+' section---------')
 if opts.tuning:
 #  try:
   page = write_tuning(page, opts)
@@ -1510,18 +1499,21 @@ if opts.tuning:
   page.add("problem in "+html_sections[4]+" section. skipping this section. "); 
 #    pass
 
+blabla(logfile, '---write the '+html_sections[5]+' section---------')
 if opts.analysis:
   try:
-    page = write_fulldata(page, opts)
+    page = write_analysis(page, opts, 'analysis')
   except: 
-    page.add("problem in "+html_sections[5]+" section. skipping this section. "); 
+    blabla(logfile, "WARNING  problem in "+html_sections[5]+" section. skipping this section. ")
+    raise
     pass
 
+blabla(logfile,'---write the '+html_sections[6]+' section---------')
 if opts.upperlimit:
   try:
     page = write_upperlimit(page, opts)
   except:  
-    page.add("problem in "+html_sections[6]+" section. skipping this section. "); 
+    blabla(logfile, "WARNING in "+html_sections[6]+" section. skipping this section. ")
     pass
 
 #try:
@@ -1531,6 +1523,7 @@ if opts.upperlimit:
 #  pass
 
 #try:
+blabla(logfile, '---write the '+html_sections[8]+' section---------')
 page = write_about(page, opts)
 #except:   page = error_section(page, html_sections[8]); pass
  
@@ -1538,14 +1531,25 @@ page = write_about(page, opts)
 ##### the end
 html_file.write(page(False))
 html_file.close()
+logfile.close()
 
-print 'html file created. Parsing to convert in nice html output'
-
-
-
-print '...Copying html documents in ' +opts.physdir
+print '---------------------FINISHED ---------------------'
+print '--- HTML file created. '
+print '--- Copying html documents in ' +opts.physdir
 make_external_call('mv  '+opts.output +' ' + opts.physdir, '','',True)
 make_external_call( 'mv toggle.js '+ opts.physdir, '', 'True')
+
+logfile = __name__+".log"
+output, status = make_external_call( 'grep WARNING '+ logfile +'| wc - | awk \'{print $1}\' - ', False,False, False)
+if status==0:
+  if int(output)==0:
+    print 'No warnings'
+  else:
+    print '\n\n\nThere are warnings : '+str(int(output))+' . Check the log file '+logfile
+else:
+  print 'Could not find the log file ' +logfile
+  
+ 
 
 
 
