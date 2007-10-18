@@ -161,7 +161,7 @@ static void worker (void);
 static int is_zipped(const char *);
 static int resolve_and_unzip(const char*, char*, const size_t);
 static void drain_fpu_stack(void);
-static REAL4 nan(void);
+static REAL4 get_nan(void);
 #ifdef _MSC_VER
 static int load_graphics_dll(void);
 #endif
@@ -939,7 +939,7 @@ static void worker (void) {
 #endif
 
   if(test_nan)
-    fprintf(stderr,"NaN:%f\n",2.0f*nan());
+    fprintf(stderr,"NaN:%f\n",2.0f*get_nan());
 
   /* CALL WORKER's MAIN()
    */
@@ -1381,7 +1381,7 @@ static void drain_fpu_stack(void) {
 #endif
 }
 
-static REAL4 nan(void) {
+static REAL4 get_nan(void) {
   static const UINT4 inan = 0xFF8001FF; /* NaN palindrome */
   return(*((REAL4*)&inan));
 }
