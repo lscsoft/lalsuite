@@ -1250,13 +1250,14 @@ int main( int argc, char *argv[] )
         {
           /* if we are using calibrated data set the response to unity */
           if ( vrbflg ) fprintf( stdout, 
-              "setting injection response to inverse dynRange... " );
+              "setting injection response to inverse dynRange..." );
           for ( k = 0; k < injResp.data->length; ++k )
           {
             injResp.data->data[k].re = (REAL4)(1.0/dynRange);
             injResp.data->data[k].im = 0.0;
           }
           injRespPtr = &injResp;
+          if ( vrbflg ) fprintf( stdout, "done\n" );
           if ( writeResponse ) 
             outFrame = fr_add_proc_COMPLEX8FrequencySeries( outFrame, 
                 &injResp, "strain/ct", "RESPONSE_INJ_CAL" );
@@ -2588,11 +2589,12 @@ int main( int argc, char *argv[] )
               case PadeT1:
               case EOB:
               case FindChirpSP:
+              case FindChirpPTF:  
                 /* find any events in the time series of snr and chisq */
                 LAL_CALL( LALFindChirpClusterEvents( &status,
                       &eventList, fcFilterInput, fcFilterParams,
                       &bankVetoData, subBankIndex ), &status );
-
+                
                 /* apply the rsq veto to any surviving events */
                 if ( fcFilterParams->filterOutputVetoParams )
                 {

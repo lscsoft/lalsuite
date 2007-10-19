@@ -143,6 +143,10 @@ REAL4	betaMax		= 0;		/* maximum BCV spin parameter	*/
 INT4    maxFcutTmplts   = -1;           /* num tmplts in fcut direction */
 REAL4   minMatch        = -1;           /* minimum requested match      */
 REAL4   fUpper          = -1;           /* upper frequency cutoff       */
+REAL4   chiMin          = -1;           /* minimum value of chi for PTF */
+REAL4   chiMax          = -1;           /* maximum value of chi for PTF */
+REAL4   kappaMin        = -2;           /* minimum value of kappa for PTF */
+REAL4   kappaMax        = -2;           /* maximum value of kappa for PTF */
 Order   order;                          /* post-Newtonian order         */
 Approximant approximant;                /* approximation method         */
 CoordinateSpace space;                  /* coordinate space used        */
@@ -974,29 +978,33 @@ int main ( int argc, char *argv[] )
     bankIn.massRange     = MinMaxComponentMass;
     bankIn.MMax          = bankIn.mMax * 2.0;
   }
-  bankIn.psi0Min       = (REAL8) psi0Min;
-  bankIn.psi0Max       = (REAL8) psi0Max;
-  bankIn.psi3Min       = (REAL8) psi3Min;
-  bankIn.psi3Max       = (REAL8) psi3Max;
+  bankIn.psi0Min          = (REAL8) psi0Min;
+  bankIn.psi0Max          = (REAL8) psi0Max;
+  bankIn.psi3Min          = (REAL8) psi3Min;
+  bankIn.psi3Max          = (REAL8) psi3Max;
   bankIn.numFcutTemplates = (UINT4) maxFcutTmplts;
-  bankIn.alpha         = (REAL8) alpha;
-  bankIn.betaMin       = (REAL8) betaMin;
-  bankIn.betaMax       = (REAL8) betaMax;
-  bankIn.mmCoarse      = (REAL8) minMatch;
-  bankIn.mmFine        = 0.99; /* doesn't matter since no fine bank yet */
-  bankIn.fLower        = (REAL8) fLow;
-  bankIn.fUpper        = (REAL8) fUpper;
-  bankIn.iflso         = 0; /* currently not implemented */
-  bankIn.tSampling     = (REAL8) sampleRate;
-  bankIn.order         = order;
-  bankIn.approximant   = approximant;
-  bankIn.gridSpacing   = gridSpacing;
-  bankIn.space         = space;
-  bankIn.insidePolygon = polygonFit; /*by default it uses a polygon fitting. */
-  bankIn.etamin        = bankIn.mMin * ( bankIn.MMax - bankIn.mMin) /
+  bankIn.alpha            = (REAL8) alpha;
+  bankIn.betaMin          = (REAL8) betaMin;
+  bankIn.betaMax          = (REAL8) betaMax;
+  bankIn.chiMin           = (REAL8) chiMin;
+  bankIn.chiMax           = (REAL8) chiMax;
+  bankIn.kappaMin         = (REAL8) kappaMin;
+  bankIn.kappaMax         = (REAL8) kappaMax;
+  bankIn.mmCoarse         = (REAL8) minMatch;
+  bankIn.mmFine           = 0.99; /* doesn't matter since no fine bank yet */
+  bankIn.fLower           = (REAL8) fLow;
+  bankIn.fUpper           = (REAL8) fUpper;
+  bankIn.iflso            = 0; /* currently not implemented */
+  bankIn.tSampling        = (REAL8) sampleRate;
+  bankIn.order            = order;
+  bankIn.approximant      = approximant;
+  bankIn.gridSpacing      = gridSpacing;
+  bankIn.space            = space;
+  bankIn.insidePolygon    = polygonFit; /*by default it uses a polygon fitting. */
+  bankIn.etamin           = bankIn.mMin * ( bankIn.MMax - bankIn.mMin) /
     ( bankIn.MMax * bankIn.MMax );
-  bankIn.LowGM  = -4.;
-  bankIn.HighGM = 6.;
+  bankIn.LowGM            = -4.;
+  bankIn.HighGM           = 6.;
   /* generate the template bank */
   if ( vrbflg )
   {
@@ -2044,6 +2052,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           approximant = BCVSpin;
         }
+        else if ( ! strcmp( "FindChirpPTF", optarg ) )
+        {
+          approximant = FindChirpPTF;
+        }  
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
