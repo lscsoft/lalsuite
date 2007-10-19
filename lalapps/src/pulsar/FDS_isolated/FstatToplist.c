@@ -48,6 +48,7 @@ extern int _doserrno;
 
 /* fsync */
 #define fsync _commit
+#define fileno _fileno
 
 /* finite */
 #include <float.h>
@@ -806,15 +807,13 @@ int write_hs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter) {
     return(-1);
   }
 
-#ifndef _MSC_VER
   /* make sure the data ends up on disk */
-  if(fsync(fp)) {
+  if(fsync(fileno(fp))) {
     LOGIOERROR("Couldn't sync", tmpfilename);
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", tmpfilename);
     return(-1);
   }
-#endif
 
   /* close tempfile */
   if(fclose(fp)) {
