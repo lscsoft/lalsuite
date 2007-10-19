@@ -534,7 +534,7 @@ static void worker (void) {
   int i;                       /**< loop counter */
   int l;                       /**< length of matched string */
   int res = 0;                 /**< return value of a function call */
-  char *startc,*endc,*appc;    /**< pointers for parsing a command-line argument */
+  char *startc,*endc;          /**< pointers for parsing a command-line argument */
   int output_help = 0;         /**< flag: should we write out an additional help string?
 				    describing additional command-line arguments handled
 			            only by this BOINC-wrapper? */
@@ -639,17 +639,19 @@ static void worker (void) {
     }
 
     /* boinc_resolve SFT files (no unzipping, but dealing with multiple files separated by ';' */
-    else if (0 == strncmp("--DataFiles",argv[arg],11)) {
-      rargv[rarg] = (char*)calloc(1024,sizeof(char));
+    else if (0 == strncmp("--DataFiles",argv[arg],strlen("--DataFiles"))) {
+      int chars = strlen("--DataFiles1=");
+
+      /* initially allocate a buffer for "--DataFiles1=" plus MAX_PATH_LEN chars */
+      rargv[rarg] = (char*)calloc(MAX_PATH_LEN + chars, sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
 	boinc_finish(HIERARCHICALSEARCH_EMEM);
       }
 
       /* copy & skip the "[1|2]=" characters, too */
-      strncpy(rargv[rarg],argv[arg],13);
-      appc = rargv[rarg]+13;
-      startc = argv[arg]+13;
+      strncpy(rargv[rarg],argv[arg],chars);
+      startc = argv[arg]+chars;
 
       /* skip one set of single quotes if and only if they are surrounding the complete path-string */
       if ((*startc == '\'') && (*(startc+(strlen(startc)-1)) == '\'')) {
@@ -661,43 +663,45 @@ static void worker (void) {
       /* look for multiple paths separated by ';' */
       while((endc = strchr(startc,';'))) {
 	*endc = '\0';
-	if (boinc_resolve_filename(startc,appc,255)) {
+	if (boinc_resolve_filename(startc,&(rargv[rarg][chars]),MAX_PATH_LEN)) {
 	  LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve input file '%s'\n", startc);
 	}
 
-#ifdef _WIN32
-	/* for Windows, we have to translate the path separator '/' to '\' */
-	{
-	  char *c = appc;
-	  while((*c != '\0') && (c < appc+255)) {
-	    if(*c == '/') *c = '\\';
-	    c++;
-	  }
-	}
-#endif
 	/* append a ';' to resolved string */
-	appc = appc + strlen(appc) + 1;
-	*(appc-1) = ';';
-	*appc = '\0';
+	chars = strlen(rargv[rarg]) + 1;
+	rargv[rarg][chars-1] =  ';';
+	rargv[rarg][chars]   = '\0';
+
+	/* make sure the next boinc_resolve() has a buffer of MAX_PATH_LEN */
+	rargv[rarg] = (char*)realloc(rargv[rarg], (MAX_PATH_LEN + chars) * sizeof(char));
+	if(!rargv[rarg]){
+	  LogPrintf(LOG_CRITICAL, "Out of memory\n");
+	  boinc_finish(HIERARCHICALSEARCH_EMEM);
+	}
 
 	/* skip the ';' in the original string */
 	startc = endc+1;
       }
 
       /* handle last (or only) filename (comments see above) */
-      if (boinc_resolve_filename(startc,appc,255)) {
+      if (boinc_resolve_filename(startc,&(rargv[rarg][chars]),MAX_PATH_LEN)) {
 	LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve input file '%s'\n", startc);
       }
 
+      /* include the terminating '\0' here */
+      chars = strlen(rargv[rarg]) + 1;
+
 #ifdef _WIN32
+      /* for Windows, we have to translate the path separator '/' to '\' */
       {
-	char *c = appc;
-	while((*c != '\0') && (c < appc+255)) {
-	  if(*c == '/') *c = '\\';
-	  c++;
-	}
+	int c;
+	for(c=0; c < chars; c++)
+	  if(rargv[rarg][c] == '/')
+	    rargv[rarg][c] = '\\';
       }
 #endif
+      /* truncate to the memory actually needed */
+      rargv[rarg] = (char*)realloc(rargv[rarg], chars * sizeof(char));
     }
 
     /* handle output file:
