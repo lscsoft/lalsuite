@@ -2547,7 +2547,7 @@ int main( int argc, char *argv[] )
         /* If doing bank veto compute CC Matrix */
         /* I removed the ccFlag dependence - this is being computed
            for each segment now!!! */
-        if (ccFlag && (subBankCurrent->subBankSize > 0) && analyseTag)
+        if (ccFlag && (subBankCurrent->subBankSize > 1) && analyseTag)
         {
           if (vrbflg) fprintf(stderr, "doing ccmat\n");
           XLALBankVetoCCMat( &bankVetoData, subBankCurrent, fcDataParams,
