@@ -803,6 +803,14 @@ int write_hs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter) {
     return(-1);
   }
 
+  /* make sure the data ends up on disk */
+  if(fsync(fp)) {
+    LOGIOERROR("Couldn't sync", tmpfilename);
+    if(fclose(fp))
+      LOGIOERROR("In addition: couldn't close", tmpfilename);
+    return(-1);
+  }
+
   /* close tempfile */
   if(fclose(fp)) {
     LOGIOERROR("Couldn't close", tmpfilename);
