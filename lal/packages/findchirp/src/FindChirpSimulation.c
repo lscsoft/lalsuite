@@ -1199,6 +1199,7 @@ XLALFindChirpBankSimSignalNorm(
     case EOB:
     case GeneratePPN:
     case BCVSpin:
+    case FindChirpPTF:
       /* integrated up to Nyquist*/
       for ( k = cut; k < fcDataParams->wtildeVec->length; ++k )
       {
@@ -1217,7 +1218,6 @@ XLALFindChirpBankSimSignalNorm(
 
   /* square root to get minimal match normalization \sqrt{(s|s)} */
   matchNorm = sqrt( matchNorm );
-
   return matchNorm;
 }
 

@@ -607,7 +607,10 @@ tagInspiralCoarseBankIn
   REAL8                         etamin;         
   REAL8				betaMin;
   REAL8				betaMax;
-
+  REAL8                         chiMin;
+  REAL8                         chiMax; 
+  REAL8                         kappaMin;
+  REAL8                         kappaMax;
   REAL8FrequencySeries          shf;
   /* Maximum size of the power spectral density array for use in
    * the computation of the metric in SBBH; typical values that

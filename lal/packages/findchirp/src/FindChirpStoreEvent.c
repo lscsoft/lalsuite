@@ -146,8 +146,11 @@ LALFindChirpStoreEvent (
   /* copy the template into the event */
   thisEvent->mass1   = (REAL4) input->fcTmplt->tmplt.mass1;
   thisEvent->mass2   = (REAL4) input->fcTmplt->tmplt.mass2;
+  thisEvent->mtotal  = (REAL4) input->fcTmplt->tmplt.totalMass;
   thisEvent->mchirp  = (REAL4) input->fcTmplt->tmplt.chirpMass;
   thisEvent->eta     = (REAL4) input->fcTmplt->tmplt.eta;
+  thisEvent->kappa   = (REAL4) input->fcTmplt->tmplt.kappa;
+  thisEvent->chi     = (REAL4) input->fcTmplt->tmplt.chi;
   thisEvent->tau0    = (REAL4) input->fcTmplt->tmplt.t0;
   thisEvent->tau2    = (REAL4) input->fcTmplt->tmplt.t2;
   thisEvent->tau3    = (REAL4) input->fcTmplt->tmplt.t3;
