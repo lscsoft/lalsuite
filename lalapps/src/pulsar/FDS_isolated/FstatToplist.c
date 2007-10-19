@@ -17,6 +17,7 @@
 *  MA  02111-1307  USA
 */
 
+#include <unistd.h>
 #include "FstatToplist.h"
 #include "HeapToplist.h"
 #include <lal/StringInput.h> /* for LAL_REAL8_FORMAT etc. */
