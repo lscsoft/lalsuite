@@ -46,6 +46,9 @@ extern int _doserrno;
 /* snprintf */
 #define LALSnprintf _snprintf
 
+/* fsync */
+#define fsync _commit
+
 /* finite */
 #include <float.h>
 #define finite _finite
