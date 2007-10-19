@@ -49,6 +49,7 @@ LALDestroyVector()
 </lalLaTeX> 
 #endif
 
+#include <math.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_odeiv.h>
@@ -60,6 +61,10 @@ LALDestroyVector()
 #include <lal/FindChirp.h>
 #include <lal/FindChirpPTF.h>
 
+#ifndef isnan
+int isnan(double);
+#define isnan(x) ((isnan)((double)(x)))
+#endif
 
 NRCSID(FINDCHIRPPTFWAVEFORMC, "$Id$");
 
@@ -466,9 +471,9 @@ XLALFindChirpPTFWaveform(
 /* </lalVerbatim> */
 {
   static const char* func = "XLALFindChirpPTFWaveform";
-  UINT4  i, len;
-  UINT4  N = PTFphi->length;
-  INT4   errcode = 0;
+  UINT4 i, len;
+  UINT4 N = PTFphi->length;
+  INT4  errcode = 0;
   REAL8 f_min = InspTmplt->fLower;
   REAL8 m1 = InspTmplt->mass1;
   REAL8 m2 = InspTmplt->mass2;
@@ -560,7 +565,7 @@ XLALFindChirpPTFWaveform(
   memset ( PTFphi->data, 0, N * sizeof(REAL4));
   memset ( PTFe1->data, 0, 3 * N * sizeof(REAL4));
   memset ( PTFe2->data, 0, 3 * N * sizeof(REAL4));
-  
+
   i = 0; 
   t = 0;
   while ( 1 )
@@ -568,8 +573,8 @@ XLALFindChirpPTFWaveform(
     /* if we have run out of memory for the waveform, break out of the loop */
     if ( i >= N  )
     {
-      XLALPrintError( "XLAL Error: output too short for PTF waveform" );
-      errcode = XLAL_ENOMEM;
+      XLALPrintError( "XLAL Error: output too short for PTF waveform\n" );
+      errcode = XLAL_ENOMEM; 
       break;
     }
 
@@ -597,7 +602,7 @@ XLALFindChirpPTFWaveform(
     /* check for that the solver exited successfully */
     if ( errcode != GSL_SUCCESS )
     {
-      XLALPrintError( "XLAL Error: GSL ODE integrator failure" );
+      XLALPrintError( "XLAL Error: GSL ODE integrator failure\n" );
       errcode = XLAL_EFAILED;
       break;
     }
@@ -616,10 +621,10 @@ XLALFindChirpPTFWaveform(
     e2z    = y[13];
 
     /* exit with an error if any of the dynamical variables contain NaN */
-    if ( Phi == GSL_NAN || omega == GSL_NAN || LNhatx == GSL_NAN || 
-         LNhaty == GSL_NAN || LNhatz == GSL_NAN || e1x == GSL_NAN || 
-         e1y == GSL_NAN || e1z == GSL_NAN || e2x == GSL_NAN || 
-         e2y == GSL_NAN || e2z == GSL_NAN )
+    if ( isnan( Phi ) || isnan( omega ) || isnan( LNhatx ) || 
+         isnan( LNhaty ) || isnan( LNhatz ) || isnan( e1x ) || 
+         isnan( e1y ) || isnan( e1z ) || isnan( e2x ) || 
+         isnan( e2y ) || isnan( e2z ) )
     {
       /* check if we are close to the MECO */
       N_steps = ((i-2) * dE_dt_n_1 - (i-1) * dE_dt_n_2) / 
