@@ -638,24 +638,18 @@ static void worker (void) {
 	res = HIERARCHICALSEARCH_EFILE;
     }
 
-
     /* boinc_resolve SFT files (no unzipping, but dealing with multiple files separated by ';' */
     else if (0 == strncmp("--DataFiles",argv[arg],11)) {
-      int chars; /* keeps track of the total number of characters in the resolved string */
-
-      rargv[rarg] = (char*)malloc(MAX_PATH_LEN+13);
+      rargv[rarg] = (char*)calloc(1024,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
 	boinc_finish(HIERARCHICALSEARCH_EMEM);
       }
-      /* actually I'm not sure boinc_resolve appends a '\0' */
-      memset(rargv[arg] + strlen(rargv[rarg]), '\0', MAX_PATH_LEN);
 
       /* copy & skip the "[1|2]=" characters, too */
-      chars = strlen("--DataFiles1=");
       strncpy(rargv[rarg],argv[arg],13);
-      appc = rargv[rarg]+chars;
-      startc = argv[arg]+chars;
+      appc = rargv[rarg]+13;
+      startc = argv[arg]+13;
 
       /* skip one set of single quotes if and only if they are surrounding the complete path-string */
       if ((*startc == '\'') && (*(startc+(strlen(startc)-1)) == '\'')) {
@@ -666,52 +660,41 @@ static void worker (void) {
 
       /* look for multiple paths separated by ';' */
       while((endc = strchr(startc,';'))) {
-	*endc = '\0'; /**< patch the next ';' to be a '\0', i.e. mark end of that filename to resolve */
-	if (boinc_resolve_filename(startc,appc,MAX_PATH_LEN)) {
+	*endc = '\0';
+	if (boinc_resolve_filename(startc,appc,255)) {
 	  LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve input file '%s'\n", startc);
 	}
 
+#ifdef _WIN32
+	/* for Windows, we have to translate the path separator '/' to '\' */
+	{
+	  char *c = appc;
+	  while((*c != '\0') && (c < appc+255)) {
+	    if(*c == '/') *c = '\\';
+	    c++;
+	  }
+	}
+#endif
 	/* append a ';' to resolved string */
-	chars += strlen(appc) + 1;
 	appc = appc + strlen(appc) + 1;
 	*(appc-1) = ';';
 	*appc = '\0';
 
 	/* skip the ';' in the original string */
 	startc = endc+1;
-
-	/* make sure the next file has MAX_PATH_LEN bytes to resolve the name */
-	rargv[rarg] = (char*)realloc(rargv[rarg],chars+MAX_PATH_LEN);
-	if(!rargv[rarg]){
-	  LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	  boinc_finish(HIERARCHICALSEARCH_EMEM);
-	}
-	/* actually I'm not sure boinc_resolve appends a '\0' */
-	memset(rargv[arg] + chars, '\0', MAX_PATH_LEN);
       }
 
       /* handle last (or only) filename (comments see above) */
-      if (boinc_resolve_filename(startc,appc,MAX_PATH_LEN)) {
+      if (boinc_resolve_filename(startc,appc,255)) {
 	LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve input file '%s'\n", startc);
-      }
-      chars += strlen(appc) + 1; /* include a terminating '\0' here */
-
-      /* truncate allocated space to what is actually needed */
-      rargv[rarg] = (char*)realloc(rargv[rarg],chars);
-      if(!rargv[rarg]){
-	LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	boinc_finish(HIERARCHICALSEARCH_EMEM);
       }
 
 #ifdef _WIN32
-      /* for Windows, we have to translate the path separator '/' to '\' */
       {
-	int c;
-	for(c=0; c <= chars; i++) {
-	  if(rargv[rarg][c] == '\0')
-	    break;
-	  if(rargv[rarg][c] == '/')
-	    rargv[rarg][c] = '\\';
+	char *c = appc;
+	while((*c != '\0') && (c < appc+255)) {
+	  if(*c == '/') *c = '\\';
+	  c++;
 	}
       }
 #endif
