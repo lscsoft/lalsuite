@@ -23,8 +23,7 @@ import ConfigParser
 import urlparse
 from pylal import CoincInspiralUtils
 from pylal import itertools
-sys.path.append('/scratch2/vaulin/opt/lib/python2.4/site-packages/lalapps')
-
+sys.path.append('@PYTHONLIBDIR@')
 ##############################################################################
 # import the modules we need to build the pipeline
 from glue import pipeline
@@ -113,6 +112,9 @@ parser.add_option("-j", "--plotinspinj" ,action="store_true",default=False,\
 parser.add_option("-s", "--plotsnrchi" ,action="store_true",default=False,\
     help="run plotsnrchi to plot  snr vs chisq for a glob of triggers.")
 
+parser.add_option("-z", "--plotinspiralrange" ,action="store_true",default=False,\
+    help="run plotinspiralrange to plot range of inspiral (Mpc) vs end time (in days).")
+
 parser.add_option("-f", "--config-file",action="store",type="string",\
     metavar=" FILE",help="use configuration file FILE")
 
@@ -124,7 +126,7 @@ command_line = sys.argv[1:]
 
 #################################
 #ALPHABETS USED IN THIS CODE.
-# b, e, f, g, i, I, j, l, M, n, p, s, t, u, v, A, D, S, T, Q
+# b, e, f, g, i, I, j, l, M, n, p, s, t, u, v, A, D, R, S, T, Q
 
 #################################
 # if --version flagged
@@ -166,7 +168,7 @@ if ((opts.plotthinca or opts.plotethinca or opts.plotinspmissed or opts.plotinjn
   sys.exit(1)
  
 
-if ((opts.plotnumtemplates or opts.plotinspiral) and not (opts.g1_data or opts.h1_data or opts.h2_data or\
+if ((opts.plotnumtemplates or opts.plotinspiral or opts.plotinspiralrange) and not (opts.g1_data or opts.h1_data or opts.h2_data or\
     opts.l1_data)):
   print >> sys.stderr, "--g1-data, --h1-data, --h2-data, --l1-data"
   sys.exit(1)
@@ -181,44 +183,15 @@ ifolist = [ifo for ifo in ('G1','H1', 'H2', 'L1', 'V2') \
 
 if opts.two_ifo:
    ifo_combo=list(itertools.choices(ifolist,2))
-elif opts.three_ifo:
+if opts.three_ifo:
    ifo_combo=list(itertools.choices(ifolist,2)) + list(itertools.choices(ifolist,3))
-elif opts.four_ifo:
+if opts.four_ifo:
    ifo_combo=list(itertools.choices(ifolist,2)) + list(itertools.choices(ifolist,3)) + \
              list(itertools.choices(ifolist,4))
-else: 
+if opts.analyze_all: 
    ifo_combo=CoincInspiralUtils.get_ifo_combos(ifolist)
 
 
-#################################
-   
-#ifo_list = ['G1','H1','H2','L1']
-
-#ifotag = None
-#################################
-# store the values
-#do = {}
-#do['G1'] = opts.g1_data
-#do['H1'] = opts.h1_data
-#do['H2'] = opts.h2_data
-#do['L1'] = opts.l1_data
-#do['V2'] = opts.v2_data
-
-#################################
-# analyze everything if --analyze-all set
-#if opts.analyze_all:
- # for ifo in ifo_list:
- #   do[ifo] = True
- # opts.one_ifo   = True
- # opts.two_ifo   = True
- # opts.three_ifo = True
- # opts.four_ifo  = True
-################################
-# a list of the ifos to do plots for
-#ifos = []
-#for ifo in ifo_list:
-#  if do[ifo]:
-#    ifos.append(ifo)
 ##############################################################################
 # try to make a directory to store the cache files and job logs
 try: os.mkdir('logs')
@@ -386,6 +359,7 @@ if opts.plotinspinj:
 
   for ifo in ifolist:
     cp.set('plotinspinj','figure-name','plotinspinj_' + ifo)
+    cp.set('plotinspinj','ifo-type',ifo)
     plotinspinj_jobs[ifo] = inspiral.PlotInspinjJob(cp)
     plotinspinj_jobs[ifo].set_sub_file( basename + '.plotinspinj_' + ifo + subsuffix )
 
@@ -404,6 +378,18 @@ if opts.plotsnrchi:
     plotsnrchi_jobs[ifo].set_sub_file( basename + '.plotsnrchi_' + ifo + subsuffix )
 
   all_jobs.extend(plotsnrchi_jobs.values())
+
+#plotinspiralrange
+if opts.plotinspiralrange:
+  """ Plotnumtemplates needs no looping. This code now separates cache files
+      either by description = "TMPLTBANK" or "INSPIRAL". In this way TMPLTBANKS
+      and TRIGBANKS for all ifos namely "H1", "H2" and "L1" are sieved together.
+  """
+  plotinspiralrange_jobs = {}
+  plotinspiralrange_jobs = inspiral.PlotInspiralrangeJob(cp)
+  plotinspiralrange_jobs.set_sub_file( basename + '.plotinspiralrange' + subsuffix)
+
+  all_jobs.append(plotinspiralrange_jobs)
 
 
 #############################################################################
@@ -471,6 +457,10 @@ if opts.plotsnrchi:
     plotsnrchi_node =inspiral.PlotSnrchiNode(plotsnrchi_jobs[ifo])
     dag.add_node(plotsnrchi_node)
 
+if opts.plotinspiralrange:
+  # add an plotnumtemplates job
+  plotinspiralrange_node=inspiral.PlotInspiralrangeNode(plotinspiralrange_jobs)
+  dag.add_node(plotinspiralrange_node)
 
 ##############################################################################
 # Step 10: Write out the DAG, help message and log file
