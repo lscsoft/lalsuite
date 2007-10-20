@@ -203,7 +203,7 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   REAL4 eta, etaInv;   /* mass ratio and its inverse */
   REAL4 phiC;          /* phase at coalescence */
   REAL4 cosI, cos2I, cos4I, cos6I; /* cosine of system inclination */
-  REAL4 sinI, sin2I, sin4I; /* sine of system inclination */
+  REAL4 sinI, sin2I, sin4I, sin5I; /* sine of system inclination */
   REAL4 fFac;          /* SI normalization for f and t */
   REAL4 f2aFac;        /* factor multiplying f in amplitude function */
   REAL4 fthree, ffour, ffive, fsix, fseven; /* powers in f2a to speed up waveform construction */
@@ -225,17 +225,17 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   REAL4 *f; /* pointer to generated frequency data */
   
   /* Harmonic terms */
-  REAL4 a1Pthree, a1Pfive, a1Psix, a1Pseven, a1Pmix;
-  REAL4 a2Ptwo, a2Pfour, a2Pfive, a2Psix, a2Pseven, a2Pmix; 
-  REAL4 a3Pthree, a3Pfive, a3Psix, a3Pseven, a3Pmix;
-  REAL4 a4Pfour, a4Psix, a4Pseven, a4Pmix;
+  REAL4 a1Pthree, a1Pfive, a1Psix, a1Pseven, a1Pmixsix;
+  REAL4 a2Ptwo, a2Pfour, a2Pfive, a2Psix, a2Pseven, a2Pmixseven; 
+  REAL4 a3Pthree, a3Pfive, a3Psix, a3Pseven, a3Pmixsix;
+  REAL4 a4Pfour, a4Psix, a4Pseven, a4Pmixseven;
   REAL4 a5Pfive, a5Pseven;
   REAL4 a6Psix;
   REAL4 a7Pseven;
-  REAL4 a1Cthree, a1Cfive, a1Csix, a1Cmixsix, a1Cmixseven;
-  REAL4 a2Ctwo, a2Cfour, a2Cfive, a2Csix, a2Cseven, a2Cmix; 
-  REAL4 a3Cthree, a3Cfive, a3Csix, a3Cseven, a3Cmix;
-  REAL4 a4Cfour, a4Csix, a4Cseven, a4Cmix;
+  REAL4 a1Cthree, a1Cfive, a1Csix, a1Cseven, a1Cmixsix;
+  REAL4 a2Ctwo, a2Cfour, a2Cfive, a2Csix, a2Cseven, a2Cmixseven; 
+  REAL4 a3Cthree, a3Cfive, a3Csix, a3Cseven, a3Cmixsix;
+  REAL4 a4Cfour, a4Csix, a4Cseven, a4Cmixseven;
   REAL4 a5Cfive, a5Cseven;
   REAL4 a6Csix;
   REAL4 a7Cseven;
@@ -299,10 +299,11 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   }
 
   /* Set PN parameters for amplitude */
-  for(i = 0; i < 6; i++){
+  q[0] = 1.0;
+  for(i = 1; i < 6; i++){
     q[i] = 1.0;
   }
-  q[0] = 1.0;
+  
 
   /* Switch on all harmonics */
   for (i = 0; i < NUMHARMONICS; i++)
@@ -326,6 +327,7 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   sinI = sin( params->inc );
   sin2I = sinI*sinI;
   sin4I = sin2I*sin2I;
+  sin5I = sin4I*sinI;
 
   cosI = cos( params->inc );
   cos2I = cosI*cosI;
@@ -339,24 +341,28 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   sd = sinI*delta;
   scd = sd*cosI;
 
+  /* The variables are annotated by the harmonic, then the polarisation (plus/cross) and then
+     the frequency power by which they are multiplied. For instance 'a1Pthree' is the first
+     harmonic, plus polarisation and is multiplied by fthree */
+
   /* First harmonic plus */
   a1Pthree = sd*(5.0 + cos2I)/8.0;
   a1Pfive  = - sd*(19.0/64.0 + 5.0/16.0*cos2I - 1.0/192.0*cos4I + eta*(-49.0/96.0 + 1.0/8.0*cos2I + 1.0/96.0*cos4I));
   a1Psix   = + sd*LAL_PI*(5.0 + cos2I)/8.0;
   a1Pseven = - sd*((1771.0 - 1667.0*cos2I)/5120 + (217*cos4I - cos6I)/9216.0
-			  + eta*(681.0/256.0 + (13.0*cos2I - 35*cos6I)/768.0 + cos6I/2304.0)
-			  + eta*eta*(-(3451.0 - 5.0*cos4I)/9216.0 + (673.0*cos2I - cos6I)/3072.0));  
-  a1Pmix   = - sd*(11.0/40.0 + 5.0*log(2.0)/4.0 + cos2I*(7.0/40.0 + log(2.0)/4.0));
+			  + eta*(681.0/256.0 + (13.0*cos2I - 35*cos4I)/768.0 + cos6I/2304.0)
+			  + eta*eta*(-(3451.0 + 5.0*cos4I)/9216.0 + (673.0*cos2I - cos6I)/3072.0));  
+  a1Pmixsix = - sd*(11.0/40.0 + 5.0*log(2.0)/4.0 + cos2I*(7.0/40.0 + log(2.0)/4.0));
   
   /* Second harmonic plus */
   a2Ptwo   = (1.0 + cos2I);
   a2Pfour  = - (19.0/6.0 + 3.0/2.0*cos2I - 1.0/3.0*cos4I + eta*(-19.0/6.0 + 11.0/6.0*cos2I + cos4I));
   a2Pfive  = 2.0*LAL_PI*(1.0 + cos2I);
-  a2Psix   = - (11.0/60.0 + 33.0/10.0*cos2I + (29.0*cos4I - 1.0*cos6I)/24.0) 
+  a2Psix   = - (11.0/60.0 + 33.0/10.0*cos2I + (29.0*cos4I - 1.0*cos6I)/24.0 
 	 		  + eta*(353.0/36.0 - 3.0*cos2I - 251.0/72.0*cos4I + 5.0/24.0*cos6I)
-	                  + eta*eta*(-49.0/12.0 + 9.0/2.0*cos2I - cos4I*(7.0 + 5.0*cos2I)/24.0);
+	                  + eta*eta*(-49.0/12.0 + 9.0/2.0*cos2I - cos4I*(7.0 + 5.0*cos2I)/24.0));
   a2Pseven = - LAL_PI*(19.0/3.0 + 3.0*cos2I - 2.0/3.0*cos4I + eta*((-16.0 + 14.0*cos2I)/3.0 + 2*cos4I));		 
-  a2Pmix   = - (-9.0 + 14.0*cos2I + 7.0*cos4I + eta*(96.0 - 8.0*cos2I - 28.0*cos4I))/5.0;      	       
+  a2Pmixseven   = - (-9.0 + 14.0*cos2I + 7.0*cos4I + eta*(96.0 - 8.0*cos2I - 28.0*cos4I))/5.0;      	       
   
   /* Third harmonic plus */
   a3Pthree = -9.0/8.0*sd*(1.0 + cos2I);
@@ -365,7 +371,7 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   a3Pseven = - sd*(3537.0/1024.0 - (22977*cos2I + 15309.0*cos4I - 729.0*cos6I)/5120
                                  + eta*(-23829.0 + 5529.0*cos2I + 7749.0*cos4I -729.0*cos6I)/1280.0
 		      		 + eta*eta*(29127.0 - 27267.0*cos2I - 1647.0*cos4I + 2187.0*cos6I)/5120.0);
-  a3Pmix   = - sd*(-189.0/40.0 + 27.0/4.0*log(1.5))*(1 + cos2I);	       
+  a3Pmixsix   = - sd*(-189.0/40.0 + 27.0/4.0*log(1.5))*(1 + cos2I);	       
 
   /* Fourth harmonic plus */	    
   a4Pfour  = 4.0/3.0*sin2I*(1.0 + cos2I)*(1.0 - 3.0*eta);
@@ -373,7 +379,7 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
 		  	   + eta*(-262.0/9.0 + 16.0*cos2I + 166.0/9.0*cos4I - 16.0/3.0*cos6I)  
 			   + eta*eta*(14.0 - 16.0*cos2I + (-10.0*cos4I + 16.0*cos6I)/3.0));
   a4Pseven = + 16.0*LAL_PI/3.0*(1.0 + cos2I)*sin2I*(1.0 - 3.0*eta);
-  a4Pmix   = - sin2I*(1.0 + cos2I)*(56.0/5.0 - 32.0*log(2.0)/3.0 - eta*(1193.0/30.0 -32.0*log(2.0)));  
+  a4Pmixseven   = - sin2I*(1.0 + cos2I)*(56.0/5.0 - 32.0*log(2.0)/3.0 - eta*(1193.0/30.0 -32.0*log(2.0)));  
 
   /* Fifth harmonic plus */
   a5Pfive  = - sd*(625.0/384.0*sin2I*(1.0 + cos2I)*(1.0 - 2.0*eta));
@@ -385,16 +391,16 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   a6Psix   = 81.0/40.0*sin4I*(1.0 + cos2I)*(1.0 + 5.0*eta*(eta - 1.0));
 
   /* Seventh harmonic plus */
-  a7Pseven = sd*sin4I*117649.0/46080.0*(1 + cos2I)*(1 + eta*(3.0*eta - 4.0));
+  a7Pseven = delta*sin5I*117649.0/46080.0*(1 + cos2I)*(1 + eta*(3.0*eta - 4.0));
 
   /* First harmonic cross */
   a1Cthree = 3.0/4.0*scd;
   a1Cfive  = - scd*(21.0/32.0 - 5.0/96.0*cos2I + eta*(-23.0 + 5.0*cos2I)/48.0);
   a1Csix   = scd*3.0*LAL_PI/4.0;         	     
-  a1Cmixsix   = scd*(9.0/20.0 + 3.0*log(2.0)/2.0);
-  a1Cmixseven =	- scd*(-913.0/768.0 + 1891.0/11520.0*cos2I - 7.0/4608.0*cos4I
+  a1Cseven =	- scd*(-913.0/7680.0 + 1891.0/11520.0*cos2I - 7.0/4608.0*cos4I
 	               + eta*(1165.0/384.0 - 235.0/576.0*cos2I + 7.0/1152.0*cos4I)
-		       + eta*eta*(-1301.0/4608.0 + 301.0/23040*cos2I - 7.0/1536.0*cos4I)); 
+		       + eta*eta*(-1301.0/4608.0 + 301.0/2304.0*cos2I - 7.0/1536.0*cos4I)); 
+  a1Cmixsix   = scd*(9.0/20.0 + 3.0*log(2.0)/2.0);
        
   /* Second harmonic cross */
   a2Ctwo   = 2.0*cosI;
@@ -404,7 +410,7 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
 	 		       + eta*(143.0/9.0 - 245.0/18.0*cos2I + 5.0/4.0*cos4I)
 			       + eta*eta*(-14.0/3.0 + 35.0/6.0*cos2I - 5.0/4.0*cos4I));
   a2Cseven = - LAL_PI*cosI*((34.0 - 8.0*cos2I)/3.0 - eta*(20.0/3.0 - 8.0*cos2I));
-  a2Cmix   = - cosI*(2.0 - (22.0*cos2I + eta*(-154.0 + 94.0*cos2I))/5.0);
+  a2Cmixseven   = - cosI*(2.0 + (-22.0*cos2I + eta*(-154.0 + 94.0*cos2I))/5.0);
 	 
   /* Third harmonic cross */	 
   a3Cthree = - 9.0/4.0*scd;	  
@@ -412,8 +418,8 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   a3Csix   = - scd*27.0/4.0*LAL_PI;
   a3Cseven = - scd*((12501.0 - 24138.0*cos2I + 1701.0*cos4I)/2560.0
 	  		     + eta*(-19581.0 + 15642.0*cos2I - 1701.0*cos4I)/640.0
-			     + eta*eta*(18903.0 - 22806.0*cos2I + 5103.0*cos4I)); 
-  a3Cmix   = - scd*(189.0/20.0 - 27.0/2.0*log(1.5));
+			     + eta*eta*(18903.0 - 22806.0*cos2I + 5103.0*cos4I)/2560.0);
+  a3Cmixsix   = - scd*(189.0/20.0 - 27.0/2.0*log(1.5));
 
   /* Fourth harmonic cross */
   a4Cfour  = cosI*sin2I*8.0/3.0*(1.0 - 3.0*eta);
@@ -421,7 +427,7 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
 	 		      + eta*((-476.0 + 620.0*cos2I)/9.0 - 16.0*cos4I)
 			      + eta*eta*((68.0 - 116.0*cos2I)/3.0 + 16.0*cos4I));
   a4Cseven = sin2I*cosI*32.0/3.0*LAL_PI*(1.0 - 3.0*eta);
-  a4Cmix   = - cosI*sin2I*(112.0/5.0 + 64.0*log(2.0)/3.0 + eta*(1193.0/15.0 - 64.0*log(2.0)));  
+  a4Cmixseven   = - cosI*sin2I*(-112.0/5.0 + 64.0*log(2.0)/3.0 + eta*(1193.0/15.0 - 64.0*log(2.0)));  
 
   /* Fifth harmonic cross */
   a5Cfive  = - scd*(625.0/192.0*(1.0 - 2.0*eta)*sin2I); 
@@ -637,6 +643,7 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   if ( nNext > nMax )
     nNext = nMax;
 
+
   /* Start integrating!  Inner loop exits each time a new buffer is
      required.  Outer loop has no explicit test; when a termination
      condition is met, we jump directly from the inner loop using a
@@ -725,24 +732,24 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
      f2a = pow(f2aFac*y, TWOTHIRDS);
 
      /* powers of frequency */
-     fthree = b3*pow(f2a, 1.5);
-     ffour  = b4*pow(f2a, 2.0);
-     ffive  = b5*pow(f2a, 2.5);
-     fsix   = b6*pow(f2a, 3.0);
-     fseven = b7*pow(f2a, 3.5);
+     fthree = pow(f2a, 1.5);
+     ffour  = pow(f2a, 2.0);
+     ffive  = pow(f2a, 2.5);
+     fsix   = pow(f2a, 3.0);
+     fseven = pow(f2a, 3.5);
 
      /* PLUS */
      a1 = q[1]*a1Pthree*fthree + q[3]*a1Pfive*ffive + q[4]*a1Psix*fsix + q[5]*a1Pseven*fseven;  
-     a1mix = q[4]*a1Pmix*fsix;
+     a1mix = q[4]*a1Pmixsix*fsix;
        
      a2 = q[0]*a2Ptwo*f2a + q[2]*a2Pfour*ffour + q[3]*a2Pfive*ffive + q[4]*a2Psix*fsix + q[5]*a2Pseven*fseven;		 
-     a2mix = q[5]*a2Pmix*fseven;      	       
+     a2mix = q[5]*a2Pmixseven*fseven;      	       
        
      a3 = q[1]*a3Pthree*fthree + q[3]*a3Pfive*ffive + q[4]*a3Psix*fsix + q[5]*a3Pseven*fseven;		
-     a3mix = q[4]*a3Pmix*fsix;	       
+     a3mix = q[4]*a3Pmixsix*fsix;	       
      
      a4 = q[2]*a4Pfour*ffour + q[4]*a4Psix*fsix + q[5]*a4Pseven*fseven; 
-     a4mix = q[5]*a4Pmix*fseven;      
+     a4mix = q[5]*a4Pmixseven*fseven;      
      
      a5 = q[3]*a5Pfive*ffive + q[5]*a5Pseven*fseven;	    
      
@@ -750,24 +757,24 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
      
      a7 = q[5]*a7Pseven*fseven;
      
-     *(h++) = preFac*(s[0]*a1*cos(1.0*(phiC - phase)/2.0) + s[1]*a2*cos(2.0*(phiC - phase)/2.0) + s[2]*a3*cos(3.0*(phiC - phase)/2.0) 
-	            + s[3]*a4*cos(4.0*(phiC - phase)/2.0) + s[4]*a5*cos(5.0*(phiC - phase)/2.0) + s[5]*a6*cos(6.0*(phiC - phase)/2.0)
-		    + s[6]*a7*cos(7.0*(phiC - phase)/2.0)
-		    + s[0]*a1mix*sin(1.0*(phiC - phase)/2.0) + s[1]*a2mix*sin(2.0*(phiC - phase)/2.0) + s[2]*a3mix*sin(3.0*(phiC - phase)/2.0)
-		    + s[3]*a4mix*sin(4.0*(phiC - phase)/2.0));      
+     *(h++) = preFac*(s[0]*a1*cos(1.0*(phiC - phase)) + s[1]*a2*cos(2.0*(phiC - phase)) + s[2]*a3*cos(3.0*(phiC - phase)) 
+	            + s[3]*a4*cos(4.0*(phiC - phase)) + s[4]*a5*cos(5.0*(phiC - phase)) + s[5]*a6*cos(6.0*(phiC - phase))
+		    + s[6]*a7*cos(7.0*(phiC - phase))
+		    + s[0]*a1mix*sin(1.0*(phiC - phase)) + s[1]*a2mix*sin(2.0*(phiC - phase)) + s[2]*a3mix*sin(3.0*(phiC - phase))
+		    + s[3]*a4mix*sin(4.0*(phiC - phase)));      
 
      /* CROSS */
-     a1 = q[1]*a1Cthree*fthree + q[3]*a1Cfive*ffive + q[4]*a1Csix*fsix;         	     
-     a1mix = q[4]*a1Cmixsix*fsix + q[5]*a1Cmixseven*fseven;    
+     a1 = q[1]*a1Cthree*fthree + q[3]*a1Cfive*ffive + q[4]*a1Csix*fsix + q[5]*a1Cseven*fseven;         	     
+     a1mix = q[4]*a1Cmixsix*fsix;    
        
      a2 = q[0]*a2Ctwo*f2a + q[2]*a2Cfour*ffour + q[3]*a2Cfive*ffive + q[4]*a2Csix*fsix + q[5]*a2Cseven*fseven;    
-     a2mix = q[5]*a2Cmix*fseven;
+     a2mix = q[5]*a2Cmixseven*fseven;
      
      a3 = q[1]*a3Cthree*fthree + q[3]*a3Cfive*ffive + q[4]*a3Csix*fsix + q[5]*a3Cseven*fseven;   
-     a3mix = q[4]*a3Cmix*fsix;
+     a3mix = q[4]*a3Cmixsix*fsix;
      
      a4 = q[2]*a4Cfour*ffour + q[4]*a4Csix*fsix + q[5]*a4Cseven*fseven;
-     a4mix = q[5]*a4Cmix*fseven;  
+     a4mix = q[5]*a4Cmixseven*fseven;  
      
      a5 = q[3]*a5Cfive*ffive + q[5]*a5Cseven*fseven;
      
@@ -775,14 +782,12 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
      
      a7 = q[5]*a7Cseven*fseven;
      
-     *(h++) = preFac*(s[0]*a1*sin(1.0*(phiC - phase)/2.0) + s[1]*a2*sin(2.0*(phiC - phase)/2.0) + s[2]*a3*sin(3.0*(phiC - phase)/2.0) 
-		    + s[3]*a4*sin(4.0*(phiC - phase)/2.0) + s[4]*a5*sin(5.0*(phiC - phase)/2.0) + s[5]*a6*sin(6.0*(phiC - phase)/2.0)
-		    + s[6]*a7*sin(7.0*(phiC - phase)/2.0)
-		    + s[0]*a1mix*cos(1.0*(phiC - phase)/2.0) + s[1]*a2mix*cos(2.0*(phiC - phase)/2.0) + s[2]*a3mix*cos(3.0*(phiC - phase)/2.0)
-	            + s[3]*a4mix*cos(4.0*(phiC - phase)/2.0));          
+     *(h++) = preFac*(s[0]*a1*sin(1.0*(phiC - phase)) + s[1]*a2*sin(2.0*(phiC - phase)) + s[2]*a3*sin(3.0*(phiC - phase)) 
+		    + s[3]*a4*sin(4.0*(phiC - phase)) + s[4]*a5*sin(5.0*(phiC - phase)) + s[5]*a6*sin(6.0*(phiC - phase))
+		    + s[6]*a7*sin(7.0*(phiC - phase))
+		    + s[0]*a1mix*cos(1.0*(phiC - phase)) + s[1]*a2mix*cos(2.0*(phiC - phase)) + s[2]*a3mix*cos(3.0*(phiC - phase))
+	            + s[3]*a4mix*cos(4.0*(phiC - phase)));          
 
-
-     
      n++;
      t = t0 + n*dt;
      yOld = y;
@@ -813,7 +818,7 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
      ABORT( stat, GENERATEPPNINSPIRALH_EMEM,
 	     GENERATEPPNINSPIRALH_MSGEMEM );
    }
-
+	
    here->next = NULL;
    h = here->h;
    f = here->f;
