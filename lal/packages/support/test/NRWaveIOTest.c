@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
   UINT4 k, length;
   REAL4TimeVectorSeries *nrdata=NULL;
 
-  sprintf(filename, "NRWaveIOTest.dat");
+  sprintf(filename, "NRWaveIOTest.data");
   SHOULD_WORK (LALReadNRWave(&status, &nrdata, 10.0, filename), &status);
 
   length = nrdata->data->vectorLength;
