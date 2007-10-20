@@ -12,28 +12,62 @@ export DH_OPTIONS
 DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 
+CFLAGS = -Wall -g
+
+ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
+	CFLAGS += -O0
+else
+	CFLAGS += -O2 
+endif
 
 ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
 	INSTALL_PROGRAM += -s
 endif
 
+#PREFIX = /opt/lscsoft
+PREFIX = /usr
 
+configure:
+	sh ./00boot
+	
 config.status : configure
 	dh_testdir
-	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) --prefix=/usr --with-gcc-flags
+#	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) --prefix=/usr --with-gcc-flags
+#	LDFLAGS="-Wl,-z,defs"
+	CFLAGS="$(CFLAGS)" \
+	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
+		--prefix=$(PREFIX) --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
+		--enable-nightly=no \
+		--disable-debug
 
 
-build : config.status
+build : build-stamp
+
+build-stamp :  config.status
 	dh_testdir
+
+	# Add here commands to compile the package.
 	$(MAKE)
 	$(MAKE) dvi
+	#docbook-to-man debian/lal.sgml > lal.1
+
+	touch $@
 
 
-clean :
+clean:
 	dh_testdir
 	dh_testroot
+	rm -f build-stamp 
+
+	# Add here commands to clean up after the build process.
 	-$(MAKE) distclean
-	dh_clean
+ifneq "$(wildcard /usr/share/misc/config.sub)" ""
+	cp -f /usr/share/misc/config.sub config.sub
+endif
+ifneq "$(wildcard /usr/share/misc/config.guess)" ""
+	cp -f /usr/share/misc/config.guess config.guess
+endif
+	dh_clean 
 
 
 install : build
@@ -41,10 +75,17 @@ install : build
 	dh_testroot
 	dh_clean -k
 	dh_installdirs
-	# install everything in tmp, then use dh_install to put everything in
-	# place (dh_install reads debian/*.install for instructions)
+
+	# Add here commands to install the package into debian/lal.
+#	$(MAKE) DESTDIR=$(CURDIR)/debian/lal install
+	# dh_install reads debian/*.install for instructions
 	$(MAKE) install DESTDIR=$(CURDIR)/debian/tmp
 	dh_install --sourcedir=debian/tmp
+
+#	# split off -dev
+#	mv $(CURDIR)/debian/lal/$(PREFIX)/lib/*a $(CURDIR)/debian/lal-dev/$(PREFIX)/lib
+#	mv $(CURDIR)/debian/lal/$(PREFIX)/lib/pkgconfig $(CURDIR)/debian/lal-dev/$(PREFIX)/lib
+#	dh_install -s
 
 
 # Must not depend on anything. This is to be called by
@@ -55,10 +96,23 @@ binary-common :
 	dh_installchangelogs 
 	dh_installdocs
 	dh_installexamples
+#	dh_install
+#	dh_installmenu
+#	dh_installdebconf	
+#	dh_installlogrotate
+#	dh_installemacsen
+#	dh_installpam
+#	dh_installmime
+#	dh_python
+#	dh_installinit
+#	dh_installcron
+#	dh_installinfo
+#	dh_installman
 	dh_link
 	dh_strip
 	dh_compress 
 	dh_fixperms
+#	dh_perl
 	dh_makeshlibs
 	dh_installdeb
 	dh_shlibdeps
