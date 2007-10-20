@@ -1875,6 +1875,79 @@ class PlotSnrchiNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
     return filename
 
+#############################################################################
+
+class PlotInspiralrangeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A plotinspiralrange job. The static options are read from the section
+  [plotinspiralrange] in the ini file.  The stdout and stderr from the job
+  are directed to the logs directory.  The path to the executable is
+  determined from the ini file.
+  """
+  def __init__(self,cp,dax=False,tag_base='PLOTINSPIRALRANGE'):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','plotinspiralrange')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp,False)
+    self.tag_base = tag_base
+
+
+    for sec in ['plotinspiralrange']:
+      self.add_ini_opts(cp,sec)
+
+    self.set_stdout_file('logs/plotinspiralrange-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/plotinspiralrange-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_sub_file('plotinspiralrange.sub')
+
+    self.add_condor_cmd('getenv','True')
+
+class PlotInspiralrangeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  A PlotInspiralrangeNode runs an instance of the plotinspiral code in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of plotinspiralrange.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.__usertag = job.get_config('pipeline','user-tag')
+
+  def set_user_tag(self,usertag):
+    self.__usertag = usertag
+    self.add_var_opt('user-tag',usertag)
+
+  def get_user_tag(self):
+    return self.__usertag
+
+  def get_output(self):
+    """
+    Returns the file name of output from the inspiral code. This must be kept
+    synchronized with the name of the output file in inspiral.c.
+    """
+    if not self.get_start() or not self.get_end() or not self.get_ifo():
+      raise InspiralError, "Start time, end time or ifo has not been set"
+
+    tag_base = self.job().tag_base
+    basename = self.get_ifo() + '-' + tag_base
+
+    if self.get_ifo_tag():
+      basename += '_' + self.get_ifo_tag()
+    if self.__usertag:
+      basename += '_' + self.__usertag
+
+    filename = basename + '-' + str(self.get_start()) + '-' + \
+      str(self.get_end() - self.get_start()) + '.xml'
+
+    if self.__zip_output:
+      filename += '.gz'
+
+    self.add_output_file(filename)
+
+    return filename
 
 ##############################################################################
 # some functions to make life easier later
