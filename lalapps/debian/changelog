@@ -1,3 +1,9 @@
+lalapps (5.2-1+cvs071020) unstable; urgency=low
+
+  * new CVS snapshot of lalapps
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Sat, 20 Oct 2007 18:35:28 +0200
+
 lalapps (5.2-1) unstable; urgency=low
 
   * Initial release
