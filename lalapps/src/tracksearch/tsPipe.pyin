@@ -70,8 +70,8 @@ cp.read(iniFile)
 #Use config information to remove files if requested
 if removepipeline:
     print "Removing this particular pipeline setup!"
-    print "Waiting 3 seconds..."
-    time.sleep(4)
+    #print "Waiting 3 seconds..."
+    #time.sleep(4)
     pathList=[]
     for option in cp.options('filelayout'):
         workpath=cp.get('filelayout',option)

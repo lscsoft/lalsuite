@@ -26,6 +26,7 @@ __date__ = '$Date$'
 __version__ = ''
 
 import os
+import sys
 import re
 import time
 import string
@@ -52,23 +53,20 @@ def buildDir(dirpath):
     pathArray.reverse()
     for pathBlock in pathArray:
         if os.path.isfile(pathBlock):
-            print 'We have a problem the path requested may clobber an existing file!'
-            print 'File :',str(pathBlock)
+            sys.stderr.write('We have a problem the path requested may clobber an existing file!\n')
+            sys.stderr.write('File :'+str(pathBlock)+'\n')
             os.abort()
         if not os.path.isdir(pathBlock):
-           print 'Making path:',pathBlock
+           sys.stdout.write('Making path:'+str(pathBlock)+'\n')
            try:
                os.mkdir(pathBlock)
            except: pass
     
     #Now double check that directory exists else flag error
     if not os.path.isdir(dirpath):
-        print '***'
-        print 'ERR, directory still not ready contain(s) ',pathArray.__len__(),' branches!'
-        print dirpath
-        print '+++'
-        print pathArray
-        print '***'
+        os.stderr.write('\n WARNING: Directory still not ready contain(s) '+str(pathArray.__len__())+' branches!\n')
+        os.stderr.write(str(dirpath))
+        os.stderr.write(str(pathArray))
 #End def
 
 def isPowOf2(input):
@@ -84,7 +82,7 @@ def powOf2Floor(input):
     ans=0
     inNum=int(input)
     if inNum < 0:
-        print "ERROR Unexpected negative value found!"
+        sys.stderr.write("ERROR Unexpected negative value found!\n")
     newPow2=1
     expPow=1
     if not isPowOf2(inNum):
@@ -97,14 +95,21 @@ def powOf2Floor(input):
         ans=inNum
     return ans
 
-def determineLayerPath(cp,blockID,layerID):
-    layerPath=os.path.normpath(str('%s/%s/%s/'%(cp.get('filelayout','workpath'),blockID,layerID)))
-    return layerPath
+def determineLayerPath(cp,blockID,layerID,channel=''):
+    """
+    Build the correct layer path for each layer of a multi-resolution search.
+    """
+#    layerPath=os.path.normpath(str('%s/%s/%s/%s/'%(cp.get('filelayout','workpath'),blockID,layerID)))
+    layerPath=os.path.normpath(str('%s/%s/'%(determineBlockPath(cp,blockID,channel),layerID)))
+    return str(layerPath)
 #End def
 
-def determineBlockPath(cp,blockID):
-    blockPath=os.path.normpath(str('%s/%s/'%(cp.get('filelayout','workpath'),blockID)))
-    return blockPath
+def determineBlockPath(cp,blockID,channel=''):
+    """
+    Build the correct block path for each data segment to be searched.
+    """
+    blockPath=os.path.normpath(str('%s/%s/%s/'%(cp.get('filelayout','workpath'),blockID,channel)))
+    return str(blockPath)
 #End def
 
 class tracksearchCheckIniFile:
@@ -124,8 +129,13 @@ class tracksearchCheckIniFile:
         #Check for existance of [condor] section files
         condorOptList=self.iniOpts.options('condor')
         fileNotFound=False
+        homedirectory=os.path.abspath(str(os.getenv('HOME')))+'/'
         for entry in condorOptList:
             optValue=self.iniOpts.get('condor',entry)
+            if optValue.startswith('~/'):
+                newValue=os.path.normpath(optValue.replace('~/',homedirectory))
+                self.iniOpts.set('condor',entry,newValue)
+                optValue=newValue
             if str(optValue).__contains__('/'):
                 if not os.path.exists(str(optValue)):
                     self.errList.append('Can not find :'+str(entry)+':'+str(optValue))
@@ -158,6 +168,14 @@ class tracksearchCheckIniFile:
         NOFB=int(self.iniOpts.get('tracksearchtime','number_of_freq_bins'))
         if WS > NOFB:
             self.errList.append('Error window length inconsistent!')
+        #Check [multichannel] section if present
+        if self.iniOpts.has_section('multichannel'):
+            for channel in self.iniOpts.options('multichannel'):
+                channelEntry=self.iniOpts.get('multichannel',channel).strip()
+                if (channelEntry==''):
+                    sys.stdout.write("Found blank channel line for,"+str(channel))
+                    sys.stdout.write("Deleting that key from installation.")
+                    self.iniOpts.remove_option('multichannel',channel)
         #Check [layerconfig] section
         LTBS=self.iniOpts.get('layerconfig','layerTopBlockSize')
         layerOpts=self.iniOpts.options('layerconfig')
@@ -189,6 +207,10 @@ class tracksearchCheckIniFile:
         condorOptList=self.iniOpts.options('pylibraryfiles')
         for entry in condorOptList:
             optValue=self.iniOpts.get('pylibraryfiles',entry)
+            if optValue.startswith('~/'):
+                newValue=os.path.normpath(optValue.replace('~/',homedirectory))
+                self.iniOpts.set('condor',entry,newValue)
+                optValue=newValue
             if str(optValue).__contains__('/'):
                 if not os.path.exists(str(optValue)):
                     self.errList.append('Can not find python library file:'+str(entry)+':'+str(optValue))
@@ -200,9 +222,9 @@ class tracksearchCheckIniFile:
     #end numberErrors def
 
     def printErrorList(self):
-        print self.numberErrors(),' INI file Errors found!'
+        sys.stderr.write(str(self.numberErrors())+' INI file Errors found!\n')
         for error in self.errList:
-            print error
+            sys.stderr.write(error+'\n')
     #end printErrorList
 
     def hasInjectSec(self):
@@ -217,11 +239,10 @@ class tracksearchCheckIniFile:
             injectTopBlockSize=float(self.iniOpts.get('layerconfig','layerTopBlockSize'))
             totalJobNodes=injectTopBlockSize/(injectLayerTimeScale*injectLayerSize)
             totalInjects=totalJobNodes*injectCount
-            print "ESTIMATING INJECTION PROPERTIES!"
-            print "Time Nodes with Injection:",totalJobNodes
-            print "Total Injections to do   :",totalInjects
-            print "Injects per Time Node    :",injectCount
-            print ""
+            sys.stdout.write("ESTIMATING INJECTION PROPERTIES!\n")
+            sys.stdout.write("Time Nodes with Injection:"+str(totalJobNodes)+"\n")
+            sys.stdout.write("Total Injections to do   :"+str(totalInjects)+"\n")
+            sys.stdout.write("Injects per Time Node    :"+str(injectCount)+"\n")
             if not os.path.exists(injectFile):
                 self.errList.append('Can not find text file to inject :'+str(injectFile))
                 os.abort()
@@ -248,7 +269,7 @@ class tracksearchConvertSegList:
         #Read segents from file
         self.origSegObject.read(self.segFilename,self.duration)
         if self.origSegObject._ScienceData__sci_segs.__len__() == 0:
-            print "Aborting Segment list is not formatted correctly!"
+            sys.stderr.write("Aborting Segment list is not formatted correctly!\n")
             os.abort()
         #Read the file header
         input_fp=open(self.segFilename,'r')
@@ -285,7 +306,7 @@ class tracksearchHousekeeperJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     We will also remove the .diag files if they are present as well.  This is an umbrella feature.  It works on
     clearing files from [filelayout],workpath and its subdirectories.  This is all blockIDs for the DAG.
     """
-    def __init__(self,cp,block_id,dagDir):
+    def __init__(self,cp,block_id,dagDir,channel=''):
         self.dagDirectory=dagDir
         self.cp=cp
         self.block_id=block_id
@@ -298,13 +319,13 @@ class tracksearchHousekeeperJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
             ignorePathString=cp.get(sec,'ignore-path')
             if not(ignorePathString.__contains__('RESULTS')):
                 cp.set(sec,'ignore-path',ignorePathString+',RESULTS')
-                print "I noticed you were not omitting RESULTS directory from cleaning."
-                print "You would delete the RESULTS files, thereby wasting CPU time."
-                print "I'll assume you just forgot and we will keep those files."
+                sys.stderr.write("I noticed you were not omitting RESULTS directory from cleaning.\n")
+                sys.stderr.write("You would delete the RESULTS files, thereby wasting CPU time.\n")
+                sys.stderr.write("I'll assume you just forgot and we will keep those files.\n")
             self.add_ini_opts(cp,sec)
         workpath=cp.get('filelayout','workpath')
         self.add_opt('parent-dir',workpath)
-        blockPath=determineBlockPath(cp,self.block_id)
+        blockPath=determineBlockPath(cp,self.block_id,channel)
         workpath=blockPath
         workpath_logs=workpath+'/logs'
         buildDir(workpath_logs)
@@ -321,7 +342,7 @@ class tracksearchTimeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     is a string either -> normal  -> injection
     Then the appropriate ini options will be used to create the job.
     """
-    def __init__(self,cp,block_id,layer_id,dagDir,jobType):
+    def __init__(self,cp,block_id,layer_id,dagDir,jobType,channel=''):
         self.injectFile=""
         self.jobType=jobType
         self.dagDirectory=dagDir
@@ -332,19 +353,24 @@ class tracksearchTimeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         #If invalid type is requested display warning and
         #assume a normal injection was requested
         if not self.validJobTypes.__contains__(str(self.jobType).lower()):
-            print "Warning: You requested invalid tracksearchTimeJob type!"
-            print "Assuming you meant -> normal <- job type."
+            sys.stderr.write("Warning: You requested invalid tracksearchTimeJob type!\n")
+            sys.stderr.write("Assuming you meant -> normal <- job type.\n")
             self.jobType='normal'
         pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
         pipeline.AnalysisJob.__init__(self,cp)
         blockID=block_id
         layerID=layer_id
-        layerPath=determineLayerPath(cp,blockID,layerID)
-        blockPath=determineBlockPath(cp,blockID)
+        layerPath=determineLayerPath(cp,blockID,layerID,channel)
+        blockPath=determineBlockPath(cp,blockID,channel)
         #THERE IS A PROBLEM WITH GPS START ARGUEMENT TO THE CODE
         #Parse all the options from BASE and Timeseries Config sections
         for sec in ['tracksearchbase']:
             self.add_ini_opts(cp,sec)
+        #Readjust the channel name listed in tracksearch time
+        #to the current one from from multichannel if
+        #self.currenchannel!=''
+        if (channel!=''):
+            cp.set('tracksearchtime','channel_name',channel)
         for sec in ['tracksearchtime']:
             self.add_ini_opts(cp,sec)
         #Check the type of job this is and add in the injection options
@@ -367,7 +393,6 @@ class tracksearchTimeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         totalTimePoints=int(sampleRate*setSize*timeScale)
         self.add_opt('total_time_points',str(totalTimePoints))
         #Set segment size for each TF map
-        #segmentTimePoints=powOf2Floor(timeScale*sampleRate)
         segmentTimePoints=int(timeScale*sampleRate)
         self.add_opt('segment_time_points',str(segmentTimePoints))
         #Set overlap size for each TF map
@@ -432,7 +457,7 @@ class tracksearchAveragerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     set of maps.  The set is then a new image of reduced dimesions specified
     via input arguments
     """
-    def __init__(self,cp,block_id,layer_id,dagDir):
+    def __init__(self,cp,block_id,layer_id,dagDir,channel=''):
         self.dagDirectory=dagDir
     #Setup job options to take a cache of caches and build new maps
             #ConfigParser object -> cp
@@ -442,8 +467,8 @@ class tracksearchAveragerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         pipeline.AnalysisJob.__init__(self,cp)
         blockID=block_id
         layerID=layer_id
-        layerPath=determineLayerPath(cp,blockID,layerID)
-        blockPath=determineBlockPath(cp,blockID)
+        layerPath=determineLayerPath(cp,blockID,layerID,channel)
+        blockPath=determineBlockPath(cp,blockID,channel)
         #Parse all the options from BASE and Timeseries Config sections
         for sec in ['averagerbase']:
             self.add_ini_opts(cp,sec)
@@ -469,7 +494,7 @@ class tracksearchMapCacheBuildJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     parsing code to create the layers of map building caches required
     to complete the pipeline
     """
-    def __init__(self,cp,block_id,layer_id,dagDir):
+    def __init__(self,cp,block_id,layer_id,dagDir,channel=''):
         self.dagDirectory=dagDir
     #Setup job options to take a cache of caches and build new maps
             #ConfigParser object -> cp
@@ -480,8 +505,8 @@ class tracksearchMapCacheBuildJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         blockID=block_id
         layerID=layer_id
         #WE NEED A DAG VARIABLE THE LAYERid FOR PROPER INITIAL DIR
-        layerPath=determineLayerPath(cp,blockID,layerID)
-        blockPath=determineBlockPath(cp,blockID)
+        layerPath=determineLayerPath(cp,blockID,layerID,channel)
+        blockPath=determineBlockPath(cp,blockID,channel)
         #From ini sections [averagerbase] and [layerconfig] we will determine
         # the proper arguments to give the mapCacheBuildJob
         layerconfigOpts=[]
@@ -491,9 +516,9 @@ class tracksearchMapCacheBuildJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
             if str(opt).__contains__(str('TimeScale').lower()):
                 layerconfigOpts.append(arg)
         if layerconfigOpts.__len__() <= 1:
-            print 'Error with section Layerconfig!'
+            sys.stderr.write("Error with section Layerconfig!\n")
         if layerconfigOpts.__len__() < layerID:
-            print 'Error invoking mapBuilderObject: layerID problem!',layerconfigOpts,layerID
+            sys.stderr.write("Error invoking mapBuilderObject: layerID problem!"+str(layerconfigOpts,layerID)+"\n")
         layerconfigOpts.sort()
         #Error condition layerID >= len(layerList)
         #Determine overlap conditions from [tracksearchbase] as percentage
@@ -505,13 +530,13 @@ class tracksearchMapCacheBuildJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.expectedTotalDuration=cp.get('layerconfig','layerTopBlockSize')
         self.overlapTime=float(string.strip(cp.get('layerconfig',layerTimeLabel)))*percentOverlap
         self.mapTime=float(string.strip(cp.get('layerconfig',layerTimeLabel)))
-        #Work on all files listed
-        #OK THIS IS INCORRECT SETTING OF MACROS
-        #self.add_opt('file','$macroFile')
-        #self.add_opt('start_time','$macroStartTime')
-        #self.add_opt('map_set_duration','$macroMapSetDuration')
-        #self.add_opt('new_map_duration','$macroNewMapDuration')
-        #self.add_opt('overlap_maps','$macroOverlapMaps')
+#         #Work on all files listed
+#         #OK THIS IS INCORRECT SETTING OF MACROS
+#         #self.add_opt('file','$macroFile')
+#         #self.add_opt('start_time','$macroStartTime')
+#         #self.add_opt('map_set_duration','$macroMapSetDuration')
+#         #self.add_opt('new_map_duration','$macroNewMapDuration')
+#         #self.add_opt('overlap_maps','$macroOverlapMaps')
         #Parse all the options from BASE and Timeseries Config sections
         for sec in ['cachebuilder']:
             self.add_ini_opts(cp,sec)
@@ -539,7 +564,7 @@ class tracksearchMapCacheBuildJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         F=int(self.jobSetSize)
         jobCacheNumEstimate=int(math.ceil(((A-C)/(B-C))/F))
         if (jobCacheNumEstimate == 0):
-            print 'Error check object initialization.'
+            sys.stderr.write("Error check object initialization.")
             return outList
         for num in range(1,jobCacheNumEstimate+1):
             outputList.append('JobSet_'+str(num)+'.cacheTSA')
@@ -556,7 +581,7 @@ class tracksearchMapCacheBuildJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         F=int(self.jobSetSize)
         jobCacheNumEstimate=int(math.ceil(((A-C)/(B-C))/F))
         if (jobCacheNumEstimate == 0):
-            print 'Error check object initialization.'
+            sys.stderr.write("Error check object initialization.\n")
             return outList
         for num in range(1,jobCacheNumEstimate+1):
             outputList.append('JobSet_'+str(num)+'.jobCache')
@@ -591,7 +616,7 @@ class tracksearchClusterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     cluster jobs will concatenate all results file into a single list.
     The single lists will be saved in a special directory.
     """
-    def __init__(self,cp,block_id,dagDir):
+    def __init__(self,cp,block_id,dagDir,channel=''):
         self.dagDirectory=dagDir
         self.__executable = cp.get('condor','clustertool')
         #HACK SETB pool the job runs on the scheduler
@@ -600,8 +625,8 @@ class tracksearchClusterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         pipeline.AnalysisJob.__init__(self,cp)
         self.block_id=blockID=block_id
         layerID='RESULTS_'+str(blockID)
-        self.initialDir=layerPath=determineLayerPath(cp,blockID,layerID)
-        blockPath=determineBlockPath(cp,blockID)
+        self.initialDir=layerPath=determineLayerPath(cp,blockID,layerID,channel)
+        blockPath=determineBlockPath(cp,blockID,channel)
         #Setup needed directories for this job to write in!
         buildDir(blockPath)
         buildDir(layerPath)
@@ -615,6 +640,7 @@ class tracksearchClusterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.candUtil=str(cp.get('pylibraryfiles','pyutilfile'))
         self.add_condor_cmd('should_transfer_files','yes')
         self.add_condor_cmd('when_to_transfer_output','on_exit')
+        self.add_condor_cmd('initialdir',self.initialDir)
         #If the job is to run in the scheduler universe we set the proper ENV
         #variables otherwise the submit file will transfer the py script.
         if self.__universe == 'scheduler':
@@ -632,7 +658,7 @@ class tracksearchThresholdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     but we put it here to allow arbitrary rethresholding after a run.  The user may wish to play
     with the trigger statistics.  This keeps the pipeline reruns to a minimum.
     """
-    def __init__(self,cp,block_id,dagDir):
+    def __init__(self,cp,block_id,dagDir,channel=''):
         self.dagDirectory=dagDir
         self.__executable = cp.get('condor','clustertool')
         self.__universe= cp .get('condor','clustertool_universe')
@@ -640,8 +666,8 @@ class tracksearchThresholdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         pipeline.AnalysisJob.__init__(self,cp)
         self.block_id=blockID=block_id
         layerID='RESULTS_'+str(blockID)
-        self.initialDir=layerPath=determineLayerPath(cp,blockID,layerID)
-        blockPath=determineBlockPath(cp,blockID)
+        self.initialDir=layerPath=determineLayerPath(cp,blockID,layerID,channel)
+        blockPath=determineBlockPath(cp,blockID,channel)
         #Setup needed directories for this job to write in!
         buildDir(blockPath)
         buildDir(layerPath)
@@ -660,6 +686,7 @@ class tracksearchThresholdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         #Setp escaping possible quotes in threshold string!
         if cp.has_option('candidatethreshold','expression_threshold'):
             newVal=val=cp.get('candidatethreshold','expression_threshold')
+            #Introduce proper shell escapes for submit file to work...
             if val.__contains__('"'):
                 newVal=str(val).replace('"','\\"')
                 cp.set('candidatethreshold','expression_threshold',newVal)
@@ -780,6 +807,17 @@ class tracksearch:
             self.jobType='injection'
         else:
             self.jobType='normal'
+        #Check to see if Config object contains a multichannel
+        #section if so set the multichannel boolean to true and adjust
+        #dag construction accordingly
+        self.currentchannel=str('')
+        self.channellist=list()
+        self.have_multichannel=False
+        self.sec_multichannel=sec_multichannel="multichannel"
+        if self.cp.has_section(sec_multichannel):
+            self.have_multichannel=True
+            for channel in self.cp.options(sec_multichannel):
+                self.channellist.append(str(self.cp.get(sec_multichannel,channel)).strip())
         #Expects a fixed size PsuedoScience Segment
         #The dag for this run will be then run from this data
         self.sciSeg=scienceSegment
@@ -820,7 +858,7 @@ class tracksearch:
         tempLib.sort()
         self.layerSetSizeInfo=tempLib
         if self.layerTimeScaleInfo.__len__()!=self.layerSetSizeInfo.__len__():
-            print 'ERROR with section [layerconfig]'
+            sys.stderr.write("ERROR with section [layerconfig]\n")
         self.layerCount=self.layerTimeScaleInfo.__len__()
 
     #End Init
@@ -850,9 +888,9 @@ class tracksearch:
             elif ((frameStart < endTime) and (frameStop > endTime)):
                 newList.append(fileContents[index])
         if newList.__len__() == 0:
-            print "ERROR! Inappropriate cache file conversion for ",startTime," to ",endTime
-            print "Are you using correct dummy cache file?"
-            print masterCacheFile
+            sys.stderr.write("ERROR! Inappropriate cache file conversion for "+str(startTime)+" to "+str(endTime)+"\n")
+            sys.stderr.write("Are you using correct dummy cache file?\n")
+            sys.stderr.write(str(masterCacheFile)+"\n")
             os.abort()
         newList.sort()
         listStart=int(newList[0].split(' ')[2])
@@ -875,22 +913,24 @@ class tracksearch:
         try:
             dagDirectory=str(self.cp.get('filelayout','dagpath')+'/'+self.blockID+'/')
         except:
-            print "Didn't find the dagpath option in [filelayout], defaulting to old behaviour."
+            sys.stdout.write("Didn't find the dagpath option in [filelayout], defaulting to old behaviour.\n")
             dagDirectory=str(self.resultPath+'/DAG_files/'+self.blockID+'/')
         dagDirectory=os.path.normpath(dagDirectory)
         return dagDirectory
     #end def
     
-    def startingSearchLayer(self,layerID):
-        #This layer is responsible for initial data find jobs and the
-        #tracksearch time jobs in a single layer search this would be
-        #the only layer to actually be used
-        #RETURNS the last node of this layer to satisify the
-        #parent child relationship to next execution layer
-        #layerID is expected to be a 1 Duh, first layer!
-        #print 'Preparing layer ',layerID,' of block ',self.blockID
-        #We need to make chunks of data from this sciSeg which are
-        #layer1SetSize long in time
+    def __startingSearchLayer__(self,layerID):
+        """
+        This layer is responsible for initial data find jobs and the
+        tracksearch time jobs in a single layer search this would be
+        the only layer to actually be used
+        RETURNS the last node of this layer to satisify the
+        parent child relationship to next execution layer
+        layerID is expected to be a 1 Duh, first layer!
+        print 'Preparing layer ',layerID,' of block ',self.blockID
+        We need to make chunks of data from this sciSeg which are
+        layer1SetSize long in time
+        """
         mapTime=float(self.cp.get('layerconfig','layer1TimeScale'))
         overlapTime=mapTime*self.percentOverlap
         setSize=float(self.cp.get('layerconfig','layer1SetSize'))
@@ -898,19 +938,19 @@ class tracksearch:
         #Create the chunk list that we will makeing data find jobs for
         self.sciSeg.make_chunks(setSize*mapTime)
         if ((self.sciSeg.dur()>=self.sciSeg.unused()) and (self.sciSeg.__len__() <= 1)):
-            print ""
-            print "WARNING: Set Size and Map Time(s) seem inconsistent!"
-            print "Set Size :",setSize
-            print "Map Time :",mapTime
-            print "Pipeline may be incorrectly constructed! Check your input options."
-            print ""
+            sys.stderr.write("\n")
+            sys.stderr.write("WARNING: Set Size and Map Time(s) seem inconsistent!\n")
+            sys.stderr.write("Set Size :"+str(setSize)+"\n")
+            sys.stderr.write("Map Time :"+str(mapTime)+"\n")
+            sys.stderr.write("Pipeline may be incorrectly constructed! Check your input options.\n")
+            sys.stderr.write("\n")
         #Setup time marker for entire run
         runStartTime=self.runStartTime
         #What is name of dagDir location of dags and sub files
         dagDir=self.dagDirectory
         #Create dataFindJob
         #This path is relative to the jobs initialDir arguments!
-        dataFindInitialDir=determineLayerPath(self.cp,self.blockID,layerID)
+        dataFindInitialDir=determineLayerPath(self.cp,self.blockID,layerID,self.currentchannel)
         dataFindLogPath=os.path.normpath(determineBlockPath(self.cp,self.blockID)+'/logs/')
         df_job = pipeline.LSCDataFindJob(dataFindInitialDir,dataFindLogPath,self.cp)
         #Setup the jobs after queries to LSCdataFind as equal children
@@ -921,14 +961,15 @@ class tracksearch:
                                                block_id,
                                                layer_id,
                                                dagDir,
-                                               self.jobType)
+                                               self.jobType,
+                                               self.currentchannel)
         df_job.set_sub_file(os.path.normpath(self.dagDirectory+'/datafind.sub'))
         df_job.add_condor_cmd('initialdir',str(dataFindInitialDir))
         prevLayerJobList=[]        
         prev_df = None
         if not str(self.cp.get('condor','datafind')).lower().__contains__(str('LSCdataFind').lower()):
-            print 'Assuming we do not need standard data find job! Hardwiring in cache file to pipeline!'
-            print 'Looking for ini option: condor,datafind_fixcache'
+            sys.stdout.write("Assuming we do not need standard data find job! Hardwiring in cache file to pipeline!\n")
+            sys.stdout.write("Looking for ini option: condor,datafind_fixcache\n")
             # Pop first chunk off list to keep from repeating jobs!
             # We do this because the for look has a repeat issue the first job
             # seems to be a repeat of 2nd analysis chunk.  The for loop catches these types
@@ -949,8 +990,8 @@ class tracksearch:
 #             print "This is due to our pipeline methodology."
             self.sciSeg._ScienceSegment__chunks.pop(0)
         if (self.sciSeg._ScienceSegment__chunks.__len__() < 1):
-            print "WARNING: Data to be analyzed not properly divided or absent!"
-            print "The input options must be WRONG!"
+            sys.stdout.write("WARNING: Data to be analyzed not properly divided or absent!\n")
+            sys.stdout.write("The input options must be WRONG!\n")
         for chunk in self.sciSeg:
             df_node=pipeline.LSCDataFindNode(df_job)
             df_node.set_start(chunk.start())
@@ -978,21 +1019,25 @@ class tracksearch:
             prevLayerJobList.append(tracksearchTime_node)
         return prevLayerJobList
 
-    def finalSearchLayer(self,layerID,nodeLinks):
-        #This layer will setup last nodes of dag.  These nodes
-        #should perform a final map search.  No additional cache
-        #building needs to be done here
-        #RETURNS no node linkage
-        #Setup file globbing for each layer
+    def __finalSearchLayer__(self,layerID,nodeLinks):
+        """
+        This layer will setup last nodes of dag.  These nodes
+        should perform a final map search.  No additional cache
+        building needs to be done here
+        RETURNS no node linkage
+        Setup file globbing for each layer
+        """
+        channel=self.currentchannel
         tracksearchCluster_job=tracksearchClusterJob(self.cp,self.blockID,self.dagDirectory)
-        
-        tracksearchCluster_job.add_condor_cmd('initialdir',tracksearchCluster_job.initialDir)
         #Loop through done search layers to glob
         prevJobList=[]
+        globformat="Glob::%s::%s::%s.candidates"
+        clobformat="Clob::%s::%s::%s_%s.candidates"
         for i in range(1,layerID):
             tracksearchCluster_node=tracksearchClusterNode(tracksearchCluster_job)
-            layer2work=determineLayerPath(self.cp,self.blockID,i)+"/*.candidates"
-            globFilename="Glob::"+str(self.blockID)+"_"+str(i)+".candidates"
+            layer2work=determineLayerPath(self.cp,self.blockID,i,channel)+"/*.candidates"
+            #globFilename="Glob::"+str(channel)+"::"+str(self.blockID)+"::"+str(i)+".candidates"
+            globFilename=globformat%(str(channel),str(self.blockID),str(i))
             tracksearchCluster_node.add_var_opt('file',layer2work)
             tracksearchCluster_node.add_var_opt('outfile',globFilename)
             tracksearchCluster_node.add_var_arg("--glob")
@@ -1003,17 +1048,21 @@ class tracksearch:
             #Record job information these jobs are parent of clobbers
             prevJobList.append(tracksearchCluster_node)
         #Setup the appropriate globbed list clobbering jobs
-        tracksearchCluster_job2=tracksearchClusterJob(self.cp,self.blockID,self.dagDirectory)
-        tracksearchCluster_job2.add_condor_cmd('initialdir',tracksearchCluster_job2.initialDir)
+        tracksearchCluster_job2=tracksearchClusterJob(self.cp,self.blockID,self.dagDirectory,self.currentchannel)
+        #DEL IF THIS DOESN'T BREAK CODE.
+        ##tracksearchCluster_job2.add_condor_cmd('initialdir',tracksearchCluster_job2.initialDir)
         tracksearchCluster_job2.set_sub_file(os.path.normpath(self.dagDirectory+'/tracksearchCluster2.sub'))
         tracksearchCluster_job.add_condor_cmd('initialdir',tracksearchCluster_job.initialDir)
         nextJobList=[]
         for i in range(1,layerID-1):
             tracksearchCluster_node2=tracksearchClusterNode(tracksearchCluster_job2)
             DLP=tracksearchCluster_job2.initialDir
-            file2clobber=DLP+"Glob::"+str(self.blockID)+"_"+str(i)+".candidates"
-            clobberWith=DLP+"Glob::"+str(self.blockID)+"_"+str(i+1)+".candidates"
-            clobFilename="Clob::"+str(self.blockID)+"_"+str(i)+"_"+str(i+1)+".candidates"
+            #file2clobber=DLP+"Glob::"+str(self.blockID)+"_"+str(i)+".candidates"
+            #clobberWith=DLP+"Glob::"+str(self.blockID)+"_"+str(i+1)+".candidates"
+            file2clobber=globformat%(str(channel),str(self.blockID),str(i))
+            clobberWith=globformat%(str(channel),str(self.blockID),str(i+1))
+            #clobFilename="Clob::"+str(self.blockID)+"_"+str(i)+"_"+str(i+1)+".candidates"
+            clobFilename=clobformat%(str(channel),str(self.blockID),str(i),str(i+1))
             tracksearchCluster_node2.add_var_opt('file',file2clobber)
             tracksearchCluster_node2.add_var_opt('outfile',clobFilename)
             tracksearchCluster_node2.add_var_opt('clobber',clobberWith)
@@ -1022,7 +1071,7 @@ class tracksearch:
             self.dag.add_node(tracksearchCluster_node2)
             nextJobList.append(tracksearchCluster_node2)
         #Step that sets up the tracksearchHousekeeperJobs
-        tracksearchHousekeeper_job=tracksearchHousekeeperJob(self.cp,self.blockID,self.dagDirectory)
+        tracksearchHousekeeper_job=tracksearchHousekeeperJob(self.cp,self.blockID,self.dagDirectory,self.currentchannel)
         tracksearchHousekeeper_node=tracksearchHousekeeperNode(tracksearchHousekeeper_job)
         for parents in prevJobList:
             tracksearchHousekeeper_node.add_parent(parents)
@@ -1042,32 +1091,33 @@ class tracksearch:
             self.dag.add_node(tracksearchThreshold_node)
     #end def finalsearchlayer method
 
-    def intermediateSearchLayers(self,layerID,nodeLinks):
-        #This layer performs the required map cache building from
-        #previous ith layer.  It is these caches which are joined into
-        #new maps and placed as part of the i+1 layer and analyzed
-        #RETURNS node linkage to possibly perform another search layer
+    def __intermediateSearchLayers__(self,layerID,nodeLinks):
+        """
+        This layer performs the required map cache building from
+        previous ith layer.  It is these caches which are joined into
+        new maps and placed as part of the i+1 layer and analyzed
+        RETURNS node linkage to possibly perform another search layer
+        """
         layerNum=layerID
         layerNumPrevious=layerID-1
         layer_id = layerNum 
         block_id=self.blockID
         dagDir=self.dagDirectory
         if (layerNumPrevious < 1):
-            print 'Error calling the intermediate search layer method!'
-        #print 'Preparing layer ',layerID,' of block ',self.blockID
+            sys.stderr.write("Error calling the intermediate search layer method!\n")
         prevLayerJobList=nodeLinks
         # Setup each additonal individual layer
         # The cache build node list clear after first pass through loop
         if (layerNum < 2):
             prevLayerJobList=[]
-        cacheBuild_job=tracksearchMapCacheBuildJob(self.cp,block_id,layerNum,dagDir)
+        cacheBuild_job=tracksearchMapCacheBuildJob(self.cp,block_id,layerNum,dagDir,self.channel)
         cacheBuild_node=tracksearchMapCacheBuildNode(cacheBuild_job)
         #Add directory to process code expects file but behavior will
         #adjust to a directory listing if that is the case
         #Specify directory contain map files to setup
         #Should be previous layer already processed!
-        cacheBuildMapDir=determineLayerPath(self.cp,block_id,layerNumPrevious)
-        cacheBuildWorkDir=determineLayerPath(self.cp,block_id,layerNum)
+        cacheBuildMapDir=determineLayerPath(self.cp,block_id,layerNumPrevious,self.channel)
+        cacheBuildWorkDir=determineLayerPath(self.cp,block_id,layerNum,self.channel)
         cacheBuild_node.add_macro('macroStartDir',cacheBuildWorkDir)
         cacheBuild_node.add_var_opt('file',cacheBuildMapDir)            
         #Set the time of this run to start preping caches for
@@ -1085,14 +1135,13 @@ class tracksearch:
         self.dag.add_node(cacheBuild_node)
         
         # The merge map
-        tracksearchAverager_job=tracksearchAveragerJob(self.cp,block_id,layerNum,dagDir)
-
+        tracksearchAverager_job=tracksearchAveragerJob(self.cp,block_id,layerNum,dagDir,self.channel)
         jobSetList=cacheBuild_job.getJobsetList()
         jobTSAList=cacheBuild_job.getJobTSAList()
         #Var to store copies of these objects to get right parent relation
         averagerJobListing=[]
         #Loop over all theoretical jobsets for map making
-        averagerWorkDir=determineLayerPath(self.cp,block_id,layerNum)
+        averagerWorkDir=determineLayerPath(self.cp,block_id,layerNum,self.channel)
         averagerTimeLayerBinCount=int(self.cp.get('tracksearchtime','number_of_time_bins'))
         for cacheSet in jobSetList:
             tracksearchAverager_node=tracksearchAveragerNode(tracksearchAverager_job)
@@ -1111,7 +1160,7 @@ class tracksearch:
         for cacheSet in jobTSAList:
             tracksearchMap_node=tracksearchMapNode(tracksearchMap_job)
             tracksearchMap_node.add_var_opt('inject_map_cache',cacheSet)
-            tracksearchMap_node.add_macro('macroStartDir',determineLayerPath(self.cp,block_id,layerNum))
+            tracksearchMap_node.add_macro('macroStartDir',determineLayerPath(self.cp,block_id,layerNum,self.channel))
             for parent in averagerJobListing:
                 tracksearchMap_node.add_parent(parent)
             self.dag.add_node(tracksearchMap_node)
@@ -1119,34 +1168,52 @@ class tracksearch:
         prevLayerJobList=nextLayerJobList
         return nextLayerJobList
     #end def
-    
-    def createJobs(self):
-        #This method will call all the needed jobs/node objects to create
-        #a coherent job dag
-        #CHECK TO MAKE SURE LAYERCONFIG IS VALID HAS ENTRIES
-        #We need a consistency check between above and [tracksearchbase]
-        #Need a new housekeeping method which will go to each step
-        #deleting the MAP:*.dat files to save disk space
+
+    def __createSingleJob__(self,channelname=''):
+        """
+        Wrapper which should be called once per channel in the
+        multichannel configuration section or just once if the only
+        channel mentioned is in the tracksearchtime section.  This
+        method should never be called without a specified channel name.
+        """
+        if ((channelname=='') and (self.have_multichannel)):
+            sys.stderr.write("Improper function call to __createSingleJob__() method")
+            os.abort()
+        self.currentchannel=channelname
         layerID=1
-
-        nodeLinkage=self.startingSearchLayer(layerID)
-
+        nodeLinkage=self.__startingSearchLayer__(layerID)
         layerCount=self.layerCount
         #set of numbers [i,j)
         for layerNum in range(2,layerCount+1):
-            nodeLinkage=self.intermediateSearchLayers(layerNum,nodeLinkage)
+            nodeLinkage=self.__intermediateSearchLayers__(layerNum,nodeLinkage)
 
-        self.finalSearchLayer(layerCount+1,nodeLinkage)
+        self.__finalSearchLayer__(layerCount+1,nodeLinkage)
+    #End __createSingleJob___()
+    
+    def createJobs(self):
         """
-        We still need the pre and post script setups for each job
-        then the correct config section in the ini file
-        also need to the final track clustering code
-        There is an implied fix to mapBuild.py code so Jobset uses
-        GPS markers and not floats in the filenames!!
+        This method will call all the needed jobs/node objects to create
+        a coherent job dag
+        CHECK TO MAKE SURE LAYERCONFIG IS VALID HAS ENTRIES
+        We need a consistency check between above and [tracksearchbase]
+        Need a new housekeeping method which will go to each step
+        deleting the MAP:*.dat files to save disk space
         """
+        if self.have_multichannel:
+            for currentchannel in self.channellist:
+                sys.stdout.write("Installing sub-pipe for channel:"+str(currentchannel)+"\n")
+                self.__createSingleJob__(currentchannel)
+        else:
+            sys.stdout.write("Setting up standard single channel tracksearch pipe.\n")
+            self.__createSingleJob__()
     #End createJobs
+
     def writePipelineDAG(self):
-        #This method lays out the dag files to a simple submission to condor
+        """
+        Method that writes out the completed DAG and job files inside
+        the proper filespace hierarchy for running the tracksearch
+        pipeline
+        """
         self.dag.write_sub_files()
         self.dag.write_dag()
         #Read in the resulting text file and prepend the DOT
@@ -1154,7 +1221,7 @@ class tracksearch:
         input_fp=open(self.dag.get_dag_file(),'r')
         contents=input_fp.readlines()
         #Determine dot file name as dagfilename.DOT
-        [dotfilename,extension]=os.path.splitext(os.path.abspath(sef.dat.get_dag_file()))
+        [dotfilename,extension]=os.path.splitext(os.path.abspath(self.dag.get_dag_file()))
         dotfilename=dotfilename+'.dot'
         contents.insert(0,'DOT '+dotfilename+' OVERWRITE UPDATE\n');
         input_fp.close()

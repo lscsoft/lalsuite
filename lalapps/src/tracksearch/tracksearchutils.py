@@ -836,9 +836,6 @@ class candidateList:
             if int(TDArrayGPS[i][0]) - int(TDArrayGPS[i-1][0]) == 1:
                 AddMe=TDArrayGPS[i][1].__sub__(TDArrayGPS[i-1][1])
                 AddMe=AddMe.__abs__()
-#                print TDArrayGPS[i][1].display(),TDArrayGPS[i-1][1].display(),AddMe.display()," As INTS ",TDArrayGPS[i][1].__makeInt__(),TDArrayGPS[i-1][1].__makeInt__(),AddMe.__makeInt__()
-#                print "Showing  i,AddMe ",i,AddMe.gpsSeconds,AddMe.gpsNanoSeconds,AddMe.display()
-#                print "Index ",i," of ",TDArrayGPS.__len__()," Adding value : ",AddMe.display()," To ",gpsSum.display()
                 print TDArrayGPS[i][1].display(),"   ",TDArrayGPS[i-1][1].display(),"    ",AddMe.display()
                 gpsSum=gpsSum.__add__(AddMe)
                 gpsSumCount=gpsSumCount+1
@@ -1040,7 +1037,7 @@ class candidateList:
         of total curves.  The average curve power and length found and
         their standard deviations.
         Output is a list like
-        [startT,stopT,curveCount,AvgP,StdevP,AvgL,StdevL]
+        [liststartT,liststopT,curveCount,AvgP,StdevP,AvgL,StdevL]
         """
         maxP=float(0)
         maxL=int(0)
@@ -1420,30 +1417,34 @@ class candidateList:
         output_fp.close()
     #End method writePixelList()
 
-    def graphdata(self,filename=''):
+    def graphdata(self,filename='',gpsReferenceFloat=0.0):
         """
         This method uses matplotlib.py to make plots of curves
         contained in this list!  Currently all plotting functions
-        are hard wired to the method!
+        are hard wired to the method!  Method needs to have relative
+        offsets specified as an optional argument
         """        
         #This code creates a scatter plot in X windows
         #If pylab loads Ok.
         brightX=[]
         brightY=[]
         brightP=[]
-        minX=float(0)
+        minX=gpsReferenceFloat
         line2plot=[]
         brightSpotX=[]
         brightSpotY=[]
         brightSpotZ=[]
         start=True
-        for element in self.curves:
-            for point in element.getKurveDataBlock_HumanReadable():
-                if start:
-                    minX=float(point[0])
-                    start=False
-                if minX >= float(point[0]):
-                    minX = float(point[0])
+        # If the GPSreference for plot is given do not rescan data
+        # automatically.
+        if (gpsReferenceFloat == 0):
+            for element in self.curves:
+                for point in element.getKurveDataBlock_HumanReadable():
+                    if start:
+                        minX=float(point[0])
+                        start=False
+                    if minX >= float(point[0]):
+                        minX = float(point[0])
         for element in self.curves:
             xtmp=[]
             ytmp=[]

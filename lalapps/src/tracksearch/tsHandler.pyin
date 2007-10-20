@@ -138,6 +138,10 @@ parser.add_option("-p","--print",dest="imageFilemask",
 parser.add_option("-i","--image",dest="imageCount",
                   default='0',
                   help="This switch allows you to tell the candidateHandler to graph the data, if the input library is clobbered together from many candidate lists then specify the maximum number of figures you are willing to create.  The default is currently 1")
+parser.add_option("-r","--graphoffset",dest="graphGPSoffset",
+                  default=float(0),
+                  help="Specify GPS offset if graphing."
+                  )
 parser.add_option("-x","--stats",dest="stats",
                   default='',
                   help="Determine the specified stats for all candidates in input file for variable in question.  See the -T options variable labels for explaination.  This result is written out to the screen as mean,min,max,std.  To measure stats of more than one trait use a comma seperated list P,L as input args. FUNCTIONALITY NOT IMPLEMENTED YET!"
@@ -153,6 +157,7 @@ clobberFilename=str(options.clobberFilename)
 expThreshold=str(options.expThreshold)
 graph2file=options.imageFilemask
 graph2screen=int(options.imageCount)
+graphGPSoffset=float(options.graphGPSoffset)
 outfile=str(options.outfile)
 dumpSummaryScreen=bool(options.dumpSummaryScreen)
 dumpSummaryDisk=bool(options.dumpSummaryDisk)
@@ -229,7 +234,7 @@ elif ((canList.__len__() >=1) and ((graph2screen>0) or (graph2file!=''))):
     for entry in canList:
         candidateObject=candidateList(verboseSwitch)
         candidateObject.__loadfileQuick__(entry)
-        candidateObject.graphdata(graph2file)
+        candidateObject.graphdata(graph2file,graphGPSoffset)
         del candidateObject
     #SECTION APPLY ABITRARY THRESHOLDS
 elif ((expThreshold != "") and (canList.__len__() >=1)):
