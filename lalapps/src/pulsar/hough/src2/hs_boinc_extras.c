@@ -182,7 +182,7 @@ int load_graphics_dll(void) {
   
   while((endc = strchr(startc,' '))) {
     memset(dll_name,'\0',sizeof(dll_name));
-    strncpy(dll_name,startc,(endc - startc) - 1);
+    strncpy(dll_name, startc, min( (endc - startc), sizeof(dll_name) );
     if (FAILED(__HrLoadAllImportsForDll(dll_name))) {
       LogPrintf(LOG_NORMAL, "WARNING: Failed to load %s - running w/o graphics\n", dll_name );
       return(-1);
