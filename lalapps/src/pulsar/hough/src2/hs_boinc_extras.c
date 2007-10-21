@@ -147,7 +147,7 @@ static UINT4 maxsize = 1024*1024;         /**< maximal size of the output file *
 static double last_rac, last_dec;         /**< last sky position, set by show_progress(),
 					       used by set_checkpoint() */
 static UINT4 last_count, last_total;      /**< last template count, see last_rac */
-
+static BOOLEAN do_sync -1;                /**< sync checkpoint file to disk, default: yes */
 
 
 
@@ -1017,13 +1017,19 @@ int main(int argc, char**argv) {
 
 #define DEBUG_LEVEL_FNAME "EAH_DEBUG_LEVEL"
 #define NO_GRAPHICS_FNAME "EAH_NO_GRAPHICS"
+#define NO_SYNC_FNAME     "EAH_NO_SYNC"
 #define DEBUG_DDD_FNAME   "EAH_DEBUG_DDD"
 
   LogPrintfVerbatim (LOG_NORMAL, "\n");
   LogPrintf (LOG_NORMAL, "Start of BOINC application '%s'.\n", argv[0]);
   
+  /* run without graphics, i.e. don't call boinc_init_graphics if demanded */
   if ((fp_debug=fopen("../../" NO_GRAPHICS_FNAME, "r")) || (fp_debug=fopen("./" NO_GRAPHICS_FNAME, "r")))
     no_graphics = -1;
+
+  /* don't force syncing the checkpoint file if demanded */
+  if ((fp_debug=fopen("../../" NO_SYNC_FNAME, "r")) || (fp_debug=fopen("./" NO_GRAPHICS_FNAME, "r")))
+    do_sync = 0;
 
   /* see if user has a DEBUG_LEVEL_FNAME file: read integer and set lalDebugLevel */
   if ((fp_debug=fopen("../../" DEBUG_LEVEL_FNAME, "r")) || (fp_debug=fopen("./" DEBUG_LEVEL_FNAME, "r")))
@@ -1282,7 +1288,7 @@ void set_checkpoint (void) {
   if (boinc_time_to_checkpoint())
 #endif
     {
-      write_hs_checkpoint(cptfilename,toplist,last_count);
+      write_hs_checkpoint(cptfilename,toplist,last_count, do_sync);
       fprintf(stderr,"c\n");
       boinc_checkpoint_completed();
     }

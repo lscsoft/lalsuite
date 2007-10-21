@@ -735,7 +735,7 @@ int fstat_cpt_file_compact(FStatCheckpointFile*cptf) {
 #endif
 
 /* dumps toplist to a temporary file, then renames the file to filename */
-int write_hs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter) {
+int write_hs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLEAN do_sync) {
 #define TMP_EXT ".tmp"
   char*tmpfilename;
   FILE*fp;
@@ -808,12 +808,14 @@ int write_hs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter) {
     return(-1);
   }
 
-  /* make sure the data ends up on disk */
-  if(fsync(fileno(fp))) {
-    LOGIOERROR("Couldn't sync", tmpfilename);
-    if(fclose(fp))
-      LOGIOERROR("In addition: couldn't close", tmpfilename);
-    return(-1);
+  if (do_sync) {
+    /* make sure the data ends up on disk */
+    if(fsync(fileno(fp))) {
+      LOGIOERROR("Couldn't sync", tmpfilename);
+      if(fclose(fp))
+	LOGIOERROR("In addition: couldn't close", tmpfilename);
+      return(-1);
+    }
   }
 
   /* close tempfile */
