@@ -163,6 +163,9 @@ static int resolve_and_unzip(const char*, char*, const size_t);
 static void drain_fpu_stack(void);
 static REAL4 get_nan(void);
 #ifdef _MSC_VER
+#include "graphics_dlls.h"
+#include "delayload_dlls.h"
+static int delayload_dll(void);
 static int load_graphics_dll(void);
 #endif
 
@@ -174,23 +177,18 @@ static int load_graphics_dll(void);
     returns 0 if successful, -1 in case of a failure.
 */
 int load_graphics_dll(void) {
-  /*
-    if (FAILED(__HrLoadAllImportsForDll("GDI32.dll"))) {
-    LogPrintf(LOG_NORMAL, "WARNING: Failed to load GDI32.DLL - running w/o graphics\n" );
-    return(-1);
-  } else
-    LogPrintf(LOG_NORMAL, "INFO: GDI32.DLL loaded\n" );
-  */
-  if (FAILED(__HrLoadAllImportsForDll("OPENGL32.dll"))) {
-    LogPrintf(LOG_NORMAL, "WARNING: Failed to load OPENGL32.DLL - running w/o graphics\n" );
-    return(-1);
-  } else
-    LogPrintf(LOG_NORMAL, "INFO: OPENGL32.DLL loaded\n" );
-  if (FAILED(__HrLoadAllImportsForDll("GLU32.dll"))) {
-    LogPrintf(LOG_NORMAL, "WARNING: Failed to load GLU32.DLL - running w/o graphics\n" );
-    return(-1);
-  } else
-    LogPrintf(LOG_NORMAL, "INFO: GLU32.DLL loaded\n" );
+  char *startc = graphics_dlls, *endc = graphics_dlls;
+  char dll_name[13]; /* DLLs are 8.3 names */
+  
+  while((endc = strchr(startc,' '))) {
+    memset(dll_name,'\0',sizeof(dll_name));
+    strncpy(dll_name,startc,(endc - startc) - 1);
+    if (FAILED(__HrLoadAllImportsForDll(dll_name))) {
+      LogPrintf(LOG_NORMAL, "WARNING: Failed to load %s - running w/o graphics\n", dll_name );
+      return(-1);
+    } else
+      LogPrintf(LOG_NORMAL, "INFO: %s loaded\n", dll_name );
+    startc = endc + 1;
   return(0);
 }
 #endif
