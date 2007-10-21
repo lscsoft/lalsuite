@@ -189,6 +189,7 @@ int load_graphics_dll(void) {
     } else
       LogPrintf(LOG_NORMAL, "INFO: %s loaded\n", dll_name );
     startc = endc + 1;
+  }
   return(0);
 }
 #endif
