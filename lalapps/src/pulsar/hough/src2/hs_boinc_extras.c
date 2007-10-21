@@ -147,7 +147,7 @@ static UINT4 maxsize = 1024*1024;         /**< maximal size of the output file *
 static double last_rac, last_dec;         /**< last sky position, set by show_progress(),
 					       used by set_checkpoint() */
 static UINT4 last_count, last_total;      /**< last template count, see last_rac */
-static BOOLEAN do_sync -1;                /**< sync checkpoint file to disk, default: yes */
+static BOOLEAN do_sync = -1;              /**< sync checkpoint file to disk, default: yes */
 
 
 
