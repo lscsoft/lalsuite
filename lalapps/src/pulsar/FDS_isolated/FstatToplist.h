@@ -146,7 +146,7 @@ extern int fstat_cpt_file_compact(FStatCheckpointFile*cptf);
     -2 if out of memory,
      0 otherwise (successful)
 */
-extern int write_hs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter);
+extern int write_hs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLEAN do_sync);
 
 /** tries to read a checkpoint
     - tries to open the file, returns 1 if no file found
