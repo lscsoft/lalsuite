@@ -179,9 +179,9 @@ static int load_graphics_dll(void);
 /** Attempt to load the dlls that are required to display graphics.
     returns 0 if successful, -1 in case of a failure.
 */
-int load_graphics_dll(void) {
-  char *startc = graphics_dlls, *endc = graphics_dlls;
-  char dll_name[13]; /* DLLs are 8.3 names */
+int try_load_dlls(const char*dlls) {
+  char *startc = dlls, *endc = dlls;
+  char dll_name[13]; /* DLLs should have 8.3 names */
   
   while((endc = strchr(startc,' '))) {
     memset(dll_name,'\0',sizeof(dll_name));
@@ -1142,7 +1142,12 @@ int main(int argc, char**argv) {
 #endif /* WIN32 */
 
 
-
+#ifdef _MSC_VER
+  if (!try_load_dlls(delayload_dlls)) {
+    LogPrintf(LOG_NORMAL,"ERROR: Loading of mandantory DLLs failed\n");
+    boinc_finish(29);
+  }
+#endif
   /* boinc_init variations */
 #if (BOINC_GRAPHICS == 2) && defined(_MSC_VER)
   /* We don't load an own DLL on Windows, but we check if we can (manually)
@@ -1150,7 +1155,7 @@ int main(int argc, char**argv) {
      without graphics if this fails */
   if (no_graphics)
     LogPrintf(LOG_NORMAL,"WARNING: graphics surpressed\n");
-  else if (!load_graphics_dll()) {
+  else if (!try_load_dlls(graphics_dlls)) {
     int retval;
     set_search_pos_hook = set_search_pos;
     fraction_done_hook = &fraction_done;
@@ -1169,7 +1174,7 @@ int main(int argc, char**argv) {
     int retval;
     retval = boinc_init_graphics_lib(worker, argv[0]);
     LogPrintf (LOG_CRITICAL, "ERROR: boinc_init_graphics_lib() returned %d.\n", retval);
-    boinc_finish(HIERARCHICALSEARCH_EWORKER );
+    boinc_finish(HIERARCHICALSEARCH_EWORKER);
   }
 #elif BOINC_GRAPHICS == 1
   {
