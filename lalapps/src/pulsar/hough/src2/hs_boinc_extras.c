@@ -64,6 +64,9 @@ NRCSID(HSBOINCEXTRASCRCSID,"$Id$");
 /** don't want to include LAL headers just for PI */
 #define LAL_PI 3.1415926535897932384626433832795029  /**< pi */
 
+#ifndef MIN
+#define MIN(a,b) ((a)<(b)?(a):(b))
+#endif
 
 /** compare strings s1 and s2 up to the length of s1 (w/o the '\0'!!)
     and set l to the length */
@@ -182,7 +185,7 @@ int load_graphics_dll(void) {
   
   while((endc = strchr(startc,' '))) {
     memset(dll_name,'\0',sizeof(dll_name));
-    strncpy(dll_name, startc, min( (endc - startc), sizeof(dll_name) );
+    strncpy(dll_name, startc, MIN( (endc - startc), sizeof(dll_name) ) );
     if (FAILED(__HrLoadAllImportsForDll(dll_name))) {
       LogPrintf(LOG_NORMAL, "WARNING: Failed to load %s - running w/o graphics\n", dll_name );
       return(-1);
