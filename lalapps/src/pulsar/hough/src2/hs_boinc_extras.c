@@ -1143,7 +1143,7 @@ int main(int argc, char**argv) {
 
 
 #ifdef _MSC_VER
-  if (!try_load_dlls(delayload_dlls, "ERROR: Failed to load %s - terminating\n")) {
+  if (try_load_dlls(delayload_dlls, "ERROR: Failed to load %s - terminating\n")) {
     LogPrintf(LOG_NORMAL,"ERROR: Loading of mandantory DLLs failed\n");
     boinc_init();
     boinc_finish(29);
