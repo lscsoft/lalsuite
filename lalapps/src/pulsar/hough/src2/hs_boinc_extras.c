@@ -179,7 +179,7 @@ static int load_graphics_dll(void);
 /** Attempt to load the dlls that are required to display graphics.
     returns 0 if successful, -1 in case of a failure.
 */
-int try_load_dlls(const char*dlls) {
+int try_load_dlls(const char*dlls, const char*mess) {
   char *startc = dlls, *endc = dlls;
   char dll_name[13]; /* DLLs should have 8.3 names */
   
@@ -187,7 +187,7 @@ int try_load_dlls(const char*dlls) {
     memset(dll_name,'\0',sizeof(dll_name));
     strncpy(dll_name, startc, MIN( (endc - startc), sizeof(dll_name) ) );
     if (FAILED(__HrLoadAllImportsForDll(dll_name))) {
-      LogPrintf(LOG_NORMAL, "WARNING: Failed to load %s - running w/o graphics\n", dll_name );
+      LogPrintf(LOG_NORMAL, mess, dll_name );
       return(-1);
     } else
       LogPrintf(LOG_NORMAL, "INFO: %s loaded\n", dll_name );
@@ -1143,8 +1143,9 @@ int main(int argc, char**argv) {
 
 
 #ifdef _MSC_VER
-  if (!try_load_dlls(delayload_dlls)) {
+  if (!try_load_dlls(delayload_dlls, "ERROR: Failed to load %s - terminating\n")) {
     LogPrintf(LOG_NORMAL,"ERROR: Loading of mandantory DLLs failed\n");
+    boinc_init();
     boinc_finish(29);
   }
 #endif
@@ -1155,7 +1156,7 @@ int main(int argc, char**argv) {
      without graphics if this fails */
   if (no_graphics)
     LogPrintf(LOG_NORMAL,"WARNING: graphics surpressed\n");
-  else if (!try_load_dlls(graphics_dlls)) {
+  else if (!try_load_dlls(graphics_dlls, "WARNING: Failed to load %s - running w/o graphics\n")) {
     int retval;
     set_search_pos_hook = set_search_pos;
     fraction_done_hook = &fraction_done;
