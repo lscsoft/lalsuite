@@ -127,9 +127,15 @@ def make_cache_entry(seglists, description, path):
 		if not seglists[instrument]:
 			del seglists[instrument]
 
+	# make the URL
+	if path:
+		url = "file://localhost%s" % os.path.abspath(path)
+	else:
+		url = None
+
 	# construct a cache entry from the instruments and
 	# segments that remain
-	return CacheEntry("+".join(instruments) or None, description, seglists.extent_all(), "file://localhost" + os.path.abspath(path))
+	return CacheEntry("+".join(instruments) or None, description, seglists.extent_all(), url)
 
 
 #
@@ -324,26 +330,35 @@ class LigolwAddNode(pipeline.LigolwAddNode):
 		self.input_cache = []
 		self.output_cache = []
 
+	def __update_output_cache(self):
+		seglists = segments.segmentlistdict()
+		for c in self.input_cache:
+			seglists |= c.to_segmentlistdict()
+		del self.output_cache[:]
+		self.output_cache.append(make_cache_entry(seglists, None, self._AnalysisNode__output))
+
 	def set_name(self, *args):
 		pipeline.LigolwAddNode.set_name(self, *args)
 		self.cache_name = os.path.join(self._CondorDAGNode__job.cache_dir, "%s.cache" % self.get_name())
 		self.add_var_opt("input-cache", self.cache_name)
 
 	def add_input_cache(self, cache):
-		if self.output_cache:
-			raise AttributeError, "cannot modify input list after computing output cache"
 		self.input_cache.extend(cache)
+		self.__output_update_cache()
+
+	def set_output(self, path):
+		pipeline.LigolwAddNode.set_output(self, path)
+		self.__update_output_cache()
+
+	def set_output_segment(self, seg):
+		for c in self.output_cache:
+			c.segment = seg
 
 	def add_preserve_cache(self, cache):
 		for c in cache:
 			self.add_var_arg("--remove-input-except %s" % c.path())
 
 	def get_output_cache(self):
-		if not self.output_cache:
-			seglists = segments.segmentlistdict()
-			for c in self.input_cache:
-				seglists |= c.to_segmentlistdict()
-			self.output_cache = [make_cache_entry(seglists, None, self._AnalysisNode__output)]
 		return self.output_cache
 
 	def write_input_files(self, *args):
@@ -1177,34 +1192,6 @@ def make_single_instrument_injections_stage(dag, datafinds, binjnodes, seglistdi
 #
 # =============================================================================
 #
-#              Combine a group of trigger files with clustering
-#
-# =============================================================================
-#
-
-
-def make_lladded_bucluster_fragment(dag, parents, segment, tag):
-	# make first-pass bucluster jobs (these are no-ops on files that
-	# don't contain sngl_burst tables).
-
-	nodes = make_bucluster_fragment(dag, parents, "%s_%d_%d" % (tag, int(segment[0]), int(abs(segment))))
-
-	# make ligolw_add job.
-
-	nodes = make_lladd_fragment(dag, nodes, "ALL", segment, tag)
-
-	# set the output
-
-	nodes[0].set_output("ALL-%s-%s-%s.xml.gz" % (tag, int(segment[0]), int(abs(segment))))
-
-	# add second-pass clustering
-
-	return make_bucluster_fragment(dag, nodes, "%s_%d_%d_POSTLLADD" % (tag, int(segment[0]), int(abs(segment))))
-
-
-#
-# =============================================================================
-#
 #       The Coincidence Fragment:  bucluster + lladd + bucluster + burca
 #
 # =============================================================================
@@ -1212,43 +1199,10 @@ def make_lladded_bucluster_fragment(dag, parents, segment, tag):
 
 
 def make_pre_coinc_lladd(dag, parents, segment, tag, input_cache):
-	nodes = make_lladd_fragment(dag, parents, "ALL", segment, "%s_PRECOINC" % tag, input_cache = input_cache, preserve_cache = input_cache)
+	nodes = make_lladd_fragment(dag, parents, "ALL", segment, tag, input_cache = input_cache, preserve_cache = input_cache)
 	nodes[0].set_output("ALL-%s-%s-%s.xml.gz" % (tag, int(segment[0]), int(abs(segment))))
+	nodes[0].set_output_segment(segment)
 	return nodes
-
-
-def make_coinc_fragment(dag, parents, segment, tag, time_slides_filename, binjnodes = []):
-	# cache for extra files to include in next ligolw_add
-
-	extra_cache = [CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename)) for filename in [time_slides_filename]]
-	for binj in binjnodes:
-		extra_cache += binj.get_output_cache()
-
-	# cache for files that should not be deleted in the event that
-	# --remove-input is set.  assume all input files are shared between
-	# this and other branches of the DAG, and should not be deleted
-
-	preserve_cache = list(extra_cache)
-	for node in parents:
-		preserve_cache += node.get_output_cache()
-
-	# make ligolw_add job.  assume all input files are shared between
-	# this and other branches of the DAG, and should not be deleted in
-	# the event that --remove-input is set
-
-	nodes = make_lladd_fragment(dag, parents, "ALL", segment, "%s_PREBURCA" % tag, preserve_cache = preserve_cache)
-
-	# add the extra files to the input cache
-
-	nodes[0].add_input_cache(extra_cache)
-
-	# set the output
-
-	nodes[0].set_output("ALL-%s-%s-%s.xml.gz" % (tag, int(segment[0]), int(abs(segment))))
-
-	# run ligolw_burca
-
-	return make_burca_fragment(dag, nodes, segment, tag)
 
 
 #
