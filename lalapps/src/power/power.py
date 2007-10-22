@@ -29,6 +29,7 @@ Excess power pipeline construction tools.
 """
 
 
+import errno
 import math
 import os
 import random
@@ -75,8 +76,18 @@ def get_cache_dir(config_parser):
 
 
 def make_dag_directories(config_parser):
-	os.mkdir(get_cache_dir(config_parser))
-	os.mkdir(get_out_dir(config_parser))
+	try:
+		os.mkdir(get_cache_dir(config_parser))
+	except OSError, e:
+		if e.errno != errno.EEXIST:
+			# OK if directory exists, otherwise report error
+			raise e
+	try:
+		os.mkdir(get_out_dir(config_parser))
+	except OSError, e:
+		if e.errno != errno.EEXIST:
+			# OK if directory exists, otherwise report error
+			raise e
 
 
 def get_parents_per_binjfind(config_parser):
