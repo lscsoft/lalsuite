@@ -344,7 +344,7 @@ class LigolwAddNode(pipeline.LigolwAddNode):
 
 	def add_input_cache(self, cache):
 		self.input_cache.extend(cache)
-		self.__output_update_cache()
+		self.__update_output_cache()
 
 	def set_output(self, path):
 		pipeline.LigolwAddNode.set_output(self, path)
@@ -1045,7 +1045,7 @@ def make_datafind_stage(dag, seglists, verbose = False):
 	segs.sort()
 
 	nodes = []
-	for seg, instrument in segs
+	for seg, instrument in segs:
 		if verbose:
 			print >>sys.stderr, "making datafind job for %s spanning %s" % (instrument, seg)
 		new_nodes = make_datafind_fragment(dag, instrument, seg)
