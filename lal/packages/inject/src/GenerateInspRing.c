@@ -224,13 +224,6 @@ XLALGenerateInspRing(
       "Jx = %.2f, Jy = %.2f, Jz = %.2f\n", Jx, Jy, Jz);
   XLALPrintInfo( "Estimated Final Spin = %.2f\n", totalAngMom );
 
-#if 0
-  ringInj->inclination = acos( orbAngMom * cos(inspiralInj->inclination) / sqrt(Jx*Jx+Jy*Jy) );
-  cosiota = cos( ringInj->inclination );
-  splus = -( 1.0 + cosiota * cosiota );
-  scross = -2.0 * cosiota;
-#endif
-  
   /* estimate the final mass */
   XLALPrintInfo( "Total inspiral mass = %.2f\n", mTot );
   mTot *= (1 - 0.01 * (1.0 + 6.0 * totalAngMom * totalAngMom ) );
@@ -482,13 +475,13 @@ XLALGenerateInspRing(
   LALComputeDetAMResponse( status->statusPtr, &resp, &detAndSource,
         &gpsAndAcc );
   CHECKSTATUSPTR(status);
-#if 0 
+ 
   /* compute the effective distance for LHO */
   /* initialize distances with real distance and compute splus and scross*/
   ringInj->eff_dist_h = ringInj->eff_dist_l = 2.0 * ringInj->distance;
   ringInj->eff_dist_h /= sqrt( splus*splus*resp.plus*resp.plus +
       scross*scross*resp.cross*resp.cross );
-#endif
+
   /* llo */
   placeAndGPS.p_detector = &llo;
   LALTimeDelayFromEarthCenter( status->statusPtr,  &time_diff_ns,
@@ -504,11 +497,11 @@ XLALGenerateInspRing(
   LALComputeDetAMResponse( status->statusPtr, &resp, &detAndSource,
         &gpsAndAcc );
   CHECKSTATUSPTR(status);
-#if 0
+
   /* compute the effective distance for LLO */
   ringInj->eff_dist_l /= sqrt( splus*splus*resp.plus*resp.plus
       + scross*scross*resp.cross*resp.cross );
-#endif
+
   
   /*
    *
@@ -605,17 +598,6 @@ XLALGenerateInspRing(
   
   ringInj->epsilon = XLALBlackHoleRingEpsilon( ringInj->frequency,
       ringInj->quality, ringInj->distance, ringInj->amplitude );
-  
-  /* compute the effective distance for LHO */
-  /* initialize distances with real distance and compute splus and scross*/
-  ringInj->eff_dist_h = ringInj->eff_dist_l = 2.0 * ringInj->distance;
-  ringInj->eff_dist_h /= sqrt( splus*splus*resp.plus*resp.plus +
-      scross*scross*resp.cross*resp.cross );
-
-  /* compute the effective distance for LLO */
-  ringInj->eff_dist_l /= sqrt( splus*splus*resp.plus*resp.plus
-      + scross*scross*resp.cross*resp.cross );
-    
   
   /* zero out inspiral and merger if we only want to inject a ringdown*/
   switch ( injectSignalType )
