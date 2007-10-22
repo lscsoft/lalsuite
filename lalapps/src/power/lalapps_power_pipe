@@ -403,6 +403,14 @@ else:
 
 
 datafinds = power.make_datafind_stage(dag, injection_seglistdict | background_seglistdict, verbose = options.verbose)
+# add binj nodes as parents of the datafinds to force the binj's to be run
+# first.  this ensures that once a datafind has run the power jobs that
+# follow it will immediately be able to run, which helps depth-first dagman
+# do smarter things.
+if binjnodes:
+	for node in datafinds:
+		for binjnode in binjnodes:
+			node.add_parent(binjnode)
 
 
 #
