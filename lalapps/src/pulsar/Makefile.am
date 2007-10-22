@@ -4,9 +4,9 @@
 SUBDIRS = FDS_isolated Injections FDS_griphyn hough FDS_binary MakeSFTs SideBand
 
 if FRAME
-FRAMEPROGS = lalapps_make_job_input_data lalapps_make_sfts lalapps_Calibrate60sSFTs lalapps_Calibrate1800SFTs lalapps_FreqAverager lalapps_psd lalapps_ComputePSD lalapps_FreqAverager_v2
+FRAMEPROGS = lalapps_make_job_input_data lalapps_make_sfts lalapps_Calibrate60sSFTs lalapps_Calibrate1800SFTs lalapps_FreqAverager lalapps_psd lalapps_ComputePSD lalapps_FreqAverager_v2 lalapps_GetSFTVelocities
 else
-FRAMEPROGS = lalapps_Calibrate60sSFTs lalapps_Calibrate1800SFTs lalapps_FreqAverager lalapps_psd lalapps_ComputePSD  lalapps_FreqAverager_v2
+FRAMEPROGS = lalapps_Calibrate60sSFTs lalapps_Calibrate1800SFTs lalapps_FreqAverager lalapps_psd lalapps_ComputePSD  lalapps_FreqAverager_v2 lalapps_GetSFTVelocities
 endif
 
 bin_PROGRAMS = $(FRAMEPROGS)
@@ -26,7 +26,7 @@ lalapps_FreqAverager_SOURCES = FreqAverager.c FreqAverager.h
 lalapps_psd_SOURCES = psd.c psd.h
 lalapps_ComputePSD_SOURCES = ComputePSD.c
 lalapps_FreqAverager_v2_SOURCES =  FreqAverager_v2.c
-
+lalapps_GetSFTVelocities_SOURCES = GetSFTVelocities.c 
 
 EXTRA_DIST = \
 make_locked_data_list \
