@@ -61,6 +61,7 @@ lalapps_tracksearch_tune_pipe: $(srcdir)/tsTunePipe.pyin python_config.sed
 
 lalapps_tracksearch_mapcachebuilder: $(srcdir)/tsMapCacheBuilder.pyin python_config.sed
 	sed -f python_config.sed $(srcdir)/tsMapCacheBuilder.pyin > lalapps_tracksearch_mapcachebuilder
+	chmod +x lalapps_tracksearch_mapcachebuilder
 
 CLEANFILES =  lalapps_tracksearch_handler \
 	      lalapps_tracksearch_pipe \

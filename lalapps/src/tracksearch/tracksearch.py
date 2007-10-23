@@ -267,10 +267,29 @@ class tracksearchConvertSegList:
 
     def writeSegList(self):
         #Read segents from file
-        self.origSegObject.read(self.segFilename,self.duration)
-        if self.origSegObject._ScienceData__sci_segs.__len__() == 0:
-            sys.stderr.write("Aborting Segment list is not formatted correctly!\n")
-            os.abort()
+        try:
+            self.origSegObject.read(self.segFilename,self.duration)
+        except IndexError:
+            sys.stderr.write("Does not appear to SegWizard formatted file.\n")
+            sys.stderr.write("Trying to reparse it assuming two column GPS list.\n")
+            sys.stderr.write("No guarantee this will work.\n")
+            index=0
+            input_fp=open(self.segFilename,'r')
+            tmpFilename=self.segFilename+'_TMP'
+            tmp_fp=open(tmpFilename,'w')
+            for line in input_fp.readlines():
+                if (line[0] == '#'):
+                    tmp_fp.write(line)
+                else:
+                    fields=line.split(" ")
+                    tmp_fp.write(str(index)+" "+str(int(fields[0]))+" "+str(int(fields[1]))+" "+str(int(fields[1])-int(fields[0]))+"\n")
+                index=index+1
+            input_fp.close()
+            tmp_fp.close()
+            self.segFilename=tmpFilename
+            sys.stderr.write("Reparsed it.  Trying to load reparsed TMP file.\n")
+            self.origSegObject.read(self.segFilename,self.duration)
+        #
         #Read the file header
         input_fp=open(self.segFilename,'r')
         newHeading=[]
@@ -331,7 +350,8 @@ class tracksearchHousekeeperJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         buildDir(workpath_logs)
         self.set_stdout_file(os.path.normpath(workpath_logs+'/tracksearchHousekeeper-$(cluster)-$(process).out'))
         self.set_stderr_file(os.path.normpath(workpath_logs+'/tracksearchHousekeeper-$(cluster)-$(process).err'))
-        self.set_sub_file(os.path.normpath(self.dagDirectory+'/tracksearchHousekeeper.sub'))
+        filename="/tracksearchHousekeeper--"+str(channel)+".sub"
+        self.set_sub_file(os.path.normpath(self.dagDirectory+filename))
         #End init
     #End class tracksearchHousekeeperJob
     
@@ -411,7 +431,8 @@ class tracksearchTimeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         channelName=string.strip(cp.get('tracksearchtime','channel_name'))
         self.set_stdout_file(os.path.normpath(blockPath+'/logs/tracksearchTime-'+channelName+'-$(macrogpsstartseconds)_$(cluster)_$(process).out'))
         self.set_stderr_file(os.path.normpath(blockPath+'/logs/tracksearchTime-'+channelName+'-$(macrogpsstartseconds)_$(cluster)_$(process).err'))
-        self.set_sub_file(os.path.normpath(self.dagDirectory+'/tracksearchTime.sub'))
+        filename="/tracksearchTime--"+str(channel)+".sub"
+        self.set_sub_file(os.path.normpath(self.dagDirectory+filename))
     #End init
 #End Class
 
@@ -446,7 +467,8 @@ class tracksearchMapJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         #Set log
         self.set_stdout_file(os.path.normpath(blockPath+'/logs/tracksearchMap-$(cluster)-$(process).out'))
         self.set_stderr_file(os.path.normpath(blockPath+'/logs/tracksearchMap-$(cluster)-$(process).err'))
-        self.set_sub_file(os.path.normpath(self.dagDirectory+'/tracksearchMap.sub'))
+        filename="/tracksearchMap--"+str(channel)+".sub"
+        self.set_sub_file(os.path.normpath(self.dagDirectory+filename))
     #End init
 #End Class
 
@@ -484,7 +506,8 @@ class tracksearchAveragerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         #Set log
         self.set_stdout_file(os.path.normpath(blockPath+'/logs/tracksearchAverager-$(cluster)-$(process).out'))
         self.set_stderr_file(os.path.normpath(blockPath+'/logs/tracksearchAverager-$(cluster)-$(process).err'))
-        self.set_sub_file(os.path.normpath(self.dagDirectory+'/tracksearchAverager.sub'))
+        filename="/tracksearchAverager--"+str(channel)+".sub"
+        self.set_sub_file(os.path.normpath(self.dagDirectory+filename))
     #End init
 #End Class
 
@@ -550,7 +573,8 @@ class tracksearchMapCacheBuildJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         #Set log
         self.set_stdout_file(os.path.normpath(blockPath+'/logs/tracksearchCacheBuild-$(cluster)-$(process).out'))
         self.set_stderr_file(os.path.normpath(blockPath+'/logs/tracksearchCacheBuild-$(cluster)-$(process).err'))
-        self.set_sub_file(os.path.normpath(self.dagDirectory+'/tracksearchCacheBuild.sub'))
+        filename="/tracksearchCacheBuild--"+str(channel)+".sub"
+        self.set_sub_file(os.path.normpath(self.dagDirectory+filename))
     #End init
 
     def getJobTSAList(self):
@@ -589,27 +613,6 @@ class tracksearchMapCacheBuildJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     #End getJobTSAList
 #End Class
 
-class tracksearchDataFindJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
-    """
-    THIS CODE IS NOT USED PLEASE IGNORE THIS CLASS IS DEAD!
-    This class wraps up the calls LSCdataFindJob and sets relationships
-    """
-    def __init__(self,cp,block_id,dagDir):
-        self.dagDirectory=dagDir
-        blockID=block_id
-        layerID=1
-        blockPath=cp.get('filelayout','workpath')+'/'+blockID+'/'+layerID+'/'
-        cachePath=blockPath+'/cache'
-        logPath=blockPath
-        self.df_job=pipeline.LSCDataFindJob(cachePath,logPath,cp)
-        pad = 0
-        length=int(cp.get('layerconfig','layer1TimeScale'))
-        overlap=0
-        self.df_job.set_sub_file(os.path.normpath(self.dagDirectory+'/datafind.sub'))
-        self.df_job.add_condor_cmd('initialdir',determineLayerPath())
-    #End init
-#End Class
-
 class tracksearchClusterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     """
     This calls is responsible for creating a generic cluster job.  The
@@ -625,7 +628,9 @@ class tracksearchClusterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         pipeline.AnalysisJob.__init__(self,cp)
         self.block_id=blockID=block_id
         layerID='RESULTS_'+str(blockID)
-        self.initialDir=layerPath=determineLayerPath(cp,blockID,layerID,channel)
+        #Do not use channel information for initial dir.
+        #Set initial to RESULTS directory above CHANNEL dirs
+        self.initialDir=layerPath=determineLayerPath(cp,blockID,layerID)
         blockPath=determineBlockPath(cp,blockID,channel)
         #Setup needed directories for this job to write in!
         buildDir(blockPath)
@@ -633,7 +638,8 @@ class tracksearchClusterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         buildDir(blockPath+'/logs')
         self.set_stdout_file(os.path.normpath(blockPath+'/logs/tracksearchCluster-$(cluster)-$(process).out'))
         self.set_stderr_file(os.path.normpath(blockPath+'/logs/tracksearchCluster-$(cluster)-$(process).err'))
-        self.set_sub_file(os.path.normpath(self.dagDirectory+'/tracksearchCluster.sub'))
+        filename="/tracksearchCluster--"+str(channel)+".sub"
+        self.set_sub_file(os.path.normpath(self.dagDirectory+filename))
         #Load in the cluster configuration sections!
         #Add the candidateUtils.py equivalent library to dag for proper
         #execution!
@@ -666,7 +672,9 @@ class tracksearchThresholdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         pipeline.AnalysisJob.__init__(self,cp)
         self.block_id=blockID=block_id
         layerID='RESULTS_'+str(blockID)
-        self.initialDir=layerPath=determineLayerPath(cp,blockID,layerID,channel)
+        #Do not set channel name information here.  This puts all
+        #threshold output files into same place
+        self.initialDir=layerPath=determineLayerPath(cp,blockID,layerID)
         blockPath=determineBlockPath(cp,blockID,channel)
         #Setup needed directories for this job to write in!
         buildDir(blockPath)
@@ -674,7 +682,8 @@ class tracksearchThresholdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         buildDir(blockPath+'/logs')
         self.set_stdout_file(os.path.normpath(blockPath+'/logs/tracksearchThreshold-$(cluster)-$(process).out'))
         self.set_stderr_file(os.path.normpath(blockPath+'/logs/tracksearchThreshold-$(cluster)-$(process).err'))
-        self.set_sub_file(os.path.normpath(self.dagDirectory+'/tracksearchThreshold.sub'))
+        filename="/tracksearchThreshold--"+str(channel)+".sub"
+        self.set_sub_file(os.path.normpath(self.dagDirectory+filename))
         #Load in the cluster configuration sections!
         #Add the candidateUtils.py equivalent library to dag for proper
         #execution!
@@ -963,7 +972,9 @@ class tracksearch:
                                                dagDir,
                                                self.jobType,
                                                self.currentchannel)
-        df_job.set_sub_file(os.path.normpath(self.dagDirectory+'/datafind.sub'))
+        channel=self.currentchannel
+        filename="/datafind--"+str(channel)+".sub"
+        df_job.set_sub_file(os.path.normpath(self.dagDirectory+filename))
         df_job.add_condor_cmd('initialdir',str(dataFindInitialDir))
         prevLayerJobList=[]        
         prev_df = None
@@ -1028,7 +1039,7 @@ class tracksearch:
         Setup file globbing for each layer
         """
         channel=self.currentchannel
-        tracksearchCluster_job=tracksearchClusterJob(self.cp,self.blockID,self.dagDirectory)
+        tracksearchCluster_job=tracksearchClusterJob(self.cp,self.blockID,self.dagDirectory,channel)
         #Loop through done search layers to glob
         prevJobList=[]
         globformat="Glob::%s::%s::%s.candidates"
@@ -1049,19 +1060,15 @@ class tracksearch:
             prevJobList.append(tracksearchCluster_node)
         #Setup the appropriate globbed list clobbering jobs
         tracksearchCluster_job2=tracksearchClusterJob(self.cp,self.blockID,self.dagDirectory,self.currentchannel)
-        #DEL IF THIS DOESN'T BREAK CODE.
-        ##tracksearchCluster_job2.add_condor_cmd('initialdir',tracksearchCluster_job2.initialDir)
-        tracksearchCluster_job2.set_sub_file(os.path.normpath(self.dagDirectory+'/tracksearchCluster2.sub'))
+        filename="/tracksearchClobber--"+str(channel)+".sub"
+        tracksearchCluster_job2.set_sub_file(os.path.normpath(self.dagDirectory+filename))
         tracksearchCluster_job.add_condor_cmd('initialdir',tracksearchCluster_job.initialDir)
         nextJobList=[]
         for i in range(1,layerID-1):
             tracksearchCluster_node2=tracksearchClusterNode(tracksearchCluster_job2)
             DLP=tracksearchCluster_job2.initialDir
-            #file2clobber=DLP+"Glob::"+str(self.blockID)+"_"+str(i)+".candidates"
-            #clobberWith=DLP+"Glob::"+str(self.blockID)+"_"+str(i+1)+".candidates"
             file2clobber=globformat%(str(channel),str(self.blockID),str(i))
             clobberWith=globformat%(str(channel),str(self.blockID),str(i+1))
-            #clobFilename="Clob::"+str(self.blockID)+"_"+str(i)+"_"+str(i+1)+".candidates"
             clobFilename=clobformat%(str(channel),str(self.blockID),str(i),str(i+1))
             tracksearchCluster_node2.add_var_opt('file',file2clobber)
             tracksearchCluster_node2.add_var_opt('outfile',clobFilename)

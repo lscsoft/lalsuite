@@ -53,6 +53,8 @@ class kurve:
         self.length=int(length)
         self.power=float(power)
         self.element=list()
+        self.sortedByTime=False
+        self.sortedByFreq=False
     #End __init__ method
 
     def __len__(self):
@@ -80,6 +82,9 @@ class kurve:
             sortedCurve.append(self.element[entry[1]])
         #Swap sorted data into element field.
         self.element=sortedCurve
+        #Set Boolean key to True
+        self.sortedByTime=True
+        self.sortedByFreq=False
     #End method __timeOrderCurve__()
         
     def appendPixel(self,Row,Col,gpsStamp,Freq,Power):
@@ -309,7 +314,7 @@ class kurve:
         sumSqr=float(0)
         var=float(0)
         if dataBlock.__len__() < 1:
-            print "Fatel Error unexpected curve length of zero for this curve!"
+            print "Fatal Error unexpected curve length of zero for this curve!"
             os.abort()
         brightestPixel=dataBlock[dataBlock.__len__()-1]
         for entry in dataBlock:
@@ -1031,6 +1036,48 @@ class candidateList:
         return resultList
     #End clusterClobberWith method
 
+    def coincidenceTimeCheck(self,secondCurveLibrary,tOffset=0.001):
+        """
+        It compares two trigger libraries self->A and other->B  it
+        searches B for matching triggers in A and returns those
+        matches.  It must be given a maximum time offset to make the
+        decision if two individual triggers are coincident in
+        time. The default will be the light travel time between H1 and
+        L1 of 10ms.
+        """
+        scl=secondCurveLibrary
+        #Check to see if lists are time sorted.
+        if not self.sortedByTime:
+            self.__timeOrderCurve__()
+        if not scl.sortedByTime:
+            scl.__timeOrderCurve__()
+        #Instead of querying each element in SCL break it into
+        #multiple libraries.
+        subsetCount=10
+        subsetDuration=0
+        slcStats=slc.candidateStats()
+        subsetDuration=float(slcStats[1]-slcStats[0])/subsetCount
+        #Create subset on intervel [ .. )
+        slcSubsets=[]
+        for entry in range(0..subsetCount):
+            slcSubsets.append(slc.applyArbitraryThresholds("(T>=%i)and(S<%i)"%((entry*subsetDuration),((entry+1)*subsetDuration))))
+        #Mon-Oct-22-2007:200710221637
+        # To Do
+        # Check self against each slcsubset advancing index of self accordingly
+        # Return the results of this after globbing all the individual results files
+        #Check through each subset for the proper coincidence.
+        
+    #END conincidenceTimeCheck
+
+    def coincidenceGetUnion(self,secondCurveLibrary):
+        """
+        Looks for matching elements the Union of both libraries.  It
+        returns identical elements.  Useful for comparing a time
+        coincident processed library with a frequency coincident
+        processed library.
+        """
+        print "HI"
+    #END conincidenceGetUnion
     def candidateStats(self):
         """
         This method calculates stats for the candidate list such as number
