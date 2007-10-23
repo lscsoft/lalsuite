@@ -1464,7 +1464,7 @@ class candidateList:
         output_fp.close()
     #End method writePixelList()
 
-    def graphdata(self,filename='',gpsReferenceFloat=0.0):
+    def graphdata(self,filename='',gpsReferenceFloat=0.0,timescale='second'):
         """
         This method uses matplotlib.py to make plots of curves
         contained in this list!  Currently all plotting functions
@@ -1492,16 +1492,25 @@ class candidateList:
                         start=False
                     if minX >= float(point[0]):
                         minX = float(point[0])
+        #Convert the time (X) axis scale to given above argument
+        conversionFactor=1;
+        timeLabel="(seconds)"
+        if timescale.lower().__contains__("hour"):
+            conversionFactor=60*60
+            timeLabel="(hours)"
+        if timescale.lower().__contains__("day"):
+            conversionFactor=60*60*24
+            timeLabel="(days)"
         for element in self.curves:
             xtmp=[]
             ytmp=[]
             ztmp=[]
             bP=element.getBrightPixelAndStats()
-            brightSpotX.append(bP[0][2].getAsFloat()-minX)
+            brightSpotX.append((bP[0][2].getAsFloat()-minX)/conversionFactor)
             brightSpotY.append(bP[0][3])
             brightSpotZ.append(float(bP[0][4]-bP[1]).__abs__()/bP[2])
             for point in element.getKurveDataBlock_HumanReadable():
-                xtmp.append(float(point[0])-minX)
+                xtmp.append((float(point[0])-minX)/conversionFactor)
                 ytmp.append(float(point[1]))
                 ztmp.append(float(point[2]))
             line2plot.append([xtmp,ytmp,ztmp])
@@ -1519,14 +1528,20 @@ class candidateList:
             tmpZ.append(entry*factor)
         brightSpotZ=tmpZ
         figure.scatter(brightSpotX,brightSpotY,brightSpotZ)
-        figure.xlabel("Time (s)")
+        figure.xlabel(str("Time %s"%(timeLabel)))
         figure.ylabel("Freq (Hz)")
-        figure.title(str("GPS %f"%minX))
+        figure.figtext(0.05,0.95,str("GPS %9.2f"%minX))
+        if (filename.upper()==''):
+            [name,extension]=os.path.splitext(self.filename[0])
+            figtitle=os.path.basename(name)
+        else:
+            figtitle=filename
+        figure.title("%s"%(figtitle))
         figure.grid(True)
         if (filename==''):
             figure.show()
         else:
-            if (filename=='AUTO'):
+            if (filename.upper()=='AUTO'):
                 [fullpath,extension]=os.path.splitext(self.filename[0])
                 filename=os.path.basename(fullpath)+'.png'
             figure.savefig(filename)

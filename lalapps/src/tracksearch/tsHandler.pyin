@@ -142,6 +142,10 @@ parser.add_option("-r","--graphoffset",dest="graphGPSoffset",
                   default=float(0),
                   help="Specify GPS offset if graphing."
                   )
+parser.add_option("-t","--timescale",dest="timescale",
+                  default='second',
+                  help="Specify an alternative plot time scale.  The valid options are second, hour, and day. Anything else will result in a scale of seconds in the plot."
+                  )
 parser.add_option("-x","--stats",dest="stats",
                   default='',
                   help="Determine the specified stats for all candidates in input file for variable in question.  See the -T options variable labels for explaination.  This result is written out to the screen as mean,min,max,std.  To measure stats of more than one trait use a comma seperated list P,L as input args. FUNCTIONALITY NOT IMPLEMENTED YET!"
@@ -164,6 +168,7 @@ dumpSummaryDisk=bool(options.dumpSummaryDisk)
 verboseSwitch=bool(options.verbose)
 measureStats=str(options.stats)
 glue=bool(options.glue)
+timescale=str(options.timescale).lower()
 
 if verboseSwitch:
     print "Setting verbose mode to candidateHandler call."
@@ -234,7 +239,7 @@ elif ((canList.__len__() >=1) and ((graph2screen>0) or (graph2file!=''))):
     for entry in canList:
         candidateObject=candidateList(verboseSwitch)
         candidateObject.__loadfileQuick__(entry)
-        candidateObject.graphdata(graph2file,graphGPSoffset)
+        candidateObject.graphdata(graph2file,graphGPSoffset,timescale)
         del candidateObject
     #SECTION APPLY ABITRARY THRESHOLDS
 elif ((expThreshold != "") and (canList.__len__() >=1)):
