@@ -1,5 +1,5 @@
 Source: lal
-Section: non-free/libs
+Section: lscsoft
 Priority: optional
 Maintainer: Kipp Cannon <kipp@gravity.phys.uwm.edu>
 Build-Depends: debhelper (>= 4.0.0), autotools-dev, libframe-dev, libmetaio-dev, libgsl0-dev (>= 1.9), fftw3-dev

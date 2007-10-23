@@ -1,5 +1,5 @@
 Source: lalapps
-Section: base
+Section: lscsoft
 Priority: optional
 Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
 Build-Depends: debhelper (>= 5), autotools-dev, lal-dev, libgsl0-dev (>= 1.9)
