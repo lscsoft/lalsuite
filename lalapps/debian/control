@@ -2,12 +2,12 @@ Source: lalapps
 Section: base
 Priority: optional
 Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
-Build-Depends: debhelper (>= 5), autotools-dev, lal-dev
+Build-Depends: debhelper (>= 5), autotools-dev, lal-dev, libgsl0-dev (>= 1.9)
 Standards-Version: 3.7.2
 
 Package: lalapps
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, libgsl0 (>= 1.9)
 Description: LSC Algorithm Library Applications
  The LSC Algorithm Library Applications for gravitational wave data analysis.
  This package contains applications that are built on tools in the
