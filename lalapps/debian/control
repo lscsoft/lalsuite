@@ -7,7 +7,7 @@ Standards-Version: 3.7.2
 
 Package: lalapps
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libgsl0 (>= 1.9)
+Depends: ${shlibs:Depends}, ${misc:Depends}, libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.9)
 Description: LSC Algorithm Library Applications
  The LSC Algorithm Library Applications for gravitational wave data analysis.
  This package contains applications that are built on tools in the

@@ -7,7 +7,7 @@ Standards-Version: 3.6.0
 
 Package: lal
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libframe0, libmetaio0, libgsl0 (>= 1.9), fftw3
+Depends: ${shlibs:Depends}, ${misc:Depends}, libframe0, libmetaio0, libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.9), fftw3
 Description: LSC Algorithm Library
  LAL contains core routines for gravitational wave data analysis as used by the
  LIGO Scientific Collaboration (LSC).
