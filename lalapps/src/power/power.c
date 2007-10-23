@@ -48,6 +48,7 @@
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALError.h>
+#include <lal/LALFrameIO.h>
 #include <lal/LALStdlib.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLArray.h>
@@ -1122,41 +1123,57 @@ static void gaussian_noise(REAL8TimeSeries *series, REAL8 rms, gsl_rng *rng)
  */
 
 
-static COMPLEX8FrequencySeries *generate_response(LALStatus *stat, const char *calcachefile, char *ifo, const char *channel_name, REAL8 deltaT, LIGOTimeGPS epoch, size_t length)
+/*
+ * Note, this function can only read new-style calibration data (S5 and
+ * later).  Calibration data in earlier formats will need to be converted.
+ */
+
+
+static COMPLEX8FrequencySeries *generate_response(const char *cachefile, const char *channel_name, REAL8 deltaT, LIGOTimeGPS epoch, size_t length)
 {
 	static const char func[] = "generate_response";
+	/* length of time interval spanned by calibration */
+	const double duration = length * deltaT;
+	/* frequency resolution of response function */
+	const double deltaf = 1.0 / (length * deltaT);
+	/* number of frequency bins in response function */
+	const int n = length / 2 + 1;
 	COMPLEX8FrequencySeries *response;
-	size_t i;
-	const LALUnit strainPerCount = { 0, {0, 0, 0, 0, 0, 1, -1}, {0, 0, 0, 0, 0, 0, 0} };
-	COMPLEX8 one = { 1.0, 0.0 };
-	CalibrationUpdateParams calfacts;
-	FrCache *calcache = NULL;
 
-	memset(&calfacts, 0, sizeof(calfacts));
-	calfacts.ifo = ifo;
+	XLALPrintInfo("generating response function spanning %g s at GPS time %u.%09u s with %g Hz resolution\n", duration, epoch.gpsSeconds, epoch.gpsNanoSeconds, deltaf);
 
-	response = XLALCreateCOMPLEX8FrequencySeries(channel_name, &epoch, 0.0, 1.0 / (length * deltaT), &strainPerCount, length / 2 + 1);
-	if(!response) {
-		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
-		return NULL;
-	}
-
-	XLALPrintInfo("generate_response(): working at GPS time %u.%09u s\n", response->epoch.gpsSeconds, response->epoch.gpsNanoSeconds);
-
-	if(!calcachefile) {
+	if(!cachefile) {
 		/* generate fake unity response if working with calibrated
 		 * data or if there is no calibration information available
 		 * */
+		const LALUnit strainPerCount = {0, {0, 0, 0, 0, 0, 1, -1}, {0, 0, 0, 0, 0, 0, 0}};
+		const COMPLEX8 one = {1.0, 0.0};
+		size_t i;
+
+		response = XLALCreateCOMPLEX8FrequencySeries(channel_name, &epoch, 0.0, deltaf, &strainPerCount, n);
+		if(!response)
+			XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+
 		XLALPrintInfo("generate_response(): generating unit response function\n");
+
 		for(i = 0; i < response->data->length; i++)
 			response->data->data[i] = one;
-	} else {
-		calcache = XLALFrImportCache(calcachefile);
-		LAL_CALL(LALExtractFrameResponse(stat, response, calcache, &calfacts), stat);
-		XLALFrDestroyCache(calcache);
-	}
 
-	return response;
+		return response;
+	} else {
+		FrCache *cache = XLALFrImportCache(cachefile);
+		if(cache) {
+			LALCalData *caldata = XLALFrCacheGetCalData(&epoch, channel_name, cache);
+			XLALFrDestroyCache(cache);
+			if(caldata) {
+				response = XLALCreateCOMPLEX8Response(&epoch, duration, deltaf, n, caldata);
+				XLALDestroyCalData(caldata);
+				if(response)
+					return response;
+			}
+		}
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	}
 }
 
 
@@ -1804,7 +1821,7 @@ int main(int argc, char *argv[])
 
 			/* Create the response function (generates unity
 			 * response if cache file is NULL). */
-			response = generate_response(&stat, options->cal_cache_filename, options->ifo, options->channel_name, series->deltaT, series->epoch, series->data->length);
+			response = generate_response(options->cal_cache_filename, options->channel_name, series->deltaT, series->epoch, series->data->length);
 			if(!response)
 				exit(1);
 
