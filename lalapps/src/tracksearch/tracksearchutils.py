@@ -511,6 +511,28 @@ class candidateList:
         return self.totalCount
     #end method __len__()
     
+    def __timeOrderLibrary__(self):
+        """
+        This method orders the trigger using their GPS start time marker.
+        This results in a easily searchable list
+        """
+        #Create sortable key list [gpsStart,gpsStop,index]
+        keyList=[]
+        index=0
+        for entry in self.curves:
+            if not entry.sortedByTime:
+                entry.__timeOrderCurve__()
+            keyList.append([entry.gpsStart.getAsFloat(),entry.gpsStop.getAsFloat(),index])
+            index=index+1
+        #Sort the key list.
+        keyList.sort
+        sortedLibrary=list()
+        for entry in keyList:
+            sortedLibrary.append(self.curves[entry[3]])
+        #Swap sorted list for original list
+        self.curves=sortedLibrary
+        self.sorted=True
+    #end __timeOrderLibrary__() method
     
     def loadfile(self,inputFilename):
         """
@@ -704,26 +726,30 @@ class candidateList:
         This sorts the input curves into an order with lowest gpsStart time
         first.  The sorting keys only on the curves start time.
         """
-        #Created keye list gpsInt.display(),OriginalIndex
-        currentIndex=0
-        keyedList=[]
-        for entry in self.curves:
-            tmpPair=[]
-            tmpPair.append((entry.startGPS()).__makeInt__())
-            tmpPair.append(currentIndex)
-            currentIndex=currentIndex.__add__(1)
-            keyedList.append(tmpPair)
-        #Sort this keyed list lowest->highest
-        keyedList.sort()
-        newList=[]
-        for entry in keyedList:
-            newList.append(self.curves[entry[1]])
-        if newList.__len__() != self.curves.__len__():
-            print "Error with sorting routine!"
-            os.abort()
-        #Reassign the list to newly sorted version
-        self.sorted=True
-        self.curves=copy.deepcopy(newList)
+        if True:
+            #Use the new method __timeOrderLibrary__()
+            self.__timeOrderLibrary__()
+        else:
+            #Created keye list gpsInt.display(),OriginalIndex
+            currentIndex=0
+            keyedList=[]
+            for entry in self.curves:
+                tmpPair=[]
+                tmpPair.append((entry.startGPS()).__makeInt__())
+                tmpPair.append(currentIndex)
+                currentIndex=currentIndex.__add__(1)
+                keyedList.append(tmpPair)
+            #Sort this keyed list lowest->highest
+            keyedList.sort()
+            newList=[]
+            for entry in keyedList:
+                newList.append(self.curves[entry[1]])
+            if newList.__len__() != self.curves.__len__():
+                print "Error with sorting routine!"
+                os.abort()
+            #Reassign the list to newly sorted version
+            self.sorted=True
+            self.curves=copy.deepcopy(newList)
     #End sortList method
 
     def findBinWidths(self):
@@ -1043,31 +1069,104 @@ class candidateList:
         matches.  It must be given a maximum time offset to make the
         decision if two individual triggers are coincident in
         time. The default will be the light travel time between H1 and
-        L1 of 10ms.
+        L1 of 10ms. It returns the matches in time coincidence for
+        A) self
+        B) secondCurveLibrary
+        C) the smaller of the two the lowest rate since triggers can break
+        into smaller triggers which are related to the
+        one larger trigger, (fewer triggers).
+        [A,B,C]
         """
         scl=secondCurveLibrary
         #Check to see if lists are time sorted.
-        if not self.sortedByTime:
-            self.__timeOrderCurve__()
-        if not scl.sortedByTime:
-            scl.__timeOrderCurve__()
-        #Instead of querying each element in SCL break it into
-        #multiple libraries.
-        subsetCount=10
-        subsetDuration=0
-        slcStats=slc.candidateStats()
-        subsetDuration=float(slcStats[1]-slcStats[0])/subsetCount
-        #Create subset on intervel [ .. )
-        slcSubsets=[]
-        for entry in range(0..subsetCount):
-            slcSubsets.append(slc.applyArbitraryThresholds("(T>=%i)and(S<%i)"%((entry*subsetDuration),((entry+1)*subsetDuration))))
-        #Mon-Oct-22-2007:200710221637
-        # To Do
-        # Check self against each slcsubset advancing index of self accordingly
-        # Return the results of this after globbing all the individual results files
-        #Check through each subset for the proper coincidence.
-        
-    #END conincidenceTimeCheck
+        if not self.sorted:
+            self.__timeOrderLibrary__()
+        if not scl.sorted:
+            scl.__timeOrderLibrary__()
+        #Break both libraries into smaller lists of libraries for searching
+        #self -> list(libA)
+        #scl  -> list(libB)
+        statsA=self.candidateStats()
+        libA_start=statsA[1]
+        libA_stop=statsA[0]
+        statsB=slc.candidateStats()
+        libB_start=statsB[1]
+        libB_stop=statsB[0]
+        #Crop the non-overlapping sections of both libraries
+        cropStart=min(libA_start,libB_start)
+        cropStop=max(libA_stop,libB_start)
+        libA_CropT=libA.applyArbitraryThresholds("(T>=%f)and(S>=T)"%(cropStart))
+        libB_CropT=libB.applyArbitraryThresholds("(T>=%f)and(S>=T)"%(cropStart))
+        libA_CropFinal=libA_CropT.applyArbitraryThresholds("(S<=%f)and(T<=S)"%(cropStop))
+        libB_CropFinal=libB_CropT.applyArbitraryThresholds("(S<=%f)and(T<=S)"%(cropStop))
+        libA=libA_CropFinal
+        libB=libB_CropFinal
+        #Compare overlapping parts of libA to libB
+        #Get list for libA of [index,gpsStart,gpsStop] and libB of [index,gpsStart,gpsStop]
+        curvesA=list()
+        curvesB=list()
+        counter=0
+        for entry in libA.curves:
+            curvesA.append([counter,entry.startGPS.getAsFloat(),entry.stopGPS.getAsFloat()])
+            counter=counter+1
+        counter=0
+        for entry in libB.curves:
+            curvesB.append([counter,entry.startGPS.getAsFloat(),entry.stopGPS.getAsFloat()])
+            counter=counter+1
+        #Sort this keyed list
+        curvesA.sort()
+        curvesB.sort()
+        resultA=copy.deepcopy(libA)
+        resultB=copy.deepcopy(libB)
+        del resultA.curves
+        del resultB.curves
+        for keyA in curvesA:
+            cutIndex_start=0
+            cutIndex_stop=0
+            k1=0
+            k3=curvesB.__len__()
+            k2=int(k3/2)+k1
+            doThis=True
+            while doThis:
+                if ((keyA[1] >= curvesB[k2][1]) and (keyA[2] >=curvesB[k2][2])):
+                    k2=k2-int((k2-k1)/2)
+                elif ((keyA[1] <= curvesB[k2][1]) and (keyA[2] <= curvesB[k2][2])):
+                    k2=k2+int((k3-k2)/2)
+                else:
+                    doThis=False
+                    cutIndex_start=k2
+            k1=0
+            k3=curvesB.__len__()
+            k2=int(k3/2)+k1
+            doThis=True
+            while doThis:
+                if ((keyA[2] <= curvesB[k2][1]) and (keyA[1] <=curvesB[k2][1])):
+                    k2=k2+int((k2-k1)/2)
+                elif ((keyA[2] >= curvesB[k2][2]) and (keyA[1] >= curvesB[k2][1])):
+                    k2=k2-int((k3-k2)/2)
+                else:
+                    doThis=False
+                    cutIndex_stop=k2
+            #Use the cutIndexs to cut out all the matchin entries from libB
+            thisSlice=[]
+            thisSlice=libB.curves.__getslice__(cutIndex_start,cutIndex_stop)
+            resultB.curves.extend(thisSlice)
+            #Record the entry as a match for library A
+            if thisSlice.__len__() > 0:
+                resultA.curves.append(entry)
+            del thisSlice
+        #Sort the coincidence lists for the this operation
+        #Still need to write __timeOrderLibrary__() method
+        resultB.__timeOrderLibrary__()
+        resultA.__timeOrderLibrary__()
+        #Return as resultC the smallest of the two trigger libraries.
+        #Since this is a more honest method to measure trigger rates.
+        if resultA.__len__() > resultB.__len__():
+            resultC=copy.deepcopy(resultA)
+        else:
+            resultC=copy.deepcopy(resultB)
+        return [resultA,resultB,resultC]
+    #END conincidenceTimeCheck method
 
     def coincidenceGetUnion(self,secondCurveLibrary):
         """
