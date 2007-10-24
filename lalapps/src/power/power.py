@@ -639,8 +639,12 @@ class BurcaTailorNode(pipeline.CondorDAGNode):
 		filename = "%s-%s-%d-%d.xml.gz" % (cache_entry.observatory, cache_entry.description, int(cache_entry.segment[0]), int(abs(cache_entry.segment)))
 		self.add_var_opt("output", filename)
 		cache_entry.url = "file://localhost" + os.path.abspath(filename)
-		self.output_cache = [cache_entry]
+		del self.output_cache[:]
+		self.output_cache.append(cache_entry)
 		return filename
+
+	def get_input_cache(self):
+		return  self.input_cache
 
 	def get_output_cache(self):
 		if not self.output_cache:
@@ -997,6 +1001,7 @@ def make_burca_tailor_fragment(dag, input_cache, seg, tag):
 	del node.get_args()[:]
 	node.add_var_arg("--add-from-cache %s" % node.cache_name)
 	node.set_output(tag)
+	node.set_post_script("/bin/rm -f %s" % " ".join([c.path() for c in node.get_input_cache()]))
 	dag.add_node(node)
 	return [node]
 
