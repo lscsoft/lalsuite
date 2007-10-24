@@ -87,7 +87,7 @@ ptf_evolution_params_t;
 /* function that computes the derivatives of the dynamical */
 /* variables for the GSL ODE integrator                    */
 INT4 XLALPTFWaveformDerivatives( 
-    REAL8 t, const REAL8 y[14], REAL8 dydt[14], void* params )
+    REAL8 t, const REAL8 y[11], REAL8 dydt[11], void* params )
 {
   /* equation numbers in description of variables and algorithms refer to
    * Pan, Buonanno, Chan and Vallisneri, Phys. Rev. D 69, 104017 (2004)
@@ -113,10 +113,7 @@ INT4 XLALPTFWaveformDerivatives(
   const REAL8 LNhatz = y[7]; /* z-cmpt of orb plane normal in Eq. (7)      */
   const REAL8 e1x    = y[8]; /* x-cmpt of orb plane basis vector 1 Eq.(13) */
   const REAL8 e1y    = y[9]; /* x-cmpt of orb plane basis vector 1 Eq.(13) */
-  const REAL8 e1z   = y[10]; /* x-cmpt of orb plane basis vector 1 Eq.(13) */
-  const REAL8 e2x   = y[11]; /* x-cmpt of orb plane basis vector 1 Eq.(13) */
-  const REAL8 e2y   = y[12]; /* x-cmpt of orb plane basis vector 1 Eq.(13) */
-  const REAL8 e2z   = y[13]; /* x-cmpt of orb plane basis vector 1 Eq.(13) */
+  const REAL8 e1z    = y[10]; /* x-cmpt of orb plane basis vector 1 Eq.(13) */
 
   /* powers of omega used in post-Newtonian expansion */
   const REAL8 omega_1_3 = pow( omega, 1.0/3.0 );
@@ -167,9 +164,6 @@ INT4 XLALPTFWaveformDerivatives(
   const REAL8 de1x_dt = Omegaey * e1z - Omegaez * e1y;
   const REAL8 de1y_dt = Omegaez * e1x - Omegaex * e1z;
   const REAL8 de1z_dt = Omegaex * e1y - Omegaey * e1x;
-  const REAL8 de2x_dt = Omegaey * e2z - Omegaez * e2y;
-  const REAL8 de2y_dt = Omegaez * e2x - Omegaex * e2z;
-  const REAL8 de2z_dt = Omegaex * e2y - Omegaey * e2x;
 
    /* compute the derivative of the orbital phase given by Eq. (5) */
   const REAL8 domega_dt = omega_11_3 * (
@@ -208,9 +202,6 @@ INT4 XLALPTFWaveformDerivatives(
   dydt[8]  = de1x_dt;
   dydt[9]  = de1y_dt;
   dydt[10] = de1z_dt;
-  dydt[11] = de2x_dt;
-  dydt[12] = de2y_dt;
-  dydt[13] = de2z_dt;
 
   return GSL_SUCCESS;
 }
@@ -492,8 +483,8 @@ XLALFindChirpPTFWaveform(
   const REAL8 freq_step = geometrized_m_total * LAL_PI;
   const REAL8 step      = deltaT / geometrized_m_total;                      
   const REAL8 omegam_to_hz = 1.0 / freq_step;                            
-  const INT4    num_evolution_variables = 14;
-  REAL8       y[14], dydt[14];             
+  const INT4  num_evolution_variables = 11;
+  REAL8       y[11], dydt[11];             
 
   /* Dynamical evolution variables and their derivatives */
   REAL8 Phi ;   /* gravitational wave phase in BCV2 Eq. (18)     */
@@ -552,9 +543,9 @@ XLALFindChirpPTFWaveform(
   e1x    = y[8]  = 1.0;
   e1y    = y[9]  = 0.0;
   e1z    = y[10] = 0.0;
-  e2x    = y[11] = 0.0;
-  e2y    = y[12] = 1.0;
-  e2z    = y[13] = 0.0;
+  e2x    = 0.0;
+  e2y    = 1.0;
+  e2z    = 0.0;
 
   /* start computing the waveform we use a while() loop which we   */
   /* break out of when one of three possible temination conditions */
@@ -616,15 +607,14 @@ XLALFindChirpPTFWaveform(
     e1x    = y[8];
     e1y    = y[9];
     e1z    = y[10];
-    e2x    = y[11];
-    e2y    = y[12];
-    e2z    = y[13];
+    e2x    = LNhaty * e1z - LNhatz * e1y;
+    e2y    = LNhatz * e1x - LNhatx * e1z;
+    e2z    = LNhatx * e1y - LNhaty * e1x;
 
     /* exit with an error if any of the dynamical variables contain NaN */
     if ( isnan( Phi ) || isnan( omega ) || isnan( LNhatx ) || 
          isnan( LNhaty ) || isnan( LNhatz ) || isnan( e1x ) || 
-         isnan( e1y ) || isnan( e1z ) || isnan( e2x ) || 
-         isnan( e2y ) || isnan( e2z ) )
+         isnan( e1y ) || isnan( e1z ) )
     {
       /* check if we are close to the MECO */
       N_steps = ((i-2) * dE_dt_n_1 - (i-1) * dE_dt_n_2) / 
