@@ -114,6 +114,12 @@ void StackSlideVecF(LALStatus *status,
                     REAL8FrequencySeriesVector *vecF, 
                     SemiCoherentParams *params);
 
+
+void StackSlideVecF_HoughMode(LALStatus *status,
+			      SemiCohCandidateList  *out,       
+			      REAL8FrequencySeriesVector *vecF, 
+			      SemiCoherentParams *params);   
+
 /* Calculate f(t) using the master equation given by Eq. 6.18 in gr-qc/0407001 */
 /* Returns f(t) in outputPoint.fkdot[0] */
 void LALappsFindFreqFromMasterEquation(LALStatus *status, 

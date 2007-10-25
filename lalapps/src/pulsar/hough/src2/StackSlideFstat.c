@@ -38,6 +38,9 @@ RCSID( "$Id$");
 #define TRUE (1==1)
 #define FALSE (1==0)
 
+#define SSMAX(x,y) ( (x) > (y) ? (x) : (y) )
+#define SSMIN(x,y) ( (x) < (y) ? (x) : (y) )
+
 extern int lalDebugLevel;
 
 #define BLOCKSIZE_REALLOC 50
@@ -351,6 +354,313 @@ void StackSlideVecF(LALStatus *status,
   RETURN(status);
 
 } /* END StackSlideVecF */
+
+
+/** \brief Function StackSlides a vector of Fstat frequency series or any REAL8FrequencySeriesVector.
+           This is similar to StackSlideVecF but adapted to calculate the hough number count and to be as 
+	   similar to Hough as possible but without using the hough look-up-tables.
+    \param out SemiCohCandidateList is a list of candidates
+    \param vecF is a vector of Fstat frequency series or any REAL8FrequencySeriesVector.
+    \param params is a pointer to SemiCoherentParams
+    \out SemiCohCandidateList is a list of candidates
+*/
+void StackSlideVecF_HoughMode(LALStatus *status,
+			      SemiCohCandidateList  *out,        /**< output candidates */
+			      REAL8FrequencySeriesVector *vecF,  /**< vector with Fstat values or any REAL8FrequencySeriesVector */
+			      SemiCoherentParams *params)        /**< input parameters  */
+{
+
+  UINT2  xSide, ySide, maxNBins, maxNBorders;
+  INT8  fBinIni, fBinFin, fBin;
+  INT4  iHmap, nfdot;
+  UINT4 k, nStacks ;
+  REAL8 deltaF, dfdot, alpha, delta;
+  REAL8 patchSizeX, patchSizeY;
+  REAL8VectorSequence *vel, *pos;
+  REAL8 fdot, refTime;
+  LIGOTimeGPS refTimeGPS;
+  LIGOTimeGPSVector   *tsMid;
+  REAL8Vector *timeDiffV=NULL;
+  UINT8Vector hist; /* histogram vector */ 
+  UINT8Vector histTotal; /* total histogram vector */
+  HoughStats stats; /* statistics struct */
+  CHAR *fileStats = NULL;
+  FILE *fpStats = NULL;
+
+  /* a minimal number of hough structs needed */
+  HOUGHMapTotal ht;
+  HOUGHDemodPar   parDem;  /* demodulation parameters */
+  HOUGHSizePar    parSize; 
+  HOUGHResolutionPar parRes;   /* patch grid information */
+  HOUGHPatchGrid  patch;   /* Patch description */ 
+  INT4 nfSize;
+
+  toplist_t *houghToplist;
+  UINT8FrequencyIndexVector freqInd; /* for trajectory in time-freq plane */
+
+  INITSTATUS( status, "StackSlideVecF_HoughMode", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+
+  /* check input is not null */
+  if ( out == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
+  if ( out->length == 0 ) {
+    ABORT ( status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+  }  
+  if ( out->list == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+  }  
+  if ( vecF == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
+  if ( vecF->length == 0 ) {
+    ABORT ( status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+  }  
+  if ( vecF->data == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
+  if ( params == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
+
+
+
+  /* copy some parameters from peakgram vector */
+  deltaF = vecF->data->deltaF;
+  nStacks = vecF->length;
+  fBinIni =  (UINT4)(vecF->data[0].f0/deltaF + 0.5);
+  fBinFin = fBinIni +  vecF->data->data->length - 1;
+
+  
+  /* copy some params to local variables */
+  nfdot = params->nfdot;
+  dfdot = params->dfdot;
+  alpha = params->alpha;
+  delta = params->delta;
+  vel = params->vel;
+  pos = params->pos;
+  fdot = params->fdot;
+  tsMid = params->tsMid;
+  refTimeGPS = params->refTime;
+  TRY ( LALGPStoFloat( status->statusPtr, &refTime, &refTimeGPS), status);
+
+  /* set patch size */
+  /* this is supposed to be the "educated guess"
+     delta theta = 1.0 / (Tcoh * f0 * Vepi )
+     where Tcoh is coherent time baseline,
+     f0 is frequency and Vepi is rotational velocity
+     of detector */
+  patchSizeX = params->patchSizeX;
+  patchSizeY = params->patchSizeY;
+
+  /* calculate time differences from start of observation time for each stack*/
+  TRY( LALDCreateVector( status->statusPtr, &timeDiffV, nStacks), status);
+  
+  for (k=0; k<nStacks; k++) {
+    REAL8 tMidStack;
+
+    TRY ( LALGPStoFloat ( status->statusPtr, &tMidStack, tsMid->data + k), status);
+    timeDiffV->data[k] = tMidStack - refTime;
+  }
+
+  /* residual spindown trajectory */
+  freqInd.deltaF = deltaF;
+  freqInd.length = nStacks;
+  freqInd.data = NULL;
+  freqInd.data =  ( UINT8 *)LALCalloc(1,nStacks*sizeof(UINT8));
+  if ( freqInd.data == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
+
+
+  /* resolution in space of residual spindowns */
+  ht.dFdot.length = 1;
+  ht.dFdot.data = NULL;
+  ht.dFdot.data = (REAL8 *)LALCalloc( 1, ht.dFdot.length * sizeof(REAL8));
+  if ( ht.dFdot.data == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
+
+  /* the residual spindowns */
+  ht.spinRes.length = 1;
+  ht.spinRes.data = NULL;
+  ht.spinRes.data = (REAL8 *)LALCalloc( 1, ht.spinRes.length*sizeof(REAL8));
+  if ( ht.spinRes.data == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
+
+  /* the residual spindowns */
+  ht.spinDem.length = 1;
+  ht.spinDem.data = NULL;
+  ht.spinDem.data = (REAL8 *)LALCalloc( 1, ht.spinRes.length*sizeof(REAL8));
+  if ( ht.spinDem.data == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
+
+  /* the demodulation params */
+  parDem.deltaF = deltaF;
+  parDem.skyPatch.alpha = alpha;
+  parDem.skyPatch.delta = delta;
+  parDem.spin.length = 1;
+  parDem.spin.data = NULL;
+  parDem.spin.data = (REAL8 *)LALCalloc(1, sizeof(REAL8));
+  if ( parDem.spin.data == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
+  parDem.spin.data[0] = fdot;
+
+  /* the skygrid resolution params */
+  parRes.deltaF = deltaF;
+  parRes.patchSkySizeX  = patchSizeX;
+  parRes.patchSkySizeY  = patchSizeY;
+  parRes.pixelFactor = params->pixelFactor;
+  parRes.pixErr = PIXERR;
+  parRes.linErr = LINERR;
+  parRes.vTotC = VTOT;
+
+
+  {
+    REAL8 maxTimeDiff, startTimeDiff, endTimeDiff;
+
+    startTimeDiff = fabs(timeDiffV->data[0]);
+    endTimeDiff = fabs(timeDiffV->data[timeDiffV->length - 1]);
+    maxTimeDiff = SSMAX( startTimeDiff, endTimeDiff);
+
+    /* set number of freq. bins for which LUTs will be calculated */
+    /* this sets the range of residual spindowns values */
+    /* phmdVS.nfSize  = 2*nfdotBy2 + 1; */
+    nfSize  = 2 * floor((nfdot-1) * (REAL4)(dfdot * maxTimeDiff / deltaF) + 0.5f) + 1; 
+  }
+
+  /* adjust fBinIni and fBinFin to take maxNBins into account */
+  /* and make sure that we have fstat values for sufficient number of bins */
+  parRes.f0Bin =  fBinIni;      
+
+  fBinIni += params->extraBinsFstat;
+  fBinFin -= params->extraBinsFstat;
+  /* this is not very clean -- the Fstat calculation has to know how many extra bins are needed */
+
+  LogPrintf(LOG_DETAIL, "Freq. range analyzed by Hough = [%fHz - %fHz] (%d bins)\n", 
+	    fBinIni*deltaF, fBinFin*deltaF, fBinFin - fBinIni + 1);
+  ASSERT ( fBinIni < fBinFin, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+
+  /* initialise number of candidates -- this means that any previous candidates 
+     stored in the list will be lost for all practical purposes*/
+  out->nCandidates = 0; 
+  
+  /* create toplist of candidates */
+  if (params->useToplist) {
+    create_toplist(&houghToplist, out->length, sizeof(SemiCohCandidate), smallerStackSlide);
+  }
+  else { 
+    /* if no toplist then use number of hough maps */
+    INT4 numHmaps = (fBinFin - fBinIni + 1) * nfSize;
+    if (out->length != numHmaps) {
+      out->length = numHmaps;
+      out->list = (SemiCohCandidate *)LALRealloc( out->list, out->length * sizeof(SemiCohCandidate));
+      if ( out->list == NULL ) {
+	ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+      }  
+    }
+  }
+
+  /*------------------ start main Hough calculation ---------------------*/
+
+  /* initialization */  
+  fBin= fBinIni; /* initial search bin */
+  iHmap = 0; /* hough map index */
+
+  while( fBin <= fBinFin ){
+    INT8 fBinSearch, fBinSearchMax;
+    UINT4 i,j; 
+    REAL8UnitPolarCoor sourceLocation;
+    	
+    parRes.f0Bin =  fBin;      
+    TRY( LALHOUGHComputeSizePar( status->statusPtr, &parSize, &parRes ),  status );
+    xSide = parSize.xSide;
+    ySide = parSize.ySide;
+
+    maxNBins = parSize.maxNBins;
+    maxNBorders = parSize.maxNBorders;
+	
+    /*------------------ create patch grid at fBin ----------------------*/
+    patch.xSide = xSide;
+    patch.ySide = ySide;
+    patch.xCoor = NULL;
+    patch.yCoor = NULL;
+    patch.xCoor = (REAL8 *)LALCalloc(1,xSide*sizeof(REAL8));
+    if ( patch.xCoor == NULL ) {
+      ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+    }  
+
+    patch.yCoor = (REAL8 *)LALCalloc(1,ySide*sizeof(REAL8));
+    if ( patch.yCoor == NULL ) {
+      ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+    }  
+    TRY( LALHOUGHFillPatchGrid( status->statusPtr, &patch, &parSize ), status );
+  
+    /*-------------- initializing the Total Hough map space ------------*/   
+    ht.xSide = xSide;
+    ht.ySide = ySide;
+    ht.skyPatch.alpha = alpha;
+    ht.skyPatch.delta = delta;
+    ht.mObsCoh = nStacks;
+    ht.deltaF = deltaF;
+    ht.spinDem.data[0] = fdot;
+    ht.patchSizeX = patchSizeX;
+    ht.patchSizeY = patchSizeY;
+    ht.dFdot.data[0] = dfdot;
+    ht.map   = NULL;
+    ht.map   = (HoughTT *)LALCalloc(1,xSide*ySide*sizeof(HoughTT));
+    if ( ht.map == NULL ) {
+      ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+    }  
+    
+    TRY( LALHOUGHInitializeHT( status->statusPtr, &ht, &patch), status); /*not needed */
+    
+  
+
+
+
+}  
+
+
+  /* copy toplist candidates to output structure if necessary */
+  if ( params->useToplist ) {
+    for ( k=0; k<houghToplist->elems; k++) {
+      out->list[k] = *((SemiCohCandidate *)(toplist_elem(houghToplist, k)));
+    }
+    out->nCandidates = houghToplist->elems;
+    free_toplist(&houghToplist);
+  }
+
+  LALFree(ht.map);
+
+  /* free remaining memory */
+  LALFree(ht.spinRes.data);
+  LALFree(ht.spinDem.data);
+  LALFree(ht.dFdot.data);
+
+  TRY( LALDDestroyVector( status->statusPtr, &timeDiffV), status);
+  LALFree(freqInd.data);
+
+  LALFree(patch.xCoor);
+  LALFree(patch.yCoor);
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+
+} /* END StackSlideVecF */
+
+
+
+
+
+
+
+
 
 /* Calculate f(t) using the master equation given by Eq. 6.18 in gr-qc/0407001 */
 /* Returns f(t) in outputPoint.fkdot[0] */
