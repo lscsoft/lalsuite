@@ -107,7 +107,7 @@ def get_timing_parameters(config_parser):
 	resample_rate = config_parser.getfloat("lalapps_power", "resample-rate")
 	params = burstsearch.XLALEPGetTimingParameters(
 		window_length = config_parser.getint("lalapps_power", "window-length"),
-		max_tile_length = config_parser.getfloat("lalapps_power", "max-tile-duration") * resample_rate,
+		max_tile_length = int(config_parser.getfloat("lalapps_power", "max-tile-duration") * resample_rate),
 		tile_stride_fraction = config_parser.getfloat("lalapps_power", "tile-stride-fraction"),
 		psd_length = config_parser.getint("lalapps_power", "psd-average-points")
 	)
@@ -848,7 +848,7 @@ def make_datafind_fragment(dag, instrument, seg):
 		node.set_type(datafindjob.get_config_file().get("datafind", "type_%s" % instrument))
 	node.set_retry(3)
 	dag.add_node(node)
-	return [node]
+	return set([node])
 
 
 def make_lladd_fragment(dag, parents, instrument, seg, tag, preserve_cache = [], input_cache = None):
@@ -1061,12 +1061,12 @@ def make_datafind_stage(dag, seglists, verbose = False):
 	segs = [(seg, instrument) for instrument, seglist in filled.iteritems() for seg in seglist]
 	segs.sort()
 
-	nodes = []
+	nodes = set()
 	for seg, instrument in segs:
 		if verbose:
 			print >>sys.stderr, "making datafind job for %s spanning %s" % (instrument, seg)
 		new_nodes = make_datafind_fragment(dag, instrument, seg)
-		nodes += new_nodes
+		nodes |= new_nodes
 
 		# add a post script to check the file list
 		required_segs_string = ",".join(segmentsUtils.to_range_strings(seglists[instrument] & segments.segmentlist([seg])))
@@ -1092,7 +1092,7 @@ def make_multibinj_fragment(dag, seg, tag):
 	nodes = make_binj_fragment(dag, seg, tag, 0.0, flow, fhigh)
 	nodes = make_lladd_fragment(dag, nodes, "ALL", seg, tag)
 	nodes[0].set_output("HL-%s-%d-%d.xml" % (tag, int(seg[0]), int(abs(seg))))
-	return nodes
+	return set(nodes)
 
 
 #
@@ -1114,9 +1114,9 @@ def make_power_segment_fragment(dag, datafindnodes, instrument, segment, tag, ti
 	Construct a DAG fragment for an entire segment, splitting the
 	segment into multiple power jobs.
 	"""
-	if len(datafindnodes) != 1:
-		raise ValueError, "must set exactly one datafind parent per power job, got %d" % len(datafindnodes)
-	framecache = datafindnodes[0].get_output()
+	# only one frame cache file can be provided as input
+	# the unpacking indirectly tests that the file count is correct
+	[framecache] = [node.get_output() for node in datafindnodes]
 	seglist = split_segment(timing_params, segment, psds_per_job)
 	if verbose:
 		print >>sys.stderr, "Segment split: " + str(seglist)
@@ -1132,18 +1132,17 @@ def make_power_segment_fragment(dag, datafindnodes, instrument, segment, tag, ti
 
 
 def make_injection_segment_fragment(dag, datafindnodes, binjnodes, instrument, segment, tag, timing_params, psds_per_job, verbose = False):
-	if len(datafindnodes) != 1:
-		raise ValueError, "must set exactly one datafind parent per power job, got %d" % len(datafindnodes)
-	framecache = datafindnodes[0].get_output()
-	if len(binjnodes) != 1:
-		raise ValueError, "must set exactly one binj parent per power job, got %d" % len(binjnodes)
-	simfile = binjnodes[0].get_output_cache()[0].path()
+	# only one frame cache file can be provided as input, and only one
+	# injection description file can be provided as input
+	# the unpacking indirectly tests that the file count is correct
+	[framecache] = [node.get_output() for node in datafindnodes]
+	[simfile] = [cache_entry.path() for node in binjnodes for cache_entry in node.get_output_cache()]
 	seglist = split_segment(timing_params, segment, psds_per_job)
 	if verbose:
 		print >>sys.stderr, "Injections split: " + str(seglist)
 	nodes = []
 	for seg in seglist:
-		nodes += make_power_fragment(dag, datafindnodes + binjnodes, instrument, seg, tag, framecache, injargs = {"burstinjection-file": simfile})
+		nodes += make_power_fragment(dag, datafindnodes | binjnodes, instrument, seg, tag, framecache, injargs = {"burstinjection-file": simfile})
 	return nodes
 
 
@@ -1170,7 +1169,7 @@ def make_single_instrument_stage(dag, datafinds, seglistdict, tag, timing_params
 
 			# find the datafind job this power job is going to
 			# need
-			dfnodes = [node for node in datafinds if (node.get_ifo() == instrument) and (seg in segments.segment(node.get_start(), node.get_end()))]
+			dfnodes = set([node for node in datafinds if (node.get_ifo() == instrument) and (seg in segments.segment(node.get_start(), node.get_end()))])
 			if len(dfnodes) != 1:
 				raise ValueError, "error, not exactly 1 datafind is suitable for power job at %s in %s" % (str(seg), instrument)
 
@@ -1195,7 +1194,7 @@ def make_single_instrument_injections_stage(dag, datafinds, binjnodes, seglistdi
 
 			# find the datafind job this power job is going to
 			# need
-			dfnodes = [node for node in datafinds if (node.get_ifo() == instrument) and (seg in segments.segment(node.get_start(), node.get_end()))]
+			dfnodes = set([node for node in datafinds if (node.get_ifo() == instrument) and (seg in segments.segment(node.get_start(), node.get_end()))])
 			if len(dfnodes) != 1:
 				raise ValueError, "error, not exactly 1 datafind is suitable for power job at %s in %s" % (str(seg), instrument)
 

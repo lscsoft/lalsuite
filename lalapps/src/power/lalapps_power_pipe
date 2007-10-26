@@ -93,6 +93,10 @@ def parse_command_line():
 	if options.do_noninjections and not options.background_time_slides:
 		raise ValueError, "missing required --background-time-slides argument"
 
+	# simplifies life later by allowing the background and injection
+	# branches of the dag to be constructed with nearly identical code
+	options.injection_time_slides = [options.injection_time_slides]
+
 	return options, (filenames or ["power.dag"])
 
 
@@ -320,7 +324,7 @@ options, filenames = parse_command_line()
 
 
 #
-# Parse .ini file.
+# Parse .ini file, loading the single-instrument segment lists while at it.
 #
 
 
@@ -336,35 +340,38 @@ power.init_job_types(config_parser)
 
 
 #
-# Construct initial segment lists
+# Using time slide information, construct segment lists describing times
+# requiring trigger construction.
 #
 
 
 if options.verbose:
 	print >>sys.stderr, "Computing segments for which lalapps_power jobs are required ..."
 
+background_time_slides = {}
+background_seglistdict = segments.segmentlistdict()
 if options.do_noninjections:
-	background_time_slides = {}
-	background_seglistdict = segments.segmentlistdict()
 	for filename in options.background_time_slides:
-		background_time_slides[filename] = ligolw_tisi.load_time_slides(filename, verbose = options.verbose, gz = filename[-3:] == ".gz").values()
-		background_seglistdict |= compute_segment_lists(seglistdict, background_time_slides[filename], options.minimum_gap, options.timing_params, full_segments = options.full_segments, verbose = options.verbose)
-else:
-	background_time_slides = {}
-	background_seglistdict = segments.segmentlistdict()
+		cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
+		background_time_slides[cache_entry] = ligolw_tisi.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
+		background_seglistdict |= compute_segment_lists(seglistdict, background_time_slides[cache_entry], options.minimum_gap, options.timing_params, full_segments = options.full_segments, verbose = options.verbose)
 
 
+injection_time_slides = {}
+injection_seglistdict = segments.segmentlistdict()
 if options.do_injections:
-	injection_time_slides = ligolw_tisi.load_time_slides(options.injection_time_slides, verbose = options.verbose, gz = options.injection_time_slides[-3:] == ".gz").values()
-	injection_seglistdict = compute_segment_lists(seglistdict, injection_time_slides, options.minimum_gap, options.timing_params, full_segments = options.full_segments, verbose = options.verbose)
-else:
-	injection_time_slides = []
-	injection_seglistdict = segments.segmentlistdict()
+	for filename in options.injection_time_slides:
+		cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
+		injection_time_slides[cache_entry] = ligolw_tisi.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
+		injection_seglistdict |= compute_segment_lists(seglistdict, injection_time_slides[cache_entry], options.minimum_gap, options.timing_params, full_segments = options.full_segments, verbose = options.verbose)
+
 
 # apply time shifts to segment lists to shift tiling phases, but take
 # intersection with original segments to stay within allowed times.  Note:
 # can't use segmentlistdict's offset mechanism to do this because we need
 # the offsets to still be 0 for coincidence testing later.
+
+
 for key, offset in tiling_phase.items():
 	if key in background_seglistdict:
 		background_seglistdict[key].shift(offset)
@@ -385,66 +392,34 @@ dag.set_dag_file(os.path.splitext(filenames[0])[0])
 
 
 #
-# Injection list generation.
-#
-
-
-if options.do_injections:
-	if options.verbose:
-		print >>sys.stderr, "Building lalapps_binj jobs ..."
-	binjnodes = power.make_multibinj_fragment(dag, injection_seglistdict.extent_all(), "INJECTIONS_%s" % options.tag)
-else:
-	binjnodes = []
-
-
-#
 # Build datafind jobs.
 #
 
 
 datafinds = power.make_datafind_stage(dag, injection_seglistdict | background_seglistdict, verbose = options.verbose)
-# add binj nodes as parents of the datafinds to force the binj's to be run
-# first.  this ensures that once a datafind has run the power jobs that
-# follow it will immediately be able to run, which helps depth-first dagman
-# do smarter things.
-if binjnodes:
-	for node in datafinds:
-		for binjnode in binjnodes:
-			node.add_parent(binjnode)
 
 
 #
-# Build single instrument fragments, one for each instrument for each
-# segment.
+# Non-injections
 #
 
 
-# non-injections
+# single-instrument trigger generation
+
 
 pwr_nodes = power.make_single_instrument_stage(dag, datafinds, background_seglistdict, options.tag, options.timing_params, options.psds_per_power, verbose = options.verbose)
 if options.enable_clustering:
 	pwr_nodes = power.make_bucluster_fragment(dag, pwr_nodes, options.tag)
 
 
-# injections
+# coincidence analysis
 
-inj_pwr_nodes = power.make_single_instrument_injections_stage(dag, datafinds, binjnodes, injection_seglistdict, "INJECTIONS_%s" % options.tag, options.timing_params, options.psds_per_injection, verbose = options.verbose)
-if options.enable_clustering:
-	inj_pwr_nodes = power.make_bucluster_fragment(dag, inj_pwr_nodes, "INJECTIONS_%s" % options.tag)
-
-
-#
-# Coincidence
-#
-
-
-# non-injections
 
 coinc_nodes = []
-for n, (time_slides_filename, time_slides) in enumerate(background_time_slides.iteritems()):
+for n, (time_slides_cache_entry, time_slides) in enumerate(background_time_slides.iteritems()):
 	if options.verbose:
-		print >>sys.stderr, "non-injections %d/%d (%s):" % (n + 1, len(background_time_slides), time_slides_filename)
-	extra_cache = set([CacheEntry(None, None, None, "file://localhost" + os.path.abspath(time_slides_filename))])
+		print >>sys.stderr, "non-injections %d/%d (%s):" % (n + 1, len(background_time_slides), time_slides_cache_entry.path())
+	extra_cache = set([time_slides_cache_entry])
 	for cache, parents, seg in group_coinc_parents(pwr_nodes, time_slides, verbose = options.verbose):
 		parents = power.make_pre_coinc_lladd(dag, parents, seg, "%s_%d" % (options.tag, n), input_cache = cache | extra_cache)
 		if options.enable_clustering:
@@ -452,25 +427,64 @@ for n, (time_slides_filename, time_slides) in enumerate(background_time_slides.i
 		coinc_nodes += power.make_burca_fragment(dag, parents, seg, "%s_%d" % (options.tag, n))
 
 
-# injections
+# conversion to SQLite database files
+
+
+coinc_nodes = power.make_sqlite_stage(dag, coinc_nodes, options.tag, verbose = options.verbose)
+
+
+#
+# Injections
+#
+
+
+# injection list generation
+
+
+if options.do_injections:
+	if options.verbose:
+		print >>sys.stderr, "Building lalapps_binj jobs ..."
+	binjnodes = power.make_multibinj_fragment(dag, injection_seglistdict.extent_all(), "INJECTIONS_%s" % options.tag)
+	# add binj nodes as parents of the datafinds to force the binj's to
+	# be run first.  this ensures that once a datafind has run the
+	# power jobs that follow it will immediately be able to run, which
+	# helps depth-first dagman do smarter things.
+	for node in datafinds:
+		for binjnode in binjnodes:
+			node.add_parent(binjnode)
+else:
+	binjnodes = set([])
+
+
+# single-instrument trigger generation
+
+
+pwr_nodes = power.make_single_instrument_injections_stage(dag, datafinds, binjnodes, injection_seglistdict, "INJECTIONS_%s" % options.tag, options.timing_params, options.psds_per_injection, verbose = options.verbose)
+if options.enable_clustering:
+	pwr_nodes = power.make_bucluster_fragment(dag, pwr_nodes, "INJECTIONS_%s" % options.tag)
+
+
+# coincidence analysis.  note that this loop constructs a broken dag if
+# there is more than one time slide file because it doesn't include n in
+# the node tags (so there will be duplicate nodes and duplicate output
+# files).  this is ok because the user can only provide one time slide file
+# on the command line.
 
 
 inj_coinc_nodes = []
-if options.verbose:
-	print >>sys.stderr, "injections 1/1 (%s):" % options.injection_time_slides
-extra_cache = set([CacheEntry(None, None, None, "file://localhost" + os.path.abspath(options.injection_time_slides))])
-for node in binjnodes:
-	extra_cache |= set(node.get_output_cache())
-for cache, parents, seg in group_coinc_parents(inj_pwr_nodes, injection_time_slides, verbose = options.verbose):
-	parents = power.make_pre_coinc_lladd(dag, parents | set(binjnodes), seg, "INJECTIONS_%s" % options.tag, input_cache = cache | extra_cache)
-	if options.enable_clustering:
-		parents = power.make_bucluster_fragment(dag, parents, "INJECTIONS_%s_%d_%d" % (options.tag, int(seg[0]), int(abs(seg))))
-	inj_coinc_nodes += power.make_burca_fragment(dag, parents, seg, "INJECTIONS_%s" % options.tag)
+binj_cache = set([cache_entry for node in binjnodes for cache_entry in node.get_output_cache()])
+for n, (time_slides_cache_entry, time_slides) in enumerate(injection_time_slides.iteritems()):
+	if options.verbose:
+		print >>sys.stderr, "injections %d/%d (%s):" % (n + 1, len(injection_time_slides), time_slides_cache_entry.path())
+	extra_cache = set([time_slides_cache_entry])
+	for cache, parents, seg in group_coinc_parents(pwr_nodes, time_slides, verbose = options.verbose):
+		parents = power.make_pre_coinc_lladd(dag, parents | binjnodes, seg, "INJECTIONS_%s" % options.tag, input_cache = cache | binj_cache | extra_cache)
+		if options.enable_clustering:
+			parents = power.make_bucluster_fragment(dag, parents, "INJECTIONS_%s_%d_%d" % (options.tag, int(seg[0]), int(abs(seg))))
+		inj_coinc_nodes += power.make_burca_fragment(dag, parents, seg, "INJECTIONS_%s" % options.tag)
 
 
-#
-# Injection identification
-#
+# injection identification
 
 
 if options.verbose:
@@ -478,12 +492,9 @@ if options.verbose:
 inj_coinc_nodes = make_binjfind_stage(dag, inj_coinc_nodes, "INJECTIONS_%s" % options.tag, verbose = options.verbose)
 
 
-#
-# Conversion to SQLite database files
-#
+# conversion to SQLite database files
 
 
-coinc_nodes = power.make_sqlite_stage(dag, coinc_nodes, options.tag, verbose = options.verbose)
 inj_coinc_nodes = power.make_sqlite_stage(dag, inj_coinc_nodes, "INJECTIONS_%s" % options.tag, verbose = options.verbose)
 
 
