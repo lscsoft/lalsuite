@@ -100,6 +100,85 @@ def mkdir( directory, overwrite ):
       print "Error: Directory %s already exists!" % directory
       sys.exit(1)
 
+
+def createInjectionFile( hipe_dir, cp, injrun, segments, source_file, verbose=False):
+   """
+   Creates an master injection file containing all injections for this run.
+   Also reads the file and returns its contents
+   """
+   from glue.ligolw import ligolw
+   from glue.ligolw import utils
+   from glue.ligolw import table
+   from glue.ligolw import lsctables
+
+   cpinj = copy.deepcopy(cp)
+
+   # get the number of injections to be made
+   for opt in ['exttrig-inj-start','exttrig-inj-stop']:
+      value = int(cpinj.get(injrun,opt))
+      cpinj.remove_option(injrun,opt)
+      if 'start' in opt:
+        injStart = value
+      else: 
+        injEnd = value
+   seed = injStart
+   numberInjections = injEnd-injStart
+
+   # set all the arguments
+   argument = []
+   for (opt,value) in cpinj.items(injrun):
+      argument.append("--%s %s" % (opt, value) )
+
+   # add arguments on times and time-intervals
+   interval = segments[1]-segments[0]
+   injInterval = interval / float(numberInjections)
+   argument.append(" --gps-start-time %d" % segments[0] )
+   argument.append(" --gps-end-time %d" % segments[1] )
+   argument.append(" --time-interval %f" % injInterval )
+   argument.append(" --time-step %f" % injInterval )
+   argument.append(" --seed %d" % seed )
+
+   # set output file and exttrig-file
+   injFile = "%s/HL-INJECTIONS.xml" % hipe_dir
+   argument.append(" --output %s" % injFile )
+   argument.append(" --exttrig-file %s" % source_file )
+
+   # execute the command
+   arguments = " ".join(argument)
+   make_external_call("./lalapps_inspinj %s" % arguments,
+      show_stdout=verbose, show_command=verbose)
+
+   # read in the file and the tables
+   doc = utils.load_filename( injFile )    
+   sims = table.get_table(doc, lsctables.SimInspiralTable.tableName)
+
+   return sims, injInterval, numberInjections
+
+
+def writeInjectionFile( fileName, sims ):
+   """
+   Writes a specific part of the sims-table to a file in hipe_dir.
+   """
+   from glue.ligolw import ligolw
+   from glue.ligolw import utils
+   from glue.ligolw import table
+   from glue.ligolw import lsctables
+
+   # prepare a new XML document
+   xmldoc = ligolw.Document()
+   xmldoc.appendChild(ligolw.LIGO_LW())
+   tbl = lsctables.New(lsctables.SimInspiralTable)
+   xmldoc.childNodes[-1].appendChild(tbl)
+
+   # append the entries we want to write
+   for sim in sims:
+     tbl.append( sim )
+   
+   # write output file
+   utils.write_filename(xmldoc, fileName )
+
+
+
 class hipe_run(object):
   """
   This class is intended to represent single run of lalapps_inspiral_hipe.
@@ -110,7 +189,11 @@ class hipe_run(object):
     self._cp = copy.copy(base_cp)
     self._ifos = ifos
     self._verbose = verbose
-  
+
+    # create directory here
+    if not os.path.isdir(self._hipe_dir):
+      os.mkdir(self._hipe_dir)
+ 
     self._hipe_args = ["--output-segs",
       "--log-path=%s" % log_path, "--config-file=%s",
       "--datafind", "--template-bank", "--inspiral", "--coincidence",
@@ -146,7 +229,7 @@ class hipe_run(object):
     if numslides == 0: numslides = ""
     self._cp.set('input', 'num-slides', numslides)
 
-  def set_injections(self, cpinj, injrun):
+  def set_injections(self, cpinj, injrun, numberInjFiles):
     """
     Turn this analysis into an injection run, using the injrun section from
     the config file cpinj.
@@ -154,13 +237,12 @@ class hipe_run(object):
     cpinj = copy.copy(cpinj)
     
     # set the start and stop seeds from the injection config file
-    for opt in ['exttrig-inj-start','exttrig-inj-stop']:
-      self._cp.set('pipeline', opt, cpinj.get(injrun,opt))
-      cpinj.remove_option(injrun,opt)
+    self._cp.set('pipeline', 'exttrig-inj-start', 1)
+    self._cp.set('pipeline', 'exttrig-inj-stop', numberInjFiles)
 
     # set the rest of the values that should go into section inspinj
-    for (opt,value) in cpinj.items(injrun):
-      self._cp.set('inspinj',opt,value)
+    #for (opt,value) in cpinj.items(injrun):
+    #  self._cp.set('inspinj',opt,value)
 
     # set injection segments
     for ifo in self._ifos:
@@ -178,8 +260,6 @@ class hipe_run(object):
     """
     Create directory and run lalapps_inspiral_hipe to create the DAG.
     """
-    if not os.path.isdir(self._hipe_dir):
-      os.mkdir(self._hipe_dir)
     os.chdir(self._hipe_dir)
     if not os.path.isdir(self._log_path):  # in case of relative path
       os.mkdir(self._log_path)
@@ -463,16 +543,36 @@ for grb in usedList:
   if opts.injection_config:
     cpinj = ConfigParser.ConfigParser()
     cpinj.read(opts.injection_config)
-    
+    from numpy import asarray
+  
     ############################################################################
     # set up the injection dag for this interval
     for injrun in cpinj.sections():
       if opts.verbose: print injrun
-      injection_analysis = hipe_run(os.path.join(idirectory, injrun), cp, ifolist, opts.log_path, source_file, verbose=opts.verbose)
+      hipe_dir = os.path.join(idirectory, injrun)
+      injection_analysis = hipe_run( hipe_dir, cp, ifolist, \
+                               opts.log_path, source_file, verbose=opts.verbose)
+
+      # create the master injection file and gets its content
+      sims, injInterval, numberInjections = createInjectionFile( hipe_dir, \
+                                               cpinj, injrun, offSourceSegment, source_file )
+      sims=asarray(sims)
+
+      # split the injections
+      safetyInterval = 800.0 # safety time in seconds between two injections
+      deltaIndex = int(safetyInterval/injInterval +1)
+      for i in range(deltaIndex):
+        index = range( i, numberInjections, deltaIndex)
+        writeInjectionFile( "%s/HL-INJECTION.%d.xml" % (hipe_dir, i+1),  sims[index] )
+
+      # set the needed parameters
       injection_analysis.set_numslides(0)
-      injection_analysis.set_injections(cpinj, injrun)
+      injection_analysis.set_injections(cpinj, injrun, deltaIndex)
       injection_analysis.write_dag('config.ini')
       uberdag.add_node(injection_analysis.get_dag_node())
+
+
+
 
 uberdag.write_sub_files()
 uberdag.write_dag()
