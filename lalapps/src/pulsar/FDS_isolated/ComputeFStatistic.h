@@ -25,7 +25,7 @@
 #include <lal/LALBarycenter.h>
 #include <lal/LALDemod.h>
 
-#include "DopplerScan.h"
+#include <lal/DopplerScan.h>
 
 /* C++ protection. */
 #ifdef  __cplusplus

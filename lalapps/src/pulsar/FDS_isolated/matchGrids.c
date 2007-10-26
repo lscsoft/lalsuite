@@ -44,7 +44,7 @@
 
 #include <lalapps.h>
 
-#include "DopplerScan.h"
+#include <lal/DopplerScan.h>
 
 RCSID ("$Id$");
 

@@ -52,11 +52,12 @@ int finite(double);
 #include <lal/LALHough.h>
 
 #include <lal/LogPrintf.h>
+#include <lal/DopplerFullScan.h>
 
 #include <lalapps.h>
 
 /* local includes */
-#include "DopplerFullScan.h"
+
 #include "HeapToplist.h"
 
 

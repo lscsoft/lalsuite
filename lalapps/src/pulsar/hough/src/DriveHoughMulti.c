@@ -86,7 +86,7 @@
 #include "./DriveHoughColor.h"
 /* lalapps includes */
 #include <lalapps.h>
-#include <DopplerScan.h>
+#include <lal/DopplerScan.h>
 #include <gsl/gsl_permutation.h>
 
 RCSID( "$Id$");

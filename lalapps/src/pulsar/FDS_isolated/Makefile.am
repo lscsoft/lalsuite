@@ -29,7 +29,6 @@ lalapps_monteint_SOURCES = monteint.c
 
 CFSsources = 	ComputeFStatistic.h	\
 		clusters.c clusters.h  	\
-		DopplerScan.c DopplerScan.h \
 		FstatToplist.c FstatToplist.h \
 		HeapToplist.c HeapToplist.h 
 
@@ -58,25 +57,19 @@ lalapps_skynet_SOURCES = skynet.c
 
 compareFstats_SOURCES = compareFstats.c
 
-ComputeFStatistic_v2_SOURCES = 	ComputeFStatistic_v2.c  HeapToplist.c HeapToplist.h \
-				DopplerScan.c DopplerScan.h  DopplerFullScan.c DopplerFullScan.h \
-				FlatPulsarMetric.c FlatPulsarMetric.h \
-				DopplerLatticeCovering.c DopplerLatticeCovering.h 
+ComputeFStatistic_v2_SOURCES = 	ComputeFStatistic_v2.c  HeapToplist.c HeapToplist.h 
 
 lalapps_PredictFStat_SOURCES = PredictFStat.c
 
 TESTS = testFStat.sh
 
-getMetric_SOURCES = getMetric.c DopplerScan.c DopplerScan.h FlatPulsarMetric.c FlatPulsarMetric.h 
+getMetric_SOURCES = getMetric.c
+
+getMesh_SOURCES = getMesh.c
 
 
-getMesh_SOURCES = getMesh.c DopplerScan.c DopplerScan.h
+testFlatPulsarMetric_SOURCES = testFlatPulsarMetric.c
 
+matchGrids_SOURCES = matchGrids.c
 
-##testLatticeCovering_SOURCES = testLatticeCovering.c  DopplerScan.c
-
-testFlatPulsarMetric_SOURCES = testFlatPulsarMetric.c FlatPulsarMetric.c FlatPulsarMetric.h
-
-matchGrids_SOURCES = matchGrids.c DopplerScan.c
-
-FstatMetric_SOURCES = FstatMetric.c FlatPulsarMetric.c FlatPulsarMetric.h
+FstatMetric_SOURCES = FstatMetric.c

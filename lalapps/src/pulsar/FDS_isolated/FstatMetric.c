@@ -46,11 +46,13 @@
 #include <lal/PulsarTimes.h>
 #include <lal/SFTutils.h>
 
+#include <lal/FlatPulsarMetric.h>
+
 #include <lalapps.h>
 #include <lal/ComputeFstat.h>
 #include <lal/LogPrintf.h>
 
-#include "FlatPulsarMetric.h"
+
 
 RCSID ("$Id$");
 

@@ -45,7 +45,7 @@
 #include <lal/AVFactories.h>
 #include <lal/SFTutils.h>
 
-#include "DopplerScan.h"
+#include <lal/DopplerScan.h>
 
 RCSID ("$Id$");
 

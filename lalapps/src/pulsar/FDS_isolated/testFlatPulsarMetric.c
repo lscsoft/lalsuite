@@ -32,7 +32,7 @@
 /*---------- INCLUDES ----------*/
 #include <math.h>
 
-#include "FlatPulsarMetric.h"
+#include <lal/FlatPulsarMetric.h>
 
 #include <lalapps.h>
 

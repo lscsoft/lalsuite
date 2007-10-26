@@ -41,9 +41,8 @@
 #include <lal/AVFactories.h>
 #include <lal/SFTutils.h>
 
-#include "FlatPulsarMetric.h"
-
-#include "DopplerScan.h"
+#include <lal/FlatPulsarMetric.h>
+#include <lal/DopplerScan.h>
 
 RCSID ("$Id$");
 

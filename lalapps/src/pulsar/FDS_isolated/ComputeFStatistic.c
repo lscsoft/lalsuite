@@ -64,7 +64,6 @@
 /* local includes */
 #include "ComputeFStatistic.h"
 #include "clusters.h"
-#include "DopplerScan.h"
 
 #include "FstatToplist.h"
 

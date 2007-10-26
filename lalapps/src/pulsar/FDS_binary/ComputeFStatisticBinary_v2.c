@@ -35,6 +35,7 @@
 #include <lal/LALDemod.h>
 #include <lal/RngMedBias.h>
 #include <lal/PulsarDataTypes.h>
+#include <lal/DopplerScan.h>
 
 #include <lalapps.h>
 
@@ -43,7 +44,7 @@
 #include "GenerateBinaryMesh_v1.h"
 #include "ReadSourceFile_v1.h"
 #include "clusters.h"
-#include "../FDS_isolated/DopplerScan.h"
+
 
 RCSID( "$Id$");
 

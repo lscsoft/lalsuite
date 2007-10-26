@@ -63,10 +63,11 @@
 #include <lal/Statistics.h>
 #include <lal/GeneratePulsarSignal.h> 
 #include <lal/LogPrintf.h>
+#include <lal/DopplerScan.h>
 
 /* lalapps includes */
 #include <lalapps.h>
-#include <DopplerScan.h>
+
 /* more efficient toplist using heaps */
 #include <FstatToplist.h>
 

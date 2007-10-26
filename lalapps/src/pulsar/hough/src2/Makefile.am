@@ -20,13 +20,11 @@ HoughMismatch_SOURCES = HoughMismatch.c ../src/MCInjectHoughS2.h \
 			../src/PeakSelect.c
 
 HierarchicalSearch_SOURCES = HierarchicalSearch.c HierarchicalSearch.h StackSlideFstat.c StackSlideFstat.h \
-			  ../../FDS_isolated/DopplerScan.c ../../FDS_isolated/DopplerScan.h \
 			  ../../FDS_isolated/FstatToplist.c ../../FDS_isolated/FstatToplist.h \
 			  ../../FDS_isolated/HeapToplist.c ../../FDS_isolated/HeapToplist.h \
 			  ../../FDS_isolated/ComputeFStatistic.h
 
 HierarchicalSearch_v2_SOURCES = HierarchicalSearch_v2.c HierarchicalSearch.h StackSlideFstat.c StackSlideFstat.h \
-			  ../../FDS_isolated/DopplerScan.c ../../FDS_isolated/DopplerScan.h \
 			  ../../FDS_isolated/FstatToplist.c ../../FDS_isolated/FstatToplist.h \
 			  ../../FDS_isolated/HeapToplist.c ../../FDS_isolated/HeapToplist.h \
 			  ../../FDS_isolated/ComputeFStatistic.h

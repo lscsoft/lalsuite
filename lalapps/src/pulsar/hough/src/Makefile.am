@@ -15,8 +15,8 @@ SFTclean_SOURCES = SFTclean.c
 MCInjectS2_SOURCES = MCInjectHoughS2.c MCInjectHoughS2.h SFTbin.h SFTbin.c DriveHoughColor.h PeakSelect.h PeakSelect.c
 DriveHough_v3_SOURCES = DriveHough_v3.c  DriveHoughColor.h PeakSelect.c PeakSelect.h
 HoughValidate_SOURCES = HoughValidate.c MCInjectComputeHough.h DriveHoughColor.h PeakSelect.h PeakSelect.c
-DriveHoughMulti_SOURCES = DriveHoughMulti.c  DriveHoughColor.h PeakSelect.c PeakSelect.h \
-			../../FDS_isolated/DopplerScan.c ../../FDS_isolated/DopplerScan.h 
+DriveHoughMulti_SOURCES = DriveHoughMulti.c  DriveHoughColor.h PeakSelect.c PeakSelect.h
+
 ValidateHoughMulti_SOURCES = ValidateHoughMulti.c  DriveHoughColor.h PeakSelect.c PeakSelect.h MCInjectHoughMulti.h
 MultiWeights_SOURCES = MultiWeights.c  DriveHoughColor.h
 MCInjectHoughMulti_SOURCES = MCInjectHoughMulti.c MCInjectHoughMulti.h DriveHoughColor.h  PeakSelect.c PeakSelect.h
