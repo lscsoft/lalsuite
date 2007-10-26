@@ -29,8 +29,8 @@ Generates a parametrized post-Newtonian inspiral waveform.
 
 \subsubsection*{Usage}
 \begin{verbatim}
-GeneratePPNAmpCorInspiralTest [-m m1 m2] [-r dist] [-i inc phii] [-f fmin fmax]
-                        [-t dt] [-p order] [-d debuglevel] [-o outfile] [-g FF FFTfile]
+GeneratePPNAmpCorInspiralTest [-m m1 m2] [-r dist] [-i inc phii psi] [-f fmin fmax]
+                        [-t dt] [-p order amp] [-d debuglevel] [-o outfile] [-g FF FFTfile]
 \end{verbatim}
 
 ****************************************** </lalLaTeX><lalErrTable> */
@@ -95,9 +95,10 @@ int lalDebugLevel = 1;
 #define FMAX  (0.0) /* This means Flso */
 #define DT    (0.00048828125) /* 1/2048 */
 #define ORDER (7)
+#define AMP (5)
 
 /* Usage format string. */
-#define USAGE "Usage: %s [-g FFToutfile] [-m m1 m2] [-r dist] [-i inc phii]\n\t[-f fmin fmax] [-t dt] [-p order] [-d debuglevel] [-o outfile]\n"
+#define USAGE "Usage: %s [-g FFToutfile] [-m m1 m2] [-r dist] [-i inc phii psi]\n\t[-f fmin fmax] [-t dt] [-p order amp] [-d debuglevel] [-o outfile]\n"
 
 /* Maximum output message length. */
 #define MSGLENGTH (1024)
@@ -204,10 +205,11 @@ main(int argc, char **argv)
   CHAR *fftout  = NULL; 	/* EXPANSION outfile */
   REAL4 m1 = M1, m2 = M2;       /* binary masses */
   REAL4 dist = DIST;            /* binary distance */
-  REAL4 inc = 0.0, phii = 0.0;  /* inclination and coalescence phase */
+  REAL4 inc = 0.0, phii = 0.0, psi = LAL_PI_2;  /* inclination, coalescence phase, and polarization angle */
   REAL4 fmin = FMIN, fmax=FMAX; /* start and stop frequencies */
   REAL8 dt = DT;                /* sampling interval */
   INT4 order = ORDER;           /* PN order */
+  INT4 amp = AMP;               /* Amplitude switches */
 
   /* Other variables. */
   UINT4 i;                      /* index */
@@ -265,10 +267,11 @@ main(int argc, char **argv)
     }
     /* Parse angles option. */
     else if ( !strcmp( argv[arg], "-i" ) ) {
-      if ( argc > arg + 2 ) {
+      if ( argc > arg + 3 ) {
 	arg++;
 	inc = atof( argv[arg++] )*LAL_PI/180.0;
 	phii = atof( argv[arg++] )*LAL_PI/180.0;
+        psi = atof(argv[arg++] )*LAL_PI/180.0;
       }else{
 	ERROR( GENERATEPPNINSPIRALTESTC_EARG,
 	       GENERATEPPNINSPIRALTESTC_MSGEARG, 0 );
@@ -303,9 +306,10 @@ main(int argc, char **argv)
     }
     /* Parse PN order option. */
     else if ( !strcmp( argv[arg], "-p" ) ) {
-      if ( argc > arg + 1 ) {
+      if ( argc > arg + 2 ) {
 	arg++;
 	order = atoi( argv[arg++] );
+        amp = atoi( argv[arg++] );
       }else{
 	ERROR( GENERATEPPNINSPIRALTESTC_EARG,
 	       GENERATEPPNINSPIRALTESTC_MSGEARG, 0 );
@@ -360,6 +364,7 @@ main(int argc, char **argv)
 
   /* Make sure that values won't crash the system or anything. */
   CHECKVAL( order, -1, 8 );
+  CHECKVAL( amp, 0, 5);
   CHECKVAL( dt, LAL_REAL4_MIN, LAL_REAL4_MAX );
 
   /*******************************************************************
@@ -369,7 +374,6 @@ main(int argc, char **argv)
   /* Fixed parameters. */
   params.position.latitude = params.position.longitude = 0.0;
   params.position.system = COORDINATESYSTEM_EQUATORIAL;
-  params.psi = 0.0;
   params.lengthIn = 0;
 
   /* Variable parameters. */
@@ -379,9 +383,13 @@ main(int argc, char **argv)
   params.eta = m1*m2/( params.mTot*params.mTot );
   params.inc = inc;
   params.phi = 0.0;
+  params.psi = psi;
   params.d = dist*LAL_PC_SI*1.0e3;
   params.fStartIn = fmin;
   params.fStopIn = fmax;
+
+  /* Amplitude switches */
+  params.ampOrder = amp;
 
   /* PPN parameter. */
   params.ppn = NULL;
@@ -401,13 +409,8 @@ main(int argc, char **argv)
 
   /* Generate waveform. */
   SUB( LALGeneratePPNAmpCorInspiral( &stat, &waveform, &params ), &stat );
-#if DEBUG
-  fprintf(stderr,"\n  Left GeneratePPNAmpCorInspiral  \n\n");
-  fprintf(stderr," fFinal = %e\n", waveform.f->data->data[waveform.f->data->length - 1]);
-#endif
-  /**********************************************
-   *                                            *
-   *   EXPANSION  to produce h(t), H(f)         *
+
+  /*   EXPANSION  to produce h(t), H(f)         *
    *                                            *
    ********************************************************************************************************
    * This Test file now calculates the polar response functions for the detector and sky position defined *
@@ -418,6 +421,8 @@ main(int argc, char **argv)
 
   /*************************** h(t)*/
   LALCreateVector( &stat, &hoft, waveform.h->data->length);
+
+  fprintf(stderr,"\n length = %d ", waveform.h->data->length);
  
   /* fake detector */
   /* This one is overhead */
@@ -435,7 +440,7 @@ main(int argc, char **argv)
   pulsar.equatorialCoords.longitude = 0.; /* RA */
   pulsar.equatorialCoords.latitude  = 0.; /* Dec */
   pulsar.equatorialCoords.system    = COORDINATESYSTEM_EQUATORIAL;
-  pulsar.orientation                = LAL_PI_2; /* orientation */
+  pulsar.orientation                = params.psi; /* orientation */
 
 
   det_and_pulsar.pDetector = &detector;
@@ -464,24 +469,6 @@ main(int argc, char **argv)
                                 &det_and_pulsar,
                                 &time_info);
   
-#if DEBUG
-  printf("\n  Done computing AM response vectors\n");
-  printf("  am_response_series.pPlus->data->length = %d\n",
-          am_response_series.pPlus->data->length);
-  printf("  am_response_series.pCross->data->length = %d\n",
-          am_response_series.pCross->data->length);
-  printf("  am_response_series.pScalar->data->length = %d\n",
-          am_response_series.pScalar->data->length);
-
-  printf("\n Check data length = %d\n\n", waveform.h->data->length);
-
-  printf("  TimeSeries data written to files plus_series.txt, ");
-  printf("  cross_series.txt, and scalar_series.txt\n");
-
-  LALSPrintTimeSeries(am_response_series.pPlus, "  plus_series.txt");
-  LALSPrintTimeSeries(am_response_series.pCross, "  cross_series.txt");
-  LALSPrintTimeSeries(am_response_series.pScalar, "  scalar_series.txt");
-#endif
 
   for ( i = 0; i < waveform.h->data->length; i++){
     hoft->data[i] = waveform.h->data->data[2*i]*am_response_series.pPlus->data->data[i] +
@@ -499,7 +486,7 @@ main(int argc, char **argv)
   }	
 
   /* Taper hoft */
-  LALInspiralWaveTaper(&stat, hoft, 4, 3);
+  /* LALInspiralWaveTaper(&stat, hoft, 30, 3);
 
   /*********************** End h(t)*/
   
