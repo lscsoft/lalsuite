@@ -266,7 +266,20 @@ heterodyne.\n");  }
       smalllist = NULL;
       smalllist = set_frame_files(&starts->data[count], &stops->data[count],
         cache, frcount, &count);
-
+      /* if there was no frame file for that segment move on */
+      if( smalllist == NULL ){
+        fprintf(stderr, "Error... could not open frame files between %d and \
+%d.\n", (INT4)gpstime, (INT4)gpstime + duration);
+        
+        if(count < numSegs){
+          count++;/*if not finished reading in all data try next set of frames*/
+          
+          continue;
+        }
+        else
+          break;
+      }
+        
       /* make vector (make sure imaginary parts are set to zero) */
       data->data = NULL;
       data->data = XLALCreateCOMPLEX16Vector(inputParams.samplerate * duration);
@@ -1461,6 +1474,10 @@ CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache,
       break;
   }
 
+  /* if no data was found at all set small list to NULL */
+  if(check == 0)
+    smalllist = NULL;
+  
   if(durlock > MAXDATALENGTH){ /* set starts to its value plus MAXDATALENGTH */
     (*position)--; /* move position counter back one */
     *starts = tempstop;
