@@ -300,9 +300,9 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
 
   /* Set PN parameters for amplitude */
   q[0] = 1.0;
-  for(i = 1; i < 6; i++){
-    q[i] = 1.0;
-  }
+  for(i = 1; i < AMPMAXORDER; i++){
+    q[i] = ( i <= params->ampOrder? 1 : 0 );
+ }
   
 
   /* Switch on all harmonics */
