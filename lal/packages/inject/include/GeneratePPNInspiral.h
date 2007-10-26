@@ -317,6 +317,7 @@ typedef struct tagPPNParamStruc {
   REAL4 fStopIn;    /* requested stop frequency (Hz) */
   UINT4 lengthIn;   /* maximum length of waveform */
   REAL4Vector *ppn; /* post-Newtonian selection parameters */
+  UINT4 ampOrder;     /* PN amplitude selection 0-5 */
 
   /* Output parameters. */
   REAL8 tc;         /* time to coalescence from start of waveform */
