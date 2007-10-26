@@ -138,7 +138,7 @@ int CSFTs(fftw_complex *L,REAL8 Fmin,REAL8 Fmax,int number,int startindex,REAL8 
   REAL8 if1 = ceil((Fmax-Fmin+Fmin)*sTsft);
 
   REAL8 ifmin = floor(Fmin*sTsft)-Dterms;
-  REAL8 ifmax = ceil((Fmax-Fmin+Fmin)*sTsft)+Dterms;//ceil(Fmax*sTsft)+Dterms;
+  REAL8 ifmax = ceil((Fmax-Fmin+Fmin)*sTsft)+Dterms;/*ceil(Fmax*sTsft)+Dterms;*/
   
   
 
@@ -148,7 +148,7 @@ int CSFTs(fftw_complex *L,REAL8 Fmin,REAL8 Fmax,int number,int startindex,REAL8 
 
   
 
-  // Loop over frequencies to be demodulated
+  /* Loop over frequencies to be demodulated */
   for(m = 0 ; m <= number*(if1-if0)  ; m++ )
   {
     llSFT.re =0.0;
@@ -156,10 +156,10 @@ int CSFTs(fftw_complex *L,REAL8 Fmin,REAL8 Fmax,int number,int startindex,REAL8 
 
     f=if0*deltaF+m*deltaF/number;
 
-    // Loop over SFTs that contribute to F-stat for a given frequency
+    /* Loop over SFTs that contribute to F-stat for a given frequency */
     for(alpha=0;alpha<number;alpha++)
       {
-	//fprintf(stderr,"start %d\n",m);
+	/* fprintf(stderr,"start %d\n",m); */
 	REAL8 tsin, tcos, tempFreq;
 	COMPLEX8 *Xalpha = sft_vect->data[alpha+startindex].data->data;
 	xTemp = (REAL8)if0+(REAL8)m/(REAL8)number;
@@ -167,10 +167,10 @@ int CSFTs(fftw_complex *L,REAL8 Fmin,REAL8 Fmax,int number,int startindex,REAL8 
 	imagXP = 0.0;
 	      	/* find correct index into LUT -- pick closest point */
 	tempFreq = xTemp-(INT4)xTemp;
-	index=(INT4)(tempFreq*64+0.5); //just like res above
+	index=(INT4)(tempFreq*64+0.5); /*just like res above */
 	      
 	{
-	  REAL8 d=LAL_TWOPI*(tempFreq-(REAL8)index/64.0);//just like res above
+	  REAL8 d=LAL_TWOPI*(tempFreq-(REAL8)index/64.0);/*just like res above */
 	  REAL8 d2=0.5*d*d;
 	  REAL8 ts=sinVal[index];
 	  REAL8 tc=cosVal[index];
@@ -201,17 +201,17 @@ int CSFTs(fftw_complex *L,REAL8 Fmin,REAL8 Fmax,int number,int startindex,REAL8 
 	   
 	    /* these four lines compute P*xtilde */
 	    Xalpha_k = Xalpha[sftIndex];
-	    //fprintf(stderr,"%d\n",sftIndex);
+	    /*fprintf(stderr,"%d\n",sftIndex); */
 	    realXP += Xalpha_k.re*realP;
 	    realXP -= Xalpha_k.im*imagP;
 	    imagXP += Xalpha_k.re*imagP;
 	    imagXP += Xalpha_k.im*realP;
 	  }
-	//double time = GPS2REAL(sft_vect->data[alpha+startindex].epoch) - t0;
-	//y = -LAL_TWOPI*(time/sTsft)*(if0+(REAL8)m/(REAL8)number);
-	//printf("Alpha = %g \n",time/sTsft);
+	/* double time = GPS2REAL(sft_vect->data[alpha+startindex].epoch) - t0; */
+	/* y = -LAL_TWOPI*(time/sTsft)*(if0+(REAL8)m/(REAL8)number); */
+	/*printf("Alpha = %g \n",time/sTsft);*/
 	y = -LAL_TWOPI*alpha*(if0+(REAL8)m/(REAL8)number);
-	//fprintf(stderr,"Time %g , time/sTsft %g\n",time,time/sTsft);
+	/*fprintf(stderr,"Time %g , time/sTsft %g\n",time,time/sTsft);*/
 
 	realQ = cos(y);
 	imagQ = sin(y);
@@ -283,7 +283,7 @@ int main(int argc, char **argv)
   /****** Book-keeping + loop variables ******/
   INT4 i,j,k=0;
   
-  //FILE *fp,*fp2;
+  /*FILE *fp,*fp2;*/
 
   /****** The time baseline of input SFTs default to 1800.0 seconds ******/
   REAL8 InputST = 1800.0;
@@ -459,7 +459,7 @@ int main(int argc, char **argv)
   
   
 	  
-  //fprintf(stderr," Name %s GPSSeconds %lf ",sft_vect->data[i].name,sft_vect->data[i].epoch.gpsSeconds+1e-9*sft_vect->data[i].epoch.gpsNanoSeconds);
+  /*fprintf(stderr," Name %s GPSSeconds %lf ",sft_vect->data[i].name,sft_vect->data[i].epoch.gpsSeconds+1e-9*sft_vect->data[i].epoch.gpsNanoSeconds);*/
 
   /****** Book-keeping variables for the loop over contiguous blocks ******/
   int startindex = 0;
@@ -494,11 +494,11 @@ int main(int argc, char **argv)
 	  
 	}
       
-      //for(j=0;j<N;j++)
-      //	{
-      // double F = (double)j/(double)(N-1)*(f_max-f_min)+f_min;
-      //printf(" %g %g %g %g \n",F,L[j][0],L[j][1],sqrt(L[j][0]*L[j][0]+L[j][1]*L[j][1]));
-      // }
+      /*for(j=0;j<N;j++)*/
+      /*	{*/
+      /* double F = (double)j/(double)(N-1)*(f_max-f_min)+f_min;*/
+      /*printf(" %g %g %g %g \n",F,L[j][0],L[j][1],sqrt(L[j][0]*L[j][0]+L[j][1]*L[j][1]));*/
+      /* }*/
 
       /****** Create an FFTW3 Plan (Backward, since its an inverse fourier transform) ******/
       fftw_plan p = fftw_plan_dft_1d(N,L,TempT,FFTW_BACKWARD,FFTW_ESTIMATE);
@@ -525,8 +525,8 @@ int main(int argc, char **argv)
 	{
 	  TS[sftindex][0] = TempT[j][0]*deltaF/(REAL8)C.cont[i];
 	  TS[sftindex++][1] = TempT[j][1]*deltaF/(REAL8)C.cont[i];
-	  //double F = (double)j/(double)(N-1)*(f_max-f_min)+f_min;
-	  //printf(" %g %g %g %g \n",F,L[j][0],L[j][1],sqrt(L[j][0]*L[j][0]+L[j][1]*L[j][1]));
+	  /*double F = (double)j/(double)(N-1)*(f_max-f_min)+f_min;*/
+	  /*printf(" %g %g %g %g \n",F,L[j][0],L[j][1],sqrt(L[j][0]*L[j][0]+L[j][1]*L[j][1]));*/
 	}
       
       /****** Update the sftindex to keep track of where in TS we are inserting the next TempT ******/
@@ -536,7 +536,7 @@ int main(int argc, char **argv)
 	  fprintf(stderr,"SFT Index Jump = %g",(C.gap[i]));
 	}
       
-      //printf(" Real %g , Imag %g \n",sft_vect->data[0].data->data->re,sft_vect->data[0].data->data->im);
+      /*printf(" Real %g , Imag %g \n",sft_vect->data[0].data->data->re,sft_vect->data[0].data->data->im);*/
       fftw_free(L);
       fftw_free(TempT);
       fftw_destroy_plan(p);
