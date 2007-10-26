@@ -27,7 +27,9 @@ liblalsupport_la_SOURCES = FileIO.c PrintVector.c PrintFrequencySeries.c \
   LIGOLwXML.c LIGOLwXMLArray.c SFTfileIO.c \
   LogPrintf.c UserInput.c ConfigFile.c getopt.c getopt.h getopt1.c \
   LALMath3DPlot.c LALMathNDPlot.c SegmentsIO.c \
-  Audio.c NRWaveIO.c
+  Audio.c NRWaveIO.c	\
+  DopplerScan.c DopplerFullScan.c DopplerLatticeCovering.c
+
 liblalsupport_la_LIBADD = @LALSUPPORT_LIBADD@
 
 

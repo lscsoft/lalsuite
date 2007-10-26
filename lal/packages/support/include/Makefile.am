@@ -5,7 +5,8 @@ pkginclude_HEADERS = FileIO.h PrintVector.h PrintFTSeries.h ReadFTSeries.h \
                      LIGOLwXML.h LIGOLwXMLHeaders.h LIGOLwXMLInspiralHeaders.h \
 		     LIGOLwXMLArray.h LIGOLwXMLRead.h ReadNoiseSpectrum.h \
 		     SFTfileIO.h LogPrintf.h UserInput.h ConfigFile.h \
-		     LALMathematica.h SegmentsIO.h Audio.h NRWaveIO.h
+		     LALMathematica.h SegmentsIO.h Audio.h NRWaveIO.h	\
+                     DopplerScan.h DopplerFullScan.h DopplerLatticeCovering.h
 
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
