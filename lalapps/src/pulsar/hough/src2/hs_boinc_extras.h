@@ -147,6 +147,7 @@ void attach_gdb(void);
 /** play with FPU status and control word
     (BSD doesn't seem to have C99 fenv.h etc.) */
 typedef UINT2 fpuw_t;
+typedef UINT4 ssew_t;
 extern void  set_fpu_control_word(const fpuw_t word);
 extern fpuw_t get_fpu_control_word(void);
 extern fpuw_t get_fpu_status(void);
@@ -163,6 +164,15 @@ extern fpuw_t get_fpu_status(void);
 #define FPU_STATUS_COND_1       (1<<9)
 #define FPU_STATUS_COND_2       (1<<10)
 #define FPU_STATUS_COND_3       (1<<14)
+/* for SSE, status and control information is in the same register
+   the status bits 0-5 are identical to the FPU status bits,
+   the exception mask bits follow */
+#define SSE_MASK_INVALID        (1<<7)
+#define SSE_MASK_DENORMALIZED   (1<<8)
+#define SSE_MASK_ZERO_DIVIDE    (1<<9)
+#define SSE_MASK_OVERFLOW       (1<<10)
+#define SSE_MASK_UNDERFLOW      (1<<11)
+#define SSE_MASK_PRECISION      (1<<12)
 
 
 /** the main() function of HierarchicalSerach.c becomes the extern MAIN(),

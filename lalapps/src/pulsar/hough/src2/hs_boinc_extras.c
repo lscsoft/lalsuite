@@ -1356,6 +1356,26 @@ fpuw_t get_fpu_status(void) {
 #endif
 }
 
+/** sets the sse control/status word */
+void set_sse_control_status(const ssew_t cword) {
+#if defined(__GNUC__) && __i386__
+  static ssew_t ssecw;
+  ssecw = cword;
+  __asm("ldmxcsr %0\n\t" : : "m" (ssecw));
+#endif
+}
+
+/** returns the sse control/status word */
+ssew_t get_sse_control_status(void) {
+#if defined(__GNUC__) && __i386__
+  static ssew_t ssesw;
+  __asm("stmxcsr %0\n\t" : "=m" (ssesw));
+  return(ssesw);
+#else
+  return(0);
+#endif
+}
+
 
 static void drain_fpu_stack(void) {
   static double dummy;
