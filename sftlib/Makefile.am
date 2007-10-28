@@ -43,8 +43,8 @@ docs_DATA       =      $(docname).pdf 	\
 
 #rule for our pdf documentation-file
 $(docname).pdf : $(docname).tex ligodcc.cls pdfdraftcopy.sty 
-	$(PDFLATEX) $(docname).tex 
-	$(PDFLATEX) $(docname).tex
+	cd $(srcdir); $(PDFLATEX) $(docname).tex 
+	cd $(srcdir); $(PDFLATEX) $(docname).tex
 
 # add documentation-sources to distribution
 EXTRA_DIST      =      $(docs_DATA) \
