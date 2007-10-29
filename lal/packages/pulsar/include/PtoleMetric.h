@@ -113,7 +113,7 @@ tagPtoleMetricIn
   REAL4          duration;	/**< Duration of integration, in seconds. */
   REAL4          maxFreq;	/**< The maximum frequency to be searched, in Hz. */
   const LALDetector    *site;	/**< The detector site, used only for its latitude and longitude. */
-  EphemerisData  *ephemeris;	/**< Not used for the Ptolemaic approximation, this is for compatibility with other metrics. */
+  const EphemerisData  *ephemeris;	/**< Not used for the Ptolemaic approximation, this is for compatibility with other metrics. */
   LALPulsarMetricType metricType; /**< The type of metric to use: analytic, Ptolemaic or fully ephemeris-based. */
 } PtoleMetricIn;
 

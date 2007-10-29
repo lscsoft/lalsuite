@@ -140,8 +140,8 @@ typedef struct {
   REAL8 obsDuration;		/**< length of time-series in seconds */
   BOOLEAN projectMetric;	/**< project the metric orthogonal to Freq? */
   const LALDetector *Detector; 	/**< Current detector */
-  EphemerisData *ephemeris;	/**< ephemeris-data for "exact" metric */
-  CHAR *skyGridFile;		/**< file containing a sky-grid (list of points) if GRID_FILE */
+  const EphemerisData *ephemeris;/**< ephemeris-data for "exact" metric */
+  const CHAR *skyGridFile;		/**< file containing a sky-grid (list of points) if GRID_FILE */
   UINT4 numSkyPartitions;	/**< number of (roughly) equal partitions to split sky-grid into */
   UINT4 partitionIndex;		/**< index of requested sky-grid partition: in [0, numPartitions - 1] */
 } DopplerSkyScanInit;

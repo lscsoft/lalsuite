@@ -91,7 +91,7 @@ LALDTEphemeris( LALStatus             *status,
 	        PulsarTimesParamStruc *tev )
 { /* </lalVerbatim> */
   LIGOTimeGPS tGPS;           /* Input structure to BartcenterEarth()  */
-  EphemerisData *eph;         /* Input structure to BarycenterEarth()  */
+  const EphemerisData *eph;         /* Input structure to BarycenterEarth()  */
   EarthState earth;           /* Output structure of BarycenterEarth() */
                               /* and input structure to Barycenter()   */
   BarycenterInput baryin;     /* Input structure for Barycenter()      */
@@ -235,7 +235,7 @@ LALTEphemeris( LALStatus   *status,
 	       PulsarTimesParamStruc *tev )
 { /* </lalVerbatim>*/
   LIGOTimeGPS tGPS; /* Input structure to BarycenterEarth() */
-  EphemerisData *eph; /* Input structure to BarycenterEarth() */
+  const EphemerisData *eph; /* Input structure to BarycenterEarth() */
   EarthState earth; /* Output structure of BarycenterEarth() */
   BarycenterInput baryin; /* Input structure for Barycenter() */
   EmissionTime emit; /*Output structure of Barycenter() */

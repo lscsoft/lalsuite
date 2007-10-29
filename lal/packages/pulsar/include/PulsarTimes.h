@@ -248,7 +248,7 @@ typedef struct tagPulsarTimesParamStruc {
   REAL8 latitude; /* Detector north latitude, in radians. */
   REAL8 longitude; /* Detector east longitude (i.e. counterclockwise
 		      about the north pole), in radians. */
-  EphemerisData *ephemeris; /* Ephemeris data containing positions, */
+  const EphemerisData *ephemeris; /* Ephemeris data containing positions, */
                            /* velocities, etc... of Earth and Sun */
   const LALDetector *site;        /* The particular detector under consideration */
 

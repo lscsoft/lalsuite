@@ -1177,7 +1177,7 @@ printFrequencyShifts ( LALStatus *status, const DopplerSkyScanState *skyScan, co
   REAL8 tdiffE;           /*current time tGPS minus time of nearest entry
                              in Earth ephem look-up table */
   REAL8 tgps[2];
-  EphemerisData *edat = init->ephemeris;
+  const EphemerisData *edat = init->ephemeris;
   UINT4 j;
   REAL8 corr1, accN, accDot[3];
   REAL8 Tobs, dT;
