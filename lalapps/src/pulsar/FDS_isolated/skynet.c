@@ -118,16 +118,17 @@ int main( int argc, char *argv[] )
     {"max-frequency",     1, 0, 9},
     {0, 0, 0, 0}
   };
+  EphemerisData *eph = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
+  eph->ephiles.earthEphemeris = earth;
+  eph->ephiles.sunEphemeris = sun;
+  eph->leap = 13; /* not valid for 2005 - must change */
 
   /* Set up. */
   lal_errhandler = LAL_ERR_EXIT;
   search.epoch.gpsSeconds = begin;
   search.duration = duration;
   search.maxFreq = max_frequency;
-  search.ephemeris = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  search.ephemeris->ephiles.earthEphemeris = earth;
-  search.ephemeris->ephiles.sunEphemeris = sun;
-  search.ephemeris->leap = 13; /* not valid for 2005 - must change */
+  search.ephemeris = eph;
   search.position.system = COORDINATESYSTEM_EQUATORIAL;
 
   /* Parse command-line options. */
