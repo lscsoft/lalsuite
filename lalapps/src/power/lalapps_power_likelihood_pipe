@@ -158,15 +158,16 @@ dag.set_dag_file("power_likelihood")
 
 
 nodes = []
-likelihood_cache_file = file(config_parser.get("ligolw_burca2", "likelihood-data-cache"), "w")
 for seg in distribution_segments:
 	if options.verbose:
 		print >>sys.stderr, "generating distribution measurement jobs for %s ..." % str(seg)
 	seg_input_cache = set([entry for entry in input_cache if entry.to_segmentlistdict().intersects_segment(seg)])
 	nodes += power.make_burca_tailor_fragment(dag, seg_input_cache, seg, "LIKELIHOOD")
-for node in nodes:
-	for entry in node.get_output_cache():
-		print >>likelihood_cache_file, str(entry)
+
+
+likelihood_cache_file = file(config_parser.get("ligolw_burca2", "likelihood-data-cache"), "w")
+for cache_entry in [cache_entry for node in nodes for cache_entry in node.get_output_cache()]:
+	print >>likelihood_cache_file, str(cache_entry)
 
 
 #
