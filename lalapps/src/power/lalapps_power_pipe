@@ -295,20 +295,6 @@ def group_coinc_parents(parents, time_slides, verbose = False):
 #
 # =============================================================================
 #
-#                           Injection Identification
-#
-# =============================================================================
-#
-
-
-def make_binjfind_stage(dag, parents, tag, verbose = False):
-	parents = power.make_bucut_fragment(dag, parents, tag)
-	return power.make_binjfind_fragment(dag, parents, tag)
-
-
-#
-# =============================================================================
-#
 #                               DAG Construction
 #
 # =============================================================================
@@ -481,6 +467,7 @@ for n, (time_slides_cache_entry, time_slides) in enumerate(injection_time_slides
 		parents = power.make_pre_coinc_lladd(dag, parents | binjnodes, seg, "INJECTIONS_%s" % options.tag, input_cache = cache | binj_cache | extra_cache)
 		if options.enable_clustering:
 			parents = power.make_bucluster_fragment(dag, parents, "INJECTIONS_%s_%d_%d" % (options.tag, int(seg[0]), int(abs(seg))))
+		parents = power.make_bucut_fragment(dag, parents, "INJECTIONS_%s" % options.tag)
 		inj_coinc_nodes += power.make_burca_fragment(dag, parents, seg, "INJECTIONS_%s" % options.tag)
 
 
@@ -489,7 +476,7 @@ for n, (time_slides_cache_entry, time_slides) in enumerate(injection_time_slides
 
 if options.verbose:
 	print >>sys.stderr, "Adding injection identification nodes"
-inj_coinc_nodes = make_binjfind_stage(dag, inj_coinc_nodes, "INJECTIONS_%s" % options.tag, verbose = options.verbose)
+inj_coinc_nodes = power.make_binjfind_fragment(dag, inj_coinc_nodes, "INJECTIONS_%s" % options.tag)
 
 
 # conversion to SQLite database files
