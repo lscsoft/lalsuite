@@ -124,6 +124,9 @@ parser.add_option("-I", "--ifo-status-check",action="store_true",default=False,\
 parser.add_option("-p", "--plots",action="store_true",default=False,\
     help="plot SNR/CHISQ from inspiral stage")
 
+parser.add_option("-C", "--mcmc",action="store_true",default=False,\
+    help="Do MCMC on the followup trigs (experimental)")
+
 parser.add_option("-w", "--write-to-iulgroup",action="store_true", \
     default=False, help="publish the page to the iulgroup")
 
@@ -153,7 +156,7 @@ if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
   and not opts.background_seis_qscan and not opts.hoft_datafind and not \
   opts.generate_segments and not opts.analyse_qscan and not \
   opts.analyse_seis_qscan and not opts.analyse_hoft_qscan and not \
-  opts.frame_check:
+  opts.mcmc and not opts.frame_check:
   print >> sys.stderr, "No steps of the pipeline specified."
   print >> sys.stderr, "Please specify at least one of"
   print >> sys.stderr, "--generate-fu-cache, --trig-bank, --inspiral, --plots,"
@@ -162,7 +165,7 @@ if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
   print >> sys.stderr, "--background-seis-qscan, --hoft-datafind,"
   print >> sys.stderr, "--generate-segments, --frame-check,"
   print >> sys.stderr, "--analyse-qscan, --analyse-seis-qscan,"
-  print >> sys.stderr, "--analyse-hoft-qscan,"
+  print >> sys.stderr, "--analyse-hoft-qscan, --mcmc"
   print >> sys.stderr, "or --write-to-iulgroup (use this option alone for now)"  
   sys.exit(1)
 
@@ -207,7 +210,8 @@ if not opts.disable_followup:
   qscanFgJob      = qscanJob(opts,cp)
   anaQscanJob     = analyseQscanJob(opts,cp)
   frcheckJob      = FrCheckJob(opts,cp)
-  statusJob      = IFOstatus_checkJob(opts,cp)
+  statusJob       = IFOstatus_checkJob(opts,cp)
+  MCMCJob 	  = mcmcJob(opts,cp)  
 
 dataJob         = qscanDataFindJob(cp,'futrig')
 qscanBgJob      = qscanLiteJob(opts,cp)
@@ -289,6 +293,9 @@ if not opts.disable_followup:
 
       # SETUP FRAME CHECK JOBS
       frcheckNode = FrCheckNode(frcheckJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag)
+
+      # MCMC JOBS
+      MCMCNode = mcmcNode(MCMCJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag)
 
       # SETUP STATUS SUMMARY PLOT JOBS
       statusNode = IFOstatus_checkNode(statusJob, ifo, trig, cp, opts, dag)
