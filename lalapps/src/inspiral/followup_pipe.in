@@ -127,6 +127,9 @@ parser.add_option("-p", "--plots",action="store_true",default=False,\
 parser.add_option("-C", "--mcmc",action="store_true",default=False,\
     help="Do MCMC on the followup trigs (experimental)")
 
+parser.add_option("-H", "--inspiral-head",action="store_true",default=False,\
+    help="Run a job using inspiral from HEAD (to get bank and cont. chisq) (experimental)")
+
 parser.add_option("-w", "--write-to-iulgroup",action="store_true", \
     default=False, help="publish the page to the iulgroup")
 
@@ -156,7 +159,7 @@ if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
   and not opts.background_seis_qscan and not opts.hoft_datafind and not \
   opts.generate_segments and not opts.analyse_qscan and not \
   opts.analyse_seis_qscan and not opts.analyse_hoft_qscan and not \
-  opts.mcmc and not opts.frame_check:
+  opts.mcmc and not opts.frame_check and not opts.inspiral_head:
   print >> sys.stderr, "No steps of the pipeline specified."
   print >> sys.stderr, "Please specify at least one of"
   print >> sys.stderr, "--generate-fu-cache, --trig-bank, --inspiral, --plots,"
@@ -212,6 +215,7 @@ if not opts.disable_followup:
   frcheckJob      = FrCheckJob(opts,cp)
   statusJob       = IFOstatus_checkJob(opts,cp)
   MCMCJob 	  = mcmcJob(opts,cp)  
+  headInspJob     = followUpInspJob(cp, 'head')
 
 dataJob         = qscanDataFindJob(cp,'futrig')
 qscanBgJob      = qscanLiteJob(opts,cp)
@@ -287,6 +291,8 @@ if not opts.disable_followup:
 
       # SETUP INSPIRAL JOBS
       inspiralNode = followUpInspNode(inspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag)
+      headInspiralNode = followUpInspNode(headInspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag, 'head')
+
 
       # SETUP PLOT JOBS
       plotNode = plotSNRCHISQNode(plotJob,ifo,inspiralNode.output_file_name,trig,page,dag,inspiralNode,opts)
