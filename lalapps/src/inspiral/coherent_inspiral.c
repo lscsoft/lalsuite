@@ -92,9 +92,33 @@ RCSID( "$Id$" );
 #define PROGRAM_NAME "coherent_inspiral"
 #define CVS_NAME_STRING "$Name$"
 
-int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
+#define ADD_SUMM_VALUE( sv_name, sv_comment, val, intval ) \
+if ( this_summ_value ) \
+{ \
+  this_summ_value = this_summ_value->next = (SummValueTable *) \
+  LALCalloc( 1, sizeof(SummValueTable) ); \
+} \
+else \
+{ \
+  summvalue.summValueTable = this_summ_value = (SummValueTable *) \
+  LALCalloc( 1, sizeof(SummValueTable) ); \
+} \
+LALSnprintf( this_summ_value->program, LIGOMETA_PROGRAM_MAX, "%s", \
+  PROGRAM_NAME ); \
+this_summ_value->version = 0; \
+this_summ_value->start_time = searchsumm.searchSummaryTable->out_start_time; \
+this_summ_value->end_time = searchsumm.searchSummaryTable->out_end_time; \
+this_summ_value->value = (REAL4) val; \
+this_summ_value->intvalue = (INT4) intval; \
+LALSnprintf( this_summ_value->name, LIGOMETA_SUMMVALUE_NAME_MAX, "%s", \
+    sv_name ); \
+LALSnprintf( this_summ_value->ifo, LIGOMETA_IFO_MAX, "%s", ifo ); \
+LALSnprintf( this_summ_value->comment, LIGOMETA_SUMMVALUE_COMM_MAX, \
+    "%s", sv_comment ); \
 
 #define rint(x) (floor((x)+0.5))
+
+int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
 
 
 /*
@@ -115,7 +139,7 @@ REAL4  dynRangeExponent     = -1;/* set to same value used in inspiral.c */
 
 /*Coherent code specific inputs*/
 
-char   ifoframefile[LAL_NUM_IFO][256];
+char  *ifoframefile[6] = {NULL,NULL,NULL,NULL,NULL,NULL};
 
 INT4 H1file = 0;
 INT4 H2file = 0;
@@ -130,15 +154,16 @@ int    bankDuration     = 0;
 CHAR   cohbankFileName[FILENAME_MAX]; /* name of input template bank */
 /* CHAR  *cohbankFileName = NULL; name of input template bank  */
 UINT4  cohSNROut            = 0;    /* default is not to write frame */
+UINT4  cohPhaseDiffOut      = 0;    /* default is not to write frame */
+UINT4  nullStatOut       = 0;    /* default is not to write frame */
 UINT4  eventsOut            = 0;    /* default is not to write events */
 REAL4  cohSNRThresh         = -1;
 UINT4  maximizeOverChirp    = 0;    /* default is no clustering */
 INT4   verbose              = 0;
 CHAR   outputPath[FILENAME_MAX];
 CHAR  *frInType         = NULL;         /* type of data frames          */
-
-UINT4 outCompress = 0;
-
+UINT4  outCompress = 0;
+INT4   numCohTrigs      = 400; /*optional argument that can be reset */
 INT8  gpsStartTimeNS   = 0;         /* input data GPS start time ns */
 LIGOTimeGPS gpsStartTime;           /* input data GPS start time    */
 INT8  gpsEndTimeNS     = 0;         /* input data GPS end time ns   */
@@ -146,6 +171,7 @@ LIGOTimeGPS gpsEndTime;             /* input data GPS end time      */
 
 int  gpsStartTimeTemp   = 0;         /* input data GPS start time ns */
 int  gpsEndTimeTemp   = 0;         /* input data GPS start time ns */
+INT8   outTimeNS        = 0;            /* search summ out time    */
 
 LALStatus             status;
 LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
@@ -159,55 +185,30 @@ ConvertSkyParams             convertParams;
 SkyPosition                  tempSky;
 MultiInspiralTable           *thisEventTemp = NULL;
 
-COMPLEX8TimeSeries * XLALFrFileFindCOMPLEX8TimeSeries( const char *channel, const char *filename )
-{
-  static const char *func = "XLALFrFileFindCOMPLEX8TimeSeries";
-        FrFile *frfileIn;
-        FrameH *frame = NULL;
-	FrProcData *proc = NULL;
-	LIGOTimeGPS tmpEpoch;
-	COMPLEX8TimeSeries *series;
-
-	frfileIn = XLALFrOpenURL( filename );
-	if ( ! frfileIn )
-		XLAL_ERROR_NULL( func, XLAL_EFUNC );
-	while ( ! proc && ( frame = FrameRead( frfileIn ) ) ) {
-		proc = frame->procData;
-		while ( proc && strcmp( channel, proc->name ) )
-			proc = proc->next;
-	}
-
-	if ( ! proc ) {
-		XLALPrintError( "XLAL Error: could not find channel %s in file %s\n", channel, filename );
-		XLAL_ERROR_NULL( func, XLAL_EIO );
-	}
-
-	XLALGPSSet( &tmpEpoch, frame->GTimeS, frame->GTimeN );
-	XLALGPSAdd( &tmpEpoch, proc->timeOffset );
-	XLALGPSAdd( &tmpEpoch, proc->data->startX[0] );
-
-	series = XLALCreateCOMPLEX8TimeSeries( proc->data->name, &tmpEpoch, 0.0, proc->data->dx[0], &lalDimensionlessUnit, proc->data->nData );
-	if ( ! series )
-		XLAL_ERROR_NULL( func, XLAL_EFUNC );
-
-	memcpy( series->data->data, proc->data->data, series->data->length * sizeof( *series->data->data ) );
-	
-	return series;
-}
-
 int main( int argc, char *argv[] )
 {
-  /* frame output data */
-
-  struct FrFile *frOutFile  = NULL;
-  struct FrameH *outFrame   = NULL;
-
   /* output */
 
   MetadataTable         proctable;
   MetadataTable         procparams;
+  MetadataTable         searchsumm;
+  MetadataTable         searchsummvars;
+  MetadataTable         summvalue;
   ProcessParamsTable   *this_proc_param = NULL;
+  SearchSummvarsTable  *this_search_summvar = NULL;
+  SummValueTable       *this_summ_value = NULL;
+
+  SearchSummvarsTable  *inputFiles = NULL;
+  SearchSummaryTable   *searchSummList = NULL;
+  SearchSummaryTable   *thisSearchSumm = NULL;
+  SearchSummvarsTable  *thisInputFile = NULL;
+
+
   LIGOLwXMLStream       results;
+  REAL4 alpha = 0;
+  REAL4 alphabeta = 0;
+  REAL4 inj_alpha = 0;
+  REAL4 inj_alphabeta = 0;
 
   FILE *filePtr[4];
 
@@ -216,13 +217,14 @@ int main( int argc, char *argv[] )
   CHAR   xmlname[FILENAME_MAX];
   CHAR   cohdataStr[LALNameLength];
   CHAR   caseIDChars[6][LIGOMETA_IFOS_MAX] = {"0","0","0","0","0","0"};
-  
+  CHAR  *ifo = NULL;
+
   INT4   cohSegLength     = 1; /* This should match hardcoded value of 1s in inspiral.c */
   INT4   numPoints        = 0;
   UINT4  numSegments      = 1; /* CHECK: number of segments; hardwired to 1 */
   UINT4  numBeamPoints    = 3721;       /* number of sky position templates */
-  UINT4  nCohDataFr       = 0;
   UINT8  eventID          = 0;
+  REAL8  cohSeriesLength;
 
   REAL8  m1               = 0.0;
   REAL8  m2               = 0.0;
@@ -234,7 +236,7 @@ int main( int argc, char *argv[] )
   UINT8  slideSign        = 0;
 
   /* counters and other variables */
-  INT4   j,k,l,w;
+  INT4   j,k,l,w, cohtrigs, cohtriglimit;
   INT4   kmax = 0;
   REAL4  theta,phi,vPlus,vMinus;
   UINT4  numDetectors     = 0;
@@ -243,9 +245,13 @@ int main( int argc, char *argv[] )
   UINT2  caseID[6]        = {0,0,0,0,0,0}; /* H1 L V G T H2 */
   INT4   numTriggers      = 0;
   INT4   numCoincs        = 0;
+  UINT4  numCohFiles      = 1;
+  UINT4  cohFileID        = 1;
+  INT4   numCohTrigs      = 400;  /*CHECK: should be in parse options */
+
   REAL4 totMass = 0.0;
   REAL8 muMass = 0.0;
-  REAL4 deltaT= 0.0;
+  REAL8 deltaT= 0.0;
   REAL4 distNorm = 0.0;
   REAL4 templateNorm = 0.0;
   REAL8 c0= 0.0;
@@ -257,21 +263,12 @@ int main( int argc, char *argv[] )
   REAL4 x3= 0.0;
   REAL4 x4= 0.0;
   REAL4 x8= 0.0;
-
-  /* */
   
-  FrCache      *frInCache   = NULL;
-
   SnglInspiralTable    *currentTrigger = NULL;
   SnglInspiralTable    *cohbankEventList=NULL;
 
   CoincInspiralTable   *coincHead = NULL;
   CoincInspiralTable   *thisCoinc = NULL;
-
-  SearchSummvarsTable  *inputFiles = NULL;
-  SearchSummaryTable   *searchSummList = NULL;
-  SearchSummaryTable   *thisSearchSumm = NULL;
-  SearchSummvarsTable  *thisInputFile = NULL;
 
   CoherentInspiralInitParams   *cohInspInitParams = NULL;
   CoherentInspiralFilterParams *cohInspFilterParams = NULL;
@@ -282,10 +279,12 @@ int main( int argc, char *argv[] )
   MultiInspiralTable           *tempTable = NULL;
   MetadataTable                 savedEvents;
   COMPLEX8TimeSeries            tempSnippet;
-  
+
   char nameArrayBeam[6][256] = {"0","0","0","0","0","0"}; /* beam files */
   char nameArrayCData[6][256] = {"0","0","0","0","0","0"}; /* cData chan names */
 
+  /* set default debugging level */
+  XLALSetErrorHandler( XLALAbortErrorHandler );
   set_debug_level( "1" ); /* change with parse option */
 
   /* create the process and process params tables */
@@ -297,20 +296,33 @@ int main( int argc, char *argv[] )
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
 
+  /* create the search summary and zero out the summvars table */
+  searchsumm.searchSummaryTable = (SearchSummaryTable *)
+    calloc( 1, sizeof(SearchSummaryTable) );
+  searchsummvars.searchSummvarsTable = NULL;
+
   arg_parse_check( argc, argv, procparams );
   if (vrbflg)  fprintf(stdout, "called parse options..\n");
   
   /* wind to the end of the process params table */
   for ( this_proc_param = procparams.processParamsTable; this_proc_param->next;
 	this_proc_param = this_proc_param->next );
-  
-  /* Set the dynamic range; needed for distNorm, templateNorm calculation */
-  dynRange = pow( 2.0, dynRangeExponent );
-  
+
   /* Set other variables */
   numPoints = sampleRate * cohSegLength;
   savedEvents.multiInspiralTable = NULL;
   k = 0; 
+
+  /* store the input sample rate */
+  this_search_summvar = searchsummvars.searchSummvarsTable = 
+    (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
+  LALSnprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+	       "data sample rate" );
+  this_search_summvar->value = (REAL8) sampleRate;
+  
+  
+  /* Set the dynamic range; needed for distNorm, templateNorm calculation */
+  dynRange = pow( 2.0, dynRangeExponent );
   
   /* read in the cohbank trigger ligo lw xml file */
   numTriggers = XLALReadInspiralTriggerFile( &cohbankEventList,
@@ -333,41 +345,74 @@ int main( int argc, char *argv[] )
 		   cohbankFileName );
 	}
     }
-  else
-    {
-      if( vrbflg )
+  else {
+    if( vrbflg )
+      {
+	fprintf( stdout, 
+		 "Read in %d triggers from the file %s\n", numTriggers, 
+		 cohbankFileName );
+      }
+    
+    /* reconstruct the coincs */
+    numCoincs = XLALRecreateCoincFromSngls( &coincHead, cohbankEventList );
+
+    /* save the number of coincidences in the search summary table */
+    searchsumm.searchSummaryTable->nevents = numCoincs;
+
+    if( numCoincs < 0 )
+      {
+	fprintf(stderr, "Unable to reconstruct coincs from single ifo triggers");
+	exit( 1 );
+      }
+    else
+      {
+	fprintf( stdout,
+		 "Recreated %d coincs from the %d triggers\n", numCoincs, 
+		 numTriggers );
+	if ( numCoincs % numCohTrigs == 0) {
+	  
+	  numCohFiles = floor( numCoincs / numCohTrigs );
+	}
+	else {
+	  numCohFiles = floor( numCoincs / numCohTrigs ) + 1;
+	}
+      }
+    
+    thisCoinc=coincHead;
+    
+    numCohFiles++;
+
+    /* loop over coincident triggers to compute cohSNR */
+    
+    for( cohFileID = 1 ; cohFileID < numCohFiles ; cohFileID++ ) {
+      
+      /* frame output data */
+      struct FrFile *frOutFile  = NULL;
+      struct FrameH *outFrameCoh   = NULL;
+      struct FrameH *outFrameCohPhaseDiff   = NULL;
+      struct FrameH *outFrameNullStat   = NULL;
+      
+      
+      if( (cohFileID == (numCohFiles-1) && !((numCoincs % numCohTrigs) == 0)) )
 	{
-	  fprintf( stdout, 
-		   "Read in %d triggers from the file %s\n", numTriggers, 
-		   cohbankFileName );
+	  cohtriglimit = (numCoincs % numCohTrigs);
+	}
+      else 
+	{
+	  cohtriglimit = numCohTrigs; 
 	}
       
-      /* reconstruct the coincs */
-      numCoincs = XLALRecreateCoincFromSngls( &coincHead, cohbankEventList );
-      if( numCoincs < 0 )
-	{
-	  fprintf(stderr, "Unable to reconstruct coincs from single ifo triggers");
-	  exit( 1 );
-	}
-      else if ( vrbflg )
-	{
-	  fprintf( stdout,
-		   "Recreated %d coincs from the %d triggers\n", numCoincs, 
-		   numTriggers );
-	}
-      
-      /* loop over coincident triggers to compute cohSNR */
-      for( thisCoinc=coincHead; thisCoinc; thisCoinc=thisCoinc->next)
-	{
-	  numDetectors = thisCoinc->numIfos;
-	  
-	  /* l is another detector index, which can have a max value of 4 */
-	  l=0;
-	  
-	  /* Note the participating ifos and the eventID
-	     for this coincident trigger */
-          for( k=0 ; k<LAL_NUM_IFO ; k++)
-	    {
+      for ( cohtrigs = 0 ; cohtrigs < cohtriglimit ; cohtrigs++) {
+	
+	numDetectors = thisCoinc->numIfos;
+	
+	/* l is another detector index, which can have a max value of 4 */
+	l=0;
+	
+	/* Note the participating ifos and the eventID
+	   for this coincident trigger */
+	for( k=0 ; k<LAL_NUM_IFO ; k++)
+	  {
 	      if( thisCoinc->snglInspiral[k] )
 		{
 		  kmax = k; /* final trigger's k value */
@@ -382,14 +427,15 @@ int main( int argc, char *argv[] )
 		  slideSign = (eventID % 1000000000) - slideNumber*100000 - triggerNumber;
 		  
 		  /* Store CData frame name now for reading its frame-file 
-		     later, within thisCoinc-ident loop*/
+		     later, within thisCoinc-ident loop
+		  */
 		  LALSnprintf( nameArrayCData[k], LALNameLength*sizeof(CHAR), "%s:%s_CData_%Ld", caseIDChars[k],frInType,eventID );
 		}
 	    }/* Closes loop for k; finished noting the participating ifos 
 		and the eventID for this coincident trigger*/
 	  
 	  /* Initialize tempTime to account for time-slides (wrt H1, hence j<5)*/
-	  for( j=0; j<5; j++)
+	  for( j=0; j<(LAL_NUM_IFO - 1) ; j++)
 	    {
 	      /* slideSign=0 is the same as a positive time slide */
 	      if(slideSign != 0)
@@ -444,6 +490,8 @@ int main( int argc, char *argv[] )
 	  cohInspInitParams->numPoints               = numPoints;
 	  cohInspInitParams->numBeamPoints           = numBeamPoints;
 	  cohInspInitParams->cohSNROut               = cohSNROut;
+	  cohInspInitParams->cohPhaseDiffOut         = cohPhaseDiffOut;
+	  cohInspInitParams->nullStatOut             = nullStatOut;
 	  
 	  
 	  /* create the data structures needed for coherentInspiral */
@@ -479,6 +527,8 @@ int main( int argc, char *argv[] )
 	  cohInspFilterParams->deltaT                  = 1.0/((REAL8) sampleRate);
 	  cohInspFilterParams->cohSNRThresh            = cohSNRThresh;  
 	  cohInspFilterParams->cohSNROut               = cohSNROut;
+	  cohInspFilterParams->cohPhaseDiffOut         = cohPhaseDiffOut;
+	  cohInspFilterParams->nullStatOut             = nullStatOut;
 	  cohInspFilterParams->numTmplts               = 1;
 	  cohInspFilterParams->fLow                    = fLow;
 	  cohInspFilterParams->maximizeOverChirp       = maximizeOverChirp;
@@ -488,6 +538,7 @@ int main( int argc, char *argv[] )
 	  for( j=0; j<LAL_NUM_IFO; j++ ) 
 	    {
 	      cohInspFilterParams->detIDVec->data[j] = caseID[j];
+	      cohInspFilterParams->sigmasqVec->data[j] = 1.0;
 	    }
 	  
 	  /* CHECK: Note that this may be replaced with 
@@ -495,14 +546,15 @@ int main( int argc, char *argv[] )
 	     Also note that the ifo orders in InterferometerNumber and 
 	     lalCachedDetectors are different:
 	     caseID[0,..,5]=(G1,H1,H2,L1,V1,T1), whereas
-	     lalCachedDetectors[0,...]=(LHO,LLO,V1,G1,T1,CIT,...)*/
+	     lalCachedDetectors[0,...]=(T1(0),V1(1),G1(2),H2(3),H1(4),L1(5),...
+	     ...,LAL_NUM_DETECTORS=12)*/
 	  w=0;
-	  if( caseID[0] ) cohInspFilterParams->detectorVec->detector[w++] = lalCachedDetectors[3];
-	  if( caseID[1] ) cohInspFilterParams->detectorVec->detector[w++] = lalCachedDetectors[0];
-	  if( caseID[2] ) cohInspFilterParams->detectorVec->detector[w++] = lalCachedDetectors[0];
-	  if( caseID[3] ) cohInspFilterParams->detectorVec->detector[w++] = lalCachedDetectors[1];
-	  if( caseID[4] ) cohInspFilterParams->detectorVec->detector[w++] = lalCachedDetectors[4];
-	  if( caseID[5] ) cohInspFilterParams->detectorVec->detector[w++] = lalCachedDetectors[2];
+	  if( caseID[0] ) cohInspFilterParams->detectorVec->detector[w++] = lalCachedDetectors[2];
+	  if( caseID[1] ) cohInspFilterParams->detectorVec->detector[w++] = lalCachedDetectors[4];
+	  if( caseID[2] ) cohInspFilterParams->detectorVec->detector[w++] = lalCachedDetectors[3];
+	  if( caseID[3] ) cohInspFilterParams->detectorVec->detector[w++] = lalCachedDetectors[5];
+	  if( caseID[4] ) cohInspFilterParams->detectorVec->detector[w++] = lalCachedDetectors[1];
+	  if( caseID[5] ) cohInspFilterParams->detectorVec->detector[w++] = lalCachedDetectors[0];
 	  
 	  /* Get beam pattern coefficients if necessary */
 	  if ( (numDetectors == 3 && !( caseID[1] && caseID[2])) || numDetectors == 4 )
@@ -537,27 +589,82 @@ int main( int argc, char *argv[] )
 	  l = 0; /* A counter to step through the cohInspCVec-tors */
 	  for( j=0; j<LAL_NUM_IFO; j++ )
 	    {
-	      if( caseID[j] )
-		{
-		  if( vrbflg ) fprintf(stdout, "getting the COMPLEX8TimeSeries\n");
-		  
-		  if(!ifoframefile[j])
-		    {
-		      fprintf(stdout,"The file %s does not exist - exiting...\n", ifoframefile[j] );
-		      goto cleanexit;
-		    }
-		  
-		  cohInspCVec->cData[l] = XLALFrFileFindCOMPLEX8TimeSeries( nameArrayCData[j], ifoframefile[j] );
-		  
-		  cohInspFilterParams->sigmasq[l] = thisCoinc->snglInspiral[j]->sigmasq;
-		  l++;
-		}/* Closes "if( caseID[j] )" */
-	    }
+	      if( caseID[j] )		{
+		FrFile *frfileIn[j];
+		FrameH *ifoFrame = NULL;
+		FrProcData *proc = NULL;
+		LIGOTimeGPS tmpEpoch;
+		
+		if( vrbflg ) fprintf(stdout, "getting the COMPLEX8TimeSeries %s \n", nameArrayCData[j] );
 
+		if ( !(frfileIn[j]= XLALFrOpenURL( ifoframefile[j] )) ) {
+		  XLALPrintError( "XLAL Error: could not open frame file %s - exiting...\n", ifoframefile[j] );
+		  goto cleanexit;
+		}		
+		while( ! proc && (ifoFrame = FrameRead( frfileIn[j] )) ) {
+		  proc = ifoFrame->procData;
+		  while ( proc && strcmp( nameArrayCData[j], proc->name ) ) {
+		    proc = proc->next;
+		  }
+		  if ( ! proc )
+		    FrameFree( ifoFrame ); 
+		}
+		
+		if ( ! proc ) {
+		  XLALPrintError( "XLAL Error: could not find channel %s in file %s - exiting...\n", nameArrayCData[j], ifoframefile[j] );
+		  FrFileIEnd( frfileIn[j] );
+		  goto cleanexit;
+		}
+		
+		XLALGPSSet( &tmpEpoch, ifoFrame->GTimeS, ifoFrame->GTimeN );
+		XLALGPSAdd( &tmpEpoch, proc->timeOffset );
+		XLALGPSAdd( &tmpEpoch, proc->data->startX[0] );
+		
+		/* Scale up fShift for all ifos */
+		if ( proc->fShift ) {
+		  cohInspCVec->cData[l] = XLALCreateCOMPLEX8TimeSeries( proc->data->name, &tmpEpoch, (REAL8) proc->fShift, proc->data->dx[0], &lalDimensionlessUnit, proc->data->nData );
+		}
+		else {
+		  cohInspCVec->cData[l] = XLALCreateCOMPLEX8TimeSeries( proc->data->name, &tmpEpoch, 0.0, proc->data->dx[0], &lalDimensionlessUnit, proc->data->nData );
+		}
+		if ( ! cohInspCVec->cData[l] ) {
+		  FrFileIEnd( frfileIn[j] );
+		  XLALPrintError( "XLAL Error: could not create cData from channel %s in file %s - exiting...\n", nameArrayCData[j], ifoframefile[j] );
+		  goto cleanexit;
+		}
+		
+		memcpy( cohInspCVec->cData[l]->data->data, proc->data->data, cohInspCVec->cData[l]->data->length * sizeof( *(cohInspCVec->cData[l])->data->data ) );
+		FrFileIEnd( frfileIn[j] );
+		
+		/*CHECK: Note that inspiral.c has a temporary fix for using 
+		  the f0 member of the COMPLEX8TimeSeries structure for 
+		  communicating sigmasq.
+		*/
+		if ( !(cohInspCVec->cData[l]->f0 == 0.0) ) {
+		  cohInspFilterParams->sigmasqVec->data[j] = cohInspCVec->cData[l]->f0;
+		}
+		else {
+		  cohInspFilterParams->sigmasqVec->data[j] = 1.0;
+		}		
+		
+		if (vrbflg)  fprintf( stdout, "sigmasq:%f\n",cohInspFilterParams->sigmasqVec->data[j]);
+		
+		l++;
+	      }/* Closes "if( caseID[j] )" */
+	    }/* Closes "for( j=0; j<LAL_NUM_IFO; j++ )" */
+	  
 	  for ( l=0 ; l<(INT4)numDetectors ; l++)
 	    { 
 	      tempTime[l] += cohInspCVec->cData[l]->epoch.gpsSeconds + cohInspCVec->cData[l]->epoch.gpsNanoSeconds * 1e-9;
 	    }
+
+	  /* store the start and end time of the first ifo cdata in the search summary */
+	  searchsumm.searchSummaryTable->in_start_time = cohInspCVec->cData[0]->epoch;
+	  LAL_CALL( LALGPStoFloat( &status, &cohSeriesLength, 
+				   &(cohInspCVec->cData[0]->epoch) ), &status );
+	  cohSeriesLength += (REAL8) cohSegLength / sampleRate ;
+	  LAL_CALL( LALFloatToGPS( &status, 
+		&(searchsumm.searchSummaryTable->in_end_time), &cohSeriesLength ), &status );
 	  
 	  /* If we can estimate distance then compute templateNorm */
 	  /* At present, this is only good for frequency domain tmplts */
@@ -853,9 +960,27 @@ int main( int argc, char *argv[] )
 	  if ( cohSNROut )
 	    {
 	      LALSnprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-			   "SNR_%d", nCohDataFr++ );
+			   "SNR_%Ld", eventID );
 	      strcpy( cohInspFilterParams->cohSNRVec->name, "Coherent");
-	      outFrame = fr_add_proc_REAL4TimeSeries( outFrame, cohInspFilterParams->cohSNRVec, "none", cohdataStr );
+	      outFrameCoh = fr_add_proc_REAL4TimeSeries( outFrameCoh, cohInspFilterParams->cohSNRVec, "none", cohdataStr );
+	    }
+	  
+	  /* save coherent phase diff in frames only if any triggers found */
+	  if ( cohPhaseDiffOut && thisEvent)
+	    {
+	      LALSnprintf( cohdataStr, LALNameLength*sizeof(CHAR),
+			   "PhaseDiff_%Ld", eventID );
+	      strcpy( cohInspFilterParams->cohPhaseDiffVec->name, "Coherent");
+	      outFrameCohPhaseDiff = fr_add_proc_REAL4TimeSeries( outFrameCohPhaseDiff, cohInspFilterParams->cohPhaseDiffVec, "none", cohdataStr );
+	    }
+	  
+	  /* save null-stream statistic in frames only if any triggers found */
+	  if ( nullStatOut && thisEvent)
+	    {
+	      LALSnprintf( cohdataStr, LALNameLength*sizeof(CHAR),
+			   "NullStat_%Ld", eventID );
+	      strcpy( cohInspFilterParams->nullStatVec->name, "Coherent");
+	      outFrameNullStat = fr_add_proc_REAL4TimeSeries( outFrameNullStat, cohInspFilterParams->nullStatVec, "none", cohdataStr );
 	    }
 	  
 	  if ( !eventsOut )
@@ -938,125 +1063,284 @@ int main( int argc, char *argv[] )
 	  cohInspFilterInput = NULL;
 	  cohInspBeamVec = NULL;
 	  cohInspCVec = NULL;
-	  
-	  for(j=0;j<LAL_NUM_IFO;j++)
-	    {
-	      memcpy(caseIDChars[j], "0",3);
-	      caseID[j] = 0;
-	      strcpy( nameArrayBeam[j], "0" );
-	      strcpy( nameArrayCData[j], "0" );
-	    }
+
 	  for(j=0;j<5;j++)
 	    {
 	      tempTime[j] = 0.0;
 	      timeptDiff[j] = 0;
 	    }
 	  tempTime[5] = 0.0;
-	}/* Close loop over thisCoinc*/
-    } /* End the condition "if ( numTriggers < 0 )" */
-  
-  /* set the name of the output file(s) (without extension) */
-  if ( userTag )
-    {
-      LALSnprintf( fileName, FILENAME_MAX, "%s-COHERENT_%s-%d-%d", ifoTag, userTag, 
-		   gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds ); 
-    }
-  else
-    {
-      LALSnprintf( fileName, FILENAME_MAX, "%s-COHERENT-%d-%d", ifoTag, 
-		   gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds ); 
-    }
-  
-  if( cohSNROut )
-    {
-      if ( outputPath[0] )
-	{
-	  LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf", outputPath, fileName);
+	  
+	  thisCoinc=thisCoinc->next;
+	  
+	}/* Close loop over cohtrigs*/
+      
+      /* Write the summary information */
+
+      if ( slideNumber ) {
+	if ( userTag )	{
+	  LALSnprintf( fileName, FILENAME_MAX, "%s-COH_PHASE_DIFF_SLIDE_%s-%d-%d-%d", ifoTag, userTag, 
+		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
 	}
-      else 
+	else	  {
+	  LALSnprintf( fileName, FILENAME_MAX, "%s-COH_PHASE_DIFF_SLIDE-%d-%d-%d", ifoTag, 
+		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
+	}
+      }
+      else {
+	if ( userTag )	{
+	  LALSnprintf( fileName, FILENAME_MAX, "%s-COH_PHASE_DIFF%s-%d-%d-%d", ifoTag, userTag, 
+		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
+	}
+	else	  {
+	  LALSnprintf( fileName, FILENAME_MAX, "%s-COH_PHASE_DIFF-%d-%d-%d", ifoTag, 
+		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
+	}
+      }
+      
+      if( outFrameCohPhaseDiff )
 	{
-	  LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
+	  if ( outputPath[0] )
+	    {
+	      LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf", outputPath, fileName);
+	    }
+	  else 
+	    {
+	      LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
+	    }
+	  
+	  if ( vrbflg ) fprintf( stdout, "writing coherent phase difference frame data to %s....", framename );
+	  frOutFile = FrFileONew( framename, 0);
+	  FrameWrite( outFrameCohPhaseDiff, frOutFile);
+	  FrFileOEnd( frOutFile );
+	  if ( vrbflg ) fprintf(stdout, "done\n");
+	  
 	}
       
-      if ( vrbflg ) fprintf( stdout, "writing frame data to %s....", framename );
-      frOutFile = FrFileONew( framename, 0);
-      FrameWrite( outFrame, frOutFile);
-      FrFileOEnd( frOutFile );
-      if ( vrbflg ) fprintf(stdout, "done\n");
-      
-    }
-  
-  if ( eventsOut )
-    { 
-      memset( &results, 0, sizeof(LIGOLwXMLStream) );
-      if ( outputPath[0] )
+      if ( slideNumber ) {
+	if ( userTag )	{
+	  LALSnprintf( fileName, FILENAME_MAX, "%s-COH_NULL_STAT_SLIDE_%s-%d-%d-%d", ifoTag, userTag, 
+		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
+	}
+	else	{
+	  LALSnprintf( fileName, FILENAME_MAX, "%s-COH_NULL_STAT_SLIDE-%d-%d-%d", ifoTag, 
+		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
+	}
+      }
+      else {
+	if ( userTag )	{
+	  LALSnprintf( fileName, FILENAME_MAX, "%s-COH_NULL_STAT_%s-%d-%d-%d", ifoTag, userTag, 
+		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
+	}
+	else	{
+	  LALSnprintf( fileName, FILENAME_MAX, "%s-COH_NULL_STAT-%d-%d-%d", ifoTag, 
+		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
+	}
+      }
+
+      if( outFrameNullStat )
 	{
-	  if ( outCompress )
-	  {
+	  if ( outputPath[0] )
+	    {
+	      LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf", outputPath, fileName);
+	    }
+	  else 
+	    {
+	      LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
+	    }
+	  
+	  if ( vrbflg ) fprintf( stdout, "writing null statistic frame data to %s....", framename );
+	  frOutFile = FrFileONew( framename, 0);
+	  FrameWrite( outFrameNullStat, frOutFile);
+	  FrFileOEnd( frOutFile );
+	  if ( vrbflg ) fprintf(stdout, "done\n");
+	  
+	}
+  
+      if ( slideNumber ) {
+	if ( userTag )	  {
+	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHERENT_SLIDE_%s-%d-%d-%d", ifoTag, userTag, 
+		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
+	}
+	else	{
+	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHERENT-SLIDE-%d-%d-%d", ifoTag, 
+		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
+	}
+      }
+      else {
+	if ( userTag )	  {
+	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHERENT_%s-%d-%d-%d", ifoTag, userTag, 
+		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
+	}
+	else	{
+	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHERENT-%d-%d-%d", ifoTag, 
+		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
+	}
+      }
+      
+      if( cohSNROut )
+	{
+	  if ( outputPath[0] )
+	    {
+	      LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf", outputPath, fileName);
+	    }
+	  else 
+	    {
+	      LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
+	    }
+	  
+	  if ( vrbflg ) fprintf( stdout, "writing coherent frame data to %s....", framename );
+	  frOutFile = FrFileONew( framename, 0);
+	  FrameWrite( outFrameCoh, frOutFile);
+	  FrFileOEnd( frOutFile );
+	  if ( vrbflg ) fprintf(stdout, "done\n");
+	  
+	}
+  
+      if (eventsOut )
+	{ 
+	  memset( &results, 0, sizeof(LIGOLwXMLStream) );
+	  if ( outputPath[0] )
+	    {
+	      if ( outCompress )
+		{
 		  LALSnprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml.gz", outputPath, fileName);
-	  }
-	  else
-	  {
+		}
+	      else
+		{
 		  LALSnprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml", outputPath, fileName);
-	  }
-	}
-      else 
-	{
-	  if ( outCompress )
-	  {
-		  LALSnprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml.gz", fileName );
-	  }
-	  else
-	  {
+		}
+	    }
+	  else 
+	    {
+	      if ( outCompress )
+		{
+		  LALSnprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml.gz", fileName );		
+		}
+	      else 
+		{
 		  LALSnprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml", fileName );
+		}	    
+	    }
+	  if ( vrbflg ) fprintf( stdout, "writing XML data to %s...\n", xmlname );
+	  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, xmlname), &status );
+	  
+	  /* write the process table */
+	  j=0;
+	  while( !(caseID[j]) ) {
+	    ifo = caseIDChars[j];
+	    j++;
 	  }
-	}
-      if ( vrbflg ) fprintf( stdout, "writing XML data to %s...\n", xmlname );
-      LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, xmlname ), &status );
-      
-      /* write the process table */
-      if ( vrbflg ) fprintf( stdout, "  process table...\n" );
-      /*      LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", caseID );*/
-      LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time), &accuracy ), &status );
-      LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ), &status );
-      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, proctable, process_table ), &status );
-      LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-      free( proctable.processTable );
-      
-      /* write the process params table */
-      if ( vrbflg ) fprintf( stdout, "  process_params table...\n" );
-      LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_params_table ), &status );
-      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, procparams, process_params_table ), &status );
-      LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-      while( procparams.processParamsTable )
-	{
-	  this_proc_param = procparams.processParamsTable;
-	  procparams.processParamsTable = this_proc_param->next;
-	  free( this_proc_param );
-	}
-      
-      if( vrbflg ) fprintf(stdout,"  event params table\n ");
-      
-      LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, multi_inspiral_table ), &status );
-      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, savedEvents, multi_inspiral_table ), &status );
-      LAL_CALL( LALEndLIGOLwXMLTable( &status, &results), &status );
-      
-      while( savedEvents.multiInspiralTable )
-	{  
-	  MultiInspiralTable *tempEvent2 = savedEvents.multiInspiralTable;
-	  savedEvents.multiInspiralTable = savedEvents.multiInspiralTable->next;
-	  LALFree( tempEvent2->event_id );
-	  LALFree( tempEvent2 );
-	}
+	  
+	  if ( vrbflg ) fprintf( stdout, "  process table...\n" );
+	  /*      LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", caseID );*/
+	  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time), &accuracy ), &status );
+	  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ), &status );
+	  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, proctable, process_table ), &status );
+	  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
 
-      savedEvents.multiInspiralTable = NULL;
-      
-      /* close the output xml file */
-      LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
-      if ( vrbflg ) fprintf( stdout, "done. XML file closed\n" );
-      
-    }/*end if ( eventsOut ) */
+	  /* write the process params table */
+	  if ( vrbflg ) fprintf( stdout, "  process_params table...\n" );
+	  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_params_table ), &status );
+	  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, procparams, process_params_table ), &status );
+	  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
 
+	  /* write the search summary table */
+	  if ( vrbflg ) fprintf( stdout, "  search_summary table...\n" );
+	  searchsumm.searchSummaryTable->out_start_time.gpsSeconds = 
+	    gpsStartTime.gpsSeconds + (numPointsSeg / (4 * sampleRate));
+	  searchsumm.searchSummaryTable->out_end_time.gpsSeconds = 
+	    gpsEndTime.gpsSeconds - (numPoints / (4 * sampleRate));
+	  
+	  /* the number of nodes for a standalone job is always 1 */
+	  searchsumm.searchSummaryTable->nnodes = 1; 
+	  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, 
+					    search_summary_table ), &status );
+	  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsumm, 
+					    search_summary_table ), &status );
+	  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+
+	  if ( numTriggers )
+	    {
+	      if ( vrbflg ) fprintf( stdout, "  search_summvars table...\n" );
+	      LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, 
+						search_summvars_table ), &status );
+	      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsummvars, 
+						search_summvars_table ), &status );
+	      LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+	    }
+	  
+	  /* store calibration information */
+	  if ( cohFileID == 1) {
+	    ADD_SUMM_VALUE( "calibration alpha", "analysis", alpha, 0 );
+	    ADD_SUMM_VALUE( "calibration alphabeta", "analysis", alphabeta, 0 );
+	    ADD_SUMM_VALUE( "calibration alpha", "injection", inj_alpha, 0 );
+	    ADD_SUMM_VALUE( "calibration alphabeta", "injection", inj_alphabeta, 0 );
+	  }
+	  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, summ_value_table ), 
+		    &status );
+	  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, summvalue, 
+					    summ_value_table ), &status );
+	  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+
+	  /* write multi_inspiral table */
+	  if ( savedEvents.multiInspiralTable ) { 
+	    if( vrbflg ) fprintf(stdout,"  event params table\n ");
+	    
+	    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, multi_inspiral_table ), &status );
+	    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, savedEvents, multi_inspiral_table ), &status );
+	    LAL_CALL( LALEndLIGOLwXMLTable( &status, &results), &status );
+	  }
+
+	  while( savedEvents.multiInspiralTable )
+	    {  
+	      MultiInspiralTable *tempEvent2 = savedEvents.multiInspiralTable;
+	      savedEvents.multiInspiralTable = savedEvents.multiInspiralTable->next;
+	      LALFree( tempEvent2->event_id );
+	      LALFree( tempEvent2 );
+	    }
+	  
+	  /* close the output xml file */
+	  LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
+	  if ( vrbflg ) fprintf( stdout, "done. XML file closed\n" );
+	  
+	}/*end "if ( eventsOut )" */
+      
+    }/* close "for( cohFileID...)" */
+  
+  }/* closes "if ( numTriggers < 0 )" */
+
+  free( proctable.processTable ); 
+  while( procparams.processParamsTable )
+    {
+      this_proc_param = procparams.processParamsTable;
+      procparams.processParamsTable = this_proc_param->next;
+      free( this_proc_param );
+    }
+  
+  while( searchsummvars.searchSummvarsTable )
+    {
+      this_search_summvar = searchsummvars.searchSummvarsTable;
+      searchsummvars.searchSummvarsTable = this_search_summvar->next;
+      LALFree( this_search_summvar );
+    }
+  free( searchsummvars.searchSummaryTable );
+  
+  while ( summvalue.summValueTable )
+  {
+    this_summ_value = summvalue.summValueTable;
+    summvalue.summValueTable = summvalue.summValueTable->next;
+    LALFree( this_summ_value );
+  }
+  /* free the search summary table after the summ_value table is written */
+  free( searchsumm.searchSummaryTable );
+
+  while ( cohbankEventList )  {
+    currentTrigger = cohbankEventList;
+    cohbankEventList = cohbankEventList->next;
+    LAL_CALL( LALFreeSnglInspiral( &status, &currentTrigger ), &status );
+  }
+  
   while ( inputFiles ) {
     thisInputFile = inputFiles;
     inputFiles = thisInputFile->next;
@@ -1068,13 +1352,7 @@ int main( int argc, char *argv[] )
     searchSummList = searchSummList->next;
     LALFree( thisSearchSumm );
   }
-  
-  while ( cohbankEventList )  {
-    currentTrigger = cohbankEventList;
-    cohbankEventList = cohbankEventList->next;
-    LAL_CALL( LALFreeSnglInspiral( &status, &currentTrigger ), &status );
-  }
-  
+
   while ( coincHead )	{
     thisCoinc = coincHead;
     coincHead = coincHead->next;
@@ -1082,12 +1360,9 @@ int main( int argc, char *argv[] )
   }
 
   goto cleanexit;
-  
+
  cleanexit:
-  
-  /* free the frame cache */
-  if( frInCache ) LAL_CALL( LALDestroyFrCache( &status, &frInCache ), &status );
-  
+
   if ( frInType )    free( frInType );
   
   if ( vrbflg ) fprintf( stdout, "checking memory leaks and exiting\n" );
@@ -1133,6 +1408,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  [--l1-slide]      l1_slide    Slide L1 data by multiples of l1_slide\n"\
 "  [--t1-slide]      t1_slide    Slide T1 data by multiples of t1_slide\n"\
 "  [--v1-slide]      v1_slide    Slide V1 data by multiples of v1_slide\n"\
+"  [--numCohTrigs]   numCohTrigs number of coherent snr frames per output frame-file\n"\
 "  --cohsnr-threshold RHO       set signal-to-noise threshold to RHO\n"\
 "  --maximize-over-chirp        do clustering\n"\
 "  --frame-type TAG             input data is contained in frames of type TAG\n"\
@@ -1142,6 +1418,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 #define USAGE3 \
 "  --write-events               write events\n"\
 "  --write-cohsnr               write cohsnr\n"\
+"  --write-cohnullstat          write coherent null statistic \n"\
+"  --write-cohphasediff         write H1-H2 coherent phase difference when data from both ifos are present\n"\
 "  --output-path                write files here\n"\
 "  --write-compress             write compressed xml files\n"\
 "  --H1-framefile               frame data for H1\n"\
@@ -1174,10 +1452,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      {"l1-slide",                 required_argument, 0,                 'Y'},
      {"t1-slide",                 required_argument, 0,                 't'},
      {"v1-slide",                 required_argument, 0,                 'w'},
+     {"numCohTrigs",              required_argument, 0,                 'n'},
      {"cohsnr-threshold",         required_argument, 0,                 'p'},
      {"maximize-over-chirp",      no_argument,       &maximizeOverChirp, 1 },
      {"write-events",             no_argument,       &eventsOut,         1 },
      {"write-cohsnr",             no_argument,       &cohSNROut,         1 },
+     {"write-cohnullstat",        no_argument,       &nullStatOut,       1 },
+     {"write-cohphasediff",       no_argument,       &cohPhaseDiffOut,   1 },
      {"gps-start-time",           required_argument, 0,                 'a'},
      {"gps-end-time",             required_argument, 0,                 'b'},
      {"output-path",              required_argument, 0,                 'P'},
@@ -1201,7 +1482,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
        size_t optarg_len;
 
        c = getopt_long_only( argc, argv,
-           "A:B:a:b:G:I:L:l:e:g:W:X:Y:t:w:P:S:T:V:Z:d:f:h:p:r:u:v:",
+           "A:B:a:b:G:I:L:l:e:g:W:X:Y:t:w:n:P:S:T:V:Z:d:f:h:p:r:u:v:",
            long_options, &option_index );
 
        if ( c == -1 )
@@ -1225,43 +1506,55 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
            break;
 
          case 'A':
-           strcpy(ifoframefile[1],optarg);
+	   optarg_len = strlen( optarg ) + 1;
+	   ifoframefile[1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+	   memcpy( ifoframefile[1], optarg, optarg_len );
            H1file = 1;
-           ADD_PROCESS_PARAM( "string", "%s", ifoframefile[1] );
-           break;
+	   ADD_PROCESS_PARAM( "string", "%s", optarg );
+	   break;
 
          case 'G':
-           strcpy(ifoframefile[0],optarg);
+	   optarg_len = strlen( optarg ) + 1;
+	   ifoframefile[0] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+	   memcpy( ifoframefile[0], optarg, optarg_len );
            G1file = 1;
-           ADD_PROCESS_PARAM( "string", "%s", ifoframefile[0] );
+	   ADD_PROCESS_PARAM( "string", "%s", optarg );
            break;
 
          case 'L':
-           strcpy(ifoframefile[3],optarg);
+	   optarg_len = strlen( optarg ) + 1;
+	   ifoframefile[3] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+	   memcpy( ifoframefile[3], optarg, optarg_len );
            L1file = 1;
-           ADD_PROCESS_PARAM( "string", "%s", ifoframefile[3] );
+	   ADD_PROCESS_PARAM( "string", "%s", optarg );
            break;
 
          case 'T':
-           strcpy(ifoframefile[4],optarg);
+	   optarg_len = strlen( optarg ) + 1;
+	   ifoframefile[4] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+	   memcpy( ifoframefile[4], optarg, optarg_len );
            T1file = 1;
-           ADD_PROCESS_PARAM( "string", "%s", ifoframefile[4] );
+	   ADD_PROCESS_PARAM( "string", "%s", optarg );
            break;
 
          case 'V':
-           strcpy(ifoframefile[5],optarg);
-           V1file = 1; 
-           ADD_PROCESS_PARAM( "string", "%s", ifoframefile[5] );
+	   optarg_len = strlen( optarg ) + 1;
+	   ifoframefile[5] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+	   memcpy( ifoframefile[5], optarg, optarg_len );
+           V1file = 1;
+	   ADD_PROCESS_PARAM( "string", "%s", optarg );
            break;
 
          case 'Z':
-           strcpy(ifoframefile[2],optarg);
+	   optarg_len = strlen( optarg ) + 1;
+	   ifoframefile[2] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+	   memcpy( ifoframefile[2], optarg, optarg_len );
            H2file = 1;
-           ADD_PROCESS_PARAM( "string", "%s", ifoframefile[2] );
+	   ADD_PROCESS_PARAM( "string", "%s", optarg );
            break;
 
          case 'B':
-           /* create storaged for the ifo-tag */
+           /* create storage for the user-tag */
            optarg_len = strlen( optarg ) + 1;
            userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
            memcpy( userTag, optarg, optarg_len );
@@ -1269,7 +1562,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
            break;
 
          case 'I':
-           /* create storaged for the ifo-tag */
+           /* create storage for the ifo-tag */
            optarg_len = strlen( optarg ) + 1;
            ifoTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
            memcpy( ifoTag, optarg, optarg_len );
@@ -1312,18 +1605,18 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
            break;
 
          case 'l':
-           numPointsSeg = atof(optarg);
-           ADD_PROCESS_PARAM("float", "%e", numPointsSeg );
+           numPointsSeg = (INT4) atoi(optarg);
+           ADD_PROCESS_PARAM("int", "%d", numPointsSeg );
            break;
 
          case 'e':
-           dynRangeExponent = atof(optarg);
+           dynRangeExponent = (REAL4) atof(optarg);
            ADD_PROCESS_PARAM("float", "%e", dynRangeExponent );
            break;
 
          case 'r': 
-           sampleRate = atof(optarg);
-           ADD_PROCESS_PARAM("float", "%e", sampleRate );
+           sampleRate = (INT4) atoi(optarg);
+           ADD_PROCESS_PARAM("int", "%d", sampleRate );
            break;
 
          case 'u':
@@ -1347,38 +1640,44 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
            /* Read in time-slide steps for all detectors */
            /* Read in time-slide step for G1 */
          case 'g': 
-           slideStep[0] = atof(optarg);
+           slideStep[0] = (REAL8) atof(optarg);
            ADD_PROCESS_PARAM("float", "%e", slideStep[0] );
            break;
 
            /* Read in time-slide step for H1 */
          case 'W': 
-           slideStep[1] = atof(optarg);
+           slideStep[1] = (REAL8) atof(optarg);
            ADD_PROCESS_PARAM("float", "%e", slideStep[1]);
            break;
 
            /* Read in time-slide step for H2 */
          case 'X': 
-           slideStep[2] = atof(optarg);
+           slideStep[2] = (REAL8) atof(optarg);
            ADD_PROCESS_PARAM("float", "%e", slideStep[2]);
            break;
 
            /* Read in time-slide step for L1 */
          case 'Y': 
-           slideStep[3] = atof(optarg);
+           slideStep[3] = (REAL8) atof(optarg);
            ADD_PROCESS_PARAM("float", "%e", slideStep[3]);
            break;
 
            /* Read in time-slide step for T1 */
          case 't': 
-           slideStep[4] = atof(optarg);
+           slideStep[4] = (REAL8) atof(optarg);
            ADD_PROCESS_PARAM("float", "%e", slideStep[4]);
            break;
 
            /* Read in time-slide step for V1 */
          case 'w': 
-           slideStep[5] = atof(optarg);
+           slideStep[5] = (REAL8) atof(optarg);
            ADD_PROCESS_PARAM("float", "%e", slideStep[5]);
+           break;
+
+           /* Read in time-slide step for V1 */
+         case 'n': 
+           numCohTrigs = (INT4) atol(optarg);
+           ADD_PROCESS_PARAM("int", "%d", numCohTrigs );
            break;
 
          case 'v':
