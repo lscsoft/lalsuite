@@ -42,7 +42,7 @@ struct tagFlatLatticeTiling {
   REAL8 generator_norm_thickness;
 
   /* Number of bounds on the parameter space */
-  int num_bounds;
+  UINT4 num_bounds;
 
   /* Bounds on the parameter space, in real parameter coordinates */
   gsl_matrix *param_bound_normal;

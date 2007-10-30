@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
     LALPrintError("%s\nERROR: LALCalloc failed to allocate format_string\n", rcsid);
     return EXIT_FAILURE;
   }
-  strcpy(format_string, "%0.8g");
+  strcpy(format_string, "%0.16g");
 
   /*
    *  Read in command line and check consistency

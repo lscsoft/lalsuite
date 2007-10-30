@@ -47,7 +47,7 @@ NRCSID(FLATLATTICETILINGC, "$Id$");
  */
 FlatLatticeTiling *XLALCreateFlatLatticeTiling(
 					       UINT4 dimension, /**< [in] Dimension of the parameter space */
-					       REAL8 mismatch   /**< [in] Maximum mismatch of the parameter space templates */
+					       REAL8 mismatch  /**< [in] Maximum mismatch of the parameter space templates */
 					       )
 {
 
@@ -182,8 +182,8 @@ void XLALDestroyFlatLatticeTiling(
  */
 int XLALAddParameterSpaceBound(
 			       FlatLatticeTiling* tiling, /**< [in] Structure */
-			       UINT4 num_bounds,          /**< [in] Number of bounds */
-			       UINT4 bound_index,         /**< [in] Index of this bound */
+			       UINT4 num_bounds,           /**< [in] Number of bounds */
+			       UINT4 bound_index,          /**< [in] Index of this bound */
 			       gsl_vector *normal,        /**< [in] Normal vector of bound */
 			       gsl_vector *origin         /**< [in] Origin of bound */
 			       )
@@ -748,7 +748,7 @@ int XLALSetupFlatLatticeTiling(
   gsl_vector_int_set(tiling->iter_order, 0, tiling->line_index);
   j = 0;
   for (i = 1; i < n; ++j) {
-    if (j != tiling->line_index) {
+    if (j != (UINT4)tiling->line_index) {
       gsl_vector_int_set(tiling->iter_order, i++, j);
     }
   }
@@ -779,8 +779,8 @@ int XLALSetupFlatLatticeTiling(
  *  Finds the next template point in the flat lattice tiling described by the structure
  */
 int XLALNextFlatLatticePoint(
-			       FlatLatticeTiling *tiling /**< [in] Structure */
-			       )
+			     FlatLatticeTiling *tiling /**< [in] Structure */
+			     )
 
 {
 
@@ -870,12 +870,10 @@ int XLALNextFlatLatticePoint(
       /* Initialise line bounds */
       line_lower = GSL_NEGINF;
       line_upper = GSL_POSINF;
-/*       line_lower = tiling->line_latt_upper; */
-/*       line_upper = tiling->line_latt_lower; */
 
       /* Initialise start and direction of line */
       for (i = 0; i < n; ++i) {
-	if (i != tiling->line_index) {
+	if (i != (UINT4)tiling->line_index) {
 	  gsl_vector_set(tiling->line_start, i, gsl_vector_long_get(tiling->latt_current, i));
 	}
       }
@@ -939,18 +937,23 @@ int XLALNextFlatLatticePoint(
 
     }
 
-    /* Transform point from lattice to parameter space */
-    for (i = 0; i < n; ++i) {
-      point = gsl_vector_get(tiling->param_lower, i);
-      for (j = 0; j < tiling->dimension; ++j) {
-	point += gsl_matrix_get(tiling->latt_to_param, i, j) * gsl_vector_long_get(tiling->latt_current, j);
-      }
-      gsl_vector_set(tiling->current, i, point);
-    }
+    /* If point in bounds ... */
+    if (in_bounds) {
 
-    /* Final check to see if point is in parameter space (used for curved spaces) */
-    if (tiling->in_param_space != NULL) {
-      in_bounds = (tiling->in_param_space)(tiling);
+      /* Transform point from lattice to parameter space */
+      for (i = 0; i < n; ++i) {
+	point = gsl_vector_get(tiling->param_lower, i);
+	for (j = 0; j < tiling->dimension; ++j) {
+	  point += gsl_matrix_get(tiling->latt_to_param, i, j) * gsl_vector_long_get(tiling->latt_current, j);
+	}
+	gsl_vector_set(tiling->current, i, point);
+      }
+      
+      /* Final check to see if point is in parameter space (used for curved spaces) */
+      if (tiling->in_param_space != NULL) {
+	/*	in_bounds = (tiling->in_param_space)(tiling);*/
+      }
+
     }
 
   }
