@@ -2448,6 +2448,8 @@ int main( int argc, char *argv[] )
                   bankCurrent->end_time.gpsNanoSeconds;
                 tempTmplt->event_id->id = bankCurrent->event_id->id;
 
+                tempTmplt->sigmasq = candle.sigmasq;                		
+
                 LAL_CALL( LALFindChirpCreateCoherentInput( &status,
                       &coherentInputData, fcFilterParams->cVec, 
                       tempTmplt, 0.5, numPoints / 4 ), &status );
