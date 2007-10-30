@@ -397,10 +397,96 @@ LALCoherentInspiralFilterParamsInit (
         LALCreateVector (status->statusPtr, &(outputPtr->cohSNRVec->data), 
 		         params->numPoints);
         BEGINFAIL( status ) {
-          TRY( LALU2DestroyVector (status->statusPtr, &(outputPtr->detIDVec)),
-	       status);
+	  if( outputPtr->detIDVec )
+	    {
+	      TRY( LALU2DestroyVector (status->statusPtr, &(outputPtr->detIDVec)),
+		   status);
+	      LALFree( outputPtr->detIDVec );
+	      outputPtr->detIDVec = NULL;
+	    }
           LALFree( outputPtr->cohSNRVec );
           outputPtr->cohSNRVec = NULL;
+          LALFree( outputPtr->detectorVec );
+          outputPtr->detectorVec = NULL;
+          LALFree( outputPtr );
+          *output = NULL;
+        }
+        ENDFAIL( status );    
+    }
+
+  /*
+   *
+   * create vector to store H1-H2 coherent phase difference if outputting it
+   *
+   */
+
+  if( params->cohPhaseDiffOut )
+    {
+      outputPtr->cohPhaseDiffVec = (REAL4TimeSeries *) 
+	LALCalloc( 1, sizeof(REAL4TimeSeries) );
+      LALCreateVector (status->statusPtr, &(outputPtr->cohPhaseDiffVec->data), 
+		       params->numPoints);
+      BEGINFAIL( status ) {
+	if( params->cohSNROut )
+	  {
+	    TRY( LALDestroyVector( status->statusPtr, &(outputPtr->cohSNRVec->data)),
+		 status); 
+	    LALFree( outputPtr->cohSNRVec );
+	    outputPtr->cohSNRVec = NULL;
+	  } 
+	if( outputPtr->detIDVec )
+	  {
+	    TRY( LALU2DestroyVector (status->statusPtr, &(outputPtr->detIDVec)),
+		 status);
+	    LALFree( outputPtr->detIDVec );
+	    outputPtr->detIDVec = NULL;
+	  }
+	LALFree( outputPtr->cohPhaseDiffVec );
+	outputPtr->cohPhaseDiffVec = NULL;
+	LALFree( outputPtr->detectorVec );
+	outputPtr->detectorVec = NULL;
+	LALFree( outputPtr );
+	*output = NULL;
+      }
+      ENDFAIL( status );    
+    }
+  
+  /*
+   *
+   * create vector to store H1-H2 null statistic if outputting it
+   *
+   */
+
+  if( params->nullStatOut )
+    {
+        outputPtr->nullStatVec = (REAL4TimeSeries *) 
+          LALCalloc( 1, sizeof(REAL4TimeSeries) );
+        LALCreateVector (status->statusPtr, &(outputPtr->nullStatVec->data), 
+		         params->numPoints);
+	BEGINFAIL( status ) {
+	  if( params->cohPhaseDiffOut )
+	    {
+	      TRY( LALDestroyVector( status->statusPtr, &(outputPtr->cohPhaseDiffVec->data)),
+		   status); 
+	      LALFree( outputPtr->cohPhaseDiffVec );
+	      outputPtr->cohPhaseDiffVec = NULL;
+	    } 
+	  if( params->cohSNROut )
+	    {
+	      TRY( LALDestroyVector( status->statusPtr, &(outputPtr->cohSNRVec->data)),
+		   status); 
+	      LALFree( outputPtr->cohSNRVec );
+	      outputPtr->cohSNRVec = NULL;
+	    } 
+	  if( outputPtr->detIDVec )
+	    {
+	      TRY( LALU2DestroyVector (status->statusPtr, &(outputPtr->detIDVec)),
+		   status);
+	      LALFree( outputPtr->detIDVec );
+	      outputPtr->detIDVec = NULL;
+	    }
+          LALFree( outputPtr->nullStatVec );
+          outputPtr->nullStatVec = NULL;
           LALFree( outputPtr->detectorVec );
           outputPtr->detectorVec = NULL;
           LALFree( outputPtr );
@@ -422,6 +508,20 @@ LALCoherentInspiralFilterParamsInit (
   if ( !(outputPtr->detectorVec) ) {
     ABORT( status, COHERENTINSPIRALH_EALOC, COHERENTINSPIRALH_MSGEALOC);
     BEGINFAIL( status ) {
+      if( params->nullStatOut )
+	{
+	  TRY( LALDestroyVector( status->statusPtr, &(outputPtr->nullStatVec->data)),
+	       status); 
+	  LALFree( outputPtr->nullStatVec );
+	  outputPtr->nullStatVec = NULL;
+	} 
+      if( params->cohPhaseDiffOut )
+	{
+	  TRY( LALDestroyVector( status->statusPtr, &(outputPtr->cohPhaseDiffVec->data)),
+	       status); 
+	  LALFree( outputPtr->cohPhaseDiffVec );
+	  outputPtr->cohPhaseDiffVec = NULL;
+	} 
       if( params->cohSNROut )
 	{
           TRY( LALDestroyVector( status->statusPtr, &(outputPtr->cohSNRVec->data)),
@@ -429,8 +529,13 @@ LALCoherentInspiralFilterParamsInit (
           LALFree( outputPtr->cohSNRVec );
           outputPtr->cohSNRVec = NULL;
 	} 
-      TRY( LALU2DestroyVector( status->statusPtr, &(outputPtr->detIDVec)),
-	   status);
+      if( outputPtr->detIDVec )
+	{
+	  TRY( LALU2DestroyVector (status->statusPtr, &(outputPtr->detIDVec)),
+	       status);
+	  LALFree( outputPtr->detIDVec );
+	  outputPtr->detIDVec = NULL;
+	}
       LALFree( outputPtr->detectorVec );
       outputPtr->detectorVec = NULL;
       LALFree( outputPtr );
@@ -446,6 +551,20 @@ LALCoherentInspiralFilterParamsInit (
     ABORT( status, COHERENTINSPIRALH_EALOC, COHERENTINSPIRALH_MSGEALOC);
     BEGINFAIL( status ) {
       LALFree( outputPtr->detectorVec );
+      if( params->nullStatOut )
+	{
+	  TRY( LALDestroyVector( status->statusPtr, &(outputPtr->nullStatVec->data)),
+	       status); 
+	  LALFree( outputPtr->nullStatVec );
+	  outputPtr->nullStatVec = NULL;
+	} 
+      if( params->cohPhaseDiffOut )
+	{
+	  TRY( LALDestroyVector( status->statusPtr, &(outputPtr->cohPhaseDiffVec->data)),
+	       status); 
+	  LALFree( outputPtr->cohPhaseDiffVec );
+	  outputPtr->cohPhaseDiffVec = NULL;
+	} 
       if( params->cohSNROut )
 	{
           TRY( LALDestroyVector( status->statusPtr, &(outputPtr->cohSNRVec->data)),
@@ -453,8 +572,13 @@ LALCoherentInspiralFilterParamsInit (
           LALFree( outputPtr->cohSNRVec );
           outputPtr->cohSNRVec = NULL;
 	}
-      TRY( LALU2DestroyVector( status->statusPtr, &(outputPtr->detIDVec)),
-	   status);
+      if( outputPtr->detIDVec )
+	{
+	  TRY( LALU2DestroyVector (status->statusPtr, &(outputPtr->detIDVec)),
+	       status);
+	  LALFree( outputPtr->detIDVec );
+	  outputPtr->detIDVec = NULL;
+	}
       LALFree( outputPtr->detectorVec );
       outputPtr->detectorVec = NULL;
       LALFree( outputPtr );
@@ -463,7 +587,47 @@ LALCoherentInspiralFilterParamsInit (
     ENDFAIL( status );
   }
 
- 
+  /* CHECK: Fixed the maximum number of participating ifos to be LAL_NUM_IFO */
+  LALDCreateVector(status->statusPtr, &(outputPtr->sigmasqVec), LAL_NUM_IFO );
+  if ( !(outputPtr->sigmasqVec ) ) {
+    ABORT( status, COHERENTINSPIRALH_EALOC, COHERENTINSPIRALH_MSGEALOC);
+    BEGINFAIL( status ) {
+      if( params->nullStatOut )
+	{
+	  TRY( LALDestroyVector( status->statusPtr, &(outputPtr->nullStatVec->data)),
+	       status); 
+	  LALFree( outputPtr->nullStatVec );
+	  outputPtr->nullStatVec = NULL;
+	} 
+      if( params->cohPhaseDiffOut )
+	{
+	  TRY( LALDestroyVector( status->statusPtr, &(outputPtr->cohPhaseDiffVec->data)),
+	       status); 
+	  LALFree( outputPtr->cohPhaseDiffVec );
+	  outputPtr->cohPhaseDiffVec = NULL;
+	} 
+      if( params->cohSNROut )
+	{
+          TRY( LALDestroyVector( status->statusPtr, &(outputPtr->cohSNRVec->data)),
+	       status);   
+          LALFree( outputPtr->cohSNRVec );
+          outputPtr->cohSNRVec = NULL;
+	}
+      if( outputPtr->detIDVec )
+	{
+	  TRY( LALU2DestroyVector (status->statusPtr, &(outputPtr->detIDVec)),
+	       status);
+	  LALFree( outputPtr->detIDVec );
+	  outputPtr->detIDVec = NULL;
+	}
+      LALFree( outputPtr->detectorVec );
+      outputPtr->detectorVec = NULL;
+      LALFree( outputPtr );
+      *output = NULL;
+    }
+    ENDFAIL( status );
+  }
+
   /* normal exit */
   DETATCHSTATUSPTR( status );
   RETURN( status );
@@ -508,6 +672,9 @@ LALCoherentInspiralFilterParamsFinalize (
   LALU2DestroyVector(status->statusPtr, &(outputPtr->detIDVec) ); 
   CHECKSTATUSPTR( status );
 
+  LALDDestroyVector(status->statusPtr, &(outputPtr->sigmasqVec) );
+  CHECKSTATUSPTR( status );
+
   /*
    *
    * destroy coherent SNR vector, if it exists
@@ -518,6 +685,30 @@ LALCoherentInspiralFilterParamsFinalize (
     CHECKSTATUSPTR( status );
     LALFree( outputPtr->cohSNRVec );
     outputPtr->cohSNRVec = NULL;
+  }
+  
+  /*
+   *
+   * destroy H1-H2 coherent phase difference vector, if it exists
+   *
+   */
+  if ( outputPtr->cohPhaseDiffVec ) {
+    LALDestroyVector( status->statusPtr, &(outputPtr->cohPhaseDiffVec->data) );
+    CHECKSTATUSPTR( status );
+    LALFree( outputPtr->cohPhaseDiffVec );
+    outputPtr->cohPhaseDiffVec = NULL;
+  }
+  
+  /*
+   *
+   * destroy H1-H2 null statistic vector, if it exists
+   *
+   */
+  if ( outputPtr->nullStatVec ) {
+    LALDestroyVector( status->statusPtr, &(outputPtr->nullStatVec->data) );
+    CHECKSTATUSPTR( status );
+    LALFree( outputPtr->nullStatVec );
+    outputPtr->nullStatVec = NULL;
   }
   
   LALFree( outputPtr );
@@ -533,8 +724,8 @@ LALCoherentInspiralFilterParamsFinalize (
 void
 LALCoherentInspiralEstimatePsiEpsilonCoaPhase (
     LALStatus                             *status,
-    INT4                                   caseID[6],
-    REAL8                                  sigmasq[4],
+    INT4                                   caseID[LAL_NUM_IFO],
+    REAL8                                 *sigmasq,
     REAL4                                  theta,
     REAL4                                  phi,
     COMPLEX8                               cData[4],
@@ -1065,7 +1256,7 @@ LALCoherentInspiralEstimatePsiEpsilonCoaPhase (
 void
 LALCoherentInspiralEstimateDistance (
     LALStatus                             *status,
-    REAL8                                  sigmasq[4],
+    REAL8                                 *sigmasq,
     REAL4                                  templateNorm,
     REAL8                                  deltaT,
     INT4                                   segmentLength,  /* time pts */
@@ -1080,16 +1271,10 @@ LALCoherentInspiralEstimateDistance (
 	      COHERENTINSPIRALFILTERC );
   ATTATCHSTATUSPTR( status );
 
-  /* Check the validity of the input params */
 
-  for( i = 0; i < 4; i++ )
-    {
-      sigmaCoherent += sigmasq[i];
-    }
-
-  /* CHECK: The following formula is not general enough for non-aligned ifos;
-     will generalize it in the next update */
-  *distance = (2 / coherentSNR) * sqrt( (sigmaCoherent * deltaT) / segmentLength );
+  /* CHECK: Assume that sigma[0] (sigma[1]) are of H1 (H2) and calculate 
+     the effective distance for the H1-H2 pair */
+  *distance = sqrt( 0.5 * (sigmasq[0] + sigmasq[1]) * deltaT / segmentLength) / coherentSNR;
 
   /* normal exit */
   DETATCHSTATUSPTR( status );
@@ -1105,6 +1290,7 @@ LALCoherentInspiralFilterSegment (
     )
 {
   INT4                                caseID[6] = {0,0,0,0,0,0};
+  REAL8                              *sigmasq = NULL;
   INT4                                i,q,w,m,j,k,l;
   INT4                                wTemp = 0;
   INT4                                qTemp = 0;
@@ -1124,7 +1310,7 @@ LALCoherentInspiralFilterSegment (
   INT4                                segmentLength = 0;
   REAL4                               buffer = 0.0; /*account for timing errors*/
   REAL4                               timingError = 0.0; /*0.00025;*/  /* allowed timing error of 2 ms */
-  REAL4                               s[2][3];/*s[4][3]up to 4 distances;in 3D space*/
+  REAL4                               s[4][3];/* up to 4 distances;in 3D space*/
   REAL8                               deltaT = 0.0;
   REAL4                               nHatVect[3] = {0,0,0};
   REAL4                               distance[4] = {0,0,0,0};
@@ -1144,16 +1330,24 @@ LALCoherentInspiralFilterSegment (
   COMPLEX8                            cDataTemp[4];
   COMPLEX8                            quadTemp[6];
   UINT4                               cohSNROut;
-  REAL4                               cohSNRLocal = 0;
+  REAL4                               cohSNRLocal = 0.0;
   REAL4                               cohSNRSq = 0.0;
   REAL4                               cohSNRLocalSq = 0.0;
+  REAL4                               cohSNRLocalRe = 0.0;
+  REAL4                               cohSNRLocalIm = 0.0;
   REAL4                               cohSNRLocalSq1 = 0.0;
   REAL4                               cohSNRLocalSq2 = 0.0;
   LALDetector                        *detector = NULL;
   COMPLEX8TimeSeries                 *cData[4] = {NULL,NULL,NULL,NULL};
   MultiInspiralTable                 *thisEvent = NULL; 
   CoherentInspiralBeamVector         *beamVec = NULL;
-  
+  UINT4                               nullStatOut;
+  REAL4                               nullStatRe    = 0.0 ;
+  REAL4                               nullStatIm    = 0.0;
+  REAL4                               nullNorm      = 0.0;
+  REAL4                               cohSnrRe      = 0.0;
+  REAL4                               cohSnrIm      = 0.0;
+
   INITSTATUS( status, "LALCoherentInspiralFilterSegment", 
 	      COHERENTINSPIRALFILTERC );
   ATTATCHSTATUSPTR( status );
@@ -1206,6 +1400,7 @@ LALCoherentInspiralFilterSegment (
   cohSNRThreshSq = params->cohSNRThresh * params->cohSNRThresh;
   cohSNRThresh  = params->cohSNRThresh;
   cohSNROut = params->cohSNROut;
+  nullStatOut = params->nullStatOut;
   deltaT = params->deltaT;
   segmentLength = params->segmentLength;
   chirpTime = params->chirpTime;
@@ -1269,7 +1464,8 @@ LALCoherentInspiralFilterSegment (
   
   /*** get detector-site locations */
   detector = params->detectorVec->detector;
-  
+  sigmasq = params->sigmasqVec->data;
+
   
   /*Now compute the position vector of all detectors relative to first detector*/
   for ( l=1 ; l < (INT4) params->numDetectors ; l++) {
@@ -1278,356 +1474,338 @@ LALCoherentInspiralFilterSegment (
 	s[l][i] = (REAL4) ( detector[l].location[i] - detector[0].location[i]);
       }
   }
-
+  
   for ( l=0 ; l < (INT4) params->numDetectors ; l++) {
     cData[l] = input->multiCData->cData[l];
   }
-
+  
   /* Now construct the appropriate coherent SNR */ 
   switch (params->numDetectors)  {
   case 2:
-    if(caseID[1] && caseID[2])  /* Network: H1 and H2*/
-      {
-	m = 0;
-	for (k=0;k<(INT4)numPoints;k++)
-	  {
-	    REAL4 cohSNR = 0.0;
+    /* Network: H1 and H2*/
+    if(caseID[1] && caseID[2]) {
+      m = 0;
+      for (k=0;k<(INT4)numPoints;k++) {
+	REAL4 cohSNR = 0.0;
 
-	    for (m=k-buffer; m<k+buffer; m++)
-	      {
-		if(m >=0 && m < (INT4) numPoints)
-		  {
-		    cohSNRLocal = sqrt( (cData[0]->data->data[k].re + 
-					 cData[1]->data->data[m].re) * (cData[0]->data->data[k].re + 
-									cData[1]->data->data[m].re) + (cData[0]->data->data[k].im + 
-												       cData[1]->data->data[m].im) * (cData[0]->data->data[k].im + 
-																      cData[1]->data->data[m].im));
-		    
-		    
-		    if(cohSNRLocal > cohSNR)
-		      {
-			cohSNR = cohSNRLocal;
-			quadTemp[0].re=cData[0]->data->data[k].re;
-			quadTemp[0].im=cData[0]->data->data[k].im;
-			quadTemp[1].re=cData[1]->data->data[m].re;
-			quadTemp[1].im=cData[1]->data->data[m].im;
-		      }
-		  }
-		if( cohSNROut ) params->cohSNRVec->data->data[k]= cohSNR;
+	for (m=k-buffer; m<k+buffer; m++) {
+	  if(m >=0 && m < (INT4) numPoints) {
+	    cohSNRLocalRe = sqrt(sigmasq[1])*cData[0]->data->data[k].re
+	      + sqrt(sigmasq[2])*cData[1]->data->data[m].re;
+	    cohSNRLocalIm = sqrt(sigmasq[1])*cData[0]->data->data[k].im
+	      + sqrt(sigmasq[2])*cData[1]->data->data[m].im;
 	    
-		if ( cohSNR > cohSNRThresh ) {
-		     if ( !*eventList ) {
-		          /* store the start of the crossing */
-		          eventStartIdx = k;
-		
-			  /* if this is the first event, start the list */
-
-			  thisEvent = *eventList = (MultiInspiralTable *) 
-			    LALCalloc( 1, sizeof(MultiInspiralTable) );
-			  
-			  if ( !thisEvent )
-			    {
-			      ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
-			    }
-			  
-			  /* record the data that we need for the clustering algorithm */          
-			  tempTime = cData[0]->epoch.gpsSeconds + 1.0e-9 * cData[0]->epoch.gpsNanoSeconds + k * deltaT;
-			  fracpart = modf( tempTime, &intpart );
-			  thisEvent->end_time.gpsSeconds = (INT4) intpart;
-			  thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
-			  
-	    found=0;			
-            if(caseID[0])
-                {
-                thisEvent->g1quad.re=quadTemp[found].re;	    
-                thisEvent->g1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->g1quad.re=0;	    
-                thisEvent->g1quad.im=0;
-                }
-            if(caseID[1])
-                {
-                thisEvent->h1quad.re=quadTemp[found].re;	    
-                thisEvent->h1quad.im=quadTemp[found].im;
-        	    found=found+1;
-                }
-            else
-                {
-                thisEvent->h1quad.re=0;	    
-                thisEvent->h1quad.im=0;
-                }
-            if(caseID[2])
-                {
+	    cohSNRLocal = sqrt( (cohSNRLocalRe*cohSNRLocalRe + cohSNRLocalIm*cohSNRLocalIm) / 
+				(sigmasq[1] + sigmasq[2] ) );
+	    
+	    if(cohSNRLocal > cohSNR) {
+	      cohSNR = cohSNRLocal;
+	      quadTemp[0].re=cData[0]->data->data[k].re;
+	      quadTemp[0].im=cData[0]->data->data[k].im;
+	      quadTemp[1].re=cData[1]->data->data[m].re;
+	      quadTemp[1].im=cData[1]->data->data[m].im;
+	    }
+	  }
+	  if( cohSNROut ) params->cohSNRVec->data->data[k]= cohSNR;
+	  
+	  if ( cohSNR > cohSNRThresh ) {
+	    if ( !*eventList ) {
+	      /* store the start of the crossing */
+	      eventStartIdx = k;
+	      
+	      /* if this is the first event, start the list */
+	      
+	      thisEvent = *eventList = (MultiInspiralTable *) 
+		LALCalloc( 1, sizeof(MultiInspiralTable) );
+	      
+	      if ( !thisEvent ) {
+		ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+	      }
+	      
+	      /* record the data that we need for the clustering algorithm */          
+	      tempTime = cData[0]->epoch.gpsSeconds + 1.0e-9 * cData[0]->epoch.gpsNanoSeconds + k * deltaT;
+	      fracpart = modf( tempTime, &intpart );
+	      thisEvent->end_time.gpsSeconds = (INT4) intpart;
+	      thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
+	      
+	      found=0; /* ifo counter */	
+	      if(caseID[0]) {
+		thisEvent->g1quad.re=quadTemp[found].re;	    
+		thisEvent->g1quad.im=quadTemp[found].im;
+		found=found+1;
+	      }
+	      else {
+		thisEvent->g1quad.re=0;	    
+		thisEvent->g1quad.im=0;
+	      }
+	      if(caseID[1]) {
+		thisEvent->h1quad.re=quadTemp[found].re;	    
+		thisEvent->h1quad.im=quadTemp[found].im;
+		found=found+1;
+	      }
+	      else {
+		thisEvent->h1quad.re=0;	    
+		thisEvent->h1quad.im=0;
+	      }
+	      if(caseID[2]) {
                 thisEvent->h2quad.re=quadTemp[found].re;	    
                 thisEvent->h2quad.im=quadTemp[found].im;
                 found=found+1;
-                }
-            else
-                { 
+	      }
+	      else {
                 thisEvent->h2quad.re=0;	    
                 thisEvent->h2quad.im=0;
-                }
-            if(caseID[3])
-                {
+	      }
+	      if(caseID[3]) {
                 thisEvent->l1quad.re=quadTemp[found].re;	    
                 thisEvent->l1quad.im=quadTemp[found].im;
                 found=found+1;		   
-                }
-            else
-                {
+	      }
+	      else {
                 thisEvent->l1quad.re=0;	    
                 thisEvent->l1quad.im=0;
-                }
-            if(caseID[4])
-                {
+	      }
+	      if(caseID[4]) {
                 thisEvent->t1quad.re=quadTemp[found].re;	    
                 thisEvent->t1quad.im=quadTemp[found].im;
                 found=found+1;
-                }
-            else
-                {
+	      }
+	      else {
                 thisEvent->t1quad.re=0;	    
                 thisEvent->t1quad.im=0;
-                }
-            if(caseID[5])
-                {
+	      }
+	      if(caseID[5]) {
                 thisEvent->v1quad.re=quadTemp[found].re;	    
                 thisEvent->v1quad.im=quadTemp[found].im;
                 found=found+1;
-                }
-            else
-                {
+	      }
+	      else {
                 thisEvent->v1quad.re=0;	    
                 thisEvent->v1quad.im=0;
-                }		
+	      }		
+	      
+	      
+	      thisEvent->snr = cohSNR;
+	      strcpy(thisEvent->ifos,caseStr);
+	      thisEvent->mass1 = input->tmplt->mass1;
+	      thisEvent->mass2 = input->tmplt->mass2;
+	      thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
+	      thisEvent->eta = input->tmplt->eta;		       
+	      /*Calculate distance/effective distance */
+	      LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+	      thisEvent->eff_distance = distanceEstimate;
+	      
+	      tempTime = 0.0;
+	      fracpart = 0.0;
+	      intpart = 0.0;
+	      fflush( stdout ); 
 
-
-			  thisEvent->snr = cohSNR;
-			  strcpy(thisEvent->ifos,caseStr);
-			  thisEvent->mass1 = input->tmplt->mass1;
-			  thisEvent->mass2 = input->tmplt->mass2;
-			  thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
-			  thisEvent->eta = input->tmplt->eta;		       
-			  /*Calculate distance/effective distance */
-			  LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
-			  thisEvent->eff_distance = distanceEstimate;
-			  
-			  
-			  
-			  tempTime = 0.0;
-			  fracpart = 0.0;
-			  intpart = 0.0;
-			  fflush( stdout ); 
-			  
-		     } /* done creating a new event */
-		     else if (params->maximizeOverChirp && k <= (eventStartIdx + deltaEventIndex) && cohSNR > thisEvent->snr ) {
-		       /* if this is the same event, update the maximum */
-		       
-		       tempTime = cData[0]->epoch.gpsSeconds + 1.0e-9 * cData[0]->epoch.gpsNanoSeconds + k * deltaT;
-		       fracpart = modf( tempTime, &intpart );
-		       thisEvent->end_time.gpsSeconds = (INT4) intpart;
-		       thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
-
-	        found=0;			
-            if(caseID[0])
+	    } /* done creating a new event; closes "if ( !*eventList )" */
+	    else if (params->maximizeOverChirp && k <= (eventStartIdx + deltaEventIndex) && cohSNR > thisEvent->snr ) {
+	      /* if this is the same event, update the maximum */
+	      
+	      tempTime = cData[0]->epoch.gpsSeconds + 1.0e-9 * cData[0]->epoch.gpsNanoSeconds + k * deltaT;
+	      fracpart = modf( tempTime, &intpart );
+	      thisEvent->end_time.gpsSeconds = (INT4) intpart;
+	      thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
+	      
+	      found=0;			
+	      if(caseID[0])
                 {
-                thisEvent->g1quad.re=quadTemp[found].re;	    
-                thisEvent->g1quad.im=quadTemp[found].im;
-                found=found+1;
+		  thisEvent->g1quad.re=quadTemp[found].re;	    
+		  thisEvent->g1quad.im=quadTemp[found].im;
+		  found=found+1;
                 }
-            else
+	      else
                 {
-                thisEvent->g1quad.re=0;	    
-                thisEvent->g1quad.im=0;
+		  thisEvent->g1quad.re=0;	    
+		  thisEvent->g1quad.im=0;
                 }
-            if(caseID[1])
+	      if(caseID[1])
                 {
-                thisEvent->h1quad.re=quadTemp[found].re;	    
-                thisEvent->h1quad.im=quadTemp[found].im;
-        	    found=found+1;
+		  thisEvent->h1quad.re=quadTemp[found].re;	    
+		  thisEvent->h1quad.im=quadTemp[found].im;
+		  found=found+1;
                 }
-            else
+	      else
                 {
-                thisEvent->h1quad.re=0;	    
-                thisEvent->h1quad.im=0;
+		  thisEvent->h1quad.re=0;	    
+		  thisEvent->h1quad.im=0;
                 }
-            if(caseID[2])
+	      if(caseID[2])
                 {
-                thisEvent->h2quad.re=quadTemp[found].re;	    
-                thisEvent->h2quad.im=quadTemp[found].im;
-                found=found+1;
+		  thisEvent->h2quad.re=quadTemp[found].re;	    
+		  thisEvent->h2quad.im=quadTemp[found].im;
+		  found=found+1;
                 }
-            else
+	      else
                 { 
-                thisEvent->h2quad.re=0;	    
-                thisEvent->h2quad.im=0;
+		  thisEvent->h2quad.re=0;	    
+		  thisEvent->h2quad.im=0;
                 }
-            if(caseID[3])
+	      if(caseID[3])
                 {
-                thisEvent->l1quad.re=quadTemp[found].re;	    
-                thisEvent->l1quad.im=quadTemp[found].im;
-                found=found+1;		   
+		  thisEvent->l1quad.re=quadTemp[found].re;	    
+		  thisEvent->l1quad.im=quadTemp[found].im;
+		  found=found+1;		   
                 }
-            else
+	      else
                 {
-                thisEvent->l1quad.re=0;	    
-                thisEvent->l1quad.im=0;
+		  thisEvent->l1quad.re=0;	    
+		  thisEvent->l1quad.im=0;
                 }
-            if(caseID[4])
+	      if(caseID[4])
                 {
-                thisEvent->t1quad.re=quadTemp[found].re;	    
-                thisEvent->t1quad.im=quadTemp[found].im;
-                found=found+1;
+		  thisEvent->t1quad.re=quadTemp[found].re;	    
+		  thisEvent->t1quad.im=quadTemp[found].im;
+		  found=found+1;
                 }
-            else
+	      else
                 {
-                thisEvent->t1quad.re=0;	    
-                thisEvent->t1quad.im=0;
+		  thisEvent->t1quad.re=0;	    
+		  thisEvent->t1quad.im=0;
                 }
-            if(caseID[5])
+	      if(caseID[5])
                 {
-                thisEvent->v1quad.re=quadTemp[found].re;	    
-                thisEvent->v1quad.im=quadTemp[found].im;
-                found=found+1;
+		  thisEvent->v1quad.re=quadTemp[found].re;	    
+		  thisEvent->v1quad.im=quadTemp[found].im;
+		  found=found+1;
                 }
-            else
+	      else
                 {
-                thisEvent->v1quad.re=0;	    
-                thisEvent->v1quad.im=0;
+		  thisEvent->v1quad.re=0;	    
+		  thisEvent->v1quad.im=0;
                 }		
-		       thisEvent->snr = cohSNR;
-		       strcpy(thisEvent->ifos, caseStr);
-		       thisEvent->mass1 = input->tmplt->mass1;
-		       thisEvent->mass2 = input->tmplt->mass2;
-		       thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
-		       thisEvent->eta = input->tmplt->eta;
-		       /*Calculate distance/effective distance */
-		       LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
-		       thisEvent->eff_distance = distanceEstimate;
-		       
-		       tempTime = 0.0;
-		       fracpart = 0.0;
-		    intpart = 0.0;
-		    fflush( stdout ); 
-		    
-		     }
-		     else if ( k > (eventStartIdx + deltaEventIndex) || !(params->maximizeOverChirp) ) {
-		       /* clean up this event */
-		       MultiInspiralTable      *lastEvent = NULL;
-		       
-		       /* allocate memory for the newEvent */
-		       lastEvent = thisEvent;
-		       
-		       lastEvent->next = thisEvent = (MultiInspiralTable *) 
-			 LALCalloc( 1, sizeof(MultiInspiralTable) );
-		       if ( !(lastEvent->next) )
-			 {
-			   ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
-			 }
-		       
-		       /* stick minimal data into the event */
-		       
-		       tempTime = cData[0]->epoch.gpsSeconds + 1.0e-9 * cData[0]->epoch.gpsNanoSeconds + k * deltaT;
-		       fracpart = modf( tempTime, &intpart );
-		       thisEvent->end_time.gpsSeconds = (INT4) intpart;
-		       thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
-
-	        found=0;			
-            if(caseID[0])
+	      thisEvent->snr = cohSNR;
+	      strcpy(thisEvent->ifos, caseStr);
+	      thisEvent->mass1 = input->tmplt->mass1;
+	      thisEvent->mass2 = input->tmplt->mass2;
+	      thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
+	      thisEvent->eta = input->tmplt->eta;
+	      /*Calculate distance/effective distance */
+	      LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+	      thisEvent->eff_distance = distanceEstimate;
+	      
+	      tempTime = 0.0;
+	      fracpart = 0.0;
+	      intpart = 0.0;
+	      fflush( stdout ); 
+	      
+	    } /* done updating event; closes "else if ( params->maximizeOverChirp &&...) */
+	    else if ( k > (eventStartIdx + deltaEventIndex) || !(params->maximizeOverChirp) ) {
+	      /* clean up this event */
+	      MultiInspiralTable      *lastEvent = NULL;
+	      
+	      /* allocate memory for the newEvent */
+	      lastEvent = thisEvent;
+	      
+	      lastEvent->next = thisEvent = (MultiInspiralTable *) 
+		LALCalloc( 1, sizeof(MultiInspiralTable) );
+	      if ( !(lastEvent->next) )
+		{
+		  ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+		}
+	      
+	      /* stick minimal data into the event */
+	      
+	      tempTime = cData[0]->epoch.gpsSeconds + 1.0e-9 * cData[0]->epoch.gpsNanoSeconds + k * deltaT;
+	      fracpart = modf( tempTime, &intpart );
+	      thisEvent->end_time.gpsSeconds = (INT4) intpart;
+	      thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
+	      
+	      found=0;			
+	      if(caseID[0])
                 {
-                thisEvent->g1quad.re=quadTemp[found].re;	    
-                thisEvent->g1quad.im=quadTemp[found].im;
-                found=found+1;
+		  thisEvent->g1quad.re=quadTemp[found].re;	    
+		  thisEvent->g1quad.im=quadTemp[found].im;
+		  found=found+1;
                 }
-            else
+	      else
                 {
-                thisEvent->g1quad.re=0;	    
-                thisEvent->g1quad.im=0;
+		  thisEvent->g1quad.re=0;	    
+		  thisEvent->g1quad.im=0;
                 }
-            if(caseID[1])
+	      if(caseID[1])
                 {
-                thisEvent->h1quad.re=quadTemp[found].re;	    
-                thisEvent->h1quad.im=quadTemp[found].im;
-        	    found=found+1;
+		  thisEvent->h1quad.re=quadTemp[found].re;	    
+		  thisEvent->h1quad.im=quadTemp[found].im;
+		  found=found+1;
                 }
-            else
+	      else
                 {
-                thisEvent->h1quad.re=0;	    
-                thisEvent->h1quad.im=0;
+		  thisEvent->h1quad.re=0;	    
+		  thisEvent->h1quad.im=0;
                 }
-            if(caseID[2])
+	      if(caseID[2])
                 {
-                thisEvent->h2quad.re=quadTemp[found].re;	    
-                thisEvent->h2quad.im=quadTemp[found].im;
-                found=found+1;
+		  thisEvent->h2quad.re=quadTemp[found].re;	    
+		  thisEvent->h2quad.im=quadTemp[found].im;
+		  found=found+1;
                 }
-            else
+	      else
                 { 
-                thisEvent->h2quad.re=0;	    
-                thisEvent->h2quad.im=0;
+		  thisEvent->h2quad.re=0;	    
+		  thisEvent->h2quad.im=0;
                 }
-            if(caseID[3])
+	      if(caseID[3])
                 {
-                thisEvent->l1quad.re=quadTemp[found].re;	    
-                thisEvent->l1quad.im=quadTemp[found].im;
-                found=found+1;		   
+		  thisEvent->l1quad.re=quadTemp[found].re;	    
+		  thisEvent->l1quad.im=quadTemp[found].im;
+		  found=found+1;		   
                 }
-            else
+	      else
                 {
-                thisEvent->l1quad.re=0;	    
-                thisEvent->l1quad.im=0;
+		  thisEvent->l1quad.re=0;	    
+		  thisEvent->l1quad.im=0;
                 }
-            if(caseID[4])
+	      if(caseID[4])
                 {
-                thisEvent->t1quad.re=quadTemp[found].re;	    
-                thisEvent->t1quad.im=quadTemp[found].im;
-                found=found+1;
+		  thisEvent->t1quad.re=quadTemp[found].re;	    
+		  thisEvent->t1quad.im=quadTemp[found].im;
+		  found=found+1;
                 }
-            else
+	      else
                 {
-                thisEvent->t1quad.re=0;	    
-                thisEvent->t1quad.im=0;
+		  thisEvent->t1quad.re=0;	    
+		  thisEvent->t1quad.im=0;
                 }
-            if(caseID[5])
+	      if(caseID[5])
                 {
-                thisEvent->v1quad.re=quadTemp[found].re;	    
-                thisEvent->v1quad.im=quadTemp[found].im;
-                found=found+1;
+		  thisEvent->v1quad.re=quadTemp[found].re;	    
+		  thisEvent->v1quad.im=quadTemp[found].im;
+		  found=found+1;
                 }
-            else
+	      else
                 {
-                thisEvent->v1quad.re=0;	    
-                thisEvent->v1quad.im=0;
+		  thisEvent->v1quad.re=0;	    
+		  thisEvent->v1quad.im=0;
                 }		
-
-		       thisEvent->snr = cohSNR;
-		       strcpy(thisEvent->ifos,caseStr);
-		       thisEvent->mass1 = input->tmplt->mass1;
-		       thisEvent->mass2 = input->tmplt->mass2;
-		       thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
-		       thisEvent->eta = input->tmplt->eta;
-		       /*Calculate distance/effective distance */
-		       LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
-		       thisEvent->eff_distance = distanceEstimate;
-		       
-		       /* Need to initialize the event start index to new value */
-		       if( k > (eventStartIdx + deltaEventIndex) )
-			 {
-			   eventStartIdx = k;
-			 }
-		       tempTime = 0.0;
-		       fracpart= 0.0;
-		       intpart = 0.0;
-		       
-		     }
-		} /* matches if (cohSNR > cohSNRThresh) */
-
-	      } /* matches for(m=k-buffer....) */
-	  }/* matches for(k=0;... */
-      }
+	      
+	      thisEvent->snr = cohSNR;
+	      strcpy(thisEvent->ifos,caseStr);
+	      thisEvent->mass1 = input->tmplt->mass1;
+	      thisEvent->mass2 = input->tmplt->mass2;
+	      thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
+	      thisEvent->eta = input->tmplt->eta;
+	      /*Calculate distance/effective distance */
+	      LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+	      thisEvent->eff_distance = distanceEstimate;
+	      
+	      /* Need to initialize the event start index to new value */
+	      if( k > (eventStartIdx + deltaEventIndex) )
+		{
+		  eventStartIdx = k;
+		}
+	      tempTime = 0.0;
+	      fracpart= 0.0;
+	      intpart = 0.0;
+	      
+	    }
+	  } /* matches if (cohSNR > cohSNRThresh) */
+	  
+	} /* matches for(m=k-buffer....) */
+      }/* matches for(k=0;... */
+    }
     else 
       { /* Network: 2 detectors excluding either H1, H2, or both H1 and H2 */
 	/*Here, the time delay looping must start */
@@ -1650,27 +1828,27 @@ LALCoherentInspiralFilterSegment (
 		if(q >= 0 && q < (INT4) numPoints)
 		  {
 		    cohSNRLocal = sqrt(cData[0]->data->data[k].re * 
-                         cData[0]->data->data[k].re + cData[1]->data->data[q].re * 
-                         cData[1]->data->data[q].re + cData[0]->data->data[k].im * 
-                         cData[0]->data->data[k].im + cData[1]->data->data[q].im * 
-                         cData[1]->data->data[q].im);
+			cData[0]->data->data[k].re + cData[1]->data->data[q].re * 
+			cData[1]->data->data[q].re + cData[0]->data->data[k].im * 
+			cData[0]->data->data[k].im + cData[1]->data->data[q].im * 
+			cData[1]->data->data[q].im);
 		    
-
+		    
 		    if(cohSNRLocal > cohSNR)
 		      {
 			cohSNR = cohSNRLocal; 
 			
-                quadTemp[0].re=cData[0]->data->data[k].re;
-                quadTemp[0].im=cData[0]->data->data[k].im;
+			quadTemp[0].re=cData[0]->data->data[k].re;
+			quadTemp[0].im=cData[0]->data->data[k].im;
 		       	quadTemp[1].re=cData[1]->data->data[q].re;
-                quadTemp[1].im=cData[1]->data->data[q].im;
-                w = q;
-		
+			quadTemp[1].im=cData[1]->data->data[q].im;
+			w = q;
+			
 		      }
 		  }
 	      }
 	    if( cohSNROut ) params->cohSNRVec->data->data[k] = cohSNR;
-
+	    
 	    if ( cohSNR > cohSNRThresh ) {
 	      if ( !*eventList ) {
 		/* store the start of the crossing */
@@ -1693,84 +1871,85 @@ LALCoherentInspiralFilterSegment (
 		thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
 
 	        found=0;			
-            if(caseID[0])
-                {
-                thisEvent->g1quad.re=quadTemp[found].re;	    
-                thisEvent->g1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->g1quad.re=0;	    
-                thisEvent->g1quad.im=0;
-                }
-            if(caseID[1])
-                {
-                thisEvent->h1quad.re=quadTemp[found].re;	    
-                thisEvent->h1quad.im=quadTemp[found].im;
+		if(caseID[0])
+		  {
+		    thisEvent->g1quad.re=quadTemp[found].re;	    
+		    thisEvent->g1quad.im=quadTemp[found].im;
+		    found=found+1;
+		  }
+		else
+		  {
+		    thisEvent->g1quad.re=0;	    
+		    thisEvent->g1quad.im=0;
+		  }
+		if(caseID[1])
+		  {
+		    thisEvent->h1quad.re=quadTemp[found].re;	    
+		    thisEvent->h1quad.im=quadTemp[found].im;
         	    found=found+1;
-                }
-            else
-                {
-                thisEvent->h1quad.re=0;	    
-                thisEvent->h1quad.im=0;
-                }
-            if(caseID[2])
-                {
-                thisEvent->h2quad.re=quadTemp[found].re;	    
-                thisEvent->h2quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                { 
-                thisEvent->h2quad.re=0;	    
-                thisEvent->h2quad.im=0;
-                }
-            if(caseID[3])
-                {
-                thisEvent->l1quad.re=quadTemp[found].re;	    
-                thisEvent->l1quad.im=quadTemp[found].im;
-                found=found+1;		   
-                }
-            else
-                {
-                thisEvent->l1quad.re=0;	    
-                thisEvent->l1quad.im=0;
-                }
-            if(caseID[4])
-                {
-                thisEvent->t1quad.re=quadTemp[found].re;	    
-                thisEvent->t1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->t1quad.re=0;	    
-                thisEvent->t1quad.im=0;
-                }
-            if(caseID[5])
-                {
-                thisEvent->v1quad.re=quadTemp[found].re;	    
-                thisEvent->v1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->v1quad.re=0;	    
-                thisEvent->v1quad.im=0;
-                }		
-
+		  }
+		else
+		  {
+		    thisEvent->h1quad.re=0;	    
+		    thisEvent->h1quad.im=0;
+		  }
+		if(caseID[2])
+		  {
+		    thisEvent->h2quad.re=quadTemp[found].re;	    
+		    thisEvent->h2quad.im=quadTemp[found].im;
+		    found=found+1;
+		  }
+		else
+		  { 
+		    thisEvent->h2quad.re=0;	    
+		    thisEvent->h2quad.im=0;
+		  }
+		if(caseID[3])
+		  {
+		    thisEvent->l1quad.re=quadTemp[found].re;	    
+		    thisEvent->l1quad.im=quadTemp[found].im;
+		    found=found+1;		   
+		  }
+		else
+		  {
+		    thisEvent->l1quad.re=0;	    
+		    thisEvent->l1quad.im=0;
+		  }
+		if(caseID[4])
+		  {
+		    thisEvent->t1quad.re=quadTemp[found].re;	    
+		    thisEvent->t1quad.im=quadTemp[found].im;
+		    found=found+1;
+		  }
+		else
+		  {
+		    thisEvent->t1quad.re=0;	    
+		    thisEvent->t1quad.im=0;
+		  }
+		if(caseID[5])
+		  {
+		    thisEvent->v1quad.re=quadTemp[found].re;	    
+		    thisEvent->v1quad.im=quadTemp[found].im;
+		    found=found+1;
+		  }
+		else
+		  {
+		    thisEvent->v1quad.re=0;	    
+		    thisEvent->v1quad.im=0;
+		  }		
+		
 		thisEvent->snr = cohSNR;
 		strcpy(thisEvent->ifos,caseStr);
 		thisEvent->mass1 = input->tmplt->mass1;
 		thisEvent->mass2 = input->tmplt->mass2;
 		thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
 		thisEvent->eta = input->tmplt->eta;
-		LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
-		thisEvent->eff_distance = distanceEstimate;
+		/* CHECK: LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		   calculates a valid effective distance for H1-H2. Since not both 
+		   are present here, set the effective distance to zero
+		*/
+		thisEvent->eff_distance = 0.0;
 		
-	
-
 		thisEvent->ligo_angle = acos( LAL_C_SI * deltaT * abs(k-w) / distance[1] );
 		if( (k-w) > 0 )
 		  {
@@ -1784,13 +1963,13 @@ LALCoherentInspiralFilterSegment (
 		fracpart = 0.0;
 		intpart = 0.0;
 		fflush( stdout ); 
-
-		 } /* done creating a new event */
+		
+	      } /* done creating a new event */
 	      else if (params->maximizeOverChirp && k <= (eventStartIdx + deltaEventIndex) && cohSNR > thisEvent->snr ) {
 		/* if this is the same event, update the maximum */
-
-	
-
+		
+		
+		
 		tempTime = cData[0]->epoch.gpsSeconds + 1.0e-9 * cData[0]->epoch.gpsNanoSeconds + k * deltaT;
 		fracpart = modf( tempTime, &intpart );
 		thisEvent->end_time.gpsSeconds = (INT4) intpart;
@@ -1798,80 +1977,80 @@ LALCoherentInspiralFilterSegment (
 		/*	obtainNetworkPhase(caseID, quadTemp, thisEvent);*/
 
 		found=0;			
-            if(caseID[0])
-                {
-                thisEvent->g1quad.re=quadTemp[found].re;	    
-                thisEvent->g1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->g1quad.re=0;	    
-                thisEvent->g1quad.im=0;
-                }
-            if(caseID[1])
-                {
-                thisEvent->h1quad.re=quadTemp[found].re;	    
-                thisEvent->h1quad.im=quadTemp[found].im;
+		if(caseID[0])
+		  {
+		    thisEvent->g1quad.re=quadTemp[found].re;	    
+		    thisEvent->g1quad.im=quadTemp[found].im;
+		    found=found+1;
+		  }
+		else
+		  {
+		    thisEvent->g1quad.re=0;	    
+		    thisEvent->g1quad.im=0;
+		  }
+		if(caseID[1])
+		  {
+		    thisEvent->h1quad.re=quadTemp[found].re;	    
+		    thisEvent->h1quad.im=quadTemp[found].im;
         	    found=found+1;
-                }
-            else
-                {
-                thisEvent->h1quad.re=0;	    
-                thisEvent->h1quad.im=0;
-                }
-            if(caseID[2])
-                {
-                thisEvent->h2quad.re=quadTemp[found].re;	    
-                thisEvent->h2quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                { 
-                thisEvent->h2quad.re=0;	    
-                thisEvent->h2quad.im=0;
-                }
-            if(caseID[3])
-                {
-                thisEvent->l1quad.re=quadTemp[found].re;	    
-                thisEvent->l1quad.im=quadTemp[found].im;
-                found=found+1;		   
-                }
-            else
-                {
-                thisEvent->l1quad.re=0;	    
-                thisEvent->l1quad.im=0;
-                }
-            if(caseID[4])
-                {
-                thisEvent->t1quad.re=quadTemp[found].re;	    
-                thisEvent->t1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->t1quad.re=0;	    
-                thisEvent->t1quad.im=0;
-                }
-            if(caseID[5])
-                {
-                thisEvent->v1quad.re=quadTemp[found].re;	    
-                thisEvent->v1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->v1quad.re=0;	    
-                thisEvent->v1quad.im=0;
-                }		
-
+		  }
+		else
+		  {
+		    thisEvent->h1quad.re=0;	    
+		    thisEvent->h1quad.im=0;
+		  }
+		if(caseID[2])
+		  {
+		    thisEvent->h2quad.re=quadTemp[found].re;	    
+		    thisEvent->h2quad.im=quadTemp[found].im;
+		    found=found+1;
+		  }
+		else
+		  { 
+		    thisEvent->h2quad.re=0;	    
+		    thisEvent->h2quad.im=0;
+		  }
+		if(caseID[3])
+		  {
+		    thisEvent->l1quad.re=quadTemp[found].re;	    
+		    thisEvent->l1quad.im=quadTemp[found].im;
+		    found=found+1;		   
+		  }
+		else
+		  {
+		    thisEvent->l1quad.re=0;	    
+		    thisEvent->l1quad.im=0;
+		  }
+		if(caseID[4])
+		  {
+		    thisEvent->t1quad.re=quadTemp[found].re;	    
+		    thisEvent->t1quad.im=quadTemp[found].im;
+		    found=found+1;
+		  }
+		else
+		  {
+		    thisEvent->t1quad.re=0;	    
+		    thisEvent->t1quad.im=0;
+		  }
+		if(caseID[5])
+		  {
+		    thisEvent->v1quad.re=quadTemp[found].re;	    
+		    thisEvent->v1quad.im=quadTemp[found].im;
+		    found=found+1;
+		  }
+		else
+		  {
+		    thisEvent->v1quad.re=0;	    
+		    thisEvent->v1quad.im=0;
+		  }		
+		
 		thisEvent->snr = cohSNR;
 		strcpy(thisEvent->ifos, caseStr);
 		thisEvent->mass1 = input->tmplt->mass1;
 		thisEvent->mass2 = input->tmplt->mass2;
 		thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
 		thisEvent->eta = input->tmplt->eta;
-		LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		thisEvent->eff_distance = distanceEstimate;
 		thisEvent->ligo_angle = acos( LAL_C_SI * deltaT * abs(k-w) / distance[1] );
 		if( (k-w) > 0 )
@@ -1912,80 +2091,80 @@ LALCoherentInspiralFilterSegment (
 		/*	obtainNetworkPhase(caseID, quadTemp, thisEvent);*/
 
 		found=0;			
-            if(caseID[0])
-                {
-                thisEvent->g1quad.re=quadTemp[found].re;	    
-                thisEvent->g1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->g1quad.re=0;	    
-                thisEvent->g1quad.im=0;
-                }
-            if(caseID[1])
-                {
-                thisEvent->h1quad.re=quadTemp[found].re;	    
-                thisEvent->h1quad.im=quadTemp[found].im;
+		if(caseID[0])
+		  {
+		    thisEvent->g1quad.re=quadTemp[found].re;	    
+		    thisEvent->g1quad.im=quadTemp[found].im;
+		    found=found+1;
+		  }
+		else
+		  {
+		    thisEvent->g1quad.re=0;	    
+		    thisEvent->g1quad.im=0;
+		  }
+		if(caseID[1])
+		  {
+		    thisEvent->h1quad.re=quadTemp[found].re;	    
+		    thisEvent->h1quad.im=quadTemp[found].im;
         	    found=found+1;
-                }
-            else
-                {
-                thisEvent->h1quad.re=0;	    
-                thisEvent->h1quad.im=0;
-                }
-            if(caseID[2])
-                {
-                thisEvent->h2quad.re=quadTemp[found].re;	    
-                thisEvent->h2quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                { 
-                thisEvent->h2quad.re=0;	    
-                thisEvent->h2quad.im=0;
-                }
-            if(caseID[3])
-                {
-                thisEvent->l1quad.re=quadTemp[found].re;	    
-                thisEvent->l1quad.im=quadTemp[found].im;
-                found=found+1;		   
-                }
-            else
-                {
-                thisEvent->l1quad.re=0;	    
-                thisEvent->l1quad.im=0;
-                }
-            if(caseID[4])
-                {
-                thisEvent->t1quad.re=quadTemp[found].re;	    
-                thisEvent->t1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->t1quad.re=0;	    
-                thisEvent->t1quad.im=0;
-                }
-            if(caseID[5])
-                {
-                thisEvent->v1quad.re=quadTemp[found].re;	    
-                thisEvent->v1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->v1quad.re=0;	    
-                thisEvent->v1quad.im=0;
-                }		
-
+		  }
+		else
+		  {
+		    thisEvent->h1quad.re=0;	    
+		    thisEvent->h1quad.im=0;
+		  }
+		if(caseID[2])
+		  {
+		    thisEvent->h2quad.re=quadTemp[found].re;	    
+		    thisEvent->h2quad.im=quadTemp[found].im;
+		    found=found+1;
+		  }
+		else
+		  { 
+		    thisEvent->h2quad.re=0;	    
+		    thisEvent->h2quad.im=0;
+		  }
+		if(caseID[3])
+		  {
+		    thisEvent->l1quad.re=quadTemp[found].re;	    
+		    thisEvent->l1quad.im=quadTemp[found].im;
+		    found=found+1;		   
+		  }
+		else
+		  {
+		    thisEvent->l1quad.re=0;	    
+		    thisEvent->l1quad.im=0;
+		  }
+		if(caseID[4])
+		  {
+		    thisEvent->t1quad.re=quadTemp[found].re;	    
+		    thisEvent->t1quad.im=quadTemp[found].im;
+		    found=found+1;
+		  }
+		else
+		  {
+		    thisEvent->t1quad.re=0;	    
+		    thisEvent->t1quad.im=0;
+		  }
+		if(caseID[5])
+		  {
+		    thisEvent->v1quad.re=quadTemp[found].re;	    
+		    thisEvent->v1quad.im=quadTemp[found].im;
+		    found=found+1;
+		  }
+		else
+		  {
+		    thisEvent->v1quad.re=0;	    
+		    thisEvent->v1quad.im=0;
+		  }		
+		
 		thisEvent->snr = cohSNR;
 		strcpy(thisEvent->ifos,caseStr);
 		thisEvent->mass1 = input->tmplt->mass1;
 		thisEvent->mass2 = input->tmplt->mass2;
 		thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
 		thisEvent->eta = input->tmplt->eta;
-		LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		thisEvent->eff_distance = distanceEstimate;
 		thisEvent->ligo_angle = acos( LAL_C_SI * deltaT * abs(k-w) / distance[1] );
 		if( (k-w) > 0 )
@@ -2006,16 +2185,16 @@ LALCoherentInspiralFilterSegment (
 		fracpart= 0.0;
 		intpart = 0.0;
 		   
-	         }
-		} /* matches if (cohSNR > cohSNRThresh) */
+	      }
+	    } /* matches if (cohSNR > cohSNRThresh) */
 	  }
       }
     break;
   case 3: /* Network: 3 detectors including both H1 and H2 */
     if(caseID[1] && caseID[2])
       {    
-	/* Now calculate the distance (in meters) */
-	distance[1] = sqrt( cartesianInnerProduct( s[1],s[1]) );
+	/* Now calculate the distance (in meters) between LHO and 2nd site*/
+	distance[1] = sqrt( cartesianInnerProduct( s[2],s[2]) );
 	timeDelay[1] = distance[1]/LAL_C_SI;
 	slidePoints[1] = rint( (fabs(timeDelay[1])/deltaT) + 1.0 );
 
@@ -2023,7 +2202,7 @@ LALCoherentInspiralFilterSegment (
 	q = 0;
 	m = 0;
 	w = 0;
-
+	
 	for(k=0;k<(INT4)numPoints;k++)
 	  {
 	    REAL4 cohSNR = 0.0;
@@ -2035,24 +2214,30 @@ LALCoherentInspiralFilterSegment (
 		      {
 			if(q >= 0 && q < (INT4) numPoints)
 			  {
-			    cohSNRLocal = sqrt( ((cData[0]->data->data[k].re + 
-                               cData[2]->data->data[m].re)*(cData[0]->data->data[k].re +
-                               cData[2]->data->data[m].re) + (cData[0]->data->data[k].im
-                               + cData[2]->data->data[m].im)*(cData[0]->data->data[k].im
-                               + cData[2]->data->data[m].im)) + 
-                               cData[1]->data->data[q].re*cData[1]->data->data[q].re + 
-                               cData[1]->data->data[q].im*cData[1]->data->data[q].im);
-		    	
+			    /*CHECK: This will NOT work if G1 is present! because it assumes that the "0" det is H1 and "1" det is H2! Rectify in next rev. */
+			    cohSNRLocalRe = sqrt(sigmasq[1])*cData[0]->data->data[k].re
+			      + sqrt(sigmasq[2])*cData[1]->data->data[m].re;
+			    cohSNRLocalIm = sqrt(sigmasq[1])*cData[0]->data->data[k].im
+			      + sqrt(sigmasq[2])*cData[1]->data->data[m].im;
+			    
+			    cohSNRLocal = (cohSNRLocalRe*cohSNRLocalRe + cohSNRLocalIm*cohSNRLocalIm) / 
+			      (sigmasq[1] + sigmasq[2]) ;
+			    
+			    cohSNRLocal += cData[2]->data->data[q].re*cData[2]->data->data[q].re + 
+			      cData[2]->data->data[q].im*cData[2]->data->data[q].im;
+
+			    cohSNRLocal = sqrt( cohSNRLocal );
+			    
 			  if(cohSNRLocal > cohSNR)
 			      {
 				cohSNR = cohSNRLocal;
 	    		  
 				quadTemp[0].re=cData[0]->data->data[k].re;
 				quadTemp[0].im=cData[0]->data->data[k].im;
-				quadTemp[1].re=cData[1]->data->data[q].re;
-				quadTemp[1].im=cData[1]->data->data[q].im; 
-				quadTemp[2].re=cData[2]->data->data[m].re;
-				quadTemp[2].im=cData[2]->data->data[m].im; 
+				quadTemp[1].re=cData[1]->data->data[m].re;
+				quadTemp[1].im=cData[1]->data->data[m].im; 
+				quadTemp[2].re=cData[2]->data->data[q].re;
+				quadTemp[2].im=cData[2]->data->data[q].im; 
 				w = q;
 				
 			      }
@@ -2060,7 +2245,7 @@ LALCoherentInspiralFilterSegment (
 		      }
 		  }
 		if( cohSNROut ) params->cohSNRVec->data->data[k] = cohSNR;
-
+		
 		if ( cohSNR > cohSNRThresh ) {
 		  if ( !*eventList ) {
 		    /* store the start of the crossing */
@@ -2081,199 +2266,199 @@ LALCoherentInspiralFilterSegment (
 		    fracpart = modf( tempTime, &intpart );
 		    thisEvent->end_time.gpsSeconds = (INT4) intpart;
 		    thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
-
-	        found=0;			
-            if(caseID[0])
-                {
-                thisEvent->g1quad.re=quadTemp[found].re;	    
-                thisEvent->g1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->g1quad.re=0;	    
-                thisEvent->g1quad.im=0;
-                }
-            if(caseID[1])
-                {
-                thisEvent->h1quad.re=quadTemp[found].re;	    
-                thisEvent->h1quad.im=quadTemp[found].im;
-        	    found=found+1;
-                }
-            else
-                {
-                thisEvent->h1quad.re=0;	    
-                thisEvent->h1quad.im=0;
-                }
-            if(caseID[2])
-                {
-                thisEvent->h2quad.re=quadTemp[found].re;	    
-                thisEvent->h2quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                { 
-                thisEvent->h2quad.re=0;	    
-                thisEvent->h2quad.im=0;
-                }
-            if(caseID[3])
-                {
-                thisEvent->l1quad.re=quadTemp[found].re;	    
-                thisEvent->l1quad.im=quadTemp[found].im;
-                found=found+1;		   
-                }
-            else
-                {
-                thisEvent->l1quad.re=0;	    
-                thisEvent->l1quad.im=0;
-                }
-            if(caseID[4])
-                {
-                thisEvent->t1quad.re=quadTemp[found].re;	    
-                thisEvent->t1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->t1quad.re=0;	    
-                thisEvent->t1quad.im=0;
-                }
-            if(caseID[5])
-                {
-                thisEvent->v1quad.re=quadTemp[found].re;	    
-                thisEvent->v1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->v1quad.re=0;	    
-                thisEvent->v1quad.im=0;
-                }		
-
-            thisEvent->snr = cohSNR;
+		    
+		    found=0;			
+		    if(caseID[0])
+		      {
+			thisEvent->g1quad.re=quadTemp[found].re;	    
+			thisEvent->g1quad.im=quadTemp[found].im;
+			found=found+1;
+		      }
+		    else
+		      {
+			thisEvent->g1quad.re=0;	    
+			thisEvent->g1quad.im=0;
+		      }
+		    if(caseID[1])
+		      {
+			thisEvent->h1quad.re=quadTemp[found].re;	    
+			thisEvent->h1quad.im=quadTemp[found].im;
+			found=found+1;
+		      }
+		    else
+		      {
+			thisEvent->h1quad.re=0;	    
+			thisEvent->h1quad.im=0;
+		      }
+		    if(caseID[2])
+		      {
+			thisEvent->h2quad.re=quadTemp[found].re;	    
+			thisEvent->h2quad.im=quadTemp[found].im;
+			found=found+1;
+		      }
+		    else
+		      { 
+			thisEvent->h2quad.re=0;	    
+			thisEvent->h2quad.im=0;
+		      }
+		    if(caseID[3])
+		      {
+			thisEvent->l1quad.re=quadTemp[found].re;	    
+			thisEvent->l1quad.im=quadTemp[found].im;
+			found=found+1;		   
+		      }
+		    else
+		      {
+			thisEvent->l1quad.re=0;	    
+			thisEvent->l1quad.im=0;
+		      }
+		    if(caseID[4])
+		      {
+			thisEvent->t1quad.re=quadTemp[found].re;	    
+			thisEvent->t1quad.im=quadTemp[found].im;
+			found=found+1;
+		      }
+		    else
+		      {
+			thisEvent->t1quad.re=0;	    
+			thisEvent->t1quad.im=0;
+		      }
+		    if(caseID[5])
+		      {
+			thisEvent->v1quad.re=quadTemp[found].re;	    
+			thisEvent->v1quad.im=quadTemp[found].im;
+			found=found+1;
+		      }
+		    else
+		      {
+			thisEvent->v1quad.re=0;	    
+			thisEvent->v1quad.im=0;
+		      }		
+		    
+		    thisEvent->snr = cohSNR;
 		    strcpy(thisEvent->ifos,caseStr);
 		    thisEvent->mass1 = input->tmplt->mass1;
 		    thisEvent->mass2 = input->tmplt->mass2;
 		    thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
 		    thisEvent->eta = input->tmplt->eta;
-		    LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		    LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		    thisEvent->eff_distance = distanceEstimate;
-
+		    
 		    thisEvent->ligo_angle = acos( LAL_C_SI * deltaT * abs(k-w) / distance[1] );
-		if( (k-w) > 0 )
-		  {
-		    thisEvent->ligo_angle_sig = 1;
-		  }
-		else
-		  {
-		    thisEvent->ligo_angle_sig = -1;
-		  }
-
+		    if( (k-w) > 0 )
+		      {
+			thisEvent->ligo_angle_sig = 1;
+		      }
+		    else
+		      {
+			thisEvent->ligo_angle_sig = -1;
+		      }
+		    
 		    tempTime = 0.0;
 		    fracpart = 0.0;
 		    intpart = 0.0;
 		    fflush( stdout ); 
-
+		    
 		  } /* done creating a new event */
 		  else if (params->maximizeOverChirp && k <= (eventStartIdx + deltaEventIndex) && cohSNR > thisEvent->snr ) {
 		    /* if this is the same event, update the maximum */
-
+		    
 		    tempTime = cData[0]->epoch.gpsSeconds + 1.0e-9 * cData[0]->epoch.gpsNanoSeconds + k * deltaT;
 		    fracpart = modf( tempTime, &intpart );
 		    thisEvent->end_time.gpsSeconds = (INT4) intpart;
 		    thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
-
-	        found=0;			
-            if(caseID[0])
-                {
-                thisEvent->g1quad.re=quadTemp[found].re;	    
-                thisEvent->g1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->g1quad.re=0;	    
-                thisEvent->g1quad.im=0;
-                }
-            if(caseID[1])
-                {
-                thisEvent->h1quad.re=quadTemp[found].re;	    
-                thisEvent->h1quad.im=quadTemp[found].im;
-        	    found=found+1;
-                }
-            else
-                {
-                thisEvent->h1quad.re=0;	    
-                thisEvent->h1quad.im=0;
-                }
-            if(caseID[2])
-                {
-                thisEvent->h2quad.re=quadTemp[found].re;	    
-                thisEvent->h2quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                { 
-                thisEvent->h2quad.re=0;	    
-                thisEvent->h2quad.im=0;
-                }
-            if(caseID[3])
-                {
-                thisEvent->l1quad.re=quadTemp[found].re;	    
-                thisEvent->l1quad.im=quadTemp[found].im;
-                found=found+1;		   
-                }
-            else
-                {
-                thisEvent->l1quad.re=0;	    
-                thisEvent->l1quad.im=0;
-                }
-            if(caseID[4])
-                {
-                thisEvent->t1quad.re=quadTemp[found].re;	    
-                thisEvent->t1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->t1quad.re=0;	    
-                thisEvent->t1quad.im=0;
-                }
-            if(caseID[5])
-                {
-                thisEvent->v1quad.re=quadTemp[found].re;	    
-                thisEvent->v1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->v1quad.re=0;	    
-                thisEvent->v1quad.im=0;
-                }		
-
+		    
+		    found=0;			
+		    if(caseID[0])
+		      {
+			thisEvent->g1quad.re=quadTemp[found].re;	    
+			thisEvent->g1quad.im=quadTemp[found].im;
+			found=found+1;
+		      }
+		    else
+		      {
+			thisEvent->g1quad.re=0;	    
+			thisEvent->g1quad.im=0;
+		      }
+		    if(caseID[1])
+		      {
+			thisEvent->h1quad.re=quadTemp[found].re;	    
+			thisEvent->h1quad.im=quadTemp[found].im;
+			found=found+1;
+		      }
+		    else
+		      {
+			thisEvent->h1quad.re=0;	    
+			thisEvent->h1quad.im=0;
+		      }
+		    if(caseID[2])
+		      {
+			thisEvent->h2quad.re=quadTemp[found].re;	    
+			thisEvent->h2quad.im=quadTemp[found].im;
+			found=found+1;
+		      }
+		    else
+		      { 
+			thisEvent->h2quad.re=0;	    
+			thisEvent->h2quad.im=0;
+		      }
+		    if(caseID[3])
+		      {
+			thisEvent->l1quad.re=quadTemp[found].re;	    
+			thisEvent->l1quad.im=quadTemp[found].im;
+			found=found+1;		   
+		      }
+		    else
+		      {
+			thisEvent->l1quad.re=0;	    
+			thisEvent->l1quad.im=0;
+		      }
+		    if(caseID[4])
+		      {
+			thisEvent->t1quad.re=quadTemp[found].re;	    
+			thisEvent->t1quad.im=quadTemp[found].im;
+			found=found+1;
+		      }
+		    else
+		      {
+			thisEvent->t1quad.re=0;	    
+			thisEvent->t1quad.im=0;
+		      }
+		    if(caseID[5])
+		      {
+			thisEvent->v1quad.re=quadTemp[found].re;	    
+			thisEvent->v1quad.im=quadTemp[found].im;
+			found=found+1;
+		      }
+		    else
+		      {
+			thisEvent->v1quad.re=0;	    
+			thisEvent->v1quad.im=0;
+		      }		
+		    
 		    thisEvent->snr = cohSNR;
 		    strcpy(thisEvent->ifos, caseStr);
 		    thisEvent->mass1 = input->tmplt->mass1;
 		    thisEvent->mass2 = input->tmplt->mass2;
 		    thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
 		    thisEvent->eta = input->tmplt->eta;
-		    LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		    LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		    thisEvent->eff_distance = distanceEstimate;
 		    thisEvent->ligo_angle = acos( LAL_C_SI * deltaT * abs(k-w) / distance[1] );
-		if( (k-w) > 0 )
-		  {
-		    thisEvent->ligo_angle_sig = 1;
-		  }
-		else
-		  {
-		    thisEvent->ligo_angle_sig = -1;
-		  }
-
+		    if( (k-w) > 0 )
+		      {
+			thisEvent->ligo_angle_sig = 1;
+		      }
+		    else
+		      {
+			thisEvent->ligo_angle_sig = -1;
+		      }
+		    
 		    tempTime = 0.0;
 		    fracpart = 0.0;
 		    intpart = 0.0;
 		    fflush( stdout ); 
-
+		    
 		  }
 		  else if ( k > (eventStartIdx + deltaEventIndex) || !(params->maximizeOverChirp) ) {
 		    /* clean up this event */
@@ -2295,93 +2480,93 @@ LALCoherentInspiralFilterSegment (
 		    fracpart = modf( tempTime, &intpart );
 		    thisEvent->end_time.gpsSeconds = (INT4) intpart;
 		    thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
-
-	        found=0;			
-            if(caseID[0])
-                {
-                thisEvent->g1quad.re=quadTemp[found].re;	    
-                thisEvent->g1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->g1quad.re=0;	    
-                thisEvent->g1quad.im=0;
-                }
-            if(caseID[1])
-                {
-                thisEvent->h1quad.re=quadTemp[found].re;	    
-                thisEvent->h1quad.im=quadTemp[found].im;
-        	    found=found+1;
-                }
-            else
-                {
-                thisEvent->h1quad.re=0;	    
-                thisEvent->h1quad.im=0;
-                }
-            if(caseID[2])
-                {
-                thisEvent->h2quad.re=quadTemp[found].re;	    
-                thisEvent->h2quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                { 
-                thisEvent->h2quad.re=0;	    
-                thisEvent->h2quad.im=0;
-                }
-            if(caseID[3])
-                {
-                thisEvent->l1quad.re=quadTemp[found].re;	    
-                thisEvent->l1quad.im=quadTemp[found].im;
-                found=found+1;		   
-                }
-            else
-                {
-                thisEvent->l1quad.re=0;	    
-                thisEvent->l1quad.im=0;
-                }
-            if(caseID[4])
-                {
-                thisEvent->t1quad.re=quadTemp[found].re;	    
-                thisEvent->t1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->t1quad.re=0;	    
-                thisEvent->t1quad.im=0;
-                }
-            if(caseID[5])
-                {
-                thisEvent->v1quad.re=quadTemp[found].re;	    
-                thisEvent->v1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->v1quad.re=0;	    
-                thisEvent->v1quad.im=0;
-                }		
-
+		    
+		    found=0;			
+		    if(caseID[0])
+		      {
+			thisEvent->g1quad.re=quadTemp[found].re;	    
+			thisEvent->g1quad.im=quadTemp[found].im;
+			found=found+1;
+		      }
+		    else
+		      {
+			thisEvent->g1quad.re=0;	    
+			thisEvent->g1quad.im=0;
+		      }
+		    if(caseID[1])
+		      {
+			thisEvent->h1quad.re=quadTemp[found].re;	    
+			thisEvent->h1quad.im=quadTemp[found].im;
+			found=found+1;
+		      }
+		    else
+		      {
+			thisEvent->h1quad.re=0;	    
+			thisEvent->h1quad.im=0;
+		      }
+		    if(caseID[2])
+		      {
+			thisEvent->h2quad.re=quadTemp[found].re;	    
+			thisEvent->h2quad.im=quadTemp[found].im;
+			found=found+1;
+		      }
+		    else
+		      { 
+			thisEvent->h2quad.re=0;	    
+			thisEvent->h2quad.im=0;
+		      }
+		    if(caseID[3])
+		      {
+			thisEvent->l1quad.re=quadTemp[found].re;	    
+			thisEvent->l1quad.im=quadTemp[found].im;
+			found=found+1;		   
+		      }
+		    else
+		      {
+			thisEvent->l1quad.re=0;	    
+			thisEvent->l1quad.im=0;
+		      }
+		    if(caseID[4])
+		      {
+			thisEvent->t1quad.re=quadTemp[found].re;	    
+			thisEvent->t1quad.im=quadTemp[found].im;
+			found=found+1;
+		      }
+		    else
+		      {
+			thisEvent->t1quad.re=0;	    
+			thisEvent->t1quad.im=0;
+		      }
+		    if(caseID[5])
+		      {
+			thisEvent->v1quad.re=quadTemp[found].re;	    
+			thisEvent->v1quad.im=quadTemp[found].im;
+			found=found+1;
+		      }
+		    else
+		      {
+			thisEvent->v1quad.re=0;	    
+			thisEvent->v1quad.im=0;
+		      }		
+		    
 		    thisEvent->snr = cohSNR;
 		    strcpy(thisEvent->ifos,caseStr);
 		    thisEvent->mass1 = input->tmplt->mass1;
 		    thisEvent->mass2 = input->tmplt->mass2;
 		    thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
 		    thisEvent->eta = input->tmplt->eta;
-		    LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		    LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		    thisEvent->eff_distance = distanceEstimate;
 		    thisEvent->ligo_angle = acos( LAL_C_SI * deltaT * abs(k-w) / distance[1] );
-		if( (k-w) > 0 )
-		  {
-		    thisEvent->ligo_angle_sig = 1;
-		  }
-		else
-		  {
-		    thisEvent->ligo_angle_sig = -1;
-		  }
-
+		    if( (k-w) > 0 )
+		      {
+			thisEvent->ligo_angle_sig = 1;
+		      }
+		    else
+		      {
+			thisEvent->ligo_angle_sig = -1;
+		      }
+		    
 		    /* Need to initialize the event start index to new value */
 		    if( k > (eventStartIdx + deltaEventIndex) )
 		      {
@@ -2390,7 +2575,7 @@ LALCoherentInspiralFilterSegment (
 		    tempTime = 0.0;
 		    fracpart= 0.0;
 		    intpart = 0.0;
-		   
+		    
 		  }
 		} /* matches if (cohSNR > cohSNRThresh) */
 	      }
@@ -2399,7 +2584,7 @@ LALCoherentInspiralFilterSegment (
     else
       { /* Network: 3 detectors excluding either H1, H2, or both (H1 && H2)*/
 	/*Now the last 3 cases will involve the looping over the coefficients*/
-
+	
 	l = 0;
 	k = 0;
 	q = 0;
@@ -2490,12 +2675,12 @@ LALCoherentInspiralFilterSegment (
 				    wTemp = w;
 				  }
 			      }
-   
+			    
 			  }
 			
 		      }
-		   if( cohSNROut ) params->cohSNRVec->data->data[k] = cohSNR;
-
+		    if( cohSNROut ) params->cohSNRVec->data->data[k] = cohSNR;
+		    
 		   if ( cohSNR > cohSNRThresh ) {
 		     if ( !*eventList ) {
 		       /* store the start of the crossing */
@@ -2510,81 +2695,81 @@ LALCoherentInspiralFilterSegment (
 			 {
 			   ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
 			 }
-		
+		       
 		       /* record the data that we need for the clustering algorithm */          
 		       tempTime = cData[0]->epoch.gpsSeconds + 1.0e-9 * cData[0]->epoch.gpsNanoSeconds + k * deltaT;
 		       fracpart = modf( tempTime, &intpart );
 		       thisEvent->end_time.gpsSeconds = (INT4) intpart;
 		       thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
-
-    	        found=0;			
-            if(caseID[0])
-                {
-                thisEvent->g1quad.re=quadTemp[found].re;	    
-                thisEvent->g1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->g1quad.re=0;	    
-                thisEvent->g1quad.im=0;
-                }
-            if(caseID[1])
-                {
-                thisEvent->h1quad.re=quadTemp[found].re;	    
-                thisEvent->h1quad.im=quadTemp[found].im;
-        	    found=found+1;
-                }
-            else
-                {
-                thisEvent->h1quad.re=0;	    
-                thisEvent->h1quad.im=0;
-                }
-            if(caseID[2])
-                {
-                thisEvent->h2quad.re=quadTemp[found].re;	    
-                thisEvent->h2quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                { 
-                thisEvent->h2quad.re=0;	    
-                thisEvent->h2quad.im=0;
-                }
-            if(caseID[3])
-                {
-                thisEvent->l1quad.re=quadTemp[found].re;	    
-                thisEvent->l1quad.im=quadTemp[found].im;
-                found=found+1;		   
-                }
-            else
-                {
-                thisEvent->l1quad.re=0;	    
-                thisEvent->l1quad.im=0;
-                }
-            if(caseID[4])
-                {
-                thisEvent->t1quad.re=quadTemp[found].re;	    
-                thisEvent->t1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->t1quad.re=0;	    
-                thisEvent->t1quad.im=0;
-                }
-            if(caseID[5])
-                {
-                thisEvent->v1quad.re=quadTemp[found].re;	    
-                thisEvent->v1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->v1quad.re=0;	    
-                thisEvent->v1quad.im=0;
-                }		
-
+		       
+		       found=0;			
+		       if(caseID[0])
+			 {
+			   thisEvent->g1quad.re=quadTemp[found].re;	    
+			   thisEvent->g1quad.im=quadTemp[found].im;
+			   found=found+1;
+			 }
+		       else
+			 {
+			   thisEvent->g1quad.re=0;	    
+			   thisEvent->g1quad.im=0;
+			 }
+		       if(caseID[1])
+			 {
+			   thisEvent->h1quad.re=quadTemp[found].re;	    
+			   thisEvent->h1quad.im=quadTemp[found].im;
+			   found=found+1;
+			 }
+		       else
+			 {
+			   thisEvent->h1quad.re=0;	    
+			   thisEvent->h1quad.im=0;
+			 }
+		       if(caseID[2])
+			 {
+			   thisEvent->h2quad.re=quadTemp[found].re;	    
+			   thisEvent->h2quad.im=quadTemp[found].im;
+			   found=found+1;
+			 }
+		       else
+			 { 
+			   thisEvent->h2quad.re=0;	    
+			   thisEvent->h2quad.im=0;
+			 }
+		       if(caseID[3])
+			 {
+			   thisEvent->l1quad.re=quadTemp[found].re;	    
+			   thisEvent->l1quad.im=quadTemp[found].im;
+			   found=found+1;		   
+			 }
+		       else
+			 {
+			   thisEvent->l1quad.re=0;	    
+			   thisEvent->l1quad.im=0;
+			 }
+		       if(caseID[4])
+			 {
+			   thisEvent->t1quad.re=quadTemp[found].re;	    
+			   thisEvent->t1quad.im=quadTemp[found].im;
+			   found=found+1;
+			 }
+		       else
+			 {
+			   thisEvent->t1quad.re=0;	    
+			   thisEvent->t1quad.im=0;
+			 }
+		       if(caseID[5])
+			 {
+			   thisEvent->v1quad.re=quadTemp[found].re;	    
+			   thisEvent->v1quad.im=quadTemp[found].im;
+			   found=found+1;
+			 }
+		       else
+			 {
+			   thisEvent->v1quad.re=0;	    
+			   thisEvent->v1quad.im=0;
+			 }		
+		       
 		       thisEvent->snr = cohSNR;
 		       strcpy(thisEvent->ifos,caseStr);
 		       thisEvent->mass1 = input->tmplt->mass1;
@@ -2600,13 +2785,15 @@ LALCoherentInspiralFilterSegment (
 		       cDataTemp[1].im = cData[1]->data->data[qTemp].im;
 		       cDataTemp[2].re = cData[2]->data->data[wTemp].re;
 		       cDataTemp[2].im = cData[2]->data->data[wTemp].im;
-		       LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
+		       LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		       thisEvent->inclination = inclination;
 		       thisEvent->polarization = polarization;
 		       thisEvent->coa_phase = coaPhase;
-		       LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
-		       thisEvent->eff_distance = distanceEstimate;
-   	             
+		       /* CHECK: LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+			  calculates a valid effective distance for H1-H2. Since not both 
+			  are present here, set the effective distance to zero */
+		       thisEvent->eff_distance = 0.0;
+		       
 		       thisEvent->ligo_axis_ra = phi;
 		       thisEvent->ligo_axis_dec = theta;
 
@@ -2618,80 +2805,80 @@ LALCoherentInspiralFilterSegment (
 		     } /* done creating a new event */
 		     else if (params->maximizeOverChirp && k <= (eventStartIdx + deltaEventIndex) && cohSNR > thisEvent->snr ) {
 		       /* if this is the same event, update the maximum */
-
+		       
 		       tempTime = cData[0]->epoch.gpsSeconds + 1.0e-9 * cData[0]->epoch.gpsNanoSeconds + k * deltaT;
 		       fracpart = modf( tempTime, &intpart );
 		       thisEvent->end_time.gpsSeconds = (INT4) intpart;
 		       thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
-
-    	        found=0;			
-            if(caseID[0])
-                {
-                thisEvent->g1quad.re=quadTemp[found].re;	    
-                thisEvent->g1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->g1quad.re=0;	    
-                thisEvent->g1quad.im=0;
-                }
-            if(caseID[1])
-                {
-                thisEvent->h1quad.re=quadTemp[found].re;	    
-                thisEvent->h1quad.im=quadTemp[found].im;
-        	    found=found+1;
-                }
-            else
-                {
-                thisEvent->h1quad.re=0;	    
-                thisEvent->h1quad.im=0;
-                }
-            if(caseID[2])
-                {
-                thisEvent->h2quad.re=quadTemp[found].re;	    
-                thisEvent->h2quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                { 
-                thisEvent->h2quad.re=0;	    
-                thisEvent->h2quad.im=0;
-                }
-            if(caseID[3])
-                {
-                thisEvent->l1quad.re=quadTemp[found].re;	    
-                thisEvent->l1quad.im=quadTemp[found].im;
-                found=found+1;		   
-                }
-            else
-                {
-                thisEvent->l1quad.re=0;	    
-                thisEvent->l1quad.im=0;
-                }
-            if(caseID[4])
-                {
-                thisEvent->t1quad.re=quadTemp[found].re;	    
-                thisEvent->t1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->t1quad.re=0;	    
-                thisEvent->t1quad.im=0;
-                }
-            if(caseID[5])
-                {
-                thisEvent->v1quad.re=quadTemp[found].re;	    
-                thisEvent->v1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->v1quad.re=0;	    
-                thisEvent->v1quad.im=0;
-                }		
-
+		       
+		       found=0;			
+		       if(caseID[0])
+			 {
+			   thisEvent->g1quad.re=quadTemp[found].re;	    
+			   thisEvent->g1quad.im=quadTemp[found].im;
+			   found=found+1;
+			 }
+		       else
+			 {
+			   thisEvent->g1quad.re=0;	    
+			   thisEvent->g1quad.im=0;
+			 }
+		       if(caseID[1])
+			 {
+			   thisEvent->h1quad.re=quadTemp[found].re;	    
+			   thisEvent->h1quad.im=quadTemp[found].im;
+			   found=found+1;
+			 }
+		       else
+			 {
+			   thisEvent->h1quad.re=0;	    
+			   thisEvent->h1quad.im=0;
+			 }
+		       if(caseID[2])
+			 {
+			   thisEvent->h2quad.re=quadTemp[found].re;	    
+			   thisEvent->h2quad.im=quadTemp[found].im;
+			   found=found+1;
+			 }
+		       else
+			 { 
+			   thisEvent->h2quad.re=0;	    
+			   thisEvent->h2quad.im=0;
+			 }
+		       if(caseID[3])
+			 {
+			   thisEvent->l1quad.re=quadTemp[found].re;	    
+			   thisEvent->l1quad.im=quadTemp[found].im;
+			   found=found+1;		   
+			 }
+		       else
+			 {
+			   thisEvent->l1quad.re=0;	    
+			   thisEvent->l1quad.im=0;
+			 }
+		       if(caseID[4])
+			 {
+			   thisEvent->t1quad.re=quadTemp[found].re;	    
+			   thisEvent->t1quad.im=quadTemp[found].im;
+			   found=found+1;
+			 }
+		       else
+			 {
+			   thisEvent->t1quad.re=0;	    
+			   thisEvent->t1quad.im=0;
+			 }
+		       if(caseID[5])
+			 {
+			   thisEvent->v1quad.re=quadTemp[found].re;	    
+			   thisEvent->v1quad.im=quadTemp[found].im;
+			   found=found+1;
+			 }
+		       else
+			 {
+			   thisEvent->v1quad.re=0;	    
+			   thisEvent->v1quad.im=0;
+			 }		
+		       
 		       thisEvent->snr = cohSNR;
 		       strcpy(thisEvent->ifos, caseStr);
 		       thisEvent->mass1 = input->tmplt->mass1;
@@ -2707,12 +2894,14 @@ LALCoherentInspiralFilterSegment (
 		       cDataTemp[1].im = cData[1]->data->data[qTemp].im;
 		       cDataTemp[2].re = cData[2]->data->data[wTemp].re;
 		       cDataTemp[2].im = cData[2]->data->data[wTemp].im;
-		       LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
+		       LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		       thisEvent->inclination = inclination;
 		       thisEvent->polarization = polarization;
 		       thisEvent->coa_phase = coaPhase;
-		       LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
-		       thisEvent->eff_distance = distanceEstimate;
+		       /* CHECK: LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+			  calculates a valid effective distance for H1-H2. Since not both 
+			  are present here, set the effective distance to zero */
+		       thisEvent->eff_distance = 0.0;
 		       thisEvent->ligo_axis_ra = phi;
 		       thisEvent->ligo_axis_dec = theta;
 
@@ -2720,7 +2909,7 @@ LALCoherentInspiralFilterSegment (
 		       fracpart = 0.0;
 		       intpart = 0.0;
 		       fflush( stdout ); 
-
+		       
 		     }
 		     else if ( k > (eventStartIdx + deltaEventIndex) || !(params->maximizeOverChirp) ) {
 		       /* clean up this event */
@@ -2742,75 +2931,75 @@ LALCoherentInspiralFilterSegment (
 		       fracpart = modf( tempTime, &intpart );
 		       thisEvent->end_time.gpsSeconds = (INT4) intpart;
 		       thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
-
-    	        found=0;			
-            if(caseID[0])
-                {
-                thisEvent->g1quad.re=quadTemp[found].re;	    
-                thisEvent->g1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->g1quad.re=0;	    
-                thisEvent->g1quad.im=0;
-                }
-            if(caseID[1])
-                {
-                thisEvent->h1quad.re=quadTemp[found].re;	    
-                thisEvent->h1quad.im=quadTemp[found].im;
-        	    found=found+1;
-                }
-            else
-                {
-                thisEvent->h1quad.re=0;	    
-                thisEvent->h1quad.im=0;
-                }
-            if(caseID[2])
-                {
-                thisEvent->h2quad.re=quadTemp[found].re;	    
-                thisEvent->h2quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                { 
-                thisEvent->h2quad.re=0;	    
-                thisEvent->h2quad.im=0;
-                }
-            if(caseID[3])
-                {
-                thisEvent->l1quad.re=quadTemp[found].re;	    
-                thisEvent->l1quad.im=quadTemp[found].im;
-                found=found+1;		   
-                }
-            else
-                {
-                thisEvent->l1quad.re=0;	    
-                thisEvent->l1quad.im=0;
-                }
-            if(caseID[4])
-                {
-                thisEvent->t1quad.re=quadTemp[found].re;	    
-                thisEvent->t1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->t1quad.re=0;	    
-                thisEvent->t1quad.im=0;
-                }
-            if(caseID[5])
-                {
-                thisEvent->v1quad.re=quadTemp[found].re;	    
-                thisEvent->v1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->v1quad.re=0;	    
-                thisEvent->v1quad.im=0;
-                }		
-
+		       
+		       found=0;			
+		       if(caseID[0])
+			 {
+			   thisEvent->g1quad.re=quadTemp[found].re;	    
+			   thisEvent->g1quad.im=quadTemp[found].im;
+			   found=found+1;
+			 }
+		       else
+			 {
+			   thisEvent->g1quad.re=0;	    
+			   thisEvent->g1quad.im=0;
+			 }
+		       if(caseID[1])
+			 {
+			   thisEvent->h1quad.re=quadTemp[found].re;	    
+			   thisEvent->h1quad.im=quadTemp[found].im;
+			   found=found+1;
+			 }
+		       else
+			 {
+			   thisEvent->h1quad.re=0;	    
+			   thisEvent->h1quad.im=0;
+			 }
+		       if(caseID[2])
+			 {
+			   thisEvent->h2quad.re=quadTemp[found].re;	    
+			   thisEvent->h2quad.im=quadTemp[found].im;
+			   found=found+1;
+			 }
+		       else
+			 { 
+			   thisEvent->h2quad.re=0;	    
+			   thisEvent->h2quad.im=0;
+			 }
+		       if(caseID[3])
+			 {
+			   thisEvent->l1quad.re=quadTemp[found].re;	    
+			   thisEvent->l1quad.im=quadTemp[found].im;
+			   found=found+1;		   
+			 }
+		       else
+			 {
+			   thisEvent->l1quad.re=0;	    
+			   thisEvent->l1quad.im=0;
+			 }
+		       if(caseID[4])
+			 {
+			   thisEvent->t1quad.re=quadTemp[found].re;	    
+			   thisEvent->t1quad.im=quadTemp[found].im;
+			   found=found+1;
+			 }
+		       else
+			 {
+			   thisEvent->t1quad.re=0;	    
+			   thisEvent->t1quad.im=0;
+			 }
+		       if(caseID[5])
+			 {
+			   thisEvent->v1quad.re=quadTemp[found].re;	    
+			   thisEvent->v1quad.im=quadTemp[found].im;
+			   found=found+1;
+			 }
+		       else
+			 {
+			   thisEvent->v1quad.re=0;	    
+			   thisEvent->v1quad.im=0;
+			 }		
+		       
 		       thisEvent->snr = cohSNR;
 		       strcpy(thisEvent->ifos,caseStr);
 		       thisEvent->mass1 = input->tmplt->mass1;
@@ -2826,12 +3015,14 @@ LALCoherentInspiralFilterSegment (
 		       cDataTemp[1].im = cData[1]->data->data[qTemp].im;
 		       cDataTemp[2].re = cData[2]->data->data[wTemp].re;
 		       cDataTemp[2].im = cData[2]->data->data[wTemp].im;
-		       LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
+		       LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		       thisEvent->inclination = inclination;
 		       thisEvent->polarization = polarization;
 		       thisEvent->coa_phase = coaPhase;
-		       LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
-		       thisEvent->eff_distance = distanceEstimate;
+		       /* CHECK: LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+			  calculates a valid effective distance for H1-H2. Since not both 
+			  are present here, set the effective distance to zero */
+		       thisEvent->eff_distance = 0.0;
 		       thisEvent->ligo_axis_ra = phi;
 		       thisEvent->ligo_axis_dec = theta;
 
@@ -2844,7 +3035,7 @@ LALCoherentInspiralFilterSegment (
             
 		       fracpart= 0.0;
 		       intpart = 0.0;
-		   
+		       
 		     }
 		    } /* matches if (cohSNR > cohSNRThresh) */		    
 		  }
@@ -2869,8 +3060,8 @@ LALCoherentInspiralFilterSegment (
 	    nHatVect[2] = cos(phi); 
 
 	    /* Now calculate the distance (in meters) projected along sky-position */
-	    distance[1] = cartesianInnerProduct(s[1],nHatVect);
-	    distance[2] = cartesianInnerProduct(s[2],nHatVect);
+	    distance[1] = cartesianInnerProduct(s[2],nHatVect);
+	    distance[2] = cartesianInnerProduct(s[3],nHatVect);
 	    timeDelay[1] = distance[1]/LAL_C_SI;
 	    timeDelay[2] = distance[2]/LAL_C_SI;
 	    slidePoints[1] = rint( (fabs(timeDelay[1])/deltaT) + 1.0 );
@@ -2899,8 +3090,10 @@ LALCoherentInspiralFilterSegment (
 				  {
 				    if (w >= 0 && w < (INT4) numPoints)
 				      {
-				      cohSNRLocal = sqrt( ( 
-                                        beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] *
+				       /*CHECK: Need to update, like previous cases that include both 
+					  H1 and H2, to include correct weighting with sigmasq's */
+				       cohSNRLocal = sqrt( ( 
+					beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] *
                                         beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] + 
                                         beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] *
                                         beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]) *
@@ -2989,75 +3182,75 @@ LALCoherentInspiralFilterSegment (
 		        fracpart = modf( tempTime, &intpart );
 		        thisEvent->end_time.gpsSeconds = (INT4) intpart;
 		        thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
-
-    	        found=0;			
-            if(caseID[0])
-                {
-                thisEvent->g1quad.re=quadTemp[found].re;	    
-                thisEvent->g1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->g1quad.re=0;	    
-                thisEvent->g1quad.im=0;
-                }
-            if(caseID[1])
-                {
-                thisEvent->h1quad.re=quadTemp[found].re;	    
-                thisEvent->h1quad.im=quadTemp[found].im;
-        	    found=found+1;
-                }
-            else
-                {
-                thisEvent->h1quad.re=0;	    
-                thisEvent->h1quad.im=0;
-                }
-            if(caseID[2])
-                {
-                thisEvent->h2quad.re=quadTemp[found].re;	    
-                thisEvent->h2quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                { 
-                thisEvent->h2quad.re=0;	    
-                thisEvent->h2quad.im=0;
-                }
-            if(caseID[3])
-                {
-                thisEvent->l1quad.re=quadTemp[found].re;	    
-                thisEvent->l1quad.im=quadTemp[found].im;
-                found=found+1;		   
-                }
-            else
-                {
-                thisEvent->l1quad.re=0;	    
-                thisEvent->l1quad.im=0;
-                }
-            if(caseID[4])
-                {
-                thisEvent->t1quad.re=quadTemp[found].re;	    
-                thisEvent->t1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->t1quad.re=0;	    
-                thisEvent->t1quad.im=0;
-                }
-            if(caseID[5])
-                {
-                thisEvent->v1quad.re=quadTemp[found].re;	    
-                thisEvent->v1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->v1quad.re=0;	    
-                thisEvent->v1quad.im=0;
-                }		
-
+			
+			found=0;			
+			if(caseID[0])
+			  {
+			    thisEvent->g1quad.re=quadTemp[found].re;	    
+			    thisEvent->g1quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  {
+			    thisEvent->g1quad.re=0;	    
+			    thisEvent->g1quad.im=0;
+			  }
+			if(caseID[1])
+			  {
+			    thisEvent->h1quad.re=quadTemp[found].re;	    
+			    thisEvent->h1quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  {
+			    thisEvent->h1quad.re=0;	    
+			    thisEvent->h1quad.im=0;
+			  }
+			if(caseID[2])
+			  {
+			    thisEvent->h2quad.re=quadTemp[found].re;	    
+			    thisEvent->h2quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  { 
+			    thisEvent->h2quad.re=0;	    
+			    thisEvent->h2quad.im=0;
+			  }
+			if(caseID[3])
+			  {
+			    thisEvent->l1quad.re=quadTemp[found].re;	    
+			    thisEvent->l1quad.im=quadTemp[found].im;
+			    found=found+1;		   
+			  }
+			else
+			  {
+			    thisEvent->l1quad.re=0;	    
+			    thisEvent->l1quad.im=0;
+			  }
+			if(caseID[4])
+			  {
+			    thisEvent->t1quad.re=quadTemp[found].re;	    
+			    thisEvent->t1quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  {
+			    thisEvent->t1quad.re=0;	    
+			    thisEvent->t1quad.im=0;
+			  }
+			if(caseID[5])
+			  {
+			    thisEvent->v1quad.re=quadTemp[found].re;	    
+			    thisEvent->v1quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  {
+			    thisEvent->v1quad.re=0;	    
+			    thisEvent->v1quad.im=0;
+			  }		
+			
 		        thisEvent->snr = cohSNR;
 		        strcpy(thisEvent->ifos,caseStr);
 		        thisEvent->mass1 = input->tmplt->mass1;
@@ -3075,11 +3268,11 @@ LALCoherentInspiralFilterSegment (
 		        cDataTemp[2].im = cData[2]->data->data[qTemp].im;
 		        cDataTemp[3].re = cData[3]->data->data[wTemp].re;
 		        cDataTemp[3].im = cData[3]->data->data[wTemp].im;
-		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
+		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		        thisEvent->inclination = inclination;
 		        thisEvent->polarization = polarization;
 			thisEvent->coa_phase = coaPhase;
-		        LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		        LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		        thisEvent->eff_distance = distanceEstimate;
 
    	                thisEvent->ligo_axis_ra = phi;
@@ -3098,75 +3291,75 @@ LALCoherentInspiralFilterSegment (
 		        fracpart = modf( tempTime, &intpart );
 		        thisEvent->end_time.gpsSeconds = (INT4) intpart;
 		        thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
-
-    	        found=0;			
-            if(caseID[0])
-                {
-                thisEvent->g1quad.re=quadTemp[found].re;	    
-                thisEvent->g1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->g1quad.re=0;	    
-                thisEvent->g1quad.im=0;
-                }
-            if(caseID[1])
-                {
-                thisEvent->h1quad.re=quadTemp[found].re;	    
-                thisEvent->h1quad.im=quadTemp[found].im;
-        	    found=found+1;
-                }
-            else
-                {
-                thisEvent->h1quad.re=0;	    
-                thisEvent->h1quad.im=0;
-                }
-            if(caseID[2])
-                {
-                thisEvent->h2quad.re=quadTemp[found].re;	    
-                thisEvent->h2quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                { 
-                thisEvent->h2quad.re=0;	    
-                thisEvent->h2quad.im=0;
-                }
-            if(caseID[3])
-                {
-                thisEvent->l1quad.re=quadTemp[found].re;	    
-                thisEvent->l1quad.im=quadTemp[found].im;
-                found=found+1;		   
-                }
-            else
-                {
-                thisEvent->l1quad.re=0;	    
-                thisEvent->l1quad.im=0;
-                }
-            if(caseID[4])
-                {
-                thisEvent->t1quad.re=quadTemp[found].re;	    
-                thisEvent->t1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->t1quad.re=0;	    
-                thisEvent->t1quad.im=0;
-                }
-            if(caseID[5])
-                {
-                thisEvent->v1quad.re=quadTemp[found].re;	    
-                thisEvent->v1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->v1quad.re=0;	    
-                thisEvent->v1quad.im=0;
-                }		
-
+			
+			found=0;			
+			if(caseID[0])
+			  {
+			    thisEvent->g1quad.re=quadTemp[found].re;	    
+			    thisEvent->g1quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  {
+			    thisEvent->g1quad.re=0;	    
+			    thisEvent->g1quad.im=0;
+			  }
+			if(caseID[1])
+			  {
+			    thisEvent->h1quad.re=quadTemp[found].re;	    
+			    thisEvent->h1quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  {
+			    thisEvent->h1quad.re=0;	    
+			    thisEvent->h1quad.im=0;
+			  }
+			if(caseID[2])
+			  {
+			    thisEvent->h2quad.re=quadTemp[found].re;	    
+			    thisEvent->h2quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  { 
+			    thisEvent->h2quad.re=0;	    
+			    thisEvent->h2quad.im=0;
+			  }
+			if(caseID[3])
+			  {
+			    thisEvent->l1quad.re=quadTemp[found].re;	    
+			    thisEvent->l1quad.im=quadTemp[found].im;
+			    found=found+1;		   
+			  }
+			else
+			  {
+			    thisEvent->l1quad.re=0;	    
+			    thisEvent->l1quad.im=0;
+			  }
+			if(caseID[4])
+			  {
+			    thisEvent->t1quad.re=quadTemp[found].re;	    
+			    thisEvent->t1quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  {
+			    thisEvent->t1quad.re=0;	    
+			    thisEvent->t1quad.im=0;
+			  }
+			if(caseID[5])
+			  {
+			    thisEvent->v1quad.re=quadTemp[found].re;	    
+			    thisEvent->v1quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  {
+			    thisEvent->v1quad.re=0;	    
+			    thisEvent->v1quad.im=0;
+			  }		
+			
 		        thisEvent->snr = cohSNR;
 		        strcpy(thisEvent->ifos, caseStr);
 		        thisEvent->mass1 = input->tmplt->mass1;
@@ -3184,11 +3377,11 @@ LALCoherentInspiralFilterSegment (
 		        cDataTemp[2].im = cData[2]->data->data[qTemp].im;
 		        cDataTemp[3].re = cData[3]->data->data[wTemp].re;
 		        cDataTemp[3].im = cData[3]->data->data[wTemp].im;
-		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
+		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		        thisEvent->inclination = inclination;
 		        thisEvent->polarization = polarization;
 			thisEvent->coa_phase = coaPhase;
-		        LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		        LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		        thisEvent->eff_distance = distanceEstimate;
 		        thisEvent->ligo_axis_ra = phi;
 		        thisEvent->ligo_axis_dec = theta;
@@ -3219,75 +3412,75 @@ LALCoherentInspiralFilterSegment (
 		        fracpart = modf( tempTime, &intpart );
 		        thisEvent->end_time.gpsSeconds = (INT4) intpart;
 		        thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
-
-    	        found=0;			
-            if(caseID[0])
-                {
-                thisEvent->g1quad.re=quadTemp[found].re;	    
-                thisEvent->g1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->g1quad.re=0;	    
-                thisEvent->g1quad.im=0;
-                }
-            if(caseID[1])
-                {
-                thisEvent->h1quad.re=quadTemp[found].re;	    
-                thisEvent->h1quad.im=quadTemp[found].im;
-        	    found=found+1;
-                }
-            else
-                {
-                thisEvent->h1quad.re=0;	    
-                thisEvent->h1quad.im=0;
-                }
-            if(caseID[2])
-                {
-                thisEvent->h2quad.re=quadTemp[found].re;	    
-                thisEvent->h2quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                { 
-                thisEvent->h2quad.re=0;	    
-                thisEvent->h2quad.im=0;
-                }
-            if(caseID[3])
-                {
-                thisEvent->l1quad.re=quadTemp[found].re;	    
-                thisEvent->l1quad.im=quadTemp[found].im;
-                found=found+1;		   
-                }
-            else
-                {
-                thisEvent->l1quad.re=0;	    
-                thisEvent->l1quad.im=0;
-                }
-            if(caseID[4])
-                {
-                thisEvent->t1quad.re=quadTemp[found].re;	    
-                thisEvent->t1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->t1quad.re=0;	    
-                thisEvent->t1quad.im=0;
-                }
-            if(caseID[5])
-                {
-                thisEvent->v1quad.re=quadTemp[found].re;	    
-                thisEvent->v1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->v1quad.re=0;	    
-                thisEvent->v1quad.im=0;
-                }		
-
+			
+			found=0;			
+			if(caseID[0])
+			  {
+			    thisEvent->g1quad.re=quadTemp[found].re;	    
+			    thisEvent->g1quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  {
+			    thisEvent->g1quad.re=0;	    
+			    thisEvent->g1quad.im=0;
+			  }
+			if(caseID[1])
+			  {
+			    thisEvent->h1quad.re=quadTemp[found].re;	    
+			    thisEvent->h1quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  {
+			    thisEvent->h1quad.re=0;	    
+			    thisEvent->h1quad.im=0;
+			  }
+			if(caseID[2])
+			  {
+			    thisEvent->h2quad.re=quadTemp[found].re;	    
+			    thisEvent->h2quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  { 
+			    thisEvent->h2quad.re=0;	    
+			    thisEvent->h2quad.im=0;
+			  }
+			if(caseID[3])
+			  {
+			    thisEvent->l1quad.re=quadTemp[found].re;	    
+			    thisEvent->l1quad.im=quadTemp[found].im;
+			    found=found+1;		   
+			  }
+			else
+			  {
+			    thisEvent->l1quad.re=0;	    
+			    thisEvent->l1quad.im=0;
+			  }
+			if(caseID[4])
+			  {
+			    thisEvent->t1quad.re=quadTemp[found].re;	    
+			    thisEvent->t1quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  {
+			    thisEvent->t1quad.re=0;	    
+			    thisEvent->t1quad.im=0;
+			  }
+			if(caseID[5])
+			  {
+			    thisEvent->v1quad.re=quadTemp[found].re;	    
+			    thisEvent->v1quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  {
+			    thisEvent->v1quad.re=0;	    
+			    thisEvent->v1quad.im=0;
+			  }		
+			
 		        thisEvent->snr = cohSNR;
 		        strcpy(thisEvent->ifos,caseStr);
 		        thisEvent->mass1 = input->tmplt->mass1;
@@ -3305,11 +3498,11 @@ LALCoherentInspiralFilterSegment (
 		        cDataTemp[2].im = cData[2]->data->data[qTemp].im;
 		        cDataTemp[3].re = cData[3]->data->data[wTemp].re;
 		        cDataTemp[3].im = cData[3]->data->data[wTemp].im;
-		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
+		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		        thisEvent->inclination = inclination;
 		        thisEvent->polarization = polarization;
 			thisEvent->coa_phase = coaPhase;
-		        LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		        LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		        thisEvent->eff_distance = distanceEstimate;
 		        thisEvent->ligo_axis_ra = phi;
 		        thisEvent->ligo_axis_dec = theta;
@@ -3486,75 +3679,75 @@ LALCoherentInspiralFilterSegment (
 		        fracpart = modf( tempTime, &intpart );
 		        thisEvent->end_time.gpsSeconds = (INT4) intpart;
 		        thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
-
-    	        found=0;			
-            if(caseID[0])
-                {
-                thisEvent->g1quad.re=quadTemp[found].re;	    
-                thisEvent->g1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->g1quad.re=0;	    
-                thisEvent->g1quad.im=0;
-                }
-            if(caseID[1])
-                {
-                thisEvent->h1quad.re=quadTemp[found].re;	    
-                thisEvent->h1quad.im=quadTemp[found].im;
-        	    found=found+1;
-                }
-            else
-                {
-                thisEvent->h1quad.re=0;	    
-                thisEvent->h1quad.im=0;
-                }
-            if(caseID[2])
-                {
-                thisEvent->h2quad.re=quadTemp[found].re;	    
-                thisEvent->h2quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                { 
-                thisEvent->h2quad.re=0;	    
-                thisEvent->h2quad.im=0;
-                }
-            if(caseID[3])
-                {
-                thisEvent->l1quad.re=quadTemp[found].re;	    
-                thisEvent->l1quad.im=quadTemp[found].im;
-                found=found+1;		   
-                }
-            else
-                {
-                thisEvent->l1quad.re=0;	    
-                thisEvent->l1quad.im=0;
-                }
-            if(caseID[4])
-                {
-                thisEvent->t1quad.re=quadTemp[found].re;	    
-                thisEvent->t1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->t1quad.re=0;	    
-                thisEvent->t1quad.im=0;
-                }
-            if(caseID[5])
-                {
-                thisEvent->v1quad.re=quadTemp[found].re;	    
-                thisEvent->v1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->v1quad.re=0;	    
-                thisEvent->v1quad.im=0;
-                }		
-
+			
+			found=0;			
+			if(caseID[0])
+			  {
+			    thisEvent->g1quad.re=quadTemp[found].re;	    
+			    thisEvent->g1quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  {
+			    thisEvent->g1quad.re=0;	    
+			    thisEvent->g1quad.im=0;
+			  }
+			if(caseID[1])
+			  {
+			    thisEvent->h1quad.re=quadTemp[found].re;	    
+			    thisEvent->h1quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  {
+			    thisEvent->h1quad.re=0;	    
+			    thisEvent->h1quad.im=0;
+			  }
+			if(caseID[2])
+			  {
+			    thisEvent->h2quad.re=quadTemp[found].re;	    
+			    thisEvent->h2quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  { 
+			    thisEvent->h2quad.re=0;	    
+			    thisEvent->h2quad.im=0;
+			  }
+			if(caseID[3])
+			  {
+			    thisEvent->l1quad.re=quadTemp[found].re;	    
+			    thisEvent->l1quad.im=quadTemp[found].im;
+			    found=found+1;		   
+			  }
+			else
+			  {
+			    thisEvent->l1quad.re=0;	    
+			    thisEvent->l1quad.im=0;
+			  }
+			if(caseID[4])
+			  {
+			    thisEvent->t1quad.re=quadTemp[found].re;	    
+			    thisEvent->t1quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  {
+			    thisEvent->t1quad.re=0;	    
+			    thisEvent->t1quad.im=0;
+			  }
+			if(caseID[5])
+			  {
+			    thisEvent->v1quad.re=quadTemp[found].re;	    
+			    thisEvent->v1quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  {
+			    thisEvent->v1quad.re=0;	    
+			    thisEvent->v1quad.im=0;
+			  }		
+			
 		        thisEvent->snr = cohSNR;
 		        strcpy(thisEvent->ifos,caseStr);
 		        thisEvent->mass1 = input->tmplt->mass1;
@@ -3572,16 +3765,18 @@ LALCoherentInspiralFilterSegment (
 		        cDataTemp[2].im = cData[2]->data->data[wTemp].im;
 		        cDataTemp[3].re = cData[3]->data->data[jTemp].re;
 		        cDataTemp[3].im = cData[3]->data->data[jTemp].im;
-		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
+		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		        thisEvent->inclination = inclination;
 		        thisEvent->polarization = polarization;
 			thisEvent->coa_phase = coaPhase;
-		        LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
-		        thisEvent->eff_distance = distanceEstimate;
-
+			/* CHECK: LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+			   calculates a valid effective distance for H1-H2. Since not both 
+			   are present here, set the effective distance to zero */
+		        thisEvent->eff_distance = 0.0;
+			
    	                thisEvent->ligo_axis_ra = phi;
 		        thisEvent->ligo_axis_dec = theta;
-
+			
 		        tempTime = 0.0;
 		        fracpart = 0.0;
 		        intpart = 0.0;
@@ -3595,75 +3790,75 @@ LALCoherentInspiralFilterSegment (
 		        fracpart = modf( tempTime, &intpart );
 		        thisEvent->end_time.gpsSeconds = (INT4) intpart;
 		        thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
-
-    	        found=0;			
-            if(caseID[0])
-                {
-                thisEvent->g1quad.re=quadTemp[found].re;	    
-                thisEvent->g1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->g1quad.re=0;	    
-                thisEvent->g1quad.im=0;
-                }
-            if(caseID[1])
-                {
-                thisEvent->h1quad.re=quadTemp[found].re;	    
-                thisEvent->h1quad.im=quadTemp[found].im;
-        	    found=found+1;
-                }
-            else
-                {
-                thisEvent->h1quad.re=0;	    
-                thisEvent->h1quad.im=0;
-                }
-            if(caseID[2])
-                {
-                thisEvent->h2quad.re=quadTemp[found].re;	    
-                thisEvent->h2quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                { 
-                thisEvent->h2quad.re=0;	    
-                thisEvent->h2quad.im=0;
-                }
-            if(caseID[3])
-                {
-                thisEvent->l1quad.re=quadTemp[found].re;	    
-                thisEvent->l1quad.im=quadTemp[found].im;
-                found=found+1;		   
-                }
-            else
-                {
-                thisEvent->l1quad.re=0;	    
-                thisEvent->l1quad.im=0;
-                }
-            if(caseID[4])
-                {
-                thisEvent->t1quad.re=quadTemp[found].re;	    
-                thisEvent->t1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->t1quad.re=0;	    
-                thisEvent->t1quad.im=0;
-                }
-            if(caseID[5])
-                {
-                thisEvent->v1quad.re=quadTemp[found].re;	    
-                thisEvent->v1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->v1quad.re=0;	    
-                thisEvent->v1quad.im=0;
-                }		
-
+			
+			found=0;			
+			if(caseID[0])
+			  {
+			    thisEvent->g1quad.re=quadTemp[found].re;	    
+			    thisEvent->g1quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  {
+			    thisEvent->g1quad.re=0;	    
+			    thisEvent->g1quad.im=0;
+			  }
+			if(caseID[1])
+			  {
+			    thisEvent->h1quad.re=quadTemp[found].re;	    
+			    thisEvent->h1quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  {
+			    thisEvent->h1quad.re=0;	    
+			    thisEvent->h1quad.im=0;
+			  }
+			if(caseID[2])
+			  {
+			    thisEvent->h2quad.re=quadTemp[found].re;	    
+			    thisEvent->h2quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  { 
+			    thisEvent->h2quad.re=0;	    
+			    thisEvent->h2quad.im=0;
+			  }
+			if(caseID[3])
+			  {
+			    thisEvent->l1quad.re=quadTemp[found].re;	    
+			    thisEvent->l1quad.im=quadTemp[found].im;
+			    found=found+1;		   
+			  }
+			else
+			  {
+			    thisEvent->l1quad.re=0;	    
+			    thisEvent->l1quad.im=0;
+			  }
+			if(caseID[4])
+			  {
+			    thisEvent->t1quad.re=quadTemp[found].re;	    
+			    thisEvent->t1quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  {
+			    thisEvent->t1quad.re=0;	    
+			    thisEvent->t1quad.im=0;
+			  }
+			if(caseID[5])
+			  {
+			    thisEvent->v1quad.re=quadTemp[found].re;	    
+			    thisEvent->v1quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  {
+			    thisEvent->v1quad.re=0;	    
+			    thisEvent->v1quad.im=0;
+			  }		
+			
 		        thisEvent->snr = cohSNR;
 		        strcpy(thisEvent->ifos, caseStr);
 		        thisEvent->mass1 = input->tmplt->mass1;
@@ -3681,12 +3876,14 @@ LALCoherentInspiralFilterSegment (
 		        cDataTemp[2].im = cData[2]->data->data[wTemp].im;
 		        cDataTemp[3].re = cData[3]->data->data[jTemp].re;
 		        cDataTemp[3].im = cData[3]->data->data[jTemp].im;
-		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
+		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		        thisEvent->inclination = inclination;
 		        thisEvent->polarization = polarization;
 			thisEvent->coa_phase = coaPhase;
-		        LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
-		        thisEvent->eff_distance = distanceEstimate;
+			/* CHECK: LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+			   calculates a valid effective distance for H1-H2. Since not both 
+			   are present here, set the effective distance to zero */
+		        thisEvent->eff_distance = 0.0;
 		        thisEvent->ligo_axis_ra = phi;
 		        thisEvent->ligo_axis_dec = theta;
 
@@ -3716,75 +3913,75 @@ LALCoherentInspiralFilterSegment (
 		        fracpart = modf( tempTime, &intpart );
 		        thisEvent->end_time.gpsSeconds = (INT4) intpart;
 		        thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
-
-    	        found=0;			
-            if(caseID[0])
-                {
-                thisEvent->g1quad.re=quadTemp[found].re;	    
-                thisEvent->g1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->g1quad.re=0;	    
-                thisEvent->g1quad.im=0;
-                }
-            if(caseID[1])
-                {
-                thisEvent->h1quad.re=quadTemp[found].re;	    
-                thisEvent->h1quad.im=quadTemp[found].im;
-        	    found=found+1;
-                }
-            else
-                {
-                thisEvent->h1quad.re=0;	    
-                thisEvent->h1quad.im=0;
-                }
-            if(caseID[2])
-                {
-                thisEvent->h2quad.re=quadTemp[found].re;	    
-                thisEvent->h2quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                { 
-                thisEvent->h2quad.re=0;	    
-                thisEvent->h2quad.im=0;
-                }
-            if(caseID[3])
-                {
-                thisEvent->l1quad.re=quadTemp[found].re;	    
-                thisEvent->l1quad.im=quadTemp[found].im;
-                found=found+1;		   
-                }
-            else
-                {
-                thisEvent->l1quad.re=0;	    
-                thisEvent->l1quad.im=0;
-                }
-            if(caseID[4])
-                {
-                thisEvent->t1quad.re=quadTemp[found].re;	    
-                thisEvent->t1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->t1quad.re=0;	    
-                thisEvent->t1quad.im=0;
-                }
-            if(caseID[5])
-                {
-                thisEvent->v1quad.re=quadTemp[found].re;	    
-                thisEvent->v1quad.im=quadTemp[found].im;
-                found=found+1;
-                }
-            else
-                {
-                thisEvent->v1quad.re=0;	    
-                thisEvent->v1quad.im=0;
-                }		
-
+			
+			found=0;			
+			if(caseID[0])
+			  {
+			    thisEvent->g1quad.re=quadTemp[found].re;	    
+			    thisEvent->g1quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  {
+			    thisEvent->g1quad.re=0;	    
+			    thisEvent->g1quad.im=0;
+			  }
+			if(caseID[1])
+			  {
+			    thisEvent->h1quad.re=quadTemp[found].re;	    
+			    thisEvent->h1quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  {
+			    thisEvent->h1quad.re=0;	    
+			    thisEvent->h1quad.im=0;
+			  }
+			if(caseID[2])
+			  {
+			    thisEvent->h2quad.re=quadTemp[found].re;	    
+			    thisEvent->h2quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  { 
+			    thisEvent->h2quad.re=0;	    
+			    thisEvent->h2quad.im=0;
+			  }
+			if(caseID[3])
+			  {
+			    thisEvent->l1quad.re=quadTemp[found].re;	    
+			    thisEvent->l1quad.im=quadTemp[found].im;
+			    found=found+1;		   
+			  }
+			else
+			  {
+			    thisEvent->l1quad.re=0;	    
+			    thisEvent->l1quad.im=0;
+			  }
+			if(caseID[4])
+			  {
+			    thisEvent->t1quad.re=quadTemp[found].re;	    
+			    thisEvent->t1quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  {
+			    thisEvent->t1quad.re=0;	    
+			    thisEvent->t1quad.im=0;
+			  }
+			if(caseID[5])
+			  {
+			    thisEvent->v1quad.re=quadTemp[found].re;	    
+			    thisEvent->v1quad.im=quadTemp[found].im;
+			    found=found+1;
+			  }
+			else
+			  {
+			    thisEvent->v1quad.re=0;	    
+			    thisEvent->v1quad.im=0;
+			  }		
+			
 		        thisEvent->snr = cohSNR;
 		        strcpy(thisEvent->ifos,caseStr);
 		        thisEvent->mass1 = input->tmplt->mass1;
@@ -3802,11 +3999,11 @@ LALCoherentInspiralFilterSegment (
 		        cDataTemp[2].im = cData[2]->data->data[wTemp].im;
 		        cDataTemp[3].re = cData[3]->data->data[jTemp].re;
 		        cDataTemp[3].im = cData[3]->data->data[jTemp].im;
-		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
+		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		        thisEvent->inclination = inclination;
 		        thisEvent->polarization = polarization;
 			thisEvent->coa_phase = coaPhase;
-		        LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		        LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		        thisEvent->eff_distance = distanceEstimate;
 		        thisEvent->ligo_axis_ra = phi;
 		        thisEvent->ligo_axis_dec = theta;
@@ -3828,9 +4025,49 @@ LALCoherentInspiralFilterSegment (
       } /*end else statement */
   } /* end case statement */
 
+
+  /* Compute null-statistic, just for H1-H2 as of now,
+     and cohSNRH1H2, if not computed above already */
+  if( caseID[1] && caseID[2] && nullStatOut && thisEvent) {	
+    
+    /* Prepare norm for null statistic */
+    nullNorm = ( 1.0 / sigmasq[1]  + 1.0 /  sigmasq[2] );
+
+    /* Allocate memory for null statistic */	  
+    memset( params->nullStatVec->data->data, 0, numPoints*sizeof(REAL4));
+
+    /* Allocate memory for null statistic if cohSNRH1H2 has 
+       not been computed above already*/	  
+    if( !(params->numDetectors == 2) )
+      memset( params->cohPhaseDiffVec->data->data, 0, numPoints*sizeof(REAL4));
+    
+    /*CHECK: Will not give intended result if first det is "G1", since it 
+      assumes that cdata[0] is H1 and cdata[1] is H1; rectify this in next rev. */
+    for (k=0;k<(INT4)numPoints;k++) {
+
+      /*Compute cohH1H2 snr, with index m replaced by k */
+      cohSnrRe = sqrt(sigmasq[1])*cData[0]->data->data[k].re
+	+ sqrt(sigmasq[2])*cData[1]->data->data[k].re;
+      cohSnrIm = sqrt(sigmasq[1])*cData[0]->data->data[k].im
+	+ sqrt(sigmasq[2])*cData[1]->data->data[k].im;
+      
+      params->cohPhaseDiffVec->data->data[k]
+	= sqrt( (cohSnrRe*cohSnrRe + cohSnrIm*cohSnrIm) / 
+		(sigmasq[1] + sigmasq[2] ) );
+
+      /* Compute null-stream statistic; 
+	 in next rev. report re and im parts separately */
+      nullStatRe = cData[0]->data->data[k].re / sqrt(sigmasq[1])
+	- cData[1]->data->data[k].re / sqrt(sigmasq[2]);
+      nullStatIm = cData[0]->data->data[k].im / sqrt(sigmasq[1])
+	- cData[1]->data->data[k].im / sqrt(sigmasq[2]);
+      params->nullStatVec->data->data[k] = 
+	( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
+    }
+    thisEvent->null_statistic = params->nullStatVec->data->data[(INT4)(numPoints/2)];
+  }
+
   /* normal exit */
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
-
-
