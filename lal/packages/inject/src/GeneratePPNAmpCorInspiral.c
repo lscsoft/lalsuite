@@ -78,7 +78,6 @@ NRCSID( GENERATEPPNAMPCORINSPIRALC, "$Id$" );
 /* Define some constants used in this module. */
 #define MAXORDER 8        /* Maximum number of N and PN terms */
 #define AMPMAXORDER 6     /* Maximum PN order in amplitude (plus one) */
-#define NUMHARMONICS 7    /* Number of harmonics */
 #define BUFFSIZE 1024     /* Number of timesteps buffered */
 #define ACCURACY (1.0e-8) /* Accuracy of root finder */
 #define TWOTHIRDS (0.6666666667) /* 2/3 */
@@ -196,9 +195,9 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   REAL4 c[MAXORDER];                      /* vector of above coefficients */
   REAL4 d0, d1, d2, d3, d4, d5, d6, d7;   /* PN phase coefficients */
   REAL4 e0, e1, e2, e3, e4, e5, e6, e7;   /* PN dy/dx coefficients */
-  REAL4 s[NUMHARMONICS];		  /* harmonic switches */	
   REAL4 p[MAXORDER];                      /* PN parameter values in phase */
   REAL4 q[AMPMAXORDER];                   /* PN parameter values in amplitude */ 
+  REAL4 Harmonics;                         /* Number of harmonics */
   REAL4 mTot, mu;      /* total mass and reduced mass */
   REAL4 eta, etaInv;   /* mass ratio and its inverse */
   REAL4 phiC;          /* phase at coalescence */
@@ -304,10 +303,11 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
     q[i] = ( i <= params->ampOrder? 1 : 0 );
  }
   
-
-  /* Switch on all harmonics */
-  for (i = 0; i < NUMHARMONICS; i++)
-    s[i] = 1.0;
+  /* Set number of harmonics in accordance with params->ampOrder*/
+  if ( params->ampOrder == 0)
+    Harmonics = 1.0;
+  else
+    Harmonics = (REAL4)(params->ampOrder) + 2.0;
 
 
   /*******************************************************************
@@ -514,7 +514,7 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   /* First, find the normalized start frequency, and the best guess as
      to the start times from each term.  We require the
      frequency to be increasing. */
-  yStart =  2.0/((REAL4)(NUMHARMONICS))*params->fStartIn / fFac;
+  yStart =  2.0/(Harmonics)*params->fStartIn / fFac;
   
   if ( params->fStopIn == 0.0 )
     yMax = 1.0/(LAL_PI*pow(6.0, 1.5)*mTot*LAL_MTSUN_SI) / fFac;
@@ -757,11 +757,11 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
      
      a7 = q[5]*a7Pseven*fseven;
      
-     *(h++) = preFac*(s[0]*a1*cos(1.0*(phiC - phase)) + s[1]*a2*cos(2.0*(phiC - phase)) + s[2]*a3*cos(3.0*(phiC - phase)) 
-	            + s[3]*a4*cos(4.0*(phiC - phase)) + s[4]*a5*cos(5.0*(phiC - phase)) + s[5]*a6*cos(6.0*(phiC - phase))
-		    + s[6]*a7*cos(7.0*(phiC - phase))
-		    + s[0]*a1mix*sin(1.0*(phiC - phase)) + s[1]*a2mix*sin(2.0*(phiC - phase)) + s[2]*a3mix*sin(3.0*(phiC - phase))
-		    + s[3]*a4mix*sin(4.0*(phiC - phase)));      
+     *(h++) = preFac*(a1*cos(1.0*(phiC - phase)) + a2*cos(2.0*(phiC - phase)) + a3*cos(3.0*(phiC - phase)) 
+	            + a4*cos(4.0*(phiC - phase)) + a5*cos(5.0*(phiC - phase)) + a6*cos(6.0*(phiC - phase))
+		    + a7*cos(7.0*(phiC - phase))
+		    + a1mix*sin(1.0*(phiC - phase)) + a2mix*sin(2.0*(phiC - phase)) + a3mix*sin(3.0*(phiC - phase))
+		    + a4mix*sin(4.0*(phiC - phase)));      
 
      /* CROSS */
      a1 = q[1]*a1Cthree*fthree + q[3]*a1Cfive*ffive + q[4]*a1Csix*fsix + q[5]*a1Cseven*fseven;         	     
@@ -782,11 +782,11 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
      
      a7 = q[5]*a7Cseven*fseven;
      
-     *(h++) = preFac*(s[0]*a1*sin(1.0*(phiC - phase)) + s[1]*a2*sin(2.0*(phiC - phase)) + s[2]*a3*sin(3.0*(phiC - phase)) 
-		    + s[3]*a4*sin(4.0*(phiC - phase)) + s[4]*a5*sin(5.0*(phiC - phase)) + s[5]*a6*sin(6.0*(phiC - phase))
-		    + s[6]*a7*sin(7.0*(phiC - phase))
-		    + s[0]*a1mix*cos(1.0*(phiC - phase)) + s[1]*a2mix*cos(2.0*(phiC - phase)) + s[2]*a3mix*cos(3.0*(phiC - phase))
-	            + s[3]*a4mix*cos(4.0*(phiC - phase)));          
+     *(h++) = preFac*(a1*sin(1.0*(phiC - phase)) + a2*sin(2.0*(phiC - phase)) + a3*sin(3.0*(phiC - phase)) 
+		    + a4*sin(4.0*(phiC - phase)) + a5*sin(5.0*(phiC - phase)) + a6*sin(6.0*(phiC - phase))
+		    + a7*sin(7.0*(phiC - phase))
+		    + a1mix*cos(1.0*(phiC - phase)) + a2mix*cos(2.0*(phiC - phase)) + a3mix*cos(3.0*(phiC - phase))
+	            + a4mix*cos(4.0*(phiC - phase)));          
 
      n++;
      t = t0 + n*dt;
