@@ -73,7 +73,8 @@ int finite(double);
 #define min(a,b) ((a)<(b)?(a):(b))
 #endif
 
-
+/* maximum number of succesive failures before switching off syncing */
+#define SYNC_FAIL_LIMIT 10
 
 /* local prototypes */
 static void reduce_fstat_toplist_precision(toplist_t *l);
@@ -741,6 +742,7 @@ int write_hs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLEA
   FILE*fp;
   UINT4 len;
   UINT4 checksum;
+  static UINT4 sync_fail_counter = 0;
 
   /* construct temporary filename */
   len = strlen(filename)+strlen(TMP_EXT)+1;
@@ -808,13 +810,15 @@ int write_hs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLEA
     return(-1);
   }
 
-  if (do_sync) {
+  if ( do_sync && (sync_fail_counter < SYNC_FAIL_LIMIT) ) {
     /* make sure the data ends up on disk */
     if(fsync(fileno(fp))) {
       LOGIOERROR("Couldn't sync", tmpfilename);
-      if(fclose(fp))
-	LOGIOERROR("In addition: couldn't close", tmpfilename);
-      return(-1);
+      sync_fail_counter++;
+      if (sync_fail_counter >= SYNC_FAIL_LIMIT)
+	LogPrintf(LOG_NORMAL,"WARNING: syncing disabled\n");
+    } else {
+      sync_fail_counter = 0;
     }
   }
 
