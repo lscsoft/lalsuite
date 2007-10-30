@@ -93,6 +93,8 @@ int write_ilwd( const char *fname, const struct series *ser )
   {
     fprintf( fp, "<real_8 name='time:step_size' units='sec'>%e</real_8>\n",
         ser->step );
+    fprintf( fp, "<real_8 name='time:heterodyne_freq' units='Hz'>%e</real_8>\n",
+        ser->f0 );
   }
   else
   {
@@ -167,7 +169,7 @@ FrameH *fr_add_proc_data( FrameH *frame, const struct series *ser )
   proc->type = IS_TIME( ser->dom ) ? 1 : 2;
   proc->subType = IS_TRANS( ser->dom ) ? 6 : 3;
 #endif
-  proc->fShift     = 0;
+  proc->fShift     = ser->f0; 
   proc->data       = vect;
   proc->next       = frame->procData;
   frame->procData  = proc;
@@ -204,4 +206,3 @@ FrameH *fr_add_proc_data( FrameH *frame, const struct series *ser )
 
   return frame;
 }
-

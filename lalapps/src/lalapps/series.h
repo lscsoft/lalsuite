@@ -42,6 +42,7 @@ struct series
   domain      dom;
   int         type;
   double      step;
+  float       f0;
   const char *unit;
   size_t      size;
   float      *data;
