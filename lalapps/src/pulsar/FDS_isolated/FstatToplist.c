@@ -74,7 +74,7 @@ int finite(double);
 #endif
 
 /* maximum number of succesive failures before switching off syncing */
-#define SYNC_FAIL_LIMIT 10
+#define SYNC_FAIL_LIMIT 5
 
 /* local prototypes */
 static void reduce_fstat_toplist_precision(toplist_t *l);
