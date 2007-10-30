@@ -928,7 +928,11 @@ static void worker (void) {
   if(crash_fpu)
     drain_fpu_stack();
 #elif defined(_MSC_VER)
-  _controlfp(1,_MCW_EM);
+  /* _controlfp(1,_MCW_EM); */
+  {
+    unsigned int cw87, cwSSE;
+    __control87_2(_EM_INVALID,_MCW_EM,&cw87,&cwSSE);
+  }
 
   if(crash_fpu)
     drain_fpu_stack();
