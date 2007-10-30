@@ -151,6 +151,9 @@ typedef UINT4 ssew_t;
 extern void  set_fpu_control_word(const fpuw_t word);
 extern fpuw_t get_fpu_control_word(void);
 extern fpuw_t get_fpu_status(void);
+extern ssew_t get_sse_control_status(void);
+extern void set_sse_control_status(const ssew_t cword);
+
 /* constants in FPU status word and control word mask */
 #define FPU_STATUS_INVALID      (1<<0)
 #define FPU_STATUS_DENORMALIZED (1<<1)

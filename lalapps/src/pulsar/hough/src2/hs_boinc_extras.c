@@ -904,7 +904,7 @@ static void worker (void) {
     
     /* throe an exception at an invalid operation */
     fpstat &= ~FPU_STATUS_INVALID;
-    set_fpu_control_word(fpstat);
+    set_fpu_control_word(fpstat);    
 
     fprintf(stderr,"FPU masked exceptions set: %4x:",fpstat);
     PRINT_FPU_EXCEPTION_MASK(fpstat);
@@ -920,6 +920,9 @@ static void worker (void) {
     PRINT_FPU_EXCEPTION_MASK(fpstat);
     fprintf(stderr,"\n");
     */
+#ifdef ENABLE_SSE_EXCEPTIONS
+    set_sse_control_status(get_sse_control_status() & ~SSE_MASK_INVALID);
+#endif
   }
 
   if(crash_fpu)
