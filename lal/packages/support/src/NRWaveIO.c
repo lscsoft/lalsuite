@@ -274,7 +274,7 @@ LALAddStrainModes(
 	    sumStrain = XLALSumStrain( sumStrain, tempStrain );
 	  }
 
-	  fprintf(stdout, "\nInjecting NR waveform from file %s", thisMetaData.filename);
+	  /*fprintf(stdout, "\nInjecting NR waveform from file %s", thisMetaData.filename);*/
 
           /* clear memory for strain */
           XLALDestroyREAL4VectorSequence ( tempStrain->data );
@@ -285,7 +285,7 @@ LALAddStrainModes(
 
       } /* end loop over modeL values */
 
-  fprintf(stdout, "\nNR injections done\n");
+  /*fprintf(stdout, "\nNR injections done\n");*/
 
   *outStrain = sumStrain;
       
