@@ -75,8 +75,8 @@ FlatLatticeTiling *XLALCreateFlatLatticeTiling(
   tiling->first_degenerate = -1;
 
   tiling->metric = gsl_matrix_calloc(dimension, dimension);
-  tiling->metric_congruent_factor = gsl_matrix_alloc(dimension, dimension);
-  gsl_matrix_set_identity(tiling->metric_congruent_factor);
+  tiling->metric_scaling = gsl_vector_alloc(dimension);
+  gsl_vector_set_all(tiling->metric_scaling, 1.0);
 
   tiling->mismatch = mismatch;
 
@@ -137,7 +137,7 @@ void XLALDestroyFlatLatticeTiling(
     if (tiling->is_degenerate) gsl_vector_int_free(tiling->is_degenerate);
 
     if (tiling->metric) gsl_matrix_free(tiling->metric);
-    if (tiling->metric_congruent_factor) gsl_matrix_free(tiling->metric_congruent_factor);
+    if (tiling->metric_scaling) gsl_vector_free(tiling->metric_scaling);
 
     if (tiling->generator) gsl_matrix_free(tiling->generator);
 
@@ -464,6 +464,8 @@ int XLALSetupFlatLatticeTiling(
   gsl_matrix_scale(tiling->generator, 1.0 / covering_radius);
 
   /* Print debugging */
+  LogPrintfVerbatim(LOG_DETAIL, "Normalised thickness: % 0.8g\n", tiling->generator_norm_thickness);
+  LogPrintfVerbatim(LOG_DETAIL, "Covering radius: % 0.8g\n", covering_radius);
   LogPrintfVerbatim(LOG_DETAIL, "Generator matrix:\n");
   for (i = 0; i < n; ++i) {
     for (j = 0; j < n; ++j) {
@@ -472,16 +474,16 @@ int XLALSetupFlatLatticeTiling(
     LogPrintfVerbatim(LOG_DETAIL, ";\n");
   }
 
-  /*  WRONG!!!
-   *  Re-scale each eigenvector $v$ by $v' = v \sqrt{\mu / \lambda}$, where
+  /*
+   *  Re-scale each eigenvector $v$ by $v' = v * \mu / \sqrt{\lambda}$, where
    *  $\mu$ is the mismatch, $\lambda$ is the eigenvalue, so that:
-   *  $g_{ij} v'^i v'^j = V'^{tr} G V'                        $
-   *  $                 = \mu / \lambda * (V^{tr} G V)$
-   *  $                 = \mu / \lambda * \lambda     $
-   *  $                 = \mu                         $
+   *  $g_{ij} v'^i v'^j = V'^{tr} G V'                  $
+   *  $                 = \mu^2 / \lambda * (V^{tr} G V)$
+   *  $                 = \mu^2 / \lambda * \lambda     $
+   *  $                 = \mu^2                         $
    */
 
-  mismatch_factor = tiling->mismatch;
+  mismatch_factor = pow(tiling->mismatch, 2);
   for (j = 0; j < n; ++j) {
     eigen_val_j = gsl_vector_get(eigen_val, j);
     for (i = 0; i < n; ++i) {
@@ -493,38 +495,35 @@ int XLALSetupFlatLatticeTiling(
 
   /*
    *  Calculate the transformation from the lattice to the parameter space:
-   *  $p = T \eta = P^{-tr} V G \eta$, where
+   *  $p = T \eta = diag(1/S) V G \eta$, where
    *  $\eta \el Z_n$ is a vector of integers describing the position of a lattice point
    *  relative to the origin (e.g. how many points across? up? down?), $G$ is the generator
    *  matrix of the lattice, which transforms $\eta$ into the lattice points with unit 
    *  covering radius, $V$ are the rescaled eigenvectors, which scale and rotate $G \eta$
-   *  appropriately, and $P$ is the congruent factor of the real metric $M$ (such that
-   *  real_metric = $P^{tr}$ tiling->metric $P$) which converts $V$ into the eigenvectors
+   *  appropriately, and $S$ are the scaling factors of the real metric $M$ (such that
+   *  real_metric = diag(S) tiling->metric diag(S)) which converts $V$ into the eigenvectors
    *  of the real matrix $V'$, such that $V'^{tr} M V'$ is equal to the appropriate maximum
    *  mismatch factors.
    */
 
-  /* Compute congruent factor LU decomposition */
-  gsl_matrix_memcpy(LU_decomp, tiling->metric_congruent_factor);
-  gsl_linalg_LU_decomp(LU_decomp, LU_perm, &LU_sign);
-
-  /* Compute congruent factor inverse */
-  gsl_linalg_LU_invert(LU_decomp, LU_perm, temp_1);
-
   /* Compute part of transformation matrix */
-  gsl_blas_dgemm(CblasTrans,   CblasNoTrans, 1.0, temp_1, eigen_vec, 0.0, tiling->latt_to_param);
+  for (i = 0; i < n; ++i) {
+    for (j = 0; j < n; ++j) {
+      gsl_matrix_set(tiling->latt_to_param, i, j, gsl_matrix_get(eigen_vec, i, j) / gsl_vector_get(tiling->metric_scaling, i));
+    }
+  }
 
   /* Calculate real metric and print debugging */
-  gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, tiling->metric, tiling->metric_congruent_factor, 0.0, temp_1);
-  gsl_blas_dgemm(CblasTrans,   CblasNoTrans, 1.0, tiling->metric_congruent_factor, temp_1, 0.0, real_metric);
   LogPrintfVerbatim(LOG_DETAIL, "Real parameter space metric:\n");
   for (i = 0; i < n; ++i) {
     for (j = 0; j < n; ++j) {
+      gsl_matrix_set(real_metric, i, j, gsl_matrix_get(tiling->metric, i, j) *
+		     gsl_vector_get(tiling->metric_scaling, i) * gsl_vector_get(tiling->metric_scaling, j));
       LogPrintfVerbatim(LOG_DETAIL, "% 0.8e ", gsl_matrix_get(real_metric, i, j));
     }
     LogPrintfVerbatim(LOG_DETAIL, ";\n");
   }
-  
+
   /* Calculate quadratic product and print debugging */
   gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, real_metric, tiling->latt_to_param, 0.0, temp_1);
   gsl_blas_dgemm(CblasTrans,   CblasNoTrans, 1.0, tiling->latt_to_param, temp_1, 0.0, temp_2);

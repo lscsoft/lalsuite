@@ -30,9 +30,9 @@ struct tagFlatLatticeTiling {
   gsl_vector_int *is_degenerate;
   int first_degenerate;
 
-  /* Matrix containing the parameter space metric, and a congruent factor */
+  /* Matrix containing the parameter space metric, and scaling factors */
   gsl_matrix *metric;
-  gsl_matrix *metric_congruent_factor;
+  gsl_vector *metric_scaling;
 
   /* Maximum mismatch of the parameter space templates */
   REAL8 mismatch;

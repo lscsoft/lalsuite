@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
   }
   
   /* Fill spindown metric and mismatch*/
-  if (XLALSpindownMetric(tiling->metric, tiling->metric_congruent_factor, (REAL8) Tspan) != XLAL_SUCCESS) {
+  if (XLALSpindownMetric(tiling->metric, tiling->metric_scaling, (REAL8) Tspan) != XLAL_SUCCESS) {
     LALPrintError("%s\nERROR: XLALSpindownOnlyMetric failed\n", rcsid);
     return EXIT_FAILURE;
   }

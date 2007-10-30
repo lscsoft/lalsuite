@@ -27,7 +27,7 @@ extern "C" {
 
   NRCSID(DIRECTEDSEARCHH, "$Id$");
 
-  int XLALSpindownMetric(gsl_matrix*, gsl_matrix*, REAL8);
+  int XLALSpindownMetric(gsl_matrix*, gsl_vector*, REAL8);
 
   int XLALBrakingIndexParameterSpace(FlatLatticeTiling*, REAL8, REAL8, REAL8, INT4, INT4);
 

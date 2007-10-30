@@ -46,12 +46,12 @@ REAL8 factorial(INT4 n) {
  *  (see that code for further background), except in terms of the frequency time
  *  derivatives expected by ComputeFstat, and scaled so that the mismatch can be
  *  calculated as $\mu = g_{ij} \Delta f^{(i)} \Delta f^{(j)}$. The time span-dependent
- *  components are included in the congruent factor, if included.
+ *  components are included in the scaling factor, if included.
  */
 int XLALSpindownMetric(
-		       gsl_matrix* metric   , /**< [in/out] Matrix containing the congruent metric */
-		       gsl_matrix* congruent, /**< [in/out] Optional matrix of the congruent factor */
-		       REAL8 Tspan            /**< [in] Time span of the data set */
+		       gsl_matrix* metric,  /**< [in/out] Matrix containing the congruent metric */
+		       gsl_vector* scaling, /**< [in/out] Optional matrix of the congruent factor */
+		       REAL8 Tspan          /**< [in] Time span of the data set */
 		       )
 {
 
@@ -73,14 +73,14 @@ int XLALSpindownMetric(
   /* Generate metric */
   for (i = 0; i < metric->size1; ++i) {
 
+    if (scaling != NULL) {
+      gsl_vector_set(scaling, i, pow(Tspan, 1 + i));
+    }
+
     for (j = 0; j < metric->size2; ++j) {
 
-      if (congruent != NULL) {
-	gsl_matrix_set(congruent, i, j, (i == j ? pow(Tspan, 1 + i) : 0.0));
-      }
-
       v = pow(LAL_PI, 2) / (factorial(i) * factorial(j) * (2 + i) * (2 + j) * (3 + i + j));
-      if (congruent == NULL) {
+      if (scaling == NULL) {
 	v *= pow(Tspan, 2 + i + j);
       }
       gsl_matrix_set(metric, i, j, v);
