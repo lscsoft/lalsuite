@@ -152,8 +152,6 @@ FrameH *fr_add_proc_COMPLEX8FrequencySeries (
     return fr_add_proc_data( frame, &fdata );
 }
 
-
-
 FrameH *fr_add_proc_COMPLEX8TimeSeries (
     FrameH                        *frame,
     COMPLEX8TimeSeries            *chan,
@@ -173,6 +171,7 @@ FrameH *fr_add_proc_COMPLEX8TimeSeries (
     fdata.dom = Time;
     fdata.type = FR_VECT_8C;
     fdata.step = (float) chan->deltaT;
+    fdata.f0 = (float) chan->f0;
     fdata.unit = unit;
     fdata.size = (size_t) chan->data->length;
     fdata.data = (float *) chan->data->data;
