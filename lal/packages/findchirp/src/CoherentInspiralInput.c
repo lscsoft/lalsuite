@@ -162,6 +162,10 @@ LALFindChirpCreateCoherentInput(
       memcpy(cohInputData->name, input->name, LALNameLength * sizeof(CHAR) ); 
       memcpy(cohInputData->data->data, &(input->data->data[cohSegStart]), fullCohSegLength * sizeof(COMPLEX8) );
       cohInputData->deltaT = deltaT;
+      /*CHECK: Below is a temporary fix for communicating sigmasq 
+	from inspiral to coherent_inspiral via the f0 member of 
+	the COMPLEX8TimeSeries structure*/
+      cohInputData->f0 = (REAL8) templt->sigmasq;
       tempTime = inputEpochSeconds + inputEpochNanoSeconds*1.0e-9 + cohSegStart * deltaT;
       fracpart = modf(tempTime, &intpart);
       cohInputData->epoch.gpsSeconds = (INT4) intpart;
