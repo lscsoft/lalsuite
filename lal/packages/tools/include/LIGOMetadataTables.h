@@ -551,6 +551,7 @@ tagMultiInspiralTable
   REAL4         ligo_angle_sig;
   REAL4         inclination;
   REAL4         polarization;
+  REAL4         null_statistic;
   COMPLEX8      h1quad;
   COMPLEX8      h2quad;
   COMPLEX8      l1quad;
