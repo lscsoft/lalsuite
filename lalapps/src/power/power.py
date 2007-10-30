@@ -182,6 +182,12 @@ def match_nodes_to_caches(nodes, caches, verbose = False):
 	return node_groups, unused
 
 
+def cache_span(cache):
+	a = min([cache_entry.segment[0] for cache_entry in cache])
+	b = max([cache_entry.segment[1] for cache_entry in cache])
+	return segments.segment(a, b)
+
+
 #
 # =============================================================================
 #
@@ -552,7 +558,7 @@ class BurcaJob(pipeline.CondorDAGJob):
 		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "ligolw_burca-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "ligolw_burca-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
-		self.add_condor_cmd("Requirements", "Memory > 1100")
+		self.add_condor_cmd("Requirements", "Memory >= $(macrominram)")
 		self.add_ini_opts(config_parser, "ligolw_burca")
 
 
@@ -578,6 +584,16 @@ class BurcaNode(pipeline.CondorDAGNode):
 			filename = c.path()
 			pipeline.CondorDAGNode.add_file_arg(self, filename)
 			self.add_output_file(filename)
+		longest_duration = max([abs(cache_entry.segment) for cache_entry in self.input_cache])
+		if longest_duration > 20000:
+			# ask for >= 1500 MB
+			self.add_macro("macrominram", 1500)
+		elif longest_duration > 10000:
+			# ask for >= 1100 MB
+			self.add_macro("macrominram", 1100)
+		else:
+			# run on any node
+			self.add_macro("macrominram", 0)
 
 	def add_file_arg(self, filename):
 		raise NotImplementedError
@@ -900,14 +916,27 @@ def make_datafind_fragment(dag, instrument, seg):
 	return set([node])
 
 
-def make_lladd_fragment(dag, parents, tag, segment = None, preserve_cache = [], extra_input_cache = None):
+def make_lladd_fragment(dag, parents, tag, segment = None, input_cache = None, preserve_cache = None, extra_input_cache = None):
 	node = LigolwAddNode(lladdjob)
 
+	# link to parents
 	for parent in parents:
-		node.add_input_cache(parent.get_output_cache())
 		node.add_parent(parent)
+
+	# build input cache
+	if input_cache is None:
+		# default is to use all output files from parents
+		for parent in parents:
+			node.add_input_cache(parent.get_output_cache())
+	else:
+		# but calling code can provide its own collection
+		node.add_input_cache(input_cache)
 	if extra_input_cache is not None:
+		# sometimes it helps to add some extra
 		node.add_input_cache(extra_input_cache)
+	if preserve_cache is not None:
+		node.add_preserve_cache(preserve_cache)
+
 
 	# construct names for the node and output file, and override the
 	# segment if needed
@@ -915,9 +944,8 @@ def make_lladd_fragment(dag, parents, tag, segment = None, preserve_cache = [], 
 	if segment is None:
 		segment = cache_entry.segment
 	node.set_name("lladd_%s_%s_%d_%d" % (tag, cache_entry.observatory, int(segment[0]), int(abs(segment))))
-	node.set_output("%s-%s-%d-%d.xml" % (cache_entry.observatory, tag, int(segment[0]), int(abs(segment))), segment = segment)
+	node.set_output("%s-%s-%d-%d.xml.gz" % (cache_entry.observatory, tag, int(segment[0]), int(abs(segment))), segment = segment)
 
-	node.add_preserve_cache(preserve_cache)
 	node.set_retry(3)
 	dag.add_node(node)
 	return set([node])
@@ -972,9 +1000,10 @@ def make_binjfind_fragment(dag, parents, tag, verbose = False):
 	nodes = []
 	while input_cache:
 		node = BinjfindNode(binjfindjob)
-		node.set_name("ligolw_binjfind_%s_%d" % (tag, len(nodes)))
 		node.add_input_cache(input_cache[:binjfindjob.files_per_binjfind])
 		del input_cache[:binjfindjob.files_per_binjfind]
+		seg = cache_span(node.get_input_cache())
+		node.set_name("ligolw_binjfind_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
 		node.add_macro("macrocomment", tag)
 		dag.add_node(node)
 		nodes.append(node)
@@ -994,9 +1023,10 @@ def make_bucluster_fragment(dag, parents, tag, verbose = False):
 	nodes = []
 	while input_cache:
 		node = BuclusterNode(buclusterjob)
-		node.set_name("ligolw_bucluster_%s_%d" % (tag, len(nodes)))
 		node.add_input_cache(input_cache[:buclusterjob.files_per_bucluster])
 		del input_cache[:buclusterjob.files_per_bucluster]
+		seg = cache_span(node.get_input_cache())
+		node.set_name("ligolw_bucluster_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
 		node.add_macro("macrocomment", tag)
 		node.set_retry(3)
 		dag.add_node(node)
@@ -1017,9 +1047,10 @@ def make_bucut_fragment(dag, parents, tag, verbose = False):
 	nodes = []
 	while input_cache:
 		node = BucutNode(bucutjob)
-		node.set_name("ligolw_bucut_%s_%d" % (tag, len(nodes)))
 		node.add_input_cache(input_cache[:bucutjob.files_per_bucut])
 		del input_cache[:bucutjob.files_per_bucut]
+		seg = cache_span(node.get_input_cache())
+		node.set_name("ligolw_bucut_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
 		node.add_macro("macrocomment", tag)
 		dag.add_node(node)
 		nodes.append(node)
@@ -1033,21 +1064,27 @@ def make_bucut_fragment(dag, parents, tag, verbose = False):
 	return set(nodes)
 
 
-def make_burca_fragment(dag, parents, tag):
-	parents = list(parents)
-	nodes = set()
-	while parents:
-		parent = parents.pop()
-		input_cache = parent.get_output_cache()
-		seg = make_cache_entry(input_cache, None, None).segment
+def make_burca_fragment(dag, parents, tag, verbose = False):
+	input_cache = [cache_entry for parent in parents for cache_entry in parent.get_output_cache()]
+	input_cache.sort(lambda a, b: cmp(a.segment, b.segment))
+	nodes = []
+	while input_cache:
 		node = BurcaNode(burcajob)
+		node.add_input_cache(input_cache[:1])
+		del input_cache[:1]
+		seg = cache_span(node.get_input_cache())
 		node.set_name("ligolw_burca_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
-		node.add_parent(parent)
-		node.add_input_cache(input_cache)
 		node.add_macro("macrocomment", tag)
 		dag.add_node(node)
-		nodes.add(node)
-	return nodes
+		nodes.append(node)
+	parent_groups, unused = match_nodes_to_caches(parents, [node.get_input_cache() for node in nodes], verbose = verbose)
+	if unused:
+		# impossible
+		raise Error
+	for node, parents in zip(nodes, parent_groups):
+		for parent in parents:
+			node.add_parent(parent)
+	return set(nodes)
 
 
 def make_burca_tailor_fragment(dag, input_cache, seg, tag):
@@ -1056,9 +1093,9 @@ def make_burca_tailor_fragment(dag, input_cache, seg, tag):
 	nodes = []
 	while input_cache:
 		node = BurcaTailorNode(burcatailorjob)
-		node.set_name("ligolw_burca_tailor_%s_%d_%d_%d" % (tag, int(seg[0]), int(abs(seg)), len(nodes)))
 		node.add_input_cache(input_cache[-5:])
 		del input_cache[-5:]
+		node.set_name("ligolw_burca_tailor_%s_%d_%d_%d" % (tag, int(seg[0]), int(abs(seg)), len(nodes)))
 		node.set_output(tag)
 		dag.add_node(node)
 		nodes.append(node)

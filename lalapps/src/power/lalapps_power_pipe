@@ -381,17 +381,17 @@ coinc_nodes = set()
 for n, (time_slides_cache_entry, time_slides) in enumerate(background_time_slides.iteritems()):
 	if options.verbose:
 		print >>sys.stderr, "non-injections %d/%d (%s):" % (n + 1, len(background_time_slides), time_slides_cache_entry.path())
-	extra_cache = set([time_slides_cache_entry])
+	tisi_cache = set([time_slides_cache_entry])
 	nodes = set()
 	for seg, parents, cache in group_coinc_parents(pwr_nodes, time_slides, verbose = options.verbose):
-		nodes |= power.make_lladd_fragment(dag, parents, "%s_%d" % (options.tag, n), segment = seg, extra_input_cache = extra_cache, preserve_cache = cache | extra_cache)
+		nodes |= power.make_lladd_fragment(dag, parents, "%s_%d" % (options.tag, n), segment = seg, input_cache = cache, extra_input_cache = tisi_cache, preserve_cache = cache | tisi_cache)
 	if options.enable_clustering:
 		if options.verbose:
 			print >>sys.stderr, "building post-lladd bucluster jobs ..."
 		nodes = power.make_bucluster_fragment(dag, nodes, "POSTLLADD_%s_%d" % (options.tag, n), verbose = options.verbose)
 	if options.verbose:
 		print >>sys.stderr, "building burca jobs ..."
-	coinc_nodes |= power.make_burca_fragment(dag, nodes, "%s_%d" % (options.tag, n))
+	coinc_nodes |= power.make_burca_fragment(dag, nodes, "%s_%d" % (options.tag, n), verbose = options.verbose)
 	if options.verbose:
 		print >>sys.stderr, "done non-injections %d/%d" % (n + 1, len(background_time_slides))
 
@@ -440,8 +440,9 @@ if options.enable_clustering:
 # coincidence analysis.  note that this loop constructs a broken dag if
 # there is more than one time slide file because it doesn't include n in
 # the node tags (so there will be duplicate node names and duplicate output
-# files).  this is ok because the user can only provide one time slide file
-# on the command line.
+# files), and because the lladd nodes' preserve caches don't save the
+# trigger files.  this is ok because the user can only provide one time
+# slide file on the command line.
 
 
 inj_coinc_nodes = set()
@@ -449,10 +450,10 @@ binj_cache = set([cache_entry for node in binjnodes for cache_entry in node.get_
 for n, (time_slides_cache_entry, time_slides) in enumerate(injection_time_slides.iteritems()):
 	if options.verbose:
 		print >>sys.stderr, "injections %d/%d (%s):" % (n + 1, len(injection_time_slides), time_slides_cache_entry.path())
-	extra_cache = set([time_slides_cache_entry])
+	tisi_cache = set([time_slides_cache_entry])
 	nodes = set()
 	for seg, parents, cache in group_coinc_parents(pwr_nodes, time_slides, verbose = options.verbose):
-		nodes |= power.make_lladd_fragment(dag, parents | binjnodes, "INJECTIONS_%s" % options.tag, segment = seg, extra_input_cache = extra_cache, preserve_cache = cache | binj_cache | extra_cache)
+		nodes |= power.make_lladd_fragment(dag, parents | binjnodes, "INJECTIONS_%s" % options.tag, segment = seg, input_cache = cache | binj_cache, extra_input_cache = tisi_cache, preserve_cache = binj_cache | tisi_cache)
 	if options.enable_clustering:
 		if options.verbose:
 			print >>sys.stderr, "building post-lladd bucluster jobs ..."
@@ -462,7 +463,7 @@ for n, (time_slides_cache_entry, time_slides) in enumerate(injection_time_slides
 	nodes = power.make_bucut_fragment(dag, nodes, "INJECTIONS_%s" % options.tag, verbose = options.verbose)
 	if options.verbose:
 		print >>sys.stderr, "building burca jobs ..."
-	inj_coinc_nodes |= power.make_burca_fragment(dag, nodes, "INJECTIONS_%s" % options.tag)
+	inj_coinc_nodes |= power.make_burca_fragment(dag, nodes, "INJECTIONS_%s" % options.tag, verbose = options.verbose)
 	if options.verbose:
 		print >>sys.stderr, "done injections %d/%d" % (n + 1, len(background_time_slides))
 
