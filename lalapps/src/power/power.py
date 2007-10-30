@@ -90,16 +90,16 @@ def make_dag_directories(config_parser):
 			raise e
 
 
-def get_parents_per_binjfind(config_parser):
-	return config_parser.getint("pipeline", "parents_per_binjfind")
+def get_files_per_binjfind(config_parser):
+	return config_parser.getint("pipeline", "files_per_binjfind")
 
 
-def get_parents_per_bucluster(config_parser):
-	return config_parser.getint("pipeline", "parents_per_bucluster")
+def get_files_per_bucluster(config_parser):
+	return config_parser.getint("pipeline", "files_per_bucluster")
 
 
-def get_parents_per_bucut(config_parser):
-	return config_parser.getint("pipeline", "parents_per_bucut")
+def get_files_per_bucut(config_parser):
+	return config_parser.getint("pipeline", "files_per_bucut")
 
 
 def get_timing_parameters(config_parser):
@@ -123,9 +123,11 @@ def get_timing_parameters(config_parser):
 	return params
 
 
-def make_cache_entry(seglists, description, path):
-	# make a copy so we can trash it
-	seglists = segments.segmentlistdict(seglists)
+def make_cache_entry(input_cache, description, path):
+	# summarize segment information
+	seglists = segments.segmentlistdict()
+	for c in input_cache:
+		seglists |= c.to_segmentlistdict()
 
 	# obtain instrument list
 	instruments = seglists.keys()
@@ -147,6 +149,38 @@ def make_cache_entry(seglists, description, path):
 	# construct a cache entry from the instruments and
 	# segments that remain
 	return CacheEntry("+".join(instruments) or None, description, seglists.extent_all(), url)
+
+
+def match_nodes_to_caches(nodes, caches, verbose = False):
+	"""
+	For each cache, get the set of the nodes whose output files it
+	contains.  A node is allowed to provide more than one output file,
+	and thus can be listed in more than one set.
+	"""
+	# can't use [set()] * len(caches) for the normal reason
+	node_groups = [set() for cache in caches]
+	n_found = 0
+	for n, node in enumerate(nodes):
+		if verbose and not (n % 10):
+			print >>sys.stderr, "\t%.1f%%\r" % (100.0 * n / len(nodes)),
+		found = False
+		for output in node.get_output_cache():
+			# find the caches in which this output has been
+			# placed, and add the node to the matching group
+			for i, cache in enumerate(caches):
+				if output in cache:
+					node_groups[i].add(node)
+					found = True
+		if found:
+			n_found += 1
+	if verbose:
+		print >>sys.stderr, "\t100.0%"
+	# count the number of nodes whose output files were not found in
+	# any caches
+	unused = len(nodes) - n_found
+
+	# done
+	return node_groups, unused
 
 
 #
@@ -342,11 +376,8 @@ class LigolwAddNode(pipeline.LigolwAddNode):
 		self.output_cache = []
 
 	def __update_output_cache(self):
-		seglists = segments.segmentlistdict()
-		for c in self.input_cache:
-			seglists |= c.to_segmentlistdict()
 		del self.output_cache[:]
-		self.output_cache.append(make_cache_entry(seglists, None, self._AnalysisNode__output))
+		self.output_cache.append(make_cache_entry(self.input_cache, None, self._AnalysisNode__output))
 
 	def set_name(self, *args):
 		pipeline.LigolwAddNode.set_name(self, *args)
@@ -368,6 +399,9 @@ class LigolwAddNode(pipeline.LigolwAddNode):
 	def add_preserve_cache(self, cache):
 		for c in cache:
 			self.add_var_arg("--remove-input-except %s" % c.path())
+
+	def get_input_cache(self):
+		return self.input_cache
 
 	def get_output_cache(self):
 		return self.output_cache
@@ -411,6 +445,9 @@ class BucutNode(pipeline.CondorDAGNode):
 
 	def add_file_arg(self, filename):
 		raise NotImplementedError
+
+	def get_input_cache(self):
+		return self.input_cache
 
 	def get_output_cache(self):
 		return self.output_cache
@@ -456,6 +493,9 @@ class BuclusterNode(pipeline.CondorDAGNode):
 		for c in self.input_cache:
 			print >>f, str(c)
 
+	def get_input_cache(self):
+		return self.input_cache
+
 	def get_output_cache(self):
 		return self.output_cache
 
@@ -491,6 +531,9 @@ class BinjfindNode(pipeline.CondorDAGNode):
 
 	def add_file_arg(self, filename):
 		raise NotImplementedError
+
+	def get_input_cache(self):
+		return self.input_cache
 
 	def get_output_cache(self):
 		return self.output_cache
@@ -539,6 +582,9 @@ class BurcaNode(pipeline.CondorDAGNode):
 	def add_file_arg(self, filename):
 		raise NotImplementedError
 
+	def get_input_cache(self):
+		return self.input_cache
+
 	def get_output_cache(self):
 		return self.output_cache
 
@@ -582,12 +628,12 @@ class SQLiteNode(pipeline.CondorDAGNode):
 			raise AttributeError, "cannot change attributes after computing output cache"
 		self.add_macro("macrodatabase", filename)
 
+	def get_input_cache(self):
+		return self.input_cache
+
 	def get_output_cache(self):
 		if not self.output_cache:
-			seglists = segments.segmentlistdict()
-			for c in self.input_cache:
-				seglists |= c.to_segmentlistdict()
-			self.output_cache = [make_cache_entry(seglists, None, self.get_opts()["macrodatabase"])]
+			self.output_cache = [make_cache_entry(self.input_cache, None, self.get_opts()["macrodatabase"])]
 		return self.output_cache
 
 	def get_output_files(self):
@@ -632,10 +678,7 @@ class BurcaTailorNode(pipeline.CondorDAGNode):
 	def set_output(self, description):
 		if self.output_cache:
 			raise AttributeError, "cannot change attributes after computing output cache"
-		seglists = segments.segmentlistdict()
-		for c in self.input_cache:
-			seglists |= c.to_segmentlistdict()
-		cache_entry = make_cache_entry(seglists, description, "")
+		cache_entry = make_cache_entry(self.input_cache, description, "")
 		filename = "%s-%s-%d-%d.xml.gz" % (cache_entry.observatory, cache_entry.description, int(cache_entry.segment[0]), int(abs(cache_entry.segment)))
 		self.add_var_opt("output", filename)
 		cache_entry.url = "file://localhost" + os.path.abspath(filename)
@@ -721,17 +764,23 @@ def init_job_types(config_parser, types = ["datafind", "binj", "power", "lladd",
 	# ligolw_binjfind
 	if "binjfind" in types:
 		binjfindjob = BinjfindJob(config_parser)
-		binjfindjob.parents_per_binjfind = get_parents_per_binjfind(config_parser)
+		binjfindjob.files_per_binjfind = get_files_per_binjfind(config_parser)
+		if binjfindjob.files_per_binjfind < 1:
+			raise ValueError, "files_per_binjfind < 1"
 
 	# ligolw_bucut
 	if "bucut" in types:
 		bucutjob = BucutJob(config_parser)
-		bucutjob.parents_per_bucut = get_parents_per_bucut(config_parser)
+		bucutjob.files_per_bucut = get_files_per_bucut(config_parser)
+		if bucutjob.files_per_bucut < 1:
+			raise ValueError, "files_per_bucut < 1"
 
 	# ligolw_bucluster
 	if "bucluster" in types:
 		buclusterjob = BuclusterJob(config_parser)
-		buclusterjob.parents_per_bucluster = get_parents_per_bucluster(config_parser)
+		buclusterjob.files_per_bucluster = get_files_per_bucluster(config_parser)
+		if buclusterjob.files_per_bucluster < 1:
+			raise ValueError, "files_per_bucluster < 1"
 		buclusterjob.cache_dir = get_cache_dir(config_parser)
 
 	# ligolw_burca
@@ -851,26 +900,33 @@ def make_datafind_fragment(dag, instrument, seg):
 	return set([node])
 
 
-def make_lladd_fragment(dag, parents, instrument, seg, tag, preserve_cache = [], input_cache = None):
+def make_lladd_fragment(dag, parents, tag, preserve_cache = [], input_cache = None):
 	node = LigolwAddNode(lladdjob)
-	node.set_name("lladd_%s_%s_%s_%s" % (instrument, tag, int(seg[0]), int(abs(seg))))
+
+	# collect input cache entries.  if input_cache is None, use the
+	# parents' output caches as the source of input files
 	parent_output_cache = []
 	for parent in parents:
 		node.add_parent(parent)
 		parent_output_cache += parent.get_output_cache()
-	# if input_cache is None, use the parents' output caches as the
-	# source of input files
 	if input_cache is not None:
 		node.add_input_cache(input_cache)
 	else:
 		node.add_input_cache(parent.get_output_cache())
+
+	# construct a name for the output file
+	cache_entry = make_cache_entry(node.get_input_cache(), None, None)
+	node.set_name("lladd_%s_%s_%d_%d" % (tag, cache_entry.observatory, int(cache_entry.segment[0]), int(abs(cache_entry.segment))))
+	node.set_output("%s-%s-%d-%d.xml" % (cache_entry.observatory, tag, int(cache_entry.segment[0]), int(abs(cache_entry.segment))))
+	node.set_output_segment(cache_entry.segment)
+
 	node.add_preserve_cache(preserve_cache)
 	node.set_retry(3)
 	dag.add_node(node)
 	# NOTE:  code that calls this generally requires a single node to
 	# be returned.  if this function is ever modified to return more
 	# than one node, check and fix all calling codes.
-	return [node]
+	return set([node])
 
 
 def make_power_fragment(dag, parents, instrument, seg, tag, framecache, injargs = {}):
@@ -886,7 +942,7 @@ def make_power_fragment(dag, parents, instrument, seg, tag, framecache, injargs 
 		# this is a hack, but I can't be bothered
 		node.add_var_arg("--%s %s" % (arg, value))
 	dag.add_node(node)
-	return [node]
+	return set([node])
 
 
 def make_binj_fragment(dag, seg, tag, offset, flow, fhigh):
@@ -913,72 +969,91 @@ def make_binj_fragment(dag, seg, tag, offset, flow, fhigh):
 	node.add_macro("macrofratio", fratio)
 	node.add_macro("macroseed", int(time.time() + start))
 	dag.add_node(node)
-	return [node]
+	return set([node])
 
 
-def make_binjfind_fragment(dag, parents, tag):
-	parents = list(parents)
+def make_binjfind_fragment(dag, parents, tag, verbose = False):
+	input_cache = [cache_entry for parent in parents for cache_entry in parent.get_output_cache()]
+	input_cache.sort(lambda a, b: cmp(a.segment, b.segment))
 	nodes = []
-	while parents:
+	while input_cache:
 		node = BinjfindNode(binjfindjob)
 		node.set_name("ligolw_binjfind_%s_%d" % (tag, len(nodes)))
-		for i in xrange(min(binjfindjob.parents_per_binjfind, len(parents))):
-			parent = parents.pop()
-			node.add_parent(parent)
-			node.add_input_cache(parent.get_output_cache())
+		node.add_input_cache(input_cache[:binjfindjob.files_per_binjfind])
+		del input_cache[:binjfindjob.files_per_binjfind]
 		node.add_macro("macrocomment", tag)
 		dag.add_node(node)
 		nodes.append(node)
-	return nodes
+	parent_groups, unused = match_nodes_to_caches(parents, [node.get_input_cache() for node in nodes], verbose = verbose)
+	if unused:
+		# impossible
+		raise Error
+	for node, parents in zip(nodes, parent_groups):
+		for parent in parents:
+			node.add_parent(parent)
+	return set(nodes)
 
 
-def make_bucluster_fragment(dag, parents, tag):
-	# make a copy of the parents list so we can modify it, and then
-	# sort by start time.  sorting by start time tends to associate
-	# bucluster jobs with files that go together in subsequent coinc
-	# jobs, and so helps facilitate a depth-first submit order.
-	parents = list(parents)
-	parents.sort(lambda a, b: cmp(a.get_start(), b.get_start()))
+def make_bucluster_fragment(dag, parents, tag, verbose = False):
+	input_cache = [cache_entry for parent in parents for cache_entry in parent.get_output_cache()]
+	input_cache.sort(lambda a, b: cmp(a.segment, b.segment))
 	nodes = []
-	while parents:
+	while input_cache:
 		node = BuclusterNode(buclusterjob)
 		node.set_name("ligolw_bucluster_%s_%d" % (tag, len(nodes)))
-		for i in xrange(min(buclusterjob.parents_per_bucluster, len(parents))):
-			parent = parents.pop()
-			node.add_parent(parent)
-			node.add_input_cache(parent.get_output_cache())
+		node.add_input_cache(input_cache[:buclusterjob.files_per_bucluster])
+		del input_cache[:buclusterjob.files_per_bucluster]
 		node.add_macro("macrocomment", tag)
 		node.set_retry(3)
 		dag.add_node(node)
 		nodes.append(node)
-	return nodes
+	parent_groups, unused = match_nodes_to_caches(parents, [node.get_input_cache() for node in nodes], verbose = verbose)
+	if unused:
+		# impossible
+		raise Error
+	for node, parents in zip(nodes, parent_groups):
+		for parent in parents:
+			node.add_parent(parent)
+	return set(nodes)
 
 
-def make_bucut_fragment(dag, parents, tag):
-	parents = list(parents)
+def make_bucut_fragment(dag, parents, tag, verbose = False):
+	input_cache = [cache_entry for parent in parents for cache_entry in parent.get_output_cache()]
+	input_cache.sort(lambda a, b: cmp(a.segment, b.segment))
 	nodes = []
-	while parents:
+	while input_cache:
 		node = BucutNode(bucutjob)
 		node.set_name("ligolw_bucut_%s_%d" % (tag, len(nodes)))
-		for i in xrange(min(bucutjob.parents_per_bucut, len(parents))):
-			parent = parents.pop()
-			node.add_parent(parent)
-			node.add_input_cache(parent.get_output_cache())
+		node.add_input_cache(input_cache[:bucutjob.files_per_bucut])
+		del input_cache[:bucutjob.files_per_bucut]
 		node.add_macro("macrocomment", tag)
 		dag.add_node(node)
 		nodes.append(node)
-	return nodes
+	parent_groups, unused = match_nodes_to_caches(parents, [node.get_input_cache() for node in nodes], verbose = verbose)
+	if unused:
+		# impossible
+		raise Error
+	for node, parents in zip(nodes, parent_groups):
+		for parent in parents:
+			node.add_parent(parent)
+	return set(nodes)
 
 
-def make_burca_fragment(dag, parents, seg, tag):
-	node = BurcaNode(burcajob)
-	node.set_name("ligolw_burca_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
-	for parent in parents:
+def make_burca_fragment(dag, parents, tag):
+	parents = list(parents)
+	nodes = set()
+	while parents:
+		parent = parents.pop()
+		input_cache = parent.get_output_cache()
+		seg = make_cache_entry(input_cache, None, None).segment
+		node = BurcaNode(burcajob)
+		node.set_name("ligolw_burca_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
 		node.add_parent(parent)
-		node.add_input_cache(parent.get_output_cache())
-	node.add_macro("macrocomment", tag)
-	dag.add_node(node)
-	return [node]
+		node.add_input_cache(input_cache)
+		node.add_macro("macrocomment", tag)
+		dag.add_node(node)
+		nodes.add(node)
+	return nodes
 
 
 def make_burca_tailor_fragment(dag, input_cache, seg, tag):
@@ -1090,9 +1165,7 @@ def make_multibinj_fragment(dag, seg, tag):
 	fhigh = flow + float(powerjob.get_opts()["bandwidth"])
 
 	nodes = make_binj_fragment(dag, seg, tag, 0.0, flow, fhigh)
-	nodes = make_lladd_fragment(dag, nodes, "ALL", seg, tag)
-	nodes[0].set_output("HL-%s-%d-%d.xml" % (tag, int(seg[0]), int(abs(seg))))
-	return set(nodes)
+	return make_lladd_fragment(dag, nodes, tag)
 
 
 #
@@ -1120,9 +1193,9 @@ def make_power_segment_fragment(dag, datafindnodes, instrument, segment, tag, ti
 	seglist = split_segment(timing_params, segment, psds_per_job)
 	if verbose:
 		print >>sys.stderr, "Segment split: " + str(seglist)
-	nodes = []
+	nodes = set()
 	for seg in seglist:
-		nodes += make_power_fragment(dag, datafindnodes, instrument, seg, tag, framecache)
+		nodes |= make_power_fragment(dag, datafindnodes, instrument, seg, tag, framecache)
 	return nodes
 
 
@@ -1140,9 +1213,9 @@ def make_injection_segment_fragment(dag, datafindnodes, binjnodes, instrument, s
 	seglist = split_segment(timing_params, segment, psds_per_job)
 	if verbose:
 		print >>sys.stderr, "Injections split: " + str(seglist)
-	nodes = []
+	nodes = set()
 	for seg in seglist:
-		nodes += make_power_fragment(dag, datafindnodes | binjnodes, instrument, seg, tag, framecache, injargs = {"burstinjection-file": simfile})
+		nodes |= make_power_fragment(dag, datafindnodes | binjnodes, instrument, seg, tag, framecache, injargs = {"burstinjection-file": simfile})
 	return nodes
 
 
@@ -1214,11 +1287,8 @@ def make_single_instrument_injections_stage(dag, datafinds, binjnodes, seglistdi
 #
 
 
-def make_pre_coinc_lladd(dag, parents, segment, tag, input_cache):
-	nodes = make_lladd_fragment(dag, parents, "ALL", segment, tag, input_cache = input_cache, preserve_cache = input_cache)
-	nodes[0].set_output("ALL-%s-%s-%s.xml.gz" % (tag, int(segment[0]), int(abs(segment))))
-	nodes[0].set_output_segment(segment)
-	return nodes
+def make_pre_coinc_lladd(dag, parents, tag, input_cache):
+	return make_lladd_fragment(dag, parents, tag, input_cache = input_cache, preserve_cache = input_cache)
 
 
 #

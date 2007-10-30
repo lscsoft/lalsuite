@@ -249,47 +249,21 @@ def group_coinc_parents(parents, time_slides, verbose = False):
 
 	# use ligolw_cafe to group each output file according to how they
 	# need to be combined to perform the coincidence analysis
-	caches = []
-	for parent in parents:
-		caches += parent.get_output_cache()
+	caches = [cache_entry for parent in parents for cache_entry in parent.get_output_cache()]
 	caches = [set(bin.objects) for bin in ligolw_cafe.ligolw_cafe(caches, time_slides, verbose = verbose)[1]]
 
-	# compute the segment spanned by each cache of output files, store
-	# results in a list in the same order as the list of caches
-	segs = [segments.segmentlist([c.segment for c in cache]).extent() for cache in caches]
-
-	# for each cache, get the set of the nodes whose output files it
-	# contains.  note that a parent node is allowed to provide more
-	# than one output file, and thus can be listed in more than one
-	# group
+	# match parents to caches
 	if verbose:
 		print >>sys.stderr, "Matching jobs to caches ..."
-	# can't use [set()] * len(caches) for the normal reason
-	parent_groups = [set() for cache in caches]
-	n_found = 0
-	for n, parent in enumerate(parents):
-		if verbose and not (n % 10):
-			print >>sys.stderr, "\t%.1f%%\r" % (100.0 * n / len(parents)),
-		found = False
-		for output in parent.get_output_cache():
-			# find the caches in which this output has been
-			# placed, and add the parent to the matching group
-			for i, cache in enumerate(caches):
-				if output in cache:
-					parent_groups[i].add(parent)
-					found = True
-		if found:
-			n_found += 1
-	if verbose:
-		print >>sys.stderr, "\t100.0%"
-	if verbose and len(parents) != n_found:
+	parent_groups, unused = power.match_nodes_to_caches(parents, caches, verbose = verbose)
+	if verbose and unused:
 		# there were parents that didn't match any caches.  this
 		# happens if ligolw_cafe decides their outputs aren't
 		# needed
-		print >>sys.stderr, "Notice:  %d jobs (of %d) produce output that will not be used by a coincidence job" % (len(parents) - n_found, len(parents))
+		print >>sys.stderr, "Notice:  %d jobs (of %d) produce output that will not be used by a coincidence job" % (unused, len(parents))
 
 	# done
-	return zip(caches, parent_groups, segs)
+	return zip(caches, parent_groups)
 
 
 #
@@ -395,22 +369,29 @@ datafinds = power.make_datafind_stage(dag, injection_seglistdict | background_se
 
 pwr_nodes = power.make_single_instrument_stage(dag, datafinds, background_seglistdict, options.tag, options.timing_params, options.psds_per_power, verbose = options.verbose)
 if options.enable_clustering:
-	pwr_nodes = power.make_bucluster_fragment(dag, pwr_nodes, options.tag)
+	if options.verbose:
+		print >>sys.stderr, "building pre-lladd bucluster jobs ..."
+	pwr_nodes = power.make_bucluster_fragment(dag, pwr_nodes, "PRELLADD_%s" % options.tag, verbose = options.verbose)
 
 
 # coincidence analysis
 
 
-coinc_nodes = []
+coinc_nodes = set()
 for n, (time_slides_cache_entry, time_slides) in enumerate(background_time_slides.iteritems()):
 	if options.verbose:
 		print >>sys.stderr, "non-injections %d/%d (%s):" % (n + 1, len(background_time_slides), time_slides_cache_entry.path())
 	extra_cache = set([time_slides_cache_entry])
-	for cache, parents, seg in group_coinc_parents(pwr_nodes, time_slides, verbose = options.verbose):
-		parents = power.make_pre_coinc_lladd(dag, parents, seg, "%s_%d" % (options.tag, n), input_cache = cache | extra_cache)
-		if options.enable_clustering:
-			parents = power.make_bucluster_fragment(dag, parents, "%s_%d_%d_%d" % (options.tag, n, int(seg[0]), int(abs(seg))))
-		coinc_nodes += power.make_burca_fragment(dag, parents, seg, "%s_%d" % (options.tag, n))
+	nodes = set()
+	for cache, parents in group_coinc_parents(pwr_nodes, time_slides, verbose = options.verbose):
+		nodes |= power.make_pre_coinc_lladd(dag, parents, "%s_%d" % (options.tag, n), input_cache = cache | extra_cache)
+	if options.enable_clustering:
+		if options.verbose:
+			print >>sys.stderr, "building post-lladd bucluster jobs ..."
+		nodes = power.make_bucluster_fragment(dag, nodes, "POSTLLADD_%s_%d" % (options.tag, n), verbose = options.verbose)
+	if options.verbose:
+		print >>sys.stderr, "building burca jobs ..."
+	coinc_nodes |= power.make_burca_fragment(dag, nodes, "%s_%d" % (options.tag, n))
 
 
 # conversion to SQLite database files
@@ -439,7 +420,7 @@ if options.do_injections:
 		for binjnode in binjnodes:
 			node.add_parent(binjnode)
 else:
-	binjnodes = set([])
+	binjnodes = set()
 
 
 # single-instrument trigger generation
@@ -447,36 +428,45 @@ else:
 
 pwr_nodes = power.make_single_instrument_injections_stage(dag, datafinds, binjnodes, injection_seglistdict, "INJECTIONS_%s" % options.tag, options.timing_params, options.psds_per_injection, verbose = options.verbose)
 if options.enable_clustering:
-	pwr_nodes = power.make_bucluster_fragment(dag, pwr_nodes, "INJECTIONS_%s" % options.tag)
+	if options.verbose:
+		print >>sys.stderr, "building pre-lladd bucluster jobs ..."
+	pwr_nodes = power.make_bucluster_fragment(dag, pwr_nodes, "INJECTIONS_PRELLADD_%s" % options.tag, verbose = options.verbose)
 
 
 # coincidence analysis.  note that this loop constructs a broken dag if
 # there is more than one time slide file because it doesn't include n in
-# the node tags (so there will be duplicate nodes and duplicate output
+# the node tags (so there will be duplicate node names and duplicate output
 # files).  this is ok because the user can only provide one time slide file
 # on the command line.
 
 
-inj_coinc_nodes = []
+inj_coinc_nodes = set()
 binj_cache = set([cache_entry for node in binjnodes for cache_entry in node.get_output_cache()])
 for n, (time_slides_cache_entry, time_slides) in enumerate(injection_time_slides.iteritems()):
 	if options.verbose:
 		print >>sys.stderr, "injections %d/%d (%s):" % (n + 1, len(injection_time_slides), time_slides_cache_entry.path())
 	extra_cache = set([time_slides_cache_entry])
-	for cache, parents, seg in group_coinc_parents(pwr_nodes, time_slides, verbose = options.verbose):
-		parents = power.make_pre_coinc_lladd(dag, parents | binjnodes, seg, "INJECTIONS_%s" % options.tag, input_cache = cache | binj_cache | extra_cache)
-		if options.enable_clustering:
-			parents = power.make_bucluster_fragment(dag, parents, "INJECTIONS_%s_%d_%d" % (options.tag, int(seg[0]), int(abs(seg))))
-		parents = power.make_bucut_fragment(dag, parents, "INJECTIONS_%s" % options.tag)
-		inj_coinc_nodes += power.make_burca_fragment(dag, parents, seg, "INJECTIONS_%s" % options.tag)
+	nodes = set()
+	for cache, parents in group_coinc_parents(pwr_nodes, time_slides, verbose = options.verbose):
+		nodes |= power.make_pre_coinc_lladd(dag, parents | binjnodes, "INJECTIONS_%s" % options.tag, input_cache = cache | binj_cache | extra_cache)
+	if options.enable_clustering:
+		if options.verbose:
+			print >>sys.stderr, "building post-lladd bucluster jobs ..."
+		nodes = power.make_bucluster_fragment(dag, nodes, "INJECTIONS_POSTLLADD_%s" % options.tag, verbose = options.verbose)
+	if options.verbose:
+		print >>sys.stderr, "building bucut jobs ..."
+	nodes = power.make_bucut_fragment(dag, nodes, "INJECTIONS_%s" % options.tag, verbose = options.verbose)
+	if options.verbose:
+		print >>sys.stderr, "building burca jobs ..."
+	inj_coinc_nodes |= power.make_burca_fragment(dag, nodes, "INJECTIONS_%s" % options.tag)
 
 
 # injection identification
 
 
 if options.verbose:
-	print >>sys.stderr, "Adding injection identification nodes"
-inj_coinc_nodes = power.make_binjfind_fragment(dag, inj_coinc_nodes, "INJECTIONS_%s" % options.tag)
+	print >>sys.stderr, "building injection identification jobs ..."
+inj_coinc_nodes = power.make_binjfind_fragment(dag, inj_coinc_nodes, "INJECTIONS_%s" % options.tag, verbose = options.verbose)
 
 
 # conversion to SQLite database files
