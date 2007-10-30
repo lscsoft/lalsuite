@@ -185,6 +185,8 @@ tagCoherentInspiralInitParams
   UINT4                         numPoints;
   UINT4                         numBeamPoints;
   UINT4                         cohSNROut;
+  UINT4                         cohPhaseDiffOut;
+  UINT4                         nullStatOut;
 }
 CoherentInspiralInitParams;
 /* </lalVerbatim> */
@@ -228,13 +230,17 @@ tagCoherentInspiralFilterParams
   REAL4                         fLow;
   REAL8                         deltaT;
   REAL4                         cohSNRThresh;
-  REAL8                         sigmasq[4];
+  REAL8Vector                  *sigmasqVec;
   REAL4                         templateNorm;
   INT4                          segmentLength; /* time points */
   UINT4                         cohSNROut;
+  UINT4                         cohPhaseDiffOut;
+  UINT4                         nullStatOut;
   UINT2Vector                  *detIDVec; /* Note: H1, H2 are from same site, but are different detectors */
   DetectorVector               *detectorVec; /*stores detectors' site info */
   REAL4TimeSeries              *cohSNRVec;
+  REAL4TimeSeries              *cohPhaseDiffVec;
+  REAL4TimeSeries              *nullStatVec;
   REAL4                         chirpTime;
 }
 CoherentInspiralFilterParams;
@@ -398,8 +404,8 @@ LALCoherentInspiralFilterParamsFinalize (
 void
 LALCoherentInspiralEstimatePsiEpsilonCoaPhase (
     LALStatus                             *status,
-    INT4                                   caseID[6],
-    REAL8                                  sigmasq[4],
+    INT4                                   caseID[LAL_NUM_IFO],
+    REAL8                                 *sigmasq,
     REAL4                                  theta,
     REAL4                                  phi,
     COMPLEX8                               cData[4],
@@ -411,7 +417,7 @@ LALCoherentInspiralEstimatePsiEpsilonCoaPhase (
 void
 LALCoherentInspiralEstimateDistance (
     LALStatus                             *status,
-    REAL8                                  sigmasq[4],
+    REAL8                                 *sigmasq,
     REAL4                                  templateNorm,
     REAL8                                  deltaT,
     INT4                                   segmentLength,  /* time pts */
