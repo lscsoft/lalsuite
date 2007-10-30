@@ -153,13 +153,15 @@ def make_cache_entry(input_cache, description, path):
 
 def match_nodes_to_caches(nodes, caches, verbose = False):
 	"""
-	For each cache, get the set of the nodes whose output files it
+	For each cache, get the set of nodes whose output files it
 	contains.  A node is allowed to provide more than one output file,
 	and thus can be listed in more than one set.
 	"""
 	# can't use [set()] * len(caches) for the normal reason
 	node_groups = [set() for cache in caches]
-	n_found = 0
+
+	# number of nodes not matching contents of output caches
+	unused = len(nodes)
 	for n, node in enumerate(nodes):
 		if verbose and not (n % 10):
 			print >>sys.stderr, "\t%.1f%%\r" % (100.0 * n / len(nodes)),
@@ -172,12 +174,9 @@ def match_nodes_to_caches(nodes, caches, verbose = False):
 					node_groups[i].add(node)
 					found = True
 		if found:
-			n_found += 1
+			unused -= 1
 	if verbose:
 		print >>sys.stderr, "\t100.0%"
-	# count the number of nodes whose output files were not found in
-	# any caches
-	unused = len(nodes) - n_found
 
 	# done
 	return node_groups, unused
@@ -375,9 +374,14 @@ class LigolwAddNode(pipeline.LigolwAddNode):
 		self.input_cache = []
 		self.output_cache = []
 
-	def __update_output_cache(self):
+	def __update_output_cache(self, observatory = None, segment = None):
 		del self.output_cache[:]
-		self.output_cache.append(make_cache_entry(self.input_cache, None, self._AnalysisNode__output))
+		cache_entry = make_cache_entry(self.input_cache, None, self._AnalysisNode__output)
+		if observatory is not None:
+			cache_entry.observatory = observatory
+		if segment is not None:
+			cache_entry.segment = segment
+		cache_entry = self.output_cache.append(cache_entry)
 
 	def set_name(self, *args):
 		pipeline.LigolwAddNode.set_name(self, *args)
@@ -388,13 +392,9 @@ class LigolwAddNode(pipeline.LigolwAddNode):
 		self.input_cache.extend(cache)
 		self.__update_output_cache()
 
-	def set_output(self, path):
+	def set_output(self, path = None, observatory = None, segment = None):
 		pipeline.LigolwAddNode.set_output(self, path)
-		self.__update_output_cache()
-
-	def set_output_segment(self, seg):
-		for c in self.output_cache:
-			c.segment = seg
+		self.__update_output_cache(observatory = observatory, segment = segment)
 
 	def add_preserve_cache(self, cache):
 		for c in cache:
@@ -488,10 +488,10 @@ class BuclusterNode(pipeline.CondorDAGNode):
 		raise NotImplementedError
 
 	def write_input_files(self, *args):
-		pipeline.CondorDAGNode.write_input_files(self, *args)
 		f = file(self.cache_name, "w")
 		for c in self.input_cache:
 			print >>f, str(c)
+		pipeline.CondorDAGNode.write_input_files(self, *args)
 
 	def get_input_cache(self):
 		return self.input_cache
@@ -885,53 +885,47 @@ datafind_pad = 512
 
 def make_datafind_fragment(dag, instrument, seg):
 	node = pipeline.LSCDataFindNode(datafindjob)
-	node.set_name("LSCdataFind-%s-%s-%s" % (instrument, int(seg[0]), int(abs(seg))))
+	node.set_name("LSCdataFind-%s-%d-%d" % (instrument, int(seg[0]), int(abs(seg))))
 	node.set_start(seg[0] - datafind_pad)
 	node.set_end(seg[1] + 1)
-	# FIXME: argh, shoot me, I need the node to know what instrument
-	# it's for, but can't call set_ifo() because that adds a
-	# --channel-name command line argument (!?)
+	# FIXME: argh, I need the node to know what instrument it's for,
+	# but can't call set_ifo() because that adds a --channel-name
+	# command line argument (!?)
 	node._AnalysisNode__ifo = instrument
 	node.set_observatory(instrument[0])
-	if node.get_type() == None:
+	if node.get_type() is None:
 		node.set_type(datafindjob.get_config_file().get("datafind", "type_%s" % instrument))
 	node.set_retry(3)
 	dag.add_node(node)
 	return set([node])
 
 
-def make_lladd_fragment(dag, parents, tag, preserve_cache = [], input_cache = None):
+def make_lladd_fragment(dag, parents, tag, segment = None, preserve_cache = [], extra_input_cache = None):
 	node = LigolwAddNode(lladdjob)
 
-	# collect input cache entries.  if input_cache is None, use the
-	# parents' output caches as the source of input files
-	parent_output_cache = []
 	for parent in parents:
-		node.add_parent(parent)
-		parent_output_cache += parent.get_output_cache()
-	if input_cache is not None:
-		node.add_input_cache(input_cache)
-	else:
 		node.add_input_cache(parent.get_output_cache())
+		node.add_parent(parent)
+	if extra_input_cache is not None:
+		node.add_input_cache(extra_input_cache)
 
-	# construct a name for the output file
-	cache_entry = make_cache_entry(node.get_input_cache(), None, None)
-	node.set_name("lladd_%s_%s_%d_%d" % (tag, cache_entry.observatory, int(cache_entry.segment[0]), int(abs(cache_entry.segment))))
-	node.set_output("%s-%s-%d-%d.xml" % (cache_entry.observatory, tag, int(cache_entry.segment[0]), int(abs(cache_entry.segment))))
-	node.set_output_segment(cache_entry.segment)
+	# construct names for the node and output file, and override the
+	# segment if needed
+	[cache_entry] = node.get_output_cache()
+	if segment is None:
+		segment = cache_entry.segment
+	node.set_name("lladd_%s_%s_%d_%d" % (tag, cache_entry.observatory, int(segment[0]), int(abs(segment))))
+	node.set_output("%s-%s-%d-%d.xml" % (cache_entry.observatory, tag, int(segment[0]), int(abs(segment))), segment = segment)
 
 	node.add_preserve_cache(preserve_cache)
 	node.set_retry(3)
 	dag.add_node(node)
-	# NOTE:  code that calls this generally requires a single node to
-	# be returned.  if this function is ever modified to return more
-	# than one node, check and fix all calling codes.
 	return set([node])
 
 
 def make_power_fragment(dag, parents, instrument, seg, tag, framecache, injargs = {}):
 	node = PowerNode(powerjob)
-	node.set_name("lalapps_power_%s_%s_%s_%s" % (instrument, tag, int(seg[0]), int(abs(seg))))
+	node.set_name("lalapps_power_%s_%s_%d_%d" % (tag, instrument, int(seg[0]), int(abs(seg))))
 	map(node.add_parent, parents)
 	node.set_cache(framecache)
 	node.set_ifo(instrument)
@@ -1281,19 +1275,6 @@ def make_single_instrument_injections_stage(dag, datafinds, binjnodes, seglistdi
 #
 # =============================================================================
 #
-#       The Coincidence Fragment:  bucluster + lladd + bucluster + burca
-#
-# =============================================================================
-#
-
-
-def make_pre_coinc_lladd(dag, parents, tag, input_cache):
-	return make_lladd_fragment(dag, parents, tag, input_cache = input_cache, preserve_cache = input_cache)
-
-
-#
-# =============================================================================
-#
 #                             ligolw_sqlite stage
 #
 # =============================================================================
@@ -1303,15 +1284,15 @@ def make_pre_coinc_lladd(dag, parents, tag, input_cache):
 def make_sqlite_stage(dag, parents, tag, verbose = False):
 	if verbose:
 		print >>sys.stderr, "generating ligolw_sqlite stage for tag %s ..." % tag
-	nodes = []
-	for parent in parents:
-		for cache_entry in parent.get_output_cache():
-			node = SQLiteNode(sqlitejob)
-			node.set_name("ligolw_sqlite_%s_%d" % (tag, len(nodes)))
-			node.add_parent(parent)
-			node.add_input_cache([cache_entry])
-			node.set_output(cache_entry.path().replace(".xml.gz", ".sqlite"))
-			node.set_retry(3)
-			dag.add_node(node)
-			nodes.append(node)
+	input_cache = [cache_entry for parent in parents for cache_entry in parent.get_output_cache()]
+	input_cache.sort(lambda a, b: cmp(a.segment, b.segment))
+	nodes = set()
+	for cache_entry in input_cache:
+		node = SQLiteNode(sqlitejob)
+		node.set_name("ligolw_sqlite_%s_%d" % (tag, len(nodes)))
+		node.add_parent(parent)
+		node.add_input_cache([cache_entry])
+		node.set_output(cache_entry.path().replace(".xml.gz", ".sqlite"))
+		dag.add_node(node)
+		nodes.add(node)
 	return nodes

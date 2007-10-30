@@ -34,7 +34,6 @@ Excess power offline pipeline construction script.
 
 
 import ConfigParser
-import glob
 import math
 from optparse import OptionParser
 import os
@@ -249,8 +248,9 @@ def group_coinc_parents(parents, time_slides, verbose = False):
 
 	# use ligolw_cafe to group each output file according to how they
 	# need to be combined to perform the coincidence analysis
-	caches = [cache_entry for parent in parents for cache_entry in parent.get_output_cache()]
-	caches = [set(bin.objects) for bin in ligolw_cafe.ligolw_cafe(caches, time_slides, verbose = verbose)[1]]
+	bins = ligolw_cafe.ligolw_cafe([cache_entry for parent in parents for cache_entry in parent.get_output_cache()], time_slides, verbose = verbose)[1]
+	caches = [set(bin.objects) for bin in bins]
+	segs = [bin.extent for bin in bins]
 
 	# match parents to caches
 	if verbose:
@@ -263,7 +263,7 @@ def group_coinc_parents(parents, time_slides, verbose = False):
 		print >>sys.stderr, "Notice:  %d jobs (of %d) produce output that will not be used by a coincidence job" % (unused, len(parents))
 
 	# done
-	return zip(caches, parent_groups)
+	return zip(segs, parent_groups, caches)
 
 
 #
@@ -383,8 +383,8 @@ for n, (time_slides_cache_entry, time_slides) in enumerate(background_time_slide
 		print >>sys.stderr, "non-injections %d/%d (%s):" % (n + 1, len(background_time_slides), time_slides_cache_entry.path())
 	extra_cache = set([time_slides_cache_entry])
 	nodes = set()
-	for cache, parents in group_coinc_parents(pwr_nodes, time_slides, verbose = options.verbose):
-		nodes |= power.make_pre_coinc_lladd(dag, parents, "%s_%d" % (options.tag, n), input_cache = cache | extra_cache)
+	for seg, parents, cache in group_coinc_parents(pwr_nodes, time_slides, verbose = options.verbose):
+		nodes |= power.make_lladd_fragment(dag, parents, "%s_%d" % (options.tag, n), segment = seg, extra_input_cache = extra_cache, preserve_cache = cache | extra_cache)
 	if options.enable_clustering:
 		if options.verbose:
 			print >>sys.stderr, "building post-lladd bucluster jobs ..."
@@ -392,11 +392,15 @@ for n, (time_slides_cache_entry, time_slides) in enumerate(background_time_slide
 	if options.verbose:
 		print >>sys.stderr, "building burca jobs ..."
 	coinc_nodes |= power.make_burca_fragment(dag, nodes, "%s_%d" % (options.tag, n))
+	if options.verbose:
+		print >>sys.stderr, "done non-injections %d/%d" % (n + 1, len(background_time_slides))
 
 
 # conversion to SQLite database files
 
 
+if options.verbose:
+	print >>sys.stderr, "building sqlite jobs ..."
 coinc_nodes = power.make_sqlite_stage(dag, coinc_nodes, options.tag, verbose = options.verbose)
 
 
@@ -447,8 +451,8 @@ for n, (time_slides_cache_entry, time_slides) in enumerate(injection_time_slides
 		print >>sys.stderr, "injections %d/%d (%s):" % (n + 1, len(injection_time_slides), time_slides_cache_entry.path())
 	extra_cache = set([time_slides_cache_entry])
 	nodes = set()
-	for cache, parents in group_coinc_parents(pwr_nodes, time_slides, verbose = options.verbose):
-		nodes |= power.make_pre_coinc_lladd(dag, parents | binjnodes, "INJECTIONS_%s" % options.tag, input_cache = cache | binj_cache | extra_cache)
+	for seg, parents, cache in group_coinc_parents(pwr_nodes, time_slides, verbose = options.verbose):
+		nodes |= power.make_lladd_fragment(dag, parents | binjnodes, "INJECTIONS_%s" % options.tag, segment = seg, extra_input_cache = extra_cache, preserve_cache = cache | binj_cache | extra_cache)
 	if options.enable_clustering:
 		if options.verbose:
 			print >>sys.stderr, "building post-lladd bucluster jobs ..."
@@ -459,19 +463,23 @@ for n, (time_slides_cache_entry, time_slides) in enumerate(injection_time_slides
 	if options.verbose:
 		print >>sys.stderr, "building burca jobs ..."
 	inj_coinc_nodes |= power.make_burca_fragment(dag, nodes, "INJECTIONS_%s" % options.tag)
+	if options.verbose:
+		print >>sys.stderr, "done injections %d/%d" % (n + 1, len(background_time_slides))
 
 
 # injection identification
 
 
 if options.verbose:
-	print >>sys.stderr, "building injection identification jobs ..."
+	print >>sys.stderr, "building binjfind jobs ..."
 inj_coinc_nodes = power.make_binjfind_fragment(dag, inj_coinc_nodes, "INJECTIONS_%s" % options.tag, verbose = options.verbose)
 
 
 # conversion to SQLite database files
 
 
+if options.verbose:
+	print >>sys.stderr, "building sqlite jobs ..."
 inj_coinc_nodes = power.make_sqlite_stage(dag, inj_coinc_nodes, "INJECTIONS_%s" % options.tag, verbose = options.verbose)
 
 
@@ -485,7 +493,8 @@ if options.verbose:
 dag.write_sub_files()
 dag.write_dag()
 
+output_cache = [cache_entry for node in coinc_nodes | inj_coinc_nodes for cache_entry in node.get_output_cache()]
+output_cache.sort(lambda a, b: cmp(a.segment, b.segment))
 final_cache = file(os.path.splitext(filenames[0])[0] + "_output.cache", "w")
-for node in coinc_nodes + inj_coinc_nodes:
-	for entry in node.get_output_cache():
-		print >>final_cache, str(entry)
+for cache_entry in output_cache:
+	print >>final_cache, str(cache_entry)
