@@ -79,7 +79,7 @@ int XLALSpindownMetric(
 
     for (j = 0; j < metric->size2; ++j) {
 
-      v = pow(LAL_PI, 2) / (factorial(i) * factorial(j) * (2 + i) * (2 + j) * (3 + i + j));
+      v = 4 * pow(LAL_PI, 2) / (factorial(i) * factorial(j) * (2 + i) * (2 + j) * (3 + i + j));
       if (scaling == NULL) {
 	v *= pow(Tspan, 2 + i + j);
       }
