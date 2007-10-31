@@ -54,18 +54,15 @@ parser.add_option("-s", "--gps-start-time",action="store",type="int",\
 parser.add_option("-e", "--gps-end-time",action="store",type="int",\
     metavar=" GPS_END", help="end analysis at GPS_END")
 
+parser.add_option("-D", "--use-available-data",action="store_true",\
+    default=False, help="analyze only the data available on the cluster")
+
 parser.add_option("-S", "--skip-generate-segments",action="store_false",\
     default=True, dest="generate_segments", \
     help="skip generation segments for analysis")
 
-parser.add_option("-D", "--use-available-data",action="store_true",\
-    default=False, help="analyze only the data available on the cluster")
-
 parser.add_option("-B", "--skip-datafind",action="store_false",\
     default=True, dest="run_datafind", help="skip the datafind step")
-
-parser.add_option("-A", "--skip-analysis",action="store_false",\
-    default=True, dest="run_analysis", help="skip the inspiral analysis")
 
 parser.add_option("-F", "--skip-full-data",action="store_false",\
     default=True, dest="run_full_data", help="skip the full data + slides")
@@ -76,6 +73,9 @@ parser.add_option("-P", "--skip-play-analysis",action="store_false",\
 parser.add_option("-I", "--skip-injections",action="store_false",\
     default=True, dest="run_injections", \
     help="skip the inspiral analysis with injections")
+
+parser.add_option("-A", "--skip-analysis",action="store_false",\
+    default=True, dest="run_analysis", help="skip the inspiral analysis")
 
 parser.add_option("-Q", "--skip-data-quality",action="store_false",\
     default=True, dest="run_data_quality", \
