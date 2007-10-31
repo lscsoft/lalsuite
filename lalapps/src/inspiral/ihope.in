@@ -146,11 +146,15 @@ inspiralutils.write_rescue()
 # Set up the IFOs and get the appropriate segments
 
 ifos = []
-for option in ["g1-data","h1-data","h2-data","l1-data"]:
+for option in ["g1-data","h1-data","h2-data","l1-data","v1-data"]:
   if cp.has_option("ifo-details",option): ifos.append(option[0:2].upper() )
 
 if cp.has_option("ifo-details","analyze-all"): 
-  ifos = ["G1", "H1", "H2", "L1"]
+  #ifos = ["G1", "H1", "H2", "L1", "V1"]
+  print >> sys.stderr, "The inspiral pipeline does not yet support coincidence between"
+  print >> sys.stderr, "all five IFOs. Do not use the analyze-all option."
+  sys.exit(1)
+
 
 print "Setting up an analysis for " + str(ifos) + " from " + \
     str(opts.gps_start_time) + " to "  + str(opts.gps_end_time)
