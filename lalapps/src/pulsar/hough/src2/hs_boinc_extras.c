@@ -885,7 +885,7 @@ static void worker (void) {
     attach_gdb();
 #endif
 
-#if defined(__GNUC__) && __i386__
+#if defined(_MSC_VER) || defined(__GNUC__) && __i386__
   /* write out the masked FPU exceptions */
   {
     fpuw_t fpstat = get_fpu_status();
@@ -896,7 +896,7 @@ static void worker (void) {
 
   {
     fpuw_t fpstat;
-
+    
     fpstat = get_fpu_control_word();
     fprintf(stderr,"FPU masked exceptions now: %4x:",fpstat);
     PRINT_FPU_EXCEPTION_MASK(fpstat);
@@ -925,22 +925,27 @@ static void worker (void) {
 #endif
   }
 
-  if(crash_fpu)
-    drain_fpu_stack();
-#elif defined(_MSC_VER)
-  /* _controlfp(1,_MCW_EM); */
-  {
+#elif 0 || defined(_MSC_VER)
+#define MY_INVALID 1 /* _EM_INVALID /**/
+  /*
+    _controlfp(MY_INVALID,_MCW_EM);
+    /*
+    {
     unsigned int cw87, cwSSE;
-    __control87_2(_EM_INVALID,_MCW_EM,&cw87,&cwSSE);
-  }
+    __control87_2(MY_INVALID,_MCW_EM,&cw87,&cwSSE);
+    }
+    _controlfp_s(NULL,MY_INVALID,_MCW_EM);
+  */
+#endif
 
   if(crash_fpu)
     drain_fpu_stack();
-#endif
 
   if(test_nan)
     fprintf(stderr,"NaN:%f\n",2.0f*get_nan());
 
+  /* sqrt(-1); */
+  
   /* CALL WORKER's MAIN()
    */
   res = MAIN(rargc,rargv);
@@ -1330,59 +1335,63 @@ void attach_gdb() {
 #endif
 }
 
+
 /** sets the FPU control word.
     The argument should be a (possibly modified) 
     fpuw_t gotten from get_fpu_control_word() */
 void set_fpu_control_word(const fpuw_t cword) {
-#if defined(__GNUC__) && __i386__
   static fpuw_t fpucw;
   fpucw = cword;
+#ifdef _MSC_VER
+  __asm fldcw fpucw;
+#elif defined(__GNUC__) && __i386__
   __asm("fldcw %0\n\t" : : "m" (fpucw));
 #endif
 }
 
 /** returns the fpu control word */
 fpuw_t get_fpu_control_word(void) {
-#if defined(__GNUC__) && __i386__
-  static fpuw_t fpucw;
+  static fpuw_t fpucw = 0;
+#ifdef _MSC_VER
+  __asm fstcw fpucw;
+#elif defined(__GNUC__) && __i386__
   __asm("fstcw %0\n\t" : "=m" (fpucw));
-  return(fpucw);
-#else
-  return(0);
 #endif
+  return(fpucw);
 }
 
 /** returns the fpu status word */
 fpuw_t get_fpu_status(void) {
-#if defined(__GNUC__) && __i386__
-  static fpuw_t fpusw;
+  static fpuw_t fpusw = 0;
+#ifdef _MSC_VER
+  __asm fnstsw fpusw;
+#elif defined(__GNUC__) && __i386__
   __asm("fnstsw %0\n\t" : "=m" (fpusw));
-  return(fpusw);
-#else
-  return(0);
 #endif
+  return(fpusw);
 }
 
 /** sets the sse control/status word */
 void set_sse_control_status(const ssew_t cword) {
-#if defined(__GNUC__) && __i386__
   static ssew_t ssecw;
   ssecw = cword;
+#ifdef _MSC_VER
+  __asm ldmxcsr ssecw;
+#elif defined(__GNUC__) && __i386__
   __asm("ldmxcsr %0\n\t" : : "m" (ssecw));
 #endif
 }
 
 /** returns the sse control/status word */
 ssew_t get_sse_control_status(void) {
-#if defined(__GNUC__) && __i386__
-  static ssew_t ssesw;
+  static ssew_t ssesw = 0;
+#ifdef _MSC_VER
+  __asm stmxcsr ssesw;
+#elif defined(__GNUC__) && __i386__
   __asm("stmxcsr %0\n\t" : "=m" (ssesw));
-  return(ssesw);
-#else
-  return(0);
 #endif
+  return(ssesw);
 }
-
 
 static void drain_fpu_stack(void) {
   static double dummy;
