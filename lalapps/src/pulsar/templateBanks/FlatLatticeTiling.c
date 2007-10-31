@@ -925,7 +925,7 @@ int XLALNextFlatLatticePoint(
 	LALPrintError("%s\nERROR: parameter space bounds appear to be insufficient\n", FLATLATTICETILINGC);
 	XLAL_ERROR("XLALNextFlatLatticePoint", XLAL_EINVAL);
       }
-      in_bounds = (line_lower <= line_upper);
+      in_bounds = (line_lower < line_upper);
 
       /* Set line bounds */
       gsl_vector_long_set(tiling->latt_lower, tiling->line_index, ceil(line_lower));
@@ -942,7 +942,7 @@ int XLALNextFlatLatticePoint(
       /* Transform point from lattice to parameter space */
       for (i = 0; i < n; ++i) {
 	point = gsl_vector_get(tiling->param_lower, i);
-	for (j = 0; j < tiling->dimension; ++j) {
+	for (j = 0; j < n; ++j) {
 	  point += gsl_matrix_get(tiling->latt_to_param, i, j) * gsl_vector_long_get(tiling->latt_current, j);
 	}
 	gsl_vector_set(tiling->current, i, point);
@@ -950,7 +950,7 @@ int XLALNextFlatLatticePoint(
       
       /* Final check to see if point is in parameter space (used for curved spaces) */
       if (tiling->in_param_space != NULL) {
-	/*	in_bounds = (tiling->in_param_space)(tiling);*/
+ 	in_bounds = (tiling->in_param_space)(tiling);
       }
 
     }

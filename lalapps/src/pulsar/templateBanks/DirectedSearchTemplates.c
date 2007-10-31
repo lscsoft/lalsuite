@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
   REAL8 alpha = 6.12;
   REAL8 delta = 1.02;
 
-  /* Starting frequency and width of search band */
+  /* Frequency and frequency band */
   REAL8 freq = 100.0;
   REAL8 freq_band = 2e-2;
   
@@ -68,6 +68,15 @@ int main(int argc, char *argv[]) {
   /* Minimum and maximum braking indices */
   INT4 minBrakingIndex = 2;
   INT4 maxBrakingIndex = 6;
+
+  /* Spindowns and spindown bands */
+  BOOLEAN useManualSpindowns = FALSE;
+  REAL8 f1dot      = -freq / age;
+  REAL8 f1dot_band =  freq / age;
+  REAL8 f2dot      = 0.0;
+  REAL8 f2dot_band = freq / pow(age, 2);
+  REAL8 f3dot      = -freq / pow(age, 3);
+  REAL8 f3dot_band =  freq / pow(age, 3);
 
   /* Type of parameter space tiling */
   CHAR *lattice_type = NULL;
@@ -87,6 +96,10 @@ int main(int argc, char *argv[]) {
 
   /* Flat lattice tiling structure */
   FlatLatticeTiling *tiling = NULL;
+
+  /* Manual lower and upper bounds */
+  gsl_vector *lower = NULL;
+  gsl_vector *upper = NULL;
 
   /*
    *  Initialise variables
@@ -119,12 +132,19 @@ int main(int argc, char *argv[]) {
   LAL_CALL(LALRegisterBOOLUserVar  (&status, "help",            'h', UVAR_HELP,      "Print this message", &is_help), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "Alpha",           'a', UVAR_OPTIONAL,  "Right ascension of the target object (in radians)", &alpha), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "Delta",           'd', UVAR_OPTIONAL,  "Declination of the target object (in radians)", &delta), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "Freq",            'f', UVAR_OPTIONAL,  "Starting frequency of search band (in Hertz)", &freq), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "FreqBand",        'b', UVAR_OPTIONAL,  "Width of frequency search band (in Hertz)", &freq_band), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "Freq",            'f', UVAR_OPTIONAL,  "Frequency (in Hertz)", &freq), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "FreqBand",        'b', UVAR_OPTIONAL,  "Frequency band (in Hertz)", &freq_band), &status);
+  LAL_CALL(LALRegisterINTUserVar   (&status, "numSpindowns",    's', UVAR_OPTIONAL,  "Number of spindown parameters", &spindowns), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "Age",             'A', UVAR_OPTIONAL,  "Characteristic age of the target object (in seconds)", &age), &status);
-  LAL_CALL(LALRegisterINTUserVar   (&status, "numSpindowns",    's', UVAR_OPTIONAL,  "Number of spindown parameter to search", &spindowns), &status);
   LAL_CALL(LALRegisterINTUserVar   (&status, "minBrakingIndex", 'n', UVAR_OPTIONAL,  "Minimum braking index of the target object", &minBrakingIndex), &status);  
-  LAL_CALL(LALRegisterINTUserVar   (&status, "maxBrakingIndex", 'N', UVAR_OPTIONAL,  "Maximum braking index of the target object", &maxBrakingIndex), &status);  
+  LAL_CALL(LALRegisterINTUserVar   (&status, "maxBrakingIndex", 'N', UVAR_OPTIONAL,  "Maximum braking index of the target object", &maxBrakingIndex), &status);
+  LAL_CALL(LALRegisterBOOLUserVar  (&status, "manualSpindowns", 'S', UVAR_OPTIONAL,  "Use the following manual ranges on the spindown parameters:", &useManualSpindowns), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "f1dot",            0 , UVAR_OPTIONAL,  "First spindown (in Hertz/s)", &f1dot), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "f1dotBand",        0 , UVAR_OPTIONAL,  "First spindown band (in Hertz/s)", &f1dot_band), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "f2dot",            0 , UVAR_OPTIONAL,  "Second spindown (in Hertz/s)", &f2dot), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "f2dotBand",        0 , UVAR_OPTIONAL,  "Second spindown band (in Hertz/s)", &f2dot_band), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "f3dot",            0 , UVAR_OPTIONAL,  "Third spindown (in Hertz/s)", &f3dot), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "f3dotBand",        0 , UVAR_OPTIONAL,  "Third spindown band (in Hertz/s)", &f3dot_band), &status);
   LAL_CALL(LALRegisterSTRINGUserVar(&status, "latticeType",     'L', UVAR_OPTIONAL,  "Type of tiling lattice (cubic, Anstar)", &lattice_type), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "metricMismatch",  'X', UVAR_OPTIONAL,  "Maximum mismatch of the search templates", &mismatch), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "timeSpan",        'T', UVAR_OPTIONAL,  "Upper bound on time span of the SFTs (in seconds)", &Tspan), &status);
@@ -160,9 +180,33 @@ int main(int argc, char *argv[]) {
   }
   
   /* Fill parameter space */
-  if (XLALBrakingIndexParameterSpace(tiling, freq, freq_band, age, minBrakingIndex, maxBrakingIndex) != XLAL_SUCCESS) {
-    LALPrintError("%s\nERROR: XLALBrakingIndexParameterSpace failed\n", rcsid);
-    return EXIT_FAILURE;
+  if (useManualSpindowns) {
+    lower = gsl_vector_calloc(tiling->dimension);
+    upper = gsl_vector_calloc(tiling->dimension);
+    gsl_vector_set(lower, 0, freq);
+    gsl_vector_set(upper, 0, freq + freq_band);
+    if (tiling->dimension > 1) {
+      gsl_vector_set(lower, 1, f1dot);
+      gsl_vector_set(upper, 1, f1dot + f1dot_band);
+    }
+    if (tiling->dimension > 2) {
+      gsl_vector_set(lower, 2, f2dot);
+      gsl_vector_set(upper, 2, f2dot + f2dot_band);
+    }
+    if (tiling->dimension > 3) {
+      gsl_vector_set(lower, 3, f2dot);
+      gsl_vector_set(upper, 3, f2dot + f3dot_band);
+    }
+    if (XLALSquareParameterSpace(tiling, lower, upper) != XLAL_SUCCESS) {
+      LALPrintError("%s\nERROR: XLALSquareParameterSpace failed\n", rcsid);
+      return EXIT_FAILURE;
+    }
+  }
+  else {
+    if (XLALBrakingIndexParameterSpace(tiling, freq, freq_band, age, minBrakingIndex, maxBrakingIndex) != XLAL_SUCCESS) {
+      LALPrintError("%s\nERROR: XLALBrakingIndexParameterSpace failed\n", rcsid);
+      return EXIT_FAILURE;
+    }
   }
   
   /* Fill lattice generator */
