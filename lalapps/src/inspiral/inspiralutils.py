@@ -83,9 +83,12 @@ def science_segments(ifo, config, opts):
   executable = config.get("condor", "segfind")
   if executable[0] != "/": executable = "../" + executable
 
+  whichtoanalyze = ifo.lower() + "-analyze"
+  print "For "+ifo+", analyze "+config.get("segments",whichtoanalyze)
+
   # run segFind to determine science segments
   segFindCall = executable + " --interferometer=" + ifo + \
-      " --type=\"" + config.get("segments", "analyze") + "\""\
+      " --type=\"" + config.get("segments", whichtoanalyze) + "\""\
       " --gps-start-time=" + str(opts.gps_start_time) + \
       " --gps-end-time=" + str(opts.gps_end_time) + " > " + segFindFile
   make_external_call(segFindCall)
@@ -149,11 +152,14 @@ def datafind_segments(ifo, config, opts):
 
   if ifo in ligoIfos: type = config.get("input","ligo-type")
   elif ifo == "G1": type =   config.get("input","geo-type")
+  elif ifo == "V1": type =   config.get("input","virgo-type")
 
   executable = config.get("condor", "datafind")
   if executable[0] != "/": executable = "../" + executable
 
-  ifo_type = ifo + "_" + type
+  if ifo == "V1": ifo_type = type
+  else: ifo_type = ifo + "_" + type
+
   dataFindFile = ifo_type + "-" + str(opts.gps_start_time) + "-" + \
       str(opts.gps_end_time - opts.gps_start_time) + ".txt"
 
@@ -189,18 +195,18 @@ def hipe_setup(hipeDir, config, opts, ifos, injFile=None, dfOnly = False, playOn
   hipecp = copy.deepcopy(config)
   if dfOnly:
     hipeSections = ['condor', 'pipeline', 'input', 'datafind','data',\
-        'ligo-data','inspiral']
+        'ligo-data','inspiral','virgo-data']
   elif vetoCat:
     hipeSections = ['condor', 'pipeline', 'input', 'data', 'ligo-data', \
-        'inspiral', 'thinca', 'thinca-2', 'datafind', \
+        'inspiral', 'thinca', 'thinca-2', 'datafind', 'virgo-data' \
         'thinca-slide', 'coire', 'coire-inj']
   else:
     hipeSections = ['condor', 'pipeline', 'input', 'calibration', 'datafind',\
-        'ligo-data', 'geo-data', 'data', 'tmpltbank', 'tmpltbank-1', \
+        'ligo-data', 'virgo-data', 'geo-data', 'data', 'tmpltbank', 'tmpltbank-1', \
         'tmpltbank-2', 'no-veto-inspiral', 'veto-inspiral', 'inspiral', \
         'h1-inspiral', 'h2-inspiral', 'l1-inspiral', 'g1-inspiral', \
-        'thinca', 'thinca-1', 'thinca-2', 'thinca-slide', 'trigtotmplt', \
-        'sire', 'sire-inj', 'coire', 'coire-inj']
+        'v1-inspiral', 'thinca', 'thinca-1', 'thinca-2', 'thinca-slide', \
+        'trigtotmplt', 'sire', 'sire-inj', 'coire', 'coire-inj']
 
   for seg in hipecp.sections():
     if not seg in hipeSections: hipecp.remove_section(seg)
