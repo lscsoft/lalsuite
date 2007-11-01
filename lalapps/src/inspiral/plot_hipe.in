@@ -191,7 +191,7 @@ if ((opts.plotnumtemplates or opts.plotinspiral or opts.plotinspiralrange) and n
 ###############################
 # Construct list based on ifos supplied at command line
 
-ifolist = [ifo for ifo in ('G1','H1', 'H2', 'L1', 'V2') \
+ifolist = [ifo for ifo in ('G1','H1', 'H2', 'L1', 'V1') \
             if getattr(opts, "%s_data" % ifo.lower())]
 
 if opts.two_ifo:
