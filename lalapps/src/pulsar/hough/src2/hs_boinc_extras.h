@@ -43,23 +43,6 @@ NRCSID(HSBOINCEXTRASHRCSID,"$Id$");
 #else
 #define COMPUTEFSTATFREQBAND LocalComputeFStatFreqBand
 
-extern int
-LocalXLALComputeFaFb ( Fcomponents *FaFb,
-                       const SFTVector *sfts, 
-                       const PulsarSpins fkdot,
-                       const SSBtimes *tSSB,
-                       const AMCoeffs *amcoe,
-                       const ComputeFParams *params);
-
-extern void
-LocalComputeFStat ( LALStatus *, Fcomponents *Fstat, 
-                    const PulsarDopplerParams *doppler,
-                    const MultiSFTVector *multiSFTs,
-                    const MultiNoiseWeights *multiWeights,
-                    const MultiDetectorStateSeries *multiDetStates,
-                    const ComputeFParams *params,
-                    ComputeFBuffer *cfBuffer );
-
 extern void
 LocalComputeFStatFreqBand ( LALStatus *status, 
                             REAL8FrequencySeries *FstatVector,

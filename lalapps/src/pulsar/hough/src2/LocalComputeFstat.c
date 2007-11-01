@@ -156,17 +156,19 @@ static REAL4 sincosLUTdiff[SINCOS_LUT_RES+SINCOS_LUT_RES/4];
 /*---------- internal prototypes ----------*/
 extern int finite(double x);
 
-void LocalComputeFStat ( LALStatus*, Fcomponents*, const PulsarDopplerParams*,
-			 const MultiSFTVector*, const MultiNoiseWeights*,
-			 const MultiDetectorStateSeries*, const ComputeFParams*,
-			 ComputeFBuffer*);
+static void
+LocalComputeFStat ( LALStatus*, Fcomponents*, const PulsarDopplerParams*,
+		    const MultiSFTVector*, const MultiNoiseWeights*,
+		    const MultiDetectorStateSeries*, const ComputeFParams*,
+		    ComputeFBuffer*);
 
-int LocalXLALComputeFaFb (Fcomponents*, const SFTVector*, const PulsarSpins,
-			  const SSBtimes*, const AMCoeffs*, const ComputeFParams*);
+static int
+LocalXLALComputeFaFb (Fcomponents*, const SFTVector*, const PulsarSpins,
+		      const SSBtimes*, const AMCoeffs*, const ComputeFParams*);
 
-int local_sin_cos_2PI_LUT_trimmed (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
+static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
 #if (SINCOS_VERSION == 2) || (SINCOS_VERSION == 9)
-void local_sin_cos_2PI_LUT_init (void);
+static void local_sin_cos_2PI_LUT_init (void);
 #endif
 
 /*==================== FUNCTION DEFINITIONS ====================*/
@@ -267,7 +269,7 @@ void LocalComputeFStatFreqBand ( LALStatus *status,
  * it not implemented yet.
  *
  */
-void
+static void
 LocalComputeFStat ( LALStatus *status, 
 		    Fcomponents *Fstat,                 /**< [out] Fstatistic + Fa, Fb */
 		    const PulsarDopplerParams *doppler, /**< parameter-space point to compute F for */
@@ -424,7 +426,7 @@ LocalComputeFStat ( LALStatus *status,
 /** Revamped version of LALDemod() (based on TestLALDemod() in CFS).
  * Compute JKS's Fa and Fb, which are ingredients for calculating the F-statistic.
  */
-int
+static int
 LocalXLALComputeFaFb ( Fcomponents *FaFb,
 		       const SFTVector *sfts,
 		       const PulsarSpins fkdot,
@@ -1232,7 +1234,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
 #if (SINCOS_VERSION == 2)
 
-void local_sin_cos_2PI_LUT_init (void)
+static void local_sin_cos_2PI_LUT_init (void)
 {
   UINT4 k;
   static REAL8 const oo_lut_res = OO_SINCOS_LUT_RES;
@@ -1242,7 +1244,7 @@ void local_sin_cos_2PI_LUT_init (void)
   }
 }
 
-int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
+static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 {
   INT4 i0;
   REAL8 d, d2;
@@ -1275,7 +1277,7 @@ int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 #elif (SINCOS_VERSION == 6)
 
 #define SINCOS_LUT_RES 63
-int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
+static int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
 
   /* Lookup tables for fast sin/cos calculation */
   static REAL4 sinLUT[SINCOS_LUT_RES+1];
@@ -1333,7 +1335,7 @@ int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
 #define SINCOS_MASK2 0x003FFF
 #define SINCOS_SHIFT 14
 
-void local_sin_cos_2PI_LUT_init (void)
+static void local_sin_cos_2PI_LUT_init (void)
 {
   static const REAL8 step = LAL_TWOPI / (REAL8)SINCOS_LUT_RES;
   static const REAL8 div  = 1.0 / ( 1 << SINCOS_SHIFT );
@@ -1352,7 +1354,7 @@ void local_sin_cos_2PI_LUT_init (void)
 }
 
 
-int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x) {
+static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x) {
   INT4  i,n;
   INT8  ix;
   static const REAL4* cosbase = sincosLUTbase + (SINCOS_LUT_RES/4);
@@ -1386,7 +1388,7 @@ int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x) {
 /* Not used or tested (yet). This features a table construction so
    that the calculation that can easily be vectorized (might help...) */
 
-int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
+static int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
 
   /* Lookup tables for fast sin/cos calculation */
   static REAL4 scTab[SINCOS_LUT_RES+1][2];
