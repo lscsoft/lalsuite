@@ -579,13 +579,13 @@ for grb in usedList:
 uberdag.write_sub_files()
 uberdag.write_dag()
 
-#print """
-#If you run the u¼ber-dag, you probably have to tell Condor not to
-#complain that your DAG logs are on NFS volumes:
-#
-#bash users:
-#export _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR=FALSE
-#
-#tcsh users:
-#setenv _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR FALSE
-#"""
+print """
+If you run the u¼ber-dag, you probably have to tell Condor not to
+complain that your DAG logs are on NFS volumes:
+
+bash users:
+export _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR=FALSE
+
+tcsh users:
+setenv _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR FALSE
+"""
