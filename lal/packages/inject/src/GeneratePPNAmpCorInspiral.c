@@ -304,10 +304,8 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
  }
   
   /* Set number of harmonics in accordance with params->ampOrder*/
-  if ( params->ampOrder == 0)
-    Harmonics = 1;
-  else
-    Harmonics = params->ampOrder + 2;
+  /* Dominant harmonic is the 2nd */
+  Harmonics = params->ampOrder + 2;
 
 
   /*******************************************************************
