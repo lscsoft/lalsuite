@@ -119,7 +119,7 @@ static char resultfile[MAX_PATH_LEN]; /**< the name of the file / zip archive to
     from the Workunit Genrator, Scheduler and Validator leads to claiming the Credit that
     the system intends to grant for a Workunit
  **/
-static double estimated_flops = -1;
+static double estimated_flops = -1.0;
 
 /** hooks for communication with the graphics thread */
 int (*boinc_init_graphics_hook)(void (*worker)(void)) = NULL; /**< boinc_init_graphics hook -
@@ -543,6 +543,7 @@ static void worker (void) {
   int breakpoint = 0;          /**< stop at breakpoint? (for testing the Windows Runtime Debugger) */
   int crash_fpu = 0;
   int test_nan = 0;
+  int test_sqrt = 0;
 
 #ifdef _WIN32
   /* point the Windows Runtime Debugger to the Symbol Store on einstein */
@@ -829,6 +830,11 @@ static void worker (void) {
       rarg--; rargc--; /* this argument is not passed to the main worker function */
     }
 
+    else if (MATCH_START("--TestSQRT",argv[arg],l)) {
+      test_sqrt = -1;
+      rarg--; rargc--; /* this argument is not passed to the main worker function */
+    }
+
     /* record a help otion (to later write help for additional command-line options) */
     else if ((0 == strncmp("--help",argv[arg],strlen("--help"))) ||
 	     (0 == strncmp("-h",argv[arg],strlen("--help")))) {
@@ -940,9 +946,10 @@ static void worker (void) {
     drain_fpu_stack();
 
   if(test_nan)
-    fprintf(stderr,"NaN:%f\n",2.0f*get_nan());
+    fprintf(stderr,"NaN:%f\n", get_nan());
 
-  /* sqrt(-1); */
+  if(test_sqrt)
+    fprintf(stderr,"NaN:%f\n", sqrt(-1));
   
   /* CALL WORKER's MAIN()
    */
@@ -967,6 +974,9 @@ static void worker (void) {
     printf("      --MaxFileSize     INT      maximum size the outpufile may grow to befor compacted (in 1k)\n");
     printf("      --OutputBufSize   INT      size of the output file buffer (in 1k)\n");
     printf("      --BreakPoint       -       if present fire up the Windows Runtime Debugger at internal breakpoint (WIN32 only)\n");
+    printf("      --CrashFPU         -       if present drain the FPU stack to test FPE\n");
+    printf("      --TestNaN          -       if present raise a NaN to test FPE\n");
+    printf("      --TestSQRT         -       if present try to calculate sqrt(-1) to test FPE\n");
     boinc_finish(0);
   }
 
@@ -1422,5 +1432,5 @@ static void drain_fpu_stack(void) {
 
 static REAL4 get_nan(void) {
   static const UINT4 inan = 0xFF8001FF; /* NaN palindrome */
-  return(*((REAL4*)&inan));
+  return((*((REAL4*)&inan)) * ((REAL4)estimated_flops));
 }
