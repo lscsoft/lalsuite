@@ -206,7 +206,7 @@ def hipe_setup(hipeDir, config, opts, ifos, injFile=None, dfOnly = False, playOn
         'tmpltbank-2', 'no-veto-inspiral', 'veto-inspiral', 'inspiral', \
         'h1-inspiral', 'h2-inspiral', 'l1-inspiral', 'g1-inspiral', \
         'v1-inspiral', 'thinca', 'thinca-1', 'thinca-2', 'thinca-slide', \
-        'trigtotmplt', 'sire', 'sire-inj', 'coire', 'coire-inj']
+        'trigbank', 'sire', 'sire-inj', 'coire', 'coire-inj']
 
   for seg in hipecp.sections():
     if not seg in hipeSections: hipecp.remove_section(seg)

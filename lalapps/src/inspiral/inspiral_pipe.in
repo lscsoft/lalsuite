@@ -34,7 +34,7 @@ Usage: lalapps_inspiral_pipe [options]
   -d, --datafind           run LSCdataFind to create frame cache files
   -t, --template-bank      run lalapps_tmpltbank to generate a template bank
   -i, --inspiral           run lalapps_inspiral on the first IFO
-  -T, --triggered-bank     run lalapps_trigtotmplt to generate a triggered bank
+  -T, --triggered-bank     run lalapps_trigbank to generate a triggered bank
   -I, --triggered-inspiral run lalapps_inspiral on the second IFO
   -C, --coincidence        run lalapps_inca on the triggers from both IFOs
 
@@ -180,7 +180,7 @@ else:
 df_job = pipeline.LSCDataFindJob('cache','logs',cp,dax)
 tmplt_job = inspiral.TmpltBankJob(cp,dax)
 insp_job = inspiral.InspiralJob(cp,dax)
-trig_job = inspiral.TrigToTmpltJob(cp)
+trig_job = inspiral.TrigbankJob(cp)
 inca_job = inspiral.IncaJob(cp)
 
 # set better submit file names than the default
@@ -191,7 +191,7 @@ else:
 df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 tmplt_job.set_sub_file( basename + '.tmpltbank' + subsuffix )
 insp_job.set_sub_file( basename + '.inspiral' + subsuffix )
-trig_job.set_sub_file( basename + '.trigtotmplt' + subsuffix )
+trig_job.set_sub_file( basename + '.trigbank' + subsuffix )
 inca_job.set_sub_file( basename + '.inca' + subsuffix )
 
 # set the usertag in the jobs
@@ -318,7 +318,7 @@ for seg in data:
     if do_inspiral:
       dag.add_node(insp1)
 
-    trigbank = inspiral.TrigToTmpltNode(trig_job)
+    trigbank = inspiral.TrigbankNode(trig_job)
     trigbank.add_file_arg(insp1.get_output())
     trigbank.make_trigbank(chunk,0,ifo1,ifo2,usertag)
     trigbank.set_vds_group(group)

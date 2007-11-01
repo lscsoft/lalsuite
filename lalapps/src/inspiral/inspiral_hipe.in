@@ -484,7 +484,7 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
               done_this_chunk = 1
 
               # make a trigbank job for the master chunk
-              trigbank = inspiral.TrigToTmpltNode(trig_job)
+              trigbank = inspiral.TrigbankNode(trig_job)
               if inj>0: trigbank.set_user_tag(exttrigUserTag)
               trigbank.set_ifo_tag(coinc_ifos)
               trigbank.set_output_ifo(ifo_name)
@@ -838,7 +838,7 @@ def coherent_analysis(ifos,single_ifo_segments,coinc_nodes,cb_job,
             if inspiral.overlap_test(coinc_done.get_chunk(),chunk):
               
               # set up the trigbank
-              trigbank = inspiral.TrigToTmpltNode(trig_coh_jobs[ifo])
+              trigbank = inspiral.TrigbankNode(trig_coh_jobs[ifo])
               trigbank.set_ifo_tag(ifotag)
               trigbank.set_output_ifo(ifo)
               trigbank.set_input_ifo(ifo)
@@ -1053,21 +1053,20 @@ ifo_list = ['H1','H2','L1','V1','G1']
 # the first four ifos named in ifo_list for quadruple coincidence
 
 if opts.g1_data:
+  if not opts.h1_data and ifo_list[4]=='G1':
+    ifo_list[0]='G1'
+    ifo_list[4]='H1'
+  if not opts.h2_data and ifo_list[4]=='G1':
+    ifo_list[1]='G1'
+    ifo_list[4]='H2'
+  if not opts.l1_data and ifo_list[4]=='G1':
+    ifo_list[2]='G1'
+    ifo_list[4]='L1'
+  if not opts.v1_data and ifo_list[4]=='G1':
+    ifo_list[3]='G1'
+    ifo_list[4]='V1'
 
-        if not opts.h1_data and ifo_list[4]=='G1':
-                ifo_list[0]='G1'
-                ifo_list[4]='H1'
-        if not opts.h2_data and ifo_list[4]=='G1':
-                ifo_list[1]='G1'
-                ifo_list[4]='H2'
-        if not opts.l1_data and ifo_list[4]=='G1':
-                ifo_list[2]='G1'
-                ifo_list[4]='L1'
-        if not opts.v1_data and ifo_list[4]=='G1':
-                ifo_list[3]='G1'
-                ifo_list[4]='V1'
-
-        print "New ifolist is " + str(ifo_list)
+  ifo_list = ifo_list[:4]
 
 ifotag = None
 do_clust = True
@@ -1267,7 +1266,7 @@ for ifo in ifo_list:
       subsuffix )
 
 # trigbank:
-trig_job = inspiral.TrigToTmpltJob(cp)
+trig_job = inspiral.TrigbankJob(cp)
 trig_job.set_sub_file( basename + '.trigbank' + subsuffix )
 
 # inspiral veto:
@@ -1275,7 +1274,7 @@ insp_veto_jobs = {}
 
 for ifo in ifo_list:
   insp_veto_jobs[ifo] = inspiral.InspiralJob(cp,opts.dax)
-  insp_veto_jobs[ifo].set_sub_file( basename + '.inspiral_veto' + ifo +
+  insp_veto_jobs[ifo].set_sub_file( basename + '.inspiral_veto_' + ifo +
     subsuffix )
 
 # thinca:
@@ -1302,7 +1301,7 @@ cb_job.set_sub_file( basename + '.cohbank' + subsuffix )
 trig_coh_jobs = {}
 
 for ifo in ifo_list:
-  trig_coh_jobs[ifo] = inspiral.TrigToTmpltJob(cp)
+  trig_coh_jobs[ifo] = inspiral.TrigbankJob(cp)
   trig_coh_jobs[ifo].set_sub_file( basename + '.trigbank_coherent_' + ifo + 
       subsuffix )
 
@@ -1379,7 +1378,7 @@ if inj_file:
   inj_jobs.extend(insp_veto_jobs.values())
   inj_jobs.extend(insp_coh_jobs.values())
 
-  for job in inj_jobs:	
+  for job in inj_jobs:  
      job.add_file_opt('injection-file',inj_file)
 
 ##############################################################################
@@ -1398,7 +1397,7 @@ try:
   max_thinca_segment = int(cp.get('input','max-thinca-segment'))
 except:
   max_thinca_segment = None
-  	 
+     
 ##############################################################################
 # read in the GPS start and end times from the ini file
 # Only used to set the cache files and coire files.

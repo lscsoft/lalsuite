@@ -1208,7 +1208,7 @@ def get_version(executable):
   output=[]
   try:
     if executable=="trigbank":
-      pathname = hipecp.get("condor", "trigtotmplt") 
+      pathname = hipecp.get("condor", "trigbank") 
     else:
       pathname = hipecp.get("condor", executable) 
     s =  os.path.split(pathname)
