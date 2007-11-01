@@ -45,9 +45,7 @@ for ifo in {G1,H1,H2,L1,V1}; do
   echo "${ifo} trigbank"
   jid=1
   for allid in `grep trigbank.sub ${1} | awk '{print $2}'`; do 
-    echo $allid
     for replid in `grep "VARS $allid" ${1} | grep macrooutputifo=\"${ifo}\"  | awk '{print $2}'` ; do 
-      echo $replid
       sedcmd="s/$replid/trigbank_ifo_${jid}/g" 
       jid=$((jid+1)) 
       sed $sedcmd ${1} > ${1}.tmp 
