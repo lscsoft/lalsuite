@@ -23,19 +23,21 @@ class InspiralError(exceptions.Exception):
 class InspiralAnalysisJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   An inspiral analysis job captures some of the common features of the specific
-  inspiral jobs that appear below.  Spcecifically, the universe and executable
+  inspiral jobs that appear below.  Spcecifically, the universe and exec_name
   are set, the stdout and stderr from the job are directed to the logs 
   directory. The path to the executable is determined from the ini file.
   """
-  def __init__(self,cp,sections,executable,dax=False):
+  def __init__(self,cp,sections,exec_name,extension='xml',dax=False):
     """
     cp = ConfigParser object from which options are read.
     sections = sections of the ConfigParser that get added to the opts
-    executable = executable name in ConfigParser
+    exec_name = exec_name name in ConfigParser
     """
-    self.__executable = cp.get('condor',executable)
-    self.__universe = cp.get('condor','universe')
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    self.__exec_name = exec_name
+    self.__extension = extension
+    universe = cp.get('condor','universe')
+    executable = cp.get('condor',exec_name)
+    pipeline.CondorDAGJob.__init__(self,universe,executable)
     pipeline.AnalysisJob.__init__(self,cp,dax)
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
@@ -43,11 +45,36 @@ class InspiralAnalysisJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
       try: self.add_ini_opts(cp,sec)
       except: pass
 
-    self.set_stdout_file('logs/' + executable + \
+    self.set_stdout_file('logs/' + exec_name + \
         '-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/' + executable + \
+    self.set_stderr_file('logs/' + exec_name + \
         '-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
-    self.set_sub_file(executable + '.sub')
+    self.set_sub_file(exec_name + '.sub')
+
+  def set_exec_name(self,exec_name):
+    """
+    Set the exec_name name 
+    """
+    self.__exec_name = exec_name
+
+  def get_exec_name(self):
+    """
+    Get the exec_name name
+    """
+    return self.__exec_name
+
+  def set_extension(self,extension):
+    """
+    Set the file extension
+    """
+    self.__extension = extension 
+
+  def get_extension(self):
+    """
+    Get the extension for the file name
+    """
+    return self.__extension
+
 
 #############################################################################
 
@@ -59,14 +86,14 @@ class TmpltBankJob(InspiralAnalysisJob):
   runs in the universe specfied in the ini file. The path to the executable
   is determined from the ini file.
   """
-  def __init__(self,cp,dax=False,tag_base='TMPLTBANK'):
+  def __init__(self,cp,dax=False):
     """
     cp = ConfigParser object from which options are read.
     """
-    executable = 'tmpltbank'
+    exec_name = 'tmpltbank'
+    extension = 'xml'
     sections = ['data','tmpltbank']
-    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
-    self.tag_base = tag_base
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
 
 class InspInjJob(InspiralAnalysisJob):
@@ -81,14 +108,15 @@ class InspInjJob(InspiralAnalysisJob):
     """
     cp = ConfigParser object from which options are read.
     """
-    executable = 'inspinj'
+    exec_name = 'inspinj'
     sections = ['inspinj']
-    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
+    extension = 'xml'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
     self.__listDone=[]
     self.__listNodes=[]
 
-  def set_done(self, number, node):
+  def set_done(self,number,node):
     self.__listDone.append(number)
     self.__listNodes.append(node)
 
@@ -111,9 +139,10 @@ class BbhInjJob(InspiralAnalysisJob):
     """
     cp = ConfigParser object from which options are read.
     """
-    executable = 'bbhinj'
+    exec_name = 'bbhinj'
     sections = ['bbhinj']
-    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
+    extension = 'xml'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
 
 class RandomBankJob(InspiralAnalysisJob):
@@ -128,9 +157,10 @@ class RandomBankJob(InspiralAnalysisJob):
     """
     cp = ConfigParser object from which options are read.
     """
-    executable = 'randombank'
+    exec_name = 'randombank'
     sections = ['randombank']
-    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
+    extension = 'xml'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
 
 class SplitBankJob(InspiralAnalysisJob):
@@ -145,9 +175,10 @@ class SplitBankJob(InspiralAnalysisJob):
     """
     cp = ConfigParser object from which options are read.
     """
-    executable = 'splitbank'
+    exec_name = 'splitbank'
     sections = ['splitbank']
-    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
+    extension = 'xml'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
 
 class InspiralJob(InspiralAnalysisJob):
@@ -158,32 +189,32 @@ class InspiralJob(InspiralAnalysisJob):
   runs in the universe specfied in the ini file. The path to the executable
   is determined from the ini file.
   """
-  def __init__(self,cp,dax=False,tag_base='INSPIRAL'):
+  def __init__(self,cp,dax=False):
     """
     cp = ConfigParser object from which options are read.
     """
-    executable = 'inspiral'
+    exec_name = 'inspiral'
     sections = ['data','inspiral']
-    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
-    self.tag_base = tag_base
+    extension = 'xml'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
 
-class TrigToTmpltJob(InspiralAnalysisJob):
+class TrigbankJob(InspiralAnalysisJob):
   """
-  A lalapps_trigtotmplt job used by the inspiral pipeline. The static
-  options are read from the section [trigtotmplt] in the ini file.  The
+  A lalapps_trigbank job used by the inspiral pipeline. The static
+  options are read from the section [trigbank] in the ini file.  The
   stdout and stderr from the job are directed to the logs directory. The job
   always runs in the scheduler universe. The path to the executable is
   determined from the ini file.
   """
-  def __init__(self,cp,dax=False,tag_base='TRIGBANK'):
+  def __init__(self,cp,dax=False):
     """
     cp = ConfigParser object from which options are read.
     """
-    executable = 'trigtotmplt'
-    sections = ['trigtotmplt']
-    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
-    self.tag_base = tag_base
+    exec_name = 'trigbank'
+    sections = ['trigbank']
+    extension = 'xml'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
 
 class IncaJob(InspiralAnalysisJob):
@@ -197,9 +228,10 @@ class IncaJob(InspiralAnalysisJob):
     """
     cp = ConfigParser object from which options are read.
     """
-    executable = 'inca'
+    exec_name = 'inca'
     sections = ['inca']
-    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
+    extension = 'xml'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
 
 class ThincaJob(InspiralAnalysisJob):
@@ -209,14 +241,14 @@ class ThincaJob(InspiralAnalysisJob):
   the job are directed to the logs directory.  The path to the executable is 
   determined from the ini file.
   """
-  def __init__(self,cp,dax=False,tag_base='THINCA'):
+  def __init__(self,cp,dax=False):
     """
     cp = ConfigParser object from which options are read.
     """
-    executable = 'thinca'
+    exec_name = 'thinca'
     sections = ['thinca']
-    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
-    self.tag_base = tag_base
+    extension = 'xml'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
 
 class SireJob(InspiralAnalysisJob):
@@ -229,9 +261,10 @@ class SireJob(InspiralAnalysisJob):
     """
     cp = ConfigParser object from which options are read.
     """
-    executable = 'sire'
+    exec_name = 'sire'
     sections = ['sire']
-    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
+    extension = 'xml'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
     # sire currently doesn't take GPS start/end times
     self.set_stdout_file('logs/sire-$(macroifo)-$(cluster)-$(process).out')
@@ -248,9 +281,10 @@ class CoireJob(InspiralAnalysisJob):
     """
     cp = ConfigParser object from which options are read.
     """
-    executable = 'coire'
+    exec_name = 'coire'
     sections = ['coire']
-    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
+    extension = 'xml'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
     # coire currently doesn't take GPS start/end times
     self.set_stdout_file('logs/coire-$(macroifo)-$(cluster)-$(process).out')
@@ -266,9 +300,10 @@ class FrJoinJob(InspiralAnalysisJob):
     """
     cp = ConfigParser object from which options are read.
     """
-    executable = 'frjoin'
+    exec_name = 'frjoin'
     sections = []
-    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
+    extension = 'gwf'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
     # frjoin currently doesn't take GPS start/end times
     self.set_stdout_file('logs/frjoin-$(cluster)-$(process).out')
@@ -286,9 +321,10 @@ class CohBankJob(InspiralAnalysisJob):
     """
     cp = ConfigParser object from which options are read.
     """
-    executable = 'cohbank'
+    exec_name = 'cohbank'
     sections = ['cohbank']
-    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
+    extension = 'xml'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
 
 class ChiaJob(InspiralAnalysisJob):
@@ -302,10 +338,27 @@ class ChiaJob(InspiralAnalysisJob):
     """
     cp = ConfigParser object from which options are read.
     """
-    executable = 'chia'
+    exec_name = 'chia'
     sections = ['chia']
-    InspiralAnalysisJob.__init__(self,cp,sections,executable,dax)
+    extension = 'xml'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
+
+class PlotInspiralrangeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A plotinspiralrange job. The static options are read from the section
+  [plotinspiralrange] in the ini file.  The stdout and stderr from the job
+  are directed to the logs directory.  The path to the executable is
+  determined from the ini file.
+  """
+  def __init__(self,cp,dax=False):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    exec_name = 'plotinspiralrange'
+    sections = ['plotinspiralrange']
+    extension = 'html'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
 #############################################################################
 
@@ -361,23 +414,35 @@ class InspiralAnalysisNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     return self.__zip_output
 
-  def get_output(self):
+  def get_output_base(self):
     """
-    Returns the file name of output from the inspiral code. This must be kept
-    synchronized with the name of the output file in inspiral.c.
+    Returns the base file name of output from the inspiral code. This is 
+    assumed to follow the standard naming convention:
+
+    IFO-EXECUTABLE_IFOTAG_USERTAG-GPS_START-DURATION
     """
     if not self.get_start() or not self.get_end() or not self.get_ifo():
       raise InspiralError, "Start time, end time or ifo has not been set"
 
-    basename = self.get_ifo() + '-' + self.job().tag_base
+    filebase = self.get_ifo() + '-' + self.job().get_exec_name().upper()
 
     if self.get_ifo_tag():
-      basename += '_' + self.get_ifo_tag()
+      filebase += '_' + self.get_ifo_tag()
     if self.get_user_tag():
-      basename += '_' + self._usertag()
+      filebase += '_' + self._usertag()
 
-    filename = basename + '-' + str(self.get_start()) + '-' + \
-      str(self.get_end() - self.get_start()) + '.xml'
+    filebase +=  '-' + str(self.get_start()) + '-' + \
+      str(self.get_end() - self.get_start()) 
+
+    return(filebase)
+
+  def get_output(self):
+    """
+    Returns the file name of output from the inspiral code. This is obtained
+    from the get_output_base() method, with the correct extension added.
+    """
+    filename = self.get_output_base()
+    filename += '.' + self.job().get_extension()
 
     if self.get_zip_output():
       filename += '.gz'
@@ -386,26 +451,23 @@ class InspiralAnalysisNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
     return filename
 
+  def get_output_cache(self):
+    """
+    Returns the name of the cache file output from the inspiral analysis codes.
+    This is obtained from the get_output_base() method, with the correct 
+    extension added.
+    """
+    filename = self.get_output_base()
+    filename += '.cache'
+
   def get_froutput(self):
     """
-    Returns the file name of output frame from the inspiral code. This
-    must be kept synchronized with the name of the output file in inspiral.c.
+    Returns the file name of output frame from the inspiral code. 
     """
-    if not self.get_start() or not self.get_end() or not self.get_ifo():
-      raise InspiralError, "Start time, end time or ifo has not been set"
+    gwffile = self.get_output_base()
+    gwffile += '.gwf'
 
-    tag_base = self.job().tag_base
-    basename = self.get_ifo() + '-' + tag_base
-
-    if self.get_ifo_tag():
-      basename += '_' + self.get_ifo_tag()
-    if self.get_user_tag():
-      basename += '_' + self.get_user_tag()
-
-    filename = basename + '-' + str(self.get_start()) + '-' + \
-      str(self.get_end() - self.get_start()) + '.gwf'
-
-    return filename  
+    return gwffile 
 
   def finalize(self):
     """
@@ -608,36 +670,15 @@ class InspiralNode(InspiralAnalysisNode):
     """
     return self.__injections
 
-  def get_froutput(self):
-    """
-    Returns the file name of output frame from the inspiral code. This
-    must be kept synchronized with the name of the output file in inspiral.c.
-    """
-    if not self.get_start() or not self.get_end() or not self.get_ifo():
-      raise InspiralError, "Start time, end time or ifo has not been set"
 
-    tag_base = self.job().tag_base
-    basename = self.get_ifo() + '-' + tag_base
-
-    if self.get_ifo_tag():
-      basename += '_' + self.get_ifo_tag()
-    if self.get_user_tag():
-      basename += '_' + self.get_usertag()
-
-    filename = basename + '-' + str(self.get_start()) + '-' + \
-      str(self.get_end() - self.get_start()) + '.gwf'
-
-    return filename  
-
-
-class TrigToTmpltNode(InspiralAnalysisNode):
+class TrigbankNode(InspiralAnalysisNode):
   """
-  A TrigToTmpltNode runs an instance of the triggered bank generator in a
+  A TrigbankNode runs an instance of the triggered bank generator in a
   Condor DAG.
   """
   def __init__(self,job):
     """
-    job = A CondorDAGJob that can run an instance of inca in trigtotmplt mode.
+    job = A CondorDAGJob that can run an instance of trigbank.
     """
     InspiralAnalysisNode.__init__(self,job)
     self.__input_ifo = None
@@ -866,11 +907,11 @@ class ThincaNode(InspiralAnalysisNode):
     if not self.get_start() or not self.get_end() or not self.get_ifos():
       raise InspiralError, "Start time, end time or ifos have not been set"
     
-    tag_base = self.job().tag_base
     if self.__num_slides:
-      basename = self.get_ifos() + '-' + tag_base + '_SLIDE'
+      basename = self.get_ifos() + '-' + self.job().get_exec_name().upper() \
+          + '_SLIDE'
     else:
-      basename = self.get_ifos() + '-' + tag_base
+      basename = self.get_ifos() + '-' + self.job().get_exec_name().upper()
 
     if self.get_ifo_tag():
       basename += '_' + self.get_ifo_tag() 
@@ -1280,6 +1321,18 @@ class ChiaNode(InspiralAnalysisNode):
   def set_bank(self,bank):
     self.add_var_opt('bank-file', bank)
     self.add_input_file(bank)
+
+
+class PlotInspiralrangeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  A PlotInspiralrangeNode runs an instance of the plotinspiral code in a 
+  Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of plotinspiralrange.
+    """
+    InspiralAnalysisNode.__init__(self,job)
 
     
 ##############################################################################
@@ -1837,80 +1890,6 @@ class PlotSnrchiNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   def __init__(self,job):
     """
     job = A CondorDAGJob that can run an instance of plotsnrchi.
-    """
-    pipeline.CondorDAGNode.__init__(self,job)
-    pipeline.AnalysisNode.__init__(self)
-    self.__usertag = job.get_config('pipeline','user-tag')
-
-  def set_user_tag(self,usertag):
-    self.__usertag = usertag
-    self.add_var_opt('user-tag',usertag)
-
-  def get_user_tag(self):
-    return self.__usertag
-
-  def get_output(self):
-    """
-    Returns the file name of output from the inspiral code. This must be kept
-    synchronized with the name of the output file in inspiral.c.
-    """
-    if not self.get_start() or not self.get_end() or not self.get_ifo():
-      raise InspiralError, "Start time, end time or ifo has not been set"
-
-    tag_base = self.job().tag_base
-    basename = self.get_ifo() + '-' + tag_base
-
-    if self.get_ifo_tag():
-      basename += '_' + self.get_ifo_tag()
-    if self.__usertag:
-      basename += '_' + self.__usertag
-
-    filename = basename + '-' + str(self.get_start()) + '-' + \
-      str(self.get_end() - self.get_start()) + '.xml'
-
-    if self.__zip_output:
-      filename += '.gz'
-
-    self.add_output_file(filename)
-
-    return filename
-
-#############################################################################
-
-class PlotInspiralrangeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
-  """
-  A plotinspiralrange job. The static options are read from the section
-  [plotinspiralrange] in the ini file.  The stdout and stderr from the job
-  are directed to the logs directory.  The path to the executable is
-  determined from the ini file.
-  """
-  def __init__(self,cp,dax=False,tag_base='PLOTINSPIRALRANGE'):
-    """
-    cp = ConfigParser object from which options are read.
-    """
-    self.__executable = cp.get('condor','plotinspiralrange')
-    self.__universe = cp.get('condor','universe')
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp,False)
-    self.tag_base = tag_base
-
-
-    for sec in ['plotinspiralrange']:
-      self.add_ini_opts(cp,sec)
-
-    self.set_stdout_file('logs/plotinspiralrange-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/plotinspiralrange-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
-    self.set_sub_file('plotinspiralrange.sub')
-
-    self.add_condor_cmd('getenv','True')
-
-class PlotInspiralrangeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
-  """
-  A PlotInspiralrangeNode runs an instance of the plotinspiral code in a Condor DAG.
-  """
-  def __init__(self,job):
-    """
-    job = A CondorDAGJob that can run an instance of plotinspiralrange.
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
