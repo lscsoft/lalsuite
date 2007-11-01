@@ -885,7 +885,17 @@ static void worker (void) {
     attach_gdb();
 #endif
 
-#if defined(_MSC_VER) || defined(__GNUC__) && __i386__
+#if defined(_MSC_VER)
+#define MY_INVALID 1 /* _EM_INVALID /**/
+  /*
+    _controlfp(MY_INVALID,_MCW_EM);
+    _controlfp_s(NULL,MY_INVALID,_MCW_EM);
+  */
+  {
+    unsigned int cw87, cwSSE;
+    __control87_2(MY_INVALID,_MCW_EM,&cw87,&cwSSE);
+  }
+#elif defined(_MSC_VER) || defined(__GNUC__) && __i386__
   /* write out the masked FPU exceptions */
   {
     fpuw_t fpstat = get_fpu_status();
@@ -924,18 +934,6 @@ static void worker (void) {
     set_sse_control_status(get_sse_control_status() & ~SSE_MASK_INVALID);
 #endif
   }
-
-#elif 0 || defined(_MSC_VER)
-#define MY_INVALID 1 /* _EM_INVALID /**/
-  /*
-    _controlfp(MY_INVALID,_MCW_EM);
-    /*
-    {
-    unsigned int cw87, cwSSE;
-    __control87_2(MY_INVALID,_MCW_EM,&cw87,&cwSSE);
-    }
-    _controlfp_s(NULL,MY_INVALID,_MCW_EM);
-  */
 #endif
 
   if(crash_fpu)
