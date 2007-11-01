@@ -186,7 +186,7 @@ class hipe_run(object):
   def __init__(self, hipe_dir, base_cp, ifos, log_path, source_file, onsource=False, verbose=False):
     self._hipe_dir = hipe_dir
     self._log_path = log_path
-    self._cp = copy.copy(base_cp)
+    self._cp = copy.deepcopy(base_cp)
     self._ifos = ifos
     self._verbose = verbose
 
@@ -197,7 +197,8 @@ class hipe_run(object):
     self._hipe_args = ["--output-segs",
       "--log-path=%s" % log_path, "--config-file=%s",
       "--datafind", "--template-bank", "--inspiral", "--coincidence",
-      "--trigbank", "--inspiral-veto", "--second-coinc", "--write-script"]
+      "--trigbank", "--inspiral-veto", "--second-coinc", 
+      "--coire-second-coinc", "--write-script"]
     
     # determine how many ifos to analyze
     n = len(self._ifos)
@@ -214,7 +215,7 @@ class hipe_run(object):
       self._hipe_args.append("--%s-data" % ifo.lower())
 
     # set the source file for thinca
-    cp.set('thinca','exttrig','../../'+source_file)
+    self._cp.set('thinca','exttrig','../../'+source_file)
 
     # set the on-source segment
     self._cp.set('input','exttrig-segments','../onSourceSeg.txt')
@@ -443,7 +444,6 @@ for grb in usedList:
   source_file = idirectory+"/triggerGRB"+grb.identifier+".xml"
   grb.writeExtTrigTable( source_file )
 
-
   ##############################################################################
   # set up the segment including the off-source segment
 
@@ -529,11 +529,13 @@ for grb in usedList:
   # In doing this, we simply copy the configuration file into the
   # sub-directory and then run the dag generation script.
   
-  basic_analysis = hipe_run("%s/analysis" % idirectory, cp, ifolist, opts.log_path, source_file, verbose=opts.verbose)
+  basic_analysis = hipe_run("%s/analysis" % idirectory, cp, ifolist, \
+                            opts.log_path, source_file, verbose=opts.verbose)
   basic_analysis.write_dag('config.ini')
   uberdag.add_node(basic_analysis.get_dag_node())
 
-  onsource_analysis = hipe_run("%s/onsource" % idirectory, cp, ifolist, opts.log_path, source_file, onsource=True, verbose=opts.verbose)
+  onsource_analysis = hipe_run("%s/onsource" % idirectory, cp, ifolist, \
+                               opts.log_path, source_file, onsource=True, verbose=opts.verbose)
   onsource_analysis.write_dag('config.ini')
   uberdag.add_node(onsource_analysis.get_dag_node())
 
@@ -548,7 +550,7 @@ for grb in usedList:
     ############################################################################
     # set up the injection dag for this interval
     for injrun in cpinj.sections():
-      if opts.verbose: print injrun
+      if opts.verbose: print "Creating DAG for ", injrun
       hipe_dir = os.path.join(idirectory, injrun)
       injection_analysis = hipe_run( hipe_dir, cp, ifolist, \
                                opts.log_path, source_file, verbose=opts.verbose)
@@ -577,7 +579,7 @@ for grb in usedList:
 uberdag.write_sub_files()
 uberdag.write_dag()
 
-#print u"""
+#print """
 #If you run the u¼ber-dag, you probably have to tell Condor not to
 #complain that your DAG logs are on NFS volumes:
 #
