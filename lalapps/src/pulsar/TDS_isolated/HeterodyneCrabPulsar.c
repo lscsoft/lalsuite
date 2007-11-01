@@ -283,12 +283,12 @@ LALGetCrabEphemeris	( LALStatus			*status,
   
   fclose(fp);
   
-	ASSERT(j != 0, status, HETERODYNECRABPULSARH_ENUMEPHEMERISDATA,
+  ASSERT(j != 0, status, HETERODYNECRABPULSARH_ENUMEPHEMERISDATA,
   HETERODYNECRABPULSARH_MSGENUMEPHEMERISDATA);
   
-	output->numOfData = j;
-	
-	/* check that the number of times in the ephemeris file (N2) is equal to the */
+  output->numOfData = j;
+
+/* check that the number of times in the ephemeris file (N2) is equal to the */
   /* number of lines read in (i-1) if not give error and exit                */
   /*if ( N2 != i-1 ){
     fprintf(stderr,"Error in ephemeris file, check or update\n");
@@ -297,11 +297,11 @@ LALGetCrabEphemeris	( LALStatus			*status,
   
   /* convert time in MJD to secs in TDB */
   for(i=0;i<j;i++){
-   	/*GPStemp = (MJDVec[i]-44244.)*86400.;*/
+    /* GPStemp = (MJDVec[i]-44244.)*86400.; */
     GPStemp = LALTDBMJDtoGPS(MJDVec[i]);
-		
-		MJDVec[i] = GPStemp + tArrVec[i];
-		    
+
+    MJDVec[i] = GPStemp + tArrVec[i];
+    
     /*printf("%lf\n",fmod(MJDVec[i],50000));*/ 
     output->tArr->data[i] = MJDVec[i];   
   }
@@ -340,10 +340,10 @@ LALComputeFreqDerivatives	( LALStatus			*status,
   ASSERT(output != (CrabSpindownParamsOutput *)NULL, status, HETERODYNECRABPULSARH_ENULLOUTPUT,
   HETERODYNECRABPULSARH_MSGENULLOUTPUT);
   
-	ASSERT(input->numOfData != 0, status, HETERODYNECRABPULSARH_ENUMEPHEMERISDATA,
+  ASSERT(input->numOfData != 0, status, HETERODYNECRABPULSARH_ENUMEPHEMERISDATA,
   HETERODYNECRABPULSARH_MSGENUMEPHEMERISDATA);
   
-	input->f1->data[0] = input->f1->data[0]*1.e-15;  /* convert f1 to correct units */ 
+  input->f1->data[0] = input->f1->data[0]*1.e-15;  /* convert f1 to correct units */ 
   phase0 = 0.0;
   phaseNew = 0.0;
   
@@ -368,13 +368,10 @@ LALComputeFreqDerivatives	( LALStatus			*status,
     (tempf2/6.0)*t*t*t + (tempf3/24.0)*t*t*t*t;
 
     /* round phase to nearest integer */
-		/* (phase is tracked well enough using the values of f0, f1, f2 and f3 
-		calculated above to be able to constrain the phase after time t to the nearest
-		integer) */
-    if((ceil(phase)-phase<0.5) && (ceil(phase)-phase>=0.0))
-      phaseNew = ceil(phase);
-    else
-      phaseNew = floor(phase);
+    /* (phase is tracked well enough using the values of f0, f1, f2 and f3 
+      calculated above to be able to constrain the phase after time t to the nearest
+      integer) */
+      phaseNew = floor(phase + 0.5);
     /* fprintf(stdout,"%lf\t%lf\n",phase,phaseNew); */
     
     /* recalculate spindown params with constrained phase */
@@ -394,7 +391,7 @@ LALComputeFreqDerivatives	( LALStatus			*status,
     output->f3->data[i-1] = f3;
     output->f4->data[i-1] = f4;
     output->tArr->data[i-1] = tArr;
-		output->numOfData = input->numOfData;
+    output->numOfData = input->numOfData;
   }
   
   /* LALCheckMemoryLeaks(); */
@@ -404,10 +401,10 @@ LALComputeFreqDerivatives	( LALStatus			*status,
 }
 
 void
-LALSetSpindownParams	( LALStatus			*status,
-			  ParamsForHeterodyne		*output,
-				CrabSpindownParamsOutput	*input,
-				LIGOTimeGPS			epoch)
+LALSetSpindownParams	( LALStatus  *status,
+        ParamsForHeterodyne   *output,
+        CrabSpindownParamsOutput  *input,
+        LIGOTimeGPS   epoch)
 {
   UINT4 i = 0;
   REAL8 dataEpoch;
@@ -420,22 +417,22 @@ LALSetSpindownParams	( LALStatus			*status,
   ASSERT(input != (CrabSpindownParamsOutput *)NULL, status, HETERODYNECRABPULSARH_ENULLINPUT,
   HETERODYNECRABPULSARH_MSGENULLINPUT);
   
-	ASSERT(input->numOfData != 0, status, HETERODYNECRABPULSARH_ENUMEPHEMERISDATA,
+  ASSERT(input->numOfData != 0, status, HETERODYNECRABPULSARH_ENUMEPHEMERISDATA,
   HETERODYNECRABPULSARH_MSGENUMEPHEMERISDATA);
-	
+
   dataEpoch = (REAL8)epoch.gpsSeconds + ((REAL8)epoch.gpsNanoSeconds/1.0e9);
     
   for(i=0;i<input->numOfData;i++){
     if((dataEpoch<input->tArr->data[i+1])&&(dataEpoch>=input->tArr->data[i])){
       output->f0 = input->f0->data[i];
-			output->f1 = input->f1->data[i];
-			output->f2 = input->f2->data[i];
-			output->f3 = input->f3->data[i];
-			output->f4 = input->f4->data[i];
-	
-			output->epoch = input->tArr->data[i];
-			
-			break;
+      output->f1 = input->f1->data[i];
+      output->f2 = input->f2->data[i];
+      output->f3 = input->f3->data[i];
+      output->f4 = input->f4->data[i];
+
+      output->epoch = input->tArr->data[i];
+
+      break;
     }
   }
   
@@ -446,23 +443,17 @@ LALSetSpindownParams	( LALStatus			*status,
 /* function that performs the timing noise heterodyne but no longer at SSB */
 /* also it now does one point at a time */
 void
-LALTimingNoiseHeterodyne	( LALStatus		*status,
-				  TNHeterodyneOutput	*output,
-					TNHeterodyneInput	*input,
-				  ParamsForHeterodyne	*params )
+LALTimingNoiseHeterodyne	( LALStatus  *status,
+          TNHeterodyneOutput  *output,
+          TNHeterodyneInput *input,
+          ParamsForHeterodyne *params )
 {
-	UINT4 i;
-  REAL8 DPhi;	/* phase difference to be removed */
-  REAL8 t1;		 
+  REAL8 DPhi; /* phase difference to be removed */
+  REAL8 t1; 
   REAL8 t;
   REAL8 phi, phi0; /* phases with and without timing noise */
-  INT8 length;
-  
-	BarycenterInput baryinput; /* barycentring variables */
-  EarthState earth;
-  EmissionTime  emit;
-	
-	INITSTATUS( status, "LALTimingNoiseHeterodyne", HETERODYNECRABPULSARC);
+
+  INITSTATUS( status, "LALTimingNoiseHeterodyne", HETERODYNECRABPULSARC);
   ATTATCHSTATUSPTR (status);
   
   /* Check Input Arguments */ 
@@ -476,47 +467,32 @@ LALTimingNoiseHeterodyne	( LALStatus		*status,
   HETERODYNECRABPULSARH_MSGEINVALIDF0);
 
   t = (REAL8)input->epoch.gpsSeconds+(REAL8)input->epoch.gpsNanoSeconds/1.e9;
-
-	/* set up location of detector */
-  baryinput.site.location[0] = params->detector.location[0]/LAL_C_SI;
-  baryinput.site.location[1] = params->detector.location[1]/LAL_C_SI;
-  baryinput.site.location[2] = params->detector.location[2]/LAL_C_SI;
- 
-	/* set up epoch, RA, DEC, and distance variables for LALBarycenter*/
-  baryinput.tgps = input->epoch;
-	baryinput.alpha = params->alpha;
-  baryinput.delta = params->delta;
-  baryinput.dInv = 0.0;
   
-	/* work out time delay */ 
-	LALBarycenterEarth(status->statusPtr, &earth, &baryinput.tgps, params->edat); 
-	LALBarycenter(status->statusPtr, &emit, &baryinput, &earth);
-	
-	/* Dt between time of data point and the epoch of the FIRST data point */
+  /* Dt between time of data point and the epoch of the FIRST data point */
   /* epoch of the FIRST data point is always the GPS time of that point  */
-  t = t - (REAL8)input->t0 + emit.deltaT;    
-    
+  t = t - (REAL8)input->t0;
+  
   /* Dt between time of data point and the epoch of that data point */
   t1 = t + (REAL8)input->t0 - (REAL8)params->epoch;
-		
+
+  //fprintf(stderr, "params->epoch = %lf\n", params->epoch);
+  
   /* calculate phase difference between signal with timing noise and one without */
   /* phi - phi0 */
-  /* phi0 = (input->f0*t + 0.5*input->f1*t*t + (1.0/6.0)*input->f2*t*t*t);/*-(input->f0*t0 + 0.5*input->f1*t0*t0);*/
   /* input f0 is already at GW freq (i.e. spin freq * 2) */
-	phi0 = input->f0*t + 0.5*input->f1*t*t + (1.0/6.0)*input->f2*t*t*t;
+  phi0 = input->f0*t + 0.5*input->f1*t*t + (1.0/6.0)*input->f2*t*t*t;
 
-  phi = 2.0*(params->f0*t1 + 0.5*params->f1*t1*t1 + (params->f2/6.0)*t1*t1*t1 +
-    (params->f3/24.0)*t1*t1*t1*t1 +
-    (params->f4/120.0)*t1*t1*t1*t1*t1);
+  phi = 2.0*(params->f0*t1 + 0.5*params->f1*t1*t1 + (params->f2/6.0)*t1*t1*t1+
+    (params->f3/24.0)*t1*t1*t1*t1 + (params->f4/120.0)*t1*t1*t1*t1*t1);
     
   DPhi = phi-phi0;
-  	 
+  
   DPhi = 2.0*(REAL8)LAL_PI*fmod(DPhi,1.0);
-	
-	output->Dphase = DPhi;
-	output->phi0 = 2.*LAL_PI*fmod(phi0,1.0);
-	output->phi1 = 2.*LAL_PI*fmod(phi,1.0);
-	    
+
+  output->Dphase = DPhi;
+  output->phi0 = 2.*LAL_PI*fmod(phi0,1.0);
+  output->phi1 = 2.*LAL_PI*fmod(phi,1.0);
+      
   /* Heterodyne to remove timing noise */
   output->Vh.re = (REAL8)input->Vh.re*cos(-DPhi) - (REAL8)input->Vh.im*sin(-DPhi);
   output->Vh.im = (REAL8)input->Vh.re*sin(-DPhi) + (REAL8)input->Vh.im*cos(-DPhi);

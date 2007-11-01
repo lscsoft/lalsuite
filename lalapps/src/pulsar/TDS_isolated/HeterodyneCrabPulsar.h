@@ -49,10 +49,6 @@
 #define _HETERODYNECRABPULSAR_H
 
 #include <lal/LALStdlib.h>
-
-#include <lal/LALBarycenter.h>
-#include <lal/LALInitBarycenter.h>
-#include <lal/SkyCoordinates.h>
 #include <lal/AVFactories.h>
 
 #ifdef __cplusplus
@@ -190,11 +186,6 @@ tagParamsForHeterodyne
   REAL8 f3;
   REAL8 f4;
   REAL8 epoch;
-	REAL8 alpha; /* RA and dec for barycentring */
-	REAL8 delta;
-	LALDetector detector;
-	EphemerisData *edat;
-	
 } ParamsForHeterodyne;
 
 /*typedef struct
