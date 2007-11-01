@@ -48,27 +48,27 @@ usage = """usage: %prog [options]
 
 parser = OptionParser( usage )
 
-parser.add_option("-V", "--version",action="store_true",default=False,\
+parser.add_option("-v", "--version",action="store_true",default=False,\
     help="print version information and exit")
     
 parser.add_option("-u", "--user-tag",action="store",type="string",\
     default=None,metavar=" USERTAG",\
     help="tag the jobs with USERTAG (overrides value in ini file)")
 
-parser.add_option("-g", "--g1-data",action="store_true",default=False,\
+parser.add_option("-G", "--g1-data",action="store_true",default=False,\
     help="analyze g1 data")
 
-parser.add_option("-a", "--h1-data",action="store_true",default=False,\
+parser.add_option("-H", "--h1-data",action="store_true",default=False,\
     help="analyze h1 data")
 
-parser.add_option("-b", "--h2-data",action="store_true",default=False,\
+parser.add_option("-B", "--h2-data",action="store_true",default=False,\
     help="analyze h2 data")
 
-parser.add_option("-l", "--l1-data",action="store_true",default=False,\
+parser.add_option("-L", "--l1-data",action="store_true",default=False,\
     help="analyze l1 data")
 
-parser.add_option("-v", "--v2-data",action="store_true",default=False,\
-    help="analyze v2 data")
+parser.add_option("-V", "--v1-data",action="store_true",default=False,\
+    help="analyze v1 data")
 
 parser.add_option("-S", "--one-ifo",action="store_true",default=False,\
     help="analyze single ifo data (not usable for GEO)")
@@ -85,7 +85,7 @@ parser.add_option("-Q", "--four-ifo",action="store_true",default=False,\
 parser.add_option("-R", "--five-ifo",action="store_true",default=False,\
     help="analyze five intereferometer data")
 
-parser.add_option("-A", "--analyze-all",action="store_true",default=False,\
+parser.add_option("-a", "--analyze-all",action="store_true",default=False,\
     help="analyze all ifos and all data (over-rides above)")
 
 parser.add_option("-i", "--plotinspiral" ,action="store_true",default=False,\
@@ -97,7 +97,7 @@ parser.add_option("-t", "--plotthinca" ,action="store_true",default=False,\
 parser.add_option("-n", "--plotnumtemplates" ,action="store_true",default=False,\
     help="run plotnumtemplates to plot trigbanks and templtbanks")
 
-parser.add_option("-I", "--plotinjnum" ,action="store_true",default=False,\
+parser.add_option("-r", "--plotinjnum" ,action="store_true",default=False,\
     help="run plotinj")
 
 parser.add_option("-e", "--plotethinca" ,action="store_true",default=False,\
@@ -120,13 +120,26 @@ parser.add_option("-f", "--config-file",action="store",type="string",\
 
 parser.add_option("-p", "--log-path",action="store",type="string",\
     metavar=" PATH",help="directory to write condor log file")
+#################################
+
+parser.add_option("-P", "--playground_only",action="store_true",default=True,\
+    help="Run plot_hipe only one the playground directory")
+
+parser.add_option("-A", "--analysis_only",action="store_true",default=True,\
+    help="Run plot_hipe on analysis directory")
+
+parser.add_option("-I", "--injections_only",action="store_true",default=True,\
+    help="Run plot_hipe on injection directory")
+
+
+
 
 command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
 
 #################################
 #ALPHABETS USED IN THIS CODE.
-# b, e, f, g, i, I, j, l, M, n, p, s, t, u, v, A, D, R, S, T, Q
+# a, b, e, f, g, i, I, j, l, M, n, p ,P , s, t, u, v, A, D, R, S, T, Q
 
 #################################
 # if --version flagged
