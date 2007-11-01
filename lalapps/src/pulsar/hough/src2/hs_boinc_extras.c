@@ -542,7 +542,8 @@ static void worker (void) {
 			            only by this BOINC-wrapper? */
   int breakpoint = 0;          /**< stop at breakpoint? (for testing the Windows Runtime Debugger) */
   int crash_fpu = 0;
-  int test_nan = 0;
+  int test_nan  = 0;
+  int test_snan = 0;
   int test_sqrt = 0;
 
 #ifdef _WIN32
@@ -830,6 +831,12 @@ static void worker (void) {
       rarg--; rargc--; /* this argument is not passed to the main worker function */
     }
 
+    /* produce a NaN, solely for testing FPU exceptions */
+    else if (MATCH_START("--TestSNaN",argv[arg],l)) {
+      test_snan = -1;
+      rarg--; rargc--; /* this argument is not passed to the main worker function */
+    }
+
     else if (MATCH_START("--TestSQRT",argv[arg],l)) {
       test_sqrt = -1;
       rarg--; rargc--; /* this argument is not passed to the main worker function */
@@ -947,6 +954,11 @@ static void worker (void) {
 
   if(test_nan)
     fprintf(stderr,"NaN:%f\n", get_nan());
+
+#ifdef _MSC_VER
+  if(test_snan)
+    fprintf(stderr,"sNaN:%f\n", get_float_snan());
+#endif
 
   if(test_sqrt)
     fprintf(stderr,"NaN:%f\n", sqrt(-1));
@@ -1128,8 +1140,8 @@ int main(int argc, char**argv) {
 #ifdef _WIN32
   signal(SIGTERM, sighandler);
   if ( !skipsighandler ) {
-    signal(SIGINT,  sighandler);
-    signal(SIGFPE,  sighandler);
+    signal(SIGINT, sighandler);
+    signal(SIGFPE, sighandler);
   }
 #elif __GLIBC__
   /* this uses unsupported features of the glibc, so don't
@@ -1156,8 +1168,8 @@ int main(int argc, char**argv) {
   /* install signal handler (generic unix) */
   boinc_set_signal_handler(SIGTERM, sighandler);
   if ( !skipsighandler ) {
-      boinc_set_signal_handler(SIGINT,  sighandler);
-      boinc_set_signal_handler(SIGFPE,  sighandler);
+      boinc_set_signal_handler(SIGINT, sighandler);
+      boinc_set_signal_handler(SIGFPE, boinc_catch_signal);
   } /* if !skipsighandler */
 #endif /* WIN32 */
 
@@ -1431,6 +1443,7 @@ static void drain_fpu_stack(void) {
 }
 
 static REAL4 get_nan(void) {
-  static const UINT4 inan = 0xFF8001FF; /* NaN palindrome */
+  static const UINT4 inan = 0xFFFFFFFF; /* full NaN */
+  /* static const UINT4 inan = 0xFF8001FF; /* NaN palindrome */
   return((*((REAL4*)&inan)) * ((REAL4)estimated_flops));
 }
