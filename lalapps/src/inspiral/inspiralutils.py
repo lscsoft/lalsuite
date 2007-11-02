@@ -203,8 +203,9 @@ def hipe_setup(hipeDir, config, opts, ifos, injFile=None, dfOnly = False, playOn
   else:
     hipeSections = ['condor', 'pipeline', 'input', 'calibration', 'datafind',\
         'ligo-data', 'virgo-data', 'geo-data', 'data', 'tmpltbank', 'tmpltbank-1', \
-        'tmpltbank-2', 'no-veto-inspiral', 'veto-inspiral', 'inspiral', \
-        'h1-inspiral', 'h2-inspiral', 'l1-inspiral', 'g1-inspiral', \
+        'tmpltbank-2', 'h1-tmpltbank', 'h2-tmpltbank', 'l1-tmpltbank', \
+        'v1-tmpltbank', 'g1-tmpltbank', 'no-veto-inspiral', 'veto-inspiral', \
+        'inspiral', 'h1-inspiral', 'h2-inspiral', 'l1-inspiral', 'g1-inspiral', \
         'v1-inspiral', 'thinca', 'thinca-1', 'thinca-2', 'thinca-slide', \
         'trigbank', 'sire', 'sire-inj', 'coire', 'coire-inj']
 
