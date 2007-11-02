@@ -2591,7 +2591,6 @@ int main( int argc, char *argv[] )
               case PadeT1:
               case EOB:
               case FindChirpSP:
-              case FindChirpPTF:  
                 /* find any events in the time series of snr and chisq */
                 LAL_CALL( LALFindChirpClusterEvents( &status,
                       &eventList, fcFilterInput, fcFilterParams,
@@ -2612,13 +2611,29 @@ int main( int argc, char *argv[] )
             if ( eventList )
             {
               /* this can only happen for FindChirpFilter */
-              if ( vrbflg ) fprintf( stdout, 
-                  "segment %d rang template [m (%e,%e)] [psi (%e,%e)]\n",
-                  fcSegVec->data[i].number,
-                  fcFilterInput->fcTmplt->tmplt.mass1, 
-                  fcFilterInput->fcTmplt->tmplt.mass2,
-                  fcFilterInput->fcTmplt->tmplt.psi0, 
-                  fcFilterInput->fcTmplt->tmplt.psi3 );
+
+              if ( vrbflg )
+              {
+                if( approximant == FindChirpPTF)
+                {
+                  fprintf( stdout, 
+                      "segment %d rang template [m (%e,%e)], chi = %e," 
+                      "kappa = %e)]\n",
+                      fcSegVec->data[i].number,
+                      fcFilterInput->fcTmplt->tmplt.mass1, 
+                      fcFilterInput->fcTmplt->tmplt.mass2,
+                      fcFilterInput->fcTmplt->tmplt.chi, 
+                      fcFilterInput->fcTmplt->tmplt.kappa );
+                }  
+                else  
+                  fprintf( stdout, 
+                      "segment %d rang template [m (%e,%e)] [psi (%e,%e)]\n",
+                      fcSegVec->data[i].number,
+                      fcFilterInput->fcTmplt->tmplt.mass1, 
+                      fcFilterInput->fcTmplt->tmplt.mass2,
+                      fcFilterInput->fcTmplt->tmplt.psi0, 
+                      fcFilterInput->fcTmplt->tmplt.psi3 );
+              }
 
               if ( vrbflg ) fprintf( stdout, "***>  dumping events  <***\n" );
 
