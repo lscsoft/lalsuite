@@ -356,6 +356,8 @@ void StackSlideVecF(LALStatus *status,
 } /* END StackSlideVecF */
 
 
+
+
 /** \brief Function StackSlides a vector of Fstat frequency series or any REAL8FrequencySeriesVector.
            This is similar to StackSlideVecF but adapted to calculate the hough number count and to be as 
 	   similar to Hough as possible but without using the hough look-up-tables.
@@ -619,12 +621,63 @@ void StackSlideVecF_HoughMode(LALStatus *status,
     }  
     
     TRY( LALHOUGHInitializeHT( status->statusPtr, &ht, &patch), status); /*not needed */
+ 
+    /*  Search frequency interval possible using the same LUTs */
+    fBinSearch = fBin;
+    fBinSearchMax = fBin + parSize.nFreqValid - 1;   
     
-  
+    /* loop over frequencies */    
+    while ( (fBinSearch <= fBinFin) && (fBinSearch < fBinSearchMax) )  { 
+
+      /* finally we can construct the hough maps and select candidates */
+      {
+	INT4   n, nfdotBy2;
+
+	nfdotBy2 = nfdot/2;
+	ht.f0Bin = fBinSearch;
+
+	/*loop over all values of residual spindown */
+	/* check limits of loop */
+	for( n = -nfdotBy2; n <= nfdotBy2 ; n++ ){ 
+
+	  ht.spinRes.data[0] =  n*dfdot; 
+	  
+	  for (j=0; j < (UINT4)nStacks; j++) {
+	    freqInd.data[j] = fBinSearch + floor( (REAL4)(timeDiffV->data[j]*n*dfdot/deltaF) + 0.5f);
+	  }
 
 
 
-}  
+
+
+
+	  /* get candidates */
+	  if ( params->useToplist ) 
+	    {
+	      TRY(GetHoughCandidates_toplist( status->statusPtr, houghToplist, &ht, &patch, &parDem), status);
+	    }
+	  else 
+	    {
+	      TRY(GetHoughCandidates_threshold( status->statusPtr, out, &ht, &patch, &parDem, params->threshold), status);
+	    }
+	  
+	  /* increment hough map index */ 	  
+	  ++iHmap;
+	  
+	} /* end loop over spindown trajectories */
+
+      } /* end of block for calculating total hough maps */
+      
+
+      /*------ shift the search freq. & PHMD structure 1 freq.bin -------*/
+
+      ++fBinSearch;
+
+
+    }   /* closing while loop over fBinSearch */
+
+
+  }  
 
 
   /* copy toplist candidates to output structure if necessary */

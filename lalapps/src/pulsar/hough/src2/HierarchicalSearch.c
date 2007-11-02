@@ -221,6 +221,12 @@ void ComputeNumExtraBins(LALStatus *status, SemiCoherentParams *par, REAL8 fdot,
 
 void DumpLUT2file(LALStatus *status, HOUGHptfLUT *lut, HOUGHPatchGrid *patch, CHAR *basename, INT4 index);
 
+void GetXiInSingleStack (LALStatus         *status,
+			 REAL8Vector       *out,
+			 HOUGHSizePar      *size,
+			 HOUGHDemodPar     *par);
+
+
 /* default values for input variables */
 #define EARTHEPHEMERIS 		"earth05-09.dat"
 #define SUNEPHEMERIS 		"sun05-09.dat"
@@ -1859,11 +1865,19 @@ void ComputeFstatHoughMap(LALStatus *status,
       /* build the LUT */
       TRY( LALHOUGHConstructPLUT( status->statusPtr, &(lutV.lut[j]), &patch, &parLut ), status);
 
+
+      /* for debugging
+	 fprintf(stdout,"%d\n", lutV.lut[j].nBin); 
+      */
+    
+
       /* for debugging */
       if ( uvar_dumpLUT) {
 	TRY( DumpLUT2file( status->statusPtr, &(lutV.lut[j]), &patch, params->outBaseName, j), status);	
       }
     }
+    
+
     
     /*--------- build the set of  PHMD centered around fBin -------------*/     
     phmdVS.fBinMin = fBin - phmdVS.nfSize/2;
@@ -3345,3 +3359,107 @@ void ComputeNumExtraBins(LALStatus            *status,
 
 
 }   /*ComputeNumExtraBins()*/
+
+
+
+
+
+void GetXiInSingleStack (LALStatus         *status,
+			 REAL8Vector       *out,
+			 HOUGHSizePar      *size,
+			 HOUGHDemodPar     *par)  /* demodulation parameters */
+{ /* </lalVerbatim> */
+
+  /* --------------------------------------------- */
+  
+  REAL8   f0;  /* frequency corresponding to f0Bin */
+  INT8    f0Bin;
+  REAL8   deltaF;  /*  df=1/TCOH  */
+  REAL8   delta;
+  REAL8   vFactor, xFactor;
+  REAL8   xiX, xiY, xiZ;
+  REAL8   modXi,invModXi;
+  REAL8UnitPolarCoor   xiInit, xiFinal; 
+  UINT4   spinOrder, i;
+  REAL8   *spinF;
+  REAL8   timeDiff;    /*  T(t)-T(t0) */
+  REAL8   timeDiffProd; 
+  /* --------------------------------------------- */
+
+  INITSTATUS (status, "GetXiInSingleStack", rcsid);
+  ATTATCHSTATUSPTR (status); 
+
+  /*   Make sure the arguments are not NULL: */ 
+  ASSERT (out, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL);
+  ASSERT (par, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL);
+  ASSERT (size, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL);
+  
+  /*   Make sure f0Bin  is not zero: */  
+  f0Bin = size->f0Bin;
+  ASSERT (f0Bin, status, HIERARCHICALSEARCH_EBAD, HIERARCHICALSEARCH_MSGEBAD);
+
+
+  deltaF = size->deltaF;
+  
+  f0 = f0Bin * deltaF;  
+
+
+  /* *********** xi calculation *****************  */
+
+  vFactor = f0;
+  xFactor = 0.0;
+
+  spinOrder = par->spin.length;
+ 
+  if(spinOrder){
+    ASSERT (par->spin.data , status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL);
+    timeDiff = par->timeDiff;
+    timeDiffProd = 1.0;
+    spinF = par->spin.data;
+
+    for (i=0; i<spinOrder; ++i ){
+      xFactor += spinF[i] * timeDiffProd * (i+1.0);
+      timeDiffProd *= timeDiff;
+      vFactor += spinF[i] * timeDiffProd;
+    }
+  }
+
+  xiX = vFactor * (par->veloC.x) + xFactor * (par->positC.x);
+  xiY = vFactor * (par->veloC.y) + xFactor * (par->positC.y);
+  xiZ = vFactor * (par->veloC.z) + xFactor * (par->positC.z);
+
+  /* -------------------------------------------   */
+  /* ***** convert xi into Polar coordinates ***** */
+
+  modXi = sqrt(xiX*xiX + xiY*xiY + xiZ*xiZ);
+  /* for testing we used:  modXi = F0* 1.06e-4; */
+  invModXi = 1./modXi;
+
+  xiInit.delta = asin( xiZ*invModXi); 
+  /* the arc sine is in the interval [-pi/2,pi/2] */
+
+  if( xiX || xiY ){
+    xiInit.alpha = atan2(xiY, xiX);  
+  }else{
+    xiInit.alpha = 0.0;
+  }
+  
+  /*   if( (xiX == 0.0 ) && (xiY == 0.0 ) ){ */
+  /*     xiInit.alpha = 0.0; */
+  /*   }else{  xiInit.alpha = atan2(xiY, xiX);  } */
+    
+  /* -------------------------------------------   */
+  /* **** Rotate Patch, so that its center becomes */
+  /* **** the south pole {x,y,z} = {0,0,-1}  ***** */
+  /*  Calculate xi in the new coordinate system.   */
+  
+  TRY(LALRotatePolarU(status->statusPtr,
+		      &xiFinal ,&xiInit, &(*par).skyPatch), status); 
+  
+   
+  DETATCHSTATUSPTR (status);
+  
+  /* normal exit */
+  RETURN (status);
+}
+
