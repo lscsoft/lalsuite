@@ -401,7 +401,7 @@ for n, (time_slides_cache_entry, time_slides) in enumerate(background_time_slide
 
 if options.verbose:
 	print >>sys.stderr, "building sqlite jobs ..."
-coinc_nodes = power.make_sqlite_stage(dag, coinc_nodes, options.tag, verbose = options.verbose)
+coinc_nodes = power.make_sqlite_fragment(dag, coinc_nodes, options.tag, verbose = options.verbose)
 
 
 #
@@ -481,7 +481,7 @@ inj_coinc_nodes = power.make_binjfind_fragment(dag, inj_coinc_nodes, "INJECTIONS
 
 if options.verbose:
 	print >>sys.stderr, "building sqlite jobs ..."
-inj_coinc_nodes = power.make_sqlite_stage(dag, inj_coinc_nodes, "INJECTIONS_%s" % options.tag, verbose = options.verbose)
+inj_coinc_nodes = power.make_sqlite_fragment(dag, inj_coinc_nodes, "INJECTIONS_%s" % options.tag, verbose = options.verbose)
 
 
 #

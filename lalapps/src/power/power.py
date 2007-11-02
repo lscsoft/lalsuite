@@ -151,6 +151,12 @@ def make_cache_entry(input_cache, description, path):
 	return CacheEntry("+".join(instruments) or None, description, seglists.extent_all(), url)
 
 
+def collect_output_caches(parents):
+	cache = [cache_entry for parent in parents for cache_entry in parent.get_output_cache()]
+	cache.sort(lambda a, b: cmp(a.segment, b.segment))
+	return cache
+
+
 def match_nodes_to_caches(nodes, caches, verbose = False):
 	"""
 	For each cache, get the set of nodes whose output files it
@@ -585,12 +591,12 @@ class BurcaNode(pipeline.CondorDAGNode):
 			pipeline.CondorDAGNode.add_file_arg(self, filename)
 			self.add_output_file(filename)
 		longest_duration = max([abs(cache_entry.segment) for cache_entry in self.input_cache])
-		if longest_duration > 20000:
-			# ask for >= 1500 MB
-			self.add_macro("macrominram", 1500)
+		if longest_duration > 25000:
+			# ask for >= 1300 MB
+			self.add_macro("macrominram", 1300)
 		elif longest_duration > 10000:
-			# ask for >= 1100 MB
-			self.add_macro("macrominram", 1100)
+			# ask for >= 800 MB
+			self.add_macro("macrominram", 800)
 		else:
 			# run on any node
 			self.add_macro("macrominram", 0)
@@ -995,8 +1001,7 @@ def make_binj_fragment(dag, seg, tag, offset, flow, fhigh):
 
 
 def make_binjfind_fragment(dag, parents, tag, verbose = False):
-	input_cache = [cache_entry for parent in parents for cache_entry in parent.get_output_cache()]
-	input_cache.sort(lambda a, b: cmp(a.segment, b.segment))
+	input_cache = collect_output_caches(parents)
 	nodes = []
 	while input_cache:
 		node = BinjfindNode(binjfindjob)
@@ -1018,8 +1023,7 @@ def make_binjfind_fragment(dag, parents, tag, verbose = False):
 
 
 def make_bucluster_fragment(dag, parents, tag, verbose = False):
-	input_cache = [cache_entry for parent in parents for cache_entry in parent.get_output_cache()]
-	input_cache.sort(lambda a, b: cmp(a.segment, b.segment))
+	input_cache = collect_output_caches(parents)
 	nodes = []
 	while input_cache:
 		node = BuclusterNode(buclusterjob)
@@ -1042,8 +1046,7 @@ def make_bucluster_fragment(dag, parents, tag, verbose = False):
 
 
 def make_bucut_fragment(dag, parents, tag, verbose = False):
-	input_cache = [cache_entry for parent in parents for cache_entry in parent.get_output_cache()]
-	input_cache.sort(lambda a, b: cmp(a.segment, b.segment))
+	input_cache = collect_output_caches(parents)
 	nodes = []
 	while input_cache:
 		node = BucutNode(bucutjob)
@@ -1064,9 +1067,28 @@ def make_bucut_fragment(dag, parents, tag, verbose = False):
 	return set(nodes)
 
 
+def make_sqlite_fragment(dag, parents, tag, verbose = False):
+	input_cache = collect_output_caches(parents)
+	nodes = []
+	for cache_entry in input_cache:
+		node = SQLiteNode(sqlitejob)
+		node.add_input_cache([cache_entry])
+		node.set_name("ligolw_sqlite_%s_%d" % (tag, len(nodes)))
+		node.set_output(cache_entry.path().replace(".xml.gz", ".sqlite"))
+		dag.add_node(node)
+		nodes.append(node)
+	parent_groups, unused = match_nodes_to_caches(parents, [node.get_input_cache() for node in nodes], verbose = verbose)
+	if unused:
+		# impossible
+		raise Error
+	for node, parents in zip(nodes, parent_groups):
+		for parent in parents:
+			node.add_parent(parent)
+	return set(nodes)
+
+
 def make_burca_fragment(dag, parents, tag, verbose = False):
-	input_cache = [cache_entry for parent in parents for cache_entry in parent.get_output_cache()]
-	input_cache.sort(lambda a, b: cmp(a.segment, b.segment))
+	input_cache = collect_output_caches(parents)
 	nodes = []
 	while input_cache:
 		node = BurcaNode(burcajob)
@@ -1308,28 +1330,3 @@ def make_single_instrument_injections_stage(dag, datafinds, binjnodes, seglistdi
 	# done
 	return nodes
 
-
-#
-# =============================================================================
-#
-#                             ligolw_sqlite stage
-#
-# =============================================================================
-#
-
-
-def make_sqlite_stage(dag, parents, tag, verbose = False):
-	if verbose:
-		print >>sys.stderr, "generating ligolw_sqlite stage for tag %s ..." % tag
-	input_cache = [cache_entry for parent in parents for cache_entry in parent.get_output_cache()]
-	input_cache.sort(lambda a, b: cmp(a.segment, b.segment))
-	nodes = set()
-	for cache_entry in input_cache:
-		node = SQLiteNode(sqlitejob)
-		node.set_name("ligolw_sqlite_%s_%d" % (tag, len(nodes)))
-		node.add_parent(parent)
-		node.add_input_cache([cache_entry])
-		node.set_output(cache_entry.path().replace(".xml.gz", ".sqlite"))
-		dag.add_node(node)
-		nodes.add(node)
-	return nodes
