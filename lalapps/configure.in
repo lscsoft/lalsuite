@@ -236,6 +236,7 @@ AC_OUTPUT( 				\
 	src/geoinspiralsearch/Makefile  \
 	src/pulsar/hough/src2/Makefile	\
 	src/pulsar/MakeSFTs/Makefile	\
+	src/pulsar/radiometer/Makefile	\
 )
 
 lalframeenabled="`test x${lalframe} = xtrue && echo "ENABLED" || echo "DISABLED"`"
