@@ -248,7 +248,7 @@ int main(int argc, char *argv[]){
   REAL8    uvar_dAlpha, uvar_dDelta; /* resolution for isotropic sky-grid */
   CHAR     *uvar_earthEphemeris=NULL;
   CHAR     *uvar_sunEphemeris=NULL;
-  CHAR     *uvar_sftDir=NULL;
+  CHAR     *uvar_sftData=NULL;
   CHAR     *uvar_dirnameOut=NULL;
   CHAR     *uvar_fbasenameOut=NULL;
   CHAR     *uvar_skyfile=NULL;
@@ -319,7 +319,7 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printLog",         0,  UVAR_OPTIONAL, "Print Log file", &uvar_printLog), &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",  &uvar_earthEphemeris),  &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file", &uvar_sunEphemeris), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",          'D', UVAR_REQUIRED, "SFT filename pattern", &uvar_sftDir), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftData",         'D', UVAR_REQUIRED, "SFT filename pattern", &uvar_sftData), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "dirnameOut",      'o', UVAR_OPTIONAL, "Output directory", &uvar_dirnameOut), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "fbasenameOut",     0,  UVAR_OPTIONAL, "Output file basename", &uvar_fbasenameOut), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",        0,  UVAR_OPTIONAL, "Print Hough maps", &uvar_printMaps), &status);  
@@ -420,9 +420,9 @@ int main(int argc, char *argv[]){
     }
     
     /* get sft catalog */
-    LAL_CALL( LALSFTdataFind( &status, &catalog, uvar_sftDir, &constraints), &status);
+    LAL_CALL( LALSFTdataFind( &status, &catalog, uvar_sftData, &constraints), &status);
     if ( (catalog == NULL) || (catalog->length == 0) ) {
-      fprintf (stderr,"Unable to match any SFTs with pattern '%s'\n", uvar_sftDir );
+      fprintf (stderr,"Unable to match any SFTs with pattern '%s'\n", uvar_sftData );
       exit(1);
     }
 
