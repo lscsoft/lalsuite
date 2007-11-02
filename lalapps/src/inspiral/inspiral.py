@@ -1325,7 +1325,7 @@ class PlotInspiralrangeJob(InspiralAnalysisJob):
     sections = ['plotinspiralrange']
     extension = 'html'
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-
+    self.add_condor_cmd('getenv', 'True')
 
 class PlotInspiralrangeNode(InspiralAnalysisNode):
   """
@@ -1338,7 +1338,6 @@ class PlotInspiralrangeNode(InspiralAnalysisNode):
     """
     InspiralAnalysisNode.__init__(self,job)
 
-    
 #######################################################################################
 
 class PlotInspiralJob(InspiralAnalysisJob):
@@ -1356,7 +1355,7 @@ class PlotInspiralJob(InspiralAnalysisJob):
     sections = ['plotinspiral']
     extension = 'html'
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-
+    self.add_condor_cmd('getenv', 'True')
 
 class PlotInspiralNode(InspiralAnalysisNode):
   """
@@ -1385,7 +1384,7 @@ class PlotThincaJob(InspiralAnalysisJob):
     sections = ['plotthinca']
     extension = 'html'
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-
+    self.add_condor_cmd('getenv', 'True')
   
 class PlotThincaNode(InspiralAnalysisNode):
   """
@@ -1396,6 +1395,7 @@ class PlotThincaNode(InspiralAnalysisNode):
     job = A CondorDAGJob that can run an instance of plotthinca.
     """
     InspiralAnalysisNode.__init__(self,job)
+
 #######################################################################################
 
 class PlotNumtemplatesJob(InspiralAnalysisJob):
@@ -1413,7 +1413,7 @@ class PlotNumtemplatesJob(InspiralAnalysisJob):
     sections = ['plotnumtemplates']
     extension = 'html'
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-
+    self.add_condor_cmd('getenv', 'True')
 
 class PlotNumtemplatesNode(InspiralAnalysisNode):
   """
@@ -1442,6 +1442,7 @@ class PlotInjnumJob(InspiralAnalysisJob):
     sections = ['plotinjnum']
     extension = 'html'
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    self.add_condor_cmd('getenv', 'True')
 
 class PlotInjnumNode(InspiralAnalysisNode):
   """
@@ -1470,6 +1471,7 @@ class PlotEthincaJob(InspiralAnalysisJob):
     sections = ['plotethinca']
     extension = 'html'
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    self.add_condor_cmd('getenv', 'True')
 
 class PlotEthincaNode(InspiralAnalysisNode):
   """
@@ -1498,7 +1500,7 @@ class PlotInspmissedJob(InspiralAnalysisJob):
     sections = ['plotinspmissed']
     extension = 'html'
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-
+    self.add_condor_cmd('getenv', 'True')
 
 class PlotInspmissedNode(InspiralAnalysisNode):
   """
@@ -1527,6 +1529,7 @@ class PlotInspinjJob(InspiralAnalysisJob):
     sections = ['plotinspinj']
     extension = 'html'
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    self.add_condor_cmd('getenv', 'True')
 
 class PlotInspinjNode(InspiralAnalysisNode):
   """
@@ -1555,6 +1558,7 @@ class PlotSnrchiJob(InspiralAnalysisJob):
     sections = ['plotsnrchi']
     extension = 'html'
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    self.add_condor_cmd('getenv', 'True')
 
 class PlotSnrchiNode(InspiralAnalysisNode):
   """
