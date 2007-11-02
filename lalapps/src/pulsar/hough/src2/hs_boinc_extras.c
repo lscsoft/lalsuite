@@ -1443,7 +1443,8 @@ static void drain_fpu_stack(void) {
 }
 
 static REAL4 get_nan(void) {
-  static const UINT4 inan = 0xFFFFFFFF; /* full NaN */
-  /* static const UINT4 inan = 0xFF8001FF; /* NaN palindrome */
+  static const UINT4 inan =
+    /* 0xFFFFFFFF; /* quiet NaN */
+       0xFF8001FF; /* signaling NaN palindrome */
   return((*((REAL4*)&inan)) * ((REAL4)estimated_flops));
 }
