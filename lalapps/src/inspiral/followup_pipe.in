@@ -159,7 +159,8 @@ if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
   and not opts.background_seis_qscan and not opts.hoft_datafind and not \
   opts.generate_segments and not opts.analyse_qscan and not \
   opts.analyse_seis_qscan and not opts.analyse_hoft_qscan and not \
-  opts.mcmc and not opts.frame_check and not opts.inspiral_head:
+  opts.mcmc and not opts.frame_check and not opts.inspiral_head \
+  and not opts.ifo_status_check :
   print >> sys.stderr, "No steps of the pipeline specified."
   print >> sys.stderr, "Please specify at least one of"
   print >> sys.stderr, "--generate-fu-cache, --trig-bank, --inspiral, --plots,"
@@ -168,7 +169,8 @@ if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
   print >> sys.stderr, "--background-seis-qscan, --hoft-datafind,"
   print >> sys.stderr, "--generate-segments, --frame-check,"
   print >> sys.stderr, "--analyse-qscan, --analyse-seis-qscan,"
-  print >> sys.stderr, "--analyse-hoft-qscan, --mcmc"
+  print >> sys.stderr, "--analyse-hoft-qscan, --mcmc,"
+  print >> sys.stderr, "--ifo-status-check"
   print >> sys.stderr, "or --write-to-iulgroup (use this option alone for now)"  
   sys.exit(1)
 
