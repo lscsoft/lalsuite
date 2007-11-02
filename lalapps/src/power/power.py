@@ -90,16 +90,20 @@ def make_dag_directories(config_parser):
 			raise e
 
 
-def get_files_per_binjfind(config_parser):
-	return config_parser.getint("pipeline", "files_per_binjfind")
-
-
 def get_files_per_bucluster(config_parser):
 	return config_parser.getint("pipeline", "files_per_bucluster")
 
 
 def get_files_per_bucut(config_parser):
 	return config_parser.getint("pipeline", "files_per_bucut")
+
+
+def get_files_per_burca(config_parser):
+	return config_parser.getint("pipeline", "files_per_burca")
+
+
+def get_files_per_binjfind(config_parser):
+	return config_parser.getint("pipeline", "files_per_binjfind")
 
 
 def get_timing_parameters(config_parser):
@@ -808,6 +812,9 @@ def init_job_types(config_parser, types = ["datafind", "binj", "power", "lladd",
 	# ligolw_burca
 	if "burca" in types:
 		burcajob = BurcaJob(config_parser)
+		burcajob.files_per_burca = get_files_per_burca(config_parser)
+		if burcajob.files_per_burca < 1:
+			raise ValueError, "files_per_burca < 1"
 
 	# ligolw_burca
 	if "burca2" in types:
@@ -1067,14 +1074,16 @@ def make_bucut_fragment(dag, parents, tag, verbose = False):
 	return set(nodes)
 
 
-def make_sqlite_fragment(dag, parents, tag, verbose = False):
+def make_burca_fragment(dag, parents, tag, verbose = False):
 	input_cache = collect_output_caches(parents)
 	nodes = []
-	for cache_entry in input_cache:
-		node = SQLiteNode(sqlitejob)
-		node.add_input_cache([cache_entry])
-		node.set_name("ligolw_sqlite_%s_%d" % (tag, len(nodes)))
-		node.set_output(cache_entry.path().replace(".xml.gz", ".sqlite"))
+	while input_cache:
+		node = BurcaNode(burcajob)
+		node.add_input_cache(input_cache[:burcajob.files_per_burca])
+		del input_cache[:burcajob.files_per_burca]
+		seg = cache_span(node.get_input_cache())
+		node.set_name("ligolw_burca_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
+		node.add_macro("macrocomment", tag)
 		dag.add_node(node)
 		nodes.append(node)
 	parent_groups, unused = match_nodes_to_caches(parents, [node.get_input_cache() for node in nodes], verbose = verbose)
@@ -1087,16 +1096,14 @@ def make_sqlite_fragment(dag, parents, tag, verbose = False):
 	return set(nodes)
 
 
-def make_burca_fragment(dag, parents, tag, verbose = False):
+def make_sqlite_fragment(dag, parents, tag, verbose = False):
 	input_cache = collect_output_caches(parents)
 	nodes = []
-	while input_cache:
-		node = BurcaNode(burcajob)
-		node.add_input_cache(input_cache[:1])
-		del input_cache[:1]
-		seg = cache_span(node.get_input_cache())
-		node.set_name("ligolw_burca_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
-		node.add_macro("macrocomment", tag)
+	for cache_entry in input_cache:
+		node = SQLiteNode(sqlitejob)
+		node.add_input_cache([cache_entry])
+		node.set_name("ligolw_sqlite_%s_%d" % (tag, len(nodes)))
+		node.set_output(cache_entry.path().replace(".xml.gz", ".sqlite"))
 		dag.add_node(node)
 		nodes.append(node)
 	parent_groups, unused = match_nodes_to_caches(parents, [node.get_input_cache() for node in nodes], verbose = verbose)
