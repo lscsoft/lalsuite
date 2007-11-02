@@ -160,6 +160,9 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
   if cp.has_section(ifo_name.lower() + '-inspiral'): 
     insp_job.add_ini_opts(cp,ifo_name.lower() + '-inspiral')
 
+  if cp.has_section(ifo_name.lower() + '-tmpltbank'):
+    tmplt_job.add_ini_opts(cp,ifo_name.lower() + '-tmpltbank')
+
   GeoBank = None
   if ifo_name == 'G1':
     data_opts = 'geo-data'
