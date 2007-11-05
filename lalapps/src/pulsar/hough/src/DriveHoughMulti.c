@@ -88,6 +88,7 @@
 #include <lalapps.h>
 #include <lal/DopplerScan.h>
 #include <gsl/gsl_permutation.h>
+#include <FstatToplist.h>
 
 RCSID( "$Id$");
 
@@ -107,7 +108,7 @@ BOOLEAN uvar_printEvents, uvar_printMaps, uvar_printStats, uvar_printSigma;
 #define EARTHEPHEMERIS "/home/badkri/lscsoft/share/lal/earth05-09.dat"
 #define SUNEPHEMERIS "/home/badkri/lscsoft/share/lal/sun05-09.dat"
 
-#define MAXFILENAMELENGTH 512 /* maximum # of characters  of a filename */
+#define HOUGHMAXFILENAMELENGTH 512 /* maximum # of characters  of a filename */
 
 #define DIROUT "./outMulti"   /* output directory */
 #define BASENAMEOUT "HM"    /* prefix file output */
@@ -128,6 +129,8 @@ BOOLEAN uvar_printEvents, uvar_printMaps, uvar_printStats, uvar_printSigma;
 
 /* local function prototype */
 void PrintLogFile (LALStatus *status, CHAR *dir, CHAR *basename, CHAR *skyfile, LALStringVector *linefiles, CHAR *executable );
+
+int CreateSkypatchDirs(CHAR *filestats, CHAR *base, INT4 index);
 
 int PrintHistogram(UINT8Vector *hist, CHAR *fnameOut, REAL8 minSignificance, REAL8 maxSignificance);
 
@@ -158,6 +161,46 @@ void SelectBestStuff(LALStatus *status, BestVariables *out, BestVariables  *in,	
 
 void DuplicateBestStuff(LALStatus *status, BestVariables *out, BestVariables *in);
 
+void GetToplistFromHoughmap(LALStatus *status, toplist_t *list, HOUGHMapTotal *ht, HOUGHPatchGrid *patch, HOUGHDemodPar *parDem, REAL8 mean, REAL8 sigma);
+
+
+void LALHOUGHCreateLUTVector(LALStatus           *status,
+			     HOUGHptfLUTVector   *lutV,
+			     UINT4               length);
+
+void LALHOUGHCreateLUTs(LALStatus           *status,
+			HOUGHptfLUTVector   *lutV,
+			UINT2               maxNBins, 
+			UINT2               maxNBorders,
+			UINT2               ySide);
+
+void LALHOUGHCreatePHMDVS(LALStatus           *status,
+			  PHMDVectorSequence  *phmdVS,
+			  UINT4               length,
+			  UINT4               nfSize);
+
+void LALHOUGHCreatePHMDs(LALStatus           *status,
+			 PHMDVectorSequence  *phmdVS,
+			 UINT2               maxNBins, 
+			 UINT2               maxNBorders,
+			 UINT2               ySide);
+
+void LALHOUGHDestroyPHMDs(LALStatus           *status,
+			  PHMDVectorSequence  *phmdVS);
+
+void LALHOUGHCreateHT(LALStatus             *status,
+		      HOUGHMapTotal         *ht,
+		      UINT2                 xSide,
+		      UINT2                 ySide);
+
+void LALHOUGHCreateFreqIndVector(LALStatus                 *status,
+				 UINT8FrequencyIndexVector *freqInd,
+				 UINT4                     length,
+				 REAL8                     deltaF);
+
+
+void LALHOUGHDestroyLUTs(LALStatus           *status,
+			 HOUGHptfLUTVector   *lut);
 
 /******************************************/
 
@@ -202,8 +245,8 @@ int main(int argc, char *argv[]){
   static HOUGHDemodPar   parDem;  /* demodulation parameters or  */
   static HOUGHSizePar    parSize; 
   static HOUGHMapTotal   ht;   /* the total Hough map */
-  static UINT8Vector     hist; /* histogram of number counts for a single map */
-  static UINT8Vector     histTotal; /* number count histogram for all maps */
+  static UINT8Vector     *hist; /* histogram of number counts for a single map */
+  static UINT8Vector     *histTotal; /* number count histogram for all maps */
   static HoughStats      stats;  /* statistical information about a Hough map */
 
   /* skypatch info */
@@ -212,11 +255,11 @@ int main(int argc, char *argv[]){
   static HoughSkyPatchesInfo skyInfo;
 
   /* output filenames and filepointers */
-  CHAR   filehisto[ MAXFILENAMELENGTH ]; 
-  CHAR   filestats[ MAXFILENAMELENGTH ]; 
-  CHAR   fileEvents[ MAXFILENAMELENGTH ];
-  CHAR   fileMaps[ MAXFILENAMELENGTH ];
-  CHAR   fileSigma[ MAXFILENAMELENGTH ];
+  CHAR   filehisto[ HOUGHMAXFILENAMELENGTH ]; 
+  CHAR   filestats[ HOUGHMAXFILENAMELENGTH ]; 
+  CHAR   fileEvents[ HOUGHMAXFILENAMELENGTH ];
+  CHAR   fileMaps[ HOUGHMAXFILENAMELENGTH ];
+  CHAR   fileSigma[ HOUGHMAXFILENAMELENGTH ];
   FILE   *fpEvents = NULL;
   FILE   *fp1 = NULL;
   FILE   *fpSigma = NULL;
@@ -234,17 +277,21 @@ int main(int argc, char *argv[]){
   UINT2  xSide, ySide;
   UINT2  maxNBins, maxNBorders;
 
+  /* output toplist candidate structure */
+  toplist_t *toplist=NULL;
+
   /* sft constraint variables */
   LIGOTimeGPS startTimeGPS, endTimeGPS;
   LIGOTimeGPSVector inputTimeStampsVector;
 
   /* user input variables */
-  BOOLEAN  uvar_help, uvar_weighAM, uvar_weighNoise, uvar_printLog, uvar_printWeights;
+  BOOLEAN  uvar_help, uvar_weighAM, uvar_weighNoise, uvar_printLog;
   INT4     uvar_blocksRngMed, uvar_nfSizeCylinder, uvar_maxBinsClean, uvar_binsHisto;  
   INT4     uvar_keepBestSFTs=1;
+  INT4     uvar_numCand;
   REAL8    uvar_startTime, uvar_endTime;
   REAL8    uvar_pixelFactor;
-  REAL8    uvar_f0, uvar_peakThreshold, uvar_houghThreshold, uvar_fSearchBand;
+  REAL8    uvar_f0, uvar_peakThreshold, uvar_houghThreshold, uvar_freqBand;
   REAL8    uvar_dAlpha, uvar_dDelta; /* resolution for isotropic sky-grid */
   CHAR     *uvar_earthEphemeris=NULL;
   CHAR     *uvar_sunEphemeris=NULL;
@@ -272,7 +319,7 @@ int main(int argc, char *argv[]){
   uvar_blocksRngMed = BLOCKSRNGMED;
   uvar_nfSizeCylinder = NFSIZE;
   uvar_f0 = F0;
-  uvar_fSearchBand = FBAND;
+  uvar_freqBand = FBAND;
   uvar_peakThreshold = THRESHOLD;
   uvar_houghThreshold = HOUGHTHRESHOLD;
   uvar_printEvents = FALSE;
@@ -280,62 +327,63 @@ int main(int argc, char *argv[]){
   uvar_printStats = FALSE;
   uvar_printSigma = FALSE;
   uvar_maxBinsClean = 100;
-  uvar_printWeights = FALSE;
   uvar_binsHisto = 1000;
   uvar_pixelFactor = PIXELFACTOR;
   uvar_dAlpha = 0.2;
   uvar_dDelta = 0.2;
+  uvar_numCand=1;
 
-  uvar_earthEphemeris = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+  uvar_earthEphemeris = (CHAR *)LALCalloc( HOUGHMAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
 
-  uvar_sunEphemeris = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+  uvar_sunEphemeris = (CHAR *)LALCalloc( HOUGHMAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_sunEphemeris,SUNEPHEMERIS);
 
-  uvar_dirnameOut = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+  uvar_dirnameOut = (CHAR *)LALCalloc( HOUGHMAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_dirnameOut,DIROUT);
 
-  uvar_fbasenameOut = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+  uvar_fbasenameOut = (CHAR *)LALCalloc( HOUGHMAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_fbasenameOut,BASENAMEOUT);
 
-  uvar_skyfile = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+  uvar_skyfile = (CHAR *)LALCalloc( HOUGHMAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_skyfile,SKYFILE);
 
   /* register user input variables */
   LAL_CALL( LALRegisterBOOLUserVar( &status, "help",             'h',  UVAR_HELP,     "Print this message", &uvar_help), &status);  
   LAL_CALL( LALRegisterREALUserVar( &status, "f0",               'f',  UVAR_OPTIONAL, "Start search frequency", &uvar_f0), &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "fSearchBand",      'b',  UVAR_OPTIONAL, "Search frequency band", &uvar_fSearchBand), &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "startTime",          0,  UVAR_OPTIONAL, "GPS start time of observation", &uvar_startTime),        &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "endTime",          0,  UVAR_OPTIONAL, "GPS end time of observation", &uvar_endTime), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "timeStampsFile",   0,  UVAR_OPTIONAL, "Input time-stamps file", &uvar_timeStampsFile),   &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",        0,  UVAR_OPTIONAL, "sky-region polygon (or 'allsky')", &uvar_skyRegion), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha",           0,  UVAR_OPTIONAL, "Resolution for flat or isotropic coarse grid (rad)", &uvar_dAlpha), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",           0,  UVAR_OPTIONAL, "Resolution for flat or isotropic coarse grid (rad)", &uvar_dDelta), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyfile",          0,  UVAR_OPTIONAL, "Alternative: input skypatch file", &uvar_skyfile),         &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "peakThreshold",    0,  UVAR_OPTIONAL, "Peak selection threshold", &uvar_peakThreshold),   &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighAM",          0,  UVAR_OPTIONAL, "Use amplitude modulation weights", &uvar_weighAM),         &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighNoise",       0,  UVAR_OPTIONAL, "Use SFT noise weights", &uvar_weighNoise), &status);  
-  LAL_CALL( LALRegisterINTUserVar(    &status, "keepBestSFTs",     0,  UVAR_OPTIONAL, "Number of best SFTs to use (default--keep all)", &uvar_keepBestSFTs),  &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printLog",         0,  UVAR_OPTIONAL, "Print Log file", &uvar_printLog), &status);  
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",  &uvar_earthEphemeris),  &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file", &uvar_sunEphemeris), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftData",         'D', UVAR_REQUIRED, "SFT filename pattern", &uvar_sftData), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "dirnameOut",      'o', UVAR_OPTIONAL, "Output directory", &uvar_dirnameOut), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fbasenameOut",     0,  UVAR_OPTIONAL, "Output file basename", &uvar_fbasenameOut), &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",        0,  UVAR_OPTIONAL, "Print Hough maps", &uvar_printMaps), &status);  
-  LAL_CALL( LALRegisterREALUserVar(   &status, "houghThreshold",   0,  UVAR_OPTIONAL, "Hough threshold (No. of sigmas)", &uvar_houghThreshold),  &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printEvents",      0,  UVAR_OPTIONAL, "Print events above threshold", &uvar_printEvents),     &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",       0,  UVAR_OPTIONAL, "Print Hough statistics", &uvar_printStats), &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printSigma",       0,  UVAR_OPTIONAL, "Print expected number count stdev.", &uvar_printSigma),      &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "binsHisto",        0,  UVAR_OPTIONAL, "No. of bins for histogram", &uvar_binsHisto),  &status);
-  LAL_CALL( LALRegisterLISTUserVar(   &status, "linefiles",        0,  UVAR_OPTIONAL, "Comma separated List of linefiles (filenames must contain IFO name)", &uvar_linefiles), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "nfSizeCylinder",   0,  UVAR_OPTIONAL, "Size of cylinder of PHMDs", &uvar_nfSizeCylinder),  &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "pixelFactor",     'p', UVAR_OPTIONAL, "sky resolution=1/v*pixelFactor*f*Tcoh", &uvar_pixelFactor), &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "freqBand",         'b',  UVAR_OPTIONAL, "Search frequency band", &uvar_freqBand), &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "startTime",         0,  UVAR_OPTIONAL, "GPS start time of observation", &uvar_startTime),        &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "endTime",         0,  UVAR_OPTIONAL, "GPS end time of observation", &uvar_endTime), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "timeStampsFile",  0,  UVAR_OPTIONAL, "Input time-stamps file", &uvar_timeStampsFile),   &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",       0,  UVAR_OPTIONAL, "sky-region polygon (or 'allsky')", &uvar_skyRegion), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha",          0,  UVAR_OPTIONAL, "Resolution for flat or isotropic coarse grid (rad)", &uvar_dAlpha), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",          0,  UVAR_OPTIONAL, "Resolution for flat or isotropic coarse grid (rad)", &uvar_dDelta), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyfile",         0,  UVAR_OPTIONAL, "Alternative: input skypatch file", &uvar_skyfile),         &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "peakThreshold",   0,  UVAR_OPTIONAL, "Peak selection threshold", &uvar_peakThreshold),   &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighAM",         0,  UVAR_OPTIONAL, "Use amplitude modulation weights", &uvar_weighAM),         &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighNoise",      0,  UVAR_OPTIONAL, "Use SFT noise weights", &uvar_weighNoise), &status);  
+  LAL_CALL( LALRegisterINTUserVar(    &status, "keepBestSFTs",    0,  UVAR_OPTIONAL, "Number of best SFTs to use (default--keep all)", &uvar_keepBestSFTs),  &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printLog",        0,  UVAR_OPTIONAL, "Print Log file", &uvar_printLog), &status);  
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris", 'E', UVAR_OPTIONAL, "Earth Ephemeris file",  &uvar_earthEphemeris),  &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",   'S', UVAR_OPTIONAL, "Sun Ephemeris file", &uvar_sunEphemeris), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftData",        'D', UVAR_REQUIRED, "SFT filename pattern", &uvar_sftData), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "dirnameOut",     'o', UVAR_OPTIONAL, "Output directory", &uvar_dirnameOut), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fbasenameOut",    0,  UVAR_OPTIONAL, "Output file basename", &uvar_fbasenameOut), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",       0,  UVAR_OPTIONAL, "Print Hough maps", &uvar_printMaps), &status);  
+  LAL_CALL( LALRegisterREALUserVar(   &status, "houghThreshold",  0,  UVAR_OPTIONAL, "Hough threshold (No. of sigmas)", &uvar_houghThreshold),  &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printEvents",     0,  UVAR_OPTIONAL, "Print events above threshold", &uvar_printEvents),     &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",      0,  UVAR_OPTIONAL, "Print Hough statistics", &uvar_printStats), &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printSigma",      0,  UVAR_OPTIONAL, "Print expected number count stdev.", &uvar_printSigma),      &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "binsHisto",       0,  UVAR_OPTIONAL, "No. of bins for histogram", &uvar_binsHisto),  &status);
+  LAL_CALL( LALRegisterLISTUserVar(   &status, "linefiles",       0,  UVAR_OPTIONAL, "Comma separated List of linefiles (filenames must contain IFO name)", &uvar_linefiles), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "nfSizeCylinder",  0,  UVAR_OPTIONAL, "Size of cylinder of PHMDs", &uvar_nfSizeCylinder),  &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "pixelFactor",    'p', UVAR_OPTIONAL, "sky resolution=1/v*pixelFactor*f*Tcoh", &uvar_pixelFactor), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "numCand",         0,  UVAR_OPTIONAL, "No. of toplist candidates", &uvar_numCand), &status);
 
   /* developer input variables */
-  LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",     0, UVAR_DEVELOPER, "Running Median block size", &uvar_blocksRngMed), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "maxBinsClean",     0, UVAR_DEVELOPER, "Maximum number of bins in cleaning", &uvar_maxBinsClean), &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printWeights",     0, UVAR_DEVELOPER, "Print relative noise weights of ifos", &uvar_printWeights), &status);  
+  LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    0, UVAR_DEVELOPER, "Running Median block size", &uvar_blocksRngMed), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "maxBinsClean",    0, UVAR_DEVELOPER, "Maximum number of bins in cleaning", &uvar_maxBinsClean), &status);
+
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -350,7 +398,7 @@ int main(int argc, char *argv[]){
     exit(1);
   }
 
-  if ( uvar_fSearchBand < 0 ) {
+  if ( uvar_freqBand < 0 ) {
     fprintf(stderr, "search frequency band must be positive\n");
     exit(1);
   }
@@ -390,7 +438,10 @@ int main(int argc, char *argv[]){
   skySizeAlpha = skyInfo.alphaSize;
   skySizeDelta = skyInfo.deltaSize;
 
-
+  /* set up toplist */
+  /* create toplist -- semiCohToplist has the same structure 
+     as a fstat candidate, so treat it as a fstat candidate */
+  create_fstat_toplist(&toplist, uvar_numCand);
 
   /* read sft Files and set up weights and nstar vector */
   {
@@ -437,15 +488,15 @@ int main(int argc, char *argv[]){
     deltaF = catalog->data[0].header.deltaF;  /* frequency resolution */
     timeBase= 1.0/deltaF; /* coherent integration time */
     f0Bin = floor( uvar_f0 * timeBase + 0.5); /* initial search frequency */
-    numSearchBins =  uvar_fSearchBand * timeBase; /* total number of search bins - 1 */
+    numSearchBins =  uvar_freqBand * timeBase; /* total number of search bins - 1 */
     fLastBin = f0Bin + numSearchBins;   /* final frequency bin to be analyzed */
     
 
     /* read sft files making sure to add extra bins for running median */
     /* add wings for Doppler modulation and running median block size*/
-    doppWings = (uvar_f0 + uvar_fSearchBand) * VTOT;    
+    doppWings = (uvar_f0 + uvar_freqBand) * VTOT;    
     fmin = uvar_f0 - doppWings - (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
-    fmax = uvar_f0 + uvar_fSearchBand + doppWings + (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
+    fmax = uvar_f0 + uvar_freqBand + doppWings + (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
 
     /* read the sfts */
     LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, catalog, fmin, fmax), &status);
@@ -609,36 +660,12 @@ int main(int argc, char *argv[]){
       timeDiffV.data[j] = XLALGPSDiff( timeV.data + j, &firstTimeStamp );
 
   } /* end block for weights, velocity and time */
-  
-
-  /* print relative weights of ifos to stdout */  
-  if ( uvar_printWeights )
-    {
-      UINT4 iIFO, iSFT, numsft, j;
-      REAL8 *sumweights=NULL;
     
-      sumweights = (REAL8 *)LALCalloc(1, numifo*sizeof(REAL8));
-      for (j = 0, iIFO = 0; iIFO < numifo; iIFO++ ) {
-	
-	numsft = mdetStates->data[iIFO]->length;
-	
-	for ( iSFT = 0; iSFT < numsft; iSFT++, j++) 	  
-	  sumweights[iIFO] += weightsNoise.data[j];	
-      
-      } /* loop over IFOs */
-      
-      for ( iIFO = 0; iIFO < numifo; iIFO++ )
-	fprintf(stdout, "%d  %f\n", iIFO, sumweights[iIFO]);
-      
-      LALFree(sumweights);
-      
-    } /* end debugging */
-  
      
   /* generating peakgrams  */  
   pgV.length = mObsCoh;
   pgV.pg = NULL;
-  pgV.pg = (HOUGHPeakGram *)LALCalloc(mObsCoh, sizeof(HOUGHPeakGram));
+  pgV.pg = (HOUGHPeakGram *)LALCalloc(1,mObsCoh*sizeof(HOUGHPeakGram));
 
   LAL_CALL( GetPeakGramFromMultSFTVector( &status, &pgV, inputSFTs, uvar_peakThreshold), &status);
 
@@ -733,29 +760,8 @@ int main(int argc, char *argv[]){
       /*  create directory fnameout/skypatch_$j using mkdir if required */
       if ( uvar_printStats || uvar_printEvents || uvar_printMaps )
 	{
-
-	  /* create the directory name uvar_dirnameOut/skypatch_$j */
-	  strcpy(  filestats, uvar_dirnameOut);
-	  strcat( filestats, "/skypatch_");
-	  {
-	    CHAR tempstr[16];
-	    sprintf(tempstr, "%d", skyCounter+1);
-	    strcat( filestats, tempstr);
-	  }
-	  strcat( filestats, "/");
-	  
-	  errno = 0;
-	  {
-	    /* check whether file can be created or if it exists already 
-	       if not then exit */
-	    INT4 mkdir_result;
-	    mkdir_result = mkdir(filestats, S_IRWXU | S_IRWXG | S_IRWXO);
-	    if ( (mkdir_result == -1) && (errno != EEXIST) )
-	      {
-		fprintf(stderr, "unable to create skypatch directory %d\n", skyCounter);
-		return 1;  /* stop the program */
-	      }
-	  } /* created directory */
+	  if (CreateSkypatchDirs(filestats, uvar_dirnameOut,skyCounter))
+	    return DRIVEHOUGHCOLOR_EFILE;
 	  
 	  /* create the base filenames for the stats, histo and event files and template files*/
 	  strcat( filestats, uvar_fbasenameOut);
@@ -797,23 +803,29 @@ int main(int argc, char *argv[]){
 
 
       /****  general parameter settings and 1st memory allocation ****/      
-      lutV.length    = mObsCohBest;
-      lutV.lut = NULL;
-      lutV.lut = (HOUGHptfLUT *)LALCalloc(mObsCohBest, sizeof(HOUGHptfLUT));
       
-      phmdVS.length  = mObsCohBest;
-      phmdVS.nfSize  = uvar_nfSizeCylinder;
+      LAL_CALL ( LALHOUGHCreateLUTVector( &status, &lutV, mObsCohBest), &status);
+      
+      LAL_CALL( LALHOUGHCreatePHMDVS( &status, &phmdVS, mObsCohBest, uvar_nfSizeCylinder), &status);
       phmdVS.deltaF  = deltaF;
-      phmdVS.phmd = NULL;
-      phmdVS.phmd=(HOUGHphmd *)LALCalloc(1, mObsCohBest*uvar_nfSizeCylinder*sizeof(HOUGHphmd));
       
-      freqInd.deltaF = deltaF;
-      freqInd.length = mObsCohBest;
-      freqInd.data = NULL;
-      freqInd.data =  ( UINT8 *)LALCalloc(1, mObsCohBest*sizeof(UINT8));
-      
+      LAL_CALL( LALHOUGHCreateFreqIndVector( &status, &freqInd, mObsCohBest, deltaF), &status);
 
-      /* for non-demodulated data (SFT input)*/
+      /* allocating histogram of the number-counts in the Hough maps */
+      if ( uvar_printStats ) {
+	UINT4 k;	
+	hist = XLALCreateUINT8Vector (uvar_binsHisto);
+	histTotal = XLALCreateUINT8Vector (uvar_binsHisto);	
+
+	/* initialize to 0 */
+	/*  memset(histTotal->data, histTotal->length*sizeof(histTotal->data[0]), 0); */
+	for (k = 0; k < histTotal->length; k++) {
+	  histTotal->data[k] = 0;
+	  hist->data[k] = 0;
+	}
+      }
+
+      /* set demodulation pars for non-demodulated data (SFT input)*/
       parDem.deltaF = deltaF;
       parDem.skyPatch.alpha = alpha;
       parDem.skyPatch.delta = delta;
@@ -833,20 +845,6 @@ int main(int argc, char *argv[]){
       parRes.linErr = LINERR;
       parRes.vTotC = VTOT;
 
-      /* allocating histogram of the number-counts in the Hough maps */
-      if ( uvar_printStats ) {
-
-	hist.length = histTotal.length = uvar_binsHisto;
-	hist.data = NULL;
-	histTotal.data = NULL;
-	hist.data = (UINT8 *)LALCalloc( hist.length, sizeof(UINT8));
-	histTotal.data = (UINT8 *)LALCalloc( histTotal.length, sizeof(UINT8));
-	{ 
-	  UINT4   j;
-	  for(j=0; j<histTotal.length; ++j)
-	    histTotal.data[j]=0;
-	}
-      }
 
       
       fBin= f0Bin;
@@ -863,7 +861,7 @@ int main(int argc, char *argv[]){
 
       while( fBin <= fLastBin){
 	INT8 fBinSearch, fBinSearchMax;
-	UINT4 i,j; 
+	UINT4 j; 
 	REAL8UnitPolarCoor sourceLocation;
 	
 	
@@ -879,35 +877,17 @@ int main(int argc, char *argv[]){
 	patch.ySide = ySide;
 	patch.xCoor = NULL;
 	patch.yCoor = NULL;
-	patch.xCoor = (REAL8 *)LALCalloc(xSide, sizeof(REAL8));
-	patch.yCoor = (REAL8 *)LALCalloc(ySide, sizeof(REAL8));
+	patch.xCoor = (REAL8 *)LALCalloc(1,xSide*sizeof(REAL8));
+	patch.yCoor = (REAL8 *)LALCalloc(1,ySide*sizeof(REAL8));
 	LAL_CALL( LALHOUGHFillPatchGrid( &status, &patch, &parSize ), &status );
 	
 	/*************** other memory allocation and settings************ */
-	for(j=0; j<lutV.length; ++j){
-	  lutV.lut[j].maxNBins = maxNBins;
-	  lutV.lut[j].maxNBorders = maxNBorders;
-	  lutV.lut[j].border =
-	    (HOUGHBorder *)LALCalloc(maxNBorders, sizeof(HOUGHBorder));
-	  lutV.lut[j].bin =
-	    (HOUGHBin2Border *)LALCalloc(maxNBins, sizeof(HOUGHBin2Border));
-	  for (i=0; i<maxNBorders; ++i){
-	    lutV.lut[j].border[i].ySide = ySide;
-	    lutV.lut[j].border[i].xPixel =
-	      (COORType *)LALCalloc(ySide, sizeof(COORType));
-	  }
-	}
-	for(j=0; j<phmdVS.length * phmdVS.nfSize; ++j){
-	  phmdVS.phmd[j].maxNBorders = maxNBorders;
-	  phmdVS.phmd[j].leftBorderP =
-	    (HOUGHBorder **)LALCalloc(maxNBorders, sizeof(HOUGHBorder *));
-	  phmdVS.phmd[j].rightBorderP =
-	    (HOUGHBorder **)LALCalloc(maxNBorders, sizeof(HOUGHBorder *));
-	  phmdVS.phmd[j].ySide = ySide;
-	  phmdVS.phmd[j].firstColumn = NULL;
-	  phmdVS.phmd[j].firstColumn = (UCHAR *)LALCalloc(ySide, sizeof(UCHAR));
-	}
+
+	LAL_CALL( LALHOUGHCreateLUTs( &status, &lutV, maxNBins, maxNBorders, ySide), &status);
 	
+	LAL_CALL( LALHOUGHCreatePHMDs( &status, &phmdVS, maxNBins, maxNBorders, ySide), &status);
+
+
 	/* ************* create all the LUTs at fBin ********************  */  
 	for (j = 0; j < mObsCohBest; ++j){  /* create all the LUTs */
 	  parDem.veloC.x = best.velV->data[j].x;
@@ -928,14 +908,11 @@ int main(int argc, char *argv[]){
 	}
 	
 	/* ************ initializing the Total Hough map space *********** */   
-	ht.xSide = xSide;
-	ht.ySide = ySide;
+	
+	LAL_CALL( LALHOUGHCreateHT( &status, &ht, xSide, ySide), &status);
 	ht.mObsCoh = mObsCohBest;
 	ht.deltaF = deltaF;
-	ht.map   = NULL;
-	ht.map   = (HoughTT *)LALCalloc(xSide*ySide, sizeof(HoughTT));
-	LAL_CALL( LALHOUGHInitializeHT( &status, &ht, &patch), &status); /*not needed */
-	
+
 
 	/*  Search frequency interval possible using the same LUTs */
 	fBinSearch = fBin;
@@ -976,6 +953,7 @@ int main(int argc, char *argv[]){
 		LAL_CALL( LALHOUGHConstructHMT( &status, &ht, &freqInd, &phmdVS ), &status );	  
 	      }
 
+
 	      /* ********************* perfom stat. analysis on the maps ****************** */
 	      LAL_CALL( LALHoughStatistics ( &status, &stats, &ht), &status );
 	      LAL_CALL( LALStereo2SkyLocation (&status, &sourceLocation, 
@@ -984,11 +962,11 @@ int main(int argc, char *argv[]){
 	      if ( uvar_printStats ) {
 
 		/*LAL_CALL( LALHoughHistogram ( &status, &hist, &ht), &status);*/
-		LAL_CALL( LALHoughHistogramSignificance ( &status, &hist, &ht, meanN, sigmaN, 
+		LAL_CALL( LALHoughHistogramSignificance ( &status, hist, &ht, meanN, sigmaN, 
 							  minSignificance, maxSignificance), &status);
 
-		for(j = 0; j < histTotal.length; j++){ 
-		  histTotal.data[j] += hist.data[j]; 
+		for(j = 0; j < histTotal->length; j++){ 
+		  histTotal->data[j] += hist->data[j]; 
 		}	      
 	      }
 
@@ -1002,6 +980,10 @@ int main(int argc, char *argv[]){
 		  nStarEventVec.event[fBinSearch-f0Bin].deltaStar = sourceLocation.delta;
 		  nStarEventVec.event[fBinSearch-f0Bin].fdotStar = ht.spinRes.data[0];
 		}
+
+
+	      /* select candidates from hough maps */
+	      LAL_CALL( GetToplistFromHoughmap( &status, toplist, &ht, &patch, &parDem, meanN, sigmaN), &status);
 
 
 	      /* ***** print results *********************** */
@@ -1042,20 +1024,12 @@ int main(int argc, char *argv[]){
 	LALFree(patch.xCoor);
 	LALFree(patch.yCoor);
 	LALFree(ht.map);
-	
-	for (j=0; j<lutV.length ; ++j){
-	  for (i=0; i<maxNBorders; ++i){
-	    LALFree( lutV.lut[j].border[i].xPixel);
-	  }
-	  LALFree( lutV.lut[j].border);
-	  LALFree( lutV.lut[j].bin);
-	}
-	for(j=0; j<phmdVS.length * phmdVS.nfSize; ++j){
-	  LALFree( phmdVS.phmd[j].leftBorderP);
-	  LALFree( phmdVS.phmd[j].rightBorderP);
-	  LALFree( phmdVS.phmd[j].firstColumn);
-	}
-	
+		
+	LALHOUGHDestroyLUTs( &status, &lutV);
+
+	LALHOUGHDestroyPHMDs( &status, &phmdVS);
+
+
       } /* closing while */
       
       /******************************************************************/
@@ -1063,7 +1037,7 @@ int main(int argc, char *argv[]){
       /******************************************************************/
       if ( uvar_printStats ) 
 	{
-	  if( PrintHistogram( &histTotal, filehisto, minSignificance, maxSignificance) ) return 7;
+	  if( PrintHistogram( histTotal, filehisto, minSignificance, maxSignificance) ) return 7;
 	}
 
       /******************************************************************/
@@ -1075,21 +1049,23 @@ int main(int argc, char *argv[]){
       if ( uvar_printEvents )
 	fclose(fpEvents);
 
-
      
-
       /******************************************************************/
       /* Free memory allocated inside skypatches loop */
       /******************************************************************/
       
       LALFree(lutV.lut);  
-      
+      lutV.lut = NULL;
+
       LALFree(phmdVS.phmd);
+      phmdVS.phmd = NULL;
+
       LALFree(freqInd.data);
+      freqInd.data = NULL;
 
       if ( uvar_printStats ) {
-	LALFree(hist.data);
-	LALFree(histTotal.data);
+	XLALDestroyUINT8Vector (hist);
+	XLALDestroyUINT8Vector (histTotal);
       }
 
     } /* finish loop over skypatches */
@@ -1101,6 +1077,23 @@ int main(int argc, char *argv[]){
   /* print most significant events */
   LAL_CALL( PrintnStarFile( &status, &nStarEventVec, uvar_dirnameOut, 
 			    uvar_fbasenameOut), &status);
+
+  /* print toplist */
+  {
+    FILE   *fpToplist = NULL;
+
+    fpToplist = fopen("hough.dat","w");
+
+    sort_fstat_toplist(toplist);
+
+    if ( write_fstat_toplist_to_fp( toplist, fpToplist, NULL) < 0)
+    fprintf( stderr, "Error in writing toplist to file\n");
+
+    if (fprintf(fpToplist,"%%DONE\n") < 0)
+      fprintf(stderr, "Error writing end marker\n");
+
+    fclose(fpToplist);
+  }
 
 
   {
@@ -1133,14 +1126,8 @@ int main(int argc, char *argv[]){
 
   LALFree(nStarEventVec.event);
 
-
-
-  LALFree(best.weightsV->data);
-  
+  LALFree(best.weightsV->data);  
   LALFree(best.weightsV);
-  
-
-  
   LALFree(best.timeDiffV->data);
   LALFree(best.timeDiffV);
   LALFree(best.velV->data);
@@ -1148,6 +1135,7 @@ int main(int argc, char *argv[]){
   LALFree(best.pgV->pg);
   LALFree(best.pgV);
 
+  free_fstat_toplist(&toplist);
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
 
@@ -1165,6 +1153,37 @@ int main(int argc, char *argv[]){
 /******************************************************************/
 /* printing the Histogram of all maps into a file                    */
 /******************************************************************/
+
+int CreateSkypatchDirs(CHAR *filestats,
+		       CHAR *base,
+		       INT4 index)
+{
+  CHAR tempstr[16];
+  INT4 mkdir_result;
+
+  /* create the directory name uvar_dirnameOut/skypatch_$j */
+  strcpy(  filestats, base);
+
+  strcat( filestats, "/skypatch_");
+  sprintf( tempstr, "%d", index);
+  strcat( filestats, tempstr);  
+  strcat( filestats, "/");
+  
+  /* check whether file can be created or if it exists already 
+     if not then exit */
+  errno = 0;  
+  mkdir_result = mkdir(filestats, S_IRWXU | S_IRWXG | S_IRWXO);
+
+  if ( (mkdir_result == -1) && (errno != EEXIST) )
+    {
+      fprintf(stderr, "unable to create skypatch directory %d\n", index);
+      return 1;
+    }
+
+  return 0;
+  
+}
+
   
 int PrintHistogram(UINT8Vector *hist, CHAR *fnameOut, REAL8 minSignificance, REAL8 maxSignificance)
 {
@@ -1172,7 +1191,7 @@ int PrintHistogram(UINT8Vector *hist, CHAR *fnameOut, REAL8 minSignificance, REA
   INT4 binsHisto;
   REAL8 dSig;
   FILE  *fp=NULL;   /* Output file */
-  char filename[ MAXFILENAMELENGTH ];
+  char filename[ HOUGHMAXFILENAMELENGTH ];
   INT4  i ;
   
   strcpy(  filename, fnameOut);
@@ -1205,7 +1224,7 @@ int PrintHistogram(UINT8Vector *hist, CHAR *fnameOut, REAL8 minSignificance, REA
 int PrintHmap2file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap){
 
   FILE  *fp=NULL;   /* Output file */
-  char filename[ MAXFILENAMELENGTH ], filenumber[16]; 
+  char filename[ HOUGHMAXFILENAMELENGTH ], filenumber[16]; 
   INT4  k, i ;
   UINT2 xSide, ySide;
    
@@ -1243,7 +1262,7 @@ int PrintHmap2file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap){
 int PrintHmap2m_file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap){
 
   FILE  *fp=NULL;   /* Output file */
-  char filename[ MAXFILENAMELENGTH ], filenumber[16]; 
+  char filename[ HOUGHMAXFILENAMELENGTH ], filenumber[16]; 
   INT4  k, i ;
   UINT2 xSide, ySide;
   INT4 mObsCoh;
@@ -1370,7 +1389,7 @@ void PrintLogFile (LALStatus       *status,
   ATTATCHSTATUSPTR (status);
   
   /* open log file for writing */
-  fnameLog = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+  fnameLog = (CHAR *)LALCalloc( HOUGHMAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(fnameLog,dir);
   strcat(fnameLog, "/logfiles/");
   /* now create directory fdirOut/logfiles using mkdir */
@@ -1476,7 +1495,7 @@ void PrintnStarFile (LALStatus                   *status,
   ASSERT(basename, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 
 
   /* create the directory for writing nstar */
-  filestar = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+  filestar = (CHAR *)LALCalloc( HOUGHMAXFILENAMELENGTH , sizeof(CHAR));
   strcpy( filestar, dirname);
   strcat( filestar, "/nstarfiles/");
   errno = 0;
@@ -1740,7 +1759,6 @@ void GetSFTNoiseWeights(LALStatus          *status,
   /* normal exit */	
   RETURN (status);
 }
-
 
 
 /** Loop over SFTs and set a threshold to get peakgrams.  SFTs must be normalized.  */
@@ -2135,3 +2153,380 @@ void DuplicateBestStuff(LALStatus      *status,
   RETURN (status);
 
 }
+
+
+
+
+
+/** helper function for creating LUT vector */
+void LALHOUGHCreateLUTVector(LALStatus           *status,
+			     HOUGHptfLUTVector   *lutV,
+			     UINT4               length)
+{
+
+  INITSTATUS (status, "LALHOUGHCreateLUTVector", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  /* check input pars are ok */
+  if (lutV == NULL) {
+    ABORT (status, DRIVEHOUGHCOLOR_ENONULL, DRIVEHOUGHCOLOR_MSGENONULL);
+  }
+
+  if (lutV->lut != NULL) {
+    ABORT (status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  }
+
+  if (length <= 0) {
+    ABORT (status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+  }
+
+  /* allocate memory */
+  lutV->length = length;
+  lutV->lut = (HOUGHptfLUT *)LALCalloc(lutV->length, sizeof(HOUGHptfLUT));
+
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+
+}
+
+
+void LALHOUGHCreateLUTs(LALStatus           *status,
+			HOUGHptfLUTVector   *lutV,
+			UINT2               maxNBins, 
+			UINT2               maxNBorders,
+			UINT2               ySide)
+{
+
+  UINT4 j,i;
+
+  INITSTATUS (status, "LALHOUGHCreateLUTs", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  /* check input pars are ok */
+  if (lutV == NULL) {
+    ABORT (status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  }
+
+  if (maxNBins <= 0) {
+    ABORT (status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+  }
+
+  if (maxNBorders <= 0) {
+    ABORT (status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+  }
+
+  if (ySide <= 0) {
+    ABORT (status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+  }
+
+
+  /* loop over luts and allocate memory */
+  for(j = 0; j < lutV->length; j++){
+
+    if (lutV->lut + j == NULL) {
+      ABORT (status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+    }
+
+    lutV->lut[j].maxNBins = maxNBins;
+    lutV->lut[j].maxNBorders = maxNBorders;
+    lutV->lut[j].border = (HOUGHBorder *)LALCalloc(maxNBorders, sizeof(HOUGHBorder));
+    lutV->lut[j].bin = (HOUGHBin2Border *)LALCalloc(maxNBins, sizeof(HOUGHBin2Border));
+
+    for (i = 0; i < maxNBorders; i++){
+      lutV->lut[j].border[i].ySide = ySide;
+      lutV->lut[j].border[i].xPixel = (COORType *)LALCalloc(ySide, sizeof(COORType));
+    }
+
+  }
+  
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+
+}
+
+
+void LALHOUGHDestroyLUTs(LALStatus           *status,
+			 HOUGHptfLUTVector   *lutV)
+{
+
+  UINT4 j,i;
+
+  INITSTATUS (status, "LALHOUGHDestroyLUTs", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  for (j = 0; j < lutV->length ; ++j){
+    for (i = 0; i < lutV->lut[j].maxNBorders; ++i){
+
+      if (lutV->lut[j].border[i].xPixel) {
+	LALFree( lutV->lut[j].border[i].xPixel);
+      }
+    }
+
+    if (lutV->lut[j].border) {
+      LALFree( lutV->lut[j].border);
+    }
+
+    if (lutV->lut[j].bin) {
+      LALFree( lutV->lut[j].bin);
+    }
+  }
+
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+
+}
+
+
+void LALHOUGHCreatePHMDVS(LALStatus           *status,
+			  PHMDVectorSequence  *phmdVS,
+			  UINT4               length,
+			  UINT4               nfSize)
+{
+
+  INITSTATUS (status, "LALHOUGHCreatePHMDVS", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  /* check input pars are ok */
+  if (phmdVS == NULL) {
+    ABORT (status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  }
+
+  if (phmdVS->phmd != NULL) {
+    ABORT (status, DRIVEHOUGHCOLOR_ENONULL, DRIVEHOUGHCOLOR_MSGENONULL);
+  }
+
+  if (length <= 0) {
+    ABORT (status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+  }
+
+  if (nfSize <= 0) {
+    ABORT (status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+  }
+
+  phmdVS->length  = length;
+  phmdVS->nfSize  = nfSize;
+  phmdVS->deltaF  = 0; /* initialization */
+
+  phmdVS->phmd=(HOUGHphmd *)LALCalloc(1, length*nfSize*sizeof(HOUGHphmd));
+  
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+
+}
+
+
+
+void LALHOUGHCreatePHMDs(LALStatus           *status,
+			 PHMDVectorSequence  *phmdVS,
+			 UINT2               maxNBins, 
+			 UINT2               maxNBorders,
+			 UINT2               ySide)
+{
+
+  UINT4 j;
+
+  INITSTATUS (status, "LALHOUGHCreatePHMDs", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  /* check input pars are ok */
+  if (phmdVS == NULL) {
+    ABORT (status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  }
+
+  if (maxNBins <= 0) {
+    ABORT (status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+  }
+
+  if (maxNBorders <= 0) {
+    ABORT (status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+  }
+
+  if (ySide <= 0) {
+    ABORT (status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+  }
+
+  for(j = 0; j < phmdVS->length * phmdVS->nfSize; j++){
+
+    if ( phmdVS->phmd + j == NULL) {
+      ABORT (status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+    }
+
+    phmdVS->phmd[j].maxNBorders = maxNBorders;
+    phmdVS->phmd[j].leftBorderP = (HOUGHBorder **)LALCalloc(maxNBorders, sizeof(HOUGHBorder *));
+    phmdVS->phmd[j].rightBorderP = (HOUGHBorder **)LALCalloc(maxNBorders, sizeof(HOUGHBorder *));
+
+    phmdVS->phmd[j].ySide = ySide;
+    phmdVS->phmd[j].firstColumn = (UCHAR *)LALCalloc(ySide, sizeof(UCHAR));
+  }
+
+  
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+
+}
+
+
+void LALHOUGHDestroyPHMDs(LALStatus           *status,
+			  PHMDVectorSequence  *phmdVS)
+{
+  UINT4 j;
+
+  INITSTATUS (status, "LALHOUGHDestroyPHMDs", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  for(j = 0; j < phmdVS->length * phmdVS->nfSize; j++){
+
+    if (phmdVS->phmd + j) {
+      LALFree( phmdVS->phmd[j].leftBorderP);
+      LALFree( phmdVS->phmd[j].rightBorderP);
+      LALFree( phmdVS->phmd[j].firstColumn);
+    }
+
+  }
+  
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+
+}
+
+
+void LALHOUGHCreateHT(LALStatus             *status,
+		      HOUGHMapTotal         *ht,
+		      UINT2                 xSide,
+		      UINT2                 ySide)
+{
+
+  INITSTATUS (status, "LALHOUGHCreateHT", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  /* check input pars are ok */
+  if (ht == NULL) {
+    ABORT (status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  }
+
+  if (xSide <= 0) {
+    ABORT (status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+  }
+
+  if (ySide <= 0) {
+    ABORT (status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+  }
+
+
+  ht->xSide = xSide;
+  ht->ySide = ySide;
+
+  ht->map = NULL;
+  ht->map = (HoughTT *)LALCalloc(xSide*ySide, sizeof(HoughTT));
+
+  ht->deltaF = 0; /* initialization */
+  ht->mObsCoh = 0; /* initialization */
+	
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+
+}
+
+
+
+void LALHOUGHCreateFreqIndVector(LALStatus                 *status,
+				 UINT8FrequencyIndexVector *freqInd,
+				 UINT4                     length,
+				 REAL8                     deltaF)
+{
+
+  INITSTATUS (status, "LALHOUGHCreateFreqIndVector", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  /* check input pars are ok */
+  if (freqInd == NULL) {
+    ABORT (status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  }
+
+  if (length <= 0) {
+    ABORT (status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+  }
+
+  if (deltaF <= 0) {
+    ABORT (status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+  }
+
+  freqInd->deltaF = deltaF;
+  freqInd->length = length;
+  freqInd->data = NULL;
+  freqInd->data =  ( UINT8 *)LALCalloc(1, freqInd->length*sizeof(UINT8));
+
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+
+}
+
+
+
+/** Get Hough candidates as a toplist */
+void GetToplistFromHoughmap(LALStatus *status,
+			    toplist_t *list,
+			    HOUGHMapTotal *ht,
+			    HOUGHPatchGrid  *patch,
+			    HOUGHDemodPar   *parDem,
+			    REAL8 mean,
+			    REAL8 sigma)
+{
+  REAL8UnitPolarCoor sourceLocation;
+  REAL8 deltaF, f0, fdot;
+  INT8 f0Bin;  
+  INT4 i,j, xSide, ySide;
+  FstatOutputEntry candidate;
+
+  INITSTATUS( status, "GetToplistFromHoughMap", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  deltaF = ht->deltaF;
+  f0Bin = ht->f0Bin;
+  f0 = f0Bin * deltaF;
+
+  fdot = ht->spinRes.data[0];
+
+  xSide = ht->xSide;
+  ySide = ht->ySide;
+
+  candidate.Freq =  f0;
+  candidate.f1dot = fdot;
+
+  for (i = 0; i < ySide; i++)  {
+      for (j = 0; j < xSide; j++) { 
+	/* get sky location of pixel */
+	TRY( LALStereo2SkyLocation (status->statusPtr, &sourceLocation, 
+				    j, i, patch, parDem), status);
+	
+	candidate.Alpha = sourceLocation.alpha;
+	candidate.Delta = sourceLocation.delta;
+	candidate.Fstat =  (ht->map[i*xSide + j] - mean)/sigma;
+	
+	insert_into_fstat_toplist(list, candidate);
+	
+      } /* end loop over xSide */  
+  } /* end loop over ySide */
+  
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+
+} /* end hough toplist selection */
+
+

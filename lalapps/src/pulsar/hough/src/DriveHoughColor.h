@@ -99,6 +99,7 @@ NRCSID (DRIVEHOUGHCOLORH, "$Id$");
 #define DRIVEHOUGHCOLOR_EFILE 4
 #define DRIVEHOUGHCOLOR_EDIR 4
 #define DRIVEHOUGHCOLOR_ENULL 5
+#define DRIVEHOUGHCOLOR_ENONULL 5
 
 #define DRIVEHOUGHCOLOR_MSGENORM "Normal exit"
 #define DRIVEHOUGHCOLOR_MSGESUB  "Subroutine failed"
@@ -107,6 +108,7 @@ NRCSID (DRIVEHOUGHCOLORH, "$Id$");
 #define DRIVEHOUGHCOLOR_MSGEFILE "Could not create output file"
 #define DRIVEHOUGHCOLOR_MSGEDIR  "Could not create directory"
 #define DRIVEHOUGHCOLOR_MSGENULL "Null pointer"
+#define DRIVEHOUGHCOLOR_MSGENONULL "Not a Null pointer"
 
 /*********************************************************************/
 /* Macros for printing errors & testing subroutines (from Creighton) */
