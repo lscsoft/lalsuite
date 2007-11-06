@@ -112,6 +112,29 @@ def determineBlockPath(cp,blockID,channel=''):
     return str(blockPath)
 #End def
 
+def determineDataPadding(cp):
+    """
+    Method that uses the pipeline config file to determine how much
+    extra data that should be sent to a node to accomplish an analysis
+    when there is a nonzero bin_buffer flag in the configuration
+    file. This method returns a time in integer seconds closest to
+    amount of data need for the padding.
+    """
+    thePad=0
+    if cp.has_option('tracksearchtime','bin_buffer'):
+        #We need to determine the padding needed in seconds
+        timeBins=cp.get('tracksearchtime','bin_buffer')
+        mapTime=float(self.cp.get('layerconfig','layer1TimeScale'))
+        mapBins=int(self.cp.get('tracksearchtime','number_of_time_bins'))
+        binDuration=mapTime/mapBins
+        #Force pad to be at least 1/4 second long
+        thePad=(binDuration*(timeBins))+0.25
+        return float(thePad)
+    else:
+        return float(0)
+#End Def
+                      
+
 class tracksearchCheckIniFile:
     """
     This class will check the ini file for appropriate arguements
@@ -299,13 +322,15 @@ class tracksearchConvertSegList:
         newHeading.append('# This file is a reprocessed list at new intervals.\n')
         newHeading.append('# We drop sections were there is not enough of original data\n')
         newHeading.append('# This file drawn from '+self.segFilename+'\n')
+        newHeading.append('# This file should be associated with appropriate INI file\n')
         output_fp=open(self.newSegFilename,'w')
         for newHeadline in newHeading:
             output_fp.write(newHeadline)
         #Write redivided list to file
         index=0
+        dataPad=determineDataPadding(self.cp)
         for bigChunks in self.origSegObject:
-            bigChunks.make_chunks(self.duration)
+            bigChunks.make_chunks(self.duration+(2*dataPad),2*dataPad)
             for newChunk in bigChunks:
                 index+=1
                 label="%d %d %d %d\n"%(index,newChunk.start(),newChunk.end(),newChunk.end()-newChunk.start())
@@ -944,8 +969,13 @@ class tracksearch:
         overlapTime=mapTime*self.percentOverlap
         setSize=float(self.cp.get('layerconfig','layer1SetSize'))
         ifo=str(self.cp.get('datafind','observatory'))
+        #If [tracksearchtime] has bin_buffer section.  Prepare blocks
+        #with proper padding data
+        padsize=determineDataPadding(self.cp)
         #Create the chunk list that we will makeing data find jobs for
-        self.sciSeg.make_chunks(setSize*mapTime)
+        #If pads exists also make sure to overlap by them to avoid
+        #losing any possible results
+        self.sciSeg.make_chunks((setSize*mapTime)+(2*padsize),2*padsize)
         if ((self.sciSeg.dur()>=self.sciSeg.unused()) and (self.sciSeg.__len__() <= 1)):
             sys.stderr.write("\n")
             sys.stderr.write("WARNING: Set Size and Map Time(s) seem inconsistent!\n")
