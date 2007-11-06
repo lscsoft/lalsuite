@@ -116,6 +116,7 @@ LALCreateTSDataSegmentVector (
 
 
   (*vector)->length = params->numberDataSegments;
+  (*vector)->SegBufferPoints=params->SegBufferPoints;
   (*vector)->dataSeg  = (REAL4TimeSeries **) 
     LALMalloc(params->numberDataSegments*sizeof(REAL4TimeSeries*));
   if ( !((*vector)->dataSeg) )
@@ -124,9 +125,10 @@ LALCreateTSDataSegmentVector (
       ABORT( status, TSDATA_EALOC, TSDATA_MSGEALOC );
     }
   /*
-   * Intialize structure to empty state
+   * Intialize structure to empty state include space for
+   * SegBufferPoints also.
    */
-  segmentLength=params->dataSegmentPoints;
+  segmentLength=params->dataSegmentPoints+(2*params->SegBufferPoints);
   for (i = 0; i < (INT4)((*vector)->length); i++)
     {
       LALCreateREAL4TimeSeries(status->statusPtr,
@@ -660,7 +662,9 @@ LALTrackSearchCalibrateCOMPLEX8FrequencySeries(
 
 /*
  * This is the function to break up long stretch of input data
- * into the requested chunks accounting for overlap
+ * into the requested chunks accounting for overlap it should also
+ * account for implicit overlaps via the segmenting buffer to remove
+ * TFR edge effects.
  */
 void
 LALTrackSearchDataSegmenter(
@@ -682,7 +686,7 @@ LALTrackSearchDataSegmenter(
    */
   ASSERT(PreparedData != NULL,status,TSDATA_ENULL,TSDATA_MSGENULL);
   ASSERT(TSSearchData != NULL,status,TSDATA_ENULL,TSDATA_MSGENULL);
-  ASSERT((params.SegLengthPoints == PreparedData->dataSeg[0]->data->length),
+  ASSERT((params.SegLengthPoints+(2*params.SegBufferPoints) == PreparedData->dataSeg[0]->data->length),
 	 status,
 	 TSDATA_ENUMZ,
 	 TSDATA_MSGENUMZ);
@@ -690,26 +694,31 @@ LALTrackSearchDataSegmenter(
 	 status,
 	 TSDATA_ESEGZ,
 	 TSDATA_MSGESEGZ);
+  ASSERT((params.SegBufferPoints == PreparedData->SegBufferPoints),
+	 status,
+	 TSDATA_ENUMZ,
+	 TSDATA_MSGENUMZ);
   /*
    * We want to fill up our TSDataVector structure accounding for
-   * desired number of segments and overlaps
+   * desired number of segments and overlaps, we also need to account
+   * implicitly specified buffer around each segment.
    */
   ATTATCHSTATUSPTR (status);
   for (l=0;l<PreparedData->length;l++)
     {
-      /*Determlne Segment Epoch*/
+      /*Determine Segment Epoch*/
       kTime=TSSearchData->deltaT*k;
       LALFloatToGPS(status->statusPtr,&(timeInterval),&kTime);
       CHECKSTATUSPTR (status);
       for (j=0;j<PreparedData->dataSeg[l]->data->length;j++)
 	{
 	  PreparedData->dataSeg[l]->data->data[j]=TSSearchData->data->data[k];
-	  /*	  printf("%d\n",j);*/
 	  k++;
 	};
-      /*Ajust for segment overlap*/
-      k = k - params.overlapFlag;
-      PreparedData->dataSeg[l]->data->length = params.SegLengthPoints;
+      /*Ajust for segment overlap and buffer point implicit overlap*/
+      k = k - (params.overlapFlag + 2*PreparedData->SegBufferPoints);
+      /*Changing element count may cause memory leak*/
+      /*PreparedData->dataSeg[l]->data->length = params.SegLengthPoints;*/
       PreparedData->dataSeg[l]->deltaT=TSSearchData->deltaT;
       PreparedData->dataSeg[l]->sampleUnits=TSSearchData->sampleUnits;
       PreparedData->dataSeg[l]->epoch.gpsSeconds=

@@ -103,6 +103,7 @@ NRCSID (TRACKSEARCHH, "$Id$");
 #define MSG_TS_OCTANT "octant cannot be greater than 4 "
 #define MSG_TS_MASKSIZE "maskSize too small"
 /* structures */
+
 typedef struct tagCurve
 {
   INT4 n; /* number of points in the curve */

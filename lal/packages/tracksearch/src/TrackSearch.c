@@ -1022,10 +1022,9 @@ void LALTrackSearchInsertMarkers(
 				 TrackSearchMapMarkingParams *input
 				 )
 {
-  LALTimeInterval dT;
   REAL8 deltaT;
-  REAL8 dataDeltaT;
   REAL8 currentRelativeFloatTime=0;
+  LIGOTimeGPS tmpGPS;
   INT4 i;
   INT4 j;
 
@@ -1053,14 +1052,14 @@ void LALTrackSearchInsertMarkers(
 	     ((1/(2*input->dataDeltaT))/(input->mapFreqBins))
 	     );
 	  currentRelativeFloatTime=output->curves[i].row[j]*deltaT;
-	    LALFloatToInterval(status->statusPtr,
-			       &dT,
-			       &currentRelativeFloatTime);	  
-	    CHECKSTATUSPTR(status);
-	  output->curves[i].gpsStamp[j].gpsSeconds=
-	    dT.seconds+input->mapStartGPS.gpsSeconds;
-	  output->curves[i].gpsStamp[j].gpsNanoSeconds=
-	    dT.nanoSeconds+input->mapStartGPS.gpsNanoSeconds;
+	  LALAddFloatToGPS(status->statusPtr,
+			   &tmpGPS,
+			   &(input->mapStartGPS),
+			   currentRelativeFloatTime);
+	  CHECKSTATUSPTR(status);
+	  output->curves[i].gpsStamp[j].gpsSeconds=tmpGPS.gpsSeconds;
+	  output->curves[i].gpsStamp[j].gpsNanoSeconds=tmpGPS.gpsNanoSeconds;
+	  /*memcpy(&(input->mapStartGPS),&(tmpGPS),sizeof(LIGOTimeGPS));*/
 	}
     }
   DETATCHSTATUSPTR (status);

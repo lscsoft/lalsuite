@@ -88,12 +88,12 @@ extern "C" {
       quiet, verbose, printFiles, all
     }TSDiagnosticType;
   
-  typedef enum tagTSSearchLogic
-    {
-      abortLogic,
-      Lgtl_AND_Pgtp,Lltl_AND_Pgtp,Lgtl_AND_Pltp,Lltl_AND_Pltp,
-      Lgtl_OR_Pgtp,Lltl_OR_Pgtp,Lgtl_OR_Pltp,Lltl_OR_Pltp
-    }TSSearchLogic;
+/*   typedef enum tagTSSearchLogic */
+/*     { */
+/*       abortLogic, */
+/*       Lgtl_AND_Pgtp,Lltl_AND_Pgtp,Lgtl_AND_Pltp,Lltl_AND_Pltp, */
+/*       Lgtl_OR_Pgtp,Lltl_OR_Pgtp,Lgtl_OR_Pltp,Lltl_OR_Pltp */
+/*     }TSSearchLogic; */
 
   /*
    * Structure to hold a collection of data segments which may be
@@ -103,7 +103,15 @@ extern "C" {
   tagTSSegmentVector
   {
     UINT4               length;  /* Number of segments long */
-    REAL4TimeSeries   **dataSeg; /* Structure for individual data segments */
+    UINT4               SegBufferPoints; /*
+					  * Number of points before
+					  * and after which are buffer
+					  * to remove TFR artifacts.
+					  */
+    REAL4TimeSeries   **dataSeg; /* 
+				  * Structure for individual data
+				  * segments 
+				  */
   }TSSegmentVector;
   
   /*
@@ -117,16 +125,37 @@ extern "C" {
     BOOLEAN           searchMaster; /*DO NOT USE*/
     BOOLEAN           haveData;/*DO NOT USE */
     UINT4            *numSlaves;/* DO NOT USE*/
-    LIGOTimeGPS       GPSstart; /*GPS start time of entire stretch*/
+    LIGOTimeGPS       GPSstart; /* GPS start time of entire stretch */
     UINT4             TimeLengthPoints; /* Product of NumSeg&SegLenthPoints*/
     UINT4             discardTLP;/* Points that need to be
 				  * discarded given
 				  * input map overlap 
 				  */
     UINT4             SegLengthPoints;/*Data Seg Length*/
+    UINT4             colsToClip;/*
+				  * Should be colsToClip before and 
+				  * after region of interest.
+				  */
+    UINT4             SegBufferPoints;/*
+				       *Extra points that are later
+				       *clipped from TFR making correct
+				       *time boundaries to avoid TFR
+				       *edge effects, should be at
+				       *least 4 cols worth of
+				       *points. Two before and two
+				       *after part of TFR we want to
+				       * keep
+				       */
     UINT4             NumSeg;/* Number of segments length TLP */
-    REAL8             SamplingRate; /*Samples per second*/
-    REAL8             SamplingRateOriginal; /*Samples per second*/
+    REAL8             SamplingRate; /*
+				     * Sampling rate of input data
+				     * should be resampled at
+				     */
+    REAL8             SamplingRateOriginal; /*
+					     * Original sampling rate
+					     * of input time series
+					     * data
+					     */
     LIGOTimeGPS       Tlength;/*Data set time length*/
     TimeFreqRepType   TransformType;/*Type of TF rep to make */
     INT4              LineWidth;/* Sigma-convolution kernel width*/
@@ -134,7 +163,12 @@ extern "C" {
     REAL4             LinePThresh;/*Ll-2ndDerv Member threshold*/
     INT4              MinLength;/*Minimum length of a curve*/
     REAL4             MinPower;/*Minimum Power in a curve*/
-    UINT4             overlapFlag;/*Num points to overlap segments by*/
+    UINT4             overlapFlag;/*
+				   * Number of points to overlap the
+				   * individual data segments by. This
+				   * is apart from implicit Segment
+				   * buffer for TFR clipping option 
+				   */ 
     UINT4             whiten;/*Flags typ of whitening to do*/
     AvgSpecMethod     avgSpecMethod;/*Type of PSD averaging to do*/
     WindowType        avgSpecWindow;/*Type of PSD averaging window*/
@@ -173,7 +207,7 @@ extern "C" {
 
   /*
    * This is a structure which gives detailed information about a
-   * signal candidate.  
+   * signal candidate.  CURRENTLY NOT USED.
    */
   typedef struct
   tagTrackSearchEvent

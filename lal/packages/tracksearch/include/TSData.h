@@ -103,6 +103,7 @@ tagTSCreateParams
   UINT4      responseSegmentPoints; /* Fixed Copy for each segment */
   UINT4      spectraSegmentPoints;  /* Fixed Copy for each segment */
   UINT4      numberDataSegments;    /* Number of data segments to analyze */
+  UINT4      SegBufferPoints; /*Number of data points to buffer seg with*/
 }TSCreateParams;
 
 
