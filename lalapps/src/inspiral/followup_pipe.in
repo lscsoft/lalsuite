@@ -159,8 +159,8 @@ if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
   and not opts.background_seis_qscan and not opts.hoft_datafind and not \
   opts.generate_segments and not opts.analyse_qscan and not \
   opts.analyse_seis_qscan and not opts.analyse_hoft_qscan and not \
-  opts.mcmc and not opts.frame_check and not opts.inspiral_head \
-  and not opts.ifo_status_check :
+  opts.mcmc and not opts.frame_check and not opts.inspiral_head and not \
+  opts.ifo_status_check:
   print >> sys.stderr, "No steps of the pipeline specified."
   print >> sys.stderr, "Please specify at least one of"
   print >> sys.stderr, "--generate-fu-cache, --trig-bank, --inspiral, --plots,"
@@ -169,8 +169,7 @@ if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
   print >> sys.stderr, "--background-seis-qscan, --hoft-datafind,"
   print >> sys.stderr, "--generate-segments, --frame-check,"
   print >> sys.stderr, "--analyse-qscan, --analyse-seis-qscan,"
-  print >> sys.stderr, "--analyse-hoft-qscan, --mcmc,"
-  print >> sys.stderr, "--ifo-status-check"
+  print >> sys.stderr, "--analyse-hoft-qscan, --mcmci --ifo-status-check"
   print >> sys.stderr, "or --write-to-iulgroup (use this option alone for now)"  
   sys.exit(1)
 
@@ -267,6 +266,8 @@ if not opts.disable_followup:
     # TRY GETTING INSPIRAL PROCESS PARAMS... 
     # currently done even when inspiral jobs are not requested... fix?
     inspiral_process_params = cache.processFollowupCache(cp, opts, trig)
+    bank_process_params, bank = cache.processFollowupCache(cp, opts, trig, 'TMPLTBANK') 
+
 
     # loop over ifos
     for ifo in trig.ifolist_in_coinc:
@@ -293,7 +294,7 @@ if not opts.disable_followup:
 
       # SETUP INSPIRAL JOBS
       inspiralNode = followUpInspNode(inspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag)
-      headInspiralNode = followUpInspNode(headInspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag, 'head')
+      headInspiralNode = followUpInspNode(headInspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag, 'head', bank)
 
 
       # SETUP PLOT JOBS
