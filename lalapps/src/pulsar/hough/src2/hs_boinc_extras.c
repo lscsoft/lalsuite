@@ -172,6 +172,37 @@ static int delayload_dll(void);
 static int load_graphics_dll(void);
 #endif
 
+typedef UINT2 fpuw_t;
+typedef UINT4 ssew_t;
+ststic void   set_fpu_control_word(const fpuw_t word);
+ststic fpuw_t get_fpu_control_word(void);
+ststic fpuw_t get_fpu_status(void);
+ststic ssew_t get_sse_control_status(void);
+ststic void   set_sse_control_status(const ssew_t cword);
+
+/* constants in FPU status word and control word mask */
+#define FPU_STATUS_INVALID      (1<<0)
+#define FPU_STATUS_DENORMALIZED (1<<1)
+#define FPU_STATUS_ZERO_DIVIDE  (1<<2)
+#define FPU_STATUS_OVERFLOW     (1<<3)
+#define FPU_STATUS_UNDERFLOW    (1<<4)
+#define FPU_STATUS_PRECISION    (1<<5)
+#define FPU_STATUS_STACK_FAULT  (1<<6)
+#define FPU_STATUS_ERROR_SUMM   (1<<7)
+#define FPU_STATUS_COND_0       (1<<8)
+#define FPU_STATUS_COND_1       (1<<9)
+#define FPU_STATUS_COND_2       (1<<10)
+#define FPU_STATUS_COND_3       (1<<14)
+/* for SSE, status and control information is in the same register
+   the status bits 0-5 are identical to the FPU status bits,
+   the exception mask bits follow */
+#define SSE_MASK_INVALID        (1<<7)
+#define SSE_MASK_DENORMALIZED   (1<<8)
+#define SSE_MASK_ZERO_DIVIDE    (1<<9)
+#define SSE_MASK_OVERFLOW       (1<<10)
+#define SSE_MASK_UNDERFLOW      (1<<11)
+#define SSE_MASK_PRECISION      (1<<12)
+
 
 /*^* FUNCTIONS *^*/
 
@@ -898,56 +929,7 @@ static void worker (void) {
     attach_gdb();
 #endif
 
-#if defined(_MSC_VER) && 0
-#define MY_INVALID 1 /* _EM_INVALID /**/
-  /*
-    _controlfp(MY_INVALID,_MCW_EM);
-    _controlfp_s(NULL,MY_INVALID,_MCW_EM);
-  */
-  {
-    unsigned int cw87, cwSSE;
-    __control87_2(MY_INVALID,_MCW_EM,&cw87,&cwSSE);
-  }
-#elif defined(_MSC_VER) || defined(__GNUC__) && __i386__
-  /* write out the masked FPU exceptions */
-  {
-    fpuw_t fpstat = get_fpu_status();
-    fprintf(stderr,"FPU status flags: ");
-    PRINT_FPU_STATUS_FLAGS(fpstat);
-    fprintf(stderr,"\n");
-  }
-
-  {
-    fpuw_t fpstat;
-    
-    fpstat = get_fpu_control_word();
-    fprintf(stderr,"FPU masked exceptions now: %4x:",fpstat);
-    PRINT_FPU_EXCEPTION_MASK(fpstat);
-    fprintf(stderr,"\n");
-    
-    /* throe an exception at an invalid operation */
-    fpstat &= ~FPU_STATUS_INVALID;
-    set_fpu_control_word(fpstat);    
-
-    fprintf(stderr,"FPU masked exceptions set: %4x:",fpstat);
-    PRINT_FPU_EXCEPTION_MASK(fpstat);
-    fprintf(stderr,"\n");
-
-    /* this is weird - somtimes gcc seems to cache the fpstat value
-       (e.g. on MacOS Intel), so the second reading of the control_word
-       doesn't seem to do what is expected
-    fpstat = 0;
-
-    fpstat = get_fpu_control_word();
-    fprintf(stderr,"FPU exception mask set to:  %4x:",fpstat);
-    PRINT_FPU_EXCEPTION_MASK(fpstat);
-    fprintf(stderr,"\n");
-    */
-#ifdef ENABLE_SSE_EXCEPTIONS
-    set_sse_control_status(get_sse_control_status() & ~SSE_MASK_INVALID);
-#endif
-  }
-#endif
+  enable_floating_point_exceptions();
 
   if(crash_fpu)
     drain_fpu_stack();
@@ -1317,12 +1299,11 @@ int init_and_read_checkpoint(toplist_t*tl     , /**< the toplist to checkpoint *
 
 
 /** sets a checkpoint.
-    It also "compacts" the output file, i.e. completely rewrites it from
-    the toplist in memory, when it has reached the maximum size. When doing
-    so it also writes another checkpoint for consistency, regardles of whether
-    it's time to checkpoint or not.
 */
 void set_checkpoint (void) {
+  /* make sure the exception mask isn't messed up by a badly written device driver etc.,
+     so restore it periodically */
+  enable_floating_point_exceptions();
   /* checkpoint every time (i.e. sky position) if FORCE_CHECKPOINTING */
 #ifndef FORCE_CHECKPOINTING
   if (boinc_time_to_checkpoint())
@@ -1447,4 +1428,64 @@ static REAL4 get_nan(void) {
     /* 0xFFFFFFFF; /* quiet NaN */
        0xFF8001FF; /* signaling NaN palindrome */
   return((*((REAL4*)&inan)) * ((REAL4)estimated_flops));
+}
+
+
+void enable_floating_point_exceptions(void) {
+#if defined(_MSC_VER) && 0
+#define MY_INVALID 1 /* _EM_INVALID /**/
+  /*
+    _controlfp(MY_INVALID,_MCW_EM);
+    _controlfp_s(NULL,MY_INVALID,_MCW_EM);
+  */
+  {
+    unsigned int cw87, cwSSE;
+    __control87_2(MY_INVALID,_MCW_EM,&cw87,&cwSSE);
+  }
+#elif defined(_MSC_VER) || defined(__GNUC__) && __i386__
+  /* write out the masked FPU exceptions */
+  /*
+  {
+    fpuw_t fpstat = get_fpu_status();
+    fprintf(stderr,"FPU status flags: ");
+    PRINT_FPU_STATUS_FLAGS(fpstat);
+    fprintf(stderr,"\n");
+  }
+  */
+
+  {
+    fpuw_t fpstat;
+    
+    fpstat = get_fpu_control_word();
+    /*
+    fprintf(stderr,"FPU masked exceptions now: %4x:",fpstat);
+    PRINT_FPU_EXCEPTION_MASK(fpstat);
+    fprintf(stderr,"\n");
+    */
+
+    /* throw an exception at an invalid operation */
+    fpstat &= ~FPU_STATUS_INVALID;
+    set_fpu_control_word(fpstat);    
+
+    /*
+    fprintf(stderr,"FPU masked exceptions set: %4x:",fpstat);
+    PRINT_FPU_EXCEPTION_MASK(fpstat);
+    fprintf(stderr,"\n");
+    */
+
+    /* this is weird - somtimes gcc seems to cache the fpstat value
+       (e.g. on MacOS Intel), so the second reading of the control_word
+       doesn't seem to do what is expected
+    fpstat = 0;
+
+    fpstat = get_fpu_control_word();
+    fprintf(stderr,"FPU exception mask set to:  %4x:",fpstat);
+    PRINT_FPU_EXCEPTION_MASK(fpstat);
+    fprintf(stderr,"\n");
+    */
+#ifdef ENABLE_SSE_EXCEPTIONS
+    set_sse_control_status(get_sse_control_status() & ~SSE_MASK_INVALID);
+#endif
+  }
+#endif
 }

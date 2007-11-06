@@ -122,44 +122,14 @@ extern void set_checkpoint(void);
 extern void write_and_close_checkpointed_file (void);
 
 /** LALApps error handler for BOINC */
-int BOINC_LAL_ErrHand (LALStatus*, const char*, const char*, const int, volatile const char*);
+extern int BOINC_LAL_ErrHand (LALStatus*, const char*, const char*, const int, volatile const char*);
 
 /** attach gdb to the running process; for debugging. */
-void attach_gdb(void);
+extern void attach_gdb(void);
 
 /** play with FPU status and control word
     (BSD doesn't seem to have C99 fenv.h etc.) */
-typedef UINT2 fpuw_t;
-typedef UINT4 ssew_t;
-extern void  set_fpu_control_word(const fpuw_t word);
-extern fpuw_t get_fpu_control_word(void);
-extern fpuw_t get_fpu_status(void);
-extern ssew_t get_sse_control_status(void);
-extern void set_sse_control_status(const ssew_t cword);
-
-/* constants in FPU status word and control word mask */
-#define FPU_STATUS_INVALID      (1<<0)
-#define FPU_STATUS_DENORMALIZED (1<<1)
-#define FPU_STATUS_ZERO_DIVIDE  (1<<2)
-#define FPU_STATUS_OVERFLOW     (1<<3)
-#define FPU_STATUS_UNDERFLOW    (1<<4)
-#define FPU_STATUS_PRECISION    (1<<5)
-#define FPU_STATUS_STACK_FAULT  (1<<6)
-#define FPU_STATUS_ERROR_SUMM   (1<<7)
-#define FPU_STATUS_COND_0       (1<<8)
-#define FPU_STATUS_COND_1       (1<<9)
-#define FPU_STATUS_COND_2       (1<<10)
-#define FPU_STATUS_COND_3       (1<<14)
-/* for SSE, status and control information is in the same register
-   the status bits 0-5 are identical to the FPU status bits,
-   the exception mask bits follow */
-#define SSE_MASK_INVALID        (1<<7)
-#define SSE_MASK_DENORMALIZED   (1<<8)
-#define SSE_MASK_ZERO_DIVIDE    (1<<9)
-#define SSE_MASK_OVERFLOW       (1<<10)
-#define SSE_MASK_UNDERFLOW      (1<<11)
-#define SSE_MASK_PRECISION      (1<<12)
-
+extern void enable_floating_point_exceptions(void);
 
 /** the main() function of HierarchicalSerach.c becomes the extern MAIN(),
     the real main() function of the BOINC App is defined in boinc_extras.c
