@@ -168,8 +168,7 @@ static REAL4 get_nan(void);
 #ifdef _MSC_VER
 #include "graphics_dlls.h"
 #include "delayload_dlls.h"
-static int delayload_dll(void);
-static int load_graphics_dll(void);
+static int try_load_dlls(const char*, const char*);
 #endif
 
 typedef UINT2 fpuw_t;
