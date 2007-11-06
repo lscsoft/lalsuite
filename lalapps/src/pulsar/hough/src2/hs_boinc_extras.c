@@ -898,7 +898,7 @@ static void worker (void) {
     attach_gdb();
 #endif
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && 0
 #define MY_INVALID 1 /* _EM_INVALID /**/
   /*
     _controlfp(MY_INVALID,_MCW_EM);
