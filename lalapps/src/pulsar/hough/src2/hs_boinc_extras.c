@@ -174,11 +174,11 @@ static int load_graphics_dll(void);
 
 typedef UINT2 fpuw_t;
 typedef UINT4 ssew_t;
-ststic void   set_fpu_control_word(const fpuw_t word);
-ststic fpuw_t get_fpu_control_word(void);
-ststic fpuw_t get_fpu_status(void);
-ststic ssew_t get_sse_control_status(void);
-ststic void   set_sse_control_status(const ssew_t cword);
+static void   set_fpu_control_word(const fpuw_t word);
+static fpuw_t get_fpu_control_word(void);
+static fpuw_t get_fpu_status(void);
+static ssew_t get_sse_control_status(void);
+static void   set_sse_control_status(const ssew_t cword);
 
 /* constants in FPU status word and control word mask */
 #define FPU_STATUS_INVALID      (1<<0)
