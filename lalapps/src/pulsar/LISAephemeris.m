@@ -45,9 +45,9 @@ duration = endGPS - startGPS;
 %% fields to write in the first line of ephem-file 
 gpsYr = ceil(startGPS); %% 'gpsYr' entry, not really used anywhere so we simply set it to start-time
 tStep = 14400;	%% hardcoded default for now
-nSteps = ceil( duration / tStep );
+nSteps = ceil( duration / tStep - 1e-6) + 1;
 
-lastGPS = startGPS + nSteps * tStep;
+lastGPS = startGPS + (nSteps-1) * tStep;
 
 %% timesteps to compute LISA ephemeris for
 tiGPS = [startGPS:tStep:lastGPS]' ;
