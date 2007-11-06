@@ -71,6 +71,7 @@ CLEANFILES =  lalapps_tracksearch_handler \
 MOSTLYCLEANFILES = *.candidates \
                    *.dat \
                    *.pgm \
+                   *.aux \
                    *.raw \
                    *.diag \
                    *.pyc \

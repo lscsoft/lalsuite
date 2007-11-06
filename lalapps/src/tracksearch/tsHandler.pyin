@@ -234,7 +234,7 @@ elif ((canList.__len__() >=1) and ((graph2screen>0) or (graph2file!=''))):
         print "Estimate images in this data structure are ",canList.__len__()
         #Needs continue anyway option here!
         os.abort()
-    if ((graph2file != 'AUTO') and (canList.__len__() > 1)):
+    if ((graph2file != 'AUTO') and (canList.__len__() > 1) and (graph2screen==0)):
         graph2file='AUTO'
     for entry in canList:
         candidateObject=candidateList(verboseSwitch)
@@ -279,7 +279,10 @@ elif ((canList.__len__() >=1) and dumpSummaryDisk and (expThreshold =="") ):
         if verboseSwitch:
             print "Processing:",entry
         candidateObject.__loadfileQuick__(entry)
-        candidateObject.writeSummary()
+        if (outfile != ""):
+            candidateObject.writeSummary(outfile)
+        else:
+            candidateObject.writeSummary(entry)
         del candidateObject
     #SECTION TO DUMP SUMMARY TO SCREEN        
 elif ((canList.__len__() >=1) and dumpSummaryScreen):

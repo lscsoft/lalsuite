@@ -86,7 +86,7 @@ int main (int argc, char *argv[])
   /*
    *Sleep for Attaching DDD 
    */
-  unsigned int doze = 0;
+  unsigned int doze = 7;
   pid_t myPID;
   myPID = getpid( );
   fprintf( stdout, "pid %d sleeping for %d seconds\n", myPID, doze );
@@ -109,7 +109,7 @@ int main (int argc, char *argv[])
   /*  set_debug_level("ERROR | WARNING | MEMDBG");*/
   /*  set_debug_level("ERROR | WARNING | MEMDBG");*/
   /*  set_debug_level("ERROR | WARNING ");*/
-  /*        set_debug_level("ALLDBG");*/
+  /*  set_debug_level("ALLDBG"); */
 
   /*
    * Initialize status structure 
@@ -481,18 +481,25 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
        * NOTE TO SELF: Tina add code to compare any factor in the dataSet
        * units structure and factor the injected data appropriately to
        * match the input data (dataSet).  This is bug affected by the
-       * REAL8->REAL4 conversions in frame reading code only. (So far)
+       * REAL8->REAL4 conversions in frame reading code only.
        */
       for (i=0,j=0;
-	   ((i<injectSet->data->length)&&(j<dataSet->data->length));
+	   ((i<injectSet->data->length)&&((j+params.SegBufferPoints)<dataSet->data->length));
 	   i++,j++)
-	dataSet->data->data[j]=injectSet->data->data[i]+dataSet->data->data[i];
+	if (j<params.SegBufferPoints)
+	  dataSet->data->data[j]=dataSet->data->data[i];
+	else
+	  dataSet->data->data[j]=
+	    injectSet->data->data[i-params.SegBufferPoints]+
+	    dataSet->data->data[i];
 
       if (params.verbosity >= printFiles)
 	print_real4tseries(dataSet,"PostInjectDataSet.diag");
     }
   /*
    * Split incoming data into Segment Vector
+   * Adjust the segmenter to make orignal segments with
+   * SegBufferPoints on each side of the segments.
    */
   LAL_CALL(LALTrackSearchDataSegmenter(status,
 				       dataSet,
@@ -519,15 +526,15 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 					     "averagePSD",
 					     gps_zero,
 					     0,
-					     1/((params.SegLengthPoints)*dataSet->deltaT),
+					     1/((params.SegLengthPoints+(2*params.SegBufferPoints))*dataSet->deltaT),
 					     lalDimensionlessUnit,
-					     params.SegLengthPoints/2+1),
+					     (params.SegLengthPoints+(2*params.SegBufferPoints))/2+1),
 	       status);
       /*
        * The given units above need to be correct to truly reflect the
        * units stored in the frame file
        */
-      windowParamsPSD.length=params.SegLengthPoints;
+      windowParamsPSD.length=(params.SegLengthPoints+(2*params.SegBufferPoints));
       windowParamsPSD.type=params.avgSpecWindow;
       LAL_CALL( LALCreateREAL4Window(status,
 				     &(windowPSD),
@@ -537,14 +544,25 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
       if (params.NumSeg < 2)
 	avgPSDParams.overlap=1;
       else /* use same as segment overlap request*/
-	avgPSDParams.overlap=params.overlapFlag;
+	{
+	  avgPSDParams.overlap=params.overlapFlag;
+	  /*
+	   * Shift around the overlap for PSD estimation to accomodate
+	   * the extra data points of 2*params.SegBufferPoints.  This
+	   * not guarantee that we will have the same number of
+	   * segments in our PSD estimate as we will process.
+	   */
+	  if (params.SegBufferPoints > 0)
+	    avgPSDParams.overlap=2*params.SegBufferPoints;
+	}
+      
 
       avgPSDParams.window=windowPSD;
       avgPSDParams.method=params.avgSpecMethod;
       /* Set PSD plan length and plan*/
       LAL_CALL( LALCreateForwardREAL4FFTPlan(status,
 					     &averagePSDPlan,
-					     params.SegLengthPoints,
+					     params.SegLengthPoints+(2*params.SegBufferPoints),
 					     0),
 		status);
       avgPSDParams.plan=averagePSDPlan;
@@ -643,7 +661,7 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
       /*
        * Setup global FFT plans 
        */
-      planLength=params.SegLengthPoints;
+      planLength=params.SegLengthPoints+(2*params.SegBufferPoints);
       LAL_CALL(  LALCreateForwardREAL4FFTPlan(status,
 					      &forwardPlan,
 					      planLength,
@@ -856,6 +874,7 @@ void LALappsTrackSearchInitialize(
       {"inject_file",         required_argument,  0,    'M'},
       {"inject_scale",        required_argument,  0,    'N'},
       {"channel_type",        required_argument,  0,    'O'},
+      {"bin_buffer",          required_argument,  0,    'P'},
       {0,                     0,                  0,      0}
     };
   
@@ -874,6 +893,8 @@ void LALappsTrackSearchInitialize(
   params->TransformType = Spectrogram;
   params->NumSeg = 1;
   params->SegLengthPoints = 0; /* Set for debuging this with overlap # */
+  params->SegBufferPoints =0; /* Set to zero to test software */
+  params->colsToClip=0;/*Number of cols to clip off ends of TFR */
   params->overlapFlag = 0; /* Change this to an INT4 for overlapping */
   params->TimeLengthPoints = 0;
   params->discardTLP = 0;
@@ -1359,6 +1380,12 @@ void LALappsTrackSearchInitialize(
 	  }
 	  break;
 
+	case 'P':
+	  {
+	    params->colsToClip=atoi(optarg);
+	  }
+	  break;
+
 	default :
 	  {
 	    fprintf(stderr,TRACKSEARCHC_MSGEMISC);
@@ -1404,11 +1431,6 @@ void LALappsTrackSearchInitialize(
 	  /* Determine the number of maps */
 	  params->NumSeg=floor((params->TimeLengthPoints-params->overlapFlag)
 			       /(params->SegLengthPoints - params->overlapFlag));
-	  /* Determine number of points to throw away (not process) */
-	  /*params->discardTLP=floor(params->NumSeg*
-	   *		       (params->SegLengthPoints-params->overlapFlag)
-	   *		       /(params->TimeLengthPoints-params->SegLengthPoints));
-	   */
 	  params->discardTLP=(params->TimeLengthPoints-params->overlapFlag)%(params->SegLengthPoints - params->overlapFlag);
 	  /* 
 	   * Reset points to process by N-discardTLP, this gives us
@@ -1419,6 +1441,15 @@ void LALappsTrackSearchInitialize(
 	    fprintf(stdout,"We need to throw away %i trailing data points for %i, evenly matched data segments\n",params->discardTLP,params->NumSeg);
 	  
 	};
+      /* 
+       * Determine the number of additional points required to negate
+       * edge effects in first and last TFR
+       */
+      params->SegBufferPoints=((params->TimeLengthPoints/params->TimeBins)*params->colsToClip);
+      params->SegBufferPoints=((params->SegLengthPoints/params->TimeBins)*params->colsToClip);
+      if ((params->verbosity >= verbose))
+	fprintf(stdout,"As a result of bin buffering requests an additional %i points are needed to negate TFR edge effects, %i points before and then after the data set to analyze.",2*params->SegBufferPoints,params->SegBufferPoints);
+
       if (params->whiten > 2 )
 	{
 	  fprintf(stderr,TRACKSEARCHC_MSGEARGS);
@@ -1485,6 +1516,8 @@ void LALappsGetFrameData(LALStatus*          status,
   REAL8                 startFloat=0;
   REAL8                 stopFloat=0;
   LIGOTimeGPS           stopGPS;
+  LIGOTimeGPS           startWithOffsetGPS;
+  REAL8                 startWithOffset;
   /* Set all variables from params structure here */
   channelIn.name = params->channelName;
   channelIn.type = params->channelNameType;
@@ -1508,26 +1541,40 @@ void LALappsGetFrameData(LALStatus*          status,
       /* Set verbosity of stream so user sees frame read problems! */
       LAL_CALL( LALFrSetMode(status,LAL_FR_VERBOSE_MODE,stream),status);
 
-      /* Seek to end or requested data makes sure that all stream is complete!*/
+      LAL_CALL(
+	       LALGPStoFloat(status,
+			     &startWithOffset,
+			     &(params->GPSstart)),
+	       status);
+      startWithOffset=startWithOffset-(params->SegBufferPoints*DataIn->deltaT);
+      LAL_CALL(
+	       LALFloatToGPS(status,
+			     &startWithOffsetGPS,
+			     &startWithOffset),
+	       status);
+      /* 
+       * Seek to end of requested data makes sure that all stream is complete!
+       */
       LAL_CALL( LALGPStoFloat(status,&startFloat,&(DataIn->epoch)),status);
-      timeInterval=DataIn->data->length*DataIn->deltaT;
-      stopFloat=startFloat+timeInterval;
+      timeInterval=(DataIn->data->length * DataIn->deltaT)+(params->SegBufferPoints*DataIn->deltaT);
+      stopFloat=startWithOffset + timeInterval;
       LAL_CALL( LALFloatToGPS(status,&stopGPS,&stopFloat),status);
       if (params->verbosity >= verbose)
 	{
-	  fprintf(stderr,"Checking frame stream spans requested data interval!\n");
-	  fprintf(stderr,"Start %i.%i\n",DataIn->epoch.gpsSeconds,DataIn->epoch.gpsNanoSeconds);
+	  fprintf(stderr,"Checking frame stream spans requested data interval, including the appropriate data buffering!\n");
+	  fprintf(stderr,"Start %i.%i\n",startWithOffsetGPS.gpsSeconds,startWithOffsetGPS.gpsNanoSeconds);
 	  fprintf(stderr,"Stop  %i.%i\n",stopGPS.gpsSeconds,stopGPS.gpsNanoSeconds);
 	}
 
       LAL_CALL( LALFrSeek(status, &(stopGPS),stream),status);
 
-      LAL_CALL( LALFrSeek(status, &(DataIn->epoch), stream), status);
+      LAL_CALL( LALFrSeek(status, &(startWithOffsetGPS), stream), status);
       /*
        * Determine the variable type of data in the frame file.
        */
       LAL_CALL( LALFrGetTimeSeriesType(status, &dataTypeCode, &channelIn, stream),status);
       
+
       if (dataTypeCode == LAL_S_TYPE_CODE)
 	{
 	  /* Proceed as usual reading in REAL4 data type information */
@@ -1548,11 +1595,17 @@ void LALappsGetFrameData(LALStatus*          status,
 	   */
 	  params->SamplingRateOriginal=1/(DataIn->deltaT);
 	  loadPoints=params->SamplingRateOriginal*(params->TimeLengthPoints/params->SamplingRate);
+	  /*
+	   * Add the bin_buffer points to the loadpoints variable.
+	   * This will load the correct number of points.
+	   */
+	  loadPoints=loadPoints+(params->SamplingRateOriginal*2*(params->SegBufferPoints/params->SamplingRate));
+
 	  LAL_CALL(
 		   LALCreateREAL4TimeSeries(status,
 					    &tmpData,
 					    "Higher Sampling Tmp Data",
-					    params->GPSstart,
+					    startWithOffsetGPS,
 					    0,
 					    1/params->SamplingRateOriginal,
 					    lalADCCountUnit,
@@ -1585,7 +1638,7 @@ void LALappsGetFrameData(LALStatus*          status,
 		   LALCreateREAL8TimeSeries(status,
 					    &tmpREAL8Data,
 					    "tmp space",
-					    params->GPSstart,
+					    startWithOffsetGPS,
 					    0,
 					    DataIn->deltaT,
 					    lalADCCountUnit,
@@ -1604,13 +1657,14 @@ void LALappsGetFrameData(LALStatus*          status,
 	   * how many of these points do we load to get the same time duration
 	   * of data points
 	   */
-	  params->SamplingRateOriginal=1/(tmpREAL8Data->deltaT);
-	  loadPoints=params->SamplingRateOriginal*(params->TimeLengthPoints/params->SamplingRate);
+ 	  params->SamplingRateOriginal=1/(tmpREAL8Data->deltaT);
+ 	  loadPoints=params->SamplingRateOriginal*(params->TimeLengthPoints/params->SamplingRate);
+	  loadPoints=loadPoints+(params->SamplingRateOriginal*2*(params->SegBufferPoints/params->SamplingRate));
 	  LAL_CALL(
 		   LALCreateREAL8TimeSeries(status,
 					    &convertibleREAL8Data,
 					    "Higher Sampling Tmp Data",
-					    params->GPSstart,
+					    startWithOffsetGPS,
 					    0,
 					    1/params->SamplingRateOriginal,
 					    lalADCCountUnit,
@@ -1745,7 +1799,7 @@ void LALappsGetFrameData(LALStatus*          status,
 		   LALCreateINT2TimeSeries(status,
 					   &tmpINT2Data,
 					   "tmp space",
-					   params->GPSstart,
+					   startWithOffsetGPS,
 					   0,
 					   DataIn->deltaT,
 					   lalADCCountUnit,
@@ -1766,11 +1820,12 @@ void LALappsGetFrameData(LALStatus*          status,
 	   */
 	  params->SamplingRateOriginal=1/(tmpINT2Data->deltaT);
 	  loadPoints=params->SamplingRateOriginal*(params->TimeLengthPoints/params->SamplingRate);
+	  loadPoints=loadPoints+(params->SamplingRateOriginal*2*(params->SegBufferPoints/params->SamplingRate));
 	  LAL_CALL(
 		   LALCreateINT2TimeSeries(status,
 					   &convertibleINT2Data,
 					   "Tmp Data",
-					   params->GPSstart,
+					   startWithOffsetGPS,
 					   0,
 					   1/params->SamplingRateOriginal,
 					   lalADCCountUnit,
@@ -1794,7 +1849,7 @@ void LALappsGetFrameData(LALStatus*          status,
 		   LALCreateREAL4TimeSeries(status,
 					    &tmpData,
 					    "Higher Sampling REAL4 Data",
-					    params->GPSstart,
+					    startWithOffsetGPS,
 					    0,
 					    1/params->SamplingRateOriginal,
 					    lalADCCountUnit,
@@ -1821,7 +1876,7 @@ void LALappsGetFrameData(LALStatus*          status,
 		   LALCreateINT4TimeSeries(status,
 					   &tmpINT4Data,
 					   "REAL8 tmp space",
-					   params->GPSstart,
+					   startWithOffsetGPS,
 					   0,
 					   DataIn->deltaT,
 					   lalADCCountUnit,
@@ -1842,11 +1897,12 @@ void LALappsGetFrameData(LALStatus*          status,
 	   */
 	  params->SamplingRateOriginal=1/(tmpINT4Data->deltaT);
 	  loadPoints=params->SamplingRateOriginal*(params->TimeLengthPoints/params->SamplingRate);
+	  loadPoints=loadPoints+(params->SamplingRateOriginal*2*(params->SegBufferPoints/params->SamplingRate));
 	  LAL_CALL(
 		   LALCreateINT4TimeSeries(status,
 					   &convertibleINT4Data,
 					   "Tmp Data",
-					   params->GPSstart,
+					   startWithOffsetGPS,
 					   0,
 					   1/params->SamplingRateOriginal,
 					   lalADCCountUnit,
@@ -1870,7 +1926,7 @@ void LALappsGetFrameData(LALStatus*          status,
 		   LALCreateREAL4TimeSeries(status,
 					    &tmpData,
 					    "Higher Sampling REAL4 Data",
-					    params->GPSstart,
+					    startWithOffsetGPS,
 					    0,
 					    1/params->SamplingRateOriginal,
 					    lalADCCountUnit,
@@ -1933,6 +1989,8 @@ void LALappsGetFrameData(LALStatus*          status,
 	   */
 	  DataIn->deltaT=(1/params->SamplingRate);
 	  DataIn->sampleUnits=tmpData->sampleUnits;
+	  /*Store new 'epoch' information into DataIn*/
+	  DataIn->epoch=startWithOffsetGPS;
 	  LALappsTSassert((tmpData->data->length >=
 			   DataIn->data->length),
 			  TRACKSEARCHC_EDATA,
@@ -1952,6 +2010,8 @@ void LALappsGetFrameData(LALStatus*          status,
 	  params->SamplingRate=params->SamplingRateOriginal;
 	  DataIn->deltaT=1/params->SamplingRateOriginal;
 	  DataIn->sampleUnits=tmpData->sampleUnits;
+	  /*Store new 'epoch' information into DataIn*/
+	  DataIn->epoch=startWithOffsetGPS;
 	  for (i=0;i<DataIn->data->length;i++)
 	    DataIn->data->data[i]=tmpData->data->data[i];
 	}
@@ -2164,8 +2224,10 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   UINT4                  injectionRun=0;/*1=yes*/
   CHARVector            *binaryFilename=NULL;
   TSAMap                *mapBuilder=NULL;/* point to write vars for saving*/
+  TSAMap                *tmpTSA=NULL;/*point to correct vars for cropping*/
   REAL8                 signalStop=0;
   REAL8                 signalStart=0;
+  REAL8                 cropDeltaT=0;
   /*
    * Error checking section
    */
@@ -2182,7 +2244,13 @@ LALappsDoTSeriesSearch(LALStatus         *status,
     { 
       tfInputs.type = params.TransformType;
       tfInputs.fRow = 2*params.FreqBins;
-      tfInputs.tCol = params.TimeBins;
+      /*
+       * TimeBin information needs to have buffer TimeBins added here
+       * this should be transparent to most users unless they invoke
+       * a --bin_buffer flag.  Then the assumed 2 Tbins becomes
+       * something else.
+       */
+      tfInputs.tCol = params.TimeBins+(2*params.colsToClip);
       tfInputs.wlengthF = params.windowsize;
       tfInputs.wlengthT = params.windowsize;
 
@@ -2207,12 +2275,21 @@ LALappsDoTSeriesSearch(LALStatus         *status,
        * i goes 0,1,2,...B 
        * Bug found Date 26Oct06 Thur
        */
+      /* Tue-Nov-06-2007:200711061138 */
+      /* Add in timeInstant calculations with buffered dat */
       for (j=0;j<tfmap->tCol;j++)
 	{
-	  tfmap->timeInstant[j]=floor(
-				      (params.SegLengthPoints/(2*params.TimeBins)
-				       +(j*(params.SegLengthPoints/params.TimeBins)))
-				      );
+	  tfmap->timeInstant[j]=
+	    floor(
+		  (
+		   (params.SegLengthPoints+(2*params.SegBufferPoints))
+		   /(2*(params.TimeBins+(2*params.colsToClip)))
+		   +(
+		     j*(params.SegLengthPoints+(2*params.SegBufferPoints))
+		     /(params.TimeBins + (2*params.SegBufferPoints))
+		     )
+		   )
+		  );
 	}
       windowParams.length = params.windowsize;
       windowParams.type = params.window;
@@ -2301,38 +2378,71 @@ LALappsDoTSeriesSearch(LALStatus         *status,
        * Read in file with a map
        */
     }
-  /*
-   * Fill in LALSignalTrackSearch params structure via the use of
-   * the TSSearch huge struct elements
+  /* 
+   * Determine the 'true' cropped map starting epoch.  This should in
+   * pratice match the epoch the user originally intended without the
+   * implicit time bin addition and subsequent cropping
    */
-  inputs.sigma=params.LineWidth;
-  inputs.high=params.StartThresh;
-  inputs.low=params.LinePThresh;
-  inputs.width=((tfmap->fRow/2)+1);
-  inputs.height=tfmap->tCol;
-  /*
-   * Fill the map marking parameter structure
-   */
-  mapMarkerParams.mapTimeBins=inputs.height;
-  mapMarkerParams.mapFreqBins=inputs.width;
-  mapMarkerParams.mapStartGPS.gpsSeconds=signalSeries->epoch.gpsSeconds;
-  mapMarkerParams.mapStartGPS.gpsNanoSeconds=
-    signalSeries->epoch.gpsNanoSeconds;
+  /*Translate buffer points to GPS delta T */
+  /*Add this time to the time of the buffered data segment */
+  /*Report this as the true start time of cropped map */
+  cropDeltaT=signalSeries->deltaT*params.SegBufferPoints;
+
+  mapMarkerParams.mapStartGPS=signalSeries->epoch;
   LAL_CALL(
 	   LALGPStoFloat(status,
 			 &signalStart,
-			 &mapMarkerParams.mapStartGPS),
+			 &signalSeries->epoch),
 	   status);
-  signalStop=(signalSeries->deltaT*signalSeries->data->length)+signalStart;
-  /*This is the map time resoltion*/
-  mapMarkerParams.deltaT=(signalStop-signalStart)/mapMarkerParams.mapTimeBins;
-  mapMarkerParams.dataDeltaT=signalSeries->deltaT;
+/*   LAL_CALL( */
+/* 	   LALFloatToGPS(status, */
+/* 			 &(mapMarkerParams.mapStartGPS), */
+/* 			 &signalStart), */
+/* 	   status); */
+  /*
+   * Fix the signalStop time stamp to be without the buffer points.  It
+   * should be the stop time of the clipped TFR.
+   */
+  signalStop=(signalSeries->deltaT*(signalSeries->data->length))+signalStart;
   LAL_CALL(
 	   LALFloatToGPS(status,
 			 &(mapMarkerParams.mapStopGPS),
 			 &signalStop),
 			 
 	   status);
+  mapMarkerParams.mapTimeBins=tfmap->tCol;
+  mapMarkerParams.mapFreqBins=((tfmap->fRow/2)+1);
+  /*This is the map time resolution*/
+  mapMarkerParams.deltaT=(signalStop-signalStart)/mapMarkerParams.mapTimeBins;
+  mapMarkerParams.dataDeltaT=signalSeries->deltaT;
+  /* 
+   * Properly CROP TFR due to buffered segments used to create the
+   * TFR.  MAKE SURE to account for proper TFR dims and time/freq
+   * information.
+   */
+  tmpTSA=LALMalloc(sizeof(TSAMap));
+  tmpTSA->imageCreateParams=tfInputs;
+  tmpTSA->clippedWith=0;
+  tmpTSA->imageBorders=mapMarkerParams;
+  tmpTSA->imageRep=tfmap;
+  LALappsTSACropMap(status,&tmpTSA,params.colsToClip);
+  /* 
+   *Copy information from cropping procedure to relevant structures.
+   */
+  memcpy(&tfInputs,&(tmpTSA->imageCreateParams),sizeof(CreateTimeFreqIn));
+  memcpy(&mapMarkerParams,&(tmpTSA->imageBorders),sizeof(TrackSearchMapMarkingParams));
+  LALFree(tmpTSA);
+
+  /*
+   * Fill in LALSignalTrackSearch params structure via the use of
+   * the TSSearch huge struct elements.  These options have been
+   * adjusted properly in the Crop subroutine call.
+   */
+  inputs.sigma=params.LineWidth;
+  inputs.high=params.StartThresh;
+  inputs.low=params.LinePThresh;
+  inputs.width=((tfmap->fRow/2)+1);
+  inputs.height=tfmap->tCol;
 
   /*
    * Call subroutine to run the search
@@ -2403,6 +2513,9 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
   UINT4             i;  /* Counter for data breaking */
   INT4              j;
   UINT4             productioncode = 1; /* Variable for ascii or frame */
+  LIGOTimeGPS       edgeOffsetGPS;
+  REAL8             originalFloatTime=0;
+  REAL8             newFloatTime=0;
   /* Set to zero to use ascii files */
   /*
    * Check for nonNULL directory path Ptr to frame files
@@ -2424,15 +2537,30 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
    * Allocate space for dataset time series
    */
   /* create and initialize the time series vector */
+  /* 
+   *Adjust value of edgeOffsetGPS to be new start point 
+   * including col buffer data
+   */
+    LAL_CALL(
+	     LALGPStoFloat(status,
+			   &originalFloatTime,
+			   &(params.GPSstart)),
+	     status);
+    newFloatTime=originalFloatTime-(params.SegBufferPoints/params.SamplingRate);
+    LAL_CALL(
+	     LALFloatToGPS(status,
+			   &edgeOffsetGPS,
+			   &newFloatTime),
+	     status);
   LAL_CALL(
 	   LALCreateREAL4TimeSeries(status,
 				    &dataset,
 				    "Uninitialized",
-				    params.GPSstart,
+				    edgeOffsetGPS,
 				    0,
 				    1/params.SamplingRate,
 				    lalADCCountUnit,
-				    params.TimeLengthPoints),
+				    (params.TimeLengthPoints+(2*params.SegBufferPoints))),
 	   status);
   if (productioncode == 1) /* Use production frame file inputs */
     {
@@ -2468,6 +2596,10 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
    */
   if (injectParams.injectTxtFile != NULL)
     {
+      /* Wed-Oct-24-2007:200710241529 
+       * Adjust starting point of injection to avoid
+       * cropping first injection from TFR
+       */
       if (params.verbosity >= verbose)
 	printf("Preparing the injection data!\n");
       LALappsCreateInjectableData(status,
@@ -2481,14 +2613,35 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
    */
   SegVecParams.dataSegmentPoints = params.SegLengthPoints;
   SegVecParams.numberDataSegments = params.NumSeg;
+  SegVecParams.SegBufferPoints = params.SegBufferPoints;
+  /*
+   * Allocate structure to hold all segment data
+   */
   LAL_CALL(LALCreateTSDataSegmentVector(status,&SegVec,&SegVecParams),
 	   status);
 
-  if (params.verbosity >= printFiles)
-    print_real4tseries(dataset,"InputReal4TimeSeriesPrePrepare.diag");
+  /*
+   * Wed-Oct-24-2007:200710241539 
+   * Edit function to fill buffered segments
+   */
   LALappsTrackSearchPrepareData(status,dataset,injectSet,SegVec,params);
-  if (params.verbosity >= printFiles)
-    print_real4tseries(dataset,"InputReal4TimeSeriesPostPrepare.diag");
+  /*
+   * Remove the dataset variable to make room in RAM for TFRs
+   */
+  if (dataset)
+    {
+      LAL_CALL(LALDestroyREAL4TimeSeries(status,dataset),
+	       status);
+      dataset=NULL;
+    }
+  if (injectSet)
+    {
+      LAL_CALL(LALDestroyREAL4TimeSeries(status,injectSet),
+	       status);
+      injectSet=NULL;
+    }
+/*   if (params.verbosity >= printFiles) */
+/*     print_real4tseries(dataset,"InputReal4TimeSeriesPostPrepare.diag"); */
 
   j=0;
   for(i = 0;i < params.NumSeg;i++)
@@ -2496,6 +2649,9 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
       printf(".");
       /*
        * Call to prepare tSeries search
+       * Rewrite functions inside to CROP maps and adjust time marks
+       * according to the uncropped parts of TFR. Ignore segment
+       * buffers....
        */
       LALappsDoTSeriesSearch(status,SegVec->dataSeg[j],params,j);
       j++;
@@ -2505,16 +2661,14 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
   if (params.dataSegVec)
     {
       LALDestroyTSDataSegmentVector(status,(params.dataSegVec));
+      params.dataSegVec=NULL;
     }
   if (SegVec)
-    LAL_CALL(LALDestroyTSDataSegmentVector(status,SegVec),
-	     status);
-  if (dataset)
-    LAL_CALL(LALDestroyREAL4TimeSeries(status,dataset),
-	     status);
-  if (injectSet)
-    LAL_CALL(LALDestroyREAL4TimeSeries(status,injectSet),
-	     status);
+    {
+      LAL_CALL(LALDestroyTSDataSegmentVector(status,SegVec),
+	       status);
+      SegVec=NULL;
+    }
 }
 /*
  * End LALappsDoTimeSeriesAnalysis

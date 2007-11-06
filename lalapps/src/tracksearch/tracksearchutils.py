@@ -29,6 +29,7 @@ import sys
 import time
 import copy
 disableGraphics=False
+
 try:
     import pylab
 except RuntimeError,ImportError:
@@ -1121,6 +1122,8 @@ class candidateList:
         del resultA.curves
         del resultB.curves
         for keyA in curvesA:
+            keyA[1]=keyA[1]-tOffset
+            keyA[2]=keyA[2]+tOffset
             cutIndex_start=0
             cutIndex_stop=0
             k1=0
@@ -1600,6 +1603,8 @@ class candidateList:
         if timescale.lower().__contains__("day"):
             conversionFactor=60*60*24
             timeLabel="(days)"
+        spinner=progressSpinner(self.verboseMode)
+        spinner.setTag('Plotting')
         for element in self.curves:
             xtmp=[]
             ytmp=[]
@@ -1616,9 +1621,11 @@ class candidateList:
             del xtmp
             del ytmp
             del ztmp
-        figure=pylab
+            spinner.updateSpinner()
+        spinner.closeSpinner()
+        fig=pylab.figure()
         for entry in line2plot:
-            figure.plot(entry[0],entry[1])
+            pylab.plot(entry[0],entry[1])
         #Normalize the brightSpotZ max -> 0..5
         normalizeZscoreTo=100
         factor=normalizeZscoreTo/(max(brightSpotZ))
@@ -1626,25 +1633,25 @@ class candidateList:
         for entry in brightSpotZ:
             tmpZ.append(entry*factor)
         brightSpotZ=tmpZ
-        figure.scatter(brightSpotX,brightSpotY,brightSpotZ)
-        figure.xlabel(str("Time %s"%(timeLabel)))
-        figure.ylabel("Freq (Hz)")
-        figure.figtext(0.05,0.95,str("GPS %9.2f"%minX))
-        if (filename.upper()==''):
+        pylab.scatter(brightSpotX,brightSpotY,brightSpotZ)
+        pylab.xlabel(str("Time %s"%(timeLabel)))
+        pylab.ylabel("Freq (Hz)")
+        pylab.figtext(0.05,0.925,"GPS %9.2f"%(minX))
+        if ((filename.upper()=='') or (filename.upper()=='AUTO')):
             [name,extension]=os.path.splitext(self.filename[0])
             figtitle=os.path.basename(name)
         else:
             figtitle=filename
-        figure.title("%s"%(figtitle))
-        figure.grid(True)
+        pylab.title("%s"%(figtitle))
+        pylab.grid(True)
         if (filename==''):
-            figure.show()
+            pylab.show()
+            pylab.close()
         else:
             if (filename.upper()=='AUTO'):
                 [fullpath,extension]=os.path.splitext(self.filename[0])
                 filename=os.path.basename(fullpath)+'.png'
-            figure.savefig(filename)
-        del figure
+            pylab.savefig(filename)
     #End method graph2screen
 #End candidateList class
 

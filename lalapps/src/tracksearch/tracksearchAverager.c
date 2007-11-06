@@ -16,9 +16,6 @@
   *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
   *  MA  02111-1307  USA
   */
-/*
- * Author: Torres C. (Univ of TX at Brownsville)
- */
 
 #include "tracksearch.h"
 #include "tracksearchAverager.h"
@@ -353,8 +350,7 @@ LALappsTSACollapseMap(LALStatus         *status,
   mapPrimeMarkerParams=map->imageBorders;
   mapPrimeMarkerParams.mapTimeBins=mapPrimeCreateParams.tCol;
   mapPrimeMarkerParams.mapFreqBins=mapPrimeCreateParams.fRow/2+1;
-  LALappsTSACreateMap(status,
-		      &mapPrime,
+  LALappsTSACreateMap(status,		      &mapPrime,
 		      &mapPrimeMarkerParams,
 		      &mapPrimeCreateParams);
 
@@ -383,6 +379,12 @@ LALappsTSACollapseMap(LALStatus         *status,
    * We were doing P'=10P/10=P but we know P'>P it has to be!
    * If we average we keep the curvature dynamic range down!
    */ 
+  /*
+   * Cristina  Tue-Oct-30-2007:200710301503 
+   * To address my comment above we will remove the averaging. So that
+   * the power in 10 pixels collapsed into 1 is equal.  The new 1
+   * pixel has the same power as original sum in 10 pixels
+   */
   for (h=0;h<map->imageRep->tCol;h++)
     {
       for (i=0,k=0;i<(map->imageRep->fRow/2+1);i=i+cparams.averageFBins,k++)
@@ -394,7 +396,8 @@ LALappsTSACollapseMap(LALStatus         *status,
 	    {
 	      tmpSum=tmpSum+map->imageRep->map[h][i+j];
 	    }
-	  mapPrimeF->imageRep->map[h][k]=tmpSum/pixelCount;
+	  /*mapPrimeF->imageRep->map[h][k]=tmpSum/pixelCount;*/
+	  mapPrimeF->imageRep->map[h][k]=tmpSum;
 	}
     }
   /*
@@ -413,9 +416,15 @@ LALappsTSACollapseMap(LALStatus         *status,
 	      /* [time][freq] */
 	      tmpSum=tmpSum+mapPrimeF->imageRep->map[(i+j)][h];
 	    }
-	     mapPrime->imageRep->map[k][h]=tmpSum/pixelCount;
+	  /*mapPrime->imageRep->map[k][h]=tmpSum/pixelCount;*/
+	  mapPrime->imageRep->map[k][h]=tmpSum;
 	}
     }
+  /*
+   * NonCritical Tue-Oct-30-2007:200710301618 
+   * Add in manipulation of freqBin and timeInstant entries after the 
+   * collapse or merge of the map.  
+   */
   /*
    * Free original map and swap pointer to mapPrime
    * Also free intermediate mapPrimeF
@@ -603,7 +612,7 @@ LALappsTSAMergeMap(LALStatus  *status,
     }
   else
     {
-      fprintf(stdout,"Doing a megre/clip of the two maps\n");
+      fprintf(stdout,"Doing a mergee/clip of the two maps\n");
       /* 
        * Figure out how to merge the two maps accordingly
        */
@@ -646,6 +655,11 @@ LALappsTSAMergeMap(LALStatus  *status,
 	    }
 	}
     }
+  /*
+   * NonCritical Tue-Oct-30-2007:200710301618 
+   * Add in manipulation of freqBin and timeInstant entries after the 
+   * collapse or merge of the map.  
+   */
   return;
 }
 /*
@@ -846,7 +860,6 @@ LALappsTSAProcessSingleCache(LALStatus    *status,
 /*
  * End LALappsTSAProcessSingleCache
  */
-
 
 void
 tsaTest(

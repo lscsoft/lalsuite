@@ -31,6 +31,124 @@ RCSID( "tracksearch $Id$");
 #define CVS_DATE "$Date$"
 
 
+void
+LALappsTSACropMap(
+		  LALStatus          *status,
+		  TSAMap            **inputMap,
+		  UINT4               binsToCrop)
+{
+  TSAMap                       *tmpMap=NULL;
+  CreateTimeFreqIn              tmpCreateParams;
+  TrackSearchMapMarkingParams   tmpMarkingParams;
+  TSAMap                       *map=NULL;
+  INT4                         i=0;
+  INT4                         j=0;
+  REAL8                         startTime=0;
+  REAL8                         stopTime=0;
+  CHARVector                    *name=NULL;
+  LALappsTSassert(((*inputMap)!=NULL),
+		  TRACKSEARCHAVERAGERC_ENPTR,
+		  TRACKSEARCHAVERAGERC_MSGENPTR);
+
+  LALappsTSassert(((*inputMap)->imageRep->tCol > (INT4)(2*binsToCrop)),
+		  TRACKSEARCHAVERAGERC_EDIMS,
+		  TRACKSEARCHAVERAGERC_MSGEDIMS);
+
+/*   LAL_CALL(LALCHARCreateVector(status,&name,1024),status); */
+/*   strcpy(name->data,"Uncroppedmap"); */
+/*   LALappsTSAWritePGM(status,(*inputMap),name); */
+
+  /*
+   * New 'cropped' map to be create and swapped into old maps place.
+   */
+  memcpy(&tmpCreateParams,&((*inputMap)->imageCreateParams),sizeof(CreateTimeFreqIn));
+  tmpCreateParams.tCol=(*inputMap)->imageCreateParams.tCol-(2*binsToCrop);
+  /**/
+  memcpy(&tmpMarkingParams,&((*inputMap)->imageBorders),sizeof(TrackSearchMapMarkingParams));
+  tmpMarkingParams.mapTimeBins=(*inputMap)->imageBorders.mapTimeBins-(2*binsToCrop);
+  /**/
+  /*
+   * Adjust times on mapStopGPS and mapStartGPS to be times
+   * after cropping the MAP
+   */
+  LAL_CALL(
+	   LALGPStoFloat(status,
+			 &startTime,
+			 &tmpMarkingParams.mapStartGPS),
+	   status);
+  startTime=startTime+(tmpMarkingParams.deltaT*binsToCrop);
+  LAL_CALL(
+	   LALFloatToGPS(status,
+			 &tmpMarkingParams.mapStartGPS,
+			 &startTime),
+	   status);
+  LAL_CALL(
+	   LALGPStoFloat(status,
+			 &stopTime,
+			 &tmpMarkingParams.mapStopGPS),
+	   status);
+  stopTime=stopTime-(tmpMarkingParams.deltaT*binsToCrop);
+  LAL_CALL(
+	   LALFloatToGPS(status,
+			 &tmpMarkingParams.mapStopGPS,
+			 &stopTime)
+	   ,status);
+  LALappsTSACreateMap(status,
+		      &tmpMap,
+		      &tmpMarkingParams,
+		      &tmpCreateParams);
+  /* 
+   * Copy over the data that is to be 'kept'
+   */	/*[time][freq]*/
+  for (i=0;(i<tmpMap->imageRep->fRow/2+1);i++)
+    for(j=0;(j<tmpMap->imageRep->tCol);j++)
+      tmpMap->imageRep->map[j][i]=(*inputMap)->imageRep->map[j+binsToCrop][i];
+
+  for (i=0;(i<tmpMap->imageRep->fRow/2+1);i++)
+    tmpMap->imageRep->freqBin[i]=(*inputMap)->imageRep->freqBin[i];
+  for (i=0;(i<tmpMap->imageRep->tCol);i++)
+    tmpMap->imageRep->timeInstant[i]=(*inputMap)->imageRep->timeInstant[i+binsToCrop];
+
+/*   strcpy(name->data,"temporarymap"); */
+/*   LALappsTSAWritePGM(status,tmpMap,name); */
+
+  /*
+   * Copy the newly created information into the structure.
+   * This should return a restructed 'structure'
+   */
+  memcpy(&((*inputMap)->imageCreateParams),&(tmpMap->imageCreateParams),sizeof(CreateTimeFreqIn));
+  /**/
+  (*inputMap)->clippedWith=tmpMap->clippedWith;
+  memcpy(&((*inputMap)->clipperMapStart),&(tmpMap->clipperMapStart),sizeof(LIGOTimeGPS));
+  /**/
+  memcpy(&((*inputMap)->imageBorders),&(tmpMap->imageBorders),sizeof(TrackSearchMapMarkingParams));
+  /**/
+  LAL_CALL(
+	   LALDestroyTimeFreqRep(status,
+				 &((*inputMap)->imageRep)),
+	   status);
+  LAL_CALL(
+	   LALCreateTimeFreqRep(status,
+				&((*inputMap)->imageRep),
+				&((*inputMap)->imageCreateParams)),
+	   status);
+  /*Copy the elements now*/
+  for (i=0;(i<(*inputMap)->imageRep->fRow/2+1);i++)
+    for(j=0;(j<(*inputMap)->imageRep->tCol);j++)
+      (*inputMap)->imageRep->map[j][i]=tmpMap->imageRep->map[j][i];
+
+/*   strcpy(name->data,"finalmap"); */
+/*   LALappsTSAWritePGM(status,*inputMap,name); */
+
+  if (name)
+    LAL_CALL(LALCHARDestroyVector(status,&name),status);
+
+  if (tmpMap)
+    LALappsTSADestroyMap(status,&tmpMap);
+  return;
+}
+
+
 void LALappsTSAReadMapFile( LALStatus         *status,
 			    TSAMap           **tfImage,
 			    CHARVector        *fileNameVec

@@ -100,6 +100,11 @@ LALappsTSALoadCacheFile(LALStatus    *status,
 			CHARVector   *filename,
 			TSAcache    **mapCache);
 
+void 
+LALappsTSACropMap(LALStatus*,
+		  TSAMap**,
+		  UINT4);
+
 void
 LALappsTSADestroyCache(LALStatus       *status,
 		       TSAcache       **mapCache);
