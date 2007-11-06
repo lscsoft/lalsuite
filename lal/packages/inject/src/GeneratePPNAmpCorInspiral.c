@@ -299,9 +299,9 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
 
   /* Set PN parameters for amplitude */
   q[0] = 1.0;
-  for(i = 1; i < AMPMAXORDER; i++){
-    q[i] = ( i <= params->ampOrder? 1 : 0 );
- }
+  for(i = 1; i < AMPMAXORDER; i++)
+    q[i] = ( i <= params->ampOrder? 1.0 : 0.0 );
+  
   
   /* Set number of harmonics in accordance with params->ampOrder*/
   /* Dominant harmonic is the 2nd */
