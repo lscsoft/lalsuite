@@ -17,25 +17,25 @@
 *  MA  02111-1307  USA
 */
 
-/******************* <lalVerbatim file="OverlapReductionFunctionCV">
+/******************* <lalVerbatim file="XLALOverlapReductionFunctionCV">
 Author: UTB Relativity Group; contact whelan@phys.utb.edu
 $Id$
 ************************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
-\subsection{Module \texttt{OverlapReductionFunction.c}}
-\label{stochastic:ss:OverlapReductionFunction.c}
+\subsection{Module \texttt{XLALOverlapReductionFunction.c}}
+\label{stochastic:ss:XLALOverlapReductionFunction.c}
 
 Calculates the values of the overlap reduction function for a pair
 of gravitational wave detectors.
 
 \subsubsection*{Prototypes}
-\idx{LALOverlapReductionFunction()}
-\input{OverlapReductionFunctionCP}
+\idx{XLALOverlapReductionFunction()}
+\input{XLALOverlapReductionFunctionCP}
 
 \subsubsection*{Description}
 
-\texttt{LALOverlapReductionFunction()} calculates the values of the overlap reduction:
+\texttt{XLALOverlapReductionFunction()} calculates the values of the overlap reduction:
 %
 \begin{equation}
 \gamma(f):={5\over 8\pi}\sum_A\int_{S^2}d\hat\Omega\
@@ -92,7 +92,7 @@ unpolarized stochastic gravitational-wave background.
 
 Given a choice of two detector sites, a frequency spacing $\delta f$,
 a start frequency $f_0$, and the number of desired values $N$, {\tt
-LALOverlapReductionFunction()\/} calculates the values of $\gamma(f)$ at the discrete
+XLALOverlapReductionFunction()\/} calculates the values of $\gamma(f)$ at the discrete
 frequencies $f_i=f_0 + i\Delta f$, $i=0,1,\cdots, N-1$.
 
 \subsubsection*{Algorithm}
@@ -152,7 +152,7 @@ j_2(\alpha)&=&3\ {\sin\alpha\over\alpha^3}-3\ {\cos\alpha\over\alpha^2}
 $\vec s$ is a unit vector pointing in the direction of 
 $\Delta \vec x:=\vec x_1-\vec x_2$, and $\alpha:=2\pi f|\Delta\vec x|/c$.
 
-{\tt LALOverlapReductionFunction()\/} calculates the values of $\gamma(f)$ 
+{\tt XLALOverlapReductionFunction()\/} calculates the values of $\gamma(f)$ 
 as follows:
 
 \begin{enumerate}
@@ -225,10 +225,10 @@ strncpy()
 
 \end{itemize}
 
-\vfill{\footnotesize\input{OverlapReductionFunctionCV}}
+\vfill{\footnotesize\input{XLALOverlapReductionFunctionCV}}
 
 ******************************************************* </lalLaTeX> */ 
-/**************************************** <lalLaTeX file="OverlapReductionFunctionCB">
+/**************************************** <lalLaTeX file="XLALOverlapReductionFunctionCB">
 \bibitem{stochastic:Flanagan:1993}
   \'{E}.~\'{E}.~Flanagan, ``The Sensitivity of Ligo to a Stochastic
   Background, and its Dependence on the Detector Orientations''
@@ -263,18 +263,18 @@ strncpy()
 #include <string.h>
 #include <lal/StochasticCrossCorrelation.h>
 
-NRCSID(OVERLAPREDUCTIONFUNCTIONC, "$Id$");
+NRCSID(XLALOVERLAPREDUCTIONFUNCTIONC, "$Id$");
 
 static void evaluateBessels(REAL4 rho[3], REAL4 alpha);
 static REAL4 cartesianInnerProduct(REAL4 a[3], REAL4 b[3]);
 
-/* <lalVerbatim file="OverlapReductionFunctionCP"> */
+/* <lalVerbatim file="XLALOverlapReductionFunctionCP"> */
 void
-LALOverlapReductionFunction(
+XLALOverlapReductionFunction(
     LALStatus                                *status,
     REAL4FrequencySeries                     *output,
     const LALDetectorPair                    *detectors,
-    const OverlapReductionFunctionParameters *parameters)
+    const XLALOverlapReductionFunctionParameters *parameters)
 /* </lalVerbatim> */
 {
   UINT4 length;
@@ -292,7 +292,7 @@ LALOverlapReductionFunction(
   RAT4 power;
 
   /* initialize status structure */
-  INITSTATUS(status, "LALOverlapReductionFunction", OVERLAPREDUCTIONFUNCTIONC);
+  INITSTATUS(status, "XLALOverlapReductionFunction", XLALOVERLAPREDUCTIONFUNCTIONC);
   ATTATCHSTATUSPTR(status);
 
   /* check that pointer to parameters is not null */
