@@ -15,7 +15,7 @@ if [ $? -ne 0 ]; then
     exit $?
 fi
 
-wget http://ldas-jobs.ligo.caltech.edu/~bdaudert/property.bundle > properties$$.log 2> properties$$.err
+wget http://ldas-jobs.ligo.caltech.edu/~bdaudert/properties.bundle > properties$$.log 2> properties$$.err
 
 if [ $? -ne 0 ]; then
     echo properties  wget failed. Output:
