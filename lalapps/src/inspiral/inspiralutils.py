@@ -198,7 +198,7 @@ def hipe_setup(hipeDir, config, opts, ifos, injFile=None, dfOnly = False, playOn
         'ligo-data','inspiral','virgo-data']
   elif vetoCat:
     hipeSections = ['condor', 'pipeline', 'input', 'data', 'ligo-data', \
-        'inspiral', 'thinca', 'thinca-2', 'datafind', 'virgo-data' \
+        'inspiral', 'thinca', 'thinca-2', 'datafind', 'virgo-data', \
         'thinca-slide', 'coire', 'coire-inj']
   else:
     hipeSections = ['condor', 'pipeline', 'input', 'calibration', 'datafind',\
