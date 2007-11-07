@@ -1,40 +1,103 @@
-# condor_submit_dax  mydax.dax my_OSG_site
+#!/usr/bin/env python
+"""
+condor_submit_dax [--verbose] dax_file site
 
-DAX=$1
-SITE=$2
+dax_file - DAX file to submit
+site - site at which to run DAX
+"""
 
-DAX_BASE=`echo $DAX | awk -F. '{print $1}'`
+import optparse
+import ConfigParse
+import sys
+import os
 
-wget http://ldas-jobs.ligo.caltech.edu/~bdaudert/sites.xml > sites$$.log  2> sites$$.err
+import urllib
 
-if [ $? -ne 0 ]; then
-    echo Sites xml wget failed. Output:
-    cat sites$$.log
-    echo Error:
-    cat sites$$.err
-    exit $?
-fi
+sites_url = "http://ldas-jobs.ligo.caltech.edu/~bdaudert/sites.xml"
+properties_url = "http://ldas-jobs.ligo.caltech.edu/~bdaudert/properties.bundle"
 
-wget http://ldas-jobs.ligo.caltech.edu/~bdaudert/properties.bundle > properties$$.log 2> properties$$.err
+def get_url(url, verbose=False):
+    """
+    Connect to a server and download the url.
+    The path to this temporary file is returned.
+    """
+    if verbose:
+        print "Downloading " + url
 
-if [ $? -ne 0 ]; then
-    echo properties  wget failed. Output:
-    cat properties$$.log
-    echo Error:
-    cat properties$$.err
-    exit $?
-fi
+    dest, info = urllib.urlretrieve(url)
 
-pegasus-plan -Dpegasus.user.properties=property.bundle --dir ./submit_files --sites $2  --output local --dax $DAX --nocleanup > ${DAX_BASE}.pegasus_plan_$$.log 2> ${DAX_BASE}.pegasus_plan_$$.err
+    if verbose >= 2:
+        print info
+    return dest
 
-if [ $? -ne 0 ]; then
-    echo Plan is bad. Output:
-    cat ${DAX_BASE}.pegasus_plan_$$.log
-    echo Error:
-    cat ${DAX_BASE}.pegasus_plan_$$.err
-    exit $?
-fi
+def parse_args():
+    parser = optparse.OptionParser(version="$Id$")
+    parser.add_option("-s", "--sites-file",
+        help="site.xml describing the desired sites")
+    parser.add_option("-p", "--properties-file",
+        help="property bundle with pegasus preferences")
+    parser.add_option("-v", "--verbose", action="store_true",
+        help="print informative messages")
+    
+    opts, args = parser.parse_args()
+    
+    if len(args) < 2:
+        print >>sys.stderr, "not enough arguments"
+    
+    return opts, args
 
-RUN_COMMAND="`grep pegasus-run ${DAX_BASE}.pegasus_plan_$$.log`"
+#
+# Main
+#
 
-exec $RUN_COMMAND
+# commandline
+opts, args = parse_args()
+dax_file = args[0]
+site = args[1]
+
+# fetch site descriptions and property bundle if necessary
+if opts.sites_file is None:
+    opts.sites_file = get_url(sites_url)
+if opts.properties_file is None:
+    opts.properties_file = get_url(properties_url)
+
+# do pegasus-plan
+cwd = os.path.getcwd()
+
+plan_args = ["pegasus-plan"]
+plan_args.append("-Dpegasus.user.properties=%s" % opts.properties_file)
+plan_args.append("-Dpegasus.dir.storage=%s" % cwd)
+plan_args.append("--dir ./submit_files")
+plan_args.append("--sites %s")
+plan_args.append("--output local")
+plan_args.append("--dax %s")
+plan_args.append(" --nocleanup")
+
+plan_in, plan_out, plan_err = os.popen3(" ".join(plan_args))
+pid, status = os.wait()
+
+if status != 0:
+    print >>sys.stderr, "External call failed."
+    print >>sys.stderr, "  status: %d" % status
+    print >>sys.stderr, "  stdout: %s" % out.read()
+    print >>sys.stderr, "  stderr: %s" % err.read()
+    print >>sys.stderr, "  command: %s" % command
+    sys.exit(status)
+
+# do pegasus_run
+plan_out_lines = plan_out.readlines()
+run_commands = [line.strip() for line in plan_out_lines if "pegasus_run" in line]
+if len(run_commands) == 0:
+    print >>sys.stderr, "Where is the run command?  I couldn't find it in the following:"
+    print >>sys.stderr, plan_out_lines
+    sys.exit(1)
+elif len(run_commands) > 1:
+    print >>sys.stderr, "I are t3h confus3d.  Why do I find more than one command to run?"
+    print >>sys.stderr, "Matching lines:"
+    print >>sys.stderr, run_commands
+    print >>sys.stderr, "All lines:"
+    print >>sys.stderr, plan_out_lines
+run_command = run_command[0]
+
+run_args = run_command.split(" ")
+os.execvp(run_args[0], run_args)
