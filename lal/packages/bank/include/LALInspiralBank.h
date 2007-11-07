@@ -104,7 +104,10 @@ $(\tau_0, \tau_3)$ space of chirptimes (the choice made by \texttt{Tau0Tau3}).
 This was implemented in releases before May 25, 2002. On May 25 we migrated to a
 new, slightly faster, computation of the metric in which, at present, only the
 choice \texttt{Tau0Tau3} can be made. Since October 2003 a new choice {\tt Psi0Psi3}
-was added to handle BCV templates.
+was added to handle BCV templates. In November 2007 two new choices were addded: 
+{\tt PTFIntrinctic} is a PTF metric in only the intrinsic parameters (a $4
+\times 4$ matrix), and {\tt PTFFull} is the PTF metric in the full parameter
+space (intrinsic and extrinsic parameters).
 
 \item\texttt{InspiralBankMassRange:}
 \input{LALInspiralBankMassRangeH}
@@ -353,7 +356,9 @@ typedef enum
 {
   Tau0Tau2, 
   Tau0Tau3, 
-  Psi0Psi3
+  Psi0Psi3,
+  PTFIntrinsic,
+  PTFFull
 }
 CoordinateSpace;
 /*  </lalVerbatim>  */
@@ -1346,6 +1351,20 @@ LALSPAF(
 \newpage\input{SpaceCoveringC}
 </lalLaTeX> */
 
+/* <lalLaTeX>
+\newpage\input{LALInspiralComputePTFMetricC}
+</lalLaTeX> */
+void XLALInspiralComputePTFIntrinsticMetric (
+    InspiralMetric             *metric,
+    REAL8FrequencySeries       *psd,
+    InspiralTemplate           *params
+    );
+
+void XLALInspiralComputePTFFullMetric (
+    InspiralMetric             *metric,
+    REAL8FrequencySeries       *psd,
+    InspiralTemplate           *params
+    );
 
 #ifdef  __cplusplus
 }

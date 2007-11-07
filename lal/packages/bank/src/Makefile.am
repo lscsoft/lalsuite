@@ -26,7 +26,8 @@ LALInspiralValidTemplate.c\
 LALInverse3.c\
 LALMatrixTransform.c\
 LALHexagonVertices.c\
-LALRectangleVertices.c
+LALRectangleVertices.c\
+LALInspiralComputePTFMetric.c
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
