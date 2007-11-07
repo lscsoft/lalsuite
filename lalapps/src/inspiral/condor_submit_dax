@@ -1,0 +1,20 @@
+# condor_submit_dax  mydax.dax my_OSG_site
+
+DAX=$1
+SITE=$2
+
+DAX_BASE=`echo $DAX | awk -F. '{print $1}'`
+
+pegasus-plan -Dpegasus.user.properties=/usr2/bdaudert/properties.bundle.$SITE --dir /usr2/bdaudert/$SITE --sites $SITE --output local --dax $DAX --nocleanup > ${DAX_BASE}.pegasus_plan_$$.log 2> ${DAX_BASE}.pegasus_plan_$$.err
+
+if [ $? -ne 0 ]; then
+    echo Plan is bad. Output:
+    cat ${DAX_BASE}.pegasus_plan_$$.log
+    echo Error:
+    cat ${DAX_BASE}.pegasus_plan_$$.err
+    exit $?
+fi
+
+RUN_COMMAND="`grep pegasus-run ${DAX_BASE}.pegasus_plan_$$.log`"
+
+exec $RUN_COMMAND
