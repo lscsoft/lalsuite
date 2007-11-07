@@ -5,7 +5,27 @@ SITE=$2
 
 DAX_BASE=`echo $DAX | awk -F. '{print $1}'`
 
-pegasus-plan -Dpegasus.user.properties=/usr2/bdaudert/properties.bundle.$SITE --dir /usr2/bdaudert/$SITE --sites $SITE --output local --dax $DAX --nocleanup > ${DAX_BASE}.pegasus_plan_$$.log 2> ${DAX_BASE}.pegasus_plan_$$.err
+wget http://ldas-jobs.ligo.caltech.edu/~bdaudert/sites.xml > sites$$.log  2> sites$$.err
+
+if [ $? -ne 0 ]; then
+    echo Sites xml wget failed. Output:
+    cat sites$$.log
+    echo Error:
+    cat sites$$.err
+    exit $?
+fi
+
+wget http://ldas-jobs.ligo.caltech.edu/~bdaudert/property.bundle > properties$$.log 2> properties$$.err
+
+if [ $? -ne 0 ]; then
+    echo properties  wget failed. Output:
+    cat properties$$.log
+    echo Error:
+    cat properties$$.err
+    exit $?
+fi
+
+pegasus-plan -Dpegasus.user.properties=property.bundle --dir ./submit_files --sites $2  --output local --dax $DAX --nocleanup > ${DAX_BASE}.pegasus_plan_$$.log 2> ${DAX_BASE}.pegasus_plan_$$.err
 
 if [ $? -ne 0 ]; then
     echo Plan is bad. Output:
