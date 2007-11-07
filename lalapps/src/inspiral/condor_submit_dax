@@ -16,6 +16,17 @@ import urllib
 sites_url = "http://ldas-jobs.ligo.caltech.edu/~bdaudert/sites.xml"
 properties_url = "http://ldas-jobs.ligo.caltech.edu/~bdaudert/properties.bundle"
 
+class PegasusTransformationCatalog(list):
+    def write_tc_data(self, file_obj):
+        fileobj.write("\n".join(map(str, self)))
+
+class PegasusTransformation(object):
+    __slots__ = ["siteID", "LogicalTX", "PhysicalTX", "Type", "SystemInfo",
+        "Profiles"]
+    
+    def __str__(self):
+        return " ".join([getattr(self, key) for key in self.__slots__])
+
 def get_url(url, verbose=False):
     """
     Connect to a server and download the url.
@@ -36,6 +47,8 @@ def parse_args():
         help="site.xml describing the desired sites")
     parser.add_option("-p", "--properties-file",
         help="property bundle with pegasus preferences")
+    parser.add_option("-i", "--ini-file",
+        help="inspiral_hipe's ini file with which to create tc.data")
     parser.add_option("-v", "--verbose", action="store_true",
         help="print informative messages")
     
@@ -57,9 +70,29 @@ site = args[1]
 
 # fetch site descriptions and property bundle if necessary
 if opts.sites_file is None:
-    opts.sites_file = get_url(sites_url)
+    opts.sites_file = get_url(sites_url, opts.verbose)
 if opts.properties_file is None:
-    opts.properties_file = get_url(properties_url)
+    opts.properties_file = get_url(properties_url, opts.verbose)
+
+# create tc.data if necessary
+if opts.ini_file:
+    cp = ConfigParse.ConfigParser()
+    cp.read(opts.ini_file)
+    
+    catalog = PegasusTransformationCatalog()
+    for prog, path in cp.items("condor"):
+        tx = PegasusTransformation()
+        tx.siteID = site
+        tx.LogicalTX = "ligo:%s:1.0" % prog
+        tx.PhysicalTX = path
+        tx.Type = "STATIC_BINARY"
+        tx.SystemInfo = "INTEL32::LINUX"
+        tx.Profiles = ""  # CHECKME
+        catalog.append(tx)
+
+#
+# run Pegasus stuff
+#
 
 # do pegasus-plan
 cwd = os.path.getcwd()
@@ -84,7 +117,7 @@ if status != 0:
     print >>sys.stderr, "  command: %s" % command
     sys.exit(status)
 
-# do pegasus_run
+# do pegasus-run
 plan_out_lines = plan_out.readlines()
 run_commands = [line.strip() for line in plan_out_lines if "pegasus_run" in line]
 if len(run_commands) == 0:
