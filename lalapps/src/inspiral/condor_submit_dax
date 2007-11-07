@@ -7,7 +7,7 @@ site - site at which to run DAX
 """
 
 import optparse
-import ConfigParse
+import ConfigParser
 import sys
 import os
 
@@ -95,31 +95,32 @@ if opts.ini_file:
 #
 
 # do pegasus-plan
-cwd = os.path.getcwd()
+cwd = os.getcwd()
 
 plan_args = ["pegasus-plan"]
 plan_args.append("-Dpegasus.user.properties=%s" % opts.properties_file)
 plan_args.append("-Dpegasus.dir.storage=%s" % cwd)
 plan_args.append("--dir ./submit_files")
-plan_args.append("--sites %s")
+plan_args.append("--sites %s" % site)
 plan_args.append("--output local")
-plan_args.append("--dax %s")
+plan_args.append("--dax %s" % dax_file)
 plan_args.append(" --nocleanup")
+plan_command = " ".join(plan_args)
 
-plan_in, plan_out, plan_err = os.popen3(" ".join(plan_args))
+plan_in, plan_out, plan_err = os.popen3(plan_command)
 pid, status = os.wait()
 
 if status != 0:
     print >>sys.stderr, "External call failed."
     print >>sys.stderr, "  status: %d" % status
-    print >>sys.stderr, "  stdout: %s" % out.read()
-    print >>sys.stderr, "  stderr: %s" % err.read()
-    print >>sys.stderr, "  command: %s" % command
+    print >>sys.stderr, "  stdout: %s" % plan_out.read()
+    print >>sys.stderr, "  stderr: %s" % plan_err.read()
+    print >>sys.stderr, "  command: %s" % plan_command
     sys.exit(status)
 
 # do pegasus-run
 plan_out_lines = plan_out.readlines()
-run_commands = [line.strip() for line in plan_out_lines if "pegasus_run" in line]
+run_commands = [line.strip() for line in plan_out_lines if line.startswith("pegasus-run")]
 if len(run_commands) == 0:
     print >>sys.stderr, "Where is the run command?  I couldn't find it in the following:"
     print >>sys.stderr, plan_out_lines
@@ -129,8 +130,8 @@ elif len(run_commands) > 1:
     print >>sys.stderr, "Matching lines:"
     print >>sys.stderr, run_commands
     print >>sys.stderr, "All lines:"
-    print >>sys.stderr, plan_out_lines
-run_command = run_command[0]
+    print >>sys.stderr, "".join(plan_out_lines)
+run_command = run_commands[0]
 
 run_args = run_command.split(" ")
 os.execvp(run_args[0], run_args)
