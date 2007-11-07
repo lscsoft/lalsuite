@@ -1,3 +1,16 @@
+lalapps (5.2-3) unstable; urgency=low
+
+  * Use --enable-frame --enable-metaio
+    What about --enable-condor and --enable-shared?
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Tue,  6 Nov 2007 17:30:00 +0100
+
+lalapps (5.2-2) unstable; urgency=low
+
+  * Depend on gsl 1.9 or later
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Thu,  1 Nov 2007 11:15:00 +0100
+
 lalapps (5.2-1) unstable; urgency=low
 
   * Initial release

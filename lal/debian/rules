@@ -24,7 +24,6 @@ ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
 	INSTALL_PROGRAM += -s
 endif
 
-#PREFIX = /opt/lscsoft
 PREFIX = /usr
 
 configure:
@@ -38,6 +37,7 @@ config.status : configure
 	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 		--prefix=$(PREFIX) --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
 		--enable-nightly=no \
+		--enable-frame --enable-metaio \
 		--disable-debug
 
 
@@ -49,7 +49,6 @@ build-stamp :  config.status
 	# Add here commands to compile the package.
 	$(MAKE)
 	$(MAKE) dvi
-	#docbook-to-man debian/lal.sgml > lal.1
 
 	touch $@
 

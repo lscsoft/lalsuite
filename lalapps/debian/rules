@@ -35,7 +35,9 @@ config.status: configure
 	CFLAGS="$(CFLAGS)" \
 	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 	    --prefix=$(PREFIX) --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
-	    --enable-nightly=no --disable-debug
+	    --enable-nightly=no \
+	    --enable-frame --enable-metaio \
+	    --disable-debug
 
 build: build-stamp
 
@@ -44,7 +46,6 @@ build-stamp:  config.status
 
 	# Add here commands to compile the package.
 	$(MAKE)
-	#docbook-to-man debian/lalapps.sgml > lalapps.1
 
 	touch $@
 
