@@ -18,7 +18,7 @@ properties_url = "http://ldas-jobs.ligo.caltech.edu/~bdaudert/properties.bundle"
 
 class PegasusTransformationCatalog(list):
     def write_tc_data(self, file_obj):
-        fileobj.write("\n".join(map(str, self)))
+        file_obj.write("\n".join(map(str, self)) + "\n")
 
 class PegasusTransformation(object):
     __slots__ = ["siteID", "LogicalTX", "PhysicalTX", "Type", "SystemInfo",
@@ -76,7 +76,8 @@ if opts.properties_file is None:
 
 # create tc.data if necessary
 if opts.ini_file:
-    cp = ConfigParse.ConfigParser()
+    if os.path.isfile("tc.data"): raise ValueError, "tc.data already exists"
+    cp = ConfigParser.ConfigParser()
     cp.read(opts.ini_file)
     
     catalog = PegasusTransformationCatalog()
@@ -89,6 +90,7 @@ if opts.ini_file:
         tx.SystemInfo = "INTEL32::LINUX"
         tx.Profiles = ""  # CHECKME
         catalog.append(tx)
+    catalog.write_tc_data(open("tc.data", "w"))
 
 #
 # run Pegasus stuff
