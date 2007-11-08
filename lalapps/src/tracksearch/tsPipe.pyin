@@ -104,7 +104,7 @@ if (injectFileFlag == True):
 dataBlockSize=int(float(str.strip(cp.get('layerconfig','layerTopBlockSize'))))
 
 #Convert the segment list to smaller blocks
-reformatSegList=tracksearch.tracksearchConvertSegList(segmentList,dataBlockSize)
+reformatSegList=tracksearch.tracksearchConvertSegList(segmentList,dataBlockSize,cp)
 #Setup logfile mask
 logFilePath=cp.get('filelayout','logpath')
 logFileMask=logFilePath+'/logFile_'

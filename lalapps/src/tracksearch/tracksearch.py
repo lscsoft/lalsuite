@@ -57,7 +57,7 @@ def buildDir(dirpath):
             sys.stderr.write('File :'+str(pathBlock)+'\n')
             os.abort()
         if not os.path.isdir(pathBlock):
-           sys.stdout.write('Making path:'+str(pathBlock)+'\n')
+           #sys.stdout.write('Making path:'+str(pathBlock)+'\n')
            try:
                os.mkdir(pathBlock)
            except: pass
@@ -117,18 +117,18 @@ def determineDataPadding(cp):
     Method that uses the pipeline config file to determine how much
     extra data that should be sent to a node to accomplish an analysis
     when there is a nonzero bin_buffer flag in the configuration
-    file. This method returns a time in integer seconds closest to
+    file. This method returns a time in integer 'ceiling'ed seconds  to
     amount of data need for the padding.
     """
     thePad=0
     if cp.has_option('tracksearchtime','bin_buffer'):
         #We need to determine the padding needed in seconds
-        timeBins=cp.get('tracksearchtime','bin_buffer')
-        mapTime=float(self.cp.get('layerconfig','layer1TimeScale'))
-        mapBins=int(self.cp.get('tracksearchtime','number_of_time_bins'))
-        binDuration=mapTime/mapBins
-        #Force pad to be at least 1/4 second long
-        thePad=(binDuration*(timeBins))+0.25
+        timeBins=int(cp.get('tracksearchtime','bin_buffer'))
+        mapTime=float(cp.get('layerconfig','layer1TimeScale'))
+        mapBins=int(cp.get('tracksearchtime','number_of_time_bins'))
+        binDuration=float(mapTime/mapBins)
+        #Force pad to be at least 1 second long
+        thePad=math.ceil((binDuration*(timeBins)))
         return float(thePad)
     else:
         return float(0)
@@ -281,13 +281,15 @@ class tracksearchConvertSegList:
     from data in the original segments file.  It is this file from where we
     construct an analysis DAG for each line item.
     """
-    def __init__(self,segmentFileName,newDuration):
+    def __init__(self,segmentFileName,newDuration,configOpts):
         self.origSegObject=pipeline.ScienceData()
         self.newSegObject=pipeline.ScienceData()
         self.newSegFilename=segmentFileName+'.revised'
         self.segFilename=segmentFileName
         self.duration=newDuration
-
+        self.cp=configOpts
+    #End __init__()
+    
     def writeSegList(self):
         #Read segents from file
         try:
@@ -323,14 +325,16 @@ class tracksearchConvertSegList:
         newHeading.append('# We drop sections were there is not enough of original data\n')
         newHeading.append('# This file drawn from '+self.segFilename+'\n')
         newHeading.append('# This file should be associated with appropriate INI file\n')
+        if determineDataPadding(self.cp) > 0:
+            newHeading.append('#This file is to be used with a config file asking for data padding of '+str(determineDataPadding(self.cp))+'\n')
         output_fp=open(self.newSegFilename,'w')
         for newHeadline in newHeading:
             output_fp.write(newHeadline)
         #Write redivided list to file
         index=0
-        dataPad=determineDataPadding(self.cp)
+            
         for bigChunks in self.origSegObject:
-            bigChunks.make_chunks(self.duration+(2*dataPad),2*dataPad)
+            bigChunks.make_chunks(self.duration)
             for newChunk in bigChunks:
                 index+=1
                 label="%d %d %d %d\n"%(index,newChunk.start(),newChunk.end(),newChunk.end()-newChunk.start())
@@ -973,14 +977,14 @@ class tracksearch:
         #with proper padding data
         padsize=determineDataPadding(self.cp)
         #Create the chunk list that we will makeing data find jobs for
-        #If pads exists also make sure to overlap by them to avoid
-        #losing any possible results
-        self.sciSeg.make_chunks((setSize*mapTime)+(2*padsize),2*padsize)
+        #If padding is requested implicity assume the data is available
+        self.sciSeg.make_chunks((setSize*mapTime))
         if ((self.sciSeg.dur()>=self.sciSeg.unused()) and (self.sciSeg.__len__() <= 1)):
             sys.stderr.write("\n")
             sys.stderr.write("WARNING: Set Size and Map Time(s) seem inconsistent!\n")
             sys.stderr.write("Set Size :"+str(setSize)+"\n")
             sys.stderr.write("Map Time :"+str(mapTime)+"\n")
+            sys.stderr.write("Pad Size :"+str(padsize)+"\n")
             sys.stderr.write("Pipeline may be incorrectly constructed! Check your input options.\n")
             sys.stderr.write("\n")
         #Setup time marker for entire run
@@ -991,6 +995,9 @@ class tracksearch:
         #This path is relative to the jobs initialDir arguments!
         dataFindInitialDir=determineLayerPath(self.cp,self.blockID,layerID,self.currentchannel)
         dataFindLogPath=os.path.normpath(determineBlockPath(self.cp,self.blockID)+'/logs/')
+        #Build the directories if they don't exist
+        buildDir(dataFindLogPath)
+        buildDir(dataFindInitialDir)
         df_job = pipeline.LSCDataFindJob(dataFindInitialDir,dataFindLogPath,self.cp)
         #Setup the jobs after queries to LSCdataFind as equal children
         block_id=self.blockID
@@ -1035,8 +1042,11 @@ class tracksearch:
             sys.stdout.write("The input options must be WRONG!\n")
         for chunk in self.sciSeg:
             df_node=pipeline.LSCDataFindNode(df_job)
-            df_node.set_start(chunk.start())
-            df_node.set_end(chunk.end())
+            df_node.set_start(chunk.start()-padsize)
+            df_node.set_end(chunk.end()+padsize)
+            #Set the node job time markers from chunk! This adjustment must
+            #reflect any buffering that might be specified on the command line.
+            bufferOffset=chunk.start()+padsize
             df_node.set_observatory(ifo[0])
             cacheName='timeLayerCache-'+str(df_node.get_observatory())+'-'+str(df_node.get_start())+'-'+str(df_node.get_end())+'.cache'
             tracksearchTime_node=tracksearchTimeNode(tracksearchTime_job)
@@ -1054,8 +1064,9 @@ class tracksearch:
                 tracksearchTime_node.add_var_opt('cachefile',outputFileList[0])
             #Consider using Condor file transfer mechanism to
             #transfer the frame cache file also.
-            #Set the node job time markers from chunk!
-            tracksearchTime_node.add_var_opt('gpsstart_seconds',chunk.start())
+            #Originally the following was uncommented.
+            #bufferOffset=chunk.start()+determineDataPadding(self.cp)
+            tracksearchTime_node.add_var_opt('gpsstart_seconds',bufferOffset)
             self.dag.add_node(tracksearchTime_node)
             prevLayerJobList.append(tracksearchTime_node)
         return prevLayerJobList
