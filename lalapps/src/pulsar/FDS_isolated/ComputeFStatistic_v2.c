@@ -141,74 +141,88 @@ typedef struct {
 } ConfigVariables;
 
 
+/* ----- User-variables: can be set from config-file or command-line */
+typedef struct {
+  INT4 Dterms;			/**< number of terms in LALDemod Dirichlet kernel is Dterms+1 */
+  CHAR *IFO;			/**< IFO name: only required if using v1 SFTs */
+  BOOLEAN SignalOnly;		/**< FALSE: estimate noise-floor from data, TRUE: assume Sh=1 */
+  BOOLEAN UseNoiseWeights;	/**< use SFT-specific noise-weights for each segment in Fstat-computation */
+
+  REAL8 Freq;			/**< start-frequency of search */
+  REAL8 FreqBand;		/**< Frequency-band to search over */
+  REAL8 dFreq;			/**< user-specifyable Frequency stepsize */
+
+  REAL8 Alpha;			/**< equatorial right-ascension in rad */
+  REAL8 dAlpha;
+  REAL8 AlphaBand;
+
+  REAL8 Delta;			/**< equatorial declination in rad */
+  REAL8 dDelta;
+  REAL8 DeltaBand;
+
+  REAL8 f1dot;			/**< 1st spindown dFreq/dt */
+  REAL8 df1dot;
+  REAL8 f1dotBand;
+
+  REAL8 f2dot;			/**< 2nd spindown d^2Freq/dt^2 */
+  REAL8 df2dot;
+  REAL8 f2dotBand;
+
+  REAL8 f3dot;			/**< 3rd spindown d^3Freq/dt^3 */
+  REAL8 df3dot;
+  REAL8 f3dotBand;
+
+  /* --- */
+  REAL8 TwoFthreshold;		/**< output threshold on 2F */
+  CHAR *ephemDir;		/**< directory to look for ephemeris files */
+  CHAR *ephemYear;		/**< date-range string on ephemeris-files to use */
+
+  INT4  gridType;		/**< type of template grid in parameter space */
+  INT4  metricType;		/**< type of metric to use in metric template grids */
+  BOOLEAN projectMetric;	/**< should we use frequency-projected metric? */
+  REAL8 metricMismatch;		/**< maximal *nominal* metric mismatch *per* dimension */
+  CHAR *skyRegion;		/**< list of skypositions defining a search-polygon */
+  CHAR *DataFiles;		/**< glob-pattern for SFT data-files to use */
+
+  BOOLEAN help;			/**< output help-string */
+  CHAR *outputLogfile;		/**< write a log-file */
+  CHAR *outputFstat;		/**< filename to output Fstatistic in */
+  CHAR *outputLoudest;		/**< filename for loudest F-candidate plus parameter estimation */
+
+  INT4 NumCandidatesToKeep;	/**< maximal number of toplist candidates to output */
+  INT4 clusterOnScanline;	/**< number of points on "scanline" to use for 1-D local maxima finding */
+
+  CHAR *gridFile;		/**< read template grid from this file */
+  REAL8 dopplermax;		/**< maximal possible doppler-effect */
+
+  INT4 RngMedWindow;		/**< running-median window for noise floor estimation */
+  REAL8 refTime;		/**< reference-time for definition of pulsar-parameters [GPS] */
+
+  REAL8 internalRefTime;	/**< which reference time to use internally for template-grid */
+  INT4 SSBprecision;		/**< full relativistic timing or Newtonian */
+
+  INT4 minStartTime;		/**< earliest start-time to use data from */
+  INT4 maxEndTime;		/**< latest end-time to use data from */
+  CHAR *workingDir;		/**< directory to use for output files */
+  REAL8 timerCount;		/**< output progress-meter every <timerCount> templates */
+
+  INT4 upsampleSFTs;		/**< use SFT-upsampling by this factor */
+} UserInput_t;
+
 /*---------- Global variables ----------*/
 extern int vrbflg;		/**< defined in lalapps.c */
 
-/* ----- User-variables: can be set from config-file or command-line */
-INT4 uvar_Dterms;
-CHAR *uvar_IFO;
-BOOLEAN uvar_SignalOnly;
-BOOLEAN uvar_UseNoiseWeights;
-REAL8 uvar_Freq;
-REAL8 uvar_FreqBand;
-REAL8 uvar_dFreq;
-REAL8 uvar_Alpha;
-REAL8 uvar_dAlpha;
-REAL8 uvar_AlphaBand;
-REAL8 uvar_Delta;
-REAL8 uvar_dDelta;
-REAL8 uvar_DeltaBand;
-/* 1st spindown */
-REAL8 uvar_f1dot;
-REAL8 uvar_df1dot;
-REAL8 uvar_f1dotBand;
-/* 2nd spindown */
-REAL8 uvar_f2dot;
-REAL8 uvar_df2dot;
-REAL8 uvar_f2dotBand;
-/* 3rd spindown */
-REAL8 uvar_f3dot;
-REAL8 uvar_df3dot;
-REAL8 uvar_f3dotBand;
-/* --- */
-REAL8 uvar_TwoFthreshold;
-CHAR *uvar_ephemDir;
-CHAR *uvar_ephemYear;
-INT4  uvar_gridType;
-INT4  uvar_metricType;
-BOOLEAN uvar_projectMetric;
-REAL8 uvar_metricMismatch;
-CHAR *uvar_skyRegion;
-CHAR *uvar_DataFiles;
-BOOLEAN uvar_help;
-CHAR *uvar_outputLogfile;
-CHAR *uvar_outputFstat;
-CHAR *uvar_outputLoudest;
-
-INT4 uvar_NumCandidatesToKeep;
-INT4 uvar_clusterOnScanline;
-
-CHAR *uvar_gridFile;
-REAL8 uvar_dopplermax;
-INT4 uvar_RngMedWindow;
-REAL8 uvar_refTime;
-REAL8 uvar_internalRefTime;
-INT4 uvar_SSBprecision;
-
-INT4 uvar_minStartTime;
-INT4 uvar_maxEndTime;
-CHAR *uvar_workingDir;
-REAL8 uvar_timerCount;
-INT4 uvar_upsampleSFTs;
+/* empty initializers */
+static UserInput_t empty_UserInput;
 
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
-void initUserVars (LALStatus *);
-void InitFStat ( LALStatus *, ConfigVariables *cfg );
+void initUserVars (LALStatus *, UserInput_t *uvar);
+void InitFStat ( LALStatus *, ConfigVariables *cfg, const UserInput_t *uvar );
 void Freemem(LALStatus *,  ConfigVariables *cfg);
 
 void WriteFStatLog (LALStatus *, CHAR *argv[], const CHAR *log_fname);
-void checkUserInputConsistency (LALStatus *);
+void checkUserInputConsistency (LALStatus *, const UserInput_t *uvar);
 int outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSeries *detStates );
 void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch, BOOLEAN isLISA);
 void getUnitWeights ( LALStatus *, MultiNoiseWeights **multiWeights, const MultiSFTVector *multiSFTs );
@@ -236,12 +250,12 @@ static const FstatCandidate empty_FstatCandidate;
 /* Function definitions start here */
 /*----------------------------------------------------------------------*/
 
-/** 
+/**
  * MAIN function of ComputeFStatistic code.
  * Calculate the F-statistic over a given portion of the parameter-space
  * and write a list of 'candidates' into a file(default: 'Fstats').
  */
-int main(int argc,char *argv[]) 
+int main(int argc,char *argv[])
 {
   LALStatus status = blank_status;	/* initialize status */
 
@@ -254,52 +268,53 @@ int main(int argc,char *argv[])
   PulsarDopplerParams dopplerpos = empty_PulsarDopplerParams;		/* current search-parameters */
   FstatCandidate loudestFCand = empty_FstatCandidate, thisFCand = empty_FstatCandidate;
 
+  UserInput_t uvar = empty_UserInput;
   ConfigVariables GV = empty_ConfigVariables;		/**< global container for various derived configuration settings */
 
-  lalDebugLevel = 0;  
+  lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
-  
+
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
 
   /* register all user-variable */
   LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
-  LAL_CALL (initUserVars(&status), &status); 	
+  LAL_CALL (initUserVars(&status, &uvar), &status); 	
 
   /* do ALL cmdline and cfgfile handling */
   LAL_CALL (LALUserVarReadAllInput(&status, argc,argv), &status);	
 
-  if (uvar_help)	/* if help was requested, we're done here */
+  if (uvar.help)	/* if help was requested, we're done here */
     exit (0);
 
   /* set log-level */
   LogSetLevel ( lalDebugLevel );
 
   /* keep a log-file recording all relevant parameters of this search-run */
-  if ( uvar_outputLogfile ) {
-    LAL_CALL (WriteFStatLog ( &status, argv, uvar_outputLogfile ), &status );
+  if ( uvar.outputLogfile ) {
+    LAL_CALL (WriteFStatLog ( &status, argv, uvar.outputLogfile ), &status );
   }
 
   /* do some sanity checks on the user-input before we proceed */
-  LAL_CALL ( checkUserInputConsistency(&status), &status);
+  LAL_CALL ( checkUserInputConsistency(&status, &uvar), &status);
 
   /* Initialization the common variables of the code, */
   /* like ephemeries data and template grids: */
-  LAL_CALL ( InitFStat(&status, &GV), &status);
+  LAL_CALL ( InitFStat(&status, &GV, &uvar), &status);
 
   /* if a complete output of the F-statistic file was requested,
    * we open and prepare the output-file here */
-  if (uvar_outputFstat)
+  if (uvar.outputFstat)
     {
-      if ( (fpFstat = fopen (uvar_outputFstat, "wb")) == NULL)
+      if ( (fpFstat = fopen (uvar.outputFstat, "wb")) == NULL)
 	{
-	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
+	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar.outputFstat);
 	  return (COMPUTEFSTATISTIC_ESYS);
 	}
       
       fprintf (fpFstat, "%s", GV.logstring );
     } /* if outputFstat */
-  
+
   /* count number of templates */
   numTemplates = XLALNumDopplerTemplates ( GV.scanState );
 
@@ -319,7 +334,7 @@ int main(int argc,char *argv[])
 
       /* Progress meter */
       templateCounter += 1.0;
-      if ( lalDebugLevel && ( ++tickCounter > uvar_timerCount) )
+      if ( lalDebugLevel && ( ++tickCounter > uvar.timerCount) )
 	{
 	  REAL8 diffSec = time(NULL) - clock0 ;  /* seconds since start of loop*/
 	  REAL8 taup = diffSec / templateCounter ;
@@ -354,7 +369,7 @@ int main(int argc,char *argv[])
        * the single-sided PSD Sh: the SignalOnly case is characterized by
        * setting Sh->1, so we need to divide Fa,Fb by sqrt(0.5*Tsft) and F by (0.5*Tsft)
        */
-      if ( uvar_SignalOnly )
+      if ( uvar.SignalOnly )
 	{
 	  REAL8 norm = 1.0 / sqrt( 0.5 * GV.Tsft );
 	  Fstat.Fa.re *= norm;  Fstat.Fa.im *= norm;
@@ -370,7 +385,7 @@ int main(int argc,char *argv[])
 
       /* two types of threshold: fixed (TwoFThreshold) and dynamic (NumCandidatesToKeep) */
       if ( XLALCenterIsLocalMax ( GV.scanlineWindow ) 					/* must be 1D local maximum */
-	   && (2.0 * GV.scanlineWindow->center->Fstat.F >= uvar_TwoFthreshold) )	/* fixed threshold */
+	   && (2.0 * GV.scanlineWindow->center->Fstat.F >= uvar.TwoFthreshold) )	/* fixed threshold */
 	{
 	  FstatCandidate *writeCand = GV.scanlineWindow->center;
 
@@ -433,7 +448,7 @@ int main(int argc,char *argv[])
     }
 
   /* ----- estimate amplitude-parameters for the loudest canidate and output into separate file ----- */
-  if ( uvar_outputLoudest )
+  if ( uvar.outputLoudest )
     {
       FILE *fpLoudest;
       PulsarCandidate pulsarParams = empty_PulsarCandidate;
@@ -442,9 +457,9 @@ int main(int argc,char *argv[])
       LAL_CALL(LALEstimatePulsarAmplitudeParams (&status, &pulsarParams, &loudestFCand.Fstat, &GV.searchRegion.refTime, &loudestFCand.Mmunu ), 
 	       &status );
 
-      if ( (fpLoudest = fopen (uvar_outputLoudest, "wb")) == NULL)
+      if ( (fpLoudest = fopen (uvar.outputLoudest, "wb")) == NULL)
 	{
-	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputLoudest);
+	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar.outputLoudest);
 	  return COMPUTEFSTATISTIC_ESYS;
 	}
 
@@ -488,135 +503,134 @@ int main(int argc,char *argv[])
  * Here we set defaults for some user-variables and register them with the UserInput module.
  */
 void
-initUserVars (LALStatus *status)
+initUserVars (LALStatus *status, UserInput_t *uvar)
 {
   INITSTATUS( status, "initUserVars", rcsid );
   ATTATCHSTATUSPTR (status);
 
   /* set a few defaults */
-  uvar_upsampleSFTs = 1;
-  uvar_Dterms 	= 16;
-  uvar_FreqBand = 0.0;
-  uvar_Alpha 	= 0.0;
-  uvar_Delta 	= 0.0;
-  uvar_AlphaBand = 0;
-  uvar_DeltaBand = 0;
-  uvar_skyRegion = NULL;
-
-  uvar_ephemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
-  strcpy (uvar_ephemYear, EPHEM_YEARS);
+  uvar->upsampleSFTs = 1;
+  uvar->Dterms 	= 16;
+  uvar->FreqBand = 0.0;
+  uvar->Alpha 	= 0.0;
+  uvar->Delta 	= 0.0;
+  uvar->AlphaBand = 0;
+  uvar->DeltaBand = 0;
+  uvar->skyRegion = NULL;
+  uvar->ephemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
+  strcpy (uvar->ephemYear, EPHEM_YEARS);
 
 #define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
-  uvar_ephemDir = LALCalloc (1, strlen(DEFAULT_EPHEMDIR)+1);
-  strcpy (uvar_ephemDir, DEFAULT_EPHEMDIR);
+  uvar->ephemDir = LALCalloc (1, strlen(DEFAULT_EPHEMDIR)+1);
+  strcpy (uvar->ephemDir, DEFAULT_EPHEMDIR);
 
-  uvar_SignalOnly = FALSE;
-  uvar_UseNoiseWeights = TRUE;
+  uvar->SignalOnly = FALSE;
+  uvar->UseNoiseWeights = TRUE;
 
-  uvar_f1dot     = 0.0;
-  uvar_f1dotBand = 0.0;
+  uvar->f1dot     = 0.0;
+  uvar->f1dotBand = 0.0;
 
   /* default step-sizes for GRID_FLAT */
-  uvar_dAlpha 	= 0.001;
-  uvar_dDelta 	= 0.001;
-  uvar_dFreq 	 = 0.0;		/* zero indicates 'not set by user==> i.e. use canonical default */
-  uvar_df1dot    = 0.0;
-  uvar_df2dot    = 0.0;
-  uvar_df3dot    = 0.0;
+  uvar->dAlpha 	= 0.001;
+  uvar->dDelta 	= 0.001;
+  uvar->dFreq 	 = 0.0;		/* zero indicates 'not set by user==> i.e. use canonical default */
+  uvar->df1dot    = 0.0;
+  uvar->df2dot    = 0.0;
+  uvar->df3dot    = 0.0;
 
-  
-  uvar_TwoFthreshold = 10.0;
-  uvar_NumCandidatesToKeep = 0;
-  uvar_clusterOnScanline = 0;
+  /* define default orbital semi-major axis */
+  uvar->TwoFthreshold = 10.0;
+  uvar->NumCandidatesToKeep = 0;
+  uvar->clusterOnScanline = 0;
 
-  uvar_metricType =  LAL_PMETRIC_NONE;
-  uvar_projectMetric = TRUE;
-  uvar_gridType = GRID_FLAT;
+  uvar->metricType =  LAL_PMETRIC_NONE;
+  uvar->projectMetric = TRUE;
+  uvar->gridType = GRID_FLAT;
 
-  uvar_metricMismatch = 0.02;
+  uvar->metricMismatch = 0.02;
 
-  uvar_help = FALSE;
-  uvar_outputLogfile = NULL;
+  uvar->help = FALSE;
+  uvar->outputLogfile = NULL;
 
-  uvar_outputFstat = NULL;
+  uvar->outputFstat = NULL;
 
-  uvar_gridFile = NULL;
+  uvar->gridFile = NULL;
 
-  uvar_dopplermax =  1.05e-4;
-  uvar_RngMedWindow = 50;	/* for running-median */
+  uvar->dopplermax =  1.05e-4;
+  uvar->RngMedWindow = 50;	/* for running-median */
 
-  uvar_SSBprecision = SSBPREC_RELATIVISTIC;
+  uvar->SSBprecision = SSBPREC_RELATIVISTIC;
 
-  uvar_minStartTime = 0;
-  uvar_maxEndTime = LAL_INT4_MAX;
+  uvar->minStartTime = 0;
+  uvar->maxEndTime = LAL_INT4_MAX;
 
-  uvar_workingDir = (CHAR*)LALMalloc(512);
-  strcpy(uvar_workingDir, ".");
+  uvar->workingDir = (CHAR*)LALMalloc(512);
+  strcpy(uvar->workingDir, ".");
 
-  uvar_timerCount = 1e5;	/* output a timer/progress count every N templates */
+  uvar->timerCount = 1e5;	/* output a timer/progress count every N templates */
 
   /* ---------- register all user-variables ---------- */
-  LALregBOOLUserVar(status, 	help, 		'h', UVAR_HELP,     "Print this message"); 
+  LALregBOOLUserStruct(status, 	help, 		'h', UVAR_HELP,     "Print this message"); 
 
-  LALregREALUserVar(status, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
-  LALregREALUserVar(status, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
-  LALregREALUserVar(status, 	Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz");
-  LALregREALUserVar(status, 	f1dot, 		's', UVAR_OPTIONAL, "First spindown parameter  dFreq/dt");
-  LALregREALUserVar(status, 	f2dot, 		 0 , UVAR_OPTIONAL, "Second spindown parameter d^2Freq/dt^2");
-  LALregREALUserVar(status, 	f3dot, 		 0 , UVAR_OPTIONAL, "Third spindown parameter  d^3Freq/dt^2");
+  LALregREALUserStruct(status, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
+  LALregREALUserStruct(status, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
+  LALregREALUserStruct(status, 	Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz");
+  LALregREALUserStruct(status, 	f1dot, 		's', UVAR_OPTIONAL, "First spindown parameter  dFreq/dt");
+  LALregREALUserStruct(status, 	f2dot, 		 0 , UVAR_OPTIONAL, "Second spindown parameter d^2Freq/dt^2");
+  LALregREALUserStruct(status, 	f3dot, 		 0 , UVAR_OPTIONAL, "Third spindown parameter  d^3Freq/dt^2");
 
-  LALregREALUserVar(status, 	AlphaBand, 	'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
-  LALregREALUserVar(status, 	DeltaBand, 	'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
-  LALregREALUserVar(status, 	FreqBand, 	'b', UVAR_OPTIONAL, "Search frequency band in Hz");
-  LALregREALUserVar(status, 	f1dotBand, 	'm', UVAR_OPTIONAL, "Search-band for f1dot");
-  LALregREALUserVar(status, 	f2dotBand, 	 0 , UVAR_OPTIONAL, "Search-band for f2dot");
-  LALregREALUserVar(status, 	f3dotBand, 	 0 , UVAR_OPTIONAL, "Search-band for f3dot");
+  LALregREALUserStruct(status, 	AlphaBand, 	'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
+  LALregREALUserStruct(status, 	DeltaBand, 	'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
+  LALregREALUserStruct(status, 	FreqBand, 	'b', UVAR_OPTIONAL, "Search frequency band in Hz");
+  LALregREALUserStruct(status, 	f1dotBand, 	'm', UVAR_OPTIONAL, "Search-band for f1dot");
+  LALregREALUserStruct(status, 	f2dotBand, 	 0 , UVAR_OPTIONAL, "Search-band for f2dot");
+  LALregREALUserStruct(status, 	f3dotBand, 	 0 , UVAR_OPTIONAL, "Search-band for f3dot");
 
-  LALregREALUserVar(status, 	dAlpha, 	'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
-  LALregREALUserVar(status, 	dDelta, 	'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
-  LALregREALUserVar(status,     dFreq,          'r', UVAR_OPTIONAL, "Frequency resolution in Hz [Default: 1/(2T)]");
-  LALregREALUserVar(status, 	df1dot, 	'e', UVAR_OPTIONAL, "Stepsize for f1dot [Default: 1/(2T^2)");
-  LALregREALUserVar(status, 	df2dot, 	 0 , UVAR_OPTIONAL, "Stepsize for f2dot [Default: 1/(2T^3)");
-  LALregREALUserVar(status, 	df3dot, 	 0 , UVAR_OPTIONAL, "Stepsize for f3dot [Default: 1/(2T^4)");
+  LALregREALUserStruct(status, 	dAlpha, 	'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
+  LALregREALUserStruct(status, 	dDelta, 	'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
+  LALregREALUserStruct(status,  dFreq,          'r', UVAR_OPTIONAL, "Frequency resolution in Hz [Default: 1/(2T)]");
+  LALregREALUserStruct(status, 	df1dot, 	'e', UVAR_OPTIONAL, "Stepsize for f1dot [Default: 1/(2T^2)");
+  LALregREALUserStruct(status, 	df2dot, 	 0 , UVAR_OPTIONAL, "Stepsize for f2dot [Default: 1/(2T^3)");
+  LALregREALUserStruct(status, 	df3dot, 	 0 , UVAR_OPTIONAL, "Stepsize for f3dot [Default: 1/(2T^4)");
 
-  LALregSTRINGUserVar(status,	skyRegion, 	'R', UVAR_OPTIONAL, "ALTERNATIVE: Specify sky-region by polygon (or use 'allsky')");
-  LALregSTRINGUserVar(status,	DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (multi-IFO) input SFT-files"); 
-  LALregSTRINGUserVar(status, 	IFO, 		'I', UVAR_OPTIONAL, "Detector: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
-  LALregSTRINGUserVar(status,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
-  LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
-  LALregBOOLUserVar(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
-  LALregBOOLUserVar(status, 	UseNoiseWeights,'W', UVAR_OPTIONAL, "Use SFT-specific noise weights");
+  LALregSTRINGUserStruct(status,skyRegion, 	'R', UVAR_OPTIONAL, "ALTERNATIVE: Specify sky-region by polygon (or use 'allsky')");
+  LALregSTRINGUserStruct(status,DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (multi-IFO) input SFT-files"); 
+  LALregSTRINGUserStruct(status,IFO, 		'I', UVAR_OPTIONAL, "Detector: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
+  LALregSTRINGUserStruct(status,ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
+  LALregSTRINGUserStruct(status,ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
+  LALregBOOLUserStruct(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
+  LALregBOOLUserStruct(status, 	UseNoiseWeights,'W', UVAR_OPTIONAL, "Use SFT-specific noise weights");
 
-  LALregREALUserVar(status, 	TwoFthreshold,	'F', UVAR_OPTIONAL, "Set the threshold for selection of 2F");
-  LALregINTUserVar(status, 	gridType,	 0 , UVAR_OPTIONAL, "Grid: 0=flat, 1=isotropic, 2=metric, 3=skygrid-file, 6=grid-file, 7=An*lattice");
-  LALregINTUserVar(status, 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
-  LALregREALUserVar(status, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal allowed mismatch for metric tiling");
-  LALregSTRINGUserVar(status,	outputLogfile,	 0,  UVAR_OPTIONAL, "Name of log-file identifying the code + search performed");
-  LALregSTRINGUserVar(status,	gridFile,	 0,  UVAR_OPTIONAL, "Load grid from this file: sky-grid or full-grid depending on --gridType.");
-  LALregREALUserVar(status,	refTime,	 0,  UVAR_OPTIONAL, "SSB reference time for pulsar-paramters [Default: startTime]");
-  LALregREALUserVar(status, 	dopplermax, 	'q', UVAR_OPTIONAL, "Maximum doppler shift expected");  
+  LALregREALUserStruct(status, 	TwoFthreshold,	'F', UVAR_OPTIONAL, "Set the threshold for selection of 2F");
+  LALregINTUserStruct(status, 	gridType,	 0 , UVAR_OPTIONAL, "Grid: 0=flat, 1=isotropic, 2=metric, 3=skygrid-file, 6=grid-file, 7=An*lattice");
+  LALregINTUserStruct(status, 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
+  LALregREALUserStruct(status, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal allowed mismatch for metric tiling");
+  LALregSTRINGUserStruct(status,outputLogfile,	 0,  UVAR_OPTIONAL, "Name of log-file identifying the code + search performed");
+  LALregSTRINGUserStruct(status,gridFile,	 0,  UVAR_OPTIONAL, "Load grid from this file: sky-grid or full-grid depending on --gridType.");
+  LALregREALUserStruct(status,	refTime,	 0,  UVAR_OPTIONAL, "SSB reference time for pulsar-parameters [Default: startTime]");
+  LALregREALUserStruct(status, 	dopplermax, 	'q', UVAR_OPTIONAL, "Maximum doppler shift expected");  
 
-  LALregSTRINGUserVar(status,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
-  LALregSTRINGUserVar(status,   outputLoudest,	 0,  UVAR_OPTIONAL, "Loudest F-statistic candidate + estimated MLE amplitudes");
+  LALregSTRINGUserStruct(status,outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
+  LALregSTRINGUserStruct(status,outputLoudest,	 0,  UVAR_OPTIONAL, "Loudest F-statistic candidate + estimated MLE amplitudes");
 
-  LALregINTUserVar(status,      NumCandidatesToKeep,0, UVAR_OPTIONAL, "Number of Fstat 'candidates' to keep. (0 = All)");
-  LALregINTUserVar(status,      clusterOnScanline, 0, UVAR_OPTIONAL, "Neighbors on each side for finding 1D local maxima on scanline");
+  LALregINTUserStruct(status,   NumCandidatesToKeep,0, UVAR_OPTIONAL, "Number of Fstat 'candidates' to keep. (0 = All)");
+  LALregINTUserStruct(status,   clusterOnScanline, 0, UVAR_OPTIONAL, "Neighbors on each side for finding 1D local maxima on scanline");
 
 
-  LALregINTUserVar ( status, 	minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest SFT-timestamp to include");
-  LALregINTUserVar ( status, 	maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
+  LALregINTUserStruct ( status, minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest SFT-timestamp to include");
+  LALregINTUserStruct ( status, maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
 
   /* ----- more experimental/expert options ----- */
-  LALregINTUserVar (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
-  LALregINTUserVar(status, 	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
-  LALregINTUserVar(status,	Dterms,		't', UVAR_DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
+  LALregINTUserStruct (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
+  LALregINTUserStruct(status, 	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
+  LALregINTUserStruct(status,	Dterms,		't', UVAR_DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
 
-  LALregSTRINGUserVar(status,   workingDir,     'w', UVAR_DEVELOPER, "Directory to use as work directory.");
-  LALregREALUserVar(status, 	timerCount, 	 0,  UVAR_DEVELOPER, "N: Output progress/timer info every N templates");  
-  LALregREALUserVar(status,	internalRefTime, 0,  UVAR_DEVELOPER, "internal reference time to use for Fstat-computation [Default: startTime]");
+  LALregSTRINGUserStruct(status,workingDir,     'w', UVAR_DEVELOPER, "Directory to use as work directory.");
+  LALregREALUserStruct(status, 	timerCount, 	 0,  UVAR_DEVELOPER, "N: Output progress/timer info every N templates");  
+  LALregREALUserStruct(status,	internalRefTime, 0,  UVAR_DEVELOPER, "internal reference time to use for Fstat-computation [Default: startTime]");
 
-  LALregINTUserVar(status,	upsampleSFTs,	 0,  UVAR_DEVELOPER, "(integer) Factor to up-sample SFTs by");
-  LALregBOOLUserVar(status, 	projectMetric, 	 0,  UVAR_DEVELOPER, "Use projected metric on Freq=const subspact");
+  LALregINTUserStruct(status,	upsampleSFTs,	 0,  UVAR_DEVELOPER, "(integer) Factor to up-sample SFTs by");
+  LALregBOOLUserStruct(status, 	projectMetric, 	 0,  UVAR_DEVELOPER, "Use projected metric on Freq=const subspact");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -687,14 +701,14 @@ InitEphemeris (LALStatus * status,
  * NOTE: the logical *order* of things in here is very important, so be careful
  */
 void
-InitFStat ( LALStatus *status, ConfigVariables *cfg )
+InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 {
   REAL8 fCoverMin, fCoverMax;	/* covering frequency-band to read from SFTs */
   SFTCatalog *catalog = NULL;
   SFTConstraints constraints = empty_SFTConstraints;
   LIGOTimeGPS minStartTimeGPS = empty_LIGOTimeGPS;
   LIGOTimeGPS maxEndTimeGPS = empty_LIGOTimeGPS;
-  PulsarSpinRange spinRangeRef = empty_PulsarSpinRange; 
+  PulsarSpinRange spinRangeRef = empty_PulsarSpinRange;
 
   UINT4 numSFTs;
   LIGOTimeGPS startTime, endTime;
@@ -703,25 +717,25 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   ATTATCHSTATUSPTR (status);
 
   /* set the current working directory */
-  if(chdir(uvar_workingDir) != 0)
+  if(chdir(uvar->workingDir) != 0)
     {
-      LogPrintf (LOG_CRITICAL,  "Unable to change directory to workinDir '%s'\n", uvar_workingDir);
+      LogPrintf (LOG_CRITICAL,  "Unable to change directory to workinDir '%s'\n", uvar->workingDir);
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
 
   /* use IFO-contraint if one given by the user */
-  if ( LALUserVarWasSet ( &uvar_IFO ) )
-    if ( (constraints.detector = XLALGetChannelPrefix ( uvar_IFO )) == NULL ) {
+  if ( LALUserVarWasSet ( &uvar->IFO ) )
+    if ( (constraints.detector = XLALGetChannelPrefix ( uvar->IFO )) == NULL ) {
       ABORT ( status,  COMPUTEFSTATISTIC_EINPUT,  COMPUTEFSTATISTIC_MSGEINPUT);
     }
-  minStartTimeGPS.gpsSeconds = uvar_minStartTime;
-  maxEndTimeGPS.gpsSeconds = uvar_maxEndTime;
+  minStartTimeGPS.gpsSeconds = uvar->minStartTime;
+  maxEndTimeGPS.gpsSeconds = uvar->maxEndTime;
   constraints.startTime = &minStartTimeGPS;
   constraints.endTime = &maxEndTimeGPS;
   
   /* get full SFT-catalog of all matching (multi-IFO) SFTs */
   LogPrintf (LOG_DEBUG, "Finding all SFTs to load ... ");
-  TRY ( LALSFTdataFind ( status->statusPtr, &catalog, uvar_DataFiles, &constraints ), status);    
+  TRY ( LALSFTdataFind ( status->statusPtr, &catalog, uvar->DataFiles, &constraints ), status);    
   LogPrintfVerbatim (LOG_DEBUG, "done. (found %d SFTs)\n", catalog->length);
 
   if ( constraints.detector ) 
@@ -729,7 +743,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
 
   if ( !catalog || catalog->length == 0 ) 
     {
-      LALPrintError ("\nSorry, didn't find any matching SFTs with pattern '%s'!\n\n", uvar_DataFiles );
+      LALPrintError ("\nSorry, didn't find any matching SFTs with pattern '%s'!\n\n", uvar->DataFiles );
       ABORT ( status,  COMPUTEFSTATISTIC_EINPUT,  COMPUTEFSTATISTIC_MSGEINPUT);
     }
 
@@ -741,24 +755,25 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   XLALAddFloatToGPS(&endTime, cfg->Tsft);	/* add on Tsft to last SFT start-time */
 
   /* ----- get reference-times (from user if given, use startTime otherwise): ----- */
-  if ( LALUserVarWasSet(&uvar_refTime)) {
-    TRY ( LALFloatToGPS (status->statusPtr, &(cfg->refTime), &uvar_refTime), status);
-  } 
+  if ( LALUserVarWasSet(&uvar->refTime)) 
+    {
+      TRY ( LALFloatToGPS (status->statusPtr, &(cfg->refTime), &uvar->refTime), status);
+    } 
   else
     cfg->refTime = startTime;
 
   { /* ----- prepare spin-range at refTime (in *canonical format*, ie all Bands >= 0) ----- */
-    REAL8 fMin = MYMIN ( uvar_Freq, uvar_Freq + uvar_FreqBand );
-    REAL8 fMax = MYMAX ( uvar_Freq, uvar_Freq + uvar_FreqBand );
+    REAL8 fMin = MYMIN ( uvar->Freq, uvar->Freq + uvar->FreqBand );
+    REAL8 fMax = MYMAX ( uvar->Freq, uvar->Freq + uvar->FreqBand );
 
-    REAL8 f1dotMin = MYMIN ( uvar_f1dot, uvar_f1dot + uvar_f1dotBand );
-    REAL8 f1dotMax = MYMAX ( uvar_f1dot, uvar_f1dot + uvar_f1dotBand );
+    REAL8 f1dotMin = MYMIN ( uvar->f1dot, uvar->f1dot + uvar->f1dotBand );
+    REAL8 f1dotMax = MYMAX ( uvar->f1dot, uvar->f1dot + uvar->f1dotBand );
 
-    REAL8 f2dotMin = MYMIN ( uvar_f2dot, uvar_f2dot + uvar_f2dotBand );
-    REAL8 f2dotMax = MYMAX ( uvar_f2dot, uvar_f2dot + uvar_f2dotBand );
+    REAL8 f2dotMin = MYMIN ( uvar->f2dot, uvar->f2dot + uvar->f2dotBand );
+    REAL8 f2dotMax = MYMAX ( uvar->f2dot, uvar->f2dot + uvar->f2dotBand );
 
-    REAL8 f3dotMin = MYMIN ( uvar_f3dot, uvar_f3dot + uvar_f3dotBand );
-    REAL8 f3dotMax = MYMAX ( uvar_f3dot, uvar_f3dot + uvar_f3dotBand );
+    REAL8 f3dotMin = MYMIN ( uvar->f3dot, uvar->f3dot + uvar->f3dotBand );
+    REAL8 f3dotMax = MYMAX ( uvar->f3dot, uvar->f3dot + uvar->f3dotBand );
     
     spinRangeRef.refTime = cfg->refTime;
     spinRangeRef.fkdot[0] = fMin;
@@ -796,9 +811,9 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   } /* extrapolate spin-range */
 
   {/* ----- load the multi-IFO SFT-vectors ----- */
-    UINT4 wings = MYMAX(uvar_Dterms, uvar_RngMedWindow/2 +1);	/* extra frequency-bins needed for rngmed, and Dterms */
-    REAL8 fMax = (1.0 + uvar_dopplermax) * fCoverMax + wings / cfg->Tsft; /* correct for doppler-shift and wings */
-    REAL8 fMin = (1.0 - uvar_dopplermax) * fCoverMin - wings / cfg->Tsft;
+    UINT4 wings = MYMAX(uvar->Dterms, uvar->RngMedWindow/2 +1);	/* extra frequency-bins needed for rngmed, and Dterms */
+    REAL8 fMax = (1.0 + uvar->dopplermax) * fCoverMax + wings / cfg->Tsft; /* correct for doppler-shift and wings */
+    REAL8 fMin = (1.0 - uvar->dopplermax) * fCoverMin - wings / cfg->Tsft;
     
     LogPrintf (LOG_DEBUG, "Loading SFTs ... ");
     TRY ( LALLoadMultiSFTs ( status->statusPtr, &(cfg->multiSFTs), catalog, fMin, fMax ), status );
@@ -810,8 +825,8 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     BOOLEAN isLISA = FALSE;
 
     cfg->ephemeris = LALCalloc(1, sizeof(EphemerisData));
-    if ( LALUserVarWasSet ( &uvar_ephemDir ) )
-      ephemDir = uvar_ephemDir;
+    if ( LALUserVarWasSet ( &uvar->ephemDir ) )
+      ephemDir = uvar->ephemDir;
     else
       ephemDir = NULL;
 
@@ -819,31 +834,31 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     if ( cfg->multiSFTs->data[0]->data[0].name[0] == 'Z' )
       isLISA = TRUE;
 
-    TRY( InitEphemeris (status->statusPtr, cfg->ephemeris, ephemDir, uvar_ephemYear, startTime, isLISA ), status);
+    TRY( InitEphemeris (status->statusPtr, cfg->ephemeris, ephemDir, uvar->ephemYear, startTime, isLISA ), status);
   }
 
   /* ----- obtain the (multi-IFO) 'detector-state series' for all SFTs ----- */
   TRY ( LALGetMultiDetectorStates ( status->statusPtr, &(cfg->multiDetStates), cfg->multiSFTs, cfg->ephemeris ), status );
 
   /* ----- normalize SFTs and calculate noise-weights ----- */
-  if ( uvar_SignalOnly )
+  if ( uvar->SignalOnly )
       cfg->multiNoiseWeights = NULL;   /* noiseWeights == NULL is equivalent to unit noise-weights in ComputeFstat() */
   else 
     {
       UINT4 X, alpha;
       MultiPSDVector *rngmed = NULL;
       cfg->multiNoiseWeights = NULL; 
-      TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &rngmed, cfg->multiSFTs, uvar_RngMedWindow ), status );
-      TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &(cfg->multiNoiseWeights), rngmed, uvar_RngMedWindow, 0 ), status );
+      TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &rngmed, cfg->multiSFTs, uvar->RngMedWindow ), status );
+      TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &(cfg->multiNoiseWeights), rngmed, uvar->RngMedWindow, 0 ), status );
       TRY ( LALDestroyMultiPSDVector (status->statusPtr, &rngmed ), status );
-      if ( !uvar_UseNoiseWeights )	/* in that case simply set weights to 1.0 */
+      if ( !uvar->UseNoiseWeights )	/* in that case simply set weights to 1.0 */
 	for ( X = 0; X < cfg->multiNoiseWeights->length; X ++ )
 	  for ( alpha = 0; alpha < cfg->multiNoiseWeights->data[X]->length; alpha ++ )
 	    cfg->multiNoiseWeights->data[X]->data[alpha] = 1.0;
     } /* if ! SignalOnly */
 
   /* ----- upsample SFTs ----- */
-  if ( (lalDebugLevel >= 2) && (uvar_upsampleSFTs > 1) )
+  if ( (lalDebugLevel >= 2) && (uvar->upsampleSFTs > 1) )
   {
     UINT4 X, numDet = cfg->multiSFTs->length;
     LogPrintf (LOG_DEBUG, "Writing original SFTs for debugging ... ");
@@ -854,15 +869,15 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
   }
 
-  LogPrintf (LOG_DEBUG, "Upsampling SFTs by factor %d ... ", uvar_upsampleSFTs );
-  TRY ( upsampleMultiSFTVector ( status->statusPtr, cfg->multiSFTs, uvar_upsampleSFTs, 16 ), status );
+  LogPrintf (LOG_DEBUG, "Upsampling SFTs by factor %d ... ", uvar->upsampleSFTs );
+  TRY ( upsampleMultiSFTVector ( status->statusPtr, cfg->multiSFTs, uvar->upsampleSFTs, 16 ), status );
   LogPrintfVerbatim (LOG_DEBUG, "done.\n");
 
-  if ( lalDebugLevel >= 2 && (uvar_upsampleSFTs > 1) )
+  if ( lalDebugLevel >= 2 && (uvar->upsampleSFTs > 1) )
   {
     UINT4 X, numDet = cfg->multiSFTs->length;
     CHAR tag[60];
-    sprintf (tag, "upsampled%02d", uvar_upsampleSFTs );
+    sprintf (tag, "upsampled%02d", uvar->upsampleSFTs );
     LogPrintf (LOG_DEBUG, "Writing upsampled SFTs for debugging ... ");
     for (X=0; X < numDet ; X ++ ) 
       {
@@ -871,28 +886,27 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
   }
 
-
   { /* ----- set up Doppler region (at internalRefTime) to scan ----- */
     LIGOTimeGPS internalRefTime = empty_LIGOTimeGPS;
     PulsarSpinRange spinRangeInt = empty_PulsarSpinRange;
-    BOOLEAN haveAlphaDelta = LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta);
+    BOOLEAN haveAlphaDelta = LALUserVarWasSet(&uvar->Alpha) && LALUserVarWasSet(&uvar->Delta);
 
-    if (uvar_skyRegion)
+    if (uvar->skyRegion)
       {
-	cfg->searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
+	cfg->searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar->skyRegion)+1);
 	if ( cfg->searchRegion.skyRegionString == NULL ) {
 	  ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
 	}
-	strcpy (cfg->searchRegion.skyRegionString, uvar_skyRegion);
+	strcpy (cfg->searchRegion.skyRegionString, uvar->skyRegion);
       }
     else if (haveAlphaDelta)    /* parse this into a sky-region */
       {
 	TRY ( SkySquare2String( status->statusPtr, &(cfg->searchRegion.skyRegionString),
-				uvar_Alpha, uvar_Delta,	uvar_AlphaBand, uvar_DeltaBand), status);
+				uvar->Alpha, uvar->Delta, uvar->AlphaBand, uvar->DeltaBand), status);
       }
 
-    if ( LALUserVarWasSet ( &uvar_internalRefTime ) ) {
-      TRY ( LALFloatToGPS (status->statusPtr, &(internalRefTime), &uvar_internalRefTime), status);
+    if ( LALUserVarWasSet ( &uvar->internalRefTime ) ) {
+      TRY ( LALFloatToGPS (status->statusPtr, &(internalRefTime), &uvar->internalRefTime), status);
     }
     else
       internalRefTime = startTime;
@@ -906,27 +920,27 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   } /* get DopplerRegion */
 
   /* ----- set computational parameters for F-statistic from User-input ----- */
-  cfg->CFparams.Dterms = uvar_Dterms;
-  cfg->CFparams.SSBprec = uvar_SSBprecision;
-  cfg->CFparams.upsampling = 1.0 * uvar_upsampleSFTs; 
+  cfg->CFparams.Dterms = uvar->Dterms;
+  cfg->CFparams.SSBprec = uvar->SSBprecision;
+  cfg->CFparams.upsampling = 1.0 * uvar->upsampleSFTs; 
 
   /* ----- set fixed grid step-sizes from user-input for GRID_FLAT ----- */
-  cfg->stepSizes.Alpha = uvar_dAlpha;
-  cfg->stepSizes.Delta = uvar_dDelta;
-  cfg->stepSizes.fkdot[0] = uvar_dFreq;
-  cfg->stepSizes.fkdot[1] = uvar_df1dot;
-  cfg->stepSizes.fkdot[2] = uvar_df2dot;
-  cfg->stepSizes.fkdot[3] = uvar_df3dot;
+  cfg->stepSizes.Alpha = uvar->dAlpha;
+  cfg->stepSizes.Delta = uvar->dDelta;
+  cfg->stepSizes.fkdot[0] = uvar->dFreq;
+  cfg->stepSizes.fkdot[1] = uvar->df1dot;
+  cfg->stepSizes.fkdot[2] = uvar->df2dot;
+  cfg->stepSizes.fkdot[3] = uvar->df3dot;
   cfg->stepSizes.orbit = NULL;
 
   /* ----- set up toplist if requested ----- */
-  if ( uvar_NumCandidatesToKeep > 0 )
-    if ( create_toplist( &(cfg->FstatToplist), uvar_NumCandidatesToKeep, sizeof(FstatCandidate), compareFstatCandidates) != 0 ) {
+  if ( uvar->NumCandidatesToKeep > 0 )
+    if ( create_toplist( &(cfg->FstatToplist), uvar->NumCandidatesToKeep, sizeof(FstatCandidate), compareFstatCandidates) != 0 ) {
       ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM ); 
     }
 
   /* ----- set up scanline-window if requested for 1D local-maximum clustering on scanline ----- */
-  if ( (cfg->scanlineWindow = XLALCreateScanlineWindow ( uvar_clusterOnScanline )) == NULL ) {
+  if ( (cfg->scanlineWindow = XLALCreateScanlineWindow ( uvar->clusterOnScanline )) == NULL ) {
     ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM ); 
   }
 
@@ -935,11 +949,11 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     DopplerFullScanInit scanInit;			/* init-structure for DopperScanner */
     
     scanInit.searchRegion = cfg->searchRegion;
-    scanInit.gridType = uvar_gridType;
-    scanInit.gridFile = uvar_gridFile;
-    scanInit.metricType = uvar_metricType;
-    scanInit.projectMetric = uvar_projectMetric;
-    scanInit.metricMismatch = uvar_metricMismatch;
+    scanInit.gridType = uvar->gridType;
+    scanInit.gridFile = uvar->gridFile;
+    scanInit.metricType = uvar->metricType;
+    scanInit.projectMetric = uvar->projectMetric;
+    scanInit.metricMismatch = uvar->metricMismatch;
     scanInit.stepSizes = cfg->stepSizes;
     scanInit.ephemeris = cfg->ephemeris;		/* used by Ephemeris-based metric */
     scanInit.startTime = cfg->multiDetStates->startTime;
@@ -1134,29 +1148,29 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
  * Throws an error plus prints error-message if problems are found.
  */
 void
-checkUserInputConsistency (LALStatus *status)
+checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
 {
 
   INITSTATUS (status, "checkUserInputConsistency", rcsid);  
   
-  if (uvar_ephemYear == NULL)
+  if (uvar->ephemYear == NULL)
     {
       LALPrintError ("\nNo ephemeris year specified (option 'ephemYear')\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }      
 
   /* check for negative stepsizes in Freq, Alpha, Delta */
-  if ( LALUserVarWasSet(&uvar_dAlpha) && (uvar_dAlpha < 0) )
+  if ( LALUserVarWasSet(&uvar->dAlpha) && (uvar->dAlpha < 0) )
     {
       LALPrintError ("\nNegative value of stepsize dAlpha not allowed!\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
-  if ( LALUserVarWasSet(&uvar_dDelta) && (uvar_dDelta < 0) )
+  if ( LALUserVarWasSet(&uvar->dDelta) && (uvar->dDelta < 0) )
     {
       LALPrintError ("\nNegative value of stepsize dDelta not allowed!\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
-  if ( LALUserVarWasSet(&uvar_dFreq) && (uvar_dFreq < 0) )
+  if ( LALUserVarWasSet(&uvar->dFreq) && (uvar->dFreq < 0) )
     {
       LALPrintError ("\nNegative value of stepsize dFreq not allowed!\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
@@ -1164,18 +1178,18 @@ checkUserInputConsistency (LALStatus *status)
 
   /* grid-related checks */
   {
-    BOOLEAN haveAlphaBand = LALUserVarWasSet( &uvar_AlphaBand );
-    BOOLEAN haveDeltaBand = LALUserVarWasSet( &uvar_DeltaBand );
+    BOOLEAN haveAlphaBand = LALUserVarWasSet( &uvar->AlphaBand );
+    BOOLEAN haveDeltaBand = LALUserVarWasSet( &uvar->DeltaBand );
     BOOLEAN haveSkyRegion, haveAlphaDelta, haveGridFile; 
     BOOLEAN useSkyGridFile, useFullGridFile, haveMetric, useMetric;
 
-    haveSkyRegion  	= (uvar_skyRegion != NULL);
-    haveAlphaDelta 	= (LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta) );
-    haveGridFile      	= (uvar_gridFile != NULL);
-    useSkyGridFile   	= (uvar_gridType == GRID_FILE_SKYGRID);
-    useFullGridFile	= (uvar_gridType == GRID_FILE_FULLGRID);
-    haveMetric     	= (uvar_metricType > LAL_PMETRIC_NONE);
-    useMetric     	= (uvar_gridType == GRID_METRIC);
+    haveSkyRegion  	= (uvar->skyRegion != NULL);
+    haveAlphaDelta 	= (LALUserVarWasSet(&uvar->Alpha) && LALUserVarWasSet(&uvar->Delta) );
+    haveGridFile      	= (uvar->gridFile != NULL);
+    useSkyGridFile   	= (uvar->gridType == GRID_FILE_SKYGRID);
+    useFullGridFile	= (uvar->gridType == GRID_FILE_FULLGRID);
+    haveMetric     	= (uvar->metricType > LAL_PMETRIC_NONE);
+    useMetric     	= (uvar->gridType == GRID_METRIC);
 
     if ( !useFullGridFile && !useSkyGridFile && haveGridFile )
       {
