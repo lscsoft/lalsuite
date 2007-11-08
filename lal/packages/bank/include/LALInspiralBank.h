@@ -1354,13 +1354,13 @@ LALSPAF(
 /* <lalLaTeX>
 \newpage\input{LALInspiralComputePTFMetricC}
 </lalLaTeX> */
-void XLALInspiralComputePTFIntrinsticMetric (
+INT4 XLALInspiralComputePTFIntrinsticMetric (
     InspiralMetric             *metric,
     REAL8FrequencySeries       *psd,
     InspiralTemplate           *params
     );
 
-void XLALInspiralComputePTFFullMetric (
+INT4 XLALInspiralComputePTFFullMetric (
     InspiralMetric             *metric,
     REAL8FrequencySeries       *psd,
     InspiralTemplate           *params
