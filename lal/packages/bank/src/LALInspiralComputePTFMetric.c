@@ -205,7 +205,7 @@ INT4 XLALInspiralComputePTFIntrinsticMetric (
   XLALDestroyVectorSequence( PTFe2 );
 
   /* normal exit */
-  return;
+  return XLAL_SUCCESS;
 }
 
 /* <lalVerbatim file="XLALInspiralComputePTFFullMetricCP">  */
