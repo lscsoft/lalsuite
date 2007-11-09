@@ -1,15 +1,11 @@
-/*********************************************************************************
- *  \author K. Wette
- *  \file
- *  \ingroup templateBanks
- *  \brief
- *  Flat lattice tiling over multi-dimensioned parameter spaces
- *********************************************************************************/
+/**
+ * \author K. Wette
+ * \file
+ * \brief Flat lattice tiling over multi-dimensioned parameter spaces
+ */
 
 #ifndef _FLATLATTICETILING_H
 #define _FLATLATTICETILING_H
-
-/******** Includes ********/
 
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
@@ -18,86 +14,46 @@
 #include <lal/LALRCSID.h>
 #include <lal/LALDatatypes.h>
 
-/******** Structures ********/
+/**
+ * Structure to hold information about the flat lattice tiling
+ */
+typedef struct tagFlatLatticeTiling {
 
-typedef struct tagFlatLatticeTiling FlatLatticeTiling;
-struct tagFlatLatticeTiling {
+  /* Dimension of the parameter space */
+  INT4 dimension;
 
-  /* Dimension of the parameter space, i.e. number of parameters to be searched over */
-  UINT4 dimension;
-
-  /* Are some dimensions degenerate */
-  gsl_vector_int *is_degenerate;
-  int first_degenerate;
-
-  /* Matrix containing the parameter space metric, and scaling factors */
+  /* Matrix containing the parameter space metric */
   gsl_matrix *metric;
-  gsl_vector *metric_scaling;
 
   /* Maximum mismatch of the parameter space templates */
   REAL8 mismatch;
 
   /* Generator matrix for the lattice tiling, and its normalised thickness */
   gsl_matrix *generator;
-  REAL8 generator_norm_thickness;
 
-  /* Number of bounds on the parameter space */
-  UINT4 num_bounds;
+  /* Pointer to function to calculate bounds on parameter space */
+  void (*bounds)(gsl_vector*, INT4, gsl_vector*, REAL8*, REAL8*);
+  gsl_vector *bounds_args;
 
-  /* Bounds on the parameter space, in real parameter coordinates */
-  gsl_matrix *param_bound_normal;
-  gsl_matrix *param_bound_origin;
+  /* Increment vectors between lattice points in the parameter space */
+  gsl_matrix *increment;
 
-  /* Bounds on the parameter space, in lattice coordinates */
-  gsl_matrix *latt_bound_normal;
-  gsl_vector *latt_bound_dot;
-
-  /* Lower and upper bounds on the parameter space, in real parameter coordinates */
-  gsl_vector *param_lower;
-  gsl_vector *param_upper;
-
-  /* Conversion matrices from lattice to parameter space */
-  gsl_matrix *latt_to_param;
-
-  /* Lower and upper bounds on the parameter space, in lattice coordinates */
-  gsl_vector_long *latt_lower;
-  gsl_vector_long *latt_upper;
-
-  /* Index of the dimension along which intersecctions with the parameter space are calculated */
-  int line_index;
-
-  /* Order that the parameter space dimensions are iterated over */
-  gsl_vector_int *iter_order;
-
-  /* Current lattice point */
-  gsl_vector_long *latt_current;
+  /* Current point in parameter space and its upper bound */
   gsl_vector *current;
+  gsl_vector *upper;
 
-  /* Lower and upper bounds on the line_index'th dimension of parameter space */
-  long line_latt_lower;
-  long line_latt_upper;
+  /* Flags for filling bounds and point to resume from */
+  gsl_vector_int *on_upper;
+  gsl_vector_int *on_lower;
+  gsl_vector *resume;  
 
-  /* Start and direction of the parameter space line and its intersecting point */
-  gsl_vector *line_start;
-  gsl_vector *line_dir;
-
-  /* Dot products of normal vectors with start and direction of line */
-  gsl_vector *line_start_dot;
-  gsl_vector *line_dir_dot;
-
-  /* Intersection of normal vectors with line */
-  gsl_vector *line_intersect;
-
-  /* Additional function for checking if point is in parameter space */
-  BOOLEAN (*in_param_space)(FlatLatticeTiling*);
-  double *in_param_space_args;
+  /* Temporary vector */
+  gsl_vector *temp;
 
   /* Number of templates generated */
-  UINT8 template_count;
+  UINT8 templates;
 
-};
-
-/******** Declarations ********/
+} FlatLatticeTiling;
 
 #ifdef __cplusplus
 extern "C" {
@@ -105,21 +61,29 @@ extern "C" {
 
   NRCSID(FLATLATTICETILINGH, "$Id$");
 
-  FlatLatticeTiling *XLALCreateFlatLatticeTiling(UINT4, REAL8);
+  FlatLatticeTiling *XLALCreateFlatLatticeTiling(INT4);
 
   void XLALDestroyFlatLatticeTiling(FlatLatticeTiling*);
 
-  int XLALAddParameterSpaceBound(FlatLatticeTiling*, UINT4, UINT4, gsl_vector*, gsl_vector*);
+  int XLALOrthonormaliseMatrixWRTMetric(gsl_matrix*, gsl_matrix*);
 
-  int XLALSquareParameterSpace(FlatLatticeTiling*, gsl_vector*, gsl_vector*);
+  gsl_matrix *XLALLowerTriangularLatticeGenerator(gsl_matrix*);
 
-  int XLALCubicLatticeGenerator(gsl_matrix*, REAL8*);
+  int XLALNormaliseLatticeGenerator(gsl_matrix*, REAL8);
 
-  int XLALAnstarLatticeGenerator(gsl_matrix*, REAL8*);
+  gsl_matrix *XLALCubicLatticeGenerator(INT4);
+  
+  gsl_matrix *XLALAnstarLatticeGenerator(INT4);
+
+  int XLALSquareParameterSpace(FlatLatticeTiling*, ...);
 
   int XLALSetupFlatLatticeTiling(FlatLatticeTiling*);
 
   int XLALNextFlatLatticePoint(FlatLatticeTiling*);
+
+  REAL8 XLALCurrentFlatLatticePoint(FlatLatticeTiling*, INT4);
+
+  UINT8 XLALNumberOfFlatLatticeTiles(FlatLatticeTiling*);
 
 #ifdef __cplusplus
 }
