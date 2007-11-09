@@ -15,9 +15,9 @@
 #include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
 #include <lal/PulsarDataTypes.h>
+#include <lal/PtoleMetric.h>
 
 #include "FlatLatticeTiling.h"
-#include "DirectedSearch.h"
 
 #include <lalapps.h>
 

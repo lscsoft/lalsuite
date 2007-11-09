@@ -8,7 +8,7 @@ bin_PROGRAMS = lalapps_skynet getMetric testFlatPulsarMetric matchGrids getMesh 
 
 EXTRA_PROGRAMS = DirectedSearchTemplates
 
-DirectedSearchTemplates_SOURCES = DirectedSearchTemplates.c FlatLatticeTiling.c DirectedSearch.c
+DirectedSearchTemplates_SOURCES = DirectedSearchTemplates.c FlatLatticeTiling.c
 
 lalapps_skynet_SOURCES = skynet.c
 
