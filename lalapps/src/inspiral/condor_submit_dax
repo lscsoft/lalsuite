@@ -6,11 +6,11 @@ dax_file - DAX file to submit
 site - site at which to run DAX
 """
 
-import optparse
 import ConfigParser
-import sys
+import optparse
 import os
-
+import socket
+import sys
 import urllib
 
 sites_url = "http://ldas-jobs.ligo.caltech.edu/~bdaudert/sites.xml"
@@ -49,7 +49,9 @@ def parse_args():
         help="property bundle with pegasus preferences")
     parser.add_option("-i", "--ini-file",
         help="inspiral_hipe's ini file with which to create tc.data")
-    parser.add_option("-v", "--verbose", action="store_true",
+    parser.add_option("-n", "--no-submit", action="store_true", default=False,
+        help="concretize the DAG and generate a sub file for it; do not submit to cluster")
+    parser.add_option("-v", "--verbose", action="store_true", default=False,
         help="print informative messages")
     
     opts, args = parser.parse_args()
@@ -79,13 +81,14 @@ if opts.ini_file:
     if os.path.isfile("tc.data"): raise ValueError, "tc.data already exists"
     cp = ConfigParser.ConfigParser()
     cp.read(opts.ini_file)
+    hostname = socket.getfqdn()
     
     catalog = PegasusTransformationCatalog()
     for prog, path in cp.items("condor"):
         tx = PegasusTransformation()
-        tx.siteID = site
-        tx.LogicalTX = "ligo:%s:1.0" % prog
-        tx.PhysicalTX = path
+        tx.siteID = "local"
+        tx.LogicalTX = "ligo::%s:1.0" % os.path.split(path)[1]
+        tx.PhysicalTX = "gsiftp://" + os.path.join(hostname, os.path.abspath(path))
         tx.Type = "STATIC_BINARY"
         tx.SystemInfo = "INTEL32::LINUX"
         tx.Profiles = ""  # CHECKME
@@ -106,9 +109,11 @@ plan_args.append("--dir ./submit_files")
 plan_args.append("--sites %s" % site)
 plan_args.append("--output local")
 plan_args.append("--dax %s" % dax_file)
-plan_args.append(" --nocleanup")
+plan_args.append("--nocleanup")
+plan_args.append("--verbose")
 plan_command = " ".join(plan_args)
 
+if opts.verbose: print "Executing: " + plan_command
 plan_in, plan_out, plan_err = os.popen3(plan_command)
 pid, status = os.wait()
 
@@ -119,9 +124,9 @@ if status != 0:
     print >>sys.stderr, "  stderr: %s" % plan_err.read()
     print >>sys.stderr, "  command: %s" % plan_command
     sys.exit(status)
+plan_out_lines = plan_out.readlines()
 
 # do pegasus-run
-plan_out_lines = plan_out.readlines()
 run_commands = [line.strip() for line in plan_out_lines if line.startswith("pegasus-run")]
 if len(run_commands) == 0:
     print >>sys.stderr, "Where is the run command?  I couldn't find it in the following:"
@@ -133,7 +138,12 @@ elif len(run_commands) > 1:
     print >>sys.stderr, run_commands
     print >>sys.stderr, "All lines:"
     print >>sys.stderr, "".join(plan_out_lines)
+    sys.exit(1)
 run_command = run_commands[0]
-
 run_args = run_command.split(" ")
-os.execvp(run_args[0], run_args)
+
+if opts.no_submit:
+    dag_filename = os.path.join(run_args[-1], dax_base + ".dag")
+    os.execvp("condor_submit_dag", ("condor_submit_dag", "-nosubmit", dag_filename))
+else:
+    os.execvp(run_args[0], run_args)
