@@ -12,6 +12,7 @@ import os
 import socket
 import sys
 import urllib
+import urlparse
 
 sites_url = "http://ldas-jobs.ligo.caltech.edu/~bdaudert/sites.xml"
 properties_url = "http://ldas-jobs.ligo.caltech.edu/~bdaudert/properties.bundle"
@@ -88,10 +89,11 @@ if opts.ini_file:
         tx = PegasusTransformation()
         tx.siteID = "local"
         tx.LogicalTX = "ligo::%s:1.0" % os.path.split(path)[1]
-        tx.PhysicalTX = "gsiftp://" + os.path.join(hostname, os.path.abspath(path))
+        tx.PhysicalTX = urlparse.urlunsplit(("gsiftp", hostname,
+            os.path.abspath(path), None, None))
         tx.Type = "STATIC_BINARY"
         tx.SystemInfo = "INTEL32::LINUX"
-        tx.Profiles = ""  # CHECKME
+        tx.Profiles = ""
         catalog.append(tx)
     catalog.write_tc_data(open("tc.data", "w"))
 
