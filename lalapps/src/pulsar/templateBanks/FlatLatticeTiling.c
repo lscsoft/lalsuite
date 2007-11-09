@@ -579,6 +579,8 @@ int XLALSetupFlatLatticeTiling(
 
   }
 
+  XLALfprintfGSLvector(stderr, "%0.16e", generator_lengths);
+
   /* Print debugging */
   LogPrintf(LOG_DETAIL, "Increment vectors between lattice points:\n");
   for (i = 0; i < n; ++i) {
@@ -587,6 +589,15 @@ int XLALSetupFlatLatticeTiling(
     }
     LogPrintfVerbatim(LOG_DETAIL, " ;\n");
   }
+  LogPrintf(LOG_DETAIL, "Lengths of increment vectors with respect to the metric:\n");
+  for (i = 0; i < n; ++i) {
+    gsl_vector_view col_i = gsl_matrix_column(tiling->increment, i);
+    gsl_blas_dgemv(CblasNoTrans, 1.0, tiling->metric, &col_i.vector, 0.0, temp);
+    gsl_blas_ddot(&col_i.vector, temp, &length);
+    length = sqrt(length);
+    LogPrintfVerbatim(LOG_DETAIL, "  % 0.16e", length);
+  }
+  LogPrintfVerbatim(LOG_DETAIL, " ;\n");
 
   /* Initialise number of templates generated */
   tiling->templates = 0;
@@ -625,6 +636,10 @@ int XLALNextFlatLatticePoint(
     tiling->resume = gsl_vector_alloc(n);
     tiling->temp = gsl_vector_alloc(n);
 
+    /* Initialise flags */
+    gsl_vector_int_set_all(tiling->on_upper, FALSE);
+    gsl_vector_int_set_all(tiling->on_lower, FALSE);
+    
     /* Calculate starting point and upper bounds */
     gsl_vector_set_all(tiling->current, GSL_NAN);
     for (i = 0; i < n; ++i) {
@@ -638,12 +653,14 @@ int XLALNextFlatLatticePoint(
       /* Save upper bound */
       gsl_vector_set(tiling->upper, i, upper);
 
+      /* If lower and upper bounds the same, set flag to avoid duplication */
+      if (lower == upper) {
+	gsl_vector_set(tiling->resume, i, upper);
+	gsl_vector_int_set(tiling->on_upper, i, TRUE);
+      }
+
     }
 
-    /* Initialise flags */
-    gsl_vector_int_set_all(tiling->on_upper, FALSE);
-    gsl_vector_int_set_all(tiling->on_lower, FALSE);
-    
   }
 
   /* Otherwise advance to next template */
