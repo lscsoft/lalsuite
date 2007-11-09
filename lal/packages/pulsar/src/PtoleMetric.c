@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 David M. Whitbeck, Thomas Essinger-Hileman, Jolien Creighton, Ian Jones, Benjamin Owen, Reinhard Prix
+*  Copyright (C) 2007 David M. Whitbeck, Thomas Essinger-Hileman, Jolien Creighton, Ian Jones, Benjamin Owen, Reinhard Prix, Karl Wette
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -71,11 +71,15 @@
  location.  The code contains (commented out) expressions for
  spindown-spindown metric components for an arbitrary number of spindowns,
  but the (commented out) spindown-sky components neglect orbital motion.
+ A separate routine, XLALSpindownMetric(), has been added to compute the
+ metric for multiple spindowns but for fixed sky position, suitable for
+ e.g. directed searches.
 
 */
 
 #include <math.h>
 #include <stdlib.h>
+#include <gsl/gsl_matrix.h>
 #include <lal/AVFactories.h>
 #include <lal/DetectorSite.h>
 #include <lal/LALStdlib.h>
@@ -821,3 +825,34 @@ XLALFindMetricDim ( const REAL8Vector *metric )
   XLAL_ERROR ( "XLALFindMetricDim", XLAL_EINVAL);
 
 }/* XLALFindMetricDim() */
+
+/**
+ * Frequency and frequency derivative components of the metric, suitable for a directed
+ * search with only one fixed sky position. The units are those expected by ComputeFstat.
+ * This routine allocates a gsl_matrix which should be freed with gsl_matrix_free.
+ */
+gsl_matrix *XLALSpindownMetric(
+			       UINT4 dimension, /**< [in] Dimension of the metric */
+ 			       REAL8 Tspan      /**< [in] Time span of the data set */
+			       )
+{
+
+  UINT4 i, j;
+  gsl_matrix *metric = NULL;
+
+  /* Allocate metric */
+  metric = gsl_matrix_alloc(dimension, dimension);
+
+  /* Calculate metric */
+  for (i = 0; i < metric->size1; ++i) {
+    for (j = 0; j < metric->size2; ++j) {
+
+      gsl_matrix_set(metric, i, j, 4 * pow(LAL_PI, 2) * pow(Tspan, 2 + i + j) / 
+		     (factrl(i) * factrl(j) * (2 + i) * (2 + j) * (3 + i + j)));
+
+    }
+  }
+
+  return metric;
+
+} /* XLALSpindownMetric */

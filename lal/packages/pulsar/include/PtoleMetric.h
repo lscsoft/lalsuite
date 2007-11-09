@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Thomas Essinger-Hileman, Jolien Creighton, Ian Jones, Benjamin Owen, Reinhard Prix
+*  Copyright (C) 2007 Thomas Essinger-Hileman, Jolien Creighton, Ian Jones, Benjamin Owen, Reinhard Prix, Karl Wette
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -56,6 +56,7 @@
 #ifndef _PTOLEMETRIC_H
 #define _PTOLEMETRIC_H
 
+#include <gsl/gsl_matrix.h>
 #include <lal/DetectorSite.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
@@ -131,6 +132,7 @@ LALPulsarMetric( LALStatus      *status,
 
 int XLALFindMetricDim ( const REAL8Vector *metric );
 
+gsl_matrix *XLALSpindownMetric(UINT4, REAL8);
 
 #ifdef  __cplusplus
 }
