@@ -256,7 +256,7 @@ int main( int argc, char *argv[] )
   INT4  endCoincidence = -1;
   LIGOTimeGPS endCoinc = {0,0};
 
-  INT4         slideStep[LAL_NUM_IFO];
+  REAL8        slideStep[LAL_NUM_IFO];
   LIGOTimeGPS  slideTimes[LAL_NUM_IFO];
   LIGOTimeGPS  slideReset[LAL_NUM_IFO];
   INT4         numSlides = 0;
@@ -487,7 +487,7 @@ int main( int argc, char *argv[] )
   memset( &aDet, 0, sizeof(LALDetector) );
 
   /* set the time slide data to zero */
-  memset( &slideStep, 0, LAL_NUM_IFO * sizeof(INT4) );
+  memset( &slideStep, 0, LAL_NUM_IFO * sizeof(REAL8) );
   memset( &slideTimes, 0, LAL_NUM_IFO * sizeof(LIGOTimeGPS) );
   memset( &slideReset, 0, LAL_NUM_IFO * sizeof(LIGOTimeGPS) );
   memset( &haveTrig, 0, LAL_NUM_IFO * sizeof(int) );
@@ -673,86 +673,86 @@ int main( int argc, char *argv[] )
        
       case 'b':
         /* slide time for G1 */
-        slideStep[LAL_IFO_G1] = atoi( optarg );
+        slideStep[LAL_IFO_G1] = atof( optarg );
         if ( slideStep[LAL_IFO_G1] < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "The slideStep must be positive\n"
-              "(%d specified)\n",
+              "(%f specified)\n",
               long_options[option_index].name, slideStep[LAL_IFO_G1] );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%ld", slideStep[LAL_IFO_G1] );
+        ADD_PROCESS_PARAM( "double", "%f", slideStep[LAL_IFO_G1] );
         break;
 
       case 'c':
         /* slide time for H1 */
-        slideStep[LAL_IFO_H1] = atoi( optarg );
+        slideStep[LAL_IFO_H1] = atof( optarg );
         if ( slideStep[LAL_IFO_H1] < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "The slideStep must be positive\n"
-              "(%d specified)\n",
+              "(%f specified)\n",
               long_options[option_index].name, slideStep[LAL_IFO_H1] );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%ld", slideStep[LAL_IFO_H1] );
+        ADD_PROCESS_PARAM( "double", "%f", slideStep[LAL_IFO_H1] );
         break;
         
       case 'd':
         /* slide time for H2 */
-        slideStep[LAL_IFO_H2] = atoi( optarg );
+        slideStep[LAL_IFO_H2] = atof( optarg );
         if ( slideStep[LAL_IFO_H2] < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "The slideStep must be positive\n"
-              "(%d specified)\n",
+              "(%f specified)\n",
               long_options[option_index].name, slideStep[LAL_IFO_H2] );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%ld", slideStep[LAL_IFO_H2] );
+        ADD_PROCESS_PARAM( "double", "%f", slideStep[LAL_IFO_H2] );
         break;
         
       case 'e':
         /* slide time for L1 */
-        slideStep[LAL_IFO_L1] = atoi( optarg );
+        slideStep[LAL_IFO_L1] = atof( optarg );
         if ( slideStep[LAL_IFO_L1] < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "The slideStep must be positive\n"
-              "(%d specified)\n",
+              "(%f specified)\n",
               long_options[option_index].name, slideStep[LAL_IFO_L1] );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%ld", slideStep[LAL_IFO_L1] );
+        ADD_PROCESS_PARAM( "double", "%f", slideStep[LAL_IFO_L1] );
         break;
         
       case 'f':
         /* slide time for T1 */
-        slideStep[LAL_IFO_T1] = atoi( optarg );
+        slideStep[LAL_IFO_T1] = atof( optarg );
         if ( slideStep[LAL_IFO_T1] < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "The slideStep must be positive\n"
-              "(%d specified)\n",
+              "(%f specified)\n",
               long_options[option_index].name, slideStep[LAL_IFO_T1] );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%ld", slideStep[LAL_IFO_T1] );
+        ADD_PROCESS_PARAM( "double", "%f", slideStep[LAL_IFO_T1] );
         break;
         
       case 'g':
         /* slide time for V1 */
-        slideStep[LAL_IFO_V1] = atoi( optarg );
+        slideStep[LAL_IFO_V1] = atof( optarg );
         if ( slideStep[LAL_IFO_V1] < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "The slideStep must be positive\n"
-              "(%d specified)\n",
+              "(%f specified)\n",
               long_options[option_index].name, slideStep[LAL_IFO_V1] );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%ld", slideStep[LAL_IFO_V1] );
+        ADD_PROCESS_PARAM( "double", "%f", slideStep[LAL_IFO_V1] );
         break;
 
       case 'T':
@@ -766,7 +766,7 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, numSlides );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%ld", numSlides );
+        ADD_PROCESS_PARAM( "int", "%d", numSlides );
         break;
 
       case 'm':
@@ -1342,7 +1342,7 @@ int main( int argc, char *argv[] )
       XLALReturnIFO( ifoA, ifoNumber );
      
       if( vrbflg && haveTrig[ifoNumber] ) fprintf( stdout, 
-          "Performing a slide of multiples of %d seconds on %s\n", 
+          "Performing a slide of multiples of %f seconds on %s\n", 
           slideStep[ifoNumber], ifoA);
 
       for( ifoTwo = ifoNumber + 1; ifoTwo < LAL_NUM_IFO; ifoTwo++ )
@@ -1351,14 +1351,25 @@ int main( int argc, char *argv[] )
             slideStep[ifoTwo] == slideStep[ifoNumber] )
         {
           XLALReturnIFO( ifoB, ifoTwo );
-           
-          fprintf( stderr,
-            "The time slide specified for ifo %s is %d\n"
-            "The time slide specified for ifo %s is also %d\n"
-            "Must specify unique time slides for all instruments\n",
-            ifoA, slideStep[ifoNumber], ifoB, slideStep[ifoTwo]);
 
-          exit( 1 );
+          if ( ( ! strcmp(ifoA,"H1") && ! strcmp(ifoB,"H2") ) ||
+               ( ! strcmp(ifoA,"H2") && ! strcmp(ifoB,"H1") ) )
+          {
+            if( vrbflg ) fprintf( stdout,
+              "The time slide specified for ifo %s is %f\n"
+              "The time slide specified for ifo %s is also %f\n",
+              ifoA, slideStep[ifoNumber], ifoB, slideStep[ifoTwo]);
+          }
+          else
+          {
+            fprintf( stderr,
+              "The time slide specified for ifo %s is %f\n"
+              "The time slide specified for ifo %s is also %f\n"
+              "Must specify unique time slides for all instruments\n",
+              ifoA, slideStep[ifoNumber], ifoB, slideStep[ifoTwo]);
+
+            exit( 1 );
+          }
         }
       }
     }
@@ -1828,9 +1839,15 @@ int main( int argc, char *argv[] )
         {
           /* Initialize the slide-times with the initial value, 
              which is the negative extreme value */
-          INT4 tmpSlide = (- numSlides * slideStep[ifoNumber]);
+          REAL8 tmpInt;
+          INT4 tmpSlide, tmpSlideNS;
+          tmpSlideNS = (INT4) (-1000000000*
+              modf(numSlides * slideStep[ifoNumber], &tmpInt) );
+          tmpSlide = (INT4) tmpInt;
           slideTimes[ifoNumber].gpsSeconds = tmpSlide;
+          slideTimes[ifoNumber].gpsNanoSeconds = tmpSlideNS;
           slideReset[ifoNumber].gpsSeconds = (-tmpSlide);
+          slideReset[ifoNumber].gpsNanoSeconds = (-tmpSlideNS);
         }
         else
         {
@@ -1839,8 +1856,16 @@ int main( int argc, char *argv[] )
              which triggers are shifted in each slide by a constant amount. 
              The reset-time however refers to the coincidence list, so it must
              be decreased for each slide. */
-          slideTimes[ifoNumber].gpsSeconds = slideStep[ifoNumber];
-          slideReset[ifoNumber].gpsSeconds -= slideStep[ifoNumber];
+          REAL8 tmpInt;
+          INT4 tmpSlide, tmpSlideNS;
+          tmpSlideNS = (INT4) (-1000000000*
+              modf(slideStep[ifoNumber], &tmpInt) );
+          tmpSlide = (INT4) tmpInt;
+
+          slideTimes[ifoNumber].gpsSeconds = tmpSlide;
+          slideTimes[ifoNumber].gpsNanoSeconds = tmpSlideNS;
+          slideReset[ifoNumber].gpsSeconds -= tmpSlide;
+          slideReset[ifoNumber].gpsNanoSeconds -= tmpSlideNS;
         }
       }
     }
