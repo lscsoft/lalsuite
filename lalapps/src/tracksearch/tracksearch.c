@@ -1512,12 +1512,12 @@ void LALappsGetFrameData(LALStatus*          status,
   LALTYPECODE           dataTypeCode=0;
   ResampleTSParams      resampleParams;
   INT4                  errCode=0;
-  REAL8                 timeInterval=0;
-  REAL8                 startFloat=0;
-  REAL8                 stopFloat=0;
-  LIGOTimeGPS           stopGPS;
-  LIGOTimeGPS           startWithOffsetGPS;
-  REAL8                 startWithOffset;
+  LIGOTimeGPS           bufferedDataStartGPS;
+  REAL8                 bufferedDataStart=0;
+  LIGOTimeGPS           bufferedDataStopGPS;
+  REAL8                 bufferedDataStop=0;
+  REAL8                 bufferedDataTimeInterval=0;
+
   /* Set all variables from params structure here */
   channelIn.name = params->channelName;
   channelIn.type = params->channelNameType;
@@ -1540,35 +1540,34 @@ void LALappsGetFrameData(LALStatus*          status,
       lal_errhandler = LAL_ERR_EXIT;
       /* Set verbosity of stream so user sees frame read problems! */
       LAL_CALL( LALFrSetMode(status,LAL_FR_VERBOSE_MODE,stream),status);
-
+      /*DataIn->epoch SHOULD and MUST equal params->startGPS - (params.SegBufferPoints/params.SamplingRate)*/
+      memcpy(&bufferedDataStartGPS,&(DataIn->epoch),sizeof(LIGOTimeGPS));
       LAL_CALL(
 	       LALGPStoFloat(status,
-			     &startWithOffset,
-			     &(params->GPSstart)),
-	       status);
-      startWithOffset=startWithOffset-(params->SegBufferPoints*DataIn->deltaT);
-      LAL_CALL(
-	       LALFloatToGPS(status,
-			     &startWithOffsetGPS,
-			     &startWithOffset),
+			     &bufferedDataStart,
+			     &bufferedDataStartGPS),
 	       status);
       /* 
        * Seek to end of requested data makes sure that all stream is complete!
        */
-      LAL_CALL( LALGPStoFloat(status,&startFloat,&(DataIn->epoch)),status);
-      timeInterval=(DataIn->data->length * DataIn->deltaT)+(params->SegBufferPoints*DataIn->deltaT);
-      stopFloat=startWithOffset + timeInterval;
-      LAL_CALL( LALFloatToGPS(status,&stopGPS,&stopFloat),status);
+      bufferedDataStop=bufferedDataStart+(DataIn->data->length * DataIn->deltaT);
+      LAL_CALL(
+	       LALFloatToGPS(status,
+			     &bufferedDataStopGPS,
+			     &bufferedDataStop),
+	       status);
+      bufferedDataTimeInterval=bufferedDataStop-bufferedDataStart;
       if (params->verbosity >= verbose)
 	{
 	  fprintf(stderr,"Checking frame stream spans requested data interval, including the appropriate data buffering!\n");
-	  fprintf(stderr,"Start %i.%i\n",startWithOffsetGPS.gpsSeconds,startWithOffsetGPS.gpsNanoSeconds);
-	  fprintf(stderr,"Stop  %i.%i\n",stopGPS.gpsSeconds,stopGPS.gpsNanoSeconds);
+	  fprintf(stderr,"Start           : %f\n",bufferedDataStart);
+	  fprintf(stderr,"Stop            : %f\n",bufferedDataStop);
+	  fprintf(stderr,"Interval length : %f\n",bufferedDataTimeInterval);
 	}
 
-      LAL_CALL( LALFrSeek(status, &(stopGPS),stream),status);
+      LAL_CALL( LALFrSeek(status, &(bufferedDataStopGPS),stream),status);
 
-      LAL_CALL( LALFrSeek(status, &(startWithOffsetGPS), stream), status);
+      LAL_CALL( LALFrSeek(status, &(bufferedDataStartGPS), stream), status);
       /*
        * Determine the variable type of data in the frame file.
        */
@@ -1605,7 +1604,7 @@ void LALappsGetFrameData(LALStatus*          status,
 		   LALCreateREAL4TimeSeries(status,
 					    &tmpData,
 					    "Higher Sampling Tmp Data",
-					    startWithOffsetGPS,
+					    bufferedDataStartGPS,
 					    0,
 					    1/params->SamplingRateOriginal,
 					    lalADCCountUnit,
@@ -1638,7 +1637,7 @@ void LALappsGetFrameData(LALStatus*          status,
 		   LALCreateREAL8TimeSeries(status,
 					    &tmpREAL8Data,
 					    "tmp space",
-					    startWithOffsetGPS,
+					    bufferedDataStartGPS,
 					    0,
 					    DataIn->deltaT,
 					    lalADCCountUnit,
@@ -1664,7 +1663,7 @@ void LALappsGetFrameData(LALStatus*          status,
 		   LALCreateREAL8TimeSeries(status,
 					    &convertibleREAL8Data,
 					    "Higher Sampling Tmp Data",
-					    startWithOffsetGPS,
+					    bufferedDataStartGPS,
 					    0,
 					    1/params->SamplingRateOriginal,
 					    lalADCCountUnit,
@@ -1799,7 +1798,7 @@ void LALappsGetFrameData(LALStatus*          status,
 		   LALCreateINT2TimeSeries(status,
 					   &tmpINT2Data,
 					   "tmp space",
-					   startWithOffsetGPS,
+					   bufferedDataStartGPS,
 					   0,
 					   DataIn->deltaT,
 					   lalADCCountUnit,
@@ -1825,7 +1824,7 @@ void LALappsGetFrameData(LALStatus*          status,
 		   LALCreateINT2TimeSeries(status,
 					   &convertibleINT2Data,
 					   "Tmp Data",
-					   startWithOffsetGPS,
+					   bufferedDataStartGPS,
 					   0,
 					   1/params->SamplingRateOriginal,
 					   lalADCCountUnit,
@@ -1849,7 +1848,7 @@ void LALappsGetFrameData(LALStatus*          status,
 		   LALCreateREAL4TimeSeries(status,
 					    &tmpData,
 					    "Higher Sampling REAL4 Data",
-					    startWithOffsetGPS,
+					    bufferedDataStartGPS,
 					    0,
 					    1/params->SamplingRateOriginal,
 					    lalADCCountUnit,
@@ -1876,7 +1875,7 @@ void LALappsGetFrameData(LALStatus*          status,
 		   LALCreateINT4TimeSeries(status,
 					   &tmpINT4Data,
 					   "REAL8 tmp space",
-					   startWithOffsetGPS,
+					   bufferedDataStartGPS,
 					   0,
 					   DataIn->deltaT,
 					   lalADCCountUnit,
@@ -1902,7 +1901,7 @@ void LALappsGetFrameData(LALStatus*          status,
 		   LALCreateINT4TimeSeries(status,
 					   &convertibleINT4Data,
 					   "Tmp Data",
-					   startWithOffsetGPS,
+					   bufferedDataStartGPS,
 					   0,
 					   1/params->SamplingRateOriginal,
 					   lalADCCountUnit,
@@ -1926,7 +1925,7 @@ void LALappsGetFrameData(LALStatus*          status,
 		   LALCreateREAL4TimeSeries(status,
 					    &tmpData,
 					    "Higher Sampling REAL4 Data",
-					    startWithOffsetGPS,
+					    bufferedDataStartGPS,
 					    0,
 					    1/params->SamplingRateOriginal,
 					    lalADCCountUnit,
@@ -1989,8 +1988,12 @@ void LALappsGetFrameData(LALStatus*          status,
 	   */
 	  DataIn->deltaT=(1/params->SamplingRate);
 	  DataIn->sampleUnits=tmpData->sampleUnits;
-	  /*Store new 'epoch' information into DataIn*/
-	  DataIn->epoch=startWithOffsetGPS;
+	  /*
+	   * Store new 'epoch' information into DataIn due to possible
+	   * shift in epoch information due to resampling
+	   */
+	  memcpy(&(DataIn->epoch),&(tmpData->epoch),sizeof(LIGOTimeGPS));
+	  DataIn->epoch=bufferedDataStartGPS;
 	  LALappsTSassert((tmpData->data->length >=
 			   DataIn->data->length),
 			  TRACKSEARCHC_EDATA,
@@ -2010,8 +2013,7 @@ void LALappsGetFrameData(LALStatus*          status,
 	  params->SamplingRate=params->SamplingRateOriginal;
 	  DataIn->deltaT=1/params->SamplingRateOriginal;
 	  DataIn->sampleUnits=tmpData->sampleUnits;
-	  /*Store new 'epoch' information into DataIn*/
-	  DataIn->epoch=startWithOffsetGPS;
+	  memcpy(&(DataIn->epoch),&(tmpData->epoch),sizeof(LIGOTimeGPS));
 	  for (i=0;i<DataIn->data->length;i++)
 	    DataIn->data->data[i]=tmpData->data->data[i];
 	}
