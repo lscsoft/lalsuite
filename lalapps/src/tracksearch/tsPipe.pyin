@@ -119,8 +119,14 @@ segmentList=reformatSegList.getSegmentName()
 allData=pipeline.ScienceData()
 allData.read(segmentList,dataBlockSize)
 allData.make_chunks(dataBlockSize)
-# Loop over our new collection of 100s chunks to set up each DAG
 indexA=0
+# The pipeline needs a method change for handling large segment lists
+# We should switch from 1 DAG per analysis segment to
+# a single DAG with the proper relationships to analyze each segment
+# each segment should be logically independant and thus one dag
+# can handle a search on a limitless amount of data using a single DAG
+# to manage the workflow.  The results of each segment should still be
+# stored independently
 for block in allData:
     indexA+=1
     logfile=logFileMask+str(indexA)+'.log'
@@ -128,8 +134,8 @@ for block in allData:
     tracksearchBlock.createJobs()
     tracksearchBlock.writePipelineDAG()
         
-print "We prepared "+str(allData.__len__())+" search DAGs."
-print "They should be found in :",cp.get('filelayout','dagpath')
+print "We prepared "+str(allData.__len__())+" analysis segments."
+print "The dag info should be found in :",cp.get('filelayout','dagpath')
 if allData.__len__() == 0:
     print "Please check your segment list."
     print "Also check INI files option in section [layerconfig]"

@@ -99,7 +99,6 @@ def determineLayerPath(cp,blockID,layerID,channel=''):
     """
     Build the correct layer path for each layer of a multi-resolution search.
     """
-#    layerPath=os.path.normpath(str('%s/%s/%s/%s/'%(cp.get('filelayout','workpath'),blockID,layerID)))
     layerPath=os.path.normpath(str('%s/%s/'%(determineBlockPath(cp,blockID,channel),layerID)))
     return str(layerPath)
 #End def
@@ -325,6 +324,7 @@ class tracksearchConvertSegList:
         newHeading.append('# We drop sections were there is not enough of original data\n')
         newHeading.append('# This file drawn from '+self.segFilename+'\n')
         newHeading.append('# This file should be associated with appropriate INI file\n')
+        newHeading.append('# This revised segment list has the burned data removed\n')
         if determineDataPadding(self.cp) > 0:
             newHeading.append('#This file is to be used with a config file asking for data padding of '+str(determineDataPadding(self.cp))+'\n')
         output_fp=open(self.newSegFilename,'w')
@@ -332,8 +332,19 @@ class tracksearchConvertSegList:
             output_fp.write(newHeadline)
         #Write redivided list to file
         index=0
-            
+        #TO DO
+        #Integrate a data burning step to avoid starting any
+        #analysis at the exact start/end of science mode segment
+        #??? Check why the dataFind end time is off by bin_buffer seconds?
+        if self.cp.has_option('layerconfig','burndata'):
+            burnOption=int(self.cp.get('layerconfig','burndata'))
+        else:
+            burnOption=0
+        dataToBurn=max([determineDataPadding(self.cp),burnOption])
         for bigChunks in self.origSegObject:
+            #Burn off data from bigChunks
+            bigChunks.set_start(bigChunks.start()+dataToBurn)
+            bigChunks.set_end(bigChunks.end()-dataToBurn)
             bigChunks.make_chunks(self.duration)
             for newChunk in bigChunks:
                 index+=1
@@ -861,8 +872,12 @@ class tracksearch:
         self.sciSeg=scienceSegment
         self.runStartTime=self.sciSeg.start()
         #The variable to link a previous jobblock into next block
+        #???? 
         self.blockJobLinkList=[]
+        #???? 
         self.blockID=str(self.sciSeg.start())+':'+str(self.sciSeg.dur())
+        self.lastBlockID='NONE'
+        #???? 
         self.dag = pipeline.CondorDAG(logfile)
         self.dagName='tracksearchDAG_'+str(self.sciSeg.start())+'_duration_'+str(self.sciSeg.dur())
         self.resultPath=self.cp.get('filelayout','workpath')
@@ -985,7 +1000,7 @@ class tracksearch:
             sys.stderr.write("Set Size :"+str(setSize)+"\n")
             sys.stderr.write("Map Time :"+str(mapTime)+"\n")
             sys.stderr.write("Pad Size :"+str(padsize)+"\n")
-            sys.stderr.write("Pipeline may be incorrectly constructed! Check your input options.\n")
+            sys.stderr.write("Pipeline may be incorrectly constructed! Check your inputs.\n")
             sys.stderr.write("\n")
         #Setup time marker for entire run
         runStartTime=self.runStartTime
@@ -994,7 +1009,7 @@ class tracksearch:
         #Create dataFindJob
         #This path is relative to the jobs initialDir arguments!
         dataFindInitialDir=determineLayerPath(self.cp,self.blockID,layerID,self.currentchannel)
-        dataFindLogPath=os.path.normpath(determineBlockPath(self.cp,self.blockID)+'/logs/')
+        dataFindLogPath=determineLayerPath(self.cp,self.blockID,"dataFindLogs")
         #Build the directories if they don't exist
         buildDir(dataFindLogPath)
         buildDir(dataFindInitialDir)
@@ -1046,8 +1061,9 @@ class tracksearch:
             df_node.set_end(chunk.end()+padsize)
             #Set the node job time markers from chunk! This adjustment must
             #reflect any buffering that might be specified on the command line.
-            bufferOffset=chunk.start()+padsize
             df_node.set_observatory(ifo[0])
+            sys.stdout.write("DF Job : "+str(df_node.get_start())+" -> "+str(df_node.get_end())+"\n")
+            sys.stdout.write("Segment: "+str(chunk.start())+" -> "+str(chunk.end())+"\n")
             cacheName='timeLayerCache-'+str(df_node.get_observatory())+'-'+str(df_node.get_start())+'-'+str(df_node.get_end())+'.cache'
             tracksearchTime_node=tracksearchTimeNode(tracksearchTime_job)
             #If executable name is anything but LSCdataFind we
@@ -1065,8 +1081,7 @@ class tracksearch:
             #Consider using Condor file transfer mechanism to
             #transfer the frame cache file also.
             #Originally the following was uncommented.
-            #bufferOffset=chunk.start()+determineDataPadding(self.cp)
-            tracksearchTime_node.add_var_opt('gpsstart_seconds',bufferOffset)
+            tracksearchTime_node.add_var_opt('gpsstart_seconds',chunk.start())
             self.dag.add_node(tracksearchTime_node)
             prevLayerJobList.append(tracksearchTime_node)
         return prevLayerJobList
@@ -1249,14 +1264,14 @@ class tracksearch:
         """
         if self.have_multichannel:
             for currentchannel in self.channellist:
-                sys.stdout.write("Installing sub-pipe for channel:"+str(currentchannel)+"\n")
+                #sys.stdout.write("Installing sub-pipe for channel:"+str(currentchannel)+"\n")
                 self.__createSingleJob__(currentchannel)
         else:
             sys.stdout.write("Setting up standard single channel tracksearch pipe.\n")
             self.__createSingleJob__()
     #End createJobs
 
-    def writePipelineDAG(self):
+    def writePipelineDAG(self,dagname=''):
         """
         Method that writes out the completed DAG and job files inside
         the proper filespace hierarchy for running the tracksearch
@@ -1271,7 +1286,7 @@ class tracksearch:
         #Determine dot file name as dagfilename.DOT
         [dotfilename,extension]=os.path.splitext(os.path.abspath(self.dag.get_dag_file()))
         dotfilename=dotfilename+'.dot'
-        contents.insert(0,'DOT '+dotfilename+' OVERWRITE UPDATE\n');
+        contents.insert(0,'DOT '+dotfilename+' UPDATE\n');
         input_fp.close()
         output_fp=open(self.dag.get_dag_file(),'w')
         output_fp.writelines(contents)
