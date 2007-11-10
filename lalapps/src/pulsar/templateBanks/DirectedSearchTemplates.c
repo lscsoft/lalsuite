@@ -28,8 +28,6 @@ RCSID("$Id$");
 
 int main(int argc, char *argv[]) {
 
-  INT4 i;
-
   /* LAL status */
   LALStatus status = blank_status;
 
@@ -64,7 +62,6 @@ int main(int argc, char *argv[]) {
 
   /* Output files */
   CHAR *output_filename = NULL;
-  FILE *output_file = NULL;
 
   /* Dimensionality of parameter space */
   INT4 dimension = 0;
@@ -165,62 +162,21 @@ int main(int argc, char *argv[]) {
     LALPrintError("%s\nERROR: XLALSetupLatticeTiling failed\n", rcsid);
     return EXIT_FAILURE;
   }
-
-  /* Open output file */
+  
+  /* Write out XML file if requested */
   if (output_filename != NULL) {
-    if ((output_file = fopen(output_filename, "wt")) == NULL) {
-      LALPrintError("%s\nERROR: Could not open output file '%s'\n", rcsid, output_filename);
+    if (XLALWriteFlatLatticeTilingXMLFile(tiling, output_filename) != XLAL_SUCCESS) {
+      LALPrintError("%s\nERROR: XLALWriteFlatLatticeTilingXMLFile failed\n", rcsid);
       return EXIT_FAILURE;
     }
-    if (tiling->dimension > 0) {
-      fprintf(output_file, "% 0.16e", freq);
-      if (tiling->dimension > 1) {
-	fprintf(output_file, "% 0.16e", f1dot); 
-	if (tiling->dimension > 2) {
-	  fprintf(output_file, "% 0.16e", f2dot);
-	  if (tiling->dimension > 3) {
-	    fprintf(output_file, "% 0.16e", f3dot);
-	  }
-	}
-      }
-      fprintf(output_file, "\n");
-    }
-    if (tiling->dimension > 0) {
-      fprintf(output_file, "% 0.16e", freq_band);
-      if (tiling->dimension > 1) {
-	fprintf(output_file, "% 0.16e", f1dot_band); 
-	if (tiling->dimension > 2) {
-	  fprintf(output_file, "% 0.16e", f2dot_band);
-	  if (tiling->dimension > 3) {
-	    fprintf(output_file, "% 0.16e", f3dot_band);
-	  }
-	}
-      }
-      fprintf(output_file, "\n");
-    }
   }
-  
-  /* Step through templates */
-  while (XLALNextFlatLatticePoint(tiling) == XLAL_SUCCESS) {
 
-    /* If required write template to output file */
-    if (output_file != NULL) {
-
-      /* Print frequency, sky position and at least PULSAR_MAX_SPINS spindowns as required by CFS_v2 */
-      for (i = 0; i < tiling->dimension; ++i) {
-	fprintf(output_file, " % 0.16e", XLALCurrentFlatLatticePoint(tiling, i));
-      }
-      fprintf(output_file, "\n");
-	
-    }
-
+  /* Otherwise just count the number of templates */
+  else {
+    while (XLALNextFlatLatticePoint(tiling));
   }
-  printf("Number of templates generated: %lli\n", XLALNumberOfFlatLatticeTiles(tiling));
 
-  /* Close output file */
-  if (output_file != NULL) {
-    fclose(output_file);
-  }
+  printf("Number of templates generated: %lli\n", XLALTotalFlatLatticePoints(tiling));
 
   /* Cleanup */
   LAL_CALL(LALDestroyUserVars(&status), &status);

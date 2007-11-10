@@ -69,6 +69,12 @@ typedef struct tagFlatLatticeTiling {
   /* Temporary vector */
   gsl_vector *temp;
 
+  /* Have we started generating templates? */
+  BOOLEAN started;
+
+  /* Have we finished generating templates? */
+  BOOLEAN finished;
+
   /* Number of templates generated */
   UINT8 templates;
 
@@ -98,11 +104,13 @@ extern "C" {
 
   int XLALSetupFlatLatticeTiling(FlatLatticeTiling*);
 
-  int XLALNextFlatLatticePoint(FlatLatticeTiling*);
+  BOOLEAN XLALNextFlatLatticePoint(FlatLatticeTiling*);
 
   REAL8 XLALCurrentFlatLatticePoint(FlatLatticeTiling*, INT4);
 
-  UINT8 XLALNumberOfFlatLatticeTiles(FlatLatticeTiling*);
+  UINT8 XLALTotalFlatLatticePoints(FlatLatticeTiling*);
+
+  int XLALWriteFlatLatticeTilingXMLFile(FlatLatticeTiling*, CHAR *);
 
 #ifdef __cplusplus
 }

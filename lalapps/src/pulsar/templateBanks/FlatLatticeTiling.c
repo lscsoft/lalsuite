@@ -95,6 +95,9 @@ FlatLatticeTiling *XLALCreateFlatLatticeTiling(
 
   tiling->temp = NULL;
 
+  tiling->started = FALSE;
+  tiling->finished = FALSE;
+
   tiling->templates = 0;
 
   return tiling;
@@ -482,6 +485,7 @@ int XLALSetupFlatLatticeTiling(
   INT4 i, j;
   INT4 n = tiling->dimension;
   gsl_matrix *directions = NULL;
+  gsl_matrix *normalised_generator = NULL;
   gsl_vector *generator_lengths = NULL;
   gsl_vector *temp = NULL;
   double length = 0.0;
@@ -540,11 +544,13 @@ int XLALSetupFlatLatticeTiling(
 
   /* Normalise the generator columns to unity so they step to points on the covering
      sphere. Save the correct length of the lattice vectors so they can be restored later. */
+  normalised_generator = gsl_matrix_alloc(n, n);
+  gsl_matrix_memcpy(normalised_generator, tiling->generator);
   generator_lengths = gsl_vector_alloc(n);
   for (i = 0; i < n; ++i) {
     
     /* Store view of ith column */
-    gsl_vector_view col_i = gsl_matrix_column(tiling->generator, i);
+    gsl_vector_view col_i = gsl_matrix_column(normalised_generator, i);
 
     /* Find length of ith column */
     gsl_blas_ddot(&col_i.vector, &col_i.vector, &length);
@@ -559,7 +565,7 @@ int XLALSetupFlatLatticeTiling(
   /* Compute the increment vectors between lattice points in the parameter space. At the moment these
      vectors will move to points on the covering sphere in directions orthogonal with respect to the metric. */
   tiling->increment = gsl_matrix_alloc(n, n);
-  gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, directions, tiling->generator, 0.0, tiling->increment);
+  gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, directions, normalised_generator, 0.0, tiling->increment);
 
   /* Scale the current increment vectors so that their length with respect to the metric
      is equal to the mismatch; then restore the original lengths of the lattice vectors. */
@@ -579,8 +585,6 @@ int XLALSetupFlatLatticeTiling(
 
   }
 
-  XLALfprintfGSLvector(stderr, "%0.16e", generator_lengths);
-
   /* Print debugging */
   LogPrintf(LOG_DETAIL, "Increment vectors between lattice points:\n");
   for (i = 0; i < n; ++i) {
@@ -599,11 +603,14 @@ int XLALSetupFlatLatticeTiling(
   }
   LogPrintfVerbatim(LOG_DETAIL, " ;\n");
 
-  /* Initialise number of templates generated */
+  /* We haven't started generating templates yet, nor have we finished */
+  tiling->started = FALSE;
+  tiling->finished = FALSE;
   tiling->templates = 0;
 
   /* Cleanup */
   gsl_matrix_free(directions);
+  gsl_matrix_free(normalised_generator);
   gsl_vector_free(generator_lengths);
   gsl_vector_free(temp);
 
@@ -614,19 +621,29 @@ int XLALSetupFlatLatticeTiling(
 /**
  * Find the next point in the flat lattice tiling
  */
-int XLALNextFlatLatticePoint(
-			     FlatLatticeTiling* tiling /**< [in] Flat lattice tiling structure */
-			     )
+BOOLEAN XLALNextFlatLatticePoint(
+				 FlatLatticeTiling* tiling /**< [in] Flat lattice tiling structure */
+				 )
 {
-
+  
   INT4 i, j;
   INT4 n = tiling->dimension;
   REAL8 lower = 0.0;
   REAL8 upper = 0.0;
   REAL8 scale = 0.0;
 
-  /* If first template ... */
-  if (tiling->templates == 0) {
+  /* Have we already finished? */
+  if (tiling->finished) {
+    return FALSE;
+  }
+
+  /* If we haven't started generating templates yet ... */
+  if (!tiling->started) {
+
+    /* We've started, but we're not finished */
+    tiling->started = TRUE;
+    tiling->finished = FALSE;
+    tiling->templates = 0;
 
     /* Allocate */
     tiling->current = gsl_vector_alloc(n);
@@ -727,7 +744,8 @@ int XLALNextFlatLatticePoint(
 	  if (i == 0) {
 
 	    /* There are no more points: we are done */
-	    return XLAL_FAILURE;
+	    tiling->finished = TRUE;
+	    return FALSE;
 
 	  }
 
@@ -757,7 +775,7 @@ int XLALNextFlatLatticePoint(
   /* Increment template count */
   ++tiling->templates;
 
-  return XLAL_SUCCESS;
+  return TRUE;
 
 }
 
@@ -775,13 +793,99 @@ REAL8 XLALCurrentFlatLatticePoint(
 }
 
 /**
- * Return the number of points generated so far by the flat lattice tiling
+ * Return the total number of points generated so far by the flat lattice tiling
  */
-UINT8 XLALNumberOfFlatLatticeTiles(
-				   FlatLatticeTiling* tiling /**< [in] Flat lattice tiling structure */
-				   )
+UINT8 XLALTotalFlatLatticePoints(
+				 FlatLatticeTiling* tiling /**< [in] Flat lattice tiling structure */
+				 )
 {
 
   return tiling->templates;
 
 }
+
+/**
+ * Write a basic XML file containing a flat lattice tiling and associated metadata.
+ */
+int XLALWriteFlatLatticeTilingXMLFile(
+				      FlatLatticeTiling* tiling, /**< [in] Flat lattice tiling structure */
+				      CHAR *output_filename      /**< [in] Output filename */
+				      )
+{
+
+  INT4 i, j;
+  INT4 n = tiling->dimension;
+  FILE *output_file = NULL;
+
+  /* Open output file */
+  if ((output_file = fopen(output_filename, "wt")) == NULL) {
+    LALPrintError("%s\nERROR: Could not open output file '%s'\n", FLATLATTICETILINGC, output_filename);
+    XLAL_ERROR("XLALWriteFlatLatticeTilingXMLFile", XLAL_EIO);
+  }
+
+  /* Write XML header */
+  fprintf(output_file, "<?xml version=\"1.0\"?>\n");
+  fprintf(output_file, "<flatlatticetiling>\n");
+
+  /* Write dimension */
+  fprintf(output_file, "  <dimension>%i</dimension>\n", tiling->dimension);
+
+  /* Write metric */
+  fprintf(output_file, "  <metric>\n");
+  for (i = 0; i < n; ++i) {
+    fprintf(output_file, "    <row>\n");
+    for (j = 0; j < n; ++j) {
+      fprintf(output_file, "      <value>%0.16e</value>\n", gsl_matrix_get(tiling->metric, i, j));
+    }
+    fprintf(output_file, "    </row>\n");
+  }
+  fprintf(output_file, "  </metric>\n");
+
+  /* Write mismatch */
+  fprintf(output_file, "  <mismatch>%0.16e</mismatch>\n", tiling->mismatch);
+
+  /* Write generator */
+  fprintf(output_file, "  <generator>\n");
+  for (i = 0; i < n; ++i) {
+    fprintf(output_file, "    <row>\n");
+    for (j = 0; j < n; ++j) {
+      fprintf(output_file, "      <value>%0.16e</value>\n", gsl_matrix_get(tiling->generator, i, j));
+    }
+    fprintf(output_file, "    </row>\n");
+  }
+  fprintf(output_file, "  </generator>\n");
+
+  /* Write increment vectors */
+  fprintf(output_file, "  <increment>\n");
+  for (i = 0; i < n; ++i) {
+    fprintf(output_file, "    <row>\n");
+    for (j = 0; j < n; ++j) {
+      fprintf(output_file, "      <value>%0.16e</value>\n", gsl_matrix_get(tiling->increment, i, j));
+    }
+    fprintf(output_file, "    </row>\n");
+  }
+  fprintf(output_file, "  </increment>\n");
+
+  /* Generate templates */
+  fprintf(output_file, "  <templates>\n");
+  while (XLALNextFlatLatticePoint(tiling)) {
+
+    /* Write template */
+    fprintf(output_file, "    <row>\n");
+    for (j = 0; j < n; ++j) {
+      fprintf(output_file, "      <value>%0.16e</value>\n", gsl_vector_get(tiling->current, j));
+    }
+    fprintf(output_file, "    </row>\n");
+
+  }
+  fprintf(output_file, "  </templates>\n");
+
+  /* Write XML footer */
+  fprintf(output_file, "</flatlatticetiling>\n");
+
+  /* Close file */
+  fclose(output_file);
+
+  return XLAL_SUCCESS;
+  
+}				      
