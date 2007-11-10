@@ -83,15 +83,12 @@ FlatLatticeTiling *XLALCreateFlatLatticeTiling(
 
   tiling->bounds = NULL;
   tiling->bounds_args = NULL;
+  tiling->bounds_xml_desc = NULL;
 
   tiling->increment = NULL;
 
   tiling->current = NULL;
   tiling->upper = NULL;
-
-  tiling->on_upper = NULL;
-  tiling->on_lower = NULL;
-  tiling->resume = NULL;
 
   tiling->temp = NULL;
 
@@ -119,15 +116,12 @@ void XLALDestroyFlatLatticeTiling(
     if (tiling->generator) gsl_matrix_free(tiling->generator);
 
     if (tiling->bounds_args) gsl_vector_free(tiling->bounds_args);
+    if (tiling->bounds_xml_desc) LALFree(tiling->bounds_xml_desc);
 
     if (tiling->increment) gsl_matrix_free(tiling->increment);
 
     if (tiling->current) gsl_vector_free(tiling->current);
     if (tiling->upper) gsl_vector_free(tiling->upper);
-
-    if (tiling->on_upper) gsl_vector_int_free(tiling->on_upper);
-    if (tiling->on_lower) gsl_vector_int_free(tiling->on_lower);
-    if (tiling->resume) gsl_vector_free(tiling->resume);
 
     if (tiling->temp) gsl_vector_free(tiling->temp);
 
@@ -431,6 +425,7 @@ int XLALSquareParameterSpace(
   INT4 n = tiling->dimension;
   va_list args;
   double a, b;
+  CHAR *p = NULL;
 
   /* Allocate */
   tiling->bounds_args = gsl_vector_alloc(2 * n);
@@ -452,6 +447,25 @@ int XLALSquareParameterSpace(
 
   /* Bound function */
   tiling->bounds = &SquareParameterSpaceBounds;
+
+  /* XML description */
+  if ((tiling->bounds_xml_desc = (CHAR*) LALMalloc((300 + 100*n) * sizeof(CHAR))) == NULL) {
+    LALPrintError("%s\nERROR: Could not allocate a CHAR*\n", FLATLATTICETILINGC);
+    XLAL_ERROR("XLALSquareParameterSpace", XLAL_ENOMEM);
+  }
+  sprintf(tiling->bounds_xml_desc, "<type>square</type><lower>");
+  for (i = 0; i < n; ++i) {
+    p = tiling->bounds_xml_desc + strlen(tiling->bounds_xml_desc);
+    sprintf(p, "%0.16e ", gsl_vector_get(tiling->bounds_args, 2*i));
+  }
+  p = tiling->bounds_xml_desc + strlen(tiling->bounds_xml_desc);
+  sprintf(p, ";</lower><upper>");
+  for (i = 0; i < n; ++i) {
+    p = tiling->bounds_xml_desc + strlen(tiling->bounds_xml_desc);
+    sprintf(p, "%0.16e ", gsl_vector_get(tiling->bounds_args, 2*i+1));
+  }
+  p = tiling->bounds_xml_desc + strlen(tiling->bounds_xml_desc);
+  sprintf(p, ";</upper>");
 
   return XLAL_SUCCESS;
 
@@ -495,6 +509,14 @@ int XLALSetupFlatLatticeTiling(
     LALPrintError("%s\nERROR: Metric matrix is not the correct size\n", FLATLATTICETILINGC);
     XLAL_ERROR("XLALSetupFlatLatticeTiling", XLAL_ESIZE);
   }
+  for (i = 0; i < n; ++i) {
+    for (j = i + 1; j < n; ++j) {
+      if (gsl_matrix_get(tiling->metric, i, j) != gsl_matrix_get(tiling->metric, j, i)) {
+	LALPrintError("%s\nERROR: Generator matrix is not symmetric\n", FLATLATTICETILINGC);
+	XLAL_ERROR("XLALSetupFlatLatticeTiling", XLAL_EDATA);
+      }
+    }
+  }
   LogPrintf(LOG_DETAIL, "Parameter space metric:\n");
   for (i = 0; i < n; ++i) {
     for (j = 0; j < n; ++j) {
@@ -517,7 +539,7 @@ int XLALSetupFlatLatticeTiling(
   for (i = 0; i < n; ++i) {
     for (j = i + 1; j < n; ++j) {
       if (gsl_matrix_get(tiling->generator, i, j) != 0.0) {
-	LALPrintError("%s\nERROR: Generator matrix is not upper triagular\n", FLATLATTICETILINGC);
+	LALPrintError("%s\nERROR: Generator matrix is not upper triangular\n", FLATLATTICETILINGC);
 	XLAL_ERROR("XLALSetupFlatLatticeTiling", XLAL_EDATA);
       }
     }
@@ -630,6 +652,7 @@ BOOLEAN XLALNextFlatLatticePoint(
   INT4 n = tiling->dimension;
   REAL8 lower = 0.0;
   REAL8 upper = 0.0;
+  REAL8 incr = 0.0;
   REAL8 scale = 0.0;
 
   /* Have we already finished? */
@@ -648,33 +671,27 @@ BOOLEAN XLALNextFlatLatticePoint(
     /* Allocate */
     tiling->current = gsl_vector_alloc(n);
     tiling->upper = gsl_vector_alloc(n);
-    tiling->on_upper = gsl_vector_int_alloc(n);
-    tiling->on_lower = gsl_vector_int_alloc(n);
-    tiling->resume = gsl_vector_alloc(n);
     tiling->temp = gsl_vector_alloc(n);
 
-    /* Initialise flags */
-    gsl_vector_int_set_all(tiling->on_upper, FALSE);
-    gsl_vector_int_set_all(tiling->on_lower, FALSE);
-    
     /* Calculate starting point and upper bounds */
     gsl_vector_set_all(tiling->current, GSL_NAN);
     for (i = 0; i < n; ++i) {
       
-      /* Get bounds */
+      /* Get bounds and increment */
       (tiling->bounds)(tiling->current, i, tiling->bounds_args, &lower, &upper);
+      incr = gsl_matrix_get(tiling->increment, i, i);
 
-      /* Set starting point to lower bound */
+      /* If size of dimension in non-zero, add an extra padding point either side */
+      if (lower < upper) {
+	lower -= incr;
+	upper += incr;
+      }
+
+      /* Set starting point to lower */
       gsl_vector_set(tiling->current, i, lower);
 
       /* Save upper bound */
       gsl_vector_set(tiling->upper, i, upper);
-
-      /* If lower and upper bounds the same, set flag to avoid duplication */
-      if (lower == upper) {
-	gsl_vector_set(tiling->resume, i, upper);
-	gsl_vector_int_set(tiling->on_upper, i, TRUE);
-      }
 
     }
 
@@ -685,23 +702,11 @@ BOOLEAN XLALNextFlatLatticePoint(
 
     for (i = n - 1; i >= 0; --i) {
 
-      /* If point is on the lower bound */
-      if (gsl_vector_int_get(tiling->on_lower, i)) {
+      /* Get increment vector for this dimension */
+      gsl_vector_view increment_i = gsl_matrix_column(tiling->increment, i);
 
-	  /* Restore point and reset flag */
-	  gsl_vector_set(tiling->current, i, gsl_vector_get(tiling->resume, i));
-	  gsl_vector_int_set(tiling->on_lower, i, FALSE);
-
-      }
-      else {
-
-	/* Get increment vector for this dimension */
-	gsl_vector_view increment_i = gsl_matrix_column(tiling->increment, i);
-
-	/* Increment current point */
-	gsl_vector_add(tiling->current, &increment_i.vector);
-
-      }
+      /* Increment current point */
+      gsl_vector_add(tiling->current, &increment_i.vector);
 
       /* Reset the higher dimension to their lower bounds */
       for (j = i + 1; j < n; ++j) {
@@ -710,63 +715,44 @@ BOOLEAN XLALNextFlatLatticePoint(
 	gsl_vector_view increment_j = gsl_matrix_column(tiling->increment, j);
 	gsl_vector_memcpy(tiling->temp, &increment_j.vector);
 	
-	/* Get bounds */
+	/* Get bounds and increment */
  	(tiling->bounds)(tiling->current, j, tiling->bounds_args, &lower, &upper);
+	incr = gsl_matrix_get(tiling->increment, j, j);
+
+	/* If size of dimension in non-zero, add an extra padding point either side */
+	if (lower < upper) {
+	  lower -= incr;
+	  upper += incr;
+	}
 
 	/* Move current point in this dimension back to its lower bound */
-	scale = floor((gsl_vector_get(tiling->current, j) - lower) / gsl_matrix_get(tiling->increment, j, j));
+	scale = floor((gsl_vector_get(tiling->current, j) - lower) / incr);
 	gsl_vector_scale(tiling->temp, scale);
 	gsl_vector_sub(tiling->current, tiling->temp);
-
-	/* Save point, set point to lower bound and flag */
-	gsl_vector_set(tiling->resume, j, gsl_vector_get(tiling->current, j));
-	gsl_vector_set(tiling->current, j, lower);
-	gsl_vector_int_set(tiling->on_lower, j, TRUE);
 
 	/* Save upper bound */
 	gsl_vector_set(tiling->upper, j, upper);
 	
       }
 
-      /* Check if it is still in bounds */
+      /* If it is still in bounds ... */
       if (gsl_vector_get(tiling->current, i) < gsl_vector_get(tiling->upper, i)) {
 
 	/* This is a valid point */
 	break;
 
       }
-      else {
 
-	/* If point is already on the upper bound */
-	if (gsl_vector_int_get(tiling->on_upper, i)) {
+      /* Otherwise, if this is the first dimension ... */
+      else if (i == 0) {
 
-	  /* If this is the first dimension ... */
-	  if (i == 0) {
-
-	    /* There are no more points: we are done */
-	    tiling->finished = TRUE;
-	    return FALSE;
-
-	  }
-
-	  /* Otherwise restore point, reset flag and continue to next dimension */
-	  gsl_vector_set(tiling->current, i, gsl_vector_get(tiling->resume, i));
-	  gsl_vector_int_set(tiling->on_upper, i, FALSE);
-
-	}
-	else {
-	  
-	  /* Save point, set point to upper bound, and flag */
-	  gsl_vector_set(tiling->resume, i, gsl_vector_get(tiling->current, i));
-	  gsl_vector_set(tiling->current, i, gsl_vector_get(tiling->upper, i));
-	  gsl_vector_int_set(tiling->on_upper, i, TRUE);
-
-	  /* This is a valid point */
-	  break;
-	  
-	}
+	/* There are no more points: we are done */
+	tiling->finished = TRUE;
+	return FALSE;
 
       }
+
+      /* Otherwise continue to next dimension */
 
     }
 
@@ -833,11 +819,11 @@ int XLALWriteFlatLatticeTilingXMLFile(
   /* Write metric */
   fprintf(output_file, "  <metric>\n");
   for (i = 0; i < n; ++i) {
-    fprintf(output_file, "    <row>\n");
+    fprintf(output_file, "    ");
     for (j = 0; j < n; ++j) {
-      fprintf(output_file, "      <value>%0.16e</value>\n", gsl_matrix_get(tiling->metric, i, j));
+      fprintf(output_file, "% 0.16e ", gsl_matrix_get(tiling->metric, i, j));
     }
-    fprintf(output_file, "    </row>\n");
+    fprintf(output_file, ";\n");
   }
   fprintf(output_file, "  </metric>\n");
 
@@ -847,22 +833,30 @@ int XLALWriteFlatLatticeTilingXMLFile(
   /* Write generator */
   fprintf(output_file, "  <generator>\n");
   for (i = 0; i < n; ++i) {
-    fprintf(output_file, "    <row>\n");
+    fprintf(output_file, "    ");
     for (j = 0; j < n; ++j) {
-      fprintf(output_file, "      <value>%0.16e</value>\n", gsl_matrix_get(tiling->generator, i, j));
+      fprintf(output_file, "% 0.16e ", gsl_matrix_get(tiling->generator, i, j));
     }
-    fprintf(output_file, "    </row>\n");
+    fprintf(output_file, ";\n");
   }
   fprintf(output_file, "  </generator>\n");
+
+  /* Write XML description of parameter space bounds */
+  if (tiling->bounds_xml_desc) {
+    fprintf(output_file, "  <bounds>\n    %s\n  </bounds>\n", tiling->bounds_xml_desc);
+  }
+  else {
+    fprintf(output_file, "  <bounds><type>unknown</type></bounds>\n");
+  }
 
   /* Write increment vectors */
   fprintf(output_file, "  <increment>\n");
   for (i = 0; i < n; ++i) {
-    fprintf(output_file, "    <row>\n");
+    fprintf(output_file, "    ");
     for (j = 0; j < n; ++j) {
-      fprintf(output_file, "      <value>%0.16e</value>\n", gsl_matrix_get(tiling->increment, i, j));
+      fprintf(output_file, "% 0.16e ", gsl_matrix_get(tiling->increment, i, j));
     }
-    fprintf(output_file, "    </row>\n");
+    fprintf(output_file, ";\n");
   }
   fprintf(output_file, "  </increment>\n");
 
@@ -871,11 +865,11 @@ int XLALWriteFlatLatticeTilingXMLFile(
   while (XLALNextFlatLatticePoint(tiling)) {
 
     /* Write template */
-    fprintf(output_file, "    <row>\n");
+    fprintf(output_file, "    ");
     for (j = 0; j < n; ++j) {
-      fprintf(output_file, "      <value>%0.16e</value>\n", gsl_vector_get(tiling->current, j));
+      fprintf(output_file, "% 0.16e ", gsl_vector_get(tiling->current, j));
     }
-    fprintf(output_file, "    </row>\n");
+    fprintf(output_file, ";\n");
 
   }
   fprintf(output_file, "  </templates>\n");

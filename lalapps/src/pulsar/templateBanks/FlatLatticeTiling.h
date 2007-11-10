@@ -53,6 +53,7 @@ typedef struct tagFlatLatticeTiling {
   /* Pointer to function to calculate bounds on parameter space */
   void (*bounds)(gsl_vector*, INT4, gsl_vector*, REAL8*, REAL8*);
   gsl_vector *bounds_args;
+  CHAR *bounds_xml_desc;
 
   /* Increment vectors between lattice points in the parameter space */
   gsl_matrix *increment;
@@ -60,11 +61,6 @@ typedef struct tagFlatLatticeTiling {
   /* Current point in parameter space and its upper bound */
   gsl_vector *current;
   gsl_vector *upper;
-
-  /* Flags for filling bounds and point to resume from */
-  gsl_vector_int *on_upper;
-  gsl_vector_int *on_lower;
-  gsl_vector *resume;  
 
   /* Temporary vector */
   gsl_vector *temp;
