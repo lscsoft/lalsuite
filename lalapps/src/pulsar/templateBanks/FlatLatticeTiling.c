@@ -566,48 +566,52 @@ int XLALSetupFlatLatticeTiling(
     LogPrintfVerbatim(LOG_DETAIL, " ;\n");
   }
 
-  /* Normalise the generator columns to unity so they step to points on the covering
-     sphere. Save the correct length of the lattice vectors so they can be restored later. */
-  normalised_generator = gsl_matrix_alloc(n, n);
-  gsl_matrix_memcpy(normalised_generator, tiling->generator);
-  generator_lengths = gsl_vector_alloc(n);
-  for (i = 0; i < n; ++i) {
+/*   /\* Normalise the generator columns to unity so they step to points on the covering */
+/*      sphere. Save the correct length of the lattice vectors so they can be restored later. *\/ */
+/*   normalised_generator = gsl_matrix_alloc(n, n); */
+/*   gsl_matrix_memcpy(normalised_generator, tiling->generator); */
+/*   generator_lengths = gsl_vector_alloc(n); */
+/*   for (i = 0; i < n; ++i) { */
     
-    /* Store view of ith column */
-    gsl_vector_view col_i = gsl_matrix_column(normalised_generator, i);
+/*     /\* Store view of ith column *\/ */
+/*     gsl_vector_view col_i = gsl_matrix_column(normalised_generator, i); */
 
-    /* Find length of ith column */
-    gsl_blas_ddot(&col_i.vector, &col_i.vector, &length);
-    length = sqrt(length);
+/*     /\* Find length of ith column *\/ */
+/*     gsl_blas_ddot(&col_i.vector, &col_i.vector, &length); */
+/*     length = sqrt(length); */
 
-    /* Normalise column and save length */
-    gsl_vector_scale(&col_i.vector, 1.0 / length);
-    gsl_vector_set(generator_lengths, i, length);
+/*     /\* Normalise column and save length *\/ */
+/*     gsl_vector_scale(&col_i.vector, 1.0 / length); */
+/*     gsl_vector_set(generator_lengths, i, length); */
 
-  }
+/*   } */
 
-  /* Compute the increment vectors between lattice points in the parameter space. At the moment these
-     vectors will move to points on the covering sphere in directions orthogonal with respect to the metric. */
+/*   /\* Compute the increment vectors between lattice points in the parameter space. At the moment these */
+/*      vectors will move to points on the covering sphere in directions orthogonal with respect to the metric. *\/ */
+/*   tiling->increment = gsl_matrix_alloc(n, n); */
+/*   gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, directions, normalised_generator, 0.0, tiling->increment); */
+
+/*   /\* Scale the increment vectors so that their length with respect to the metric */
+/*      is equal to the mismatch; then restore the original lengths of the lattice vectors. *\/ */
+/*   temp = gsl_vector_alloc(n); */
+/*   for (i = 0; i < n; ++i) { */
+
+/*     /\* Store view of ith column *\/ */
+/*     gsl_vector_view col_i = gsl_matrix_column(tiling->increment, i); */
+
+/*     /\* Find length of ith column with respect to the metric *\/ */
+/*     gsl_blas_dgemv(CblasNoTrans, 1.0, tiling->metric, &col_i.vector, 0.0, temp); */
+/*     gsl_blas_ddot(&col_i.vector, temp, &length); */
+/*     length = sqrt(length); */
+
+/*     /\* Scale the column so that its metric-length is the mismatch, and restore the lattice vector length *\/ */
+/*     gsl_vector_scale(&col_i.vector, tiling->mismatch / length * gsl_vector_get(generator_lengths, i)); */
+
+/*   } */
+
   tiling->increment = gsl_matrix_alloc(n, n);
-  gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, directions, normalised_generator, 0.0, tiling->increment);
-
-  /* Scale the increment vectors so that their length with respect to the metric
-     is equal to the mismatch; then restore the original lengths of the lattice vectors. */
-  temp = gsl_vector_alloc(n);
-  for (i = 0; i < n; ++i) {
-
-    /* Store view of ith column */
-    gsl_vector_view col_i = gsl_matrix_column(tiling->increment, i);
-
-    /* Find length of ith column with respect to the metric */
-    gsl_blas_dgemv(CblasNoTrans, 1.0, tiling->metric, &col_i.vector, 0.0, temp);
-    gsl_blas_ddot(&col_i.vector, temp, &length);
-    length = sqrt(length);
-
-    /* Scale the column so that its metric-length is the mismatch, and restore the lattice vector length */
-    gsl_vector_scale(&col_i.vector, tiling->mismatch / length * gsl_vector_get(generator_lengths, i));
-
-  }
+  gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, directions, tiling->generator, 0.0, tiling->increment);
+  gsl_matrix_scale(tiling->increment, sqrt(tiling->mismatch);
 
   /* Print debugging */
   LogPrintf(LOG_DETAIL, "Increment vectors between lattice points:\n");
