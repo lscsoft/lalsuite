@@ -52,6 +52,8 @@ NRCSID(FLATLATTICETILINGC, "$Id$");
 
 static void SquareParameterSpaceBounds(gsl_vector*, INT4, gsl_vector*, REAL8*, REAL8*);
 
+static void GetCurrentBounds(FlatLatticeTiling*, INT4, REAL8*, REAL8*);
+
 /**
  * Creates a structure to hold information about the flat lattice tiling
  */
@@ -148,7 +150,7 @@ int XLALOrthonormaliseMatrixWRTMetric(
   double inner_prod = 0.0;
 
   /* Check input */
-  if (m != metric->size1 || m != metric->size2) {
+  if (m != (INT4)metric->size1 || m != (INT4)metric->size2) {
     LALPrintError("%s\ERROR: Metric matrix is not the correct size\n", FLATLATTICETILINGC);
     XLAL_ERROR("XLALOrthonormaliseMatrixWRTMetric", XLAL_ESIZE);
   }
@@ -475,12 +477,12 @@ int XLALSquareParameterSpace(
  * Returns the bounds for a square parameter
  */
 void SquareParameterSpaceBounds(
-			       gsl_vector *current, /**< [in] Current point */
-			       INT4 index,          /**< [in] Dimension to set bound on */
-			       gsl_vector *args,    /**< [in] Other arguments */
-			       REAL8 *lower,        /**< [out] Lower bound */
-			       REAL8 *upper         /**< [out] Upper bound */
-			       ) 
+				gsl_vector *current, /**< [in] Current point */
+				INT4 index,          /**< [in] Dimension to set bound on */
+				gsl_vector *args,    /**< [in] Other arguments */
+				REAL8 *lower,        /**< [out] Lower bound */
+				REAL8 *upper         /**< [out] Upper bound */
+				) 
 {
   
   *lower = gsl_vector_get(args, 2*index  );
@@ -505,7 +507,7 @@ int XLALSetupFlatLatticeTiling(
   double length = 0.0;
 
   /* Check metric */
-  if (tiling->metric->size1 != n || tiling->metric->size2 != n) {
+  if ((INT4)tiling->metric->size1 != n || (INT4)tiling->metric->size2 != n) {
     LALPrintError("%s\nERROR: Metric matrix is not the correct size\n", FLATLATTICETILINGC);
     XLAL_ERROR("XLALSetupFlatLatticeTiling", XLAL_ESIZE);
   }
@@ -532,7 +534,7 @@ int XLALSetupFlatLatticeTiling(
   }
 
   /* Check generator */
-  if (tiling->generator->size1 != n || tiling->generator->size2 != n) {
+  if ((INT4)tiling->generator->size1 != n || (INT4)tiling->generator->size2 != n) {
     LALPrintError("%s\nERROR: Generator matrix is not the correct size\n", FLATLATTICETILINGC);
     XLAL_ERROR("XLALSetupFlatLatticeTiling", XLAL_ESIZE);
   }
@@ -589,7 +591,7 @@ int XLALSetupFlatLatticeTiling(
   tiling->increment = gsl_matrix_alloc(n, n);
   gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, directions, normalised_generator, 0.0, tiling->increment);
 
-  /* Scale the current increment vectors so that their length with respect to the metric
+  /* Scale the increment vectors so that their length with respect to the metric
      is equal to the mismatch; then restore the original lengths of the lattice vectors. */
   temp = gsl_vector_alloc(n);
   for (i = 0; i < n; ++i) {
@@ -641,6 +643,27 @@ int XLALSetupFlatLatticeTiling(
 }
 
 /**
+ * Call the bounds function to get bounds on the current point
+ */
+void GetCurrentBounds(
+		      FlatLatticeTiling* tiling, /**< [in] Flat lattice tiling structure */
+		      INT4 index,                /**< [in] Dimension to set bound on */
+		      REAL8 *lower,              /**< [out] Lower bound */
+		      REAL8 *upper               /**< [out] Upper bound */
+		      ) 
+{
+
+  if (index == 0) {
+    (tiling->bounds)(NULL,                        index, tiling->bounds_args, lower, upper);
+  }
+  else {
+    gsl_vector_view current_up_to_index = gsl_vector_subvector(tiling->current, 0, index);
+    (tiling->bounds)(&current_up_to_index.vector, index, tiling->bounds_args, lower, upper);
+  }
+  
+}
+
+/**
  * Find the next point in the flat lattice tiling
  */
 BOOLEAN XLALNextFlatLatticePoint(
@@ -674,11 +697,10 @@ BOOLEAN XLALNextFlatLatticePoint(
     tiling->temp = gsl_vector_alloc(n);
 
     /* Calculate starting point and upper bounds */
-    gsl_vector_set_all(tiling->current, GSL_NAN);
     for (i = 0; i < n; ++i) {
       
       /* Get bounds and increment */
-      (tiling->bounds)(tiling->current, i, tiling->bounds_args, &lower, &upper);
+      GetCurrentBounds(tiling, i, &lower, &upper);
       incr = gsl_matrix_get(tiling->increment, i, i);
 
       /* If size of dimension in non-zero, add an extra padding point either side */
@@ -708,7 +730,7 @@ BOOLEAN XLALNextFlatLatticePoint(
       /* Increment current point */
       gsl_vector_add(tiling->current, &increment_i.vector);
 
-      /* Reset the higher dimension to their lower bounds */
+      /* Reset the higher dimensions to their lower bounds */
       for (j = i + 1; j < n; ++j) {
 
 	/* Get increment vector for this dimension */
@@ -716,7 +738,7 @@ BOOLEAN XLALNextFlatLatticePoint(
 	gsl_vector_memcpy(tiling->temp, &increment_j.vector);
 	
 	/* Get bounds and increment */
- 	(tiling->bounds)(tiling->current, j, tiling->bounds_args, &lower, &upper);
+	GetCurrentBounds(tiling, j, &lower, &upper);
 	incr = gsl_matrix_get(tiling->increment, j, j);
 
 	/* If size of dimension in non-zero, add an extra padding point either side */
