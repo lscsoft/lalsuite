@@ -22,6 +22,7 @@ SPININJSRC 	= spininj.c
 COINEXTSRC 	= coinext.c
 RANDOMBANKSRC 	= randombank.c
 NRWAVESRC	= nr_wave.c
+SELECTNRWAVESRC = select_nrwave.c
 CALCEXPSNRSRC	= calcexpsnr.c
 if LALFRAME
 if LALMETAIO
@@ -33,7 +34,7 @@ bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank \
                lalapps_thinca lalapps_trigbank \
                lalapps_spininj lalapps_coherent_inspiral \
                lalapps_coherentbank lalapps_coinext \
-               lalapps_randombank lalapps_nr_wave \
+               lalapps_randombank lalapps_nr_wave lalapps_select_nrwave \
                lalapps_calcexpsnr 
 
 lalapps_inspiral_SOURCES 	= $(INSPIRALSRC)
@@ -58,6 +59,7 @@ lalapps_gwf2xml_SOURCES 	= $(GWF2XMLSRC)
 lalapps_coinext_SOURCES         = $(COINEXTSRC)
 lalapps_randombank_SOURCES 	= $(RANDOMBANKSRC)
 lalapps_nr_wave_SOURCES		= $(NRWAVESRC)
+lalapps_select_nrwave_SOURCES	= $(SELECTNRWAVESRC)
 lalapps_calcexpsnr_SOURCES	= $(CALCEXPSNRSRC)
 else
 bin_PROGRAMS = 
