@@ -55,6 +55,9 @@ typedef struct tagFlatLatticeTiling {
   gsl_vector *bounds_args;
   CHAR *bounds_xml_desc;
 
+  /* Orthogonal directions of the metric */
+  gsl_matrix *directions;
+
   /* Increment vectors between lattice points in the parameter space */
   gsl_matrix *increment;
 
@@ -96,7 +99,7 @@ extern "C" {
   
   gsl_matrix *XLALAnstarLatticeGenerator(INT4);
 
-  int XLALSquareParameterSpace(FlatLatticeTiling*, ...);
+  int XLALSquareParameterSpace(FlatLatticeTiling*, gsl_vector*, gsl_vector*);
 
   int XLALSetupFlatLatticeTiling(FlatLatticeTiling*);
 

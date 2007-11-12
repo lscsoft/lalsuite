@@ -27,7 +27,6 @@
 
 #include <math.h>
 #include <stdio.h>
-#include <stdarg.h>
 #include <string.h>
 
 #include <gsl/gsl_math.h>
@@ -35,6 +34,7 @@
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_nan.h>
+#include <gsl/gsl_sort_vector.h>
 
 #include <lal/LALRCSID.h>
 #include <lal/LALError.h>
@@ -87,6 +87,8 @@ FlatLatticeTiling *XLALCreateFlatLatticeTiling(
   tiling->bounds_args = NULL;
   tiling->bounds_xml_desc = NULL;
 
+  tiling->directions = NULL;
+
   tiling->increment = NULL;
 
   tiling->current = NULL;
@@ -119,6 +121,8 @@ void XLALDestroyFlatLatticeTiling(
 
     if (tiling->bounds_args) gsl_vector_free(tiling->bounds_args);
     if (tiling->bounds_xml_desc) LALFree(tiling->bounds_xml_desc);
+
+    if (tiling->directions) gsl_matrix_free(tiling->directions);
 
     if (tiling->increment) gsl_matrix_free(tiling->increment);
 
@@ -414,37 +418,28 @@ gsl_matrix *XLALAnstarLatticeGenerator(
 }
 
 /**
- * Create a parameter space with square bounds, described by a list of alternating lower and upper bounds
- * on the parameter space in each dimension: lower0, upper0, lower1, upper1, lower2, ...
+ * Create a parameter described by vectors of starting points and widths of each dimension.
  */
 int XLALSquareParameterSpace(
 			     FlatLatticeTiling* tiling, /**< [in] Flat lattice tiling structure */
-			     ...                        /**< [in] A 2*tiling->dimension list of REAL8s */
+			     gsl_vector *start,         /**< [in] Starting point of dimension*/
+			     gsl_vector *width          /**< [in] Width of dimension */
 			     )
 {
 
   INT4 i;
   INT4 n = tiling->dimension;
-  va_list args;
-  double a, b;
+  double x  = 0.0;
+  double dx = 0.0;
   CHAR *p = NULL;
 
-  /* Allocate */
+  /* Lower and upper bounds */
   tiling->bounds_args = gsl_vector_alloc(2 * n);
-
-  /* Read parameter list */
-  va_start(args, tiling);
-  for (i = 0; i < 2 * n; ++i) {
-    gsl_vector_set(tiling->bounds_args, i, va_arg(args, REAL8));
-  }
-  va_end(args);
-
-  /* Make sure bounds are in the right order */
   for (i = 0; i < n; ++i) {
-    a = gsl_vector_get(tiling->bounds_args, 2*i  );
-    b = gsl_vector_get(tiling->bounds_args, 2*i+1);
-    gsl_vector_set(tiling->bounds_args, 2*i  , GSL_MIN_DBL(a, b));
-    gsl_vector_set(tiling->bounds_args, 2*i+1, GSL_MAX_DBL(a, b));
+    x  = gsl_vector_get(start, i);
+    dx = gsl_vector_get(width, i);
+    gsl_vector_set(tiling->bounds_args, 2*i  , GSL_MIN_DBL(x, x + dx));
+    gsl_vector_set(tiling->bounds_args, 2*i+1, GSL_MAX_DBL(x, x + dx));
   }
 
   /* Bound function */
@@ -500,11 +495,6 @@ int XLALSetupFlatLatticeTiling(
 
   INT4 i, j;
   INT4 n = tiling->dimension;
-  gsl_matrix *directions = NULL;
-  gsl_matrix *normalised_generator = NULL;
-  gsl_vector *generator_lengths = NULL;
-  gsl_vector *temp = NULL;
-  double length = 0.0;
 
   /* Check metric */
   if ((INT4)tiling->metric->size1 != n || (INT4)tiling->metric->size2 != n) {
@@ -554,66 +544,23 @@ int XLALSetupFlatLatticeTiling(
     LogPrintfVerbatim(LOG_DETAIL, " ;\n");
   }
 
-  /* Find orthogonal directions with respect to the metric, starting from the identity matrix */ 
-  directions = gsl_matrix_alloc(n, n);
-  gsl_matrix_set_identity(directions);
-  XLALOrthonormaliseMatrixWRTMetric(directions, tiling->metric);
-  LogPrintf(LOG_DETAIL, "Orthonormal directions with respect to metric:\n");
+  /* Find orthogonal directions with respect to the metric, starting from 
+     the identity matrix, and scale the orthnormal directions to the mismatch. */
+  tiling->directions = gsl_matrix_alloc(n, n);
+  gsl_matrix_set_identity(tiling->directions);
+  XLALOrthonormaliseMatrixWRTMetric(tiling->directions, tiling->metric);
+  gsl_matrix_scale(tiling->directions, tiling->mismatch);
+  LogPrintf(LOG_DETAIL, "Orthogonal directions with respect to metric:\n");
   for (i = 0; i < n; ++i) {
     for (j = 0; j < n; ++j) {
-      LogPrintfVerbatim(LOG_DETAIL, "  % 0.16e", gsl_matrix_get(directions, i, j));
+      LogPrintfVerbatim(LOG_DETAIL, "  % 0.16e", gsl_matrix_get(tiling->directions, i, j));
     }
     LogPrintfVerbatim(LOG_DETAIL, " ;\n");
   }
 
-/*   /\* Normalise the generator columns to unity so they step to points on the covering */
-/*      sphere. Save the correct length of the lattice vectors so they can be restored later. *\/ */
-/*   normalised_generator = gsl_matrix_alloc(n, n); */
-/*   gsl_matrix_memcpy(normalised_generator, tiling->generator); */
-/*   generator_lengths = gsl_vector_alloc(n); */
-/*   for (i = 0; i < n; ++i) { */
-    
-/*     /\* Store view of ith column *\/ */
-/*     gsl_vector_view col_i = gsl_matrix_column(normalised_generator, i); */
-
-/*     /\* Find length of ith column *\/ */
-/*     gsl_blas_ddot(&col_i.vector, &col_i.vector, &length); */
-/*     length = sqrt(length); */
-
-/*     /\* Normalise column and save length *\/ */
-/*     gsl_vector_scale(&col_i.vector, 1.0 / length); */
-/*     gsl_vector_set(generator_lengths, i, length); */
-
-/*   } */
-
-/*   /\* Compute the increment vectors between lattice points in the parameter space. At the moment these */
-/*      vectors will move to points on the covering sphere in directions orthogonal with respect to the metric. *\/ */
-/*   tiling->increment = gsl_matrix_alloc(n, n); */
-/*   gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, directions, normalised_generator, 0.0, tiling->increment); */
-
-/*   /\* Scale the increment vectors so that their length with respect to the metric */
-/*      is equal to the mismatch; then restore the original lengths of the lattice vectors. *\/ */
-/*   temp = gsl_vector_alloc(n); */
-/*   for (i = 0; i < n; ++i) { */
-
-/*     /\* Store view of ith column *\/ */
-/*     gsl_vector_view col_i = gsl_matrix_column(tiling->increment, i); */
-
-/*     /\* Find length of ith column with respect to the metric *\/ */
-/*     gsl_blas_dgemv(CblasNoTrans, 1.0, tiling->metric, &col_i.vector, 0.0, temp); */
-/*     gsl_blas_ddot(&col_i.vector, temp, &length); */
-/*     length = sqrt(length); */
-
-/*     /\* Scale the column so that its metric-length is the mismatch, and restore the lattice vector length *\/ */
-/*     gsl_vector_scale(&col_i.vector, tiling->mismatch / length * gsl_vector_get(generator_lengths, i)); */
-
-/*   } */
-
+  /* Compute the increment vectors between lattice points in the parameter space. */
   tiling->increment = gsl_matrix_alloc(n, n);
-  gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, directions, tiling->generator, 0.0, tiling->increment);
-  gsl_matrix_scale(tiling->increment, sqrt(tiling->mismatch);
-
-  /* Print debugging */
+  gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, tiling->directions, tiling->generator, 0.0, tiling->increment);
   LogPrintf(LOG_DETAIL, "Increment vectors between lattice points:\n");
   for (i = 0; i < n; ++i) {
     for (j = 0; j < n; ++j) {
@@ -621,26 +568,11 @@ int XLALSetupFlatLatticeTiling(
     }
     LogPrintfVerbatim(LOG_DETAIL, " ;\n");
   }
-  LogPrintf(LOG_DETAIL, "Lengths of increment vectors with respect to the metric:\n");
-  for (i = 0; i < n; ++i) {
-    gsl_vector_view col_i = gsl_matrix_column(tiling->increment, i);
-    gsl_blas_dgemv(CblasNoTrans, 1.0, tiling->metric, &col_i.vector, 0.0, temp);
-    gsl_blas_ddot(&col_i.vector, temp, &length);
-    length = sqrt(length);
-    LogPrintfVerbatim(LOG_DETAIL, "  % 0.16e", length);
-  }
-  LogPrintfVerbatim(LOG_DETAIL, " ;\n");
 
-  /* We haven't started generating templates yet, nor have we finished */
+  /* We haven't started generating templates yet, nor have we finished. */
   tiling->started = FALSE;
   tiling->finished = FALSE;
   tiling->templates = 0;
-
-  /* Cleanup */
-  gsl_matrix_free(directions);
-  gsl_matrix_free(normalised_generator);
-  gsl_vector_free(generator_lengths);
-  gsl_vector_free(temp);
 
   return XLAL_SUCCESS;
 
@@ -707,12 +639,6 @@ BOOLEAN XLALNextFlatLatticePoint(
       GetCurrentBounds(tiling, i, &lower, &upper);
       incr = gsl_matrix_get(tiling->increment, i, i);
 
-      /* If size of dimension in non-zero, add an extra padding point either side */
-      if (lower < upper) {
-	lower -= incr;
-	upper += incr;
-      }
-
       /* Set starting point to lower */
       gsl_vector_set(tiling->current, i, lower);
 
@@ -744,12 +670,6 @@ BOOLEAN XLALNextFlatLatticePoint(
 	/* Get bounds and increment */
 	GetCurrentBounds(tiling, j, &lower, &upper);
 	incr = gsl_matrix_get(tiling->increment, j, j);
-
-	/* If size of dimension in non-zero, add an extra padding point either side */
-	if (lower < upper) {
-	  lower -= incr;
-	  upper += incr;
-	}
 
 	/* Move current point in this dimension back to its lower bound */
 	scale = floor((gsl_vector_get(tiling->current, j) - lower) / incr);
@@ -874,6 +794,17 @@ int XLALWriteFlatLatticeTilingXMLFile(
   else {
     fprintf(output_file, "  <bounds><type>unknown</type></bounds>\n");
   }
+
+  /* Write directions */
+  fprintf(output_file, "  <directions>\n");
+  for (i = 0; i < n; ++i) {
+    fprintf(output_file, "    ");
+    for (j = 0; j < n; ++j) {
+      fprintf(output_file, "% 0.16e ", gsl_matrix_get(tiling->directions, i, j));
+    }
+    fprintf(output_file, ";\n");
+  }
+  fprintf(output_file, "  </directions>\n");
 
   /* Write increment vectors */
   fprintf(output_file, "  <increment>\n");

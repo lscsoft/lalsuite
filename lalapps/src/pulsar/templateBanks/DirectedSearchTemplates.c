@@ -1,5 +1,26 @@
+/*
+ *  Copyright (C) 2007 Karl Wette
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ *  MA  02111-1307  USA
+ */
+
 /**
  * \author K. Wette
+ * \file
+ * \brief Flat lattice tiling over multi-dimensioned parameter spaces
  */
 
 #include "config.h"
@@ -14,59 +35,30 @@
 #include <lal/LALError.h>
 #include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
-#include <lal/PulsarDataTypes.h>
 #include <lal/PtoleMetric.h>
-
-#include "FlatLatticeTiling.h"
-
 #include <lalapps.h>
 
-static const BOOLEAN TRUE  = (1==1);
-static const BOOLEAN FALSE = (1==0);
+#include "FlatLatticeTiling.h"
 
 RCSID("$Id$");
 
 int main(int argc, char *argv[]) {
 
-  /* LAL status */
+  INT4 i, j, ii, jj;
+  INT4 dims = 0;
   LALStatus status = blank_status;
-
-  /* Print help message? */
-  BOOLEAN is_help = FALSE;
-
-  /* Right ascension and declenation */
-  REAL8 alpha = 6.12;
-  REAL8 delta = 1.02;
-
-  /* Frequency and spindowns */
-  REAL8 freq       = 100.0;
-  REAL8 freq_band  = 1.0e-2;
-  REAL8 f1dot      = 0.0;
-  REAL8 f1dot_band = 0.0;
-  REAL8 f2dot      = 0.0;
-  REAL8 f2dot_band = 0.0;
-  REAL8 f3dot      = 0.0;
-  REAL8 f3dot_band = 0.0;
-  
-  /* Type of lattice */
+  BOOLEAN is_help = 0;
+  LALStringVector *list_bounds = NULL;
+  gsl_vector *bounds = NULL;
+  double bound = 0.0;
+  gsl_vector *start = NULL;
+  gsl_vector *width = NULL;
+  gsl_matrix *metric = NULL;
   INT4 lattice_type = 0;
-
-  /* Type of metric */
   INT4 metric_type = 0;
-
-  /* Maximum template mismatch */
   REAL8 mismatch = 0.25;
-
-  /* Time span of the SFTs */
   REAL8 Tspan = 1036800.0;
-
-  /* Output files */
   CHAR *output_filename = NULL;
-
-  /* Dimensionality of parameter space */
-  INT4 dimension = 0;
-
-  /* Flat lattice tiling structure */
   FlatLatticeTiling *tiling = NULL;
 
   /* Initialise LAL error handler, debug level and log level */
@@ -75,53 +67,86 @@ int main(int argc, char *argv[]) {
   LogSetLevel(lalDebugLevel);
 
   /* Register command line flags */
-  LAL_CALL(LALRegisterBOOLUserVar  (&status, "help",            'h', UVAR_HELP,      "Print this message", &is_help), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "Alpha",           'a', UVAR_OPTIONAL,  "Right ascension of the target object (in radians)", &alpha), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "Delta",           'd', UVAR_OPTIONAL,  "Declination of the target object (in radians)", &delta), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "Freq",            'f', UVAR_OPTIONAL,  "Starting frequency of search band (in Hertz)", &freq), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "FreqBand",        'b', UVAR_OPTIONAL,  "Width of frequency search band (in Hertz)", &freq_band), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "f1dot",            0 , UVAR_OPTIONAL,  "First spindown (in Hertz/s)", &f1dot), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "f1dotBand",        0 , UVAR_OPTIONAL,  "First spindown band (in Hertz/s)", &f1dot_band), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "f2dot",            0 , UVAR_OPTIONAL,  "Second spindown (in Hertz/s)", &f2dot), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "f2dotBand",        0 , UVAR_OPTIONAL,  "Second spindown band (in Hertz/s)", &f2dot_band), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "f3dot",            0 , UVAR_OPTIONAL,  "Third spindown (in Hertz/s)", &f3dot), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "f3dotBand",        0 , UVAR_OPTIONAL,  "Third spindown band (in Hertz/s)", &f3dot_band), &status);
-  LAL_CALL(LALRegisterINTUserVar   (&status, "latticeType",     'L', UVAR_OPTIONAL,  "Type of tiling lattice (0=Anstar, 1=cubic)", &lattice_type), &status);
-  LAL_CALL(LALRegisterINTUserVar   (&status, "metricType",      'M', UVAR_OPTIONAL,  "Type of metric (0=spindown, 1=identity, for testing)", &metric_type), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "metricMismatch",  'X', UVAR_OPTIONAL,  "Maximum mismatch of the search templates", &mismatch), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "timeSpan",        'T', UVAR_OPTIONAL,  "Upper bound on time span of the SFTs (in seconds)", &Tspan), &status);
-  LAL_CALL(LALRegisterSTRINGUserVar(&status, "outputFile",      'o', UVAR_OPTIONAL,  "Output file containing the generated templates", &output_filename), &status);
-
+  LAL_CALL(LALRegisterBOOLUserVar  (&status, "help",            'h', UVAR_HELP,     "Print this message", &is_help), &status);
+  LAL_CALL(LALRegisterLISTUserVar  (&status, "bounds",          'b', UVAR_REQUIRED, "Start,width,start,... bounds on the parameter space", &list_bounds), &status);
+  LAL_CALL(LALRegisterINTUserVar   (&status, "metric_type",     'm', UVAR_OPTIONAL, "Type of metric (0=spindown, 1=eye)", &metric_type), &status);
+  LAL_CALL(LALRegisterINTUserVar   (&status, "lattice_type",    'L', UVAR_OPTIONAL, "Type of tiling lattice (0=Anstar, 1=cubic)", &lattice_type), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "metric_mismatch", 'u', UVAR_OPTIONAL, "Maximum mismatch of the templates", &mismatch), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "time_span",       'T', UVAR_OPTIONAL, "Time span of the data set (in seconds)", &Tspan), &status);
+  LAL_CALL(LALRegisterSTRINGUserVar(&status, "output_file",     'o', UVAR_OPTIONAL, "XML output file containing templates and metadata", &output_filename), &status);
+  
   /* Read in command line */
   LAL_CALL(LALUserVarReadAllInput(&status, argc, argv), &status);
   if (is_help) {
     return EXIT_SUCCESS;
   }
 
-  /* Create tiling structure */
-  if (LALUserVarWasSet(&freq_band)) {
-    ++dimension;
-    if (LALUserVarWasSet(&f1dot_band)) {
-      ++dimension;
-      if (LALUserVarWasSet(&f2dot_band)) {
-	++dimension;
-	if (LALUserVarWasSet(&f3dot_band)) {
-	  ++dimension;
-	}
-      }
+  /* Parse the parameter space bounds */
+  if (list_bounds->length/2 != (list_bounds->length+1)/2) {
+    LALPrintError("%s\nERROR: Must be an even number of bounds\n", rcsid);
+    return EXIT_FAILURE;
+  }
+  bounds = gsl_vector_alloc(list_bounds->length);
+  for (i = 0; i < bounds->size; ++i) {
+    if (sscanf(list_bounds->data[i], "%le", &bound) != 1) {
+      LALPrintError("%s\nERROR: Bound '%s' must be numberic\n", list_bounds->data[i], rcsid);
+      return EXIT_FAILURE;
+    }
+    gsl_vector_set(bounds, i, bound);
+  }
+
+  /* Count the number of dimensions */
+  for (i = 1; i < bounds->size; i += 2) {
+    if (gsl_vector_get(bounds, i) != 0.0) {
+      ++dims;
     }
   }
-  if ((tiling = XLALCreateFlatLatticeTiling(dimension)) == NULL) {
+  
+  /* Create tiling structure */
+  if ((tiling = XLALCreateFlatLatticeTiling(dims)) == NULL) {
     LALPrintError("%s\nERROR: XLALCreateFlatLatticeTiling failed\n", rcsid);
     return EXIT_FAILURE;
   }
   
-  /* Fill spindown metric and mismatch*/
+  /* Setup parameter space */
+  start = gsl_vector_alloc(dims);
+  width = gsl_vector_alloc(dims);
+  for (i = ii = 0; i < dims; ++i, ++ii) {
+    
+    if (gsl_vector_get(bounds, 2*ii+1) == 0.0) ++ii;
+
+    gsl_vector_set(start, i, gsl_vector_get(bounds, 2*ii  ));
+    gsl_vector_set(width, i, gsl_vector_get(bounds, 2*ii+1));
+
+  }
+  if (XLALSquareParameterSpace(tiling, start, width) != XLAL_SUCCESS) {
+    LALPrintError("%s\nERROR: XLALSquareParameterSpace failed\n", rcsid);
+    return EXIT_FAILURE;
+  }
+
+  /* Set metric */
   if (metric_type == 0) {
-    if ((tiling->metric = XLALSpindownMetric(tiling->dimension, Tspan)) == NULL) {
+
+    if ((metric = XLALSpindownMetric(bounds->size/2, Tspan)) == NULL) {
       LALPrintError("%s\nERROR: XLALSpindownOnlyMetric failed\n", rcsid);
       return EXIT_FAILURE;
     }
+ 
+    tiling->metric = gsl_matrix_alloc(dims, dims);
+    for (i = ii = 0; i < dims; ++i, ++ii) {
+      
+      if (gsl_vector_get(bounds, 2*ii+1) == 0.0) ++ii;
+      
+      for (j = jj = 0; j < dims; ++j, ++jj) {
+	
+	if (gsl_vector_get(bounds, 2*jj+1) == 0.0) ++jj;
+
+	gsl_matrix_set(tiling->metric, i, j, gsl_matrix_get(metric, ii, jj));
+	
+      }
+      
+    }
+    
   }
   else if (metric_type == 1) {
     tiling->metric = gsl_matrix_alloc(tiling->dimension, tiling->dimension);
@@ -131,9 +156,11 @@ int main(int argc, char *argv[]) {
     LALPrintError("%s\nERROR: Invalid metric type\n", rcsid);
     return EXIT_FAILURE;
   }
+
+  /* Set mismatch */
   tiling->mismatch = mismatch;
 
-  /* Fill lattice generator */
+  /* Set lattice generator */
   if (lattice_type == 0) {
     if ((tiling->generator = XLALAnstarLatticeGenerator(tiling->dimension)) == NULL) {
       LALPrintError("%s\nERROR: XLALAnstarLatticeGenerator failed\n", rcsid);
@@ -151,12 +178,6 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  /* Setup parameter space */
-  if (XLALSquareParameterSpace(tiling, freq, freq + freq_band, f1dot, f1dot + f1dot_band, f2dot, f2dot + f2dot_band, f3dot, f3dot + f3dot_band) != XLAL_SUCCESS) {
-    LALPrintError("%s\nERROR: XLALSquareParameterSpace failed\n", rcsid);
-    return EXIT_FAILURE;
-  }
-    
   /* Setup tiling */
   if (XLALSetupFlatLatticeTiling(tiling) != XLAL_SUCCESS) {
     LALPrintError("%s\nERROR: XLALSetupLatticeTiling failed\n", rcsid);
@@ -180,6 +201,10 @@ int main(int argc, char *argv[]) {
 
   /* Cleanup */
   LAL_CALL(LALDestroyUserVars(&status), &status);
+  gsl_vector_free(bounds);
+  gsl_vector_free(start);
+  gsl_vector_free(width);
+  gsl_matrix_free(metric);
   XLALDestroyFlatLatticeTiling(tiling);
   LALCheckMemoryLeaks();
 
