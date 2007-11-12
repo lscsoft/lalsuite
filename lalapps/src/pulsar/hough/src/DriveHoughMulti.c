@@ -84,6 +84,7 @@
 
 
 #include "./DriveHoughColor.h"
+#include "./MCInjectHoughMulti.h"
 /* lalapps includes */
 #include <lalapps.h>
 #include <lal/DopplerScan.h>
@@ -100,7 +101,7 @@ RCSID( "$Id$");
 extern int lalDebugLevel;
 
 /* boolean global variables for controlling output */
-BOOLEAN uvar_EnableExtraInfo;
+BOOLEAN uvar_EnableExtraInfo, uvar_EnableChi2;
 
 /* #define EARTHEPHEMERIS "./earth05-09.dat" */
 /* #define SUNEPHEMERIS "./sun05-09.dat"    */
@@ -126,7 +127,60 @@ BOOLEAN uvar_EnableExtraInfo;
 #define TRUE (1==1)
 #define FALSE (1==0)
 
+#define NBLOCKSTEST 8 /* number of data blocks to do Chi2 test */
+
+/* ****************************************
+ * Structure, HoughParamsTest, typedef
+ */
+
+typedef struct tagHoughParamsTest{
+    UINT4  length;            /* number p of blocks to split the data into */
+    UINT4  *numberSFTp;       /* Ni SFTs in each data block */
+    REAL8  *sumWeight;        /* Pointer to the sumWeight of each block of data */
+    REAL8  *sumWeightSquare;  /* Pointer to the sumWeightSquare of each block of data */
+}HoughParamsTest; 
+
+
+ typedef struct tagUCHARPeakGramVector{
+   UINT4             length; /**< number of elements */
+   UCHARPeakGram     *upg;    /**< expanded Peakgrams */
+ } UCHARPeakGramVector;
+
+/******************************************/  
+
 /* local function prototype */
+
+void SplitSFTs(LALStatus         *status, 
+	       REAL8Vector       *weightsV, 
+	       HoughParamsTest   *chi2Params);
+
+void ComputeFoft(LALStatus   *status,
+		 REAL8Vector          *foft,
+                 HoughTemplate        *pulsarTemplate,
+		 REAL8Vector          *timeDiffV,
+		 REAL8Cart3CoorVector *velV,
+                 REAL8                 timeBase);
+
+void ComputeandPrintChi2 ( LALStatus                *status,
+		           toplist_t                *tl,
+		           REAL8Vector              *timeDiffV,
+		           REAL8Cart3CoorVector     *velV,
+			   REAL8                    timeBase,
+			   INT4                     p,
+			   REAL8                    alphaPeak,
+			   MultiDetectorStateSeries *mdetStates,
+			   UINT4                    mObsCoh,
+			   UINT4                    sftFminBin,
+			   REAL8Vector		    *weightsNoise,
+			   UCHARPeakGramVector      *upgV /**< Expanded (UCHAR) peakgrams */);
+
+void GetPeakGramFromMultSFTVector_NondestroyPg1(LALStatus                   *status,
+						HOUGHPeakGramVector         *out, /**< Output compressed peakgrams */
+						UCHARPeakGramVector         *upgV, /**< Output uncompressed peakgrams */
+						MultiSFTVector              *in,  /**< Input SFTs */
+						REAL8                       thr   /**< Threshold on SFT power */) ; 
+
+
 void PrintLogFile (LALStatus *status, CHAR *dir, CHAR *basename, CHAR *skyfile, LALStringVector *linefiles, CHAR *executable );
 
 int CreateSkypatchDirs(CHAR *filestats, CHAR *base, INT4 index);
@@ -217,7 +271,7 @@ int main(int argc, char *argv[]){
 
   /* standard pulsar sft types */ 
   MultiSFTVector *inputSFTs = NULL;
-  UINT4 binsSFT;
+  UINT4 binsSFT, sftFminBin;
   UINT4 numSearchBins;
   
   /* information about all the ifos */
@@ -236,6 +290,7 @@ int main(int argc, char *argv[]){
   /* hough structures */
   static HOUGHptfLUTVector   lutV; /* the Look Up Table vector*/
   static HOUGHPeakGramVector pgV;  /* vector of peakgrams */
+  static UCHARPeakGramVector upgV;  /* vector of expanded peakgrams */
   static PHMDVectorSequence  phmdVS;  /* the partial Hough map derivatives */
   static UINT8FrequencyIndexVector freqInd; /* for trajectory in time-freq plane */
   static HOUGHResolutionPar parRes;   /* patch grid information */
@@ -271,6 +326,7 @@ int main(int argc, char *argv[]){
   REAL8  alpha, delta, timeBase, deltaF, f1jump;
   REAL8  patchSizeX, patchSizeY;
   REAL8  alphaPeak, minSignificance, maxSignificance;
+  REAL8  meanN, sigmaN;
   UINT2  xSide, ySide;
   UINT2  maxNBins, maxNBorders;
 
@@ -299,7 +355,7 @@ int main(int argc, char *argv[]){
   CHAR     *uvar_timeStampsFile=NULL;
   CHAR     *uvar_skyRegion=NULL;
   LALStringVector *uvar_linefiles=NULL;
-
+  INT4     uvar_p;
 
   /* Set up the default parameters */
 
@@ -325,6 +381,9 @@ int main(int argc, char *argv[]){
   uvar_dDelta = 0.2;
   uvar_numCand=1;
   uvar_EnableExtraInfo=FALSE;
+  uvar_EnableChi2=FALSE;
+  uvar_p = NBLOCKSTEST;
+
 
   uvar_earthEphemeris = (CHAR *)LALCalloc( HOUGHMAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
@@ -368,6 +427,8 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterREALUserVar(   &status, "pixelFactor",    'p', UVAR_OPTIONAL, "sky resolution=1/v*pixelFactor*f*Tcoh", &uvar_pixelFactor), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "numCand",         0,  UVAR_OPTIONAL, "No. of toplist candidates", &uvar_numCand), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printExtraInfo",  0,  UVAR_OPTIONAL, "Print HoughMaps, HoughStatistics, expected number count stdev", &uvar_EnableExtraInfo), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "pdatablock",     'p',  UVAR_OPTIONAL, "Number of data blocks for veto tests",  &uvar_p),               &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printChi2",  0,  UVAR_OPTIONAL, "Print Chi2 value for each element in the Toplist", &uvar_EnableChi2), &status);
 
   /* developer input variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    0, UVAR_DEVELOPER, "Running Median block size", &uvar_blocksRngMed), &status);
@@ -548,6 +609,8 @@ int main(int argc, char *argv[]){
 
     /* SFT info -- assume all SFTs have same length */
     binsSFT = inputSFTs->data[0]->data->data->length;
+    sftFminBin = (INT4) floor(inputSFTs->data[0]->data[0].f0 * timeBase + 0.5);
+
 
     LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
 
@@ -636,13 +699,28 @@ int main(int argc, char *argv[]){
 
   } /* end block for weights, velocity and time */
     
+
      
   /* generating peakgrams  */  
   pgV.length = mObsCoh;
   pgV.pg = NULL;
   pgV.pg = (HOUGHPeakGram *)LALCalloc(1,mObsCoh*sizeof(HOUGHPeakGram));
 
-  LAL_CALL( GetPeakGramFromMultSFTVector( &status, &pgV, inputSFTs, uvar_peakThreshold), &status);
+  if (uvar_EnableChi2)
+  {
+       
+    upgV.length = mObsCoh;
+    upgV.upg = NULL;
+    upgV.upg = (UCHARPeakGram *)LALCalloc(1,mObsCoh*sizeof(UCHARPeakGram));
+
+    LAL_CALL( GetPeakGramFromMultSFTVector_NondestroyPg1(&status, &pgV, &upgV, inputSFTs, uvar_peakThreshold),&status);
+  }
+  
+  else
+  {
+      LAL_CALL( GetPeakGramFromMultSFTVector( &status, &pgV, inputSFTs, uvar_peakThreshold), &status);
+  }
+
 
   /* we are done with the sfts and ucharpeakgram now */
   LAL_CALL (LALDestroyMultiSFTVector(&status, &inputSFTs), &status );
@@ -674,7 +752,7 @@ int main(int argc, char *argv[]){
     {
       UINT4 k;
       REAL8 sumWeightSquare;
-      REAL8  meanN, sigmaN;
+      /*     REAL8  meanN, sigmaN;*/
       BestVariables temp;
 
       /* set sky positions and skypatch sizes */
@@ -972,7 +1050,19 @@ int main(int argc, char *argv[]){
   if ( uvar_EnableExtraInfo )
     fclose(fpSigma);
 
-    /* print toplist */
+/*********************************************************/
+                  /* print toplist */
+/********************************************************/
+
+/* If we want to print Chi2 value */
+ 
+ if (uvar_EnableChi2)
+  {
+     LAL_CALL(ComputeandPrintChi2(&status, toplist, &timeDiffV, &velV, timeBase, uvar_p, alphaPeak, mdetStates, mObsCoh, sftFminBin, &weightsNoise,&upgV), &status);    
+  }
+
+  else
+      
   {
     FILE   *fpToplist = NULL;
 
@@ -988,14 +1078,25 @@ int main(int argc, char *argv[]){
 
     fclose(fpToplist);
   }
-
+/********************************************************/
 
   {
     UINT4 j;
     for (j = 0; j < mObsCoh; ++j) LALFree( pgV.pg[j].peak); 
   }
-  LALFree(pgV.pg);
   
+ LALFree(pgV.pg);
+
+ if (uvar_EnableChi2) 
+ {
+   {UINT4 j;
+   for (j = 0; j < mObsCoh; ++j) LALFree( upgV.upg[j].data);
+   }
+   LALFree(upgV.upg);
+
+ }
+
+
   LALFree(timeV.data);
   LALFree(timeDiffV.data);
   
@@ -2365,3 +2466,366 @@ FILE *fp1 = *fp1_ptr;
 					
 
 
+
+/********************************************************************************/
+void ComputeFoft(LALStatus   *status,
+		 REAL8Vector          *foft,
+                 HoughTemplate        *pulsarTemplate,
+		 REAL8Vector          *timeDiffV,
+		 REAL8Cart3CoorVector *velV,
+                 REAL8                 timeBase){
+  
+  INT4   mObsCoh;
+  REAL8   f0new, vcProdn, timeDiffN;
+  INT4    f0newBin;
+  REAL8   sourceDelta, sourceAlpha, cosDelta;
+  INT4    j,i, nspin, factorialN; 
+  REAL8Cart3Coor  sourceLocation;
+  
+  /* --------------------------------------------- */
+  INITSTATUS (status, "ComputeFoft", rcsid);
+  ATTATCHSTATUSPTR (status);
+  
+  /*   Make sure the arguments are not NULL: */
+  ASSERT (foft,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (pulsarTemplate,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (timeDiffV,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (velV,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  
+  ASSERT (foft->data,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (timeDiffV->data,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (velV->data,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  
+  sourceDelta = pulsarTemplate->latitude;
+  sourceAlpha = pulsarTemplate->longitude;
+  cosDelta = cos(sourceDelta);
+  
+  sourceLocation.x = cosDelta* cos(sourceAlpha);
+  sourceLocation.y = cosDelta* sin(sourceAlpha);
+  sourceLocation.z = sin(sourceDelta);
+    
+  mObsCoh = foft->length;    
+  nspin = pulsarTemplate->spindown.length;
+  
+  for (j=0; j<mObsCoh; ++j){  /* loop for all different time stamps */
+    vcProdn = velV->data[j].x * sourceLocation.x
+      + velV->data[j].y * sourceLocation.y
+      + velV->data[j].z * sourceLocation.z;
+    f0new = pulsarTemplate->f0;
+    factorialN = 1;
+    timeDiffN = timeDiffV->data[j];
+    
+    for (i=0; i<nspin;++i){ /* loop for spin-down values */
+      factorialN *=(i+1);
+      f0new += pulsarTemplate->spindown.data[i]* timeDiffN / factorialN;
+      timeDiffN *= timeDiffN;
+    }
+    f0newBin = floor( f0new * timeBase + 0.5);
+    foft->data[j] = f0newBin * (1.0 +vcProdn) / timeBase;
+  }    
+    
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+
+} /* end Computefoft */
+
+
+
+
+/* *********************************************************************/
+
+void SplitSFTs(LALStatus         *status,
+	       REAL8Vector       *weightsV,
+	       HoughParamsTest   *chi2Params){
+  
+    INT4    j=0;           /* index of each block. It runs betwen 0 and p */ 
+    UINT4   iSFT=0;       
+    REAL8   *weights_ptr;  /* pointer to weightsV.data */
+    REAL8   sumWeightpMax; /* Value of sumWeight we want to fix in each set of SFTs */
+    UINT4   numberSFT;     /* Counter with the # of SFTs in each block */        
+    UINT4   mObsCoh, p;
+    REAL8   partialsumWeightp, partialsumWeightSquarep;
+  
+  /* --------------------------------------------- */
+  INITSTATUS (status, "SplitSFTs", rcsid);
+  ATTATCHSTATUSPTR (status);
+  
+  /*   Make sure the arguments are not NULL: */
+  ASSERT (weightsV,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (chi2Params,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  
+  ASSERT (weightsV->data,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (chi2Params->length,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (chi2Params->numberSFTp,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (chi2Params->sumWeight,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (chi2Params->sumWeightSquare,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (chi2Params->length < weightsV->length,  status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+  
+  mObsCoh = weightsV->length;    
+  p = chi2Params->length;
+
+  sumWeightpMax=mObsCoh/p;       /* Compute the value of the sumWeight we want to fix in each set of SFT's */
+  weights_ptr=weightsV->data;    /* Make the pointer to point to the first position of the vector weightsV.data */
+  
+
+      for (j=0;(UINT4)(weights_ptr-weightsV->data)<mObsCoh;j++){
+
+	  partialsumWeightSquarep=0;
+	  partialsumWeightp=0;
+	  
+	  for(numberSFT=0;(partialsumWeightp<sumWeightpMax)&&(iSFT<mObsCoh);){
+	          numberSFT++;
+		  iSFT++;
+		  
+		  
+		  
+		  
+		  
+		  
+		  partialsumWeightp += *weights_ptr;
+		  partialsumWeightSquarep += (*weights_ptr)*(*weights_ptr);
+		  weights_ptr++;
+	      } /* loop over SFTs */
+	  
+	  chi2Params->numberSFTp[j]=numberSFT;
+	  chi2Params->sumWeight[j]=partialsumWeightp;
+	  chi2Params->sumWeightSquare[j]=partialsumWeightSquarep;
+      
+       } /* loop over the p blocks of data */
+  
+      
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+
+}/* SplitSFTs */
+
+
+
+
+/**********************************************************************/
+
+void ComputeandPrintChi2 ( LALStatus                *status,
+		           toplist_t                *tl,
+		           REAL8Vector              *timeDiffV,
+		           REAL8Cart3CoorVector     *velV,
+			   REAL8                    timeBase,
+			   INT4                     p,
+			   REAL8                    alphaPeak,
+			   MultiDetectorStateSeries *mdetStates,
+			   UINT4                    mObsCoh,
+			   UINT4                    sftFminBin,
+			   REAL8Vector		    *weightsNoise,
+			   UCHARPeakGramVector      *upgV /**< Expanded (UCHAR) peakgrams */)
+{
+    HoughTemplate    pulsarTemplate; 
+    UINT4    k, i, j, ii, numberSFTp ;
+    INT4    index;
+    REAL8  sumWeightSquare, meanN, sigmaN;       
+    REAL8   eta, numberCount;                 
+    REAL8   nj, sumWeightj, sumWeightSquarej;
+    FstatOutputEntry   readTopList;
+    REAL8Vector  foft;
+    REAL8Vector  weightsV;
+
+
+    /* Chi2Test parameters */
+    HoughParamsTest chi2Params;
+    REAL8  numberCountTotal;   /* Sum over all the numberCounts */
+    REAL8  chi2;
+    REAL8Vector numberCountV;  /* Vector with the number count of each block inside */
+    
+    /* memory for weightsV */
+    weightsV.length=mObsCoh;
+    weightsV.data=(REAL8 *)LALCalloc(1, mObsCoh*sizeof(REAL8));
+    
+    /* memory for chi2Params */
+    chi2Params.length = p;
+    chi2Params.numberSFTp = NULL;
+    chi2Params.sumWeight = NULL;
+    chi2Params.sumWeightSquare = NULL;
+    chi2Params.numberSFTp = (UINT4 *)LALMalloc( p*sizeof(UINT4));
+    chi2Params.sumWeight = (REAL8 *)LALMalloc( p*sizeof(REAL8));
+    chi2Params.sumWeightSquare = (REAL8 *)LALMalloc( p*sizeof(REAL8));
+
+    /* memory for number Count Vector */
+    numberCountV.length = p;
+    numberCountV.data = NULL;
+    numberCountV.data = (REAL8 *)LALMalloc( p*sizeof(REAL8));
+
+    /* Memory for one spindown */
+    pulsarTemplate.spindown.length = 1 ;
+    pulsarTemplate.spindown.data = NULL;
+    pulsarTemplate.spindown.data = (REAL8 *)LALMalloc(sizeof(REAL8));
+
+    /* Open file to write the toplist with 2 new columns: significance and chi2 */
+    FILE *fpChi2=NULL;
+    fpChi2 = fopen("ToplistWithChi2", "w");
+
+
+    /* ----------------------------------------------------------------------------------*/
+    /* Loop over all the elements in the TopList */
+
+    for (i=0; i < tl->elems; i++){
+    
+	readTopList = *((FstatOutputEntry*)(tl->heap[i]));    
+
+        /* Copy template parameters from the TopList */
+	pulsarTemplate.f0= readTopList.Freq  ;
+	pulsarTemplate.spindown.data[0] = readTopList.f1dot ;
+	pulsarTemplate.latitude= readTopList.Alpha ;
+	pulsarTemplate.longitude= readTopList.Delta ;
+
+	/* copy noise weights */
+	memcpy(weightsV.data, weightsNoise->data, mObsCoh * sizeof(REAL8));
+
+	/* calculate amplitude modulation weights */
+	TRY(GetAMWeights( status->statusPtr, &weightsV, mdetStates, pulsarTemplate.latitude, pulsarTemplate.longitude), status);
+
+
+	/**********************************************************************************/
+	/* Split the SFTs into p blocks and calculate the number count in each block */  
+	/**********************************************************************************/  
+
+	/* compute mean and sigma for noise only */    
+	/* first calculate the sum of the weights squared */
+	sumWeightSquare = 0.0;
+     
+	for ( k = 0; k < (UINT4)mObsCoh; k++)
+	  
+	    sumWeightSquare += weightsV.data[k] * weightsV.data[k];
+	    meanN = mObsCoh * alphaPeak;
+	    sigmaN = sqrt (sumWeightSquare * alphaPeak * (1.0 - alphaPeak));
+            
+            /* the received frequency as a function of time  */
+	    TRY( ComputeFoft(status->statusPtr, &foft, &pulsarTemplate, timeDiffV, velV, timeBase), status);   
+
+               
+            /* Split the SFTs into p blocs */
+	    TRY(SplitSFTs(status->statusPtr, &weightsV, &chi2Params), status);
+   
+            
+            /* loop over SFT, generate peakgram and get number count */
+
+	    j=0;
+   
+	    for (k=0 ; k<(UINT4)p ; k++ ){
+       
+		numberSFTp=chi2Params.numberSFTp[k];
+		numberCount = 0;
+
+		for (ii=0 ; (ii < numberSFTp) ; ii++) {
+   
+		    index = floor( foft.data[j]*timeBase - sftFminBin + 0.5); 
+            
+		    numberCount += upgV->upg[j].data[index]*weightsV.data[j];
+	    
+		    j++;
+
+		} /* loop over SFTs */
+       
+		numberCountV.data[k]=numberCount;
+       	  
+	    }/* loop over blocks */
+  
+  
+            /*-----------------------------*/  
+            /* Chi2 Test */
+  
+	    numberCountTotal=0;
+	    chi2=0;
+ 
+	    for(k=0; k<(UINT4)p ; k++){
+		numberCountTotal += numberCountV.data[k];
+	    }
+      
+	    eta=numberCountTotal/mObsCoh;
+      
+	    for(j=0 ; j<((UINT4)p) ; j++){
+	  
+		nj=numberCountV.data[j];
+		sumWeightj=chi2Params.sumWeight[j];
+		sumWeightSquarej=chi2Params.sumWeightSquare[j];
+	  
+		chi2 += (nj-sumWeightj*eta)*(nj-sumWeightj*eta)/(sumWeightSquarej*eta*(1-eta));
+	    }
+      
+	    setvbuf(fpChi2, (char *)NULL, _IOLBF, 0);
+	    fprintf(fpChi2, "%g  %g  %g  %g %g  %g \n", pulsarTemplate.f0, pulsarTemplate.latitude, pulsarTemplate.longitude, pulsarTemplate.spindown.data[0], (numberCountTotal - meanN)/sigmaN, chi2);
+	    
+	    /*-----------------------------*/
+      
+	    LALFree(pulsarTemplate.spindown.data);
+	    LALFree(foft.data); 
+	    LALFree(numberCountV.data);
+	    LALFree(chi2Params.numberSFTp);
+	    LALFree(chi2Params.sumWeight);
+	    LALFree(chi2Params.sumWeightSquare);
+	    LALFree(weightsV.data);
+	    weightsV.data=NULL;
+
+    } /* End of loop over top list elements */
+
+    fclose(fpChi2);
+
+} /* End of ComputeChi2 */
+
+
+
+/************************************************************************************/
+/** Loop over SFTs and set a threshold to get peakgrams.  SFTs must be normalized.  */
+/** This function will create a vector with the uncompressed PeakGrams in it        */
+/** (this is necesary if we want to compute the chi2 later )                        */
+void GetPeakGramFromMultSFTVector_NondestroyPg1(LALStatus                   *status,
+						HOUGHPeakGramVector         *out, /**< Output compressed peakgrams */
+						UCHARPeakGramVector         *upgV, /**< Output uncompressed peakgrams */
+						MultiSFTVector              *in,  /**< Input SFTs */
+						REAL8                       thr   /**< Threshold on SFT power */)  
+{
+  SFTtype  *sft;
+  INT4   nPeaks;
+  UINT4  iIFO, iSFT, numsft, numifo, j, binsSFT; 
+  
+  INITSTATUS (status, "GetSFTNoiseWeights", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  numifo = in->length;
+  binsSFT = in->data[0]->data->data->length;
+ 
+  /* loop over sfts and select peaks */
+  for ( j = 0, iIFO = 0; iIFO < numifo; iIFO++){
+    
+      numsft = in->data[iIFO]->length;
+    
+      for ( iSFT = 0; iSFT < numsft; iSFT++, j++) {
+      
+	  sft = in->data[iIFO]->data + iSFT;
+
+          /* Store the expanded PeakGrams */ 
+	  upgV->upg[j].length = binsSFT;
+	  upgV->upg[j].data = NULL;
+	  upgV->upg[j].data= (UCHAR *)LALCalloc( 1, binsSFT*sizeof(UCHAR));
+     
+	  TRY (SFTtoUCHARPeakGram( status->statusPtr, &(upgV->upg[j]), sft, thr), status);
+      
+	  nPeaks = upgV->upg[j].nPeaks;
+
+          /* compress peakgram */      
+	  out->pg[j].length = nPeaks;
+	  out->pg[j].peak = NULL;
+	  out->pg[j].peak = (INT4 *)LALCalloc( 1, nPeaks*sizeof(INT4));
+      
+	  TRY( LALUCHAR2HOUGHPeak( status->statusPtr, &(out->pg[j]), &(upgV->upg[j])), status );
+      
+      } /* loop over SFTs */
+  } /* loop over IFOs */
+
+ 
+
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+
+}
