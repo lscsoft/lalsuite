@@ -267,7 +267,7 @@ LALFitToPulsarStudentT	( 	LALStatus            *status,
 	INT4Vector *kVec=NULL;
 	UINT4 count=0;
 	REAL8 meanSegLength=0.0;
-	
+  
   INITSTATUS(status, "LALFitToPulsarStudentT", FITTOPULSARC);
   ATTATCHSTATUSPTR(status);
 
@@ -384,6 +384,7 @@ LALFitToPulsarStudentT	( 	LALStatus            *status,
        	sumBB = 0.0;
 
         /*k = input->N;*/
+        
 				count=0;     
       	for (i = 0; i < n-kVec->data[kVec->length-1]; i+=tempLength){ 
        		tempLength = kVec->data[count];
@@ -419,7 +420,7 @@ LALFitToPulsarStudentT	( 	LALStatus            *status,
 				
 					count++;
       	} /* n*/
-      
+        
 				/* find best fit */
       	for (iH0 = 0; iH0 < params->meshH0[2]; iH0++){
 	  			arg = iH0 + params->meshH0[2]*(iCosIota +  params->meshCosIota[2]*(iPhase + params->meshPhase[2]*iPsi));
@@ -585,6 +586,6 @@ LALPulsarMarginalize   ( 	LALStatus              *status,
   DETATCHSTATUSPTR(status);
   RETURN(status);
 
-}				
+}
 
 
