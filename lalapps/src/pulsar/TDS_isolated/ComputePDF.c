@@ -37,8 +37,7 @@ $Id$
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 1; } else ((void)0)
 
-#define MAXLENGTH 75000
-#define CONDOR 1
+#define MAXLENGTH 330000
 
 int lalDebugLevel = 0;
 int main(int argc, char **argv)
@@ -193,10 +192,11 @@ the variable condor is defined, then read in the first argument pulsar_name from
   }
   else if (flag == 2)
   {
-    if (iL1) sprintf(infile1,"%s/dataL1/outfine.%s_L1.S%d_30", argv[2],pulsar_name, irun);
-    if (iH1) sprintf(infile2,"%s/dataH1/outfine.%s_H1.S%d_30", argv[2], pulsar_name, irun);
-    if (iH2) sprintf(infile3,"%s/dataH2/outfine.%s_H2.S%d_30", argv[2], pulsar_name, irun); 
-    if (iGEO) sprintf(infile4,"%s/dataGEO/outfine.%s_GEO.S%d_30", argv[2], pulsar_name, irun);   
+    if (iL1) sprintf(infile1,"%s/dataL1/finehet_%s_L1", argv[2], pulsar_name);
+    if (iH1) sprintf(infile2,"%s/dataH1/finehet_%s_H1", argv[2], pulsar_name);
+    if (iH2) sprintf(infile3,"%s/dataH2/finehet_%s_H2", argv[2], pulsar_name); 
+    if (iGEO) sprintf(infile4,"%s/dataG1/finehet_%s_GEO", argv[2],
+pulsar_name);  
   }
   else
   {
@@ -305,12 +305,14 @@ the variable condor is defined, then read in the first argument pulsar_name from
       i=0;  
       while (!feof(fp1))
       {
-        tgps1[i].gpsSeconds = (INT4)floor(t);
-        tgps1[i].gpsNanoSeconds = (INT4)floor((fmod(t,1.0)*1.e9));       
-        input1.B->data[i].re = B.re;
-        input1.B->data[i].im = B.im;    
-        fscanf(fp1,"%lf\t%lf\t%lf",&t,&B.re, &B.im);    
-        i++;  
+        if(fabs(B.re) > 1e-28 && fabs(B.im) > 1e-28){
+          tgps1[i].gpsSeconds = (INT4)floor(t);
+          tgps1[i].gpsNanoSeconds = (INT4)floor((fmod(t,1.0)*1.e9));       
+          input1.B->data[i].re = B.re;
+          input1.B->data[i].im = B.im;   
+          i++;
+        }
+        fscanf(fp1,"%lf\t%lf\t%lf",&t,&B.re, &B.im);
       } 
       input1.t = tgps1;
       input1.B->length = i;
@@ -337,6 +339,7 @@ the variable condor is defined, then read in the first argument pulsar_name from
     fclose(fp1);
   }
  
+  fprintf(stderr, "I've read in the L1 data.\n");
  /* read data from H1 */
   if (iH1)
   {
@@ -346,12 +349,14 @@ the variable condor is defined, then read in the first argument pulsar_name from
       i=0;  
       while (!feof(fp2))
       {
-        tgps2[i].gpsSeconds = (INT4)floor(t);
-        tgps2[i].gpsNanoSeconds = (INT4)floor((fmod(t,1.0)*1.e9));       
-        input2.B->data[i].re = B.re;
-        input2.B->data[i].im = B.im;    
-        fscanf(fp2,"%lf\t%lf\t%lf",&t,&B.re, &B.im);    
-        i++;  
+        if(fabs(B.re) > 1e-28 && fabs(B.im) > 1e-28){
+          tgps2[i].gpsSeconds = (INT4)floor(t);
+          tgps2[i].gpsNanoSeconds = (INT4)floor((fmod(t,1.0)*1.e9));       
+          input2.B->data[i].re = B.re;
+          input2.B->data[i].im = B.im;   
+          i++;
+        }
+        fscanf(fp2,"%lf\t%lf\t%lf",&t,&B.re, &B.im);
       } 
       input2.t = tgps2;
       input2.B->length = i;
@@ -378,6 +383,7 @@ the variable condor is defined, then read in the first argument pulsar_name from
     fclose(fp2);
   }
   
+  fprintf(stderr, "I've read in the H1 data.\n");
  /* read data from H2 */
   if (iH2)
   {
@@ -387,12 +393,14 @@ the variable condor is defined, then read in the first argument pulsar_name from
       i=0;  
       while (!feof(fp3))
       {
-        tgps3[i].gpsSeconds = (INT4)floor(t);
-        tgps3[i].gpsNanoSeconds = (INT4)floor((fmod(t,1.0)*1.e9));       
-        input3.B->data[i].re = B.re;
-        input3.B->data[i].im = B.im;    
-        fscanf(fp3,"%lf\t%lf\t%lf",&t,&B.re, &B.im);    
-        i++;  
+        if(fabs(B.re) > 1e-28 && fabs(B.im) > 1e-28){
+          tgps3[i].gpsSeconds = (INT4)floor(t);
+          tgps3[i].gpsNanoSeconds = (INT4)floor((fmod(t,1.0)*1.e9));       
+          input3.B->data[i].re = B.re;
+          input3.B->data[i].im = B.im;
+          i++;
+        }
+        fscanf(fp3,"%lf\t%lf\t%lf",&t,&B.re, &B.im);
       }  
     input3.t = tgps3;
     input3.B->length = i;
@@ -418,6 +426,8 @@ the variable condor is defined, then read in the first argument pulsar_name from
     }
     fclose(fp3);
   }
+  
+  fprintf(stderr, "I've read in the H2 data.\n");
   /* read data from GEO */
   if (iGEO)
   {
@@ -427,12 +437,14 @@ the variable condor is defined, then read in the first argument pulsar_name from
       i=0;  
       while (!feof(fp4))
       {
-        tgps4[i].gpsSeconds = (INT4)floor(t);
-        tgps4[i].gpsNanoSeconds = (INT4)floor((fmod(t,1.0)*1.e9));       
-        input4.B->data[i].re = B.re;
-        input4.B->data[i].im = B.im;    
-        fscanf(fp4,"%lf\t%lf\t%lf",&t,&B.re, &B.im);    
-        i++;  
+        if(fabs(B.re) > 1e-28 && fabs(B.im) > 1e-28){
+          tgps4[i].gpsSeconds = (INT4)floor(t);
+          tgps4[i].gpsNanoSeconds = (INT4)floor((fmod(t,1.0)*1.e9));       
+          input4.B->data[i].re = B.re;
+          input4.B->data[i].im = B.im; 
+          i++;
+        }
+        fscanf(fp4,"%lf\t%lf\t%lf",&t,&B.re, &B.im);
       } 
       input4.t = tgps4;
       input4.B->length = i;
@@ -845,10 +857,10 @@ the variable condor is defined, then read in the first argument pulsar_name from
     }
     else if (flag == 2)
     {
-       sprintf(outfile1,"%s/%s/pdf_st.%s_L1", argv[2], pulsar_name, pulsar_name); 
-       sprintf(outfile1Phase,"%s/%s/pdfPhase_st.%s_L1", argv[2], pulsar_name, pulsar_name); 
-       sprintf(outfile1Psi,"%s/%s/pdfPsi_st.%s_L1", argv[2], pulsar_name, pulsar_name); 
-       sprintf(outfile1CosIota,"%s/%s/pdfCosIota_st.%s_L1", argv[2], pulsar_name, pulsar_name); 
+       sprintf(outfile1,"%s/pdfoutputs/pdf_st.%s_L1", argv[2], pulsar_name); 
+       sprintf(outfile1Phase,"%s/pdfoutputs/pdfPhase_st.%s_L1", argv[2], pulsar_name); 
+       sprintf(outfile1Psi,"%s/pdfoutputs/pdfPsi_st.%s_L1", argv[2], pulsar_name); 
+       sprintf(outfile1CosIota,"%s/pdfoutputs/pdfCosIota_st.%s_L1", argv[2], pulsar_name); 
     }
    
     fp_pdf1 = fopen(outfile1, "w"); 
@@ -879,10 +891,10 @@ the variable condor is defined, then read in the first argument pulsar_name from
      }
      else if (flag == 2)
      {
-       sprintf(outfile2,"%s/%s/pdf_st.%s_H1", argv[2], pulsar_name, pulsar_name);
-       sprintf(outfile2Phase,"%s/%s/pdfPhase_st.%s_H1", argv[2], pulsar_name, pulsar_name);
-       sprintf(outfile2Psi,"%s/%s/pdfPsi_st.%s_H1", argv[2], pulsar_name, pulsar_name);
-       sprintf(outfile2CosIota,"%s/%s/pdfCosIota_st.%s_H1", argv[2], pulsar_name, pulsar_name);
+       sprintf(outfile2,"%s/pdfoutputs/pdf_st.%s_H1", argv[2], pulsar_name);
+       sprintf(outfile2Phase,"%s/pdfoutputs/pdfPhase_st.%s_H1", argv[2], pulsar_name);
+       sprintf(outfile2Psi,"%s/pdfoutputs/pdfPsi_st.%s_H1", argv[2], pulsar_name);
+       sprintf(outfile2CosIota,"%s/pdfoutputs/pdfCosIota_st.%s_H1", argv[2], pulsar_name);
      }    
      fp_pdf2 = fopen(outfile2, "w"); 
      fp_pdf2Phase = fopen(outfile2Phase, "w"); 
@@ -912,10 +924,10 @@ the variable condor is defined, then read in the first argument pulsar_name from
      }
      else if (flag == 2)
      {
-       sprintf(outfile3,"%s/%s/pdf_st.%s_H2", argv[2], pulsar_name, pulsar_name);
-       sprintf(outfile3Phase,"%s/%s/pdfPhase_st.%s_H2", argv[2], pulsar_name, pulsar_name);
-       sprintf(outfile3Psi,"%s/%s/pdfPsi_st.%s_H2", argv[2], pulsar_name, pulsar_name);
-       sprintf(outfile3CosIota,"%s/%s/pdfCosIota_st.%s_H2", argv[2], pulsar_name, pulsar_name);
+       sprintf(outfile3,"%s/pdfoutputs/pdf_st.%s_H2", argv[2], pulsar_name);
+       sprintf(outfile3Phase,"%s/pdfoutputs/pdfPhase_st.%s_H2", argv[2], pulsar_name);
+       sprintf(outfile3Psi,"%s/pdfoutputs/pdfPsi_st.%s_H2", argv[2], pulsar_name);
+       sprintf(outfile3CosIota,"%s/pdfoutputs/pdfCosIota_st.%s_H2", argv[2], pulsar_name);
      }
      
     fp_pdf3 = fopen(outfile3, "w"); 
@@ -945,10 +957,10 @@ the variable condor is defined, then read in the first argument pulsar_name from
      }
      else if (flag == 2)
      {
-       sprintf(outfile4,"%s/%s/pdf_st.%s_GEO", argv[2], pulsar_name, pulsar_name);
-       sprintf(outfile4Phase,"%s/%s/pdfPhase_st.%s_GEO", argv[2], pulsar_name, pulsar_name);
-       sprintf(outfile4Psi,"%s/%s/pdfPsi_st.%s_GEO", argv[2], pulsar_name, pulsar_name);
-       sprintf(outfile4CosIota,"%s/%s/pdfCosIota_st.%s_GEO", argv[2], pulsar_name, pulsar_name);
+       sprintf(outfile4,"%s/pdfoutputs/pdf_st.%s_GEO", argv[2], pulsar_name);
+       sprintf(outfile4Phase,"%s/pdfoutputs/pdfPhase_st.%s_GEO", argv[2], pulsar_name);
+       sprintf(outfile4Psi,"%s/pdfoutputs/pdfPsi_st.%s_GEO", argv[2], pulsar_name);
+       sprintf(outfile4CosIota,"%s/pdfoutputs/pdfCosIota_st.%s_GEO", argv[2], pulsar_name);
      }
      
     fp_pdf4 = fopen(outfile4, "w"); 
@@ -979,10 +991,10 @@ the variable condor is defined, then read in the first argument pulsar_name from
      }
      else if (flag == 2)
      {
-       sprintf(outfile,"%s/%s/pdf_st.%s_Joint", argv[2], pulsar_name, pulsar_name);
-       sprintf(outfilePhase,"%s/%s/pdfPhase_st.%s_Joint", argv[2], pulsar_name, pulsar_name);
-       sprintf(outfilePsi,"%s/%s/pdfPsi_st.%s_Joint", argv[2], pulsar_name, pulsar_name);
-       sprintf(outfileCosIota,"%s/%s/pdfCosIota_st.%s_Joint", argv[2], pulsar_name, pulsar_name);
+       sprintf(outfile,"%s/pdfoutputs/pdf_st.%s_Joint", argv[2], pulsar_name);
+       sprintf(outfilePhase,"%s/pdfoutputs/pdfPhase_st.%s_Joint", argv[2], pulsar_name);
+       sprintf(outfilePsi,"%s/pdfoutputs/pdfPsi_st.%s_Joint", argv[2], pulsar_name);
+       sprintf(outfileCosIota,"%s/pdfoutputs/pdfCosIota_st.%s_Joint", argv[2], pulsar_name);
      }
      
     fp_joint = fopen(outfile, "w"); 
