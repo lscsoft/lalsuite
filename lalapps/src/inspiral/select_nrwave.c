@@ -69,6 +69,34 @@ RCSID( "$Id$" );
 /* verbose flag */
 extern int vrbflg;
 
+typedef struct {
+  REAL8 massRatioMin; 
+  REAL8 massRatioMax;
+  REAL8 sx1Min; 
+  REAL8 sx1Max;
+  REAL8 sx2Min; 
+  REAL8 sx2Max;
+  REAL8 sy1Min; 
+  REAL8 sy1Max;
+  REAL8 sy2Min; 
+  REAL8 sy2Max;
+  REAL8 sz1Min; 
+  REAL8 sz1Max;
+  REAL8 sz2Min; 
+  REAL8 sz2Max; 
+} NrParRange;
+
+
+void GetNRMetaDataFromFrameHistory(LALStatus  *status, 
+				   NRWaveMetaData *data,
+				   FrHistory *history);
+
+void ParseThisComment(NRWaveMetaData *data, CHAR *comment);
+
+REAL8 GetNumericValue(CHAR *comment);
+
+REAL8 MetaDataInRange(NRWaveMetaData *data, NrParRange *range);
+
 
 /* main program entry */
 INT4 main( INT4 argc, CHAR *argv[] )
@@ -78,9 +106,12 @@ INT4 main( INT4 argc, CHAR *argv[] )
   FrCache *frGlobCache = NULL;
   FrCache *frInCache = NULL;
   FrCacheSieve  sieve;
-  FrStream  *frStream = NULL;
+  FrameH *frame=NULL;
+  FrFile *frFile=NULL;
 
-  NRWaveCatalog nrCatalog;
+
+  NRWaveMetaData metaData;
+  NrParRange range;
 
   UINT4 k;
 
@@ -88,18 +119,16 @@ INT4 main( INT4 argc, CHAR *argv[] )
   BOOLEAN  uvar_help = FALSE;
   CHAR *uvar_nrDir=NULL;
   CHAR *uvar_nrGroup=NULL;
-  REAL8 uvar_minMassRatio=0, uvar_maxMassRatio=0;
-  REAL8 uvar_minSx1, uvar_minSx2, uvar_maxSx1, uvar_maxSx2;
-  REAL8 uvar_minSy1, uvar_minSy2, uvar_maxSy1, uvar_maxSy2;
-  REAL8 uvar_minSz1, uvar_minSz2, uvar_maxSz1, uvar_maxSz2;
-
+  REAL8 uvar_minMassRatio=1, uvar_maxMassRatio=0;
+  REAL8 uvar_minSx1=-1, uvar_minSx2=-1, uvar_maxSx1=1, uvar_maxSx2=1;
+  REAL8 uvar_minSy1=-1, uvar_minSy2=-1, uvar_maxSy1=1, uvar_maxSy2=1;
+  REAL8 uvar_minSz1=-1, uvar_minSz2=-1, uvar_maxSz1=1, uvar_maxSz2=1;
 
   /* default debug level */
   lal_errhandler = LAL_ERR_EXIT;
 
   lalDebugLevel = 0;
   LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
-
 
   LAL_CALL( LALRegisterBOOLUserVar( &status, "help", 'h', UVAR_HELP, "Print this message", &uvar_help), &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "nrDir", 'D', UVAR_REQUIRED, "Directory with NR data", &uvar_nrDir), &status);
@@ -122,7 +151,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
   LAL_CALL( LALRegisterREALUserVar( &status, "maxSz1", 0, UVAR_OPTIONAL, "Maximum z-spin of first BH", &uvar_maxSz1),  &status);
   LAL_CALL( LALRegisterREALUserVar( &status, "maxSz2", 0, UVAR_OPTIONAL, "Maximum z-spin of second BH", &uvar_maxSz2),  &status);
 
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "nrGroup", 0, UVAR_REQUIRED, "NR group", &uvar_nrGroup), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "nrGroup", 0, UVAR_OPTIONAL, "NR group", &uvar_nrGroup), &status);
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -131,14 +160,39 @@ INT4 main( INT4 argc, CHAR *argv[] )
   if (uvar_help)
     exit(0); 
 
+
+  range.massRatioMin = uvar_minMassRatio;
+  range.massRatioMax = uvar_maxMassRatio;
+
+  range.sx1Min = uvar_minSx1;
+  range.sx1Max = uvar_maxSx1;
+
+  range.sx2Min = uvar_minSx2;
+  range.sx2Max = uvar_maxSx2;
+
+  range.sy1Min = uvar_minSy1;
+  range.sy1Max = uvar_maxSy1;
+
+  range.sy2Min = uvar_minSy2;
+  range.sy2Max = uvar_maxSy2;
+
+  range.sz1Min = uvar_minSz1;
+  range.sz1Max = uvar_maxSz1;
+
+  range.sz2Min = uvar_minSz2;
+  range.sz2Max = uvar_maxSz2;
+
   
   /* create a frame cache by globbing *.gwf in specified dir */
   LAL_CALL( LALFrCacheGenerate( &status, &frGlobCache, uvar_nrDir, NULL ), 
 	    &status );
 
+
   memset( &sieve, 0, sizeof(FrCacheSieve) );
+  /* sieve doesn't actually do anything yet */
   LAL_CALL( LALFrCacheSieve( &status, &frInCache, frGlobCache, &sieve ), 
 	    &status );
+
   LAL_CALL( LALDestroyFrCache( &status, &frGlobCache ), &status );  
   
   /* check we globbed at least one frame file */
@@ -147,15 +201,27 @@ INT4 main( INT4 argc, CHAR *argv[] )
     exit(1);
   }
 
-  LAL_CALL( LALFrCacheOpen( &status, &frStream, frInCache ), &status );  
 
   /* loop over frame files and select the ones with nr-params in the right range */
   for (k = 0; k < frInCache->numFrameFiles; k++) {
 
-    
-  }
+    frFile =  XLALFrOpenURL( frInCache->frameFiles[k].url);
 
-  LAL_CALL( LALFrClose( &status, &frStream ), &status );
+    frame = FrameRead (frFile);
+    
+    memset(&metaData, 0, sizeof(NRWaveMetaData));    
+    LAL_CALL( GetNRMetaDataFromFrameHistory( &status, &metaData, frame->history), &status);
+
+    if ( MetaDataInRange(&metaData, &range)) {
+      /* need to print other pars as well */
+      fprintf(stdout,"%s\n",frInCache->frameFiles[k].url);
+    }    
+
+
+  } /* end loop over framefiles */
+
+
+  /*   LAL_CALL( LALFrClose( &status, &frStream ), &status ); */
   LAL_CALL( LALDestroyFrCache( &status, &frInCache ), &status );  
 
 
@@ -166,3 +232,115 @@ INT4 main( INT4 argc, CHAR *argv[] )
 }
 
 
+/* metadata is stored in the history field comment 
+   -- this function parses the comment to fill the metadata struct */
+void GetNRMetaDataFromFrameHistory(LALStatus  *status, 
+				   NRWaveMetaData *data,
+				   FrHistory *history)
+{
+
+  UINT4 strlen=128;
+  CHAR *comment=NULL; /* the comments string */
+  FrHistory *localhist;
+
+  INITSTATUS (status, "GetNRMetaDataFromFrameHistory", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  comment = LALMalloc(strlen*sizeof(CHAR));
+
+  localhist = history;
+  while (localhist) {
+
+    strcpy(comment,localhist->comment);
+    ParseThisComment(data, comment);
+
+    localhist = localhist->next;
+  }
+
+  LALFree(comment);
+
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+
+}
+
+
+void ParseThisComment(NRWaveMetaData *data,
+		      CHAR *comment)
+{
+
+  if (strstr(comment,"spin1x"))
+    data->spin1[0] = GetNumericValue(comment);
+  else if (strstr(comment,"spin1y"))
+    data->spin1[1] = GetNumericValue(comment);
+  else if (strstr(comment,"spin1z"))
+    data->spin1[2] = GetNumericValue(comment);
+  else if (strstr(comment,"spin2x"))
+    data->spin2[0] = GetNumericValue(comment);
+  else if (strstr(comment,"spin2y"))
+    data->spin2[1] = GetNumericValue(comment);
+  else if (strstr(comment,"spin2z"))
+    data->spin2[2] = GetNumericValue(comment);
+  else if (strstr(comment,"mass-ratio"))
+    data->massRatio = GetNumericValue(comment);
+  
+  return;
+
+}
+
+REAL8 GetNumericValue(CHAR *comment)
+{
+
+  CHAR *tmp;
+  tmp = strstr(comment, ":");
+  tmp++;
+
+  /* todo: might want to skip whitespace before calling atof */
+
+  return(atof(tmp));
+
+}
+
+
+/* typedef struct  */
+/* { */
+/*   REAL8 massRatio; /\**< Mass ratio m1/m2 where we assume m1 >= m2*\/ */
+/*   REAL8 spin1[3];  /\**< Spin of m1 *\/ */
+/*   REAL8 spin2[3];  /\**< Spin of m2 *\/ */
+/*   INT4  mode[2];   /\**< l and m values *\/ */
+/*   CHAR  filename[LALNameLength]; /\**< filename where data is stored *\/ */
+/* }  */
+
+/* typedef struct { */
+/*   REAL8 massRatioMin, massRatioMax; */
+/*   REAL8 sx1Min, sx1Max; */
+/*   REAL8 sx2Min, sx2Max; */
+/*   REAL8 sy1Min, sy1Max; */
+/*   REAL8 sy2Min, sy2Max; */
+/*   REAL8 sz1Min, sz1Max; */
+/*   REAL8 sz2Min, sz2Max;  */
+/* } NrParRange; */
+
+REAL8 MetaDataInRange(NRWaveMetaData *data, NrParRange *range)
+{
+
+  REAL8 ret;
+  BOOLEAN flag = FALSE;
+
+  flag = (data->massRatio >= range->massRatioMin) && (data->massRatio <= range->massRatioMax);
+  flag = flag && (data->spin1[0] >= range->sx1Min) && (data->spin1[0] <= range->sx1Max);
+  flag = flag && (data->spin2[0] >= range->sx2Min) && (data->spin2[0] <= range->sx2Max);  
+  flag = flag && (data->spin1[1] >= range->sy1Min) && (data->spin1[1] <= range->sy1Max);
+  flag = flag && (data->spin2[1] >= range->sy2Min) && (data->spin2[1] <= range->sy2Max);
+  flag = flag && (data->spin1[2] >= range->sz1Min) && (data->spin1[2] <= range->sz1Max);
+  flag = flag && (data->spin2[2] >= range->sz2Min) && (data->spin2[2] <= range->sz2Max);
+
+  if (flag) 
+    ret = 1;
+  else
+    ret = 0; 
+
+  return(ret);
+
+}
