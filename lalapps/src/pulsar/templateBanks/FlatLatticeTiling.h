@@ -55,8 +55,8 @@ typedef struct tagFlatLatticeTiling {
   gsl_vector *bounds_args;
   CHAR *bounds_xml_desc;
 
-  /* Orthogonal directions of the metric */
-  gsl_matrix *directions;
+  /* Padding to include at either end along each dimension */
+  gsl_vector *padding;
 
   /* Increment vectors between lattice points in the parameter space */
   gsl_matrix *increment;
