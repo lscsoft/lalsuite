@@ -87,7 +87,12 @@ INT4 main( INT4 argc, CHAR *argv[] )
   /* user input variables */
   BOOLEAN  uvar_help = FALSE;
   CHAR *uvar_nrDir=NULL;
-  INT4 uvar_minEta=0, uvar_maxEta=0;
+  CHAR *uvar_nrGroup=NULL;
+  REAL8 uvar_minMassRatio=0, uvar_maxMassRatio=0;
+  REAL8 uvar_minSx1, uvar_minSx2, uvar_maxSx1, uvar_maxSx2;
+  REAL8 uvar_minSy1, uvar_minSy2, uvar_maxSy1, uvar_maxSy2;
+  REAL8 uvar_minSz1, uvar_minSz2, uvar_maxSz1, uvar_maxSz2;
+
 
   /* default debug level */
   lal_errhandler = LAL_ERR_EXIT;
@@ -98,9 +103,26 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
   LAL_CALL( LALRegisterBOOLUserVar( &status, "help", 'h', UVAR_HELP, "Print this message", &uvar_help), &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "nrDir", 'D', UVAR_REQUIRED, "Directory with NR data", &uvar_nrDir), &status);
-  LAL_CALL( LALRegisterINTUserVar( &status, "minEta", 0, UVAR_OPTIONAL, "Minimum symm. mass ratio", &uvar_minEta),  &status);
-  LAL_CALL( LALRegisterINTUserVar( &status, "maxEta", 0, UVAR_OPTIONAL, "Minimum symm. mass ratio", &uvar_maxEta),  &status);
 
+  LAL_CALL( LALRegisterREALUserVar( &status, "minMassRatio", 0, UVAR_OPTIONAL, "Minimum mass ratio", &uvar_minMassRatio),  &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "maxMassRatio", 0, UVAR_OPTIONAL, "Maximum mass ratio", &uvar_maxMassRatio),  &status);
+
+  LAL_CALL( LALRegisterREALUserVar( &status, "minSx1", 0, UVAR_OPTIONAL, "Minimum x-spin of first BH", &uvar_minSx1),  &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "minSx2", 0, UVAR_OPTIONAL, "Minimum x-Spin of second BH", &uvar_minSx2),  &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "maxSx1", 0, UVAR_OPTIONAL, "Maximum x-spin of first BH", &uvar_maxSx1),  &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "maxSx2", 0, UVAR_OPTIONAL, "Maximum x-spin of second BH", &uvar_maxSx2),  &status);
+
+  LAL_CALL( LALRegisterREALUserVar( &status, "minSy1", 0, UVAR_OPTIONAL, "Minimum y-spin of first BH", &uvar_minSy1),  &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "minSy2", 0, UVAR_OPTIONAL, "Minimum y-Spin of second BH", &uvar_minSy2),  &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "maxSy1", 0, UVAR_OPTIONAL, "Maximum y-spin of first BH", &uvar_maxSy1),  &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "maxSy2", 0, UVAR_OPTIONAL, "Maximum y-spin of second BH", &uvar_maxSy2),  &status);
+
+  LAL_CALL( LALRegisterREALUserVar( &status, "minSz1", 0, UVAR_OPTIONAL, "Minimum z-spin of first BH", &uvar_minSz1),  &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "minSz2", 0, UVAR_OPTIONAL, "Minimum z-Spin of second BH", &uvar_minSz2),  &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "maxSz1", 0, UVAR_OPTIONAL, "Maximum z-spin of first BH", &uvar_maxSz1),  &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "maxSz2", 0, UVAR_OPTIONAL, "Maximum z-spin of second BH", &uvar_maxSz2),  &status);
+
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "nrGroup", 0, UVAR_REQUIRED, "NR group", &uvar_nrGroup), &status);
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
