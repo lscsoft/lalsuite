@@ -74,8 +74,14 @@ typedef struct tagFlatLatticeTiling {
   /* Have we finished generating templates? */
   BOOLEAN finished;
 
-  /* Number of templates generated */
-  UINT8 templates;
+  /* Number of templates generated so far */
+  UINT8 template_count;
+
+  /* Have we counted the total number of templates? */
+  UINT8 counted;
+
+  /* Total number of templates */
+  UINT8 total_templates;
 
 } FlatLatticeTiling;
 
@@ -107,9 +113,9 @@ extern "C" {
 
   REAL8 XLALCurrentFlatLatticePoint(FlatLatticeTiling*, INT4);
 
-  UINT8 XLALTotalFlatLatticePoints(FlatLatticeTiling*);
+  UINT8 XLALCurrentNumberOfFlatLatticePoints(FlatLatticeTiling*);
 
-  int XLALWriteFlatLatticeTilingXMLFile(FlatLatticeTiling*, CHAR *);
+  UINT8 XLALTotalNumberOfFlatLatticePoints(FlatLatticeTiling*);
 
 #ifdef __cplusplus
 }

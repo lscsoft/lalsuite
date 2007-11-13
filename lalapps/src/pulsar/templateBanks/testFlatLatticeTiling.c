@@ -42,6 +42,8 @@
 
 RCSID("$Id$");
 
+int XLALWriteFlatLatticeTilingXMLFile(FlatLatticeTiling*, CHAR *);
+
 int main(int argc, char *argv[]) {
 
   INT4 i, j, ii, jj;
@@ -192,12 +194,8 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  /* Otherwise just count the number of templates */
-  else {
-    while (XLALNextFlatLatticePoint(tiling));
-  }
-
-  printf("Number of templates generated: %lli\n", XLALTotalFlatLatticePoints(tiling));
+  /* Count the number of templates */
+  printf("Number of templates generated: %lli\n", XLALTotalNumberOfFlatLatticePoints(tiling));
 
   /* Cleanup */
   LAL_CALL(LALDestroyUserVars(&status), &status);
@@ -211,3 +209,105 @@ int main(int argc, char *argv[]) {
   return EXIT_SUCCESS;
 
 }
+
+
+/**
+ * Write a basic XML file containing a flat lattice tiling and associated metadata.
+ */
+int XLALWriteFlatLatticeTilingXMLFile(
+				      FlatLatticeTiling* tiling, /**< [in] Flat lattice tiling structure */
+				      CHAR *output_filename      /**< [in] Output filename */
+				      )
+{
+
+  INT4 i, j;
+  INT4 n = tiling->dimension;
+  FILE *output_file = NULL;
+
+  /* Open output file */
+  if ((output_file = fopen(output_filename, "wt")) == NULL) {
+    LALPrintError("%s\nERROR: Could not open output file '%s'\n", rcsid, output_filename);
+    XLAL_ERROR("XLALWriteFlatLatticeTilingXMLFile", XLAL_EIO);
+  }
+
+  /* Write XML header */
+  fprintf(output_file, "<?xml version=\"1.0\"?>\n");
+  fprintf(output_file, "<flatlatticetiling version=\"%s\">\n", rcsid);
+
+  /* Write dimension */
+  fprintf(output_file, "  <dimension>%i</dimension>\n", tiling->dimension);
+
+  /* Write metric */
+  fprintf(output_file, "  <metric>\n");
+  for (i = 0; i < n; ++i) {
+    fprintf(output_file, "    ");
+    for (j = 0; j < n; ++j) {
+      fprintf(output_file, "% 0.16e ", gsl_matrix_get(tiling->metric, i, j));
+    }
+    fprintf(output_file, ";\n");
+  }
+  fprintf(output_file, "  </metric>\n");
+
+  /* Write mismatch */
+  fprintf(output_file, "  <mismatch>%0.16e</mismatch>\n", tiling->mismatch);
+
+  /* Write generator */
+  fprintf(output_file, "  <generator>\n");
+  for (i = 0; i < n; ++i) {
+    fprintf(output_file, "    ");
+    for (j = 0; j < n; ++j) {
+      fprintf(output_file, "% 0.16e ", gsl_matrix_get(tiling->generator, i, j));
+    }
+    fprintf(output_file, ";\n");
+  }
+  fprintf(output_file, "  </generator>\n");
+
+  /* Write XML description of parameter space bounds */
+  if (tiling->bounds_xml_desc) {
+    fprintf(output_file, "  <bounds>\n    %s\n  </bounds>\n", tiling->bounds_xml_desc);
+  }
+  else {
+    fprintf(output_file, "  <bounds><type>unknown</type></bounds>\n");
+  }
+
+  /* Write increment vectors */
+  fprintf(output_file, "  <increment>\n");
+  for (i = 0; i < n; ++i) {
+    fprintf(output_file, "    ");
+    for (j = 0; j < n; ++j) {
+      fprintf(output_file, "% 0.16e ", gsl_matrix_get(tiling->increment, i, j));
+    }
+    fprintf(output_file, ";\n");
+  }
+  fprintf(output_file, "  </increment>\n");
+
+  /* Write padding */
+  fprintf(output_file, "  <padding>\n    ");
+  for (i = 0; i < n; ++i) {
+    fprintf(output_file, "% 0.16e ", gsl_vector_get(tiling->padding, i));
+  }
+  fprintf(output_file, "\n  </padding>\n");
+
+  /* Generate templates */
+  fprintf(output_file, "  <templates>\n");
+  while (XLALNextFlatLatticePoint(tiling)) {
+
+    /* Write template */
+    fprintf(output_file, "    ");
+    for (j = 0; j < n; ++j) {
+      fprintf(output_file, "% 0.16e ", gsl_vector_get(tiling->current, j));
+    }
+    fprintf(output_file, ";\n");
+
+  }
+  fprintf(output_file, "  </templates>\n");
+
+  /* Write XML footer */
+  fprintf(output_file, "</flatlatticetiling>\n");
+
+  /* Close file */
+  fclose(output_file);
+
+  return XLAL_SUCCESS;
+  
+}				      

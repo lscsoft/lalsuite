@@ -37,13 +37,10 @@
 #include <gsl/gsl_sort_vector.h>
 
 #include <lal/LALRCSID.h>
-#include <lal/LALError.h>
-#include <lal/XLALError.h>
+#include <lal/LALStdlib.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALConstants.h>
-#include <lal/LALError.h>
-#include <lal/LALStdlib.h>
-#include <lal/LogPrintf.h>
+#include <lal/XLALError.h>
 
 static const BOOLEAN TRUE  = (1==1);
 static const BOOLEAN FALSE = (1==0);
@@ -66,12 +63,12 @@ FlatLatticeTiling *XLALCreateFlatLatticeTiling(
 
   /* Check input */
   if (dimension < 1) {
-    LALPrintError("%s\nERROR: Dimension must be non-zero\n", FLATLATTICETILINGC);
+    XLALPrintError("%s\nERROR: Dimension must be non-zero\n", FLATLATTICETILINGC);
     XLAL_ERROR_NULL("XLALCreateFlatLatticeTiling", XLAL_EINVAL);
   }
 
   if ((tiling = (FlatLatticeTiling*) LALMalloc(sizeof(FlatLatticeTiling))) == NULL) {
-    LALPrintError("%s\nERROR: Could not allocate a FlatLatticeTiling\n", FLATLATTICETILINGC);
+    XLALPrintError("%s\nERROR: Could not allocate a FlatLatticeTiling\n", FLATLATTICETILINGC);
     XLAL_ERROR_NULL("XLALCreateFlatLatticeTiling", XLAL_ENOMEM);
   }
 
@@ -99,7 +96,11 @@ FlatLatticeTiling *XLALCreateFlatLatticeTiling(
   tiling->started = FALSE;
   tiling->finished = FALSE;
 
-  tiling->templates = 0;
+  tiling->template_count = 0;
+
+  tiling->counted = FALSE;
+
+  tiling->total_templates = 0;
 
   return tiling;
 
@@ -155,7 +156,7 @@ int XLALOrthonormaliseMatrixWRTMetric(
 
   /* Check input */
   if (m != (INT4)metric->size1 || m != (INT4)metric->size2) {
-    LALPrintError("%s\ERROR: Metric matrix is not the correct size\n", FLATLATTICETILINGC);
+    XLALPrintError("%s\ERROR: Metric matrix is not the correct size\n", FLATLATTICETILINGC);
     XLAL_ERROR("XLALOrthonormaliseMatrixWRTMetric", XLAL_ESIZE);
   }
 
@@ -194,7 +195,7 @@ int XLALOrthonormaliseMatrixWRTMetric(
   }
 
   /* Print debugging */
-  LogPrintf(LOG_DETAIL, "Inner product of matrix columns with metric\n");
+  XLALPrintInfo("Inner product of matrix columns with metric\n");
   for (i = 0; i < n; ++i) {
 
     /* Store view of ith column */
@@ -209,11 +210,11 @@ int XLALOrthonormaliseMatrixWRTMetric(
       gsl_blas_dgemv(CblasNoTrans, 1.0, metric, &col_j.vector, 0.0, temp);
       gsl_blas_ddot(&col_i.vector, temp, &inner_prod);
 
-      LogPrintfVerbatim(LOG_DETAIL, "  % 0.16e", inner_prod);
+      XLALPrintInfo("  % 0.16e", inner_prod);
 
     }
 
-    LogPrintfVerbatim(LOG_DETAIL, " ;\n");
+    XLALPrintInfo(" ;\n");
 
   }
 
@@ -243,7 +244,7 @@ gsl_matrix *XLALLowerTriangularLatticeGenerator(
 
   /* Check input */
   if (m < n) {
-    LALPrintError("%s\nERROR: Generator must have at least the same number of rows as columns\n", FLATLATTICETILINGC);
+    XLALPrintError("%s\nERROR: Generator must have at least the same number of rows as columns\n", FLATLATTICETILINGC);
     XLAL_ERROR_NULL("XLALLowerTriangularLatticeGenerator", XLAL_ESIZE);
   }
 
@@ -299,7 +300,7 @@ int XLALNormaliseLatticeGenerator(
 
   /* Check input */
   if (generator->size1 != generator->size2) {
-    LALPrintError("%s\nERROR: Generator must be square\n", FLATLATTICETILINGC);
+    XLALPrintError("%s\nERROR: Generator must be square\n", FLATLATTICETILINGC);
     XLAL_ERROR("XLALNormaliseLatticeGenerator", XLAL_ESIZE);
   }
 
@@ -343,7 +344,7 @@ gsl_matrix *XLALCubicLatticeGenerator(
 
   /* Check input */
   if (dimension < 1) {
-    LALPrintError("%s\nERROR: Dimension must be non-zero\n", FLATLATTICETILINGC);
+    XLALPrintError("%s\nERROR: Dimension must be non-zero\n", FLATLATTICETILINGC);
     XLAL_ERROR_NULL("XLALCubicLatticeGenerator", XLAL_EINVAL);
   }
 
@@ -378,7 +379,7 @@ gsl_matrix *XLALAnstarLatticeGenerator(
 
   /* Check input */
   if (dimension < 1) {
-    LALPrintError("%s\nERROR: Dimension must be non-zero\n", FLATLATTICETILINGC);
+    XLALPrintError("%s\nERROR: Dimension must be non-zero\n", FLATLATTICETILINGC);
     XLAL_ERROR_NULL("XLALAnstarLatticeGenerator", XLAL_EINVAL);
   }
 
@@ -392,12 +393,12 @@ gsl_matrix *XLALAnstarLatticeGenerator(
   gsl_vector_view last_col = gsl_matrix_column(generator, dimension-1);
   gsl_vector_set_all(&last_col.vector, 1.0 / (n + 1));
   gsl_vector_set(&last_col.vector, 0, -n / (n + 1));
-  LogPrintf(LOG_DETAIL, "A_%i^* generator matrix in %i-dimensional space:\n", dimension, dimension + 1);
+  XLALPrintInfo("A_%i^* generator matrix in %i-dimensional space:\n", dimension, dimension + 1);
   for (i = 0; i < dimension + 1; ++i) {
     for (j = 0; j < dimension; ++j) {
-      LogPrintfVerbatim(LOG_DETAIL, "  % 0.16e", gsl_matrix_get(generator, i, j));
+      XLALPrintInfo("  % 0.16e", gsl_matrix_get(generator, i, j));
     }
-    LogPrintfVerbatim(LOG_DETAIL, " ;\n");
+    XLALPrintInfo(" ;\n");
   }
  
 
@@ -447,7 +448,7 @@ int XLALSquareParameterSpace(
 
   /* XML description */
   if ((tiling->bounds_xml_desc = (CHAR*) LALMalloc((300 + 100*n) * sizeof(CHAR))) == NULL) {
-    LALPrintError("%s\nERROR: Could not allocate a CHAR*\n", FLATLATTICETILINGC);
+    XLALPrintError("%s\nERROR: Could not allocate a CHAR*\n", FLATLATTICETILINGC);
     XLAL_ERROR("XLALSquareParameterSpace", XLAL_ENOMEM);
   }
   sprintf(tiling->bounds_xml_desc, "<type>square</type><lower>");
@@ -500,54 +501,53 @@ int XLALSetupFlatLatticeTiling(
   gsl_permutation *LU_perm = NULL;
   gsl_matrix *inverse = NULL;
   int LU_sign = 0;
-  double padding = 0.0;
 
   /* Check metric */
   if ((INT4)tiling->metric->size1 != n || (INT4)tiling->metric->size2 != n) {
-    LALPrintError("%s\nERROR: Metric matrix is not the correct size\n", FLATLATTICETILINGC);
+    XLALPrintError("%s\nERROR: Metric matrix is not the correct size\n", FLATLATTICETILINGC);
     XLAL_ERROR("XLALSetupFlatLatticeTiling", XLAL_ESIZE);
   }
   for (i = 0; i < n; ++i) {
     for (j = i + 1; j < n; ++j) {
       if (gsl_matrix_get(tiling->metric, i, j) != gsl_matrix_get(tiling->metric, j, i)) {
-	LALPrintError("%s\nERROR: Generator matrix is not symmetric\n", FLATLATTICETILINGC);
+	XLALPrintError("%s\nERROR: Generator matrix is not symmetric\n", FLATLATTICETILINGC);
 	XLAL_ERROR("XLALSetupFlatLatticeTiling", XLAL_EDATA);
       }
     }
   }
-  LogPrintf(LOG_DETAIL, "Parameter space metric:\n");
+  XLALPrintInfo("Parameter space metric:\n");
   for (i = 0; i < n; ++i) {
     for (j = 0; j < n; ++j) {
-      LogPrintfVerbatim(LOG_DETAIL, "  % 0.16e", gsl_matrix_get(tiling->metric, i, j));
+      XLALPrintInfo("  % 0.16e", gsl_matrix_get(tiling->metric, i, j));
     }
-    LogPrintfVerbatim(LOG_DETAIL, " ;\n");
+    XLALPrintInfo(" ;\n");
   }
 
   /* Check mismatch */
   if (tiling->mismatch <= 0.0) {
-    LALPrintError("%s\nERROR: Mismatch must be non-zero\n", FLATLATTICETILINGC);
+    XLALPrintError("%s\nERROR: Mismatch must be non-zero\n", FLATLATTICETILINGC);
     XLAL_ERROR("XLALSetupFlatLatticeTiling", XLAL_EINVAL);
   }
 
   /* Check generator */
   if ((INT4)tiling->generator->size1 != n || (INT4)tiling->generator->size2 != n) {
-    LALPrintError("%s\nERROR: Generator matrix is not the correct size\n", FLATLATTICETILINGC);
+    XLALPrintError("%s\nERROR: Generator matrix is not the correct size\n", FLATLATTICETILINGC);
     XLAL_ERROR("XLALSetupFlatLatticeTiling", XLAL_ESIZE);
   }
   for (i = 0; i < n; ++i) {
     for (j = i + 1; j < n; ++j) {
       if (gsl_matrix_get(tiling->generator, i, j) != 0.0) {
-	LALPrintError("%s\nERROR: Generator matrix is not upper triangular\n", FLATLATTICETILINGC);
+	XLALPrintError("%s\nERROR: Generator matrix is not upper triangular\n", FLATLATTICETILINGC);
 	XLAL_ERROR("XLALSetupFlatLatticeTiling", XLAL_EDATA);
       }
     }
   }
-  LogPrintf(LOG_DETAIL, "Lattice generator:\n");
+  XLALPrintInfo("Lattice generator:\n");
   for (i = 0; i < n; ++i) {
     for (j = 0; j < n; ++j) {
-      LogPrintfVerbatim(LOG_DETAIL, "  % 0.16e", gsl_matrix_get(tiling->generator, i, j));
+      XLALPrintInfo("  % 0.16e", gsl_matrix_get(tiling->generator, i, j));
     }
-    LogPrintfVerbatim(LOG_DETAIL, " ;\n");
+    XLALPrintInfo(" ;\n");
   }
 
   /* Find orthogonal directions with respect to the metric, starting from 
@@ -556,23 +556,23 @@ int XLALSetupFlatLatticeTiling(
   gsl_matrix_set_identity(directions);
   XLALOrthonormaliseMatrixWRTMetric(directions, tiling->metric);
   gsl_matrix_scale(directions, tiling->mismatch);
-  LogPrintf(LOG_DETAIL, "Orthogonal directions with respect to metric:\n");
+  XLALPrintInfo("Orthogonal directions with respect to metric:\n");
   for (i = 0; i < n; ++i) {
     for (j = 0; j < n; ++j) {
-      LogPrintfVerbatim(LOG_DETAIL, "  % 0.16e", gsl_matrix_get(directions, i, j));
+      XLALPrintInfo("  % 0.16e", gsl_matrix_get(directions, i, j));
     }
-    LogPrintfVerbatim(LOG_DETAIL, " ;\n");
+    XLALPrintInfo(" ;\n");
   }
 
   /* Compute the increment vectors between lattice points in the parameter space. */
   tiling->increment = gsl_matrix_alloc(n, n);
   gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, directions, tiling->generator, 0.0, tiling->increment);
-  LogPrintf(LOG_DETAIL, "Increment vectors between lattice points:\n");
+  XLALPrintInfo("Increment vectors between lattice points:\n");
   for (i = 0; i < n; ++i) {
     for (j = 0; j < n; ++j) {
-      LogPrintfVerbatim(LOG_DETAIL, "  % 0.16e", gsl_matrix_get(tiling->increment, i, j));
+      XLALPrintInfo("  % 0.16e", gsl_matrix_get(tiling->increment, i, j));
     }
-    LogPrintfVerbatim(LOG_DETAIL, " ;\n");
+    XLALPrintInfo(" ;\n");
   }
 
   /* Compute the inverse of the metric, and scale its columns to the 
@@ -587,12 +587,12 @@ int XLALSetupFlatLatticeTiling(
     gsl_vector_view col_i = gsl_matrix_column(inverse, i);
     gsl_vector_scale(&col_i.vector, tiling->mismatch / sqrt(gsl_matrix_get(inverse, i, i)));
   }
-  LogPrintf(LOG_DETAIL, "Inverse of the metric, scaled to the mismatch:\n");
+  XLALPrintInfo("Inverse of the metric, scaled to the mismatch:\n");
   for (i = 0; i < n; ++i) {
     for (j = 0; j < n; ++j) {
-      LogPrintfVerbatim(LOG_DETAIL, "  % 0.16e", gsl_matrix_get(inverse, i, j));
+      XLALPrintInfo("  % 0.16e", gsl_matrix_get(inverse, i, j));
     }
-    LogPrintfVerbatim(LOG_DETAIL, " ;\n");
+    XLALPrintInfo(" ;\n");
   }
 
   /* Set the padding at either end along each dimension to be the size of the 
@@ -600,16 +600,18 @@ int XLALSetupFlatLatticeTiling(
   tiling->padding = gsl_vector_alloc(n);
   gsl_vector_view inverse_diag = gsl_matrix_diagonal(inverse);
   gsl_vector_memcpy(tiling->padding, &inverse_diag.vector);
-  LogPrintf(LOG_DETAIL, "Padding at either end along each dimension:\n");
+  XLALPrintInfo("Padding at either end along each dimension:\n");
   for (i = 0; i < n; ++i) {
-    LogPrintfVerbatim(LOG_DETAIL, "  % 0.16e", gsl_vector_get(tiling->padding, i));
+    XLALPrintInfo("  % 0.16e", gsl_vector_get(tiling->padding, i));
   }
-  LogPrintfVerbatim(LOG_DETAIL, " ;\n");
+  XLALPrintInfo(" ;\n");
 
-  /* We haven't started generating templates yet, nor have we finished. */
+  /* We haven't started generating templates yet, nor have we counted them */
   tiling->started = FALSE;
   tiling->finished = FALSE;
-  tiling->templates = 0;
+  tiling->template_count = 0;
+  tiling->counted = FALSE;
+  tiling->total_templates = 0;
 
   /* Cleanup */
   gsl_matrix_free(directions);
@@ -678,7 +680,7 @@ BOOLEAN XLALNextFlatLatticePoint(
     /* We've started, but we're not finished */
     tiling->started = TRUE;
     tiling->finished = FALSE;
-    tiling->templates = 0;
+    tiling->template_count = 0;
 
     /* Allocate */
     tiling->current = gsl_vector_alloc(n);
@@ -756,7 +758,7 @@ BOOLEAN XLALNextFlatLatticePoint(
   }
     
   /* Increment template count */
-  ++tiling->templates;
+  ++tiling->template_count;
 
   return TRUE;
 
@@ -776,114 +778,42 @@ REAL8 XLALCurrentFlatLatticePoint(
 }
 
 /**
- * Return the total number of points generated so far by the flat lattice tiling
+ * Return the number of points generated so far by the flat lattice tiling
  */
-UINT8 XLALTotalFlatLatticePoints(
-				 FlatLatticeTiling* tiling /**< [in] Flat lattice tiling structure */
-				 )
+UINT8 XLALCurrentNumberOfFlatLatticePoints(
+					   FlatLatticeTiling* tiling /**< [in] Flat lattice tiling structure */
+					   )
 {
-
-  return tiling->templates;
+  
+  return tiling->template_count;
 
 }
 
 /**
- * Write a basic XML file containing a flat lattice tiling and associated metadata.
+ * Count and return the total number of points generated by the flat lattice tiling
  */
-int XLALWriteFlatLatticeTilingXMLFile(
-				      FlatLatticeTiling* tiling, /**< [in] Flat lattice tiling structure */
-				      CHAR *output_filename      /**< [in] Output filename */
-				      )
+UINT8 XLALTotalNumberOfFlatLatticePoints(
+					 FlatLatticeTiling* tiling /**< [in] Flat lattice tiling structure */
+					 )
 {
 
-  INT4 i, j;
-  INT4 n = tiling->dimension;
-  FILE *output_file = NULL;
+  /* If we haven't already counted them ... */
+  if (!tiling->counted) {
 
-  /* Open output file */
-  if ((output_file = fopen(output_filename, "wt")) == NULL) {
-    LALPrintError("%s\nERROR: Could not open output file '%s'\n", FLATLATTICETILINGC, output_filename);
-    XLAL_ERROR("XLALWriteFlatLatticeTilingXMLFile", XLAL_EIO);
-  }
+    /* Count the number of templates */
+    while (XLALNextFlatLatticePoint(tiling));
 
-  /* Write XML header */
-  fprintf(output_file, "<?xml version=\"1.0\"?>\n");
-  fprintf(output_file, "<flatlatticetiling version=\"%s\">\n", FLATLATTICETILINGC);
+    /* Save number of points */
+    tiling->total_templates = tiling->template_count;
+    tiling->counted = TRUE;
 
-  /* Write dimension */
-  fprintf(output_file, "  <dimension>%i</dimension>\n", tiling->dimension);
-
-  /* Write metric */
-  fprintf(output_file, "  <metric>\n");
-  for (i = 0; i < n; ++i) {
-    fprintf(output_file, "    ");
-    for (j = 0; j < n; ++j) {
-      fprintf(output_file, "% 0.16e ", gsl_matrix_get(tiling->metric, i, j));
-    }
-    fprintf(output_file, ";\n");
-  }
-  fprintf(output_file, "  </metric>\n");
-
-  /* Write mismatch */
-  fprintf(output_file, "  <mismatch>%0.16e</mismatch>\n", tiling->mismatch);
-
-  /* Write generator */
-  fprintf(output_file, "  <generator>\n");
-  for (i = 0; i < n; ++i) {
-    fprintf(output_file, "    ");
-    for (j = 0; j < n; ++j) {
-      fprintf(output_file, "% 0.16e ", gsl_matrix_get(tiling->generator, i, j));
-    }
-    fprintf(output_file, ";\n");
-  }
-  fprintf(output_file, "  </generator>\n");
-
-  /* Write XML description of parameter space bounds */
-  if (tiling->bounds_xml_desc) {
-    fprintf(output_file, "  <bounds>\n    %s\n  </bounds>\n", tiling->bounds_xml_desc);
-  }
-  else {
-    fprintf(output_file, "  <bounds><type>unknown</type></bounds>\n");
-  }
-
-  /* Write increment vectors */
-  fprintf(output_file, "  <increment>\n");
-  for (i = 0; i < n; ++i) {
-    fprintf(output_file, "    ");
-    for (j = 0; j < n; ++j) {
-      fprintf(output_file, "% 0.16e ", gsl_matrix_get(tiling->increment, i, j));
-    }
-    fprintf(output_file, ";\n");
-  }
-  fprintf(output_file, "  </increment>\n");
-
-  /* Write padding */
-  fprintf(output_file, "  <padding>\n    ");
-  for (i = 0; i < n; ++i) {
-    fprintf(output_file, "% 0.16e ", gsl_vector_get(tiling->padding, i));
-  }
-  fprintf(output_file, "\n  </padding>\n");
-
-  /* Generate templates */
-  fprintf(output_file, "  <templates>\n");
-  while (XLALNextFlatLatticePoint(tiling)) {
-
-    /* Write template */
-    fprintf(output_file, "    ");
-    for (j = 0; j < n; ++j) {
-      fprintf(output_file, "% 0.16e ", gsl_vector_get(tiling->current, j));
-    }
-    fprintf(output_file, ";\n");
+    /* Reset tiling structure */
+    tiling->started = FALSE;
+    tiling->finished = FALSE;
+    tiling->template_count = 0;
 
   }
-  fprintf(output_file, "  </templates>\n");
 
-  /* Write XML footer */
-  fprintf(output_file, "</flatlatticetiling>\n");
+  return tiling->total_templates;
 
-  /* Close file */
-  fclose(output_file);
-
-  return XLAL_SUCCESS;
-  
-}				      
+}
