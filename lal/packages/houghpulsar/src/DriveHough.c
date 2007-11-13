@@ -449,6 +449,9 @@ void LALHOUGHConstructHMT  (LALStatus                  *status,
   hd.xSide = xSide;
   hd.ySide = ySide;
   hd.map = (HoughDT *)LALMalloc(ySide*(xSide+1)*sizeof(HoughDT));
+  if (hd. map == NULL) {
+    ABORT( status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL); 
+  }
   /* -------------------------------------------   */
 
  
@@ -612,6 +615,10 @@ void LALHOUGHConstructHMT_W (LALStatus                  *status,
   hd.xSide = xSide;
   hd.ySide = ySide;
   hd.map = (HoughDT *)LALMalloc(ySide*(xSide+1)*sizeof(HoughDT));
+  if (hd. map == NULL) {
+    ABORT( status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL); 
+  }
+
   /* -------------------------------------------   */
  
   TRY( LALHOUGHInitializeHD(status->statusPtr, &hd), status);
@@ -837,8 +844,20 @@ void LALHOUGHComputeAMWeights  (LALStatus          *status,
   /* Allocate space for amParams stucture */
   /* Here, amParams->das is the Detector and Source info */
   amParams = (AMCoeffsParams *)LALMalloc(sizeof(AMCoeffsParams));
+  if (amParams == NULL) {
+    ABORT( status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL); 
+  }
+
   amParams->das = (LALDetAndSource *)LALMalloc(sizeof(LALDetAndSource));
+  if (amParams->das == NULL) {
+    ABORT( status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL); 
+  }
+
   amParams->das->pSource = (LALSource *)LALMalloc(sizeof(LALSource));
+  if (amParams->das->pSource == NULL) {
+    ABORT( status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL); 
+  }
+
   /* Fill up AMCoeffsParams structure */
   amParams->baryinput = &baryinput;
   amParams->earth = &earth; 
@@ -858,13 +877,27 @@ void LALHOUGHComputeAMWeights  (LALStatus          *status,
 
   amc.a = NULL;
   amc.a = (REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
+  if (amc.a == NULL) {
+    ABORT( status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL); 
+  }
+
   amc.a->length = length; 
   amc.a->data = (REAL4 *)LALMalloc(length*sizeof(REAL4)); 
+  if (amc.a->data == NULL) {
+    ABORT( status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL); 
+  }
 
   amc.b = NULL;
   amc.b = (REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
+  if (amc.b == NULL) {
+    ABORT( status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL); 
+  }
+
   amc.b->length = length; 
   amc.b->data = (REAL4 *)LALMalloc(length*sizeof(REAL4)); 
+  if (amc.b->data == NULL) {
+    ABORT( status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL); 
+  }
 
   TRY (LALComputeAM( status->statusPtr, &amc, timeV->data, amParams), status); 
   aVec = amc.a; /* a and b are as defined in JKS */
@@ -911,8 +944,6 @@ void LALHOUGHComputeMultiIFOAMWeights  (LALStatus          *status,
 					REAL8              delta) 
 { /*   *********************************************  </lalVerbatim> */
   
-  UINT4 k; 
-
    /* --------------------------------------------- */
   INITSTATUS (status, "LALHOUGHComputeAMWeights", DRIVEHOUGHC);
   ATTATCHSTATUSPTR (status); 
