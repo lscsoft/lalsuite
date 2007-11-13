@@ -92,7 +92,7 @@ extern LALStatus *global_status;
 extern void register_output_file(char*filename);
 
 /** show progress of the App.
-    NOTE: This also set the count & total (skypos) for checkpointing */
+    NOTE: This also sets the count & total (skypos) for checkpointing */
 extern void show_progress(double rac, double dec, UINT4 count, UINT4 total);
 
 /** inits checkpointing for the toplist and reads the last checkpoint if present
@@ -112,13 +112,10 @@ extern void show_progress(double rac, double dec, UINT4 count, UINT4 total);
 extern int init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
                                      UINT4 total, char*outputname, char*cptname);
 
-/** actually writes a checkpoint only if it's "boinc time to checkpoint"
-    and compacts the output file if necessary */
+/** actually writes a checkpoint only if it's boinc_time_to_checkpoint() */
 extern void set_checkpoint(void);
 
-/** does the final (compact) write of the file and cleans up checkpointing stuff
-    The checkpoint file remains there in case the App gets inteerupted afterwards
-    but befor boinc_finish was called */
+/** writes the toplist to the final (ASCII) output file */
 extern void write_and_close_checkpointed_file (void);
 
 /** LALApps error handler for BOINC */
@@ -127,12 +124,11 @@ extern int BOINC_LAL_ErrHand (LALStatus*, const char*, const char*, const int, v
 /** attach gdb to the running process; for debugging. */
 extern void attach_gdb(void);
 
-/** play with FPU status and control word
-    (BSD doesn't seem to have C99 fenv.h etc.) */
+/** play with floating-point exceptions */
 extern void enable_floating_point_exceptions(void);
 
 /** the main() function of HierarchicalSerach.c becomes the extern MAIN(),
-    the real main() function of the BOINC App is defined in boinc_extras.c
+    the actual main() function of the BOINC App is defined in boinc_extras.c
 */
 extern int MAIN(int,char**);
 
