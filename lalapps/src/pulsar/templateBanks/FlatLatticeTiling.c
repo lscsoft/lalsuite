@@ -857,6 +857,13 @@ int XLALWriteFlatLatticeTilingXMLFile(
   }
   fprintf(output_file, "  </increment>\n");
 
+  /* Write padding */
+  fprintf(output_file, "  <padding>\n    ");
+  for (i = 0; i < n; ++i) {
+    fprintf(output_file, "% 0.16e ", gsl_vector_get(tiling->padding, i));
+  }
+  fprintf(output_file, "\n  </padding>\n");
+
   /* Generate templates */
   fprintf(output_file, "  <templates>\n");
   while (XLALNextFlatLatticePoint(tiling)) {
