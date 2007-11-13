@@ -1063,7 +1063,7 @@ int main(int argc, char *argv[]){
     {
       FILE   *fpToplist = NULL;
       
-      fpToplist = fopen("hough.dat","w");
+      fpToplist = fopen("hough_top.dat","w");
       
       sort_fstat_toplist(toplist);
       
@@ -2538,13 +2538,13 @@ void SplitSFTs(LALStatus         *status,
 	       REAL8Vector       *weightsV,
 	       HoughParamsTest   *chi2Params){
   
-    INT4    j=0;           /* index of each block. It runs betwen 0 and p */ 
-    UINT4   iSFT=0;       
-    REAL8   *weights_ptr;  /* pointer to weightsV.data */
-    REAL8   sumWeightpMax; /* Value of sumWeight we want to fix in each set of SFTs */
-    UINT4   numberSFT;     /* Counter with the # of SFTs in each block */        
-    UINT4   mObsCoh, p;
-    REAL8   partialsumWeightp, partialsumWeightSquarep;
+  UINT4    j=0;           /* index of each block. It runs betwen 0 and p */ 
+  UINT4   iSFT;       
+  REAL8   *weights_ptr;  /* pointer to weightsV.data */
+  REAL8   sumWeightpMax; /* Value of sumWeight we want to fix in each set of SFTs */
+  UINT4   numberSFT;     /* Counter with the # of SFTs in each block */        
+  UINT4   mObsCoh, p;
+  REAL8   partialsumWeightp, partialsumWeightSquarep;
   
   /* --------------------------------------------- */
   INITSTATUS (status, "SplitSFTs", rcsid);
@@ -2567,18 +2567,19 @@ void SplitSFTs(LALStatus         *status,
   sumWeightpMax = mObsCoh/p;       /* Compute the value of the sumWeight we want to fix in each set of SFT's */
   weights_ptr = weightsV->data;    /* Make the pointer to point to the first position of the vector weightsV.data */
   
-  for (j=0;(UINT4)(weights_ptr-weightsV->data)<mObsCoh;j++){
-    
+  /*   for (j=0;(UINT4)(weights_ptr-weightsV->data)<mObsCoh;j++){ */
+  iSFT = 0;
+  for (j = 0; j < p; j++){
+
     partialsumWeightSquarep = 0;
     partialsumWeightp = 0;
     
-    for(numberSFT = 0;(partialsumWeightp<sumWeightpMax)&&(iSFT<mObsCoh);){
-      numberSFT++;
-      iSFT++;
+    for(numberSFT = 0;(partialsumWeightp<sumWeightpMax)&&(iSFT<mObsCoh); numberSFT++, iSFT++){
       
       partialsumWeightp += *weights_ptr;
       partialsumWeightSquarep += (*weights_ptr)*(*weights_ptr);
       weights_ptr++;
+
     } /* loop over SFTs */
     
     ASSERT ( (UINT4)j < p, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
@@ -2623,6 +2624,7 @@ void ComputeandPrintChi2 ( LALStatus                *status,
     REAL8        timeBase;
     UINT4        sftFminBin ;
     FILE *fpChi2=NULL;
+    REAL8 oldSig;
 
     /* Chi2Test parameters */
     HoughParamsTest chi2Params;
@@ -2679,8 +2681,7 @@ void ComputeandPrintChi2 ( LALStatus                *status,
 
     /* Open file to write the toplist with 2 new columns: significance and chi2 */
 
-    fpChi2 = fopen("ToplistWithChi2", "w");
-
+    fpChi2 = fopen("hough_chi2.dat", "w");
 
     /* ----------------------------------------------------------------------------------*/
     /* Loop over all the elements in the TopList */
@@ -2694,6 +2695,7 @@ void ComputeandPrintChi2 ( LALStatus                *status,
 	pulsarTemplate.spindown.data[0] = readTopList.f1dot ;
 	pulsarTemplate.latitude= readTopList.Alpha ;
 	pulsarTemplate.longitude= readTopList.Delta ;
+	oldSig = readTopList.Fstat;
 
 	/* copy noise weights */
 	memcpy(weightsV.data, weightsNoise->data, mObsCoh * sizeof(REAL8));
@@ -2770,7 +2772,7 @@ void ComputeandPrintChi2 ( LALStatus                *status,
 	}
 	
 	setvbuf(fpChi2, (char *)NULL, _IOLBF, 0);
-	fprintf(fpChi2, "%g  %g  %g  %g %g  %g \n", pulsarTemplate.f0, pulsarTemplate.latitude, pulsarTemplate.longitude, pulsarTemplate.spindown.data[0], (numberCountTotal - meanN)/sigmaN, chi2);
+	fprintf(fpChi2, "%g  %g %g  %g  %g %g  %g \n", pulsarTemplate.f0, pulsarTemplate.latitude, pulsarTemplate.longitude, pulsarTemplate.spindown.data[0], (numberCountTotal - meanN)/sigmaN, oldSig, chi2);
 	
 	/*-----------------------------*/
 		
