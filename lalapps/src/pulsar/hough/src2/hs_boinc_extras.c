@@ -102,6 +102,7 @@ NRCSID(HSBOINCEXTRASCRCSID,"$Id$");
     fprintf(stderr," STACK_FAULT");    \
   PRINT_FPU_EXCEPTION_MASK(fpstat)
 
+
 /*^* global VARIABLES *^*/
 
 /** The program might have multiple output file(s) that are to be zipped into the archive
@@ -143,10 +144,8 @@ static char **global_argv;
 
 /** variables for checkpointing */
 static char* cptfilename;                 /**< name of the checkpoint file */
-static char* outfilename;                 /**< name of the checkpoint file */
+static char* outfilename;                 /**< name of the output file */
 static toplist_t* toplist;                /**< the toplist we're checkpointing */
-static UINT4 bufsize = 8*1024;            /**< size of output file buffer */
-static UINT4 maxsize = 1024*1024;         /**< maximal size of the output file */
 static double last_rac, last_dec;         /**< last sky position, set by show_progress(),
 					       used by set_checkpoint() */
 static UINT4 last_count, last_total;      /**< last template count, see last_rac */
@@ -831,18 +830,6 @@ static void worker (void) {
       rarg--; rargc--; /* this argument is not passed to the main worker function */
     }
 
-    /* set maximal output filesize (roughly - can grow beyond this until the next checkpoint) */
-    else if (MATCH_START("--MaxFileSize=",argv[arg],l)) {
-      maxsize = 1024*atoi(argv[arg]+l);
-      rarg--; rargc--; /* this argument is not passed to the main worker function */
-    }
-
-    /* set size of output file buffer */
-    else if (MATCH_START("--OutputBufSize=",argv[arg],l)) {
-      bufsize = 1024*atoi(argv[arg]+l);
-      rarg--; rargc--; /* this argument is not passed to the main worker function */
-    }
-
     /* fire up debugger at breakpoint, solely for testing the debugger (and symbols) */
     else if (MATCH_START("--BreakPoint",argv[arg],l)) {
       breakpoint = -1;
@@ -964,8 +951,6 @@ static void worker (void) {
   if(output_help) {
     printf("Additional options the BOINC version understands:\n");
     printf("      --WUfpops         REAL     \"flops estimation\", passed to the BOINC client as the number of Flops\n");
-    printf("      --MaxFileSize     INT      maximum size the outpufile may grow to befor compacted (in 1k)\n");
-    printf("      --OutputBufSize   INT      size of the output file buffer (in 1k)\n");
     printf("      --BreakPoint       -       if present fire up the Windows Runtime Debugger at internal breakpoint (WIN32 only)\n");
     printf("      --CrashFPU         -       if present drain the FPU stack to test FPE\n");
     printf("      --TestNaN          -       if present raise a NaN to test FPE\n");
