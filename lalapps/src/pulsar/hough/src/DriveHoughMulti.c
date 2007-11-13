@@ -1053,47 +1053,47 @@ int main(int argc, char *argv[]){
 
 /* If we want to print Chi2 value */
  
- if (uvar_EnableChi2)
-  {
-     LAL_CALL(ComputeandPrintChi2(&status, toplist, &timeDiffV, &velV, uvar_p, alphaPeak, mdetStates, &weightsNoise, &upgV), &status);    
-  }
-
+  if (uvar_EnableChi2)
+    {
+      LAL_CALL(ComputeandPrintChi2(&status, toplist, &timeDiffV, &velV, uvar_p, alphaPeak, mdetStates, &weightsNoise, &upgV), &status);    
+    }
+  
   else
+    
+    {
+      FILE   *fpToplist = NULL;
       
-  {
-    FILE   *fpToplist = NULL;
-
-    fpToplist = fopen("hough.dat","w");
-
-    sort_fstat_toplist(toplist);
-
-    if ( write_fstat_toplist_to_fp( toplist, fpToplist, NULL) < 0)
-    fprintf( stderr, "Error in writing toplist to file\n");
-
-    if (fprintf(fpToplist,"%%DONE\n") < 0)
-      fprintf(stderr, "Error writing end marker\n");
-
-    fclose(fpToplist);
-  }
-/********************************************************/
-
+      fpToplist = fopen("hough.dat","w");
+      
+      sort_fstat_toplist(toplist);
+      
+      if ( write_fstat_toplist_to_fp( toplist, fpToplist, NULL) < 0)
+	fprintf( stderr, "Error in writing toplist to file\n");
+      
+      if (fprintf(fpToplist,"%%DONE\n") < 0)
+	fprintf(stderr, "Error writing end marker\n");
+      
+      fclose(fpToplist);
+    }
+  /********************************************************/
+  
   {
     UINT4 j;
     for (j = 0; j < mObsCoh; ++j) LALFree( pgV.pg[j].peak); 
   }
   
- LALFree(pgV.pg);
-
- if (uvar_EnableChi2) 
- {
-   {UINT4 j;
-   for (j = 0; j < mObsCoh; ++j) LALFree( upgV.upg[j].data);
-   }
-   LALFree(upgV.upg);
-
- }
-
-
+  LALFree(pgV.pg);
+  
+  if (uvar_EnableChi2) 
+    {
+      {UINT4 j;
+      for (j = 0; j < mObsCoh; ++j) LALFree( upgV.upg[j].data);
+      }
+      LALFree(upgV.upg);
+      
+    }
+  
+  
   LALFree(timeV.data);
   LALFree(timeDiffV.data);
   
@@ -1116,7 +1116,9 @@ int main(int argc, char *argv[]){
   LALFree(skySizeAlpha);
   LALFree(skySizeDelta);
 
-  LALFree(nStarEventVec.event);
+  if (nStarEventVec.event) {
+    LALFree(nStarEventVec.event);
+  }
 
   LALFree(best.weightsV->data);  
   LALFree(best.weightsV);
@@ -2562,31 +2564,31 @@ void SplitSFTs(LALStatus         *status,
   mObsCoh = weightsV->length;    
   p = chi2Params->length;
 
-  sumWeightpMax=mObsCoh/p;       /* Compute the value of the sumWeight we want to fix in each set of SFT's */
-  weights_ptr=weightsV->data;    /* Make the pointer to point to the first position of the vector weightsV.data */
+  sumWeightpMax = mObsCoh/p;       /* Compute the value of the sumWeight we want to fix in each set of SFT's */
+  weights_ptr = weightsV->data;    /* Make the pointer to point to the first position of the vector weightsV.data */
   
-
-      for (j=0;(UINT4)(weights_ptr-weightsV->data)<mObsCoh;j++){
-
-	  partialsumWeightSquarep=0;
-	  partialsumWeightp=0;
-	  
-	  for(numberSFT=0;(partialsumWeightp<sumWeightpMax)&&(iSFT<mObsCoh);){
-	          numberSFT++;
-		  iSFT++;
-     		  
-		  partialsumWeightp += *weights_ptr;
-		  partialsumWeightSquarep += (*weights_ptr)*(*weights_ptr);
-		  weights_ptr++;
-	      } /* loop over SFTs */
-	  
-	  chi2Params->numberSFTp[j]=numberSFT;
-	  chi2Params->sumWeight[j]=partialsumWeightp;
-	  chi2Params->sumWeightSquare[j]=partialsumWeightSquarep;
+  for (j=0;(UINT4)(weights_ptr-weightsV->data)<mObsCoh;j++){
+    
+    partialsumWeightSquarep = 0;
+    partialsumWeightp = 0;
+    
+    for(numberSFT = 0;(partialsumWeightp<sumWeightpMax)&&(iSFT<mObsCoh);){
+      numberSFT++;
+      iSFT++;
       
-       } /* loop over the p blocks of data */
-  
-      
+      partialsumWeightp += *weights_ptr;
+      partialsumWeightSquarep += (*weights_ptr)*(*weights_ptr);
+      weights_ptr++;
+    } /* loop over SFTs */
+    
+    ASSERT ( (UINT4)j < p, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+
+    chi2Params->numberSFTp[j] = numberSFT;
+    chi2Params->sumWeight[j] = partialsumWeightp;
+    chi2Params->sumWeightSquare[j] = partialsumWeightSquarep;
+    
+  } /* loop over the p blocks of data */
+        
   DETATCHSTATUSPTR (status);
   /* normal exit */
   RETURN (status);
@@ -2620,6 +2622,13 @@ void ComputeandPrintChi2 ( LALStatus                *status,
     REAL8Vector  weightsV;
     REAL8        timeBase;
     UINT4        sftFminBin ;
+    FILE *fpChi2=NULL;
+
+    /* Chi2Test parameters */
+    HoughParamsTest chi2Params;
+    REAL8  numberCountTotal;   /* Sum over all the numberCounts */
+    REAL8  chi2;
+    REAL8Vector numberCountV;  /* Vector with the number count of each block inside */
 
     /* --------------------------------------------- */
     INITSTATUS (status, "ComputeandPrintChi2", rcsid);
@@ -2639,12 +2648,6 @@ void ComputeandPrintChi2 ( LALStatus                *status,
     mObsCoh = velV->length;
     timeBase = upgV->upg[0].timeBase; 
     sftFminBin = upgV->upg[0].fminBinIndex;
-
-    /* Chi2Test parameters */
-    HoughParamsTest chi2Params;
-    REAL8  numberCountTotal;   /* Sum over all the numberCounts */
-    REAL8  chi2;
-    REAL8Vector numberCountV;  /* Vector with the number count of each block inside */
     
     /* memory for weightsV */
     weightsV.length=mObsCoh;
@@ -2675,7 +2678,7 @@ void ComputeandPrintChi2 ( LALStatus                *status,
     foft.data = (REAL8 *)LALMalloc( mObsCoh*sizeof(REAL8));
 
     /* Open file to write the toplist with 2 new columns: significance and chi2 */
-    FILE *fpChi2=NULL;
+
     fpChi2 = fopen("ToplistWithChi2", "w");
 
 
@@ -2772,18 +2775,22 @@ void ComputeandPrintChi2 ( LALStatus                *status,
 	/*-----------------------------*/
 		
     } /* End of loop over top list elements */
- 
-	LALFree(pulsarTemplate.spindown.data);
-	LALFree(foft.data);
-	LALFree(numberCountV.data);
-	LALFree(chi2Params.numberSFTp);
-	LALFree(chi2Params.sumWeight);
-	LALFree(chi2Params.sumWeightSquare);
-	LALFree(weightsV.data);
-	weightsV.data=NULL;
-
     
+    LALFree(pulsarTemplate.spindown.data);
+    LALFree(foft.data);
+    LALFree(numberCountV.data);
+    LALFree(chi2Params.numberSFTp);
+    LALFree(chi2Params.sumWeight);
+    LALFree(chi2Params.sumWeightSquare);
+    LALFree(weightsV.data);
+    weightsV.data=NULL;
+        
     fclose(fpChi2);
+    
+    DETATCHSTATUSPTR (status);
+    
+    /* normal exit */	
+    RETURN (status);
     
 } /* End of ComputeChi2 */
 
