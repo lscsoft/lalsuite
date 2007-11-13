@@ -496,10 +496,10 @@ int XLALSetupFlatLatticeTiling(
   INT4 i, j;
   INT4 n = tiling->dimension;
   gsl_matrix *directions = NULL;
-  gsl_eigen_symmv_workspace *eig_wksp = NULL;
-  gsl_vector *eig_val = NULL;
-  gsl_matrix* eig_vec = NULL;
-  gsl_matrix *temp = NULL;
+  gsl_matrix *LU_decomp = NULL;
+  gsl_permutation *LU_perm = NULL;
+  gsl_matrix *inverse = NULL;
+  int LU_sign = 0;
   double padding = 0.0;
 
   /* Check metric */
@@ -552,21 +552,21 @@ int XLALSetupFlatLatticeTiling(
 
   /* Find orthogonal directions with respect to the metric, starting from 
      the identity matrix, and scale the orthnormal directions to the mismatch. */
-  tiling->directions = gsl_matrix_alloc(n, n);
-  gsl_matrix_set_identity(tiling->directions);
-  XLALOrthonormaliseMatrixWRTMetric(tiling->directions, tiling->metric);
-  gsl_matrix_scale(tiling->directions, tiling->mismatch);
+  directions = gsl_matrix_alloc(n, n);
+  gsl_matrix_set_identity(directions);
+  XLALOrthonormaliseMatrixWRTMetric(directions, tiling->metric);
+  gsl_matrix_scale(directions, tiling->mismatch);
   LogPrintf(LOG_DETAIL, "Orthogonal directions with respect to metric:\n");
   for (i = 0; i < n; ++i) {
     for (j = 0; j < n; ++j) {
-      LogPrintfVerbatim(LOG_DETAIL, "  % 0.16e", gsl_matrix_get(tiling->directions, i, j));
+      LogPrintfVerbatim(LOG_DETAIL, "  % 0.16e", gsl_matrix_get(directions, i, j));
     }
     LogPrintfVerbatim(LOG_DETAIL, " ;\n");
   }
 
   /* Compute the increment vectors between lattice points in the parameter space. */
   tiling->increment = gsl_matrix_alloc(n, n);
-  gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, tiling->directions, tiling->generator, 0.0, tiling->increment);
+  gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, directions, tiling->generator, 0.0, tiling->increment);
   LogPrintf(LOG_DETAIL, "Increment vectors between lattice points:\n");
   for (i = 0; i < n; ++i) {
     for (j = 0; j < n; ++j) {
@@ -575,41 +575,32 @@ int XLALSetupFlatLatticeTiling(
     LogPrintfVerbatim(LOG_DETAIL, " ;\n");
   }
 
-  /* Calculate the eigenvalues and eigenvectors of the metric */
-  eig_wksp = gsl_eigen_symmv_alloc(n);
-  eig_val = gsl_vector_alloc(n);
-  eig_vec = gsl_matrix_alloc(n, n);
-  temp = gsl_matrix_alloc(n, n);
-
-  gsl_matrix_memcpy(temp, tiling->metric);
-  gsl_eigen_symmv(temp, eig_val, eig_vec, eig_wksp);
-  XLALfprintfGSLvector(stdout, "%0.16e", eig_val);
-  XLALfprintfGSLmatrix(stdout, "%0.16e", eig_vec);
-
-  gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, tiling->metric, eig_vec, 0.0, temp);
-  XLALfprintfGSLmatrix(stdout, "%0.16e", temp);
-
-  gsl_matrix_memcpy(temp, eig_vec);
+  /* Compute the inverse of the metric, and scale its columns to the 
+     mismatch to find the extent of the box bounding the metric ellipses. */
+  LU_decomp = gsl_matrix_alloc(n, n);
+  LU_perm = gsl_permutation_alloc(n);
+  inverse = gsl_matrix_alloc(n, n);
+  gsl_matrix_memcpy(LU_decomp, tiling->metric);
+  gsl_linalg_LU_decomp(LU_decomp, LU_perm, &LU_sign);
+  gsl_linalg_LU_invert(LU_decomp, LU_perm, inverse);
   for (i = 0; i < n; ++i) {
-    gsl_vector_view ci = gsl_matrix_column(temp, i);
-    gsl_vector_scale(&ci.vector, tiling->mismatch / sqrt(fabs(gsl_vector_get(eig_val, i))));
+    gsl_vector_view col_i = gsl_matrix_column(inverse, i);
+    gsl_vector_scale(&col_i.vector, tiling->mismatch / sqrt(gsl_matrix_get(inverse, i, i)));
   }
-  XLALfprintfGSLmatrix(stdout, "%0.16e", temp);
-
-  gsl_matrix_memcpy(tiling->directions, temp);
-
-  /* Compute padding to include at either end along 
-     each dimension, to take care of gaps along the edges. */
-  tiling->padding = gsl_vector_alloc(n);
-  gsl_vector_set(tiling->padding, 0, 0.0);
-  for (i = 1; i < n; ++i) {
-    padding = 0.0;
-    for (j = 0; j < i; ++j) {
-      padding = GSL_MAX_DBL(padding, fabs(gsl_matrix_get(tiling->increment, i, j)));
+  LogPrintf(LOG_DETAIL, "Inverse of the metric, scaled to the mismatch:\n");
+  for (i = 0; i < n; ++i) {
+    for (j = 0; j < n; ++j) {
+      LogPrintfVerbatim(LOG_DETAIL, "  % 0.16e", gsl_matrix_get(inverse, i, j));
     }
-    gsl_vector_set(tiling->padding, i, fabs(padding));
+    LogPrintfVerbatim(LOG_DETAIL, " ;\n");
   }
-  LogPrintf(LOG_DETAIL, "Padding to be included at either end along each dimension:\n");
+
+  /* Set the padding at either end along each dimension to be the size of the 
+     bounding box of the ellipses, to take care of possible gaps at the edges. */
+  tiling->padding = gsl_vector_alloc(n);
+  gsl_vector_view inverse_diag = gsl_matrix_diagonal(inverse);
+  gsl_vector_memcpy(tiling->padding, &inverse_diag.vector);
+  LogPrintf(LOG_DETAIL, "Padding at either end along each dimension:\n");
   for (i = 0; i < n; ++i) {
     LogPrintfVerbatim(LOG_DETAIL, "  % 0.16e", gsl_vector_get(tiling->padding, i));
   }
@@ -621,11 +612,10 @@ int XLALSetupFlatLatticeTiling(
   tiling->templates = 0;
 
   /* Cleanup */
-  gsl_matrix_free(tiling->directions);
-  gsl_eigen_symmv_free(eig_wksp);
-  gsl_vector_free(eig_val);
-  gsl_matrix_free(eig_vec);
-  gsl_matrix_free(temp);
+  gsl_matrix_free(directions);
+  gsl_matrix_free(LU_decomp);
+  gsl_permutation_free(LU_perm);
+  gsl_matrix_free(inverse);
 
   return XLAL_SUCCESS;
 
@@ -855,17 +845,6 @@ int XLALWriteFlatLatticeTilingXMLFile(
   else {
     fprintf(output_file, "  <bounds><type>unknown</type></bounds>\n");
   }
-
-  /* Write directions */
-  fprintf(output_file, "  <directions>\n");
-  for (i = 0; i < n; ++i) {
-    fprintf(output_file, "    ");
-    for (j = 0; j < n; ++j) {
-      fprintf(output_file, "% 0.16e ", gsl_matrix_get(tiling->directions, i, j));
-    }
-    fprintf(output_file, ";\n");
-  }
-  fprintf(output_file, "  </directions>\n");
 
   /* Write increment vectors */
   fprintf(output_file, "  <increment>\n");
