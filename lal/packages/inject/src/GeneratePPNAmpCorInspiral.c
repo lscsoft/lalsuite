@@ -197,6 +197,7 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   REAL4 e0, e1, e2, e3, e4, e5, e6, e7;   /* PN dy/dx coefficients */
   REAL4 p[MAXORDER];                      /* PN parameter values in phase */
   REAL4 q[AMPMAXORDER];                   /* PN parameter values in amplitude */ 
+  UINT4 ampOrder;			  /* Amplitude Order */
   INT4 Harmonics;                         /* Number of harmonics */
   REAL4 mTot, mu;      /* total mass and reduced mass */
   REAL4 eta, etaInv;   /* mass ratio and its inverse */
@@ -298,14 +299,19 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   }
 
   /* Set PN parameters for amplitude */
+  if ( (&params->ampOrder == NULL) || (params->ampOrder >= AMPMAXORDER) )
+    ampOrder = 4;	  
+  else
+    ampOrder = params->ampOrder;	  
+  fprintf(stderr, "\n ampOrder = %d \n", ampOrder);
   q[0] = 1.0;
   for(i = 1; i < AMPMAXORDER; i++)
-    q[i] = ( i <= params->ampOrder? 1.0 : 0.0 );
+    q[i] = ( i <= ampOrder? 1.0 : 0.0 );
   
   
   /* Set number of harmonics in accordance with params->ampOrder*/
   /* Dominant harmonic is the 2nd */
-  Harmonics = params->ampOrder + 2;
+  Harmonics = ampOrder + 2;
 
 
   /*******************************************************************
