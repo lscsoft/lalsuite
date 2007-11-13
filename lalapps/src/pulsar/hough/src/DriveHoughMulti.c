@@ -2574,12 +2574,7 @@ void SplitSFTs(LALStatus         *status,
 	  for(numberSFT=0;(partialsumWeightp<sumWeightpMax)&&(iSFT<mObsCoh);){
 	          numberSFT++;
 		  iSFT++;
-		  
-		  
-		  
-		  
-		  
-		  
+     		  
 		  partialsumWeightp += *weights_ptr;
 		  partialsumWeightSquarep += (*weights_ptr)*(*weights_ptr);
 		  weights_ptr++;
@@ -2624,7 +2619,7 @@ void ComputeandPrintChi2 ( LALStatus                *status,
     REAL8Vector  foft;
     REAL8Vector  weightsV;
     REAL8        timeBase;
-    UINT4                    sftFminBin;
+    UINT4        sftFminBin ;
 
     /* --------------------------------------------- */
     INITSTATUS (status, "ComputeandPrintChi2", rcsid);
@@ -2643,7 +2638,7 @@ void ComputeandPrintChi2 ( LALStatus                *status,
 
     mObsCoh = velV->length;
     timeBase = upgV->upg[0].timeBase; 
-    sftFminBin = upgV->upg[0].fminBinIndex; 
+    sftFminBin = upgV->upg[0].fminBinIndex;
 
     /* Chi2Test parameters */
     HoughParamsTest chi2Params;
@@ -2673,6 +2668,11 @@ void ComputeandPrintChi2 ( LALStatus                *status,
     pulsarTemplate.spindown.length = 1 ;
     pulsarTemplate.spindown.data = NULL;
     pulsarTemplate.spindown.data = (REAL8 *)LALMalloc(sizeof(REAL8));
+
+    /* Memory for f(t) vector */
+    foft.length = mObsCoh;
+    foft.data = NULL;
+    foft.data = (REAL8 *)LALMalloc( mObsCoh*sizeof(REAL8));
 
     /* Open file to write the toplist with 2 new columns: significance and chi2 */
     FILE *fpChi2=NULL;
@@ -2770,17 +2770,18 @@ void ComputeandPrintChi2 ( LALStatus                *status,
 	fprintf(fpChi2, "%g  %g  %g  %g %g  %g \n", pulsarTemplate.f0, pulsarTemplate.latitude, pulsarTemplate.longitude, pulsarTemplate.spindown.data[0], (numberCountTotal - meanN)/sigmaN, chi2);
 	
 	/*-----------------------------*/
-	
+		
+    } /* End of loop over top list elements */
+ 
 	LALFree(pulsarTemplate.spindown.data);
-	LALFree(foft.data); 
+	LALFree(foft.data);
 	LALFree(numberCountV.data);
 	LALFree(chi2Params.numberSFTp);
 	LALFree(chi2Params.sumWeight);
 	LALFree(chi2Params.sumWeightSquare);
 	LALFree(weightsV.data);
 	weightsV.data=NULL;
-	
-    } /* End of loop over top list elements */
+
     
     fclose(fpChi2);
     
