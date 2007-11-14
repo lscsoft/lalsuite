@@ -609,6 +609,11 @@ int XLALSetupFlatLatticeTiling(
   }
   XLALPrintInfo(" ;\n");
 
+  /* Allocate variables */
+  tiling->current = gsl_vector_alloc(n);
+  tiling->upper = gsl_vector_alloc(n);
+  tiling->temp = gsl_vector_alloc(n);
+
   /* We haven't started generating templates yet, nor have we counted them */
   tiling->started = FALSE;
   tiling->finished = FALSE;
@@ -684,11 +689,6 @@ BOOLEAN XLALNextFlatLatticePoint(
     tiling->started = TRUE;
     tiling->finished = FALSE;
     tiling->template_count = 0;
-
-    /* Allocate */
-    tiling->current = gsl_vector_alloc(n);
-    tiling->upper = gsl_vector_alloc(n);
-    tiling->temp = gsl_vector_alloc(n);
 
     /* Calculate starting point and upper bounds */
     for (i = 0; i < n; ++i) {
