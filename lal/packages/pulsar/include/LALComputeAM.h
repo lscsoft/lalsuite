@@ -113,23 +113,23 @@ struct AMCoeffsParams
 
 typedef struct AMCoeffsTag
 {
-  REAL4Vector     *a;          /* the function a(t)         */
-  REAL4Vector     *b;          /* the function b(t)         */
-  REAL4           A;           /* the scalar product (a||a) */
-  REAL4           B;           /* the scalar product (b||b) */
-  REAL4           C;           /* the scalar product (a||b) */
-  REAL4           D;           /* the quantity AB-C^2       */
+  REAL4Vector     *a;          /**< the function a(t)         */
+  REAL4Vector     *b;          /**< the function b(t)         */
+  REAL4           A;           /**< the scalar product (a||a) */
+  REAL4           B;           /**< the scalar product (b||b) */
+  REAL4           C;           /**< the scalar product (a||b) */
+  REAL4           D;           /**< the quantity AB-C^2       */
 } AMCoeffs;
 
 typedef struct AMCoeffsParamsTag
 {
-  BarycenterInput      *baryinput;  /* data from Barycentring routine */
-  EarthState           *earth;      /* from LALBarycenter()           */
-  EphemerisData        *edat;       /* the ephemerides                */
-  LALDetAndSource      *das;        /* det and source information     */
-  LALFrDetector        *det;        /* detector geometry              */
-  REAL4                polAngle;    /* polarization angle             */
-  LALLeapSecAccuracy  leapAcc;     /* accuracy in def of leap sec */
+  BarycenterInput      *baryinput;  /**< data from Barycentring routine */
+  EarthState           *earth;      /**< from LALBarycenter()           */
+  EphemerisData        *edat;       /**< the ephemerides                */
+  LALDetAndSource      *das;        /**< det and source information     */
+  LALFrDetector        *det;        /**< detector geometry              */
+  REAL4                polAngle;    /**< polarization angle             */
+  LALLeapSecAccuracy  leapAcc;     /**< accuracy in def of leap sec */
 } AMCoeffsParams;
 
 
