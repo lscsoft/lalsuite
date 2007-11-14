@@ -324,7 +324,7 @@ if opts.plotinjnum:
   for ifos in  ifo_combo:
     combostring = combo2str(ifos)
     cp.set('plotinjnum','ifo-type', combostring)
-    cp.set('plotinjnum','ifo-times',combostring)
+    cp.set('plotinjnum','figure-name','plotinjnum_' + combostring)
     plotinjnum_jobs[combostring] = inspiral.PlotInjnumJob(cp) 
     plotinjnum_jobs[combostring].set_sub_file( basename + '.plotinjnum_' +  combostring + subsuffix )
   
