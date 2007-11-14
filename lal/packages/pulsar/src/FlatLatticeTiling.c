@@ -159,7 +159,7 @@ int XLALOrthonormaliseMatrixWRTMetric(
 
   /* Check input */
   if (m != (INT4)metric->size1 || m != (INT4)metric->size2) {
-    XLALPrintError("%s\ERROR: Metric matrix is not the correct size\n", FLATLATTICETILINGC);
+    XLALPrintError("%s\nERROR: Metric matrix is not the correct size\n", FLATLATTICETILINGC);
     XLAL_ERROR("XLALOrthonormaliseMatrixWRTMetric", XLAL_ESIZE);
   }
 
@@ -389,13 +389,15 @@ gsl_matrix *XLALAnstarLatticeGenerator(
   /* Generator in dimension+1 space */
   generator = gsl_matrix_alloc(dimension + 1, dimension);
   gsl_matrix_set_all(generator, 0.0);
-  gsl_vector_view first_row = gsl_matrix_row(generator, 0);
-  gsl_vector_set_all(&first_row.vector, 1.0);
-  gsl_vector_view sub_diag = gsl_matrix_subdiagonal(generator, 1);
-  gsl_vector_set_all(&sub_diag.vector, -1.0);
-  gsl_vector_view last_col = gsl_matrix_column(generator, dimension-1);
-  gsl_vector_set_all(&last_col.vector, 1.0 / (n + 1));
-  gsl_vector_set(&last_col.vector, 0, -n / (n + 1));
+  {
+    gsl_vector_view first_row = gsl_matrix_row(generator, 0);
+    gsl_vector_view sub_diag = gsl_matrix_subdiagonal(generator, 1);
+    gsl_vector_view last_col = gsl_matrix_column(generator, dimension-1);
+    gsl_vector_set_all(&first_row.vector, 1.0);
+    gsl_vector_set_all(&sub_diag.vector, -1.0);
+    gsl_vector_set_all(&last_col.vector, 1.0 / (n + 1));
+    gsl_vector_set(&last_col.vector, 0, -n / (n + 1));
+  }
   XLALPrintInfo("A_%i^* generator matrix in %i-dimensional space:\n", dimension, dimension + 1);
   for (i = 0; i < dimension + 1; ++i) {
     for (j = 0; j < dimension; ++j) {
@@ -601,8 +603,10 @@ int XLALSetupFlatLatticeTiling(
   /* Set the padding at either end along each dimension to be the size of the 
      bounding box of the ellipses, to take care of possible gaps at the edges. */
   tiling->padding = gsl_vector_alloc(n);
-  gsl_vector_view inverse_diag = gsl_matrix_diagonal(inverse);
-  gsl_vector_memcpy(tiling->padding, &inverse_diag.vector);
+  {
+    gsl_vector_view inverse_diag = gsl_matrix_diagonal(inverse);
+    gsl_vector_memcpy(tiling->padding, &inverse_diag.vector);
+  }
   XLALPrintInfo("Padding at either end along each dimension:\n");
   for (i = 0; i < n; ++i) {
     XLALPrintInfo("  % 0.16e", gsl_vector_get(tiling->padding, i));
