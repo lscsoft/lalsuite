@@ -19,10 +19,10 @@ import ConfigParser
 
 # ***************************************************************************
 # ***************************************************************************
-def blabla(logfile, text):
+def logText(logfile, text, tag="done"):
   if opts.verbose is True:
     print text 
-  logfile.write(text+'\n')
+  logfile.write("<"+tag+">"+text+"</"+tag+">\n")
 
 def make_external_call(command, show_stdout=False, show_command=False, show_error=True):
   """
@@ -81,10 +81,36 @@ def create_toggle():
 
 
 # ***************************************************************************
+def write_logfile(page , opts):
+  """
+  This function creates an entry with the logfile information.
+ 
+  @param page:
+  @param opts:
+  """
+  # get the directory of the url
+  dir = opts.webdir +'/'
+
+  page.br()
+  page.add("<!-- beginning of the general section -->")
+  page.div(id="encadre")
+  page.div(id="contenu")
+  page = write_title(page, html_sections[8], "rimbaud")
+  page.div(id="div_rimbaud", style='display:block')
+  page.li(e.a("logfile", href=dir +  __name__+'.xml'))
+  page.div.close()
+  page.div.close()
+  page.div.close()
+
+  return page
 # ***************************************************************************
 def write_toc(page , opts):
-  """ This function creates the table of contents, using the html_sections 
-      variable defined in the main part of this program.
+  """ 
+  This function creates the table of contents, using the html_sections 
+  variable defined in the main part of this program.
+
+  @param page:
+  @param opts:
   """
   # get the directory of the url
   dir = opts.webdir +'/'
@@ -102,6 +128,7 @@ def write_toc(page , opts):
   # the html document
   for this_item in items:
     page.li(e.a(this_item, href=dir + opts.output + '#' + this_item))
+
   page.ol.close()
   page.div.close()
   page.div.close()
@@ -151,10 +178,10 @@ def write_general(page,opts):
     page.ul.close()
     page.ol.close()
   except:
-    blabla(logfile, """Problem with the executable: cannot find them ? """)
+    logText(logfile, """Problem with the executable: cannot find them ? """, "warning")
     pass
   else:
-    blabla(logfile,  "...Get the executables version...done")
+    logText(logfile,  "...Get the executables version...", "done")
 
 
   # The ifo requested
@@ -246,8 +273,7 @@ set. The times analyzed according to hipe are (SELECTED_SEGS):""")
       page.div.close() # (3)
 
     except:
-      blabla(logfile, "Problems parsing category veto segment list "+str(i))
-      page.add("unknown or not set. ")
+      logText(logfile, "Problems parsing category veto segment list "+str(i), "warning")
      
 
   for tag in ["SCIENCE_SEGMENTS", "RDS_C03_L2"] :
@@ -296,7 +322,7 @@ def write_injections_efficiencies(fname,dir):
     if "L" in ifos:
       plot_name = "plotnumgalaxies/" + ifos + "/" + ifos + "_" + \
           opts.x_value + "_" + opts.y_value
-      blabla(logfile, plot_name)
+      logText(logfile, plot_name, "warning")
       add_figure(fname,dir,fnames=[plot_name + "_efficiency.png",\
           plot_name + "_mc_errors.png"],\
           size="half",caption="efficiency plot, and Monte Carlo errors")
@@ -313,6 +339,7 @@ def write_injections_efficiencies(fname,dir):
 # ***************************************************************************
 # ***************************************************************************
 def write_upperlimit(page, opts):
+  
   webdir = opts.webdir
   ini = opts.config_file
   ifos = get_ifos()
@@ -504,7 +531,7 @@ def write_analysis(page,opts, thisSearch='playground'):
     page = add_config_section(page, "ligo-data")
     page.div.close()  
   except:
-    blabla(logfile, "WARNING: problem in General information section. skipping ...")
+    logText(logfile, "problem in General information section. skipping ...", "warning")
     pass
   
  
@@ -560,7 +587,7 @@ def write_analysis(page,opts, thisSearch='playground'):
       comment += "<center><pre>-------------------summary file (category 1) \n"  +summary.read()+"</pre></center>"
       summary.close()
     except:
-      blabla(logfile, 'WARNING SIRE files not found at first inspiral stage')
+      logText(logfile, 'WARNING SIRE files not found at first inspiral stage', "warning")
       page.div(id="todo")
       page.p("Summary file from sire not found")
       page.div.close()
@@ -574,7 +601,7 @@ def write_analysis(page,opts, thisSearch='playground'):
       comment += "<center><pre>-------------------summary file (category 2) \n"  +summary.read()+"</pre></center>"
       summary.close()
     except:
-      blabla(logfile, 'WARNING SIRE files not found at first inspiral stage (cat veto 2)')
+      logText(logfile, 'WARNING SIRE files not found at first inspiral stage (cat veto 2)', "warning")
       page.div(id="todo")
       page.p("Summary file from sire not found (cat2)")
       page.div.close()
@@ -706,7 +733,7 @@ def write_analysis(page,opts, thisSearch='playground'):
 	 in each slide and zero lag, the cumulative histogram of number of\
 	 events versus SNR, and the SNR scatter plots for 2 ifos."    
     try :
-      blabla(logfile, opts.datadir+"/"+ thisSearch  +"/"+combi+"-COIRE_"+combi+"-"+opts.gps_start_time+"-"+opts.duration+".txt")
+      logText(logfile, opts.datadir+"/"+ thisSearch  +"/"+combi+"-COIRE_"+combi+"-"+opts.gps_start_time+"-"+opts.duration+".txt")
       summary =open(opts.datadir+"/"+ thisSearch  +"/"+combi+"-COIRE_"+combi+"-"+opts.gps_start_time+"-"+opts.duration+".txt")
       comment += "<center><pre>-------------------coire second stage, summary file (category 1) \n"  +summary.read()+"</pre></center>"
       summary.close()
@@ -758,7 +785,7 @@ def write_analysis(page,opts, thisSearch='playground'):
         page.td(data)
       except:
         page.td('not found')
-        blabla(logfile, 'WARNING' + text +' not found') 
+        logText(logfile, 'WARNING' + text +' not found', "warning") 
     page.tr.close()
     page.tr()
     page.td('time slides')    
@@ -770,7 +797,7 @@ def write_analysis(page,opts, thisSearch='playground'):
         page.td(data)
       except:
         page.td('file not found')
-        blabla(logfile, 'WARNING' + text +' not found') 
+        logText(logfile, 'WARNING' + text +' not found', "warning") 
 
     page.tr.close()
     page.table.close()
@@ -894,7 +921,7 @@ def write_about(page, opt):
   page.br()
   page.div(id="encadre")
   page.div(id="contenu")
-  page = write_title(page, html_sections[8], "balzac")
+  page = write_title(page, html_sections[9], "balzac")
   page.div(id="div_balzac", style='display:block')
   page.p("This page was automatically generated with write_ihope_page using the following ini file")
   tmp  = open(opts.config)
@@ -917,7 +944,7 @@ def write_about(page, opt):
 # ***************************************************************************
 # ***************************************************************************
 def get_numslide(run):
-  blabla(logfile, opts.datadir + "/" + run + "/inspiral_hipe_" + run)
+  logText(logfile, opts.datadir + "/" + run + "/inspiral_hipe_" + run )
   return str(29)
   
 
@@ -961,7 +988,7 @@ def heading(page, title="None", label="Switch details on/off", heading="h3"):
   page.div(id="div_"+input , style='display:none') 
 
 
-  blabla(logfile, '      Enters sub-section: '+title )
+  logText(logfile, '      Enters sub-section: '+title )
   return page 
 
 # ***************************************************************************
@@ -1030,10 +1057,10 @@ def create_venn(data, tag):
     if not opts.debug:
       make_external_call(command, True, True, True)    
   except:
-    blabla(logfile, """WARNING   The matlab command to create the venn diagram failed. 
+    logText(logfile, """WARNING   The matlab command to create the venn diagram failed. 
                 Check that matlab is properly set,and vennX.m is available
                 (see matapps/src/searches/inspiral/matspiral/utilities")  
-          """)
+          """, "error")
 
 # ***************************************************************************
 # ***************************************************************************
@@ -1067,9 +1094,9 @@ def get_coincident_segments(tag):
     page.div(id="todo")
     page.p( "Problem with the coincident segment")
     page.div.close()# close the todo
-    blabla(logfile , 'WARNING problem(s) while parsnig the coincident segments')
+    logText(logfile , 'WARNING problem(s) while parsnig the coincident segments', "warning")
   else:
-    blabla(logfile, '...Get the analyzed segments duration...done')
+    ilogText(logfile, '...Get the analyzed segments duration...done')
 
   return output
 
@@ -1112,9 +1139,9 @@ def get_segments_tag(tag):
         output_seconds, status = make_external_call(command, 0, 0, False)
         thisdata[ifo] = [ output_days, output_seconds]
   except:
-    blabla(logfile,  'Error while parsing the segment duration files')
+    logText(logfile,  'Error while parsing the segment duration files', "error")
   else:
-    blabla(logfile,  '...Get the segment duration for '+tag+'...done')
+    logText(logfile,  '...Get the segment duration for '+tag+'...done')
 
 
   return thisdata
@@ -1138,9 +1165,9 @@ def get_segments():
       output_seconds, status = make_external_call(command, 0, 0)
       thisdata[ifo] = [ output_days, output_seconds]
   except:
-    blabla(logfile,  'Error while parsing the selected segment')
+    logText(logfile,  'Error while parsing the selected segment', "error")
   else:
-    blabla(logfile,  '...Get the selected segment...done')
+    logText(logfile,  '...Get the selected segment...done',)
 
 
   return thisdata
@@ -1252,10 +1279,10 @@ def copy_segments():
     stdout+='...done'
   except:
     stdout +=" WARNING:: problem while copying category segment list. passing..."    
-    blabla(logfile,  stdout)
+    logText(logfile,  stdouti, "warning")
     pass
   else: 
-    blabla(logfile,  stdout)
+    logText(logfile,  stdout)
 
  #  the segment files
   try :
@@ -1271,10 +1298,10 @@ def copy_segments():
     stdout+='...done'
   except:
     stdout +=" WARNING:: problem while copying segment list. passing..."    
-    blabla(logfile,  stdout)
+    logText(logfile,  stdout, "warning")
     pass
   else: 
-    blabla(logfile,  stdout)
+    logText(logfile,  stdout)
 
  #  the selected segment files
   for thisSearch in ['playground', 'analysis']:
@@ -1294,10 +1321,10 @@ def copy_segments():
       stdout+='...done'
     except:
       stdout +=" WARNING:: problem while copying a selected segment (playground). passing..."    
-      blabla(logfile,  stdout)
+      logText(logfile,  stdout, "warning")
       pass
     else: 
-      blabla(logfile,  stdout)
+      logText(logfile,  stdout)
  
 # ***************************************************************************
 # ***************************************************************************
@@ -1322,43 +1349,72 @@ def set_style():
 
   return style
 
-# ***************************************************************************
-# ***************************************************************************
-#############################################################################
-usage =  """ %prog [options]
-Program to write webpage from upperlimit.py
+# ----------------------------------------------------------------------------
+def parse_arguments():
+  usage =  """ %prog [options]
+  Program to write webpage from upperlimit.py
+  """
+
+  parser = OptionParser( usage = usage, version = "%prog CVS "+__Id__ )
+
+  parser.add_option("-C","--config-file",action="store",type="string",\
+      metavar=" INI File",\
+      help="ini file with information about run directories" )
+  parser.add_option("-A","--skip-analysis",action="store_false",\
+      default=True, dest="analysis",metavar="DOANALYSIS",\
+      help="" )
+  parser.add_option("-T","--skip-tuning",action="store_false",\
+      default=True, dest="tuning",metavar="DOTUNING",\
+      help="" )
+  parser.add_option("-U","--skip-upperlimit",action="store_false",\
+      default=True, dest="upperlimit",metavar="DOUPPERLIMIT",\
+      help="" )
+  parser.add_option("-S","--skip-summary",action="store_false",\
+      default=True, dest="summary",metavar="DOSUMMARY",\
+      help="" )
+  parser.add_option("-P","--skip-playground",action="store_false",\
+      default=True, dest="playground",metavar="DOPLAYGROUND",\
+      help="" )
+  parser.add_option("-D","--debug-mode",action="store_true",\
+       default=False, dest="debug",metavar="DODEBUG",\
+       help="" )
+  parser.add_option("-V","--verbose",action="store_true",\
+      default=False, dest="verbose",metavar="VERBOSE",\
+      help="" )
+
+  (opts,args) = parser.parse_args()
+
+  if opts.config_file is None:
+    raise ValueError,\
+"""
+------------------------------------------------------------------------------
+the arguments --config-file must be used and followed by an ini file, an
+example of which is  :
+
+[main]
+gps-start-time  = 847555570
+gps-end-time    = 849974770
+title           = "Low mass CBC analysis"
+ihope-ini-file  = ihope.ini
+ihope-directory = /archive/home/cokelaer/S5/Month1/full_analysis/
+url             = ldas-jobs.ligo.caltech.edu
+username        = cokelaer
+output          = index.shtml
+style           = /archive/home/cokelaer/style.css
 """
 
-parser = OptionParser( usage = usage, version = "%prog CVS "+__Id__ )
+  return opts,args
 
-parser.add_option("-C","--config-file",action="store",type="string",\
-    default='write_ihope_page.ini', metavar=" INI File",\
-    help="ini file with information about run directories" )
-parser.add_option("-A","--skip-analysis",action="store_false",\
-    default=True, dest="analysis",metavar="DOANALYSIS",\
-    help="" )
-parser.add_option("-T","--skip-tuning",action="store_false",\
-    default=True, dest="tuning",metavar="DOTUNING",\
-    help="" )
-parser.add_option("-U","--skip-upperlimit",action="store_false",\
-    default=True, dest="upperlimit",metavar="DOUPPERLIMIT",\
-    help="" )
-parser.add_option("-S","--skip-summary",action="store_false",\
-    default=True, dest="summary",metavar="DOSUMMARY",\
-    help="" )
-parser.add_option("-P","--skip-playground",action="store_false",\
-    default=True, dest="playground",metavar="DOPLAYGROUND",\
-    help="" )
-parser.add_option("-D","--debug-mode",action="store_true",\
-    default=False, dest="debug",metavar="DODEBUG",\
-    help="" )
-parser.add_option("-V","--verbose",action="store_true",\
-    default=False, dest="verbose",metavar="VERBOSE",\
-    help="" )
+# ----------------------------------------------------------------------------
 
+try:
+  import markup
+  from markup import oneliner as e
+except: 
+  raise ImportError("Require markup.py to generate the html page")
 
+opts,args = parse_arguments()
 
-(opts,args) = parser.parse_args()
 
 #############################################################################
 #  MAIN PART                                                                #
@@ -1371,7 +1427,11 @@ configcp = ConfigParser.ConfigParser()
 configcp.read(config)
 
 try :
-  logfile = open(__name__+".log", "w")
+  logfile = open(__name__+".xml", "w")
+  logfile.write("""<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml-stylesheet type="text/xsl" href="write_ihope_page.xsl"?>
+<log>
+""")
 except:
   print "Could not create the log file...quitting"
   raise 
@@ -1403,7 +1463,7 @@ opts.physdir = '/archive/home/'+opts.username+'/public_html/'+ opts.gpsdir
 try:
   opts.style = set_style()
 except:
-  blabla(logfile, "WARNING::problem with the style file. (either not copied or not found)")
+  logWarning(logfile, "problem with the style file. (either not copied or not found)")
   raise
 
 html_file = file(opts.output,"w")
@@ -1417,12 +1477,12 @@ if not os.path.isdir(opts.physdir):
   "%s is not a valid directory. Trying to create it." % opts.physdir
   try:
     os.mkdir(opts.physdir)
-    blabla(logfile, "##Warning:: directory "+opts.physdir+" created")
+    logText(logfile, "##Warning:: directory "+opts.physdir+" created","warning" )
   except: pass
 
 
 # now we can parse the ihope.ini file 
-blabla(logfile, "...Parsing the ihope ini file" )
+logText(logfile, "...Parsing the ihope ini file" )
 hipe   = opts.ihope_directory+'/'+opts.config_file
 hipecp = ConfigParser.ConfigParser()
 hipecp.read(hipe)
@@ -1440,6 +1500,7 @@ html_sections = ("General information",  \
 		"Full data", \
 		"Upper limit", \
 		"Openning the box",
+		"Log file",
 		"About this page")
 title = opts.title+ ": from "+str(opts.gps_start_time)+" to "+str(opts.gps_end_time) 
 script = {}
@@ -1452,14 +1513,15 @@ page.init(title=title, css=opts.style, script=script)
 page.h1(opts.title +" (" + opts.gps_start_time +"-" +opts.gps_end_time+")")
 
 ##### we write the toc, and general section
-blabla(logfile, '---write the TOC section---')
+logText(logfile, " TOC ", "section")
 try: 
   page = write_toc(page, opts)
 except:
-  page.div("problem in toc section. skippingg this section. "); 
+  page.div("problem in TOC section. skipping this section. "); 
+  logText(logfile, "problem in TOC section. skipping this section. ", "error"); 
   pass
 
-blabla(logfile, "---write the "+html_sections[0]+' section---------')
+logText(logfile, html_sections[0],"section")
 try:
   page = write_general(page, opts)
 except:
@@ -1469,7 +1531,7 @@ except:
   else:
     pass
 
-blabla(logfile, '---write the '+html_sections[1]+' section---------')
+logText(logfile, html_sections[1],"section")
 if opts.summary:
   try:
     page = write_data_summary(page, opts)
@@ -1477,7 +1539,7 @@ if opts.summary:
     page.add("problem in "+html_sections[1]+" section. skipping this section. "); 
     pass
 
-blabla(logfile, '---write the '+html_sections[2]+' section---------')
+logText(logfile, html_sections[2],"section")
 if opts.playground:
   try:
     page = write_analysis(page, opts, 'playground')
@@ -1488,10 +1550,10 @@ if opts.playground:
     else:
       pass
   
-blabla(logfile, '---write the '+html_sections[3]+' section---------')
+logText(logfile,html_sections[3],"section")
 page = write_injection(page, opts)
 
-blabla(logfile, '---write the '+html_sections[4]+' section---------')
+logText(logfile,html_sections[4],"section")
 if opts.tuning:
 #  try:
   page = write_tuning(page, opts)
@@ -1499,23 +1561,24 @@ if opts.tuning:
   page.add("problem in "+html_sections[4]+" section. skipping this section. "); 
 #    pass
 
-blabla(logfile, '---write the '+html_sections[5]+' section---------')
+logText(logfile, html_sections[5],"section")
 if opts.analysis:
   try:
     page = write_analysis(page, opts, 'analysis')
   except: 
-    blabla(logfile, "WARNING  problem in "+html_sections[5]+" section. skipping this section. ")
+    logText(logfile, "WARNING  problem in "+html_sections[5]+" section. skipping this section. ", "warning")
     raise
     pass
 
-blabla(logfile,'---write the '+html_sections[6]+' section---------')
+logText(logfile, html_sections[6],"section")
 if opts.upperlimit:
   try:
     page = write_upperlimit(page, opts)
   except:  
-    blabla(logfile, "WARNING in "+html_sections[6]+" section. skipping this section. ")
+    logText(logfile, "WARNING in "+html_sections[6]+" section. skipping this section. ", "warning")
     pass
 
+logText(logfile, html_sections[7],"section")
 #try:
 #  page = write_openbox(page, opts)
 #except:
@@ -1523,7 +1586,9 @@ if opts.upperlimit:
 #  pass
 
 #try:
-blabla(logfile, '---write the '+html_sections[8]+' section---------')
+logText(logfile, html_sections[8],"section")
+page = write_logfile(page, opts)
+logText(logfile, html_sections[9],"section")
 page = write_about(page, opts)
 #except:   page = error_section(page, html_sections[8]); pass
  
@@ -1531,6 +1596,7 @@ page = write_about(page, opts)
 ##### the end
 html_file.write(page(False))
 html_file.close()
+logfile.write("</log>")
 logfile.close()
 
 print '---------------------FINISHED ---------------------'
@@ -1539,17 +1605,60 @@ print '--- Copying html documents in ' +opts.physdir
 make_external_call('mv  '+opts.output +' ' + opts.physdir, '','',True)
 make_external_call( 'mv toggle.js '+ opts.physdir, '', 'True')
 
-logfile = __name__+".log"
+logfile = __name__+".xml"
 output, status = make_external_call( 'grep WARNING '+ logfile +'| wc - | awk \'{print $1}\' - ', False,False, False)
+
 if status==0:
   if int(output)==0:
     print 'No warnings'
   else:
     print '\n\n\nThere are warnings : '+str(int(output))+' . Check the log file '+logfile
+  
+  output, status = make_external_call('mv '+logfile + " "+opts.physdir, True,True,True) 
+
 else:
   print 'Could not find the log file ' +logfile
   
  
+#Finally create the xsl for the log xml file
+logfile = open(__name__+".xsl", "w")
+logfile.write("""<?xml version="1.0" encoding="ISO-8859-1"?>
+<xsl:stylesheet version="1.0"
+xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+<xsl:template match="/">
+  <html>
+  <body>
+  <center><h1>Log file summary </h1></center>
+  <xsl:apply-templates/>
+  </body>
+  </html>
+</xsl:template>
+
+<xsl:template match="section">
+<h2 color="blue">Section: <xsl:value-of select="."/></h2>
+<br />
+</xsl:template>
+
+<xsl:template match="done">
+<div style="color:green">
+<table><tr><td><xsl:value-of select="."/></td><td> passed</td></tr></table></div>
+</xsl:template>
+<xsl:template match="warning">
+<div style="color:orange">
+<table><tr><td><xsl:value-of select="."/></td><td> passed</td></tr></table></div>
+</xsl:template>
+<xsl:template match="error">
+<div style="color:red">
+<table><tr><td><xsl:value-of select="."/></td><td> passed</td></tr></table></div>
+</xsl:template>
+
+
+</xsl:stylesheet>
+""")
+
+logfile.close()
+output, status = make_external_call('mv '+__name__+".xsl" + " "+opts.physdir, True,True,True) 
 
 
 
