@@ -1019,6 +1019,7 @@ int main(int argc, char**argv) {
 #define NO_GRAPHICS_FNAME "EAH_NO_GRAPHICS"
 #define NO_SYNC_FNAME     "EAH_NO_SYNC"
 #define DEBUG_DDD_FNAME   "EAH_DEBUG_DDD"
+#define DEBUG_GDB_FNAME   "EAH_DEBUG_GDB"
 
   LogPrintfVerbatim (LOG_NORMAL, "\n");
   LogPrintf (LOG_NORMAL, "Start of BOINC application '%s'.\n", argv[0]);
@@ -1081,7 +1082,37 @@ int main(int argc, char**argv) {
 	system(commandstring);
 	sleep(20);
       }
-    } /* DEBUGGING */
+    } /* DDD DEBUGGING */
+
+  /* see if user has created a DEBUG_GDB_FNAME file: turn on debuggin using 'gdb' */
+  if ((fp_debug=fopen("../../" DEBUG_GDB_FNAME, "r")) || (fp_debug=fopen("./" DEBUG_GDB_FNAME, "r")) ) 
+    {
+      char commandstring[256];
+      char resolved_name[MAXFILENAMELENGTH];
+      char *ptr;
+      pid_t process_id=getpid();
+      
+      fclose(fp_debug);
+      LogPrintf ( LOG_NORMAL, "Found '%s' file, trying debugging with 'gdb'\n", DEBUG_GDB_FNAME);
+      
+      /* see if the path is absolute or has slashes.  If it has
+	 slashes, take tail name */
+      if ((ptr = strrchr(argv[0], '/'))) {
+	ptr++;
+      } else {
+	ptr = argv[0];
+      }
+      
+      /* if file name is an XML soft link, resolve it */
+      if (boinc_resolve_filename(ptr, resolved_name, sizeof(resolved_name)))
+	LogPrintf (LOG_NORMAL,  "Unable to boinc_resolve_filename(%s), so no debugging\n", ptr);
+      else {
+	skipsighandler = 1;
+	LALSnprintf(commandstring,sizeof(commandstring),"gdb %s %d &", resolved_name ,process_id);
+	system(commandstring);
+	sleep(20);
+      }
+    } /* GDB DEBUGGING */
 #endif // GNUC
 
 
@@ -1472,4 +1503,9 @@ void enable_floating_point_exceptions(void) {
 #endif
   }
 #endif
+}
+
+int segfault (void) {
+  volatile int i = *((int*)1);
+  return(i);
 }

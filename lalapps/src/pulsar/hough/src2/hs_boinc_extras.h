@@ -127,6 +127,9 @@ extern void attach_gdb(void);
 /** play with floating-point exceptions */
 extern void enable_floating_point_exceptions(void);
 
+/** generate a segfault (for testing purposes) */
+extern int segfault (void);
+
 /** the main() function of HierarchicalSerach.c becomes the extern MAIN(),
     the actual main() function of the BOINC App is defined in boinc_extras.c
 */
