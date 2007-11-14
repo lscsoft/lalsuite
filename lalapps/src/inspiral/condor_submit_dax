@@ -79,7 +79,6 @@ if opts.properties_file is None:
 
 # create tc.data if necessary
 if opts.ini_file:
-    if os.path.isfile("tc.data"): raise ValueError, "tc.data already exists"
     cp = ConfigParser.ConfigParser()
     cp.read(opts.ini_file)
     hostname = socket.getfqdn()
