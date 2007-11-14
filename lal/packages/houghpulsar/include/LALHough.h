@@ -324,7 +324,8 @@ NRCSID (LALHOUGHH, "$Id$");
 #define LALHOUGHH_EINT  6
 #define LALHOUGHH_ESAME 8
 #define LALHOUGHH_EFREQ 10
-#define LALHOUGHH_EVAL 12
+#define LALHOUGHH_EVAL  12
+#define LALHOUGHH_EMEM  32
 
 #define LALHOUGHH_MSGENULL "Null pointer"
 #define LALHOUGHH_MSGESIZE "Invalid input size"
@@ -333,6 +334,7 @@ NRCSID (LALHOUGHH, "$Id$");
 #define LALHOUGHH_MSGESAME "Input/Output pointers are the same" 
 #define LALHOUGHH_MSGEFREQ "Invalid frequency"
 #define LALHOUGHH_MSGEVAL  "Invalid value"
+#define LALHOUGHH_MSGEMEM  "malloc() failed / Out of memory"
   
 /* </lalErrTable>  */
 

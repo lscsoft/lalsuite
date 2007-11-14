@@ -450,7 +450,7 @@ void LALHOUGHConstructHMT  (LALStatus                  *status,
   hd.ySide = ySide;
   hd.map = (HoughDT *)LALMalloc(ySide*(xSide+1)*sizeof(HoughDT));
   if (hd. map == NULL) {
-    ABORT( status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL); 
+    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM);
   }
   /* -------------------------------------------   */
 
@@ -616,7 +616,7 @@ void LALHOUGHConstructHMT_W (LALStatus                  *status,
   hd.ySide = ySide;
   hd.map = (HoughDT *)LALMalloc(ySide*(xSide+1)*sizeof(HoughDT));
   if (hd. map == NULL) {
-    ABORT( status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL); 
+    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM); 
   }
 
   /* -------------------------------------------   */
@@ -845,17 +845,17 @@ void LALHOUGHComputeAMWeights  (LALStatus          *status,
   /* Here, amParams->das is the Detector and Source info */
   amParams = (AMCoeffsParams *)LALMalloc(sizeof(AMCoeffsParams));
   if (amParams == NULL) {
-    ABORT( status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL); 
+    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM); 
   }
 
   amParams->das = (LALDetAndSource *)LALMalloc(sizeof(LALDetAndSource));
   if (amParams->das == NULL) {
-    ABORT( status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL); 
+    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM); 
   }
 
   amParams->das->pSource = (LALSource *)LALMalloc(sizeof(LALSource));
   if (amParams->das->pSource == NULL) {
-    ABORT( status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL); 
+    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM); 
   }
 
   /* Fill up AMCoeffsParams structure */
@@ -878,25 +878,25 @@ void LALHOUGHComputeAMWeights  (LALStatus          *status,
   amc.a = NULL;
   amc.a = (REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
   if (amc.a == NULL) {
-    ABORT( status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL); 
+    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM); 
   }
 
   amc.a->length = length; 
   amc.a->data = (REAL4 *)LALMalloc(length*sizeof(REAL4)); 
   if (amc.a->data == NULL) {
-    ABORT( status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL); 
+    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM); 
   }
 
   amc.b = NULL;
   amc.b = (REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
   if (amc.b == NULL) {
-    ABORT( status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL); 
+    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM); 
   }
 
   amc.b->length = length; 
   amc.b->data = (REAL4 *)LALMalloc(length*sizeof(REAL4)); 
   if (amc.b->data == NULL) {
-    ABORT( status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL); 
+    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM); 
   }
 
   TRY (LALComputeAM( status->statusPtr, &amc, timeV->data, amParams), status); 
