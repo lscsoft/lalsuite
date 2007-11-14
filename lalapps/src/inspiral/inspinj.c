@@ -522,6 +522,7 @@ int main( int argc, char *argv[] )
 { 
   LIGOTimeGPS gpsStartTime;
   LIGOTimeGPS gpsEndTime;
+  LIGOTimeGPS currentGpsTime;
   long gpsDuration;
 
   REAL8 meanTimeStep = 2630 / LAL_PI; /* seconds between injections     */
@@ -1421,6 +1422,7 @@ int main( int argc, char *argv[] )
 
   /* loop over parameter generation until end time is reached */
   ninj = 0;
+  currentGpsTime = gpsStartTime;
   while ( 1 )
   {
     /* increase counter */
@@ -1428,7 +1430,7 @@ int main( int argc, char *argv[] )
 		     
     /* store time in table */
     simTable=XLALRandomInspiralTime( simTable, randParams,
-				     gpsStartTime, timeInterval );
+				     currentGpsTime, timeInterval );
 
     /* populate waveform and other parameters */
     memcpy( simTable->waveform, waveform, 
@@ -1458,7 +1460,7 @@ int main( int argc, char *argv[] )
     drawFromSource( &drawnRightAscension, &drawnDeclination, &drawnDistance,
                     drawnSourceName );
 
-    /* popualate distances */
+    /* populate distances */
     if ( dDistr == distFromSourceFile )
     {
       simTable->distance = drawnDistance;
@@ -1506,9 +1508,11 @@ int main( int argc, char *argv[] )
     /* populate the site specific information */
     LALPopulateSimInspiralSiteInfo( &status, simTable );
 
-    /* increase time step, check if end of loop is reached */
-    gpsStartTime=*XLALGPSAdd( &gpsStartTime, meanTimeStep );
-    if ( gpsStartTime.gpsSeconds > gpsEndTime.gpsSeconds )
+    /* increment current time, avoiding roundoff error;
+       check if end of loop is reached */
+    currentGpsTime = gpsStartTime;
+    XLALGPSAdd(&currentGpsTime, ninj * meanTimeStep);
+    if ( XLALGPSCmp( &currentGpsTime, &gpsEndTime ) >= 0 )
       break;
 
     /* allocate and go to next SimInspiralTable */
