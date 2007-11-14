@@ -8,7 +8,7 @@ bin_PROGRAMS = lalapps_skynet getMetric testFlatPulsarMetric matchGrids getMesh 
 
 EXTRA_PROGRAMS = testFlatLatticeTiling
 
-testFlatLatticeTiling_SOURCES  = testFlatLatticeTiling.c FlatLatticeTiling.c
+testFlatLatticeTiling_SOURCES  = testFlatLatticeTiling.c
 
 lalapps_skynet_SOURCES = skynet.c
 

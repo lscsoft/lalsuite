@@ -36,9 +36,8 @@
 #include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
 #include <lal/PtoleMetric.h>
+#include <lal/FlatLatticeTiling.h>
 #include <lalapps.h>
-
-#include "FlatLatticeTiling.h"
 
 RCSID("$Id$");
 
