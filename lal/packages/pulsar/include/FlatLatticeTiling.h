@@ -55,6 +55,9 @@ typedef struct tagFlatLatticeTiling {
   gsl_vector *bounds_args;
   CHAR *bounds_xml_desc;
 
+  /* Any extra user-defined information */
+  void *user_defined;
+
   /* Padding to include at either end along each dimension */
   gsl_vector *padding;
 

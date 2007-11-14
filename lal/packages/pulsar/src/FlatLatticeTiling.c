@@ -83,6 +83,8 @@ FlatLatticeTiling *XLALCreateFlatLatticeTiling(
   tiling->bounds_args = NULL;
   tiling->bounds_xml_desc = NULL;
 
+  tiling->user_defined = NULL;
+
   tiling->padding = NULL;
 
   tiling->increment = NULL;
@@ -121,6 +123,8 @@ void XLALDestroyFlatLatticeTiling(
 
     if (tiling->bounds_args) gsl_vector_free(tiling->bounds_args);
     if (tiling->bounds_xml_desc) LALFree(tiling->bounds_xml_desc);
+
+    if (tiling->user_defined) LALFree(tiling->user_defined);
 
     if (tiling->padding) gsl_vector_free(tiling->padding);
 
@@ -554,7 +558,7 @@ int XLALSetupFlatLatticeTiling(
   directions = gsl_matrix_alloc(n, n);
   gsl_matrix_set_identity(directions);
   XLALOrthonormaliseMatrixWRTMetric(directions, tiling->metric);
-  gsl_matrix_scale(directions, tiling->mismatch);
+  gsl_matrix_scale(directions, sqrt(tiling->mismatch));
   XLALPrintInfo("Orthogonal directions with respect to metric:\n");
   for (i = 0; i < n; ++i) {
     for (j = 0; j < n; ++j) {
@@ -584,7 +588,7 @@ int XLALSetupFlatLatticeTiling(
   gsl_linalg_LU_invert(LU_decomp, LU_perm, inverse);
   for (i = 0; i < n; ++i) {
     gsl_vector_view col_i = gsl_matrix_column(inverse, i);
-    gsl_vector_scale(&col_i.vector, tiling->mismatch / sqrt(gsl_matrix_get(inverse, i, i)));
+    gsl_vector_scale(&col_i.vector, sqrt(tiling->mismatch / gsl_matrix_get(inverse, i, i)));
   }
   XLALPrintInfo("Inverse of the metric, scaled to the mismatch:\n");
   for (i = 0; i < n; ++i) {
