@@ -59,6 +59,25 @@ extern "C" {
 
 NRCSID( NRWAVEINJECTH, "$Id$");
 
+/* list of numrel groups -- add more if necessary 
+   might want to add some numrel collaborations as well
+   such as CIT_CORNELL, NRWAVES etc. */
+typedef enum {
+  NR_GROUP_LSU,
+  NR_GROUP_AEI,
+  NR_GROUP_PSU,
+  NR_GROUP_CIT,
+  NR_GROUP_CORNELL,
+  NR_GROUP_RIT,
+  NR_GROUP_JENA,
+  NR_GROUP_SOUTHAMPTON,
+  NR_GROUP_FAU,
+  NR_GROUP_UTB,
+  NR_GROUP_UIUC,
+  NR_GROUP_DUMMY
+} NumRelGroup;
+
+
 REAL4TimeVectorSeries *
 XLALSumStrain( 
     REAL4TimeVectorSeries *tempstrain,  
