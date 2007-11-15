@@ -2563,33 +2563,35 @@ void SplitSFTs(LALStatus         *status,
   
   mObsCoh = weightsV->length;    
   p = chi2Params->length;
-
-  sumWeightpMax = mObsCoh/p;       /* Compute the value of the sumWeight we want to fix in each set of SFT's */
+  
+  sumWeightpMax = (REAL8)(mObsCoh)/p;       /* Compute the value of the sumWeight we want to fix in each set of SFT's */
   weights_ptr = weightsV->data;    /* Make the pointer to point to the first position of the vector weightsV.data */
   
   /*   for (j=0;(UINT4)(weights_ptr-weightsV->data)<mObsCoh;j++){ */
   iSFT = 0;
   for (j = 0; j < p; j++){
 
-    partialsumWeightSquarep = 0;
-    partialsumWeightp = 0;
+      partialsumWeightSquarep = 0;
+      partialsumWeightp = 0;
     
-    for(numberSFT = 0;(partialsumWeightp<sumWeightpMax)&&(iSFT<mObsCoh); numberSFT++, iSFT++){
-      
-      partialsumWeightp += *weights_ptr;
-      partialsumWeightSquarep += (*weights_ptr)*(*weights_ptr);
-      weights_ptr++;
+      for(numberSFT = 0;(partialsumWeightp<sumWeightpMax)&&(iSFT<mObsCoh); numberSFT++, iSFT++){
+ 
+	  partialsumWeightp += *weights_ptr;
+	  partialsumWeightSquarep += (*weights_ptr)*(*weights_ptr);
+	  weights_ptr++; 
 
-    } /* loop over SFTs */
+      } /* loop over SFTs */
     
-    ASSERT ( (UINT4)j < p, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
-
-    chi2Params->numberSFTp[j] = numberSFT;
-    chi2Params->sumWeight[j] = partialsumWeightp;
-    chi2Params->sumWeightSquare[j] = partialsumWeightSquarep;
+      ASSERT ( (UINT4)j < p, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+  
+      chi2Params->numberSFTp[j] = numberSFT;
+      chi2Params->sumWeight[j] = partialsumWeightp;
+      chi2Params->sumWeightSquare[j] = partialsumWeightSquarep;
     
   } /* loop over the p blocks of data */
-        
+       
+  ASSERT ( iSFT == mObsCoh, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);  
+
   DETATCHSTATUSPTR (status);
   /* normal exit */
   RETURN (status);
@@ -2788,6 +2790,7 @@ void ComputeandPrintChi2 ( LALStatus                *status,
     weightsV.data=NULL;
         
     fclose(fpChi2);
+
     
     DETATCHSTATUSPTR (status);
     
