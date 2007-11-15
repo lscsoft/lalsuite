@@ -993,6 +993,13 @@ int main(int argc, char**argv) {
   FILE* fp_debug;
   int skipsighandler = 0;
 
+  /* init BOINC diagnostics */
+  boinc_init_diagnostics(BOINC_DIAG_DUMPCALLSTACKENABLED |
+                         BOINC_DIAG_HEAPCHECKENABLED |
+                         BOINC_DIAG_ARCHIVESTDERR |
+                         BOINC_DIAG_REDIRECTSTDERR |
+                         BOINC_DIAG_TRACETOSTDERR);
+
   LogSetLevel(LOG_DETAIL); /* as long as we are debugging */
 
   /* dummy for keeping the RCSIDs */
@@ -1004,14 +1011,6 @@ int main(int argc, char**argv) {
   /* pass argc/v to the worker via global vars */
   global_argc = argc;
   global_argv = argv;
-
-  /* init BOINC diagnostics */
-  boinc_init_diagnostics(BOINC_DIAG_DUMPCALLSTACKENABLED |
-                         BOINC_DIAG_HEAPCHECKENABLED |
-                         BOINC_DIAG_ARCHIVESTDERR |
-                         BOINC_DIAG_REDIRECTSTDERR |
-                         BOINC_DIAG_TRACETOSTDERR);
-
 
   /* debugging support by files */
 
