@@ -748,7 +748,7 @@ int main( int argc, char *argv[] )
     /* calculate M and a from f and Q */
     this_inj->spin = 1 - pow( (this_inj->quality / 2.0), ( - 20.0 / 9.0 ) );
     this_inj->mass = pow( LAL_C_SI, 3) / LAL_G_SI / LAL_MSUN_SI / 2.0 / LAL_PI
-                      * ( 1.0 - 0.63 * pow( ( this_inj->quality /2.0 ), (-2.0/3.0))); 
+                      * ( 1.0 - 0.63 * pow( ( this_inj->quality /2.0 ), (-2.0/3.0))) / this_inj->frequency; 
 
 #if 0
     /* mass distribution */
