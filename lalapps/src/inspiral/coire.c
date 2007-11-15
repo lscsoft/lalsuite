@@ -1279,6 +1279,18 @@ int main( int argc, char *argv[] )
         numClusteredEvents );
   }
 
+  /*
+   *
+   * update search_summary->nevents with an authoritative count of coincs
+   *
+   */
+
+  searchSummList->nevents = 0;
+  thisCoinc = coincHead;
+  while (thisCoinc) {
+    searchSummList->nevents += 1;
+    thisCoinc = thisCoinc->next;
+  }
 
   /*
    *
