@@ -37,6 +37,7 @@
 #include <lal/AVFactories.h>
 #include <lal/NRWaveIO.h>
 #include <lal/NRWaveInject.h>
+#include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/Inject.h>
 #include <lal/FileIO.h>
@@ -87,8 +88,7 @@ typedef struct {
 } NrParRange;
 
 
-void GetNRMetaDataFromFrameHistory(LALStatus  *status, 
-				   NRWaveMetaData *data,
+void GetNRMetaDataFromFrameHistory(NRWaveMetaData *data,
 				   FrHistory *history);
 
 void ParseThisComment(NRWaveMetaData *data, CHAR *comment);
@@ -103,13 +103,19 @@ INT4 main( INT4 argc, CHAR *argv[] )
 {
   LALStatus status = blank_status;
 
+  /* frame file stuff */
   FrCache *frGlobCache = NULL;
   FrCache *frInCache = NULL;
   FrCacheSieve  sieve;
   FrameH *frame=NULL;
   FrFile *frFile=NULL;
 
+  /* inspiral table stuff */
+  SimInspiralTable  *this_inj = NULL;
+  LIGOLwXMLStream   xmlfp;
+  MetadataTable  injections;
 
+  /* nrwave stuff */
   NRWaveMetaData metaData;
   NrParRange range;
 
@@ -196,11 +202,13 @@ INT4 main( INT4 argc, CHAR *argv[] )
   LAL_CALL( LALDestroyFrCache( &status, &frGlobCache ), &status );  
   
   /* check we globbed at least one frame file */
-  if ( ! frInCache->numFrameFiles )  {
+  if ( !frInCache->numFrameFiles )  {
     fprintf( stderr, "error: no numrel frame files found\n");
     exit(1);
   }
 
+  /* initialize head of inspiral table linked list to null */
+  injections.simInspiralTable = NULL;
 
   /* loop over frame files and select the ones with nr-params in the right range */
   for (k = 0; k < frInCache->numFrameFiles; k++) {
@@ -210,20 +218,74 @@ INT4 main( INT4 argc, CHAR *argv[] )
     frame = FrameRead (frFile);
     
     memset(&metaData, 0, sizeof(NRWaveMetaData));    
-    LAL_CALL( GetNRMetaDataFromFrameHistory( &status, &metaData, frame->history), &status);
+    LAL_CALL( GetNRMetaDataFromFrameHistory( &metaData, frame->history), &status);
 
+    /* if we find parameters in range then write to output */
     if ( MetaDataInRange(&metaData, &range)) {
+
+      REAL8 tmp;
+
       /* need to print other pars as well */
       fprintf(stdout,"%s\n",frInCache->frameFiles[k].url);
+
+      /* set up the inspiral table linked list*/
+      if ( injections.simInspiralTable )
+	{
+	  this_inj = this_inj->next = (SimInspiralTable *)
+	    LALCalloc( 1, sizeof(SimInspiralTable) );
+	}
+      else
+	{
+	  injections.simInspiralTable = this_inj = (SimInspiralTable *)
+	    LALCalloc( 1, sizeof(SimInspiralTable) );
+	}
+
+      tmp = sqrt(metaData.massRatio) + 1.0/sqrt(metaData.massRatio);
+      this_inj->eta = 1.0/( tmp * tmp );
+
+      this_inj->spin1x = metaData.spin1[0];
+      this_inj->spin1y = metaData.spin1[1];
+      this_inj->spin1z = metaData.spin1[2];
+
+      this_inj->spin2x = metaData.spin2[0];
+      this_inj->spin2y = metaData.spin2[1];
+      this_inj->spin2z = metaData.spin2[2];
+
     }    
 
 
   } /* end loop over framefiles */
 
 
+
+  /* open the xml file */
+  memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
+  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlfp, "nrout.xml" ), &status );
+
+
+  if ( injections.simInspiralTable )
+  {
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_inspiral_table ), 
+	      &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, injections, 
+				      sim_inspiral_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
+  }
+
+  /* close the linked list */
+  while ( injections.simInspiralTable )
+  {
+    this_inj = injections.simInspiralTable;
+    injections.simInspiralTable = injections.simInspiralTable->next;
+    LALFree( this_inj );
+  }
+
+  /* close cache */
   /*   LAL_CALL( LALFrClose( &status, &frStream ), &status ); */
   LAL_CALL( LALDestroyFrCache( &status, &frInCache ), &status );  
 
+  /* close the injection file */
+  LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlfp ), &status );
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
   LALCheckMemoryLeaks();
@@ -234,17 +296,13 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
 /* metadata is stored in the history field comment 
    -- this function parses the comment to fill the metadata struct */
-void GetNRMetaDataFromFrameHistory(LALStatus  *status, 
-				   NRWaveMetaData *data,
+void GetNRMetaDataFromFrameHistory(NRWaveMetaData *data,
 				   FrHistory *history)
 {
 
   UINT4 strlen=128;
   CHAR *comment=NULL; /* the comments string */
   FrHistory *localhist;
-
-  INITSTATUS (status, "GetNRMetaDataFromFrameHistory", rcsid);
-  ATTATCHSTATUSPTR (status);
 
   comment = LALMalloc(strlen*sizeof(CHAR));
 
@@ -258,11 +316,7 @@ void GetNRMetaDataFromFrameHistory(LALStatus  *status,
   }
 
   LALFree(comment);
-
-  DETATCHSTATUSPTR (status);
-  /* normal exit */
-  RETURN (status);
-
+  return;
 }
 
 
