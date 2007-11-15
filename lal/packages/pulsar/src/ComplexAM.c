@@ -160,21 +160,22 @@ LALGetCmplxAMCoeffs(LALStatus *status,
       coeffs->b->data[i] = bi;
 
       /* sum A, B, C on the fly */
-      coeffs->A += ai.re * ai.re - ai.im * ai.im;
-      coeffs->B += bi.re * bi.re - bi.im * bi.im;
-      coeffs->C += ai.re * bi.re - ai.im * bi.im;
-      coeffs->E += - ai.re * bi.im - ai.im * bi.re;
+      coeffs->A += ai.re * ai.re + ai.im * ai.im;
+      coeffs->B += bi.re * bi.re + bi.im * bi.im;
+      coeffs->C += ai.re * bi.re + ai.im * bi.im;
+      coeffs->E += ai.re * bi.im - ai.im * bi.re;
 
     } /* for i < numSteps */
 
-  /* finish calculation of A,B,C, D */
+  /* finish calculation of A,B,C,E,D */
   norm = 2.0f / numSteps;
   coeffs->A *= norm;
   coeffs->B *= norm;
   coeffs->C *= norm;
-  coeffs->D *= norm;
+  coeffs->E *= norm;
 
-  coeffs->D = coeffs->A * coeffs->B - coeffs->C * coeffs->C;
+  coeffs->D = coeffs->A * coeffs->B - coeffs->C * coeffs->C
+    - coeffs->E * coeffs->E;
 
   RETURN(status);
 
