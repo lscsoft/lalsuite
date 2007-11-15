@@ -180,3 +180,116 @@ LALGetCmplxAMCoeffs(LALStatus *status,
   RETURN(status);
 
 } /* LALGetCmplxAMCoeffs() */
+
+/** Multi-IFO version of LALGetCmplxAMCoeffs(). 
+ * Get all antenna-pattern coefficients for all input detector-series.
+ *
+ * NOTE: contrary to LALGetCmplxAMCoeffs(), this functions *allocates* the output-vector,
+ * use XLALDestroyMultiCmplxAMCoeffs() to free this.
+ */
+void
+LALGetMultiCmplxAMCoeffs (LALStatus *status, 
+		     MultiCmplxAMCoeffs **multiAMcoef,	/**< [out] AM-coefficients for all input detector-state series */
+		     const MultiCmplxDetectorStateSeries *multiDetStates, /**< [in] detector-states at timestamps t_i */
+		     SkyPosition skypos			/**< source sky-position [in equatorial coords!] */
+		     )
+{
+  UINT4 X, numDetectors;
+  MultiCmplxAMCoeffs *ret = NULL;
+
+  INITSTATUS( status, "LALGetMultiCmplxAMCoeffs", COMPLEXAMC);
+  ATTATCHSTATUSPTR (status);
+
+  /* check input */
+  ASSERT (multiDetStates, status,COMPLEXAMC_ENULL, COMPLEXAMC_MSGENULL);
+  ASSERT (multiDetStates->length, status,COMPLEXAMC_ENULL, COMPLEXAMC_MSGENULL);
+  ASSERT (multiAMcoef, status,COMPLEXAMC_ENULL, COMPLEXAMC_MSGENULL);
+  ASSERT ( *multiAMcoef == NULL, status,COMPLEXAMC_ENONULL, COMPLEXAMC_MSGENONULL);
+  ASSERT ( skypos.system == COORDINATESYSTEM_EQUATORIAL, status, COMPLEXAMC_EINPUT, COMPLEXAMC_MSGEINPUT );
+
+  numDetectors = multiDetStates->length;
+
+  if ( ( ret = LALCalloc( 1, sizeof( *ret ) )) == NULL ) {
+    ABORT (status, COMPLEXAMC_EMEM, COMPLEXAMC_MSGEMEM);    
+  }
+  ret->length = numDetectors;
+  if ( ( ret->data = LALCalloc ( numDetectors, sizeof ( *ret->data ) )) == NULL ) {
+    LALFree ( ret );
+    ABORT (status, COMPLEXAMC_EMEM, COMPLEXAMC_MSGEMEM);
+  }
+
+  for ( X=0; X < numDetectors; X ++ )
+    {
+      CmplxAMCoeffs *amcoeX = NULL;
+      UINT4 numStepsX = multiDetStates->data[X]->length;
+
+      ret->data[X] = LALCalloc ( 1, sizeof ( *(ret->data[X]) ) );
+      amcoeX = ret->data[X];
+      amcoeX->a = XLALCreateCOMPLEX8Vector ( numStepsX );
+      if ( (amcoeX->b = XLALCreateCOMPLEX8Vector ( numStepsX )) == NULL ) {
+	LALPrintError ("\nOut of memory!\n\n");
+	goto failed;
+      }
+
+      LALGetCmplxAMCoeffs (status->statusPtr, amcoeX, multiDetStates->data[X], skypos );
+      if ( status->statusPtr->statusCode ) 
+	{
+	  LALPrintError ( "\nCall to LALGetCmplxAMCoeffs() has failed ... \n\n");
+	  goto failed;
+	}
+ 
+    } /* for X < numDetectors */
+
+  goto success;
+
+ failed:
+  /* free all memory allocated so far */
+  XLALDestroyMultiCmplxAMCoeffs ( ret );
+  ABORT ( status, -1, "LALGetMultiCmplxAMCoeffs() failed" );
+
+ success:
+  (*multiAMcoef) = ret;
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+
+} /* LALGetMultiCmplxAMCoeffs() */
+
+
+
+/* ===== Object creation/destruction functions ===== */
+
+/** Destroy a MultiCmplxAMCoeffs structure. 
+ * Note, this is "NULL-robust" in the sense that it will not crash 
+ * on NULL-entries anywhere in this struct, so it can be used
+ * for failure-cleanup even on incomplete structs 
+ */
+void
+XLALDestroyMultiCmplxAMCoeffs ( MultiCmplxAMCoeffs *multiAMcoef )
+{
+  UINT4 X;
+  CmplxAMCoeffs *tmp;
+
+  if ( ! multiAMcoef )
+    return;
+
+  if ( multiAMcoef->data )
+    {
+      for ( X=0; X < multiAMcoef->length; X ++ ) 
+	{
+	  if ( (tmp = multiAMcoef->data[X]) != NULL )
+	    {
+	      if ( tmp->a )
+		XLALDestroyCOMPLEX8Vector ( tmp->a );
+	      if ( tmp->b )
+		XLALDestroyCOMPLEX8Vector ( tmp->b );
+	      LALFree ( tmp );
+	    } /* if multiAMcoef->data[X] */
+	} /* for X < numDetectors */
+      LALFree ( multiAMcoef->data );
+    }
+  LALFree ( multiAMcoef );
+
+  return;
+
+} /* XLALDestroyMultiCmplxAMCoeffs() */
