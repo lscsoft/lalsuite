@@ -54,9 +54,9 @@ LALappsTSACropMap(
 		  TRACKSEARCHAVERAGERC_EDIMS,
 		  TRACKSEARCHAVERAGERC_MSGEDIMS);
 
-/*   LAL_CALL(LALCHARCreateVector(status,&name,1024),status); */
-/*   strcpy(name->data,"Uncroppedmap"); */
-/*   LALappsTSAWritePGM(status,(*inputMap),name); */
+   LAL_CALL(LALCHARCreateVector(status,&name,1024),status); 
+/*    strcpy(name->data,"Uncroppedmap");  */
+/*    LALappsTSAWritePGM(status,(*inputMap),name);  */
 
   /*
    * New 'cropped' map to be create and swapped into old maps place.
@@ -130,7 +130,7 @@ LALappsTSACropMap(
   LAL_CALL(
 	   LALCreateTimeFreqRep(status,
 				&((*inputMap)->imageRep),
-				&((*inputMap)->imageCreateParams)),
+				&((tmpMap)->imageCreateParams)),
 	   status);
   /*Copy the elements now*/
   for (i=0;(i<(*inputMap)->imageRep->fRow/2+1);i++)

@@ -30,6 +30,7 @@ import time
 from glue import pipeline
 sys.path.append('@PYTHONLIBDIR@')
 import tracksearch
+from tracksearchutils import progressSpinner
 
 #Parse the command line options and create help features
 parser = OptionParser()
@@ -50,12 +51,18 @@ parser.add_option("-r","--remove_pipeline",dest="removepipeline",
                   action="store_true",
                   help="This option is used to remove an installed pipeline with the specified configuration INI and segment file.  It deciphers the location of where the pipes were installed and removes the contents and directories. Use this option CAUTIOUSLY!"
                   )
+parser.add_option("-v","--verbose",dest="verbose",
+                  help="Invoke a more verbose setting with progress indicator.",
+                  action="store_true",
+                  default=False
+                  )
 (options,args) = parser.parse_args()
 
 iniFile=os.path.abspath(str(options.iniFile))
 segmentList=os.path.abspath(str(options.segmentList))
 injectFileFlag=bool(options.invokeInject)
 removepipeline=bool(options.removepipeline)
+verbose=bool(options.verbose)
 
 if not os.path.exists(iniFile):
     print 'Can not find iniFile: ',os.path.basename(iniFile)
@@ -127,12 +134,25 @@ indexA=0
 # can handle a search on a limitless amount of data using a single DAG
 # to manage the workflow.  The results of each segment should still be
 # stored independently
+
+##### New initialization method
+tracksearchLogFile="tracksearchDag.log"
+tracksearchBlock=tracksearch.tracksearch(cp,injectFileFlag,tracksearchLogFile)
+progress=progressSpinner(verbose)
+progress.setTag('Building ')
 for block in allData:
-    indexA+=1
-    logfile=logFileMask+str(indexA)+'.log'
-    tracksearchBlock=tracksearch.tracksearch(cp,block,injectFileFlag,logfile)
-    tracksearchBlock.createJobs()
-    tracksearchBlock.writePipelineDAG()
+    progress.updateSpinner()
+    tracksearchBlock.createJobs(block)
+progress.closeSpinner
+tracksearchBlock.writePipelineDAG()
+
+### OLD multiple pipe building method.
+# for block in allData:
+#     indexA+=1
+#     logfile=logFileMask+str(indexA)+'.log'
+#     tracksearchBlock=tracksearch.tracksearch(cp,injectFileFlag,logfile,block)
+#     tracksearchBlock.createJobs()
+#     tracksearchBlock.writePipelineDAG()
         
 print "We prepared "+str(allData.__len__())+" analysis segments."
 print "The dag info should be found in :",cp.get('filelayout','dagpath')

@@ -845,9 +845,32 @@ class tracksearch:
     """
     #TO HANDLE FUTURE COINCIDENT ANALYSIS WE NEED TO ADJUST DAGDIR FOR
     #EACH IFO THEN MAKE A CLUSTERING DIR OR SOMETHING LIKE THAT
-    def __init__(self,cparser,scienceSegment,injectFlag,logfile):
-        #cp -> ConfigParser object
+    def __init__(self,cparser,injectFlag,logfile,scienceSegment=''):
+        #For large DAG of may possible data Blocks track each call
+        #to createJobs() which is called once per data Block for analysis
+        self.sciSeg=''
+        self.runStartTime=''
+        self.blockID=''
+        self.lastBlockID=''
+        self.dagName=''
         self.cp=cparser
+        self.resultPath=self.cp.get('filelayout','workpath')
+        self.globalDagName='tracksearchGlobal'
+        self.dagDirectory=''
+        if (scienceSegment==''):
+            self.dataSegmentCount=0
+            self.dagName=self.globalDagName
+            #Uses legacy getDagDirectory were blockID has not been assigned yet!
+            self.dagDirectory=os.path.normpath(self.getDagDirectory()+'/DAGS/');
+            self.dag = pipeline.CondorDAG(os.path.normpath(self.dagDirectory+'/'+logfile))
+        else:
+            self.dataSegmentCount=-1
+            self.__initializeBlock__(scienceSegment)
+            self.dag = pipeline.CondorDAG(os.path.normpath(self.dagDirectory+'/'+logfile))
+            self.dagName='tracksearchDAG_'+str(self.sciSeg.start())+'_duration_'+str(self.sciSeg.dur())
+        buildDir(self.dagDirectory)
+        self.dagFilename=self.dagDirectory+'/'+self.dagName
+        self.dag.set_dag_file(self.dagFilename)
         self.injectFlag=False
         self.injectFlag=injectFlag
         self.jobType=""
@@ -867,24 +890,6 @@ class tracksearch:
             self.have_multichannel=True
             for channel in self.cp.options(sec_multichannel):
                 self.channellist.append(str(self.cp.get(sec_multichannel,channel)).strip())
-        #Expects a fixed size PsuedoScience Segment
-        #The dag for this run will be then run from this data
-        self.sciSeg=scienceSegment
-        self.runStartTime=self.sciSeg.start()
-        #The variable to link a previous jobblock into next block
-        #???? 
-        self.blockJobLinkList=[]
-        #???? 
-        self.blockID=str(self.sciSeg.start())+':'+str(self.sciSeg.dur())
-        self.lastBlockID='NONE'
-        #???? 
-        self.dag = pipeline.CondorDAG(logfile)
-        self.dagName='tracksearchDAG_'+str(self.sciSeg.start())+'_duration_'+str(self.sciSeg.dur())
-        self.resultPath=self.cp.get('filelayout','workpath')
-        self.dagDirectory=self.getDagDirectory()
-        self.dagFilename=self.dagDirectory+'/'+self.dagName
-        buildDir(self.dagDirectory)
-        self.dag.set_dag_file(self.dagFilename)
         #Variables that are common to all search layers
         self.percentOverlap=float(string.strip(self.cp.get('layerconfig','layerOverlapPercent')))
         self.layerTimeScaleInfo=[]
@@ -913,9 +918,36 @@ class tracksearch:
         if self.layerTimeScaleInfo.__len__()!=self.layerSetSizeInfo.__len__():
             sys.stderr.write("ERROR with section [layerconfig]\n")
         self.layerCount=self.layerTimeScaleInfo.__len__()
-
+        # Initialize the list of dataFind jobs df_job
+        # Initialize the list of dataFind nodes also
+        # Form in memory df_jobList=
+        # list(
+        #      tuple(dataFindInitialDir,
+        #            dataFindLogPath,
+        #            df_job,
+        #            list(tuple(start,stop,df_node))))
+        #
+        self.dataFindJobList=list()
     #End Init
 
+    def __initializeBlock__(self,scienceSegment):
+        """
+        Initialized the DAG in preparation for incoming block of data to analyze.
+        This method should be called by only to other methods __init__().  When the DAG
+        will contain multiple smaller dags.  Or the more effective LARGE dag spanning all
+        data blocks feed into the method self.createjobs(dataBlock)
+        """
+        #Expects a fixed size PsuedoScience Segment
+        #The dag for this run will be then run from this data
+        self.dataSegmentCount=self.dataSegmentCount+1
+        self.sciSeg=scienceSegment
+        self.runStartTime=self.sciSeg.start()
+        self.blockID=str(self.sciSeg.start())+':'+str(self.sciSeg.dur())
+        self.lastBlockID='NONE'
+        #This is Legacy Variable name.  It is the directory where each blocks submit files should go!
+        self.dagDirectory=self.getDagDirectory()
+    #End __initializeBlock__()
+    
     def __buildSubCacheFile__(self,masterCacheFile,subCachePath,startTime,endTime):
         """
         This method streamlines the masterCacheFile into smaller cache files to
@@ -971,6 +1003,78 @@ class tracksearch:
         dagDirectory=os.path.normpath(dagDirectory)
         return dagDirectory
     #end def
+    def __getAssociatedDataFindNode__(self,dataFindInitialDir,dataFindLogPath,nodeStart,nodeEnd):
+        """
+        Method fetches pre-existing data find node to limit calls in
+        multichannel pipeline if the datafindnode does not exists it
+        creates it first and keeps a record of the datafindjob to
+        create future data find nodes as needed.  It returns a
+        datafind node to the calling method
+        """
+        #1 Check to see if we have a df_job related to input arguments
+        #  If NOT create the df_job else select the existing df_job
+        #2 Check to see if we have an existing df_node for this df_job
+        #  If NOT use selected df_job and create df_node return this
+        #  node
+        #  IF YES select the df_node and return it to calling function
+        # Do we have a dataFind job matching dataFindInitialDir,dataFindLogPath?
+        haveDataFindJob=False
+        indexJ=0
+        indexN=0
+        index=0
+        haveDataFindNode=False
+        newDataFindJobRecord=tuple()
+        newDataFindNodeRecord=tuple()
+        df_id=df_lp=df_job=df_jobNodeList=''
+        for entry in self.dataFindJobList:
+            df_id,df_lp,df_job,df_jobNodeList=entry
+            if (dataFindInitialDir == df_id) and (dataFindLogPath == df_lp):
+                haveDataFindJob=True
+                currentDataFindJob=df_job
+                currentDataFindNodeList=df_jobNodeList
+                indexJ=index
+            index=index+1
+        #If not dataFindJob found
+        if not(haveDataFindJob):
+            indexJ=index
+            #Create the needed dataFind job
+            buildDir(dataFindLogPath)
+            buildDir(dataFindInitialDir)
+            dataFindSubFileDir=os.path.normpath(self.dagDirectory+'/dataFindJobs/')
+            buildDir(dataFindSubFileDir)
+            currentDataFindJob=pipeline.LSCDataFindJob(dataFindInitialDir,dataFindLogPath,self.cp)
+            filename="/datafind--"+str(self.blockID)+".sub"
+            currentDataFindJob.set_sub_file(os.path.normpath(dataFindSubFileDir+filename))
+            currentDataFindJob.add_condor_cmd('initialdir',str(dataFindInitialDir))
+            currentDataFindNodeList=list()
+            #Save record of created df_job
+            newDataFindJobRecord=dataFindInitialDir,dataFindLogPath,currentDataFindJob,currentDataFindNodeList
+            self.dataFindJobList.append(newDataFindJobRecord)
+            haveDataFindJob=True
+        index=0
+        #Check the list from the datafind job for associated datafind nodes
+        currentDataFindJobRecord=self.dataFindJobList[indexJ]
+        #If the currentDataFindJob has not associated nodes
+        nodeFound=False
+        dataFindNodeList=list(currentDataFindJobRecord[3])
+        for entry in dataFindNodeList:
+            if (nodeStart == entry.get_start()) and (nodeEnd == entry.get_end()):
+                nodeFound=True
+                associatedDataFindNode=entry
+        if ((dataFindNodeList.__len__() == 0) or not(nodeFound)):
+            #Create a new associated dataFindNode
+            currentDataFindJob=currentDataFindJobRecord[2]
+            newDataFindNode=pipeline.LSCDataFindNode(currentDataFindJob)
+            newDataFindNode.set_start(nodeStart)
+            newDataFindNode.set_end(nodeEnd)
+            ifo=str(self.cp.get('datafind','observatory'))
+            newDataFindNode.set_observatory(ifo)
+            self.dataFindJobList[indexJ][3].append(newDataFindNode)
+            associatedDataFindNode=newDataFindNode
+            # Add node to the DAG
+            self.dag.add_node(associatedDataFindNode)
+        return associatedDataFindNode
+    #End __getAssociatedDataFindNode__()
     
     def __startingSearchLayer__(self,layerID):
         """
@@ -987,7 +1091,6 @@ class tracksearch:
         mapTime=float(self.cp.get('layerconfig','layer1TimeScale'))
         overlapTime=mapTime*self.percentOverlap
         setSize=float(self.cp.get('layerconfig','layer1SetSize'))
-        ifo=str(self.cp.get('datafind','observatory'))
         #If [tracksearchtime] has bin_buffer section.  Prepare blocks
         #with proper padding data
         padsize=determineDataPadding(self.cp)
@@ -1008,12 +1111,9 @@ class tracksearch:
         dagDir=self.dagDirectory
         #Create dataFindJob
         #This path is relative to the jobs initialDir arguments!
-        dataFindInitialDir=determineLayerPath(self.cp,self.blockID,layerID,self.currentchannel)
-        dataFindLogPath=determineLayerPath(self.cp,self.blockID,"dataFindLogs")
-        #Build the directories if they don't exist
-        buildDir(dataFindLogPath)
-        buildDir(dataFindInitialDir)
-        df_job = pipeline.LSCDataFindJob(dataFindInitialDir,dataFindLogPath,self.cp)
+        dataFindInitialDir=determineLayerPath(self.cp,self.blockID,"dataFind_Caches")
+        dataFindLogPath=determineLayerPath(self.cp,self.blockID,"dataFind_Logs")
+
         #Setup the jobs after queries to LSCdataFind as equal children
         block_id=self.blockID
         layer_id=layerID
@@ -1025,9 +1125,6 @@ class tracksearch:
                                                self.jobType,
                                                self.currentchannel)
         channel=self.currentchannel
-        filename="/datafind--"+str(channel)+".sub"
-        df_job.set_sub_file(os.path.normpath(self.dagDirectory+filename))
-        df_job.add_condor_cmd('initialdir',str(dataFindInitialDir))
         prevLayerJobList=[]        
         prev_df = None
         if not str(self.cp.get('condor','datafind')).lower().__contains__(str('LSCdataFind').lower()):
@@ -1047,24 +1144,20 @@ class tracksearch:
             # Only works on datafind_fixcache jobs!!!! (Temp fix)
             self.sciSeg._ScienceSegment__chunks.pop(0)
         else:
-#             print "Manipulating LSCdataFind jobs to be executed!"
-#             print "See comment in tracksearch.py startingSearchLayer method Line:916"
-#             print "We are poping off first entry of _ScienceSegment_ to avoid 1 repeated job."
-#             print "This is due to our pipeline methodology."
             self.sciSeg._ScienceSegment__chunks.pop(0)
         if (self.sciSeg._ScienceSegment__chunks.__len__() < 1):
             sys.stdout.write("WARNING: Data to be analyzed not properly divided or absent!\n")
             sys.stdout.write("The input options must be WRONG!\n")
         for chunk in self.sciSeg:
-            df_node=pipeline.LSCDataFindNode(df_job)
-            df_node.set_start(chunk.start()-padsize)
-            df_node.set_end(chunk.end()+padsize)
+            #Method that creates a dataFind job if needed and returns
+            #appropriate new node entry if it doesn't exists for that
+            #time or returns the node that is used for finding that
+            #time interval
+            nodeStart=chunk.start()-padsize
+            nodeEnd=chunk.end()+padsize
+
             #Set the node job time markers from chunk! This adjustment must
             #reflect any buffering that might be specified on the command line.
-            df_node.set_observatory(ifo[0])
-            sys.stdout.write("DF Job : "+str(df_node.get_start())+" -> "+str(df_node.get_end())+"\n")
-            sys.stdout.write("Segment: "+str(chunk.start())+" -> "+str(chunk.end())+"\n")
-            cacheName='timeLayerCache-'+str(df_node.get_observatory())+'-'+str(df_node.get_start())+'-'+str(df_node.get_end())+'.cache'
             tracksearchTime_node=tracksearchTimeNode(tracksearchTime_job)
             #If executable name is anything but LSCdataFind we
             #assume that the cache file should be hard wired!
@@ -1074,7 +1167,7 @@ class tracksearch:
                 tracksearchTime_node.add_var_opt('cachefile',subCacheFile)
             else:
                 #Setup a traditional pipe with a real data finding job
-                self.dag.add_node(df_node)
+                df_node=self.__getAssociatedDataFindNode__(dataFindInitialDir,dataFindLogPath,nodeStart,nodeEnd)
                 tracksearchTime_node.add_parent(df_node)
                 outputFileList=df_node.get_output_files()
                 tracksearchTime_node.add_var_opt('cachefile',outputFileList[0])
@@ -1253,7 +1346,7 @@ class tracksearch:
         self.__finalSearchLayer__(layerCount+1,nodeLinkage)
     #End __createSingleJob___()
     
-    def createJobs(self):
+    def createJobs(self,scienceSegment=''):
         """
         This method will call all the needed jobs/node objects to create
         a coherent job dag
@@ -1262,6 +1355,13 @@ class tracksearch:
         Need a new housekeeping method which will go to each step
         deleting the MAP:*.dat files to save disk space
         """
+        stype=type('')
+        if ((type(scienceSegment) != stype) and (self.dataSegmentCount<0)):
+            sys.stderr.write("Error Inconsistent calling of tracksearch pipe methods!\n")
+            return
+        if ((self.dataSegmentCount>-1) and (type(scienceSegment) != stype)):
+            self.__initializeBlock__(scienceSegment)
+        #
         if self.have_multichannel:
             for currentchannel in self.channellist:
                 #sys.stdout.write("Installing sub-pipe for channel:"+str(currentchannel)+"\n")

@@ -2433,6 +2433,9 @@ LALappsDoTSeriesSearch(LALStatus         *status,
    */
   memcpy(&tfInputs,&(tmpTSA->imageCreateParams),sizeof(CreateTimeFreqIn));
   memcpy(&mapMarkerParams,&(tmpTSA->imageBorders),sizeof(TrackSearchMapMarkingParams));
+/*   if (params.verbosity >= verbose) */
+/*     LALappsTSAWritePGM(status,tmpTSA,NULL); */
+  tfmap=tmpTSA->imageRep;
   LALFree(tmpTSA);
 
   /*
@@ -2445,7 +2448,15 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   inputs.low=params.LinePThresh;
   inputs.width=((tfmap->fRow/2)+1);
   inputs.height=tfmap->tCol;
-
+  if (params.verbosity >= verbose)
+    {
+      fprintf(stderr,"Map related search parameters\n");
+      fprintf(stderr,"Sigma\t\t%f\n",inputs.sigma);
+      fprintf(stderr,"High\t\t%f\n",inputs.high);
+      fprintf(stderr,"Low\t\t%f\n",inputs.low);
+      fprintf(stderr,"Width\t\t%i\t\t%i\n",inputs.width,(tfmap->fRow/2)+1);
+      fprintf(stderr,"Height\t\t%i\t\t%i\n",inputs.height,tfmap->tCol);
+    }
   /*
    * Call subroutine to run the search
    */
