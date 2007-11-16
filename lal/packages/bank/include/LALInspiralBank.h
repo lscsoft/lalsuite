@@ -349,6 +349,17 @@ to the 6 templates (hexagonal) around the current template that we are dealing w
 
 
 
+/* <lalVerbatim file="LALComputeMomentsH"> */
+typedef enum
+{
+  disable,
+  enable
+}
+ComputeMoments;
+/*  </lalVerbatim>  */
+/*  <lalLaTeX> 
+\idx[Type]{ComputeMoments} 
+</lalLaTeX>  */
 
 
 /* <lalVerbatim file="LALCoordinateSpaceH"> */
@@ -661,6 +672,11 @@ tagInspiralCoarseBankIn
   Approximant                   approximant;  
 
   InsidePolygon                 insidePolygon;  
+  ComputeMoments                computeMoments;
+  /* ComputeMoments tells whether to re-compute the moments
+   * using an upper limit defined by flso; This is done after 
+   * the template bank is gnerated
+   */
 }
 InspiralCoarseBankIn;
 /* </lalVerbatim>  */
