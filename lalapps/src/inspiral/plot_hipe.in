@@ -324,7 +324,7 @@ if opts.plotinjnum:
   for ifos in  ifo_combo:
     combostring = combo2str(ifos)
     cp.set('plotinjnum','ifo-type', combostring)
-    cp.set('plotinjnum','figure-name','plotinjnum_' + combostring)
+    cp.set('plotinjnum','ifo-times',combostring)
     plotinjnum_jobs[combostring] = inspiral.PlotInjnumJob(cp) 
     plotinjnum_jobs[combostring].set_sub_file( basename + '.plotinjnum_' +  combostring + subsuffix )
   
@@ -354,9 +354,9 @@ if opts.plotethinca:
 if opts.plotinspmissed:
 
   plotinspmissed_jobs = {}
-
+  
   for ifo in ifolist:
-    cp.set('plotinspmissed','fig-name','plotinspmissed_' + ifo)
+    cp.set('plotinspmissed','ifo-times',ifo)
     cp.set('plotinspmissed','ifo-type',ifo)
     cp.set('plotinspmissed','ifo',ifo)
     plotinspmissed_jobs[ifo] = inspiral.PlotInspmissedJob(cp)
