@@ -32,6 +32,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
 #include <lal/LALDatatypes.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/AVFactories.h>
 #include <lal/NRWaveIO.h>
