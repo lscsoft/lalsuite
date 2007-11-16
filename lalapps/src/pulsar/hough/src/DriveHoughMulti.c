@@ -2695,15 +2695,15 @@ void ComputeandPrintChi2 ( LALStatus                *status,
         /* Copy template parameters from the TopList */
 	pulsarTemplate.f0= readTopList.Freq  ;
 	pulsarTemplate.spindown.data[0] = readTopList.f1dot ;
-	pulsarTemplate.latitude= readTopList.Alpha ;
-	pulsarTemplate.longitude= readTopList.Delta ;
+	pulsarTemplate.latitude= readTopList.Delta ;
+	pulsarTemplate.longitude= readTopList.Alpha ;
 	oldSig = readTopList.Fstat;
 
 	/* copy noise weights */
 	memcpy(weightsV.data, weightsNoise->data, mObsCoh * sizeof(REAL8));
 
 	/* calculate amplitude modulation weights */
-	TRY(GetAMWeights( status->statusPtr, &weightsV, mdetStates, pulsarTemplate.latitude, pulsarTemplate.longitude), status);
+	TRY(GetAMWeights( status->statusPtr, &weightsV, mdetStates, pulsarTemplate.longitude, pulsarTemplate.latitude), status);
 
 
 	/**********************************************************************************/
@@ -2722,7 +2722,7 @@ void ComputeandPrintChi2 ( LALStatus                *status,
 	
 	/* the received frequency as a function of time  */
 	TRY( ComputeFoft(status->statusPtr, &foft, &pulsarTemplate, timeDiffV, velV, timeBase), status);   
-	
+
 	
 	/* Split the SFTs into p blocs */
 	TRY(SplitSFTs(status->statusPtr, &weightsV, &chi2Params), status);
