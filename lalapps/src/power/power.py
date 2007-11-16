@@ -1136,7 +1136,7 @@ def make_burca_tailor_fragment(dag, input_cache, seg, tag):
 	del node.get_args()[:]
 	node.add_var_arg("--add-from-cache %s" % node.cache_name)
 	node.set_output(tag)
-	node.set_post_script("/bin/rm -f %s" % " ".join([c.path() for c in node.get_input_cache()]))
+	#node.set_post_script("/bin/rm -f %s" % " ".join([c.path() for c in node.get_input_cache()]))
 	dag.add_node(node)
 	return [node]
 
