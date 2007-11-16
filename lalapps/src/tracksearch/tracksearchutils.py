@@ -1662,18 +1662,24 @@ class progressSpinner:
     Defaults input verbose arguement to TRUE.  Use the spinner.
     Send a false to __init__ causes all spinner methods do nothing!
     """
-    def __init__(self,verbose=False):
+    def __init__(self,verbose=False,spinnerNum=int(3)):
         self.verbose=verbose
         self.timesCalled=0
         self.frameCount=0
         self.spinTag=''
         self.timeNow=0
         self.timeLast=0
-        self.spinnerString=".:^ "
-        self.spinnerString=".oO0Oo. "
-        self.spinnerString="-|/-\|/"
+        self.spinnerString01=".:^ "
+        self.spinnerString02=".oO0Oo. "
+        self.spinnerString03="-|/-\|/"
         self.spinnerFrames=[]
-        for frame in self.spinnerString:
+        if int(spinnerNum) == 1:
+            self.spinnerStringPicked=self.spinnerString01
+        if int(spinnerNum) == 2:
+            self.spinnerStringPicked=self.spinnerString01
+        if int(spinnerNum) == 3:
+            self.spinnerStringPicked=self.spinnerString01
+        for frame in self.spinnerStringPicked:
             self.spinnerFrames.append(frame)
     #End __init__
 
@@ -1720,7 +1726,7 @@ class progressSpinner:
         Method that you call when you don't need spinner any longer!
         """
         if self.verbose:
-            sys.stderr.writelines('\n')
+            sys.stderr.writelines('\n\n')
             sys.stderr.flush()
     #End closeSpinner
 #Misc methods

@@ -51,6 +51,11 @@ parser.add_option("-r","--remove_pipeline",dest="removepipeline",
                   action="store_true",
                   help="This option is used to remove an installed pipeline with the specified configuration INI and segment file.  It deciphers the location of where the pipes were installed and removes the contents and directories. Use this option CAUTIOUSLY!"
                   )
+parser.add_option("-b","--rubber_block_length",dest="topBlockFloat",
+                  default=False,
+                  action="store_true",
+                  help="If this flag is specified then don't adjust the entries in the segment list, instead prepare a simple 1 layer investigation with no interval restriction on the layerTopBlockSize field in the config file.  We have an implicit minimum block size to use which is equal to a single tracksearchTime job call given the configuration options in INI file.  If the INI file contains configuration options for more than just a 1 layer run then pipe builder will exited with an error. We build chunks equal to the length of layerTopBlockSize plus smaller ones to maximize the data we check.  The lower bound on chunk size is a 1 tracksearchTime job worth of data."
+                  )
 parser.add_option("-v","--verbose",dest="verbose",
                   help="Invoke a more verbose setting with progress indicator.",
                   action="store_true",
@@ -63,6 +68,7 @@ segmentList=os.path.abspath(str(options.segmentList))
 injectFileFlag=bool(options.invokeInject)
 removepipeline=bool(options.removepipeline)
 verbose=bool(options.verbose)
+topBlockFloat=bool(options.topBlockFloat)
 
 if not os.path.exists(iniFile):
     print 'Can not find iniFile: ',os.path.basename(iniFile)
@@ -107,11 +113,43 @@ if (injectFileFlag == True):
         print "Double check the paramter file's injection section!"
         os.abort()
 
-#We assume the input segment list is > 100 so we will try to loop it
+#We assume the input segment list has entries exceeding layerTopBlockSize
+#so we will try to loop it.  If the pipe builder was invoked with a FLOATING
+#top block size then we will issue an error IFF there is more than 1 layer configured
+segmentListName=segmentList
 dataBlockSize=int(float(str.strip(cp.get('layerconfig','layerTopBlockSize'))))
-
-#Convert the segment list to smaller blocks
-reformatSegList=tracksearch.tracksearchConvertSegList(segmentList,dataBlockSize,cp)
+if not(topBlockFloat):
+    #Convert the segment list to smaller blocks
+    reformatSegList=tracksearch.tracksearchConvertSegList(segmentList,dataBlockSize,cp)
+    reformatSegList.writeSegList()
+    segmentListName=reformatSegList.getSegmentName()
+    allData=pipeline.ScienceData()
+    allData.read(segmentListName,dataBlockSize)
+    allData.make_chunks(dataBlockSize)
+else:
+    #Do optimized floating blocks
+    #Check for layer2
+    for opt in cp.options('layerconfig'):
+        if str(opt).lower().__contains__(str('layer2TimeScale').lower()):
+            print "Error found additional layerconfig options for multi-resolution search."
+            print "Aborting pipeline construction."
+            os.abort
+    allData=pipeline.ScienceData()
+    allData.read(segmentListName,dataBlockSize)
+    setSize=int(cp.get('layerconfig','layer1SetSize'))
+    timeScale=float(cp.get('layerconfig','layer1TimeScale'))
+    minSize=setSize*timeScale
+    if cp.has_option('layerconfig','burndata'):
+        dataToBurn=int(cp.get('layerconfig','burndata'))
+    else:
+        dataToBurn=int(0)
+    
+    for segment in allData:
+        segment.set_start(segment.start()+dataToBurn)
+        segment.set_end(segment.end()+dataToBurn)
+    allData.make_optimised_chunks(minSize,dataBlockSize)
+    
+    
 #Setup logfile mask
 logFilePath=cp.get('filelayout','logpath')
 logFileMask=logFilePath+'/logFile_'
@@ -121,11 +159,6 @@ if not(os.path.isdir(logFilePath)):
        tracksearch.buildDir(logFilePath)
        print 'Created...'
 
-reformatSegList.writeSegList()
-segmentList=reformatSegList.getSegmentName()
-allData=pipeline.ScienceData()
-allData.read(segmentList,dataBlockSize)
-allData.make_chunks(dataBlockSize)
 indexA=0
 # The pipeline needs a method change for handling large segment lists
 # We should switch from 1 DAG per analysis segment to
@@ -138,7 +171,7 @@ indexA=0
 ##### New initialization method
 tracksearchLogFile="tracksearchDag.log"
 tracksearchBlock=tracksearch.tracksearch(cp,injectFileFlag,tracksearchLogFile)
-progress=progressSpinner(verbose)
+progress=progressSpinner(verbose,2)
 progress.setTag('Building ')
 for block in allData:
     progress.updateSpinner()

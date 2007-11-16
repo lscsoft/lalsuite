@@ -890,6 +890,8 @@ class tracksearch:
             self.have_multichannel=True
             for channel in self.cp.options(sec_multichannel):
                 self.channellist.append(str(self.cp.get(sec_multichannel,channel)).strip())
+        else:
+            sys.stdout.write("Setting up standard single channel tracksearch pipe.\n")
         #Variables that are common to all search layers
         self.percentOverlap=float(string.strip(self.cp.get('layerconfig','layerOverlapPercent')))
         self.layerTimeScaleInfo=[]
@@ -1227,11 +1229,13 @@ class tracksearch:
             self.dag.add_node(tracksearchCluster_node2)
             nextJobList.append(tracksearchCluster_node2)
         #Step that sets up the tracksearchHousekeeperJobs
-        tracksearchHousekeeper_job=tracksearchHousekeeperJob(self.cp,self.blockID,self.dagDirectory,self.currentchannel)
-        tracksearchHousekeeper_node=tracksearchHousekeeperNode(tracksearchHousekeeper_job)
-        for parents in prevJobList:
-            tracksearchHousekeeper_node.add_parent(parents)
-        self.dag.add_node(tracksearchHousekeeper_node)
+        #If housekeeper section has action = NO don't setup the jobs
+        if (self.cp.get('housekeeper','action').lower() == 'yes'):
+            tracksearchHousekeeper_job=tracksearchHousekeeperJob(self.cp,self.blockID,self.dagDirectory,self.currentchannel)
+            tracksearchHousekeeper_node=tracksearchHousekeeperNode(tracksearchHousekeeper_job)
+            for parents in prevJobList:
+                tracksearchHousekeeper_node.add_parent(parents)
+            self.dag.add_node(tracksearchHousekeeper_node)
         #Only do setup the threshold jobs if the ini file has a threshold section!
         if self.cp.has_section('candidatethreshold'):
             tracksearchThreshold_job=tracksearchThresholdJob(self.cp,self.blockID,self.dagDirectory)
@@ -1367,7 +1371,6 @@ class tracksearch:
                 #sys.stdout.write("Installing sub-pipe for channel:"+str(currentchannel)+"\n")
                 self.__createSingleJob__(currentchannel)
         else:
-            sys.stdout.write("Setting up standard single channel tracksearch pipe.\n")
             self.__createSingleJob__()
     #End createJobs
 
