@@ -19,7 +19,7 @@
 
 /**
  * \file DriveHough_v3.c
- * \author Badri Krishnan, Alicia Sintes 
+ * \author Badri Krishnan, Alicia Sintes, Llucia Sancho 
  * \brief Driver code for performing Hough transform search on non-demodulated
    data using SFTs from possible multiple IFOs
 
@@ -27,6 +27,7 @@
  
    History:   Created by Sintes and Krishnan July 04, 2003
               Modifications for S4 January 2006
+	      Modifications for S5 November 2007
 
    \par Description
    
@@ -58,7 +59,7 @@
 
    - The parameter nfSizeCylinder which determines the range of spindown parameters
       to be searched over.
-validatehoughmultichi2
+
    - Boolean variable for deciding if the SFTs should be inverse noise weighed.
 
    - Boolean variable for deciding whether amplitude modulation weights should be used.
@@ -82,14 +83,22 @@ validatehoughmultichi2
       the list of events, and the Hough maps 
 */
 
-
+/* lalapps/hough includes */
 #include "./DriveHoughColor.h"
 #include "./MCInjectHoughMulti.h"
+
 /* lalapps includes */
 #include <lalapps.h>
-#include <lal/DopplerScan.h>
-#include <gsl/gsl_permutation.h>
 #include <FstatToplist.h>
+
+/* lal includes */
+#include <lal/DopplerScan.h>
+#include <lal/LogPrintf.h>
+
+/* gsl includes */
+#include <gsl/gsl_permutation.h>
+
+
 
 RCSID( "$Id$");
 
@@ -260,9 +269,11 @@ int main(int argc, char *argv[]){
   static LALStatus  status;  
   
   /* time and velocity  */
-  static LIGOTimeGPSVector    timeV;
+  LIGOTimeGPSVector    *timeV=NULL;
+  REAL8Vector  *timeDiffV=NULL;
   static REAL8Cart3CoorVector velV;
-  static REAL8Vector          timeDiffV;
+
+
   LIGOTimeGPS firstTimeStamp, lastTimeStamp;
   REAL8 tObs;
 
@@ -276,7 +287,7 @@ int main(int argc, char *argv[]){
   UINT4 numifo;
 
   /* vector of weights */
-  REAL8Vector weightsV, weightsNoise;
+  REAL8Vector *weightsV=NULL, *weightsNoise=NULL;
 
   /* ephemeris */
   EphemerisData    *edat=NULL;
@@ -352,7 +363,7 @@ int main(int argc, char *argv[]){
   CHAR     *uvar_timeStampsFile=NULL;
   CHAR     *uvar_skyRegion=NULL;
   LALStringVector *uvar_linefiles=NULL;
-  INT4     uvar_p;
+  INT4     uvar_chiSqBins;
 
   /* Set up the default parameters */
 
@@ -379,7 +390,7 @@ int main(int argc, char *argv[]){
   uvar_numCand=1;
   uvar_EnableExtraInfo=FALSE;
   uvar_EnableChi2=FALSE;
-  uvar_p = NBLOCKSTEST;
+  uvar_chiSqBins = NBLOCKSTEST;
 
 
   uvar_earthEphemeris = (CHAR *)LALCalloc( HOUGHMAXFILENAMELENGTH , sizeof(CHAR));
@@ -401,15 +412,15 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterBOOLUserVar( &status, "help",             'h',  UVAR_HELP,     "Print this message", &uvar_help), &status);  
   LAL_CALL( LALRegisterREALUserVar( &status, "f0",               'f',  UVAR_OPTIONAL, "Start search frequency", &uvar_f0), &status);
   LAL_CALL( LALRegisterREALUserVar( &status, "freqBand",         'b',  UVAR_OPTIONAL, "Search frequency band", &uvar_freqBand), &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "startTime",         0,  UVAR_OPTIONAL, "GPS start time of observation", &uvar_startTime),        &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "startTime",         0,  UVAR_OPTIONAL, "GPS start time of observation", &uvar_startTime), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "endTime",         0,  UVAR_OPTIONAL, "GPS end time of observation", &uvar_endTime), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "timeStampsFile",  0,  UVAR_OPTIONAL, "Input time-stamps file", &uvar_timeStampsFile),   &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",       0,  UVAR_OPTIONAL, "sky-region polygon (or 'allsky')", &uvar_skyRegion), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha",          0,  UVAR_OPTIONAL, "Resolution for flat or isotropic coarse grid (rad)", &uvar_dAlpha), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",          0,  UVAR_OPTIONAL, "Resolution for flat or isotropic coarse grid (rad)", &uvar_dDelta), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyfile",         0,  UVAR_OPTIONAL, "Alternative: input skypatch file", &uvar_skyfile),         &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyfile",         0,  UVAR_OPTIONAL, "Alternative: input skypatch file", &uvar_skyfile),  &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "peakThreshold",   0,  UVAR_OPTIONAL, "Peak selection threshold", &uvar_peakThreshold),   &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighAM",         0,  UVAR_OPTIONAL, "Use amplitude modulation weights", &uvar_weighAM),         &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighAM",         0,  UVAR_OPTIONAL, "Use amplitude modulation weights", &uvar_weighAM),  &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighNoise",      0,  UVAR_OPTIONAL, "Use SFT noise weights", &uvar_weighNoise), &status);  
   LAL_CALL( LALRegisterINTUserVar(    &status, "keepBestSFTs",    0,  UVAR_OPTIONAL, "Number of best SFTs to use (default--keep all)", &uvar_keepBestSFTs),  &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printLog",        0,  UVAR_OPTIONAL, "Print Log file", &uvar_printLog), &status);  
@@ -424,8 +435,8 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterREALUserVar(   &status, "pixelFactor",    'p', UVAR_OPTIONAL, "sky resolution=1/v*pixelFactor*f*Tcoh", &uvar_pixelFactor), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "numCand",         0,  UVAR_OPTIONAL, "No. of toplist candidates", &uvar_numCand), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printExtraInfo",  0,  UVAR_OPTIONAL, "Print HoughMaps, HoughStatistics, expected number count stdev", &uvar_EnableExtraInfo), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "pdatablock",     'p',  UVAR_OPTIONAL, "Number of data blocks for veto tests",  &uvar_p),               &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printChi2",  0,  UVAR_OPTIONAL, "Print Chi2 value for each element in the Toplist", &uvar_EnableChi2), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "chiSqBins",       0,  UVAR_OPTIONAL, "Number of chi-square bins for veto tests",  &uvar_chiSqBins), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "enableChi2",      0,  UVAR_OPTIONAL, "Print Chi2 value for each element in the Toplist", &uvar_EnableChi2), &status);
 
   /* developer input variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    0, UVAR_DEVELOPER, "Running Median block size", &uvar_blocksRngMed), &status);
@@ -441,17 +452,17 @@ int main(int argc, char *argv[]){
 
   /* very basic consistency checks on user input */
   if ( uvar_f0 < 0 ) {
-    fprintf(stderr, "start frequency must be positive\n");
+    LogPrintf(LOG_CRITICAL, "start frequency must be positive\n");
     exit(1);
   }
 
   if ( uvar_freqBand < 0 ) {
-    fprintf(stderr, "search frequency band must be positive\n");
+    LogPrintf(LOG_CRITICAL, "search frequency band must be positive\n");
     exit(1);
   }
  
   if ( uvar_peakThreshold < 0 ) {
-    fprintf(stderr, "peak selection threshold must be positive\n");
+    LogPrintf(LOG_CRITICAL, "peak selection threshold must be positive\n");
     exit(1);
   }
 
@@ -460,12 +471,12 @@ int main(int argc, char *argv[]){
 
 
   if ( uvar_binsHisto < 1 ) {
-    fprintf(stderr, "binsHisto must be at least 1\n");
+    LogPrintf(LOG_CRITICAL, "binsHisto must be at least 1\n");
     exit(1);
   }
 
   if ( uvar_keepBestSFTs < 1 ) {
-    fprintf(stderr, "must keep at least 1 SFT\n");
+    LogPrintf(LOG_CRITICAL, "must keep at least 1 SFT\n");
     exit(1);
   }
 
@@ -477,6 +488,7 @@ int main(int argc, char *argv[]){
 
   /***** start main calculations *****/
 
+  LogPrintf (LOG_NORMAL, "Setting up sky-patches...");
   /* set up skypatches */
   LAL_CALL( SetUpSkyPatches( &status, &skyInfo, uvar_skyfile, uvar_skyRegion, uvar_dAlpha, uvar_dDelta), &status);
   nSkyPatches = skyInfo.numSkyPatches;
@@ -484,13 +496,18 @@ int main(int argc, char *argv[]){
   skyDelta = skyInfo.delta;
   skySizeAlpha = skyInfo.alphaSize;
   skySizeDelta = skyInfo.deltaSize;
+  LogPrintfVerbatim (LOG_NORMAL, "done\n");
 
   /* set up toplist */
   /* create toplist -- semiCohToplist has the same structure 
      as a fstat candidate, so treat it as a fstat candidate */
-  create_fstat_toplist(&toplist, uvar_numCand);
+  if ( create_fstat_toplist(&toplist, uvar_numCand) != 0) {
+    LogPrintf(LOG_CRITICAL,"Unable to create toplist\n");
+  }
 
-  /* read sft Files and set up weights and nstar vector */
+
+  LogPrintf (LOG_NORMAL, "Reading SFTs...");
+  /* read sft Files and set up weights */
   {
     /* new SFT I/O data types */
     SFTCatalog *catalog = NULL;
@@ -520,7 +537,7 @@ int main(int argc, char *argv[]){
     /* get sft catalog */
     LAL_CALL( LALSFTdataFind( &status, &catalog, uvar_sftData, &constraints), &status);
     if ( (catalog == NULL) || (catalog->length == 0) ) {
-      fprintf (stderr,"Unable to match any SFTs with pattern '%s'\n", uvar_sftData );
+      LogPrintf (LOG_CRITICAL,"Unable to match any SFTs with pattern '%s'\n", uvar_sftData );
       exit(1);
     }
 
@@ -581,23 +598,26 @@ int main(int argc, char *argv[]){
     /* clean sfts if required */
     if ( LALUserVarWasSet( &uvar_linefiles ) )
       {
+
 	RandomParams *randPar=NULL;
 	FILE *fpRand=NULL;
 	INT4 seed, ranCount;  
 
+	LogPrintfVerbatim (LOG_NORMAL, "...cleaning SFTs...");
 	if ( (fpRand = fopen("/dev/urandom", "r")) == NULL ) {
-	  fprintf(stderr,"Error in opening /dev/urandom" ); 
+	  LogPrintf(LOG_CRITICAL,"error in opening /dev/urandom" ); 
 	  exit(1);
 	} 
 
 	if ( (ranCount = fread(&seed, sizeof(seed), 1, fpRand)) != 1 ) {
-	  fprintf(stderr,"Error in getting random seed" );
+	  LogPrintf(LOG_CRITICAL,"error in getting random seed" );
 	  exit(1);
 	}
 
 	LAL_CALL ( LALCreateRandomParams (&status, &randPar, seed), &status );
 
-	LAL_CALL( LALRemoveKnownLinesInMultiSFTVector ( &status, inputSFTs, uvar_maxBinsClean, uvar_blocksRngMed, uvar_linefiles, randPar), &status);
+	LAL_CALL( LALRemoveKnownLinesInMultiSFTVector ( &status, inputSFTs, uvar_maxBinsClean, 
+							uvar_blocksRngMed, uvar_linefiles, randPar), &status);
 
 	LAL_CALL ( LALDestroyRandomParams (&status, &randPar), &status);
 	fclose(fpRand);
@@ -612,7 +632,7 @@ int main(int argc, char *argv[]){
     LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
 
   } /* end of sft reading block */
-
+  LogPrintfVerbatim (LOG_NORMAL, "done\n");
 
 
   /** some memory allocations */
@@ -622,30 +642,18 @@ int main(int argc, char *argv[]){
   velV.data = NULL;
   velV.data = (REAL8Cart3Coor *)LALCalloc(1, mObsCoh*sizeof(REAL8Cart3Coor));
   
-  /* allocate memory for timestamps vector */
-  timeV.length = mObsCoh;
-  timeV.data = NULL;
-  timeV.data = (LIGOTimeGPS *)LALCalloc( 1, mObsCoh*sizeof(LIGOTimeGPS));
+  /* allocate memory for timestamps and timediff vectors */
+  timeV = XLALCreateTimestampVector (mObsCoh);
+  timeDiffV = XLALCreateREAL8Vector( mObsCoh);
   
-  /* allocate memory for vector of time differences from start */
-  timeDiffV.length = mObsCoh;
-  timeDiffV.data = NULL; 
-  timeDiffV.data = (REAL8 *)LALCalloc(1, mObsCoh*sizeof(REAL8));
+  /* allocate and initialize noise and AMweights vectors */
+  weightsV = XLALCreateREAL8Vector( mObsCoh);
+  weightsNoise = XLALCreateREAL8Vector( mObsCoh);    
+  LAL_CALL( LALHOUGHInitializeWeights( &status, weightsNoise), &status);
+  LAL_CALL( LALHOUGHInitializeWeights( &status, weightsV), &status);
   
-  /* allocate noise and AMweights vectors */
-  weightsV.length = mObsCoh;
-  weightsV.data = (REAL8 *)LALCalloc(1, mObsCoh*sizeof(REAL8));
-    
-  weightsNoise.length = mObsCoh;
-  weightsNoise.data = (REAL8 *)LALCalloc(1, mObsCoh*sizeof(REAL8));
-
-  /* initialize all weights to unity */
-  LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsNoise), &status);
-  LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsV), &status);
-  
-
  
-  
+  LogPrintf (LOG_NORMAL, "Setting up weights...");  
   /* get detector velocities weights vector, and timestamps */
   { 
     MultiNoiseWeights *multweight = NULL;    
@@ -680,48 +688,47 @@ int main(int argc, char *argv[]){
        mid-time of the SFTs -- should not make any difference */
     LAL_CALL ( LALGetMultiDetectorStates ( &status, &mdetStates, inputSFTs, edat), &status);
 
-    LAL_CALL ( GetSFTVelTime( &status, &velV, &timeV, mdetStates), &status);
+    LAL_CALL ( GetSFTVelTime( &status, &velV, timeV, mdetStates), &status);
 
     /* copy the noise-weights vector if required*/
     if ( uvar_weighNoise ) {
 
-      LAL_CALL ( GetSFTNoiseWeights( &status, &weightsNoise, multweight), &status);
+      LAL_CALL ( GetSFTNoiseWeights( &status, weightsNoise, multweight), &status);
 
       LAL_CALL ( LALDestroyMultiNoiseWeights ( &status, &multweight), &status);
     }
 
     /* compute the time difference relative to startTime for all SFTs */
     for(j = 0; j < mObsCoh; j++)
-      timeDiffV.data[j] = XLALGPSDiff( timeV.data + j, &firstTimeStamp );
+      timeDiffV->data[j] = XLALGPSDiff( timeV->data + j, &firstTimeStamp );
 
   } /* end block for weights, velocity and time */
-    
+  LogPrintfVerbatim (LOG_NORMAL, "done\n");    
 
-     
+
+  LogPrintf (LOG_NORMAL, "Generating peakgrams...");     
   /* generating peakgrams  */  
   pgV.length = mObsCoh;
   pgV.pg = NULL;
   pgV.pg = (HOUGHPeakGram *)LALCalloc(1,mObsCoh*sizeof(HOUGHPeakGram));
-
+  
   if (uvar_EnableChi2)
-  {
-       
+  {   
     upgV.length = mObsCoh;
     upgV.upg = NULL;
     upgV.upg = (UCHARPeakGram *)LALCalloc(1,mObsCoh*sizeof(UCHARPeakGram));
-
+    
     LAL_CALL( GetPeakGramFromMultSFTVector_NondestroyPg1(&status, &pgV, &upgV, inputSFTs, uvar_peakThreshold),&status);
-  }
-  
+  }  
   else
   {
-      LAL_CALL( GetPeakGramFromMultSFTVector( &status, &pgV, inputSFTs, uvar_peakThreshold), &status);
+    LAL_CALL( GetPeakGramFromMultSFTVector( &status, &pgV, inputSFTs, uvar_peakThreshold), &status);
   }
 
 
   /* we are done with the sfts and ucharpeakgram now */
   LAL_CALL (LALDestroyMultiSFTVector(&status, &inputSFTs), &status );
-
+  LogPrintfVerbatim (LOG_NORMAL, "done\n");
 
   /* if we want to print expected sigma for each skypatch */
   if ( uvar_EnableExtraInfo ) 
@@ -733,7 +740,7 @@ int main(int argc, char *argv[]){
       
       if ( (fpSigma = fopen(fileSigma,"w")) == NULL)
 	{
-	  fprintf(stderr,"Unable to find file %s for writing\n", fileSigma);
+	  LogPrintf(LOG_CRITICAL,"Unable to find file %s for writing\n", fileSigma);
 	  return DRIVEHOUGHCOLOR_EFILE;
 	}
     } /* end if( uvar_EnableExtraInfo) */
@@ -744,6 +751,7 @@ int main(int argc, char *argv[]){
   maxSignificance = sqrt(mObsCohBest * (1-alphaPeak)/alphaPeak);
       
 
+  LogPrintf (LOG_NORMAL, "Starting loop over skypatches...");
   /* loop over sky patches -- main Hough calculations */
   for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++)
     {
@@ -751,6 +759,8 @@ int main(int argc, char *argv[]){
       REAL8 sumWeightSquare;
       /*     REAL8  meanN, sigmaN;*/
       BestVariables temp;
+
+      LogPrintfVerbatim (LOG_NORMAL, "%d/%d,",skyCounter, nSkyPatches);
 
       /* set sky positions and skypatch sizes */
       alpha = skyAlpha[skyCounter];
@@ -760,17 +770,17 @@ int main(int argc, char *argv[]){
 
       /* copy noise weights if required */
       if ( uvar_weighNoise )
-	memcpy(weightsV.data, weightsNoise.data, mObsCoh * sizeof(REAL8));
+	memcpy(weightsV->data, weightsNoise->data, mObsCoh * sizeof(REAL8));
 
       /* calculate amplitude modulation weights if required */
       if (uvar_weighAM) {
-	LAL_CALL( GetAMWeights( &status, &weightsV, mdetStates, alpha, delta), &status);
+	LAL_CALL( GetAMWeights( &status, weightsV, mdetStates, alpha, delta), &status);
       }
       
       /* sort weights vector to get the best sfts */
       temp.length = mObsCoh;
-      temp.weightsV = &weightsV;
-      temp.timeDiffV = &timeDiffV;
+      temp.weightsV = weightsV;
+      temp.timeDiffV = timeDiffV;
       temp.velV = &velV;
       temp.pgV = &pgV;
 
@@ -995,7 +1005,7 @@ int main(int argc, char *argv[]){
 	      LAL_CALL( LALHOUGHWeighSpacePHMD( &status, &phmdVS, best.weightsV), &status);	    
 	    }
 
-	  }   /* ********>>>>>>  closing second while  <<<<<<<<**********<  */
+	  }   /*closing second while */
 	
 	fBin = fBinSearch;
 	
@@ -1003,80 +1013,80 @@ int main(int argc, char *argv[]){
 	LALFree(patch.xCoor);
 	LALFree(patch.yCoor);
 	LALFree(ht.map);
-		
+	
 	LALHOUGHDestroyLUTs( &status, &lutV);
-
+	
 	LALHOUGHDestroyPHMDs( &status, &phmdVS);
-
-
+	
+	
       } /* closing while */
       
-      /******************************************************************/
+
       /* printing total histogram */
-      /******************************************************************/
       if ( uvar_EnableExtraInfo ) 
 	{
 	  if( PrintHistogram( histTotal, filehisto, minSignificance, maxSignificance) ) return 7;
 	}
 
-/* --------------------------------------------------*/
-/* Closing files with statistics results and events*/
+      /* --------------------------------------------------*/
+      /* Closing files with statistics results and events*/
       if (uvar_EnableExtraInfo) fclose(fp1);
       
-      /******************************************************************/
       /* Free memory allocated inside skypatches loop */
-      /******************************************************************/
-      
       LALFree(lutV.lut);  
       lutV.lut = NULL;
-
+      
       LALFree(phmdVS.phmd);
       phmdVS.phmd = NULL;
-
+      
       LALFree(freqInd.data);
       freqInd.data = NULL;
-
+      
       if ( uvar_EnableExtraInfo ) {
 	XLALDestroyUINT8Vector (hist);
 	XLALDestroyUINT8Vector (histTotal);
       }
-
+      
     } /* finish loop over skypatches */
+    LogPrintfVerbatim (LOG_NORMAL, "...done\n");
+
 
   /* close sigma file */
   if ( uvar_EnableExtraInfo )
     fclose(fpSigma);
 
-/*********************************************************/
-                  /* print toplist */
-/********************************************************/
-
-/* If we want to print Chi2 value */
- 
-  if (uvar_EnableChi2)
-    {
-      LAL_CALL(ComputeandPrintChi2(&status, toplist, &timeDiffV, &velV, uvar_p, alphaPeak, mdetStates, &weightsNoise, &upgV), &status);    
-    }
-  
-  else
-    
-    {
-      FILE   *fpToplist = NULL;
-      
-      fpToplist = fopen("hough_top.dat","w");
-      
-      sort_fstat_toplist(toplist);
-      
-      if ( write_fstat_toplist_to_fp( toplist, fpToplist, NULL) < 0)
-	fprintf( stderr, "Error in writing toplist to file\n");
-      
-      if (fprintf(fpToplist,"%%DONE\n") < 0)
-	fprintf(stderr, "Error writing end marker\n");
-      
-      fclose(fpToplist);
-    }
+  /*********************************************************/
+  /* print toplist */
   /********************************************************/
   
+  /* If we want to print Chi2 value */
+  
+  if (uvar_EnableChi2){
+    LogPrintf (LOG_NORMAL, "Starting chi-square follow-up of top candidates...");
+    LAL_CALL(ComputeandPrintChi2(&status, toplist, timeDiffV, &velV, uvar_chiSqBins, alphaPeak, mdetStates, weightsNoise, &upgV), &status);    
+    LogPrintfVerbatim (LOG_NORMAL, "done\n");
+  }
+  else {
+    
+    FILE   *fpToplist = NULL;
+
+    LogPrintf (LOG_NORMAL, "Sort and print toplist...");
+    fpToplist = fopen("hough_top.dat","w");
+    
+    sort_fstat_toplist(toplist);
+    
+    if ( write_fstat_toplist_to_fp( toplist, fpToplist, NULL) < 0)
+      LogPrintf( LOG_CRITICAL, "error in writing toplist to file...\n");
+    
+    if (fprintf(fpToplist,"%%DONE\n") < 0)
+      LogPrintf(LOG_CRITICAL, "error writing end marker...\n");
+    
+    fclose(fpToplist);
+    LogPrintfVerbatim (LOG_NORMAL, "done\n");
+  }
+  /********************************************************/
+  
+  LogPrintf (LOG_NORMAL, "Free memory and exit...");
   {
     UINT4 j;
     for (j = 0; j < mObsCoh; ++j) LALFree( pgV.pg[j].peak); 
@@ -1093,17 +1103,14 @@ int main(int argc, char *argv[]){
       
     }
   
-  
-  LALFree(timeV.data);
-  LALFree(timeDiffV.data);
+  XLALDestroyTimestampVector ( timeV);
+  XLALDestroyREAL8Vector( timeDiffV);
   
 
   LALFree(velV.data);
 
-  LALFree(weightsV.data);
-  weightsV.data = NULL;
-
-  LALFree(weightsNoise.data);  
+  XLALDestroyREAL8Vector(weightsV);
+  XLALDestroyREAL8Vector(weightsNoise);
 
   XLALDestroyMultiDetectorStateSeries ( mdetStates );
 
@@ -1135,8 +1142,10 @@ int main(int argc, char *argv[]){
 
   LALCheckMemoryLeaks();
 
-  if ( lalDebugLevel )
-    REPORTSTATUS ( &status);
+  LogPrintfVerbatim (LOG_NORMAL, "bye\n");
+
+  /*   if ( lalDebugLevel ) */
+  /*     REPORTSTATUS ( &status); */
 
   return status.statusCode;
 }
