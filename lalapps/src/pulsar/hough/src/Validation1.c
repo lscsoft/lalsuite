@@ -34,7 +34,48 @@
  */
 
 
-#include "./Validation1.h"
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <glob.h>
+#include <time.h>
+#include <errno.h> 
+
+#include <lal/Date.h>
+#include <lal/DetectorSite.h>
+#include <lal/LALDatatypes.h>
+#include <lal/LALHough.h>
+#include <lal/SFTUtils.h>
+
+#include "./SFTbin.h"
+#include "./Velocity.h"
+#include "./PeakSelect.h"
+#include "./DriveHoughColor.h"
+
+ 
+#define VALIDATION1_ENORM 0
+#define VALIDATION1_ESUB  1
+#define VALIDATION1_EARG  2
+#define VALIDATION1_EBAD  3
+#define VALIDATION1_EFILE 4
+
+#define VALIDATION1_MSGENORM "Normal exit"
+#define VALIDATION1_MSGESUB  "Subroutine failed"
+#define VALIDATION1_MSGEARG  "Error parsing arguments"
+#define VALIDATION1_MSGEBAD  "Bad argument values"
+#define VALIDATION1_MSGEFILE "Could not create output file"
+
+
+/* A global pointer for debugging. */
+#ifndef NDEBUG
+char *lalWatch;
+#endif
+
 
 NRCSID (VALIDATION1C, "$Id$");
 
