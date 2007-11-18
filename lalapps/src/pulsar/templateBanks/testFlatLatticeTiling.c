@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
   bounds = gsl_vector_alloc(list_bounds->length);
-  for (i = 0; i < bounds->size; ++i) {
+  for (i = 0; i < (INT4)bounds->size; ++i) {
     if (sscanf(list_bounds->data[i], "%le", &bound) != 1) {
       LALPrintError("%s\nERROR: Bound '%s' must be numberic\n", list_bounds->data[i], rcsid);
       return EXIT_FAILURE;
@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
   }
 
   /* Count the number of dimensions */
-  for (i = 1; i < bounds->size; i += 2) {
+  for (i = 1; i < (INT4)bounds->size; i += 2) {
     if (gsl_vector_get(bounds, i) != 0.0) {
       ++dims;
     }
@@ -201,6 +201,15 @@ int main(int argc, char *argv[]) {
     
     /* Write dimension */
     fprintf(output_file, "  <dimension>%i</dimension>\n", tiling->dimension);
+
+    /* Write indices of non-zero dimensions */
+    fprintf(output_file, "  <indices>");
+    for (i = 0; i < (INT4)bounds->size/2; ++i) {
+      if (gsl_vector_get(bounds, 2*i+1) != 0) {
+	fprintf(output_file, "%i ", i);
+      }
+    }
+    fprintf(output_file, "</indices>\n");
     
     /* Write metric */
     fprintf(output_file, "  <metric>\n");
@@ -258,11 +267,11 @@ int main(int argc, char *argv[]) {
     while (XLALNextFlatLatticePoint(tiling)) {
       
       /* Write template */
-      fprintf(output_file, "    ");
+      fprintf(output_file, "    <row>");
       for (j = 0; j < dims; ++j) {
 	fprintf(output_file, "% 0.16e ", gsl_vector_get(tiling->current, j));
       }
-      fprintf(output_file, ";\n");
+      fprintf(output_file, "</row>\n");
       
     }
     fprintf(output_file, "  </templates>\n");
