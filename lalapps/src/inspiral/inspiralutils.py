@@ -229,7 +229,8 @@ def findSegmentsToAnalyze(config,ifo,generate_segments=True,\
 
     print "Generating cat 1 veto segments for " + ifo + " ...",
     sys.stdout.flush()
-    vetoFiles = veto_segments(ifo, config, sciSegFile, dqSegFile, [1] )
+    vetoFiles = veto_segments(ifo, config, sciSegFile, dqSegFile, [1], \
+        generate_segments )
     print "done"
 
     # remove cat 1 veto times
