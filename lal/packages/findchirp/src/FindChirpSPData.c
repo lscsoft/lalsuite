@@ -88,17 +88,9 @@ LALFindChirpSPData (
   INT4 			startIX = 0;
   INT4			endIX = 0;
   INT4			sortFlag = 0;
-  FindChirpSegment     *fcSeg2;
   COMPLEX8Vector       *fftVec = NULL;
-  REAL4 		specSum = 0;
-  REAL4			respSumRe = 0;
-  REAL4			respSumIm = 0;
-  FILE			*PSDFile = NULL;
-  CHAR			PSDFileName[16];
-  INT4			smoothWn = 128;
   FindChirpSegment     *fcSeg;
   DataSegment          *dataSeg;
-  
   INITSTATUS( status, "LALFindChirpSPData", FINDCHIRPSPDATAC );
   ATTATCHSTATUSPTR( status );
 
@@ -417,7 +409,6 @@ LALFindChirpSPData (
     /* compute the total power in the uncorrupted data */
     dataPower->data[dataPower->length - 1 ] = 2.0 * 
       (dataPower->data[endIX] - dataPower->data[startIX]);
-    
     for ( k = cut; k < fcSeg->data->data->length; ++k )
     {
       outputData[k].re  *= wtilde[k].re * amp[k];
@@ -454,14 +445,18 @@ LALFindChirpSPData (
   for ( i = 1; i < dataSegVec->length; ++i )
   {
     fcSeg = &(fcSegVec->data[i]);
-    if (fcSeg->dataPower->data->data[fcSeg->dataPower->data->length - 1 ] <
-        PSDsum) 
+    if 
+    (
+    (fcSeg->dataPower->data->data[fcSeg->dataPower->data->length - 1 ] < PSDsum)    && 
+    (fcSeg->dataPower->data->data[fcSeg->dataPower->data->length - 1 ] > 0)
+    || 
+    PSDsum == 0
+    ) 
     {
       PSDsum = fcSeg->dataPower->data->data[fcSeg->dataPower->data->length - 1 ]; 
     }
 
   }
-  
   /* reset each dataPower's last element to the min power */
 /*  sortFlag = rint(dataSegVec->length / 2 + 1);*/
   sortFlag = 0;

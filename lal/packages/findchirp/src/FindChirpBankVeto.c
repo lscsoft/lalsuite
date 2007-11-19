@@ -169,11 +169,11 @@ XLALComputeFullChisq(
 )
 
 {
-  INT4 stIX, BVLen, fftIX; 
+  INT4 stIX, fftIX; 
   REAL4 fftNorm, powerNorm, signalPower, Sdothsq, chisq;
 
   stIX = input->fcTmplt->tmplt.tC / params->deltaT  + 1.0;
-  BVLen = bankVetoData->length;
+  /*BVLen = bankVetoData->length;*/
   fftIX = input->segment->dataPower->data->length - 1;
   fftNorm = (REAL4) fftIX;
   /* The power norm is stored in the last point of each dataPower vector */
@@ -191,7 +191,8 @@ XLALComputeFullChisq(
   /* in the time domain and frequency domain because of the complex matched */
   /* filter ?? I have used 0.25 * the SNR^2 */
   chisq =  signalPower*fftNorm/powerNorm - 0.25 * (Sdothsq * norm);
-  
+  if (chisq < 0) chisq = 1;
+
   *dof = stIX; 
   return chisq;
 
