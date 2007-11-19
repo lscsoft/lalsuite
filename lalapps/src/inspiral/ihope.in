@@ -15,7 +15,7 @@ __version__ = '$Revision$'[11:-2]
 
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path
-import os, sys, copy
+import os, sys, copy, shutil
 import ConfigParser
 import optparse
 import tempfile
@@ -29,7 +29,6 @@ from glue import segmentsUtils
 from glue import pipeline
 import inspiralutils 
 
-dq_url_pattern = "http://ldas-cit.ligo.caltech.edu/segments/S5/%s/dq_segments.txt"
 
 ##############################################################################
 #
@@ -59,6 +58,10 @@ parser.add_option("-D", "--use-available-data",action="store_true",\
 
 parser.add_option("-S", "--skip-generate-segments",action="store_false",\
     default=True, dest="generate_segments", \
+    help="skip generation segments for analysis")
+
+parser.add_option("-V", "--skip-generate-veto-segments",action="store_false",\
+    default=True, dest="generate_veto_segments", \
     help="skip generation segments for analysis")
 
 parser.add_option("-B", "--skip-datafind",action="store_false",\
@@ -114,14 +117,34 @@ if opts.gps_end_time < opts.gps_start_time:
   sys.exit(1)
 
 ##############################################################################
+# set up the analysis directory
+analysisDirectory = str(opts.gps_start_time) + "-" + str(opts.gps_end_time)
+inspiralutils.mkdir(analysisDirectory)
+
+# copy the ini file into the directory
+shutil.copy( opts.config_file, analysisDirectory )
+opts.config_file = opts.config_file.split("/")[-1]
+
+os.chdir(analysisDirectory)
+
 # parse the ini file:
 cp = ConfigParser.ConfigParser()
 cp.read(opts.config_file)
 
-# set up the analysis directory
-analysisDirectory = str(opts.gps_start_time) + "-" + str(opts.gps_end_time)
+# set gps start and end times in the cp object.
+cp.set("input", "gps-start-time", str(opts.gps_start_time) )
+cp.set("input", "gps-end-time", str(opts.gps_end_time) )
 
-inspiralutils.mkdir(analysisDirectory)
+##############################################################################
+# create a directory called executables and copy them over
+inspiralutils.mkdir("executables")
+os.chdir("../")
+for (job, executable) in cp.items("condor"):
+  if job != "universe":
+    shutil.copy( executable, analysisDirectory + "/executables" )
+    executable = "../executables/" + executable.split("/")[-1]
+    cp.set("condor", job, executable)
+
 os.chdir(analysisDirectory)
 
 ##############################################################################
@@ -141,17 +164,16 @@ dag.set_dag_file(basename)
 # write the file to handle the rescue dags
 inspiralutils.write_rescue()
 
-
 ##############################################################################
 # Set up the IFOs and get the appropriate segments
+ifos = [] 
 
-ifos = []
 for option in ["g1-data","h1-data","h2-data","l1-data","v1-data"]:
   if cp.has_option("ifo-details",option): ifos.append(option[0:2].upper() )
 
 if cp.has_option("ifo-details","analyze-all"): 
-  #ifos = ["G1", "H1", "H2", "L1", "V1"]
-  print >> sys.stderr, "The inspiral pipeline does not yet support coincidence between"
+  print >> sys.stderr, \
+      "The inspiral pipeline does not yet support coincidence between"
   print >> sys.stderr, "all five IFOs. Do not use the analyze-all option."
   sys.exit(1)
 
@@ -163,19 +185,32 @@ sys.stdout.flush()
 
 ##############################################################################
 # Determine the segments to analyze
+inspiralutils.mkdir("segments")
+os.chdir("..")
+for (vetoes, file) in cp.items("segments"):
+  if "veto-file" in vetoes:
+    shutil.copy( file, analysisDirectory + "/segments" )
+    file = "../segments/" + file.split("/")[-1]
+    cp.set("segments", vetoes, file)
+os.chdir(analysisDirectory)
+os.chdir("segments")
+
 segFile = {}
 dqVetoes = {}
 
 for ifo in ifos:
-  inspiralutils.findSegmentsToAnalyze(cp, opts, ifo, dq_url_pattern, segFile, \
-      dqVetoes) 
+  segFile[ifo], dqVetoes[ifo] = inspiralutils.findSegmentsToAnalyze(cp, ifo, \
+      opts.generate_segments, opts.use_available_data, \
+      opts.generate_veto_segments)
+
+os.chdir("..")
 
 ##############################################################################
 # Run lalapps_inspiral_hipe for datafind
 if opts.run_datafind:
   print "Running inspiral hipe for datafind run"
-  hipeDfNode = inspiralutils.hipe_setup("datafind", cp, opts, ifos, \
-      dfOnly = True)
+  hipeDfNode = inspiralutils.hipe_setup("datafind", cp, ifos, \
+      opts.log_path, dfOnly = True)
   dag.add_node(hipeDfNode)
 
 
@@ -184,15 +219,16 @@ if opts.run_datafind:
 if opts.run_analysis:
   if opts.run_play_analysis:
     print "Running inspiral hipe for playground run"
-    hipePlayNode = inspiralutils.hipe_setup("playground", cp, opts, ifos, \
-         playOnly = True)
+    hipePlayNode = inspiralutils.hipe_setup("playground", cp, ifos, \
+         opts.log_path, playOnly = True)
     dag.add_node(hipePlayNode)
     if opts.run_datafind:
       hipePlayNode.add_parent(hipeDfNode)
 
   if opts.run_full_data:
     print "Running inspiral hipe for analysis run"
-    hipeAnalysisNode = inspiralutils.hipe_setup("analysis", cp, opts, ifos)
+    hipeAnalysisNode = inspiralutils.hipe_setup("analysis", cp, ifos, \
+        opts.log_path)
     dag.add_node(hipeAnalysisNode)
     if opts.run_datafind:
       hipeAnalysisNode.add_parent(hipeDfNode)
@@ -201,8 +237,8 @@ if opts.run_analysis:
     hipeInjNode = {} 
     print "Running inspiral hipe for injection runs"
     for (injDir, injFile) in cp.items("injections"):
-      hipeInjNode[injDir] = inspiralutils.hipe_setup(injDir, cp, opts, ifos, \
-           injFile)
+      hipeInjNode[injDir] = inspiralutils.hipe_setup(injDir, cp, ifos, \
+           opts.log_path, injFile)
       dag.add_node(hipeInjNode[injDir])
       if opts.run_datafind:
         hipeInjNode[injDir].add_parent(hipeDfNode)
@@ -220,7 +256,8 @@ if opts.run_data_quality:
     if opts.run_play_analysis:
       print "Running inspiral hipe for play with vetoes"
       hipePlayVetoNode[category] = inspiralutils.hipe_setup("playground", cp, \
-          opts, ifos, playOnly = True, vetoCat = category, vetoFiles = dqVetoes)
+          ifos, opts.log_path, playOnly = True, vetoCat = category, \
+          vetoFiles = dqVetoes)
       dag.add_node(hipePlayVetoNode[category])
       if category==2 and opts.run_analysis: 
         hipePlayVetoNode[category].add_parent(hipePlayNode)
@@ -231,7 +268,7 @@ if opts.run_data_quality:
     if opts.run_full_data:
       print "Running inspiral hipe for full data with vetoes"
       hipeAnalysisVetoNode[category] = inspiralutils.hipe_setup("analysis", \
-          cp, opts, ifos, vetoCat = category, vetoFiles = dqVetoes)
+          cp, ifos, opts.log_path, vetoCat = category, vetoFiles = dqVetoes)
       dag.add_node(hipeAnalysisVetoNode[category])
       if category==2 and opts.run_analysis: 
         hipeAnalysisVetoNode[category].add_parent(hipeAnalysisNode)
@@ -244,7 +281,8 @@ if opts.run_data_quality:
       for (injDir, injFile) in cp.items("injections"):
         if category == 2: hipeInjVetoNode[injDir] = {}
         hipeInjVetoNode[injDir][category] = inspiralutils.hipe_setup(injDir, \
-            cp, opts, ifos, injFile = cp.get("injections", injDir), 
+            cp, ifos, opts.log_path, \
+            injFile = cp.get("injections", injDir), \
             vetoCat = category, vetoFiles = dqVetoes)
         dag.add_node(hipeInjVetoNode[injDir][category])
         if category==2 and opts.run_analysis: 

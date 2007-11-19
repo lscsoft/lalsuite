@@ -58,66 +58,63 @@ def mkdir( newdir ):
   else: os.mkdir(newdir)
 
 ##############################################################################
-def link_executables(directory, config):
-  """
-  link executables to given directory
-  """
-  for (job, executable) in config.items("condor"):
-    if job != "universe":
-      if executable[0] != "/":
-        executable = "../../" + executable
-      config.set("condor", job, executable)
-
-##############################################################################
 # Function to set up the segments for the analysis
-def science_segments(ifo, config, opts):
+def science_segments(ifo, config, generate_segments = True):
   """
   generate the segments for the specified ifo
+  @param ifo:    the name of the ifo
+  @param config: the configParser object with analysis details
+  @param generate_segments: whether or not to actually make segments
   """
-  segFindFile = ifo + "-SCIENCE_SEGMENTS-" + str(opts.gps_start_time) + "-" + \
-      str(opts.gps_end_time - opts.gps_start_time) + ".txt"
+  start = config.getint("input","gps-start-time")
+  end = config.getint("input","gps-end-time")
+
+  segFindFile = ifo + "-SCIENCE_SEGMENTS-" + str(start) + "-" + \
+      str(end - start) + ".txt"
 
   # if not generating segments, all we need is the name of the segment file
-  if not opts.generate_segments: return segFindFile
+  if not generate_segments: return segFindFile
 
   executable = config.get("condor", "segfind")
-  if executable[0] != "/": executable = "../" + executable
 
   whichtoanalyze = ifo.lower() + "-analyze"
-  print "For "+ifo+", analyze "+config.get("segments",whichtoanalyze)
+  print "For " + ifo + ", analyze " +config.get("segments",whichtoanalyze)
 
   # run segFind to determine science segments
-  segFindCall = executable + " --interferometer=" + ifo + \
+  segFindCall = executable 
+  for opt,arg in config.items('segfind'):
+    segFindCall += ' --' + opt + " " + arg
+  segFindCall +=  " --interferometer=" + ifo + \
       " --type=\"" + config.get("segments", whichtoanalyze) + "\""\
-      " --gps-start-time=" + str(opts.gps_start_time) + \
-      " --gps-end-time=" + str(opts.gps_end_time) + " > " + segFindFile
+      " --gps-start-time=" + str(start) + \
+      " --gps-end-time=" + str(end) + " > " + segFindFile
   make_external_call(segFindCall)
+
   return segFindFile
 
 ##############################################################################
 # Function to set up the segments for the analysis
-def veto_segments(ifo, config, segmentList, dqSegFile, categories, opts):
+def veto_segments(ifo, config, segmentList, dqSegFile, categories): 
   """
   generate veto segments for the given ifo
 
-  ifo         = name of the ifo
-  segmentList = list of science mode segments
-  dqSegfile   = the file containing dq flags
-  categories  = list of veto categories
+  @param ifo         : name of the ifo
+  @param segmentList : list of science mode segments
+  @param dqSegfile   : the file containing dq flags
+  @param categories  : list of veto categories
   """
   executable = config.get("condor", "query_dq")
-  if executable[0] != "/": executable = "../" + executable
-
+  start = config.getint("input","gps-start-time")
+  end = config.getint("input","gps-end-time")
   vetoFiles = {}
 
   for category in categories:
     dqFile = config.get("segments", ifo.lower() + "-cat-" + str(category) + \
         "-veto-file")
-    if dqFile[0] != "/": dqFile = "../" + dqFile
 
     vetoFile = ifo + "-CATEGORY_" + str(category) + "_VETO_SEGS-" + \
-        str(opts.gps_start_time) + "-" + \
-        str(opts.gps_end_time - opts.gps_start_time) + ".txt"
+        str(start) + "-" + \
+        str(end - start) + ".txt"
 
     dqCall = executable + " --ifo " + ifo + " --dq-segfile " + dqSegFile + \
         " --segfile " + segmentList + " --flagfile " + dqFile + \
@@ -133,8 +130,8 @@ def veto_segments(ifo, config, segmentList, dqSegFile, categories, opts):
 
     if previousSegs:
       combinedFile = ifo + "-COMBINED_CAT_" + str(category) + "_VETO_SEGS-" + \
-          str(opts.gps_start_time) + "-" + \
-          str(opts.gps_end_time - opts.gps_start_time) + ".txt"
+          str(start) + "-" + \
+          str(end - start) + ".txt"
 
       vetoSegs = segmentsUtils.fromsegwizard(open(vetoFile)).coalesce()
       vetoSegs |= previousSegs
@@ -147,28 +144,39 @@ def veto_segments(ifo, config, segmentList, dqSegFile, categories, opts):
 
 ##############################################################################
 # Function to set up the segments for the analysis
-def datafind_segments(ifo, config, opts):
+def datafind_segments(ifo, config):
+  """
+  generate datafind segments for the given ifo
+
+  @param ifo         : name of the ifo
+  @param config: the configParser object with analysis details
+  """
   ligoIfos = ["H1","H2","L1"]
 
   if ifo in ligoIfos: type = config.get("input","ligo-type")
-  elif ifo == "G1": type =   config.get("input","geo-type")
-  elif ifo == "V1": type =   config.get("input","virgo-type")
-
-  executable = config.get("condor", "datafind")
-  if executable[0] != "/": executable = "../" + executable
+  elif ifo == "G1": type = config.get("input","geo-type")
+  elif ifo == "V1": type = config.get("input","virgo-type")
 
   if ifo == "V1": ifo_type = type
   else: ifo_type = ifo + "_" + type
 
-  dataFindFile = ifo_type + "-" + str(opts.gps_start_time) + "-" + \
-      str(opts.gps_end_time - opts.gps_start_time) + ".txt"
+  executable = config.get("condor", "datafind")
+  start = config.getint("input","gps-start-time")
+  end = config.getint("input","gps-end-time")
+
+
+  dataFindFile = ifo_type + "-" + str(start) + "-" + \
+      str(end - start) + ".txt"
 
   print "Running LSCdataFind to determine available data from " + type + \
       " frames for " + ifo
-  dataFindCall = executable + " --observatory=" + ifo[0] + \
+  dataFindCall = executable 
+  for opt,arg in config.items('datafind'):
+    dataFindCall += ' --' + opt + " " + arg
+  dataFindCall += " --observatory=" + ifo[0] + \
       " --type=" + ifo_type + \
-      " --gps-start-time=" + str(opts.gps_start_time) + \
-      " --gps-end-time=" + str(opts.gps_end_time) + " --show-times > " + \
+      " --gps-start-time=" + str(start) + \
+      " --gps-end-time=" + str(end) + " --show-times > " + \
       dataFindFile
   make_external_call(dataFindCall)
   dfSegs = segmentsUtils.fromsegwizard(file(dataFindFile)).coalesce()
@@ -176,12 +184,93 @@ def datafind_segments(ifo, config, opts):
   return dfSegs
 
 ##############################################################################
+# Function to determine the segments to analyze 
+#(science segments, data quality, missing segments)
+def findSegmentsToAnalyze(config,ifo,generate_segments=True,\
+    use_available_data=False,data_quality_vetoes=False):
+  """
+  generate segments for the given ifo
+
+  @param ifo         : name of the ifo
+  @param config      : the configParser object with analysis details
+  @param generate_segments: whether the segment files should be generated
+  @param use_available_data: restrict segments to data which actually available
+  @param data_quality_vetoes: generate the cat2,3,4 DQ veto segments
+  """
+
+  # file names
+  segFile = ifo + "-SELECTED_SEGS.txt"
+  missedFile = ifo + "-MISSED_SEGS.txt"
+  dqSegFile = ifo + "-DQ_SEGMENTS.txt"
+
+  if config.has_section("input"):
+    config.set("input", ifo.lower() + "-segments", "../segments/" + segFile)
+
+  if generate_segments:
+    print "Generating science segments for " + ifo + " ...",
+    sys.stdout.flush()
+  sciSegFile = science_segments(ifo, config, generate_segments)
+  if generate_segments: 
+    sciSegs = segmentsUtils.fromsegwizard(file(sciSegFile)).coalesce()
+    print " done."
+
+  # download the dq segments to generate the veto files
+  if generate_segments:
+    # XXX FIXME:hard coded path to get the dq-segments from:
+    dq_url_pattern = \
+        "http://ldas-cit.ligo.caltech.edu/segments/S5/%s/dq_segments.txt"
+
+    print "Downloading the latest daily dump of segment database to " \
+        + dqSegFile + " ...",
+    sys.stdout.flush()
+    dqSegFile, info = urllib.urlretrieve(dq_url_pattern % ifo, dqSegFile)
+    print "done"
+
+    print "Generating cat 1 veto segments for " + ifo + " ...",
+    sys.stdout.flush()
+    vetoFiles = veto_segments(ifo, config, sciSegFile, dqSegFile, [1] )
+    print "done"
+
+    # remove cat 1 veto times
+    vetoSegs = segmentsUtils.fromsegwizard(open(vetoFiles[1])).coalesce()
+    sciSegs = sciSegs.__and__(vetoSegs.__invert__())
+
+    if use_available_data:
+      dfSegs = datafind_segments(ifo, config)
+      analyzedSegs = sciSegs.__and__(dfSegs)
+      missedSegs = sciSegs.__and__(dfSegs.__invert__())
+      segmentsUtils.tosegwizard(file(missedFile,"w"), missedSegs)
+      print "Writing " + ifo + " segments which cannot be analyzed to file " \
+          + missedFile
+      print "Not analyzing %d s, representing %.2f percent of time" %  \
+         (missedSegs.__abs__(),
+         100. * missedSegs.__abs__() / analyzedSegs.__abs__() )
+
+    else: analyzedSegs = sciSegs
+
+    segmentsUtils.tosegwizard(file(segFile,"w"), analyzedSegs)
+    print "Writing " + ifo + " segments of total time " + \
+        str(analyzedSegs.__abs__()) + "s to file: " + segFile
+    print "done"
+
+  if data_quality_vetoes: 
+    print "Generating veto segments for " + ifo + "..."
+    sys.stdout.flush()
+    dqVetoes = veto_segments(ifo, config, segFile, dqSegFile, [2,3,4] )
+    print "done"
+
+  return tuple([segFile, dqVetoes])
+
+
+##############################################################################
 # Function to set up lalapps_inspiral_hipe
-def hipe_setup(hipeDir, config, opts, ifos, injFile=None, dfOnly = False, playOnly = False, vetoCat = None, vetoFiles = None):
+def hipe_setup(hipeDir, config, ifos, logPath, injFile=None, dfOnly = False, \
+    playOnly = False, vetoCat = None, vetoFiles = None):
   """
   run lalapps_inspiral_hipe and add job to dag
   hipeDir   = directory in which to run inspiral hipe
   config    = config file
+  logPath   = location where log files will be written
   injFile   = injection file to use when running
   dfOnly    = only run the datafind step of the pipeline
   vetoCat   = run this category of veto
@@ -202,12 +291,13 @@ def hipe_setup(hipeDir, config, opts, ifos, injFile=None, dfOnly = False, playOn
         'thinca-slide', 'coire', 'coire-inj']
   else:
     hipeSections = ['condor', 'pipeline', 'input', 'calibration', 'datafind',\
-        'ligo-data', 'virgo-data', 'geo-data', 'data', 'tmpltbank', 'tmpltbank-1', \
-        'tmpltbank-2', 'h1-tmpltbank', 'h2-tmpltbank', 'l1-tmpltbank', \
-        'v1-tmpltbank', 'g1-tmpltbank', 'no-veto-inspiral', 'veto-inspiral', \
-        'inspiral', 'h1-inspiral', 'h2-inspiral', 'l1-inspiral', 'g1-inspiral', \
-        'v1-inspiral', 'thinca', 'thinca-1', 'thinca-2', 'thinca-slide', \
-        'trigbank', 'sire', 'sire-inj', 'coire', 'coire-inj']
+        'ligo-data', 'virgo-data', 'geo-data', 'data', 'tmpltbank', \
+        'tmpltbank-1', 'tmpltbank-2', 'h1-tmpltbank', 'h2-tmpltbank', \
+        'l1-tmpltbank', 'v1-tmpltbank', 'g1-tmpltbank', 'no-veto-inspiral', \
+        'veto-inspiral', 'inspiral', 'h1-inspiral', 'h2-inspiral', \
+        'l1-inspiral', 'g1-inspiral', 'v1-inspiral', 'thinca', 'thinca-1', \
+        'thinca-2', 'thinca-slide', 'trigbank', 'sire', 'sire-inj', \
+        'coire', 'coire-inj']
 
   for seg in hipecp.sections():
     if not seg in hipeSections: hipecp.remove_section(seg)
@@ -215,8 +305,6 @@ def hipe_setup(hipeDir, config, opts, ifos, injFile=None, dfOnly = False, playOn
   hipecp.remove_option("condor","hipe")
   hipecp.remove_option("condor","follow")
 
-  hipecp.set("input", "gps-start-time", opts.gps_start_time)
-  hipecp.set("input", "gps-end-time", opts.gps_end_time)
 
   # set the data type
   if playOnly:
@@ -258,9 +346,6 @@ def hipe_setup(hipeDir, config, opts, ifos, injFile=None, dfOnly = False, playOn
             " to avoid double wrapping"
         hipecp.set("input","num-slides", str(numSlides))
 
-  # link the executables
-  link_executables(hipeDir, hipecp)
-
   # return to the directory, write ini file and run hipe
   os.chdir(hipeDir)
   iniFile = "inspiral_hipe_"
@@ -278,7 +363,7 @@ def hipe_setup(hipeDir, config, opts, ifos, injFile=None, dfOnly = False, playOn
 
   # work out the hipe call:
   hipeCommand = config.get("condor","hipe")
-  hipeCommand += " --log-path " + opts.log_path
+  hipeCommand += " --log-path " + logPath
   hipeCommand += " --config-file " + iniFile
   if playOnly: hipeCommand += " --priority 10"
   for item in config.items("ifo-details"):
@@ -358,9 +443,6 @@ def followup_setup(followupDir, config, opts, hipeDir):
       if "config-file" in opt and arg[0] != "/":
         arg = "../../" + arg
         followupcp.set(section, opt, arg)
-
-  # link the executables
-  link_executables(followupDir, followupcp)
 
   # return to the directory, write ini file and run hipe
   os.chdir(followupDir)
@@ -443,63 +525,4 @@ def write_rescue():
   f.close()
   os.chmod("rescue.sh", 0744)
 
-##############################################################################
-# Function to determine the segments to analyze (science segments, data quality, missing segments)
 
-def findSegmentsToAnalyze(config,opts,ifo,dq_url_pattern,segFile,dqVetoes=None):
-  segFile[ifo] = ifo + "-SELECTED_SEGS.txt"
-  missedFile = ifo + "-MISSED_SEGS.txt"
-  dqSegFile = ifo + "-DQ_SEGMENTS.txt"
-
-  if config.has_section("input"):
-    config.set("input", ifo.lower() + "-segments", "../" + segFile[ifo])
-
-  if opts.generate_segments:
-    print "Generating science segments for " + ifo + " ...",
-    sys.stdout.flush()
-  sciSegFile = science_segments(ifo, config, opts)
-  sciSegs = segmentsUtils.fromsegwizard(file(sciSegFile)).coalesce()
-  if opts.generate_segments: print " done."
-
-  # download the dq segments to generate the veto files
-  if opts.generate_segments:
-    print "Downloading the latest daily dump of segment database to " \
-        + dqSegFile + " ...",
-    dqSegFile, info = urllib.urlretrieve(dq_url_pattern % ifo, dqSegFile)
-    print "done"
-
-    print "Generating cat 1 veto segments for " + ifo + " ...",
-    sys.stdout.flush()
-    vetoFiles = veto_segments(ifo, config, sciSegFile, dqSegFile, [1], opts)
-    print "done"
-
-    # remove cat 1 veto times
-    vetoSegs = segmentsUtils.fromsegwizard(open(vetoFiles[1])).coalesce()
-    sciSegs = sciSegs.__and__(vetoSegs.__invert__())
-
-    if opts.use_available_data:
-      dfSegs = datafind_segments(ifo, config, opts)
-      analyzedSegs = sciSegs.__and__(dfSegs)
-      missedSegs = sciSegs.__and__(dfSegs.__invert__())
-      segmentsUtils.tosegwizard(file(missedFile,"w"), missedSegs)
-      print "Writing " + ifo + " segments which cannot be analyzed to file " + \
-         missedFile
-      print "Not analyzing %d s, representing %.2f percent of time" %  \
-         (missedSegs.__abs__(),
-         100. * missedSegs.__abs__() / analyzedSegs.__abs__() )
-
-    else: analyzedSegs = sciSegs
-
-    segmentsUtils.tosegwizard(file(segFile[ifo],"w"), analyzedSegs)
-    print "Writing " + ifo + " segments of total time " + \
-        str(analyzedSegs.__abs__()) + "s to file: " + segFile[ifo]
-    print "done"
-
-  if opts.run_data_quality:
-    print "Generating veto segments for " + ifo + "..."
-    sys.stdout.flush()
-    if dqVetoes == None:
-      print >> sys.stderr, "the dqVetoes list needs to be specified as input"
-      sys.exit(1)
-    dqVetoes[ifo] = veto_segments(ifo, config, segFile[ifo], dqSegFile, [2,3,4], opts)
-    print "done"
