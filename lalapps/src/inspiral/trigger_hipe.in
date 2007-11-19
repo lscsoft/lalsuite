@@ -1,4 +1,4 @@
-#!/usr/bin/env @PYTHONPROG@
+#!@PYTHONPROG@
 # coding=utf-8
 """
 trigger_hipe.in - external-trigger inspiral pipeline driver script
@@ -15,23 +15,31 @@ determine various parameters and then set up analysis and injection
 runs.
 
 """
+from __future__ import division
 
 __author__ = 'Patrick Brady <patrick@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
 __version__ = '$Revision$'[11:-2]
 
 ##############################################################################
-# import standard modules and append the lalapps prefix to the python path
 import copy
 import os
 import sys
-import shutil
 import ConfigParser
-from optparse import *
+import optparse
+
+import numpy
+
+from glue.ligolw import ligolw
+from glue.ligolw import utils
+from glue.ligolw import table
+from glue.ligolw import lsctables
 from glue import segments
 from glue import segmentsUtils
 from glue import pipeline
-import GRButils
+from pylal import GRButils
+from pylal import grbsummary
+from lalapps import inspiralutils
 
 ##############################################################################
 # define a few utility functions that make this job easier
@@ -51,40 +59,6 @@ def buildOffSourceSegment ( scienceSegment, grbSegment, dt, ifo ):
 
   return tmpSegment
 
-def make_external_call(command, show_stdout=False, show_command=False):
-  """
-  Run a program on the shell and print informative messages on failure.
-  """
-  if show_command: print command
-
-  stdin, out, err = os.popen3(command)
-  pid, status = os.wait()
-
-  if status != 0:
-      print >>sys.stderr, "External call failed."
-      print >>sys.stderr, "  status: %d" % status
-      print >>sys.stderr, "  stdout: %s" % out.read()
-      print >>sys.stderr, "  stderr: %s" % err.read()
-      print >>sys.stderr, "  command: %s" % command
-      sys.exit(status)
-  if show_stdout:
-      print out.read()
-  stdin.close()
-  out.close()
-  err.close()
-
-# subroutine to plot the segment areas
-def plotSegs( seglist, timeOffset, y, col):
-  f=None
-  # loop over all segments in the list
-  for seg in seglist:
-    a=ct( seg[0],timeOffset )
-    b=ct( seg[1],timeOffset )
-    # fill the area
-    f=pylab.fill( [a,b,b,a,a], [y,y,y+1, y+1, y], col )
-  # return 'pointer' to this filling
-  return f
-
 # subroutine to rescale the times
 def ct(time, timeOffset):
   return (time-timeOffset)  # /3600.0
@@ -92,78 +66,68 @@ def ct(time, timeOffset):
 
 def mkdir( directory, overwrite ):
   try:
-    os.mkdir(idirectory)
+    os.mkdir(directory)
   except OSError:
     if overwrite:
       print "Warning: Overwriting contents in existing directory %s" % directory
     else:
-      print "Error: Directory %s already exists!" % directory
-      sys.exit(1)
+      raise
 
 
-def createInjectionFile( hipe_dir, cp, injrun, segments, source_file, verbose=False):
-   """
-   Creates an master injection file containing all injections for this run.
-   Also reads the file and returns its contents
-   """
-   from glue.ligolw import ligolw
-   from glue.ligolw import utils
-   from glue.ligolw import table
-   from glue.ligolw import lsctables
+def createInjectionFile(hipe_dir, cp, injrun, injection_segment,
+  source_file, verbose=False):
+  """
+  Creates an master injection file containing all injections for this run.
+  Also reads the file and returns its contents
+  """
+  cpinj = copy.deepcopy(cp)
 
-   cpinj = copy.deepcopy(cp)
+  # get the number of injections to be made
+  for opt in ['exttrig-inj-start','exttrig-inj-stop']:
+    value = int(cpinj.get(injrun,opt))
+    cpinj.remove_option(injrun,opt)
+    if 'start' in opt:
+      injStart = value
+    else: 
+      injEnd = value
+  seed = injStart
+  numberInjections = injEnd - injStart + 1  # e.g., 1 through 5000 inclusive
 
-   # get the number of injections to be made
-   for opt in ['exttrig-inj-start','exttrig-inj-stop']:
-      value = int(cpinj.get(injrun,opt))
-      cpinj.remove_option(injrun,opt)
-      if 'start' in opt:
-        injStart = value
-      else: 
-        injEnd = value
-   seed = injStart
-   numberInjections = injEnd-injStart
+  # set all the arguments
+  argument = []
+  for (opt,value) in cpinj.items(injrun):
+    argument.append("--%s %s" % (opt, value) )
 
-   # set all the arguments
-   argument = []
-   for (opt,value) in cpinj.items(injrun):
-      argument.append("--%s %s" % (opt, value) )
+  # add arguments on times and time-intervals
+  interval = abs(injection_segment)
+  injInterval = interval / numberInjections
+  argument.append(" --gps-start-time %d" % injection_segment[0] )
+  argument.append(" --gps-end-time %d" % injection_segment[1] )
+  argument.append(" --time-interval %f" % injInterval )
+  argument.append(" --time-step %f" % injInterval )
+  argument.append(" --seed %d" % seed )
 
-   # add arguments on times and time-intervals
-   interval = segments[1]-segments[0]
-   injInterval = interval / float(numberInjections)
-   argument.append(" --gps-start-time %d" % segments[0] )
-   argument.append(" --gps-end-time %d" % segments[1] )
-   argument.append(" --time-interval %f" % injInterval )
-   argument.append(" --time-step %f" % injInterval )
-   argument.append(" --seed %d" % seed )
+  # set output file and exttrig-file
+  injFile = "%s/HL-INJECTIONS.xml" % hipe_dir
+  argument.append(" --output %s" % injFile )
+  argument.append(" --exttrig-file %s" % source_file )
 
-   # set output file and exttrig-file
-   injFile = "%s/HL-INJECTIONS.xml" % hipe_dir
-   argument.append(" --output %s" % injFile )
-   argument.append(" --exttrig-file %s" % source_file )
+  # execute the command
+  arguments = " ".join(argument)
+  inspiralutils.make_external_call("./lalapps_inspinj %s" % arguments,
+    show_stdout=verbose, show_command=verbose)
 
-   # execute the command
-   arguments = " ".join(argument)
-   make_external_call("./lalapps_inspinj %s" % arguments,
-      show_stdout=verbose, show_command=verbose)
+  # read in the file and the tables
+  doc = utils.load_filename( injFile )    
+  sims = table.get_table(doc, lsctables.SimInspiralTable.tableName)
 
-   # read in the file and the tables
-   doc = utils.load_filename( injFile )    
-   sims = table.get_table(doc, lsctables.SimInspiralTable.tableName)
-
-   return sims, injInterval, numberInjections
+  return sims, injInterval, numberInjections
 
 
 def writeInjectionFile( fileName, sims ):
    """
    Writes a specific part of the sims-table to a file in hipe_dir.
    """
-   from glue.ligolw import ligolw
-   from glue.ligolw import utils
-   from glue.ligolw import table
-   from glue.ligolw import lsctables
-
    # prepare a new XML document
    xmldoc = ligolw.Document()
    xmldoc.appendChild(ligolw.LIGO_LW())
@@ -177,7 +141,69 @@ def writeInjectionFile( fileName, sims ):
    # write output file
    utils.write_filename(xmldoc, fileName )
 
+def plot_segments(trigger, ifolist, segdict, onSourceSegment, offSourceSegment, subdir):
+    """
+    Plot the on- and off-source segment extents for all IFOs in ifolist.
+    """
+    colorCode = {'H1':'r', 'H2':'b', 'L1':'g', 'V1':'m', 'G1':'k'}
+    hi = len(ifolist)
 
+    fig = pylab.figure()
+    ax = fig.add_subplot(111)
+    ax.plot([-6, 6], [0, hi], 'w.')
+    area = {}
+    for c, ifo in enumerate(ifolist):
+      color = colorCode[ifo]
+      for seg in segdict[ifo]:
+        a = ct(seg[0], trigger)
+        b = ct(seg[1], trigger)
+        ax.fill([a, b, b, a, a], [c, c, c+1, c+1, c], color)
+    ax.axvline(ct(offSourceSegment[0], trigger), color='k', lw=4)
+    ax.axvline(ct(offSourceSegment[1], trigger), color='k', lw=4)
+    ax.axvline(ct(onSourceSegment[0], trigger), color='k', ls='--')
+    ax.axvline(ct(onSourceSegment[1], trigger), color='k', ls='--')
+    ax.set_xlabel('time [h]')
+    ax.set_ylabel('IFO')
+    
+    a = ct(offSourceSegment[0] - 2 * minsciseg, trigger)
+    b = ct(offSourceSegment[1] + 2 * minsciseg, trigger)
+    ticks = numpy.arange(hi) + 0.5
+    ax.set_yticks(ticks)
+    ax.set_yticklabels(ifolist)
+    for x in ax.get_xticks():
+      ax.plot([x, x], [0, hi], 'k:')
+    for y in range(hi):
+      ax.plot([-6,6], [y,y], 'k:')
+    ax.set_xlim([a, b])
+    
+    fig.savefig(subdir+"/segments-"+subdir+".png")
+    pylab.close(fig)
+
+def plot_injection_distributions(sims, tag, subdir, overwrite_flag=False):
+    """
+    Plot histograms of all injected parameters that have numeric values.
+    Create directory tag+"_injection" and fill with *_distribution.png.
+    """ 
+    plot_dir = tag + "_injection_distributions"
+    
+    # temporarily change to directory
+    cwd = os.getcwdu()
+    os.chdir(subdir)
+    mkdir(plot_dir, overwrite_flag)
+    os.chdir(plot_dir)
+    
+    for attr, attr_type in zip(sims.columnnames, sims.columntypes):
+        if attr_type.startswith("int") or attr_type.startswith("real"):
+            fig = pylab.figure()
+            ax = fig.add_subplot(111)
+            ax.hist([getattr(sim, attr) for sim in sims], bins=20)
+            ax.set_xlabel(attr.replace("_", r"\_"))
+            ax.set_ylabel(r"\# of injections")
+            fig.savefig(attr + "_distribution.png")
+            pylab.close(fig)
+
+    # return to original directory
+    os.chdir(cwd)
 
 class hipe_run(object):
   """
@@ -191,8 +217,7 @@ class hipe_run(object):
     self._verbose = verbose
 
     # create directory here
-    if not os.path.isdir(self._hipe_dir):
-      os.mkdir(self._hipe_dir)
+    mkdir(self._hipe_dir, overwrite=True)
  
     self._hipe_args = ["--output-segs",
       "--log-path=%s" % log_path, "--config-file=%s",
@@ -224,38 +249,22 @@ class hipe_run(object):
     else:
       self._cp.set('input','exttrig-analyze','off_source')
 
-      
-  
   def set_numslides(self, numslides):
     if numslides == 0: numslides = ""
     self._cp.set('input', 'num-slides', numslides)
 
-  def set_injections(self, cpinj, injrun, numberInjFiles):
+  def set_injections(self, injrun, numberInjFiles):
     """
     Turn this analysis into an injection run, using the injrun section from
     the config file cpinj.
     """
-    cpinj = copy.copy(cpinj)
-    
     # set the start and stop seeds from the injection config file
     self._cp.set('pipeline', 'exttrig-inj-start', 1)
     self._cp.set('pipeline', 'exttrig-inj-stop', numberInjFiles)
 
-    # set the rest of the values that should go into section inspinj
-    #for (opt,value) in cpinj.items(injrun):
-    #  self._cp.set('inspinj',opt,value)
-
     # set injection segments
     for ifo in self._ifos:
         self._cp.set('input', ifo.lower() + '-segments', "../" + ifo + "-selectedsegs.txt")
-
-    # the start and end time for the injections that are made
-    # should be a segment adjacent to the on-source segment. It's
-    # convenient to do this here since it needs a calculation.
-    # We are assuming that there exists one 180s segment before the trigger
-    # on-source interval.
-    #self._cp.set('inspinj','gps-start-time',(trigger-120))  # not needed any more
-    #self._cp.set('inspinj','gps-end-time',(trigger-120))    # not needed anymore
 
   def write_dag(self, ini_file_name):
     """
@@ -264,9 +273,11 @@ class hipe_run(object):
     os.chdir(self._hipe_dir)
     if not os.path.isdir(self._log_path):  # in case of relative path
       os.mkdir(self._log_path)
-    self._cp.write(file(ini_file_name,'w'))
+    cp_file = open(ini_file_name, 'w')
+    self._cp.write(cp_file)
+    cp_file.close()
     arguments = " ".join(self._hipe_args)
-    make_external_call("../../lalapps_inspiral_hipe %s" % (arguments % ini_file_name),
+    inspiralutils.make_external_call("../../lalapps_inspiral_hipe %s" % (arguments % ini_file_name),
       show_stdout=self._verbose, show_command=self._verbose)
     os.chdir("../../")
   
@@ -276,8 +287,11 @@ class hipe_run(object):
     """
     job = pipeline.CondorDAGManJob("%s/config.dag" % self._hipe_dir)
     node = pipeline.CondorDAGNode(job)
-    return node
     
+    # hack to make rescue possible
+    inspiralutils.fix_rescue(node)
+    return node
+
 ##############################################################################
 # define usage and command line options and arguments - parse
 usage = """usage: %prog ...
@@ -323,7 +337,7 @@ that we need with a note about its current status:
 * grb_summary: exists, but developmental
 
 """
-parser = OptionParser(usage, version="$Id$")
+parser = optparse.OptionParser(usage, version="$Id$")
 
 parser.add_option("-v", "--verbose", action="store_true",default=False,\
   help="make things verbose" )
@@ -338,7 +352,7 @@ parser.add_option("-L","--l1-segments",action="store",type="string",\
 parser.add_option("-V","--v1-segments",action="store",type="string",\
   default=None, metavar=" V1_SEGMENTS", help="V1 input segment to read" )
 parser.add_option("-T","--grb",action="append",type="string",\
-    default=None, metavar=" GRB NAME",\
+    default=["all"], metavar=" GRB NAME",\
     help="name of the GRB to be analyzed")
 parser.add_option("-l","--list",action="store",type="string",\
     default=None, metavar=" GRB LIST",\
@@ -349,8 +363,13 @@ parser.add_option("-a","--onsource-left",action="store",type="int",\
 parser.add_option("-b","--onsource-right",action="store",type="int",\
     default=60, metavar=" ONRIGHT",\
     help="Specifies the right onsource time window (default:60)")
+parser.add_option("-t", "--padding-time", type="int", default=0,
+  help="padding time on each side of an analysis segment")
+parser.add_option("-n", "--num-trials", type="int",
+  help="the off-source segment should contain NUM_TRIALS segments of the length of the on-source segment")
 parser.add_option("-o", "--overwrite-dir", action="store_true",default=False,\
   help="overwrite contents in already existing directories" )
+
 # read in the config file
 parser.add_option("-f","--config-file",action="store",type="string",\
   default=None, metavar=" FILE", help="use configuration file FILE" )
@@ -358,12 +377,25 @@ parser.add_option("-g","--injection-config",action="store",type="string",\
   default=None, metavar=" FILE", help="use configuration file FILE" )
 parser.add_option("-p", "--log-path",action="store",type="string",\
     metavar=" PATH",help="directory to write condor log file")
+
 # Add some plotting capabilities to check things
 parser.add_option("-P", "--plot-segments", action="store_true",default=False,\
   help="plot segments for each interval with original segments" )
+parser.add_option("-D", "--plot-injections", action="store_true",
+  default=False, help="histogram distributions of each injection parameter")
 
 ( opts , args ) = parser.parse_args()
 
+required_opts = ["list", "onsource_right", "onsource_left", "padding_time",
+    "num_trials", "config_file", "injection_config", "log_path"]
+for opt in required_opts:
+    if getattr(opts, opt) is None:
+        raise ValueError, "--%s is a required option" % opt
+
+if not opts.plot_segments and not opts.plot_injections:
+  import matplotlib
+  matplotlib.use("Agg")
+import pylab
 
 ##############################################################################
 # create the config parser object and read in the ini file
@@ -400,6 +432,9 @@ tag = opts.config_file.rstrip(".ini")
 uberdag = pipeline.CondorDAG("%s/%s_uberdag.log" % (opts.log_path, tag))
 uberdag.set_dag_file("%s_uberdag" % tag)
 
+# hack to enable somewhat clean rescues
+inspiralutils.write_rescue()
+
 ##############################################################################
 # read in the GRB data from the list
 listGRB = GRButils.grbTable(opts.list)
@@ -410,7 +445,7 @@ else:
   usedList=[]
   for name in opts.grb:
 
-    # search for the given GRB identifier in the list of GRB's
+    # search for the given GRB identifier in the list of GRBs
     grb = listGRB.find(name)
     if grb:
 
@@ -425,15 +460,13 @@ else:
 for grb in usedList:
 
   # extract the time of the GRB
-  trigger = grb.gpsTime
+  trigger = int(grb.gpsTime)
 
 
   ##############################################################################
   # set up the on source segment
-  onSourceSegment = segments.segment( trigger - opts.onsource_left, trigger + opts.onsource_right )
-  lengthOnsource = opts.onsource_left+opts.onsource_right
-  injectionSegment = segments.segment( trigger - minsciseg/2 , 
-    trigger + minsciseg/2)
+  onSourceSegment = segments.segment(trigger - opts.onsource_left, trigger + opts.onsource_right)
+  lengthOnsource = opts.onsource_left + opts.onsource_right
 
   # name and the directory
   idirectory = "GRB" + str(grb.identifier)
@@ -453,25 +486,42 @@ for grb in usedList:
   
   # for each ifo, construct the maximal segment surrounding the grb, and
   # then use the minimal length segment to actually do the analysis
+  # Also record which IFOs are in play.
+  grb_ifolist = []
   for ifo in ifolist:
     try:
-      segmentIndex = segdict[ifo].find( trigger )
-      trigger_segment = segdict[ifo][segmentIndex]
-      tmpOffSourceSegment = \
-          buildOffSourceSegment(trigger_segment,onSourceSegment,180,ifo)
-      if tmpOffSourceSegment in offSourceSegment:
-        offSourceSegment = tmpOffSourceSegment
+      offSourceSegment &= grbsummary.compute_offsource_segment(segdict[ifo],
+        onSourceSegment, padding_time=opts.padding_time,
+        max_trials=opts.num_trials, symmetric=True)
+      grb_ifolist.append(ifo)
     except ValueError:
-      print "Trigger for GRB %s cannot be found in any segment for %s" % (grb.identifier, ifo)
+      print "Warning: Trigger for GRB %s cannot be found in any segment for %s.  Skipping." % (grb.identifier, ifo)
+      continue
+  
+  # gps-start-time and gps-end-time enable the output of intermediate and
+  # output caches in inspiral_hipe; these fail, however, with the
+  # non-conformant HL-INJECTION_%d.xml naming scheme we have.
+  # cp.set("input", "gps-start-time", offSourceSegment[0])
+  # cp.set("input", "gps-end-time", offSourceSegment[1])
+  cp.remove_option("input", "gps-start-time")
+  cp.remove_option("input", "gps-end-time")
+  
+  if len(grb_ifolist) == 0:
+    print >>sys.stderr, "Warning: could not construct offsource segment for GRB %s; skipping" % grb.identifier
+    continue
+  if len(grb_ifolist) > 4:
+    while len(grb_ifolist) > 4:
+      del grb_ifolist[4]
+    print >>sys.stderr, "inspiral_hipe cannot handle more than 4 IFOs; truncating to first four alphabetically."
 
   # write out the segment list to a segwizard file
-  for ifo in ifolist:
+  for ifo in grb_ifolist:
     tmpoutfile = idirectory+"/"+ifo+"-selectedsegs.txt"
     segmentsUtils.tosegwizard(file(tmpoutfile,'w'),\
       segments.segmentlist([offSourceSegment]))
     tmpoutfile = idirectory+"/"+ifo+"-injsegs.txt"
     segmentsUtils.tosegwizard(file(tmpoutfile,'w'),\
-      segments.segmentlist([injectionSegment]))
+      segments.segmentlist([offSourceSegment]))
   segmentsUtils.tosegwizard(file(idirectory+"/onSourceSeg.txt",'w'),\
       segments.segmentlist([onSourceSegment]))
   
@@ -481,38 +531,8 @@ for grb in usedList:
   
    # plot the segment lists
   if opts.plot_segments:
-    import pylab
-    import numpy
-    colorCode={ 'H1':'r', 'H2':'b', 'L1':'g', 'V1':'m', 'G1':'k' }
-    hi=len(ifolist)
-
-    pylab.figure()
-    pylab.plot([-6,6],[0,hi] ,'w.')
-    area={}
-    c=0
-    for ifo in ifolist:
-      area[ifo]=plotSegs( segdict[ifo], trigger, c, colorCode[ifo])
-      c+=1
-    pylab.axvline(ct(offSourceSegment[0],trigger), color='k', lw=4)
-    pylab.axvline(ct(offSourceSegment[1],trigger), color='k', lw=4)
-    pylab.axvline(ct(onSourceSegment[0],trigger), color='k', ls='--')
-    pylab.axvline(ct(onSourceSegment[1],trigger), color='k', ls='--')
-    pylab.xlabel('time [h]')
-    pylab.ylabel('IFO')
-    a=ct(offSourceSegment[0]-2*minsciseg,trigger)
-    b=ct(offSourceSegment[1]+2*minsciseg,trigger)
-    pylab.xlim([a, b])
-    ax=pylab.axes()
-    ticks = numpy.arange( hi )+0.5
-    ax.set_yticks(ticks)
-    ax.set_yticklabels( ifolist )
-    for x in ax.get_xticks():
-      pylab.plot([x,x],[0,hi],'k:' )
-    for y in range(int(hi)):
-      pylab.plot([-6,6],[y,y],'k:' )
-    pylab.xlim([a, b])
-    pylab.savefig(idirectory+"/segments-"+idirectory+".png")
-
+    plot_segments(trigger, grb_ifolist, segdict, onSourceSegment, offSourceSegment,
+      idirectory)
 
   # Next thing is to generate the dag for this interval of time.
   # The steps here are:
@@ -529,13 +549,16 @@ for grb in usedList:
   # In doing this, we simply copy the configuration file into the
   # sub-directory and then run the dag generation script.
   
-  basic_analysis = hipe_run("%s/analysis" % idirectory, cp, ifolist, \
+  if opts.verbose: print "Creating DAG for offsource analysis"
+  basic_analysis = hipe_run("%s/analysis" % idirectory, cp, grb_ifolist,
                             opts.log_path, source_file, verbose=opts.verbose)
   basic_analysis.write_dag('config.ini')
   uberdag.add_node(basic_analysis.get_dag_node())
 
-  onsource_analysis = hipe_run("%s/onsource" % idirectory, cp, ifolist, \
-                               opts.log_path, source_file, onsource=True, verbose=opts.verbose)
+  if opts.verbose: print "Creating DAG for onsource analysis"
+  onsource_analysis = hipe_run("%s/onsource" % idirectory, cp, grb_ifolist,
+                               opts.log_path, source_file, onsource=True,
+                               verbose=opts.verbose)
   onsource_analysis.write_dag('config.ini')
   uberdag.add_node(onsource_analysis.get_dag_node())
 
@@ -545,37 +568,42 @@ for grb in usedList:
   if opts.injection_config:
     cpinj = ConfigParser.ConfigParser()
     cpinj.read(opts.injection_config)
-    from numpy import asarray
   
     ############################################################################
     # set up the injection dag for this interval
     for injrun in cpinj.sections():
       if opts.verbose: print "Creating DAG for ", injrun
       hipe_dir = os.path.join(idirectory, injrun)
-      injection_analysis = hipe_run( hipe_dir, cp, ifolist, \
+      injection_analysis = hipe_run( hipe_dir, cp, grb_ifolist, \
                                opts.log_path, source_file, verbose=opts.verbose)
 
       # create the master injection file and gets its content
-      sims, injInterval, numberInjections = createInjectionFile( hipe_dir, \
-                                               cpinj, injrun, offSourceSegment, source_file )
-      sims=asarray(sims)
+      if opts.verbose: print "  Creating injections..."
+      sims, injInterval, numberInjections = createInjectionFile(hipe_dir,
+        cpinj, injrun, offSourceSegment.contract(opts.padding_time), source_file, opts.verbose)
+
+      # plot the injections as made
+      if opts.plot_injections:
+          if opts.verbose: print "  Plotting injection distributions..."
+          plot_injection_distributions(sims, injrun, idirectory,
+            overwrite_flag=opts.overwrite_dir)
 
       # split the injections
-      safetyInterval = 800.0 # safety time in seconds between two injections
-      deltaIndex = int(safetyInterval/injInterval +1)
+      if opts.verbose: print "  Splitting injections..."
+      safetyInterval = 800 # safety time in seconds between two injections
+      deltaIndex = int(safetyInterval // injInterval) + 1
       for i in range(deltaIndex):
-        index = range( i, numberInjections, deltaIndex)
-        writeInjectionFile( "%s/HL-INJECTION.%d.xml" % (hipe_dir, i+1),  sims[index] )
+        writeInjectionFile( "%s/HL-INJECTION_%d.xml" % (hipe_dir, i+1),
+            sims[i:numberInjections:deltaIndex])
 
       # set the needed parameters
+      if opts.verbose: print "  Writing DAG..."
       injection_analysis.set_numslides(0)
-      injection_analysis.set_injections(cpinj, injrun, deltaIndex)
+      injection_analysis.set_injections(injrun, deltaIndex)
       injection_analysis.write_dag('config.ini')
       uberdag.add_node(injection_analysis.get_dag_node())
 
-
-
-
+if opts.verbose: print "Writing sub files and uber-DAG..."
 uberdag.write_sub_files()
 uberdag.write_dag()
 
