@@ -489,14 +489,15 @@ for grb in usedList:
   # Also record which IFOs are in play.
   grb_ifolist = []
   for ifo in ifolist:
-    try:
-      offSourceSegment &= grbsummary.compute_offsource_segment(segdict[ifo],
-        onSourceSegment, padding_time=opts.padding_time,
-        max_trials=opts.num_trials, symmetric=True)
-      grb_ifolist.append(ifo)
-    except ValueError:
+    ifo_offSourceSegment = grbsummary.compute_offsource_segment(segdict[ifo],
+      onSourceSegment, padding_time=opts.padding_time,
+      max_trials=opts.num_trials, symmetric=True)
+    if ifo_offSourceSegment is None:
       print "Warning: Trigger for GRB %s cannot be found in any segment for %s.  Skipping." % (grb.identifier, ifo)
       continue
+      
+    offSourceSegment &= ifo_offSourceSegment
+    grb_ifolist.append(ifo)
   
   # gps-start-time and gps-end-time enable the output of intermediate and
   # output caches in inspiral_hipe; these fail, however, with the
@@ -608,7 +609,7 @@ uberdag.write_sub_files()
 uberdag.write_dag()
 
 print """
-If you run the u¼ber-dag, you probably have to tell Condor not to
+If you run the uber-dag, you probably have to tell Condor not to
 complain that your DAG logs are on NFS volumes:
 
 bash users:
