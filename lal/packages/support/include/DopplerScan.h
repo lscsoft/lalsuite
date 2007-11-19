@@ -101,6 +101,7 @@ typedef enum
   /* ----- full multi-dim grid-types ----- */
   GRID_FILE_FULLGRID	= 6,		/**< load the full D-dim grid from a file */
   GRID_METRIC_LATTICE	= 7,		/**< 'optimal' covering using An*-lattice and flat metric */
+  GRID_SPINDOWN_LATTICE = 8,            /**< spindown lattice tiling for a single sky position */
   /* ----- end-marker ----- */
   GRID_LAST
 } DopplerGridType;
