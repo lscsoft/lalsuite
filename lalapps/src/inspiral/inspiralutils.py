@@ -94,7 +94,8 @@ def science_segments(ifo, config, generate_segments = True):
 
 ##############################################################################
 # Function to set up the segments for the analysis
-def veto_segments(ifo, config, segmentList, dqSegFile, categories): 
+def veto_segments(ifo, config, segmentList, dqSegFile, categories, 
+  generateVetoes): 
   """
   generate veto segments for the given ifo
 
@@ -102,6 +103,7 @@ def veto_segments(ifo, config, segmentList, dqSegFile, categories):
   @param segmentList : list of science mode segments
   @param dqSegfile   : the file containing dq flags
   @param categories  : list of veto categories
+  @param generateVetoes: generate the veto files
   """
   executable = config.get("condor", "query_dq")
   start = config.getint("input","gps-start-time")
@@ -121,22 +123,21 @@ def veto_segments(ifo, config, segmentList, dqSegFile, categories):
         " --outfile " + vetoFile
 
     # generate the segments
-    make_external_call(dqCall)
+    if generateVetoes: make_external_call(dqCall)
 
     # if there are previous vetoes, generate combined
-    try: previousSegs = \
-        segmentsUtils.fromsegwizard(open(vetoFiles[category-1]))
-    except: previousSegs = None
+    if (category-1) in categories: 
 
-    if previousSegs:
       combinedFile = ifo + "-COMBINED_CAT_" + str(category) + "_VETO_SEGS-" + \
           str(start) + "-" + \
           str(end - start) + ".txt"
-
-      vetoSegs = segmentsUtils.fromsegwizard(open(vetoFile)).coalesce()
-      vetoSegs |= previousSegs
-      segmentsUtils.tosegwizard(file(combinedFile,"w"), vetoSegs)
       vetoFiles[category] = combinedFile
+
+      if generateVetoes: 
+        previousSegs = segmentsUtils.fromsegwizard(open(vetoFiles[category-1]))
+        vetoSegs = segmentsUtils.fromsegwizard(open(vetoFile)).coalesce()
+        vetoSegs |= previousSegs
+        segmentsUtils.tosegwizard(file(combinedFile,"w"), vetoSegs)
 
     else: vetoFiles[category] = vetoFile
 
@@ -256,8 +257,9 @@ def findSegmentsToAnalyze(config,ifo,generate_segments=True,\
   if data_quality_vetoes: 
     print "Generating veto segments for " + ifo + "..."
     sys.stdout.flush()
-    dqVetoes = veto_segments(ifo, config, segFile, dqSegFile, [2,3,4] )
-    print "done"
+  dqVetoes = veto_segments(ifo, config, segFile, dqSegFile, [2,3,4], 
+      data_quality_vetoes )
+  if data_quality_vetoes: print "done"
 
   return tuple([segFile, dqVetoes])
 
