@@ -189,17 +189,6 @@ typedef struct
 % \newpage\input{ComplexAMC}
 </lalLaTeX> */
 
-/** Struct holding buffered CmplxComputeFStat()-internal quantities to avoid unnecessarily 
- * recomputing things that depend ONLY on the skyposition and detector-state series (but not on the spins). 
- * For the first call of CmplxComputeFStat() the pointer-entries should all be NULL.
- */
-typedef struct {
-  const MultiCmplxDetectorStateSeries *multiDetStates;/**< buffer for each detStates (store pointer) and skypos */
-  REAL8 Alpha, Delta;				/**< skyposition of candidate */
-  MultiSSBtimes *multiSSB;	
-  MultiCmplxAMCoeffs *multiAMcoef;
-} CmplxComputeFBuffer;
-
 /*---------- exported prototypes [API] ----------*/
 void
 LALGetCmplxAMCoeffs(LALStatus *,
@@ -212,14 +201,6 @@ LALGetMultiCmplxAMCoeffs (LALStatus *,
 		     MultiCmplxAMCoeffs **multiAMcoef,
 		     const MultiCmplxDetectorStateSeries *multiDetStates,
 		     SkyPosition pos );
-
-void CmplxComputeFStat ( LALStatus *, Fcomponents *Fstat, 
-			 const PulsarDopplerParams *doppler,
-			 const MultiSFTVector *multiSFTs,
-			 const MultiNoiseWeights *multiWeights,
-			 const MultiCmplxDetectorStateSeries *multiDetStates,
-			 const ComputeFParams *params,
-			 CmplxComputeFBuffer *cfBuffer );
 
 int
 XLALWeighMultiCmplxAMCoeffs ( MultiCmplxAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights );
