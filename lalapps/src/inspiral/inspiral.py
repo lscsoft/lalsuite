@@ -358,9 +358,9 @@ class InspiralAnalysisNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
     try:
-      self.__usertag = job.get_opts()['user-tag']
+      self.set_user_tag(job.get_opts()['user-tag'])
     except:
-      self.__usertag = job.get_config('pipeline','user-tag')
+      self.set_user_tag(job.get_config('pipeline','user-tag'))
 
     try:
       self.__pad_data = int(self.job().get_opts()['pad-data'])
@@ -372,6 +372,24 @@ class InspiralAnalysisNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
       self.__zip_output = True
     except:
       self.__zip_output = False 
+    
+    self.set_ifo_tag(None)
+
+  def set_ifo_tag(self, ifo_tag):
+    """
+    Set the ifo tag that is passed to the analysis code.
+    Add _FIRST and _SECOND to what AnalysisNode.set_ifo_tag does.
+    @param ifo_tag: a string to identify one or more IFOs
+    """
+    if ifo_tag:
+      self.__ifo_tag = "SECOND_" + ifo_tag
+      self.add_var_opt('ifo-tag', "SECOND_" + ifo_tag)
+    else:
+      self.__ifo_tag = "FIRST"
+      self.add_var_opt('ifo-tag', "FIRST")
+  
+  def get_ifo_tag(self):
+    return self.__ifo_tag
 
   def set_pad_data(self, pad):
     """
@@ -413,7 +431,7 @@ class InspiralAnalysisNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     if self.get_ifo_tag():
       filebase += '_' + self.get_ifo_tag()
     if self.get_user_tag():
-      filebase += '_' + self._usertag()
+      filebase += '_' + self.get_user_tag()
 
     filebase +=  '-' + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) 
@@ -494,6 +512,13 @@ class InspInjNode(InspiralAnalysisNode):
     self.add_var_opt('output',outputName)
     self.__outputName = outputName
 
+  def get_output(self):
+    """
+    Return the manually-set output name if it exists, otherwise, derive the
+    name like other InspiralAnalysisNodes.
+    """
+    return self.__outputName or InspiralAnalysisNode.get_output(self)
+
 
 class BbhInjNode(InspiralAnalysisNode):
   """
@@ -523,7 +548,7 @@ class BbhInjNode(InspiralAnalysisNode):
     if not self.get_start() or not self.get_end():
       raise InspiralError, "Start time or end time has not been set"
     if self.get_user_tag():
-      bbhinject = 'HL-INJECTIONS_' + self.get_usertag() + '-'
+      bbhinject = 'HL-INJECTIONS_' + self.get_user_tag() + '-'
       bbhinject = bbhinject + str(self.get_start()) + '-'
       bbhinject = bbhinject + str(self.get_end()-self.get_start()) + '.xml'
     elif self.__seed:
@@ -733,7 +758,7 @@ class IncaNode(InspiralAnalysisNode):
     if self.get_ifo_tag():
       basename += '_' + self.get_ifo_tag()
     if self.get_user_tag():
-      basename += '_' + self.get_usertag() 
+      basename += '_' + self.get_user_tag() 
 
     filename = basename + '-' + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) + '.xml'
@@ -760,7 +785,7 @@ class IncaNode(InspiralAnalysisNode):
     if self.get_ifo_tag():
       basename += '_' + self.get_ifo_tag()
     if self.get_user_tag():
-      basename += '_' + self.get_usertag()
+      basename += '_' + self.get_user_tag()
 
     filename = basename + '-' + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) + '.xml'
@@ -924,7 +949,7 @@ class SireNode(InspiralAnalysisNode):
     """
     InspiralAnalysisNode.__init__(self,job)
     self.__injection_file = None
-    self.__ifo_tag = None
+    self.__ifo_tag = "FIRST"
 
   def set_ifo(self, ifo):
     """
@@ -981,7 +1006,10 @@ class SireNode(InspiralAnalysisNode):
     Set the ifo tag that is passed to the analysis code.
     @param ifo_tag: a string to identify one or more IFOs
     """
-    self.__ifo_tag = ifo_tag
+    if ifo_tag:
+      self.__ifo_tag = "SECOND_" + ifo_tag
+    else:
+      self.__ifo_tag = "FIRST"
 
   def get_ifo_tag(self):
     """
@@ -1062,7 +1090,7 @@ class CoireNode(InspiralAnalysisNode):
     """
     InspiralAnalysisNode.__init__(self,job)
     self.__ifos  = None
-    self.__ifo_tag = None
+    self.__ifo_tag = "FIRST"
     self.__num_slides = None
     self.__injection_file = None
     self.__output_tag = None
@@ -1136,7 +1164,10 @@ class CoireNode(InspiralAnalysisNode):
     Set the ifo tag that is passed to the analysis code.
     @param ifo_tag: a string to identify one or more IFOs
     """
-    self.__ifo_tag = ifo_tag
+    if ifo_tag:
+      self.__ifo_tag = "SECOND_" + ifo_tag
+    else:
+      self.__ifo_tag = "FIRST"
 
   def get_ifo_tag(self):
     """
@@ -1160,7 +1191,7 @@ class CoireNode(InspiralAnalysisNode):
     fname = "COIRE"
     if self.get_slides(): fname += "_SLIDE"
     if self.get_inj_file():
-      fname += "_" + self.get_inj_file().split("-")[1]
+      fname += "_" + self.get_inj_file().split(".")[0].split("-")[1]
       fname += "_FOUND"
     if self.get_ifo_tag(): fname += "_" + self.get_ifo_tag()
     if self.get_user_tag(): fname += "_" + self.get_user_tag()
