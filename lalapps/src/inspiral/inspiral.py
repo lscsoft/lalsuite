@@ -357,21 +357,19 @@ class InspiralAnalysisNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
-    try:
-      self.set_user_tag(job.get_opts()['user-tag'])
-    except:
+    opts = job.get_opts()
+    
+    if ("user-tag" in opts) and opts["user-tag"]:
+      self.set_user_tag(opts['user-tag'])
+    elif job.get_config('pipeline','user-tag'):
       self.set_user_tag(job.get_config('pipeline','user-tag'))
 
-    try:
-      self.__pad_data = int(self.job().get_opts()['pad-data'])
-    except: 
+    if ("pad-data" in opts) and int(opts['pad-data']):
+      self.__pad_data = int(opts['pad-data'])
+    else:
       self.__pad_data = None
 
-    try:
-      self.__zip_output = job.get_opts()['write-compress']
-      self.__zip_output = True
-    except:
-      self.__zip_output = False 
+    self.__zip_output = ("write-compress" in opts)
     
     self.set_ifo_tag(None)
 
