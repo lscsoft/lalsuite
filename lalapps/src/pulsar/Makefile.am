@@ -3,7 +3,7 @@
 # $Id$
 
 
-SUBDIRS = FDS_isolated Injections FDS_griphyn hough FDS_binary MakeSFTs SideBand templateBanks radiometer
+SUBDIRS = Injections FDS_isolated FDS_griphyn hough FDS_binary MakeSFTs SideBand templateBanks radiometer
 
 
 if FRAME

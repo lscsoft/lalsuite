@@ -1,7 +1,9 @@
 #!/bin/sh
 
 ## allow 'make test' to work from builddir != srcdir
-if [ -z "${srcdir}" ]; then
+if [ -n "${srcdir}" ]; then
+    builddir="./";
+else
     srcdir=.
 fi
 
@@ -9,22 +11,18 @@ sftdir="${srcdir}/.."
 
 sftbase="SFT.0000"
 IFO="LHO"
-FCOMPARE="compareFstats"
-CFS_DEFAULT="lalapps_ComputeFStatistic"
+FCOMPARE="${builddir}compareFstats"
+CFS_DEFAULT="${builddir}lalapps_ComputeFStatistic"
 
 outfile1="Fstatv1_1.dat";
 outfile2="Fstatv1_2.dat";
 outfile3="Fstatv1_3.dat";
 
-CFSparams1="--IFO=$IFO --DataDir=$sftdir --BaseName=$sftbase --Freq=300.1 \
+CFSparams1="--IFO=$IFO --DataDir=$sftdir --BaseName=$sftbase --Freq=300.1 --Fthreshold=0\
 --FreqBand=0.2 --Alpha=2.2 --AlphaBand=0.012 --Delta=0.8 --DeltaBand=0.018 --gridType=0 --outputFstat=$outfile1"
 
-CFSparams2="--IFO=$IFO --DataDir=$sftdir --BaseName=$sftbase --Freq=300.1 \
+CFSparams2="--IFO=$IFO --DataDir=$sftdir --BaseName=$sftbase --Freq=300.1 --Fthreshold=0\
 --FreqBand=0.2 --Alpha=2.2 --AlphaBand=0.003 --Delta=0.8 --DeltaBand=0.003 --gridType=1 --outputFstat=$outfile2"
-
-CFSparams3="--IFO=$IFO --DataDir=$sftdir --BaseName=$sftbase --Freq=300.1 \
---FreqBand=0.2 --Alpha=2.2 --AlphaBand=1.0 --Delta=0.8 --DeltaBand=1.0 \
---gridType=2 --metricType=1 --metricMismatch=0.02 --outputFstat=$outfile3"
 
 #give help string if requested
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
@@ -81,7 +79,7 @@ echo "Comparing output-file 'Fstats' with reference-version 'Fstats.ref1' ... "
 
 cmdline="$FCOMPARE --clusterFiles=false -1 ./${outfile1} -2 ${srcdir}/Fstats.ref1 --Ftolerance=0.01";
 echo $cmdline
-if $cmdline; then
+if $cmdline >& test1.dat; then
     echo "OK."
 else
     echo "OUCH... files differ. Something might be wrong..."
@@ -97,7 +95,7 @@ echo "----------------------------------------------------------------------"
 
 cmdline="$prog $CFSparams2 $extra_args"
 echo $cmdline
-if ! $cmdline ; then
+if ! $cmdline >& test2.dat ; then
     echo "Something failed ... giving up.";
     exit 2;
 fi
@@ -110,37 +108,5 @@ if $cmdline; then
     echo "OK."
 else
     echo "OUCH... files differ. Something might be wrong..."
-    exit 2
-fi
-
-
-## Test3: using a the analytic Ptole-metric
-##----------------------------------------
-
-## temporarily deactivated:
-exit
-
-echo
-echo "----------------------------------------------------------------------"
-echo "Test 3) analytic Ptole-metric:"
-echo "----------------------------------------------------------------------"
-echo "$prog $CFSparams3"
-if ! "$prog" $CFSparams3; then
-    echo "failed... exiting.";
-    echo
-    exit 2
-fi
-
-echo
-echo "Comparing output-file 'Fstats' with reference-version 'Fstats.ref3' ... "
-cmdline="$FCOMPARE --clusterFiles=false -1 ./${outfile3} -2 ${srcdir}/Fstats.ref3 --Ftolerance=0.01";
-echo $cmdline
-if $cmdline ; then
-    echo "OK."
-    echo
-    exit 0
-else
-    echo "OUCH... files differ. Something might be wrong..."
-    echo
     exit 2
 fi

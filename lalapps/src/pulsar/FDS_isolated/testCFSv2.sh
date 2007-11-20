@@ -3,12 +3,20 @@
 ## take user-arguments for CFS-v2:
 extra_args="$@"
 
+## allow 'make test' to work from builddir != srcdir
+if [ -n "${srcdir}" ]; then
+    builddir="./";
+    injectdir="../Injections/"
+else
+    srcdir=.
+fi
+
 ##---------- names of codes and input/output files
-saf_code="lalapps_SemiAnalyticF"
-mfd_code="lalapps_Makefakedata"
-cfs_code="lalapps_ComputeFStatistic"
-cfsv2_code="ComputeFStatistic_v2"
-cmp_code="compareFstats"
+mfd_code="${injectdir}lalapps_Makefakedata"
+saf_code="${builddir}lalapps_SemiAnalyticF"
+cfs_code="${builddir}lalapps_ComputeFStatistic"
+cfsv2_code="${builddir}ComputeFStatistic_v2"
+cmp_code="${builddir}compareFstats"
 
 SFTdir="./testSFTs"
 
