@@ -133,7 +133,7 @@ typedef enum {
 typedef struct {
   UINT4 Dterms;		/**< how many terms to keep in the Dirichlet kernel (~16 is usually fine) */
   REAL8 upsampling;	/**< frequency-upsampling applied to SFTs ==> dFreq != 1/Tsft ... */
-  SSBprecision SSBprec; /**< wether to use full relativist SSB-timing, or just simple Newtonian */
+  SSBprecision SSBprec; /**< whether to use full relativist SSB-timing, or just simple Newtonian */
 } ComputeFParams;
 
 /** Struct holding buffered ComputeFStat()-internal quantities to avoid unnecessarily 
