@@ -37,7 +37,9 @@ LALInspiralBankGeneration(
 {
   InspiralTemplateList *coarseList = NULL;
   SnglInspiralTable *bank;
-  INT4  cnt = 0;
+  InspiralMomentsEtc moments;
+  INT4 cnt = 0;
+  REAL8 fFinal =0;
   INT4  chicnt = 0;
   INT4  kappacnt = 0;
   INT4  i;
@@ -70,7 +72,7 @@ LALInspiralBankGeneration(
     /* Use LALInspiralCreateCoarseBank(). */
     TRY( LALInspiralCreateCoarseBank( status->statusPtr, &coarseList, ntiles,
          *input ), status );
- 
+    /* */ 
     /* Convert output data structure. */
     bank = (SnglInspiralTable *) LALCalloc(1, sizeof(SnglInspiralTable));
     if (bank == NULL){
@@ -98,6 +100,32 @@ LALInspiralBankGeneration(
       bank->ttotal = coarseList[cnt].params.tC;
       bank->psi0 = coarseList[cnt].params.psi0;
       bank->psi3 = coarseList[cnt].params.psi3;
+      
+      /* This calucation is only valid for the PN case. For EOB, we 
+       * should use the correct value of v (close to lightring). What 
+       * about the amplitude corrected one ? */
+      fFinal = pow(sqrt(1./6.),3.)
+        /(LAL_PI * (coarseList[cnt].params.mass1+coarseList[cnt].params.mass2) 
+        * LAL_MTSUN_SI );
+      if (fFinal > input->fUpper)
+      {
+        fFinal = input->fUpper;
+      }
+      coarseList[cnt].params.fFinal = fFinal;
+    
+      /* Update the Gamma parameter if requested, using the proper cut-off 
+       * frequency */
+      if ( input->computeMoments )
+      {
+        coarseList[cnt].params.fCutoff = coarseList[cnt].params.fFinal;
+        LALGetInspiralMoments( status->statusPtr, &moments, &(input->shf), 
+            &(coarseList[cnt].params) );
+
+        LALInspiralComputeMetric(status->statusPtr, &(coarseList[cnt].metric),
+            &(coarseList[cnt].params), &moments);
+      }
+
+
       bank->f_final = coarseList[cnt].params.fFinal;
       bank->eta = coarseList[cnt].params.eta;
       bank->beta = coarseList[cnt].params.beta;
