@@ -134,6 +134,7 @@ typedef struct {
   UINT4 Dterms;		/**< how many terms to keep in the Dirichlet kernel (~16 is usually fine) */
   REAL8 upsampling;	/**< frequency-upsampling applied to SFTs ==> dFreq != 1/Tsft ... */
   SSBprecision SSBprec; /**< whether to use full relativist SSB-timing, or just simple Newtonian */
+  BOOLEAN useRAA;        /**< whether to use the frequency- and sky-position-dependent rigid adiabatic response tensor and not just the long-wavelength approximation */
 } ComputeFParams;
 
 /** Struct holding buffered ComputeFStat()-internal quantities to avoid unnecessarily 
