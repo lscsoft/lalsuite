@@ -1098,7 +1098,6 @@ class CoireNode(InspiralAnalysisNode):
     Add the list of interferometers 
     """
     self.__ifos = ifos
-    self.add_var_opt('coinc-cut',ifos)
 
   def get_ifos(self):
     """
