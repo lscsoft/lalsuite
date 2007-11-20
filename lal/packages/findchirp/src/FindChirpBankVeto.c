@@ -173,7 +173,6 @@ XLALComputeFullChisq(
   REAL4 fftNorm, powerNorm, signalPower, Sdothsq, chisq;
 
   stIX = input->fcTmplt->tmplt.tC / params->deltaT  + 1.0;
-  /*BVLen = bankVetoData->length;*/
   fftIX = input->segment->dataPower->data->length - 1;
   fftNorm = (REAL4) fftIX;
   /* The power norm is stored in the last point of each dataPower vector */
@@ -182,17 +181,20 @@ XLALComputeFullChisq(
   /* data */
   powerNorm = input->segment->dataPower->data->data[fftIX] 
                   / fftNorm / fftNorm ;
+
   signalPower = (input->segment->dataPower->data->data[snrIX] -
                        input->segment->dataPower->data->data[snrIX-stIX]) 
                     / fftNorm / fftNorm;
+
   /* this is just the snr squared */
   Sdothsq = ( (q[snrIX].re * q[snrIX].re + q[snrIX].im * q[snrIX].im) );
+
   /* I think their should be a factor of 4 difference in the power computed */
   /* in the time domain and frequency domain because of the complex matched */
   /* filter ?? I have used 0.25 * the SNR^2 */
   chisq =  signalPower*fftNorm/powerNorm - 0.25 * (Sdothsq * norm);
-  if (chisq < 0) chisq = 1;
 
+  if (chisq < 1) chisq = 1; 
   *dof = stIX; 
   return chisq;
 
@@ -278,19 +280,25 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 {
 
 
+  REAL4 iSNR_r = 0;
+  REAL4 iSNR_i = 0;
+  REAL4 jSNR_r = 0;
+  REAL4 jSNR_i = 0;
   REAL4 iSNR = 0;
   REAL4 jSNR = 0;
   REAL4 chisq = 0;
   UINT4 j = 0;
-  REAL4 ii,jj,ji,denomFac_r, denomFac_i, denomFac;
+  REAL4 ii,jj,ji,denomFac,phi_i, phi_j, chi_i, chi_r;
   UINT4 iSize = bankVetoData->length;
   
-  iSNR = sqrt( ( bankVetoData->qVecArray[i]->data[snrIX].re *
-                 bankVetoData->qVecArray[i]->data[snrIX].re +
-                 bankVetoData->qVecArray[i]->data[snrIX].im *
-                 bankVetoData->qVecArray[i]->data[snrIX].im )
-               * bankVetoData->fcInputArray[i]->fcTmplt->norm );
-               
+  iSNR_r = bankVetoData->qVecArray[i]->data[snrIX].re 
+         * sqrt(bankVetoData->fcInputArray[i]->fcTmplt->norm);
+  iSNR_i = bankVetoData->qVecArray[i]->data[snrIX].im
+         * sqrt(bankVetoData->fcInputArray[i]->fcTmplt->norm);
+  iSNR = sqrt(iSNR_r*iSNR_r + iSNR_i*iSNR_i);
+
+  phi_i =  atan2(iSNR_i,  iSNR_r);
+
   *dof = 0;
   if (iSize == 1) return 0;
 
@@ -299,19 +307,28 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
     ji = bankVetoData->ccMat->data[j*iSize + i];
     ii = bankVetoData->ccMat->data[i*iSize + i];
     jj = bankVetoData->ccMat->data[j*iSize + j];
-
+    phi_j = bankVetoData->normMat->data[j*iSize + i];
     denomFac =  1.0 - (ji * ji / ii / jj) ;
 
     if ( denomFac != 0.0 && ji != 0.0 && ii != 0 && jj != 0 )
     {
-      jSNR = sqrt( ( bankVetoData->qVecArray[j]->data[snrIX].re *
-                     bankVetoData->qVecArray[j]->data[snrIX].re +
-                     bankVetoData->qVecArray[j]->data[snrIX].im *
-                     bankVetoData->qVecArray[j]->data[snrIX].im )
-                   * bankVetoData->fcInputArray[j]->fcTmplt->norm );
+      jSNR_r = bankVetoData->qVecArray[j]->data[snrIX].re
+             * sqrt(bankVetoData->fcInputArray[j]->fcTmplt->norm);
+      jSNR_i = bankVetoData->qVecArray[j]->data[snrIX].im
+             * sqrt(bankVetoData->fcInputArray[j]->fcTmplt->norm);
+      jSNR = sqrt(jSNR_r*jSNR_r + jSNR_i*jSNR_i);
 
-      chisq += (jSNR - ji / sqrt(ii*jj) * iSNR) *
-               (jSNR - ji / sqrt(ii*jj) * iSNR) / denomFac; 
+      chi_r = (jSNR_r*cos(0.0-phi_j) - jSNR_i*sin(0.0-phi_j)) - 
+              ji / sqrt(ii*jj) * (iSNR_r);
+
+      chi_i = (jSNR_r*sin(0.0-phi_j) + jSNR_i*cos(0.0-phi_j)) -
+              ji / sqrt(ii*jj) * (iSNR_i);
+      /* Previously I used the modulus only */
+      /*  chisq += (jSNR - ji / sqrt(ii*jj) * iSNR)                        */
+      /*         * (jSNR - ji / sqrt(ii*jj) * iSNR) / denomFac;            */
+
+      /* Now I use the real and imaginary parts seperately */
+      chisq += chi_r*chi_r/denomFac + chi_i*chi_i/denomFac;
 
       (*dof)++;
     }
