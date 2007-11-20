@@ -80,6 +80,27 @@ NRCSID (NRWAVEIOH, "$Id$");
 #define NRWAVEIO_MSGEFORMAT     "Meta data file format incorrect"
 /*@}*/
 
+
+/* list of numrel groups -- add more if necessary 
+   might want to add some numrel collaborations as well
+   such as CIT_CORNELL, NRWAVES etc. */
+typedef enum {
+  NR_GROUP_LSU,
+  NR_GROUP_AEI,
+  NR_GROUP_PSU,
+  NR_GROUP_CIT,
+  NR_GROUP_CORNELL,
+  NR_GROUP_RIT,
+  NR_GROUP_JENA,
+  NR_GROUP_SOUTHAMPTON,
+  NR_GROUP_FAU,
+  NR_GROUP_UTB,
+  NR_GROUP_UIUC,
+  NR_GROUP_DUMMY
+} NumRelGroup;
+
+
+
 /** Struct containing metadata information about a 
     single numerical relativity waveform.  This information
     will be read from a metadata file. It is expected that 
@@ -92,6 +113,7 @@ typedef struct
   REAL8 spin2[3];  /**< Spin of m2 */
   INT4  mode[2];   /**< l and m values */
   CHAR  filename[LALNameLength]; /**< filename where data is stored */
+  NumRelGroup groupName;
 } 
 NRWaveMetaData;
 
