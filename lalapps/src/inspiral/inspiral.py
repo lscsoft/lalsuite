@@ -1189,7 +1189,8 @@ class CoireNode(InspiralAnalysisNode):
     fname = "COIRE"
     if self.get_slides(): fname += "_SLIDE"
     if self.get_inj_file():
-      fname += "_" + self.get_inj_file().split(".")[0].split("-")[1]
+      fname += "_" + \
+          self.get_inj_file().split("/")[-1].split(".")[0].split("-")[1]
       fname += "_FOUND"
     if self.get_ifo_tag(): fname += "_" + self.get_ifo_tag()
     if self.get_user_tag(): fname += "_" + self.get_user_tag()
