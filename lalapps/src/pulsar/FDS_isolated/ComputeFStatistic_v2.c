@@ -201,6 +201,8 @@ typedef struct {
   REAL8 internalRefTime;	/**< which reference time to use internally for template-grid */
   INT4 SSBprecision;		/**< full relativistic timing or Newtonian */
 
+  BOOLEAN useRAA;               /**< use rigid adiabatic response instead of long-wavelength */
+
   INT4 minStartTime;		/**< earliest start-time to use data from */
   INT4 maxEndTime;		/**< latest end-time to use data from */
   CHAR *workingDir;		/**< directory to use for output files */
@@ -561,6 +563,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   uvar->SSBprecision = SSBPREC_RELATIVISTIC;
 
+  uvar->useRAA = FALSE;
+
   uvar->minStartTime = 0;
   uvar->maxEndTime = LAL_INT4_MAX;
 
@@ -602,7 +606,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregBOOLUserStruct(status, 	UseNoiseWeights,'W', UVAR_OPTIONAL, "Use SFT-specific noise weights");
 
   LALregREALUserStruct(status, 	TwoFthreshold,	'F', UVAR_OPTIONAL, "Set the threshold for selection of 2F");
-  LALregINTUserStruct(status, 	gridType,	 0 , UVAR_OPTIONAL, "Grid: 0=flat, 1=isotropic, 2=metric, 3=skygrid-file, 6=grid-file, 7=An*lattice, 8=spin-lattice");
+  LALregINTUserStruct(status, 	gridType,	 0 , UVAR_OPTIONAL, "Grid: 0=flat, 1=isotropic, 2=metric, 3=skygrid-file, 6=grid-file, 7=An*lattice");
   LALregINTUserStruct(status, 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
   LALregREALUserStruct(status, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal allowed mismatch for metric tiling");
   LALregSTRINGUserStruct(status,outputLogfile,	 0,  UVAR_OPTIONAL, "Name of log-file identifying the code + search performed");
@@ -622,6 +626,9 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   /* ----- more experimental/expert options ----- */
   LALregINTUserStruct (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
+
+  LALregBOOLUserStruct(status, 	useRAA, 	 0,  UVAR_DEVELOPER, "Use rigid adiabatic response");
+
   LALregINTUserStruct(status, 	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
   LALregINTUserStruct(status,	Dterms,		't', UVAR_DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
 
@@ -922,6 +929,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   /* ----- set computational parameters for F-statistic from User-input ----- */
   cfg->CFparams.Dterms = uvar->Dterms;
   cfg->CFparams.SSBprec = uvar->SSBprecision;
+  cfg->CFparams.useRAA = uvar->useRAA;
   cfg->CFparams.upsampling = 1.0 * uvar->upsampleSFTs; 
 
   /* ----- set fixed grid step-sizes from user-input for GRID_FLAT ----- */
