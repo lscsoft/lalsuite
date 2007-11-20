@@ -212,7 +212,7 @@ ComputeFStat ( LALStatus *status,
   }
 
   if ( doppler->orbit ) {
-    LALPrintError ("\nSorry, binary-pulsar search not yet implemented in LALComputeFStat()\n\n");
+    LALPrintError ("\nSorry, binary-pulsar search not yet implemented in ComputeFStat()\n\n");
     ABORT ( status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
   }
 
