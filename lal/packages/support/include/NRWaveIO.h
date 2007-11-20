@@ -135,6 +135,7 @@ typedef struct
   REAL8 dynRange;
 } NumRelInjectParams;
 
+void LALReadNRWave_raw(LALStatus *status, REAL4TimeVectorSeries **out, const CHAR  *filename);
 
 void LALReadNRWave(LALStatus *status, REAL4TimeVectorSeries **out, const REAL4  mass, const CHAR  *filename);
 
