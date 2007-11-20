@@ -1157,8 +1157,8 @@ def make_burca2_fragment(dag, parents, input_cache, tag):
 		node = BurcaNode(burca2job)
 		node.set_name("ligolw_burca2_%s_%d" % (tag, len(nodes)))
 		node.add_macro("macrocomment", tag)
-		node.add_input_cache(input_cache[-10:])
-		del input_cache[-10:]
+		node.add_input_cache(input_cache[-30:])
+		del input_cache[-30:]
 		for parent in parents:
 			node.add_parent(parent)
 		dag.add_node(node)
