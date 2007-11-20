@@ -4,7 +4,7 @@
 if [ -z "${srcdir}" ]; then
     srcdir=.
 fi
-  
+
 sftdir="${srcdir}/.."
 
 sftbase="SFT.0000"
@@ -12,15 +12,19 @@ IFO="LHO"
 FCOMPARE="compareFstats"
 CFS_DEFAULT="lalapps_ComputeFStatistic"
 
+outfile1="Fstatv1_1.dat";
+outfile2="Fstatv1_2.dat";
+outfile3="Fstatv1_3.dat";
+
 CFSparams1="--IFO=$IFO --DataDir=$sftdir --BaseName=$sftbase --Freq=300.1 \
---FreqBand=0.2 --Alpha=2.2 --AlphaBand=0.012 --Delta=0.8 --DeltaBand=0.018 --gridType=0"
+--FreqBand=0.2 --Alpha=2.2 --AlphaBand=0.012 --Delta=0.8 --DeltaBand=0.018 --gridType=0 --outputFstat=$outfile1"
 
 CFSparams2="--IFO=$IFO --DataDir=$sftdir --BaseName=$sftbase --Freq=300.1 \
---FreqBand=0.2 --Alpha=2.2 --AlphaBand=0.003 --Delta=0.8 --DeltaBand=0.003 --gridType=1"
+--FreqBand=0.2 --Alpha=2.2 --AlphaBand=0.003 --Delta=0.8 --DeltaBand=0.003 --gridType=1 --outputFstat=$outfile2"
 
 CFSparams3="--IFO=$IFO --DataDir=$sftdir --BaseName=$sftbase --Freq=300.1 \
 --FreqBand=0.2 --Alpha=2.2 --AlphaBand=1.0 --Delta=0.8 --DeltaBand=1.0 \
---gridType=2 --metricType=1 --metricMismatch=0.02"
+--gridType=2 --metricType=1 --metricMismatch=0.02 --outputFstat=$outfile3"
 
 #give help string if requested
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
@@ -53,7 +57,7 @@ if [ -z "$LAL_DATA_PATH" ]; then
     exit 1
 fi
 
-## Tests start here 
+## Tests start here
 ## --------------------
 echo
 echo "Running ComputeFStatistic-code '$prog' on test-data '$sftdir/$sftbase*'"
@@ -69,15 +73,15 @@ cmdline="$prog $CFSparams1 $extra_args";
 echo $cmdline
 if ! $cmdline ; then
     echo "Something failed ... giving up.";
-    exit 2;
-fi    
+   exit 2;
+fi
 
 echo
 echo "Comparing output-file 'Fstats' with reference-version 'Fstats.ref1' ... "
 
-cmdline="$FCOMPARE -1 ./Fstats -2 ${srcdir}/Fstats.ref1";
+cmdline="$FCOMPARE --clusterFiles=false -1 ./${outfile1} -2 ${srcdir}/Fstats.ref1 --Ftolerance=0.01";
 echo $cmdline
-if $cmdline ; then
+if $cmdline; then
     echo "OK."
 else
     echo "OUCH... files differ. Something might be wrong..."
@@ -100,7 +104,7 @@ fi
 
 echo
 echo "Comparing output-file 'Fstats' with reference-version 'Fstats.ref2' ... "
-cmdline="$FCOMPARE -1 ./Fstats -2 ${srcdir}/Fstats.ref2"
+cmdline="$FCOMPARE --clusterFiles=false -1 ./${outfile2} -2 ${srcdir}/Fstats.ref2 --Ftolerance=0.01"
 echo $cmdline
 if $cmdline; then
     echo "OK."
@@ -129,8 +133,9 @@ fi
 
 echo
 echo "Comparing output-file 'Fstats' with reference-version 'Fstats.ref3' ... "
-
-if $FCOMPARE -1 ./Fstats -2 ${srcdir}/Fstats.ref3 ; then
+cmdline="$FCOMPARE --clusterFiles=false -1 ./${outfile3} -2 ${srcdir}/Fstats.ref3 --Ftolerance=0.01";
+echo $cmdline
+if $cmdline ; then
     echo "OK."
     echo
     exit 0
