@@ -131,6 +131,8 @@ parser.add_option("-A", "--analysis_only",action="store_true",default=True,\
 parser.add_option("-I", "--injections_only",action="store_true",default=True,\
     help="Run plot_hipe on injection directory")
 
+parser.add_option("-w", "--write-script", action="store_true", default=False,
+      help="write the workflow to a locally executable script")
 
 
 
@@ -479,6 +481,9 @@ if opts.plotinspiralrange:
 # Step 10: Write out the DAG, help message and log file
 dag.write_sub_files()
 dag.write_dag()
+
+if opts.write_script:
+  dag.write_script()
 
 ##############################################################################  
 # write a message telling the user that the DAG has been written
