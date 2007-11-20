@@ -3,7 +3,7 @@
 ## take user-arguments for CFS-v2:
 extra_args="$@"
 
-##---------- names of codes and input/output files  
+##---------- names of codes and input/output files
 saf_code="lalapps_SemiAnalyticF"
 mfd_code="lalapps_Makefakedata"
 cfs_code="lalapps_ComputeFStatistic"
@@ -91,9 +91,9 @@ if ! eval $cmdline; then
     exit 1
 fi
 
-echo 
+echo
 echo -n "Running '$saf_code' ... "
-cmdline="$saf_code $saf_CL --sqrtSh=$sqrtSh"	
+cmdline="$saf_code $saf_CL --sqrtSh=$sqrtSh"
 echo $cmdline
 if ! resF=`eval $cmdline 2> /dev/null`; then
     echo "Error ... something failed running '$saf_code' ..."
@@ -102,19 +102,19 @@ fi
 echo  "ok."
 res2F=`echo $resF | awk '{printf "%g", 2.0 * $1}'`
 echo "The SemiAnalyticF calculations predicts: 2F = $res2F"
-  
-echo 
+
+echo
 echo "----------------------------------------------------------------------"
 echo "STEP 2: run CFS_v1 with perfect match"
 echo "----------------------------------------------------------------------"
 echo
 outfile_v1="Fstat_v1.dat";
-## common cmdline-options for v1 and v2    
+## common cmdline-options for v1 and v2
 cfs_CL="--IFO=$IFO --Freq=$Freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --DataFiles='$SFTdir/testSFT*' --refTime=$refTime"
 if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
-    
+
 cmdline="$cfs_code $cfs_CL  --outputFstat=$outfile_v1 --expLALDemod=0 --Fthreshold=0";
 echo $cmdline;
 
@@ -123,7 +123,7 @@ if ! eval $cmdline; then
     exit 1
 fi
 
-echo    
+echo
 echo "----------------------------------------------------------------------"
 echo " STEP 3: run CFS_v2 with perfect match"
 echo "----------------------------------------------------------------------"
@@ -158,7 +158,7 @@ cat $outfile_v2NWoff | sed -e"/^%.*/{d}"
 
 
 echo
-cmdline="$cmp_code -1 $outfile_v1 -2 $outfile_v2NWoff --clusterFiles=0 --Ftolerance=$Ftolerance"
+cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_v2NWoff --clusterFiles=0 --Ftolerance=$Ftolerance"
 echo $cmdline
 if ! eval $cmdline; then
     echo "OUCH... files differ. Something might be wrong..."
@@ -167,7 +167,7 @@ else
     echo "OK."
 fi
 
-cmdline="$cmp_code -1 $outfile_v1 -2 $outfile_v2NWon --clusterFiles=0 --Ftolerance=$Ftolerance"
+cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_v2NWon --clusterFiles=0 --Ftolerance=$Ftolerance"
 echo $cmdline
 if ! eval $cmdline; then
     echo "OUCH... files differ. Something might be wrong..."
