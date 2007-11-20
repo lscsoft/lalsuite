@@ -36,7 +36,6 @@
 #include <lal/Units.h>
 #include <lal/LALConstants.h>
 #include <lal/NRWaveInject.h>
-#include <lal/SphericalHarmonics.h>
 #include <lal/Random.h>
 #include <lal/Inject.h>
 #include <gsl/gsl_heapsort.h> 
