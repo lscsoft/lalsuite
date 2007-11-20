@@ -1122,8 +1122,8 @@ def make_burca_tailor_fragment(dag, input_cache, seg, tag):
 	nodes = set()
 	while input_cache:
 		node = BurcaTailorNode(burcatailorjob)
-		node.add_input_cache(input_cache[-7:])
-		del input_cache[-7:]
+		node.add_input_cache(input_cache[-15:])
+		del input_cache[-15:]
 		node.set_name("ligolw_burca_tailor_%s_%d_%d_%d" % (tag, int(seg[0]), int(abs(seg)), len(nodes)))
 		node.set_output("%s_%d" % (tag, len(nodes)))
 		dag.add_node(node)
@@ -1136,7 +1136,7 @@ def make_burca_tailor_fragment(dag, input_cache, seg, tag):
 	del node.get_args()[:]
 	node.add_var_arg("--add-from-cache %s" % node.cache_name)
 	node.set_output(tag)
-	#node.set_post_script("/bin/rm -f %s" % " ".join([c.path() for c in node.get_input_cache()]))
+	node.set_post_script("/bin/rm -f %s" % " ".join([c.path() for c in node.get_input_cache()]))
 	dag.add_node(node)
 	return set([node])
 
