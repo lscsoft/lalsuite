@@ -76,6 +76,7 @@
 #include <lal/FindChirpBCVSpin.h>
 #include <lal/FindChirpPTF.h>
 #include <lal/FindChirpChisq.h>
+#include <lal/GenerateInspiral.h>
 #include <lal/LALTrigScanCluster.h>
 #include <lal/NRWaveIO.h>
 #include <lal/NRWaveInject.h>
@@ -99,25 +100,25 @@ RCSID( "$Id$" );
 if ( this_summ_value ) \
 { \
   this_summ_value = this_summ_value->next = (SummValueTable *) \
-  LALCalloc( 1, sizeof(SummValueTable) ); \
+  LALCalloc( 1, sizeof(SummValueTable) );\
 } \
 else \
 { \
   summvalue.summValueTable = this_summ_value = (SummValueTable *) \
-  LALCalloc( 1, sizeof(SummValueTable) ); \
+  LALCalloc( 1, sizeof(SummValueTable) );\
 } \
 LALSnprintf( this_summ_value->program, LIGOMETA_PROGRAM_MAX, "%s", \
-  PROGRAM_NAME ); \
-this_summ_value->version = 0; \
-this_summ_value->start_time = searchsumm.searchSummaryTable->out_start_time; \
-this_summ_value->end_time = searchsumm.searchSummaryTable->out_end_time; \
-this_summ_value->value = (REAL4) val; \
-this_summ_value->intvalue = (INT4) intval; \
+  PROGRAM_NAME );\
+this_summ_value->version = 0;\
+this_summ_value->start_time = searchsumm.searchSummaryTable->out_start_time;\
+this_summ_value->end_time = searchsumm.searchSummaryTable->out_end_time;\
+this_summ_value->value = (REAL4) val;\
+this_summ_value->intvalue = (INT4) intval;\
 LALSnprintf( this_summ_value->name, LIGOMETA_SUMMVALUE_NAME_MAX, "%s", \
-    sv_name ); \
-LALSnprintf( this_summ_value->ifo, LIGOMETA_IFO_MAX, "%s", ifo ); \
+    sv_name );\
+LALSnprintf( this_summ_value->ifo, LIGOMETA_IFO_MAX, "%s", ifo );\
 LALSnprintf( this_summ_value->comment, LIGOMETA_SUMMVALUE_COMM_MAX, \
-    "%s", sv_comment ); \
+    "%s", sv_comment );\
 
 double rint(double x);
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
@@ -252,7 +253,7 @@ UINT4 ccFlag = 0;
 CHAR  *userTag          = NULL;         /* string the user can tag with */
 CHAR  *ifoTag           = NULL;         /* string to tag parent IFOs    */
 CHAR   fileName[FILENAME_MAX];          /* name of output files         */
-UINT4  outCompress      = 0;
+INT4   outCompress      = 0;
 INT4   maximizationInterval = 0;        /* Max over template in this    */ 
                                         /* maximizationInterval Nanosec */ 
                                         /* interval                     */
@@ -326,8 +327,6 @@ int main( int argc, char *argv[] )
   REAL4TimeSeries               chan;
   REAL8TimeSeries               strainChan;
   REAL4FrequencySeries          spec;
-  REAL4				specSum;
-  REAL4Sequence			*tempSpec = NULL;
   COMPLEX8FrequencySeries       resp;
   DataSegmentVector            *dataSegVec = NULL;
   COMPLEX8TimeSeries           *coherentInputData = NULL;
@@ -744,7 +743,7 @@ int main( int argc, char *argv[] )
 
   /* determine the number of points to get and create storage for the data */
   inputLengthNS = 
-    (REAL8) ( gpsEndTimeNS - gpsStartTimeNS + 2000000000LL * padData );
+    (REAL8) ( gpsEndTimeNS - gpsStartTimeNS + 2000000000L * padData );
   numInputPoints = (UINT4) floor( inputLengthNS / (chan.deltaT * 1.0e9) + 0.5 );
   if ( calData == real_8 )
   {
@@ -959,7 +958,7 @@ int main( int argc, char *argv[] )
       /* set the spectrum to the Initial LIGO design noise curve */
       REAL8 psd_value;
       LALLIGOIPsd( NULL, &psd_value, strainHighPassFreq );
-      for ( k = 0; k < kmin ; ++k )
+      for ( k = 0; k < (UINT4)kmin ; ++k )
       {  
         spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
       }
@@ -975,7 +974,7 @@ int main( int argc, char *argv[] )
       /* set the spectrum to the Advanced LIGO design noise curve */
       REAL8 psd_value;
       LALAdvLIGOPsd( NULL, &psd_value, strainHighPassFreq );
-      for ( k = 0; k < kmin ; ++k )
+      for ( k = 0; k < (UINT4)kmin ; ++k )
       {  
         spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
       }
@@ -1003,7 +1002,7 @@ int main( int argc, char *argv[] )
         &status );
     LAL_CALL( LALReverseRealFFT( &status, chan.data, ntilde, invPlan ), &status);
     /* normalize the noise */
-    for ( j = 0; j < length; ++j )
+    for ( j = 0; j < (UINT4)length; ++j )
     {
       chan.data->data[j] /= (REAL4) length ;
     }
@@ -1138,7 +1137,7 @@ int main( int argc, char *argv[] )
     if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
         outFrame, &resp, "strain/ct", "RESPONSE_UNITY" );
   }
-  if (specType == 3 | specType == 4)
+  if ( ( specType == 3 ) || ( specType == 4 ) )
   {
     /* replace the response function with 1/dynRange if we are using the */
     /* design LIGO or AdvLIGO psd                                        */
@@ -1168,7 +1167,7 @@ int main( int argc, char *argv[] )
     endKeep.gpsSeconds   += injSafety;
 
     /* read in the time domain follow-up data from XML */
-    for (i = 0; i < numTDFiles; i++ )
+    for (i = 0; i < (UINT4)numTDFiles; i++ )
     {
       INT4 thisTDNum = 0;
       if ( !tdFollowUpEvents )
@@ -1705,7 +1704,7 @@ int main( int argc, char *argv[] )
     REAL8 sim_psd_value, sim_psd_freq;
     LALLIGOIPsd( NULL, &sim_psd_value, strainHighPassFreq );
     
-    for ( k = 0; k < k_min; ++k )
+    for ( k = 0; k < (UINT4)k_min; ++k )
     {
       spec.data->data[k] = (REAL4) (9.0e-46 * sim_psd_value * dynRange * 
                                     dynRange);
@@ -1727,7 +1726,7 @@ int main( int argc, char *argv[] )
     REAL8 sim_psd_value, sim_psd_freq;
     LALAdvLIGOPsd( NULL, &sim_psd_value, strainHighPassFreq );
     
-    for ( k = 0; k < k_min; ++k )
+    for ( k = 0; k < (UINT4)k_min; ++k )
     {
       spec.data->data[k] = (REAL4) (9.0e-46 * sim_psd_value * dynRange * 
                                     dynRange);
@@ -2068,7 +2067,7 @@ int main( int argc, char *argv[] )
       {
         if ( vrbflg )
         {
-          fprintf( stdout, "standard candle not calculated; \n"
+          fprintf( stdout, "standard candle not calculated;\n"
               "chan.deltaT = %e\nnumPoints = %d\n",
               chan.deltaT, numPoints );
           fflush( stdout );
@@ -2280,7 +2279,7 @@ int main( int argc, char *argv[] )
             (trigEndTimeNS && (trigEndTimeNS < fcSegStartTimeNS)) ) )
         { 
           if ( vrbflg ) fprintf( stdout, 
-              "skipping segment %d/%d [%lld-%lld] (outside trig time)\n", 
+              "skipping segment %d/%d [%ld-%ld] (outside trig time)\n", 
               fcSegVec->data[i].number, fcSegVec->length, 
               fcSegStartTimeNS, fcSegEndTimeNS );
 
@@ -2352,7 +2351,7 @@ int main( int argc, char *argv[] )
                 fcFilterParams->qVec );
             /* END CHADs CHANGES */
             if ( vrbflg ) fprintf( stdout, 
-                "filtering segment %d/%d [%lld-%lld] "
+                "filtering segment %d/%d [%ld-%ld] "
                 "against template %d/%d (%e,%e)\n", 
                 fcSegVec->data[i].number, fcSegVec->length,
                 fcSegStartTimeNS, fcSegEndTimeNS,
@@ -2504,7 +2503,7 @@ int main( int argc, char *argv[] )
           else /* not analyzeTag */
           {
             if ( vrbflg ) fprintf( stdout, 
-                "skipping segment %d/%d [%lld-%lld]\n",
+                "skipping segment %d/%d [%ld-%ld]\n",
                 fcSegVec->data[i].number, fcSegVec->length, 
                 fcSegStartTimeNS, fcSegEndTimeNS );
           }
@@ -3218,155 +3217,155 @@ int main( int argc, char *argv[] )
 
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
   this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-calloc( 1, sizeof(ProcessParamsTable) ); \
+calloc( 1, sizeof(ProcessParamsTable) );\
 LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-    PROGRAM_NAME ); \
+    PROGRAM_NAME );\
 LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
-    long_options[option_index].name ); \
-LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+    long_options[option_index].name );\
+LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype );\
 LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
-#define USAGE \
-  "lalapps_inspiral [options]\n\n"\
-"  --help                       display this message\n"\
-"  --verbose                    print progress information\n"\
-"  --version                    print version information and exit\n"\
-"  --debug-level LEVEL          set the LAL debug level to LEVEL\n"\
-"  --user-tag STRING            set the process_params usertag to STRING\n"\
-"  --ifo-tag STRING             set the ifotag to STRING - for file naming\n"\
-"  --comment STRING             set the process table comment to STRING\n"\
-"\n"\
-"  --gps-start-time SEC         GPS second of data start time\n"\
-"  --gps-start-time-ns NS       GPS nanosecond of data start time\n"\
-"  --gps-end-time SEC           GPS second of data end time\n"\
-"  --gps-end-time-ns NS         GPS nanosecond of data end time\n"\
-"  --pad-data T                 pad the data start and end time by T seconds\n"\
-"  --slide-time T               slide data start epoch by T seconds\n"\
-"  --slide-time-ns T            slide data start epoch by T nanoseconds\n"\
-"\n"\
-"  --glob-frame-data            glob *.gwf files in the pwd to obtain frame data\n"\
-"  --frame-type TAG             input data is contained in frames of type TAG\n"\
-"  --frame-cache                obtain frame data from LAL frame cache FILE\n"\
-"  --calibration-cache FILE     obtain calibration from LAL frame cache FILE\n"\
-"  --glob-calibration-data      obtain calibration by globbing in working dir\n"\
-"\n"\
-"  --channel-name CHAN          read data from interferometer channel CHAN\n"\
-"  --calibrated-data TYPE       calibrated data of TYPE real_4 or real_8\n"\
-"  --strain-high-pass-freq F    high pass REAL8 h(t) data above F Hz\n"\
-"  --strain-high-pass-order O   set the order of the h(t) high pass filter to O\n"\
-"  --strain-high-pass-atten A   set the attenuation of the high pass filter to A\n"\
-"  --point-calibration          use the first point in the chunk to calibrate\n"\
-"\n"\
-"  --injection-file FILE        inject simulated inspiral signals from FILE\n"\
-"  --fast F                     analyse injections templates within a match F\n"\
-"  --inject-overhead            inject signals from overhead detector\n"\
-"  --enable-filter-inj-only     filter only segments with injections\n"\
-"  --disable-filter-inj-only    filter all segments when doing injections\n"\
-"                               All segments are filtered.\n"\
-"\n"\
-"  --td-follow-up FILE          Follow up coincident BCV events in FILE\n"\
-"  --bank-file FILE             read template bank parameters from FILE\n"\
-"  --start-template N           start filtering at template number N in bank\n"\
-"  --stop-template N            stop filtering at template number N in bank\n"\
-"  --reverse-chirp-bank         filters data using a reverse chirp template bank\n"\
-"\n"\
-"  --sample-rate F              filter data at F Hz, downsampling if necessary\n"\
-"  --resample-filter TYPE       set resample filter to TYPE (ldas|butterworth)\n"\
-"\n"\
-"  --disable-high-pass          turn off the IIR highpass filter\n"\
-"  --enable-high-pass F         high pass data above F Hz using an IIR filter\n"\
-"  --high-pass-order O          set the order of the high pass filter to O\n"\
-"  --high-pass-attenuation A    set the attenuation of the high pass filter to A\n"\
-"  --spectrum-type TYPE         use PSD estimator TYPE\n"\
-"                                 (mean|median|gaussian|white|LIGO|AdvLIGO)\n"\
-"                               TYPE 'gaussian' is equivalent to 'white' - deprecated option\n"\
-"\n"\
-"  --segment-length N           set data segment length to N points\n"\
-"  --number-of-segments N       set number of data segments to N\n"\
-"  --segment-overlap N          overlap data segments by N points\n"\
-"\n"\
-"  --low-frequency-cutoff F     do not filter below F Hz\n"\
-"  --inverse-spec-length T      set length of inverse spectrum to T seconds\n"\
-"  --dynamic-range-exponent X   set dynamic range scaling to 2^X\n"\
-"\n"\
-"  --approximant APPROX         set approximant of the waveform to APPROX\n"\
-"                               (FindChirpSP|BCV|BCVC|BCVSpin|TaylorT1|TaylorT2|\n"\
-"                                  TaylorT3|PadeT1|EOB|GeneratePPN|FindChirpPTF)\n"\
-"  --order ORDER                set the pN order of the waveform to ORDER\n"\
-"                               (twoPN|twoPointFivePN|threePN|threePointFivePN|\n"\
-"                                  pseudoFourPN)\n"\
-"  --snr-threshold RHO          set signal-to-noise threshold to RHO\n"\
-"  --chisq-bins P               set number of chisq veto bins to P\n"\
-"  --chisq-delta DELTA          set chisq delta parameter to DELTA\n"\
-"  --chisq-threshold X          threshold on chi^2 < X * ( p + DELTA *rho^2 )\n"\
-"  --cluster-method MTHD        max over chirp MTHD (tmplt|window|none)\n"\
-"  --cluster-window SEC         set length of clustering time window if required\n"\
-"\n"\
-"  --enable-rsq-veto            enable the r^2 veto test\n"\
-"  --disable-rsq-veto           disable the r^2 veto test\n"\
-"  --rsq-veto-window SEC        set the r^2 veto window to SEC\n"\
-"  --rsq-veto-threshold RSQ     set r^2 veto threshold to RSQ\n"\
-"\n"\
-"  --do-rsq-veto                do the r^2 veto\n"\
-"  --rsq-veto-time-thresh SEC   set the r^2 veto window to SEC\n"\
-"  --rsq-veto-max-snr MAXSNR    set the r^2 veto maximum snr to MAXSNR\n"\
-"  --rsq-veto-coeff COEFF       set the r^2 veto coefficient to COEFF\n"\
-"  --rsq-veto-pow POW           set the r^2 veto power to POW\n"\
-"\n"\
-"  --bank-veto-subbank-size N   set the number of tmplts in a subbank to N\n"\
-"\n"\
-"  --maximization-interval msec set length of maximization interval\n"\
-"\n"\
-"  --ts-cluster   MTHD          max over template and end time MTHD \n"\
-"                                 (T0T3Tc|T0T3TcAS|Psi0Psi3Tc|Psi0Psi3TcAS)\n"\
-"  --ts-endtime-interval msec   set end-time interval for TrigScan clustering\n"\
-"  --ts-metric-scaling fac      scale the metric which defines the ellipsoids for TrigScan\n"\
-"                               Scaling must be > 0\n"\
-"\n"\
-"  --enable-output              write the results to a LIGO LW XML file\n"\
-"  --output-mask MASK           write the output sngl_inspiral table\n"\
-"                                 with optional MASK (bns|bcv)\n"\
-"  --write-compress             write a compressed xml file\n"\
-"  --disable-output             do not write LIGO LW XML output file\n"\
-"  --trig-start-time SEC        only output triggers after GPS time SEC\n"\
-"  --trig-end-time SEC          only output triggers before GPS time SEC\n"\
-"\n"\
-"  --white-gaussian VAR         replace data with white gaussian noise of variance VAR\n"\
-"  --gaussian-noise VAR         same as --white-gaussian - deprecated option\n"\
-"  --colored-gaussian PSD       replace data with colored gaussian noise with psd PSD\n"\
-"                               (LIGO|AdvLIGO)\n"\
-"\n"\
-"  --random-seed SEED           set random number seed for injections to SEED\n"\
-"                                 (urandom|integer)\n"\
-"\n"\
-"  --bank-simulation N          perform N injections to test the template bank\n"\
-"                                (sim_inspiral.xml|integer)\n"\
-"  --enable-bank-sim-max        compute the maximum match over the bank\n"\
-"  --disable-bank-sim-max       do not maximize the match over the bank\n"\
-"  --sim-approximant APX        set approximant of the injected waveform to APX\n"\
-"                                 (TaylorT1|TaylorT2|TaylorT3|PadeT1|EOB|\n"\
-"                                  GeneratePPN|FrameFile)\n"\
-"  --numrel-data-dir NRDir      directory where numerical waveforms are located\n"\
-"  --numrel-meta-file NRMeta    Numerical relativity waveform metadata file\n"\
-"  --numrel-modelo  modeLo      Lowest numerical relativity mode to inject\n"\
-"  --numrel-modehi  modeHi      Highest numerical relativity mode to inject\n"\
-"  --sim-frame-file F           read the bank sim waveform from frame named F\n"\
-"  --sim-frame-channel C        read the bank sim waveform from frame channel C\n"\
-"  --sim-minimum-mass M         set minimum mass of bank injected signal to M\n"\
-"  --sim-maximum-mass M         set maximum mass of bank injected signal to M\n"\
-"\n"\
-"  --data-checkpoint            checkpoint and exit after data is read in\n"\
-"  --checkpoint-path PATH       write checkpoint file under PATH\n"\
-"  --output-path PATH           write output data to PATH\n"\
-"\n"\
-"  --write-raw-data             write raw data to a frame file\n"\
-"  --write-filter-data          write data that is passed to filter to a frame\n"\
-"  --write-response             write the computed response function to a frame\n"\
-"  --write-spectrum             write the uncalibrated psd to a frame\n"\
-"  --write-snrsq                write the snr time series for each data segment\n"\
-"  --write-chisq                write the r^2 time series for each data segment\n"\
-"  --write-cdata                write the complex filter output\n"\
-"\n"
+#define USAGE(a) \
+fprintf( a,   "lalapps_inspiral [options]\n\n");\
+fprintf( a, "  --help                       display this message\n");\
+fprintf( a, "  --verbose                    print progress information\n");\
+fprintf( a, "  --version                    print version information and exit\n");\
+fprintf( a, "  --debug-level LEVEL          set the LAL debug level to LEVEL\n");\
+fprintf( a, "  --user-tag STRING            set the process_params usertag to STRING\n");\
+fprintf( a, "  --ifo-tag STRING             set the ifotag to STRING - for file naming\n");\
+fprintf( a, "  --comment STRING             set the process table comment to STRING\n");\
+fprintf( a, "\n");\
+fprintf( a, "  --gps-start-time SEC         GPS second of data start time\n");\
+fprintf( a, "  --gps-start-time-ns NS       GPS nanosecond of data start time\n");\
+fprintf( a, "  --gps-end-time SEC           GPS second of data end time\n");\
+fprintf( a, "  --gps-end-time-ns NS         GPS nanosecond of data end time\n");\
+fprintf( a, "  --pad-data T                 pad the data start and end time by T seconds\n");\
+fprintf( a, "  --slide-time T               slide data start epoch by T seconds\n");\
+fprintf( a, "  --slide-time-ns T            slide data start epoch by T nanoseconds\n");\
+fprintf( a, "\n");\
+fprintf( a, "  --glob-frame-data            glob *.gwf files in the pwd to obtain frame data\n");\
+fprintf( a, "  --frame-type TAG             input data is contained in frames of type TAG\n");\
+fprintf( a, "  --frame-cache                obtain frame data from LAL frame cache FILE\n");\
+fprintf( a, "  --calibration-cache FILE     obtain calibration from LAL frame cache FILE\n");\
+fprintf( a, "  --glob-calibration-data      obtain calibration by globbing in working dir\n");\
+fprintf( a, "\n");\
+fprintf( a, "  --channel-name CHAN          read data from interferometer channel CHAN\n");\
+fprintf( a, "  --calibrated-data TYPE       calibrated data of TYPE real_4 or real_8\n");\
+fprintf( a, "  --strain-high-pass-freq F    high pass REAL8 h(t) data above F Hz\n");\
+fprintf( a, "  --strain-high-pass-order O   set the order of the h(t) high pass filter to O\n");\
+fprintf( a, "  --strain-high-pass-atten A   set the attenuation of the high pass filter to A\n");\
+fprintf( a, "  --point-calibration          use the first point in the chunk to calibrate\n");\
+fprintf( a, "\n");\
+fprintf( a, "  --injection-file FILE        inject simulated inspiral signals from FILE\n");\
+fprintf( a, "  --fast F                     analyse injections templates within a match F\n");\
+fprintf( a, "  --inject-overhead            inject signals from overhead detector\n");\
+fprintf( a, "  --enable-filter-inj-only     filter only segments with injections\n");\
+fprintf( a, "  --disable-filter-inj-only    filter all segments when doing injections\n");\
+fprintf( a, "                               All segments are filtered.\n");\
+fprintf( a, "\n");\
+fprintf( a, "  --td-follow-up FILE          Follow up coincident BCV events in FILE\n");\
+fprintf( a, "  --bank-file FILE             read template bank parameters from FILE\n");\
+fprintf( a, "  --start-template N           start filtering at template number N in bank\n");\
+fprintf( a, "  --stop-template N            stop filtering at template number N in bank\n");\
+fprintf( a, "  --reverse-chirp-bank         filters data using a reverse chirp template bank\n");\
+fprintf( a, "\n");\
+fprintf( a, "  --sample-rate F              filter data at F Hz, downsampling if necessary\n");\
+fprintf( a, "  --resample-filter TYPE       set resample filter to TYPE (ldas|butterworth) \n");\
+fprintf( a, "\n");\
+fprintf( a, "  --disable-high-pass          turn off the IIR highpass filter\n");\
+fprintf( a, "  --enable-high-pass F         high pass data above F Hz using an IIR filter\n");\
+fprintf( a, "  --high-pass-order O          set the order of the high pass filter to O\n");\
+fprintf( a, "  --high-pass-attenuation A    set the attenuation of the high pass filter to A\n");\
+fprintf( a, "  --spectrum-type TYPE         use PSD estimator TYPE\n");\
+fprintf( a, "                                 (mean|median|gaussian|white|LIGO|AdvLIGO) \n");\
+fprintf( a, "                               TYPE 'gaussian' is equivalent to 'white' - deprecated option\n");\
+fprintf( a, "\n");\
+fprintf( a, "  --segment-length N           set data segment length to N points\n");\
+fprintf( a, "  --number-of-segments N       set number of data segments to N\n");\
+fprintf( a, "  --segment-overlap N          overlap data segments by N points\n");\
+fprintf( a, "\n");\
+fprintf( a, "  --low-frequency-cutoff F     do not filter below F Hz\n");\
+fprintf( a, "  --inverse-spec-length T      set length of inverse spectrum to T seconds\n");\
+fprintf( a, "  --dynamic-range-exponent X   set dynamic range scaling to 2^X\n");\
+fprintf( a, "\n");\
+fprintf( a, "  --approximant APPROX         set approximant of the waveform to APPROX\n");\
+fprintf( a, "                               (FindChirpSP|BCV|BCVC|BCVSpin|TaylorT1|TaylorT2|\n");\
+fprintf( a, "                                  TaylorT3|PadeT1|EOB|GeneratePPN|FindChirpPTF) \n");\
+fprintf( a, "  --order ORDER                set the pN order of the waveform to ORDER\n");\
+fprintf( a, "                               (twoPN|twoPointFivePN|threePN|threePointFivePN|\n");\
+fprintf( a, "                                  pseudoFourPN) \n");\
+fprintf( a, "  --snr-threshold RHO          set signal-to-noise threshold to RHO\n");\
+fprintf( a, "  --chisq-bins P               set number of chisq veto bins to P\n");\
+fprintf( a, "  --chisq-delta DELTA          set chisq delta parameter to DELTA\n");\
+fprintf( a, "  --chisq-threshold X          threshold on chi^2 < X * ( p + DELTA *rho^2 ) \n");\
+fprintf( a, "  --cluster-method MTHD        max over chirp MTHD (tmplt|window|none) \n");\
+fprintf( a, "  --cluster-window SEC         set length of clustering time window if required\n");\
+fprintf( a, "\n");\
+fprintf( a, "  --enable-rsq-veto            enable the r^2 veto test\n");\
+fprintf( a, "  --disable-rsq-veto           disable the r^2 veto test\n");\
+fprintf( a, "  --rsq-veto-window SEC        set the r^2 veto window to SEC\n");\
+fprintf( a, "  --rsq-veto-threshold RSQ     set r^2 veto threshold to RSQ\n");\
+fprintf( a, "\n");\
+fprintf( a, "  --do-rsq-veto                do the r^2 veto\n");\
+fprintf( a, "  --rsq-veto-time-thresh SEC   set the r^2 veto window to SEC\n");\
+fprintf( a, "  --rsq-veto-max-snr MAXSNR    set the r^2 veto maximum snr to MAXSNR\n");\
+fprintf( a, "  --rsq-veto-coeff COEFF       set the r^2 veto coefficient to COEFF\n");\
+fprintf( a, "  --rsq-veto-pow POW           set the r^2 veto power to POW\n");\
+fprintf( a, "\n");\
+fprintf( a, "  --bank-veto-subbank-size N   set the number of tmplts in a subbank to N\n");\
+fprintf( a, "\n");\
+fprintf( a, "  --maximization-interval msec set length of maximization interval\n");\
+fprintf( a, "\n");\
+fprintf( a, "  --ts-cluster   MTHD          max over template and end time MTHD \n");\
+fprintf( a, "                                 (T0T3Tc|T0T3TcAS|Psi0Psi3Tc|Psi0Psi3TcAS) \n");\
+fprintf( a, "  --ts-endtime-interval msec   set end-time interval for TrigScan clustering\n");\
+fprintf( a, "  --ts-metric-scaling fac      scale the metric which defines the ellipsoids for TrigScan\n");\
+fprintf( a, "                               Scaling must be > 0\n");\
+fprintf( a, "\n");\
+fprintf( a, "  --enable-output              write the results to a LIGO LW XML file\n");\
+fprintf( a, "  --output-mask MASK           write the output sngl_inspiral table\n");\
+fprintf( a, "                                 with optional MASK (bns|bcv) \n");\
+fprintf( a, "  --write-compress             write a compressed xml file\n");\
+fprintf( a, "  --disable-output             do not write LIGO LW XML output file\n");\
+fprintf( a, "  --trig-start-time SEC        only output triggers after GPS time SEC\n");\
+fprintf( a, "  --trig-end-time SEC          only output triggers before GPS time SEC\n");\
+fprintf( a, "\n");\
+fprintf( a, "  --white-gaussian VAR         replace data with white gaussian noise of variance VAR\n");\
+fprintf( a, "  --gaussian-noise VAR         same as --white-gaussian - deprecated option\n");\
+fprintf( a, "  --colored-gaussian PSD       replace data with colored gaussian noise with psd PSD\n");\
+fprintf( a, "                               (LIGO|AdvLIGO) \n");\
+fprintf( a, "\n");\
+fprintf( a, "  --random-seed SEED           set random number seed for injections to SEED\n");\
+fprintf( a, "                                 (urandom|integer) \n");\
+fprintf( a, "\n");\
+fprintf( a, "  --bank-simulation N          perform N injections to test the template bank\n");\
+fprintf( a, "                                (sim_inspiral.xml|integer) \n");\
+fprintf( a, "  --enable-bank-sim-max        compute the maximum match over the bank\n");\
+fprintf( a, "  --disable-bank-sim-max       do not maximize the match over the bank\n");\
+fprintf( a, "  --sim-approximant APX        set approximant of the injected waveform to APX\n");\
+fprintf( a, "                                 (TaylorT1|TaylorT2|TaylorT3|PadeT1|EOB|\n");\
+fprintf( a, "                                  GeneratePPN|FrameFile) \n");\
+fprintf( a, "  --numrel-data-dir NRDir      directory where numerical waveforms are located\n");\
+fprintf( a, "  --numrel-meta-file NRMeta    Numerical relativity waveform metadata file\n");\
+fprintf( a, "  --numrel-modelo  modeLo      Lowest numerical relativity mode to inject\n");\
+fprintf( a, "  --numrel-modehi  modeHi      Highest numerical relativity mode to inject\n");\
+fprintf( a, "  --sim-frame-file F           read the bank sim waveform from frame named F\n");\
+fprintf( a, "  --sim-frame-channel C        read the bank sim waveform from frame channel C\n");\
+fprintf( a, "  --sim-minimum-mass M         set minimum mass of bank injected signal to M\n");\
+fprintf( a, "  --sim-maximum-mass M         set maximum mass of bank injected signal to M\n");\
+fprintf( a, "\n");\
+fprintf( a, "  --data-checkpoint            checkpoint and exit after data is read in\n");\
+fprintf( a, "  --checkpoint-path PATH       write checkpoint file under PATH\n");\
+fprintf( a, "  --output-path PATH           write output data to PATH\n");\
+fprintf( a, "\n");\
+fprintf( a, "  --write-raw-data             write raw data to a frame file\n");\
+fprintf( a, "  --write-filter-data          write data that is passed to filter to a frame\n");\
+fprintf( a, "  --write-response             write the computed response function to a frame\n");\
+fprintf( a, "  --write-spectrum             write the uncalibrated psd to a frame\n");\
+fprintf( a, "  --write-snrsq                write the snr time series for each data segment\n");\
+fprintf( a, "  --write-chisq                write the r^2 time series for each data segment\n");\
+fprintf( a, "  --write-cdata                write the complex filter output\n");\
+fprintf( a, "\n");
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 {
@@ -3553,7 +3552,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                 long_options[option_index].name, gstartt );
             exit( 1 );
           }
-          gpsStartTimeNS += (INT8) gstartt * 1000000000LL;
+          gpsStartTimeNS += (INT8) gstartt * 1000000000L;
           ADD_PROCESS_PARAM( "int", "%ld", gstartt );
         }
         break;
@@ -3602,7 +3601,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                 long_options[option_index].name, gendt );
             exit( 1 );
           }            
-          gpsEndTimeNS += (INT8) gendt * 1000000000LL;
+          gpsEndTimeNS += (INT8) gendt * 1000000000L;
           ADD_PROCESS_PARAM( "int", "%ld", gendt );
         }
         break;
@@ -3696,7 +3695,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                   long_options[option_index].name, gstartt );
               exit( 1 );
             }
-            trigStartTimeNS = (INT8) gstartt * 1000000000LL;
+            trigStartTimeNS = (INT8) gstartt * 1000000000L;
           }
           ADD_PROCESS_PARAM( "int", "%ld", gstartt );
         }
@@ -3726,7 +3725,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                   long_options[option_index].name, gendt );
               exit( 1 );
             }            
-            trigEndTimeNS = (INT8) gendt * 1000000000LL;
+            trigEndTimeNS = (INT8) gendt * 1000000000L;
           }
           ADD_PROCESS_PARAM( "int", "%ld", gendt );
         }
@@ -3833,7 +3832,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'h':
-        fprintf( stdout, USAGE );
+        USAGE( stdout );
         exit( 0 );
         break;
 
@@ -4853,7 +4852,18 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
-
+  
+  if ( outCompress)
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--write-compress" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
+  }
 
   /*
    *
@@ -4893,7 +4903,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     if ( trigStartTimeNS < gpsStartTimeNS )
     {
       fprintf( stderr, 
-          "trigStartTimeNS = %lld\nis less than gpsStartTimeNS = %lld", 
+          "trigStartTimeNS = %ld\nis less than gpsStartTimeNS = %ld", 
           trigStartTimeNS, gpsStartTimeNS );
     }
   }
@@ -4902,7 +4912,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     if ( trigEndTimeNS > gpsEndTimeNS )
     {
       fprintf( stderr, 
-          "trigEndTimeNS = %lld\nis greater than gpsEndTimeNS = %lld", 
+          "trigEndTimeNS = %ld\nis greater than gpsEndTimeNS = %ld", 
           trigEndTimeNS, gpsEndTimeNS );
     }
   }
@@ -4991,16 +5001,16 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   inputDataLength = numPoints * numSegments - ( numSegments - 1 ) * ovrlap;
   {
     INT8 gpsChanIntervalNS = gpsEndTimeNS - gpsStartTimeNS;
-    INT8 inputDataLengthNS = (INT8) inputDataLength * 1000000000LL / 
+    INT8 inputDataLengthNS = (INT8) inputDataLength * 1000000000L / 
       (INT8) sampleRate;
 
     if ( inputDataLengthNS != gpsChanIntervalNS )
     {
       fprintf( stderr, "length of input data and data chunk do not match\n" );
-      fprintf( stderr, "start time: %lld, end time %lld\n",
-          gpsStartTimeNS / 1000000000LL, gpsEndTimeNS / 1000000000LL );
-      fprintf( stderr, "gps channel time interval: %lld ns\n"
-          "computed input data length: %lld ns\n", 
+      fprintf( stderr, "start time: %ld, end time %ld\n",
+          gpsStartTimeNS / 1000000000L, gpsEndTimeNS / 1000000000L );
+      fprintf( stderr, "gps channel time interval: %ld ns\n"
+          "computed input data length: %ld ns\n", 
           gpsChanIntervalNS, inputDataLengthNS );
       exit( 1 );
     }
