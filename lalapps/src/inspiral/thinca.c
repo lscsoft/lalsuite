@@ -101,140 +101,136 @@ ExtTriggerTable   *exttrigHead = NULL;
  * USAGE
  *
  */
-static void print_usage(char *program)
-{
-  fprintf(stderr,
-      "Usage:  %s [options] [LIGOLW XML input files]\n" \
-      "The following options are recognized.  Options not surrounded in [] are\n" \
-      "required.\n" \
-      "  [--help]                      display this message\n"\
-      "  [--verbose]                   print progress information\n"\
-      "  [--version]                   print version information and exit\n"\
-      "  [--debug-level]   level       set the LAL debug level to LEVEL\n"\
-      "  [--user-tag]      usertag     set the process_params usertag\n"\
-      "  [--ifo-tag]       ifotag      set the ifo-tag - for file naming\n"\
-      "  [--comment]       string      set the process table comment to STRING\n"\
-      "  [--write-compress]            write a compressed xml file\n"\
-      "\n"\
-      "   --gps-start-time start_time  GPS second of data start time\n"\
-      "   --gps-end-time   end_time    GPS second of data end time\n"\
-      "  [--check-times]               Check that all times were analyzed\n"\
-      "  [--multi-ifo-coinc]           Look for triple/quadruple ifo coincidence\n"\
-      "  [--maximization-interval] max_dt set length of maximization interval in ms\n"\
-      "\n"\
-      "  [--g1-slide]      g1_slide    Slide G1 data by multiples of g1_slide\n"\
-      "  [--h1-slide]      h1_slide    Slide H1 data by multiples of h1_slide\n"\
-      "  [--h2-slide]      h2_slide    Slide H2 data by multiples of h2_slide\n"\
-      "  [--l1-slide]      l1_slide    Slide L1 data by multiples of l1_slide\n"\
-      "  [--t1-slide]      t1_slide    Slide T1 data by multiples of t1_slide\n"\
-      "  [--v1-slide]      v1_slide    Slide V1 data by multiples of v1_slide\n"\
-      "  [--num-slides]    num_slides  The number of time slides to perform\n"\
-      "\n"\
-      "  [--g1-triggers]               input triggers from G1\n"\
-      "  [--h1-triggers]               input triggers from H1\n"\
-      "  [--h2-triggers]               input triggers from H2\n"\
-      "  [--l1-triggers]               input triggers from L1\n"\
-      "  [--t1-triggers]               input triggers from T1\n"\
-      "  [--v1-triggers]               input triggers from V1\n"\
-      "\n"\
-      "  [--do-veto]                    perform a veto on single IFO triggers\n"\
-      "                                 at the times specified in the veto files below\n"\
-      "  [--g1-veto-file]               veto file for G1\n"\
-      "  [--h1-veto-file]               veto file for H1\n"\
-      "  [--h2-veto-file]               veto file for H2\n"\
-      "  [--l1-veto-file]               veto file for L1\n"\
-      "  [--t1-veto-file]               veto file for T1\n"\
-      "  [--v1-veto-file]               veto file for V1\n"\
-      "\n"\
-      "   --parameter-test     test    set parameters with which to test coincidence:\n"\
-      "                                (m1_and_m2|mchirp_and_eta|mchirp_and_eta_ext|psi0_and_psi3|ellipsoid)\n"\
-      "  [--g1-time-accuracy]  g1_dt   specify the timing accuracy of G1 in ms\n"\
-      "  [--h1-time-accuracy]  h1_dt   specify the timing accuracy of H1 in ms\n"\
-      "  [--h2-time-accuracy]  h2_dt   specify the timing accuracy of H2 in ms\n"\
-      "  [--l1-time-accuracy]  l1_dt   specify the timing accuracy of L1 in ms\n"\
-      "  [--t1-time-accuracy]  t1_dt   specify the timing accuracy of T1 in ms\n"\
-      "  [--v1-time-accuracy]  v1_dt   specify the timing accuracy of V1 in ms\n"\
-      "\n"\
-      "  [--g1-mass-accuracy]  g1_dm   specify the mass accuracy of G1\n"\
-      "  [--h1-mass-accuracy]  h1_dm   specify the mass accuracy of H1\n"\
-      "  [--h2-mass-accuracy]  h2_dm   specify the mass accuracy of H2\n"\
-      "  [--l1-mass-accuracy]  l1_dm   specify the mass accuracy of L1\n"\
-      "  [--t1-mass-accuracy]  t1_dm   specify the mass accuracy of T1\n"\
-      "  [--v1-mass-accuracy]  v1_dm   specify the mass accuracy of V1\n"\
-      "\n"\
-      "  [--g1-mchirp-accuracy] g1_dmchirp  specify the mchirp accuracy of G1\n"\
-      "  [--h1-mchirp-accuracy] h1_dmchirp  specify the mchirp accuracy of H1\n"\
-      "  [--h2-mchirp-accuracy] h2_dmchirp  specify the mchirp accuracy of H2\n"\
-      "  [--l1-mchirp-accuracy] l1_dmchirp  specify the mchirp accuracy of L1\n"\
-      "  [--t1-mchirp-accuracy] t1_dmchirp  specify the mchirp accuracy of T1\n"\
-      "  [--v1-mchirp-accuracy] v1_dmchirp  specify the mchirp accuracy of V1\n"\
-      "\n"\
-      "  [--g1-eta-accuracy] g1_deta   specify the eta accuracy of G1\n"\
-      "  [--h1-eta-accuracy] h1_deta   specify the eta accuracy of H1\n"\
-      "  [--h2-eta-accuracy] h2_deta   specify the eta accuracy of H2\n"\
-      "  [--l1-eta-accuracy] l1_deta   specify the eta accuracy of L1\n"\
-      "  [--t1-eta-accuracy] t1_deta   specify the eta accuracy of T1\n"\
-      "  [--v1-eta-accuracy] v1_deta   specify the eta accuracy of V1\n"\
-      "\n"\
-      "  [--g1-psi0-accuracy]  g1_dpsi0   specify the psi0 accuracy of G1\n"\
-      "  [--h1-psi0-accuracy]  h1_dpsi0   specify the psi0 accuracy of H1\n"\
-      "  [--h2-psi0-accuracy]  h2_dpsi0   specify the psi0 accuracy of H2\n"\
-      "  [--l1-psi0-accuracy]  l1_dpsi0   specify the psi0 accuracy of L1\n"\
-      "  [--t1-psi0-accuracy]  t1_dpsi0   specify the psi0 accuracy of T1\n"\
-      "  [--v1-psi0-accuracy]  v1_dpsi0   specify the psi0 accuracy of V1\n"\
-      "\n"\
-      "  [--g1-psi3-accuracy]  g1_dpsi3   specify the psi3 accuracy of G1\n"\
-      "  [--h1-psi3-accuracy]  h1_dpsi3   specify the psi3 accuracy of H1\n"\
-      "  [--h2-psi3-accuracy]  h2_dpsi3   specify the psi3 accuracy of H2\n"\
-      "  [--l1-psi3-accuracy]  l1_dpsi3   specify the psi3 accuracy of L1\n"\
-      "  [--t1-psi3-accuracy]  t1_dpsi3   specify the psi3 accuracy of T1\n"\
-      "  [--v1-psi3-accuracy]  v1_dpsi3   specify the psi3 accuracy of V1\n"\
-      "\n"
-      "  [--e-thinca-parameter]  match    specify the e-thinca parameter\n"\
-      "\n"\
-      "  [--h1-h2-distance-cut]           perform H1-H2 distance cut\n"\
-      "  [--h1-kappa]          h1_kappa   specify H1 kappa for eff dist test\n"\
-      "  [--h2-kappa]          h2_kappa   specify H2 kappa for eff dist test\n"\
-      "  [--h1-epsilon]        h1_epsilon specify H1 epsilon for eff dist test\n"\
-      "  [--h2-epsilon]        h2_epsilon specify H1 epsilon for eff dist test\n"\
-      "\n"\
-      "  [--h1-h2-consistency]            perform H1-H2 consistency cut\n"\
-      "  [--snr-cut]           snr        reject triggers below this snr\n"\
-      "                                   needed when --h1-h2-consistency is given\n"\
-      "\n"\
-      "  [--dmchirp-high]      dmchirp    different chirp mass window for high masses\n"\
-      "  [--high-mass]         mass       total mass for trigger above which\n"\
-      "                                   the high mass mchirp is used\n"\
-      "\n"\
-      "                                   (both bounds must be specified)\n"\
-      "  [--bcvc]                         perform cut based on alphaF\n"\
-      "                                   with individual bounds given below.\n"\
-      "  [--do-alphaf-cut]                perform cut based on alphaF\n"\
-      "                                   with bounds given below\n"\
-      "                                   (both bounds must be specified)\n"\
-      "  [--h1-alphaf-hi]      alphaFhi   reject BCV triggers outside the specified \n"\
-      "  [--h1-alphaf-lo]      alphaFlo   alphaF area for H1 (if \n"\
-      "  [--h2-alphaf-hi]      alphaFhi   reject BCV triggers outside the specified \n"\
-      "  [--h2-alphaf-lo]      alphaFlo   alphaF area for H2\n"\
-      "  [--l1-alphaf-hi]      alphaFhi   reject BCV triggers outside the specified \n"\
-      "  [--l1-alphaf-lo]      alphaFlo   alphaF area for L1\n"\
-      "\n"\
-      "  [--iota-cut-h1h2]    iotaCutH1H2 reject H1H2 triggers with iota above the specified value \n"\
-      "  [--iota-cut-h1l1]    iotaCutH1L1 reject H1L1 triggers with iota above the specified value \n"\
-      "\n"\
-      "  [--do-bcvspin-h1h2-veto]         reject coincidences with H1 snr < H2 snr \n"\
-      "\n"\
-      "   --data-type          data_type  specify the data type, must be one of\n"\
-      "                                   (playground_only|exclude_play|all_data)\n"\
-      "   --complete-coincs               write out triggers from all non-vetoed ifos\n"
-      "                                   if not seen, snr is equal to zero\n"\
-      "  [--exttrig]           source     enables the External-Trigger mode \n"\
-"                                         (using actual time delays) for a source\n"\
-      "                                   specified in the source file\n"\
-      "\n"\
-      "[LIGOLW XML input files] list of the input trigger files.\n"\
-      "\n", program);
-}
+#define USAGE(a, msg) \
+fprintf( a, "Usage:  %s [options] [LIGOLW XML input files]\n" , msg);\
+fprintf( a, "The following options are recognized.  Options not surrounded in [] are\n" );\
+fprintf( a, "required.\n" );\
+fprintf( a, "  [--help]                      display this message\n");\
+fprintf( a, "  [--verbose]                   print progress information\n");\
+fprintf( a, "  [--version]                   print version information and exit\n");\
+fprintf( a, "  [--debug-level]   level       set the LAL debug level to LEVEL\n");\
+fprintf( a, "  [--user-tag]      usertag     set the process_params usertag\n");\
+fprintf( a, "  [--ifo-tag]       ifotag      set the ifo-tag - for file naming\n");\
+fprintf( a, "  [--comment]       string      set the process table comment to STRING\n");\
+fprintf( a, "  [--write-compress]            write a compressed xml file\n");\
+fprintf( a, "\n");\
+fprintf( a, "   --gps-start-time start_time  GPS second of data start time\n");\
+fprintf( a, "   --gps-end-time   end_time    GPS second of data end time\n");\
+fprintf( a, "  [--check-times]               Check that all times were analyzed\n");\
+fprintf( a, "  [--multi-ifo-coinc]           Look for triple/quadruple ifo coincidence\n");\
+fprintf( a, "  [--maximization-interval] max_dt set length of maximization interval in ms\n");\
+fprintf( a, "\n");\
+fprintf( a, "  [--g1-slide]      g1_slide    Slide G1 data by multiples of g1_slide\n");\
+fprintf( a, "  [--h1-slide]      h1_slide    Slide H1 data by multiples of h1_slide\n");\
+fprintf( a, "  [--h2-slide]      h2_slide    Slide H2 data by multiples of h2_slide\n");\
+fprintf( a, "  [--l1-slide]      l1_slide    Slide L1 data by multiples of l1_slide\n");\
+fprintf( a, "  [--t1-slide]      t1_slide    Slide T1 data by multiples of t1_slide\n");\
+fprintf( a, "  [--v1-slide]      v1_slide    Slide V1 data by multiples of v1_slide\n");\
+fprintf( a, "  [--num-slides]    num_slides  The number of time slides to perform\n");\
+fprintf( a, "\n");\
+fprintf( a, "  [--g1-triggers]               input triggers from G1\n");\
+fprintf( a, "  [--h1-triggers]               input triggers from H1\n");\
+fprintf( a, "  [--h2-triggers]               input triggers from H2\n");\
+fprintf( a, "  [--l1-triggers]               input triggers from L1\n");\
+fprintf( a, "  [--t1-triggers]               input triggers from T1\n");\
+fprintf( a, "  [--v1-triggers]               input triggers from V1\n");\
+fprintf( a, "\n");\
+fprintf( a, "  [--do-veto]                    perform a veto on single IFO triggers\n");\
+fprintf( a, "                                 at the times specified in the veto files below\n");\
+fprintf( a, "  [--g1-veto-file]               veto file for G1\n");\
+fprintf( a, "  [--h1-veto-file]               veto file for H1\n");\
+fprintf( a, "  [--h2-veto-file]               veto file for H2\n");\
+fprintf( a, "  [--l1-veto-file]               veto file for L1\n");\
+fprintf( a, "  [--t1-veto-file]               veto file for T1\n");\
+fprintf( a, "  [--v1-veto-file]               veto file for V1\n");\
+fprintf( a, "\n");\
+fprintf( a, "   --parameter-test     test    set parameters with which to test coincidence:\n");\
+fprintf( a, "                                (m1_and_m2|mchirp_and_eta|mchirp_and_eta_ext|psi0_and_psi3|ellipsoid)\n");\
+fprintf( a, "  [--g1-time-accuracy]  g1_dt   specify the timing accuracy of G1 in ms\n");\
+fprintf( a, "  [--h1-time-accuracy]  h1_dt   specify the timing accuracy of H1 in ms\n");\
+fprintf( a, "  [--h2-time-accuracy]  h2_dt   specify the timing accuracy of H2 in ms\n");\
+fprintf( a, "  [--l1-time-accuracy]  l1_dt   specify the timing accuracy of L1 in ms\n");\
+fprintf( a, "  [--t1-time-accuracy]  t1_dt   specify the timing accuracy of T1 in ms\n");\
+fprintf( a, "  [--v1-time-accuracy]  v1_dt   specify the timing accuracy of V1 in ms\n");\
+fprintf( a, "\n");\
+fprintf( a, "  [--g1-mass-accuracy]  g1_dm   specify the mass accuracy of G1\n");\
+fprintf( a, "  [--h1-mass-accuracy]  h1_dm   specify the mass accuracy of H1\n");\
+fprintf( a, "  [--h2-mass-accuracy]  h2_dm   specify the mass accuracy of H2\n");\
+fprintf( a, "  [--l1-mass-accuracy]  l1_dm   specify the mass accuracy of L1\n");\
+fprintf( a, "  [--t1-mass-accuracy]  t1_dm   specify the mass accuracy of T1\n");\
+fprintf( a, "  [--v1-mass-accuracy]  v1_dm   specify the mass accuracy of V1\n");\
+fprintf( a, "\n");\
+fprintf( a, "  [--g1-mchirp-accuracy] g1_dmchirp  specify the mchirp accuracy of G1\n");\
+fprintf( a, "  [--h1-mchirp-accuracy] h1_dmchirp  specify the mchirp accuracy of H1\n");\
+fprintf( a, "  [--h2-mchirp-accuracy] h2_dmchirp  specify the mchirp accuracy of H2\n");\
+fprintf( a, "  [--l1-mchirp-accuracy] l1_dmchirp  specify the mchirp accuracy of L1\n");\
+fprintf( a, "  [--t1-mchirp-accuracy] t1_dmchirp  specify the mchirp accuracy of T1\n");\
+fprintf( a, "  [--v1-mchirp-accuracy] v1_dmchirp  specify the mchirp accuracy of V1\n");\
+fprintf( a, "\n");\
+fprintf( a, "  [--g1-eta-accuracy] g1_deta   specify the eta accuracy of G1\n");\
+fprintf( a, "  [--h1-eta-accuracy] h1_deta   specify the eta accuracy of H1\n");\
+fprintf( a, "  [--h2-eta-accuracy] h2_deta   specify the eta accuracy of H2\n");\
+fprintf( a, "  [--l1-eta-accuracy] l1_deta   specify the eta accuracy of L1\n");\
+fprintf( a, "  [--t1-eta-accuracy] t1_deta   specify the eta accuracy of T1\n");\
+fprintf( a, "  [--v1-eta-accuracy] v1_deta   specify the eta accuracy of V1\n");\
+fprintf( a, "\n");\
+fprintf( a, "  [--g1-psi0-accuracy]  g1_dpsi0   specify the psi0 accuracy of G1\n");\
+fprintf( a, "  [--h1-psi0-accuracy]  h1_dpsi0   specify the psi0 accuracy of H1\n");\
+fprintf( a, "  [--h2-psi0-accuracy]  h2_dpsi0   specify the psi0 accuracy of H2\n");\
+fprintf( a, "  [--l1-psi0-accuracy]  l1_dpsi0   specify the psi0 accuracy of L1\n");\
+fprintf( a, "  [--t1-psi0-accuracy]  t1_dpsi0   specify the psi0 accuracy of T1\n");\
+fprintf( a, "  [--v1-psi0-accuracy]  v1_dpsi0   specify the psi0 accuracy of V1\n");\
+fprintf( a, "\n");\
+fprintf( a, "  [--g1-psi3-accuracy]  g1_dpsi3   specify the psi3 accuracy of G1\n");\
+fprintf( a, "  [--h1-psi3-accuracy]  h1_dpsi3   specify the psi3 accuracy of H1\n");\
+fprintf( a, "  [--h2-psi3-accuracy]  h2_dpsi3   specify the psi3 accuracy of H2\n");\
+fprintf( a, "  [--l1-psi3-accuracy]  l1_dpsi3   specify the psi3 accuracy of L1\n");\
+fprintf( a, "  [--t1-psi3-accuracy]  t1_dpsi3   specify the psi3 accuracy of T1\n");\
+fprintf( a, "  [--v1-psi3-accuracy]  v1_dpsi3   specify the psi3 accuracy of V1\n");\
+fprintf( a, "\n");\
+fprintf( a, "  [--e-thinca-parameter]  match    specify the e-thinca parameter\n");\
+fprintf( a, "\n");\
+fprintf( a, "  [--h1-h2-distance-cut]           perform H1-H2 distance cut\n");\
+fprintf( a, "  [--h1-kappa]          h1_kappa   specify H1 kappa for eff dist test\n");\
+fprintf( a, "  [--h2-kappa]          h2_kappa   specify H2 kappa for eff dist test\n");\
+fprintf( a, "  [--h1-epsilon]        h1_epsilon specify H1 epsilon for eff dist test\n");\
+fprintf( a, "  [--h2-epsilon]        h2_epsilon specify H1 epsilon for eff dist test\n");\
+fprintf( a, "\n");\
+fprintf( a, "  [--h1-h2-consistency]            perform H1-H2 consistency cut\n");\
+fprintf( a, "  [--snr-cut]           snr        reject triggers below this snr\n");\
+fprintf( a, "                                   needed when --h1-h2-consistency is given\n");\
+fprintf( a, "\n");\
+fprintf( a, "  [--dmchirp-high]      dmchirp    different chirp mass window for high masses\n");\
+fprintf( a, "  [--high-mass]         mass       total mass for trigger above which\n");\
+fprintf( a, "                                   the high mass mchirp is used\n");\
+fprintf( a, "\n");\
+fprintf( a, "                                   (both bounds must be specified)\n");\
+fprintf( a, "  [--bcvc]                         perform cut based on alphaF\n");\
+fprintf( a, "                                   with individual bounds given below.\n");\
+fprintf( a, "  [--do-alphaf-cut]                perform cut based on alphaF\n");\
+fprintf( a, "                                   with bounds given below\n");\
+fprintf( a, "                                   (both bounds must be specified)\n");\
+fprintf( a, "  [--h1-alphaf-hi]      alphaFhi   reject BCV triggers outside the specified \n");\
+fprintf( a, "  [--h1-alphaf-lo]      alphaFlo   alphaF area for H1 (if \n");\
+fprintf( a, "  [--h2-alphaf-hi]      alphaFhi   reject BCV triggers outside the specified \n");\
+fprintf( a, "  [--h2-alphaf-lo]      alphaFlo   alphaF area for H2\n");\
+fprintf( a, "  [--l1-alphaf-hi]      alphaFhi   reject BCV triggers outside the specified \n");\
+fprintf( a, "  [--l1-alphaf-lo]      alphaFlo   alphaF area for L1\n");\
+fprintf( a, "\n");\
+fprintf( a, "  [--iota-cut-h1h2]    iotaCutH1H2 reject H1H2 triggers with iota above the specified value \n");\
+fprintf( a, "  [--iota-cut-h1l1]    iotaCutH1L1 reject H1L1 triggers with iota above the specified value \n");\
+fprintf( a, "\n");\
+fprintf( a, "  [--do-bcvspin-h1h2-veto]         reject coincidences with H1 snr < H2 snr \n");\
+fprintf( a, "\n");\
+fprintf( a, "   --data-type          data_type  specify the data type, must be one of\n");\
+fprintf( a, "                                   (playground_only|exclude_play|all_data)\n");\
+fprintf( a, "   --complete-coincs               write out triggers from all non-vetoed ifos\n");\
+fprintf( a, "                                   if not seen, snr is equal to zero\n");\
+fprintf( a, "  [--exttrig]           source     enables the External-Trigger mode \n");\
+fprintf( a, "                                         (using actual time delays) for a source\n");\
+fprintf( a, "                                   specified in the source file\n");\
+fprintf( a, "\n");\
+fprintf( a, "[LIGOLW XML input files] list of the input trigger files.\n");\
 
 
 
@@ -243,6 +239,7 @@ static void print_usage(char *program)
  * MAIN
  *
  */
+  
 int main( int argc, char *argv[] )
 {
   static LALStatus      status;
@@ -287,7 +284,7 @@ int main( int argc, char *argv[] )
   UINT4  numQuadruples = 0;
   UINT4  numTrigs[LAL_NUM_IFO];
   UINT4  N = 0;
-  UINT4  outCompress = 0;
+  INT4  outCompress = 0;
 
   LALDetector          aDet;
 
@@ -454,8 +451,6 @@ int main( int argc, char *argv[] )
  
   /* set default values for those values.
      with those values ALL triggers will survive (i.e. no cut). */
-  accuracyParams.iotaCutH1H2=-1.0;
-  accuracyParams.iotaCutH1L1=-1.0;
   accuracyParams.exttrig=0;
 
 
@@ -484,6 +479,12 @@ int main( int argc, char *argv[] )
     calloc( 1, sizeof(SearchSummaryTable) );
 
   memset( &accuracyParams, 0, sizeof(InspiralAccuracyList) );
+  accuracyParams.iotaCutH1H2=-1.0;
+  /* by default, iotacutH1H2 is unphysical so that it must be provided 
+     if --h1-h2-consistency-check option is given by the user (checked 
+     in the parsing function)
+  */
+
   memset( &aDet, 0, sizeof(LALDetector) );
 
   /* set the time slide data to zero */
@@ -950,7 +951,7 @@ int main( int argc, char *argv[] )
 
       case 'h':
         /* help message */
-        print_usage(argv[0]);
+        USAGE( stdout , "");
         exit( 1 );
         break;
 
@@ -994,7 +995,7 @@ int main( int argc, char *argv[] )
         break;
 
       case '?':
-        print_usage(argv[0]);
+        USAGE( stderr , "");
         exit( 1 );
         break;
 
@@ -1188,8 +1189,8 @@ int main( int argc, char *argv[] )
         break;
        
       default:
-        fprintf( stderr, "Error: Unknown error while parsing options\n" );
-        print_usage(argv[0]);
+        fprintf( stderr, "Error: Unknown error while parsing options \n" );
+        USAGE( stderr , argv[0]);
         exit( 1 );
 
     }
@@ -1404,6 +1405,16 @@ int main( int argc, char *argv[] )
   }
 
 
+  if ( outCompress )
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--write-compress" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  }
   /* store the check-times in the process_params table */
   if ( checkTimes )
   {
@@ -1451,7 +1462,7 @@ int main( int argc, char *argv[] )
                "greater than zero when --h1-h2-consistency is given\n" );
       exit( 1 );
     }
-
+    
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
     LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
