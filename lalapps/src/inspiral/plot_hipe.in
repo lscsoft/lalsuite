@@ -288,7 +288,6 @@ if opts.plotthinca:
     for ifo in ifos:
       plotthinca_jobs[combostring].add_opt(ifo.lower() + "-triggers","  ")
     plotthinca_jobs[combostring].add_opt("ifo-times",combostring)
-    plotthinca_jobs[combostring].add_opt('figure-name', combostring +'_plotthinca')
     plotthinca_jobs[combostring].set_sub_file( basename + '.plotthinca_' + combostring + subsuffix )
   
   all_jobs.extend(plotthinca_jobs.values())
@@ -346,7 +345,7 @@ if opts.plotethinca:
       ifosoption+=' --ifo '+ ifos[i]
     plotethinca_jobs[combostring].add_opt("ifo", ifosoption)
     plotethinca_jobs[combostring].add_opt("ifo-times", combostring)
-    plotethinca_jobs[combostring].add_opt("figure-name", combostring + '-plotethinca')
+    plotethinca_jobs[combostring].add_opt("user-tag", combostring)
     plotethinca_jobs[combostring].set_sub_file( basename + '.plotethinca_' + combostring + subsuffix )
 
   all_jobs.extend(plotethinca_jobs.values())
