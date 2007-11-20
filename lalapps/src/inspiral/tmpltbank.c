@@ -151,6 +151,8 @@ Order   order;                          /* post-Newtonian order         */
 Approximant approximant;                /* approximation method         */
 CoordinateSpace space;                  /* coordinate space used        */
 INT4    haveGridSpacing = 0;            /* flag to indicate gridspacing */
+INT4    computeMoments  = 1;
+
 GridSpacing gridSpacing = SquareNotOriented; /* grid spacing (square or hexa)*/
 int     polygonFit      = 1;            /* fit a polygon around BCV bank */
 
@@ -174,7 +176,7 @@ int    writeRawData     = 0;            /* write the raw data to a file */
 int    writeResponse    = 0;            /* write response function used */
 int    writeSpectrum    = 0;            /* write computed psd to file   */
 int    writeStrainSpec  = 0;            /* write computed stain spec    */
-UINT4  outCompress      = 0;
+INT4  outCompress      = 0;
 
 /* other command line args */
 CHAR comment[LIGOMETA_COMMENT_MAX];     /* process param comment        */
@@ -226,6 +228,7 @@ int main ( int argc, char *argv[] )
   SearchSummvarsTable  *this_search_summvar;
   ProcessParamsTable   *this_proc_param;
   LIGOLwXMLStream       results;
+
 
   /* counters and other variables */
   UINT4 cut, i, j, k;
@@ -314,19 +317,19 @@ int main ( int argc, char *argv[] )
 
     numTdFollow = 0;
   
-    for (i = 0; i < numTDFiles; i++ )
+    for (i = 0; i < (UINT4)numTDFiles; i++ )
     {
       INT4 thisTDNum = 0;
       if ( !tdFollowUp )
       {
-        thisTDNum = LALSnglInspiralTableFromLIGOLw(&tdFollowUp, tdFileNames[i],
-			0, -1);
+        thisTDNum = LALSnglInspiralTableFromLIGOLw(&tdFollowUp, 
+          tdFileNames[i], 0, -1);
         thisTdFollow = tdFollowUp;
       }
       else
       {
-        thisTDNum = LALSnglInspiralTableFromLIGOLw(&(thisTdFollow->next), tdFileNames[i],
-                        0, -1);
+        thisTDNum = LALSnglInspiralTableFromLIGOLw(&(thisTdFollow->next), 
+          tdFileNames[i], 0, -1);
       }
       if ( thisTDNum < 0 )
       {
@@ -345,7 +348,8 @@ int main ( int argc, char *argv[] )
 
     tdFollowUp  = XLALIfoCutSingleInspiral( &tdFollowUp, ifo );
     if ( tdFollowUp )
-       tdFollowUp = XLALTimeCutSingleInspiral( tdFollowUp, &gpsStartTime, &gpsEndTime );
+       tdFollowUp = XLALTimeCutSingleInspiral( tdFollowUp, &gpsStartTime,
+           &gpsEndTime );
 
     /* If there are no events to follow up, we just exit */
     if ( !tdFollowUp ) goto cleanExit;
@@ -370,7 +374,7 @@ int main ( int argc, char *argv[] )
     dynRange = 1.0;
   }
   if ( vrbflg )
-    fprintf( stdout, "using dynamic range scaling %le\n", dynRange );
+    fprintf( stdout, "using dynamic range scaling %e\n", dynRange );
 
 
   /*
@@ -504,7 +508,7 @@ int main ( int argc, char *argv[] )
   }
 
   /* determine the number of points to get and create storage forr the data */
-  inputLengthNS = (REAL8) ( 1000000000LL * 
+  inputLengthNS = (REAL8) ( 1000000000L * 
       ( gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds + 2 * padData ) );
   chan.deltaT *= 1.0e9;
   numInputPoints = (UINT4) floor( inputLengthNS / chan.deltaT + 0.5 );
@@ -1005,6 +1009,8 @@ int main ( int argc, char *argv[] )
     ( bankIn.MMax * bankIn.MMax );
   bankIn.LowGM            = -4.;
   bankIn.HighGM           = 6.;
+  bankIn.computeMoments   = computeMoments; /* by default, gammas/moments are recomputed */
+  
   /* generate the template bank */
   if ( vrbflg )
   {
@@ -1225,97 +1231,97 @@ cleanExit:
 
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
 this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-  calloc( 1, sizeof(ProcessParamsTable) ); \
+  calloc( 1, sizeof(ProcessParamsTable) );\
   LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-   PROGRAM_NAME ); \
+   PROGRAM_NAME );\
    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
-     long_options[option_index].name ); \
-     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+     long_options[option_index].name );\
+     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype );\
      LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
-#define USAGE \
-"  --help                       display this message\n"\
-"  --verbose                    print progress information\n"\
-"  --version                    print version information and exit\n"\
-"  --debug-level LEVEL          set the LAL debug level to LEVEL\n"\
-"  --user-tag STRING            set the process_params usertag to STRING\n"\
-"  --ifo-tag STRING             set the ifotag to STRING - for file naming\n"\
-"  --comment STRING             set the process table comment to STRING\n"\
-"  --write-compress             write a compressed xml file\n"\
-"\n"\
-"  --gps-start-time SEC         GPS second of data start time\n"\
-"  --gps-end-time SEC           GPS second of data end time\n"\
-"  --pad-data T                 pad the data start and end time by T seconds\n"\
-"\n"\
-"  --glob-frame-data            glob *.gwf files in the pwd to obtain frame data\n"\
-"  --frame-type TAG             input data is contained in frames of type TAG\n"\
-"  --frame-cache                obtain frame data from LAL frame cache FILE\n"\
-"  --calibration-cache FILE     obtain calibration from LAL frame cache FILE\n"\
-"  --glob-calibration-data      obtain calibration by globbing in working dir\n"\
-"\n"\
-"  --channel-name CHAN          read data from interferometer channel CHAN\n"\
-"  --calibrated-data TYPE       calibrated data of TYPE real_4 or real_8\n"\
-"  --strain-high-pass-freq F    high pass REAL8 h(t) data above F Hz\n"\
-"  --strain-high-pass-order O   set the order of the h(t) high pass filter to O\n"\
-"  --strain-high-pass-atten A   set the attenuation of the high pass filter to A\n"\
-"  --point-calibration          use the first point in the chunk to calibrate\n"\
-"\n"\
-"  --sample-rate F              filter data at F Hz, downsampling if necessary\n"\
-"  --resample-filter TYPE       set resample filter to TYPE [ldas|butterworth]\n"\
-"\n"\
-"  --disable-high-pass          turn off the IIR highpass filter\n"\
-"  --enable-high-pass F         high pass data above F Hz using an IIR filter\n"\
-"  --high-pass-order O          set the order of the high pass filter to O\n"\
-"  --high-pass-attenuation A    set the attenuation of the high pass filter to A\n"\
-"  --spectrum-type TYPE         use PSD estimator TYPE (mean|median|LIGO|AdvLIGO)\n"\
-"  --dynamic-range-exponent X   set dynamic range scaling to 2^X\n"\
-"\n"\
-"  --segment-length N           set data segment length to N points\n"\
-"  --number-of-segments N       set number of data segments to N\n"\
-"\n"\
-"  --td-follow-up FILE          follow up BCV events contained in FILE\n"\
-"\n"\
-"  --standard-candle            compute a standard candle from the PSD\n"\
-"  --candle-snr SNR             signal-to-noise ration of standard candle\n"\
-"  --candle-mass1 M             mass of first component in candle binary\n"\
-"  --candle-mass2 M             mass of second component in candle binary\n"\
-"\n"\
-"  --low-frequency-cutoff F     do not filter below F Hz\n"\
-"  --high-frequency-cutoff F    upper frequency cutoff in Hz\n"\
-"\n"\
-"  --minimum-mass MASS          set minimum component mass of bank to MASS\n"\
-"  --maximum-mass MASS          set maximum component mass of bank to MASS\n"\
-"  --max-total-mass MASS        set maximum total mass of the bank to MASS\n"\
-"  --min-total-mass MASS        set minimum total mass of the bank to MASS\n"\
-"\n"\
-"  --minimum-psi0 PSI0          set minimum range of BCV parameter psi0 to PSI0\n"\
-"  --maximum-psi0 PSI0          set maximum range of BCV parameter psi0 to PSI0\n"\
-"  --minimum-psi3 PSI3          set minimum range of BCV parameter psi3 to PSI3\n"\
-"  --maximum-psi3 PSI3          set maximum range of BCV parameter psi3 to PSI3\n"\
-"  --maximum-fcut-tmplts N      maximum number of tmplts in fcut direction is N\n"\
-"  --disable-polygon-fit        disable the polygon fitting for BCV bank\n"\
-"  --alpha ALPHA                set alpha for the BCV bank generation\n"\
-"  --minimum-beta BETA		set minimum BCV spin parameter beta to BETA\n"\
-"  --maximum-beta BETA		set maximum BCV spin parameter beta to BETA\n"\
-"\n"\
-"  --minimal-match M            generate bank with minimal match M\n"\
-"\n"\
-"  --order ORDER                set post-Newtonian order of the waveform to ORDER\n"\
-"                                 (newtonian|oneHalfPN|onePN|onePointFivePN|\n"\
-"                                 twoPN|twoPointFive|threePN|threePointFivePN)\n"\
-"  --approximant APPROX         set approximant of the waveform to APPROX\n"\
-"                                 (TaylorT1|TaylorT2|TaylorT3|TaylorF1|TaylorF2|\n"\
-"                                 PadeT1|PadeT2|EOB|BCV|SpinTaylorT3|BCVSpin)\n"\
-"  --space SPACE                grid up template bank with mass parameters SPACE\n"\
-"                                 (Tau0Tau2|Tau0Tau3|Psi0Psi3)\n"\
-"  --grid-spacing GRIDSPACING   grid up template bank with GRIDSPACING\n"\
-"                                 (Hexagonal|SquareNotOriented)\n"\
-"\n"\
-"  --write-raw-data             write raw data to a frame file\n"\
-"  --write-response             write the computed response function to a frame\n"\
-"  --write-spectrum             write the uncalibrated psd to a frame\n"\
-"  --write-strain-spectrum      write the calibrated strain psd to a text file\n"\
-"\n"
+#define USAGE( a ) \
+fprintf(a, "  --help                       display this message\n");\
+fprintf(a, "  --verbose                    print progress information\n");\
+fprintf(a, "  --version                    print version information and exit\n");\
+fprintf(a, "  --debug-level LEVEL          set the LAL debug level to LEVEL\n");\
+fprintf(a, "  --user-tag STRING            set the process_params usertag to STRING\n");\
+fprintf(a, "  --ifo-tag STRING             set the ifotag to STRING - for file naming\n");\
+fprintf(a, "  --comment STRING             set the process table comment to STRING\n");\
+fprintf(a, "  --write-compress             write a compressed xml file\n");\
+fprintf(a, "\n");\
+fprintf(a, "  --gps-start-time SEC         GPS second of data start time\n");\
+fprintf(a, "  --gps-end-time SEC           GPS second of data end time\n");\
+fprintf(a, "  --pad-data T                 pad the data start and end time by T seconds\n");\
+fprintf(a, "\n");\
+fprintf(a, "  --glob-frame-data            glob *.gwf files in the pwd to obtain frame data\n");\
+fprintf(a, "  --frame-type TAG             input data is contained in frames of type TAG\n");\
+fprintf(a, "  --frame-cache                obtain frame data from LAL frame cache FILE\n");\
+fprintf(a, "  --calibration-cache FILE     obtain calibration from LAL frame cache FILE\n");\
+fprintf(a, "  --glob-calibration-data      obtain calibration by globbing in working dir\n");\
+fprintf(a, "\n");\
+fprintf(a, "  --channel-name CHAN          read data from interferometer channel CHAN\n");\
+fprintf(a, "  --calibrated-data TYPE       calibrated data of TYPE real_4 or real_8\n");\
+fprintf(a, "  --strain-high-pass-freq F    high pass REAL8 h(t) data above F Hz\n");\
+fprintf(a, "  --strain-high-pass-order O   set the order of the h(t) high pass filter to O\n");\
+fprintf(a, "  --strain-high-pass-atten A   set the attenuation of the high pass filter to A\n");\
+fprintf(a, "  --point-calibration          use the first point in the chunk to calibrate\n");\
+fprintf(a, "\n");\
+fprintf(a, "  --sample-rate F              filter data at F Hz, downsampling if necessary\n");\
+fprintf(a, "  --resample-filter TYPE       set resample filter to TYPE [ldas|butterworth]\n");\
+fprintf(a, "\n");\
+fprintf(a, "  --disable-high-pass          turn off the IIR highpass filter\n");\
+fprintf(a, "  --enable-high-pass F         high pass data above F Hz using an IIR filter\n");\
+fprintf(a, "  --high-pass-order O          set the order of the high pass filter to O\n");\
+fprintf(a, "  --high-pass-attenuation A    set the attenuation of the high pass filter to A\n");\
+fprintf(a, "  --spectrum-type TYPE         use PSD estimator TYPE (mean|median|LIGO|AdvLIGO)\n");\
+fprintf(a, "  --dynamic-range-exponent X   set dynamic range scaling to 2^X\n");\
+fprintf(a, "\n");\
+fprintf(a, "  --segment-length N           set data segment length to N points\n");\
+fprintf(a, "  --number-of-segments N       set number of data segments to N\n");\
+fprintf(a, "\n");\
+fprintf(a, "  --td-follow-up FILE          follow up BCV events contained in FILE\n");\
+fprintf(a, "\n");\
+fprintf(a, "  --standard-candle            compute a standard candle from the PSD\n");\
+fprintf(a, "  --candle-snr SNR             signal-to-noise ration of standard candle\n");\
+fprintf(a, "  --candle-mass1 M             mass of first component in candle binary\n");\
+fprintf(a, "  --candle-mass2 M             mass of second component in candle binary\n");\
+fprintf(a, "\n");\
+fprintf(a, "  --low-frequency-cutoff F     do not filter below F Hz\n");\
+fprintf(a, "  --high-frequency-cutoff F    upper frequency cutoff in Hz\n");\
+fprintf(a, "  --disable-compute-moments    do not recompute the moments stored in the template bank. \n");\
+fprintf(a, "\n");\
+fprintf(a, "  --minimum-mass MASS          set minimum component mass of bank to MASS\n");\
+fprintf(a, "  --maximum-mass MASS          set maximum component mass of bank to MASS\n");\
+fprintf(a, "  --max-total-mass MASS        set maximum total mass of the bank to MASS\n");\
+fprintf(a, "  --min-total-mass MASS        set minimum total mass of the bank to MASS\n");\
+fprintf(a, "\n");\
+fprintf(a, "  --minimum-psi0 PSI0          set minimum range of BCV parameter psi0 to PSI0\n");\
+fprintf(a, "  --maximum-psi0 PSI0          set maximum range of BCV parameter psi0 to PSI0\n");\
+fprintf(a, "  --minimum-psi3 PSI3          set minimum range of BCV parameter psi3 to PSI3\n");\
+fprintf(a, "  --maximum-psi3 PSI3          set maximum range of BCV parameter psi3 to PSI3\n");\
+fprintf(a, "  --maximum-fcut-tmplts N      maximum number of tmplts in fcut direction is N\n");\
+fprintf(a, "  --disable-polygon-fit        disable the polygon fitting for BCV bank\n");\
+fprintf(a, "  --alpha ALPHA                set alpha for the BCV bank generation\n");\
+fprintf(a, "  --minimum-beta BETA		set minimum BCV spin parameter beta to BETA\n");\
+fprintf(a, "  --maximum-beta BETA		set maximum BCV spin parameter beta to BETA\n");\
+fprintf(a, "\n");\
+fprintf(a, "  --minimal-match M            generate bank with minimal match M\n");\
+fprintf(a, "\n");\
+fprintf(a, "  --order ORDER                set post-Newtonian order of the waveform to ORDER\n");\
+fprintf(a, "                                 (newtonian|oneHalfPN|onePN|onePointFivePN|\n");\
+fprintf(a, "                                 twoPN|twoPointFive|threePN|threePointFivePN)\n");\
+fprintf(a, "  --approximant APPROX         set approximant of the waveform to APPROX\n");\
+fprintf(a, "                                 (TaylorT1|TaylorT2|TaylorT3|TaylorF1|TaylorF2|\n");\
+fprintf(a, "                                 PadeT1|PadeT2|EOB|BCV|SpinTaylorT3|BCVSpin)\n");\
+fprintf(a, "  --space SPACE                grid up template bank with mass parameters SPACE\n");\
+fprintf(a, "                                 (Tau0Tau2|Tau0Tau3|Psi0Psi3)\n");\
+fprintf(a, "  --grid-spacing GRIDSPACING   grid up template bank with GRIDSPACING\n");\
+fprintf(a, "                                 (Hexagonal|SquareNotOriented)\n");\
+fprintf(a, "\n");\
+fprintf(a, "  --write-response             write the computed response function to a frame\n");\
+fprintf(a, "  --write-spectrum             write the uncalibrated psd to a frame\n");\
+fprintf(a, "  --write-strain-spectrum      write the calibrated strain psd to a text file\n"); 
+
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 {
@@ -1355,7 +1361,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"pad-data",                required_argument, 0,                'x'},
     {"debug-level",             required_argument, 0,                'z'},
     {"user-tag",                required_argument, 0,                'Z'},
-    {"userTag",                 required_argument, 0,                'Z'},
     {"ifo-tag",                 required_argument, 0,                'Y'},
     {"version",                 no_argument,       0,                'V'},    
     {"resample-filter",         required_argument, 0,                'r'},
@@ -1379,7 +1384,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"max-total-mass",          required_argument, 0,                'y'},
     {"min-total-mass",          required_argument, 0,                'W'},
     {"disable-polygon-fit",     no_argument, 	   &polygonFit,       0 },
-
+    {"disable-compute-moments", no_argument, 	   &computeMoments,   0 },
     /* standard candle parameters */
     {"candle-snr",              required_argument, 0,                'k'},
     {"candle-mass1",            required_argument, 0,                'l'},
@@ -1393,6 +1398,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"td-follow-up",            required_argument, 0,                'w'},
     {0, 0, 0, 0}
   };
+
   int c;
   ProcessParamsTable *this_proc_param = procparams.processParamsTable;
   UINT4   haveOrder       = 0;
@@ -1409,7 +1415,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
    * parse command line arguments
    *
    */
-
 
   while ( 1 )
   {
@@ -1627,7 +1632,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'h':
-        fprintf( stdout, USAGE );
+        USAGE( stdout );
         exit( 0 );
         break;
 
@@ -1817,7 +1822,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           calloc( 1, sizeof(ProcessParamsTable) );
         LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
             PROGRAM_NAME );
-        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
+        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--user-tag" );
         LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
@@ -2222,16 +2227,19 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case '?':
-        fprintf( stderr, USAGE );
+        USAGE( stderr );
         exit( 1 );
         break;
 
       default:
         fprintf( stderr, "unknown error while parsing options\n" );
-        fprintf( stderr, USAGE );
+        USAGE( stderr );
         exit( 1 );
     }
   }
+          
+
+
 
   if ( optind < argc )
   {
@@ -2243,6 +2251,84 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     exit( 1 );
   }
 
+  /* add option without arguments into the process param table */
+  if (vrbflg==1)
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--verbose" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  }
+  if (outCompress==1)
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--write-compress" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  }
+  if (computeMoments==0)
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--disable-compute-moments" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  }
+  if (polygonFit==0)
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--disable-polygon-fit" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  }
+  if (globFrameData==1)
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--glob-frame-data" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  }
+  if (globCalData==1)
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--glob-calibration-data" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  }
+  if (pointCal==1)
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--point-calibration" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  }
   /*
    *
    * check validity of arguments
@@ -2348,9 +2434,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   inputDataLength = numPoints * numSegments - ( numSegments - 1 ) * 
     (numPoints / 2);
   {
-    UINT8 gpsChanIntervalNS = gpsEndTime.gpsSeconds * 1000000000LL - 
-      gpsStartTime.gpsSeconds * 1000000000LL;
-    UINT8 inputDataLengthNS = (UINT8) inputDataLength * 1000000000LL / 
+    UINT8 gpsChanIntervalNS = gpsEndTime.gpsSeconds * 1000000000L - 
+      gpsStartTime.gpsSeconds * 1000000000L;
+    UINT8 inputDataLengthNS = (UINT8) inputDataLength * 1000000000L / 
       (UINT8) sampleRate;
 
     if ( inputDataLengthNS != gpsChanIntervalNS )
@@ -2358,8 +2444,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       fprintf( stderr, "length of input data and data chunk do not match\n" );
       fprintf( stderr, "start time: %d, end time %d\n",
           gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds );
-      fprintf( stderr, "gps channel time interval: %lld ns\n"
-          "computed input data length: %lld ns\n", 
+      fprintf( stderr, "gps channel time interval: %ld ns\n"
+          "computed input data length: %ld ns\n", 
           gpsChanIntervalNS, inputDataLengthNS );
       exit( 1 );
     }
