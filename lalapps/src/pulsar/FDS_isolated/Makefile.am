@@ -46,4 +46,5 @@ ComputeFStatistic_v2_SOURCES = 	ComputeFStatistic_v2.c  HeapToplist.c HeapToplis
 
 lalapps_PredictFStat_SOURCES = PredictFStat.c
 
-TESTS = testFStat.sh
+TESTS = testFStat.sh testCFSv2.sh testGridv2.sh
+
