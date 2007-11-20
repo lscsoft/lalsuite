@@ -51,7 +51,7 @@ void LALReadNRWave_raw(LALStatus *status,
   LALParsedDataFile *cfgdata=NULL;
   REAL4 tmp1, tmp2, tmp3;
 
-  INITSTATUS (status, "LALReadNRWave", NRWAVEIOC);
+  INITSTATUS (status, "LALReadNRWave_raw", NRWAVEIOC);
   ATTATCHSTATUSPTR (status); 
  
   /* some consistency checks */
