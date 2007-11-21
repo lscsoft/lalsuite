@@ -1,4 +1,4 @@
-#!/usr/bin/env $PYTHONPROG@
+#!/usr/bin/env @PYTHONPROG@
 """
 ihope_status.in - give a brief dag status
 
