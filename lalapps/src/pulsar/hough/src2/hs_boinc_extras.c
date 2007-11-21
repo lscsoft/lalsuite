@@ -992,7 +992,6 @@ static void worker (void) {
 int main(int argc, char**argv) {
   FILE* fp_debug;
   int skipsighandler = 0;
-  BOINC_OPTIONS eah_boinc_options;
 
   /* init BOINC diagnostics */
   boinc_init_diagnostics(BOINC_DIAG_DUMPCALLSTACKENABLED |
@@ -1012,8 +1011,6 @@ int main(int argc, char**argv) {
   /* pass argc/v to the worker via global vars */
   global_argc = argc;
   global_argv = argv;
-
-
 
   /* debugging support by files */
 
@@ -1173,9 +1170,6 @@ int main(int argc, char**argv) {
 #endif /* WIN32 */
 
 
-
-  /* load delay-loaded DLLs */
-
 #ifdef _MSC_VER
   if (try_load_dlls(delayload_dlls, "ERROR: Failed to load %s - terminating\n")) {
     LogPrintf(LOG_NORMAL,"ERROR: Loading of mandantory DLLs failed\n");
@@ -1183,15 +1177,7 @@ int main(int argc, char**argv) {
     boinc_finish(29);
   }
 #endif
-
-
-
   /* boinc_init variations */
-
-  /* set our boinc options */
-  boinc_options_defaults(eah_boinc_options);
-  eah_boinc_options.backwards_compatible_graphics = 0;
-
 #if (BOINC_GRAPHICS == 2) && defined(_MSC_VER)
   /* We don't load an own DLL on Windows, but we check if we can (manually)
      load the system DLLs necessary to do graphics on Windows, and will run
@@ -1202,7 +1188,7 @@ int main(int argc, char**argv) {
     int retval;
     set_search_pos_hook = set_search_pos;
     fraction_done_hook = &fraction_done;
-    retval = boinc_init_options_graphics(eah_boinc_options, worker);
+    retval = boinc_init_graphics(worker);
     LogPrintf (LOG_CRITICAL, "boinc_init_graphics() returned %d.\n", retval);
     boinc_finish(HIERARCHICALSEARCH_EWORKER);
   }
@@ -1226,7 +1212,7 @@ int main(int argc, char**argv) {
     set_search_pos_hook = set_search_pos;
     fraction_done_hook = &fraction_done;
     /* no dynamic library, just call boinc_init_graphics() */
-    retval = boinc_init_options_graphics(eah_boinc_options, worker);
+    retval = boinc_init_graphics(worker);
     LogPrintf (LOG_CRITICAL, "ERROR: boinc_init_graphics() returned %d\n", retval);
     boinc_finish(HIERARCHICALSEARCH_EWORKER );
   }
