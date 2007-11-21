@@ -50,11 +50,13 @@ If outputfile is not given it is \texttt{wave1.dat} in the current directory.
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 #include <lal/GeneratePPNInspiral.h>
+#include <lal/GenerateInspiral.h>
 
 NRCSID(LALSTPNWaveformTestC, "$Id: LALSTPNWaveformTest.c,v 1.1 2004/05/05 20:06:23 thomas Exp");
 
-int main(int argc,char **argv) {
+int main() {
     static LALStatus    mystatus;
+    
     CoherentGW      thewaveform;
     SimInspiralTable    injParams;
     PPNParamStruc       ppnParams;
@@ -70,50 +72,37 @@ int main(int argc,char **argv) {
     memset( &injParams, 0, sizeof(SimInspiralTable) );
     memset( &ppnParams, 0, sizeof(PPNParamStruc) );
 
-    if(argc < 14) {
-        printf("Usage: %s m1 m2 S1x S1y S1z S2x S2y S2z theta0 phi0 finit distance PNorder [outputfile]\n\n",argv[0]);
-        printf("The spins are given as chi1 and chi2 times the unit vector;\n");
-        printf("the initial orbital angular momentum is given as standard polar angles,\n");
-        printf("the initial frequency in Hz, the distance in Mpc.\n");
-        printf("Legal values for PNorder include newtonian, oneHalfPN, onePN,\n");
-        printf("onePointFivePN, twoPN, twoPointFivePN, threePN, threePointFivePN.\n");
-        printf("If outputfile is not given it is wave1.dat in the current directory.\n");
-        exit(1);
-    }
-    
-    if(argc > 14) {
-        filename = argv[14];
-    }
-
     /* --- first we fill the SimInspiral structure --- */
     
-    injParams.mass1 = atof(argv[1]);
-    injParams.mass2 = atof(argv[2]);
+    injParams.mass1 = 10.;
+    injParams.mass2 = 10.;
 
     /* MV-20060224: I believe this is not used in the SpinTaylor code! */
-
     injParams.f_final = 500.0;
+    injParams.f_lower = 40.;;
+    
+    LALSnprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTaylortwoPN");
+     
+    /* this is given in Mpc */    
+    injParams.distance = 100.;
+    /* this should not be zero*/
+    injParams.theta0 = 0.01;
+    injParams.phi0   = 0.5;
+    
+    injParams.inclination = 0.8;
+    injParams.polarization   = 0.9;
 
-    injParams.f_lower = atof(argv[11]);
+    injParams.spin1x = 0.1;
+    injParams.spin1y = 0.2;
+    injParams.spin1z = 0.3;
     
-    LALSnprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),argv[13]);
-    
-    /* MV-20060224: this is given in Mpc */
-    
-    injParams.distance = atof(argv[12]);
-
-    injParams.theta0 = atof(argv[9]);
-    injParams.phi0   = atof(argv[10]);
-
-    injParams.spin1x = atof(argv[3]);
-    injParams.spin1y = atof(argv[4]);
-    injParams.spin1z = atof(argv[5]);
-    
-    injParams.spin2x = atof(argv[6]);
-    injParams.spin2y = atof(argv[7]);
-    injParams.spin2z = atof(argv[8]);
+    injParams.spin2x = 0.4;
+    injParams.spin2y = 0.5;
+    injParams.spin2z = 0.6;
 
     ppnParams.deltaT = 1.0 / 4096.0;
+ 
+    fprintf(stderr, "Lower cut-off frequency used will be %fHz\n", injParams.f_lower);
 
     /* --- now we can call the injection function --- */
     LALGenerateInspiral( &mystatus, &thewaveform, &injParams, &ppnParams );
@@ -145,6 +134,6 @@ int main(int argc,char **argv) {
     }
 
     fclose(outputfile);
-
+    fprintf(stdout,"waveform saved in wave1.dat\n" );
     return 0;
 }
