@@ -21,7 +21,64 @@ import os
 import optparse
 from optparse import OptionParser
 import time
+  
+def get_status(filename, depth):
+  """
+  parse a dag filem search for failed/done jobs
+  @param filename: name of a dag file to parse
+  @param depth: used for the tabbing
+  @return output_message
+  @return error_message
+  @return number_of_failed_jobs
 
+  """
+  space = "    "
+  tab =""
+  for i in range(0,depth):
+    tab = tab + space
+
+  try:
+    thisdag = open(filename, 'r')
+  except:
+    print "This file does not exists ("+filename+")"
+    return [], "fileError", -1
+  print tab + '-->  parsing '+ filename 
+  line = "dummy"
+  status = []
+  error = []
+  while line:
+    line = thisdag.readline()
+    if line.find('Done')>=0:
+      output = tab + line      
+      line = thisdag.readline()
+      output = output + tab + line
+      #read the numbers
+      line = thisdag.readline()
+      numbers = line.split(" ")
+      num = line
+      number_of_failed_jobs = int(numbers[len(numbers)-1])
+
+      output = output + tab + line
+  # count the number of jobs
+  num=num.split()
+  num = num[2:]
+  s = 0
+  for i in num:
+   s = s+ int(i)
+  njobs = s
+  # and failed or unready
+  s = 0
+  for i in num[1:]:
+   s = s+ int(i)  
+  number_of_failed_jobs = s 
+    
+  if len(output)>0:
+    print output
+  else:
+    print "No line matches \"Done or Failed\" as expected... "
+    print error
+
+  return output, error, number_of_failed_jobs
 
 usage = """\
 %prog [options]
@@ -29,14 +86,15 @@ usage = """\
  brief status of the dag
    
  Purpose - parse one or several dagman.out file(s) to obtain a brief  summary 
- of the dag status.
+ of the dag status and their rescue files if they exist.
  
- Example - first, you can parse a dag that contains several dag such as ihope.dag 
+ Example - You can parse a dag that contains several dag such as ihope.dag 
 
-         >>> python %prog --ihope-dag-file ihope.dag
+         >>> python %prog --dag-file ihope.dag
          
-         - second,  if no sub-dag files are found within the file provide, the 
-         dagman.out is parsed %prog --dag-file hipe.dag')
+         - Or a simple dag:
+        
+         >>> python %prog --dag-file hipe.dag')
 
 """
  
@@ -51,12 +109,6 @@ parser = OptionParser(usage=usage, \
 parser.add_option( "--dag-file", \
   dest='scandag', default='ihope.dag', metavar='DAGFILE', \
   help="The dag file to parse")
-parser.add_option( "--parse-n-lines", \
-  dest='nlines', default='10000',  metavar='NLINES', \
-  help="The number of lines to parse (starting from the end)")
-parser.add_option( "--failed-status", \
-  dest='failed', default='10000', metavar='NLINES',\
-  help="Give a summary of the failed jobs")
 
 (options, args) = parser.parse_args()
 
@@ -90,7 +142,7 @@ dagFile.close()
 
 if len(filenames)==0:
   print 'No dag files found in ' + options.scandag
-  print 'Assuming that ' + options.scandag + 'is the dag file you want to parse'
+  print 'Assuming that ' + options.scandag + ' is the dag file you want to parse'
   filenames.append(options.scandag)
   
 print 'Parsing the dag files for status...\n'
@@ -99,15 +151,31 @@ print 'Parsing the dag files for status...\n'
 time.sleep(1)
 
 
+#parse all the dags one by one
 for i in xrange(0,len(filenames), 1):
   tag = filenames[i] 
   filename = tag +'.dagman.out'
-  print '-->  '+ tag +' status '
-  print '------------------------------------------------------------------------'
-  os.system('tail -n ' + options.nlines + ' '  + filename +' | grep -v macro | grep -v Note | grep -v Event| grep -v Number | grep -v Node | grep -v Of | grep -v Submit | grep -v node | grep -v submit | grep -v assigned | grep -v seconds | grep -v failed |tail -n 3 - ')
-  print '\n\n'
+  
 
-  os.system('grep ERROR '+filename + '> ' + filename + '.status')
+  undone_jobs = 111
+  depth = 0   # used for tabulating rescue files
+  print '-------------------------------------------------------------------------'
+  while undone_jobs is not 0:
+    # how many jobs are completed/failed ? 
+    output, error, undone_jobs = get_status(filename, depth)
+    tag = tag+'.rescue'
+    filename = tag + '.dagman.out'
+    depth = depth + 1
+    # if no file found, we stop this dag parsing
+    if len(error)>0:
+      break
+  #this dag has been parse. Where they any failures ?
+  if undone_jobs >0:
+    print "  WARNING: still " +str(undone_jobs) + "jobs not done"
+  else: 
+    print filenames[i]+" is COMPLETED"
+  print '-------------------------------------------------------------------------'
+
   
   
 
