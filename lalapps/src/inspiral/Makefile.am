@@ -74,7 +74,9 @@ bin_SCRIPTS = lalapps_inspiral_pipe lalapps_inspiral_hipe \
               lalapps_inspiral_online_pipe \
               lalapps_inspiral_online_pipe_inject \
               lalapps_check_hipe_times lalapps_ihope \
-              lalapps_followup_pipe lalapps_plot_hipe
+              lalapps_followup_pipe lalapps_plot_hipe \
+              lalapps_ihope_status
+              
 pkgpython_DATA = inspiral.py inspiralutils.py
 endif
 
@@ -95,6 +97,10 @@ lalapps_plot_hipe: $(srcdir)/plot_hipe.in python_config.sed
 lalapps_ihope: $(srcdir)/ihope.in python_config.sed
 	sed -f python_config.sed $(srcdir)/ihope.in > lalapps_ihope
 	chmod +x lalapps_ihope
+lalapps_ihope_status: $(srcdir)/ihope_status.in python_config.sed
+	sed -f python_config.sed $(srcdir)/ihope_status.in > lalapps_ihope_status
+	chmod +x lalapps_ihope_status
+lalapps_followup_pipe: $(srcdir)/followup_pipe.in python_config.sed
 lalapps_followup_pipe: $(srcdir)/followup_pipe.in python_config.sed
 	sed -f python_config.sed $(srcdir)/followup_pipe.in > lalapps_followup_pipe
 	chmod +x lalapps_followup_pipe
@@ -120,7 +126,7 @@ EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(INCASRC) $(COHERESRC) $(INSPINJSRC) \
              $(SPLITBANKSRC) inspiral.py inspiralutils.py inspiral_pipe.in \
              inspiral_online_pipe.in inspiral_hipe.in \
-	     multi_hipe.in trigger_hipe.in ihope.in\
+	     multi_hipe.in trigger_hipe.in ihope.in ihope_status.in\
              inspiral_online_pipe_inject.in check_hipe_times.in \
 	     followup_pipe.in plot_hipe.in \
              $(DATA)
@@ -132,7 +138,7 @@ CLEANFILES = lalapps_inspiral_pipe lalapps_inspiral_hipe \
 	     lalapps_multi_hipe lalapps_trigger_hipe\
              lalapps_inspiral_online_pipe \
              lalapps_inspiral_online_pipe_inject python_config.sed \
-             lalapps_check_hipe_times lalapps_ihope \
+             lalapps_check_hipe_times lalapps_ihope lalapps_ihope_status\
 	     lalapps_followup_pipe lalapps_plot_hipe
 
 MOSTLYCLEANFILES = *INSPIRAL*.xml *INSPIRAL*.gwf \
