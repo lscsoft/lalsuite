@@ -300,7 +300,12 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
 
   /* Set PN parameters for amplitude */
   if ( (&params->ampOrder == NULL) || (params->ampOrder >= AMPMAXORDER) )
-    ampOrder = 4;	  
+  {	  
+    if (params->ppn->length - 1 >= 4 )
+      ampOrder = 4;
+    else
+      ampOrder = params->ppn->length - 1;	    
+  }
   else
     ampOrder = params->ampOrder;	  
   fprintf(stderr, "\n ampOrder = %d \n", ampOrder);
@@ -522,6 +527,8 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   
   if ( params->fStopIn == 0.0 )
     yMax = 1.0/(LAL_PI*pow(6.0, 1.5)*mTot*LAL_MTSUN_SI) / fFac;
+  else if( params->fStopIn < 0.0 )
+    yMax = -1.0*params->fStopIn / fFac;
   else {
     ASSERT( fabs( params->fStopIn ) > params->fStartIn, stat,
 	    GENERATEPPNINSPIRALH_EFBAD, GENERATEPPNINSPIRALH_MSGEFBAD );
