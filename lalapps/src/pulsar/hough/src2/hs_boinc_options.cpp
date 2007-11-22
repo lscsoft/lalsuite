@@ -27,12 +27,11 @@
 char* rcsid = "$Id$";
 BOINC_OPTIONS eah_boinc_options;
 
-
-// int boinc_init_graphics_options(WORKER_FUNC_PTR worker)
-int boinc_init_graphics_options(void (*worker)())
+int boinc_init_graphics_options(WORKER_FUNC_PTR worker)
 {
-  // return(boinc_init_options_graphics(eah_boinc_options, worker));
-  return(boinc_init_graphics(worker));
+#if (BOINC_GRAPHICS == 1) || ((BOINC_GRAPHICS == 2) && defined(_MSC_VER))
+  return(boinc_init_options_graphics(eah_boinc_options, worker));
+#endif
 }
 
 void set_boinc_options(void) {

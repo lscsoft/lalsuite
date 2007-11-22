@@ -28,10 +28,9 @@
 extern "C" {
 #endif
   
-  // extern int boinc_init_graphics_options(WORKER_FUNC_PTR);
-  // extern int boinc_init_graphics_options((void(*)(void)));
-  extern int boinc_init_graphics_options(void (*worker)());
-  extern void set_boinc_options(void);
+extern int boinc_init_graphics_options(WORKER_FUNC_PTR);
+
+extern void set_boinc_options(void);
 
 #ifdef __cplusplus
 }
