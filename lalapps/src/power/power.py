@@ -1120,10 +1120,15 @@ def make_burca_tailor_fragment(dag, input_cache, seg, tag):
 	input_cache = list(input_cache)
 	input_cache.sort(reverse = True)
 	nodes = set()
+	max_t_per_job = 180000
 	while input_cache:
+		cache = []
+		t = 0
+		while input_cache and t <= max_t_per_job:
+			cache.append(input_cache.pop())
+			t += float(abs(cache[-1].segment))
 		node = BurcaTailorNode(burcatailorjob)
-		node.add_input_cache(input_cache[-15:])
-		del input_cache[-15:]
+		node.add_input_cache(cache)
 		node.set_name("ligolw_burca_tailor_%s_%d_%d_%d" % (tag, int(seg[0]), int(abs(seg)), len(nodes)))
 		node.set_output("%s_%d" % (tag, len(nodes)))
 		dag.add_node(node)
@@ -1142,6 +1147,9 @@ def make_burca_tailor_fragment(dag, input_cache, seg, tag):
 
 
 def make_burca2_fragment(dag, parents, input_cache, tag):
+	# FIXME:  this whole function just isn't the way I want this to
+	# work.  I want to provide DAG nodes, not input files...
+
 	# note that the likelihood data collection step immediately
 	# preceding this is a choke point in the pipeline, where all jobs
 	# must complete before anything else can begin, so there is no
@@ -1151,14 +1159,17 @@ def make_burca2_fragment(dag, parents, input_cache, tag):
 	input_cache = list(input_cache)
 	random.shuffle(input_cache)
 	nodes = set()
-	# FIXME:  this whole function just isn't the way I want this to
-	# work.  I want to provide DAG nodes, not input files...
+	max_t_per_job = 180000
 	while input_cache:
+		cache = []
+		t = 0
+		while input_cache and t <= max_t_per_job:
+			cache.append(input_cache.pop())
+			t += float(abs(cache[-1].segment))
 		node = BurcaNode(burca2job)
 		node.set_name("ligolw_burca2_%s_%d" % (tag, len(nodes)))
 		node.add_macro("macrocomment", tag)
-		node.add_input_cache(input_cache[-30:])
-		del input_cache[-30:]
+		node.add_input_cache(cache)
 		for parent in parents:
 			node.add_parent(parent)
 		dag.add_node(node)
