@@ -53,15 +53,6 @@ $Id$
 #include <lal/LALInspiral.h>
 #include <lal/FindChirpPTF.h>
 #include <lal/MatrixUtils.h>
-#include <gsl/gsl_errno.h>
-#include <gsl/gsl_math.h>
-#include <gsl/gsl_blas.h>
-#include <gsl/gsl_vector.h>
-#include <gsl/gsl_vector_complex.h>
-#include <gsl/gsl_matrix.h>
-#include <gsl/gsl_cblas.h>
-#include <gsl/gsl_linalg.h>
-#include <gsl/gsl_eigen.h>
 
 NRCSID (FINDCHIRPPTFFILTERC, "$Id$");
 
@@ -79,22 +70,19 @@ LALFindChirpPTFFilterSegment (
 /* </lalVerbatim> */
 {
   UINT4                 i, j, k, l, kmax, kmin;
-  UINT4                 errcode = 0;
   UINT4                 numPoints;
   UINT4                 deltaEventIndex;
   UINT4                 ignoreIndex;
   REAL4                 deltaT, max_eigen, r, s, x, y;
   REAL4                 deltaF, fFinal, fmin, length;
+  REAL4                 u1[5], u2[5], v1[5], v2[5], *Binv;
+  REAL4                 N, check, thresh;
+  REAL4                 v1_dot_v1, v2_dot_v2, v1_dot_u1, v1_dot_u2, 
+                        v2_dot_u1, v2_dot_u2, u1_dot_u1, u2_dot_u2;
   COMPLEX8             *snr            = NULL;
   COMPLEX8             *PTFQtilde, *qtilde, *PTFq, *inputData;
   COMPLEX8Vector        qVec;
   FindChirpBankVetoData clusterInput;
-
-  /* Define variables and allocate memory needed for gsl function */
-  gsl_eigen_nonsymm_workspace *workspace = gsl_eigen_nonsymm_alloc ( 5 );
-  gsl_matrix                  *PTFMatrix = gsl_matrix_alloc( 5, 5 );
-  gsl_vector_complex          *eigenvalues = gsl_vector_complex_alloc( 5 );
-  gsl_complex                  eval;
   
   /*
    *
@@ -103,28 +91,27 @@ LALFindChirpPTFFilterSegment (
    */
 
   /* number of points in a segment */
-  numPoints = params->PTFqVec->vectorLength;
+  numPoints   = params->PTFqVec->vectorLength;
+  N           = (REAL4) numPoints;
   /* workspace vectors */
-  snr = params->PTFsnrVec->data;
-  qtilde = params->qtildeVec->data;
-  PTFq   = params->PTFqVec->data;
+  snr         = params->PTFsnrVec->data;
+  qtilde      = params->qtildeVec->data;
+  PTFq        = params->PTFqVec->data;
   qVec.length = numPoints;
 
   /* template and data */
-  inputData = input->segment->data->data->data;
-  length    = input->segment->data->data->length;
-  PTFQtilde = input->fcTmplt->PTFQtilde->data;
+  inputData   = input->segment->data->data->data;
+  length      = input->segment->data->data->length;
+  PTFQtilde   = input->fcTmplt->PTFQtilde->data;
+  Binv        = input->fcTmplt->PTFBinverse->data;
 
   /* number of points and frequency cutoffs */
-  deltaT = (REAL4) params->deltaT;
-  deltaF = 1.0 / ( deltaT * (REAL4) numPoints );
-  fFinal = (REAL4) input->fcTmplt->tmplt.fFinal;
-  fmin   = (REAL4) input->fcTmplt->tmplt.fLower;
-  kmax =  fFinal / deltaF < numPoints/2 ? fFinal / deltaF : numPoints/2;
-  kmin =  fmin / deltaF > 1.0 ? fmin/ deltaF : 1;
-  
-  /* Set parameters for the gsl function */
-  gsl_eigen_nonsymm_params( 0, 1, workspace);
+  deltaT      = (REAL4) params->deltaT;
+  deltaF      = 1.0 / ( deltaT * N );
+  fFinal      = (REAL4) input->fcTmplt->tmplt.fFinal;
+  fmin        = (REAL4) input->fcTmplt->tmplt.fLower;
+  kmax        = fFinal / deltaF < numPoints/2 ? fFinal / deltaF : numPoints/2;
+  kmin        = fmin / deltaF > 1.0 ? fmin/ deltaF : 1;
   
   INITSTATUS( status, "LALFindChirpPTFFilter", FINDCHIRPPTFFILTERC );
   ATTATCHSTATUSPTR( status );
@@ -244,7 +231,7 @@ LALFindChirpPTFFilterSegment (
    */
 
   /* clear the snr output vector and workspace*/
-  memset( params->PTFsnrVec->data, 0, numPoints * sizeof(REAL4) );
+  memset( params->PTFsnrVec->data, 0, numPoints * sizeof(COMPLEX8) );
   memset( params->PTFqVec->data, 0, 5 * numPoints * sizeof(COMPLEX8) );
   
   for ( i = 0; i < 5; ++i )
@@ -276,65 +263,56 @@ LALFindChirpPTFFilterSegment (
   }
 
   /* now we have PTFqVec which contains <s|Q^I_0> + i <s|Q^I_\pi/2> */
+  
+  /* set the threshold on max eigenvalue to be 48 (~ 7 for snr) */ 
 
+  thresh = 12.0 * N * N;
+   
   for ( j = 0; j < numPoints; ++j ) /* beginning of main loop over time */
   {  
-    /* Set PTFMatrix elements to zero */
-    memset(params->PTFA->data, 0 , 25 * sizeof(REAL4));
-    gsl_matrix_set_zero( PTFMatrix );
-    
-    /* construct A */
-    for ( i = 0; i < 5; ++i )
-    {  
-      for ( l = 0; l < i + 1; ++l )
-      { 
-        params->PTFA->data[5 * i + l] = PTFq[i * numPoints + j].re * 
-                                        PTFq[l * numPoints + j].re +
-                                        PTFq[i * numPoints + j].im * 
-                                        PTFq[l * numPoints + j].im ;
-        params->PTFA->data[5 * l + i] = params->PTFA->data[ 5 * i + l]; 
-      }  
-    } 
-    
-    /* multiply by PTFBinverse to obtain AB^(-1) */
-
-    LALSMatrixMultiply(status->statusPtr, 
-        params->PTFMatrix, params->PTFA, 
-        input->fcTmplt->PTFBinverse);
-    CHECKSTATUSPTR( status );
-
-    /* Construct the gsl matrix to be used by gsl_eigen_nonsymm */
-    for ( i = 0; i < 5; ++i ) 
-    {
-      for ( l = 0; l < 5; ++l )
-      {
-        gsl_matrix_set(PTFMatrix, i, l, params->PTFMatrix->data[5 * i + l]);
-      }
+    v1_dot_v1 = v2_dot_v2 = u1_dot_u1 = u2_dot_u2 = check = 0.0;
+    for (i = 0; i < 5; i++)
+    { 
+      u1[i] = 0.0;
+      u2[i] = 0.0;
+      v1[i] = PTFq[i * numPoints + j].re;
+      v2[i] = PTFq[i * numPoints + j].im;
     }
-     
-    /* find max eigenvalue and store it in snr vector */
-    errcode = gsl_eigen_nonsymm ( PTFMatrix, eigenvalues, workspace); 
-    if ( errcode != GSL_SUCCESS )
-    {
-      fprintf(stderr,"GSL eigenvalue error %d at time step %d\n",errcode,j);
-      ABORT( status, FINDCHIRPH_EIGEN, FINDCHIRPH_MSGEIGEN);
-    }
-    
-    max_eigen = 0.0;
-    for ( i = 0; i < 5; ++i )
-    {
-      eval = gsl_vector_complex_get( eigenvalues, i );
-      if ( GSL_IMAG( eval ) == 0) 
+    for (i = 0; i < 5; i++)
+    { 
+      for ( l = 0; l < 5; l++ )
       {  
-        if ( GSL_REAL( eval ) > max_eigen ) max_eigen = GSL_REAL( eval );        
-      } 
+        u1[i] = u1[i] + Binv[i * 5 + l] * v1[l];
+        u2[i] = u2[i] + Binv[i * 5 + l] * v2[l];
+      }
+      
+      v1_dot_v1 = v1_dot_v1 + v1[i] * v1[i];
+      u1_dot_u1 = u1_dot_u1 + u1[i] * u1[i];
+      v2_dot_v2 = v2_dot_v2 + v2[i] * v2[i];
+      u2_dot_u2 = u2_dot_u2 + u2[i] * u2[i];
     }
-    
-    snr[j].re = 2.0 * sqrt(max_eigen) / (REAL4) numPoints;
-    snr[j].im = 0;
-    
-  } /* End of main loop over time */
+    /* Construct the upper limit on SNR */
+    check = sqrt(v1_dot_v1 * u1_dot_u1) + sqrt(v2_dot_v2 * u2_dot_u2);
 
+    /* Compute SNR only for times when the upper limit on SNR is above
+     * threshold 
+     */ 
+    if ( check > thresh )
+    {  
+      v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = max_eigen = 0.0;
+      for (i = 0; i < 5; i++)
+      {
+        v1_dot_u1 = v1_dot_u1 + v1[i] * u1[i];
+        v1_dot_u2 = v1_dot_u2 + v1[i] * u2[i];
+        v2_dot_u1 = v2_dot_u1 + v2[i] * u1[i];
+        v2_dot_u2 = v2_dot_u2 + v2[i] * u2[i];
+      }
+      max_eigen = 0.5 * ( v1_dot_u1 + v2_dot_u2 + sqrt( (v1_dot_u1 - v2_dot_u2)
+                 * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v2_dot_u1 ));
+      snr[j].re = 2.0 * sqrt(max_eigen) / N;
+    }
+  } /* End of main loop over time */
+  
 
   /* 
    *
@@ -388,11 +366,6 @@ LALFindChirpPTFFilterSegment (
   CHECKSTATUSPTR( status );
 
   params->qVec = NULL;
-
-  /* Free gsl allocated memory */
-  gsl_matrix_free( PTFMatrix );
-  gsl_eigen_nonsymm_free( workspace );
-  gsl_vector_complex_free( eigenvalues );
   
   /* normal exit */
   DETATCHSTATUSPTR( status );
