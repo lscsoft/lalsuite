@@ -55,7 +55,8 @@
 #include "hs_boinc_extras.h"
 #include "hs_boinc_options.h"
 
-NRCSID(HSBOINCEXTRASCRCSID,"$Id$");
+
+char* HSBOINCEXTRASCRCSID = "$Id$";
 
 
 /*^* MACROS *^*/
@@ -1004,8 +1005,7 @@ int main(int argc, char**argv) {
   LogSetLevel(LOG_DETAIL); /* as long as we are debugging */
 
   /* dummy for keeping the RCSIDs */
-  if(skipsighandler)
-    fprintf(stderr,"%s\n%s\n",HSBOINCEXTRASHRCSID,HSBOINCEXTRASCRCSID);
+  HSBOINCEXTRASCRCSID = HSBOINCEXTRASHRCSID;
 
   LogPrintf(LOG_NORMAL, "Built at: " __DATE__ " " __TIME__ "\n");
 

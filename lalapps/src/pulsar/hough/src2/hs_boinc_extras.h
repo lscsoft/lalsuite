@@ -29,8 +29,9 @@
 
 #include <lal/LALError.h>
 #include <lal/LALRCSID.h>
-NRCSID(HSBOINCEXTRASHRCSID,"$Id$");
 #include "FstatToplist.h"
+
+#define HSBOINCEXTRASHRCSID "$Id$"
 
 #define EAH_LOGLEVEL 1        /* LOG_DEBUG */
 #define EAH_LALDEBUGLEVEL 33  /* DebugLevel = 1, but without time-consuming memory debugging */
