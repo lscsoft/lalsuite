@@ -53,6 +53,7 @@
 #include "HierarchicalSearch.h"
 #include <lal/LogPrintf.h>
 #include "hs_boinc_extras.h"
+#include "hs_boinc_options.h"
 
 NRCSID(HSBOINCEXTRASCRCSID,"$Id$");
 
@@ -1012,6 +1013,8 @@ int main(int argc, char**argv) {
   global_argc = argc;
   global_argv = argv;
 
+
+
   /* debugging support by files */
 
 #define DEBUG_LEVEL_FNAME "EAH_DEBUG_LEVEL"
@@ -1117,6 +1120,7 @@ int main(int argc, char**argv) {
 
 
   /* install signal handler */
+
   /* the previous boinc_init_diagnostics() call should have installed boinc_catch_signal() for
      SIGILL
      SIGABRT
@@ -1177,7 +1181,13 @@ int main(int argc, char**argv) {
     boinc_finish(29);
   }
 #endif
+
+
+
   /* boinc_init variations */
+
+  set_boinc_options();
+
 #if (BOINC_GRAPHICS == 2) && defined(_MSC_VER)
   /* We don't load an own DLL on Windows, but we check if we can (manually)
      load the system DLLs necessary to do graphics on Windows, and will run
@@ -1188,7 +1198,7 @@ int main(int argc, char**argv) {
     int retval;
     set_search_pos_hook = set_search_pos;
     fraction_done_hook = &fraction_done;
-    retval = boinc_init_graphics(worker);
+    retval = boinc_init_graphics_options(worker);
     LogPrintf (LOG_CRITICAL, "boinc_init_graphics() returned %d.\n", retval);
     boinc_finish(HIERARCHICALSEARCH_EWORKER);
   }
@@ -1212,7 +1222,7 @@ int main(int argc, char**argv) {
     set_search_pos_hook = set_search_pos;
     fraction_done_hook = &fraction_done;
     /* no dynamic library, just call boinc_init_graphics() */
-    retval = boinc_init_graphics(worker);
+    retval = boinc_init_graphics_options(worker);
     LogPrintf (LOG_CRITICAL, "ERROR: boinc_init_graphics() returned %d\n", retval);
     boinc_finish(HIERARCHICALSEARCH_EWORKER );
   }
