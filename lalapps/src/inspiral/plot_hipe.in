@@ -258,6 +258,22 @@ else:
 # create the Condor jobs that will be used in the DAG
 all_jobs = []
 
+executables= ["plotinspiral","plotinspiralrange","plotnumtemplates", "plotethinca", "plotthinca"]
+common_options = ["gps-start-time", "gps-end-time", "enable-output", "output-path", "cache-file-playground"]
+
+for common_option in common_options:
+  for executable in  executables:
+    try:
+      if common_option == "cache-file-playground":
+        cp.set(executable, "cache-file",  string.strip(cp.get('general',common_option)))
+      else:
+        cp.set(executable, common_option,  string.strip(cp.get('general',common_option)))
+    except:
+      pass
+
+
+
+
 # inspiral:
 if opts.plotinspiral:
   
