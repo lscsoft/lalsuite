@@ -76,8 +76,8 @@ NRCSID( COMPLEXAMC, "$Id$");
 void
 LALGetCmplxAMCoeffs(LALStatus *status,
 		    CmplxAMCoeffs *coeffs,			/**< [out] amplitude-coeffs {a(f_0,t_i), b(f_0,t_i)} */
-		    const CmplxDetectorStateSeries *DetectorStates,	/**< timeseries of detector states (note these may depend on f_0 and the sky position) */
-		    SkyPosition skypos			/**< {alpha,delta} of the source */
+		    const DetectorStateSeries *DetectorStates,	/**< timeseries of detector states (note these may depend on f_0 and the sky position) */
+		    PulsarDopplerParams doppler			/**< {alpha,delta} of the source */
 	       )
 {
   REAL4 delta, alpha;
@@ -88,6 +88,10 @@ LALGetCmplxAMCoeffs(LALStatus *status,
   REAL4 eta1, eta2, eta3;
   REAL4 norm;
   UINT4 i, numSteps;
+
+  CmplxDetectorTensor d;
+
+  CHAR channelNum;
 
   INITSTATUS (status, "LALGetCmplxAMCoeffs", COMPLEXAMC);
 
@@ -102,13 +106,15 @@ LALGetCmplxAMCoeffs(LALStatus *status,
   ASSERT ( (coeffs->a->length == numSteps) && (coeffs->b->length == numSteps), status,
 	   COMPLEXAMC_EINPUT,  COMPLEXAMC_MSGEINPUT);
 
-  /* require sky-pos to be in equatorial coordinates */
-  ASSERT ( skypos.system == COORDINATESYSTEM_EQUATORIAL, status, 
-	   SKYCOORDINATESH_ESYS, SKYCOORDINATESH_MSGESYS );
+  ASSERT ( DetectorStates->detector.frDetector.prefix[0] == 'Z', status,
+	   COMPLEXAMC_ERAALISA, COMPLEXAMC_MSGERAALISA);
+
+  /* need to know TDI channel number to calculate complex detector tensor */
+  channelNum = DetectorStates->detector.frDetector.prefix[0];
 
   /*---------- We write components of xi and eta vectors in SSB-fixed coords */
-  alpha = skypos.longitude;
-  delta = skypos.latitude;
+  alpha = doppler.Alpha;
+  delta = doppler.Delta;
 
   sin_cos_LUT (&sin1delta, &cos1delta, delta );
   sin_cos_LUT (&sin1alpha, &cos1alpha, alpha );
@@ -128,33 +134,39 @@ LALGetCmplxAMCoeffs(LALStatus *status,
     {
       COMPLEX8 ai, bi;
 
-      CmplxDetectorTensor *d = &(DetectorStates->data[i].detT);
+      if ( XLALgetCmplxLISADetectorTensor(&d,
+					  DetectorStates->data[i].tGPS,
+					  channelNum)
+	   != 0 ) {
+	LALPrintError ( "\nXLALgetCmplxLISADetectorTensor() failed ... errno = %d\n\n", xlalErrno );
+	ABORT ( status, COMPLEXAMC_EXLAL, COMPLEXAMC_MSGEXLAL );
+      }
       
-      ai.re = d->d11.re * ( xi1 * xi1 - eta1 * eta1 )
-	+ 2 * d->d12.re * ( xi1*xi2 - eta1*eta2 )
-	- 2 * d->d13.re *             eta1 * eta3
-	+     d->d22.re * ( xi2*xi2 - eta2*eta2 )
-	- 2 * d->d23.re *             eta2 * eta3
-	-     d->d33.re *             eta3*eta3;
+      ai.re = d.d11.re * ( xi1 * xi1 - eta1 * eta1 )
+	+ 2 * d.d12.re * ( xi1*xi2 - eta1*eta2 )
+	- 2 * d.d13.re *             eta1 * eta3
+	+     d.d22.re * ( xi2*xi2 - eta2*eta2 )
+	- 2 * d.d23.re *             eta2 * eta3
+	-     d.d33.re *             eta3*eta3;
 
-      ai.im = d->d11.im * ( xi1 * xi1 - eta1 * eta1 )
-	+ 2 * d->d12.im * ( xi1*xi2 - eta1*eta2 )
-	- 2 * d->d13.im *             eta1 * eta3
-	+     d->d22.im * ( xi2*xi2 - eta2*eta2 )
-	- 2 * d->d23.im *             eta2 * eta3
-	-     d->d33.im *             eta3*eta3;
+      ai.im = d.d11.im * ( xi1 * xi1 - eta1 * eta1 )
+	+ 2 * d.d12.im * ( xi1*xi2 - eta1*eta2 )
+	- 2 * d.d13.im *             eta1 * eta3
+	+     d.d22.im * ( xi2*xi2 - eta2*eta2 )
+	- 2 * d.d23.im *             eta2 * eta3
+	-     d.d33.im *             eta3*eta3;
 
-      bi.re = d->d11.re * 2 * xi1 * eta1
-	+ 2 * d->d12.re *   ( xi1 * eta2 + xi2 * eta1 )
-	+ 2 * d->d13.re *     xi1 * eta3
-	+     d->d22.re * 2 * xi2 * eta2
-	+ 2 * d->d23.re *     xi2 * eta3;
+      bi.re = d.d11.re * 2 * xi1 * eta1
+	+ 2 * d.d12.re *   ( xi1 * eta2 + xi2 * eta1 )
+	+ 2 * d.d13.re *     xi1 * eta3
+	+     d.d22.re * 2 * xi2 * eta2
+	+ 2 * d.d23.re *     xi2 * eta3;
 
-      bi.im = d->d11.im * 2 * xi1 * eta1
-	+ 2 * d->d12.im *   ( xi1 * eta2 + xi2 * eta1 )
-	+ 2 * d->d13.im *     xi1 * eta3
-	+     d->d22.im * 2 * xi2 * eta2
-	+ 2 * d->d23.im *     xi2 * eta3;
+      bi.im = d.d11.im * 2 * xi1 * eta1
+	+ 2 * d.d12.im *   ( xi1 * eta2 + xi2 * eta1 )
+	+ 2 * d.d13.im *     xi1 * eta3
+	+     d.d22.im * 2 * xi2 * eta2
+	+ 2 * d.d23.im *     xi2 * eta3;
 
       coeffs->a->data[i] = ai;
       coeffs->b->data[i] = bi;
@@ -190,8 +202,8 @@ LALGetCmplxAMCoeffs(LALStatus *status,
 void
 LALGetMultiCmplxAMCoeffs (LALStatus *status, 
 		     MultiCmplxAMCoeffs **multiAMcoef,	/**< [out] AM-coefficients for all input detector-state series */
-		     const MultiCmplxDetectorStateSeries *multiDetStates, /**< [in] detector-states at timestamps t_i */
-		     SkyPosition skypos			/**< source sky-position [in equatorial coords!] */
+		     const MultiDetectorStateSeries *multiDetStates, /**< [in] detector-states at timestamps t_i */
+		     PulsarDopplerParams doppler		     /**< source sky-position [in equatorial coords!], freq etc. */
 		     )
 {
   UINT4 X, numDetectors;
@@ -205,7 +217,6 @@ LALGetMultiCmplxAMCoeffs (LALStatus *status,
   ASSERT (multiDetStates->length, status,COMPLEXAMC_ENULL, COMPLEXAMC_MSGENULL);
   ASSERT (multiAMcoef, status,COMPLEXAMC_ENULL, COMPLEXAMC_MSGENULL);
   ASSERT ( *multiAMcoef == NULL, status,COMPLEXAMC_ENONULL, COMPLEXAMC_MSGENONULL);
-  ASSERT ( skypos.system == COORDINATESYSTEM_EQUATORIAL, status, COMPLEXAMC_EINPUT, COMPLEXAMC_MSGEINPUT );
 
   numDetectors = multiDetStates->length;
 
@@ -231,7 +242,7 @@ LALGetMultiCmplxAMCoeffs (LALStatus *status,
 	goto failed;
       }
 
-      LALGetCmplxAMCoeffs (status->statusPtr, amcoeX, multiDetStates->data[X], skypos );
+      LALGetCmplxAMCoeffs (status->statusPtr, amcoeX, multiDetStates->data[X], doppler );
       if ( status->statusPtr->statusCode ) 
 	{
 	  LALPrintError ( "\nCall to LALGetCmplxAMCoeffs() has failed ... \n\n");
@@ -391,7 +402,7 @@ XLALWeighMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNoise
   multiAMcoef->Mmunu.Ad = Ad;
   multiAMcoef->Mmunu.Bd = Bd;
   multiAMcoef->Mmunu.Cd = Cd;
-
+  multiAMcoef->Mmunu.Cd = Ed;
 
   return XLAL_SUCCESS;
 

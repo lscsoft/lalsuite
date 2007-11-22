@@ -43,6 +43,7 @@ NRCSID( LISASPECIFICSH, "$Id$" );
 #include <lal/LALDetectors.h>
 #include <lal/LALDatatypes.h>
 #include <lal/DetectorStates.h>
+#include <lal/ComplexAM.h>
 
 /*---------- exported DEFINES ----------*/
 
@@ -62,6 +63,7 @@ typedef enum {
 /*---------- exported prototypes [API] ----------*/
 int XLALcreateLISA ( LALDetector *Detector, CHAR channelNum );
 int XLALgetLISADetectorTensor ( DetectorTensor *detT, LIGOTimeGPS tGPS, CHAR channelNum );
+int XLALgetCmplxLISADetectorTensor ( CmplxDetectorTensor *detT, LIGOTimeGPS tGPS, CHAR channelNum );
 
 #ifdef  __cplusplus
 }

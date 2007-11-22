@@ -94,6 +94,25 @@ struct AMCoeffs
 \end{description}
 
 \begin{verbatim}
+struct CmplxAMCoeffs
+\end{verbatim}
+\index{\texttt{CmplxAMCoeffs}}
+
+\noindent This structure contains the AM co\"{e}fficients $a$ and $b$
+in the case of a complex detector tensor, and some relevant scalar
+products. That is:
+
+\begin{description}
+\item[\texttt{COMPLEX8Vector *a}]  The $a$ co\"{e}fficient evaluated at the relevant times
+\item[\texttt{COMPLEX8Vector *b}]  The $b$ co\"{e}fficient evaluated at the relevant times
+\item[\texttt{REAL4 A}]  The scalar product $(a||a)$
+\item[\texttt{REAL4 B}]  The scalar product $(b||b)$
+\item[\texttt{REAL4 C}]  The scalar product $(a||b)$
+\item[\texttt{REAL4 E}]  The scalar product $(a||ib)$
+\item[\texttt{REAL4 D}]  The quantity $AB-C^{2}-E^{2}$
+\end{description}
+
+\begin{verbatim}
 struct AMCoeffsParams
 \end{verbatim}
 \index{\texttt{AMCoeffsParams}}
@@ -120,6 +139,17 @@ typedef struct AMCoeffsTag
   REAL4           C;           /**< the scalar product (a||b) */
   REAL4           D;           /**< the quantity AB-C^2       */
 } AMCoeffs;
+
+typedef struct CmplxAMCoeffsTag
+{
+  COMPLEX8Vector     *a;          /**< the a coefficient evaluated at the relevant times */
+  COMPLEX8Vector     *b;          /**< the b coefficient evaluated at the relevant times  */
+  REAL4               A;          /**< the scalar product (a||a) */
+  REAL4               B;          /**< the scalar product (b||b) */
+  REAL4               C;          /**< the scalar product (a||b) */
+  REAL4               E;          /**< the scalar product (a||ib) */
+  REAL4               D;          /**< the quantity AB-C^2-E^2    */
+} CmplxAMCoeffs;
 
 typedef struct AMCoeffsParamsTag
 {

@@ -60,48 +60,20 @@ extern "C" {
 #define COMPLEXAMC_EMEM   		4
 #define COMPLEXAMC_EXLAL		5
 #define COMPLEXAMC_EIEEE		6
+#define COMPLEXAMC_ERAALISA		7
 
 #define COMPLEXAMC_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define COMPLEXAMC_MSGENONULL 	"Output pointer is non-NULL"
 #define COMPLEXAMC_MSGEINPUT   	"Invalid input"
 #define COMPLEXAMC_MSGEMEM   	"Out of memory. Bad."
-#define COMPLEXAMC_MSGEXLAL		"XLAL function call failed"
-#define COMPLEXAMC_MSGEIEEE		"Floating point failure"
+#define COMPLEXAMC_MSGEXLAL	"XLAL function call failed"
+#define COMPLEXAMC_MSGEIEEE	"Floating point failure"
+#define COMPLEXAMC_MSGERAALISA	"RAA response only available for LISA"
 
   /* <lalLaTeX>
 \subsection*{Structures}
 
-\begin{verbatim}
-struct AMCoeffs
-\end{verbatim}
-\index{\texttt{AMCoeffs}}
-
-\noindent This structure contains the AM co\"{e}fficients $a$ and $b$
-in the case of a complex detector tensor, and some relevant scalar
-products. That is:
-
-\begin{description}
-\item[\texttt{COMPLEX8Vector *a}]  The $a$ co\"{e}fficient evaluated at the relevant times
-\item[\texttt{COMPLEX8Vector *b}]  The $b$ co\"{e}fficient evaluated at the relevant times
-\item[\texttt{REAL4 A}]  The scalar product $(a||a)$
-\item[\texttt{REAL4 B}]  The scalar product $(b||b)$
-\item[\texttt{REAL4 C}]  The scalar product $(a||b)$
-\item[\texttt{REAL4 E}]  The scalar product $(a||ib)$
-\item[\texttt{REAL4 D}]  The quantity $AB-C^{2}-E^{2}$
-\end{description}
-
 </lalLaTeX> */
-
-typedef struct CmplxAMCoeffsTag
-{
-  COMPLEX8Vector     *a;          /**< the a coefficient evaluated at the relevant times */
-  COMPLEX8Vector     *b;          /**< the b coefficient evaluated at the relevant times  */
-  REAL4               A;          /**< the scalar product (a||a) */
-  REAL4               B;          /**< the scalar product (b||b) */
-  REAL4               C;          /**< the scalar product (a||b) */
-  REAL4               E;          /**< the scalar product (a||ib) */
-  REAL4               D;          /**< the quantity AB-C^2-E^2    */
-} CmplxAMCoeffs;
 
 /** Struct holding the "antenna-pattern" matrix \f$\mathcal{M}_{\mu\nu} \equiv \left( \mathbf{h}_\mu|\mathbf{h}_\nu\right)\f$,
  * in terms of the multi-detector scalar product. This matrix can be shown to be expressible, in the case of complex AM co\"{e}fficients, as
@@ -190,17 +162,18 @@ typedef struct
 </lalLaTeX> */
 
 /*---------- exported prototypes [API] ----------*/
-void
-LALGetCmplxAMCoeffs(LALStatus *,
-		    CmplxAMCoeffs *coeffs,
-		    const CmplxDetectorStateSeries *DetectorStates,
-		    SkyPosition skypos);
 
 void
-LALGetMultiCmplxAMCoeffs (LALStatus *, 
-		     MultiCmplxAMCoeffs **multiAMcoef,
-		     const MultiCmplxDetectorStateSeries *multiDetStates,
-		     SkyPosition pos );
+LALGetCmplxAMCoeffs( LALStatus *,
+		     CmplxAMCoeffs *coeffs,
+		     const DetectorStateSeries *DetectorStates,
+		     PulsarDopplerParams doppler);
+
+void
+LALGetMultiCmplxAMCoeffs( LALStatus *, 
+			  MultiCmplxAMCoeffs **multiAMcoef,
+			  const MultiDetectorStateSeries *multiDetStates,
+			  PulsarDopplerParams doppler );
 
 int
 XLALWeighMultiCmplxAMCoeffs ( MultiCmplxAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights );
