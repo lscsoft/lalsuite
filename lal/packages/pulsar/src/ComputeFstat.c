@@ -196,6 +196,7 @@ ComputeFStat ( LALStatus *status,
   MultiAMCoeffs *multiAMcoef = NULL;
   MultiCmplxAMCoeffs *multiCmplxAMcoef = NULL;
   REAL8 Ad, Bd, Cd, Dd_inv, Ed;
+  SkyPosition skypos;
 
   INITSTATUS( status, "ComputeFStat", COMPUTEFSTATC );
   ATTATCHSTATUSPTR (status);
@@ -218,6 +219,25 @@ ComputeFStat ( LALStatus *status,
     ABORT ( status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
   }
 
+  /* check if that skyposition SSB+AMcoef were already buffered */
+  if ( cfBuffer 
+       && ( cfBuffer->multiDetStates == multiDetStates )
+       && ( cfBuffer->Alpha == doppler->Alpha )
+       && ( cfBuffer->Delta == doppler->Delta ) 
+       && cfBuffer->multiSSB
+       && cfBuffer->multiAMcoef )
+    { /* yes ==> reuse */
+      multiSSB = cfBuffer->multiSSB;
+      multiAMcoef = cfBuffer -> multiAMcoef;
+    }
+  else 
+    {
+      skypos.system =   COORDINATESYSTEM_EQUATORIAL;
+      skypos.longitude = doppler->Alpha;
+      skypos.latitude  = doppler->Delta;
+      TRY ( LALGetMultiSSBtimes ( status->statusPtr, &multiSSB, multiDetStates, skypos, doppler->refTime, params->SSBprec ), status );
+    }
+
   if ( params->useRAA ) {
     LALGetMultiCmplxAMCoeffs ( status->statusPtr, &multiCmplxAMcoef, multiDetStates, *doppler );
     BEGINFAIL ( status ) {
@@ -237,27 +257,8 @@ ComputeFStat ( LALStatus *status,
     Dd_inv = 1.0 / (Ad * Bd - Cd * Cd - Ed * Ed);
 
   } else {
-
-  /* check if that skyposition SSB+AMcoef were already buffered */
-  if ( cfBuffer 
-       && ( cfBuffer->multiDetStates == multiDetStates )
-       && ( cfBuffer->Alpha == doppler->Alpha )
-       && ( cfBuffer->Delta == doppler->Delta ) 
-       && cfBuffer->multiSSB
-       && cfBuffer->multiAMcoef )
-    { /* yes ==> reuse */
-      multiSSB = cfBuffer->multiSSB;
-      multiAMcoef = cfBuffer -> multiAMcoef;
-    }
-  else 
-    {
-      SkyPosition skypos;
-      skypos.system =   COORDINATESYSTEM_EQUATORIAL;
-      skypos.longitude = doppler->Alpha;
-      skypos.latitude  = doppler->Delta;
-      /* compute new AM-coefficients and SSB-times */
-      TRY ( LALGetMultiSSBtimes ( status->statusPtr, &multiSSB, multiDetStates, skypos, doppler->refTime, params->SSBprec ), status );
-
+    if ( !multiAMcoef ) {
+      /* compute new AM-coefficients */
       LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multiDetStates, skypos );
       BEGINFAIL ( status ) {
 	XLALDestroyMultiSSBtimes ( multiSSB );
