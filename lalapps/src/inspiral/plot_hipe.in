@@ -37,6 +37,64 @@ def combo2str(combo):
   for ifo in combo:
     ifo_list += ifo
   return ifo_list
+    
+def config_add_cache_file(cp, section, this_parameter):
+  """
+  @param cp: the input config file to parse
+  @return: cp with an updated cachefile
+  """
+  try:
+    dir = string.strip(cp.get('general',this_parameter)) 
+    gpsstart = string.strip(cp.get('general','gps-start-time'))   
+    gpsend = string.strip(cp.get('general','gps-end-time'))  
+    this = ""
+    for cache in dir.split(","):
+      
+      this +="./"+cache+"/inspiral_hipe_"+cache+"_intermediate_data-"+str(gpsstart)+"-"+str(gpsend)+".cache "
+    if "injection" in this_parameter:
+      cp.set(section, "injection-cache-file", this)
+    else:
+      cp.set(section, "cache-file", this)
+  except:
+    raise ValueError
+
+  return cp
+#----------
+def search_for_cachefile(cp, this_section, type=None):
+  """
+  param type : must be either "injection" or "analysis", default is playground
+  """
+  try:
+    if type==None:
+      cp = config_add_cache_file(cp, this_section, "playground-directory")
+    elif type=="injection":
+      cp = config_add_cache_file(cp, this_section, "injection-directory")
+    elif type=="analysis":
+      cp = config_add_cache_file(cp, this_section, "analysis-directory")
+  except:
+    try: 
+      cp.get(this_section,"cache-file")
+    except:
+      raise ValueError, "---------- No playground-directory in the [general] section AND \
+        no cache-file in [" + this_section + "]. Need at least one of them in the ini file"
+
+  return cp
+
+def set_common_options(cp, this_section):
+  """
+  """
+  common_options = ["gps-start-time", "gps-end-time", "enable-output", "output-path"]
+  for common_option in common_options:
+    try:
+      cp.set(this_section, common_option,  string.strip(cp.get('general',common_option)))
+    except:
+      print "WARNING: --gps-start-time and --gps-end-time stronly recommended in [genera] section of your ini file"
+      pass
+
+  return cp 
+
+
+
 
 #############################################################################
 #
@@ -258,20 +316,6 @@ else:
 # create the Condor jobs that will be used in the DAG
 all_jobs = []
 
-executables= ["plotinspiral","plotinspiralrange","plotnumtemplates", "plotethinca", "plotthinca"]
-common_options = ["gps-start-time", "gps-end-time", "enable-output", "output-path", "cache-file-playground"]
-
-for common_option in common_options:
-  for executable in  executables:
-    try:
-      if common_option == "cache-file-playground":
-        cp.set(executable, "cache-file",  string.strip(cp.get('general',common_option)))
-      else:
-        cp.set(executable, common_option,  string.strip(cp.get('general',common_option)))
-    except:
-      pass
-
-
 
 
 # inspiral:
@@ -284,13 +328,14 @@ if opts.plotinspiral:
       all times are sieved.
   """
   plotinspiral_jobs = {}
+  this_section = "plotinspiral"
+  cp = search_for_cachefile(cp, this_section)
+  cp = set_common_options(cp, this_section)
 
   for ifo in ifolist:
-    cp.set('plotinspiral','figure-name','plotinspiral_' + ifo)
-    cp.set('plotinspiral','ifo-type',ifo)
+    cp.set('plotinspiral','ifo-times',ifo)
     plotinspiral_jobs[ifo] = inspiral.PlotInspiralJob(cp)
     plotinspiral_jobs[ifo].set_sub_file( basename + '.plotinspiral_' + ifo + subsuffix )
-
  
   all_jobs.extend(plotinspiral_jobs.values())
 
@@ -298,6 +343,9 @@ if opts.plotinspiral:
 #plotthinca
 if opts.plotthinca:
   plotthinca_jobs = {}
+  this_section = "plotthinca"
+  cp = search_for_cachefile(cp, this_section)
+  cp = set_common_options(cp, this_section)
   for ifos in  ifo_combo:
     combostring = combo2str(ifos)
     plotthinca_jobs[combostring] = inspiral.PlotThincaJob(cp)
@@ -316,6 +364,10 @@ if opts.plotnumtemplates:
       and TRIGBANKS for all ifos namely "H1", "H2" and "L1" are sieved together.
   """
   plotnumtemplates_jobs = {}
+  this_section = "plotnumtemplates"
+  cp = search_for_cachefile(cp, this_section)
+  cp = set_common_options(cp, this_section)
+
   plotnumtemplates_jobs = inspiral.PlotNumtemplatesJob(cp)
   plotnumtemplates_jobs.set_sub_file( basename + '.plotnumtemplates' + subsuffix)
 
@@ -337,6 +389,9 @@ if opts.plotinjnum:
 
   """
   plotinjnum_jobs = {}
+  this_section = "plotinjnum"
+  cp = search_for_cachefile(cp, this_section, type="injection")
+  cp = set_common_options(cp, this_section)
   
   for ifos in  ifo_combo:
     combostring = combo2str(ifos)
@@ -350,8 +405,12 @@ if opts.plotinjnum:
 
 # plotethinca
 if opts.plotethinca:
+  print cp.get("plotethinca", "x-value")
 
   plotethinca_jobs = {}
+  this_section = "plotethinca"
+  cp = search_for_cachefile(cp, this_section)
+  cp = set_common_options(cp, this_section)
 
   for ifos in  ifo_combo:
     combostring = combo2str(ifos)
@@ -370,6 +429,9 @@ if opts.plotethinca:
 if opts.plotinspmissed:
 
   plotinspmissed_jobs = {}
+  this_section = "plotinspmissed"
+  cp = search_for_cachefile(cp, this_section, type="injection")
+  cp = set_common_options(cp, this_section)
   
   for ifo in ifolist:
     cp.set('plotinspmissed','ifo-times',ifo)
@@ -385,9 +447,11 @@ if opts.plotinspmissed:
 if opts.plotinspinj:
 
   plotinspinj_jobs = {}
+  this_section = "plotinspinj"
+  cp = search_for_cachefile(cp, this_section, type="injection")
+  cp = set_common_options(cp, this_section)
 
   for ifo in ifolist:
-    cp.set('plotinspinj','figure-name','plotinspinj_' + ifo)
     cp.set('plotinspinj','ifo-type',ifo)
     plotinspinj_jobs[ifo] = inspiral.PlotInspinjJob(cp)
     plotinspinj_jobs[ifo].set_sub_file( basename + '.plotinspinj_' + ifo + subsuffix )
@@ -398,10 +462,14 @@ if opts.plotinspinj:
 if opts.plotsnrchi:
 
   plotsnrchi_jobs = {}
+  this_section = "plotsnrchi"
+  cp = search_for_cachefile(cp, this_section)
+  cp = search_for_cachefile(cp, this_section, type="injection")
+  cp = set_common_options(cp, this_section)
 
-  for ifo in ifolist:
+
+  for ifo in ifolist:    
     plotsnrchi_jobs[ifo] = inspiral.PlotSnrchiJob(cp)
-    plotsnrchi_jobs[ifo].add_opt("figure-name", ifo + "-plotsnrchi")
     plotsnrchi_jobs[ifo].add_opt("title", ifo)
     plotsnrchi_jobs[ifo].add_opt("single-ifo", ifo)
     plotsnrchi_jobs[ifo].set_sub_file( basename + '.plotsnrchi_' + ifo + subsuffix )
@@ -415,6 +483,10 @@ if opts.plotinspiralrange:
       and TRIGBANKS for all ifos namely "H1", "H2" and "L1" are sieved together.
   """
   plotinspiralrange_jobs = {}
+  this_section = "plotinspiralrange"
+  cp = search_for_cachefile(cp, this_section)
+  cp = set_common_options(cp, this_section)
+
   plotinspiralrange_jobs = inspiral.PlotInspiralrangeJob(cp)
   plotinspiralrange_jobs.set_sub_file( basename + '.plotinspiralrange' + subsuffix)
 
