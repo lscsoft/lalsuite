@@ -136,7 +136,7 @@ LALGetCmplxAMCoeffs(LALStatus *status,
 
       if ( XLALgetCmplxLISADetectorTensor(&d,
 					  DetectorStates->data[i].tGPS,
-					  channelNum)
+					  doppler, channelNum)
 	   != 0 ) {
 	LALPrintError ( "\nXLALgetCmplxLISADetectorTensor() failed ... errno = %d\n\n", xlalErrno );
 	ABORT ( status, COMPLEXAMC_EXLAL, COMPLEXAMC_MSGEXLAL );

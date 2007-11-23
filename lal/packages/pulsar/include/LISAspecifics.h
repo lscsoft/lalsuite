@@ -63,7 +63,7 @@ typedef enum {
 /*---------- exported prototypes [API] ----------*/
 int XLALcreateLISA ( LALDetector *Detector, CHAR channelNum );
 int XLALgetLISADetectorTensor ( DetectorTensor *detT, LIGOTimeGPS tGPS, CHAR channelNum );
-int XLALgetCmplxLISADetectorTensor ( CmplxDetectorTensor *detT, LIGOTimeGPS tGPS, CHAR channelNum );
+int XLALgetCmplxLISADetectorTensor ( CmplxDetectorTensor *detT, LIGOTimeGPS tGPS, PulsarDopplerParams doppler, CHAR channelNum );
 
 #ifdef  __cplusplus
 }

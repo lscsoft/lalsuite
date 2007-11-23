@@ -58,7 +58,7 @@ const LALDetector empty_LALDetector;
 /*---------- internal prototypes ----------*/
 int XLALgetLISAtwoArmIFO ( DetectorTensor *detT, LIGOTimeGPS tGPS, LISAarmT armA, LISAarmT armB );
 
-int XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, LIGOTimeGPS tGPS, LISAarmT armA, LISAarmT armB );
+int XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, LIGOTimeGPS tGPS, PulsarDopplerParams doppler, LISAarmT armA, LISAarmT armB );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -270,19 +270,19 @@ XLALgetLISAtwoArmIFO ( DetectorTensor *detT, 	/**< [out]: two-arm IFO detector-t
   recB  = rec_l [armB];
       
   /* get un-normalized arm-vectors first */
-  nA[0] = x[recA] - x[sendA]; 
-  nA[1] = y[recA] - y[sendA]; 
-  nA[2] = z[recA] - z[sendA];
+  nA[I1] = x[recA] - x[sendA]; 
+  nA[I2] = y[recA] - y[sendA]; 
+  nA[I3] = z[recA] - z[sendA];
       
-  nB[0] = x[recB] - x[sendB]; 
-  nB[1] = y[recB] - y[sendB]; 
-  nB[2] = z[recB] - z[sendB];
+  nB[I1] = x[recB] - x[sendB]; 
+  nB[I2] = y[recB] - y[sendB]; 
+  nB[I3] = z[recB] - z[sendB];
   
   /* get lenths and normalize */
   LA = sqrt ( SCALAR(nA,nA) );
   LB = sqrt ( SCALAR(nB,nB) );
-  nA[0] /= LA;	nA[1] /= LA; 	nA[2] /= LA;
-  nB[0] /= LB; 	nB[1] /= LB; 	nB[2] /= LB;
+  nA[I1] /= LA;	nA[I2] /= LA; 	nA[I3] /= LA;
+  nB[I1] /= LB; 	nB[I2] /= LB; 	nB[I3] /= LB;
 
   /* now we can express the detector tensor in the long-wavelength limit (LWL): */
   detT->d11 =  0.5 * ( nA[I1] * nA[I1] - nB[I1] * nB[I1] );
@@ -306,7 +306,8 @@ XLALgetLISAtwoArmIFO ( DetectorTensor *detT, 	/**< [out]: two-arm IFO detector-t
 int
 XLALgetCmplxLISADetectorTensor ( CmplxDetectorTensor *detT, 	/**< [out]: LISA LWL detector-tensor */
 				 LIGOTimeGPS tGPS,		/**< [in] GPS time to compute IFO at */
-				 CHAR channelNum )		/**< channel-number (as a char)  '1', '2', '3' .. */
+				 PulsarDopplerParams doppler,   /**< [in] doppler parameters including frequency and sky position */
+				 CHAR channelNum)		/**< [in] channel-number (as a char)  '1', '2', '3' .. */
 {
   LISAarmT armA, armB;
   CHAR chan1 = 0;
@@ -345,18 +346,18 @@ XLALgetCmplxLISADetectorTensor ( CmplxDetectorTensor *detT, 	/**< [out]: LISA LW
     } /* switch channel[1] */
 
   if (chan1 == 0) {
-    if ( XLALgetLISAtwoArmRAAIFO ( detT, tGPS, armA, armB ) != 0 ) {
+    if ( XLALgetLISAtwoArmRAAIFO ( detT, tGPS, doppler, armA, armB ) != 0 ) {
       LALPrintError ("\nXLALgetLISAtwoArmRAAIFO() failed !\n\n");
       xlalErrno = XLAL_EINVAL;
       return -1;
     }
   } else {
-    if ( XLALgetCmplxLISADetectorTensor ( &detT1, tGPS, chan1 ) != 0 ) {
+    if ( XLALgetCmplxLISADetectorTensor ( &detT1, tGPS, doppler, chan1 ) != 0 ) {
       LALPrintError ("\nXLALgetCmplxLISADetectorTensor() failed !\n\n");
       xlalErrno = XLAL_EINVAL;
       return -1;
     }
-    if ( XLALgetCmplxLISADetectorTensor ( &detT2, tGPS, chan2 ) != 0 ) {
+    if ( XLALgetCmplxLISADetectorTensor ( &detT2, tGPS, doppler, chan2 ) != 0 ) {
       LALPrintError ("\nXLALgetCmplxLISADetectorTensor() failed !\n\n");
       xlalErrno = XLAL_EINVAL;
       return -1;
@@ -392,6 +393,7 @@ XLALgetCmplxLISADetectorTensor ( CmplxDetectorTensor *detT, 	/**< [out]: LISA LW
 int
 XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, 	/**< [out]: two-arm IFO detector-tensor */
 			  LIGOTimeGPS tGPS,	/**< [in] GPS time to compute IFO at */
+			  PulsarDopplerParams doppler,   /**< [in] doppler parameters including frequency and sky position */
 			  LISAarmT armA, 		/**< [in] first arm */
 			  LISAarmT armB )		/**< [in] second arm */
 {
@@ -406,7 +408,15 @@ XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, 	/**< [out]: two-arm IFO de
   
   UINT4 sendA, recA, sendB, recB; 	/* respective senders/receivers for arms 'A' and 'B' */
   REAL4 nA[3], LA, nB[3], LB;		/* unit-vectors and armlength of the two arms involved */
-  
+  REAL4 pifL_c;
+  REAL4 delta, alpha;
+  REAL4 sin1delta, cos1delta;
+  REAL4 sin1alpha, cos1alpha;
+  REAL4 k[3];
+  REAL4 kdotnA, kdotnB;
+  REAL4 sinpha, cospha, eta, sinceta;
+  COMPLEX8 coeffAA, coeffBB;
+
   { /* determine space-craft positions [MLDC Challenge 1] */
     REAL4 a = LAL_AU_SI;
     REAL4 e = 0.00965;		/* eccentricity */
@@ -442,31 +452,87 @@ XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, 	/**< [out]: two-arm IFO de
   recB  = rec_l [armB];
       
   /* get un-normalized arm-vectors first */
-  nA[0] = x[recA] - x[sendA]; 
-  nA[1] = y[recA] - y[sendA]; 
-  nA[2] = z[recA] - z[sendA];
+  nA[I1] = x[recA] - x[sendA]; 
+  nA[I2] = y[recA] - y[sendA]; 
+  nA[I3] = z[recA] - z[sendA];
       
-  nB[0] = x[recB] - x[sendB]; 
-  nB[1] = y[recB] - y[sendB]; 
-  nB[2] = z[recB] - z[sendB];
+  nB[I1] = x[recB] - x[sendB]; 
+  nB[I2] = y[recB] - y[sendB]; 
+  nB[I3] = z[recB] - z[sendB];
   
   /* get lenths and normalize */
   LA = sqrt ( SCALAR(nA,nA) );
   LB = sqrt ( SCALAR(nB,nB) );
-  nA[0] /= LA;	nA[1] /= LA; 	nA[2] /= LA;
-  nB[0] /= LB; 	nB[1] /= LB; 	nB[2] /= LB;
+  nA[I1] /= LA;	nA[I2] /= LA; 	nA[I3] /= LA;
+  nB[I1] /= LB; 	nB[I2] /= LB; 	nB[I3] /= LB;
 
-  /***** NEED TO MODIFY DETECTOR TENSOR FOR SKY POS AND FREQ *****/
+  pifL_c = doppler.fkdot[0] * (LA + LB) * (LAL_PI_2 / LAL_C_SI);
+
+  alpha = doppler.Alpha;
+  delta = doppler.Delta;
+
+  sin_cos_LUT (&sin1delta, &cos1delta, delta );
+  sin_cos_LUT (&sin1alpha, &cos1alpha, alpha );
+
+  k[I1] = - cos1delta * cos1alpha;
+  k[I2] = - cos1delta * cos1alpha;
+  k[I3] = - sin1delta;
+
+  kdotnA = SCALAR(k,nA);
+  kdotnB = SCALAR(k,nB);
+
+  /* calculate coefficient of nA x nA */
+  sin_cos_LUT (&sinpha, &cospha,
+	       ( pifL_c / 3.0 ) * ( 3.0 - (kdotnA + 2.0*kdotnB) )
+	       );
+  eta = pifL_c * (1.0 + kdotnA);
+  sinceta = sin(eta) / eta;
+  coeffAA.re = cospha * sinceta;
+  coeffAA.im = sinpha * sinceta;
+
+  sin_cos_LUT (&sinpha, &cospha,
+	       ( pifL_c / 3.0 ) * ( - 3.0 - (kdotnA + 2.0*kdotnB) )
+	       );
+  eta = pifL_c * (1.0 - kdotnA);
+  sinceta = sin(eta) / eta;
+  coeffAA.re += cospha * sinceta;
+  coeffAA.im += sinpha * sinceta;
+
+  /* calculate coefficient of nB x nB */
+  sin_cos_LUT (&sinpha, &cospha,
+	       ( pifL_c / 3.0 ) * ( 3.0 + (2.0*kdotnA + kdotnB) )
+	       );
+  eta = pifL_c * (1.0 - kdotnB);
+  sinceta = sin(eta) / eta;
+  coeffBB.re = cospha * sinceta / 4.0;
+  coeffBB.im = sinpha * sinceta / 4.0;
+
+  sin_cos_LUT (&sinpha, &cospha,
+	       ( pifL_c / 3.0 ) * ( - 3.0 + (2.0*kdotnA + kdotnB) )
+	       );
+  eta = pifL_c * (1.0 + kdotnB);
+  sinceta = sin(eta) / eta;
+  coeffBB.re += cospha * sinceta / 4.0;
+  coeffBB.im += sinpha * sinceta / 4.0;
 
   /* now we can express the detector tensor in the rigid adiabatic approximation (RAA): */
-  detT->d11.re =  0.5 * ( nA[I1] * nA[I1] - nB[I1] * nB[I1] );
-  detT->d12.re =  0.5 * ( nA[I1] * nA[I2] - nB[I1] * nB[I2] );
-  detT->d13.re =  0.5 * ( nA[I1] * nA[I3] - nB[I1] * nB[I3] );
+  detT->d11.re =  coeffAA.re * nA[I1] * nA[I1] - coeffBB.re * nB[I1] * nB[I1];
+  detT->d12.re =  coeffAA.re * nA[I1] * nA[I2] - coeffBB.re * nB[I1] * nB[I2];
+  detT->d13.re =  coeffAA.re * nA[I1] * nA[I3] - coeffBB.re * nB[I1] * nB[I3];
   
-  detT->d22.re =  0.5 * ( nA[I2] * nA[I2] - nB[I2] * nB[I2] );
-  detT->d23.re =  0.5 * ( nA[I2] * nA[I3] - nB[I2] * nB[I3] );
+  detT->d22.re =  coeffAA.re * nA[I2] * nA[I2] - coeffBB.re * nB[I2] * nB[I2];
+  detT->d23.re =  coeffAA.re * nA[I2] * nA[I3] - coeffBB.re * nB[I2] * nB[I3];
+
+  detT->d33.re =  coeffAA.re * nA[I3] * nA[I3] - coeffBB.re * nB[I3] * nB[I3];
+
+  detT->d11.im =  coeffAA.im * nA[I1] * nA[I1] - coeffBB.im * nB[I1] * nB[I1];
+  detT->d12.im =  coeffAA.im * nA[I1] * nA[I2] - coeffBB.im * nB[I1] * nB[I2];
+  detT->d13.im =  coeffAA.im * nA[I1] * nA[I3] - coeffBB.im * nB[I1] * nB[I3];
   
-  detT->d33.re =  0.5 * ( nA[I3] * nA[I3] - nB[I3] * nB[I3] );
+  detT->d22.im =  coeffAA.im * nA[I2] * nA[I2] - coeffBB.im * nB[I2] * nB[I2];
+  detT->d23.im =  coeffAA.im * nA[I2] * nA[I3] - coeffBB.im * nB[I2] * nB[I3];
+
+  detT->d33.im =  coeffAA.im * nA[I3] * nA[I3] - coeffBB.im * nB[I3] * nB[I3];
 
   return 0;
 
