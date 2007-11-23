@@ -246,6 +246,7 @@ LALGetMultiCmplxAMCoeffs (LALStatus *status,
       if ( status->statusPtr->statusCode ) 
 	{
 	  LALPrintError ( "\nCall to LALGetCmplxAMCoeffs() has failed ... \n\n");
+	  REPORTSTATUS ( status->statusPtr );
 	  goto failed;
 	}
  
