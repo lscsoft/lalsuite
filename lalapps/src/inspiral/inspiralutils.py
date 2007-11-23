@@ -315,14 +315,25 @@ def hipe_setup(hipeDir, config, ifos, logPath, injFile=None, dfOnly = False, \
   else:
     hipecp.set("pipeline", "playground-data-mask", "all_data")
 
-  # deal with vetoes
+  # set the user-tag to be the same as the directory name
+  usertag = hipeDir.upper()
+
   if vetoCat:
-    for section in ["thinca", "coire"]:
-      hipecp.set(section, "user-tag","CAT_" + str(vetoCat) + "_VETO")
+    # set the old usertag in inspiral, so that we pick up the inspiral xml
+    for section in ["inspiral"]:
+      hipecp.set(section, "user-tag",usertag)
+
+    # set the correct pipeline usertag
+    usertag += "_CAT_" + str(vetoCat) + "_VETO"
+
+    # add the veto files in the thinca section
     for ifo in ifos:
       hipecp.set("thinca", ifo.lower() + "-veto-file", "../" + \
           vetoFiles[ifo][vetoCat])
     hipecp.set("thinca", "do-veto", "")
+
+  # set the usertag
+  hipecp.set("pipeline", "user-tag",usertag)
 
   if injFile:
     # add the injection options to the ini file
@@ -352,8 +363,9 @@ def hipe_setup(hipeDir, config, ifos, logPath, injFile=None, dfOnly = False, \
   # return to the directory, write ini file and run hipe
   os.chdir(hipeDir)
   iniFile = "inspiral_hipe_"
-  if vetoCat: iniFile += "cat" + str(vetoCat) + "_veto_"
-  iniFile += hipeDir + ".ini"
+  iniFile += hipeDir
+  if vetoCat: iniFile += "_cat" + str(vetoCat) + "_veto"
+  iniFile += ".ini"
 
   hipecp.write(file(iniFile,"w"))
 
@@ -389,8 +401,8 @@ def hipe_setup(hipeDir, config, ifos, logPath, injFile=None, dfOnly = False, \
     except: pass
 
   # make hipe job/node
-  hipeJob = pipeline.CondorDAGManJob(hipeDir + "/" + iniFile.rstrip("ini") + \
-      "dag")
+  hipeDag = iniFile.rstrip("ini") + usertag + ".dag"
+  hipeJob = pipeline.CondorDAGManJob(hipeDir + "/" + hipeDag)
   if vetoCat: hipeJob.add_opt("maxjobs", "5")
   hipeNode = pipeline.CondorDAGNode(hipeJob)
 
