@@ -110,7 +110,7 @@ LALGetCmplxAMCoeffs(LALStatus *status,
 	   COMPLEXAMC_ERAALISA, COMPLEXAMC_MSGERAALISA);
 
   /* need to know TDI channel number to calculate complex detector tensor */
-  channelNum = DetectorStates->detector.frDetector.prefix[0];
+  channelNum = DetectorStates->detector.frDetector.prefix[1];
 
   /*---------- We write components of xi and eta vectors in SSB-fixed coords */
   alpha = doppler.Alpha;
