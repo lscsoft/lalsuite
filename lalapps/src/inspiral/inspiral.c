@@ -743,7 +743,7 @@ int main( int argc, char *argv[] )
 
   /* determine the number of points to get and create storage for the data */
   inputLengthNS = 
-    (REAL8) ( gpsEndTimeNS - gpsStartTimeNS + 2000000000L * padData );
+    (REAL8) ( gpsEndTimeNS - gpsStartTimeNS + 2000000000LL * padData );
   numInputPoints = (UINT4) floor( inputLengthNS / (chan.deltaT * 1.0e9) + 0.5 );
   if ( calData == real_8 )
   {
@@ -3552,7 +3552,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                 long_options[option_index].name, gstartt );
             exit( 1 );
           }
-          gpsStartTimeNS += (INT8) gstartt * 1000000000L;
+          gpsStartTimeNS += (INT8) gstartt * 1000000000LL;
           ADD_PROCESS_PARAM( "int", "%ld", gstartt );
         }
         break;
@@ -3601,7 +3601,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                 long_options[option_index].name, gendt );
             exit( 1 );
           }            
-          gpsEndTimeNS += (INT8) gendt * 1000000000L;
+          gpsEndTimeNS += (INT8) gendt * 1000000000LL;
           ADD_PROCESS_PARAM( "int", "%ld", gendt );
         }
         break;
@@ -3695,7 +3695,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                   long_options[option_index].name, gstartt );
               exit( 1 );
             }
-            trigStartTimeNS = (INT8) gstartt * 1000000000L;
+            trigStartTimeNS = (INT8) gstartt * 1000000000LL;
           }
           ADD_PROCESS_PARAM( "int", "%ld", gstartt );
         }
@@ -3725,7 +3725,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                   long_options[option_index].name, gendt );
               exit( 1 );
             }            
-            trigEndTimeNS = (INT8) gendt * 1000000000L;
+            trigEndTimeNS = (INT8) gendt * 1000000000LL;
           }
           ADD_PROCESS_PARAM( "int", "%ld", gendt );
         }
@@ -5001,14 +5001,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   inputDataLength = numPoints * numSegments - ( numSegments - 1 ) * ovrlap;
   {
     INT8 gpsChanIntervalNS = gpsEndTimeNS - gpsStartTimeNS;
-    INT8 inputDataLengthNS = (INT8) inputDataLength * 1000000000L / 
+    INT8 inputDataLengthNS = (INT8) inputDataLength * 1000000000LL / 
       (INT8) sampleRate;
 
     if ( inputDataLengthNS != gpsChanIntervalNS )
     {
       fprintf( stderr, "length of input data and data chunk do not match\n" );
       fprintf( stderr, "start time: %ld, end time %ld\n",
-          gpsStartTimeNS / 1000000000L, gpsEndTimeNS / 1000000000L );
+          gpsStartTimeNS / 1000000000LL, gpsEndTimeNS / 1000000000LL );
       fprintf( stderr, "gps channel time interval: %ld ns\n"
           "computed input data length: %ld ns\n", 
           gpsChanIntervalNS, inputDataLengthNS );
