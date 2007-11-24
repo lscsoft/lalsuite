@@ -156,7 +156,7 @@ void ComputeFStatFreqBand ( LALStatus *status,
     thisPoint.fkdot[0] += deltaF;
   }
 
-  XLALEmptyComputeFBuffer ( cfBuffer );
+  XLALEmptyComputeFBuffer ( cfBuffer, FALSE );
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -219,16 +219,14 @@ ComputeFStat ( LALStatus *status,
     ABORT ( status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
   }
 
-  /* check if that skyposition SSB+AMcoef were already buffered */
+  /* check if that skyposition SSB were already buffered */
   if ( cfBuffer 
        && ( cfBuffer->multiDetStates == multiDetStates )
        && ( cfBuffer->Alpha == doppler->Alpha )
        && ( cfBuffer->Delta == doppler->Delta ) 
-       && cfBuffer->multiSSB
-       && cfBuffer->multiAMcoef )
+       && cfBuffer->multiSSB )
     { /* yes ==> reuse */
       multiSSB = cfBuffer->multiSSB;
-      multiAMcoef = cfBuffer -> multiAMcoef;
     }
   else 
     {
@@ -256,8 +254,26 @@ ComputeFStat ( LALStatus *status,
     Ed = multiCmplxAMcoef->Mmunu.Ed;
     Dd_inv = 1.0 / (Ad * Bd - Cd * Cd - Ed * Ed);
 
+
+    /* store these in buffer if available */
+    if ( cfBuffer )
+      {
+	XLALEmptyComputeFBuffer ( *cfBuffer, TRUE );
+	cfBuffer->multiCmplxAMcoef = multiCmplxAMcoef;
+	cfBuffer->Alpha = doppler->Alpha;
+	cfBuffer->Delta = doppler->Delta;
+	cfBuffer->multiDetStates = multiDetStates ;
+      } /* if cfBuffer */
+
   } else {
-    if ( !multiAMcoef ) {
+    /* check if AM coeffs already buffered */
+    if ( cfBuffer
+	 && ( cfBuffer->multiDetStates == multiDetStates )
+	 && ( cfBuffer->Alpha == doppler->Alpha )
+	 && ( cfBuffer->Delta == doppler->Delta ) 
+	 && cfBuffer->multiAMcoef ) {
+      multiAMcoef = cfBuffer -> multiAMcoef;
+    } else {
       /* compute new AM-coefficients */
       LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multiDetStates, skypos );
       BEGINFAIL ( status ) {
@@ -273,7 +289,7 @@ ComputeFStat ( LALStatus *status,
       /* store these in buffer if available */
       if ( cfBuffer )
 	{
-	  XLALEmptyComputeFBuffer ( *cfBuffer );
+	  XLALEmptyComputeFBuffer ( *cfBuffer, FALSE );
 	  cfBuffer->multiSSB = multiSSB;
 	  cfBuffer->multiAMcoef = multiAMcoef;
 	  cfBuffer->Alpha = doppler->Alpha;
@@ -1693,11 +1709,14 @@ XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef )
  * buffer-container is not freed (which is why it's passed
  * by value and not by reference...) */
 void
-XLALEmptyComputeFBuffer ( ComputeFBuffer cfb )
+XLALEmptyComputeFBuffer ( ComputeFBuffer cfb, BOOLEAN keepSSB )
 {
-  XLALDestroyMultiSSBtimes ( cfb.multiSSB );
+  if (!keepSSB) {
+    XLALDestroyMultiSSBtimes ( cfb.multiSSB );
+  }
   cfb.multiSSB = NULL;
   XLALDestroyMultiAMCoeffs ( cfb.multiAMcoef );
+  XLALDestroyMultiCmplxAMCoeffs ( cfb.multiCmplxAMcoef );
   cfb.multiAMcoef = NULL;
 
   return;
@@ -1886,11 +1905,11 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
 				  PulsarCandidate *pulsarParams,  	/**< [out] estimated params {h0,cosi,phi0,psi} plus error-estimates */
 				  const Fcomponents *Fstat,	 	/**<  Fstat-components Fa, Fb */
 				  const LIGOTimeGPS *FstatRefTime,	/**<  reference-time for the phase of Fa, Fb */
-				  const AntennaPatternMatrix *Mmunu 	/**<  antenna-pattern A,B,C and normalization S_inv*Tsft */
+				  const CmplxAntennaPatternMatrix *Mmunu 	/**<  antenna-pattern A,B,C and normalization S_inv*Tsft */
 				  )
 {
   REAL8 A1h, A2h, A3h, A4h;
-  REAL8 Ad, Bd, Cd, Dd;
+  REAL8 Ad, Bd, Cd, Dd, Ed;
   REAL8 normAmu;
   REAL8 A1check, A2check, A3check, A4check;
 
@@ -1924,7 +1943,8 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
   Ad = Mmunu->Ad;
   Bd = Mmunu->Bd;
   Cd = Mmunu->Cd;
-  Dd = Ad * Bd - Cd * Cd;
+  Ed = Mmunu->Ed;
+  Dd = Ad * Bd - Cd * Cd - Ed * Ed;
 
   normAmu = 2.0 / sqrt(Mmunu->Sinv_Tsft);	/* generally *very* small!! */
 
@@ -1962,6 +1982,9 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
   gsl_matrix_set (M_Mu_Nu, 0, 0,   Bd / Dd );
   gsl_matrix_set (M_Mu_Nu, 1, 1,   Ad / Dd );
   gsl_matrix_set (M_Mu_Nu, 0, 1, - Cd / Dd );  
+
+  gsl_matrix_set (M_Mu_Nu, 0, 3, - Ed / Dd );
+  gsl_matrix_set (M_Mu_Nu, 1, 2,   Ed / Dd );
 
   gsl_matrix_set (M_Mu_Nu, 2, 2,   Bd / Dd );
   gsl_matrix_set (M_Mu_Nu, 3, 3,   Ad / Dd );

@@ -107,7 +107,7 @@ RCSID( "$Id$");
 typedef struct {
   PulsarDopplerParams doppler;		/**< Doppler params of this 'candidate' */
   Fcomponents  Fstat;			/**< the Fstat-value (plus Fa,Fb) for this candidate */
-  AntennaPatternMatrix Mmunu;		/**< antenna-pattern matrix Mmunu = 0.5* Sinv*Tsft * [ Ad, Cd; Cd; Bd ] */
+  CmplxAntennaPatternMatrix Mmunu;		/**< antenna-pattern matrix Mmunu = 0.5* Sinv*Tsft * [ Ad, Cd; Cd; Bd ] */
 } FstatCandidate;
 
 
@@ -364,7 +364,15 @@ int main(int argc,char *argv[])
 
       /* collect data on current 'Fstat-candidate' */
       thisFCand.doppler = dopplerpos;
-      thisFCand.Mmunu = cfBuffer.multiAMcoef->Mmunu;
+      if ( cfBuffer.multiCmplxAMcoef ) {
+	thisFCand.Mmunu = cfBuffer.multiCmplxAMcoef->Mmunu;
+      } else {
+	thisFCand.Mmunu.Ad = cfBuffer.multiAMcoef->Mmunu.Ad;
+	thisFCand.Mmunu.Bd = cfBuffer.multiAMcoef->Mmunu.Bd;
+	thisFCand.Mmunu.Cd = cfBuffer.multiAMcoef->Mmunu.Cd;
+	thisFCand.Mmunu.Sinv_Tsft = cfBuffer.multiAMcoef->Mmunu.Sinv_Tsft;
+	thisFCand.Mmunu.Ed = 0.0;
+      }
 
       /* correct normalization in --SignalOnly case:
        * we didn't normalize data by 1/sqrt(Tsft * 0.5 * Sh) in terms of 
@@ -488,7 +496,7 @@ int main(int argc,char *argv[])
   LAL_CALL ( FreeDopplerFullScan(&status, &GV.scanState), &status);
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
-  XLALEmptyComputeFBuffer ( cfBuffer );
+  XLALEmptyComputeFBuffer ( cfBuffer, FALSE );
 
   LAL_CALL ( Freemem(&status, &GV), &status);
   

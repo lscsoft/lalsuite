@@ -491,7 +491,7 @@ int main(int argc,char *argv[])
 
   XLALDestroyREAL8FrequencySeries ( fstatVector );
 
-  XLALEmptyComputeFBuffer ( cfBuffer );
+  XLALEmptyComputeFBuffer ( cfBuffer, FALSE );
 
   LAL_CALL ( Freemem(&status, &GV), &status);
 

@@ -114,6 +114,41 @@ typedef struct {
   AntennaPatternMatrix Mmunu;	/**< antenna-pattern matrix \f$\mathcal{M}_{\mu\nu}\f$ */
 } MultiAMCoeffs;
 
+/** Struct holding the "antenna-pattern" matrix \f$\mathcal{M}_{\mu\nu} \equiv \left( \mathbf{h}_\mu|\mathbf{h}_\nu\right)\f$,
+ * in terms of the multi-detector scalar product. This matrix can be shown to be expressible, in the case of complex AM co\"{e}fficients, as
+ * \f{equation}
+ * \mathcal{M}_{\mu\nu} = \frac{1}{2}\,\mathcal{S}^{-1}\,T_\mathrm{SFT}\,\left( \begin{array}{c c c c} A_d & C_d & 0 & -E_d \\ C_d & B_d & E_d & 0 \\ 0 & E_d & A_d & C_d \\ -E_d & 0 & C_d & B_d \\ \end{array}\right)\,,
+ * \f}
+ * where (here) \f$\mathcal{S} \equiv \frac{1}{N_\mathrm{SFT}}\sum_{X,\alpha} S_{X\alpha}\f$ characterizes the multi-detector noise-floor, and
+ * \f{equation}
+ * A_d \equiv \sum_{X,\alpha} \mathrm{Re} \widehat{a}^X_\alpha{}^* \widehat{a}^X_\alpha\,,\quad
+ * B_d \equiv \sum_{X,\alpha} \mathrm{Re} \widehat{b}^X_\alpha{}^* \widehat{b}^X_\alpha \,,\quad
+ * C_d \equiv \sum_{X,\alpha} \mathrm{Re} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha \,,
+ * E_d \equiv \sum_{X,\alpha} \mathrm{Im} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha \,,
+ * \f}
+ * and the noise-weighted atenna-functions \f$\widehat{a}^X_\alpha = \sqrt{w^X_\alpha}\,a^X_\alpha\f$, 
+ * \f$\widehat{b}^X_\alpha = \sqrt{w^X_\alpha}\,b^X_\alpha\f$, and noise-weights 
+ * \f$w^X_\alpha \equiv {S^{-1}_{X\alpha}/{\mathcal{S}^{-1}}\f$.
+ * 
+ * \note One reason for storing the un-normalized \a Ad, \a Bd, \a Cd, \a Ed and the normalization-factor \a Sinv_Tsft separately 
+ * is that the former are of order unity, while \a Sinv_Tsft is very large, and it has numerical advantages for parameter-estimation
+ * to use that fact.
+ */
+typedef struct {
+  REAL8 Ad; 		/**<  \f$A_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{a}^X_\alpha\f$ */
+  REAL8 Bd; 		/**<  \f$B_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{b}^X_\alpha{}^* \widehat{b}^X_\alpha\f$ */
+  REAL8 Cd; 		/**<  \f$C_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha\f$ */
+  REAL8 Ed; 		/**<  \f$E_d \equiv \mathrm{Im} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha\f$ */
+  REAL8 Sinv_Tsft;	/**< normalization-factor \f$\mathcal{S}^{-1}\,T_\mathrm{SFT}\f$ */
+} CmplxAntennaPatternMatrix;
+
+/** Multi-IFO container for antenna-pattern coefficients a^X(t), b^X(t) and atenna-pattern matrix M_mu_nu */
+typedef struct {
+  UINT4 length;		/**< number of IFOs */
+  CmplxAMCoeffs **data;	/**< noise-weighted am-coeffs \f$\widehat{a}_{X\alpha}\f$, and \f$\widehat{b}_{X\alpha}\f$ */
+  CmplxAntennaPatternMatrix Mmunu;	/**< antenna-pattern matrix \f$\mathcal{M}_{\mu\nu}\f$ */
+} MultiCmplxAMCoeffs;
+
 /** Type containing F-statistic proper plus the two complex amplitudes Fa and Fb (for ML-estimators) */
 typedef struct {
   REAL8 F;		/**< F-statistic value */
@@ -146,6 +181,7 @@ typedef struct {
   REAL8 Alpha, Delta;				/**< skyposition of candidate */
   MultiSSBtimes *multiSSB;	
   MultiAMCoeffs *multiAMcoef;
+  MultiCmplxAMCoeffs *multiCmplxAMcoef;
 } ComputeFBuffer;
 
 
@@ -243,14 +279,14 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
 				  PulsarCandidate *pulsarParams,
 				  const Fcomponents *Fstat,
 				  const LIGOTimeGPS *FstatRefTime,
-				  const AntennaPatternMatrix *Mmunu
+				  const CmplxAntennaPatternMatrix *Mmunu
 				  );
 
 /* destructors */
 void XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB );
 void XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef );
 
-void XLALEmptyComputeFBuffer ( ComputeFBuffer cfb );
+void XLALEmptyComputeFBuffer ( ComputeFBuffer cfb, BOOLEAN keepSSB );
 
 
 /* helpers */
