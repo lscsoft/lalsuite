@@ -107,6 +107,10 @@ INT4 main( INT4 argc, CHAR *argv[] )
   INT4 frameFlag = 0;                     /* write h(t) to a frame?         */
   int c;
 
+  REAL4 dynRange = 1.0;                   /* the inspiral pipeline resizes data */
+                                          /* by 2^dynRange. Set to 1.0 when     */
+                                          /* using nr_wave as stand-alone code  */
+
   /* default debug level */
   lal_errhandler = LAL_ERR_EXIT;
   set_debug_level( "5" );
@@ -453,6 +457,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
   nrPar.modeLlo = modeLlo;
   nrPar.modeLhi = modeLhi;
   nrPar.nrCatalog = &nrCatalog;
+  nrPar.dynRange = dynRange;
 
   for ( i = 0; i < num_ifos; i++ )
   {
