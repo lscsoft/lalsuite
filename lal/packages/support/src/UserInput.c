@@ -74,11 +74,15 @@ static void RegisterUserVar (LALStatus *, const CHAR *name, UserVarType type, CH
 			     UserVarState flag, const CHAR *helpstr, void *cvar);
 
 static void UvarValue2String (LALStatus *, CHAR **outstr, LALUserVariable *uvar);
+void UvarType2String (LALStatus *status, CHAR **out, LALUserVariable *uvar);
 CHAR *deblank_string ( const CHAR *start, UINT4 len );
 CHAR *copy_string_unquoted ( const CHAR *in );
 void check_and_mark_as_set ( LALUserVariable *varp );
 
 LALStringVector *XLALParseCSV2StringVector ( const CHAR *CSVlist );
+
+
+
 
 /*---------- Function definitions ---------- */
 
@@ -964,6 +968,7 @@ LALUserVarGetLog (LALStatus *status, CHAR **logstr,  UserVarLogFormat format)
   CHAR *record = NULL;
   CHAR *valstr;		/* buffer to hold value-string */
   CHAR *append;
+  CHAR *typestr=NULL;
   UINT4 len, appendlen;
 
   INITSTATUS( status, "LALUserVarGetLog", USERINPUTC);
@@ -984,9 +989,11 @@ LALUserVarGetLog (LALStatus *status, CHAR **logstr,  UserVarLogFormat format)
 	continue;
 
       valstr = NULL;
+      typestr = NULL;
       TRY ( UvarValue2String (status->statusPtr, &valstr, ptr), status);
+      TRY(UvarType2String(status->statusPtr, &typestr, ptr), status);
 
-      appendlen = strlen(ptr->name) + strlen(valstr) + 10; 
+      appendlen = strlen(ptr->name) + strlen(valstr) + strlen(typestr) + 10; 
       if ( (append = LALMalloc(appendlen)) == NULL) {
 	ABORT (status,  USERINPUTH_EMEM,  USERINPUTH_MSGEMEM);
       }
@@ -998,6 +1005,9 @@ LALUserVarGetLog (LALStatus *status, CHAR **logstr,  UserVarLogFormat format)
 	  break;
 	case UVAR_LOGFMT_CMDLINE:
 	  sprintf (append, " --%s=%s", ptr->name, valstr);
+	  break;
+	case UVAR_LOGFMT_PROCPARAMS:  
+	  sprintf (append, "--%s = %s :%s;", ptr->name, valstr, typestr);
 	  break;
 	default:
 	  ABORT (status, USERINPUTH_ERECFORMAT, USERINPUTH_MSGERECFORMAT);
@@ -1013,6 +1023,8 @@ LALUserVarGetLog (LALStatus *status, CHAR **logstr,  UserVarLogFormat format)
 
       LALFree (valstr);
       valstr=NULL;
+      LALFree(typestr);
+      typestr = NULL;
       LALFree (append);
       append=NULL;
     } /* while ptr->next */
@@ -1023,6 +1035,116 @@ LALUserVarGetLog (LALStatus *status, CHAR **logstr,  UserVarLogFormat format)
   RETURN (status);
 
 } /* LALUserVarGetLog() */
+
+
+
+/** Return user log as a process-params table
+ * 
+ * \param[out] **procPar the output ProcessParamsTable
+ * \param[in] *progname  name of calling code
+ */
+void
+LALUserVarGetProcParamsTable (LALStatus *status, ProcessParamsTable **out, CHAR *progname)
+{
+  LALUserVariable *ptr = NULL;
+  CHAR *valstr=NULL; 
+  CHAR *typestr=NULL;
+  ProcessParamsTable *this_proc_param=NULL;
+
+  INITSTATUS( status, "LALUserVarGetProcParamsTable", USERINPUTC);
+  ATTATCHSTATUSPTR(status);
+
+  ASSERT (out, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
+  ASSERT (*out == NULL, status, USERINPUTH_ENONULL,USERINPUTH_MSGENONULL);
+  ASSERT (progname, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
+
+  ptr = &UVAR_vars;
+  while ( (ptr = ptr->next) )   /* we skip the possible lalDebugLevel-entry */
+    {
+      if ( (ptr->state & UVAR_WAS_SET) == FALSE )	/* skip unset variables */
+	continue;
+
+      /* get value and type of the uservar */
+      TRY ( UvarValue2String (status->statusPtr, &valstr, ptr), status);
+      TRY ( UvarType2String (status->statusPtr, &typestr, ptr), status);
+
+      /* *out is null in the first iteration of this loop in which case
+	 we allocate memory for the header of the linked list, otherwise 
+	 allocate memory for the nodes */
+      if (*out == NULL)
+	this_proc_param = *out = (ProcessParamsTable *)LALCalloc( 1, sizeof(ProcessParamsTable) );    
+      else 
+	this_proc_param = this_proc_param->next = 
+	  (ProcessParamsTable *)LALCalloc( 1, sizeof(ProcessParamsTable) );    
+
+      /* copy the strings into the procparams table */
+      LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, progname ); 
+      LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", ptr->name );
+      LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, valstr );
+      LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, typestr );
+      
+      LALFree (valstr);
+      valstr=NULL;
+      LALFree(typestr);
+      typestr = NULL;
+
+    } /* while ptr->next */
+  
+
+  DETATCHSTATUSPTR(status);
+  RETURN (status);
+
+} /* LALUserVarGetProcParamsTable() */
+
+
+
+/* Return the type of the given UserVariable as a string.
+ * For INTERNAL use only!
+ */
+void UvarType2String (LALStatus *status, CHAR **out, LALUserVariable *uvar)
+{
+
+  CHAR *ret=NULL;
+  CHAR buf[16];
+
+  INITSTATUS( status, "UvarType2String", USERINPUTC);
+
+  ASSERT (*out == NULL, status, USERINPUTH_ENONULL,USERINPUTH_MSGENONULL);
+
+  switch (uvar->type)
+    {
+    case UVAR_BOOL:
+      sprintf(buf,"boolean");
+      break;
+    case UVAR_INT4:
+      sprintf(buf,"int4");
+      break;
+    case UVAR_REAL8:
+      sprintf(buf,"real8");
+      break;
+    case UVAR_STRING:
+      sprintf(buf,"string");
+      break;
+    case UVAR_CSVLIST:
+      sprintf(buf,"list");
+      break;
+    default:
+      LogPrintf (LOG_CRITICAL, "ERROR: unkown UserVariable-type encountered\n");
+      ABORT (status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
+      break;      
+    } /* switch */
+
+  if ( (ret = LALMalloc (strlen(buf) + 1)) == NULL) {
+    ABORT (status,  USERINPUTH_EMEM,  USERINPUTH_MSGEMEM);
+  }
+  strcpy (ret, buf);
+
+  *out = ret;
+
+  RETURN(status);
+  
+} /* UvarType2String() */
+
 
 
 /* Return the value of the given UserVariable as a string.
