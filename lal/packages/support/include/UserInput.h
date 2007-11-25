@@ -38,6 +38,7 @@
 
 #include <lal/ConfigFile.h>
 #include <lal/SFTutils.h>
+#include <lal/LIGOMetadataTables.h>
 
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {
@@ -125,6 +126,7 @@ typedef enum {
 typedef enum {
   UVAR_LOGFMT_CFGFILE,	/**< return UserVars as a config-file */
   UVAR_LOGFMT_CMDLINE,	/**< return UserVars as a command-line */
+  UVAR_LOGFMT_PROCPARAMS, /**< return UserVars suitable for filling in process-params struct */
   UVAR_LOGFMT_LAST
 } UserVarLogFormat;
 
@@ -179,6 +181,7 @@ void LALUserVarCheckRequired (LALStatus *);
 INT4 LALUserVarWasSet (const void *cvar);
 void LALGetDebugLevel (LALStatus *, int argc, char *argv[], CHAR optchar);
 void LALUserVarGetLog (LALStatus *, CHAR **logstr,  UserVarLogFormat format);
+void LALUserVarGetProcParamsTable (LALStatus *status, ProcessParamsTable **out, CHAR *progname);
 
 #ifdef  __cplusplus
 }
