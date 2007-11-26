@@ -359,11 +359,6 @@ class InspiralAnalysisNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     pipeline.AnalysisNode.__init__(self)
     opts = job.get_opts()
     
-    if ("user-tag" in opts) and opts["user-tag"]:
-      self.set_user_tag(opts['user-tag'])
-    elif job.get_config('pipeline','user-tag'):
-      self.set_user_tag(job.get_config('pipeline','user-tag'))
-
     if ("pad-data" in opts) and int(opts['pad-data']):
       self.__pad_data = int(opts['pad-data'])
     else:
