@@ -291,6 +291,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
              insp.set_trig_start(chunk.trig_start())
              insp.set_trig_end(chunk.trig_end())
              insp.set_ifo(ifo_name)
+             insp.set_ifo_tag("FIRST")
              insp.set_vds_group(ifo_name[0] + str(chunk.start()))
              if not opts.read_cache: insp.set_cache(df.get_output())
              else:  insp.set_cache(cp.get('datafind',ifo_name+"-cache"))
@@ -388,7 +389,10 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
       if inj>0: thinca.set_user_tag(exttrigUserTag)
       thinca.set_start(seg.start())
       thinca.set_end(seg.end())
-      if ifotag: thinca.set_ifo_tag(ifotag)
+      if ifotag:
+        thinca.set_ifo_tag("SECOND_" + ifotag)
+      else:
+        thinca.set_ifo_tag("FIRST")
       if slides: thinca.set_num_slides(slides)
 
       # scroll through ifos, adding the appropriate ones
@@ -522,7 +526,7 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
               insp.set_trig_start(chunk.trig_start())
               insp.set_trig_end(chunk.trig_end())
               insp.set_ifo(ifo_name)
-              insp.set_ifo_tag(coinc_ifos)
+              insp.set_ifo_tag("SECOND_" + coinc_ifos)
               insp.set_vds_group(ifo_name[0] + str(chunk.start()))
               if not opts.read_cache: 
                 insp.set_cache(seg.get_df_node().get_output())
@@ -706,7 +710,10 @@ def sire_segs(segments, sire_job, dag, do_input, ifo,
   sire.set_ifo(ifo)
   if inj_file: 
     sire.set_inj_file(inj_file)
-  if ifotag: sire.set_ifo_tag(ifotag)
+  if ifotag:
+    sire.set_ifo_tag("SECOND_" + ifotag)
+  else:
+    sire.set_ifo_tag("FIRST")
   if usertag: sire.set_user_tag(usertag)
   
   # set the segment
@@ -755,7 +762,10 @@ def coire_segs(segments, coire_job, dag, do_input, ifos,
   coire.set_ifos(ifos)
   if inj_file:
     coire.set_inj_file(inj_file)
-  if ifotag: coire.set_ifo_tag(ifotag)
+  if ifotag:
+    coire.set_ifo_tag("SECOND_" + ifotag)
+  else:
+    coire.set_ifo_tag("FIRST")
   if num_slides: coire.set_slides(num_slides)
   if usertag: coire.set_user_tag(usertag)
  

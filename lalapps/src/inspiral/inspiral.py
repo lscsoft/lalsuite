@@ -365,24 +365,6 @@ class InspiralAnalysisNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
       self.__pad_data = None
 
     self.__zip_output = ("write-compress" in opts)
-    
-    self.set_ifo_tag(None)
-
-  def set_ifo_tag(self, ifo_tag):
-    """
-    Set the ifo tag that is passed to the analysis code.
-    Add _FIRST and _SECOND to what AnalysisNode.set_ifo_tag does.
-    @param ifo_tag: a string to identify one or more IFOs
-    """
-    if ifo_tag:
-      self.__ifo_tag = "SECOND_" + ifo_tag
-      self.add_var_opt('ifo-tag', "SECOND_" + ifo_tag)
-    else:
-      self.__ifo_tag = "FIRST"
-      self.add_var_opt('ifo-tag', "FIRST")
-  
-  def get_ifo_tag(self):
-    return self.__ifo_tag
 
   def set_pad_data(self, pad):
     """
@@ -942,7 +924,7 @@ class SireNode(InspiralAnalysisNode):
     """
     InspiralAnalysisNode.__init__(self,job)
     self.__injection_file = None
-    self.__ifo_tag = "FIRST"
+    self.__ifo_tag = None
 
   def set_ifo(self, ifo):
     """
@@ -999,10 +981,7 @@ class SireNode(InspiralAnalysisNode):
     Set the ifo tag that is passed to the analysis code.
     @param ifo_tag: a string to identify one or more IFOs
     """
-    if ifo_tag:
-      self.__ifo_tag = "SECOND_" + ifo_tag
-    else:
-      self.__ifo_tag = "FIRST"
+    self.__ifo_tag = ifo_tag
 
   def get_ifo_tag(self):
     """
@@ -1083,7 +1062,7 @@ class CoireNode(InspiralAnalysisNode):
     """
     InspiralAnalysisNode.__init__(self,job)
     self.__ifos  = None
-    self.__ifo_tag = "FIRST"
+    self.__ifo_tag = None
     self.__num_slides = None
     self.__injection_file = None
     self.__output_tag = None
@@ -1156,10 +1135,7 @@ class CoireNode(InspiralAnalysisNode):
     Set the ifo tag that is passed to the analysis code.
     @param ifo_tag: a string to identify one or more IFOs
     """
-    if ifo_tag:
-      self.__ifo_tag = "SECOND_" + ifo_tag
-    else:
-      self.__ifo_tag = "FIRST"
+    self.__ifo_tag = ifo_tag
 
   def get_ifo_tag(self):
     """
