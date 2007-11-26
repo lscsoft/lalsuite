@@ -286,7 +286,7 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
 void XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB );
 void XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef );
 
-void XLALEmptyComputeFBuffer ( ComputeFBuffer cfb, BOOLEAN keepSSB );
+void XLALEmptyComputeFBuffer ( ComputeFBuffer *cfb );
 
 
 /* helpers */

@@ -108,7 +108,7 @@ RCSID( "$Id$");
 typedef struct {
   PulsarDopplerParams doppler;		/**< Doppler params of this 'candidate' */
   Fcomponents  Fstat;			/**< the Fstat-value (plus Fa,Fb) for this candidate */
-  AntennaPatternMatrix Mmunu;		/**< antenna-pattern matrix Mmunu = 0.5* Sinv*Tsft * [ Ad, Cd; Cd; Bd ] */
+  CmplxAntennaPatternMatrix Mmunu;		/**< antenna-pattern matrix Mmunu = 0.5* Sinv*Tsft * [ Ad, Cd; Cd; Bd ] */
 } FstatCandidate;
 
 
@@ -491,7 +491,7 @@ int main(int argc,char *argv[])
 
   XLALDestroyREAL8FrequencySeries ( fstatVector );
 
-  XLALEmptyComputeFBuffer ( cfBuffer, FALSE );
+  XLALEmptyComputeFBuffer ( &cfBuffer );
 
   LAL_CALL ( Freemem(&status, &GV), &status);
 

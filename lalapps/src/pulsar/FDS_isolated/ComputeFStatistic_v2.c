@@ -496,7 +496,7 @@ int main(int argc,char *argv[])
   LAL_CALL ( FreeDopplerFullScan(&status, &GV.scanState), &status);
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
-  XLALEmptyComputeFBuffer ( cfBuffer, FALSE );
+  XLALEmptyComputeFBuffer ( &cfBuffer );
 
   LAL_CALL ( Freemem(&status, &GV), &status);
   

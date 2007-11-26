@@ -156,7 +156,7 @@ void ComputeFStatFreqBand ( LALStatus *status,
     thisPoint.fkdot[0] += deltaF;
   }
 
-  XLALEmptyComputeFBuffer ( cfBuffer, FALSE );
+  XLALEmptyComputeFBuffer ( &cfBuffer );
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -234,6 +234,10 @@ ComputeFStat ( LALStatus *status,
       skypos.longitude = doppler->Alpha;
       skypos.latitude  = doppler->Delta;
       TRY ( LALGetMultiSSBtimes ( status->statusPtr, &multiSSB, multiDetStates, skypos, doppler->refTime, params->SSBprec ), status );
+      if ( cfBuffer )
+	{
+	  XLALEmptyComputeFBuffer ( cfBuffer );
+	}
     }
 
   if ( params->useRAA )
@@ -258,8 +262,8 @@ ComputeFStat ( LALStatus *status,
       /* store these in buffer if available */
       if ( cfBuffer )
 	{
-	  XLALEmptyComputeFBuffer ( *cfBuffer, TRUE );
 	  cfBuffer->multiSSB = multiSSB;
+	  XLALDestroyMultiCmplxAMCoeffs ( cfBuffer->multiCmplxAMcoef );
 	  cfBuffer->multiCmplxAMcoef = multiCmplxAMcoef;
 	  cfBuffer->Alpha = doppler->Alpha;
 	  cfBuffer->Delta = doppler->Delta;
@@ -295,7 +299,7 @@ ComputeFStat ( LALStatus *status,
 	  /* store these in buffer if available */
 	  if ( cfBuffer )
 	    {
-	      XLALEmptyComputeFBuffer ( *cfBuffer, FALSE );
+	      /* note that the buffer should have already been emptied above */
 	      cfBuffer->multiSSB = multiSSB;
 	      cfBuffer->multiAMcoef = multiAMcoef;
 	      cfBuffer->Alpha = doppler->Alpha;
@@ -393,6 +397,7 @@ ComputeFStat ( LALStatus *status,
     {
       XLALDestroyMultiSSBtimes ( multiSSB );
       XLALDestroyMultiAMCoeffs ( multiAMcoef );
+      XLALDestroyMultiCmplxAMCoeffs ( multiCmplxAMcoef );
     } /* if !cfBuffer */
 
   DETATCHSTATUSPTR (status);
@@ -1715,15 +1720,14 @@ XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef )
  * buffer-container is not freed (which is why it's passed
  * by value and not by reference...) */
 void
-XLALEmptyComputeFBuffer ( ComputeFBuffer cfb, BOOLEAN keepSSB )
+XLALEmptyComputeFBuffer ( ComputeFBuffer *cfb)
 {
-  if (!keepSSB) {
-    XLALDestroyMultiSSBtimes ( cfb.multiSSB );
-  }
-  cfb.multiSSB = NULL;
-  XLALDestroyMultiAMCoeffs ( cfb.multiAMcoef );
-  XLALDestroyMultiCmplxAMCoeffs ( cfb.multiCmplxAMcoef );
-  cfb.multiAMcoef = NULL;
+  XLALDestroyMultiSSBtimes ( cfb->multiSSB );
+  cfb->multiSSB = NULL;
+  XLALDestroyMultiAMCoeffs ( cfb->multiAMcoef );
+  cfb->multiAMcoef = NULL;
+  XLALDestroyMultiCmplxAMCoeffs ( cfb->multiCmplxAMcoef );
+  cfb->multiCmplxAMcoef = NULL;
 
   return;
 } /* XLALDestroyComputeFBuffer() */
