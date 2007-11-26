@@ -403,7 +403,7 @@ XLALWeighMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNoise
   multiAMcoef->Mmunu.Ad = Ad;
   multiAMcoef->Mmunu.Bd = Bd;
   multiAMcoef->Mmunu.Cd = Cd;
-  multiAMcoef->Mmunu.Cd = Ed;
+  multiAMcoef->Mmunu.Ed = Ed;
 
   return XLAL_SUCCESS;
 
