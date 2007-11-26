@@ -1376,7 +1376,8 @@ all_jobs.extend(cohinsp_jobs.values())
 # set the usertag in the jobs
 if usertag:
   for job in all_jobs:
-    job.add_opt('user-tag',usertag)
+    if not job.get_opts().has_key('user-tag'):
+      job.add_opt('user-tag',usertag)
 
 all_jobs.append(df_job)
 all_jobs.append(frjoin_job)
