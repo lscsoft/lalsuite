@@ -70,6 +70,7 @@ def create_static_pfn_cache(cp):
   """
   pass
 
+
 ##############################################################################
 # some functions to make life easier later
 class AnalyzedIFOData:
@@ -202,6 +203,13 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
     print "we use calibrated data for ", ifo_name 
   else: calibrated = False
 
+  # prepare the exttrig injection filename
+  if ifo_data:
+    exttrigStart = ifo_data[0].start()
+    exttrigDuration = ifo_data[-1].end()-exttrigStart
+    injectionFileTemplate = "HL-INJECTION_%%s-%d-%d.xml" % \
+      (exttrigStart, exttrigDuration)
+
   chunks_analyzed = []
   # loop over the master science segments
   for seg in ifo_data:
@@ -251,7 +259,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
              if inj>0: 
                 # set the appropriate user-tag and the injection filename
                 exttrigUserTag=usertag+str(inj)
-                injectionFile='HL-INJECTION_'+str(inj)+'.xml'
+                injectionFile = injectionFileTemplate % exttrigUserTag
 
                 # check if the inspinj job has already be made
                 inspinj=inspinj_job.check_node(inj)              
@@ -460,6 +468,13 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
     calibrated = True
   else: calibrated = False
 
+  # prepare the exttrig injection filename
+  if ifo_data:
+    exttrigStart = ifo_data[0].start()
+    exttrigDuration = ifo_data[-1].end()-exttrigStart
+    injectionFileTemplate = "HL-INJECTION_%%s-%d-%d.xml" % \
+      (exttrigStart, exttrigDuration)
+
   trig_chunks_analyzed = []
 
   # loop over the master science segments
@@ -474,7 +489,7 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
         
         if inj>0:
           exttrigUserTag=usertag+str(inj)
-          injectionFile='HL-INJECTION_'+str(inj)+'.xml'
+          injectionFile = injectionFileTemplate % exttrigUserTag
 
         # now loop over all the data that we need to filter
         for coinc_done in coinc_data:
