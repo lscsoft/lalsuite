@@ -383,7 +383,7 @@ ComputeFStat ( LALStatus *status,
 			   + Ad * ( SQ(retF.Fb.re) + SQ(retF.Fb.im) )
 			   - 2.0 * Cd *( retF.Fa.re * retF.Fb.re + retF.Fa.im * retF.Fb.im )
 			   /**** CHECK SIGNS!!! ****/
-			   + 2.0 * Ed *( retF.Fa.re * retF.Fb.im - retF.Fa.im * retF.Fb.re )
+			   - 2.0 * Ed *( retF.Fa.re * retF.Fb.im - retF.Fa.im * retF.Fb.re )
 			   );
     }
 
