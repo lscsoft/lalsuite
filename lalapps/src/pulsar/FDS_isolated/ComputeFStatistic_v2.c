@@ -1346,6 +1346,7 @@ write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, co
   fprintf (fp, "Ad       = % .6g;\n", Fcand->Mmunu.Ad );
   fprintf (fp, "Bd       = % .6g;\n", Fcand->Mmunu.Bd );
   fprintf (fp, "Cd       = % .6g;\n", Fcand->Mmunu.Cd );
+  fprintf (fp, "Ed       = % .6g;\n", Fcand->Mmunu.Ed );
   fprintf (fp, "Sinv_Tsft= % .6g;\n", Fcand->Mmunu.Sinv_Tsft );
   fprintf (fp, "\n");
 
