@@ -204,9 +204,6 @@ def findSegmentsToAnalyze(config,ifo,generate_segments=True,\
   missedFile = ifo + "-MISSED_SEGS.txt"
   dqSegFile = ifo + "-DQ_SEGMENTS.txt"
 
-  if config.has_section("input"):
-    config.set("input", ifo.lower() + "-segments", "../segments/" + segFile)
-
   if generate_segments:
     print "Generating science segments for " + ifo + " ...",
     sys.stdout.flush()
@@ -328,8 +325,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injFile=None, dfOnly = False, \
 
     # add the veto files in the thinca section
     for ifo in ifos:
-      hipecp.set("thinca", ifo.lower() + "-veto-file", "../" + \
-          vetoFiles[ifo][vetoCat])
+      hipecp.set("thinca", ifo.lower() + "-veto-file", vetoFiles[ifo][vetoCat])
     hipecp.set("thinca", "do-veto", "")
 
   # set the usertag
@@ -363,7 +359,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injFile=None, dfOnly = False, \
   # return to the directory, write ini file and run hipe
   os.chdir(hipeDir)
   iniFile = "inspiral_hipe_"
-  iniFile += hipeDir
+  iniFile += hipeDir 
   if vetoCat: iniFile += "_cat" + str(vetoCat) + "_veto"
   iniFile += ".ini"
 

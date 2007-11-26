@@ -202,6 +202,12 @@ for ifo in ifos:
   segFile[ifo], dqVetoes[ifo] = inspiralutils.findSegmentsToAnalyze(cp, ifo, \
       opts.generate_segments, opts.use_available_data, \
       opts.generate_veto_segments)
+  # set correct name as we're in the segments directory:
+  segFile[ifo] = "../segments/" + segFile[ifo]
+  cp.set("input", ifo.lower() + "-segments", segFile[ifo])
+  for key in dqVetoes[ifo].keys():
+    dqVetoes[ifo][key] = "../segments/" + dqVetoes[ifo][key]
+
 
 os.chdir("..")
 
