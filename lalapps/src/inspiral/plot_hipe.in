@@ -83,7 +83,7 @@ def search_for_cachefile(cp, this_section, type=None):
 def set_common_options(cp, this_section):
   """
   """
-  common_options = ["gps-start-time", "gps-end-time", "enable-output", "output-path"]
+  common_options = ["gps-start-time", "gps-end-time", "enable-output", "output-path", "verbose"]
   for common_option in common_options:
     try:
       cp.set(this_section, common_option,  string.strip(cp.get('general',common_option)))
@@ -405,7 +405,6 @@ if opts.plotinjnum:
 
 # plotethinca
 if opts.plotethinca:
-  print cp.get("plotethinca", "x-value")
 
   plotethinca_jobs = {}
   this_section = "plotethinca"
@@ -453,6 +452,7 @@ if opts.plotinspinj:
 
   for ifo in ifolist:
     cp.set('plotinspinj','ifo-type',ifo)
+    cp.set('plotinspinj','ifo-times',ifo)
     plotinspinj_jobs[ifo] = inspiral.PlotInspinjJob(cp)
     plotinspinj_jobs[ifo].set_sub_file( basename + '.plotinspinj_' + ifo + subsuffix )
 
@@ -472,6 +472,7 @@ if opts.plotsnrchi:
     plotsnrchi_jobs[ifo] = inspiral.PlotSnrchiJob(cp)
     plotsnrchi_jobs[ifo].add_opt("title", ifo)
     plotsnrchi_jobs[ifo].add_opt("single-ifo", ifo)
+    plotsnrchi_jobs[ifo].add_opt("ifo-times", ifo)
     plotsnrchi_jobs[ifo].set_sub_file( basename + '.plotsnrchi_' + ifo + subsuffix )
 
   all_jobs.extend(plotsnrchi_jobs.values())
@@ -509,7 +510,6 @@ if opts.plotinspiral:
   # add an plotinspiral job
     plotinspiral_node=inspiral.PlotInspiralNode(plotinspiral_jobs[ifo])
     dag.add_node(plotinspiral_node)
-
 
 if opts.plotnumtemplates:
   # add an plotnumtemplates job
