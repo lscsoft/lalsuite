@@ -175,7 +175,7 @@ LALGetCmplxAMCoeffs(LALStatus *status,
       coeffs->A += ai.re * ai.re + ai.im * ai.im;
       coeffs->B += bi.re * bi.re + bi.im * bi.im;
       coeffs->C += ai.re * bi.re + ai.im * bi.im;
-      coeffs->E += - ai.re * bi.im + ai.im * bi.re;
+      coeffs->E += ai.re * bi.im - ai.im * bi.re;
 
     } /* for i < numSteps */
 
@@ -369,7 +369,7 @@ XLALWeighMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNoise
 	      Ad += ahat.re * ahat.re + ahat.im * ahat.im;
 	      Bd += bhat.re * bhat.re + bhat.im * bhat.im;
 	      Cd += ahat.re * bhat.re + ahat.im * bhat.im;
-	      Ed += - ahat.re * bhat.re + ahat.im * bhat.im;
+	      Ed += ahat.re * bhat.im - ahat.im * bhat.re;
 	    } /* for alpha < numSFTsX */
 	} /* for X < numDetectors */
       multiAMcoef->Mmunu.Sinv_Tsft = multiWeights->Sinv_Tsft;
@@ -394,7 +394,7 @@ XLALWeighMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNoise
 	      Ad += ahat.re * ahat.re + ahat.im * ahat.im;
 	      Bd += bhat.re * bhat.re + bhat.im * bhat.im;
 	      Cd += ahat.re * bhat.re + ahat.im * bhat.im;
-	      Ed += - ahat.re * bhat.re + ahat.im * bhat.im;
+	      Ed += ahat.re * bhat.im - ahat.im * bhat.re;
 	    } /* for alpha < numSFTsX */
 	} /* for X < numDetectors */
 
