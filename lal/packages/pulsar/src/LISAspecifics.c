@@ -475,7 +475,7 @@ XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, 	/**< [out]: two-arm IFO de
   sin_cos_LUT (&sin1alpha, &cos1alpha, alpha );
 
   k[I1] = - cos1delta * cos1alpha;
-  k[I2] = - cos1delta * cos1alpha;
+  k[I2] = - cos1delta * sin1alpha;
   k[I3] = - sin1delta;
 
   kdotnA = SCALAR(k,nA);
@@ -487,16 +487,16 @@ XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, 	/**< [out]: two-arm IFO de
 	       );
   eta = pifL_c * (1.0 + kdotnA);
   sinceta = sin(eta) / eta;
-  coeffAA.re = cospha * sinceta;
-  coeffAA.im = sinpha * sinceta;
+  coeffAA.re = cospha * sinceta / 4.0;
+  coeffAA.im = sinpha * sinceta / 4.0;
 
   sin_cos_LUT (&sinpha, &cospha,
 	       ( pifL_c / 3.0 ) * ( - 3.0 - (kdotnA + 2.0*kdotnB) )
 	       );
   eta = pifL_c * (1.0 - kdotnA);
   sinceta = sin(eta) / eta;
-  coeffAA.re += cospha * sinceta;
-  coeffAA.im += sinpha * sinceta;
+  coeffAA.re += cospha * sinceta / 4.0;
+  coeffAA.im += sinpha * sinceta / 4.0;
 
   /* calculate coefficient of nB x nB */
   sin_cos_LUT (&sinpha, &cospha,
