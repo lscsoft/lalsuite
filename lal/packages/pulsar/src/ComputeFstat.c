@@ -259,6 +259,7 @@ ComputeFStat ( LALStatus *status,
       if ( cfBuffer )
 	{
 	  XLALEmptyComputeFBuffer ( *cfBuffer, TRUE );
+	  cfBuffer->multiSSB = multiSSB;
 	  cfBuffer->multiCmplxAMcoef = multiCmplxAMcoef;
 	  cfBuffer->Alpha = doppler->Alpha;
 	  cfBuffer->Delta = doppler->Delta;
