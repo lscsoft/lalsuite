@@ -12,16 +12,16 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 /** \author J. T. Whelan
- * \file 
+ * \file
  * \brief
  * Functions related to F-statistic calculation when the AM coefficients are complex.
- *                                                                          
+ *
  */
 
 /*---------- INCLUDES ----------*/
@@ -53,12 +53,12 @@ NRCSID( COMPLEXAMC, "$Id$");
 /** Compute the 'amplitude coefficients' \f$a(t)\sin\zeta\f$,
  * \f$b(t)\sin\zeta\f$ as defined in \ref JKS98 for a series of
  * timestamps.
- * 
+ *
  * The input consists of the DetectorState-timeseries, which contains
  * the detector-info and the LMST's corresponding to the different times.
- * 
+ *
  * In order to allow re-using the output-structure AMCoeffs for subsequent
- * calls, we require the REAL4Vectors a and b to be allocated already and 
+ * calls, we require the REAL4Vectors a and b to be allocated already and
  * to have the same length as the DetectoStates-timeseries.
  *
  * \note This is an alternative implementation to both LALComputeAM()
@@ -72,7 +72,7 @@ NRCSID( COMPLEXAMC, "$Id$");
  * \note THIS VERSION IS FOR THE CASE WHERE THE DETECTOR TENSOR IS COMPLEX
  * AND THE DESCRIPTION NEEDS TO BE MODIFIED!
  *
- */ 
+ */
 void
 LALGetCmplxAMCoeffs(LALStatus *status,
 		    CmplxAMCoeffs *coeffs,			/**< [out] amplitude-coeffs {a(f_0,t_i), b(f_0,t_i)} */
@@ -141,7 +141,7 @@ LALGetCmplxAMCoeffs(LALStatus *status,
 	LALPrintError ( "\nXLALgetCmplxLISADetectorTensor() failed ... errno = %d\n\n", xlalErrno );
 	ABORT ( status, COMPLEXAMC_EXLAL, COMPLEXAMC_MSGEXLAL );
       }
-      
+
       ai.re = d.d11.re * ( xi1 * xi1 - eta1 * eta1 )
 	+ 2 * d.d12.re * ( xi1*xi2 - eta1*eta2 )
 	- 2 * d.d13.re *             eta1 * eta3
@@ -193,14 +193,14 @@ LALGetCmplxAMCoeffs(LALStatus *status,
 
 } /* LALGetCmplxAMCoeffs() */
 
-/** Multi-IFO version of LALGetCmplxAMCoeffs(). 
+/** Multi-IFO version of LALGetCmplxAMCoeffs().
  * Get all antenna-pattern coefficients for all input detector-series.
  *
  * NOTE: contrary to LALGetCmplxAMCoeffs(), this functions *allocates* the output-vector,
  * use XLALDestroyMultiCmplxAMCoeffs() to free this.
  */
 void
-LALGetMultiCmplxAMCoeffs (LALStatus *status, 
+LALGetMultiCmplxAMCoeffs (LALStatus *status,
 		     MultiCmplxAMCoeffs **multiAMcoef,	/**< [out] AM-coefficients for all input detector-state series */
 		     const MultiDetectorStateSeries *multiDetStates, /**< [in] detector-states at timestamps t_i */
 		     PulsarDopplerParams doppler		     /**< source sky-position [in equatorial coords!], freq etc. */
@@ -221,7 +221,7 @@ LALGetMultiCmplxAMCoeffs (LALStatus *status,
   numDetectors = multiDetStates->length;
 
   if ( ( ret = LALCalloc( 1, sizeof( *ret ) )) == NULL ) {
-    ABORT (status, COMPLEXAMC_EMEM, COMPLEXAMC_MSGEMEM);    
+    ABORT (status, COMPLEXAMC_EMEM, COMPLEXAMC_MSGEMEM);
   }
   ret->length = numDetectors;
   if ( ( ret->data = LALCalloc ( numDetectors, sizeof ( *ret->data ) )) == NULL ) {
@@ -243,13 +243,13 @@ LALGetMultiCmplxAMCoeffs (LALStatus *status,
       }
 
       LALGetCmplxAMCoeffs (status->statusPtr, amcoeX, multiDetStates->data[X], doppler );
-      if ( status->statusPtr->statusCode ) 
+      if ( status->statusPtr->statusCode )
 	{
 	  LALPrintError ( "\nCall to LALGetCmplxAMCoeffs() has failed ... \n\n");
 	  REPORTSTATUS ( status->statusPtr );
 	  goto failed;
 	}
- 
+
     } /* for X < numDetectors */
 
   goto success;
@@ -271,10 +271,10 @@ LALGetMultiCmplxAMCoeffs (LALStatus *status,
 
 /* ===== Object creation/destruction functions ===== */
 
-/** Destroy a MultiCmplxAMCoeffs structure. 
- * Note, this is "NULL-robust" in the sense that it will not crash 
+/** Destroy a MultiCmplxAMCoeffs structure.
+ * Note, this is "NULL-robust" in the sense that it will not crash
  * on NULL-entries anywhere in this struct, so it can be used
- * for failure-cleanup even on incomplete structs 
+ * for failure-cleanup even on incomplete structs
  */
 void
 XLALDestroyMultiCmplxAMCoeffs ( MultiCmplxAMCoeffs *multiAMcoef )
@@ -287,7 +287,7 @@ XLALDestroyMultiCmplxAMCoeffs ( MultiCmplxAMCoeffs *multiAMcoef )
 
   if ( multiAMcoef->data )
     {
-      for ( X=0; X < multiAMcoef->length; X ++ ) 
+      for ( X=0; X < multiAMcoef->length; X ++ )
 	{
 	  if ( (tmp = multiAMcoef->data[X]) != NULL )
 	    {
@@ -307,10 +307,10 @@ XLALDestroyMultiCmplxAMCoeffs ( MultiCmplxAMCoeffs *multiAMcoef )
 } /* XLALDestroyMultiCmplxAMCoeffs() */
 
 
-/** Multiply AM-coeffs \f$a_{X\alpha}, b_{X\alpha}\f$ by weights \f$\sqrt(w_{X\alpha})\f$ and 
+/** Multiply AM-coeffs \f$a_{X\alpha}, b_{X\alpha}\f$ by weights \f$\sqrt(w_{X\alpha})\f$ and
  * compute the resulting \f$A_d, B_d, C_d, E_d\f$ by simply *SUMMING* them, i.e.
  * \f$A_d \equiv \sum_{X,\alpha} \sqrt{w_{X\alpha} a_{X\alpha}^2\f$ etc.
- * 
+ *
  * NOTE: this function modifies the CmplxAMCoeffs *in place* !
  * NOTE2: if the weights = NULL, we assume unit-weights.
  */
@@ -331,7 +331,7 @@ XLALWeighMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNoise
       LALPrintError("\nmultiWeights must have same length as mulitAMcoef!\n\n");
       XLAL_ERROR( "XLALWeighMultiCmplxAMCoeffs", XLAL_EINVAL );
     }
-  
+
   /* noise-weight Antenna-patterns and compute A,B,C,E */
   Ad = Bd = Cd = Ed = 0;
 
@@ -341,14 +341,14 @@ XLALWeighMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNoise
 	{
 	  CmplxAMCoeffs *amcoeX = multiAMcoef->data[X];
 	  UINT4 numSteps = amcoeX->a->length;
-	  
+
 	  REAL8Vector *weightsX = multiWeights->data[X];;
-	  if ( weightsX->length != numSteps ) 
+	  if ( weightsX->length != numSteps )
 	    {
 	      LALPrintError("\nmultiWeights must have same length as mulitAMcoef!\n\n");
 	      XLAL_ERROR( "XLALWeighMultiCmplxAMCoeffs", XLAL_EINVAL );
 	    }
-	  
+
 	  for(alpha = 0; alpha < numSteps; alpha++)
 	    {
 	      REAL8 Sqwi = sqrt ( weightsX->data[alpha] );
@@ -358,13 +358,13 @@ XLALWeighMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNoise
 	      ahat.im = Sqwi * amcoeX->a->data[alpha].im;
 	      bhat.re= Sqwi * amcoeX->b->data[alpha].re;
 	      bhat.im= Sqwi * amcoeX->b->data[alpha].im;
-	      
+
 	      /* *replace* original a(t), b(t) by noise-weighed version! */
 	      amcoeX->a->data[alpha].re = ahat.re;
 	      amcoeX->a->data[alpha].im = ahat.im;
 	      amcoeX->b->data[alpha].re = bhat.re;
 	      amcoeX->b->data[alpha].im = bhat.im;
-	      
+
 	      /* sum A, B, C, E on the fly */
 	      Ad += ahat.re * ahat.re + ahat.im * ahat.im;
 	      Bd += bhat.re * bhat.re + bhat.im * bhat.im;
@@ -380,7 +380,7 @@ XLALWeighMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNoise
 	{
 	  CmplxAMCoeffs *amcoeX = multiAMcoef->data[X];
 	  UINT4 numSteps = amcoeX->a->length;
-	  
+
 	  for(alpha = 0; alpha < numSteps; alpha++)
 	    {
 	      COMPLEX16 ahat;
@@ -389,7 +389,7 @@ XLALWeighMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNoise
 	      ahat.im = amcoeX->a->data[alpha].im;
 	      bhat.re = amcoeX->b->data[alpha].re;
 	      bhat.im = amcoeX->b->data[alpha].im;
-	    
+
 	      /* sum A, B, C, E on the fly */
 	      Ad += ahat.re * ahat.re + ahat.im * ahat.im;
 	      Bd += bhat.re * bhat.re + bhat.im * bhat.im;

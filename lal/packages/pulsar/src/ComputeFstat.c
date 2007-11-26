@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2006 John T. Whelan, Badri Krishnan
- * Copyright (C) 2005, 2006 Reinhard Prix 
+ * Copyright (C) 2005, 2006 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,17 +13,17 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 /** \author R. Prix, J. T. Whelan
- * \file 
+ * \file
  * \brief
- * Functions to calculate the so-called F-statistic for a given point in parameter-space, 
+ * Functions to calculate the so-called F-statistic for a given point in parameter-space,
  * following the equations in \ref JKS98.
- *                                                                          
+ *
  */
 
 /*---------- INCLUDES ----------*/
@@ -52,11 +52,11 @@ NRCSID( COMPUTEFSTATC, "$Id$");
 #define FALSE (1==0)
 
 
-#define LD_SMALL4       (2.0e-4)		/**< "small" number for REAL4*/ 
+#define LD_SMALL4       (2.0e-4)		/**< "small" number for REAL4*/
 #define OOTWOPI         (1.0 / LAL_TWOPI)	/**< 1/2pi */
 
 #define TWOPI_FLOAT     6.28318530717958f  	/**< single-precision 2*pi */
-#define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)	/**< single-precision 1 / (2pi) */ 
+#define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)	/**< single-precision 1 / (2pi) */
 
 
 /*----- Macros ----- */
@@ -100,11 +100,11 @@ int finite(double x);
     This function is simply a wrapper for ComputeFstat() which is called repeatedly for
     every frequency value.  The output, i.e. fstatVector must be properly allocated
     before this function is called.  The values of the start frequency, the step size
-    in the frequency and the number of frequency values for which the Fstatistic is 
-    to be calculated are read from fstatVector.  The other parameters are not checked and 
-    they must be correctly set outside this function. 
+    in the frequency and the number of frequency values for which the Fstatistic is
+    to be calculated are read from fstatVector.  The other parameters are not checked and
+    they must be correctly set outside this function.
 */
-void ComputeFStatFreqBand ( LALStatus *status, 
+void ComputeFStatFreqBand ( LALStatus *status,
 			    REAL8FrequencySeries *fstatVector, /**< [out] Vector of Fstat values */
 			    const PulsarDopplerParams *doppler,/**< parameter-space point to compute F for */
 			    const MultiSFTVector *multiSFTs, /**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
@@ -114,7 +114,7 @@ void ComputeFStatFreqBand ( LALStatus *status,
 			    )
 {
 
-  UINT4 numDetectors, numBins, k;	
+  UINT4 numDetectors, numBins, k;
   REAL8 deltaF;
   Fcomponents Fstat;
   PulsarDopplerParams thisPoint;
@@ -135,7 +135,7 @@ void ComputeFStatFreqBand ( LALStatus *status,
   ASSERT ( fstatVector->data->data, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( fstatVector->data->length > 0, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
 
-  /** something to improve/cleanup -- the start frequency is available both 
+  /** something to improve/cleanup -- the start frequency is available both
       from the fstatvector and from the input doppler point -- they could be inconsistent
       or the user of this function could misunderstand */
 
@@ -147,12 +147,12 @@ void ComputeFStatFreqBand ( LALStatus *status,
 
   /* loop over frequency values and fill up values in fstatVector */
   for ( k = 0; k < numBins; k++) {
- 
-    TRY (ComputeFStat ( status->statusPtr, &Fstat, &thisPoint, multiSFTs, multiWeights, 
+
+    TRY (ComputeFStat ( status->statusPtr, &Fstat, &thisPoint, multiSFTs, multiWeights,
 			multiDetStates, params, &cfBuffer ), status);
 
     fstatVector->data->data[k] = Fstat.F;
-      
+
     thisPoint.fkdot[0] += deltaF;
   }
 
@@ -168,19 +168,19 @@ void ComputeFStatFreqBand ( LALStatus *status,
 
 /** Function to compute (multi-IFO) F-statistic for given parameter-space point ::psPoint,
  *  normalized SFT-data (normalized by <em>double-sided</em> PSD Sn), noise-weights
- *  and detector state-series 
+ *  and detector state-series
  *
- * NOTE: for better efficiency some quantities that need to be recomputed only for different 
- * sky-positions are buffered in \a cfBuffer if given. 
+ * NOTE: for better efficiency some quantities that need to be recomputed only for different
+ * sky-positions are buffered in \a cfBuffer if given.
  * - In order to 'empty' this buffer (at the end) use XLALEmptyComputeFBuffer()
  * - You CAN pass NULL for the \a cfBuffer if you don't want to use buffering (slower).
  *
- * NOTE2: there's a spaceholder for binary-pulsar parameters in \a psPoint, but this 
+ * NOTE2: there's a spaceholder for binary-pulsar parameters in \a psPoint, but this
  * it not implemented yet.
  *
  */
 void
-ComputeFStat ( LALStatus *status, 
+ComputeFStat ( LALStatus *status,
 	       Fcomponents *Fstat,                 /**< [out] Fstatistic + Fa, Fb */
 	       const PulsarDopplerParams *doppler, /**< parameter-space point to compute F for */
 	       const MultiSFTVector *multiSFTs,    /**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
@@ -191,7 +191,7 @@ ComputeFStat ( LALStatus *status,
 	       )
 {
   Fcomponents retF = empty_Fcomponents;
-  UINT4 X, numDetectors;	
+  UINT4 X, numDetectors;
   MultiSSBtimes *multiSSB = NULL;
   MultiAMCoeffs *multiAMcoef = NULL;
   MultiCmplxAMCoeffs *multiCmplxAMcoef = NULL;
@@ -220,15 +220,15 @@ ComputeFStat ( LALStatus *status,
   }
 
   /* check if that skyposition SSB were already buffered */
-  if ( cfBuffer 
+  if ( cfBuffer
        && ( cfBuffer->multiDetStates == multiDetStates )
        && ( cfBuffer->Alpha == doppler->Alpha )
-       && ( cfBuffer->Delta == doppler->Delta ) 
+       && ( cfBuffer->Delta == doppler->Delta )
        && cfBuffer->multiSSB )
     { /* yes ==> reuse */
       multiSSB = cfBuffer->multiSSB;
     }
-  else 
+  else
     {
       skypos.system =   COORDINATESYSTEM_EQUATORIAL;
       skypos.longitude = doppler->Alpha;
@@ -236,82 +236,87 @@ ComputeFStat ( LALStatus *status,
       TRY ( LALGetMultiSSBtimes ( status->statusPtr, &multiSSB, multiDetStates, skypos, doppler->refTime, params->SSBprec ), status );
     }
 
-  if ( params->useRAA ) {
-    LALGetMultiCmplxAMCoeffs ( status->statusPtr, &multiCmplxAMcoef, multiDetStates, *doppler );
-    BEGINFAIL ( status ) {
-      XLALDestroyMultiSSBtimes ( multiSSB );
-    } ENDFAIL (status);
-
-    /* noise-weigh Antenna-patterns and compute A,B,C */
-    if ( XLALWeighMultiCmplxAMCoeffs ( multiCmplxAMcoef, multiWeights ) != XLAL_SUCCESS ) {
-      LALPrintError("\nXLALWeighMultiCmplxAMCoeffs() failed with error = %d\n\n", xlalErrno );
-      ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
-    }
-    
-    Ad = multiCmplxAMcoef->Mmunu.Ad;
-    Bd = multiCmplxAMcoef->Mmunu.Bd;
-    Cd = multiCmplxAMcoef->Mmunu.Cd;
-    Ed = multiCmplxAMcoef->Mmunu.Ed;
-    Dd_inv = 1.0 / (Ad * Bd - Cd * Cd - Ed * Ed);
-
-
-    /* store these in buffer if available */
-    if ( cfBuffer )
-      {
-	XLALEmptyComputeFBuffer ( *cfBuffer, TRUE );
-	cfBuffer->multiCmplxAMcoef = multiCmplxAMcoef;
-	cfBuffer->Alpha = doppler->Alpha;
-	cfBuffer->Delta = doppler->Delta;
-	cfBuffer->multiDetStates = multiDetStates ;
-      } /* if cfBuffer */
-
-  } else {
-    /* check if AM coeffs already buffered */
-    if ( cfBuffer
-	 && ( cfBuffer->multiDetStates == multiDetStates )
-	 && ( cfBuffer->Alpha == doppler->Alpha )
-	 && ( cfBuffer->Delta == doppler->Delta ) 
-	 && cfBuffer->multiAMcoef ) {
-      multiAMcoef = cfBuffer -> multiAMcoef;
-    } else {
-      /* compute new AM-coefficients */
-      LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multiDetStates, skypos );
+  if ( params->useRAA )
+    {
+      LALGetMultiCmplxAMCoeffs ( status->statusPtr, &multiCmplxAMcoef, multiDetStates, *doppler );
       BEGINFAIL ( status ) {
 	XLALDestroyMultiSSBtimes ( multiSSB );
       } ENDFAIL (status);
 
       /* noise-weigh Antenna-patterns and compute A,B,C */
-      if ( XLALWeighMultiAMCoeffs ( multiAMcoef, multiWeights ) != XLAL_SUCCESS ) {
-	LALPrintError("\nXLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
+      if ( XLALWeighMultiCmplxAMCoeffs ( multiCmplxAMcoef, multiWeights ) != XLAL_SUCCESS ) {
+	LALPrintError("\nXLALWeighMultiCmplxAMCoeffs() failed with error = %d\n\n", xlalErrno );
 	ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
       }
+
+      Ad = multiCmplxAMcoef->Mmunu.Ad;
+      Bd = multiCmplxAMcoef->Mmunu.Bd;
+      Cd = multiCmplxAMcoef->Mmunu.Cd;
+      Ed = multiCmplxAMcoef->Mmunu.Ed;
+      Dd_inv = 1.0 / (Ad * Bd - Cd * Cd - Ed * Ed);
 
       /* store these in buffer if available */
       if ( cfBuffer )
 	{
-	  XLALEmptyComputeFBuffer ( *cfBuffer, FALSE );
-	  cfBuffer->multiSSB = multiSSB;
-	  cfBuffer->multiAMcoef = multiAMcoef;
+	  XLALEmptyComputeFBuffer ( *cfBuffer, TRUE );
+	  cfBuffer->multiCmplxAMcoef = multiCmplxAMcoef;
 	  cfBuffer->Alpha = doppler->Alpha;
 	  cfBuffer->Delta = doppler->Delta;
 	  cfBuffer->multiDetStates = multiDetStates ;
 	} /* if cfBuffer */
 
-    } /* if no buffer, different skypos or different detStates */
+    } /* if useRAA */
+  else
+    {
+      /* check if AM coeffs already buffered */
+      if ( cfBuffer
+	   && ( cfBuffer->multiDetStates == multiDetStates )
+	   && ( cfBuffer->Alpha == doppler->Alpha )
+	   && ( cfBuffer->Delta == doppler->Delta )
+	   && cfBuffer->multiAMcoef )
+	{
+	  multiAMcoef = cfBuffer -> multiAMcoef;
+	}
+      else
+	{
+	  /* compute new AM-coefficients */
+	  LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multiDetStates, skypos );
+	  BEGINFAIL ( status ) {
+	    XLALDestroyMultiSSBtimes ( multiSSB );
+	  } ENDFAIL (status);
 
-  Ad = multiAMcoef->Mmunu.Ad;
-  Bd = multiAMcoef->Mmunu.Bd;
-  Cd = multiAMcoef->Mmunu.Cd;
-  Dd_inv = 1.0 / (Ad * Bd - Cd * Cd );
-  Ed = 0;
-  }
+	  /* noise-weigh Antenna-patterns and compute A,B,C */
+	  if ( XLALWeighMultiAMCoeffs ( multiAMcoef, multiWeights ) != XLAL_SUCCESS ) {
+	    LALPrintError("\nXLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
+	    ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
+	  }
+
+	  /* store these in buffer if available */
+	  if ( cfBuffer )
+	    {
+	      XLALEmptyComputeFBuffer ( *cfBuffer, FALSE );
+	      cfBuffer->multiSSB = multiSSB;
+	      cfBuffer->multiAMcoef = multiAMcoef;
+	      cfBuffer->Alpha = doppler->Alpha;
+	      cfBuffer->Delta = doppler->Delta;
+	      cfBuffer->multiDetStates = multiDetStates ;
+	    } /* if cfBuffer */
+
+	} /* if no buffer, different skypos or different detStates */
+
+      Ad = multiAMcoef->Mmunu.Ad;
+      Bd = multiAMcoef->Mmunu.Bd;
+      Cd = multiAMcoef->Mmunu.Cd;
+      Dd_inv = 1.0 / (Ad * Bd - Cd * Cd );
+      Ed = 0;
+    } /* if !useRAA */
 
   /* ----- loop over detectors and compute all detector-specific quantities ----- */
   for ( X=0; X < numDetectors; X ++)
     {
       Fcomponents FcX = empty_Fcomponents;	/* for detector-specific FaX, FbX */
 
-      if ( params->useRAA ) 
+      if ( params->useRAA )
 	{
 	  if ( XLALComputeFaFbCmplx (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSB->data[X], multiCmplxAMcoef->data[X], params) != 0)
 	    {
@@ -319,7 +324,7 @@ ComputeFStat ( LALStatus *status,
 	      ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
 	    }
 	}
-      else if ( params->upsampling > 1) 
+      else if ( params->upsampling > 1)
 	{
 	  if ( XLALComputeFaFbXavie (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSB->data[X], multiAMcoef->data[X], params) != 0)
 	    {
@@ -338,47 +343,50 @@ ComputeFStat ( LALStatus *status,
 
 #ifndef LAL_NDEBUG
       if ( !finite(FcX.Fa.re) || !finite(FcX.Fa.im) || !finite(FcX.Fb.re) || !finite(FcX.Fb.im) ) {
-	LALPrintError("XLALComputeFaFb() returned non-finite: Fa=(%f,%f), Fb=(%f,%f)\n", 
+	LALPrintError("XLALComputeFaFb() returned non-finite: Fa=(%f,%f), Fb=(%f,%f)\n",
 		      FcX.Fa.re, FcX.Fa.im, FcX.Fb.re, FcX.Fb.im );
 	ABORT (status,  COMPUTEFSTATC_EIEEE,  COMPUTEFSTATC_MSGEIEEE);
       }
 #endif
- 		 
+
       /* Fa = sum_X Fa_X */
       retF.Fa.re += FcX.Fa.re;
       retF.Fa.im += FcX.Fa.im;
 
-      /* Fb = sum_X Fb_X */ 		  
+      /* Fb = sum_X Fb_X */
       retF.Fb.re += FcX.Fb.re;
       retF.Fb.im += FcX.Fb.im;
-  		  
+
     } /* for  X < numDetectors */
- 
+
   /* ----- compute final Fstatistic-value ----- */
 
   /* NOTE: the data MUST be normalized by the DOUBLE-SIDED PSD (using LALNormalizeMultiSFTVect),
-   * therefore there is a factor of 2 difference with respect to the equations in JKS, which 
+   * therefore there is a factor of 2 difference with respect to the equations in JKS, which
    * where based on the single-sided PSD.
-   */ 
+   */
 
-  if ( Ed == 0 ) {
- 		       
-  retF.F = Dd_inv * (  Bd * (SQ(retF.Fa.re) + SQ(retF.Fa.im) ) 
-                     + Ad * ( SQ(retF.Fb.re) + SQ(retF.Fb.im) )
-                     - 2.0 * Cd *( retF.Fa.re * retF.Fb.re + retF.Fa.im * retF.Fb.im )  
-		   );
+  if ( Ed == 0 )
+    {
 
-  } else {
- 		       
-    retF.F = Dd_inv * (  Bd * (SQ(retF.Fa.re) + SQ(retF.Fa.im) ) 
-			 + Ad * ( SQ(retF.Fb.re) + SQ(retF.Fb.im) )
-			 - 2.0 * Cd *( retF.Fa.re * retF.Fb.re
-				       + retF.Fa.im * retF.Fb.im )  
-			 /**** CHECK SIGNS!!! ****/
-			 - 2.0 * Ed *( retF.Fa.re * retF.Fb.im
-				       - retF.Fa.im * retF.Fb.re )  
-			 );
-  }
+      retF.F = Dd_inv * (  Bd * (SQ(retF.Fa.re) + SQ(retF.Fa.im) )
+			   + Ad * ( SQ(retF.Fb.re) + SQ(retF.Fb.im) )
+			   - 2.0 * Cd *( retF.Fa.re * retF.Fb.re + retF.Fa.im * retF.Fb.im )
+			   );
+
+    }
+  else
+    {
+
+      retF.F = Dd_inv * (  Bd * (SQ(retF.Fa.re) + SQ(retF.Fa.im) )
+			   + Ad * ( SQ(retF.Fb.re) + SQ(retF.Fb.im) )
+			   - 2.0 * Cd *( retF.Fa.re * retF.Fb.re
+					 + retF.Fa.im * retF.Fb.im )
+			   /**** CHECK SIGNS!!! ****/
+			   - 2.0 * Ed *( retF.Fa.re * retF.Fb.im
+					 - retF.Fa.im * retF.Fb.re )
+			   );
+    }
 
   (*Fstat) = retF;
 
@@ -405,7 +413,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 		  const SSBtimes *tSSB,
 		  const AMCoeffs *amcoe,
 		  const ComputeFParams *params)       /**< addition computational params */
-{ 
+{
   UINT4 alpha;                 	/* loop index over SFTs */
   UINT4 spdnOrder;		/* maximal spindown-orders */
   UINT4 numSFTs;		/* number of SFTs (M in the Notes) */
@@ -419,8 +427,8 @@ XLALComputeFaFb ( Fcomponents *FaFb,
   REAL8 *DeltaT_al, *Tdot_al;	/* pointer to alpha-arrays of SSB-timings */
   SFTtype *SFT_al;		/* SFT alpha  */
   UINT4 Dterms = params->Dterms;
-  
-  REAL8 norm = OOTWOPI; 
+
+  REAL8 norm = OOTWOPI;
 
   /* ----- check validity of input */
 #ifndef LAL_NDEBUG
@@ -433,7 +441,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
     LALPrintError ("\nInput SFTs are NULL!\n\n");
     XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
   }
-  
+
   if ( !tSSB || !tSSB->DeltaT || !tSSB->Tdot || !amcoe || !amcoe->a || !amcoe->b || !params)
     {
       LALPrintError ("\nIllegal NULL in input !\n\n");
@@ -521,7 +529,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	Dphi_alpha *= Tsft * (*Tdot_al);		/* guaranteed > 0 ! */
 
 	lambda_alpha = phi_alpha - 0.5 * Dphi_alpha;
-	
+
 	/* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
 	if ( sin_cos_2PI_LUT ( &imagQ, &realQ, - lambda_alpha ) ) {
 	  XLAL_ERROR ( "XLALComputeFaFb", XLAL_EFUNC);
@@ -532,9 +540,9 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	kappa_max = kappa_star + 1.0 * Dterms - 1.0;
 
 	/* ----- check that required frequency-bins are found in the SFTs ----- */
-	k0 = kstar - Dterms + 1;	
+	k0 = kstar - Dterms + 1;
 	k1 = k0 + 2 * Dterms - 1;
-	if ( (k0 < freqIndex0) || (k1 > freqIndex1) ) 
+	if ( (k0 < freqIndex0) || (k1 > freqIndex1) )
 	  {
 	    LALPrintError ("Required frequency-bins [%d, %d] not covered by SFT-interval [%d, %d]\n\n",
 			   k0, k1, freqIndex0, freqIndex1 );
@@ -545,19 +553,19 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 
       /* NOTE: sin[ 2pi (Dphi_alpha - k) ] = sin [ 2pi Dphi_alpha ], therefore
        * the trig-functions need to be calculated only once!
-       * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the 
+       * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the
        * closest to zero and will pose no numerical difficulties !
        */
       sin_cos_2PI_LUT ( &s_alpha, &c_alpha, kappa_star );
-      c_alpha -= 1.0f; 
+      c_alpha -= 1.0f;
 
       /* ---------- calculate the (truncated to Dterms) sum over k ---------- */
 
-      /* ---------- ATTENTION: this the "hot-loop", which will be 
-       * executed many millions of times, so anything in here 
+      /* ---------- ATTENTION: this the "hot-loop", which will be
+       * executed many millions of times, so anything in here
        * has a HUGE impact on the whole performance of the code.
-       * 
-       * DON'T touch *anything* in here unless you really know 
+       *
+       * DON'T touch *anything* in here unless you really know
        * what you're doing !!
        *------------------------------------------------------------
        */
@@ -568,9 +576,9 @@ XLALComputeFaFb ( Fcomponents *FaFb,
       imagXP = 0;
 
       /* if no danger of denominator -> 0 */
-      if ( ( kappa_star > LD_SMALL4 ) && (kappa_star < 1.0 - LD_SMALL4) )	
-	{ 
-	  /* improved hotloop algorithm by Fekete Akos: 
+      if ( ( kappa_star > LD_SMALL4 ) && (kappa_star < 1.0 - LD_SMALL4) )
+	{
+	  /* improved hotloop algorithm by Fekete Akos:
 	   * take out repeated divisions into a single common denominator,
 	   * plus use extra cleverness to compute the nominator efficiently...
 	   */
@@ -579,7 +587,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	  REAL4 pn = kappa_max;
 	  REAL4 qn = pn;
 	  REAL4 U_alpha, V_alpha;
-	  
+
 	  /* recursion with 2*Dterms steps */
 	  UINT4 l;
 	  for ( l = 1; l < 2*Dterms; l ++ )
@@ -591,7 +599,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	      Tn = pn * Tn + qn * (*Xalpha_l).im;	/* T_(n+1) */
 	      qn *= pn;				/* q_(n+1) */
 	    } /* for l <= 2*Dterms */
-	  
+
 	  U_alpha = Sn / qn;
 	  V_alpha = Tn / qn;
 
@@ -603,7 +611,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 
 	  realXP = s_alpha * U_alpha - c_alpha * V_alpha;
 	  imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
-	  
+
 	} /* if |remainder| > LD_SMALL4 */
       else
 	{ /* otherwise: lim_{rem->0}P_alpha,k  = 2pi delta_{k,kstar} */
@@ -613,17 +621,17 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	  realXP = TWOPI_FLOAT * Xalpha_l[ind0].re;
 	  imagXP = TWOPI_FLOAT * Xalpha_l[ind0].im;
 	} /* if |remainder| <= LD_SMALL4 */
-      
+
       realQXP = realQ * realXP - imagQ * imagXP;
       imagQXP = realQ * imagXP + imagQ * realXP;
-      
+
       /* we're done: ==> combine these into Fa and Fb */
       a_alpha = (*a_al);
       b_alpha = (*b_al);
 
       Fa.re += a_alpha * realQXP;
       Fa.im += a_alpha * imagQXP;
-      
+
       Fb.re += b_alpha * realQXP;
       Fb.im += b_alpha * imagQXP;
 
@@ -636,7 +644,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
       SFT_al ++;
 
     } /* for alpha < numSFTs */
-      
+
   /* return result */
   FaFb->Fa.re = norm * Fa.re;
   FaFb->Fa.im = norm * Fa.im;
@@ -660,7 +668,7 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
 		  const SSBtimes *tSSB,
 		  const CmplxAMCoeffs *amcoe,
 		  const ComputeFParams *params)       /**< addition computational params */
-{ 
+{
   UINT4 alpha;                 	/* loop index over SFTs */
   UINT4 spdnOrder;		/* maximal spindown-orders */
   UINT4 numSFTs;		/* number of SFTs (M in the Notes) */
@@ -674,8 +682,8 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
   REAL8 *DeltaT_al, *Tdot_al;	/* pointer to alpha-arrays of SSB-timings */
   SFTtype *SFT_al;		/* SFT alpha  */
   UINT4 Dterms = params->Dterms;
-  
-  REAL8 norm = OOTWOPI; 
+
+  REAL8 norm = OOTWOPI;
 
   /* ----- check validity of input */
 #ifndef LAL_NDEBUG
@@ -688,7 +696,7 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
     LALPrintError ("\nInput SFTs are NULL!\n\n");
     XLAL_ERROR ( "XLALComputeFaFbCmplx", XLAL_EINVAL);
   }
-  
+
   if ( !tSSB || !tSSB->DeltaT || !tSSB->Tdot || !amcoe || !amcoe->a || !amcoe->b || !params)
     {
       LALPrintError ("\nIllegal NULL in input !\n\n");
@@ -776,7 +784,7 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
 	Dphi_alpha *= Tsft * (*Tdot_al);		/* guaranteed > 0 ! */
 
 	lambda_alpha = phi_alpha - 0.5 * Dphi_alpha;
-	
+
 	/* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
 	if ( sin_cos_2PI_LUT ( &imagQ, &realQ, - lambda_alpha ) ) {
 	  XLAL_ERROR ( "XLALComputeFaFbCmplx", XLAL_EFUNC);
@@ -787,9 +795,9 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
 	kappa_max = kappa_star + 1.0 * Dterms - 1.0;
 
 	/* ----- check that required frequency-bins are found in the SFTs ----- */
-	k0 = kstar - Dterms + 1;	
+	k0 = kstar - Dterms + 1;
 	k1 = k0 + 2 * Dterms - 1;
-	if ( (k0 < freqIndex0) || (k1 > freqIndex1) ) 
+	if ( (k0 < freqIndex0) || (k1 > freqIndex1) )
 	  {
 	    LALPrintError ("Required frequency-bins [%d, %d] not covered by SFT-interval [%d, %d]\n\n",
 			   k0, k1, freqIndex0, freqIndex1 );
@@ -800,19 +808,19 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
 
       /* NOTE: sin[ 2pi (Dphi_alpha - k) ] = sin [ 2pi Dphi_alpha ], therefore
        * the trig-functions need to be calculated only once!
-       * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the 
+       * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the
        * closest to zero and will pose no numerical difficulties !
        */
       sin_cos_2PI_LUT ( &s_alpha, &c_alpha, kappa_star );
-      c_alpha -= 1.0f; 
+      c_alpha -= 1.0f;
 
       /* ---------- calculate the (truncated to Dterms) sum over k ---------- */
 
-      /* ---------- ATTENTION: this the "hot-loop", which will be 
-       * executed many millions of times, so anything in here 
+      /* ---------- ATTENTION: this the "hot-loop", which will be
+       * executed many millions of times, so anything in here
        * has a HUGE impact on the whole performance of the code.
-       * 
-       * DON'T touch *anything* in here unless you really know 
+       *
+       * DON'T touch *anything* in here unless you really know
        * what you're doing !!
        *------------------------------------------------------------
        */
@@ -823,9 +831,9 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
       imagXP = 0;
 
       /* if no danger of denominator -> 0 */
-      if ( ( kappa_star > LD_SMALL4 ) && (kappa_star < 1.0 - LD_SMALL4) )	
-	{ 
-	  /* improved hotloop algorithm by Fekete Akos: 
+      if ( ( kappa_star > LD_SMALL4 ) && (kappa_star < 1.0 - LD_SMALL4) )
+	{
+	  /* improved hotloop algorithm by Fekete Akos:
 	   * take out repeated divisions into a single common denominator,
 	   * plus use extra cleverness to compute the nominator efficiently...
 	   */
@@ -834,7 +842,7 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
 	  REAL4 pn = kappa_max;
 	  REAL4 qn = pn;
 	  REAL4 U_alpha, V_alpha;
-	  
+
 	  /* recursion with 2*Dterms steps */
 	  UINT4 l;
 	  for ( l = 1; l < 2*Dterms; l ++ )
@@ -846,7 +854,7 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
 	      Tn = pn * Tn + qn * (*Xalpha_l).im;	/* T_(n+1) */
 	      qn *= pn;				/* q_(n+1) */
 	    } /* for l <= 2*Dterms */
-	  
+
 	  U_alpha = Sn / qn;
 	  V_alpha = Tn / qn;
 
@@ -858,7 +866,7 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
 
 	  realXP = s_alpha * U_alpha - c_alpha * V_alpha;
 	  imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
-	  
+
 	} /* if |remainder| > LD_SMALL4 */
       else
 	{ /* otherwise: lim_{rem->0}P_alpha,k  = 2pi delta_{k,kstar} */
@@ -868,17 +876,17 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
 	  realXP = TWOPI_FLOAT * Xalpha_l[ind0].re;
 	  imagXP = TWOPI_FLOAT * Xalpha_l[ind0].im;
 	} /* if |remainder| <= LD_SMALL4 */
-      
+
       realQXP = realQ * realXP - imagQ * imagXP;
       imagQXP = realQ * imagXP + imagQ * realXP;
-      
+
       /* we're done: ==> combine these into Fa and Fb */
       a_alpha = (*a_al);
       b_alpha = (*b_al);
 
       Fa.re += a_alpha.re * realQXP - a_alpha.im * imagQXP;
       Fa.im += a_alpha.re * imagQXP + a_alpha.im * realQXP;
-      
+
       Fb.re += b_alpha.re * realQXP - b_alpha.im * imagQXP;
       Fb.im += b_alpha.re * imagQXP + b_alpha.im * realQXP;
 
@@ -890,7 +898,7 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
       SFT_al ++;
 
     } /* for alpha < numSFTs */
-      
+
   /* return result */
   FaFb->Fa.re = norm * Fa.re;
   FaFb->Fa.im = norm * Fa.im;
@@ -913,7 +921,7 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,
 		       const SSBtimes *tSSB,
 		       const AMCoeffs *amcoe,
 		       const ComputeFParams *params)       /**< addition computational params */
-{ 
+{
   UINT4 alpha;                 	/* loop index over SFTs */
   UINT4 spdnOrder;		/* maximal spindown-orders */
   UINT4 numSFTs;		/* number of SFTs (M in the Notes) */
@@ -940,7 +948,7 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,
     LALPrintError ("\nInput SFTs are NULL!\n\n");
     XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
   }
-  
+
   if ( !tSSB || !tSSB->DeltaT || !tSSB->Tdot || !amcoe || !amcoe->a || !amcoe->b || !params)
     {
       LALPrintError ("\nIllegal NULL in input !\n\n");
@@ -1023,7 +1031,7 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,
 	Dphi_alpha *= Tsft * (*Tdot_al);		/* guaranteed > 0 ! */
 
 	lambda_alpha = phi_alpha - 0.5 * Dphi_alpha;
-	
+
 	/* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
 	if ( sin_cos_2PI_LUT ( &imagQ, &realQ, - lambda_alpha ) ) {
 	  XLAL_ERROR ( "XLALComputeFaFb", XLAL_EFUNC);
@@ -1032,23 +1040,23 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,
 	kstar = (INT4) (Dphi_alpha * Upsampling + 0.5f - freqIndex0);	/* k* = round(Dphi_alpha*chi) for positive Dphi */
 
 	/* ----- check that required frequency-bins are found in the SFTs ----- */
-	if ( (kstar < 0) || (kstar > freqIndex1 - freqIndex0) ) 
+	if ( (kstar < 0) || (kstar > freqIndex1 - freqIndex0) )
 	  {
 	    LALPrintError ("Required frequency-bin [%d] not covered by SFT-interval [%d, %d]\n\n",
 			   freqIndex0 + kstar, freqIndex0, freqIndex1 );
 	    XLAL_ERROR("XLALComputeFaFb", XLAL_EDOM);
 	  }
-	
+
       } /* compute kstar, lambda_alpha */
 
 
       /* ---------- calculate the (truncated to ZERO Dterms) sum over k ---------- */
 
-      /* ---------- ATTENTION: this the "hot-loop", which will be 
-       * executed many millions of times, so anything in here 
+      /* ---------- ATTENTION: this the "hot-loop", which will be
+       * executed many millions of times, so anything in here
        * has a HUGE impact on the whole performance of the code.
-       * 
-       * DON'T touch *anything* in here unless you really know 
+       *
+       * DON'T touch *anything* in here unless you really know
        * what you're doing !!
        *------------------------------------------------------------
        */
@@ -1078,7 +1086,7 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,
       SFT_al ++;
 
     } /* for alpha < numSFTs */
-      
+
   /* return result */
   FaFb->Fa.re = Fa.re;
   FaFb->Fa.im = Fa.im;
@@ -1091,22 +1099,22 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,
 
 
 
-/** Compute the 'amplitude coefficients' \f$a(t), b(t)\f$ as defined in 
+/** Compute the 'amplitude coefficients' \f$a(t), b(t)\f$ as defined in
  * \ref JKS98 for a series of timestamps.
- * 
+ *
  * The input consists of the DetectorState-timeseries, which contains
  * the detector-info and the LMST's corresponding to the different times.
- * 
+ *
  * In order to allow re-using the output-structure AMCoeffs for subsequent
- * calls, we require the REAL4Vectors a and b to be allocated already and 
+ * calls, we require the REAL4Vectors a and b to be allocated already and
  * to have the same length as the DetectoStates-timeseries.
  *
- * \note This is an alternative implementation to LALComputeAM() with 
+ * \note This is an alternative implementation to LALComputeAM() with
  * the aim to be both simpler and faster.
  * The difference being that we don't implicitly re-derive the final expression
  * here but simply try to implement the final expressions (12), (13) in \ref JKS98
  * in the most economical way possible.
- */ 
+ */
 void
 LALGetAMCoeffs(LALStatus *status,
 	       AMCoeffs *coeffs,			/**< [out] amplitude-coeffs {a(t_i), b(t_i)} */
@@ -1116,7 +1124,7 @@ LALGetAMCoeffs(LALStatus *status,
 {
   REAL4 ah1, ah2, ah3, ah4, ah5;
   REAL4 a1, a2, a3, a4, a5;
-  
+
   REAL4 bh1, bh2, bh3, bh4;
   REAL4 b1, b2, b3, b4;
 
@@ -1141,7 +1149,7 @@ LALGetAMCoeffs(LALStatus *status,
 	   COMPUTEFSTATC_EINPUT,  COMPUTEFSTATC_MSGEINPUT);
 
   /* require sky-pos to be in equatorial coordinates */
-  ASSERT ( skypos.system == COORDINATESYSTEM_EQUATORIAL, status, 
+  ASSERT ( skypos.system == COORDINATESYSTEM_EQUATORIAL, status,
 	   SKYCOORDINATESH_ESYS, SKYCOORDINATESH_MSGESYS );
 
   /*---------- detector paramters: lambda, L, gamma */
@@ -1253,12 +1261,12 @@ LALGetAMCoeffs(LALStatus *status,
 /** Compute the 'amplitude coefficients' \f$a(t)\sin\zeta\f$,
  * \f$b(t)\sin\zeta\f$ as defined in \ref JKS98 for a series of
  * timestamps.
- * 
+ *
  * The input consists of the DetectorState-timeseries, which contains
  * the detector-info and the LMST's corresponding to the different times.
- * 
+ *
  * In order to allow re-using the output-structure AMCoeffs for subsequent
- * calls, we require the REAL4Vectors a and b to be allocated already and 
+ * calls, we require the REAL4Vectors a and b to be allocated already and
  * to have the same length as the DetectoStates-timeseries.
  *
  * \note This is an alternative implementation to both LALComputeAM()
@@ -1268,7 +1276,7 @@ LALGetAMCoeffs(LALStatus *status,
  * more general than the JKS expressions and could be used e.g., with
  * the response tensor of a bar detector with no further modification
  * needed.)
- */ 
+ */
 void
 LALNewGetAMCoeffs(LALStatus *status,
 	       AMCoeffs *coeffs,			/**< [out] amplitude-coeffs {a(t_i), b(t_i)} */
@@ -1299,7 +1307,7 @@ LALNewGetAMCoeffs(LALStatus *status,
 	   COMPUTEFSTATC_EINPUT,  COMPUTEFSTATC_MSGEINPUT);
 
   /* require sky-pos to be in equatorial coordinates */
-  ASSERT ( skypos.system == COORDINATESYSTEM_EQUATORIAL, status, 
+  ASSERT ( skypos.system == COORDINATESYSTEM_EQUATORIAL, status,
 	   SKYCOORDINATESH_ESYS, SKYCOORDINATESH_MSGESYS );
 
   /*---------- We write components of xi and eta vectors in SSB-fixed coords */
@@ -1324,7 +1332,7 @@ LALNewGetAMCoeffs(LALStatus *status,
       REAL4 ai, bi;
 
       DetectorTensor *d = &(DetectorStates->data[i].detT);
-      
+
       ai =    d->d11 * ( xi1 * xi1 - eta1 * eta1 )
 	+ 2 * d->d12 * ( xi1*xi2 - eta1*eta2 )
 	- 2 * d->d13 *             eta1 * eta3
@@ -1371,13 +1379,13 @@ LALNewGetAMCoeffs(LALStatus *status,
 /** For a given DetectorStateSeries, calculate the time-differences
  *  \f$\Delta T_\alpha\equiv T(t_\alpha) - T_0\f$, and their
  *  derivatives \f$Tdot_\alpha \equiv d T / d t (t_\alpha)\f$.
- * 
+ *
  *  \note The return-vectors \a DeltaT and \a Tdot must be allocated already
  *  and have the same length as the input time-series \a DetStates.
  *
  */
 void
-LALGetSSBtimes (LALStatus *status, 
+LALGetSSBtimes (LALStatus *status,
 		SSBtimes *tSSB,			/**< [out] DeltaT_alpha = T(t_alpha) - T_0; and Tdot(t_alpha) */
 		const DetectorStateSeries *DetectorStates,/**< [in] detector-states at timestamps t_i */
 		SkyPosition pos,		/**< source sky-location */
@@ -1406,7 +1414,7 @@ LALGetSSBtimes (LALStatus *status,
   ASSERT (precision < SSBPREC_LAST, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
   ASSERT ( pos.system == COORDINATESYSTEM_EQUATORIAL, status,
 	   COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-  
+
 
   /* convenience variables */
   alpha = pos.longitude;
@@ -1433,7 +1441,7 @@ LALGetSSBtimes (LALStatus *status,
 
 	  /* Tdot_alpha */
 	  tSSB->Tdot->data[i] = 1.0 + SCALAR(vn, DetectorStates->data[i].vDetector);
-	  
+
 	} /* for i < numSteps */
 
       break;
@@ -1478,14 +1486,14 @@ LALGetSSBtimes (LALStatus *status,
 
 } /* LALGetSSBtimes() */
 
-/** Multi-IFO version of LALGetSSBtimes(). 
+/** Multi-IFO version of LALGetSSBtimes().
  * Get all SSB-timings for all input detector-series.
  *
  * NOTE: contrary to LALGetSSBtimes(), this functions *allocates* the output-vector,
  * use XLALDestroyMultiSSBtimes() to free this.
  */
 void
-LALGetMultiSSBtimes (LALStatus *status, 
+LALGetMultiSSBtimes (LALStatus *status,
 		     MultiSSBtimes **multiSSB,		/**< [out] SSB-timings for all input detector-state series */
 		     const MultiDetectorStateSeries *multiDetStates, /**< [in] detector-states at timestamps t_i */
 		     SkyPosition skypos,		/**< source sky-position [in equatorial coords!] */
@@ -1509,7 +1517,7 @@ LALGetMultiSSBtimes (LALStatus *status,
   numDetectors = multiDetStates->length;
 
   if ( ( ret = LALCalloc( 1, sizeof( *ret ) )) == NULL ) {
-    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);    
+    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
   }
   ret->length = numDetectors;
   if ( ( ret->data = LALCalloc ( numDetectors, sizeof ( *ret->data ) )) == NULL ) {
@@ -1531,12 +1539,12 @@ LALGetMultiSSBtimes (LALStatus *status,
       }
 
       LALGetSSBtimes (status->statusPtr, SSBtimesX, multiDetStates->data[X], skypos, refTime, precision );
-      if ( status->statusPtr->statusCode ) 
+      if ( status->statusPtr->statusCode )
 	{
 	  LALPrintError ( "\nCall to LALGetSSBtimes() has failed ... \n\n");
 	  goto failed;
 	}
- 
+
     } /* for X < numDet */
 
   goto success;
@@ -1554,14 +1562,14 @@ LALGetMultiSSBtimes (LALStatus *status,
 
 } /* LALGetMultiSSBtimes() */
 
-/** Multi-IFO version of LALGetAMCoeffs(). 
+/** Multi-IFO version of LALGetAMCoeffs().
  * Get all antenna-pattern coefficients for all input detector-series.
  *
  * NOTE: contrary to LALGetAMCoeffs(), this functions *allocates* the output-vector,
  * use XLALDestroyMultiAMCoeffs() to free this.
  */
 void
-LALGetMultiAMCoeffs (LALStatus *status, 
+LALGetMultiAMCoeffs (LALStatus *status,
 		     MultiAMCoeffs **multiAMcoef,	/**< [out] AM-coefficients for all input detector-state series */
 		     const MultiDetectorStateSeries *multiDetStates, /**< [in] detector-states at timestamps t_i */
 		     SkyPosition skypos			/**< source sky-position [in equatorial coords!] */
@@ -1583,7 +1591,7 @@ LALGetMultiAMCoeffs (LALStatus *status,
   numDetectors = multiDetStates->length;
 
   if ( ( ret = LALCalloc( 1, sizeof( *ret ) )) == NULL ) {
-    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);    
+    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
   }
   ret->length = numDetectors;
   if ( ( ret->data = LALCalloc ( numDetectors, sizeof ( *ret->data ) )) == NULL ) {
@@ -1606,12 +1614,12 @@ LALGetMultiAMCoeffs (LALStatus *status,
 
       /* LALGetAMCoeffs (status->statusPtr, amcoeX, multiDetStates->data[X], skypos ); */
       LALNewGetAMCoeffs (status->statusPtr, amcoeX, multiDetStates->data[X], skypos );
-      if ( status->statusPtr->statusCode ) 
+      if ( status->statusPtr->statusCode )
 	{
 	  LALPrintError ( "\nCall to LALNewGetAMCoeffs() has failed ... \n\n");
 	  goto failed;
 	}
- 
+
     } /* for X < numDetectors */
 
   goto success;
@@ -1633,10 +1641,10 @@ LALGetMultiAMCoeffs (LALStatus *status,
 
 /* ===== Object creation/destruction functions ===== */
 
-/** Destroy a MultiSSBtimes structure. 
- * Note, this is "NULL-robust" in the sense that it will not crash 
+/** Destroy a MultiSSBtimes structure.
+ * Note, this is "NULL-robust" in the sense that it will not crash
  * on NULL-entries anywhere in this struct, so it can be used
- * for failure-cleanup even on incomplete structs 
+ * for failure-cleanup even on incomplete structs
  */
 void
 XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB )
@@ -1649,7 +1657,7 @@ XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB )
 
   if ( multiSSB->data )
     {
-      for ( X=0; X < multiSSB->length; X ++ ) 
+      for ( X=0; X < multiSSB->length; X ++ )
 	{
 	  if ( (tmp = multiSSB->data[X]) != NULL )
 	    {
@@ -1668,10 +1676,10 @@ XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB )
 
 } /* XLALDestroyMultiSSBtimes() */
 
-/** Destroy a MultiAMCoeffs structure. 
- * Note, this is "NULL-robust" in the sense that it will not crash 
+/** Destroy a MultiAMCoeffs structure.
+ * Note, this is "NULL-robust" in the sense that it will not crash
  * on NULL-entries anywhere in this struct, so it can be used
- * for failure-cleanup even on incomplete structs 
+ * for failure-cleanup even on incomplete structs
  */
 void
 XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef )
@@ -1684,7 +1692,7 @@ XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef )
 
   if ( multiAMcoef->data )
     {
-      for ( X=0; X < multiAMcoef->length; X ++ ) 
+      for ( X=0; X < multiAMcoef->length; X ++ )
 	{
 	  if ( (tmp = multiAMcoef->data[X]) != NULL )
 	    {
@@ -1704,8 +1712,8 @@ XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef )
 } /* XLALDestroyMultiAMCoeffs() */
 
 
-/** Destruction of a ComputeFBuffer *contents*, 
- * i.e. the multiSSB and multiAMcoeff, while the 
+/** Destruction of a ComputeFBuffer *contents*,
+ * i.e. the multiSSB and multiAMcoeff, while the
  * buffer-container is not freed (which is why it's passed
  * by value and not by reference...) */
 void
@@ -1723,10 +1731,10 @@ XLALEmptyComputeFBuffer ( ComputeFBuffer cfb, BOOLEAN keepSSB )
 } /* XLALDestroyComputeFBuffer() */
 
 
-/** Multiply AM-coeffs \f$a_{X\alpha}, b_{X\alpha}\f$ by weights \f$\sqrt(w_{X\alpha})\f$ and 
+/** Multiply AM-coeffs \f$a_{X\alpha}, b_{X\alpha}\f$ by weights \f$\sqrt(w_{X\alpha})\f$ and
  * compute the resulting \f$A_d, B_d, C_d\f$ by simply *SUMMING* them, i.e.
  * \f$A_d \equiv \sum_{X,\alpha} \sqrt{w_{X\alpha} a_{X\alpha}^2\f$ etc.
- * 
+ *
  * NOTE: this function modifies the AMCoeffs *in place* !
  * NOTE2: if the weights = NULL, we assume unit-weights.
  */
@@ -1747,7 +1755,7 @@ XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *m
       LALPrintError("\nmultiWeights must have same length as mulitAMcoef!\n\n");
       XLAL_ERROR( "XLALWeighMultiAMCoeffs", XLAL_EINVAL );
     }
-  
+
   /* noise-weight Antenna-patterns and compute A,B,C */
   Ad = Bd = Cd = 0;
 
@@ -1757,24 +1765,24 @@ XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *m
 	{
 	  AMCoeffs *amcoeX = multiAMcoef->data[X];
 	  UINT4 numSteps = amcoeX->a->length;
-	  
+
 	  REAL8Vector *weightsX = multiWeights->data[X];;
-	  if ( weightsX->length != numSteps ) 
+	  if ( weightsX->length != numSteps )
 	    {
 	      LALPrintError("\nmultiWeights must have same length as mulitAMcoef!\n\n");
 	      XLAL_ERROR( "XLALWeighMultiAMCoeffs", XLAL_EINVAL );
 	    }
-	  
+
 	  for(alpha = 0; alpha < numSteps; alpha++)
 	    {
 	      REAL8 Sqwi = sqrt ( weightsX->data[alpha] );
 	      REAL8 ahat = Sqwi * amcoeX->a->data[alpha] ;
 	      REAL8 bhat = Sqwi * amcoeX->b->data[alpha] ;
-	      
+
 	      /* *replace* original a(t), b(t) by noise-weighed version! */
 	      amcoeX->a->data[alpha] = ahat;
 	      amcoeX->b->data[alpha] = bhat;
-	      
+
 	      /* sum A, B, C on the fly */
 	      Ad += ahat * ahat;
 	      Bd += bhat * bhat;
@@ -1789,12 +1797,12 @@ XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *m
 	{
 	  AMCoeffs *amcoeX = multiAMcoef->data[X];
 	  UINT4 numSteps = amcoeX->a->length;
-	  
+
 	  for(alpha = 0; alpha < numSteps; alpha++)
 	    {
 	      REAL8 ahat = amcoeX->a->data[alpha] ;
 	    REAL8 bhat = amcoeX->b->data[alpha] ;
-	    
+
 	    /* sum A, B, C on the fly */
 	    Ad += ahat * ahat;
 	    Bd += bhat * bhat;
@@ -1812,11 +1820,11 @@ XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *m
   return XLAL_SUCCESS;
 
 } /* XLALWeighMultiAMCoefs() */
-  
+
 
 /* ===== General internal helper functions ===== */
 
-/** Calculate sin(x) and cos(x) to roughly 1e-7 precision using 
+/** Calculate sin(x) and cos(x) to roughly 1e-7 precision using
  * a lookup-table and Taylor-expansion.
  *
  * NOTE: this function will fail for arguments larger than
@@ -1864,8 +1872,8 @@ sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
    * this was previously done using
    *   xt = x - (INT4)x;
    * which is numerically unsafe for x > LAL_INT4_MAX ~ 2e9
-   * for saftey we therefore rather use modf(), even if that 
-   * will be somewhat slower... 
+   * for saftey we therefore rather use modf(), even if that
+   * will be somewhat slower...
    */
   xt = modf(x, &dummy);/* xt in (-1, 1) */
 
@@ -1885,7 +1893,7 @@ sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 
   ts = sinVal[i0];
   tc = cosVal[i0];
-   
+
   /* use Taylor-expansions for sin/cos around LUT-points */
   (*sin2pix) = ts + d * tc - d2 * ts;
   (*cos2pix) = tc - d * ts - d2 * tc;
@@ -1897,7 +1905,7 @@ sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 
 /** Parameter-estimation: based on large parts on Yousuke's notes and implemention (in CFSv1),
  * extended for error-estimation.
- * This implementation follows closely the derivations found in 
+ * This implementation follows closely the derivations found in
  * http://www.lsc-group.phys.uwm.edu/cgi-bin/enote.pl?nb=puls5knownpulsardemod&action=view&page=12
  */
 void
@@ -1920,7 +1928,7 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
   REAL8 phi0, psi;
   REAL8 b1, b2, b3;
   REAL8 h0, cosi;
-  
+
   REAL8 cosphi0, sinphi0, cos2psi, sin2psi;
 
   REAL8 tolerance = LAL_REAL4_EPS;
@@ -1981,25 +1989,25 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
   /* ----- fill matrix M^{mu,nu} [symmetric: use UPPER HALF ONLY!!]*/
   gsl_matrix_set (M_Mu_Nu, 0, 0,   Bd / Dd );
   gsl_matrix_set (M_Mu_Nu, 1, 1,   Ad / Dd );
-  gsl_matrix_set (M_Mu_Nu, 0, 1, - Cd / Dd );  
+  gsl_matrix_set (M_Mu_Nu, 0, 1, - Cd / Dd );
 
   gsl_matrix_set (M_Mu_Nu, 0, 3, - Ed / Dd );
   gsl_matrix_set (M_Mu_Nu, 1, 2,   Ed / Dd );
 
   gsl_matrix_set (M_Mu_Nu, 2, 2,   Bd / Dd );
   gsl_matrix_set (M_Mu_Nu, 3, 3,   Ad / Dd );
-  gsl_matrix_set (M_Mu_Nu, 2, 3, - Cd / Dd );  
+  gsl_matrix_set (M_Mu_Nu, 2, 3, - Cd / Dd );
 
   /* get (un-normalized) MLE's for amplitudes A^mu  = M^{mu,nu} x_nu */
 
-  /* GSL-doc: int gsl_blas_dsymv (CBLAS_UPLO_t Uplo, double alpha, const gsl_matrix * A, 
+  /* GSL-doc: int gsl_blas_dsymv (CBLAS_UPLO_t Uplo, double alpha, const gsl_matrix * A,
    *                              const gsl_vector * x, double beta, gsl_vector * y )
-   * 
-   * compute the matrix-vector product and sum: y = alpha A x + beta y 
-   * for the symmetric matrix A. Since the matrix A is symmetric only its 
-   * upper half or lower half need to be stored. When Uplo is CblasUpper 
-   * then the upper triangle and diagonal of A are used, and when Uplo 
-   * is CblasLower then the lower triangle and diagonal of A are used. 
+   *
+   * compute the matrix-vector product and sum: y = alpha A x + beta y
+   * for the symmetric matrix A. Since the matrix A is symmetric only its
+   * upper half or lower half need to be stored. When Uplo is CblasUpper
+   * then the upper triangle and diagonal of A are used, and when Uplo
+   * is CblasLower then the lower triangle and diagonal of A are used.
    */
   TRYGSL(gsl_blas_dsymv (CblasUpper, 1.0, M_Mu_Nu, x_mu, 0.0, A_Mu), status);
 
@@ -2008,7 +2016,7 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
   A3h = gsl_vector_get ( A_Mu, 2 );
   A4h = gsl_vector_get ( A_Mu, 3 );
 
-  /* LogPrintf (LOG_DEBUG, "norm= %g; A1 = %g, A2 = %g, A3 = %g, A4 = %g\n",  normAmu, A1h, A2h, A3h, A4h ); 
+  /* LogPrintf (LOG_DEBUG, "norm= %g; A1 = %g, A2 = %g, A3 = %g, A4 = %g\n",  normAmu, A1h, A2h, A3h, A4h );
    */
   Asq = SQ(A1h) + SQ(A2h) + SQ(A3h) + SQ(A4h);
   Da = A1h * A4h - A2h * A3h;
@@ -2018,11 +2026,11 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
   aPlus = sqrt(Ap2);		/* not yet normalized */
 
   Ac2 = 0.5 * ( Asq - disc );
-  aCross = sqrt( Ac2 );	
+  aCross = sqrt( Ac2 );
   aCross *= MYSIGN ( Da ); 	/* not yet normalized */
 
   beta = aCross / aPlus;
-  
+
   b1 =   A4h - beta * A1h;
   b2 =   A3h + beta * A2h;
   b3 = - A1h + beta * A4h ;
@@ -2041,13 +2049,13 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
   sin2psi = sin(2*psi);
 
   /* check numerical consistency of estimated Amu and reconstructed */
-  A1check =   aPlus * cosphi0 * cos2psi - aCross * sinphi0 * sin2psi;  
-  A2check =   aPlus * cosphi0 * sin2psi + aCross * sinphi0 * cos2psi;  
-  A3check = - aPlus * sinphi0 * cos2psi - aCross * cosphi0 * sin2psi;  
-  A4check = - aPlus * sinphi0 * sin2psi + aCross * cosphi0 * cos2psi;  
+  A1check =   aPlus * cosphi0 * cos2psi - aCross * sinphi0 * sin2psi;
+  A2check =   aPlus * cosphi0 * sin2psi + aCross * sinphi0 * cos2psi;
+  A3check = - aPlus * sinphi0 * cos2psi - aCross * cosphi0 * sin2psi;
+  A4check = - aPlus * sinphi0 * sin2psi + aCross * cosphi0 * cos2psi;
 
-  /* LogPrintf (LOG_DEBUG, "reconstructed:    A1 = %g, A2 = %g, A3 = %g, A4 = %g\n", 
-     A1check, A2check, A3check, A4check ); 
+  /* LogPrintf (LOG_DEBUG, "reconstructed:    A1 = %g, A2 = %g, A3 = %g, A4 = %g\n",
+     A1check, A2check, A3check, A4check );
   */
 
   if ( ( fabs( (A1check - A1h)/A1h ) > tolerance ) ||
@@ -2056,7 +2064,7 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
        ( fabs( (A4check - A4h)/A4h ) > tolerance ) )
     {
       if ( lalDebugLevel )
-	LALPrintError ( "WARNING LALEstimatePulsarAmplitudeParams(): Difference between estimated and reconstructed Amu exceeds tolerance of %g\n",  
+	LALPrintError ( "WARNING LALEstimatePulsarAmplitudeParams(): Difference between estimated and reconstructed Amu exceeds tolerance of %g\n",
 			tolerance );
     }
 
@@ -2066,36 +2074,36 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
 
 
   /* ========== Estimate the errors ========== */
-  
+
   /* ----- compute derivatives \partial A^\mu / \partial B^\nu, where
-   * we consider the output-variables B^\nu = (h0, cosi, phi0, psi) 
+   * we consider the output-variables B^\nu = (h0, cosi, phi0, psi)
    * where aPlus = 0.5 * h0 * (1 + cosi^2)  and aCross = h0 * cosi
    */
   { /* Ahat^mu is defined as A^mu with the replacements: A_+ --> A_x, and A_x --> h0 */
-    REAL8 A1hat =   aCross * cosphi0 * cos2psi - h0 * sinphi0 * sin2psi;  
-    REAL8 A2hat =   aCross * cosphi0 * sin2psi + h0 * sinphi0 * cos2psi;  
-    REAL8 A3hat = - aCross * sinphi0 * cos2psi - h0 * cosphi0 * sin2psi;  
-    REAL8 A4hat = - aCross * sinphi0 * sin2psi + h0 * cosphi0 * cos2psi;  
+    REAL8 A1hat =   aCross * cosphi0 * cos2psi - h0 * sinphi0 * sin2psi;
+    REAL8 A2hat =   aCross * cosphi0 * sin2psi + h0 * sinphi0 * cos2psi;
+    REAL8 A3hat = - aCross * sinphi0 * cos2psi - h0 * cosphi0 * sin2psi;
+    REAL8 A4hat = - aCross * sinphi0 * sin2psi + h0 * cosphi0 * cos2psi;
 
     /* ----- A1 =   aPlus * cosphi0 * cos2psi - aCross * sinphi0 * sin2psi; ----- */
     gsl_matrix_set (Jh_Mu_nu, 0, 0,   A1h / h0 );	/* dA1/h0 */
     gsl_matrix_set (Jh_Mu_nu, 0, 1,   A1hat ); 		/* dA1/dcosi */
     gsl_matrix_set (Jh_Mu_nu, 0, 2,   A3h );		/* dA1/dphi0 */
     gsl_matrix_set (Jh_Mu_nu, 0, 3, - 2.0 * A2h );	/* dA1/dpsi */
-  
-    /* ----- A2 =   aPlus * cosphi0 * sin2psi + aCross * sinphi0 * cos2psi; ----- */ 
+
+    /* ----- A2 =   aPlus * cosphi0 * sin2psi + aCross * sinphi0 * cos2psi; ----- */
     gsl_matrix_set (Jh_Mu_nu, 1, 0,   A2h / h0 );	/* dA2/h0 */
     gsl_matrix_set (Jh_Mu_nu, 1, 1,   A2hat ); 		/* dA2/dcosi */
     gsl_matrix_set (Jh_Mu_nu, 1, 2,   A4h );		/* dA2/dphi0 */
     gsl_matrix_set (Jh_Mu_nu, 1, 3,   2.0 * A1h );	/* dA2/dpsi */
 
-    /* ----- A3 = - aPlus * sinphi0 * cos2psi - aCross * cosphi0 * sin2psi; ----- */ 
-    gsl_matrix_set (Jh_Mu_nu, 2, 0,   A3h / h0 );	/* dA3/h0 */ 
+    /* ----- A3 = - aPlus * sinphi0 * cos2psi - aCross * cosphi0 * sin2psi; ----- */
+    gsl_matrix_set (Jh_Mu_nu, 2, 0,   A3h / h0 );	/* dA3/h0 */
     gsl_matrix_set (Jh_Mu_nu, 2, 1,   A3hat ); 		/* dA3/dcosi */
-    gsl_matrix_set (Jh_Mu_nu, 2, 2, - A1h );		/* dA3/dphi0 */  
+    gsl_matrix_set (Jh_Mu_nu, 2, 2, - A1h );		/* dA3/dphi0 */
     gsl_matrix_set (Jh_Mu_nu, 2, 3, - 2.0 * A4h );	/* dA3/dpsi */
 
-    /* ----- A4 = - aPlus * sinphi0 * sin2psi + aCross * cosphi0 * cos2psi; ----- */ 
+    /* ----- A4 = - aPlus * sinphi0 * sin2psi + aCross * cosphi0 * cos2psi; ----- */
     gsl_matrix_set (Jh_Mu_nu, 3, 0,   A4h / h0 );	/* dA4/h0 */
     gsl_matrix_set (Jh_Mu_nu, 3, 1,   A4hat ); 		/* dA4/dcosi */
     gsl_matrix_set (Jh_Mu_nu, 3, 2, - A2h );		/* dA4/dphi0 */
@@ -2110,12 +2118,12 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
   gsl_matrix_memcpy ( Jh_Mu_nu, tmp );
 
   /* ----- compute Jh^-1 . Minv . (Jh^-1)^T ----- */
-  
-  /* GSL-doc: gsl_blas_dgemm (CBLAS_TRANSPOSE_t TransA, CBLAS_TRANSPOSE_t TransB, double alpha, 
+
+  /* GSL-doc: gsl_blas_dgemm (CBLAS_TRANSPOSE_t TransA, CBLAS_TRANSPOSE_t TransB, double alpha,
    *                          const gsl_matrix *A, const gsl_matrix *B, double beta, gsl_matrix *C)
-   * These functions compute the matrix-matrix product and sum 
-   * C = \alpha op(A) op(B) + \beta C 
-   * where op(A) = A, A^T, A^H for TransA = CblasNoTrans, CblasTrans, CblasConjTrans 
+   * These functions compute the matrix-matrix product and sum
+   * C = \alpha op(A) op(B) + \beta C
+   * where op(A) = A, A^T, A^H for TransA = CblasNoTrans, CblasTrans, CblasConjTrans
    * and similarly for the parameter TransB.
    */
 
@@ -2124,12 +2132,12 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
   /* then J^-1 . tmp , store result in tmp2 */
   TRYGSL( gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, Jh_Mu_nu, tmp, 0.0, tmp2 ), status);
   gsl_matrix_memcpy ( Jh_Mu_nu, tmp2 );
-  
+
   /* ===== debug-output resulting matrices ===== */
   /* propagate initial-phase from Fstat-reference-time to refTime of Doppler-params */
   TRY ( LALExtrapolatePulsarPhase (status->statusPtr, &phi0, pulsarParams->Doppler.fkdot, pulsarParams->Doppler.refTime, phi0, (*FstatRefTime) ),
 	status );
-  
+
   if ( phi0 < 0 )	      /* make sure phi0 in [0, 2*pi] */
     phi0 += LAL_TWOPI;
   phi0 = fmod ( phi0, LAL_TWOPI );
