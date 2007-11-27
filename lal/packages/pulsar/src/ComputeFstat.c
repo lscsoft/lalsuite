@@ -386,6 +386,7 @@ ComputeFStat ( LALStatus *status,
       retF.F = Dd_inv * (  Bd * (SQ(retF.Fa.re) + SQ(retF.Fa.im) )
 			   + Ad * ( SQ(retF.Fb.re) + SQ(retF.Fb.im) )
 			   - 2.0 * Cd *( retF.Fa.re * retF.Fb.re + retF.Fa.im * retF.Fb.im )
+			   /* This term is -2 E Im(Fa Fb^* ) */
 			   - 2.0 * Ed *( - retF.Fa.re * retF.Fb.im + retF.Fa.im * retF.Fb.re )
 			   );
     }
@@ -887,11 +888,13 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
       a_alpha = (*a_al);
       b_alpha = (*b_al);
 
-      Fa.re += a_alpha.re * realQXP - a_alpha.im * imagQXP;
-      Fa.im += a_alpha.re * imagQXP + a_alpha.im * realQXP;
+      /* Fa contains complex conjugate of a */
+      Fa.re += a_alpha.re * realQXP + a_alpha.im * imagQXP;
+      Fa.im += a_alpha.re * imagQXP - a_alpha.im * realQXP;
 
-      Fb.re += b_alpha.re * realQXP - b_alpha.im * imagQXP;
-      Fb.im += b_alpha.re * imagQXP + b_alpha.im * realQXP;
+      /* Fb contains complex conjugate of b */
+      Fb.re += b_alpha.re * realQXP + b_alpha.im * imagQXP;
+      Fb.im += b_alpha.re * imagQXP - b_alpha.im * realQXP;
 
       /* advance pointers over alpha */
       a_al ++;
