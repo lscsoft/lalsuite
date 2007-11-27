@@ -621,7 +621,10 @@ tagSimInspiralTable
   REAL4          eff_dist_g;
   REAL4          eff_dist_t;
   REAL4          eff_dist_v;
-  EventIDColumn *event_id;
+  EventIDColumn  *event_id;
+  INT4           numrel_mode_min;
+  INT4           numrel_mode_max;
+  CHAR           numrel_data[LIGOMETA_STRING_MAX];
 }
 SimInspiralTable;
 /* </lalVerbatim> */

@@ -1886,6 +1886,9 @@ SimInspiralTableFromLIGOLw (
     {"eff_dist_g",          -1, 47},
     {"eff_dist_t",          -1, 48},
     {"eff_dist_v",          -1, 49},
+    {"numrel_mode_min",     -1, 50},
+    {"numrel_mode_max",     -1, 51},
+    {"numrel_data",         -1, 52},
     {NULL,                   0, 0}
   };
 
@@ -2158,6 +2161,19 @@ SimInspiralTableFromLIGOLw (
         {
           thisSim->eff_dist_v = r4colData;
         }
+	else if ( tableDir[j].idx == 50 )
+	{
+	  thisSim->numrel_mode_min = i4colData;
+	}
+	else if ( tableDir[j].idx == 51 )
+	{
+	  thisSim->numrel_mode_max = i4colData;
+	}
+	else if ( tableDir[j].idx == 52 )
+	{
+          LALSnprintf(thisSim->numrel_data, LIGOMETA_STRING_MAX * sizeof(CHAR),
+              "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
+	}
         else
         {
           CLOBBER_SIM;
