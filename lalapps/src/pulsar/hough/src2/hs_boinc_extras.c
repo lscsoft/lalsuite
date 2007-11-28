@@ -327,13 +327,15 @@ static void sighandler(int sig)
     PRINT_FPU_STATUS_FLAGS(fpstat);
     fprintf(stderr,"\n");
   }
-#endif
+#endif /* __i386__ */
   /* now get TRUE stacktrace */
   nostackframes = backtrace (stackframes, 64);
   LogPrintf (LOG_CRITICAL,   "Obtained %zd stack frames for this thread.\n", nostackframes);
   LogPrintf (LOG_CRITICAL,   "Use gdb command: 'info line *0xADDRESS' to print corresponding line numbers.\n");
   /* overwrite sigaction with caller's address */
+#ifdef __i386__
   stackframes[1] = (void *) uc->uc_mcontext.gregs[REG_EIP];
+#endif /* __i386__ */
   backtrace_symbols_fd(stackframes, nostackframes, fileno(stderr));
 #endif /* __GLIBC__ */
 
