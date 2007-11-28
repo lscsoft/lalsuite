@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Badri Krishnan, Iraj Gholami, Reinhard Prix
+*  Copyright (C) 2007 Badri Krishnan, Iraj Gholami, Reinhard Prix, Karl Wette
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -35,6 +35,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h> 
+#include <gsl/gsl_sort.h>
+#include <gsl/gsl_math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
@@ -79,6 +81,18 @@ RCSID( "$Id$");
 
 /* ---------- local types ---------- */
 
+/** types of mathematical operations */
+enum tagMATH_OP_TYPE {
+  MATH_OP_ARITHMETIC_SUM = 0,   /** sum(x)     */
+  MATH_OP_ARITHMETIC_MEAN,      /** sum(x) / n */
+  MATH_OP_ARITHMETIC_MEDIAN,    /** x_1 <= ... x_{n/2} <= .. <= x_n */
+  MATH_OP_HARMONIC_SUM,         /** 1 / sum(1/x) */
+  MATH_OP_HARMONIC_MEAN,        /** n / sum(1/x) */
+  MATH_OP_MINIMUM,              /** x_1 <= ... */
+  MATH_OP_MAXIMUM,              /** ... <= x_n */
+  MATH_OP_LAST
+};    
+
 /** user input variables */
 typedef struct 
 { 
@@ -96,6 +110,12 @@ typedef struct
   INT4 blocksRngMed;
   INT4 maxBinsClean;
 
+  INT4 mthopOverSFTs;        /* type of math. operation over SFTs */
+  INT4 mthopOverIFOs;        /* type of math. operation over IFOs */
+  REAL8 finalPSDBinSize;     /* bin final PSD size */
+  INT4 finalPSDBinMthOp;     /* type of math. operation over bins */
+  REAL8 finalPSDBinStep;     /* final PSD bin step size */
+
   CHAR *outputFILE;   /* OBSOLETE: don't use. Superceded by outputPSD */
 } UserVariables_t;
 
@@ -111,6 +131,7 @@ extern INT4 lalDebugLevel;
 void initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar);
 void ReadTimeStampsFile (LALStatus *status, LIGOTimeGPSVector  *ts, CHAR *filename);
 void LALfwriteSpectrograms ( LALStatus *status, const CHAR *bname, const MultiPSDVector *multiPSD );
+static REAL8 math_op(REAL8*, size_t, INT4);
 
 /*============================================================
  * FUNCTION definitions
@@ -122,12 +143,15 @@ main(int argc, char *argv[]){
   static LALStatus       status;  /* LALStatus pointer */ 
   UserVariables_t uvar = empty_UserVariables;
   
-  UINT4 k, numBins, numIFOs, X, iSFT;
+  UINT4 k, numBins, numIFOs, maxNumSFTs, X, alpha;
   REAL8 Freq0, dFreq, normPSD;
+  UINT4 finalBinSize, finalBinStep, finalNumBins;
 
   FILE *fpOut = NULL;
 
-  REAL8Vector *meanSn = NULL;	/* averaged PSD: arithmetic mean over SFTs and harmonic-mean over IFOs */ 
+  REAL8Vector *overSFTs = NULL; /* one frequency bin over SFTs */
+  REAL8Vector *overIFOs = NULL; /* one frequency bin over IFOs */
+  REAL8Vector *finalPSD = NULL; /* math. operation PSD over SFTs and IFOs */
 
   SFTCatalog *catalog = NULL;
   SFTConstraints constraints = empty_SFTConstraints;
@@ -219,48 +243,67 @@ main(int argc, char *argv[]){
       fclose(fpRand);
     } /* end cleaning */
   
-  LogPrintf (LOG_DEBUG, "Computing spectrogram and mean-PSD ... ");
+  LogPrintf (LOG_DEBUG, "Computing spectrogram and PSD ... ");
   /* get power running-median rngmed[ |data|^2 ] from SFTs */
   LAL_CALL( LALNormalizeMultiSFTVect (&status, &multiPSD, inputSFTs, uvar.blocksRngMed), &status);
   /* Throw away SFTs, not needed any more */
   LAL_CALL (LALDestroyMultiSFTVector(&status, &inputSFTs), &status );
 
+  /* start frequency and frequency spacing */
   Freq0 = multiPSD->data[0]->data[0].f0;
   dFreq = multiPSD->data[0]->data[0].deltaF;
-  normPSD = 2.0 * dFreq;
 
-  numIFOs = multiPSD->length;
+  /* number of raw bins in final PSD */
   numBins = multiPSD->data[0]->data[0].data->length;
-
-  if ( (meanSn = XLALCreateREAL8Vector ( numBins )) == NULL ) {
+  if ( (finalPSD = XLALCreateREAL8Vector ( numBins )) == NULL ) {
     LogPrintf (LOG_CRITICAL, "Out of memory!\n");
     exit (-1);
   }
 
-  /* normalize rngmd(power) to get proper *single-sided* PSD: Sn = (2/Tsft) rngmed[|data|^2] 
-   * AND
-   * compute 'mean-Sn': arithmetic mean over SFTs, harmonic mean over IFOs, per freq-bin  
-   */
-  for ( k = 0; k < numBins; k ++ )
-    {
-      REAL8 sumSXinv = 0;
-      for ( X = 0; X < numIFOs; X ++ )
-	{
-	  UINT4 numSFTs = multiPSD->data[X]->length;
-	  REAL8 sumSn = 0;
-	  for ( iSFT = 0; iSFT < numSFTs; iSFT ++ )
-	    {
-	      multiPSD->data[X]->data[iSFT].data->data[k] *= normPSD;
-	      sumSn += multiPSD->data[X]->data[iSFT].data->data[k];
-	    } /* for iSFT < numSFTs */
+  /* number of IFOs */
+  numIFOs = multiPSD->length;
+  if ( (overIFOs = XLALCreateREAL8Vector ( numIFOs )) == NULL ) {
+    LogPrintf (LOG_CRITICAL, "Out of memory!\n");
+    exit (-1);
+  }
 
-	  sumSXinv += numSFTs / sumSn;		/* 1 / mean[Sn(sft)] */
+  /* maximum number of SFTs */
+  maxNumSFTs = 0;
+  for (X = 0; X < numIFOs; ++X) {
+    maxNumSFTs = GSL_MAX(maxNumSFTs, multiPSD->data[X]->length);    
+  }
+  if ( (overSFTs = XLALCreateREAL8Vector ( maxNumSFTs )) == NULL ) {
+    LogPrintf (LOG_CRITICAL, "Out of memory!\n");
+    exit (-1);
+  }
 
-	} /* for X < numIFOs */
+  /* normalize rngmd(power) to get proper *single-sided* PSD: Sn = (2/Tsft) rngmed[|data|^2]] */
+  normPSD = 2.0 * dFreq;
 
-      meanSn->data[k] = 1.0 / sumSXinv;
+  /* loop over frequency bins in final PSD */
+  for (k = 0; k < numBins; ++k) {
+ 
+    /* loop over IFOs */
+    for (X = 0; X < numIFOs; ++X) {
 
-    } /* for k < numBins */
+      /* number of SFTs for this IFO */
+      UINT4 numSFTs = multiPSD->data[X]->length;
+
+      /* copy PSD frequency bins and normalise multiPSD for later use */
+      for (alpha = 0; alpha < numSFTs; ++alpha) {
+	multiPSD->data[X]->data[alpha].data->data[k] *= normPSD;
+	overSFTs->data[alpha] = multiPSD->data[X]->data[alpha].data->data[k];
+      }
+
+      /* compute math. operation over SFTs for this IFO */
+      overIFOs->data[X] = math_op(overSFTs->data, numSFTs, uvar.mthopOverSFTs);
+
+    } /* over IFOs */
+
+    /* compute math. operation over IFOs for this frequency */
+    finalPSD->data[k] = math_op(overIFOs->data, numIFOs, uvar.mthopOverIFOs);
+
+  } /* over freq bins */
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
   /* output spectrograms */
@@ -268,15 +311,40 @@ main(int argc, char *argv[]){
     LAL_CALL ( LALfwriteSpectrograms ( &status, uvar.outputSpectBname, multiPSD ), &status );
   }
 
-  /* write mean-Sn to output file */
-  if (  (fpOut = fopen(uvar.outputPSD, "wb")) == NULL)
-    {
-      LogPrintf ( LOG_CRITICAL, "Unable to open output file %s for writing...exiting \n", uvar.outputPSD );
-      exit(1);
-    }
+  /* open output file */
+  if (  (fpOut = fopen(uvar.outputPSD, "wb")) == NULL) {
+    LogPrintf ( LOG_CRITICAL, "Unable to open output file %s for writing...exiting \n", uvar.outputPSD );
+    exit(1);
+  }
 
-  for (k = 0; k < numBins; k++)
-    fprintf(fpOut, "%f   %e\n", Freq0 + k * dFreq, meanSn->data[k] );
+  /* work out bin size */
+  if (uvar.finalPSDBinSize <= 0.0) {
+    finalBinSize = 1;
+  }
+  else {
+    finalBinSize = (UINT4)floor(uvar.finalPSDBinSize / dFreq + 0.5); /* round to nearest bin */
+  }
+
+  /* work out bin step */
+  if (uvar.finalPSDBinStep <= 0.0) {
+    finalBinStep = finalBinSize;
+  }
+  else {
+    finalBinStep = (UINT4)floor(uvar.finalPSDBinStep / dFreq + 0.5); /* round to nearest bin */
+  }
+
+  /* work out total number of bins */
+  finalNumBins = (UINT4)floor((numBins - finalBinSize) / finalBinStep) + 1;
+
+  /* write final PSD to file */
+  LogPrintf(LOG_DEBUG, "Printing PSD to file ... ");
+  for (k = 0; k < finalNumBins; ++k) {
+    UINT4 b = k * finalBinStep;
+    REAL8 f = Freq0 + b * dFreq;
+    REAL8 p = math_op(&(finalPSD->data[b]), finalBinSize, uvar.finalPSDBinMthOp);
+    fprintf(fpOut, "% f   % e\n", f, p);
+  }
+  LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
   fclose(fpOut);
 
@@ -285,7 +353,9 @@ main(int argc, char *argv[]){
     
   LAL_CALL (LALDestroyUserVars(&status), &status);
 
-  XLALDestroyREAL8Vector ( meanSn );
+  XLALDestroyREAL8Vector ( overSFTs );
+  XLALDestroyREAL8Vector ( overIFOs );
+  XLALDestroyREAL8Vector ( finalPSD );
 
   LALCheckMemoryLeaks(); 
 
@@ -349,6 +419,75 @@ void ReadTimeStampsFile (LALStatus          *status,
   RETURN (status);
 }    
 
+/** compute the various kinds of math. operation */
+REAL8 math_op(REAL8* data, size_t length, INT4 type) {
+
+  UINT4 i;
+  REAL8 res = 0.0;
+
+  switch (type) {
+
+  case MATH_OP_ARITHMETIC_SUM: /* sum(data)/length  */
+
+    for (i = 0; i < length; ++i) res += *(data++);
+
+    break;
+
+  case MATH_OP_ARITHMETIC_MEAN: /* sum(data)/length  */
+
+    for (i = 0; i < length; ++i) res += *(data++);
+    res /= (REAL8)length;
+
+    break;
+
+  case MATH_OP_ARITHMETIC_MEDIAN: /* middle element of sort(data) */
+
+    gsl_sort(data, 1, length);
+    if (length/2 == (length+1)/2) /* length is even */ {
+      res = (data[length/2] + data[length/2+1])/2;
+    }
+    else /* length is odd */ {
+      res = data[length/2+1];
+    }
+
+    break;
+
+  case MATH_OP_HARMONIC_SUM: /* 1 / sum(1 / data) */
+
+    for (i = 0; i < length; ++i) res += 1.0 / *(data++);
+    res = 1.0 / res;
+
+    break;
+
+  case MATH_OP_HARMONIC_MEAN: /* length / sum(1 / data) */
+
+    for (i = 0; i < length; ++i) res += 1.0 / *(data++);
+    res = (REAL8)length / res;
+
+    break;
+
+  case MATH_OP_MINIMUM: /* first element of sort(data) */
+
+    gsl_sort(data, 1, length);
+    res = data[0];
+    break;
+
+  case MATH_OP_MAXIMUM: /* first element of sort(data) */
+
+    gsl_sort(data, 1, length);
+    res = data[length-1];
+    break;
+
+  default:
+
+    LALPrintError("'%s' is not a valid math. operation", type);
+    exit (-1);
+
+  }
+
+  return res;
+
+}
 
 
 /** register all "user-variables" */
@@ -377,6 +516,12 @@ initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar)
   uvar->outputPSD = (CHAR *)LALMalloc(256 * sizeof(CHAR));
   strcpy(uvar->outputPSD, OUTPUTPSDFILE);
 
+  uvar->mthopOverSFTs = MATH_OP_ARITHMETIC_MEAN;
+  uvar->mthopOverIFOs = MATH_OP_HARMONIC_SUM;
+  uvar->finalPSDBinSize = -1.0;
+  uvar->finalPSDBinMthOp = MATH_OP_ARITHMETIC_MEDIAN;
+  uvar->finalPSDBinStep = -1.0;
+
   /* register user input variables */
   LALregBOOLUserStruct ( status, 	help, 		'h', UVAR_HELP,    	"Print this message" );
   LALregSTRINGUserStruct ( status, 	inputData, 	'i', UVAR_REQUIRED, 	"Input SFT pattern");
@@ -390,9 +535,15 @@ initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar)
   LALregSTRINGUserStruct ( status, 	timeStampsFile, 't', UVAR_OPTIONAL, 	"Time-stamps file");
 
   LALregINTUserStruct ( status, 	blocksRngMed,  	'w', UVAR_OPTIONAL, 	"Running Median window size");
-  LALregINTUserStruct ( status, 	maxBinsClean, 	'm', UVAR_OPTIONAL, 	"Maximum Cleaning Bins");
+  LALregINTUserStruct ( status,         mthopOverSFTs,  'S', UVAR_OPTIONAL,     "Type of math. operation over SFTs: 0=arith-sum, 1=arith-mean, 2=arith-median, 3=harm-sum, 4=harm-mean, 5=min, 6=max");
+  LALregINTUserStruct ( status,         mthopOverIFOs,  'I', UVAR_OPTIONAL,     "Type of math. operation over IFOs: as for mthopOverSFTs");
+  LALregREALUserStruct( status,         finalPSDBinSize,'B', UVAR_OPTIONAL,     "Bin the final PSD into bins of size (default: no binning)");
+  LALregINTUserStruct ( status,        finalPSDBinMthOp,'A', UVAR_OPTIONAL,     "If binning, type of math. operation over frequency bins: as for mthopOverSFTs");
+  LALregREALUserStruct( status,         finalPSDBinStep,'D', UVAR_OPTIONAL,     "If binning, step size to move bin along (default: size of bin)");
 
+  LALregINTUserStruct ( status, 	maxBinsClean, 	'm', UVAR_OPTIONAL, 	"Maximum Cleaning Bins");
   LALregLISTUserStruct ( status, 	linefiles, 	 0, UVAR_OPTIONAL, 	"Comma separated list of linefiles (names must contain IFO name)");
+
   LALregSTRINGUserStruct ( status, 	outputFILE, 	 0, UVAR_DEVELOPER, 	"Output PSD file [OBSOLETE: use '--outputPSD' instead]");
 
   /* read all command line variables */
