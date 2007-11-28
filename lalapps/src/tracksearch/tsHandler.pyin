@@ -191,11 +191,6 @@ if (glob and (canList.__len__() >= 1)):
                 print "Prexisting file found:",outName
                 print "Removing!"
             os.unlink(outName)
-    #Set output file name
-    if outfile !="":
-        outName=outfile
-    else:
-        outName="Glob:"+newGlobFile.__filemaskGlob__()
     #Depending on the presence of the --glue switch we actually read
     #the data or just concatenate the files together.
     #Thu-Oct-11-2007:200710111752 
@@ -207,6 +202,11 @@ if (glob and (canList.__len__() >= 1)):
     else:
         #Glob them through RAM allowing the proper adjustments to be made
         newGlobFile=buildCandidateGlob(canList,verboseSwitch)
+        #Set output file name
+        if outfile !="":
+            outName=outfile
+        else:
+            outName="Glob:"+newGlobFile.__filemaskGlob__()
         #Write this globbed file to disk.
         newGlobFile.writefile(outName)
 
@@ -239,7 +239,11 @@ elif ((canList.__len__() >=1) and ((graph2screen>0) or (graph2file!=''))):
     for entry in canList:
         candidateObject=candidateList(verboseSwitch)
         candidateObject.__loadfileQuick__(entry)
-        candidateObject.graphdata(graph2file,graphGPSoffset,timescale)
+        try:
+            candidateObject.graphdata(graph2file,graphGPSoffset,timescale)
+        except:
+            sys.stderr.write("Problem trying to create plot!\n")
+            sys.stderr.write("Skipping.\n")
         del candidateObject
     #SECTION APPLY ABITRARY THRESHOLDS
 elif ((expThreshold != "") and (canList.__len__() >=1)):

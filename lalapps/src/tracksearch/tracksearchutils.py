@@ -1676,6 +1676,9 @@ class candidateList:
         are hard wired to the method!  Method needs to have relative
         offsets specified as an optional argument
         """        
+        if self.totalCount==0:
+            sys.stdout.write("Omitting this plot no triggers to plot.\n");
+            return
         #This code creates a scatter plot in X windows
         #If pylab loads Ok.
         brightX=[]
@@ -1731,7 +1734,10 @@ class candidateList:
             pylab.plot(entry[0],entry[1])
         #Normalize the brightSpotZ max -> 0..5
         normalizeZscoreTo=100
-        factor=normalizeZscoreTo/(max(brightSpotZ))
+        if brightSpotZ.__len__() < 1:
+            factor=1;
+        else:
+            factor=normalizeZscoreTo/(max(brightSpotZ))
         tmpZ=[]
         for entry in brightSpotZ:
             tmpZ.append(entry*factor)
