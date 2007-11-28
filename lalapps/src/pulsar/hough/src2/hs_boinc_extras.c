@@ -319,6 +319,7 @@ static void sighandler(int sig)
   } /* termination signals */
 
 #ifdef __GLIBC__
+#ifdef __i386__
   /* in case of a floating-point exception write out the FPU status */
   if ( sig == SIGFPE ) {
     fpuw_t fpstat = uc->uc_mcontext.fpregs->sw;
@@ -326,6 +327,7 @@ static void sighandler(int sig)
     PRINT_FPU_STATUS_FLAGS(fpstat);
     fprintf(stderr,"\n");
   }
+#endif
   /* now get TRUE stacktrace */
   nostackframes = backtrace (stackframes, 64);
   LogPrintf (LOG_CRITICAL,   "Obtained %zd stack frames for this thread.\n", nostackframes);
