@@ -540,7 +540,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	for (s=0; s <= spdnOrder; s++) {
 	  REAL8 fsdot = fkdot[s];
 	  Dphi_alpha += fsdot * Tas * inv_fact[s]; 	/* here: DT^s/s! */
-#ifndef EAH_NO_CHECK_FINITE_DPHI
+#ifdef EAH_CHECK_FINITE_DPHI
 	  if (!finite(Dphi_alpha)) {
 	    LogPrintf(LOG_CRITICAL, "non-finite Dphi_alpha:%e, alpha:%d, spind#:%d, fkdot:%e, Tas:%e, inv_fact[s]:%e, inv_fact[s+1]:%e, phi_alpha:%e. DT_al:%e\n",
 		      Dphi_alpha, alpha, s, fkdot[s], Tas, inv_fact[s], inv_fact[s+1], phi_alpha, DT_al);
@@ -555,8 +555,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	Dphi_alpha *= Tsft * (*Tdot_al);		/* guaranteed > 0 ! */
 #ifndef EAH_NO_CHECK_FINITE_DPHI
 	if (!finite(Dphi_alpha)) {
-	  LogPrintf(LOG_CRITICAL, "non-finite Dphi_alpha:%e, alpha:%d, Tsft:%e, Tkdot_al:%e\n",
-		    Dphi_alpha, alpha, Tsft, (*Tdot_al));
+	  LogPrintf(LOG_CRITICAL, "non-finite Dphi_alpha:%e, alpha:%d, Tsft:%e, Tkdot_al:%e Tas:%e, DT_al:%e\n",
+		    Dphi_alpha, alpha, Tsft, (*Tdot_al), Tas, DT_al);
 	  XLAL_ERROR("LocalXLALComputeFaFb", XLAL_EDOM);
 	}
 #endif
