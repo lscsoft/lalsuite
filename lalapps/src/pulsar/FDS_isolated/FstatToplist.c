@@ -728,11 +728,11 @@ int fstat_cpt_file_compact(FStatCheckpointFile*cptf) {
 #ifdef _MSC_VER
 #define LOGIOERROR(mess,filename) \
     LogPrintf(LOG_CRITICAL, "ERROR: %s %s: line:%d, doserr:%d, ferr:%d, errno:%d: %s\n",\
-	      mess,filename,__LINE__,_doserrno,ferror(fp),errno,strerror(errno))
+	      mess,filename,__LINE__,_doserrno,((fp)?(ferror(fp)):0),errno,strerror(errno))
 #else
 #define LOGIOERROR(mess,filename) \
     LogPrintf(LOG_CRITICAL, "ERROR: %s %s: line:%d, ferr:%d, errno:%d: %s\n",\
-	      mess,filename,__LINE__,ferror(fp),errno,strerror(errno))
+	      mess,filename,__LINE__,((fp)?(ferror(fp)):0),errno,strerror(errno))
 #endif
 
 /* dumps toplist to a temporary file, then renames the file to filename */
