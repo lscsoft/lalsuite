@@ -615,6 +615,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
       if (__builtin_expect((kappa_star > LD_SMALL4) && (kappa_star < 1.0 - LD_SMALL4), (0==0)))
 
 #if (EAH_OPTIMIZATION == 1) && FALSE
+	/* FIXME: this version still needs to be fixed after switching from 2*Dterms+1 to 2*Dterms calc */
 	/* vectorization with common denominator */
 
 	{
@@ -769,6 +770,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
 #elif (EAH_OPTIMIZATION == 3)
 
+	/** SSE version with reciprocal estimates from Akos */
+
         {
 
           COMPLEX8 XSums __attribute__ ((aligned (16))); /* sums of Xa.re and Xa.im for SSE */
@@ -900,238 +903,6 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
 	}
 
-#elif (EAH_OPTIMIZATION == 4) && FALSE
-
-	/** SSE version with reciprocal estimates */
-
-        {
-
-	  REAL4 kappa_m = kappa_max; /**< kappa_max in single precision */
-
-          /** having these not aligned will crash the assembler code */
-
-          COMPLEX8 XSums __attribute__ ((aligned (16))); /**< sums of Xa.re and Xa.im for SSE */
-
-          /** vector constants */
-          static REAL4 V0011[4] __attribute__ ((aligned (16))) = { 0,0,1,1 };
-          static REAL4 V1111[4] __attribute__ ((aligned (16))) = { 1,1,1,1 };
-          static REAL4 V2222[4] __attribute__ ((aligned (16))) = { 2,2,2,2 };
-
-          __asm __volatile
-	    (
-
-	     "MOVSS	%[kappa_m],%%XMM0	\n\t"	/* X0:     0     0     0     A */
-	     "SHUFPS	$0,%%XMM0,%%XMM0       	\n\t"	/* X0:     A     A     A     A */
-
-	     "SUBPS	%[V0011],%%XMM0		\n\t"	/* X0:    A1    A1    A0    A0 */
-	     "MOVUPS	0(%[Xa]),%%XMM3 	\n\t"	/* X3:    I1    R1    I0    R0 */
-	     "RCPPS	%%XMM0,%%XMM1		\n\t"	/* X1:  1/A1  1/A1  1/A0  1/A0 */
-	     "MULPS	%%XMM3,%%XMM1		\n\t"	/* X1: I1/A1 R1/A1 I0/A0 R0/A0 */
-
-	     "SUBPS	%[V2222],%%XMM0		\n\t"	/* X0:    A3    A3    A2    A2 */
-	     "MOVUPS	16(%[Xa]),%%XMM4	\n\t"	/* X4:    I3    R3    I2    R2 */
-	     "RCPPS	%%XMM0,%%XMM2		\n\t"	/* X2:  1/A3  1/A3  1/A2  1/A2 */
-	     "MULPS	%%XMM4,%%XMM2		\n\t"	/* X2: I3/A3 R3/A3 I2/A2 R2/A2 */
-
-	     "SUBPS	%[V2222],%%XMM0		\n\t"	/* X0:    A5    A5    A4    A4 */
-	     "MOVUPS	32(%[Xa]),%%XMM5	\n\t"	/* X5:    I5    R5    I4    R4 */
-	     "RCPPS	%%XMM0,%%XMM3		\n\t"	/* X3:  1/A5  1/A5  1/A4  1/A4 */
-	     "MULPS	%%XMM5,%%XMM3		\n\t"	/* X3: I5/A5 R5/A5 I4/A4 R4/A4 */
-
-	     "ADDPS	%%XMM2,%%XMM1		\n\t"	/* X2 -> R11..I12 */
-
-	     "SUBPS	%[V2222],%%XMM0		\n\t"	/* X0:    A7    A7    A6    A6 */
-	     "MOVUPS	48(%[Xa]),%%XMM4	\n\t"	/* X4:    I7    R7    I6    R6 */
-	     "DIVPS	%%XMM0,%%XMM4		\n\t"	/* X4: I7/A7 R7/A7 I6/A6 R6/A6 */
-
-	     "SUBPS	%[V2222],%%XMM0		\n\t"	/* X0:    A9    A9    A8    A8 */
-	     "MOVUPS	64(%[Xa]),%%XMM5	\n\t"	/* X5:    I9    R9    I8    R8 */
-	     "DIVPS	%%XMM0,%%XMM5		\n\t"	/* X5: I9/A9 R9/A9 I8/A8 R8/A8 */
-
-	     "ADDPS	%%XMM4,%%XMM3		\n\t"	/* X4 -> R13..I14 */
-
-	     "SUBPS	%[V2222],%%XMM0		\n\t"	/* X0:   A11   A11   A10   A10 */
-	     "XORPS	%%XMM6,%%XMM6		\n\t"	/* X6:     0     0     0     0 */
-	     "MOVLPS	80(%[Xa]),%%XMM6	\n\t"	/* X6:     0     0   I10   R10 */
-	     "DIVPS	%%XMM0,%%XMM6		\n\t"	/* X6:     0     0 I10/A10 R10/A10 */
-
-	     "SUBPS	%[V1111],%%XMM0		\n\t"	/* X0:   A12   A12   A11   A11 */
-	     "MOVUPS	88(%[Xa]),%%XMM2	\n\t"	/* X2:   I12   R12   I11   R11 */
-	     "RCPPS	%%XMM0,%%XMM7		\n\t"	/* X7: 1/A12 1/A12 1/A11 1/A11 */
-	     "MULPS	%%XMM2,%%XMM7		\n\t"	/* X7: I12/A12 R12/A12 I11/A11 R11/A11 */
-
-	     "ADDPS	%%XMM6,%%XMM5		\n\t"	/* X6 -> R15..I16 */
-
-	     "SUBPS	%[V2222],%%XMM0		\n\t"	/* X0:   A14   A14   A13   A13 */
-	     "MOVUPS	104(%[Xa]),%%XMM4	\n\t"	/* X4:   I14   R14   I13   R13 */
-	     "RCPPS	%%XMM0,%%XMM2		\n\t"	/* X2: 1/A14 1/A14 1/A13 1/A13 */
-	     "MULPS	%%XMM4,%%XMM2		\n\t"	/* X2: I14/A14 R14/A14 I13/A13 R13/A13 */
-
-	     "ADDPS	%%XMM7,%%XMM1		\n\t"	/* X7 -> free */
-
-	     "SUBPS	%[V2222],%%XMM0		\n\t"	/* X0:   A16   A16   A15   A15 */
-	     "MOVUPS	120(%[Xa]),%%XMM6	\n\t"	/* X6:   I16   R16   I15   R15 */
-	     "RCPPS	%%XMM0,%%XMM4		\n\t"	/* X4: 1/A16 1/A16 1/A15 1/A15 */
-	     "MULPS	%%XMM6,%%XMM4		\n\t"	/* X4: I16/A16 R16/A16 I15/A15 R15/A15 */
-
-	     "ADDPS	%%XMM2,%%XMM3		\n\t"	/* X2 -> free */
-	     "ADDPS	%%XMM4,%%XMM5		\n\t"	/* X4 -> free */
-
-	     "ADDPS	%%XMM3,%%XMM1		\n\t"	/* X3 -> free */
-	     "ADDPS	%%XMM5,%%XMM1		\n\t"	/* X5 -> free */
-
-	     "MOVHLPS   %%XMM1,%%XMM0		\n\t"	/* X0: ? ? SumIup SumRup */
-	     "ADDPS	%%XMM1,%%XMM0		\n\t"	/* X0: ? ? SumI SumR */
-
-	     "MOVLPS	%%XMM0,%[XSums]   	\n\t"	/* store result */
-
-	     /* interface */
-	     :
-	     /* output  (here: to memory)*/
-	     [XSums]      "=m" (XSums)
-
-	     :
-	     /* input */
-	     [Xa]          "r"  (Xalpha_l),
-	     [kappa_m]     "m"  (kappa_m),
-
-	     /* constants */
-	     [V0011]       "m"  (V0011[0]),
-	     [V1111]       "m"  (V1111[0]),
-	     [V2222]       "m"  (V2222[0])
-
-	     :
-	     /* clobbered registers */
-#ifndef IGNORE_XMM_REGISTERS
-	     "xmm0","xmm1","xmm2","xmm3","xmm4","xmm5","xmm6","xmm7"
-#endif
-	     );
-
-	  realXP = s_alpha * XSums.re - c_alpha * XSums.im;
-	  imagXP = c_alpha * XSums.re + s_alpha * XSums.im;
-	  
-	}
-
-#elif (EAH_OPTIMIZATION == 5) && FALSE
-
-	/** trying to improve SSE version with reciprocal estimates */
-
-        {
-
-	  REAL4 kappa_m = kappa_max; /**< kappa_max in single precision */
-
-          /** having these not aligned will crash the assembler code */
-
-          COMPLEX8 XSums __attribute__ ((aligned (16))); /**< sums of Xa.re and Xa.im for SSE */
-
-          /** vector constants */
-          static REAL4 V0011[4] __attribute__ ((aligned (16))) = { 0,0,1,1 };
-          static REAL4 V1111[4] __attribute__ ((aligned (16))) = { 1,1,1,1 };
-          static REAL4 V2222[4] __attribute__ ((aligned (16))) = { 2,2,2,2 };
-
-          __asm __volatile
-	    (
-
-	     "MOVSS	%[kappa_m],%%XMM0	\n\t"	/* X0:     0     0     0     A */
-	     "SHUFPS	$0,%%XMM0,%%XMM0       	\n\t"	/* X0:     A     A     A     A */
-
-	     "SUBPS	%[V0011],%%XMM0		\n\t"	/* X0:    A1    A1    A0    A0 */
-	     "MOVLPS	0(%[Xa]),%%XMM3 	\n\t"	/* X3:    I1    R1    I0    R0 */
-	     "MOVHPS	8(%[Xa]),%%XMM3 	\n\t"	/* X3:    I1    R1    I0    R0 */
-	     "RCPPS	%%XMM0,%%XMM1		\n\t"	/* X1:  1/A1  1/A1  1/A0  1/A0 */
-	     "MULPS	%%XMM3,%%XMM1		\n\t"	/* X1: I1/A1 R1/A1 I0/A0 R0/A0 */
-
-	     "SUBPS	%[V2222],%%XMM0		\n\t"	/* X0:    A3    A3    A2    A2 */
-	     "MOVLPS	16(%[Xa]),%%XMM4	\n\t"	/* X4:    I3    R3    I2    R2 */
-	     "MOVHPS	24(%[Xa]),%%XMM4	\n\t"	/* X4:    I3    R3    I2    R2 */
-	     "RCPPS	%%XMM0,%%XMM2		\n\t"	/* X2:  1/A3  1/A3  1/A2  1/A2 */
-	     "MULPS	%%XMM4,%%XMM2		\n\t"	/* X2: I3/A3 R3/A3 I2/A2 R2/A2 */
-
-	     "SUBPS	%[V2222],%%XMM0		\n\t"	/* X0:    A5    A5    A4    A4 */
-	     "MOVLPS	32(%[Xa]),%%XMM5	\n\t"	/* X5:    I5    R5    I4    R4 */
-	     "MOVHPS	40(%[Xa]),%%XMM5	\n\t"	/* X5:    I5    R5    I4    R4 */
-	     "RCPPS	%%XMM0,%%XMM3		\n\t"	/* X3:  1/A5  1/A5  1/A4  1/A4 */
-	     "MULPS	%%XMM5,%%XMM3		\n\t"	/* X3: I5/A5 R5/A5 I4/A4 R4/A4 */
-
-	     "ADDPS	%%XMM2,%%XMM1		\n\t"	/* X2 -> R11..I12 */
-
-	     "SUBPS	%[V2222],%%XMM0		\n\t"	/* X0:    A7    A7    A6    A6 */
-	     "MOVLPS	48(%[Xa]),%%XMM4	\n\t"	/* X4:    I7    R7    I6    R6 */
-	     "MOVHPS	56(%[Xa]),%%XMM4	\n\t"	/* X4:    I7    R7    I6    R6 */
-	     "DIVPS	%%XMM0,%%XMM4		\n\t"	/* X4: I7/A7 R7/A7 I6/A6 R6/A6 */
-
-	     "SUBPS	%[V2222],%%XMM0		\n\t"	/* X0:    A9    A9    A8    A8 */
-	     "MOVLPS	64(%[Xa]),%%XMM5	\n\t"	/* X5:    I9    R9    I8    R8 */
-	     "MOVHPS	72(%[Xa]),%%XMM5	\n\t"	/* X5:    I9    R9    I8    R8 */
-	     "DIVPS	%%XMM0,%%XMM5		\n\t"	/* X5: I9/A9 R9/A9 I8/A8 R8/A8 */
-
-	     "ADDPS	%%XMM4,%%XMM3		\n\t"	/* X4 -> R13..I14 */
-
-	     "SUBPS	%[V2222],%%XMM0		\n\t"	/* X0:   A11   A11   A10   A10 */
-	     "XORPS	%%XMM6,%%XMM6		\n\t"	/* X6:     0     0     0     0 */
-	     "MOVLPS	80(%[Xa]),%%XMM6	\n\t"	/* X6:     0     0   I10   R10 */
-	     "DIVPS	%%XMM0,%%XMM6		\n\t"	/* X6:     0     0 I10/A10 R10/A10 */
-
-	     "SUBPS	%[V1111],%%XMM0		\n\t"	/* X0:   A12   A12   A11   A11 */
-	     "MOVLPS	88(%[Xa]),%%XMM2	\n\t"	/* X2:   I12   R12   I11   R11 */
-	     "MOVHPS	96(%[Xa]),%%XMM2	\n\t"	/* X2:   I12   R12   I11   R11 */
-	     "RCPPS	%%XMM0,%%XMM7		\n\t"	/* X7: 1/A12 1/A12 1/A11 1/A11 */
-	     "MULPS	%%XMM2,%%XMM7		\n\t"	/* X7: I12/A12 R12/A12 I11/A11 R11/A11 */
-
-	     "ADDPS	%%XMM6,%%XMM5		\n\t"	/* X6 -> R15..I16 */
-
-	     "SUBPS	%[V2222],%%XMM0		\n\t"	/* X0:   A14   A14   A13   A13 */
-	     "MOVLPS	104(%[Xa]),%%XMM4	\n\t"	/* X4:   I14   R14   I13   R13 */
-	     "MOVHPS	112(%[Xa]),%%XMM4	\n\t"	/* X4:   I14   R14   I13   R13 */
-	     "RCPPS	%%XMM0,%%XMM2		\n\t"	/* X2: 1/A14 1/A14 1/A13 1/A13 */
-	     "MULPS	%%XMM4,%%XMM2		\n\t"	/* X2: I14/A14 R14/A14 I13/A13 R13/A13 */
-
-	     "ADDPS	%%XMM7,%%XMM1		\n\t"	/* X7 -> free */
-
-	     "SUBPS	%[V2222],%%XMM0		\n\t"	/* X0:   A16   A16   A15   A15 */
-	     "MOVLPS	120(%[Xa]),%%XMM6	\n\t"	/* X6:   I16   R16   I15   R15 */
-	     "MOVHPS	128(%[Xa]),%%XMM6	\n\t"	/* X6:   I16   R16   I15   R15 */
-	     "RCPPS	%%XMM0,%%XMM4		\n\t"	/* X4: 1/A16 1/A16 1/A15 1/A15 */
-	     "MULPS	%%XMM6,%%XMM4		\n\t"	/* X4: I16/A16 R16/A16 I15/A15 R15/A15 */
-
-	     "ADDPS	%%XMM2,%%XMM3		\n\t"	/* X2 -> free */
-	     "ADDPS	%%XMM4,%%XMM5		\n\t"	/* X4 -> free */
-
-	     "ADDPS	%%XMM3,%%XMM1		\n\t"	/* X3 -> free */
-	     "ADDPS	%%XMM5,%%XMM1		\n\t"	/* X5 -> free */
-
-	     "MOVHLPS   %%XMM1,%%XMM0		\n\t"	/* X0: ? ? SumIup SumRup */
-	     "ADDPS	%%XMM1,%%XMM0		\n\t"	/* X0: ? ? SumI SumR */
-
-	     "MOVLPS	%%XMM0,%[XSums]   	\n\t"	/* store result */
-
-	     /* interface */
-	     :
-	     /* output  (here: to memory)*/
-	     [XSums]      "=m" (XSums)
-
-	     :
-	     /* input */
-	     [Xa]          "r"  (Xalpha_l),
-	     [kappa_m]     "m"  (kappa_m),
-
-	     /* constants */
-	     [V0011]       "m"  (V0011[0]),
-	     [V1111]       "m"  (V1111[0]),
-	     [V2222]       "m"  (V2222[0])
-
-	     :
-	     /* clobbered registers */
-#ifndef IGNORE_XMM_REGISTERS
-	     "xmm0","xmm1","xmm2","xmm3","xmm4","xmm5","xmm6","xmm7"
-#endif
-	     );
-
-	  realXP = s_alpha * XSums.re - c_alpha * XSums.im;
-	  imagXP = c_alpha * XSums.re + s_alpha * XSums.im;
-	  
-	}
-
 #else /* EAH_OPTIMIZATION */
 
 	{ 
@@ -1151,11 +922,11 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	    {
 	      Xalpha_l ++;
 	      
-	      pn = pn - 1.0f; 			/* p_(n+1) */
-	      Sn = pn * Sn + qn * (*Xalpha_l).re;	/* S_(n+1) */
-	      Tn = pn * Tn + qn * (*Xalpha_l).im;	/* T_(n+1) */
-	      qn *= pn;				/* q_(n+1) */
-	    } /* for l <= 2*Dterms */
+	      pn = pn - 1.0f;   		  /* p_(n+1) */
+	      Sn = pn * Sn + qn * (*Xalpha_l).re; /* S_(n+1) */
+	      Tn = pn * Tn + qn * (*Xalpha_l).im; /* T_(n+1) */
+	      qn *= pn; 			  /* q_(n+1) */
+	    } /* for l < 2*Dterms */
 	  
 	  U_alpha = Sn / qn;
 	  V_alpha = Tn / qn;
@@ -1233,6 +1004,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 #define IND_TO_X	(LAL_TWOPI * OO_SINCOS_LUT_RES)
 
 #if (SINCOS_VERSION == 2)
+/* "traditional" version with 2 LUT */
 
 static void local_sin_cos_2PI_LUT_init (void)
 {
@@ -1274,7 +1046,9 @@ static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 
 } /* local_sin_cos_2PI_LUT() */
 
 
+
 #elif (SINCOS_VERSION == 6)
+/* adapted 6-table version from S4 */
 
 #define SINCOS_LUT_RES 63
 static int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
@@ -1329,6 +1103,8 @@ static int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
 
 
 #elif (SINCOS_VERSION == 9)
+
+/* linear approximation developed with Akos */
 
 #define SINCOS_ADDS  402653184.0
 #define SINCOS_MASK1 0xFFFFFF
