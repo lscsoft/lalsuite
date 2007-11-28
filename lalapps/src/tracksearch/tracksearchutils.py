@@ -29,6 +29,7 @@ import sys
 import time
 import copy
 disableGraphics=False
+import numarray
 
 try:
     import pylab
@@ -87,7 +88,55 @@ class kurve:
         self.sortedByTime=True
         self.sortedByFreq=False
     #End method __timeOrderCurve__()
-        
+
+    def getSymmetryFactor(self,inputPixel,weight=1):
+        """
+        The default of weight 1 makes the inner product weight all
+        dimensions(pixels) around the point to determine symetry equal.
+        If we increase the weighting factor we can make the inner product
+        highly sensitivite to asymetry near the point of interest but not
+        far from it.
+        """
+        #Determine the max information we have around our element of
+        #interest
+        elementIndex=0
+        pixelIndex=0
+        for entry in self.element:
+            if inputPixel==entry:
+                pixelIndex=elementIndex
+            elementIndex+=1
+        #Determine max num pixels we can go out from inputPixel before
+        #getting to start of end of Kurve
+        workLength=min([(pixelIndex-0),(elementIndex-pixelIndex)])
+        Lvect=list()
+        Rvect=list()
+        if workLength < 2:
+            #Can not determine symmetry from these points
+            #The point of interest is left or right bounded only
+            #It can't be symmetrical
+            symmetryFactor=0
+            return symmetryFactor
+        LTotalVect=self.element.__getslice__(pixelIndex-workLength,pixelIndex-1)
+        RTotalVect=self.element.__getslice__(pixelIndex+1,pixelIndex+workLength)
+        RTotalVect.reverse()
+        for entry in LTotalVect:
+            Lvect.append(entry[4])
+        for entry in RTotalVect:
+            Rvect.append(entry[4])
+        #Add in weights!
+        for index in range(0,Lvect.__len__(),1):
+           Lvect[index]=Lvect[index]/(weight**index)
+        for index in range(0,Rvect.__len__(),1):
+           Rvect[index]=Rvect[index]/(weight**index)
+        LdotR=numarray.innerproduct(Lvect,Rvect)
+        NormLR=math.sqrt(
+            numarray.innerproduct(Lvect,Lvect)*
+            numarray.innerproduct(Rvect,Rvect)
+            )
+        symmetryFactor=LdotR/NormLR
+        return symmetryFactor
+    #End def getSymmetryFactor
+    
     def appendPixel(self,Row,Col,gpsStamp,Freq,Power):
         """
         Add a new pixel to our curve.  This should not be used manually in
@@ -184,10 +233,12 @@ class kurve:
         return result
     #End method printStopFreq
         
-    def getCandidateBandwidth(self):
+    def getCandidateBandwidth(self,getBounds=bool(False)):
         """
         This methods figures out the curves maximun bandwidth and returns
-        it in units of Hz.  This doesn't necessarily correlate to end Freq - start Freq
+        it in units of Hz.  This doesn't necessarily correlate to end
+        Freq - start Freq.  If you set getBound to True in call you
+        get back the bandwidth, F_min, and F_max
         """
         minFreq=0
         maxFreq=0
@@ -201,7 +252,10 @@ class kurve:
             maxFreq=listFreq[listFreq.__len__()-1]
         bandWidth=maxFreq-minFreq
         #Remember bandwidth above is middle bin to middle bin must and .5 and .5 bin edges!
-        return abs(bandWidth)
+        if getBounds:
+            return [abs(bandWidth),min([minFreq,maxFreq]),max([minFreq,maxFreq])]
+        else:
+            return abs(bandWidth)
     #End method getCandidateBandwidth
 
     def getCandidateDuration(self):
@@ -309,15 +363,64 @@ class kurve:
         method self.appendPixel.
         [X,mean,var]
         """
+        brightestPixel=self.getBrightPixel()
+        #Consider migrating the mean var part to new method
+        #getKurveMeanVar()
+        mean,var=self.__getKurveMeanVar__()
+        return [brightestPixel,mean,var]
+        #End getBrightPixel method
+
+    def getBrightPixel(self):
+        """
+        Give the element (pixel) from the brighest one in a Kurve
+        """
         dataBlock=self.getSortedByBrightness()
-        mean=float(0)
-        sum=float(0)
-        sumSqr=float(0)
-        var=float(0)
         if dataBlock.__len__() < 1:
             print "Fatal Error unexpected curve length of zero for this curve!"
             os.abort()
         brightestPixel=dataBlock[dataBlock.__len__()-1]
+        return brightestPixel
+    #End getBrightPixel()
+    
+    def getCMPixel(self):
+        """
+        Method which returns the traits of the center of mass point
+        for the kurve.  Here center of mass is 1 dim along the
+        kurve. It returns a single element of a Kurve which is a list
+        with entries
+        [Row,Col,gpsStamp,Freq,Power]
+        """
+        print "Hi girl. The CM is ?"
+        if not(self.sortedByTime):
+            self.__timeOrderCurve__()
+        M=0
+        m=0
+        r=0
+        rCM=1
+        tmpCM=0
+        index=1
+        for element in self.element:
+            row,col,gpsStamp,Freq,Power=element
+            M=M+Power
+            m=Power
+            r=0
+            index=index+1
+            tmpCM=tmpCM + (index*m)
+        rCM=int(round(tmpCM/M))
+        return self.element[rCM]
+    #End def getCMPixel()
+
+    def __getKurveMeanVar__(self):
+        """
+        This method gets the mean and var of the power in a curve
+        returning both in a solution [mean,var]
+        """
+        mean=float(0)
+        sum=float(0)
+        sumSqr=float(0)
+        var=float(0)
+        n=0
+        dataBlock=self.getKurveDataBlock()
         for entry in dataBlock:
             #Add individual power elements
             sum=sum.__add__(float(entry[4]))
@@ -325,8 +428,8 @@ class kurve:
         n=dataBlock.__len__()
         mean=float(sum.__div__(n))
         var=float(sumSqr - float(sum*sum).__div__(n)).__div__(n-1)
-        return [brightestPixel,mean,var]
-        #End getBrightPixel method
+        return [mean,var]
+#End method __getKurveMeanVar__()
 #End class kurve
         
 class gpsInt:
@@ -1652,7 +1755,103 @@ class candidateList:
                 [fullpath,extension]=os.path.splitext(self.filename[0])
                 filename=os.path.basename(fullpath)+'.png'
             pylab.savefig(filename)
-    #End method graph2screen
+    #End method graphdata
+
+    def createGlitchDatabase(self,verbose=bool(False)):
+        """
+        Commands to build either a structure which can be graphed
+        selectively or to create a database for use with auto-glitch
+        classification pipeline. There is a companion summary for this
+        method.  If one wants to hand cut the summary you can excise the
+        triggers from the output summary from original entire database for
+        graphing the triggers.
+        """
+        weight=1
+        glitchDatabase=[]
+        spinner=progressSpinner(verbose,2)
+        spinner.setTag('GlitchDB ')
+        for trigger in self.curves:
+            spinner.updateSpinner()
+            triggerStartString=trigger.startGPS().__diskPrint__()
+            triggerStartFloat=trigger.startGPS().getAsFloat()
+            triggerStopFloat=trigger.stopGPS().getAsFloat()
+            triggerBandwidth,triggerLowF,triggerHighF=trigger.getCandidateBandwidth(bool(True))
+            triggerID,triggerLength,triggerIntegratedPower=trigger.getKurveHeader()
+            brightPixel=trigger.getBrightPixel()
+            cmPixel=trigger.getBrightPixel()
+            meanPixelPower,varPixelPower=trigger.__getKurveMeanVar__()
+            triggerCentralFreq=triggerLowF+(triggerHighF-triggerLowF)/2
+            triggerDuration=triggerStopFloat-triggerStartFloat
+            triggerCentralTime=(triggerStopFloat+triggerStartFloat)/2
+            #
+            relativeTimeBP=brightPixel[2].getAsFloat()-triggerCentralTime
+            relativeFreqBP=brightPixel[3]-triggerCentralFreq
+            symmetryBP=trigger.getSymmetryFactor(brightPixel,weight)
+            zScoreBP=(
+                (triggerIntegratedPower-meanPixelPower)/
+                math.sqrt(varPixelPower)
+                )
+            relativeTimeCM=cmPixel[2].getAsFloat()-triggerCentralTime
+            relativeFreqCM=cmPixel[3]-triggerCentralFreq
+            symmetryCM=trigger.getSymmetryFactor(brightPixel,weight)
+            zScoreCM=(
+                (triggerIntegratedPower-meanPixelPower)/
+                math.sqrt(varPixelPower)
+                )
+            #(+) if T_bp > T_cm
+            if (triggerDuration > 0):
+                spanTnorm=(
+                    (brightPixel[2].getAsFloat()-cmPixel[2].getAsFloat())/
+                    triggerDuration
+                )
+            else:
+                spanTnorm=0
+            #(+) if F_bp>F_cm
+            if (triggerBandwidth > 0):
+                spanFnorm=(brightPixel[3]-cmPixel[3])/triggerBandwidth
+            else:
+                spanFnorm=0
+            #Create glitch database entry
+            glitchDatabaseEntry=[triggerStartString,triggerStartFloat,
+                                 triggerLowF,triggerDuration,
+                                 triggerBandwidth,int(triggerLength),
+                                 triggerIntegratedPower,meanPixelPower,
+                                 varPixelPower,relativeTimeBP,
+                                 relativeFreqBP,symmetryBP,
+                                 zScoreBP,relativeTimeCM,
+                                 relativeTimeCM,symmetryCM,
+                                 zScoreCM,spanTnorm,spanFnorm]
+            glitchDatabase.append(glitchDatabaseEntry)
+        spinner.closeSpinner()
+        return glitchDatabase
+        #End createGraphingSummary
+
+    def writeGlitchDatabase(self,glitchDatabase='',override=''):
+        """
+        Write out the glitch database for the candidateList structure.
+        """
+        if type(glitchDatabase) == type(''):
+            glitchDatabase=self.createGlitchDatabase(self.verboseMode)
+        format="%s "
+        entryFormat="%10.5f "
+        for index in range(1,glitchDatabase[0].__len__(),1):
+            format=format+entryFormat
+        format=format+"\n"
+        if override=='':
+            sourceFile=self.filename[0]
+        else:
+            sourceFile=override
+        outRoot,outExt=os.path.splitext(sourceFile)
+        outFile=outRoot+'.glitchDB'
+        fp=open(outFile,'w')
+        counter=0
+        for entry in self.createGlitchDatabase(self.verboseMode):
+            counter+=1
+            tupleForm=tuple(entry)
+            string=format%tupleForm
+            fp.write(string)
+        fp.close()
+    #End writeGlitchDatabase method
 #End candidateList class
 
 #Misc Utility classes
