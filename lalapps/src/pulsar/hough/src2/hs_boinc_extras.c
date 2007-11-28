@@ -940,7 +940,7 @@ static void worker (void) {
     LogPrintf (LOG_CRITICAL, "ERROR: MAIN() returned with error '%d'\n",res);
   }
 
-#if defined(__GNUC__) && __i386__
+#if defined(__GNUC__) && defined(__i386__)
   {
     fpuw_t fpstat = get_fpu_status();
     fprintf(stderr,"FPU status flags: ");
@@ -1369,7 +1369,7 @@ void set_fpu_control_word(const fpuw_t cword) {
   fpucw = cword;
 #ifdef _MSC_VER
   __asm fldcw fpucw;
-#elif defined(__GNUC__) && __i386__
+#elif defined(__GNUC__) && defined(__i386__)
   __asm("fldcw %0\n\t" : : "m" (fpucw));
 #endif
 }
@@ -1379,7 +1379,7 @@ fpuw_t get_fpu_control_word(void) {
   static fpuw_t fpucw = 0;
 #ifdef _MSC_VER
   __asm fstcw fpucw;
-#elif defined(__GNUC__) && __i386__
+#elif defined(__GNUC__) && defined(__i386__)
   __asm("fstcw %0\n\t" : "=m" (fpucw));
 #endif
   return(fpucw);
@@ -1390,7 +1390,7 @@ fpuw_t get_fpu_status(void) {
   static fpuw_t fpusw = 0;
 #ifdef _MSC_VER
   __asm fnstsw fpusw;
-#elif defined(__GNUC__) && __i386__
+#elif defined(__GNUC__) && defined(__i386__)
   __asm("fnstsw %0\n\t" : "=m" (fpusw));
 #endif
   return(fpusw);
@@ -1402,7 +1402,7 @@ void set_sse_control_status(const ssew_t cword) {
   ssecw = cword;
 #ifdef _MSC_VER
   __asm ldmxcsr ssecw;
-#elif defined(__GNUC__) && __i386__
+#elif defined(__GNUC__) && defined(__i386__)
   __asm("ldmxcsr %0\n\t" : : "m" (ssecw));
 #endif
 }
@@ -1412,7 +1412,7 @@ ssew_t get_sse_control_status(void) {
   static ssew_t ssesw = 0;
 #ifdef _MSC_VER
   __asm stmxcsr ssesw;
-#elif defined(__GNUC__) && __i386__
+#elif defined(__GNUC__) && defined(__i386__)
   __asm("stmxcsr %0\n\t" : "=m" (ssesw));
 #endif
   return(ssesw);
@@ -1420,7 +1420,7 @@ ssew_t get_sse_control_status(void) {
 
 static void drain_fpu_stack(void) {
   static double dummy;
-#if defined(__GNUC__) && __i386__
+#if defined(__GNUC__) && defined(__i386__)
   __asm(
 	"fstpl %0\n\t"
 	"fstpl %0\n\t"
@@ -1466,7 +1466,7 @@ void enable_floating_point_exceptions(void) {
     unsigned int cw87, cwSSE;
     __control87_2(MY_INVALID,_MCW_EM,&cw87,&cwSSE);
   }
-#elif defined(_MSC_VER) || defined(__GNUC__) && __i386__
+#elif defined(_MSC_VER) || defined(__GNUC__) && defined(__i386__)
   /* write out the masked FPU exceptions */
   /*
   {
