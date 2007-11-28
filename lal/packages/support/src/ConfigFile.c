@@ -12,15 +12,15 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 /** \file
  * \ingroup UserInput
  * \author Reinhard Prix
- * 
+ *
  * \brief General-purpose routines for config-file reading.
  *
  *
@@ -29,20 +29,20 @@
 This module provides routines for reading formatted
 config-files containing definitions of the form <tt>variable = value</tt>.
 The general syntax is somewhat similar to the one provided by the
-perl-module <tt>ConfigParser</tt> (cf. 
+perl-module <tt>ConfigParser</tt> (cf.
 http://www.python.org/doc/current/lib/module-ConfigParser.html)
 but (currently) without the possibility of "chapters".
-Comments are allowed using either '<tt>\#</tt>', '<tt>;</tt>' or <tt>%</tt>. 
+Comments are allowed using either '<tt>\#</tt>', '<tt>;</tt>' or <tt>%</tt>.
 You can also use line-continuation  using a '<tt>\\</tt>' at the end of the line.
-Also note that comment-signs '<tt>\#;%</tt>' within double-quotes '<tt>"..."</tt>' 
+Also note that comment-signs '<tt>\#;%</tt>' within double-quotes '<tt>"..."</tt>'
 are <em>not</em> treated as comment-characters.  The general syntax is best illustrated
-using a simple example: 
+using a simple example:
 \code
 # comment line
 var1 = 1.0    ; you can also comment using semi-colons
 somevar = some text.\
         You can also use\
-        line-continuation	
+        line-continuation
    var3 = 4      # whatever that means
 note = "this is also possible, and # here does nothing"
 a_switch = true	 #possible values: 0,1,true,false,yes,no, case insensitive
@@ -54,15 +54,15 @@ useful in the case of line-continuation (see example). All leading and
 trailing spaces in are ignore (except within double-quotes).
 
 The general approach of reading from such a config-file, is to first
-call LALParseDataFile() which loads and pre-parses the contents of the 
+call LALParseDataFile() which loads and pre-parses the contents of the
 config-file into the structure LALParsedDataFile. Then one can read in
 config-variables either using one of the type-strict custom-wrappers
 <tt>LALReadConfig<TYPE>Variable()</tt> or the general-purpose reading function
 LALReadConfigVariable().
 
 
-A boolean variable read by LALReadConfigBOOLVariable() can have any of the values 
-<tt>{"1", "0", "yes", "no", "true", "false"}</tt>, where the comparison is done 
+A boolean variable read by LALReadConfigBOOLVariable() can have any of the values
+<tt>{"1", "0", "yes", "no", "true", "false"}</tt>, where the comparison is done
 <em>case-insensitively</em>, i.e. you can also use "True" or "FALSE"....
 
 
@@ -70,8 +70,8 @@ If one wishes a tight sytnax for the config-file, one can check
 that there are no illegal entries in the config-file. This is done
 by checking at the end that all config-file entries have been
 successfully parsed, using:
-LALCheckConfigReadComplete(), where \a strictness is either 
-CONFIGFILE_WARN or CONFIGFILE_ERROR.  
+LALCheckConfigReadComplete(), where \a strictness is either
+CONFIGFILE_WARN or CONFIGFILE_ERROR.
 In the first case only a warning is issued, while in the second it is
 treated as a LAL-error if some config-file entries have not been
 read-in. (The use of this function is optional).
@@ -84,20 +84,20 @@ LALDestroyParsedDataFile().
 \code
 LALCHARReadSequence()
 LALCreateTokenList()       LALDestroyTokenList()
-LALCalloc()                LALMalloc()             LALFree()  
+LALCalloc()                LALMalloc()             LALFree()
 LALPrintError()            LALOpenDataFile()                 fclose()
 \endcode
 
 \par Notes
 
-LALReadConfigSTRINGVariable() and LALReadConfigSTRINGVariable() are not 
-the same as using <tt>"%s"</tt> as a format string, as they read the 
+LALReadConfigSTRINGVariable() and LALReadConfigSTRINGVariable() are not
+the same as using <tt>"%s"</tt> as a format string, as they read the
 <em>rest</em> of the logical line (excluding comments) as a string.
 
 
 In the case of LALReadConfigSTRINGVariable(), the required
-memory is allocated and has to be freed by the caller, while for   
-LALReadConfigSTRINGVariable() the caller has to provide a 
+memory is allocated and has to be freed by the caller, while for
+LALReadConfigSTRINGVariable() the caller has to provide a
 CHARVector of length \f$N\f$, which defines the maximum length of
 string to be read.
 
@@ -136,20 +136,20 @@ Some general-purpose routines for config-file reading
 This module provides routines for reading formatted
 config-files containing definitions of the form \mbox{\texttt{variable = value}}.
 The general syntax is somewhat similar to the one provided by the
-perl-module \texttt{ConfigParser} (cf. 
+perl-module \texttt{ConfigParser} (cf.
 \verb+http://www.python.org/doc/current/lib/module-ConfigParser.html+ )
 but (currently) without the possibility of "chapters".
 Comments are allowed using either '\#', ';' or '%'. You can also use
 standard line-continuation  using a '\verb+\+' at the end of the line.
 Also note that '\#', ';' or '%' within double-quotes '\"' are \emph{not}
 treated as comment-characters.  The general syntax is best illustrated
-using a simple example: 
+using a simple example:
 \begin{verbatim}
 # comment line
 var1 = 1.0    ; you can also comment using semi-colons
 somevar = some text.\
         You can also use\
-        line-continuation	
+        line-continuation
    var3 = 4      # whatever that means
 note = "this is also possible, and # here does nothing"
 a_switch = true	 #possible values: 0,1,true,false,yes,no, case insensitive
@@ -171,8 +171,8 @@ or the general-purpose reading function:\\
 \verb+LALReadConfigVariable(status, void *cvar, LALConfigData *cfg, LALConfigVar *var)+
 
 
-A boolean variable read by \verb+LALReadConfigBOOLVariable()+ can have any of the values 
-\verb+{1, 0, yes, no, true, false}+, where the comparison is done \emph{case-insensitively}, 
+A boolean variable read by \verb+LALReadConfigBOOLVariable()+ can have any of the values
+\verb+{1, 0, yes, no, true, false}+, where the comparison is done \emph{case-insensitively},
 i.e. you also use "True" or "FALSE"....
 
 
@@ -181,7 +181,7 @@ that there are no "illegal" entries in the config-file. This is done
 by checking at the end that all config-file entries have been
 successfully parsed, using: \\
 \verb+LALCheckConfigReadComplete (status, LALConfigData *cfg, INT2 strictness)+,
-where \verb+strictness+ is either \verb+CONFIGFILE_WARN+ or \verb+CONFIGFILE_ERROR+. 
+where \verb+strictness+ is either \verb+CONFIGFILE_WARN+ or \verb+CONFIGFILE_ERROR+.
 In the first case only a warning is issued, while in the second it is
 treated as a LAL-error if some config-file entries have not been
 read-in. (The use of this function is optional).
@@ -196,7 +196,7 @@ The configfile-data should be freed at the end using\\
 \begin{verbatim}
 LALCHARReadSequence()
 LALCreateTokenList()       LALDestroyTokenList()
-LALCalloc()                LALMalloc()             LALFree()  
+LALCalloc()                LALMalloc()             LALFree()
 LALPrintError()            LALOpenDataFile()                 fclose()
 \end{verbatim}
 
@@ -209,8 +209,8 @@ logical line (excluding comments) as a string.
 
 
 In the case of \verb+LALReadConfigSTRINGVariable()+, the required
-memory is allocated and has to be freed by the caller, while for   
-\verb+LALReadConfigSTRINGVariable()+ the caller has to provide a 
+memory is allocated and has to be freed by the caller, while for
+\verb+LALReadConfigSTRINGVariable()+ the caller has to provide a
 \verb+CHARVector+ of length $N$, which defines the maximum length of
 string to be read.
 
@@ -242,6 +242,7 @@ more convenient to use the \verb+UserInput+ infrastructure
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 #include <lal/StreamInput.h>
+#include <lal/LogPrintf.h>
 
 #include <lal/ConfigFile.h>
 
@@ -266,16 +267,16 @@ static const char lower_chars[] = "abcdefghijklmnopqrstuvwxyz";
 
 
 /** Parse an ASCII data-file into a pre-cleaned array of lines.
- * 
- * The cleaning gets rid of comments ('#', ';'), empty lines, 
+ *
+ * The cleaning gets rid of comments ('#', ';'), empty lines,
  * and performs line-continuation if '\' is found at EOL
  *
  */
 void
-LALParseDataFile (LALStatus *status, 
+LALParseDataFile (LALStatus *status,
 		  LALParsedDataFile **cfgdata, 	/**< [out] pre-parsed data-file lines */
 		  const CHAR *fname)		/**< [in] name of config-file to be read */
-{ 
+{
 
   CHARSequence *rawdata = NULL;
   FILE *fp;
@@ -292,19 +293,19 @@ LALParseDataFile (LALStatus *status,
 #if HAVE_STAT
   if (  stat ( fname, &stat_out ) )
     {
-      LALPrintError ("Could not stat data-file: `%s` : \n\n", fname, strerror(errno) );
+      LogPrintf ( LOG_CRITICAL, "Could not stat data-file: `%s` : \n\n", fname, strerror(errno) );
       ABORT (status, CONFIGFILEH_EFILE, CONFIGFILEH_MSGEFILE);
     }
 
   if ( ! S_ISREG(stat_out.st_mode)  )
     {
-      LALPrintError ("'%s' does not seem to be a regular file!\n");
+      LogPrintf ( LOG_CRITICAL, "'%s' does not seem to be a regular file!\n");
       ABORT (status, CONFIGFILEH_EFILE, CONFIGFILEH_MSGEFILE);
     }
 #endif
 
   if ( (fp = LALOpenDataFile (fname)) == NULL) {
-    LALPrintError ("Could not open data-file: `%s`\n\n", fname);
+    LogPrintf ( LOG_CRITICAL, "Could not open data-file: `%s`\n\n", fname);
     ABORT (status, CONFIGFILEH_EFILE, CONFIGFILEH_MSGEFILE);
   }
 
@@ -322,12 +323,12 @@ LALParseDataFile (LALStatus *status,
   if ( (*cfgdata = LALCalloc (1, sizeof(LALParsedDataFile))) == NULL) {
     ABORT (status, CONFIGFILEH_EMEM, CONFIGFILEH_MSGEMEM);
   }
-  
+
   /* parse this into individual lines */
   LALCreateTokenList (status->statusPtr, &((*cfgdata)->lines), rawdata->data, "\n");
   LALFree (rawdata->data);
   LALFree (rawdata);
-  
+
   BEGINFAIL (status)
     LALFree (*cfgdata);
   ENDFAIL (status);
@@ -335,8 +336,8 @@ LALParseDataFile (LALStatus *status,
   /* initialize the 'wasRead' flags for the lines */
   if ( (*cfgdata)->lines->nTokens )
     {
-      if ( ((*cfgdata)->wasRead = 
-	    LALCalloc(1,(*cfgdata)->lines->nTokens * sizeof( (*cfgdata)->wasRead[0]))) == NULL) 
+      if ( ((*cfgdata)->wasRead =
+	    LALCalloc(1,(*cfgdata)->lines->nTokens * sizeof( (*cfgdata)->wasRead[0]))) == NULL)
 	{
 	  LALFree ((*cfgdata)->lines);
 	  ABORT (status, CONFIGFILEH_EMEM, CONFIGFILEH_MSGEMEM);
@@ -353,7 +354,7 @@ LALParseDataFile (LALStatus *status,
 /** Free memory associated with a LALParsedDataFile structure.
  */
 void
-LALDestroyParsedDataFile (LALStatus *status, 
+LALDestroyParsedDataFile (LALStatus *status,
 			  LALParsedDataFile **cfgdata)	/**< [in/out] config-file data */
 {
   INITSTATUS( status, "LALDestroyConfigData", CONFIGFILEC );
@@ -369,7 +370,7 @@ LALDestroyParsedDataFile (LALStatus *status,
     LALFree ( (*cfgdata)->wasRead);
 
   LALFree ( *cfgdata );
-  
+
   *cfgdata = NULL;
 
   DETATCHSTATUSPTR (status);
@@ -384,19 +385,19 @@ LALDestroyParsedDataFile (LALStatus *status,
  *
  * - <tt>param->varName</tt> is the name of the config-variable to read
  * - <tt>param->fmt</tt>     is the format string to use for reading
- *  
- * \note a special format-string is FMT_STRING, which means read the whole remaining line 
+ *
+ * \note a special format-string is FMT_STRING, which means read the whole remaining line
  *   which is different from "%s"! (reads only one word)
  *   In this case, this also does the memory-allocation!
  *
  */
 void
-LALReadConfigVariable (LALStatus *status, 
+LALReadConfigVariable (LALStatus *status,
 		       void *varp, 			/**< [out] result gets written here! */
 		       const LALParsedDataFile *cfgdata,/**< [in] pre-parsed config-data */
 		       const LALConfigVar *param,	/**< [in]  var-name, fmt-string, strictness */
 		       BOOLEAN *wasRead)		/**< [out] did we succeed in reading? */
-{ 
+{
   CHAR *found = NULL;
   INT2 ret = 0;
 
@@ -412,8 +413,8 @@ LALReadConfigVariable (LALStatus *status,
   ASSERT( cfgdata->lines != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
   ASSERT( cfgdata->wasRead != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
   ASSERT( varp != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
-  ASSERT( param->varName != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL );  
-  ASSERT( param->fmt != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL );  
+  ASSERT( param->varName != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL );
+  ASSERT( param->fmt != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL );
 
   *wasRead = FALSE;
 
@@ -438,23 +439,23 @@ LALReadConfigVariable (LALStatus *status,
 	}
 
     } /* for lines */
-  
+
   if (!found)
     {
-      switch (param->strictness) 
+      switch (param->strictness)
 	{
 	case CONFIGFILE_IGNORE:
 	  RETURN (status);
 	  break;
 	case CONFIGFILE_WARN:
 	  if (lalDebugLevel & LALWARNING)
-	    LALPrintError ("\nWarning: Config-file variable '%s' was not found!\n", param->varName);
+	    LogPrintf ( LOG_CRITICAL, "Warning: Config-file variable '%s' was not found!\n", param->varName);
 	  RETURN (status);
 	  break;
 
 	case CONFIGFILE_ERROR:
-	default: 
-	  LALPrintError ("\nError: Config-file variable %s was not found!\n", param->varName);
+	default:
+	  LogPrintf ( LOG_CRITICAL, "Error: Config-file variable %s was not found!\n", param->varName);
 	  ABORT (status, CONFIGFILEH_EVAR, CONFIGFILEH_MSGEVAR );
 	  break;
 	} /* switch (strictness) */
@@ -462,7 +463,7 @@ LALReadConfigVariable (LALStatus *status,
     } /* if not found */
 
   /* now read the value into the variable */
-  
+
   /* reading a quoted string needs some special treatment: */
   if ( !strcmp(param->fmt, FMT_STRING) )
     {
@@ -471,7 +472,7 @@ LALReadConfigVariable (LALStatus *status,
 
       ASSERT ( *cstr == NULL, status, CONFIGFILEH_ENONULL, CONFIGFILEH_MSGENONULL);
 
-      (*cstr) = (CHAR*) LALMalloc( strlen (found) + 1); 
+      (*cstr) = (CHAR*) LALMalloc( strlen (found) + 1);
       strcpy ( (*cstr), found);
       ret = 1;
     }
@@ -480,13 +481,13 @@ LALReadConfigVariable (LALStatus *status,
 
   if ( (ret == 0) || (ret == EOF) )
     {
-      LALPrintError("\nERROR: Config-file variable %s was not readable using the format %s\n\n", param->varName, param->fmt);
+      LogPrintf (LOG_CRITICAL, "ERROR: Config-file variable %s was not readable using the format %s\n\n", param->varName, param->fmt);
       ABORT( status, CONFIGFILEH_EFMT, CONFIGFILEH_MSGEFMT );
     }
 
   /* ok, we have successfully read in the config-variable: let's make a note of it */
   cfgdata->wasRead[linefound] = 1;
-  
+
   *wasRead = TRUE;
 
   RETURN (status);
@@ -498,7 +499,7 @@ LALReadConfigVariable (LALStatus *status,
 /** Type-specialization of generic reading-function LALReadConfigVariable() to BOOLEAN variables.
  */
 void
-LALReadConfigBOOLVariable (LALStatus *status, 
+LALReadConfigBOOLVariable (LALStatus *status,
 			   BOOLEAN *varp, 		 /**< [out] variable to store result */
 			   const LALParsedDataFile *cfgdata,/**< [in] pre-parsed config-data */
 			   const CHAR *varName,		 /**< [in] variable-name to read */
@@ -527,12 +528,12 @@ LALReadConfigBOOLVariable (LALStatus *status,
 	ret = 0;
       else
 	{
-	  LALPrintError ( "illegal bool-value `%s`\n", tmp);
+	  LogPrintf ( LOG_CRITICAL,  "illegal bool-value `%s`\n", tmp);
 	  LALFree (tmp);
 	  ABORT (status, CONFIGFILEH_EBOOL, CONFIGFILEH_MSGEBOOL);
 	}
       LALFree (tmp);
-      
+
       if (ret != -1)	/* only set value of something has been found */
 	{
 	  *varp = (BOOLEAN) ret;
@@ -550,9 +551,9 @@ LALReadConfigBOOLVariable (LALStatus *status,
 /** Type-specialization of generic reading-function LALReadConfigVariable() to INT4 variables.
  */
 void
-LALReadConfigINT4Variable (LALStatus *status, 
-			   INT4 *varp, 
-			   const LALParsedDataFile *cfgdata, 
+LALReadConfigINT4Variable (LALStatus *status,
+			   INT4 *varp,
+			   const LALParsedDataFile *cfgdata,
 			   const CHAR *varName,
 			   BOOLEAN *wasRead)
 {
@@ -565,7 +566,7 @@ LALReadConfigINT4Variable (LALStatus *status,
   param.strictness = CONFIGFILE_IGNORE;
 
   LALReadConfigVariable (status, (void*) varp, cfgdata, &param, wasRead);
-  
+
   RETURN (status);
 
 } /* LALReadConfigINT4Variable() */
@@ -573,9 +574,9 @@ LALReadConfigINT4Variable (LALStatus *status,
 /** Type-specialization of generic reading-function LALReadConfigVariable() to REAL8 variables.
  */
 void
-LALReadConfigREAL8Variable (LALStatus *status, 
-			    REAL8 *varp, 
-			    const LALParsedDataFile *cfgdata, 
+LALReadConfigREAL8Variable (LALStatus *status,
+			    REAL8 *varp,
+			    const LALParsedDataFile *cfgdata,
 			    const CHAR *varName,
 			    BOOLEAN *wasRead)
 {
@@ -588,26 +589,26 @@ LALReadConfigREAL8Variable (LALStatus *status,
   param.strictness = CONFIGFILE_IGNORE;
 
   LALReadConfigVariable (status, (void*) varp, cfgdata, &param, wasRead);
-  
+
   RETURN (status);
 
 } /* LALReadConfigREAL8Variable() */
 
 
-/** Type-specialization of generic reading-function LALReadConfigVariable() to 
- * STRING variables 
- * \note this means the rest of the line, NOT "%s"! (but excluding comments of course), 
+/** Type-specialization of generic reading-function LALReadConfigVariable() to
+ * STRING variables
+ * \note this means the rest of the line, NOT "%s"! (but excluding comments of course),
  * \par Note2: if string is quoted by ", everything within quotes is read,
- *       and the quotes are removed here 
+ *       and the quotes are removed here
  *
  */
 void
-LALReadConfigSTRINGVariable (LALStatus *status, 
+LALReadConfigSTRINGVariable (LALStatus *status,
 			     CHAR **varp, 		/**< [out] string, allocated here! */
 			     const LALParsedDataFile *cfgdata, /**< [in] pre-parsed config-data */
 			     const CHAR *varName,	/**< [in] variable-name to be read */
 			     BOOLEAN *wasRead)		/**< [out] did we succeed in reading? */
-{ 
+{
   LALConfigVar param = {0,0,0};
   CHAR *str = NULL;
   CHAR *ret = NULL;
@@ -637,7 +638,7 @@ LALReadConfigSTRINGVariable (LALStatus *status,
       if ( (numQuotes !=0) && (numQuotes != 2) ) {
 	ABORT (status, CONFIGFILEH_ESTRING, CONFIGFILEH_MSGESTRING);
       }
-      if ( numQuotes==2 )  
+      if ( numQuotes==2 )
 	{
 	  /* allowed only at end and beginning */
 	  if ( (str[0] != '"') || (str[strlen(str)-1] != '"') ) {
@@ -653,7 +654,7 @@ LALReadConfigSTRINGVariable (LALStatus *status,
 	} /* if 2 quotation marks */
       else
 	ret = str;	/* no quotes, just return string */
-      
+
       *varp = ret;
 
     } /* if wasRead */
@@ -667,10 +668,10 @@ LALReadConfigSTRINGVariable (LALStatus *status,
 
 
 
-/** Type-specialization of generic reading-function LALReadConfigVariable() to 
+/** Type-specialization of generic reading-function LALReadConfigVariable() to
  * reading of <em>fixed-length</em> strings.
  * Another variant of string-reading:similar to ReadConfigSTRINGVariable(), but
- * here a fixed-size CHAR-array is used as input, no memory is allocated by 
+ * here a fixed-size CHAR-array is used as input, no memory is allocated by
  * the function.
  * \note you have to provide the length of your string-array as input in <tt>varp->length</tt>
  * (this is basically a wrapper for ReadConfigSTRINGVariable())
@@ -684,7 +685,7 @@ LALReadConfigSTRINGVariable (LALStatus *status,
  *
  */
 void
-LALReadConfigSTRINGNVariable (LALStatus *status, 
+LALReadConfigSTRINGNVariable (LALStatus *status,
 			      CHARVector *varp, 	/**< [out] must be allocated! */
 			      const LALParsedDataFile *cfgdata, /**< [in] pre-parsed config-data */
 			      const CHAR *varName,	/**< [in] variable-name */
@@ -694,12 +695,12 @@ LALReadConfigSTRINGNVariable (LALStatus *status,
 
   INITSTATUS( status, "LALReadSTRINGNVariable", CONFIGFILEC );
   ATTATCHSTATUSPTR (status);
-  
+
   /* This traps coding errors in the calling routine. */
   ASSERT( varp != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
   ASSERT( varp->data != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
   ASSERT( varp->length != 0, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
-  
+
   TRY (LALReadConfigSTRINGVariable (status->statusPtr, &tmp, cfgdata, varName, wasRead), status);
 
   if (*wasRead && tmp)
@@ -712,25 +713,25 @@ LALReadConfigSTRINGNVariable (LALStatus *status,
     }
   else
     *wasRead = FALSE;
-    
+
   DETATCHSTATUSPTR (status);
-  RETURN (status);  
+  RETURN (status);
 
 } /* LALReadConfigSTRINGNVariable() */
 
 
 
-/** Check if all lines of config-file have been successfully read in 
+/** Check if all lines of config-file have been successfully read in
  * and issue a warning or error (depending on strictness) if not.
  */
 void
-LALCheckConfigReadComplete (LALStatus *status, 
+LALCheckConfigReadComplete (LALStatus *status,
 			    const LALParsedDataFile *cfgdata, /**< [in] config-file data */
 			    ConfigStrictness strict)  	/**< [in] what to do if unparsed lines */
-{ 
+{
   UINT4 i;
 
-  INITSTATUS( status, "LALCheckConfigReadComplete", CONFIGFILEC );  
+  INITSTATUS( status, "LALCheckConfigReadComplete", CONFIGFILEC );
 
   ASSERT (cfgdata != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
   ASSERT (cfgdata->lines != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
@@ -745,45 +746,45 @@ LALCheckConfigReadComplete (LALStatus *status,
 	    case CONFIGFILE_IGNORE:
 	      continue;
 	    case CONFIGFILE_WARN:
-	      LALPrintError ("Warning: Ignoring unknown config-file entry '%s'.\n",
+	      LogPrintf ( LOG_CRITICAL, "Warning: Ignoring unknown config-file entry '%s'.\n",
 			     cfgdata->lines->tokens[i] );
 	      continue;
 	    case CONFIGFILE_ERROR:
 	    default:
-	      LALPrintError ("ERROR: config-file entry #%d has not been read!\n", i);
-	      LALPrintError ("Line was: '%s'\n", cfgdata->lines->tokens[i]);
+	      LogPrintf ( LOG_CRITICAL, "ERROR: config-file entry #%d has not been read!\n", i);
+	      LogPrintf ( LOG_CRITICAL, "Line was: '%s'\n", cfgdata->lines->tokens[i]);
 	      ABORT (status, CONFIGFILEH_EUNKNOWN, CONFIGFILEH_MSGEUNKNOWN);
 	      break;
 	    } /* switch strict */
 	} /* if some line not read */
 
     } /* for i < lines */
-  
+
   RETURN (status);
 
 } /* LALCheckConfigReadComplete() */
 
 
 
-/* ---------------------------------------------------------------------- 
+/* ----------------------------------------------------------------------
  *   INTERNAL FUNCTIONS FOLLOW HERE
  *----------------------------------------------------------------------*/
 
 /** Helper function:  turn a string into lowercase without using locale-functions.
  */
 void
-LALLowerCaseString (LALStatus *status, 
-		    CHAR *string)	/**< [in/out] string to convert */ 
+LALLowerCaseString (LALStatus *status,
+		    CHAR *string)	/**< [in/out] string to convert */
 {
   UINT4 i;
 
-  INITSTATUS( status, "LALLowerCaseString", CONFIGFILEC );  
+  INITSTATUS( status, "LALLowerCaseString", CONFIGFILEC );
 
   ASSERT (string != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
 
   for (i=0; i < strlen (string); i++)
     string[i] = TOLOWER( string[i] );
-  
+
   RETURN (status);
 
 } /* LALLowerCaseString() */
@@ -808,18 +809,18 @@ TOLOWER(int c)
 
 
 /* ----------------------------------------------------------------------
- * cleanConfig(): do some preprocessing on the config-file, namely 'erase' 
+ * cleanConfig(): do some preprocessing on the config-file, namely 'erase'
  * all comments by '\n', and glue '\'-continued lines
  *----------------------------------------------------------------------*/
 void
 cleanConfig (CHARSequence *text)
 {
-  size_t len;  
+  size_t len;
   CHAR *ptr, *ptr2, *eol;
   BOOLEAN inQuotes = 0;
 
   /*----------------------------------------------------------------------
-   * RUN 1: clean out comments, by replacing them by '\n' 
+   * RUN 1: clean out comments, by replacing them by '\n'
    */
   ptr = text->data;
   while ( *ptr )
@@ -830,25 +831,25 @@ cleanConfig (CHARSequence *text)
       if ( ((*ptr) == '#') || ( (*ptr) == ';') || ( (*ptr) == '%') )
 	if ( !inQuotes )	/* only consider as comments if not quoted */
 	  {
-	    len = strcspn (ptr, "\n"); 
-	    memset ( (void*)ptr, '\n', len); 	
+	    len = strcspn (ptr, "\n");
+	    memset ( (void*)ptr, '\n', len);
 	  }
-	
+
       ptr ++;
 
     } /* while *ptr */
 
   /*----------------------------------------------------------------------
-   * RUN 2: do line-gluing when '\' is found at end-of-line 
+   * RUN 2: do line-gluing when '\' is found at end-of-line
    */
   ptr = text->data;
   while ( (ptr = strchr(ptr, '\\')) != NULL )
     {
-      if ( ptr[1] == '\n' ) 
-	{	
+      if ( ptr[1] == '\n' )
+	{
 	  /* ok, now it gets a bit tricky: to avoid getting spurious spaces from
-	   * the line-continuation, we shift the rest of the file forward by 2 positions 
-	   * to nicely fit to the previous line... 
+	   * the line-continuation, we shift the rest of the file forward by 2 positions
+	   * to nicely fit to the previous line...
 	   */
 	  len = strlen (ptr+2);
 	  memmove(ptr, ptr+2, len+1);	/* move the whole rest (add +1 for '\0') */
@@ -856,21 +857,21 @@ cleanConfig (CHARSequence *text)
     } /* while '\' found in text */
 
   /*----------------------------------------------------------------------
-   * RUN 3: turn all tabs into single spaces.. 
+   * RUN 3: turn all tabs into single spaces..
    */
   ptr = text->data;
   while ( (ptr = strchr(ptr, '\t')) != NULL )
     *ptr = ' ';
 
-  /*---------------------------------------------------------------------- 
-   * RUN 4: get rid of initial and trailing whitespace (replace it by '\n') 
+  /*----------------------------------------------------------------------
+   * RUN 4: get rid of initial and trailing whitespace (replace it by '\n')
    */
   ptr = text->data;
   while (ptr < (text->data + text->length -1) )
     {
       eol = strchr (ptr, '\n'); /* point to end-of-line */
 
-      len = strspn (ptr, WHITESPACE); 
+      len = strspn (ptr, WHITESPACE);
       if (len) memset ( (void*)ptr, '\n', len);
 
       if (eol != NULL)
@@ -879,7 +880,7 @@ cleanConfig (CHARSequence *text)
 	ptr = strchr (ptr, '\0'); /* or end of file */
 
       /* clean away all trailing whitespace of last line*/
-      ptr2 = ptr - 1; 
+      ptr2 = ptr - 1;
       while ( *ptr2 == ' ' )
 	*ptr2-- = '\n';
 
