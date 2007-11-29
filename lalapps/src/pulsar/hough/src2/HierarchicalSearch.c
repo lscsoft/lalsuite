@@ -1302,6 +1302,8 @@ void SetUpSFTs( LALStatus *status,
   REAL8 freqLo, freqHi;
   INT4 extraBins, tmpLeap;
   
+  INT4 sft_check_result;
+
   /* leap second for LALBarycenter */
   LALLeapSecFormatAndAcc lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
     
@@ -1312,6 +1314,12 @@ void SetUpSFTs( LALStatus *status,
   constraints.startTime = &(in->minStartTimeGPS);
   constraints.endTime = &(in->maxEndTimeGPS);
   TRY( LALSFTdataFind( status->statusPtr, &catalog, in->sftbasename, &constraints), status);
+
+  /* check CRC sums of SFTs */
+  TRY ( LALCheckSFTCatalog ( status->statusPtr, &sft_check_result, &catalog ), status );
+  if (sft_check_result) {
+    ABORT ( status, HIERARCHICALSEARCH_ESFT, HIERARCHICALSEARCH_MSGESFT );
+  }
 
   /* set some sft parameters */
   deltaFsft = catalog->data[0].header.deltaF;

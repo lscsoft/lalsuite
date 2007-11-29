@@ -102,18 +102,20 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
 #define HIERARCHICALSEARCH_EWORKER 9
 #define HIERARCHICALSEARCH_ECHECKPT 10
 #define HIERARCHICALSEARCH_EMEM 11
+#define HIERARCHICALSEARCH_ESFT 12
 
 
-#define HIERARCHICALSEARCH_MSGENORM "Normal exit"
-#define HIERARCHICALSEARCH_MSGESUB  "Subroutine failed"
-#define HIERARCHICALSEARCH_MSGEARG  "Error parsing arguments"
-#define HIERARCHICALSEARCH_MSGEBAD  "Bad argument values"
-#define HIERARCHICALSEARCH_MSGEFILE "Could not create output file"
-#define HIERARCHICALSEARCH_MSGENULL "Null pointer"
-#define HIERARCHICALSEARCH_MSGEVAL "Invalid value"
-#define HIERARCHICALSEARCH_MSGENONULL "Pointer not null"
-#define HIERARCHICALSEARCH_MSGCHECKPT "Could not resume from checkpoint"
-#define HIERARCHICALSEARCH_MSGMEM "Out of memory"
+#define HIERARCHICALSEARCH_MSGENORM    "Normal exit"
+#define HIERARCHICALSEARCH_MSGESUB     "Subroutine failed"
+#define HIERARCHICALSEARCH_MSGEARG     "Error parsing arguments"
+#define HIERARCHICALSEARCH_MSGEBAD     "Bad argument values"
+#define HIERARCHICALSEARCH_MSGEFILE    "Could not create output file"
+#define HIERARCHICALSEARCH_MSGENULL    "Null pointer"
+#define HIERARCHICALSEARCH_MSGEVAL     "Invalid value"
+#define HIERARCHICALSEARCH_MSGENONULL  "Pointer not null"
+#define HIERARCHICALSEARCH_MSGECHECKPT "Could not resume from checkpoint"
+#define HIERARCHICALSEARCH_MSGEMEM     "Out of memory"
+#define HIERARCHICALSEARCH_MSGESFT     "SFT validity check failed"
 
 
 /* ******************************************************************
