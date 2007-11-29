@@ -278,7 +278,8 @@ void LALWriteSFT2file (LALStatus *, const SFTtype *sft, const CHAR *fname, const
 void LALWriteSFTVector2Dir (LALStatus *, const SFTVector *sftVect, const CHAR *basename, const CHAR *comment, const CHAR *description); 
 
 void LALWrite_v2SFT_to_v1file (LALStatus *, const SFTtype *sft, const CHAR *fname);
-void LALCheckSFTs ( LALStatus *, INT4 *check_result, const CHAR *file_pattern, SFTConstraints *constraints);
+void LALCheckSFTs ( LALStatus *, INT4 *check_result, const CHAR *file_pattern, SFTConstraints *constraints );
+void LALCheckSFTCatalog ( LALStatus *status, INT4 *check_result, SFTCatalog *catalog );
 
 void LALReadTimestampsFile (LALStatus* , LIGOTimeGPSVector **timestamps, const CHAR *fname);
 

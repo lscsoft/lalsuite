@@ -1107,14 +1107,13 @@ void LALLoadMultiSFTs ( LALStatus *status,
  */
 void
 LALCheckSFTs ( LALStatus *status, 
-	       INT4 *check_result, 		/**< LAL-status of SFT-operations */
+	       INT4 *check_result, 	     /**< LAL-status of SFT-operations */
 	       const CHAR *file_pattern,     /**< where to find the SFTs: normally a path+file-pattern */
-	       SFTConstraints *constraints	/**< additional constraints for SFT-selection */
+	       SFTConstraints *constraints   /**< additional constraints for SFT-selection */
 	       )
 {
   LALStatus sft_status = empty_status;
   SFTCatalog *catalog = NULL;
-  UINT4 i;
 
   INITSTATUS (status, "LALCheckSFTs", SFTFILEIOC);
   ATTATCHSTATUSPTR (status); 
@@ -1134,6 +1133,37 @@ LALCheckSFTs ( LALStatus *status,
     goto sft_failed;
 
   /* Step 2: step through SFTs and check CRC64 */
+  if ( catalog ) {
+    TRY ( LALCheckSFTCatalog ( status->statusPtr, check_result, catalog ), status );
+  }
+
+ sft_failed:
+
+  if ( catalog ) {
+    TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
+  }
+
+  DETATCHSTATUSPTR ( status );
+  RETURN ( status );
+
+} /* LALCheckSFTs() */
+
+
+/* checks the SFTs in a given SFTcatalog */
+void
+LALCheckSFTCatalog ( LALStatus *status, 
+		     INT4 *check_result,  /**< LAL-status of SFT-operations */
+		     SFTCatalog *catalog  /**< catalog of SFTs to check */
+		     )
+{
+  UINT4 i;
+
+  INITSTATUS (status, "LALCheckSFTCatalog", SFTFILEIOC);
+
+  ASSERT ( check_result, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
+  ASSERT ( catalog,      status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
+
+  /* step through SFTs and check CRC64 */
   for ( i=0; i < catalog->length; i ++ )
     {
       FILE *fp;
@@ -1170,14 +1200,9 @@ LALCheckSFTs ( LALStatus *status,
 
  sft_failed:
 
-  if ( catalog ) {
-    TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
-  }
-
-  DETATCHSTATUSPTR ( status );
   RETURN ( status );
 
-} /* LALCheckSFTs() */
+} /* LALCheckSFTCatalog() */
 
 
 /** Read timestamps file and returns timestamps vector (alloc'ed in here!).
