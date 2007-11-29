@@ -342,7 +342,7 @@ main(int argc, char *argv[]){
     UINT4 b = k * finalBinStep;
     REAL8 f = Freq0 + b * dFreq;
     REAL8 p = math_op(&(finalPSD->data[b]), finalBinSize, uvar.finalPSDBinMthOp);
-    fprintf(fpOut, "% f   % e\n", f, p);
+    fprintf(fpOut, "%f   %e\n", f, p);
   }
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
