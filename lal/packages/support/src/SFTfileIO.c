@@ -1185,8 +1185,10 @@ LALCheckSFTCatalog ( LALStatus *status,
 	      XLALPrintError ( "CRC64 checksum failure for SFT '%s'\n", 
 			      XLALshowSFTLocator ( catalog->data[i].locator ) );
 	      (*check_result) = SFTFILEIO_ECRC64;
+	      fclose(fp);
 	      goto sft_failed;
 	    }
+	  fclose(fp);
 	  break;
 
 	default:
