@@ -1163,6 +1163,8 @@ LALCheckSFTCatalog ( LALStatus *status,
   ASSERT ( check_result, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
   ASSERT ( catalog,      status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
 
+  (*check_result) = 0;
+
   /* step through SFTs and check CRC64 */
   for ( i=0; i < catalog->length; i ++ )
     {
