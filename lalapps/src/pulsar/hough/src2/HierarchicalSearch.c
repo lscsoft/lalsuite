@@ -1318,6 +1318,7 @@ void SetUpSFTs( LALStatus *status,
   /* check CRC sums of SFTs */
   TRY ( LALCheckSFTCatalog ( status->statusPtr, &sft_check_result, catalog ), status );
   if (sft_check_result) {
+    LogPrintf(LOG_CRITICAL,"SFT validity check failed (%d)\n", sft_check_result);
     ABORT ( status, HIERARCHICALSEARCH_ESFT, HIERARCHICALSEARCH_MSGESFT );
   }
 
