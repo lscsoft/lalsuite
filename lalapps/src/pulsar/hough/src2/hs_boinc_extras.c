@@ -985,6 +985,7 @@ static void worker (void) {
   if (estimated_flops >= 0)
     boinc_ops_cumulative( estimated_flops, 0 /*ignore IOPS*/ );
 
+  LogPrintf (LOG_NORMAL, "done. calling boinc_finish(%d).\n",res);
   boinc_finish(res);
 } /* worker() */
 
@@ -1235,7 +1236,8 @@ int main(int argc, char**argv) {
   /* we end up here only if BOINC_GRAPHICS == 0 or a call to boinc_init_graphics failed */
   boinc_init();
   worker();
-  boinc_finish(HIERARCHICALSEARCH_ENORM);
+  LogPrintf (LOG_NORMAL, "done. calling boinc_finish(%d).\n",0);
+  boinc_finish(0);
   /* boinc_init_graphics() or boinc_finish() ends the program, we never get here */
   return(0);
 }
