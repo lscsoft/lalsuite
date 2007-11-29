@@ -550,7 +550,7 @@ int MAIN( int argc, char *argv[]) {
       if ((fpLog = fopen(fnamelog, "wb")) == NULL) {
 	fprintf(stderr, "Unable to open file %s for writing\n", fnamelog);
 	LALFree(fnamelog);
-	/*exit*/ return(1);
+	/*exit*/ return(HIERARCHICALSEARCH_EFILE);
       }
 
       /* get the log string */
@@ -588,7 +588,7 @@ int MAIN( int argc, char *argv[]) {
   edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
   if ( edat == NULL) {
     fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
-    return(1);
+    return(HIERARCHICALSEARCH_EMEM);
   }
 
   (*edat).ephiles.earthEphemeris = uvar_ephemE;
@@ -607,7 +607,7 @@ int MAIN( int argc, char *argv[]) {
       fnameSemiCohCand = LALCalloc( strlen(uvar_fnameout) + 1, sizeof(CHAR) );
       if ( fnameSemiCohCand == NULL) {
 	fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
-	return(1);
+	return(HIERARCHICALSEARCH_EMEM);
       }
 
       strcpy(fnameSemiCohCand, uvar_fnameout);
@@ -623,7 +623,7 @@ int MAIN( int argc, char *argv[]) {
       if ( !(fpFstat1 = fopen( fnameFstatVec1, "wb")))
 	{
 	  fprintf ( stderr, "Unable to open Fstat file fstatvec1.out for writing.\n");
-	  return HIERARCHICALSEARCH_EFILE;
+	  return (HIERARCHICALSEARCH_EFILE);
 	}
     }
 
@@ -832,7 +832,7 @@ int MAIN( int argc, char *argv[]) {
   semiCohCandList.list = (SemiCohCandidate *)LALCalloc( 1, semiCohCandList.length * sizeof(SemiCohCandidate));
   if ( semiCohCandList.list == NULL) {
     fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
-    return(1);
+    return(HIERARCHICALSEARCH_EMEM);
   }
 
 
@@ -861,7 +861,7 @@ int MAIN( int argc, char *argv[]) {
   fstatVector.data = (REAL8FrequencySeries *)LALCalloc( 1, nStacks * sizeof(REAL8FrequencySeries));
   if ( fstatVector.data == NULL) {
     fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
-    return(1);
+    return(HIERARCHICALSEARCH_EMEM);
   }
   
 
@@ -881,7 +881,7 @@ int MAIN( int argc, char *argv[]) {
   scanInit.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
   if ( scanInit.skyRegionString == NULL) {
     fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
-    return(1);
+    return(HIERARCHICALSEARCH_EMEM);
   }
   strcpy (scanInit.skyRegionString, uvar_skyRegion);
 
@@ -1016,14 +1016,14 @@ int MAIN( int argc, char *argv[]) {
 	    fstatVector.data[k].data = (REAL8Sequence *)LALCalloc( 1, sizeof(REAL8Sequence));
 	    if ( fstatVector.data[k].data == NULL) {
 	      fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
-	      return(1);
+	      return(HIERARCHICALSEARCH_EMEM);
 	    }
 
 	    fstatVector.data[k].data->length = binsFstat1;
 	    fstatVector.data[k].data->data = (REAL8 *)LALCalloc( 1, binsFstat1 * sizeof(REAL8));
 	    if ( fstatVector.data[k].data->data == NULL) {
 	      fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
-	      return(1);
+	      return(HIERARCHICALSEARCH_EMEM);
 	    }
 
 	  } 
@@ -1031,14 +1031,14 @@ int MAIN( int argc, char *argv[]) {
 	    fstatVector.data[k].data = (REAL8Sequence *)LALRealloc( fstatVector.data[k].data, sizeof(REAL8Sequence));
 	    if ( fstatVector.data[k].data == NULL) {
 	      fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
-	      return(1);
+	      return(HIERARCHICALSEARCH_EMEM);
 	    }
 
 	    fstatVector.data[k].data->length = binsFstat1;
 	    fstatVector.data[k].data->data = (REAL8 *)LALRealloc( fstatVector.data[k].data->data, binsFstat1 * sizeof(REAL8));
 	    if ( fstatVector.data[k].data->data == NULL) {
 	      fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
-	      return(1);
+	      return(HIERARCHICALSEARCH_EMEM);
 	    }
 
 	  } 
@@ -1316,7 +1316,7 @@ void SetUpSFTs( LALStatus *status,
   TRY( LALSFTdataFind( status->statusPtr, &catalog, in->sftbasename, &constraints), status);
 
   /* check CRC sums of SFTs */
-  TRY ( LALCheckSFTCatalog ( status->statusPtr, &sft_check_result, &catalog ), status );
+  TRY ( LALCheckSFTCatalog ( status->statusPtr, &sft_check_result, catalog ), status );
   if (sft_check_result) {
     ABORT ( status, HIERARCHICALSEARCH_ESFT, HIERARCHICALSEARCH_MSGESFT );
   }
