@@ -246,7 +246,7 @@ void LocalComputeFStatFreqBand ( LALStatus *status,
     thisPoint.fkdot[0] += deltaF;
   }
 
-  XLALEmptyComputeFBuffer ( cfBuffer );
+  XLALEmptyComputeFBuffer ( &cfBuffer );
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -341,7 +341,7 @@ LocalComputeFStat ( LALStatus *status,
       /* store these in buffer if available */
       if ( cfBuffer )
 	{
-	  XLALEmptyComputeFBuffer ( *cfBuffer );
+	  XLALEmptyComputeFBuffer ( cfBuffer );
 	  cfBuffer->multiSSB = multiSSB;
 	  cfBuffer->multiAMcoef = multiAMcoef;
 	  cfBuffer->Alpha = doppler->Alpha;
