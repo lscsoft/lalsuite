@@ -237,15 +237,15 @@ void ReportStatus(LALStatus *status)
 { /* </lalVerbatim> */
   LALStatus *ptr;
   for ( ptr = status; ptr ; ptr = ptr->statusPtr ) {                                         
-    LogPrintf ( LOG_NORMAL, "\nLevel %i: %s\n", ptr->level, ptr->Id );
+    fprintf(stderr, "\nLevel %i: %s\n", ptr->level, ptr->Id );
     if ( ptr->statusCode ) {
-      LogPrintf ( LOG_NORMAL, "\tStatus code %i: %s\n", ptr->statusCode,
-		  ptr->statusDescription );
+      fprintf(stderr, "\tStatus code %i: %s\n", ptr->statusCode,
+	      ptr->statusDescription );
     } else {
-      LogPrintf ( LOG_NORMAL, "\tStatus code 0: Nominal\n" );
+      fprintf(stderr, "\tStatus code 0: Nominal\n" );
     }
-    LogPrintf ( LOG_NORMAL, "\tfunction %s, file %s, line %i\n",
-                   ptr->function, ptr->file, ptr->line );
+    fprintf(stderr, "\tfunction %s, file %s, line %i\n",
+	    ptr->function, ptr->file, ptr->line );
   }
   return;
 }
@@ -304,14 +304,14 @@ static void sighandler(int sig)
 
   /* lets start by ignoring ANY further occurences of this signal
      (hopefully just in THIS thread, if truly implementing POSIX threads */
-  LogPrintfVerbatim (LOG_CRITICAL, "\n");
-  LogPrintf (LOG_CRITICAL, "APP DEBUG: Application caught signal %d.\n\n", sig );
+  fprintf(stderr, "\n");
+  fprintf(stderr, "APP DEBUG: Application caught signal %d.\n\n", sig );
 
   /* ignore TERM interrupts once  */
   if ( sig == SIGTERM || sig == SIGINT ) {
     killcounter ++;
     if ( killcounter >= 4 ) {
-      LogPrintf (LOG_CRITICAL, "APP DEBUG: got 4th kill-signal, guess you mean it. Exiting now\n\n");
+      fprintf(stderr, "APP DEBUG: got 4th kill-signal, guess you mean it. Exiting now\n\n");
       boinc_finish(COMPUTEFSTAT_EXIT_USER);
     }
     else
@@ -330,8 +330,8 @@ static void sighandler(int sig)
 #endif /* __i386__ */
   /* now get TRUE stacktrace */
   nostackframes = backtrace (stackframes, 64);
-  LogPrintf (LOG_CRITICAL,   "Obtained %zd stack frames for this thread.\n", nostackframes);
-  LogPrintf (LOG_CRITICAL,   "Use gdb command: 'info line *0xADDRESS' to print corresponding line numbers.\n");
+  fprintf(stderr,   "Obtained %zd stack frames for this thread.\n", nostackframes);
+  fprintf(stderr,   "Use gdb command: 'info line *0xADDRESS' to print corresponding line numbers.\n");
   /* overwrite sigaction with caller's address */
 #ifdef __i386__
   stackframes[1] = (void *) uc->uc_mcontext.gregs[REG_EIP];
@@ -340,12 +340,12 @@ static void sighandler(int sig)
 #endif /* __GLIBC__ */
 
   if (global_status)
-    LogPrintf (LOG_CRITICAL,   "Stack trace of LAL functions in worker thread:\n");
+    fprintf(stderr,   "Stack trace of LAL functions in worker thread:\n");
   while (global_status) {
-    LogPrintf (LOG_CRITICAL,   "%s at line %d of file %s\n", global_status->function, global_status->line, global_status->file);
+    fprintf(stderr,   "%s at line %d of file %s\n", global_status->function, global_status->line, global_status->file);
     if (!(global_status->statusPtr)) {
       const char *p=global_status->statusDescription;
-      LogPrintf (LOG_CRITICAL,   "At lowest level status code = %d, description: %s\n", global_status->statusCode, p?p:"NO LAL ERROR REGISTERED");
+      fprintf(stderr,   "At lowest level status code = %d, description: %s\n", global_status->statusCode, p?p:"NO LAL ERROR REGISTERED");
     }
     global_status=global_status->statusPtr;
   }
@@ -1358,7 +1358,7 @@ void attach_gdb() {
 #ifdef __GLIBC__
   char cmd[256];
   pid_t pid=getpid();
-  snprintf(cmd, sizeof(cmd), "gdb -pid %d -ex gcore --args %s", pid, global_argv[0]); 
+  snprintf(cmd, sizeof(cmd), "gdb -batch -pid %d -ex gcore --args %s", pid, global_argv[0]); 
   system(cmd);
   sleep(20);
 #endif
