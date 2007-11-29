@@ -516,7 +516,7 @@ initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar)
   uvar->outputPSD = (CHAR *)LALMalloc(256 * sizeof(CHAR));
   strcpy(uvar->outputPSD, OUTPUTPSDFILE);
 
-  uvar->mthopOverSFTs = MATH_OP_ARITHMETIC_MEAN;
+  uvar->mthopOverSFTs = MATH_OP_HARMONIC_MEAN;
   uvar->mthopOverIFOs = MATH_OP_HARMONIC_SUM;
   uvar->finalPSDBinSize = -1.0;
   uvar->finalPSDBinMthOp = MATH_OP_ARITHMETIC_MEDIAN;
