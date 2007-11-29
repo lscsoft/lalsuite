@@ -82,7 +82,10 @@ install : build
 	$(MAKE) install DESTDIR=$(CURDIR)/debian/tmp
 	dh_install --sourcedir=debian/tmp
 
-#	# split off -dev
+	# split off -dev
+	-mv $(CURDIR)/debian/lal/$(PREFIX)/include/* $(CURDIR)/debian/lal-dev/$(PREFIX)/include
+	-mv $(CURDIR)/debian/lal/$(PREFIX)/lib/*a $(CURDIR)/debian/lal-dev/$(PREFIX)/lib
+	-mv $(CURDIR)/debian/lal/$(PREFIX)/lib/pkgconfig $(CURDIR)/debian/lal-dev/$(PREFIX)/lib
 #	mv $(CURDIR)/debian/lal/$(PREFIX)/lib/*a $(CURDIR)/debian/lal-dev/$(PREFIX)/lib
 #	mv $(CURDIR)/debian/lal/$(PREFIX)/lib/pkgconfig $(CURDIR)/debian/lal-dev/$(PREFIX)/lib
 #	dh_install -s
