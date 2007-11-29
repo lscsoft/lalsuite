@@ -1302,7 +1302,7 @@ void SetUpSFTs( LALStatus *status,
   REAL8 freqLo, freqHi;
   INT4 extraBins, tmpLeap;
   
-  INT4 sft_check_result;
+  INT4 sft_check_result = 0;
 
   /* leap second for LALBarycenter */
   LALLeapSecFormatAndAcc lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
