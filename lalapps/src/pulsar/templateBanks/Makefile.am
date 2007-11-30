@@ -6,7 +6,8 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 bin_PROGRAMS = lalapps_skynet getMetric testFlatPulsarMetric matchGrids getMesh FstatMetric testFlatLatticeTiling testLatticeCovering
 
-testFlatLatticeTiling_SOURCES  = testFlatLatticeTiling.c
+testFlatLatticeTiling_SOURCES  = testLatticeCovering.c
+testLatticeCovering_SOURCES  = testFlatLatticeTiling.c
 
 lalapps_skynet_SOURCES = skynet.c
 
