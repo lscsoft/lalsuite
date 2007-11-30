@@ -1152,7 +1152,7 @@ def make_burca2_fragment(dag, parents, input_cache, tag):
 	input_cache = list(input_cache)
 	input_cache.sort(reverse = True)
 	nodes = set()
-	max_t_per_job = 180000
+	max_t_per_job = 90000
 	while input_cache:
 		cache = []
 		t = 0
