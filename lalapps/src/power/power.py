@@ -1149,15 +1149,8 @@ def make_burca_tailor_fragment(dag, input_cache, seg, tag):
 def make_burca2_fragment(dag, parents, input_cache, tag):
 	# FIXME:  this whole function just isn't the way I want this to
 	# work.  I want to provide DAG nodes, not input files...
-
-	# note that the likelihood data collection step immediately
-	# preceding this is a choke point in the pipeline, where all jobs
-	# must complete before anything else can begin, so there is no
-	# advantage in grouping files in time order at this stage.
-	# therefore, to load balance the jobs, we randomize the input
-	# files.
 	input_cache = list(input_cache)
-	random.shuffle(input_cache)
+	input_cache.sort(reverse = True)
 	nodes = set()
 	max_t_per_job = 180000
 	while input_cache:
