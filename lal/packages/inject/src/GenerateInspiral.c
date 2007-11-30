@@ -154,6 +154,42 @@ LALGenerateInspiral(
     LALGeneratePPNInspiral(status->statusPtr, waveform, ppnParams);
     CHECKSTATUSPTR(status);
   }
+  else if ( approximant == AmpCorPPN )
+  {
+    int i;
+
+    /* fill structure with input parameters */
+    LALGenerateInspiralPopulatePPN(status->statusPtr, ppnParams, thisEvent);
+    CHECKSTATUSPTR(status);
+
+    /* PPN parameter. */
+    ppnParams->ppn = NULL;
+    LALSCreateVector( status->statusPtr, &(ppnParams->ppn), order + 1 );
+    ppnParams->ppn->length = order + 1;
+    
+    ppnParams->ppn->data[0] = 1.0;
+    if ( order > 0 )
+    {
+      ppnParams->ppn->data[1] = 0.0;
+      for ( i = 2; i <= (INT4)( order ); i++ )
+      {  
+        ppnParams->ppn->data[i] = 1.0;
+      }
+    }
+    
+    /* Currently ppnParams->ampOrder cannot be set by the
+       user. By choosing a negative value the order will be
+       set the same as the phase order.
+    */
+    ppnParams->ampOrder = -1;
+
+    /* generate PPN waveform */
+    LALGeneratePPNAmpCorInspiral(status->statusPtr, waveform, ppnParams);
+    CHECKSTATUSPTR(status);
+    
+    LALSDestroyVector(status->statusPtr, &(ppnParams->ppn) );
+    CHECKSTATUSPTR(status);
+  }
   else
   {
     inspiralParams.approximant = approximant;
@@ -177,8 +213,8 @@ LALGenerateInspiral(
     CHECKSTATUSPTR(status);
   }
 
-  /* If no waveform has been generated */
-  if ( waveform->a == NULL )
+  /* If no waveform has been generated. (AmpCorPPN fills waveform.h) */
+  if ( waveform->a == NULL && approximant != AmpCorPPN )
   {	
     LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
         "No waveform generated (check lower frequency)\n");
@@ -187,8 +223,8 @@ LALGenerateInspiral(
   }
 
 
-  /* If sampling problem */
-  if ( ppnParams->dfdt > 2.0 )
+  /* If sampling problem. (AmpCorPPN may not be compatible) */
+  if ( ppnParams->dfdt > 2.0 && approximant != AmpCorPPN )
   {
     LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
         "Waveform sampling interval is too large:\n"
@@ -341,6 +377,13 @@ LALGetApproximantFromString(
   else if ( strstr(thisEvent, "PadeT1" ) )
   {
     *approximant = PadeT1;
+  }
+  else if ( strstr(thisEvent, "Amplitude" ) )
+  {/*ideally we should search for "AmplitudeCorrection" BUT there is a bug in strstr 
+  [avr-libc-dev] [bug #19135] strstr(): `needle' is not always founded. WE found that 
+  searching for AmplitudeCorrection raised this bug. That's why we search for "Amplitude" only.
+  */
+    *approximant = AmpCorPPN;
   }
   else if ( strstr(thisEvent, "GeneratePPN" ) )
   {
