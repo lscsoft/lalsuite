@@ -38,7 +38,7 @@
 #include <lalapps.h>
 
 #include <lal/LatticeCovering.h>
-#include "DopplerScan.h"
+#include <lal/DopplerScan.h>
 
 
 

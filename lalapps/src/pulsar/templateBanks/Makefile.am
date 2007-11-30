@@ -4,7 +4,7 @@
 AM_CFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-bin_PROGRAMS = lalapps_skynet getMetric testFlatPulsarMetric matchGrids getMesh FstatMetric testFlatLatticeTiling
+bin_PROGRAMS = lalapps_skynet getMetric testFlatPulsarMetric matchGrids getMesh FstatMetric testFlatLatticeTiling testLatticeCovering
 
 testFlatLatticeTiling_SOURCES  = testFlatLatticeTiling.c
 
