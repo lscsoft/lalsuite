@@ -89,7 +89,8 @@ LALFree()
 #include <lal/LALInspiralBank.h>
 #include <lal/GenerateInspiral.h>
 #include <lal/FrameStream.h>
-
+#include <lal/NRWaveInject.h>
+#include <math.h>
 
 NRCSID( FINDCHIRPSIMULATIONC, "$Id$" );
 
@@ -113,7 +114,8 @@ LALFindChirpInjectSignals (
   REAL4TimeSeries       signal;
   COMPLEX8Vector       *unity = NULL;
   CHAR                  warnMsg[512];
-
+  CHAR                  ifo[LIGOMETA_IFO_MAX];
+  
   INITSTATUS( status, "LALFindChirpInjectSignals", FINDCHIRPSIMULATIONC );
   ATTATCHSTATUSPTR( status );
 
@@ -142,6 +144,7 @@ LALFindChirpInjectSignals (
    */
 
 
+  
   LALGPStoINT8( status->statusPtr, &chanStartTime, &(chan->epoch) );
   CHECKSTATUSPTR( status );
 
@@ -179,22 +182,27 @@ LALFindChirpInjectSignals (
     case 'H':
       *(detector.site) = lalCachedDetectors[LALDetectorIndexLHODIFF];
       LALWarning( status, "computing waveform for Hanford." );
+      strcpy(ifo, "H1");
       break;
     case 'L':
       *(detector.site) = lalCachedDetectors[LALDetectorIndexLLODIFF];
       LALWarning( status, "computing waveform for Livingston." );
+      strcpy(ifo, "L1");
       break;
     case 'G':
       *(detector.site) = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
       LALWarning( status, "computing waveform for GEO600." );
+      strcpy(ifo, "G1");
       break;
     case 'T':
       *(detector.site) = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
       LALWarning( status, "computing waveform for TAMA300." );
+      strcpy(ifo, "T1");
       break;
     case 'V':
       *(detector.site) = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
       LALWarning( status, "computing waveform for Virgo." );
+      strcpy(ifo, "V1");
       break;
     default:
       LALFree( detector.site );
@@ -302,62 +310,115 @@ LALFindChirpInjectSignals (
     /* clear the signal structure */
     memset( &signal, 0, sizeof(REAL4TimeSeries) );
 
-    /* set the start times for injection */
-    LALINT8toGPS( status->statusPtr, &(waveform.a->epoch), &waveformStartTime );
-    CHECKSTATUSPTR( status );
-    memcpy( &(waveform.f->epoch), &(waveform.a->epoch), 
-        sizeof(LIGOTimeGPS) );
-    memcpy( &(waveform.phi->epoch), &(waveform.a->epoch), 
-        sizeof(LIGOTimeGPS) );
-
-    /* set the start time of the signal vector to the start time of the chan */
-    signal.epoch = chan->epoch;
-
-    /* set the parameters for the signal time series */
-    signal.deltaT = chan->deltaT;
-    if ( ( signal.f0 = chan->f0 ) != 0 )
+    /* The below if-else can be considered as
+        if use simulateCoherentGW
+        else use XLALCalculateNRStain */
+    if( waveform.h == NULL)
     {
-      ABORT( status, FINDCHIRPH_EHETR, FINDCHIRPH_MSGEHETR );
+      /* set the start times for injection */
+      LALINT8toGPS( status->statusPtr, &(waveform.a->epoch), &waveformStartTime );
+      CHECKSTATUSPTR( status );
+      memcpy( &(waveform.f->epoch), &(waveform.a->epoch), 
+          sizeof(LIGOTimeGPS) );
+      memcpy( &(waveform.phi->epoch), &(waveform.a->epoch), 
+          sizeof(LIGOTimeGPS) );
+
+      /* set the start time of the signal vector to the start time of the chan */
+      signal.epoch = chan->epoch;
+
+      /* set the parameters for the signal time series */
+      signal.deltaT = chan->deltaT;
+      if ( ( signal.f0 = chan->f0 ) != 0 )
+      {
+        ABORT( status, FINDCHIRPH_EHETR, FINDCHIRPH_MSGEHETR );
+      }
+      signal.sampleUnits = lalADCCountUnit;
+
+      /* simulate the detectors response to the inspiral */
+      LALSCreateVector( status->statusPtr, &(signal.data), chan->data->length );
+      CHECKSTATUSPTR( status );
+
+      LALSimulateCoherentGW( status->statusPtr, 
+          &signal, &waveform, &detector );
+      CHECKSTATUSPTR( status );
     }
-    signal.sampleUnits = lalADCCountUnit;
+    else
+    {
+      INT4 i, j, kh, km, length, sampleRate;
+      REAL4 temp;
+      REAL4TimeSeries      *tmpSig;
 
-    /* simulate the detectors response to the inspiral */
-    LALSCreateVector( status->statusPtr, &(signal.data), chan->data->length );
-    CHECKSTATUSPTR( status );
+      length = waveform.h->data->length;
+      kh = 2*length;
+      km = kh-1;
+      /* XLALCalculateNRStrain does not take a vector with alternating 
+       * h+ & hx but rather one that stores h+ in the first half and hx
+       * in the second half. Therefore, We transfer waveform.h to strain 
+       * before calling the function */
+      for( i = 1; i < length; i++)
+      {
+        temp = waveform.h->data->data[km - 2*i];
+        for( j = 0; j <= i; j++)
+        {
+            waveform.h->data->data[km - 2*i + j] = waveform.h->data->data[kh - 2*i + j];
+        }	  
+      waveform.h->data->data[km - i] = temp;
+      }
+  
+      sampleRate = (INT4) (1./waveform.h->deltaT);
+      if (abs((REAL4) sampleRate - 1./waveform.h->deltaT) > 0.5)
+      {
+	fprintf(stderr, "problem with sample rate in FindChirpInjectSignals\n");
+        exit(0);
+      }
+      
+      waveform.h->data->vectorLength = length;
+      tmpSig = XLALCalculateNRStrain( waveform.h , thisEvent, ifo, sampleRate);
+      signal = *tmpSig;
+      
+      XLALDestroyREAL4Vector( tmpSig->data );
+      LALFree(tmpSig);
 
-    LALSimulateCoherentGW( status->statusPtr, 
-        &signal, &waveform, &detector );
-    CHECKSTATUSPTR( status );
+    }
 
     /* inject the signal into the data channel */
     LALSSInjectTimeSeries( status->statusPtr, chan, &signal );
     CHECKSTATUSPTR( status );
 
-    /* destroy the signal */
-    LALSDestroyVector( status->statusPtr, &(signal.data) );
-    CHECKSTATUSPTR( status );
-
-    LALSDestroyVectorSequence( status->statusPtr, &(waveform.a->data) );
-    CHECKSTATUSPTR( status );
-
-    LALSDestroyVector( status->statusPtr, &(waveform.f->data) );
-    CHECKSTATUSPTR( status );
-
-    LALDDestroyVector( status->statusPtr, &(waveform.phi->data) );
-    CHECKSTATUSPTR( status );
 
     if ( waveform.shift )
     {
       LALSDestroyVector( status->statusPtr, &(waveform.shift->data) );
       CHECKSTATUSPTR( status );
+      LALFree( waveform.shift );
     }
     
-    LALFree( waveform.a );
-    LALFree( waveform.f );
-    LALFree( waveform.phi );
-    if ( waveform.shift )
+    if( waveform.h )
     {
-      LALFree( waveform.shift );
+      LALSDestroyVectorSequence( status->statusPtr, &(waveform.h->data) );
+      CHECKSTATUSPTR( status );
+      LALFree( waveform.h );
+    }
+    if( waveform.a )
+    {
+      LALSDestroyVectorSequence( status->statusPtr, &(waveform.a->data) );
+      CHECKSTATUSPTR( status );
+      LALFree( waveform.a );
+      /* destroy the signal */
+      LALSDestroyVector( status->statusPtr, &(signal.data) );
+      CHECKSTATUSPTR( status );
+    }
+    if( waveform.f )
+    {
+      LALSDestroyVector( status->statusPtr, &(waveform.f->data) );
+      CHECKSTATUSPTR( status );
+      LALFree( waveform.f );
+    } 
+    if( waveform.phi )
+    {
+      LALDDestroyVector( status->statusPtr, &(waveform.phi->data) );
+      CHECKSTATUSPTR( status );
+      LALFree( waveform.phi );
     }
   }
 
@@ -1270,4 +1331,5 @@ XLALFindChirpBankSimComputeMatch (
   maxMatch->value = tmplt->snr / matchNorm;
 
   return maxMatch;
+
 }
