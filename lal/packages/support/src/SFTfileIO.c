@@ -1129,23 +1129,21 @@ LALCheckSFTs ( LALStatus *status,
 
   /* Step 1: find the catalog of matching SFTs */
   LALSFTdataFind ( &sft_status, &catalog, file_pattern, constraints );
-  if ( ((*check_result) = sft_status.statusCode) != 0 ) 
-    goto sft_failed;
+  if ( ((*check_result) = sft_status.statusCode) == 0 ) {
 
-  /* Step 2: step through SFTs and check CRC64 */
-  if ( catalog ) {
-    TRY ( LALCheckSFTCatalog ( status->statusPtr, check_result, catalog ), status );
+    /* Step 2: step through SFTs and check CRC64 */
+    if ( catalog ) {
+      TRY ( LALCheckSFTCatalog ( status->statusPtr, check_result, catalog ), status );
+    }
   }
-
- sft_failed:
 
   if ( catalog ) {
     TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
   }
-
+  
   DETATCHSTATUSPTR ( status );
   RETURN ( status );
-
+  
 } /* LALCheckSFTs() */
 
 
