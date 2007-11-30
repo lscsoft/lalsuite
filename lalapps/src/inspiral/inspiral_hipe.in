@@ -1904,7 +1904,7 @@ if gps_start_time is not None and gps_end_time is not None:
   for ifo in ifo_analyze: 
     cache_fname += ifo
   cache_fname += '-INSPIRAL_HIPE' 
-  if opts.user_tag: cache_fname += '_' + opts.user_tag
+  if usertag: cache_fname += '_' + usertag
   cache_fname += '-' + str(gps_start_time) + '-' + \
     str(gps_end_time - gps_start_time) + '.cache'
   output_data_cache = lal.Cache()
