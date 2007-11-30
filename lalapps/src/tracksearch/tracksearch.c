@@ -246,8 +246,8 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
    */
   if (params.verbosity == printFiles)
     {
-      print_lalUnit(dataSet->sampleUnits,"EntireInputDataSet_Units.diag");
-      print_real4tseries(dataSet,"EntireInputDataSet.diag");
+      print_lalUnit(dataSet->sampleUnits,"Pre_DataCondEntireInputDataSet_Units.diag");
+      print_real4tseries(dataSet,"Pre_DataCondEntireInputDataSet.diag");
     }
 
   /*
@@ -296,8 +296,8 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 		status);
       if (params.verbosity == printFiles)
 	{
-	  print_lalUnit(response->sampleUnits,"responseFunction_Units.diag");
-	  print_complex8fseries(response,"responseFunction.diag");
+	  print_lalUnit(response->sampleUnits,"extractedResponseFunction_Units.diag");
+	  print_complex8fseries(response,"extractedResponseFunction.diag");
 	}
       /*
        * Destroy IFO text pointer
@@ -342,8 +342,8 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 
       if (params.verbosity == printFiles)
 	{
-	  print_complex8fseries(dataSetFFT,"dataSetFFT.diag");
-	  print_lalUnit(dataSetFFT->sampleUnits,"dataSetFFT_Units.diag");
+	  print_complex8fseries(dataSetFFT,"Pre_CalibrateDataSetFFT.diag");
+	  print_lalUnit(dataSetFFT->sampleUnits,"Pre_CalibrateDataSetFFT_Units.diag");
 	}
       /*
        * Calibrate
@@ -355,8 +355,8 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 
       if (params.verbosity == printFiles)
 	{
-	  print_complex8fseries(dataSetFFT,"dataSetFFTCalibrate.diag");
-	  print_lalUnit(dataSetFFT->sampleUnits,"dataSetFFTCalibrate_Units.diag");
+	  print_complex8fseries(dataSetFFT,"Post_CalibrateDataSetFFT.diag");
+	  print_lalUnit(dataSetFFT->sampleUnits,"Post_CalibrateDataSetFFT_Units.diag");
 	}
       /*
        * Inverse FFT the entire dataSet
@@ -391,8 +391,8 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
       
       if (params.verbosity == printFiles)
 	{
-	  print_real4tseries(dataSet,"dataSetCalibrate.diag");
-	  print_lalUnit(dataSet->sampleUnits,"dataSetCalibrate_Units.diag");
+	  print_real4tseries(dataSet,"Post_CalibrateTimeDomainDataSet.diag");
+	  print_lalUnit(dataSet->sampleUnits,"Post_CalibrateTimeDomainDataSe__Units.diag");
 	}
       /*
        * Free the FFT memory space
@@ -417,6 +417,9 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
    * Perform low and or high  pass filtering on 
    * the input data stream if requested
    */
+  if ((params.verbosity >= printFiles) && ((params.highPass > 0)||(params.lowPass)))
+    print_real4tseries(dataSet,"Pre_ButterworthFiltered_AllDataset.diag");
+
   if (params.lowPass > 0)
     {
       if (params.verbosity >= verbose)
@@ -459,7 +462,7 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 	       status);
     }
   if ((params.verbosity >= printFiles) && ((params.highPass > 0)||(params.lowPass)))
-    print_real4tseries(dataSet,"ButterworthFiltered.diag");
+    print_real4tseries(dataSet,"Post_ButterworthFiltered_AllDataset.diag");
   /*
    * End the Butterworth filtering
    *****************************************
@@ -473,10 +476,10 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 	{
 	  printf("Making requested injections.\n");
 	  fprintf(stderr,"If frame was REAL8 data converted to REAL4 data.\n");
-	  fprintf(stderr,"Potential problem with possibly prefactored input data.");
+	  fprintf(stderr,"Potential problem with possibly prefactored input data.\n");
 	}
       if (params.verbosity >= printFiles)
-	print_real4tseries(dataSet,"PreInjectDataSet.diag");
+	print_real4tseries(dataSet,"Pre_SoftwareInjectDataSet.diag");
       /*
        * NOTE TO SELF: Tina add code to compare any factor in the dataSet
        * units structure and factor the injected data appropriately to
@@ -494,7 +497,7 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 	    dataSet->data->data[i];
 
       if (params.verbosity >= printFiles)
-	print_real4tseries(dataSet,"PostInjectDataSet.diag");
+	print_real4tseries(dataSet,"Post_SoftwareInjectDataSet.diag");
     }
   /*
    * Split incoming data into Segment Vector
@@ -585,9 +588,9 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 	    }
 	  if (params.verbosity >= printFiles)
 	    {
-	      print_real4fseries(averagePSD,"PreSmoothing-averagePSD.diag");
+	      print_real4fseries(averagePSD,"Pre_SmoothingAveragePSD.diag");
 	      print_lalUnit(averagePSD->sampleUnits,
-			    "PreSmoothing-averagePSD_Units.diag");
+			    "Pre_SmoothingAveragePSD_Units.diag");
 	    }
 	  
 	  /*
@@ -654,9 +657,9 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 	}
       if (params.verbosity == printFiles)
 	{
-	  print_real4tseries(dataSet,"dataSet.diag");
-	  print_real4fseries(averagePSD,"averagePSD.diag");
-	  print_lalUnit(averagePSD->sampleUnits,"averagePSD_Units.diag");
+	  print_real4tseries(dataSet,"timeDomainAllDataSet.diag");
+	  print_real4fseries(averagePSD,"Post_SmoothingAveragePSD.diag");
+	  print_lalUnit(averagePSD->sampleUnits,"Post_SmoothingAveragePSD_Units.diag");
 	}
       /*
        * Setup global FFT plans 
@@ -696,12 +699,25 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
       /* 
        * Actually whiten each data segment
        */
+  if (params.verbosity >= printFiles)
+    {
+      tmpSignalPtr=NULL;
+      for (i=0;i<dataSegments->length;i++)
+	{
+	  tmpSignalPtr=(dataSegments->dataSeg[i]);
+	  LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
+		   status);
+	  sprintf(dataLabel->data,"Pre_WhitenTimeDomainDataSeg_%i.diag",i);
+	  print_real4tseries(tmpSignalPtr,dataLabel->data);
+	  sprintf(dataLabel->data,"Pre_WhitenTimeDomainDataSeg_%i_Units.diag",i);
+	  print_lalUnit(tmpSignalPtr->sampleUnits,dataLabel->data);
+	  LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
+		   status);
+	}
+
       for (i=0;i<dataSegments->length;i++)
 	{
 	  tmpSignalPtr = (dataSegments->dataSeg[i]);
-	  if (params.verbosity == printFiles)
-	    {
-	      print_lalUnit(tmpSignalPtr->sampleUnits,"InputTimeSeries_Units.diag");
 	    }
 	  /*
 	   * FFT segment
@@ -711,14 +727,24 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 				       tmpSignalPtr->data,
 				       forwardPlan),
 		    status);
-	  if (params.verbosity == printFiles)
+	  if (params.verbosity >= printFiles)
 	    {
-	      print_complex8fseries(signalFFT,"signalFFT.diag");
-	      print_lalUnit(signalFFT->sampleUnits,"signalFFT_Units.diag");
+	      print_complex8fseries(signalFFT,"Pre_whitenSignalFFT.diag");
+	      print_lalUnit(signalFFT->sampleUnits,"Pre_whitenSignalFFT_Units.diag");
 	    }
 	  /*
 	   * Whiten
 	   */
+	  if (params.verbosity >= printFiles)
+	    {
+	      LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
+		       status);
+	      sprintf(dataLabel->data,"Pre_whitenSignalFFT_%i.diag",i);
+	      print_complex8fseries(signalFFT,dataLabel->data);
+	      LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
+		       status);
+	    }
+
 	  if (params.whiten != 0)
 	    {
 	      LAL_CALL(LALTrackSearchWhitenCOMPLEX8FrequencySeries(status,
@@ -726,10 +752,6 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 								   averagePSD,
 								   params.whiten),
 		       status);
-	      if (params.verbosity == printFiles)
-		{
-		  print_complex8fseries(signalFFT,"signalFFTWhiten.diag");
-		}
 	    }
 	  /*
 	   * Reverse FFT
@@ -750,7 +772,7 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 	    {
 	      LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
 		       status);
-	      sprintf(dataLabel->data,"signalFFT_%i.diag",i);
+	      sprintf(dataLabel->data,"Post_whitenSignalFFT_%i.diag",i);
 	      print_complex8fseries(signalFFT,dataLabel->data);
 	      LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
 		       status);
@@ -800,9 +822,9 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 	  tmpSignalPtr=(dataSegments->dataSeg[i]);
 	  LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
 		   status);
-	  sprintf(dataLabel->data,"dataSeg_%i.diag",i);
+	  sprintf(dataLabel->data,"Post_WhitenTimeDomainDataSeg_%i.diag",i);
 	  print_real4tseries(tmpSignalPtr,dataLabel->data);
-	  sprintf(dataLabel->data,"dataSeg_%i_Units.diag",i);
+	  sprintf(dataLabel->data,"Post_WhitenTimeDomainDataSeg_%i_Units.diag",i);
 	  print_lalUnit(tmpSignalPtr->sampleUnits,dataLabel->data);
 	  LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
 		   status);
@@ -1957,8 +1979,8 @@ void LALappsGetFrameData(LALStatus*          status,
 
       if (params->verbosity >= printFiles)
 	{
-	  print_real4tseries(tmpData,"OriginalInputTimeSeries.diag");
-	  print_lalUnit(tmpData->sampleUnits,"OriginalInputTimeSeries_Units.diag");
+	  print_real4tseries(tmpData,"RawOriginalInputTimeSeries.diag");
+	  print_lalUnit(tmpData->sampleUnits,"RawOriginalInputTimeSeries_Units.diag");
 	}
       /*
        * Prepare for the resample if needed or just copy the data so send
@@ -1980,8 +2002,8 @@ void LALappsGetFrameData(LALStatus*          status,
 		   status);
 	  if (params->verbosity >= printFiles)
 	    {
-	      print_real4tseries(tmpData,"ResampledlInputTimeSeries.diag");
-	      print_lalUnit(tmpData->sampleUnits,"ResampledlInputTimeSeries_Units.diag");
+	      print_real4tseries(tmpData,"ResampledOriginalInputTimeSeries.diag");
+	      print_lalUnit(tmpData->sampleUnits,"ResampledlOriginalInputTimeSeries_Units.diag");
 	    }
 	  /*
 	   * Copy only the valid data and fill the returnable metadata
@@ -2019,8 +2041,8 @@ void LALappsGetFrameData(LALStatus*          status,
 	}
       if (params->verbosity >= printFiles)
 	{
-	  print_real4tseries(DataIn,"ActualReDoneTimeSeries.diag");
-	  print_lalUnit(DataIn->sampleUnits,"ActualReDoneTimeSeries_Units.diag");
+	  print_real4tseries(DataIn,"CopyForUse_ResampledTimeSeries.diag");
+	  print_lalUnit(DataIn->sampleUnits,"CopyForUse_ResampledTimeSeries_Units.diag");
 	}
       /*
        * Release the memory for the temporary time series
@@ -2230,6 +2252,8 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   REAL8                 signalStop=0;
   REAL8                 signalStart=0;
   REAL8                 cropDeltaT=0;
+  INT4                  tmpSegDataPoints=0;
+  INT4                  tmpMapTimeBins=0;
   /*
    * Error checking section
    */
@@ -2279,19 +2303,15 @@ LALappsDoTSeriesSearch(LALStatus         *status,
        */
       /* Tue-Nov-06-2007:200711061138 */
       /* Add in timeInstant calculations with buffered dat */
+      tmpSegDataPoints=params.SegLengthPoints+(2*params.SegBufferPoints);
+      tmpMapTimeBins=(params.TimeBins+(2*params.colsToClip));
       for (j=0;j<tfmap->tCol;j++)
 	{
-	  tfmap->timeInstant[j]=
-	    floor(
-		  (
-		   (params.SegLengthPoints+(2*params.SegBufferPoints))
-		   /(2*(params.TimeBins+(2*params.colsToClip)))
-		   +(
-		     j*(params.SegLengthPoints+(2*params.SegBufferPoints))
-		     /(params.TimeBins + (2*params.SegBufferPoints))
-		     )
-		   )
-		  );
+	  tfmap->timeInstant[j]=floor(
+				      (tmpSegDataPoints/(2*tmpMapTimeBins))
+				      +
+				      ((j*(tmpSegDataPoints/tmpMapTimeBins)))
+				      );
 	}
       windowParams.length = params.windowsize;
       windowParams.type = params.window;
@@ -2396,11 +2416,6 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 			 &signalStart,
 			 &signalSeries->epoch),
 	   status);
-/*   LAL_CALL( */
-/* 	   LALFloatToGPS(status, */
-/* 			 &(mapMarkerParams.mapStartGPS), */
-/* 			 &signalStart), */
-/* 	   status); */
   /*
    * Fix the signalStop time stamp to be without the buffer points.  It
    * should be the stop time of the clipped TFR.
@@ -2427,14 +2442,20 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   tmpTSA->clippedWith=0;
   tmpTSA->imageBorders=mapMarkerParams;
   tmpTSA->imageRep=tfmap;
+/*   /\* */
+/*    * Dump out PGM of map before we crop it! */
+/*    *\/ */
+/*   if (params.verbosity >= verbose) */
+/*     LALappsTSAWritePGM(status,tmpTSA,NULL);  */
   LALappsTSACropMap(status,&tmpTSA,params.colsToClip);
+    
   /* 
    *Copy information from cropping procedure to relevant structures.
    */
   memcpy(&tfInputs,&(tmpTSA->imageCreateParams),sizeof(CreateTimeFreqIn));
   memcpy(&mapMarkerParams,&(tmpTSA->imageBorders),sizeof(TrackSearchMapMarkingParams));
-/*   if (params.verbosity >= verbose) */
-/*     LALappsTSAWritePGM(status,tmpTSA,NULL); */
+  if (params.verbosity >= verbose)
+    LALappsTSAWritePGM(status,tmpTSA,NULL); 
   tfmap=tmpTSA->imageRep;
   LALFree(tmpTSA);
 
@@ -2448,15 +2469,15 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   inputs.low=params.LinePThresh;
   inputs.width=((tfmap->fRow/2)+1);
   inputs.height=tfmap->tCol;
-  if (params.verbosity >= verbose)
-    {
-      fprintf(stderr,"Map related search parameters\n");
-      fprintf(stderr,"Sigma\t\t%f\n",inputs.sigma);
-      fprintf(stderr,"High\t\t%f\n",inputs.high);
-      fprintf(stderr,"Low\t\t%f\n",inputs.low);
-      fprintf(stderr,"Width\t\t%i\t\t%i\n",inputs.width,(tfmap->fRow/2)+1);
-      fprintf(stderr,"Height\t\t%i\t\t%i\n",inputs.height,tfmap->tCol);
-    }
+/*   if (params.verbosity >= verbose) */
+/*     { */
+/*       fprintf(stderr,"Map related search parameters\n"); */
+/*       fprintf(stderr,"Sigma\t\t%f\n",inputs.sigma); */
+/*       fprintf(stderr,"High\t\t%f\n",inputs.high); */
+/*       fprintf(stderr,"Low\t\t%f\n",inputs.low); */
+/*       fprintf(stderr,"Width\t\t%i\t\t%i\n",inputs.width,(tfmap->fRow/2)+1); */
+/*       fprintf(stderr,"Height\t\t%i\t\t%i\n",inputs.height,tfmap->tCol); */
+/*     } */
   /*
    * Call subroutine to run the search
    */
@@ -2614,13 +2635,21 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
        * cropping first injection from TFR
        */
       if (params.verbosity >= verbose)
-	printf("Preparing the injection data!\n");
+	{
+	  printf("Preparing the injection data!\n");
+	  printf("Inject Offset    %f\n",injectParams.startTimeOffset);
+	  printf("Inject Space     %f\n",injectParams.injectSpace);
+	  printf("Inject Count     %i\n",injectParams.numOfInjects);
+	  printf("Inject Scale     %f\n",injectParams.scaleFactor);
+	  printf("Inject Sampling  %f\n",injectParams.sampleRate);
+	}
+
       LALappsCreateInjectableData(status,
 				  &injectSet,
 				  injectParams);
     }
   if ((params.verbosity >= printFiles) && (injectSet != NULL))
-    print_real4tseries(injectSet,"PreparedInjectData.diag");
+    print_real4tseries(injectSet,"CreatedSoftwareInjectableData.diag");
   /* 
    * Prepare the data for the call to Tracksearch 
    */
@@ -2653,8 +2682,6 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
 	       status);
       injectSet=NULL;
     }
-/*   if (params.verbosity >= printFiles) */
-/*     print_real4tseries(dataset,"InputReal4TimeSeriesPostPrepare.diag"); */
 
   j=0;
   for(i = 0;i < params.NumSeg;i++)
