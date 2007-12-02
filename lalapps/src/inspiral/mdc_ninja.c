@@ -56,7 +56,7 @@ RCSID( "$Id$" );
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
-#define PROGRAM_NAME "nr_wave"
+#define PROGRAM_NAME "mdc_ninja"
 
 /* function prototypes */
 static void print_usage( CHAR *program );

@@ -21,9 +21,9 @@ GWF2XMLSRC 	= gwf2xml.c
 SPININJSRC 	= spininj.c
 COINEXTSRC 	= coinext.c
 RANDOMBANKSRC 	= randombank.c
-NRWAVESRC	= nr_wave.c
 NINJASRC	= ninja.c
 FRNINJASRC	= fr_ninja.c
+MDCNINJASRC	= mdc_ninja.c
 CALCEXPSNRSRC	= calcexpsnr.c
 if LALFRAME
 if LALMETAIO
@@ -35,8 +35,8 @@ bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank \
                lalapps_thinca lalapps_trigbank \
                lalapps_spininj lalapps_coherent_inspiral \
                lalapps_coherentbank lalapps_coinext \
-               lalapps_randombank lalapps_nr_wave lalapps_ninja \
-               lalapps_fr_ninja lalapps_calcexpsnr
+               lalapps_randombank lalapps_ninja lalapps_fr_ninja \
+               lalapps_mdc_ninja lalapps_calcexpsnr
 
 lalapps_inspiral_SOURCES 	= $(INSPIRALSRC)
 lalapps_coherent_inspiral_SOURCES = $(COHERESRC)
@@ -59,9 +59,9 @@ lalapps_inspfrinj_SOURCES 	= $(INSPFRINJSRC)
 lalapps_gwf2xml_SOURCES 	= $(GWF2XMLSRC)
 lalapps_coinext_SOURCES         = $(COINEXTSRC)
 lalapps_randombank_SOURCES 	= $(RANDOMBANKSRC)
-lalapps_nr_wave_SOURCES	= $(NRWAVESRC)
 lalapps_ninja_SOURCES		= $(NINJASRC)
 lalapps_fr_ninja_SOURCES	= $(FRNINJASRC)
+lalapps_mdc_ninja_SOURCES	= $(MDCNINJASRC)
 lalapps_calcexpsnr_SOURCES	= $(CALCEXPSNRSRC)
 else
 bin_PROGRAMS = 
