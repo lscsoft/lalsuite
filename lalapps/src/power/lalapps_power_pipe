@@ -463,7 +463,7 @@ for n, (time_slides_cache_entry, time_slides) in enumerate(injection_time_slides
 		print >>sys.stderr, "building burca jobs ..."
 	inj_coinc_nodes |= power.make_burca_fragment(dag, nodes, "INJECTIONS_%s" % options.tag, verbose = options.verbose)
 	if options.verbose:
-		print >>sys.stderr, "done injections %d/%d" % (n + 1, len(background_time_slides))
+		print >>sys.stderr, "done injections %d/%d" % (n + 1, len(background_time_slides) + 1)
 
 
 # injection identification
