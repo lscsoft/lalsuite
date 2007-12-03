@@ -231,7 +231,7 @@ if opts.run_analysis:
     print "Running inspiral hipe for playground run"
     hipePlayNode = inspiralutils.hipe_setup("playground", cp, ifos, \
          opts.log_path, playOnly = True)
-    cachelist.append("playground/" + "".join(ifos)+"-INSPIRAL_HIPE_PLAYGROUND-"+str(opts.gps_start_time)+"-"+str(opts.gps_end_time-opts.gps_start_time)+".cache")
+    cachelist.append("playground/" + "".join(ifos)+"-INSPIRAL_HIPE_" + cp.get("pipeline", "user-tag") + "_PLAYGROUND-"+str(opts.gps_start_time)+"-"+str(opts.gps_end_time-opts.gps_start_time)+".cache")
     dag.add_node(hipePlayNode)
     if opts.run_datafind:
       hipePlayNode.add_parent(hipeDfNode)
@@ -240,7 +240,7 @@ if opts.run_analysis:
     print "Running inspiral hipe for analysis run"
     hipeAnalysisNode = inspiralutils.hipe_setup("analysis", cp, ifos, \
         opts.log_path)
-    cachelist.append("analysis/" + "".join(ifos)+"-INSPIRAL_HIPE_ANALYSIS-"+str(opts.gps_start_time)+"-"+str(opts.gps_end_time-opts.gps_start_time)+".cache")
+    cachelist.append("analysis/" + "".join(ifos)+"-INSPIRAL_HIPE_" + cp.get("pipeline", "user-tag") + "_ANALYSIS-"+str(opts.gps_start_time)+"-"+str(opts.gps_end_time-opts.gps_start_time)+".cache")
     dag.add_node(hipeAnalysisNode)
     if opts.run_datafind:
       hipeAnalysisNode.add_parent(hipeDfNode)
@@ -251,7 +251,7 @@ if opts.run_analysis:
     for (injDir, injFile) in cp.items("injections"):
       hipeInjNode[injDir] = inspiralutils.hipe_setup(injDir, cp, ifos, \
            opts.log_path, injFile)
-      cachelist.append(injDir + "/" + "".join(ifos)+"-INSPIRAL_HIPE_" + injDir.upper() + "-"+str(opts.gps_start_time)+"-"+str(opts.gps_end_time-opts.gps_start_time)+".cache")
+      cachelist.append(injDir + "/" + "".join(ifos)+"-INSPIRAL_HIPE_" + cp.get("pipeline", "user-tag") + "_" + injDir.upper() + "-"+str(opts.gps_start_time)+"-"+str(opts.gps_end_time-opts.gps_start_time)+".cache")
       dag.add_node(hipeInjNode[injDir])
       if opts.run_datafind:
         hipeInjNode[injDir].add_parent(hipeDfNode)
@@ -271,7 +271,7 @@ if opts.run_data_quality:
       hipePlayVetoNode[category] = inspiralutils.hipe_setup("playground", cp, \
           ifos, opts.log_path, playOnly = True, vetoCat = category, \
           vetoFiles = dqVetoes)
-      cachelist.append("playground/" + "".join(ifos) + "-INSPIRAL_HIPE_PLAYGROUND_CAT_" + str(category) + "_VETO-" + str(opts.gps_start_time) + "-" + str(opts.gps_end_time-opts.gps_start_time) + ".cache")
+      cachelist.append("playground/" + "".join(ifos) + "-INSPIRAL_HIPE_" + cp.get("pipeline", "user-tag") + "_PLAYGROUND_CAT_" + str(category) + "_VETO-" + str(opts.gps_start_time) + "-" + str(opts.gps_end_time-opts.gps_start_time) + ".cache")
       dag.add_node(hipePlayVetoNode[category])
       if category==2 and opts.run_analysis: 
         hipePlayVetoNode[category].add_parent(hipePlayNode)
@@ -283,7 +283,7 @@ if opts.run_data_quality:
       print "Running inspiral hipe for full data with vetoes"
       hipeAnalysisVetoNode[category] = inspiralutils.hipe_setup("analysis", \
           cp, ifos, opts.log_path, vetoCat = category, vetoFiles = dqVetoes)
-      cachelist.append("analysis/" + "".join(ifos) + "-INSPIRAL_HIPE_ANALYSIS_CAT_" + str(category) + "_VETO-" + str(opts.gps_start_time) + "-" + str(opts.gps_end_time-opts.gps_start_time) + ".cache")
+      cachelist.append("analysis/" + "".join(ifos) + "-INSPIRAL_HIPE_" + cp.get("pipeline", "user-tag") + "_ANALYSIS_CAT_" + str(category) + "_VETO-" + str(opts.gps_start_time) + "-" + str(opts.gps_end_time-opts.gps_start_time) + ".cache")
       dag.add_node(hipeAnalysisVetoNode[category])
       if category==2 and opts.run_analysis: 
         hipeAnalysisVetoNode[category].add_parent(hipeAnalysisNode)
@@ -299,7 +299,7 @@ if opts.run_data_quality:
             cp, ifos, opts.log_path, \
             injFile = cp.get("injections", injDir), \
             vetoCat = category, vetoFiles = dqVetoes)
-        cachelist.append(injDir + "/" + "".join(ifos) + "-INSPIRAL_HIPE_" + injDir.upper() + "_CAT_" + str(category) + "_VETO-" + str(opts.gps_start_time) + "-" + str(opts.gps_end_time-opts.gps_start_time) + ".cache")
+        cachelist.append(injDir + "/" + "".join(ifos) + "-INSPIRAL_HIPE_" + cp.get("pipeline", "user-tag") + "_" + injDir.upper() + "_CAT_" + str(category) + "_VETO-" + str(opts.gps_start_time) + "-" + str(opts.gps_end_time-opts.gps_start_time) + ".cache")
         dag.add_node(hipeInjVetoNode[injDir][category])
         if category==2 and opts.run_analysis: 
           hipeInjVetoNode[injDir][category].add_parent(hipeInjNode[injDir])
