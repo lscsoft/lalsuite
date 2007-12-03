@@ -313,7 +313,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injFile=None, dfOnly = False, \
     hipecp.set("pipeline", "playground-data-mask", "all_data")
 
   # set the user-tag to be the same as the directory name
-  usertag = hipeDir.upper()
+  usertag = hipecp.get("pipeline", "user-tag") + "_" + hipeDir.upper()
 
   if vetoCat:
     # set the old usertag in inspiral, so that we pick up the inspiral xml
