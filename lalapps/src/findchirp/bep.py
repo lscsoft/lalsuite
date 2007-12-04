@@ -16,24 +16,14 @@ import locale
 import math
 from optparse import OptionParser
 import time  
+import ConfigParser
 
 #find the path for lalapps_bankefficiency
 user = os.getlogin()
 uname = os.uname()
 host = uname[1]
-if host.find('explorer')>=0:
-        path  		= '/home/'+user+'/lscsoft/lalapps/src/findchirp/'
-	executable_name = 'lalapps_BankEfficiency'
-elif host.find('coma')>=0:        
-        path  		= '/home2/'+user+'/lscsoft/lalapps/src/findchirp/'
-	executable_name = 'lalapps_BankEfficiency'
-elif host.find('ldas-grid')>=0:        
-        path  		= '/archive/home/'+user+'/opt/lalapps/src/findchirp/'
-	executable_name = 'lalapps_test'
-else:
-        path  		= '/home/cokelaer/lscsoft/lalapps/src/findchirp/'
+#if host.find('explorer')>=0:
 
-executable_name = 'lalapps_BankEfficiency'
 
 
 def set_predefined_search_parameter(BE):
@@ -87,262 +77,203 @@ def set_predefined_search_parameter(BE):
 	    BE['bank-ffinal'] = BE['sampling']/2 - 1
 	return BE
 
-def create_condor_file(BE, arguments):
-	fp = open('bep.sub','w');
-	fp.write('Executable   = ' + path + executable_name +'\n')
-	fp.write('Universe     = vanilla\n')
-	#fp.write('Universe     = vanilla\n')
-	
-        if host.find('coma')>=0:        
-                fp.write('Environment  = LD_LIBRARY_PATH=/usr/lscsoft/non-lsc/lib\n')
-                
-	#fp.write('Requirements = Memory >=128 && OpSys == "LINUX" && FileSystemDomain == "explorer" && UidDomain == "explorer"\n')
-	#fp.write('+MaxHours =40\n\n')
-	fp.write('Arguments = '+ '--seed $(macroseed) ' + arguments)
-	fp.write('\n\n')
-	fp.write('priority = 10\n')
-	
-	tag = str(BE['noise-model'])+'_'+str(BE['fl'])+'_'+ str(BE['search']) +'_'+str(BE['signal'])+'_'+str(BE['signal-order'])+'_'+str(BE['template'])+'_'+str(BE['template-order'])+'_'+str(BE['sampling'])+'_'+str(BE['mm'])+'.$(macroseed)\n'
+def create_condor_file(configcp):
+  """
+  """
+  fp = open('bep.sub','w');
+  fp.write('Executable   = ' +configcp.get("main", "executable")+"\n")
+  fp.write('Universe     = vanilla\n')
 
-        if host.find('ldas-grid')>=0:        
-		index = 1
-		this_path = '/usr1/'+user+'/'
-		this_file = 'tmp'+str(index)
-		while os.path.isfile(this_path+this_file)==True:
-			index=index+1
-			this_file = 'tmp'+str(index)
+  if host.find('coma')>=0:        
+    fp.write('Environment  = LD_LIBRARY_PATH=/usr/lscsoft/non-lsc/lib\n')
+     
+    #fp.write('Requirements = Memory >=128 && OpSys == "LINUX" && FileSystemDomain == "explorer" && UidDomain == "explorer"\n')
+    #fp.write('+MaxHours =40\n\n')
+
+  arguments = ""
+  for i in configcp.items("general"):
+    arguments = arguments + ' --'+i[0] +' ' +i[1]
+  for i in configcp.items("bank"):
+    arguments = arguments + ' --'+i[0] +' ' +i[1]
+  for i in configcp.items("signal"):
+    arguments = arguments + ' --'+i[0] +' ' +i[1]
+    
+  n = float(configcp.get("simulation", "ntrial"))
+  N = float(configcp.get("simulation", "njobs"))
+  print n/N
+  
+  
+  arguments = arguments + ' --ntrial '+str( int(n/N))
+
+
+
+  fp.write('Arguments = ' + arguments + ' --seed $(macroseed)')
+  fp.write('\n\n')
+  fp.write('priority = 10\n')
+  
+  
+  if host.find('ldas-grid')>=0:        
+    index = 1
+    this_path = '/usr1/'+user+'/'
+    this_file = 'tmp'+str(index)
+    while os.path.isfile(this_path+this_file)==True:
+      index=index+1
+      this_file = 'tmp'+str(index)
 			
-		msg = 'log = '+this_path+this_file+'\n'	
-	else:
-		msg = 'log = ./log/tmp\n'
-	fp.write(msg)
-	msg = 'output = out_'+tag
-	fp.write(msg)
-	msg = 'error = ./log/err_'+tag
-	fp.write(msg)
-	fp.write('notification = never\n')
+    msg = 'log = '+this_path+this_file+'\n'	
+  else:
+    msg = 'log = ./log/tmp\n'
+    
+  fp.write(msg)
+  msg = 'output = ./out_$(macroseed) \n'
+  fp.write(msg)
+  msg = 'error = ./log/err_$(macroseed) \n'
+  fp.write(msg)
+  fp.write('notification = never\n')
 
-	fp.write('Queue 1')
-	fp.close()
+  fp.write('Queue 1')
+  fp.close()
+  
+  return arguments
 
-def create_bank(arguments):
-	os.system('rm -f BE_Bank.dat BE_Bank.xml')
-	print '###'
-	print ' We are creating the template bank for sanity check. Please wait'
-	fp =open('BankEfficiency_createbank','w');
-	fp.write( path + executable_name + arguments+' --n 1 --faithfulness --print-bank 1> bep_bank.out 2>bep_bank.err'+'\n')
-	fp.close()
-	os.system('chmod 755 BankEfficiency_createbank')
-	a=os.system('./BankEfficiency_createbank')
-	
-	if a==0:
-		print '... done (your parameters seems correct). See BE_Bank.xml file.'
-	else:
-		print '... failed (your parameters seems correct)'
-		quit
-        time.sleep(.5)
+def create_bank(configcp):
+  arguments=""
+  os.system('rm -f BE_Bank.dat BE_Bank.xml')
+  print '###'
+  print ' We are creating the template bank for sanity check. Please wait'
+  fp =open('BankEfficiency_createbank','w');
+  fp.write( configcp.get("main", "executable") + arguments+' --n 1 --faithfulness --print-bank 1> bep_bank.out 2>bep_bank.err'+'\n')
+  fp.close()
+  os.system('chmod 755 BankEfficiency_createbank')
+  a=os.system('./BankEfficiency_createbank')
+  
+  if a==0:
+    print '... done (your parameters seems correct). See BE_Bank.xml file.'
+  else:
+    print '... failed (your parameters seems correct)'
 
-def create_dag_file(njobs):
-        print '--- Generating the dag file'
-	fp=open('bep.dag', 'w')
-	for id in range(1,njobs+1,1):
-		fp.write('JOB '+str(id)+' bep.sub'+'\n')
-	 	fp.write('VARS '+str(id)+' macroseed="'+str(id)+'"\n')
+def create_dag_file(configcp):
+  """ 
+  """
+  njobs = int(configcp.get("simulation", "njobs"))
+  print '--- Generating the dag file'
+  fp=open('bep.dag', 'w')
+  for id in range(1,njobs+1,1):
+    fp.write('JOB '+str(id)+' bep.sub'+'\n')
+    fp.write('VARS '+str(id)+' macroseed="'+str(id)+'"\n')
 
                 
-	fp.close()
-        print '... done'
-        time.sleep(.5)
+  fp.close()
+  print '... done'
 
-def create_finalise_script(BE, options):
-        fp = open('finalise.sh', 'w')
-        fp.write('#!/bin/sh\n')
-        fp.write('rm -f Trigger.dat ; find . -name "out_*" | awk \'{print "cat  " $1 ">> Trigger.dat"}\' > script.sh; chmod 755 script.sh ; ./script.sh; \n')
-        fp.write('cp TMPLTBANK.xml BE_Bank.xml\n')
-        fp.write(path+executable_name +' --ascii2xml \n')
-        fp.write('mv Trigger.xml Trigger_' + BE['noise-model'] +'_'+str(BE['fl'])+'_'+options.search+'_'+BE['bank-grid-spacing']+'_'+BE['template'])
-        fp.write('_'+str(BE['template-order']))
-        fp.write('_'+BE['signal']+'_'+str(BE['signal-order'])+'_'+str(BE['sampling'])+'_'+str(BE['mm'])+'.xml')
-        fp.close()
-        os.system('chmod 755 finalise.sh')
+def create_finalise_script(configcp):
+  """
+  """
+  fl = configcp.get("general", "fl")
+  noise_model = configcp.get("general", "noise-model")
+  grid = configcp.get("bank", "bank-grid-spacing")
+  mm = configcp.get("bank", "mm")
+  template = configcp.get("bank", "template")
+  signal = configcp.get("signal", "signal")
+  
+  fp = open('finalise.sh', 'w')
+  fp.write('#!/bin/sh\n')
+  fp.write('rm -f Trigger.dat ; find . -name "out_*" | awk \'{print "cat  " $1 ">> Trigger.dat"}\' > script.sh; chmod 755 script.sh ; ./script.sh; \n')
+  fp.write('cp TMPLTBANK.xml BE_Bank.xml\n')
+  fp.write(configcp.get("main", "executable") +' --ascii2xml \n')
+  fp.write('mv Trigger.xml Trigger_' + noise_model +'_'+fl+'_'+grid+'_'+template+'_'+signal+'_'+mm+'.xml')
+  fp.close()
+  os.system('chmod 755 finalise.sh')
         
 
-def check_executable():
-	try:
-		print '--- Check that the executable ('+executable_name+')is present in '+path
-		f = open(path+executable_name, 'r')
-		f.close()
-	except:
-		print '### Can not find ' +path + executable_name
-		sys.exit()
-	print '... executable found. Going ahead'
+def check_executable(configcp):
+  try:
+    print '--- Check that the executable ('+ configcp.get("main","executable")  +')is present in '+path
+    f = open(configcp("main", "executable"), 'r')
+    f.close()
+  except:
+    print '### Can not find ' + configcp("main", "executable")
+    sys.exit()
+  print '... executable found. Going ahead'
 	
 
 
 
-def main():
-    check_executable()
-    time.sleep(1)
-    print '--- Parsing user arguments'
-    parser = OptionParser()
-    parser.add_option( "--noise-model", 
-		dest='noise_model',default='LIGOI',metavar='NOISEMODEL',
-		help=" <VIRGO, GEO, LIGOI, LIGOA, EGO>") 
-    parser.add_option("--search",
-		dest='search',default='BNS',
-		help=" <BNS, BBH, PBH , BHNS, S5 (1,60)>")
-    parser.add_option("--signal-mass-range",
-		default='1 3', dest='signal_mass_range',
-		help="min and max individual mass in solar mass." )
-    parser.add_option("--bank-mass-range",
-		default='1 3', dest='bank_mass_range',
-		help="min and max individual mass in solar mass." )
-    parser.add_option("--signal",
-		default='EOB', dest='signal',type='string',
-		help="approximant of the injection (EOB, TaylorT1, ...)." )
-    parser.add_option("--template",
-		default='EOB', dest='template',type='string',
-	 	help="approximant of the injection (EOB, TaylorT1, ...)." )
-    parser.add_option("--template-order",
-		default=4, dest='template_order',type='int',
-		help="PN order of the template." )
-    parser.add_option("--signal-order",
-		default=4,dest='signal_order', type='int',
-		help="PN order of the signal." )
-    parser.add_option("--minimal-match",
-		default=0.95, dest='minimal_match', 
-		help="minimal match." )
-    parser.add_option("--sampling",
-		dest='sampling', default=4096, type='float',
-		help="sampling frequency" )
-    parser.add_option("--bank-ffinal",
-		dest='bank_ffinal', default=2047, type='float',
-		help="upper frequency to be used" )
-    parser.add_option("-n","--ntrial",
-		dest='ntrial', default=10000, type='int',
-		help="number of trial." )
-    parser.add_option("--bank-grid-spacing",
-		dest='bank_grid_spacing', default='Hexagonal', 
-	 	help="type of template bank placement : HybridHexagonal,Hexagonal, SquareNotOriented, HexagonalNotOriented" )
-    parser.add_option("--fl",
-		dest='fl',  type='int',default=-1, 
-		help="lower cut off frequency" )
-    parser.add_option("--max-total-mass",
-		dest='max_total_mass', default=-1, type='float',
-		help="max total mass (injection)" )
-    parser.add_option("--fast-simulation",
-		action="store_true", default="false",
-		dest='fast_simulation', 
-		help="fast simulation option" )
-    parser.add_option("--bhns-injection",
-		action="store_true", default="false",
-		dest='bhns_injection', 
-		help="bhns injection only. If search arguments is set to BHNS, this parameter will always be used." )
-
-#pipeline parameters
-    parser.add_option("","--njobs",
-		dest='njobs', default=100, type='int',
-		help="number of jobs." )
+def parse_arguments():
+  print '--- Parsing user arguments'
+  parser = OptionParser()
+  parser.add_option( "--config-file")
+  
+  parser.add_option("--search",
+      dest='search',default='BNS',
+      help=" <BNS, BBH, PBH , BHNS, S5 (1,60)>")
+  parser.add_option("--bank-ffinal",
+      dest='bank_ffinal', default=2047, type='float',
+      help="upper frequency to be used" )
+  parser.add_option("--max-total-mass",
+      dest='max_total_mass', default=-1, type='float',
+      help="max total mass (injection)" )
+  parser.add_option("--fast-simulation",
+      action="store_true", default="false",
+      dest='fast_simulation', 
+      help="fast simulation option" )
+  parser.add_option("--bhns-injection",
+      action="store_true", default="false",
+      dest='bhns_injection', 
+      help="bhns injection only. If search arguments is set to BHNS, this parameter will always be used." )
 
 
-    (options, args) = parser.parse_args()
-    print options
-    print args
-    for thisarg in args:
-	print str(args[thisarg]) + str(options[thisarg])
 
-    BE={} 
-    BE['search'] 		= options.search 
-    BE['noise-model']		= options.noise_model
-    BE['fl']			= options.fl
-    BE['bank-mass-range']	= options.bank_mass_range
-    BE['signal-mass-range']	= options.signal_mass_range
-    BE['signal']		= options.signal
-    BE['template']		= options.template
-    BE['signal-order']		= options.signal_order
-    BE['template-order']	= options.template_order
-    BE['mm']			= options.minimal_match
-    BE['sampling']		= options.sampling
-    BE['bank-grid-spacing']	= options.bank_grid_spacing
-    #derived options set to fixed value for the time being.
-    if options.bank_ffinal > options.sampling/2-1:
-	BE['bank-ffinal'] = options.sampling/2-1
-    else:
-	BE['bank-ffinal'] = options.bank_ffinal
+  (options, args) = parser.parse_args()
+  return options,args
+
+# -----------------------------------------------------------------------------------
+options, args = parse_arguments()
+configcp = ConfigParser.ConfigParser()
+configcp.read(options.config_file)
+print configcp.items("main")
+#BE['search'] 		= options.search 
+#derived options set to fixed value for the time being.
+#if options.bank_ffinal > options.sampling/2-1:
+#  BE['bank-ffinal'] = options.sampling/2-1
+#e#lse:
+#  BE['bank-ffinal'] = options.bank_ffinal
     
-    #[some other default values]
-    others = ' --print-xml  --debug 33 --print-bank '
-    # options  without arguments 
-    
-    if options.fast_simulation==True:
-  	others = others + ' --fast-simulation '
-    if options.bhns_injection==True:
-  	others = others + ' --bhns-injection '
-    if BE['search']=='BHNS':
-  	others = others + ' --bhns-injection '
+#[some other default values]
+#others = ' --print-xml  --debug 33 --print-bank '
+# options  without arguments 
+
+#if options.fast_simulation==True:
+#  others = others + ' --fast-simulation '
+#if options.bhns_injection==True:
+#  others = others + ' --bhns-injection '
+#if BE['search']=='BHNS':
+#  others = others + ' --bhns-injection '
         
-    arguments  = others
+#arguments  = others
 
-    #depending on the "search" value, we set some extra default values
-    BE = set_predefined_search_parameter(BE)
     
-    time.sleep(1)
-    # default values for lower cut off frequency 
-    if BE['fl']==-1:
-        if BE['noise-model']=='VIRGO':
-            BE['fl'] = 20        
-        elif BE['noise-model']=='GEO':
-            BE['fl']=40
-        elif BE['noise-model']=='LIGOI':
-            BE['fl']=40
-        elif BE['noise-model']=='LIGOA':
-            BE['fl']=20
-        elif BE['noise-model']=='EGO':
-            BE['fl']=14
-            if BE['search']=='PBH':
-		BE['fl']=20
-
-    # compute the number of trial per node   
-    nCondor = math.ceil(options.ntrial/options.njobs)
-    BE['ntrial'] = nCondor
-    
-
-    for arg in  BE:
-	if arg!='search':
-		arguments = arguments +  ' --'+arg+' '+ str(BE[arg])
-    
-    if options.max_total_mass > 0:
-	BE['max-total-mass'] = str(options.max_total_mass)
-
-    time.sleep(1)
-    # print some information on the screen
-    print """
+arguments = create_condor_file(configcp)
+print """
 	The condor script will use the following arguments 
 	-------------------------------------------
     """
+print arguments
+print '\n--- The number of simulation requested is '+configcp.get("simulation", "ntrial")
+print '--- They will be split into '+ configcp.get("simulation", "njobs")+' jobs'
 
-    for arg in BE:
-	print '    ' + arg + ' = ' +str(BE[arg])
-    print '    we also use these options :'+others
-    print '\n--- The number of simulation requested is '+str(BE['ntrial'])
-    print '--- They will be split into '+ str(options.njobs)+' jobs'
+# create the condor file using the input parameter stored in BE
+create_dag_file(configcp)
+create_bank(configcp)
 
-    # create the condor file using the input parameter stored in BE
-    create_condor_file(BE, arguments)
-    create_dag_file(options.njobs)
-
-    # we create only the bank. This is mainly to test if the 
-    # input parameters are correct
-    create_bank(arguments)
-
-    #create prototyp
-    print '--- Generating the prototype xml file for merging condor job'
-    command = path + executable_name + ' ' + arguments +' --print-prototype 1>bep_proto.out 2>bep_proto.err'
-    os.system(command)
-    print '... done'
-    time.sleep(.5)
+print '--- Generating the prototype xml file for merging condor job'
+arguments = ""
+command = configcp.get("main", "executable") + ' ' + arguments +' --print-prototype 1>bep_proto.out 2>bep_proto.err'
+os.system(command)
+print '... done'
+time.sleep(.5)
     
-    print """--- In order to start the job, type
+print """--- In order to start the job, type
     	
                 condor_submit_dag -maxjobs 100  bep.dag
                 
@@ -351,8 +282,8 @@ def main():
                 
                  finalise.sh"""
 
-    create_finalise_script(BE, options)
-    os.system('mkdir log')
+create_finalise_script(configcp)
+os.system('mkdir log')
         
-if __name__ == "__main__":
-    main()
+#if __name__ == "__main__":
+#    main()
