@@ -158,7 +158,7 @@ def create_finalise_script(configcp):
   os.system('chmod 755 finalise.sh')
         
 
-def check_executable(configcp):i
+def check_executable(configcp):
   """
   """
   try:
