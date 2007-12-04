@@ -450,7 +450,8 @@ typedef enum {
    BCVC,
    FrameFile,
    AmpCorPPN,
-   NumRel
+   NumRel,
+   Eccentricity
  } Approximant;
 /* </lalVerbatim>  */
 
@@ -1024,7 +1025,6 @@ void LALInspiralWave1(
      REAL4Vector *signalvec,
      InspiralTemplate *params);
 
-
 void LALInspiralWave1Templates(
      LALStatus *status,
      REAL4Vector *signalvec1,
@@ -1037,6 +1037,25 @@ void LALInspiralWave1ForInjection(
      InspiralTemplate *params,
      PPNParamStruc  *ppnParams			     
      );
+
+void LALInspiralEccentricity(
+     LALStatus *status,
+     REAL4Vector *signalvec,
+     InspiralTemplate *params);
+
+void LALInspiralEccentricityTemplates(
+     LALStatus *status,
+     REAL4Vector *signalvec1,
+     REAL4Vector *signalvec2,
+     InspiralTemplate *params);
+
+void LALInspiralEccentricityForInjection(
+     LALStatus        *status,
+     CoherentGW *waveform,
+     InspiralTemplate *params,
+     PPNParamStruc  *ppnParams			     
+     );
+
 
 /*  <lalLaTeX>
 \newpage\input{LALInspiralWave2C}
