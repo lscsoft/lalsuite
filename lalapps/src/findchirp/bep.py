@@ -26,59 +26,9 @@ host = uname[1]
 
 
 
-def set_predefined_search_parameter(BE):
-	if BE['search']=='BNS':
-	    BE['bank-mass-range'] = '1 3'
-	    BE['signal-mass-range'] = '1 3'
-	    BE['sampling'] = 4096
-	    BE['bank-ffinal']= BE['sampling']/2 - 1
-    
-	elif BE['search']=='BBH':
-	    BE['bank-mass-range'] = '3 30'
-	    BE['signal-mass-range'] = '3 30'
-	    BE['sampling'] = 4096
-	    BE['bank-ffinal'] = BE['sampling']/2 - 1
-	
-	elif BE['search']=='BHNS':
-	    BE['bank-mass-range'] = '1 63'
-	    BE['signal-mass-range'] = '1 60'
-	    BE['sampling'] = 4096
-	    BE['bank-ffinal'] = BE['sampling']/2 - 1
-	
-	elif BE['search']=='S5':
-	    BE['bank-mass-range'] = '1 30'
-	    BE['signal-mass-range'] = '1 30'
-	    BE['sampling'] = 4096
-	    BE['bank-ffinal'] = BE['sampling']/2 - 1
-	
-	elif BE['search']=='BCV':
-	    BE['bank-psi0-range'] = '10000 550000'
-	    BE['bank-psi3-range'] = '-5000 -10'
-	    BE['bank-number-fcut'] = '3'
-	    BE['signal-mass-range'] = '3 80'
-	    BE['bank-mass-range'] = '3 80'
-	    BE['signal-max-total-mass'] =  80
-	    BE['bank-alpha'] = 0.01
-	    BE['sampling'] = 4096
-	    BE['bank-ffinal'] = BE['sampling']/2 - 1
-	    BE['template'] = 'BCV'
-	    BE['bank-inside-polygon'] = 1
-	   
-	   
-	elif BE['search']=='PBH':
-	    BE['bank-mass-range'] = '.3 1'
-	    BE['signal-mass-range'] = '.3 1'
-	    BE['sampling'] = 4096
-	    BE['bank-ffinal'] = BE['sampling']/2 - 1
-	else:
-	    BE['bank-mass-range'] = '1 3'
-	    BE['signal-mass-range'] = '1 3'
-	    BE['sampling'] = 4096
-	    BE['bank-ffinal'] = BE['sampling']/2 - 1
-	return BE
-
 def create_condor_file(configcp):
   """
+  create a condor file for lalapps_bankefficiency
   """
   fp = open('bep.sub','w');
   fp.write('Executable   = ' +configcp.get("main", "executable")+"\n")
@@ -87,9 +37,6 @@ def create_condor_file(configcp):
   if host.find('coma')>=0:        
     fp.write('Environment  = LD_LIBRARY_PATH=/usr/lscsoft/non-lsc/lib\n')
      
-    #fp.write('Requirements = Memory >=128 && OpSys == "LINUX" && FileSystemDomain == "explorer" && UidDomain == "explorer"\n')
-    #fp.write('+MaxHours =40\n\n')
-
   arguments = ""
   for i in configcp.items("general"):
     arguments = arguments + ' --'+i[0] +' ' +i[1]
@@ -102,15 +49,11 @@ def create_condor_file(configcp):
   N = float(configcp.get("simulation", "njobs"))
   print n/N
   
-  
   arguments = arguments + ' --ntrial '+str( int(n/N))
-
-
 
   fp.write('Arguments = ' + arguments + ' --seed $(macroseed)')
   fp.write('\n\n')
   fp.write('priority = 10\n')
-  
   
   if host.find('ldas-grid')>=0:        
     index = 1
@@ -138,7 +81,7 @@ def create_condor_file(configcp):
 
 def create_bank(configcp, arguments):
   """
-  
+  create the template bank independantly 
   """
   arguments = arguments + ' --n 1 --check --print-bank --print-xml'
   os.system('rm -f BE_Bank.dat BE_Bank.xml')
@@ -158,6 +101,8 @@ def create_bank(configcp, arguments):
 
 def create_dag_file(configcp):
   """ 
+  create the whole daga file containing jobs for the simulations and the
+  output (finalise.sh)
   """
   njobs = int(configcp.get("simulation", "njobs"))
   print '--- Generating the dag file'
@@ -171,13 +116,30 @@ def create_dag_file(configcp):
   for id in range(1,njobs+1,1):
     fp.write('PARENT ' + str(id)+' CHILD '+str(njobs+1)+'\n')
     
-
-                
   fp.close()
   print '... done'
 
+def create_finalise_condor(configcp):
+  """
+  create the sub file for finalise.sh
+  """
+  fp = open('finalise.sub', 'w')
+  fp.write('Executable   = ./finalise.sh\n')
+  fp.write('Universe     = vanilla\n')
+  fp.write('Arguments =\n')
+  fp.write('priority = 10\n')
+  fp.write('log = ./log/tmp\n')
+  fp.write('output = ./out_finalise\n')
+  fp.write('error = ./log/err_finalise\n')
+  fp.write('notification = never\n')
+  fp.write('Queue 1\n')
+  fp.close()
+
+  
 def create_finalise_script(configcp):
   """
+  create the finalise,sh script that concatenates all the output into an XML
+  file.
   """
   fl = configcp.get("general", "fl")
   noise_model = configcp.get("general", "noise-model")
@@ -196,7 +158,9 @@ def create_finalise_script(configcp):
   os.system('chmod 755 finalise.sh')
         
 
-def check_executable(configcp):
+def check_executable(configcp):i
+  """
+  """
   try:
     print '--- Check that the executable ('+ configcp.get("main","executable")  +')is present in '+path
     f = open(configcp("main", "executable"), 'r')
@@ -210,6 +174,8 @@ def check_executable(configcp):
 
 
 def parse_arguments():
+  """
+  """
   print '--- Parsing user arguments'
   parser = OptionParser()
   parser.add_option( "--config-file")
@@ -254,6 +220,7 @@ print '--- They will be split into '+ configcp.get("simulation", "njobs")+' jobs
 
 # create the condor file using the input parameter stored in BE
 create_finalise_script(configcp)
+create_finalise_condor(configcp)
 create_dag_file(configcp)
 create_bank(configcp, arguments)
 
