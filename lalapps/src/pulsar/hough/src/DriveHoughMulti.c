@@ -2576,7 +2576,6 @@ void SplitSFTs(LALStatus         *status,
   sumWeightpMax = (REAL8)(mObsCoh)/p;       /* Compute the value of the sumWeight we want to fix in each set of SFT's */
   weights_ptr = weightsV->data;    /* Make the pointer to point to the first position of the vector weightsV.data */
   
-  /*   for (j=0;(UINT4)(weights_ptr-weightsV->data)<mObsCoh;j++){ */
   iSFT = 0;
   for (j = 0; j < p; j++){
 

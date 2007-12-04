@@ -150,8 +150,9 @@ int main(int argc, char *argv[]){
   
   /* skypatch info */
   REAL8  *skyAlpha, *skyDelta, *skySizeAlpha, *skySizeDelta; 
-  UINT4   nSkyPatches, skyIndex, skyCounter=0; 
+  UINT4   nSkyPatches, skyCounter=0; 
   static REAL8Cart3CoorVector skyPatchCenterV;
+  INT4   skyIndex;
 
   /* standard pulsar sft types */ 
   MultiSFTVector *inputSFTs  = NULL;
@@ -218,7 +219,7 @@ int main(int argc, char *argv[]){
   CHAR   *uvar_fnameOut=NULL;
   CHAR   *uvar_skyfile=NULL;
   LALStringVector *uvar_linefiles=NULL;
-  UINT4   uvar_p;
+  INT4   uvar_p;
 
   /******************************************************************/ 
   /*  set up the default parameters  */
@@ -1055,8 +1056,8 @@ int main(int argc, char *argv[]){
       
       /* block for calculating peakgram and number count */  
       {
-       UINT4 iIFO, iSFT, ii, numberSFTp, k;
-       INT4 index;
+       UINT4 iIFO, iSFT, ii, numberSFTp;
+       INT4 index, k;
        SFTtype  *sft;
 
        LAL_CALL(SplitSFTs(&status, &weightsV, &chi2Params), &status);
@@ -1128,7 +1129,7 @@ int main(int argc, char *argv[]){
 {
       REAL8   eta;                /* Auxiliar variable */ 
       REAL8   nj, sumWeightj, sumWeightSquarej;
-      UINT4   k;               
+      INT4   k;               
 
       numberCountTotal=0;
       chi2=0;
@@ -1139,7 +1140,7 @@ int main(int argc, char *argv[]){
       
       eta=numberCountTotal/mObsCoh;
       
-      for(j=0 ; j<(uvar_p) ; j++){
+      for(j=0 ; j<(UINT4)(uvar_p) ; j++){
 	  
 	  nj=numberCountVec.data[j];
 	  sumWeightj=chi2Params.sumWeight[j];
@@ -1934,8 +1935,8 @@ void SplitSFTs(LALStatus         *status,
 	       REAL8Vector       *weightsV,
 	       HoughParamsTest   *chi2Params){
   
-    INT4    j=0;           /* index of each block. It runs betwen 0 and p */ 
-    UINT4   iSFT=0;       
+    UINT4    j=0;           /* index of each block. It runs betwen 0 and p */ 
+    UINT4   iSFT;       
     REAL8   *weights_ptr;  /* pointer to weightsV.data */
     REAL8   sumWeightpMax; /* Value of sumWeight we want to fix in each set of SFTs */
     UINT4   numberSFT;     /* Counter with the # of SFTs in each block */        
@@ -1960,30 +1961,32 @@ void SplitSFTs(LALStatus         *status,
   mObsCoh = weightsV->length;    
   p = chi2Params->length;
 
-  sumWeightpMax=mObsCoh/p;       /* Compute the value of the sumWeight we want to fix in each set of SFT's */
+  sumWeightpMax=(REAL8)(mObsCoh)/p;       /* Compute the value of the sumWeight we want to fix in each set of SFT's */
   weights_ptr=weightsV->data;    /* Make the pointer to point to the first position of the vector weightsV.data */
   
-
-      for (j=0;(UINT4)(weights_ptr-weightsV->data)<mObsCoh;j++){
-
-	  partialsumWeightSquarep=0;
-	  partialsumWeightp=0;
-	  
-	  for(numberSFT=0;(partialsumWeightp<sumWeightpMax)&&(iSFT<mObsCoh);){
-	          numberSFT++;
-		  iSFT++;
-		  partialsumWeightp += *weights_ptr;
-		  partialsumWeightSquarep += (*weights_ptr)*(*weights_ptr);
-		  weights_ptr++;
-	      } /* loop over SFTs */
-	  
-	  chi2Params->numberSFTp[j]=numberSFT;
-	  chi2Params->sumWeight[j]=partialsumWeightp;
-	  chi2Params->sumWeightSquare[j]=partialsumWeightSquarep;
-      
-       } /* loop over the p blocks of data */
   
-      
+  iSFT = 0;
+  for (j = 0; j < p; j++){
+
+      partialsumWeightSquarep = 0;
+      partialsumWeightp = 0;
+    
+      for(numberSFT = 0;(partialsumWeightp<sumWeightpMax)&&(iSFT<mObsCoh); numberSFT++, iSFT++){
+ 
+	  partialsumWeightp += *weights_ptr;
+	  partialsumWeightSquarep += (*weights_ptr)*(*weights_ptr);
+	  weights_ptr++; 
+
+      } /* loop over SFTs */
+    
+      ASSERT ( (UINT4)j < p, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+  
+      chi2Params->numberSFTp[j] = numberSFT;
+      chi2Params->sumWeight[j] = partialsumWeightp;
+      chi2Params->sumWeightSquare[j] = partialsumWeightSquarep;
+    
+  } /* loop over the p blocks of data */
+     
     
   DETATCHSTATUSPTR (status);
   /* normal exit */
