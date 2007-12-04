@@ -136,13 +136,16 @@ def create_condor_file(configcp):
   
   return arguments
 
-def create_bank(configcp):
-  arguments=""
+def create_bank(configcp, arguments):
+  """
+  
+  """
+  arguments = arguments + ' --n 1 --check --print-bank --print-xml'
   os.system('rm -f BE_Bank.dat BE_Bank.xml')
   print '###'
   print ' We are creating the template bank for sanity check. Please wait'
   fp =open('BankEfficiency_createbank','w');
-  fp.write( configcp.get("main", "executable") + arguments+' --n 1 --faithfulness --print-bank 1> bep_bank.out 2>bep_bank.err'+'\n')
+  fp.write( configcp.get("main", "executable") + arguments +' 1> bep_bank.out 2>bep_bank.err'+'\n')
   fp.close()
   os.system('chmod 755 BankEfficiency_createbank')
   a=os.system('./BankEfficiency_createbank')
@@ -151,6 +154,7 @@ def create_bank(configcp):
     print '... done (your parameters seems correct). See BE_Bank.xml file.'
   else:
     print '... failed (your parameters seems correct)'
+    sys.exit()
 
 def create_dag_file(configcp):
   """ 
@@ -159,8 +163,14 @@ def create_dag_file(configcp):
   print '--- Generating the dag file'
   fp=open('bep.dag', 'w')
   for id in range(1,njobs+1,1):
-    fp.write('JOB '+str(id)+' bep.sub'+'\n')
+    fp.write('JOB '+str(id)+' bep.sub\n')
     fp.write('VARS '+str(id)+' macroseed="'+str(id)+'"\n')
+
+  fp.write('JOB '+str(njobs+1)+ ' finalise.sub\n' )
+  
+  for id in range(1,njobs+1,1):
+    fp.write('PARENT ' + str(id)+' CHILD '+str(njobs+1)+'\n')
+    
 
                 
   fp.close()
@@ -178,8 +188,8 @@ def create_finalise_script(configcp):
   
   fp = open('finalise.sh', 'w')
   fp.write('#!/bin/sh\n')
-  fp.write('rm -f Trigger.dat ; find . -name "out_*" | awk \'{print "cat  " $1 ">> Trigger.dat"}\' > script.sh; chmod 755 script.sh ; ./script.sh; \n')
   fp.write('cp TMPLTBANK.xml BE_Bank.xml\n')
+  fp.write('rm -f Trigger.dat ; find . -name "out_*" | awk \'{print "cat  " $1 ">> Trigger.dat"}\' > script.sh; chmod 755 script.sh ; ./script.sh; \n')
   fp.write(configcp.get("main", "executable") +' --ascii2xml \n')
   fp.write('mv Trigger.xml Trigger_' + noise_model +'_'+fl+'_'+grid+'_'+template+'_'+signal+'_'+mm+'.xml')
   fp.close()
@@ -231,27 +241,7 @@ def parse_arguments():
 options, args = parse_arguments()
 configcp = ConfigParser.ConfigParser()
 configcp.read(options.config_file)
-print configcp.items("main")
-#BE['search'] 		= options.search 
-#derived options set to fixed value for the time being.
-#if options.bank_ffinal > options.sampling/2-1:
-#  BE['bank-ffinal'] = options.sampling/2-1
-#e#lse:
-#  BE['bank-ffinal'] = options.bank_ffinal
-    
-#[some other default values]
-#others = ' --print-xml  --debug 33 --print-bank '
-# options  without arguments 
-
-#if options.fast_simulation==True:
-#  others = others + ' --fast-simulation '
-#if options.bhns_injection==True:
-#  others = others + ' --bhns-injection '
-#if BE['search']=='BHNS':
-#  others = others + ' --bhns-injection '
         
-#arguments  = others
-
     
 arguments = create_condor_file(configcp)
 print """
@@ -263,8 +253,9 @@ print '\n--- The number of simulation requested is '+configcp.get("simulation", 
 print '--- They will be split into '+ configcp.get("simulation", "njobs")+' jobs'
 
 # create the condor file using the input parameter stored in BE
+create_finalise_script(configcp)
 create_dag_file(configcp)
-create_bank(configcp)
+create_bank(configcp, arguments)
 
 print '--- Generating the prototype xml file for merging condor job'
 arguments = ""
@@ -274,13 +265,18 @@ print '... done'
 time.sleep(.5)
     
 print """--- In order to start the job, type
-    	
-                condor_submit_dag -maxjobs 100  bep.dag
+--------------------------------------------
+condor_submit_dag -maxjobs 100  bep.dag
+
+or 
+
+condor_submit_dag -maxjobs 100  -f bep.dag
+--------------------------------------------
                 
-        Once the dag is finished and all the job are completed, get back all
-        the results together within an xml file by using the script 
-                
-                 finalise.sh"""
+Once the dag is finished and all the job are completed, get back all
+the results together within an xml file by using the script called : finalise.sh
+
+Ideally, this script should be put within the daga file"""
 
 create_finalise_script(configcp)
 os.system('mkdir log')
