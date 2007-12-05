@@ -1,21 +1,21 @@
 /*
-*  Copyright (C) 2007 Chad Hanna, Alexander Dietz, Duncan Brown, Gareth Jones, Jolien Creighton, Nickolas Fotopoulos, Patrick Brady, Stephen Fairhurst
-*
-*  This program is free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  This program is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
-*  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
-*/
+ *  Copyright (C) 2007 Chad Hanna, Alexander Dietz, Duncan Brown, Gareth Jones, Jolien Creighton, Nickolas Fotopoulos, Patrick Brady, Stephen Fairhurst
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ *  MA  02111-1307  USA
+ */
 
 
 
@@ -69,14 +69,13 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
  *  *********************************
  */
 ProcessParamsTable *next_process_param( const char *name, const char *type,
-					const char *fmt, ... );
-void printUsage(void);
+    const char *fmt, ... );
 void read_mass_data( char* filename );
 void read_source_data( char* filename );
 void drawFromSource( REAL8 *rightAscension,
-                     REAL8 *declination,
-                     REAL8 *distance,
-                     CHAR  name[LIGOMETA_SOURCE_MAX] );
+    REAL8 *declination,
+    REAL8 *distance,
+    CHAR  name[LIGOMETA_SOURCE_MAX] );
 void drawLocationFromExttrig( SimInspiralTable* table );
 void drawMassFromSource( SimInspiralTable* table );
 
@@ -182,93 +181,85 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
  * print-out of the usage
  *
  */
-void printUsage(void)
+static void print_usage(char *program)
 {
-  printf("lalapps_inspinj [options]\n" );
-  printf("\nDefaults are shown in brackets\n\n" );
-  printf("  --help                   display this message\n");
-  printf("  --source-file FILE       read source parameters from FILE\n");
-  printf("  --mass-file FILE         "
-	 "read population mass parameters from FILE\n");
-  printf("  --exttrig-file FILE      XML file containing external trigger\n");
-  printf("  --f-lower FREQUENCY      lower cut-off frequency.\n");
-  printf("  --gps-start-time TIME    "
-	 "start injections at GPS time TIME\n");
-  printf("  --gps-end-time TIME      "
-	 "end injections at GPS time TIME \n");
-  printf("  --time-step STEP         "
-	 "space injections by ave of STEP sec (2630 / PI)\n");
-  printf("  --time-interval TIME     "
-	 "distribute injections in interval TIME (0)\n");
-  printf("  --seed SEED              "
-	 "seed random number generator with SEED (1)\n");
-  printf("  --waveform NAME          set waveform type to NAME\n");
-  printf("  --user-tag STRING        set the usertag to STRING\n");
-  printf("  --enable-milkyway LUM    "
-	 "enables Milky Way injections, set MW luminosity LUM\n");
-  printf("  --disable-milkyway       disables Milky Way injections\n");
-  printf("  --min-distance DMIN      "
-	 "set the minimum distance to DMIN kpc\n");
-  printf("  --max-distance DMAX      set the maximum distance to DMAX kpc\n");
-  printf("  --d-distr DDISTR         "
-	 "distribute injections uniformly over d\n");
-  printf("                           (DDISTR = uniform), or over log10(d) \n");
-  printf("                           (DDISTR = log10),\n");
-  printf("                           or over volume (DDISTR = volume)\n");
-  printf("                           or using source list (DDISTR = source)\n");
-  printf("  --l-distr LDISTR         "
-	 "sets the distribution for the source locations,\n");
-  printf("                           "
-	 "LDISTR=source uses the locations given in the \n");
-  printf("                           "
-         "source-file, LDISTR=exttrig uses external trigger file,\n");
-  printf("                           "
-         "LDISTR=random uses random locations\n");
-  printf("  --i-distr INCDIST        "
-	 "distribute inclinations uniformly ver arccos(i)\n");
-  printf("                           "
-	 "(INCDIST=uniform) or gaussian distributed in \n");
-  printf("                           arccos(i)  (INCDIST=gaussian)\n");
-  printf("  --inclStd INCLSTD        "
-	 "sets the standard deviation for gaussian inclination distr.\n");
-  printf("  --min-mass1 MIN          "
-	 "set the minimum component mass to MIN\n");
-  printf("  --max-mass1 MAX          "
-	 "set the maximum component mass to MAX\n");
-  printf("  --min-mass2 MIN          "
-	 "set the minimum component mass2 to MIN (minMass1)\n");
-  printf("  --max-mass2 MAX          "
-	 "set the maximum component mass2 to MAX (maxMass1)\n"); 
-  printf("  --min-mtotal MINTOTAL    "
-	 "sets the minimum total mass to MINTOTAL\n");
-  printf("  --max-mtotal MAXTOTAL    "
-	 "sets the maximum total mass to MAXTOTAL\n");
-  printf("  --m-distr MDISTR         distribute injections uniformly over\n");
-  printf("                           "
-	 "total mass (MDISTR = totalMass), or over mass1 and\n");
-  printf("                           over mass2 (MDISTR = componentMass), \n");
-  printf("                           or gaussian (MDISTR=gaussian), \n");
-  printf("                           or log in comonent mass (MDISTR=log),\n");
-  printf("                           or using mass file (MDISTR=source)\n");
-  printf("  --mean-mass1 MASS         "
-	 "set the mean value for both mass components if \n");
-  printf("                           MDISTR=gaussian\n");
-  printf("  --mean-mass2 MASS        "
-	 "set the mean value for mass2 if MDISTR=gaussian\n");
-  printf("  --stdev-mass1 MSTD        "
-	 "set the standard deviation for both component\n");
-  printf("                           masses if MDISTR=gaussian\n");
-  printf("  --stdev-mass2 MSTD       "
-	 "set the standard deviation for mass2 if \n");
-  printf("                           MDISTR=gaussian\n");
-  printf("  --disable-spin           disables spinning injections\n");
-  printf("  --enable-spin            enables spinning injections\n");
-  printf("  [--min-spin1 MIN]        set the minimum spin1 to MIN (0.0)\n");
-  printf("  [--max-spin1 MAX]        set the maximum spin1 to MAX (0.0)\n");
-  printf("  [--min-spin2 MIN]        set the minimum spin2 to MIN (0.0)\n");
-  printf("  [--max-spin2 MAX]        set the maximum spin2 to MAX (0.0)\n");
-  printf("  [--output NAME]          set the output filename \n");
-  printf("\n");
+  fprintf(stderr,
+      "lalapps_inspinj [options]\n"\
+      "The following options are recognized.  Options not surrounded in []\n"\
+      "are required. Defaults are shown in brackets\n", program );
+  fprintf(stderr,
+      " [--help ]                 display this message\n"\
+      " [--verbose]               print progress information\n"\
+      " [--user-tag] usertag      set the usertag \n"\
+      " [--output ] name          overwrite the standard file naming convention\n"\
+      " [--write-compress]        write a compressed xml file\n"\
+      "\n"\
+      "Waveform details:\n"\
+      " [--seed] randomSeed       seed for random number generator (default : 1)\n"\
+      "  --f-lower freq           lower cut-off frequency.\n"\
+      "  --waveform wfm           set waveform type to wfm\n"\
+      "\n"\
+      "Time distribution information:\n"\
+      "  --gps-start-time start   GPS start time for injections\n"\
+      "  --gps-end-time end       GPS end time for injections\n"\
+      "  [--time-step] step       space injections by average of step seconds\n"\
+      "                           (default : 2630 / pi seconds)\n"\
+      "  [--time-interval] int    distribute injections in an interval, int s\n"\
+      "                           (default : 0 seconds)\n"\
+      "\n"\
+      "Source distribution information:\n"\
+      "  --l-distr  locDist       set the source location distribution,\n"\
+      "                           locDist must be one of:\n"\
+      "                           source: use locations from source-file\n"\
+      "                           exttrig: use external trigger file\n"\
+      "                           random: uses random locations\n"\
+      "  --d-distr distDist       set the distance distribution of injections\n"\
+      "                           source: take distance from galaxy source file\n"\
+      "                           uniform: uniform distribution in distance\n"\
+      "                           log10: uniform distribution in log10(d) \n"\
+      "                           volume: uniform distribution in volume\n"\
+      "  --i-distr INCDIST        set the inclination distribution, must be either\n"\
+      "                           uniform: distribute uniformly over arccos(i)\n"\
+      "                           gaussian: gaussian distributed in arccos(i)\n"\
+      " [--inclStd]  incStd       std dev for gaussian inclination dist\n"\
+      " [--source-file] sources   read source parameters from sources\n"\
+      "                           requires enable/disable milkyway\n"\
+      " [--enable-milkyway] lum   enables MW injections, set MW luminosity\n"\
+      " [--disable-milkyway]      disables Milky Way injections\n"\
+      " [--exttrig-file] exttrig  XML file containing external trigger\n"\
+      " [--min-distance] DMIN     set the minimum distance to DMIN kpc\n"\
+      " [--max-distance] DMAX     set the maximum distance to DMAX kpc\n"\
+      "                           min/max distance required if d-distr not 'source'\n"\
+      "\n"\
+      "Mass distribution information:\n"\
+      " --m-distr massDist        set the mass distribution of injections\n"\
+      "                           must be one of:\n"\
+      "                           source: using file containing list of mass pairs\n"\
+      "                           totalMass: uniform distribution in total mass\n"\
+      "                           componentMass: uniform in m1 and m2\n"\
+      "                           gaussian: gaussian mass distribution\n"\
+      "                           log: log distribution in comonent mass\n"\
+      " [--mass-file] mFile       read population mass parameters from mFile\n"\
+      " [--min-mass1] m1min       set the minimum component mass to m1min\n"\
+      " [--max-mass1] m1max       set the maximum component mass to m1max\n"\
+      " [--min-mass2] m2min       set the min component mass2 to m2min\n"\
+      " [--max-mass2] m2max       set the max component mass2 to m2max\n"\
+      " [--min-mtotal] minTotal   sets the minimum total mass to minTotal\n"\
+      " [--max-mtotal] maxTotal   sets the maximum total mass to maxTotal\n"\
+      " [--mean-mass1] m1mean     set the mean value for mass1\n"\
+      " [--stdev-mass1] m1std     set the standard deviation for mass1\n"\
+      " [--mean-mass2] m2mean     set the mean value for mass2\n"\
+      " [--stdev-mass2] m2std     set the standard deviation for mass2\n"\
+      "\n"\
+      "Spin distribution information:\n"\
+      "  --disable-spin           disables spinning injections\n"\
+      "  --enable-spin            enables spinning injections\n"\
+      "                           One of these is required.\n"\
+      "  [--min-spin1] spin1min   Set the minimum spin1 to spin1min (0.0)\n"\
+      "  [--max-spin1] spin1max   Set the maximum spin1 to spin1max (0.0)\n"\
+      "  [--min-spin2] spin2min   Set the minimum spin2 to spin2min (0.0)\n"\
+      "  [--max-spin2] spin2max   Set the maximum spin2 to spin2max (0.0)\n"\
+      "\n");
 }
 
 
@@ -281,7 +272,6 @@ void printUsage(void)
 void 
 read_mass_data( char* filename )
 {
-  /*const char *basename = massFileName ? massFileName : "BNSMasses.dat";*/
   char line[256];
   FILE   *fp;
   int n = 0;
@@ -308,7 +298,7 @@ read_mass_data( char* filename )
     fprintf( stderr, "Allocation error for mass_data\n" );
     exit( 1 );
   }
-  
+
   /* 'rewind' the file */
   rewind( fp );
 
@@ -329,7 +319,7 @@ read_mass_data( char* filename )
  *
  */
 
-void 
+  void 
 read_source_data( char* filename )
 {
   char line[256];
@@ -405,10 +395,10 @@ read_source_data( char* filename )
     fprintf( stderr, "Allocation error for ratioVec/fracVec\n" );
     exit( 1 );
   }
-    
+
   /* MW luminosity might be zero */
   norm = mwLuminosity;
-  
+
   /* calculate the fractions of the different sources */
   for ( i = 0; i < num_source; ++i )
     norm += ratioVec[i] = source_data[i].lum * source_data[i].fudge;
@@ -423,7 +413,7 @@ read_source_data( char* filename )
  * functions to draw masses from mass distribution
  *
  */
-   
+
 void drawMassFromSource( SimInspiralTable* table )
 { 
   REAL4 m1, m2, eta;
@@ -433,7 +423,7 @@ void drawMassFromSource( SimInspiralTable* table )
   index = (int)( num_mass * XLALUniformDeviate( randParams ) );
   m1=mass_data[index].mass1;
   m2=mass_data[index].mass2;
-  
+
   eta=m1 * m2 / ( ( m1 + m2 ) * ( m1 + m2 ) );
   table->mass1 = m1;
   table->mass2 = m2;
@@ -447,13 +437,13 @@ void drawMassFromSource( SimInspiralTable* table )
  *
  */
 void drawFromSource( REAL8 *rightAscension,
-                     REAL8 *declination,
-                     REAL8 *distance,
-                     CHAR   name[LIGOMETA_SOURCE_MAX] )
+    REAL8 *declination,
+    REAL8 *distance,
+    CHAR   name[LIGOMETA_SOURCE_MAX] )
 {
   REAL4 u;
   int i;
- 
+
   u=XLALUniformDeviate( randParams );
 
   /* draw from the source table */
@@ -466,16 +456,16 @@ void drawFromSource( REAL8 *rightAscension,
       *declination    = source_data[i].dec;
       *distance = source_data[i].dist/1000.0;
       memcpy( name, source_data[i].name,
-              sizeof(CHAR) * LIGOMETA_SOURCE_MAX );
+          sizeof(CHAR) * LIGOMETA_SOURCE_MAX );
       return;
     }
   }
 
   /* now then, draw from MilkyWay
-     WARNING: This sets location AND distance */
+WARNING: This sets location AND distance */
   XLALRandomInspiralMilkywayLocation( rightAscension, declination, distance, randParams );
   memcpy( name, MW_name,
-          sizeof(CHAR) * 30 );
+      sizeof(CHAR) * 30 );
 
 }
 
@@ -529,7 +519,7 @@ int main( int argc, char *argv[] )
   REAL8 timeInterval = 0;
   REAL4 fLower = -1;
   REAL4 eps=0.01;  /* needed for some awkward spinning injections */
-  
+
   size_t ninj;
   int rand_seed = 1;
 
@@ -710,7 +700,7 @@ int main( int argc, char *argv[] )
           exit( 1 );
         }
         gpsStartTime.gpsSeconds = gpsinput;
-        gpsStartTime.gpsNanoSeconds = 0;	
+        gpsStartTime.gpsNanoSeconds = 0;        
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, "int", 
               "%ld", gpsinput );
@@ -736,7 +726,7 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, gpsinput );
           exit( 1 );
         }
-	      gpsEndTime.gpsSeconds = gpsinput;
+        gpsEndTime.gpsSeconds = gpsinput;
         gpsEndTime.gpsNanoSeconds = 0;
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, "int", 
@@ -843,9 +833,9 @@ int main( int argc, char *argv[] )
         {
           mDistr=gaussianMassDist;
         } 
-	      else if (!strcmp(dummy, "log")) 
-	      {
-	        mDistr=logComponentMass;
+        else if (!strcmp(dummy, "log")) 
+        {
+          mDistr=logComponentMass;
         } 
         else
         {
@@ -885,7 +875,7 @@ int main( int argc, char *argv[] )
               "float", "%le", maxMass2 );
         break;
 
-     case 'A':
+      case 'A':
         minMtotal = atof( optarg );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, 
@@ -997,7 +987,7 @@ int main( int argc, char *argv[] )
         }
 
         break;
-	
+
       case 'l':
         optarg_len = strlen( optarg ) + 1;
         memcpy( dummy, optarg, optarg_len );
@@ -1032,7 +1022,7 @@ int main( int argc, char *argv[] )
         }
 
         break;
-	
+
       case 'I':
         optarg_len = strlen( optarg ) + 1;
         memcpy( dummy, optarg, optarg_len );
@@ -1065,21 +1055,21 @@ int main( int argc, char *argv[] )
         break;
 
 
-    case 'B':
-      /* gaussian width for inclination */
-      inclStd = (REAL4) atof( optarg );
-      if ( inclStd <= 0 )
-      {
-	fprintf( stderr, "invalid argument to --%s:\n"
-		 "inclination gaussian width must be greater than 0: "
-		 "(%f specified)\n",
-		 long_options[option_index].name, dmax );
-	exit( 1 );
-      }
-      this_proc_param = this_proc_param->next = 
-	next_process_param( long_options[option_index].name, 
-			    "float", "%e", inclStd );
-      break;
+      case 'B':
+        /* gaussian width for inclination */
+        inclStd = (REAL4) atof( optarg );
+        if ( inclStd <= 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "inclination gaussian width must be greater than 0: "
+              "(%f specified)\n",
+              long_options[option_index].name, dmax );
+          exit( 1 );
+        }
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%e", inclStd );
+        break;
 
       case 'P':
         optarg_len = strlen( optarg ) + 1;
@@ -1091,54 +1081,54 @@ int main( int argc, char *argv[] )
         break;
 
       case 'g':
-	minSpin1 = atof( optarg );
-	this_proc_param = this_proc_param->next =
-	  next_process_param( long_options[option_index].name,
-			      "float", "%le", minSpin1 );
-	break;
+        minSpin1 = atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%le", minSpin1 );
+        break;
 
-       case 'G':
-         maxSpin1 = atof( optarg );
-         this_proc_param = this_proc_param->next =
-           next_process_param( long_options[option_index].name,
-               "float", "%le", maxSpin1 );
-         break;
+      case 'G':
+        maxSpin1 = atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%le", maxSpin1 );
+        break;
 
-       case 'u':
-         minSpin2 = atof( optarg );
-         this_proc_param = this_proc_param->next =
-           next_process_param( long_options[option_index].name,
-               "float", "%le", minSpin2 );
-         break;
+      case 'u':
+        minSpin2 = atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%le", minSpin2 );
+        break;
 
-       case 'U':
-         maxSpin2 = atof( optarg );
-         this_proc_param = this_proc_param->next =
-           next_process_param( long_options[option_index].name,
-               "float", "%le", maxSpin2 );
-         break;
-       case 'V':
-         /* print version information and exit */
-         fprintf( stdout, "LIGO/LSC inspiral injection engine\n"
+      case 'U':
+        maxSpin2 = atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%le", maxSpin2 );
+        break;
+      case 'V':
+        /* print version information and exit */
+        fprintf( stdout, "LIGO/LSC inspiral injection engine\n"
             "The CBC group \n"
             "CVS Version: " CVS_ID_STRING "\n"
             "CVS Tag: " CVS_NAME_STRING "\n" );
-          exit( 0 );
-          break;
+        exit( 0 );
+        break;
 
       case 'h':
-        printUsage();
+        print_usage(argv[0]);
         exit( 0 );
         break;
 
       case '?':
-        printUsage();
+        print_usage(argv[0]);
         exit( 1 );
         break;
 
       default:
         fprintf( stderr, "unknown error while parsing options\n" );
-        printUsage();
+        print_usage(argv[0]);
         exit( 1 );
     }
   }
@@ -1147,17 +1137,17 @@ int main( int argc, char *argv[] )
   if ( mwLuminosity < 0  && dDistr == distFromSourceFile ) 
   {
     fprintf( stderr, 
-	     "Must specify either --enable-milkyway LUM or "
-	     "--disable-milkyway\n" );
-    printUsage();
+        "Must specify either --enable-milkyway LUM or --disable-milkyway\n"\
+        " when using --d-distr=source\n" );
+    print_usage(argv[0]);
     exit( 1 );
   }
 
   if (gpsStartTime.gpsSeconds==-1 || gpsEndTime.gpsSeconds==-1)
   {
     fprintf( stderr, 
-	     "Must specify both --gps-start-time and --gps-end-time.\n");
-    printUsage();
+        "Must specify both --gps-start-time and --gps-end-time.\n");
+    print_usage(argv[0]);
     exit( 1 );
   }
 
@@ -1166,28 +1156,28 @@ int main( int argc, char *argv[] )
   if ( dDistr == unknownDistanceDist )
   {
     printf("Must specify a distance distribution (--d-distr).\n");
-    printUsage();
+    print_usage(argv[0]);
     exit( 1 );
   }
 
   if ( lDistr == unknownLocationDist )
   {
     printf("Must specify a location distribution (--l-distr).\n");
-    printUsage();
+    print_usage(argv[0]);
     exit( 1 );
   }
 
   if ( mDistr == unknownMassDist )
   {
     printf("Must specify a mass distribution (--m-distr).\n");
-    printUsage();
+    print_usage(argv[0]);
     exit( 1 );
   }
 
   if ( iDistr == unknownInclDist )
   {
     printf("Must specify an inclination distribution (--i-distr).\n");
-    printUsage();
+    print_usage(argv[0]);
     exit( 1 );
   }
 
@@ -1198,7 +1188,7 @@ int main( int argc, char *argv[] )
     {
       fprintf( stderr, 
           "Must specify --source-file when using --d-distr source \n" );
-      printUsage();
+      print_usage(argv[0]);
       exit( 1 );
     }
 
@@ -1211,29 +1201,29 @@ int main( int argc, char *argv[] )
   if ( dDistr==distFromSourceFile && lDistr!=locationFromSourceFile )
   {    
     fprintf( stderr, 
-             "WARNING: source file specified for distance "
-             "but NOT for location. This might give strange distributions\n" );
+        "WARNING: source file specified for distance "
+        "but NOT for location. This might give strange distributions\n" );
   }
 
   /* check if the location file is specified for location but NOT for 
-     distances: GRB case */
+distances: GRB case */
   if ( dDistr!=distFromSourceFile && lDistr==locationFromSourceFile &&
-       mwLuminosity>0.0 )
+      mwLuminosity>0.0 )
   {    
     fprintf( stderr, 
-             "WARNING: source file specified for locations "
-             "but NOT for distances, while Milky Way injections "
-             "are allowed. This might give strange distributions\n" );
+        "WARNING: source file specified for locations "
+        "but NOT for distances, while Milky Way injections "
+        "are allowed. This might give strange distributions\n" );
   }
-  
+
 
   /* check selection of masses */
   if ( !massFileName && mDistr==massFromSourceFile )
   {
     fprintf( stderr, 
         "Must specify either a file contining the masses (--mass-file) "\
-	     "or choose another mass-distribution (--m-distr).\n" );
-    printUsage();
+        "or choose another mass-distribution (--m-distr).\n" );
+    print_usage(argv[0]);
     exit( 1 );
   }
 
@@ -1247,22 +1237,22 @@ int main( int argc, char *argv[] )
   if ( lDistr == locationFromExttrigFile && !exttrigFileName )
   {
     fprintf( stderr, 
-             "If --l-distr exttrig is specified, must specify " \
-             "external trigger XML file using --exttrig-file.\n");
-    printUsage();
+        "If --l-distr exttrig is specified, must specify " \
+        "external trigger XML file using --exttrig-file.\n");
+    print_usage(argv[0]);
     exit( 1 );
   } 
   if ( lDistr == locationFromExttrigFile && exttrigFileName )
   {
     numExtTriggers=LALExtTriggerTableFromLIGOLw( &exttrigHead, exttrigFileName,
-                                                 0, 1);
+        0, 1);
     printf("Number of triggers read from the external trigger file: %d\n",
-           numExtTriggers);
-    
+        numExtTriggers);
+
     if (numExtTriggers>1)
     {
       printf("WARNING: Only 1 external trigger expected in the file '%s'",
-             exttrigFileName );
+          exttrigFileName );
     }
     if (numExtTriggers==0)
     {
@@ -1275,9 +1265,9 @@ int main( int argc, char *argv[] )
   if ( iDistr==gaussianInclDist && inclStd<0.0 )
   {
     fprintf( stderr, 
-	     "Must specify width for gaussian inclination distribution, "\
-	     "use --inclStd.\n" );
-    printUsage();
+        "Must specify width for gaussian inclination distribution, "\
+        "use --inclStd.\n" );
+    print_usage(argv[0]);
     exit( 1 );
   }
 
@@ -1285,39 +1275,39 @@ int main( int argc, char *argv[] )
   if ( fLower <= 0.0 )
   {
     fprintf( stderr, "--f-lower must be specified and non-zero\n" );
-    printUsage();
+    print_usage(argv[0]);
     exit( 1 );
   }
 
 
   /* check for gaussian mass distribution parameters */
   if ( mDistr==gaussianMassDist && (meanMass1 < 0.0 || massStdev1 < 0.0 || 
-				    meanMass2 < 0.0 || massStdev2 < 0.0))
+        meanMass2 < 0.0 || massStdev2 < 0.0))
   {
     fprintf( stderr, 
-	     "Must specify --mean-mass1/2 and --stdev-mass1/2 if choosing"
-	     " --m-distr=gaussian\n" );
-    printUsage();
+        "Must specify --mean-mass1/2 and --stdev-mass1/2 if choosing"
+        " --m-distr=gaussian\n" );
+    print_usage(argv[0]);
     exit( 1 );
   }
 
   /* check if the mass area is properly specified */
   if ( mDistr!=gaussianMassDist && (minMass1 <0.0 || minMass2 <0.0 || 
-				    maxMass1 <0.0 || maxMass2 <0.0) )
+        maxMass1 <0.0 || maxMass2 <0.0) )
   {
     fprintf( stderr, 
-	     "Must specify --min-mass1/2 and --max-mass1/2 if choosing"
-	     " --m-distr not gaussian\n" );
-    printUsage();
+        "Must specify --min-mass1/2 and --max-mass1/2 if choosing"
+        " --m-distr not gaussian\n" );
+    print_usage(argv[0]);
     exit( 1 );
   }
 
-   /* check if the maximum total mass is properly specified */
+  /* check if the maximum total mass is properly specified */
   if ( mDistr!=gaussianMassDist && maxMtotal<(minMass1 + minMass2 ))
   {
     fprintf( stderr, 
-	     "Maximum total mass must be larger than minMass1+minMass2\n"); 
-    printUsage();
+        "Maximum total mass must be larger than minMass1+minMass2\n"); 
+    print_usage(argv[0]);
     exit( 1 );
   }
 
@@ -1325,24 +1315,24 @@ int main( int argc, char *argv[] )
   if ( maxMtotal<0.0)
   {
     fprintf( stderr, 
-	     "Must specify --max-mtotal.\n" );
-    printUsage();
+        "Must specify --max-mtotal.\n" );
+    print_usage(argv[0]);
     exit( 1 );
   }
   if ( minMtotal<0.0)
   {
     fprintf( stderr, 
-             "Must specify --min-mtotal.\n" );
-    printUsage();
+        "Must specify --min-mtotal.\n" );
+    print_usage(argv[0]);
     exit( 1 );
   }
 
   if ( dDistr!=distFromSourceFile && (dmin<0.0 || dmax<0.0) )
   {
     fprintf( stderr, 
-	     "Must specify --min-distance and --max-distance if "
-	     "--d-distr is not source.\n" );
-    printUsage();
+        "Must specify --min-distance and --max-distance if "
+        "--d-distr is not source.\n" );
+    print_usage(argv[0]);
     exit( 1 );
 
   } 
@@ -1350,15 +1340,15 @@ int main( int argc, char *argv[] )
   if ( !*waveform )
   {
     fprintf( stderr, "No waveform specified (--waveform).\n" );
-    printUsage();
+    print_usage(argv[0]);
     exit( 1 );
   }
 
   if ( spinInjections==-1 )
   {
     fprintf( stderr, 
-	     "Must specify --disable-spin or --enable-spin.\n" );
-    printUsage();
+        "Must specify --disable-spin or --enable-spin.\n" );
+    print_usage(argv[0]);
     exit( 1 );
   }
 
@@ -1368,8 +1358,8 @@ int main( int argc, char *argv[] )
     if (minSpin1 < 0. || minSpin2 < 0. || maxSpin1 > 1. || maxSpin2 >1.)
     {
       fprintf( stderr,
-               "Spins can only take values between 0 and 1.\n" );
-      printUsage();
+          "Spins can only take values between 0 and 1.\n" );
+      print_usage(argv[0]);
       exit( 1 );
     }
 
@@ -1377,8 +1367,8 @@ int main( int argc, char *argv[] )
     if (minSpin1 > maxSpin1 || minSpin2 > maxSpin2 )
     {
       fprintf( stderr,
-               "Minimal spins must be less than maximal spins.\n" );    
-      printUsage();
+          "Minimal spins must be less than maximal spins.\n" );    
+      print_usage(argv[0]);
       exit( 1 );
     }
   }
@@ -1427,14 +1417,14 @@ int main( int argc, char *argv[] )
   {
     /* increase counter */
     ninj++;
-		     
+
     /* store time in table */
     simTable=XLALRandomInspiralTime( simTable, randParams,
-				     currentGpsTime, timeInterval );
+        currentGpsTime, timeInterval );
 
     /* populate waveform and other parameters */
     memcpy( simTable->waveform, waveform, 
-	    sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX );
+        sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX );
     simTable->f_lower = fLower;
 
     /* populate masses */
@@ -1445,20 +1435,20 @@ int main( int argc, char *argv[] )
     else if ( mDistr==gaussianMassDist )
     { 
       simTable=XLALGaussianInspiralMasses( simTable, randParams,
-                                           minMass1, maxMass1,
-					   meanMass1, massStdev1,
-                                           minMass2, maxMass2, 
-					   meanMass2, massStdev2);
+          minMass1, maxMass1,
+          meanMass1, massStdev1,
+          minMass2, maxMass2, 
+          meanMass2, massStdev2);
     } else {
       simTable=XLALRandomInspiralMasses( simTable, randParams, mDistr,
-					 minMass1, maxMass1,
-					 minMass2, maxMass2, 
-                                         minMtotal, maxMtotal);
+          minMass1, maxMass1,
+          minMass2, maxMass2, 
+          minMtotal, maxMtotal);
     }
 
     /* draw location and distances */
     drawFromSource( &drawnRightAscension, &drawnDeclination, &drawnDistance,
-                    drawnSourceName );
+        drawnSourceName );
 
     /* populate distances */
     if ( dDistr == distFromSourceFile )
@@ -1468,7 +1458,7 @@ int main( int argc, char *argv[] )
     else
     {
       simTable=XLALRandomInspiralDistance(simTable, randParams, 
-					  dDistr, dmin/1000.0, dmax/1000.0);
+          dDistr, dmin/1000.0, dmax/1000.0);
     }
 
     /* populate location */
@@ -1477,7 +1467,7 @@ int main( int argc, char *argv[] )
       simTable->longitude = drawnRightAscension;
       simTable->latitude  = drawnDeclination;
       memcpy( simTable->source, drawnSourceName,
-              sizeof(CHAR) * LIGOMETA_SOURCE_MAX );
+          sizeof(CHAR) * LIGOMETA_SOURCE_MAX );
     }
     else if ( lDistr == locationFromExttrigFile )
     {
@@ -1487,22 +1477,22 @@ int main( int argc, char *argv[] )
     {
       simTable=XLALRandomInspiralSkyLocation(simTable, randParams); 
     }
-   
+
     /* populate orientations */
     do {
       simTable=XLALRandomInspiralOrientation(simTable, randParams,
-					     iDistr, inclStd);
+          iDistr, inclStd);
 
     } while ( ! strcmp(waveform, "SpinTaylorthreePointFivePN") &&
-              ( simTable->inclination < eps ||
-		simTable->inclination > LAL_PI-eps) );
+        ( simTable->inclination < eps ||
+          simTable->inclination > LAL_PI-eps) );
 
     /* populate spins, if required */
     if (spinInjections)
     {
       simTable = XLALRandomInspiralSpins( simTable, randParams, 
-					  minSpin1, maxSpin1,
-					  minSpin2, maxSpin2);
+          minSpin1, maxSpin1,
+          minSpin2, maxSpin2);
     }
 
     /* populate the site specific information */
@@ -1526,34 +1516,34 @@ int main( int argc, char *argv[] )
 
   memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
 
- 
+
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlfp, fname ), &status );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
-			    &accuracy ), &status );
+        &accuracy ), &status );
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, process_table ), 
-	    &status );
+      &status );
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, proctable, 
-				    process_table ), &status );
+        process_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
-  
+
   if ( procparams.processParamsTable )
   {
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, process_params_table ),
-	      &status );
+        &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, procparams, 
-				      process_params_table ), &status );
+          process_params_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
   }
-  
+
   if ( injections.simInspiralTable )
   {
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_inspiral_table ), 
-	      &status );
+        &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, injections, 
-				      sim_inspiral_table ), &status );
+          sim_inspiral_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );   
   }
-  
+
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlfp ), &status );
 
   return 0;
