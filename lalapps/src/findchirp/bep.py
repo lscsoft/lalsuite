@@ -68,9 +68,9 @@ def create_condor_file(configcp):
     msg = 'log = ./log/tmp\n'
     
   fp.write(msg)
-  msg = 'output = ./out_$(macroseed) \n'
+  msg = 'output = ./bankefficiency_$(macroseed).out \n'
   fp.write(msg)
-  msg = 'error = ./log/err_$(macroseed) \n'
+  msg = 'error = ./log/bankefficiency_$(macroseed).err \n'
   fp.write(msg)
   fp.write('notification = never\n')
 
@@ -88,7 +88,8 @@ def create_bank(configcp, arguments):
   print '###'
   print ' We are creating the template bank for sanity check. Please wait'
   fp =open('BankEfficiency_createbank','w');
-  fp.write( configcp.get("main", "executable") + arguments +' 1> bep_bank.out 2>bep_bank.err'+'\n')
+  fp.write( configcp.get("main", "executable") + arguments +' \
+      1> ./log/bankefficiency_tmpltbank.out 2>./log/bankefficiency_tmpltbank.err'+'\n')
   fp.close()
   os.system('chmod 755 BankEfficiency_createbank')
   a=os.system('./BankEfficiency_createbank')
@@ -129,8 +130,8 @@ def create_finalise_condor(configcp):
   fp.write('Arguments =\n')
   fp.write('priority = 10\n')
   fp.write('log = ./log/tmp\n')
-  fp.write('output = ./out_finalise\n')
-  fp.write('error = ./log/err_finalise\n')
+  fp.write('output = ./log/bankefficiency_finalise.out\n')
+  fp.write('error = ./log/bankefficiency_finalise.err\n')
   fp.write('notification = never\n')
   fp.write('Queue 1\n')
   fp.close()
@@ -151,7 +152,7 @@ def create_finalise_script(configcp):
   fp = open('finalise.sh', 'w')
   fp.write('#!/bin/sh\n')
   fp.write('cp TMPLTBANK.xml BE_Bank.xml\n')
-  fp.write('rm -f Trigger.dat ; find . -name "out_*" | awk \'{print "cat  " $1 ">> Trigger.dat"}\' > script.sh; chmod 755 script.sh ; ./script.sh; \n')
+  fp.write('rm -f Trigger.dat ; find . -name "bankefficiency*.out" | awk \'{print "cat  " $1 ">> Trigger.dat"}\' > script.sh; chmod 755 script.sh ; ./script.sh; \n')
   fp.write(configcp.get("main", "executable") +' --ascii2xml \n')
   fp.write('mv Trigger.xml Trigger_' + noise_model +'_'+fl+'_'+grid+'_'+template+'_'+signal+'_'+mm+'.xml')
   fp.close()
@@ -209,6 +210,7 @@ configcp = ConfigParser.ConfigParser()
 configcp.read(options.config_file)
         
     
+os.system('mkdir log')
 arguments = create_condor_file(configcp)
 print """
 	The condor script will use the following arguments 
@@ -226,7 +228,8 @@ create_bank(configcp, arguments)
 
 print '--- Generating the prototype xml file for merging condor job'
 arguments = ""
-command = configcp.get("main", "executable") + ' ' + arguments +' --print-prototype 1>bep_proto.out 2>bep_proto.err'
+command = configcp.get("main", "executable") + ' ' + arguments +' --print-prototype \
+    1>./log/bankefficiency_prototype.out 2>./log/bankefficiency_prototype.err'
 os.system(command)
 print '... done'
 time.sleep(.5)
