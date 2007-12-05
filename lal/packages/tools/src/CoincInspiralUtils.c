@@ -23,7 +23,11 @@
  *
  * Author: Brady, P. R., Brown, D. A., and Fairhurst, S
  * 
+<<<<<<< CoincInspiralUtils.c
  * Revision: $Id$
+=======
+ * Revision: $Id$
+>>>>>>> 1.55.2.4
  * 
  *-----------------------------------------------------------------------
  */
@@ -31,7 +35,11 @@
 #if 0
 <lalVerbatim file="CoincInspiralUtilsCV">
 Author: Fairhurst, S.
+<<<<<<< CoincInspiralUtils.c
 $Id$
+=======
+$Id$
+>>>>>>> 1.55.2.4
 </lalVerbatim> 
 #endif
 
@@ -51,7 +59,11 @@ $Id$
 #include <lal/XLALError.h>
 #include <lal/CoincInspiralEllipsoid.h>
 
+<<<<<<< CoincInspiralUtils.c
 NRCSID( COINCINSPIRALUTILSC, "$Id$" );
+=======
+NRCSID( COINCINSPIRALUTILSC, "$Id$" );
+>>>>>>> 1.55.2.4
 
 #if 0
 <lalLaTeX>
@@ -2106,6 +2118,51 @@ XLALCoincInspiralIfosCut(
     }
   }
   
+  return( numCoinc );
+}
+
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+int
+XLALCoincInspiralIfosDiscard(
+    CoincInspiralTable **coincHead,
+    char                *ifos
+    )
+/* </lalVerbatim> */
+{
+  CoincInspiralTable    *prevCoinc = NULL;
+  CoincInspiralTable    *thisCoinc = NULL;
+  int                    numCoinc = 0;
+
+  thisCoinc = *coincHead;
+  *coincHead = NULL;
+
+  while ( thisCoinc )   {
+    CoincInspiralTable *tmpCoinc = thisCoinc;
+    thisCoinc = thisCoinc->next;
+
+    if ( XLALCoincInspiralIfos( tmpCoinc, ifos ) )
+    {
+      /* ifos match so discard tmpCoinc */
+      XLALFreeCoincInspiral( &tmpCoinc );
+    }
+    else
+    {
+      /* keep tmpCoinc */
+      if ( ! *coincHead  )
+      {
+        *coincHead = tmpCoinc;
+      }
+      else
+      {
+        prevCoinc->next = tmpCoinc;
+      }
+      tmpCoinc->next = NULL;
+      prevCoinc = tmpCoinc;
+      ++numCoinc;
+    }
+  }
+
   return( numCoinc );
 }
 
