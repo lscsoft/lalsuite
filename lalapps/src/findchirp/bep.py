@@ -36,6 +36,9 @@ def create_condor_file(configcp):
 
   if host.find('coma')>=0:        
     fp.write('Environment  = LD_LIBRARY_PATH=/usr/lscsoft/non-lsc/lib\n')
+  
+  if host.find('explorer')>=0:        
+    fp.write('Getenv = True\n')
      
   arguments = ""
   for i in configcp.items("general"):
