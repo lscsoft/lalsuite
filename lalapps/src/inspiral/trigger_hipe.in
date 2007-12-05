@@ -199,7 +199,7 @@ def plot_injection_distributions(sims, tag, subdir, overwrite_flag=False):
             ax.hist([getattr(sim, attr) for sim in sims], bins=20)
             ax.set_xlabel(attr.replace("_", r"\_"))
             ax.set_ylabel(r"\# of injections")
-            fig.savefig(attr + "_distribution.png")
+            fig.savefig(str(attr) + "_distribution.png")
             pylab.close(fig)
 
     # return to original directory
@@ -209,7 +209,8 @@ class hipe_run(object):
   """
   This class is intended to represent single run of lalapps_inspiral_hipe.
   """
-  def __init__(self, hipe_dir, base_cp, ifos, log_path, source_file, onsource=False, verbose=False):
+  def __init__(self, hipe_dir, base_cp, ifos, log_path, source_file, onsource=False, usertag=None, verbose=False):
+    self._dag_name = None
     self._hipe_dir = hipe_dir
     self._log_path = log_path
     self._cp = copy.deepcopy(base_cp)
@@ -248,6 +249,10 @@ class hipe_run(object):
       self._cp.set('input','exttrig-analyze','on_source')
     else:
       self._cp.set('input','exttrig-analyze','off_source')
+    
+    # set the usertag
+    if usertag is not None:
+      self._cp.set("pipeline", "user-tag", usertag)
 
   def set_numslides(self, numslides):
     if numslides == 0: numslides = ""
@@ -280,17 +285,30 @@ class hipe_run(object):
     inspiralutils.make_external_call("../../lalapps_inspiral_hipe %s" % (arguments % ini_file_name),
       show_stdout=self._verbose, show_command=self._verbose)
     os.chdir("../../")
+    self._dag_name = os.path.join(self._hipe_dir,
+                                  ini_file_name.replace(".ini", ".dag"))
+  
+  def get_dag_name(self):
+    return self._dag_name
   
   def get_dag_node(self):
     """
     Return a tuple of (job, node), where these refer to this hipe_run's DAG.
     """
-    job = pipeline.CondorDAGManJob("%s/config.dag" % self._hipe_dir)
+    job = pipeline.CondorDAGManJob(self.get_dag_name())
     node = pipeline.CondorDAGNode(job)
     
     # hack to make rescue possible
     inspiralutils.fix_rescue(node)
     return node
+
+def concatenate_cache_files(hipe_runs, output_cache):
+  """
+  Get the cache outputs from each hipe_run and concatenate them to a file
+  named output_cache.
+  """
+  dags = [r.get_dag_name() for r in hipe_runs]
+  make_external_call("cat %s > %s" % (" ".join(dags), output_cache))
 
 ##############################################################################
 # define usage and command line options and arguments - parse
@@ -499,13 +517,9 @@ for grb in usedList:
     offSourceSegment &= ifo_offSourceSegment
     grb_ifolist.append(ifo)
   
-  # gps-start-time and gps-end-time enable the output of intermediate and
-  # output caches in inspiral_hipe; these fail, however, with the
-  # non-conformant HL-INJECTION_%d.xml naming scheme we have.
-  # cp.set("input", "gps-start-time", offSourceSegment[0])
-  # cp.set("input", "gps-end-time", offSourceSegment[1])
-  cp.remove_option("input", "gps-start-time")
-  cp.remove_option("input", "gps-end-time")
+  # enable the output of intermediate and output caches in inspiral_hipe
+  cp.set("input", "gps-start-time", offSourceSegment[0])
+  cp.set("input", "gps-end-time", offSourceSegment[1])
   
   if len(grb_ifolist) == 0:
     print >>sys.stderr, "Warning: could not construct offsource segment for GRB %s; skipping" % grb.identifier
@@ -530,10 +544,13 @@ for grb in usedList:
     print "on-source segment: ", onSourceSegment
     print "off-source segment: ", offSourceSegment
   
-   # plot the segment lists
+  # plot the segment lists
+  if opts.plot_segments or opts.plot_injections:
+    plot_dir = "trigger_hipe_plots"
+    inspiralutils.mkdir(plot_dir)
   if opts.plot_segments:
     plot_segments(trigger, grb_ifolist, segdict, onSourceSegment, offSourceSegment,
-      idirectory)
+      plot_dir)
 
   # Next thing is to generate the dag for this interval of time.
   # The steps here are:
@@ -550,17 +567,21 @@ for grb in usedList:
   # In doing this, we simply copy the configuration file into the
   # sub-directory and then run the dag generation script.
   
+  hipe_runs = []
+  
   if opts.verbose: print "Creating DAG for offsource analysis"
   basic_analysis = hipe_run("%s/analysis" % idirectory, cp, grb_ifolist,
                             opts.log_path, source_file, verbose=opts.verbose)
-  basic_analysis.write_dag('config.ini')
+  basic_analysis.write_dag('analysis.ini')
+  hipe_runs.append(basic_analysis)
   uberdag.add_node(basic_analysis.get_dag_node())
 
   if opts.verbose: print "Creating DAG for onsource analysis"
   onsource_analysis = hipe_run("%s/onsource" % idirectory, cp, grb_ifolist,
                                opts.log_path, source_file, onsource=True,
                                verbose=opts.verbose)
-  onsource_analysis.write_dag('config.ini')
+  onsource_analysis.write_dag('onsource.ini')
+  hipe_runs.append(onsource_analysis)
   uberdag.add_node(onsource_analysis.get_dag_node())
 
   
@@ -573,7 +594,7 @@ for grb in usedList:
     ############################################################################
     # set up the injection dag for this interval
     for injrun in cpinj.sections():
-      if opts.verbose: print "Creating DAG for ", injrun
+      if opts.verbose: print "Creating DAG for", injrun
       hipe_dir = os.path.join(idirectory, injrun)
       injection_analysis = hipe_run( hipe_dir, cp, grb_ifolist, \
                                opts.log_path, source_file, verbose=opts.verbose)
@@ -586,7 +607,7 @@ for grb in usedList:
       # plot the injections as made
       if opts.plot_injections:
           if opts.verbose: print "  Plotting injection distributions..."
-          plot_injection_distributions(sims, injrun, idirectory,
+          plot_injection_distributions(sims, injrun, plot_dir,
             overwrite_flag=opts.overwrite_dir)
 
       # split the injections
@@ -594,19 +615,21 @@ for grb in usedList:
       safetyInterval = 800 # safety time in seconds between two injections
       deltaIndex = int(safetyInterval // injInterval) + 1
       for i in range(deltaIndex):
-        writeInjectionFile( "%s/HL-INJECTION_%d.xml" % (hipe_dir, i+1),
+        writeInjectionFile( "%s/HL-INJECTION_%d-%d-%d.xml" % (hipe_dir, i+1, offSourceSegment[0], abs(offSourceSegment)),
             sims[i:numberInjections:deltaIndex])
 
       # set the needed parameters
       if opts.verbose: print "  Writing DAG..."
       injection_analysis.set_numslides(0)
       injection_analysis.set_injections(injrun, deltaIndex)
-      injection_analysis.write_dag('config.ini')
+      injection_analysis.write_dag(injrun + '.ini')
+      hipe_runs.append(injection_analysis)
       uberdag.add_node(injection_analysis.get_dag_node())
 
 if opts.verbose: print "Writing sub files and uber-DAG..."
 uberdag.write_sub_files()
 uberdag.write_dag()
+concatenate_cache_files(hipe_runs, tag + ".cache")
 
 print """
 If you run the uber-dag, you probably have to tell Condor not to
