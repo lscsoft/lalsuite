@@ -23,11 +23,7 @@
  *
  * Author: Brady, P. R., Brown, D. A., and Fairhurst, S
  * 
-<<<<<<< CoincInspiralUtils.c
  * Revision: $Id$
-=======
- * Revision: $Id$
->>>>>>> 1.55.2.4
  * 
  *-----------------------------------------------------------------------
  */
@@ -35,11 +31,7 @@
 #if 0
 <lalVerbatim file="CoincInspiralUtilsCV">
 Author: Fairhurst, S.
-<<<<<<< CoincInspiralUtils.c
 $Id$
-=======
-$Id$
->>>>>>> 1.55.2.4
 </lalVerbatim> 
 #endif
 
@@ -59,11 +51,7 @@ $Id$
 #include <lal/XLALError.h>
 #include <lal/CoincInspiralEllipsoid.h>
 
-<<<<<<< CoincInspiralUtils.c
 NRCSID( COINCINSPIRALUTILSC, "$Id$" );
-=======
-NRCSID( COINCINSPIRALUTILSC, "$Id$" );
->>>>>>> 1.55.2.4
 
 #if 0
 <lalLaTeX>
