@@ -23,11 +23,7 @@
  *
  * Author: Fairhurst, S.
  * 
-<<<<<<< thinca.c
  * Revision: $Id$
-=======
- * Revision: $Id$
->>>>>>> 1.73.2.4
  * 
  *-----------------------------------------------------------------------
  */
@@ -52,29 +48,13 @@
 #include <lalapps.h>
 #include <processtable.h>
 
-<<<<<<< thinca.c
 RCSID("$Id$");
-=======
-RCSID("$Id$");
->>>>>>> 1.73.2.4
 
-<<<<<<< thinca.c
 #define CVS_ID_STRING "$Id$"
-=======
-#define CVS_ID_STRING "$Id$"
->>>>>>> 1.73.2.4
 #define CVS_NAME_STRING "$Name$"
-<<<<<<< thinca.c
 #define CVS_REVISION "$Revision$"
-=======
-#define CVS_REVISION "$Revision$"
->>>>>>> 1.73.2.4
 #define CVS_SOURCE "$Source$"
-<<<<<<< thinca.c
 #define CVS_DATE "$Date$"
-=======
-#define CVS_DATE "$Date$"
->>>>>>> 1.73.2.4
 #define PROGRAM_NAME "thinca"
 
 #define INCA_EARG   1
@@ -304,12 +284,8 @@ int main( int argc, char *argv[] )
   UINT4  numQuadruples = 0;
   UINT4  numTrigs[LAL_NUM_IFO];
   UINT4  N = 0;
-<<<<<<< thinca.c
   INT4  outCompress = 0;
-=======
-  UINT4  outCompress = 0;
   UINT4  slideH1H2Together = 0;
->>>>>>> 1.73.2.4
 
   LALDetector          aDet;
 
