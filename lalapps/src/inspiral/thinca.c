@@ -23,7 +23,11 @@
  *
  * Author: Fairhurst, S.
  * 
+<<<<<<< thinca.c
  * Revision: $Id$
+=======
+ * Revision: $Id$
+>>>>>>> 1.73.2.4
  * 
  *-----------------------------------------------------------------------
  */
@@ -48,13 +52,29 @@
 #include <lalapps.h>
 #include <processtable.h>
 
+<<<<<<< thinca.c
 RCSID("$Id$");
+=======
+RCSID("$Id$");
+>>>>>>> 1.73.2.4
 
+<<<<<<< thinca.c
 #define CVS_ID_STRING "$Id$"
+=======
+#define CVS_ID_STRING "$Id$"
+>>>>>>> 1.73.2.4
 #define CVS_NAME_STRING "$Name$"
+<<<<<<< thinca.c
 #define CVS_REVISION "$Revision$"
+=======
+#define CVS_REVISION "$Revision$"
+>>>>>>> 1.73.2.4
 #define CVS_SOURCE "$Source$"
+<<<<<<< thinca.c
 #define CVS_DATE "$Date$"
+=======
+#define CVS_DATE "$Date$"
+>>>>>>> 1.73.2.4
 #define PROGRAM_NAME "thinca"
 
 #define INCA_EARG   1
@@ -284,7 +304,12 @@ int main( int argc, char *argv[] )
   UINT4  numQuadruples = 0;
   UINT4  numTrigs[LAL_NUM_IFO];
   UINT4  N = 0;
+<<<<<<< thinca.c
   INT4  outCompress = 0;
+=======
+  UINT4  outCompress = 0;
+  UINT4  slideH1H2Together = 0;
+>>>>>>> 1.73.2.4
 
   LALDetector          aDet;
 
@@ -1360,6 +1385,7 @@ int main( int argc, char *argv[] )
               "The time slide specified for ifo %s is %f\n"
               "The time slide specified for ifo %s is also %f\n",
               ifoA, slideStep[ifoNumber], ifoB, slideStep[ifoTwo]);
+            slideH1H2Together = 1;
           }
           else
           {
@@ -2054,6 +2080,18 @@ int main( int argc, char *argv[] )
       /* count the coincs, scroll to end of list */
       if( slideNum )
       {  
+
+        /* keep only the requested coincs */
+        if( slideH1H2Together )
+        {
+          if ( vrbflg ) fprintf( stdout,
+              "Throwing out slide coincs found only as H1H2 doubles.\n" );
+          numCoincInSlide = XLALCoincInspiralIfosDiscard(
+              &coincInspiralList, "H1H2" );
+          if ( vrbflg ) fprintf( stdout,
+              "Kept %d non-H1H2 coincs in slide.\n", numCoincInSlide );
+        }
+
         for (numCoincInSlide = 1, thisCoinc = coincInspiralList; 
             thisCoinc->next; ++numCoincInSlide, thisCoinc = thisCoinc->next );
         
