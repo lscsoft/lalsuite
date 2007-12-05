@@ -1454,14 +1454,6 @@ class candidateList:
         summary information to a .summary text file.  This method is
         closely related to createSummaryStructure method.  We have as
         output of this method
-        GPS start
-        GPS stop
-        F start
-        F stop
-        Curve Length
-        Integrate Power
-        Duration (secs)
-        Freq Band (Hz)
         """
         summary=[]
         for lineInfo in self.curves:
@@ -1517,6 +1509,8 @@ class candidateList:
         outRoot,outExt=os.path.splitext(sourceFile)
         outFile=outRoot+'.summary'
         fp=open(outFile,'w')
+        key="# GPSstart Duration Fstart Fstop Fband Tbright Fbright AvgBright StdDevBright CL IP\n"
+        fp.write(key)
         for entry in self.createSummaryStructure():
             fp.write(entry)
         fp.close()
@@ -1669,7 +1663,7 @@ class candidateList:
         output_fp.close()
     #End method writePixelList()
 
-    def graphdata(self,filename='',gpsReferenceFloat=0.0,timescale='second'):
+    def graphdata(self,filename='',gpsReferenceFloat=0.0,timescale='second',useLogColors=True,myColorMap='jet'):
         """
         This method uses matplotlib.py to make plots of curves
         contained in this list!  Currently all plotting functions
@@ -1711,6 +1705,7 @@ class candidateList:
             timeLabel="(days)"
         spinner=progressSpinner(self.verboseMode)
         spinner.setTag('Plotting')
+        elementIPlist=[]
         for element in self.curves:
             xtmp=[]
             ytmp=[]
@@ -1723,15 +1718,34 @@ class candidateList:
                 xtmp.append((float(point[0])-minX)/conversionFactor)
                 ytmp.append(float(point[1]))
                 ztmp.append(float(point[2]))
-            line2plot.append([xtmp,ytmp,ztmp])
+            elementIP=element.getKurveHeader()[2]
+            elementIPlist.append(elementIP)
+            line2plot.append([xtmp,ytmp,ztmp,elementIP])
             del xtmp
             del ytmp
             del ztmp
             spinner.updateSpinner()
         spinner.closeSpinner()
+        maxValue=max(elementIPlist)
+        minValue=min(elementIPlist)
         fig=pylab.figure()
+        pylab.cm.ScalarMappable().set_cmap(myColorMap)
+        #pylab.jet()
+        useLogColors=True
+        linearColorScale=pylab.matplotlib.colors.normalize(minValue,maxValue)
+        if (minValue > 0) and (maxValue > 0):
+            logColorScale=pylab.matplotlib.colors.normalize(math.log(minValue),math.log(maxValue))
+        else:
+            logColorScale=linearColorScale
+        currentPalette=pylab.get_cmap()
         for entry in line2plot:
-            pylab.plot(entry[0],entry[1])
+            if useLogColors:
+                myRed,myGreen,myBlue,myAlpha=currentPalette(
+                    logColorScale(math.log(entry[3])))
+            else:
+                myRed,myGreen,myBlue,myAlpha=currentPalette(
+                    linearColorScale(entry[3]))
+            pylab.plot(entry[0],entry[1],color=(myRed,myGreen,myBlue))
         #Normalize the brightSpotZ max -> 0..5
         normalizeZscoreTo=100
         if brightSpotZ.__len__() < 1:
@@ -1742,10 +1756,15 @@ class candidateList:
         for entry in brightSpotZ:
             tmpZ.append(entry*factor)
         brightSpotZ=tmpZ
-        pylab.scatter(brightSpotX,brightSpotY,brightSpotZ)
+        pylab.scatter(brightSpotX,brightSpotY,brightSpotZ,color='black',marker='o')
         pylab.xlabel(str("Time %s"%(timeLabel)))
         pylab.ylabel("Freq (Hz)")
-        pylab.figtext(0.05,0.925,"GPS %9.2f"%(minX))
+        pylab.figtext(0.01,0.95,"GPS %9.2f"%(minX))
+        textLocX=0.80
+        if not useLogColors:
+            pylab.figtext(textLocX,0.025,str(myColorMap).upper()+":Linear Coloring")
+        else:
+            pylab.figtext(textLocX,0.025,str(myColorMap).upper()+":Log Coloring")
         if ((filename.upper()=='') or (filename.upper()=='AUTO')):
             [name,extension]=os.path.splitext(self.filename[0])
             figtitle=os.path.basename(name)
