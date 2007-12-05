@@ -44,21 +44,6 @@ from lalapps import inspiralutils
 ##############################################################################
 # define a few utility functions that make this job easier
 
-def buildOffSourceSegment ( scienceSegment, grbSegment, dt, ifo ):
-  """ Return the segment protracted symmetrically about on-source. """
-  scienceSegment = scienceSegment.contract(72)
-
-  nplus = (scienceSegment[1] - grbSegment[1]) // dt 
-  nminus = (grbSegment[0] - scienceSegment[0]) // dt
-
-  nsegs = min(nplus, nminus)
-
-  tmpSegment = grbSegment.protract( nsegs * dt + 72 )
-
-  scienceSegment = scienceSegment.protract(72)
-
-  return tmpSegment
-
 # subroutine to rescale the times
 def ct(time, timeOffset):
   return (time-timeOffset)  # /3600.0
