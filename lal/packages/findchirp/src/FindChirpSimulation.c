@@ -112,6 +112,7 @@ LALFindChirpInjectSignals (
   INT8                  waveformStartTime;
   INT8                  chanStartTime;
   REAL4TimeSeries       signal;
+  REAL4TimeSeries      *tmpSig;
   COMPLEX8Vector       *unity = NULL;
   CHAR                  warnMsg[512];
   CHAR                  ifo[LIGOMETA_IFO_MAX];
@@ -346,7 +347,6 @@ LALFindChirpInjectSignals (
     {
       INT4 i, j, kh, km, length, sampleRate;
       REAL4 temp;
-      REAL4TimeSeries      *tmpSig;
 
       length = waveform.h->data->length;
       kh = 2*length;
@@ -376,15 +376,17 @@ LALFindChirpInjectSignals (
       tmpSig = XLALCalculateNRStrain( waveform.h , thisEvent, ifo, sampleRate);
       signal = *tmpSig;
       
-      XLALDestroyREAL4Vector( tmpSig->data );
-      LALFree(tmpSig);
-
     }
 
     /* inject the signal into the data channel */
     LALSSInjectTimeSeries( status->statusPtr, chan, &signal );
     CHECKSTATUSPTR( status );
 
+    if ( tmpSig )    
+    {
+      XLALDestroyREAL4Vector( tmpSig->data );
+      LALFree(tmpSig);
+    }
 
     if ( waveform.shift )
     {
