@@ -75,6 +75,7 @@ NRCSID(LALINSPIRALBANKH, "$Id$" );
 #define LALINSPIRALBANKH_EORDER     32
 #define LALINSPIRALBANKH_EGRIDSPACING 64
 #define LALINSPIRALBANKH_EHEXAINIT 128
+#define LALINSPIRALBANKH_EFCUT      5
 
 #define LALINSPIRALBANKH_MSGENULL   "Null pointer"
 #define LALINSPIRALBANKH_MSGEMEM    "Memory allocation failure"
@@ -85,6 +86,7 @@ NRCSID(LALINSPIRALBANKH, "$Id$" );
 #define LALINSPIRALBANKH_MSGEORDER  "Inappropriate PN order"
 #define LALINSPIRALBANKH_MSGEGRIDSPACING "Inappropriate grid spacing parameter [SquareNotOriented or Hexagonal]"
 #define LALINSPIRALBANKH_MSGEHEXAINIT "Empty bank. abnormal behaviour in HexaBank generation."
+#define LALINSPIRALBANKH_MSGEFCUT "Inappropriate cutoff frequency [SchwarzISCO, BKLISCO or ERD]"
 
 /* </lalErrTable> */
 
@@ -120,6 +122,10 @@ The choice \texttt{MinMaxComponentMass} means the minimum of the
 components masses will be again fixed by \texttt{mMin} and the
 maximum of the component masses is fixed by \texttt{mMax} of the
 \texttt{InspiralCoarseIn} structure below.
+
+\item\texttt{FreqCut:}
+\input{LALFreqCutH}
+An enum that lists all the formulas that can be used to specify an upper frequency cutoff. From lowest to highest, the choices are: SchwarzISCO, the innermost stable circular orbit (ISCO) for a test particle orbiting a Schwarzschild black hole. BKLISCO, a mass ratio dependent ISCO derived from estimates of the final spin of a merged black found in a paper by Buonanno, Kidder, and Lehner (arXiv:0709.3839). ERD, an effective ringdown frequency studied in Pan et al (arXiv:0704.1964) that was found to give good fit between stationary-phase templates and  numerical relativity waveforms.
 
 \item\texttt{GridSpacing:}
 \input{LALGridSpacingH}
@@ -209,6 +215,9 @@ parameter structure but not in creating the template bank.
 
 \item \texttt{order}: Post-Newtonian order of the waveform 
 \item \texttt{approximant}: Approximant of the waveform 
+\item \texttt{NumFreqCut}: Number of different upper frequency cutoffs (spaced evenly between MinFreqCut and MaxFreqCut) to use when creating a template bank.
+\item \texttt{MaxFreqCut}: largest upper frequency cutoff to use
+\item \texttt{MinFreqCut}: smallest upper frequency cutoff to use
 \end{itemize}
 
 \item \texttt{InspiralFineBankIn}
@@ -447,7 +456,18 @@ InspiralBankMassRange;
 \idx[Type]{InspiralBankMassRange} 
 </lalLaTeX>  */
 
-
+/* <lalVerbatim file="LALFreqCutH"> */
+typedef enum
+{
+  SchwarzISCO,
+  BKLISCO,
+  ERD
+}
+FreqCut;
+/* </lalVerbatim> */
+/* <lalLaTeX>
+\idx[Type]{FreqCut}
+</lalLaTeX>  */
 
 
 /* <lalVerbatim file="LALInspiralMetricH"> */
@@ -670,6 +690,10 @@ tagInspiralCoarseBankIn
   /* post-Newtonian order and approximation */
   Order                         order;        
   Approximant                   approximant;  
+  /* parameters for different/multiple freq. cutoffs */
+  INT4                          NumFreqCut;
+  FreqCut                       MaxFreqCut;
+  FreqCut                       MinFreqCut;
 
   InsidePolygon                 insidePolygon;  
   ComputeMoments                computeMoments;
