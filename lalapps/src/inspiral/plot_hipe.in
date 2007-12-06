@@ -29,6 +29,7 @@ sys.path.append('@PYTHONLIBDIR@')
 from glue import pipeline
 
 from lalapps import inspiral
+from lalapps import inspiralutils
 
 ##############################
 # Convert ifo list to string
@@ -46,7 +47,7 @@ def set_common_options(cp, this_section):
     try:
       cp.set(this_section, common_option,  string.strip(cp.get('common',common_option)))
     except:
-      print "WARNING: --gps-start-time and --gps-end-time stronly recommended in [common] section of your ini file"
+      print "warning:", common_option, "is strongly recommended in the [common] section of your ini file"
       pass
 
   return cp 
@@ -304,28 +305,24 @@ if opts.plotinspiral:
   plotinspiral_jobs = {}
   this_section = "plotinspiral"
   cp = set_common_options(cp, this_section)
-  prog_tag = cp.get('plotinspiral-meta','program-tag')
-  zerolag_suffix = cp.get('pipeline','zerolag-suffix')
-
+  
   for ifo in ifolist:
-    
+    job = inspiral.PlotInspiralJob(cp)
+    job.add_opt("ifo-times", ifo)
     if opts.first_stage:
-      plotinspiral_jobs[ifo + "FIRST"] = inspiral.PlotInspiralJob(cp)
-      plotinspiral_jobs[ifo + "FIRST"].add_opt("inspiral-stage", "FIRST") 
-      plotinspiral_jobs[ifo + "FIRST"].add_opt("ifo-times", ifo)
-      plotinspiral_jobs[ifo + "FIRST"].add_opt("ifo-tag", "FIRST_" + ifo)
-      plotinspiral_jobs[ifo + "FIRST"].add_opt("trig-pattern", str(prog_tag) + "_FIRST_" + ifo + \
-      '_' + input_user_tag + str(zerolag_suffix))
-      plotinspiral_jobs[ifo + "FIRST"].set_sub_file( basename + '.plotinspiral_FIRST_' + ifo + subsuffix )
+      job.add_opt("ifo-tag", "FIRST_" + ifo)
+      job.set_sub_file( basename + '.plotinspiral_FIRST_' + ifo + subsuffix )
+      pattern_dict = inspiralutils.determine_sieve_patterns(cp, "plotinspiral", "FIRST", usertag)
+      for opt, val in pattern_dict.iteritems():
+        job.add_opt(opt, val)
+      plotinspiral_jobs[ifo + "FIRST"] = job
     if opts.second_stage:
-      plotinspiral_jobs[ifo + "SECOND"] = inspiral.PlotInspiralJob(cp)
-      plotinspiral_jobs[ifo + "SECOND"].add_opt("inspiral-stage", "SECOND") 
-      plotinspiral_jobs[ifo + "SECOND"].add_opt("ifo-tag", "SECOND_" + ifo)
-      plotinspiral_jobs[ifo + "SECOND"].add_opt("trig-pattern", str(prog_tag) + "_SECOND_" + ifo + \
-      '_' + input_user_tag + str(zerolag_suffix))
-      plotinspiral_jobs[ifo + "SECOND"].set_sub_file( basename + '.plotinspiral_SECOND_' + ifo + subsuffix )
-      plotinspiral_jobs[ifo + "SECOND"].add_opt("ifo-times", ifo)
-      plotinspiral_jobs[ifo + "SECOND"].set_sub_file( basename + '.plotinspiral_SECOND_' + ifo + subsuffix )  
+      job.add_opt("ifo-tag", "SECOND_" + ifo)
+      job.set_sub_file( basename + '.plotinspiral_SECOND_' + ifo + subsuffix )
+      pattern_dict = inspiralutils.determine_sieve_patterns(cp, "plotinspiral", "SECOND", usertag)
+      for opt, val in pattern_dict.iteritems():
+        job.add_opt(opt, val)
+      plotinspiral_jobs[ifo + "SECOND"] = job
  
   all_jobs.extend(plotinspiral_jobs.values())
 
