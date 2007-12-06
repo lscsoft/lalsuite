@@ -82,8 +82,8 @@ def science_segments(ifo, config, generate_segments = True):
 
   # run segFind to determine science segments
   segFindCall = executable 
-  for opt,arg in config.items('segfind'):
-    segFindCall += ' --' + opt + " " + arg
+  for opt,arg in config.items("segfind"):
+    segFindCall += " --" + opt + " " + arg
   segFindCall +=  " --interferometer=" + ifo + \
       " --type=\"" + config.get("segments", whichtoanalyze) + "\""\
       " --gps-start-time=" + str(start) + \
@@ -172,8 +172,8 @@ def datafind_segments(ifo, config):
   print "Running LSCdataFind to determine available data from " + type + \
       " frames for " + ifo
   dataFindCall = executable 
-  for opt,arg in config.items('datafind'):
-    dataFindCall += ' --' + opt + " " + arg
+  for opt,arg in config.items("datafind"):
+    dataFindCall += " --" + opt + " " + arg
   dataFindCall += " --observatory=" + ifo[0] + \
       " --type=" + ifo_type + \
       " --gps-start-time=" + str(start) + \
@@ -283,26 +283,27 @@ def hipe_setup(hipeDir, config, ifos, logPath, injFile=None, dfOnly = False, \
   # create the hipe config parser, keep only relevant info
   hipecp = copy.deepcopy(config)
   if dfOnly:
-    hipeSections = ['condor', 'pipeline', 'input', 'datafind','data',\
-        'ligo-data','inspiral','virgo-data']
+    hipeSections = ["condor", "pipeline", "input", "datafind","data",\
+        "ligo-data","inspiral","virgo-data"]
   elif vetoCat:
-    hipeSections = ['condor', 'pipeline', 'input', 'data', 'ligo-data', \
-        'inspiral', 'thinca', 'thinca-2', 'datafind', 'virgo-data', \
-        'thinca-slide', 'coire', 'coire-inj']
+    hipeSections = ["condor", "pipeline", "input", "data", "ligo-data", \
+        "inspiral", "thinca", "thinca-2", "datafind", "virgo-data", \
+        "thinca-slide", "coire", "coire-inj"]
   else:
-    hipeSections = ['condor', 'pipeline', 'input', 'calibration', 'datafind',\
-        'ligo-data', 'virgo-data', 'geo-data', 'data', 'tmpltbank', \
-        'tmpltbank-1', 'tmpltbank-2', 'h1-tmpltbank', 'h2-tmpltbank', \
-        'l1-tmpltbank', 'v1-tmpltbank', 'g1-tmpltbank', 'no-veto-inspiral', \
-        'veto-inspiral', 'inspiral', 'h1-inspiral', 'h2-inspiral', \
-        'l1-inspiral', 'g1-inspiral', 'v1-inspiral', 'thinca', 'thinca-1', \
-        'thinca-2', 'thinca-slide', 'trigbank', 'sire', 'sire-inj', \
-        'coire', 'coire-inj']
+    hipeSections = ["condor", "pipeline", "input", "calibration", "datafind",\
+        "ligo-data", "virgo-data", "geo-data", "data", "tmpltbank", \
+        "tmpltbank-1", "tmpltbank-2", "h1-tmpltbank", "h2-tmpltbank", \
+        "l1-tmpltbank", "v1-tmpltbank", "g1-tmpltbank", "no-veto-inspiral", \
+        "veto-inspiral", "inspiral", "h1-inspiral", "h2-inspiral", \
+        "l1-inspiral", "g1-inspiral", "v1-inspiral", "thinca", "thinca-1", \
+        "thinca-2", "thinca-slide", "trigbank", "sire", "sire-inj", \
+        "coire", "coire-inj"]
 
   for seg in hipecp.sections():
     if not seg in hipeSections: hipecp.remove_section(seg)
 
   hipecp.remove_option("condor","hipe")
+  hipecp.remove_option("condor","plot")
   hipecp.remove_option("condor","follow")
 
 
@@ -313,7 +314,10 @@ def hipe_setup(hipeDir, config, ifos, logPath, injFile=None, dfOnly = False, \
     hipecp.set("pipeline", "playground-data-mask", "all_data")
 
   # set the user-tag to be the same as the directory name
-  usertag = hipecp.get("pipeline", "user-tag") + "_" + hipeDir.upper()
+  if hipecp.get("pipeline","user-tag"):
+    usertag = hipecp.get("pipeline", "user-tag") + "_" + hipeDir.upper()
+  else:
+    usertag = hipeDir.upper()
 
   if vetoCat:
     # set the old usertag in inspiral, so that we pick up the inspiral xml
@@ -411,6 +415,109 @@ def hipe_setup(hipeDir, config, ifos, logPath, injFile=None, dfOnly = False, \
   return hipeNode
 
 ##############################################################################
+# Function to set up lalapps_plot_hipe
+def plot_setup(plotDir, config, ifos, logPath, injectionSuffix,
+    zerolagSuffix, slideSuffix, cacheFile):
+  """
+  run lalapps_inspiral_hipe and add job to dag
+  plotDir   = directory in which to run inspiral hipe
+  config    = config file
+  logPath   = location where log files will be written
+  injFile   = injection file to use when running
+  dfOnly    = only run the datafind step of the pipeline
+  vetoCat   = run this category of veto
+  vetoFiles = dictionary of veto files
+  """
+  # make the directory for running hipe
+  mkdir(plotDir)
+
+  plotcp = copy.deepcopy(config)
+
+  plotSections = ["common", "pipeline", "condor",\
+      "plotinspiral", "plotinspiral-meta", \
+      "plotthinca", "plotthinca-meta", \
+      "plotnumtemplates", "plotnumtemplates-meta", \
+      "plotinjnum", "plotinjnum-meta", \
+      "plotethinca", "plotethinca-meta", \
+      "plotinspmissed", "plotinspmissed-meta", \
+      "plotinspinj", "plotinspinj-meta", \
+      "plotsnrchi", "plotsnrchi-meta", \
+      "plotinspiralrange", "plotinspiralrange-meta"]
+
+  for seg in plotcp.sections():
+    if not seg in plotSections: plotcp.remove_section(seg)
+
+  plotcp.remove_option("condor","hipe")
+  plotcp.remove_option("condor","plot")
+  plotcp.remove_option("condor","follow")
+
+  # XXX Can't yet run the plotting codes in standard universe
+  if plotcp.get("pipeline","universe") == "standard":
+    plotcp.set("pipeline","universe","vanilla")
+
+  # set the various suffixes in pipeline
+  plotcp.set("pipeline","injection-suffix",injectionSuffix)
+  plotcp.set("pipeline","zerolag-suffix",zerolagSuffix)
+  plotcp.set("pipeline","slide-suffix",slideSuffix)
+
+  # set details for the common section
+  plotcp.set("common","gps-start-time", plotcp.get("input","gps-start-time") )
+  plotcp.set("common","gps-start-end", plotcp.get("input","gps-end-time") )
+
+  # set the user-tag
+  if plotcp.get("pipeline","user-tag"):
+    usertag = plotcp.get("pipeline","user-tag")
+    plotcp.set("pipeline","input-user-tag",usertag)
+    usertag += plotDir.upper()
+  else:
+    usertag = hipeDir.upper()
+
+  plotcp.set("pipeline","user-tag",usertag)
+  
+  plotcp.set("common","cache-file",cacheFile)
+
+  # return to the directory, write ini file and run hipe
+  os.chdir(plotDir)
+  iniFile = "plot_hipe_"
+  iniFile += hipeDir 
+  iniFile += ".ini"
+
+  plotcp.write(file(iniFile,"w"))
+
+  print "Running plot hipe in directory " + plotDir
+  print "Using zero lag sieve" + zerolagSuffix 
+  print "Using time slide sieve" + slideSuffix  
+  print "Using injection sieve" + injectionSuffix 
+
+  # work out the hipe call:
+  plotCommand = config.get("condor","plot")
+  plotCommand += " --log-path " + logPath
+  plotCommand += " --config-file " + iniFile
+  for item in config.items("ifo-details"):
+      plotCommand += " --" + item[0] + " " + item[1]
+
+  for item in config.items("plot-arguments"):
+      plotCommand += " --" + item[0] + " " + item[1]
+
+  # run lalapps_inspiral_hipe
+  make_external_call(plotCommand)
+
+  # make hipe job/node
+  plotDag = iniFile.rstrip("ini") + usertag + ".dag"
+  plotJob = pipeline.CondorDAGManJob(plotDir + "/" + plotDag)
+  plotJob.add_opt("maxjobs", "5")
+  plotNode = pipeline.CondorDAGNode(plotJob)
+
+  # add postscript to deal with rescue dag
+  fix_rescue(plotNode)
+
+  # return to the original directory
+  os.chdir("..")
+
+  return plotNode
+
+
+##############################################################################
 # Function to set up lalapps_followup_pipe
 def followup_setup(followupDir, config, opts, hipeDir):
   """
@@ -424,9 +531,9 @@ def followup_setup(followupDir, config, opts, hipeDir):
 
   # create the followup config parser, keep only relevant info
   followupcp = copy.deepcopy(config)
-  followupSections = ['condor', 'hipe-cache', 'triggers', 'datafind', \
-      'q-datafind', 'qscan', 'q-hoft-datafind', 'qscan-hoft', \
-      'plots', 'output', 'seg']
+  followupSections = ["condor", "hipe-cache", "triggers", "datafind", \
+      "q-datafind", "qscan", "q-hoft-datafind", "qscan-hoft", \
+      "plots", "output", "seg"]
 
   for seg in followupcp.sections():
     if not seg in followupSections: followupcp.remove_section(seg)
