@@ -1728,18 +1728,15 @@ class candidateList:
             del ztmp
             spinner.updateSpinner()
         spinner.closeSpinner()
-<<<<<<< tracksearchutils.py
         maxValue=float(max(elementIPlist))
         minValue=float(min(elementIPlist))
         #Setup colorbar hack
         stepSize=(maxValue-minValue)/256
         linearValueMatrix=pylab.outerproduct(pylab.arange(minValue,maxValue,stepSize),pylab.ones(1))
-=======
         #Set jet colormap
         #Determine mapping of IP to colors
         maxValue=max(elementIPlist)
         minValue=min(elementIPlist)
->>>>>>> 1.14
         fig=pylab.figure()
         pylab.cm.ScalarMappable().set_cmap(myColorMap)
         linearColorScale=pylab.matplotlib.colors.normalize(minValue,maxValue)
