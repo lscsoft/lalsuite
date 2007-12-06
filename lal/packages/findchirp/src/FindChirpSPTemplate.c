@@ -218,14 +218,13 @@ LALFindChirpSPTemplate (
   c25Log = 3*c25;
   c30 = 11583231236531.0/4694215680.0 - LAL_GAMMA*6848.0/21.0 - LAL_PI*LAL_PI*640.0/3.0 + eta*(LAL_PI*LAL_PI*2255.0/12.0 - 15737765635.0/3048192.0) + eta*eta*76055.0/1728.0 - eta*eta*eta*127825.0/1296.0 - 6848.0*log(4.0)/21.0;
   c30Log = -6848.0/21.0;
-  c35 = LAL_PI*(77096675.0/254016.0 + eta*378515.0/1512.0 - eta*eta*74055.0/756.0);
+  c35 = LAL_PI*(77096675.0/254016.0 + eta*378515.0/1512.0 - eta*eta*74045.0/756.0);
   c40P = 3923.0;
 
   /* x1 */
   x1 = pow( LAL_PI * m * LAL_MTSUN_SI * deltaF, -1.0/3.0 );
 
   /* frequency cutoffs */
-  tmplt->fFinal = 1.0 / (6.0 * sqrt(6.0) * LAL_PI * m * LAL_MTSUN_SI);
   kmin = params->fLow / deltaF > 1 ? params->fLow / deltaF : 1;
   kmax = tmplt->fFinal / deltaF < numPoints/2 ? 
     tmplt->fFinal / deltaF : numPoints/2;
