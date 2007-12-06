@@ -646,7 +646,7 @@ def write_rescue():
 ##############################################################################
 # plot_hipe helpers
 
-def determine_sieve_patterns(cp, plot_name, ifotags, usertag=None):
+def determine_sieve_patterns(cp, plot_name, ifotag, usertag=None):
     """
     From the given plot configuration file, determine the --*-pattern values
     for a given plot name.  Returns as a dictionary of command-line option-
@@ -669,7 +669,7 @@ def determine_sieve_patterns(cp, plot_name, ifotags, usertag=None):
     >>> from ConfigParser import ConfigParser
     >>> cp = ConfigParser()
     >>> cp.read("plot_hipe.ini")
-    >>> print determine_sieve_patterns(cp, "plotinspiral", ["H1"])
+    >>> print determine_sieve_patterns(cp, "plotinspiral", "H1")
     {'bank-pattern': 'TRIGBANK_H1*_PLAYGROUND', 'missed-pattern':
      'SIRE_H1*_INJ*', 'trig-pattern': 'SIRE_H1*_PLAYGROUND'}
     
@@ -681,14 +681,12 @@ def determine_sieve_patterns(cp, plot_name, ifotags, usertag=None):
     patterns = {}
     for pattern_name in cp.get(meta_name, "cache-patterns").split(","):
         program_tag = cp.get(meta_name, pattern_name + "-program-tag")
+        pattern = program_tag + "_" + ifotag + "*"
+        if usertag is not None:
+            pattern += "_" + usertag
         suffix = suffixes.get(pattern_name)
-
-        for ifotag in ifotags:
-            pattern = program_tag + "_" + ifotag + "*"
-            if usertag is not None:
-                pattern += "_" + usertag
-            if suffix is not None:
-                pattern += "_" + suffix
-            patterns[pattern_name + "-pattern"] = pattern
+        if suffix is not None:
+            pattern += "_" + suffix
+        patterns[pattern_name + "-pattern"] = pattern
     return patterns
 
