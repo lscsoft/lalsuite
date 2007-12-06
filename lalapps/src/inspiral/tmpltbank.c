@@ -152,6 +152,9 @@ Approximant approximant;                /* approximation method         */
 CoordinateSpace space;                  /* coordinate space used        */
 INT4    haveGridSpacing = 0;            /* flag to indicate gridspacing */
 INT4    computeMoments  = 1;
+FreqCut MaxFreqCut;                     /* Max. upper frequency cutoff  */
+FreqCut MinFreqCut;                     /* Min. upper frequency cutoff  */
+INT4 NumFreqCut = 0;                    /* # of upper freq. cuts to use */    
 
 GridSpacing gridSpacing = SquareNotOriented; /* grid spacing (square or hexa)*/
 int     polygonFit      = 1;            /* fit a polygon around BCV bank */
@@ -1010,6 +1013,9 @@ int main ( int argc, char *argv[] )
   bankIn.LowGM            = -4.;
   bankIn.HighGM           = 6.;
   bankIn.computeMoments   = computeMoments; /* by default, gammas/moments are recomputed */
+  bankIn.MaxFreqCut = MaxFreqCut;
+  bankIn.MinFreqCut = MinFreqCut;
+  bankIn.NumFreqCut = NumFreqCut; 
   
   /* generate the template bank */
   if ( vrbflg )
@@ -1313,6 +1319,12 @@ fprintf(a, "                                 twoPN|twoPointFive|threePN|threePoi
 fprintf(a, "  --approximant APPROX         set approximant of the waveform to APPROX\n");\
 fprintf(a, "                                 (TaylorT1|TaylorT2|TaylorT3|TaylorF1|TaylorF2|\n");\
 fprintf(a, "                                 PadeT1|PadeT2|EOB|BCV|SpinTaylorT3|BCVSpin)\n");\
+fprintf(a, " --num-freq-cutoffs Ncut       create a template bank with Ncut different upper \n");\
+fprintf(a, "                                 frequency cutoffs (must be a positive integer) \n");\
+fprintf(a, " --max-high-freq-cutoff MAX    formula to compute the largest high freq. cutoff\n");\
+fprintf(a, "                                 possible choices in ascending order: (ISCO|ERD)\n");\
+fprintf(a, " --min-high-freq-cutoff MIN    formula to compute the smallest high freq. cutoff\n");\
+fprintf(a, "                                 possible choices in ascending order: (ISCO|ERD)\n");\
 fprintf(a, "  --space SPACE                grid up template bank with mass parameters SPACE\n");\
 fprintf(a, "                                 (Tau0Tau2|Tau0Tau3|Psi0Psi3)\n");\
 fprintf(a, "  --grid-spacing GRIDSPACING   grid up template bank with GRIDSPACING\n");\
@@ -1379,6 +1391,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"high-frequency-cutoff",   required_argument, 0,                'D'},
     {"order",                   required_argument, 0,                'E'},
     {"approximant",             required_argument, 0,                'F'},
+    {"num-freq-cutoffs",        required_argument, 0,                '1'},
+    {"max-high-freq-cutoff",    required_argument, 0,                '2'},
+    {"min-high-freq-cutoff",    required_argument, 0,                '3'},
     {"space",                   required_argument, 0,                'G'},
     {"grid-spacing",            required_argument, 0,                'v'},
     {"max-total-mass",          required_argument, 0,                'y'},
@@ -1409,6 +1424,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   UINT4   havePsi3Min     = 0;
   UINT4   havePsi3Max     = 0;
   UINT4   haveAlpha       = 0;
+  UINT4   haveNumFcut     = 0;
+  UINT4   haveMaxFcut     = 0;
+  UINT4   haveMinFcut     = 0;
 
   /*
    *
@@ -1424,7 +1442,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
     c = getopt_long_only( argc, argv, 
         "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:r:s:t:u:v:x:yz:"
-        "A:B:C:D:E:F:G:H:I:J:K:L:M:O:P:Q:R:S:T:U:VZ:",
+        "A:B:C:D:E:F:G:H:I:J:K:L:M:O:P:Q:R:S:T:U:VZ:1:2:3:",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -2231,6 +2249,70 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         exit( 1 );
         break;
 
+      case '1':
+        NumFreqCut = (INT4) atof( optarg );
+        if( NumFreqCut < 1 )
+	  {
+	    fprintf( stdout, "invalid argument to --%s:\n"
+              "Value must be a positive integer "
+              "(%d specified)\n",
+              long_options[option_index].name, NumFreqCut );
+	    exit( 1 );
+	  }
+	  ADD_PROCESS_PARAM( "int", "%d", NumFreqCut );
+	  haveNumFcut = 1;
+	  break;
+
+      case '2':
+	if ( ! strcmp( "SchwarzISCO", optarg ) )
+	  {
+	    MaxFreqCut = SchwarzISCO;
+	  }
+	else if( ! strcmp( "BKLISCO", optarg ) )
+	  {
+	    MaxFreqCut = BKLISCO;
+	  }
+	else if ( ! strcmp( "ERD", optarg ) )
+	  {
+	    MaxFreqCut = ERD;
+	  }
+	else
+	  {
+	    fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown cutoff frequency specified: "
+              "%s (must be one of: SchwarzISCO, BKLISCO, or ERD)\n", 
+              long_options[option_index].name, optarg );
+          exit( 1 );
+	  }
+	  ADD_PROCESS_PARAM( "string", "%s", optarg );
+	  haveMaxFcut = 1;
+	  break;
+
+      case '3':
+	if ( ! strcmp( "SchwarzISCO", optarg ) )
+	  {
+	    MinFreqCut = SchwarzISCO;
+	  }
+	else if ( ! strcmp( "BKLISCO", optarg ) )
+	  {
+	    MinFreqCut = BKLISCO;
+	  }
+	else if ( ! strcmp( "ERD", optarg ) )
+	  {
+	    MinFreqCut = ERD;
+	  }
+	else
+	  {
+	    fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown cutoff frequency specified: "
+              "%s (must be one of: SchwarzISCO, BKLISCO, or ERD)\n", 
+              long_options[option_index].name, optarg );
+          exit( 1 );
+	  }
+	  ADD_PROCESS_PARAM( "string", "%s", optarg );
+	  haveMinFcut = 1;
+	  break;
+
       default:
         fprintf( stderr, "unknown error while parsing options\n" );
         USAGE( stderr );
@@ -2724,6 +2806,32 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   {
     fprintf( stderr, "--high-frequency-cutoff must be specified\n" );
     exit( 1 );
+  }
+
+  /* Check that multiple cutoff freq. options specified */
+  if ( ! haveNumFcut )
+    {
+      fprintf( stderr, "must specify --num-freq-cutoffs\n" );
+      exit( 1 );
+    }
+  if ( ! haveMaxFcut )
+    {
+      fprintf( stderr, "must specify --max-high-freq-cutoff\n" );
+      exit( 1 );
+    }
+  if ( ! haveMinFcut )
+    {
+      fprintf( stderr, "must specify --min-high-freq-cutoff\n" );
+      exit( 1 );
+    }
+  /* Check Min and Max upper freq. cuts are the same if NumFreqCut = 1 */
+  if ( NumFreqCut == 1 )
+  {
+    if( MaxFreqCut < MinFreqCut || MaxFreqCut > MinFreqCut )
+      {
+	fprintf(stderr, "--max-high-freq-cutoff must equal --min-high-freq-cutoff when --num-freq-cutoffs = 1\n" );
+    exit( 1 );
+      }
   }
 
   return 0;
