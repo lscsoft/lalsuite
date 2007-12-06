@@ -304,16 +304,27 @@ if opts.plotinspiral:
   plotinspiral_jobs = {}
   this_section = "plotinspiral"
   cp = set_common_options(cp, this_section)
+  prog_tag = cp.get('plotinspiral-meta','program-tag')
+  zerolag_suffix = cp.get('pipeline','zerolag-suffix')
 
   for ifo in ifolist:
-    cp.set('plotinspiral','ifo-times',ifo)
+    
     if opts.first_stage:
       plotinspiral_jobs[ifo + "FIRST"] = inspiral.PlotInspiralJob(cp)
       plotinspiral_jobs[ifo + "FIRST"].add_opt("inspiral-stage", "FIRST") 
+      plotinspiral_jobs[ifo + "FIRST"].add_opt("ifo-times", ifo)
+      plotinspiral_jobs[ifo + "FIRST"].add_opt("ifo-tag", "FIRST_" + ifo)
+      plotinspiral_jobs[ifo + "FIRST"].add_opt("trig-pattern", str(prog_tag) + "_FIRST_" + ifo + \
+      '_' + input_user_tag + str(zerolag_suffix))
       plotinspiral_jobs[ifo + "FIRST"].set_sub_file( basename + '.plotinspiral_FIRST_' + ifo + subsuffix )
     if opts.second_stage:
       plotinspiral_jobs[ifo + "SECOND"] = inspiral.PlotInspiralJob(cp)
       plotinspiral_jobs[ifo + "SECOND"].add_opt("inspiral-stage", "SECOND") 
+      plotinspiral_jobs[ifo + "SECOND"].add_opt("ifo-tag", "SECOND_" + ifo)
+      plotinspiral_jobs[ifo + "SECOND"].add_opt("trig-pattern", str(prog_tag) + "_SECOND_" + ifo + \
+      '_' + input_user_tag + str(zerolag_suffix))
+      plotinspiral_jobs[ifo + "SECOND"].set_sub_file( basename + '.plotinspiral_SECOND_' + ifo + subsuffix )
+      plotinspiral_jobs[ifo + "SECOND"].add_opt("ifo-times", ifo)
       plotinspiral_jobs[ifo + "SECOND"].set_sub_file( basename + '.plotinspiral_SECOND_' + ifo + subsuffix )  
  
   all_jobs.extend(plotinspiral_jobs.values())
@@ -334,24 +345,24 @@ if opts.plotthinca:
       plotthinca_jobs[combostring + "FIRST"] = inspiral.PlotThincaJob(cp)
       for ifo in ifos:
         plotthinca_jobs[combostring + "FIRST"].add_opt(ifo.lower() + "-triggers","  ")
-      plotthinca_jobs[combostring + "FIRST"].add_opt("ifo-times", combostring)
-      plotthinca_jobs[combostring + "FIRST"].add_opt("ifo-tag", "FIRST_" + combostring)
-      plotthinca_jobs[combostring + "FIRST"].add_opt("zerolag-pattern", prog_tag + "_FIRST_" + \
-      combostring + '_' + input_user_tag + zerolag_suffix)
-      plotthinca_jobs[combostring + "FIRST"].add_opt("slide-pattern", prog_tag + "_SLIDE_FIRST_" + \
-      combostring + '_' + input_user_tag + slide_suffix)
-      plotthinca_jobs[combostring + "FIRST"].set_sub_file( basename + '.plotthinca_FIRST_' + combostring + subsuffix )
+        plotthinca_jobs[combostring + "FIRST"].add_opt("ifo-times", combostring)
+        plotthinca_jobs[combostring + "FIRST"].add_opt("ifo-tag", "FIRST_" + combostring)
+        plotthinca_jobs[combostring + "FIRST"].add_opt("zerolag-pattern", str(prog_tag) + "_FIRST_" + \
+        combostring + '_' + input_user_tag + str(zerolag_suffix))
+        plotthinca_jobs[combostring + "FIRST"].add_opt("slide-pattern", str(prog_tag) + "_SLIDE_FIRST_" + \
+        combostring + '_' + input_user_tag + str(slide_suffix))
+        plotthinca_jobs[combostring + "FIRST"].set_sub_file( basename + '.plotthinca_FIRST_' + combostring + subsuffix )
     if opts.second_stage:
       plotthinca_jobs[combostring + "SECOND"] = inspiral.PlotThincaJob(cp)
       for ifo in ifos:
         plotthinca_jobs[combostring + "SECOND"].add_opt(ifo.lower() + "-triggers","  ")
-      plotthinca_jobs[combostring + "SECOND"].add_opt("ifo-times", combostring)
-      plotthinca_jobs[combostring + "SECOND"].add_opt("ifo-tag", "SECOND_" + combostring)
-      plotthinca_jobs[combostring + "SECOND"].add_opt("zerolag-pattern", prog_tag + "_SECOND_" + \
-      combostring + '_' + input_user_tag + zerolag_suffix)
-      plotthinca_jobs[combostring + "SECOND"].add_opt("slide-pattern", prog_tag + "_SLIDE_SECOND_" + \
-      combostring + '_' + input_user_tag + slide_suffix)
-      plotthinca_jobs[combostring + "SECOND"].set_sub_file( basename + '.plotthinca_SECOND_' + combostring + subsuffix )
+        plotthinca_jobs[combostring + "SECOND"].add_opt("ifo-times", combostring)
+        plotthinca_jobs[combostring + "SECOND"].add_opt("ifo-tag", "SECOND_" + combostring)
+        plotthinca_jobs[combostring + "SECOND"].add_opt("zerolag-pattern", str(prog_tag) + "_SECOND_" + \
+        combostring + '_' + input_user_tag + str(zerolag_suffix))
+        plotthinca_jobs[combostring + "SECOND"].add_opt("slide-pattern", str(prog_tag) + "_SLIDE_SECOND_" + \
+        combostring + '_' + input_user_tag + str(slide_suffix))
+        plotthinca_jobs[combostring + "SECOND"].set_sub_file( basename + '.plotthinca_SECOND_' + combostring + subsuffix )
 
 
   all_jobs.extend(plotthinca_jobs.values())  
@@ -427,24 +438,38 @@ if opts.plotethinca:
   plotethinca_jobs = {}
   this_section = "plotethinca"
   cp = set_common_options(cp, this_section)
+  prog_tag = cp.get('plotethinca-meta','program-tag')
+  zerolag_suffix = cp.get('pipeline','zerolag-suffix')
+  slide_suffix = cp.get('pipeline','slide-suffix')
 
   for ifos in  ifo_combo:
     combostring = combo2str(ifos)
     ifosoption=ifos[0]
     for i in range(1,len(ifos)):
       ifosoption+=' --ifo '+ ifos[i]
-    if opts.first_stage:
-      plotethinca_jobs[combostring + "FIRST"] = inspiral.PlotEthincaJob(cp)
-      plotethinca_jobs[combostring + "FIRST"].add_opt("ifo", ifosoption)
-      plotethinca_jobs[combostring + "FIRST"].add_opt("ifo-times", combostring)
-      plotethinca_jobs[combostring + "FIRST"].add_opt("inspiral-stage", "FIRST")
-      plotethinca_jobs[combostring + "FIRST"].set_sub_file( basename + '.plotethinca_FIRST_' + combostring + subsuffix )
-    if opts.second_stage:
-      plotethinca_jobs[combostring + "SECOND"] = inspiral.PlotEthincaJob(cp)
-      plotethinca_jobs[combostring + "SECOND"].add_opt("ifo", ifosoption)
-      plotethinca_jobs[combostring + "SECOND"].add_opt("ifo-times", combostring)
-      plotethinca_jobs[combostring + "SECOND"].add_opt("inspiral-stage", "SECOND")
-      plotethinca_jobs[combostring + "SECOND"].set_sub_file( basename + '.plotethinca_SECOND_' + combostring + subsuffix )
+      if opts.first_stage:
+        plotethinca_jobs[combostring + "FIRST"] = inspiral.PlotEthincaJob(cp)
+        plotethinca_jobs[combostring + "FIRST"].add_opt("ifo", ifosoption)
+        plotethinca_jobs[combostring + "FIRST"].add_opt("ifo-times", combostring)
+        plotethinca_jobs[combostring + "FIRST"].add_opt("ifo-tag", "FIRST_" + combostring)
+        plotethinca_jobs[combostring + "FIRST"].add_opt("inspiral-stage", "FIRST")
+        plotethinca_jobs[combostring + "FIRST"].add_opt("zerolag-pattern", str(prog_tag) + "_FIRST_" + \
+        combostring + '_' + input_user_tag + str(zerolag_suffix))
+        plotthinca_jobs[combostring + "FIRST"].add_opt("slide-pattern", str(prog_tag) + "_SLIDE_FIRST_" + \
+        combostring + '_' + input_user_tag + str(slide_suffix))
+        plotethinca_jobs[combostring + "FIRST"].set_sub_file( basename + '.plotethinca_FIRST_' + combostring + subsuffix )
+      if opts.second_stage:
+        plotethinca_jobs[combostring + "SECOND"] = inspiral.PlotEthincaJob(cp)
+        plotethinca_jobs[combostring + "SECOND"].add_opt("ifo", ifosoption)
+        plotethinca_jobs[combostring + "SECOND"].add_opt("ifo-times", combostring)
+        plotethinca_jobs[combostring + "SECOND"].add_opt("ifo-tag", "SECOND_" + combostring)
+        plotethinca_jobs[combostring + "SECOND"].add_opt("inspiral-stage", "SECOND")
+        plotethinca_jobs[combostring + "SECOND"].add_opt("zerolag-pattern", str(prog_tag) + "_SECOND_" + \
+        combostring + '_' + input_user_tag + str(zerolag_suffix))
+        plotthinca_jobs[combostring + "SECOND"].add_opt("slide-pattern", str(prog_tag) + "_SLIDE_SECOND_" + \
+        combostring + '_' + input_user_tag + str(slide_suffix))
+        plotethinca_jobs[combostring + "SECOND"].add_opt("inspiral-stage", "SECOND")
+        plotethinca_jobs[combostring + "SECOND"].set_sub_file( basename + '.plotethinca_SECOND_' + combostring + subsuffix )
 
   all_jobs.extend(plotethinca_jobs.values())
 
