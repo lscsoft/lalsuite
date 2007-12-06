@@ -1667,7 +1667,9 @@ class candidateList:
         This method uses matplotlib.py to make plots of curves
         contained in this list!  Currently all plotting functions
         are hard wired to the method!  Method needs to have relative
-        offsets specified as an optional argument
+        offsets specified as an optional argument.  The input args are
+        filename,gpsRefTime,timescale,useLogColors,colormap
+        each of which is NOT manditory.
         """        
         if self.totalCount==0:
             sys.stdout.write("Omitting this plot no triggers to plot.\n");
@@ -1726,15 +1728,24 @@ class candidateList:
             del ztmp
             spinner.updateSpinner()
         spinner.closeSpinner()
+<<<<<<< tracksearchutils.py
+        maxValue=float(max(elementIPlist))
+        minValue=float(min(elementIPlist))
+        #Setup colorbar hack
+        stepSize=(maxValue-minValue)/256
+        linearValueMatrix=pylab.outerproduct(pylab.arange(minValue,maxValue,stepSize),pylab.ones(1))
+=======
         #Set jet colormap
         #Determine mapping of IP to colors
         maxValue=max(elementIPlist)
         minValue=min(elementIPlist)
+>>>>>>> 1.14
         fig=pylab.figure()
         pylab.cm.ScalarMappable().set_cmap(myColorMap)
-        #pylab.jet()
-        useLogColors=True
         linearColorScale=pylab.matplotlib.colors.normalize(minValue,maxValue)
+        pylab.imshow(linearValueMatrix,cmap=pylab.cm.get_cmap(myColorMap),origin="upper",extent=[0,0.01,0,0.01])
+        pylab.delaxes()
+        pylab.colorbar(tickfmt='%2.1e',orientation='vertical')
         if (minValue > 0) and (maxValue > 0):
             logColorScale=pylab.matplotlib.colors.normalize(math.log(minValue),math.log(maxValue))
         else:
