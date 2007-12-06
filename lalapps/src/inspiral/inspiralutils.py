@@ -643,4 +643,52 @@ def write_rescue():
   f.close()
   os.chmod("rescue.sh", 0744)
 
+##############################################################################
+# plot_hipe helpers
+
+def determine_sieve_patterns(cp, plot_name, ifotags, usertag=None):
+    """
+    From the given plot configuration file, determine the --*-pattern values
+    for a given plot name.  Returns as a dictionary of command-line option-
+    value pairs.
+    
+    Example ini file:
+    [pipeline]
+    trig-suffix = PLAYGROUND
+    bank-suffix = PLAYGROUND
+    missed-suffix = INJ*
+    
+    [plotinspiral-meta]
+    cache-patterns = trig,bank,missed
+    trig-program-tag = SIRE
+    bank-program-tag = TRIGBANK
+    missed-program-tag = SIRE
+    
+    Example invocation:
+    >>> from lalapps.inspiralutils import determine_sieve_patterns
+    >>> from ConfigParser import ConfigParser
+    >>> cp = ConfigParser()
+    >>> cp.read("plot_hipe.ini")
+    >>> print determine_sieve_patterns(cp, "plotinspiral", ["H1"])
+    {'bank-pattern': 'TRIGBANK_H1*_PLAYGROUND', 'missed-pattern':
+     'SIRE_H1*_INJ*', 'trig-pattern': 'SIRE_H1*_PLAYGROUND'}
+    
+    """
+    meta_name = plot_name + "-meta"
+    usertag = cp.get("pipeline", "input-user-tag") or usertag
+    suffixes = dict([(opt[:-len("-suffix")],val) for opt,val in cp.items("pipeline") if opt.endswith("-suffix")])
+
+    patterns = {}
+    for pattern_name in cp.get(meta_name, "cache-patterns").split(","):
+        program_tag = cp.get(meta_name, pattern_name + "-program-tag")
+        suffix = suffixes.get(pattern_name)
+
+        for ifotag in ifotags:
+            pattern = program_tag + "_" + ifotag + "*"
+            if usertag is not None:
+                pattern += "_" + usertag
+            if suffix is not None:
+                pattern += "_" + suffix
+            patterns[pattern_name + "-pattern"] = pattern
+    return patterns
 
