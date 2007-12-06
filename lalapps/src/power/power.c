@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 
@@ -165,8 +166,8 @@ struct options {
 	int window_pad;
 	/* time-frequency plane stride */
 	int window_shift;
-	/* set non-zero to generate noise */
-	int seed;
+	/* random number generator seed */
+	unsigned long seed;
 
 	/*
 	 * frame data input
@@ -281,7 +282,7 @@ static struct options *options_new(void)
 		.psd_length = 0,	/* impossible */
 		.psd_shift = 0,	/* impossible */
 		.resample_rate = 0,	/* impossible */
-		.seed = 1,	/* default */
+		.seed = 0,	/* default == use system clock */
 		.max_series_length = 0,	/* default == disable */
 		.calibrated = FALSE,	/* default */
 		.high_pass = -1.0,	/* impossible */
@@ -780,13 +781,8 @@ static struct options *parse_command_line(int argc, char *argv[], MetadataTable 
 		break;
 
 	case 'c':
-		options->seed = atoi(optarg);
-		if(options->seed <= 0) {
-			sprintf(msg, "must be greater than 0 (%i specified)", options->seed);
-			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
-		}
-		ADD_PROCESS_PARAM("int");
+		options->seed = atol(optarg);
+		ADD_PROCESS_PARAM("long");
 		break;
 
 	case 'e':
@@ -1800,7 +1796,21 @@ int main(int argc, char *argv[])
 			}
 			if(!rng) {
 				rng = gsl_rng_alloc(gsl_rng_ranlxd1);
-				gsl_rng_set(rng, options->seed);
+				if(options->seed)
+					gsl_rng_set(rng, options->seed);
+				else {
+					/* use time in milliseconds */
+					struct timeval t;
+					unsigned long seed;
+					if(gettimeofday(&t, NULL)) {
+						/* failure */
+						XLALPrintError("%s: error: cannot get time of day to seed random number generator\n", argv[0]);
+						exit(1);
+					}
+					seed = 1000 * (t.tv_sec + t.tv_usec * 1e-6);
+					XLALPrintInfo("%s: using random number seed %lu\n", seed);
+					gsl_rng_set(rng, seed);
+				}
 			}
 			gaussian_noise(series, options->noise_rms, rng);
 		} else {
