@@ -2454,7 +2454,7 @@ LALappsDoTSeriesSearch(LALStatus         *status,
    */
   memcpy(&tfInputs,&(tmpTSA->imageCreateParams),sizeof(CreateTimeFreqIn));
   memcpy(&mapMarkerParams,&(tmpTSA->imageBorders),sizeof(TrackSearchMapMarkingParams));
-  if (params.verbosity >= verbose)
+  if (params.verbosity >= printFiles)
     LALappsTSAWritePGM(status,tmpTSA,NULL); 
   tfmap=tmpTSA->imageRep;
   LALFree(tmpTSA);

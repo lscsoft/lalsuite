@@ -33,6 +33,7 @@ import string
 import math
 import exceptions
 import ConfigParser
+from tracksearchutils import determineDataPadding
 from glue import pipeline
 
 
@@ -111,29 +112,6 @@ def determineBlockPath(cp,blockID,channel=''):
     return str(blockPath)
 #End def
 
-def determineDataPadding(cp):
-    """
-    Method that uses the pipeline config file to determine how much
-    extra data that should be sent to a node to accomplish an analysis
-    when there is a nonzero bin_buffer flag in the configuration
-    file. This method returns a time in integer 'ceiling'ed seconds  to
-    amount of data need for the padding.
-    """
-    thePad=0
-    if cp.has_option('tracksearchtime','bin_buffer'):
-        #We need to determine the padding needed in seconds
-        timeBins=int(cp.get('tracksearchtime','bin_buffer'))
-        mapTime=float(cp.get('layerconfig','layer1TimeScale'))
-        mapBins=int(cp.get('tracksearchtime','number_of_time_bins'))
-        binDuration=float(mapTime/mapBins)
-        #Force pad to be at least 1 second long
-        thePad=math.ceil((binDuration*(timeBins)))
-        return float(thePad)
-    else:
-        return float(0)
-#End Def
-                      
-
 class tracksearchCheckIniFile:
     """
     This class will check the ini file for appropriate arguements
@@ -177,6 +155,7 @@ class tracksearchCheckIniFile:
         lambdaL=self.iniOpts.get('tracksearchbase','member_threshold')
         if lambdaL > lambdaH :
             self.errList.append('Error invalid choice for lambda parameters')
+            self.errList.append('Lh:'+str(lambdaH)+' Ll:'+str(lambdaL))
         CL=float(self.iniOpts.get('tracksearchbase','length_threshold'))
         if CL < 3:
             self.errList.append('Error invalid choice for curve length threshold')
@@ -693,7 +672,8 @@ class tracksearchClusterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
             self.add_condor_cmd('environment','PYTHONPATH=$PYTHONPATH:'+os.path.abspath(os.path.dirname(self.candUtil)))
         else:
             self.add_condor_cmd('transfer_input_files',self.candUtil)
-        for sec in ['clusterconfig']:
+        if cp.has_section('clusterconfig'):
+            for sec in ['clusterconfig']:
                 self.add_ini_opts(cp,sec)
         #End __init__ method
 #End class tracksearchClusterJob

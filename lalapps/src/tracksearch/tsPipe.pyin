@@ -31,6 +31,7 @@ from glue import pipeline
 sys.path.append('@PYTHONLIBDIR@')
 import tracksearch
 from tracksearchutils import progressSpinner
+from tracksearchutils import autoCreateSegmentList
 
 #Parse the command line options and create help features
 parser = OptionParser()
@@ -56,29 +57,55 @@ parser.add_option("-b","--rubber_block_length",dest="topBlockFloat",
                   action="store_true",
                   help="If this flag is specified then don't adjust the entries in the segment list, instead prepare a simple 1 layer investigation with no interval restriction on the layerTopBlockSize field in the config file.  We have an implicit minimum block size to use which is equal to a single tracksearchTime job call given the configuration options in INI file.  If the INI file contains configuration options for more than just a 1 layer run then pipe builder will exited with an error. We build chunks equal to the length of layerTopBlockSize plus smaller ones to maximize the data we check.  The lower bound on chunk size is a 1 tracksearchTime job worth of data."
                   )
+parser.add_option("-u","--unique_path",dest="uniquePath",
+                  default='',
+                  help="Mechanism to reuse a ini file where UNIQUE_PATH is appended to paths from work_path log_path and dag_path, these options are found in [filelayout] section of ini file.")
 parser.add_option("-v","--verbose",dest="verbose",
                   help="Invoke a more verbose setting with progress indicator.",
                   action="store_true",
                   default=False
                   )
+parser.add_option("-e","--specific_event",dest="specificGPS",
+                  default='0',
+                  help="Mechanism to setup a tracksearch pipeline for a specific GPS time stamp.  This method uses the INI file specified to setup an appropriate segment list for the run such that the GPS time specified is approximately centered in the middle of the data to be analyzed.  The amount of surrounding data (durations) etc are all defined in the INI file. Using this option will implicity set the flag associated with --unique_path unless it has already been set to something by the user.",
+                  )
+                  
 (options,args) = parser.parse_args()
 
-iniFile=os.path.abspath(str(options.iniFile))
-segmentList=os.path.abspath(str(options.segmentList))
+iniFile=os.path.abspath(os.path.expanduser(str(options.iniFile)))
+segmentList=os.path.abspath(os.path.expanduser(str(options.segmentList)))
 injectFileFlag=bool(options.invokeInject)
 removepipeline=bool(options.removepipeline)
 verbose=bool(options.verbose)
 topBlockFloat=bool(options.topBlockFloat)
+uniquePath=str(options.uniquePath)
+specificGPS=float(options.specificGPS)
 
 if not os.path.exists(iniFile):
     print 'Can not find iniFile: ',os.path.basename(iniFile)
     os.abort()
-if not os.path.exists(segmentList):
+if (not os.path.exists(segmentList) and specificGPS == 0):
     print 'Can not find segentlist: ',os.path.basename(segmentList)
     os.abort()
+    
 #Read in the configuration file options
 cp = ConfigParser.ConfigParser()
 cp.read(iniFile)
+
+#If specificGPS flag is used to start pipe builder
+#It is placed in same path as INI file can be found also.
+if (specificGPS != 0):
+    segmentList=autoCreateSegmentList(cp,iniFile,specificGPS)
+    if uniquePath == '':
+        uniquePath='/event_'+str(specificGPS)
+
+#Adjust the paths using unique_path option
+newWorkPath=os.path.normpath(os.path.expanduser(str(cp.get('filelayout','workpath')))+"/"+uniquePath)
+newDagPath=os.path.normpath(os.path.expanduser(str(cp.get('filelayout','dagpath')))+"/"+uniquePath)
+newLogPath=os.path.normpath(os.path.expanduser(str(cp.get('filelayout','logpath')))+"/"+uniquePath)
+cp.set('filelayout','workpath',newWorkPath)
+cp.set('filelayout','dagpath',newDagPath)
+cp.set('filelayout','logpath',newLogPath)
 
 #Use config information to remove files if requested
 if removepipeline:
@@ -129,6 +156,10 @@ if not(topBlockFloat):
 else:
     #Do optimized floating blocks
     #Check for layer2
+    setSize=int(cp.get('layerconfig','layer1SetSize'))
+    timeScale=float(cp.get('layerconfig','layer1TimeScale'))
+    minSize=setSize*timeScale
+    print "Building pipe with rubber to block size. Minimum duration: "+str(minSize)
     for opt in cp.options('layerconfig'):
         if str(opt).lower().__contains__(str('layer2TimeScale').lower()):
             print "Error found additional layerconfig options for multi-resolution search."
@@ -136,9 +167,6 @@ else:
             os.abort
     allData=pipeline.ScienceData()
     allData.read(segmentListName,dataBlockSize)
-    setSize=int(cp.get('layerconfig','layer1SetSize'))
-    timeScale=float(cp.get('layerconfig','layer1TimeScale'))
-    minSize=setSize*timeScale
     if cp.has_option('layerconfig','burndata'):
         dataToBurn=int(cp.get('layerconfig','burndata'))
     else:
@@ -173,6 +201,10 @@ tracksearchLogFile="tracksearchDag.log"
 tracksearchBlock=tracksearch.tracksearch(cp,injectFileFlag,tracksearchLogFile)
 progress=progressSpinner(verbose,2)
 progress.setTag('Building ')
+if allData.__len__() == 0:
+    print "Please check your segment list."
+    print "Also check INI files option in section [layerconfig]"
+    os.abort()
 for block in allData:
     progress.updateSpinner()
     tracksearchBlock.createJobs(block)
@@ -189,10 +221,6 @@ tracksearchBlock.writePipelineDAG()
         
 print "We prepared "+str(allData.__len__())+" analysis segments."
 print "The dag info should be found in :",cp.get('filelayout','dagpath')
-if allData.__len__() == 0:
-    print "Please check your segment list."
-    print "Also check INI files option in section [layerconfig]"
-    os.abort()
 sys.exit(0)
 
 
