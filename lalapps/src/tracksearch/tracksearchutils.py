@@ -1800,6 +1800,7 @@ class candidateList:
         method.  If one wants to hand cut the summary you can excise the
         triggers from the output summary from original entire database for
         graphing the triggers.
+        Symmetry weights -- Z scores replace this field!
         """
         weight=1
         glitchDatabase=[]
@@ -1821,14 +1822,14 @@ class candidateList:
             #
             relativeTimeBP=brightPixel[2].getAsFloat()-triggerCentralTime
             relativeFreqBP=brightPixel[3]-triggerCentralFreq
-            symmetryBP=trigger.getSymmetryFactor(brightPixel,weight)
+            ###symmetryBP=trigger.getSymmetryFactor(brightPixel,weight)
             zScoreBP=(
                 (triggerIntegratedPower-meanPixelPower)/
                 math.sqrt(varPixelPower)
                 )
             relativeTimeCM=cmPixel[2].getAsFloat()-triggerCentralTime
             relativeFreqCM=cmPixel[3]-triggerCentralFreq
-            symmetryCM=trigger.getSymmetryFactor(brightPixel,weight)
+            ###symmetryCM=trigger.getSymmetryFactor(brightPixel,weight)
             zScoreCM=(
                 (triggerIntegratedPower-meanPixelPower)/
                 math.sqrt(varPixelPower)
@@ -1852,9 +1853,9 @@ class candidateList:
                                  triggerBandwidth,int(triggerLength),
                                  triggerIntegratedPower,meanPixelPower,
                                  varPixelPower,relativeTimeBP,
-                                 relativeFreqBP,symmetryBP,
+                                 relativeFreqBP,0,
                                  zScoreBP,relativeTimeCM,
-                                 relativeTimeCM,symmetryCM,
+                                 relativeTimeCM,0,
                                  zScoreCM,spanTnorm,spanFnorm]
             glitchDatabase.append(glitchDatabaseEntry)
         spinner.closeSpinner()
@@ -1867,11 +1868,11 @@ class candidateList:
         """
         if type(glitchDatabase) == type(''):
             glitchDatabase=self.createGlitchDatabase(self.verboseMode)
-        format="%s "
-        entryFormat="%10.5f "
+        format="%s\t"
+        entryFormat="%10.5f\t"
         for index in range(1,glitchDatabase[0].__len__(),1):
             format=format+entryFormat
-        format=format+"\n"
+        format=format.rstrip('\t')+"\n"
         if override=='':
             sourceFile=self.filename[0]
         else:
