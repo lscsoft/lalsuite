@@ -155,7 +155,7 @@ def create_finalise_script(configcp):
   fp = open('finalise.sh', 'w')
   fp.write('#!/bin/sh\n')
   fp.write('cp TMPLTBANK.xml BE_Bank.xml\n')
-  fp.write('rm -f Trigger.dat ; find . -name "bankefficiency*.out" | awk \'{print "cat  " $1 ">> Trigger.dat"}\' > script.sh; chmod 755 script.sh ; ./script.sh; \n')
+  fp.write('rm -f Trigger.dat ; ls bankefficiency*.out | awk \'{print "cat  " $1 ">> Trigger.dat"}\' > script.sh; chmod 755 script.sh ; ./script.sh; \n')
   fp.write(configcp.get("main", "executable") +' --ascii2xml \n')
   fp.write('mv Trigger.xml Trigger_' + noise_model +'_'+fl+'_'+grid+'_'+template+'_'+signal+'_'+mm+'.xml')
   fp.close()
