@@ -29,8 +29,8 @@ sys.path.append('@PYTHONLIBDIR@')
 from glue import pipeline
 
 from lalapps import inspiral
+from lalapps.inspiralutils import determine_sieve_patterns
 from lalapps import inspiralutils
-
 ##############################
 # Convert ifo list to string
 def combo2str(combo):
@@ -332,33 +332,27 @@ if opts.plotthinca:
   plotthinca_jobs = {}
   this_section = "plotthinca"
   cp = set_common_options(cp, this_section)
-  prog_tag = cp.get('plotthinca-meta','program-tag')
-  zerolag_suffix = cp.get('pipeline','zerolag-suffix')
-  slide_suffix = cp.get('pipeline','slide-suffix')
-
   for ifos in  ifo_combo:
     combostring = combo2str(ifos)
     if opts.first_stage:
+      pattern = determine_sieve_patterns(cp, "plotthinca", "FIRST",combostring)
       plotthinca_jobs[combostring + "FIRST"] = inspiral.PlotThincaJob(cp)
       for ifo in ifos:
         plotthinca_jobs[combostring + "FIRST"].add_opt(ifo.lower() + "-triggers","  ")
         plotthinca_jobs[combostring + "FIRST"].add_opt("ifo-times", combostring)
         plotthinca_jobs[combostring + "FIRST"].add_opt("ifo-tag", "FIRST_" + combostring)
-        plotthinca_jobs[combostring + "FIRST"].add_opt("zerolag-pattern", str(prog_tag) + "_FIRST_" + \
-        combostring + '_' + input_user_tag + str(zerolag_suffix))
-        plotthinca_jobs[combostring + "FIRST"].add_opt("slide-pattern", str(prog_tag) + "_SLIDE_FIRST_" + \
-        combostring + '_' + input_user_tag + str(slide_suffix))
+        plotthinca_jobs[combostring + "FIRST"].add_opt("zerolag-pattern",str(pattern['coinc-pattern']))
+        plotthinca_jobs[combostring + "FIRST"].add_opt("slide-pattern", str(pattern['slide-pattern']))
         plotthinca_jobs[combostring + "FIRST"].set_sub_file( basename + '.plotthinca_FIRST_' + combostring + subsuffix )
     if opts.second_stage:
+      pattern = determine_sieve_patterns(cp, "plotthinca", "SECOND",combostring)
       plotthinca_jobs[combostring + "SECOND"] = inspiral.PlotThincaJob(cp)
       for ifo in ifos:
         plotthinca_jobs[combostring + "SECOND"].add_opt(ifo.lower() + "-triggers","  ")
         plotthinca_jobs[combostring + "SECOND"].add_opt("ifo-times", combostring)
         plotthinca_jobs[combostring + "SECOND"].add_opt("ifo-tag", "SECOND_" + combostring)
-        plotthinca_jobs[combostring + "SECOND"].add_opt("zerolag-pattern", str(prog_tag) + "_SECOND_" + \
-        combostring + '_' + input_user_tag + str(zerolag_suffix))
-        plotthinca_jobs[combostring + "SECOND"].add_opt("slide-pattern", str(prog_tag) + "_SLIDE_SECOND_" + \
-        combostring + '_' + input_user_tag + str(slide_suffix))
+        plotthinca_jobs[combostring + "SECOND"].add_opt("zerolag-pattern", str(pattern['coinc-pattern']))
+        plotthinca_jobs[combostring + "SECOND"].add_opt("slide-pattern", str(pattern['slide-pattern']))
         plotthinca_jobs[combostring + "SECOND"].set_sub_file( basename + '.plotthinca_SECOND_' + combostring + subsuffix )
 
 
@@ -402,7 +396,7 @@ if opts.plotinjnum:
     combostring = combo2str(ifos)
     if opts.first_stage:
       prog_tag = cp.get('plotinjnum-meta','inj-program-tag')
-      suffix = cp.get('pipeline','injection-suffix')
+      suffix = cp.get('pipeline','inj-suffix')
       plotinjnum_jobs[combostring + "FIRST"] = inspiral.PlotInjnumJob(cp)
       plotinjnum_jobs[combostring + "FIRST"].add_opt("ifo-type",combostring)
       plotinjnum_jobs[combostring + "FIRST"].add_opt("ifo-times",combostring)
@@ -414,7 +408,7 @@ if opts.plotinjnum:
       plotinjnum_jobs[combostring + "FIRST"].set_sub_file( basename + '.plotinjnum_FIRST_' +  combostring + subsuffix )
     if opts.second_stage:
       prog_tag = cp.get('plotinjnum-meta','inj-program-tag')
-      suffix = cp.get('pipeline','injection-suffix')
+      suffix = cp.get('pipeline','inj-suffix')
       plotinjnum_jobs[combostring + "SECOND"] = inspiral.PlotInjnumJob(cp)
       plotinjnum_jobs[combostring + "SECOND"].add_opt("ifo-type",combostring)
       plotinjnum_jobs[combostring + "SECOND"].add_opt("ifo-times",combostring)
@@ -435,9 +429,6 @@ if opts.plotethinca:
   plotethinca_jobs = {}
   this_section = "plotethinca"
   cp = set_common_options(cp, this_section)
-  prog_tag = cp.get('plotethinca-meta','program-tag')
-  zerolag_suffix = cp.get('pipeline','zerolag-suffix')
-  slide_suffix = cp.get('pipeline','slide-suffix')
 
   for ifos in  ifo_combo:
     combostring = combo2str(ifos)
@@ -490,7 +481,7 @@ if opts.plotinspmissed:
        plotinspmissed_jobs[ifo +"FIRST"].set_sub_file( basename + '.plotinspmissed_FIRST_' + ifo + subsuffix )
     if opts.second_stage:
        prog_tag = cp.get('plotinspinj-meta','inj-program-tag')
-       suffix = cp.get('pipeline','injection-suffix')
+       suffix = cp.get('pipeline','inj-suffix')
        plotinspmissed_jobs[ifo +"SECOND"] = inspiral.PlotInspmissedJob(cp)
        plotinspmissed_jobs[ifo +"SECOND"].add_opt("ifo-times", ifo)
        plotinspmissed_jobs[ifo +"SECOND"].add_opt("ifo", ifo)
@@ -509,19 +500,19 @@ if opts.plotinspinj:
 
   for ifo in ifolist:
     if opts.first_stage:
-      prog_tag = cp.get('plotinspinj-meta','inj-program-tag')
-      suffix = cp.get('pipeline','injection-suffix')
+      pattern = determine_sieve_patterns(cp, "plotinspinj","FIRST")
+      suffix = cp.get('pipeline','inj-suffix')
       plotinspinj_jobs[ifo + "FIRST"] = inspiral.PlotInspinjJob(cp)
       plotinspinj_jobs[ifo + "FIRST"].add_opt("ifo-times", ifo)
-      plotinspinj_jobs[ifo + "FIRST"].add_opt("inj-found-pattern", str(prog_tag) + "_*_FOUND_FIRST_*_" + input_user_tag + str(suffix))
+      plotinspinj_jobs[ifo + "FIRST"].add_opt("inj-found-pattern", str(pattern['found-pattern']))
       plotinspinj_jobs[ifo +"FIRST"].add_opt("ifo-tag", "FIRST_" + ifo)
       plotinspinj_jobs[ifo + "FIRST"].set_sub_file( basename + '.plotinspinj_FIRST_' + ifo + subsuffix )
     if opts.second_stage:
-      prog_tag = cp.get('plotinspinj-meta','inj-program-tag')
-      suffix = cp.get('pipeline','injection-suffix')
+      pattern = determine_sieve_patterns(cp, "plotinspinj","SECOND")
+      suffix = cp.get('pipeline','inj-suffix')
       plotinspinj_jobs[ifo + "SECOND"] = inspiral.PlotInspinjJob(cp)
       plotinspinj_jobs[ifo + "SECOND"].add_opt("ifo-times", ifo)
-      plotinspinj_jobs[ifo + "SECOND"].add_opt("inj-found-pattern", str(prog_tag) + "_*_FOUND_SECOND_*_" + input_user_tag + str(suffix))
+      plotinspinj_jobs[ifo + "SECOND"].add_opt("inj-found-pattern", str(pattern['found-pattern']))
       plotinspinj_jobs[ifo + "SECOND"].add_opt("ifo-tag", "SECOND_" + ifo)
       plotinspinj_jobs[ifo + "SECOND"].set_sub_file( basename + '.plotinspinj_SECOND_' + ifo + subsuffix )
 
@@ -534,14 +525,16 @@ if opts.plotsnrchi:
   this_section = "plotsnrchi"
   cp = set_common_options(cp, this_section)
 
-
-  for ifo in ifolist:    
+  for ifo in ifolist:   
+    pattern = determine_sieve_patterns(cp, "plotsnrchi","SECOND_*") 
     plotsnrchi_jobs[ifo] = inspiral.PlotSnrchiJob(cp)
     plotsnrchi_jobs[ifo].add_opt("title", ifo)
     plotsnrchi_jobs[ifo].add_opt("single-ifo", ifo)
     plotsnrchi_jobs[ifo].add_opt("ifo-times", ifo)
     if opts.second_stage:
       plotsnrchi_jobs[ifo].add_opt("inspiral_stage", "SECOND")
+      plotsnrchi_jobs[ifo].add_opt("trig-pattern", str(pattern['trig-pattern']))
+      plotsnrchi_jobs[ifo].add_opt("inj-pattern", str(pattern['found-pattern']))
       plotsnrchi_jobs[ifo].set_sub_file( basename + '.plotsnrchi_SECOND_' + ifo + subsuffix )
 
   all_jobs.extend(plotsnrchi_jobs.values())
