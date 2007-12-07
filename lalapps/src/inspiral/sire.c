@@ -88,8 +88,8 @@ static void print_usage(char *program)
       "The following options are recognized.  Options not surrounded in []\n"\
       "are required.\n", program );
   fprintf(stderr,
-      " [--help                       display this message\n"\
-      " [--verbose                    print progress information\n"\
+      " [--help]                      display this message\n"\
+      " [--verbose]                   print progress information\n"\
       " [--debug-level]   level       set the LAL debug level\n"\
       " [--user-tag]      usertag     set the process_params usertag\n"\
       " [--comment]       string      set the process table comment to string\n"\
