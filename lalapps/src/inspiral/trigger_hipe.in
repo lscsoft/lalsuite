@@ -121,8 +121,11 @@ def writeInjectionFile( fileName, sims ):
 
    # append the entries we want to write
    for sim in sims:
+     sim.numrel_data="nan"
+     sim.numrel_mode_max = 0
+     sim.numrel_mode_min = 0
      tbl.append( sim )
-   
+ 
    # write output file
    utils.write_filename(xmldoc, fileName )
 
@@ -194,13 +197,14 @@ class hipe_run(object):
   """
   This class is intended to represent single run of lalapps_inspiral_hipe.
   """
-  def __init__(self, hipe_dir, base_cp, ifos, log_path, source_file, onsource=False, usertag=None, verbose=False):
+  def __init__(self, hipe_dir, base_cp, ifos, log_path, source_file, dag_name, onsource=False, usertag=None, verbose=False):
     self._dag_name = None
     self._hipe_dir = hipe_dir
     self._log_path = log_path
     self._cp = copy.deepcopy(base_cp)
     self._ifos = ifos
     self._verbose = verbose
+    self._dag_name = os.path.join(self._hipe_dir, dag_name)
 
     # create directory here
     mkdir(self._hipe_dir, overwrite=True)
@@ -209,7 +213,7 @@ class hipe_run(object):
       "--log-path=%s" % log_path, "--config-file=%s",
       "--datafind", "--template-bank", "--inspiral", "--coincidence",
       "--trigbank", "--inspiral-veto", "--second-coinc", 
-      "--coire-second-coinc", "--write-script"]
+      "--coire-second-coinc", "--write-script","--sire-inspiral"]
     
     # determine how many ifos to analyze
     n = len(self._ifos)
@@ -256,25 +260,26 @@ class hipe_run(object):
     for ifo in self._ifos:
         self._cp.set('input', ifo.lower() + '-segments', "../" + ifo + "-selectedsegs.txt")
 
-  def write_dag(self, ini_file_name):
+  def write_dag(self):
     """
     Create directory and run lalapps_inspiral_hipe to create the DAG.
     """
+    ini_file_name = os.path.basename( self._dag_name+'.ini' )
     os.chdir(self._hipe_dir)
     if not os.path.isdir(self._log_path):  # in case of relative path
       os.mkdir(self._log_path)
-    cp_file = open(ini_file_name, 'w')
+    cp_file = open( ini_file_name, 'w')
     self._cp.write(cp_file)
     cp_file.close()
     arguments = " ".join(self._hipe_args)
     inspiralutils.make_external_call("../../lalapps_inspiral_hipe %s" % (arguments % ini_file_name),
       show_stdout=self._verbose, show_command=self._verbose)
     os.chdir("../../")
-    self._dag_name = os.path.join(self._hipe_dir,
-                                  ini_file_name.replace(".ini", ".dag"))
+    #self._dag_name = os.path.join(self._hipe_dir,
+    #                              ini_file_name.replace(".ini", ".dag"))
   
   def get_dag_name(self):
-    return self._dag_name
+    return self._dag_name+'.dag'
   
   def get_dag_node(self):
     """
@@ -293,7 +298,7 @@ def concatenate_cache_files(hipe_runs, output_cache):
   named output_cache.
   """
   dags = [r.get_dag_name() for r in hipe_runs]
-  make_external_call("cat %s > %s" % (" ".join(dags), output_cache))
+  inspiralutils.make_external_call("cat %s > %s" % (" ".join(dags), output_cache))
 
 ##############################################################################
 # define usage and command line options and arguments - parse
@@ -556,16 +561,16 @@ for grb in usedList:
   
   if opts.verbose: print "Creating DAG for offsource analysis"
   basic_analysis = hipe_run("%s/analysis" % idirectory, cp, grb_ifolist,
-                            opts.log_path, source_file, verbose=opts.verbose)
-  basic_analysis.write_dag('analysis.ini')
+                            opts.log_path, source_file, "analysis", verbose=opts.verbose)
+  basic_analysis.write_dag()
   hipe_runs.append(basic_analysis)
   uberdag.add_node(basic_analysis.get_dag_node())
 
   if opts.verbose: print "Creating DAG for onsource analysis"
   onsource_analysis = hipe_run("%s/onsource" % idirectory, cp, grb_ifolist,
-                               opts.log_path, source_file, onsource=True,
+                               opts.log_path, source_file, "onsource", onsource=True,
                                verbose=opts.verbose)
-  onsource_analysis.write_dag('onsource.ini')
+  onsource_analysis.write_dag()
   hipe_runs.append(onsource_analysis)
   uberdag.add_node(onsource_analysis.get_dag_node())
 
@@ -582,7 +587,7 @@ for grb in usedList:
       if opts.verbose: print "Creating DAG for", injrun
       hipe_dir = os.path.join(idirectory, injrun)
       injection_analysis = hipe_run( hipe_dir, cp, grb_ifolist, \
-                               opts.log_path, source_file, verbose=opts.verbose)
+                               opts.log_path, source_file, injrun, verbose=opts.verbose)
 
       # create the master injection file and gets its content
       if opts.verbose: print "  Creating injections..."
@@ -607,7 +612,7 @@ for grb in usedList:
       if opts.verbose: print "  Writing DAG..."
       injection_analysis.set_numslides(0)
       injection_analysis.set_injections(injrun, deltaIndex)
-      injection_analysis.write_dag(injrun + '.ini')
+      injection_analysis.write_dag()
       hipe_runs.append(injection_analysis)
       uberdag.add_node(injection_analysis.get_dag_node())
 
