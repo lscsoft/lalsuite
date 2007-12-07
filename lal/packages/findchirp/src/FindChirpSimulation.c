@@ -376,17 +376,14 @@ LALFindChirpInjectSignals (
       tmpSig = XLALCalculateNRStrain( waveform.h , thisEvent, ifo, sampleRate);
       signal = *tmpSig;
       
+      
     }
 
     /* inject the signal into the data channel */
     LALSSInjectTimeSeries( status->statusPtr, chan, &signal );
     CHECKSTATUSPTR( status );
 
-    if ( tmpSig )    
-    {
-      XLALDestroyREAL4Vector( tmpSig->data );
-      LALFree(tmpSig);
-    }
+
 
     if ( waveform.shift )
     {
