@@ -433,6 +433,12 @@ def plot_setup(plotDir, config, ifos, logPath, injectionSuffix,
 
   plotcp = copy.deepcopy(config)
 
+  # set details for the common section
+  plotcp.add_section("common")
+  plotcp.set("common","gps-start-time", plotcp.get("input","gps-start-time") )
+  plotcp.set("common","gps-start-end", plotcp.get("input","gps-end-time") )
+  plotcp.set("common","output-path", ".")
+
   plotSections = ["common", "pipeline", "condor",\
       "plotinspiral", "plotinspiral-meta", \
       "plotthinca", "plotthinca-meta", \
@@ -452,17 +458,14 @@ def plot_setup(plotDir, config, ifos, logPath, injectionSuffix,
   plotcp.remove_option("condor","follow")
 
   # XXX Can't yet run the plotting codes in standard universe
-  if plotcp.get("pipeline","universe") == "standard":
-    plotcp.set("pipeline","universe","vanilla")
+  if plotcp.get("condor","universe") == "standard":
+    plotcp.set("condor","universe","vanilla")
 
   # set the various suffixes in pipeline
   plotcp.set("pipeline","injection-suffix",injectionSuffix)
   plotcp.set("pipeline","zerolag-suffix",zerolagSuffix)
   plotcp.set("pipeline","slide-suffix",slideSuffix)
 
-  # set details for the common section
-  plotcp.set("common","gps-start-time", plotcp.get("input","gps-start-time") )
-  plotcp.set("common","gps-start-end", plotcp.get("input","gps-end-time") )
 
   # set the user-tag
   if plotcp.get("pipeline","user-tag"):
@@ -470,7 +473,8 @@ def plot_setup(plotDir, config, ifos, logPath, injectionSuffix,
     plotcp.set("pipeline","input-user-tag",usertag)
     usertag += plotDir.upper()
   else:
-    usertag = hipeDir.upper()
+    usertag = plotDir.upper()
+    plotcp.set("pipeline","input-user-tag",None)
 
   plotcp.set("pipeline","user-tag",usertag)
   
@@ -479,7 +483,7 @@ def plot_setup(plotDir, config, ifos, logPath, injectionSuffix,
   # return to the directory, write ini file and run hipe
   os.chdir(plotDir)
   iniFile = "plot_hipe_"
-  iniFile += hipeDir 
+  iniFile += plotDir 
   iniFile += ".ini"
 
   plotcp.write(file(iniFile,"w"))
