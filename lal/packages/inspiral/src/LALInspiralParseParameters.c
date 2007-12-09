@@ -181,7 +181,9 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	  }
 	  else if (strcmp(argv[i],"SpinTaylorT3")==0){
 	    params->approximant = SpinTaylorT3; }
-	  else {params->approximant = TaylorT1;} /*is it correct ? */
+          else if (strcmp(argv[i],"Eccentricity")==0){
+	    params->approximant = Eccentricity; }
+	  else {fprintf(stderr,"Approximant not found in ParseParameter function\n");} /*is it correct ? */
 	}/* SpinTaylor is not available here only for inject package*/
       else if (strcmp(argv[i], "--order")==0){
 	params->order = atoi(argv[++i]);}
@@ -221,6 +223,8 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	params->startPhase = atof(argv[++i]); }
       else if (strcmp(argv[i],"--startTime")==0){
 	params->startTime = atof(argv[++i]); }
+      else if (strcmp(argv[i],"--eccentricity")==0){
+	params->eccentricity = atof(argv[++i]); }
       else if (strcmp(argv[i],"--Theta")==0){
 	params->Theta = atof(argv[++i]); }
       else if (strcmp(argv[i],"--Zeta2")==0){
@@ -247,10 +251,6 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	params->psi3 = atof(argv[++i]); }
       else if (strcmp(argv[i],"--inclination")==0){
 	params->inclination = atof(argv[++i]); }
-      else if (strcmp(argv[i],"--orbitTheta0")==0){
-	params->orbitTheta0 = atof(argv[++i]); }
-      else if (strcmp(argv[i],"--orbitPhi0")==0){
-	params->orbitPhi0 = atof(argv[++i]); }
       else if (strcmp(argv[i],"--sourceTheta")==0){
 	params->sourceTheta = atof(argv[++i]); }
       else if (strcmp(argv[i],"--sourcePhi")==0){
@@ -311,8 +311,6 @@ void LALInspiralITStructurePrint(LALStatus *status,
   printf("# beta        = %-15.12f\n", params.beta);
 
   printf("# inclination = %-15.12f\n", params.inclination);
-  printf("# orbitTheta0 = %-15.12f\n", params.orbitTheta0);
-  printf("# orbitPhi0   = %-15.12f\n", params.orbitPhi0);
   printf("# sourceTheta = %-15.12f\n", params.sourceTheta);
   printf("# sourcePhi   = %-15.12f\n", params.sourcePhi);
   printf("# spin1 x     = %-15.12f\n", params.spin1[0]);
@@ -383,8 +381,6 @@ void LALInspiralITStructureSetDefault(LALStatus *status,
   params->beta         = INSPIRALTEMPLATE_BETA;
     
   params->inclination  = INSPIRALTEMPLATE_INCLINATION;
-  params->orbitTheta0  = INSPIRALTEMPLATE_ORBITTHETA0;
-  params->orbitPhi0    = INSPIRALTEMPLATE_ORBITPHI0;
   params->sourceTheta  = INSPIRALTEMPLATE_SOURCETHETA;
   params->sourcePhi    = INSPIRALTEMPLATE_SOURCEPHI;
   params->spin1[0]     = INSPIRALTEMPLATE_SPIN1X;  
@@ -436,10 +432,10 @@ void LALInspiralITStructureHelp()
   fprintf(stderr,"--alpha5      (BCVSpin)\n");
   fprintf(stderr,"--alpha6      (BCVSpin)\n");
   fprintf(stderr,"--beta        (BCVSpin)\n");
+  
+  fprintf(stderr,"--eccentricity \n");
 
   fprintf(stderr,"--inclination \n");
-  fprintf(stderr,"--orbitTheta0 \n");
-  fprintf(stderr,"--orbitPhi0   \n");
   fprintf(stderr,"--sourceTheta \n");
   fprintf(stderr,"--sourcePhi   \n");
 
