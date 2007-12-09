@@ -107,7 +107,7 @@ LALInspiralDerivatives (
   v = *(values->data);
 
   dvalues->data[0] = -ak->flux(v, ak->coeffs)/ (ak->totalmass*ak->dEnergy(v, ak->coeffs));
-  dvalues->data[1] = 2.* pow(v,3.)/ak->totalmass;
+  dvalues->data[1] = 2.* v*v*v/ak->totalmass;
 
   return;
 }
