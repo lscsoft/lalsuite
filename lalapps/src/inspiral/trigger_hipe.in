@@ -197,7 +197,8 @@ class hipe_run(object):
   """
   This class is intended to represent single run of lalapps_inspiral_hipe.
   """
-  def __init__(self, hipe_dir, base_cp, ifos, log_path, source_file, dag_name, onsource=False, usertag=None, verbose=False):
+  def __init__(self, hipe_dir, base_cp, ifos, log_path, source_file, dag_name,
+               onsource=False, usertag=None, verbose=False):
     self._dag_name = None
     self._hipe_dir = hipe_dir
     self._log_path = log_path
@@ -470,7 +471,6 @@ for grb in usedList:
   # extract the time of the GRB
   trigger = int(grb.gpsTime)
 
-
   ##############################################################################
   # set up the on source segment
   onSourceSegment = segments.segment(trigger - opts.onsource_left, trigger + opts.onsource_right)
@@ -560,21 +560,23 @@ for grb in usedList:
   hipe_runs = []
   
   if opts.verbose: print "Creating DAG for offsource analysis"
-  basic_analysis = hipe_run("%s/analysis" % idirectory, cp, grb_ifolist,
-                            opts.log_path, source_file, "analysis", verbose=opts.verbose)
-  basic_analysis.write_dag()
-  hipe_runs.append(basic_analysis)
-  uberdag.add_node(basic_analysis.get_dag_node())
+  offsource_analysis = hipe_run(idirectory + "/offsource", cp, grb_ifolist,
+                            opts.log_path, source_file, "analysis",
+                            usertag=idirectory + "_OFFSOURCE",
+                            verbose=opts.verbose)
+  offsource_analysis.write_dag()
+  hipe_runs.append(offsource_analysis)
+  uberdag.add_node(offsource_analysis.get_dag_node())
 
   if opts.verbose: print "Creating DAG for onsource analysis"
-  onsource_analysis = hipe_run("%s/onsource" % idirectory, cp, grb_ifolist,
-                               opts.log_path, source_file, "onsource", onsource=True,
+  onsource_analysis = hipe_run(idirectory + "/onsource", cp, grb_ifolist,
+                               opts.log_path, source_file, "onsource",
+                               onsource=True, usertag=idirectory + "_ONSOURCE",
                                verbose=opts.verbose)
   onsource_analysis.write_dag()
   hipe_runs.append(onsource_analysis)
   uberdag.add_node(onsource_analysis.get_dag_node())
 
-  
   ############################################################################
   # create the config parser object and read in the ini file
   if opts.injection_config:
@@ -586,8 +588,10 @@ for grb in usedList:
     for injrun in cpinj.sections():
       if opts.verbose: print "Creating DAG for", injrun
       hipe_dir = os.path.join(idirectory, injrun)
-      injection_analysis = hipe_run( hipe_dir, cp, grb_ifolist, \
-                               opts.log_path, source_file, injrun, verbose=opts.verbose)
+      injection_analysis = hipe_run(hipe_dir, cp, grb_ifolist,
+                                    opts.log_path, source_file, injrun,
+                                    usertag=idirectory + "_" + injrun,
+                                    verbose=opts.verbose)
 
       # create the master injection file and gets its content
       if opts.verbose: print "  Creating injections..."
