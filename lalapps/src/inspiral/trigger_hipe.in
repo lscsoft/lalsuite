@@ -57,7 +57,6 @@ def mkdir( directory, overwrite ):
     else:
       raise
 
-
 def createInjectionFile(hipe_dir, cp, injrun, injection_segment,
   source_file, verbose=False):
   """
@@ -106,17 +105,6 @@ def createInjectionFile(hipe_dir, cp, injrun, injection_segment,
   sims = table.get_table(doc, lsctables.SimInspiralTable.tableName)
 
   return sims, injInterval, numberInjections
-
-def fix_numrel_columns(sims):
-    """
-    Due to a mismatch between our LAL tag and the LAL HEAD, against which
-    we compile pylal, there are missing columns that cannot be missing.
-    Just put in nonsense values so that glue.ligolw code won't barf.
-    """
-    for sim in sims:
-        sim.numrel_data="nan"
-        sim.numrel_mode_max = 0
-        sim.numrel_mode_min = 0
 
 def plot_segments(trigger, ifolist, segdict, onSourceSegment, offSourceSegment, subdir):
     """
@@ -265,8 +253,6 @@ class hipe_run(object):
     inspiralutils.make_external_call("../../lalapps_inspiral_hipe %s" % (arguments % ini_file_name),
       show_stdout=self._verbose, show_command=self._verbose)
     os.chdir("../../")
-    #self._dag_name = os.path.join(self._hipe_dir,
-    #                              ini_file_name.replace(".ini", ".dag"))
   
   def get_dag_name(self):
     return self._dag_name+'.dag'
@@ -589,7 +575,7 @@ for grb in ext_trigs:
           inj_file_name = "%s/HL-INJECTION_%d-%d-%d.xml" % \
               (hipe_dir, i+1, offSourceSegment[0], abs(offSourceSegment))
           sims_chunk = sims[i:numberInjections:deltaIndex]
-          fix_numrel_columns(sims_chunk)  # FIXME: hack for old LAL tag
+          grbsummary.fix_numrel_columns(sims_chunk)  # FIXME: hack for old LAL tag
           grbsummary.write_rows(sims_chunk, lsctables.SimInspiralTable, inj_file_name)
 
       # set the needed parameters
