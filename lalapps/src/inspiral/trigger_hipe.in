@@ -37,7 +37,6 @@ from glue.ligolw import lsctables
 from glue import segments
 from glue import segmentsUtils
 from glue import pipeline
-from pylal import GRButils
 from pylal import grbsummary
 from lalapps import inspiralutils
 
@@ -108,26 +107,16 @@ def createInjectionFile(hipe_dir, cp, injrun, injection_segment,
 
   return sims, injInterval, numberInjections
 
-
-def writeInjectionFile( fileName, sims ):
-   """
-   Writes a specific part of the sims-table to a file in hipe_dir.
-   """
-   # prepare a new XML document
-   xmldoc = ligolw.Document()
-   xmldoc.appendChild(ligolw.LIGO_LW())
-   tbl = lsctables.New(lsctables.SimInspiralTable)
-   xmldoc.childNodes[-1].appendChild(tbl)
-
-   # append the entries we want to write
-   for sim in sims:
-     sim.numrel_data="nan"
-     sim.numrel_mode_max = 0
-     sim.numrel_mode_min = 0
-     tbl.append( sim )
- 
-   # write output file
-   utils.write_filename(xmldoc, fileName )
+def fix_numrel_columns(sims):
+    """
+    Due to a mismatch between our LAL tag and the LAL HEAD, against which
+    we compile pylal, there are missing columns that cannot be missing.
+    Just put in nonsense values so that glue.ligolw code won't barf.
+    """
+    for sim in sims:
+        sim.numrel_data="nan"
+        sim.numrel_mode_max = 0
+        sim.numrel_mode_min = 0
 
 def plot_segments(trigger, ifolist, segdict, onSourceSegment, offSourceSegment, subdir):
     """
@@ -446,30 +435,18 @@ inspiralutils.write_rescue()
 
 ##############################################################################
 # read in the GRB data from the list
-listGRB = GRButils.grbTable(opts.list)
+ext_trigs = grbsummary.load_external_triggers(opts.list, verbose=opts.verbose)
 
-if opts.grb[0]=='all':
-  usedList = listGRB.rows
-else:
-  usedList=[]
-  for name in opts.grb:
-
-    # search for the given GRB identifier in the list of GRBs
-    grb = listGRB.find(name)
-    if grb:
-
-      ## add to list
-      usedList.append( grb )
-    else:
-      print "GRB%s couldn't be found in the list. Skipping this GRB." % name
+if not (len(opts.grb) == 1 and opts.grb[0] == "all"):
+    ext_trigs = ext_trigs.filterRows(lambda row: row.event_number_grb in opts.grb)
 
 ##############################################################################
 # loop over the intervals, constructing overlapping segment lists,
 # making directories, and writing output to them
-for grb in usedList:
+for grb in ext_trigs:
 
   # extract the time of the GRB
-  trigger = int(grb.gpsTime)
+  trigger = int(grb.start_time)
 
   ##############################################################################
   # set up the on source segment
@@ -477,13 +454,13 @@ for grb in usedList:
   lengthOnsource = opts.onsource_left + opts.onsource_right
 
   # name and the directory
-  idirectory = "GRB" + str(grb.identifier)
+  idirectory = "GRB" + str(grb.event_number_grb)
   mkdir( idirectory, opts.overwrite_dir)
 
   # create the source-file which contains data about the position and time
   # and place it into the corresponding directory
-  source_file = idirectory+"/triggerGRB"+grb.identifier+".xml"
-  grb.writeExtTrigTable( source_file )
+  source_file = idirectory+"/triggerGRB"+str(grb.event_number_grb)+".xml"
+  grbsummary.write_rows([grb], lsctables.ExtTriggersTable, source_file)
 
   ##############################################################################
   # set up the segment including the off-source segment
@@ -501,7 +478,7 @@ for grb in usedList:
       onSourceSegment, padding_time=opts.padding_time,
       max_trials=opts.num_trials, symmetric=True)
     if ifo_offSourceSegment is None:
-      print "Warning: Trigger for GRB %s cannot be found in any segment for %s.  Skipping." % (grb.identifier, ifo)
+      print "Warning: Trigger for GRB %s cannot be found in any segment for %s.  Skipping." % (grb.event_number_grb, ifo)
       continue
       
     offSourceSegment &= ifo_offSourceSegment
@@ -512,7 +489,7 @@ for grb in usedList:
   cp.set("input", "gps-end-time", offSourceSegment[1])
   
   if len(grb_ifolist) == 0:
-    print >>sys.stderr, "Warning: could not construct offsource segment for GRB %s; skipping" % grb.identifier
+    print >>sys.stderr, "Warning: could not construct offsource segment for GRB %s; skipping" % grb.event_number_grb
     continue
   if len(grb_ifolist) > 4:
     while len(grb_ifolist) > 4:
@@ -609,8 +586,11 @@ for grb in usedList:
       safetyInterval = 800 # safety time in seconds between two injections
       deltaIndex = int(safetyInterval // injInterval) + 1
       for i in range(deltaIndex):
-        writeInjectionFile( "%s/HL-INJECTION_%d-%d-%d.xml" % (hipe_dir, i+1, offSourceSegment[0], abs(offSourceSegment)),
-            sims[i:numberInjections:deltaIndex])
+          inj_file_name = "%s/HL-INJECTION_%d-%d-%d.xml" % \
+              (hipe_dir, i+1, offSourceSegment[0], abs(offSourceSegment))
+          sims_chunk = sims[i:numberInjections:deltaIndex]
+          fix_numrel_columns(sims_chunk)  # FIXME: hack for old LAL tag
+          grbsummary.write_rows(sims_chunk, lsctables.SimInspiralTable, inj_file_name)
 
       # set the needed parameters
       if opts.verbose: print "  Writing DAG..."
