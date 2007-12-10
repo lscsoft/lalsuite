@@ -64,6 +64,9 @@ static void output_frame( CHAR *ifo, INT4 gpsStart, INT4 gpsEnd,
     REAL4TimeSeries *injData );
 static void output_multi_channel_frame( INT4 num_ifos, INT4 gpsStart,
     INT4 gpsEnd, REAL4TimeSeries *injData[LAL_NUM_IFO] );
+static void write_mdc_log_file( CHAR *filename, SimInspiralTable *injections,
+    INT4 gps_start, CHAR *set_name );
+
 
 
 /* verbose flag */
@@ -84,6 +87,8 @@ INT4 main( INT4 argc, CHAR *argv[] )
   CHAR *injectionFile = NULL;            /* name of file containing injs   */
   CHAR *nrMetaFile    = NULL;            /* name of file with nr meta info */
   CHAR *nrDataDir     = NULL;            /* name of dir with nr waveform   */
+  CHAR *setName       = NULL;            /* name to assign injection set   */
+  CHAR *mdcFileName   = NULL;            /* name of MDC Log                */
 
   NumRelInjectParams nrPar;
   NRWaveCatalog nrCatalog;               /* NR wave metadata struct        */
@@ -105,11 +110,12 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
   INT4 ifosFlag  = 0;                     /* injections for all ifos?       */
   INT4 frameFlag = 0;                     /* write h(t) to a frame?         */
+  INT4 mdcFlag   = 0;                     /* write an MDC log?              */ 
   int c;
 
   REAL4 dynRange = 1.0;                   /* the inspiral pipeline resizes data */
-                                          /* by 2^dynRange. Set to 1.0 when     */
-                                          /* using nr_wave as stand-alone code  */
+  /* by 2^dynRange. Set to 1.0 when     */
+  /* using nr_wave as stand-alone code  */
 
   /* default debug level */
   lal_errhandler = LAL_ERR_EXIT;
@@ -122,7 +128,9 @@ INT4 main( INT4 argc, CHAR *argv[] )
     {"verbose",                 no_argument,       &vrbflg,           1 },
     {"all-ifos",                no_argument,       &ifosFlag,         1 },
     {"write-frame",             no_argument,       &frameFlag,        1 },
+    {"write-mdc-log",           no_argument,       &mdcFlag,          1 },
     /* these options don't set a flag */
+    {"debug-level",             required_argument, 0,                'D'},
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
     {"injection-file",          required_argument, 0,                'f'},
@@ -132,7 +140,8 @@ INT4 main( INT4 argc, CHAR *argv[] )
     {"ifo",                     required_argument, 0,                'i'},
     {"modeL-lo",                required_argument, 0,                'L'},
     {"modeL-hi",                required_argument, 0,                'H'},
-    {"debug-level",             required_argument, 0,                'D'},
+    {"set-name",                required_argument, 0,                'n'},
+    {"mdc-log",                 required_argument, 0,                'o'},
     {"help",                    no_argument,       0,                'h'},
     {"version",                 no_argument,       0,                'V'},
     {0, 0, 0, 0}
@@ -146,7 +155,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only( argc, argv, "a:b:f:m:d:r:i:L:H:hV",
+    c = getopt_long_only( argc, argv, "D:a:b:f:m:d:r:i:L:H:n:o:hV",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -306,6 +315,20 @@ INT4 main( INT4 argc, CHAR *argv[] )
         }
         break;
 
+      case 'n':
+        /* create storage for the injection set name */
+        optarg_len = strlen(optarg) + 1;
+        setName = (CHAR *)calloc(optarg_len, sizeof(CHAR));
+        memcpy(setName, optarg, optarg_len);
+        break;
+
+      case 'o':
+        /* create storage for the output mdc log file name */
+        optarg_len = strlen(optarg) + 1;
+        mdcFileName = (CHAR *)calloc(optarg_len, sizeof(CHAR));
+        memcpy(mdcFileName, optarg, optarg_len);
+        break;
+
       case 'D':
         /* set debug level */
         set_debug_level( optarg );
@@ -413,6 +436,24 @@ INT4 main( INT4 argc, CHAR *argv[] )
     exit( 1 );
   }
 
+  /* mdc log options */
+  if ( mdcFlag )
+  {
+    /* set name */
+    if ( setName == NULL )
+    {
+      fprintf( stderr, "--set-name must be specified\n" );
+      exit( 1 );
+    }
+
+    /* mdc log name */
+    if (mdcFileName == NULL )
+    {
+      fprintf( stderr, "--mdc-log must be specified\n" );
+      exit( 1 );
+    }
+  }
+
   /*
    *
    * Main Code
@@ -490,6 +531,12 @@ INT4 main( INT4 argc, CHAR *argv[] )
     }
   }
 
+  /* write mdc log */
+  if ( mdcFlag )
+  {
+    write_mdc_log_file(mdcFileName, injections, gpsStartSec, setName);
+  }
+
   /* clear memory */
   LALFree( nrCatalog.data );
 
@@ -547,6 +594,9 @@ static void print_usage( CHAR *program )
       "  --modeL-lo        lo          lowest value of l to inject\n"\
       "  --modeL-hi        hi          highest value of l to inject\n"\
       "  --sample-rate     rate        the sample rate used to generate injections\n"\
+      "  --write-mdc-log               write an MDC log file\n"\
+      "  --set-name        set_name    set the injection set name\n"\
+      "  --mdc-log         mdc_log     name of file for MDC log file\n"\
       "  --write-frame                 write h(t) waveform to a frame file\n"\
       "\n", program );
 }
@@ -661,4 +711,91 @@ static void output_multi_channel_frame(INT4 num_ifos,
   FrameFree( frame );
 
   return;
+}
+
+/* function to write a Burst MDC log file */
+static void write_mdc_log_file(CHAR *filename, SimInspiralTable *injections, INT4 gps_start, CHAR *set_name)
+{
+  /* variables */
+  FILE *output;
+  SimInspiralTable *thisInj;
+  float f_isco;
+
+  /* open output file */
+  if ((output = fopen(filename, "w")) == NULL)
+  {
+    fprintf(stderr, "ERROR: Cannot open output file \"%s\"\n", \
+        filename);
+    exit(1);
+  }
+
+  /* loop over injections */
+  for (thisInj = injections; thisInj; thisInj = thisInj->next)
+  {
+    /* GravEn_SimID */
+    fprintf(output, "file ");
+    /* GravEn_Ampl */
+    fprintf(output, "0 ");
+    /* StartSamp1 */
+    fprintf(output, "0 ");
+    /* StartSamp2 */
+    fprintf(output, "0 ");
+    /* Internal_x */
+    fprintf(output, "%g ", cos(thisInj->inclination));
+    /* Internal_phi */
+    fprintf(output, "%g ", thisInj->coa_phase);
+    /* External_x */
+    fprintf(output, "%g ", cos(thisInj->latitude));
+    /* External_phi */
+    fprintf(output, "%g ", thisInj->longitude);
+    /* External_psi */
+    fprintf(output, "%g ", thisInj->polarization);
+    /* FrameGPS */
+    fprintf(output, "%d ", gps_start);
+    /* SimStartGPS */
+    fprintf(output, "%d.%09d ", thisInj->h_end_time.gpsSeconds, thisInj->h_end_time.gpsNanoSeconds);
+    /* SimName */
+    fprintf(output, "%s ", set_name);
+    /* SimHpHp */
+    fprintf(output, "0 ");
+    /* SimHcHc */
+    fprintf(output, "0 ");
+    /* SimHpHc */
+    fprintf(output, "0 ");
+    /* GEO GPS F_+ F_x eff_dist */
+    fprintf(output, "GEO %d.%09d 1 0 %g ", thisInj->g_end_time.gpsSeconds,
+        thisInj->g_end_time.gpsNanoSeconds, thisInj->eff_dist_g);
+    /* H1 GPS F_+ F_x eff_dist */
+    fprintf(output, "H1 %d.%09d 1 0 %g ", thisInj->h_end_time.gpsSeconds,
+        thisInj->h_end_time.gpsNanoSeconds, thisInj->eff_dist_h);
+    /* H2 GPS F_+ F_x eff_dist */
+    fprintf(output, "H2 %d.%09d 1 0 %g ", thisInj->h_end_time.gpsSeconds,
+        thisInj->h_end_time.gpsNanoSeconds, thisInj->eff_dist_h);
+    /* L1 GPS F_+ F_x eff_dist */
+    fprintf(output, "L1 %d.%09d 1 0 %g ", thisInj->l_end_time.gpsSeconds,
+        thisInj->l_end_time.gpsNanoSeconds, thisInj->eff_dist_l);
+    /* TAMA GPS F_+ F_x eff_dist */
+    fprintf(output, "TAMA %d.%09d 1 0 %g ", thisInj->t_end_time.gpsSeconds,
+        thisInj->t_end_time.gpsNanoSeconds, thisInj->eff_dist_t);
+    /* VIRGO GPS F_+ F_x eff_dist */
+    fprintf(output, "VIRGO %d.%09d 1 0 %g ", thisInj->v_end_time.gpsSeconds,
+        thisInj->v_end_time.gpsNanoSeconds, thisInj->eff_dist_v);
+
+    /* calculate frequency of innermost stable circulat orbit */
+    /* taken from: gr-qc/0612100 */
+    f_isco = 205 * (20 / (thisInj->mass1 + thisInj->mass2));
+
+    /* numerical relativity specific parameters */
+    fprintf(output, "insp ");
+    fprintf(output, "distance %g ", thisInj->distance);
+    fprintf(output, "mass1 %g ", thisInj->mass1);
+    fprintf(output, "mass2 %g ", thisInj->mass2);
+    fprintf(output, "mchirp %g ", thisInj->mchirp);
+    fprintf(output, "spin1 %g %g %g ", thisInj->spin1x, thisInj->spin1y, thisInj->spin1z);
+    fprintf(output, "spin2 %g %g %g ", thisInj->spin2x, thisInj->spin2y, thisInj->spin2z);
+    fprintf(output, "freq %g %g\n", thisInj->f_lower, f_isco);
+  }
+
+  /* close output file */
+  fclose(output);
 }
