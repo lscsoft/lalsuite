@@ -81,7 +81,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
   /* counters */
   int c;
   INT4 i;
-  INT4 num_ifos;
+  INT4 num_ifos = 0;
 
   /* lowest/highest values of l to inject */
   INT4 modeLlo = -1;
@@ -468,20 +468,6 @@ INT4 main( INT4 argc, CHAR *argv[] )
    *
    */
 
-  /* get number of ifos */
-  if ( ifosFlag )
-    num_ifos = LAL_NUM_IFO;
-  else
-    num_ifos = 1;
-
-  /* setup the injection time series to be zeros of the correct length */
-  for ( i = 0; i < num_ifos; i++ )
-  {
-    injData[i] = XLALCreateREAL4TimeSeries( "", &gpsStartTime, 0, 1./sampleRate,
-        &lalADCCountUnit, sampleRate * (gpsEndSec - gpsStartSec) );
-    memset( injData[i]->data->data, 0.0, injData[i]->data->length * sizeof(REAL4) );
-  }
-
   /* read the injections */
   numInjections = SimInspiralTableFromLIGOLw( &injections, injectionFile,
       gpsStartSec, gpsEndSec );
@@ -498,37 +484,52 @@ INT4 main( INT4 argc, CHAR *argv[] )
     exit( 1 );
   }
 
-  /* get catalog of numrel waveforms from metadata file */
-  LAL_CALL( LALNRDataFind( &status, &nrCatalog, nrDataDir, nrMetaFile ),
-      &status );
-
-  /* set parameters */
-  nrPar.modeLlo = modeLlo;
-  nrPar.modeLhi = modeLhi;
-  nrPar.nrCatalog = &nrCatalog;
-  nrPar.dynRange = dynRange;
-
-  for ( i = 0; i < num_ifos; i++ )
-  {
-    /* get ifo */
-    if ( ifosFlag )
-    {
-      XLALReturnIFO( ifo, i );
-    }
-
-    /* set ifo */
-    nrPar.ifo = ifo;
-
-    /* perform injection */
-    LAL_CALL( LALDriveNRInject( &status, injData[i], injections, &nrPar), &status );
-
-    /* set strain as unit */
-    injData[i]->sampleUnits = lalStrainUnit;
-  }
-
-  /* output frame */
   if ( frameFlag )
   {
+
+    /* get number of ifos */
+    if ( ifosFlag )
+      num_ifos = LAL_NUM_IFO;
+    else
+      num_ifos = 1;
+
+    /* setup the injection time series to be zeros of the correct length */
+    for ( i = 0; i < num_ifos; i++ )
+    {
+      injData[i] = XLALCreateREAL4TimeSeries( "", &gpsStartTime, 0, 1./sampleRate,
+          &lalADCCountUnit, sampleRate * (gpsEndSec - gpsStartSec) );
+      memset( injData[i]->data->data, 0.0, injData[i]->data->length * sizeof(REAL4) );
+    }
+
+    /* get catalog of numrel waveforms from metadata file */
+    LAL_CALL( LALNRDataFind( &status, &nrCatalog, nrDataDir, nrMetaFile ),
+        &status );
+
+    /* set parameters */
+    nrPar.modeLlo = modeLlo;
+    nrPar.modeLhi = modeLhi;
+    nrPar.nrCatalog = &nrCatalog;
+    nrPar.dynRange = dynRange;
+
+    for ( i = 0; i < num_ifos; i++ )
+    {
+      /* get ifo */
+      if ( ifosFlag )
+      {
+        XLALReturnIFO( ifo, i );
+      }
+
+      /* set ifo */
+      nrPar.ifo = ifo;
+
+      /* perform injection */
+      LAL_CALL( LALDriveNRInject( &status, injData[i], injections, &nrPar), &status );
+
+      /* set strain as unit */
+      injData[i]->sampleUnits = lalStrainUnit;
+    }
+
+    /* output frame */
     if ( ifosFlag )
     {
       output_multi_channel_frame( num_ifos, gpsStartSec, gpsEndSec, injData );
@@ -546,7 +547,8 @@ INT4 main( INT4 argc, CHAR *argv[] )
   }
 
   /* clear memory */
-  LALFree( nrCatalog.data );
+  if ( nrCatalog.data )
+    LALFree( nrCatalog.data );
 
   if ( injectionFile )
     free( injectionFile );
