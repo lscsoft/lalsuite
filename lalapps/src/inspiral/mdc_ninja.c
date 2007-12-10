@@ -78,46 +78,53 @@ INT4 main( INT4 argc, CHAR *argv[] )
 {
   LALStatus status = blank_status;
 
-  INT4 i;                                 /* loop counter                   */
-  INT4 num_ifos;                          /* number of ifos                 */
-
-  INT4 modeLlo = -1;                     /* lowest value of l to inject    */
-  INT4 modeLhi = -1;                     /* highest values of l to inject  */
-
-  CHAR *injectionFile = NULL;            /* name of file containing injs   */
-  CHAR *nrMetaFile    = NULL;            /* name of file with nr meta info */
-  CHAR *nrDataDir     = NULL;            /* name of dir with nr waveform   */
-  CHAR *setName       = NULL;            /* name to assign injection set   */
-  CHAR *mdcFileName   = NULL;            /* name of MDC Log                */
-
-  NumRelInjectParams nrPar;
-  NRWaveCatalog nrCatalog;               /* NR wave metadata struct        */
-
-  CHAR ifo[LIGOMETA_IFO_MAX];            /* name of ifo                    */
-
-  INT4 gpsStartSec          = -1;         /* start time of data             */
-  INT4 gpsEndSec            = -1;         /* end time of data               */
-  LIGOTimeGPS gpsStartTime = {0, 0};     /* start time GPS                 */
-  LIGOTimeGPS gpsEndTime   = {0, 0};     /* end time GPS                   */
-
-  INT4 sampleRate    = -1;                /* output sample rate             */
-  INT4 numInjections = 0;                 /* number of injections           */
-
-  SimInspiralTable *injections = NULL;   /* list of injections to be done  */
-
-  REAL4TimeSeries *injData[LAL_NUM_IFO]; /* time series of zeros to which
-                                            we add injections              */
-
-  INT4 ifosFlag  = 0;                     /* injections for all ifos?       */
-  INT4 frameFlag = 0;                     /* write h(t) to a frame?         */
-  INT4 mdcFlag   = 0;                     /* write an MDC log?              */ 
+  /* counters */
   int c;
+  INT4 i;
+  INT4 num_ifos;
 
-  REAL4 dynRange = 1.0;                   /* the inspiral pipeline resizes data */
-  /* by 2^dynRange. Set to 1.0 when     */
-  /* using nr_wave as stand-alone code  */
+  /* lowest/highest values of l to inject */
+  INT4 modeLlo = -1;
+  INT4 modeLhi = -1;
 
-  /* default debug level */
+  /* file/directory/set names */
+  CHAR *injectionFile = NULL;
+  CHAR *nrMetaFile    = NULL;
+  CHAR *nrDataDir     = NULL;
+  CHAR *setName       = NULL;
+  CHAR *mdcFileName   = NULL;
+
+  /* NR metadata struct/catalog */
+  NumRelInjectParams nrPar;
+  NRWaveCatalog nrCatalog;
+
+  /* ifo name */
+  CHAR ifo[LIGOMETA_IFO_MAX];
+
+  /* start/end times */
+  INT4 gpsStartSec          = -1;
+  INT4 gpsEndSec            = -1;
+  LIGOTimeGPS gpsStartTime  = {0, 0};
+  LIGOTimeGPS gpsEndTime    = {0, 0};
+
+  /* injections */
+  SimInspiralTable *injections = NULL;
+  INT4 numInjections           = 0;
+
+  /* injection waveforms time series */
+  INT4 sampleRate = -1;
+  REAL4TimeSeries *injData[LAL_NUM_IFO];
+
+  /* getopt flags */
+  INT4 ifosFlag  = 0;
+  INT4 frameFlag = 0;
+  INT4 mdcFlag   = 0;
+
+  /* the inspiral pipeline resizes data day 2^dynRange. Set to 1.0 when
+   * using as standalone code */
+  REAL4 dynRange = 1.0;
+
+  /* set default debug level */
   lal_errhandler = LAL_ERR_EXIT;
   set_debug_level( "5" );
 
@@ -155,6 +162,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
     int option_index = 0;
     size_t optarg_len;
 
+    /* parse command line arguments */
     c = getopt_long_only( argc, argv, "D:a:b:f:m:d:r:i:L:H:n:o:hV",
         long_options, &option_index );
 
