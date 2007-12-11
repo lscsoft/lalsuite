@@ -1322,9 +1322,9 @@ fprintf(a, "                                 PadeT1|PadeT2|EOB|BCV|SpinTaylorT3|
 fprintf(a, " --num-freq-cutoffs Ncut       create a template bank with Ncut different upper \n");\
 fprintf(a, "                                 frequency cutoffs (must be a positive integer) \n");\
 fprintf(a, " --max-high-freq-cutoff MAX    formula to compute the largest high freq. cutoff\n");\
-fprintf(a, "                                 possible choices in ascending order: (ISCO|ERD)\n");\
+fprintf(a, "                                 possible choices in ascending order: (SchwarzISCO|BKLISCO|ERD)\n");\
 fprintf(a, " --min-high-freq-cutoff MIN    formula to compute the smallest high freq. cutoff\n");\
-fprintf(a, "                                 possible choices in ascending order: (ISCO|ERD)\n");\
+fprintf(a, "                                 possible choices in ascending order: (SchwarzISCO|BKLISCO|ERD)\n");\
 fprintf(a, "  --space SPACE                grid up template bank with mass parameters SPACE\n");\
 fprintf(a, "                                 (Tau0Tau2|Tau0Tau3|Psi0Psi3)\n");\
 fprintf(a, "  --grid-spacing GRIDSPACING   grid up template bank with GRIDSPACING\n");\
