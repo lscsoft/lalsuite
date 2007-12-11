@@ -424,7 +424,7 @@ inspiralutils.write_rescue()
 ext_trigs = grbsummary.load_external_triggers(opts.list, verbose=opts.verbose)
 
 if not (len(opts.grb) == 1 and opts.grb[0] == "all"):
-    ext_trigs = ext_trigs.filterRows(lambda row: row.event_number_grb in opts.grb)
+  ext_trigs = ext_trigs.filterRows(lambda row: row.event_number_grb in opts.grb)
 
 ##############################################################################
 # loop over the intervals, constructing overlapping segment lists,
@@ -451,24 +451,17 @@ for grb in ext_trigs:
   ##############################################################################
   # set up the segment including the off-source segment
 
-  # first step involves making the segment infinitely large
-  offSourceSegment = \
-    segments.segment(segments.NegInfinity, segments.PosInfinity)
+  offSourceSegment, grb_ifolist = \
+    grbsummary.multi_ifo_compute_offsource_segment(segdict, onSourceSegment,
+    padding_time=opts.padding_time, max_trials=opts.num_trials, symmetric=True)
+  grb_ifolist.sort()
+  ifo_times = "".join(grb_ifolist)
   
-  # for each ifo, construct the maximal segment surrounding the grb, and
-  # then use the minimal length segment to actually do the analysis
-  # Also record which IFOs are in play.
-  grb_ifolist = []
-  for ifo in ifolist:
-    ifo_offSourceSegment = grbsummary.compute_offsource_segment(segdict[ifo],
-      onSourceSegment, padding_time=opts.padding_time,
-      max_trials=opts.num_trials, symmetric=True)
-    if ifo_offSourceSegment is None:
-      print "Warning: Trigger for GRB %s cannot be found in any segment for %s.  Skipping." % (grb.event_number_grb, ifo)
-      continue
-      
-    offSourceSegment &= ifo_offSourceSegment
-    grb_ifolist.append(ifo)
+  if offSourceSegment is None:
+    print "Warning: Trigger for GRB %s cannot be found in any segment for %s.  Skipping." % (grb.event_number_grb, ifo)
+    continue
+  elif opts.verbose:
+    print "Sufficient off-source data has been found in", ifo_times, "time."
   
   # enable the output of intermediate and output caches in inspiral_hipe
   cp.set("input", "gps-start-time", offSourceSegment[0])
@@ -480,7 +473,7 @@ for grb in ext_trigs:
   if len(grb_ifolist) > 4:
     while len(grb_ifolist) > 4:
       del grb_ifolist[4]
-    print >>sys.stderr, "inspiral_hipe cannot handle more than 4 IFOs; truncating to first four alphabetically."
+    print >>sys.stderr, "Warning: inspiral_hipe cannot handle more than 4 IFOs; truncating to first four alphabetically."
 
   # write out the segment list to a segwizard file
   for ifo in grb_ifolist:
