@@ -768,7 +768,7 @@ static void write_mdc_log_file(CHAR *filename, SimInspiralTable *injections, INT
     /* Internal_phi */
     fprintf(output, "%g ", thisInj->coa_phase);
     /* External_x */
-    fprintf(output, "%g ", cos(thisInj->latitude));
+    fprintf(output, "%g ", cos(thisInj->latitude - LAL_PI_2));
     /* External_phi */
     fprintf(output, "%g ", thisInj->longitude);
     /* External_psi */
