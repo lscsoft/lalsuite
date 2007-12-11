@@ -68,9 +68,11 @@ static void write_mdc_log_file( CHAR *filename, SimInspiralTable *injections,
     INT4 gps_start, CHAR *set_name );
 
 
-
-/* verbose flag */
+/* getopt flags */
 extern int vrbflg;
+INT4 ifosFlag  = 0;
+INT4 frameFlag = 0;
+INT4 mdcFlag   = 0;
 
 
 /* main program entry */
@@ -99,7 +101,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
   NRWaveCatalog nrCatalog;
 
   /* ifo name */
-  CHAR ifo[LIGOMETA_IFO_MAX];
+  CHAR *ifo = NULL;
 
   /* start/end times */
   INT4 gpsStartSec          = -1;
@@ -114,11 +116,6 @@ INT4 main( INT4 argc, CHAR *argv[] )
   /* injection waveforms time series */
   INT4 sampleRate = -1;
   REAL4TimeSeries *injData[LAL_NUM_IFO];
-
-  /* getopt flags */
-  INT4 ifosFlag  = 0;
-  INT4 frameFlag = 0;
-  INT4 mdcFlag   = 0;
 
   /* the inspiral pipeline resizes data day 2^dynRange. Set to 1.0 when
    * using as standalone code */
@@ -287,6 +284,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
       case 'i':
         /* create storage for the ifo name and copy it */
         optarg_len = strlen( optarg ) + 1;
+        ifo = (CHAR *) calloc( optarg_len, sizeof(CHAR));
         memcpy( ifo, optarg, optarg_len );
 
         /* check for supported ifo */
@@ -372,76 +370,84 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
   /* check validity of input data time */
 
-  /* start time specified */
-  if ( gpsStartSec < 0 )
+  if ( frameFlag )
   {
-    fprintf( stderr, "--gps-start-time must be specified\n" );
-    exit( 1 );
+    /* check that sample rate has been specified */
+    if ( sampleRate < 0 )
+    {
+      fprintf( stderr, "--sample-rate must be specified\n" );
+      exit( 1 );
+    }
+
+    /* ifo specified, or all ifos */
+    if (( !ifo ) && ( ifosFlag == 0 ))
+    {
+      fprintf( stderr, "--ifo, or --all-ifos, must be specifed\n" );
+      exit( 1 );
+    }
+    else
+      fprintf( stderr, "bugger\n");
+
+    /* metadata file specified */
+    if ( nrMetaFile == NULL )
+    {
+      fprintf( stderr, "--nr-meta-file must be specified\n" );
+      exit( 1 );
+    }
+
+    /* data directory specified */
+    if ( nrDataDir == NULL )
+    {
+      fprintf( stderr, "--nr-data-dir must be specified\n" );
+      exit( 1 );
+    }
+
+    /* lowest value of l */
+    if ( modeLlo == -1 )
+    {
+      fprintf( stderr, "--modeL-lo must be specified\n" );
+      exit( 1 );
+    }
+
+    /* highest value of l */
+    if ( modeLhi == -1 )
+    {
+      fprintf( stderr, "--modeL-hi must be specified\n" );
+      exit( 1 );
+    }
   }
 
-  /* end time specified */
-  if ( gpsEndSec < 0 )
+  if (( frameFlag ) || ( mdcFlag ))
   {
-    fprintf( stderr, "--gps-end-time must be specified\n" );
-    exit( 1 );
-  }
+    /* check that we have injections */
+    if ( injectionFile == NULL )
+    {
+      fprintf( stderr, "--injection-file must be specified\n" );
+      exit( 1 );
+    }
 
-  /* end after start */
-  if ( gpsEndSec <= gpsStartSec )
-  {
-    fprintf( stderr, "invalid gps time range: "
-        "start time: %d, end time %d\n",
-        gpsStartSec, gpsEndSec );
-    exit( 1 );
-  }
+    /* start time specified */
+    if ( gpsStartSec < 0 )
+    {
+      fprintf( stderr, "--gps-start-time must be specified\n" );
+      exit( 1 );
+    }
 
-  /* check that sample rate has been specified */
-  if ( sampleRate < 0 )
-  {
-    fprintf( stderr, "--sample-rate must be specified\n" );
-    exit( 1 );
-  }
+    /* end time specified */
+    if ( gpsEndSec < 0 )
+    {
+      fprintf( stderr, "--gps-end-time must be specified\n" );
+      exit( 1 );
+    }
 
-  /* check that we have injections */
-  if ( injectionFile == NULL )
-  {
-    fprintf( stderr, "--injection-file must be specified\n" );
-    exit( 1 );
-  }
-
-  /* ifo specified, or all ifos */
-  if (( !ifo ) && ( !ifosFlag ))
-  {
-    fprintf( stderr, "--ifo, or --all-ifos, must be specifed\n" );
-    exit( 1 );
-  }
-
-  /* metadata file specified */
-  if ( nrMetaFile == NULL )
-  {
-    fprintf( stderr, "--nr-meta-file must be specified\n" );
-    exit( 1 );
-  }
-
-  /* data directory specified */
-  if ( nrDataDir == NULL )
-  {
-    fprintf( stderr, "--nr-data-dir must be specified\n" );
-    exit( 1 );
-  }
-
-  /* lowest value of l */
-  if ( modeLlo == -1 )
-  {
-    fprintf( stderr, "--modeL-lo must be specified\n" );
-    exit( 1 );
-  }
-
-  /* highest value of l */
-  if ( modeLhi == -1 )
-  {
-    fprintf( stderr, "--modeL-hi must be specified\n" );
-    exit( 1 );
+    /* end after start */
+    if ( gpsEndSec <= gpsStartSec )
+    {
+      fprintf( stderr, "invalid gps time range: "
+          "start time: %d, end time %d\n",
+          gpsStartSec, gpsEndSec );
+      exit( 1 );
+    }
   }
 
   /* mdc log options */
@@ -460,6 +466,12 @@ INT4 main( INT4 argc, CHAR *argv[] )
       fprintf( stderr, "--mdc-log must be specified\n" );
       exit( 1 );
     }
+  }
+
+  if (( mdcFlag == 0 ) && ( frameFlag == 0 ))
+  {
+    fprintf( stderr, "nothing to do, exiting...\n" );
+    exit( 1 );
   }
 
   /*
@@ -516,6 +528,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
       /* get ifo */
       if ( ifosFlag )
       {
+        ifo = (CHAR *) calloc( LIGOMETA_IFO_MAX, sizeof(CHAR));        
         XLALReturnIFO( ifo, i );
       }
 
@@ -556,6 +569,8 @@ INT4 main( INT4 argc, CHAR *argv[] )
     free( nrMetaFile );
   if ( nrDataDir )
     free( nrDataDir );
+  if ( ifo )
+    free( ifo );
 
   for ( i = 0; i < num_ifos; i++ )
   {
