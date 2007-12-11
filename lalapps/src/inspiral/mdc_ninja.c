@@ -385,8 +385,6 @@ INT4 main( INT4 argc, CHAR *argv[] )
       fprintf( stderr, "--ifo, or --all-ifos, must be specifed\n" );
       exit( 1 );
     }
-    else
-      fprintf( stderr, "bugger\n");
 
     /* metadata file specified */
     if ( nrMetaFile == NULL )
