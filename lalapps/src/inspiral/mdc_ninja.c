@@ -48,15 +48,14 @@
 #include <lal/LALDetectors.h>
 #include <lal/LALFrameIO.h>
 
-
+/* cvs information */
 RCSID( "$Id$" );
-
 #define CVS_ID_STRING "$Id$"
 #define CVS_NAME_STRING "$Name$"
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
-#define PROGRAM_NAME "mdc_ninja"
+#define PROGRAM_NAME "lalapp_mdc_ninja"
 
 /* function prototypes */
 static void print_usage( CHAR *program );
@@ -179,7 +178,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
         }
         else
         {
-          fprintf( stderr, "Error parsing option %s with argument %s\n",
+          fprintf( stderr, "Error parsing option '%s' with argument '%s'\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -193,9 +192,9 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
       case 'V':
         /* print version information and exit */
-        fprintf( stdout, "Numerical Relativity Waveform Injection Program\n" 
-            "CVS Version: " CVS_ID_STRING "\n"
-            "CVS Tag: " CVS_NAME_STRING "\n" );
+        fprintf( stdout, "%s - Numerical Relativity MDC Injection Program\n" \
+            "CVS Version: %s\nCVS Tag: %s\n", PROGRAM_NAME, CVS_ID_STRING, \
+            CVS_NAME_STRING );
         exit( 0 );
         break;
 
@@ -346,7 +345,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
         break;
 
       default:
-        fprintf( stderr, "unknown error while parsing options\n" );
+        fprintf( stderr, "ERROR: Unknown error while parsing options\n" );
         print_usage( argv[0] );
         exit( 1 );
     }
@@ -354,7 +353,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
   if ( optind < argc )
   {
-    fprintf( stderr, "extraneous command line arguments:\n" );
+    fprintf( stderr, "ERROR: Extraneous command line arguments:\n" );
     while ( optind < argc )
     {
       fprintf ( stderr, "%s\n", argv[optind++] );
@@ -375,42 +374,42 @@ INT4 main( INT4 argc, CHAR *argv[] )
     /* check that sample rate has been specified */
     if ( sampleRate < 0 )
     {
-      fprintf( stderr, "--sample-rate must be specified\n" );
+      fprintf( stderr, "ERROR: --sample-rate must be specified\n" );
       exit( 1 );
     }
 
     /* ifo specified, or all ifos */
     if (( !ifo ) && ( ifosFlag == 0 ))
     {
-      fprintf( stderr, "--ifo, or --all-ifos, must be specifed\n" );
+      fprintf( stderr, "ERROR: --ifo, or --all-ifos, must be specifed\n" );
       exit( 1 );
     }
 
     /* metadata file specified */
     if ( nrMetaFile == NULL )
     {
-      fprintf( stderr, "--nr-meta-file must be specified\n" );
+      fprintf( stderr, "ERROR: --nr-meta-file must be specified\n" );
       exit( 1 );
     }
 
     /* data directory specified */
     if ( nrDataDir == NULL )
     {
-      fprintf( stderr, "--nr-data-dir must be specified\n" );
+      fprintf( stderr, "ERROR: --nr-data-dir must be specified\n" );
       exit( 1 );
     }
 
     /* lowest value of l */
     if ( modeLlo == -1 )
     {
-      fprintf( stderr, "--modeL-lo must be specified\n" );
+      fprintf( stderr, "ERROR: --modeL-lo must be specified\n" );
       exit( 1 );
     }
 
     /* highest value of l */
     if ( modeLhi == -1 )
     {
-      fprintf( stderr, "--modeL-hi must be specified\n" );
+      fprintf( stderr, "ERROR: --modeL-hi must be specified\n" );
       exit( 1 );
     }
   }
@@ -420,28 +419,28 @@ INT4 main( INT4 argc, CHAR *argv[] )
     /* check that we have injections */
     if ( injectionFile == NULL )
     {
-      fprintf( stderr, "--injection-file must be specified\n" );
+      fprintf( stderr, "ERROR: --injection-file must be specified\n" );
       exit( 1 );
     }
 
     /* start time specified */
     if ( gpsStartSec < 0 )
     {
-      fprintf( stderr, "--gps-start-time must be specified\n" );
+      fprintf( stderr, "ERROR: --gps-start-time must be specified\n" );
       exit( 1 );
     }
 
     /* end time specified */
     if ( gpsEndSec < 0 )
     {
-      fprintf( stderr, "--gps-end-time must be specified\n" );
+      fprintf( stderr, "ERROR: --gps-end-time must be specified\n" );
       exit( 1 );
     }
 
     /* end after start */
     if ( gpsEndSec <= gpsStartSec )
     {
-      fprintf( stderr, "invalid gps time range: "
+      fprintf( stderr, "ERROR: Invalid gps time range: "
           "start time: %d, end time %d\n",
           gpsStartSec, gpsEndSec );
       exit( 1 );
@@ -454,21 +453,21 @@ INT4 main( INT4 argc, CHAR *argv[] )
     /* set name */
     if ( setName == NULL )
     {
-      fprintf( stderr, "--set-name must be specified\n" );
+      fprintf( stderr, "ERROR: --set-name must be specified\n" );
       exit( 1 );
     }
 
     /* mdc log name */
     if (mdcFileName == NULL )
     {
-      fprintf( stderr, "--mdc-log must be specified\n" );
+      fprintf( stderr, "ERROR: --mdc-log must be specified\n" );
       exit( 1 );
     }
   }
 
   if (( mdcFlag == 0 ) && ( frameFlag == 0 ))
   {
-    fprintf( stderr, "nothing to do, exiting...\n" );
+    fprintf( stderr, "Nothing to do, exiting...\n" );
     exit( 1 );
   }
 
@@ -484,13 +483,13 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
   if ( vrbflg )
   {
-    fprintf( stdout, "Read %d injection(s) from the file %s\n",
+    fprintf( stdout, "Read %d injection(s) from the file '%s'\n",
         numInjections, injectionFile );
   }
 
   if ( numInjections < 0 )
   {
-    fprintf( stderr, "ERROR: Cannot read injection file\n" );
+    fprintf( stderr, "ERROR: Cannot read injection file '%s'\n", injectionFile );
     exit( 1 );
   }
 
@@ -656,7 +655,7 @@ static void output_frame(CHAR *ifo,
     detectorFlags = LAL_TAMA_300_DETECTOR_BIT;
   else
   {
-    fprintf( stderr, "ERROR: Unrecognised IFO: %s\n", ifo );
+    fprintf( stderr, "ERROR: Unrecognised IFO: '%s'\n", ifo );
     exit( 1 );
   }
 
@@ -669,13 +668,13 @@ static void output_frame(CHAR *ifo,
 
   if ( vrbflg )
   {
-    fprintf( stdout, "Writing injection to frame: %s\n", fname );
+    fprintf( stdout, "Writing injection to frame: '%s'\n", fname );
   }
 
   /* write frame */
   if (XLALFrameWrite( frame, fname, 8) != 0)
   {
-    fprintf( stderr, "ERROR: Cannot save frame file: %s\n", fname );
+    fprintf( stderr, "ERROR: Cannot save frame file: '%s'\n", fname );
     exit( 1 );
   }
 
@@ -720,13 +719,13 @@ static void output_multi_channel_frame(INT4 num_ifos,
 
   if (vrbflg)
   {
-    fprintf( stdout, "Writing injections to frame: %s\n", fname );
+    fprintf( stdout, "Writing injections to frame: '%s'\n", fname );
   }
 
   /* write frame */
   if ( XLALFrameWrite( frame, fname, 8 ) != 0 )
   {
-    fprintf( stderr, "ERROR: Cannot save frame file: %s\n", fname );
+    fprintf( stderr, "ERROR: Cannot save frame file: '%s'\n", fname );
     exit( 1 );
   }
 
@@ -747,9 +746,14 @@ static void write_mdc_log_file(CHAR *filename, SimInspiralTable *injections, INT
   /* open output file */
   if ((output = fopen(filename, "w")) == NULL)
   {
-    fprintf(stderr, "ERROR: Cannot open output file \"%s\"\n", \
+    fprintf(stderr, "ERROR: Cannot open MDC log file: '%s'\n", \
         filename);
     exit(1);
+  }
+
+  if (vrbflg)
+  {
+    fprintf(stdout, "Writing MDC log file: '%s'\n", filename);
   }
 
   /* loop over injections */
