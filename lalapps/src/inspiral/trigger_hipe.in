@@ -575,7 +575,6 @@ for grb in ext_trigs:
           inj_file_name = "%s/HL-INJECTION_%d-%d-%d.xml" % \
               (hipe_dir, i+1, offSourceSegment[0], abs(offSourceSegment))
           sims_chunk = sims[i:numberInjections:deltaIndex]
-          grbsummary.fix_numrel_columns(sims_chunk)  # FIXME: hack for old LAL tag
           grbsummary.write_rows(sims_chunk, lsctables.SimInspiralTable, inj_file_name)
 
       # set the needed parameters
