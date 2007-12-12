@@ -77,8 +77,7 @@ LALFindChirpPTFFilterSegment (
   REAL4                 deltaF, fFinal, fmin, length;
   REAL4                 u1[5], u2[5], v1[5], v2[5], *Binv;
   REAL4                 N, check, thresh;
-  REAL4                 v1_dot_v1, v2_dot_v2, v1_dot_u1, v1_dot_u2, 
-                        v2_dot_u1, v2_dot_u2, u1_dot_u1, u2_dot_u2;
+  REAL4                 v1_dot_u1, v1_dot_u2, v2_dot_u1, v2_dot_u2;
   COMPLEX8             *snr            = NULL;
   COMPLEX8             *PTFQtilde, *qtilde, *PTFq, *inputData;
   COMPLEX8Vector        qVec;
@@ -170,8 +169,6 @@ LALFindChirpPTFFilterSegment (
       FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
   ASSERT( input->segment->approximant == FindChirpPTF, status,
       FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
-
-  fprintf(stderr,"LALFindChirpPTFFilterSegment called\n");
 
   /*
    *
@@ -265,52 +262,39 @@ LALFindChirpPTFFilterSegment (
   /* now we have PTFqVec which contains <s|Q^I_0> + i <s|Q^I_\pi/2> */
   
   /* set the threshold on max eigenvalue to be 48 (~ 7 for snr) */ 
-
   thresh = 12.0 * N * N;
    
   for ( j = 0; j < numPoints; ++j ) /* beginning of main loop over time */
   {  
-    v1_dot_v1 = v2_dot_v2 = u1_dot_u1 = u2_dot_u2 = check = 0.0;
+    for (i = 0; i < 5; i++)
+    { 
+      v1[i] = PTFq[i * numPoints + j].re;
+      v2[i] = PTFq[i * numPoints + j].im;
+    }
+    /* construct the vectors u[i] = B^(-1) v[i] */
     for (i = 0; i < 5; i++)
     { 
       u1[i] = 0.0;
       u2[i] = 0.0;
-      v1[i] = PTFq[i * numPoints + j].re;
-      v2[i] = PTFq[i * numPoints + j].im;
-    }
-    for (i = 0; i < 5; i++)
-    { 
       for ( l = 0; l < 5; l++ )
       {  
         u1[i] = u1[i] + Binv[i * 5 + l] * v1[l];
         u2[i] = u2[i] + Binv[i * 5 + l] * v2[l];
       }
-      
-      v1_dot_v1 = v1_dot_v1 + v1[i] * v1[i];
-      u1_dot_u1 = u1_dot_u1 + u1[i] * u1[i];
-      v2_dot_v2 = v2_dot_v2 + v2[i] * v2[i];
-      u2_dot_u2 = u2_dot_u2 + u2[i] * u2[i];
     }
-    /* Construct the upper limit on SNR */
-    check = sqrt(v1_dot_v1 * u1_dot_u1) + sqrt(v2_dot_v2 * u2_dot_u2);
 
-    /* Compute SNR only for times when the upper limit on SNR is above
-     * threshold 
-     */ 
-    if ( check > thresh )
-    {  
-      v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = max_eigen = 0.0;
-      for (i = 0; i < 5; i++)
-      {
-        v1_dot_u1 = v1_dot_u1 + v1[i] * u1[i];
-        v1_dot_u2 = v1_dot_u2 + v1[i] * u2[i];
-        v2_dot_u1 = v2_dot_u1 + v2[i] * u1[i];
-        v2_dot_u2 = v2_dot_u2 + v2[i] * u2[i];
-      }
-      max_eigen = 0.5 * ( v1_dot_u1 + v2_dot_u2 + sqrt( (v1_dot_u1 - v2_dot_u2)
-                 * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v2_dot_u1 ));
-      snr[j].re = 2.0 * sqrt(max_eigen) / N;
+    /* Compute SNR */ 
+    v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = max_eigen = 0.0;
+    for (i = 0; i < 5; i++)
+    {
+      v1_dot_u1 = v1_dot_u1 + v1[i] * u1[i];
+      v1_dot_u2 = v1_dot_u2 + v1[i] * u2[i];
+      v2_dot_u1 = v2_dot_u1 + v2[i] * u1[i];
+      v2_dot_u2 = v2_dot_u2 + v2[i] * u2[i];
     }
+    max_eigen = 0.5 * ( v1_dot_u1 + v2_dot_u2 + sqrt( (v1_dot_u1 - v2_dot_u2)
+          * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v2_dot_u1 ));
+    snr[j].re = 2.0 * sqrt(max_eigen) / N;
   } /* End of main loop over time */
   
 
