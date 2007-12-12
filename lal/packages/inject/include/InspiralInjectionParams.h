@@ -44,6 +44,7 @@ typedef enum
 { 
   unknownMassDist,
   massFromSourceFile,
+  massFromNRFile,
   uniformTotalMass,
   uniformComponentMass,
   logComponentMass,
@@ -135,6 +136,14 @@ SimInspiralTable* XLALRandomInspiralSpins( SimInspiralTable *inj,
     REAL4  spin1Max,
     REAL4  spin2Min,
     REAL4  spin2Max );
+
+SimInspiralTable* XLALRandomNRInjectTotalMass( 
+    SimInspiralTable *inj,  
+    RandomParams *randParams,
+    REAL4  minTotalMass,
+    REAL4  maxTotalMass,
+    SimInspiralTable *nrInjParams   
+    );
 
 SimInspiralTable *XLALInspiralSiteTimeAndDist( 
     SimInspiralTable  *inj,

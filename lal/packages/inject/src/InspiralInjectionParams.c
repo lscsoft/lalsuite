@@ -340,6 +340,44 @@ SimInspiralTable* XLALRandomInspiralSpins(
   return ( inj );
 }
 
+/** Generates random masses for an inspiral injection. */
+SimInspiralTable* XLALRandomNRInjectTotalMass( 
+    SimInspiralTable *inj,   /**< injection for which masses will be set*/
+    RandomParams *randParams,/**< random parameter details*/
+    REAL4  minTotalMass,     /**< minimum total mass of binaty */
+    REAL4  maxTotalMass,     /**< maximum total mass of binary */
+    SimInspiralTable *nrInjParams   /**< parameters of NR injection*/
+    )
+{       
+  REAL4 mtotal;
+  
+  mtotal = minTotalMass + XLALUniformDeviate( randParams ) * \
+               (maxTotalMass - minTotalMass);
+  inj->eta = nrInjParams->eta;
+  inj->mchirp = mtotal * pow(inj->eta, 3.0/5.0);
+
+  /* set mass1 and mass2 */
+  inj->mass1 = (mtotal / 2.0) * (1 + pow( (1 - 4 * inj->eta), 0.5) );
+  inj->mass2 = (mtotal / 2.0) * (1 - pow( (1 - 4 * inj->eta), 0.5) );
+
+  /* copy over the spin parameters */
+  inj->spin1x = nrInjParams->spin1x;
+  inj->spin1y = nrInjParams->spin1y;
+  inj->spin1z = nrInjParams->spin1z;
+  inj->spin2x = nrInjParams->spin2x;
+  inj->spin2y = nrInjParams->spin2y;
+  inj->spin2z = nrInjParams->spin2z;
+
+  /* copy over the numrel information */
+  inj->numrel_mode_min = nrInjParams->numrel_mode_min;
+  inj->numrel_mode_min = nrInjParams->numrel_mode_min;
+  LALSnprintf( inj->numrel_data, LIGOMETA_STRING_MAX, 
+      nrInjParams->numrel_data);
+
+  return ( inj );
+}  
+
+
 /** Set end time and effective distance of an injection for a detector */
 SimInspiralTable *XLALInspiralSiteTimeAndDist( 
     SimInspiralTable  *inj, /**< the injection details */
