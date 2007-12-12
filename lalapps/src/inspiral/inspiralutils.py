@@ -58,6 +58,24 @@ def mkdir( newdir ):
   else: os.mkdir(newdir)
 
 ##############################################################################
+def hipe_cache(ifos, usertag, gps_start_time, gps_end_time):
+  """
+  return the name of the hipe cache 
+
+  ifos    = list of ifos
+  usertag = usertag
+  gps_start_time = start time of analysis
+  gps_end_time   = end time of analysis
+  """
+  hipeCache = "".join(ifos) + "-INSPIRAL_HIPE" 
+  if usertag:
+    hipeCache += "_" + usertag 
+  hipeCache += "-" + str(gps_start_time) + "-" + \
+      str(gps_end_time - gps_start_time)  + ".cache"
+
+  return hipeCache
+
+##############################################################################
 # Function to set up the segments for the analysis
 def science_segments(ifo, config, generate_segments = True):
   """
@@ -406,6 +424,9 @@ def hipe_setup(hipeDir, config, ifos, logPath, injFile=None, dfOnly = False, \
   if vetoCat: hipeJob.add_opt("maxjobs", "5")
   hipeNode = pipeline.CondorDAGNode(hipeJob)
 
+  hipeNode.add_output_file( hipe_cache(ifos, usertag, \
+      hipecp.getint("input", "gps-start-time"), \
+      hipecp.getint("input", "gps-end-time")) )
   # add postscript to deal with rescue dag
   fix_rescue(hipeNode)
 
