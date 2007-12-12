@@ -97,7 +97,7 @@ LALInspiralWaveNormalise
      psdvalue = psd.data[i];
      if (psdvalue) 
      {
-	*norm += (pow(in->data[i], 2.) + pow(in->data[k], 2.))/psdvalue;
+	*norm += (in->data[i]*in->data[i] + in->data[k]*in->data[k])/psdvalue;
      }
   }
 
