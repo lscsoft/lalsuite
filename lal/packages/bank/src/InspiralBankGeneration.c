@@ -38,13 +38,14 @@ LALInspiralBankGeneration(
   InspiralTemplateList *coarseList = NULL;
   SnglInspiralTable *bank;
   InspiralMomentsEtc moments;
-  INT4 cnt = 0;
-  REAL8 fFinal =0;
+  INT4 cnt        = 0;
+  REAL8 fFinal    = 0;
   REAL8 MinfFinal = 0;
   REAL8 MaxfFinal = 0;
-  REAL8 q = 0;
-  INT4  chicnt = 0;
-  INT4  kappacnt = 0;
+  REAL8 q         = 0;
+  INT4  chicnt    = 0;
+  INT4  kappacnt  = 0;
+  INT4  numTmplts = 0;
   INT4  i;
   REAL4 chi[3], kappa[4];
   
@@ -277,12 +278,16 @@ LALInspiralBankGeneration(
       {
         for( cnt = 0; cnt < *ntiles; cnt++ )
         {
+          /* restrict the bank boundaries to the region of validity of PTF */
+          if ( coarseList[cnt].params.mass1 < 6.0 || 
+               coarseList[cnt].params.mass2 > 3.0 ) continue;
           bank = bank->next = (SnglInspiralTable *) LALCalloc( 1, sizeof(
                 SnglInspiralTable ) );
           if (bank == NULL)
           {
             ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
           }
+          numTmplts     = numTmplts + 1 ;
           bank->mass1   = coarseList[cnt].params.mass1;
           bank->mass2   = coarseList[cnt].params.mass2;
           bank->mchirp  = coarseList[cnt].params.chirpMass;
@@ -316,6 +321,7 @@ LALInspiralBankGeneration(
     *first = bank;
     /* free the coarse list returned by create coarse bank */
     LALFree( coarseList );
+    *ntiles = numTmplts;
     break;
 
   case BCVSpin:
