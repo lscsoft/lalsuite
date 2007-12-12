@@ -22,7 +22,7 @@ import optparse
 from optparse import OptionParser
 import time
   
-def get_status(filename, depth):
+def get_status(filename, depth, debug=False):
   """
   parse a dag filem search for failed/done jobs
   @param filename: name of a dag file to parse
@@ -40,12 +40,19 @@ def get_status(filename, depth):
   try:
     thisdag = open(filename, 'r')
   except:
-    print "This file does not exists ("+filename+")"
+    if debug==True:
+      print "This file does not exists ("+filename+")"
     return [], "fileError", -1
   print tab + '-->  parsing '+ filename 
+    
+  #line = thisdag.readline()
+  #if not line:
+  #  return [], "emptyFile", -1
+
   line = "dummy"
   status = []
   error = []
+  countline = 0
   while line:
     line = thisdag.readline()
     if line.find('Done')>=0:
@@ -157,24 +164,28 @@ for i in xrange(0,len(filenames), 1):
   filename = tag +'.dagman.out'
   
 
-  undone_jobs = 111
+  undone_jobs = 111 #dummy value
   depth = 0   # used for tabulating rescue files
   print '-------------------------------------------------------------------------'
   while undone_jobs is not 0:
-    # how many jobs are completed/failed ? 
+    # How many jobs are completed/failed ? 
     output, error, undone_jobs = get_status(filename, depth)
     tag = tag+'.rescue'
     filename = tag + '.dagman.out'
     depth = depth + 1
-    # if no file found, we stop this dag parsing
+    # If no file found, we stop this dag parsing
     if len(error)>0:
+#      print error
       break
-  #this dag has been parse. Where they any failures ?
+  
+  # This dag has been parsed. Where they any failures ?
   if undone_jobs >0:
     print "  WARNING: still " +str(undone_jobs) + "jobs not done"
-  else: 
+  if error=="emptyFile":
+    print "empty file"
+  if undone_jobs==0: 
     print filenames[i]+" is COMPLETED"
-  print '-------------------------------------------------------------------------'
+#  print '-------------------------------------------------------------------------\n'
 
   
   
