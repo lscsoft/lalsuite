@@ -285,7 +285,7 @@ LALInspiralWaveTemplates(
 	   CHECKSTATUSPTR(status);
 	   break;
       case Eccentricity:
-           LALInspiralEccentricity(status->statusPtr, signal1, signal2, params);
+           LALInspiralEccentricityTemplates(status->statusPtr, signal1, signal2, params);
            CHECKSTATUSPTR(status);
       	   break;
       default: 
