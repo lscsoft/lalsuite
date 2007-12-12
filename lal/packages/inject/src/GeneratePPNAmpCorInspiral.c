@@ -303,8 +303,8 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   /* Set PN parameters for amplitude */
   if ( (params->ampOrder < 0) || (params->ampOrder >= AMPMAXORDER) )
   {	  
-    if (params->ppn->length - 1 >= 4 )
-      ampOrder = 4;
+    if (params->ppn->length - 1 >= 5 )
+      ampOrder = 5;
     else
       ampOrder = params->ppn->length - 1;	    
   }
