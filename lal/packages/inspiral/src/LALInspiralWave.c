@@ -194,9 +194,9 @@ LALInspiralWave(
            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
 	   break;
       case SpinTaylorT3:
-	   LALInspiralSpinModulatedWave(status->statusPtr, signal, params); 
+           LALInspiralSpinModulatedWave(status->statusPtr, signal, params);
            CHECKSTATUSPTR(status);
-	   break;
+           break;
       case SpinTaylor:
            /*GenerateTimeDomainWaveformForInjection (status->statusPtr, signal, params);
            CHECKSTATUSPTR(status);*/
@@ -207,6 +207,10 @@ LALInspiralWave(
 	   break;
       case AmpCorPPN:
    	   LALInspiralAmplitudeCorrectedWave(status->statusPtr, signal, params);
+	   CHECKSTATUSPTR(status);	   
+      	   break;
+      case Eccentricity:
+   	   LALInspiralEccentricity(status->statusPtr, signal, params);
 	   CHECKSTATUSPTR(status);	   
       	   break;
       default:
@@ -280,6 +284,10 @@ LALInspiralWaveTemplates(
       	   LALInspiralAmplitudeCorrectedWaveTemplates(status->statusPtr, signal1, signal2, params);
 	   CHECKSTATUSPTR(status);
 	   break;
+      case Eccentricity:
+           LALInspiralEccentricity(status->statusPtr, signal1, signal2, params);
+           CHECKSTATUSPTR(status);
+      	   break;
       default: 
            ABORT( status, 9999, "Unknown case in switch." );
       	   
