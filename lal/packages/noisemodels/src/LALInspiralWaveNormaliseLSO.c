@@ -114,7 +114,7 @@ LALInspiralWaveNormaliseLSO
 		  psd = in->psd->data[i];
 		  if (psd) 
 		  {
-			  *norm += (pow(filter->data[i], 2.) + pow(filter->data[n-i], 2.))/(psd*0.5);
+			  *norm += (filter->data[i]*filter->data[i] + filter->data[n-i]*filter->data[n-i])/(psd*0.5);
 		  }
 	  }
   }
