@@ -471,7 +471,7 @@ if opts.plotinspmissed:
   for ifo in ifolist:
     if opts.first_stage:
        prog_tag = cp.get('plotinspinj-meta','inj-program-tag')
-       suffix = cp.get('pipeline','injection-suffix')
+       suffix = cp.get('pipeline','inj-suffix')
        plotinspmissed_jobs[ifo +"FIRST"] = inspiral.PlotInspmissedJob(cp)
        plotinspmissed_jobs[ifo +"FIRST"].add_opt("ifo-times", ifo)
        plotinspmissed_jobs[ifo +"FIRST"].add_opt("ifo", ifo)
