@@ -677,54 +677,46 @@ def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
   return follow_chunks_analyzed, bankList
 
 ##############################################################################
-# function to sweep up data using coire  
+# function to sweep up data using sire
 def sire_segs(segments, sire_job, dag, do_input, ifo,
   inj_file=None, ifotag=None, usertag=None):
   """
   Do a sire to sweep up all the triggers of a specific kind
   
   segments  = list of thinca segments to use
-  sire_job = coire job to use for the analysis
+  sire_job  = sire job to use for the analysis
   dag       = name of the dag
-  do_input  = whether the files to be coired were produced by this dag
+  do_input  = whether the files to be sired were produced by this dag
   ifo       = which ifo triggers to keep
   inj_file  = name of injection file
   ifotag    = ifotag used in naming the file
   usertag   = the usertag to add to the output file name
   """
-  sire = inspiral.SireNode(sire_job)
-
-  # set the options:
-  sire.set_ifo(ifo)
-  if inj_file: 
-    sire.set_inj_file(inj_file)
-  if ifotag:
-    sire.set_ifo_tag("SECOND_" + ifotag)
-  else:
-    sire.set_ifo_tag("FIRST")
-  if usertag: sire.set_user_tag(usertag)
-  
-  # set the segment
-  extent_start = min([seg.get_chunk().start() for seg in segments])
-  extent_end = max([seg.get_chunk().end() for seg in segments])
-  sire.set_start(extent_start)
-  sire.set_end(extent_end)
-  
-  # set up the input file
-  input_file = sire.get_output().replace(".xml", ".input") 
-  f = open(input_file, 'w')
   for seg in segments:
+    sire = inspiral.SireNode(sire_job)
+
+    # set the options:
+    sire.set_ifo(ifo)
+    if inj_file: 
+      sire.set_inj_file(inj_file)
+    if ifotag:
+      sire.set_ifo_tag("SECOND_" + ifotag)
+    else:
+      sire.set_ifo_tag("FIRST")
+    if usertag: sire.set_user_tag(usertag)
+
+    # set the segment
+    sire.set_start(seg.get_chunk().start())
+    sire.set_end(seg.get_chunk().end())
+
+    # set the glob file for sire
     if do_input: sire.add_parent(seg.get_dag_node())
     if seg.get_dag_node().get_output():
-      f.write('%s\n' % seg.get_dag_node().get_output())
+      sire.set_glob(seg.get_dag_node().get_output())
     else: 
-      f.write('%s\n' % seg.get_dag_node().get_output_a())
-  f.close()
+      sire.set_glob(seg.get_dag_node().get_output_a())
 
-  # add the input file name to coire 
-  sire.set_input(input_file)
-
-  dag.add_node(sire) 
+    dag.add_node(sire) 
 
 ##############################################################################
 # function to sweep up data using coire  
@@ -744,38 +736,30 @@ def coire_segs(segments, coire_job, dag, do_input, ifos,
   usertag   = the usertag to add to the output file name
   """
 
-  coire = inspiral.CoireNode(coire_job)
-
-  # set the options:
-  coire.set_ifos(ifos)
-  if inj_file:
-    coire.set_inj_file(inj_file)
-  if ifotag:
-    coire.set_ifo_tag("SECOND_" + ifotag)
-  else:
-    coire.set_ifo_tag("FIRST")
-  if num_slides: coire.set_slides(num_slides)
-  if usertag: coire.set_user_tag(usertag)
- 
-  # set the segment
-  extent_start = min([seg.get_chunk().start() for seg in segments])
-  extent_end = max([seg.get_chunk().end() for seg in segments])
-  coire.set_start(extent_start)
-  coire.set_end(extent_end)
- 
-  # set up the input file
-  input_file = coire.get_output().replace(".xml", ".input") 
-  f = open(input_file, 'w')
   for seg in segments:
-    if do_input: coire.add_parent(seg.get_dag_node())
-    f.write('%s\n' % seg.get_dag_node().get_output())
-  f.close()
+    coire = inspiral.CoireNode(coire_job)
 
-  # add the input file name to coire 
-  coire.set_input(input_file)
+    # set the options:
+    coire.set_ifos(ifos)
+    if inj_file:
+      coire.set_inj_file(inj_file)
+    if ifotag:
+      coire.set_ifo_tag("SECOND_" + ifotag)
+    else:
+      coire.set_ifo_tag("FIRST")
+    if num_slides: coire.set_slides(num_slides)
+    if usertag: coire.set_user_tag(usertag)
+ 
+    # set the segment
+    coire.set_start(seg.get_chunk().start())
+    coire.set_end(seg.get_chunk().end())
+ 
+    # set the glob file for coire 
+    if do_input: coire.add_parent(seg.get_dag_node())
+    coire.set_glob(seg.get_dag_node().get_output())
   
-  coire.finalize()
-  dag.add_node(coire) 
+    coire.finalize()
+    dag.add_node(coire) 
 
 
 ##############################################################################
