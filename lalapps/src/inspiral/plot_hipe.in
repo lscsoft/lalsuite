@@ -306,24 +306,27 @@ if opts.plotinspiral:
   cp = set_common_options(cp, this_section)
   
   for ifo in ifolist:
-    job = inspiral.PlotInspiralJob(cp)
-    job.add_opt("ifo-times", ifo)
     if opts.first_stage:
+      job = inspiral.PlotInspiralJob(cp)
+      job.add_opt("ifo-times", ifo)
       job.add_opt("ifo-tag", "FIRST_" + ifo)
       job.set_sub_file( basename + '.plotinspiral_FIRST_' + ifo + subsuffix )
       pattern_dict = inspiralutils.determine_sieve_patterns(cp, "plotinspiral", "FIRST", usertag)
       for opt, val in pattern_dict.iteritems():
         job.add_opt(opt, val)
       plotinspiral_jobs[ifo + "FIRST"] = job
+      all_jobs.extend(plotinspiral_jobs.values())
     if opts.second_stage:
+      job = inspiral.PlotInspiralJob(cp)
+      job.add_opt("ifo-times", ifo)
       job.add_opt("ifo-tag", "SECOND_" + ifo)
       job.set_sub_file( basename + '.plotinspiral_SECOND_' + ifo + subsuffix )
       pattern_dict = inspiralutils.determine_sieve_patterns(cp, "plotinspiral", "SECOND", usertag)
       for opt, val in pattern_dict.iteritems():
         job.add_opt(opt, val)
       plotinspiral_jobs[ifo + "SECOND"] = job
+      all_jobs.extend(plotinspiral_jobs.values())
  
-  all_jobs.extend(plotinspiral_jobs.values())
 
 
 #plotthinca
