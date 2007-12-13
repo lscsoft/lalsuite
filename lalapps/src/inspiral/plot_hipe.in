@@ -22,7 +22,7 @@ import tempfile
 import ConfigParser
 import urlparse
 from pylal import CoincInspiralUtils
-from pylal import itertools
+from glue import iterutils
 sys.path.append('@PYTHONLIBDIR@')
 ##############################################################################
 # import the modules we need to build the pipeline
@@ -230,12 +230,12 @@ ifolist = [ifo for ifo in ('G1','H1', 'H2', 'L1', 'V1') \
             if getattr(opts, "%s_data" % ifo.lower())]
 
 if opts.two_ifo:
-   ifo_combo=list(itertools.choices(ifolist,2))
+   ifo_combo=list(iterutils.choices(ifolist,2))
 if opts.three_ifo:
-   ifo_combo=list(itertools.choices(ifolist,2)) + list(itertools.choices(ifolist,3))
+   ifo_combo=list(iterutils.choices(ifolist,2)) + list(iterutils.choices(ifolist,3))
 if opts.four_ifo:
-   ifo_combo=list(itertools.choices(ifolist,2)) + list(itertools.choices(ifolist,3)) + \
-             list(itertools.choices(ifolist,4))
+   ifo_combo=list(iterutils.choices(ifolist,2)) + list(iterutils.choices(ifolist,3)) + \
+             list(iterutils.choices(ifolist,4))
 if opts.analyze_all: 
    ifo_combo=CoincInspiralUtils.get_ifo_combos(ifolist)
 
@@ -252,20 +252,19 @@ except: pass
 
 ##############################################################################
 # if a usertag has been specified, override the config file
-if opts.user_tag:
+if opts.user_tag is not None:
   usertag = opts.user_tag
-  cp.set('pipeline','user-tag',usertag)
+  cp.set('pipeline','user-tag', usertag)
+elif cp.has_option("pipeline", "user-tag"):
+  usertag = string.strip(cp.get('pipeline','user-tag'))
 else:
-  try:
-    usertag = string.strip(cp.get('pipeline','user-tag'))
-  except:
-    usertag = None
+  usertag = None
   
 ##############################################################################
 # create a log file that the Condor jobs will write to
 basename = re.sub(r'\.ini',r'',opts.config_file)
 tempfile.tempdir = opts.log_path
-if usertag:
+if usertag is not None:
   tempfile.template = basename + '.' + usertag + '.dag.log.'
 else:
   tempfile.template = basename + '.dag.log.'
@@ -276,13 +275,13 @@ fh.close()
 ##############################################################################
 # create the DAG writing the log to the specified directory
 dag = pipeline.CondorDAG(logfile)
-if usertag:
+if usertag is not None:
   dag.set_dag_file(basename + '.' + usertag )
 else:
   dag.set_dag_file(basename )
 
 # set better submit file names than the default
-if usertag:
+if usertag is not None:
   subsuffix = '.' + usertag + '.sub'
 else:
   subsuffix = '.sub'
@@ -564,7 +563,7 @@ if opts.plotinspiralrange:
 
 #############################################################################
 # set the usertag in the jobs
-if usertag:
+if usertag is not None:
   for job in all_jobs:
     job.add_opt('user-tag',usertag)
 
