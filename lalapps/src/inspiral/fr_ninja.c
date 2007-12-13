@@ -57,6 +57,7 @@ RCSID("$Id$");
 /* function prototypes */
 static void print_usage(FILE *ptr, CHAR *program);
 static CHAR* channel_name(CHAR *polarisation, INT4 index, CHAR *channel);
+INT4 get_mode_index(INT4 modeL, INT4 modeM);
 
 /* verbose flag */
 extern int vrbflg;
@@ -68,7 +69,24 @@ enum {
   P2P0,
   P2N1,
   P2N2,
-  NUM_WAVEFORMS};
+  P3P3,
+  P3P2,
+  P3P1,
+  P3P0,
+  P3N1,
+  P3N2,
+  P3N3,
+  P4P4,
+  P4P3,
+  P4P2,
+  P4P1,
+  P4P0,
+  P4N1,
+  P4N2,  
+  P4N3,
+  P4N4,
+  NUM_WAVEFORMS
+} MODE_INDEX;
 
 /*
  * main program entry point
@@ -313,23 +331,47 @@ INT4 main(INT4 argc, CHAR **argv)
   LAL_CALL(LALReadConfigSTRINGVariable(&status, &spin2z, meta_file, "spin2z", &wasRead), &status);
 
   /* ht-data section */
+  /* l=2 */
   LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P2P2], meta_file, "2,2", &wasRead), &status);
   LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P2P1], meta_file, "2,1", &wasRead), &status);
   LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P2P0], meta_file, "2,0", &wasRead), &status);
   LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P2N1], meta_file, "2,-1", &wasRead), &status);
   LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P2N2], meta_file, "2,-2", &wasRead), &status);
 
+  /* l=3 */
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P3P3], meta_file, "3,3", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P3P2], meta_file, "3,2", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P3P1], meta_file, "3,1", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P3P0], meta_file, "3,0", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P3N1], meta_file, "3,-1", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P3N2], meta_file, "3,-2", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P3N3], meta_file, "3,-3", &wasRead), &status);
+
+  /* l=4 */
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P4P4], meta_file, "4,4", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P4P3], meta_file, "4,3", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P4P2], meta_file, "4,2", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P4P1], meta_file, "4,1", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P4P0], meta_file, "4,0", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P4N1], meta_file, "4,1", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P4N2], meta_file, "4,2", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P4N3], meta_file, "4,3", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P4N4], meta_file, "4,4", &wasRead), &status);
+
   /* read waveforms */
-  for (i = 0; i < NUM_WAVEFORMS; i++)
-  {
-    /* get full path to waveform data file */
-    LALSnprintf(file_path, FILENAME_MAX, "%s/%s", nrDataDir, wf_name[i]);
+  for (i = 0; i < NUM_WAVEFORMS; i++)  {
 
-    if (vrbflg)
-      fprintf(stdout, "reading waveform: %s\n", file_path);
+    if (wf_name[i] != NULL) {
 
+      /* get full path to waveform data file */
+      LALSnprintf(file_path, FILENAME_MAX, "%s/%s", nrDataDir, wf_name[i]);
+      
+      if (vrbflg)
+	fprintf(stdout, "reading waveform: %s\n", file_path);
+      
     /* read waveforms */
-    LAL_CALL(LALReadNRWave_raw(&status, &waveforms[i], file_path), &status);
+      LAL_CALL(LALReadNRWave_raw(&status, &waveforms[i], file_path), &status);
+    }
   }
 
   /* set waveform metadata */
@@ -350,25 +392,26 @@ INT4 main(INT4 argc, CHAR **argv)
    * location within the REAL4TimeVector Series */
   for (i = 0; i < NUM_WAVEFORMS; i++)
   {
-    /* get length of waveform */
-    wf_length = waveforms[i]->data->vectorLength;
+    if (waveforms[i]) {
+      /* get length of waveform */
+      wf_length = waveforms[i]->data->vectorLength;
+      
+      /* allocate memory for waveform */
+      XLALResizeREAL4TimeSeries(hplus[i], 0, wf_length);
+      XLALResizeREAL4TimeSeries(hcross[i], 0, wf_length);
+      
+      /* set time spacing */
+      hplus[i]->deltaT = waveforms[i]->deltaT;
+      hcross[i]->deltaT = waveforms[i]->deltaT;
 
-    /* allocate memory for waveform */
-    XLALResizeREAL4TimeSeries(hplus[i], 0, wf_length);
-    XLALResizeREAL4TimeSeries(hcross[i], 0, wf_length);
-
-    /* set time spacing */
-    hplus[i]->deltaT = waveforms[i]->deltaT;
-    hcross[i]->deltaT = waveforms[i]->deltaT;
-
-    /* copy waveforms into appropriate series */
-    for (j = 0; j < wf_length; j ++)
-    {
-      hplus[i]->data->data[j] = waveforms[i]->data->data[j];
-      hcross[i]->data->data[j] = waveforms[i]->data->data[wf_length + j];
+      /* copy waveforms into appropriate series */
+      for (j = 0; j < wf_length; j ++) {
+	hplus[i]->data->data[j] = waveforms[i]->data->data[j];
+	hcross[i]->data->data[j] = waveforms[i]->data->data[wf_length + j];
+      }
     }
   }
-
+  
   if (vrbflg)
     fprintf(stdout, "creating and saving frame: %s\n", frame_name);
 
@@ -390,8 +433,10 @@ INT4 main(INT4 argc, CHAR **argv)
   /* add channels to frame */
   for (i = 0; i < NUM_WAVEFORMS; i++)
   {
-    XLALFrameAddREAL4TimeSeriesSimData(frame, hplus[i]);
-    XLALFrameAddREAL4TimeSeriesSimData(frame, hcross[i]);
+    if ( (hplus[i]->data->length) && (hcross[i]->data->length) ) {
+      XLALFrameAddREAL4TimeSeriesSimData(frame, hplus[i]);
+      XLALFrameAddREAL4TimeSeriesSimData(frame, hcross[i]);
+    }
   }
 
   /* write frame */
@@ -429,27 +474,38 @@ INT4 main(INT4 argc, CHAR **argv)
   LALFree(meta_file);
 
   /* waveforms */
-  for (i = 0; i < NUM_WAVEFORMS; i++)
-  {
+  for (i = 0; i < NUM_WAVEFORMS; i++) {
+    
     /* channel names */
-    LALFree(plus_channel[i]);
-    LALFree(cross_channel[i]);
-    LALFree(wf_name[i]);
+    if (plus_channel[i]) 
+      LALFree(plus_channel[i]);
+
+    if (cross_channel[i])
+      LALFree(cross_channel[i]);
+
+    if (wf_name[i])
+      LALFree(wf_name[i]);
 
     /* raw waveforms */
-    LALFree(waveforms[i]->data->data);
-    LALFree(waveforms[i]->data);
-    LALFree(waveforms[i]);
+    if (waveforms[i]) {
+      LALFree(waveforms[i]->data->data);
+      LALFree(waveforms[i]->data);
+      LALFree(waveforms[i]);
+    }
 
     /* hplus */
-    LALFree(hplus[i]->data->data);
-    LALFree(hplus[i]->data);
-    LALFree(hplus[i]);
+    if (hplus[i]) {
+      LALFree(hplus[i]->data->data);
+      LALFree(hplus[i]->data);
+      LALFree(hplus[i]);
+    }
 
     /* hcross */
-    LALFree(hcross[i]->data->data);
-    LALFree(hcross[i]->data);
-    LALFree(hcross[i]);
+    if (hcross[i]) {
+      LALFree(hcross[i]->data->data);
+      LALFree(hcross[i]->data);
+      LALFree(hcross[i]);
+    }
   }
 
   /* clear frame */
@@ -505,25 +561,229 @@ static CHAR* channel_name(CHAR *polarisation, INT4 index, CHAR *channel)
   }
 
   /* allocate memory for channel */
-  channel = (CHAR *)LALCalloc(LIGOMETA_CHANNEL_MAX, sizeof(CHAR));
+  channel = (CHAR *)LALCalloc(1,LIGOMETA_CHANNEL_MAX*sizeof(CHAR));
 
-  /* construct channel name */
-  if (index == P2P2)
-    LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l2_mp2", polarisation);
-  else if (index == P2P1)
+  switch (index) {
+
+    /* l=2 */
+  case P2P2: 
+    LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l2_mp2", polarisation);    
+    break;
+  case P2P1:
     LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l2_mp1", polarisation);
-  else if (index == P2P0)
+    break;   
+  case P2P0:
     LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l2_mp0", polarisation);
-  else if (index == P2N1)
+    break;
+  case P2N1:
     LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l2_mn1", polarisation);
-  else if (index == P2N2)
+    break;
+  case P2N2:
     LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l2_mn2", polarisation);
-  else
-  {
+    break;
+
+    /* l=3 */
+  case P3P3:
+    LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l3_mp3", polarisation);
+    break;
+  case P3P2:
+    LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l3_mp2", polarisation);
+    break;
+  case P3P1:
+    LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l3_mp1", polarisation);
+    break;
+  case P3P0:
+    LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l3_mp0", polarisation);
+    break;
+  case P3N1:
+    LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l3_mn1", polarisation);
+    break;
+  case P3N2:
+    LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l3_mn2", polarisation);
+    break;
+  case P3N3:
+    LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l3_mn3", polarisation);
+    break;
+
+    /* l=4 */
+  case P4P4:
+    LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l4_mp4", polarisation);
+    break;
+  case P4P3:
+    LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l4_mp3", polarisation);
+    break;
+  case P4P2:
+    LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l4_mp2", polarisation);
+    break;
+  case P4P1:
+    LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l4_mp1", polarisation);
+    break;
+  case P4P0:
+    LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l4_mp0", polarisation);
+    break;
+  case P4N1:
+    LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l4_mn1", polarisation);
+    break;
+  case P4N2:
+    LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l4_mn2", polarisation);
+    break;
+  case P4N3:
+    LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l4_mn3", polarisation);
+    break;
+  case P4N4:
+    LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l4_mn4", polarisation);
+    break;
+
+  default:
     fprintf(stderr, "Error: Unknown waveform index: '%d'\n", index);
     exit(1);
+    break;
   }
 
   /* return channel name */
   return channel;
-} 
+}
+
+
+INT4 get_mode_index(INT4 modeL, INT4 modeM)
+{
+
+  INT4 ret;
+
+  switch (modeL) {
+
+    /* l =2 */
+  case 2:    
+    switch (modeM) {
+    case 2: 
+      ret = P2P2;
+      break;
+    case 1:
+      ret = P2P1;
+      break;
+    case 0:
+      ret = P2P0;
+      break;
+    case -1:
+      ret = P2N1;
+      break;
+    case -2:
+      ret = P2N2;
+      break;
+    default:
+      ret = NUM_WAVEFORMS;
+      break;
+    }
+    break;
+
+    /* l=3 */
+  case 3:
+    switch (modeM){
+    case 3:
+      ret = P3P3;
+      break;
+    case 2:
+      ret = P3P2;
+      break;
+    case 1:
+      ret = P3P1;
+      break;
+    case 0:
+      ret = P3P0;
+      break;
+    case -1:
+      ret = P3N1;
+      break;
+    case -2:
+      ret = P3N2;
+      break;
+    case -3:
+      ret = P3N3;
+      break;
+    default:
+      ret = NUM_WAVEFORMS;
+      break;
+    }
+    break;
+
+    /* l=4 */
+  case 4:
+    switch (modeM){
+    case 4:
+      ret = P4P4;
+      break;
+    case 3:
+      ret = P4P3;
+      break;
+    case 2:
+      ret = P4P2;
+      break;
+    case 1:
+      ret = P4P1;
+      break;
+    case 0:
+      ret = P4P0;
+      break;
+    case -1:
+      ret = P4N1;
+      break;
+    case -2:
+      ret = P4N2;
+      break;
+    case -3:
+      ret = P4N3;
+      break;
+    case -4:
+      ret = P4N4;
+      break;
+
+    default:
+      ret = NUM_WAVEFORMS;
+      break;
+    }
+    break;
+
+  default: 
+    ret = NUM_WAVEFORMS;
+    break;
+  }
+  return ret;
+}
+
+
+/* function for reading the NR frame */
+/* void LALReadNRFrame(LALStatus *status, */
+/* 		    REAL4TimeVectorSeries **out, */
+/* 		    FrStream  *stream, */
+/* 		    CHAR      *polarisation, */
+/* 		    INT4      modeL, */
+/* 		    INT4      modeM) */
+/* { */
+
+/*   FrChanIn chan; */
+/*   CHAR *name=NULL; */
+
+/*   INITSTATUS (status, "LALReadNRFrame", rcsid); */
+/*   ATTATCHSTATUSPTR (status); */
+
+/*   chan.type = LAL_SIM_CHAN; */
+  
+/*   name = channel_name(polarisation,2*modeL + modeM */
+
+/*   typedef struct */
+/*     tagFrChanIn */
+/*   { */
+/*     const CHAR *name; */
+/*   ChannelType type; */
+/*   } */
+/*   FrChanIn; */
+
+   
+/*   DETATCHSTATUSPTR (status); */
+  
+/*   /\* normal exit *\/ */
+/*   RETURN (status); */
+
+
+/* } */
+		    
