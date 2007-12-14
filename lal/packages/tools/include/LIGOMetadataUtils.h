@@ -1129,6 +1129,74 @@ XLALCoincSimInspiralTest (
     CoincInspiralTable **missedCoincHead
    );
 
+/* multi inspiral */
+
+void
+LALFreeMultiInspiral (
+    LALStatus          *status,
+    MultiInspiralTable **eventHead
+    );
+
+int
+XLALFreeMultiInspiral (
+    MultiInspiralTable **eventHead
+    );
+
+MultiInspiralTable *
+XLALSortMultiInspiral (
+    MultiInspiralTable *eventHead,
+    int(*comparfunc)   (const void *, const void *)
+    );
+
+REAL4
+XLALMultiInspiralStat(
+    MultiInspiralTable         *multiInspiral,
+    SnglInspiralClusterChoice  multiStat
+    );
+
+int
+XLALClusterMultiInspiralTable (
+    MultiInspiralTable         **inspiralList,
+    INT8                         dtimeNS,
+    SnglInspiralClusterChoice   clusterchoice
+    );
+
+MultiInspiralTable *
+XLALTimeCutMultiInspiral(
+    MultiInspiralTable          *eventHead,
+    LIGOTimeGPS                *startTime,
+    LIGOTimeGPS                *endTime
+    );
+
+MultiInspiralTable *
+XLALSNRCutMultiInspiral (
+    MultiInspiralTable          *eventHead,
+    REAL4                       snrCut
+    );
+
+MultiInspiralTable *
+XLALPlayTestMultiInspiral(
+    MultiInspiralTable          *eventHead,
+    LALPlaygroundDataMask      *dataType
+    );
+
+INT4 XLALCountMultiInspiral( MultiInspiralTable *head );
+
+int
+LALCompareMultiInspiralByTime (
+    const void *a,
+    const void *b
+    );
+
+int
+XLALMultiSimInspiralTest (
+    SimInspiralTable  **simHead,
+    MultiInspiralTable **eventHead,
+    SimInspiralTable  **missedSimHead,
+    MultiInspiralTable **missedMultiHead,
+    INT8                injectWindowNS
+    );
+
 
 /*
  *
