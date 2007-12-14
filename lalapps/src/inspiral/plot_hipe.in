@@ -344,6 +344,7 @@ if opts.plotthinca:
         plotthinca_jobs[combostring + "FIRST"].add_opt(ifo.lower() + "-triggers","  ")
         plotthinca_jobs[combostring + "FIRST"].add_opt("ifo-times", combostring)
         plotthinca_jobs[combostring + "FIRST"].add_opt("ifo-tag", "FIRST_" + combostring)
+        plotthinca_jobs[combostring + "FIRST"].add_opt("statistic", "snr")
         for opt, val in pattern_dict.iteritems():
           plotthinca_jobs[combostring + "FIRST"].add_opt(opt, val)
         plotthinca_jobs[combostring + "FIRST"].set_sub_file( basename + '.plotthinca_FIRST_' + combostring + subsuffix )
@@ -355,6 +356,7 @@ if opts.plotthinca:
         plotthinca_jobs[combostring + "SECOND"].add_opt(ifo.lower() + "-triggers","  ")
         plotthinca_jobs[combostring + "SECOND"].add_opt("ifo-times", combostring)
         plotthinca_jobs[combostring + "SECOND"].add_opt("ifo-tag", "SECOND_" + combostring)
+        plotthinca_jobs[combostring + "SECOND"].add_opt("statistic", "effective_snr")
         for opt, val in pattern_dict.iteritems():
           plotthinca_jobs[combostring + "SECOND"].add_opt(opt, val)
         plotthinca_jobs[combostring + "SECOND"].set_sub_file( basename + '.plotthinca_SECOND_' + combostring + subsuffix )
