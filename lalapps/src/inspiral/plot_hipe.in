@@ -337,24 +337,26 @@ if opts.plotthinca:
   for ifos in  ifo_combo:
     combostring = combo2str(ifos)
     if opts.first_stage:
-      pattern = determine_sieve_patterns(cp, "plotthinca", "FIRST",combostring)
+      pattern_dict = determine_sieve_patterns(cp, "plotthinca", "FIRST",
+        combostring)
       plotthinca_jobs[combostring + "FIRST"] = inspiral.PlotThincaJob(cp)
       for ifo in ifos:
         plotthinca_jobs[combostring + "FIRST"].add_opt(ifo.lower() + "-triggers","  ")
         plotthinca_jobs[combostring + "FIRST"].add_opt("ifo-times", combostring)
         plotthinca_jobs[combostring + "FIRST"].add_opt("ifo-tag", "FIRST_" + combostring)
-        plotthinca_jobs[combostring + "FIRST"].add_opt("zerolag-pattern",str(pattern['coinc-pattern']))
-        plotthinca_jobs[combostring + "FIRST"].add_opt("slide-pattern", str(pattern['slide-pattern']))
+        for opt, val in pattern_dict.iteritems():
+          plotthinca_jobs[combostring + "FIRST"].add_opt(opt, val)
         plotthinca_jobs[combostring + "FIRST"].set_sub_file( basename + '.plotthinca_FIRST_' + combostring + subsuffix )
     if opts.second_stage:
-      pattern = determine_sieve_patterns(cp, "plotthinca", "SECOND",combostring)
+      pattern_dict = determine_sieve_patterns(cp, "plotthinca", "SECOND",
+        combostring)
       plotthinca_jobs[combostring + "SECOND"] = inspiral.PlotThincaJob(cp)
       for ifo in ifos:
         plotthinca_jobs[combostring + "SECOND"].add_opt(ifo.lower() + "-triggers","  ")
         plotthinca_jobs[combostring + "SECOND"].add_opt("ifo-times", combostring)
         plotthinca_jobs[combostring + "SECOND"].add_opt("ifo-tag", "SECOND_" + combostring)
-        plotthinca_jobs[combostring + "SECOND"].add_opt("zerolag-pattern", str(pattern['coinc-pattern']))
-        plotthinca_jobs[combostring + "SECOND"].add_opt("slide-pattern", str(pattern['slide-pattern']))
+        for opt, val in pattern_dict.iteritems():
+          plotthinca_jobs[combostring + "SECOND"].add_opt(opt, val)
         plotthinca_jobs[combostring + "SECOND"].set_sub_file( basename + '.plotthinca_SECOND_' + combostring + subsuffix )
 
 
