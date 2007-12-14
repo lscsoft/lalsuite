@@ -219,12 +219,17 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
           if not opts.read_cache:
             if not seg.get_df_node():
               df = pipeline.LSCDataFindNode(df_job)
+              if not opts.disable_dag_categories:
+                df.set_category('datafind')
+              if not opts.disable_dag_priorities:
+                df.set_priority(100)
               df.set_observatory(ifo_name[0])
               df.set_start(seg.start())
               df.set_end(seg.end())
               seg.set_df_node(df)
               if type: df.set_type(type)
-              if prev_df: df.add_parent(prev_df)
+              if prev_df and opts.disable_dag_categories:
+                df.add_parent(prev_df)
               if opts.datafind: dag.add_node(df)
               prev_df = df
           else:
@@ -232,6 +237,10 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
 
           # make a template bank job for the master chunk
           bank = inspiral.TmpltBankNode(tmplt_job)
+          if not opts.disable_dag_categories:
+            bank.set_category('tmpltbank')
+          if not opts.disable_dag_priorities:
+            bank.set_priority(1)
           bank.set_start(chunk.start())
           bank.set_end(chunk.end())
           bank.set_ifo(ifo_name)
@@ -255,6 +264,10 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
 
                    # create an inspinj node for the master chunk (once!)
                    inspinj = inspiral.InspInjNode(inspinj_job)
+                   if not opts.disable_dag_categories:
+                     inspinj.set_category('inspinj')
+                   if not opts.disable_dag_priorities:
+                     inspinj.set_priority(100)
                    inspinj.set_end(chunk.start())
                    inspinj.set_end(chunk.end())
                    inspinj.set_ifo(ifo_name)
@@ -271,6 +284,10 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
 
              # make an inspiral job for the master chunk
              insp = inspiral.InspiralNode(insp_job)
+             if not opts.disable_dag_categories:
+               insp.set_category('inspiral1')
+             if not opts.disable_dag_priorities:
+               insp.set_priority(2)
              if inj>0:
                insp.set_injections(injectionFile)
                insp.set_user_tag(exttrigUserTag)
@@ -290,7 +307,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
                 insp.set_bank(bank.get_output())
              if opts.datafind: insp.add_parent(df)
              if (opts.template_bank and not GeoBank): insp.add_parent(bank)
-             if inj>0:  
+             if inj>0:
                 insp.add_parent(inspinj)
              if opts.inspiral: dag.add_node(insp)
 
@@ -318,6 +335,10 @@ def single_coinc(ifo_analyzed,ifo_name,ifo_single,single_coinc_job,dag,
   single_coinc_analyzed = []
   for seg in ifo_single:
     sinca = inspiral.IncaNode(single_coinc_job)
+    if not opts.disable_dag_categories:
+      sinca.set_category('inca')
+    if not opts.disable_dag_priorities:
+      sinca.set_priority(100)
     sinca.set_start(seg.start())
     sinca.set_end(seg.end())
     sinca.set_ifo_a(ifo_name)
@@ -374,6 +395,10 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
 
     for seg in coinc_segs:
       thinca = inspiral.ThincaNode(coinc_job)
+      if not opts.disable_dag_categories: 
+        thinca.set_category('thinca')
+      if not opts.disable_dag_priorities:
+        thinca.set_priority(3)
       if inj>0: thinca.set_user_tag(exttrigUserTag)
       thinca.set_start(seg.start())
       thinca.set_end(seg.end())
@@ -496,6 +521,10 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
 
               # make a trigbank job for the master chunk
               trigbank = inspiral.TrigbankNode(trig_job)
+              if not opts.disable_dag_categories:
+                trigbank.set_category('trigbank')
+              if not opts.disable_dag_priorities: 
+                trigbank.set_priority(4)
               if inj>0: trigbank.set_user_tag(exttrigUserTag)
               trigbank.set_ifo_tag(coinc_ifos)
               trigbank.set_output_ifo(ifo_name)
@@ -506,6 +535,10 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
         
               # make an inspiral job for the master chunk
               insp = inspiral.InspiralNode(insp_veto_job)
+              if not opts.disable_dag_categories:
+                insp.set_category('inspiral2')
+              if not opts.disable_dag_priorities:
+                insp.set_priority(5)
               if inj>0:
                 insp.set_injections(injectionFile)
                 insp.set_user_tag(exttrigUserTag)
@@ -614,6 +647,10 @@ def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
             if not banks:
               # make a template bank job for the master chunk
               bank = inspiral.TmpltBankNode(tmplt_follow_job)
+              if not opts.disable_dag_categories:
+                bank.set_category('tmpltbank')
+              if not opts.disable_dag_priorities:
+                bank.set_priority(1)
               bank.set_start(chunk.start())
               bank.set_end(chunk.end())
               bank.set_ifo(ifo_name)
@@ -634,6 +671,10 @@ def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
 
             # make an inspiral job for the master chunk
             insp = inspiral.InspiralNode(insp_veto_job)
+            if not opts.disable_dag_categories:
+              insp.set_category('inspiral2')
+            if not opts.disable_dag_priorities:
+              insp.set_priority(5)
             insp.set_start(chunk.start())
             insp.set_end(chunk.end())
             insp.set_trig_start(chunk.trig_start())
@@ -694,6 +735,10 @@ def sire_segs(segments, sire_job, dag, do_input, ifo,
   """
   for seg in segments:
     sire = inspiral.SireNode(sire_job)
+    if not opts.disable_dag_categories:
+      sire.set_category('sire')
+    if not opts.disable_dag_priorities:
+      sire.set_priority(100)
 
     # set the options:
     sire.set_ifo(ifo)
@@ -738,6 +783,10 @@ def coire_segs(segments, coire_job, dag, do_input, ifos,
 
   for seg in segments:
     coire = inspiral.CoireNode(coire_job)
+    if not opts.disable_dag_categories:
+      coire.set_category('coire')
+    if not opts.disable_dag_priorities:
+      coire.set_priority(100)
 
     # set the options:
     coire.set_ifos(ifos)
@@ -811,6 +860,10 @@ def coherent_analysis(ifos,single_ifo_segments,coinc_nodes,cb_job,
   for coinc_done in coinc_nodes:
     # set up cohbank
     cohbank = inspiral.CohBankNode( cb_job )
+    if not opts.disable_dag_categories:
+      cohbank.set_category('cohbank')
+    if not opts.disable_dag_priorities:
+      cohbank.set_priority(6)
     cohbank.set_bank(coinc_done.get_dag_node().get_output())
     cohbank.set_start(coinc_done.get_chunk().start())
     cohbank.set_end(coinc_done.get_chunk().end())
@@ -820,6 +873,10 @@ def coherent_analysis(ifos,single_ifo_segments,coinc_nodes,cb_job,
     
     # set up cohinsp
     cohinsp = inspiral.ChiaNode(cohinsp_job)
+    if not opts.disable_dag_categories:
+      cohinsp.set_category('cohinsp')
+    if not opts.disable_dag_priorities:
+      cohinsp.set_priority(7)
     cohinsp.set_bank(cohbank.get_output())
     cohinsp.set_start(coinc_done.get_chunk().start())
     cohinsp.set_end(coinc_done.get_chunk().end())
@@ -830,6 +887,10 @@ def coherent_analysis(ifos,single_ifo_segments,coinc_nodes,cb_job,
       if ifo in ifos:
         # set up the frjoin job
         frjoin = inspiral.FrJoinNode(frjoin_job)
+        if not opts.disable_dag_categories:
+          frjoin.set_category('frjoin')
+        if not opts.disable_dag_priorities:
+          frjoin.set_priority(8)
         outputName = ifo + '-INSPIRAL_'
         if usertag: outputName += usertag + '_'
         outputName += ifotag + '-' + str(coinc_done.get_chunk().start()) + \
@@ -844,6 +905,10 @@ def coherent_analysis(ifos,single_ifo_segments,coinc_nodes,cb_job,
               
               # set up the trigbank
               trigbank = inspiral.TrigbankNode(trig_coh_jobs[ifo])
+              if not opts.disable_dag_categories:
+                trigbank.set_category('trigbank2')
+              if not opts.disable_dag_priorities:
+                trigbank.set_priority(9)
               trigbank.set_ifo_tag(ifotag)
               trigbank.set_output_ifo(ifo)
               trigbank.set_input_ifo(ifo)
@@ -855,6 +920,10 @@ def coherent_analysis(ifos,single_ifo_segments,coinc_nodes,cb_job,
 
               # set up the inspiral
               insp = inspiral.InspiralNode(insp_coh_jobs[ifo])
+              if not opts.disable_dag_categories:
+                insp.set_category('inspiral3')
+              if not opts.disable_dag_priorities:
+                insp.set_priority(10)
               insp.set_start(chunk.start())
               insp.set_end(chunk.end())
               insp.set_ifo(ifo)
@@ -962,7 +1031,11 @@ parser.add_option("-R", "--read-cache",action="store_true",default=False,\
 parser.add_option("-P", "--priority",action="store",type="int",\
     metavar=" PRIO",help="run jobs with condor priority PRIO")
 
-  
+parser.add_option("", "--disable-dag-categories",action="store_true",
+    default=False,help="disable the internal dag category maxjobs")
+parser.add_option("", "--disable-dag-priorities",action="store_true",
+    default=False,help="disable the depth first priorities")
+ 
 parser.add_option("-f", "--config-file",action="store",type="string",\
     metavar=" FILE",help="use configuration file FILE")
 
@@ -1900,8 +1973,23 @@ if gps_start_time is not None and gps_end_time is not None:
 else:
   print "gps start and stop times not specified: cache files not generated"
 
+
 ##############################################################################
-# Step 11: Write out the DAG, help message and log file
+# Step 11: Setup the Maximum number of jobs for different categories
+if not opts.disable_dag_categories:
+  if opts.datafind:
+    dag.add_maxjobs_category('datafind',10)
+  if opts.coincidence or opts.second_coinc:
+    dag.add_maxjobs_category('thinca',20)
+  if opts.trigbank:
+    dag.add_maxjobs_category('trigbank',20)
+  if opts.coire_coincidence or opts.coire_second_coinc:
+    dag.add_maxjobs_category('coire',20)
+  if opts.sire_inspiral or opts.sire_inspiral_veto:
+    dag.add_maxjobs_category('sire',20)
+
+##############################################################################
+# Step 12: Write out the DAG, help message and log file
 dag.write_sub_files()
 dag.write_dag()
 
