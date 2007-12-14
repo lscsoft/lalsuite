@@ -122,7 +122,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
   /* set default debug level */
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "5" );
+  set_debug_level( "33" );
 
   /* getopt arguments */
   struct option long_options[] =
