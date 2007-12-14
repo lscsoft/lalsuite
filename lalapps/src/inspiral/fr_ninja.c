@@ -353,10 +353,10 @@ INT4 main(INT4 argc, CHAR **argv)
   LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P4P2], meta_file, "4,2", &wasRead), &status);
   LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P4P1], meta_file, "4,1", &wasRead), &status);
   LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P4P0], meta_file, "4,0", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P4N1], meta_file, "4,1", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P4N2], meta_file, "4,2", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P4N3], meta_file, "4,3", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P4N4], meta_file, "4,4", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P4N1], meta_file, "4,-1", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P4N2], meta_file, "4,-2", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P4N3], meta_file, "4,-3", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[P4N4], meta_file, "4,-4", &wasRead), &status);
 
   /* read waveforms */
   for (i = 0; i < NUM_WAVEFORMS; i++)  {
