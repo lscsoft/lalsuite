@@ -287,6 +287,22 @@ INT4 XLALReadRingdownTriggerFile (
     CHAR                  *fileName
     );
 
+int
+LALMultiInspiralTableFromLIGOLw (
+    MultiInspiralTable **eventHead,
+    CHAR                *fileName
+    );
+
+int 
+XLALReadMultiInspiralTriggerFile (
+    MultiInspiralTable    **inspiralEventList,
+    MultiInspiralTable    **lastTrigger,
+    SearchSummaryTable   **searchSummList,
+    SearchSummvarsTable  **inputFileList,
+    CHAR                  *fileName
+    );
+
+
 #ifdef  __cplusplus
 }
 #endif
