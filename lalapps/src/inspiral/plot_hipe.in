@@ -443,26 +443,21 @@ if opts.plotethinca:
       ifosoption+=' --ifo '+ ifos[i]
       if opts.first_stage:
         plotethinca_jobs[combostring + "FIRST"] = inspiral.PlotEthincaJob(cp)
-        plotethinca_jobs[combostring + "FIRST"].add_opt("ifo", ifosoption)
         plotethinca_jobs[combostring + "FIRST"].add_opt("ifo-times", combostring)
         plotethinca_jobs[combostring + "FIRST"].add_opt("ifo-tag", "FIRST_" + combostring)
-        plotethinca_jobs[combostring + "FIRST"].add_opt("inspiral-stage", "FIRST")
-        plotethinca_jobs[combostring + "FIRST"].add_opt("zerolag-pattern", str(prog_tag) + "_FIRST_" + \
-        combostring + '_' + input_user_tag + str(zerolag_suffix))
-        plotthinca_jobs[combostring + "FIRST"].add_opt("slide-pattern", str(prog_tag) + "_SLIDE_FIRST_" + \
-        combostring + '_' + input_user_tag + str(slide_suffix))
+        pattern_dict = determine_sieve_patterns(cp, "plotethinca",
+                "FIRST", usertag)
+        for opt, val in pattern_dict.iteritems():
+          plotethinca_jobs[combostring + "FIRST"].add_opt(opt, val)
         plotethinca_jobs[combostring + "FIRST"].set_sub_file( basename + '.plotethinca_FIRST_' + combostring + subsuffix )
       if opts.second_stage:
         plotethinca_jobs[combostring + "SECOND"] = inspiral.PlotEthincaJob(cp)
-        plotethinca_jobs[combostring + "SECOND"].add_opt("ifo", ifosoption)
         plotethinca_jobs[combostring + "SECOND"].add_opt("ifo-times", combostring)
         plotethinca_jobs[combostring + "SECOND"].add_opt("ifo-tag", "SECOND_" + combostring)
-        plotethinca_jobs[combostring + "SECOND"].add_opt("inspiral-stage", "SECOND")
-        plotethinca_jobs[combostring + "SECOND"].add_opt("zerolag-pattern", str(prog_tag) + "_SECOND_" + \
-        combostring + '_' + input_user_tag + str(zerolag_suffix))
-        plotthinca_jobs[combostring + "SECOND"].add_opt("slide-pattern", str(prog_tag) + "_SLIDE_SECOND_" + \
-        combostring + '_' + input_user_tag + str(slide_suffix))
-        plotethinca_jobs[combostring + "SECOND"].add_opt("inspiral-stage", "SECOND")
+        pattern_dict = determine_sieve_patterns(cp, "plotethinca",
+                "SECOND_" + combostring, usertag)
+        for opt, val in pattern_dict.iteritems():
+          plotethinca_jobs[combostring + "SECOND"].add_opt(opt, val)
         plotethinca_jobs[combostring + "SECOND"].set_sub_file( basename + '.plotethinca_SECOND_' + combostring + subsuffix )
 
   all_jobs.extend(plotethinca_jobs.values())
