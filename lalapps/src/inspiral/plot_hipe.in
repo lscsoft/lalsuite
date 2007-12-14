@@ -407,10 +407,10 @@ if opts.plotinjnum:
       plotinjnum_jobs[combostring + "FIRST"].add_opt("ifo-type",combostring)
       plotinjnum_jobs[combostring + "FIRST"].add_opt("ifo-times",combostring)
       plotinjnum_jobs[combostring + "FIRST"].add_opt("inj-found-pattern", str(prog_tag) + "_*_FOUND_FIRST_" + \
-      combostring + '_' + input_user_tag + str(suffix))
+         input_user_tag + str(suffix))
       plotinjnum_jobs[combostring + "FIRST"].add_opt("inj-missed-pattern", str(prog_tag) + "_*_MISSED_FIRST_" + \
-      combostring + '_' + input_user_tag + str(suffix))
-      plotinjnum_jobs[combostring + "FIRST"].add_opt("ifo-tag", "FIRST_" + combostring) 
+         input_user_tag + str(suffix))
+      plotinjnum_jobs[combostring + "FIRST"].add_opt("ifo-tag", "FIRST") 
       plotinjnum_jobs[combostring + "FIRST"].set_sub_file( basename + '.plotinjnum_FIRST_' +  combostring + subsuffix )
     if opts.second_stage:
       prog_tag = cp.get('plotinjnum-meta','inj-program-tag')
@@ -529,11 +529,11 @@ if opts.plotsnrchi:
   for ifo in ifolist:   
     pattern = determine_sieve_patterns(cp, "plotsnrchi","SECOND_*") 
     plotsnrchi_jobs[ifo] = inspiral.PlotSnrchiJob(cp)
-    plotsnrchi_jobs[ifo].add_opt("title", ifo)
+    #plotsnrchi_jobs[ifo].add_opt("title", ifo)
     plotsnrchi_jobs[ifo].add_opt("single-ifo", ifo)
     plotsnrchi_jobs[ifo].add_opt("ifo-times", ifo)
     if opts.second_stage:
-      plotsnrchi_jobs[ifo].add_opt("inspiral_stage", "SECOND")
+      #plotsnrchi_jobs[ifo].add_opt("inspiral-stage", "SECOND")
       plotsnrchi_jobs[ifo].add_opt("trig-pattern", str(pattern['trig-pattern']))
       plotsnrchi_jobs[ifo].add_opt("inj-pattern", str(pattern['found-pattern']))
       plotsnrchi_jobs[ifo].set_sub_file( basename + '.plotsnrchi_SECOND_' + ifo + subsuffix )
@@ -549,16 +549,15 @@ if opts.plotinspiralrange:
   plotinspiralrange_jobs = {}
   this_section = "plotinspiralrange"
   cp = set_common_options(cp, this_section)
+        
+  pattern = determine_sieve_patterns(cp, "plotinspiralrange", "", usertag)
+  print pattern
+  plotinspiralrange_jobs["FIRST"] = inspiral.PlotInspiralrangeJob(cp)
+  plotinspiralrange_jobs["FIRST"].set_sub_file( basename + '.plotinspiralrange_' + subsuffix)
+        
 
-  if opts.first_stage:
-    plotinspiralrange_jobs["FIRST"] = inspiral.PlotInspiralrangeJob(cp)
-    plotinspiralrange_jobs["FIRST"].add_opt("inspiral-stage", "FIRST")
-    plotinspiralrange_jobs["FIRST"].set_sub_file( basename + '.plotinspiralrange_FIRST_' + subsuffix)
-  if opts.second_stage:
-    plotinspiralrange_jobs["SECOND"] = inspiral.PlotInspiralrangeJob(cp)
-    plotinspiralrange_jobs["SECOND"].add_opt("inspiral-stage", "SECOND")
-    plotinspiralrange_jobs["SECOND"].set_sub_file( basename + '.plotinspiralrange_SECOND_' + subsuffix)
-
+  plotinspiralrange_jobs["FIRST"].add_opt("inspiral-pattern", str(pattern['inspiral-pattern']).replace("_*_","_"))
+  plotinspiralrange_jobs["FIRST"].add_opt("bank-pattern", str(pattern['bank-pattern']).replace("_*_","_"))
 
   all_jobs.extend(plotinspiralrange_jobs.values())
 
@@ -668,12 +667,12 @@ if opts.plotsnrchi:
 
 if opts.plotinspiralrange:
   # add an plotnumtemplates job
-  if opts.first_stage:
-    plotinspiralrange_node=inspiral.PlotInspiralrangeNode(plotinspiralrange_jobs["FIRST"])
-    dag.add_node(plotinspiralrange_node)
-  if opts.second_stage:
-    plotinspiralrange_node=inspiral.PlotInspiralrangeNode(plotinspiralrange_jobs["SECOND"])
-    dag.add_node(plotinspiralrange_node)
+ # if opts.first_stage:
+  plotinspiralrange_node=inspiral.PlotInspiralrangeNode(plotinspiralrange_jobs["FIRST"])
+  dag.add_node(plotinspiralrange_node)
+  #if opts.second_stage:
+  #  plotinspiralrange_node=inspiral.PlotInspiralrangeNode(plotinspiralrange_jobs["SECOND"])
+  #  dag.add_node(plotinspiralrange_node)
 
 
 ##############################################################################
