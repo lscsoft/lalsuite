@@ -293,6 +293,8 @@ MetaTableDirectory* XLALCreateMetaTableDir(
           {"ligo_angle_sig",          -1, 31},
           {"inclination",             -1, 32},
           {"polarization",            -1, 33},
+          {"event_id",                -1, 34},
+          {"null_statistic",          -1, 35},
           {NULL,                       0, 0}
         };
         for ( i=0 ; tmpTableDir[i].name; ++i )
