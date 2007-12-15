@@ -375,6 +375,10 @@ if opts.plotnumtemplates:
   cp = set_common_options(cp, this_section)
   plotnumtemplates_jobs = inspiral.PlotNumtemplatesJob(cp)
   plotnumtemplates_jobs.set_sub_file( basename + '.plotnumtemplates_' + subsuffix)
+  pattern_dict = determine_sieve_patterns(cp, this_section, "", usertag)
+  for opt, val in pattern_dict.iteritems():
+    if opt=="bank-pattern": val = val.replace("_*_","_")
+    plotnumtemplates_jobs.add_opt(opt, val)
   
 
   all_jobs.append(plotnumtemplates_jobs)
