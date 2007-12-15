@@ -3466,3 +3466,500 @@ void XLALCleanSummValueTable(SummValueTable **inputSummValue)
 }
 
 
+#define CLOBBER_EVENTS \
+  while ( *eventHead ); \
+{ \
+  thisEvent = *eventHead; \
+  *eventHead = (*eventHead)->next; \
+  LALFree( thisEvent ); \
+  thisEvent = NULL; \
+}
+
+/* <lalVerbatim file="LIGOLwXMLReadCP"> */
+int
+LALMultiInspiralTableFromLIGOLw (
+    MultiInspiralTable **eventHead,
+    CHAR                *fileName
+    )
+/* </lalVerbatim> */
+{
+  int                                   i, j, nrows;
+  int                                   mioStatus;
+  MultiInspiralTable                   *thisEvent = NULL;
+  struct MetaioParseEnvironment         parseEnv;
+  const  MetaioParseEnv                 env = &parseEnv;
+  MetaTableDirectory tableDir[] =
+    {
+          {"ifos",                    -1, 0},
+          {"search",                  -1, 1},
+          {"end_time",                -1, 2},
+          {"end_time_ns",             -1, 3},
+          {"end_time_gmst",           -1, 4},
+          {"impulse_time",            -1, 5},
+          {"impulse_time_ns",         -1, 6},
+          {"amplitude",               -1, 7},
+          {"ifo1_eff_distance",       -1, 8},
+          {"ifo2_eff_distance",       -1, 9},
+          {"eff_distance",            -1, 10},
+          {"coa_phase",               -1, 11},
+          {"mass1",                   -1, 12},
+          {"mass2",                   -1, 13},
+          {"mchirp",                  -1, 14},
+          {"eta",                     -1, 15},
+          {"tau0",                    -1, 16},
+          {"tau2",                    -1, 17},
+          {"tau3",                    -1, 18},
+          {"tau4",                    -1, 19},
+          {"tau5",                    -1, 20},
+          {"ttotal",                  -1, 21},
+          {"ifo1_snr",                -1, 22},
+          {"ifo2_snr",                -1, 23},
+          {"snr",                     -1, 24},
+          {"chisq",                   -1, 25},
+          {"chisq_dof",               -1, 26},
+          {"sigmasq",                 -1, 27},
+          {"ligo_axis_ra",            -1, 28},
+          {"ligo_axis_dec",           -1, 29},
+          {"ligo_angle",              -1, 30},
+          {"ligo_angle_sig",          -1, 31},
+          {"inclination",             -1, 32},
+          {"polarization",            -1, 33},
+          {"event_id",                -1, 34},
+          {"null_statistic",          -1, 35},
+          {NULL,                       0, 0}
+    };
+
+  /*CHECK: TO be added after defining COMPLEX 8 c8colData below
+          {"h1quad",                  -1, 36},
+          {"h2quad",                  -1, 37},
+          {"l1quad",                  -1, 38},
+          {"g1quad",                  -1, 39},
+          {"v1quad",                  -1, 40},
+          {"t1quad",                  -1, 41},
+  */
+
+  /* check that the bank handle and pointer are valid */
+  if ( ! eventHead )
+  {
+    fprintf( stderr, "null pointer passed as handle to event list" );
+    return -1;
+  }
+  if ( *eventHead )
+  {
+    fprintf( stderr, "non-null pointer passed as pointer to event list" );
+    return -1;
+  }
+
+  /* open the multi_inspiral XML file */
+  mioStatus = MetaioOpenFile( env, fileName );
+  if ( mioStatus )
+  {
+    fprintf( stderr, "unable to open file %s\n", fileName );
+    return -1;
+  }
+
+  /* open the multi_inspiral table template bank file */
+  mioStatus = MetaioOpenTableOnly( env, "multi_inspiral" );
+  if ( mioStatus )
+  {
+    fprintf( stdout, "no multi_inspiral table in file %s\n", fileName );
+    return 0;
+  }
+
+  /* figure out the column positions of the template parameters */
+  for ( i = 0; tableDir[i].name; ++i )
+  {
+    if ( (tableDir[i].pos = MetaioFindColumn( env, tableDir[i].name )) < 0 )
+    {
+      fprintf( stderr, "unable to find column %s\n", tableDir[i].name );
+
+      if ( ! strcmp(tableDir[i].name, "event_id") )
+      {
+        fprintf( stderr,
+            "The event_id column is not populated, continuing anyway\n");
+      }
+      else
+      {
+        MetaioClose(env);
+        return -1;
+      }
+    }
+  }
+
+  /* loop over the rows in the file */
+  i = nrows = 0;
+  while ( (mioStatus = MetaioGetRow(env)) == 1 )
+  {
+    /* count the rows in the file */
+    i++;
+    /* allocate memory for the template we are about to read in */
+    if ( ! *eventHead )
+    {
+      thisEvent = *eventHead = (MultiInspiralTable *)
+        LALCalloc( 1, sizeof(MultiInspiralTable) );
+    }
+    else
+    {
+      thisEvent = thisEvent->next = (MultiInspiralTable *)
+        LALCalloc( 1, sizeof(MultiInspiralTable) );
+    }
+    if ( ! thisEvent )
+    {
+      fprintf( stderr, "could not allocate multi inspiral event\n" );
+        CLOBBER_EVENTS;
+        MetaioClose( env );
+        return -1;
+    }
+
+    /* parse the contents of the row into the MultiInspiralTable structure */
+    for ( j = 0; tableDir[j].name; ++j )
+    {
+      REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
+      REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8;
+      INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
+      UINT8 i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
+
+      if ( tableDir[j].pos < 0 ) continue;
+
+      /* dereference the data stored in the table */
+      if ( tableDir[j].idx == 0 )
+      {
+        LALSnprintf( thisEvent->ifos, LIGOMETA_IFO_MAX * sizeof(CHAR),
+            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+      }
+      else if ( tableDir[j].idx == 1 )
+      {
+        LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+      }
+      else if ( tableDir[j].idx == 2 )
+      {
+        thisEvent->end_time.gpsSeconds = i4colData;
+      }
+      else if ( tableDir[j].idx == 3 )
+      {
+        thisEvent->end_time.gpsNanoSeconds = i4colData;
+      }
+      else if ( tableDir[j].idx == 4 )
+      {
+        thisEvent->end_time_gmst = r8colData;
+      }
+      else if ( tableDir[j].idx == 5 )
+      {
+        thisEvent->impulse_time.gpsSeconds = i4colData;
+      }
+      else if ( tableDir[j].idx == 6 )
+      {
+        thisEvent->impulse_time.gpsNanoSeconds = i4colData;
+      }
+      else if ( tableDir[j].idx == 7 )
+      {
+        thisEvent->amplitude = r4colData;
+      }
+      else if ( tableDir[j].idx == 8 )
+      {
+        thisEvent->ifo1_eff_distance = r4colData;
+      }
+      else if ( tableDir[j].idx == 9 )
+      {
+        thisEvent->ifo2_eff_distance = r4colData;
+      }
+      else if ( tableDir[j].idx == 10 )
+      {
+        thisEvent->eff_distance = r4colData;
+      }
+      else if ( tableDir[j].idx == 11 )
+      {
+        thisEvent->coa_phase = r4colData;
+      }
+      else if ( tableDir[j].idx == 12 )
+      {
+        thisEvent->mass1 = r4colData;
+      }
+      else if ( tableDir[j].idx == 13 )
+      {
+        thisEvent->mass2 = r4colData;
+      }
+      else if ( tableDir[j].idx == 14 )
+      {
+        thisEvent->mchirp = r4colData;
+      }
+      else if ( tableDir[j].idx == 15 )
+      {
+        thisEvent->eta = r4colData;
+      }
+      else if ( tableDir[j].idx == 16 )
+      {
+        thisEvent->tau0 = r4colData;
+      }
+      else if ( tableDir[j].idx == 17 )
+      {
+        thisEvent->tau2 = r4colData;
+      }
+      else if ( tableDir[j].idx == 18 )
+      {
+        thisEvent->tau3 = r4colData;
+      }
+      else if ( tableDir[j].idx == 19 )
+      {
+        thisEvent->tau4 = r4colData;
+      }
+      else if ( tableDir[j].idx == 20 )
+      {
+        thisEvent->tau5 = r4colData;
+      }
+      else if ( tableDir[j].idx == 21 )
+      {
+        thisEvent->ttotal = r4colData;
+      }
+      else if ( tableDir[j].idx == 22 )
+      {
+        thisEvent->ifo1_snr = r4colData;
+      }
+      else if ( tableDir[j].idx == 23 )
+      {
+        thisEvent->ifo2_snr = r4colData;
+      }
+      else if ( tableDir[j].idx == 24 )
+      {
+        thisEvent->snr = r4colData;
+      }
+      else if ( tableDir[j].idx == 25 )
+      {
+        thisEvent->chisq = r4colData;
+      }
+      else if ( tableDir[j].idx == 26 )
+      {
+        thisEvent->chisq_dof = i4colData;
+      }
+      else if ( tableDir[j].idx == 27 )
+      {
+        thisEvent->bank_chisq = r4colData;
+      }
+      else if ( tableDir[j].idx == 28 )
+      {
+        thisEvent->bank_chisq_dof = i4colData;
+      }
+      else if ( tableDir[j].idx == 29 )
+      {
+        thisEvent->cont_chisq = r4colData;
+      }
+      else if ( tableDir[j].idx == 30 )
+      {
+        thisEvent->cont_chisq_dof = i4colData;
+      }
+      else if ( tableDir[j].idx == 31 )
+      {
+        thisEvent->sigmasq = r8colData;
+      }
+      else if ( tableDir[j].idx == 32 )
+      {
+        thisEvent->ligo_axis_ra = r4colData;
+      }
+      else if ( tableDir[j].idx == 33 )
+      {
+        thisEvent->ligo_axis_dec = r4colData;
+      }
+      else if ( tableDir[j].idx == 34 )
+      {
+        thisEvent->ligo_angle = r4colData;
+      }
+      else if ( tableDir[j].idx == 35 )
+      {
+        thisEvent->ligo_angle_sig = r4colData;
+      }
+      else if ( tableDir[j].idx == 36 )
+      {
+        thisEvent->inclination = r4colData;
+      }
+      else if ( tableDir[j].idx == 37 )
+      {
+        thisEvent->polarization = r4colData;
+      }
+      else if ( tableDir[j].idx == 38 )
+      {
+        if ( tableDir[j].pos > 0 && i8colData )
+        {
+          thisEvent->event_id = (EventIDColumn *)
+            LALCalloc( 1, sizeof(EventIDColumn) );
+          thisEvent->event_id->id = i8colData;
+          thisEvent->event_id->multiInspiralTable = thisEvent;
+        }
+      }
+      else if ( tableDir[j].idx == 39 )
+      {
+        thisEvent->null_statistic = r8colData;
+      }
+      else
+      {
+        CLOBBER_EVENTS;
+        fprintf( stderr, "unknown column while parsing multi_inspiral\n" );
+        return -1;
+      }
+    }
+
+    /* count the number of triggers parsed */
+    nrows++;
+  }
+
+  if ( mioStatus == -1 )
+  {
+    fprintf( stderr, "error parsing after row %d\n", i );
+    CLOBBER_EVENTS;
+    MetaioClose( env );
+    return -1;
+  }
+
+  /* Normal exit */
+  MetaioClose( env );
+  return nrows;
+}
+
+#undef CLOBBER_EVENTS
+
+/* <lalVerbatim file="LIGOLwXMLReadCP"> */
+int
+XLALReadMultiInspiralTriggerFile (
+    MultiInspiralTable    **inspiralEventList,
+    MultiInspiralTable    **lastTrigger,
+    SearchSummaryTable    **searchSummList,
+    SearchSummvarsTable   **inputFileList,
+    CHAR                   *fileName
+    )
+/* </lalVerbatim> */
+{
+  const char *func = "XLALReadMultiInspiralTriggerFile";
+  INT4 numFileTriggers = 0;
+  INT4 haveSummValue = 0;
+  MultiInspiralTable   *inputData = NULL;
+  SearchSummaryTable   *inputSummary = NULL;
+  SearchSummaryTable   *thisSearchSumm = NULL;
+  SearchSummvarsTable  *thisInputFile = NULL;
+#if 0
+  SummValueTable  *thisSummValue = NULL;
+  SummValueTable  *inputSummValue = NULL;
+#endif
+
+
+  /* store the file name in search summvars */
+  XLALPrintInfo(
+      "XLALReadMultiInspiralTriggerFile(): storing input file name %s\n"
+      "in search summvars table\n", fileName );
+
+  if ( ! *inputFileList )
+  {
+    *inputFileList = thisInputFile = (SearchSummvarsTable *)
+      LALCalloc( 1, sizeof(SearchSummvarsTable) );
+  }
+  else
+  {
+    for ( thisInputFile = *inputFileList; thisInputFile->next;
+        thisInputFile = thisInputFile->next );
+    thisInputFile = thisInputFile->next = (SearchSummvarsTable *)
+      LALCalloc( 1, sizeof(SearchSummvarsTable) );
+  }
+  LALSnprintf( thisInputFile->name, LIGOMETA_NAME_MAX,
+      "input_file" );
+  LALSnprintf( thisInputFile->string, LIGOMETA_NAME_MAX,
+      "%s", fileName );
+
+
+  /* read in the search summary and store */
+  XLALPrintInfo(
+      "XLALReadMultiInspiralTriggerFile(): Reading search_summary table\n");
+
+  inputSummary = XLALSearchSummaryTableFromLIGOLw(fileName);
+
+  if ( ! inputSummary )
+  {
+    XLALPrintError("No valid search_summary table in %s, exiting\n",
+        fileName );
+    LALFree(thisInputFile);
+    XLAL_ERROR(func, XLAL_EIO);
+  }
+  else
+  {
+    /* store the search summary table in searchSummList list */
+    if ( ! *searchSummList )
+    {
+      *searchSummList = thisSearchSumm = inputSummary;
+    }
+    else
+    {
+      for ( thisSearchSumm = *searchSummList; thisSearchSumm->next;
+          thisSearchSumm = thisSearchSumm->next);
+      thisSearchSumm = thisSearchSumm->next = inputSummary;
+    }
+  }
+#if 0
+  /* read in the summ value table and store */
+  XLALPrintInfo(
+      "XLALReadMultiInspiralTriggerFile(): Reading summ_value table\n");
+
+  haveSummValue = SummValueTableFromLIGOLw(&inputSummValue, fileName);
+
+  if ( ! inputSummValue || haveSummValue < 1)
+  {
+    XLALPrintError("No valid summ_value table in %s, exiting\n",
+        fileName );
+    LALFree(thisInputFile);
+    XLAL_ERROR(func, XLAL_EIO);
+  }
+  else
+  {
+    /* store the summ value table in SummValueList list */
+    XLALPrintInfo("XLALReadMultiInspiralTriggerFile(): Checking summ_value_table\n");
+
+    /* keep only relevant information (inspiral_effective_distance)*/
+    XLALCleanSummValueTable(&inputSummValue);
+
+    if ( ! *summValueList )
+    {
+      *summValueList = thisSummValue = inputSummValue;
+    }
+    else
+    {
+      for ( thisSummValue = *summValueList; thisSummValue->next;
+          thisSummValue = thisSummValue->next);
+      thisSummValue = thisSummValue->next = inputSummValue;
+    }
+  }
+#endif
+  /* read in the triggers */
+  numFileTriggers =
+    LALMultiInspiralTableFromLIGOLw( &inputData, fileName);
+
+  if ( numFileTriggers < 0 )
+  {
+    XLALPrintError("Unable to read multi_inspiral table from %s\n",
+        fileName );
+    LALFree(thisInputFile);
+    XLAL_ERROR(func, XLAL_EIO);
+  }
+  else if ( numFileTriggers > 0 )
+  {
+
+    XLALPrintInfo(
+        "XLALReadMultiInspiralTriggerFile(): Got %d multi_inspiral rows from %s\n",
+        numFileTriggers, fileName );
+
+    /* store the triggers */
+    if ( ! *inspiralEventList )
+    {
+      /* store the head of the linked list */
+      *inspiralEventList = *lastTrigger = inputData;
+    }
+    else
+    {
+      /* append to the end of the linked list and set current    */
+      /* trigger to the first trigger of the list being appended */
+      *lastTrigger = (*lastTrigger)->next = inputData;
+    }
+
+    /* scroll to the end of the linked list of triggers */
+    for ( ; (*lastTrigger)->next; *lastTrigger = (*lastTrigger)->next );
+  }
+
+  return( numFileTriggers );
+}
+
