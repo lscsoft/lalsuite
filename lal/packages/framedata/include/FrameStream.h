@@ -290,6 +290,7 @@ int XLALFrGetREAL4FrequencySeries( REAL4FrequencySeries *series, FrStream *strea
 int XLALFrGetREAL8FrequencySeries( REAL8FrequencySeries *series, FrStream *stream );
 int XLALFrGetCOMPLEX8FrequencySeries( COMPLEX8FrequencySeries *series, FrStream *stream );
 int XLALFrGetCOMPLEX16FrequencySeries( COMPLEX16FrequencySeries *series, FrStream *stream );
+int XLALFrGetVectorLength ( CHAR *name, FrStream *stream );
 
 INT2TimeSeries *XLALFrReadINT2TimeSeries( FrStream *stream, const char *chname, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit );
 INT4TimeSeries *XLALFrReadINT4TimeSeries( FrStream *stream, const char *chname, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit );

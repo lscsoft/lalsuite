@@ -504,6 +504,33 @@ int XLALFrGetTimeSeriesType( const char *channel, FrStream *stream )
   XLAL_ERROR( func, XLAL_ETYPE );
 }
 
+
+
+/* little helper function for getting number of points in a channel */
+int XLALFrGetVectorLength ( CHAR *name, FrStream *stream )
+{
+  static const char *func = "XLALFrGetREAL4TimeSeriesLength";
+  struct FrVect	*vect;
+  int ret = -1;
+
+  if ( stream->state & LAL_FR_ERR )
+    XLAL_ERROR( func, XLAL_EIO );
+  if ( stream->state & LAL_FR_END )
+    XLAL_ERROR( func, XLAL_EIO ); 
+
+  vect = loadFrVect( stream, name );
+  if ( ! vect || ! vect->data )
+    XLAL_ERROR( func, XLAL_ENAME ); /* couldn't find channel */
+
+  ret = vect->nData;
+
+  FrVectFree(vect);
+
+  return ret;
+
+}
+
+
 /* <lalVerbatim file="FrameSeriesCP"> */
 void
 LALFrGetTimeSeriesType(
