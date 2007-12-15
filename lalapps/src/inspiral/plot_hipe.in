@@ -346,6 +346,9 @@ if opts.plotthinca:
         plotthinca_jobs[combostring + "FIRST"].add_opt("ifo-tag", "FIRST_" + combostring)
         plotthinca_jobs[combostring + "FIRST"].add_opt("statistic", "snr")
         for opt, val in pattern_dict.iteritems():
+          val = val.replace("_CAT_4","")
+          val = val.replace("_CAT_2","")
+          val = val.replace("_CAT_1","")
           plotthinca_jobs[combostring + "FIRST"].add_opt(opt, val)
         plotthinca_jobs[combostring + "FIRST"].set_sub_file( basename + '.plotthinca_FIRST_' + combostring + subsuffix )
     if opts.second_stage:
@@ -407,6 +410,9 @@ if opts.plotinjnum:
     if opts.first_stage:
       prog_tag = cp.get('plotinjnum-meta','inj-program-tag')
       suffix = cp.get('pipeline','inj-suffix')
+      suffix = suffix.replace("CAT_4","")
+      suffix = suffix.replace("CAT_2","")
+      suffix = suffix.replace("CAT_1","")
       plotinjnum_jobs[combostring + "FIRST"] = inspiral.PlotInjnumJob(cp)
       plotinjnum_jobs[combostring + "FIRST"].add_opt("ifo-type",combostring)
       plotinjnum_jobs[combostring + "FIRST"].add_opt("ifo-times",combostring)
@@ -481,6 +487,9 @@ if opts.plotinspmissed:
       pattern_dict = determine_sieve_patterns(cp, this_section,
         "FIRST", usertag)
       for opt, val in pattern_dict.iteritems():
+        val = val.replace("_CAT_4","")
+        val = val.replace("_CAT_2","")
+        val = val.replace("_CAT_1","")
         plotinspmissed_jobs[ifo + "FIRST"].add_opt(opt, val)
       plotinspmissed_jobs[ifo + "FIRST"].add_opt("ifo-tag", "FIRST_" + ifo)
       plotinspmissed_jobs[ifo +"FIRST"].set_sub_file( basename + '.plotinspmissed_FIRST_' + ifo + subsuffix )
@@ -508,13 +517,16 @@ if opts.plotinspinj:
       plotinspinj_jobs[ifo + "FIRST"] = inspiral.PlotInspinjJob(cp)
       pattern_dict = determine_sieve_patterns(cp, this_section, "FIRST", usertag)
       for opt, val in pattern_dict.iteritems():
+        val = val.replace("CAT_4","")
+        val = val.replace("CAT_2","")
+        val = val.replace("CAT_1","")
         plotinspinj_jobs[ifo + "FIRST"].add_opt(opt, val)
       plotinspinj_jobs[ifo + "FIRST"].add_opt("ifo-times", ifo)
       plotinspinj_jobs[ifo + "FIRST"].add_opt("ifo-tag", "FIRST_" + ifo)
       plotinspinj_jobs[ifo + "FIRST"].set_sub_file( basename + '.plotinspinj_FIRST_' + ifo + subsuffix )
     if opts.second_stage:
       plotinspinj_jobs[ifo + "SECOND"] = inspiral.PlotInspinjJob(cp)
-      pattern = determine_sieve_patterns(cp, this_section, "SECOND", usertag)
+      pattern_dict = determine_sieve_patterns(cp, this_section, "SECOND", usertag)
       for opt, val in pattern_dict.iteritems():
         plotinspinj_jobs[ifo + "SECOND"].add_opt(opt, val)
       plotinspinj_jobs[ifo + "SECOND"].add_opt("ifo-times", ifo)
@@ -538,6 +550,9 @@ if opts.plotsnrchi:
       plotsnrchi_jobs[ifo].add_opt("ifo-times", ifo)
       pattern_dict = determine_sieve_patterns(cp, this_section, "", usertag)
       for opt, val in pattern_dict.iteritems():
+        val = val.replace("CAT_4","")
+        val = val.replace("CAT_2","")
+        val = val.replace("CAT_1","")
         plotsnrchi_jobs[ifo].add_opt(opt, val)
       plotsnrchi_jobs[ifo].set_sub_file( basename + '.plotsnrchi_SECOND_' + ifo + subsuffix )
 
@@ -557,6 +572,7 @@ if opts.plotinspiralrange:
   plotinspiralrange_jobs["FIRST"] = inspiral.PlotInspiralrangeJob(cp)
   plotinspiralrange_jobs["FIRST"].set_sub_file( basename + '.plotinspiralrange_' + subsuffix)
   for opt, val in pattern_dict.iteritems():
+    val = val.replace("_*_","_")
     plotinspiralrange_jobs["FIRST"].add_opt(opt, val)
   all_jobs.extend(plotinspiralrange_jobs.values())
 
