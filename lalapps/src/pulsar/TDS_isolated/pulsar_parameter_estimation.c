@@ -69,6 +69,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
   
   OutputParams output;
   REAL8 maxPost=0.;
+  REAL8 logNoiseEv[5]; /* log evidence for noise only (no signal) */
   Results results;
   
   CHAR *params[]={"h0", "phi", "psi", "ciota"};
@@ -111,10 +112,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
      detPos[numDets] = *XLALGetSiteInfo( dets[numDets] );
      numDets++;
   }
-  
-  fprintf(stderr, "pos1 = %lf, pos2 = %lf, pos3 = %lf.\n",
-detPos[0].location[0], detPos[0].location[1], detPos[0].location[2]);
-  
+
   if( verbose ){
     fprintf(stderr, "Analysing data from %d detector(s):\n  ", numDets);
     for( i = 0 ; i < numDets ; i++ )
@@ -267,7 +265,7 @@ detPos[0].location[0], detPos[0].location[1], detPos[0].location[2]);
     
     /*======================== CALCULATE LIKELIHOOD ==========================*/
     if( inputs.mcmc.doMCMC == 0 ){
-      create_likelihood_grid(data[k], singleLike, inputs.mesh);
+      logNoiseEv[i] = create_likelihood_grid(data[k], singleLike, inputs.mesh);
     
       if( verbose )
         fprintf(stderr, "I've calculated the likelihood for %s.\n", dets[i]);
@@ -299,8 +297,8 @@ detPos[0].location[0], detPos[0].location[1], detPos[0].location[2]);
         return 0;
       }
     
-      /* output the evidence and an UL if requested */
-      fprintf(fp, "%s\t%le\n", output.det, results.evidence);
+      /* output the log odds ratio and an UL if requested */
+      fprintf(fp, "%s\t%le\n", output.det, results.evidence-logNoiseEv[i]);
       if( output.dob != 0. ){
         fprintf(fp, "%.1lf%% h0 upper limit = %lf\n", output.dob,
           results.h0UpperLimit);
@@ -321,9 +319,15 @@ detPos[0].location[0], detPos[0].location[1], detPos[0].location[2]);
   
   /*=================== CREATE THE JOINT POSTERIOR IF REQUIRED ===============*/
   if( numDets > 1 ){
+    
+    
     output.det = "Joint";
     
     if( inputs.mcmc.doMCMC == 0 ){
+      REAL8 totLogNoiseEv=0.;
+
+      for( n = 0 ; n < numDets ; n++ ) totLogNoiseEv += logNoiseEv[n];
+
       output.outPost = inputs.outputPost; /* set for whether we want to output
                                             the full posterior */
    
@@ -348,7 +352,7 @@ detPos[0].location[0], detPos[0].location[1], detPos[0].location[2]);
       }
     
       /* output the evidence */
-      fprintf(fp, "%s\t%le\n", output.det, results.evidence);
+      fprintf(fp, "%s\t%le\n", output.det, results.evidence - totLogNoiseEv);
       if( output.dob != 0. ){
         fprintf(fp, "%.1lf%% h0 upper limit = %lf\n", output.dob,
           results.h0UpperLimit);
@@ -756,13 +760,15 @@ REAL8 **** allocate_likelihood_memory(MeshGrid mesh){
 
 
 /* function to create a log likelihood array over the parameter grid */ 
-void create_likelihood_grid(DataStructure data, REAL8 ****logLike, 
+REAL8 create_likelihood_grid(DataStructure data, REAL8 ****logLike, 
   MeshGrid mesh){
   IntrinsicPulsarVariables vars;
  
   INT4 i=0, j=0, k=0;
   
   REAL8 cosphi=0., sinphi=0.;
+
+  REAL8 noiseEvidence=0.;
 
   /* create vector of data segment length */
   data.chunkLengths = NULL;
@@ -800,13 +806,15 @@ void create_likelihood_grid(DataStructure data, REAL8 ****logLike,
         vars.psi = mesh.minVals.psi + (REAL8)k*mesh.delta.psi;
         
         /* perform final loop over h0 within log_likelihood function */
-        log_likelihood(logLike[i][j][k], data, vars, mesh);
+        noiseEvidence = log_likelihood(logLike[i][j][k], data, vars, mesh);
       }
     }
   }
 
   /* free memory */ 
   XLALDestroyREAL8Vector(data.sumData);
+
+  return noiseEvidence;
 }
 
 
@@ -835,7 +843,7 @@ void sum_data(DataStructure data){
 }
 
 
-void log_likelihood(REAL8 *likeArray, DataStructure data,
+REAL8 log_likelihood(REAL8 *likeArray, DataStructure data,
   IntrinsicPulsarVariables vars, MeshGrid mesh){
   INT4 i=0, j=0, count=0, k=0;
   INT4 length=0, chunkLength=0;
@@ -853,6 +861,8 @@ void log_likelihood(REAL8 *likeArray, DataStructure data,
   REAL8 exclamation[data.chunkMax+1]; /* all factorials up to chunkMax */
   REAL8 log2=0.;
   
+  REAL8 noiseEvidence=0.; /* the log evidence that the data is just noise */
+
   INT4 first=0, through=0;
   
   /* to save time get all log factorials up to chunkMax */
@@ -926,11 +936,20 @@ void log_likelihood(REAL8 *likeArray, DataStructure data,
         
       likeArray[k] += exclamation[chunkLength];
       likeArray[k] -= (REAL8)chunkLength*log(chiSquare);
+
+      /* get the log evidence for the data not containing a signal */
+      if( k == 0 ){
+        noiseEvidence += ((REAL8)chunkLength - 1.)*log2;
+        noiseEvidence += exclamation[chunkLength];
+        noiseEvidence -= (REAL8)chunkLength*log(data.sumData->data[count]);
+      } 
     }
     
     first++;
     count++;
   }
+
+  return noiseEvidence;
 }
 
 

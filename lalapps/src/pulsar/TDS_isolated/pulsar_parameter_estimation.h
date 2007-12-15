@@ -275,12 +275,12 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]);
 REAL8 **** allocate_likelihood_memory(MeshGrid mesh);
 
 /* function to create a log likelihood array over the parameter grid */
-void create_likelihood_grid(DataStructure data, REAL8 ****logLike, 
+REAL8 create_likelihood_grid(DataStructure data, REAL8 ****logLike, 
   MeshGrid mesh);
 
 /* a function to compute the log likelihood of the data given some parameters 
 - this function loops over the h0 part of the likelihood array for speed */
-void log_likelihood(REAL8 *likeArray, DataStructure data,
+REAL8 log_likelihood(REAL8 *likeArray, DataStructure data,
   IntrinsicPulsarVariables vars, MeshGrid mesh);
 
 /* a function to sum over the data */
