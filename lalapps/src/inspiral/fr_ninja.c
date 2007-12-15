@@ -273,7 +273,52 @@ INT4 main(INT4 argc, CHAR **argv)
   epoch.gpsNanoSeconds = 0;
   detector_flags = 0;
 
-  /* initialise waveform pointers */
+  if (vrbflg)
+    fprintf(stdout, "reading metadata: %s\n", nrMetaFile);
+
+  /* open metadata file */
+  LAL_CALL(LALParseDataFile(&status, &meta_file, nrMetaFile), &status);
+
+  /* metadata section */
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &simulation_details, meta_file, "simulation-details", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &nr_group, meta_file, "nr-group", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &email, meta_file, "email", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &mass_ratio, meta_file, "mass-ratio", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &spin1x, meta_file, "spin1x", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &spin1y, meta_file, "spin1y", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &spin1z, meta_file, "spin1z", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &spin2x, meta_file, "spin2x", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &spin2y, meta_file, "spin2y", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &spin2z, meta_file, "spin2z", &wasRead), &status);
+
+  /* set waveform metadata */
+  LALSnprintf(sim, HISTORY_COMMENT, "simulation-details:%s", simulation_details);
+  LALSnprintf(group, HISTORY_COMMENT, "nr-group:%s", nr_group);
+  LALSnprintf(mail, HISTORY_COMMENT, "email:%s", email);
+  LALSnprintf(ratio, HISTORY_COMMENT, "mass-ratio:%s", mass_ratio);
+  LALSnprintf(s1x, HISTORY_COMMENT, "spin1x:%s", spin1x);
+  LALSnprintf(s1y, HISTORY_COMMENT, "spin1y:%s", spin1y);
+  LALSnprintf(s1z, HISTORY_COMMENT, "spin1z:%s", spin1z);
+  LALSnprintf(s2x, HISTORY_COMMENT, "spin2x:%s", spin2x);
+  LALSnprintf(s2y, HISTORY_COMMENT, "spin2y:%s", spin2y);
+  LALSnprintf(s2z, HISTORY_COMMENT, "spin2z:%s", spin2z);
+
+  /* define frame */
+  frame = XLALFrameNew(&epoch, duration, "NR", 0, 1, detector_flags);
+
+  /* add metadata as FrHistory structures */
+  XLALFrHistoryAdd(frame, "simulation-details", sim);
+  XLALFrHistoryAdd(frame, "nr-group", group);
+  XLALFrHistoryAdd(frame, "email", mail);
+  XLALFrHistoryAdd(frame, "mass-ratio", ratio);
+  XLALFrHistoryAdd(frame, "spin1x", s1x);
+  XLALFrHistoryAdd(frame, "spin1y", s1y);
+  XLALFrHistoryAdd(frame, "spin1z", s1z);
+  XLALFrHistoryAdd(frame, "spin2x", s2x);
+  XLALFrHistoryAdd(frame, "spin2y", s2y);
+  XLALFrHistoryAdd(frame, "spin2z", s2z);
+
+  /* loop over l & m values */
   for (l = MIN_L; l <= MAX_L; l++)
   {
     for (m = (MAX_L - l); m <= MAX_L + l; m++)
@@ -293,42 +338,12 @@ INT4 main(INT4 argc, CHAR **argv)
       /* initilise waveform time series */
       hplus[l][m] = XLALCreateREAL4TimeSeries(plus_channel[l][m], &epoch, 0, 0, &lalDimensionlessUnit, 0);
       hcross[l][m] = XLALCreateREAL4TimeSeries(cross_channel[l][m], &epoch, 0, 0, &lalDimensionlessUnit, 0);
-    }
-  }
 
-  if (vrbflg)
-    fprintf(stdout, "reading metadata: %s\n", nrMetaFile);
-
-  /* open metadata file */
-  LAL_CALL(LALParseDataFile(&status, &meta_file, nrMetaFile), &status);
-
-  /* metadata section */
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &simulation_details, meta_file, "simulation-details", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &nr_group, meta_file, "nr-group", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &email, meta_file, "email", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &mass_ratio, meta_file, "mass-ratio", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &spin1x, meta_file, "spin1x", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &spin1y, meta_file, "spin1y", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &spin1z, meta_file, "spin1z", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &spin2x, meta_file, "spin2x", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &spin2y, meta_file, "spin2y", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &spin2z, meta_file, "spin2z", &wasRead), &status);
-
-  /* ht-data section */
-  for (l = MIN_L; l <= MAX_L; l++)
-  {
-    for (m = (MAX_L - l); m <= MAX_L + l; m++)
-    {
+      /* read ht-data section of metadata file */
       LALSnprintf(field, HISTORY_COMMENT, "%d,%d", l, m - MAX_L);
-      LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[l][m], meta_file, field, &wasRead), &status);      
-    }
-  }
+      LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[l][m], meta_file, field, &wasRead), &status);
 
-  /* read waveforms */
-  for (l = MIN_L; l <= MAX_L; l++)
-  {
-    for (m = (MAX_L - l); m <= MAX_L + l; m++)
-    {
+      /* read waveform */
       if (wf_name[l][m] != NULL)
       {
         /* get full path to waveform data file */
@@ -340,29 +355,11 @@ INT4 main(INT4 argc, CHAR **argv)
         /* read waveforms */
         LAL_CALL(LALReadNRWave_raw(&status, &waveforms[l][m], file_path), &status);
       }
-    }
-  }
 
-  /* set waveform metadata */
-  LALSnprintf(sim, HISTORY_COMMENT, "simulation-details:%s", simulation_details);
-  LALSnprintf(group, HISTORY_COMMENT, "nr-group:%s", nr_group);
-  LALSnprintf(mail, HISTORY_COMMENT, "email:%s", email);
-  LALSnprintf(ratio, HISTORY_COMMENT, "mass-ratio:%s", mass_ratio);
-  LALSnprintf(s1x, HISTORY_COMMENT, "spin1x:%s", spin1x);
-  LALSnprintf(s1y, HISTORY_COMMENT, "spin1y:%s", spin1y);
-  LALSnprintf(s1z, HISTORY_COMMENT, "spin1z:%s", spin1z);
-  LALSnprintf(s2x, HISTORY_COMMENT, "spin2x:%s", spin2x);
-  LALSnprintf(s2y, HISTORY_COMMENT, "spin2y:%s", spin2y);
-  LALSnprintf(s2z, HISTORY_COMMENT, "spin2z:%s", spin2z);
-
-  /* generate waveform time series from vector series */
-  /* TODO: should use pointer arithmetic here and update the data
-   * pointer in the REAL4TimeSeries to point to the appropriate
-   * location within the REAL4TimeVector Series */
-  for (l = MIN_L; l <= MAX_L; l++)
-  {
-    for (m = (MAX_L - l); m <= MAX_L + l; m++)
-    {
+      /* generate waveform time series from vector series */
+      /* TODO: should use pointer arithmetic here and update the data
+       * pointer in the REAL4TimeSeries to point to the appropriate
+       * location within the REAL4TimeVector Series */
       if (waveforms[l][m])
       {
         /* get length of waveform */
@@ -382,33 +379,9 @@ INT4 main(INT4 argc, CHAR **argv)
           hcross[l][m]->data->data[i] = waveforms[l][m]->data->data[wf_length + i];
         }
       }
-    }
-  }
 
-  if (vrbflg)
-    fprintf(stdout, "creating and saving frame: %s\n", frame_name);
-
-  /* define frame */
-  frame = XLALFrameNew(&epoch, duration, "NR", 0, 1, detector_flags);
-
-  /* add metadata as FrHistory structures */
-  XLALFrHistoryAdd(frame, "simulation-details", sim);
-  XLALFrHistoryAdd(frame, "nr-group", group);
-  XLALFrHistoryAdd(frame, "email", mail);
-  XLALFrHistoryAdd(frame, "mass-ratio", ratio);
-  XLALFrHistoryAdd(frame, "spin1x", s1x);
-  XLALFrHistoryAdd(frame, "spin1y", s1y);
-  XLALFrHistoryAdd(frame, "spin1z", s1z);
-  XLALFrHistoryAdd(frame, "spin2x", s2x);
-  XLALFrHistoryAdd(frame, "spin2y", s2y);
-  XLALFrHistoryAdd(frame, "spin2z", s2z);
-
-  /* add channels to frame */
-  for (l = MIN_L; l <= MAX_L; l++)
-  {
-    for (m = (MAX_L - l); m <= MAX_L + l; m++)
-    {
-      if ( (hplus[l][m]->data->length) && (hcross[l][m]->data->length) )
+     /* add channels to frame */
+     if ((hplus[l][m]->data->length) && (hcross[l][m]->data->length))
       {
         XLALFrameAddREAL4TimeSeriesSimData(frame, hplus[l][m]);
         XLALFrameAddREAL4TimeSeriesSimData(frame, hcross[l][m]);
@@ -513,6 +486,7 @@ static void print_usage(FILE *ptr, CHAR *program)
       "                           waveforms\n"\
       " --output         FILE     name of output frame file\n", program);
 }
+
 
 /* function to return channel name */
 static CHAR* channel_name(CHAR *polarisation, UINT4 l, UINT4 m, CHAR *channel)
