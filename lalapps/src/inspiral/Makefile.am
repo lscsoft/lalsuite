@@ -3,6 +3,7 @@
 INSPIRALSRC 	= inspiral.c
 TMPLTBANKSRC 	= tmpltbank.c inspiralutils.c inspiral.h
 COHERESRC 	= coherent_inspiral.c
+COHIRESRC	= cohire.c
 COHEREBANK 	= coherentbank.c
 INCASRC 	= inca.c
 THINCASRC 	= thinca.c
@@ -33,13 +34,14 @@ bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank \
                lalapps_minj lalapps_bbhinj lalapps_blindinj \
                lalapps_inspfrinj lalapps_gwf2xml \
                lalapps_thinca lalapps_trigbank \
-               lalapps_spininj lalapps_coherent_inspiral \
+               lalapps_spininj lalapps_coherent_inspiral lalapps_cohire \
                lalapps_coherentbank lalapps_coinext \
                lalapps_randombank lalapps_ninja lalapps_fr_ninja \
                lalapps_mdc_ninja lalapps_calcexpsnr
 
 lalapps_inspiral_SOURCES 	= $(INSPIRALSRC)
 lalapps_coherent_inspiral_SOURCES = $(COHERESRC)
+lalapps_cohire_SOURCES          = $(COHIRESRC)
 lalapps_coherentbank_SOURCES 	= $(COHEREBANK)
 lalapps_tmpltbank_SOURCES 	= $(TMPLTBANKSRC)
 lalapps_inca_SOURCES 		= $(INCASRC)
