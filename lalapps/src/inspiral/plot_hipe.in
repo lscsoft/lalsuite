@@ -484,7 +484,7 @@ if opts.plotinspmissed:
       plotinspmissed_jobs[ifo +"SECOND"] = inspiral.PlotInspmissedJob(cp)
       plotinspmissed_jobs[ifo +"SECOND"].add_opt("ifo", ifo)
       pattern_dict = determine_sieve_patterns(cp, this_section,
-        "SECOND_" + ifo, usertag)
+        "SECOND", usertag)
       for opt, val in pattern_dict.iteritems():
         plotinspmissed_jobs[ifo + "SECOND"].add_opt(opt, val)
       plotinspmissed_jobs[ifo +"SECOND"].add_opt("ifo-tag", "SECOND_" + ifo)
@@ -501,19 +501,19 @@ if opts.plotinspinj:
 
   for ifo in ifolist:
     if opts.first_stage:
-      pattern = determine_sieve_patterns(cp, "plotinspinj","FIRST")
-      suffix = cp.get('pipeline','inj-suffix')
       plotinspinj_jobs[ifo + "FIRST"] = inspiral.PlotInspinjJob(cp)
+      pattern_dict = determine_sieve_patterns(cp, this_section, "FIRST", usertag)
+      for opt, val in pattern_dict.iteritems():
+        plotinspinj_jobs[ifo + "FIRST"].add_opt(opt, val)
       plotinspinj_jobs[ifo + "FIRST"].add_opt("ifo-times", ifo)
-      plotinspinj_jobs[ifo + "FIRST"].add_opt("inj-found-pattern", str(pattern['found-pattern']))
-      plotinspinj_jobs[ifo +"FIRST"].add_opt("ifo-tag", "FIRST_" + ifo)
+      plotinspinj_jobs[ifo + "FIRST"].add_opt("ifo-tag", "FIRST_" + ifo)
       plotinspinj_jobs[ifo + "FIRST"].set_sub_file( basename + '.plotinspinj_FIRST_' + ifo + subsuffix )
     if opts.second_stage:
-      pattern = determine_sieve_patterns(cp, "plotinspinj","SECOND")
-      suffix = cp.get('pipeline','inj-suffix')
       plotinspinj_jobs[ifo + "SECOND"] = inspiral.PlotInspinjJob(cp)
+      pattern = determine_sieve_patterns(cp, this_section, "SECOND", usertag)
+      for opt, val in pattern_dict.iteritems():
+        plotinspinj_jobs[ifo + "SECOND"].add_opt(opt, val)
       plotinspinj_jobs[ifo + "SECOND"].add_opt("ifo-times", ifo)
-      plotinspinj_jobs[ifo + "SECOND"].add_opt("inj-found-pattern", str(pattern['found-pattern']))
       plotinspinj_jobs[ifo + "SECOND"].add_opt("ifo-tag", "SECOND_" + ifo)
       plotinspinj_jobs[ifo + "SECOND"].set_sub_file( basename + '.plotinspinj_SECOND_' + ifo + subsuffix )
 
@@ -521,21 +521,20 @@ if opts.plotinspinj:
 
 #plotsnrchi
 if opts.plotsnrchi:
-
   plotsnrchi_jobs = {}
   this_section = "plotsnrchi"
   cp = set_common_options(cp, this_section)
 
-  for ifo in ifolist:   
-    pattern = determine_sieve_patterns(cp, "plotsnrchi","SECOND_*") 
-    plotsnrchi_jobs[ifo] = inspiral.PlotSnrchiJob(cp)
-    #plotsnrchi_jobs[ifo].add_opt("title", ifo)
-    plotsnrchi_jobs[ifo].add_opt("single-ifo", ifo)
-    plotsnrchi_jobs[ifo].add_opt("ifo-times", ifo)
-    if opts.second_stage:
-      #plotsnrchi_jobs[ifo].add_opt("inspiral-stage", "SECOND")
-      plotsnrchi_jobs[ifo].add_opt("trig-pattern", str(pattern['trig-pattern']))
-      plotsnrchi_jobs[ifo].add_opt("inj-pattern", str(pattern['found-pattern']))
+  if opts.first_stage:
+    print >>sys.stderr, "warning: plotsnrchi can only run with second stage inputs.  Skipping..."
+  if opts.second_stage:
+    for ifo in ifolist:   
+      plotsnrchi_jobs[ifo] = inspiral.PlotSnrchiJob(cp)
+      plotsnrchi_jobs[ifo].add_opt("single-ifo", ifo)
+      plotsnrchi_jobs[ifo].add_opt("ifo-times", ifo)
+      pattern_dict = determine_sieve_patterns(cp, this_section, "", usertag)
+      for opt, val in pattern_dict.iteritems():
+        plotsnrchi_jobs[ifo].add_opt(opt, val)
       plotsnrchi_jobs[ifo].set_sub_file( basename + '.plotsnrchi_SECOND_' + ifo + subsuffix )
 
   all_jobs.extend(plotsnrchi_jobs.values())
@@ -549,16 +548,12 @@ if opts.plotinspiralrange:
   plotinspiralrange_jobs = {}
   this_section = "plotinspiralrange"
   cp = set_common_options(cp, this_section)
-        
-  pattern = determine_sieve_patterns(cp, "plotinspiralrange", "", usertag)
-  print pattern
+  
+  pattern_dict = determine_sieve_patterns(cp, this_section, "", usertag)
   plotinspiralrange_jobs["FIRST"] = inspiral.PlotInspiralrangeJob(cp)
   plotinspiralrange_jobs["FIRST"].set_sub_file( basename + '.plotinspiralrange_' + subsuffix)
-        
-
-  plotinspiralrange_jobs["FIRST"].add_opt("inspiral-pattern", str(pattern['inspiral-pattern']).replace("_*_","_"))
-  plotinspiralrange_jobs["FIRST"].add_opt("bank-pattern", str(pattern['bank-pattern']).replace("_*_","_"))
-
+  for opt, val in pattern_dict.iteritems():
+    plotinspiralrange_jobs["FIRST"].add_opt(opt, val)
   all_jobs.extend(plotinspiralrange_jobs.values())
 
 
