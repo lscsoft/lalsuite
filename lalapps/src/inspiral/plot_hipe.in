@@ -404,7 +404,8 @@ if opts.plotinjnum:
   plotinjnum_jobs = {}
   this_section = "plotinjnum"
   cp = set_common_options(cp, this_section)
-  
+  this_user_tag = input_user_tag
+  if this_user_tag is None: this_user_tag="" 
   for ifos in  ifo_combo:
     combostring = combo2str(ifos)
     if opts.first_stage:
@@ -417,9 +418,9 @@ if opts.plotinjnum:
       plotinjnum_jobs[combostring + "FIRST"].add_opt("ifo-type",combostring)
       plotinjnum_jobs[combostring + "FIRST"].add_opt("ifo-times",combostring)
       plotinjnum_jobs[combostring + "FIRST"].add_opt("inj-found-pattern", str(prog_tag) + "_*_FOUND_FIRST_" + \
-         input_user_tag + str(suffix))
+         this_user_tag + str(suffix))
       plotinjnum_jobs[combostring + "FIRST"].add_opt("inj-missed-pattern", str(prog_tag) + "_*_MISSED_FIRST_" + \
-         input_user_tag + str(suffix))
+         this_user_tag + str(suffix))
       plotinjnum_jobs[combostring + "FIRST"].add_opt("ifo-tag", "FIRST") 
       plotinjnum_jobs[combostring + "FIRST"].set_sub_file( basename + '.plotinjnum_FIRST_' +  combostring + subsuffix )
     if opts.second_stage:
@@ -429,9 +430,9 @@ if opts.plotinjnum:
       plotinjnum_jobs[combostring + "SECOND"].add_opt("ifo-type",combostring)
       plotinjnum_jobs[combostring + "SECOND"].add_opt("ifo-times",combostring)
       plotinjnum_jobs[combostring + "SECOND"].add_opt("inj-found-pattern", str(prog_tag) + "_*_FOUND_SECOND_" + \
-      combostring + '_' + input_user_tag + str(suffix))
+      combostring + '_' + this_user_tag + str(suffix))
       plotinjnum_jobs[combostring + "SECOND"].add_opt("inj-missed-pattern", str(prog_tag) + "_*_MISSED_SECOND_" + \
-      combostring + '_' + input_user_tag + str(suffix))
+      combostring + '_' + this_user_tag + str(suffix))
       plotinjnum_jobs[combostring + "SECOND"].add_opt("ifo-tag", "SECOND_" + combostring)
       plotinjnum_jobs[combostring + "SECOND"].set_sub_file( basename + '.plotinjnum_SECOND_' +  combostring + subsuffix )
 
