@@ -219,7 +219,7 @@ if not os.path.isdir(dir):
 # Checks if input-user-tag is specified.
 tag = cp.get('pipeline','input-user-tag')
 if tag=="":
-  input_user_tag = ''
+  input_user_tag = None
 else: 
   input_user_tag = tag + '_'
 
@@ -311,7 +311,7 @@ if opts.plotinspiral:
       job.add_opt("ifo-times", ifo)
       job.add_opt("ifo-tag", "FIRST_" + ifo)
       job.set_sub_file( basename + '.plotinspiral_FIRST_' + ifo + subsuffix )
-      pattern_dict = inspiralutils.determine_sieve_patterns(cp, "plotinspiral", "FIRST", usertag)
+      pattern_dict = inspiralutils.determine_sieve_patterns(cp, "plotinspiral", "FIRST", input_user_tag)
       for opt, val in pattern_dict.iteritems():
         job.add_opt(opt, val)
       plotinspiral_jobs[ifo + "FIRST"] = job
@@ -321,7 +321,7 @@ if opts.plotinspiral:
       job.add_opt("ifo-times", ifo)
       job.add_opt("ifo-tag", "SECOND_" + ifo)
       job.set_sub_file( basename + '.plotinspiral_SECOND_' + ifo + subsuffix )
-      pattern_dict = inspiralutils.determine_sieve_patterns(cp, "plotinspiral", "SECOND", usertag)
+      pattern_dict = inspiralutils.determine_sieve_patterns(cp, "plotinspiral", "SECOND", input_user_tag)
       for opt, val in pattern_dict.iteritems():
         job.add_opt(opt, val)
       plotinspiral_jobs[ifo + "SECOND"] = job
@@ -338,7 +338,7 @@ if opts.plotthinca:
     combostring = combo2str(ifos)
     if opts.first_stage:
       pattern_dict = determine_sieve_patterns(cp, "plotthinca", "FIRST",
-        usertag)
+        input_user_tag)
       plotthinca_jobs[combostring + "FIRST"] = inspiral.PlotThincaJob(cp)
       for ifo in ifos:
         plotthinca_jobs[combostring + "FIRST"].add_opt(ifo.lower() + "-triggers","  ")
@@ -353,7 +353,7 @@ if opts.plotthinca:
         plotthinca_jobs[combostring + "FIRST"].set_sub_file( basename + '.plotthinca_FIRST_' + combostring + subsuffix )
     if opts.second_stage:
       pattern_dict = determine_sieve_patterns(cp, "plotthinca",
-        "SECOND_" + combostring, usertag)
+        "SECOND_" + combostring, input_user_tag)
       plotthinca_jobs[combostring + "SECOND"] = inspiral.PlotThincaJob(cp)
       for ifo in ifos:
         plotthinca_jobs[combostring + "SECOND"].add_opt(ifo.lower() + "-triggers","  ")
@@ -378,7 +378,7 @@ if opts.plotnumtemplates:
   cp = set_common_options(cp, this_section)
   plotnumtemplates_jobs = inspiral.PlotNumtemplatesJob(cp)
   plotnumtemplates_jobs.set_sub_file( basename + '.plotnumtemplates_' + subsuffix)
-  pattern_dict = determine_sieve_patterns(cp, this_section, "", usertag)
+  pattern_dict = determine_sieve_patterns(cp, this_section, "", input_user_tag)
   for opt, val in pattern_dict.iteritems():
     if opt=="bank-pattern": val = val.replace("_*_","_")
     plotnumtemplates_jobs.add_opt(opt, val)
@@ -456,7 +456,7 @@ if opts.plotethinca:
         plotethinca_jobs[combostring + "FIRST"].add_opt("ifo-times", combostring)
         plotethinca_jobs[combostring + "FIRST"].add_opt("ifo-tag", "FIRST_" + combostring)
         pattern_dict = determine_sieve_patterns(cp, "plotethinca",
-                "FIRST", usertag)
+                "FIRST", input_user_tag)
         for opt, val in pattern_dict.iteritems():
           plotethinca_jobs[combostring + "FIRST"].add_opt(opt, val)
         plotethinca_jobs[combostring + "FIRST"].set_sub_file( basename + '.plotethinca_FIRST_' + combostring + subsuffix )
@@ -465,7 +465,7 @@ if opts.plotethinca:
         plotethinca_jobs[combostring + "SECOND"].add_opt("ifo-times", combostring)
         plotethinca_jobs[combostring + "SECOND"].add_opt("ifo-tag", "SECOND_" + combostring)
         pattern_dict = determine_sieve_patterns(cp, "plotethinca",
-                "SECOND_" + combostring, usertag)
+                "SECOND_" + combostring, input_user_tag)
         for opt, val in pattern_dict.iteritems():
           plotethinca_jobs[combostring + "SECOND"].add_opt(opt, val)
         plotethinca_jobs[combostring + "SECOND"].set_sub_file( basename + '.plotethinca_SECOND_' + combostring + subsuffix )
@@ -485,7 +485,7 @@ if opts.plotinspmissed:
       plotinspmissed_jobs[ifo +"FIRST"] = inspiral.PlotInspmissedJob(cp)
       plotinspmissed_jobs[ifo +"FIRST"].add_opt("ifo", ifo)
       pattern_dict = determine_sieve_patterns(cp, this_section,
-        "FIRST", usertag)
+        "FIRST", input_user_tag)
       for opt, val in pattern_dict.iteritems():
         val = val.replace("_CAT_4","")
         val = val.replace("_CAT_2","")
@@ -497,7 +497,7 @@ if opts.plotinspmissed:
       plotinspmissed_jobs[ifo +"SECOND"] = inspiral.PlotInspmissedJob(cp)
       plotinspmissed_jobs[ifo +"SECOND"].add_opt("ifo", ifo)
       pattern_dict = determine_sieve_patterns(cp, this_section,
-        "SECOND", usertag)
+        "SECOND", input_user_tag)
       for opt, val in pattern_dict.iteritems():
         plotinspmissed_jobs[ifo + "SECOND"].add_opt(opt, val)
       plotinspmissed_jobs[ifo +"SECOND"].add_opt("ifo-tag", "SECOND_" + ifo)
@@ -515,7 +515,8 @@ if opts.plotinspinj:
   for ifo in ifolist:
     if opts.first_stage:
       plotinspinj_jobs[ifo + "FIRST"] = inspiral.PlotInspinjJob(cp)
-      pattern_dict = determine_sieve_patterns(cp, this_section, "FIRST", usertag)
+      pattern_dict = determine_sieve_patterns(cp, this_section, "FIRST", 
+          input_user_tag)
       for opt, val in pattern_dict.iteritems():
         val = val.replace("CAT_4","")
         val = val.replace("CAT_2","")
@@ -526,7 +527,8 @@ if opts.plotinspinj:
       plotinspinj_jobs[ifo + "FIRST"].set_sub_file( basename + '.plotinspinj_FIRST_' + ifo + subsuffix )
     if opts.second_stage:
       plotinspinj_jobs[ifo + "SECOND"] = inspiral.PlotInspinjJob(cp)
-      pattern_dict = determine_sieve_patterns(cp, this_section, "SECOND", usertag)
+      pattern = determine_sieve_patterns(cp, this_section, "SECOND", 
+          input_user_tag)
       for opt, val in pattern_dict.iteritems():
         plotinspinj_jobs[ifo + "SECOND"].add_opt(opt, val)
       plotinspinj_jobs[ifo + "SECOND"].add_opt("ifo-times", ifo)
@@ -548,7 +550,8 @@ if opts.plotsnrchi:
       plotsnrchi_jobs[ifo] = inspiral.PlotSnrchiJob(cp)
       plotsnrchi_jobs[ifo].add_opt("single-ifo", ifo)
       plotsnrchi_jobs[ifo].add_opt("ifo-times", ifo)
-      pattern_dict = determine_sieve_patterns(cp, this_section, "", usertag)
+      pattern_dict = determine_sieve_patterns(cp, this_section, "", 
+          input_user_tag)
       for opt, val in pattern_dict.iteritems():
         val = val.replace("CAT_4","")
         val = val.replace("CAT_2","")
@@ -568,7 +571,7 @@ if opts.plotinspiralrange:
   this_section = "plotinspiralrange"
   cp = set_common_options(cp, this_section)
   
-  pattern_dict = determine_sieve_patterns(cp, this_section, "", usertag)
+  pattern_dict = determine_sieve_patterns(cp, this_section, "", input_user_tag)
   plotinspiralrange_jobs["FIRST"] = inspiral.PlotInspiralrangeJob(cp)
   plotinspiralrange_jobs["FIRST"].set_sub_file( basename + '.plotinspiralrange_' + subsuffix)
   for opt, val in pattern_dict.iteritems():
