@@ -320,16 +320,47 @@ if opts.run_data_quality:
 ##############################################################################
 # Set up the directories for plotting and run lalapps_plot
 if opts.run_plots:
-  plotNode = inspiralutils.plot_setup("plots", cp, ifos, opts.log_path, \
-      "INJ", "PLAYGROUND", "PLAYGROUND", cachefilename )
-  dag.add_node(plotNode)
-  if opts.run_data_quality and opts.run_play_analysis:
-    plotNode.add_parent(hipePlayVetoNode[4])
-  if opts.run_data_quality and opts.run_full_data:
-    plotNode.add_parent(hipeAnalysisVetoNode[4])
-  if opts.run_data_quality and opts.run_injections:
-    for (injDir, injDile) in cp.items("injections"):
-      plotNode.add_parent(hipeInjVetoNode[injDir][4])
+  if opts.run_play_analysis:
+    print "Making plots depending only on the playground"
+    # single ifo
+    plotcp = copy.deepcopy(cp)
+    plotcp.add_section("plot-arguments")
+    plotcp.set("plot-arguments","plotinspiralrange","")
+    plotcp.set("plot-arguments","plotnumtemplates","")
+    plotcp.set("plot-arguments","plotinspiral","")
+    plotcp.set("plot-arguments","write-script","")
+    playPlotNode = inspiralutils.plot_setup("playground_summary_plots", \
+        plotcp, opts.log_path, "both", "", "PLAYGROUND", "PLAYGROUND", \
+        "PLAYGROUND", "../" + cachefilename, tag="SNGL" )
+    dag.add_node(playPlotNode)
+    if opts.run_analysis and opts.run_play_analysis:
+      playPlotNode.add_parent(hipePlayNode)
+
+    # coincs
+    plotcp = copy.deepcopy(cp)
+    plotcp.add_section("plot-arguments")
+    plotcp.set("plot-arguments","plotthinca","")
+    plotcp.set("plot-arguments","write-script","")
+    playPlotCoincNode = inspiralutils.plot_setup("playground_summary_plots", 
+        plotcp, opts.log_path, "first", "", "PLAYGROUND", "PLAYGROUND", \
+        "PLAYGROUND", "../" + cachefilename, tag="COINC" )
+    dag.add_node(playPlotCoincNode)
+    if opts.run_analysis and opts.run_play_analysis:
+      playPlotCoincNode.add_parent(hipePlayNode)
+
+    # coincs second (require DQ)
+    plotcp = copy.deepcopy(cp)
+    plotcp.add_section("plot-arguments")
+    plotcp.set("plot-arguments","plotthinca","")
+    plotcp.set("plot-arguments","write-script","")
+    playPlotVetoNode = inspiralutils.plot_setup("playground_summary_plots", 
+        plotcp, opts.log_path, "second", "", "PLAYGROUND_CAT_2_VETO", \
+        "PLAYGROUND_CAT_2_VETO", "PLAYGROUND_CAT_2_VETO", \
+        "../" + cachefilename, tag="COINC_CAT_2" )
+    dag.add_node(playPlotVetoNode)
+    if opts.run_data_quality and opts.run_play_analysis:
+      playPlotVetoNode.add_parent(hipePlayVetoNode[2])
+
 
 ##############################################################################
 # Set up the directories for followup and run lalapps_followup_pipe
@@ -374,8 +405,9 @@ print """\n  from a condor submit machine
 # cat the cache files together
 
 
-command = "cat " + " ".join(cachelist) + " > " + cachefilename
-os.popen(command)
+if len(cachelist):
+  command = "cat " + " ".join(cachelist) + " > " + cachefilename
+  os.popen(command)
 
 ##############################################################################
 # write out a log file for this script
