@@ -437,17 +437,20 @@ def hipe_setup(hipeDir, config, ifos, logPath, injFile=None, dfOnly = False, \
 
 ##############################################################################
 # Function to set up lalapps_plot_hipe
-def plot_setup(plotDir, config, ifos, logPath, injectionSuffix,
-    zerolagSuffix, slideSuffix, cacheFile):
+def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
+    zerolagSuffix, slideSuffix, bankSuffix, cacheFile, tag = None):
   """
-  run lalapps_inspiral_hipe and add job to dag
+  run lalapps_plot_hipe and add job to dag
   plotDir   = directory in which to run inspiral hipe
   config    = config file
   logPath   = location where log files will be written
-  injFile   = injection file to use when running
-  dfOnly    = only run the datafind step of the pipeline
-  vetoCat   = run this category of veto
-  vetoFiles = dictionary of veto files
+  stage     = which stage to run (first, second or both)
+  injectionSuffix = the string to restrict to for injections
+  zerolagSuffix   = the string to restrict to for zero lag
+  slideSuffix     = the string to restrict to for time slides
+  bankSuffix      = the string to restrict to for bank plots
+  cacheFile       = the input cache file for plotting
+  tag             = extra tag for naming
   """
   # make the directory for running hipe
   mkdir(plotDir)
@@ -457,8 +460,9 @@ def plot_setup(plotDir, config, ifos, logPath, injectionSuffix,
   # set details for the common section
   plotcp.add_section("common")
   plotcp.set("common","gps-start-time", plotcp.get("input","gps-start-time") )
-  plotcp.set("common","gps-start-end", plotcp.get("input","gps-end-time") )
+  plotcp.set("common","gps-end-time", plotcp.get("input","gps-end-time") )
   plotcp.set("common","output-path", ".")
+  plotcp.set("common","enable-output","")
 
   plotSections = ["common", "pipeline", "condor",\
       "plotinspiral", "plotinspiral-meta", \
@@ -484,7 +488,13 @@ def plot_setup(plotDir, config, ifos, logPath, injectionSuffix,
 
   # set the various suffixes in pipeline
   plotcp.set("pipeline","injection-suffix",injectionSuffix)
+  plotcp.set("pipeline","inj-suffix",injectionSuffix)
+  plotcp.set("pipeline","found-suffix",injectionSuffix)
+  plotcp.set("pipeline","missed-suffix",injectionSuffix)
+  plotcp.set("pipeline","bank-suffix",bankSuffix)
   plotcp.set("pipeline","zerolag-suffix",zerolagSuffix)
+  plotcp.set("pipeline","trig-suffix",zerolagSuffix)
+  plotcp.set("pipeline","coinc-suffix",zerolagSuffix)
   plotcp.set("pipeline","slide-suffix",slideSuffix)
 
 
@@ -492,11 +502,12 @@ def plot_setup(plotDir, config, ifos, logPath, injectionSuffix,
   if plotcp.get("pipeline","user-tag"):
     usertag = plotcp.get("pipeline","user-tag")
     plotcp.set("pipeline","input-user-tag",usertag)
-    usertag += plotDir.upper()
+    usertag += plotDir.upper() 
   else:
     usertag = plotDir.upper()
-    plotcp.set("pipeline","input-user-tag",None)
+    plotcp.set("pipeline","input-user-tag","")
 
+  if tag: usertag += "_" + tag
   plotcp.set("pipeline","user-tag",usertag)
   
   plotcp.set("common","cache-file",cacheFile)
@@ -505,14 +516,16 @@ def plot_setup(plotDir, config, ifos, logPath, injectionSuffix,
   os.chdir(plotDir)
   iniFile = "plot_hipe_"
   iniFile += plotDir 
+  if tag: iniFile += "_" + tag.lower()
   iniFile += ".ini"
 
   plotcp.write(file(iniFile,"w"))
 
   print "Running plot hipe in directory " + plotDir
-  print "Using zero lag sieve" + zerolagSuffix 
-  print "Using time slide sieve" + slideSuffix  
-  print "Using injection sieve" + injectionSuffix 
+  print "Using zero lag sieve: " + zerolagSuffix 
+  print "Using time slide sieve: " + slideSuffix  
+  print "Using injection sieve: " + injectionSuffix 
+  print "Using bank sieve: " + bankSuffix 
 
   # work out the hipe call:
   plotCommand = config.get("condor","plot")
@@ -524,13 +537,18 @@ def plot_setup(plotDir, config, ifos, logPath, injectionSuffix,
   for item in config.items("plot-arguments"):
       plotCommand += " --" + item[0] + " " + item[1]
 
+  if stage == "first" or stage == "both":
+    plotCommand += " --first-stage"
+  if stage == "second" or stage == "both":
+    plotCommand += " --second-stage"
+ 
   # run lalapps_inspiral_hipe
   make_external_call(plotCommand)
 
   # make hipe job/node
   plotDag = iniFile.rstrip("ini") + usertag + ".dag"
   plotJob = pipeline.CondorDAGManJob(plotDir + "/" + plotDag)
-  plotJob.add_opt("maxjobs", "5")
+  plotJob.add_opt("maxjobs", "2")
   plotNode = pipeline.CondorDAGNode(plotJob)
 
   # add postscript to deal with rescue dag
