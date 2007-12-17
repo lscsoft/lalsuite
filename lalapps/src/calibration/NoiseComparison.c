@@ -870,10 +870,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"whitener-re",          required_argument, NULL,           'u'},
     {"whitener-im",          required_argument, NULL,           'v'},
     {"fcal",                 required_argument, NULL,           'w'},
+    {"version",              no_argument, NULL,                 'x'},
     {"help",                 no_argument, NULL,                 'h'},
     {0, 0, 0, 0}
   };
-  char args[] = "ha:b:c:d:e:g:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:";
+  char args[] = "ha:b:c:d:e:g:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x";
 
   /* Initialize default values */
   CLA->freqfile=NULL;
@@ -911,6 +912,13 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 
     switch ( c )
     {
+    case 'x':
+      fprintf(stdout,"Program: %s\n",PROGRAM_NAME);
+      fprintf(stdout,"Revision: %s\n", CVS_REVISION );
+      fprintf(stdout,"Source: %s\n", CVS_SOURCE);
+      fprintf(stdout,"Date: %s\n", CVS_DATE);
+      exit(0);      
+      break;
     case 'a':
       CLA->freqfile=optarg;
       break;
