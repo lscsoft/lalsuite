@@ -351,6 +351,8 @@ void print_info_of_the_cell( LALStatus *lalStatus, FILE *fp, const CellData *cd,
 			     const INT4 icell_end, const REAL8 sig_thr, const REAL8 ncand_thr);
 void print_info_of_cell_and_ifo_S4R2a( LALStatus *, FILE *fp, const CellData *cd, const CandidateList *CList, const INT4 icell_start,
 				 const INT4 icell_end, const REAL8 sig_thr, const REAL8 ncand_thr );
+void print_info_of_cell_and_ifo_S5R1a( LALStatus *, FILE *fp, const CellData *cd, const CandidateList *CList, const INT4 icell_start,
+				       const INT4 icell_end, const REAL8 sig_thr, const REAL8 ncand_thr );
 
 void print_cand_of_most_coin_cell( LALStatus *lalStatus, CellData *cd, const CandidateList *CList);
 
@@ -1126,22 +1128,33 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
       }
     }
 
-    if( !strcmp(CLA->EahRun,"S4R2a") ) {
+    if( !strcmp(CLA->EahRun,"S5R1a") ) {
       for( icell=0; icell<(*ncell); icell++ ) {
         if( cell[CellListi[icell]].iFreq != prev_iFreq ) {
-          print_info_of_cell_and_ifo_S4R2a( lalStatus->statusPtr, fp, cell, CList, CellListi[icell], CellListi[icell]+1, 0, 0);
+          print_info_of_cell_and_ifo_S5R1a( lalStatus->statusPtr, fp, cell, CList, CellListi[icell], CellListi[icell]+1, 0, 0);
           BEGINFAIL(lalStatus) {fclose(fp);} ENDFAIL(lalStatus);
         }
         prev_iFreq = cell[CellListi[icell]].iFreq;
       }
     }
     else {
-      for( icell=0; icell<(*ncell); icell++ ) {
-	if( cell[CellListi[icell]].iFreq != prev_iFreq ) {
-	  print_info_of_the_cell( lalStatus->statusPtr, fp, cell, CellListi[icell], CellListi[icell]+1, 0, 0);
-	  BEGINFAIL(lalStatus) {fclose(fp);} ENDFAIL(lalStatus);
+      if( !strcmp(CLA->EahRun,"S4R2a") ) {
+	for( icell=0; icell<(*ncell); icell++ ) {
+	  if( cell[CellListi[icell]].iFreq != prev_iFreq ) {
+	    print_info_of_cell_and_ifo_S4R2a( lalStatus->statusPtr, fp, cell, CList, CellListi[icell], CellListi[icell]+1, 0, 0);
+	    BEGINFAIL(lalStatus) {fclose(fp);} ENDFAIL(lalStatus);
+	  }
+	  prev_iFreq = cell[CellListi[icell]].iFreq;
 	}
-	prev_iFreq = cell[CellListi[icell]].iFreq;
+      }
+      else {
+	for( icell=0; icell<(*ncell); icell++ ) {
+	  if( cell[CellListi[icell]].iFreq != prev_iFreq ) {
+	    print_info_of_the_cell( lalStatus->statusPtr, fp, cell, CellListi[icell], CellListi[icell]+1, 0, 0);
+	    BEGINFAIL(lalStatus) {fclose(fp);} ENDFAIL(lalStatus);
+	  }
+	  prev_iFreq = cell[CellListi[icell]].iFreq;
+	}
       }
     }
     fclose(fp);
@@ -3235,4 +3248,98 @@ void print_info_of_cell_and_ifo_S4R2a( LALStatus *lalStatus,
 
   RETURN (lalStatus);
 } /* void print_info_of_cell_and_ifo_S4R2a( ) */
+
+
+/* ########################################################################################## */
+void print_info_of_cell_and_ifo_S5R1a( LALStatus *lalStatus,
+				       FILE *fp,
+				       const CellData *cd,
+				       const CandidateList *CList,
+				       const INT4 icell_start,
+				       const INT4 icell_end,
+				       const REAL8 sig_thr,
+				       const REAL8 ncand_thr )
+{
+  INT4 idx, ic, icell;
+  INT4 cH1,cL1;
+  struct int4_linked_list *p;
+
+  INITSTATUS( lalStatus, "print_info_of_cell_and_ifo_S5R1a", rcsid );
+  ASSERT( cd != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
+  ASSERT( CList != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
+
+  cH1 = 0;
+  cL1 = 0;
+
+  icell = icell_start;
+  while( icell < icell_end &&
+         cd[icell].significance > sig_thr &&
+         cd[icell].nCand > ncand_thr )
+    {
+
+      cH1 = 0;
+      cL1 = 0;
+      p = cd[icell].CandID;
+      ic = 0;
+      while( p !=NULL && ic <= LINKEDSTR_MAX_DEPTH ) {
+        idx = p->data;
+
+        switch( CList[idx].FileID )
+          {
+	  case 5800:
+	  case 6065:
+	  case 6066:
+	  case 5923:
+	  case 5728:
+	  case 5684:
+	  case 5883:
+	  case 5719:
+	  case 6074:
+	  case 5909:
+	  case 6069:
+	  case 5726:
+	  case 6780:
+	  case 7049:
+	  case 6026:
+	  case 5702:
+	  case 5905:
+	  case 6502:
+	  case 6493:
+	  case 5790:
+	  case 5949:
+	  case 5768:
+	    cH1++;
+            break;
+	  case 6284:
+	  case 5843:
+	  case 6500:
+	  case 5925:
+	  case 6744:
+	  case 5835:
+            cL1++;
+            break;
+          }
+
+        p = p->next;
+        ic++;
+      } /*   while( p !=NULL && ic <= LINKEDSTR_MAX_DEPTH ) {  */
+      
+      if( ic >  LINKEDSTR_MAX_DEPTH ) {
+	LALPrintError("Maximum depth of linked structure reached!");
+	exit(POLKA_EXIT_ERR);
+      }
+      
+      if( cd[icell].nCand != (cH1+cL1) ) {
+	LALPrintError("Split-up of number of coincidences among detectors incorrect!");
+	exit(POLKA_EXIT_ERR);
+	}
+      
+      fprintf(fp,"%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t% g" " \t\t%" LAL_INT4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_INT4_FORMAT "\t%" LAL_INT4_FORMAT "\\n",\
+	      cd[icell].Freq, cd[icell].Delta, cd[icell].Alpha, cd[icell].F1dot, cd[icell].nCand, cd[icell].significance,cH1,cL1);
+      icell++;
+      
+    } /*   while( icell < icell_end && ...  */
+  
+  RETURN (lalStatus);
+} /* void print_info_of_cell_and_ifo_S5R1a( ) */
 
