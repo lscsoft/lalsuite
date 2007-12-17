@@ -228,6 +228,7 @@ typedef struct PolkaConfigVarsTag
   CHAR *OutputFile;  /*  Names of output file */
   CHAR *InputDir;    /*  Directory name of input files */
   CHAR *BaseName;    /*  Base name of input files */
+  CHAR *EahRun;      /*  E@H identifying run label */
   CHAR **Filelist;   /*  Array of filenames to load Fstats file from */
   UINT4 NFiles;      /*  Number of input files read */
   INT4 Nthr;         /*  Show exective results of cells with numbers of coincidence above Nthr. */
@@ -343,10 +344,14 @@ int compareINT4arrays(const INT4 *ap, const INT4 *bp, size_t n);
 int compareSignificances(const void *a, const void *b);
 
 void PrintResult( LALStatus *, const PolkaConfigVars *CLA, CellData *cell, const INT4 *ncell, CandidateList *CList , const INT4 cellgridnum, INT4 CellListi[]);
+
 void print_Fstat_of_the_cell( LALStatus *, FILE *fp, const CellData *cd, const CandidateList *CList, const INT4 icell_start, 
 			      const INT4 icell_end, const REAL8 sig_thr, const REAL8 ncand_thr );
 void print_info_of_the_cell( LALStatus *lalStatus, FILE *fp, const CellData *cd, const INT4 icell_start, 
 			     const INT4 icell_end, const REAL8 sig_thr, const REAL8 ncand_thr);
+void print_info_of_cell_and_ifo_S4R2a( LALStatus *, FILE *fp, const CellData *cd, const CandidateList *CList, const INT4 icell_start,
+				 const INT4 icell_end, const REAL8 sig_thr, const REAL8 ncand_thr );
+
 void print_cand_of_most_coin_cell( LALStatus *lalStatus, CellData *cd, const CandidateList *CList);
 
 void FreeMemory(LALStatus *, PolkaConfigVars *CLA, CellData *cell, CandidateList *CList, const UINT4 datalen);
@@ -572,65 +577,41 @@ int main(INT4 argc,CHAR *argv[])
 
 		/* Assign the ALPHA index to the candidate event */
                 SortedC[icand].iAlpha = floor( ((SortedC[icand].Alpha) * (cos(SortedC[icand].Delta)) / (PCV.DeltaAlpha))  + (cc2 * 0.5) );
-                AlphaTwoPiIdx = floor( ((LAL_TWOPI - EPSEDGE) / (PCV.DeltaAlpha))  + (cc2 * 0.5)  );
-                if (cc2 == 0) { /* unshifted grid */
-                  /* Enlarge the last cell along equator, no wrap-around */
-                  if ( SortedC[icand].iAlpha == AlphaTwoPiIdx ) {
-                    SortedC[icand].iAlpha = SortedC[icand].iAlpha - 1;
-                  }
-                }
-                else { /* shifted grid */
-                  /* Do wrap-around */
-		  AlphaZeroIdx = floor( (EPSEDGE * cos(SortedC[icand].Delta) / (PCV.DeltaAlpha))  + (cc2 * 0.5)  );
-                  if ( SortedC[icand].iAlpha == AlphaZeroIdx ) {
-                    SortedC[icand].Alpha = SortedC[icand].Alpha + LAL_TWOPI;
-                    SortedC[icand].iAlpha = AlphaTwoPiIdx;
-                  }
-                }
-
-
-		/* Compute the edge in coordinates (alpha*cos(delta), delta) from left corner */
-	        DeltaEdge = acos( (SortedC[icand].iAlpha * PCV.DeltaAlpha) / LAL_TWOPI );  
-
+	
 		/* Assign the DELTA index to the candidate event */
 		DeltaDeltaStep=0;
 		if (cc3 == 0) { /* unshifted cell-grid */
+		
 		  while ( LookupDelta1[DeltaDeltaStep] < fabs(SortedC[icand].Delta) ) {
 		    DeltaDeltaStep++;
 		    if (DeltaDeltaStep >= iDeltaMax1)
 		      break;
 		  }
-		  /* check if domain edge is hit and eventually move event into previous cell */
-                  if ( DeltaDeltaStep > 0 ) {
-		    if ( (fabs(DeltaEdge) < LookupDelta1[DeltaDeltaStep]) || (SortedC[icand].Alpha > LAL_TWOPI) ) {
-		      DeltaDeltaStep--;
-		    }
-		  }
+
 		  if ( SortedC[icand].Delta < 0 ) {
 		    SortedC[icand].iDelta = -(INT4)(2 * DeltaDeltaStep);
 		  }
 		  else {
 		    SortedC[icand].iDelta = (INT4)(2 * DeltaDeltaStep);
 		  }
+
                 }
+		
                 else { /* shifted cell-grid */
+		  
 		  while ( LookupDelta2[DeltaDeltaStep] < fabs(SortedC[icand].Delta) ) { 
 		    DeltaDeltaStep++;
 		    if (DeltaDeltaStep >= iDeltaMax2)
 		      break;
 		  }
-		  /* check if domain edge is hit and eventually move event into previous cell */
-		  if ( DeltaDeltaStep > 0 ) {
-		    if ( (fabs(DeltaEdge) < LookupDelta2[DeltaDeltaStep]) || (SortedC[icand].Alpha > LAL_TWOPI) ) {
-		      DeltaDeltaStep--;
-		    }
-		  }
+
 		  if ( SortedC[icand].Delta < 0 ) {
 		    SortedC[icand].iDelta = -(INT4)((2 * DeltaDeltaStep) + 1);
 		  }
 		  else {
 		    SortedC[icand].iDelta = (INT4)((2 * DeltaDeltaStep) + 1);
 		  }
+
 		}
 
 
@@ -1145,12 +1126,23 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
       }
     }
 
-    for( icell=0; icell<(*ncell); icell++ ) {
-      if( cell[CellListi[icell]].iFreq != prev_iFreq ) {
-	print_info_of_the_cell( lalStatus->statusPtr, fp, cell, CellListi[icell], CellListi[icell]+1, 0, 0);
-	BEGINFAIL(lalStatus) {fclose(fp);} ENDFAIL(lalStatus);
+    if( !strcmp(CLA->EahRun,"S4R2a") ) {
+      for( icell=0; icell<(*ncell); icell++ ) {
+        if( cell[CellListi[icell]].iFreq != prev_iFreq ) {
+          print_info_of_cell_and_ifo_S4R2a( lalStatus->statusPtr, fp, cell, CList, CellListi[icell], CellListi[icell]+1, 0, 0);
+          BEGINFAIL(lalStatus) {fclose(fp);} ENDFAIL(lalStatus);
+        }
+        prev_iFreq = cell[CellListi[icell]].iFreq;
       }
-      prev_iFreq = cell[CellListi[icell]].iFreq;
+    }
+    else {
+      for( icell=0; icell<(*ncell); icell++ ) {
+	if( cell[CellListi[icell]].iFreq != prev_iFreq ) {
+	  print_info_of_the_cell( lalStatus->statusPtr, fp, cell, CellListi[icell], CellListi[icell]+1, 0, 0);
+	  BEGINFAIL(lalStatus) {fclose(fp);} ENDFAIL(lalStatus);
+	}
+	prev_iFreq = cell[CellListi[icell]].iFreq;
+      }
     }
     fclose(fp);
   }
@@ -2762,6 +2754,8 @@ ReadCommandLineArgs( LALStatus *lalStatus,
   CHAR* uvar_InputDirectory;
   CHAR* uvar_BaseName;
 
+  CHAR* uvar_EahRun;
+
   BOOLEAN uvar_AutoOut;
   INT4 uvar_Nthr;  
   INT4 uvar_CellGrid;
@@ -2782,7 +2776,6 @@ ReadCommandLineArgs( LALStatus *lalStatus,
 
   const CHAR BNAME[] = "Test";
 
-
   INITSTATUS( lalStatus, "ReadCommandLineArgs", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
 
@@ -2796,8 +2789,12 @@ ReadCommandLineArgs( LALStatus *lalStatus,
   uvar_OutputData = NULL;
 
   uvar_InputDirectory = NULL;
+
   uvar_BaseName = (CHAR*)LALCalloc (1, strlen(BNAME)+1);
   strcpy (uvar_BaseName, BNAME);
+
+  uvar_EahRun = (CHAR*)LALCalloc (1, strlen(BNAME)+1);
+  strcpy (uvar_EahRun, BNAME);
 
   /* The following numbers are arbitrary. */
   uvar_Nthr = 65536;     
@@ -2826,10 +2823,10 @@ ReadCommandLineArgs( LALStatus *lalStatus,
   LALregSTRINGUserVar(lalStatus,     OutputData,     'o', UVAR_REQUIRED, "Ouput candidates file name");
 
   LALregSTRINGUserVar(lalStatus,     InputData,      'I', UVAR_OPTIONAL, "Input candidates Fstats file.");
-  LALregSTRINGUserVar(lalStatus,     InputDirectory, 'i', UVAR_OPTIONAL,"Input candidates Fstats files directory.");
-  LALregSTRINGUserVar(lalStatus,     BaseName,       'b', UVAR_OPTIONAL,"BaseName of the Input Fstats files");
+  LALregSTRINGUserVar(lalStatus,     InputDirectory, 'i', UVAR_OPTIONAL, "Input candidates Fstats files directory.");
+  LALregSTRINGUserVar(lalStatus,     BaseName,       'b', UVAR_OPTIONAL, "BaseName of the Input Fstats files");
 
-  LALregINTUserVar(lalStatus,        Nthr,            0,  UVAR_OPTIONAL, "Threshold on number of coincidence");
+  LALregINTUserVar(lalStatus,        Nthr,            0,  UVAR_OPTIONAL, "Threshold on number of coincidences");
   LALregREALUserVar(lalStatus,       Sthr,            0,  UVAR_OPTIONAL, "Threshold on significance.");
   LALregBOOLUserVar(lalStatus,       AutoOut,         0,  UVAR_OPTIONAL, "Set Nthr and Sthr to print most significant cell only."); 
 
@@ -2838,15 +2835,16 @@ ReadCommandLineArgs( LALStatus *lalStatus,
 
   LALregREALUserVar(lalStatus,       FreqWindow,     'f', UVAR_REQUIRED, "Frequency window in Hz");
   LALregREALUserVar(lalStatus,       F1dotWindow,    's', UVAR_REQUIRED, "First Spindown parameter window");
-  LALregREALUserVar(lalStatus,       AlphaWindow,    'a', UVAR_REQUIRED, "Right ascension window in radians");
+  LALregREALUserVar(lalStatus,       AlphaWindow,    'a', UVAR_REQUIRED, "Right Ascension window in radians");
   LALregREALUserVar(lalStatus,       DeltaWindow,    'd', UVAR_REQUIRED, "Declination window in radians");
   LALregREALUserVar(lalStatus,       Kappa,          'k', UVAR_OPTIONAL, "Tuning parameter for declination window");
 
   LALregREALUserVar(lalStatus,       FreqShift,      'F', UVAR_OPTIONAL, "Frequency shift in FreqWindow");
   LALregREALUserVar(lalStatus,       F1dotShift,     'S', UVAR_OPTIONAL, "First Spindown shift in F1dotWindow");
-  LALregREALUserVar(lalStatus,       AlphaShift,     'A', UVAR_OPTIONAL, "Right ascension shift in AlphaWindow");
+  LALregREALUserVar(lalStatus,       AlphaShift,     'A', UVAR_OPTIONAL, "Right Ascension shift in AlphaWindow");
   LALregREALUserVar(lalStatus,       DeltaShift,     'D', UVAR_OPTIONAL, "Declination shift in DeltaWindow");
 
+  LALregSTRINGUserVar(lalStatus,     EahRun,         'r', UVAR_OPTIONAL, "E@H identifying run label for ifo split-up (S4R2a, S5R1a)");
 
   TRY (LALUserVarReadAllInput(lalStatus->statusPtr,argc,argv),lalStatus); 
 
@@ -2886,7 +2884,7 @@ ReadCommandLineArgs( LALStatus *lalStatus,
   CLA->OutputFile = NULL;
   CLA->InputDir = NULL;
   CLA->BaseName = NULL;
-
+  CLA->EahRun = NULL;
 
   if( LALUserVarWasSet (&uvar_InputData) ) {
     CLA->FstatsFile = (CHAR *) LALMalloc(strlen(uvar_InputData)+1);
@@ -2931,6 +2929,14 @@ ReadCommandLineArgs( LALStatus *lalStatus,
       exit(POLKA_EXIT_ERR);
     }          
   strcpy(CLA->BaseName,uvar_BaseName);
+  
+  CLA->EahRun = (CHAR *) LALMalloc(strlen(uvar_EahRun)+1);
+  if(CLA->EahRun == NULL)
+    {
+      TRY( FreeConfigVars( lalStatus->statusPtr, CLA ), lalStatus);
+      exit(POLKA_EXIT_ERR);
+    }
+  strcpy(CLA->EahRun,uvar_EahRun);
 
 
   CLA->AutoOut = uvar_AutoOut;
@@ -3143,4 +3149,90 @@ void sortFreqCells2(INT4 *data, INT4 left, INT4 right)
   sortFreqCells2(data, left, last-1);
   sortFreqCells2(data, last+1, right);
 }
-/* ################################################################### */
+/* ########################################################################################## */
+
+
+
+/* ########################################################################################## */
+void print_info_of_cell_and_ifo_S4R2a( LALStatus *lalStatus,
+                              FILE *fp,
+                              const CellData *cd,
+                              const CandidateList *CList,
+                              const INT4 icell_start,
+                              const INT4 icell_end,
+                              const REAL8 sig_thr,
+                              const REAL8 ncand_thr )
+{
+  INT4 idx, ic, icell;
+  INT4 cH1,cL1;
+  struct int4_linked_list *p;
+
+  INITSTATUS( lalStatus, "print_info_of_cell_and_ifo_S4R2a", rcsid );
+  ASSERT( cd != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
+  ASSERT( CList != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
+
+  cH1 = 0;
+  cL1 = 0;
+
+  icell = icell_start;
+  while( icell < icell_end &&
+         cd[icell].significance > sig_thr &&
+         cd[icell].nCand > ncand_thr )
+    {
+
+      cH1 = 0;
+      cL1 = 0;
+      p = cd[icell].CandID;
+      ic = 0;
+      while( p !=NULL && ic <= LINKEDSTR_MAX_DEPTH ) {
+        idx = p->data;
+
+	switch( CList[idx].FileID ) 
+	  {
+	  case 6537:
+	  case 6497:
+	  case 5828:
+	  case 6120:
+	  case 5955:
+	  case 5613:
+	  case 6126:
+	  case 5946:
+	  case 6130:
+	  case 5515:
+	    cH1++;
+	    break;
+	  case 6341:
+	  case 6102:
+	  case 5813:
+	  case 5783:
+	  case 5538:
+	  case 6514:
+	  case 5653:
+	    cL1++;
+	    break;
+	  }
+	
+        p = p->next;
+        ic++;
+      } /*   while( p !=NULL && ic <= LINKEDSTR_MAX_DEPTH ) {  */
+
+      if( ic >  LINKEDSTR_MAX_DEPTH ) {
+        LALPrintError("Maximum depth of linked structure reached!");
+        exit(POLKA_EXIT_ERR);
+      }
+
+      if( cd[icell].nCand != (cH1+cL1) ) {
+        LALPrintError("Split-up of number of coincidences among detectors incorrect!");
+        exit(POLKA_EXIT_ERR);
+      }
+
+
+      fprintf(fp,"%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t% g" " \t\t%" LAL_INT4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_INT4_FORMAT "\t%" LAL_INT4_FORMAT "\n",\
+	      cd[icell].Freq, cd[icell].Delta, cd[icell].Alpha, cd[icell].F1dot, cd[icell].nCand, cd[icell].significance,cH1,cL1);
+      icell++;
+
+    } /*   while( icell < icell_end && ...  */
+
+  RETURN (lalStatus);
+} /* void print_info_of_cell_and_ifo_S4R2a( ) */
+
