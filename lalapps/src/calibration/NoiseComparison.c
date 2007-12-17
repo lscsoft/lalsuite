@@ -149,10 +149,10 @@ typedef struct ResponseFunctionTag
 static LALStatus status;
 INT4 lalDebugLevel=3;
 
-FrCache *hoftframecache;                                           /* frame reading variables */
+FrCache *hoftframecache=NULL;                                           /* frame reading variables */
 FrStream *hoftframestream=NULL;
 
-FrCache *derrframecache;                                           /* frame reading variables */
+FrCache *derrframecache=NULL;                                           /* frame reading variables */
 FrStream *derrframestream=NULL;
 
 LIGOTimeGPS gpsepoch;
@@ -359,7 +359,7 @@ INT4 k,m;
 LIGOTimeGPS localgpsepoch=gpsepoch; /* Local variable epoch used to calculate the calibration factors */
 long double gtime=(long double)(localgpsepoch.gpsSeconds+(long double)localgpsepoch.gpsNanoSeconds*1E-9);
 
-FrCache *framecache;                                           /* frame reading variables */
+FrCache *framecache=NULL;                                           /* frame reading variables */
 FrStream *framestream=NULL;
 
   /* create Frame cache, open frame stream and delete frame cache */
