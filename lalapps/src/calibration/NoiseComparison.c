@@ -18,11 +18,11 @@
 */
 
 /*********************************************************************************/
-/* Noise comparison code between h(t) and  frequency domain calibrated DARM_ERR  */
+/* Noise comparison code between h(t) and frequency domain calibrated DARM_ERR   */
 /*                                                                               */
 /*                                  X. Siemens                                   */
 /*                                                                               */
-/*                Caltech -- December 2006                  */
+/*                           Caltech -- December 2006                            */
 /*********************************************************************************/
 
 #include <config.h>
@@ -94,7 +94,7 @@ REAL4 tmpx, tmpy;
 
 #define MAXLINESRS   500000     /* Maximum # of lines in a Response file */
 #define MAXFACTORS   500000       /* Maximum # of factors to be computed */
-
+#define MAXFREQUENCIES 100       /* Maximum number of frequemcies for which to do the comparison */
 
 NRCSID( NOISECOMPARISONC, "NoiseComparison $Id$");
 RCSID( "NoiseComparison $Id$");
@@ -109,7 +109,7 @@ RCSID( "NoiseComparison $Id$");
 /* STRUCTURES */
 
 struct CommandLineArgsTag {
-  REAL8 f;                 /* Starting Frequency */
+  char *freqfile;          /* File with frequencies */
   REAL8 fcal;              /* Calibration line frequency */
   REAL8 b;                 /* band */    
   REAL8 t;                 /* Time interval to compute the FFT */
@@ -174,9 +174,12 @@ REAL4FFTPlan *fftPlan=NULL;
 FrPos derrpos;
 FrPos hoftpos;
 
-Response OLG0, OLG, Sensing0, Sensing;
+Response OLG0, OLG[MAXFREQUENCIES], Sensing0, Sensing[MAXFREQUENCIES];
 
 REAL8 gamma_fac[MAXFACTORS];
+
+REAL8 frequencies[MAXFREQUENCIES]; /* frequency array */
+INT4 Nfrequencies;  /* number of frequencies */
 
 /***************************************************************************/
 
@@ -523,7 +526,7 @@ FrStream *framestream=NULL;
 int ComputeNoise(struct CommandLineArgsTag CLA, int n)
 {
 
-  INT4 k;
+  INT4 k,j;
   REAL8 mean_Sh_derr;
   REAL8 mean_Sh_hoft;
   COMPLEX8 R,H,C;
@@ -564,52 +567,59 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
   XLALREAL8ForwardFFT( ffthtData, hoft.data, fftPlanDouble );
   XLALREAL4ForwardFFT( fftderrData, derr.data, fftPlan );
 
+  fprintf(fpout, "    %d     ", gpsepoch.gpsSeconds);
 
-  /* Compute the noise */
-  mean_Sh_derr = 0.0;
-  mean_Sh_hoft = 0.0;
-  {
-    int firstbin=(INT4)(CLA.f*CLA.t+0.5);
-    int nsamples=(INT4)(CLA.b*CLA.t+0.5);
-    
-    for (k=0; k<nsamples; k++)
+  for (j=0; j < Nfrequencies; j++)  
     {
-      REAL4 dr= fftderrData->data[k+firstbin].re;
-      REAL4 di= fftderrData->data[k+firstbin].im;
-      REAL8 dpsq;
-      REAL4 caldr,caldi;
+      /* Compute the noise */
+      mean_Sh_derr = 0.0;
+      mean_Sh_hoft = 0.0;
+      {
+	int firstbin=(INT4)(frequencies[j]*CLA.t+0.5);
+	int nsamples=(INT4)(CLA.b*CLA.t+0.5);
+	
+	for (k=0; k<nsamples; k++)
+	  {
+	    REAL4 dr= fftderrData->data[k+firstbin].re;
+	    REAL4 di= fftderrData->data[k+firstbin].im;
+	    REAL8 dpsq;
+	    REAL4 caldr,caldi;
 
-      REAL4 hr= ffthtData->data[k+firstbin].re;
-      REAL4 hi= ffthtData->data[k+firstbin].im;
-      REAL8 hpsq;
-
-      /* Compute Response */
-      C.re=gamma_fac[n]*Sensing.re[k];
-      C.im=gamma_fac[n]*Sensing.im[k];
+	    REAL4 hr= ffthtData->data[k+firstbin].re;
+	    REAL4 hi= ffthtData->data[k+firstbin].im;
+	    REAL8 hpsq;
+	    
+	    /* Compute Response */
+	    C.re=gamma_fac[n]*Sensing[j].re[k];
+	    C.im=gamma_fac[n]*Sensing[j].im[k];
+	    
+	    H.re=1.0+gamma_fac[n]*OLG[j].re[k];
+	    H.im=gamma_fac[n]*OLG[j].im[k];
+	    R=cdiv(H,C);
+	    
+	    /* Apply response to DARM_ERR */
+	    caldr=dr*R.re-di*R.im;
+	    caldi=di*R.re+dr*R.im;
       
-      H.re=1.0+gamma_fac[n]*OLG.re[k];
-      H.im=gamma_fac[n]*OLG.im[k];
-      R=cdiv(H,C);
-
-      /* Apply response to DARM_ERR */
-      caldr=dr*R.re-di*R.im;
-      caldi=di*R.re+dr*R.im;
+	    dpsq=pow(caldr,2.0)+pow(caldi,2);
+	    hpsq=pow(hr,2.0)+pow(hi,2);
+	    
+	    mean_Sh_derr += dpsq;
+	    mean_Sh_hoft += hpsq;
       
-      dpsq=pow(caldr,2.0)+pow(caldi,2);
-      hpsq=pow(hr,2.0)+pow(hi,2);
+	  }
+	mean_Sh_derr *= 2.0*derr.deltaT/(REAL4)derr.data->length;
+	mean_Sh_hoft *= 2.0*hoft.deltaT/(REAL4)hoft.data->length;
+      }
+    
 
-      mean_Sh_derr += dpsq;
-      mean_Sh_hoft += hpsq;
-      
+      fprintf(fpout, " %e          %e          %e   ", 
+	      sqrt(mean_Sh_hoft), sqrt(mean_Sh_derr), sqrt(mean_Sh_hoft)/sqrt(mean_Sh_derr));
     }
-    mean_Sh_derr *= 2.0*derr.deltaT/(REAL4)derr.data->length;
-    mean_Sh_hoft *= 2.0*hoft.deltaT/(REAL4)hoft.data->length;
-  }
-
-
-  fprintf(fpout, "    %d         %e          %e          %e\n", gpsepoch.gpsSeconds, 
-	  sqrt(mean_Sh_hoft), sqrt(mean_Sh_derr), sqrt(mean_Sh_hoft)/sqrt(mean_Sh_derr));
   
+ 
+  fprintf(fpout, "\n");
+
   return 0;
 }
 
@@ -620,10 +630,35 @@ int ReadCalFiles(struct CommandLineArgsTag CLA)
 {
   char line[256];
 
-  INT4 i,j;
+  INT4 i,j,k;
   FILE *fpR;
   int nsamples=(INT4)(CLA.b*CLA.t+0.5);
   REAL4 f,df;
+
+ /* ------ Open and read Frequency File ------ */
+ i=0;
+ fpR=fopen(CLA.freqfile,"r");
+ if (fpR==NULL) 
+   {
+     fprintf(stderr,"Weird... %s doesn't exist!\n",CLA.freqfile);
+     return 1;
+   }
+ while(fgets(line,sizeof(line),fpR))
+   {
+     if(*line == '#') continue;
+     if(*line == '%') continue;
+     if (i >= MAXFREQUENCIES)
+       {
+	 fprintf(stderr,"Too many lines in file %s! Exiting... \n", CLA.freqfile);
+	 return 1;
+       }
+     sscanf(line,"%le",&frequencies[i]);
+     i++;
+   }
+ Nfrequencies=i;
+ /* -- close OLG file -- */
+ fclose(fpR);     
+
 
  /* ------ Open and read OLG File ------ */
  i=0;
@@ -650,47 +685,52 @@ int ReadCalFiles(struct CommandLineArgsTag CLA)
  /* -- close OLG file -- */
  fclose(fpR);     
 
- /* Now compute a response appropriate for the frequency spacing of our data */
- i=0;
- for (j=0; j < nsamples;j++)               
-    {
-      REAL4 a,b;
 
-      f = CLA.f  + j/CLA.t;
+ /* for each frequency in the ferquency file: */
+ for (k=0; k < Nfrequencies; k++)
+   {
+     /* compute a response appropriate for the frequency spacing of our data */
+     i=0;
+     for (j=0; j < nsamples;j++)               
+       {
+	 REAL4 a,b;
+	 
+	 f = frequencies[k]  + j/CLA.t;
 
-      while (i < MAXLINESRS-1 && f > OLG0.Frequency[i]) i++; 
+	 while (i < MAXLINESRS-1 && f > OLG0.Frequency[i]) i++; 
+	 
+	 if(i == MAXLINESRS-1 && f > OLG0.Frequency[i])
+	   {
+	     fprintf(stderr,"No calibration info for frequency %f!\n",f);
+	     return 1;
+	   }
+	 /* checks order */
 
-      if(i == MAXLINESRS-1 && f > OLG0.Frequency[i])
-	{
-	  fprintf(stderr,"No calibration info for frequency %f!\n",f);
-	  return 1;
-	}
-      /* checks order */
+	 /* Since now Rraw.Frequency[i-1] < f =< Rraw.Frequency[i] ||*/
+	 /* can compute a weighted average of the raw frequencies at i-1 and i */
 
-      /* Since now Rraw.Frequency[i-1] < f =< Rraw.Frequency[i] ||*/
-      /* can compute a weighted average of the raw frequencies at i-1 and i */
+	 /* check both bounds!!!!! */
+	 if(f < OLG0.Frequency[i-1] || f > OLG0.Frequency[i])
+	   {
+	     fprintf(stderr,"Frequency %f in SFT does not lie between two lines in OLG file!\n",f);
+	     return 1;
+	   }
 
-      /* check both bounds!!!!! */
-      if(f < OLG0.Frequency[i-1] || f > OLG0.Frequency[i])
-	{
-	  fprintf(stderr,"Frequency %f in SFT does not lie between two lines in OLG file!\n",f);
-	  return 1;
-	}
-
-      /* If the frequencies are closely spaced this may create dangerous floating point errors */
-      df=OLG0.Frequency[i]-OLG0.Frequency[i-1];
-
-      a=(f-OLG0.Frequency[i-1])/df;
-      if (a>1.0) a=1.0;
-      b=1.0-a;
-
-      OLG.Frequency[j]=f;
-      OLG.Magnitude[j]=a*OLG0.Magnitude[i]+b*OLG0.Magnitude[i-1];
-      OLG.Phase[j]=a*OLG0.Phase[i]+b*OLG0.Phase[i-1];
-
-      OLG.re[j]=a*OLG0.re[i]+b*OLG0.re[i-1];
-      OLG.im[j]=a*OLG0.im[i]+b*OLG0.im[i-1];      
-    }
+	 /* If the frequencies are closely spaced this may create dangerous floating point errors */
+	 df=OLG0.Frequency[i]-OLG0.Frequency[i-1];
+	 
+	 a=(f-OLG0.Frequency[i-1])/df;
+	 if (a>1.0) a=1.0;
+	 b=1.0-a;
+	 
+	 OLG[k].Frequency[j]=f;
+	 OLG[k].Magnitude[j]=a*OLG0.Magnitude[i]+b*OLG0.Magnitude[i-1];
+	 OLG[k].Phase[j]=a*OLG0.Phase[i]+b*OLG0.Phase[i-1];
+	 
+	 OLG[k].re[j]=a*OLG0.re[i]+b*OLG0.re[i-1];
+	 OLG[k].im[j]=a*OLG0.im[i]+b*OLG0.im[i-1];      
+       }
+   }
 
  /* ------ Open and read Sensing File ------ */
  i=0;
@@ -717,50 +757,52 @@ int ReadCalFiles(struct CommandLineArgsTag CLA)
  /* -- close Sensing file -- */
  fclose(fpR);     
 
- /* Now compute a response appropriate for the frequency spacing of our data */
- i=0;
- for (j=0; j < nsamples;j++)               
-    {
-      REAL4 a,b;
 
-      f = CLA.f  + j/CLA.t;
+ /* for each frequency in the ferquency file: */
+ for (k=0; k < Nfrequencies; k++)
+   {
+     /* compute a response appropriate for the frequency spacing of our data */
+     i=0;
+     for (j=0; j < nsamples;j++)               
+       {
+	 REAL4 a,b;
+	 
+	 f = frequencies[k]  + j/CLA.t;
+	 
+	 while (i < MAXLINESRS-1 && f > Sensing0.Frequency[i]) i++; 
+	 
+	 if(i == MAXLINESRS-1 && f > Sensing0.Frequency[i])
+	   {
+	     fprintf(stderr,"No calibration info for frequency %f!\n",f);
+	     return 1;
+	   }
+	 /* checks order */
 
-      while (i < MAXLINESRS-1 && f > Sensing0.Frequency[i]) i++; 
+	 /* Since now Rraw.Frequency[i-1] < f =< Rraw.Frequency[i] ||*/
+	 /* can compute a weighted average of the raw frequencies at i-1 and i */
 
-      if(i == MAXLINESRS-1 && f > Sensing0.Frequency[i])
-	{
-	  fprintf(stderr,"No calibration info for frequency %f!\n",f);
-	  return 1;
-	}
-      /* checks order */
+	 /* check both bounds!!!!! */
+	 if(f < Sensing0.Frequency[i-1] || f > Sensing0.Frequency[i])
+	   {
+	     fprintf(stderr,"Frequency %f in SFT does not lie between two lines in Sensing file!\n",f);
+	     return 1;
+	   }
 
-      /* Since now Rraw.Frequency[i-1] < f =< Rraw.Frequency[i] ||*/
-      /* can compute a weighted average of the raw frequencies at i-1 and i */
+	 /* If the frequencies are closely spaced this may create dangerous floating point errors */
+	 df=Sensing0.Frequency[i]-Sensing0.Frequency[i-1];
 
-      /* check both bounds!!!!! */
-      if(f < Sensing0.Frequency[i-1] || f > Sensing0.Frequency[i])
-	{
-	  fprintf(stderr,"Frequency %f in SFT does not lie between two lines in Sensing file!\n",f);
-	  return 1;
-	}
+	 a=(f-Sensing0.Frequency[i-1])/df;
+	 if (a>1.0) a=1.0;
+	 b=1.0-a;
 
-      /* If the frequencies are closely spaced this may create dangerous floating point errors */
-      df=Sensing0.Frequency[i]-Sensing0.Frequency[i-1];
+	 Sensing[k].Frequency[j]=f;
+	 Sensing[k].Magnitude[j]=a*Sensing0.Magnitude[i]+b*Sensing0.Magnitude[i-1];
+	 Sensing[k].Phase[j]=a*Sensing0.Phase[i]+b*Sensing0.Phase[i-1];
 
-      a=(f-Sensing0.Frequency[i-1])/df;
-      if (a>1.0) a=1.0;
-      b=1.0-a;
-
-      Sensing.Frequency[j]=f;
-      Sensing.Magnitude[j]=a*Sensing0.Magnitude[i]+b*Sensing0.Magnitude[i-1];
-      Sensing.Phase[j]=a*Sensing0.Phase[i]+b*Sensing0.Phase[i-1];
-
-      Sensing.re[j]=a*Sensing0.re[i]+b*Sensing0.re[i-1];
-      Sensing.im[j]=a*Sensing0.im[i]+b*Sensing0.im[i-1];      
-    }
-
-
-
+	 Sensing[k].re[j]=a*Sensing0.re[i]+b*Sensing0.re[i-1];
+	 Sensing[k].im[j]=a*Sensing0.im[i]+b*Sensing0.im[i-1];      
+       }
+   }
 
   return 0;
 }
@@ -806,7 +848,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 
   INT4 errflg=0;
   struct option long_options[] = {
-    {"freq",                 required_argument, NULL,           'a'},
+    {"freq-file",            required_argument, NULL,           'a'},
     {"time",                 required_argument, NULL,           'b'},
     {"band",                 required_argument, NULL,           'c'},
     {"hoft-cache",           required_argument, NULL,           'd'},
@@ -834,7 +876,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   char args[] = "ha:b:c:d:e:g:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:";
 
   /* Initialize default values */
-  CLA->f=0.0;
+  CLA->freqfile=NULL;
   CLA->fcal=0.0;
   CLA->b=0.0;
   CLA->t=0.0;
@@ -870,7 +912,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     switch ( c )
     {
     case 'a':
-      CLA->f=atof(optarg);
+      CLA->freqfile=optarg;
       break;
     case 'b':
       CLA->t=atof(optarg);
@@ -955,7 +997,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'h':
       /* print usage/help message */
       fprintf(stdout,"Arguments are:\n");
-      fprintf(stdout,"\t freq (-a)\tFLOAT\t Start frequency (Hz).\n");
+      fprintf(stdout,"\t freq-file (-a)\tFLOAT\t Name of file with frequencies.\n");
       fprintf(stdout,"\t time (-b)\tFLOAT\t Integration time (s).\n");
       fprintf(stdout,"\t band (-c)\tFLOAT\t Frequency band (Hz).\n");
       fprintf(stdout,"\t hoft-cache (-d)\tFLOAT\t h(t) cache file name.\n");
@@ -989,9 +1031,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     }
   }
 
-  if(CLA->f == 0.0)
+  if(CLA->freqfile == NULL)
     {
-      fprintf(stderr,"No start frequency specified.\n");
+      fprintf(stderr,"No frequency file specified.\n");
       fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
