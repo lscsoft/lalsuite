@@ -396,15 +396,13 @@ LALInspiralEccentricityEngine(
 
  
    
-   REAL8 omega;
-   REAL8 amp, m, dt, t, v, h1, h2, f, fu, fHigh, piM;
+   REAL8 amp, m, dt, t,  h1, h2, f,  fHigh, piM;
    REAL8Vector dummy, values, dvalues, valuesNew, yt, dym, dyt;
 
    rk4In in4;
    rk4GSLIntegrator *integrator;
    void *funcParams;
    expnCoeffs ak;
-   expnFunc func;
 #if 0
    REAL8 mTot = 0;
    REAL8 unitHz = 0;
@@ -561,7 +559,6 @@ LALInspiralEccentricityEngine(
    fHigh = 1024.;
       
    f = 1./(pow(orbital_element_p, 3./2.))/piM;
-   fprintf(stderr, "f=%f\n",f);
   
 
 
