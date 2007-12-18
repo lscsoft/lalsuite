@@ -19,6 +19,7 @@
 
 #include <processtable.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <gsl/gsl_histogram.h>
 #include <gsl/gsl_matrix.h>
 #include <lalapps.h>
@@ -38,21 +39,20 @@
 #include <lal/LALError.h>
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
-#include <lal/FrameStream.h>
+/*#include <lal/FrameStream.h>
 #include <lal/FrameCalibration.h>
 #include <lal/Window.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/IIRFilter.h>
 #include <lal/ResampleTimeSeries.h>
-#include <lal/BandPassTimeSeries.h>
+#include <lal/BandPassTimeSeries.h>*/
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOLwXMLInspiralHeaders.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
-#include <lal/FindChirp.h>
-#include <lal/PrintFTSeries.h>
+/*#include <lal/FindChirp.h>*/
 
 
 /* Here, I defined my own xml table outside the lal strcuture although
@@ -65,37 +65,59 @@
 
 #define MAXIFO 2
 #define BANKEFFICIENCY_PARAMS_ROW \
-"         %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%u"
-
+"       %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%u"
 
 #define BANKEFFICIENCY_PARAMS_ROW_SPACE \
-"         %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %u"
+"%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %u"
 
 /*do not use capital here for future mysql migration */
 #define PRINT_LIGOLW_XML_BANKEFFICIENCY(fp) ( \
 fputs( "   <Table Name=\"bankefficiencygroup:bankefficiency:table\">\n", fp) == EOF || \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi0\"                Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi3\"                Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi0_sim\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi3_sim\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau0\"                Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau3\"                Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau0_sim\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau3_sim\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ffinal\"              Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ffinal_sim\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass1_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass2_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phase_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:snr\"                 Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:snr_at_ta\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phase\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:alpha_f\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:time\"                Type=\"int_4s\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:time_sim\"            Type=\"int_4s\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:nfast\"               Type=\"int_4s\"/>\n", fp) == EOF ||  \
-fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"               Type=\"Local\" Delimiter=\",\">\n", fp) == EOF ) 
-
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi0\"                  Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi3\"                  Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi0_sim\"              Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi3_sim\"              Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau0\"                  Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau3\"                  Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau0_sim\"              Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau3_sim\"              Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ecc\"                   Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ecc_sim\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ffinal\"                Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ffinal_sim\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass1_sim\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass2_sim\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phase_sim\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:snr\"                   Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:snr_at_ta\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phase\"                 Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:alpha_f\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:time\"                  Type=\"int_4s\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:time_sim\"              Type=\"int_4s\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:nfast\"                 Type=\"int_4s\"/>\n", fp) == EOF ||  \
+fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"                 Type=\"Local\" Delimiter=\",\">\n", fp) == EOF ) 
+/*
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_x_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_y_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_z_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_x_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_y_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_z_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:source_theta_sim\"      Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:source_phi_sim\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:inclination_sim\"       Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:polarisationAngle_sim\" Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_x\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_y\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_z\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_x\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_y\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_z\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:source_theta\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:source_phi\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:inclination\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:polarisationAngle\"     Type=\"real_4\"/>\n", fp) == EOF ||  \
+ */
 
 
 #define CVS_ID_STRING      "$Id$"
@@ -253,8 +275,8 @@ typedef struct{
   INT4 snrAtCoaTime;
   double m1,m2, psi0,psi3, tau0, tau3;
   DetectorName noiseModel;
-  REAL4   maxTotalMass;
-  REAL4   minTotalMass;
+  REAL4 maxTotalMass;
+  REAL4 minTotalMass;
   INT4 startTime;
   INT4 numSeconds;
   REAL4 signalfFinal;
@@ -264,7 +286,8 @@ typedef struct{
   INT4 ambiguity;
   REAL8 eMatch;
   REAL8 mmFine;
-  REAL8 t0FineMin, t0FineMax, t3FineMin, t3FineMax, t0FineBin, t3FineBin; 
+  REAL8 t0FineMin, t0FineMax, t3FineMin, t3FineMax, t0FineBin, t3FineBin;
+  REAL8 eccentricityMin, eccentricityMax;
 }
 UserParametersIn;
 
@@ -278,9 +301,11 @@ typedef struct{
   INT4   layer;
   INT4   templateNumber;
   InspiralTemplate bestTemplate;
+  REAL4 eccentricity;
   REAL4 spin1_x, spin1_y,spin1_z;
   REAL4 spin2_x, spin2_y,spin2_z;
-  REAL4 orbitTheta0, orbitPhi0;
+  REAL4 sourceTheta0, sourcePhi0;
+  REAL4 polarisationAngle, inclination;
   InspiralTemplate bestUTemplate;
   REAL4 snrAtCoaTime; 
   
@@ -295,6 +320,8 @@ typedef struct{
   REAL4 tau3_trigger;
   REAL4 psi0_trigger;
   REAL4 psi3_trigger;
+  REAL4 beta_trigger;
+  REAL4 beta_inject;
   REAL4 psi0_inject;
   REAL4 psi3_inject;
   REAL4 fend_trigger;
@@ -309,9 +336,11 @@ typedef struct{
   UINT4 ntrial;
   UINT4 nfast;
   REAL4 snrAtCoaTime; 
+  REAL4 eccentricity;
   REAL4 spin1_x, spin1_y,spin1_z;
   REAL4 spin2_x, spin2_y,spin2_z;
-  REAL4 orbitTheta0, orbitPhi0;
+  REAL4 sourceTheta0, sourcePhi0;
+  REAL4 inclination, polarisationAngle;
 
 } ResultIn;
 
@@ -341,8 +370,8 @@ typedef struct{
  * */
 void
 KeepHighestValues(OverlapOutputIn in , 
-		  OverlapOutputIn *out
-		  );
+		  OverlapOutputIn *out,
+		  InspiralTemplate insptmplt);
 
 
 /* function to create the filters in the BCV overlap.
@@ -362,6 +391,16 @@ LALCreateBCVFilters(REAL4Vector 	*Filter1,
 		    REAL4 		psi0,
 		    REAL4 		psi3);
 
+void
+LALCreateBCVSpinFilters(REAL4Vector 	*FilterBCVSpin1,
+			REAL4Vector 	*FilterBCVSpin2,
+			REAL4Vector 	*FilterBCVSpin3,
+			InspiralWaveOverlapIn   *overlapin,
+			BEPowerVector  *powerVector,
+			BEMoments      *moments,
+			UINT4 		kMin,
+			UINT4 		kMax);
+		
 void 
 LALBankPrintAscii(MetadataTable          templateBank ,
 		  UINT4                  numCoarse,
@@ -405,6 +444,17 @@ LALWaveOverlapBCV(LALStatus 		  *status,
 		  UserParametersIn        userParam, 
 		  OverlapOutputIn         *OverlapOutput,
 		  BEMoments               *moments);
+
+void
+LALWaveOverlapBCVSpin(LALStatus 		  *status,
+		      REAL4Vector             *correlation,
+		      InspiralWaveOverlapIn   *overlapin,
+		      REAL4Vector             *Filter1, 
+		      REAL4Vector             *Filter2,
+		      REAL4Vector             *Filter3,
+		      UserParametersIn        userParam, 
+		      OverlapOutputIn         *OverlapOutput
+		      );
 
 
 /* Function to store the moments needed by the BCV overlap process 
@@ -541,6 +591,7 @@ BEGetMaximumSize(
     LALStatus  *status, 		      
     RandomInspiralSignalIn  randIn,
     InspiralCoarseBankIn    coarseBankIn, 
+    UserParametersIn         userParam, 
     UINT4 *length
     );
 
@@ -626,6 +677,23 @@ LALInspiralOverlapBCV(
     REAL4Vector                 *correlation,
     BEMoments                   *moments);
 
+void 
+LALInspiralOverlapBCVSpin(
+    LALStatus                   *status,
+    InspiralTemplate            *list,
+    BEPowerVector               *powerVector,
+    UserParametersIn            *userParam, 
+    RandomInspiralSignalIn      *randIn,
+    REAL4Vector                 *Filter1,
+    REAL4Vector                 *Filter2,
+    REAL4Vector                 *Filter3,
+    InspiralWaveOverlapIn       *overlapin,
+    OverlapOutputIn             *output,
+    REAL4Vector                 *correlation,
+    BEMoments                   *moments);
+
+
+
 
 void BEParseGetInt( CHAR **argv, INT4 *index, INT4 *data);
 void BEParseGetDouble(CHAR **argv, INT4 *index, REAL8 *data);
@@ -645,4 +713,21 @@ CHAR* GetStringFromScientificRun(INT4 input);
 
 void 
 BEAscii2Xml(void);
+
+void
+LALInspiralBankGeneration2(
+     LALStatus *status,
+     InspiralCoarseBankIn *input,
+     SnglInspiralTable **first,
+     INT4 *ntiles,
+     UserParametersIn *userParam);
+
+void
+LALInspiralCreateFineBank2(
+    LALStatus  *status,
+    InspiralTemplateList **outlist,
+    INT4                 *nlist,
+    InspiralFineBankIn   fineIn, 
+    UserParametersIn *param);
+static int vrbflg = 0;
 
