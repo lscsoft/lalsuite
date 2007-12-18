@@ -2199,7 +2199,7 @@ void BEGenerateInputData(LALStatus *status,
         randIn->param.distance = 1;
         randIn->param.signalAmplitude = 1;
 	    temp = randIn->param.massChoice;
-        randIn->param.massChoice = spinOnly;
+/*        randIn->param.massChoice = spinOnly;*/
         randIn->spin1min = 0;
         randIn->spin1max = 1;
         randIn->spin2min = 0;
