@@ -315,6 +315,7 @@ LALInspiralCreateCoarseBank(
     case TaylorT3: 
     case TaylorF1: 
     case TaylorF2: 
+    case Eccentricity: 
     case PadeT1: 
     case PadeF1: 
     case EOB:     
