@@ -72,6 +72,7 @@ LALInspiralBankGeneration(
   case TaylorT2:
   case TaylorT3:
   case AmpCorPPN:
+  case Eccentricity:
 
     /* Use LALInspiralCreateCoarseBank(). */
     TRY( LALInspiralCreateCoarseBank( status->statusPtr, &coarseList, ntiles,
