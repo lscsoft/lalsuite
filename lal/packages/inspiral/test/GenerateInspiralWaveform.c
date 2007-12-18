@@ -140,10 +140,11 @@ int main (int argc , char **argv) {
   
   SUB( LALInspiralITStructureParseParameters(&status, argc, argv, &params), 
        &status);/*parse user inspiral template parameters */
+
  
   SUB(  LALInspiralInit(&status, &params, &paramsInit), &status);
   /*  params.signalAmplitude =1;*/
-  
+ 
   
   if (otherIn.PrintParameters){
     fprintf(stderr, "the inspiral structure (your parameters) before the call to the waveform generation:\n");
@@ -202,6 +203,7 @@ int main (int argc , char **argv) {
   case EOB:
   case PadeT1:
   case SpinTaylor:
+  case Eccentricity:
     SUB(LALInspiralWave(&status, signal2, &params), &status);
     if (status.statusCode == 0){
       printf_timeseries(signal2->length, signal2->data, dt, params.startTime);   	  
@@ -218,6 +220,8 @@ int main (int argc , char **argv) {
   default:
 	    break;
   }
+
+  fprintf(stderr, "fFinal = %f Hz tFinal = %f seconds" , params.fFinal, params.tC) ;
   
   if (otherIn.PrintParameters){
     fprintf(stderr, "the inspiral structure after the call to the waveform generation:\n");
