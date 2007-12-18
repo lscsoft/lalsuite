@@ -315,9 +315,9 @@ int Initialise(struct CommandLineArgsTag CLA)
       fprintf(stderr,"Could not open %s!\n",CLA.noisefile);
       return 1;
     }
-  setvbuf( fpout, NULL, _IONBF, 0 );  /* This stops buffering */
+  /*   setvbuf( fpout, NULL, _IONBF, 0 );  */
   
-  fprintf(fpout,"%s  GPS start time      h(t) noise     Calibrated DARM_ERR noise      Ratio\n", "%");
+/*   fprintf(fpout,"%s  GPS start time      h(t) noise     Calibrated DARM_ERR noise      Ratio\n", "%"); */
 
   LALCreateForwardREAL8FFTPlan( &status, &fftPlanDouble, hoft.data->length, 0 );
   TESTSTATUS( &status );
@@ -567,7 +567,7 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
   XLALREAL8ForwardFFT( ffthtData, hoft.data, fftPlanDouble );
   XLALREAL4ForwardFFT( fftderrData, derr.data, fftPlan );
 
-  fprintf(fpout, "    %d     ", gpsepoch.gpsSeconds);
+  fprintf(fpout, "%d ", gpsepoch.gpsSeconds);
 
   for (j=0; j < Nfrequencies; j++)  
     {
@@ -613,11 +613,9 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
       }
     
 
-      fprintf(fpout, " %e          %e          %e   ", 
-	      sqrt(mean_Sh_hoft), sqrt(mean_Sh_derr), sqrt(mean_Sh_hoft)/sqrt(mean_Sh_derr));
+      fprintf(fpout, "%e %e %e ",sqrt(mean_Sh_hoft), sqrt(mean_Sh_derr), sqrt(mean_Sh_hoft)/sqrt(mean_Sh_derr));
     }
   
- 
   fprintf(fpout, "\n");
 
   return 0;
