@@ -227,7 +227,16 @@ ComputeFStat ( LALStatus *status,
        && cfBuffer->multiSSB )
     { /* yes ==> reuse */
       multiSSB = cfBuffer->multiSSB;
-    }
+
+      /* re-use (LWL) AM coefficients whenever available */
+      if ( cfBuffer->multiAMcoef )
+	multiAMcoef = cfBuffer->multiAMcoef;
+
+      /* re-use RAA AM coefficients *only* if buffereRAA is TRUE !*/
+      if ( params->bufferedRAA && cfBuffer->multiCmplxAMcoef  )
+	multiCmplxAMcoef = cfBuffer->multiCmplxAMcoef;
+
+    } /* if have buffered stuff to reuse */
   else
     {
       skypos.system =   COORDINATESYSTEM_EQUATORIAL;
@@ -236,85 +245,84 @@ ComputeFStat ( LALStatus *status,
       TRY ( LALGetMultiSSBtimes ( status->statusPtr, &multiSSB, multiDetStates, skypos, doppler->refTime, params->SSBprec ), status );
       if ( cfBuffer )
 	{
-	  XLALEmptyComputeFBuffer ( cfBuffer );
-	}
-    }
+	  XLALDestroyMultiSSBtimes ( cfBuffer->multiSSB );
+	  cfBuffer->multiSSB = multiSSB;
+	  cfBuffer->Alpha = doppler->Alpha;
+	  cfBuffer->Delta = doppler->Delta;
+	  cfBuffer->multiDetStates = multiDetStates ;
+	} /* buffer new SSB times */
 
-  if ( params->useRAA )
+    } /* could not reuse previously buffered quantites */
+
+  /* special treatment of AM coefficients */
+  if ( params->useRAA && !multiCmplxAMcoef )
     {
+      /* compute new RAA AM-coefficients */
       LALGetMultiCmplxAMCoeffs ( status->statusPtr, &multiCmplxAMcoef, multiDetStates, *doppler );
       BEGINFAIL ( status ) {
 	XLALDestroyMultiSSBtimes ( multiSSB );
       } ENDFAIL (status);
 
-      /* noise-weigh Antenna-patterns and compute A,B,C */
+      /* noise-weight Antenna-patterns and compute A,B,C */
       if ( XLALWeighMultiCmplxAMCoeffs ( multiCmplxAMcoef, multiWeights ) != XLAL_SUCCESS ) {
 	LALPrintError("\nXLALWeighMultiCmplxAMCoeffs() failed with error = %d\n\n", xlalErrno );
 	ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
       }
 
-      Ad = multiCmplxAMcoef->Mmunu.Ad;
-      Bd = multiCmplxAMcoef->Mmunu.Bd;
-      Cd = multiCmplxAMcoef->Mmunu.Cd;
-      Ed = multiCmplxAMcoef->Mmunu.Ed;
-      Dd_inv = 1.0 / (Ad * Bd - Cd * Cd - Ed * Ed);
+      /* store in buffer if available */
+      if ( cfBuffer )
+	{
+	  XLALDestroyMultiCmplxAMCoeffs ( cfBuffer->multiCmplxAMcoef );
+	  cfBuffer->multiCmplxAMcoef = multiCmplxAMcoef;
+	}
+
+    } /* if RAA AM coefficients need to be computed */
+
+  if ( !params->useRAA && !multiAMcoef )
+    {
+      /* compute new AM-coefficients */
+      LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multiDetStates, skypos );
+      BEGINFAIL ( status ) {
+	XLALDestroyMultiSSBtimes ( multiSSB );
+      } ENDFAIL (status);
+
+      /* noise-weight Antenna-patterns and compute A,B,C */
+      if ( XLALWeighMultiAMCoeffs ( multiAMcoef, multiWeights ) != XLAL_SUCCESS ) {
+	LALPrintError("\nXLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
+	ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
+      }
 
       /* store these in buffer if available */
       if ( cfBuffer )
 	{
-	  cfBuffer->multiSSB = multiSSB;
-	  XLALDestroyMultiCmplxAMCoeffs ( cfBuffer->multiCmplxAMcoef );
-	  cfBuffer->multiCmplxAMcoef = multiCmplxAMcoef;
-	  cfBuffer->Alpha = doppler->Alpha;
-	  cfBuffer->Delta = doppler->Delta;
-	  cfBuffer->multiDetStates = multiDetStates ;
+	  XLALDestroyMultiAMCoeffs ( cfBuffer->multiAMcoef );
+	  cfBuffer->multiAMcoef = multiAMcoef;
 	} /* if cfBuffer */
 
-    } /* if useRAA */
-  else
+    } /* if LWL AM coefficient need to be computed */
+
+
+  if ( multiAMcoef )
     {
-      /* check if AM coeffs already buffered */
-      if ( cfBuffer
-	   && ( cfBuffer->multiDetStates == multiDetStates )
-	   && ( cfBuffer->Alpha == doppler->Alpha )
-	   && ( cfBuffer->Delta == doppler->Delta )
-	   && cfBuffer->multiAMcoef )
-	{
-	  multiAMcoef = cfBuffer -> multiAMcoef;
-	}
-      else
-	{
-	  /* compute new AM-coefficients */
-	  LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multiDetStates, skypos );
-	  BEGINFAIL ( status ) {
-	    XLALDestroyMultiSSBtimes ( multiSSB );
-	  } ENDFAIL (status);
-
-	  /* noise-weigh Antenna-patterns and compute A,B,C */
-	  if ( XLALWeighMultiAMCoeffs ( multiAMcoef, multiWeights ) != XLAL_SUCCESS ) {
-	    LALPrintError("\nXLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
-	    ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
-	  }
-
-	  /* store these in buffer if available */
-	  if ( cfBuffer )
-	    {
-	      /* note that the buffer should have already been emptied above */
-	      cfBuffer->multiSSB = multiSSB;
-	      cfBuffer->multiAMcoef = multiAMcoef;
-	      cfBuffer->Alpha = doppler->Alpha;
-	      cfBuffer->Delta = doppler->Delta;
-	      cfBuffer->multiDetStates = multiDetStates ;
-	    } /* if cfBuffer */
-
-	} /* if no buffer, different skypos or different detStates */
-
       Ad = multiAMcoef->Mmunu.Ad;
       Bd = multiAMcoef->Mmunu.Bd;
       Cd = multiAMcoef->Mmunu.Cd;
       Dd_inv = 1.0 / (Ad * Bd - Cd * Cd );
       Ed = 0;
-    } /* if !useRAA */
+    }
+  else if ( multiCmplxAMcoef )
+    {
+      Ad = multiCmplxAMcoef->Mmunu.Ad;
+      Bd = multiCmplxAMcoef->Mmunu.Bd;
+      Cd = multiCmplxAMcoef->Mmunu.Cd;
+      Ed = multiCmplxAMcoef->Mmunu.Ed;
+      Dd_inv = 1.0 / (Ad * Bd - Cd * Cd - Ed * Ed);
+    }
+  else
+    {
+      LALPrintError ( "Programming error: neither 'multiAMcoef' nor 'multiCmplxAMcoef' are available!\n");
+      ABORT ( status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+    }
 
   /* ----- loop over detectors and compute all detector-specific quantities ----- */
   for ( X=0; X < numDetectors; X ++)
@@ -370,26 +378,12 @@ ComputeFStat ( LALStatus *status,
    * therefore there is a factor of 2 difference with respect to the equations in JKS, which
    * where based on the single-sided PSD.
    */
-
-  if ( Ed == 0 )
-    {
-
-      retF.F = Dd_inv * (  Bd * (SQ(retF.Fa.re) + SQ(retF.Fa.im) )
-			   + Ad * ( SQ(retF.Fb.re) + SQ(retF.Fb.im) )
-			   - 2.0 * Cd *( retF.Fa.re * retF.Fb.re + retF.Fa.im * retF.Fb.im )
-			   );
-
-    }
-  else
-    {
-
-      retF.F = Dd_inv * (  Bd * (SQ(retF.Fa.re) + SQ(retF.Fa.im) )
-			   + Ad * ( SQ(retF.Fb.re) + SQ(retF.Fb.im) )
-			   - 2.0 * Cd *( retF.Fa.re * retF.Fb.re + retF.Fa.im * retF.Fb.im )
-			   /* This term is -2 E Im(Fa Fb^* ) */
-			   - 2.0 * Ed *( - retF.Fa.re * retF.Fb.im + retF.Fa.im * retF.Fb.re )
-			   );
-    }
+  retF.F = Dd_inv * (  Bd * (SQ(retF.Fa.re) + SQ(retF.Fa.im) )
+		       + Ad * ( SQ(retF.Fb.re) + SQ(retF.Fb.im) )
+		       - 2.0 * Cd *( retF.Fa.re * retF.Fb.re + retF.Fa.im * retF.Fb.im )
+		       );
+  if ( Ed != 0 ) /* extra term in RAA case */
+    retF.F += - 2.0 * Dd_inv * Ed *( - retF.Fa.re * retF.Fb.im + retF.Fa.im * retF.Fb.re ); /* -2 E Im(Fa Fb^* ) / D */
 
   (*Fstat) = retF;
 

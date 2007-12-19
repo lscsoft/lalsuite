@@ -170,6 +170,7 @@ typedef struct {
   REAL8 upsampling;	/**< frequency-upsampling applied to SFTs ==> dFreq != 1/Tsft ... */
   SSBprecision SSBprec; /**< whether to use full relativist SSB-timing, or just simple Newtonian */
   BOOLEAN useRAA;        /**< whether to use the frequency- and sky-position-dependent rigid adiabatic response tensor and not just the long-wavelength approximation */
+  BOOLEAN bufferedRAA;	/**< approximate RAA by assuming constant response over (small) frequency band */
 } ComputeFParams;
 
 /** Struct holding buffered ComputeFStat()-internal quantities to avoid unnecessarily 
