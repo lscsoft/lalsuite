@@ -565,7 +565,6 @@ main (INT4 argc, CHAR **argv )
     fclose(Foutput);
     gsl_matrix_free(amb1);
   }
-  fprintf(stderr, "ok\n");fflush(stderr);
   
   /* free memory */
   while ( templateBank.snglInspiralTable )
@@ -574,11 +573,9 @@ main (INT4 argc, CHAR **argv )
     templateBank.snglInspiralTable = templateBank.snglInspiralTable->next;
     LALFree( tmpltHead );
   }
-  fprintf(stderr, "ok\n");fflush(stderr);
   
   /* --- destroy the plans, correlation and signal --- */
   LALDestroyRandomParams(&status, &randParams );
-  fprintf(stderr, "ok\n");fflush(stderr);
   if (userParam.template == BCV)
   {
     LALFree(powerVector.fm5_3.data);
@@ -596,16 +593,11 @@ main (INT4 argc, CHAR **argv )
     }
   }
   
-  fprintf(stderr, "ok\n");fflush(stderr);
   LALFree(randIn.psd.data);
-  fprintf(stderr, "ok\n");fflush(stderr);
   LALDDestroyVector( &status, &(coarseBankIn.shf.data) );
-  fprintf(stderr, "ok\n");fflush(stderr);
  
   LALFree(signal.data);
-  fprintf(stderr, "ok\n");fflush(stderr);
   LALFree(correlation.data);
-  fprintf(stderr, "ok\n");fflush(stderr);
 
   
   LALDestroyRealFFTPlan(&status,&fwdp);
