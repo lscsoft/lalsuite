@@ -67,15 +67,26 @@ NRCSID( DETECTORSTATESH, "$Id$" );
  * The coordinate-system is SSB-fixed Cartesian coordinates, in particular EQUATORIAL coords for 
  * Earth-based detectors and ECLIPTIC coords for LISA.
  */
-typedef struct 
+typedef struct
 {
   REAL4 d11;   REAL4 d12;   REAL4 d13;
                REAL4 d22;   REAL4 d23;
                             REAL4 d33;
 } DetectorTensor;
-  
+
+/** Struct containing pre-computed quantites describing a
+ * single detector arm: unit-vector along detector-arm, arm-length,
+ * and arm "basis-tensor" n x n
+ */
+typedef struct
+{
+  REAL4 n[3];			/* unit vector pointing along this arm */
+  REAL4 L;			/* length of this arm */
+  DetectorTensor baseT;		/* "basis-tensor" n x n */
+} DetectorArm;
+
 /* ----- Output types for LALGetDetectorStates() */
-/** State-info about position, velocity and LMST of a detector together 
+/** State-info about position, velocity and LMST of a detector together
  * with corresponding EarthState.
  */
 typedef struct
@@ -83,9 +94,10 @@ typedef struct
   LIGOTimeGPS tGPS;		/**< GPS timestamps corresponding to this entry */
   REAL8 rDetector[3];		/**< Cartesian coords of detector position in ICRS J2000. Units=sec */
   REAL8 vDetector[3];		/**< Cart. coords. of detector velocity, in dimensionless units (v/c)*/
-  DetectorTensor detT;		/**< Detector-tensor components in SSB-fixed, Cartesian coordinates */
   REAL8 LMST;			/**< local mean sidereal time at the detector-location in radians */
   EarthState earthState;	/**< EarthState information */
+  DetectorArm detArms[3];	/**< include up to three arms to allow describing LISA */
+  DetectorTensor detT;		/**< Detector-tensor components in SSB-fixed, Cartesian coordinates */
 } DetectorState;
 
 

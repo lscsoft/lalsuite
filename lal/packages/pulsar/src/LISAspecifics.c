@@ -58,7 +58,7 @@ const LALDetector empty_LALDetector;
 /*---------- internal prototypes ----------*/
 int XLALgetLISAtwoArmIFO ( DetectorTensor *detT, LIGOTimeGPS tGPS, LISAarmT armA, LISAarmT armB );
 
-int XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, LIGOTimeGPS tGPS, PulsarDopplerParams doppler, LISAarmT armA, LISAarmT armB );
+int XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, const DetectorState *detState, PulsarDopplerParams doppler, LISAarmT armA, LISAarmT armB );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -305,7 +305,7 @@ XLALgetLISAtwoArmIFO ( DetectorTensor *detT, 	/**< [out]: two-arm IFO detector-t
  */
 int
 XLALgetCmplxLISADetectorTensor ( CmplxDetectorTensor *detT, 	/**< [out]: LISA LWL detector-tensor */
-				 LIGOTimeGPS tGPS,		/**< [in] GPS time to compute IFO at */
+				 const DetectorState *detState, /**< [in] detector-state info */
 				 PulsarDopplerParams doppler,   /**< [in] doppler parameters including frequency and sky position */
 				 CHAR channelNum)		/**< [in] channel-number (as a char)  '1', '2', '3' .. */
 {
@@ -346,18 +346,18 @@ XLALgetCmplxLISADetectorTensor ( CmplxDetectorTensor *detT, 	/**< [out]: LISA LW
     } /* switch channel[1] */
 
   if (chan1 == 0) {
-    if ( XLALgetLISAtwoArmRAAIFO ( detT, tGPS, doppler, armA, armB ) != 0 ) {
+    if ( XLALgetLISAtwoArmRAAIFO ( detT, detState, doppler, armA, armB ) != 0 ) {
       LALPrintError ("\nXLALgetLISAtwoArmRAAIFO() failed !\n\n");
       xlalErrno = XLAL_EINVAL;
       return -1;
     }
   } else {
-    if ( XLALgetCmplxLISADetectorTensor ( &detT1, tGPS, doppler, chan1 ) != 0 ) {
+    if ( XLALgetCmplxLISADetectorTensor ( &detT1, detState, doppler, chan1 ) != 0 ) {
       LALPrintError ("\nXLALgetCmplxLISADetectorTensor() failed !\n\n");
       xlalErrno = XLAL_EINVAL;
       return -1;
     }
-    if ( XLALgetCmplxLISADetectorTensor ( &detT2, tGPS, doppler, chan2 ) != 0 ) {
+    if ( XLALgetCmplxLISADetectorTensor ( &detT2, detState, doppler, chan2 ) != 0 ) {
       LALPrintError ("\nXLALgetCmplxLISADetectorTensor() failed !\n\n");
       xlalErrno = XLAL_EINVAL;
       return -1;
@@ -392,7 +392,7 @@ XLALgetCmplxLISADetectorTensor ( CmplxDetectorTensor *detT, 	/**< [out]: LISA LW
  */
 int
 XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, 	/**< [out]: two-arm IFO detector-tensor */
-			  LIGOTimeGPS tGPS,	/**< [in] GPS time to compute IFO at */
+			  const DetectorState *detState, /**< [in] detector-state info */
 			  PulsarDopplerParams doppler,   /**< [in] doppler parameters including frequency and sky position */
 			  LISAarmT armA, 		/**< [in] first arm */
 			  LISAarmT armB )		/**< [in] second arm */
@@ -428,7 +428,7 @@ XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, 	/**< [out]: two-arm IFO de
     REAL4 sqrt3;
 
     sqrt3 = sqrt(3.0f);
-    ti = XLALGPSGetREAL8( &tGPS ) - LISA_TIME_ORIGIN;
+    ti = XLALGPSGetREAL8( &detState->tGPS ) - LISA_TIME_ORIGIN;
     alpha_ti = Om * ti + kappa;
 
     sin_cos_LUT (&sin_alpha, &cos_alpha, alpha_ti);

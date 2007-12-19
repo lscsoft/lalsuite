@@ -40,7 +40,8 @@
 
 
 #include <lal/AVFactories.h>
-#include "ComplexAM.h"
+#include <lal/LISAspecifics.h>
+#include <lal/ComplexAM.h>
 
 NRCSID( COMPLEXAMC, "$Id$");
 
@@ -135,7 +136,7 @@ LALGetCmplxAMCoeffs(LALStatus *status,
       COMPLEX8 ai, bi;
 
       if ( XLALgetCmplxLISADetectorTensor(&d,
-					  DetectorStates->data[i].tGPS,
+					  &(DetectorStates->data[i]),
 					  doppler, channelNum)
 	   != 0 ) {
 	LALPrintError ( "\nXLALgetCmplxLISADetectorTensor() failed ... errno = %d\n\n", xlalErrno );
