@@ -64,7 +64,7 @@ NRCSID( DETECTORSTATESH, "$Id$" );
 /*---------- exported types ----------*/
 
 /** The 'detector tensor' for a GW-detector: symmetric 3x3 matrix, storing only the upper triangle.
- * The coordinate-system is SSB-fixed Cartesian coordinates, in particular EQUATORIAL coords for 
+ * The coordinate-system is SSB-fixed Cartesian coordinates, in particular EQUATORIAL coords for
  * Earth-based detectors and ECLIPTIC coords for LISA.
  */
 typedef struct
@@ -76,14 +76,17 @@ typedef struct
 
 /** Struct containing pre-computed quantites describing a
  * single detector arm: unit-vector along detector-arm, arm-length,
- * and arm "basis-tensor" n x n
+ * and arm "basis-tensor" n x n. This is used to speed up the
+ * computation of LISA detector tensors in the rigid-adiabatic approximation.
  */
 typedef struct
 {
   REAL4 n[3];			/* unit vector pointing along this arm */
-  REAL4 L;			/* length of this arm */
-  DetectorTensor baseT;		/* "basis-tensor" n x n */
+  REAL4 L_c;			/* length of this arm in seconds L / c */
+  DetectorTensor basisT;	/* "basis-tensor" n x n */
 } DetectorArm;
+
+typedef DetectorArm Detector3Arms[3];	/**< used to allow functions some type/size checking */
 
 /* ----- Output types for LALGetDetectorStates() */
 /** State-info about position, velocity and LMST of a detector together
@@ -96,7 +99,7 @@ typedef struct
   REAL8 vDetector[3];		/**< Cart. coords. of detector velocity, in dimensionless units (v/c)*/
   REAL8 LMST;			/**< local mean sidereal time at the detector-location in radians */
   EarthState earthState;	/**< EarthState information */
-  DetectorArm detArms[3];	/**< include up to three arms to allow describing LISA */
+  Detector3Arms detArms;	/**< include up to three arms to allow describing LISA */
   DetectorTensor detT;		/**< Detector-tensor components in SSB-fixed, Cartesian coordinates */
 } DetectorState;
 
@@ -139,6 +142,8 @@ LALGetMultiDetectorStates( LALStatus *,
 			   const EphemerisData *edat );
 
 void LALCreateDetectorStateSeries (LALStatus *, DetectorStateSeries **vect, UINT4 length );
+
+int XLALSubtractDetectorTensors ( DetectorTensor *diff, const DetectorTensor *aT, const DetectorTensor *bT );
 
 /* destructors */
 void XLALDestroyDetectorStateSeries ( DetectorStateSeries *detStates );

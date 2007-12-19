@@ -62,12 +62,13 @@ typedef enum {
 
 /*---------- exported prototypes [API] ----------*/
 int XLALcreateLISA ( LALDetector *Detector, CHAR channelNum );
-int XLALgetLISADetectorTensor ( DetectorTensor *detT, LIGOTimeGPS tGPS, CHAR channelNum );
+int XLALgetLISADetectorTensor ( DetectorTensor *detT, const Detector3Arms detArms, CHAR channelNum );
 int XLALgetCmplxLISADetectorTensor ( CmplxDetectorTensor *detT, const DetectorState *detState, PulsarDopplerParams doppler, CHAR channelNum );
+int XLALprecomputeLISAarms ( DetectorState *detState );
 
 #ifdef  __cplusplus
 }
-#endif  
+#endif
 /* C++ protection. */
 
 #endif  /* Double-include protection. */

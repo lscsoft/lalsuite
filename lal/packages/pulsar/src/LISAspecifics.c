@@ -45,7 +45,7 @@ NRCSID( LISASPECIFICSC, "$Id$");
 /** Simple Euklidean scalar product for two 3-dim vectors in cartesian coords */
 #define SCALAR(u,v) ((u)[0]*(v)[0] + (u)[1]*(v)[1] + (u)[2]*(v)[2])
 #define SQ(x) ( (x) * (x) )
-
+#define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
 /*----- SWITCHES -----*/
 
 /*---------- internal types ----------*/
@@ -133,13 +133,103 @@ XLALcreateLISA (LALDetector *Detector,	/**< [out] LALDetector */
 
 } /* XLALcreateLISA() */
 
+
+/** Precompute the arm-geometry for LISA, which is later used
+ * for assembling the RAA detector-tensor (which depends on
+ * frequency and skyposition
+ */
+int
+XLALprecomputeLISAarms ( DetectorState *detState )
+{
+  REAL4 x[3], y[3], z[3];		/* position x,y,z of spacecraft n */
+
+  enum { SC1 = 0, SC2, SC3 };		/* translate TDI-conventions to C-indexing */
+  enum { I1 = 0, I2, I3 };		/* convenience indices */
+
+  UINT4 send_l[3] = { SC3, SC1, SC2 };	/* canonical sender-spacecraft 's' for arm 'l' */
+  UINT4 rec_l [3] = { SC2, SC3, SC1 };	/* canonical receiver-spacecraft 'r' for arm 'l' */
+
+  UINT4 arm;
+
+  if ( !detState )
+    return -1;
+
+  { /* determine space-craft positions [MLDC Challenge 1] */
+    REAL4 e = 0.00965;				/* LISA eccentricity */
+    REAL4 ae = LAL_AU_SI * e / LAL_C_SI;	/* in units of time */
+    REAL4 kappa = 0, lambda = 0;		/* MLDC default */
+    REAL4 sin_alpha, cos_alpha;
+
+    REAL8 Om = LAL_TWOPI /  LAL_YRSID_SI;
+    REAL8 alpha_t;
+    UINT4 i;
+    REAL8 tGPS = GPS2REAL8( detState->tGPS ) - LISA_TIME_ORIGIN;
+
+    alpha_t = Om * tGPS + kappa;
+    sin_cos_LUT (&sin_alpha, &cos_alpha, alpha_t);
+
+    for ( i = 0; i < 3; i ++ )
+      {
+	REAL4 beta = 2.0 * i * LAL_PI / 3.0  + lambda;	/* relative orbital phase in constellation */
+	REAL4 sin_beta, cos_beta;
+	sin_cos_LUT ( &sin_beta, &cos_beta, beta );
+
+	x[i] = detState->earthState.posNow[0] + ae * ( sin_alpha * cos_alpha * sin_beta  - ( 1.0f + SQ(sin_alpha)) * cos_beta );
+	y[i] = detState->earthState.posNow[1] + ae * ( sin_alpha * cos_alpha * cos_beta  - ( 1.0f + SQ(cos_alpha)) * sin_beta );
+	z[i] = detState->earthState.posNow[2] - sqrt(3.0f) * ae * ( cos_alpha * cos_beta + sin_alpha * sin_beta );
+      } /* for i=[0:2] */
+
+  } /* determine spacecraft positions */
+
+  for ( arm = 0; arm < 3; arm ++ )
+    {
+      UINT4 send, rec;
+      REAL4 n[3], L, invL;
+      DetectorTensor basisT;
+
+      /* get canonical (ie following TDI conventions) senders and receivers this arm */
+      send = send_l[arm];
+      rec  = rec_l [arm];
+
+      /* get un-normalized arm-vectors first */
+      detState->detArms[arm].n[0] = n[0] = x[rec] - x[send];
+      detState->detArms[arm].n[1] = n[1] = y[rec] - y[send];
+      detState->detArms[arm].n[2] = n[2] = z[rec] - z[send];
+
+      /* get armlength in seconds, and normalize */
+      detState->detArms[arm].L_c = L = sqrt ( SCALAR(n,n) );
+      invL = 1.0f / L;
+
+      n[0] *= invL;
+      n[1] *= invL;
+      n[2] *= invL;
+
+      /* pre-compute the "basis tensor" n x n for this arm */
+      basisT.d11 =  0.5 * n[I1] * n[I1];
+      basisT.d12 =  0.5 * n[I1] * n[I2];
+      basisT.d13 =  0.5 * n[I1] * n[I3];
+
+      basisT.d22 =  0.5 * n[I2] * n[I2];
+      basisT.d23 =  0.5 * n[I2] * n[I3];
+
+      basisT.d33 =  0.5 * n[I3] * n[I3];
+
+      detState->detArms[arm].basisT = basisT;
+
+    } /* for arm = 0, 1, 2 */
+
+  return 0;
+
+} /* XLALprecomputeLISAarms() */
+
+
 /* Construct the long-wavelength-limit (LWL) detector tensor for LISA, given the prefix
  *
  * RETURN 0 = OK, -1 = ERROR
  */
 int
 XLALgetLISADetectorTensor ( DetectorTensor *detT, 	/**< [out]: LISA LWL detector-tensor */
-			    LIGOTimeGPS tGPS,		/**< [in] GPS time to compute IFO at */
+			    const Detector3Arms detArms,/**< [in] precomputed detector-arms */
 			    CHAR channelNum )		/**< channel-number (as a char)  '1', '2', '3' .. */
 {
   LISAarmT armA, armB;
@@ -178,30 +268,22 @@ XLALgetLISADetectorTensor ( DetectorTensor *detT, 	/**< [out]: LISA LWL detector
       break;
     } /* switch channel[1] */
 
-  if (chan1 == 0) {
-    if ( XLALgetLISAtwoArmIFO ( detT, tGPS, armA, armB ) != 0 ) {
-      LALPrintError ("\nXLALgetLISAtwoArmIFO() failed !\n\n");
-      xlalErrno = XLAL_EINVAL;
-      return -1;
-    }
-  } else {
-    if ( XLALgetLISADetectorTensor ( &detT1, tGPS, chan1 ) != 0 ) {
-      LALPrintError ("\nXLALgetLISADetectorTensor() failed !\n\n");
-      xlalErrno = XLAL_EINVAL;
-      return -1;
-    }
-    if ( XLALgetLISADetectorTensor ( &detT2, tGPS, chan2 ) != 0 ) {
-      LALPrintError ("\nXLALgetLISADetectorTensor() failed !\n\n");
-      xlalErrno = XLAL_EINVAL;
-      return -1;
-    }
-    detT->d11 = detT1.d11 - detT2.d11;
-    detT->d12 = detT1.d12 - detT2.d12;
-    detT->d13 = detT1.d13 - detT2.d13;
-    detT->d22 = detT1.d22 - detT2.d22;
-    detT->d23 = detT1.d23 - detT2.d23;
-    detT->d33 = detT1.d33 - detT2.d33;
-  }
+  if (chan1 == 0)
+    XLALSubtractDetectorTensors ( detT, &(detArms[armA].basisT), &(detArms[armB].basisT) );
+  else
+    {
+      if ( XLALgetLISADetectorTensor ( &detT1, detArms, chan1 ) != 0 ) {
+	LALPrintError ("\nXLALgetLISADetectorTensor() failed !\n\n");
+	xlalErrno = XLAL_EINVAL;
+	return -1;
+      }
+      if ( XLALgetLISADetectorTensor ( &detT2, detArms, chan2 ) != 0 ) {
+	LALPrintError ("\nXLALgetLISADetectorTensor() failed !\n\n");
+	xlalErrno = XLAL_EINVAL;
+	return -1;
+      }
+      XLALSubtractDetectorTensors ( detT, &detT1, &detT2 );
+    } /* multi-channel "detector" such as 'X-Y' etc */
 
   return 0;
 

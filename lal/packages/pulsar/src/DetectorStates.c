@@ -177,7 +177,7 @@ LALGetDetectorStates (LALStatus *status,
 
 
 
-/** Function to compute the LWL detector-tensor for the given \a detector in 
+/** Function to compute the LWL detector-tensor for the given \a detector in
  * SSB-fixed cartesian coordinates at time tgps.
  * The coordinates used are: EQUATORIAL for Earth-based detectors, but ECLIPTIC for LISA.
  * RETURN: 0 = OK, -1 = ERROR
@@ -198,8 +198,14 @@ XLALFillDetectorTensor (DetectorState *detState,	/**< [out,in]: detector state: 
 
   /* we need to distinguish two cases: space-borne (i.e. LISA) and Earth-based detectors */
   if ( prefix[0] == 'Z' )	/* LISA */
-    { 
-      if ( XLALgetLISADetectorTensor ( &(detState->detT), detState->tGPS, prefix[1] ) != 0 ) {
+    {
+      if ( XLALprecomputeLISAarms ( detState ) != 0 ) {
+	LALPrintError ("\nXLALprecomputeLISAarms() failed !\n\n");
+	xlalErrno = XLAL_EINVAL;
+	return -1;
+      }
+
+      if ( XLALgetLISADetectorTensor ( &(detState->detT), detState->detArms, prefix[1] ) != 0 ) {
 	LALPrintError ("\nXLALgetLISADetectorTensor() failed !\n\n");
 	xlalErrno = XLAL_EINVAL;
 	return -1;
@@ -214,7 +220,7 @@ XLALFillDetectorTensor (DetectorState *detState,	/**< [out,in]: detector state: 
       sin_cos_LUT ( &sinG, &cosG, detState->earthState.gmstRad );
       sinGsinG = sinG * sinG;
       sinGcosG = sinG * cosG;
-      cosGcosG = cosG * cosG;      
+      cosGcosG = cosG * cosG;
 
       /*
       printf("GMST = %fdeg; cosG = %f, sinG= %f\n",
@@ -250,10 +256,32 @@ XLALFillDetectorTensor (DetectorState *detState,	/**< [out,in]: detector state: 
       */
 
     } /* if Earth-based */
-    
+
   return 0;
 
 } /* XLALFillDetectorTensor() */
+
+/** Convenience function for subtracting two DetectorTensors: aT - bT
+ */
+int
+XLALSubtractDetectorTensors ( DetectorTensor *diff, const DetectorTensor *aT, const DetectorTensor *bT )
+{
+  if ( !diff || !aT || !bT )
+    return -1;
+
+  diff->d11 = aT->d11  - bT->d11;
+  diff->d12 = aT->d12  - bT->d12;
+  diff->d13 = aT->d13  - bT->d13;
+
+  diff->d22 = aT->d22  - bT->d22;
+  diff->d23 = aT->d23  - bT->d23;
+
+  diff->d33 = aT->d33  - bT->d33;
+
+  return 0;
+
+} /* XLALSubtractDetectorTensors */
+
 
 
 
