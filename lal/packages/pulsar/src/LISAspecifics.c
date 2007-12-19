@@ -58,6 +58,8 @@ const LALDetector empty_LALDetector;
 /*---------- internal prototypes ----------*/
 int XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, const DetectorArm *armA, const DetectorArm *armB, const FreqSkypos_t *freq_skypos );
 
+static REAL4 safe_sinc ( REAL4 x );
+
 /*==================== FUNCTION DEFINITIONS ====================*/
 
 
@@ -384,7 +386,7 @@ XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, 	/**< [out]: two-arm IFO de
   REAL4 pifL_3c = pifL_c / 3.0f;
   REAL4 kdotnA, kdotnB;
   REAL4 eta, sinpha, cospha;
-  REAL4 sinc_eta, sineta, coseta;
+  REAL4 sinc_eta;
   COMPLEX8 coeffAA, coeffBB;
 
   if ( !detT || !detArmA || !detArmB || !freq_skypos )
@@ -399,8 +401,7 @@ XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, 	/**< [out]: two-arm IFO de
   sin_cos_LUT (&sinpha, &cospha, pifL_3c * ( 3.0f - (kdotnA + 2.0f * kdotnB) ) );
 
   eta = pifL_c * (1.0f + kdotnA);
-  sin_cos_LUT ( &sineta, &coseta, eta );
-  sinc_eta = sineta / eta;
+  sinc_eta = safe_sinc ( eta );
 
   coeffAA.re = 0.5f * cospha * sinc_eta;
   coeffAA.im = 0.5f * sinpha * sinc_eta;
@@ -409,8 +410,7 @@ XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, 	/**< [out]: two-arm IFO de
   sin_cos_LUT (&sinpha, &cospha, pifL_3c * ( - 3.0f - (kdotnA + 2.0f * kdotnB) ) );
 
   eta = pifL_c * (1.0f - kdotnA);
-  sin_cos_LUT ( &sineta, &coseta, eta );
-  sinc_eta = sineta / eta;
+  sinc_eta = safe_sinc ( eta );
 
   coeffAA.re += 0.5f * cospha * sinc_eta;
   coeffAA.im += 0.5f * sinpha * sinc_eta;
@@ -421,8 +421,7 @@ XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, 	/**< [out]: two-arm IFO de
   sin_cos_LUT (&sinpha, &cospha, pifL_3c * ( 3.0f + (2.0f * kdotnA + kdotnB) ) );
 
   eta = pifL_c * (1.0f - kdotnB);
-  sin_cos_LUT ( &sineta, &coseta, eta );
-  sinc_eta = sineta / eta;
+  sinc_eta = safe_sinc ( eta );
 
   coeffBB.re = 0.5f * cospha * sinc_eta;
   coeffBB.im = 0.5f * sinpha * sinc_eta;
@@ -431,8 +430,7 @@ XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, 	/**< [out]: two-arm IFO de
   sin_cos_LUT (&sinpha, &cospha, pifL_3c * ( - 3.0f + (2.0f * kdotnA + kdotnB) ) );
 
   eta = pifL_c * (1.0f + kdotnB);
-  sin_cos_LUT ( &sineta, &coseta, eta );
-  sinc_eta = sineta / eta;
+  sinc_eta = safe_sinc ( eta );
 
   coeffBB.re += 0.5f * cospha * sinc_eta;
   coeffBB.im += 0.5f * sinpha * sinc_eta;
@@ -454,3 +452,20 @@ XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, 	/**< [out]: two-arm IFO de
   return 0;
 
 } /* XLALgetLISAtwoArmRAAIFO() */
+
+#define SINC_SAFETY 1e-5
+/** Unnormalized sinc(x) = sin(x) / x. Correctly handle the limit x->0
+ * where sinc(x) = 1
+ */
+static REAL4 safe_sinc ( REAL4 x )
+{
+  REAL4 sinx, cosx;
+  if ( (x > SINC_SAFETY) || ( x < -SINC_SAFETY ) )
+    {
+      sin_cos_LUT ( &sinx, &cosx, x );
+      return (sinx / x );
+    }
+  else
+    return 1.0f;
+
+} /* sinc () */
