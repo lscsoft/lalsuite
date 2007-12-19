@@ -12,15 +12,15 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 /**
  * \author Reinhard Prix
  * \date 2005
- * \file 
+ * \file
  * \ingroup pulsar
  * \brief API for the DetectorStates.c functions.
  *
@@ -83,7 +83,7 @@ typedef struct
 {
   REAL4 n[3];			/* unit vector pointing along this arm */
   REAL4 L_c;			/* length of this arm in seconds L / c */
-  DetectorTensor basisT;	/* "basis-tensor" n x n */
+  DetectorTensor basisT;	/* arm "basis-tensor" (n x n) */
 } DetectorArm;
 
 typedef DetectorArm Detector3Arms[3];	/**< used to allow functions some type/size checking */
@@ -128,22 +128,25 @@ typedef struct
 
 /*---------- exported prototypes [API] ----------*/
 void
-LALGetDetectorStates (LALStatus *, 
+LALGetDetectorStates (LALStatus *,
 		      DetectorStateSeries **DetectorStates,
 		      const LIGOTimeGPSVector *timestamps,
 		      const LALDetector *detector,
 		      const EphemerisData *edat,
 		      REAL8 tOffset);
 
-void 
-LALGetMultiDetectorStates( LALStatus *, 
-			   MultiDetectorStateSeries **mdetStates, 
-			   const MultiSFTVector *multiSFTs, 
+void
+LALGetMultiDetectorStates( LALStatus *,
+			   MultiDetectorStateSeries **mdetStates,
+			   const MultiSFTVector *multiSFTs,
 			   const EphemerisData *edat );
 
 void LALCreateDetectorStateSeries (LALStatus *, DetectorStateSeries **vect, UINT4 length );
 
+int XLALTensorSquareVector ( DetectorTensor *vxv, REAL4 v1, REAL4 v2, REAL4 v3 );
+int XLALAddDetectorTensors ( DetectorTensor *sum, const DetectorTensor *aT, const DetectorTensor *bT );
 int XLALSubtractDetectorTensors ( DetectorTensor *diff, const DetectorTensor *aT, const DetectorTensor *bT );
+int XLALMultiplyDetectorTensor ( DetectorTensor *mult, const DetectorTensor *aT, REAL4 factor );
 
 /* destructors */
 void XLALDestroyDetectorStateSeries ( DetectorStateSeries *detStates );
@@ -156,12 +159,12 @@ void XLALDestroyMultiDetectorStateSeries ( MultiDetectorStateSeries *mdetStates 
 void LALGetMultiDetectorVelTimePos(LALStatus                *status,
 				   REAL8VectorSequence      **outVel,
 				   REAL8VectorSequence      **outPos,
-				   LIGOTimeGPSVector        **outTime, 
+				   LIGOTimeGPSVector        **outTime,
 				   MultiDetectorStateSeries *in);
 
 #ifdef  __cplusplus
 }
-#endif  
+#endif
 /* C++ protection. */
 
 #endif  /* Double-include protection. */

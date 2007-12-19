@@ -62,9 +62,12 @@ typedef enum {
 
 /*---------- exported prototypes [API] ----------*/
 int XLALcreateLISA ( LALDetector *Detector, CHAR channelNum );
-int XLALgetLISADetectorTensor ( DetectorTensor *detT, const Detector3Arms detArms, CHAR channelNum );
-int XLALgetCmplxLISADetectorTensor ( CmplxDetectorTensor *detT, const DetectorState *detState, PulsarDopplerParams doppler, CHAR channelNum );
+
 int XLALprecomputeLISAarms ( DetectorState *detState );
+
+int XLALgetLISADetectorTensorLWL ( DetectorTensor *detT, const Detector3Arms detArms, CHAR channelNum );
+int XLALgetLISADetectorTensorRAA ( CmplxDetectorTensor *detT, const Detector3Arms detArms, PulsarDopplerParams doppler, CHAR channelNum );
+
 
 #ifdef  __cplusplus
 }

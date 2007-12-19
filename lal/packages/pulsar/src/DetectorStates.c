@@ -205,8 +205,8 @@ XLALFillDetectorTensor (DetectorState *detState,	/**< [out,in]: detector state: 
 	return -1;
       }
 
-      if ( XLALgetLISADetectorTensor ( &(detState->detT), detState->detArms, prefix[1] ) != 0 ) {
-	LALPrintError ("\nXLALgetLISADetectorTensor() failed !\n\n");
+      if ( XLALgetLISADetectorTensorLWL ( &(detState->detT), detState->detArms, prefix[1] ) != 0 ) {
+	LALPrintError ("\nXLALgetLISADetectorTensorLWL() failed !\n\n");
 	xlalErrno = XLAL_EINVAL;
 	return -1;
       }
@@ -261,7 +261,53 @@ XLALFillDetectorTensor (DetectorState *detState,	/**< [out,in]: detector state: 
 
 } /* XLALFillDetectorTensor() */
 
+/** Compute the "squared-tensor" v x v for given vector v,
+ * the result is returned in a "detectorTensor" struct
+ */
+int
+XLALTensorSquareVector ( DetectorTensor *vxv, REAL4 v1, REAL4 v2, REAL4 v3 )
+{
+  if ( !vxv )
+    return -1;
+
+  vxv->d11 = v1 * v1;
+  vxv->d12 = v1 * v2;
+  vxv->d13 = v1 * v3;
+
+  vxv->d22 = v2 * v2;
+  vxv->d23 = v2 * v3;
+
+  vxv->d33 = v3 * v3;
+
+  return 0;
+
+} /* XLALTensorSquareVector() */
+
+
+/** Convenience function for adding two DetectorTensors: aT - bT
+ * NOTE: it *is* save to have sum point to the same tensor-struct as either aT or bT.
+ */
+int
+XLALAddDetectorTensors ( DetectorTensor *sum, const DetectorTensor *aT, const DetectorTensor *bT )
+{
+  if ( !sum || !aT || !bT )
+    return -1;
+
+  sum->d11 = aT->d11  + bT->d11;
+  sum->d12 = aT->d12  + bT->d12;
+  sum->d13 = aT->d13  + bT->d13;
+
+  sum->d22 = aT->d22  + bT->d22;
+  sum->d23 = aT->d23  + bT->d23;
+
+  sum->d33 = aT->d33  + bT->d33;
+
+  return 0;
+
+} /* XLALSubtractDetectorTensors() */
+
 /** Convenience function for subtracting two DetectorTensors: aT - bT
+ * NOTE: it *is* save to have diff point to the same tensor-struct as either aT or bT.
  */
 int
 XLALSubtractDetectorTensors ( DetectorTensor *diff, const DetectorTensor *aT, const DetectorTensor *bT )
@@ -280,7 +326,30 @@ XLALSubtractDetectorTensors ( DetectorTensor *diff, const DetectorTensor *aT, co
 
   return 0;
 
-} /* XLALSubtractDetectorTensors */
+} /* XLALSubtractDetectorTensors() */
+
+/** Convenience function for multiplying a DetectorTensor by a scalar factor.
+ * NOTE: it *is* safe to have aT and mult point to the same tensor-struct
+ */
+int
+XLALMultiplyDetectorTensor ( DetectorTensor *mult, const DetectorTensor *aT, REAL4 factor )
+{
+  if ( !mult || !aT )
+    return -1;
+
+  mult->d11 = factor * aT->d11;
+  mult->d12 = factor * aT->d12;
+  mult->d13 = factor * aT->d13;
+
+  mult->d22 = factor * aT->d22;
+  mult->d23 = factor * aT->d23;
+
+  mult->d33 = factor * aT->d33;
+
+  return 0;
+
+} /* XLALMultiplyDetectorTensor() */
+
 
 
 
@@ -383,11 +452,11 @@ LALGetMultiDetectorStates( LALStatus *status,
   /* free complete MultiDetectorStateSeries built up so far */
   XLALDestroyMultiDetectorStateSeries ( ret );	/* NOTE: this function is "NULL-robust" */
   ABORT ( status, -1, "LALGetMultiDetectorStates failed" );
-  
+
  success:
 
   (*mdetStates) = ret;
-  
+
   DETATCHSTATUSPTR (status);
   RETURN ( status );
 
@@ -399,7 +468,7 @@ LALGetMultiDetectorStates( LALStatus *status,
 
 /** Create a DetectorStateSeries */
 void
-LALCreateDetectorStateSeries (LALStatus *status, 
+LALCreateDetectorStateSeries (LALStatus *status,
 			      DetectorStateSeries **vect,	/**< output vector */
 			      UINT4 length )			/**< number of entries */
 {

@@ -77,7 +77,7 @@ NRCSID( COMPLEXAMC, "$Id$");
 void
 LALGetCmplxAMCoeffs(LALStatus *status,
 		    CmplxAMCoeffs *coeffs,			/**< [out] amplitude-coeffs {a(f_0,t_i), b(f_0,t_i)} */
-		    const DetectorStateSeries *DetectorStates,	/**< timeseries of detector states (note these may depend on f_0 and the sky position) */
+		    const DetectorStateSeries *DetectorStates,	/**< timeseries of detector states */
 		    PulsarDopplerParams doppler			/**< {alpha,delta} of the source */
 	       )
 {
@@ -135,39 +135,39 @@ LALGetCmplxAMCoeffs(LALStatus *status,
     {
       COMPLEX8 ai, bi;
 
-      if ( XLALgetCmplxLISADetectorTensor(&d,
-					  &(DetectorStates->data[i]),
+      if ( XLALgetLISADetectorTensorRAA (&d,
+					  DetectorStates->data[i].detArms,
 					  doppler, channelNum)
 	   != 0 ) {
 	LALPrintError ( "\nXLALgetCmplxLISADetectorTensor() failed ... errno = %d\n\n", xlalErrno );
 	ABORT ( status, COMPLEXAMC_EXLAL, COMPLEXAMC_MSGEXLAL );
       }
 
-      ai.re = d.d11.re * ( xi1 * xi1 - eta1 * eta1 )
-	+ 2 * d.d12.re * ( xi1*xi2 - eta1*eta2 )
-	- 2 * d.d13.re *             eta1 * eta3
-	+     d.d22.re * ( xi2*xi2 - eta2*eta2 )
-	- 2 * d.d23.re *             eta2 * eta3
-	-     d.d33.re *             eta3*eta3;
+      ai.re = d.re.d11 * ( xi1 * xi1 - eta1 * eta1 )
+	+ 2 * d.re.d12 * ( xi1*xi2 - eta1*eta2 )
+	- 2 * d.re.d13 *             eta1 * eta3
+	+     d.re.d22 * ( xi2*xi2 - eta2*eta2 )
+	- 2 * d.re.d23 *             eta2 * eta3
+	-     d.re.d33 *             eta3*eta3;
 
-      ai.im = d.d11.im * ( xi1 * xi1 - eta1 * eta1 )
-	+ 2 * d.d12.im * ( xi1*xi2 - eta1*eta2 )
-	- 2 * d.d13.im *             eta1 * eta3
-	+     d.d22.im * ( xi2*xi2 - eta2*eta2 )
-	- 2 * d.d23.im *             eta2 * eta3
-	-     d.d33.im *             eta3*eta3;
+      ai.im = d.im.d11 * ( xi1 * xi1 - eta1 * eta1 )
+	+ 2 * d.im.d12 * ( xi1*xi2 - eta1*eta2 )
+	- 2 * d.im.d13 *             eta1 * eta3
+	+     d.im.d22 * ( xi2*xi2 - eta2*eta2 )
+	- 2 * d.im.d23 *             eta2 * eta3
+	-     d.im.d33 *             eta3*eta3;
 
-      bi.re = d.d11.re * 2 * xi1 * eta1
-	+ 2 * d.d12.re *   ( xi1 * eta2 + xi2 * eta1 )
-	+ 2 * d.d13.re *     xi1 * eta3
-	+     d.d22.re * 2 * xi2 * eta2
-	+ 2 * d.d23.re *     xi2 * eta3;
+      bi.re = d.re.d11 * 2 * xi1 * eta1
+	+ 2 * d.re.d12 *   ( xi1 * eta2 + xi2 * eta1 )
+	+ 2 * d.re.d13 *     xi1 * eta3
+	+     d.re.d22 * 2 * xi2 * eta2
+	+ 2 * d.re.d23 *     xi2 * eta3;
 
-      bi.im = d.d11.im * 2 * xi1 * eta1
-	+ 2 * d.d12.im *   ( xi1 * eta2 + xi2 * eta1 )
-	+ 2 * d.d13.im *     xi1 * eta3
-	+     d.d22.im * 2 * xi2 * eta2
-	+ 2 * d.d23.im *     xi2 * eta3;
+      bi.im = d.im.d11 * 2 * xi1 * eta1
+	+ 2 * d.im.d12 *   ( xi1 * eta2 + xi2 * eta1 )
+	+ 2 * d.im.d13 *     xi1 * eta3
+	+     d.im.d22 * 2 * xi2 * eta2
+	+ 2 * d.im.d23 *     xi2 * eta3;
 
       coeffs->a->data[i] = ai;
       coeffs->b->data[i] = bi;

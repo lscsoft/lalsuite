@@ -49,8 +49,8 @@ Computes filter components for amplitude demodulation.
 #ifdef __cplusplus
 extern "C" {
 #endif
-  
-  NRCSID (COMPLEXAMH, "$Id: ComplexAM.h");
+
+NRCSID (COMPLEXAMH, "$Id: ComplexAM.h");
 
 
 /*----- Error-codes -----*/
@@ -76,14 +76,13 @@ extern "C" {
 </lalLaTeX> */
 
 /** The 'detector tensor' for a GW-detector: symmetric 3x3 matrix, storing only the upper triangle.
- * The coordinate-system is SSB-fixed Cartesian coordinates, in particular EQUATORIAL coords for 
+ * The coordinate-system is SSB-fixed Cartesian coordinates, in particular EQUATORIAL coords for
  * Earth-based detectors and ECLIPTIC coords for LISA.
  */
-typedef struct 
+typedef struct
 {
-  COMPLEX8 d11;   COMPLEX8 d12;   COMPLEX8 d13;
-                  COMPLEX8 d22;   COMPLEX8 d23;
-                                  COMPLEX8 d33;
+  DetectorTensor re;	/**< tensor holding real-parts of all components */
+  DetectorTensor im;	/**< tensor holding imaginary-parts of all components */
 } CmplxDetectorTensor;
 
   /* <lalLaTeX>
@@ -100,7 +99,7 @@ LALGetCmplxAMCoeffs( LALStatus *,
 		     PulsarDopplerParams doppler);
 
 void
-LALGetMultiCmplxAMCoeffs( LALStatus *, 
+LALGetMultiCmplxAMCoeffs( LALStatus *,
 			  MultiCmplxAMCoeffs **multiAMcoef,
 			  const MultiDetectorStateSeries *multiDetStates,
 			  PulsarDopplerParams doppler );
