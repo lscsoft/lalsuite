@@ -151,7 +151,7 @@ LALInspiralParameterCalc (
  
    ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT((INT4)params->massChoice >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT((INT4)params->massChoice <= 14, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT((INT4)params->massChoice <= 15, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
    totalMass 	= 0.0;
    ieta 	= params->ieta;
@@ -164,8 +164,10 @@ LALInspiralParameterCalc (
    switch(params->massChoice) 
    {
       case massesAndSpin:
+      /*case spinOnly:*/
       case minmaxTotalMass:
       case m1Andm2:
+      case fixedMasses:
 
          ASSERT(params->mass1 > 0.0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
          ASSERT(params->mass2 > 0.0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
@@ -387,13 +389,13 @@ LALInspiralParameterCalc (
    params->t5 	= 5.*(7729./252. + ieta*eta)/(256.*eta*params->fLower); 
    params->psi0 = 3.L/(128.L * eta * pow(LAL_PI * totalMass, fiveby3));
    params->psi3 = -3.L * LAL_PI/(8.L * eta * pow(LAL_PI * totalMass, twoby3));
-
+   
    switch (params->order) {
                         
       case newtonian:
       case oneHalfPN:
          params->t2=0.0;
-         params->t3=0.0;
+/*       params->t3=0.0;*/        
          params->t4=0.0;
          params->tC = params->t0;
       break;
