@@ -288,6 +288,7 @@ main (INT4 argc, CHAR **argv )
       the approximant again with userParam.template into overlapin.appoximant */     
       insptmplt = randIn.param;   
       filter_processed = 0;
+      insptmplt.eccentricity = 0;
 /*for (ie=0; ie<=1; ie++)
 {
        insptmplt.eccentricity = 0.1*ie;*/
@@ -355,7 +356,7 @@ main (INT4 argc, CHAR **argv )
 	      LAL_CALL(LALInspiralParameterCalc( &status,  &(insptmplt) ), &status);
 	      
               overlapin.param = insptmplt;
-	      if( userParam.template == Eccentricity)
+              if( userParam.template == Eccentricity)
               {
 	        insptmplt.massChoice = t03;
                 overlapin.param.order = 4; /*insptmplt does not contain the good approximant*/              
