@@ -86,7 +86,6 @@ LALGetCmplxAMCoeffs(LALStatus *status,
 
   REAL4 xi[3];
   REAL4 eta[3];
-  REAL4 norm;
   UINT4 i, numSteps;
   SymmTensor3 etaT, xiT, ePlus, eCross;
 
@@ -132,12 +131,6 @@ LALGetCmplxAMCoeffs(LALStatus *status,
 
 
   /*---------- Compute the a(f_0,t_i) and b(f_0,t_i) ---------- */
-  coeffs->A = 0;
-  coeffs->B = 0;
-  coeffs->C = 0;
-  coeffs->E = 0;
-  coeffs->D = 0;
-
   for ( i=0; i < numSteps; i++ )
     {
       COMPLEX8 ai, bi;
@@ -157,22 +150,7 @@ LALGetCmplxAMCoeffs(LALStatus *status,
       coeffs->a->data[i] = ai;
       coeffs->b->data[i] = bi;
 
-      /* sum A, B, C on the fly */
-      coeffs->A += ai.re * ai.re + ai.im * ai.im;
-      coeffs->B += bi.re * bi.re + bi.im * bi.im;
-      coeffs->C += ai.re * bi.re + ai.im * bi.im;
-      coeffs->E += ai.re * bi.im - ai.im * bi.re;
-
     } /* for i < numSteps */
-
-  /* finish calculation of A,B,C,E,D */
-  norm = 2.0f / numSteps;
-  coeffs->A *= norm;
-  coeffs->B *= norm;
-  coeffs->C *= norm;
-  coeffs->E *= norm;
-
-  coeffs->D = coeffs->A * coeffs->B - coeffs->C * coeffs->C - coeffs->E * coeffs->E;
 
   RETURN(status);
 

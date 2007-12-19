@@ -144,11 +144,6 @@ typedef struct CmplxAMCoeffsTag
 {
   COMPLEX8Vector     *a;          /**< the a coefficient evaluated at the relevant times */
   COMPLEX8Vector     *b;          /**< the b coefficient evaluated at the relevant times  */
-  REAL4               A;          /**< the scalar product (a||a) */
-  REAL4               B;          /**< the scalar product (b||b) */
-  REAL4               C;          /**< the scalar product (a||b) */
-  REAL4               E;          /**< the scalar product (a||ib) */
-  REAL4               D;          /**< the quantity AB-C^2-E^2    */
 } CmplxAMCoeffs;
 
 typedef struct AMCoeffsParamsTag
