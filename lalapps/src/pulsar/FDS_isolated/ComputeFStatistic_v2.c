@@ -202,6 +202,7 @@ typedef struct {
   INT4 SSBprecision;		/**< full relativistic timing or Newtonian */
 
   BOOLEAN useRAA;               /**< use rigid adiabatic response instead of long-wavelength */
+  BOOLEAN bufferedRAA;		/**< approximate RAA by using only middle frequency */
 
   INT4 minStartTime;		/**< earliest start-time to use data from */
   INT4 maxEndTime;		/**< latest end-time to use data from */
@@ -572,6 +573,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->SSBprecision = SSBPREC_RELATIVISTIC;
 
   uvar->useRAA = FALSE;
+  uvar->bufferedRAA = FALSE;
 
   uvar->minStartTime = 0;
   uvar->maxEndTime = LAL_INT4_MAX;
@@ -635,7 +637,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   /* ----- more experimental/expert options ----- */
   LALregINTUserStruct (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
 
-  LALregBOOLUserStruct(status, 	useRAA, 	 0,  UVAR_DEVELOPER, "Use rigid adiabatic response");
+  LALregBOOLUserStruct(status, 	useRAA, 	 0,  UVAR_DEVELOPER, "Use rigid adiabatic approximation (RAA) for detector response");
+  LALregBOOLUserStruct(status, 	bufferedRAA, 	 0,  UVAR_DEVELOPER, "Approximate RAA by using only middle-frequency");
 
   LALregINTUserStruct(status, 	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
   LALregINTUserStruct(status,	Dterms,		't', UVAR_DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
@@ -938,6 +941,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   cfg->CFparams.Dterms = uvar->Dterms;
   cfg->CFparams.SSBprec = uvar->SSBprecision;
   cfg->CFparams.useRAA = uvar->useRAA;
+  cfg->CFparams.bufferedRAA = uvar->bufferedRAA;
   cfg->CFparams.upsampling = 1.0 * uvar->upsampleSFTs; 
 
   /* ----- set fixed grid step-sizes from user-input for GRID_FLAT ----- */
