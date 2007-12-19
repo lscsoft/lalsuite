@@ -56,7 +56,7 @@ const LALDetector empty_LALDetector;
 /*---------- Global variables ----------*/
 
 /*---------- internal prototypes ----------*/
-int XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, const DetectorArm *armA, const DetectorArm *armB, PulsarDopplerParams doppler);
+int XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, const DetectorArm *armA, const DetectorArm *armB, const FreqSkypos_t *freq_skypos );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -182,7 +182,7 @@ XLALprecomputeLISAarms ( DetectorState *detState )
   for ( arm = 0; arm < 3; arm ++ )
     {
       UINT4 send, rec;
-      REAL4 n[3], L, invL;
+      REAL4 n[3], L_c, invL;
 
       /* get canonical (ie following TDI conventions) senders and receivers this arm */
       send = send_l[arm];
@@ -194,8 +194,9 @@ XLALprecomputeLISAarms ( DetectorState *detState )
       n[2] = z[rec] - z[send];
 
       /* get armlength in seconds, and normalize */
-      detState->detArms[arm].L_c = L = sqrt ( SCALAR(n,n) );
-      invL = 1.0f / L;
+      L_c = sqrt ( SCALAR(n,n) );
+      detState->detArms[arm].armlength_c = L_c;
+      invL = 1.0f / L_c;
 
       n[0] *= invL;
       n[1] *= invL;
@@ -296,8 +297,9 @@ XLALgetLISADetectorTensorLWL ( SymmTensor3 *detT, 		/**< [out]: LISA LWL detecto
 int
 XLALgetLISADetectorTensorRAA ( CmplxDetectorTensor *detT, 	/**< [out]: LISA LWL detector-tensor */
 			       const Detector3Arms detArms,	/**< [in] precomputed detector-arms */
-			       PulsarDopplerParams doppler,   	/**< [in] doppler parameters including frequency and sky position */
-			       CHAR channelNum)			/**< [in] channel-number (as a char)  '1', '2', '3' .. */
+			       CHAR channelNum,			/**< [in] channel-number (as a char)  '1', '2', '3' .. */
+			       const FreqSkypos_t *freq_skypos	/**< [in] precompute frequency and skypos info */
+			       )
 {
   LISAarmT armA, armB;
   CHAR chan1 = 0;
@@ -336,18 +338,18 @@ XLALgetLISADetectorTensorRAA ( CmplxDetectorTensor *detT, 	/**< [out]: LISA LWL 
     } /* switch channel[1] */
 
   if (chan1 == 0) {
-    if ( XLALgetLISAtwoArmRAAIFO ( detT, &(detArms[armA]), &(detArms[armB]), doppler ) != 0 ) {
+    if ( XLALgetLISAtwoArmRAAIFO ( detT, &(detArms[armA]), &(detArms[armB]), freq_skypos ) != 0 ) {
       LALPrintError ("\nXLALgetLISAtwoArmRAAIFO() failed !\n\n");
       xlalErrno = XLAL_EINVAL;
       return -1;
     }
   } else {
-    if ( XLALgetLISADetectorTensorRAA ( &detT1, detArms, doppler, chan1 ) != 0 ) {
+    if ( XLALgetLISADetectorTensorRAA ( &detT1, detArms, chan1, freq_skypos ) != 0 ) {
       LALPrintError ("\nXLALgetCmplxLISADetectorTensorRAA() failed !\n\n");
       xlalErrno = XLAL_EINVAL;
       return -1;
     }
-    if ( XLALgetLISADetectorTensorRAA ( &detT2, detArms, doppler, chan2 ) != 0 ) {
+    if ( XLALgetLISADetectorTensorRAA ( &detT2, detArms, chan2, freq_skypos ) != 0 ) {
       LALPrintError ("\nXLALgetCmplxLISADetectorTensorRAA() failed !\n\n");
       xlalErrno = XLAL_EINVAL;
       return -1;
@@ -374,32 +376,22 @@ int
 XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, 	/**< [out]: two-arm IFO detector-tensor */
 			  const DetectorArm *detArmA,	/**< [in] precomputed detector-arm 'A' */
 			  const DetectorArm *detArmB,	/**< [in] precomputed detector-arm 'B' */
-			  PulsarDopplerParams doppler   /**< [in] doppler parameters including frequency and sky position */
+			  const FreqSkypos_t *freq_skypos /**< [in] precomputed frequency and skypos info */
 			  )
 {
-
-  REAL4 pifL_c = LAL_PI_2 * doppler.fkdot[0] * (detArmA->L_c + detArmB->L_c);
+  REAL4 L_c = 0.5f * ( detArmA->armlength_c + detArmB->armlength_c );
+  REAL4 pifL_c = LAL_PI * freq_skypos->Freq * L_c;
   REAL4 pifL_3c = pifL_c / 3.0f;
-  REAL4 sin1Delta, cos1Delta;
-  REAL4 sin1Alpha, cos1Alpha;
   REAL4 kdotnA, kdotnB;
   REAL4 eta, sinpha, cospha;
   REAL4 sinc_eta, sineta, coseta;
-  REAL4 k[3];
   COMPLEX8 coeffAA, coeffBB;
 
-  if ( !detT || !detArmA || !detArmB )
+  if ( !detT || !detArmA || !detArmB || !freq_skypos )
     return -1;
 
-  sin_cos_LUT (&sin1Delta, &cos1Delta, doppler.Delta );
-  sin_cos_LUT (&sin1Alpha, &cos1Alpha, doppler.Alpha );
-
-  k[0] = - cos1Delta * cos1Alpha;
-  k[1] = - cos1Delta * sin1Alpha;
-  k[2] = - sin1Delta;
-
-  kdotnA = SCALAR ( k, (detArmA->n) );
-  kdotnB = SCALAR ( k, (detArmB->n) );
+  kdotnA = - SCALAR ( freq_skypos->skyposV, (detArmA->n) );
+  kdotnB = - SCALAR ( freq_skypos->skyposV, (detArmB->n) );
 
   /* ----- calculate complex coefficient in front of basis-tensor (1/2)*(nA x nA) ----- */
 

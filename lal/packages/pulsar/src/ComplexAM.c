@@ -78,17 +78,10 @@ void
 LALGetCmplxAMCoeffs(LALStatus *status,
 		    CmplxAMCoeffs *coeffs,			/**< [out] amplitude-coeffs {a(f_0,t_i), b(f_0,t_i)} */
 		    const DetectorStateSeries *DetectorStates,	/**< timeseries of detector states */
-		    PulsarDopplerParams doppler			/**< {alpha,delta} of the source */
-	       )
+		    const FreqSkypos_t *freq_skypos		/**< Frequency and skyposition information */
+		    )
 {
-  REAL4 sin1delta, cos1delta;
-  REAL4 sin1alpha, cos1alpha;
-
-  REAL4 xi[3];
-  REAL4 eta[3];
   UINT4 i, numSteps;
-  SymmTensor3 etaT, xiT, ePlus, eCross;
-
   CHAR channelNum;
 
   INITSTATUS (status, "LALGetCmplxAMCoeffs", COMPLEXAMC);
@@ -110,42 +103,22 @@ LALGetCmplxAMCoeffs(LALStatus *status,
   /* need to know TDI channel number to calculate complex detector tensor */
   channelNum = DetectorStates->detector.frDetector.prefix[1];
 
-  /*---------- We write components of xi and eta vectors in SSB-fixed coords */
-  sin_cos_LUT (&sin1delta, &cos1delta, doppler.Delta );
-  sin_cos_LUT (&sin1alpha, &cos1alpha, doppler.Alpha );
-  xi[0] = - sin1alpha;
-  xi[1] =   cos1alpha;
-  xi[2] =   0.0f;
-
-  eta[0] = sin1delta * cos1alpha;
-  eta[1] = sin1delta * sin1alpha;
-  eta[2] = - cos1delta;
-
-  /* compute e+ */
-  XLALTensorSquareVector3 ( &xiT,   xi );	  /* the tensor xi x xi */
-  XLALTensorSquareVector3 ( &etaT, eta );	  /* the tensor eta x eta */
-  XLALSubtractSymmTensor3s ( &ePlus, &xiT, &etaT );	/* e+ = xi x xi - eta x eta */
-
-  /* compute ex */
-  XLALSymmetricTensorProduct3 ( &eCross, xi, eta );	/* ex = xi x eta + eta x xi */
-
-
   /*---------- Compute the a(f_0,t_i) and b(f_0,t_i) ---------- */
   for ( i=0; i < numSteps; i++ )
     {
       COMPLEX8 ai, bi;
       CmplxDetectorTensor d;
 
-      if ( XLALgetLISADetectorTensorRAA (&d, DetectorStates->data[i].detArms, doppler, channelNum) != 0 ) {
+      if ( XLALgetLISADetectorTensorRAA (&d, DetectorStates->data[i].detArms, channelNum, freq_skypos ) != 0 ) {
 	LALPrintError ( "\nXLALgetCmplxLISADetectorTensor() failed ... errno = %d\n\n", xlalErrno );
 	ABORT ( status, COMPLEXAMC_EXLAL, COMPLEXAMC_MSGEXLAL );
       }
 
-      ai.re = XLALContractSymmTensor3s ( &d.re, &ePlus );
-      ai.im = XLALContractSymmTensor3s ( &d.im, &ePlus );
+      ai.re = XLALContractSymmTensor3s ( &d.re, &(freq_skypos->ePlus) );
+      ai.im = XLALContractSymmTensor3s ( &d.im, &(freq_skypos->ePlus) );
 
-      bi.re = XLALContractSymmTensor3s ( &d.re, &eCross );
-      bi.im = XLALContractSymmTensor3s ( &d.im, &eCross );
+      bi.re = XLALContractSymmTensor3s ( &d.re, &(freq_skypos->eCross) );
+      bi.im = XLALContractSymmTensor3s ( &d.im, &(freq_skypos->eCross) );
 
       coeffs->a->data[i] = ai;
       coeffs->b->data[i] = bi;
@@ -171,6 +144,9 @@ LALGetMultiCmplxAMCoeffs (LALStatus *status,
 {
   UINT4 X, numDetectors;
   MultiCmplxAMCoeffs *ret = NULL;
+  REAL4 sin1Delta, cos1Delta;
+  REAL4 sin1Alpha, cos1Alpha;
+  FreqSkypos_t freq_skypos;
 
   INITSTATUS( status, "LALGetMultiCmplxAMCoeffs", COMPLEXAMC);
   ATTATCHSTATUSPTR (status);
@@ -192,6 +168,36 @@ LALGetMultiCmplxAMCoeffs (LALStatus *status,
     ABORT (status, COMPLEXAMC_EMEM, COMPLEXAMC_MSGEMEM);
   }
 
+  sin_cos_LUT (&sin1Delta, &cos1Delta, doppler.Delta );
+  sin_cos_LUT (&sin1Alpha, &cos1Alpha, doppler.Alpha );
+
+  freq_skypos.skyposV[0] = cos1Delta * cos1Alpha;
+  freq_skypos.skyposV[1] = cos1Delta * sin1Alpha;
+  freq_skypos.skyposV[2] = sin1Delta;
+
+  /*---------- compute components of xi and eta vectors in SSB-fixed coords */
+  {
+    REAL4 xi[3];
+    REAL4 eta[3];
+    SymmTensor3 etaT, xiT;
+
+    xi[0] = - sin1Alpha;
+    xi[1] =   cos1Alpha;
+    xi[2] =   0.0f;
+
+    eta[0] = sin1Delta * cos1Alpha;
+    eta[1] = sin1Delta * sin1Alpha;
+    eta[2] = - cos1Delta;
+
+    /* compute e+ */
+    XLALTensorSquareVector3 ( &xiT,   xi );	  /* the tensor xi x xi */
+    XLALTensorSquareVector3 ( &etaT, eta );	  /* the tensor eta x eta */
+    XLALSubtractSymmTensor3s ( &(freq_skypos.ePlus), &xiT, &etaT );	/* e+ = xi x xi - eta x eta */
+
+    /* compute ex */
+    XLALSymmetricTensorProduct3 ( &(freq_skypos.eCross), xi, eta );	/* ex = xi x eta + eta x xi */
+  }
+
   for ( X=0; X < numDetectors; X ++ )
     {
       CmplxAMCoeffs *amcoeX = NULL;
@@ -205,7 +211,9 @@ LALGetMultiCmplxAMCoeffs (LALStatus *status,
 	goto failed;
       }
 
-      LALGetCmplxAMCoeffs (status->statusPtr, amcoeX, multiDetStates->data[X], doppler );
+      freq_skypos.Freq = doppler.fkdot[0];
+
+      LALGetCmplxAMCoeffs (status->statusPtr, amcoeX, multiDetStates->data[X], &freq_skypos );
       if ( status->statusPtr->statusCode )
 	{
 	  LALPrintError ( "\nCall to LALGetCmplxAMCoeffs() has failed ... \n\n");

@@ -79,9 +79,9 @@ typedef struct
  */
 typedef struct
 {
-  REAL4 n[3];			/* unit vector pointing along this arm */
-  REAL4 L_c;			/* length of this arm in seconds L / c */
-  SymmTensor3 basisT;		/* arm "basis-tensor" (n x n) */
+  REAL4 n[3];			/**< unit vector pointing along this arm */
+  SymmTensor3 basisT;		/**< arm "basis-tensor" (n x n) */
+  REAL4 armlength_c;		/**< armlengths in seconds L / c */
 } DetectorArm;
 
 typedef DetectorArm Detector3Arms[3];	/**< used to allow functions some type/size checking */
