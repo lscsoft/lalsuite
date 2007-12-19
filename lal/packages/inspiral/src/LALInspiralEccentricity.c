@@ -403,6 +403,8 @@ LALInspiralEccentricityEngine(
    rk4GSLIntegrator *integrator;
    void *funcParams;
    expnCoeffs ak;
+   expnFunc func;
+
 #if 0
    REAL8 mTot = 0;
    REAL8 unitHz = 0;
@@ -425,11 +427,11 @@ LALInspiralEccentricityEngine(
 
    LALInspiralSetup (status->statusPtr, &ak, params);
    CHECKSTATUSPTR(status);
-/*   LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
+   LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
    CHECKSTATUSPTR(status);
-   */
+  
    m = ak.totalmass = params->mass1+params->mass2;
-   ak.tn = 150.;
+/*   ak.tn = 150.;*/
   
    values.length = dvalues.length = valuesNew.length =
    yt.length = dym.length = dyt.length = number_of_diff_equations;
