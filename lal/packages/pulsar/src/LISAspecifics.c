@@ -13,13 +13,13 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 /** \author R. Prix, J. T. Whelan
- * \file 
+ * \file
  * \brief
  * LISA-specific implementations for Fstat/continuous-wave searches on LISA TDI observables.
  *
@@ -67,7 +67,7 @@ int XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, const DetectorState *de
  * INPUT: channelNum = '1', '2', '3', '4', '5', '6': detector-tensor corresponding to TDIs X, Y, Z, Y-Z, Z-X, X-Y respectively.
  * return -1 on ERROR, 0 if OK
  */
-int 
+int
 XLALcreateLISA (LALDetector *Detector,	/**< [out] LALDetector */
 		CHAR channelNum		/**< [in] which TDI observable: '1' = X, '2'= Y, '3' = Z, '4' = Y-Z, '5' = Z-X, '6' = X-Y */
 		)
@@ -105,7 +105,7 @@ XLALcreateLISA (LALDetector *Detector,	/**< [out] LALDetector */
       break;
     default:
       LALPrintError ("\nIllegal LISA TDI index '%c': must be one of {'1', '2', '3', '4', '5', '6'}.\n\n", channelNum );
-      return -1;      
+      return -1;
       break;
     } /* switch (detIndex) */
 
@@ -121,7 +121,7 @@ XLALcreateLISA (LALDetector *Detector,	/**< [out] LALDetector */
   Detector1.type = LALDETECTORTYPE_ABSENT;
 
   /* however: need to be careful to put some non-zero numbers for location
-   * otherwise LALBarycenter() will spit out NaNs ... 
+   * otherwise LALBarycenter() will spit out NaNs ...
    */
   Detector1.location[0] = 1;
   Detector1.location[1] = 1;
@@ -130,11 +130,11 @@ XLALcreateLISA (LALDetector *Detector,	/**< [out] LALDetector */
   (*Detector) = Detector1;
 
   return 0;
-  
+
 } /* XLALcreateLISA() */
 
 /* Construct the long-wavelength-limit (LWL) detector tensor for LISA, given the prefix
- * 
+ *
  * RETURN 0 = OK, -1 = ERROR
  */
 int
@@ -208,13 +208,13 @@ XLALgetLISADetectorTensor ( DetectorTensor *detT, 	/**< [out]: LISA LWL detector
 } /* XLALgetLISADetectorTensor() */
 
 
-/** return a long-wavelength-limit (LWL) two-arm IFO detector tensor for LISA, given 'armA' and 'armB' 
- * This implements LISA LWL-tensor using spacecraft-orbits described by Eq.(2.1) in LISA-MLCD 
+/** return a long-wavelength-limit (LWL) two-arm IFO detector tensor for LISA, given 'armA' and 'armB'
+ * This implements LISA LWL-tensor using spacecraft-orbits described by Eq.(2.1) in LISA-MLCD
  * 'challenge1.pdf' document, see http://astrogravs.nasa.gov/docs/mldc/round1.html
- * 
+ *
  * RETURN 0 = OK, -1 = ERROR
  *
- * \note: armA=0 means "arm 1" in TDI notation, therefore the enums LISA_ARM1, LISA_ARM2, LISA_ARM3 
+ * \note: armA=0 means "arm 1" in TDI notation, therefore the enums LISA_ARM1, LISA_ARM2, LISA_ARM3
  * should be used to avoid confusion.
  */
 int
@@ -231,10 +231,10 @@ XLALgetLISAtwoArmIFO ( DetectorTensor *detT, 	/**< [out]: two-arm IFO detector-t
 
   UINT4 send_l[3] = { SC3, SC1, SC2 };	/* sender-spacecraft 's' for arm 'l' */
   UINT4 rec_l [3] = { SC2, SC3, SC1 };	/* receiver-spacecraft 'r' for arm 'l' */
-  
+
   UINT4 sendA, recA, sendB, recB; 	/* respective senders/receivers for arms 'A' and 'B' */
   REAL4 nA[3], LA, nB[3], LB;		/* unit-vectors and armlength of the two arms involved */
-  
+
   { /* determine space-craft positions [MLDC Challenge 1] */
     REAL4 a = LAL_AU_SI;
     REAL4 e = 0.00965;		/* eccentricity */
@@ -255,7 +255,7 @@ XLALgetLISAtwoArmIFO ( DetectorTensor *detT, 	/**< [out]: two-arm IFO detector-t
 	REAL4 beta = 2.0 * ( n - 1.0 ) * LAL_PI / 3.0  + lambda;	/* relative orbital phase in constellation */
 	REAL4 sin_beta, cos_beta;
 	sin_cos_LUT ( &sin_beta, &cos_beta, beta );
-	
+
 	x[n-1] = a * cos_alpha  + a * e * ( sin_alpha * cos_alpha * sin_beta  - ( 1.0 + SQ(sin_alpha)) * cos_beta );
 	y[n-1] = a * sin_alpha  + a * e * ( sin_alpha * cos_alpha * cos_beta  - ( 1.0 + SQ(cos_alpha)) * sin_beta );
 	z[n-1] = - sqrt3 * a * e * ( cos_alpha * cos_beta + sin_alpha * sin_beta );
@@ -263,21 +263,21 @@ XLALgetLISAtwoArmIFO ( DetectorTensor *detT, 	/**< [out]: two-arm IFO detector-t
   } /* determine spacecraft positions x[n-1], y[n-1], z[n-1] */
 
   /* get corresponding senders and receivers for the arms involved */
-  sendA = send_l[armA]; 
+  sendA = send_l[armA];
   recA  = rec_l [armA];
-  
-  sendB = send_l[armB]; 
+
+  sendB = send_l[armB];
   recB  = rec_l [armB];
-      
+
   /* get un-normalized arm-vectors first */
-  nA[I1] = x[recA] - x[sendA]; 
-  nA[I2] = y[recA] - y[sendA]; 
+  nA[I1] = x[recA] - x[sendA];
+  nA[I2] = y[recA] - y[sendA];
   nA[I3] = z[recA] - z[sendA];
-      
-  nB[I1] = x[recB] - x[sendB]; 
-  nB[I2] = y[recB] - y[sendB]; 
+
+  nB[I1] = x[recB] - x[sendB];
+  nB[I2] = y[recB] - y[sendB];
   nB[I3] = z[recB] - z[sendB];
-  
+
   /* get lenths and normalize */
   LA = sqrt ( SCALAR(nA,nA) );
   LB = sqrt ( SCALAR(nB,nB) );
@@ -288,10 +288,10 @@ XLALgetLISAtwoArmIFO ( DetectorTensor *detT, 	/**< [out]: two-arm IFO detector-t
   detT->d11 =  0.5 * ( nA[I1] * nA[I1] - nB[I1] * nB[I1] );
   detT->d12 =  0.5 * ( nA[I1] * nA[I2] - nB[I1] * nB[I2] );
   detT->d13 =  0.5 * ( nA[I1] * nA[I3] - nB[I1] * nB[I3] );
-  
+
   detT->d22 =  0.5 * ( nA[I2] * nA[I2] - nB[I2] * nB[I2] );
   detT->d23 =  0.5 * ( nA[I2] * nA[I3] - nB[I2] * nB[I3] );
-  
+
   detT->d33 =  0.5 * ( nA[I3] * nA[I3] - nB[I3] * nB[I3] );
 
   return 0;
@@ -300,7 +300,7 @@ XLALgetLISAtwoArmIFO ( DetectorTensor *detT, 	/**< [out]: two-arm IFO detector-t
 
 
 /* Construct the rigid-adiabatic-approximation (RAA) detector tensor for LISA, given the prefix
- * 
+ *
  * RETURN 0 = OK, -1 = ERROR
  */
 int
@@ -381,13 +381,13 @@ XLALgetCmplxLISADetectorTensor ( CmplxDetectorTensor *detT, 	/**< [out]: LISA LW
 } /* XLALgetCmplxLISADetectorTensor() */
 
 
-/** return a rigid-adiabatic-approximation (RAA) two-arm IFO detector tensor for LISA, given 'armA' and 'armB' 
- * This implements LISA RAA-tensor using spacecraft-orbits described by Eq.(2.1) in LISA-MLCD 
+/** return a rigid-adiabatic-approximation (RAA) two-arm IFO detector tensor for LISA, given 'armA' and 'armB'
+ * This implements LISA RAA-tensor using spacecraft-orbits described by Eq.(2.1) in LISA-MLCD
  * 'challenge1.pdf' document, see http://astrogravs.nasa.gov/docs/mldc/round1.html
- * 
+ *
  * RETURN 0 = OK, -1 = ERROR
  *
- * \note: armA=0 means "arm 1" in TDI notation, therefore the enums LISA_ARM1, LISA_ARM2, LISA_ARM3 
+ * \note: armA=0 means "arm 1" in TDI notation, therefore the enums LISA_ARM1, LISA_ARM2, LISA_ARM3
  * should be used to avoid confusion.
  */
 int
@@ -405,7 +405,7 @@ XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, 	/**< [out]: two-arm IFO de
 
   UINT4 send_l[3] = { SC3, SC1, SC2 };	/* sender-spacecraft 's' for arm 'l' */
   UINT4 rec_l [3] = { SC2, SC3, SC1 };	/* receiver-spacecraft 'r' for arm 'l' */
-  
+
   UINT4 sendA, recA, sendB, recB; 	/* respective senders/receivers for arms 'A' and 'B' */
   REAL4 nA[3], LA, nB[3], LB;		/* unit-vectors and armlength of the two arms involved */
   REAL4 pifL_c;
@@ -437,7 +437,7 @@ XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, 	/**< [out]: two-arm IFO de
 	REAL4 beta = 2.0 * ( n - 1.0 ) * LAL_PI / 3.0  + lambda;	/* relative orbital phase in constellation */
 	REAL4 sin_beta, cos_beta;
 	sin_cos_LUT ( &sin_beta, &cos_beta, beta );
-	
+
 	x[n-1] = a * cos_alpha  + a * e * ( sin_alpha * cos_alpha * sin_beta  - ( 1.0 + SQ(sin_alpha)) * cos_beta );
 	y[n-1] = a * sin_alpha  + a * e * ( sin_alpha * cos_alpha * cos_beta  - ( 1.0 + SQ(cos_alpha)) * sin_beta );
 	z[n-1] = - sqrt3 * a * e * ( cos_alpha * cos_beta + sin_alpha * sin_beta );
@@ -445,21 +445,21 @@ XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, 	/**< [out]: two-arm IFO de
   } /* determine spacecraft positions x[n-1], y[n-1], z[n-1] */
 
   /* get corresponding senders and receivers for the arms involved */
-  sendA = send_l[armA]; 
+  sendA = send_l[armA];
   recA  = rec_l [armA];
-  
+
   sendB = send_l[armB];
   recB  = rec_l [armB];
-      
+
   /* get un-normalized arm-vectors first */
-  nA[I1] = x[recA] - x[sendA]; 
-  nA[I2] = y[recA] - y[sendA]; 
+  nA[I1] = x[recA] - x[sendA];
+  nA[I2] = y[recA] - y[sendA];
   nA[I3] = z[recA] - z[sendA];
-      
-  nB[I1] = x[recB] - x[sendB]; 
-  nB[I2] = y[recB] - y[sendB]; 
+
+  nB[I1] = x[recB] - x[sendB];
+  nB[I2] = y[recB] - y[sendB];
   nB[I3] = z[recB] - z[sendB];
-  
+
   /* get lenths and normalize */
   LA = sqrt ( SCALAR(nA,nA) );
   LB = sqrt ( SCALAR(nB,nB) );
@@ -519,7 +519,7 @@ XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, 	/**< [out]: two-arm IFO de
   detT->d11.re =  coeffAA.re * nA[I1] * nA[I1] - coeffBB.re * nB[I1] * nB[I1];
   detT->d12.re =  coeffAA.re * nA[I1] * nA[I2] - coeffBB.re * nB[I1] * nB[I2];
   detT->d13.re =  coeffAA.re * nA[I1] * nA[I3] - coeffBB.re * nB[I1] * nB[I3];
-  
+
   detT->d22.re =  coeffAA.re * nA[I2] * nA[I2] - coeffBB.re * nB[I2] * nB[I2];
   detT->d23.re =  coeffAA.re * nA[I2] * nA[I3] - coeffBB.re * nB[I2] * nB[I3];
 
@@ -528,7 +528,7 @@ XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, 	/**< [out]: two-arm IFO de
   detT->d11.im =  coeffAA.im * nA[I1] * nA[I1] - coeffBB.im * nB[I1] * nB[I1];
   detT->d12.im =  coeffAA.im * nA[I1] * nA[I2] - coeffBB.im * nB[I1] * nB[I2];
   detT->d13.im =  coeffAA.im * nA[I1] * nA[I3] - coeffBB.im * nB[I1] * nB[I3];
-  
+
   detT->d22.im =  coeffAA.im * nA[I2] * nA[I2] - coeffBB.im * nB[I2] * nB[I2];
   detT->d23.im =  coeffAA.im * nA[I2] * nA[I3] - coeffBB.im * nB[I2] * nB[I3];
 
