@@ -215,7 +215,7 @@ XLALFillDetectorTensor (DetectorState *detState,	/**< [out,in]: detector state: 
   else
     {
       REAL4 sinG, cosG, sinGcosG, sinGsinG, cosGcosG;
-      DetectorTensor *detT = &(detState->detT);
+      SymmTensor3 *detT = &(detState->detT);
 
       sin_cos_LUT ( &sinG, &cosG, detState->earthState.gmstRad );
       sinGsinG = sinG * sinG;
@@ -265,52 +265,50 @@ XLALFillDetectorTensor (DetectorState *detState,	/**< [out,in]: detector state: 
  * the result is returned in a "detectorTensor" struct
  */
 int
-XLALTensorSquareVector ( DetectorTensor *vxv, REAL4 v1, REAL4 v2, REAL4 v3 )
+XLALTensorSquareVector3 ( SymmTensor3 *vxv, REAL4 v[3] )
 {
   if ( !vxv )
     return -1;
 
-  vxv->d11 = v1 * v1;
-  vxv->d12 = v1 * v2;
-  vxv->d13 = v1 * v3;
+  vxv->d11 = v[0] * v[0];
+  vxv->d12 = v[0] * v[1];
+  vxv->d13 = v[0] * v[2];
 
-  vxv->d22 = v2 * v2;
-  vxv->d23 = v2 * v3;
+  vxv->d22 = v[1] * v[1];
+  vxv->d23 = v[1] * v[2];
 
-  vxv->d33 = v3 * v3;
+  vxv->d33 = v[2] * v[2];
 
   return 0;
 
-} /* XLALTensorSquareVector() */
+} /* XLALTensorSquareVector3() */
 
-
-/** Convenience function for adding two DetectorTensors: aT - bT
- * NOTE: it *is* save to have sum point to the same tensor-struct as either aT or bT.
+/** Compute the symmetrized tensor product T = v x w + w x v
  */
 int
-XLALAddDetectorTensors ( DetectorTensor *sum, const DetectorTensor *aT, const DetectorTensor *bT )
+XLALSymmetricTensorProduct3 ( SymmTensor3 *vxw, REAL4 v[3], REAL4 w[3] )
 {
-  if ( !sum || !aT || !bT )
+  if ( !vxw )
     return -1;
 
-  sum->d11 = aT->d11  + bT->d11;
-  sum->d12 = aT->d12  + bT->d12;
-  sum->d13 = aT->d13  + bT->d13;
+  vxw->d11 = 2.0f * v[0] * w[0];
+  vxw->d12 = v[0] * w[1] + w[0] * v[1];
+  vxw->d13 = v[0] * w[2] + w[0] * v[2];
 
-  sum->d22 = aT->d22  + bT->d22;
-  sum->d23 = aT->d23  + bT->d23;
+  vxw->d22 = 2.0f * v[1] * w[1];
+  vxw->d23 = v[1] * w[2] + w[1] * v[2];
 
-  sum->d33 = aT->d33  + bT->d33;
+  vxw->d33 = 2.0f * v[2] * w[2];
 
   return 0;
 
-} /* XLALSubtractDetectorTensors() */
+} /* XLALSymmTensorProduct() */
 
-/** Convenience function for subtracting two DetectorTensors: aT - bT
+/** Convenience function for subtracting two SymmTensor3s: aT - bT
  * NOTE: it *is* save to have diff point to the same tensor-struct as either aT or bT.
  */
 int
-XLALSubtractDetectorTensors ( DetectorTensor *diff, const DetectorTensor *aT, const DetectorTensor *bT )
+XLALSubtractSymmTensor3s ( SymmTensor3 *diff, const SymmTensor3 *aT, const SymmTensor3 *bT )
 {
   if ( !diff || !aT || !bT )
     return -1;
@@ -326,13 +324,13 @@ XLALSubtractDetectorTensors ( DetectorTensor *diff, const DetectorTensor *aT, co
 
   return 0;
 
-} /* XLALSubtractDetectorTensors() */
+} /* XLALSubtractSymmTensor3s() */
 
-/** Convenience function for multiplying a DetectorTensor by a scalar factor.
+/** Convenience function for multiplying a SymmTensor3 by a scalar factor.
  * NOTE: it *is* safe to have aT and mult point to the same tensor-struct
  */
 int
-XLALMultiplyDetectorTensor ( DetectorTensor *mult, const DetectorTensor *aT, REAL4 factor )
+XLALScaleSymmTensor3 ( SymmTensor3 *mult, const SymmTensor3 *aT, REAL4 factor )
 {
   if ( !mult || !aT )
     return -1;
@@ -348,21 +346,39 @@ XLALMultiplyDetectorTensor ( DetectorTensor *mult, const DetectorTensor *aT, REA
 
   return 0;
 
-} /* XLALMultiplyDetectorTensor() */
+} /* XLALMultiplySymmTensor3() */
 
+/** Contract two symmetric tensors over both indices T1 : T2
+ */
+REAL4
+XLALContractSymmTensor3s ( const SymmTensor3 *T1, const SymmTensor3 *T2 )
+{
+  REAL4 ret;
 
+  if ( !T1 || !T2 )
+    XLALREAL4FailNaN();
 
+  ret = T1->d11 * T2->d11
+    + T1->d22 * T2->d22
+    + T1->d33 * T2->d33
+    + 2.0f * ( T1->d12 * T2->d12
+	       + T1->d13 * T2->d13
+	       + T1->d23 * T2->d23 );
+
+  return ret;
+
+} /* XLALContractSymmTensor3s() */
 
 
 /* ===== Multi-IFO versions of some of the above functions ===== */
 
-/** Get the detector-time series for the given MultiSFTVector. 
+/** Get the detector-time series for the given MultiSFTVector.
  * (see LALGetDetectorStates() for more comments).
  *
  * \note The time-series is based on the <em>midpoints</em> of the SFT-timestamps.
  */
 void
-LALGetMultiDetectorStates( LALStatus *status, 
+LALGetMultiDetectorStates( LALStatus *status,
 			   MultiDetectorStateSeries **mdetStates, /**< [out] multi-IFO detector-states */
 			   const MultiSFTVector *multiSFTs, 		/**< [in] multi-IFO SFTs */
 			   const EphemerisData *edat )		/**< ephemeris files data nix nix*/

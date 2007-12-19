@@ -1337,7 +1337,7 @@ LALNewGetAMCoeffs(LALStatus *status,
     {
       REAL4 ai, bi;
 
-      DetectorTensor *d = &(DetectorStates->data[i].detT);
+      SymmTensor3 *d = &(DetectorStates->data[i].detT);
 
       ai =    d->d11 * ( xi1 * xi1 - eta1 * eta1 )
 	+ 2 * d->d12 * ( xi1*xi2 - eta1*eta2 )

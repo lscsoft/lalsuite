@@ -81,8 +81,8 @@ NRCSID (COMPLEXAMH, "$Id: ComplexAM.h");
  */
 typedef struct
 {
-  DetectorTensor re;	/**< tensor holding real-parts of all components */
-  DetectorTensor im;	/**< tensor holding imaginary-parts of all components */
+  SymmTensor3 re;	/**< tensor holding real-parts of all components */
+  SymmTensor3 im;	/**< tensor holding imaginary-parts of all components */
 } CmplxDetectorTensor;
 
   /* <lalLaTeX>

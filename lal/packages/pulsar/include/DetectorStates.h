@@ -63,16 +63,14 @@ NRCSID( DETECTORSTATESH, "$Id$" );
 
 /*---------- exported types ----------*/
 
-/** The 'detector tensor' for a GW-detector: symmetric 3x3 matrix, storing only the upper triangle.
- * The coordinate-system is SSB-fixed Cartesian coordinates, in particular EQUATORIAL coords for
- * Earth-based detectors and ECLIPTIC coords for LISA.
+/** A symmetric 3x3 tensor (such as detector-tensors), storing only the upper triangle.
  */
 typedef struct
 {
   REAL4 d11;   REAL4 d12;   REAL4 d13;
                REAL4 d22;   REAL4 d23;
                             REAL4 d33;
-} DetectorTensor;
+} SymmTensor3;
 
 /** Struct containing pre-computed quantites describing a
  * single detector arm: unit-vector along detector-arm, arm-length,
@@ -83,7 +81,7 @@ typedef struct
 {
   REAL4 n[3];			/* unit vector pointing along this arm */
   REAL4 L_c;			/* length of this arm in seconds L / c */
-  DetectorTensor basisT;	/* arm "basis-tensor" (n x n) */
+  SymmTensor3 basisT;		/* arm "basis-tensor" (n x n) */
 } DetectorArm;
 
 typedef DetectorArm Detector3Arms[3];	/**< used to allow functions some type/size checking */
@@ -100,7 +98,7 @@ typedef struct
   REAL8 LMST;			/**< local mean sidereal time at the detector-location in radians */
   EarthState earthState;	/**< EarthState information */
   Detector3Arms detArms;	/**< include up to three arms to allow describing LISA */
-  DetectorTensor detT;		/**< Detector-tensor components in SSB-fixed, Cartesian coordinates */
+  SymmTensor3 detT;		/**< Detector-tensor components in SSB-fixed, Cartesian coordinates */
 } DetectorState;
 
 
@@ -143,10 +141,12 @@ LALGetMultiDetectorStates( LALStatus *,
 
 void LALCreateDetectorStateSeries (LALStatus *, DetectorStateSeries **vect, UINT4 length );
 
-int XLALTensorSquareVector ( DetectorTensor *vxv, REAL4 v1, REAL4 v2, REAL4 v3 );
-int XLALAddDetectorTensors ( DetectorTensor *sum, const DetectorTensor *aT, const DetectorTensor *bT );
-int XLALSubtractDetectorTensors ( DetectorTensor *diff, const DetectorTensor *aT, const DetectorTensor *bT );
-int XLALMultiplyDetectorTensor ( DetectorTensor *mult, const DetectorTensor *aT, REAL4 factor );
+int XLALSubtractSymmTensor3s ( SymmTensor3 *diff, const SymmTensor3 *aT, const SymmTensor3 *bT );
+int XLALScaleSymmTensor3   ( SymmTensor3 *mult, const SymmTensor3 *aT, REAL4 factor );
+int XLALTensorSquareVector3 ( SymmTensor3 *vxv, REAL4 v[3] );
+int XLALSymmetricTensorProduct3 ( SymmTensor3 *vxw, REAL4 v[3], REAL4 w[3] );
+REAL4 XLALContractSymmTensor3s ( const SymmTensor3 *T1, const SymmTensor3 *T2 );
+
 
 /* destructors */
 void XLALDestroyDetectorStateSeries ( DetectorStateSeries *detStates );

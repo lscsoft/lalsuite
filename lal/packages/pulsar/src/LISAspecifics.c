@@ -202,7 +202,7 @@ XLALprecomputeLISAarms ( DetectorState *detState )
       n[2] *= invL;
 
       /* pre-compute the "basis tensor" n x n  for this arm */
-      XLALTensorSquareVector ( &(detState->detArms[arm].basisT), n[0], n[1], n[2] );
+      XLALTensorSquareVector3 ( &(detState->detArms[arm].basisT), n );
 
       /* store arm unit-vector */
       detState->detArms[arm].n[0] = n[0];
@@ -222,14 +222,14 @@ XLALprecomputeLISAarms ( DetectorState *detState )
  * RETURN 0 = OK, -1 = ERROR
  */
 int
-XLALgetLISADetectorTensorLWL ( DetectorTensor *detT, 		/**< [out]: LISA LWL detector-tensor */
+XLALgetLISADetectorTensorLWL ( SymmTensor3 *detT, 		/**< [out]: LISA LWL detector-tensor */
 			       const Detector3Arms detArms,	/**< [in] precomputed detector-arms */
 			       CHAR channelNum )		/**< channel-number (as a char)  '1', '2', '3' .. */
 {
   LISAarmT armA, armB;
   CHAR chan1 = 0;
   CHAR chan2 = 0;
-  DetectorTensor detT1, detT2;
+  SymmTensor3 detT1, detT2;
 
   if ( !detT )
     return -1;
@@ -264,8 +264,8 @@ XLALgetLISADetectorTensorLWL ( DetectorTensor *detT, 		/**< [out]: LISA LWL dete
 
   if (chan1 == 0)
     {
-      XLALSubtractDetectorTensors ( detT, &(detArms[armA].basisT), &(detArms[armB].basisT) );
-      XLALMultiplyDetectorTensor ( detT, detT, 0.5f );	/* (1/2)*(nA x nA - nB x nB ) */
+      XLALSubtractSymmTensor3s ( detT, &(detArms[armA].basisT), &(detArms[armB].basisT) );
+      XLALScaleSymmTensor3 ( detT, detT, 0.5f );	/* (1/2)*(nA x nA - nB x nB ) */
     }
   else
     {
@@ -280,7 +280,7 @@ XLALgetLISADetectorTensorLWL ( DetectorTensor *detT, 		/**< [out]: LISA LWL dete
 	return -1;
       }
 
-      XLALSubtractDetectorTensors ( detT, &detT1, &detT2 );	/* d_X - d_Y etc */
+      XLALSubtractSymmTensor3s ( detT, &detT1, &detT2 );	/* d_X - d_Y etc */
     } /* multi-channel "detector" such as 'X-Y' etc */
 
   return 0;
@@ -352,8 +352,8 @@ XLALgetLISADetectorTensorRAA ( CmplxDetectorTensor *detT, 	/**< [out]: LISA LWL 
       xlalErrno = XLAL_EINVAL;
       return -1;
     }
-    XLALSubtractDetectorTensors ( &detT->re, &detT1.re, &detT2.re );
-    XLALSubtractDetectorTensors ( &detT->im, &detT1.im, &detT2.im );
+    XLALSubtractSymmTensor3s ( &detT->re, &detT1.re, &detT2.re );
+    XLALSubtractSymmTensor3s ( &detT->im, &detT1.im, &detT2.im );
   }
 
   return 0;
@@ -449,14 +449,14 @@ XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, 	/**< [out]: two-arm IFO de
    * detT = coeffAA * basisA - coeffBB * basisB
    */
   {
-    DetectorTensor tmpA, tmpB;
-    XLALMultiplyDetectorTensor ( &tmpA, &detArmA->basisT, coeffAA.re );
-    XLALMultiplyDetectorTensor ( &tmpB, &detArmB->basisT, coeffBB.re );
-    XLALSubtractDetectorTensors( &detT->re, &tmpA, &tmpB );
+    SymmTensor3 tmpA, tmpB;
+    XLALScaleSymmTensor3 ( &tmpA, &detArmA->basisT, coeffAA.re );
+    XLALScaleSymmTensor3 ( &tmpB, &detArmB->basisT, coeffBB.re );
+    XLALSubtractSymmTensor3s( &detT->re, &tmpA, &tmpB );
 
-    XLALMultiplyDetectorTensor ( &tmpA, &detArmA->basisT, coeffAA.im );
-    XLALMultiplyDetectorTensor ( &tmpB, &detArmB->basisT, coeffBB.im );
-    XLALSubtractDetectorTensors( &detT->im, &tmpA, &tmpB );
+    XLALScaleSymmTensor3 ( &tmpA, &detArmA->basisT, coeffAA.im );
+    XLALScaleSymmTensor3 ( &tmpB, &detArmB->basisT, coeffBB.im );
+    XLALSubtractSymmTensor3s( &detT->im, &tmpA, &tmpB );
   }
 
   return 0;

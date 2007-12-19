@@ -81,16 +81,14 @@ LALGetCmplxAMCoeffs(LALStatus *status,
 		    PulsarDopplerParams doppler			/**< {alpha,delta} of the source */
 	       )
 {
-  REAL4 delta, alpha;
   REAL4 sin1delta, cos1delta;
   REAL4 sin1alpha, cos1alpha;
 
-  REAL4 xi1, xi2;
-  REAL4 eta1, eta2, eta3;
+  REAL4 xi[3];
+  REAL4 eta[3];
   REAL4 norm;
   UINT4 i, numSteps;
-
-  CmplxDetectorTensor d;
+  SymmTensor3 etaT, xiT, ePlus, eCross;
 
   CHAR channelNum;
 
@@ -114,16 +112,24 @@ LALGetCmplxAMCoeffs(LALStatus *status,
   channelNum = DetectorStates->detector.frDetector.prefix[1];
 
   /*---------- We write components of xi and eta vectors in SSB-fixed coords */
-  alpha = doppler.Alpha;
-  delta = doppler.Delta;
+  sin_cos_LUT (&sin1delta, &cos1delta, doppler.Delta );
+  sin_cos_LUT (&sin1alpha, &cos1alpha, doppler.Alpha );
+  xi[0] = - sin1alpha;
+  xi[1] =   cos1alpha;
+  xi[2] =   0.0f;
 
-  sin_cos_LUT (&sin1delta, &cos1delta, delta );
-  sin_cos_LUT (&sin1alpha, &cos1alpha, alpha );
-  xi1 = - sin1alpha;
-  xi2 =  cos1alpha;
-  eta1 = sin1delta * cos1alpha;
-  eta2 = sin1delta * sin1alpha;
-  eta3 = - cos1delta;
+  eta[0] = sin1delta * cos1alpha;
+  eta[1] = sin1delta * sin1alpha;
+  eta[2] = - cos1delta;
+
+  /* compute e+ */
+  XLALTensorSquareVector3 ( &xiT,   xi );	  /* the tensor xi x xi */
+  XLALTensorSquareVector3 ( &etaT, eta );	  /* the tensor eta x eta */
+  XLALSubtractSymmTensor3s ( &ePlus, &xiT, &etaT );	/* e+ = xi x xi - eta x eta */
+
+  /* compute ex */
+  XLALSymmetricTensorProduct3 ( &eCross, xi, eta );	/* ex = xi x eta + eta x xi */
+
 
   /*---------- Compute the a(f_0,t_i) and b(f_0,t_i) ---------- */
   coeffs->A = 0;
@@ -131,43 +137,22 @@ LALGetCmplxAMCoeffs(LALStatus *status,
   coeffs->C = 0;
   coeffs->E = 0;
   coeffs->D = 0;
+
   for ( i=0; i < numSteps; i++ )
     {
       COMPLEX8 ai, bi;
+      CmplxDetectorTensor d;
 
-      if ( XLALgetLISADetectorTensorRAA (&d,
-					  DetectorStates->data[i].detArms,
-					  doppler, channelNum)
-	   != 0 ) {
+      if ( XLALgetLISADetectorTensorRAA (&d, DetectorStates->data[i].detArms, doppler, channelNum) != 0 ) {
 	LALPrintError ( "\nXLALgetCmplxLISADetectorTensor() failed ... errno = %d\n\n", xlalErrno );
 	ABORT ( status, COMPLEXAMC_EXLAL, COMPLEXAMC_MSGEXLAL );
       }
 
-      ai.re = d.re.d11 * ( xi1 * xi1 - eta1 * eta1 )
-	+ 2 * d.re.d12 * ( xi1*xi2 - eta1*eta2 )
-	- 2 * d.re.d13 *             eta1 * eta3
-	+     d.re.d22 * ( xi2*xi2 - eta2*eta2 )
-	- 2 * d.re.d23 *             eta2 * eta3
-	-     d.re.d33 *             eta3*eta3;
+      ai.re = XLALContractSymmTensor3s ( &d.re, &ePlus );
+      ai.im = XLALContractSymmTensor3s ( &d.im, &ePlus );
 
-      ai.im = d.im.d11 * ( xi1 * xi1 - eta1 * eta1 )
-	+ 2 * d.im.d12 * ( xi1*xi2 - eta1*eta2 )
-	- 2 * d.im.d13 *             eta1 * eta3
-	+     d.im.d22 * ( xi2*xi2 - eta2*eta2 )
-	- 2 * d.im.d23 *             eta2 * eta3
-	-     d.im.d33 *             eta3*eta3;
-
-      bi.re = d.re.d11 * 2 * xi1 * eta1
-	+ 2 * d.re.d12 *   ( xi1 * eta2 + xi2 * eta1 )
-	+ 2 * d.re.d13 *     xi1 * eta3
-	+     d.re.d22 * 2 * xi2 * eta2
-	+ 2 * d.re.d23 *     xi2 * eta3;
-
-      bi.im = d.im.d11 * 2 * xi1 * eta1
-	+ 2 * d.im.d12 *   ( xi1 * eta2 + xi2 * eta1 )
-	+ 2 * d.im.d13 *     xi1 * eta3
-	+     d.im.d22 * 2 * xi2 * eta2
-	+ 2 * d.im.d23 *     xi2 * eta3;
+      bi.re = XLALContractSymmTensor3s ( &d.re, &eCross );
+      bi.im = XLALContractSymmTensor3s ( &d.im, &eCross );
 
       coeffs->a->data[i] = ai;
       coeffs->b->data[i] = bi;
@@ -187,8 +172,7 @@ LALGetCmplxAMCoeffs(LALStatus *status,
   coeffs->C *= norm;
   coeffs->E *= norm;
 
-  coeffs->D = coeffs->A * coeffs->B - coeffs->C * coeffs->C
-    - coeffs->E * coeffs->E;
+  coeffs->D = coeffs->A * coeffs->B - coeffs->C * coeffs->C - coeffs->E * coeffs->E;
 
   RETURN(status);
 
