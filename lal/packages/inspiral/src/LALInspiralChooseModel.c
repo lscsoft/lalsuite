@@ -470,17 +470,17 @@ LALInspiralChooseModel(
    switch (params->order) 
    {
       case newtonian:
-      case oneHalfPN:
       switch (params->approximant) 
       {
          case AmpCorPPN:
+         case Eccentricity:
          case TaylorT1:
          case TaylorT2:
          case TaylorT3:
          case TaylorF1:
          case TaylorF2:
          case SpinTaylorT3:
-      case SpinTaylor:
+         case SpinTaylor:
             ak->vn = ak->vlso = vlso = ak->vlsoT0;
             f->dEnergy = dEt0;
             f->flux = Ft0;
@@ -498,6 +498,9 @@ LALInspiralChooseModel(
             break;
       }
       break;
+      case oneHalfPN:
+        ABORT(status, LALINSPIRALH_ECHOICE, "OneHalfPN is not valid");
+        break;
       case onePN:
       switch (params->approximant) 
       {
@@ -754,6 +757,9 @@ LALInspiralChooseModel(
  case BCV:
  case BCVSpin:
    ak->tn = 100.;
+   break;
+ case Eccentricity:
+   ak->tn = 100.;  /* not used yet */
    break;
  default:
    ABORT( status, 9999, "Unknown case in switch." );
