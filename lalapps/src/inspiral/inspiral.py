@@ -10,6 +10,7 @@ __version__ = '$Revision$'[11:-2]
 
 import string
 import exceptions
+import sys
 from glue import pipeline
 
 
@@ -42,8 +43,10 @@ class InspiralAnalysisJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
     for sec in sections:
-      try: self.add_ini_opts(cp,sec)
-      except: pass
+      if cp.has_section(sec):
+        self.add_ini_opts(cp, sec)
+      else:
+        print >>sys.stderr, "warning: config file is missing section [" + sec + "]"
 
     self.set_stdout_file('logs/' + exec_name + \
         '-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
