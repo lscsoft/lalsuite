@@ -744,10 +744,7 @@ def sire_segs(segments, sire_job, dag, do_input, ifo,
     sire.set_ifo(ifo)
     if inj_file: 
       sire.set_inj_file(inj_file)
-    if ifotag:
-      sire.set_ifo_tag("SECOND_" + ifotag)
-    else:
-      sire.set_ifo_tag("FIRST")
+    if ifotag: sire.set_ifo_tag(ifotag)
     if usertag: sire.set_user_tag(usertag)
 
     # set the segment
@@ -792,10 +789,7 @@ def coire_segs(segments, coire_job, dag, do_input, ifos,
     coire.set_ifos(ifos)
     if inj_file:
       coire.set_inj_file(inj_file)
-    if ifotag:
-      coire.set_ifo_tag("SECOND_" + ifotag)
-    else:
-      coire.set_ifo_tag("FIRST")
+    if ifotag is not None: coire.set_ifo_tag(ifotag)
     if num_slides: coire.set_slides(num_slides)
     if usertag: coire.set_user_tag(usertag)
  
@@ -1735,7 +1729,7 @@ for ifo in ifo_list:
   # Step 4S: Run sire on the single ifo triggers
   if opts.sire_inspiral and len(chunks_analyzed[ifo]):
     sire_segs(chunks_analyzed[ifo], sire_job, dag, opts.inspiral, ifo,
-        inj_file = inj_file, usertag = usertag)
+        inj_file = inj_file, ifotag="FIRST", usertag = usertag)
 
   print "done" 
 
@@ -1755,7 +1749,7 @@ for ifo in ifo_list:
   # Step 5S: Run sire on the single ifo triggers
   if opts.coire_coincidence and len(single_coinc_nodes[ifo]):
     sire_segs(single_coinc_nodes[ifo], sire_job, dag, opts.inspiral, ifo,
-        inj_file = inj_file, usertag = usertag, ifotag = ifo)
+        inj_file=inj_file, usertag=usertag, ifotag="FIRST")
 
 print "done"
   
@@ -1779,7 +1773,7 @@ for ifos in ifo_coincs:
   if opts.coire_coincidence and len(coinc_nodes[ifos])\
          and not doExtTrig:
     coire_segs(coinc_nodes[ifos], coire_job, dag, opts.coincidence, 
-        ifos, inj_file = inj_file, usertag = usertag) 
+        ifos, inj_file=inj_file, ifotag="FIRST", usertag=usertag) 
   
 
 
@@ -1797,7 +1791,7 @@ for ifos in ifo_coincs:
            and not doExtTrig:
       coire_segs(coinc_slide_nodes[ifos], coire_slide_job, dag, 
           opts.coincidence, ifos, inj_file = inj_file, num_slides = num_slides,
-          usertag = usertag)
+          ifotag="FIRST", usertag=usertag)
 
   # Concatenate the zerolag and slide nodes
   coinc_nodes[ifos] = coinc_nodes[ifos] + coinc_slide_nodes[ifos]
@@ -1858,7 +1852,7 @@ for ifos in ifo_coincs:
         if opts.sire_inspiral_veto and len(analyzed_coinc_data[ifos][ifo]):   
           sire_segs(analyzed_coinc_data[ifos][ifo], sire_job, dag, 
               opts.inspiral_veto, ifo, inj_file = inj_file, usertag = usertag, 
-              ifotag = ifos)
+              ifotag="SECOND_" + ifo)
 
       print "done"
 
@@ -1893,7 +1887,7 @@ for ifos in ifo_coincs:
     if opts.coire_second_coinc and len(coinc2_nodes[ifos])\
            and not doExtTrig :
       coire_segs(coinc2_nodes[ifos], coire_job, dag, opts.second_coinc, 
-          ifos, inj_file = inj_file, ifotag = ifos, usertag = usertag)
+          ifos, inj_file=inj_file, ifotag="SECOND_" + ifos, usertag=usertag)
 
   # Step 8slide: Time slides on the data
   if num_slides:
@@ -1914,14 +1908,13 @@ for ifos in ifo_coincs:
         analyzed_coinc_data[ifos], analyzed_data[ifos],
         thinca2_slide_jobs[ifos], dag, opts.second_coinc, opts.inspiral_veto,
         exttrigInjections, usertag=usertag, coire_job=coire_slide_job,
-        do_coire=opts.coire_second_coinc,
-        ifotag=ifos, slides=num_slides)
+        do_coire=opts.coire_second_coinc, ifotag=ifos, slides=num_slides)
 
      if opts.coire_second_coinc and len(coinc2_slide_nodes[ifos])\
             and not doExtTrig:
        coire_segs(coinc2_slide_nodes[ifos], coire_slide_job, dag, 
            opts.second_coinc, ifos, inj_file = inj_file, 
-           num_slides = num_slides, ifotag = ifos, usertag = usertag)
+           num_slides=num_slides, ifotag="SECOND_" + ifos, usertag=usertag)
 
   print "done"
 
