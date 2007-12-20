@@ -720,14 +720,14 @@ int main( int argc, char *argv[] )
   /* check that we have all the options to do injections */
   if ( injectFileName && injectWindowNS < 0 )
   {
-    fprintf( stderr, "--injection-coincidence must be specified if "
+    fprintf( stderr, "--injection-window must be specified if "
         "--injection-file is given\n" );
     exit( 1 );
   }
   else if ( ! injectFileName && injectWindowNS >= 0 )
   {
     fprintf( stderr, "--injection-file must be specified if "
-        "--injection-coincidence is given\n" );
+        "--injection-window is given\n" );
     exit( 1 );
   }
 
