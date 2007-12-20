@@ -210,7 +210,7 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 				    REAL4TimeSeries  *injectSet,
 				    TSSegmentVector  *dataSegments,
 				    TSSearchParams    params)
-     /* Add option NULL or with data called REAL4TimeSeries injectSet */
+/* Add option NULL or with data called REAL4TimeSeries injectSet */
 {
   AverageSpectrumParams     avgPSDParams;
   CHARVector               *dataLabel=NULL;
@@ -699,140 +699,136 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
       /* 
        * Actually whiten each data segment
        */
-  if (params.verbosity >= printFiles)
-    {
-      tmpSignalPtr=NULL;
-      for (i=0;i<dataSegments->length;i++)
+      if (params.verbosity >= printFiles)
 	{
-	  tmpSignalPtr=(dataSegments->dataSeg[i]);
-	  LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
-		   status);
-	  sprintf(dataLabel->data,"Pre_WhitenTimeDomainDataSeg_%i.diag",i);
-	  print_real4tseries(tmpSignalPtr,dataLabel->data);
-	  sprintf(dataLabel->data,"Pre_WhitenTimeDomainDataSeg_%i_Units.diag",i);
-	  print_lalUnit(tmpSignalPtr->sampleUnits,dataLabel->data);
-	  LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
-		   status);
-	}
-
-      for (i=0;i<dataSegments->length;i++)
-	{
-	  tmpSignalPtr = (dataSegments->dataSeg[i]);
-	    }
-	  /*
-	   * FFT segment
-	   */
-	  LAL_CALL( LALForwardREAL4FFT(status,
-				       signalFFT->data,
-				       tmpSignalPtr->data,
-				       forwardPlan),
-		    status);
-	  if (params.verbosity >= printFiles)
+	  tmpSignalPtr=NULL;
+	  for (i=0;i<dataSegments->length;i++)
 	    {
-	      print_complex8fseries(signalFFT,"Pre_whitenSignalFFT.diag");
-	      print_lalUnit(signalFFT->sampleUnits,"Pre_whitenSignalFFT_Units.diag");
-	    }
-	  /*
-	   * Whiten
-	   */
-	  if (params.verbosity >= printFiles)
-	    {
+	      tmpSignalPtr=(dataSegments->dataSeg[i]);
 	      LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
 		       status);
-	      sprintf(dataLabel->data,"Pre_whitenSignalFFT_%i.diag",i);
-	      print_complex8fseries(signalFFT,dataLabel->data);
+	      sprintf(dataLabel->data,"Pre_WhitenTimeDomainDataSeg_%i.diag",i);
+	      print_real4tseries(tmpSignalPtr,dataLabel->data);
+	      sprintf(dataLabel->data,"Pre_WhitenTimeDomainDataSeg_%i_Units.diag",i);
+	      print_lalUnit(tmpSignalPtr->sampleUnits,dataLabel->data);
 	      LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
 		       status);
 	    }
+	  tmpSignalPtr=NULL;
 
-	  if (params.whiten != 0)
+	  for (i=0;i<dataSegments->length;i++)
 	    {
+	      tmpSignalPtr = (dataSegments->dataSeg[i]);
+	      /*
+	       * FFT segment
+	       */
+	      LAL_CALL( LALForwardREAL4FFT(status,
+					   signalFFT->data,
+					   tmpSignalPtr->data,
+					   forwardPlan),
+			status);
+	      /*
+	       * Whiten
+	       */
+	      if (params.verbosity >= printFiles)
+		{
+		  LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
+			   status);
+		  sprintf(dataLabel->data,"Pre_whitenSignalFFT_%i.diag",i);
+		  print_complex8fseries(signalFFT,dataLabel->data);
+		  LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
+			   status);
+		}
+	      if (params.verbosity >= verbose)
+		fprintf(stdout,"Whitening data segment: %i of %i\n",i,dataSegments->length);
 	      LAL_CALL(LALTrackSearchWhitenCOMPLEX8FrequencySeries(status,
 								   signalFFT,
 								   averagePSD,
 								   params.whiten),
 		       status);
+	      if (params.verbosity >= printFiles)
+		{
+		  LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
+			   status);
+		  sprintf(dataLabel->data,"Post_whitenSignalFFT_%i.diag",i);
+		  print_complex8fseries(signalFFT,dataLabel->data);
+		  LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
+			   status);
+		}
+		
+	    
+	      /*
+	       * Reverse FFT
+	       */
+	      LAL_CALL( LALReverseREAL4FFT(status,
+					   tmpSignalPtr->data,
+					   signalFFT->data,
+					   reversePlan),
+			status);
+	      /* 
+	       * Normalize the IFFT by 1/n factor
+	       * See lsd-5 p259 10.1 for explaination
+	       */
+	      for (j=0;j<tmpSignalPtr->data->length;j++)
+		tmpSignalPtr->data->data[j]= 
+		  tmpSignalPtr->data->data[j]/tmpSignalPtr->data->length;
 	    }
 	  /*
-	   * Reverse FFT
+	   * Reset the tmp frequency series units
 	   */
-	  LAL_CALL( LALReverseREAL4FFT(status,
-				       tmpSignalPtr->data,
-				       signalFFT->data,
-				       reversePlan),
-		    status);
-	  /* 
-	   * Normalize the IFFT by 1/n factor
-	   * See lsd-5 p259 10.1 for explaination
+	  signalFFT->sampleUnits=originalFrequecyUnits;
+	  tmpSignalPtr=NULL;
+      
+	  /*
+	   * Free temporary Frequency Series
 	   */
-	  for (j=0;j<tmpSignalPtr->data->length;j++)
-	    tmpSignalPtr->data->data[j]= 
-	      tmpSignalPtr->data->data[j]/tmpSignalPtr->data->length;
-	  if (params.verbosity == printFiles)
+	  if (signalFFT)
 	    {
+	      LAL_CALL( LALDestroyCOMPLEX8FrequencySeries(status,signalFFT),
+			status);
+	    }
+	  if (windowPSD)
+	    LAL_CALL( LALDestroyREAL4Window(status,
+					    &windowPSD),
+		      status);
+	  if (averagePSDPlan)
+	    LAL_CALL( LALDestroyREAL4FFTPlan(status,&averagePSDPlan),
+		      status);
+	  if (averagePSD)
+	    LAL_CALL(LALDestroyREAL4FrequencySeries(status,averagePSD),
+		     status);
+	  if (forwardPlan)
+	    {
+	      LAL_CALL(
+		       LALDestroyREAL4FFTPlan(status,&forwardPlan),
+		       status);
+	    }
+	  if (reversePlan)
+	    {
+	      LAL_CALL( LALDestroyREAL4FFTPlan(status,&reversePlan),
+			status);
+	    }
+	}
+      if (params.verbosity >= printFiles)
+	{
+	  tmpSignalPtr=NULL;
+	  for (i=0;i<dataSegments->length;i++)
+	    {
+	      tmpSignalPtr=(dataSegments->dataSeg[i]);
 	      LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
 		       status);
-	      sprintf(dataLabel->data,"Post_whitenSignalFFT_%i.diag",i);
-	      print_complex8fseries(signalFFT,dataLabel->data);
+	      sprintf(dataLabel->data,"Post_WhitenTimeDomainDataSeg_%i.diag",i);
+	      print_real4tseries(tmpSignalPtr,dataLabel->data);
+	      sprintf(dataLabel->data,"Post_WhitenTimeDomainDataSeg_%i_Units.diag",i);
+	      print_lalUnit(tmpSignalPtr->sampleUnits,dataLabel->data);
 	      LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
 		       status);
 	    }
 	}
-      /*
-       * Reset the tmp frequency series units
-       */
-      signalFFT->sampleUnits=originalFrequecyUnits;
-      tmpSignalPtr=NULL;
-      
-      /*
-       * Free temporary Frequency Series
-       */
-      if (signalFFT)
-	{
-	  LAL_CALL( LALDestroyCOMPLEX8FrequencySeries(status,signalFFT),
-		    status);
-	}
-      if (windowPSD)
-	LAL_CALL( LALDestroyREAL4Window(status,
-					&windowPSD),
-		  status);
-      if (averagePSDPlan)
-	LAL_CALL( LALDestroyREAL4FFTPlan(status,&averagePSDPlan),
-		  status);
-      if (averagePSD)
-	LAL_CALL(LALDestroyREAL4FrequencySeries(status,averagePSD),
-		 status);
-      if (forwardPlan)
-	{
-	  LAL_CALL(
-		   LALDestroyREAL4FFTPlan(status,&forwardPlan),
-		   status);
-	}
-      if (reversePlan)
-	{
-	  LAL_CALL( LALDestroyREAL4FFTPlan(status,&reversePlan),
-		    status);
-	}
-    }
-  if (params.verbosity >= printFiles)
-    {
-      tmpSignalPtr=NULL;
-      for (i=0;i<dataSegments->length;i++)
-	{
-	  tmpSignalPtr=(dataSegments->dataSeg[i]);
-	  LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
-		   status);
-	  sprintf(dataLabel->data,"Post_WhitenTimeDomainDataSeg_%i.diag",i);
-	  print_real4tseries(tmpSignalPtr,dataLabel->data);
-	  sprintf(dataLabel->data,"Post_WhitenTimeDomainDataSeg_%i_Units.diag",i);
-	  print_lalUnit(tmpSignalPtr->sampleUnits,dataLabel->data);
-	  LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
-		   status);
-	}
     }
   return;
 }
-/* End the PrepareData routine */
+  /* End the LALappsTrackSearchPrepareData routine */
 
 /*
  * Setup params structure by parsing the command line
@@ -3009,13 +3005,13 @@ LALappsWriteSearchResults(LALStatus      *status,
   /*Form of solution FreqIndex,TimeIndex,GPSSec,GPSNano,Power*/
   for (i = 0;i < outCurve.numberOfCurves;i++)
     {
-      fprintf(totalFile,"Curve number,length,power:%i,%i,%f\n",
+      fprintf(totalFile,"Curve number,length,power:%i,%i,%6.18f\n",
 	      i,
 	      outCurve.curves[i].n,
 	      outCurve.curves[i].totalPower);
       for (j = 0;j < outCurve.curves[i].n;j++)
 	{ /*Long info*/
-	  fprintf(totalFile,"%i,%i;%i,%i,%f,%f",
+	  fprintf(totalFile,"%i,%i;%i,%i,%f,%6.18f",
 		  outCurve.curves[i].col[j],
 		  outCurve.curves[i].row[j],
 		  outCurve.curves[i].gpsStamp[j].gpsSeconds,

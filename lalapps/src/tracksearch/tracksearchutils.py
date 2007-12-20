@@ -414,19 +414,33 @@ class kurve:
         This method gets the mean and var of the power in a curve
         returning both in a solution [mean,var]
         """
-        mean=float(0)
-        sum=float(0)
-        sumSqr=float(0)
-        var=float(0)
-        n=0
+        pylabNotLoaded=False
+        powerArray=[]
         dataBlock=self.getKurveDataBlock()
         for entry in dataBlock:
-            #Add individual power elements
-            sum=sum.__add__(float(entry[4]))
-            sumSqr=sumSqr + (float(entry[4])*float(entry[4]))
-        n=dataBlock.__len__()
-        mean=float(sum.__div__(n))
-        var=float(sumSqr - float(sum*sum).__div__(n)).__div__(n-1)
+            powerArray.append(entry[4])
+        try:
+            mean=pylab.mean(powerArray)
+        except:
+            pylabNotLoaded=True
+        try:
+            stddev=pylab.std(powerArray)
+            var=stddev*stddev
+        except:
+            pylabNotLoaded=True
+        if pylabNotLoaded:
+            mean=float(0)
+            sum=float(0)
+            sumSqr=float(0)
+            var=float(0)
+            n=0
+            for entry in dataBlock:
+                #Add individual power elements
+                sum=sum.__add__(float(entry[4]))
+                sumSqr=sumSqr + (float(entry[4])*float(entry[4]))
+            n=dataBlock.__len__()
+            mean=float(sum.__div__(n))
+            var=float(sumSqr - float(sum*sum).__div__(n)).__div__(n-1)
         return [mean,var]
 #End method __getKurveMeanVar__()
 #End class kurve
@@ -1671,6 +1685,8 @@ class candidateList:
         filename,gpsRefTime,timescale,useLogColors,colormap
         each of which is NOT manditory.
         """        
+        #Determine version of matplotlib
+        matplotlibVersion=int(pylab.matplotlib.__version__.replace('.',''))
         if self.totalCount==0:
             sys.stdout.write("Omitting this plot no triggers to plot.\n");
             return
@@ -1698,6 +1714,9 @@ class candidateList:
         #Convert the time (X) axis scale to given above argument
         conversionFactor=1;
         timeLabel="(seconds)"
+        if timescale.lower().__contains__("minute"):
+            conversionFactor=60
+            timeLabel="(minutes)"
         if timescale.lower().__contains__("hour"):
             conversionFactor=60*60
             timeLabel="(hours)"
@@ -1714,7 +1733,11 @@ class candidateList:
             bP=element.getBrightPixelAndStats()
             brightSpotX.append((bP[0][2].getAsFloat()-minX)/conversionFactor)
             brightSpotY.append(bP[0][3])
-            brightSpotZ.append(float(bP[0][4]-bP[1]).__abs__()/bP[2])
+            if (bP[2] == 0):
+                #Unable to determine Z score
+                brightSpotZ.append(0)
+            else:
+                brightSpotZ.append(float(bP[0][4]-bP[1]).__abs__()/bP[2])
             #Get curve stats IP
             for point in element.getKurveDataBlock_HumanReadable():
                 xtmp.append((float(point[0])-minX)/conversionFactor)
@@ -1737,24 +1760,39 @@ class candidateList:
         #Determine mapping of IP to colors
         maxValue=max(elementIPlist)
         minValue=min(elementIPlist)
-        fig=pylab.figure()
+        #fig=pylab.figure()
         pylab.cm.ScalarMappable().set_cmap(myColorMap)
         linearColorScale=pylab.matplotlib.colors.normalize(minValue,maxValue)
-        pylab.imshow(linearValueMatrix,cmap=pylab.cm.get_cmap(myColorMap),origin="upper",extent=[0,0.01,0,0.01])
-        pylab.delaxes()
-        pylab.colorbar(tickfmt='%2.1e',orientation='vertical')
         if (minValue > 0) and (maxValue > 0):
             logColorScale=pylab.matplotlib.colors.normalize(math.log(minValue),math.log(maxValue))
         else:
             logColorScale=linearColorScale
+        #If we are using version 0.80.0 of below
+        version800=int(str('0.80.0').replace('.',''))
+        if matplotlibVersion<=version800:
+            print "Matlib plot version ",matplotlibVersion
+            pylab.imshow(linearValueMatrix,cmap=pylab.cm.get_cmap(myColorMap),origin="upper",extent=[0,0.01,0,0.01])
+            pylab.delaxes()
+            pylab.hold(True)
+            pylab.colorbar(tickfmt='%2.1e',orientation='vertical')
         currentPalette=pylab.get_cmap()
         for entry in line2plot:
             if useLogColors:
-                myRed,myGreen,myBlue,myAlpha=currentPalette(
-                    logColorScale(math.log(entry[3])))
+                try:
+                    myRed,myGreen,myBlue,myAlpha=currentPalette(
+                        logColorScale(math.log(entry[3])))
+                except:
+                    sys.stderr.write("Problem mapping trigger log color.\n")
+                    sys.stderr.write("Value causing errors is %e\n"%(entry[3]))
+                    myRed,myGreen,myBlue,myAlpha=(0,0,0,1)
             else:
-                myRed,myGreen,myBlue,myAlpha=currentPalette(
-                    linearColorScale(entry[3]))
+                try:
+                    myRed,myGreen,myBlue,myAlpha=currentPalette(
+                        linearColorScale(entry[3]))
+                except:
+                    sys.stderr.write("Problem mapping trigger linear color.\n")
+                    sys.stderr.write("Value causing errors is %e\n"%(entry[3]))
+                    myRed,myGreen,myBlue,myAlpha=(0,0,0,1)
             pylab.plot(entry[0],entry[1],color=(myRed,myGreen,myBlue))
         #Normalize the brightSpotZ max -> 0..5
         normalizeZscoreTo=100
@@ -1780,6 +1818,13 @@ class candidateList:
             figtitle=os.path.basename(name)
         else:
             figtitle=filename
+        #If newer version of matplotlib library try colorbar again
+        version877=int(str('0.87.7').replace('.',''))
+        if ((version800 < matplotlibVersion <= version877) or
+            (matplotlibVersion > version877)):
+            print "Matlib plot version ",matplotlibVersion
+            sys.stderr.write("Error setting colorbar! Sorry, figure will have no colorbar.\n")
+            sys.stderr.write("Using matlibplot version :"+pylab.matplotlib.__version__+"\n")
         pylab.title("%s"%(figtitle))
         pylab.grid(True)
         if (filename==''):

@@ -247,9 +247,11 @@ elif ((canList.__len__() >=1) and ((graph2screen>0) or (graph2file!=''))):
         candidateObject.__loadfileQuick__(entry)
         try:
             candidateObject.graphdata(graph2file,graphGPSoffset,timescale)
-        except:
-            sys.stderr.write("Problem trying to create plot!\n")
-            sys.stderr.write("Skipping.\n")
+        except Exception, errorInfo:
+            sys.stderr.write("Problem trying to create plot, %s !\n"%(os.path.basename(graph2file)))
+            sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
+            sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
+            sys.stderr.write("Skipping this plot. Sorry.\n")
         del candidateObject
     #SECTION APPLY ABITRARY THRESHOLDS
 elif ((expThreshold != "") and (canList.__len__() >=1)):
@@ -298,9 +300,9 @@ elif ((canList.__len__() >=1) and (dumpSummaryDisk or glitchdb) and (expThreshol
         elif dumpSummaryDisk:
             candidateObject.writeSummary(entry)
         if ((outfile != "") and glitchdb):
-            candidateObject.writeGlitchDatabase()
+            candidateObject.writeGlitchDatabase('',outfile)
         elif glitchdb:
-            candidateObject.writeGlitchDatabase()
+            candidateObject.writeGlitchDatabase('',entry)
         del candidateObject
     #SECTION TO DUMP SUMMARY TO SCREEN        
 elif ((canList.__len__() >=1) and dumpSummaryScreen):
