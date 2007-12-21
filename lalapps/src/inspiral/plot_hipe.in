@@ -140,7 +140,7 @@ parser.add_option("-p", "--log-path",action="store",type="string",\
 parser.add_option("", "--first-stage",action="store_true", default=False,\
     metavar="FIRSTSTAGE",help="to make plots for output of the first inspiral stage")
 parser.add_option("", "--second-stage",action="store_true", default=False,\
-    metavar="FIRSTSTAGE",help="to make plots for output of the second inspiral stage")
+    metavar="SECONDSTAGE",help="to make plots for output of the second inspiral stage")
 
 
 #################################
@@ -536,9 +536,12 @@ if opts.plotinspinj:
       plotinspinj_jobs[ifo + "FIRST"].set_sub_file( basename + '.plotinspinj_FIRST_' + ifo + subsuffix )
     if opts.second_stage:
       plotinspinj_jobs[ifo + "SECOND"] = inspiral.PlotInspinjJob(cp)
-      pattern = determine_sieve_patterns(cp, this_section, "SECOND", 
+      pattern_dict = determine_sieve_patterns(cp, this_section, "SECOND", 
           input_user_tag)
       for opt, val in pattern_dict.iteritems():
+        val = val.replace("CAT_4","")
+        val = val.replace("CAT_2","")
+        val = val.replace("CAT_3","")
         plotinspinj_jobs[ifo + "SECOND"].add_opt(opt, val)
       plotinspinj_jobs[ifo + "SECOND"].add_opt("ifo-times", ifo)
       plotinspinj_jobs[ifo + "SECOND"].add_opt("ifo-tag", "SECOND_" + ifo)
