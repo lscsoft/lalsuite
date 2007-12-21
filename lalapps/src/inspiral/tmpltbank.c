@@ -1,22 +1,3 @@
-/*
-*  Copyright (C) 2007 Alexander Dietz, Duncan Brown, Eirini Messaritaki, Gareth Jones, Benjamin Owen, Patrick Brady, Robert Adam Mercer, Stephen Fairhurst, Craig Robinson , Thomas Cokelaer
-*
-*  This program is free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  This program is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
-*  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
-*/
-
 /*----------------------------------------------------------------------- 
  * 
  * File Name: tmpltbank.c
@@ -143,19 +124,11 @@ REAL4	betaMax		= 0;		/* maximum BCV spin parameter	*/
 INT4    maxFcutTmplts   = -1;           /* num tmplts in fcut direction */
 REAL4   minMatch        = -1;           /* minimum requested match      */
 REAL4   fUpper          = -1;           /* upper frequency cutoff       */
-REAL4   chiMin          = -1;           /* minimum value of chi for PTF */
-REAL4   chiMax          = -1;           /* maximum value of chi for PTF */
-REAL4   kappaMin        = -2;           /* minimum value of kappa for PTF */
-REAL4   kappaMax        = -2;           /* maximum value of kappa for PTF */
 Order   order;                          /* post-Newtonian order         */
 Approximant approximant;                /* approximation method         */
 CoordinateSpace space;                  /* coordinate space used        */
 INT4    haveGridSpacing = 0;            /* flag to indicate gridspacing */
 INT4    computeMoments  = 1;
-FreqCut MaxFreqCut;                     /* Max. upper frequency cutoff  */
-FreqCut MinFreqCut;                     /* Min. upper frequency cutoff  */
-INT4 NumFreqCut = 0;                    /* # of upper freq. cuts to use */    
-
 GridSpacing gridSpacing = SquareNotOriented; /* grid spacing (square or hexa)*/
 int     polygonFit      = 1;            /* fit a polygon around BCV bank */
 
@@ -377,7 +350,7 @@ int main ( int argc, char *argv[] )
     dynRange = 1.0;
   }
   if ( vrbflg )
-    fprintf( stdout, "using dynamic range scaling %e\n", dynRange );
+    fprintf( stdout, "using dynamic range scaling %le\n", dynRange );
 
 
   /*
@@ -985,39 +958,30 @@ int main ( int argc, char *argv[] )
     bankIn.massRange     = MinMaxComponentMass;
     bankIn.MMax          = bankIn.mMax * 2.0;
   }
-  bankIn.psi0Min          = (REAL8) psi0Min;
-  bankIn.psi0Max          = (REAL8) psi0Max;
-  bankIn.psi3Min          = (REAL8) psi3Min;
-  bankIn.psi3Max          = (REAL8) psi3Max;
+  bankIn.psi0Min       = (REAL8) psi0Min;
+  bankIn.psi0Max       = (REAL8) psi0Max;
+  bankIn.psi3Min       = (REAL8) psi3Min;
+  bankIn.psi3Max       = (REAL8) psi3Max;
   bankIn.numFcutTemplates = (UINT4) maxFcutTmplts;
-  bankIn.alpha            = (REAL8) alpha;
-  bankIn.betaMin          = (REAL8) betaMin;
-  bankIn.betaMax          = (REAL8) betaMax;
-  bankIn.chiMin           = (REAL8) chiMin;
-  bankIn.chiMax           = (REAL8) chiMax;
-  bankIn.kappaMin         = (REAL8) kappaMin;
-  bankIn.kappaMax         = (REAL8) kappaMax;
-  bankIn.mmCoarse         = (REAL8) minMatch;
-  bankIn.mmFine           = 0.99; /* doesn't matter since no fine bank yet */
-  bankIn.fLower           = (REAL8) fLow;
-  bankIn.fUpper           = (REAL8) fUpper;
-  bankIn.iflso            = 0; /* currently not implemented */
-  bankIn.tSampling        = (REAL8) sampleRate;
-  bankIn.order            = order;
-  bankIn.approximant      = approximant;
-  bankIn.gridSpacing      = gridSpacing;
-  bankIn.space            = space;
-  bankIn.insidePolygon    = polygonFit; /*by default it uses a polygon fitting. */
-  bankIn.etamin           = bankIn.mMin * ( bankIn.MMax - bankIn.mMin) /
+  bankIn.alpha         = (REAL8) alpha;
+  bankIn.betaMin       = (REAL8) betaMin;
+  bankIn.betaMax       = (REAL8) betaMax;
+  bankIn.mmCoarse      = (REAL8) minMatch;
+  bankIn.mmFine        = 0.99; /* doesn't matter since no fine bank yet */
+  bankIn.fLower        = (REAL8) fLow;
+  bankIn.fUpper        = (REAL8) fUpper;
+  bankIn.iflso         = 0; /* currently not implemented */
+  bankIn.tSampling     = (REAL8) sampleRate;
+  bankIn.order         = order;
+  bankIn.approximant   = approximant;
+  bankIn.gridSpacing   = gridSpacing;
+  bankIn.space         = space;
+  bankIn.insidePolygon = polygonFit; /*by default it uses a polygon fitting. */
+  bankIn.etamin        = bankIn.mMin * ( bankIn.MMax - bankIn.mMin) /
     ( bankIn.MMax * bankIn.MMax );
-  bankIn.LowGM            = -4.;
-  bankIn.HighGM           = 6.;
-  bankIn.computeMoments   = computeMoments; /* by default, gammas/moments are recomputed */
-  bankIn.MaxFreqCut = MaxFreqCut;
-  bankIn.MinFreqCut = MinFreqCut;
-  bankIn.NumFreqCut = NumFreqCut; 
-  
-  /* generate the template bank */
+  bankIn.LowGM  = -4.;
+  bankIn.HighGM = 6.;
+  bankIn.computeMoments   = computeMoments; /* by default, gammas/moments are recomputed *//* generate the template bank */
   if ( vrbflg )
   {
     fprintf( stdout, "generating template bank parameters... " );
@@ -1237,103 +1201,96 @@ cleanExit:
 
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
 this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-  calloc( 1, sizeof(ProcessParamsTable) );\
+  calloc( 1, sizeof(ProcessParamsTable) ); \
   LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-   PROGRAM_NAME );\
+   PROGRAM_NAME ); \
    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
-     long_options[option_index].name );\
-     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype );\
+     long_options[option_index].name ); \
+     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
      LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
-#define USAGE( a ) \
-fprintf(a, "  --help                       display this message\n");\
-fprintf(a, "  --verbose                    print progress information\n");\
-fprintf(a, "  --version                    print version information and exit\n");\
-fprintf(a, "  --debug-level LEVEL          set the LAL debug level to LEVEL\n");\
-fprintf(a, "  --user-tag STRING            set the process_params usertag to STRING\n");\
-fprintf(a, "  --ifo-tag STRING             set the ifotag to STRING - for file naming\n");\
-fprintf(a, "  --comment STRING             set the process table comment to STRING\n");\
-fprintf(a, "  --write-compress             write a compressed xml file\n");\
-fprintf(a, "\n");\
-fprintf(a, "  --gps-start-time SEC         GPS second of data start time\n");\
-fprintf(a, "  --gps-end-time SEC           GPS second of data end time\n");\
-fprintf(a, "  --pad-data T                 pad the data start and end time by T seconds\n");\
-fprintf(a, "\n");\
-fprintf(a, "  --glob-frame-data            glob *.gwf files in the pwd to obtain frame data\n");\
-fprintf(a, "  --frame-type TAG             input data is contained in frames of type TAG\n");\
-fprintf(a, "  --frame-cache                obtain frame data from LAL frame cache FILE\n");\
-fprintf(a, "  --calibration-cache FILE     obtain calibration from LAL frame cache FILE\n");\
-fprintf(a, "  --glob-calibration-data      obtain calibration by globbing in working dir\n");\
-fprintf(a, "\n");\
-fprintf(a, "  --channel-name CHAN          read data from interferometer channel CHAN\n");\
-fprintf(a, "  --calibrated-data TYPE       calibrated data of TYPE real_4 or real_8\n");\
-fprintf(a, "  --strain-high-pass-freq F    high pass REAL8 h(t) data above F Hz\n");\
-fprintf(a, "  --strain-high-pass-order O   set the order of the h(t) high pass filter to O\n");\
-fprintf(a, "  --strain-high-pass-atten A   set the attenuation of the high pass filter to A\n");\
-fprintf(a, "  --point-calibration          use the first point in the chunk to calibrate\n");\
-fprintf(a, "\n");\
-fprintf(a, "  --sample-rate F              filter data at F Hz, downsampling if necessary\n");\
-fprintf(a, "  --resample-filter TYPE       set resample filter to TYPE [ldas|butterworth]\n");\
-fprintf(a, "\n");\
-fprintf(a, "  --disable-high-pass          turn off the IIR highpass filter\n");\
-fprintf(a, "  --enable-high-pass F         high pass data above F Hz using an IIR filter\n");\
-fprintf(a, "  --high-pass-order O          set the order of the high pass filter to O\n");\
-fprintf(a, "  --high-pass-attenuation A    set the attenuation of the high pass filter to A\n");\
-fprintf(a, "  --spectrum-type TYPE         use PSD estimator TYPE (mean|median|LIGO|AdvLIGO)\n");\
-fprintf(a, "  --dynamic-range-exponent X   set dynamic range scaling to 2^X\n");\
-fprintf(a, "\n");\
-fprintf(a, "  --segment-length N           set data segment length to N points\n");\
-fprintf(a, "  --number-of-segments N       set number of data segments to N\n");\
-fprintf(a, "\n");\
-fprintf(a, "  --td-follow-up FILE          follow up BCV events contained in FILE\n");\
-fprintf(a, "\n");\
-fprintf(a, "  --standard-candle            compute a standard candle from the PSD\n");\
-fprintf(a, "  --candle-snr SNR             signal-to-noise ration of standard candle\n");\
-fprintf(a, "  --candle-mass1 M             mass of first component in candle binary\n");\
-fprintf(a, "  --candle-mass2 M             mass of second component in candle binary\n");\
-fprintf(a, "\n");\
-fprintf(a, "  --low-frequency-cutoff F     do not filter below F Hz\n");\
-fprintf(a, "  --high-frequency-cutoff F    upper frequency cutoff in Hz\n");\
-fprintf(a, "  --disable-compute-moments    do not recompute the moments stored in the template bank. \n");\
-fprintf(a, "\n");\
-fprintf(a, "  --minimum-mass MASS          set minimum component mass of bank to MASS\n");\
-fprintf(a, "  --maximum-mass MASS          set maximum component mass of bank to MASS\n");\
-fprintf(a, "  --max-total-mass MASS        set maximum total mass of the bank to MASS\n");\
-fprintf(a, "  --min-total-mass MASS        set minimum total mass of the bank to MASS\n");\
-fprintf(a, "\n");\
-fprintf(a, "  --minimum-psi0 PSI0          set minimum range of BCV parameter psi0 to PSI0\n");\
-fprintf(a, "  --maximum-psi0 PSI0          set maximum range of BCV parameter psi0 to PSI0\n");\
-fprintf(a, "  --minimum-psi3 PSI3          set minimum range of BCV parameter psi3 to PSI3\n");\
-fprintf(a, "  --maximum-psi3 PSI3          set maximum range of BCV parameter psi3 to PSI3\n");\
-fprintf(a, "  --maximum-fcut-tmplts N      maximum number of tmplts in fcut direction is N\n");\
-fprintf(a, "  --disable-polygon-fit        disable the polygon fitting for BCV bank\n");\
-fprintf(a, "  --alpha ALPHA                set alpha for the BCV bank generation\n");\
-fprintf(a, "  --minimum-beta BETA		set minimum BCV spin parameter beta to BETA\n");\
-fprintf(a, "  --maximum-beta BETA		set maximum BCV spin parameter beta to BETA\n");\
-fprintf(a, "\n");\
-fprintf(a, "  --minimal-match M            generate bank with minimal match M\n");\
-fprintf(a, "\n");\
-fprintf(a, "  --order ORDER                set post-Newtonian order of the waveform to ORDER\n");\
-fprintf(a, "                                 (newtonian|oneHalfPN|onePN|onePointFivePN|\n");\
-fprintf(a, "                                 twoPN|twoPointFive|threePN|threePointFivePN)\n");\
-fprintf(a, "  --approximant APPROX         set approximant of the waveform to APPROX\n");\
-fprintf(a, "                                 (TaylorT1|TaylorT2|TaylorT3|TaylorF1|TaylorF2|\n");\
-fprintf(a, "                                 PadeT1|PadeT2|EOB|BCV|SpinTaylorT3|BCVSpin)\n");\
-fprintf(a, " --num-freq-cutoffs Ncut       create a template bank with Ncut different upper \n");\
-fprintf(a, "                                 frequency cutoffs (must be a positive integer) \n");\
-fprintf(a, " --max-high-freq-cutoff MAX    formula to compute the largest high freq. cutoff\n");\
-fprintf(a, "                                 possible choices in ascending order: (SchwarzISCO|BKLISCO|ERD)\n");\
-fprintf(a, " --min-high-freq-cutoff MIN    formula to compute the smallest high freq. cutoff\n");\
-fprintf(a, "                                 possible choices in ascending order: (SchwarzISCO|BKLISCO|ERD)\n");\
-fprintf(a, "  --space SPACE                grid up template bank with mass parameters SPACE\n");\
-fprintf(a, "                                 (Tau0Tau2|Tau0Tau3|Psi0Psi3)\n");\
-fprintf(a, "  --grid-spacing GRIDSPACING   grid up template bank with GRIDSPACING\n");\
-fprintf(a, "                                 (Hexagonal|SquareNotOriented)\n");\
-fprintf(a, "\n");\
-fprintf(a, "  --write-response             write the computed response function to a frame\n");\
-fprintf(a, "  --write-spectrum             write the uncalibrated psd to a frame\n");\
-fprintf(a, "  --write-strain-spectrum      write the calibrated strain psd to a text file\n"); 
-
+#define USAGE \
+"  --help                       display this message\n"\
+"  --verbose                    print progress information\n"\
+"  --version                    print version information and exit\n"\
+"  --debug-level LEVEL          set the LAL debug level to LEVEL\n"\
+"  --user-tag STRING            set the process_params usertag to STRING\n"\
+"  --ifo-tag STRING             set the ifotag to STRING - for file naming\n"\
+"  --comment STRING             set the process table comment to STRING\n"\
+"\n"\
+"  --gps-start-time SEC         GPS second of data start time\n"\
+"  --gps-end-time SEC           GPS second of data end time\n"\
+"  --pad-data T                 pad the data start and end time by T seconds\n"\
+"\n"\
+"  --glob-frame-data            glob *.gwf files in the pwd to obtain frame data\n"\
+"  --frame-type TAG             input data is contained in frames of type TAG\n"\
+"  --frame-cache                obtain frame data from LAL frame cache FILE\n"\
+"  --calibration-cache FILE     obtain calibration from LAL frame cache FILE\n"\
+"  --glob-calibration-data      obtain calibration by globbing in working dir\n"\
+"\n"\
+"  --channel-name CHAN          read data from interferometer channel CHAN\n"\
+"  --calibrated-data TYPE       calibrated data of TYPE real_4 or real_8\n"\
+"  --strain-high-pass-freq F    high pass REAL8 h(t) data above F Hz\n"\
+"  --strain-high-pass-order O   set the order of the h(t) high pass filter to O\n"\
+"  --strain-high-pass-atten A   set the attenuation of the high pass filter to A\n"\
+"  --point-calibration          use the first point in the chunk to calibrate\n"\
+"\n"\
+"  --sample-rate F              filter data at F Hz, downsampling if necessary\n"\
+"  --resample-filter TYPE       set resample filter to TYPE [ldas|butterworth]\n"\
+"\n"\
+"  --disable-high-pass          turn off the IIR highpass filter\n"\
+"  --enable-high-pass F         high pass data above F Hz using an IIR filter\n"\
+"  --high-pass-order O          set the order of the high pass filter to O\n"\
+"  --high-pass-attenuation A    set the attenuation of the high pass filter to A\n"\
+"  --spectrum-type TYPE         use PSD estimator TYPE (mean|median|LIGO|AdvLIGO)\n"\
+"  --dynamic-range-exponent X   set dynamic range scaling to 2^X\n"\
+"\n"\
+"  --segment-length N           set data segment length to N points\n"\
+"  --number-of-segments N       set number of data segments to N\n"\
+"\n"\
+"  --td-follow-up FILE          follow up BCV events contained in FILE\n"\
+"\n"\
+"  --standard-candle            compute a standard candle from the PSD\n"\
+"  --candle-snr SNR             signal-to-noise ration of standard candle\n"\
+"  --candle-mass1 M             mass of first component in candle binary\n"\
+"  --candle-mass2 M             mass of second component in candle binary\n"\
+"\n"\
+"  --low-frequency-cutoff F     do not filter below F Hz\n"\
+"  --high-frequency-cutoff F    upper frequency cutoff in Hz\n"\
+"\n"\
+"  --minimum-mass MASS          set minimum component mass of bank to MASS\n"\
+"  --maximum-mass MASS          set maximum component mass of bank to MASS\n"\
+"  --max-total-mass MASS        set maximum total mass of the bank to MASS\n"\
+"  --min-total-mass MASS        set minimum total mass of the bank to MASS\n"\
+"\n"\
+"  --minimum-psi0 PSI0          set minimum range of BCV parameter psi0 to PSI0\n"\
+"  --maximum-psi0 PSI0          set maximum range of BCV parameter psi0 to PSI0\n"\
+"  --minimum-psi3 PSI3          set minimum range of BCV parameter psi3 to PSI3\n"\
+"  --maximum-psi3 PSI3          set maximum range of BCV parameter psi3 to PSI3\n"\
+"  --maximum-fcut-tmplts N      maximum number of tmplts in fcut direction is N\n"\
+"  --disable-polygon-fit        disable the polygon fitting for BCV bank\n"\
+"  --alpha ALPHA                set alpha for the BCV bank generation\n"\
+"  --minimum-beta BETA		set minimum BCV spin parameter beta to BETA\n"\
+"  --maximum-beta BETA		set maximum BCV spin parameter beta to BETA\n"\
+"\n"\
+"  --minimal-match M            generate bank with minimal match M\n"\
+"\n"\
+"  --order ORDER                set post-Newtonian order of the waveform to ORDER\n"\
+"                                 (newtonian|oneHalfPN|onePN|onePointFivePN|\n"\
+"                                 twoPN|twoPointFive|threePN|threePointFivePN)\n"\
+"  --approximant APPROX         set approximant of the waveform to APPROX\n"\
+"                                 (TaylorT1|TaylorT2|TaylorT3|TaylorF1|TaylorF2|\n"\
+"                                 PadeT1|PadeT2|EOB|BCV|SpinTaylorT3|BCVSpin)\n"\
+"  --space SPACE                grid up template bank with mass parameters SPACE\n"\
+"                                 (Tau0Tau2|Tau0Tau3|Psi0Psi3)\n"\
+"  --grid-spacing GRIDSPACING   grid up template bank with GRIDSPACING\n"\
+"                                 (Hexagonal|SquareNotOriented)\n"\
+"\n"\
+"  --write-raw-data             write raw data to a frame file\n"\
+"  --write-response             write the computed response function to a frame\n"\
+"  --write-spectrum             write the uncalibrated psd to a frame\n"\
+"  --write-strain-spectrum      write the calibrated strain psd to a text file\n"\
+"\n"
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 {
@@ -1391,9 +1348,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"high-frequency-cutoff",   required_argument, 0,                'D'},
     {"order",                   required_argument, 0,                'E'},
     {"approximant",             required_argument, 0,                'F'},
-    {"num-freq-cutoffs",        required_argument, 0,                '1'},
-    {"max-high-freq-cutoff",    required_argument, 0,                '2'},
-    {"min-high-freq-cutoff",    required_argument, 0,                '3'},
     {"space",                   required_argument, 0,                'G'},
     {"grid-spacing",            required_argument, 0,                'v'},
     {"max-total-mass",          required_argument, 0,                'y'},
@@ -1413,7 +1367,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"td-follow-up",            required_argument, 0,                'w'},
     {0, 0, 0, 0}
   };
-
   int c;
   ProcessParamsTable *this_proc_param = procparams.processParamsTable;
   UINT4   haveOrder       = 0;
@@ -1424,15 +1377,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   UINT4   havePsi3Min     = 0;
   UINT4   havePsi3Max     = 0;
   UINT4   haveAlpha       = 0;
-  UINT4   haveNumFcut     = 0;
-  UINT4   haveMaxFcut     = 0;
-  UINT4   haveMinFcut     = 0;
 
   /*
    *
    * parse command line arguments
    *
    */
+
 
   while ( 1 )
   {
@@ -1442,7 +1393,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
     c = getopt_long_only( argc, argv, 
         "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:r:s:t:u:v:x:yz:"
-        "A:B:C:D:E:F:G:H:I:J:K:L:M:O:P:Q:R:S:T:U:VZ:1:2:3:",
+        "A:B:C:D:E:F:G:H:I:J:K:L:M:O:P:Q:R:S:T:U:VZ:",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -1650,7 +1601,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'h':
-        USAGE( stdout );
+        fprintf( stdout, USAGE );
         exit( 0 );
         break;
 
@@ -2075,10 +2026,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           approximant = BCVSpin;
         }
-        else if ( ! strcmp( "FindChirpPTF", optarg ) )
-        {
-          approximant = FindChirpPTF;
-        }  
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -2245,81 +2192,17 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case '?':
-        USAGE( stderr );
+        fprintf( stderr, USAGE );
         exit( 1 );
         break;
 
-      case '1':
-        NumFreqCut = (INT4) atof( optarg );
-        if( NumFreqCut < 1 )
-	  {
-	    fprintf( stdout, "invalid argument to --%s:\n"
-              "Value must be a positive integer "
-              "(%d specified)\n",
-              long_options[option_index].name, NumFreqCut );
-	    exit( 1 );
-	  }
-	  ADD_PROCESS_PARAM( "int", "%d", NumFreqCut );
-	  haveNumFcut = 1;
-	  break;
-
-      case '2':
-	if ( ! strcmp( "SchwarzISCO", optarg ) )
-	  {
-	    MaxFreqCut = SchwarzISCO;
-	  }
-	else if( ! strcmp( "BKLISCO", optarg ) )
-	  {
-	    MaxFreqCut = BKLISCO;
-	  }
-	else if ( ! strcmp( "ERD", optarg ) )
-	  {
-	    MaxFreqCut = ERD;
-	  }
-	else
-	  {
-	    fprintf( stderr, "invalid argument to --%s:\n"
-              "unknown cutoff frequency specified: "
-              "%s (must be one of: SchwarzISCO, BKLISCO, or ERD)\n", 
-              long_options[option_index].name, optarg );
-          exit( 1 );
-	  }
-	  ADD_PROCESS_PARAM( "string", "%s", optarg );
-	  haveMaxFcut = 1;
-	  break;
-
-      case '3':
-	if ( ! strcmp( "SchwarzISCO", optarg ) )
-	  {
-	    MinFreqCut = SchwarzISCO;
-	  }
-	else if ( ! strcmp( "BKLISCO", optarg ) )
-	  {
-	    MinFreqCut = BKLISCO;
-	  }
-	else if ( ! strcmp( "ERD", optarg ) )
-	  {
-	    MinFreqCut = ERD;
-	  }
-	else
-	  {
-	    fprintf( stderr, "invalid argument to --%s:\n"
-              "unknown cutoff frequency specified: "
-              "%s (must be one of: SchwarzISCO, BKLISCO, or ERD)\n", 
-              long_options[option_index].name, optarg );
-          exit( 1 );
-	  }
-	  ADD_PROCESS_PARAM( "string", "%s", optarg );
-	  haveMinFcut = 1;
-	  break;
-
       default:
         fprintf( stderr, "unknown error while parsing options\n" );
-        USAGE( stderr );
+        fprintf( stderr, USAGE );
         exit( 1 );
     }
   }
-          
+
 
 
 
@@ -2806,32 +2689,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   {
     fprintf( stderr, "--high-frequency-cutoff must be specified\n" );
     exit( 1 );
-  }
-
-  /* Check that multiple cutoff freq. options specified */
-  if ( ! haveNumFcut )
-    {
-      fprintf( stderr, "must specify --num-freq-cutoffs\n" );
-      exit( 1 );
-    }
-  if ( ! haveMaxFcut )
-    {
-      fprintf( stderr, "must specify --max-high-freq-cutoff\n" );
-      exit( 1 );
-    }
-  if ( ! haveMinFcut )
-    {
-      fprintf( stderr, "must specify --min-high-freq-cutoff\n" );
-      exit( 1 );
-    }
-  /* Check Min and Max upper freq. cuts are the same if NumFreqCut = 1 */
-  if ( NumFreqCut == 1 )
-  {
-    if( MaxFreqCut < MinFreqCut || MaxFreqCut > MinFreqCut )
-      {
-	fprintf(stderr, "--max-high-freq-cutoff must equal --min-high-freq-cutoff when --num-freq-cutoffs = 1\n" );
-    exit( 1 );
-      }
   }
 
   return 0;
