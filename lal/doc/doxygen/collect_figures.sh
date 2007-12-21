@@ -3,7 +3,7 @@
 cwd=`pwd`;
 pkgdir="$cwd/../../packages";
 
-epsfigures=`find $pkgdir -name "*.eps" -print | grep -e"[^.].*[.]eps$"`; 
+epsfigures=`find $pkgdir -name "*.eps" -print | grep -e"[^.].*[.]eps$"`;
 pngfigures=`find $pkgdir -name "*.png" -print`;
 figdir="./figures";
 latexdir="./latex";
@@ -18,11 +18,11 @@ if [ ! -d "$figdir" ]; then
 fi
 
 for i in $epsfigures $cwd/*.eps; do
-    ln -sf $i $figdir >& /dev/null;
-    ln -sf $i $latexdir >& /dev/null;## hack to get around doxygen missing some eps-figures for latex
+    ln -sf $i $figdir &> /dev/null;
+    ln -sf $i $latexdir &> /dev/null;## hack to get around doxygen missing some eps-figures for latex
 done
 
 for i in $pngfigures $cwd/*.png; do
-    ln -sf $i $figdir >& /dev/null;
+    ln -sf $i $figdir &> /dev/null;
 done
 echo
