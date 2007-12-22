@@ -968,6 +968,10 @@ def make_power_fragment(dag, parents, instrument, seg, tag, framecache, injargs 
 	node = PowerNode(powerjob)
 	node.set_name("lalapps_power_%s_%s_%d_%d" % (tag, instrument, int(seg[0]), int(abs(seg))))
 	map(node.add_parent, parents)
+	# FIXME:  PowerNode should not be subclassed from AnalysisNode,
+	# because that class is too hard-coded.  For example, there is no
+	# way to switch to analysing gaussian noise except to comment out
+	# this line in the code.
 	node.set_cache(framecache)
 	node.set_ifo(instrument)
 	node.set_start(seg[0])
@@ -1120,7 +1124,7 @@ def make_burca_tailor_fragment(dag, input_cache, seg, tag):
 	input_cache = list(input_cache)
 	input_cache.sort(reverse = True)
 	nodes = set()
-	max_t_per_job = 180000
+	max_t_per_job = 2**20
 	while input_cache:
 		cache = []
 		t = 0
@@ -1152,7 +1156,7 @@ def make_burca2_fragment(dag, parents, input_cache, tag):
 	input_cache = list(input_cache)
 	input_cache.sort(reverse = True)
 	nodes = set()
-	max_t_per_job = 90000
+	max_t_per_job = 2**17
 	while input_cache:
 		cache = []
 		t = 0
