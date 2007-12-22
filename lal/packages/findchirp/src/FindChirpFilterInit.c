@@ -1031,8 +1031,6 @@ LALFindChirpFilterFinalize (
     CHECKSTATUSPTR( status );
   }
 
-  fprintf(stderr,"destroyed workspace for chisq filter\n");
-
   /*
    *
    * free the chisq structures
@@ -1065,8 +1063,6 @@ LALFindChirpFilterFinalize (
 
     LALFree( outputPtr->rhosqVec );
   }    
-
-  fprintf(stderr,"destroyed rhosq\n");  
  
   if ( outputPtr->cVec )
   {
@@ -1075,8 +1071,6 @@ LALFindChirpFilterFinalize (
 
     LALFree( outputPtr->cVec );
   }    
-
-  fprintf(stderr,"destroyed cVec\n");
 
   /*
    *
