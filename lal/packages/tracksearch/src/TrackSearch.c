@@ -153,7 +153,7 @@ LALSignalTrackSearch(LALStatus *status,
   /* check if the values for the threshold on the second derivative are OK */
   ASSERT(((params->low>0)&&(params->high>params->low)), status, TS_ILLEGAL_PARAMS, TS_MSG_ILLEGAL_PARAMS);
   /* check if sigma is greater than unity. Otherwise the Gaussian masks will be too small to be useful. */
-  ASSERT(params->sigma>=1,status,TS_ILLEGAL_PARAMS, TS_MSG_ILLEGAL_PARAMS);    
+  ASSERT(params->sigma>=1,status,TS_SIGMASIZE, MSG_TS_SIGMASIZE);    
   /* Now we are ready to begin our work */
   /* Compute Convolutions of the image with the Gaussian derivative Kernels */
   ComputeConvolutions(status->statusPtr, &(out->store), tfMap, params);
@@ -184,7 +184,17 @@ LALSignalTrackSearch(LALStatus *status,
   /*
    * End diagnotics temporary code
    */
-
+  /*
+   * If automatic \Lambda is enabled must compute that here
+   * use Gauss2 and h averaging routine (to be written)
+   * input (W) must be integer and limit for Gauss2 is -W -> W
+   * which is what I needed in my derivation for the integral
+   * Also need to to 
+   * auto_Lh= H_calc * Gauss2(W,sigma)
+   * storing this in the tracksearch arguments structure for 
+   * reporting the Lh value and associated Ll value as output in 
+   * diagnostics.  
+   */
 
   /* Compute Possible Line Points */
   ComputeLinePoints(status->statusPtr,  &(out->store), params);

@@ -89,6 +89,7 @@ NRCSID (TRACKSEARCHH, "$Id$");
 #define TS_TOO_MANY_CURVES 9
 #define TS_OCTANT 10
 #define TS_MASKSIZE 11
+#define TS_SIGMASIZE 12
 
 
 #define TS_MSGNON_NULL_POINTER  "Allocation of memory to Non null pointer" 
@@ -102,6 +103,7 @@ NRCSID (TRACKSEARCHH, "$Id$");
 #define MSG_TS_TOO_MANY_CURVES " Too many curves found in map "
 #define MSG_TS_OCTANT "octant cannot be greater than 4 "
 #define MSG_TS_MASKSIZE "maskSize too small"
+#define MSG_TS_SIGMASIZE "sigma value to small to be useful"
 /* structures */
 
 typedef struct tagCurve
@@ -142,6 +144,10 @@ typedef struct tagTrackSearchOut
   INT4 numberOfCurves;    /* the number of curves found*/
   Curve *curves;          /* a pointer to a array of numberOfCurves curves */
   TrackSearchStore store; /* a pointer to the temporary storage space */
+  REAL4 minPowerCut;       /* copy of applied threshold value */
+  REAL4 minLengthCut;      /* copy of applied threshold value */
+  REAL4 startThreshCut;    /* copy of applied Lh threshold */
+  REAL4 linePThreshCut;    /* copy of applied Ll threshold */
 } TrackSearchOut;
 
 /*
@@ -174,8 +180,12 @@ typedef struct tagTrackSearchParams
   REAL4 sigma; /* the width of the lines to search for (in pixels) */
   REAL4 high;  /* the upper threshold on the 2nd derivative (along maximal direction)*/
   REAL4 low;   /* the lower threshold on the 2nd derivative (along maximal direction)*/
+  BOOLEAN autoL; /* Bool flag to call auto Lambda code if needed */
+  REAL4 rLow;  /* the lower threshold relative to upper threshold
+		*  (only used if using auto threshold adjustments)
+		*/
+  REAL4 autoLambda; /* given Z score value determine best auto lambda for run */
 } TrackSearchParams;
-
 
 /*
  * Function Prototypes
@@ -190,6 +200,7 @@ void
 LALTrackSearchInsertMarkers(LALStatus *, 
 			    TrackSearchOut *,
 			    TrackSearchMapMarkingParams *);
+
 				
 #ifdef  __cplusplus
 }

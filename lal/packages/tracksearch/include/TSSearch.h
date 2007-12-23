@@ -161,6 +161,9 @@ extern "C" {
     INT4              LineWidth;/* Sigma-convolution kernel width*/
     REAL4             StartThresh;/*Lh-2ndDerv Start threshold*/
     REAL4             LinePThresh;/*Ll-2ndDerv Member threshold*/
+    REAL4             autoThresh;/* Z score auto Lh threshold value*/
+    REAL4             relaThresh;/* Relative LinePThresh given found Lh*/
+    BOOLEAN           autoLambda;/*Bool flag to track auto Lh state */
     INT4              MinLength;/*Minimum length of a curve*/
     REAL4             MinPower;/*Minimum Power in a curve*/
     UINT4             overlapFlag;/*

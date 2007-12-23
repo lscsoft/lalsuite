@@ -148,6 +148,15 @@ tagTSWhitenParams
   UINT4           whitenLevel;
 }TSWhitenParams;
 
+/*
+ * Routine to determine the best Lh and set Ll given Lrelative.  
+ */
+void
+LALTracksearchFindLambda(
+			 LALStatus                *status,
+			 TimeFreqRep               map,
+			 TSSearchParams           *searchParams
+			 );
 
 /*
  * Routine to break up time series input and make a collection of 

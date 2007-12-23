@@ -36,6 +36,40 @@
 NRCSID (TSDATAC,"$Id$");
 
 /*
+ * Local static functions 
+ */
+static REAL4 localGauss2(REAL4 lineWidth)
+{
+  REAL8 limit1,limit2; /* the limits over which to average the function */
+  INT4 numberInt=20;   /* number of bins;*/
+  REAL8 interval;      /* the bin width */
+  REAL8 loop;          /* the loop variable */
+  INT4 i;              /* loop variable */
+  REAL8 sum;           /* the sum */
+  REAL4 result;        /* the value to return */
+  REAL8 norm;          /* normalizing constant */
+  REAL8 temp;          /* temporary variable */
+  REAL8 sigma=0;
+
+  sigma = lineWidth/(2*sqrt(3));
+  limit1 = -(lineWidth/2);
+  limit2 =  (lineWidth/2);
+  interval= (limit2-limit1)/numberInt;
+  sum=0.0;
+  norm = 1.0/(sigma*sigma*sigma*sqrt(LAL_PI*2.0));
+  for(i=0;i<=numberInt;i++){
+    loop = limit1 + i*interval;
+    temp = ((loop*loop)/(sigma*sigma));
+    sum += norm * exp(-0.5*temp) * (temp - 1.0);
+  }
+  sum /= (numberInt+1);
+  result = sum;
+  return result;
+}
+
+
+
+/*
  *Extra diagnostic code
  */
 /* Non Compliant code taken from EPSearch.c */
@@ -90,6 +124,80 @@ static void print_real4tseries(const REAL4TimeSeries *fseries, const char *file)
 /*
  * End diagnostic code
  */
+
+void
+LALTracksearchFindLambda(
+			 LALStatus                *status,
+			 TimeFreqRep               map,
+			 TSSearchParams           *searchParams
+			 )
+{
+  INT4            i=0;/* Counter in F axis */
+  INT4            j=0;/* Counter in T axis */
+  REAL8        sumX=0;/* Sum of h differences */
+  REAL8     sumXSqr=0;/* Sum of h^2 differences */
+  INT8      counter=0;/* Number of h diff measurements taken */
+  REAL8     current=0;/* Current h value */
+  REAL8       meanH=0;/* Mean feature step height */
+  REAL8        stdH=0;/* Variance on the mean step height */
+  REAL8 upperThresh=0;/* Auto discovered upper curvatuve threshold */
+  REAL8 lowerThresh=0;/* Value set from upperThresh */
+  REAL8 myGaussian=0;
+  REAL8 myFloor=10e20;/*Lowest value in TFR */
+  INITSTATUS(status,"LALTracksearchFindLambda", TSDATAC);
+  ATTATCHSTATUSPTR (status);
+  
+  ASSERT(searchParams,status, TSDATA_ENNUL, TSDATA_MSGENNUL);
+  counter=0;
+  sumX=0;
+  sumXSqr=0;
+  current=0;
+  for (i = 1;i < map.tCol;i++)
+    { 
+      for (j = 1;j <(map.fRow/2+1);j++)
+	{
+	  current=0;
+	  current=map.map[i][j];
+	  if (current < myFloor)
+		       myFloor=current;
+	  sumX=sumX+current;
+	  sumXSqr=sumXSqr+(current*current);
+          counter=counter+1;
+/* 	  /\* H value in F direction *\/ */
+/* 	  current=(&map)->map[i][j]-(&map)->map[i][j-1]; */
+/* 	  sumX=sumX+current; */
+/* 	  sumXSqr=sumXSqr+(current*current); */
+/* 	  counter=counter+1; */
+/* 	  current=0; */
+/* 	  /\* H value in T direction *\/ */
+/* 	  current=(&map)->map[i][j]-(&map)->map[i-1][j]; */
+/* 	  sumX=sumX+current; */
+/* 	  sumXSqr=sumXSqr+(current*current); */
+/* 	  counter=counter+1; */
+	};
+    };
+  /* Determine mean H value */
+  meanH=(sumX/counter)-myFloor;
+  /* Determine STD of H value */
+  stdH=sqrt((sumXSqr-(sumX*sumX)/counter)/counter-1);
+  myGaussian=localGauss2(searchParams->LineWidth);
+  /* Given desired contrast Z score */
+  upperThresh=(meanH+(searchParams->autoThresh*stdH))*myGaussian;
+  lowerThresh=upperThresh*searchParams->relaThresh;
+  searchParams->StartThresh=fabs(upperThresh);
+  searchParams->LinePThresh=fabs(lowerThresh);
+  if (searchParams->verbosity >= verbose)
+    {
+      fprintf(stdout," Auto lambda invoked\n");
+      fprintf(stdout,"Lh %f \t Ll %f \n 2nd D Gauss %f \t  Mean h  %f \t Std h %f\n",searchParams->StartThresh,searchParams->LinePThresh,myGaussian,meanH,stdH);
+    }
+  /* Need to throw an error if we get a value Lh <= 0 */
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}/*
+  * End LALTracksearchFindLambda
+  */
+
 
 void
 LALCreateTSDataSegmentVector (
@@ -823,11 +931,7 @@ LALSVectorPolynomialInterpolation(
   RETURN(status);
 }/* End interpolate vector like Matlab interp1 */
 
-/* 
- * Noncompliant code 
- * Local SUB-routines
- * Non complient test code 
- */
+
 
 /* 
  * As written this routine most likely wont work 
