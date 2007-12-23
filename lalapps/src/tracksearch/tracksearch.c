@@ -846,6 +846,7 @@ void LALappsTrackSearchInitialize(
   /*Local Variables*/
   LIGOTimeGPS     tempGPS;
   INT4 len;
+  REAL4 optWidth=0;
 
   /* Setup file option to read ascii types and not frames */
   /* getop arguments */
@@ -893,6 +894,8 @@ void LALappsTrackSearchInitialize(
       {"inject_scale",        required_argument,  0,    'N'},
       {"channel_type",        required_argument,  0,    'O'},
       {"bin_buffer",          required_argument,  0,    'P'},
+      {"zcontrast",           required_argument,  0,    'Q'},
+      {"zlength",             required_argument,  0,    'R'},
       {0,                     0,                  0,      0}
     };
   
@@ -960,6 +963,9 @@ void LALappsTrackSearchInitialize(
   strcpy(params->calibrateIFO,"L1");
   params->injectMapCache=NULL;
   params->injectSingleMap=NULL;
+  params->autoThresh=-1;/*Default no automatic lambda runs*/
+  params->relaThresh=-1;/*Default no automatic lambda runs*/
+  params->autoLambda=0;/*False assume no automatic*/
   /* Inject params defaults */
   injectParams->startTimeOffset=0;
   injectParams->numOfInjects=0;
@@ -1404,6 +1410,19 @@ void LALappsTrackSearchInitialize(
 	  }
 	  break;
 
+	case 'Q':
+	  {
+	    params->autoThresh=atof(optarg);
+	    params->autoLambda=1;
+	  }
+	  break;
+
+	case 'R':
+	  {
+	    params->relaThresh=atof(optarg);
+	  }
+	  break;
+
 	default :
 	  {
 	    fprintf(stderr,TRACKSEARCHC_MSGEMISC);
@@ -1466,7 +1485,7 @@ void LALappsTrackSearchInitialize(
       params->SegBufferPoints=((params->TimeLengthPoints/params->TimeBins)*params->colsToClip);
       params->SegBufferPoints=((params->SegLengthPoints/params->TimeBins)*params->colsToClip);
       if ((params->verbosity >= verbose))
-	fprintf(stdout,"As a result of bin buffering requests an additional %i points are needed to negate TFR edge effects, %i points before and then after the data set to analyze.",2*params->SegBufferPoints,params->SegBufferPoints);
+	fprintf(stdout,"As a result of bin buffering requests an additional %i points are needed to negate TFR edge effects, %i points before and then after the data set to analyze.\n",2*params->SegBufferPoints,params->SegBufferPoints);
 
       if (params->whiten > 2 )
 	{
@@ -1477,23 +1496,53 @@ void LALappsTrackSearchInitialize(
   /*
    * Do following checks
    */
-  if (params->StartThresh < params->LinePThresh)
+  /* If not auto lambda choosen then */
+  if (params->autoLambda == 0)
     {
-      fprintf(stderr,TRACKSEARCHC_MSGEARGS);
-      exit(TRACKSEARCHC_EARGS);
+      if (params->StartThresh < params->LinePThresh)
+	{
+	  fprintf(stderr,TRACKSEARCHC_MSGEARGS);
+	  exit(TRACKSEARCHC_EARGS);
+	}
+      if (params->StartThresh < params->LinePThresh)
+	{
+	  fprintf(stderr,TRACKSEARCHC_MSGEARGS);
+	  exit(TRACKSEARCHC_EARGS);
+	}
     }
-  if (params->StartThresh < params->LinePThresh)
-    {
-      fprintf(stderr,TRACKSEARCHC_MSGEARGS);
-      exit(TRACKSEARCHC_EARGS);
+  else
+    { /*Assuming we need to autocalibrate here*/
+      if ((params->relaThresh < 0) || (params->relaThresh > 1))
+	{
+	  params->autoLambda=0;
+	  fprintf(stderr,TRACKSEARCHC_MSGEARGS);
+	  exit(TRACKSEARCHC_EARGS);
+	}
     }
+
   if (params->MinLength < 2)
     {
+      fprintf(stderr,"Minimum length threshold invalid!\n");
       fprintf(stderr,TRACKSEARCHC_MSGEARGS);
       exit(TRACKSEARCHC_EARGS);
     }
-  if ((params->LineWidth) < 1)
+  if (
+      ((params->LineWidth) < ceil((2.0/MASK_SIZE)*(2.0*sqrt(3))))
+    ||
+      (params->LineWidth/(2.0*sqrt(3)) < 1)
+      )
     {
+      optWidth=0;
+      if ((2.0*sqrt(3)) < ceil((2.0/MASK_SIZE)))
+	{
+	  optWidth=ceil((2.0/MASK_SIZE)*(2.0*sqrt(3)));
+	}
+      else
+	{
+	  optWidth=ceil(2.0*sqrt(3));
+	}
+      fprintf(stderr,"Line width inappropriate try mimimum of: %i\n",
+	      (INT4) optWidth);
       fprintf(stderr,TRACKSEARCHC_MSGEARGS);
       exit(TRACKSEARCHC_EARGS);
     }
@@ -2126,6 +2175,23 @@ void LALappsDoTrackSearch(
    * Should be default be givin minimum curve length parameter 
    * We want to apply thresholds in a seperate routine 
    */
+  /*
+   * if the tssearchparams 'params' variable contains the directive
+   * to apply auto determined lambda thresholds, calculate them for
+   * the map and use them to run the analysis
+   */
+  /*
+   * DO THE AUTO ADJUSTMENTS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   */
+  if (params.autoLambda)
+    {
+      /* Do the calculate of Lh given parameters */
+      /* Just pending inclussion of gaussian integral */
+      LAL_CALL( LALTracksearchFindLambda(status,*tfmap,&params),
+		status);
+      tsInputs.high=params.StartThresh;
+      tsInputs.low=params.LinePThresh;
+    }
   /* Catch the error code here and abort */
   LAL_CALL( LALSignalTrackSearch(status,&outputCurves,tfmap,&tsInputs),
 	    status);
@@ -2186,6 +2252,14 @@ void LALappsDoTrackSearch(
 					 params),
 	    status);
 
+  /*
+   * Record user request thresholds into output data structure
+   * as a simple reference
+   */
+  outputCurvesThreshold.minPowerCut=params.MinPower;
+  outputCurvesThreshold.minLengthCut=params.MinLength;
+  outputCurvesThreshold.startThreshCut=tsInputs.high;
+  outputCurvesThreshold.linePThreshCut=tsInputs.low;
   /* 
    * Dump out list of surviving candidates
    */
@@ -2460,7 +2534,7 @@ LALappsDoTSeriesSearch(LALStatus         *status,
    * the TSSearch huge struct elements.  These options have been
    * adjusted properly in the Crop subroutine call.
    */
-  inputs.sigma=params.LineWidth;
+  inputs.sigma=(params.LineWidth)/(2*sqrt(3));
   inputs.high=params.StartThresh;
   inputs.low=params.LinePThresh;
   inputs.width=((tfmap->fRow/2)+1);
@@ -2474,6 +2548,9 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 /*       fprintf(stderr,"Width\t\t%i\t\t%i\n",inputs.width,(tfmap->fRow/2)+1); */
 /*       fprintf(stderr,"Height\t\t%i\t\t%i\n",inputs.height,tfmap->tCol); */
 /*     } */
+
+  /* If requested to the auto lambda determination */
+
   /*
    * Call subroutine to run the search
    */
@@ -3000,7 +3077,7 @@ LALappsWriteSearchResults(LALStatus      *status,
   INT4             j=0;
 
   totalFile=fopen(myFilename,"w");
-  fprintf(totalFile,"# Total Curves: %i\n",outCurve.numberOfCurves);
+  fprintf(totalFile,"# Total Curves,Lh,Ll: %i,%f,%f\n",outCurve.numberOfCurves,outCurve.startThreshCut,outCurve.linePThreshCut);
   fprintf(totalFile,"# Legend: Col,Row;gpsSec,gpsNanoSec,Freq,depth\n");
   /*Form of solution FreqIndex,TimeIndex,GPSSec,GPSNano,Power*/
   for (i = 0;i < outCurve.numberOfCurves;i++)

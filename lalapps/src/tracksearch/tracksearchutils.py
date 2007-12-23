@@ -389,7 +389,6 @@ class kurve:
         with entries
         [Row,Col,gpsStamp,Freq,Power]
         """
-        print "Hi girl. The CM is ?"
         if not(self.sortedByTime):
             self.__timeOrderCurve__()
         M=0
@@ -403,10 +402,14 @@ class kurve:
             M=M+Power
             m=Power
             r=0
-            index=index+1
             tmpCM=tmpCM + (index*m)
+            index=index+1
         rCM=int(round(tmpCM/M))
-        return self.element[rCM]
+        try:
+            return self.element[rCM]
+        except:
+            print rCM,self.element.__len__()
+            os.abort()
     #End def getCMPixel()
 
     def __getKurveMeanVar__(self):
@@ -1466,7 +1469,18 @@ class candidateList:
         structure self.curves.  This output can be used to write the
         summary information to a .summary text file.  This method is
         closely related to createSummaryStructure method.  We have as
-        output of this method
+        output of this method.  This is a list of lists with fields
+        0 GPS Start
+        1 GPS Stop
+        2 Start F
+        3 Stop F
+        4 GPS Bright
+        5 Freq Bright
+        6 Pow Bright
+        7 Mean Pow
+        8 Std Pow
+        9 Length
+        10 Integrated Power
         """
         summary=[]
         for lineInfo in self.curves:
@@ -1476,7 +1490,7 @@ class candidateList:
             d=lineInfo.getCandidateDuration()+self.gpsWidth.getAsFloat()
             F=lineInfo.getCandidateBandwidth()+self.freqWidth
             t=float(lineInfo.printStartGPS())
-            s=float(lineInfo.printStopGPS())
+            S=float(lineInfo.printStopGPS())
             f=float(lineInfo.printStartFreq())
             g=float(lineInfo.printStopFreq())
             tmp=lineInfo.getBrightPixelAndStats()
@@ -1486,7 +1500,8 @@ class candidateList:
             m=tmp[1] #Mean power of pixels in curve
             s=tmp[2] #stddev^2 of pixel power in curve
             #summary.append([t,s,f,g,l,p,d,F])
-            summary.append([t,s,f,g,l,p,d,F,v,h,m,s,j])
+            #summary.append([t,S,f,g,l,p,d,F,v,h,m,s,j])
+            summary.append([t,d,f,F,h,v,j,m,s,l,p])
         return summary
     #End dumpCandidateKurveSummary()
 
@@ -1547,13 +1562,25 @@ class candidateList:
         """
         This method takes in a string and uses it literally to construct a
         testing condition to impose on the kurve entries from a candidate file.
-        It then returns the list of candidates meeting the express written in the
+        It then returns the list of candidates meeting the express
+        written in the
         string.  Use caution with this function! This is parsed left to right!
         Valid variable labels:
-        P     Integrated Power
+        curveID,L,P,D,B,T,S,F,G,V,H,J,M,C
+        curveID approx unique database key
         L     Curve Length in Pixels
+        P     Integrated Power
         D     Time Duration in Seconds
-        F     Frequency Bandwidth in Hertz
+        B     Bandwidth
+        T     StartGPS
+        S     StopGPS
+        F     start Freq
+        G     stop Freq
+        V     Bright Freq
+        H     Bright Time
+        J     Bright Pow
+        M     mean Bright
+        C     std Bright
         Example:
         P>10 and L < 5
         D >=2 or P>12
@@ -1676,6 +1703,14 @@ class candidateList:
         output_fp.close()
     #End method writePixelList()
 
+    #Add method wrapped by graphdata which creates a figure and
+    #returns a handle to it for plotting via ipython or other func
+    # These functions will work with integrate power trait only.
+    # def __triggerLinePlotPrimative__()
+    # def __triggerHistogramPrimative__()
+    # def getOutlierList(percentage cut)
+    # def graphoutliers(percentage cut)
+    #
     def graphdata(self,filename='',gpsReferenceFloat=0.0,timescale='second',useLogColors=True,myColorMap='jet'):
         """
         This method uses matplotlib.py to make plots of curves
@@ -1753,6 +1788,8 @@ class candidateList:
         spinner.closeSpinner()
         maxValue=float(max(elementIPlist))
         minValue=float(min(elementIPlist))
+        if maxValue==minValue:
+            minValue=maxValue-1
         #Setup colorbar hack
         stepSize=(maxValue-minValue)/256
         linearValueMatrix=pylab.outerproduct(pylab.arange(minValue,maxValue,stepSize),pylab.ones(1))
@@ -1859,24 +1896,40 @@ class candidateList:
             triggerBandwidth,triggerLowF,triggerHighF=trigger.getCandidateBandwidth(bool(True))
             triggerID,triggerLength,triggerIntegratedPower=trigger.getKurveHeader()
             brightPixel=trigger.getBrightPixel()
-            cmPixel=trigger.getBrightPixel()
+            cmPixel=trigger.getCMPixel()
             meanPixelPower,varPixelPower=trigger.__getKurveMeanVar__()
             triggerCentralFreq=triggerLowF+(triggerHighF-triggerLowF)/2
             triggerDuration=triggerStopFloat-triggerStartFloat
             triggerCentralTime=(triggerStopFloat+triggerStartFloat)/2
             #
-            relativeTimeBP=brightPixel[2].getAsFloat()-triggerCentralTime
-            relativeFreqBP=brightPixel[3]-triggerCentralFreq
+            try:
+                relativeTimeBP=(brightPixel[2].getAsFloat()-triggerCentralTime)/triggerDuration
+            except ZeroDivisionError:
+                relativeTimeBP=0
+
+            try:
+                relativeFreqBP=(brightPixel[3]-triggerCentralFreq)/triggerBandwidth
+            except ZeroDivisionError:
+                relativeFreqBP=0
+                
             ###symmetryBP=trigger.getSymmetryFactor(brightPixel,weight)
             zScoreBP=(
-                (triggerIntegratedPower-meanPixelPower)/
+                (brightPixel[4]-meanPixelPower)/
                 math.sqrt(varPixelPower)
                 )
-            relativeTimeCM=cmPixel[2].getAsFloat()-triggerCentralTime
-            relativeFreqCM=cmPixel[3]-triggerCentralFreq
+            try:
+                relativeTimeCM=(cmPixel[2].getAsFloat()-triggerCentralTime)/triggerDuration
+            except ZeroDivisionError:
+                relativeTimeCM=0
+
+            try:
+                relativeFreqCM=(cmPixel[3]-triggerCentralFreq)/triggerBandwidth
+            except ZeroDivisionError:
+                relativeFreqCM=0
+                
             ###symmetryCM=trigger.getSymmetryFactor(brightPixel,weight)
             zScoreCM=(
-                (triggerIntegratedPower-meanPixelPower)/
+                (cmPixel[4]-meanPixelPower)/
                 math.sqrt(varPixelPower)
                 )
             #(+) if T_bp > T_cm
@@ -1898,9 +1951,9 @@ class candidateList:
                                  triggerBandwidth,int(triggerLength),
                                  triggerIntegratedPower,meanPixelPower,
                                  varPixelPower,relativeTimeBP,
-                                 relativeFreqBP,0,
+                                 relativeFreqBP,
                                  zScoreBP,relativeTimeCM,
-                                 relativeTimeCM,0,
+                                 relativeFreqCM,
                                  zScoreCM,spanTnorm,spanFnorm]
             glitchDatabase.append(glitchDatabaseEntry)
         spinner.closeSpinner()
