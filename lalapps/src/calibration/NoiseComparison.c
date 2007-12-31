@@ -92,8 +92,8 @@ REAL4 tmpx, tmpy;
       tmpc ) )
 
 
-#define MAXLINESRS   500000     /* Maximum # of lines in a Response file */
-#define MAXFACTORS   500000       /* Maximum # of factors to be computed */
+#define MAXLINESRS   100000     /* Maximum # of lines in a Response file */
+#define MAXFACTORS   100000       /* Maximum # of factors to be computed */
 #define MAXFREQUENCIES 100       /* Maximum number of frequemcies for which to do the comparison */
 
 NRCSID( NOISECOMPARISONC, "NoiseComparison $Id$");
@@ -131,6 +131,7 @@ struct CommandLineArgsTag {
   REAL8 D0Im;              /* Imaginary part of digital filter at cal line freq. */
   REAL8 W0Re;              /* Real part of whitening filter at cal line freq.*/
   REAL8 W0Im;              /* Imaginary part of whitening filter at cal line freq. */
+  REAL8 gamma_fudgefactor; /* fudge factor to divide gammas by */
 } CommandLineArgs;
 
 typedef struct ResponseFunctionTag
@@ -485,6 +486,7 @@ FrStream *framestream=NULL;
       TESTSTATUS( &status );
 
       /* put factors into series */
+      factors.alphabeta.re /= CLA.gamma_fudgefactor;
       gamma_fac[m]   = factors.alphabeta.re;
 
       fprintf(stdout,"%18.9Lf %f %f %f %f %f %f %f %f %f %f %f %f \n",gtime,
@@ -869,10 +871,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"whitener-im",          required_argument, NULL,           'v'},
     {"fcal",                 required_argument, NULL,           'w'},
     {"version",              no_argument, NULL,                 'x'},
+    {"gamma-fudge-factor",   required_argument, NULL,           'y'},
     {"help",                 no_argument, NULL,                 'h'},
     {0, 0, 0, 0}
   };
-  char args[] = "ha:b:c:d:e:g:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x";
+  char args[] = "ha:b:c:d:e:g:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:xy:";
 
   /* Initialize default values */
   CLA->freqfile=NULL;
@@ -897,6 +900,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->D0Im=0.0;
   CLA->W0Re=0.0;
   CLA->W0Im=0.0;
+  CLA->gamma_fudgefactor=1.0;
 
   /* Scan through list of command line arguments */
   while ( 1 )
@@ -1000,6 +1004,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       /*  imaginary part of servo */
       CLA->fcal=atof(optarg);
       break;
+    case 'y':
+      CLA->gamma_fudgefactor=atof(optarg);
+      break;
     case 'h':
       /* print usage/help message */
       fprintf(stdout,"Arguments are:\n");
@@ -1025,6 +1032,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\twhitener-re (-u)\tFLOAT\t Real part of the whitening filter at the calibration line frequency.\n");
       fprintf(stdout,"\twhitener-im (-v)\tFLOAT\t Imaginary part of whitening filter at the calibration line frequency.\n");
       fprintf(stdout,"\tfcal (-w)\tFLOAT\t Calibration line frequency.\n");
+      fprintf(stdout,"\tgamma-fudge-factor (-y)\tFLAG\t Fudge factor used to adjust factor values. Gamma is divided by this value.\n");
       fprintf(stdout,"\thelp (-h)\tFLAG\t This message\n");    
       exit(0);
       break;
