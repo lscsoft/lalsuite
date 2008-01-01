@@ -404,7 +404,7 @@ class kurve:
             r=0
             tmpCM=tmpCM + (index*m)
             index=index+1
-        rCM=int(round(tmpCM/M))
+        rCM=int(math.floor(tmpCM/M))
         try:
             return self.element[rCM]
         except:
@@ -1946,15 +1946,23 @@ class candidateList:
             else:
                 spanFnorm=0
             #Create glitch database entry
-            glitchDatabaseEntry=[triggerStartString,triggerStartFloat,
-                                 triggerLowF,triggerDuration,
-                                 triggerBandwidth,int(triggerLength),
-                                 triggerIntegratedPower,meanPixelPower,
-                                 varPixelPower,relativeTimeBP,
+            glitchDatabaseEntry=[triggerStartString,
+                                 triggerStartFloat,
+                                 triggerLowF,
+                                 triggerDuration,
+                                 triggerBandwidth,
+                                 int(triggerLength),
+                                 triggerIntegratedPower,
+                                 meanPixelPower,
+                                 varPixelPower,
+                                 relativeTimeBP,
                                  relativeFreqBP,
-                                 zScoreBP,relativeTimeCM,
+                                 zScoreBP,
+                                 relativeTimeCM,
                                  relativeFreqCM,
-                                 zScoreCM,spanTnorm,spanFnorm]
+                                 zScoreCM,
+                                 spanTnorm,
+                                 spanFnorm]
             glitchDatabase.append(glitchDatabaseEntry)
         spinner.closeSpinner()
         return glitchDatabase
