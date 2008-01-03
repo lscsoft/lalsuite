@@ -1209,15 +1209,13 @@ static REAL8TimeSeries *add_burst_injections(LALStatus *stat, char *filename, RE
 		exit(1);
 	}
 
-	XLALPrintInfo("add_burst_injections(): reading in SimBurst Table\n");
+	XLALPrintInfo("add_burst_injections(): reading sim_burst table from %s\n", filename);
 
 	LAL_CALL(LALSimBurstTableFromLIGOLw(stat, &injections, filename, start_time, stop_time), stat);
 
-	XLALPrintInfo("add_burst_injections(): injecting signals into time series\n");
+	XLALPrintInfo("add_burst_injections(): computing injections, and adding to input time series\n");
 
 	LAL_CALL(LALBurstInjectSignals(stat, zeroes, injections, response, calType), stat);
-
-	XLALPrintInfo("add_burst_injections(): finished making the injections\n");
 
 	while(injections) {
 		SimBurstTable *thisEvent = injections;
@@ -1228,6 +1226,8 @@ static REAL8TimeSeries *add_burst_injections(LALStatus *stat, char *filename, RE
 	for(i = 0; i < series->data->length; i++)
 		series->data->data[i] += zeroes->data->data[i];
 	XLALDestroyREAL4TimeSeries(zeroes);
+
+	XLALPrintInfo("add_burst_injections(): done\n");
 
 	return series;
 }
