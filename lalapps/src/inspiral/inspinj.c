@@ -70,7 +70,8 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
  */
 ProcessParamsTable *next_process_param( const char *name, const char *type,
     const char *fmt, ... );
-void read_mass_data( char* filename );
+void read_mass_data( char *filename );
+void read_nr_data( char* filename );
 void read_source_data( char* filename );
 void drawFromSource( REAL8 *rightAscension,
     REAL8 *declination,
@@ -78,6 +79,7 @@ void drawFromSource( REAL8 *rightAscension,
     CHAR  name[LIGOMETA_SOURCE_MAX] );
 void drawLocationFromExttrig( SimInspiralTable* table );
 void drawMassFromSource( SimInspiralTable* table );
+void drawMassSpinFromNR( SimInspiralTable* table );
 
 /* 
  *  *************************************
@@ -93,6 +95,7 @@ InclDistribution        iDistr;
 SimInspiralTable *simTable;
 
 char *massFileName = NULL;
+char *nrFileName = NULL;
 char *sourceFileName = NULL;
 char *outputFileName = NULL;
 char *exttrigFileName = NULL;
@@ -145,6 +148,10 @@ struct {
   REAL8 mass2;
 } *mass_data;
 
+int num_nr = 0;
+int i = 0;
+SimInspiralTable **nrSimArray = NULL;
+
 /* 
  *  *********************************
  *  Implementation of the code pieces  
@@ -184,7 +191,7 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
 static void print_usage(char *program)
 {
   fprintf(stderr,
-      "lalapps_inspinj [options]\n"\
+      "%s [options]\n"\
       "The following options are recognized.  Options not surrounded in []\n"\
       "are required. Defaults are shown in brackets\n", program );
   fprintf(stderr,
@@ -235,11 +242,14 @@ static void print_usage(char *program)
       " --m-distr massDist        set the mass distribution of injections\n"\
       "                           must be one of:\n"\
       "                           source: using file containing list of mass pairs\n"\
+      "                           nrwaves: using xml file with list of NR waveforms\n"\
+      "                           (requires setting max/min total masses)\n"\
       "                           totalMass: uniform distribution in total mass\n"\
       "                           componentMass: uniform in m1 and m2\n"\
       "                           gaussian: gaussian mass distribution\n"\
       "                           log: log distribution in comonent mass\n"\
       " [--mass-file] mFile       read population mass parameters from mFile\n"\
+      " [--nr-file] nrFile        read mass/spin parameters from xml nrFile\n"\
       " [--min-mass1] m1min       set the minimum component mass to m1min\n"\
       " [--max-mass1] m1max       set the maximum component mass to m1max\n"\
       " [--min-mass2] m2min       set the min component mass2 to m2min\n"\
@@ -269,7 +279,7 @@ static void print_usage(char *program)
  *
  */
 
-void 
+  void 
 read_mass_data( char* filename )
 {
   char line[256];
@@ -312,6 +322,50 @@ read_mass_data( char* filename )
   /* close the file */
   fclose( fp );
 }
+
+  void
+read_nr_data( char* filename )
+{
+  SimInspiralTable  *nrSimHead = NULL;
+  SimInspiralTable  *thisEvent= NULL;
+  INT4               i = 0;
+
+  num_nr = SimInspiralTableFromLIGOLw( &nrSimHead, filename, 0, 0 );
+
+
+  if ( num_nr < 0 )
+  {
+    fprintf( stderr, "error: unable to read sim_inspiral table from %s\n", 
+        filename );
+    exit( 1 );
+  }
+  else if ( num_nr == 0 )
+  {
+    fprintf( stderr, "error: zero events in sim_inspiral table from %s\n", 
+        filename );
+  }
+
+  /* allocate an array of pointers */
+  nrSimArray = (SimInspiralTable ** ) 
+    LALCalloc( num_nr, sizeof(SimInspiralTable *) );
+
+  if ( !nrSimArray ) 
+  {
+    fprintf( stderr, "Allocation error for nr simulations\n" );
+    exit( 1 );
+  }
+
+  for( i = 0, thisEvent=nrSimHead; i < num_nr; 
+      ++i, thisEvent = thisEvent->next )
+  {
+    nrSimArray[i] = thisEvent;
+    if (i > 0)
+    {
+      nrSimArray[i-1]->next = NULL;
+    }
+  }
+}
+
 
 /*
  *
@@ -431,6 +485,23 @@ void drawMassFromSource( SimInspiralTable* table )
   table->mchirp = pow( eta, 0.6) * (m1 + m2); 
 }
 
+
+/*
+ *
+ * functions to draw masses from mass distribution
+ *
+ */
+
+void drawMassSpinFromNR( SimInspiralTable* table )
+{ 
+  int index=0;
+
+  /* choose masses from the mass-list */  
+  index = (int)( num_nr * XLALUniformDeviate( randParams ) );
+  XLALRandomNRInjectTotalMass( table, randParams, minMtotal, maxMtotal, 
+      nrSimArray[index]);
+}
+
 /*
  *
  * functions to draw sky location from source distribution
@@ -462,10 +533,10 @@ void drawFromSource( REAL8 *rightAscension,
   }
 
   /* now then, draw from MilkyWay
-WARNING: This sets location AND distance */
-  XLALRandomInspiralMilkywayLocation( rightAscension, declination, distance, randParams );
-  memcpy( name, MW_name,
-      sizeof(CHAR) * 30 );
+   * WARNING: This sets location AND distance */
+  XLALRandomInspiralMilkywayLocation( rightAscension, declination, distance, 
+      randParams );
+  memcpy( name, MW_name, sizeof(CHAR) * 30 );
 
 }
 
@@ -552,6 +623,7 @@ int main( int argc, char *argv[] )
     {"help",                          no_argument, 0,                'h'},
     {"source-file",             required_argument, 0,                'f'},
     {"mass-file",               required_argument, 0,                'm'},
+    {"nr-file",                 required_argument, 0,                'c'},
     {"exttrig-file",            required_argument, 0,                'E'},
     {"f-lower",                 required_argument, 0,                'F'},
     {"gps-start-time",          required_argument, 0,                'a'},
@@ -596,7 +668,7 @@ int main( int argc, char *argv[] )
 
   /* set up inital debugging values */
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "LALMSGLVL2" );
+  set_debug_level( "1" );
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) 
@@ -658,6 +730,15 @@ int main( int argc, char *argv[] )
         optarg_len = strlen( optarg ) + 1;
         massFileName = calloc( 1, optarg_len * sizeof(char) );
         memcpy( massFileName, optarg, optarg_len * sizeof(char) );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, "string", 
+              "%s", optarg );
+        break;
+
+      case 'c':
+        optarg_len = strlen( optarg ) + 1;
+        nrFileName = calloc( 1, optarg_len * sizeof(char) );
+        memcpy( nrFileName, optarg, optarg_len * sizeof(char) );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, "string", 
               "%s", optarg );
@@ -821,6 +902,10 @@ int main( int argc, char *argv[] )
         {         
           mDistr=massFromSourceFile; 
         } 
+        else if (!strcmp(dummy, "nrwaves")) 
+        {         
+          mDistr=massFromNRFile; 
+        } 
         else if (!strcmp(dummy, "totalMass")) 
         {
           mDistr=uniformTotalMass;
@@ -840,8 +925,8 @@ int main( int argc, char *argv[] )
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "unknown mass distribution: "
-              "%s must be one of (source,totalMass,componentMass,gaussian)\n", 
+              "unknown mass distribution: %s must be one of\n"
+              "(source, nrwaves, totalMass, componentMass, gaussian, log)\n", 
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -956,7 +1041,7 @@ int main( int argc, char *argv[] )
           calloc( 1, sizeof(ProcessParamsTable) );
         LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
             PROGRAM_NAME );
-        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--d-distr" );
+        LALSnprintf( this_proc_param->param,LIGOMETA_PARAM_MAX,"--d-distr" );
         LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
@@ -1139,7 +1224,6 @@ int main( int argc, char *argv[] )
     fprintf( stderr, 
         "Must specify either --enable-milkyway LUM or --disable-milkyway\n"\
         " when using --d-distr=source\n" );
-    print_usage(argv[0]);
     exit( 1 );
   }
 
@@ -1147,7 +1231,6 @@ int main( int argc, char *argv[] )
   {
     fprintf( stderr, 
         "Must specify both --gps-start-time and --gps-end-time.\n");
-    print_usage(argv[0]);
     exit( 1 );
   }
 
@@ -1156,28 +1239,24 @@ int main( int argc, char *argv[] )
   if ( dDistr == unknownDistanceDist )
   {
     printf("Must specify a distance distribution (--d-distr).\n");
-    print_usage(argv[0]);
     exit( 1 );
   }
 
   if ( lDistr == unknownLocationDist )
   {
     printf("Must specify a location distribution (--l-distr).\n");
-    print_usage(argv[0]);
     exit( 1 );
   }
 
   if ( mDistr == unknownMassDist )
   {
     printf("Must specify a mass distribution (--m-distr).\n");
-    print_usage(argv[0]);
     exit( 1 );
   }
 
   if ( iDistr == unknownInclDist )
   {
     printf("Must specify an inclination distribution (--i-distr).\n");
-    print_usage(argv[0]);
     exit( 1 );
   }
 
@@ -1188,7 +1267,6 @@ int main( int argc, char *argv[] )
     {
       fprintf( stderr, 
           "Must specify --source-file when using --d-distr source \n" );
-      print_usage(argv[0]);
       exit( 1 );
     }
 
@@ -1206,7 +1284,7 @@ int main( int argc, char *argv[] )
   }
 
   /* check if the location file is specified for location but NOT for 
-distances: GRB case */
+   * distances: GRB case */
   if ( dDistr!=distFromSourceFile && lDistr==locationFromSourceFile &&
       mwLuminosity>0.0 )
   {    
@@ -1223,9 +1301,16 @@ distances: GRB case */
     fprintf( stderr, 
         "Must specify either a file contining the masses (--mass-file) "\
         "or choose another mass-distribution (--m-distr).\n" );
-    print_usage(argv[0]);
     exit( 1 );
   }
+  if ( !nrFileName && mDistr==massFromNRFile )
+  {
+    fprintf( stderr, 
+        "Must specify either a file contining the masses (--nr-file) "\
+        "or choose another mass-distribution (--m-distr).\n" );
+    exit( 1 );
+  }
+
 
   /* read the masses from the mass file here */
   if ( massFileName && mDistr==massFromSourceFile )
@@ -1233,13 +1318,17 @@ distances: GRB case */
     read_mass_data( massFileName );
   } 
 
+  if ( nrFileName && mDistr==massFromNRFile )
+  {
+    read_nr_data ( nrFileName );
+  }
+
   /* read in the data from the external trigger file */
   if ( lDistr == locationFromExttrigFile && !exttrigFileName )
   {
     fprintf( stderr, 
         "If --l-distr exttrig is specified, must specify " \
         "external trigger XML file using --exttrig-file.\n");
-    print_usage(argv[0]);
     exit( 1 );
   } 
   if ( lDistr == locationFromExttrigFile && exttrigFileName )
@@ -1267,7 +1356,6 @@ distances: GRB case */
     fprintf( stderr, 
         "Must specify width for gaussian inclination distribution, "\
         "use --inclStd.\n" );
-    print_usage(argv[0]);
     exit( 1 );
   }
 
@@ -1275,7 +1363,6 @@ distances: GRB case */
   if ( fLower <= 0.0 )
   {
     fprintf( stderr, "--f-lower must be specified and non-zero\n" );
-    print_usage(argv[0]);
     exit( 1 );
   }
 
@@ -1287,7 +1374,6 @@ distances: GRB case */
     fprintf( stderr, 
         "Must specify --mean-mass1/2 and --stdev-mass1/2 if choosing"
         " --m-distr=gaussian\n" );
-    print_usage(argv[0]);
     exit( 1 );
   }
 
@@ -1298,7 +1384,6 @@ distances: GRB case */
     fprintf( stderr, 
         "Must specify --min-mass1/2 and --max-mass1/2 if choosing"
         " --m-distr not gaussian\n" );
-    print_usage(argv[0]);
     exit( 1 );
   }
 
@@ -1307,7 +1392,6 @@ distances: GRB case */
   {
     fprintf( stderr, 
         "Maximum total mass must be larger than minMass1+minMass2\n"); 
-    print_usage(argv[0]);
     exit( 1 );
   }
 
@@ -1316,14 +1400,12 @@ distances: GRB case */
   {
     fprintf( stderr, 
         "Must specify --max-mtotal.\n" );
-    print_usage(argv[0]);
     exit( 1 );
   }
   if ( minMtotal<0.0)
   {
     fprintf( stderr, 
         "Must specify --min-mtotal.\n" );
-    print_usage(argv[0]);
     exit( 1 );
   }
 
@@ -1332,7 +1414,6 @@ distances: GRB case */
     fprintf( stderr, 
         "Must specify --min-distance and --max-distance if "
         "--d-distr is not source.\n" );
-    print_usage(argv[0]);
     exit( 1 );
 
   } 
@@ -1340,15 +1421,14 @@ distances: GRB case */
   if ( !*waveform )
   {
     fprintf( stderr, "No waveform specified (--waveform).\n" );
-    print_usage(argv[0]);
     exit( 1 );
   }
 
-  if ( spinInjections==-1 )
+  if ( spinInjections==-1 && mDistr != massFromNRFile )
   {
     fprintf( stderr, 
-        "Must specify --disable-spin or --enable-spin.\n" );
-    print_usage(argv[0]);
+        "Must specify --disable-spin or --enable-spin\n"\
+        "Unless doing NR injections\n" );
     exit( 1 );
   }
 
@@ -1359,7 +1439,6 @@ distances: GRB case */
     {
       fprintf( stderr,
           "Spins can only take values between 0 and 1.\n" );
-      print_usage(argv[0]);
       exit( 1 );
     }
 
@@ -1368,7 +1447,6 @@ distances: GRB case */
     {
       fprintf( stderr,
           "Minimal spins must be less than maximal spins.\n" );    
-      print_usage(argv[0]);
       exit( 1 );
     }
   }
@@ -1431,6 +1509,10 @@ distances: GRB case */
     if ( mDistr==massFromSourceFile )
     {
       drawMassFromSource( simTable );
+    }
+    else if ( mDistr==massFromNRFile )
+    {
+      drawMassSpinFromNR( simTable );
     }
     else if ( mDistr==gaussianMassDist )
     { 
@@ -1514,6 +1596,16 @@ distances: GRB case */
   /* destroy the structure containing the random params */
   LAL_CALL(  LALDestroyRandomParams( &status, &randParams ), &status);
 
+  /* destroy the NR data */
+  if ( num_nr )
+  {
+    for( i = 0; i < num_nr; i++ )
+    {
+      LALFree( nrSimArray[i] );
+    }
+    LALFree( nrSimArray );
+  }
+
   memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
 
 
@@ -1546,5 +1638,6 @@ distances: GRB case */
 
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlfp ), &status );
 
+  LALCheckMemoryLeaks();
   return 0;
 }
