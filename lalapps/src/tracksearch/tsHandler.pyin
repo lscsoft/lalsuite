@@ -246,7 +246,7 @@ elif ((canList.__len__() >=1) and ((graph2screen>0) or (graph2file!=''))):
         candidateObject=candidateList(verboseSwitch)
         candidateObject.__loadfileQuick__(entry)
         try:
-            candidateObject.graphdata(graph2file,graphGPSoffset,timescale)
+            candidateObject.graphTriggers(graph2file,graphGPSoffset,timescale)
         except Exception, errorInfo:
             sys.stderr.write("Problem trying to create plot, %s !\n"%(os.path.basename(graph2file)))
             sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))

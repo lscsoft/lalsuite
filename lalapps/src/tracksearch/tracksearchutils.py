@@ -1706,12 +1706,14 @@ class candidateList:
     #Add method wrapped by graphdata which creates a figure and
     #returns a handle to it for plotting via ipython or other func
     # These functions will work with integrate power trait only.
-    # def __triggerLinePlotPrimative__()
-    # def __triggerHistogramPrimative__()
-    # def getOutlierList(percentage cut)
+    # *** def __triggerLinePlotPrimative__()
+    # *** def __triggerHistogramPrimative__()
+    # def getOutliers(percentage cut)
     # def graphoutliers(percentage cut)
+    # def graphTriggers()
+    # def showHistogram()
     #
-    def graphdata(self,filename='',gpsReferenceFloat=0.0,timescale='second',useLogColors=True,myColorMap='jet'):
+    def graphTriggers(self,filename='',gpsReferenceFloat=0.0,timescale='second',useLogColors=True,myColorMap='jet'):
         """
         This method uses matplotlib.py to make plots of curves
         contained in this list!  Currently all plotting functions
@@ -1720,8 +1722,29 @@ class candidateList:
         filename,gpsRefTime,timescale,useLogColors,colormap
         each of which is NOT manditory.
         """        
+        self.__triggerLinePlotPrimative__(gpsReference,timescale,useLogColors,myColorMap)
+        #
+        if (filename==''):
+            pylab.show()
+            pylab.close()
+        else:
+            if (filename.upper()=='AUTO'):
+                [fullpath,extension]=os.path.splitext(self.filename[0])
+                filename=os.path.basename(fullpath)+'.png'
+            pylab.savefig(filename)
+    #End method graphdata
+
+    def  __triggerLinePlotPrimative__(self,gpsReferenceFloat=0.0,timescale='second',userLogColor=True,myColorMap='jet'):
+        """
+        This is a method that creates a line plot of the trigger present
+        in the trigger library and returns the figure information for
+        latter showing,adding to subplot or saving to disk.
+        
+        """
+        ### __triggerLinePlotPrimative__ ###
         #Determine version of matplotlib
         matplotlibVersion=int(pylab.matplotlib.__version__.replace('.',''))
+        matplotlibVersion=int(10000)
         if self.totalCount==0:
             sys.stdout.write("Omitting this plot no triggers to plot.\n");
             return
@@ -1797,7 +1820,6 @@ class candidateList:
         #Determine mapping of IP to colors
         maxValue=max(elementIPlist)
         minValue=min(elementIPlist)
-        #fig=pylab.figure()
         pylab.cm.ScalarMappable().set_cmap(myColorMap)
         linearColorScale=pylab.matplotlib.colors.normalize(minValue,maxValue)
         if (minValue > 0) and (maxValue > 0):
@@ -1864,15 +1886,23 @@ class candidateList:
             sys.stderr.write("Using matlibplot version :"+pylab.matplotlib.__version__+"\n")
         pylab.title("%s"%(figtitle))
         pylab.grid(True)
-        if (filename==''):
-            pylab.show()
-            pylab.close()
-        else:
-            if (filename.upper()=='AUTO'):
-                [fullpath,extension]=os.path.splitext(self.filename[0])
-                filename=os.path.basename(fullpath)+'.png'
-            pylab.savefig(filename)
-    #End method graphdata
+    # END  __triggerLinePlotPrimative__
+
+
+    def __triggerHistogramPrimative__(colCount=50):
+        """
+        This method plots a histogram of the triggers present in a
+        trigger library and plots a reference lines mean 1std 2std
+        3std 4std 5std deviations (Gaussian).
+        """
+        triggers=lib.dumpCandidateKurveSummary()
+        histList=[]
+        powList=[]
+        for entry in triggers:
+            histList.append([entry[10],entry[0]])
+            powList.append(entry[10])
+        [entries,bins,patches]=hist(powList,colCount,log=False)
+    # END __triggerHistogramPrimative__():
 
     def createGlitchDatabase(self,verbose=bool(False)):
         """
