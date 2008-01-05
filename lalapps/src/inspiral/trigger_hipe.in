@@ -38,6 +38,7 @@ from glue import segments
 from glue import segmentsUtils
 from glue import pipeline
 from pylal import grbsummary
+from pylal import dqutils
 from lalapps import inspiralutils
 
 ##############################################################################
@@ -105,6 +106,17 @@ def createInjectionFile(hipe_dir, cp, injrun, injection_segment,
   sims = table.get_table(doc, lsctables.SimInspiralTable.tableName)
 
   return sims, injInterval, numberInjections
+
+def fix_numrel_columns(sims):
+   """
+   Due to a mismatch between our LAL tag and the LAL HEAD, against which
+   we compile pylal, there are missing columns that cannot be missing.
+   Just put in nonsense values so that glue.ligolw code won't barf.
+   """
+   for sim in sims:
+       sim.numrel_data="nan"
+       sim.numrel_mode_max = 0
+       sim.numrel_mode_min = 0
 
 def plot_segments(trigger, ifolist, segdict, onSourceSegment, offSourceSegment, subdir):
     """
@@ -176,13 +188,13 @@ class hipe_run(object):
   """
   def __init__(self, hipe_dir, base_cp, ifos, log_path, source_file, dag_name,
                onsource=False, usertag=None, verbose=False):
-    self._dag_name = None
     self._hipe_dir = hipe_dir
     self._log_path = log_path
     self._cp = copy.deepcopy(base_cp)
     self._ifos = ifos
     self._verbose = verbose
     self._dag_name = os.path.join(self._hipe_dir, dag_name)
+    self._usertag = usertag
 
     # create directory here
     mkdir(self._hipe_dir, overwrite=True)
@@ -255,7 +267,13 @@ class hipe_run(object):
     os.chdir("../../")
   
   def get_dag_name(self):
-    return self._dag_name+'.dag'
+    dag_name = self._dag_name
+    
+    # match inspiral_hipe's convention
+    if self._usertag is not None:
+      dag_name += "." + self._usertag
+    
+    return dag_name + '.dag'
   
   def get_dag_node(self):
     """
@@ -325,6 +343,8 @@ parser = optparse.OptionParser(usage, version="$Id$")
 
 parser.add_option("-v", "--verbose", action="store_true",default=False,\
   help="make things verbose" )
+  
+# what data?
 parser.add_option("-G","--g1-segments",action="store",type="string",\
   default=None, metavar=" G1_SEGMENTS", help="G1 input segment to read" )
 parser.add_option("-H","--h1-segments",action="store",type="string",\
@@ -341,6 +361,8 @@ parser.add_option("-T","--grb",action="append",type="string",\
 parser.add_option("-l","--list",action="store",type="string",\
     default=None, metavar=" GRB LIST",\
     help="path to the file with GRB data stored")
+
+# what parameters?
 parser.add_option("-a","--onsource-left",action="store",type="int",\
     default=120, metavar=" ONLEFT",\
     help="Specifies the left onsource time window (default: 120)")
@@ -362,11 +384,13 @@ parser.add_option("-g","--injection-config",action="store",type="string",\
 parser.add_option("-p", "--log-path",action="store",type="string",\
     metavar=" PATH",help="directory to write condor log file")
 
-# Add some plotting capabilities to check things
+# Add some extra capabilities
 parser.add_option("-P", "--plot-segments", action="store_true",default=False,\
   help="plot segments for each interval with original segments" )
 parser.add_option("-D", "--plot-injections", action="store_true",
   default=False, help="histogram distributions of each injection parameter")
+parser.add_option("", "--skip-dataquality", action="store_false", default=True,
+  dest="do_dataquality", help="skip a query for data quality")
 
 ( opts , args ) = parser.parse_args()
 
@@ -399,7 +423,7 @@ minsciseg = length + 2 * paddata
 
 ##############################################################################
 # Read in all the segment lists, filtering for sufficiently long segments
-segdict = {}
+segdict = segments.segmentlistdict()
 
 for ifo in ["G1", "H1", "H2", "L1", "V1"]:
   ifo_segfile = getattr(opts, "%s_segments" % ifo.lower())
@@ -408,6 +432,39 @@ for ifo in ["G1", "H1", "H2", "L1", "V1"]:
     segdict[ifo] = segments.segmentlist([s for s in tmplist if abs(s) > minsciseg])
 ifolist = segdict.keys()
 ifolist.sort()
+
+##############################################################################
+# Derive data quality vetoes
+if opts.do_dataquality:
+  for ifo in ifolist:
+    ifo_segfile = getattr(opts, "%s_segments" % ifo.lower())
+    dq_segments = ifo + "_dq_segments.txt"
+    kept_filename = ifo + "_cat1_kept_segments.txt"
+    vetoed_filename = ifo + "_cat1_vetoed_segments.txt"
+    
+    # download DQ segment dump
+    if os.path.isfile(dq_segments):
+      if opts.verbose:
+        print "using existing DQ segments file", dq_segments
+    else:
+      dqutils.get_dq_file(ifo, dest=dq_segments, verbose=opts.verbose)
+    
+    # FIXME?: I shouldn't have to do this in order to call query_dq
+    extent = segdict.extent_all()
+    cp.set("input", "gps-start-time", str(extent[0]))
+    cp.set("input", "gps-end-time", str(extent[1]))
+    
+    # call pylal_query_dq to write DQ to cat1_filename
+    cat1_filename = inspiralutils.veto_segments(ifo, cp, ifo_segfile, dq_segments, [1], True)[1]
+    
+    # read it back in and apply
+    veto_segs = segmentsUtils.fromsegwizard(open(cat1_filename))
+    vetoed_segs = segdict[ifo] & veto_segs
+    segdict[ifo] -= vetoed_segs
+    
+    # keep a copy for accounting purposes
+    segmentsUtils.tosegwizard(open(kept_filename, "w"), segdict[ifo])
+    segmentsUtils.tosegwizard(open(vetoed_filename, "w"), vetoed_segs)
 
 ############################################################################
 # set up the über dag for all intervals and all injections
@@ -553,6 +610,9 @@ for grb in ext_trigs:
       if opts.verbose: print "  Creating injections..."
       sims, injInterval, numberInjections = createInjectionFile(hipe_dir,
         cpinj, injrun, offSourceSegment.contract(opts.padding_time), source_file, opts.verbose)
+        
+      # XXX: hack since glue is having trouble with empty columns
+      fix_numrel_columns(sims)
 
       # plot the injections as made
       if opts.plot_injections:
