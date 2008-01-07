@@ -574,7 +574,7 @@ for grb in ext_trigs:
   
   if opts.verbose: print "Creating DAG for offsource analysis"
   offsource_analysis = hipe_run(idirectory + "/offsource", cp, grb_ifolist,
-                            opts.log_path, source_file, "analysis",
+                            opts.log_path, source_file, "offsource",
                             usertag=idirectory + "_OFFSOURCE",
                             verbose=opts.verbose)
   offsource_analysis.write_dag()
