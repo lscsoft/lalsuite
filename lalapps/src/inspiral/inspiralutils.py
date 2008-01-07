@@ -678,9 +678,9 @@ def write_rescue():
   if (( ${1}>0 ))
   then
     DIR=${2%/*}
-    DAG=${2#*/}
+    DAG=${2##*/}
     mv ${2} ${2}.orig
-    `sed "s/DIR ${DIR}//g" ${DAG}.rescue > ${2}`
+    `sed "s+DIR ${DIR}++g" ${DAG}.rescue > ${2}`
     exit ${1}
   fi""")
   f.close()
