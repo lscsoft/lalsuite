@@ -778,6 +778,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
 	  REAL4 kappa_m = kappa_max; /* single precision version of kappa_max */
 
+#ifdef __GNUC__
           /* vector constants */
           /* having these not aligned will crash the assembler code */
           static REAL4 V0011[4] __attribute__ ((aligned (16))) = { 0,0,1,1 };
@@ -890,6 +891,72 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	     /* vector constants */
 	     [V0011]       "m"  (V0011[0]),
 	     [V2222]       "m"  (V2222[0])
+#else
+          static REAL4 V0011[4] = { 0,0,1,1 };
+          static REAL4 V2222[4] = { 2,2,2,2 };
+
+	     /* -------------------------------------------------------------------; */
+	     /* Prepare common divisor method for 4 values ( two Re-Im pair ) */
+	     /*  Im1, Re1, Im0, Re0 */
+	     "MOVSS	xmm2,kappa_m   		\n\t"	/* X2:  -   -   -   C */
+	     "MOVLPS	xmm1,Xalpha_l   	\n\t"	/* X1:  -   -  Y00 X00 */
+	     "MOVHPS	xmm1,Xalpha_l+8   	\n\t"	/* X1: Y01 X01 Y00 X00 */
+	     "SHUFPS	xmm2,xmm2,0   		\n\t"	/* X2:  C   C   C   C */
+	     "MOVAPS	xmm4,V2222   		\n\t"	/* X7:  2   2   2   2 */
+	     "SUBPS	xmm2,V0011   		\n\t"	/* X2: C-1 C-1  C   C */
+	     /* -------------------------------------------------------------------; */
+	     "MOVAPS	xmm0,xmm2   	\n\t"	/* X0: C-1 C-1  C   C */
+	     /* -------------------------------------------------------------------; */
+	     /* xmm0: collected denumerators -> a new element will multiply by this */
+	     /* xmm1: collected numerators -> we will divide it by the denumerator last */
+	     /* xmm2: current denumerator ( counter type ) */
+	     /* xmm3: current numerator ( current Re,Im elements ) */
+	     /* -------------------------------------------------------------------; */
+	     /*  Im3, Re3, Im2, Re2 */
+	     "MOVLPS	xmm3,16(%[Xa])   	\n\t"	/* X3:  -   -  Y02 X02 */
+	     "MOVHPS	xmm3,24(%[Xa])   	\n\t"	/* X3: Y03 X03 Y02 X02 */
+	     "SUBPS	xmm2,xmm4   	\n\t"	/* X2: C-3 C-3 C-2 C-2 */
+	     "MULPS	xmm3,xmm0   	\n\t"	/* X3: Xnew*Ccol */
+	     "MULPS	xmm1,xmm2   	\n\t"	/* X1: Xold*Cnew */
+	     "MULPS	xmm0,xmm2   	\n\t"	/* X0: Ccol=Ccol*Cnew */
+	     "ADDPS	xmm1,xmm3   	\n\t"	/* X1: Xold=Xold*Cnew+Xnew*Ccol */
+
+	     /* -------------------------------------------------------------------; */
+	     /*  Im5, Re5, Im4, Re4 */
+	     "MOVLPS	32(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y04 X04 */
+	     "MOVHPS	40(%[Xa]),%%xmm3   	\n\t"	/* X3: Y05 X05 Y04 X04 */
+	     /* -------------------------------------------------------------------; */
+	     /*  Im7, Re7, Im6, Re6 */
+	     "MOVLPS	48(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y06 X06 */
+	     "MOVHPS	56(%[Xa]),%%xmm3   	\n\t"	/* X3: Y07 X07 Y06 X06 */
+	     /* -------------------------------------------------------------------; */
+	     /*  Im9, Re9, Im8, Re8 */
+	     "MOVLPS	64(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y08 X08 */
+	     "MOVHPS	72(%[Xa]),%%xmm3   	\n\t"	/* X3: Y09 X09 Y08 X08 */
+	     /* -------------------------------------------------------------------; */
+	     /*  Im11, Re11, Im10, Re10 */
+	     "MOVLPS	80(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y10 X10 */
+	     "MOVHPS	88(%[Xa]),%%xmm3   	\n\t"	/* X3: Y11 X11 Y10 X10 */
+	     /* -------------------------------------------------------------------; */
+	     /*  Im13, Re13, Im12, Re12 */
+	     "MOVLPS	96(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y12 X12 */
+	     "MOVHPS	104(%[Xa]),%%xmm3   	\n\t"	/* X3: Y13 X13 Y12 X12 */
+	     /* -------------------------------------------------------------------; */
+	     /*  Im15, Re15, Im14, Re14 */
+	     "MOVLPS	112(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y14 X14 */
+	     "MOVHPS	120(%[Xa]),%%xmm3   	\n\t"	/* X3: Y15 X15 Y14 X14 */
+
+	     /* -------------------------------------------------------------------; */
+	     /* Four divisions at once ( two for real parts and two for imaginary parts ) */
+	     "DIVPS	xmm1,xmm0   	\n\t"	/* X1: Y0G X0G Y1F X1F */
+	     /* -------------------------------------------------------------------; */
+	     /* So we have to add the two real and two imaginary parts */
+	     "MOVHLPS   xmm4,xmm1	        \n\t"	/* X4:  -   -  Y0G X0G */
+	     "ADDPS	xmm4,xmm1   	\n\t"	/* X4:  -   -  YOK XOK */
+	     /* -------------------------------------------------------------------; */
+	     /* Save values for FPU part */
+	     "MOVLPS	XSums,xmm4   	\n\t"	/*  */
+#endif
 
 #ifndef IGNORE_XMM_REGISTERS
 	     :
