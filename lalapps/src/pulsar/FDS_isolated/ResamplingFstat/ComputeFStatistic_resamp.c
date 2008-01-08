@@ -206,7 +206,27 @@ CHAR *uvar_workingDir;
 REAL8 uvar_timerCount;
 INT4 uvar_upsampleSFTs;
 
+/* Defining a multi-IFO complex time series. Keeping the Real and Imaginary parts as seperate vectors, since it is necessary to interpolate them seperately */
+
+typedef struct
+{
+  UINT4 length;                    /* Number of IFOs */
+  REAL8TimeSeries* Real;           /* Real part of the time series */
+  REAL8TimeSeries* Imag;           /* Imaginary part of the time series */
+}MultiCOMPLEX8TimeSeries;
+
+/* A contiguity structure required by the preprocessing function in order to store the information pertaining to the contiguity of SFTs and the gaps between them */
+
+typedef struct
+{
+  UINT4  length;                    /* Number of Contiguous blocks */
+  UINT4* NumContinuous;             /* Number of Contiguous SFTs in each block */
+  REAL8* Gap;                       /* Gap between two Contiguous blocks in seconds */
+}Contiguity;
+
+
 /* ---------- local prototypes ---------- */
+void CalcTimeSeries(LALStatus *, MultiSFTVector *multiSFTs, MultiCOMPLEX8TimeSeries* Tseries);
 int main(int argc,char *argv[]);
 void initUserVars (LALStatus *);
 void InitFStat ( LALStatus *, ConfigVariables *cfg );
@@ -240,6 +260,35 @@ static const FstatCandidate empty_FstatCandidate;
 /*----------------------------------------------------------------------*/
 /* Function definitions start here */
 /*----------------------------------------------------------------------*/
+
+/* CalcTimeSeries calculates a heterodyned downsampled time series.
+   It heterodynes the middle of the band to zero and downsamples
+   appropriately. The resulting time series is complex and is stored
+   in the MultiComplex8TimesSeries structure.
+*/
+
+void CalcTimeSeries(LALStatus *, MultiSFTVector *multiSFTs, MultiCOMPLEX8TimeSeries* Tseries);
+{
+  Contiguity C;            
+  UINT4 i,j;         /* Counters */
+
+  /*loop over IFOs*/
+  for(i=0;i<multiSFTs->length;i++)
+    {
+      SFTVector *SFT_Vect = multiSFTs->data[i]; /* Copy local  SFTVect */
+      BOOLEAN IsFirst = TRUE;                   /* Bookkeeping Variable */
+      UINT4 NumCount = 1;                       /* Number of SFTs in each block */
+      C.length = 0;                             /* Initial Condition */
+      REAL8 SFT_TimeBaseline = 0;
+      if(SFT_Vect->length)
+	SFT_TimeBaseline = 1.0/SFT_Vect->data[0].deltaF;
+	
+      /* Loop over all SFTs in this SFTVector */
+      for(j=0;j<SFT_Vect->length;j++)
+	{
+	  if(IsFirst)
+	    {
+	      
 
 /**
  * MAIN function of ComputeFStatistic code.
