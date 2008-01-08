@@ -270,7 +270,7 @@ static const FstatCandidate empty_FstatCandidate;
 void CalcTimeSeries(LALStatus *, MultiSFTVector *multiSFTs, MultiCOMPLEX8TimeSeries* Tseries);
 {
   Contiguity C;            
-  UINT4 i,j;         /* Counters */
+  UINT4 i,j,k,p,q;         /* Counters */
 
   /*loop over IFOs*/
   for(i=0;i<multiSFTs->length;i++)
@@ -278,17 +278,67 @@ void CalcTimeSeries(LALStatus *, MultiSFTVector *multiSFTs, MultiCOMPLEX8TimeSer
       SFTVector *SFT_Vect = multiSFTs->data[i]; /* Copy local  SFTVect */
       BOOLEAN IsFirst = TRUE;                   /* Bookkeeping Variable */
       UINT4 NumCount = 1;                       /* Number of SFTs in each block */
-      C.length = 0;                             /* Initial Condition */
-      REAL8 SFT_TimeBaseline = 0;
-      if(SFT_Vect->length)
-	SFT_TimeBaseline = 1.0/SFT_Vect->data[0].deltaF;
-	
+      /* Initialize C, length = 0 to begin with. But we need to assign memory to Gap and NumContinuous. The maximum number of continuous blocks is the total number of SFTs, therefore it is appropriate to assign that much memory */
+      C.length = 0;                    
+      C.Gap = (REAL8*)LALMalloc(sizeof(REAL8)*SFT_Vect->length); 
+      C.NumContinuous = (REAL8*)LALMalloc(sizeof(REAL8)*SFT_Vect->length);
+
+      REAL8 SFT_TimeBaseline = 0;               /* Time Baseline of SFTs */
+
+      /* In order to avoid Seg Faults */
+      /* Time_Baseline = 1/deltaF */
+      if(SFT_Vect->length)                      
+	SFT_TimeBaseline = 1.0/SFT_Vect->data[0].deltaF; 
+
+      /* Another Bookkeeping variable */
+      UINT4 NumofBlocks = 0;
+
       /* Loop over all SFTs in this SFTVector */
       for(j=0;j<SFT_Vect->length;j++)
 	{
+	  /* Stores difference in times between two consecutive SFTs */
+	  REAL8 TimeDiff;             
+
 	  if(IsFirst)
 	    {
+	      IsFirst = FALSE;        /* No Longer First */
+	      NumCount = 1;           /* Minimum SFTs in each block is 1 */
+	    }
+	  else
+	    {
+	        /* Calculate the difference in start times between this SFT and the one before it, since this one isnt the first */
+	      TimeDiff = GPS2REAL8(SFT_Vect->data[i].epoch)-GPS2REAL8(SFT_Vect->data[i-1].epoch);                   
+
+	      /* If true, it means that these two SFTs are next to each other in time and hence add 1 to the Number continuous */
+	      if(TimeDiff == SFT_TimeBaseline) 
+		NumCount++;           
 	      
+	      /* Now we are dealing with a new block */
+	      else                    
+		{
+		  IsFirst = TRUE;
+
+		  /* Restart Cycle with this SFT being first */
+		  j--;      
+
+		  /* Record the Gap between these two blocks */
+		  C.Gap[NumofBlocks] = diff;
+
+		  /* Also Record how many SFTs in this block */
+		  C.NumContinuous[NumofBlocks] = NumCount;
+		  
+		  /* One more in this Block */
+		  NumofBlocks += 1;
+		}
+	    }/*Top most else() */
+	}
+      
+      /* Record information for the last block */
+      C.Gap[NumofBlocks] = 0;
+      C.NumContinuous[NumofBlocks] = NumCount;
+      C.length = NumofBlocks + 1;
+    }/*Loop over Multi-IFOs */
+}/*CalctimeSeries()
 
 /**
  * MAIN function of ComputeFStatistic code.
