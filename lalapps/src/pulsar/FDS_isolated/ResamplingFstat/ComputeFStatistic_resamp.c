@@ -267,7 +267,7 @@ static const FstatCandidate empty_FstatCandidate;
    in the MultiComplex8TimesSeries structure.
 */
 
-void CalcTimeSeries(LALStatus *, MultiSFTVector *multiSFTs, MultiCOMPLEX8TimeSeries* Tseries);
+void CalcTimeSeries(LALStatus *Status, MultiSFTVector *multiSFTs, MultiCOMPLEX8TimeSeries* Tseries)
 {
   Contiguity C;            
   UINT4 i,j,k,p,q;         /* Counters */
@@ -281,7 +281,7 @@ void CalcTimeSeries(LALStatus *, MultiSFTVector *multiSFTs, MultiCOMPLEX8TimeSer
       /* Initialize C, length = 0 to begin with. But we need to assign memory to Gap and NumContinuous. The maximum number of continuous blocks is the total number of SFTs, therefore it is appropriate to assign that much memory */
       C.length = 0;                    
       C.Gap = (REAL8*)LALMalloc(sizeof(REAL8)*SFT_Vect->length); 
-      C.NumContinuous = (REAL8*)LALMalloc(sizeof(REAL8)*SFT_Vect->length);
+      C.NumContinuous = (UINT4*)LALMalloc(sizeof(UINT4)*SFT_Vect->length);
 
       REAL8 SFT_TimeBaseline = 0;               /* Time Baseline of SFTs */
 
@@ -322,7 +322,7 @@ void CalcTimeSeries(LALStatus *, MultiSFTVector *multiSFTs, MultiCOMPLEX8TimeSer
 		  j--;      
 
 		  /* Record the Gap between these two blocks */
-		  C.Gap[NumofBlocks] = diff;
+		  C.Gap[NumofBlocks] = TimeDiff;
 
 		  /* Also Record how many SFTs in this block */
 		  C.NumContinuous[NumofBlocks] = NumCount;
