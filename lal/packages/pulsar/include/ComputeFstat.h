@@ -12,15 +12,15 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 /**
  * \author Reinhard Prix
  * \date 2005
- * \file 
+ * \file
  * \ingroup pulsar
  * \brief Header-file defining the API for the F-statistic functions.
  *
@@ -91,11 +91,11 @@ typedef struct {
  * B_d \equiv \sum_{X,\alpha} \widehat{b}^X_\alpha \widehat{b}^X_\alpha \,,\quad
  * C_d \equiv \sum_{X,\alpha} \widehat{a}^X_\alpha \widehat{b}^X_\alpha \,,
  * \f}
- * and the noise-weighted atenna-functions \f$\widehat{a}^X_\alpha = \sqrt{w^X_\alpha}\,a^X_\alpha\f$, 
- * \f$\widehat{b}^X_\alpha = \sqrt{w^X_\alpha}\,b^X_\alpha\f$, and noise-weights 
+ * and the noise-weighted atenna-functions \f$\widehat{a}^X_\alpha = \sqrt{w^X_\alpha}\,a^X_\alpha\f$,
+ * \f$\widehat{b}^X_\alpha = \sqrt{w^X_\alpha}\,b^X_\alpha\f$, and noise-weights
  * \f$w^X_\alpha \equiv {S^{-1}_{X\alpha}/{\mathcal{S}^{-1}}\f$.
- * 
- * \note One reason for storing the un-normalized \a Ad, \a Bd, \a Cd and the normalization-factor \a Sinv_Tsft separately 
+ *
+ * \note One reason for storing the un-normalized \a Ad, \a Bd, \a Cd and the normalization-factor \a Sinv_Tsft separately
  * is that the former are of order unity, while \a Sinv_Tsft is very large, and it has numerical advantages for parameter-estimation
  * to use that fact.
  */
@@ -103,6 +103,7 @@ typedef struct {
   REAL8 Ad; 		/**<  \f$A_d \equiv \sum_{X,\alpha} \widehat{a}^X_\alpha \widehat{a}^X_\alpha\f$ */
   REAL8 Bd; 		/**<  \f$B_d \equiv \sum_{X,\alpha} \widehat{b}^X_\alpha \widehat{b}^X_\alpha\f$ */
   REAL8 Cd; 		/**<  \f$C_d \equiv \sum_{X,\alpha} \widehat{a}^X_\alpha \widehat{b}^X_\alpha\f$ */
+  REAL8 Dd; 		/**<  determinant \f$D_d \equiv A_d B_d - C_d^2 \f$ */
   REAL8 Sinv_Tsft;	/**< normalization-factor \f$\mathcal{S}^{-1}\,T_\mathrm{SFT}\f$ */
 } AntennaPatternMatrix;
 
@@ -126,11 +127,11 @@ typedef struct {
  * C_d \equiv \sum_{X,\alpha} \mathrm{Re} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha \,,
  * E_d \equiv \sum_{X,\alpha} \mathrm{Im} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha \,,
  * \f}
- * and the noise-weighted atenna-functions \f$\widehat{a}^X_\alpha = \sqrt{w^X_\alpha}\,a^X_\alpha\f$, 
- * \f$\widehat{b}^X_\alpha = \sqrt{w^X_\alpha}\,b^X_\alpha\f$, and noise-weights 
+ * and the noise-weighted atenna-functions \f$\widehat{a}^X_\alpha = \sqrt{w^X_\alpha}\,a^X_\alpha\f$,
+ * \f$\widehat{b}^X_\alpha = \sqrt{w^X_\alpha}\,b^X_\alpha\f$, and noise-weights
  * \f$w^X_\alpha \equiv {S^{-1}_{X\alpha}/{\mathcal{S}^{-1}}\f$.
- * 
- * \note One reason for storing the un-normalized \a Ad, \a Bd, \a Cd, \a Ed and the normalization-factor \a Sinv_Tsft separately 
+ *
+ * \note One reason for storing the un-normalized \a Ad, \a Bd, \a Cd, \a Ed and the normalization-factor \a Sinv_Tsft separately
  * is that the former are of order unity, while \a Sinv_Tsft is very large, and it has numerical advantages for parameter-estimation
  * to use that fact.
  */
@@ -139,6 +140,7 @@ typedef struct {
   REAL8 Bd; 		/**<  \f$B_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{b}^X_\alpha{}^* \widehat{b}^X_\alpha\f$ */
   REAL8 Cd; 		/**<  \f$C_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha\f$ */
   REAL8 Ed; 		/**<  \f$E_d \equiv \mathrm{Im} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha\f$ */
+  REAL8 Dd; 		/**<  determinant \f$D_d \equiv A_d B_d - C_d^2 -E_d^2 \f$ */
   REAL8 Sinv_Tsft;	/**< normalization-factor \f$\mathcal{S}^{-1}\,T_\mathrm{SFT}\f$ */
 } CmplxAntennaPatternMatrix;
 
@@ -154,7 +156,7 @@ typedef struct {
   REAL8 F;		/**< F-statistic value */
   COMPLEX16 Fa;		/**< complex amplitude Fa */
   COMPLEX16 Fb;		/**< complex amplitude Fb */
-} Fcomponents; 
+} Fcomponents;
 
 /** The precision in calculating the barycentric transformation */
 typedef enum {
@@ -173,14 +175,14 @@ typedef struct {
   BOOLEAN bufferedRAA;	/**< approximate RAA by assuming constant response over (small) frequency band */
 } ComputeFParams;
 
-/** Struct holding buffered ComputeFStat()-internal quantities to avoid unnecessarily 
- * recomputing things that depend ONLY on the skyposition and detector-state series (but not on the spins). 
+/** Struct holding buffered ComputeFStat()-internal quantities to avoid unnecessarily
+ * recomputing things that depend ONLY on the skyposition and detector-state series (but not on the spins).
  * For the first call of ComputeFStat() the pointer-entries should all be NULL.
  */
 typedef struct {
   const MultiDetectorStateSeries *multiDetStates;/**< buffer for each detStates (store pointer) and skypos */
   REAL8 Alpha, Delta;				/**< skyposition of candidate */
-  MultiSSBtimes *multiSSB;	
+  MultiSSBtimes *multiSSB;
   MultiAMCoeffs *multiAMcoef;
   MultiCmplxAMCoeffs *multiCmplxAMcoef;
 } ComputeFBuffer;
@@ -199,7 +201,7 @@ extern const ComputeFBuffer empty_ComputeFBuffer;
 /*---------- exported prototypes [API] ----------*/
 int
 XLALComputeFaFb ( Fcomponents *FaFb,
-		  const SFTVector *sfts, 
+		  const SFTVector *sfts,
 		  const PulsarSpins fkdot,
 		  const SSBtimes *tSSB,
 		  const AMCoeffs *amcoe,
@@ -207,31 +209,31 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 
 int
 XLALComputeFaFbXavie ( Fcomponents *FaFb,
-		       const SFTVector *sfts, 
+		       const SFTVector *sfts,
 		       const PulsarSpins fkdot,
 		       const SSBtimes *tSSB,
 		       const AMCoeffs *amcoe,
 		       const ComputeFParams *params);
-  
+
 int
 XLALComputeFaFbCmplx ( Fcomponents *FaFb,
-		       const SFTVector *sfts, 
+		       const SFTVector *sfts,
 		       const PulsarSpins fkdot,
 		       const SSBtimes *tSSB,
 		       const CmplxAMCoeffs *amcoe,
 		       const ComputeFParams *params);
 
 void
-LALGetSSBtimes (LALStatus *, 
+LALGetSSBtimes (LALStatus *,
 		SSBtimes *tSSB,
-		const DetectorStateSeries *DetectorStates, 
+		const DetectorStateSeries *DetectorStates,
 		SkyPosition pos,
 		LIGOTimeGPS refTime,
 		SSBprecision precision);
 
 void
 LALGetAMCoeffs(LALStatus *,
-	       AMCoeffs *coeffs, 
+	       AMCoeffs *coeffs,
 	       const DetectorStateSeries *DetectorStates,
 	       SkyPosition skypos);
 
@@ -242,7 +244,7 @@ LALNewGetAMCoeffs(LALStatus *,
 		  SkyPosition skypos);
 
 void
-LALGetMultiSSBtimes (LALStatus *, 
+LALGetMultiSSBtimes (LALStatus *,
 		     MultiSSBtimes **multiSSB,
 		     const MultiDetectorStateSeries *multiDetStates,
 		     SkyPosition pos,
@@ -250,13 +252,13 @@ LALGetMultiSSBtimes (LALStatus *,
 		     SSBprecision precision );
 
 void
-LALGetMultiAMCoeffs (LALStatus *, 
+LALGetMultiAMCoeffs (LALStatus *,
 		     MultiAMCoeffs **multiAMcoef,
 		     const MultiDetectorStateSeries *multiDetStates,
 		     SkyPosition pos );
 
 
-void ComputeFStat ( LALStatus *, Fcomponents *Fstat, 
+void ComputeFStat ( LALStatus *, Fcomponents *Fstat,
 		    const PulsarDopplerParams *doppler,
 		    const MultiSFTVector *multiSFTs,
 		    const MultiNoiseWeights *multiWeights,
@@ -264,10 +266,10 @@ void ComputeFStat ( LALStatus *, Fcomponents *Fstat,
 		    const ComputeFParams *params,
 		    ComputeFBuffer *cfBuffer );
 
-void ComputeFStatFreqBand ( LALStatus *status, 
+void ComputeFStatFreqBand ( LALStatus *status,
 			    REAL8FrequencySeries *FstatVector,
 			    const PulsarDopplerParams *doppler,
-			    const MultiSFTVector *multiSFTs, 
+			    const MultiSFTVector *multiSFTs,
 			    const MultiNoiseWeights *multiWeights,
 			    const MultiDetectorStateSeries *multiDetStates,
 			    const ComputeFParams *params);
@@ -291,13 +293,13 @@ void XLALEmptyComputeFBuffer ( ComputeFBuffer *cfb );
 
 
 /* helpers */
-int sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
+int sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x);
 int sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x);
 
 
 #ifdef  __cplusplus
 }
-#endif  
+#endif
 /* C++ protection. */
 
 #endif  /* Double-include protection. */

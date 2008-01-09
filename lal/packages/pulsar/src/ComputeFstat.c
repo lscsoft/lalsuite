@@ -307,7 +307,7 @@ ComputeFStat ( LALStatus *status,
       Ad = multiAMcoef->Mmunu.Ad;
       Bd = multiAMcoef->Mmunu.Bd;
       Cd = multiAMcoef->Mmunu.Cd;
-      Dd_inv = 1.0 / (Ad * Bd - Cd * Cd );
+      Dd_inv = 1.0 / multiAMcoef->Mmunu.Dd;
       Ed = 0;
     }
   else if ( multiCmplxAMcoef )
@@ -316,7 +316,7 @@ ComputeFStat ( LALStatus *status,
       Bd = multiCmplxAMcoef->Mmunu.Bd;
       Cd = multiCmplxAMcoef->Mmunu.Cd;
       Ed = multiCmplxAMcoef->Mmunu.Ed;
-      Dd_inv = 1.0 / (Ad * Bd - Cd * Cd - Ed * Ed);
+      Dd_inv = 1.0 / multiCmplxAMcoef->Mmunu.Dd;
     }
   else
     {
@@ -1814,7 +1814,7 @@ XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *m
   multiAMcoef->Mmunu.Ad = Ad;
   multiAMcoef->Mmunu.Bd = Bd;
   multiAMcoef->Mmunu.Cd = Cd;
-
+  multiAMcoef->Mmunu.Dd = Ad * Bd - Cd * Cd;
 
   return XLAL_SUCCESS;
 
