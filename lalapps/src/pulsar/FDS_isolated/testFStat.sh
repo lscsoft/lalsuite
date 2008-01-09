@@ -79,7 +79,7 @@ echo "Comparing output-file 'Fstats' with reference-version 'Fstats.ref1' ... "
 
 cmdline="$FCOMPARE --clusterFiles=false -1 ./${outfile1} -2 ${srcdir}/Fstats.ref1 --Ftolerance=0.01";
 echo $cmdline
-if $cmdline >& test1.dat; then
+if $cmdline &> test1.dat; then
     echo "OK."
 else
     echo "OUCH... files differ. Something might be wrong..."
@@ -95,7 +95,7 @@ echo "----------------------------------------------------------------------"
 
 cmdline="$prog $CFSparams2 $extra_args"
 echo $cmdline
-if ! $cmdline >& test2.dat ; then
+if ! $cmdline; then
     echo "Something failed ... giving up.";
     exit 2;
 fi
@@ -104,7 +104,7 @@ echo
 echo "Comparing output-file 'Fstats' with reference-version 'Fstats.ref2' ... "
 cmdline="$FCOMPARE --clusterFiles=false -1 ./${outfile2} -2 ${srcdir}/Fstats.ref2 --Ftolerance=0.01"
 echo $cmdline
-if $cmdline; then
+if $cmdline &> test2.dat; then
     echo "OK."
 else
     echo "OUCH... files differ. Something might be wrong..."
