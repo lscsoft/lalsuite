@@ -66,7 +66,6 @@ XLALSumStrain(
 
 /** Takes a (sky averaged) numerical relativity waveform and returns the
  * waveform appropriate for given coalescence phase and inclination angles */
-/** for the moment only mode (2,2) implemented */
 REAL4TimeVectorSeries *
 XLALOrientNRWave( 
     REAL4TimeVectorSeries *strain,         /**< sky average h+, hx data */ 
@@ -673,4 +672,39 @@ void LALInjectStrainGW( LALStatus                 *status,
   DETATCHSTATUSPTR(status);
   RETURN(status);
   
+}
+
+
+/** construct the channel name corresponding to a particular mode 
+    and polarization in frame file containing nr data */
+CHAR* XLALGetNinjaChannelName(CHAR *polarisation, UINT4 l, INT4 m)
+{
+  /* variables */
+  CHAR sign;
+  CHAR *channel=NULL;
+
+  if ( !((strncmp(polarisation, "plus", 4) == 0) || (strncmp(polarisation, "cross", 5) == 0))) {
+    XLAL_ERROR_NULL( "XLALGetNinjaChannelName",   XLAL_EINVAL ); 
+  }
+
+  /* allocate memory for channel */
+  channel = (CHAR *)LALCalloc(1, LIGOMETA_CHANNEL_MAX * sizeof(CHAR));
+
+  /* get sign of m */
+  if (m < 0)
+  {
+    /* negative */
+    strncpy(&sign, "n", 1);
+  }
+  else
+  {
+    /* positive */
+    strncpy(&sign, "p", 1);
+  }
+
+  /* set channel name */
+  LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l%d_m%c%d", polarisation, l, sign, abs(m));
+
+  /* return channel name */
+  return channel;
 }

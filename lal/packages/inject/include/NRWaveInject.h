@@ -60,6 +60,10 @@ extern "C" {
 NRCSID( NRWAVEINJECTH, "$Id$");
 
 
+#define NINJA_MIN_MODE 2
+#define NINJA_MAX_MODE 4
+
+
 REAL4TimeVectorSeries *
 XLALSumStrain( 
     REAL4TimeVectorSeries *tempstrain,  
@@ -119,6 +123,10 @@ XLALSphHarm ( COMPLEX16 *out, /**< [out] the value of Y2_lm(theta,phi) */
 	      REAL4   theta, /**< position - azimuthal angle */
 	      REAL4   phi ); /**< position - polar angle */
   
+/** channel name for nr data in frame file */
+CHAR* XLALGetNinjaChannelName(CHAR *polarisation, /**< either plus or cross */
+			      UINT4 l, /**< azimuthal mode index */
+			      INT4 m );/**< polar mode index */
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */
