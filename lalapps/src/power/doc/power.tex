@@ -1,4 +1,4 @@
-\documentclass{article}
+\documentclass[10pt]{article}
 \usepackage{fullpage}
 \usepackage{kcannon0}
 \bibliographystyle{utphys}
@@ -1300,6 +1300,11 @@ contain one inverse power of the square root of the power spectral density.
 \subsection{Time Domain Segmentation}
 
 
+%
+% FIXME:  the descriptions here are obsolete
+%
+
+
 The excess power analysis code does not process the input data as a
 continuous time series;  rather the time series is split into a sequence of
 discrete ``analysis windows'', which are each analyzed individually.  To
@@ -1414,169 +1419,6 @@ this condition, the next data to be read into memory should start $(2
 \times \mbox{\parm{filter corruption}} + \mbox{\parm{window length}} -
 \mbox{\parm{window shift}})$ samples prior to the end of the previous data
 to have been read.
-
-
-\subsection{Butterworth Filter used in Excess Power Search}
-\label{section:Butterworth}
-
-
-The LIGO data is dominated by noise at low frequencies. We 
-therefore apply a Butterworth high pass filter to get rid off these 
-low frequency noise components. Here we report on a set of tests 
-that were performed to check the performance of the high pass filter.
-
-Of primary interest to us is the impulse response and frequency response 
-of the filter. Figure~\ref{fig:checkbuttertimeseries} shows the 
-time series containing a $\delta$ function before and after the 
-application of the high pass filter:
-\begin{figure}
-\begin{center}
-\resizebox{.9\linewidth}{!}{\includegraphics{figures/checkbuttertimeseries}}
-\resizebox{.9\linewidth}{!}{\includegraphics{figures/butter894comptimeseries}}
-\caption{Top panel: Time series before Butterworth and 
-Bottom 2 panels: Time series after Butterworth} \label{fig:checkbuttertimeseries}
-\end{center}
-\end{figure}
-The impulse response in Figure~\ref{fig:checkbuttertimeseries} shows  
-time domain ringing produced by the filter. Maximum amplitude of 
-the ringing is upto about $1.5$\% of the original time series amplitude.
-However ringing in the side lobes die down to almost zero within about
-20 milliseconds on both sides of the $\delta$ function. This ringing may
-affect the timing resolution in real search, but we are yet
-to quantify that effect.  
-
-The Butterworth filter is created using the LAL routine,
-\texttt{LALButterworthREAL4TimeSeries()} which uses the following 
-parameters to specify the filter:
-\begin{itemize}
-  \item the low frequency cut off, f2. 
-  \item The attenuation, a2. It gives a measure of power
-    that is allowed to pass at f2.
-  \item The filter order, nMax.
-\end{itemize}
-
-The frequency response of the filter is shown in Figure~\ref{fig:butterworthtest4} 
-where the chosen parameters were $f2 = 120Hz$, $a2 = 0.1$ and $nMax = 4$.
-\begin{figure}
-\centering
-\resizebox{.9\linewidth}{!}{\includegraphics{figures/butterworthtest4}}
-\resizebox{.9\linewidth}{!}{\includegraphics{figures/testattenuation4}}
-\caption{Frequency response of the high pass filter} \label{fig:butterworthtest4} 
-\end{figure}
-The red dotted line shows the spectrum which was measured without
-the high pass filter while the blue line shows the spectrum after the data was 
-high passed. From Figure~\ref{fig:butterworthtest4} 
-it is evident that most of the frequency content below 100 Hz is being
-blocked as desired. However this choice of parameters leeds to the 
-undesirable feature that the signal power is suppressed all the way upto
-$210$ Hz.                                         . 
-
-The Excess Power code is configured to search for bursts above some 
-minimal frequency, flow. It is therefore desirable to have little
-or no attenuation above that frequency. The choice of Butterworth filter 
-parameters that appear to achieve that are: 
-\begin{itemize}
-\item cutoff frequency,$f2 = flow - 10 Hz$
-\item attenuatoin, $a2 = 0.9$
-\item order, $Nmax = 8$
-\end{itemize}
-The frequency response of such a filter with $f2 = 120 Hz$ is shown in
-Figure~\ref{fig:testattenuation8_9} 
-\begin{figure}
-\centering
-\resizebox{.9\linewidth}{!}{\includegraphics{figures/testattenuation8_9}}
-\resizebox{.9\linewidth}{!}{\includegraphics{figures/testattenuation8_9zoomed}}
-\caption{Comparison of the spectra: Filter order 8 and attenuation 0.9}
-\label{fig:testattenuation8_9}
-\end{figure}
-
-
-\subsection{Clustering in Excess Power Search}
-
-
-%
-% FIXME: this section is obsolete
-%
-
-The excess power search is a multi-resolution analysis of the
-time-frequency structure of the input time series.  A burst trigger is
-identified if the probability of obtaining the excess power in a
-time-frequency tile from Gaussian noise is smaller than some threshold
-$\alpha$.   For large bursts in the data stream, many tiles can be
-identified as triggers with different sizes and aspect ratios.   Hence when
-the search over a particular segment is complete,   triggers have to be
-clustered. 
-
-The triggers are identified by a number of characteristic features like
-start time,  peak time,  central frequency,  bandwidth,  excess power (the
-excess compared to the power expected in Gaussian noise for the
-corresponding time fequency volume)  and a confidence assosciated with this
-measurement.  To do the clustering we first compare the peak times of the
-triggers.  If the peak times are within an allowed range,  i.e. if
-$|peaktime(trigger 1) - peaktime(trigger 2)| < dt$ where $dt$ is some
-seconds,  we check whether the triggers  overlap in frequency.  If they
-overlap,  we cluster them into one single trigger whose start time and
-bandwidth are so chosen that they cover the time-frequency area which
-includes the areas of the individual triggers.  The peak time of the
-clustered trigger is equal to the peak time of that trigger which has more
-excess power between the two.  Then we repeat the comparison but now
-between the clustered trigger and another trigger.  If the peak times again
-lie within the specified range and the frequencies overlap,  we modify,
-otherwise we keep them as distinct triggers.  We repeat these steps until
-there are no more distinct triggers which satisfy our criterion for
-clustering.  The execess power of the cluster is the maximum of the
-triggers involved in that particular cluster.
-
-Top panel in Figure~\ref{fig:checkcluster}  shows a set of triggers before
-clustering,  middle panel shows a set of clustered triggers when $dt$ was
-chosen to be $10  nanosecs$ and the bottom panel shows the cluster when
-$dt$ was $10  secs$. In the bottom panel there is only $1$ clustered
-trigger and if one looks at the top panel this is expected because all the
-peak  times of the triggers(before clustering)  lie within $10  secs$ of
-each other.
-\begin{figure}
-\centering
-\resizebox{.9\linewidth}{!}{\includegraphics{figures/checkclustering_dt10nsec10sec}}
-\caption{Clustering in Excess Power}
-\label{fig:checkcluster}
-\end{figure}
-
-To understand this better let us look at the triggers themselves:
-
-\vspace{0.1 in}
-
-\begin{tabular}{||l|l|l|l|l|l|l|lr||} \hline
-no. & start time(sec) & peak time(sec) & duration(sec) & central freq(Hz) & bandwidth(Hz) & snr \\ \hline
-1 &729501161.0  & 729501161.25  & 0.5     & 170  & 8   & 66.121277 \\ \hline
-2 &729501161.125  & 729501161.28125  & 0.3125  & 186  & 48  & 123.3495 \\ \hline
-3 &729501161.0625  & 729501161.28125  & 0.4375  & 186  & 48  & 120.2974 \\ \hline
-4 &729501161.125 &729501161.28125 &0.3125 &178 &32 &82.274979 \\ \hline
-5 &729501161.25 &729501161.3125 &0.125 &186 &48 &72.011459  \\ \hline
-6 &729501161.25 &729501161.34375 &0.1875 &186 &48 & 92.914597 \\ \hline
-7 &729501161.3125 &729501161.375 &0.125 & 186 &48 & 74.42984 \\ \hline
-\end{tabular}
-
-\vspace{0.1 in} 
-
-The table above contains the set of triggers before clustering while   
-the table below contains the $5$ clustered events when $dt$ 
-was $10 nanosec$.
-
-\vspace{0.1 in}
-
-\begin{tabular}{||l|l|l|l|l|l|l|lr||} \hline
-no. & start time(sec) & peak time(sec) & duration(sec) & central freq(Hz) & bandwidth(Hz) & snr \\ \hline
-1 &729501161.0 &729501161.25 &0.5 &170 &8 & 66.121277 \\ \hline
-2 &729501161.0625 &729501161.28125 &0.4375 &186 &48 &123.3495 \\ \hline
-3 &729501161.25 &729501161.34375 &0.1875 &186 &48 &92.914597 \\ \hline
-4 &729501161.25 &729501161.3125 &0.125 &186 &48 &72.011459 \\ \hline
-5 &729501161.3125 &729501161.375 &0.125 &186 &48 &74.42984 \\ \hline 
-\end{tabular}
-
-\vspace{0.1 in}
-
-Thus from this set of clustered triggers it is quite clear what we have been 
-discussing till now.
 
 
 \subsection{Tuning the excess power pipeline}
@@ -1838,6 +1680,99 @@ EOB waveforms. The $50 p.c.$ efficiency is at $66.5 Mpc$ effective distance.
 \label{fig:eobeff}
 \end{center}
 \end{figure}
+
+
+
+\section{Program \prog{ligolw\_bucluster}}
+
+
+\subsection{Clustering in Excess Power Search}
+
+
+%
+% FIXME: this section is obsolete
+%
+
+The excess power search is a multi-resolution analysis of the
+time-frequency structure of the input time series.  A burst trigger is
+identified if the probability of obtaining the excess power in a
+time-frequency tile from Gaussian noise is smaller than some threshold
+$\alpha$.   For large bursts in the data stream, many tiles can be
+identified as triggers with different sizes and aspect ratios.   Hence when
+the search over a particular segment is complete,   triggers have to be
+clustered. 
+
+The triggers are identified by a number of characteristic features like
+start time,  peak time,  central frequency,  bandwidth,  excess power (the
+excess compared to the power expected in Gaussian noise for the
+corresponding time fequency volume)  and a confidence assosciated with this
+measurement.  To do the clustering we first compare the peak times of the
+triggers.  If the peak times are within an allowed range,  i.e. if
+$|peaktime(trigger 1) - peaktime(trigger 2)| < dt$ where $dt$ is some
+seconds,  we check whether the triggers  overlap in frequency.  If they
+overlap,  we cluster them into one single trigger whose start time and
+bandwidth are so chosen that they cover the time-frequency area which
+includes the areas of the individual triggers.  The peak time of the
+clustered trigger is equal to the peak time of that trigger which has more
+excess power between the two.  Then we repeat the comparison but now
+between the clustered trigger and another trigger.  If the peak times again
+lie within the specified range and the frequencies overlap,  we modify,
+otherwise we keep them as distinct triggers.  We repeat these steps until
+there are no more distinct triggers which satisfy our criterion for
+clustering.  The execess power of the cluster is the maximum of the
+triggers involved in that particular cluster.
+
+Top panel in Figure~\ref{fig:checkcluster}  shows a set of triggers before
+clustering,  middle panel shows a set of clustered triggers when $dt$ was
+chosen to be $10  nanosecs$ and the bottom panel shows the cluster when
+$dt$ was $10  secs$. In the bottom panel there is only $1$ clustered
+trigger and if one looks at the top panel this is expected because all the
+peak  times of the triggers(before clustering)  lie within $10  secs$ of
+each other.
+\begin{figure}
+\centering
+\resizebox{.9\linewidth}{!}{\includegraphics{figures/checkclustering_dt10nsec10sec}}
+\caption{Clustering in Excess Power}
+\label{fig:checkcluster}
+\end{figure}
+
+To understand this better let us look at the triggers themselves:
+
+\vspace{0.1 in}
+
+\begin{tabular}{||l|l|l|l|l|l|l|lr||} \hline
+no. & start time(sec) & peak time(sec) & duration(sec) & central freq(Hz) & bandwidth(Hz) & snr \\ \hline
+1 &729501161.0  & 729501161.25  & 0.5     & 170  & 8   & 66.121277 \\ \hline
+2 &729501161.125  & 729501161.28125  & 0.3125  & 186  & 48  & 123.3495 \\ \hline
+3 &729501161.0625  & 729501161.28125  & 0.4375  & 186  & 48  & 120.2974 \\ \hline
+4 &729501161.125 &729501161.28125 &0.3125 &178 &32 &82.274979 \\ \hline
+5 &729501161.25 &729501161.3125 &0.125 &186 &48 &72.011459  \\ \hline
+6 &729501161.25 &729501161.34375 &0.1875 &186 &48 & 92.914597 \\ \hline
+7 &729501161.3125 &729501161.375 &0.125 & 186 &48 & 74.42984 \\ \hline
+\end{tabular}
+
+\vspace{0.1 in} 
+
+The table above contains the set of triggers before clustering while   
+the table below contains the $5$ clustered events when $dt$ 
+was $10 nanosec$.
+
+\vspace{0.1 in}
+
+\begin{tabular}{||l|l|l|l|l|l|l|lr||} \hline
+no. & start time(sec) & peak time(sec) & duration(sec) & central freq(Hz) & bandwidth(Hz) & snr \\ \hline
+1 &729501161.0 &729501161.25 &0.5 &170 &8 & 66.121277 \\ \hline
+2 &729501161.0625 &729501161.28125 &0.4375 &186 &48 &123.3495 \\ \hline
+3 &729501161.25 &729501161.34375 &0.1875 &186 &48 &92.914597 \\ \hline
+4 &729501161.25 &729501161.3125 &0.125 &186 &48 &72.011459 \\ \hline
+5 &729501161.3125 &729501161.375 &0.125 &186 &48 &74.42984 \\ \hline 
+\end{tabular}
+
+\vspace{0.1 in}
+
+Thus from this set of clustered triggers it is quite clear what we have been 
+discussing till now.
+
 
 
 \section{Program \prog{lalapps\_binj}}
