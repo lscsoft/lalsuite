@@ -85,9 +85,6 @@ RCSID("power $Id$");
 #define FALSE      0
 
 
-#undef SIMINJECTIONS
-
-
 /*
  * ============================================================================
  *
@@ -235,19 +232,6 @@ struct options {
 	double fractional_stride;
 	REAL8Window *window;
 
-#ifdef SIMINJECTIONS
-	/*
-	 * ???
-	 */
-
-	/* file with list of sim injections */
-	char *simInjectionFile;
-	/* name of the sim waveform cache file */
-	char *sim_cache_filename;
-	/* Distance at which the sim waveforms have been generated */
-	double sim_distance;
-#endif	/* SIMINJECTIONS */
-
 	/*
 	 * output control
 	 */
@@ -295,11 +279,6 @@ static struct options *options_new(void)
 		.output_filename = NULL,	/* impossible */
 		.sim_burst_filename = NULL,	/* default == disable */
 		.sim_inspiral_filename = NULL,	/* default == disable */
-#ifdef SIMINJECTIONS
-		.sim_distance = 10000.0,	/* default (10 Mpc) */
-		.sim_cache_filename = NULL,	/* default == disable */
-		.simInjectionFile = NULL,	/* default == disable */
-#endif	/* SIMINJECTIONS */
 		.cache_filename = NULL,	/* default == disable */
 		.confidence_threshold = XLAL_REAL8_FAIL_NAN,	/* impossible */
 		.bandwidth = 0,	/* impossible */
@@ -366,12 +345,6 @@ fprintf(stderr,
 "	[--ram-limit <MebiBytes>]\n" \
 "	 --resample-rate <Hz>\n" \
 "	[--seed <seed>]\n");
-#ifdef SIMINJECTIONS
-fprintf(stderr,
-"	[--sim-cache <sim cache file>]\n" \
-"	[--sim-distance <sim distance(Kpc)>]\n" \
-"	[--siminjection-file <file name>]\n");
-#endif	/* SIMINJECTIONS */
 fprintf(stderr,
 "	 --tile-stride-fraction <fraction>\n" \
 "	[--user-tag <comment>]\n" \
@@ -598,11 +571,6 @@ static struct options *parse_command_line(int argc, char *argv[], MetadataTable 
 		{"ram-limit", required_argument, NULL, 'a'},
 		{"resample-rate", required_argument, NULL, 'e'},
 		{"seed", required_argument, NULL, 'c'},
-#ifdef SIMINJECTIONS
-		{"sim-cache", required_argument, NULL, 'q'},
-		{"sim-distance", required_argument, NULL, 'u'},
-		{"siminjection-file", required_argument, NULL, 't'},
-#endif	/* SIMINJECTIONS */
 		{"tile-stride-fraction", required_argument, NULL, 'f'},
 		{"user-tag", required_argument, NULL, 'h'},
 		{"window-length", required_argument, NULL, 'W'},
@@ -870,28 +838,6 @@ static struct options *parse_command_line(int argc, char *argv[], MetadataTable 
 		}
 		ADD_PROCESS_PARAM("float");
 		break;
-
-#ifdef SIMINJECTIONS
-	case 'q':
-		options->sim_cache_filename = optarg;
-		ADD_PROCESS_PARAM("string");
-		break;
-
-	case 't':
-		options->simInjectionFile = optarg;
-		ADD_PROCESS_PARAM("string");
-		break;
-
-	case 'u':
-		options->sim_distance = atof(optarg);
-		if(options->sim_distance <= 0) {
-			sprintf(msg, "must be greater than 0 (%f kpc specified), check the specification file for the generation of the sim waveforms to get the distance value", options->sim_distance);
-			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
-		}
-		ADD_PROCESS_PARAM("float");
-		break;
-#endif	/* SIMINJECTIONS */
 
 	/* option sets a flag */
 	case 0:
@@ -1346,235 +1292,6 @@ static REAL8TimeSeries *add_mdc_injections(const char *mdccachefile, const char 
 /*
  * ============================================================================
  *
- *                               Sim injections
- *
- * ============================================================================
- */
-
-
-#ifdef SIMINJECTIONS
-static void add_sim_injections(LALStatus *stat, REAL4TimeSeries *series, COMPLEX8FrequencySeries *response, size_t lengthlimit)
-{
-	REAL4TimeSeries *signal;
-	DetectorResponse detector;
-	LALDetector *tmpDetector = NULL;
-	CoherentGW waveform;
-	REAL4 *aData;
-	LALTimeInterval epochCorrection;
-	COMPLEX8FrequencySeries *transfer = NULL;
-	COMPLEX8Vector *unity = NULL;
-
-	char pluschan[30];
-	char crosschan[30];
-	LIGOTimeGPS start, end;
-	UINT4 i, n;
-	REAL8 simDuration;
-
-	INT4 start_time = series->epoch.gpsSeconds;
-	INT4 stop_time = start_time + series->data->length * series->deltaT;
-	SimBurstTable *injections = NULL;
-	SimBurstTable *simBurst = NULL;
-	BurstParamStruc burstParam;
-
-	if(!response) {
-		XLALPrintError("add_sim_injections(): must supply calibration information for injections\n");
-		exit(1);
-	}
-
-	/* allocate memory */
-	memset(&detector, 0, sizeof(DetectorResponse));
-	transfer = (COMPLEX8FrequencySeries *) XLALCalloc(1, sizeof(COMPLEX8FrequencySeries));
-	if(!transfer) {
-		XLALPrintError("add_sim_injections(): detector.transfer not allocated\n");
-		exit(1);
-	}
-
-	memcpy(&(transfer->epoch), &(response->epoch), sizeof(LIGOTimeGPS));
-	transfer->f0 = response->f0;
-	transfer->deltaF = response->deltaF;
-
-	tmpDetector = detector.site = (LALDetector *) LALMalloc(sizeof(LALDetector));
-
-	/* set the detector site */
-	switch(series->name[0]) {
-	case 'H':
-		*(detector.site) = lalCachedDetectors[LALDetectorIndexLHODIFF];
-		LALWarning(stat, "computing waveform for Hanford.");
-		break;
-	case 'L':
-		*(detector.site) = lalCachedDetectors[LALDetectorIndexLLODIFF];
-		LALWarning(stat, "computing waveform for Livingston.");
-		break;
-	case 'G':
-		*(detector.site) = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-		LALWarning(stat, "computing waveform for GEO600.");
-		break;
-	default:
-		XLALFree(detector.site);
-		detector.site = NULL;
-		tmpDetector = NULL;
-		LALWarning(stat, "Unknown detector site, computing plus mode " "waveform with no time delay");
-		break;
-	}
-
-	/* set up units for the transfer function */
-	{
-	RAT4 negOne = { -1, 0 };
-	LALUnit unit;
-	LALUnitPair pair;
-	pair.unitOne = &lalADCCountUnit;
-	pair.unitTwo = &lalStrainUnit;
-	LAL_CALL(LALUnitRaise(stat, &unit, pair.unitTwo, &negOne), stat);
-	pair.unitTwo = &unit;
-	LAL_CALL(LALUnitMultiply(stat, &(transfer->sampleUnits), &pair), stat);
-	}
-
-	/* invert the response function to get the transfer function */
-	LAL_CALL(LALCCreateVector(stat, &(transfer->data), response->data->length), stat);
-
-	LAL_CALL(LALCCreateVector(stat, &unity, response->data->length), stat);
-	for(i = 0; i < response->data->length; ++i) {
-		unity->data[i].re = 1.0;
-		unity->data[i].im = 0.0;
-	}
-
-	LAL_CALL(LALCCVectorDivide(stat, transfer->data, unity, response->data), stat);
-
-	LAL_CALL(LALCDestroyVector(stat, &unity), stat);
-
-	/* Set up a time series to hold signal in ADC counts */
-	signal = XLALCreateREAL4TimeSeries(series->name, &series->epoch, series->f0, series->deltaT, &series->sampleUnits, series->data->length);
-
-	XLALPrintInfo("add_sim_injections(): reading in SimBurst Table\n");
-
-	LAL_CALL(LALSimBurstTableFromLIGOLw(stat, &injections, options.simInjectionFile, start_time, stop_time), stat);
-
-	simBurst = injections;
-	while(simBurst) {
-		REAL4TimeSeries *plusseries = NULL;
-		REAL4TimeSeries *crossseries = NULL;
-
-		/* set the burst params */
-		burstParam.deltaT = series->deltaT;
-		if(!(strcmp(simBurst->coordinates, "HORIZON"))) {
-			burstParam.system = COORDINATESYSTEM_HORIZON;
-		} else if(!(strcmp(simBurst->coordinates, "ZENITH"))) {
-			/* set coordinate system for completeness */
-			burstParam.system = COORDINATESYSTEM_EQUATORIAL;
-			detector.site = NULL;
-		} else if(!(strcmp(simBurst->coordinates, "GEOGRAPHIC"))) {
-			burstParam.system = COORDINATESYSTEM_GEOGRAPHIC;
-		} else if(!(strcmp(simBurst->coordinates, "EQUATORIAL"))) {
-			burstParam.system = COORDINATESYSTEM_EQUATORIAL;
-		} else if(!(strcmp(simBurst->coordinates, "ECLIPTIC"))) {
-			burstParam.system = COORDINATESYSTEM_ECLIPTIC;
-		} else if(!(strcmp(simBurst->coordinates, "GALACTIC"))) {
-			burstParam.system = COORDINATESYSTEM_GALACTIC;
-		} else
-			burstParam.system = COORDINATESYSTEM_EQUATORIAL;
-
-		/* Set the channel names */
-		snprintf(pluschan, 30, "SIM_plus_%s_%d", simBurst->waveform, simBurst->zm_number);
-		snprintf(crosschan, 30, "SIM_cross_%s_%d", simBurst->waveform, simBurst->zm_number);
-
-		/*Set the start and end times of the sim waveforms */
-		start.gpsSeconds = 0;
-		start.gpsNanoSeconds = 0;
-		simDuration = (simBurst->dtplus + simBurst->dtminus);
-		n = (INT4) (simDuration / series->deltaT);
-
-		end = start;
-		XLALGPSAdd(&end, simDuration);
-
-		/* Get the plus time series */
-		plusseries = get_time_series(options.sim_cache_filename, pluschan, start, end, lengthlimit, FALSE, options.cal_high_pass);
-
-		/* Get the cross time series */
-		crossseries = get_time_series(options.sim_cache_filename, crosschan, start, end, lengthlimit, FALSE, options.cal_high_pass);
-
-		/* read in the waveform in a CoherentGW struct */
-		memset(&waveform, 0, sizeof(CoherentGW));
-		/* this step sets the adata,fdata,phidata to 0 */
-		LAL_CALL(LALGenerateBurst(stat, &waveform, simBurst, &burstParam), stat);
-
-		/* correct the waveform epoch:
-		 * Remember the peak time is always at the center of the frame
-		 * Hence the epoch of the waveform is set at 1/2 of the duration
-		 * before the geocent_peak_time, since geocent_peak_time should match
-		 * with the peak time in the frame
-		 */
-		simDuration = simDuration / 2.0;
-		LAL_CALL(LALFloatToInterval(stat, &epochCorrection, &simDuration), stat);
-		LAL_CALL(LALDecrementGPS(stat, &(waveform.a->epoch), &(simBurst->geocent_peak_time), &epochCorrection), stat);
-
-		aData = waveform.a->data->data;
-
-		/* copy the plus and cross data properly scaled for
-		 * distance.
-		 *
-		 * NOTE: options.sim_distance specify the distance at which
-		 * the simulated waveforms are produced. Check that the
-		 * specified distance is 10 times of the distance as in
-		 * parameter file, BBHWaveGen.in. Since in the wave
-		 * generation script 1 kpc = 3.086e20 m where as the right
-		 * definition is 1 kpc = 3.086e19 m.
-		 */
-		for(i = 0; i < n; i++) {
-			*(aData++) = plusseries->data->data[i] * options.sim_distance / simBurst->distance;
-			*(aData++) = crossseries->data->data[i] * options.sim_distance / simBurst->distance;
-		}
-
-		/* must set the epoch of signal since it's used by coherent
-		 * GW */
-		signal->epoch = waveform.a->epoch;
-		detector.transfer = NULL;
-
-		/* convert this into an ADC signal */
-		LAL_CALL(LALSimulateCoherentGW(stat, signal, &waveform, &detector), stat);
-		XLALRespFilt(signal, transfer);
-
-		/* inject the signal into the data channel */
-		LAL_CALL(LALSSInjectTimeSeries(stat, series, signal), stat);
-
-		/* Clean up */
-		XLALDestroyREAL4TimeSeries(plusseries);
-		XLALDestroyREAL4TimeSeries(crossseries);
-		LAL_CALL(LALSDestroyVectorSequence(stat, &(waveform.a->data)), stat);
-		LAL_CALL(LALSDestroyVector(stat, &(waveform.f->data)), stat);
-		LAL_CALL(LALDDestroyVector(stat, &(waveform.phi->data)), stat);
-		LALFree(waveform.a);
-		waveform.a = NULL;
-		LALFree(waveform.f);
-		waveform.f = NULL;
-		LALFree(waveform.phi);
-		waveform.phi = NULL;
-
-		/* reset the detector site information in case it changed */
-		detector.site = tmpDetector;
-
-		/* move on to next one */
-		simBurst = simBurst->next;
-	}
-
-	XLALDestroyREAL4TimeSeries(signal);
-	LAL_CALL(LALCDestroyVector(stat, &(transfer->data)), stat);
-
-	if(detector.site)
-		XLALFree(detector.site);
-	XLALFree(transfer);
-
-	while(injections) {
-		SimBurstTable *thisEvent = injections;
-		injections = injections->next;
-		XLALFree(thisEvent);
-	}
-}
-#endif /* SIMINJECTIONS */
-
-
-/*
- * ============================================================================
- *
  *                               Analysis Loop
  *
  * ============================================================================
@@ -1839,11 +1556,7 @@ int main(int argc, char *argv[])
 		 * requested.
 		 */
 
-		if(options->sim_burst_filename || options->sim_inspiral_filename
-#ifdef SIMINJECTIONS
-		|| options->sim_cache_filename
-#endif	/* SIMINJECTIONS */
-		) {
+		if(options->sim_burst_filename || options->sim_inspiral_filename) {
 			COMPLEX8FrequencySeries *response;
 
 			/* Create the response function (generates unity
@@ -1857,10 +1570,6 @@ int main(int argc, char *argv[])
 				add_burst_injections(&stat, options->sim_burst_filename, series, response);
 			if(options->sim_inspiral_filename)
 				add_inspiral_injections(&stat, options->sim_inspiral_filename, series, response);
-#ifdef SIMINJECTIONS
-			if(options->sim_cache_filename)
-				add_sim_injections(&stat, series, response, options->max_series_length);
-#endif	/* SIMINJECTIONS */
 
 			/* clean up */
 			XLALDestroyCOMPLEX8FrequencySeries(response);
