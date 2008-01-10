@@ -348,8 +348,7 @@ fprintf(stderr,
 fprintf(stderr,
 "	 --tile-stride-fraction <fraction>\n" \
 "	[--user-tag <comment>]\n" \
-"	 --window-length <samples>\n" \
-"	 --window-shift <samples>\n");
+"	 --window-length <samples>\n");
 }
 
 
