@@ -29,7 +29,7 @@
 
 
 
-\title{Burst Search Programs}
+\title{Excess Power}
 \author{Patrick Brady, Duncan Brown, Kipp Cannon, Saikat Ray-Majumder}
 \date{2007-7-6}
 
@@ -37,152 +37,79 @@
 \begin{document}
 \maketitle
 
- 
-\section{Running the power code under Condor}
+
+\section{Pipeline Overview}
 
 
-%
-% FIXME: this section is obsolete
-%
+The excess power pipeline implements an ``incoherent'' search for unmodeled
+gravitational waves.  A schematic diagram of the data flow through the
+pipeline is shown in Figure \ref{fig1}.
+\begin{figure}
+\begin{center}\includegraphics{figures/pipeline.pdf}\end{center}
+\caption{Data flow in the excess power pipeline.}
+\label{fig1}
+\end{figure}
+Here and in what follows we'll discuss the multi-detector version of the
+pipeline.  The pipeline can analyze any number of detectors, but in the 1
+detector case much of the pipeline (e.g., the coincidence stages) reduces
+to no-ops and is uninteresting.
 
-This section is under construction!
+The pipeline begins by scanning the outputs of the gravitational wave
+detectors for statistically significant excursions from the background
+noise.  In particular, it searches for excursions from the noise, or
+bursts, that can be characterized by a frequency band and time interval.
+The raw events identified in the outputs of the individual detectors are
+clustered, which reduces the event rate and assists in parameter
+estimation.  The clusters are tested for coincidence across instruments,
+that is events are discarded unless matching events are also found in all
+other detectors.  A set of events that, together, passes the coincidence
+test will be refered to as a coincident \(n\)-tuple.
 
+Prior to applying the coincidence test, optional delays can be applied to
+the events.  In the LIGO-only case, delays are only applied to events from
+the L1 detector.  The delay facility is used to collect two populations of
+coincident \(n\)-tuples:  \(n\)-tuples with time shifts applied which are
+refered to as time-slide coincidences, and \(n\)-tuples with no time shifts
+applied which are refered to as zero-lag coincidences.
 
-\section{Program \prog{lalapps\_power\_pipe}}
+It is also possible to insert software injections into the detector time
+series.  The injection facility is used to simulate the presense of
+gravitational waves in the data.  When software injections are inserted
+into the time series, the coincidence test is followed by an injection
+identification step.  This stage identifies two populations of recovered
+injections:  injections that are recovered very well, and injections that
+are recovered poorly.
 
+The time-slide non-injection \(n\)-tuples, and the \(n\)-tuples
+corresponding to well-recovered software injections are collected together
+and their parameters measured to yield two distribution density functions.
+The parameter distribution density function measured from the time-slide
+\(n\)-tuples is interpreted as the parameter distribution for noise-like
+\(n\)-tuples, while the parameter distribution density function measured
+from the software injections is interpreted as the parameter distribution
+for gravitational wave-like \(n\)-tuples.  The ratio of these two
+distributions is used to assign a likelihood ratio to each \(n\)-tuple.
 
-\begin{entry}
-
-\item[Name]
-\prog{lalapps\_power\_pipe} --- builds a one/two/three interferometer excess-power
-search DAG   
-
-\item[Synopsis]
-\prog{lalapps\_power\_pipe} \newline \hspace*{0.5in}
-[\option{-h, --help}] \newline \hspace*{0.5in}
-[\option{-v, --version}] \newline \hspace*{0.5in}
-[\option{-u, --user-tag}~\parm{tag}] \newline \hspace*{0.5in}
-[\option{-d, --datafind}] \newline \hspace*{0.5in}
-[\option{-r, --power}] \newline \hspace*{0.5in}
-[\option{-H, --ifo\_h1}] \newline \hspace*{0.5in}
-[\option{-K, --ifo\_h2}] \newline \hspace*{0.5in}
-[\option{-L, --ifo\_l}] \newline \hspace*{0.5in}
-[\option{-c, --makeinjfiles}] \newline \hspace*{0.5in}
-[\option{-j, --injections}~\parm{injection type}] \newline \hspace*{0.5in}
-[\option{-m, --mdcinjections}] \newline \hspace*{0.5in}
-[\option{-b, --coincidence}] \newline \hspace*{0.5in}
-[\option{-t, --triplecoincidence}] \newline \hspace*{0.5in}
-[\option{-s, --timeslides}] \newline \hspace*{0.5in}
-[\option{-p, --playground-only}] \newline \hspace*{0.5in}
-[\option{-P, --priority}~\parm{prio}] \newline \hspace*{0.5in}
-\option{-f, --config-file}~\parm{file} \newline \hspace*{0.5in}
-\option{-l, --log-path}~\parm{path}
-
-\item[Description] 
-\prog{lalapps\_power\_pipe} builds an excess power search DAG suitable for
-running at the various LSC Data Grid sites.   The script requires a
-configuration file.   An example file can be found in
-\texttt{\$LALPREFIX/share/lalapps/power\_pipe.ini}.   Arguments to be
-passed to the search code are supplied in this file and used the DAG
-construction.  This is a standard python format configuration file.
-
-\item[Options]\leavevmode
-\begin{entry}
-
-\item[\option{--help}] Prints the usage information
-
-\item[\option{--user-tag} \parm{tag}]   The tag for the job.  This will
-override the value set in the ini file
-
-\item[\option{--datafind}] run LSCdataFind as part of the DAG to create the
-cache files for each science segment
-
-\item[\option{--power}] run \prog{lalapps\_power} on the data.  To run
-the power jobs one has to specify the ifo or the combination of ifos.  This
-can be specified by a combination of the options \option{--ifo\_h1},
- \option{--ifo\_h2} and \option{--ifo\_l}.  
-
-\item[\option{--ifo\_h1}] run \prog{lalapps\_power} on the data from H1
-
-\item[\option{--ifo\_h2}] run \prog{lalapps\_power} on the data from H2
-
-\item[\option{--ifo\_l}] run \prog{lalapps\_power} on the data from L1
-
-If one wants to run on both H1 and H2 data then the options \option{--ifo\_h1}
-and \option{--ifo\_h2} have to be specified with \option{--power} and 
-similarly for other combinations.  For example if one then wants to run on 
-all of H1,  H2 and L1 data then all the three options,  \option{--ifo\_h1},
- \option{--ifo\_h2},  \option{--ifo\_l} have to be specified with the 
-\option{--power}.
-
-\item[\option{--makeinjfiles}] run \prog{lalapps\_binj} or 
-\prog{lalapps\_bbhinj} to generate the injection files for each science
-segment. These files are then used by the power jobs as the injection
-parameter files.  However,  specifying this option tells the dag to 
-create the injection files only.  Whether to perform the injections or not
-is specified by the option \option{--injections} along with the type of 
-waveform we would inject.    
-
-\item[\option{--injections} \parm{type}] When this option is specifed 
-simulated waveforms are injected to the data.  To use this option either
-the injection files have to be in the directory or has to be used along with
-\option{--makeinjfiles}.  The type of the injections also has to be specified 
-with this option. The valid types are \texttt{burst, inspiral, burstandinspiral
-and sim}.  \texttt{burst} indicates burst waveforms, \texttt{inspiral} 
-indicates inspiral waveforms, \texttt{burstandinspiral} indicates both
-burst and inspiral waveforms are to be injected and \texttt{sim} indicates
-waveforms like warren,  kudu.
-
-\item[\option{--mdcinjections}] run jobs with MDC injections      
-
-\item[\option{--coincidence}] run \prog{lalapps\_burca} doing double 
-coincidence analysis.  However note that to use this option either
-two of the ifo options have to be used or the trigger files from two ifos 
-have to be in the directory.
-
-\item[\option{--triplecoincidence}] triple coincidence analysis is performed.  
-As in double coincidence this option is to be used
-either with the three ifo options or the trigger files from three ifos have
-to be in the directory.
-
-\item[\option{--timeslides}] perform the timeslide analysis. Timeslides
-are currently performed only between sites, i.e. between Hanford and 
-Livingstone. So to use this option either \option{--ifo\_h1} or 
-\option{--ifo\_h2} or both have to be used with \option{--ifo\_l} or the 
-trigger files have to be in the directory. 
-
-\item[\option{--priority} \parm{prio}] run jobs with condor priority
-\parm{prio}.
-
-\item[\option{--config-file} \parm{file}] use configuration file
-\parm{file}.
-
-\item[\option{--log-path} \parm{path}] directory to write condor log file
-
-\end{entry}
-
-
-\item[Example]
-To run the program which will do the datafind,  power nodes on the H1
-and L1 data with simulated injections doing a double coincidence analysis
-using the power\_pipe.ini file(which should be in the directory) type:
-\begin{verbatim}
-lalapps_power_pipe -f power_pipe.ini -d -r -H -L -b -c -j sim -l /people/saikat/log/
-\end{verbatim}
-
-\item[Author]
-Duncan Brown, Patrick Brady and Saikat Ray-Majumder
-\end{entry}
+Finally, a likelihood-ratio based threshold is applied to each \(n\)-tuple.
+The zero-lag \(n\)-tuples that survive this final cut are gravitational
+wave detection candidates.  The same cut is applied to software injection
+\(n\)-tuples to measure the detection efficiency of the pipeline.  If the
+final threshold is adjusted so that just exactly 0 zero-lag \(n\)-tuples
+survive, the efficiency measured for the pipeline in that configuration can
+be used to derive an upper-limit result.
 
 
 \section{Program \prog{lalapps\_power}}
 
 
+\subsection{Man Page}
+
+
 \begin{entry}
 
 \item[Name]
-\prog{lalapps\_power} --- performs excess power analysis on real or
-simulated data.
+\prog{lalapps\_power} --- apply excess power event selection algorithm to
+real or simulated gravitational wave detector data.
 
 \item[Synopsis]
 \prog{lalapps\_power} \newline \hspace*{0.5in}
@@ -223,57 +150,60 @@ simulated data.
 
 \item[Description] 
 \prog{lalapps\_power} performs an excess power analysis on real or
-simulated data.  Consider searching for signals with the following
-properties:
-\begin{itemize}
-\item Maximum signal time duration $T=2^a$ seconds where $a$ is a positive
-or negative integer;  the sampling rate of the data stream is taken
-assummed $\mbox{\texttt{srate}} = 2^b$ Hz.
+simulated data.  This program's input consists of gravitational wave
+detector time series data, and an optional list of injections to add to the
+time series prior to analysis.  The program's output is a list of events
+identified as being statistically significant in the input time series.
 
-\item The frequency band of the signal is between $f_{\mathrm{low}}$ Hz and
-${f_{\mathrm{high}}}$ Hz.  Current versions of the code expect
-${f_{\mathrm{high}}}-{f_{\mathrm{low}}}=2^d$ Hz where $d$ is an integer. 
+Gravitational wave detector time series data is read from LIGO/VIRGO .gwf
+frame files.  This program analyzes data from only a single detector at a
+time, but it can analyze data that spans multiple frame files.  Usually a
+collection of frame files is specified by providing as input to this
+program a LAL cache file, as might be obtained from \prog{LSCdataFind}.
 
-\item Minimum time duration,
+If software injections are desired, then a LIGO\_LW XML file containing a
+sim\_burst table describing the software injections must also be provided
+as input.  In the past it has also been possible to read sim\_inspiral
+tables and MDC injection frame files, but these facilities have not been
+tested in a long time.  See the \prog{lalapps\_binj} program described in
+Sec.~\ref{program:lalapps-binj} for information on constructing injection
+description files.
 
-\item Minimum frequency bandwidth.
-\end{itemize}
+The output is written to a LIGO\_LW XML file containing a sngl\_burst table
+listing the events found in the input time series.  The output file also
+contains process, process\_params, and search\_summary tables containing
+metadata describing the analysis that was performed.  In particular, these
+other tables provide precise information about the instrument and interval
+of time that the program analyzed.
 
-The input data for a search consists of LIGO/VIRGO \texttt{.gwf} frame
-files.  These files can be collected together in a single directory, or in
-locations described via the LAL frame cache file mechanism.  The code can
-be used for Monte-Carlo simulations to determine search efficiency by
-providing a list of injections to be made;  this injections list must be in
-LIGO lightweight format and can be generated using the \prog{lalapps\_binj}
-program described in Sec.~\ref{program:lalapps-binj}. 
-
-The output data is written as \verb|sngl_burst| triggers in LIGO
-lightweight XML files.  The files are named according to a standardized
-naming convention
+By default, the output file is named following the standard frame file
+naming convention.
 \begin{quote}
-\{IFO\}-POWER\_\{comment\}-\{GPS Start Time\}-\{duration\}.xml
+\parm{instrument}-POWER\_\parm{comment}-\parm{start}-\parm{duration}.xml
 \end{quote}
-For example, if a search was run on the Hanford 4km interferometer and
-generated triiggers starting at 731488397 and the triggers cover 33 seconds
-after that time,  then the file name would be 
+For example, if a search was run on the Hanford \(\unit{4}{\kilo\metre}\)
+interferometer and generated triggers starting at GPS time
+\(\unit{731488397}{\second}\), the triggers cover \(\unit{33}{\second}\)
+after that time, and the command line includes the option
+``\option{--comment} TEST'', then the file name would be 
 \begin{quote}
-H1-POWER\_test\_this\_again-731488397-33.xml
+H1-POWER\_TEST-731488397-33.xml
 \end{quote}
-where the comment was ``test\_this\_again''.  Note that the comment should
-not include spaces and should use underscores instead.
+The output file name can be set explicitly with the \option{--output}
+command line option.  If the name ends in ``.gz'', then it will be
+gzip-compressed.
 
 \item[Options]\leavevmode
 \begin{entry}
 \item[\option{--bandwidth} \parm{Hz}]
-Set the bandwidth in which the search is to be performed.  This must be a
-power of 2.
+Set the bandwidth in which the search is to be performed.  This must be an
+integer power of 2.  This and the \option{--low-freq-cutoff} option
+together set the frequency band to be searched.
 
 \item[\option{--burstinjection-file} \parm{file name}]
-Use \parm{file name} as a LIGO lightweight XML file containing a list of
-injections to be made.   The file should contain a \verb+sim_burst+ table
-which is used to set information about the types of burst injections to be
-made.  This file may be constructed by hand, the \verb+lalapps_binj+
-program described in Section \ref{program:lalapps-binj}.
+Read the sim\_burst table from the LIGO\_LW XML file \parm{file name}, and
+add the software injections described therein to the input time series
+prior to analysis.
 
 \item[\option{--calibrated-data}]
 When the \option{--calibrated-data} option is supplied, input time series
@@ -300,9 +230,9 @@ example, ``\verb|H2:LSC-AS_Q|''.
 Set the confidence threshold below which events should be discarded.  The
 ``confidence'' of an event is \(-\ln P(\text{event} | \text{stationary
 Gaussian white noise})\), so an event with a confidence of 30 has a
-probability of \(\ee^{-30}\) of being found in stationary Gaussian white
-noise.  LIGO strain outputs are not stationary, and so a typical,
-practical, threshold is 70 or higher.
+probability of \(\ee^{-30}\) of having been found in stationary Gaussian
+white noise.  For the LIGO instruments, a practical treshold is typically
+around 10.
 
 \item[\option{--debug-level} \option{info|warn|error|off}]
 Sets the level of verbosity:  \option{info} = print all messages,
@@ -324,7 +254,7 @@ is 0.5 seconds worth of data.
 \item[\option{--frame-cache} \parm{cache file}]
 Obtain the locations of input \texttt{.gwf} frame files from the LAL frame
 cache file \parm{cache file}.  LAL frame cache files are explained in the
-``framedata'' package in LAL and can be constructed by making calls to
+``framedata'' package in LAL and can be constructed by running
 \prog{LSCDataFind} on some systems.  One of \option{--frame-cache}, or
 \option{--gaussian-noise-rms} must be specified.
 
@@ -335,14 +265,14 @@ of \option{--frame-cache}, or \option{--gaussian-noise-rms} must be
 specified.
 
 \item[\option{--gps-end-time} \parm{seconds}]
-Set the GPS time up to which input data should be read to \parm{seconds}.
-Non-integer values are permitted, but the fractional part must not contain
-more than 9 digits (accurate to nanoseconds).
+Set the GPS time up to which input data should be read.  Non-integer values
+are permitted, but the fractional part must not contain more than 9 digits
+(accurate to nanoseconds).
 
 \item[\option{--gps-start-time} \parm{seconds}]
-Set the GPS time from which to start reading input data to \parm{seconds}.
-Non-integer values are permitted, but the fractional part must not contain
-more than 9 digits (accurate to nanoseconds).
+Set the GPS time from which to start reading input data.  Non-integer
+values are permitted, but the fractional part must not contain more than 9
+digits (accurate to nanoseconds).
 
 \item[\option{--help}]
 Display a usage message and exit.
@@ -350,7 +280,7 @@ Display a usage message and exit.
 \item[\option{--high-pass} \parm{Hz}]
 The input time series is high-pass filtered as part of the input data
 conditioning.  This argument sets the cut-off frequency for this filter.
-In older versions of the program, this frequency has hard-coded to be
+In older versions of the program, this frequency was hard-coded to be
 \unit{10}{\hertz} below the lower bound of the frequency band being
 searched or \unit{150}{Hz}, which ever was lower.
 
@@ -362,9 +292,9 @@ This file may be constructed by hand, the
 \verb+lalapps_bbhinj+ program described in the Inspiral package   
 
 \item[\option{--low-freq-cutoff} \parm{Hz}]
-Set the lowest frequency at which to search for gravitational waves to
-\parm{Hz}.  This parameter is $f_{\mathrm{low}}$ from our description of
-the desired signal parameters above.
+Set the lower bound for the frequency band in which to search for
+gravitational waves.  This and the \option{--bandwidth} option together set
+the frequency band to be searched.
 
 \item[\option{--max-event-rate} \parm{Hz}]
 Exit with a failure if the event rate, averaged over the entire analysis
@@ -373,9 +303,9 @@ code from filling up disks if the threshold is set improperly.  A value of
 0 (the default) disables this feature.
 
 \item[\option{--max-tile-bandwidth} \parm{Hz}]
-This specifies the maximum frequency bandwidth (\(B\)) that a tile can
-have.  This also fixes the minimum time duration of the tiles, $\Delta t =
-1/B $.  This must be an integer power of 2.
+This specifies the maximum frequency bandwidth, \(B\), that a tile can
+have.  This also fixes the minimum time duration of the tiles, \(\Delta t =
+1/B\).  This must be an integer power of 2.
 
 \item[\option{--max-tile-duration} \parm{s}]
 This specifies the maximum duration that a tile can have.  This also fixes
@@ -392,7 +322,7 @@ injections.
 \item[\option{--output} \parm{file name}]
 Set the name of the LIGO Light Weight XML file to which results will be
 written.  The default is
-``\parm{instrument}\_POWER\_\parm{comment}-\parm{start}-\parm{duration}.xml''.
+``\parm{instrument}-POWER\_\parm{comment}-\parm{start}-\parm{duration}.xml''.
 Where \parm{instrument} is derived from the name of the channel being
 analyzed, and \parm{comment} is obtained from the command line.
 \parm{start} is the integar part of the GPS start time from the command
@@ -430,17 +360,8 @@ analysis.  This must be a power of 2 in the range \unit{2}{\hertz} to
 
 \item[\option{--seed} \parm{seed}]
 When synthesizing Gaussian white noise with \option{--gaussian-noise-rms},
-this options can be optionally used to set the random number generator's
+this option can be optionally used to set the random number generator's
 seed.
-
-\item[\option{--target-sample-rate} \parm{Hz}]
-Down-convert the input data stream to a sample rate of \parm{Hz} samples
-per second prior to analysis.  This can be used to reduce the number of CPU
-cycles required to analyze a given quantity of input data.  \emph{Note:}
-All other parameters are given with respect to \emph{this} sample rate.
-For example, the number of samples used to estimate the average PSD as
-given by \option{--psd-average-points} refers to the time series following
-data rate down-conversion.
 
 \item[\option{--tile-stride-fraction} \parm{fraction}]
 This parameter controls the amount by which adjacent time-frequency tiles
@@ -532,11 +453,12 @@ correcting for the overlap between adjacent channel filters.
 Once the energy in a tile has been measured, a threshold is applied to
 select the ``important'' tiles.  The quantity thresholded on is the
 probability of measuring at least that much energy in a tile with that
-bandwidth and that duration in Gaussian noise.  The procedure employed to
-assess this probability is to first whiten and normalize the data, to
-transform it into what is then assumed to be stationary white unit-variance
-Gaussian noise, and then read off the probability of the observed energy
-from a theoretical distribution derived from that assumption.
+bandwidth and that duration in stationary Gaussian noise.  The procedure
+employed to assess this probability is to first whiten and normalize the
+data, to transform it into what is then assumed to be stationary white
+unit-variance Gaussian noise, and then read off the probability of the
+observed energy from a theoretical distribution derived from that
+assumption.
 
 
 \subsubsection{The Whitening Procedure}
@@ -2212,5 +2134,143 @@ lalapps_binj \
 Jolien Creighton, Patrick Brady, Duncan Brown, Saikat Ray-Majumder, Kipp
 Cannon
 \end{entry}
+
+ 
+\section{Running the power code under Condor}
+
+
+%
+% FIXME: this section is obsolete
+%
+
+This section is under construction!
+
+
+\section{Program \prog{lalapps\_power\_pipe}}
+
+
+\begin{entry}
+
+\item[Name]
+\prog{lalapps\_power\_pipe} --- builds a one/two/three interferometer excess-power
+search DAG   
+
+\item[Synopsis]
+\prog{lalapps\_power\_pipe} \newline \hspace*{0.5in}
+[\option{-h, --help}] \newline \hspace*{0.5in}
+[\option{-v, --version}] \newline \hspace*{0.5in}
+[\option{-u, --user-tag}~\parm{tag}] \newline \hspace*{0.5in}
+[\option{-d, --datafind}] \newline \hspace*{0.5in}
+[\option{-r, --power}] \newline \hspace*{0.5in}
+[\option{-H, --ifo\_h1}] \newline \hspace*{0.5in}
+[\option{-K, --ifo\_h2}] \newline \hspace*{0.5in}
+[\option{-L, --ifo\_l}] \newline \hspace*{0.5in}
+[\option{-c, --makeinjfiles}] \newline \hspace*{0.5in}
+[\option{-j, --injections}~\parm{injection type}] \newline \hspace*{0.5in}
+[\option{-m, --mdcinjections}] \newline \hspace*{0.5in}
+[\option{-b, --coincidence}] \newline \hspace*{0.5in}
+[\option{-t, --triplecoincidence}] \newline \hspace*{0.5in}
+[\option{-s, --timeslides}] \newline \hspace*{0.5in}
+[\option{-p, --playground-only}] \newline \hspace*{0.5in}
+[\option{-P, --priority}~\parm{prio}] \newline \hspace*{0.5in}
+\option{-f, --config-file}~\parm{file} \newline \hspace*{0.5in}
+\option{-l, --log-path}~\parm{path}
+
+\item[Description] 
+\prog{lalapps\_power\_pipe} builds an excess power search DAG suitable for
+running at the various LSC Data Grid sites.   The script requires a
+configuration file.   An example file can be found in
+\texttt{\$LALPREFIX/share/lalapps/power\_pipe.ini}.   Arguments to be
+passed to the search code are supplied in this file and used the DAG
+construction.  This is a standard python format configuration file.
+
+\item[Options]\leavevmode
+\begin{entry}
+
+\item[\option{--help}] Prints the usage information
+
+\item[\option{--user-tag} \parm{tag}]   The tag for the job.  This will
+override the value set in the ini file
+
+\item[\option{--datafind}] run LSCdataFind as part of the DAG to create the
+cache files for each science segment
+
+\item[\option{--power}] run \prog{lalapps\_power} on the data.  To run
+the power jobs one has to specify the ifo or the combination of ifos.  This
+can be specified by a combination of the options \option{--ifo\_h1},
+ \option{--ifo\_h2} and \option{--ifo\_l}.  
+
+\item[\option{--ifo\_h1}] run \prog{lalapps\_power} on the data from H1
+
+\item[\option{--ifo\_h2}] run \prog{lalapps\_power} on the data from H2
+
+\item[\option{--ifo\_l}] run \prog{lalapps\_power} on the data from L1
+
+If one wants to run on both H1 and H2 data then the options \option{--ifo\_h1}
+and \option{--ifo\_h2} have to be specified with \option{--power} and 
+similarly for other combinations.  For example if one then wants to run on 
+all of H1,  H2 and L1 data then all the three options,  \option{--ifo\_h1},
+ \option{--ifo\_h2},  \option{--ifo\_l} have to be specified with the 
+\option{--power}.
+
+\item[\option{--makeinjfiles}] run \prog{lalapps\_binj} or 
+\prog{lalapps\_bbhinj} to generate the injection files for each science
+segment. These files are then used by the power jobs as the injection
+parameter files.  However,  specifying this option tells the dag to 
+create the injection files only.  Whether to perform the injections or not
+is specified by the option \option{--injections} along with the type of 
+waveform we would inject.    
+
+\item[\option{--injections} \parm{type}] When this option is specifed 
+simulated waveforms are injected to the data.  To use this option either
+the injection files have to be in the directory or has to be used along with
+\option{--makeinjfiles}.  The type of the injections also has to be specified 
+with this option. The valid types are \texttt{burst, inspiral, burstandinspiral
+and sim}.  \texttt{burst} indicates burst waveforms, \texttt{inspiral} 
+indicates inspiral waveforms, \texttt{burstandinspiral} indicates both
+burst and inspiral waveforms are to be injected and \texttt{sim} indicates
+waveforms like warren,  kudu.
+
+\item[\option{--mdcinjections}] run jobs with MDC injections      
+
+\item[\option{--coincidence}] run \prog{lalapps\_burca} doing double 
+coincidence analysis.  However note that to use this option either
+two of the ifo options have to be used or the trigger files from two ifos 
+have to be in the directory.
+
+\item[\option{--triplecoincidence}] triple coincidence analysis is performed.  
+As in double coincidence this option is to be used
+either with the three ifo options or the trigger files from three ifos have
+to be in the directory.
+
+\item[\option{--timeslides}] perform the timeslide analysis. Timeslides
+are currently performed only between sites, i.e. between Hanford and 
+Livingstone. So to use this option either \option{--ifo\_h1} or 
+\option{--ifo\_h2} or both have to be used with \option{--ifo\_l} or the 
+trigger files have to be in the directory. 
+
+\item[\option{--priority} \parm{prio}] run jobs with condor priority
+\parm{prio}.
+
+\item[\option{--config-file} \parm{file}] use configuration file
+\parm{file}.
+
+\item[\option{--log-path} \parm{path}] directory to write condor log file
+
+\end{entry}
+
+
+\item[Example]
+To run the program which will do the datafind,  power nodes on the H1
+and L1 data with simulated injections doing a double coincidence analysis
+using the power\_pipe.ini file(which should be in the directory) type:
+\begin{verbatim}
+lalapps_power_pipe -f power_pipe.ini -d -r -H -L -b -c -j sim -l /people/saikat/log/
+\end{verbatim}
+
+\item[Author]
+Duncan Brown, Patrick Brady and Saikat Ray-Majumder
+\end{entry}
+
 
 \end{document}
