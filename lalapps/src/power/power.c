@@ -85,6 +85,9 @@ RCSID("power $Id$");
 #define FALSE      0
 
 
+#undef SIMINJECTIONS
+
+
 /*
  * ============================================================================
  *
@@ -232,8 +235,9 @@ struct options {
 	double fractional_stride;
 	REAL8Window *window;
 
+#ifdef SIMINJECTIONS
 	/*
-	 * WTF
+	 * ???
 	 */
 
 	/* file with list of sim injections */
@@ -242,6 +246,7 @@ struct options {
 	char *sim_cache_filename;
 	/* Distance at which the sim waveforms have been generated */
 	double sim_distance;
+#endif	/* SIMINJECTIONS */
 
 	/*
 	 * output control
@@ -288,11 +293,13 @@ static struct options *options_new(void)
 		.high_pass = -1.0,	/* impossible */
 		.max_event_rate = 0,	/* default == disable */
 		.output_filename = NULL,	/* impossible */
+		.sim_burst_filename = NULL,	/* default == disable */
+		.sim_inspiral_filename = NULL,	/* default == disable */
+#ifdef SIMINJECTIONS
 		.sim_distance = 10000.0,	/* default (10 Mpc) */
 		.sim_cache_filename = NULL,	/* default == disable */
-		.sim_burst_filename = NULL,	/* default == disable */
 		.simInjectionFile = NULL,	/* default == disable */
-		.sim_inspiral_filename = NULL,	/* default == disable */
+#endif	/* SIMINJECTIONS */
 		.cache_filename = NULL,	/* default == disable */
 		.confidence_threshold = XLAL_REAL8_FAIL_NAN,	/* impossible */
 		.bandwidth = 0,	/* impossible */
@@ -340,9 +347,9 @@ static void print_usage(const char *program)
 "	[--debug-level info|warn|error|off]\n" \
 "	[--dump-diagnostics <xml filename>]\n" \
 "	 --filter-corruption <samples>\n" \
-"	 --frame-cache <cache file>\n", program);
+"	 --frame-cache <cache file>\n" \
+"	[--gaussian-noise-rms <rms amplitude>]\n", program);
 fprintf(stderr,
-"	[--gaussian-noise-rms <rms amplitude>]\n" \
 "	 --gps-end-time <seconds>\n" \
 "	 --gps-start-time <seconds>\n" \
 "	[--help]\n" \
@@ -355,15 +362,17 @@ fprintf(stderr,
 "	[--mdc-cache <cache file>]\n" \
 "	[--mdc-channel <channel name>]\n" \
 "	[--output <filename>]\n" \
-"	 --psd-average-points <samples>\n");
-fprintf(stderr,
+"	 --psd-average-points <samples>\n" \
 "	[--ram-limit <MebiBytes>]\n" \
 "	 --resample-rate <Hz>\n" \
-"	[--seed <seed>]\n" \
+"	[--seed <seed>]\n");
+#ifdef SIMINJECTIONS
+fprintf(stderr,
 "	[--sim-cache <sim cache file>]\n" \
-"	[--sim-seconds <sim seconds>]\n" \
 "	[--sim-distance <sim distance(Kpc)>]\n" \
-"	[--siminjection-file <file name>]\n" \
+"	[--siminjection-file <file name>]\n");
+#endif	/* SIMINJECTIONS */
+fprintf(stderr,
 "	 --tile-stride-fraction <fraction>\n" \
 "	[--user-tag <comment>]\n" \
 "	 --window-length <samples>\n" \
@@ -589,9 +598,11 @@ static struct options *parse_command_line(int argc, char *argv[], MetadataTable 
 		{"ram-limit", required_argument, NULL, 'a'},
 		{"resample-rate", required_argument, NULL, 'e'},
 		{"seed", required_argument, NULL, 'c'},
+#ifdef SIMINJECTIONS
 		{"sim-cache", required_argument, NULL, 'q'},
 		{"sim-distance", required_argument, NULL, 'u'},
 		{"siminjection-file", required_argument, NULL, 't'},
+#endif	/* SIMINJECTIONS */
 		{"tile-stride-fraction", required_argument, NULL, 'f'},
 		{"user-tag", required_argument, NULL, 'h'},
 		{"window-length", required_argument, NULL, 'W'},
@@ -860,6 +871,7 @@ static struct options *parse_command_line(int argc, char *argv[], MetadataTable 
 		ADD_PROCESS_PARAM("float");
 		break;
 
+#ifdef SIMINJECTIONS
 	case 'q':
 		options->sim_cache_filename = optarg;
 		ADD_PROCESS_PARAM("string");
@@ -879,6 +891,7 @@ static struct options *parse_command_line(int argc, char *argv[], MetadataTable 
 		}
 		ADD_PROCESS_PARAM("float");
 		break;
+#endif	/* SIMINJECTIONS */
 
 	/* option sets a flag */
 	case 0:
@@ -1339,7 +1352,7 @@ static REAL8TimeSeries *add_mdc_injections(const char *mdccachefile, const char 
  */
 
 
-#if 0
+#ifdef SIMINJECTIONS
 static void add_sim_injections(LALStatus *stat, REAL4TimeSeries *series, COMPLEX8FrequencySeries *response, size_t lengthlimit)
 {
 	REAL4TimeSeries *signal;
@@ -1556,7 +1569,7 @@ static void add_sim_injections(LALStatus *stat, REAL4TimeSeries *series, COMPLEX
 		XLALFree(thisEvent);
 	}
 }
-#endif
+#endif /* SIMINJECTIONS */
 
 
 /*
@@ -1826,7 +1839,11 @@ int main(int argc, char *argv[])
 		 * requested.
 		 */
 
-		if(options->sim_burst_filename || options->sim_inspiral_filename || options->sim_cache_filename) {
+		if(options->sim_burst_filename || options->sim_inspiral_filename
+#ifdef SIMINJECTIONS
+		|| options->sim_cache_filename
+#endif	/* SIMINJECTIONS */
+		) {
 			COMPLEX8FrequencySeries *response;
 
 			/* Create the response function (generates unity
@@ -1840,11 +1857,10 @@ int main(int argc, char *argv[])
 				add_burst_injections(&stat, options->sim_burst_filename, series, response);
 			if(options->sim_inspiral_filename)
 				add_inspiral_injections(&stat, options->sim_inspiral_filename, series, response);
-			if(options->sim_cache_filename) {
-				fprintf(stderr, "error:  \"sim\" code disabled\n");
-				exit(1);
-				/*add_sim_injections(&stat, series, response, options->max_series_length);*/
-			}
+#ifdef SIMINJECTIONS
+			if(options->sim_cache_filename)
+				add_sim_injections(&stat, series, response, options->max_series_length);
+#endif	/* SIMINJECTIONS */
 
 			/* clean up */
 			XLALDestroyCOMPLEX8FrequencySeries(response);
