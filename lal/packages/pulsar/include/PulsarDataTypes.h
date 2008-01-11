@@ -53,13 +53,13 @@ NRCSID( PULSARDATATYPESH, "$Id$");
 
 /** Type defining the orbital parameters of a binary pulsar */
 typedef struct {
-  LIGOTimeGPS orbitEpoch; /**< time of periapsis passage (in SSB) */
-  REAL8 omega;            /**< argument of periapsis (radians) */
-  REAL8 rPeriNorm;        /**< projected, normalized periapsis (s) */
-  REAL8 oneMinusEcc;      /**< 1 - orbital eccentricity */
-  REAL8 angularSpeed;     /**< angular speed at periapsis (Hz) */
+  LIGOTimeGPS tp;         /**< time of observed periapsis passage (in SSB) */
+  REAL8 argp;            /**< argument of periapsis (radians) */
+  REAL8 asini;            /**< projected, normalized orbital semi-major axis (s) */
+  REAL8 ecc;              /**< orbital eccentricity */
+  REAL8 period;           /**< orbital period (sec) */
 } BinaryOrbitParams;
-  
+
 /** Type containing the JKS 'amplitude parameters' {h0, cosi, phi0, psi} */
 typedef struct {
   REAL8 h0;	/**< overall signal amplitude */

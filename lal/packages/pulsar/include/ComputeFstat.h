@@ -183,6 +183,7 @@ typedef struct {
   const MultiDetectorStateSeries *multiDetStates;/**< buffer for each detStates (store pointer) and skypos */
   REAL8 Alpha, Delta;				/**< skyposition of candidate */
   MultiSSBtimes *multiSSB;
+  MultiSSBtimes *multiBinary;
   MultiAMCoeffs *multiAMcoef;
   MultiCmplxAMCoeffs *multiCmplxAMcoef;
 } ComputeFBuffer;
@@ -214,7 +215,6 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,
 		       const SSBtimes *tSSB,
 		       const AMCoeffs *amcoe,
 		       const ComputeFParams *params);
-
 int
 XLALComputeFaFbCmplx ( Fcomponents *FaFb,
 		       const SFTVector *sfts,
@@ -222,6 +222,22 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
 		       const SSBtimes *tSSB,
 		       const CmplxAMCoeffs *amcoe,
 		       const ComputeFParams *params);
+
+void
+LALGetBinarytimes (LALStatus *,
+		   SSBtimes *tBinary,
+		   const SSBtimes *tSSB,
+		   const DetectorStateSeries *DetectorStates,
+		   const BinaryOrbitParams *binaryparams,
+		   LIGOTimeGPS refTime);
+
+void
+LALGetMultiBinarytimes (LALStatus *status,
+			MultiSSBtimes **multiBinary,
+			const MultiSSBtimes *multiSSB,
+			const MultiDetectorStateSeries *multiDetStates,
+			const BinaryOrbitParams *binaryparams,
+			LIGOTimeGPS refTime);
 
 void
 LALGetSSBtimes (LALStatus *,

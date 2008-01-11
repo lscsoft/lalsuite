@@ -115,12 +115,12 @@ LALGeneratePulsarSignal (LALStatus *status,
 	TRY (LALConvertGPS2SSB (status->statusPtr, &tmpTime, params->orbit->orbitEpoch, params), status);
 	sourceParams.orbitEpoch = tmpTime;
       */
-      sourceParams.orbitEpoch =  params->orbit->orbitEpoch;
-      /* ------------------------------------------------------------*/
-      sourceParams.omega = params->orbit->omega;
-      sourceParams.rPeriNorm = params->orbit->rPeriNorm;
-      sourceParams.oneMinusEcc = params->orbit->oneMinusEcc;
-      sourceParams.angularSpeed = params->orbit->angularSpeed;
+      sourceParams.orbitEpoch =  params->orbit->tp;
+      sourceParams.omega = params->orbit->argp;
+      /* ------- here we do conversion to Teviets preferred variables -------*/
+      sourceParams.rPeriNorm = params->orbit->asini*(1.0 - params->orbit->ecc);
+      sourceParams.oneMinusEcc = 1.0 - params->orbit->ecc;
+      sourceParams.angularSpeed = (LAL_TWOPI/params->orbit->period)*sqrt((1.0 +params->orbit->ecc)/pow((1.0 - params->orbit->ecc),3.0));
     }
   else
     sourceParams.rPeriNorm = 0.0;		/* this defines an isolated pulsar */
@@ -549,12 +549,12 @@ LALComputeSkyAndZeroPsiAMResponse (LALStatus *status,
     csbParams->tGPS=params->pSFTParams->timestamps->data;
     csbParams->skyPos[0]=params->pSigParams->pulsar.position.longitude;
     csbParams->skyPos[1]=params->pSigParams->pulsar.position.latitude;
-    csbParams->OrbitalEccentricity = 1.0 - params->pSigParams->orbit->oneMinusEcc; /* Orbital eccentricy */
-    csbParams->ArgPeriapse = params->pSigParams->orbit->omega;       /* argument of periapsis (radians) */
-    csbParams->TperiapseSSB = params->pSigParams->orbit->orbitEpoch; /* time of periapsis passage (in SSB) */
+    csbParams->OrbitalEccentricity = params->pSigParams->orbit->ecc; /* Orbital eccentricy */
+    csbParams->ArgPeriapse = params->pSigParams->orbit->argp;       /* argument of periapsis (radians) */
+    csbParams->TperiapseSSB = params->pSigParams->orbit->tp; /* time of periapsis passage (in SSB) */
     /* compute semi-major axis and orbital period */
-    csbParams->SemiMajorAxis = params->pSigParams->orbit->rPeriNorm/params->pSigParams->orbit->oneMinusEcc; 
-    csbParams->OrbitalPeriod = ( ((REAL8)LAL_TWOPI) / params->pSigParams->orbit->angularSpeed ) * sqrt( (1.0 + csbParams->OrbitalEccentricity) / pow(params->pSigParams->orbit->oneMinusEcc,3.0) );
+    csbParams->SemiMajorAxis = params->pSigParams->orbit->asini;
+    csbParams->OrbitalPeriod = params->pSigParams->orbit->period;
     csbParams->baryinput=&baryinput;
     csbParams->emit = &emit;
     csbParams->earth = &earth;
