@@ -14,7 +14,7 @@
 \newcommand{\prog}[1]{\texttt{#1}}
 \newcommand{\function}[1]{\texttt{#1}}
 \newcommand{\option}[1]{\texttt{#1}}
-\newcommand{\parm}[1]{$<$\textit{#1}$>$}
+\newcommand{\parm}[1]{\textit{#1}}
 
 
 \newenvironment{entry}%
@@ -1422,192 +1422,6 @@ this condition, the next data to be read into memory should start $(2
 to have been read.
 
 
-\subsection{Tuning the excess power pipeline}
-
-
-The excess power search identifies time-frequency tiles as events when the 
-probability of getting power in the tile from Gaussian noise alone
-is below some particular threshold.  The search assumes no particular 
-information about the gravitational wave signals other than the time
-frequency ranges to search for,  so once those ranges are chosen the main 
-tool to tune the pipeline is by tweaking the threshold.  The other parameter 
-to test in the tuning procedure is the coincidence window.  Thus to 
-summarize the parameters to tune in the excess power search are:
-\begin{itemize}
-\item maximum duration(seconds) of the tiles
-\item maximum bandwidth of the tiles
-\item probability thresholds on the individual instruments
-\item the coincidence window
-\end{itemize}
-In the following sections we will go over the tuning of the different 
-parameters in more details.
-
-
-\subsubsection{Tuning the size of the tiles}
-\label{section:tunetilesize}
-
-
-The size(duration and bandwidth) of the tiles are largely guided by the
-time-frequency content of the gravitational waves one is searching for.
-  Here,  we describe the tuning procedure where we were concentrating 
-on the search of the merger phase preceded by an inspiral phase.  As
-mentioned before the physical parameters describing the merger phase
-of a binary black hole coalescence are very poorly understood till
-today.  However there are some rough estimates available in the literature 
-which we will briefly describe here.  These will provide us a guideline
-in choosing the parameters of our search pipeline. [FH:Flannagan and Hughes]
-
-The process of coalescence can be roughly divided into three phases:
-\begin{itemize}
-\item Inspiral phase
-\item Merger phase
-\item Ringdown phase
-\end{itemize}
-The inspiral phase can be modelled accurately enough to use the match
-filtering techniques to search for the waveforms, however for massive
-black holes when there are not enough cycles left in the inspiral phase 
-we have to rely on the merger phase for the detection of the coalescence.
-According to the estimates of FH, binary black hole systems with total
-mass $M \leq 30M_{\odot}$ are best searched for via their inspiral waves
-while systems with $M > 30M_{\odot}$ must be searched via their
-merger waves and/or their well understood ringdown waves.  
-
-FH has estimated a conservative value for the merger frequency given
-by 
-\begin{equation}
-f_{merge} = \frac{0.02}{M} \\
-          = 205 Hz (\frac{20M_{\odot}}{M})
-\label{eq:fmerge}
-\end{equation}.
-This is conservative in the sense that one can reasonably be sure that
-numerically generated templates will not be needed before $f = f_{merger}$.
-Now LIGO noise floor restricts the lowest frequency that can be searched 
-for and in $S4$ this is $\approx 50 Hz$. Using \eqref{eq:fmerge} we 
-then get that a binary system of maximum mass $\approx 80M_{\odot}$ 
-can be searched for in $S4$.  However for a $80 M_{\odot}$ binary the 
-number of cycles in the inspiral phase will be very small and since we
-are interested in the coincidence of the mergers with the inspirals we
-would like to restrict our search to a bit lower total mass.  Thus the 
-mass range of the binary black holes that we decide to look at for the 
-IB search is given by 
-\begin{equation}
-30 M_{\odot} < M \leq 70 M_{\odot}. 
-\label{eq:massrange}
-\end{equation}
-Given this mass range let us now see what can we estimate about the 
-expected frequency and duration of the merger signals. From 
-\eqref{eq:fmerge} we get the approximte range of the merger frequencies:
-\begin{equation}
-58 Hz < f_{merge} \leq 140 Hz
-\label{eq:frange}
-\end{equation}
-Now according to FH the high frequency shut off for the mergers are
-roughly given by 
-\begin{equation}
-f_{qnr} = 1320 Hz (\frac{20M_{\odot}}{M})
-\label{eq:fqnr}
-\end{equation}
-Thus if the assumed bandwidth of the merger signal is 
-$\Delta f = f_{qnr} - f_{merge}$,  then for our mass range of 
-interest we may expect the bandwidth to be of the order of few
-hundred Hertz.  
-
-The effective duration for the signals has also been roughly estimated
-by FH to be:
-\begin{equation}
-50 M < T < 10 M
-\label{eq:timerange}
-\end{equation}
-depending on the total spin of the binary system. If we consider
-a coalescence where both the inspiraling black holes are nearly
-maximally spinning, with their spins and the orbital angular momentum
-nearly alligned then the merger may be expected to be long,  while
-for non-spinning black holes the merger will be rather quick.  Thus 
-given our mass range of interest (\eqref{eq:massrange}) the 
-time duration of the expected signals whould be somewhere in the 
-range:
-\begin{equation}
-17.2 ms < T < 1.5 ms
-\label{eq:trange}
-\end{equation} 
-  
-So given these estimates about the bandwidth and the duration of the 
-signals of our main interest we choose the following parameters in our
-search pipeline:
-\begin{itemize}
-\item Low frequency cutoff: $50 Hz$
-\item Bandwidth: $1024 Hz$
-\item Maximum duration of a tile: $125 ms$; we have set the duration 
-a few times longer than the maximum duration in \eqref{eq:trange}
-because of the uncertainty in the estimations related to the nature 
-of the merger signals.
-\item Maximum bandwidth of a tile: $128 Hz$; we have the bandwidth 
-smaller than the estimated bandwidths for the merger signals since
-because of the LIGO noise curve the prominent contribution to the 
-power from the merger phase will be for a few hundred Hertz.
-\end{itemize}
-The last two parameters set the maximum duration and bandwith of 
-a single tile in the search,  which does not preclude us from searching
-for longer or broader signals since we can always sum up the power
-from multiple tiles triggered by the particular signal. 
-    
-
-\subsubsection{Deciding on the probability thresholds}
-
-
-We saw in Sec~\ref{section:tunetilesize} that the sizes of the tiles
-are mainly guided by the rough expectations about the signals that 
-we are interested in.  However, the threshold on the probability
-of power in a tile is guided by the optimisation between the false 
-rate and efficiency to a set of Monte Carlo simulations.  The idea
-we usually follow is to choose a threshold which lowers the false rate 
-maintaining the efficiency at an acceptable value.
-
-To get a rough idea about the region where we start loosing significant 
-amount of efficiency without an appreciable effect in lowering the false 
-rate we estimate the efficiencies and the false rates for a number of 
-thresholds. We have used $Q9$ Sine-Gaussian waveforms at $235 Hz $ to
-perform the tuning and the confidence thresholds are
-$\{-30.0, -35.0, -40.0, -45.0, -50.0, -55.0, -60.0, -65.0, -70.0, -80.0, 
--90.0, -100.0, -150.0, -200.0\}$. How the efficiency and the false rate 
-depend on the thresholds are shown in Fig~\ref{fig:dt125df128tune}: 
-\begin{figure}
-\begin{center}
-\resizebox{.9\linewidth}{!}{\includegraphics{figures/H1_L1_dt125_df128}}
-\caption{Efficiency vs. False rate for different |thresholds|}
-\label{fig:dt125df128tune}
-\end{center}
-\end{figure}
-The circles on the curves show the values corresponding to different 
-thresholds.  The maximum false rate and the best efficiency are obtained 
-for the lowest |threshold|(30.0),  then as the |threshold| is increased
-the false rate decreases while the efficiency gets worse. Around the 
-|thresholds| of $50.0 - 60.0$ one may notice that for a very small 
-decrease in false rate the efficiency gets a whole lot worse.  This gives 
-us a rough idea that we should choose $ |threshold| < 60.0$.  However
-one should be aware of the fact that tuning must be specific to the 
-pipeline being run.  In our pipeline we have a coincidence step which
-involves the burst triggers and the inspiral triggers and we are not
-quite sure how many of the false triggers will survive that step. We
-also plan to use the Hanford 2Km instrument in a coherent follow up at
-the end of the pipeline which will also hopefully get rid off many of the
-false triggers. However we would like to  
-have a good estimate of the background distribution of triggers and so 
-have a few surviviors at the end of the pipeline.  Keeping that 
-in mind we decided to choose a looser threshold on the confidence 
-probabilities. The thresholds we chose are 
-\begin{itemize}
-\item Threshold on H1: -38.0
-\item Threshold on L1: -38.0; The instrument in Livingstone was less 
-sensitive than the one in Hanford for the first half of the run but 
-for the second half both the instruments had equal sensitivity.  So
-we decided to have the same thresholds on both the instruments.
-\end{itemize}      
-These thresholds were so chosen so that the false rate after 
-coincidence between H1 and L1 triggers is $\approx 2 mHz$ while 
-the $ h_{rss}$ is $\approx 1.12e-21$.
-
-
 \section{Program \prog{lalapps\_binj}}
 \label{program:lalapps-binj}
 
@@ -1664,7 +1478,7 @@ h_{\mathrm{rss}}\).  These parameters are set using the
 \option{--strain-scale-min} and \option{--strain-scale-max} command line
 arguments.  The following table lists the strain distributions, and the
 meaning of the ``min'' and ``max'' parameters for each.
-\begin{center}\begin{tabular}{p{3cm}ccc}
+\begin{center}\begin{tabular}{p{.3\linewidth}ccc}
 \hline\hline
 Description & \option{--strain-dist} & \option{--strain-scale-min} &
 \option{--strain-scale-max} \\
@@ -1864,110 +1678,300 @@ Cannon
 \section{Program \prog{ligolw\_bucluster}}
 
 
-\subsection{Clustering in Excess Power Search}
+\subsection{Man Page}
 
 
-%
-% FIXME: this section is obsolete
-%
+\begin{entry}
+\item[Name]
+\prog{ligolw\_bucluster} --- cluster the burst events in LIGO light weight
+XML files.
+
+\item[Synopsis]
+\prog{ligolw\_bucluster} (\option{-c}~\parm{name},
+\option{--cluster-algorithm}~\parm{name}) [\option{--comment}~\parm{text}]
+[\option{--help}] [\option{-i}~\parm{filename},
+\option{--input-cache}~\parm{filename}] [\option{-p}~\parm{name},
+\option{--program}~\parm{name}] [\option{--verbose}] [\option{--version}]
+[filename~...]
+
+\item[Description]
+The program \prog{ligolw\_bucluster} applies a clustering alogrithm to the
+burst events stored in the sngl\_burst tables of one or more LIGO light
+weight XML files.  At this time only one clustering algorithm is
+implemented, the clustering algorithm used by the excess power burst search
+pipeline.  The files to be processed can be listed on the command line
+and/or in one or more LAL cache files.  If the command line does not
+specify any files to process, then input is read from stdin and written to
+stdout.  Any file whose name ends in ``.gz'' is assumed to be
+gzip-compressed.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\option{-c}~\parm{name}, \option{--cluster-algorithm}~\parm{name}]
+Set the clustering method (required).  Allowed values are
+\begin{entry}
+\item[excesspower]  Select the clustering algorithm used by the excess
+power burst search pipeline.  This algorithm is associative, meaning the
+final trigger list is independent of the order in which the consituent
+triggers are clustered.  This allows the algorithm to be safely applied
+repeatedly to the same triggers (the clustering algorithm is an identity
+transform on triggers that have already been processed).
+
+\end{entry}
+(yes, only one clustering algorithm is implemented at this time, and yes,
+it's still a required option).
+
+\item[\option{--comment}~\parm{text}] Set the comment string to be
+recorded in the process table (default = ``'').
+
+\item[\option{--help}] Print a help message.
+
+\item[\option{-i}~\parm{filename}, \option{--input-cache}~\parm{filename}]
+Process the LIGO light-weight XML files listed in this LAL cache.  If this
+option is provided more than once, then all files from all input caches are
+processed.
+
+\item[\option{-p}~\parm{name}, \option{--program}~\parm{name}]  Set the
+name of the program that generated the events as it appears in the process
+table (default = ``\prog{lalapps\_power}'').  At this time, this
+information is only used to extract live time information from the search
+summary table in order for this program to record an appropriate entry for
+itself in the search summary table.  In the future, the program name might
+be used to restrict the triggers that are processed.
+
+\item[\option{--verbose}]  Be verbose.
+
+\item[\option{--version}]  Print the version of this program and exit.
+
+\end{entry}
+
+\item[Example]
+\begin{verbatim}
+$ ligolw_bucluster --comment TEST --cluster-algorithm excesspower --verbose \
+input1.xml.gz input2.xml.gz
+\end{verbatim}
+
+\item[Author]
+Kipp Cannon
+\end{entry}
+
+
+\subsection{Clustering Algorithm}
+
 
 The excess power search is a multi-resolution analysis of the
 time-frequency structure of the input time series.  A burst trigger is
-identified if the probability of obtaining the excess power in a
-time-frequency tile from Gaussian noise is smaller than some threshold
-$\alpha$.   For large bursts in the data stream, many tiles can be
-identified as triggers with different sizes and aspect ratios.   Hence when
-the search over a particular segment is complete,   triggers have to be
-clustered. 
+identified if the probability of obtaining the observed energy in the same
+time-frequency tile in Gaussian noise is smaller than some threshold.  A
+large burst in the data stream will result in many nearby time-frequency
+tiles being identified as triggers, all with different sizes and aspect
+ratios, many overlapping one another.  The program \prog{ligolw\_bucluster}
+replaces these moguls of triggers with single triggers intended to
+summarize the event.  The following clustering algorithms are avialable.
+\begin{entry}
+\item[excesspower]
+Each event has a start time, an end time, a low frequency, and a high
+frequency, and these four things together define a tile in the
+time-frequency plane.  Each input event also has a peak time and peak
+frequency, an SNR, an \(h_{\text{rss}}\), and a ``confidence'' (how much
+not like stationary Gaussian noise this event is).  Finally, each input
+event has a ``most significant contributor'' which is a second set of start
+and end times, etc., which define the time-frequency tile of what is
+considered the most significant portion of the event.  Initially, before
+clustering has been performed, the boundaries of the most significant
+portion are equal to the boundaries of the event itself.
 
-The triggers are identified by a number of characteristic features like
-start time,  peak time,  central frequency,  bandwidth,  excess power (the
-excess compared to the power expected in Gaussian noise for the
-corresponding time fequency volume)  and a confidence assosciated with this
-measurement.  To do the clustering we first compare the peak times of the
-triggers.  If the peak times are within an allowed range,  i.e. if
-$|peaktime(trigger 1) - peaktime(trigger 2)| < dt$ where $dt$ is some
-seconds,  we check whether the triggers  overlap in frequency.  If they
-overlap,  we cluster them into one single trigger whose start time and
-bandwidth are so chosen that they cover the time-frequency area which
-includes the areas of the individual triggers.  The peak time of the
-clustered trigger is equal to the peak time of that trigger which has more
-excess power between the two.  Then we repeat the comparison but now
-between the clustered trigger and another trigger.  If the peak times again
-lie within the specified range and the frequencies overlap,  we modify,
-otherwise we keep them as distinct triggers.  We repeat these steps until
-there are no more distinct triggers which satisfy our criterion for
-clustering.  The execess power of the cluster is the maximum of the
-triggers involved in that particular cluster.
+The events in the input list are compared, pair-wise, and every pair of
+events whose time-frequency tiles are not disjoint are replaced with a
+single event whose properties are as follows.  The time-frequency tile of
+the new event is the smallest tile that contains both of the constituent
+tiles.  The peak time and peak frequency of the new event are the
+\(\text{SNR}^{2}\)-weighted averages of the peak times and peak frequencies
+of the constituent events.  The SNR of the new event is the square root of
+the sum of the squares of the SNRs of the constituent events.  The
+\(h_{\text{rss}}\) and confidence of the new event are copied verbatim from
+whichever of the two events has the highest confidence value.  And the
+boundaries of the ``most significant contributor'' are set equal to the
+\(\text{SNR}^{2}\)-weighted averages of the respective boundaries of the
+two constituent events (the new ``most-significant'' start time is the
+\(\text{SNR}^{2}\)-weighted average of the two ``most-significant'' start
+times, etc.).
 
-Top panel in Figure~\ref{fig:checkcluster}  shows a set of triggers before
-clustering,  middle panel shows a set of clustered triggers when $dt$ was
-chosen to be $10  nanosecs$ and the bottom panel shows the cluster when
-$dt$ was $10  secs$. In the bottom panel there is only $1$ clustered
-trigger and if one looks at the top panel this is expected because all the
-peak  times of the triggers(before clustering)  lie within $10  secs$ of
-each other.
+This clustering transformation is applied iteratively until the list of
+events stops changing.  Altogether, this algorithm has the property that if
+three or more events ultimately combine together to form a cluster, the
+order in which they are combined pair-wise is irrelevant.  An example of
+the application of this algorithm is shown in Figure \ref{fig2}.
 \begin{figure}
-\centering
-\resizebox{.9\linewidth}{!}{\includegraphics{figures/checkclustering_dt10nsec10sec}}
-\caption{Clustering in Excess Power}
-\label{fig:checkcluster}
+\begin{center}
+\resizebox{.9\linewidth}{!}{\includegraphics{figures/clustering_example.png}}
+\end{center}
+\caption{Example of excess power time-frequency triggers before and after
+clustering.  Both panels show the trigger(s) resulting from a software
+injection of a \(Q = 8.89\) sine-Gaussian, the horizontal axis is time
+relative to the centre time of a software injection, and the vertical axis
+is the frequency relative to the centre frequency of the injection.  The
+top panel shows the many hundreds of triggers in the output of
+\prog{lalapps\_power} resulting from this one software injection, the
+bottom panel shows the single trigger in the output of
+\prog{ligolw\_bucluster}.  The large rectangle marks the extent of the
+triggers that formed the cluster, the small rectangle shows the ``most
+significant portion'' of the event, and the small ``\(+\)'' marker
+indicates the time and frequency where it is estimated the burst event's
+energy peaked (note its proximity to the true centre time and frequency of
+the injection).}
+\label{fig2}
 \end{figure}
 
-To understand this better let us look at the triggers themselves:
-
-\vspace{0.1 in}
-
-\begin{tabular}{||l|l|l|l|l|l|l|lr||} \hline
-no. & start time(sec) & peak time(sec) & duration(sec) & central freq(Hz) & bandwidth(Hz) & snr \\ \hline
-1 &729501161.0  & 729501161.25  & 0.5     & 170  & 8   & 66.121277 \\ \hline
-2 &729501161.125  & 729501161.28125  & 0.3125  & 186  & 48  & 123.3495 \\ \hline
-3 &729501161.0625  & 729501161.28125  & 0.4375  & 186  & 48  & 120.2974 \\ \hline
-4 &729501161.125 &729501161.28125 &0.3125 &178 &32 &82.274979 \\ \hline
-5 &729501161.25 &729501161.3125 &0.125 &186 &48 &72.011459  \\ \hline
-6 &729501161.25 &729501161.34375 &0.1875 &186 &48 & 92.914597 \\ \hline
-7 &729501161.3125 &729501161.375 &0.125 & 186 &48 & 74.42984 \\ \hline
-\end{tabular}
-
-\vspace{0.1 in} 
-
-The table above contains the set of triggers before clustering while   
-the table below contains the $5$ clustered events when $dt$ 
-was $10 nanosec$.
-
-\vspace{0.1 in}
-
-\begin{tabular}{||l|l|l|l|l|l|l|lr||} \hline
-no. & start time(sec) & peak time(sec) & duration(sec) & central freq(Hz) & bandwidth(Hz) & snr \\ \hline
-1 &729501161.0 &729501161.25 &0.5 &170 &8 & 66.121277 \\ \hline
-2 &729501161.0625 &729501161.28125 &0.4375 &186 &48 &123.3495 \\ \hline
-3 &729501161.25 &729501161.34375 &0.1875 &186 &48 &92.914597 \\ \hline
-4 &729501161.25 &729501161.3125 &0.125 &186 &48 &72.011459 \\ \hline
-5 &729501161.3125 &729501161.375 &0.125 &186 &48 &74.42984 \\ \hline 
-\end{tabular}
-
-\vspace{0.1 in}
-
-Thus from this set of clustered triggers it is quite clear what we have been 
-discussing till now.
+\end{entry}
 
 
+\section{Program \prog{ligolw\_burca}}
 
-\section{Running the power code under Condor}
+
+\begin{entry}
+\item[Name]
+\prog{ligolw\_burca} --- perform a coincidence analysis on LIGO
+light-weight XML files containing burst events.
+
+\item[Synopsis]
+\prog{ligolw\_burca} [\option{--version}] [\option{-h}, \option{--help}]
+[\option{-c}~\parm{text}, \option{--comment}~\parm{text}] [\option{-f},
+\option{--force}] (\option{-p}~\parm{name}, \option{--program}~\parm{name})
+(\option{-a}~\parm{name}, \option{--coincidence-algorithm}~\parm{name})
+[\option{--likelihood-data}~\parm{filename}]
+[\option{--likelihood-data-cache}~\parm{filename}]
+[\option{-t}~\parm{inst1,inst2=[threshold,...]},
+\option{--thresholds}~\parm{inst1,inst2=[threshold,...]}]
+[\option{--tmp-space}~\parm{path}]
+[\option{-s}~\parm{\(\kappa\),\(\epsilon\)},
+\option{--stringcusp-parms}~\parm{\(\kappa\),\(\epsilon\)}] [\option{-v},
+\option{--verbose}] [filename~...]
+
+\item[Description]
+The program \prog{ligolw\_burca} actually performs two distinct functions.
+In the future, it is likely these functions will be split into two
+applications.  The first function formed by this program is a
+inter-instrument coincidence comparison of the burst events stored in
+sngl\_burst tables in LIGO light-weight XML files.  The other function
+performed by this program is the ranking of \(n\)-tuples of
+mutually-coincident events according to likelihood ratio data collected
+from time-slide and injection runs.
+
+\item[Options]
+Blah blah.
+
+\item[Example]
+Blah blah.
+
+\item[Author]
+Kipp Cannon
+
+\end{entry}
 
 
-%
-% FIXME: this section is obsolete
-%
+\subsection{Coincidence Algorithm}
 
-This section is under construction!
+
+The coincidence tests applied by this application are exclusively two-event
+tests:  one event from one instrument is compared to one event from another
+instrument, and the two are either coincident or not.  Events taken from
+more than two instruments constitute a coincident \(n\)-tuple when they are
+all pair-wise mutually coincident.  Establishing the coincidence of an
+\(n\)-tuple thus requires \(n\)-choose-2 tests, which scales as
+\(\order(n^{2})\).  The total number of \(n\)-tuples that needs to be
+tested is, in principle, \(\order(N^{n})\) where \(N\) is the average
+number of events obtained from each instrument going into the coincidence
+analysis.  A variety of optimization techniques are employed to avoid
+unnecessary comparisons --- these optimizations form the bulk of the
+internal complexity of this program --- but users should not be surprised
+to find that this program can take a long time to run.
+
+There are two coincidence tests to choose from.  These are as follows.
+\begin{entry}
+\item[excesspower]
+Two events are coincident if their time-frequency tiles are not disjoint
+after allowing for the light travel time between the two instruments.
+There are no tunable parameters in this coincidence test, and the light
+travel times are obtained from an internal look-up table of the locations
+of known instruments.
+
+When this coincidence test is selected, the output file has a multi\_burst
+table added to it which is populated with summary information about each
+coincident \(n\)-tuple identified by the coincidence analysis.  Each
+coincident \(n\)-tuple is assigned an SNR equal to the square root of the
+sum of the squares of the SNRs of the events that participate.  Each
+\(n\)-tuple is also assigned a bandwidth, duration, and peak frequency
+which are the \(\text{SNR}^{2}\)-weighted averages of the respective
+quantities from the constituent events.  Each \(n\)-tuple is assigned an
+\(h_{\text{rss}}\) equal to the \(h_{\text{rss}}\) of the most
+statistically confident of the constituent events, and a confidence equal
+to the lowest confidence of the constituent events.  At the present time,
+of all of this information only the confidence assigned to the \(n\)-tuple
+is used elsewhere in the pipeline.
+
+\item[stringcusp]
+Two events are coincident if their peak times do not differ by more than
+\(\Delta t\) as set by the matching \option{--threshold} option from the
+command line.  If the two events are taken from H1 and H2, then in addition
+to the peak time comparison to be coincident they must also pass an
+amplitude comparison.  Each string cusp burst event has an amplitude \(A\)
+and an SNR \(\rho\), and the amplitude consistency test requires that
+\begin{equation}
+\magnitude{A_{1} - A_{2}}
+   \leq \min \left\{ \magnitude{A_{1}} (\kappa / \rho_{1} + \epsilon),
+   \magnitude{A_{2}} (\kappa / \rho_{2} + \epsilon) \right\},
+\end{equation}
+where \(\kappa\) and \(\epsilon\) are parameters supplied on the command
+line.
+
+\end{entry}
+
+
+\subsection{Likelihood Ratio Analysis}
+
+
+In this mode of operation, \prog{ligolw\_burca} assigns likelihood ratios
+to the coincident \(n\)-tuples it has previously identified using parameter
+distribution density data collected from populations of time-slide
+(``noise'') and injection (``gravitational wave'') \(n\)-tuples.  The
+procedure goes as follows.  First, \prog{ligolw\_burca} is used to identify
+coincident \(n\)-tuples in time-slide and injection trigger lists.  Another
+program, \prog{ligolw\_burca\_tailor} (see Section \ref{section1}), scans
+these \(n\)-tuples and collects summary statistics about their properties.
+Finally, \prog{ligolw\_burca} is used to reprocess the \(n\)-tuples using
+the parameter distributions measured by \prog{ligolw\_burca\_tailor} to
+assign likelihood ratio values to each \(n\)-tuple, thereby ranking the
+\(n\)-tuples from most to least injection-like.  Note that typically one
+will not want to use the same \(n\)-tuples to assign likelihood ratio
+values to themselves, but this is an unimportant operational detail at this
+time.  See Figure \ref{fig3} for an example of the \(n\)-tuple parameter
+distribution functions measured by \prog{ligolw\_burca\_tailor}.
+
+
+\section{Program \prog{ligolw\_burca\_tailor}}
+\label{section1}
+
+
+% FIXME
+Blah blah blah.
+\begin{figure}
+\begin{center}
+\resizebox{.9\linewidth}{!}{\includegraphics{figures/plotburca2-P-793154128-2525061.png}}
+\end{center}
+\caption{Example of the parameter distributions collected by
+\prog{ligolw\_burca\_tailor}.  The black curves are the distributions
+observed in time-slide \(n\)-tuples (``noise''), and the red are the
+parameter distributions observed in software injection \(n\)-tuples
+(``gravitational waves'').}
+\label{fig3}
+\end{figure}
 
 
 \section{Program \prog{lalapps\_power\_pipe}}
 
 
 \begin{entry}
-
 \item[Name]
 \prog{lalapps\_power\_pipe} --- builds a one/two/three interferometer excess-power
 search DAG   
@@ -2088,6 +2092,192 @@ lalapps_power_pipe -f power_pipe.ini -d -r -H -L -b -c -j sim -l /people/saikat/
 \item[Author]
 Duncan Brown, Patrick Brady and Saikat Ray-Majumder
 \end{entry}
+
+
+\section{Tuning the Excess Power Pipeline}
+
+
+The excess power search identifies time-frequency tiles as events when the 
+probability of getting power in the tile from Gaussian noise alone
+is below some particular threshold.  The search assumes no particular 
+information about the gravitational wave signals other than the time
+frequency ranges to search for,  so once those ranges are chosen the main 
+tool to tune the pipeline is by tweaking the threshold.  The other parameter 
+to test in the tuning procedure is the coincidence window.  Thus to 
+summarize the parameters to tune in the excess power search are:
+\begin{itemize}
+\item maximum duration(seconds) of the tiles
+\item maximum bandwidth of the tiles
+\item probability thresholds on the individual instruments
+\item the coincidence window
+\end{itemize}
+In the following sections we will go over the tuning of the different 
+parameters in more details.
+
+
+\subsection{Tuning the size of the tiles}
+\label{section:tunetilesize}
+
+
+The size(duration and bandwidth) of the tiles are largely guided by the
+time-frequency content of the gravitational waves one is searching for.
+  Here,  we describe the tuning procedure where we were concentrating 
+on the search of the merger phase preceded by an inspiral phase.  As
+mentioned before the physical parameters describing the merger phase
+of a binary black hole coalescence are very poorly understood till
+today.  However there are some rough estimates available in the literature 
+which we will briefly describe here.  These will provide us a guideline
+in choosing the parameters of our search pipeline. [FH:Flannagan and Hughes]
+
+The process of coalescence can be roughly divided into three phases:
+\begin{itemize}
+\item Inspiral phase
+\item Merger phase
+\item Ringdown phase
+\end{itemize}
+The inspiral phase can be modelled accurately enough to use the match
+filtering techniques to search for the waveforms, however for massive
+black holes when there are not enough cycles left in the inspiral phase 
+we have to rely on the merger phase for the detection of the coalescence.
+According to the estimates of FH, binary black hole systems with total
+mass $M \leq 30M_{\odot}$ are best searched for via their inspiral waves
+while systems with $M > 30M_{\odot}$ must be searched via their
+merger waves and/or their well understood ringdown waves.  
+
+FH has estimated a conservative value for the merger frequency given
+by 
+\begin{equation}
+f_{merge} = \frac{0.02}{M} \\
+          = 205 Hz (\frac{20M_{\odot}}{M})
+\label{eq:fmerge}
+\end{equation}.
+This is conservative in the sense that one can reasonably be sure that
+numerically generated templates will not be needed before $f = f_{merger}$.
+Now LIGO noise floor restricts the lowest frequency that can be searched 
+for and in $S4$ this is $\approx 50 Hz$. Using \eqref{eq:fmerge} we 
+then get that a binary system of maximum mass $\approx 80M_{\odot}$ 
+can be searched for in $S4$.  However for a $80 M_{\odot}$ binary the 
+number of cycles in the inspiral phase will be very small and since we
+are interested in the coincidence of the mergers with the inspirals we
+would like to restrict our search to a bit lower total mass.  Thus the 
+mass range of the binary black holes that we decide to look at for the 
+IB search is given by 
+\begin{equation}
+30 M_{\odot} < M \leq 70 M_{\odot}. 
+\label{eq:massrange}
+\end{equation}
+Given this mass range let us now see what can we estimate about the 
+expected frequency and duration of the merger signals. From 
+\eqref{eq:fmerge} we get the approximte range of the merger frequencies:
+\begin{equation}
+58 Hz < f_{merge} \leq 140 Hz
+\label{eq:frange}
+\end{equation}
+Now according to FH the high frequency shut off for the mergers are
+roughly given by 
+\begin{equation}
+f_{qnr} = 1320 Hz (\frac{20M_{\odot}}{M})
+\label{eq:fqnr}
+\end{equation}
+Thus if the assumed bandwidth of the merger signal is 
+$\Delta f = f_{qnr} - f_{merge}$,  then for our mass range of 
+interest we may expect the bandwidth to be of the order of few
+hundred Hertz.  
+
+The effective duration for the signals has also been roughly estimated
+by FH to be:
+\begin{equation}
+50 M < T < 10 M
+\label{eq:timerange}
+\end{equation}
+depending on the total spin of the binary system. If we consider
+a coalescence where both the inspiraling black holes are nearly
+maximally spinning, with their spins and the orbital angular momentum
+nearly alligned then the merger may be expected to be long,  while
+for non-spinning black holes the merger will be rather quick.  Thus 
+given our mass range of interest (\eqref{eq:massrange}) the 
+time duration of the expected signals whould be somewhere in the 
+range:
+\begin{equation}
+17.2 ms < T < 1.5 ms
+\label{eq:trange}
+\end{equation} 
+  
+So given these estimates about the bandwidth and the duration of the 
+signals of our main interest we choose the following parameters in our
+search pipeline:
+\begin{itemize}
+\item Low frequency cutoff: $50 Hz$
+\item Bandwidth: $1024 Hz$
+\item Maximum duration of a tile: $125 ms$; we have set the duration 
+a few times longer than the maximum duration in \eqref{eq:trange}
+because of the uncertainty in the estimations related to the nature 
+of the merger signals.
+\item Maximum bandwidth of a tile: $128 Hz$; we have the bandwidth 
+smaller than the estimated bandwidths for the merger signals since
+because of the LIGO noise curve the prominent contribution to the 
+power from the merger phase will be for a few hundred Hertz.
+\end{itemize}
+The last two parameters set the maximum duration and bandwith of 
+a single tile in the search,  which does not preclude us from searching
+for longer or broader signals since we can always sum up the power
+from multiple tiles triggered by the particular signal. 
+    
+
+\subsection{Deciding on the probability thresholds}
+
+
+We saw in Sec~\ref{section:tunetilesize} that the sizes of the tiles
+are mainly guided by the rough expectations about the signals that 
+we are interested in.  However, the threshold on the probability
+of power in a tile is guided by the optimisation between the false 
+rate and efficiency to a set of Monte Carlo simulations.  The idea
+we usually follow is to choose a threshold which lowers the false rate 
+maintaining the efficiency at an acceptable value.
+
+To get a rough idea about the region where we start loosing significant 
+amount of efficiency without an appreciable effect in lowering the false 
+rate we estimate the efficiencies and the false rates for a number of 
+thresholds. We have used $Q9$ Sine-Gaussian waveforms at $235 Hz $ to
+perform the tuning and the confidence thresholds are
+$\{-30.0, -35.0, -40.0, -45.0, -50.0, -55.0, -60.0, -65.0, -70.0, -80.0, 
+-90.0, -100.0, -150.0, -200.0\}$. How the efficiency and the false rate 
+depend on the thresholds are shown in Fig~\ref{fig:dt125df128tune}: 
+\begin{figure}
+\begin{center}
+\resizebox{.9\linewidth}{!}{\includegraphics{figures/H1_L1_dt125_df128}}
+\caption{Efficiency vs. False rate for different |thresholds|}
+\label{fig:dt125df128tune}
+\end{center}
+\end{figure}
+The circles on the curves show the values corresponding to different 
+thresholds.  The maximum false rate and the best efficiency are obtained 
+for the lowest |threshold|(30.0),  then as the |threshold| is increased
+the false rate decreases while the efficiency gets worse. Around the 
+|thresholds| of $50.0 - 60.0$ one may notice that for a very small 
+decrease in false rate the efficiency gets a whole lot worse.  This gives 
+us a rough idea that we should choose $ |threshold| < 60.0$.  However
+one should be aware of the fact that tuning must be specific to the 
+pipeline being run.  In our pipeline we have a coincidence step which
+involves the burst triggers and the inspiral triggers and we are not
+quite sure how many of the false triggers will survive that step. We
+also plan to use the Hanford 2Km instrument in a coherent follow up at
+the end of the pipeline which will also hopefully get rid off many of the
+false triggers. However we would like to  
+have a good estimate of the background distribution of triggers and so 
+have a few surviviors at the end of the pipeline.  Keeping that 
+in mind we decided to choose a looser threshold on the confidence 
+probabilities. The thresholds we chose are 
+\begin{itemize}
+\item Threshold on H1: -38.0
+\item Threshold on L1: -38.0; The instrument in Livingstone was less 
+sensitive than the one in Hanford for the first half of the run but 
+for the second half both the instruments had equal sensitivity.  So
+we decided to have the same thresholds on both the instruments.
+\end{itemize}      
+These thresholds were so chosen so that the false rate after 
+coincidence between H1 and L1 triggers is $\approx 2 mHz$ while 
+the $ h_{rss}$ is $\approx 1.12e-21$.
 
 
 \bibliography{refs}

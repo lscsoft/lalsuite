@@ -12,6 +12,8 @@ GRAPHIC_FILES += figures/tiles_histogram_adjusted.png
 GRAPHIC_FILES += figures/h_histogram.png
 GRAPHIC_FILES += figures/plotbinj_L1_4.png
 GRAPHIC_FILES += figures/plotbinj_L1_5.png
+GRAPHIC_FILES += figures/clustering_example.png
+GRAPHIC_FILES += figures/plotburca2-P-793154128-2525061.png
 BIB_FILES := refs.bib
 
 include LaTeX.Rules
