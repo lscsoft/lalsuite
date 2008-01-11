@@ -76,6 +76,12 @@ parser.add_option("-m", "--datafind",action="store_true",\
 parser.add_option("-M", "--hoft-datafind",action="store_true",\
     default=False, help="use datafind to get hoft data (for qscan)")
 
+parser.add_option("", "--single-qevent",action="store_true",default=False,\
+    help="do single qevent")
+
+parser.add_option("", "--H1H2-qevent",action="store_true",default=False,\
+    help="do coherent qevent")
+
 parser.add_option("-q", "--qscan",action="store_true",default=False,\
     help="do qscans")
 
@@ -160,7 +166,7 @@ if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
   opts.generate_segments and not opts.analyse_qscan and not \
   opts.analyse_seis_qscan and not opts.analyse_hoft_qscan and not \
   opts.mcmc and not opts.frame_check and not opts.inspiral_head and not \
-  opts.ifo_status_check:
+  opts.ifo_status_check and not opts.single_qevent and not opts.H1H2_qevent:
   print >> sys.stderr, "No steps of the pipeline specified."
   print >> sys.stderr, "Please specify at least one of"
   print >> sys.stderr, "--generate-fu-cache, --trig-bank, --inspiral, --plots,"
@@ -170,6 +176,7 @@ if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
   print >> sys.stderr, "--generate-segments, --frame-check,"
   print >> sys.stderr, "--analyse-qscan, --analyse-seis-qscan,"
   print >> sys.stderr, "--analyse-hoft-qscan, --mcmci --ifo-status-check"
+  print >> sys.stderr, "--single-qevent, --H1H2-qevent"
   print >> sys.stderr, "or --write-to-iulgroup (use this option alone for now)"  
   sys.exit(1)
 
@@ -217,6 +224,7 @@ if not opts.disable_followup:
   statusJob       = IFOstatus_checkJob(opts,cp)
   MCMCJob 	  = mcmcJob(opts,cp)  
   headInspJob     = followUpInspJob(cp, 'head')
+  h1h2QJob        = h1h2QeventJob(opts,cp)   
 
 dataJob         = qscanDataFindJob(cp,'futrig')
 qscanBgJob      = qscanLiteJob(opts,cp)
@@ -257,8 +265,11 @@ for ifo in ifos_list:
 
 if not opts.disable_followup:
 
-  # Prepare the followup jobs
+  # LOOP ON TRIGGERS (=CANDIDATES)
   for trig in followuptrigs:
+ 
+    # Initialization of local variables
+    dHoftNode = {}
 
     #Lets make a new section for this event
     dag.appendSection('Trigger ID = '+str(trig.eventID)+ ' Stat = '+str(trig.statValue))  
@@ -278,18 +289,17 @@ if not opts.disable_followup:
       dag.appendSubSection(str(ifo)+' @ GPS '+str(trig.gpsTime[ifo]))
 
       # SETUP DATAFIND JOBS FOR HOFT QCANS
-      dHoftNode = qscanDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,trig.gpsTime[ifo],ifo,opts,dag,prev_dNode,'hoft_datafind')
-      if dHoftNode.validNode: prev_dNode = dHoftNode
+      dHoftNode[ifo] = qscanDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,trig.gpsTime[ifo],ifo,opts,dag,prev_dNode,'hoft_datafind')
+      if dHoftNode[ifo].validNode: prev_dNode = dHoftNode[ifo]
 
-      # SETUP DATAFIND JOBS FOR REGULAR QCANS
+      # SETUP DATAFIND JOBS FOR REGULAR QSCANS
       dNode = qscanDataFindNode(dataJob,'futrig','q-datafind',cp,trig.gpsTime[ifo],ifo,opts,dag,prev_dNode,'datafind')
       if dNode.validNode: prev_dNode = dNode
     
       # SETUP FOREGROUND QSCAN JOBS
-      qFgNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,dHoftNode.outputFileName,ifo,'foreground-hoft-qscan',opts,dHoftNode,dag,'hoft_datafind','hoft_qscan')
+      qFgNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,dHoftNode[ifo].outputFileName,ifo,'foreground-hoft-qscan',opts,dHoftNode[ifo],dag,'hoft_datafind','hoft_qscan')
       qFgNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,dNode.outputFileName,ifo,'foreground-qscan',opts,dNode,dag,'datafind','qscan')
       qFgNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,dNode.outputFileName,ifo,'foreground-seismic-qscan',opts,dNode,dag,'datafind','seis_qscan')
-
 
       # SETUP INSPIRAL JOBS
       inspiralNode = followUpInspNode(inspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag)
@@ -309,12 +319,20 @@ if not opts.disable_followup:
       statusNode = IFOstatus_checkNode(statusJob, ifo, trig, cp, opts, dag)
 
 
-    # loop over ifos not found in coincidence (though in the analysed times)
+    # SETUP H1H2 SPECIFIC JOBS
+    # first make sure that the coincident trigger is found in at least one Hanford ifo and that both Hanford ifos are in the analysed times
+    lho_flag = trig.ifolist_in_coinc.count('H1') + trig.ifolist_in_coinc.count('H2')
+    if lho_flag == 2:
+      #times = {"H1":trig.gpsTime["H1"],"H2":trig.gpsTime["H2"]} # equivalent to trig.gpsTime ?
+      #Lets append a new subsection to the last section
+      dag.appendSubSection('H1H2 followup' +' @ GPS '+str(trig.gpsTime['H1']))
+      h1h2Qevent = h1h2QeventNode(h1h2QJob,dHoftNode,trig.gpsTime,['H1','H2'],'qevent',cp,opts,dag,'H1H2_qevent')
+
+
+    # LOOP OVER IFOS NOT FOUND IN COINCIDENCE (THOUGH IN THE ANALYSED TIMES)
     for j in range(0,len(trig.ifoTag)-1,2):
       ifo = trig.ifoTag[j:j+2]
-      try: 
-        trig.ifolist_in_coinc.index(ifo)
-      except:
+      if not trig.ifolist_in_coinc.count(ifo):
 
         #Lets append a new subsection to the last section
         dag.appendSubSection(str(ifo)+" (non coincident ifo)")
