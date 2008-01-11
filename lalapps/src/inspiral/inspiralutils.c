@@ -79,6 +79,8 @@
 
 #include "inspiral.h"
 
+RCSID( "$Id$" );
+
 REAL4 compute_candle_distance(REAL4 candleM1, REAL4 candleM2,
     REAL4 snr, REAL8 chanDeltaT, INT4 nPoints, 
     REAL8FrequencySeries *spec, UINT4 cut)
@@ -138,4 +140,136 @@ SummValueTable **add_summvalue_table(SummValueTable **newTable,
   return (newTable);
 }
 
+
+
+void AddNumRelStrainModes(  LALStatus              *status,
+			    REAL4TimeVectorSeries  **outStrain, /** [out]  h+, hx data    */
+			    SimInspiralTable *thisinj     /** [in]   injection data */)
+{
+  INT4 modeL, modeM, modeLlo, modeLhi;
+  INT4 len, k;
+  CHAR *channel_name;
+  FrStream  *frStream = NULL;
+  FrCache frCache;
+  LIGOTimeGPS epoch;
+  REAL4TimeSeries  *seriesPlus=NULL;
+  REAL4TimeSeries  *seriesCross=NULL;
+  REAL8 massMpc;
+  
+  REAL4TimeVectorSeries *sumStrain=NULL;
+  REAL4TimeVectorSeries *tempStrain=NULL;
+  
+  /*   NRWaveMetaData thisMetaData; */
+
+  INITSTATUS (status, "LALAddStrainModes", rcsid);
+  ATTATCHSTATUSPTR (status); 
+
+  modeLlo = thisinj->numrel_mode_min;
+  modeLhi = thisinj->numrel_mode_max;
+
+  /* create a frame cache and open the frame stream */
+  frCache.numFrameFiles = 1;
+  frCache.frameFiles = LALCalloc(1, sizeof(frCache.frameFiles[0]));
+  frCache.frameFiles[0].url = thisinj->numrel_data;
+  frStream = XLALFrCacheOpen( &frCache );
+
+  /* the total mass of the binary in Mpc */
+  massMpc = (thisinj->mass1 + thisinj->mass2) * LAL_MRSUN_SI / ( LAL_PC_SI * 1.0e6);
+  
+  /* loop over l values */
+  for ( modeL = modeLlo; modeL <= modeLhi; modeL++ ) {
+
+    /* loop over m values */
+    for ( modeM = -modeL; modeM <= modeL; modeM++ ) {
+
+      /* read numrel waveform */ 
+      /* first the plus polarization */
+      channel_name = XLALGetNinjaChannelName("plus", modeL, modeM);      
+
+      /*get number of data points */
+      len = XLALFrGetVectorLength ( channel_name, frStream );
+        
+      epoch.gpsSeconds = 0;
+      epoch.gpsNanoSeconds = 0;
+      
+      seriesPlus = XLALCreateREAL4TimeSeries ( channel_name, &epoch, 0, 0, &lalDimensionlessUnit, len);
+      memset(seriesPlus->data->data, 0, seriesPlus->data->length*sizeof(REAL4));
+      
+      XLALFrGetREAL4TimeSeries ( seriesPlus, frStream );  
+      XLALFrRewind( frStream );
+      LALFree(channel_name);
+
+      /* now the cross polarization */
+      channel_name = XLALGetNinjaChannelName("cross", modeL, modeM);      
+
+      /*get number of data points */
+      len = XLALFrGetVectorLength ( channel_name, frStream );
+        
+      epoch.gpsSeconds = 0;
+      epoch.gpsNanoSeconds = 0;
+      
+      seriesCross = XLALCreateREAL4TimeSeries ( channel_name, &epoch, 0, 0, &lalDimensionlessUnit, len);
+      memset(seriesCross->data->data, 0, seriesCross->data->length*sizeof(REAL4));
+      
+      XLALFrGetREAL4TimeSeries ( seriesCross, frStream );
+      XLALFrRewind( frStream );
+      LALFree(channel_name);
+
+      /* allocate memory for tempStrain */
+      tempStrain = LALCalloc(1, sizeof(*tempStrain));	
+      tempStrain->data = XLALCreateREAL4VectorSequence(2, len);
+      tempStrain->deltaT = seriesPlus->deltaT;
+      tempStrain->f0 = seriesPlus->f0;
+      tempStrain->sampleUnits = seriesPlus->sampleUnits;
+      
+      /* now copy the data and scale amplitude corresponding to distance of 1Mpc*/ 
+      for (k = 0; k < len; k++) {
+      	tempStrain->data->data[k] = massMpc * seriesPlus->data->data[k];
+      	tempStrain->data->data[len + k] = massMpc * seriesCross->data->data[k];	
+      }
+      
+      /* we are done with seriesPlus and Cross for this iteration */
+      XLALDestroyREAL4TimeSeries (seriesPlus);
+      XLALDestroyREAL4TimeSeries (seriesCross);
+
+      /* compute the h+ and hx for given inclination and coalescence phase*/
+      tempStrain = XLALOrientNRWave( tempStrain, modeL, modeM, thisinj->inclination, thisinj->coa_phase );
+      
+      if (sumStrain == NULL) {
+	
+	sumStrain = LALCalloc(1, sizeof(*sumStrain));	
+	sumStrain->data =  XLALCreateREAL4VectorSequence(2, tempStrain->data->vectorLength);
+	sumStrain->deltaT = tempStrain->deltaT;
+	sumStrain->f0 = tempStrain->f0;
+	sumStrain->sampleUnits = tempStrain->sampleUnits;
+	
+	memset(sumStrain->data->data,0.0,2*tempStrain->data->vectorLength*sizeof(REAL4));
+	
+	sumStrain = XLALSumStrain( sumStrain, tempStrain );
+      }
+      
+      else {
+	sumStrain = XLALSumStrain( sumStrain, tempStrain );
+      }
+            
+      /* clear memory for strain */
+      XLALDestroyREAL4VectorSequence ( tempStrain->data );
+      LALFree( tempStrain );
+      tempStrain = NULL;
+      
+    } /* end loop over modeM values */
+    
+  } /* end loop over modeL values */
+  
+  /*fprintf(stdout, "\nNR injections done\n");*/
+
+  XLALFrClose( frStream );
+  LALFree(frCache.frameFiles);
+  
+  *outStrain = sumStrain;
+      
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+
+}
 

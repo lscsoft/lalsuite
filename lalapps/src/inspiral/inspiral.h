@@ -17,6 +17,32 @@
 *  MA  02111-1307  USA
 */
 
+
+
+#include <lalapps.h>
+#include <lal/LALConfig.h>
+#include <lal/LALStdio.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALError.h>
+#include <lal/LALDatatypes.h>
+#include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataTables.h>
+#include <lal/AVFactories.h>
+#include <lal/NRWaveIO.h>
+#include <lal/NRWaveInject.h>
+#include <lal/LIGOLwXMLRead.h>
+#include <lal/Inject.h>
+#include <lal/FileIO.h>
+#include <lal/Units.h>
+#include <lal/FrequencySeries.h>
+#include <lal/TimeSeries.h>
+#include <lal/TimeFreqFFT.h>
+#include <lal/VectorOps.h>
+#include <lal/LALDetectors.h>
+#include <lal/LALFrameIO.h>
+#include <lal/FrameStream.h>
+
+
 REAL4 compute_candle_distance(
     REAL4 candleM1, 
     REAL4 candleM2,
@@ -37,3 +63,6 @@ SummValueTable **add_summvalue_table(
     REAL8 value
     );
 
+void AddNumRelStrainModes( LALStatus              *status,
+			   REAL4TimeVectorSeries  **outStrain,
+			   SimInspiralTable *thisinj);

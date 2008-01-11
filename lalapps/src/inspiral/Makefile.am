@@ -24,7 +24,7 @@ COINEXTSRC 	= coinext.c
 RANDOMBANKSRC 	= randombank.c
 NINJASRC	= ninja.c
 FRNINJASRC	= fr_ninja.c
-MDCNINJASRC	= mdc_ninja.c
+MDCNINJASRC	= mdc_ninja.c inspiralutils.c inspiral.h
 CALCEXPSNRSRC	= calcexpsnr.c
 if LALFRAME
 if LALMETAIO

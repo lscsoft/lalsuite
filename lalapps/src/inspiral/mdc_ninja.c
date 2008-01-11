@@ -47,6 +47,9 @@
 #include <lal/VectorOps.h>
 #include <lal/LALDetectors.h>
 #include <lal/LALFrameIO.h>
+#include <lal/FrameStream.h>
+
+#include "inspiral.h"
 
 /* cvs information */
 RCSID( "$Id$" );
@@ -85,19 +88,12 @@ INT4 main( INT4 argc, CHAR *argv[] )
   INT4 num_ifos = 0;
 
   /* lowest/highest values of l to inject */
-  INT4 modeLlo = -1;
-  INT4 modeLhi = -1;
 
   /* file/directory/set names */
   CHAR *injectionFile = NULL;
-  CHAR *nrMetaFile    = NULL;
-  CHAR *nrDataDir     = NULL;
   CHAR *setName       = NULL;
   CHAR *mdcFileName   = NULL;
 
-  /* NR metadata struct/catalog */
-  NumRelInjectParams nrPar;
-  NRWaveCatalog nrCatalog;
 
   /* ifo name */
   CHAR *ifo = NULL;
@@ -110,11 +106,13 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
   /* injections */
   SimInspiralTable *injections = NULL;
+  SimInspiralTable *thisInj = NULL;
   INT4 numInjections           = 0;
 
   /* injection waveforms time series */
   INT4 sampleRate = -1;
   REAL4TimeSeries *injData[LAL_NUM_IFO];
+  REAL4TimeVectorSeries *tempStrain=NULL;
 
   /* the inspiral pipeline resizes data day 2^dynRange. Set to 1.0 when
    * using as standalone code */
@@ -253,20 +251,6 @@ INT4 main( INT4 argc, CHAR *argv[] )
         memcpy( injectionFile, optarg, optarg_len );
         break;
 
-      case 'm':
-        /* create storage for the meta file name */
-        optarg_len = strlen( optarg ) + 1;
-        nrMetaFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( nrMetaFile, optarg, optarg_len );
-        break;
-
-      case 'd':
-        /* create storage for the nr data directory */
-        optarg_len = strlen( optarg ) + 1;
-        nrDataDir = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( nrDataDir, optarg, optarg_len );
-        break;
-
       case 'r':
         /* set the sample rate */
         sampleRate = (INT4) atoi( optarg );
@@ -291,32 +275,6 @@ INT4 main( INT4 argc, CHAR *argv[] )
         {
           fprintf( stderr, "IFO not recognised: %s\n", ifo );
           exit(1);
-        }
-        break;
-
-      case 'L':
-        /* set lower bound of l */
-        modeLlo = (INT4) atoi( optarg );
-        if ( modeLlo < 2 )
-        {
-          fprintf( stderr, "invalid argument to --%s:\n"
-              "l value must be a greater than 1: "
-              "(%d specified) \n",
-              long_options[option_index].name, modeLlo );
-          exit( 1 );
-        }
-        break;
-
-      case 'H':
-        /* set lower bound of l */
-        modeLhi = (INT4) atoi( optarg );
-        if ( modeLhi < 2 )
-        {
-          fprintf( stderr, "invalid argument to --%s:\n"
-              "l value must be a greater than 1: "
-              "(%d specified) \n",
-              long_options[option_index].name, modeLhi );
-          exit( 1 );
         }
         break;
 
@@ -367,7 +325,6 @@ INT4 main( INT4 argc, CHAR *argv[] )
    *
    */
 
-  /* check validity of input data time */
 
   if ( frameFlag )
   {
@@ -382,34 +339,6 @@ INT4 main( INT4 argc, CHAR *argv[] )
     if (( !ifo ) && ( ifosFlag == 0 ))
     {
       fprintf( stderr, "ERROR: --ifo, or --all-ifos, must be specifed\n" );
-      exit( 1 );
-    }
-
-    /* metadata file specified */
-    if ( nrMetaFile == NULL )
-    {
-      fprintf( stderr, "ERROR: --nr-meta-file must be specified\n" );
-      exit( 1 );
-    }
-
-    /* data directory specified */
-    if ( nrDataDir == NULL )
-    {
-      fprintf( stderr, "ERROR: --nr-data-dir must be specified\n" );
-      exit( 1 );
-    }
-
-    /* lowest value of l */
-    if ( modeLlo == -1 )
-    {
-      fprintf( stderr, "ERROR: --modeL-lo must be specified\n" );
-      exit( 1 );
-    }
-
-    /* highest value of l */
-    if ( modeLhi == -1 )
-    {
-      fprintf( stderr, "ERROR: --modeL-hi must be specified\n" );
       exit( 1 );
     }
   }
@@ -510,34 +439,35 @@ INT4 main( INT4 argc, CHAR *argv[] )
       memset( injData[i]->data->data, 0.0, injData[i]->data->length * sizeof(REAL4) );
     }
 
-    /* get catalog of numrel waveforms from metadata file */
-    LAL_CALL( LALNRDataFind( &status, &nrCatalog, nrDataDir, nrMetaFile ),
-        &status );
+    /* loop over ifos */
+    for ( i = 0; i < num_ifos; i++ )  {
 
-    /* set parameters */
-    nrPar.modeLlo = modeLlo;
-    nrPar.modeLhi = modeLhi;
-    nrPar.nrCatalog = &nrCatalog;
-    nrPar.dynRange = dynRange;
-
-    for ( i = 0; i < num_ifos; i++ )
-    {
       /* get ifo */
       if ( ifosFlag )
       {
-        ifo = (CHAR *) calloc( LIGOMETA_IFO_MAX, sizeof(CHAR));        
+        ifo = (CHAR *) calloc( LIGOMETA_IFO_MAX, sizeof(CHAR));
         XLALReturnIFO( ifo, i );
       }
 
-      /* set ifo */
-      nrPar.ifo = ifo;
+      /* loop over injections */
+      for ( thisInj = injections; thisInj; thisInj = thisInj->next ) {
+	
+	LAL_CALL( AddNumRelStrainModes( &status, &tempStrain, thisInj), &status);
+	
+	LAL_CALL( LALInjectStrainGW( &status, injData[i], tempStrain, injections, ifo, dynRange), &status);
 
-      /* perform injection */
-      LAL_CALL( LALDriveNRInject( &status, injData[i], injections, &nrPar), &status );
+	/* set strain as unit */
+	injData[i]->sampleUnits = lalStrainUnit;
 
-      /* set strain as unit */
-      injData[i]->sampleUnits = lalStrainUnit;
-    }
+	
+	XLALDestroyREAL4VectorSequence ( tempStrain->data);
+	tempStrain->data = NULL;
+	LALFree(tempStrain);
+	tempStrain = NULL;
+
+      } /* loop over injectionsj */
+
+    } /* loop over ifos */
 
     /* output frame */
     if ( ifosFlag )
@@ -556,16 +486,10 @@ INT4 main( INT4 argc, CHAR *argv[] )
     write_mdc_log_file(mdcFileName, injections, gpsStartSec, setName);
   }
 
-  /* clear memory */
-  if ( nrCatalog.data )
-    LALFree( nrCatalog.data );
 
   if ( injectionFile )
     free( injectionFile );
-  if ( nrMetaFile )
-    free( nrMetaFile );
-  if ( nrDataDir )
-    free( nrDataDir );
+
   if ( ifo )
     free( ifo );
 
@@ -604,17 +528,11 @@ static void print_usage( CHAR *program )
       "  [--verbose]                   print progress information\n"\
       "  [--version]                   print version information and exit\n"\
       "  --debug-level     lvl         set debug level to 'lvl'\n"\
-      "  --injection-file  inj_file    read injection details from inj_file\n"\
+      "  --injection-file  inj_file    read injection details from xml sim-inspiral inj_file\n"\
       "  --ifo             ifo         IFO for which to generate injections\n"\
       "  --all-ifos                    create injections for all IFOs\n"\
-      "  --nr-meta-file    meta_file   file containing details of available\n"\
-      "                                numerical relativity waveforms\n"\
-      "  --nr-data-dir     dir         specify directory containing numerical\n"\
-      "                                relativity waveforms\n"\
       "  --gps-start-time  start       start time of output file\n"\
       "  --gps-end-time    end         end time of output file\n"\
-      "  --modeL-lo        lo          lowest value of l to inject\n"\
-      "  --modeL-hi        hi          highest value of l to inject\n"\
       "  --sample-rate     rate        the sample rate used to generate injections\n"\
       "  --write-mdc-log               write an MDC log file\n"\
       "  --set-name        set_name    set the injection set name\n"\
@@ -826,3 +744,5 @@ static void write_mdc_log_file(CHAR *filename, SimInspiralTable *injections, INT
   /* close output file */
   fclose(output);
 }
+
+
