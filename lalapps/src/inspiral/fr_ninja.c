@@ -323,6 +323,7 @@ INT4 main(INT4 argc, CHAR **argv)
   XLALFrHistoryAdd(frame, "spin2y", s2y);
   XLALFrHistoryAdd(frame, "spin2z", s2z);
 
+
   /* loop over l & m values */
   for (l = MIN_L; l <= MAX_L; l++)
   {
@@ -339,9 +340,8 @@ INT4 main(INT4 argc, CHAR **argv)
       /* generate channel names */
       /* plus_channel[l][m] = channel_name("plus", l, m, plus_channel[l][m]); */
       /* cross_channel[l][m] = channel_name("cross", l, m, cross_channel[l][m]); */
-      plus_channel[l][m] = XLALGetNinjaChannelName( "plus", l, m);
-      cross_channel[l][m] = XLALGetNinjaChannelName("cross", l, m);
-
+      plus_channel[l][m] = XLALGetNinjaChannelName( "plus", l, m - MAX_L);
+      cross_channel[l][m] = XLALGetNinjaChannelName("cross", l, m - MAX_L);
 
       /* initilise waveform time series */
       hplus[l][m] = XLALCreateREAL4TimeSeries(plus_channel[l][m], &epoch, 0, 0, &lalDimensionlessUnit, 0);
