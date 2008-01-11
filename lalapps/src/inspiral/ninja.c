@@ -162,7 +162,7 @@ int main( INT4 argc, CHAR *argv[] )
   REAL8 uvar_minSx1=-1, uvar_minSx2=-1, uvar_maxSx1=1, uvar_maxSx2=1;
   REAL8 uvar_minSy1=-1, uvar_minSy2=-1, uvar_maxSy1=1, uvar_maxSy2=1;
   REAL8 uvar_minSz1=-1, uvar_minSz2=-1, uvar_maxSz1=1, uvar_maxSz2=1;
-
+  INT4 uvar_minMode = 2, uvar_maxMode = 2;
 
   /* default debug level */
   lal_errhandler = LAL_ERR_EXIT;
@@ -195,6 +195,9 @@ int main( INT4 argc, CHAR *argv[] )
   LAL_CALL( LALRegisterREALUserVar( &status, "minSz2", 0, UVAR_OPTIONAL, "Min. z-Spin of second BH", &uvar_minSz2),  &status);
   LAL_CALL( LALRegisterREALUserVar( &status, "maxSz1", 0, UVAR_OPTIONAL, "Max. z-spin of first BH", &uvar_maxSz1),  &status);
   LAL_CALL( LALRegisterREALUserVar( &status, "maxSz2", 0, UVAR_OPTIONAL, "Max. z-spin of second BH", &uvar_maxSz2),  &status);
+
+  LAL_CALL( LALRegisterINTUserVar( &status, "minMode", 0, UVAR_OPTIONAL, "Min mode value to be injected", &uvar_minMode),  &status);
+  LAL_CALL( LALRegisterINTUserVar( &status, "maxMode", 0, UVAR_OPTIONAL, "Max mode value to be injected", &uvar_maxMode),  &status);
 
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "nrGroup", 0, UVAR_OPTIONAL, "NR group", &uvar_nrGroup), &status);
 
@@ -294,8 +297,8 @@ int main( INT4 argc, CHAR *argv[] )
 
       strcpy(this_inj->numrel_data,frInCache->frameFiles[k].url);
 
-      this_inj->numrel_mode_min = minMode;
-      this_inj->numrel_mode_max = maxMode;
+      this_inj->numrel_mode_min = uvar_minMode;
+      this_inj->numrel_mode_max = uvar_maxMode;
 
     } /* end if (metadata is in range) */   
 
