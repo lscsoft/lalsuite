@@ -30,10 +30,14 @@
 #include <lal/AVFactories.h>
 #include <lal/ConfigFile.h>
 #include <lal/LALFrameIO.h>
+#include <lal/FrameStream.h>
 #include <lal/LALDetectors.h>
 #include <lal/NRWaveIO.h>
+#include <lal/NRWaveInject.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
+
+#include <FrameL.h>
 
 #include <lalapps.h>
 
@@ -61,6 +65,7 @@ RCSID("$Id$");
 /* function prototypes */
 static void print_usage(FILE *ptr, CHAR *program);
 static CHAR* channel_name(CHAR *polarisation, UINT4 l, UINT4 m, CHAR *channel);
+
 
 /* verbose flag */
 extern int vrbflg;
@@ -396,6 +401,8 @@ INT4 main(INT4 argc, CHAR **argv)
     exit(1);
   }
 
+
+
   /*
    * clear memory
    */
@@ -539,39 +546,5 @@ static CHAR* channel_name(CHAR *polarisation, UINT4 l, UINT4 m, CHAR *channel)
 }
 
 
-/* function for reading the NR frame */
-/* void LALReadNRFrame(LALStatus *status, */
-/* 		    REAL4TimeVectorSeries **out, */
-/* 		    FrStream  *stream, */
-/* 		    CHAR      *polarisation, */
-/* 		    INT4      modeL, */
-/* 		    INT4      modeM) */
-/* { */
 
-/*   FrChanIn chan; */
-/*   CHAR *name=NULL; */
-
-/*   INITSTATUS (status, "LALReadNRFrame", rcsid); */
-/*   ATTATCHSTATUSPTR (status); */
-
-/*   chan.type = LAL_SIM_CHAN; */
-
-/*   name = channel_name(polarisation,2*modeL + modeM */
-
-/*   typedef struct */
-/*     tagFrChanIn */
-/*   { */
-/*     const CHAR *name; */
-/*   ChannelType type; */
-/*   } */
-/*   FrChanIn; */
-
-
-/*   DETATCHSTATUSPTR (status); */
-
-/*   /\* normal exit *\/ */
-/*   RETURN (status); */
-
-
-/* } */
 
