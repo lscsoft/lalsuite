@@ -17,7 +17,8 @@
 *  MA  02111-1307  USA
 */
 
-
+#ifndef _LALAPPS_INSPIRAL_H
+#define _LALAPPS_INSPIRAL_H
 
 #include <lalapps.h>
 #include <lal/LALConfig.h>
@@ -43,6 +44,10 @@
 #include <lal/FrameStream.h>
 
 
+#ifdef  __cplusplus   /* C++ protection. */
+extern "C" {
+#endif
+
 REAL4 compute_candle_distance(
     REAL4 candleM1, 
     REAL4 candleM2,
@@ -66,3 +71,10 @@ SummValueTable **add_summvalue_table(
 void AddNumRelStrainModes( LALStatus              *status,
 			   REAL4TimeVectorSeries  **outStrain,
 			   SimInspiralTable *thisinj);
+
+
+#ifdef  __cplusplus
+}                /* Close C++ protection */
+#endif
+
+#endif           /* Close double-include protection */
