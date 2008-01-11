@@ -1,4 +1,6 @@
 /*
+ * Copyright (C) 2007 Chris Messenger
+ * Copyright (C) 2007 Reinhard Prix
  * Copyright (C) 2005, 2006 Reinhard Prix, Iraj Gholami
  * Copyright (C) 2004 Reinhard Prix
  * Copyright (C) 2002, 2003, 2004 M.A. Papa, X. Siemens, Y. Itoh
@@ -20,7 +22,7 @@
  */
 
 /*********************************************************************************/
-/** \author R. Prix, I. Gholami, Y. Ioth, Papa, X. Siemens
+/** \author R. Prix, I. Gholami, Y. Ioth, Papa, X. Siemens, C. Messenger
  * \file 
  * \brief
  * Calculate the F-statistic for a given parameter-space of pulsar GW signals.
@@ -53,6 +55,7 @@ int finite(double);
 
 #include <lal/LogPrintf.h>
 #include <lal/DopplerFullScan.h>
+#include <lal/BinaryPulsarTiming.h>
 
 #include <lalapps.h>
 
@@ -125,6 +128,8 @@ typedef struct
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {
+  REAL8 Alpha;                              /**< sky position alpha in radians */
+  REAL8 Delta;                              /**< sky position delta in radians */
   REAL8 Tsft;                               /**< length of one SFT in seconds */
   LIGOTimeGPS refTime;			    /**< reference-time for pulsar-parameters in SBB frame */
   DopplerRegion searchRegion;		    /**< parameter-space region (at *internalRefTime*) to search over */
@@ -153,10 +158,12 @@ typedef struct {
   REAL8 dFreq;			/**< user-specifyable Frequency stepsize */
 
   REAL8 Alpha;			/**< equatorial right-ascension in rad */
+  CHAR *RA;
   REAL8 dAlpha;
   REAL8 AlphaBand;
 
   REAL8 Delta;			/**< equatorial declination in rad */
+  CHAR *Dec;
   REAL8 dDelta;
   REAL8 DeltaBand;
 
@@ -171,6 +178,15 @@ typedef struct {
   REAL8 f3dot;			/**< 3rd spindown d^3Freq/dt^3 */
   REAL8 df3dot;
   REAL8 f3dotBand;
+
+  /* orbital parameters */
+  REAL8 orbitPeriod;		/**< binary-system orbital period in s */
+  REAL8 orbitasini;		/**< amplitude of radial motion */
+  INT4 orbitTpSSBsec;		/**< time of periapse passage */
+  INT4 orbitTpSSBnan;
+  REAL8 orbitTpSSBMJD;		/**< in MJD format */
+  REAL8 orbitArgp;		/**< angle of periapse */
+  REAL8 orbitEcc;		/**< orbital eccentricity */
 
   /* --- */
   REAL8 TwoFthreshold;		/**< output threshold on 2F */
@@ -197,6 +213,7 @@ typedef struct {
 
   INT4 RngMedWindow;		/**< running-median window for noise floor estimation */
   REAL8 refTime;		/**< reference-time for definition of pulsar-parameters [GPS] */
+  REAL8 refTimeMJD;		/**< the same in MJD */
 
   REAL8 internalRefTime;	/**< which reference time to use internally for template-grid */
   INT4 SSBprecision;		/**< full relativistic timing or Newtonian */
@@ -270,6 +287,7 @@ int main(int argc,char *argv[])
   Fcomponents Fstat = empty_Fcomponents;
   PulsarDopplerParams dopplerpos = empty_PulsarDopplerParams;		/* current search-parameters */
   FstatCandidate loudestFCand = empty_FstatCandidate, thisFCand = empty_FstatCandidate;
+  BinaryOrbitParams *orbitalParams = NULL;
 
   UserInput_t uvar = empty_UserInput;
   ConfigVariables GV = empty_ConfigVariables;		/**< global container for various derived configuration settings */
@@ -318,6 +336,31 @@ int main(int argc,char *argv[])
       fprintf (fpFstat, "%s", GV.logstring );
     } /* if outputFstat */
 
+  /* setup binary parameters */
+  orbitalParams = NULL;
+  if ( LALUserVarWasSet(&uvar.orbitasini) && (uvar.orbitasini > 0) )
+    {
+      orbitalParams = (BinaryOrbitParams *)LALCalloc(1,sizeof(BinaryOrbitParams));
+      orbitalParams->tp.gpsSeconds = uvar.orbitTpSSBsec;
+      orbitalParams->tp.gpsNanoSeconds = uvar.orbitTpSSBnan;
+      orbitalParams->argp = uvar.orbitArgp;
+      orbitalParams->asini = uvar.orbitasini;
+      orbitalParams->ecc = uvar.orbitEcc;
+      orbitalParams->period = uvar.orbitPeriod;
+      if (LALUserVarWasSet(&uvar.orbitTpSSBMJD))
+	{
+	  /* convert MJD peripase to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
+	  REAL8 GPSfloat;
+	  GPSfloat = LALTDBMJDtoGPS(uvar.orbitTpSSBMJD);
+	  XLALFloatToGPS(&(orbitalParams->tp),GPSfloat);
+	}
+      else
+	{
+	  orbitalParams->tp.gpsSeconds = uvar.orbitTpSSBsec;
+	  orbitalParams->tp.gpsNanoSeconds = uvar.orbitTpSSBnan;
+	}
+    }
+
   /* count number of templates */
   numTemplates = XLALNumDopplerTemplates ( GV.scanState );
 
@@ -331,6 +374,8 @@ int main(int argc,char *argv[])
 
   while ( XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0 )
     {
+      dopplerpos.orbit = orbitalParams;		/* temporary solution until binary-gridding exists */
+      
       /* main function call: compute F-statistic for this template */
       LAL_CALL( ComputeFStat(&status, &Fstat, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights, 
 			     GV.multiDetStates, &GV.CFparams, &cfBuffer ), &status );
@@ -345,7 +390,7 @@ int main(int argc,char *argv[])
 	  tickCounter = 0.0;
 	  LogPrintf (LOG_DEBUG, "Progress: %g/%g = %.2f %% done, Estimated time left: %.0f s\n",
 		     templateCounter, numTemplates, templateCounter/numTemplates * 100.0, timeLeft);
-	} 
+	}
       
       /* sanity check on the result */
       if ( !finite(Fstat.F) )
@@ -355,6 +400,13 @@ int main(int argc,char *argv[])
 	  LogPrintf (LOG_CRITICAL, "[Alpha,Delta] = [%.16g,%.16g],\nfkdot=[%.16g,%.16g,%.16g,%16.g]\n",
 		     dopplerpos.Alpha, dopplerpos.Delta, 
 		     dopplerpos.fkdot[0], dopplerpos.fkdot[1], dopplerpos.fkdot[2], dopplerpos.fkdot[3] );
+	  if (dopplerpos.orbit != NULL) 
+	    {
+	      LogPrintf (LOG_CRITICAL, "tp = {%d s, %d ns}, argp = %f, asini = %f, ecc = %f, period = %f\n", 
+			 dopplerpos.orbit->tp.gpsSeconds, dopplerpos.orbit->tp.gpsNanoSeconds, 
+			 dopplerpos.orbit->argp, dopplerpos.orbit->asini,
+			 dopplerpos.orbit->ecc, dopplerpos.orbit->period);
+	    }
 	  return -1;
 	}
       
@@ -525,9 +577,12 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->FreqBand = 0.0;
   uvar->Alpha 	= 0.0;
   uvar->Delta 	= 0.0;
+  uvar->RA       = NULL;
+  uvar->Dec      = NULL;
   uvar->AlphaBand = 0;
   uvar->DeltaBand = 0;
   uvar->skyRegion = NULL;
+
   uvar->ephemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
   strcpy (uvar->ephemYear, EPHEM_YEARS);
 
@@ -550,6 +605,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->df3dot    = 0.0;
 
   /* define default orbital semi-major axis */
+  uvar->orbitasini = 0.0;
+
   uvar->TwoFthreshold = 10.0;
   uvar->NumCandidatesToKeep = 0;
   uvar->clusterOnScanline = 0;
@@ -588,6 +645,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   LALregREALUserStruct(status, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
   LALregREALUserStruct(status, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
+  LALregSTRINGUserStruct(status,RA, 		 0 , UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in format hh:mm:ss.sss");
+  LALregSTRINGUserStruct(status,Dec, 		 0 , UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in format dd:mm:ss.sss");
   LALregREALUserStruct(status, 	Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz");
   LALregREALUserStruct(status, 	f1dot, 		's', UVAR_OPTIONAL, "First spindown parameter  dFreq/dt");
   LALregREALUserStruct(status, 	f2dot, 		 0 , UVAR_OPTIONAL, "Second spindown parameter d^2Freq/dt^2");
@@ -607,6 +666,14 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregREALUserStruct(status, 	df2dot, 	 0 , UVAR_OPTIONAL, "Stepsize for f2dot [Default: 1/(2T^3)");
   LALregREALUserStruct(status, 	df3dot, 	 0 , UVAR_OPTIONAL, "Stepsize for f3dot [Default: 1/(2T^4)");
 
+  LALregREALUserStruct(status, 	orbitPeriod, 	 0,  UVAR_OPTIONAL, "Orbital period in seconds");
+  LALregREALUserStruct(status, 	orbitasini, 	 0,  UVAR_OPTIONAL, "Orbital projected semi-major axis (normalised by the speed of light) in seconds [Default: 0.0]");
+  LALregINTUserStruct(status, 	orbitTpSSBsec, 	 0,  UVAR_OPTIONAL, "The true time of periapsis in the SSB frame (seconds part) in GPS seconds");
+  LALregINTUserStruct(status, 	orbitTpSSBnan, 	 0,  UVAR_OPTIONAL, "The true time of periapsis in the SSB frame (nanoseconds part)");
+  LALregREALUserStruct(status, 	orbitTpSSBMJD, 	 0,  UVAR_OPTIONAL, "The true time of periapsis in the SSB frame (in MJD)");
+  LALregREALUserStruct(status, 	orbitArgp, 	 0,  UVAR_OPTIONAL, "The orbital argument of periapse in radians");
+  LALregREALUserStruct(status, 	orbitEcc, 	 0,  UVAR_OPTIONAL, "The orbital eccentricity");
+  
   LALregSTRINGUserStruct(status,skyRegion, 	'R', UVAR_OPTIONAL, "ALTERNATIVE: Specify sky-region by polygon (or use 'allsky')");
   LALregSTRINGUserStruct(status,DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (multi-IFO) input SFT-files"); 
   LALregSTRINGUserStruct(status,IFO, 		'I', UVAR_OPTIONAL, "Detector: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
@@ -622,6 +689,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregSTRINGUserStruct(status,outputLogfile,	 0,  UVAR_OPTIONAL, "Name of log-file identifying the code + search performed");
   LALregSTRINGUserStruct(status,gridFile,	 0,  UVAR_OPTIONAL, "Load grid from this file: sky-grid or full-grid depending on --gridType.");
   LALregREALUserStruct(status,	refTime,	 0,  UVAR_OPTIONAL, "SSB reference time for pulsar-parameters [Default: startTime]");
+  LALregREALUserStruct(status,	refTimeMJD,	 0,  UVAR_OPTIONAL, "SSB reference time for pulsar-parameters in MJD [Default: startTime]");
   LALregREALUserStruct(status, 	dopplermax, 	'q', UVAR_OPTIONAL, "Maximum doppler shift expected");  
 
   LALregSTRINGUserStruct(status,outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
@@ -777,6 +845,13 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     {
       TRY ( LALFloatToGPS (status->statusPtr, &(cfg->refTime), &uvar->refTime), status);
     } 
+  else if (LALUserVarWasSet(&uvar->refTimeMJD)) 
+    {
+      /* convert MJD peripase to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
+      REAL8 GPSfloat;
+      GPSfloat = LALTDBMJDtoGPS(uvar->refTimeMJD);
+      XLALFloatToGPS(&(cfg->refTime),GPSfloat);
+    }
   else
     cfg->refTime = startTime;
 
@@ -904,11 +979,25 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
   }
 
+  /* define sky position variables from user input */
+  if (LALUserVarWasSet(&uvar->RA)) 
+    {
+      /* use Matt Pitkins conversion code found in lal/packages/pulsar/src/BinaryPulsarTiming.c */
+      cfg->Alpha = LALDegsToRads(uvar->RA, "alpha");
+    }
+  else cfg->Alpha = uvar->Alpha;
+  if (LALUserVarWasSet(&uvar->Dec)) 
+    {
+      /* use Matt Pitkins conversion code found in lal/packages/pulsar/src/BinaryPulsarTiming.c */
+      cfg->Delta = LALDegsToRads(uvar->Dec, "delta");
+    }
+  else cfg->Delta = uvar->Delta;
+
   { /* ----- set up Doppler region (at internalRefTime) to scan ----- */
     LIGOTimeGPS internalRefTime = empty_LIGOTimeGPS;
     PulsarSpinRange spinRangeInt = empty_PulsarSpinRange;
-    BOOLEAN haveAlphaDelta = LALUserVarWasSet(&uvar->Alpha) && LALUserVarWasSet(&uvar->Delta);
-
+    BOOLEAN haveAlphaDelta = (LALUserVarWasSet(&uvar->Alpha) && LALUserVarWasSet(&uvar->Delta)) || (LALUserVarWasSet(&uvar->RA) && LALUserVarWasSet(&uvar->Dec));
+    
     if (uvar->skyRegion)
       {
 	cfg->searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar->skyRegion)+1);
@@ -920,7 +1009,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     else if (haveAlphaDelta)    /* parse this into a sky-region */
       {
 	TRY ( SkySquare2String( status->statusPtr, &(cfg->searchRegion.skyRegionString),
-				uvar->Alpha, uvar->Delta, uvar->AlphaBand, uvar->DeltaBand), status);
+				cfg->Alpha, cfg->Delta,	uvar->AlphaBand, uvar->DeltaBand), status);
       }
 
     if ( LALUserVarWasSet ( &uvar->internalRefTime ) ) {
@@ -1179,6 +1268,19 @@ checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }      
 
+  /* check that only alpha OR RA has been set */
+  if ( LALUserVarWasSet(&uvar->Alpha) && (LALUserVarWasSet(&uvar->RA)) )
+    {
+      LALPrintError ("\nInput either Alpha OR RA, not both!\n\n");
+      ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
+    }
+  /* check that only delta OR Dec has been set */
+  if ( LALUserVarWasSet(&uvar->Delta) && (LALUserVarWasSet(&uvar->Dec)) )
+    {
+      LALPrintError ("\nInput either Delta OR Dec, not both!\n\n");
+      ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
+    }
+
   /* check for negative stepsizes in Freq, Alpha, Delta */
   if ( LALUserVarWasSet(&uvar->dAlpha) && (uvar->dAlpha < 0) )
     {
@@ -1196,6 +1298,55 @@ checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
 
+  /* check that reference time has not been set twice */
+  if ( LALUserVarWasSet(&uvar->refTime) && LALUserVarWasSet(&uvar->refTimeMJD) )
+    {
+      LALPrintError ("\nSet only uvar->refTime OR uvar->refTimeMJD OR leave empty to use SSB start time as Tref!\n\n");
+      ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
+    }
+
+  /* binary parameter checks */
+  if ( LALUserVarWasSet(&uvar->orbitPeriod) && (uvar->orbitPeriod <= 0) )
+    {
+      LALPrintError ("\nNegative or zero value of orbital period not allowed!\n\n");
+      ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
+    }
+  if ( LALUserVarWasSet(&uvar->orbitasini) && (uvar->orbitasini < 0) )
+    {
+      LALPrintError ("\nNegative value of projected orbital semi-major axis not allowed!\n\n");
+      ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
+    }
+   if ( LALUserVarWasSet(&uvar->orbitTpSSBMJD) && (LALUserVarWasSet(&uvar->orbitTpSSBsec) || LALUserVarWasSet(&uvar->orbitTpSSBnan)))
+    {
+      LALPrintError ("\nSet only uvar->orbitTpSSBMJD OR uvar->orbitTpSSBsec/nan to specify periapse passage time!\n\n");
+      ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
+    }
+   if ( LALUserVarWasSet(&uvar->orbitTpSSBMJD) && (uvar->orbitTpSSBMJD < 0) )
+    {
+      LALPrintError ("\nNegative value of the true time of orbital periapsis not allowed!\n\n");
+      ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
+    }
+  if ( LALUserVarWasSet(&uvar->orbitTpSSBsec) && (uvar->orbitTpSSBsec < 0) )
+    {
+      LALPrintError ("\nNegative value of seconds part of the true time of orbital periapsis not allowed!\n\n");
+      ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
+    }
+  if ( LALUserVarWasSet(&uvar->orbitTpSSBnan) && ((uvar->orbitTpSSBnan < 0) || (uvar->orbitTpSSBnan >= 1e9)) )
+    {
+      LALPrintError ("\nTime of nanoseconds part the true time of orbital periapsis must lie in range (0, 1e9]!\n\n");
+      ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
+    }
+  if ( LALUserVarWasSet(&uvar->orbitArgp) && ((uvar->orbitArgp < 0) || (uvar->orbitArgp >= LAL_TWOPI)) )
+    {
+      LALPrintError ("\nOrbital argument of periapse must lie in range [0 2*PI)!\n\n");
+      ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
+    }
+  if ( LALUserVarWasSet(&uvar->orbitEcc) && (uvar->orbitEcc < 0) )
+    {
+      LALPrintError ("\nNegative value of orbital eccentricity not allowed!\n\n");
+      ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
+    }
+
   /* grid-related checks */
   {
     BOOLEAN haveAlphaBand = LALUserVarWasSet( &uvar->AlphaBand );
@@ -1204,7 +1355,7 @@ checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
     BOOLEAN useSkyGridFile, useFullGridFile, haveMetric, useMetric;
 
     haveSkyRegion  	= (uvar->skyRegion != NULL);
-    haveAlphaDelta 	= (LALUserVarWasSet(&uvar->Alpha) && LALUserVarWasSet(&uvar->Delta) );
+    haveAlphaDelta 	= (LALUserVarWasSet(&uvar->Alpha) && LALUserVarWasSet(&uvar->Delta) ) || (LALUserVarWasSet(&uvar->RA) && LALUserVarWasSet(&uvar->Dec) );
     haveGridFile      	= (uvar->gridFile != NULL);
     useSkyGridFile   	= (uvar->gridType == GRID_FILE_SKYGRID);
     useFullGridFile	= (uvar->gridType == GRID_FILE_FULLGRID);
@@ -1345,6 +1496,17 @@ write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, co
   fprintf (fp, "f3dot    = % .16g;\n", pulsarParams->Doppler.fkdot[3] );
 
   fprintf (fp, "\n");
+
+  /* Binary parameters */
+  if (pulsarParams->Doppler.orbit) 
+    {
+      fprintf (fp, "orbitPeriod       = % .16g;\n", pulsarParams->Doppler.orbit->period );
+      fprintf (fp, "orbitasini        = % .16g;\n", pulsarParams->Doppler.orbit->asini );
+      fprintf (fp, "orbitTpSSBsec     = % .8d;\n", pulsarParams->Doppler.orbit->tp.gpsSeconds );
+      fprintf (fp, "orbitTpSSBnan     = % .8d;\n", pulsarParams->Doppler.orbit->tp.gpsNanoSeconds );
+      fprintf (fp, "orbitArgp         = % .16g;\n", pulsarParams->Doppler.orbit->argp );
+      fprintf (fp, "orbitEcc          = % .16g;\n", pulsarParams->Doppler.orbit->ecc );
+    }
 
   /* Amplitude Modulation Coefficients */
   fprintf (fp, "Ad       = % .6g;\n", Fcand->Mmunu.Ad );

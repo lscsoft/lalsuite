@@ -43,6 +43,7 @@
 #include <lal/SFTfileIO.h>
 #include <lal/GeneratePulsarSignal.h>
 #include <lal/TimeSeries.h>
+#include <lal/BinaryPulsarTiming.h>
 
 
 RCSID ("$Id$");
@@ -109,7 +110,7 @@ void FreeMem (LALStatus *, ConfigVars_t *cfg);
 void InitUserVars (LALStatus *);
 void InitMakefakedata (LALStatus *, ConfigVars_t *cfg, int argc, char *argv[]);
 void AddGaussianNoise (LALStatus *, REAL4TimeSeries *outSeries, REAL4TimeSeries *inSeries, REAL4 sigma);
-void GetOrbitalParams (LALStatus *, BinaryOrbitParams *orbit);
+/* void GetOrbitalParams (LALStatus *, BinaryOrbitParams *orbit); */
 void WriteMFDlog (LALStatus *, char *argv[], const char *logfile);
 
 
@@ -180,6 +181,7 @@ CHAR *uvar_ephemYear;		/**< Year (or range of years) of ephemeris files to be us
 
 /* pulsar parameters [REQUIRED] */
 REAL8 uvar_refTime;		/**< Pulsar reference time tRef in SSB ('0' means: use startTime converted to SSB) */
+REAL8 uvar_refTimeMJD;          /**< Pulsar reference time tRef in MJD ('0' means: use startTime converted to SSB) */
 
 REAL8 uvar_h0;			/**< overall signal amplitude h0 */
 REAL8 uvar_cosi;		/**< cos(iota) of inclination angle iota */
@@ -190,6 +192,8 @@ REAL8 uvar_phi0;		/**< Initial phase phi */
 
 REAL8 uvar_Alpha;		/**< Right ascension [radians] alpha of pulsar */
 REAL8 uvar_Delta;		/**< Declination [radians] delta of pulsar */
+CHAR *uvar_RA;		        /**< Right ascension [hh:mm:ss.ssss] alpha of pulsar */
+CHAR *uvar_Dec;	         	/**< Declination [dd:mm:ss.ssss] delta of pulsar */
 REAL8 uvar_longitude;		/**< [DEPRECATED] Right ascension [radians] alpha of pulsar */
 REAL8 uvar_latitude;		/**< [DEPRECATED] Declination [radians] delta of pulsar */
 
@@ -202,12 +206,13 @@ REAL8 uvar_f3dot;		/**< Third spindown parameter f''' */
 
 /* orbital parameters [OPTIONAL] */
 
-REAL8 uvar_orbitSemiMajorAxis;	/**< Projected orbital semi-major axis in seconds (a/c) */
-REAL8 uvar_orbitEccentricity;	/**< Orbital eccentricity */
-INT4  uvar_orbitTperiSSBsec;	/**< 'observed' (SSB) time of periapsis passage. Seconds. */
-INT4  uvar_orbitTperiSSBns;	/**< 'observed' (SSB) time of periapsis passage. Nanoseconds. */
+REAL8 uvar_orbitasini;	        /**< Projected orbital semi-major axis in seconds (a/c) */
+REAL8 uvar_orbitEcc;	        /**< Orbital eccentricity */
+INT4  uvar_orbitTpSSBsec;	/**< 'observed' (SSB) time of periapsis passage. Seconds. */
+INT4  uvar_orbitTpSSBnan;	/**< 'observed' (SSB) time of periapsis passage. Nanoseconds. */
+REAL8 uvar_orbitTpSSBMJD;       /**< 'observed' (SSB) time of periapsis passage. MJD. */
 REAL8 uvar_orbitPeriod;		/**< Orbital period (seconds) */
-REAL8 uvar_orbitArgPeriapse;	/**< Argument of periapsis (radians) */
+REAL8 uvar_orbitArgp;	        /**< Argument of periapsis (radians) */
 
 /* precision-level of signal-generation */
 BOOLEAN uvar_exactSignal;	/**< generate signal timeseries as exactly as possible (slow) */
@@ -529,6 +534,8 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
     BOOLEAN have_latitude  = LALUserVarWasSet ( &uvar_latitude );
     BOOLEAN have_Alpha  = LALUserVarWasSet ( &uvar_Alpha );
     BOOLEAN have_Delta  = LALUserVarWasSet ( &uvar_Delta );
+    BOOLEAN have_RA = LALUserVarWasSet ( &uvar_RA );
+    BOOLEAN have_Dec = LALUserVarWasSet ( &uvar_Dec );
 
     /* ----- {h0,cosi} or {aPlus,aCross} ----- */
     if ( (have_aPlus || have_aCross) && ( have_h0 || have_cosi ) ) {
@@ -577,8 +584,8 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       cfg->pulsar.Doppler.fkdot[0] = uvar_f0;
 
     /* ----- skypos ----- */
-    if ( (have_Alpha || have_Delta) && ( have_longitude || have_latitude ) ) {
-      printf ( "\nUse EITHER {Alpha, Delta} [preferred] OR {longitude,latitude} [deprecated]\n\n");
+    if ( (have_Alpha || have_Delta) && ( have_longitude || have_latitude ) && (have_RA || have_Dec) ) {
+      printf ( "\nUse EITHER {Alpha, Delta} [preferred] OR {RA, Dec} [preferred] OR {longitude,latitude} [deprecated]\n\n");
       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
     }
     if ( (have_Alpha && !have_Delta) || ( !have_Alpha && have_Delta ) ) {
@@ -589,10 +596,19 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       printf ( "\nSpecify skyposition: need BOTH --longitude and --latitude!\n\n");
       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
     }
+    if ( (have_RA && !have_Dec) || ( !have_RA && have_Dec ) ) {
+      printf ( "\nSpecify skyposition: need BOTH --RA and --Dec!\n\n");
+      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+    }
     if ( have_Alpha )
       {
 	cfg->pulsar.Doppler.Alpha = uvar_Alpha;
 	cfg->pulsar.Doppler.Delta = uvar_Delta;
+      }
+    else if ( have_RA ) 
+      {
+	cfg->pulsar.Doppler.Alpha = LALDegsToRads(uvar_RA,"alpha");
+	cfg->pulsar.Doppler.Delta = LALDegsToRads(uvar_Dec,"delta");
       }
     else
       {
@@ -941,22 +957,23 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
   /* Consistency check: if any orbital parameters specified, we need all of them (except for nano-seconds)! */ 
   {
-    BOOLEAN set1 = LALUserVarWasSet(&uvar_orbitSemiMajorAxis);
-    BOOLEAN set2 = LALUserVarWasSet(&uvar_orbitEccentricity);
+    BOOLEAN set1 = LALUserVarWasSet(&uvar_orbitasini);
+    BOOLEAN set2 = LALUserVarWasSet(&uvar_orbitEcc);
     BOOLEAN set3 = LALUserVarWasSet(&uvar_orbitPeriod);
-    BOOLEAN set4 = LALUserVarWasSet(&uvar_orbitArgPeriapse);
-    BOOLEAN set5 = LALUserVarWasSet(&uvar_orbitTperiSSBsec);
-    BOOLEAN set6 = LALUserVarWasSet(&uvar_orbitTperiSSBns);
+    BOOLEAN set4 = LALUserVarWasSet(&uvar_orbitArgp);
+    BOOLEAN set5 = LALUserVarWasSet(&uvar_orbitTpSSBsec);
+    BOOLEAN set6 = LALUserVarWasSet(&uvar_orbitTpSSBnan);
+    BOOLEAN set7 = LALUserVarWasSet(&uvar_orbitTpSSBMJD);
     BinaryOrbitParams *orbit = NULL;
 
-    if (set1 || set2 || set3 || set4 || set5 || set6)
+    if (set1 || set2 || set3 || set4 || set5 || set6 || set7)
     {
-      if ( (uvar_orbitSemiMajorAxis > 0) && !(set1 && set2 && set3 && set4 && set5) ) 
+      if ( (uvar_orbitasini > 0) && !(set1 && set2 && set3 && set4 && (set5 || set7)) ) 
 	{
 	  printf("\nPlease either specify  ALL orbital parameters or NONE!\n\n");
 	  ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
 	}
-      if ( (uvar_orbitEccentricity < 0) || (uvar_orbitEccentricity > 1) )
+      if ( (uvar_orbitEcc < 0) || (uvar_orbitEcc > 1) )
 	{
 	  printf ("\nEccentricity has to lie within [0, 1]\n\n");
 	  ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
@@ -964,8 +981,31 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       if ( (orbit = LALCalloc ( 1, sizeof(BinaryOrbitParams) )) == NULL ){
 	ABORT (status, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM);
       }
-      TRY ( GetOrbitalParams(status->statusPtr, orbit), status);
-      cfg->pulsar.Doppler.orbit = orbit;
+      if (set7 && (!set5 && !set6))
+	{
+	  /* convert MJD peripase to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
+	  REAL8 GPSfloat;
+	  GPSfloat = LALTDBMJDtoGPS(uvar_orbitTpSSBMJD);
+	  XLALFloatToGPS(&(orbit->tp),GPSfloat);
+	}
+      else if ((set5 && set6) && !set7)
+	{
+	  orbit->tp.gpsSeconds = uvar_orbitTpSSBsec;
+	  orbit->tp.gpsNanoSeconds = uvar_orbitTpSSBnan;
+	}
+      else if ((set7 && set5) || (set7 && set6)) 
+	{
+	  printf("\nPlease either specify time of periapse in GPS OR MJD, not both!\n\n");
+	  ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
+	}
+     
+      /* fill in orbital parameter structure */
+      orbit->period = uvar_orbitPeriod;
+      orbit->asini = uvar_orbitasini;
+      orbit->argp = uvar_orbitArgp;
+      orbit->ecc = uvar_orbitEcc;
+
+      cfg->pulsar.Doppler.orbit = orbit;     /* struct copy */
     } /* if one or more orbital parameters were set */
     else
       cfg->pulsar.Doppler.orbit = NULL;
@@ -990,7 +1030,24 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
 
   /* ----- set "pulsar reference time", i.e. SSB-time at which pulsar params are defined ---------- */
-  TRY ( LALFloatToGPS(status->statusPtr, &(cfg->pulsar.Doppler.refTime), &uvar_refTime), status);
+  if (LALUserVarWasSet(&uvar_refTime) && LALUserVarWasSet(&uvar_refTimeMJD))
+    {
+      printf ( "\nUse only one of '--refTime' and '--refTimeMJD' to specify SSB reference time!\n\n");
+      ABORT ( status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD );
+    }
+  else if (LALUserVarWasSet(&uvar_refTime))
+    {
+      TRY ( LALFloatToGPS(status->statusPtr, &(cfg->pulsar.Doppler.refTime), &uvar_refTime), status);
+    }
+  else if (LALUserVarWasSet(&uvar_refTimeMJD))
+    {
+      
+      /* convert MJD to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
+      REAL8 GPSfloat;
+      GPSfloat = LALTDBMJDtoGPS(uvar_refTimeMJD);
+      XLALFloatToGPS(&(cfg->pulsar.Doppler.refTime),GPSfloat);
+    }
+
 
   /* ---------- has the user specified an actuation-function file ? ---------- */
   if ( uvar_actuation ) 
@@ -1068,7 +1125,8 @@ InitUserVars (LALStatus *status)
   uvar_generationMode = GENERATE_ALL_AT_ONCE;
 
   uvar_refTime = 0.0;
-
+  uvar_refTimeMJD = 0.0;
+      
   uvar_actuation = NULL;
   uvar_actuationScale = - 1.0;	/* seems to be the LIGO-default */
 
@@ -1116,9 +1174,12 @@ InitUserVars (LALStatus *status)
 
   /* pulsar params */
   LALregREALUserVar(status,   refTime, 		'S', UVAR_OPTIONAL, "Pulsar reference time in SSB (if 0: use startTime -> SSB)");
+  LALregREALUserVar(status,   refTimeMJD, 	 0 , UVAR_OPTIONAL, "Pulsar reference time in SSB in MJD (if 0: use startTime -> SSB)");
 
   LALregREALUserVar(status,   Alpha,	 	 0, UVAR_OPTIONAL, "Right ascension/longitude [radians] of pulsar");
   LALregREALUserVar(status,   Delta, 	 	 0, UVAR_OPTIONAL, "Declination/latitude [radians] of pulsar");
+  LALregSTRINGUserVar(status, RA,	 	 0, UVAR_OPTIONAL, "Right ascension/longitude [hh:mm:ss.ssss] of pulsar");
+  LALregSTRINGUserVar(status, Dec, 	 	 0, UVAR_OPTIONAL, "Declination/latitude [dd:mm:ss.ssss] of pulsar");
   LALregREALUserVar(status,   longitude,	 0, UVAR_DEVELOPER, "[DEPRECATED] Use --Alpha instead!");
   LALregREALUserVar(status,   latitude, 	 0, UVAR_DEVELOPER, "[DEPRECATED] Use --Delta instead!");
 
@@ -1137,12 +1198,13 @@ InitUserVars (LALStatus *status)
   LALregREALUserVar(status,   f3dot,  	 	 0, UVAR_OPTIONAL, "Third spindown parameter f'''");
 
   /* binary-system orbital parameters */
-  LALregREALUserVar(status,   orbitSemiMajorAxis,0, UVAR_OPTIONAL, "Projected orbital semi-major axis in seconds (a/c)");
-  LALregREALUserVar(status,   orbitEccentricity, 0, UVAR_OPTIONAL, "Orbital eccentricity");
-  LALregINTUserVar(status,    orbitTperiSSBsec,  0, UVAR_OPTIONAL, "'observed' (SSB) time of periapsis passage. Seconds.");
-  LALregINTUserVar(status,    orbitTperiSSBns,   0, UVAR_OPTIONAL, "'observed' (SSB) time of periapsis passage. Nanoseconds.");
+  LALregREALUserVar(status,   orbitasini,        0, UVAR_OPTIONAL, "Projected orbital semi-major axis in seconds (a/c)");
+  LALregREALUserVar(status,   orbitEcc,          0, UVAR_OPTIONAL, "Orbital eccentricity");
+  LALregINTUserVar(status,    orbitTpSSBsec,     0, UVAR_OPTIONAL, "'true' (SSB) time of periapsis passage. Seconds.");
+  LALregINTUserVar(status,    orbitTpSSBnan,     0, UVAR_OPTIONAL, "'true' (SSB) time of periapsis passage. Nanoseconds.");
+  LALregREALUserVar(status,   orbitTpSSBMJD,     0, UVAR_OPTIONAL, "'true' (SSB) time of periapsis passage. MJD.");
   LALregREALUserVar(status,   orbitPeriod,       0, UVAR_OPTIONAL, "Orbital period (seconds)");
-  LALregREALUserVar(status,   orbitArgPeriapse,  0, UVAR_OPTIONAL, "Argument of periapsis (radians)");                            
+  LALregREALUserVar(status,   orbitArgp,         0, UVAR_OPTIONAL, "Argument of periapsis (radians)");                            
 
   /* noise */
   LALregSTRINGUserVar(status, noiseSFTs,	'D', UVAR_OPTIONAL, "Glob-like pattern specifying noise-SFTs to be added to signal");  
@@ -1295,40 +1357,40 @@ AddGaussianNoise (LALStatus* status, REAL4TimeSeries *outSeries, REAL4TimeSeries
  * into those required by LALGenerateSpinOrbitCW() (see LAL doc for equations)
  * 
  */
-void
-GetOrbitalParams (LALStatus *status, BinaryOrbitParams *orbit)
-{
-  REAL8 OneMEcc;
-  REAL8 OnePEcc;
-  REAL8 correction;
-  LIGOTimeGPS TperiTrue;
-  LIGOTimeGPS TperiSSB;
+/* void */
+/* GetOrbitalParams (LALStatus *status, BinaryOrbitParams *orbit) */
+/* { */
+/*   REAL8 OneMEcc; */
+/*   REAL8 OnePEcc; */
+/*   REAL8 correction; */
+/*   LIGOTimeGPS TperiTrue; */
+/*   LIGOTimeGPS TperiSSB; */
   
-  INITSTATUS( status, "GetOrbitalParams", rcsid );
-  ATTATCHSTATUSPTR (status);
+/*   INITSTATUS( status, "GetOrbitalParams", rcsid ); */
+/*   ATTATCHSTATUSPTR (status); */
   
-  OneMEcc = 1.0 - uvar_orbitEccentricity;
-  OnePEcc = 1.0 + uvar_orbitEccentricity;
+/*   OneMEcc = 1.0 - uvar_orbitEccentricity; */
+/*   OnePEcc = 1.0 + uvar_orbitEccentricity; */
 
-  /* we need to convert the observed time of periapse passage to the "true" time of periapse passage */
-  /* this correction is due to the light travel time from binary barycenter to the source at periapse */
-  /* it is what Teviets codes require */
-  TperiSSB.gpsSeconds = uvar_orbitTperiSSBsec;
-  TperiSSB.gpsNanoSeconds = uvar_orbitTperiSSBns;
-  correction = uvar_orbitSemiMajorAxis * OneMEcc * sin(uvar_orbitArgPeriapse);
+/*   /\* we need to convert the observed time of periapse passage to the "true" time of periapse passage *\/ */
+/*   /\* this correction is due to the light travel time from binary barycenter to the source at periapse *\/ */
+/*   /\* it is what Teviets codes require *\/ */
+/*   TperiSSB.gpsSeconds = uvar_orbitTperiSSBsec; */
+/*   TperiSSB.gpsNanoSeconds = uvar_orbitTperiSSBns; */
+/*   correction = uvar_orbitSemiMajorAxis * OneMEcc * sin(uvar_orbitArgPeriapse); */
 
-  TRY (LALAddFloatToGPS(status->statusPtr, &TperiTrue, &TperiSSB, -correction), status);
+/*   TRY (LALAddFloatToGPS(status->statusPtr, &TperiTrue, &TperiSSB, -correction), status); */
 
-  orbit->orbitEpoch = TperiTrue;
-  orbit->omega = uvar_orbitArgPeriapse;
-  orbit->rPeriNorm = uvar_orbitSemiMajorAxis * OneMEcc;
-  orbit->oneMinusEcc = OneMEcc;
-  orbit->angularSpeed = (LAL_TWOPI/uvar_orbitPeriod) * sqrt(OnePEcc/(OneMEcc*OneMEcc*OneMEcc));
+/*   orbit->orbitEpoch = TperiTrue; */
+/*   orbit->omega = uvar_orbitArgPeriapse; */
+/*   orbit->rPeriNorm = uvar_orbitSemiMajorAxis * OneMEcc; */
+/*   orbit->oneMinusEcc = OneMEcc; */
+/*   orbit->angularSpeed = (LAL_TWOPI/uvar_orbitPeriod) * sqrt(OnePEcc/(OneMEcc*OneMEcc*OneMEcc)); */
 
-  DETATCHSTATUSPTR (status);
-  RETURN(status);
+/*   DETATCHSTATUSPTR (status); */
+/*   RETURN(status); */
 
-} /* GetOrbitalParams() */
+/* } /\* GetOrbitalParams() *\/ */
 
 
 /***********************************************************************/
