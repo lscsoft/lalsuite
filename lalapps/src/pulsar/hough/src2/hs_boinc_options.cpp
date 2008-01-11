@@ -26,6 +26,7 @@
 
 char* rcsid = "$Id$";
 BOINC_OPTIONS eah_boinc_options;
+APP_INIT_DATA eah_app_init_data;
 
 int boinc_init_graphics_options(WORKER_FUNC_PTR worker)
 {
@@ -38,4 +39,21 @@ void set_boinc_options(void) {
   rcsid = HS_BOINC_OPTIONS_H_RCSID;
   boinc_options_defaults(eah_boinc_options);
   eah_boinc_options.backwards_compatible_graphics = 0;
+  boinc_get_init_data(eah_app_init_data);
+  /*
+    Just to remind me of the info in there:
+
+    fprintf(f,"User: %s \t\t", init_data.user_name);
+    fprintf(f,"Auth: %s \n", init_data.authenticator);
+    fprintf(f,"Team: %s \n\n", init_data.team_name);
+    fprintf(f,"Project Dir: %s \n", init_data.project_dir);  
+    fprintf(f,"BOINC Dir: %s \n", init_data.boinc_dir);  
+    fprintf(f,"\n");
+    fprintf(f,"Total Credit:\t %f\n", init_data.user_total_credit);
+    fprintf(f,"Avg Credit:\t %f\n",     init_data.user_expavg_credit);
+    fprintf(f,"\n");
+    fprintf(f,"APP Name: %s \n", init_data.app_name);
+    fprintf(f,"WU Name:  %s \n", init_data.wu_name);
+  */
+
 }
