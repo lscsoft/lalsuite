@@ -175,6 +175,7 @@ void AddNumRelStrainModes(  LALStatus              *status,
 
   /* the total mass of the binary in Mpc */
   massMpc = (thisinj->mass1 + thisinj->mass2) * LAL_MRSUN_SI / ( LAL_PC_SI * 1.0e6);
+
   
   /* loop over l values */
   for ( modeL = modeLlo; modeL <= modeLhi; modeL++ ) {
@@ -261,10 +262,11 @@ void AddNumRelStrainModes(  LALStatus              *status,
     
   } /* end loop over modeL values */
   
-  /*fprintf(stdout, "\nNR injections done\n");*/
 
   XLALFrClose( frStream );
   LALFree(frCache.frameFiles);
+
+  sumStrain->deltaT *= LAL_MTSUN_SI * (thisinj->mass1 + thisinj->mass2);
   
   *outStrain = sumStrain;
       
