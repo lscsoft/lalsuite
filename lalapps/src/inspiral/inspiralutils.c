@@ -175,7 +175,6 @@ void AddNumRelStrainModes(  LALStatus              *status,
 
   /* the total mass of the binary in Mpc */
   massMpc = (thisinj->mass1 + thisinj->mass2) * LAL_MRSUN_SI / ( LAL_PC_SI * 1.0e6);
-
   
   /* loop over l values */
   for ( modeL = modeLlo; modeL <= modeLhi; modeL++ ) {
@@ -219,7 +218,7 @@ void AddNumRelStrainModes(  LALStatus              *status,
       /* allocate memory for tempStrain */
       tempStrain = LALCalloc(1, sizeof(*tempStrain));	
       tempStrain->data = XLALCreateREAL4VectorSequence(2, len);
-      tempStrain->deltaT = seriesPlus->deltaT;
+      tempStrain->deltaT = LAL_MTSUN_SI * (thisinj->mass1 + thisinj->mass2) * seriesPlus->deltaT ;
       tempStrain->f0 = seriesPlus->f0;
       tempStrain->sampleUnits = seriesPlus->sampleUnits;
       
@@ -265,8 +264,6 @@ void AddNumRelStrainModes(  LALStatus              *status,
 
   XLALFrClose( frStream );
   LALFree(frCache.frameFiles);
-
-  sumStrain->deltaT *= LAL_MTSUN_SI * (thisinj->mass1 + thisinj->mass2);
   
   *outStrain = sumStrain;
       
