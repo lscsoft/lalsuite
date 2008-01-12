@@ -1,25 +1,10 @@
 Power tasks:
 ============
 
-+  Add ability to resample the data following inspiral code
-+  Fix threshold computing codes (PATRICK)
-+  Make sure that frame reading code does not drop times
-
-*  Add ability to output spectrum, etc. as frames
-*  Add ability to output hrss for the burst triggers found (PATRICK)
-
 o  Make sure can filter auxilliary channels
 o  Fix injection codes to be able to take arbitrary signals
         - this is a substantial job,  needs a couple of weeks
 	- could plan to work with h(t) for now
-
-
-multiPower:
-==========
-
-*  Develop a code to do multi-detector power searches
-*  Should be easy given all our current experience
-
 
 Burst-inspiral coincidence:
 ==========================
