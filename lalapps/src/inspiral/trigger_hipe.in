@@ -601,10 +601,10 @@ for grb in ext_trigs:
     for injrun in cpinj.sections():
       if opts.verbose: print "Creating DAG for", injrun
       hipe_dir = os.path.join(idirectory, injrun)
+      usertag = idirectory + "_" + injrun
       injection_analysis = hipe_run(hipe_dir, cp, grb_ifolist,
                                     opts.log_path, source_file, injrun,
-                                    usertag=idirectory + "_" + injrun,
-                                    verbose=opts.verbose)
+                                    usertag=usertag, verbose=opts.verbose)
 
       # create the master injection file and gets its content
       if opts.verbose: print "  Creating injections..."
@@ -625,8 +625,9 @@ for grb in ext_trigs:
       safetyInterval = 800 # safety time in seconds between two injections
       deltaIndex = int(safetyInterval // injInterval) + 1
       for i in range(deltaIndex):
-          inj_file_name = "%s/HL-INJECTION_%d-%d-%d.xml" % \
-              (hipe_dir, i+1, offSourceSegment[0], abs(offSourceSegment))
+          inj_file_name = "%s/HL-INJECTION_%s_%d-%d-%d.xml" % \
+              (hipe_dir, usertag, i+1, offSourceSegment[0],
+               abs(offSourceSegment))
           sims_chunk = sims[i:numberInjections:deltaIndex]
           grbsummary.write_rows(sims_chunk, lsctables.SimInspiralTable, inj_file_name)
 
