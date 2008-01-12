@@ -255,7 +255,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
           for inj in range(exttrigInjections[0], exttrigInjections[1]+1):
              if inj>0: 
                 # set the appropriate user-tag and the injection filename
-                exttrigUserTag=usertag+str(inj)
+                exttrigUserTag = usertag + "_" + str(inj)
                 injectionFile = injectionFileTemplate % exttrigUserTag
 
                 # check if the inspinj job has already be made
@@ -391,7 +391,7 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
   for inj in range(exttrigInjections[0], exttrigInjections[1]+1):
     if inj>0:
       # set the appropriate user-tag and the injection filename
-      exttrigUserTag=usertag+str(inj)
+      exttrigUserTag = usertag + "_" + str(inj)
 
     for seg in coinc_segs:
       thinca = inspiral.ThincaNode(coinc_job)
@@ -505,7 +505,7 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
         done_this_chunk = 0
         
         if inj>0:
-          exttrigUserTag=usertag+str(inj)
+          exttrigUserTag=usertag + "_" + str(inj)
           injectionFile = injectionFileTemplate % exttrigUserTag
 
         # now loop over all the data that we need to filter
