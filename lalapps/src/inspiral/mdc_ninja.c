@@ -440,8 +440,8 @@ INT4 main( INT4 argc, CHAR *argv[] )
     }
 
     /* loop over ifos */
-    for ( i = 0; i < num_ifos; i++ )  {
-
+    for ( i = 0; i < num_ifos; i++ )
+    {
       /* get ifo */
       if ( ifosFlag )
       {
@@ -450,20 +450,22 @@ INT4 main( INT4 argc, CHAR *argv[] )
       }
 
       /* loop over injections */
-      for ( thisInj = injections; thisInj; thisInj = thisInj->next ) {
-	
-	LAL_CALL( AddNumRelStrainModes( &status, &tempStrain, thisInj), &status);
-	
-	LAL_CALL( LALInjectStrainGW( &status, injData[i], tempStrain, injections, ifo, dynRange), &status);
+      for ( thisInj = injections; thisInj; thisInj = thisInj->next )
+      {
+        LAL_CALL( AddNumRelStrainModes( &status, &tempStrain, thisInj), &status);
 
-	/* set strain as unit */
-	injData[i]->sampleUnits = lalStrainUnit;
+        /* set units to ADC Counts */
+        injData[i]->sampleUnits = lalADCCountUnit;
 
-	
-	XLALDestroyREAL4VectorSequence ( tempStrain->data);
-	tempStrain->data = NULL;
-	LALFree(tempStrain);
-	tempStrain = NULL;
+        LAL_CALL( LALInjectStrainGW( &status, injData[i], tempStrain, injections, ifo, dynRange), &status);
+
+        /* set strain as unit */
+        injData[i]->sampleUnits = lalStrainUnit;
+
+        XLALDestroyREAL4VectorSequence ( tempStrain->data);
+        tempStrain->data = NULL;
+        LALFree(tempStrain);
+        tempStrain = NULL;
 
       } /* loop over injectionsj */
 
