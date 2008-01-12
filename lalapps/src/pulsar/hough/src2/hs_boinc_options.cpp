@@ -22,7 +22,6 @@
 
 #include "hs_boinc_options.h"
 #include "boinc_api.h"
-#include "graphics_api.h"
 
 char* rcsid = "$Id$";
 BOINC_OPTIONS eah_boinc_options;
@@ -32,6 +31,8 @@ int boinc_init_graphics_options(WORKER_FUNC_PTR worker)
 {
 #if (BOINC_GRAPHICS == 1) || ((BOINC_GRAPHICS == 2) && defined(_MSC_VER))
   return(boinc_init_options_graphics(eah_boinc_options, worker));
+#else
+  return(0);
 #endif
 }
 

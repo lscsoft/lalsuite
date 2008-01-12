@@ -20,7 +20,9 @@
 /* C++ -> C interface for BOINC_OPTION handling etc.
 */
 
+#if (BOINC_GRAPHICS > 0)
 #include "graphics_api.h"
+#endif
 
 #define HS_BOINC_OPTIONS_H_RCSID "$Id$"
 
