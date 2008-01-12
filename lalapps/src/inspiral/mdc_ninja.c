@@ -87,13 +87,10 @@ INT4 main( INT4 argc, CHAR *argv[] )
   INT4 i;
   INT4 num_ifos = 0;
 
-  /* lowest/highest values of l to inject */
-
   /* file/directory/set names */
   CHAR *injectionFile = NULL;
   CHAR *setName       = NULL;
   CHAR *mdcFileName   = NULL;
-
 
   /* ifo name */
   CHAR *ifo = NULL;
@@ -147,7 +144,6 @@ INT4 main( INT4 argc, CHAR *argv[] )
     {"version",                 no_argument,       0,                'V'},
     {0, 0, 0, 0}
   };
-
 
   /* parse the arguments */
   while ( 1 )
@@ -454,13 +450,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
       {
         LAL_CALL( AddNumRelStrainModes( &status, &tempStrain, thisInj), &status);
 
-        /* set units to ADC Counts */
-        injData[i]->sampleUnits = lalADCCountUnit;
-
         LAL_CALL( LALInjectStrainGW( &status, injData[i], tempStrain, injections, ifo, dynRange), &status);
-
-        /* set strain as unit */
-        injData[i]->sampleUnits = lalStrainUnit;
 
         XLALDestroyREAL4VectorSequence ( tempStrain->data);
         tempStrain->data = NULL;
@@ -468,6 +458,9 @@ INT4 main( INT4 argc, CHAR *argv[] )
         tempStrain = NULL;
 
       } /* loop over injectionsj */
+
+      /* set strain as unit */
+      injData[i]->sampleUnits = lalStrainUnit;
 
     } /* loop over ifos */
 
