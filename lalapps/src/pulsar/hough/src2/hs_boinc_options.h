@@ -30,7 +30,9 @@
 extern "C" {
 #endif
   
+#if (BOINC_GRAPHICS > 0)
 extern int boinc_init_graphics_options(WORKER_FUNC_PTR);
+#endif
 
 extern void set_boinc_options(void);
 
