@@ -314,38 +314,38 @@ static void options_free(struct options *options)
 static void print_usage(const char *program)
 {
 	fprintf(stderr,
-"Usage:  %s <option> [...]\n" \
+"Usage:  %s [option ...]\n" \
 "The following options are recognized.  Options not surrounded in [] are\n" \
 "required.\n" \
-"	 --bandwidth <bandwidth>\n" \
-"	[--burstinjection-file <file name>]\n" \
+"	 --bandwidth <Hz>\n" \
+"	[--burstinjection-file <XML file name>]\n" \
 "	[--calibrated-data]\n" \
-"	[--calibration-cache <cache file>]\n" \
-"	 --channel-name <string>\n" \
+"	[--calibration-cache <cache file name>]\n" \
+"	 --channel-name <name>\n" \
 "	 --confidence-threshold <confidence>\n" \
 "	[--debug-level info|warn|error|off]\n" \
-"	[--dump-diagnostics <xml filename>]\n" \
+"	[--dump-diagnostics <XML file name>]\n" \
 "	 --filter-corruption <samples>\n" \
-"	 --frame-cache <cache file>\n" \
-"	[--gaussian-noise-rms <rms amplitude>]\n", program);
-fprintf(stderr,
+"	 --frame-cache <cache file name>\n" \
+"	[--gaussian-noise-rms <RMS amplitude>]\n", program);
+	fprintf(stderr,
 "	 --gps-end-time <seconds>\n" \
 "	 --gps-start-time <seconds>\n" \
 "	[--help]\n" \
-"	 --high-pass <high pass frequency>\n" \
-"	[--inspiralinjection-file <file name>]\n" \
+"	 --high-pass <Hz>\n" \
+"	[--inspiralinjection-file <XML file name>]\n" \
 "	 --low-freq-cutoff <Hz>\n" \
 "	[--max-event-rate <Hz>]\n" \
 "	 --max-tile-bandwidth <Hz>\n" \
 "	 --max-tile-duration <seconds>\n" \
-"	[--mdc-cache <cache file>]\n" \
-"	[--mdc-channel <channel name>]\n" \
+"	[--mdc-cache <cache file name>]\n" \
+"	[--mdc-channel <name>]\n" \
 "	[--output <filename>]\n" \
 "	 --psd-average-points <samples>\n" \
 "	[--ram-limit <MebiBytes>]\n" \
 "	 --resample-rate <Hz>\n" \
 "	[--seed <seed>]\n");
-fprintf(stderr,
+	fprintf(stderr,
 "	 --tile-stride-fraction <fraction>\n" \
 "	[--user-tag <comment>]\n" \
 "	 --window-length <samples>\n");
