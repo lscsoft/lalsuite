@@ -117,16 +117,16 @@ parser.add_option("-c","--clobber",dest="clobberFilename",
                    default="",
                    help="This is a file or directory/mask of all files that should be globbed together then checked against the globbed list from --file option.  Entries candidates in FILE with reside in list CLOBBER will be deleted from list FILE and written to disk along with an globbed list which is not clobbered.The filename will be like CLOBBER:Start:00000000,0:Stop:00000000,0:TF:000:000:AND:Start:00000000,0:Stop:00000000,0:TF:000:000:.candidates.  This option can not be used with glob, we assume specified --file are globs of candidates.   We glob the --clobber option if neccessary to perform the clobber."
                    )
-parser.add_option("-T","--expression_threshold",dest="expThreshold",
+parser.add_option("-T","--expression-threshold",dest="expThreshold",
                   default="",
                   help="This is a flexible thresholding interface.  We are allowed to manipulate variables to build expressions. Variables allowed are:\n P ,power \n L ,curve length \n D , time duration in seconds \n B , frequency bandwith of kurve \n  T, start time float\n S, stop time float\n F, start Freq \n, G, stop Freq \n V, bright pixel frequency\n H, bright pixel time(float)\n J, power of bright pixel \n M, mean pixel power \n C, variance pixel power \n See the help for the candidateList class for better explaination of the valid syntax allowed. You can impose multiple threshold expresssions for one file operation.  This saves time lost to IO of running candidateHandler.py multiple times.  Use the comma as a delimiter B>10,L<100 would apply to thresholds and save them in two appropriately marked files. ENCLOSE THE EXPRESSION IN DOUBLE QUOTES",
                   )
-parser.add_option("-s","--write_summary",dest="dumpSummaryDisk",
+parser.add_option("-s","--write-summary",dest="dumpSummaryDisk",
                   default=False,
                   action="store_true",
                   help="This will write the summary information for the candidate file(s) opened. The filename scheme replaces candidate with summary. The data store is Length Pixels,Power,Duration Sec,Bandwidth Hz.  This option can be invoked along with the thresholding option to write out summary files of the results immediately after thresholding the data."
                   )
-parser.add_option("-d","--display_summary",dest="dumpSummaryScreen",
+parser.add_option("-d","--display-summary",dest="dumpSummaryScreen",
                   default=False,
                   action="store_true",
                   help="This will display the summary information for the candidate file(s) opened."
@@ -159,6 +159,15 @@ parser.add_option("-v","--verbose",dest="verbose",
                   default=False,
                   action="store_true",
                   help="Sets up the verbose features. Prints diagnostic messages and progress meters where appropriate.")
+parser.add_option("-n","--bin-count",
+                  default=50,
+                  dest="histCol",
+                  help="Sets up a integrated power histogram column count so we can see significant outliers in the trigger distributions.")
+parser.add_option("-m","--histogram",
+                  default=False,
+                  dest="histogram",
+                  action="store_true",
+                  help="This option will show a histogram. For the candidate trigger library.")
 (options,args)=parser.parse_args()
 filename=str(options.filename)
 glitchdb=bool(options.glitchdb)
@@ -166,6 +175,8 @@ glob=options.glob
 clobberFilename=str(options.clobberFilename)
 expThreshold=str(options.expThreshold)
 graph2file=options.imageFilemask
+createHistogram=bool(options.histogram)
+histogramcolumns=int(options.histCol)
 graph2screen=int(options.imageCount)
 graphGPSoffset=float(options.graphGPSoffset)
 outfile=str(options.outfile)
@@ -233,6 +244,11 @@ elif (clobberFilename != '') and (canList.__len__() == 1):
         newClobberedList.writefile(outfile)
     else:
         newClobberedList.writefile(clobberVictim.__filemaskClob__(newCandidateClobberObject))
+    #
+    # >>> TINA <<<
+    # Add logic branch to do a report graphic...  Try original trigger
+    # curve plots, show power histogram, then show a cut trigger plot
+    # 
     #Create a scatterplot on screen of the curves in the candidateList
 elif ((canList.__len__() >=1) and ((graph2screen>0) or (graph2file!=''))):
     if ((graph2screen < canList.__len__()) and (graph2file=='')):
@@ -253,6 +269,22 @@ elif ((canList.__len__() >=1) and ((graph2screen>0) or (graph2file!=''))):
             sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
             sys.stderr.write("Skipping this plot. Sorry.\n")
         del candidateObject
+    #SECTION CREATE HISTOGRAMS
+elif (createHistogram and (canList.__len__() >=1)):
+    if ((graph2file != 'AUTO') and (canList.__len__() > 1) and (graph2screen==0)):
+        graph2file='AUTO'
+    for entry in canList:
+        candidateObject=candidateList(verboseSwitch)
+        candidateObject.__loadfileQuick__(entry)
+        try:
+            candidateObject.showHistogram(graph2file,histogramcolumns,0.05)
+        except Exception, errorInfo:
+            sys.stderr.write("Problem trying to create plot, %s !\n"%(os.path.basename(graph2file)))
+            sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
+            sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
+            sys.stderr.write("Skipping this plot. Sorry.\n")
+        del candidateObject
+
     #SECTION APPLY ABITRARY THRESHOLDS
 elif ((expThreshold != "") and (canList.__len__() >=1)):
     #Carry out thresholding on all entries in canList

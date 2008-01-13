@@ -1722,8 +1722,19 @@ class candidateList:
         filename,gpsRefTime,timescale,useLogColors,colormap
         each of which is NOT manditory.
         """        
-        self.__triggerLinePlotPrimative__(gpsReference,timescale,useLogColors,myColorMap)
-        #
+        pylab.figure()
+        self.__triggerLinePlotPrimative__(gpsReferenceFloat,
+                                          timescale,
+                                          useLogColors,
+                                          myColorMap)
+        # Set figure title
+        # 
+        if ((filename.upper()=='') or (filename.upper()=='AUTO')):
+            [name,extension]=os.path.splitext(self.filename[0])
+            figtitle=os.path.basename(name)
+        else:
+            figtitle=filename
+        pylab.title("%s"%(figtitle))
         if (filename==''):
             pylab.show()
             pylab.close()
@@ -1734,15 +1745,66 @@ class candidateList:
             pylab.savefig(filename)
     #End method graphdata
 
-    def  __triggerLinePlotPrimative__(self,gpsReferenceFloat=0.0,timescale='second',userLogColor=True,myColorMap='jet'):
+
+    def showHistogram(self,filename='',colCount=50,topPercentage=float(0.05)):
+        """
+        Show a histogram of integrated power for each trigger in the
+        trigger library.  It uses a input filename if needed and a 
+        parameter of number of bins to
+        break the trigger library into.
+        """
+        pylab.figure()
+        [entries,bins,patches]=self. __triggerHistogramPrimative__(colCount,
+                                                                   True)
+        # Setup a percentile ranking score mark!
+        index=entries.__len__()
+        entryList=[]
+        tally=0
+        count=sum(entries)
+        for entry in entries:
+            entryList.append(float(entry))
+        entryList.reverse()
+        for entry in entryList:
+            tally=tally+entry
+            if ((float(tally)/count) >= (1-topPercentage)):
+                break
+            index=index-1
+        patchIndex=0
+        for thisPatch in patches:
+            if patchIndex >= index:
+                thisPatch.set_facecolor('red')
+            else:
+                thisPatch.set_facecolor('blue')
+            patchIndex=patchIndex+1
+        transitionValue=bins[index]
+        pylab.xlabel(str("Power"))
+        pylab.ylabel(str("Count"))
+        pylab.figtext(0.01,0.95,
+                      "Upper Percentile :%3.2f%% , Power Threshold :%f"%(float(100)*topPercentage,transitionValue))
+        if ((filename.upper()=='') or (filename.upper()=='AUTO')):
+            [name,extension]=os.path.splitext(self.filename[0])
+            figtitle=os.path.basename(name)
+        else:
+            figtitle=filename
+        pylab.title("%s"%(figtitle))
+        if (filename==''):
+            pylab.show()
+            pylab.close()
+        else:
+            if (filename.upper()=='AUTO'):
+                [fullpath,extension]=os.path.splitext(self.filename[0])
+                filename=os.path.basename(fullpath)+'.png'
+            pylab.savefig(filename)
+    #End showHistogram
+
+
+    def  __triggerLinePlotPrimative__(self,gpsReferenceFloat=0.0,timescale='second',useLogColors=True,myColorMap='jet'):
         """
         This is a method that creates a line plot of the trigger present
         in the trigger library and returns the figure information for
         latter showing,adding to subplot or saving to disk.
         
         """
-        ### __triggerLinePlotPrimative__ ###
-        #Determine version of matplotlib
         matplotlibVersion=int(pylab.matplotlib.__version__.replace('.',''))
         matplotlibVersion=int(10000)
         if self.totalCount==0:
@@ -1872,11 +1934,6 @@ class candidateList:
             pylab.figtext(textLocX,0.025,str(myColorMap).upper()+":Linear Coloring")
         else:
             pylab.figtext(textLocX,0.025,str(myColorMap).upper()+":Log Coloring")
-        if ((filename.upper()=='') or (filename.upper()=='AUTO')):
-            [name,extension]=os.path.splitext(self.filename[0])
-            figtitle=os.path.basename(name)
-        else:
-            figtitle=filename
         #If newer version of matplotlib library try colorbar again
         version877=int(str('0.87.7').replace('.',''))
         if ((version800 < matplotlibVersion <= version877) or
@@ -1884,24 +1941,28 @@ class candidateList:
             print "Matlib plot version ",matplotlibVersion
             sys.stderr.write("Error setting colorbar! Sorry, figure will have no colorbar.\n")
             sys.stderr.write("Using matlibplot version :"+pylab.matplotlib.__version__+"\n")
-        pylab.title("%s"%(figtitle))
         pylab.grid(True)
     # END  __triggerLinePlotPrimative__
 
 
-    def __triggerHistogramPrimative__(colCount=50):
+    def __triggerHistogramPrimative__(self,colCount=50,statReport=False):
         """
         This method plots a histogram of the triggers present in a
         trigger library and plots a reference lines mean 1std 2std
         3std 4std 5std deviations (Gaussian).
+        It takes two optional arguments,
+        The number of bins to create
+        Boolean flag to indicate that results should be returned
         """
-        triggers=lib.dumpCandidateKurveSummary()
+        triggers=self.dumpCandidateKurveSummary()
         histList=[]
         powList=[]
         for entry in triggers:
             histList.append([entry[10],entry[0]])
             powList.append(entry[10])
-        [entries,bins,patches]=hist(powList,colCount,log=False)
+        [entries,bins,patches]=pylab.hist(powList,colCount,bottom=1,log=True)
+        if statReport:
+            return [entries,bins,patches]
     # END __triggerHistogramPrimative__():
 
     def createGlitchDatabase(self,verbose=bool(False)):
