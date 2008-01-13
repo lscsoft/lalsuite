@@ -68,7 +68,8 @@ __version__ = "$Revision$"[11:-2]
 
 def parse_command_line():
 	parser = OptionParser(
-		version="%prog CVS $Id$"
+		version = "%prog CVS $Id$",
+		description = "%prog builds an excess power pipeline DAG suitable for running at the various LSC Data Grid sites.  The script requires a configuration file.  An example file can be found in the LALApps CVS."
 	)
 	parser.add_option("--condor-log-dir", metavar = "path", default = ".", help = "Set the directory for Condor log files (default = \".\").")
 	parser.add_option("--config-file", metavar = "filename", default = "power.ini", help = "Set .ini configuration file name (default = \"power.ini\").")
