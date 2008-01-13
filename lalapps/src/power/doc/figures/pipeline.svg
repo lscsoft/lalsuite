@@ -83,8 +83,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.263222"
-     inkscape:cx="164.83384"
-     inkscape:cy="327.88278"
+     inkscape:cx="345.78924"
+     inkscape:cy="290.4553"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showguides="true"
@@ -566,7 +566,7 @@
        sodipodi:nodetypes="cc" />
     <g
        id="g3711"
-       transform="translate(-52.337978,-24.909519)">
+       transform="translate(-52.337978,-21.743013)">
       <rect
          transform="matrix(0.7071068,-0.7071068,0.7071068,0.7071068,0,0)"
          y="709.67877"
@@ -593,8 +593,9 @@
     </g>
     <path
        style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#Arrow2Lend);stroke-opacity:1"
-       d="M 474.68028,436.62125 L 474.68028,450.61537"
-       id="path3717" />
+       d="M 474.68028,436.62125 L 474.68028,455.09349"
+       id="path3717"
+       sodipodi:nodetypes="cc" />
     <g
        id="g3729"
        transform="translate(-68.738512,-27.42846)">
@@ -664,7 +665,7 @@
        sodipodi:nodetypes="ccc" />
     <path
        style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#Arrow2Lend);stroke-opacity:1"
-       d="M 438.72535,487.68983 L 398.80648,487.68983"
+       d="M 438.72535,490.85634 L 398.80648,490.85634"
        id="path3752"
        sodipodi:nodetypes="cc" />
     <text
@@ -682,13 +683,13 @@
        xml:space="preserve"
        style="font-size:10px;font-style:normal;font-variant:normal;font-weight:300;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:URW Bookman L"
        x="418.53983"
-       y="484.13333"
+       y="487.29984"
        id="text3758"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan3760"
          x="418.53983"
-         y="484.13333">Yes</tspan></text>
+         y="487.29984">Yes</tspan></text>
     <g
        id="g4799"
        transform="translate(-2.3069687,-65.280969)">
@@ -799,7 +800,7 @@
        sodipodi:nodetypes="cc" />
     <path
        style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#Arrow2Lend);stroke-opacity:1"
-       d="M 474.6054,524.31434 L 474.6054,554.40297"
+       d="M 474.6054,526.27352 L 474.6054,554.40297"
        id="path5816"
        sodipodi:nodetypes="cc" />
     <path
@@ -822,13 +823,13 @@
        xml:space="preserve"
        style="font-size:10px;font-style:normal;font-variant:normal;font-weight:300;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:URW Bookman L"
        x="478.16769"
-       y="534.44153"
+       y="537.60803"
        id="text5824"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan5826"
          x="478.16769"
-         y="534.44153">Yes &amp; No</tspan></text>
+         y="537.60803">Yes &amp; No</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:10px;font-style:normal;font-variant:normal;font-weight:300;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:URW Bookman L"
@@ -1493,5 +1494,11 @@
            id="tspan4474"
            sodipodi:role="line">Clustering</tspan></text>
     </g>
+    <path
+       style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:3,3;stroke-dashoffset:0"
+       d="M 30.081807,312.45536 L 195.53174,312.45536 L 256.48698,379.37592 L 430.64481,379.37592"
+       id="path2414"
+       transform="translate(108.18752,61.64169)"
+       sodipodi:nodetypes="cccc" />
   </g>
 </svg>

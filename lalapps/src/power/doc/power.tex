@@ -47,7 +47,9 @@ gravitational waves.  A schematic diagram of the data flow through the
 pipeline is shown in Figure \ref{fig1}.
 \begin{figure}
 \begin{center}\includegraphics{figures/pipeline.pdf}\end{center}
-\caption{Data flow in the excess power pipeline.}
+\caption{Data flow in the excess power pipeline.  The dashed line marks the
+division between the ``top half'' and ``bottom half'' of the pipeline (See
+Section \ref{section2}).}
 \label{fig1}
 \end{figure}
 Here and in what follows we'll discuss the multi-detector version of the
@@ -1678,82 +1680,15 @@ Cannon
 \section{Program \prog{ligolw\_bucluster}}
 
 
-\subsection{Man Page}
+\subsection{Overview}
 
 
-\begin{entry}
-\item[Name]
-\prog{ligolw\_bucluster} --- cluster the burst events in LIGO light weight
-XML files.
-
-\item[Synopsis]
-\prog{ligolw\_bucluster} (\option{-c}~\parm{name},
-\option{--cluster-algorithm}~\parm{name}) [\option{--comment}~\parm{text}]
-[\option{--help}] [\option{-i}~\parm{filename},
-\option{--input-cache}~\parm{filename}] [\option{-p}~\parm{name},
-\option{--program}~\parm{name}] [\option{--verbose}] [\option{--version}]
-[filename~...]
-
-\item[Description]
-The program \prog{ligolw\_bucluster} applies a clustering alogrithm to the
-burst events stored in the sngl\_burst tables of one or more LIGO light
-weight XML files.  At this time only one clustering algorithm is
-implemented, the clustering algorithm used by the excess power burst search
-pipeline.  The files to be processed can be listed on the command line
-and/or in one or more LAL cache files.  If the command line does not
-specify any files to process, then input is read from stdin and written to
-stdout.  Any file whose name ends in ``.gz'' is assumed to be
-gzip-compressed.
-
-\item[Options]\leavevmode
-\begin{entry}
-\item[\option{-c}~\parm{name}, \option{--cluster-algorithm}~\parm{name}]
-Set the clustering method (required).  Allowed values are
-\begin{entry}
-\item[excesspower]  Select the clustering algorithm used by the excess
-power burst search pipeline.  This algorithm is associative, meaning the
-final trigger list is independent of the order in which the consituent
-triggers are clustered.  This allows the algorithm to be safely applied
-repeatedly to the same triggers (the clustering algorithm is an identity
-transform on triggers that have already been processed).
-
-\end{entry}
-(yes, only one clustering algorithm is implemented at this time, and yes,
-it's still a required option).
-
-\item[\option{--comment}~\parm{text}] Set the comment string to be
-recorded in the process table (default = ``'').
-
-\item[\option{--help}] Print a help message.
-
-\item[\option{-i}~\parm{filename}, \option{--input-cache}~\parm{filename}]
-Process the LIGO light-weight XML files listed in this LAL cache.  If this
-option is provided more than once, then all files from all input caches are
-processed.
-
-\item[\option{-p}~\parm{name}, \option{--program}~\parm{name}]  Set the
-name of the program that generated the events as it appears in the process
-table (default = ``\prog{lalapps\_power}'').  At this time, this
-information is only used to extract live time information from the search
-summary table in order for this program to record an appropriate entry for
-itself in the search summary table.  In the future, the program name might
-be used to restrict the triggers that are processed.
-
-\item[\option{--verbose}]  Be verbose.
-
-\item[\option{--version}]  Print the version of this program and exit.
-
-\end{entry}
-
-\item[Example]
-\begin{verbatim}
-$ ligolw_bucluster --comment TEST --cluster-algorithm excesspower --verbose \
-input1.xml.gz input2.xml.gz
-\end{verbatim}
-
-\item[Author]
-Kipp Cannon
-\end{entry}
+The program \prog{ligolw\_bucluster} (``burst cluster'') applies a
+clustering alogrithm to the burst events stored in the sngl\_burst tables
+of one or more LIGO light weight XML files.  At this time only one
+clustering algorithm is implemented, the clustering algorithm used by the
+excess power burst search pipeline.  For more information on running this
+program, consult its usage message.
 
 
 \subsection{Clustering Algorithm}
@@ -1826,48 +1761,79 @@ the injection).}
 \end{entry}
 
 
+\section{Program \prog{ligolw\_cafe}}
+
+
+\subsection{Overview}
+
+
+The program \prog{ligolw\_cafe} (``coincidence analysis front end'') groups
+trigger files for analysis in the coincidence stage of the pipeline.
+Normally gravitational wave antennas do not have 100\% duty cycles, in
+particular laser interferometers can frequently ``loose lock'' so that the
+time series data recorded from the antenna has gaps in it.  This has the
+side effect of providing natural boundaries in the data on which to divide
+analysis tasks.  For example, if one has a collection of trigger files
+gathered from two instruments and one wishes to search for coincident
+events but there are gaps in the times spanned by the files, since events
+stored in files before a gap cannot be coincident with events stored in
+files after the gap one can avoid performing unnecessary comparisons in the
+coincidence analysis by collecting together for coincidence tests only
+events from within the same continguous group of files.  The program
+\prog{ligolw\_cafe} is used to determine which files need to be grouped
+together to perform a coincidence analysis among them.
+
+
+\subsection{Operation}
+
+
+This program takes as input a LAL cache file describing a collection of
+files to be used in a coincidence analysis.  In particular, the instrument
+and segment columns in the cache file should correctly describe the
+contents of each file.  This program also uses for input a LIGO Light
+Weight XML file containing a time\_slide table describing a list of
+instrument and time delay combinations to be used in the coincidence
+analysis.  The LAL cache files are named on the command line, or a cache
+file can be read from stdin.  The time slide XML file is specified with a
+command line option.
+
+The program iteratively applies the time delays from the time\_slide table
+in the time slide XML file to the segments of the files in the input cache.
+For each time delay and instrument combination, the files whose segments
+intersect one another are identified and placed together in groups, where
+the files within a group intersect one another and the files in different
+groups do not.  As different time delay and instrument combinations are
+considered, the file groups are allowed to coalesce as needed.  The final
+result is a collection of file groups, where no file from one group was
+ever identified as being coincident with a file from another group in any
+of the instrument and delay combinations considered.  Therefore, the
+triggers from the files from one group need never be compared to the
+triggers from the files in another group as it is known in advance that
+they cannot be coincident.
+
+The output of the program is a collection of LAL cache files, one LAL cache
+for each coincident group of files that was identified.
+
+One should think of this program as a coincidence analysis applied at the
+level of entire files, whose role is to reduce the total number of
+comparisons that need to be performed to complete the full coincidence
+stage in a pipeline.
+
+
 \section{Program \prog{ligolw\_burca}}
 
 
-\begin{entry}
-\item[Name]
-\prog{ligolw\_burca} --- perform a coincidence analysis on LIGO
-light-weight XML files containing burst events.
+\subsection{Overview}
 
-\item[Synopsis]
-\prog{ligolw\_burca} [\option{--version}] [\option{-h}, \option{--help}]
-[\option{-c}~\parm{text}, \option{--comment}~\parm{text}] [\option{-f},
-\option{--force}] (\option{-p}~\parm{name}, \option{--program}~\parm{name})
-(\option{-a}~\parm{name}, \option{--coincidence-algorithm}~\parm{name})
-[\option{--likelihood-data}~\parm{filename}]
-[\option{--likelihood-data-cache}~\parm{filename}]
-[\option{-t}~\parm{inst1,inst2=[threshold,...]},
-\option{--thresholds}~\parm{inst1,inst2=[threshold,...]}]
-[\option{--tmp-space}~\parm{path}]
-[\option{-s}~\parm{\(\kappa\),\(\epsilon\)},
-\option{--stringcusp-parms}~\parm{\(\kappa\),\(\epsilon\)}] [\option{-v},
-\option{--verbose}] [filename~...]
 
-\item[Description]
 The program \prog{ligolw\_burca} actually performs two distinct functions.
 In the future, it is likely these functions will be split into two
-applications.  The first function formed by this program is a
+applications.  The first function performed by this program is an
 inter-instrument coincidence comparison of the burst events stored in
 sngl\_burst tables in LIGO light-weight XML files.  The other function
 performed by this program is the ranking of \(n\)-tuples of
 mutually-coincident events according to likelihood ratio data collected
 from time-slide and injection runs.
-
-\item[Options]
-Blah blah.
-
-\item[Example]
-Blah blah.
-
-\item[Author]
-Kipp Cannon
-
-\end{entry}
 
 
 \subsection{Coincidence Algorithm}
@@ -1883,9 +1849,8 @@ all pair-wise mutually coincident.  Establishing the coincidence of an
 tested is, in principle, \(\order(N^{n})\) where \(N\) is the average
 number of events obtained from each instrument going into the coincidence
 analysis.  A variety of optimization techniques are employed to avoid
-unnecessary comparisons --- these optimizations form the bulk of the
-internal complexity of this program --- but users should not be surprised
-to find that this program can take a long time to run.
+unnecessary comparisons, but users should not be surprised to find that
+this program can take a long time to run.
 
 There are two coincidence tests to choose from.  These are as follows.
 \begin{entry}
@@ -1927,18 +1892,23 @@ line.
 
 \end{entry}
 
+The results of the coincident event search are recorded in coinc tables in
+the XML files, which are overwritten.
+
 
 \subsection{Likelihood Ratio Analysis}
 
 
-In this mode of operation, \prog{ligolw\_burca} assigns likelihood ratios
-to the coincident \(n\)-tuples it has previously identified using parameter
-distribution density data collected from populations of time-slide
-(``noise'') and injection (``gravitational wave'') \(n\)-tuples.  The
-procedure goes as follows.  First, \prog{ligolw\_burca} is used to identify
-coincident \(n\)-tuples in time-slide and injection trigger lists.  Another
-program, \prog{ligolw\_burca\_tailor} (see Section \ref{section1}), scans
-these \(n\)-tuples and collects summary statistics about their properties.
+Setting the coincidence test to ``\option{excesspower2}'' switches to the
+likelihood ratio analysis mode.  In this mode of operation,
+\prog{ligolw\_burca} assigns likelihood ratios to the coincident
+\(n\)-tuples it has previously identified using parameter distribution
+density data collected from populations of time-slide (``noise'') and
+injection (``gravitational wave'') \(n\)-tuples.  The procedure goes as
+follows.  First, \prog{ligolw\_burca} is used to identify coincident
+\(n\)-tuples in time-slide and injection trigger lists.  Another program,
+\prog{ligolw\_burca\_tailor} (see Section \ref{section1}), scans these
+\(n\)-tuples and collects summary statistics about their properties.
 Finally, \prog{ligolw\_burca} is used to reprocess the \(n\)-tuples using
 the parameter distributions measured by \prog{ligolw\_burca\_tailor} to
 assign likelihood ratio values to each \(n\)-tuple, thereby ranking the
@@ -1948,13 +1918,127 @@ values to themselves, but this is an unimportant operational detail at this
 time.  See Figure \ref{fig3} for an example of the \(n\)-tuple parameter
 distribution functions measured by \prog{ligolw\_burca\_tailor}.
 
+Note that in likelihood ratio analysis mode, \prog{ligolw\_burca} processes
+triggers in SQLite3 database files.  Use the program \prog{ligolw\_sqlite}
+to transform LIGO Light Weight XML files into SQLite3 database files before
+processing.
+
+
+\section{Program \prog{ligolw\_binjfind}}
+
+
+\subsection{Overview}
+
+
+The program \prog{ligolw\_binjfind} processes LIGO light weight XML files
+containing sim\_burst, sngl\_burst, and optionally coinc\_event tables and
+identifies and records which burst events correspond to injections.  There
+are three kinds of burst/injection matches that are searched for and
+recorded:
+\begin{itemize}
+\item individual burst events in the sngl\_burst table that match
+injections in the sim\_burst table,
+
+\item coincident \(n\)-tuples of burst events that match ``exactly''
+injections in the sim\_burst table,
+
+\item and coincident \(n\)-tuples of burst events that are ``nearby''
+injections in the sim\_burst table.
+\end{itemize}
+Two burst/injection comparison tests are available, one for use with the
+excess power burst search pipeline and one for use with the string cusp
+search pipeline.  An ``exact'' \(n\)-tuple/injection match is one in which
+every burst event in the coincident \(n\)-tuple is identified as matching
+the injection according to the burst/injection comparison test.  A
+``nearby'' \(n\)-tuple/injection match is a coincident \(n\)-tuple of burst
+events that occurs within \(\unit{2}{\second}\) of the injection (the
+injection does not precede the first of the events' start times or lag the
+last of their end times by more than \(\unit{2}{\second}\)).
+
+The reason for the two distinct types of \(n\)-tuple/injection matches is
+that there are two reasons one wishes to identify an injection in a list of
+burst events.  On the one hand, one wishes to characterize the search code
+in order to measure how well it does or does not recover the parameters of
+an injection and for this one does not want to be distracted by accidental
+injection recoveries (when noise in the time series happens to occur near
+an injection), and so one wishes to identify burst events that really are
+believed to be the direct result of the software injection.  On the other
+hand, one wishes to measure the detection efficiency of the pipeline or the
+probability that the pipeline produces a detection candidate when a
+software injection is placed in the time series.  In this case it doesn't
+matter if the injection is recovered well at all, only whether or not
+something (anything) survives the pipeline when the injection is placed in
+the input.
+
+The results of the injection identification tests are recorded in the coinc
+tables in the XML files, which are overwritten.
+
 
 \section{Program \prog{ligolw\_burca\_tailor}}
 \label{section1}
 
 
-% FIXME
-Blah blah blah.
+\subsection{Overview}
+
+
+The program \prog{ligolw\_burca\_tailor} scans the coincident \(n\)-tuples
+of burst events recorded in LIGO Light Weight XML files and collects
+statistics on their properties.  The resulting parameter distribution
+densities are written as Array data to LIGO Light Weight XML files which
+can be used by \prog{ligolw\_burca} to assign likelihood ratio values to
+coincident \(n\)-tuples.
+
+Note that \prog{ligolw\_burca\_tailor} operates on SQLite3 database files.
+Use the program \prog{ligolw\_sqlite} to transform LIGO Light Weight XML
+into SQLite3 database files before processing with
+\prog{ligolw\_burca\_tailor}.
+
+
+\subsection{Operation}
+
+
+This program collects statistics specific to the excess power burst search
+pipeline.  At present, the events in an \(n\)-tuple are taken pair-wise and
+5 parameters computed for each pair:
+\begin{itemize}
+\item \((\Delta t_{1} - \Delta t_{2}) / \mean{\Delta t}\), the difference
+in the two events' ``most significant'' durations as a fraction of the
+average of the two durations,
+
+\item \((\Delta f_{1} - \Delta f_{2}) / \mean{\Delta f}\), the difference
+in the two events' ``most significant'' bandwidths as a fraction of the
+average of the two bandwidths,
+
+\item \((h_{\text{rss}_{1}} - h_{\text{rss}_{2}}) /
+\mean{h_{\text{rss}}}\), the difference of the two events'
+\(h_{\text{rss}}\)s as a fraction of the average of the two,
+
+\item \((f_{1} - f_{2}) / \mean{f}\), the difference of the two events'
+peak frequencies as a fraction of the average of the two,
+
+\item \(t_{1} - t_{2}\), the difference in the two events' peak times.
+
+\end{itemize}
+The first four quantities are dimensionless and algebraically confined to
+the interval \([-2, +2]\).  The fifth parameter is dimensionful and has no
+natural interval in which its values are confined.  A three-event
+\(n\)-tuple is characterized by a total of 15 parameters, one set of the
+five numbers above for each choice of two events from the \(n\)-tuple.
+
+The parameter distributions are tracked by constructing bins, and for each
+bin counting how many \(n\)-tuples produce a parameter value in the range
+represented by that bin.  When all the \(n\)-tuples have been processed,
+the bin counts are stored as Array data in an output LIGO Light Weight XML
+file.  For the parameters confined to finite intervals, the distributions
+are measured using simple linearly-spaced bins.  For the \(t_{1} - t_{2}\)
+parameters a non-linear binning is used in which the bins are uniform in
+\(\tan^{-1} [(t_{1} - t_{2}) / T]\), where \(T\) is a parameter used to set
+the scale of the bins.  This binning produces bins that are approximately
+uniformly spaced for small \((t_{1} - t_{2}) / T\), but transition to
+asymptotically diminishing density for large \((t_{1} - t_{2}) / T\).
+
+Figure \ref{fig3} shows an example of the parameter distributions measured
+for time-slide and injection \(n\)-tuples in stationary Gaussian noise.
 \begin{figure}
 \begin{center}
 \resizebox{.9\linewidth}{!}{\includegraphics{figures/plotburca2-P-793154128-2525061.png}}
@@ -1968,130 +2052,137 @@ parameter distributions observed in software injection \(n\)-tuples
 \end{figure}
 
 
-\section{Program \prog{lalapps\_power\_pipe}}
+\subsection{Other Features}
 
 
-\begin{entry}
-\item[Name]
-\prog{lalapps\_power\_pipe} --- builds a one/two/three interferometer excess-power
-search DAG   
-
-\item[Synopsis]
-\prog{lalapps\_power\_pipe} \newline \hspace*{0.5in}
-[\option{-h, --help}] \newline \hspace*{0.5in}
-[\option{-v, --version}] \newline \hspace*{0.5in}
-[\option{-u, --user-tag}~\parm{tag}] \newline \hspace*{0.5in}
-[\option{-d, --datafind}] \newline \hspace*{0.5in}
-[\option{-r, --power}] \newline \hspace*{0.5in}
-[\option{-H, --ifo\_h1}] \newline \hspace*{0.5in}
-[\option{-K, --ifo\_h2}] \newline \hspace*{0.5in}
-[\option{-L, --ifo\_l}] \newline \hspace*{0.5in}
-[\option{-c, --makeinjfiles}] \newline \hspace*{0.5in}
-[\option{-j, --injections}~\parm{injection type}] \newline \hspace*{0.5in}
-[\option{-m, --mdcinjections}] \newline \hspace*{0.5in}
-[\option{-b, --coincidence}] \newline \hspace*{0.5in}
-[\option{-t, --triplecoincidence}] \newline \hspace*{0.5in}
-[\option{-s, --timeslides}] \newline \hspace*{0.5in}
-[\option{-p, --playground-only}] \newline \hspace*{0.5in}
-[\option{-P, --priority}~\parm{prio}] \newline \hspace*{0.5in}
-\option{-f, --config-file}~\parm{file} \newline \hspace*{0.5in}
-\option{-l, --log-path}~\parm{path}
-
-\item[Description] 
-\prog{lalapps\_power\_pipe} builds an excess power search DAG suitable for
-running at the various LSC Data Grid sites.   The script requires a
-configuration file.   An example file can be found in
-\texttt{\$LALPREFIX/share/lalapps/power\_pipe.ini}.   Arguments to be
-passed to the search code are supplied in this file and used the DAG
-construction.  This is a standard python format configuration file.
-
-\item[Options]\leavevmode
-\begin{entry}
-
-\item[\option{--help}] Prints the usage information
-
-\item[\option{--user-tag} \parm{tag}]   The tag for the job.  This will
-override the value set in the ini file
-
-\item[\option{--datafind}] run LSCdataFind as part of the DAG to create the
-cache files for each science segment
-
-\item[\option{--power}] run \prog{lalapps\_power} on the data.  To run
-the power jobs one has to specify the ifo or the combination of ifos.  This
-can be specified by a combination of the options \option{--ifo\_h1},
- \option{--ifo\_h2} and \option{--ifo\_l}.  
-
-\item[\option{--ifo\_h1}] run \prog{lalapps\_power} on the data from H1
-
-\item[\option{--ifo\_h2}] run \prog{lalapps\_power} on the data from H2
-
-\item[\option{--ifo\_l}] run \prog{lalapps\_power} on the data from L1
-
-If one wants to run on both H1 and H2 data then the options \option{--ifo\_h1}
-and \option{--ifo\_h2} have to be specified with \option{--power} and 
-similarly for other combinations.  For example if one then wants to run on 
-all of H1,  H2 and L1 data then all the three options,  \option{--ifo\_h1},
- \option{--ifo\_h2},  \option{--ifo\_l} have to be specified with the 
-\option{--power}.
-
-\item[\option{--makeinjfiles}] run \prog{lalapps\_binj} or 
-\prog{lalapps\_bbhinj} to generate the injection files for each science
-segment. These files are then used by the power jobs as the injection
-parameter files.  However,  specifying this option tells the dag to 
-create the injection files only.  Whether to perform the injections or not
-is specified by the option \option{--injections} along with the type of 
-waveform we would inject.    
-
-\item[\option{--injections} \parm{type}] When this option is specifed 
-simulated waveforms are injected to the data.  To use this option either
-the injection files have to be in the directory or has to be used along with
-\option{--makeinjfiles}.  The type of the injections also has to be specified 
-with this option. The valid types are \texttt{burst, inspiral, burstandinspiral
-and sim}.  \texttt{burst} indicates burst waveforms, \texttt{inspiral} 
-indicates inspiral waveforms, \texttt{burstandinspiral} indicates both
-burst and inspiral waveforms are to be injected and \texttt{sim} indicates
-waveforms like warren,  kudu.
-
-\item[\option{--mdcinjections}] run jobs with MDC injections      
-
-\item[\option{--coincidence}] run \prog{lalapps\_burca} doing double 
-coincidence analysis.  However note that to use this option either
-two of the ifo options have to be used or the trigger files from two ifos 
-have to be in the directory.
-
-\item[\option{--triplecoincidence}] triple coincidence analysis is performed.  
-As in double coincidence this option is to be used
-either with the three ifo options or the trigger files from three ifos have
-to be in the directory.
-
-\item[\option{--timeslides}] perform the timeslide analysis. Timeslides
-are currently performed only between sites, i.e. between Hanford and 
-Livingstone. So to use this option either \option{--ifo\_h1} or 
-\option{--ifo\_h2} or both have to be used with \option{--ifo\_l} or the 
-trigger files have to be in the directory. 
-
-\item[\option{--priority} \parm{prio}] run jobs with condor priority
-\parm{prio}.
-
-\item[\option{--config-file} \parm{file}] use configuration file
-\parm{file}.
-
-\item[\option{--log-path} \parm{path}] directory to write condor log file
-
-\end{entry}
+The program \prog{ligolw\_burca\_tailor} can also merge LIGO Light Weight
+XML files containing distribution data into single files.  The collection
+of the statistics can be a time-consuming operation, and it can be
+convenient to process files in parallel groups on a compute cluster.  In
+this case, it's necessary to be able to merge the bin counts after each
+group of trigger files has been processed.
 
 
-\item[Example]
-To run the program which will do the datafind,  power nodes on the H1
-and L1 data with simulated injections doing a double coincidence analysis
-using the power\_pipe.ini file(which should be in the directory) type:
-\begin{verbatim}
-lalapps_power_pipe -f power_pipe.ini -d -r -H -L -b -c -j sim -l /people/saikat/log/
-\end{verbatim}
+\section{Program \prog{ligolw\_tisi}}
+\label{section3}
 
-\item[Author]
-Duncan Brown, Patrick Brady and Saikat Ray-Majumder
-\end{entry}
+
+% FIXME
+
+Blah blah blah.
+
+
+\section{Pipeline Construction}
+\label{section2}
+
+
+\subsection{Overview}
+
+
+The ``excess power pipeline'' is the search pipeline that results from
+chaining the programs described above together to perform a
+multi-instrument search for gravitational wave bursts.  Typically the
+pipeline is executed on a Condor compute cluster (this is the only mode
+that has been tested).  This is done using a set of Condor job control
+files which instruct Condor as to the sequence of jobs to run and the
+command line arguments to give each.  The Condor control files are
+generated using a set of Python scripts described below.
+
+Refering to the pipeline schematic in Figure \ref{fig1}, there are two
+scripts for building the excess power pipeline.  The first script,
+\prog{lalapps\_power\_pipe}, builds the ``top half'' of the pipeline, the
+part of the pipeline above the dashed divider in the schematic.  This part
+of the pipeline involves data discovery, optional software injections,
+trigger identification, clustering, coincidence analysis, and injection
+identification.  The second script,
+\prog{lalapps\_power\_likelihood\_pipe}, builds the ``bottom half'' of the
+pipeline.  In this part of the pipeline, coincident \(n\)-tuple parameter
+distribution data is used to rank coincidences according to how
+injection-like they appear.
+
+In the top half of the pipeline, all programs manipulate data files in LIGO
+Light Weight XML format.  In the bottom half, all programs manipulate the
+data files in SQLite3 database format.  The transition from XML to SQLite3
+occurs at the end of the top half of the pipeline, where the data
+processing sequence ends with a set of \prog{ligolw\_sqlite} jobs to
+convert the files.
+
+The Condor control files for the top and bottom halves of the pipeline can
+reside in the same directory (there are no name conflicts), so the entire
+pipeline can be constructed as a pair of DAGs in a single directory.
+
+
+\subsection{The Pipeline's Top Half}
+
+
+The Condor control files for the pipeline's top half are constructed using
+the program \prog{lalapps\_power\_pipe}.  This program can generate three
+versions of the pipeline's top half:  a version containing the
+non-injection portion of the pipeline only (the left part of Figure
+\ref{fig1}), a version containing the injection portion of the pipeline
+only (the right part of Figure \ref{fig1}), or a version containing both
+injection and non-injection jobs.
+
+To generate the Condor control files, the pipeline construction program
+\prog{lalapps\_power\_pipe} requires the following information as input.
+\begin{itemize}
+\item One or more LIGO Light Weight XML files containing one time\_slide
+table each (See \prog{ligolw\_tisi} in Section \ref{section3}) describing
+the instrument and time delay combinations to use in the non-injection
+coincidence stage of the pipeline.  These files are not required if the
+injection-only version of the pipeline is being constructed.  Each time
+slide file results in a separate set of \prog{ligolw\_burca} jobs being
+constructed.  This allows a large number of time slides to be analyzed,
+distributing them across multiple \prog{ligolw\_burca} jobs.
+
+\item One LIGO Light Weight XML file containing the time\_slide table
+identifiying the instrument and delay combinations to be used in the
+injection coincidence stage of the pipeline.  This file is not required if
+the non-injection only version of the pipeline is being constructed.  Note
+that at the present time, the injection stage of the pipeline can only
+process injections at 0 offset so only all-zero time slides can be given in
+this input file.  However, the instrument combination appearing in the time
+slides are used to determine which pairs of instruments to combine in the
+coincidence stage.
+
+\item A set of files in segwizard format listing the segments to be
+analyzed.  There must be exactly one segment file for each instrument
+appearing in any of the time slides found in the time slide files.
+
+\item A .ini file providing miscellaneous configuration information for the
+pipeline construction script.  In particular, the command line options used
+used for each program are given in this file as well as the names of the
+segment files and the executables to use.
+
+\end{itemize}
+
+The pipeline script analyzes the segments and the time slides and
+determines which time intervals can be analyzed, and which time intervals
+will be combined together for the coincidence analyses.  Instances of
+\prog{lalapps\_power} are used to generate triggers, and
+\prog{ligolw\_bucluster} jobs are used to cluster the resulting triggers.
+The program \prog{ligolw\_add} is used to combine the appropriate trigger
+files together in preparation for coincidence analysis.  At this time, the
+time slides files generated by the user prior to pipeline construction are
+also merged into the trigger files, and in the case of the injection branch
+of the pipeline the list of software injections is also merged into the
+trigger file.  The resulting merged data files are processed with
+\prog{ligolw\_burca} for coincidence identification, and in the case of the
+injection portion of the pipeline with \prog{ligolw\_bucut} and
+\prog{ligolw\_binjfind} to trim the software injection list and identify
+software injections respectively.  Finally, a set of \prog{ligolw\_sqlite}
+jobs convert the XML files to SQLite3 database files.  A representative
+graph of the parent-child relationships among the jobs is shown in Figure
+\ref{fig4}
+\begin{figure}
+\begin{center}
+% FIXME
+FIXME
+\end{center}
+\caption{A graph showing the parent-child relationships among the jobs in
+the top half of the excess power pipeline.}
+\label{fig4}
+\end{figure}
 
 
 \section{Tuning the Excess Power Pipeline}
