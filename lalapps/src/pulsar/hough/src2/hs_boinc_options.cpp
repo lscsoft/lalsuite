@@ -37,7 +37,10 @@ int boinc_init_graphics_options(WORKER_FUNC_PTR worker)
 void set_boinc_options(void) {
   rcsid = HS_BOINC_OPTIONS_H_RCSID;
   boinc_options_defaults(eah_boinc_options);
+#if (BOINC_GRAPHICS > 0)
+  // only makes sense on Apps with graphics
   eah_boinc_options.backwards_compatible_graphics = 0;
+#endif
   boinc_get_init_data(eah_app_init_data);
   /*
     Just to remind me of the info in there:
