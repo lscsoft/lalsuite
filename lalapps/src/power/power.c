@@ -1,23 +1,24 @@
 /*
-*  Copyright (C) 2007 Denny Mackin, Duncan Brown, Ik Siong Heng, Jolien
-*  Creighton, Kipp Cannon, Mark Williamsen, Patrick Brady, Robert Adam
-*  Mercer, Saikat Ray-Majumder, Stephen Fairhurst
-*
-*  This program is free software; you can redistribute it and/or modify it
-*  under the terms of the GNU General Public License as published by the
-*  Free Software Foundation; either version 2 of the License, or (at your
-*  option) any later version.
-*
-*  This program is distributed in the hope that it will be useful, but
-*  WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-*  General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License along
-*  with with program; see the file COPYING. If not, write to the Free
-*  Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-*  02111-1307  USA
-*/
+ * Copyright (C) 2007 Denny Mackin, Duncan Brown, Ik Siong Heng, Jolien
+ * Creighton, Kipp Cannon, Mark Williamsen, Patrick Brady, Robert Adam
+ * Mercer, Saikat Ray-Majumder, Stephen Fairhurst
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with with program; see the file COPYING. If not, write to the Free
+ * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ * 02111-1307  USA
+ */
+
 
 #include <getopt.h>
 #include <lalapps.h>
@@ -30,6 +31,7 @@
 #include <sys/time.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
+
 
 #include <lal/AVFactories.h>
 #include <lal/Date.h>
@@ -68,18 +70,22 @@
 #include <lal/VectorOps.h>
 #include <lal/Window.h>
 
+
 /* ARGH!  allow the code to be C99!  Obsession with C89 will cause bugs */
 double trunc(double);
 int snprintf(char *str, size_t size, const char *format, ...);
 int vsnprintf(char *str, size_t size, const char *format, va_list ap);
 
+
 NRCSID(POWERC, "power $Id$");
 RCSID("power $Id$");
+
 
 #define PROGRAM_NAME "lalapps_power"
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
+
 
 #define TRUE       1
 #define FALSE      0
@@ -127,7 +133,7 @@ static int is_power_of_2(int x)
 static int double_is_power_of_2(double x)
 {
 	if(x <= 0)
-		return FALSE;
+		return 0;
 	if(x < 1)
 		/* might be a -ve power */
 		return double_is_power_of_2(1 / x);
