@@ -27,6 +27,8 @@
 
 #define HS_BOINC_OPTIONS_H_RCSID "$Id$"
 
+#define EAH_SHMEM_APP_NAME "EinsteinHS"
+
 struct HS_SHMEM {
   char user_name[64];
   char team_name[64];

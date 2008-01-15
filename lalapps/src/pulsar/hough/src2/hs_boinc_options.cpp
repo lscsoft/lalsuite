@@ -55,10 +55,19 @@ static void update_shmem(void) {
   strncpy(shmem->wu_name,init_data.wu_name,sizeof(shmem->wu_name));
   strncpy(shmem->boinc_dir,init_data.boinc_dir,sizeof(shmem->boinc_dir));
   boinc_get_status(&shmem->status);
+
+  /*
+    Just to remind me of the info also in init.data
+
+    fprintf(f,"Auth: %s \n", init_data.authenticator);
+    fprintf(f,"Project Dir: %s \n", init_data.project_dir);  
+    fprintf(f,"BOINC Dir: %s \n", init_data.boinc_dir);  
+  */
+
 }
 
 int setup_shmem(void) {
-  shmem = (HS_SHMEM*)boinc_graphics_make_shmem("EinsteinHS", sizeof(HS_SHMEM));
+  shmem = (HS_SHMEM*)boinc_graphics_make_shmem(EAH_SHMEM_APP_NAME, sizeof(HS_SHMEM));
   if (!shmem) {
     fprintf(stderr, "failed to create shared mem segment\n");
     return(-1);
@@ -86,20 +95,4 @@ void set_boinc_options(void) {
   eah_boinc_options.backwards_compatible_graphics = 0;
 #endif
   boinc_get_init_data(eah_app_init_data);
-  /*
-    Just to remind me of the info in there:
-
-    fprintf(f,"User: %s \t\t", init_data.user_name);
-    fprintf(f,"Auth: %s \n", init_data.authenticator);
-    fprintf(f,"Team: %s \n\n", init_data.team_name);
-    fprintf(f,"Project Dir: %s \n", init_data.project_dir);  
-    fprintf(f,"BOINC Dir: %s \n", init_data.boinc_dir);  
-    fprintf(f,"\n");
-    fprintf(f,"Total Credit:\t %f\n", init_data.user_total_credit);
-    fprintf(f,"Avg Credit:\t %f\n",     init_data.user_expavg_credit);
-    fprintf(f,"\n");
-    fprintf(f,"APP Name: %s \n", init_data.app_name);
-    fprintf(f,"WU Name:  %s \n", init_data.wu_name);
-  */
-
 }
