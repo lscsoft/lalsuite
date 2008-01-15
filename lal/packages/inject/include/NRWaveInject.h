@@ -60,8 +60,39 @@ extern "C" {
 NRCSID( NRWAVEINJECTH, "$Id$");
 
 
+#define NRWAVEINJECT_ENULL 	  1
+#define NRWAVEINJECT_EFILE 	  2
+#define NRWAVEINJECT_ENONULL  3
+#define NRWAVEINJECT_ENOMEM   4
+#define NRWAVEINJECT_EVAL 	  5
+#define NRWAVEINJECT_EFORMAT  6
+
+#define NRWAVEINJECT_MSGENULL 	"Null pointer"
+#define NRWAVEINJECT_MSGEFILE 	"Error in file-IO"
+#define NRWAVEINJECT_MSGENONULL "Not a Null pointer"
+#define NRWAVEINJECT_MSGENOMEM 	"Memory ellocation error"
+#define NRWAVEINJECT_MSGEVAL  	"Invalid value"
+#define NRWAVEINJECT_MSGEFORMAT "Meta data file format incorrect"
+
+
 #define NINJA_MIN_MODE 2
-#define NINJA_MAX_MODE 4
+#define NINJA_MAX_MODE 5
+
+/* enum for list of numrel groups */
+typedef enum{
+  NINJA_GROUP_AEI = 0,
+  NINJA_GROUP_CIT,  
+  NINJA_GROUP_LSU,
+  NINJA_GROUP_JENA,
+  NINJA_GROUP_RIT,
+  NINJA_GROUP_CORNELL,
+  NINJA_GROUP_PSU,
+  NINJA_GROUP_FAU,
+  NINJA_GROUP_UTB,  
+  NINJA_GROUP_UIUC,
+  NINJA_GROUP_PRINCETON,
+  NINJA_GROUP_LAST
+} NumRelGroup;
 
 
 REAL4TimeVectorSeries *

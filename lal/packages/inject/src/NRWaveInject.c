@@ -643,7 +643,9 @@ void LALInjectStrainGW( LALStatus                 *status,
   INITSTATUS (status, "LALNRInject",  NRWAVEINJECTC);
   ATTATCHSTATUSPTR (status); 
 
-  sampleRate = 1.0/strain->deltaT;  
+  /* sampleRate = 1.0/strain->deltaT;   */
+  /* use the sample rate required for the output time series */
+  sampleRate = 1.0/injData->deltaT;
     
   /*compute strain for given sky location*/
   htData = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate );
@@ -707,4 +709,44 @@ CHAR* XLALGetNinjaChannelName(CHAR *polarisation, UINT4 l, INT4 m)
 
   /* return channel name */
   return channel;
+}
+
+
+/** Function for parsing numrel group name and converting it into a enum element. 
+    This needs to be robust enough to be able to handle the information as submitted 
+    by the groups. Is there a cleaner way to do this?
+*/
+NumRelGroup XLALParseNumRelGroupName( CHAR *name)
+{
+
+  NumRelGroup ret=NINJA_GROUP_LAST;
+
+  if ( !name ) {
+    return ret;
+  }
+
+  if ( strstr( name, "Caltech") || strstr( name, "CIT") )
+    ret = NINJA_GROUP_CIT;
+  else if ( strstr( name, "AEI") || strstr(name, "Potsdam")  )
+    ret = NINJA_GROUP_AEI;
+  else if ( strstr( name, "Jena") )
+    ret = NINJA_GROUP_JENA;
+  else if ( strstr( name, "Pretorius") || strstr( name, "Princeton"))
+    ret = NINJA_GROUP_PRINCETON;
+  else if ( strstr( name, "Cornell") )
+    ret = NINJA_GROUP_CORNELL;
+  else if ( strstr( name, "PSU") || strstr(name, "Penn State") )
+    ret = NINJA_GROUP_PSU;
+  else if ( strstr( name, "LSU") )
+    ret = NINJA_GROUP_LSU;
+  else if ( strstr( name, "RIT") || strstr( name, "Rochester") )
+    ret = NINJA_GROUP_RIT;
+  else if ( strstr( name, "FAU") || strstr( name, "Florida Atlantic") )
+    ret = NINJA_GROUP_FAU;
+  else if ( strstr( name, "UTB") )
+    ret = NINJA_GROUP_UTB;
+  else if ( strstr( name, "UIUC") || strstr(name, "Urbana Champaign") )
+    ret = NINJA_GROUP_UIUC;
+
+  return ret;    
 }
