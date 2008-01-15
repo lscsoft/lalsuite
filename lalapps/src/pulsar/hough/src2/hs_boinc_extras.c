@@ -382,6 +382,11 @@ void show_progress(double rac,  /**< right ascension */
   if (set_search_pos_hook)
     set_search_pos_hook(rac * 180.0/LAL_PI, dec * 180.0/LAL_PI);
 
+  /* tell APIv6 graphics about status */
+  boincv6_skypos_rac = rac;
+  boincv6_skypos_dec = dac;
+  boincv6_fraction_done = fraction_done;
+
   /* tell BOINC client about fraction done and flops so far (faked from estimation) */
   boinc_fraction_done(fraction);
   if (estimated_flops >= 0)

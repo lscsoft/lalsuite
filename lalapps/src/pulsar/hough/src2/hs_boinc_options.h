@@ -20,18 +20,44 @@
 /* C++ -> C interface for BOINC_OPTION handling etc.
 */
 
+#include "boinc_api.h"
 #if (BOINC_GRAPHICS > 0)
 #include "graphics_api.h"
 #endif
 
 #define HS_BOINC_OPTIONS_H_RCSID "$Id$"
 
+struct HS_SHMEM {
+  char user_name[64];
+  char team_name[64];
+  char  app_name[64];
+  char   wu_name[64];
+  char boincdir[128];
+  double skypos_rac;
+  double skypos_dec;
+  double user_credit;
+  double ravg_credit;
+  double host_credit;
+  double update_time;
+  double fraction_done;
+  double cpu_time;
+  BOINC_STATUS status;
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
   
+extern double boincv6_skypos_rac;
+extern double boincv6_skypos_dec;
+extern double boincv6_fraction_done;
+
 #if (BOINC_GRAPHICS > 0)
 extern int boinc_init_graphics_options(WORKER_FUNC_PTR);
+#endif
+
+#ifdef BOINC_APIV6
+extern int setup_shmem(void);
 #endif
 
 extern void set_boinc_options(void);

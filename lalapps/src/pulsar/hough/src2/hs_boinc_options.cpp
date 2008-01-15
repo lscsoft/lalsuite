@@ -23,6 +23,51 @@
 #include "hs_boinc_options.h"
 #include "boinc_api.h"
 
+/* BOINC APIv6 stuff */
+
+#ifdef BOINC_APIV6
+#include "graphics2.h"
+
+HS_SHMEM* shmem;
+
+double boincv6_skypos_rac = 0;
+double boincv6_skypos_dec = 0;
+double boincv6_fraction_done = 0;
+
+static void update_shmem(void) {
+  if (!shmem) return;
+
+  shmem->fraction_done = boincv6_fraction_done();
+  shmem->skypos_rac    = boincv6_skypos_rac;
+  shmem->skypos_dec    = boincv6_skypos_dec;
+  shmem->user_credit   = init_data.user_total_credit;
+  shmem->ravg_credit   = init_data.user_expavg_credit;
+  shmem->host_credit   = 0; /* FIXME: should bei in init_data, too */
+  shmem->cpu_time      = boinc_worker_thread_cpu_time();;
+  shmem->update_time   = dtime();
+  strncpy(shmem->user_name,init_data.user_name,sizeof(shmem->user_name));
+  strncpy(shmem->team_name,init_data.team_name,sizeof(shmem->team_name));
+  strncpy(shmem->app_name,init_data.app_name,sizeof(shmem->app_name));
+  strncpy(shmem->wu_name,init_data.wu_name,sizeof(shmem->wu_name));
+  strncpy(shmem->boinc_dir,init_data.boinc_dir,sizeof(shmem->boinc_dir));
+  boinc_get_status(&shmem->status);
+}
+
+int setup_shmem(void) {
+  shmem = (HS_SHMEM*)boinc_graphics_make_shmem("EinsteinHS", sizeof(HS_SHMEM));
+  if (!shmem) {
+    fprintf(stderr, "failed to create shared mem segment\n");
+    return(-1);
+  }
+  update_shmem();
+  boinc_register_timer_callback(update_shmem);
+  return(0);
+}
+
+#endif
+
+
+
 char* rcsid = "$Id$";
 BOINC_OPTIONS eah_boinc_options;
 APP_INIT_DATA eah_app_init_data;
