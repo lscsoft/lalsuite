@@ -41,27 +41,27 @@ HS_SHMEM* shmem = NULL;
 static void update_shmem(void) {
   if (!shmem) return;
 
-  shmem->fraction_done = boincv6_fraction_done();
+  shmem->fraction_done = boincv6_fraction_done;
   shmem->skypos_rac    = boincv6_skypos_rac;
   shmem->skypos_dec    = boincv6_skypos_dec;
-  shmem->user_credit   = init_data.user_total_credit;
-  shmem->ravg_credit   = init_data.user_expavg_credit;
-  shmem->host_credit   = init_data.host_total_credit;
+  shmem->user_credit   = eah_app_init_data.user_total_credit;
+  shmem->ravg_credit   = eah_app_init_data.user_expavg_credit;
+  shmem->host_credit   = eah_app_init_data.host_total_credit;
   shmem->cpu_time      = boinc_worker_thread_cpu_time();;
-  shmem->update_time   = dtime();
-  strncpy(shmem->user_name,init_data.user_name,sizeof(shmem->user_name));
-  strncpy(shmem->team_name,init_data.team_name,sizeof(shmem->team_name));
-  strncpy(shmem->app_name,init_data.app_name,sizeof(shmem->app_name));
-  strncpy(shmem->wu_name,init_data.wu_name,sizeof(shmem->wu_name));
-  strncpy(shmem->boinc_dir,init_data.boinc_dir,sizeof(shmem->boinc_dir));
+  shmem->update_time   = 0; //dtime();
+  strncpy(shmem->user_name,eah_app_init_data.user_name,sizeof(shmem->user_name));
+  strncpy(shmem->team_name,eah_app_init_data.team_name,sizeof(shmem->team_name));
+  strncpy(shmem->app_name,eah_app_init_data.app_name,sizeof(shmem->app_name));
+  strncpy(shmem->wu_name,eah_app_init_data.wu_name,sizeof(shmem->wu_name));
+  strncpy(shmem->boincdir,eah_app_init_data.boinc_dir,sizeof(shmem->boincdir));
   boinc_get_status(&shmem->status);
 
   /*
     Just to remind me of the info also in init.data
 
-    fprintf(f,"Auth: %s \n", init_data.authenticator);
-    fprintf(f,"Project Dir: %s \n", init_data.project_dir);  
-    fprintf(f,"BOINC Dir: %s \n", init_data.boinc_dir);  
+    fprintf(f,"Auth: %s \n", eah_app_init_data.authenticator);
+    fprintf(f,"Project Dir: %s \n", eah_app_init_data.project_dir);  
+    fprintf(f,"BOINC Dir: %s \n", eah_app_init_data.boinc_dir);  
   */
 
 }
