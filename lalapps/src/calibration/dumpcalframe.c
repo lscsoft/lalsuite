@@ -76,6 +76,13 @@ int main( int argc, char *argv[] )
             fprintf( stderr, "\t\t\t\tTime %d-%d\n", sData->timeStart, sData->timeEnd );
             print_factors( sData );
           }
+          else if ( 0 == strcmp( sData->representation, "time_series" ) && 0 !=  strcmp( sData->comment, "time domain FIR filter" ))
+          {
+            fprintf( stderr, "\t\t\tCalibration Data %s\n", sData->name );
+            fprintf( stderr, "\t\t\t\tVersion %d\n", sData->version );
+            fprintf( stderr, "\t\t\t\tTime %d-%d\n", sData->timeStart, sData->timeEnd );
+            print_factors( sData );
+          }
         }
       }
       FrameFree( frame );
