@@ -203,7 +203,7 @@ initUserVars (LALStatus *status, UserInput *uvar, int argc, char *argv[])
   LALRegisterREALUserVar(status->statusPtr,	"f1dot", 		's', UVAR_OPTIONAL, 
 			 "first spindown-value df/dt", &(uvar->f1dot));
   LALRegisterINTUserVar(status->statusPtr,        "metricType",     'M', UVAR_OPTIONAL, 
-			"Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact, 4=FLAT", 
+			"Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact, 4=FLAT[old]", 
 			&(uvar->metricType));
   LALRegisterBOOLUserVar(status->statusPtr,	"projectMetric",	 0,  UVAR_OPTIONAL,
 			 "Project metric onto frequency-surface", &(uvar->projectMetric));
@@ -323,9 +323,9 @@ printPulsarMetric(LALStatus *status, const UserInput *uvar, const ConfigVariable
     }
 
   if ( lalDebugLevel )
-    printf ("\n %s Metric: (f, alpha, delta, f1dot) \n", 
+    printf ("\n%%%% %s Metric: (f, alpha, delta, f1dot) \n",
 	    uvar->projectMetric ? "Projected":"Unprojected");
-
+  printf ("\n g_ij = \\\n");
   TRY ( printMetric(status->statusPtr, metric ), status);
 
   TRY( LALDDestroyVector (status->statusPtr, &metric), status);
@@ -351,37 +351,12 @@ printFlatPulsarMetric (LALStatus *status, const UserInput *uvar, const ConfigVar
 			    &metric, config->startTimeGPS, uvar->duration, config->site), status);
 
   /* formatted output of metric coefficients */
-  printf ("\n Flat Metric in dimensionless variables (kappaX, kappaY, w0, w1, w2, ...) \n");
+  printf ("\n%%%% Flat Metric in dimensionless variables (kappaX, kappaY, w0, w1, w2, ...) \n");
+  printf ("\ng_ij = \\\n");
   TRY ( printMetric(status->statusPtr, metric), status );
-
-  /* translate coefficients into physical coordinates {f, alpha, delta, f1, f2 }*/
-  TRY ( LALDCreateVector ( status->statusPtr, &physmetric, metric->length ), status );
-
-  dim = XLALFindMetricDim ( metric );
-  for ( a=2; a < dim; a ++ )
-    for ( b=a; b < dim; b++ )
-      {
-	UINT4 a0, b0;	/* take care of changing f-coordinate to first position */
-	if ( a == 2 ) 
-	  a0 = 0;
-	else
-	  a0 = a;
-	if ( b == 2 ) 
-	  b0 = 0;
-	else 
-	  b0 = b;
-
-	physmetric->data[ PMETRIC_INDEX(a0,b0) ] = 
-	  metric->data [ PMETRIC_INDEX (a, b) ] * (pow(LAL_TWOPI,2) * pow(uvar->duration,a+b-2) );
-      }
-
-  /* formatted output of translated physical metric coefficients */
-  printf ("\n Flat Metric in translated units (f, -, -, f1dot, f2dot,...) \n");
-  TRY ( printMetric(status->statusPtr, physmetric), status );
 
   /* free memory */
   TRY( LALDDestroyVector (status->statusPtr, &metric), status);
-  TRY( LALDDestroyVector (status->statusPtr, &physmetric), status);
 
   DETATCHSTATUSPTR ( status );
   RETURN(status);
