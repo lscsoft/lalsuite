@@ -23,16 +23,20 @@
 #include "hs_boinc_options.h"
 #include "boinc_api.h"
 
+char* rcsid = "$Id$";
+BOINC_OPTIONS eah_boinc_options;
+APP_INIT_DATA eah_app_init_data;
+
 /* BOINC APIv6 stuff */
+
+double boincv6_skypos_rac = 0;
+double boincv6_skypos_dec = 0;
+double boincv6_fraction_done = 0;
 
 #ifdef BOINC_APIV6
 #include "graphics2.h"
 
 HS_SHMEM* shmem;
-
-double boincv6_skypos_rac = 0;
-double boincv6_skypos_dec = 0;
-double boincv6_fraction_done = 0;
 
 static void update_shmem(void) {
   if (!shmem) return;
@@ -66,11 +70,6 @@ int setup_shmem(void) {
 
 #endif
 
-
-
-char* rcsid = "$Id$";
-BOINC_OPTIONS eah_boinc_options;
-APP_INIT_DATA eah_app_init_data;
 
 #if (BOINC_GRAPHICS == 1) || ((BOINC_GRAPHICS == 2) && defined(_MSC_VER))
 int boinc_init_graphics_options(WORKER_FUNC_PTR worker)
