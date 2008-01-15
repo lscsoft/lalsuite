@@ -942,6 +942,11 @@ static void worker (void) {
   if(test_sqrt)
     fprintf(stderr,"NaN:%f\n", sqrt(-1));
   
+#ifdef BOINC_APIV6
+  if(setup_shmem())
+    LogPrintf (LOG_NORMAL, "Couldn't set up communication with graphics process\n",res);
+#endif
+
   /* CALL WORKER's MAIN()
    */
   res = MAIN(rargc,rargv);
