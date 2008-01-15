@@ -36,7 +36,7 @@ double boincv6_fraction_done = 0;
 #ifdef BOINC_APIV6
 #include "graphics2.h"
 
-HS_SHMEM* shmem;
+HS_SHMEM* shmem = NULL;
 
 static void update_shmem(void) {
   if (!shmem) return;
@@ -46,7 +46,7 @@ static void update_shmem(void) {
   shmem->skypos_dec    = boincv6_skypos_dec;
   shmem->user_credit   = init_data.user_total_credit;
   shmem->ravg_credit   = init_data.user_expavg_credit;
-  shmem->host_credit   = 0; /* FIXME: should bei in init_data, too */
+  shmem->host_credit   = init_data.host_total_credit;
   shmem->cpu_time      = boinc_worker_thread_cpu_time();;
   shmem->update_time   = dtime();
   strncpy(shmem->user_name,init_data.user_name,sizeof(shmem->user_name));
