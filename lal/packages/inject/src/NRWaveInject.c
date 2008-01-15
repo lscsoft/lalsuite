@@ -715,6 +715,7 @@ CHAR* XLALGetNinjaChannelName(CHAR *polarisation, UINT4 l, INT4 m)
 /** Function for parsing numrel group name and converting it into a enum element. 
     This needs to be robust enough to be able to handle the information as submitted 
     by the groups. Is there a cleaner way to do this?
+    add or modify the group names as required
 */
 NumRelGroup XLALParseNumRelGroupName( CHAR *name)
 {

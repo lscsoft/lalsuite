@@ -115,11 +115,9 @@ XLALCalculateNRStrain(
     CHAR                  *ifo,
     INT4                   sampleRate);
 
-
 REAL4TimeSeries *
 XLALInterpolateNRWave( REAL4TimeSeries *in,
 		       INT4      sampleRate);
-
 
 INT4 
 XLALFindNRFile( NRWaveMetaData *out,
@@ -133,14 +131,12 @@ XLALSumStrain(
     REAL4TimeVectorSeries *tempstrain,     /**< storing variable */ 
     REAL4TimeVectorSeries *strain          /**< variable to add  */);
 
-
 void LALInjectStrainGW( LALStatus *status, 
 			REAL4TimeSeries *injData, 
 			REAL4TimeVectorSeries *strain, 
 			SimInspiralTable *thisInj, 
 			CHAR *ifo, 
 			REAL8 dynRange);
-
 
 INT4
 XLALFindNRCoalescenceTime(REAL8 *tc, 
@@ -158,6 +154,8 @@ XLALSphHarm ( COMPLEX16 *out, /**< [out] the value of Y2_lm(theta,phi) */
 CHAR* XLALGetNinjaChannelName(CHAR *polarisation, /**< either plus or cross */
 			      UINT4 l, /**< azimuthal mode index */
 			      INT4 m );/**< polar mode index */
+
+NumRelGroup XLALParseNumRelGroupName( CHAR *name);
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */
