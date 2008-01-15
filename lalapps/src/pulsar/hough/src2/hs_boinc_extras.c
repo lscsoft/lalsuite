@@ -384,8 +384,8 @@ void show_progress(double rac,  /**< right ascension */
 
   /* tell APIv6 graphics about status */
   boincv6_skypos_rac = rac;
-  boincv6_skypos_dec = dac;
-  boincv6_fraction_done = fraction_done;
+  boincv6_skypos_dec = dec;
+  boincv6_fraction_done = fraction;
 
   /* tell BOINC client about fraction done and flops so far (faked from estimation) */
   boinc_fraction_done(fraction);
