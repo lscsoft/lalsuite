@@ -1214,7 +1214,19 @@ static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 
 #endif
 
   x += SINCOS_ADDS;
-  ix = *(INT8*)(&x); /* transform the bits that make a REAL8 into a INT8 */
+
+  /* try various ways to transform the bits of a REAL8(x) into an INT8(ix) */
+#if defined(SINCOS_REAL2INT) && (SINCOS_REAL2INT == 2) && defined(__GNUC__)
+  /* manually code the store instruction we want, fast but limited to gcc & x87 */
+  __asm( "fstl %[ix]\n\t" : [ix] "=m" (ix) : [x] "t" (x) );
+#elif defined(SINCOS_REAL2INT) && (SINCOS_REAL2INT == 1)
+  /* requires -fno-strict-aliasing on gcc */
+  ix = *(INT8*)(&x);
+#else
+  /* works always, but is somewhat slow */
+  memcpy(&ix,&x,sizeof(ix));
+#endif
+
   i  = ix & SINCOS_MASK1;
   n  = ix & SINCOS_MASK2;
   i  = i >> SINCOS_SHIFT;
