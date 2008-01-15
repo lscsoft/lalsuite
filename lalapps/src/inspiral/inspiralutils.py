@@ -388,7 +388,8 @@ def hipe_setup(hipeDir, config, ifos, logPath, injFile=None, dfOnly = False, \
   hipecp.write(file(iniFile,"w"))
 
   print "Running hipe in directory " + hipeDir
-  if injFile: print "Injection file: " + hipecp.get("input", "injection-file")
+  if dfOnly: print "Running datafind only"
+  elif injFile: print "Injection file: " + hipecp.get("input", "injection-file")
   else: print "No injections, " + str(hipecp.get("input","num-slides")) + \
       " time slides"
   if vetoCat: print "Running the category " + str(vetoCat) + " vetoes"
@@ -400,13 +401,27 @@ def hipe_setup(hipeDir, config, ifos, logPath, injFile=None, dfOnly = False, \
   hipeCommand += " --config-file " + iniFile
   if playOnly: hipeCommand += " --priority 10"
   for item in config.items("ifo-details"):
-      hipeCommand += " --" + item[0] + " " + item[1]
+    hipeCommand += " --" + item[0] + " " + item[1]
 
-  for item in config.items("hipe-arguments"):
-    if (dfOnly and item[0] == "datafind") or  \
-        (vetoCat and item[0] in ["second-coinc", "coire-second-coinc"]) or \
-        (not dfOnly and not vetoCat and item[0] != "datafind"):
-      hipeCommand += " --" + item[0] + " " + item[1]
+  def test_and_add_hipe_arg(hipeCommand, hipe_arg):
+    if config.has_option("hipe-arguments",hipe_arg):
+      hipeCommand += "--" + hipe_arg + " " + \
+        config.get("hipe-arguments",hipe_arg)
+    return(hipeCommand)
+
+  if dfOnly:
+    hipeCommand = test_and_add_hipe_arg(hipeCommand,"datafind")
+  elif vetoCat:
+    hipeCommand = test_and_add_hipe_arg(hipeCommand,"second-coinc")
+    hipeCommand = test_and_add_hipe_arg(hipeCommand,"coire-second-coinc")
+  else:
+    omit = ["datafind", "disable-dag-categories", "disable-dag-priorities"]
+    for (opt, arg) in config.items("hipe-arguments"):
+      if opt not in omit:
+        hipeCommand += "--" + opt + " " + arg 
+
+  hipeCommand = test_and_add_hipe_arg(hipeCommand,"disable-dag-categories")
+  hipeCommand = test_and_add_hipe_arg(hipeCommand,"disable-dag-priorities")
 
   # run lalapps_inspiral_hipe
   make_external_call(hipeCommand)
