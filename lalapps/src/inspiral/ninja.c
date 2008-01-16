@@ -91,6 +91,8 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 #define TRUE (1==1)
 #define FALSE (1==0)
 
+#define NINJA_SEPARATOR ';'
+
 /* verbose flag */
 extern int vrbflg;
 
@@ -112,17 +114,27 @@ typedef struct {
 } NrParRange;
 
 
+typedef struct 
+{
+  REAL8 massRatio; /**< Mass ratio m1/m2 where we assume m1 >= m2*/
+  REAL8 spin1[3];  /**< Spin of m1 */
+  REAL8 spin2[3];  /**< Spin of m2 */
+  INT4  mode[2];   /**< l and m values */
+  CHAR  filename[LALNameLength]; /**< filename where data is stored */
+  NumRelGroup group;
+} NinjaMetaData;
+
 /* functions for internal use only */
 
-int get_nr_metadata_from_framehistory(NRWaveMetaData *data, FrHistory *history);
+int get_nr_metadata_from_framehistory(NinjaMetaData *data, FrHistory *history);
 
 int get_mode_index_from_channel_name(INT4  *mode_l, INT4  *mode_m, CHAR  *name);
 
 int get_minmax_modes(INT4 *min, INT4 *max, FrameH *frame);
 
-int get_eta_spins_from_string(NRWaveMetaData *data, CHAR *comment);
+int get_metadata_from_string(NinjaMetaData *data, CHAR *comment);
 
-int metadata_in_range(NRWaveMetaData *data, NrParRange *range);
+int metadata_in_range(NinjaMetaData *data, NrParRange *range);
 
 
 /* main program entry */
@@ -146,9 +158,8 @@ int main( INT4 argc, CHAR *argv[] )
   ProcessParamsTable   *this_proc_param = NULL;
   LALLeapSecAccuracy  accuracy = LALLEAPSEC_LOOSE;
 
-
   /* nrwave stuff */
-  NRWaveMetaData metaData;
+  NinjaMetaData metaData;
   NrParRange range;
 
   UINT4 k;
@@ -156,6 +167,7 @@ int main( INT4 argc, CHAR *argv[] )
   /* user input variables */
   BOOLEAN  uvar_help = FALSE;
   CHAR *uvar_nrDir=NULL;
+  CHAR *uvar_pattern=NULL;
   CHAR *uvar_nrGroup=NULL;
   CHAR *uvar_outFile=NULL;
   REAL8 uvar_minMassRatio=1, uvar_maxMassRatio=0;
@@ -175,6 +187,7 @@ int main( INT4 argc, CHAR *argv[] )
 
   LAL_CALL( LALRegisterBOOLUserVar( &status, "help", 'h', UVAR_HELP, "Print this message", &uvar_help), &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "nrDir", 'D', UVAR_REQUIRED, "Directory with NR data", &uvar_nrDir), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "pattern", 0, UVAR_REQUIRED, "Filename pattern", &uvar_pattern), &status);
 
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "outFile", 'o', UVAR_OPTIONAL, "Output xml filename", &uvar_outFile), &status);
 
@@ -235,7 +248,7 @@ int main( INT4 argc, CHAR *argv[] )
   LogPrintf (LOG_NORMAL, "Globbing frame files...");  
 
   /* create a frame cache by globbing *.gwf in specified dir */
-  LAL_CALL( LALFrCacheGenerate( &status, &frGlobCache, uvar_nrDir, NULL ), 
+  LAL_CALL( LALFrCacheGenerate( &status, &frGlobCache, uvar_nrDir, uvar_pattern ), 
 	    &status );
 
   memset( &sieve, 0, sizeof(FrCacheSieve) );
@@ -252,7 +265,6 @@ int main( INT4 argc, CHAR *argv[] )
   }
   LogPrintfVerbatim (LOG_NORMAL, "found %d\n",frInCache->numFrameFiles);
 
-
   /* initialize head of simInspiralTable linked list to null */
   injections.simInspiralTable = NULL;
 
@@ -264,7 +276,7 @@ int main( INT4 argc, CHAR *argv[] )
 
     frame = FrameRead (frFile);
     
-    memset(&metaData, 0, sizeof(NRWaveMetaData));    
+    memset(&metaData, 0, sizeof(NinjaMetaData));    
     get_nr_metadata_from_framehistory( &metaData, frame->history);
 
     /* if we find parameters in range then write to the siminspiral table */
@@ -392,7 +404,7 @@ int main( INT4 argc, CHAR *argv[] )
 
 /* metadata is stored in the history field comment 
    -- this function parses the comment to fill the metadata struct */
-int get_nr_metadata_from_framehistory(NRWaveMetaData *data,
+int get_nr_metadata_from_framehistory(NinjaMetaData *data,
 				      FrHistory *history)
 {
 
@@ -404,11 +416,9 @@ int get_nr_metadata_from_framehistory(NRWaveMetaData *data,
 
   localhist = history;
   while (localhist) {
-
+    /* get history comment string and parse it */
     strcpy(comment,localhist->comment);
-
-    get_eta_spins_from_string(data, comment);
-
+    get_metadata_from_string(data, comment);    
     localhist = localhist->next;
   }
 
@@ -417,7 +427,7 @@ int get_nr_metadata_from_framehistory(NRWaveMetaData *data,
 }
 
 
-int get_eta_spins_from_string(NRWaveMetaData *data,
+int get_metadata_from_string(NinjaMetaData *data,
 			      CHAR *comment)
 {
 
@@ -467,6 +477,11 @@ int get_eta_spins_from_string(NRWaveMetaData *data,
     return 0;
   }
 
+  if (strstr(token,"nr-group")) {
+    token = strtok(NULL,":");
+    data->group = XLALParseNumRelGroupName( token);
+    return 0;
+  }
 
   /* did not match anything */
   return -1;
@@ -477,7 +492,7 @@ int get_eta_spins_from_string(NRWaveMetaData *data,
 
 
 
-int metadata_in_range(NRWaveMetaData *data, NrParRange *range)
+int metadata_in_range(NinjaMetaData *data, NrParRange *range)
 {
 
   INT4 ret;

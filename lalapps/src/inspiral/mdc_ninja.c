@@ -450,7 +450,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
       {
         LAL_CALL( AddNumRelStrainModes( &status, &tempStrain, thisInj), &status);
 
-        LAL_CALL( LALInjectStrainGW( &status, injData[i], tempStrain, injections, ifo, dynRange), &status);
+        LAL_CALL( LALInjectStrainGW( &status, injData[i], tempStrain, thisInj, ifo, dynRange), &status);
 
         XLALDestroyREAL4VectorSequence ( tempStrain->data);
         tempStrain->data = NULL;
