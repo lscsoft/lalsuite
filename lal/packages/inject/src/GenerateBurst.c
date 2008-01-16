@@ -1,64 +1,40 @@
 /*
-*  Copyright (C) 2007 Jolien Creighton, Patrick Brady, Saikat Ray-Majumder, Xavier Siemens, Teviet Creighton
-*
-*  This program is free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  This program is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
-*  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
-*/
+ * Copyright (C) 2007 Jolien Creighton, Patrick Brady, Saikat Ray-Majumder,
+ * Xavier Siemens, Teviet Creighton, Kipp Cannon
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with with program; see the file COPYING. If not, write to the Free
+ * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ * 02111-1307  USA
+ */
 
-/************************** <lalVerbatim file="GenerateBurstCV">
-Author: Brady, P. B.
-$Id$
-**************************************************** </lalVerbatim> */
 
-/********************************************************** <lalLaTeX>
+/*
+ * ============================================================================
+ *
+ *                                  Preamble
+ *
+ * ============================================================================
+ */
 
-\providecommand{\lessim}{\stackrel{<}{\scriptstyle\sim}}
 
-\subsection{Module \texttt{GenerateBurst.c}}
-\label{ss:GenerateBurst.c}
+#include <lal/FrequencySeries.h>
+#include <lal/Sequence.h>
+#include <lal/TimeSeries.h>
+#include <gsl/gsl_randist.h>
 
-Computes one of the standard burst waveforms with specified $h_{rss}$.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{GenerateBurstCP}
-\idx{LALGenerateBurst()}
-
-\subsubsection*{Description}
-
-This function computes one of the following burst waveforms:
-\begin{description}
-\item[Sine-Gaussian]:  a linearly polarized sine-Gaussian with the specified
-frequency and decay constant.
-\end{description}
-
-\subsubsection*{Uses}
-\begin{verbatim}
-LALMalloc()                   LALFree()
-LALSCreateVectorSequence()    LALSDestroyVectorSequence()
-LALSCreateVector()            LALSDestroyVector()
-LALDCreateVector()            LALDDestroyVector()
-LALSnprintf()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{GenerateBurstCV}}
-
-******************************************************* </lalLaTeX> */
-
+/* FIXME:  which of these are still needed? */
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -75,17 +51,269 @@ LALSnprintf()
 #include <lal/RealFFT.h>
 
 
-NRCSID( GENERATEBURSTC, "$Id$" );
+NRCSID(GENERATEBURSTC, "$Id$");
 
-/* <lalVerbatim file="GenerateBurstCP"> */
-void
+
+/*
+ * ============================================================================
+ *
+ *                    Fill a time series with white noise
+ *
+ * ============================================================================
+ */
+
+
+static void gaussian_noise(REAL8TimeSeries *series, REAL8 rms, gsl_rng *rng)
+{
+	unsigned i;
+
+	for(i = 0; i < series->data->length; i++)
+		series->data->data[i] = gsl_ran_gaussian(rng, rms);
+}
+
+
+/*
+ * ============================================================================
+ *
+ *            Construct a Band- and Time-Limited White Noise Burst
+ *
+ * ============================================================================
+ */
+
+
+/*
+ * Given the Fourier transform of a real-valued function h(t), compute and
+ * return the integral of the square if its derivative:
+ *
+ * \int \dot{h}^{2} \diff t.
+ *
+ * Uses Kahan's compensated summation algorithm, and does summation from
+ * lowest to highest frequency assuming that high frequency components tend
+ * to add more to the magnitude of the derivative.
+ *
+ * The normalization factors in this function assume that
+ * XLALREAL8FreqTimeFFT() will be used to convert the frequency series to
+ * the time domain.
+ */
+
+
+static double integrate_hdot_squared_dt(COMPLEX16FrequencySeries *fseries)
+{
+	unsigned i;
+	double e = 0.0;
+	double sum = 0.0;
+
+	for(i = 0; i < fseries->data->length; i++) {
+		double tmp = sum;
+		/* what we want to add = f^{2} |\tilde{s}(f)|^{2} + "error
+		 * from last iteration" */
+		double x = (fseries->f0 + i * fseries->deltaF) * (fseries->f0 + i * fseries->deltaF) * (fseries->data->data[i].re * fseries->data->data[i].re + fseries->data->data[i].im * fseries->data->data[i].im) + e;
+		/* add */
+		sum += x;
+		/* negative of what was actually added */
+		e = tmp - sum;
+		/* what didn't get added, add next time */
+		e += x;
+	}
+
+	/* because we've only summed the positive frequency components */
+
+	sum *= 2;
+
+	/* 4 \pi^{2} \delta f */
+
+	sum *= LAL_TWOPI * LAL_TWOPI * fseries->deltaF;
+
+	return sum;
+}
+
+
+/*
+ * Parameters:
+ *
+ * duration
+ * 	duration of waveform in seconds
+ * frequency
+ * 	centre frequency of waveform in Hertz
+ * bandwidth
+ * 	bandwidth of waveform in Hertz
+ * int_hdot_squared
+ * 	waveform is normalized so that \int \dot{h}^{2} \diff t equals this
+ * delta_t
+ * 	the sample rate of the time series to construct
+ * rng
+ * 	a GSL random number generator to be used to produce Gaussian random
+ * 	variables
+ */
+
+
+REAL8TimeSeries *XLALBandAndTimeLimitedWhiteNoiseBurst(REAL8 duration, REAL8 frequency, REAL8 bandwidth, REAL8 int_hdot_squared, REAL8 delta_t, gsl_rng *rng)
+{
+	static const char func[] = "XLALBandAndTimeLimitedWhiteNoiseBurst";
+	int length;
+	LIGOTimeGPS epoch;
+	REAL8TimeSeries *series;
+	COMPLEX16FrequencySeries *fseries;
+	REAL8Window *window;
+	REAL8FFTPlan *plan;
+	REAL8 norm_factor;
+	unsigned i;
+
+	/* check input */
+
+	if(duration < 0 || bandwidth < 0 || duration * bandwidth < LAL_2_PI || frequency < bandwidth / 2 || int_hdot_squared < 0 || delta_t <= 0)
+		XLAL_ERROR_NULL(func, XLAL_EINVAL);
+
+	/* length of the injection time series is 10 * duration, rounded to
+	 * the nearest odd integer */
+
+	length = (int) (10.0 * duration / delta_t / 2.0);
+	length = 2 * length + 1;
+
+	/* the middle sample is t = 0 */
+
+	XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * delta_t);
+
+	/* allocate the time series */
+
+	series = XLALCreateREAL8TimeSeries("BTLWNB", &epoch, 0.0, delta_t, &lalStrainUnit, length);
+	if(!series)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+
+	/* fill with independent zero-mean unit variance Gaussian random
+	 * numbers */
+
+	gaussian_noise(series, 1, rng);
+
+	/* apply the time-domain Gaussian window.  the window function's
+	 * shape parameter is ((length - 1) / 2) * delta_t / \sigma_{t} where
+	 *
+	 * \sigma_{t} = \sqrt{duration^{2} / 4 - 1 / (\pi^{2} bandwidth^{2})}
+	 *
+	 * is the compensated time-domain window duration */
+
+	window = XLALCreateGaussREAL8Window(series->data->length, ((series->data->length - 1) / 2) * delta_t / sqrt(duration * duration / 4.0 - 1.0 / (LAL_PI * LAL_PI * bandwidth * bandwidth)));
+	if(!window) {
+		XLALDestroyREAL8TimeSeries(series);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	}
+	for(i = 0; i < window->data->length; i++)
+		series->data->data[i] *= window->data->data[i];
+	XLALDestroyREAL8Window(window);
+
+	/* apply an additional Hann window to taper the time series to 0 */
+
+	window = XLALCreateHannREAL8Window(series->data->length);
+	if(!window) {
+		XLALDestroyREAL8TimeSeries(series);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	}
+	for(i = 0; i < window->data->length; i++)
+		series->data->data[i] *= window->data->data[i];
+	XLALDestroyREAL8Window(window);
+
+	/* transform to the frequency domain */
+
+	plan = XLALCreateForwardREAL8FFTPlan(series->data->length, 0);
+	fseries = XLALCreateCOMPLEX16FrequencySeries(NULL, &epoch, 0.0, 0.0, &lalDimensionlessUnit, series->data->length / 2 + 1);
+	if(!plan || !fseries) {
+		XLALDestroyCOMPLEX16FrequencySeries(fseries);
+		XLALDestroyREAL8FFTPlan(plan);
+		XLALDestroyREAL8TimeSeries(series);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	}
+	i = XLALREAL8TimeFreqFFT(fseries, series, plan);
+	XLALDestroyREAL8FFTPlan(plan);
+	if(i) {
+		XLALDestroyCOMPLEX16FrequencySeries(fseries);
+		XLALDestroyREAL8TimeSeries(series);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	}
+
+	/* apply the frequency-domain Gaussian window.  the window
+	 * function's shape parameter is computed similarly to that of the
+	 * time-domain window, with \sigma_{f} = \Delta f / 2.  the window
+	 * is created with its peak on the middle sample, which we need to
+	 * shift to the sample corresponding to the injection's centre
+	 * frequency. */
+
+	window = XLALCreateGaussREAL8Window(2 * fseries->data->length, fseries->data->length * fseries->deltaF / (bandwidth / 2.0));
+	if(!window) {
+		XLALDestroyCOMPLEX16FrequencySeries(fseries);
+		XLALDestroyREAL8TimeSeries(series);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	}
+	/* FIXME:  it's possible the start index should have 0.5 added or
+	 * subtracted because the peak of the Gaussian might be 1/2 bin
+	 * away from where this expression considers it to be */
+	XLALResizeREAL8Sequence(window->data, fseries->data->length - frequency / fseries->deltaF, fseries->data->length);
+	for(i = 0; i < window->data->length; i++) {
+		fseries->data->data[i].re *= window->data->data[i];
+		fseries->data->data[i].im *= window->data->data[i];
+	}
+	XLALDestroyREAL8Window(window);
+
+	/* normalize the waveform to achieve the desired \int \dot{h}^{2}
+	 * dt */
+
+	norm_factor = sqrt(int_hdot_squared / integrate_hdot_squared_dt(fseries));
+	for(i = 0; i < fseries->data->length; i++) {
+		fseries->data->data[i].re *= norm_factor;
+		fseries->data->data[i].im *= norm_factor;
+	}
+
+	/* transform to the time domain */
+
+	plan = XLALCreateReverseREAL8FFTPlan(length, 0);
+	if(!plan) {
+		XLALDestroyCOMPLEX16FrequencySeries(fseries);
+		XLALDestroyREAL8TimeSeries(series);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	}
+	i = XLALREAL8FreqTimeFFT(series, fseries, plan);
+	XLALDestroyREAL8FFTPlan(plan);
+	XLALDestroyCOMPLEX16FrequencySeries(fseries);
+	if(i) {
+		XLALDestroyREAL8TimeSeries(series);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	}
+
+	/* apply a Tukey window to ensure continuity at the start and end
+	 * of the injection.  the window's shape parameter sets what
+	 * fraction of the window is used by the tapers */
+
+	window = XLALCreateTukeyREAL8Window(series->data->length, 0.5);
+	if(!window) {
+		XLALDestroyREAL8TimeSeries(series);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	}
+	for(i = 0; i < window->data->length; i++)
+		series->data->data[i] *= window->data->data[i];
+	XLALDestroyREAL8Window(window);
+
+	/* done */
+
+	return series;
+}
+
+
+/*
+ * ============================================================================
+ *
+ *                   Legacy Code --- Please Update to XLAL!
+ *
+ * ============================================================================
+ */
+
+
+static void
 LALGenerateBurst( 
     LALStatus          *stat, 
     CoherentGW         *output,
     SimBurstTable      *simBurst,
     BurstParamStruc    *params 
     )
-{ /* </lalVerbatim> */
+{
   UINT4 n, i;          /* number of and index over samples */
   REAL8 t, dt, duration;         /* time, interval */
   REAL8 t0, tau, gtime;  /* central time, decay time, gaussian time */
@@ -390,9 +618,6 @@ LALGenerateBurst(
 
 
 
-
-
-/* <lalVerbatim file="GenerateBurstCP"> */
 void
 LALBurstInjectSignals( 
     LALStatus               *stat, 
@@ -401,7 +626,6 @@ LALBurstInjectSignals(
     COMPLEX8FrequencySeries *resp,
     INT4                     calType
     )
-/* </lalVerbatim> */
 {
   UINT4              k;
   INT4               injStartTime;

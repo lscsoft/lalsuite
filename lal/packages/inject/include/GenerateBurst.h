@@ -17,47 +17,32 @@
 *  MA  02111-1307  USA
 */
 
-/***************************** <lalVerbatim file="GenerateBurstHV">
-Author: Brady, P R
-$Id$
-**************************************************** </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-
-\section{Header \texttt{GenerateBurst.h}}
-\label{s:GenerateBurst.h}
-
-Provides routines to generate burst waveforms.
-
-\subsection*{Synopsis}
-\begin{verbatim}
-#include <lal/GenerateBurst.h>
-\end{verbatim}
-
-This header covers routines to generate a variety of burst waveforms
-......
-
-
-******************************************************* </lalLaTeX> */
 
 #ifndef _GENERATEBURST_H
 #define _GENERATEBURST_H
 
+
+#include <lal/LALAtomicDatatypes.h>
+#include <lal/LALDatatypes.h>
+#include <gsl/gsl_rng.h>
+
+
+/* FIXME:  which of these are still needed? */
 #include <lal/LALStdlib.h>
 #include <lal/SimulateCoherentGW.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/LIGOMetadataTables.h>
+
 
 #ifdef  __cplusplus
 extern "C" {
 #pragma }
 #endif
 
-NRCSID( GENERATEBURSTH, "$Id$" );
 
-/********************************************************** <lalLaTeX>
-\subsection*{Error conditions}
-****************************************** </lalLaTeX><lalErrTable> */
+NRCSID(GENERATEBURSTH, "$Id$");
+
+
 #define GENERATEBURSTH_ENUL 1
 #define GENERATEBURSTH_EOUT 2
 #define GENERATEBURSTH_EMEM 3
@@ -69,73 +54,54 @@ NRCSID( GENERATEBURSTH, "$Id$" );
 #define GENERATEBURSTH_MSGEMEM "Out of memory"
 #define GENERATEBURSTH_MSGETYP "Waveform type not implemented"
 #define GENERATEBURSTH_MSGELEN "Waveform length not correctly specified"
-/******************************************** </lalErrTable><lalLaTeX>
 
-\subsection*{Types}
-\idx[Type]{SimBurstType}
-\idx[Type]{BurstParamStruc}
 
-\subsubsection*{Structure \texttt{SimBurstType}}
-
-******************************************************* </lalLaTeX> */
-
-/******************************************** <lalVerbatim> */
-typedef enum{
-  sineGaussian,
-  Gaussian,
-  Ringdown,
-  Ringup
+typedef enum {
+	sineGaussian,
+	Gaussian,
+	Ringdown,
+	Ringup
 } SimBurstType;
-/******************************************** </lalVerbatim> */
 
 
-/******************************************** <lalLaTeX>
-
-\subsubsection*{Structure \texttt{BurstParamStruc}}
-
-This structure stores the parameters for constructing a burst gravitational
-waveform 
-
-******************************************************* </lalLaTeX> */
-
-/******************************************** <lalVerbatim> */
 typedef struct tagBurstParamStruc {
-  REAL8 deltaT;             /* requested sampling interval (s) */
-  CoordinateSystem system;  /* coordinate system to assume for simBurst */
+	REAL8 deltaT;	/* requested sampling interval (s) */
+	CoordinateSystem system;	/* coordinate system to assume for simBurst */
 } BurstParamStruc;
-/******************************************** </lalVerbatim> */
 
 
-/* <lalLaTeX>
-\vfill{\footnotesize\input{GenerateBurstHV}}
-</lalLaTeX> */
+/*
+ * ============================================================================
+ *
+ *                            Function Prototypes
+ *
+ * ============================================================================
+ */
 
 
-/* Function prototypes. */
+REAL8TimeSeries *XLALBandAndTimeLimitedWhiteNoiseBurst(
+	REAL8 duration,
+	REAL8 frequency,
+	REAL8 bandwidth,
+	REAL8 int_hdot_squared,
+	REAL8 delta_t,
+	gsl_rng *rng
+);
 
-/* <lalLaTeX>
-\newpage\input{GenerateBurstC}
-</lalLaTeX> */
-void
-LALGenerateBurst( 
-    LALStatus          *status, 
-    CoherentGW         *output, 
-    SimBurstTable      *simBurst,
-    BurstParamStruc    *params 
-    );
 
-void
-LALBurstInjectSignals( 
-    LALStatus               *status, 
-    REAL4TimeSeries         *series, 
-    SimBurstTable           *injections,
-    COMPLEX8FrequencySeries *resp,
-    INT4                     calType
-    );
+void LALBurstInjectSignals(
+	LALStatus *status,
+	REAL4TimeSeries *series,
+	SimBurstTable *injections,
+	COMPLEX8FrequencySeries *resp,
+	INT4 calType
+);
+
 
 #ifdef  __cplusplus
 #pragma {
 }
 #endif
+
 
 #endif /* _GENERATEBURST_H */
