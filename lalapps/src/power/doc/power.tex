@@ -1641,6 +1641,20 @@ changing the length of the injection time series changes the number of
 random numbers used to construct it, so in this way the injection waveform
 also depends on the time series' sample rate.
 
+An example of the output of this algorithm is shown in Figure \ref{fig5}
+\begin{figure}
+\begin{center}
+\resizebox{.9\linewidth}{!}{\includegraphics{figures/btlwnb_example.png}}
+\end{center}
+\caption{Example of a band- and time-limited white-noise burst waveform.
+The horizontal axis is time in seconds, the vertical axis is strain.  The
+waveform's paraters were \(\Delta t = \unit{0.05}{\milli\second}\),
+\(\Delta f = 8 \frac{2}{\pi} / \Delta t\) (16 degrees of freedom), and
+\(f_{0} = \unit{100}{\hertz}\).  The amplitude was normalized so that
+\(\int \dot{h}^{2} \diff t = 1\).}
+\label{fig5}
+\end{figure}
+
 
 \subsubsection{Normalization}
 
