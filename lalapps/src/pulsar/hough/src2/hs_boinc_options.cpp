@@ -41,6 +41,8 @@ HS_SHMEM* shmem = NULL;
 static void update_shmem(void) {
   if (!shmem) return;
 
+  boinc_get_init_data(eah_app_init_data);
+
   shmem->fraction_done = boincv6_fraction_done;
   shmem->skypos_rac    = boincv6_skypos_rac;
   shmem->skypos_dec    = boincv6_skypos_dec;
@@ -49,11 +51,11 @@ static void update_shmem(void) {
   shmem->host_credit   = eah_app_init_data.host_total_credit;
   shmem->cpu_time      = boinc_worker_thread_cpu_time();;
   shmem->update_time   = 0; //dtime();
-  strncpy(shmem->user_name,eah_app_init_data.user_name,sizeof(shmem->user_name));
-  strncpy(shmem->team_name,eah_app_init_data.team_name,sizeof(shmem->team_name));
-  strncpy(shmem->app_name,eah_app_init_data.app_name,sizeof(shmem->app_name));
-  strncpy(shmem->wu_name,eah_app_init_data.wu_name,sizeof(shmem->wu_name));
-  strncpy(shmem->boincdir,eah_app_init_data.boinc_dir,sizeof(shmem->boincdir));
+  strncpy(shmem->user_name, eah_app_init_data.user_name, sizeof(shmem->user_name));
+  strncpy(shmem->team_name, eah_app_init_data.team_name, sizeof(shmem->team_name));
+  strncpy(shmem->app_name,  eah_app_init_data.app_name,  sizeof(shmem->app_name));
+  strncpy(shmem->wu_name,   eah_app_init_data.wu_name,   sizeof(shmem->wu_name));
+  strncpy(shmem->boincdir,  eah_app_init_data.boinc_dir, sizeof(shmem->boincdir));
   boinc_get_status(&shmem->status);
 
   /*
@@ -67,6 +69,8 @@ static void update_shmem(void) {
 }
 
 int setup_shmem(void) {
+  boinc_get_init_data(eah_app_init_data);
+
   shmem = (HS_SHMEM*)boinc_graphics_make_shmem(EAH_SHMEM_APP_NAME, sizeof(HS_SHMEM));
   if (!shmem) {
     fprintf(stderr, "failed to create shared mem segment\n");
@@ -94,5 +98,4 @@ void set_boinc_options(void) {
   // only makes sense on Apps with graphics
   eah_boinc_options.backwards_compatible_graphics = 0;
 #endif
-  boinc_get_init_data(eah_app_init_data);
 }
