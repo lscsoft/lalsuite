@@ -20,6 +20,9 @@
 /* C++ -> C interface for BOINC_OPTION handling etc.
 */
 
+using namespace std;
+#include <iostream>
+
 #include "hs_boinc_options.h"
 #include "boinc_api.h"
 
@@ -39,11 +42,13 @@ double boincv6_fraction_done = 0;
 HS_SHMEM* shmem = NULL;
 
 static void update_shmem(void) {
+  // char buf[1024];
+
   if (!shmem) return;
 
   boinc_get_init_data(eah_app_init_data);
 
-  shmem->fraction_done = boincv6_fraction_done;
+  shmem->fraction_done = boinc_get_fraction_done(); // boincv6_fraction_done;
   shmem->skypos_rac    = boincv6_skypos_rac;
   shmem->skypos_dec    = boincv6_skypos_dec;
   shmem->user_credit   = eah_app_init_data.user_total_credit;
@@ -66,6 +71,38 @@ static void update_shmem(void) {
     fprintf(f,"BOINC Dir: %s \n", eah_app_init_data.boinc_dir);  
   */
 
+  char*buf = shmem->xml;
+
+  snprintf(buf, sizeof(buf),
+	   "<graphics_info>\n"
+	   "  <fraction_done>%f</fraction_done>\n"
+	   "  <skypos_rac>%f</skypos_rac>\n"
+	   "  <skypos_dec>%f</skypos_dec>\n"
+	   "  <user_credit>%f</user_credit>\n"
+	   "  <ravg_credit>%f</ravg_credit>\n"
+	   "  <host_credit>%f</host_credit>\n"
+	   "  <cpu_time>%f</cpu_time>\n"
+	   "  <update_time>%f</update_time>\n"
+	   "  <user_name>%s</user_name>\n"
+	   "  <team_name>%s</team_name>\n"
+	   "  <app_name>%s</app_name>\n"
+	   "  <wu_name>%s</wu_name>\n"
+	   "  <boincdir>%s</boincdir>\n"
+	   "</graphics_info>\n",
+	   boinc_get_fraction_done(),
+	   boincv6_skypos_rac,
+	   boincv6_skypos_dec,
+	   eah_app_init_data.user_total_credit,
+	   eah_app_init_data.user_expavg_credit,
+	   eah_app_init_data.host_total_credit,
+	   boinc_worker_thread_cpu_time(),
+	   0.0, //dtime();
+	   eah_app_init_data.user_name,
+	   eah_app_init_data.team_name,
+	   eah_app_init_data.app_name,
+	   eah_app_init_data.wu_name,
+	   eah_app_init_data.boinc_dir);
+  cout << buf;
 }
 
 int setup_shmem(void) {

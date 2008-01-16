@@ -30,6 +30,7 @@
 #define EAH_SHMEM_APP_NAME "EinsteinHS"
 
 struct HS_SHMEM {
+  char xml[1024];
   char user_name[64];
   char team_name[64];
   char  app_name[64];
