@@ -1424,6 +1424,243 @@ this condition, the next data to be read into memory should start $(2
 to have been read.
 
 
+\subsection{Band and Time Limited White-Noise Burst Injections}
+
+
+% FIXME:  I change notation here:  now \Delta t and \Delta f are the
+% duration and bandwidth of the injection respectively instead of the
+% sample resolutions in the time and frequency series.
+
+
+\subsubsection{Overview}
+
+
+The excess power algorithm is the optimum detection strategy for waveforms
+whose energy is confined to a given pass band and time interval, but where
+nothing else is known about the waveform.  For characterizing the pipeline,
+it is necessary to produce such waveforms:  waveforms of unknown structure
+except for having their energy confined to a chosen pass band and time
+interval.  We can construct such waveforms by applying to stationary white
+Gaussian noise a time-domain window function and then a frequency domain
+window function so as to retain energy only within the desired time
+interval and frequency band.  We shall refer to the result of this
+procedure a band- and time-limited white-noise burst waveform (BTLWNB).
+
+
+\subsubsection{Construction}
+
+
+The construction of a BTLWNB waveform with duration \(\Delta t\) and
+bandwidth \(\Delta f\) centred on \(f_{0}\) begins by populating a time
+series with independent Gaussian random numbers.  The origin of the time
+co-ordinate corresponds to the middle sample in the time series.  We apply
+an initial time-limiting window function to the time series by multiplying
+the time series with a Gaussian window function
+\begin{equation}
+w_{1}(t)
+   \propto \ee^{-\frac{1}{2} t^{2} / \sigma_{t}^{2}},
+\end{equation}
+where \(\sigma_{t}\) sets the duration of the window.  The windowed time
+series is then Fourier transformed and a second Gaussian window applied in
+the frequency domain
+\begin{equation}
+\tilde{w}_{2}(f)
+   \propto \ee^{-\frac{1}{2} (f - f_{0})^{2} / \sigma_{f}^{2}},
+\end{equation}
+where \(\sigma_{f} = \frac{1}{2} \Delta f\).
+
+Since the inital time series is real-valued, the negative frequency
+components of the Fourier transform are the complex conjugates of the
+positive frequency components and need not be stored.  The frequency-domain
+filter is real-valued (phase preserving), and so when the positive
+frequency components are the only ones being stored applying the window
+function to them alone achieves the correct result.
+
+The multiplication of the frequency domain data by the window function is
+equivalent to convolving the time domain data with the Fourier transform of
+the window.  Since the Fourier transform of the frequency window is not a
+\(\delta\) function, the application of the band-limiting window has the
+effect of spreading the signal in the time domain, i.e.\ increasing its
+duration.  We can compensate for this by choosing an appropriate value for
+\(\sigma_{t}\) so that the waveform has the correct duration \emph{after}
+application of the frequency domain window.  The inverse Fourier transform
+of \(\tilde{w}_{2}(f)\) is
+\begin{equation}
+w_{2}(t)
+   \propto \ee^{-2 \pi^{2} \sigma_{f}^{2} t^{2}}.
+\end{equation}
+The result of convolving two Gaussians with one another is another
+Gaussian, so the effective time-domain window is
+\begin{equation}
+w(t)
+   = w_{1}(t) \otimes w_{2}(t)
+   \propto \ee^{-\frac{1}{2} t^{2} / \sigma^{2}},
+\end{equation}
+where
+\begin{equation}
+\sigma^{2}
+   = \sigma_{t}^{2} + \frac{1}{4 \pi^{2} \sigma_{f}^{2}}
+   = \sigma_{t}^{2} + \frac{1}{\pi^{2} \Delta f^{2}}
+\end{equation}
+We wish this Gaussian's width to be \(\sigma = \frac{1}{2} \Delta t\),
+therefore
+\begin{equation}
+\sigma_{t}
+   = \sqrt{\frac{1}{4} \Delta t^{2} - \frac{1}{\pi^{2} \Delta f^{2}}}.
+\end{equation}
+Note that \(\sigma_{t}\) is only real-valued when
+\begin{equation}
+\Delta t \Delta f
+   \geq \frac{2}{\pi}.
+\end{equation}
+
+After application of the frequency domain window the data is inverse
+transformed to the time domain for injection into the strain data.
+
+
+\subsubsection{Details}
+
+
+The injection code uses a time series whose length is \(10 \Delta t\)
+rounded to the nearest odd integer,
+\begin{equation}
+L
+   = 2 \left\lfloor \frac{1}{2} \frac{10 \Delta t}{\delta t} \right\rfloor
+   + 1
+\end{equation}
+where \(\delta t\) is the sample period of the time series.  The middle
+sample is \(t = 0\), so the first and last samples are at \(t = \pm \delta
+t (L - 1) / 2\).  The time-domain Gaussian window is constructed with a
+call to \texttt{XLALCreateGaussREAL8Window()} with a shape parameter of
+\begin{equation}
+\beta
+   = \frac{\delta t (L - 1) / 2}{\sigma_{t}}.
+\end{equation}
+The numerator transforms the normalized co-ordinate \(y \in [-1, +1]\) in
+the definition of the window function to \(t\) (see the LAL documentation
+for more information).  Following application of the Gaussian window, a
+Hann window (\(\propto \cos^{2}\)) the length of the entire time series is
+also applied to ensure the injection tapers smoothly to 0 at the start and
+end prior to transformation to the frequency domain.  The Hann window does
+have the effect of reducing the duration of the waveform in the time domain
+a small amount, but the large difference in time scales between the
+Gaussian and Hann windows makes this effect small and it is ignored in
+computing \(\sigma_{t}\).
+
+The time series is transformed to the frequency domain with a call to
+\texttt{XLALREAL8TimeFreqFFT()}, which populates the metadata of the output
+frequency series with the appropriate values.  There are \((L + 1) / 2\)
+complex-valued frequency components with a bin spacing of \(\delta f = (L
+\delta t)^{-1}\).  The first bin's frequency is \(\unit{0}{\hertz}\), and
+altogether they span a frequency of \(f = \delta f (L + 1) / 2\).  The
+frequency domain Gaussian window is constructed with a call to
+\texttt{XLALCreateGaussREAL8Window()} requesting a window with a length
+twice that of the frequency series, and a shape parameter of
+\begin{equation}
+\beta
+   = \frac{\delta f (L + 1) / 2}{\sigma_{f}}.
+\end{equation}
+The window is created with the peak centered in the vector, so we will need
+to shift the samples to place the peak at the correct frequency.
+Requesting a window twice as long as the frequency series ensures that we
+will still have a complete set of samples after they are shifted.  The
+numerator in the shape parameter converts the normalized co-ordinate \(y
+\in [-1, +1]\) in the definition of the window function (see the LAL
+documentation for more information) to frequency (\(y\) spans 2 ``units'',
+and because the window vector is twice the length of the frequency series
+it spans a frequency of \(\delta f (L + 1)\), so there are \(\delta f (L +
+1) / 2\) frequency units per unit of \(y\)).  The frequency-domain window's
+samples are shifted with a call to \texttt{XLALResizeREAL8Sequence()},
+which is used to extract \((L + 1) / 2\) samples starting at index
+\(\lfloor (L + 1) / 2 - f_{0} / \delta f \rfloor\).
+
+Following application of the frequency-domain window, the injection is
+transformed back to the time domain with a call to
+\texttt{XLALREAL8FreqTimeFFT()}.  If \(\tilde{h}_{k}\) are the complex
+values in the frequency bins, the output time series is
+\begin{equation}
+h_{j}
+   = \delta f \sum_{k = 0}^{L - 1} \tilde{h}_{k} \ee^{2 \pi \aye j k / L}
+   = \delta f \sum_{k = 0}^{L - 1} \tilde{h}_{k} \ee^{2 \pi \aye t k / (L
+   \delta t)},
+\end{equation}
+where \(t = j \delta t\).  Differentiating with respect to \(t\),
+\begin{equation}
+\dot{h}_{j}
+   = \delta f \sum_{k = 0}^{L - 1} \left( \frac{2 \pi \aye k}{L \delta t}
+   \right) \tilde{h}_{k} \ee^{2 \pi \aye j k / L},
+\end{equation}
+and so
+\begin{align}
+\sum_{j = 0}^{L - 1} \dot{h}_{j}^{2} \delta t
+   & = \delta f^{2} \delta t \sum_{k = 0}^{L - 1} \sum_{k' = 0}^{L - 1}
+   \left( \frac{4 \pi^{2} k k'}{L^{2} \delta t^{2}} \right) \tilde{h}_{k}
+   \conj{\tilde{h}_{k'}} \sum_{j = 0}^{L - 1} \ee^{2 \pi \aye j (k - k') /
+   L}
+   \\
+   & = \delta f^{2} L \delta t \sum_{k = 0}^{L - 1} \left( \frac{4 \pi^{2}
+   k^{2}}{L^{2} \delta t^{2}} \right) \magnitude{\tilde{h}_{k}}^{2}
+   \\
+   & = 4 \pi^{2} \delta f \sum_{k = 0}^{L - 1} (k \delta f)^{2}
+   \magnitude{\tilde{h}_{k}}^{2}.
+\end{align}
+This relationship is used to normalize the injection time series.  The
+expression on the left hand side is \(\int \dot{h}^{2} \diff t\).  The
+right hand side is computed in the frequency domain following application
+of the Gaussian window, and the amplitudes of the frequency components
+scaled prior to conversion to the time domain so that \(\int \dot{h}^{2}
+\diff t\) has the desired value.
+
+Since the application of the band-limiting filter spreads the signal in the
+time domain, it will not taper to 0 smoothly when transformed back to the
+time domain.  To ensure no discontinuities in the strain time series when
+the injection is added to it, a final Tukey window is applied to the
+injection in the time domain.  The Tukey window is constructed with a call
+to \texttt{XLALCreateTukeyREAL8Window()} with a shape parameter of \(\beta
+= 0.5\) so that the tapers span a total of 50\% of the injection time
+series.  Because the Tukey window is flat with unit amplitude in the
+middle, it has no effect on the injection time series where the bulk of the
+energy is concentrated, and the large tapers ensure the Tukey window
+induces negligble spread of the injection in the frequency domain.  Because
+the injection is normalized in the frequency domain prior to transformation
+to the time domain, the application of the Tukey window does bias the
+normalization slightly by reducing the total energy in the injection,
+however the Tukey window's tapers start several \(\sigma_{t}\)s away from
+the injection's peak and so this effect is negligble.
+
+In order that the waveforms be reproducable so that an analysis can be
+repeated, or the waveforms constructed multiple times for injection into
+the strain data from more than one instrument, it is necessary to specify
+how the initial time series of independent Gaussian random numbers is to be
+constructed.  This is done by specifying the seed to be used with the
+random number generator.  The random number generator is not specified, so
+the same seed may produce different injections with different versions of
+the code, but a seed and CVS tag combination (and choice of normalization)
+should be guaranteed to produce the same injection.  Note also that
+changing the length of the injection time series changes the number of
+random numbers used to construct it, so in this way the injection waveform
+also depends on the time series' sample rate.
+
+
+\subsubsection{Normalization}
+
+
+The local gravitational wave energy flux in the two independent
+polarizations, \(h_{+}(t)\) and \(h_{\times}(t)\), is
+\begin{equation}
+\frac{\diff E}{\diff A \diff t}
+   = \frac{1}{16 \pi} \frac{c^{3}}{G} \left( \dot{h}_{+}^{2} +
+   \dot{h}_{\times}^{2} \right).
+\end{equation}
+For a source at non-cosmological distances (distances small enough that for
+spheres of that radius \(A = 4 \pi r^{2}\)), the equivalent isotropic
+radiated energy in a gravitational wave for a source at a distance \(r\) is
+\begin{equation}
+E
+   = \frac{c^{3}}{4 G} r^{2} \int \dot{h}(t)^{2} \diff t.
+\end{equation}
+
+
 \section{Program \prog{lalapps\_binj}}
 \label{program:lalapps-binj}
 
