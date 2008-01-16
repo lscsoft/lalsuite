@@ -250,7 +250,7 @@ elif (clobberFilename != '') and (canList.__len__() == 1):
     # curve plots, show power histogram, then show a cut trigger plot
     # 
     #Create a scatterplot on screen of the curves in the candidateList
-elif ((canList.__len__() >=1) and ((graph2screen>0) or (graph2file!=''))):
+elif (not createHistogram and (canList.__len__() >=1) and ((graph2screen>0) or (graph2file!=''))):
     if ((graph2screen < canList.__len__()) and (graph2file=='')):
         print "Number of images to create exceeds your request!"
         print "Estimate images in this data structure are ",canList.__len__()
