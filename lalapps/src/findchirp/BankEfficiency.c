@@ -37,12 +37,13 @@ INT4 randnStartPad = 0;
 INT4 ascii2xml = 0;
 
 
+
 int
 main (INT4 argc, CHAR **argv ) 
 {
   
   INT4          ntrials = 0; /*number of simulations*/
-  INT4 	                 i, ie;
+  INT4 	                 i;
   INT4 	                 j;
   INT4                   thisTemplateIndex;
   Approximant            tempOrder;  /* temporary phase order */
@@ -92,6 +93,13 @@ main (INT4 argc, CHAR **argv )
   REAL4                  g11;
   REAL4                  g01;
   REAL4                  match;
+      
+  /* --- eccentricity related to the bank */
+  REAL4                  eccentricityTemplate = 0;
+  REAL4                  EccentricityMin = 0;
+  REAL4                  EccentricityMax = 0.8;
+  REAL4                  eccentricityStep;
+  REAL4                  eccentricityBins = 8;
 
   /* --- ambiguity function and statistics --- */
   gsl_histogram         * histogramNoise = gsl_histogram_alloc (200);  
@@ -104,9 +112,6 @@ main (INT4 argc, CHAR **argv )
   lal_errhandler = LAL_ERR_EXIT;
   lalDebugLevel = 0;
   templateBank.snglInspiralTable = NULL;
-  /* init a random structure using possibly the seed from user input*/
-  LAL_CALL(LALCreateRandomParams(&status, &randParams, randIn.useed ), 
-	   &status);
 
   /* --- Initialization of structure --- */
   ParametersInitialization(&coarseBankIn, &randIn, &userParam);
@@ -116,9 +121,15 @@ main (INT4 argc, CHAR **argv )
 
   /* --- Check input parameters --- */
   UpdateParams(&coarseBankIn, &randIn, &userParam);
+  
+  /* init a random structure using possibly the seed from user input*/
+  /* this call must be after the userParam have been read because it uses
+   * randIn.useed as an input !*/
+  LAL_CALL(LALCreateRandomParams(&status, &randParams, randIn.useed ), 
+	   &status);
 
   /* this is a call to the function that converts the ASCII output of
-   * BankEfficiency into a standard XML output. Usefule when several ASCII
+   * BankEfficiency into a standard XML output. Useful when several ASCII
    * output are avalaible and needs to be converted all together into an XML
    * file.
    * */
@@ -186,8 +197,10 @@ main (INT4 argc, CHAR **argv )
     if (coarseBankIn.order <= 4){
      coarseBankIn.order = temp_order;  
     }
-    
+
   }
+      
+  
   
   amb1 = gsl_matrix_alloc(4,sizeBank); /*allocated t0,t3,max*/
   for (i=0;i<4; i++)
@@ -238,6 +251,7 @@ main (INT4 argc, CHAR **argv )
    * Main loop is here. We create a random signal and filter 
    * it with the template bank while we want to perform one
     simulation. */
+
   while (++ntrials <= userParam.ntrials) 
     {     
       UINT4 currentTemplate = 0;
@@ -289,14 +303,24 @@ main (INT4 argc, CHAR **argv )
       insptmplt = randIn.param;   
       filter_processed = 0;
       insptmplt.eccentricity = 0;
-/*for (ie=0; ie<=1; ie++)
-{
-       insptmplt.eccentricity = 0.1*ie;*/
-      /* -- and enter in the bank */
-      for (tmpltCurrent  = tmpltHead, thisTemplateIndex=0;
-	   tmpltCurrent && thisTemplateIndex < sizeBank;
-	   tmpltCurrent = tmpltCurrent->next, thisTemplateIndex++)
-	{ 
+
+      if (userParam.eccentricBank)
+        eccentricityStep = (EccentricityMax - EccentricityMin)/eccentricityBins; 
+      else
+      {
+        eccentricityStep = 1;/*larger than max eccentricity so that only EccentricityMin is used, which we set to zero*/
+        EccentricityMin = 0;
+        EccentricityMax = 1;
+      }
+      
+      for (eccentricityTemplate = EccentricityMin; eccentricityTemplate < EccentricityMax; eccentricityTemplate+=eccentricityStep)
+      {
+        insptmplt.eccentricity = eccentricityTemplate;
+        /* -- and enter in the bank */
+        for (tmpltCurrent  = tmpltHead, thisTemplateIndex=0;
+	     tmpltCurrent && thisTemplateIndex < sizeBank;
+	     tmpltCurrent = tmpltCurrent->next, thisTemplateIndex++)
+  	{ 
 	  /* populate InspiralTemplateList with tmplt */
 
 	  if (vrbflg){	    
@@ -307,15 +331,16 @@ main (INT4 argc, CHAR **argv )
 	  BEInitOverlapOutputIn(&OverlapOutputThisTemplate);
 
 	  /* which template family to be used ? */
-	  switch(userParam.template)
-	    {
+          switch(userParam.template)
+	  {
 
 	    case BCV:	   
 	      CreateListfromTmplt(&insptmplt, tmpltCurrent);
 	      insptmplt.massChoice = psi0Andpsi3;
 	      LAL_CALL(LALInspiralParameterCalc( &status,  &(insptmplt) ), &status);
 	      
-	      if (userParam.faithfulness){
+	      if (userParam.faithfulness)
+	      {
 		insptmplt = randIn.param;
 		overlapin.param              = randIn.param;
 		overlapin.param.approximant  = userParam.template;
@@ -450,17 +475,20 @@ main (INT4 argc, CHAR **argv )
 	      
 	      
 	      break;
-	    }
+          } /*end of the switch*/
 	  
 	  /* fill histogram of the correlation output. Useful to get a flavour
            * of the output distribution in presence of noise only for
            * instance. */
-	  if (userParam.printSNRHisto){
-	    for (i=0; i<(INT4)correlation.length; i++){
+	  if (userParam.printSNRHisto)
+	  {
+	    for (i=0; i<(INT4)correlation.length; i++)
+	    {
               /* in the unconstraint case, if alphafCut is applied,
                * correlation =-1 if alphaF > 1. Therefore we do not count it
                * in the correlation histogram*/
-	      if (correlation.data[i]!=-1){
+	      if (correlation.data[i]!=-1)
+	      {
                 gsl_histogram_increment(histogramNoise, correlation.data[i]);
               }
 	    }		    
@@ -473,8 +501,8 @@ main (INT4 argc, CHAR **argv )
 			    
 	  /* We can also keep the best trigger in each template. */
 
-	}/*end of  bank process*/
-/*}*//*end of eccentricity*/
+        }/*end of  bank process*/
+      }/*end of eccentricity*/
 
       /* Then print the maximum overlap over the whole bank and the corresponding 
        * parameter of the templates, injected signal and so on. This is the main results
@@ -1563,6 +1591,9 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
   }
   if (userParam.fastSimulation ){
     ADD_PROCESS_PARAM("float", "%s", "--fast-simulation"," ");
+  }
+  if (userParam.eccentricBank ){
+    ADD_PROCESS_PARAM("float", "%s", "--eccentric-bank"," ");
   }
   if (userParam.binaryInjection == BHNS){
     ADD_PROCESS_PARAM("float", "%s", "--bhns-injection", " ");
@@ -2681,6 +2712,7 @@ void InitUserParametersIn(UserParametersIn *userParam)
   userParam->numSeconds   	= -1;
   userParam->inputPSD     	= NULL;
   userParam->ambiguity     	= 0;
+  userParam->eccentricBank     	= 0;
 }
 
 
@@ -3034,6 +3066,9 @@ ParseParameters(	INT4 			*argc,
       }
       else if (!strcmp(argv[i],"--print-bank")) {
         userParam->printBank		= 1;
+      }
+      else if (!strcmp(argv[i],"--eccentric-bank")) {
+        userParam->eccentricBank		= 1;
       }
       else if (!strcmp(argv[i],"--compute-moments")) {
         coarseBankIn->computeMoments = 1;
@@ -3780,6 +3815,7 @@ LALInspiralBankGeneration2(
   case TaylorT2:
   case TaylorT3:
   case AmpCorPPN:
+  case Eccentricity:
 
     /* Use LALInspiralCreateCoarseBank(). */
     TRY( LALInspiralCreateCoarseBank( status->statusPtr, &coarseList, ntiles,
@@ -3803,8 +3839,11 @@ LALInspiralBankGeneration2(
     *first = bank;
     for( cnt = 0; cnt < flist; cnt++ )
     {
+
+      /* do we want a template bank in the eccentyricity dimension (uniform
+       * distribution ? */
       bank = bank->next = (SnglInspiralTable *) LALCalloc( 1, sizeof(
-             SnglInspiralTable ) );
+           SnglInspiralTable ) );
       if (bank == NULL)
       {
         ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
@@ -3825,10 +3864,9 @@ LALInspiralBankGeneration2(
       bank->f_final = fineList[cnt].params.fFinal;
       bank->eta = fineList[cnt].params.eta;
       bank->beta = fineList[cnt].params.beta;
-      
       /* Copy the 10 metric co-efficients ... */
       memcpy (bank->Gamma, fineList[cnt].metric.Gamma, 10*sizeof(REAL4));
-      
+          
     }
     /* Free first template, which is blank. */
     bank = (*first)->next;
@@ -3933,3 +3971,6 @@ void LALInspiralCreateFineBank2(LALStatus  *status,
   
   DETATCHSTATUSPTR(status);
 }
+    
+
+
