@@ -20,8 +20,13 @@
 /* C++ -> C interface for BOINC_OPTION handling etc.
 */
 
+#ifdef _MSC_VER
+extern ostream cout;
+extern ostream cerr;
+#else
 using namespace std;
 #include <iostream>
+#endif
 
 #include "hs_boinc_options.h"
 #include "boinc_api.h"
