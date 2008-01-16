@@ -944,7 +944,9 @@ static void worker (void) {
   
 #ifdef BOINC_APIV6
   if(setup_shmem())
-    LogPrintf (LOG_NORMAL, "Couldn't set up communication with graphics process\n",res);
+    LogPrintf (LOG_NORMAL, "WARNING: Couldn't set up communication with graphics process\n",res);
+  else
+    LogPrintf (LOG_DEBUG, "Set up communication with graphics process.\n",res);
 #endif
 
   /* CALL WORKER's MAIN()
