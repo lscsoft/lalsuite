@@ -1793,7 +1793,7 @@ class candidateList:
         else:
             if (filename.upper()=='AUTO'):
                 [fullpath,extension]=os.path.splitext(self.filename[0])
-                filename=os.path.basename(fullpath)+'.png'
+                filename=os.path.basename(fullpath)+'_histogram.png'
             pylab.savefig(filename)
     #End showHistogram
 
