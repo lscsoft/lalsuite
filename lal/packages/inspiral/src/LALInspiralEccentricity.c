@@ -431,8 +431,7 @@ LALInspiralEccentricityEngine(
    CHECKSTATUSPTR(status);
   
    m = ak.totalmass = params->mass1+params->mass2;
-/*   ak.tn = 150.;*/
-  
+   
    values.length = dvalues.length = valuesNew.length =
    yt.length = dym.length = dyt.length = number_of_diff_equations;
    dummy.length = number_of_diff_equations * 6;
@@ -518,6 +517,8 @@ LALInspiralEccentricityEngine(
    p0 = (1. - e0*e0)/pow(2. * LAL_PI * m * LAL_MTSUN_SI* fmin/3. , 2./3.);
 
 
+
+    
    
    *(values.data) = orbital_element_p = p0;
    *(values.data+1) = phase = params->startPhase;
@@ -562,9 +563,6 @@ LALInspiralEccentricityEngine(
       
    f = 1./(pow(orbital_element_p, 3./2.))/piM;
   
-
-
-   
    do {
       /* Free up memory and abort if writing beyond the end of vector*/
       /*if ((signal1 && (UINT4)count >= signal1->length) || (ff && (UINT4)count >= ff->length))*/
@@ -591,7 +589,7 @@ LALInspiralEccentricityEngine(
           + 0.5 * orbital_element_e * cos(threePhim2Beta) + orbital_element_e_squared * cos2Beta) * onepCosSqI +
           + ( orbital_element_e * cos(orbital_element_p) + orbital_element_e_squared) * SinSqI);
 /*        fprintf(stderr, "p=%e, e=%e, phase = %e\n", orbital_element_p, orbital_element_e, phase);fflush(stderr);*/
-   /*      if (f>=params->fLower){*/
+/*         if (f>=params->fLower){*/
           *(signal1->data + count) = (REAL4) h1;
 /*          t = (++count-params->nStartPad) * dt;
          }*/
