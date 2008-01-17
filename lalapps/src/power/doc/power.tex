@@ -1538,14 +1538,7 @@ call to \texttt{XLALCreateGaussREAL8Window()} with a shape parameter of
 \end{equation}
 The numerator transforms the normalized co-ordinate \(y \in [-1, +1]\) in
 the definition of the window function to \(t\) (see the LAL documentation
-for more information).  Following application of the Gaussian window, a
-Hann window (\(\propto \cos^{2}\)) the length of the entire time series is
-also applied to ensure the injection tapers smoothly to 0 at the start and
-end prior to transformation to the frequency domain.  The Hann window does
-have the effect of reducing the duration of the waveform in the time domain
-a small amount, but the large difference in time scales between the
-Gaussian and Hann windows makes this effect small and it is ignored in
-computing \(\sigma_{t}\).
+for more information).
 
 The time series is transformed to the frequency domain with a call to
 \texttt{XLALREAL8TimeFreqFFT()}, which populates the metadata of the output
