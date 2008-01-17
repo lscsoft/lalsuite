@@ -166,7 +166,7 @@ static int is_zipped(const char *);
 static int resolve_and_unzip(const char*, char*, const size_t);
 static void drain_fpu_stack(void);
 static REAL4 get_nan(void);
-#ifdef _MSC_VER
+#ifdef _MSC_VER && 0
 #include "graphics_dlls.h"
 #include "delayload_dlls.h"
 static int try_load_dlls(const char*, const char*);
@@ -206,7 +206,7 @@ static void   set_sse_control_status(const ssew_t cword);
 
 /*^* FUNCTIONS *^*/
 
-#ifdef _MSC_VER
+#ifdef _MSC_VER && 0
 /** Attempt to load the dlls that are required to display graphics.
     returns 0 if successful, -1 in case of a failure.
 */
@@ -1191,7 +1191,7 @@ int main(int argc, char**argv) {
 #endif /* WIN32 */
 
 
-#ifdef _MSC_VER
+#ifdef _MSC_VER && 0
   if (try_load_dlls(delayload_dlls, "ERROR: Failed to load %s - terminating\n")) {
     LogPrintf(LOG_NORMAL,"ERROR: Loading of mandantory DLLs failed\n");
     boinc_init();
@@ -1211,14 +1211,15 @@ int main(int argc, char**argv) {
      without graphics if this fails */
   if (no_graphics)
     LogPrintf(LOG_NORMAL,"WARNING: graphics surpressed\n");
-  else if (!try_load_dlls(graphics_dlls, "WARNING: Failed to load %s - running w/o graphics\n")) {
-    int retval;
-    set_search_pos_hook = set_search_pos;
-    fraction_done_hook = &fraction_done;
-    retval = boinc_init_graphics_options(worker);
-    LogPrintf (LOG_CRITICAL, "boinc_init_graphics() returned %d.\n", retval);
-    boinc_finish(HIERARCHICALSEARCH_EWORKER);
-  }
+  else /* if (!try_load_dlls(graphics_dlls, "WARNING: Failed to load %s - running w/o graphics\n")) */
+    {
+      int retval;
+      set_search_pos_hook = set_search_pos;
+      fraction_done_hook = &fraction_done;
+      retval = boinc_init_graphics_options(worker);
+      LogPrintf (LOG_CRITICAL, "boinc_init_graphics() returned %d.\n", retval);
+      boinc_finish(HIERARCHICALSEARCH_EWORKER);
+    }
 #elif BOINC_GRAPHICS == 2
   /* Try loading screensaver-graphics as a dynamic library.  If this
      succeeds then extern void* graphics_lib_handle is set, and can
