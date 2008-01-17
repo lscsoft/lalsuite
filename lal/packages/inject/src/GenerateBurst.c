@@ -57,7 +57,7 @@ NRCSID(GENERATEBURSTC, "$Id$");
 /*
  * ============================================================================
  *
- *                    Fill a time series with white noise
+ *           Fill a time series with stationary white Gaussin noise
  *
  * ============================================================================
  */
@@ -270,17 +270,6 @@ REAL8TimeSeries *XLALBandAndTimeLimitedWhiteNoiseBurst(REAL8 duration, REAL8 fre
 	 * is the compensated time-domain window duration */
 
 	window = XLALCreateGaussREAL8Window(series->data->length, ((series->data->length - 1) / 2) * delta_t / sqrt(duration * duration / 4.0 - 1.0 / (LAL_PI * LAL_PI * bandwidth * bandwidth)));
-	if(!window) {
-		XLALDestroyREAL8TimeSeries(series);
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
-	}
-	for(i = 0; i < window->data->length; i++)
-		series->data->data[i] *= window->data->data[i];
-	XLALDestroyREAL8Window(window);
-
-	/* apply an additional Hann window to taper the time series to 0 */
-
-	window = XLALCreateHannREAL8Window(series->data->length);
 	if(!window) {
 		XLALDestroyREAL8TimeSeries(series);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
@@ -518,8 +507,6 @@ static int XLALGenerateBurst(CoherentGW *output, SimBurstTable *simBurst, BurstP
 			*aData++ = 0;
 		}
 	} else if(!(strcmp(simBurst->waveform, "StringCusp"))) {
-		t0 = XLALGPSDiff(&(simBurst->geocent_peak_time), &startTime);
-
 		/* I use the simburst table as follows: The duration is still
 		   dtplus+dtminus; hpeak is the amplitude of the cusp, not the
 		   value of the strain at the peak, t0 is the central time of the
@@ -528,72 +515,69 @@ static int XLALGenerateBurst(CoherentGW *output, SimBurstTable *simBurst, BurstP
 		   about 1Hz except that it low compared to the ferquecny at which
 		   we should be high-passing the data; the high frequency cutoff
 		   is given by f0 */
-		{
-			REAL4Vector *vector;
-			COMPLEX8Vector *vtilde;
-			RealFFTPlan *rplan;
-			REAL4 dfreq = 1 / (2 * duration);	/* the factor of two here is becaus the length of injections 
-								   is actually twice the value of the variable duration */
-			REAL4 flow = 1;
+		REAL4Vector *vector;
+		COMPLEX8Vector *vtilde;
+		RealFFTPlan *rplan;
+		REAL4 dfreq = 1 / (2 * duration);	/* the factor of two here is becaus the length of injections 
+							   is actually twice the value of the variable duration */
+		REAL4 flow = 1;
 
-			/* create vector to store h(t), create vector that
-			 * will hold frequency domain template, create fft
-			 * plan */
-			vector = XLALCreateREAL4Sequence(n);
-			vtilde = XLALCreateCOMPLEX8Sequence(n / 2 + 1);
-			rplan = XLALCreateReverseREAL4FFTPlan(n, 0);
-			if(!vector || !vtilde || !rplan) {
-				XLALDestroyREAL4Sequence(vector);
-				XLALDestroyCOMPLEX8Sequence(vtilde);
-				XLALDestroyREAL4FFTPlan(rplan);
-				XLAL_ERROR(func, XLAL_EFUNC);
-			}
+		t0 = XLALGPSDiff(&(simBurst->geocent_peak_time), &startTime);
 
-			for(i = 0; i < vtilde->length - 1; i++) {
-				REAL4 freq = i * dfreq;
-				/* Set the FD template */
-				vtilde->data[i].re = hpeak * pow((sqrt(1 + pow(flow, 2) * pow(freq, -2))), -8) * pow(freq, -4.0 / 3.0);
-
-				if(freq >= f0) {
-					vtilde->data[i].re *= exp(1 - freq / f0);
-				}
-
-				vtilde->data[i].im = vtilde->data[i].re * sin(-LAL_TWOPI * freq * duration);
-				vtilde->data[i].re = vtilde->data[i].re * cos(-LAL_TWOPI * freq * duration);
-			}
-
-			/* set dc to zero */
-			vtilde->data[0].re = 0;
-			vtilde->data[0].im = 0;
-			/* set nyquist to zero */
-			vtilde->data[vtilde->length - 1].re = 0;
-			vtilde->data[vtilde->length - 1].im = 0;
-
-			/* Reverse FFT */
-			if(XLALREAL4ReverseFFT(vector, vtilde, rplan))
-				XLAL_ERROR(func, XLAL_EFUNC);
-
-			/* multiply times dfreq to make sure units are
-			 * correct */
-			for(i = 0; i < vector->length; i++)
-				vector->data[i] *= dfreq;
-
-			/* make sure injection starts precisely at 0 */
-			for(i = 0; i < vector->length; i++)
-				vector->data[i] -= vector->data[0];
-
-			for(i = 0; i < n; i++) {
-				*fData++ = 0.0;
-				*phiData++ = 0.0;
-				*aData++ = vector->data[i];
-				*aData++ = 0;
-			}
-
-			/* free the data */
+		/* create vector to store h(t), create vector that will
+		 * hold frequency domain template, create fft plan */
+		vector = XLALCreateREAL4Sequence(n);
+		vtilde = XLALCreateCOMPLEX8Sequence(n / 2 + 1);
+		rplan = XLALCreateReverseREAL4FFTPlan(n, 0);
+		if(!vector || !vtilde || !rplan) {
 			XLALDestroyREAL4Sequence(vector);
 			XLALDestroyCOMPLEX8Sequence(vtilde);
 			XLALDestroyREAL4FFTPlan(rplan);
+			XLAL_ERROR(func, XLAL_EFUNC);
 		}
+
+		/* Set the FD template */
+		for(i = 0; i < vtilde->length - 1; i++) {
+			REAL4 freq = i * dfreq;
+			vtilde->data[i].re = hpeak * pow((sqrt(1 + pow(flow, 2) * pow(freq, -2))), -8) * pow(freq, -4.0 / 3.0);
+
+			if(freq >= f0)
+				vtilde->data[i].re *= exp(1 - freq / f0);
+
+			vtilde->data[i].im = vtilde->data[i].re * sin(-LAL_TWOPI * freq * duration);
+			vtilde->data[i].re = vtilde->data[i].re * cos(-LAL_TWOPI * freq * duration);
+		}
+
+		/* set dc to zero */
+		vtilde->data[0].re = 0;
+		vtilde->data[0].im = 0;
+		/* set nyquist to zero */
+		vtilde->data[vtilde->length - 1].re = 0;
+		vtilde->data[vtilde->length - 1].im = 0;
+
+		/* Reverse FFT */
+		if(XLALREAL4ReverseFFT(vector, vtilde, rplan))
+			XLAL_ERROR(func, XLAL_EFUNC);
+
+		/* multiply times dfreq to make sure units are correct */
+		for(i = 0; i < vector->length; i++)
+			vector->data[i] *= dfreq;
+
+		/* make sure injection starts precisely at 0 */
+		for(i = 0; i < vector->length; i++)
+			vector->data[i] -= vector->data[0];
+
+		for(i = 0; i < n; i++) {
+			*fData++ = 0.0;
+			*phiData++ = 0.0;
+			*aData++ = vector->data[i];
+			*aData++ = 0;
+		}
+
+		/* free the data */
+		XLALDestroyREAL4Sequence(vector);
+		XLALDestroyCOMPLEX8Sequence(vtilde);
+		XLALDestroyREAL4FFTPlan(rplan);
 	} else if(!(strcmp(simBurst->waveform, "warren"))) {
 		/* set everything to 0 */
 		for(i = 0; i < n; i++) {
@@ -603,6 +587,7 @@ static int XLALGenerateBurst(CoherentGW *output, SimBurstTable *simBurst, BurstP
 			*(aData++) = 0.0;
 		}
 	} else {
+		/* unknown waveform */
 		XLAL_ERROR(func, XLAL_EINVAL);
 	}
 
