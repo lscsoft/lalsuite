@@ -55,60 +55,25 @@ static void update_shmem(void) {
 
   boinc_get_init_data(eah_app_init_data);
 
-  shmem->fraction_done = boinc_get_fraction_done(); // boincv6_fraction_done;
   shmem->skypos_rac    = boincv6_skypos_rac;
   shmem->skypos_dec    = boincv6_skypos_dec;
-  shmem->user_credit   = eah_app_init_data.user_total_credit;
-  shmem->ravg_credit   = eah_app_init_data.user_expavg_credit;
-  shmem->host_credit   = eah_app_init_data.host_total_credit;
+  shmem->fraction_done = boinc_get_fraction_done(); // boincv6_fraction_done;
   shmem->cpu_time      = boinc_worker_thread_cpu_time();;
-  shmem->update_time   = 0; //dtime();
-  strncpy(shmem->user_name, eah_app_init_data.user_name, sizeof(shmem->user_name));
-  strncpy(shmem->team_name, eah_app_init_data.team_name, sizeof(shmem->team_name));
-  strncpy(shmem->app_name,  eah_app_init_data.app_name,  sizeof(shmem->app_name));
-  strncpy(shmem->wu_name,   eah_app_init_data.wu_name,   sizeof(shmem->wu_name));
-  strncpy(shmem->boincdir,  eah_app_init_data.boinc_dir, sizeof(shmem->boincdir));
   boinc_get_status(&shmem->status);
-
-  /*
-    Just to remind me of the info also in init.data
-
-    fprintf(f,"Auth: %s \n", eah_app_init_data.authenticator);
-    fprintf(f,"Project Dir: %s \n", eah_app_init_data.project_dir);  
-    fprintf(f,"BOINC Dir: %s \n", eah_app_init_data.boinc_dir);  
-  */
 
   char*buf = shmem->xml;
 
   snprintf(buf, sizeof(buf),
 	   "<graphics_info>\n"
-	   "  <fraction_done>%f</fraction_done>\n"
 	   "  <skypos_rac>%f</skypos_rac>\n"
 	   "  <skypos_dec>%f</skypos_dec>\n"
-	   "  <user_credit>%f</user_credit>\n"
-	   "  <ravg_credit>%f</ravg_credit>\n"
-	   "  <host_credit>%f</host_credit>\n"
+	   "  <fraction_done>%f</fraction_done>\n"
 	   "  <cpu_time>%f</cpu_time>\n"
-	   "  <update_time>%f</update_time>\n"
-	   "  <user_name>%s</user_name>\n"
-	   "  <team_name>%s</team_name>\n"
-	   "  <app_name>%s</app_name>\n"
-	   "  <wu_name>%s</wu_name>\n"
-	   "  <boincdir>%s</boincdir>\n"
 	   "</graphics_info>\n",
-	   boinc_get_fraction_done(),
 	   boincv6_skypos_rac,
 	   boincv6_skypos_dec,
-	   eah_app_init_data.user_total_credit,
-	   eah_app_init_data.user_expavg_credit,
-	   eah_app_init_data.host_total_credit,
-	   boinc_worker_thread_cpu_time(),
-	   0.0, //dtime();
-	   eah_app_init_data.user_name,
-	   eah_app_init_data.team_name,
-	   eah_app_init_data.app_name,
-	   eah_app_init_data.wu_name,
-	   eah_app_init_data.boinc_dir);
+	   boinc_get_fraction_done(),
+	   boinc_worker_thread_cpu_time());
   // cout << buf;
 }
 
