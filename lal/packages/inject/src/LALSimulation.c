@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2008 J. Creighton, T. Creighton
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the 
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  MA  02111-1307  USA
+ */
 #include <math.h>
 #include <lal/LALSimulation.h>
 #include <lal/LALDetectors.h>
@@ -13,11 +31,60 @@
 #include "check_series_macros.h"
 
 
-/*
-REAL8TimeSeries * XLALCoherentSignalStrainREAL8TimeSeries( REAL8TimeSeries *aplus, REAL8TimeSeries *across, REAL8TimeSeries *frequency, REAL8TimeSeries *phi, SkyPosition *position, REAL8 psi, LALDetector *detector, EphemerisData *ephemerides )
+#if 0
+REAL8TimeSeries * XLALSimQuasiPeriodicInjectionREAL8TimeSeries( REAL8TimeSeries *aplus, REAL8TimeSeries *across, REAL8TimeSeries *frequency, REAL8TimeSeries *phi, REAL8TimeSeries *psi, SkyPosition *position, LALDetector *detector, EphemerisData *ephemerides, LIGOTimeGPS *start, REAL8 deltaT, UINT4 length, COMPLEX16FrequencySeries *response )
 {
+	REAL8 slowDeltaT = 600.0; /* 10 minutes */
+	UINT4 slowLength;
+
+	/* sanity checks */
+
+	/* SET UP LOOK-UP TABLES */
+
+	/* construct time-dependent time-delay look-up table */
+	/* uses ephemeris */
+	/* sampled slowDeltaT */
+	/* starts 8 min before injection start, ends 8 min after injection end */
+	slowLength = floor(0.5 + (length*deltaT + 16.0)/slowDeltaT);
+
+	/* construct time-dependent polarization response look-up table */
+	/* sampled at slowDeltaT */
+	/* starts 8 min before injection start, ends 8 min after injection end */
+	fplus;
+	fcross;
+
+
+
+	/* apply time-dependent time-delay */
+	/* apply time-dependent polarization response */
+	/* apply frequency-dependent detector response */
+	for ( j = 0; j < injection->length; ++j ) {
+		REAL8 dt;
+		REAL8 fpl;
+		REAL8 fcr;
+		REAL8 apl;
+		REAL8 acr;
+		REAL8 freq;
+		REAL8 phase;
+		REAL8 pol;
+
+		/* interpolate to get dt, fpl, fcr */
+
+		/* interpolate to get apl, acr, freq, phase, pol */
+		/* but not at detector time: detector time plus dt */
+
+		/* rotate fpl and fcr using pol */
+
+		/* adjust apl, acr, and phase by detector response at freq */
+
+		injection->data->data[j] = fpl*apl*cos(phase) + fcr*acr*sin(phase); /* or something like this */
+
+	}
+
+
+
 }
-*/
+#endif
 
 REAL8TimeSeries * XLALSimDetectorStrainREAL8TimeSeries( REAL8TimeSeries *hplus, REAL8TimeSeries *hcross, SkyPosition *position, REAL8 psi, LALDetector *detector )
 {

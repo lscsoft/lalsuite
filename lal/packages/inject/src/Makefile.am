@@ -15,7 +15,9 @@ libinject_la_SOURCES =	\
 	GenerateInspiral.c		GenerateInspiralSmooth.c  \
 	GeneratePulsarSignal.c		SimulatePulsarSignal.c	 \
 	CelestialCoordinatesLaldoc.c    NRWaveInject.c \
-	InspiralInjectionParams.c    GenerateInspRing.c	
+	InspiralInjectionParams.c    GenerateInspRing.c	 \
+	LALSimulation.c 		LALSimBurst.c \
+	LALSimInspiral.c 		LALSimInspiralPNMode.c
 	
 
 ## Hack to get this working for now... change later

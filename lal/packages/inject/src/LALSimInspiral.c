@@ -1,3 +1,22 @@
+/*
+ * Copyright (C) 2008 J. Creighton, S. Fairhurst, B. Krishnan, L. Santamaria
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the 
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  MA  02111-1307  USA
+ */
+
 #include <math.h>
 
 #include <gsl/gsl_const.h>
@@ -19,13 +38,16 @@
 /**
  * Computes the (s)Y(l,m) spin-weighted spherical harmonic.
  *
+ * From somewhere ....
+ *
+ * See also:
  * Implements Equations (II.9)-(II.13) of
  * D. A. Brown, S. Fairhurst, B. Krishnan, R. A. Mercer, R. K. Kopparapu,
  * L. Santamaria, and J. T. Whelan,
  * "Data formats for numerical relativity waves",
  * arXiv:0709.0093v1 (2007).
  *
- * Currently only supports s=-2, l=2 modes.
+ * Currently only supports s=-2, l=2,3,4,5 modes.
  */
 COMPLEX16 XLALSpinWeightedSphericalHarmonic(REAL8 theta, REAL8 phi, int s, int l, int m)
 {
@@ -45,31 +67,146 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(REAL8 theta, REAL8 phi, int s, int l
 
 	if ( s == -2 ) {
 		if ( l == 2 ) {
-			switch (m) {
-				case 2:
-					fac = sqrt(5.0/(64.0*LAL_PI))*pow(1.0 + cos(theta), 2.0);
-					break;
-				case 1:
-					fac = sqrt(5.0/(16.0*LAL_PI))*sin(theta)*(1.0 + cos(theta));
-					break;
-				case 0:
-					fac = sqrt(15.0/(32.0*LAL_PI))*pow(sin(theta), 2.0);
+			switch ( m ) {
+				case -2:
+					fac = sqrt( 5.0 / ( 64.0 * LAL_PI ) ) * ( 1.0 - cos( theta ))*( 1.0 - cos( theta ));
 					break;
 				case -1:
-					fac = sqrt(5.0/(16.0*LAL_PI))*sin(theta)*(1.0 - cos(theta));
+					fac = sqrt( 5.0 / ( 16.0 * LAL_PI ) ) * sin( theta )*( 1.0 - cos( theta ));
+					break;
+	
+				case 0:
+					fac = sqrt( 15.0 / ( 32.0 * LAL_PI ) ) * sin( theta )*sin( theta );
+					break;
+	
+				case 1:
+					fac = sqrt( 5.0 / ( 16.0 * LAL_PI ) ) * sin( theta )*( 1.0 + cos( theta ));
+					break;
+	
+				case 2:
+					fac = sqrt( 5.0 / ( 64.0 * LAL_PI ) ) * ( 1.0 + cos( theta ))*( 1.0 + cos( theta ));
+					break;	   
+				default:
+					XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d - require |m| <= l\n", func, s, l, m );
+					XLAL_ERROR_VAL(func, XLAL_EINVAL, czero);
+					break;
+			} /*  switch (m) */
+		}  /* l==2*/
+		else if ( l == 3 ) {
+			switch ( m ) {
+				case -3:
+					fac = sqrt(21.0/(2.0*LAL_PI))*cos(theta/2.0)*pow(sin(theta/2.0),5.0);
 					break;
 				case -2:
-					fac = sqrt(5.0/(64.0*LAL_PI))*pow(1.0 - cos(theta), 2.0);
+					fac = sqrt(7.0/4.0*LAL_PI)*(2.0 + 3.0*cos(theta))*pow(sin(theta/2.0),4.0);
 					break;
+				case -1:
+					fac = sqrt(35.0/(2.0*LAL_PI))*(sin(theta) + 4.0*sin(2.0*theta) - 3.0*sin(3.0*theta))/32.0;
+					break;
+				case 0:
+					fac = (sqrt(105.0/(2.0*LAL_PI))*cos(theta)*pow(sin(theta),2.0))/4.0;
+					break;
+				case 1:
+					fac = -sqrt(35.0/(2.0*LAL_PI))*(sin(theta) - 4.0*sin(2.0*theta) - 3.0*sin(3.0*theta))/32.0;
+					break;
+	  
+				case 2:
+					fac = sqrt(7.0/LAL_PI)*pow(cos(theta/2.0),4.0)*(-2.0 + 3.0*cos(theta))/2.0;
+					break;	   
+	  
+				case 3:
+					fac = -sqrt(21.0/(2.0*LAL_PI))*pow(cos(theta/2.0),5.0)*sin(theta/2.0);
+					break;	   
+	  
 				default:
-					XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d\n", func, s, l, m );
+					XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d - require |m| <= l\n", func, s, l, m );
 					XLAL_ERROR_VAL(func, XLAL_EINVAL, czero);
+					break;
+			} 
+		}   /* l==3 */ 
+		else if ( l == 4 ) {
+			switch ( m ) {
+				case -4:
+					fac = 3.0*sqrt(7.0/LAL_PI)*pow(cos(theta/2.0),2.0)*pow(sin(theta/2.0),6.0);
+					break;
+				case -3:
+					fac = 3.0*sqrt(7.0/(2.0*LAL_PI))*cos(theta/2.0)*(1.0 + 2.0*cos(theta))*pow(sin(theta/2.0),5.0);
+					break;
+	
+				case -2:
+					fac = (3.0*(9.0 + 14.0*cos(theta) + 7.0*cos(2.0*theta))*pow(sin(theta/2.0),4.0))/(4.0*sqrt(LAL_PI));
+					break;
+				case -1:
+					fac = (3.0*(3.0*sin(theta) + 2.0*sin(2.0*theta) + 7.0*sin(3.0*theta) - 7.0*sin(4.0*theta)))/(32.0*sqrt(2.0*LAL_PI));
+					break;
+				case 0:
+					fac = (3.0*sqrt(5.0/(2.0*LAL_PI))*(5.0 + 7.0*cos(2.0*theta))*pow(sin(theta),2.0))/16.0;
+					break;
+				case 1:
+					fac = (3.0*(3.0*sin(theta) - 2.0*sin(2.0*theta) + 7.0*sin(3.0*theta) + 7.0*sin(4.0*theta)))/(32.0*sqrt(2.0*LAL_PI));
+					break;
+				case 2:
+					fac = (3.0*pow(cos(theta/2.0),4.0)*(9.0 - 14.0*cos(theta) + 7.0*cos(2.0*theta)))/(4.0*sqrt(LAL_PI));
+					break;	   
+				case 3:
+					fac = -3.0*sqrt(7.0/(2.0*LAL_PI))*pow(cos(theta/2.0),5.0)*(-1.0 + 2.0*cos(theta))*sin(theta/2.0);
+					break;	   
+				case 4:
+					fac = 3.0*sqrt(7.0/LAL_PI)*pow(cos(theta/2.0),6.0)*pow(sin(theta/2.0),2.0);
+					break;	   
+				default:
+					XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d - require |m| <= l\n", func, s, l, m );
+					XLAL_ERROR_VAL(func, XLAL_EINVAL, czero);
+					break;
 			}
-		} else {
-			XLALPrintError("XLAL Error - %s: Unsupported mode l=%d (only l=2 implemented)\n", func, s);
+		}    /* l==4 */
+		else if ( l == 5 ) {
+			switch ( m ) {
+				case -5:
+					fac = sqrt(330.0/LAL_PI)*pow(cos(theta/2.0),3.0)*pow(sin(theta/2.0),7.0);
+					break;
+				case -4:
+					fac = sqrt(33.0/LAL_PI)*pow(cos(theta/2.0),2.0)*(2.0 + 5.0*cos(theta))*pow(sin(theta/2.0),6.0);
+					break;
+				case -3:
+					fac = (sqrt(33.0/(2.0*LAL_PI))*cos(theta/2.0)*(17.0 + 24.0*cos(theta) + 15.0*cos(2.0*theta))*pow(sin(theta/2.0),5.0))/4.0;
+					break;
+				case -2:
+					fac = (sqrt(11.0/LAL_PI)*(32.0 + 57.0*cos(theta) + 36.0*cos(2.0*theta) + 15.0*cos(3.0*theta))*pow(sin(theta/2.0),4.0))/8.0;
+					break;
+				case -1:
+					fac = (sqrt(77.0/LAL_PI)*(2.0*sin(theta) + 8.0*sin(2.0*theta) + 3.0*sin(3.0*theta) + 12.0*sin(4.0*theta) - 15.0*sin(5.0*theta)))/256.0;
+					break;
+				case 0:
+					fac = (sqrt(1155.0/(2.0*LAL_PI))*(5.0*cos(theta) + 3.0*cos(3.0*theta))*pow(sin(theta),2.0))/32.0;
+					break;
+				case 1:
+					fac = sqrt(77.0/LAL_PI)*(-2.0*sin(theta) + 8.0*sin(2.0*theta) - 3.0*sin(3.0*theta) + 12.0*sin(4.0*theta) + 15.0*sin(5.0*theta))/256.0;
+					break;
+				case 2:
+					fac = sqrt(11.0/LAL_PI)*pow(cos(theta/2.0),4.0)*(-32.0 + 57.0*cos(theta) - 36.0*cos(2.0*theta) + 15.0*cos(3.0*theta))/8.0;
+					break;	   
+				case 3:
+					fac = -sqrt(33.0/(2.0*LAL_PI))*pow(cos(theta/2.0),5.0)*(17.0 - 24.0*cos(theta) + 15.0*cos(2.0*theta))*sin(theta/2.0)/4.0;
+					break;	   
+				case 4:
+					fac = sqrt(33.0/LAL_PI)*pow(cos(theta/2.0),6.0)*(-2.0 + 5.0*cos(theta))*pow(sin(theta/2.0),2.0);
+					break;	   
+				case 5:
+					fac = -sqrt(330.0/LAL_PI)*pow(cos(theta/2.0),7.0)*pow(sin(theta/2.0),3.0);
+					break;	   
+				default:
+					XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d - require |m| <= l\n", func, s, l, m );
+					XLAL_ERROR_VAL(func, XLAL_EINVAL, czero);
+					break;
+			}
+		}  /* l==5 */
+		else {
+			XLALPrintError("XLAL Error - %s: Unsupported mode l=%d (only l in [2,5] implemented)\n", func, s);
 			XLAL_ERROR_VAL(func, XLAL_EINVAL, czero);
 		}
-	} else {
+	}
+       	else {
 		XLALPrintError("XLAL Error - %s: Unsupported mode s=%d (only s=-2 implemented)\n", func, s);
 		XLAL_ERROR_VAL(func, XLAL_EINVAL, czero);
 	}
@@ -309,54 +446,9 @@ int XLALSimInspiralPNEvolveOrbitTaylorT4(REAL8TimeSeries **x, REAL8TimeSeries **
 	/* make the correct length */
 	XLALResizeREAL8TimeSeries(*x, 0, j);
 	XLALResizeREAL8TimeSeries(*phi, 0, j);
-	/* TODO: adjust time */
+	XLALGPSAdd(&(*phi)->epoch, -1.0*j*deltaT);
+	XLALGPSAdd(&(*x)->epoch, -1.0*j*deltaT);
 	return j;
-}
-
-
-/**
- * Computes h(2,2) mode of spherical harmonic decomposition of
- * the post-Newtonian inspiral waveform.
- *
- * Implements Equation (79) of:
- * Lawrence E. Kidder, "Using Full Information When Computing Modes of
- * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
- * Orbit", arXiv:0710.0614v1 [gr-qc].
- */
-COMPLEX16 XLALSimInspiralPNMode22(REAL8 x, REAL8 phi, REAL8 m1, REAL8 m2, REAL8 r, int O)
-{
-	static const char *func = "XLALSimInspiralPNMode22";
-	REAL8 fac = -8.0*sqrt(LAL_PI/5.0)*LAL_G_SI*pow(LAL_C_SI, -2.0);
-	REAL8 m = m1 + m2;
-	REAL8 mu = m1*m2/m;
-	REAL8 nu = mu/m;
-	COMPLEX16 ans;
-	REAL8 re = 0.0;
-	REAL8 im = 0.0;
-	switch (O) {
-		default: /* unsupported pN order */
-			XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", func, O/2, O%2?".5":"" );
-			XLAL_ERROR_VAL(func, XLAL_EINVAL, czero);
-		case -1: /* use highest available pN order */
-		case 6:
-			re += ((27027409.0/646800.0) - (856.0/105.0)*LAL_GAMMA + (2.0/3.0)*pow(LAL_PI, 2.0) - (1712.0/105.0)*log(2.0) - (428.0/105.0)*log(x) - ((278185.0/33264.0) - (41.0/96.0)*pow(LAL_PI, 2.0))*nu - (20261.0/2772.0)*pow(nu, 2.0) + (114635.0/99792.0)*pow(nu, 3.0))*pow(x, 3.0);
-			im += (428.0/105.0)*LAL_PI*pow(x, 3.0);
-		case 5:
-			re -= ((107.0/21.0) - (34.0/21.0)*nu)*LAL_PI*pow(x, 2.5);
-			im -= 24.0*nu*pow(x, 2.5);
-		case 4:
-			re -= ((2173.0/1512.0) + (1069.0/216.0)*nu - (2047.0/1512.0)*pow(nu, 2.0))*pow(x, 2.0);
-		case 3:
-			re += 2.0*LAL_PI*pow(x, 1.5);
-		case 2:
-			re -= ((107.0/42.0) - (55.0/42.0)*nu)*x;
-		case 1:
-		case 0:
-			re += 1.0;
-	}
-	ans = cmul(cpolar(1.0, -2.0*phi), crect(re, im));
-	ans = cmulr(ans, (fac*mu/r)*x);
-	return ans;
 }
 
 
@@ -366,16 +458,30 @@ COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(REAL8TimeSer
 	COMPLEX16TimeSeries *h;
 	UINT4 j;
 	h = XLALCreateCOMPLEX16TimeSeries( "H_MODE", &x->epoch, 0.0, x->deltaT, &lalStrainUnit, x->data->length );
-	if ( l == 2 && m == 2 )
+	if ( l == 2 && abs(m) == 2 )
 		for ( j = 0; j < h->data->length; ++j )
 			h->data->data[j] = XLALSimInspiralPNMode22(x->data->data[j], phi->data->data[j], m1, m2, r, O);
-	else if ( l == 2 && m == -2 )
+	else if ( l == 2 && abs(m) == 1 )
 		for ( j = 0; j < h->data->length; ++j )
-			h->data->data[j] = conj(XLALSimInspiralPNMode22(x->data->data[j], phi->data->data[j], m1, m2, r, O));
+			h->data->data[j] = XLALSimInspiralPNMode21(x->data->data[j], phi->data->data[j], m1, m2, r, O);
+	else if ( l == 3 && abs(m) == 3 )
+		for ( j = 0; j < h->data->length; ++j )
+			h->data->data[j] = XLALSimInspiralPNMode33(x->data->data[j], phi->data->data[j], m1, m2, r, O);
+	else if ( l == 3 && abs(m) == 2 )
+		for ( j = 0; j < h->data->length; ++j )
+			h->data->data[j] = XLALSimInspiralPNMode32(x->data->data[j], phi->data->data[j], m1, m2, r, O);
+	else if ( l == 3 && abs(m) == 1 )
+		for ( j = 0; j < h->data->length; ++j )
+			h->data->data[j] = XLALSimInspiralPNMode31(x->data->data[j], phi->data->data[j], m1, m2, r, O);
 	else {
 		XLALDestroyCOMPLEX16TimeSeries(h);
 		XLALPrintError("XLAL Error - %s: Unsupported mode l=%d, m=%d\n", func, l, m );
 		XLAL_ERROR_NULL(func, XLAL_EINVAL);
+	}
+	if ( m < 0 ) {
+		REAL8 sign = l % 2 ? -1.0 : 1.0;
+		for ( j = 0; j < h->data->length; ++j )
+			h->data->data[j] = cmulr(conj(h->data->data[j]), sign);
 	}
 	return h;
 }
@@ -387,15 +493,19 @@ int XLALSimInspiralPN(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, LIGOTim
 	REAL8TimeSeries *phi;
 	COMPLEX16TimeSeries *hmode;
 	UINT4 n;
+	int l, m;
 	n = XLALSimInspiralPNEvolveOrbitTaylorT4(&x, &phi, tc, deltaT, m1, m2, fmin, O);
-	*hplus = XLALCreateREAL8TimeSeries( "H_PLUS", tc, 0.0, deltaT, &lalStrainUnit, n );
-	*hcross = XLALCreateREAL8TimeSeries( "H_CROSS", tc, 0.0, deltaT, &lalStrainUnit, n );
+	*hplus = XLALCreateREAL8TimeSeries( "H_PLUS", &x->epoch, 0.0, deltaT, &lalStrainUnit, n );
+	*hcross = XLALCreateREAL8TimeSeries( "H_CROSS", &x->epoch, 0.0, deltaT, &lalStrainUnit, n );
 	memset((*hplus)->data->data, 0, (*hplus)->data->length*sizeof(*(*hplus)->data->data));
 	memset((*hcross)->data->data, 0, (*hcross)->data->length*sizeof(*(*hcross)->data->data));
-	hmode = XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(x, phi, m1, m2, r, O, 2, 2);
-	XLALSimAddMode(*hplus, *hcross, hmode, i, 0.0, 2, 2, 1);
-
-	XLALDestroyCOMPLEX16TimeSeries(hmode);
+	for ( l = 2; l <= LAL_PN_MODE_L_MAX; ++l ) {
+		for ( m = 1; m <= l; ++m ) {
+			hmode = XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(x, phi, m1, m2, r, O, l, m);
+			XLALSimAddMode(*hplus, *hcross, hmode, i, 0.0, l, m, 1);
+			XLALDestroyCOMPLEX16TimeSeries(hmode);
+		}
+	}
 	XLALDestroyREAL8TimeSeries(phi);
 	XLALDestroyREAL8TimeSeries(x);
 	return n;
@@ -408,8 +518,8 @@ int XLALSimInspiralPNRestricted(REAL8TimeSeries **hplus, REAL8TimeSeries **hcros
 	COMPLEX16TimeSeries *hmode;
 	UINT4 n;
 	n = XLALSimInspiralPNEvolveOrbitTaylorT4(&x, &phi, tc, deltaT, m1, m2, fmin, O);
-	*hplus = XLALCreateREAL8TimeSeries( "H_PLUS", tc, 0.0, deltaT, &lalStrainUnit, n );
-	*hcross = XLALCreateREAL8TimeSeries( "H_CROSS", tc, 0.0, deltaT, &lalStrainUnit, n );
+	*hplus = XLALCreateREAL8TimeSeries( "H_PLUS", &x->epoch, 0.0, deltaT, &lalStrainUnit, n );
+	*hcross = XLALCreateREAL8TimeSeries( "H_CROSS", &x->epoch, 0.0, deltaT, &lalStrainUnit, n );
 	memset((*hplus)->data->data, 0, (*hplus)->data->length*sizeof(*(*hplus)->data->data));
 	memset((*hcross)->data->data, 0, (*hcross)->data->length*sizeof(*(*hcross)->data->data));
 	/* restricted pN: only quadrupole amplitude */

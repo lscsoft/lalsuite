@@ -1,15 +1,40 @@
+/*
+ * Copyright (C) 2008 J. Creighton, S. Fairhurst, B. Krishnan, L. Santamaria
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the 
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  MA  02111-1307  USA
+ */
 #include <lal/LALDatatypes.h>
+
+#define LAL_PN_MODE_L_MAX 3 
+
 
 /**
  * Computes the (s)Y(l,m) spin-weighted spherical harmonic.
  *
- * Implements Equations (II.9)-(II.13) of
+ * From somewhere ...
+ *
+ * See also:
+ * Equations (II.9)-(II.13) of
  * D. A. Brown, S. Fairhurst, B. Krishnan, R. A. Mercer, R. K. Kopparapu,
  * L. Santamaria, and J. T. Whelan,
  * "Data formats for numerical relativity waves",
  * arXiv:0709.0093v1 (2007).
  *
- * Currently only supports s=-2, l=2 modes.
+ * Currently only supports s=-2, l=2,3,4,5 modes.
+ *
  */
 COMPLEX16 XLALSpinWeightedSphericalHarmonic(REAL8 theta, REAL8 phi, int s, int l, int m);
 
@@ -75,15 +100,19 @@ REAL8 XLALSimInspiralPNEnergy(REAL8 x, REAL8 m1, REAL8 m2, int O);
 int XLALSimInspiralPNEvolveOrbitTaylorT4(REAL8TimeSeries **x, REAL8TimeSeries **phi, LIGOTimeGPS *tc, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fmin, int O);
 
 /**
- * Computes h(2,2) mode of spherical harmonic decomposition of
+ * Computes h(l,m) modes of spherical harmonic decomposition of
  * the post-Newtonian inspiral waveform.
  *
- * Implements Equation (79) of:
+ * Implements Equation (79)-(116) of:
  * Lawrence E. Kidder, "Using Full Information When Computing Modes of
  * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
  * Orbit", arXiv:0710.0614v1 [gr-qc].
  */
 COMPLEX16 XLALSimInspiralPNMode22(REAL8 x, REAL8 phi, REAL8 m1, REAL8 m2, REAL8 r, int O);
+COMPLEX16 XLALSimInspiralPNMode21(REAL8 x, REAL8 phi, REAL8 m1, REAL8 m2, REAL8 r, int O);
+COMPLEX16 XLALSimInspiralPNMode33(REAL8 x, REAL8 phi, REAL8 m1, REAL8 m2, REAL8 r, int O);
+COMPLEX16 XLALSimInspiralPNMode32(REAL8 x, REAL8 phi, REAL8 m1, REAL8 m2, REAL8 r, int O);
+COMPLEX16 XLALSimInspiralPNMode31(REAL8 x, REAL8 phi, REAL8 m1, REAL8 m2, REAL8 r, int O);
 
 COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(REAL8TimeSeries *x, REAL8TimeSeries *phi, REAL8 m1, REAL8 m2, REAL8 r, int O, int l, int m);
 
