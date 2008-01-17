@@ -84,15 +84,6 @@ SERIESTYPE *`XLALAdd'SERIESTYPE (
 );
 /* </lalVerbatim> */
 
-/* <lalLaTeX file="FrequencySeriesSubtractP">
-\idx{`XLALSubtract'SERIESTYPE ()}
-</lalLaTeX> <lalVerbatim file="FrequencySeriesSubtractP"> */
-SERIESTYPE *`XLALSubtract'SERIESTYPE (
-	SERIESTYPE *arg1,
-	const SERIESTYPE *arg2
-);
-/* </lalVerbatim> */
-
 ifelse(DATATYPE, COMPLEX8,
 /* <lalLaTeX file="FrequencySeriesConjugateP">
 \idx{`XLALConjugate'SERIESTYPE ()}

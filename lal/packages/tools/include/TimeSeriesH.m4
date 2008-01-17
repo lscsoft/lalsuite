@@ -95,12 +95,3 @@ SERIESTYPE *`XLALAdd'SERIESTYPE (
 );
 /* </lalVerbatim> */
 
-/* <lalLaTeX file="TimeSeriesSubtractP">
-\idx{`XLALSubtract'SERIESTYPE ()}
-</lalLaTeX> <lalVerbatim file="TimeSeriesSubtractP"> */
-SERIESTYPE *`XLALSubtract'SERIESTYPE (
-	SERIESTYPE *arg1,
-	const SERIESTYPE *arg2
-);
-/* </lalVerbatim> */
-
