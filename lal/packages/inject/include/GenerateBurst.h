@@ -43,17 +43,8 @@ extern "C" {
 NRCSID(GENERATEBURSTH, "$Id$");
 
 
-#define GENERATEBURSTH_ENUL 1
-#define GENERATEBURSTH_EOUT 2
 #define GENERATEBURSTH_EMEM 3
-#define GENERATEBURSTH_ETYP 4
-#define GENERATEBURSTH_ELEN 5
-
-#define GENERATEBURSTH_MSGENUL "Unexpected null pointer in arguments"
-#define GENERATEBURSTH_MSGEOUT "Output field a, f, phi, or shift already exists"
 #define GENERATEBURSTH_MSGEMEM "Out of memory"
-#define GENERATEBURSTH_MSGETYP "Waveform type not implemented"
-#define GENERATEBURSTH_MSGELEN "Waveform length not correctly specified"
 
 
 typedef enum {
