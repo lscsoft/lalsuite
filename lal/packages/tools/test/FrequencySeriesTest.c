@@ -167,32 +167,6 @@ int main(void)
 	XLALDestroyREAL4FrequencySeries(y);
 
 	/*
-	 * Subtract
-	 */
-
-	/* subtract a series from itself */
-	a = sequential_frequencyseries(1024);
-	XLALSubtractINT4FrequencySeries(a, a);
-	for(i = 0; i < (int) a->data->length; i++)
-		if(a->data->data[i] != 0) {
-			fprintf(stderr, "Subtract test 1 failed\n");
-			exit(1);
-		}
-	XLALDestroyINT4FrequencySeries(a);
-
-	/* subtract identical data */
-	x = random_frequencyseries(1024);
-	y = XLALCutREAL4FrequencySeries(x, 0, x->data->length);
-	XLALSubtractREAL4FrequencySeries(x, y);
-	for(i = 0; i < (int) x->data->length; i++)
-		if(x->data->data[i] != 0.0) {
-			fprintf(stderr, "Subtract test 2 failed\n");
-			exit(1);
-		}
-	XLALDestroyREAL4FrequencySeries(x);
-	XLALDestroyREAL4FrequencySeries(y);
-
-	/*
 	 * Success
 	 */
 
