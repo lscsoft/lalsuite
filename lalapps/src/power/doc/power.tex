@@ -1521,8 +1521,12 @@ transformed to the time domain for injection into the strain data.
 \subsubsection{Details}
 
 
-The injection code uses a time series whose length is \(10 \Delta t\)
-rounded to the nearest odd integer,
+The algorithm described here yields a single time series containing a band-
+and time-limited white noise burst waveform.  The injection generator
+produces both \(h_{+}\) and \(h_{\times}\) waveforms.  These are
+independent waveforms constructed by simply applying the time series
+construction algorithm twice.  The injection code uses a time series whose
+length is \(10 \Delta t\) rounded to the nearest odd integer,
 \begin{equation}
 L
    = 2 \left\lfloor \frac{1}{2} \frac{10 \Delta t}{\delta t} \right\rfloor
@@ -1598,27 +1602,26 @@ and so
    \magnitude{\tilde{h}_{k}}^{2}.
 \end{align}
 This relationship is used to normalize the injection time series.  The
-expression on the left hand side is \(\int \dot{h}^{2} \diff t\).  The
-right hand side is computed in the frequency domain following application
-of the Gaussian window, and the amplitudes of the frequency components
-scaled prior to conversion to the time domain so that \(\int \dot{h}^{2}
-\diff t\) has the desired value.
+expression on the left hand side is \(\int \dot{h}^{2} \diff t\).  For both
+polarizations the right hand side is computed in the frequency domain
+following application of the Gaussian window, and the amplitudes of the
+frequency components scaled prior to conversion to the time domain so that
+\(\int (\dot{h}_{+}^{2} + \dot{h}_{\times}^{2}) \diff t\) has the desired
+value.
 
-Since the application of the band-limiting filter spreads the signal in the
-time domain, it will not taper to 0 smoothly when transformed back to the
-time domain.  To ensure no discontinuities in the strain time series when
-the injection is added to it, a final Tukey window is applied to the
-injection in the time domain.  The Tukey window is constructed with a call
-to \texttt{XLALCreateTukeyREAL8Window()} with a shape parameter of \(\beta
-= 0.5\) so that the tapers span a total of 50\% of the injection time
-series.  Because the Tukey window is flat with unit amplitude in the
-middle, it has no effect on the injection time series where the bulk of the
-energy is concentrated, and the large tapers ensure the Tukey window
-induces negligble spread of the injection in the frequency domain.  Because
-the injection is normalized in the frequency domain prior to transformation
-to the time domain, the application of the Tukey window does bias the
+To ensure no discontinuities in the strain time series when the injection
+is added to it, a final Tukey window is applied to the injection in the
+time domain.  The Tukey window is constructed with a call to
+\texttt{XLALCreateTukeyREAL8Window()} with a shape parameter of \(\beta =
+0.5\) so that the tapers span a total of 50\% of the injection time series.
+Because the Tukey window is flat with unit amplitude in the middle, it has
+no effect on the injection time series where the bulk of the energy is
+concentrated, and the large tapers ensure the Tukey window induces
+negligble spread of the injection in the frequency domain.  Because the
+injection is normalized in the frequency domain prior to transformation to
+the time domain, the application of the Tukey window does bias the
 normalization slightly by reducing the total energy in the injection,
-however the Tukey window's tapers start several \(\sigma_{t}\)s away from
+however the Tukey window's tapers start several \(\sigma_{t}\) away from
 the injection's peak and so this effect is negligble.
 
 In order that the waveforms be reproducable so that an analysis can be
@@ -1637,14 +1640,18 @@ also depends on the time series' sample rate.
 An example of the output of this algorithm is shown in Figure \ref{fig5}
 \begin{figure}
 \begin{center}
-\resizebox{.9\linewidth}{!}{\includegraphics{figures/btlwnb_example.png}}
+\resizebox{.45\linewidth}{!}{\includegraphics{figures/btlwnb_example_+.pdf}}%
+\resizebox{.45\linewidth}{!}{\includegraphics{figures/btlwnb_example_x.pdf}}
 \end{center}
-\caption{Example of a band- and time-limited white-noise burst waveform.
-The horizontal axis is time in seconds, the vertical axis is strain.  The
+\caption{Example of the \(+\) and \(\times\) polarizations of a band- and
+time-limited white-noise burst injection waveform.  The horizontal axis is
+time in seconds, the vertical axis is strain, and the plots show the full
+extent of the time series produced by the injection generator.  The
 waveform's paraters were \(\Delta t = \unit{0.05}{\milli\second}\),
-\(\Delta f = 8 \frac{2}{\pi} / \Delta t\) (16 degrees of freedom), and
-\(f_{0} = \unit{100}{\hertz}\).  The amplitude was normalized so that
-\(\int \dot{h}^{2} \diff t = 1\).}
+\(\Delta f = 8 \frac{2}{\pi} / \Delta t\) (16 degrees of freedom per
+polarization), and \(f_{0} = \unit{100}{\hertz}\).  The amplitude was
+normalized so that \(\int (\dot{h}_{+}^{2} + \dot{h}_{\times}^{2}) \diff t
+= 1\).}
 \label{fig5}
 \end{figure}
 
@@ -1664,7 +1671,8 @@ spheres of that radius \(A = 4 \pi r^{2}\)), the equivalent isotropic
 radiated energy in a gravitational wave for a source at a distance \(r\) is
 \begin{equation}
 E
-   = \frac{c^{3}}{4 G} r^{2} \int \dot{h}(t)^{2} \diff t.
+   = \frac{c^{3}}{4 G} r^{2} \int \left( \dot{h}_{+}^{2}(t) +
+   \dot{h}_{\times}^{2}(t) \right) \diff t.
 \end{equation}
 
 
