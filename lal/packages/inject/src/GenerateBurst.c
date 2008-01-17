@@ -201,7 +201,8 @@ static REAL8 XLALMeasureIntHDotSquaredDT(COMPLEX16FrequencySeries *fseries)
  * bandwidth
  * 	bandwidth of waveform in Hertz
  * int_hdot_squared
- * 	waveform is normalized so that \int \dot{h}^{2} \diff t equals this
+ * 	waveform is normalized so that \int (\dot{h}_{+}^{2} +
+ * 	\dot{h}_{\times}^{2}) \diff t equals this
  * delta_t
  * 	the sample rate of the time series to construct
  * rng
@@ -210,7 +211,8 @@ static REAL8 XLALMeasureIntHDotSquaredDT(COMPLEX16FrequencySeries *fseries)
  *
  * Output:
  *
- * A time series containing h(t), with the injection centred on t = 0.
+ * Two time series containing h+(t) and hx(t), with the injection centred
+ * on t = 0.  The + and x time series are two independent injections.
  *
  * Note:  because the injection is constructed with a random number
  * generator, any changes to this function that change how random numbers
@@ -223,13 +225,12 @@ static REAL8 XLALMeasureIntHDotSquaredDT(COMPLEX16FrequencySeries *fseries)
  */
 
 
-REAL8TimeSeries *XLALBandAndTimeLimitedWhiteNoiseBurst(REAL8 duration, REAL8 frequency, REAL8 bandwidth, REAL8 int_hdot_squared, REAL8 delta_t, gsl_rng * rng)
+int XLALBandAndTimeLimitedWhiteNoiseBurst(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 duration, REAL8 frequency, REAL8 bandwidth, REAL8 int_hdot_squared, REAL8 delta_t, gsl_rng * rng)
 {
 	static const char func[] = "XLALBandAndTimeLimitedWhiteNoiseBurst";
 	int length;
 	LIGOTimeGPS epoch;
-	REAL8TimeSeries *series;
-	COMPLEX16FrequencySeries *fseries;
+	COMPLEX16FrequencySeries *tilde_hplus, *tilde_hcross;
 	REAL8Window *window;
 	REAL8FFTPlan *plan;
 	REAL8 norm_factor;
@@ -238,7 +239,7 @@ REAL8TimeSeries *XLALBandAndTimeLimitedWhiteNoiseBurst(REAL8 duration, REAL8 fre
 	/* check input */
 
 	if(duration < 0 || bandwidth < 0 || duration * bandwidth < LAL_2_PI || frequency < bandwidth / 2 || int_hdot_squared < 0 || delta_t <= 0)
-		XLAL_ERROR_NULL(func, XLAL_EINVAL);
+		XLAL_ERROR(func, XLAL_EINVAL);
 
 	/* length of the injection time series is 10 * duration, rounded to
 	 * the nearest odd integer */
@@ -252,15 +253,21 @@ REAL8TimeSeries *XLALBandAndTimeLimitedWhiteNoiseBurst(REAL8 duration, REAL8 fre
 
 	/* allocate the time series */
 
-	series = XLALCreateREAL8TimeSeries("BTLWNB", &epoch, 0.0, delta_t, &lalStrainUnit, length);
-	if(!series)
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	*hplus = XLALCreateREAL8TimeSeries("BTLWNB +", &epoch, 0.0, delta_t, &lalStrainUnit, length);
+	*hcross = XLALCreateREAL8TimeSeries("BTLWNB x", &epoch, 0.0, delta_t, &lalStrainUnit, length);
+	if(!*hplus || !*hcross) {
+		XLALDestroyREAL8TimeSeries(*hplus);
+		XLALDestroyREAL8TimeSeries(*hcross);
+		*hplus = *hcross = NULL;
+		XLAL_ERROR(func, XLAL_EFUNC);
+	}
 
 	/* fill with independent zero-mean unit variance Gaussian random
 	 * numbers (any non-zero amplitude is OK, it will be adjusted
 	 * later) */
 
-	gaussian_noise(series, 1, rng);
+	gaussian_noise(*hplus, 1, rng);
+	gaussian_noise(*hcross, 1, rng);
 
 	/* apply the time-domain Gaussian window.  the window function's
 	 * shape parameter is ((length - 1) / 2) * delta_t / \sigma_{t} where
@@ -269,31 +276,43 @@ REAL8TimeSeries *XLALBandAndTimeLimitedWhiteNoiseBurst(REAL8 duration, REAL8 fre
 	 *
 	 * is the compensated time-domain window duration */
 
-	window = XLALCreateGaussREAL8Window(series->data->length, ((series->data->length - 1) / 2) * delta_t / sqrt(duration * duration / 4.0 - 1.0 / (LAL_PI * LAL_PI * bandwidth * bandwidth)));
+	window = XLALCreateGaussREAL8Window((*hplus)->data->length, (((*hplus)->data->length - 1) / 2) * delta_t / sqrt(duration * duration / 4.0 - 1.0 / (LAL_PI * LAL_PI * bandwidth * bandwidth)));
 	if(!window) {
-		XLALDestroyREAL8TimeSeries(series);
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		XLALDestroyREAL8TimeSeries(*hplus);
+		XLALDestroyREAL8TimeSeries(*hcross);
+		*hplus = *hcross = NULL;
+		XLAL_ERROR(func, XLAL_EFUNC);
 	}
-	for(i = 0; i < window->data->length; i++)
-		series->data->data[i] *= window->data->data[i];
+	for(i = 0; i < window->data->length; i++) {
+		(*hplus)->data->data[i] *= window->data->data[i];
+		(*hcross)->data->data[i] *= window->data->data[i];
+	}
 	XLALDestroyREAL8Window(window);
 
 	/* transform to the frequency domain */
 
-	plan = XLALCreateForwardREAL8FFTPlan(series->data->length, 0);
-	fseries = XLALCreateCOMPLEX16FrequencySeries(NULL, &epoch, 0.0, 0.0, &lalDimensionlessUnit, series->data->length / 2 + 1);
-	if(!plan || !fseries) {
-		XLALDestroyCOMPLEX16FrequencySeries(fseries);
+	plan = XLALCreateForwardREAL8FFTPlan((*hplus)->data->length, 0);
+	tilde_hplus = XLALCreateCOMPLEX16FrequencySeries(NULL, &epoch, 0.0, 0.0, &lalDimensionlessUnit, (*hplus)->data->length / 2 + 1);
+	tilde_hcross = XLALCreateCOMPLEX16FrequencySeries(NULL, &epoch, 0.0, 0.0, &lalDimensionlessUnit, (*hplus)->data->length / 2 + 1);
+	if(!plan || !tilde_hplus || !tilde_hcross) {
+		XLALDestroyCOMPLEX16FrequencySeries(tilde_hplus);
+		XLALDestroyCOMPLEX16FrequencySeries(tilde_hcross);
 		XLALDestroyREAL8FFTPlan(plan);
-		XLALDestroyREAL8TimeSeries(series);
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		XLALDestroyREAL8TimeSeries(*hplus);
+		XLALDestroyREAL8TimeSeries(*hcross);
+		*hplus = *hcross = NULL;
+		XLAL_ERROR(func, XLAL_EFUNC);
 	}
-	i = XLALREAL8TimeFreqFFT(fseries, series, plan);
+	i = XLALREAL8TimeFreqFFT(tilde_hplus, *hplus, plan);
+	i |= XLALREAL8TimeFreqFFT(tilde_hcross, *hcross, plan);
 	XLALDestroyREAL8FFTPlan(plan);
 	if(i) {
-		XLALDestroyCOMPLEX16FrequencySeries(fseries);
-		XLALDestroyREAL8TimeSeries(series);
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		XLALDestroyCOMPLEX16FrequencySeries(tilde_hplus);
+		XLALDestroyCOMPLEX16FrequencySeries(tilde_hcross);
+		XLALDestroyREAL8TimeSeries(*hplus);
+		XLALDestroyREAL8TimeSeries(*hcross);
+		*hplus = *hcross = NULL;
+		XLAL_ERROR(func, XLAL_EFUNC);
 	}
 
 	/* apply the frequency-domain Gaussian window.  the window
@@ -303,63 +322,81 @@ REAL8TimeSeries *XLALBandAndTimeLimitedWhiteNoiseBurst(REAL8 duration, REAL8 fre
 	 * shift to the sample corresponding to the injection's centre
 	 * frequency. */
 
-	window = XLALCreateGaussREAL8Window(2 * fseries->data->length, fseries->data->length * fseries->deltaF / (bandwidth / 2.0));
+	window = XLALCreateGaussREAL8Window(2 * tilde_hplus->data->length, tilde_hplus->data->length * tilde_hplus->deltaF / (bandwidth / 2.0));
 	if(!window) {
-		XLALDestroyCOMPLEX16FrequencySeries(fseries);
-		XLALDestroyREAL8TimeSeries(series);
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		XLALDestroyCOMPLEX16FrequencySeries(tilde_hplus);
+		XLALDestroyCOMPLEX16FrequencySeries(tilde_hcross);
+		XLALDestroyREAL8TimeSeries(*hplus);
+		XLALDestroyREAL8TimeSeries(*hcross);
+		*hplus = *hcross = NULL;
+		XLAL_ERROR(func, XLAL_EFUNC);
 	}
 	/* FIXME:  it's possible the start index should have 0.5 added or
 	 * subtracted because the peak of the Gaussian might be 1/2 bin
 	 * away from where this expression considers it to be */
-	XLALResizeREAL8Sequence(window->data, fseries->data->length - frequency / fseries->deltaF, fseries->data->length);
+	XLALResizeREAL8Sequence(window->data, tilde_hplus->data->length - frequency / tilde_hplus->deltaF, tilde_hplus->data->length);
 	for(i = 0; i < window->data->length; i++) {
-		fseries->data->data[i].re *= window->data->data[i];
-		fseries->data->data[i].im *= window->data->data[i];
+		tilde_hplus->data->data[i].re *= window->data->data[i];
+		tilde_hplus->data->data[i].im *= window->data->data[i];
+		tilde_hcross->data->data[i].re *= window->data->data[i];
+		tilde_hcross->data->data[i].im *= window->data->data[i];
 	}
 	XLALDestroyREAL8Window(window);
 
-	/* normalize the waveform to achieve the desired \int \dot{h}^{2}
-	 * dt */
+	/* normalize the waveform to achieve the desired \int
+	 * (\dot{h}_{+}^{2} + \dot{h}_{\times}^{2}) dt */
 
-	norm_factor = sqrt(int_hdot_squared / XLALMeasureIntHDotSquaredDT(fseries));
-	for(i = 0; i < fseries->data->length; i++) {
-		fseries->data->data[i].re *= norm_factor;
-		fseries->data->data[i].im *= norm_factor;
+	norm_factor = sqrt(int_hdot_squared / (XLALMeasureIntHDotSquaredDT(tilde_hplus) + XLALMeasureIntHDotSquaredDT(tilde_hcross)));
+	for(i = 0; i < tilde_hplus->data->length; i++) {
+		tilde_hplus->data->data[i].re *= norm_factor;
+		tilde_hplus->data->data[i].im *= norm_factor;
+		tilde_hcross->data->data[i].re *= norm_factor;
+		tilde_hcross->data->data[i].im *= norm_factor;
 	}
 
 	/* transform to the time domain */
 
-	plan = XLALCreateReverseREAL8FFTPlan(length, 0);
+	plan = XLALCreateReverseREAL8FFTPlan((*hplus)->data->length, 0);
 	if(!plan) {
-		XLALDestroyCOMPLEX16FrequencySeries(fseries);
-		XLALDestroyREAL8TimeSeries(series);
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		XLALDestroyCOMPLEX16FrequencySeries(tilde_hplus);
+		XLALDestroyCOMPLEX16FrequencySeries(tilde_hcross);
+		XLALDestroyREAL8TimeSeries(*hplus);
+		XLALDestroyREAL8TimeSeries(*hcross);
+		*hplus = *hcross = NULL;
+		XLAL_ERROR(func, XLAL_EFUNC);
 	}
-	i = XLALREAL8FreqTimeFFT(series, fseries, plan);
+	i = XLALREAL8FreqTimeFFT(*hplus, tilde_hplus, plan);
+	i |= XLALREAL8FreqTimeFFT(*hcross, tilde_hcross, plan);
 	XLALDestroyREAL8FFTPlan(plan);
-	XLALDestroyCOMPLEX16FrequencySeries(fseries);
+	XLALDestroyCOMPLEX16FrequencySeries(tilde_hplus);
+	XLALDestroyCOMPLEX16FrequencySeries(tilde_hcross);
 	if(i) {
-		XLALDestroyREAL8TimeSeries(series);
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		XLALDestroyREAL8TimeSeries(*hplus);
+		XLALDestroyREAL8TimeSeries(*hcross);
+		*hplus = *hcross = NULL;
+		XLAL_ERROR(func, XLAL_EFUNC);
 	}
 
 	/* apply a Tukey window to ensure continuity at the start and end
 	 * of the injection.  the window's shape parameter sets what
 	 * fraction of the window is used by the tapers */
 
-	window = XLALCreateTukeyREAL8Window(series->data->length, 0.5);
+	window = XLALCreateTukeyREAL8Window((*hplus)->data->length, 0.5);
 	if(!window) {
-		XLALDestroyREAL8TimeSeries(series);
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		XLALDestroyREAL8TimeSeries(*hplus);
+		XLALDestroyREAL8TimeSeries(*hcross);
+		*hplus = *hcross = NULL;
+		XLAL_ERROR(func, XLAL_EFUNC);
 	}
-	for(i = 0; i < window->data->length; i++)
-		series->data->data[i] *= window->data->data[i];
+	for(i = 0; i < window->data->length; i++) {
+		(*hplus)->data->data[i] *= window->data->data[i];
+		(*hcross)->data->data[i] *= window->data->data[i];
+	}
 	XLALDestroyREAL8Window(window);
 
 	/* done */
 
-	return series;
+	return 0;
 }
 
 
