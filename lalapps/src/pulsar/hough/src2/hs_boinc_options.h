@@ -31,17 +31,8 @@
 
 struct HS_SHMEM {
   char xml[1024];
-  char user_name[64];
-  char team_name[64];
-  char  app_name[64];
-  char   wu_name[64];
-  char boincdir[128];
   double skypos_rac;
   double skypos_dec;
-  double user_credit;
-  double ravg_credit;
-  double host_credit;
-  double update_time;
   double fraction_done;
   double cpu_time;
   BOINC_STATUS status;
