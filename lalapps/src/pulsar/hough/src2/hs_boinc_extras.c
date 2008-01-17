@@ -166,7 +166,7 @@ static int is_zipped(const char *);
 static int resolve_and_unzip(const char*, char*, const size_t);
 static void drain_fpu_stack(void);
 static REAL4 get_nan(void);
-#ifdef _MSC_VER && 0
+#ifdef _NO_MSC_VER
 #include "graphics_dlls.h"
 #include "delayload_dlls.h"
 static int try_load_dlls(const char*, const char*);
@@ -206,7 +206,7 @@ static void   set_sse_control_status(const ssew_t cword);
 
 /*^* FUNCTIONS *^*/
 
-#ifdef _MSC_VER && 0
+#ifdef _NO_MSC_VER
 /** Attempt to load the dlls that are required to display graphics.
     returns 0 if successful, -1 in case of a failure.
 */
@@ -1191,7 +1191,7 @@ int main(int argc, char**argv) {
 #endif /* WIN32 */
 
 
-#ifdef _MSC_VER && 0
+#ifdef _NO_MSC_VER
   if (try_load_dlls(delayload_dlls, "ERROR: Failed to load %s - terminating\n")) {
     LogPrintf(LOG_NORMAL,"ERROR: Loading of mandantory DLLs failed\n");
     boinc_init();
