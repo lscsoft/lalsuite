@@ -49,7 +49,6 @@ double boincv6_fraction_done = 0;
 HS_SHMEM* shmem = NULL;
 
 static void update_shmem(void) {
-  // char buf[1024];
 
   if (!shmem) return;
 
@@ -61,9 +60,7 @@ static void update_shmem(void) {
   shmem->cpu_time      = boinc_worker_thread_cpu_time();;
   boinc_get_status(&shmem->status);
 
-  char*buf = shmem->xml;
-
-  snprintf(buf, sizeof(buf),
+  snprintf(shmem->xml, sizeof(shmem->xml),
 	   "<graphics_info>\n"
 	   "  <skypos_rac>%f</skypos_rac>\n"
 	   "  <skypos_dec>%f</skypos_dec>\n"
@@ -74,7 +71,6 @@ static void update_shmem(void) {
 	   boincv6_skypos_dec,
 	   boinc_get_fraction_done(),
 	   boinc_worker_thread_cpu_time());
-  // cout << buf;
 }
 
 int setup_shmem(void) {
