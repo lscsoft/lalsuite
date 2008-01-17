@@ -46,7 +46,7 @@ double boincv6_fraction_done = 0;
 #ifdef BOINC_APIV6
 #include "graphics2.h"
 
-HS_SHMEM* shmem = NULL;
+char*shmem = NULL;
 
 static void update_shmem(void) {
 
@@ -54,13 +54,7 @@ static void update_shmem(void) {
 
   boinc_get_init_data(eah_app_init_data);
 
-  shmem->skypos_rac    = boincv6_skypos_rac;
-  shmem->skypos_dec    = boincv6_skypos_dec;
-  shmem->fraction_done = boinc_get_fraction_done(); // boincv6_fraction_done;
-  shmem->cpu_time      = boinc_worker_thread_cpu_time();;
-  boinc_get_status(&shmem->status);
-
-  snprintf(shmem->xml, sizeof(shmem->xml),
+  snprintf(shmem, EAH_SHMEM_SIZE,
 	   "<graphics_info>\n"
 	   "  <skypos_rac>%f</skypos_rac>\n"
 	   "  <skypos_dec>%f</skypos_dec>\n"
@@ -76,7 +70,7 @@ static void update_shmem(void) {
 int setup_shmem(void) {
   boinc_get_init_data(eah_app_init_data);
 
-  shmem = (HS_SHMEM*)boinc_graphics_make_shmem(EAH_SHMEM_APP_NAME, sizeof(HS_SHMEM));
+  shmem = (char*)boinc_graphics_make_shmem(EAH_SHMEM_APP_NAME, EAH_SHMEM_SIZE);
   if (!shmem) {
     fprintf(stderr, "failed to create shared mem segment\n");
     return(-1);

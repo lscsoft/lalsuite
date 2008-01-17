@@ -28,15 +28,7 @@
 #define HS_BOINC_OPTIONS_H_RCSID "$Id$"
 
 #define EAH_SHMEM_APP_NAME "EinsteinHS"
-
-struct HS_SHMEM {
-  char xml[1024];
-  double skypos_rac;
-  double skypos_dec;
-  double fraction_done;
-  double cpu_time;
-  BOINC_STATUS status;
-};
+#define EAH_SHMEM_SIZE 1024
 
 #ifdef __cplusplus
 extern "C" {
