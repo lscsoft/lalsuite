@@ -265,6 +265,7 @@ typedef struct{
   INT4 lengthFactor;			/* multiply estimated length of filters by that factor */
   INT4 printSNRHisto;		
   INT4 printBank;			/* print bank of templates 		*/
+  INT4 eccentricBank;			/* print bank of templates 		*/
   INT4 printResultXml;
   INT4 printPrototype;
   INT4 printPsd;                        /* print the psd used in <x|x>          */
