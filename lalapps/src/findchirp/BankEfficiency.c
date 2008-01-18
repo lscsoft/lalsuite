@@ -2622,6 +2622,8 @@ void InitInspiralCoarseBankIn(InspiralCoarseBankIn *coarseBankIn)
   coarseBankIn->gridSpacing     = SquareNotOriented;
   coarseBankIn->computeMoments  = 0;
   coarseBankIn->NumFreqCut = 1;
+  coarseBankIn->MaxFreqCut = SchwarzISCO;
+  coarseBankIn->MinFreqCut = SchwarzISCO;
 }
 
 
