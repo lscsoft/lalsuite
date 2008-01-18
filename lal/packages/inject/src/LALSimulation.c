@@ -86,12 +86,12 @@ REAL8TimeSeries * XLALSimQuasiPeriodicInjectionREAL8TimeSeries( REAL8TimeSeries 
 }
 #endif
 
-REAL8TimeSeries * XLALSimDetectorStrainREAL8TimeSeries( REAL8TimeSeries *hplus, REAL8TimeSeries *hcross, SkyPosition *position, REAL8 psi, LALDetector *detector )
+
+REAL8TimeSeries * XLALSimDetectorStrainREAL8TimeSeries( REAL8TimeSeries *hplus, REAL8TimeSeries *hcross, REAL8 right_ascension, REAL8 declination, REAL8 psi, LALDetector *detector )
 {
 	static const char *func = "XLALSimDetectorStrainREAL8TimeSeries";
 	REAL8TimeSeries *h;
 	LIGOTimeGPS epoch;
-	SkyPosition equatorial;
 	REAL8 fplus;
 	REAL8 fcross;
 	REAL8 gmst;
@@ -104,16 +104,11 @@ REAL8TimeSeries * XLALSimDetectorStrainREAL8TimeSeries( REAL8TimeSeries *hplus, 
 
 	/* FIXME: sanity check on parameters */
 
-	/* FIXME: Convert any system to equatorial */
-	if ( position->system != COORDINATESYSTEM_EQUATORIAL )
-		XLAL_ERROR_NULL( func, XLAL_ETYPE );
-	equatorial = *position;
-	
 	epoch = hplus->epoch;
 	gmst = XLALGreenwichMeanSiderealTime( &epoch );
 
-	XLALComputeDetAMResponse( &fplus, &fcross, detector->response, equatorial.longitude, equatorial.latitude, psi, gmst );
-	delay = XLALTimeDelayFromEarthCenter( detector->location, equatorial.longitude, equatorial.latitude, &epoch );
+	XLALComputeDetAMResponse( &fplus, &fcross, detector->response, right_ascension, declination, psi, gmst );
+	delay = XLALTimeDelayFromEarthCenter( detector->location, right_ascension, declination, &epoch );
 	XLALGPSAdd( &epoch, delay );
 
 	/* TODO: Encode detector in name */
@@ -125,6 +120,7 @@ REAL8TimeSeries * XLALSimDetectorStrainREAL8TimeSeries( REAL8TimeSeries *hplus, 
 
 	return h;
 }
+
 
 REAL8TimeSeries * XLALSimInjectionREAL8TimeSeries( REAL8TimeSeries *h, LIGOTimeGPS *start, REAL8 deltaT, UINT4 length, COMPLEX16FrequencySeries *response )
 {
