@@ -324,7 +324,7 @@ int XLALBandAndTimeLimitedWhiteNoiseBurst(REAL8TimeSeries **hplus, REAL8TimeSeri
 	 * shift to the sample corresponding to the injection's centre
 	 * frequency. */
 
-	window = XLALCreateGaussREAL8Window(2 * tilde_hplus->data->length, (tilde_hplus->data->length * tilde_hplus->deltaF / 2) / (bandwidth / 2.0));
+	window = XLALCreateGaussREAL8Window(2 * tilde_hplus->data->length, ((2 * tilde_hplus->data->length - 1) * tilde_hplus->deltaF / 2) / (bandwidth / 2.0));
 	if(!window) {
 		XLALDestroyCOMPLEX16FrequencySeries(tilde_hplus);
 		XLALDestroyCOMPLEX16FrequencySeries(tilde_hcross);
