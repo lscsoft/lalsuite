@@ -1568,7 +1568,7 @@ numerator in the shape parameter converts the normalized co-ordinate \(y
 frequency.\footnote{See the LAL documentation for more information.  The
 window is twice the length of the frequency series, sample index 0 is \(y =
 -1\), sample index \(L + 1\) is \(y = +1\), so there are \(L / 2\) sample
-index per unit of \(y\).}  The frequency-domain window's samples are
+indexes per unit of \(y\).}  The frequency-domain window's samples are
 shifted with a call to \texttt{XLALResizeREAL8Sequence()}, which is used to
 extract \((L + 1) / 2\) samples starting at index \(\lfloor (L + 1) / 2 -
 f_{0} / \delta f \rfloor\).
@@ -1633,11 +1633,14 @@ how the initial time series of independent Gaussian random numbers is to be
 constructed.  This is done by specifying the seed to be used with the
 random number generator.  The random number generator is not specified, so
 the same seed may produce different injections with different versions of
-the code, but a seed and CVS tag combination (and choice of normalization)
-should be guaranteed to produce the same injection.  Note also that
-changing the length of the injection time series changes the number of
-random numbers used to construct it, so in this way the injection waveform
-also depends on the time series' sample rate.
+the code, but a seed and CVS tag combination should be guaranteed to
+produce the same injection.  Note also that changing the length of the
+injection time series changes the number of random numbers used to
+construct it, so the injection waveform also depends on the time series'
+sample rate.  One has to be careful when constructing injection waveforms
+for instruments with different sample rates (e.g., LIGO and VIRGO), that
+the injection is constructed at some high common sample rate and then down
+sampled afterwards for each instrument as needed.
 
 An example of the output of this algorithm is shown in Figure \ref{fig5}
 \begin{figure}
