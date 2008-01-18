@@ -429,7 +429,7 @@ int XLALBandAndTimeLimitedWhiteNoiseBurst(REAL8TimeSeries **hplus, REAL8TimeSeri
  * 	deltaT).
  *
  * The low frequency cutoff is fixed at 1 Hz;  there's nothing special
- * about 1 Hz except that it low compared to the ferquecny at which we
+ * about 1 Hz except that it is low compared to the frequency at which we
  * should be high-passing the data
  */
 
@@ -471,6 +471,7 @@ REAL8TimeSeries *XLALGenerateStringCusp(REAL8 amplitude, REAL8 f_high, REAL8 del
 		XLALDestroyREAL8FFTPlan(plan);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
+	XLALUnitMultiply(&tilde_h->sampleUnits, &h->sampleUnits, &lalSecondUnit);
 
 	/* construct the waveform in the frequency domain */
 
