@@ -240,7 +240,7 @@ int XLALBandAndTimeLimitedWhiteNoiseBurst(REAL8TimeSeries **hplus, REAL8TimeSeri
 
 	/* check input */
 
-	if(duration < 0 || bandwidth < 0 || duration * bandwidth < LAL_2_PI || frequency < bandwidth / 2 || int_hdot_squared < 0 || delta_t <= 0)
+	if(duration < 0 || bandwidth < 0 || duration * bandwidth < LAL_2_PI || int_hdot_squared < 0 || delta_t <= 0)
 		XLAL_ERROR(func, XLAL_EINVAL);
 
 	/* length of the injection time series is 10 * duration, rounded to
