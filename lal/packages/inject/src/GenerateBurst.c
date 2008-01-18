@@ -28,6 +28,7 @@
  */
 
 
+#include <math.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Sequence.h>
 #include <lal/TimeSeries.h>
@@ -226,7 +227,7 @@ static REAL8 XLALMeasureIntHDotSquaredDT(COMPLEX16FrequencySeries *fseries)
  */
 
 
-int XLALBandAndTimeLimitedWhiteNoiseBurst(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 duration, REAL8 frequency, REAL8 bandwidth, REAL8 int_hdot_squared, REAL8 delta_t, gsl_rng * rng)
+int XLALBandAndTimeLimitedWhiteNoiseBurst(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 duration, REAL8 frequency, REAL8 bandwidth, REAL8 int_hdot_squared, REAL8 delta_t, gsl_rng *rng)
 {
 	static const char func[] = "XLALBandAndTimeLimitedWhiteNoiseBurst";
 	int length;
@@ -378,9 +379,9 @@ int XLALBandAndTimeLimitedWhiteNoiseBurst(REAL8TimeSeries **hplus, REAL8TimeSeri
 		XLAL_ERROR(func, XLAL_EFUNC);
 	}
 
-	/* apply a Tukey window to ensure continuity at the start and end
-	 * of the injection.  the window's shape parameter sets what
-	 * fraction of the window is used by the tapers */
+	/* apply a Tukey window for continuity at the start and end of the
+	 * injection.  the window's shape parameter sets what fraction of
+	 * the window is used by the tapers */
 
 	window = XLALCreateTukeyREAL8Window((*hplus)->data->length, 0.5);
 	if(!window) {
@@ -476,13 +477,13 @@ REAL8TimeSeries *XLALGenerateStringCusp(REAL8 amplitude, REAL8 f_high, REAL8 del
 
 	/* construct the waveform in the frequency domain */
 
-	for(i = 0; (unsigned) i < tilde_h->data->length - 1; i++) {
+	for(i = 0; (unsigned) i < tilde_h->data->length; i++) {
 		double f = i * tilde_h->deltaF;
 
 		/* frequency-domain wave form */
 
 		tilde_h->data->data[i].re = amplitude * pow((sqrt(1 + f_low * f_low / (f * f))), -8) * pow(f, -4.0 / 3.0);
-		if(f >= f_high)
+		if(f > f_high)
 			tilde_h->data->data[i].re *= exp(1 - f / f_high);
 		tilde_h->data->data[i].im = tilde_h->data->data[i].re;
 
