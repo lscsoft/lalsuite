@@ -1635,9 +1635,10 @@ produce the same injection.  Note also that changing the length of the
 injection time series changes the number of random numbers used to
 construct it, so the injection waveform also depends on the time series'
 sample rate.  One has to be careful when constructing injection waveforms
-for instruments with different sample rates (e.g., LIGO and VIRGO), that
-the injection is constructed at some high common sample rate and then down
-sampled afterwards for each instrument as needed.
+for instruments with different sample rates (e.g., LIGO and VIRGO).  The
+injection must be constructed at the same sample rate for both instruments
+and then up- or down-sampled as needed when injected into the instrument's
+time series.
 
 An example of the output of this algorithm is shown in Figure \ref{fig5}
 \begin{figure}
