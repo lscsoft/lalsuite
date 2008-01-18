@@ -76,6 +76,7 @@ NRCSID(LALINSPIRALBANKH, "$Id$" );
 #define LALINSPIRALBANKH_EGRIDSPACING 64
 #define LALINSPIRALBANKH_EHEXAINIT 128
 #define LALINSPIRALBANKH_EFCUT      5
+#define LALINSPIRALBANKH_EFHIGH     6
 
 #define LALINSPIRALBANKH_MSGENULL   "Null pointer"
 #define LALINSPIRALBANKH_MSGEMEM    "Memory allocation failure"
@@ -87,6 +88,7 @@ NRCSID(LALINSPIRALBANKH, "$Id$" );
 #define LALINSPIRALBANKH_MSGEGRIDSPACING "Inappropriate grid spacing parameter [SquareNotOriented or Hexagonal]"
 #define LALINSPIRALBANKH_MSGEHEXAINIT "Empty bank. abnormal behaviour in HexaBank generation."
 #define LALINSPIRALBANKH_MSGEFCUT "Inappropriate cutoff frequency [SchwarzISCO, BKLISCO or ERD]"
+#define LALINSPIRALBANKH_MSGEFHIGH "Final frequency is less than the low frequency cutoff."
 
 /* </lalErrTable> */
 
