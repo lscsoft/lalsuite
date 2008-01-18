@@ -324,7 +324,7 @@ int XLALBandAndTimeLimitedWhiteNoiseBurst(REAL8TimeSeries **hplus, REAL8TimeSeri
 	 * shift to the sample corresponding to the injection's centre
 	 * frequency. */
 
-	window = XLALCreateGaussREAL8Window(2 * tilde_hplus->data->length, ((2 * tilde_hplus->data->length - 1) * tilde_hplus->deltaF / 2) / (bandwidth / 2.0));
+	window = XLALCreateGaussREAL8Window(2 * tilde_hplus->data->length + 1, (tilde_hplus->data->length * tilde_hplus->deltaF) / (bandwidth / 2.0));
 	if(!window) {
 		XLALDestroyCOMPLEX16FrequencySeries(tilde_hplus);
 		XLALDestroyCOMPLEX16FrequencySeries(tilde_hcross);
@@ -333,10 +333,7 @@ int XLALBandAndTimeLimitedWhiteNoiseBurst(REAL8TimeSeries **hplus, REAL8TimeSeri
 		*hplus = *hcross = NULL;
 		XLAL_ERROR(func, XLAL_EFUNC);
 	}
-	/* FIXME:  it's possible the start index should have 0.5 added or
-	 * subtracted because the peak of the Gaussian might be 1/2 bin
-	 * away from where this expression considers it to be */
-	XLALResizeREAL8Sequence(window->data, tilde_hplus->data->length - frequency / tilde_hplus->deltaF, tilde_hplus->data->length);
+	XLALResizeREAL8Sequence(window->data, tilde_hplus->data->length - (unsigned) (frequency / tilde_hplus->deltaF + 0.5), tilde_hplus->data->length);
 	for(i = 0; i < window->data->length; i++) {
 		tilde_hplus->data->data[i].re *= window->data->data[i];
 		tilde_hplus->data->data[i].im *= window->data->data[i];
