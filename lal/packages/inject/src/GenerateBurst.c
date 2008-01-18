@@ -412,6 +412,119 @@ int XLALBandAndTimeLimitedWhiteNoiseBurst(REAL8TimeSeries **hplus, REAL8TimeSeri
 /*
  * ============================================================================
  *
+ *                                String Cusp
+ *
+ * ============================================================================
+ */
+
+
+/*
+ * Input:
+ *	amplitude = waveform's amplitude parameter
+ *	f_high = high frequency cutoff
+ *	delta_t = sample period of output time series
+ *
+ * Output:
+ * 	h(t) with waveform peak at t = 0 (as defined by the epoch and
+ * 	deltaT).
+ *
+ * The low frequency cutoff is fixed at 1 Hz;  there's nothing special
+ * about 1 Hz except that it low compared to the ferquecny at which we
+ * should be high-passing the data
+ */
+
+
+REAL8TimeSeries *XLALGenerateStringCusp(REAL8 amplitude, REAL8 f_high, REAL8 delta_t)
+{
+	static const char func[] = "XLALGenerateStringCusp";
+	REAL8TimeSeries *h;
+	COMPLEX16FrequencySeries *tilde_h;
+	REAL8FFTPlan *plan;
+	LIGOTimeGPS epoch;
+	int length;
+	int i;
+	const double f_low = 1.0;
+
+	/* check input */
+
+	if(amplitude < 0 || f_high < 1 || delta_t <= 0)
+		XLAL_ERROR_NULL(func, XLAL_EINVAL);
+
+	/* length of the injection time series is 5 / f_low, rounded to the
+	 * nearest odd integer */
+
+	length = (int) (5 / f_low / delta_t / 2.0);
+	length = 2 * length + 1;
+
+	/* the middle sample is t = 0 */
+
+	XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * delta_t);
+
+	/* allocate time and frequency series and FFT plan */
+
+	h = XLALCreateREAL8TimeSeries("string cusp", &epoch, 0.0, delta_t, &lalStrainUnit, length);
+	tilde_h = XLALCreateCOMPLEX16FrequencySeries("string cusp", &epoch, 0.0, 1.0 / (length * delta_t), &lalDimensionlessUnit, length / 2 + 1);
+	plan = XLALCreateReverseREAL8FFTPlan(length, 0);
+	if(!h || !tilde_h || !plan) {
+		XLALDestroyREAL8TimeSeries(h);
+		XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
+		XLALDestroyREAL8FFTPlan(plan);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	}
+
+	/* construct the waveform in the frequency domain */
+
+	for(i = 0; (unsigned) i < tilde_h->data->length - 1; i++) {
+		double f = i * tilde_h->deltaF;
+
+		/* frequency-domain wave form */
+
+		tilde_h->data->data[i].re = amplitude * pow((sqrt(1 + f_low * f_low / (f * f))), -8) * pow(f, -4.0 / 3.0);
+		if(f >= f_high)
+			tilde_h->data->data[i].re *= exp(1 - f / f_high);
+		tilde_h->data->data[i].im = tilde_h->data->data[i].re;
+
+		/* phase shift to put waveform's peak on the middle sample
+		 * of the time series */
+
+		tilde_h->data->data[i].im *= sin(-LAL_PI * i * (length - 1) / length);
+		tilde_h->data->data[i].re *= cos(-LAL_PI * i * (length - 1) / length);
+	}
+
+	/* set DC to zero */
+
+	tilde_h->data->data[0].re = 0;
+	tilde_h->data->data[0].im = 0;
+
+	/* set Nyquist to zero */
+
+	tilde_h->data->data[tilde_h->data->length - 1].re = 0;
+	tilde_h->data->data[tilde_h->data->length - 1].im = 0;
+
+	/* transform to time domain */
+
+	i = XLALREAL8FreqTimeFFT(h, tilde_h, plan);
+	XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
+	XLALDestroyREAL8FFTPlan(plan);
+	if(i) {
+		XLALDestroyREAL8TimeSeries(h);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	}
+
+	/* apodize the time series */
+
+	for(i = h->data->length - 1; i >= 0; i--)
+		h->data->data[i] -= h->data->data[0];
+
+	/* done */
+
+	return h;
+}
+
+
+/*
+ * ============================================================================
+ *
  *                   Legacy Code --- Please Update to XLAL!
  *
  * ============================================================================

@@ -82,6 +82,13 @@ int XLALBandAndTimeLimitedWhiteNoiseBurst(
 );
 
 
+REAL8TimeSeries *XLALGenerateStringCusp(
+	REAL8 amplitude,
+	REAL8 f_high,
+	REAL8 delta_t
+);
+
+
 void LALBurstInjectSignals(
 	LALStatus *status,
 	REAL4TimeSeries *series,
