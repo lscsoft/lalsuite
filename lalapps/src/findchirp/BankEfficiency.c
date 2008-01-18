@@ -46,7 +46,7 @@ main (INT4 argc, CHAR **argv )
   INT4 	                 i;
   INT4 	                 j;
   INT4                   thisTemplateIndex;
-  Approximant            tempOrder;  /* temporary phase order */
+  Order            tempOrder;  /* temporary phase order */
 
   /* --- input --- */
   UserParametersIn       userParam;
@@ -189,12 +189,12 @@ main (INT4 argc, CHAR **argv )
   else
   {
     INT4 temp_order = coarseBankIn.order;
-    if (coarseBankIn.order <= 4){
+    if (coarseBankIn.order < 4){
      coarseBankIn.order = 4;  
     }
     LAL_CALL( LALInspiralBankGeneration( &status, &coarseBankIn, &tmpltHead, &sizeBank),
  	   &status );
-    if (coarseBankIn.order <= 4){
+    if (coarseBankIn.order < 4){
      coarseBankIn.order = temp_order;  
     }
 
@@ -1977,9 +1977,14 @@ void BEGetMaximumSize(LALStatus  *status,
   }
   else 
   {
-    /* why ? */
+    /* why ? because this is probably the longest template (stops at light
+     * ring) */
     randIn.param.approximant 	= EOB;
   }
+  /*HEre we do not care about the order, so let us set it to a value that wont
+   * cause any problems (Newtonian , 1PN not properly implemented eveywhere!*/
+  coarseBankIn.order = twoPN;
+  randIn.param.order = twoPN;
 
   *length = 0;
  
@@ -2031,10 +2036,10 @@ void BECreatePsd(LALStatus                *status,
   INITSTATUS( status, "BECreatePsd", BANKEFFICIENCYC );
   ATTATCHSTATUSPTR( status );
   
+  
   if (vrbflg){
     fprintf(stdout, "generating PSD ...");
   }
-
 
   memset( &(coarseBankIn->shf), 0, sizeof(REAL8FrequencySeries) );
   coarseBankIn->shf.f0 	= 0;
@@ -2109,6 +2114,7 @@ void BECreatePsd(LALStatus                *status,
   if (vrbflg){
     fprintf(stdout, " ... done \n");
   }
+  
   
 
   DETATCHSTATUSPTR( status );
