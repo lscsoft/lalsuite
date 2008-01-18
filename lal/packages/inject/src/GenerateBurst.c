@@ -195,11 +195,11 @@ static REAL8 XLALMeasureIntHDotSquaredDT(COMPLEX16FrequencySeries *fseries)
  * Parameters:
  *
  * duration
- * 	duration of waveform in seconds
+ * 	width of time domain Gaussian envelope in seconds
  * frequency
  * 	centre frequency of waveform in Hertz
  * bandwidth
- * 	bandwidth of waveform in Hertz
+ * 	width of frequency domain Gaussian envelope in Hertz
  * int_hdot_squared
  * 	waveform is normalized so that \int (\dot{h}_{+}^{2} +
  * 	\dot{h}_{\times}^{2}) \diff t equals this
@@ -212,7 +212,8 @@ static REAL8 XLALMeasureIntHDotSquaredDT(COMPLEX16FrequencySeries *fseries)
  * Output:
  *
  * Two time series containing h+(t) and hx(t), with the injection centred
- * on t = 0.  The + and x time series are two independent injections.
+ * on t = 0 (as defined by the epoch and deltaT).  The + and x time series
+ * are two independent injections.
  *
  * Note:  because the injection is constructed with a random number
  * generator, any changes to this function that change how random numbers
