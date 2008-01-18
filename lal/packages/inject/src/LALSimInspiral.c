@@ -403,7 +403,13 @@ int XLALSimInspiralPNEvolveOrbitTaylorT4(REAL8TimeSeries **x, REAL8TimeSeries **
 	double yerr[2];
 	const gsl_odeiv_step_type *T = gsl_odeiv_step_rk4;
 	gsl_odeiv_step *s;
-	gsl_odeiv_system sys = { XLALSimInspiralPNEvolveOrbitTaylorT4Integrand, NULL, 2, &params };
+	gsl_odeiv_system sys;
+
+	/* setup ode system */
+	sys.function = XLALSimInspiralPNEvolveOrbitTaylorT4Integrand;
+	sys.jacobian = NULL;
+	sys.dimension = 2;
+	sys.params = &params;
 
 	/* allocate memory */
 	*x = XLALCreateREAL8TimeSeries( "ORBITAL_FREQUENCY_PARAMETER", tc, 0.0, deltaT, &lalDimensionlessUnit, blocklen );
