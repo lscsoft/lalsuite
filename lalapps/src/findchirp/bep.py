@@ -230,7 +230,6 @@ create_dag_file(configcp)
 create_bank(configcp, arguments)
 
 print '--- Generating the prototype xml file for merging condor job'
-arguments = ""
 command = configcp.get("main", "executable") + ' ' + arguments +' --print-prototype \
     1>./log/bankefficiency_prototype.out 2>./log/bankefficiency_prototype.err'
 os.system(command)
