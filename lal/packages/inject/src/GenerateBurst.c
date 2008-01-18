@@ -272,13 +272,13 @@ int XLALBandAndTimeLimitedWhiteNoiseBurst(REAL8TimeSeries **hplus, REAL8TimeSeri
 	gaussian_noise(*hcross, 1, rng);
 
 	/* apply the time-domain Gaussian window.  the window function's
-	 * shape parameter is ((length - 1) / 2) * delta_t / \sigma_{t} where
+	 * shape parameter is ((length - 1) * delta_t / 2) / \sigma_{t} where
 	 *
 	 * \sigma_{t} = \sqrt{duration^{2} / 4 - 1 / (\pi^{2} bandwidth^{2})}
 	 *
 	 * is the compensated time-domain window duration */
 
-	window = XLALCreateGaussREAL8Window((*hplus)->data->length, (((*hplus)->data->length - 1) / 2) * delta_t / sqrt(duration * duration / 4.0 - 1.0 / (LAL_PI * LAL_PI * bandwidth * bandwidth)));
+	window = XLALCreateGaussREAL8Window((*hplus)->data->length, (((*hplus)->data->length - 1) * delta_t / 2) / sqrt(duration * duration / 4.0 - 1.0 / (LAL_PI * LAL_PI * bandwidth * bandwidth)));
 	if(!window) {
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
@@ -324,7 +324,7 @@ int XLALBandAndTimeLimitedWhiteNoiseBurst(REAL8TimeSeries **hplus, REAL8TimeSeri
 	 * shift to the sample corresponding to the injection's centre
 	 * frequency. */
 
-	window = XLALCreateGaussREAL8Window(2 * tilde_hplus->data->length, tilde_hplus->data->length * tilde_hplus->deltaF / (bandwidth / 2.0));
+	window = XLALCreateGaussREAL8Window(2 * tilde_hplus->data->length, (tilde_hplus->data->length * tilde_hplus->deltaF / 2) / (bandwidth / 2.0));
 	if(!window) {
 		XLALDestroyCOMPLEX16FrequencySeries(tilde_hplus);
 		XLALDestroyCOMPLEX16FrequencySeries(tilde_hcross);
