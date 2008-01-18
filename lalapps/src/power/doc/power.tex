@@ -1538,11 +1538,13 @@ t (L - 1) / 2\).  The time-domain Gaussian window is constructed with a
 call to \texttt{XLALCreateGaussREAL8Window()} with a shape parameter of
 \begin{equation}
 \beta
-   = \frac{\delta t (L - 1) / 2}{\sigma_{t}}.
+   = \frac{(L - 1) \delta t / 2}{\sigma_{t}}.
 \end{equation}
 The numerator transforms the normalized co-ordinate \(y \in [-1, +1]\) in
-the definition of the window function to \(t\) (see the LAL documentation
-for more information).
+the definition of the window function to \(t\).\footnote{See the LAL
+documentation for more information.  Sample index 0 is \(y = -1\), sample
+index \(L - 1\) is \(y = +1\), so there are \((L - 1) / 2\) sample indexes
+per unit of \(y\).}.
 
 The time series is transformed to the frequency domain with a call to
 \texttt{XLALREAL8TimeFreqFFT()}, which populates the metadata of the output
@@ -1555,21 +1557,21 @@ frequency domain Gaussian window is constructed with a call to
 twice that of the frequency series, and a shape parameter of
 \begin{equation}
 \beta
-   = \frac{\delta f (L + 1) / 2}{\sigma_{f}}.
+   = \frac{L \delta f / 2}{\sigma_{f}}.
 \end{equation}
 The window is created with the peak centered in the vector, so we will need
 to shift the samples to place the peak at the correct frequency.
 Requesting a window twice as long as the frequency series ensures that we
 will still have a complete set of samples after they are shifted.  The
 numerator in the shape parameter converts the normalized co-ordinate \(y
-\in [-1, +1]\) in the definition of the window function (see the LAL
-documentation for more information) to frequency (\(y\) spans 2 ``units'',
-and because the window vector is twice the length of the frequency series
-it spans a frequency of \(\delta f (L + 1)\), so there are \(\delta f (L +
-1) / 2\) frequency units per unit of \(y\)).  The frequency-domain window's
-samples are shifted with a call to \texttt{XLALResizeREAL8Sequence()},
-which is used to extract \((L + 1) / 2\) samples starting at index
-\(\lfloor (L + 1) / 2 - f_{0} / \delta f \rfloor\).
+\in [-1, +1]\) in the definition of the window function to
+frequency.\footnote{See the LAL documentation for more information.  The
+window is twice the length of the frequency series, sample index 0 is \(y =
+-1\), sample index \(L + 1\) is \(y = +1\), so there are \(L / 2\) sample
+index per unit of \(y\).}  The frequency-domain window's samples are
+shifted with a call to \texttt{XLALResizeREAL8Sequence()}, which is used to
+extract \((L + 1) / 2\) samples starting at index \(\lfloor (L + 1) / 2 -
+f_{0} / \delta f \rfloor\).
 
 Following application of the frequency-domain window, the injection is
 transformed back to the time domain with a call to
