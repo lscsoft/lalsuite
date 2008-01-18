@@ -175,6 +175,11 @@ double XLALTimeDelayFromEarthCenter(
 {/* </lalVerbatim> */
 	const double earth_center[3] = {0.0, 0.0, 0.0};
 
+	/*
+	 * This is positive when the wavefront arrives at the detector
+	 * after arriving at the geocentre.
+	 */
+
 	return XLALArrivalTimeDiff(detector_earthfixed_xyz_metres, earth_center, source_right_ascension_radians, source_declination_radians, gpstime);
 }
 
