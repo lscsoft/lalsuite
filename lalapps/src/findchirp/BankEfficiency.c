@@ -300,7 +300,8 @@ main (INT4 argc, CHAR **argv )
       /* -- first we populate the insptmplt with the random parameter*/ 
       /* -- !! here the approximant is overwritten. Later, we will populate
       the approximant again with userParam.template into overlapin.appoximant */     
-      insptmplt = randIn.param;   
+      insptmplt = randIn.param;  
+      insptmplt.order = coarseBankIn.order;
       filter_processed = 0;
       insptmplt.eccentricity = 0;
 
