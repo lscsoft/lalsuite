@@ -186,16 +186,17 @@ index $i$ to normalized co-ordinate $y$ is
 y(i)
    = \left\{ \begin{array}{ll}
    0 & L \le 1, \\
-   1 - 2 i / (L - 1) & L > 1,
+   2 i / (L - 1) - 1 & L > 1,
    \end{array} \right.
 \end{equation}
 where $0 \le i < L$, and floating-point division is used.  This agrees with
 J.~G.~Proakis and D.~G.~Manolakis, \textit{Digital Signal Processing}
-\cite{pm}, and \texttt{MatLab}.  For odd-lengthed vectors, the middle
-sample corresponds to $y = 0$, while for even-lengthed vectors $y = 0$
-occurs half-way between the two middle samples.  Substituting $y(i)$ into
-the definitions of the window functions above yields $w(i)$, the value of
-the window function at the integer sample $i$.
+\cite{pm}, and \texttt{MatLab}.  The first sample is $y = -1$, the last
+sample is $y = +1$.  For odd-lengthed vectors, the middle sample is $y =
+0$, while for even-lengthed vectors $y = 0$ occurs half-way between the two
+middle samples.  Substituting $y(i)$ into the definitions of the window
+functions above yields $w(i)$, the value of the window function at the
+integer sample $i$.
 
 The Fourier transforms of the windows are shown as functions of $1 / y$ in
 Fig.~\ref{f:window-f}.
