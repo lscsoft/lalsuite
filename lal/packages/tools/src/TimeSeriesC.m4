@@ -57,7 +57,7 @@ SERIESTYPE *`XLALCreate'SERIESTYPE (
 	if(!new || !sequence) {
 		XLALFree(new);
 		`XLALDestroy'SEQUENCETYPE (sequence);
-		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 
 	if(name)
@@ -111,7 +111,7 @@ SERIESTYPE *`XLALCut'SERIESTYPE (
 	if(!new || !sequence) {
 		XLALFree(new);
 		`XLALDestroy'SEQUENCETYPE (sequence);
-		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 
 	*new = *series;

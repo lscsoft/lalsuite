@@ -40,7 +40,7 @@ SEQUENCETYPE *`XLALCreate'SEQUENCETYPE (
 	if(!new || !data) {
 		XLALFree(new);
 		XLALFree(data);
-		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 
 	new->data = data;
@@ -114,7 +114,7 @@ SEQUENCETYPE *`XLALResize'SEQUENCETYPE (
 			sequence->length = length;
 			`XLALShift'SEQUENCETYPE (sequence, -first);
 		} else
-			XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+			XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	} else {
 		/* do not need to increase memory */
 		`XLALShift'SEQUENCETYPE (sequence, -first);
@@ -123,7 +123,7 @@ SEQUENCETYPE *`XLALResize'SEQUENCETYPE (
 			sequence->data = new_data;
 			sequence->length = length;
 		} else
-			XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+			XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 
 	return sequence;
