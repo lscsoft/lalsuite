@@ -16,6 +16,8 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
  *  MA  02111-1307  USA
  */
+
+
 #include <math.h>
 #include <lal/LALSimulation.h>
 #include <lal/LALDetectors.h>
@@ -86,6 +88,8 @@ REAL8TimeSeries * XLALSimQuasiPeriodicInjectionREAL8TimeSeries( REAL8TimeSeries 
 }
 #endif
 
+#define KIPPSPROPOSAL
+#ifndef KIPPSPROPOSAL
 
 REAL8TimeSeries * XLALSimDetectorStrainREAL8TimeSeries( REAL8TimeSeries *hplus, REAL8TimeSeries *hcross, REAL8 right_ascension, REAL8 declination, REAL8 psi, LALDetector *detector )
 {
@@ -227,3 +231,204 @@ REAL8TimeSeries * XLALSimInjectionREAL8TimeSeries( REAL8TimeSeries *h, LIGOTimeG
 
 	return injection;
 }
+
+
+#else	/* KIPPSPROPOSAL */
+
+
+/*
+ * Input
+ *
+ * - h+ and hx time series for the injection with t = 0 interpreted to be
+ *   the "time" of the injection,
+ *
+ * - the right ascension and declination of the source,
+ *
+ * - the orientation of the wave co-ordinate system,
+ *
+ * - the detector into which the injection is destined to be injected,
+ *
+ * - and the "time" of the injection as observed at the geocentre.
+ *
+ * Output
+ *
+ * The strain time series as seen in the detector, with the epoch set to
+ * the start of the time series at that detector.
+ *
+ * Notes
+ *
+ * Antenna response factors are computed sample-by-sample, but waveform is
+ * not Doppler corrected or otherwise re-interpolated to account for
+ * detector motion.
+ */
+
+
+REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(const REAL8TimeSeries *hplus, const REAL8TimeSeries *hcross, REAL8 right_ascension, REAL8 declination, REAL8 psi, LALDetector *detector, const LIGOTimeGPS *injection_time_at_geocentre)
+{
+	static const char func[] = "XLALSimDetectorStrainREAL8TimeSeries";
+	char name[13];	/* "?? injection" + terminator */
+	REAL8TimeSeries *h;
+	unsigned i;
+
+	LAL_CHECK_VALID_SERIES(hplus, NULL);
+	LAL_CHECK_VALID_SERIES(hcross, NULL);
+	LAL_CHECK_CONSISTENT_TIME_SERIES(hplus, hcross, NULL);
+
+	/* generate name */
+
+	sprintf(name, "%2s injection", detector->frDetector.prefix);
+
+	/* allocate output time series.  epoch = injection "time" at
+	 * geocentre */
+
+	h = XLALCreateREAL8TimeSeries(name, injection_time_at_geocentre, hplus->f0, hplus->deltaT, &lalStrainUnit, hplus->data->length);
+	if(!h)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+
+	/* add start time of input time series and the detector's geometric
+	 * delay.  after this, epoch = the time of the injection time
+	 * series' first sample at the desired detector */
+
+	XLALGPSAdd(&h->epoch, XLALGPSGetREAL8(&hplus->epoch) + XLALTimeDelayFromEarthCenter(detector->location, right_ascension, declination, injection_time_at_geocentre));
+
+	/* project + and x time series onto detector */
+
+	for(i = 0; i < hplus->data->length; i++) {
+		LIGOTimeGPS epoch = h->epoch;
+		double fplus, fcross;
+
+		XLALGPSAdd(&epoch, i * hplus->deltaT);
+		XLALComputeDetAMResponse(&fplus, &fcross, detector->response, right_ascension, declination, psi, XLALGreenwichMeanSiderealTime(&epoch));
+
+		h->data->data[i] = fplus * hplus->data->data[i] + fcross * hcross->data->data[i];
+	}
+
+	/* done */
+
+	return h;
+}
+
+
+/*
+ * Essentially a wrapper for XLALAddREAL8TimeSeries(), but performs
+ * sub-sample re-interpolation to adjust the source time series epoch to
+ * lie on an integer sample boundary in the target time series.  This
+ * transformation is done in the frequency domain, so it is convenient to
+ * allow a response function to be applied at the same time.  Note that the
+ * source time series is modified in place by this function.
+ */
+
+
+int XLALAddInjectionREAL8TimeSeries(REAL8TimeSeries *target, REAL8TimeSeries *h, const COMPLEX16FrequencySeries *response)
+{
+	static const char func[] = "XLALAddInjectionREAL8TimeSeries";
+	COMPLEX16FrequencySeries *tilde_h;
+	REAL8FFTPlan *plan;
+	unsigned i;
+	int start_sample_int;
+	double start_sample_frac;
+
+	/* check input */
+
+	if(h->deltaT != target->deltaT || h->f0 != target->f0)
+		XLAL_ERROR(func, XLAL_EINVAL);
+
+	/* compute the integer and fractional parts of the sample in the
+	 * target time series on which the injection time series begins.
+	 * the fractional part is always positive, e.g. -3.5 --> -4 + 0.5.
+	 * the integer part will be used to set a new epoch and the
+	 * fractional part used to re-interpolate the injection */
+
+	start_sample_frac = XLALGPSDiff(&h->epoch, &target->epoch) / target->deltaT;
+	start_sample_int = floor(start_sample_frac);
+	start_sample_frac -= start_sample_int;
+
+	/* extend the injection time series by 1 second of 0s in both
+	 * directions with the hope that this suppresses (a)periodicity
+	 * artifacts sufficiently.  computing count of samples first
+	 * ensures that the same number is added to the start and end. */
+
+	i = 1.0 / h->deltaT;
+	if(!XLALResizeREAL8TimeSeries(h, -(int) i, h->data->length + 2 * i))
+		XLAL_ERROR(func, XLAL_EFUNC);
+
+	/* transform injection to frequency domain.  the FFT function
+	 * populates the frequency series' metadata with the appropirate
+	 * values. */
+
+	tilde_h = XLALCreateCOMPLEX16FrequencySeries(NULL, &h->epoch, 0, 0, &lalDimensionlessUnit, h->data->length / 2 + 1);
+	plan = XLALCreateForwardREAL8FFTPlan(h->data->length, 0);
+	if(!tilde_h || !plan) {
+		XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
+		XLALDestroyREAL8FFTPlan(plan);
+		XLAL_ERROR(func, XLAL_EFUNC);
+	}
+	i = XLALREAL8TimeFreqFFT(tilde_h, h, plan);
+	XLALDestroyREAL8FFTPlan(plan);
+	if(i) {
+		XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
+		XLAL_ERROR(func, XLAL_EFUNC);
+	}
+
+	/* apply delay correction and optional response function */
+
+	for(i = 0; i < tilde_h->data->length; i++) {
+		const double f = tilde_h->f0 + i * tilde_h->deltaF;
+		COMPLEX16 fac;
+
+		/* phase for time delay */
+
+		fac = LAL_CEXP(LAL_CMUL_REAL(LAL_COMPLEX16_I, -LAL_TWOPI * f * start_sample_frac * target->deltaT));
+
+		/* response function */
+
+		if(response) {
+			unsigned j = floor(f / response->deltaF + 0.5);
+			if(j > response->data->length)
+				j = response->data->length;
+			if(LAL_COMPLEX_EQ(response->data->data[j], LAL_COMPLEX16_ZERO))
+				fac = LAL_COMPLEX16_ZERO;
+			else
+				fac = LAL_CDIV(fac, response->data->data[j]);
+		}
+
+		/* apply factor */
+
+		tilde_h->data->data[i] = LAL_CMUL(tilde_h->data->data[i], fac);
+	}
+
+	/* zero DC and Nyquist components */
+
+	if(tilde_h->f0 == 0)
+		tilde_h->data->data[0] = LAL_COMPLEX16_ZERO;
+	tilde_h->data->data[tilde_h->data->length - 1] = LAL_COMPLEX16_ZERO;
+
+	/* return to time domain */
+
+	plan = XLALCreateReverseREAL8FFTPlan(h->data->length, 0);
+	if(!plan) {
+		XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
+		XLAL_ERROR(func, XLAL_EFUNC);
+	}
+	i = XLALREAL8FreqTimeFFT(h, tilde_h, plan);
+	XLALDestroyREAL8FFTPlan(plan);
+	XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
+	if(i)
+		XLAL_ERROR(func, XLAL_EFUNC);
+
+	/* set epoch from integer sample offset */
+
+	h->epoch = target->epoch;
+	XLALGPSAdd(&h->epoch, start_sample_int * h->deltaT);
+
+	/* add to target time series */
+
+	if(!XLALAddREAL8TimeSeries(target, h))
+		XLAL_ERROR(func, XLAL_EFUNC);
+
+	/* done */
+
+	return 0;
+}
+
+#endif	/* KIPPSPROPOSAL */

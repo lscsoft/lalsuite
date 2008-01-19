@@ -20,6 +20,28 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LALDetectors.h>
 
-REAL8TimeSeries * XLALSimDetectorStrainREAL8TimeSeries( REAL8TimeSeries *hplus, REAL8TimeSeries *hcross, REAL8 right_ascension, REAL8 declination, REAL8 psi, LALDetector *detector );
+#define KIPPSPROPOSAL
+#ifndef KIPPSPROPOSAL
 
+REAL8TimeSeries * XLALSimDetectorStrainREAL8TimeSeries( REAL8TimeSeries *hplus, REAL8TimeSeries *hcross, REAL8 right_ascension, REAL8 declination, REAL8 psi, LALDetector *detector );
 REAL8TimeSeries * XLALSimInjectionREAL8TimeSeries( REAL8TimeSeries *h, LIGOTimeGPS *start, REAL8 deltaT, UINT4 length, COMPLEX16FrequencySeries *response );
+
+#else	/* KIPPSPROPOSAL */
+
+REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
+	const REAL8TimeSeries *hplus,
+	const REAL8TimeSeries *hcross,
+	REAL8 right_ascension,
+	REAL8 declination,
+	REAL8 psi,
+	LALDetector *detector,
+	const LIGOTimeGPS *injection_time_at_geocentre
+);
+
+int XLALAddInjectionREAL8TimeSeries(
+	REAL8TimeSeries *target,
+	REAL8TimeSeries *h,
+	const COMPLEX16FrequencySeries *response
+);
+
+#endif	/* KIPPSPROPOSAL */
