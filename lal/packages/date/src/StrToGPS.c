@@ -271,3 +271,58 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 	/* success */
 	return(0);
 }
+
+
+/*
+ * Return a string containing the ASCII base 10 representation of a
+ * LIGOTimeGPS.
+ */
+
+
+char *XLALGPSToStr(const LIGOTimeGPS *t)
+{
+	static const char func[] = "XLALGPSToStr";
+	const long billion = 1000000000;
+	LIGOTimeGPS copy = *t;
+	/* 21 = 9 digits to the right of the decimal point + decimal point
+	 * + upto 10 digits to the left of the decimal point plus an
+	 * optional sign + a null */
+	char *s = XLALMalloc(21 * sizeof(*s));
+
+	if(!s)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+
+	/* normalize the fractional part */
+
+	while(labs(copy.gpsNanoSeconds) > billion) {
+		if(copy.gpsNanoSeconds < 0) {
+			copy.gpsSeconds -= 1;
+			copy.gpsNanoSeconds += billion;
+		} else {
+			copy.gpsSeconds += 1;
+			copy.gpsNanoSeconds -= billion;
+		}
+	}
+
+	/* if both components are non-zero, make sure they have the same
+	 * sign */
+
+	if(copy.gpsSeconds > 0 && copy.gpsNanoSeconds < 0) {
+		copy.gpsSeconds -= 1;
+		copy.gpsNanoSeconds += billion;
+	} else if(copy.gpsSeconds < 0 && copy.gpsNanoSeconds > 0) {
+		copy.gpsSeconds += 1;
+		copy.gpsNanoSeconds -= billion;
+	}
+
+	/* print */
+
+	if(copy.gpsSeconds < 0 || copy.gpsNanoSeconds < 0)
+		/* number is negative */
+		sprintf(s, "-%ld.%09ld", labs(copy.gpsSeconds), labs(copy.gpsNanoSeconds));
+	else
+		/* number is non-negative */
+		sprintf(s, "%ld.%09ld", (long) copy.gpsSeconds, (long) copy.gpsNanoSeconds);
+
+	return s;
+}
