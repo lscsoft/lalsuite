@@ -29,10 +29,12 @@
 
 
 #include <math.h>
+#include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
 #include <lal/FrequencySeries.h>
+#include <lal/LALSimulation.h>
 #include <lal/Sequence.h>
 #include <lal/TimeSeries.h>
-#include <gsl/gsl_randist.h>
 
 
 /* FIXME:  which of these are still needed? */
@@ -240,8 +242,10 @@ int XLALBandAndTimeLimitedWhiteNoiseBurst(REAL8TimeSeries **hplus, REAL8TimeSeri
 
 	/* check input */
 
-	if(duration < 0 || bandwidth < 0 || duration * bandwidth < LAL_2_PI || int_hdot_squared < 0 || delta_t <= 0)
+	if(duration < 0 || bandwidth < 0 || duration * bandwidth < LAL_2_PI || int_hdot_squared < 0 || delta_t <= 0) {
+		*hplus = *hcross = NULL;
 		XLAL_ERROR(func, XLAL_EINVAL);
+	}
 
 	/* length of the injection time series is 10 * duration, rounded to
 	 * the nearest odd integer */
@@ -433,10 +437,9 @@ int XLALBandAndTimeLimitedWhiteNoiseBurst(REAL8TimeSeries **hplus, REAL8TimeSeri
  */
 
 
-REAL8TimeSeries *XLALGenerateStringCusp(REAL8 amplitude, REAL8 f_high, REAL8 delta_t)
+int XLALGenerateStringCusp(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 amplitude, REAL8 f_high, REAL8 delta_t)
 {
 	static const char func[] = "XLALGenerateStringCusp";
-	REAL8TimeSeries *h;
 	COMPLEX16FrequencySeries *tilde_h;
 	REAL8FFTPlan *plan;
 	LIGOTimeGPS epoch;
@@ -446,8 +449,10 @@ REAL8TimeSeries *XLALGenerateStringCusp(REAL8 amplitude, REAL8 f_high, REAL8 del
 
 	/* check input */
 
-	if(amplitude < 0 || f_high < 1 || delta_t <= 0)
-		XLAL_ERROR_NULL(func, XLAL_EINVAL);
+	if(amplitude < 0 || f_high < 1 || delta_t <= 0) {
+		*hplus = *hcross = NULL;
+		XLAL_ERROR(func, XLAL_EINVAL);
+	}
 
 	/* length of the injection time series is 5 / f_low, rounded to the
 	 * nearest odd integer */
@@ -461,16 +466,23 @@ REAL8TimeSeries *XLALGenerateStringCusp(REAL8 amplitude, REAL8 f_high, REAL8 del
 
 	/* allocate time and frequency series and FFT plan */
 
-	h = XLALCreateREAL8TimeSeries("string cusp", &epoch, 0.0, delta_t, &lalStrainUnit, length);
+	*hplus = XLALCreateREAL8TimeSeries("string cusp +", &epoch, 0.0, delta_t, &lalStrainUnit, length);
+	*hcross = XLALCreateREAL8TimeSeries("string cusp x", &epoch, 0.0, delta_t, &lalStrainUnit, length);
 	tilde_h = XLALCreateCOMPLEX16FrequencySeries("string cusp", &epoch, 0.0, 1.0 / (length * delta_t), &lalDimensionlessUnit, length / 2 + 1);
 	plan = XLALCreateReverseREAL8FFTPlan(length, 0);
-	if(!h || !tilde_h || !plan) {
-		XLALDestroyREAL8TimeSeries(h);
+	if(!*hplus || !*hcross || !tilde_h || !plan) {
+		XLALDestroyREAL8TimeSeries(*hplus);
+		XLALDestroyREAL8TimeSeries(*hcross);
 		XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
 		XLALDestroyREAL8FFTPlan(plan);
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		*hplus = *hcross = NULL;
+		XLAL_ERROR(func, XLAL_EFUNC);
 	}
-	XLALUnitMultiply(&tilde_h->sampleUnits, &h->sampleUnits, &lalSecondUnit);
+	XLALUnitMultiply(&tilde_h->sampleUnits, &(*hplus)->sampleUnits, &lalSecondUnit);
+
+	/* zero the cross time series, injection is done in + only */
+
+	memset((*hcross)->data->data, 0, (*hcross)->data->length * sizeof(*(*hcross)->data->data));
 
 	/* construct the waveform in the frequency domain */
 
@@ -503,22 +515,88 @@ REAL8TimeSeries *XLALGenerateStringCusp(REAL8 amplitude, REAL8 f_high, REAL8 del
 
 	/* transform to time domain */
 
-	i = XLALREAL8FreqTimeFFT(h, tilde_h, plan);
+	i = XLALREAL8FreqTimeFFT(*hplus, tilde_h, plan);
 	XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
 	XLALDestroyREAL8FFTPlan(plan);
 	if(i) {
-		XLALDestroyREAL8TimeSeries(h);
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		XLALDestroyREAL8TimeSeries(*hplus);
+		XLALDestroyREAL8TimeSeries(*hcross);
+		*hplus = *hcross = NULL;
+		XLAL_ERROR(func, XLAL_EFUNC);
 	}
 
 	/* apodize the time series */
 
-	for(i = h->data->length - 1; i >= 0; i--)
-		h->data->data[i] -= h->data->data[0];
+	for(i = (*hplus)->data->length - 1; i >= 0; i--)
+		(*hplus)->data->data[i] -= (*hplus)->data->data[0];
 
 	/* done */
 
-	return h;
+	return 0;
+}
+
+
+/*
+ * ============================================================================
+ *
+ *                              sim_burst Nexus
+ *
+ * ============================================================================
+ */
+
+
+static int XLALBurstInjectSignals(LALDetector *detector, REAL8TimeSeries *h, SimBurstTable *sim_burst)
+{
+	static const char func[] = "XLALBurstInjectSignals";
+	REAL8TimeSeries *injection_hplus, *injection_hcross;
+	REAL8TimeSeries *injection_h;
+
+	for(; sim_burst; sim_burst = sim_burst->next) {
+		/* construct the h+ and hx time series for the injection
+		 * waveform */
+
+		if(!strcmp(sim_burst->waveform, "BTLWNB")) {
+			/* hrss --> int \dot{h}^2 dt, freq --> f_{0},
+			 * dtplus --> duration, dtminus --> bandwidth,
+			 * zm_number --> seed */
+			gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
+			if(!rng)
+				XLAL_ERROR(func, XLAL_ENOMEM);
+			gsl_rng_set(rng, sim_burst->zm_number);
+			if(XLALBandAndTimeLimitedWhiteNoiseBurst(&injection_hplus, &injection_hcross, sim_burst->dtplus, sim_burst->freq, sim_burst->dtminus, sim_burst->hrss, h->deltaT, rng)) {
+				gsl_rng_free(rng);
+				XLAL_ERROR(func, XLAL_EFUNC);
+			}
+			gsl_rng_free(rng);
+		} else if(!strcmp(sim_burst->waveform, "StringCusp")) {
+			/* hpeak --> amplitude, freq --> f_{high} */
+			if(XLALGenerateStringCusp(&injection_hplus, &injection_hcross, sim_burst->hpeak, sim_burst->freq, h->deltaT))
+				XLAL_ERROR(func, XLAL_EFUNC);
+		}
+
+		/* project the wave strain onto the detector's response
+		 * tensor to produce the injection strain as seen in the
+		 * detector.  longitude --> right ascension, latitude -->
+		 * declination, polarization --> psi, geocent_peak_time -->
+		 * "time" of injection at geocentre */
+
+		injection_h = XLALSimDetectorStrainREAL8TimeSeries(injection_hplus, injection_hcross, sim_burst->longitude, sim_burst->latitude, sim_burst->polarization, detector, &sim_burst->geocent_peak_time);
+		XLALDestroyREAL8TimeSeries(injection_hplus);
+		XLALDestroyREAL8TimeSeries(injection_hcross);
+		if(!injection_h)
+			XLAL_ERROR(func, XLAL_EFUNC);
+
+		/* add the injection strain time series to the detector
+		 * data */
+
+		if(XLALAddInjectionREAL8TimeSeries(h, injection_h, NULL)) {
+			XLALDestroyREAL8TimeSeries(injection_h);
+			XLAL_ERROR(func, XLAL_EFUNC);
+		}
+		XLALDestroyREAL8TimeSeries(injection_h);
+	}
+
+	return 0;
 }
 
 
