@@ -32,6 +32,7 @@ using namespace std;
 
 #include "hs_boinc_options.h"
 #include "boinc_api.h"
+#include "util.h" /* for BOINC's dtime() */
 
 char* rcsid = "$Id$";
 BOINC_OPTIONS eah_boinc_options;
@@ -60,11 +61,13 @@ static void update_shmem(void) {
 	   "  <skypos_dec>%f</skypos_dec>\n"
 	   "  <fraction_done>%f</fraction_done>\n"
 	   "  <cpu_time>%f</cpu_time>\n"
+	   "  <update_time>%f</update_time>\n"
 	   "</graphics_info>\n",
 	   boincv6_skypos_rac,
 	   boincv6_skypos_dec,
 	   boinc_get_fraction_done(),
-	   boinc_worker_thread_cpu_time());
+	   boinc_worker_thread_cpu_time(),
+	   dtime());
 }
 
 int setup_shmem(void) {
