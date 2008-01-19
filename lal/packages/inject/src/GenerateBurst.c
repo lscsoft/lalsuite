@@ -60,7 +60,7 @@ NRCSID(GENERATEBURSTC, "$Id$");
 /*
  * ============================================================================
  *
- *           Fill a time series with stationary white Gaussin noise
+ *          Fill a time series with stationary white Gaussinn noise
  *
  * ============================================================================
  */
@@ -214,9 +214,9 @@ static REAL8 XLALMeasureIntHDotSquaredDT(COMPLEX16FrequencySeries *fseries)
  *
  * Output:
  *
- * Two time series containing h+(t) and hx(t), with the injection centred
- * on t = 0 (as defined by the epoch and deltaT).  The + and x time series
- * are two independent injections.
+ * Two time series containing h+(t) and hx(t), with the time-domain
+ * Gaussian envelope's peak located at t = 0 (as defined by the epoch and
+ * deltaT).  The + and x time series are two independent injections.
  *
  * Note:  because the injection is constructed with a random number
  * generator, any changes to this function that change how random numbers
@@ -238,11 +238,13 @@ int XLALBandAndTimeLimitedWhiteNoiseBurst(REAL8TimeSeries **hplus, REAL8TimeSeri
 	REAL8Window *window;
 	REAL8FFTPlan *plan;
 	REAL8 norm_factor;
+	REAL8 sigma_t_squared = duration * duration / 4.0 - 1.0 / (LAL_PI * LAL_PI * bandwidth * bandwidth);
 	unsigned i;
 
-	/* check input */
+	/* check input.  checking if sigma_t_squared < 0 is equivalent to
+	 * checking if duration * bandwidth < LAL_2_PI */
 
-	if(duration < 0 || bandwidth < 0 || duration * bandwidth < LAL_2_PI || int_hdot_squared < 0 || delta_t <= 0) {
+	if(duration < 0 || bandwidth < 0 || sigma_t_squared < 0 || int_hdot_squared < 0 || delta_t <= 0) {
 		*hplus = *hcross = NULL;
 		XLAL_ERROR(func, XLAL_EINVAL);
 	}
@@ -277,12 +279,9 @@ int XLALBandAndTimeLimitedWhiteNoiseBurst(REAL8TimeSeries **hplus, REAL8TimeSeri
 
 	/* apply the time-domain Gaussian window.  the window function's
 	 * shape parameter is ((length - 1) * delta_t / 2) / \sigma_{t} where
-	 *
-	 * \sigma_{t} = \sqrt{duration^{2} / 4 - 1 / (\pi^{2} bandwidth^{2})}
-	 *
-	 * is the compensated time-domain window duration */
+	 * \sigma_{t} is the compensated time-domain window duration */
 
-	window = XLALCreateGaussREAL8Window((*hplus)->data->length, (((*hplus)->data->length - 1) * delta_t / 2) / sqrt(duration * duration / 4.0 - 1.0 / (LAL_PI * LAL_PI * bandwidth * bandwidth)));
+	window = XLALCreateGaussREAL8Window((*hplus)->data->length, (((*hplus)->data->length - 1) * delta_t / 2) / sqrt(sigma_t_squared));
 	if(!window) {
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
