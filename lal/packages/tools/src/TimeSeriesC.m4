@@ -179,34 +179,34 @@ SERIESTYPE *`XLALAdd'SERIESTYPE (
 {
 	static const char func[] = "`XLALAdd'SERIESTYPE";
 	REAL8 Delta_epoch = XLALGPSDiff(&arg2->epoch, &arg1->epoch);
-	REAL8 ratio = XLALUnitRatio(&arg1->sampleUnits, &arg2->sampleUnits);
+	REAL8 unit_ratio = XLALUnitRatio(&arg2->sampleUnits, &arg1->sampleUnits);
 	unsigned i, j;
 
 	/* make sure arguments are compatible */
-	if(XLALIsREAL8FailNaN(ratio))
+	if(XLALIsREAL8FailNaN(unit_ratio))
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	if((arg1->f0 != arg2->f0) || (arg1->deltaT != arg2->deltaT))
 		XLAL_ERROR_NULL(func, XLAL_EDATA);
 
 	/* set start indexes */
 	if(Delta_epoch >= 0) {
-		i = Delta_epoch / arg1->deltaT;
+		i = floor(Delta_epoch / arg1->deltaT + 0.5);
 		j = 0;
 	} else {
 		i = 0;
-		j = -Delta_epoch / arg2->deltaT;
+		j = floor(-Delta_epoch / arg2->deltaT + 0.5);
 	}
 
 	/* add arg2 to arg1, adjusting the units */
 	for(; i < arg1->data->length && j < arg2->data->length; i++, j++) {
 		ifelse(DATATYPE, COMPLEX8,
-		arg1->data->data[i].re += arg2->data->data[j].re / ratio;
-		arg1->data->data[i].im += arg2->data->data[j].im / ratio;
+		arg1->data->data[i].re += arg2->data->data[j].re * unit_ratio;
+		arg1->data->data[i].im += arg2->data->data[j].im * unit_ratio;
 		, DATATYPE, COMPLEX16,
-		arg1->data->data[i].re += arg2->data->data[j].re / ratio;
-		arg1->data->data[i].im += arg2->data->data[j].im / ratio;
+		arg1->data->data[i].re += arg2->data->data[j].re * unit_ratio;
+		arg1->data->data[i].im += arg2->data->data[j].im * unit_ratio;
 		, 
-		arg1->data->data[i] += arg2->data->data[j] / ratio;)
+		arg1->data->data[i] += arg2->data->data[j] * unit_ratio;)
 	}
 
 	return(arg1);

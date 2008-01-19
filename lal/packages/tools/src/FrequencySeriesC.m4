@@ -160,34 +160,34 @@ SERIESTYPE *`XLALAdd'SERIESTYPE (
 {
 	static const char func[] = "`XLALAdd'SERIESTYPE";
 	REAL8 Delta_f0 = arg2->f0 - arg1->f0;
-	REAL8 ratio = XLALUnitRatio(&arg1->sampleUnits, &arg2->sampleUnits);
+	REAL8 unit_ratio = XLALUnitRatio(&arg2->sampleUnits, &arg1->sampleUnits);
 	unsigned i, j;
 
 	/* make sure arguments are compatible */
-	if(XLALIsREAL8FailNaN(ratio))
+	if(XLALIsREAL8FailNaN(unit_ratio))
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	if(XLALGPSCmp(&arg1->epoch, &arg2->epoch) || (arg1->deltaF != arg2->deltaF))
 		XLAL_ERROR_NULL(func, XLAL_EDATA);
 
 	/* set start indexes */
 	if(Delta_f0 >= 0) {
-		i = Delta_f0 / arg1->deltaF;
+		i = floor(Delta_f0 / arg1->deltaF + 0.5);
 		j = 0;
 	} else {
 		i = 0;
-		j = -Delta_f0 / arg2->deltaF;
+		j = floor(-Delta_f0 / arg2->deltaF + 0.5);
 	}
 
 	/* add arg2 to arg1, adjusting the units */
 	for(; i < arg1->data->length && j < arg2->data->length; i++, j++) {
 		ifelse(DATATYPE, COMPLEX8,
-		arg1->data->data[i].re += arg2->data->data[j].re / ratio;
-		arg1->data->data[i].im += arg2->data->data[j].im / ratio;
+		arg1->data->data[i].re += arg2->data->data[j].re * unit_ratio;
+		arg1->data->data[i].im += arg2->data->data[j].im * unit_ratio;
 		, DATATYPE, COMPLEX16,
-		arg1->data->data[i].re += arg2->data->data[j].re / ratio;
-		arg1->data->data[i].im += arg2->data->data[j].im / ratio;
+		arg1->data->data[i].re += arg2->data->data[j].re * unit_ratio;
+		arg1->data->data[i].im += arg2->data->data[j].im * unit_ratio;
 		, 
-		arg1->data->data[i] += arg2->data->data[j] / ratio;)
+		arg1->data->data[i] += arg2->data->data[j] * unit_ratio;)
 	}
 
 	return(arg1);
@@ -221,38 +221,38 @@ SERIESTYPE *`XLALMultiply'SERIESTYPE (
 {
 	static const char func[] = "`XLALMultiply'SERIESTYPE";
 	REAL8 Delta_f0 = arg2->f0 - arg1->f0;
-	REAL8 ratio = XLALUnitRatio(&arg1->sampleUnits, &arg2->sampleUnits);
+	REAL8 unit_ratio = XLALUnitRatio(&arg2->sampleUnits, &arg1->sampleUnits);
 	unsigned i, j;
 
 	/* make sure arguments are compatible */
-	if(XLALIsREAL8FailNaN(ratio))
+	if(XLALIsREAL8FailNaN(unit_ratio))
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	if(XLALGPSCmp(&arg1->epoch, &arg2->epoch))
 		XLAL_ERROR_NULL(func, XLAL_EDATA);
 
 	/* set start indexes */
 	if(Delta_f0 >= 0) {
-		i = Delta_f0 / arg1->deltaF;
+		i = floor(Delta_f0 / arg1->deltaF + 0.5);
 		j = 0;
 	} else {
 		i = 0;
-		j = -Delta_f0 / arg2->deltaF;
+		j = floor(-Delta_f0 / arg2->deltaF + 0.5);
 	}
 
 	/* multiply arg2 by arg1, adjusting the units */
 	for(; i < arg1->data->length && j < arg2->data->length; i++, j++) {
 		ifelse(DATATYPE, COMPLEX8,
-		REAL4 re = arg2->data->data[j].re / ratio;
-		REAL4 im = arg2->data->data[j].im / ratio;
+		REAL4 re = arg2->data->data[j].re * unit_ratio;
+		REAL4 im = arg2->data->data[j].im * unit_ratio;
 		arg1->data->data[i].re = arg1->data->data[i].re * re - arg1->data->data[i].im * im;
 		arg1->data->data[i].im = arg1->data->data[i].re * im + arg1->data->data[i].im * re;
 		, DATATYPE, COMPLEX16,
-		REAL8 re = arg2->data->data[j].re / ratio;
-		REAL8 im = arg2->data->data[j].im / ratio;
+		REAL8 re = arg2->data->data[j].re * unit_ratio;
+		REAL8 im = arg2->data->data[j].im * unit_ratio;
 		arg1->data->data[i].re = arg1->data->data[i].re * re - arg1->data->data[i].im * im;
 		arg1->data->data[i].im = arg1->data->data[i].re * im + arg1->data->data[i].im * re;
 		, 
-		arg1->data->data[i] *= arg2->data->data[j] / ratio;)
+		arg1->data->data[i] *= arg2->data->data[j] * unit_ratio;)
 	}
 
 	return(arg1);

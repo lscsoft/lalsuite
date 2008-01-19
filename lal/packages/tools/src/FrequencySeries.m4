@@ -19,6 +19,7 @@
  */
 
 
+#include <math.h>
 #include <string.h>
 #include <lal/Date.h>
 #include <lal/FrequencySeries.h>
