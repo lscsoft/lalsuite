@@ -337,7 +337,7 @@ int XLALBandAndTimeLimitedWhiteNoiseBurst(REAL8TimeSeries **hplus, REAL8TimeSeri
 		*hplus = *hcross = NULL;
 		XLAL_ERROR(func, XLAL_EFUNC);
 	}
-	XLALResizeREAL8Sequence(window->data, tilde_hplus->data->length - (unsigned) (frequency / tilde_hplus->deltaF + 0.5), tilde_hplus->data->length);
+	XLALResizeREAL8Sequence(window->data, tilde_hplus->data->length - (unsigned) floor(frequency / tilde_hplus->deltaF + 0.5), tilde_hplus->data->length);
 	for(i = 0; i < window->data->length; i++) {
 		tilde_hplus->data->data[i].re *= window->data->data[i];
 		tilde_hplus->data->data[i].im *= window->data->data[i];
@@ -449,7 +449,7 @@ int XLALGenerateStringCusp(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, RE
 
 	/* check input */
 
-	if(amplitude < 0 || f_high < 1 || delta_t <= 0) {
+	if(amplitude < 0 || f_high < f_low || delta_t <= 0) {
 		*hplus = *hcross = NULL;
 		XLAL_ERROR(func, XLAL_EINVAL);
 	}
@@ -545,10 +545,18 @@ int XLALGenerateStringCusp(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, RE
  */
 
 
+/*
+ * Convenience wrapper to iterate over the entries in a sim_burst linked
+ * list and inject them into a strain time series.
+ */
+
+
 static int XLALBurstInjectSignals(LALDetector *detector, REAL8TimeSeries *h, SimBurstTable *sim_burst)
 {
 	static const char func[] = "XLALBurstInjectSignals";
+	/* + and x time series for injection waveform */
 	REAL8TimeSeries *injection_hplus, *injection_hcross;
+	/* injection time series as added to detector's */
 	REAL8TimeSeries *injection_h;
 
 	for(; sim_burst; sim_burst = sim_burst->next) {
@@ -572,7 +580,9 @@ static int XLALBurstInjectSignals(LALDetector *detector, REAL8TimeSeries *h, Sim
 			/* hpeak --> amplitude, freq --> f_{high} */
 			if(XLALGenerateStringCusp(&injection_hplus, &injection_hcross, sim_burst->hpeak, sim_burst->freq, h->deltaT))
 				XLAL_ERROR(func, XLAL_EFUNC);
-		}
+		} else
+			/* unrecognized waveform */
+			XLAL_ERROR(func, XLAL_EINVAL);
 
 		/* project the wave strain onto the detector's response
 		 * tensor to produce the injection strain as seen in the
