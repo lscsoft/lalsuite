@@ -17,8 +17,8 @@ libinject_la_SOURCES =	\
 	CelestialCoordinatesLaldoc.c    NRWaveInject.c \
 	InspiralInjectionParams.c    GenerateInspRing.c	 \
 	LALSimulation.c 		LALSimBurst.c \
-	LALSimInspiral.c 		LALSimInspiralPNMode.c
-	
+	LALSimInspiral.c 		LALSimInspiralPNMode.c \
+	check_series_macros.h
 
 ## Hack to get this working for now... change later
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include -I$(srcdir)/../../date/include
