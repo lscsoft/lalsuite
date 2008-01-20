@@ -293,11 +293,11 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(const REAL8TimeSeries *hpl
 
 	/* project + and x time series onto detector */
 
-	for(i = 0; i < hplus->data->length; i++) {
+	for(i = 0; i < h->data->length; i++) {
 		LIGOTimeGPS epoch = h->epoch;
 		double fplus, fcross;
 
-		XLALGPSAdd(&epoch, i * hplus->deltaT);
+		XLALGPSAdd(&epoch, i * h->deltaT);
 		XLALComputeDetAMResponse(&fplus, &fcross, detector->response, right_ascension, declination, psi, XLALGreenwichMeanSiderealTime(&epoch));
 
 		h->data->data[i] = fplus * hplus->data->data[i] + fcross * hcross->data->data[i];
@@ -325,13 +325,22 @@ int XLALAddInjectionREAL8TimeSeries(REAL8TimeSeries *target, REAL8TimeSeries *h,
 	COMPLEX16FrequencySeries *tilde_h;
 	REAL8FFTPlan *plan;
 	unsigned i;
-	int start_sample_int;
+	long start_sample_int;
 	double start_sample_frac;
 
 	/* check input */
 
 	if(h->deltaT != target->deltaT || h->f0 != target->f0)
 		XLAL_ERROR(func, XLAL_EINVAL);
+
+	/* extend the injection time series by 1 second of 0s in both
+	 * directions with the hope that this suppresses (a)periodicity
+	 * artifacts sufficiently.  computing count of samples first
+	 * ensures that the same number is added to the start and end. */
+
+	i = 1.0 / h->deltaT;
+	if(!XLALResizeREAL8TimeSeries(h, -(int) i, h->data->length + 2 * i))
+		XLAL_ERROR(func, XLAL_EFUNC);
 
 	/* compute the integer and fractional parts of the sample in the
 	 * target time series on which the injection time series begins.
@@ -342,15 +351,6 @@ int XLALAddInjectionREAL8TimeSeries(REAL8TimeSeries *target, REAL8TimeSeries *h,
 	start_sample_frac = XLALGPSDiff(&h->epoch, &target->epoch) / target->deltaT;
 	start_sample_int = floor(start_sample_frac);
 	start_sample_frac -= start_sample_int;
-
-	/* extend the injection time series by 1 second of 0s in both
-	 * directions with the hope that this suppresses (a)periodicity
-	 * artifacts sufficiently.  computing count of samples first
-	 * ensures that the same number is added to the start and end. */
-
-	i = 1.0 / h->deltaT;
-	if(!XLALResizeREAL8TimeSeries(h, -(int) i, h->data->length + 2 * i))
-		XLAL_ERROR(func, XLAL_EFUNC);
 
 	/* transform injection to frequency domain.  the FFT function
 	 * populates the frequency series' metadata with the appropirate
