@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007 Badri Krishnan, Chad Hanna, Lucia Santamaria Lara, Robert Adam Mercer, Stephen Fairhurst
+ * Copyright (C) 2007 Badri Krishnan, Lucia Santamaria Lara, Robert Adam Mercer, Stephen Fairhurst
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -111,6 +111,8 @@ typedef struct {
   REAL8 sz1Max;
   REAL8 sz2Min; 
   REAL8 sz2Max; 
+  INT4 numGroups;
+  NumRelGroup *grouplist;
 } NrParRange;
 
 
@@ -136,6 +138,7 @@ int get_metadata_from_string(NinjaMetaData *data, CHAR *comment);
 
 int metadata_in_range(NinjaMetaData *data, NrParRange *range);
 
+int parse_group_list ( NrParRange *range, CHAR *list);
 
 /* main program entry */
 int main( INT4 argc, CHAR *argv[] )
@@ -186,33 +189,33 @@ int main( INT4 argc, CHAR *argv[] )
   strcpy(uvar_outFile, "ninja_out.xml");
 
   LAL_CALL( LALRegisterBOOLUserVar( &status, "help", 'h', UVAR_HELP, "Print this message", &uvar_help), &status);  
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "nrDir", 'D', UVAR_REQUIRED, "Directory with NR data", &uvar_nrDir), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "datadir", 'D', UVAR_REQUIRED, "Directory with NR data", &uvar_nrDir), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "pattern", 0, UVAR_REQUIRED, "Filename pattern", &uvar_pattern), &status);
 
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "outFile", 'o', UVAR_OPTIONAL, "Output xml filename", &uvar_outFile), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "outfile", 'o', UVAR_OPTIONAL, "Output xml filename", &uvar_outFile), &status);
 
-  LAL_CALL( LALRegisterREALUserVar( &status, "minMassRatio", 0, UVAR_OPTIONAL, "Min. mass ratio", &uvar_minMassRatio),  &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "maxMassRatio", 0, UVAR_OPTIONAL, "Max. mass ratio", &uvar_maxMassRatio),  &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "min-mass-ratio", 0, UVAR_OPTIONAL, "Min. mass ratio", &uvar_minMassRatio),  &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "max-mass-ratio", 0, UVAR_OPTIONAL, "Max. mass ratio", &uvar_maxMassRatio),  &status);
 
-  LAL_CALL( LALRegisterREALUserVar( &status, "minSx1", 0, UVAR_OPTIONAL, "Min. x-spin of first BH", &uvar_minSx1),  &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "minSx2", 0, UVAR_OPTIONAL, "Min. x-Spin of second BH", &uvar_minSx2),  &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "maxSx1", 0, UVAR_OPTIONAL, "Max. x-spin of first BH", &uvar_maxSx1),  &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "maxSx2", 0, UVAR_OPTIONAL, "Max. x-spin of second BH", &uvar_maxSx2),  &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "min-sx1", 0, UVAR_OPTIONAL, "Min. x-spin of first BH", &uvar_minSx1),  &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "min-sx2", 0, UVAR_OPTIONAL, "Min. x-Spin of second BH", &uvar_minSx2),  &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "max-sx1", 0, UVAR_OPTIONAL, "Max. x-spin of first BH", &uvar_maxSx1),  &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "max-sx2", 0, UVAR_OPTIONAL, "Max. x-spin of second BH", &uvar_maxSx2),  &status);
 
-  LAL_CALL( LALRegisterREALUserVar( &status, "minSy1", 0, UVAR_OPTIONAL, "Min. y-spin of first BH", &uvar_minSy1),  &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "minSy2", 0, UVAR_OPTIONAL, "Min. y-Spin of second BH", &uvar_minSy2),  &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "maxSy1", 0, UVAR_OPTIONAL, "Max. y-spin of first BH", &uvar_maxSy1),  &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "maxSy2", 0, UVAR_OPTIONAL, "Max. y-spin of second BH", &uvar_maxSy2),  &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "min-sy1", 0, UVAR_OPTIONAL, "Min. y-spin of first BH", &uvar_minSy1),  &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "min-sy2", 0, UVAR_OPTIONAL, "Min. y-Spin of second BH", &uvar_minSy2),  &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "max-sy1", 0, UVAR_OPTIONAL, "Max. y-spin of first BH", &uvar_maxSy1),  &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "max-sy2", 0, UVAR_OPTIONAL, "Max. y-spin of second BH", &uvar_maxSy2),  &status);
 
-  LAL_CALL( LALRegisterREALUserVar( &status, "minSz1", 0, UVAR_OPTIONAL, "Min. z-spin of first BH", &uvar_minSz1),  &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "minSz2", 0, UVAR_OPTIONAL, "Min. z-Spin of second BH", &uvar_minSz2),  &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "maxSz1", 0, UVAR_OPTIONAL, "Max. z-spin of first BH", &uvar_maxSz1),  &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "maxSz2", 0, UVAR_OPTIONAL, "Max. z-spin of second BH", &uvar_maxSz2),  &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "min-sz1", 0, UVAR_OPTIONAL, "Min. z-spin of first BH", &uvar_minSz1),  &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "min-sz2", 0, UVAR_OPTIONAL, "Min. z-Spin of second BH", &uvar_minSz2),  &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "max-sz1", 0, UVAR_OPTIONAL, "Max. z-spin of first BH", &uvar_maxSz1),  &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "max-sz2", 0, UVAR_OPTIONAL, "Max. z-spin of second BH", &uvar_maxSz2),  &status);
 
-  LAL_CALL( LALRegisterINTUserVar( &status, "minMode", 0, UVAR_OPTIONAL, "Min mode value to be injected", &uvar_minMode),  &status);
-  LAL_CALL( LALRegisterINTUserVar( &status, "maxMode", 0, UVAR_OPTIONAL, "Max mode value to be injected", &uvar_maxMode),  &status);
+  LAL_CALL( LALRegisterINTUserVar( &status, "min-mode", 0, UVAR_OPTIONAL, "Min mode value to be injected", &uvar_minMode),  &status);
+  LAL_CALL( LALRegisterINTUserVar( &status, "max-mode", 0, UVAR_OPTIONAL, "Max mode value to be injected", &uvar_maxMode),  &status);
 
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "nrGroup", 0, UVAR_OPTIONAL, "NR group", &uvar_nrGroup), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "nr-group", 0, UVAR_OPTIONAL, "NR group list (default=all)", &uvar_nrGroup), &status);
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -220,7 +223,6 @@ int main( INT4 argc, CHAR *argv[] )
   /* exit if help was required */
   if (uvar_help)
     exit(0); 
-
 
   range.massRatioMin = uvar_minMassRatio;
   range.massRatioMax = uvar_maxMassRatio;
@@ -243,7 +245,7 @@ int main( INT4 argc, CHAR *argv[] )
   range.sz2Min = uvar_minSz2;
   range.sz2Max = uvar_maxSz2;
 
-
+  parse_group_list ( &range, uvar_nrGroup);
 
   LogPrintf (LOG_NORMAL, "Globbing frame files...");  
 
@@ -393,6 +395,7 @@ int main( INT4 argc, CHAR *argv[] )
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlfp ), &status );
 
   /* destroy all user input variables */
+  LALFree(range.grouplist);
   LAL_CALL (LALDestroyUserVars(&status), &status);
 
   LALCheckMemoryLeaks();
@@ -495,8 +498,9 @@ int get_metadata_from_string(NinjaMetaData *data,
 int metadata_in_range(NinjaMetaData *data, NrParRange *range)
 {
 
-  INT4 ret;
+  INT4 ret, k;
   BOOLEAN flag = FALSE;
+  BOOLEAN groupflag = FALSE;
 
   flag = (data->massRatio >= range->massRatioMin) && (data->massRatio <= range->massRatioMax);
   flag = flag && (data->spin1[0] >= range->sx1Min) && (data->spin1[0] <= range->sx1Max);
@@ -505,6 +509,18 @@ int metadata_in_range(NinjaMetaData *data, NrParRange *range)
   flag = flag && (data->spin2[1] >= range->sy2Min) && (data->spin2[1] <= range->sy2Max);
   flag = flag && (data->spin1[2] >= range->sz1Min) && (data->spin1[2] <= range->sz1Max);
   flag = flag && (data->spin2[2] >= range->sz2Min) && (data->spin2[2] <= range->sz2Max);
+
+  for (k = 0; k < range->numGroups; k++) {
+    if ( range->grouplist[k] == data->group )
+      groupflag = TRUE;
+  }
+
+  /* if numgroups == 0 then user did not enter any groups and 
+     so we must select all groups */
+  if ( range->numGroups == 0)
+    groupflag = TRUE;
+
+  flag = flag && groupflag;
 
   if (flag) 
     ret = 1;
@@ -594,8 +610,44 @@ int get_mode_index_from_channel_name(INT4  *mode_l,
     ret = 0;
   }
 
-
-
   return ret;
 
 }
+
+/** take a list of numrel group names separated by ";" and parse it to
+    get a vector of NumRelGroup */
+int parse_group_list ( NrParRange *range,
+		       CHAR *list)
+{
+
+  UINT4 numGroups=0;
+  NumRelGroup thisGroup;
+  NumRelGroup *grouplist=NULL;
+  CHAR *token;
+
+  /* look for the ";" token */
+  token = strtok(list,";");
+
+  while (token) {
+
+    thisGroup = XLALParseNumRelGroupName( token);    
+
+    /* if the parsing was successful, add to list */
+    if (thisGroup != NINJA_GROUP_LAST) {
+      
+      numGroups++;
+      grouplist = LALRealloc(grouplist, numGroups*sizeof(*grouplist));
+      grouplist[numGroups-1] = thisGroup;
+    }
+
+    token = strtok(NULL,";");
+
+  }
+
+  range->numGroups = numGroups;
+  range->grouplist = grouplist;
+
+  return numGroups;
+
+}
+
