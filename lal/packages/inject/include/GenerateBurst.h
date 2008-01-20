@@ -70,7 +70,7 @@ typedef struct tagBurstParamStruc {
  */
 
 
-int XLALBandAndTimeLimitedWhiteNoiseBurst(
+int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 	REAL8TimeSeries **hplus,
 	REAL8TimeSeries **hcross,
 	REAL8 duration,

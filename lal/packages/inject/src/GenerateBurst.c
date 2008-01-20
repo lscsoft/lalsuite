@@ -229,9 +229,9 @@ static REAL8 XLALMeasureIntHDotSquaredDT(COMPLEX16FrequencySeries *fseries)
  */
 
 
-int XLALBandAndTimeLimitedWhiteNoiseBurst(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 duration, REAL8 frequency, REAL8 bandwidth, REAL8 int_hdot_squared, REAL8 delta_t, gsl_rng *rng)
+int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 duration, REAL8 frequency, REAL8 bandwidth, REAL8 int_hdot_squared, REAL8 delta_t, gsl_rng *rng)
 {
-	static const char func[] = "XLALBandAndTimeLimitedWhiteNoiseBurst";
+	static const char func[] = "XLALGenerateBandAndTimeLimitedWhiteNoiseBurst";
 	int length;
 	LIGOTimeGPS epoch;
 	COMPLEX16FrequencySeries *tilde_hplus, *tilde_hcross;
@@ -570,7 +570,7 @@ static int XLALBurstInjectSignals(LALDetector *detector, REAL8TimeSeries *h, Sim
 			if(!rng)
 				XLAL_ERROR(func, XLAL_ENOMEM);
 			gsl_rng_set(rng, sim_burst->zm_number);
-			if(XLALBandAndTimeLimitedWhiteNoiseBurst(&injection_hplus, &injection_hcross, sim_burst->dtplus, sim_burst->freq, sim_burst->dtminus, sim_burst->hrss, h->deltaT, rng)) {
+			if(XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(&injection_hplus, &injection_hcross, sim_burst->dtplus, sim_burst->freq, sim_burst->dtminus, sim_burst->hrss, h->deltaT, rng)) {
 				gsl_rng_free(rng);
 				XLAL_ERROR(func, XLAL_EFUNC);
 			}
