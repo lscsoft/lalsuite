@@ -24,7 +24,6 @@
 
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALDatatypes.h>
-#include <gsl/gsl_rng.h>
 
 
 /* FIXME:  which of these are still needed? */
@@ -70,24 +69,10 @@ typedef struct tagBurstParamStruc {
  */
 
 
-int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
-	REAL8TimeSeries **hplus,
-	REAL8TimeSeries **hcross,
-	REAL8 duration,
-	REAL8 frequency,
-	REAL8 bandwidth,
-	REAL8 int_hdot_squared,
-	REAL8 delta_t,
-	gsl_rng *rng
-);
-
-
-int XLALGenerateStringCusp(
-	REAL8TimeSeries **hplus,
-	REAL8TimeSeries **hcross,
-	REAL8 amplitude,
-	REAL8 f_high,
-	REAL8 delta_t
+int XLALBurstInjectSignals(
+	LALDetector *detector,
+	REAL8TimeSeries *h,
+	const SimBurstTable *sim_burst
 );
 
 
