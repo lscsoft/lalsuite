@@ -109,7 +109,6 @@ NRCSID( LIGOMETADATAUTILSH, "$Id$" );
 \idx[Type]{SnglInspiralParameterTest}
 \idx[Type]{SnglInspiralAccuracy}
 \idx[Type]{SnglInspiralClusterChoice}
-\idx[Type]{SnglBurstAccuracy}
 
 
 
@@ -309,30 +308,6 @@ SnglInspiralBCVCalphafCut;
 The \texttt{SnglInspiralBCVCalphafCut} provides entries for cutting single IFO triggers generated with the BCVC code. For each LSC IFO there is a field \texttt{lo} and \texttt{hi} which corresponds to the area allowing triggers.
 </lalLaTeX>
 #endif
-/*
- *
- * burst specific structures 
- *
- */
-
-#if 0
-<lalLaTeX>
-\subsubsection*{Type \texttt{SnglSnglBurstAccuracy}}
-</lalLaTeX>
-#endif
-/* <lalVerbatim> */
-typedef struct
-tagSnglBurstAccuracy
-{
-  INT4  difference;
-  REAL4 dRhoPlus;
-  REAL4 dRhoMinus;
-  INT8  dtime;
-  REAL4 dm;
-}
-SnglBurstAccuracy;
-/*</lalVerbatim> */
-
 
 
 /*
