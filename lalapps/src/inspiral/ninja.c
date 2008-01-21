@@ -190,7 +190,7 @@ int main( INT4 argc, CHAR *argv[] )
 
   LAL_CALL( LALRegisterBOOLUserVar( &status, "help", 'h', UVAR_HELP, "Print this message", &uvar_help), &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "datadir", 'D', UVAR_REQUIRED, "Directory with NR data", &uvar_nrDir), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "pattern", 0, UVAR_REQUIRED, "Filename pattern", &uvar_pattern), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "pattern", 0, UVAR_OPTIONAL, "Filename pattern", &uvar_pattern), &status);
 
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "outfile", 'o', UVAR_OPTIONAL, "Output xml filename", &uvar_outFile), &status);
 
