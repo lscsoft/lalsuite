@@ -272,3 +272,42 @@ void AddNumRelStrainModes(  LALStatus              *status,
 
 }
 
+
+/** Main function for injecting numetrical relativity waveforms.
+    Takes as input a list of injections, and adds h(t) to a given 
+    timeseries for a specified ifo and a dynamic range factor.
+*/
+void InjectNumRelWaveforms (LALStatus              *status,
+			   REAL4TimeSeries         *chan,       /**< [out] the output time series */
+			   SimInspiralTable        *injections, /**< [in] list of injections */
+			   CHAR                    ifo[3],      /**< [in] 2 char code for interferometer */
+			   REAL8                   dynRange)    /**< [in] dynamic range factor for scaling time series */
+{
+
+  REAL4TimeVectorSeries *tempStrain=NULL;
+  SimInspiralTable    *thisInj = NULL;
+
+  INITSTATUS (status, "InjectNumRelWaveforms", rcsid);
+  ATTATCHSTATUSPTR (status); 
+  
+  /* loop over injections */
+  for ( thisInj = injections; thisInj; thisInj = thisInj->next )
+    {
+      TRY( AddNumRelStrainModes( status->statusPtr, &tempStrain, thisInj), 
+	   status);
+      
+      TRY( LALInjectStrainGW( status->statusPtr, chan, tempStrain, thisInj, 
+			      ifo, dynRange), status);
+      
+      XLALDestroyREAL4VectorSequence ( tempStrain->data);
+      tempStrain->data = NULL;
+      LALFree(tempStrain);
+      tempStrain = NULL;
+      
+    } /* loop over injectionsj */
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+
+}
+

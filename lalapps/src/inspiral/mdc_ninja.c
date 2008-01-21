@@ -103,21 +103,15 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
   /* injections */
   SimInspiralTable *injections = NULL;
-  SimInspiralTable *thisInj = NULL;
   INT4 numInjections           = 0;
 
   /* injection waveforms time series */
   INT4 sampleRate = -1;
   REAL4TimeSeries *injData[LAL_NUM_IFO];
-  REAL4TimeVectorSeries *tempStrain=NULL;
 
   /* the inspiral pipeline resizes data day 2^dynRange. Set to 1.0 when
    * using as standalone code */
   REAL4 dynRange = 1.0;
-
-  /* set default debug level */
-  lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "33" );
 
   /* getopt arguments */
   struct option long_options[] =
@@ -144,6 +138,10 @@ INT4 main( INT4 argc, CHAR *argv[] )
     {"version",                 no_argument,       0,                'V'},
     {0, 0, 0, 0}
   };
+
+  /* set default debug level */
+  lal_errhandler = LAL_ERR_EXIT;
+  set_debug_level( "33" );
 
   /* parse the arguments */
   while ( 1 )
@@ -445,19 +443,9 @@ INT4 main( INT4 argc, CHAR *argv[] )
         XLALReturnIFO( ifo, i );
       }
 
-      /* loop over injections */
-      for ( thisInj = injections; thisInj; thisInj = thisInj->next )
-      {
-        LAL_CALL( AddNumRelStrainModes( &status, &tempStrain, thisInj), &status);
-
-        LAL_CALL( LALInjectStrainGW( &status, injData[i], tempStrain, thisInj, ifo, dynRange), &status);
-
-        XLALDestroyREAL4VectorSequence ( tempStrain->data);
-        tempStrain->data = NULL;
-        LALFree(tempStrain);
-        tempStrain = NULL;
-
-      } /* loop over injectionsj */
+      /* now we can finally inject the waveforms */
+      LAL_CALL( InjectNumRelWaveforms ( &status, injData[i], injections, ifo, 
+					dynRange), &status); 
 
       /* set strain as unit */
       injData[i]->sampleUnits = lalStrainUnit;

@@ -72,6 +72,12 @@ void AddNumRelStrainModes( LALStatus              *status,
 			   REAL4TimeVectorSeries  **outStrain,
 			   SimInspiralTable *thisinj);
 
+void InjectNumRelWaveforms (LALStatus              *status,
+			    REAL4TimeSeries        *chan, 
+			    SimInspiralTable       *injections,
+			    CHAR                    ifo[3],    
+			    REAL8                   dynRange); 
+
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */
