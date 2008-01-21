@@ -48,6 +48,20 @@
 extern "C" {
 #endif
 
+
+#define INSPIRALH_ENULL   1
+#define INSPIRALH_EFILE   2
+#define INSPIRALH_ENONULL 3
+#define INSPIRALH_ENOMEM  4
+#define INSPIRALH_EVAL 	  5
+
+#define INSPIRALH_MSGENULL    "Null pointer"
+#define INSPIRALH_MSGEFILE    "Error in file-IO"
+#define INSPIRALH_MSGENONULL  "Not a Null pointer"
+#define INSPIRALH_MSGENOMEM   "Memory ellocation error"
+#define INSPIRALH_MSGEVAL     "Invalid value"
+
+
 REAL4 compute_candle_distance(
     REAL4 candleM1, 
     REAL4 candleM2,

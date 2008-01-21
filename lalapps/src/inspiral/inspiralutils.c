@@ -290,6 +290,9 @@ void InjectNumRelWaveforms (LALStatus              *status,
   INITSTATUS (status, "InjectNumRelWaveforms", rcsid);
   ATTATCHSTATUSPTR (status); 
   
+  ASSERT( chan, status, INSPIRALH_ENULL, INSPIRALH_MSGENULL );
+  ASSERT( ifo, status, INSPIRALH_ENULL, INSPIRALH_MSGENULL );
+  
   /* loop over injections */
   for ( thisInj = injections; thisInj; thisInj = thisInj->next )
     {
