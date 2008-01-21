@@ -395,7 +395,9 @@ int main( INT4 argc, CHAR *argv[] )
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlfp ), &status );
 
   /* destroy all user input variables */
-  LALFree(range.grouplist);
+  if (range.grouplist != NULL) { 
+    LALFree(range.grouplist);
+  }
   LAL_CALL (LALDestroyUserVars(&status), &status);
 
   LALCheckMemoryLeaks();
@@ -431,62 +433,75 @@ int get_nr_metadata_from_framehistory(NinjaMetaData *data,
 
 
 int get_metadata_from_string(NinjaMetaData *data,
-			      CHAR *comment)
+			     CHAR *comment)
 {
 
   CHAR *token;
+  CHAR *thiscomment=NULL;
 
-  token = strtok(comment,":");
+  thiscomment = LALCalloc(1, (strlen(comment)+1)*sizeof(CHAR));
+  strcpy(thiscomment, comment);
+
+  token = strtok(thiscomment,":");
 
   if (strstr(token,"spin1x")) {
     token = strtok(NULL,":");
     data->spin1[0] = atof(token);
+    LALFree(thiscomment);
     return 0;
   }
 
   if (strstr(token,"spin1y")) {
     token = strtok(NULL,":");
     data->spin1[1] = atof(token);
+    LALFree(thiscomment);
     return 0;
   }
 
   if (strstr(token,"spin1z")) {
     token = strtok(NULL,":");
     data->spin1[2] = atof(token);
+    LALFree(thiscomment);
     return 0;
   }
 
   if (strstr(token,"spin2x")) {
     token = strtok(NULL,":");
     data->spin2[0] = atof(token);
+    LALFree(thiscomment);
     return 0;
   }
 
   if (strstr(token,"spin2y")) {
     token = strtok(NULL,":");
     data->spin2[1] = atof(token);
+    LALFree(thiscomment);
     return 0;
   }
 
   if (strstr(token,"spin2z")) {
     token = strtok(NULL,":");
     data->spin2[2] = atof(token);
+    LALFree(thiscomment);
     return 0;
   }
 
   if (strstr(token,"mass-ratio")) {
     token = strtok(NULL,":");
     data->massRatio = atof(token);
+    LALFree(thiscomment);
     return 0;
   }
 
   if (strstr(token,"nr-group")) {
     token = strtok(NULL,":");
     data->group = XLALParseNumRelGroupName( token);
+    LALFree(thiscomment);
     return 0;
   }
 
   /* did not match anything */
+  LALFree(thiscomment);
   return -1;
 
 }
