@@ -639,26 +639,33 @@ int parse_group_list ( NrParRange *range,
   NumRelGroup thisGroup;
   NumRelGroup *grouplist=NULL;
   CHAR *token;
+  CHAR *thislist=NULL;
 
   /* look for the ";" token */
-  token = strtok(list,";");
+  if (list) {
 
-  while (token) {
-
-    thisGroup = XLALParseNumRelGroupName( token);    
-
-    /* if the parsing was successful, add to list */
-    if (thisGroup != NINJA_GROUP_LAST) {
+    thislist = LALCalloc(1,(strlen(list)+1)*sizeof(CHAR));
+    strcpy(thislist,list);
+  
+    token = strtok(thislist,";");
+    
+    while (token) {
       
-      numGroups++;
-      grouplist = LALRealloc(grouplist, numGroups*sizeof(*grouplist));
-      grouplist[numGroups-1] = thisGroup;
+      thisGroup = XLALParseNumRelGroupName( token);    
+      
+      /* if the parsing was successful, add to list */
+      if (thisGroup != NINJA_GROUP_LAST) {
+	
+	numGroups++;
+	grouplist = LALRealloc(grouplist, numGroups*sizeof(*grouplist));
+	grouplist[numGroups-1] = thisGroup;
+      }
+      token = strtok(NULL,";");
     }
+    LALFree(thislist);
+  } /* if(list) */
 
-    token = strtok(NULL,";");
-
-  }
-
+  /* copy to output */
   range->numGroups = numGroups;
   range->grouplist = grouplist;
 
