@@ -23,6 +23,8 @@ __version__ = '$Revision$'[11:-2]
 
 ##############################################################################
 import copy
+import math
+import sha
 import os
 import sys
 import ConfigParser
@@ -58,6 +60,42 @@ def mkdir( directory, overwrite ):
     else:
       raise
 
+def hash_n_bits(input_string, n_bits, hash_lib=sha):
+  """
+  Return the first n_bits (as an integer) of a hash on input_string.  Defaults
+  to SHA-1.
+  
+  n_bits=31 is useful for, say, random seeds that must fit into a LAL INT4.
+  """
+  # Some test examples:
+  #
+  # In [30]: hex(hash_n_bits("test", 28) << (32 - 28))
+  # Out[30]: '0xa94a8fe0L'
+  # 
+  # In [31]: hex(hash_n_bits("test", 29) << (32 - 29))
+  # Out[31]: '0xa94a8fe0L'
+  # 
+  # In [32]: hex(hash_n_bits("test", 30) << (32 - 30))
+  # Out[32]: '0xa94a8fe4L'
+  # 
+  # In [33]: hex(hash_n_bits("test", 31) << (32 - 31))
+  # Out[33]: '0xa94a8fe4L'
+  # 
+  # In [34]: hex(hash_n_bits("test", 32))
+  # Out[34]: '0xa94a8fe5L'
+  
+  hashed_string = hash_lib.new(input_string).digest()
+  n_bytes = int(math.ceil(n_bits / 8))
+  
+  def bytes2int(byte_string):
+    result = 0
+    for byte in byte_string:
+      result <<= 8
+      result += ord(byte)
+    return result
+  
+  return bytes2int(hashed_string[:n_bytes]) >> (8*n_bytes - n_bits)
+
 def createInjectionFile(hipe_dir, cp, injrun, injection_segment,
   source_file, verbose=False):
   """
@@ -74,7 +112,7 @@ def createInjectionFile(hipe_dir, cp, injrun, injection_segment,
       injStart = value
     else: 
       injEnd = value
-  seed = injStart
+  seed = hash_n_bits(hipe_dir, 31)
   numberInjections = injEnd - injStart + 1  # e.g., 1 through 5000 inclusive
 
   # set all the arguments
@@ -246,6 +284,8 @@ class hipe_run(object):
     if exttrig_analyze is not None:
       self._cp.set('input','exttrig-segments','../onSourceSeg.txt')
       self._cp.set('input','exttrig-analyze', exttrig_analyze)
+    else:
+      self._cp.set('input', 'exttrig-analyze', 'all')
     
     # set the usertag
     if usertag is not None:
