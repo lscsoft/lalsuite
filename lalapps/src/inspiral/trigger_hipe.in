@@ -400,10 +400,10 @@ for opt in required_opts:
     if getattr(opts, opt) is None:
         raise ValueError, "--%s is a required option" % opt
 
-if not opts.plot_segments and not opts.plot_injections:
+if opts.plot_segments and opts.plot_injections:
   import matplotlib
   matplotlib.use("Agg")
-import pylab
+  import pylab
 
 ##############################################################################
 # create the config parser object and read in the ini file
