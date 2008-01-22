@@ -191,11 +191,14 @@ main (INT4 argc, CHAR **argv )
     INT4 temp_order = coarseBankIn.order;
     if (coarseBankIn.order < 4){
      coarseBankIn.order = 4;  
-    }
-    LAL_CALL( LALInspiralBankGeneration( &status, &coarseBankIn, &tmpltHead, &sizeBank),
+     LAL_CALL( LALInspiralBankGeneration( &status, &coarseBankIn, &tmpltHead, &sizeBank),
  	   &status );
-    if (coarseBankIn.order < 4){
      coarseBankIn.order = temp_order;  
+    }
+    else
+    {
+      LAL_CALL( LALInspiralBankGeneration( &status, &coarseBankIn, &tmpltHead, &sizeBank),
+ 	   &status );
     }
 
   }
