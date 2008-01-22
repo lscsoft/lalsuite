@@ -52,8 +52,6 @@
 #include <lal/NRWaveIO.h>
 #include <lal/TimeDelay.h>
 #include <lal/DetResponse.h>
-#include <lal/SphericalHarmonics.h>  
-
 
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {
