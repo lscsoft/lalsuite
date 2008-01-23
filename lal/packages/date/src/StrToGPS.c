@@ -275,22 +275,31 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 
 /*
  * Return a string containing the ASCII base 10 representation of a
- * LIGOTimeGPS.
+ * LIGOTimeGPS.  If s is not NULL, then the string is written to that
+ * location which must be large enough to hold the string plus a NULL
+ * terminator.  If s is NULL then a new buffer is allocated, and the string
+ * written to it.  The return value is the address of the string or NULL on
+ * failure.
  */
 
 
-char *XLALGPSToStr(const LIGOTimeGPS *t)
+char *XLALGPSToStr(char *s, const LIGOTimeGPS *t)
 {
 	static const char func[] = "XLALGPSToStr";
 	const long billion = 1000000000;
+	/* so we can play with it */
 	LIGOTimeGPS copy = *t;
-	/* 21 = 9 digits to the right of the decimal point + decimal point
-	 * + upto 10 digits to the left of the decimal point plus an
-	 * optional sign + a null */
-	char *s = XLALMalloc(21 * sizeof(*s));
 
-	if(!s)
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	/* make sure we've got a buffer */
+
+	if(!s) {
+		/* 21 = 9 digits to the right of the decimal point +
+		 * decimal point + upto 10 digits to the left of the
+		 * decimal point plus an optional sign + a null */
+		s = XLALMalloc(21 * sizeof(*s));
+		if(!s)
+			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	}
 
 	/* normalize the fractional part */
 
