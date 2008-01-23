@@ -23,6 +23,7 @@ __version__ = '$Revision$'[11:-2]
 
 ##############################################################################
 import copy
+import glob
 import math
 import sha
 import os
@@ -96,13 +97,13 @@ def hash_n_bits(input_string, n_bits, hash_lib=sha):
   
   return bytes2int(hashed_string[:n_bytes]) >> (8*n_bytes - n_bits)
 
-def createInjectionFile(hipe_dir, cp, injrun, injection_segment,
+def createInjectionFile(hipe_dir, cp, cpinj, injrun, injection_segment,
   source_file, verbose=False):
   """
   Creates an master injection file containing all injections for this run.
   Also reads the file and returns its contents
   """
-  cpinj = copy.deepcopy(cp)
+  cpinj = copy.deepcopy(cpinj)
 
   # get the number of injections to be made
   for opt in ['exttrig-inj-start','exttrig-inj-stop']:
@@ -135,8 +136,9 @@ def createInjectionFile(hipe_dir, cp, injrun, injection_segment,
   argument.append(" --exttrig-file %s" % source_file )
 
   # execute the command
+  executable = cp.get("condor", "inspinj")
   arguments = " ".join(argument)
-  inspiralutils.make_external_call("./lalapps_inspinj %s" % arguments,
+  inspiralutils.make_external_call(executable + " " + arguments,
     show_stdout=verbose, show_command=verbose)
 
   # read in the file and the tables
@@ -300,6 +302,7 @@ class hipe_run(object):
     # set the start and stop seeds from the injection config file
     self._cp.set('pipeline', 'exttrig-inj-start', 1)
     self._cp.set('pipeline', 'exttrig-inj-stop', numberInjFiles)
+    self._cp.set("condor", "inspinj", "/bin/true")
 
     # set injection segments
     for ifo in self._ifos:
@@ -309,6 +312,7 @@ class hipe_run(object):
     """
     Create directory and run lalapps_inspiral_hipe to create the DAG.
     """
+    # write out an appropriate ini file
     ini_file_name = os.path.basename( self._dag_name+'.ini' )
     os.chdir(self._hipe_dir)
     if not os.path.isdir(self._log_path):  # in case of relative path
@@ -317,14 +321,22 @@ class hipe_run(object):
     self._cp.write(cp_file)
     cp_file.close()
     arguments = " ".join(self._hipe_args)
+    
+    # run inspiral_hipe
     inspiralutils.make_external_call("../../lalapps_inspiral_hipe %s" % (arguments % ini_file_name),
-      show_stdout=self._verbose, show_command=self._verbose)
+      show_stdout=False, show_command=self._verbose)
     
     # create link to datafind directory's cache directory
     if self._only_run != ["datafind"]:
       if os.path.exists("cache"):
         os.rmdir("cache")
       os.symlink("../datafind/cache", "cache")
+    
+    # set inspinj jobs to run in the local universe
+    inspinj_sub_files = glob.glob("*inspinj*.sub")
+    for sub_file in inspinj_sub_files:
+      contents = open(sub_file).read().replace("universe = standard", "universe = local")
+      open(sub_file, "w").write(contents)
     
     os.chdir("../../")
   
@@ -692,8 +704,9 @@ for grb in ext_trigs:
 
       # create the master injection file and gets its content
       if opts.verbose: print "  Creating injections..."
-      sims, injInterval, numberInjections = createInjectionFile(hipe_dir,
-        cpinj, injrun, offSourceSegment.contract(opts.padding_time), source_file, opts.verbose)
+      sims, injInterval, numberInjections = createInjectionFile(hipe_dir, cp,
+        cpinj, injrun, offSourceSegment.contract(opts.padding_time),
+        source_file, opts.verbose)
         
       # XXX: hack since glue is having trouble with empty columns
       fix_numrel_columns(sims)
