@@ -435,6 +435,9 @@ parser.add_option("-t", "--padding-time", type="int", default=0,
   help="padding time on each side of an analysis segment")
 parser.add_option("-n", "--num-trials", type="int",
   help="the off-source segment should contain NUM_TRIALS segments of the length of the on-source segment")
+parser.add_option("-s", "--symmetric", action="store_true", default=False,
+  help="restrict the off-source trials to be arranged symmetrically about "\
+       "the on-source segment (default: asymmetrical distribution allowed)")
 parser.add_option("-o", "--overwrite-dir", action="store_true",default=False,\
   help="overwrite contents in already existing directories" )
 
@@ -572,7 +575,8 @@ for grb in ext_trigs:
 
   offSourceSegment, grb_ifolist = \
     grbsummary.multi_ifo_compute_offsource_segment(segdict, onSourceSegment,
-    padding_time=opts.padding_time, max_trials=opts.num_trials, symmetric=True)
+      padding_time=opts.padding_time, max_trials=opts.num_trials,
+      symmetric=opts.symmetric)
   grb_ifolist.sort()
   ifo_times = "".join(grb_ifolist)
   
