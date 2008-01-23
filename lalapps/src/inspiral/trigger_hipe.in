@@ -234,14 +234,11 @@ class hipe_run(object):
     self._verbose = verbose
     self._dag_name = os.path.join(self._hipe_dir, dag_name)
     self._usertag = usertag
+    self._only_run = only_run
+    self._dont_run = dont_run
 
     # create directory here
     mkdir(self._hipe_dir, overwrite=True)
-    
-    # create link to datafind directory's cache directory
-    if only_run != ["datafind"]:
-      if not os.path.exists(os.path.join(self._hipe_dir, "cache")):
-        os.symlink("../datafind/cache", os.path.join(self._hipe_dir, "cache"))
  
     ## Determine arguments to inspiral_hipe
     self._hipe_args = ["--output-segs", "--log-path=%s" % log_path,
@@ -322,6 +319,13 @@ class hipe_run(object):
     arguments = " ".join(self._hipe_args)
     inspiralutils.make_external_call("../../lalapps_inspiral_hipe %s" % (arguments % ini_file_name),
       show_stdout=self._verbose, show_command=self._verbose)
+    
+    # create link to datafind directory's cache directory
+    if self._only_run != ["datafind"]:
+      if os.path.exists("cache"):
+        os.rmdir("cache")
+      os.symlink("../datafind/cache", "cache")
+    
     os.chdir("../../")
   
   def get_dag_name(self):
