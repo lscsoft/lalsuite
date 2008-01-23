@@ -831,8 +831,8 @@ def coherent_analysis(ifos,single_ifo_segments,coinc_nodes,cb_job,
       if cp.has_section('coh-trig'):
         trig_coh_jobs[ifo].add_ini_opts(cp,'coh-trig')
       # set up inspirals:
-      if cp.has_section('no-veto-inspiral'):
-        insp_coh_jobs[ifo].add_ini_opts(cp,'no-veto-inspiral')
+      if cp.has_section('coherent-inspiral'):
+        insp_coh_jobs[ifo].add_ini_opts(cp,'coherent-inspiral')
       if cp.has_section(ifo.lower() + '-inspiral'): 
         insp_coh_jobs[ifo].add_ini_opts(cp,ifo.lower() + '-inspiral')
       if ifo == 'G1':
