@@ -94,7 +94,9 @@ extern void register_output_file(char*filename);
 
 /** show progress of the App.
     NOTE: This also sets the count & total (skypos) for checkpointing */
-extern void show_progress(double rac, double dec, UINT4 count, UINT4 total);
+extern void show_progress(double rac, double dec,
+			  UINT4 count, UINT4 total,
+			  REAL8 freq, REAL8 fband);
 
 /** inits checkpointing for the toplist and reads the last checkpoint if present
     This expects all passed variables (toplist, total, count) to be already

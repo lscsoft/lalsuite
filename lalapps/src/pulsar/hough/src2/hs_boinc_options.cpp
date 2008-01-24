@@ -40,9 +40,7 @@ APP_INIT_DATA eah_app_init_data;
 
 /* BOINC APIv6 stuff */
 
-double boincv6_skypos_rac = 0;
-double boincv6_skypos_dec = 0;
-double boincv6_fraction_done = 0;
+t_progress boincv6_progress;
 
 #ifdef BOINC_APIV6
 #include "graphics2.h"
@@ -50,10 +48,11 @@ double boincv6_fraction_done = 0;
 char*shmem = NULL;
 
 static void update_shmem(void) {
+  BOINC_STATUS *boincstat;
 
   if (!shmem) return;
 
-  boinc_get_init_data(eah_app_init_data);
+  boinc_get_status(boincstat);
 
   snprintf(shmem, EAH_SHMEM_SIZE,
 	   "<graphics_info>\n"
@@ -62,12 +61,44 @@ static void update_shmem(void) {
 	   "  <fraction_done>%f</fraction_done>\n"
 	   "  <cpu_time>%f</cpu_time>\n"
 	   "  <update_time>%f</update_time>\n"
+	   "  <frequency>%f</frequency>\n"
+	   "  <bandwidth>%f</bandwidth>\n"
+           "  <candidate>\n"
+	   "    <frequency>%f<frequency>\n"
+	   "    <spindown>%f<spindown>\n"
+	   "    <rac>%f<rac>\n"
+	   "    <dec>%f<dec>\n"
+	   "    <hough_sig>%f<hough_sig>\n"
+           "  </candidate>\n"
+           "  <boinc_status>\n"
+	   "    <no_heartbeat>%d<no_heartbeat>\n"
+	   "    <suspended>%d<suspended>\n"
+	   "    <quit_request>%d<quit_request>\n"
+	   "    <reread_init_data_file>%d<reread_init_data_file>\n"
+	   "    <abort_request>%d<abort_request>\n"
+	   "    <working_set_size>%f<working_set_size>\n"
+	   "    <max_working_set_size>%f<max_working_set_size>\n"
+           "  </boinc_status>\n"
 	   "</graphics_info>\n",
-	   boincv6_skypos_rac,
-	   boincv6_skypos_dec,
+	   boincv6_progress.skypos_rac,
+	   boincv6_progress.skypos_dec,
 	   boinc_get_fraction_done(),
 	   boinc_worker_thread_cpu_time(),
-	   dtime());
+	   dtime(),
+	   boincv6_progress.frequency,
+	   boincv6_progress.bandwidth,
+	   boincv6_progress.cand_frequency,
+	   boincv6_progress.cand_spindown,
+	   boincv6_progress.cand_rac,
+	   boincv6_progress.cand_dec,
+	   boincv6_progress.cand_hough_sign,
+	   boincstat->no_heartbeat,
+	   boincstat->suspended,
+	   boincstat->quit_request,
+	   boincstat->reread_init_data_file,
+	   boincstat->abort_request,
+	   boincstat->working_set_size,
+	   boincstat->max_working_set_size);
 }
 
 int setup_shmem(void) {
@@ -95,6 +126,7 @@ int boinc_init_graphics_options(WORKER_FUNC_PTR worker)
 
 void set_boinc_options(void) {
   rcsid = HS_BOINC_OPTIONS_H_RCSID;
+  boinc_get_init_data(eah_app_init_data);
   boinc_options_defaults(eah_boinc_options);
 #if (BOINC_GRAPHICS > 0)
   // only makes sense on Apps with graphics

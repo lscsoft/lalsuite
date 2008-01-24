@@ -323,7 +323,7 @@ static void sighandler(int sig)
   /* in case of a floating-point exception write out the FPU status */
   if ( sig == SIGFPE ) {
     fpuw_t fpstat = uc->uc_mcontext.fpregs->sw;
-    fprintf(stderr,"FPU status word %x, flags: ", uc->uc_mcontext.fpregs->sw);
+    fprintf(stderr,"FPU status word %lx, flags: ", uc->uc_mcontext.fpregs->sw);
     PRINT_FPU_STATUS_FLAGS(fpstat);
     fprintf(stderr,"\n");
   }
@@ -366,8 +366,10 @@ static void sighandler(int sig)
 void show_progress(double rac,  /**< right ascension */
 		   double dec,  /**< declination */
 		   UINT4 count, /**< current skypoint counter */
-		   UINT4 total  /**< total number of skypoints */
-		   ) {
+		   UINT4 total, /**< total number of skypoints */
+		   REAL8 freq,  /**< base frequency */
+		   REAL8 fband  /**< frequency bandwidth */
+		   ){
   double fraction = (double)count / (double)total;
 
   /* set globals to be written into next checkpoint */
@@ -383,9 +385,29 @@ void show_progress(double rac,  /**< right ascension */
     set_search_pos_hook(rac * 180.0/LAL_PI, dec * 180.0/LAL_PI);
 
   /* tell APIv6 graphics about status */
-  boincv6_skypos_rac = rac;
-  boincv6_skypos_dec = dec;
-  boincv6_fraction_done = fraction;
+  boincv6_progress.skypos_rac = rac;
+  boincv6_progress.skypos_dec = dec;
+  if(toplist->elems - 1 > 0) {
+    /* take the last (rightmost) leaf of the heap tree - might not be the
+       "best" candidate, but for the graphics it should be good enough */
+    FstatOutputEntry *line = (FstatOutputEntry*)(toplist->heap[toplist->elems - 1]);
+
+    boincv6_progress.cand_frequency  = line->Freq;
+    boincv6_progress.cand_spindown   = line->f1dot;
+    boincv6_progress.cand_rac        = line->Alpha;
+    boincv6_progress.cand_dec        = line->Delta;
+    boincv6_progress.cand_hough_sign = line->Fstat;
+    boincv6_progress.frequency       = freq;
+    boincv6_progress.bandwidth       = fband;
+  } else {
+    boincv6_progress.cand_frequency  = 0.0;
+    boincv6_progress.cand_spindown   = 0.0;
+    boincv6_progress.cand_rac        = 0.0;
+    boincv6_progress.cand_dec        = 0.0;
+    boincv6_progress.cand_hough_sign = 0.0;
+    boincv6_progress.frequency       = 0.0;
+    boincv6_progress.bandwidth       = 0.0;
+  }
 
   /* tell BOINC client about fraction done and flops so far (faked from estimation) */
   boinc_fraction_done(fraction);

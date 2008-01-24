@@ -132,7 +132,7 @@ RCSID( "$Id$");
 #define HS_CHECKPOINTING 0 /* no checkpointing in the non-BOINC case (yet) */
 #define GET_CHECKPOINT(toplist,total,count,outputname,cptname) *total=0;
 #define INSERT_INTO_FSTAT_TOPLIST insert_into_fstat_toplist
-#define SHOW_PROGRESS(rac,dec,tpl_count,tpl_total)
+#define SHOW_PROGRESS(rac,dec,tpl_count,tpl_total,freq,fband)
 #define SET_CHECKPOINT
 #define MAIN  main
 #define FOPEN fopen
@@ -947,8 +947,9 @@ int MAIN( int argc, char *argv[]) {
 #endif
 
       SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta,
-		    skyGridCounter,thisScan.numSkyGridPoints);
-      
+		    skyGridCounter,thisScan.numSkyGridPoints,
+		    uvar_Freq, uvar_FreqBand);
+
       LogPrintfVerbatim(LOG_DEBUG, "%d, ", skyGridCounter );
       
       /*------------- calculate F statistic for each stack --------------*/
@@ -1136,7 +1137,8 @@ int MAIN( int argc, char *argv[]) {
 	    /* this is necessary here, because GetSemiCohToplist() might set
 	       a checkpoint that needs some information from here */
 	    SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta,
-			  skyGridCounter,thisScan.numSkyGridPoints);
+			  skyGridCounter,thisScan.numSkyGridPoints,
+			  uvar_Freq, uvar_FreqBand);
 	    
 	    LogPrintf(LOG_DETAIL, "Selecting toplist from semicoherent candidates\n");
 	    LAL_CALL( GetSemiCohToplist(&status, semiCohToplist, &semiCohCandList, meanN, sigmaN), &status);
@@ -1160,7 +1162,8 @@ int MAIN( int argc, char *argv[]) {
 	  
 	  /* this is necessary here, because the checkpoint needs some information from here */
 	  SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta,
-			skyGridCounter,thisScan.numSkyGridPoints);
+			skyGridCounter,thisScan.numSkyGridPoints,
+			uvar_Freq, uvar_FreqBand);
 	  
 	  SET_CHECKPOINT;
 	  

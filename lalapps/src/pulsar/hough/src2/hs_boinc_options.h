@@ -33,10 +33,20 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  
-extern double boincv6_skypos_rac;
-extern double boincv6_skypos_dec;
-extern double boincv6_fraction_done;
+
+typedef struct {
+  double skypos_rac;
+  double skypos_dec;
+  double frequency;
+  double bandwidth;
+  double cand_frequency;
+  double cand_spindown;
+  double cand_rac;
+  double cand_dec;
+  double cand_hough_sign;
+} t_progress;
+
+extern t_progress boincv6_progress;
 
 #if (BOINC_GRAPHICS > 0)
 extern int boinc_init_graphics_options(WORKER_FUNC_PTR);
