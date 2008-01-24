@@ -345,26 +345,30 @@ LALFindChirpInjectSignals (
     }
     else
     {
-      INT4 i, j, kh, km, length, sampleRate;
-      REAL4 temp;
+      INT4 i, kh, length, sampleRate;
+      float *x1;
+      FILE *fileName;
 
       length = waveform.h->data->length;
       kh = 2*length;
-      km = kh-1;
-      /* XLALCalculateNRStrain does not take a vector with alternating 
+      x1 = (float *) LALMalloc(sizeof(x1)*kh);     
+      /* 
+       * XLALCalculateNRStrain does not take a vector with alternating 
        * h+ & hx but rather one that stores h+ in the first half and hx
-       * in the second half. Therefore, We transfer waveform.h to strain 
-       * before calling the function */
-      for( i = 1; i < length; i++)
+       * in the second half.
+       */
+      for( i = 0; i < kh; i++)
       {
-        temp = waveform.h->data->data[km - 2*i];
-        for( j = 0; j <= i; j++)
-        {
-            waveform.h->data->data[km - 2*i + j] = waveform.h->data->data[kh - 2*i + j];
-        }	  
-      waveform.h->data->data[km - i] = temp;
+        x1[i] = waveform.h->data->data[i];
       }
-  
+      for( i = 0; i < length; i++)
+      {
+            waveform.h->data->data[i] = x1[2*i];
+            waveform.h->data->data[length+i] = x1[2*i+1];
+      }	  
+
+      LALFree(x1);
+
       sampleRate = (INT4) (1./waveform.h->deltaT);
       if (abs((REAL4) sampleRate - 1./waveform.h->deltaT) > 0.5)
       {
@@ -375,6 +379,13 @@ LALFindChirpInjectSignals (
       waveform.h->data->vectorLength = length;
       tmpSig = XLALCalculateNRStrain( waveform.h , thisEvent, ifo, sampleRate);
       signal = *tmpSig;
+
+      fileName = fopen("tmp1.dat", "w");
+      for( i = 0; i < length; i++)
+      {
+            fprintf(fileName, "%e\n", signal.data->data[i]);
+      }	  
+      fclose(fileName);
       
       
     }
