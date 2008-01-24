@@ -303,10 +303,15 @@ if opts.plotinspiral:
   """
   plotinspiral_jobs = {}
   this_section = "plotinspiral"
-  cp = set_common_options(cp, this_section)
-  
+  cp = set_common_options(cp, this_section)   
+  cp_second = copy.deepcopy(cp)
   for ifo in ifolist:
     if opts.first_stage:
+      if cp.has_option('plotinspiral','snr-chisq'):cp.remove_option('plotinspiral','snr-chisq')
+      if cp.has_option('plotinspiral','log-snr-chisq'):cp.remove_option('plotinspiral','log-snr-chisq')
+      if cp.has_option('plotinspiral','hist-chisq'):cp.remove_option('plotinspiral','hist-chisq')
+      if cp.has_option('plotinspiral','cum-hist-snr-chi'):cp.remove_option('plotinspiral','cum-hist-snr-chi')
+      if cp.has_option('plotinspiral','hist-snr-chi'):cp.remove_option('plotinspiral','hist-snr-chi')    
       job = inspiral.PlotInspiralJob(cp)
       job.add_opt("ifo-times", ifo)
       job.add_opt("ifo-tag", "FIRST_" + ifo)
@@ -320,11 +325,11 @@ if opts.plotinspiral:
       plotinspiral_jobs[ifo + "FIRST"] = job
       all_jobs.extend(plotinspiral_jobs.values())
     if opts.second_stage:
-      job = inspiral.PlotInspiralJob(cp)
+      job = inspiral.PlotInspiralJob(cp_second)
       job.add_opt("ifo-times", ifo)
       job.add_opt("ifo-tag", "SECOND_" + ifo)
       job.set_sub_file( basename + '.plotinspiral_SECOND_' + ifo + subsuffix )
-      pattern_dict = inspiralutils.determine_sieve_patterns(cp, "plotinspiral", "SECOND", input_user_tag)
+      pattern_dict = inspiralutils.determine_sieve_patterns(cp_second, "plotinspiral", "SECOND", input_user_tag)
       for opt, val in pattern_dict.iteritems():
         job.add_opt(opt, val)
       plotinspiral_jobs[ifo + "SECOND"] = job
