@@ -71,3 +71,9 @@ int XLALSimBurstSineGaussian(
 	REAL8 polarization,
 	REAL8 delta_t
 );
+
+
+REAL8 XLALMeasureHPeak(REAL8TimeSeries *);
+REAL8 XLALMeasureIntHSquaredDT(REAL8TimeSeries *);
+REAL8 XLALMeasureHrss(REAL8TimeSeries *);
+REAL8 XLALMeasureIntHDotSquaredDT(COMPLEX16FrequencySeries *);

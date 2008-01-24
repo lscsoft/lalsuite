@@ -73,7 +73,7 @@ static void gaussian_noise(REAL8TimeSeries * series, REAL8 rms, gsl_rng * rng)
  */
 
 
-static REAL8 XLALMeasureHPeak(REAL8TimeSeries *series)
+REAL8 XLALMeasureHPeak(REAL8TimeSeries *series)
 {
 	static const char func[] = "XLALMeasureHPeak";
 	double hpeak;
@@ -92,11 +92,17 @@ static REAL8 XLALMeasureHPeak(REAL8TimeSeries *series)
 
 
 /*
- * Returns the root-sum-square strain.
+ * Returns what people call the "root-sum-square strain".  Infact, this is
+ *
+ * \sqrt{\sum h^{2} \Delta t},
+ *
+ * which is an approximation of
+ *
+ * \sqrt{\int h^{2} \diff t}
  */
 
 
-static REAL8 XLALMeasureHrss(REAL8TimeSeries *series)
+REAL8 XLALMeasureIntHSquaredDT(REAL8TimeSeries *series)
 {
 	double e = 0.0;
 	double sum = 0.0;
@@ -117,7 +123,13 @@ static REAL8 XLALMeasureHrss(REAL8TimeSeries *series)
 		e += x;
 	}
 
-	return sqrt(sum);
+	return sum * series->deltaT;
+}
+
+
+REAL8 XLALMeasureHrss(REAL8TimeSeries *series)
+{
+	return sqrt(XLALMeasureIntHSquaredDT(series));
 }
 
 
@@ -133,7 +145,7 @@ static REAL8 XLALMeasureHrss(REAL8TimeSeries *series)
  */
 
 
-static REAL8 XLALMeasureIntHDotSquaredDT(COMPLEX16FrequencySeries *fseries)
+REAL8 XLALMeasureIntHDotSquaredDT(COMPLEX16FrequencySeries *fseries)
 {
 	unsigned i;
 	double e = 0.0;
@@ -182,11 +194,13 @@ static REAL8 XLALMeasureIntHDotSquaredDT(COMPLEX16FrequencySeries *fseries)
  * Parameters:
  *
  * duration
- * 	width of time domain Gaussian envelope in seconds
+ * 	time domain Gaussian envelope is \propto \exp ( -\frac{1}{2} t^{2}
+ * 	/ duration^{2} ) where t and duration are in seconds.
  * frequency
- * 	centre frequency of waveform in Hertz
  * bandwidth
- * 	width of frequency domain Gaussian envelope in Hertz
+ * 	frequency domain Gaussian envelope is \propto \exp ( -\frac{1}{2}
+ * 	(f - f_{0})^{2} / bandwidth^{2} ) where f and bandwidth are in
+ * 	Hertz.
  * int_hdot_squared
  * 	waveform is normalized so that \int (\dot{h}_{+}^{2} +
  * 	\dot{h}_{\times}^{2}) \diff t equals this
@@ -231,6 +245,9 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 	REAL8Window *window;
 	REAL8FFTPlan *plan;
 	REAL8 norm_factor;
+	/* compensate the width of the time-domain window's envelope for
+	 * the broadening will be induced by the subsequent application of
+	 * the frequency-domain envelope */
 	REAL8 sigma_t_squared = duration * duration / 4.0 - 1.0 / (LAL_PI * LAL_PI * bandwidth * bandwidth);
 	unsigned i;
 
@@ -242,10 +259,10 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 		XLAL_ERROR(func, XLAL_EINVAL);
 	}
 
-	/* length of the injection time series is 10 * duration, rounded to
+	/* length of the injection time series is 30 * duration, rounded to
 	 * the nearest odd integer */
 
-	length = (int) (10.0 * duration / delta_t / 2.0);
+	length = (int) floor(30.0 * duration / delta_t / 2.0);
 	length = 2 * length + 1;
 
 	/* the middle sample is t = 0 */
@@ -429,9 +446,9 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
  *
  * h+ and hx time series containing a cosine-Gaussian in the + polarization
  * and a sine-Gaussian in the x polarization.  The Gaussian envelope peaks
- * at t = 0 as defined by epoch and deltaT.  Note that a Tukey window with
- * tapers covering 50% of the time series is applied to make the waveform
- * go to 0 smoothly at the start and end.
+ * in both at t = 0 as defined by epoch and deltaT.  Note that a Tukey
+ * window with tapers covering 50% of the time series is applied to make
+ * the waveform go to 0 smoothly at the start and end.
  */
 
 
@@ -460,16 +477,16 @@ int XLALSimBurstSineGaussian(
 	const double sgrss = sqrt((Q / (4.0 * centre_frequency * sqrt(LAL_PI))) * (1.0 - exp(-Q * Q)));
 	/* "peak" amplitudes of plus and cross */
 	const double h0plus  = hplusrss / cgrss;
-	const double h0cross = hplusrss / sgrss;
+	const double h0cross = hcrossrss / sgrss;
 	LIGOTimeGPS epoch;
 	int length;
 	unsigned i;
 
-	/* length of the injection time series is 10 * the width of the
+	/* length of the injection time series is 30 * the width of the
 	 * Gaussian envelope (sigma_t in the comments above), rounded to
 	 * the nearest odd integer */
 
-	length = (int) (10.0 * Q / (LAL_TWOPI * centre_frequency) / delta_t / 2.0);
+	length = (int) floor(30.0 * Q / (LAL_TWOPI * centre_frequency) / delta_t / 2.0);
 	length = 2 * length + 1;
 
 	/* the middle sample is t = 0 */
@@ -534,10 +551,11 @@ int XLALSimBurstSineGaussian(
  *	delta_t = sample period of output time series
  *
  * Output:
- * 	h(t) with waveform peak at t = 0 (as defined by the epoch and
- * 	deltaT).
+ * 	h+(t) and hx(t), where the cusp waveform has been placed entirely
+ * 	in the + polarization (the x polarization is zeroed), and the
+ * 	waveform peaks at t = 0 (as defined by the epoch and deltaT).
  *
- * The low frequency cutoff is fixed at 1 Hz;  there's nothing special
+ * The low frequency cut-off is fixed at 1 Hz;  there's nothing special
  * about 1 Hz except that it is low compared to the frequency at which we
  * should be high-passing the data
  */
@@ -557,6 +575,7 @@ int XLALGenerateStringCusp(
 	LIGOTimeGPS epoch;
 	int length;
 	int i;
+	/* low frequency cut-off in Hertz */
 	const double f_low = 1.0;
 
 	/* check input */
@@ -566,10 +585,10 @@ int XLALGenerateStringCusp(
 		XLAL_ERROR(func, XLAL_EINVAL);
 	}
 
-	/* length of the injection time series is 5 / f_low, rounded to the
-	 * nearest odd integer */
+	/* length of the injection time series is 15 / f_low, rounded to
+	 * the nearest odd integer */
 
-	length = (int) (5 / f_low / delta_t / 2.0);
+	length = (int) (15 / f_low / delta_t / 2.0);
 	length = 2 * length + 1;
 
 	/* the middle sample is t = 0 */
@@ -580,7 +599,7 @@ int XLALGenerateStringCusp(
 
 	*hplus = XLALCreateREAL8TimeSeries("string cusp +", &epoch, 0.0, delta_t, &lalStrainUnit, length);
 	*hcross = XLALCreateREAL8TimeSeries("string cusp x", &epoch, 0.0, delta_t, &lalStrainUnit, length);
-	tilde_h = XLALCreateCOMPLEX16FrequencySeries("string cusp", &epoch, 0.0, 1.0 / (length * delta_t), &lalDimensionlessUnit, length / 2 + 1);
+	tilde_h = XLALCreateCOMPLEX16FrequencySeries("string cusp +", &epoch, 0.0, 1.0 / (length * delta_t), &lalDimensionlessUnit, length / 2 + 1);
 	plan = XLALCreateReverseREAL8FFTPlan(length, 0);
 	if(!*hplus || !*hcross || !tilde_h || !plan) {
 		XLALDestroyREAL8TimeSeries(*hplus);
@@ -592,14 +611,14 @@ int XLALGenerateStringCusp(
 	}
 	XLALUnitMultiply(&tilde_h->sampleUnits, &(*hplus)->sampleUnits, &lalSecondUnit);
 
-	/* zero the cross time series, injection is done in + only */
+	/* zero the x time series, injection is done in + only */
 
 	memset((*hcross)->data->data, 0, (*hcross)->data->length * sizeof(*(*hcross)->data->data));
 
 	/* construct the waveform in the frequency domain */
 
 	for(i = 0; (unsigned) i < tilde_h->data->length; i++) {
-		double f = i * tilde_h->deltaF;
+		double f = tilde_h->f0 + i * tilde_h->deltaF;
 
 		/* frequency-domain wave form */
 
@@ -638,6 +657,7 @@ int XLALGenerateStringCusp(
 	}
 
 	/* apodize the time series */
+	/* FIXME:  use a Tukey window? */
 
 	for(i = (*hplus)->data->length - 1; i >= 0; i--)
 		(*hplus)->data->data[i] -= (*hplus)->data->data[0];

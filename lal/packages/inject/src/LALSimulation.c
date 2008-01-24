@@ -223,11 +223,10 @@ REAL8TimeSeries * XLALSimInjectionREAL8TimeSeries( REAL8TimeSeries *h, LIGOTimeG
 
 	XLALResizeREAL8TimeSeries( injection, 0, length );
 
-	/*
-	 * TODO: for some reason, response doesn't have correct units.
+	/* TODO: for some reason, response doesn't have correct units.
 	if ( response )
 		XLALUnitDivide( &injection->sampleUnits, &injection->sampleUnits, &response->sampleUnits );
-		*/
+	*/
 
 	return injection;
 }
@@ -415,6 +414,14 @@ int XLALAddInjectionREAL8TimeSeries(REAL8TimeSeries *target, REAL8TimeSeries *h,
 	XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
 	if(i)
 		XLAL_ERROR(func, XLAL_EFUNC);
+
+	/* the deltaT can get corrupted by floating point round-off during
+	 * its trip through the frequency domain.  since this function
+	 * starts by confirming that the sample rate of the injection
+	 * matches that of the target time series, we can use that to reset
+	 * the sample rate to its original value. */
+
+	h->deltaT = target->deltaT;
 
 	/* set epoch from integer sample offset */
 

@@ -22,14 +22,16 @@
 #define _GENERATEBURST_H
 
 
-#include <lal/LALAtomicDatatypes.h>
+/*
+ * ============================================================================
+ *
+ *                                  Preamble
+ *
+ * ============================================================================
+ */
+
+
 #include <lal/LALDatatypes.h>
-
-
-/* FIXME:  which of these are still needed? */
-#include <lal/LALStdlib.h>
-#include <lal/SimulateCoherentGW.h>
-#include <lal/SkyCoordinates.h>
 #include <lal/LIGOMetadataTables.h>
 
 
@@ -42,24 +44,6 @@ extern "C" {
 NRCSID(GENERATEBURSTH, "$Id$");
 
 
-#define GENERATEBURSTH_EMEM 3
-#define GENERATEBURSTH_MSGEMEM "Out of memory"
-
-
-typedef enum {
-	sineGaussian,
-	Gaussian,
-	Ringdown,
-	Ringup
-} SimBurstType;
-
-
-typedef struct tagBurstParamStruc {
-	REAL8 deltaT;	/* requested sampling interval (s) */
-	CoordinateSystem system;	/* coordinate system to assume for simBurst */
-} BurstParamStruc;
-
-
 /*
  * ============================================================================
  *
@@ -70,18 +54,9 @@ typedef struct tagBurstParamStruc {
 
 
 int XLALBurstInjectSignals(
-	LALDetector *detector,
 	REAL8TimeSeries *h,
-	const SimBurstTable *sim_burst
-);
-
-
-void LALBurstInjectSignals(
-	LALStatus *status,
-	REAL4TimeSeries *series,
-	SimBurstTable *injections,
-	COMPLEX8FrequencySeries *resp,
-	INT4 calType
+	const SimBurst *sim_burst,
+	const COMPLEX16FrequencySeries *response
 );
 
 
