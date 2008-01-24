@@ -387,7 +387,7 @@ void show_progress(double rac,  /**< right ascension */
   /* tell APIv6 graphics about status */
   boincv6_progress.skypos_rac = rac;
   boincv6_progress.skypos_dec = dec;
-  if(toplist->elems - 1 > 0) {
+  if(toplist->elems > 0) {
     /* take the last (rightmost) leaf of the heap tree - might not be the
        "best" candidate, but for the graphics it should be good enough */
     FstatOutputEntry *line = (FstatOutputEntry*)(toplist->heap[toplist->elems - 1]);
