@@ -684,7 +684,8 @@ tagSimBurst
 	REAL8 amplitude;
 	REAL8 hrss;
 	REAL8 egw_over_rsquared;
-	unsigned long waveform_number;
+	/* FIXME:  this should be unsigned long */
+	long waveform_number;
 	long simulation_id;
 } SimBurst;
 /* </lalVerbatim> */

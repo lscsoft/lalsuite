@@ -981,7 +981,9 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 	XLALFilePuts("\t\t<Column Name=\"sim_burst:amplitude\" Type=\"real_8\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"sim_burst:hrss\" Type=\"real_8\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"sim_burst:egw_over_rsquared\" Type=\"real_8\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sim_burst:waveform_number\" Type=\"int_8u\"/>\n", xml->fp);
+	/* FIXME:  waveform is an unsigned long, but metaio doesn't support
+	 * int_8u columns */
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:waveform_number\" Type=\"int_8s\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"sim_burst:simulation_id\" Type=\"ilwd:char\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Stream Name=\"sim_burst:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
 	if(XLALGetBaseErrno())
@@ -990,7 +992,9 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 	/* rows */
 
 	for(; sim_burst; sim_burst = sim_burst->next) {
-		if(XLALFilePrintf(xml->fp, "%s\"process:process_id:%ld\",\"%s\",%.16g,%.16g,%.16g,%d,%d,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%lu,\"sim_burst:simulation_id:%ld\"",
+		/* FIXME:  waveform is an unsigned long, but metaio doesn't
+		 * support int_8u columns */
+		if(XLALFilePrintf(xml->fp, "%s\"process:process_id:%ld\",\"%s\",%.16g,%.16g,%.16g,%d,%d,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%ld,\"sim_burst:simulation_id:%ld\"",
 			row_head,
 			sim_burst->process_id,
 			sim_burst->waveform,
