@@ -161,6 +161,11 @@ LALWriteLIGOLwXMLTable (
     MetadataTableType    table
     );
 
+int XLALWriteLIGOLwXMLSimBurstTable(
+	LIGOLwXMLStream *xml,
+	const SimBurst *sim_burst
+);
+
 #if 0
 <lalLaTeX>
 \vfill{\footnotesize\input{LIGOLwXMLHV}}

@@ -35,13 +35,11 @@ $Id$
 </lalVerbatim> 
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <lal/LALStdlib.h>
-#include <lal/LALStdio.h>
+#include <string.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/Date.h>
+#include <lal/XLALError.h>
 
 NRCSID( SNGLBURSTUTILSC, "$Id$" );
 
@@ -434,4 +432,55 @@ void XLALClusterSnglBurstTable (
 				}
 			}
 	} while(did_cluster);
+}
+
+
+/*
+ * Create and destroy a SimBurst structure.
+ */
+
+
+SimBurst *XLALCreateSimBurst(void)
+{
+	static const char func[] = "XLALCreateSimBurst";
+	SimBurst *new = XLALMalloc(sizeof(*new));
+
+	if(!new)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+
+	new->next = NULL;
+	new->process_id = new->simulation_id = 0;
+	memset(new->waveform, 0, sizeof(new->waveform));
+	new->ra = XLAL_REAL8_FAIL_NAN;
+	new->dec = XLAL_REAL8_FAIL_NAN;
+	new->psi = XLAL_REAL8_FAIL_NAN;
+	XLALGPSSet(&new->time_geocent_gps, 0, 0);
+	new->time_geocent_gmst = XLAL_REAL8_FAIL_NAN;
+	new->duration = XLAL_REAL8_FAIL_NAN;
+	new->frequency = XLAL_REAL8_FAIL_NAN;
+	new->bandwidth = XLAL_REAL8_FAIL_NAN;
+	new->q = XLAL_REAL8_FAIL_NAN;
+	new->pol_ellipse_angle = XLAL_REAL8_FAIL_NAN;
+	new->pol_ellipse_e= XLAL_REAL8_FAIL_NAN;
+	new->amplitude = XLAL_REAL8_FAIL_NAN;
+	new->hrss = XLAL_REAL8_FAIL_NAN;
+	new->egw_over_rsquared = XLAL_REAL8_FAIL_NAN;
+	new->waveform_number = 0;
+
+	return new;
+}
+
+
+void XLALDestroySimBurst(SimBurst *sim_burst)
+{
+	XLALFree(sim_burst);
+}
+
+
+void XLALSimBurstAssignIDs(SimBurst *sim_burst)
+{
+	long id;
+
+	for(id = 0; sim_burst; sim_burst = sim_burst->next)
+		sim_burst->simulation_id = id++;
 }

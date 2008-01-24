@@ -1179,6 +1179,7 @@ XLALMultiSimInspiralTest (
  *
  */
 
+
 void
 XLALFreeSnglBurst(
 	SnglBurstTable *event
@@ -1255,6 +1256,10 @@ XLALClusterSnglBurstTable(
 	int (*testfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *),
 	void (*clusterfunc)(SnglBurstTable *, const SnglBurstTable *)
 );
+
+SimBurst *XLALCreateSimBurst(void);
+void XLALDestroySimBurst(SimBurst *);
+void XLALSimBurstAssignIDs(SimBurst *);
 
 
 /*

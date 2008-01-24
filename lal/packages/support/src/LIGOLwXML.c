@@ -44,6 +44,7 @@ $Id$
 #include <lal/LALVersion.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
+#include <lal/XLALError.h>
 
 #ifdef fputs
 #	undef fputs
@@ -273,9 +274,6 @@ LALBeginLIGOLwXMLTable (
       break;
     case sim_inspiral_table:
       myfprintf( xml->fp, LIGOLW_XML_SIM_INSPIRAL );
-      break;
-    case sim_burst_table:
-      myfprintf( xml->fp, LIGOLW_XML_SIM_BURST );
       break;
     case sim_ringdown_table:
       myfprintf( xml->fp, LIGOLW_XML_SIM_RINGDOWN );
@@ -762,39 +760,6 @@ LALWriteLIGOLwXMLTable (
         }
       }
       break;
-    case sim_burst_table:
-      {
-        while( tablePtr.simBurstTable )
-        {
-          FIRST_TABLE_ROW
-            fprintf( xml->fp, SIM_BURST_ROW,
-                tablePtr.simBurstTable->waveform,
-                tablePtr.simBurstTable->geocent_peak_time.gpsSeconds,
-                tablePtr.simBurstTable->geocent_peak_time.gpsNanoSeconds,
-                tablePtr.simBurstTable->h_peak_time.gpsSeconds,
-                tablePtr.simBurstTable->h_peak_time.gpsNanoSeconds,
-                tablePtr.simBurstTable->l_peak_time.gpsSeconds,
-                tablePtr.simBurstTable->l_peak_time.gpsNanoSeconds,
-                tablePtr.simBurstTable->peak_time_gmst,
-                tablePtr.simBurstTable->dtminus,
-                tablePtr.simBurstTable->dtplus,
-                tablePtr.simBurstTable->longitude,
-                tablePtr.simBurstTable->latitude,
-                tablePtr.simBurstTable->coordinates,
-                tablePtr.simBurstTable->polarization,
-                tablePtr.simBurstTable->hrss,
-                tablePtr.simBurstTable->hpeak,
-                tablePtr.simBurstTable->distance,
-                tablePtr.simBurstTable->freq,
-                tablePtr.simBurstTable->tau,
-                tablePtr.simBurstTable->zm_number,
-                xml->rowCount
-                  );
-          tablePtr.simBurstTable = tablePtr.simBurstTable->next;
-          ++(xml->rowCount);
-        }
-      }
-      break;
     case sim_ringdown_table:
       {
         while( tablePtr.simRingdownTable )
@@ -980,3 +945,83 @@ LALWriteLIGOLwXMLTable (
 }
 
 #undef FIRST_TABLE_ROW /* undefine first table row macro */
+
+
+int XLALWriteLIGOLwXMLSimBurstTable(
+	LIGOLwXMLStream *xml,
+	const SimBurst *sim_burst
+)
+{
+	static const char func[] = "XLALWriteLIGOLwXMLSimBurstTable";
+	const char *row_head = "\n\t\t\t";
+
+	if(xml->table != no_table) {
+		XLALPrintError("a table is still open");
+		XLAL_ERROR(func, XLAL_EFAILED);
+	}
+
+	/* table header */
+
+	XLALClearErrno();
+	XLALFilePuts("\t<Table Name=\"sim_burst:table\">\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:process_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:waveform\" Type=\"lstring\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:ra\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:dec\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:psi\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:time_geocent_gps\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:time_geocent_gps_ns\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:time_geocent_gmst\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:duration\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:frequency\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:bandwidth\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:q\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:pol_ellipse_angle\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:pol_ellipse_e\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:amplitude\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:hrss\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:egw_over_rsquared\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:waveform_number\" Type=\"int_8u\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:simulation_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Stream Name=\"sim_burst:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
+	if(XLALGetBaseErrno())
+		XLAL_ERROR(func, XLAL_EFUNC);
+
+	/* rows */
+
+	for(; sim_burst; sim_burst = sim_burst->next) {
+		if(XLALFilePrintf(xml->fp, "%s\"process:process_id:%ld\",\"%s\",%.16g,%.16g,%.16g,%d,%d,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%lu,\"sim_burst:simulation_id:%ld\"",
+			row_head,
+			sim_burst->process_id,
+			sim_burst->waveform,
+			sim_burst->ra,
+			sim_burst->dec,
+			sim_burst->psi,
+			sim_burst->time_geocent_gps.gpsSeconds,
+			sim_burst->time_geocent_gps.gpsNanoSeconds,
+			sim_burst->time_geocent_gmst,
+			sim_burst->duration,
+			sim_burst->frequency,
+			sim_burst->bandwidth,
+			sim_burst->q,
+			sim_burst->pol_ellipse_angle,
+			sim_burst->pol_ellipse_e,
+			sim_burst->amplitude,
+			sim_burst->hrss,
+			sim_burst->egw_over_rsquared,
+			sim_burst->waveform_number,
+			sim_burst->simulation_id
+		) < 0)
+			XLAL_ERROR(func, XLAL_EFUNC);
+		row_head = ",\n\t\t\t";
+	}
+
+	/* table footer */
+
+	if(XLALFilePuts("\n\t\t</Stream>\n\t</Table>\n", xml->fp) < 0)
+		XLAL_ERROR(func, XLAL_EFUNC);
+
+	/* done */
+
+	return 0;
+}

@@ -136,7 +136,6 @@ typedef enum
   sngl_transdata_table,
   multi_inspiral_table,
   sim_inspiral_table,
-  sim_burst_table,
   sim_ringdown_table,
   summ_value_table,
   sim_inst_params_table,
@@ -206,14 +205,12 @@ tagEventIDColumn
   UINT8  id;
   CHAR   textId[LIGOMETA_UNIQUE_MAX];
   UCHAR  dbUniqueId[LIGOMETA_DBUNIQUE_MAX];
-  struct tagSnglBurstTable      *snglBurstTable;
   struct tagSnglInspiralTable   *snglInspiralTable;
   struct tagSnglRingdownTable   *snglRingdownTable;
   struct tagSummValueTable      *summValueTable;
   struct tagMultiInspiralTable  *multiInspiralTable;
   struct tagSnglTransdataTable  *snglTransdataTable;
   struct tagSimInspiralTable    *simInspiralTable;
-  struct tagSimBurstTable       *simBurstTable;
   struct tagSimRingdownTable    *simRingdownTable;
   struct tagCoincInspiralTable  *coincInspiralTable;
   struct tagCoincRingdownTable  *coincRingdownTable;
@@ -660,7 +657,7 @@ it contains a pointer to an associated \texttt{SimInspiral}.  This table is
 meant to provide a simple way to manipulate coincident triggers.
 
 
-\subsubsection*{Type \texttt{SimBurstTable}}
+\subsubsection*{Type \texttt{SimBurst}}
 
 </lalLaTeX>
 #endif
@@ -668,28 +665,28 @@ meant to provide a simple way to manipulate coincident triggers.
 
 /* <lalVerbatim> */
 typedef struct
-tagSimBurstTable
+tagSimBurst
 {
-  struct tagSimBurstTable *next;
-  CHAR             waveform[LIGOMETA_WAVEFORM_MAX];
-  LIGOTimeGPS      geocent_peak_time;
-  LIGOTimeGPS      h_peak_time;
-  LIGOTimeGPS      l_peak_time;
-  REAL8            peak_time_gmst;
-  REAL4            dtminus;
-  REAL4            dtplus;
-  REAL4            longitude;
-  REAL4            latitude;
-  CHAR             coordinates[LIGOMETA_COORDINATES_MAX];
-  REAL4            polarization;
-  REAL4            hrss;
-  REAL4            hpeak;
-  REAL4            distance;
-  REAL4            freq;
-  REAL4            tau;
-  INT4             zm_number;
-}
-SimBurstTable;
+	struct tagSimBurst *next;
+	long process_id;
+	char waveform[LIGOMETA_WAVEFORM_MAX];
+	REAL8 ra;
+	REAL8 dec;
+	REAL8 psi;
+	LIGOTimeGPS time_geocent_gps;
+	REAL8 time_geocent_gmst;
+	REAL8 duration;
+	REAL8 frequency;
+	REAL8 bandwidth;
+	REAL8 q;
+	REAL8 pol_ellipse_angle;
+	REAL8 pol_ellipse_e;
+	REAL8 amplitude;
+	REAL8 hrss;
+	REAL8 egw_over_rsquared;
+	unsigned long waveform_number;
+	long simulation_id;
+} SimBurst;
 /* </lalVerbatim> */
 #if 0
 <lalLaTeX>
@@ -1040,7 +1037,7 @@ tagMetadataTable
   SnglRingdownTable     *snglRingdownTable;
   MultiInspiralTable    *multiInspiralTable;
   SimInspiralTable      *simInspiralTable;
-  SimBurstTable         *simBurstTable;
+  SimBurst              *simBurst;
   SimRingdownTable      *simRingdownTable;
   SnglTransdataTable    *snglTransdataTable;
   SummValueTable        *summValueTable;

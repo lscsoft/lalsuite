@@ -56,14 +56,14 @@ Routines to create a directory of a LIGO LW XML file.
 
 \subsubsection*{Description}
 
-The routine \verb+LALCreateMetaTableDir+ constructs a \verb+MetaTableDirectory+
-for a given LIGOLwXML table.  It determines the location of each column expected
-to be present in the XML table and populates the \verb+pos+ field with this
-information.  This then allows other routines to parse the contents of an XML
-file and correctly interpret the entries.  Currently, this has been implemented
-only for the \verb+sngl_burst+ and \verb+sim_burst+ tables.  When reading these
-tables, a call is made to \verb+LALCreateMetaTableDir+.  For all other tables,
-the directory is constructed internally by the reading code.
+The routine \verb+LALCreateMetaTableDir+ constructs a
+\verb+MetaTableDirectory+ for a given LIGOLwXML table.  It determines the
+location of each column expected to be present in the XML table and
+populates the \verb+pos+ field with this information.  This then allows
+other routines to parse the contents of an XML file and correctly interpret
+the entries.  When reading these tables, a call is made to
+\verb+LALCreateMetaTableDir+.  For all other tables, the directory is
+constructed internally by the reading code.
 
 \subsubsection*{Algorithm}
 
@@ -318,47 +318,6 @@ MetaTableDirectory* XLALCreateMetaTableDir(
           "unable to index type sim_inspiral_table\n" );
       XLAL_ERROR_NULL( func, XLAL_EINVAL );
       break;
-    case sim_burst_table:
-      {
-        MetaTableDirectory tmpTableDir[] =
-        {
-          {"waveform",                     -1, 0},
-          {"geocent_peak_time",            -1, 1},
-          {"geocent_peak_time_ns",         -1, 2},
-          {"h_peak_time",                  -1, 3},
-          {"h_peak_time_ns",               -1, 4},
-          {"l_peak_time",                  -1, 5},
-          {"l_peak_time_ns",               -1, 6},
-          {"peak_time_gmst",               -1, 7},
-          {"dtplus",                       -1, 8},
-          {"dtminus",                      -1, 9},
-          {"longitude",                    -1, 10},
-          {"latitude",                     -1, 11},
-          {"coordinates",                  -1, 12},
-          {"polarization",                 -1, 13},
-          {"hrss",                         -1, 14},
-          {"hpeak",                        -1, 15},
-          {"freq",                         -1, 16},
-          {"tau",                          -1, 17},
-          {"zm_number",                    -1, 18},
-          {NULL,                            0, 0}
-        };
-        for ( i=0 ; tmpTableDir[i].name; ++i )
-        {
-          if ( (tmpTableDir[i].pos = 
-                MetaioFindColumn( env, tmpTableDir[i].name )) < 0 )
-          {
-            XLALPrintError( "XLALError - unable to find column %s\n", 
-                tmpTableDir[i].name );
-            XLAL_ERROR_NULL( func, XLAL_EFAILED );
-          }
-        }
-
-        tableDir = (MetaTableDirectory *) LALMalloc( (i+1) * 
-            sizeof(MetaTableDirectory)) ;
-        memcpy(tableDir, tmpTableDir, (i+1)*sizeof(MetaTableDirectory) );
-      }
-      break;
     case sim_ringdown_table:
       {
         MetaTableDirectory tmpTableDir[] =
@@ -500,48 +459,6 @@ LALCreateMetaTableDir(
       break;
     case sim_inspiral_table:
       ABORT( status, LIGOLWXMLREADH_EMTAB, LIGOLWXMLREADH_MSGEMTAB );
-      break;
-    case sim_burst_table:
-      {
-        MetaTableDirectory tmpTableDir[] =
-        {
-          {"waveform",                     -1, 0},
-          {"geocent_peak_time",            -1, 1},
-          {"geocent_peak_time_ns",         -1, 2},
-          {"h_peak_time",                  -1, 3},
-          {"h_peak_time_ns",               -1, 4},
-          {"l_peak_time",                  -1, 5},
-          {"l_peak_time_ns",               -1, 6},
-          {"peak_time_gmst",               -1, 7},
-          {"dtplus",                       -1, 8},
-          {"dtminus",                      -1, 9},
-          {"longitude",                    -1, 10},
-          {"latitude",                     -1, 11},
-          {"coordinates",                  -1, 12},
-          {"polarization",                 -1, 13},
-          {"hrss",                         -1, 14},
-          {"hpeak",                        -1, 15},
-          {"distance",                     -1, 16},
-          {"freq",                         -1, 17},
-          {"tau",                          -1, 18},
-          {"zm_number",                    -1, 19},
-          {NULL,                            0, 0}
-        };
-        for ( i=0 ; tmpTableDir[i].name; ++i )
-        {
-          if ( (tmpTableDir[i].pos = 
-                MetaioFindColumn( env, tmpTableDir[i].name )) < 0 )
-          {
-            fprintf( stderr, "unable to find column %s\n", 
-                tmpTableDir[i].name );
-            ABORT(status,LIGOLWXMLREADH_ENCOL,LIGOLWXMLREADH_MSGENCOL);
-          }
-        }
-
-        *tableDir = (MetaTableDirectory *) LALMalloc( (i+1) * 
-            sizeof(MetaTableDirectory)) ;
-        memcpy(*tableDir, tmpTableDir, (i+1)*sizeof(MetaTableDirectory) );
-      }
       break;
     case summ_value_table:
       ABORT( status, LIGOLWXMLREADH_EMTAB, LIGOLWXMLREADH_MSGEMTAB );

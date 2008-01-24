@@ -179,14 +179,12 @@ LALSnglBurstTableFromLIGOLw (
     CHAR               *fileName
     );
 
-void
-LALSimBurstTableFromLIGOLw (
-    LALStatus         *status,
-    SimBurstTable    **eventHead,
-    const CHAR        *fileName,
-    INT4               startTime,
-    INT4               stopTime
-    );
+SimBurst *
+XLALSimBurstTableFromLIGOLw (
+    const CHAR *filename,
+    const LIGOTimeGPS *start,
+    const LIGOTimeGPS *end
+);
 
 int
 LALSnglInspiralTableFromLIGOLw (
