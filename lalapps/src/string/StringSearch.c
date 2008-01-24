@@ -63,6 +63,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/PrintFTSeries.h>
 #include <lal/Random.h>
 #include <lal/Date.h>
+#include <lal/Units.h>
 
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
@@ -323,6 +324,8 @@ int WindowData(void)
 
   /* FIXME: Here I need to add a check to make sure the Tukey window 
      does not eat past the pad. Need to add CLA to function args */
+  /* FIXME:  if this is a Tukey window, use LAL's window code to generate
+   * it */
 
   LALDCreateVector(&status,&window,GV.ht.data->length);
   TESTSTATUS( &status );
@@ -357,45 +360,41 @@ int WindowData(void)
 
 int AddInjections(struct CommandLineArgsTag CLA)
 {
+  REAL8TimeSeries *injections;
+  LIGOTimeGPS startTime = GV.ht.epoch;
+  LIGOTimeGPS stopTime = GV.ht.epoch;
+  SimBurst *sim_burst;
+  unsigned p;
 
-  INT4 startTime = GV.ht.epoch.gpsSeconds+CLA.ShortSegDuration/4+CLA.pad;
-  INT4 stopTime = startTime + GV.ht_proc.data->length * GV.ht_proc.deltaT-CLA.ShortSegDuration/4-CLA.pad;
-  SimBurstTable *injections = NULL;
-  int i,p;
-  INT4 calType=0;
-
-  COMPLEX8 one = {1.0, 0.0};
-  COMPLEX8FrequencySeries *response = NULL;
-  const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
+  XLALGPSAdd(&startTime, CLA.ShortSegDuration / 4 + CLA.pad);
+  XLALGPSAdd(&stopTime, GV.ht_proc.data->length * GV.ht_proc.deltaT - CLA.ShortSegDuration / 4 - CLA.pad);
 
   /* Get info from injection file */
-  LALSimBurstTableFromLIGOLw(&status, &injections, CLA.InjectionFile, startTime, stopTime);
+  sim_burst = XLALSimBurstTableFromLIGOLw(CLA.InjectionFile, &startTime, &stopTime);
 
-  /* make the response function */
-  LALCreateCOMPLEX8FrequencySeries(&status, &response, CLA.ChannelName, GV.ht_proc.epoch, 0.0, 
-				   1.0 / (GV.ht_proc.data->length * GV.ht_proc.deltaT), 
-				   strainPerCount, GV.ht_proc.data->length / 2 + 1);
-  
-  for(i = 0; i < (int)response->data->length; i++)
-			response->data->data[i] = one;
+  /* new injection code is double precision, so we need to create a
+   * buffer to put the injections in and then quantize to single precision
+   * for the string code */
+  injections = XLALCreateREAL8TimeSeries(GV.ht_proc.name, &GV.ht_proc.epoch, GV.ht_proc.f0, GV.ht_proc.deltaT, &GV.ht_proc.sampleUnits, GV.ht_proc.data->length);
+  memset(injections->data->data, 0, injections->data->length * sizeof(*injections->data->data));
 
   /* Inject the signals into ht_proc; ht_proc has been set to zero 
      so I can print out injecitons */
-  LALBurstInjectSignals(&status, &GV.ht_proc, injections, response, calType); 
-  LALDestroyCOMPLEX8FrequencySeries(&status, response);
+  XLALBurstInjectSignals(injections, sim_burst, NULL);
+  for(p = 0; p < GV.ht_proc.data->length; p++)
+    GV.ht_proc.data->data[p] += injections->data->data[p];
+  XLALDestroyREAL8TimeSeries(injections);
 
   /* free the injection table */
-  while(injections) {
-    SimBurstTable *thisEvent = injections;
-    injections = injections->next;
-    LALFree(thisEvent);
+  while(sim_burst) {
+    SimBurst *next = sim_burst->next;
+    XLALDestroySimBurst(sim_burst);
+    sim_burst = next;
   }
 
   /* add injections into the data */
-  for (p=0; p<(int)GV.ht.data->length; p++)  
-    {
-      GV.ht.data->data[p] += GV.ht_proc.data->data[p]; 
-    } 
+  for(p = 0; p < GV.ht.data->length; p++)  
+    GV.ht.data->data[p] += GV.ht_proc.data->data[p];
 
   return 0;
 }
@@ -1017,7 +1016,7 @@ int ReadData(struct CommandLineArgsTag CLA)
   strncpy(GV.ht_proc.name, GV.ht.name, LALNameLength);
   GV.ht_proc.deltaT=GV.ht.deltaT;
   GV.ht_proc.epoch=GV.ht.epoch;
-  GV.ht_proc.sampleUnits=GV.ht.sampleUnits;
+  GV.ht_proc.sampleUnits=GV.ht.sampleUnits=lalStrainUnit;
 
   LALFrClose(&status,&framestream);
   TESTSTATUS( &status );

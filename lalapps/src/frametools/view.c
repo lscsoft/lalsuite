@@ -446,13 +446,13 @@ int inspinj( REAL4TimeSeries *series, const char *inspinjfile, const char *calfi
 
 int burstinj( REAL4TimeSeries *series, const char *burstinjfile, const char *calfile )
 {
-	static LALStatus status;
-	SimBurstTable *injections = NULL;
+	SimBurst *sim_burst;
+	REAL8TimeSeries *injections;
 	COMPLEX8FrequencySeries *response;
-	REAL4TimeSeries keep;
 	REAL8 deltaF;
-	int tbeg;
-	int tend;
+	LIGOTimeGPS tbeg = series->epoch;
+	LIGOTimeGPS tend = series->epoch;
+	unsigned i;
 
 	if ( ! burstinjfile )
 		return 0;
@@ -461,10 +461,10 @@ int burstinj( REAL4TimeSeries *series, const char *burstinjfile, const char *cal
 		return 0;
 	}
 
-	tbeg = series->epoch.gpsSeconds;
-	tend = tbeg + ceil( series->deltaT * series->data->length );
-	LALSimBurstTableFromLIGOLw( &status, &injections, burstinjfile, tbeg, tend );
-	if ( status.statusCode ) {
+	XLALGPSAdd(&tend, series->deltaT * series->data->length);
+
+	sim_burst = XLALSimBurstTableFromLIGOLw( burstinjfile, &tbeg, &tend );
+	if ( !sim_burst ) {
 		fprintf( stderr, "error: could not read file %s\n", burstinjfile );
 		exit( 1 );
 	}
@@ -473,18 +473,21 @@ int burstinj( REAL4TimeSeries *series, const char *burstinjfile, const char *cal
 
 	deltaF = 1.0 / ( series->deltaT * series->data->length );
 	response = getresp( calfile, series->name, &series->epoch, deltaF, series->data->length, 1.0 );
-	keep = *series;
-	LALBurstInjectSignals( &status, series, injections, response, 0 );
-	*series = keep;
-	if ( status.statusCode ) {
+
+	injections = XLALCreateREAL8TimeSeries(series->name, &series->epoch, series->f0, series->deltaT, &series->sampleUnits, series->data->length);
+	/* FIXME:  new injection code requires double precision respose */
+	if(XLALBurstInjectSignals( injections, sim_burst, /*response*/ NULL )) {
 		fprintf( stderr, "error: signal injection failed\n" );
 		exit( 1 );
 	}
+	for(i = 0; i < series->data->length; i++)
+		series->data->data[i] += injections->data->data[i];
+	XLALDestroyREAL8TimeSeries(injections);
 
-	while ( injections ) {
-		SimBurstTable *thisInjection = injections;
-		injections = injections->next;
-		LALFree( thisInjection );
+	while ( sim_burst ) {
+		SimBurst *next = sim_burst->next;
+		XLALDestroySimBurst( sim_burst );
+		sim_burst = next;
 	}
 	XLALDestroyCOMPLEX8FrequencySeries( response );
 

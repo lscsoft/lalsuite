@@ -1007,6 +1007,9 @@ static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *c
 		series = XLALFrReadREAL8TimeSeries(stream, chname, &start, duration, lengthlimit);
 		if(!series)
 			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		/* FIXME:  ARGH!!!  frame files cannot be trusted to
+		 * provide units for their contents!  */
+		series->sampleUnits = lalStrainUnit;
 	} else {
 		/* read data as single-precision, and convert to double */
 		REAL4TimeSeries *tmp = XLALFrReadREAL4TimeSeries(stream, chname, &start, duration, lengthlimit);
@@ -1021,6 +1024,9 @@ static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *c
 		for(i = 0; i < tmp->data->length; i++)
 			series->data->data[i] = tmp->data->data[i];
 		XLALDestroyREAL4TimeSeries(tmp);
+		/* FIXME:  ARGH!!!  frame files cannot be trusted to
+		 * provide units for their contents!  */
+		series->sampleUnits = lalADCCountUnit;
 	}
 
 	/*
@@ -1146,54 +1152,44 @@ static COMPLEX8FrequencySeries *generate_response(const char *cachefile, const c
  */
 
 
-/*
- * LAL can only generate single-precision injections so we have to do the
- * injections into a temporary array of zeros, and then add it into the
- * double-precision time series
- */
-
-
-static REAL8TimeSeries *add_burst_injections(LALStatus *stat, char *filename, REAL8TimeSeries *series, COMPLEX8FrequencySeries *response)
+static int add_burst_injections(REAL8TimeSeries *h, const char *filename)
 {
 	static const char func[] = "add_burst_injections";
-	const INT4 start_time = series->epoch.gpsSeconds;
-	const INT4 stop_time = start_time + series->data->length * series->deltaT;
-	const INT4 calType = 0;
-	REAL4TimeSeries *zeroes = XLALCreateREAL4TimeSeries(series->name, &series->epoch, series->f0, series->deltaT, &series->sampleUnits, series->data->length);
-	SimBurstTable *injections = NULL;
-	unsigned i;
+	/* hard-coded speed hack.  only injections whose "times" are within
+	 * this many seconds of the time series will be loaded */
+	const double longest_injection = 600.0;
+	LIGOTimeGPS start = h->epoch;
+	LIGOTimeGPS end = h->epoch;
+	SimBurst *sim_burst;
 
-	if(!zeroes)
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
-	memset(zeroes->data->data, 0, zeroes->data->length * sizeof(*zeroes->data->data));
-
-	if(!response) {
-		XLALDestroyREAL4TimeSeries(zeroes);
-		XLALPrintError("add_burst_injections(): must supply calibration information for injections\n");
-		exit(1);
-	}
+	XLALGPSAdd(&start, -longest_injection);
+	XLALGPSAdd(&end, h->data->length * h->deltaT + longest_injection);
 
 	XLALPrintInfo("add_burst_injections(): reading sim_burst table from %s\n", filename);
 
-	LAL_CALL(LALSimBurstTableFromLIGOLw(stat, &injections, filename, start_time, stop_time), stat);
+	sim_burst = XLALSimBurstTableFromLIGOLw(filename, &start, &end);
+	if(!sim_burst)
+		XLAL_ERROR(func, XLAL_EFUNC);
 
 	XLALPrintInfo("add_burst_injections(): computing injections, and adding to input time series\n");
-
-	LAL_CALL(LALBurstInjectSignals(stat, zeroes, injections, response, calType), stat);
-
-	while(injections) {
-		SimBurstTable *thisEvent = injections;
-		injections = injections->next;
-		XLALFree(thisEvent);
+	if(XLALBurstInjectSignals(h, sim_burst, NULL)) {
+		while(sim_burst) {
+			SimBurst *next = sim_burst->next;
+			XLALDestroySimBurst(sim_burst);
+			sim_burst = next;
+		}
+		XLAL_ERROR(func, XLAL_EFUNC);
 	}
-
-	for(i = 0; i < series->data->length; i++)
-		series->data->data[i] += zeroes->data->data[i];
-	XLALDestroyREAL4TimeSeries(zeroes);
 
 	XLALPrintInfo("add_burst_injections(): done\n");
 
-	return series;
+	while(sim_burst) {
+		SimBurst *next = sim_burst->next;
+		XLALDestroySimBurst(sim_burst);
+		sim_burst = next;
+	}
+
+	return 0;
 }
 
 
@@ -1572,7 +1568,8 @@ int main(int argc, char *argv[])
 
 			/* perform injections */
 			if(options->sim_burst_filename)
-				add_burst_injections(&stat, options->sim_burst_filename, series, response);
+				if(add_burst_injections(series, options->sim_burst_filename))
+					exit(1);
 			if(options->sim_inspiral_filename)
 				add_inspiral_injections(&stat, options->sim_inspiral_filename, series, response);
 

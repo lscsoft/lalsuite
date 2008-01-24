@@ -1526,10 +1526,10 @@ and time-limited white noise burst waveform.  The injection generator
 produces both \(h_{+}\) and \(h_{\times}\) waveforms.  These are
 independent waveforms constructed by simply applying the time series
 construction algorithm twice.  The injection code uses a time series whose
-length is \(10 \Delta t\) rounded to the nearest odd integer,
+length is \(30 \Delta t\) rounded to the nearest odd integer,
 \begin{equation}
 L
-   = 2 \left\lfloor \frac{1}{2} \frac{10 \Delta t}{\delta t} \right\rfloor
+   = 2 \left\lfloor \frac{1}{2} \frac{30 \Delta t}{\delta t} \right\rfloor
    + 1
 \end{equation}
 where \(\delta t\) is the sample period of the time series.  The middle
@@ -1688,29 +1688,22 @@ E
 \prog{lalapps\_binj} --- produces burst injection data files.
 
 \item[Synopsis]
-\prog{lalapps\_binj} \newline \hspace*{0.5in}
-[\option{--help}] \newline \hspace*{0.5in}
-\option{--gps-start-time}~\parm{tstart} \newline \hspace*{0.5in}
-\option{--gps-end-time}~\parm{tend} \newline \hspace*{0.5in}
-[\option{--time-step}~\parm{tstep}] \newline \hspace*{0.5in}
-[\option{--seed}~\parm{seed}] \newline \hspace*{0.5in}
-[\option{--waveform}~\parm{wave}] \newline \hspace*{0.5in}
-[\option{--population}~\parm{name}] \newline \hspace*{0.5in}
-[\option{--freq-dist}~\parm{name}] \newline \hspace*{0.5in}
-[\option{--flow}~\parm{flow}] \newline \hspace*{0.5in}
-[\option{--fhigh}~\parm{fhigh}] \newline \hspace*{0.5in}
-[\option{--deltaf}~\parm{deltaf}] \newline \hspace*{0.5in}
-[\option{--quality}~\parm{quality}] \newline \hspace*{0.5in}
-[\option{--tau}~\parm{tau}] \newline \hspace*{0.5in}
-[\option{--strain-dist}~\parm{name}] \newline \hspace*{0.5in}
-[\option{--strain-scale-min}~\parm{value}] \newline \hspace*{0.5in}
-[\option{--strain-scale-max}~\parm{value}] \newline \hspace*{0.5in}
-[\option{--max-distance}~\parm{max-distance}] \newline \hspace*{0.5in}
-[\option{--min-distance}~\parm{min-distance}] \newline \hspace*{0.5in}
-[\option{--simwaveform-duration}~\parm{simwaveform-duration}] \newline \hspace*{0.5in}
-[\option{--simwaveform-min-number}~\parm{simwaveform-min-number}] \newline \hspace*{0.5in}
-[\option{--simwaveform-max-number}~\parm{simwaveform-max-number}] \newline \hspace*{0.5in}
-[\option{--usertag}~\parm{tag}]
+\prog{lalapps\_binj} [\option{--help}]
+\option{--gps-start-time}~\parm{seconds}
+\option{--gps-end-time}~\parm{seconds} [\option{--time-step}~\parm{value}]
+[\option{--seed}~\parm{seed}] [\option{--waveform}~\parm{name}]
+[\option{--population}~\parm{name}] [\option{--freq-dist}~\parm{name}]
+[\option{--flow}~\parm{Hertz}] [\option{--fhigh}~\parm{Hertz}]
+[\option{--deltaf}~\parm{Hertz}] [\option{--quality}~\parm{value}]
+[\option{--strain-dist}~\parm{name}]
+[\option{--strain-scale-min}~\parm{value}]
+[\option{--strain-scale-max}~\parm{value}]
+[\option{--max-distance}~\parm{value}]
+[\option{--min-distance}~\parm{value}]
+[\option{--simwaveform-duration}~\parm{seconds}]
+[\option{--waveform\_number-min}~\parm{value}]
+[\option{--waveform\_number-max}~\parm{value}]
+[\option{--usertag}~\parm{string}]
 
 \item[Description] 
 \prog{lalapps\_binj} generates a number of burst parameters suitable for
@@ -1777,21 +1770,51 @@ If a \option{--user-tag} is not specified on the command line, the
 
 \item[Options]\leavevmode
 \begin{entry}
-\item[\option{--help}] Print a help message.
+\item[\option{--deltaf} \parm{Hertz}]
+Optional.  The linear spacing between frequencies used to make
+injections.  Default value is \(\unit{0}{\hertz}\).
 
-\item[\option{--gps-start-time} \parm{tstart}]
-Required.  Start time of the injection data to be created.
+\item[\option{--fhigh} \parm{Hertz}]
+Optional.  Only generate injections with frequencies below \parm{fhigh}.
+Default value is \(\unit{2000}{\hertz}\).
 
-\item[\option{--gps-end-time} \parm{tend}]
+\item[\option{--flow} \parm{Hertz}]
+Optional.  The code can generate injections at multiple frequencies.  This
+option sets the first frequency used in that case.  Default value is
+\(\unit{70}{\hertz}\).
+
+\item[\option{--freq-dist} \parm{name}]
+Optional.  If not doing string injections (by setting
+\option{--waveform=StringCusp}), use this to select a frequency
+distribution.  Allowed values are \option{monoarithmetic} for a
+monotonically increasing arithmetic progression, \option{monogeometric} for
+a monotonically increasing geometric progression, or \option{randgeometric}
+for a sequence of logarithmically-distributed random frequencies.
+\emph{Note}:  the \option{randgeometric} sequence is a variant of the
+\option{monogeometric} sequence with each injection displaced from the
+nominal frequency by a random amount.  To avoid biasing the noise estimate
+by having two injections occur at nearly the same frequency, a larger
+\option{--fratio} should be used with this sequence.
+
+\item[\option{--gps-end-time} \parm{seconds}]
 Required.  End time of the injection data to be created.
 
-\item[\option{--time-step} \parm{tstep}]
-Optional. Sets the time step interval between injections. The injections
-will occour at \parm{tstep}$/\pi$ second intervals. Defaults to $2630/\pi$.
+\item[\option{--gps-start-time} \parm{seconds}]
+Required.  Start time of the injection data to be created.
 
-\item[\option{--seed} \parm{seed}]
-Optional. Seed the random number generator with the integer \parm{seed}.
-Defaults to $1$.
+\item[\option{--help}] Print a help message.
+
+\item[\option{--max-distance} \parm{value}]
+Optional.  This is used when one wants to inject simulated
+Inspiral+Burst+Ringdown waveforms.  This specifies the maximum distance in
+Kpc that a source can be placed at.  This should be used with the
+\option{--min-distance}.
+
+\item[\option{--min-distance} \parm{value}]
+Optional.  This is used when one wants to inject simulated
+Inspiral+Burst+Ringdown waveforms.  This specifies the minimum distance in
+Kpc that a source can be placed at.  This should be used with the
+\option{--max-distance}.
 
 \item[\option{--population} \parm{name}]
 The population of injections to synthesize.  Select one of:
@@ -1807,108 +1830,60 @@ from directly above each observatory and optimially-oriented for each
 shell centred on the geocenter, with optimal polarization at each
 observatory).
 
-\item[\option{--freq-dist} \parm{name}]
-Optional.  If not doing string injections (by setting
-\option{--waveform=StringCusp}), use this to select a frequency
-distribution.  Allowed values are \option{monoarithmetic} for a
-monotonically increasing arithmetic progression, \option{monogeometric} for
-a monotonically increasing geometric progression, or \option{randgeometric}
-for a sequence of logarithmically-distributed random frequencies.
-\emph{Note}:  the \option{randgeometric} sequence is a variant of the
-\option{monogeometric} sequence with each injection displaced from the
-nominal frequency by a random amount.  To avoid biasing the noise estimate
-by having two injections occur at nearly the same frequency, a larger
-\option{--fratio} should be used with this sequence.
+\item[\option{--quality} \parm{value}]
+Optional.  The quality factor for sine-Gaussian, Gaussian, ring-down and
+ring-up waveforms.
 
-\item[\option{--flow} \parm{flow}]
-Optional.  The code can generate injections at multiple frequencies.  This
-option sets the first frequency used in that case.  Default value is 150
-Hz.
+\item[\option{--seed} \parm{value}]
+Optional. Seed the random number generator with the integer \parm{value}.
+Defaults to 1.
 
-\item[\option{--fhigh} \parm{fhigh}]
-Optional.  Only generate injections with frequencies below \parm{fhigh}.
-Default value is 1000 Hz.
-
-\item[\option{--deltaf} \parm{deltaf}]
-Optional.  The linear spacing between frequencies used to make
-injections.  Default value is 0 Hz.
-
-\item[\option{--waveform} \parm{wave}]
-Optional.  Default is \texttt{SineGaussian}.   The string \parm{wave} will
-be written into the \texttt{waveform} column of the \texttt{sim\_burst}
-table output. This is used by the burst code to determine which type of
-waveforms it should inject into the data.  Types implemented in LAL inject
-package are:
-\begin{description}
-\item[\texttt{SineGaussian}]  Inject a sine-Gaussian waveform defined by
-\begin{eqnarray}
-A_+(t) &=& h_0 \exp[ - (t-t_0)^2/ \tau^2 ] \sin[ 2 \pi f_0 (t-t_0)] \\
-A_\times(t) &=& 0
-\end{eqnarray}
-
-\item[\texttt{CosGaussian}]  Inject a cos-Gaussian waveform defined by
-\begin{eqnarray}
-A_+(t) &=& h_0 \exp[ - (t-t_0)^2/ \tau^2 ] \cos[ 2 \pi f_0 (t-t_0)] \\
-A_\times(t) &=& 0
-\end{eqnarray}
-\end{description}
-
-\item[\option{--tau} \parm{tau}]
-Optional.  The decay-time $\tau$ for sine-gaussian,  gaussian,  ringdown
-and ring-up waveforms.
-
-\item[\option{--quality} \parm{quality}]
-Optional.  The quality factor for sine-gaussian,  gaussian,  ringdown and
-ring-up waveforms.    This option overrides the decay-time \parm{tau} and
-recalculates the duration for each waveform using the formula
-$$ 
-\tau = \frac{\textsc{quality} }{ \sqrt{2} \pi f_0 }
-$$
-where $f_0$ is the frequency of the injection.
+\item[\option{--simwaveform-duration} \parm{seconds}]
+Optional.  This specifies the duration in seconds of the frames containing
+the simulated waveforms.
 
 \item[\option{--strain-dist} \parm{name}]
 Required.  Select the strain amplitude distribution.  See the table in the
 Description section above for more information.
-
-\item[\option{--strain-scale-min} \parm{value}]
-Optional.  Used to set the minimum of the distribution selected with
-\option{--strain-scale}.  The meaning of the value set with this parameter
-depends on the distribution chosen.
 
 \item[\option{--strain-scale-max} \parm{value}]
 Optional.  Used to set the maximum of the distribution selected with
 \option{--strain-scale}.  The meaning of the value set with this parameter
 depends on the distribution chosen.
 
+\item[\option{--strain-scale-min} \parm{value}]
+Optional.  Used to set the minimum of the distribution selected with
+\option{--strain-scale}.  The meaning of the value set with this parameter
+depends on the distribution chosen.
+
+\item[\option{--time-step} \parm{value}]
+Optional.  Sets the interval between injections.  The injections will
+occour at \parm{value}$/\pi$ second intervals.  Defaults to 210.
+
 \item[\option{--user-tag} \parm{string}]
 Optional. Set the user tag for this job to be \parm{string}. May also be
 specified on the command line as \option{-userTag} for LIGO database
 compatibility.
 
-\item[\option{--max-distance} \parm{distance}]
-Optional.  This is used when one wants to inject simulated Inspiral$+$Burst$+$Ringdown 
-waveforms.  This specifies the maximum distance in Kpc that a source can be placed at.
-This should be used with the \option{--min-distance}.
+\item[\option{--waveform} \parm{name}]
+Optional.  Default is \texttt{SineGaussian}.   The string \parm{wave} will
+be written into the \texttt{waveform} column of the \texttt{sim\_burst}
+table output. This is used by the burst code to determine which type of
+waveforms it should inject into the data.  Types implemented in LAL inject
+package are:
+\begin{description}
+\item[\texttt{SineGaussian}]  Inject a sine-Gaussian waveform.
 
-\item[\option{--min-distance} \parm{distance}]
-Optional.  This is used when one wants to inject simulated Inspiral$+$Burst$+$Ringdown 
-waveforms.  This specifies the minimum distance in Kpc that a source can be placed at.
-This should be used with the \option{--max-distance}.
+\end{description}
 
-\item[\option{--d-distr} \parm{distribution number}] 
-Optional.  This is used when the maximum and minimum distribution options are used.
- This should be an integer number and depending on the number different distance
-distributions can be used while placing the sources.  
+\item[\option{--waveform-number-max} \parm{value}] 
+Optional.  This specifies the maximum number of the simulated waveforms to
+be injected.  
 
-\item[\option{--simwaveform-duration} \parm{simwaveform-duration}]
-Optional.  This specifies the duration in seconds of the frames containing the simulated 
-waveforms.
+\item[\option{--waveform-number-min} \parm{value}] 
+Optional.  This specifies the minimum number of the simulated waveforms to
+be injected.
 
-\item[\option{--simwaveform-min-number} \parm{simwaveform-min-number}] 
-Optional.  This specifies the minimum number of the simulated waveforms to be injected.
-
-\item[\option{--simwaveform-max-number} \parm{simwaveform-max-number}] 
-Optional.  This specifies the maximum number of the simulated waveforms to be injected.  
 \end{entry}
 
 \item[Example]
@@ -1921,8 +1896,8 @@ lalapps_binj \
 --fhigh 2118.0 \
 --fratio 1.17629327749 \
 --quality 8.89 \
---strain-dist consthpeak
---strain-scale-min 6.0e-20 \
+--strain-dist consthrss
+--strain-scale-min 6.0e-21 \
 --seed 45
 \end{verbatim}
 
