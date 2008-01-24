@@ -160,7 +160,9 @@ static struct options options_defaults(void)
 		.waveform = "SineGaussian",
 		.simwaveform_duration = 0.0,
 		.waveform_number_min = 0,
-		.waveform_number_max = ULONG_MAX,
+		/* FIXME:  this should be ULONG_MAX but metaio can't handle
+		 * unsigned ints yet */
+		.waveform_number_max = LONG_MAX,
 		.user_tag = NULL
 	};
 
