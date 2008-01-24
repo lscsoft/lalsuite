@@ -923,13 +923,22 @@ int main(int argc, char *argv[])
 			break;
 		}
 
-		/* polarization ellipse for circularly polarized waveforms.
-		 * hard-coded to linearly polarized "x" waveforms (makes
-		 * LAL's sine-Gaussian generator make linearly-polarized
-		 * sine-Gaussians like the old code). */
-
-		sim_burst->pol_ellipse_angle = LAL_PI_2;
-		sim_burst->pol_ellipse_e = 1.0;
+		if(!strcmp(options.waveform, "StringCusp")) {
+			/* string cusp waveform generator makes a linearly
+			 * polarized waveform in the + polarization.  it
+			 * ignores these parameters, but just for
+			 * consistency we populate them appropriately */
+			sim_burst->pol_ellipse_angle = 0.0;
+			sim_burst->pol_ellipse_e = 1.0;
+		} else {
+			/* polarization ellipse for circularly polarized
+			 * waveforms.  hard-coded to linearly polarized "x"
+			 * waveforms (makes LAL's sine-Gaussian generator
+			 * make linearly-polarized sine-Gaussians like the
+			 * old code). */
+			sim_burst->pol_ellipse_angle = LAL_PI_2;
+			sim_burst->pol_ellipse_e = 1.0;
+		}
 
 		/* strain */
 		/* FIXME:  must set hrss, amplitude, and egw */
