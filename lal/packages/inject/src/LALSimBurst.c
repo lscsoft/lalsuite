@@ -466,11 +466,11 @@ int XLALSimBurstSineGaussian(
 	static const char func[] = "XLALSimBurstSineGaussian";
 	REAL8Window *window;
 	/* semimajor and semiminor axes of waveform ellipsoid */
-	const double a = hrss / sqrt(2.0 - eccentricity * eccentricity);
+	const double a = 1.0 / sqrt(2.0 - eccentricity * eccentricity);
 	const double b = a * sqrt(1.0 - eccentricity * eccentricity);
 	/* rss of plus and cross polarizations */
-	const double hplusrss  = a * cos(polarization) - b * sin(polarization);
-	const double hcrossrss = b * cos(polarization) + a * sin(polarization);
+	const double hplusrss  = hrss * (a * cos(polarization) - b * sin(polarization));
+	const double hcrossrss = hrss * (b * cos(polarization) + a * sin(polarization));
 	/* rss of unit amplitude cosine- and sine-gaussian waveforms.  see
 	 * K. Riles, LIGO-T040055-00.pdf */
 	const double cgrss = sqrt((Q / (4.0 * centre_frequency * sqrt(LAL_PI))) * (1.0 + exp(-Q * Q)));
@@ -655,6 +655,10 @@ int XLALGenerateStringCusp(
 		*hplus = *hcross = NULL;
 		XLAL_ERROR(func, XLAL_EFUNC);
 	}
+
+	/* force the sample rate incase round-off has shifted it a bit */
+
+	(*hplus)->deltaT = (*hcross)->deltaT = delta_t;
 
 	/* apodize the time series */
 	/* FIXME:  use a Tukey window? */
