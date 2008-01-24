@@ -48,11 +48,11 @@ t_progress boincv6_progress;
 char*shmem = NULL;
 
 static void update_shmem(void) {
-  BOINC_STATUS *boincstat;
+  BOINC_STATUS boincstat;
 
   if (!shmem) return;
 
-  boinc_get_status(boincstat);
+  boinc_get_status(&boincstat);
 
   snprintf(shmem, EAH_SHMEM_SIZE,
 	   "<graphics_info>\n"
@@ -92,13 +92,13 @@ static void update_shmem(void) {
 	   boincv6_progress.cand_rac,
 	   boincv6_progress.cand_dec,
 	   boincv6_progress.cand_hough_sign,
-	   boincstat->no_heartbeat,
-	   boincstat->suspended,
-	   boincstat->quit_request,
-	   boincstat->reread_init_data_file,
-	   boincstat->abort_request,
-	   boincstat->working_set_size,
-	   boincstat->max_working_set_size);
+	   boincstat.no_heartbeat,
+	   boincstat.suspended,
+	   boincstat.quit_request,
+	   boincstat.reread_init_data_file,
+	   boincstat.abort_request,
+	   boincstat.working_set_size,
+	   boincstat.max_working_set_size);
 }
 
 int setup_shmem(void) {
