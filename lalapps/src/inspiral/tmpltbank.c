@@ -133,6 +133,7 @@ REAL4   minMass         = -1;           /* minimum component mass       */
 REAL4   maxMass         = -1;           /* maximum component mass       */
 REAL4   minTotalMass    = -1;           /* minimum total mass           */
 REAL4   maxTotalMass    = -1;           /* maximum total mass           */
+REAL4   chirpMassCutoff = -1;           /* maximum chirp mass to keep   */
 REAL4   psi0Min         = 0;            /* minimum value of psi0        */
 REAL4   psi0Max         = 0;            /* maximum value of psi0        */
 REAL4   psi3Min         = 0;            /* minimum value of psi3        */
@@ -1025,6 +1026,15 @@ int main ( int argc, char *argv[] )
   }
   LAL_CALL( LALInspiralBankGeneration( &status, &bankIn, &tmplt, &numCoarse),
       &status );
+
+  /* Do chirp mass cut */
+  if ( chirpMassCutoff > 0 )
+  {
+    tmplt = XLALMassCut( tmplt, "mchirp", 0, chirpMassCutoff, -1, -1 );
+    /* count the remaining tmplts */
+    numCoarse = XLALCountSnglInspiral( tmplt );
+  }
+
   if ( vrbflg )
   {
     fprintf( stdout, "done. Got %d templates\n", numCoarse );
@@ -1300,6 +1310,7 @@ fprintf(a, "  --minimum-mass MASS          set minimum component mass of bank to
 fprintf(a, "  --maximum-mass MASS          set maximum component mass of bank to MASS\n");\
 fprintf(a, "  --max-total-mass MASS        set maximum total mass of the bank to MASS\n");\
 fprintf(a, "  --min-total-mass MASS        set minimum total mass of the bank to MASS\n");\
+fprintf(a, "  --chirp-mass-cutoff MASS     set chirp mass cutoff to MASS\n");\
 fprintf(a, "\n");\
 fprintf(a, "  --minimum-psi0 PSI0          set minimum range of BCV parameter psi0 to PSI0\n");\
 fprintf(a, "  --maximum-psi0 PSI0          set maximum range of BCV parameter psi0 to PSI0\n");\
@@ -1398,6 +1409,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"grid-spacing",            required_argument, 0,                'v'},
     {"max-total-mass",          required_argument, 0,                'y'},
     {"min-total-mass",          required_argument, 0,                'W'},
+    {"chirp-mass-cutoff",       required_argument, 0,                'q'},
     {"disable-polygon-fit",     no_argument, 	   &polygonFit,       0 },
     {"disable-compute-moments", no_argument, 	   &computeMoments,   0 },
     /* standard candle parameters */
@@ -2164,7 +2176,20 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         }
         ADD_PROCESS_PARAM( "float", "%e", minTotalMass );
         break;
-         
+        
+      case 'q':
+        chirpMassCutoff = (REAL4) atof( optarg );
+        if ( chirpMassCutoff <= 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "chirp mass cutoff must be > 0: "
+              "(%f solar masses specified)\n",
+              long_options[option_index].name, chirpMassCutoff );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", chirpMassCutoff );
+        break;
+
       case 'k':
         candleSnr = (REAL4) atof( optarg );
         if ( candleSnr <= 0 )
