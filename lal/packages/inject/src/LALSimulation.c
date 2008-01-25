@@ -434,9 +434,15 @@ int XLALAddInjectionREAL8TimeSeries(REAL8TimeSeries *target, REAL8TimeSeries *h,
 	/* the deltaT can get corrupted by floating point round-off during
 	 * its trip through the frequency domain.  since this function
 	 * starts by confirming that the sample rate of the injection
-	 * matches that of the target time series, we can use that to reset
-	 * the sample rate to its original value. */
+	 * matches that of the target time series, we can use the target
+	 * series' sample rate to reset the injection's sample rate to its
+	 * original value.  but do a check to make sure we're not masking a
+	 * real bug */
 
+	if(fabs(h->deltaT - target->deltaT) / h->deltaT > 1e-12) {
+		XLALPrintError("sample rate mismatch");
+		XLAL_ERROR(func, XLAL_EERR);
+	}
 	h->deltaT = target->deltaT;
 
 	/* set epoch from integer sample offset */
