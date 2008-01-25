@@ -262,7 +262,15 @@ REAL8TimeSeries * XLALSimInjectionREAL8TimeSeries( REAL8TimeSeries *h, LIGOTimeG
  */
 
 
-REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(const REAL8TimeSeries *hplus, const REAL8TimeSeries *hcross, REAL8 right_ascension, REAL8 declination, REAL8 psi, LALDetector *detector, const LIGOTimeGPS *injection_time_at_geocentre)
+REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
+	const REAL8TimeSeries *hplus,
+	const REAL8TimeSeries *hcross,
+	REAL8 right_ascension,
+	REAL8 declination,
+	REAL8 psi,
+	LALDetector *detector,
+	const LIGOTimeGPS *injection_time_at_geocentre
+)
 {
 	static const char func[] = "XLALSimDetectorStrainREAL8TimeSeries";
 	char name[13];	/* "?? injection" + terminator */
@@ -331,7 +339,11 @@ static unsigned long round_up_to_power_of_two(unsigned long x)
 }
 
 
-int XLALAddInjectionREAL8TimeSeries(REAL8TimeSeries *target, REAL8TimeSeries *h, const COMPLEX16FrequencySeries *response)
+int XLALAddInjectionREAL8TimeSeries(
+	REAL8TimeSeries *target,
+	REAL8TimeSeries *h,
+	const COMPLEX16FrequencySeries *response
+)
 {
 	static const char func[] = "XLALAddInjectionREAL8TimeSeries";
 	COMPLEX16FrequencySeries *tilde_h;
@@ -347,14 +359,11 @@ int XLALAddInjectionREAL8TimeSeries(REAL8TimeSeries *target, REAL8TimeSeries *h,
 
 	/* extend the injection time series by (at least) 1 second of 0s in
 	 * both directions with the hope that this suppresses
-	 * (a)periodicity artifacts sufficiently.  computing count of
-	 * samples first ensures that the same number is added to the start
-	 * and end.  for efficiency's sake, make sure the new length is a
-	 * power of two */
+	 * (a)periodicity artifacts sufficiently.  for efficiency's sake,
+	 * make sure the new length is a power of two */
 
-	i = 1.0 / h->deltaT;
-	i = round_up_to_power_of_two(h->data->length + 2 * i);
-	if(!XLALResizeREAL8TimeSeries(h, -(int) (i / 2), i))
+	i = round_up_to_power_of_two(h->data->length + 2.0 / h->deltaT) - h->data->length;
+	if(!XLALResizeREAL8TimeSeries(h, -(int) (i / 2), h->data->length + i))
 		XLAL_ERROR(func, XLAL_EFUNC);
 
 	/* compute the integer and fractional parts of the sample in the
