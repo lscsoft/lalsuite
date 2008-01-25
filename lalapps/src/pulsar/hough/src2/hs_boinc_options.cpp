@@ -117,19 +117,8 @@ int setup_shmem(void) {
 #endif
 
 
-#if (BOINC_GRAPHICS == 1) || ((BOINC_GRAPHICS == 2) && defined(_MSC_VER))
-int boinc_init_graphics_options(WORKER_FUNC_PTR worker)
-{
-  return(boinc_init_options_graphics(eah_boinc_options, worker));
-}
-#endif
-
 void set_boinc_options(void) {
   rcsid = HS_BOINC_OPTIONS_H_RCSID;
   boinc_get_init_data(eah_app_init_data);
   boinc_options_defaults(eah_boinc_options);
-#if (BOINC_GRAPHICS > 0)
-  // only makes sense on Apps with graphics
-  eah_boinc_options.backwards_compatible_graphics = 0;
-#endif
 }

@@ -32,10 +32,6 @@
 #include "boinc_api.h"
 #include "diagnostics.h"
 #include "boinc_zip.h"
-#if BOINC_GRAPHICS
-#include "graphics_api.h"
-#include "graphics_lib.h"
-#endif
 
 /* our own win_lib includes patches for chdir() and sleep() */
 #ifdef _WIN32
@@ -45,9 +41,6 @@
 /* probably already included by previous headers, but make sure they are included */
 #include <stdlib.h>
 #include <string.h>
-#if (BOINC_GRAPHICS == 2) && !defined(_MSC_VER)
-#include <dlfcn.h>
-#endif
 
 /* headers of our own code */
 #include "HierarchicalSearch.h"
@@ -116,6 +109,7 @@ static char **outfiles = NULL;        /**< the names  of the output files */
 static int  noutfiles  = 0;           /**< the number of the output files */
 static char resultfile[MAX_PATH_LEN]; /**< the name of the file / zip archive to return */
 
+
 /** FLOPS estimation - may be set by command line option --WUfpops=.
     When set, ((skypoint_counter / total_skypoints) * estimated_flops) is periodically
     reported to the BOINC Client as the number of flops, so that together with information
@@ -124,20 +118,6 @@ static char resultfile[MAX_PATH_LEN]; /**< the name of the file / zip archive to
  **/
 static double estimated_flops = -1.0;
 
-/** hooks for communication with the graphics thread */
-int (*boinc_init_graphics_hook)(void (*worker)(void)) = NULL; /**< boinc_init_graphics hook -
-								 no graphics if this can't be loaded */
-void (*set_search_pos_hook)(float,float) = NULL; /**< updates the search position on the starsphere */
-double *fraction_done_hook = NULL; /**< hooks the "fraction done" counter of the graphics */
-
-/** if we don't get these symbols from a dynamic library (BOINC_GRAPHICS == 2) we declare them here */
-#if (BOINC_GRAPHICS == 1) || ((BOINC_GRAPHICS == 2) && defined(_MSC_VER))
-extern double fraction_done;
-extern void set_search_pos(float RAdeg, float DEdeg);
-extern int boinc_init_graphics(void (*worker)(void));
-#endif
-/** allow for telling apps with "dynamic graphics" to not use graphics */
-static int no_graphics = 0;
 
 /** worker() doesn't take arguments, so we have to pass it argv/c as global vars :-( */
 static int global_argc;
@@ -148,8 +128,6 @@ static char **global_argv;
 static char* cptfilename;                 /**< name of the checkpoint file */
 static char* outfilename;                 /**< name of the output file */
 static toplist_t* toplist;                /**< the toplist we're checkpointing */
-static double last_rac, last_dec;         /**< last sky position, set by show_progress(),
-					       used by set_checkpoint() */
 static UINT4 last_count, last_total;      /**< last template count, see last_rac */
 static BOOLEAN do_sync = -1;              /**< sync checkpoint file to disk, default: yes */
 
@@ -373,16 +351,13 @@ void show_progress(double rac,  /**< right ascension */
   double fraction = (double)count / (double)total;
 
   /* set globals to be written into next checkpoint */
-  last_rac = rac;
-  last_dec = dec;
   last_count = count;
   last_total = total;
 
-  /* tell graphics thread about fraction done and sky position */
-  if (fraction_done_hook)
-    *fraction_done_hook = fraction;
-  if (set_search_pos_hook)
-    set_search_pos_hook(rac * 180.0/LAL_PI, dec * 180.0/LAL_PI);
+  /* tell BOINC client about fraction done and flops so far (faked from estimation) */
+  boinc_fraction_done(fraction);
+  if (estimated_flops >= 0)
+    boinc_ops_cumulative( estimated_flops * fraction, 0 /*ignore IOPS*/ );
 
   /* tell APIv6 graphics about status */
   boincv6_progress.skypos_rac = rac;
@@ -408,11 +383,6 @@ void show_progress(double rac,  /**< right ascension */
     boincv6_progress.frequency       = 0.0;
     boincv6_progress.bandwidth       = 0.0;
   }
-
-  /* tell BOINC client about fraction done and flops so far (faked from estimation) */
-  boinc_fraction_done(fraction);
-  if (estimated_flops >= 0)
-    boinc_ops_cumulative( estimated_flops * fraction, 0 /*ignore IOPS*/ );
 }
 
 
@@ -613,21 +583,6 @@ static void worker (void) {
   diagnostics_set_symstore("http://einstein.phys.uwm.edu/symstore");
 #endif
 
-  /* try to load the graphics shared object and, if succeeded, hook the symbols */
-#if (BOINC_GRAPHICS == 2) && !defined(_MSC_VER)
-  if (graphics_lib_handle) {
-    if (!(set_search_pos_hook = dlsym(graphics_lib_handle,"set_search_pos"))) {
-      LogPrintf (LOG_CRITICAL,   "unable to resolve set_search_pos(): %s\n", dlerror());
-      boinc_finish(HIERARCHICALSEARCH_EDLOPEN);
-    }
-    if (!(fraction_done_hook = dlsym(graphics_lib_handle,"fraction_done"))) {
-      LogPrintf (LOG_CRITICAL,   "unable to resolve fraction_done(): %s\n", dlerror());
-      boinc_finish(HIERARCHICALSEARCH_EDLOPEN);
-    }
-  }
-  else
-    LogPrintf (LOG_CRITICAL,  "graphics_lib_handle NULL: running without graphics\n");
-#endif
 
   /* PATCH THE COMMAND LINE
 
@@ -1057,7 +1012,6 @@ int main(int argc, char**argv) {
   /* debugging support by files */
 
 #define DEBUG_LEVEL_FNAME "EAH_DEBUG_LEVEL"
-#define NO_GRAPHICS_FNAME "EAH_NO_GRAPHICS"
 #define NO_SYNC_FNAME     "EAH_NO_SYNC"
 #define DEBUG_DDD_FNAME   "EAH_DEBUG_DDD"
 #define DEBUG_GDB_FNAME   "EAH_DEBUG_GDB"
@@ -1065,12 +1019,8 @@ int main(int argc, char**argv) {
   LogPrintfVerbatim (LOG_NORMAL, "\n");
   LogPrintf (LOG_NORMAL, "Start of BOINC application '%s'.\n", argv[0]);
   
-  /* run without graphics, i.e. don't call boinc_init_graphics if demanded */
-  if ((fp_debug=fopen("../../" NO_GRAPHICS_FNAME, "r")) || (fp_debug=fopen("./" NO_GRAPHICS_FNAME, "r")))
-    no_graphics = -1;
-
   /* don't force syncing the checkpoint file if demanded */
-  if ((fp_debug=fopen("../../" NO_SYNC_FNAME, "r")) || (fp_debug=fopen("./" NO_GRAPHICS_FNAME, "r")))
+  if ((fp_debug=fopen("../../" NO_SYNC_FNAME, "r")) || (fp_debug=fopen("./" NO_SYNC_FNAME, "r")))
     do_sync = 0;
 
   /* see if user has a DEBUG_LEVEL_FNAME file: read integer and set lalDebugLevel */
@@ -1222,58 +1172,13 @@ int main(int argc, char**argv) {
 #endif
 
 
-
-  /* boinc_init variations */
-
+  /* boinc_init */
   set_boinc_options();
-
-#if (BOINC_GRAPHICS == 2) && defined(_MSC_VER)
-  /* We don't load an own DLL on Windows, but we check if we can (manually)
-     load the system DLLs necessary to do graphics on Windows, and will run
-     without graphics if this fails */
-  if (no_graphics)
-    LogPrintf(LOG_NORMAL,"WARNING: graphics surpressed\n");
-  else /* if (!try_load_dlls(graphics_dlls, "WARNING: Failed to load %s - running w/o graphics\n")) */
-    {
-      int retval;
-      set_search_pos_hook = set_search_pos;
-      fraction_done_hook = &fraction_done;
-      retval = boinc_init_graphics_options(worker);
-      LogPrintf (LOG_CRITICAL, "boinc_init_graphics() returned %d.\n", retval);
-      boinc_finish(HIERARCHICALSEARCH_EWORKER);
-    }
-#elif BOINC_GRAPHICS == 2
-  /* Try loading screensaver-graphics as a dynamic library.  If this
-     succeeds then extern void* graphics_lib_handle is set, and can
-     be used with dlsym() to resolve symbols from that library as
-     needed. */
-  if (no_graphics)
-    LogPrintf(LOG_NORMAL,"WARNING: graphics surpressed\n");
-  else {
-    int retval;
-    retval = boinc_init_graphics_lib(worker, argv[0]);
-    LogPrintf (LOG_CRITICAL, "ERROR: boinc_init_graphics_lib() returned %d.\n", retval);
-    boinc_finish(HIERARCHICALSEARCH_EWORKER);
-  }
-#elif BOINC_GRAPHICS == 1
-  {
-    int retval;
-    /* if we don't get them from the shared library, use variables local to here */
-    set_search_pos_hook = set_search_pos;
-    fraction_done_hook = &fraction_done;
-    /* no dynamic library, just call boinc_init_graphics() */
-    retval = boinc_init_graphics_options(worker);
-    LogPrintf (LOG_CRITICAL, "ERROR: boinc_init_graphics() returned %d\n", retval);
-    boinc_finish(HIERARCHICALSEARCH_EWORKER );
-  }
-#endif /* BOINC_GRAPHICS== */
-
-  /* we end up here only if BOINC_GRAPHICS == 0 or a call to boinc_init_graphics failed */
   boinc_init();
   worker();
   LogPrintf (LOG_NORMAL, "done. calling boinc_finish(%d).\n",0);
   boinc_finish(0);
-  /* boinc_init_graphics() or boinc_finish() ends the program, we never get here */
+  /* boinc_finish() ends the program, we never get here */
   return(0);
 }
 

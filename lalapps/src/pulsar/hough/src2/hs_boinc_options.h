@@ -21,9 +21,6 @@
 */
 
 #include "boinc_api.h"
-#if (BOINC_GRAPHICS > 0)
-#include "graphics_api.h"
-#endif
 
 #define HS_BOINC_OPTIONS_H_RCSID "$Id$"
 
@@ -47,10 +44,6 @@ typedef struct {
 } t_progress;
 
 extern t_progress boincv6_progress;
-
-#if (BOINC_GRAPHICS > 0)
-extern int boinc_init_graphics_options(WORKER_FUNC_PTR);
-#endif
 
 #ifdef BOINC_APIV6
 extern int setup_shmem(void);
