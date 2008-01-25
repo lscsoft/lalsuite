@@ -70,11 +70,15 @@ static int XLALGenerateSimBurst(
 	static const char func[] = "XLALGenerateSimBurst";
 
 	if(!strcmp(sim_burst->waveform, "BTLWNB")) {
-		/* E_{GW} is in M_{sun}, so we multiply by (M_{sun} c^2) to
-		 * convert to energy, which is then multiplied by (4 G /
-		 * c^3) to convert to a value of \int \dot{h}^{2} \diff t.
-		 * */
-		double int_hdot_squared_dt = sim_burst->egw_over_rsquared * LAL_MSUN_SI * 4 * LAL_G_SI / LAL_C_SI;
+		/* E_{GW}/r^{2} is in M_{sun} / pc^{2}, so we multiply by
+		 * (M_{sun} c^2) to convert to energy/pc^{2}, and divide by
+		 * (distance/pc)^{2} to convert to energy/distance^{2},
+		 * which is then multiplied by (4 G / c^3) to convert to a
+		 * value of \int \dot{h}^{2} \diff t.  From the values of
+		 * the LAL constants, the total factor multiplying
+		 * egw_over_rsquared is 1.8597e-21. */
+
+		double int_hdot_squared_dt = sim_burst->egw_over_rsquared * LAL_MSUN_SI * 4 * LAL_G_SI / LAL_C_SI / LAL_PC_SI / LAL_PC_SI;
 
 		/* the waveform number is interpreted as the seed for GSL's
 		 * Mersenne twister random number generator */
