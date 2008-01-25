@@ -318,6 +318,19 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(const REAL8TimeSeries *hpl
  */
 
 
+static unsigned long round_up_to_power_of_two(unsigned long x)
+{
+	unsigned n;
+
+	x--;
+	/* if x shares bits with x + 1, then x + 1 is not a power of 2 */
+	for(n = 1; n && (x & (x + 1)); n *= 2)
+		x |= x >> n;
+
+	return x + 1;
+}
+
+
 int XLALAddInjectionREAL8TimeSeries(REAL8TimeSeries *target, REAL8TimeSeries *h, const COMPLEX16FrequencySeries *response)
 {
 	static const char func[] = "XLALAddInjectionREAL8TimeSeries";
@@ -332,13 +345,16 @@ int XLALAddInjectionREAL8TimeSeries(REAL8TimeSeries *target, REAL8TimeSeries *h,
 	if(h->deltaT != target->deltaT || h->f0 != target->f0)
 		XLAL_ERROR(func, XLAL_EINVAL);
 
-	/* extend the injection time series by 1 second of 0s in both
-	 * directions with the hope that this suppresses (a)periodicity
-	 * artifacts sufficiently.  computing count of samples first
-	 * ensures that the same number is added to the start and end. */
+	/* extend the injection time series by (at least) 1 second of 0s in
+	 * both directions with the hope that this suppresses
+	 * (a)periodicity artifacts sufficiently.  computing count of
+	 * samples first ensures that the same number is added to the start
+	 * and end.  for efficiency's sake, make sure the new length is a
+	 * power of two */
 
 	i = 1.0 / h->deltaT;
-	if(!XLALResizeREAL8TimeSeries(h, -(int) i, h->data->length + 2 * i))
+	i = round_up_to_power_of_two(h->data->length + 2 * i);
+	if(!XLALResizeREAL8TimeSeries(h, -(int) (i / 2), i))
 		XLAL_ERROR(func, XLAL_EFUNC);
 
 	/* compute the integer and fractional parts of the sample in the
