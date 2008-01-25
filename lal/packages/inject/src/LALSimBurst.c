@@ -389,6 +389,10 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 		XLAL_ERROR(func, XLAL_EFUNC);
 	}
 
+	/* force the sample rate incase round-off has shifted it a bit */
+
+	(*hplus)->deltaT = (*hcross)->deltaT = delta_t;
+
 	/* apply a Tukey window for continuity at the start and end of the
 	 * injection.  the window's shape parameter sets what fraction of
 	 * the window is used by the tapers */
