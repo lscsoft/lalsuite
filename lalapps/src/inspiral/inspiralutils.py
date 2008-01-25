@@ -217,10 +217,16 @@ def findSegmentsToAnalyze(config,ifo,generate_segments=True,\
   @param data_quality_vetoes: generate the cat2,3,4 DQ veto segments
   """
 
+  start = config.getint("input","gps-start-time")
+  end = config.getint("input","gps-end-time")
+    
   # file names
-  segFile = ifo + "-SELECTED_SEGS.txt"
-  missedFile = ifo + "-MISSED_SEGS.txt"
-  dqSegFile = ifo + "-DQ_SEGMENTS.txt"
+  segFile = ifo + "-SELECTED_SEGS-" + str(start) + "-" + \
+      str(end - start) + ".txt"
+  missedFile = ifo + "-MISSED_SEGS-" + str(start) + "-" + \
+      str(end - start) + ".txt"
+  dqSegFile = ifo + "-DQ_SEGMENTS-" + str(start) + "-" + \
+      str(end - start) + ".txt"
 
   if generate_segments:
     print "Generating science segments for " + ifo + " ...",
