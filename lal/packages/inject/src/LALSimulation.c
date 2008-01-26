@@ -18,6 +18,15 @@
  */
 
 
+/*
+ * ============================================================================
+ *
+ *                                  Preamble
+ *
+ * ============================================================================
+ */
+
+
 #include <math.h>
 #include <lal/LALSimulation.h>
 #include <lal/LALDetectors.h>
@@ -31,6 +40,37 @@
 #include <lal/FrequencySeries.h>
 #include <lal/TimeFreqFFT.h>
 #include "check_series_macros.h"
+
+
+/*
+ * ============================================================================
+ *
+ *                                 Utilities
+ *
+ * ============================================================================
+ */
+
+
+static unsigned long round_up_to_power_of_two(unsigned long x)
+{
+	unsigned n;
+
+	x--;
+	/* if x shares bits with x + 1, then x + 1 is not a power of 2 */
+	for(n = 1; n && (x & (x + 1)); n *= 2)
+		x |= x >> n;
+
+	return x + 1;
+}
+
+
+/*
+ * ============================================================================
+ *
+ *                            Injection Machinery
+ *
+ * ============================================================================
+ */
 
 
 #if 0
@@ -235,7 +275,7 @@ REAL8TimeSeries * XLALSimInjectionREAL8TimeSeries( REAL8TimeSeries *h, LIGOTimeG
 #else	/* KIPPSPROPOSAL */
 
 
-/*
+/**
  * Input
  *
  * - h+ and hx time series for the injection with t = 0 interpreted to be
@@ -316,27 +356,16 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 }
 
 
-/*
+/**
  * Essentially a wrapper for XLALAddREAL8TimeSeries(), but performs
  * sub-sample re-interpolation to adjust the source time series epoch to
  * lie on an integer sample boundary in the target time series.  This
  * transformation is done in the frequency domain, so it is convenient to
  * allow a response function to be applied at the same time.  Note that the
- * source time series is modified in place by this function.
+ * source time series is modified in place by this function.  Passing NULL
+ * for the response function turns this feature off (i.e., uses a unit
+ * response).
  */
-
-
-static unsigned long round_up_to_power_of_two(unsigned long x)
-{
-	unsigned n;
-
-	x--;
-	/* if x shares bits with x + 1, then x + 1 is not a power of 2 */
-	for(n = 1; n && (x & (x + 1)); n *= 2)
-		x |= x >> n;
-
-	return x + 1;
-}
 
 
 int XLALAddInjectionREAL8TimeSeries(
