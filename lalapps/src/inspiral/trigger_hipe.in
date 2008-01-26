@@ -519,33 +519,26 @@ ifolist.sort()
 ##############################################################################
 # Derive data quality vetoes
 if opts.do_dataquality:
+  dq_segdict = segments.segmentlistdict()
+  
   for ifo in ifolist:
-    ifo_segfile = getattr(opts, "%s_segments" % ifo.lower())
-    dq_segments = ifo + "_dq_segments.txt"
-    kept_filename = ifo + "_cat1_kept_segments.txt"
-    vetoed_filename = ifo + "_cat1_vetoed_segments.txt"
+    # download (if necessary) and parse DQ segments
+    dq_segfile = ifo + "_dq_segments.txt"
+    dq_segdict.update(dqutils.download_and_parse_dq_segs(dq_segfile, ifo,
+                                                         verbose=opts.verbose))
     
-    # download DQ segment dump
-    if os.path.isfile(dq_segments):
-      if opts.verbose:
-        print "using existing DQ segments file", dq_segments
-    else:
-      dqutils.get_dq_file(ifo, dest=dq_segments, verbose=opts.verbose)
+    # determine category 1 vetoes
+    window_file = cp.get("segments", ifo.lower() + "-cat-1-veto-file")
+    veto_windows = dqutils.from_veto_file(open(window_file))
+    vetoed_segs = dqutils.determine_vetoes(veto_windows, dq_segdict,
+                                           segdict[ifo])
     
-    # FIXME?: I shouldn't have to do this in order to call query_dq
-    extent = segdict.extent_all()
-    cp.set("input", "gps-start-time", str(extent[0]))
-    cp.set("input", "gps-end-time", str(extent[1]))
-    
-    # call pylal_query_dq to write DQ to cat1_filename
-    cat1_filename = inspiralutils.veto_segments(ifo, cp, ifo_segfile, dq_segments, [1], True)[1]
-    
-    # read it back in and apply
-    veto_segs = segmentsUtils.fromsegwizard(open(cat1_filename))
-    vetoed_segs = segdict[ifo] & veto_segs
+    # apply veto
     segdict[ifo] -= vetoed_segs
     
-    # keep a copy for accounting purposes
+    # write a copy for accounting purposes
+    kept_filename = ifo + "_cat1_kept_segments.txt"
+    vetoed_filename = ifo + "_cat1_vetoed_segments.txt"
     segmentsUtils.tosegwizard(open(kept_filename, "w"), segdict[ifo])
     segmentsUtils.tosegwizard(open(vetoed_filename, "w"), vetoed_segs)
 
