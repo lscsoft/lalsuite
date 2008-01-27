@@ -43,6 +43,7 @@
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 
+
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -51,6 +52,7 @@
 #include <lal/LIGOLwXML.h>
 #include <lal/Date.h>
 #include <lal/TimeDelay.h>
+#include <lal/XLALError.h>
 #include <lalapps.h>
 #include <processtable.h>
 
@@ -61,11 +63,6 @@ int snprintf(char *str, size_t size, const char *format, ...);
 RCSID("$Id$");
 
 
-#define KPC (1e3 * LAL_PC_SI)
-#define MPC (1e6 * LAL_PC_SI)
-#define GPC (1e9 * LAL_PC_SI)
-
-
 #define MW_CENTER_J2000_RA_RAD 2.0318570464121519l /* = 27940.04 s = 7 h 45 m 40.04 s */
 #define MW_CENTER_J2000_DEC_RAD -0.50628171572274738l /* = -29o 00' 28.1" */
 
@@ -74,9 +71,6 @@ RCSID("$Id$");
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "lalapps_binj"
-
-#define TRUE      1
-#define FALSE     0
 
 
 /*
@@ -90,26 +84,8 @@ RCSID("$Id$");
 
 enum population {
 	POPULATION_GALACTIC_CORE,
-	POPULATION_UNIFORM_SKY,
-	POPULATION_ZENITH
-};
-
-
-enum strain_dist {
-	STRAIN_DIST_NONE,
-	STRAIN_DIST_CONST_HRSS,
-	STRAIN_DIST_LOG_HRSS,
-	STRAIN_DIST_LOG_HRSSTAU,
-	STRAIN_DIST_PRESET_HRSS
-};
-
-
-enum freq_dist {
-	FREQ_DIST_NONE,
-	FREQ_DIST_STRING_CUSP,
-	FREQ_DIST_MONO_ARITHMETIC,
-	FREQ_DIST_MONO_GEOMETRIC,
-	FREQ_DIST_RANDOM_GEOMETRIC
+	POPULATION_ALL_SKY_SINEGAUSSIAN,
+	POPULATION_STRING_CUSP
 };
 
 
@@ -117,23 +93,21 @@ struct options {
 	INT8 gps_start_time;
 	INT8 gps_end_time;
 	enum population population;
-	enum freq_dist freq_dist;
-	double flow;
-	double fhigh;
-	double fratio;
-	double deltaf;
-	double quality;
-	enum strain_dist strain_dist;
-	double strain_scale_min;
-	double strain_scale_max;
-	double log10_max_distance;
-	double log10_min_distance;
+	double maxA;
+	double minA;
+	double maxbandwidth;
+	double minbandwidth;
+	double maxduration;
+	double minduration;
+	double maxEoverr2;
+	double minEoverr2;
+	double maxf;
+	double minf;
+	double maxhrss;
+	double minhrss;
+	double q;
 	unsigned long seed;
 	double time_step;
-	char *waveform;
-	double simwaveform_duration;
-	unsigned long waveform_number_min;
-	unsigned long waveform_number_max;
 	char *user_tag;
 };
 
@@ -143,26 +117,22 @@ static struct options options_defaults(void)
 	struct options defaults = {
 		.gps_start_time = 0,
 		.gps_end_time = 0,
-		.population = POPULATION_UNIFORM_SKY,
-		.freq_dist = FREQ_DIST_NONE,
-		.flow = 70.0,
-		.fhigh = 2000.0,
-		.fratio = 0.0,
-		.deltaf = 0.0,
-		.quality = -1.0,
-		.strain_dist = STRAIN_DIST_NONE,
-		.strain_scale_min = 0.0,
-		.strain_scale_max = 0.0,
-		.log10_max_distance = log10(10000.0),
-		.log10_min_distance = log10(100.0),
+		.population = -1,
+		.maxbandwidth = XLAL_REAL8_FAIL_NAN,
+		.minbandwidth = XLAL_REAL8_FAIL_NAN,
+		.maxduration = XLAL_REAL8_FAIL_NAN,
+		.minduration = XLAL_REAL8_FAIL_NAN,
+		.maxEoverr2 = XLAL_REAL8_FAIL_NAN,
+		.minEoverr2 = XLAL_REAL8_FAIL_NAN,
+		.maxf = XLAL_REAL8_FAIL_NAN,
+		.minf = XLAL_REAL8_FAIL_NAN,
+		.maxhrss = XLAL_REAL8_FAIL_NAN,
+		.minhrss = XLAL_REAL8_FAIL_NAN,
+		.minA = XLAL_REAL8_FAIL_NAN,
+		.maxA = XLAL_REAL8_FAIL_NAN,
+		.q = XLAL_REAL8_FAIL_NAN,
 		.seed = 0,
 		.time_step = 210.0 / LAL_PI,
-		.waveform = "SineGaussian",
-		.simwaveform_duration = 0.0,
-		.waveform_number_min = 0,
-		/* FIXME:  this should be ULONG_MAX but metaio can't handle
-		 * unsigned ints yet */
-		.waveform_number_max = LONG_MAX,
 		.user_tag = NULL
 	};
 
@@ -177,72 +147,66 @@ static void print_usage(void)
 "\n" \
 "Options:\n" \
 "\n" \
-"--deltaf Hertz\n" \
-"	linear spacing of injection frequencies (0.0)\n" \
-"\n" \
-"--fhigh Hertz\n" \
-"	only inject frequencies smaller than FHIGH (1000.0)\n" \
-"\n" \
-"--flow Hertz\n" \
-"	first frequency of injection (150.0)\n" \
-"\n" \
-"--fratio value\n" \
-"	exponential spacing of injection frequencies (0.0)\n" \
-"\n" \
-"--freq-dist [monoarithmetic|monogeometric|randgeometric]\n" \
-"	select the frequency distribution\n" \
-"\n" \
-	); fprintf(stderr, 
 "--gps-end-time seconds\n" \
-"	end injections at GPS time TIME\n" \
-"\n" \
 "--gps-start-time seconds\n" \
-"	start injections at GPS time TIME\n" \
+"	Bounds of interval in which to synthesize injections.\n" \
 "\n" \
 "--help\n" \
 "	display this message\n" \
 "\n" \
-"--max-distance value\n" \
-"	max distance of source in Kpc (default 10000Kpc)\n" \
+"--max-amplitude value\n" \
+"--min-amplitude value\n" \
+"	Set the bounds of the injection ampltiudes.  These only affect\n" \
+"	string cusp injections.\n" \
 "\n" \
-"--min-distance value\n" \
-"	min distance of source in Kpc (default 100Kpc)\n" \
-"\n" \
-"--population [galactic_core|uniform_sky|zenith]\n" \
-"	select the population to synthesize\n" \
+"--max-bandwidth hertz\n" \
+"--min-bandwidth hertz\n" \
+"	Set the bounds of the injection bandwidthds.  These only affect\n" \
+"	btlwnb waveforms.\n" \
 "\n" \
 	); fprintf(stderr, 
-"--quality value\n" \
-"	quality factor for SG waveforms\n" \
+"--max-duration seconds\n" \
+"--min-duration seconds\n" \
+"	Set the bounds of the injection durations.  These only affect\n" \
+"	btlwnb waveforms.\n" \
+"\n" \
+"--max-e-over-r2 value\n" \
+"--min-e-over-r2 value\n" \
+"	Set the bounds of the range of equivalent isotropic radiated\n" \
+"	energies of btlwnb waveforms.  The units are M_{sun} / pc^{2} (solar\n" \
+"	masses per parsec^{2}).\n" \
+"\n" \
+	); fprintf(stderr, 
+"--max-frequency hertz\n" \
+"--min-frequency hertz\n" \
+"	Set the bounds of the injection frequencies.  These are the centre\n" \
+"	frequencies of sine-Gaussians and btlwnb waveforms, and the\n" \
+"	high-frequency cut-offs of string cusp waveforms.\n" \
+"\n" \
+"--max-hrss value\n" \
+"--min-hrss value\n" \
+"	Set the bounds of the injection h_{rss} values.  These only affect\n" \
+"	sine-Gaussian injections.  (Actually, these set the bounds of the\n" \
+"	product of the waveform's hrss and its duration, which makes the\n" \
+"	injections lie along the 50 efficiency curve better.  To convert to\n" \
+"	real hrss multiply by sqrt(2) pi f/Q.) \n" \
+"\n" \
+	); fprintf(stderr, 
+"--population name\n" \
+"	Select the injection population to synthesize.  Allowed values are\n" \
+"	galactic_core, string_cusp, all_sky_sinegaussian.\n" \
+"\n" \
+"--q value\n" \
+"	Set the Q for sine-Gaussian injections.\n" \
 "\n" \
 "--seed value\n" \
-"	seed random number generator with this value (0 = off, default = 0)\n" \
-"\n" \
-"--simwaveform-duration seconds\n" \
-"	duration of the simulated waveform (Warren/Ott/ZM)\n" \
-"\n" \
-"--strain-dist [consthrss|hrsspresets|loghrss|loghrss-t]\n" \
-"	select the strain distribution\n" \
-"\n" \
-"--strain-scale-max value\n" \
-"	maximum of the strain distribution\n" \
-"\n" \
-	); fprintf(stderr, 
-"--strain-scale-min value\n" \
-"	mininum of the strain distribution\n" \
+"	Set the random number generator's seed (0 = off, default = 0).\n" \
 "\n" \
 "--time-step value\n" \
-"	space injections value / pi seconds appart (210)\n" \
-"\n" \
-"--waveform-number-max value\n" \
-"--waveform-number-min value\n" \
-"	waveform number is uniformly distributed in [min, max)\n" \
-"\n" \
-"--waveform string\n" \
-"	set waveform type to NAME (SineGaussian)\n" \
+"	Set the time betwen injections to value/pi seconds (default = 210).\n" \
 "\n" \
 "--user-tag string\n" \
-"	set the usertag to STRING\n"
+"	Set the user tag in the process and search summary tables to this.\n"
 	);
 }
 
@@ -271,81 +235,31 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 	int c;
 	int option_index;
 	struct option long_options[] = {
-		{"population", required_argument, NULL, 'A'},
-		{"freq-dist", required_argument, NULL, 'F'},
-		{"deltaf", required_argument, NULL, 'B'},
-		{"fhigh", required_argument, NULL, 'C'},
-		{"flow", required_argument, NULL, 'D'},
-		{"fratio", required_argument, NULL, 'E'},
-		{"gps-end-time", required_argument, NULL, 'G'},
-		{"gps-start-time", required_argument, NULL, 'H'},
-		{"help", no_argument, NULL, 'I'},
-		{"strain-dist", required_argument, NULL, 'J'},
-		{"strain-scale-max", required_argument, NULL, 'K'},
-		{"strain-scale-min", required_argument, NULL, 'L'},
-		{"max-distance", required_argument, NULL, 'M'},
-		{"min-distance", required_argument, NULL, 'N'},
-		{"quality", required_argument, NULL, 'O'},
+		{"gps-end-time", required_argument, NULL, 'A'},
+		{"gps-start-time", required_argument, NULL, 'B'},
+		{"help", no_argument, NULL, 'C'},
+		{"max-amplitude", required_argument, NULL, 'D'},
+		{"min-amplitude", required_argument, NULL, 'E'},
+		{"max-bandwidth", required_argument, NULL, 'F'},
+		{"min-bandwidth", required_argument, NULL, 'G'},
+		{"max-duration", required_argument, NULL, 'H'},
+		{"min-duration", required_argument, NULL, 'I'},
+		{"max-e-over-r2", required_argument, NULL, 'S'},
+		{"min-e-over-r2", required_argument, NULL, 'T'},
+		{"max-frequency", required_argument, NULL, 'J'},
+		{"min-frequency", required_argument, NULL, 'K'},
+		{"max-hrss", required_argument, NULL, 'L'},
+		{"min-hrss", required_argument, NULL, 'M'},
+		{"population", required_argument, NULL, 'N'},
+		{"q", required_argument, NULL, 'O'},
 		{"seed", required_argument, NULL, 'P'},
-		{"simwaveform-duration", required_argument, NULL, 'Q'},
-		{"waveform-number-max", required_argument, NULL, 'R'},
-		{"waveform-number-min", required_argument, NULL, 'S'},
-		{"time-step", required_argument, NULL, 'U'},
-		{"user-tag", required_argument, NULL, 'V'},
-		{"waveform", required_argument, NULL, 'W'},
+		{"time-step", required_argument, NULL, 'Q'},
+		{"user-tag", required_argument, NULL, 'R'},
 		{NULL, 0, NULL, 0}
 	};
 
 	do switch(c = getopt_long(*argc, *argv, "", long_options, &option_index)) {
 	case 'A':
-		if(!strcmp(optarg, "galactic_core"))
-			options.population = POPULATION_GALACTIC_CORE;
-		else if(!strcmp(optarg, "uniform_sky"))
-			options.population = POPULATION_UNIFORM_SKY;
-		else if(!strcmp(optarg, "zenith"))
-			options.population = POPULATION_ZENITH;
-		else {
-			fprintf(stderr, "error: unrecognized population \"%s\"", optarg);
-			exit(1);
-		}
-		ADD_PROCESS_PARAM("lstring");
-		break;
-
-	case 'F':
-		if(!strcmp(optarg, "monoarithmetic"))
-			options.freq_dist = FREQ_DIST_MONO_ARITHMETIC;
-		else if(!strcmp(optarg, "monogeometric"))
-			options.freq_dist = FREQ_DIST_MONO_GEOMETRIC;
-		else if(!strcmp(optarg, "randgeometric"))
-			options.freq_dist = FREQ_DIST_RANDOM_GEOMETRIC;
-		else {
-			fprintf(stderr, "error: unrecognized frequency distribution \"%s\"", optarg);
-			exit(1);
-		}
-		ADD_PROCESS_PARAM("lstring");
-		break;
-
-	case 'B':
-		options.deltaf = atof(optarg);
-		ADD_PROCESS_PARAM("real_8");
-		break;
-
-	case 'C':
-		options.fhigh = atof(optarg);
-		ADD_PROCESS_PARAM("real_8");
-		break;
-
-	case 'D':
-		options.flow = atof(optarg);
-		ADD_PROCESS_PARAM("real_8");
-		break;
-
-	case 'E':
-		options.fratio = atof(optarg);
-		ADD_PROCESS_PARAM("real_8");
-		break;
-
-	case 'G':
 		XLALClearErrno();
 		{
 			LIGOTimeGPS tmp;
@@ -359,7 +273,7 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 		ADD_PROCESS_PARAM("lstring");
 		break;
 
-	case 'H':
+	case 'B':
 		XLALClearErrno();
 		{
 			LIGOTimeGPS tmp;
@@ -373,48 +287,76 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 		ADD_PROCESS_PARAM("lstring");
 		break;
 
-	case 'I':
+	case 'C':
 		print_usage();
 		exit(0);
 
+	case 'D':
+		options.maxA = atof(optarg);
+		ADD_PROCESS_PARAM("real_8");
+		break;
+
+	case 'E':
+		options.minA = atof(optarg);
+		ADD_PROCESS_PARAM("real_8");
+		break;
+
+	case 'F':
+		options.maxbandwidth = atof(optarg);
+		ADD_PROCESS_PARAM("real_8");
+		break;
+
+	case 'G':
+		options.minbandwidth = atof(optarg);
+		ADD_PROCESS_PARAM("real_8");
+		break;
+
+	case 'H':
+		options.maxduration = atof(optarg);
+		ADD_PROCESS_PARAM("real_8");
+		break;
+
+	case 'I':
+		options.minduration = atof(optarg);
+		ADD_PROCESS_PARAM("real_8");
+		break;
+
 	case 'J':
-		if(!strcmp(optarg, "consthrss"))
-			options.strain_dist = STRAIN_DIST_CONST_HRSS;
-		else if(!strcmp(optarg, "hrsspresets"))
-			options.strain_dist = STRAIN_DIST_PRESET_HRSS;
-		else if(!strcmp(optarg, "loghrss"))
-			options.strain_dist = STRAIN_DIST_LOG_HRSS;
-		else if(!strcmp(optarg, "loghrss-t"))
-			options.strain_dist = STRAIN_DIST_LOG_HRSSTAU;
+		options.maxf = atof(optarg);
+		ADD_PROCESS_PARAM("real_8");
+		break;
+
+	case 'K':
+		options.minf = atof(optarg);
+		ADD_PROCESS_PARAM("real_8");
+		break;
+
+	case 'L':
+		options.maxhrss = atof(optarg);
+		ADD_PROCESS_PARAM("real_8");
+		break;
+
+	case 'M':
+		options.minhrss = atof(optarg);
+		ADD_PROCESS_PARAM("real_8");
+		break;
+
+	case 'N':
+		if(!strcmp(optarg, "galactic_core"))
+			options.population = POPULATION_GALACTIC_CORE;
+		else if(!strcmp(optarg, "string_cusp"))
+			options.population = POPULATION_STRING_CUSP;
+		else if(!strcmp(optarg, "all_sky_sinegaussian"))
+			options.population = POPULATION_ALL_SKY_SINEGAUSSIAN;
 		else {
-			fprintf(stderr, "error: unrecognized strain distribution \"%s\"", optarg);
+			fprintf(stderr, "error: unrecognized population \"%s\"", optarg);
 			exit(1);
 		}
 		ADD_PROCESS_PARAM("lstring");
 		break;
 
-	case 'K':
-		options.strain_scale_max = atof(optarg);
-		ADD_PROCESS_PARAM("real_8");
-		break;
-
-	case 'L':
-		options.strain_scale_min = atof(optarg);
-		ADD_PROCESS_PARAM("real_8");
-		break;
-
-	case 'M':
-		options.log10_max_distance = log10(atof(optarg));
-		ADD_PROCESS_PARAM("real_8");
-		break;
-
-	case 'N':
-		options.log10_min_distance = log10(atof(optarg));
-		ADD_PROCESS_PARAM("real_8");
-		break;
-
 	case 'O':
-		options.quality = atof(optarg);
+		options.q = atof(optarg);
 		ADD_PROCESS_PARAM("real_8");
 		break;
 
@@ -424,40 +366,23 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 		break;
 
 	case 'Q':
-		options.simwaveform_duration = atof(optarg);
-		ADD_PROCESS_PARAM("real_8");
-		break;
-
-	case 'R':
-		options.waveform_number_max = atol(optarg);
-		ADD_PROCESS_PARAM("int_8u");
-		break;
-
-	case 'S':
-		options.waveform_number_min = atol(optarg);
-		ADD_PROCESS_PARAM("int_8u");
-		break;
-
-	case 'U':
 		options.time_step = atof(optarg) / LAL_PI;
 		ADD_PROCESS_PARAM("real_8");
 		break;
 
-	case 'V':
+	case 'R':
 		options.user_tag = optarg;
 		ADD_PROCESS_PARAM("lstring");
 		break;
 
-	case 'W':
-		options.waveform = optarg;
-		/* -1 for null terminator */
-		if(strlen(options.waveform) > LIGOMETA_WAVEFORM_MAX - 1) {
-			fprintf(stderr, "error: --waveform %s exceeds max length of %d characters\n", options.waveform, LIGOMETA_WAVEFORM_MAX - 1);
-			exit(1);
-		}
-		if(!strcmp(options.waveform, "StringCusp"))
-			options.freq_dist = FREQ_DIST_STRING_CUSP;
-		ADD_PROCESS_PARAM("lstring");
+	case 'S':
+		options.maxEoverr2 = atof(optarg);
+		ADD_PROCESS_PARAM("real_8");
+		break;
+
+	case 'T':
+		options.minEoverr2 = atof(optarg);
+		ADD_PROCESS_PARAM("real_8");
 		break;
 
 	case 0:
@@ -479,94 +404,34 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 		exit(1);
 	} while(c != -1);
 
-
 	/* check some of the input parameters for consistency */
-	if(options.fhigh == options.flow) {
-		/* use monotonic arithmetic distribution for case of fixed
-		 * frequency */
-		options.freq_dist = FREQ_DIST_MONO_ARITHMETIC;
-		options.deltaf = 1.0;
-	}
-	if(options.fhigh < options.flow) {
-		fprintf(stderr, "error: --fhigh < --flow\n");
+	if(options.maxA < options.minA) {
+		fprintf(stderr, "error: --max-amplitude < --min-amplitude\n");
 		exit(1);
 	}
-
-	switch(options.freq_dist) {
-	case FREQ_DIST_NONE:
-		fprintf(stderr, "error: must select a frequency distribution\n");
+	if(options.maxbandwidth < options.minbandwidth) {
+		fprintf(stderr, "error: --max-bandwidth < --min-bandwidth\n");
 		exit(1);
-
-	case FREQ_DIST_STRING_CUSP:
-		if(options.freq_dist != FREQ_DIST_STRING_CUSP) {
-			fprintf(stderr, "error: cannot choose frequency distribution with --waveform=StringCusp\n");
-			exit(1);
-		}
-		break;
-
-	case FREQ_DIST_MONO_ARITHMETIC:
-		if((options.deltaf <= 0.0) || (options.fratio != 0.0)) {
-			fprintf(stderr, "error: invalid frequency distribution parameters\n");
-			exit(1);
-		}
-		break;
-
-	case FREQ_DIST_MONO_GEOMETRIC:
-		if((options.deltaf != 0.0) || (options.fratio <= 0.0)) {
-			fprintf(stderr, "error: invalid frequency distribution parameters\n");
-			exit(1);
-		}
-		break;
-
-	case FREQ_DIST_RANDOM_GEOMETRIC:
-		if((options.deltaf != 0.0) || (options.fratio <= 0.0) || (options.fhigh / options.flow < sqrt(options.fratio))) {
-			fprintf(stderr, "error: invalid frequency distribution parameters\n");
-			exit(1);
-		}
-		break;
 	}
-
-	switch(options.strain_dist) {
-	case STRAIN_DIST_NONE:
-		fprintf(stderr, "error: must select a strain distribution\n");
+	if(options.maxduration < options.minduration) {
+		fprintf(stderr, "error: --max-duration < --min-duration\n");
 		exit(1);
-
-	case STRAIN_DIST_CONST_HRSS:
-		if(options.strain_scale_min == 0.0) {
-			fprintf(stderr, "error: must set --strain-scale-min\n");
-			exit(1);
-		}
-		if(options.strain_scale_max != 0.0)
-			fprintf(stderr, "warning: --strain-scale-max provided but ignored\n");
-		break;
-
-	case STRAIN_DIST_LOG_HRSS:
-	case STRAIN_DIST_LOG_HRSSTAU:
-		if(options.strain_scale_min == 0.0) {
-			fprintf(stderr, "error: must set --strain-scale-min\n");
-			exit(1);
-		}
-		if(options.strain_scale_max == 0.0) {
-			fprintf(stderr, "error: must set --strain-scale-max\n");
-			exit(1);
-		}
-		break;
-
-	case STRAIN_DIST_PRESET_HRSS:
-		if(options.strain_scale_min != 0.0)
-			fprintf(stderr, "warning: --strain-scale-min provided but ignored\n");
-		if(options.strain_scale_max != 0.0)
-			fprintf(stderr, "warning: --strain-scale-max provided but ignored\n");
-		break;
+	}
+	if(options.maxf < options.minf) {
+		fprintf(stderr, "error: --max-frequency < --min-frequency\n");
+		exit(1);
+	}
+	if(options.maxhrss < options.minhrss) {
+		fprintf(stderr, "error: --max-hrss < --min-hrss\n");
+		exit(1);
 	}
 
 	if(!options.gps_start_time || !options.gps_end_time) {
 		fprintf(stderr, "--gps-start-time and --gps-end-time are both required\n");
 		exit(1);
 	}
-
-	if((options.fratio != 0.0) && (options.deltaf != 0.0)) {
-		fprintf(stderr, "error:  cannot specify both --deltaf and --fratio\n");
+	if(options.gps_end_time < options.gps_start_time) {
+		fprintf(stderr, "error: --gps-end-time < --gps-start-time\n");
 		exit(1);
 	}
 
@@ -577,16 +442,74 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 /* 
  * ============================================================================
  *
- *                            Solving For Unknowns
+ *                                 Sequences
  *
  * ============================================================================
  */
 
 
-static double duration_from_q_and_f(double Q, double f)
+/*
+ * Repeating arithmetic sequence.
+ */
+
+
+static double sequence_arithmetic_next(double low, double high, double delta)
 {
-	/* compute duration from Q and frequency */
-	return Q / (sqrt(2.0) * LAL_PI * f);
+	static int i = 0;
+	double x = low + delta * i++;
+
+	if(high < low || high - low < delta)
+		return XLAL_REAL8_FAIL_NAN;
+
+	if(x > high) {
+		i = 1;
+		return low;
+	}
+
+	return x;
+}
+
+
+/*
+ * Repeating geometric sequence.
+ */
+
+
+static double sequence_geometric_next(double low, double high, double ratio)
+{
+	static unsigned i = 0;
+	double x = low * pow(ratio, i++);
+
+	if(high < low || high / low < ratio)
+		return XLAL_REAL8_FAIL_NAN;
+
+	if(x > high) {
+		i = 1;
+		return low;
+	}
+
+	return x;
+}
+
+
+/*
+ * Random amplitude presets.
+ */
+
+
+static double sequence_preset_next(gsl_rng *rng)
+{
+	static const double presets[] = {
+		1e-22,
+		2e-22,
+		5e-22,
+		1e-21,
+		2e-21,
+		5e-21,
+		1e-20
+	};
+
+	return presets[gsl_rng_uniform_int(rng, sizeof(presets)/sizeof(*presets))];
 }
 
 
@@ -599,86 +522,38 @@ static double duration_from_q_and_f(double Q, double f)
  */
 
 
-static double Log10Deviate(gsl_rng *rng, double log10_min, double log10_max)
-{
-	/* FIXME:  this distribution must be in GSL */
-	return pow(10.0, gsl_ran_flat(rng, log10_min, log10_max));
-}
-
-
-/* 
- * ============================================================================
- *
- *                          Frequency Distributions
- *
- * ============================================================================
- */
-
-
 /*
- * String cusps.  What's distributed uniformly is theta^2, the square of
- * the angle the line of sight makes with direction of the cusp.
+ * Return a random number in the range [a, b), whose logarithm is uniformly
+ * distributed
  */
 
 
-static double freq_dist_string_cusp_next(gsl_rng *rng, struct options options)
+static double ran_flat_log(gsl_rng *rng, double a, double b)
 {
-	const double thetasqmin = pow(options.fhigh, -2.0 / 3.0);
-	const double thetasqmax = pow(options.flow, -2.0 / 3.0);
-	const double thetasq = gsl_ran_flat(rng, thetasqmin, thetasqmax);
-
-	return pow(thetasq, -3.0 / 2.0);
+	return exp(gsl_ran_flat(rng, log(a), log(b)));
 }
 
 
 /*
- * Monotonically increasing arithmetic sequence.
+ * Logarithmically-distributed random(ish) sequence.  Same as
+ * sequence_geometric_next() but where each repetition of the sequence has
+ * a random factor applied whose logarithm is uniformly distributed.  The
+ * result is a random variable whose logarithm is uniformly distributed on
+ * average, but in which neighbouring numbers are separated by a guaranteed
+ * minimum ratio.
  */
 
 
-static double freq_dist_monotonic_arithmetic_next(struct options options)
+static double ran_flat_log_discrete(gsl_rng *rng, double a, double b, double ratio)
 {
-	static int i = 0;
-	const double freq = options.flow + options.deltaf * i++;
+	static double factor = 0.0;
+	double x = sequence_geometric_next(a, b / ratio, ratio);
 
-	if(freq <= options.fhigh)
-		return freq;
-	i = 1;
-	return options.flow;
-}
+	if(x == a)
+		/* sequence has looped.  must happen first time through */
+		factor = ran_flat_log(rng, 1.0, ratio);
 
-
-/*
- * Monotonically increasing geometric sequence.
- */
-
-
-static double freq_dist_monotonic_geometric_next(struct options options)
-{
-	static int i = 0;
-	const double freq = options.flow * pow(options.fratio, i++);
-
-	if(freq <= options.fhigh)
-		return freq;
-	i = 1;
-	return options.flow;
-}
-
-
-/*
- * Logarithmically-distributed random(ish) sequence.
- */
-
-
-static double freq_dist_random_geometric_next(gsl_rng *rng, struct options options)
-{
-	static double random_factor = 1.0;
-	double freq = freq_dist_monotonic_geometric_next(options);
-	if(freq * options.fratio > options.fhigh)
-		freq = freq_dist_monotonic_geometric_next(options);
-	if(freq == options.flow)
-		random_factor = Log10Deviate(rng, 0.0, log10(options.fratio));
-	return freq * random_factor;
+	return x * factor;
 }
 
 
@@ -691,17 +566,198 @@ static double freq_dist_random_geometric_next(gsl_rng *rng, struct options optio
  */
 
 
-static double hrss_preset_next(gsl_rng *rng)
-{
-	static const double presets[] = {
-		1e-19,
-		2.0e-19,
-		3.0e-19,
-		3.3e-18,
-		5.3e-17
-	};
+/* 
+ * ============================================================================
+ *
+ *                          String Cusp Simulations
+ *
+ * ============================================================================
+ */
 
-	return presets[gsl_rng_uniform_int(rng, sizeof(presets)/sizeof(*presets))];
+
+/*
+ * \theta is the angle the line of sight makes with the cusp.  \theta^{2}
+ * is distributed uniformly, and the high frequency cut-off of the
+ * injection is \propto \theta^{-3}.  So we first solve for the limits of
+ * \theta^{2} from the low- and high bounds of the frequency band of
+ * interest, pick a uniformly-distributed number in that range, and convert
+ * back to a high frequency cut-off.
+ */
+
+
+static double random_string_cusp_fhigh(double flow, double fhigh, gsl_rng *rng)
+{
+	const double thetasqmin = pow(fhigh, -2.0 / 3.0);
+	const double thetasqmax = pow(flow, -2.0 / 3.0);
+	const double thetasq = gsl_ran_flat(rng, thetasqmin, thetasqmax);
+
+	return pow(thetasq, -3.0 / 2.0);
+}
+
+
+/*
+ * Uniform sky location, and uniform polarization orientation.
+ */
+
+
+static void random_location_and_polarization(double *ra, double *dec, double *psi, gsl_rng *rng)
+{
+	*ra = gsl_ran_flat(rng, 0, LAL_TWOPI);
+	*dec = asin(gsl_ran_flat(rng, -1, +1));
+	*psi = gsl_ran_flat(rng, 0, LAL_TWOPI);
+}
+
+
+/*
+ * Pick a random string cusp injection.
+ */
+
+
+static SimBurst *random_string_cusp(double flow, double fhigh, double Alow, double Ahigh, gsl_rng *rng)
+{
+	SimBurst *sim_burst = XLALCreateSimBurst();
+
+	if(!sim_burst)
+		return NULL;
+
+	strcpy(sim_burst->waveform, "StringCusp");
+
+	/* high frequency cut-off and amplitude */
+
+	sim_burst->frequency = random_string_cusp_fhigh(flow, fhigh, rng);
+	sim_burst->amplitude = ran_flat_log(rng, Alow, Ahigh);
+
+	/* sky location and wave frame orientation */
+
+	random_location_and_polarization(&sim_burst->ra, &sim_burst->dec, &sim_burst->psi, rng);
+
+	/* string cusp waveform generator makes a linearly polarized
+	 * waveform in the + polarization.  it ignores these parameters,
+	 * but just for consistency we populate them appropriately */
+
+	sim_burst->pol_ellipse_angle = 0.0;
+	sim_burst->pol_ellipse_e = 1.0;
+
+	return sim_burst;
+}
+
+
+/* 
+ * ============================================================================
+ *
+ *                         Galactic Core Simulations
+ *
+ * ============================================================================
+ */
+
+
+/*
+ * Pick a random galactic core band- and time-limited white noise burst.
+ */
+
+
+static SimBurst *random_galactic_core(double minf, double maxf, double minband, double maxband, double mindur, double maxdur, double minEoverr2, double maxEoverr2, gsl_rng *rng)
+{
+	SimBurst *sim_burst = XLALCreateSimBurst();
+
+	if(!sim_burst)
+		return NULL;
+
+	strcpy(sim_burst->waveform, "BTLWNB");
+
+	/* sky location and wave frame orientation */
+
+	sim_burst->ra = MW_CENTER_J2000_RA_RAD;
+	sim_burst->dec = MW_CENTER_J2000_DEC_RAD;
+	sim_burst->psi = gsl_ran_flat(rng, 0, LAL_TWOPI);
+
+	/* pick a waveform */
+	/* FIXME:  this should be ULONG_MAX but metaio can't handle
+	 * unsigned ints yet */
+
+	sim_burst->waveform_number = floor(gsl_ran_flat(rng, 0, LONG_MAX));
+
+	/* centre frequency.  three steps between minf and maxf */
+
+	sim_burst->frequency = ran_flat_log_discrete(rng, minf, maxf, pow(maxf / minf, 1.0 / 3.0));
+
+	/* duration and bandwidth.  keep picking until a valid pair is
+	 * obtained (i.e. their product is >= 2 / \pi) */
+
+	do {
+		sim_burst->duration = ran_flat_log(rng, mindur, maxdur);
+		sim_burst->bandwidth = ran_flat_log(rng, minband, maxband);
+	} while(sim_burst->bandwidth * sim_burst->duration < LAL_2_PI);
+
+	/* energy */
+
+	sim_burst->egw_over_rsquared = ran_flat_log(rng, minEoverr2, maxEoverr2);
+
+	/* done */
+
+	return sim_burst;
+}
+
+
+/* 
+ * ============================================================================
+ *
+ *                           All-Sky sine-Gaussians
+ *
+ * ============================================================================
+ */
+
+
+/*
+ * the duration of a sine-Gaussian from its Q and centre frequency
+ */
+
+
+static double duration_from_q_and_f(double Q, double f)
+{
+	/* compute duration from Q and frequency */
+	return Q / (sqrt(2.0) * LAL_PI * f);
+}
+
+
+/*
+ * pick a sine-Gaussian
+ */
+
+
+static SimBurst *random_all_sky_sineGaussian(double minf, double maxf, double q, double minhrsst, double maxhrsst, gsl_rng *rng)
+{
+	SimBurst *sim_burst = XLALCreateSimBurst();
+
+	if(!sim_burst)
+		return NULL;
+
+	strcpy(sim_burst->waveform, "SineGaussian");
+
+	/* sky location and wave frame orientation */
+
+	random_location_and_polarization(&sim_burst->ra, &sim_burst->dec, &sim_burst->psi, rng);
+
+	/* q and centre frequency.  three steps between minf and maxf */
+
+	sim_burst->q = q;
+	sim_burst->frequency = ran_flat_log_discrete(rng, minf, maxf, pow(maxf / minf, 1.0 / 3.0));
+
+	/* hrss */
+
+	sim_burst->hrss = ran_flat_log(rng, minhrsst, maxhrsst) / duration_from_q_and_f(sim_burst->q, sim_burst->frequency);
+
+	/* hard-code for linearly polarized waveforms in the x
+	 * polarization.  induces LAL's sine-Gaussian generator to produce
+	 * linearly polarized sine-Gaussians (+ would be a cosine
+	 * Gaussian). */
+
+	sim_burst->pol_ellipse_angle = LAL_PI_2;
+	sim_burst->pol_ellipse_e = 1.0;
+
+	/* done */
+
+	return sim_burst;
 }
 
 
@@ -767,15 +823,15 @@ static void write_xml(MetadataTable proctable, MetadataTable procparams, Metadat
 
 int main(int argc, char *argv[])
 {
+	LALStatus status = blank_status;
 	struct options options;
 	INT8 tinj;
 	gsl_rng *rng;
-	LALStatus status = blank_status;
 	MetadataTable proctable;
 	MetadataTable procparams;
 	MetadataTable searchsumm;
 	SimBurst *sim_burst_head = NULL;
-	SimBurst *sim_burst = NULL;
+	SimBurst **sim_burst = &sim_burst_head;
 
 
 	/*
@@ -804,7 +860,7 @@ int main(int argc, char *argv[])
 	proctable.processTable = calloc(1, sizeof(*proctable.processTable));
 	XLALGPSTimeNow(&proctable.processTable->start_time);
 	LAL_CALL(populate_process_table(&status, proctable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE), &status);
-	snprintf(proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "");
+	snprintf(proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "H1,H2,L1");
 	if(options.user_tag)
 		snprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, "%s", options.user_tag);
 
@@ -840,134 +896,43 @@ int main(int argc, char *argv[])
 
 
 	for(tinj = options.gps_start_time; tinj <= options.gps_end_time; tinj += options.time_step * 1e9) {
-
-		/* allocate the injection */
-
-		if(sim_burst) {
-			sim_burst->next = XLALCreateSimBurst();
-			sim_burst = sim_burst->next;
-		} else
-			sim_burst_head = sim_burst = XLALCreateSimBurst();
-
-		/* process and simulation ids */
-
-		sim_burst->process_id = 0;
-		sim_burst->simulation_id = searchsumm.searchSummaryTable->nevents++;
-
-		/* frequency */
-
-		switch(options.freq_dist) {
-		case FREQ_DIST_NONE:
-			fprintf(stderr, "error: internal error\n");
-			exit(1);
-
-		case FREQ_DIST_STRING_CUSP:
-			sim_burst->frequency = freq_dist_string_cusp_next(rng, options);
-			break;
-
-		case FREQ_DIST_MONO_ARITHMETIC:
-			sim_burst->frequency = freq_dist_monotonic_arithmetic_next(options);
-			break;
-
-		case FREQ_DIST_MONO_GEOMETRIC:
-			sim_burst->frequency = freq_dist_monotonic_geometric_next(options);
-			break;
-
-		case FREQ_DIST_RANDOM_GEOMETRIC:
-			sim_burst->frequency = freq_dist_random_geometric_next(rng, options);
-			break;
-		}
-
-		/* q, duration, and bandwidth */
-
-		sim_burst->q = options.quality;
-		if(options.simwaveform_duration)
-			sim_burst->duration = options.simwaveform_duration;
-		else
-			sim_burst->duration = duration_from_q_and_f(options.quality, sim_burst->frequency);
-		sim_burst->bandwidth = LAL_2_PI / sim_burst->duration;
-
-		/* waveform (command line parsing code has already checked
-		 * that the length is safe) */
-
-		strcpy(sim_burst->waveform, options.waveform);
-
-		/* peak time at geocentre in GPS seconds */
-
-		XLALINT8NSToGPS(&sim_burst->time_geocent_gps, tinj);
-
-		/* peak time at geocentre in radians */
-
-		sim_burst->time_geocent_gmst = XLALGreenwichMeanSiderealTime(&sim_burst->time_geocent_gps);
-
-		/* sky location and polarization */
+		/* create an injection */
 
 		switch(options.population) {
 		case POPULATION_GALACTIC_CORE:
-			sim_burst->ra = MW_CENTER_J2000_RA_RAD;
-			sim_burst->dec = MW_CENTER_J2000_DEC_RAD;
-			sim_burst->psi = gsl_ran_flat(rng, 0, LAL_TWOPI);
+			*sim_burst = random_galactic_core(options.minf, options.maxf, options.minbandwidth, options.maxbandwidth, options.minduration, options.maxduration, options.minEoverr2, options.maxEoverr2, rng);
 			break;
 
-		case POPULATION_UNIFORM_SKY:
-			sim_burst->ra = gsl_ran_flat(rng, 0, LAL_TWOPI);
-			sim_burst->dec = asin(gsl_ran_flat(rng, -1, +1));
-			sim_burst->psi = gsl_ran_flat(rng, 0, LAL_TWOPI);
+		case POPULATION_ALL_SKY_SINEGAUSSIAN:
+			*sim_burst = random_all_sky_sineGaussian(options.minf, options.maxf, options.q, options.minhrss, options.maxhrss, rng);
 			break;
 
-		case POPULATION_ZENITH:
-			/* optimally oriented overhead:  ra and dec are
-			 * left undefined (they were initialized to NaNs
-			 * when the sim_burst was created) */
-			sim_burst->psi = 0.0;
+		case POPULATION_STRING_CUSP:
+			*sim_burst = random_string_cusp(options.minf, options.maxf, options.minA, options.maxA, rng);
 			break;
 		}
 
-		if(!strcmp(options.waveform, "StringCusp")) {
-			/* string cusp waveform generator makes a linearly
-			 * polarized waveform in the + polarization.  it
-			 * ignores these parameters, but just for
-			 * consistency we populate them appropriately */
-			sim_burst->pol_ellipse_angle = 0.0;
-			sim_burst->pol_ellipse_e = 1.0;
-		} else {
-			/* polarization ellipse for circularly polarized
-			 * waveforms.  hard-coded to linearly polarized "x"
-			 * waveforms (makes LAL's sine-Gaussian generator
-			 * make linearly-polarized sine-Gaussians like the
-			 * old code). */
-			sim_burst->pol_ellipse_angle = LAL_PI_2;
-			sim_burst->pol_ellipse_e = 1.0;
-		}
-
-		/* strain */
-		/* FIXME:  must set hrss, amplitude, and egw */
-
-		switch(options.strain_dist) {
-		case STRAIN_DIST_NONE:
-			fprintf(stderr, "error: internal error\n");
+		if(!*sim_burst) {
+			XLALPrintError("can't make injection");
 			exit(1);
-
-		case STRAIN_DIST_CONST_HRSS:
-			sim_burst->amplitude = sim_burst->hrss = sim_burst->egw_over_rsquared = options.strain_scale_min;
-			break;
-
-		case STRAIN_DIST_LOG_HRSS:
-			sim_burst->amplitude = sim_burst->hrss = sim_burst->egw_over_rsquared = Log10Deviate(rng, options.strain_scale_min, options.strain_scale_max);
-			break;
-
-		case STRAIN_DIST_LOG_HRSSTAU:
-			sim_burst->amplitude = sim_burst->hrss = sim_burst->egw_over_rsquared = Log10Deviate(rng, options.strain_scale_min - log10(sim_burst->duration), options.strain_scale_max - log10(sim_burst->duration));
-			break;
-
-		case STRAIN_DIST_PRESET_HRSS:
-			sim_burst->amplitude = sim_burst->hrss = sim_burst->egw_over_rsquared = hrss_preset_next(rng);
-			break;
 		}
 
-		/* pick a waveform */
+		/* set process and simulation ids */
 
-		sim_burst->waveform_number = options.waveform_number_min + (unsigned long) floor(gsl_ran_flat(rng, options.waveform_number_min, options.waveform_number_max));
+		(*sim_burst)->process_id = 0;
+		(*sim_burst)->simulation_id = searchsumm.searchSummaryTable->nevents++;
+
+		/* peak time at geocentre in GPS seconds */
+
+		XLALINT8NSToGPS(&(*sim_burst)->time_geocent_gps, tinj);
+
+		/* peak time at geocentre in GMST radians */
+
+		(*sim_burst)->time_geocent_gmst = XLALGreenwichMeanSiderealTime(&(*sim_burst)->time_geocent_gps);
+
+		/* move to next injection */
+
+		sim_burst = &(*sim_burst)->next;
 	}
 
 	/* output */

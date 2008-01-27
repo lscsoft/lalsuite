@@ -1688,201 +1688,136 @@ E
 \prog{lalapps\_binj} --- produces burst injection data files.
 
 \item[Synopsis]
-\prog{lalapps\_binj} [\option{--help}]
+\prog{lalapps\_binj}
 \option{--gps-start-time}~\parm{seconds}
-\option{--gps-end-time}~\parm{seconds} [\option{--time-step}~\parm{value}]
-[\option{--seed}~\parm{seed}] [\option{--waveform}~\parm{name}]
-[\option{--population}~\parm{name}] [\option{--freq-dist}~\parm{name}]
-[\option{--flow}~\parm{Hertz}] [\option{--fhigh}~\parm{Hertz}]
-[\option{--deltaf}~\parm{Hertz}] [\option{--quality}~\parm{value}]
-[\option{--strain-dist}~\parm{name}]
-[\option{--strain-scale-min}~\parm{value}]
-[\option{--strain-scale-max}~\parm{value}]
-[\option{--max-distance}~\parm{value}]
-[\option{--min-distance}~\parm{value}]
-[\option{--simwaveform-duration}~\parm{seconds}]
-[\option{--waveform\_number-min}~\parm{value}]
-[\option{--waveform\_number-max}~\parm{value}]
-[\option{--usertag}~\parm{string}]
+\option{--gps-end-time}~\parm{seconds}
+[\option{--help}]
+[\option{--max-amplitude}~\parm{value}]
+[\option{--min-amplitude}~\parm{value}]
+[\option{--max-bandwidth}~\parm{Hertz}]
+[\option{--min-bandwidth}~\parm{Hertz}]
+[\option{--max-duration}~\parm{seconds}]
+[\option{--min-duration}~\parm{seconds}]
+[\option{--max-e-over-r2}~\parm{\(\Msol/\text{\parsec}^{2}\)}]
+[\option{--min-e-over-r2}~\parm{\(\Msol/\text{\parsec}^{2}\)}]
+[\option{--max-frequency}~\parm{Hertz}]
+[\option{--min-frequency}~\parm{Hertz}]
+[\option{--population}~\parm{name}]
+[\option{--q}~\parm{value}]
+[\option{--seed}~\parm{value}]
+[\option{--time-step}~\parm{value}]
+[\option{--user-tag}~\parm{string}]
 
 \item[Description] 
-\prog{lalapps\_binj} generates a number of burst parameters suitable for
-using in a Monte Carlo injection to test the efficiency of a burst search.
-The various parameters (detailed below) are specified on the command line
-or can be randomly chosen in a manner appropriate for an burst upper limit
-search.
+\prog{lalapps\_binj} produces a LIGO Light-Weight XML file containing a
+sim\_burst table describing a sequence of burst software injections.  This
+file can be read by \prog{lalapps\_power}, which will perform the software
+injections described therein while analyzing data.
 
-\prog{lalapps\_binj} produces an injection set following one of two sky
-disitributions:  a set of injections from point sources
-uniformly-distributed over the sky with uniformly-distributed linear
-polarizations, or a set of injections located directly above each
-observatory with optimally-oriented linear polarizations.  Which set is
-produced is selected by the \option{--population} option.
+\prog{lalapps\_binj} produces one of three injection populations:  an
+injection population simulating cosmological string cusp burst events, an
+injection population consisting of sine-Gaussians uniformly distributed
+over the sky, and an injection population of band- and time-limited
+white-noise burst waveforms originating from the direction of the galactic
+core.  These populations are selected with the \option{--population}
+option.  Each population required additional parameters to characterize it,
+and other command line options are associated with these.
 
-Injections are produced with various strains, and one of several strain
-distributions can be selected with the \option{--strain-dist} parameter.
-Some strain distributions require a ``min'' and or a ``max'' parameter, for
-example in the case of logarithmically-distributed \(h_{\mathrm{rss}}\) one
-needs to specify the smallest and largest values of \(\log_{10}
-h_{\mathrm{rss}}\).  These parameters are set using the
-\option{--strain-scale-min} and \option{--strain-scale-max} command line
-arguments.  The following table lists the strain distributions, and the
-meaning of the ``min'' and ``max'' parameters for each.
-\begin{center}\begin{tabular}{p{.3\linewidth}ccc}
-\hline\hline
-Description & \option{--strain-dist} & \option{--strain-scale-min} &
-\option{--strain-scale-max} \\
-\hline
-Constant \(h_{\mathrm{peak}}\) & \texttt{consthpeak} & \(h_{\mathrm{peak}}\) & n/a \\
-Constant \(h_{\mathrm{rss}}\) & \texttt{consthrss} & \(h_{\mathrm{rss}}\) & n/a \\
-Randomly select one of several preset values of \(h_{\mathrm{peak}}\) & \texttt{hpeakpresets} & n/a & n/a \\
-Uniformly-distributed \(\log_{10} h_{\mathrm{peak}}\) & \texttt{loghpeak} & \(\min \log_{10} h_{\mathrm{peak}}\) & \(\max \log_{10} h_{\mathrm{peak}}\) \\
-Uniformly-distributed \(\log_{10} h_{\mathrm{rss}}\) & \texttt{loghrss} & \(\min \log_{10} h_{\mathrm{rss}}\) & \(\max \log_{10} h_{\mathrm{rss}}\) \\
-Uniformly-distributed \(\log_{10} (h_{\mathrm{rss}} \Delta t)\) & \texttt{loghrss-t} & \(\min \log_{10} (h_{\mathrm{rss}} \Delta t)\) & \(\max \log_{10} (h_{\mathrm{rss}} \Delta t)\) \\
-\hline\hline
-\end{tabular}\end{center}
-
-One of several frequency distributions can be chosen.  If the waveform is
-set to \texttt{StringCusp}, then a frequency distribution appropriate for
-that source is selected.  Otherwise the user can choose an arithmetic
-frequency progression, a geometric frequency progression, or a
-logarithmically-uniform random frequency distribution.
-
-The output of this program  is  a  list  of  the  injected events, starting
-at  the specified start time, ending at the specified end time, and
-containing one set  of burst parameters every specified time step.  The
-output is written to a file name in the standard burst pipeline format:
-\begin{center}
-\begin{verbatim}
-        HL-INJECTIONS_USERTAG_SEED-GPSSTART-DURATION.xml
-\end{verbatim}
-\end{center}
-where \verb$USERTAG$ is \parm{tag} as specfied on the command line,
-\verb$SEED$ is the  value  of  the random number seed chosen and
-\verb$GPSSTART$ and \verb$DURATION$ describes the GPS time interval that
-the file covers. The file is in the standard LIGO lightweight XML format
-containing a \texttt{sim\_burst} table that describes the injections.  This
-table is described in the LAL \texttt{tools} package under
-\texttt{LIGOMetadataTables.h} header.  
-
-If a \option{--user-tag} is not specified on the command line, the
-\texttt{\_USERTAG} part of the filename will be omitted.
+The output is written to a file name in the standard burst pipeline format:
+\begin{quote}
+\texttt{HL-INJECTIONS\_USERTAG-GPSSTART-DURATION.xml}
+\end{quote}
+where \texttt{USERTAG} is the user tag specfied on the command line, and
+\texttt{GPSSTART} and \texttt{DURATION} describes the GPS time interval
+that the file covers.  If a \option{--user-tag} is not specified on the
+command line, the \texttt{\_USERTAG} part of the filename will be omitted.
 
 \item[Options]\leavevmode
 \begin{entry}
-\item[\option{--deltaf} \parm{Hertz}]
-Optional.  The linear spacing between frequencies used to make
-injections.  Default value is \(\unit{0}{\hertz}\).
-
-\item[\option{--fhigh} \parm{Hertz}]
-Optional.  Only generate injections with frequencies below \parm{fhigh}.
-Default value is \(\unit{2000}{\hertz}\).
-
-\item[\option{--flow} \parm{Hertz}]
-Optional.  The code can generate injections at multiple frequencies.  This
-option sets the first frequency used in that case.  Default value is
-\(\unit{70}{\hertz}\).
-
-\item[\option{--freq-dist} \parm{name}]
-Optional.  If not doing string injections (by setting
-\option{--waveform=StringCusp}), use this to select a frequency
-distribution.  Allowed values are \option{monoarithmetic} for a
-monotonically increasing arithmetic progression, \option{monogeometric} for
-a monotonically increasing geometric progression, or \option{randgeometric}
-for a sequence of logarithmically-distributed random frequencies.
-\emph{Note}:  the \option{randgeometric} sequence is a variant of the
-\option{monogeometric} sequence with each injection displaced from the
-nominal frequency by a random amount.  To avoid biasing the noise estimate
-by having two injections occur at nearly the same frequency, a larger
-\option{--fratio} should be used with this sequence.
-
 \item[\option{--gps-end-time} \parm{seconds}]
-Required.  End time of the injection data to be created.
+Set the end time of the injection population in GPS seconds.  The injection
+list in the output file will contain injections that span only the times
+between \option{--gps-start-time} and \option{--gps-end-time}.
 
 \item[\option{--gps-start-time} \parm{seconds}]
-Required.  Start time of the injection data to be created.
+Set the start time of the injection population in GPS seconds.  The
+injection list in the output file will contain injections that span only
+the times between \option{--gps-start-time} and \option{--gps-end-time}.
 
-\item[\option{--help}] Print a help message.
+\item[\option{--help}]
+Print a usage message.
 
-\item[\option{--max-distance} \parm{value}]
-Optional.  This is used when one wants to inject simulated
-Inspiral+Burst+Ringdown waveforms.  This specifies the maximum distance in
-Kpc that a source can be placed at.  This should be used with the
-\option{--min-distance}.
+\item[\option{--max-amplitude} \parm{value}]
+Set the upper bound of the range of injection amplitudes.  This only
+affects string cusp injections.
 
-\item[\option{--min-distance} \parm{value}]
-Optional.  This is used when one wants to inject simulated
-Inspiral+Burst+Ringdown waveforms.  This specifies the minimum distance in
-Kpc that a source can be placed at.  This should be used with the
-\option{--max-distance}.
+\item[\option{--min-amplitude} \parm{value}]
+Set the lower bound of the range of injection amplitudes.  This only
+affects string cusp injections.
+
+\item[\option{--max-bandwidth} \parm{Hertz}]
+Set the upper bound of the range of injection bandwidths.  This only
+affects band- and time-limited white-noies burst injections.
+
+\item[\option{--min-bandwidth} \parm{Hertz}]
+Set the lower bound of the range of injection bandwidths.  This only
+affects time- and band-limited white-noise burst injections.
+
+\item[\option{--max-duration} \parm{seconds}]
+Set the upper bound of the range of injection durations.  This only affects
+time- and band-limited white-noise burst injections.
+
+\item[\option{--min-duration} \parm{seconds}]
+Set the lower bound of the range of injection durations.  This only affects
+time- and band-limited white-noise burst injections.
+
+\item[\option{--max-e-over-r2} \parm{\(\Msol / \text{\parsec}^{2}\)}]
+Set the upper bound of the range of injection energies.  This only affects
+time- and band-limited white-noise burst injections.  The energy of the
+injection is the equivalent isotropic radiated energy for an isolated
+source.  The value given on the command line is the energy in solar masses
+divided by the square of the distance to the source in parsecs.
+
+\item[\option{--min-e-over-r2} \parm{\(\Msol / \text{\parsec}^{2}\)}]
+Set the lower bound of the range of injection energies.  This only affects
+time- and band-limited white-noise burst injections.  See
+\option{--max-e-over-r2} for more information.
+
+\item[\option{--max-hrss} \parm{value}]
+Set the upper bound of the range of injection \(h_{\text{rss}}\) values.
+This only affects sine-Gaussian injections.  Infact, this argument sets the
+product of the injection's \(h_{\text{rss}}\) and its duration --- shorter
+injections will be assigned higher \(h_{\text{rss}}\) values.  This
+improves the match of the injection amplitudes to the pipeline's
+sensitivity curve.  The ``duration'' of a sine-Gaussian is interpreted to
+be \(Q / (\sqrt{2} \pi f)\).
+
+\item[\option{--min-hrss} \parm{value}]
+Set the lower bound of the range of injection \(h_{\text{rss}}\) values.
+This only affects sine-Gaussian injections.  See \option{--max-hrss} for
+more information.
 
 \item[\option{--population} \parm{name}]
-The population of injections to synthesize.  Select one of:
-\begin{itemize}
-\item \texttt{uniform\_sky}
-\item \texttt{zenith}
-\end{itemize}
-The default is \texttt{uniform\_sky}, which produces a set of point-source
-injections uniformly distributed over the sky with uniformly distributed
-linear polarization.  \texttt{zenith} produces a set of injections incident
-from directly above each observatory and optimially-oriented for each
-(think of this as a burst in the form of an inwardly-directed spherical
-shell centred on the geocenter, with optimal polarization at each
-observatory).
+Select the injection population.  The allowed names are
+\option{galactic\_core}, \option{string\_cusp},
+\option{all\_sky\_sinegaussian}.
 
-\item[\option{--quality} \parm{value}]
-Optional.  The quality factor for sine-Gaussian, Gaussian, ring-down and
-ring-up waveforms.
+\item[\option{--q} \parm{value}]
+Set the \(Q\) of the injections.  This only affects sine-Gaussian
+injections.
 
 \item[\option{--seed} \parm{value}]
-Optional. Seed the random number generator with the integer \parm{value}.
-Defaults to 1.
-
-\item[\option{--simwaveform-duration} \parm{seconds}]
-Optional.  This specifies the duration in seconds of the frames containing
-the simulated waveforms.
-
-\item[\option{--strain-dist} \parm{name}]
-Required.  Select the strain amplitude distribution.  See the table in the
-Description section above for more information.
-
-\item[\option{--strain-scale-max} \parm{value}]
-Optional.  Used to set the maximum of the distribution selected with
-\option{--strain-scale}.  The meaning of the value set with this parameter
-depends on the distribution chosen.
-
-\item[\option{--strain-scale-min} \parm{value}]
-Optional.  Used to set the minimum of the distribution selected with
-\option{--strain-scale}.  The meaning of the value set with this parameter
-depends on the distribution chosen.
+Set the seed for the random number generator.  This allows an injection
+population to be reconstructed identically, or to ensure that two different
+files do not contain the same injections.
 
 \item[\option{--time-step} \parm{value}]
-Optional.  Sets the interval between injections.  The injections will
-occour at \parm{value}$/\pi$ second intervals.  Defaults to 210.
+Set the time interval between injections.  The time interval is
+\(\text{\parm{value}} / \pi\) seconds.
 
 \item[\option{--user-tag} \parm{string}]
-Optional. Set the user tag for this job to be \parm{string}. May also be
-specified on the command line as \option{-userTag} for LIGO database
-compatibility.
-
-\item[\option{--waveform} \parm{name}]
-Optional.  Default is \texttt{SineGaussian}.   The string \parm{wave} will
-be written into the \texttt{waveform} column of the \texttt{sim\_burst}
-table output. This is used by the burst code to determine which type of
-waveforms it should inject into the data.  Types implemented in LAL inject
-package are:
-\begin{description}
-\item[\texttt{SineGaussian}]  Inject a sine-Gaussian waveform.
-
-\end{description}
-
-\item[\option{--waveform-number-max} \parm{value}] 
-Optional.  This specifies the maximum number of the simulated waveforms to
-be injected.  
-
-\item[\option{--waveform-number-min} \parm{value}] 
-Optional.  This specifies the minimum number of the simulated waveforms to
-be injected.
+Set the user tag appearing in the output filename, and in the metadata
+tables in the file.
 
 \end{entry}
 
@@ -1891,14 +1826,14 @@ be injected.
 lalapps_binj \
 --gps-start-time 794063160 \
 --gps-end-time 794063610.5 \
---time-step 200 \
---flow 70.0 \
---fhigh 2118.0 \
---fratio 1.17629327749 \
---quality 8.89 \
---strain-dist consthrss
---strain-scale-min 6.0e-21 \
---seed 45
+--min-frequency 70.0 \
+--max-frequency 2118.0 \
+--min-hrss 3.0e-24 \
+--max-hrss 1.0e-21 \
+--population all_sky_sinegaussian \
+--q 8.89 \
+--seed 45 \
+--time-step 200
 \end{verbatim}
 
 \item[Author] 
