@@ -73,6 +73,7 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <lal/Date.h>
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 #include <lal/LIGOLwXML.h>
@@ -110,9 +111,15 @@ static int WriteLIGOLwXMLArrayMeta(
 )
 {
 	int error = 0;
+	char *s = XLALGPSToStr(NULL, epoch);
 
-	error |= fprintf(stream, "%s<Time Name=\"epoch\" Type=\"GPS\">%d.%09d</Time>\n", indent, epoch->gpsSeconds, epoch->gpsNanoSeconds) < 0;
+	if(!s)
+		return -1;
+
+	error |= fprintf(stream, "%s<Time Name=\"epoch\" Type=\"GPS\">%s</Time>\n", indent, s) < 0;
 	error |= fprintf(stream, "%s<Param Name=\"f0\" Unit=\"s^-1\" Type=\"real_8\">%.16g</Param>\n", indent, f0) < 0;
+
+	XLALFree(s);
 
 	return error ? -1 : 0;
 }
@@ -282,7 +289,7 @@ static int WriteLIGOLwXMLArray(
 {
 	int error = 0;
 
-	error |= fprintf(stream, "\t<LIGO_LW>\n") < 0;
+	error |= fprintf(stream, "\t<LIGO_LW Name=\"%s%s\">\n", is_complex ? (is_real4 ? "COMPLEX8" : "COMPLEX16") : (is_real4 ? "REAL4" : "REAL8"), is_tseries ? "TimeSeries" : "FrequencySeries") < 0;
 	if(comment)
 		error |= fprintf(stream, "\t\t<Comment>%s</Comment>\n", comment) < 0;
 	error |= WriteLIGOLwXMLArrayMeta(stream, "\t\t", epoch, f0) < 0;
