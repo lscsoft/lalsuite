@@ -985,15 +985,8 @@ def make_power_fragment(dag, parents, instrument, seg, tag, framecache, injargs 
 
 
 def make_binj_fragment(dag, seg, tag, offset, flow, fhigh):
-	# determine frequency ratio from number of injections across band
-	# (take a bit off to allow fhigh to be picked up despite round-off
-	# errors)
-	fratio = 0.9999999 * (fhigh / flow) ** (1.0 / binjjob.injection_bands)
-
-	# one injection every time-step / pi seconds, taking
-	# injection_bands steps across the frequency range, this is how
-	# often the sequence "repeats"
-	period = binjjob.injection_bands * float(binjjob.get_opts()["time-step"]) / math.pi
+	# one injection every time-step / pi seconds
+	period = float(binjjob.get_opts()["time-step"]) / math.pi
 
 	# adjust start time to be commensurate with injection period
 	start = seg[0] - seg[0] % period + period * offset
@@ -1005,7 +998,6 @@ def make_binj_fragment(dag, seg, tag, offset, flow, fhigh):
 	node.set_user_tag(tag)
 	node.add_macro("macroflow", flow)
 	node.add_macro("macrofhigh", fhigh)
-	node.add_macro("macrofratio", fratio)
 	node.add_macro("macroseed", int(time.time() + start))
 	dag.add_node(node)
 	return set([node])
