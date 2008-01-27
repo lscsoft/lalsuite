@@ -185,6 +185,7 @@ static void print_usage(void)
 "\n" \
 "--max-hrss value\n" \
 "--min-hrss value\n" \
+	); fprintf(stderr, 
 "	Set the bounds of the injection h_{rss} values.  These only affect\n" \
 "	sine-Gaussian injections.  (Actually, these set the bounds of the\n" \
 "	product of the waveform's hrss and its duration, which makes the\n" \
