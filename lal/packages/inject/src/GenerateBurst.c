@@ -131,9 +131,9 @@ int XLALBurstInjectSignals(
 	/* to be deduced from the time series' channel name */
 	LALDetector detector;
 	/* + and x time series for injection waveform */
-	REAL8TimeSeries *injection_hplus, *injection_hcross;
+	REAL8TimeSeries *hplus, *hcross;
 	/* injection time series as added to detector's */
-	REAL8TimeSeries *injection_h;
+	REAL8TimeSeries *h;
 	/* skip injections whose geocentre times are more than this many
 	 * seconds outside of the target time series */
 	const double injection_window = 600.0;
@@ -149,9 +149,10 @@ int XLALBurstInjectSignals(
 		}
 	}
 	if(i >= LAL_NUM_DETECTORS) {
-		XLALPrintError("can't identify detector from channel '%s'", series->name);
+		XLALPrintError("%s(): can't identify instrument from channel '%s'", func, series->name);
 		XLAL_ERROR(func, XLAL_EDATA);
 	}
+	XLALPrintInfo("%s(): channel name is '%s', instrument appears to be '%s'", func, series->name, detector.frDetector.prefix);
 
 	/* iterate over injections */
 
@@ -165,27 +166,27 @@ int XLALBurstInjectSignals(
 		/* construct the h+ and hx time series for the injection
 		 * waveform */
 
-		if(XLALGenerateSimBurst(&injection_hplus, &injection_hcross, sim_burst, series->deltaT))
+		if(XLALGenerateSimBurst(&hplus, &hcross, sim_burst, series->deltaT))
 			XLAL_ERROR(func, XLAL_EFUNC);
 
 		/* project the wave strain onto the detector's response
 		 * tensor to produce the injection strain as seen in the
 		 * detector. */
 
-		injection_h = XLALSimDetectorStrainREAL8TimeSeries(injection_hplus, injection_hcross, sim_burst->ra, sim_burst->dec, sim_burst->psi, &detector, &sim_burst->time_geocent_gps);
-		XLALDestroyREAL8TimeSeries(injection_hplus);
-		XLALDestroyREAL8TimeSeries(injection_hcross);
-		if(!injection_h)
+		h = XLALSimDetectorStrainREAL8TimeSeries(hplus, hcross, sim_burst->ra, sim_burst->dec, sim_burst->psi, &detector, &sim_burst->time_geocent_gps);
+		XLALDestroyREAL8TimeSeries(hplus);
+		XLALDestroyREAL8TimeSeries(hcross);
+		if(!h)
 			XLAL_ERROR(func, XLAL_EFUNC);
 
 		/* add the injection strain time series to the detector
 		 * data */
 
-		if(XLALAddInjectionREAL8TimeSeries(series, injection_h, response)) {
-			XLALDestroyREAL8TimeSeries(injection_h);
+		if(XLALAddInjectionREAL8TimeSeries(series, h, response)) {
+			XLALDestroyREAL8TimeSeries(h);
 			XLAL_ERROR(func, XLAL_EFUNC);
 		}
-		XLALDestroyREAL8TimeSeries(injection_h);
+		XLALDestroyREAL8TimeSeries(h);
 	}
 
 	return 0;
