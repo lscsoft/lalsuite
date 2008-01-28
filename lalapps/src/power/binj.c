@@ -44,15 +44,20 @@
 #include <gsl/gsl_randist.h>
 
 
+#include <lal/Date.h>
+#include <lal/GenerateBurst.h>
+#include <lal/LALConstants.h>
+#include <lal/LALSimBurst.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
+#include <lal/LIGOLwXML.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
-#include <lal/LIGOLwXML.h>
-#include <lal/Date.h>
 #include <lal/TimeDelay.h>
+#include <lal/TimeSeries.h>
 #include <lal/XLALError.h>
+
+
 #include <lalapps.h>
 #include <processtable.h>
 
@@ -561,15 +566,6 @@ static double ran_flat_log_discrete(gsl_rng *rng, double a, double b, double rat
 /* 
  * ============================================================================
  *
- *                                hrss Presets
- *
- * ============================================================================
- */
-
-
-/* 
- * ============================================================================
- *
  *                          String Cusp Simulations
  *
  * ============================================================================
@@ -659,6 +655,7 @@ static SimBurst *random_string_cusp(double flow, double fhigh, double Alow, doub
 
 static SimBurst *random_galactic_core(double minf, double maxf, double minband, double maxband, double mindur, double maxdur, double minEoverr2, double maxEoverr2, gsl_rng *rng)
 {
+	REAL8TimeSeries *hplus, *hcross;
 	SimBurst *sim_burst = XLALCreateSimBurst();
 
 	if(!sim_burst)
@@ -693,6 +690,16 @@ static SimBurst *random_galactic_core(double minf, double maxf, double minband, 
 	/* energy */
 
 	sim_burst->egw_over_rsquared = ran_flat_log(rng, minEoverr2, maxEoverr2);
+
+	/* populate the hrss column for convenience later */
+	/* FIXME:  sample rate is hard-coded to 8192 Hz, which is what the
+	 * excess power pipeline's .ini file is configured for in CVS, but
+	 * because it can be easily changed this is not good */
+
+	XLALGenerateSimBurst(&hplus, &hcross, sim_burst, 1.0 / 8192);
+	sim_burst->hrss = sqrt(pow(XLALMeasureHrss(hplus), 2) + pow(XLALMeasureHrss(hcross), 2));
+	XLALDestroyREAL8TimeSeries(hplus);
+	XLALDestroyREAL8TimeSeries(hcross);
 
 	/* done */
 
