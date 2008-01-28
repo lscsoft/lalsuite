@@ -272,8 +272,8 @@ LALFindChirpInjectIMR (
     CHECKSTATUSPTR( status );
 
     /* add the ringdown */
-    wfm = XLALGenerateInspRing( status->statusPtr, &waveform, thisEvent, 
-        thisRingdownEvent, injectSignalType );
+    wfm = XLALGenerateInspRing( &waveform, thisEvent, thisRingdownEvent, 
+       injectSignalType );
  
     if ( !wfm )
     {

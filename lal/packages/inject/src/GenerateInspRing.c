@@ -1,5 +1,4 @@
-/*
-*  Copyright (C) 2007 Bernd Machenschalk, Stephen Fairhurst
+/* *  Copyright (C) 2007 Bernd Machenschalk, Stephen Fairhurst
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -51,15 +50,19 @@
 
 NRCSID (GENERATEINSPRINGC,"$Id$");
 
+static SimRingdownTable*
+XLALDeriveRingdownParameters(
+    SimRingdownTable    *ringInj      
+    );
+
 /** Takes an inspiral waveform, and a simInspiralTable and generates a ringdown
  * at an appropriate frequency and quality */
 CoherentGW *
 XLALGenerateInspRing(
-    LALStatus           *status,
-    CoherentGW		*waveform,    /**< the inspiral waveform */
-    SimInspiralTable	*inspiralInj,     /**< details of the inspiral */
-    SimRingdownTable    *ringInj,
-    INT4                 injectSignalType
+    CoherentGW          *waveform,     /**< the inspiral waveform */
+    SimInspiralTable    *inspiralInj,  /**< details of the inspiral */
+    SimRingdownTable    *ringInj,      /**< ringdown details to be populated */
+    int                  injectSignalType /**< type of injection */
     )
 {
   static const char *func = "XLALGenerateInspRing";
@@ -106,22 +109,8 @@ XLALGenerateInspRing(
   REAL4                 orbAngMom, totalAngMom;
   REAL4                 Jx, Jy, Jz;
   
-  LALMSTUnitsAndAcc     gmstUnits = { MST_HRS, LALLEAPSEC_STRICT };
-  LALGPSandAcc          gpsAndAcc;
-  SkyPosition           skyPos;
-  LALSource             source;
-  LALPlaceAndGPS        placeAndGPS;
-  DetTimeAndASource     detTimeAndSource;
-  LALDetector           lho = lalCachedDetectors[LALDetectorIndexLHODIFF];
-  LALDetector           llo = lalCachedDetectors[LALDetectorIndexLLODIFF];
-  LALDetAndSource       detAndSource;
-  LALDetAMResponse      resp;
-  REAL8                 time_diff_ns;
   REAL4                 splus, scross, cosiota, cosiotaA, cosiotaB;
   
-  INITSTATUS( status, "XLALGenerateInspRing", GENERATEINSPRINGC );
-  ATTATCHSTATUSPTR( status );
-
   /*
    *
    * Work out where the inspiral ended
@@ -184,22 +173,6 @@ XLALGenerateInspRing(
    *
    */
 
-  /* Calculate the Ringdown parameters */
-  XLALPrintInfo( "Calculating (approximate) parameters for the ringdown\n" );
-
-  memcpy( ringInj->waveform, "Ringdown", LIGOMETA_WAVEFORM_MAX * sizeof(CHAR));
-  LALSnprintf( ringInj->coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR), 
-      "EQUATORIAL");
-  
-  ringInj->geocent_start_time = inspiralInj->geocent_end_time;
-
-  ringInj->longitude    = inspiralInj->longitude;
-  ringInj->latitude     = inspiralInj->latitude;
-  ringInj->distance     = inspiralInj->distance;
-
-  XLALPrintInfo(
-      "Ringdown longitude = %.2f, latitude = %.2f, distance = %.2f\n",
-      ringInj->longitude, ringInj->latitude, ringInj->distance );
 
 
   /* estimate the final angular momentum */
@@ -241,6 +214,15 @@ XLALGenerateInspRing(
   XLALPrintInfo( 
       "Estimated Ringdown Frequency = %.2f Hz, and Quality = %.2f\n"
       "\n", ringInj->frequency, ringInj->quality );
+
+  ringInj->longitude    = inspiralInj->longitude;
+  ringInj->latitude     = inspiralInj->latitude;
+  ringInj->distance     = inspiralInj->distance;
+
+  XLALPrintInfo(
+      "Ringdown longitude = %.2f, latitude = %.2f, distance = %.2f\n",
+      ringInj->longitude, ringInj->latitude, ringInj->distance );
+
 
   /*
    *
@@ -315,6 +297,9 @@ XLALGenerateInspRing(
    * which we smooth the merger to the ring */
 
   outputLength = inputLength + 2 * mergerLength - 1 + ringLength;
+
+
+
 
   /* 
    *
@@ -394,6 +379,7 @@ XLALGenerateInspRing(
     }
   }
 
+  /* populate ringdown phase */
   ringInj->phase = phase;
   
   /* converge to ring frequency and constant polarization */
@@ -431,78 +417,21 @@ XLALGenerateInspRing(
     }
   }
 
+  /* ringdown start time */
+  {
+    REAL8 tRing;
+    tRing = XLALGPSGetREAL8(&(inspiralInj->geocent_end_time));
+    tRing += ( mergerLength + endMerger + 1.0) * dt;
+    XLALGPSSetREAL8( &(ringInj->geocent_start_time), tRing );
+  }
+  XLALPrintInfo(
+      "Ringdown start time = %d.%d\n", ringInj->geocent_start_time.gpsSeconds,
+      ringInj->geocent_start_time.gpsNanoSeconds);
+
+  /* ringdown polarization */
   ringInj->polarization = polarization;
     
-  /* correct time */
-  LALAddFloatToGPS( status->statusPtr, &(ringInj->geocent_start_time),
-          &(ringInj->geocent_start_time), ( mergerLength + endMerger + 1.0) * dt );
-  CHECKSTATUSPTR(status);
-  
-  memset( &skyPos, 0, sizeof(SkyPosition) );
-  memset( &source, 0, sizeof(LALSource) );
-  memset( &placeAndGPS, 0, sizeof(LALPlaceAndGPS) );
-  memset( &detTimeAndSource, 0, sizeof(DetTimeAndASource) );
-  memset( &detAndSource, 0, sizeof(LALDetAndSource) );
- 
-  skyPos.longitude = ringInj->longitude;
-  skyPos.latitude  = ringInj->latitude;
-  skyPos.system    = COORDINATESYSTEM_EQUATORIAL;
- 
-  source.equatorialCoords = skyPos;
-  source.orientation      = ringInj->polarization;
-    
-  placeAndGPS.p_gps = &(ringInj->geocent_start_time);
-    
-  detTimeAndSource.p_det_and_time = &placeAndGPS;
-  detTimeAndSource.p_source = &skyPos;
-  detAndSource.pSource = &source;
-  
-  /* and get time at the sites */
-  ringInj->h_start_time = ringInj->l_start_time = ringInj->geocent_start_time;
-  
-  /* lho */
-  placeAndGPS.p_detector = &lho;
-  LALTimeDelayFromEarthCenter( status->statusPtr, &time_diff_ns, 
-        &detTimeAndSource );
-  CHECKSTATUSPTR(status);
-  
-  LALAddFloatToGPS( status->statusPtr, &(ringInj->h_start_time),
-        &(ringInj->h_start_time), time_diff_ns );
-  CHECKSTATUSPTR(status);
- 
-  /* compute the response of the LHO detectors */
-  detAndSource.pDetector = &lho;
-  LALComputeDetAMResponse( status->statusPtr, &resp, &detAndSource,
-        &gpsAndAcc );
-  CHECKSTATUSPTR(status);
- 
-  /* compute the effective distance for LHO */
-  /* initialize distances with real distance and compute splus and scross*/
-  ringInj->eff_dist_h = ringInj->eff_dist_l = 2.0 * ringInj->distance;
-  ringInj->eff_dist_h /= sqrt( splus*splus*resp.plus*resp.plus +
-      scross*scross*resp.cross*resp.cross );
 
-  /* llo */
-  placeAndGPS.p_detector = &llo;
-  LALTimeDelayFromEarthCenter( status->statusPtr,  &time_diff_ns,
-        &detTimeAndSource );
-  CHECKSTATUSPTR(status);
-  
-  LALAddFloatToGPS( status->statusPtr,  &(ringInj->l_start_time),
-        &(ringInj->l_start_time), time_diff_ns );
-  CHECKSTATUSPTR(status);
-  
-  /* compute the response of the LLO detector */
-  detAndSource.pDetector = &llo;
-  LALComputeDetAMResponse( status->statusPtr, &resp, &detAndSource,
-        &gpsAndAcc );
-  CHECKSTATUSPTR(status);
-
-  /* compute the effective distance for LLO */
-  ringInj->eff_dist_l /= sqrt( splus*splus*resp.plus*resp.plus
-      + scross*scross*resp.cross*resp.cross );
-
-  
   /*
    *
    * set amplitude for merger and ringdown
@@ -567,12 +496,14 @@ XLALGenerateInspRing(
   n = 2.0*(inputLength + mergerLength + endMerger ) + 1.0;
   ampCross = waveform->a->data->data[n];
   
-  cosiotaA = ampPlus / ampCross * (1.0 + sqrt(1-ampCross*ampCross/ampPlus/ampPlus));
-  cosiotaB = ampPlus / ampCross * (1.0 - sqrt(1-ampCross*ampCross/ampPlus/ampPlus));
+  cosiotaA = ampPlus / ampCross * 
+    (1.0 + sqrt(1-ampCross*ampCross/ampPlus/ampPlus));
+  cosiotaB = ampPlus / ampCross * 
+    (1.0 - sqrt(1-ampCross*ampCross/ampPlus/ampPlus));
 
-  if ( cosiotaA > -1.0 & cosiotaA < 1.0)
+  if ( cosiotaA > -1.0 && cosiotaA < 1.0)
     cosiota = cosiotaA;
-  else if ( cosiotaB > -1.0 & cosiotaB < 1.0)
+  else if ( cosiotaB > -1.0 && cosiotaB < 1.0)
     cosiota = cosiotaB;
   else
   {
@@ -583,73 +514,130 @@ XLALGenerateInspRing(
     XLALFree( waveform->shift );
     XLAL_ERROR_NULL(func,XLAL_EFAILED);
   }
-  
+ 
+  /* ringdown inclination and amplitude */ 
   ringInj->inclination = acos( cosiota );
   amp =  ampPlus / ( 1.0 + cosiota * cosiota );
   ringInj->amplitude = sqrt( amp*amp);
   
-  splus = -( 1.0 + cosiota * cosiota );
-  scross = -2.0 * cosiota;
+  /* zero out inspiral and merger if we only want to inject a ringdown*/
+  if ( injectSignalType ==  imr_ring_inject )
+  {
+    for ( n = 0; n < 2.0*(inputLength + mergerLength + endMerger ); n++ )
+    {
+      waveform->a->data->data[n]= 0;
+    }
+  }
+  ringInj = XLALDeriveRingdownParameters(ringInj);
+
+  return( waveform );
+}
+  
+static SimRingdownTable*
+XLALDeriveRingdownParameters(
+    SimRingdownTable    *ringInj      /**< ringdown details to be populated */
+    )
+{
+  static const char *func = "XLALDeriveRingdownParameters";
+  REAL4 cosiota;
+  double splus, scross, fplus, fcross;
+  double tDelay, tStart;
+  
+  LALDetector lho = lalCachedDetectors[LALDetectorIndexLHODIFF];
+  LALDetector llo = lalCachedDetectors[LALDetectorIndexLLODIFF];
+
+  /* Calculate the Ringdown parameters */
+  XLALPrintInfo( "Calculating (approximate) parameters for the ringdown\n" );
+
+  /* waveform */
+  memcpy( ringInj->waveform, "Ringdown", 
+      LIGOMETA_WAVEFORM_MAX * sizeof(CHAR));
+  LALSnprintf( ringInj->coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR), 
+      "EQUATORIAL");
 
   /* calculate hrss */
   ringInj->hrss = ringInj->amplitude * sqrt( 2 / LAL_PI / ringInj->frequency ) *
     pow( ( 2.0 * pow( ringInj->quality, 3.0 ) + ringInj->quality ) /
         ( 1.0 + 4.0 * pow ( ringInj->quality, 2 ) ) , 0.5);
-  
+
+  XLALPrintInfo( "Ringdown h_rss = %.2g\n", ringInj->hrss);
+
+  /* and epsilon */
   ringInj->epsilon = XLALBlackHoleRingEpsilon( ringInj->frequency,
       ringInj->quality, ringInj->distance, ringInj->amplitude );
-  
-  /* zero out inspiral and merger if we only want to inject a ringdown*/
-  switch ( injectSignalType )
-  {
-    case imr_ring_inject:
-      for ( n = 0; n < 2.0*(inputLength + mergerLength + endMerger ); n++ )
-      {
-        waveform->a->data->data[n]= 0;
-      }
-      break;
-    case imr_inject:
-      break;
-  }
-    
+  XLALPrintInfo( "Ringdown epsilon = %.2g\n", ringInj->epsilon);
 
-  if ( 0 )    
-  {
-    FILE *fp;
-    char fname[512];
-    UINT4 jj, kplus, kcross;
-    LALSnprintf( fname, sizeof(fname) / sizeof(*fname), 
-       "waveform-%d.txt", 
-        ringInj->geocent_start_time.gpsSeconds);
-    fp = fopen( fname, "w" );
-             
-    for( jj = 0, kplus = 0, kcross = 1; jj < waveform->phi->data->length; 
-        ++jj, kplus += 2, kcross +=2 )
-    {
-      fprintf(fp, "%d %e %e %le %e\n", jj,
-        waveform->a->data->data[kplus], 
-        waveform->a->data->data[kcross], 
-        waveform->phi->data->data[jj], 
-        waveform->f->data->data[jj]);
-    }
-    fclose( fp );     
-  }
-  
-  /* compute hrss at LHO */
+  /* calculate start time at sites */
+  tStart =  XLALGPSGetREAL8(&(ringInj->geocent_start_time) );
+  ringInj->start_time_gmst = XLALGreenwichSiderealTime( 
+      &(ringInj->geocent_start_time), 0.0 );
+ 
+  /* lho */
+  tDelay = XLALTimeDelayFromEarthCenter( lho.location, ringInj->longitude,
+      ringInj->latitude, &(ringInj->geocent_start_time) );
+  XLALGPSSetREAL8( &(ringInj->h_start_time), tDelay + tStart );
+  /* llo */
+  tDelay = XLALTimeDelayFromEarthCenter( llo.location, ringInj->longitude,
+      ringInj->latitude, &(ringInj->geocent_start_time) );
+  XLALGPSSetREAL8( &(ringInj->l_start_time), tDelay + tStart );
+
+  XLALPrintInfo( "Site start times:\n"
+      "LHO: %d.%d GPS seconds\n"
+      "LLO: %d.%d GPS seconds\n",
+      ringInj->h_start_time.gpsSeconds, ringInj->h_start_time.gpsNanoSeconds,
+      ringInj->l_start_time.gpsSeconds, ringInj->l_start_time.gpsNanoSeconds);
+
+  XLALGreenwichMeanSiderealTimeToGPS(ringInj->start_time_gmst,
+     &(ringInj->geocent_start_time));
+  XLALPrintInfo( "Start times:\n"
+      "From GMST: %d.%d GPS seconds\n",
+      ringInj->geocent_start_time.gpsSeconds, 
+      ringInj->geocent_start_time.gpsNanoSeconds);
+
+  /* compute effective distance and hrss for sites */
+  cosiota = cos(ringInj->inclination);
+  splus = -( 1.0 + cosiota * cosiota );
+  scross = -2.0 * cosiota;
+  /* LHO */
+  XLALComputeDetAMResponse(&fplus, &fcross, lho.response, ringInj->latitude, 
+      ringInj->longitude, ringInj->polarization, ringInj->start_time_gmst);
+  ringInj->eff_dist_h = 2.0 * ringInj->distance;
+  ringInj->eff_dist_h /= sqrt( splus*splus*fplus*fplus +
+      scross*scross*fcross*fcross );
   ringInj->hrss_h = ringInj->amplitude * pow ( (
-        (2*pow(ringInj->quality,3)+ringInj->quality ) * splus*splus*resp.plus*resp.plus +
-        2*pow(ringInj->quality,2) * splus*scross*resp.plus*resp.cross +
-        2*pow(ringInj->quality,3) * scross*scross*resp.cross*resp.cross )
-      /  2.0 / LAL_PI / ringInj->frequency / ( 1.0 + 4.0 * pow ( ringInj->quality, 2 ) ) , 0.5 );
+        (2*pow(ringInj->quality,3)+ringInj->quality ) * 
+        splus*splus*fplus*fplus +
+        2*pow(ringInj->quality,2) * splus*scross*fplus*fcross +
+        2*pow(ringInj->quality,3) * scross*scross*fcross*fcross )
+      /  2.0 / LAL_PI / ringInj->frequency / 
+      ( 1.0 + 4.0 * pow ( ringInj->quality, 2 ) ) , 0.5 );
+  XLALPrintInfo( "LHO response: F+ = %f, Fx = %f\n", fplus, fcross);
 
   /* compute hrss at LLO */
+  /* LLO */
+  XLALComputeDetAMResponse(&fplus, &fcross, llo.response, ringInj->longitude, 
+      ringInj->latitude, ringInj->polarization, ringInj->start_time_gmst);
+  ringInj->eff_dist_l = 2.0 * ringInj->distance;
+  ringInj->eff_dist_l /= sqrt( splus*splus*fplus*fplus +
+      scross*scross*fcross*fcross );
   ringInj->hrss_l = ringInj->amplitude * pow ( (
-        (2*pow(ringInj->quality,3)+ringInj->quality ) * splus*splus*resp.plus*resp.plus +
-        2*pow(ringInj->quality,2) * splus*scross*resp.plus*resp.cross +
-        2*pow(ringInj->quality,3) * scross*scross*resp.cross*resp.cross )
-      /  2.0 / LAL_PI / ringInj->frequency / ( 1.0 + 4.0 * pow ( ringInj->quality, 2 ) ) , 0.5 );
+        (2*pow(ringInj->quality,3)+ringInj->quality ) * 
+        splus*splus*fplus*fplus +
+        2*pow(ringInj->quality,2) * splus*scross*fplus*fcross +
+        2*pow(ringInj->quality,3) * scross*scross*fcross*fcross )
+      /  2.0 / LAL_PI / ringInj->frequency / 
+      ( 1.0 + 4.0 * pow ( ringInj->quality, 2 ) ) , 0.5 );
 
-  DETATCHSTATUSPTR( status );  
-  return( waveform );
+  XLALPrintInfo( "LLO response: F+ = %f, Fx = %f\n", fplus, fcross);
+  XLALPrintInfo( "Site effective distances:\n"
+      "LHO: %f Mpc\n"
+      "LLO: %f Mpc\n",
+      ringInj->eff_dist_h, ringInj->eff_dist_l);
+
+  XLALPrintInfo( "Site h_rss:\n"
+      "LHO: %g\n"
+      "LLO: %g\n",
+      ringInj->hrss_l, ringInj->hrss_l);
+  return( ringInj );
 }
 

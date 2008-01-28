@@ -57,7 +57,6 @@ NRCSID( GENERATEINSPRING, "$Id$");
 
 CoherentGW *
 XLALGenerateInspRing(
-    LALStatus         *status,
     CoherentGW        *waveform,
     SimInspiralTable  *thisEvent,
     SimRingdownTable  *thisRingEvent,
