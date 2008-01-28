@@ -240,7 +240,7 @@ static REAL4TimeSeries *injectWaveform(
   CoherentGW                 waveform, *wfm;
   ActuationParameters        actData = actuationParams[ifoNumber];
   UINT4 i,k;
-  int                        injectSignalType = 1; /* hardwire to imr waveform */
+  int injectSignalType = imr_inject; 
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
   FILE  *fp = NULL;
   char  fileName[FILENAME_MAX];
@@ -277,8 +277,8 @@ static REAL4TimeSeries *injectWaveform(
       status);
 
   /* add the ringdown */
-  wfm = XLALGenerateInspRing( status, &waveform, inspInj, 
-      thisRingdownEvent, injectSignalType );
+  wfm = XLALGenerateInspRing( &waveform, inspInj, thisRingdownEvent, 
+      injectSignalType );
 
   if ( !wfm )
   {
@@ -937,9 +937,6 @@ int main( int argc, char *argv[] )
    * write output to LIGO_LW XML file
    *
    */
-
-fprintf( stdout,"mass1=%e, mass2=%e\n",inj->mass1,inj->mass2);
-fprintf( stdout,"mass=%e\n",ringList->mass);
 
   /* create the output file name */
   LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
