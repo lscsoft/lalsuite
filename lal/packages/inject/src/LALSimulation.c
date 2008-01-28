@@ -395,11 +395,11 @@ int XLALAddInjectionREAL8TimeSeries(
 	if(!XLALResizeREAL8TimeSeries(h, -(int) (i / 2), h->data->length + i))
 		XLAL_ERROR(func, XLAL_EFUNC);
 
-	/* compute the integer and fractional parts of the sample in the
-	 * target time series on which the injection time series begins.
-	 * the fractional part is always positive, e.g. -3.5 --> -4 + 0.5.
-	 * the integer part will be used to set a new epoch and the
-	 * fractional part used to re-interpolate the injection */
+	/* compute the integer and fractional parts of the sample index in
+	 * the target time series on which the injection time series
+	 * begins.  the fractional part is always positive, e.g. -3.5 -->
+	 * -4 + 0.5.  the integer part will be used to set a new epoch and
+	 * the fractional part used to re-interpolate the injection */
 
 	start_sample_frac = XLALGPSDiff(&h->epoch, &target->epoch) / target->deltaT;
 	start_sample_int = floor(start_sample_frac);
@@ -436,7 +436,7 @@ int XLALAddInjectionREAL8TimeSeries(
 		/* response function */
 
 		if(response) {
-			unsigned j = floor(f / response->deltaF + 0.5);
+			unsigned j = (f < response->f0) ? 0 : floor((f - response->f0) / response->deltaF + 0.5);
 			if(j > response->data->length)
 				j = response->data->length;
 			if(LAL_COMPLEX_EQ(response->data->data[j], LAL_COMPLEX16_ZERO))
@@ -486,7 +486,7 @@ int XLALAddInjectionREAL8TimeSeries(
 	/* set epoch from integer sample offset */
 
 	h->epoch = target->epoch;
-	XLALGPSAdd(&h->epoch, start_sample_int * h->deltaT);
+	XLALGPSAdd(&h->epoch, start_sample_int * target->deltaT);
 
 	/* add to target time series */
 
