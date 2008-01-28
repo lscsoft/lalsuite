@@ -48,6 +48,7 @@
 #include <lal/LALDetectors.h>
 #include <lal/LALFrameIO.h>
 #include <lal/FrameStream.h>
+#include <lal/FindChirp.h>
 
 #include "inspiral.h"
 
@@ -75,6 +76,7 @@ extern int vrbflg;
 INT4 ifosFlag  = 0;
 INT4 frameFlag = 0;
 INT4 mdcFlag   = 0;
+INT4 noNR      = 0;
 
 
 /* main program entry */
@@ -95,6 +97,9 @@ INT4 main( INT4 argc, CHAR *argv[] )
   /* ifo name */
   CHAR *ifo = NULL;
 
+  /* channel */
+  CHAR channel[LALNameLength];
+
   /* start/end times */
   INT4 gpsStartSec          = -1;
   INT4 gpsEndSec            = -1;
@@ -109,6 +114,10 @@ INT4 main( INT4 argc, CHAR *argv[] )
   INT4 sampleRate = -1;
   REAL4TimeSeries *injData[LAL_NUM_IFO];
 
+  /* response function */
+  COMPLEX8FrequencySeries *response = NULL;
+  const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
+
   /* the inspiral pipeline resizes data day 2^dynRange. Set to 1.0 when
    * using as standalone code */
   REAL4 dynRange = 1.0;
@@ -121,6 +130,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
     {"all-ifos",                no_argument,       &ifosFlag,         1 },
     {"write-frame",             no_argument,       &frameFlag,        1 },
     {"write-mdc-log",           no_argument,       &mdcFlag,          1 },
+    {"no-numerical",            no_argument,       &noNR,             1 },
     /* these options don't set a flag */
     {"debug-level",             required_argument, 0,                'D'},
     {"gps-start-time",          required_argument, 0,                'a'},
@@ -433,6 +443,19 @@ INT4 main( INT4 argc, CHAR *argv[] )
       memset( injData[i]->data->data, 0.0, injData[i]->data->length * sizeof(REAL4) );
     }
 
+    if (vrbflg)
+      fprintf(stdout, "generating unity response...\n");
+
+
+    /* setup a unity response frequency series */
+    response = XLALCreateCOMPLEX8FrequencySeries("", &gpsStartTime, 0,
+        1, &strainPerCount, (sampleRate * (gpsEndSec - gpsStartSec))/2 + 1);
+    for ( i = 0; i < (INT4)response->data->length; i++)
+    {
+      response->data->data[i].re = 1.0;
+      response->data->data[i].im = 0;
+    }
+
     /* loop over ifos */
     for ( i = 0; i < num_ifos; i++ )
     {
@@ -443,9 +466,21 @@ INT4 main( INT4 argc, CHAR *argv[] )
         XLALReturnIFO( ifo, i );
       }
 
-      /* now we can finally inject the waveforms */
-      LAL_CALL( InjectNumRelWaveforms ( &status, injData[i], injections, ifo, 
-					dynRange), &status); 
+      if (noNR)
+      {
+        /* injected specified waveforms */
+        LAL_CALL( LALFindChirpInjectSignals( &status, injData[i], injections, response), &status);
+
+        /* set the channel name */
+        LALSnprintf(channel, LALNameLength, "%s:STRAIN", ifo);
+        strncpy(injData[i]->name, channel, LALNameLength);
+      }
+      else
+      {
+        /* now we can finally inject the numerical waveforms */
+        LAL_CALL( InjectNumRelWaveforms ( &status, injData[i], injections, ifo, 
+  	  		dynRange), &status);
+      }
 
       /* set strain as unit */
       injData[i]->sampleUnits = lalStrainUnit;
@@ -521,6 +556,7 @@ static void print_usage( CHAR *program )
       "  --set-name        set_name    set the injection set name\n"\
       "  --mdc-log         mdc_log     name of file for MDC log file\n"\
       "  --write-frame                 write h(t) waveform to a frame file\n"\
+      "  --no-numerical                the injections are not numerical\n"\
       "\n", program );
 }
 
