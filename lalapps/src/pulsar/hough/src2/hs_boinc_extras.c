@@ -1175,6 +1175,9 @@ int main(int argc, char**argv) {
   }
 #endif
 
+#ifdef __APPLE__
+  setMacIcon(argv[0], MacAppIconData, sizeof(MacAppIconData));
+#endif
 
   /* boinc_init */
   set_boinc_options();
@@ -1185,10 +1188,6 @@ int main(int argc, char**argv) {
   /* boinc_finish() ends the program, we never get here */
   return(0);
 }
-
-#ifdef __APPLE__
-  setMacIcon(argv[0], MacAppIconData, sizeof(MacAppIconData));
-#endif
 
 /* CHECKPOINTING FUNCTIONS */
 
