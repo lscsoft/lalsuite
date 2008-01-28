@@ -51,6 +51,10 @@
 
 char* HSBOINCEXTRASCRCSID = "$Id$";
 
+#ifdef __APPLE__
+#include "EaH_Mac_Icon.h" 
+#endif
+
 
 /*^* MACROS *^*/
 
@@ -1182,7 +1186,9 @@ int main(int argc, char**argv) {
   return(0);
 }
 
-
+#ifdef __APPLE__
+  setMacIcon(argv[0], MacAppIconData, sizeof(MacAppIconData));
+#endif
 
 /* CHECKPOINTING FUNCTIONS */
 
