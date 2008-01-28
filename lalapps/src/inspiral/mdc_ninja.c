@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2007 Badri Krishnan, Chad Hanna, Lucia Santamaria Lara, Robert Adam Mercer, Stephen Fairhurst
+ * Copyright (C) 2007, 2008 Badri Krishnan, Chad Hanna, Lucia Santamaria Lara,
+ * Robert Adam Mercer, Stephen Fairhurst
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -136,12 +137,8 @@ INT4 main( INT4 argc, CHAR *argv[] )
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
     {"injection-file",          required_argument, 0,                'f'},
-    {"nr-meta-file",            required_argument, 0,                'm'},
-    {"nr-data-dir",             required_argument, 0,                'd'},
     {"sample-rate",             required_argument, 0,                'r'},
     {"ifo",                     required_argument, 0,                'i'},
-    {"modeL-lo",                required_argument, 0,                'L'},
-    {"modeL-hi",                required_argument, 0,                'H'},
     {"set-name",                required_argument, 0,                'n'},
     {"mdc-log",                 required_argument, 0,                'o'},
     {"help",                    no_argument,       0,                'h'},
@@ -161,7 +158,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
     size_t optarg_len;
 
     /* parse command line arguments */
-    c = getopt_long_only( argc, argv, "D:a:b:f:m:d:r:i:L:H:n:o:hV",
+    c = getopt_long_only( argc, argv, "D:a:b:f:r:i:n:o:hV",
         long_options, &option_index );
 
     /* detect the end of the options */
