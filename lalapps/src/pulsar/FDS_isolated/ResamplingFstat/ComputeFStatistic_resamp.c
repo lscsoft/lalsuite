@@ -215,6 +215,9 @@ typedef struct
   REAL8TimeSeries* Imag;           /* Imaginary part of the time series */
 }MultiCOMPLEX8TimeSeries;
 
+/* Using a temporary Time Series for now */
+MultiCOMPLEX8TimeSeries *temp_TimeSeries;
+
 /* A contiguity structure required by the preprocessing function in order to store the information pertaining to the contiguity of SFTs and the gaps between them */
 
 typedef struct
@@ -272,6 +275,7 @@ void CalcTimeSeries(LALStatus *Status, MultiSFTVector *multiSFTs, MultiCOMPLEX8T
   Contiguity C;            
   UINT4 i,j,k,p,q;         /* Counters */
 
+  printf("Here for now :) %d \n",multiSFTs->length);
   /*loop over IFOs*/
   for(i=0;i<multiSFTs->length;i++)
     {
@@ -284,6 +288,8 @@ void CalcTimeSeries(LALStatus *Status, MultiSFTVector *multiSFTs, MultiCOMPLEX8T
       C.NumContinuous = (UINT4*)LALMalloc(sizeof(UINT4)*SFT_Vect->length);
 
       REAL8 SFT_TimeBaseline = 0;               /* Time Baseline of SFTs */
+
+      printf("The length of the SFT_Vect = %g\n",SFT_Vect->data[0].deltaF);
 
       /* In order to avoid Seg Faults */
       /* Time_Baseline = 1/deltaF */
@@ -337,6 +343,10 @@ void CalcTimeSeries(LALStatus *Status, MultiSFTVector *multiSFTs, MultiCOMPLEX8T
       C.Gap[NumofBlocks] = 0;
       C.NumContinuous[NumofBlocks] = NumCount;
       C.length = NumofBlocks + 1;
+      for(k=0;k<C.length;k++)
+	{
+	  printf("Number Continuous = %d , Gap = %g\n",C.NumContinuous[k],C.Gap[k]);
+	}
     }/*Loop over Multi-IFOs */
 }/*CalctimeSeries()
 
@@ -426,6 +436,9 @@ int main(int argc,char *argv[])
   templateCounter = 0.0;
   tickCounter = 0;
   clock0 = time(NULL);
+
+  /*Call the CalcTimeSeries Function Here*/
+  CalcTimeSeries(&status, GV.multiSFTs,temp_TimeSeries);
 
   while ( XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0 )
     {
