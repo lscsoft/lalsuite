@@ -1,20 +1,11 @@
 ## Process this file with automake to produce Makefile.in
-check_PROGRAMS = SlopeETGTest TFClustersETGTest StdBurstOutput ThresholdsTest
-
-SlopeETGTest_SOURCES = SlopeETGTest.c
-SlopeETGTest_LDADD = $(top_builddir)/lib/liblal.la 
-
-TFClustersETGTest_SOURCES = TFClustersETGTest.c
-TFClustersETGTest_LDADD = $(top_builddir)/lib/liblal.la 
-
-StdBurstOutput_SOURCES = StdBurstOutput.c
-StdBurstOutput_LDADD = $(top_builddir)/lib/liblal.la
+check_PROGRAMS = ThresholdsTest
 
 ThresholdsTest_SOURCES = ThresholdsTest.c
 ThresholdsTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-TESTS = SlopeETGTest StdBurstOutput TFClustersETGTest ThresholdsTest
+TESTS = ThresholdsTest
 TESTS_ENVIRONMENT = 1>/dev/null
 MOSTLYCLEANFILES = .dvi-dep PrintVector.*
 DISTCLEANFILES = *.tex
