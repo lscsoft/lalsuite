@@ -1595,6 +1595,12 @@ int main( int argc, char *argv[] )
 
   /* destroy the structure containing the random params */
   LAL_CALL(  LALDestroyRandomParams( &status, &randParams ), &status);
+  
+  /* If we read from an external trigger file, free our external trigger.
+     exttrigHead is guaranteed to have no children to free. */
+  if ( exttrigHead != NULL ) {
+    LALFree(exttrigHead);
+  }
 
   /* destroy the NR data */
   if ( num_nr )
