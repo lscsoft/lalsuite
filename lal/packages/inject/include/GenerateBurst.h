@@ -53,6 +53,14 @@ NRCSID(GENERATEBURSTH, "$Id$");
  */
 
 
+int XLALGenerateSimBurst(
+	REAL8TimeSeries **hplus,
+	REAL8TimeSeries **hcross,
+	const SimBurst *sim_burst,
+	double delta_t
+);
+
+
 int XLALBurstInjectSignals(
 	REAL8TimeSeries *h,
 	const SimBurst *sim_burst,
