@@ -148,21 +148,7 @@ static void ParseOptions(int argc, char *argv[])
 };
 
 
-/*
-#define CHECKERROR(msg, expr, error) { \
-	REAL8 result = expr; \
-	if(!XLALIsREAL8FailNaN(result)) { \
-		fprintf(stderr, msg ": failed to return REAL8FailNaN\n"); \
-		exit(1); \
-	} \
-	if(XLALGetBaseErrno() != error) { \
-		fprintf(stderr, msg ": expected error %d, got %d\n", error, XLALGetBaseErrno()); \
-		exit(1); \
-	} \
-	XLALClearErrno(); \
-};
-*/
-int CHECKERROR(const char *msg, REAL8 result, int error )
+static void CHECKERROR(const char *msg, REAL8 result, int error )
 {
   if(!XLALIsREAL8FailNaN(result)) {
     fprintf(stderr, "%s: failed to return REAL8FailNaN\n", msg);
