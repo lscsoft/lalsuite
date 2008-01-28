@@ -632,8 +632,8 @@ static SimBurst *random_string_cusp(double flow, double fhigh, double Alow, doub
 	 * waveform in the + polarization.  it ignores these parameters,
 	 * but just for consistency we populate them appropriately */
 
-	sim_burst->pol_ellipse_angle = 0.0;
 	sim_burst->pol_ellipse_e = 1.0;
+	sim_burst->pol_ellipse_angle = 0.0;
 
 	return sim_burst;
 }
@@ -701,6 +701,18 @@ static SimBurst *random_galactic_core(double minf, double maxf, double minband, 
 	XLALDestroyREAL8TimeSeries(hplus);
 	XLALDestroyREAL8TimeSeries(hcross);
 
+	/* not sure if this makes sense.  these parameters are ignored by
+	 * the injection code, but post-processing tools sometimes wish to
+	 * know with what amplitude an injection should've been seen in an
+	 * instrument, and the use these to project the + and x amplitudes
+	 * onto the projector.  setting the eccentricity to 0 and the angle
+	 * to anything makes such tools believe the amplitude is equally
+	 * partitioned between the two polarizations which is true for
+	 * these injections. */
+
+	sim_burst->pol_ellipse_e = 0.0;
+	sim_burst->pol_ellipse_angle = 0.0;
+
 	/* done */
 
 	return sim_burst;
@@ -760,8 +772,8 @@ static SimBurst *random_all_sky_sineGaussian(double minf, double maxf, double q,
 	 * linearly polarized sine-Gaussians (+ would be a cosine
 	 * Gaussian). */
 
-	sim_burst->pol_ellipse_angle = LAL_PI_2;
 	sim_burst->pol_ellipse_e = 1.0;
+	sim_burst->pol_ellipse_angle = LAL_PI_2;
 
 	/* done */
 
