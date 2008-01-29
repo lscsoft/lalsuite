@@ -268,7 +268,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
                      inspinj.set_category('inspinj')
                    if not opts.disable_dag_priorities:
                      inspinj.set_priority(100)
-                   inspinj.set_end(chunk.start())
+                   inspinj.set_start(chunk.start())
                    inspinj.set_end(chunk.end())
                    inspinj.set_ifo(ifo_name)
                    inspinj.set_seed(inj)
