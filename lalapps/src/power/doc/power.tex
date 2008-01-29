@@ -1663,7 +1663,7 @@ normalized so that \(\int (\dot{h}_{+}^{2} + \dot{h}_{\times}^{2}) \diff t
 
 
 The local gravitational wave energy flux in the two independent
-polarizations, \(h_{+}(t)\) and \(h_{\times}(t)\), is
+polarizations, \(h_{+}(t)\) and \(h_{\times}(t)\), is \cite{isaacson1968}
 \begin{equation}
 \frac{\diff E}{\diff A \diff t}
    = \frac{1}{16 \pi} \frac{c^{3}}{G} \left( \dot{h}_{+}^{2} +
@@ -1774,9 +1774,19 @@ time- and band-limited white-noise burst injections.
 \item[\option{--max-e-over-r2} \parm{\(\Msol / \text{\parsec}^{2}\)}]
 Set the upper bound of the range of injection energies.  This only affects
 time- and band-limited white-noise burst injections.  The energy of the
-injection is the equivalent isotropic radiated energy for an isolated
-source.  The value given on the command line is the energy in solar masses
-divided by the square of the distance to the source in parsecs.
+injection is the equivalent isotropic radiated energy at the source, and
+since the strain at Earth depends not only on total energy radiated but
+also the distance to the source the value given here on the command line is
+the energy divided by the distance squared.  Furthermore, since the energy
+radiated is proportional to the square of the derivative of the strain,
+higher frequency injections are harder to detect (the higher frequency
+means that the same energy is achieved with a smaller total strain,
+additionally interferometer detectors experience greater shot noise at high
+frequency).  Therefore, so that the injections are appoximately equally
+detectable across the band, the energy range set on the command line is
+scaled by \((f / \unit{100}{\hertz})^{3}\) (the range given on the command
+line is exactly the range of energies at \(\unit{100}{\hertz}\);  the
+exponent is found impirically).
 
 \item[\option{--min-e-over-r2} \parm{\(\Msol / \text{\parsec}^{2}\)}]
 Set the lower bound of the range of injection energies.  This only affects
