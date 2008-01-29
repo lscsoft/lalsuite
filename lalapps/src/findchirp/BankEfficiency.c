@@ -295,7 +295,6 @@ main (INT4 argc, CHAR **argv )
 	Foutput=  fopen("BE_signal.dat","w");
 	for (i=0; i<(INT4)signal.length; i++)
 	  fprintf(Foutput, "%e %e\n", (float)i/randIn.param.tSampling,signal.data[i]);
-	  fprintf(Foutput, "%e %e\n", (float)i/randIn.param.tSampling,signal.data[i]);
 	fclose(Foutput);	
       }
 
@@ -437,7 +436,6 @@ main (INT4 argc, CHAR **argv )
 	      
 
 	      match = 1 - (g00*dt0*dt0 + 2*g01*dt0*dt3 + g11*dt3*dt3);
-
 	
 	      {
 	        if (userParam.fastSimulation == 1 && (match <userParam.eMatch )  )
@@ -534,7 +532,7 @@ main (INT4 argc, CHAR **argv )
 
       PrintResults(result, randIn, ntrials, userParam.ntrials);  
       if (userParam.printResultXml) {
-	  BEPrintResultsXml(coarseBankIn,randIn,userParam,result);	 
+	  BEPrintResultsXml(coarseBankIn,randIn,userParam,result, 0);	 
 	}
       
       
@@ -1734,7 +1732,8 @@ void
 BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
 		   RandomInspiralSignalIn       randIn,
 		   UserParametersIn             userParam,
-		   ResultIn                     trigger
+		   ResultIn                     trigger,
+                   UINT4                        itbest
 		  )
 {
   LALStatus             status = blank_status;
@@ -1836,7 +1835,8 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
 	trigger.alphaF, 
 	trigger.bin,
 	randIn.param.nStartPad,
-	trigger.nfast
+	trigger.nfast,
+        itbest
 	);
 
   if (trigger.ntrial == (UINT4)userParam.ntrials)
@@ -3614,7 +3614,7 @@ void Help(void)
 void 
 BEAscii2Xml(void)
 {
-  UINT4 countline = 0;
+  UINT4 countline = 0, nfast_max=0;
   UINT8  id = 0;
   ResultIn trigger;
   REAL4 tau0, tau3, tau0I, tau3I, psi0, psi3,phaseI, ecc, eccI
@@ -3758,7 +3758,7 @@ BEAscii2Xml(void)
 	&trigger.fend_trigger, &trigger.fend_inject,
 	&trigger.mass1_inject, &trigger.mass2_inject,
 	&phaseI, &trigger.rho_final, &trigger.snrAtCoaTime, &trigger.phase,
-	&trigger.alphaF, &trigger.bin, &nStartPad, &trigger.nfast); 
+	&trigger.alphaF, &trigger.bin, &nStartPad, &trigger.nfast, &nfast_max); 
 
       
     fprintf(output, BANKEFFICIENCY_PARAMS_ROW,
@@ -3767,7 +3767,7 @@ BEAscii2Xml(void)
         trigger.fend_trigger, trigger.fend_inject,
 	trigger.mass1_inject, trigger.mass2_inject,
 	phaseI, trigger.rho_final, trigger.snrAtCoaTime, trigger.phase, 
-        trigger.alphaF, trigger.bin, nStartPad, trigger.nfast); 
+        trigger.alphaF, trigger.bin, nStartPad, trigger.nfast, nfast_max); 
     fprintf(output,",\n");
       
     countline++;

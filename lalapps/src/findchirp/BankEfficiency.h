@@ -65,10 +65,10 @@
 
 #define MAXIFO 2
 #define BANKEFFICIENCY_PARAMS_ROW \
-"       %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%u"
+"       %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%u,%u"
 
 #define BANKEFFICIENCY_PARAMS_ROW_SPACE \
-"%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %u"
+"%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %u %u"
 
 /*do not use capital here for future mysql migration */
 #define PRINT_LIGOLW_XML_BANKEFFICIENCY(fp) ( \
@@ -95,6 +95,7 @@ fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:alpha_f\"       
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:time\"                  Type=\"int_4s\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:time_sim\"              Type=\"int_4s\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:nfast\"                 Type=\"int_4s\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:nfast_max\"                 Type=\"int_4s\"/>\n", fp) == EOF ||  \
 fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"                 Type=\"Local\" Delimiter=\",\">\n", fp) == EOF ) 
 /*
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_x_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
@@ -622,14 +623,8 @@ BEPrintResultsXml(
     InspiralCoarseBankIn         coarseBankIn,
     RandomInspiralSignalIn       randIn,
     UserParametersIn             userParam,
-    ResultIn                     trigger
-    );
-void 
-BEPrintResultsXml2( 
-    InspiralCoarseBankIn         coarseBankIn,
-    RandomInspiralSignalIn       randIn,
-    UserParametersIn             userParam,
-    ResultIn                     trigger
+    ResultIn                     trigger,
+    UINT4                        itbest
     );
 
 void 
