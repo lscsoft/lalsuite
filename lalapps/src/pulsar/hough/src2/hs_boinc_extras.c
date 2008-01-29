@@ -1175,7 +1175,7 @@ int main(int argc, char**argv) {
   }
 #endif
 
-#ifdef __APPLE__
+#if defined(__APPLE__) && ! defined(BOINC_APIV6)
   setMacIcon(argv[0], MacAppIconData, sizeof(MacAppIconData));
 #endif
 
