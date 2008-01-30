@@ -1475,9 +1475,16 @@ CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache,
   }
 
   /* if no data was found at all set small list to NULL */
-  if(check == 0)
+  if(check == 0){
+    /* if we still haven't reach the end of the segment, move to next bit */
+    if(tempstop < *stops){
+      (*position)--;
+      *starts = tempstop;
+    }
+
     return NULL;
-  
+  }
+
   if(durlock > MAXDATALENGTH){ /* set starts to its value plus MAXDATALENGTH */
     (*position)--; /* move position counter back one */
     *starts = tempstop;
