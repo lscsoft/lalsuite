@@ -187,8 +187,8 @@ void LALHOUGHInitializeHT (LALStatus      *status,
   ASSERT (patch->xSide, status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
   ASSERT (patch->ySide, status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
   /*   Check consistency between patch and ht size  (size mismatch) */
-  ASSERT (ht->xSide=patch->xSide, status, HOUGHMAPH_ESZMM, HOUGHMAPH_MSGESZMM);
-  ASSERT (ht->ySide=patch->ySide, status, HOUGHMAPH_ESZMM, HOUGHMAPH_MSGESZMM);
+  ASSERT (ht->xSide == patch->xSide, status, HOUGHMAPH_ESZMM, HOUGHMAPH_MSGESZMM);
+  ASSERT (ht->ySide == patch->ySide, status, HOUGHMAPH_ESZMM, HOUGHMAPH_MSGESZMM);
 
   /* -------------------------------------------   */
 
@@ -462,8 +462,8 @@ void LALHOUGHIntegrHD2HT (LALStatus       *status,
   ASSERT (ht->xSide, status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
   ASSERT (ht->ySide, status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
   /*   Check consistency between hd and ht size  (size mismatch) */
-  ASSERT (ht->xSide=hd->xSide, status, HOUGHMAPH_ESZMM, HOUGHMAPH_MSGESZMM);
-  ASSERT (ht->ySide=hd->ySide, status, HOUGHMAPH_ESZMM, HOUGHMAPH_MSGESZMM);
+  ASSERT (ht->xSide == hd->xSide, status, HOUGHMAPH_ESZMM, HOUGHMAPH_MSGESZMM);
+  ASSERT (ht->ySide == hd->ySide, status, HOUGHMAPH_ESZMM, HOUGHMAPH_MSGESZMM);
   /* -------------------------------------------   */
 
   /* number of physical pixels */
