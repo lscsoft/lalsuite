@@ -1199,7 +1199,10 @@ static void local_sin_cos_2PI_LUT_init (void)
 
 static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x) {
   INT4  i,n;
-  INT8  ix;
+  union {
+    REAL8 asreal;
+    INT8  asint;
+  } ux;
   static const REAL4* cosbase = sincosLUTbase + (SINCOS_LUT_RES/4);
   static const REAL4* cosdiff = sincosLUTdiff + (SINCOS_LUT_RES/4);
 
@@ -1213,22 +1216,26 @@ static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 
   }
 #endif
 
+#if defined(SINCOS_REAL2INT)
   x += SINCOS_ADDS;
 
   /* try various ways to transform the bits of a REAL8(x) into an INT8(ix) */
 #if defined(SINCOS_REAL2INT) && (SINCOS_REAL2INT == 2) && defined(__GNUC__)
   /* manually code the store instruction we want, fast but limited to gcc & x87 */
-  __asm( "fstl %[ix]\n\t" : [ix] "=m" (ix) : [x] "t" (x) );
+  __asm( "fstl %[ux.asint]\n\t" : [ux.asint] "=m" (ux.asint) : [x] "t" (x) );
 #elif defined(SINCOS_REAL2INT) && (SINCOS_REAL2INT == 1)
   /* requires -fno-strict-aliasing on gcc */
-  ix = *(INT8*)(&x);
+  ux.asint = *(INT8*)(&x);  
 #else
   /* works always, but is somewhat slow */
-  memcpy(&ix,&x,sizeof(ix));
+  memcpy(&(ux.asint),&x,sizeof(ux));
+#endif
+#else
+  ux.asreal = x + SINCOS_ADDS;
 #endif
 
-  i  = ix & SINCOS_MASK1;
-  n  = ix & SINCOS_MASK2;
+  i  = ux.asint & SINCOS_MASK1;
+  n  = ux.asint & SINCOS_MASK2;
   i  = i >> SINCOS_SHIFT;
   
   (*sin2pix) = sincosLUTbase[i]  + n * sincosLUTdiff[i];
