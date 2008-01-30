@@ -8,7 +8,7 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 ## not usable before automake-1.6:
 ## AM_LDFLAGS = -all-static
 
-bin_PROGRAMS = NstarClean SFTclean MCInjectS2 DriveHough_v3 HoughValidate DriveHoughMulti MCInjectHoughMulti MultiWeights ValidateHoughMulti ValidateChi2Test MCInjectHoughMultiChi2Test
+bin_PROGRAMS = NstarClean SFTclean MCInjectS2 DriveHough_v3 HoughValidate DriveHoughMulti DriveHoughMulti_S5 MCInjectHoughMulti MultiWeights ValidateHoughMulti ValidateChi2Test MCInjectHoughMultiChi2Test
 
 NstarClean_SOURCES = NstarClean.c
 SFTclean_SOURCES = SFTclean.c 
@@ -16,6 +16,10 @@ MCInjectS2_SOURCES = MCInjectHoughS2.c MCInjectHoughS2.h SFTbin.h SFTbin.c Drive
 DriveHough_v3_SOURCES = DriveHough_v3.c  DriveHoughColor.h PeakSelect.c PeakSelect.h
 HoughValidate_SOURCES = HoughValidate.c MCInjectComputeHough.h DriveHoughColor.h PeakSelect.h PeakSelect.c
 DriveHoughMulti_SOURCES = DriveHoughMulti.c  DriveHoughColor.h PeakSelect.c PeakSelect.h \
+	 ../../FDS_isolated/FstatToplist.c ../../FDS_isolated/FstatToplist.h \
+	 ../../FDS_isolated/HeapToplist.c ../../FDS_isolated/HeapToplist.h
+
+DriveHoughMulti_S5_SOURCES = DriveHoughMulti_S5.c  DriveHoughColor.h PeakSelect.c PeakSelect.h \
 	 ../../FDS_isolated/FstatToplist.c ../../FDS_isolated/FstatToplist.h \
 	 ../../FDS_isolated/HeapToplist.c ../../FDS_isolated/HeapToplist.h
 
