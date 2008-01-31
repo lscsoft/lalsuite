@@ -93,7 +93,7 @@ def hash_n_bits(input_string, n_bits, hash_lib=sha):
   return bytes2int(hashed_string[:n_bytes]) >> (8*n_bytes - n_bits)
 
 def createInjectionFile(hipe_dir, cp, cpinj, injrun, injection_segment,
-  source_file, verbose=False):
+  source_file, usertag=None, verbose=False):
   """
   Creates an master injection file containing all injections for this run.
   Also reads the file and returns its contents
@@ -124,20 +124,29 @@ def createInjectionFile(hipe_dir, cp, cpinj, injrun, injection_segment,
   argument.append(" --time-interval %f" % injInterval )
   argument.append(" --time-step %f" % injInterval )
   argument.append(" --seed %d" % seed )
+  argument.append(" --user-tag %s" % usertag)
 
   # set output file and exttrig-file
-  injFile = "%s/HL-INJECTIONS.xml" % hipe_dir
-  argument.append(" --output %s" % injFile )
   argument.append(" --exttrig-file %s" % source_file )
 
   # execute the command
   executable = cp.get("condor", "inspinj")
   arguments = " ".join(argument)
   inspiralutils.make_external_call(executable + " " + arguments,
-    show_stdout=verbose, show_command=verbose)
+    show_command=verbose)
+    
+  # recreate the output filename
+  injFile = "HL-INJECTIONS_" + str(seed)
+  if usertag is not None:
+    injFile += "_" + usertag
+  injFile += "-%d-%d.xml" % (injection_segment[0], abs(injection_segment))
+  
+  # move it into the GRB directory to avoid clutter
+  new_injFile = hipe_dir + "/" + injFile
+  os.rename(injFile, new_injFile)
 
   # read in the file and the tables
-  doc = utils.load_filename( injFile )    
+  doc = utils.load_filename(new_injFile)
   sims = table.get_table(doc, lsctables.SimInspiralTable.tableName)
 
   return sims, injInterval, numberInjections
@@ -353,7 +362,6 @@ def make_dq_run(base_analysis, veto_file_dict, category):
   analysis.dag_base_name += "_CATEGORY_" + str(category)
 
   return analysis
-    
 
 def concatenate_files(input_names, output_name):
   """
@@ -473,6 +481,21 @@ cp = ConfigParser.ConfigParser()
 cp.read(opts.config_file)
 
 ##############################################################################
+# read in the GRB data from the list
+ext_trigs = grbsummary.load_external_triggers(opts.list)
+
+if not (len(opts.grb) == 1 and opts.grb[0] == "all"):
+  ext_trigs = filter(lambda row: row.event_number_grb in opts.grb, ext_trigs)
+
+if len(ext_trigs) == 0:
+  print "No external triggers found.  Nothing to do."
+  sys.exit()
+
+if opts.verbose:
+  print "Will construct workflows to analyze:", \
+    ", ".join(["GRB" + trig.event_number_grb for trig in ext_trigs])
+
+##############################################################################
 # get the pad and chunk lengths from the values in the ini file
 paddata = int(cp.get('data', 'pad-data'))
 n = int(cp.get('data', 'segment-length'))
@@ -552,30 +575,23 @@ uberdag.set_dag_file("%s_uberdag" % tag)
 inspiralutils.write_rescue()
 
 ##############################################################################
-# read in the GRB data from the list
-ext_trigs = grbsummary.load_external_triggers(opts.list, verbose=opts.verbose)
+# loop over the GRBs and construct their required sub-DAGs
 
-if not (len(opts.grb) == 1 and opts.grb[0] == "all"):
-  ext_trigs = ext_trigs.filterRows(lambda row: row.event_number_grb in opts.grb)
-
-##############################################################################
-# loop over the intervals, constructing overlapping segment lists,
-# making directories, and writing output to them
 grb_caches = []
 
 for grb in ext_trigs:
 
-  # extract the time of the GRB
-  trigger = int(grb.start_time)
+  # name and the directory
+  idirectory = "GRB" + str(grb.event_number_grb)
+  if opts.verbose:
+    print "*", idirectory
+  mkdir(idirectory, opts.overwrite_dir)
 
   ##############################################################################
   # set up the on source segment
-  onSourceSegment = segments.segment(trigger - opts.onsource_left, trigger + opts.onsource_right)
-  lengthOnsource = opts.onsource_left + opts.onsource_right
-
-  # name and the directory
-  idirectory = "GRB" + str(grb.event_number_grb)
-  mkdir( idirectory, opts.overwrite_dir)
+  trigger = int(grb.start_time)
+  onSourceSegment = segments.segment(trigger - opts.onsource_left,
+                                     trigger + opts.onsource_right)
 
   # create the source-file which contains data about the position and time
   # and place it into the corresponding directory
@@ -718,7 +734,7 @@ for grb in ext_trigs:
       if opts.verbose: print "  Creating injections..."
       sims, injInterval, numberInjections = createInjectionFile(hipe_dir, cp,
         cpinj, injrun, offSourceSegment.contract(opts.padding_time),
-        source_file, opts.verbose)
+        source_file, usertag, opts.verbose)
         
       # XXX: hack since glue is having trouble with empty columns
       fix_numrel_columns(sims)
