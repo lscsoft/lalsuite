@@ -47,11 +47,6 @@ from lalapps import inspiralutils
 ##############################################################################
 # define a few utility functions that make this job easier
 
-# subroutine to rescale the times
-def ct(time, timeOffset):
-  return (time-timeOffset)  # /3600.0
-
-
 def mkdir( directory, overwrite ):
   try:
     os.mkdir(directory)
@@ -157,70 +152,6 @@ def fix_numrel_columns(sims):
        sim.numrel_data="nan"
        sim.numrel_mode_max = 0
        sim.numrel_mode_min = 0
-
-def plot_segments(trigger, ifolist, segdict, onSourceSegment, offSourceSegment, subdir):
-    """
-    Plot the on- and off-source segment extents for all IFOs in ifolist.
-    """
-    colorCode = {'H1':'r', 'H2':'b', 'L1':'g', 'V1':'m', 'G1':'k'}
-    hi = len(ifolist)
-
-    fig = pylab.figure()
-    ax = fig.add_subplot(111)
-    ax.plot([-6, 6], [0, hi], 'w.')
-    area = {}
-    for c, ifo in enumerate(ifolist):
-      color = colorCode[ifo]
-      for seg in segdict[ifo]:
-        a = ct(seg[0], trigger)
-        b = ct(seg[1], trigger)
-        ax.fill([a, b, b, a, a], [c, c, c+1, c+1, c], color)
-    ax.axvline(ct(offSourceSegment[0], trigger), color='k', lw=4)
-    ax.axvline(ct(offSourceSegment[1], trigger), color='k', lw=4)
-    ax.axvline(ct(onSourceSegment[0], trigger), color='k', ls='--')
-    ax.axvline(ct(onSourceSegment[1], trigger), color='k', ls='--')
-    ax.set_xlabel('time [h]')
-    ax.set_ylabel('IFO')
-    
-    a = ct(offSourceSegment[0] - 2 * minsciseg, trigger)
-    b = ct(offSourceSegment[1] + 2 * minsciseg, trigger)
-    ticks = numpy.arange(hi) + 0.5
-    ax.set_yticks(ticks)
-    ax.set_yticklabels(ifolist)
-    for x in ax.get_xticks():
-      ax.plot([x, x], [0, hi], 'k:')
-    for y in range(hi):
-      ax.plot([-6,6], [y,y], 'k:')
-    ax.set_xlim([a, b])
-    
-    fig.savefig(subdir+"/segments-"+subdir+".png")
-    pylab.close(fig)
-
-def plot_injection_distributions(sims, tag, subdir, overwrite_flag=False):
-    """
-    Plot histograms of all injected parameters that have numeric values.
-    Create directory tag+"_injection" and fill with *_distribution.png.
-    """ 
-    plot_dir = tag + "_injection_distributions"
-    
-    # temporarily change to directory
-    cwd = os.getcwdu()
-    os.chdir(subdir)
-    mkdir(plot_dir, overwrite_flag)
-    os.chdir(plot_dir)
-    
-    for attr, attr_type in zip(sims.columnnames, sims.columntypes):
-        if attr_type.startswith("int") or attr_type.startswith("real"):
-            fig = pylab.figure()
-            ax = fig.add_subplot(111)
-            ax.hist([getattr(sim, attr) for sim in sims], bins=20)
-            ax.set_xlabel(attr.replace("_", r"\_"))
-            ax.set_ylabel(r"\# of injections")
-            fig.savefig(str(attr) + "_distribution.png")
-            pylab.close(fig)
-
-    # return to original directory
-    os.chdir(cwd)
 
 ##############################################################################
 # inspiral_hipe wrapper
@@ -525,10 +456,6 @@ parser.add_option("-p", "--log-path",action="store",type="string",\
     metavar=" PATH",help="directory to write condor log file")
 
 # Add some extra capabilities
-parser.add_option("-P", "--plot-segments", action="store_true",default=False,\
-  help="plot segments for each interval with original segments" )
-parser.add_option("-D", "--plot-injections", action="store_true",
-  default=False, help="histogram distributions of each injection parameter")
 parser.add_option("", "--skip-dataquality", action="store_false", default=True,
   dest="do_dataquality", help="skip a query for data quality")
 
@@ -539,11 +466,6 @@ required_opts = ["list", "onsource_right", "onsource_left", "padding_time",
 for opt in required_opts:
     if getattr(opts, opt) is None:
         raise ValueError, "--%s is a required option" % opt
-
-if opts.plot_segments or opts.plot_injections:
-  import matplotlib
-  matplotlib.use("Agg")
-  import pylab
 
 ##############################################################################
 # create the config parser object and read in the ini file
@@ -695,14 +617,6 @@ for grb in ext_trigs:
   if opts.verbose:
     print "on-source segment: ", onSourceSegment
     print "off-source segment: ", offSourceSegment
-  
-  # plot the segment lists
-  if opts.plot_segments or opts.plot_injections:
-    plot_dir = "trigger_hipe_plots"
-    inspiralutils.mkdir(plot_dir)
-  if opts.plot_segments:
-    plot_segments(trigger, grb_ifolist, segdict, onSourceSegment, offSourceSegment,
-      plot_dir)
 
   ############################################################################
   # write veto files for higher-category DQ vetoes, narrowed down to this
@@ -808,12 +722,6 @@ for grb in ext_trigs:
         
       # XXX: hack since glue is having trouble with empty columns
       fix_numrel_columns(sims)
-
-      # plot the injections as made
-      if opts.plot_injections:
-          if opts.verbose: print "  Plotting injection distributions..."
-          plot_injection_distributions(sims, injrun, plot_dir,
-            overwrite_flag=opts.overwrite_dir)
 
       # split the injections
       if opts.verbose: print "  Splitting injections..."
