@@ -268,8 +268,8 @@ heterodyne.\n");  }
       if((smalllist = set_frame_files(&starts->data[count], &stops->data[count],
         cache, frcount, &count))==NULL){
         /* if there was no frame file for that segment move on */
-        fprintf(stderr, "Error... could not open frame files between %d and \
-%d.\n", (INT4)gpstime, (INT4)gpstime + duration);
+        fprintf(stderr, "Error... no frame files listed between %d and %d.\n", 
+          (INT4)gpstime, (INT4)gpstime + duration);
         
         if(count < numSegs){
           count++;/*if not finished reading in all data try next set of frames*/
@@ -1474,21 +1474,14 @@ CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache,
       break;
   }
 
-  /* if no data was found at all set small list to NULL */
-  if(check == 0){
-    /* if we still haven't reach the end of the segment, move to next bit */
-    if(tempstop < *stops){
-      (*position)--;
-      *starts = tempstop;
-    }
-
-    return NULL;
-  }
-
   if(durlock > MAXDATALENGTH){ /* set starts to its value plus MAXDATALENGTH */
     (*position)--; /* move position counter back one */
     *starts = tempstop;
   }
+
+  /* if no data was found at all set small list to NULL */
+  if(check == 0)
+    return NULL;
 
   if(strlen(smalllist) > MAXLISTLENGTH){
     fprintf(stderr, "Error... small list of frames files is too long.\n");
