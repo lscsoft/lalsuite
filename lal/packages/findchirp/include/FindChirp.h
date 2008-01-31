@@ -102,6 +102,7 @@ that implement the search.
 #include <lal/ComplexFFT.h>
 #include <lal/DataBuffer.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/GeneratePPNInspiral.h>
@@ -147,6 +148,7 @@ NRCSID (FINDCHIRPH, "$Id$");
 #define FINDCHIRPH_EMAPX 26
 #define FINDCHIRPH_EPTFW 27
 #define FINDCHIRPH_EIGEN 28
+#define FINDCHIRPH_EIMRW 29
 
 #define FINDCHIRPH_MSGENULL "Null pointer"
 #define FINDCHIRPH_MSGENNUL "Non-null pointer"
@@ -173,6 +175,7 @@ NRCSID (FINDCHIRPH, "$Id$");
 #define FINDCHIRPH_MSGEMAPX "Mismatch in waveform approximant"
 #define FINDCHIRPH_MSGEPTFW "Error generating PTF waveform"
 #define FINDCHIRPH_MSGEIGEN "Error computing eigenvalues"
+#define FINDCHIRPH_MSGEIMRW "Error computing IMR waveform"
 
 /* </lalErrTable> */
 
@@ -978,12 +981,12 @@ LALFindChirpInjectSignals (
 
 SimRingdownTable *
 LALFindChirpInjectIMR (
-    LALStatus                  *status,
-    REAL4TimeSeries            *chan,
-    SimInspiralTable           *events,
-    SimRingdownTable           *ringdownevents,
-    COMPLEX8FrequencySeries    *resp,
-    int                        injectSignalType
+    LALStatus                     *status,
+    REAL4TimeSeries               *chan,
+    SimInspiralTable              *events,
+    SimRingdownTable              *ringdownevents,
+    COMPLEX8FrequencySeries       *resp,
+    INT4                           injectSignalType
     );
 
 INT4

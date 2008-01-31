@@ -90,6 +90,7 @@ LALFree()
 #include <lal/GenerateInspiral.h>
 #include <lal/FrameStream.h>
 #include <lal/NRWaveInject.h>
+#include <lal/GenerateInspRing.h>
 #include <math.h>
 
 NRCSID( FINDCHIRPSIMULATIONC, "$Id$" );
@@ -272,6 +273,30 @@ LALFindChirpInjectSignals (
     CHECKSTATUSPTR( status );
 
     LALInfo( status, ppnParams.termDescription );
+
+    if ( strstr( thisEvent->waveform, "KludgeIMR") || 
+        strstr( thisEvent->waveform, "KludgeRingOnly") )
+    {
+      CoherentGW *wfm;
+      SimRingdownTable *ringEvent;
+      int injectSignalType = imr_inject;
+
+ 
+      ringEvent = (SimRingdownTable *) 
+        LALCalloc( 1, sizeof(SimRingdownTable) ); 
+      wfm = XLALGenerateInspRing( &waveform, thisEvent, ringEvent, 
+          injectSignalType);
+      LALFree(ringEvent);
+
+      if ( !wfm )
+      {
+        LALInfo( status, "Unable to generate merger/ringdown, "
+            "injecting inspiral only");
+        ABORT( status, FINDCHIRPH_EIMRW, FINDCHIRPH_MSGEIMRW );
+      }
+      waveform = *wfm;
+    }
+
 
     if ( thisEvent->geocent_end_time.gpsSeconds )
     {

@@ -521,7 +521,8 @@ XLALGenerateInspRing(
   ringInj->amplitude = sqrt( amp*amp);
   
   /* zero out inspiral and merger if we only want to inject a ringdown*/
-  if ( injectSignalType ==  imr_ring_inject )
+  if ( injectSignalType ==  imr_ring_inject || 
+      strstr(inspiralInj->waveform, "KludgeRingOnly") )
   {
     for ( n = 0; n < 2.0*(inputLength + mergerLength + endMerger ); n++ )
     {
@@ -586,13 +587,6 @@ XLALDeriveRingdownParameters(
       "LLO: %d.%d GPS seconds\n",
       ringInj->h_start_time.gpsSeconds, ringInj->h_start_time.gpsNanoSeconds,
       ringInj->l_start_time.gpsSeconds, ringInj->l_start_time.gpsNanoSeconds);
-
-  XLALGreenwichMeanSiderealTimeToGPS(ringInj->start_time_gmst,
-     &(ringInj->geocent_start_time));
-  XLALPrintInfo( "Start times:\n"
-      "From GMST: %d.%d GPS seconds\n",
-      ringInj->geocent_start_time.gpsSeconds, 
-      ringInj->geocent_start_time.gpsNanoSeconds);
 
   /* compute effective distance and hrss for sites */
   cosiota = cos(ringInj->inclination);

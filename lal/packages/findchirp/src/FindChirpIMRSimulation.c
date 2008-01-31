@@ -104,7 +104,7 @@ LALFindChirpInjectIMR (
     SimInspiralTable           *events,
     SimRingdownTable           *ringdownevents,
     COMPLEX8FrequencySeries    *resp,
-    int                        injectSignalType
+    INT4                        injectSignalType
     )
 /* </lalVerbatim> */
 {
