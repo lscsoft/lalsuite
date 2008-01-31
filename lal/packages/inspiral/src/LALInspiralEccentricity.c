@@ -501,25 +501,20 @@ LALInspiralEccentricityEngine(
    fmin = params->fLower /2.*3.;  /* fmin is the minimumn orbital frequency (factor 2) of the third harmonic (factor3)*/
 
    fmin = params->fLower ;
-   iota = params->inclination;
+   iota = params->inclination; /*overwritten later */
    /*actually fLower if 3 times less */
+   
    beta = 0.;
    twoBeta = 2.* beta;
    cos2Beta = cos(twoBeta);
    sin2Beta = sin(twoBeta);
    iota = LAL_PI/4.;
-   iota = 0.;
    onepCosSqI = 1. + cos(iota) * cos(iota);
    SinSqI = sin(iota) * sin(iota);
    cosI = cos(iota);
 
-
    p0 = (1. - e0*e0)/pow(2. * LAL_PI * m * LAL_MTSUN_SI* fmin/3. , 2./3.);
-
-
-
-    
-   
+       
    *(values.data) = orbital_element_p = p0;
    *(values.data+1) = phase = params->startPhase;
    *(values.data+2) = orbital_element_e = e0; 
