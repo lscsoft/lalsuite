@@ -54,6 +54,11 @@ LocalComputeFStatFreqBand ( LALStatus *status,
                             const MultiNoiseWeights *multiWeights,
                             const MultiDetectorStateSeries *multiDetStates,
                             const ComputeFParams *params);
+extern void
+LocalComputeFstatHoughMap ( LALStatus *status,
+			    SemiCohCandidateList  *out,   /* output candidates */
+			    HOUGHPeakGramVector *pgV, /* peakgram vector */
+			    SemiCoherentParams *params);
 #endif
 
 #define SHOW_PROGRESS show_progress
