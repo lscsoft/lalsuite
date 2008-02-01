@@ -620,37 +620,13 @@ XLALFindChirpPTFWaveform(
       N_steps = ((i-2) * dE_dt_n_1 - (i-1) * dE_dt_n_2) / 
         ( dE_dt_n_1 -  dE_dt_n_2) - i + 1;
 
-      if ( m2 > ( 0.5 * m1 - 1.4) && chi1 > (0.7 - kappa) )
+      if ( N_steps > 5.0 ) 
       {
-        if ( N_steps <= 5.0 && N_steps > 0.0) 
-        {
-          /* fprintf(stderr,"Secondary condition on MECO reached\n"); */
-          break;
-        }  
-        else
-        {  
-          fprintf(stderr,"cycle %d\n",i);
-          XLALPrintError( "XLAL Error: NaN in PTF dynamical variables\n" );
-          errcode = XLAL_EFAILED;    
-          break;
-        }   
-
-      }
-      else  
-      {  
-        if ( N_steps <= 3.0 && N_steps > 0.0) 
-        {
-          /* secondary condition on MECO reached */
-          break;
-        }  
-        else
-        {   
-          fprintf(stderr,"cycle %d\n",i);
-          XLALPrintError( "XLAL Error: NaN in PTF dynamical variables\n" );
-          errcode = XLAL_EFAILED;    
-          break;
-        }   
-      }
+        fprintf(stderr,"cycle %d\n",i);
+        XLALPrintError( "XLAL Error: NaN in PTF dynamical variables\n" );
+        errcode = XLAL_EFAILED;    
+      }   
+      break;
     }
 
     /*  Store the last two values of dE/dt so as to be able to estimate   */
