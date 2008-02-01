@@ -27,6 +27,12 @@
 
 #include"HierarchicalSearch.h"
 
+RCSID( "$Id$");
+
+#define HSMAX(x,y) ( (x) > (y) ? (x) : (y) )
+#define HSMIN(x,y) ( (x) < (y) ? (x) : (y) )
+#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
+
 /* functions we need to get from local copies, or assign back to LAL pendants using macros:
 
 extern void LocalHOUGHComputeSizePar( status->statusPtr, &parSize, &parRes );
@@ -51,7 +57,8 @@ extern void LocalHOUGHWeighSpacePHMD(status->statusPtr, &phmdVS, params->weights
 #define LocalHOUGHConstructSpacePHMD LALHOUGHConstructSpacePHMD
 #define LocalHOUGHWeighSpacePHMD     LALHOUGHWeighSpacePHMD
 #define LocalHOUGHInitializeHT       LALHOUGHInitializeHT
-#define LocalHOUGHConstructHMT_W     LocalHOUGHConstructHMT_WALalHOUGHupdateSpacePHMDup
+#define LocalHOUGHConstructHMT_W     LALHOUGHConstructHMT_W
+#define LocalHOUGHupdateSpacePHMDup  LALHOUGHupdateSpacePHMDup
 #define LocalHOUGHWeighSpacePHMD     LALHOUGHWeighSpacePHMD
 
 
