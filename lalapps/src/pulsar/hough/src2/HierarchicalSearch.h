@@ -1,5 +1,5 @@
 /*  
- *  Copyright (C) 2005 Badri Krishnan, Alicia Sintes
+ *  Copyright (C) 2005-2008 Badri Krishnan, Alicia Sintes, Bernd Machenschalk
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

@@ -1,11 +1,59 @@
+/*  
+ *  Copyright (C) 2005-2008 Badri Krishnan, Alicia Sintes, Bernd Machenschalk
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the 
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  MA  02111-1307  USA
+ * 
+ */
+
 /*
    This is a local copy of ComputeFstatHoughMap() of HierarchicalSearch.c
-   See that file for details (short documentation, copyright etc.
+   See that file for details
 
    $Id$
 */
 
 #include"HierarchicalSearch.h"
+
+/* functions we need to get from local copies, or assign back to LAL pendants using macros:
+
+extern void LocalHOUGHComputeSizePar( status->statusPtr, &parSize, &parRes );
+extern void LocalHOUGHFillPatchGrid( status->statusPtr, &patch, &parSize );
+extern void LocalHOUGHParamPLUT( status->statusPtr, &parLut, &parSize, &parDem);
+extern void LocalHOUGHConstructPLUT( status->statusPtr, &(lutV.lut[j]), &patch, &parLut );
+extern void LocalHOUGHConstructSpacePHMD(status->statusPtr, &phmdVS, pgV, &lutV);
+extern void LocalHOUGHWeighSpacePHMD(status->statusPtr, &phmdVS, params->weightsV);
+extern void LocalHOUGHInitializeHT( status->statusPtr, &ht, &patch);
+extern void LocalHOUGHConstructHMT_W(status->statusPtr, &ht, &freqInd, &phmdVS);
+extern void LocalHOUGHupdateSpacePHMDup(status->statusPtr, &phmdVS, pgV, &lutV);
+extern void LocalHOUGHWeighSpacePHMD(status->statusPtr, &phmdVS, params->weightsV);
+
+*/
+
+/*  for testing we'll point all of them back to LAL for now */
+
+#define LocalHOUGHComputeSizePar     LALHOUGHComputeSizePar
+#define LocalHOUGHFillPatchGrid      LALHOUGHFillPatchGrid
+#define LocalHOUGHParamPLUT          LALHOUGHParamPLUT
+#define LocalHOUGHConstructPLUT      LALHOUGHConstructPLUT
+#define LocalHOUGHConstructSpacePHMD LALHOUGHConstructSpacePHMD
+#define LocalHOUGHWeighSpacePHMD     LALHOUGHWeighSpacePHMD
+#define LocalHOUGHInitializeHT       LALHOUGHInitializeHT
+#define LocalHOUGHConstructHMT_W     LocalHOUGHConstructHMT_WALalHOUGHupdateSpacePHMDup
+#define LocalHOUGHWeighSpacePHMD     LALHOUGHWeighSpacePHMD
+
 
 void LocalComputeFstatHoughMap(LALStatus *status,
 			       SemiCohCandidateList  *out,   /* output candidates */
