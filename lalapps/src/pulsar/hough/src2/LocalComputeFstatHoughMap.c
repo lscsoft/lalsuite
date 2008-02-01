@@ -33,6 +33,20 @@ RCSID( "$Id$");
 #define HSMIN(x,y) ( (x) < (y) ? (x) : (y) )
 #define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
+/* comparison function for the toplist */
+static int smallerHough(const void *a,const void *b) {
+  SemiCohCandidate a1, b1;
+  a1 = *((const SemiCohCandidate *)a);
+  b1 = *((const SemiCohCandidate *)b);
+  
+  if( a1.significance < b1.significance )
+    return(1);
+  else if( a1.significance > b1.significance)
+    return(-1);
+  else
+    return(0);
+}
+
 /* functions we need to get from local copies, or assign back to LAL pendants using macros:
 
 extern void LocalHOUGHComputeSizePar( status->statusPtr, &parSize, &parRes );
