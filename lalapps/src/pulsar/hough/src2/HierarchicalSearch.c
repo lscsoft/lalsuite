@@ -137,6 +137,7 @@ RCSID( "$Id$");
 #define MAIN  main
 #define FOPEN fopen
 #define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
+#define COMPUTEFSTATHOUGHMAP ComputeFstatHoughMap
 #endif
 
 extern int lalDebugLevel;
@@ -1106,8 +1107,11 @@ int MAIN( int argc, char *argv[]) {
 	    LAL_CALL( FstatVectToPeakGram( &status, &pgV, &fstatVector, uvar_peakThrF), &status);
 	      
 	    /* get candidates */
-	    LAL_CALL ( ComputeFstatHoughMap ( &status, &semiCohCandList, &pgV, &semiCohPar), &status);
-	      
+	    /* this is the second most costly function. We here allow for using architecture-specific
+	       optimized functions from a local file instead of the standard ComputeFstatHoughMap()
+	       below that refers to the LALHOUGH functions in LAL */
+	    LAL_CALL ( COMPUTEFSTATHOUGHMAP ( &status, &semiCohCandList, &pgV, &semiCohPar), &status);
+	    
 	    /* free peakgrams -- we don't need them now because we have the Hough maps */
 	    for (k=0; k<nStacks; k++) 
 	      LALFree(pgV.pg[k].peak);

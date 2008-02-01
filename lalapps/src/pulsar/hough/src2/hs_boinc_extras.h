@@ -41,7 +41,9 @@
 /* use a local copy of ComputeFStatFreqBand() and related functions for E@H-specific optimizations */
 #ifndef EAH_OPTIMIZATION
 #define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
+#define COMPUTEFSTATHOUGHMAP ComputeFstatHoughMap
 #else
+#define COMPUTEFSTATHOUGHMAP ComputeFstatHoughMap
 #define COMPUTEFSTATFREQBAND LocalComputeFStatFreqBand
 
 extern void
