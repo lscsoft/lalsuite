@@ -212,9 +212,6 @@ void PrintCatalogInfo( LALStatus  *status, const SFTCatalog *catalog, FILE *fp);
 
 void PrintStackInfo( LALStatus  *status, const SFTCatalogSequence *catalogSeq, FILE *fp);
 
-void GetHoughCandidates_threshold(LALStatus *status, SemiCohCandidateList *out, HOUGHMapTotal *ht, HOUGHPatchGrid *patch,
-				  HOUGHDemodPar *parDem, REAL8 threshold);
-
 void GetSemiCohToplist(LALStatus *status, toplist_t *list, SemiCohCandidateList *in, REAL8 meanN, REAL8 sigmaN);
 
 void ComputeNumExtraBins(LALStatus *status, SemiCoherentParams *par, REAL8 fdot, REAL8 f0, REAL8 deltaF);

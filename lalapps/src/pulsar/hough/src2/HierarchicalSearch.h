@@ -216,11 +216,20 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
 		      CHAR *fnameOut, 
 		      INT4 iHmap);
 
-  void GetHoughCandidates_toplist(LALStatus *status,
-				  toplist_t *list,
-				  HOUGHMapTotal *ht,
-				  HOUGHPatchGrid  *patch,
-				  HOUGHDemodPar   *parDem);
+  extern
+  void GetHoughCandidates_threshold(LALStatus            *status,
+				    SemiCohCandidateList *out,
+				    HOUGHMapTotal        *ht,
+				    HOUGHPatchGrid       *patch,
+				    HOUGHDemodPar        *parDem,
+				    REAL8                threshold);
+
+  extern
+  void GetHoughCandidates_toplist(LALStatus      *status,
+				  toplist_t      *list,
+				  HOUGHMapTotal  *ht,
+				  HOUGHPatchGrid *patch,
+				  HOUGHDemodPar  *parDem);
 
   void GetFstatCandidates_toplist(LALStatus *status,
 				  toplist_t *list,
