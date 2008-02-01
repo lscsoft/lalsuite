@@ -1454,22 +1454,22 @@ int main( int argc, char *argv[] )
   if ( userTag && outCompress )
   {
     LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml.gz",
-        rand_seed, userTag, gpsStartTime, gpsDuration );
+        rand_seed, userTag, gpsStartTime.gpsSeconds, gpsDuration );
   }
   else if ( userTag && !outCompress )
   {
     LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
-        rand_seed, userTag, gpsStartTime, gpsDuration );
+        rand_seed, userTag, gpsStartTime.gpsSeconds, gpsDuration );
   }
   else if ( !userTag && outCompress )
   {
     LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml.gz",
-        rand_seed, gpsStartTime, gpsDuration );
+        rand_seed, gpsStartTime.gpsSeconds, gpsDuration );
   }
   else
   {
     LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%ld.xml", 
-        rand_seed, gpsStartTime, gpsDuration );
+        rand_seed, gpsStartTime.gpsSeconds, gpsDuration );
   }
   if ( outputFileName ) 
   {
