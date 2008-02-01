@@ -112,7 +112,7 @@ void LocalComputeFstatHoughMap(LALStatus *status,
 
   toplist_t *houghToplist;
 
-  INITSTATUS( status, "ComputeFstatHoughMap", rcsid );
+  INITSTATUS( status, "LocalComputeFstatHoughMap", rcsid );
   ATTATCHSTATUSPTR (status);
 
   /* check input is not null */
