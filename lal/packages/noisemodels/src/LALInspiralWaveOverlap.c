@@ -241,19 +241,19 @@ LALInspiralWaveOverlap
         * */
 
        /* Check that the space has been allocated to recv the xcorr and  filters */
-       ASSERT (overlapout->xcorr1->length = overlapin->signal.length, 
+       ASSERT (overlapout->xcorr1->length == overlapin->signal.length, 
                status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
        ASSERT (overlapout->xcorr1->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
       
-       ASSERT (overlapout->xcorr2->length = overlapin->signal.length, 
+       ASSERT (overlapout->xcorr2->length == overlapin->signal.length, 
                status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
        ASSERT (overlapout->xcorr2->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
       
-       ASSERT (overlapout->filter1->length = overlapin->signal.length, 
+       ASSERT (overlapout->filter1->length == overlapin->signal.length, 
                status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
        ASSERT (overlapout->filter1->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
        
-       ASSERT (overlapout->filter2->length = overlapin->signal.length, 
+       ASSERT (overlapout->filter2->length == overlapin->signal.length, 
                status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
        ASSERT (overlapout->filter2->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
 
@@ -301,4 +301,5 @@ void LALInspiralGetOrthoNormalFilter(REAL4Vector *filter2, REAL4Vector *filter1)
         filter2->data[n-i] = filter1->data[i];
     }
 }
+
 
