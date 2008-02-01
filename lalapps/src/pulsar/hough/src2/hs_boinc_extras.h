@@ -43,7 +43,7 @@
 #define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
 #define COMPUTEFSTATHOUGHMAP ComputeFstatHoughMap
 #else
-#define COMPUTEFSTATHOUGHMAP ComputeFstatHoughMap
+#define COMPUTEFSTATHOUGHMAP LocalComputeFstatHoughMap
 #define COMPUTEFSTATFREQBAND LocalComputeFStatFreqBand
 
 extern void
