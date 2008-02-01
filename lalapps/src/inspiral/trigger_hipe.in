@@ -485,7 +485,8 @@ cp.read(opts.config_file)
 ext_trigs = grbsummary.load_external_triggers(opts.list)
 
 if not (len(opts.grb) == 1 and opts.grb[0] == "all"):
-  ext_trigs = filter(lambda row: row.event_number_grb in opts.grb, ext_trigs)
+  temp_list = filter(lambda row: row.event_number_grb in opts.grb, ext_trigs)
+  ext_trigs = table.new_from_template(ext_trigs).extend(temp_list)
 
 if len(ext_trigs) == 0:
   print "No external triggers found.  Nothing to do."
@@ -584,7 +585,7 @@ for grb in ext_trigs:
   # name and the directory
   idirectory = "GRB" + str(grb.event_number_grb)
   if opts.verbose:
-    print "*", idirectory
+    print "* Constructing workflow for", idirectory
   mkdir(idirectory, opts.overwrite_dir)
 
   ##############################################################################
@@ -604,7 +605,7 @@ for grb in ext_trigs:
   offSourceSegment, grb_ifolist = \
     grbsummary.multi_ifo_compute_offsource_segment(segdict, onSourceSegment,
       padding_time=opts.padding_time, max_trials=opts.num_trials,
-      symmetric=opts.symmetric)
+      min_trials=opts.num_trials, symmetric=opts.symmetric)
   grb_ifolist.sort()
   ifo_times = "".join(grb_ifolist)
   
@@ -638,17 +639,20 @@ for grb in ext_trigs:
   # write veto files for higher-category DQ vetoes, narrowed down to this
   # GRB's off-source segment times and participating IFOs.
 
-  off_source_seglist = segments.segmentlist([offSourceSegment])
-  veto_filename_dict = {}
-  for category in (2, 3, 4):
-    cum_category = "".join([str(c) for c in range(2, category+1)])
-    veto_filename_dict[category] = {}
-    for ifo in grb_ifolist:
-      grb_cum_veto_segs = cum_vetoed_segs[(ifo, category)] & off_source_seglist
-      veto_filename = idirectory + "/" + ifo.lower() + "-cat" + cum_category \
-        + "_veto_segments.txt"
-      segmentsUtils.tosegwizard(open(veto_filename, "w"), grb_cum_veto_segs)
-      veto_filename_dict[category][ifo] = veto_filename
+  if opts.do_dataquality:
+    if opts.verbose:
+      print "applying category 2, 3, and 4 vetoes"
+    off_source_seglist = segments.segmentlist([offSourceSegment])
+    veto_filename_dict = {}
+    for category in (2, 3, 4):
+      cum_category = "".join([str(c) for c in range(2, category+1)])
+      veto_filename_dict[category] = {}
+      for ifo in grb_ifolist:
+        grb_cum_veto_segs = cum_vetoed_segs[(ifo, category)] & off_source_seglist
+        veto_filename = idirectory + "/" + ifo.lower() + "-cat" + cum_category \
+          + "_veto_segments.txt"
+        segmentsUtils.tosegwizard(open(veto_filename, "w"), grb_cum_veto_segs)
+        veto_filename_dict[category][ifo] = veto_filename
 
   ############################################################################
   # set up the analysis dag for this interval
