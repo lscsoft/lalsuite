@@ -26,6 +26,7 @@ NINJASRC	= ninja.c
 FRNINJASRC	= fr_ninja.c
 MDCNINJASRC	= mdc_ninja.c inspiralutils.c inspiral.h
 CALCEXPSNRSRC	= calcexpsnr.c
+SNEDSRC         = sned.c
 if LALFRAME
 if LALMETAIO
 bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank \
@@ -37,7 +38,7 @@ bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank \
                lalapps_spininj lalapps_coherent_inspiral lalapps_cohire \
                lalapps_coherentbank lalapps_coinext \
                lalapps_randombank lalapps_ninja lalapps_fr_ninja \
-               lalapps_mdc_ninja lalapps_calcexpsnr
+               lalapps_mdc_ninja lalapps_calcexpsnr lalapps_sned
 
 lalapps_inspiral_SOURCES 	= $(INSPIRALSRC)
 lalapps_coherent_inspiral_SOURCES = $(COHERESRC)
@@ -65,6 +66,7 @@ lalapps_ninja_SOURCES		= $(NINJASRC)
 lalapps_fr_ninja_SOURCES	= $(FRNINJASRC)
 lalapps_mdc_ninja_SOURCES	= $(MDCNINJASRC)
 lalapps_calcexpsnr_SOURCES	= $(CALCEXPSNRSRC)
+lalapps_sned_SOURCES      = $(SNEDSRC)
 else
 bin_PROGRAMS = 
 endif
