@@ -226,8 +226,8 @@ class BurstInjJob(pipeline.CondorDAGJob):
 
 		self.add_ini_opts(config_parser, "lalapps_binj")
 
-		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "binj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out"))
-		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "binj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err"))
+		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "lalapps_binj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_binj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err"))
 		self.set_sub_file("lalapps_binj.sub")
 
 
