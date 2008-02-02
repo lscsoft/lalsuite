@@ -54,6 +54,8 @@ static void update_shmem(void) {
 
   boinc_get_status(&boincstat);
 
+  memset(shmem, 0, EAH_SHMEM_SIZE);
+
   snprintf(shmem, EAH_SHMEM_SIZE,
 	   "<graphics_info>\n"
 	   "  <skypos_rac>%f</skypos_rac>\n"
