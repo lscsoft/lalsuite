@@ -1225,26 +1225,26 @@ static REAL8TimeSeries *add_inspiral_injections(LALStatus *stat, char *filename,
 
 	if(!response) {
 		XLALDestroyREAL4TimeSeries(zeroes);
-		XLALPrintError("add_inspiral_injections(): must supply calibration information for injections\n");
+		XLALPrintError("%s(): error: must supply calibration information for injections\n", func);
 		exit(1);
 	}
 
-	XLALPrintInfo("add_inspiral_injections(): reading in SimInspiral Table\n");
+	XLALPrintInfo("%s(): reading sim_inspiral table ...\n", func);
 
 	numInjections = SimInspiralTableFromLIGOLw(&injections, filename, start_time, stop_time);
 
 	if(numInjections < 0) {
 		XLALDestroyREAL4TimeSeries(zeroes);
-		XLALPrintError("add_inspiral_injections():error:cannot read injection file\n");
+		XLALPrintError("%s(): error: cannot read injection file\n", func);
 		exit(1);
 	}
 
-	XLALPrintInfo("add_inspiral_injections(): injecting signals into time series\n");
+	XLALPrintInfo("%s(): computing injections ...\n", func);
 
 	if(numInjections > 0)
 		LAL_CALL(LALFindChirpInjectSignals(stat, zeroes, injections, response), stat);
 
-	XLALPrintInfo("add_inspiral_injections(): finished making the injections\n");
+	XLALPrintInfo("%s(): done\n", func);
 
 	while(injections) {
 		SimInspiralTable *thisEvent = injections;
@@ -1269,15 +1269,19 @@ static REAL8TimeSeries *add_inspiral_injections(LALStatus *stat, char *filename,
  */
 
 
-static REAL8TimeSeries *add_mdc_injections(const char *mdccachefile, const char *channel_name, REAL8TimeSeries *series, LIGOTimeGPS epoch, LIGOTimeGPS stopepoch, size_t lengthlimit)
+static REAL8TimeSeries *add_mdc_injections(const char *mdccachefile, const char *channel_name, REAL8TimeSeries *series)
 {
 	static const char func[] = "add_mdc_injections";
+	LIGOTimeGPS stop;
 	REAL8TimeSeries *mdc;
 	unsigned i;
 
-	XLALPrintInfo("add_mdc_injections(): mixing data from MDC frames\n");
+	XLALPrintInfo("%s(): mixing data from MDC frames\n", func);
 
-	mdc = get_time_series(mdccachefile, channel_name, epoch, stopepoch, lengthlimit, TRUE);
+	stop = series->epoch;
+	XLALGPSAdd(&stop, series->data->length * series->deltaT);
+
+	mdc = get_time_series(mdccachefile, channel_name, series->epoch, stop, 0, TRUE);
 	if(!mdc)
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
@@ -1609,7 +1613,7 @@ int main(int argc, char *argv[])
 		 */
 
 		if(options->mdc_cache_filename)
-			add_mdc_injections(options->mdc_cache_filename, options->mdc_channel_name, series, epoch, options->gps_end, options->max_series_length);
+			add_mdc_injections(options->mdc_cache_filename, options->mdc_channel_name, series);
 
 		/*
 		 * Condition the time series data.
