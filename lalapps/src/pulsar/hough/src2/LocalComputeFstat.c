@@ -84,6 +84,9 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 #endif
 
 /*----- Macros ----- */
+/** fixed DTERMS to allow for loop unrolling */
+#define DTERMS 8
+
 /** square */
 #define SQ(x) ( (x) * (x) )
 
@@ -212,13 +215,17 @@ void LocalComputeFStatFreqBand ( LALStatus *status,
   ASSERT ( fstatVector->data, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( fstatVector->data->data, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( fstatVector->data->length > 0, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
-
+  ASSERT ( DTERMS == params->Dterms, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
   {
     static int first = !0;
     if (first) {
 #if (SINCOS_VERSION == 2) || (SINCOS_VERSION == 9)
       local_sin_cos_2PI_LUT_init();
 #endif
+      if (DTERMS != params->Dterms) {
+	LogPrintf(LOG_CRITICAL, "LocalComputeFstat has been compiled with fixed DTERMS (%d) != params->Dtems (%d)\n",DTERMS, params->Dterms);
+	ABORT ( status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
+      }
       fprintf(stderr,"\n$Revision$ OPT:%d SCV:%d, SCTRIM:%d\n",
 	      EAH_OPTIMIZATION, SINCOS_VERSION, SINCOS_ROUND_METHOD);
       first = 0;
@@ -446,7 +453,6 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
   REAL4 *a_al, *b_al;		/* pointer to alpha-arrays over a and b */
   REAL8 *DeltaT_al, *Tdot_al;	/* pointer to alpha-arrays of SSB-timings */
   SFTtype *SFT_al;		/* SFT alpha  */
-  UINT4 Dterms = params->Dterms;
   
   REAL8 norm = OOTWOPI; 
 
@@ -564,11 +570,11 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	
 	kstar = (INT4) (Dphi_alpha);	/* k* = floor(Dphi_alpha*chi) for positive Dphi */
 	kappa_star = Dphi_alpha - 1.0 * kstar;	/* remainder of Dphi_alpha: >= 0 ! */
-	kappa_max = kappa_star + 1.0 * Dterms - 1.0;
+	kappa_max = kappa_star + 1.0 * DTERMS - 1.0;
 
 	/* ----- check that required frequency-bins are found in the SFTs ----- */
-	k0 = kstar - Dterms + 1;
-	k1 = k0 + 2 * Dterms - 1;
+	k0 = kstar - DTERMS + 1;
+	k1 = k0 + 2 * DTERMS - 1;
 	if ( (k0 < freqIndex0) || (k1 > freqIndex1) ) 
 	  {
 	    LogPrintf(LOG_CRITICAL,
@@ -595,7 +601,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 #endif
       c_alpha -= 1.0f; 
 
-      /* ---------- calculate the (truncated to Dterms) sum over k ---------- */
+      /* ---------- calculate the (truncated to DTERMS) sum over k ---------- */
 
       /* ---------- ATTENTION: this the "hot-loop", which will be 
        * executed many millions of times, so anything in here 
@@ -615,7 +621,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
       if (__builtin_expect((kappa_star > LD_SMALL4) && (kappa_star < 1.0 - LD_SMALL4), (0==0)))
 
 #if (EAH_OPTIMIZATION == 1) && FALSE
-	/* FIXME: this version still needs to be fixed after switching from 2*Dterms+1 to 2*Dterms calc */
+	/* FIXME: this version still needs to be fixed after switching from 2*DTERMS+1 to 2*DTERMS calc */
 	/* vectorization with common denominator */
 
 	{
@@ -625,7 +631,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  REAL4 pn[4]  = {kappa_max-1.0f, kappa_max-1.0f, kappa_max-2.0f, kappa_max-2.0f};
 	  REAL4 qn[4]  = {1.0f, 1.0f, kappa_max, kappa_max};
 
-	  for ( l = 0; l < Dterms - 1; l ++ ) {
+	  for ( l = 0; l < DTERMS - 1; l ++ ) {
 	    for ( ve = 0; ve < 4; ve++) {
 	      STn[ve] = pn[ve] * STn[ve] + qn[ve] * Xal[ve];
 	      qn[ve] *= pn[ve];
@@ -983,9 +989,9 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  REAL4 qn = pn;
 	  REAL4 U_alpha, V_alpha;
 	  
-	  /* recursion with 2*Dterms steps */
+	  /* recursion with 2*DTERMS steps */
 	  UINT4 l;
-	  for ( l = 1; l < 2*Dterms; l ++ )
+	  for ( l = 1; l < 2*DTERMS; l ++ )
 	    {
 	      Xalpha_l ++;
 	      
@@ -993,7 +999,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	      Sn = pn * Sn + qn * (*Xalpha_l).re; /* S_(n+1) */
 	      Tn = pn * Tn + qn * (*Xalpha_l).im; /* T_(n+1) */
 	      qn *= pn; 			  /* q_(n+1) */
-	    } /* for l < 2*Dterms */
+	    } /* for l < 2*DTERMS */
 	  
 	  U_alpha = Sn / qn;
 	  V_alpha = Tn / qn;
@@ -1009,9 +1015,9 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	{ /* otherwise: lim_{rem->0}P_alpha,k  = 2pi delta_{k,kstar} */
  	  UINT4 ind0;
    	  if ( kappa_star <= LD_SMALL4 )
-	    ind0 = Dterms - 1;
+	    ind0 = DTERMS - 1;
    	  else
-	    ind0 = Dterms;
+	    ind0 = DTERMS;
  	  realXP = TWOPI_FLOAT * Xalpha_l[ind0].re;
  	  imagXP = TWOPI_FLOAT * Xalpha_l[ind0].im;
 	} /* if |remainder| <= LD_SMALL4 */
