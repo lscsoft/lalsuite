@@ -595,7 +595,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
       /* if no danger of denominator -> 0 */
       if (__builtin_expect((kappa_star > LD_SMALL4) && (kappa_star < 1.0 - LD_SMALL4), (0==0)))
 
-#if (EAH_HOTLLOP_VARIANT == EAH_HOTLLOP_VARIANT_AUTOVECT) && FALSE
+#if (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_AUTOVECT) && FALSE
+
 	/* FIXME: this version still needs to be fixed after switching from 2*DTERMS+1 to 2*DTERMS calc */
 	/* vectorization with common denominator */
 
@@ -633,7 +634,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  }
 	}
 
-#elif (EAH_HOTLLOP_VARIANT == EAH_HOTLLOP_VARIANT_ALTIVEC)
+#elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_ALTIVEC) && FALSE
 
         {
 	  /* THIS IS DANGEROUS!! It relies on current implementation of COMPLEX8 type!! */
@@ -749,7 +750,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  imagXP = c_alpha * XRes + s_alpha * XIms;
 	} /* if x cannot be close to 0 */
 
-#elif (EAH_HOTLLOP_VARIANT == EAH_HOTLLOP_VARIANT_SSE)
+#elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_SSE)
 
 	/** SSE version with reciprocal estimates from Akos */
 
@@ -951,7 +952,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
 	}
 
-#else /* EAH_OPTIMIZATION */
+#else /* EAH_HOTLLOP_VARIANT */
 
 	{ 
 	  /* improved hotloop algorithm by Fekete Akos: 
