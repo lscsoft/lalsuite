@@ -1165,13 +1165,13 @@ static int add_burst_injections(REAL8TimeSeries *h, const char *filename)
 	XLALGPSAdd(&start, -longest_injection);
 	XLALGPSAdd(&end, h->data->length * h->deltaT + longest_injection);
 
-	XLALPrintInfo("add_burst_injections(): reading sim_burst table from %s\n", filename);
+	XLALPrintInfo("%s(): reading sim_burst table from %s\n", func, filename);
 
 	sim_burst = XLALSimBurstTableFromLIGOLw(filename, &start, &end);
 	if(!sim_burst)
 		XLAL_ERROR(func, XLAL_EFUNC);
 
-	XLALPrintInfo("add_burst_injections(): computing injections, and adding to input time series\n");
+	XLALPrintInfo("%s(): computing injections and adding to input time series\n", func);
 	if(XLALBurstInjectSignals(h, sim_burst, NULL)) {
 		while(sim_burst) {
 			SimBurst *next = sim_burst->next;
@@ -1181,7 +1181,7 @@ static int add_burst_injections(REAL8TimeSeries *h, const char *filename)
 		XLAL_ERROR(func, XLAL_EFUNC);
 	}
 
-	XLALPrintInfo("add_burst_injections(): done\n");
+	XLALPrintInfo("%s(): done\n", func);
 
 	while(sim_burst) {
 		SimBurst *next = sim_burst->next;
@@ -1410,6 +1410,27 @@ static void output_results(LALStatus *stat, char *file, const char *ifo, Metadat
 /*
  * ============================================================================
  *
+ *                                Progress Bar
+ *
+ * ============================================================================
+ */
+
+
+static void print_progress_bar(const char *func, const LIGOTimeGPS *start, const LIGOTimeGPS *end, const LIGOTimeGPS *t)
+{
+	static const char bar[] = "+++++++++++++++++++++++++++++++++++++++++++++++++)";
+	static const char spc[] = "-------------------------------------------------)";
+	double fraction = XLALGPSDiff(t, start) / XLALGPSDiff(end, start);
+	int l = sizeof(bar)/sizeof(*bar) - 1;
+	int offset = fraction * l;
+
+	XLALPrintInfo("%s: [%s%s %.1f%% complete\n", func, bar + l - offset, spc + offset, 100.0 * fraction);
+}
+
+
+/*
+ * ============================================================================
+ *
  *                                Entry point
  *
  * ============================================================================
@@ -1498,6 +1519,12 @@ int main(int argc, char *argv[])
 	 */
 
 	for(epoch = options->gps_start; XLALGPSCmp(&epoch, &boundepoch) < 0;) {
+		/*
+		 * Progress bar.
+		 */
+
+		print_progress_bar(argv[0], &options->gps_start, &boundepoch, &epoch);
+
 		/*
 		 * Get the data.
 		 */
@@ -1592,8 +1619,6 @@ int main(int argc, char *argv[])
 			XLALPrintError("%s: XLALEPConditionData() failed.\n", argv[0]);
 			exit(1);
 		}
-
-		XLALPrintInfo("%s: %u samples (%.9f s) at GPS time %d.%09u s remain after conditioning\n", argv[0], series->data->length, series->data->length * series->deltaT, series->epoch.gpsSeconds, series->epoch.gpsNanoSeconds);
 
 		/*
 		 * Store the start and end times of the data that actually

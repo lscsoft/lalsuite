@@ -76,7 +76,7 @@ SnglBurstTable *XLALEPSearch(
 	REAL8 maxTileDuration
 )
 { 
-	const char func[] = "XLALEPSearch";
+	static const char func[] = "XLALEPSearch";
 	SnglBurstTable *head = NULL;
 	int errorcode = 0;
 	int start_sample;
@@ -158,11 +158,11 @@ SnglBurstTable *XLALEPSearch(
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
-		XLALPrintInfo("XLALEPSearch(): analyzing %u samples (%.9lf s) at offset %u (%.9lf s) from epoch %d.%09u s\n", cuttseries->data->length, cuttseries->data->length * cuttseries->deltaT, start_sample, start_sample * cuttseries->deltaT, tseries->epoch.gpsSeconds, tseries->epoch.gpsNanoSeconds);
+		XLALPrintInfo("%s(): analyzing %u samples (%.9lf s) at offset %u (%.9lf s) from epoch %d.%09u s\n", func, cuttseries->data->length, cuttseries->data->length * cuttseries->deltaT, start_sample, start_sample * cuttseries->deltaT, tseries->epoch.gpsSeconds, tseries->epoch.gpsNanoSeconds);
 		if(diagnostics)
 			diagnostics->XLALWriteLIGOLwXMLArrayREAL8TimeSeries(diagnostics->LIGOLwXMLStream, NULL, cuttseries);
 
-		XLALPrintInfo("XLALEPSearch(): computing the Fourier transform\n");
+		XLALPrintInfo("%s(): computing the Fourier transform\n", func);
 		fseries = XLALWindowedREAL8ForwardFFT(cuttseries, plane->window, fplan);
 		XLALDestroyREAL8TimeSeries(cuttseries);
 		if(!fseries) {
@@ -175,7 +175,7 @@ SnglBurstTable *XLALEPSearch(
 		 */
 
 #if 1
-		XLALPrintInfo("XLALEPSearch(): normalizing to the average spectrum\n");
+		XLALPrintInfo("%s(): normalizing to the average spectrum\n", func);
 		if(!XLALWhitenCOMPLEX16FrequencySeries(fseries, psd, plane->flow, plane->flow + plane->channels * plane->deltaF)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
@@ -191,7 +191,7 @@ SnglBurstTable *XLALEPSearch(
 		 * performance boost.
 		 */
 
-		XLALPrintInfo("XLALEPSearch(): constructing channel filters ...\n");
+		XLALPrintInfo("%s(): constructing channel filters ...\n", func);
 		if(XLALTFPlaneMakeChannelFilters(fseries, plane, psd)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
@@ -203,7 +203,7 @@ SnglBurstTable *XLALEPSearch(
 		 */
 
 #if 1
-		XLALPrintInfo("XLALEPSearch(): projecting data onto time-frequency plane\n");
+		XLALPrintInfo("%s(): projecting data onto time-frequency plane\n", func);
 		if(XLALFreqSeriesToTFPlane(plane, fseries, rplan)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
@@ -220,7 +220,7 @@ SnglBurstTable *XLALEPSearch(
 		 * for head == NULL.
 		 */
 
-		XLALPrintInfo("XLALEPSearch(): computing the excess power for each tile\n");
+		XLALPrintInfo("%s(): computing the excess power for each tile\n", func);
 		XLALClearErrno();
 		head = XLALComputeExcessPower(plane, head, confidence_threshold);
 		if(xlalErrno) {
@@ -237,7 +237,7 @@ SnglBurstTable *XLALEPSearch(
 		 * performance boost.
 		 */
 
-		XLALPrintInfo("XLALEPSearch(): constructing template bank\n");
+		XLALPrintInfo("%s(): constructing template bank\n", func);
 		template_bank = XLALCreateExcessPowerTemplateBank(fseries, plane, psd);
 		if(!template_bank) {
 			errorcode = XLAL_EFUNC;
@@ -248,7 +248,7 @@ SnglBurstTable *XLALEPSearch(
 		 * Project frequency series onto templates
 		 */
 
-		XLALPrintInfo("XLALEPSearch(): projecting frequency series onto template bank\n");
+		XLALPrintInfo("%s(): projecting frequency series onto template bank\n", func);
 		XLALClearErrno();
 		head = XLALExcessPowerProject(fseries, plane, template_bank, head, confidence_threshold, rplan);
 		if(xlalErrno) {
@@ -266,7 +266,7 @@ SnglBurstTable *XLALEPSearch(
 	 * Memory clean-up.
 	 */
 
-	XLALPrintInfo("XLALEPSearch(): done\n");
+	XLALPrintInfo("%s(): done\n", func);
 
 	error:
 	XLALDestroyREAL8FFTPlan(fplan);
@@ -295,8 +295,10 @@ int XLALEPConditionData(
 	INT4 corruption
 )
 {
-	const char func[] = "XLALEPConditionData";
+	static const char func[] = "XLALEPConditionData";
 	const REAL8 epsilon = 1.0e-3;
+
+	XLALPrintInfo("%s(): conditioning %u samples (%.9f s) at GPS time %d%.09u s ...\n", func, series->data->length, series->data->length * series->deltaT, series->epoch.gpsSeconds, series->epoch.gpsNanoSeconds);
 
 	/*
 	 * High-pass filter the time series.
@@ -327,6 +329,12 @@ int XLALEPConditionData(
 
 	if(!XLALShrinkREAL8TimeSeries(series, corruption, series->data->length - 2 * corruption))
 		XLAL_ERROR(func, XLAL_EFUNC);
+
+	/*
+	 * Done.
+	 */
+
+	XLALPrintInfo("%s(): %u samples (%.9f s) at GPS time %d.%09u s remain after conditioning\n", func, series->data->length, series->data->length * series->deltaT, series->epoch.gpsSeconds, series->epoch.gpsNanoSeconds);
 
 	return(0);
 }
