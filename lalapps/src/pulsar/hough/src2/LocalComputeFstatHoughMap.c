@@ -45,6 +45,10 @@ RCSID( "$Id$");
 #define AD_ALIGN64 ".align 64" 
 #endif 
 
+#ifdef EAH_HOUGH_BATCHSIZELD
+#define EAH_HOUGH_BATCHSIZE (1 << EAH_HOUGH_BATCHSIZELD)
+#endif
+
 /* prefetch compiler directives */
 #if EAH_HOUGH_PREFETCH == EAH_HOUGH_PREFETCH_DIRECT
 #if defined(__INTEL_COMPILER) ||  defined(_MSC_VER)
@@ -730,29 +734,19 @@ __asm __volatile (
 );
 
 
-#elif defined(EAH_OPTIMIZATION_HM) && (EAH_OPTIMIZATION_HM == 2) 
-#if  defined(EAH_HM_BATCHSIZE) && (EAH_HM_BATCHSIZE == 4)
-#define BATCHSIZE 4
-#define BATCHSIZE_LOG2 2
-#elif defined(EAH_HM_BATCHSIZE) && (EAH_HM_BATCHSIZE == 2)
-#define BATCHSIZE 2
-#define BATCHSIZE_LOG2 1
-#else 
-#define BATCHSIZE 1
-#define BATCHSIZE_LOG2 0
-#endif
+#elif defined(EAH_HOUGH_BATCHSIZELD)
 
     sidxBase=yLower*xSideP1;
-    sidxBase_n = sidxBase+(xSideP1 << BATCHSIZE_LOG2);	
+    sidxBase_n = sidxBase+(xSideP1 << EAH_HOUGH_BATCHSIZE_LOG2);	
     /* fill first cache entries */	
 
     
     c_c =0;
-    c_n =BATCHSIZE;
+    c_n =EAH_HOUGH_BATCHSIZE;
 
     offs = yUpper - yLower+1;
-    if (offs > BATCHSIZE) {
-	offs = BATCHSIZE; 
+    if (offs > EAH_HOUGH_BATCHSIZE) {
+	offs = EAH_HOUGH_BATCHSIZE; 
     }	
 	
     	
@@ -761,25 +755,25 @@ __asm __volatile (
     }		
 		
     c_c=0;
-    for(j=yLower; j<=yUpper-(2*BATCHSIZE-1);j+=BATCHSIZE){
+    for(j=yLower; j<=yUpper-(2*EAH_HOUGH_BATCHSIZE-1);j+=EAH_HOUGH_BATCHSIZE){
 
       	
-      sidx0 = xPixel[j+BATCHSIZE]+sidxBase_n;; 
-#if (BATCHSIZE == 4) || (BATCHSIZE == 2)
-      sidx1 = xPixel[j+(BATCHSIZE+1)]+sidxBase_n+xSideP1;
+      sidx0 = xPixel[j+EAH_HOUGH_BATCHSIZE]+sidxBase_n;; 
+#if (EAH_HOUGH_BATCHSIZE == 4) || (EAH_HOUGH_BATCHSIZE == 2)
+      sidx1 = xPixel[j+(EAH_HOUGH_BATCHSIZE+1)]+sidxBase_n+xSideP1;
 #endif
-#if (BATCHSIZE == 4)
-      sidx2 = xPixel[j+(BATCHSIZE+2)]+sidxBase_n+xSideP1_2;
-      sidx3 = xPixel[j+(BATCHSIZE+3)]+sidxBase_n+xSideP1_3;;
+#if (EAH_HOUGH_BATCHSIZE == 4)
+      sidx2 = xPixel[j+(EAH_HOUGH_BATCHSIZE+2)]+sidxBase_n+xSideP1_2;
+      sidx3 = xPixel[j+(EAH_HOUGH_BATCHSIZE+3)]+sidxBase_n+xSideP1_3;;
 #endif
 	
-      PREFETCH(xPixel +(j+(BATCHSIZE+BATCHSIZE)));
+      PREFETCH(xPixel +(j+(EAH_HOUGH_BATCHSIZE+EAH_HOUGH_BATCHSIZE)));
 
       PREFETCH(pf_addr[c_n] = map_pointer+sidx0);
-#if (BATCHSIZE == 4) || (BATCHSIZE == 2)
+#if (EAH_HOUGH_BATCHSIZE == 4) || (EAH_HOUGH_BATCHSIZE == 2)
       PREFETCH(pf_addr[c_n+1] = map_pointer+sidx1);
 #endif
-#if (BATCHSIZE == 4)
+#if (EAH_HOUGH_BATCHSIZE == 4)
       PREFETCH(pf_addr[c_n+2] = map_pointer+sidx2);
       PREFETCH(pf_addr[c_n+3] = map_pointer+sidx3);
 #endif
@@ -790,14 +784,14 @@ __asm __volatile (
 		__FILE__,__LINE__,sidx,ySide*(xSide+1),j,xPixel[j] );
 	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
       }
-#if (BATCHSIZE == 4) || (BATCHSIZE == 2)
+#if (EAH_HOUGH_BATCHSIZE == 4) || (EAH_HOUGH_BATCHSIZE == 2)
       if ((sidx1 < 0) || (sidx1 >= ySide*(xSide+1))) {
 	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d\n",
 		__FILE__,__LINE__,sidx,ySide*(xSide+1),j+1,xPixel[j+1] );
 	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
       }
 #endif
-#if (BATCHSIZE == 4)
+#if (EAH_HOUGH_BATCHSIZE == 4)
       if ((sidx2 < 0) || (sidx2 >= ySide*(xSide+1))) {
 	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d\n",
 		__FILE__,__LINE__,sidx2,ySide*(xSide+1),j+2,xPixel[j+2] );
@@ -812,27 +806,27 @@ __asm __volatile (
 #endif 
 
       tempM0 = *(pf_addr[c_c]) +weight;
-#if (BATCHSIZE == 4) || (BATCHSIZE == 2)
+#if (EAH_HOUGH_BATCHSIZE == 4) || (EAH_HOUGH_BATCHSIZE == 2)
       tempM1 = *(pf_addr[c_c+1]) +weight;
 #endif
-#if (BATCHSIZE == 4)
+#if (EAH_HOUGH_BATCHSIZE == 4)
       tempM2 = *(pf_addr[c_c+2]) +weight;
       tempM3 = *(pf_addr[c_c+3]) +weight;
 #endif
       sidxBase = sidxBase_n;
-      sidxBase_n+=xSideP1 << BATCHSIZE_LOG2;
+      sidxBase_n+=xSideP1 << EAH_HOUGH_BATCHSIZE_LOG2;
       
       (*(pf_addr[c_c]))=tempM0;
-#if (BATCHSIZE == 4) || (BATCHSIZE == 2)
+#if (EAH_HOUGH_BATCHSIZE == 4) || (EAH_HOUGH_BATCHSIZE == 2)
       (*(pf_addr[c_c+1]))=tempM1;
 #endif
-#if (BATCHSIZE == 4)
+#if (EAH_HOUGH_BATCHSIZE == 4)
       (*(pf_addr[c_c+2]))=tempM2;
       (*(pf_addr[c_c+3]))=tempM3;
 #endif 
 
-      c_c ^= BATCHSIZE;
-      c_n ^= BATCHSIZE;
+      c_c ^= EAH_HOUGH_BATCHSIZE;
+      c_n ^= EAH_HOUGH_BATCHSIZE;
     }
 
 
@@ -878,7 +872,7 @@ __asm __volatile (
     yUpper = (*borderP).yUpper;
     xPixel =  &( (*borderP).xPixel[0] );
 
-#ifdef PREFETCH_OPT
+#if EAH_HOUGH_PREFETCH > EAH_HOUGH_PREFETCH_NONE
     if(k < lengthRight-1) {
 	INT4 ylkp1 = phmd->rightBorderP[k+1]->yLower;
 	PREFETCH(&(phmd->rightBorderP[k+1]->xPixel[ylkp1]));
@@ -969,29 +963,19 @@ __asm __volatile (
 );
 
 
-#elif defined(EAH_OPTIMIZATION_HM) && (EAH_OPTIMIZATION_HM == 2)
-#if  defined(EAH_HM_BATCHSIZE) && (EAH_HM_BATCHSIZE == 4)
-#define BATCHSIZE 4
-#define BATCHSIZE_LOG2 2
-#elif defined(EAH_HM_BATCHSIZE) && (EAH_HM_BATCHSIZE == 2)
-#define BATCHSIZE 2
-#define BATCHSIZE_LOG2 1
-#else 
-#define BATCHSIZE 1
-#define BATCHSIZE_LOG2 0
-#endif
+#elif defined(EAH_HOUGH_BATCHSIZELD)
 
     sidxBase=yLower*xSideP1;
-    sidxBase_n = sidxBase+(xSideP1 << BATCHSIZE_LOG2);	
+    sidxBase_n = sidxBase+(xSideP1 << EAH_HOUGH_BATCHSIZE_LOG2);	
     /* fill first cache entries */	
 
     
     c_c =0;
-    c_n =BATCHSIZE;
+    c_n =EAH_HOUGH_BATCHSIZE;
 
     offs = yUpper - yLower+1;
-    if (offs > BATCHSIZE) {
-	offs = BATCHSIZE; 
+    if (offs > EAH_HOUGH_BATCHSIZE) {
+	offs = EAH_HOUGH_BATCHSIZE; 
     }	
 	
     	
@@ -1000,25 +984,25 @@ __asm __volatile (
     }		
 		
     c_c=0;
-    for(j=yLower; j<=yUpper-(BATCHSIZE*2-1);j+=BATCHSIZE){
+    for(j=yLower; j<=yUpper-(EAH_HOUGH_BATCHSIZE*2-1);j+=EAH_HOUGH_BATCHSIZE){
 
       	
-      sidx0 = xPixel[j+BATCHSIZE]+sidxBase_n;; 
-#if (BATCHSIZE == 4) || (BATCHSIZE == 2)
-      sidx1 = xPixel[j+(BATCHSIZE+1)]+sidxBase_n+xSideP1;
+      sidx0 = xPixel[j+EAH_HOUGH_BATCHSIZE]+sidxBase_n;; 
+#if (EAH_HOUGH_BATCHSIZE == 4) || (EAH_HOUGH_BATCHSIZE == 2)
+      sidx1 = xPixel[j+(EAH_HOUGH_BATCHSIZE+1)]+sidxBase_n+xSideP1;
 #endif
-#if (BATCHSIZE == 4) 
-      sidx2 = xPixel[j+(BATCHSIZE+2)]+sidxBase_n+xSideP1_2;
-      sidx3 = xPixel[j+(BATCHSIZE+3)]+sidxBase_n+xSideP1_3;;
+#if (EAH_HOUGH_BATCHSIZE == 4) 
+      sidx2 = xPixel[j+(EAH_HOUGH_BATCHSIZE+2)]+sidxBase_n+xSideP1_2;
+      sidx3 = xPixel[j+(EAH_HOUGH_BATCHSIZE+3)]+sidxBase_n+xSideP1_3;;
 #endif
 	
-      PREFETCH(xPixel +(j+(BATCHSIZE+BATCHSIZE)));
+      PREFETCH(xPixel +(j+(EAH_HOUGH_BATCHSIZE+EAH_HOUGH_BATCHSIZE)));
 
       PREFETCH(pf_addr[c_n] = map_pointer+sidx0);
-#if (BATCHSIZE == 4) || (BATCHSIZE == 2)
+#if (EAH_HOUGH_BATCHSIZE == 4) || (EAH_HOUGH_BATCHSIZE == 2)
       PREFETCH(pf_addr[c_n+1] = map_pointer+sidx1);
 #endif
-#if (BATCHSIZE == 4) 
+#if (EAH_HOUGH_BATCHSIZE == 4) 
       PREFETCH(pf_addr[c_n+2] = map_pointer+sidx2);
       PREFETCH(pf_addr[c_n+3] = map_pointer+sidx3);
 #endif
@@ -1029,14 +1013,14 @@ __asm __volatile (
 		__FILE__,__LINE__,sidx,ySide*(xSide+1),j,xPixel[j] );
 	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
       }
-#if (BATCHSIZE == 4) || (BATCHSIZE == 2)
+#if (EAH_HOUGH_BATCHSIZE == 4) || (EAH_HOUGH_BATCHSIZE == 2)
       if ((sidx1 < 0) || (sidx1 >= ySide*(xSide+1))) {
 	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d\n",
 		__FILE__,__LINE__,sidx,ySide*(xSide+1),j+1,xPixel[j+1] );
 	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
       }
 #endif
-#if (BATCHSIZE == 4) 
+#if (EAH_HOUGH_BATCHSIZE == 4) 
       if ((sidx2 < 0) || (sidx2 >= ySide*(xSide+1))) {
 	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d\n",
 		__FILE__,__LINE__,sidx2,ySide*(xSide+1),j+2,xPixel[j+2] );
@@ -1052,27 +1036,27 @@ __asm __volatile (
 #endif 
 
       tempM0 = *(pf_addr[c_c]) -weight;
-#if (BATCHSIZE == 4) || (BATCHSIZE == 2)
+#if (EAH_HOUGH_BATCHSIZE == 4) || (EAH_HOUGH_BATCHSIZE == 2)
       tempM1 = *(pf_addr[c_c+1]) -weight;
 #endif
-#if (BATCHSIZE == 4) 
+#if (EAH_HOUGH_BATCHSIZE == 4) 
       tempM2 = *(pf_addr[c_c+2]) -weight;
       tempM3 = *(pf_addr[c_c+3]) -weight;
 #endif
 
       sidxBase = sidxBase_n;
-      sidxBase_n+=xSideP1 << BATCHSIZE_LOG2;
+      sidxBase_n+=xSideP1 << EAH_HOUGH_BATCHSIZE_LOG2;
       
       (*(pf_addr[c_c]))=tempM0;
-#if (BATCHSIZE == 4) || (BATCHSIZE == 2)
+#if (EAH_HOUGH_BATCHSIZE == 4) || (EAH_HOUGH_BATCHSIZE == 2)
       (*(pf_addr[c_c+1]))=tempM1;
 #endif
-#if (BATCHSIZE == 4) 
+#if (EAH_HOUGH_BATCHSIZE == 4) 
       (*(pf_addr[c_c+2]))=tempM2;
       (*(pf_addr[c_c+3]))=tempM3;
 #endif
-      c_c ^= BATCHSIZE;
-      c_n ^= BATCHSIZE;
+      c_c ^= EAH_HOUGH_BATCHSIZE;
+      c_n ^= EAH_HOUGH_BATCHSIZE;
     }
 
 
