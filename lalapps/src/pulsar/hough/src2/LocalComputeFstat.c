@@ -36,6 +36,8 @@
 #include <lal/ComputeFstat.h>
 #include <lal/LogPrintf.h>
 
+#include "LocalOptimizationFlags.h"
+
 NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 
 
@@ -56,31 +58,10 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 
 /*---------- optimization dependant switches ----------*/
 
-/* current EAH_OPTIMIZATION codes are
-   0: "original" version from LAL
-   1: Auto-vectorizing common-denominator loop
-   2: "mixed" (common-denominator / reciprocal estimate) vectorized AltiVec version
-   3: x86 Assembler-coded SSE hot-loop
-   4: x86 Assembler-coded SSE hot-loop 12 reciprocal estimates, 5 divisions
-*/
-
-#ifndef EAH_OPTIMIZATION
-#define EAH_OPTIMIZATION 0
-#endif
 
 /* definitely fastest on PowerPC */
 #if (EAH_OPTIMIZATION == 2)
 #define SINCOS_FLOOR
-#endif
-
-#ifndef SINCOS_VERSION
-/* select one of these:
-   2: "original" two-table version like in LAL
-   6: "6-table" version as derived from old CFS code used up to S5R1
-   3: "vectorized" version based on "6-table", combined them into 3
-   9: Linear interpolation from Akos, using bit-operations
-*/
-#define SINCOS_VERSION 2
 #endif
 
 /*----- Macros ----- */
@@ -102,36 +83,29 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
     give significant differences in speed, so we provide various ways here.
     We also record the way we are using for logging */
 
-#if (SINCOS_VERSION == 9) && FALSE
+#if (EAH_SINCOS_VARIANT == EAH_SINCOS_VARIANT_LINEAR) && FALSE
 /** no trimming should be required for this function, but apparently still is */
 #define SINCOS_TRIM_X(y,x)
-#define SINCOS_ROUND_METHOD -1
+#define EAH_SINCOS_ROUND -1
 
-#elif defined(SINCOS_FLOOR)
+#elif EAH_SINCOS_ROUND == EAH_SINCOS_ROUND_FLOOR
 #define SINCOS_TRIM_X(y,x) \
   y = x - floor(x);
-#define SINCOS_ROUND_METHOD 0
-
-#elif defined(SINCOS_INT4)
+#elif EAH_SINCOS_ROUND == EAH_SINCOS_ROUND_INT4
 #define SINCOS_TRIM_X(y,x) \
   y = x-(INT4)x; \
   if ( y < 0.0 ) { y += 1.0; }
-#define SINCOS_ROUND_METHOD 4
-
-#elif defined(SINCOS_INT8)
+#elif EAH_SINCOS_ROUND == EAH_SINCOS_ROUND_INT8
 #define SINCOS_TRIM_X(y,x) \
   y = x-(INT8)x; \
   if ( y < 0.0 ) { y += 1.0; }
-#define SINCOS_ROUND_METHOD 8
-
-#else
+#elif EAH_SINCOS_ROUND == EAH_SINCOS_ROUND_MODF
 #define SINCOS_TRIM_X(y,x) \
 { \
   REAL8 dummy; \
   y = modf(x, &dummy); \
   if ( y < 0.0 ) { y += 1.0; } \
 }
-#define SINCOS_ROUND_METHOD 2
 #endif
 
 /*----- SWITCHES -----*/
@@ -146,11 +120,11 @@ static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/2
 static const LALStatus empty_status;
 
 /* sin/cos Lookup tables */
-#if (SINCOS_VERSION == 2)
+#if (EAH_SINCOS_VARIANT == EAH_SINCOS_VARIANT_LAL)
 #define SINCOS_LUT_RES 64 /* resolution of lookup-table */
 static REAL4 sinLUT[SINCOS_LUT_RES+1];
 static REAL4 cosLUT[SINCOS_LUT_RES+1];
-#elif (SINCOS_VERSION == 9)
+#elif (EAH_SINCOS_VARIANT == EAH_SINCOS_VARIANT_LINEAR)
 #define SINCOS_LUT_RES 1024 /* should be multiple of 4 */
 static REAL4 sincosLUTbase[SINCOS_LUT_RES+SINCOS_LUT_RES/4];
 static REAL4 sincosLUTdiff[SINCOS_LUT_RES+SINCOS_LUT_RES/4];
@@ -170,9 +144,7 @@ LocalXLALComputeFaFb (Fcomponents*, const SFTVector*, const PulsarSpins,
 		      const SSBtimes*, const AMCoeffs*, const ComputeFParams*);
 
 static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
-#if (SINCOS_VERSION == 2) || (SINCOS_VERSION == 9)
 static void local_sin_cos_2PI_LUT_init (void);
-#endif
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -219,15 +191,18 @@ void LocalComputeFStatFreqBand ( LALStatus *status,
   {
     static int first = !0;
     if (first) {
-#if (SINCOS_VERSION == 2) || (SINCOS_VERSION == 9)
+      /* init sin/cos lookup tables */
       local_sin_cos_2PI_LUT_init();
-#endif
+
+      /* make sure Dterms is waht we expect */
       if (DTERMS != params->Dterms) {
 	LogPrintf(LOG_CRITICAL, "LocalComputeFstat has been compiled with fixed DTERMS (%d) != params->Dtems (%d)\n",DTERMS, params->Dterms);
 	ABORT ( status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
       }
-      fprintf(stderr,"\n$Revision$ OPT:%d SCV:%d, SCTRIM:%d\n",
-	      EAH_OPTIMIZATION, SINCOS_VERSION, SINCOS_ROUND_METHOD);
+
+      /* write out optimization settings */
+      fprintf(stderr,"\n$Revision$ OPT:%d SCV:%d, SCTRIM:%d, HLV:%d, HP:%d\n",
+	      EAH_OPTIMIZATION, EAH_SINCOS_VARIANT, EAH_SINCOS_ROUND, EAH_HOTLOOP_VARIANT, EAH_HOUGH_PREFETCH);
       first = 0;
     }
   }
@@ -620,7 +595,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
       /* if no danger of denominator -> 0 */
       if (__builtin_expect((kappa_star > LD_SMALL4) && (kappa_star < 1.0 - LD_SMALL4), (0==0)))
 
-#if (EAH_OPTIMIZATION == 1) && FALSE
+#if (EAH_HOTLLOP_VARIANT == EAH_HOTLLOP_VARIANT_AUTOVECT) && FALSE
 	/* FIXME: this version still needs to be fixed after switching from 2*DTERMS+1 to 2*DTERMS calc */
 	/* vectorization with common denominator */
 
@@ -658,7 +633,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  }
 	}
 
-#elif (EAH_OPTIMIZATION == 2) && FALSE
+#elif (EAH_HOTLLOP_VARIANT == EAH_HOTLLOP_VARIANT_ALTIVEC)
 
         {
 	  /* THIS IS DANGEROUS!! It relies on current implementation of COMPLEX8 type!! */
@@ -774,7 +749,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  imagXP = c_alpha * XRes + s_alpha * XIms;
 	} /* if x cannot be close to 0 */
 
-#elif (EAH_OPTIMIZATION == 3)
+#elif (EAH_HOTLLOP_VARIANT == EAH_HOTLLOP_VARIANT_SSE)
 
 	/** SSE version with reciprocal estimates from Akos */
 
@@ -1076,7 +1051,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 #define X_TO_IND	(1.0 * SINCOS_LUT_RES * OOTWOPI )
 #define IND_TO_X	(LAL_TWOPI * OO_SINCOS_LUT_RES)
 
-#if (SINCOS_VERSION == 2)
+#if (EAH_SINCOS_VARIANT == EAH_SINCOS_VARIANT_LAL)
 /* "traditional" version with 2 LUT */
 
 static void local_sin_cos_2PI_LUT_init (void)
@@ -1120,62 +1095,7 @@ static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 
 
 
 
-#elif (SINCOS_VERSION == 6)
-/* adapted 6-table version from S4 */
-
-#define SINCOS_LUT_RES 63
-static int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
-
-  /* Lookup tables for fast sin/cos calculation */
-  static REAL4 sinLUT[SINCOS_LUT_RES+1];
-  static REAL4 sinLUT2PI[SINCOS_LUT_RES+1];
-  static REAL4 sinLUT2PIPI[SINCOS_LUT_RES+1];
-  static REAL4 cosLUT[SINCOS_LUT_RES+1];
-  static REAL4 cosLUT2PI[SINCOS_LUT_RES+1];
-  static REAL4 cosLUT2PIPI[SINCOS_LUT_RES+1];
-
-  static BOOLEAN tabs_empty = 1; /* reset after initializing the sin/cos tables */
-
-  UINT4 i; /* array index */
-  REAL4 d, d2; /* intermediate value  */
-  REAL4 x; /* x limited to [0..1) */
-  static REAL4 const oo_lut_res = OO_SINCOS_LUT_RES;
-
-  /* res=10*(params->mCohSFT); */
-  /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
-  /* using three tables with values including PI is simply faster */
-  if ( tabs_empty ) {
-
-    for (i=0; i <= SINCOS_LUT_RES; i++) {
-      sinLUT[i]      = sin((LAL_TWOPI*i)/(SINCOS_LUT_RES));
-      sinLUT2PI[i]   = sinLUT[i]    * LAL_TWOPI * -1.0;
-      sinLUT2PIPI[i] = sinLUT2PI[i] * LAL_PI;
-      cosLUT[i]      = cos((LAL_TWOPI*i)/(SINCOS_LUT_RES));
-      cosLUT2PI[i]   = cosLUT[i]    * LAL_TWOPI;
-      cosLUT2PIPI[i] = cosLUT2PI[i] * LAL_PI * -1.0;
-    }
-
-    tabs_empty = 0;
-  }
-
-  SINCOS_TRIM_X (x,xin);
-
-  i = x * SINCOS_LUT_RES + .5; /* round-to-nearest */
-  d = x - i * oo_lut_res;
-#if 1
-  (*sin2pix) = sinLUT[i] + d * (cosLUT2PI[i] + d * sinLUT2PIPI[i]);
-  (*cos2pix) = cosLUT[i] + d * (sinLUT2PI[i] + d * cosLUT2PIPI[i]);
-#else
-  d2 = d*d;
-  (*sin2pix) = sinLUT[i] + d * cosLUT2PI[i] + d2 * sinLUT2PIPI[i];
-  (*cos2pix) = cosLUT[i] + d * sinLUT2PI[i] + d2 * cosLUT2PIPI[i];
-#endif
-
-  return XLAL_SUCCESS;
-}
-
-
-#elif (SINCOS_VERSION == 9)
+#elif (EAH_SINCOS_VARIANT == EAH_SINCOS_VARIANT_LINEAR)
 
 /* linear approximation developed with Akos */
 
@@ -1222,23 +1142,7 @@ static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 
   }
 #endif
 
-#if defined(SINCOS_REAL2INT)
-  x += SINCOS_ADDS;
-
-  /* try various ways to transform the bits of a REAL8(x) into an INT8(ix) */
-#if defined(SINCOS_REAL2INT) && (SINCOS_REAL2INT == 2) && defined(__GNUC__)
-  /* manually code the store instruction we want, fast but limited to gcc & x87 */
-  __asm( "fstl %[ux.asint]\n\t" : [ux.asint] "=m" (ux.asint) : [x] "t" (x) );
-#elif defined(SINCOS_REAL2INT) && (SINCOS_REAL2INT == 1)
-  /* requires -fno-strict-aliasing on gcc */
-  ux.asint = *(INT8*)(&x);  
-#else
-  /* works always, but is somewhat slow */
-  memcpy(&(ux.asint),&x,sizeof(ux));
-#endif
-#else
   ux.asreal = x + SINCOS_ADDS;
-#endif
 
   i  = ux.asint & SINCOS_MASK1;
   n  = ux.asint & SINCOS_MASK2;
@@ -1250,71 +1154,6 @@ static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 
   return XLAL_SUCCESS;
 }
 
-
-#elif (SINCOS_VERSION == 3)
-
-/* Not used or tested (yet). This features a table construction so
-   that the calculation that can easily be vectorized (might help...) */
-
-static int local_sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 xin) {
-
-  /* Lookup tables for fast sin/cos calculation */
-  static REAL4 scTab[SINCOS_LUT_RES+1][2];
-  static REAL4 scTab2PI[SINCOS_LUT_RES+1][2];
-  static REAL4 scTab2PIPI[SINCOS_LUT_RES+1][2];
-  static REAL4 diVal[SINCOS_LUT_RES+1];
-
-  static BOOLEAN tabs_empty = 1; /* reset after initializing the sin/cos tables */
-
-#ifndef SINCOS_VE
-#define SINCOS_VE 2
-#endif
-
-  UINT4 i; /* array index */
-  REAL4 d, d2; /* intermediate value  */
-  REAL4 x; /* x limited to [0..1) */
-  REAL4 sincos[SINCOS_VE];
-  int ve;
-
-  /* res=10*(params->mCohSFT); */
-  /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
-  /* using three tables with values including PI is simply faster */
-  if ( tabs_empty ) {
-    REAL4 r_lut_res = 1.0f / (REAL4)(SINCOS_LUT_RES);
-
-    for (i=0; i <= SINCOS_LUT_RES; i++) {
-      scTab[i][0]      = sin((LAL_TWOPI*i)/(SINCOS_LUT_RES));
-      scTab2PI[i][1]   = scTab[i][0]    * LAL_TWOPI * -1.0;
-      scTab2PIPI[i][0] = scTab2PI[i][1] * LAL_PI;
-      scTab[i][1]      = cos((LAL_TWOPI*i)/(SINCOS_LUT_RES));
-      scTab2PI[i][0]   = scTab[i][1]    * LAL_TWOPI;
-      scTab2PIPI[i][1] = scTab2PI[i][0] * LAL_PI * -1.0;
-
-      diVal[i] = (REAL4)i * r_lut_res;
-    }
-
-    tabs_empty = 0;
-  }
-
-  SINCOS_TRIM_X (x,xin);
-
-  i = x * SINCOS_LUT_RES + .5; /* round-to-nearest */
-  d = x - diVal[i];
-#if 1
-  for (ve=0; ve < SINCOS_VE; ve++)
-    sincos[ve] = scTab[i][ve] + d * (scTab2PI[i][ve] + d * scTab2PIPI[i][ve]);
-#else
-  d2 = d*d;
-  for (ve=0; ve < SINCOS_VE; ve++)
-    sincos[ve] = scTab[i][ve] + d * scTab2PI[i][ve] + d2 * scTab2PIPI[i][ve];
-#endif
-
-  (*sin2pix) = sincos[0];
-  (*cos2pix) = sincos[1];
-
-  return XLAL_SUCCESS;
-}
-
-#else  /* SINCOS_VERSION */
-#error no valid SINCOS_VERSION specified
-#endif /* SINCOS_VERSION */
+#else  /* EAH_SINCOS_VARIANT */
+#error no valid EAH_SINCOS_VARIANT specified
+#endif /* EAH_SINCOS_VARIANT */

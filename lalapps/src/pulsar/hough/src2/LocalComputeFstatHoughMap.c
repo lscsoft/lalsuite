@@ -26,6 +26,7 @@
 */
 
 #include"HierarchicalSearch.h"
+#include "LocalOptimizationFlags.h"
 
 RCSID( "$Id$");
 
@@ -45,7 +46,7 @@ RCSID( "$Id$");
 #endif 
 
 /* prefetch compiler directives */
-#if defined(PREFETCH_OPT)
+#if EAH_HOUGH_PREFETCH == EAH_HOUGH_PREFETCH_DIRECT
 #if defined(__INTEL_COMPILER) ||  defined(_MSC_VER)
 // not tested yet with icc or MS Visual C 
 #include <mmintrin.h>
@@ -604,14 +605,14 @@ void LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
 
   if(lengthLeft > 0) {
       borderP = phmd->leftBorderP[0];
-#ifdef PREFETCH_OPT
+#if EAH_HOUGH_PREFETCH > EAH_PREFETCH_NONE
       PREFETCH(&(borderP->xPixel[borderP->yLower]));
 #endif
   }	
 
   if(lengthRight > 0) {
       borderP = phmd->rightBorderP[0];
-#ifdef PREFETCH_OPT
+#if EAH_HOUGH_PREFETCH > EAH_PREFETCH_NONE
       PREFETCH(&(borderP->xPixel[borderP->yLower]));
 #endif
   }	
@@ -635,7 +636,7 @@ void LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
     yLower = (*borderP).yLower;
     yUpper = (*borderP).yUpper;
 
-#ifdef PREFETCH_OPT
+#if EAH_HOUGH_PREFETCH > EAH_PREFETCH_NONE
     if(k < lengthLeft-1) {
 	INT4 ylkp1 = phmd->leftBorderP[k+1]->yLower;
 	PREFETCH(&(phmd->leftBorderP[k+1]->xPixel[ylkp1]));
@@ -659,7 +660,7 @@ void LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
     }
 
 
-#if defined(EAH_OPTIMIZATION) && (EAH_OPTIMIZATION_HM == 1)
+#if EAH_HOUGH_ASS == EAH_HOUGH_ASS_X87
 
 /* don't clobber ebx , used for PIC on Mac OS */
 
@@ -900,7 +901,7 @@ __asm __volatile (
     }
 
 
-#if defined(EAH_OPTIMIZATION_HM) && (EAH_OPTIMIZATION_HM == 1)
+#if EAH_HOUGH_ASS == EAH_HOUGH_ASS_X87
 
 __asm __volatile (
 	"push %%ebx				\n\t"
