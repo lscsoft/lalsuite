@@ -465,12 +465,12 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
       if (noNR)
       {
-        /* injected specified waveforms */
-        LAL_CALL( LALFindChirpInjectSignals( &status, injData[i], injections, response), &status);
-
         /* set the channel name */
         LALSnprintf(channel, LALNameLength, "%s:STRAIN", ifo);
         strncpy(injData[i]->name, channel, LALNameLength);
+
+        /* injected specified waveforms */
+        LAL_CALL( LALFindChirpInjectSignals( &status, injData[i], injections, response), &status);
       }
       else
       {
