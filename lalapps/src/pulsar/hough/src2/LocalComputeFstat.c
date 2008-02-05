@@ -976,9 +976,18 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	      Tn = pn * Tn + qn * (*Xalpha_l).im; /* T_(n+1) */
 	      qn *= pn; 			  /* q_(n+1) */
 	    } /* for l < 2*DTERMS */
-	  
-	  U_alpha = Sn / qn;
-	  V_alpha = Tn / qn;
+
+#ifdef EAH_HOTLOOP_RECIPROCAL
+	  /* could hardly be slower than two divisions */
+	  {
+	    RAL4 r_qn = 1.0 / qn;
+	    U_alpha = Sn * r_qn;
+	    V_alpha = Tn * r_qn;
+	  }
+#else
+	  U_alpha = Sn * r_qn;
+	  V_alpha = Tn * r_qn;
+#endif
 
  	  realXP = s_alpha * U_alpha - c_alpha * V_alpha;
  	  imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
