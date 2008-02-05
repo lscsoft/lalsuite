@@ -1188,8 +1188,8 @@ void LocalHOUGHConstructHMT_W (LALStatus                  *status,
     j = (fBin + breakLine) % nfSize;
 
     /* Add the corresponding PHMD to HD */
-    TRY( LALHOUGHAddPHMD2HD_W(status->statusPtr,
-			    &hd, &(phmdVS->phmd[j*length+k]) ), status);
+    TRY( LocalHOUGHAddPHMD2HD_W(status->statusPtr,
+				&hd, &(phmdVS->phmd[j*length+k]) ), status);
   }
 
   TRY( LALHOUGHIntegrHD2HT(status->statusPtr, ht, &hd), status);
