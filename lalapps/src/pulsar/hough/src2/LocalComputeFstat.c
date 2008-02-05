@@ -511,6 +511,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	UINT4 s; 		/* loop-index over spindown-order */
 	REAL8 phi_alpha, Dphi_alpha, DT_al;
 	REAL8 Tas;	/* temporary variable to calculate (DeltaT_alpha)^s */
+	static const REAL8 Dterms_1f = DTERMS - 1; /* Dterms - 1 as a double constant */
 
 	/* init for s=0 */
 	phi_alpha = 0.0;
@@ -545,11 +546,19 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	
 	kstar = (INT4) (Dphi_alpha);	/* k* = floor(Dphi_alpha*chi) for positive Dphi */
 	kappa_star = Dphi_alpha - 1.0 * kstar;	/* remainder of Dphi_alpha: >= 0 ! */
-	kappa_max = kappa_star + 1.0 * DTERMS - 1.0;
+	kappa_max = kappa_star + Dterms_1f;
 
 	/* ----- check that required frequency-bins are found in the SFTs ----- */
 	k0 = kstar - DTERMS + 1;
-	k1 = k0 + 2 * DTERMS - 1;
+	/* 
+	   original:
+	   k1 = k0 + 2 * DTERMS - 1;
+	   inserted k0:
+	   k1 = kstar - DTERMS + 1 + 2 * DTERMS - 1;
+	   shortened:
+	*/
+	k1 = kstar + DTERMS;
+
 	if ( (k0 < freqIndex0) || (k1 > freqIndex1) ) 
 	  {
 	    LogPrintf(LOG_CRITICAL,
