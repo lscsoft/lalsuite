@@ -509,14 +509,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
     free( ifo );
 
   for ( i = 0; i < num_ifos; i++ )
-  {
-    if ( injData[i]->data->data )
-      LALFree( injData[i]->data->data );
-    if ( injData[i]->data )
-      LALFree( injData[i]->data );
-    if ( injData[i] )
-      LALFree( injData[i] );
-  }
+    XLALDestroyREAL4TimeSeries(injData[i]);
 
   while ( injections )
   {
