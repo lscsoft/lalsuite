@@ -511,6 +511,8 @@ INT4 main( INT4 argc, CHAR *argv[] )
   for ( i = 0; i < num_ifos; i++ )
     XLALDestroyREAL4TimeSeries(injData[i]);
 
+  XLALDestroyCOMPLEX8FrequencySeries(response);
+
   while ( injections )
   {
     SimInspiralTable *thisInj = NULL;
