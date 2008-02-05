@@ -27,6 +27,10 @@
 
 
 /*---------- INCLUDES ----------*/
+#ifdef _MSC_VER
+#include "mmintrin.h"
+#endif
+
 #define __USE_ISOC99 1
 #include <math.h>
 
