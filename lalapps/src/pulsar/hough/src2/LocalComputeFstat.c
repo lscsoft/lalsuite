@@ -1030,8 +1030,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	    V_alpha = Tn * r_qn;
 	  }
 #else
-	  U_alpha = Sn * r_qn;
-	  V_alpha = Tn * r_qn;
+	  U_alpha = Sn / qn;
+	  V_alpha = Tn / qn;
 #endif
 
  	  realXP = s_alpha * U_alpha - c_alpha * V_alpha;
