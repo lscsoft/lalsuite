@@ -87,11 +87,10 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
     give significant differences in speed, so we provide various ways here.
     We also record the way we are using for logging */
 
-#if (EAH_SINCOS_VARIANT == EAH_SINCOS_VARIANT_LINEAR) && FALSE
-/** no trimming should be required for this function, but apparently still is */
-#define SINCOS_TRIM_X(y,x)
-#define EAH_SINCOS_ROUND -1
-
+#if EAH_SINCOS_ROUND == EAH_SINCOS_ROUND_PLUS2
+/* this only makes sense for the linear sin/cos approximation */
+#define SINCOS_TRIM_X(y,x) \
+  y = x - rint(x) + 1.0;
 #elif EAH_SINCOS_ROUND == EAH_SINCOS_ROUND_FLOOR
 #define SINCOS_TRIM_X(y,x) \
   y = x - floor(x);
