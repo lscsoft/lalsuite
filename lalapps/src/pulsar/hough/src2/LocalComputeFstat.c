@@ -761,15 +761,15 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
 #elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_SSE)
 
-	/** SSE version with reciprocal estimates from Akos */
+	/** SSE version from Akos */
 
+#ifdef __GNUC__
         {
 
           COMPLEX8 XSums __attribute__ ((aligned (16))); /* sums of Xa.re and Xa.im for SSE */
 
 	  REAL4 kappa_m = kappa_max; /* single precision version of kappa_max */
 
-#ifdef __GNUC__
           /* vector constants */
           /* having these not aligned will crash the assembler code */
           static REAL4 V0011[4] __attribute__ ((aligned (16))) = { 0,0,1,1 };
@@ -882,72 +882,6 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	     /* vector constants */
 	     [V0011]       "m"  (V0011[0]),
 	     [V2222]       "m"  (V2222[0])
-#else
-          static REAL4 V0011[4] = { 0,0,1,1 };
-          static REAL4 V2222[4] = { 2,2,2,2 };
-
-	     /* -------------------------------------------------------------------; */
-	     /* Prepare common divisor method for 4 values ( two Re-Im pair ) */
-	     /*  Im1, Re1, Im0, Re0 */
-	     "MOVSS	xmm2,kappa_m   		\n\t"	/* X2:  -   -   -   C */
-	     "MOVLPS	xmm1,Xalpha_l   	\n\t"	/* X1:  -   -  Y00 X00 */
-	     "MOVHPS	xmm1,Xalpha_l+8   	\n\t"	/* X1: Y01 X01 Y00 X00 */
-	     "SHUFPS	xmm2,xmm2,0   		\n\t"	/* X2:  C   C   C   C */
-	     "MOVAPS	xmm4,V2222   		\n\t"	/* X7:  2   2   2   2 */
-	     "SUBPS	xmm2,V0011   		\n\t"	/* X2: C-1 C-1  C   C */
-	     /* -------------------------------------------------------------------; */
-	     "MOVAPS	xmm0,xmm2   	\n\t"	/* X0: C-1 C-1  C   C */
-	     /* -------------------------------------------------------------------; */
-	     /* xmm0: collected denumerators -> a new element will multiply by this */
-	     /* xmm1: collected numerators -> we will divide it by the denumerator last */
-	     /* xmm2: current denumerator ( counter type ) */
-	     /* xmm3: current numerator ( current Re,Im elements ) */
-	     /* -------------------------------------------------------------------; */
-	     /*  Im3, Re3, Im2, Re2 */
-	     "MOVLPS	xmm3,16(%[Xa])   	\n\t"	/* X3:  -   -  Y02 X02 */
-	     "MOVHPS	xmm3,24(%[Xa])   	\n\t"	/* X3: Y03 X03 Y02 X02 */
-	     "SUBPS	xmm2,xmm4   	\n\t"	/* X2: C-3 C-3 C-2 C-2 */
-	     "MULPS	xmm3,xmm0   	\n\t"	/* X3: Xnew*Ccol */
-	     "MULPS	xmm1,xmm2   	\n\t"	/* X1: Xold*Cnew */
-	     "MULPS	xmm0,xmm2   	\n\t"	/* X0: Ccol=Ccol*Cnew */
-	     "ADDPS	xmm1,xmm3   	\n\t"	/* X1: Xold=Xold*Cnew+Xnew*Ccol */
-
-	     /* -------------------------------------------------------------------; */
-	     /*  Im5, Re5, Im4, Re4 */
-	     "MOVLPS	32(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y04 X04 */
-	     "MOVHPS	40(%[Xa]),%%xmm3   	\n\t"	/* X3: Y05 X05 Y04 X04 */
-	     /* -------------------------------------------------------------------; */
-	     /*  Im7, Re7, Im6, Re6 */
-	     "MOVLPS	48(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y06 X06 */
-	     "MOVHPS	56(%[Xa]),%%xmm3   	\n\t"	/* X3: Y07 X07 Y06 X06 */
-	     /* -------------------------------------------------------------------; */
-	     /*  Im9, Re9, Im8, Re8 */
-	     "MOVLPS	64(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y08 X08 */
-	     "MOVHPS	72(%[Xa]),%%xmm3   	\n\t"	/* X3: Y09 X09 Y08 X08 */
-	     /* -------------------------------------------------------------------; */
-	     /*  Im11, Re11, Im10, Re10 */
-	     "MOVLPS	80(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y10 X10 */
-	     "MOVHPS	88(%[Xa]),%%xmm3   	\n\t"	/* X3: Y11 X11 Y10 X10 */
-	     /* -------------------------------------------------------------------; */
-	     /*  Im13, Re13, Im12, Re12 */
-	     "MOVLPS	96(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y12 X12 */
-	     "MOVHPS	104(%[Xa]),%%xmm3   	\n\t"	/* X3: Y13 X13 Y12 X12 */
-	     /* -------------------------------------------------------------------; */
-	     /*  Im15, Re15, Im14, Re14 */
-	     "MOVLPS	112(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y14 X14 */
-	     "MOVHPS	120(%[Xa]),%%xmm3   	\n\t"	/* X3: Y15 X15 Y14 X14 */
-
-	     /* -------------------------------------------------------------------; */
-	     /* Four divisions at once ( two for real parts and two for imaginary parts ) */
-	     "DIVPS	xmm1,xmm0   	\n\t"	/* X1: Y0G X0G Y1F X1F */
-	     /* -------------------------------------------------------------------; */
-	     /* So we have to add the two real and two imaginary parts */
-	     "MOVHLPS   xmm4,xmm1	        \n\t"	/* X4:  -   -  Y0G X0G */
-	     "ADDPS	xmm4,xmm1   	\n\t"	/* X4:  -   -  YOK XOK */
-	     /* -------------------------------------------------------------------; */
-	     /* Save values for FPU part */
-	     "MOVLPS	XSums,xmm4   	\n\t"	/*  */
-#endif
 
 #ifndef IGNORE_XMM_REGISTERS
 	     :
@@ -956,10 +890,112 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 #endif
 	     );
 
+	     realXP = s_alpha * XSums.re - c_alpha * XSums.im;
+	     imagXP = c_alpha * XSums.re + s_alpha * XSums.im;
+	     
+	}
+#else
+	{
+	  __declspec(align(16)) static __m128 v0011 = _mm_set_ps(1.0, 1.0, 0.0, 0.0);
+	  __declspec(align(16)) static __m128 v2222 = _mm_set_ps(2.0, 2.0, 2.0, 2.0);
+  
+	  __declspec(align(16))COMPLEX8 XSums; 
+	  REAL4 kappa_m = kappa_max; /* single precision version of kappa_max */
+	      
+	  __asm {
+		 mov      esi , Xalpha_l 	
+		 movss    xmm2, kappa_m	/* X2:  -   -   -   C */
+		 movlps   xmm1, MMWORD PTR [esi]	/* X1:  -   -  Y00 X00 */
+		 movhps   xmm1, MMWORD PTR [esi+0x08]	/* X1: Y01 X01 Y00 X00 */
+		 shufps   xmm2, xmm2, 0x00	/* X2:  C   C   C   C */
+		 movaps   xmm4, XMMWORD PTR v2222	/* X7:  2   2   2   2 */
+		 subps    xmm2, XMMWORD PTR v0011	/* X2: C-1 C-1  C   C */
+		 /* -------------------------------------------------------------------; */
+		 movaps   xmm0, xmm2	/* X0: C-1 C-1  C   C */
+		 /* -------------------------------------------------------------------; */
+		 /* xmm0: collected denumerators -> a new element will multiply by this */
+		 /* xmm1: collected numerators -> we will divide it by the denumerator last */
+		 /* xmm2: current denumerator ( counter type ) */
+		 /* xmm3: current numerator ( current Re,Im elements ) */
+		 /* -------------------------------------------------------------------; */
+		 /*  Im3, Re3, Im2, Re2 */
+		 movlps   xmm3, MMWORD PTR [esi+0x010]	/* X3:  -   -  Y02 X02 */
+		 movhps   xmm3, MMWORD PTR [esi+0x018]	/* X3: Y03 X03 Y02 X02 */
+		 subps    xmm2, xmm4	/* X2: C-3 C-3 C-2 C-2 */
+		 mulps    xmm3, xmm0	/* X3: Xnew*Ccol */
+		 mulps    xmm1, xmm2	/* X1: Xold*Cnew */
+		 mulps    xmm0, xmm2	/* X0: Ccol=Ccol*Cnew */
+		 addps    xmm1, xmm3	/* X1: Xold=Xold*Cnew+Xnew*Ccol */
+		 /* -------------------------------------------------------------------; */
+		 /*  Im5, Re5, Im4, Re4 */
+		 movlps   xmm3, MMWORD PTR [esi+0x020]	/* X3:  -   -  Y04 X04 */
+		 movhps   xmm3, MMWORD PTR [esi+0x028]	/* X3: Y05 X05 Y04 X04 */
+		 subps    xmm2, xmm4	/* X2: C-5 C-5 C-4 C-4 */
+		 mulps    xmm3, xmm0	/* X3: Xnew*Ccol */
+		 mulps    xmm1, xmm2	/* X1: Xold*Cnew */
+		 mulps    xmm0, xmm2	/* X0: Ccol=Ccol*Cnew */
+		 addps    xmm1, xmm3	/* X1: Xold=Xold*Cnew+Xnew*Ccol */
+		 /* -------------------------------------------------------------------; */
+		 /*  Im7, Re7, Im6, Re6 */
+		 movlps   xmm3, MMWORD PTR [esi+0x030]	/* X3:  -   -  Y06 X06 */
+		 movhps   xmm3, MMWORD PTR [esi+0x038]	/* X3: Y07 X07 Y06 X06 */
+		 subps    xmm2, xmm4	/* X2: C-7 C-7 C-6 C-6 */
+		 mulps    xmm3, xmm0	/* X3: Xnew*Ccol */
+		 mulps    xmm1, xmm2	/* X1: Xold*Cnew */
+		 mulps    xmm0, xmm2	/* X0: Ccol=Ccol*Cnew */
+		 addps    xmm1, xmm3	/* X1: Xold=Xold*Cnew+Xnew*Ccol */
+		 /* -------------------------------------------------------------------; */
+		 /*  Im9, Re9, Im8, Re8 */
+		 movlps   xmm3, MMWORD PTR [esi+0x040]	/* X3:  -   -  Y08 X08 */
+		 movhps   xmm3, MMWORD PTR [esi+0x048]	/* X3: Y09 X09 Y08 X08 */
+		 subps    xmm2, xmm4	/* X2: C-9 C-9 C-8 C-8 */
+		 mulps    xmm3, xmm0	/* X3: Xnew*Ccol */
+		 mulps    xmm1, xmm2	/* X1: Xold*Cnew */
+		 mulps    xmm0, xmm2	/* X0: Ccol=Ccol*Cnew */
+		 addps    xmm1, xmm3	/* X1: Xold=Xold*Cnew+Xnew*Ccol */
+		 /* -------------------------------------------------------------------; */
+		 /*  Im11, Re11, Im10, Re10 */
+		 movlps   xmm3, MMWORD PTR [esi+0x050]	/* X3:  -   -  Y10 X10 */
+		 movhps   xmm3, MMWORD PTR [esi+0x058]	/* X3: Y11 X11 Y10 X10 */
+		 subps    xmm2, xmm4	/* X2: C11 C11 C10 C10 */
+		 mulps    xmm3, xmm0	/* X3: Xnew*Ccol */
+		 mulps    xmm1, xmm2	/* X1: Xold*Cnew */
+		 mulps    xmm0, xmm2	/* X0: Ccol=Ccol*Cnew */
+		 addps    xmm1, xmm3	/* X1: Xold=Xold*Cnew+Xnew*Ccol */
+		 /* -------------------------------------------------------------------; */
+		 /*  Im13, Re13, Im12, Re12 */
+		 movlps   xmm3, MMWORD PTR [esi+0x060]	/* X3:  -   -  Y12 X12 */
+		 movhps   xmm3, MMWORD PTR [esi+0x068]	/* X3: Y13 X13 Y12 X12 */
+		 subps    xmm2, xmm4	/* X2: C13 C13 C12 C12 */
+		 mulps    xmm3, xmm0	/* X3: Xnew*Ccol */
+		 mulps    xmm1, xmm2	/* X1: Xold*Cnew */
+		 mulps    xmm0, xmm2	/* X0: Ccol=Ccol*Cnew */
+		 addps    xmm1, xmm3	/* X1: Xold=Xold*Cnew+Xnew*Ccol */
+		 /* -------------------------------------------------------------------; */
+		 /*  Im15, Re15, Im14, Re14 */
+		 movlps   xmm3, MMWORD PTR [esi+0x070]	/* X3:  -   -  Y14 X14 */
+		 movhps   xmm3, MMWORD PTR [esi+0x078]	/* X3: Y15 X15 Y14 X14 */
+		 subps    xmm2, xmm4	/* X2: C15 C15 C14 C14 */
+		 mulps    xmm3, xmm0	/* X3: Xnew*Ccol */
+		 mulps    xmm1, xmm2	/* X1: Xold*Cnew */
+		 mulps    xmm0, xmm2	/* X0: Ccol=Ccol*Cnew */
+		 addps    xmm1, xmm3	/* X1: Xold=Xold*Cnew+Xnew*Ccol */
+		 /* -------------------------------------------------------------------; */
+		 /* Four divisions at once ( two for real parts and two for imaginary parts ) */
+		 divps    xmm1, xmm0	/* X1: Y0G X0G Y1F X1F */
+		 /* -------------------------------------------------------------------; */
+		 /* So we have to add the two real and two imaginary parts */
+		 movhlps  xmm4, xmm1	/* X4:  -   -  Y0G X0G */
+		 addps    xmm4, xmm1	/* X4:  -   -  YOK XOK */
+		 /* -------------------------------------------------------------------; */
+		 movlps   XSums, xmm4	/* Save values for FPU part */	
+	        };
+
 	  realXP = s_alpha * XSums.re - c_alpha * XSums.im;
 	  imagXP = c_alpha * XSums.re + s_alpha * XSums.im;
-
+	     
 	}
+#endif
 
 #else /* EAH_HOTLLOP_VARIANT */
 
