@@ -52,6 +52,7 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/Units.h>
 #include <lal/Window.h>
+#include <lal/CLR.h>
 #include <lalapps.h>
 #include <math.h>
 #include <processtable.h>

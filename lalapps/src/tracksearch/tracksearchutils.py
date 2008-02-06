@@ -1757,7 +1757,7 @@ class candidateList:
         [entries,bins,patches]=self. __triggerHistogramPrimative__(colCount,
                                                                    True)
         # Setup a percentile ranking score mark!
-        index=entries.__len__()
+        index=entries.__len__()-1
         entryList=[]
         tally=0
         count=sum(entries)
@@ -1766,7 +1766,7 @@ class candidateList:
         entryList.reverse()
         for entry in entryList:
             tally=tally+entry
-            if ((float(tally)/count) >= (1-topPercentage)):
+            if ((float(tally)/count) >= (topPercentage)):
                 break
             index=index-1
         patchIndex=0
@@ -1777,10 +1777,12 @@ class candidateList:
                 thisPatch.set_facecolor('blue')
             patchIndex=patchIndex+1
         transitionValue=bins[index]
+        if index==entries.__len__()-1:
+            topPercentage=float(tally)/count
         pylab.xlabel(str("Power"))
         pylab.ylabel(str("Count"))
         pylab.figtext(0.01,0.95,
-                      "Upper Percentile :%3.2f%% , Power Threshold :%f"%(float(100)*topPercentage,transitionValue))
+                      "Upper Percentile :%3f%% , Power Threshold :%f"%(float(100)*topPercentage,transitionValue))
         if ((filename.upper()=='') or (filename.upper()=='AUTO')):
             [name,extension]=os.path.splitext(self.filename[0])
             figtitle=os.path.basename(name)

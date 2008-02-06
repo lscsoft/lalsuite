@@ -168,6 +168,11 @@ parser.add_option("-m","--histogram",
                   dest="histogram",
                   action="store_true",
                   help="This option will show a histogram. For the candidate trigger library.")
+parser.add_option("-P","--top-percentile",
+                  default=0.05,
+                  dest="topPercentile",
+                  help="This options set the histogram top percentile option for the histogram. In floating point style 1% --> 0.01")
+
 (options,args)=parser.parse_args()
 filename=str(options.filename)
 glitchdb=bool(options.glitchdb)
@@ -186,6 +191,7 @@ verboseSwitch=bool(options.verbose)
 measureStats=str(options.stats)
 glue=bool(options.glue)
 timescale=str(options.timescale).lower()
+topTol=float(options.topPercentile)
 
 if verboseSwitch:
     print "Setting verbose mode to candidateHandler call."
@@ -277,9 +283,9 @@ elif (createHistogram and (canList.__len__() >=1)):
         candidateObject=candidateList(verboseSwitch)
         candidateObject.__loadfileQuick__(entry)
         try:
-            candidateObject.showHistogram(graph2file,histogramcolumns,0.05)
+            candidateObject.showHistogram(graph2file,histogramcolumns,topTol)
         except Exception, errorInfo:
-            sys.stderr.write("Problem trying to create plot, %s !\n"%(os.path.basename(graph2file)))
+            sys.stderr.write("Problem trying to create histogram plot, %s !\n"%(os.path.basename(graph2file)))
             sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
             sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
             sys.stderr.write("Skipping this plot. Sorry.\n")
