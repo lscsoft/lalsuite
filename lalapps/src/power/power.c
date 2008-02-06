@@ -858,13 +858,11 @@ static struct options *parse_command_line(int argc, char *argv[], MetadataTable 
 	case '?':
 		print_usage(argv[0]);
 		exit(1);
-		break;
 
 	/* missing argument for an option */
 	case ':':
 		print_usage(argv[0]);
 		exit(1);
-		break;
 	} while(c != -1);
 
 	/*
@@ -1044,13 +1042,6 @@ static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *c
 	 */
 
 	XLALFrClose(stream);
-
-	/*
-	 * Check for other failures.
-	 */
-
-	if(!series)
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
 	/*
 	 * Verbosity.
