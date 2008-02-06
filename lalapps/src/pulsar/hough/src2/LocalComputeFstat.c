@@ -27,9 +27,6 @@
 
 
 /*---------- INCLUDES ----------*/
-#ifdef _MSC_VER
-#include "mmintrin.h"
-#endif
 
 #define __USE_ISOC99 1
 #include <math.h>
@@ -41,6 +38,10 @@
 #include <lal/LogPrintf.h>
 
 #include "LocalOptimizationFlags.h"
+
+#ifdef _MSC_VER && (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_SSE)
+#include <xmmintrin.h>
+#endif
 
 NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 
@@ -902,7 +903,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  __declspec(align(16)) static __m128 v0011 = _mm_set_ps(1.0, 1.0, 0.0, 0.0);
 	  __declspec(align(16)) static __m128 v2222 = _mm_set_ps(2.0, 2.0, 2.0, 2.0);
   
-	  __declspec(align(16))COMPLEX8 XSums; 
+	  __declspec(align(16)) COMPLEX8 XSums; 
 	  REAL4 kappa_m = kappa_max; /* single precision version of kappa_max */
 	      
 	  __asm {
