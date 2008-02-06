@@ -163,17 +163,6 @@ LALTracksearchFindLambda(
 	  sumX=sumX+current;
 	  sumXSqr=sumXSqr+(current*current);
           counter=counter+1;
-/* 	  /\* H value in F direction *\/ */
-/* 	  current=(&map)->map[i][j]-(&map)->map[i][j-1]; */
-/* 	  sumX=sumX+current; */
-/* 	  sumXSqr=sumXSqr+(current*current); */
-/* 	  counter=counter+1; */
-/* 	  current=0; */
-/* 	  /\* H value in T direction *\/ */
-/* 	  current=(&map)->map[i][j]-(&map)->map[i-1][j]; */
-/* 	  sumX=sumX+current; */
-/* 	  sumXSqr=sumXSqr+(current*current); */
-/* 	  counter=counter+1; */
 	};
     };
   /* Determine mean H value */
@@ -188,8 +177,8 @@ LALTracksearchFindLambda(
   searchParams->LinePThresh=fabs(lowerThresh);
   if (searchParams->verbosity >= verbose)
     {
-      fprintf(stdout," Auto lambda invoked\n");
-      fprintf(stdout,"Lh %f \t Ll %f \n 2nd D Gauss %f \t  Mean h  %f \t Std h %f\n",searchParams->StartThresh,searchParams->LinePThresh,myGaussian,meanH,stdH);
+      fprintf(stdout,"Auto lambda invoked\n");
+      fprintf(stdout,"Lh %e \t Ll %e \n 2nd D Gauss %f \t  Mean h  %e \t Std h %f Floor: %f \n",searchParams->StartThresh,searchParams->LinePThresh,myGaussian,meanH,stdH,myFloor);
     }
   /* Need to throw an error if we get a value Lh <= 0 */
   DETATCHSTATUSPTR(status);
