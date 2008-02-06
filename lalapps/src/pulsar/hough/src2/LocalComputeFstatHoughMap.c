@@ -609,14 +609,14 @@ void LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
 
   if(lengthLeft > 0) {
       borderP = phmd->leftBorderP[0];
-#if EAH_HOUGH_PREFETCH > EAH_PREFETCH_NONE
+#if EAH_HOUGH_PREFETCH > EAH_HOUGH_PREFETCH_NONE
       PREFETCH(&(borderP->xPixel[borderP->yLower]));
 #endif
   }	
 
   if(lengthRight > 0) {
       borderP = phmd->rightBorderP[0];
-#if EAH_HOUGH_PREFETCH > EAH_PREFETCH_NONE
+#if EAH_HOUGH_PREFETCH > EAH_HOUGH_PREFETCH_NONE
       PREFETCH(&(borderP->xPixel[borderP->yLower]));
 #endif
   }	
@@ -640,7 +640,7 @@ void LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
     yLower = (*borderP).yLower;
     yUpper = (*borderP).yUpper;
 
-#if EAH_HOUGH_PREFETCH > EAH_PREFETCH_NONE
+#if EAH_HOUGH_PREFETCH > EAH_HOUGH_PREFETCH_NONE
     if(k < lengthLeft-1) {
 	INT4 ylkp1 = phmd->leftBorderP[k+1]->yLower;
 	PREFETCH(&(phmd->leftBorderP[k+1]->xPixel[ylkp1]));
@@ -665,6 +665,9 @@ void LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
 
 
 #if EAH_HOUGH_ASS == EAH_HOUGH_ASS_X87
+
+
+#ifdef __GNUC__
 
 /* don't clobber ebx , used for PIC on Mac OS */
 
@@ -728,10 +731,69 @@ __asm __volatile (
 	"pop %%ebx				\n\t"
 	
 : 
-: [xPixel] "m" (xPixel) , [yLower] "m" (yLower) , [yUpper] "m" (yUpper), [xSideP1] "m" (xSideP1) , [map] "m" (map_pointer) , [w] "m" (weight)
-: "eax", "ecx", "edx", "esi","edi","cc", "st(7)","st(6)", "st(5)"
+:     [xPixel] "m" (xPixel) , [yLower] "m" (yLower) , [yUpper] "m" (yUpper), [xSideP1] "m" (xSideP1) , [map] "m" (map_pointer) , [w] "m" (weight)
+:     "eax", "ecx", "edx", "esi","edi","cc", "st","st(1)", "st(2)","st(3)", "st(4)","st(5)", "st(6)" , "st(7)" 
 
-);
+    );
+
+#else 
+     _asm{
+	
+	push     ebx 
+	mov      eax, xPixel
+	mov      ebx, yLower
+	lea      esi, DWORD PTR [eax+ebx*2]
+	mov      edx, xSideP1
+	mov      edi, yUpper
+	lea      eax, DWORD PTR [eax+edi*2-2]
+	mov      edi, map_pointer
+	mov      ecx, ebx
+	imul     ecx, edx
+	lea      edi, DWORD PTR [edi+ecx*8]
+	fld      QWORD PTR weight
+	cmp      esi, eax
+	jmp      l1_a
+	
+		ALIGN 16 
+	
+	l2_a:
+
+	movzx    ebx, WORD PTR [esi]
+	movzx    ecx, WORD PTR [esi+0x2]
+	lea      ebx, DWORD PTR [edi+ebx*8]
+	fld      QWORD PTR [ebx]
+	lea      edi, DWORD PTR [edi+edx*8]
+	lea      ecx, DWORD PTR [edi+ecx*8]
+	fld      QWORD PTR [ecx]
+	fxch     st(1)
+	fadd     st(0), st(2)
+	fstp     QWORD PTR [ebx]
+	fadd     st(0), st(1)
+	fstp     QWORD PTR [ecx]
+	lea      edi, DWORD PTR [edi+edx*8]
+	lea      esi, DWORD PTR [esi+0x4]
+	cmp      esi, eax
+	
+	l1_a:
+	
+	jbe      l2_a
+	
+	add      eax, 0x2
+	cmp      esi, eax
+	jnz      l_end_a
+	movzx    ebx, WORD PTR [esi]
+	lea      ebx, DWORD PTR [edi+ebx*8]
+	fld      QWORD PTR [ebx]
+	fadd     st(0), st(1)
+	fstp     QWORD PTR [ebx]
+
+	l_end_a:    
+
+	fstp     st(0)
+	pop      ebx 
+	};
+#endif
+
 
 
 #elif defined(EAH_HOUGH_BATCHSIZELD)
@@ -751,7 +813,15 @@ __asm __volatile (
 	
     	
     for(j=yLower; j < yLower+offs; j++) {
-        PREFETCH(pf_addr[c_c++] = map_pointer + xPixel[j] + j*xSideP1);			
+        PREFETCH(pf_addr[c_c++] = map_pointer + xPixel[j] + j*xSideP1);		
+#ifndef LAL_NDEBUG       
+      	sidx0=xPixel[j]+ j*xSideP1;
+        if ((sidx0 < 0) || (sidx0 >= ySide*(xSide+1)) || xPixel[j] < 0 || xPixel[j] >= xSideP1 ) {
+  	  fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n",
+	  	  __FILE__,__LINE__,sidx,ySide*(xSide+1),j,xPixel[j],xSide );
+	  ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
+        }
+#endif	
     }		
 		
     c_c=0;
@@ -779,27 +849,27 @@ __asm __volatile (
 #endif
 
 #ifndef LAL_NDEBUG 
-      if ((sidx0 < 0) || (sidx0 >= ySide*(xSide+1))) {
-	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d\n",
-		__FILE__,__LINE__,sidx,ySide*(xSide+1),j,xPixel[j] );
+      if ((sidx0 < 0) || (sidx0 >= ySide*(xSide+1))|| xPixel[j+EAH_HOUGH_BATCHSIZE] < 0 || xPixel[j+EAH_HOUGH_BATCHSIZE] >= xSideP1) {
+	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n",
+		__FILE__,__LINE__,sidx,ySide*(xSide+1),j+EAH_HOUGH_BATCHSIZE,xPixel[j+EAH_HOUGH_BATCHSIZE],xSide );
 	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
       }
 #if (EAH_HOUGH_BATCHSIZE == 4) || (EAH_HOUGH_BATCHSIZE == 2)
-      if ((sidx1 < 0) || (sidx1 >= ySide*(xSide+1))) {
-	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d\n",
-		__FILE__,__LINE__,sidx,ySide*(xSide+1),j+1,xPixel[j+1] );
+      if ((sidx1 < 0) || (sidx1 >= ySide*(xSide+1))|| xPixel[j+EAH_HOUGH_BATCHSIZE+1] < 0 || xPixel[j+EAH_HOUGH_BATCHSIZE+1] >= xSideP1) {
+	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n",
+		__FILE__,__LINE__,sidx,ySide*(xSide+1),j+EAH_HOUGH_BATCHSIZE+1,xPixel[j+EAH_HOUGH_BATCHSIZE+1],xSide );
 	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
       }
 #endif
 #if (EAH_HOUGH_BATCHSIZE == 4)
-      if ((sidx2 < 0) || (sidx2 >= ySide*(xSide+1))) {
-	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d\n",
-		__FILE__,__LINE__,sidx2,ySide*(xSide+1),j+2,xPixel[j+2] );
+      if ((sidx2 < 0) || (sidx2 >= ySide*(xSide+1))|| xPixel[j+EAH_HOUGH_BATCHSIZE+2] < 0 || xPixel[j+EAH_HOUGH_BATCHSIZE+2] >= xSideP1) {
+	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n",
+		__FILE__,__LINE__,sidx2,ySide*(xSide+1),j+EAH_HOUGH_BATCHSIZE+2,xPixel[j+EAH_HOUGH_BATCHSIZE+2],xSide );
 	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
       }
-      if ((sidx3 < 0) || (sidx3 >= ySide*(xSide+1))) {
-	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d\n",
-		__FILE__,__LINE__,sidx3,ySide*(xSide+1),j+3,xPixel[j+3] );
+      if ((sidx3 < 0) || (sidx3 >= ySide*(xSide+1))|| xPixel[j+EAH_HOUGH_BATCHSIZE+3] < 0 || xPixel[j+EAH_HOUGH_BATCHSIZE+3] >= xSideP1) {
+	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n",
+		__FILE__,__LINE__,sidx3,ySide*(xSide+1),j+EAH_HOUGH_BATCHSIZE+3,xPixel[j+EAH_HOUGH_BATCHSIZE+3],xSide );
 	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
       }
 #endif
@@ -829,18 +899,19 @@ __asm __volatile (
       c_n ^= EAH_HOUGH_BATCHSIZE;
     }
 
-
+    sidxBase=j*xSideP1;
     for(; j<=yUpper;++j){
-      sidx = j*xSideP1 + xPixel[j];
+      sidx = sidxBase + xPixel[j];
 #ifndef LAL_NDEBUG
-      if ((sidx < 0) || (sidx >= ySide*(xSide+1))) {
-	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d\n",
-		__FILE__,__LINE__,sidx,ySide*(xSide+1),j,xPixel[j] );
-
+      if ((sidx < 0) || (sidx >= ySide*(xSide+1)) || xPixel[j] < 0 || xPixel[j] >= xSideP1) {
+	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n",
+		__FILE__,__LINE__,sidx,ySide*(xSide+1),j,xPixel[j],xSide );
+ 
 	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
       }
 #endif
       map_pointer[sidx] += weight;
+      sidxBase+=xSideP1;
     }
 
 
@@ -896,6 +967,8 @@ __asm __volatile (
 
 
 #if EAH_HOUGH_ASS == EAH_HOUGH_ASS_X87
+
+#ifdef __GNUC__
 
 __asm __volatile (
 	"push %%ebx				\n\t"
@@ -958,9 +1031,70 @@ __asm __volatile (
 	
 : 
 : [xPixel] "m" (xPixel) , [yLower] "m" (yLower) , [yUpper] "m" (yUpper), [xSideP1] "m" (xSideP1) , [map] "m" (map_pointer) , [w] "m" (weight)
-: "eax", "ecx", "edx", "esi", "edi","cc", "st(7)","st(6)", "st(5)"
+: "eax", "ecx", "edx", "esi","edi","cc", "st","st(1)", "st(2)","st(3)", "st(4)","st(5)", "st(6)" , "st(7)" 
 
 );
+#else
+
+
+    _asm{
+	push     ebx 
+	mov      eax, xPixel
+	mov      ebx, yLower
+	lea      esi, DWORD PTR [eax+ebx*2]
+	mov      edx, xSideP1
+	mov      edi, yUpper
+	lea      eax, DWORD PTR [eax+edi*2-2]
+	mov      edi, map_pointer
+	mov      ecx, ebx
+	imul     ecx, edx
+	lea      edi, DWORD PTR [edi+ecx*8]
+	fld      QWORD PTR weight
+	cmp      esi, eax
+	jmp      l1_b
+	
+	ALIGN 16
+	
+	l2_b:
+
+	movzx    ebx, WORD PTR [esi]
+	movzx    ecx, WORD PTR [esi+0x2]
+	lea      ebx, DWORD PTR [edi+ebx*8]
+	fld      QWORD PTR [ebx]
+	lea      edi, DWORD PTR [edi+edx*8]
+	lea      ecx, DWORD PTR [edi+ecx*8]
+	fld      QWORD PTR [ecx]
+	fxch     st(1)
+	fsub     st(0), st(2)
+	fstp     QWORD PTR [ebx]
+	fsub     st(0), st(1)
+	fstp     QWORD PTR [ecx]
+	lea      edi, DWORD PTR [edi+edx*8]
+	lea      esi, DWORD PTR [esi+0x4]
+	cmp      esi, eax
+
+	l1_b:
+
+	jbe      l2_b
+	
+	add      eax, 0x2
+	cmp      esi, eax
+	jnz      l_end_b
+	movzx    ebx, WORD PTR [esi]
+	lea      ebx, DWORD PTR [edi+ebx*8]
+	fld      QWORD PTR [ebx]
+	fsub     st(0), st(1)
+	fstp     QWORD PTR [ebx]
+
+	l_end_b:    
+
+	fstp     st(0)
+	pop      ebx 
+    }
+
+
+#endif
+
 
 
 #elif defined(EAH_HOUGH_BATCHSIZELD)
@@ -981,6 +1115,14 @@ __asm __volatile (
     	
     for(j=yLower; j < yLower+offs; j++) {
         PREFETCH(pf_addr[c_c++] = map_pointer + xPixel[j] + j*xSideP1);			
+#ifndef LAL_NDEBUG       
+      	sidx0=xPixel[j]+ j*xSideP1;
+        if ((sidx0 < 0) || (sidx0 >= ySide*(xSide+1)) || xPixel[j] < 0 || xPixel[j] >= xSideP1 ) {
+  	  fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n",
+	  	  __FILE__,__LINE__,sidx,ySide*(xSide+1),j,xPixel[j],xSide );
+	  ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
+        }
+#endif
     }		
 		
     c_c=0;
@@ -1007,32 +1149,31 @@ __asm __volatile (
       PREFETCH(pf_addr[c_n+3] = map_pointer+sidx3);
 #endif
 
-#ifndef LAL_NDEBUG 
-      if ((sidx0 < 0) || (sidx0 >= ySide*(xSide+1))) {
-	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d\n",
-		__FILE__,__LINE__,sidx,ySide*(xSide+1),j,xPixel[j] );
+#ifndef LAL_NDEBUG       
+      if ((sidx0 < 0) || (sidx0 >= ySide*(xSide+1)) || xPixel[j+EAH_HOUGH_BATCHSIZE] < 0 || xPixel[j+EAH_HOUGH_BATCHSIZE] >= xSideP1 ) {
+	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n",
+		__FILE__,__LINE__,sidx,ySide*(xSide+1),j+EAH_HOUGH_BATCHSIZE,xPixel[j+EAH_HOUGH_BATCHSIZE],xSide );
 	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
       }
 #if (EAH_HOUGH_BATCHSIZE == 4) || (EAH_HOUGH_BATCHSIZE == 2)
-      if ((sidx1 < 0) || (sidx1 >= ySide*(xSide+1))) {
-	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d\n",
-		__FILE__,__LINE__,sidx,ySide*(xSide+1),j+1,xPixel[j+1] );
+      if ((sidx1 < 0) || (sidx1 >= ySide*(xSide+1)) || xPixel[j+EAH_HOUGH_BATCHSIZE+1] < 0 || xPixel[j+EAH_HOUGH_BATCHSIZE+1] >= xSideP1 ) {
+	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n",
+		__FILE__,__LINE__,sidx,ySide*(xSide+1),j+EAH_HOUGH_BATCHSIZE+1,xPixel[j+EAH_HOUGH_BATCHSIZE+1],xSide );
 	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
       }
 #endif
 #if (EAH_HOUGH_BATCHSIZE == 4) 
-      if ((sidx2 < 0) || (sidx2 >= ySide*(xSide+1))) {
-	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d\n",
-		__FILE__,__LINE__,sidx2,ySide*(xSide+1),j+2,xPixel[j+2] );
+      if ((sidx2 < 0) || (sidx2 >= ySide*(xSide+1)) || xPixel[j+EAH_HOUGH_BATCHSIZE+2] < 0 || xPixel[j+EAH_HOUGH_BATCHSIZE+2] >= xSideP1 ) {
+	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n",
+		__FILE__,__LINE__,sidx2,ySide*(xSide+1),j+EAH_HOUGH_BATCHSIZE+2,xPixel[j+EAH_HOUGH_BATCHSIZE+2],xSide );
 	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
       }
-      if ((sidx3 < 0) || (sidx3 >= ySide*(xSide+1))) {
-	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d\n",
-		__FILE__,__LINE__,sidx3,ySide*(xSide+1),j+3,xPixel[j+3] );
+      if ((sidx3 < 0) || (sidx3 >= ySide*(xSide+1)) || xPixel[j+EAH_HOUGH_BATCHSIZE+3] < 0 || xPixel[j+EAH_HOUGH_BATCHSIZE+3] >= xSideP1) {
+	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n",
+		__FILE__,__LINE__,sidx3,ySide*(xSide+1),j+EAH_HOUGH_BATCHSIZE+3,xPixel[j+EAH_HOUGH_BATCHSIZE+3],xSide );
 	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
       }
 #endif
-
 #endif 
 
       tempM0 = *(pf_addr[c_c]) -weight;
@@ -1059,18 +1200,18 @@ __asm __volatile (
       c_n ^= EAH_HOUGH_BATCHSIZE;
     }
 
-
+    sidxBase=j*xSideP1;
     for(; j<=yUpper;++j){
-      sidx = j*xSideP1 + xPixel[j];
+      sidx = sidxBase + xPixel[j];
 #ifndef LAL_NDEBUG
-      if ((sidx < 0) || (sidx >= ySide*(xSide+1))) {
-	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d\n",
-		__FILE__,__LINE__,sidx,ySide*(xSide+1),j,xPixel[j] );
-
-	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
+      if ((sidx < 0) || (sidx >= ySide*(xSide+1)) || xPixel[j] < 0 || xPixel[j] >= xSideP1 ) {
+	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n",
+		__FILE__,__LINE__,sidx,ySide*(xSide+1),j,xPixel[j],xSide );
+  	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
       }
 #endif
       map_pointer[sidx] -= weight;
+      sidxBase += xSideP1;
     }
 
 #else
