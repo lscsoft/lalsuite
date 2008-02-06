@@ -1188,6 +1188,7 @@ static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 
     REAL8 asreal;
     INT8  asint;
   } ux;
+  
   static const REAL4* cosbase = sincosLUTbase + (SINCOS_LUT_RES/4);
   static const REAL4* cosdiff = sincosLUTdiff + (SINCOS_LUT_RES/4);
 
@@ -1201,7 +1202,12 @@ static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 
   }
 #endif
 
+#if EAH_SINCOS_F2IBITS == EAH_SINCOS_F2IBITS_MEMCPY
+  REAL8 asreal = x + SINCOS_ADDS;
+  memcpy(&(ux.asint), &asreal, sizeof(ux.asint));
+#else
   ux.asreal = x + SINCOS_ADDS;
+#endif
 
   i  = ux.asint & SINCOS_MASK1;
   n  = ux.asint & SINCOS_MASK2;

@@ -10,6 +10,9 @@
 #define EAH_SINCOS_ROUND_INT4        4
 #define EAH_SINCOS_ROUND_INT8        8
 
+#define EAH_SINCOS_F2IBITS_UNION     EAH_GENERIC
+#define EAH_SINCOS_F2IBITS_MEMCPY    1
+
 #define EAH_SINCOS_VARIANT_LAL       EAH_GENERIC
 #define EAH_SINCOS_VARIANT_LINEAR    9
 
@@ -33,7 +36,7 @@
 
 #if   EAH_OPTIMIZATION == 1 /* fastest portable code */
 #define EAH_SINCOS_VARIANT  EAH_SINCOS_VARIANT_LINEAR
-#define EAH_SINCOS_ROUND    EAH_SINCOS_ROUND_PLUS2
+#define EAH_SINCOS_ROUND    EAH_SINCOS_ROUND_INT8
 #define EAH_HOTLOOP_VARIANT EAH_HOTLOOP_VARIANT_LAL
 #define EAH_HOTLOOP_RECIPROCAL /* might give it a try - on old CPUs this might give a little speedup */
 #define EAH_HOUGH_PREFETCH  EAH_HOUGH_PREFETCH_NONE
@@ -78,4 +81,9 @@
 #endif
 #ifndef EAH_HOUGH_ASS
 #define EAH_HOUGH_ASS       EAH_GENERIC
+#endif
+
+/* it looks like for most compilers this is actually faster... */
+#ifndef EAH_SINCOS_F2IBITS
+#define EAH_SINCOS_F2IBITS  EAH_SINCOS_F2IBITS_MEMCPY
 #endif
