@@ -62,6 +62,9 @@ RCSID( "$Id$" );
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "lalapp_mdc_ninja"
 
+/* defines */
+#define HISTORY_COMMENT 512
+
 /* function prototypes */
 static void print_usage( CHAR *program );
 static void output_frame( CHAR *ifo, INT4 gpsStart, INT4 gpsEnd,
@@ -567,6 +570,7 @@ static void output_frame(CHAR *ifo,
   INT4 duration;
   INT4 detectorFlags;
   FrameH *frame;
+  CHAR creator[HISTORY_COMMENT];  
 
   /* get frame filename */
   duration = gpsEnd - gpsStart;
@@ -595,6 +599,10 @@ static void output_frame(CHAR *ifo,
   /* define frame */
   frame = XLALFrameNew( &injData->epoch, duration, "LIGO", 0, 1,
       detectorFlags );
+
+  /* set creator metadata */
+  LALSnprintf(creator, HISTORY_COMMENT, "creator:$Id$");
+  XLALFrHistoryAdd(frame, "creator", creator);
 
   /* add channel to frame */
   XLALFrameAddREAL4TimeSeriesSimData( frame, injData );
@@ -629,6 +637,7 @@ static void output_multi_channel_frame(INT4 num_ifos,
   INT4 detectorFlags;
   FrameH *frame;
   INT4 i;
+  CHAR creator[HISTORY_COMMENT];
 
   /* get frame filename */
   duration = gpsEnd - gpsStart;
@@ -643,6 +652,10 @@ static void output_multi_channel_frame(INT4 num_ifos,
   /* define frame */
   frame = XLALFrameNew( &(injData[0])->epoch, duration, "LIGO", 0, 1,
       detectorFlags );
+
+  /* set creator metadata */
+  LALSnprintf(creator, HISTORY_COMMENT, "creator:$Id$");
+  XLALFrHistoryAdd(frame, "creator", creator);
 
   /* add channels to frame */
   for( i = 0; i < num_ifos; i++ )
