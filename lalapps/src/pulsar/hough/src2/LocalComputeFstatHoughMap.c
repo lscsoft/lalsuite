@@ -53,7 +53,7 @@ RCSID( "$Id$");
 #if EAH_HOUGH_PREFETCH == EAH_HOUGH_PREFETCH_DIRECT
 #if defined(__INTEL_COMPILER) ||  defined(_MSC_VER)
 // not tested yet with icc or MS Visual C 
-#include <mmintrin.h>
+#include "xmmintrin.h"
 #define PREFETCH(a) _mm_prefetch(a,_MM_HINT_T0)
 #elif defined(__GNUC__)
 #define PREFETCH(a) __builtin_prefetch(a)
