@@ -69,6 +69,82 @@ const LALStringVector empty_LALStringVector;
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
+/** Extract a frequency band from an SFTVector, returning a new SFTvector
+ * Note: fMin < 0 implies to start from lowest frequency bin,
+ *       fMax < 0 implies to include up to highest frequency bin
+ *
+ * if fMin, fMax > 0, the corresponding frequency MUST be contained in the
+ * input SFT, otherwise an error is returned.
+ *
+ * We guarantee that both fMin and fMax will be *contained* in the returned SFT,
+ * which means the actual min(f) can be < fMin, and max(f) > fMax is possible.
+ *
+ */
+SFTVector *
+XLALExtractBandfromSFTs ( const SFTVector *sfts, REAL8 fMin, REAL8 fMax )
+{
+  const CHAR *fn = "XLALExtractBandfromSFTs";
+  REAL8 dFreq;
+  UINT4 iMin, iMax, i0, numSFTs, numBinsIn, numBinsOut, iSFT;
+  SFTVector *out;
+  REAL8 f0Out;
+  COMPLEX8Vector *sav;
+
+  if ( !sfts || !sfts->data || (sfts->length==0) || !sfts->data[0].data ) {
+    XLAL_ERROR_NULL( fn, XLAL_EINVAL );
+  }
+
+  dFreq = sfts->data[0].deltaF;
+
+  i0 = floor ( sfts->data[0].f0 / dFreq + 0.5 );	/* round to nearest bin */
+  numBinsIn = sfts->data[0].data->length;
+
+  if ( fMin < 0 )
+    iMin = i0;
+  else
+    iMin = floor ( fMin / dFreq + 1e-6 );	/* round down */
+
+  if ( fMax < 0 )
+    iMax = i0 + numBinsIn - 1;
+  else
+    iMax = ceil ( fMax / dFreq - 1e-6 );	/* round up */
+
+  if ( iMax < iMin ) {
+    XLALPrintError ("Resulting SFT has no bins iMax (%d) < iMin (%d)!\n", iMax, iMin );
+    XLAL_ERROR_NULL( fn, XLAL_EINVAL );
+  }
+
+  numSFTs = sfts->length;
+  f0Out = iMin * dFreq;
+  numBinsOut = iMax - iMin + 1;
+
+  if ( (out = XLALCreateSFTVector ( numSFTs, numBinsOut )) == NULL ) {
+    XLAL_ERROR_NULL( fn, XLAL_ENOMEM );
+  }
+
+  /* now copy heads and all requested bins */
+  for ( iSFT = 0; iSFT < numSFTs; iSFT ++ )
+    {
+      /* first copy complete head (saving data-pointer first, which will be copied in the next step) */
+      sav = out->data[iSFT].data;
+      memcpy ( &(out->data[iSFT]), &(sfts->data[iSFT]), sizeof(sfts->data[0]) );
+      out->data[iSFT].data = sav;
+
+      /* fix new header information */
+      out->data[iSFT].f0 = f0Out;
+
+      /* copy data */
+      memcpy (out->data[iSFT].data->data, sfts->data[iSFT].data->data + iMin - i0, numBinsOut * sizeof (sfts->data[iSFT].data->data[0] ) );
+      out->data[iSFT].data->length = numBinsOut;
+
+    } /* for iSFT < numSFTs */
+
+  return ( out );
+
+} /* XLALExtractBandfromSFTs() */
+
+
+
 /** Create one SFT-struct. Allows for numBins == 0.
  */
 void
@@ -115,8 +191,7 @@ LALCreateSFTVector (LALStatus *status,
 		    UINT4 numSFTs, 	/**< number of SFTs */
 		    UINT4 numBins)	/**< number of frequency-bins per SFT */
 {
-  UINT4 iSFT, j;
-  SFTVector *vect;	/* vector to be returned */
+  SFTVector *vect;
 
   INITSTATUS( status, "LALCreateSFTVector", SFTUTILSC);
   ATTATCHSTATUSPTR( status );
@@ -124,39 +199,9 @@ LALCreateSFTVector (LALStatus *status,
   ASSERT (output != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
   ASSERT (*output == NULL, status, SFTUTILS_ENONULL,  SFTUTILS_MSGENONULL);
 
-  vect = LALCalloc (1, sizeof(*vect) );
-  if (vect == NULL) {
+  if ( (vect = XLALCreateSFTVector ( numSFTs, numBins )) == NULL ) {
     ABORT (status, SFTUTILS_EMEM, SFTUTILS_MSGEMEM);
   }
-
-  vect->length = numSFTs;
-
-  vect->data = LALCalloc (1, numSFTs * sizeof ( *vect->data ) );
-  if (vect->data == NULL) {
-    LALFree (vect);
-    ABORT (status, SFTUTILS_EMEM, SFTUTILS_MSGEMEM);
-  }
-
-  for (iSFT=0; iSFT < numSFTs; iSFT ++)
-    {
-      COMPLEX8Vector *data = NULL;
-
-      /* allow SFTs with 0 bins: only header */
-      if ( numBins )
-	{
-	  LALCCreateVector (status->statusPtr, &data , numBins);
-	  BEGINFAIL (status)  /* crap, we have to de-allocate as far as we got so far... */
-	    {
-	      for (j=0; j<iSFT; j++)
-		LALCDestroyVector (status->statusPtr, (COMPLEX8Vector**)&(vect->data[j].data) );
-	      LALFree (vect->data);
-	      LALFree (vect);
-	    } ENDFAIL (status);
-	}
-      
-      vect->data[iSFT].data = data;
-
-    } /* for iSFT < numSFTs */
 
   *output = vect;
 
@@ -165,6 +210,53 @@ LALCreateSFTVector (LALStatus *status,
 
 } /* LALCreateSFTVector() */
 
+
+/** XLAL function to create an SFTVector of \c numSFT SFTs with \c SFTlen frequency-bins
+ */
+SFTVector *
+XLALCreateSFTVector (UINT4 numSFTs, 	/**< number of SFTs */
+		     UINT4 numBins	/**< number of frequency-bins per SFT */
+		     )
+{
+  const CHAR *fn = "XLALCreateSFTVector()";
+  UINT4 iSFT;
+  SFTVector *vect;
+
+  if ( (vect = LALCalloc ( 1, sizeof(*vect) )) == NULL ) {
+    XLAL_ERROR_NULL( fn, XLAL_ENOMEM );
+  }
+
+  vect->length = numSFTs;
+  if ( (vect->data = LALCalloc (1, numSFTs * sizeof ( *vect->data ) )) == NULL ) {
+    LALFree (vect);
+    XLAL_ERROR_NULL( fn, XLAL_ENOMEM );
+  }
+
+  for ( iSFT = 0; iSFT < numSFTs; iSFT ++)
+    {
+      COMPLEX8Vector *data = NULL;
+
+      /* allow SFTs with 0 bins: only header */
+      if ( numBins )
+	{
+	  if ( (data = XLALCreateCOMPLEX8Vector ( numBins )) == NULL )
+	    {
+	      UINT4 j;
+	      for ( j = 0; j < iSFT; j++ )
+		XLALDestroyCOMPLEX8Vector ( vect->data[j].data );
+	      LALFree (vect->data);
+	      LALFree (vect);
+	      XLAL_ERROR_NULL( fn, XLAL_ENOMEM );
+	    }
+	}
+
+      vect->data[iSFT].data = data;
+
+    } /* for iSFT < numSFTs */
+
+  return vect;
+
+} /* XLALCreateSFTVector() */
 
 
 
@@ -253,23 +345,36 @@ LALDestroySFTtype (LALStatus *status,
 /** Destroy an SFT-vector
  */
 void
-LALDestroySFTVector (LALStatus *status, 
+LALDestroySFTVector (LALStatus *status,
 		     SFTVector **vect)	/**< the SFT-vector to free */
+{
+  INITSTATUS( status, "LALDestroySFTVector", SFTUTILSC);
+
+  ASSERT (vect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
+
+  XLALDestroySFTVector ( *vect );
+
+  *vect = NULL;
+
+  RETURN (status);
+
+} /* LALDestroySFTVector() */
+
+
+/** XLAL interface to destroy an SFTVector
+ */
+void
+XLALDestroySFTVector (SFTVector *vect)
 {
   UINT4 i;
   SFTtype *sft;
 
-  INITSTATUS( status, "LALDestroySFTVector", SFTUTILSC);
-  ATTATCHSTATUSPTR( status );
+  if ( !vect )
+    return;
 
-  ASSERT (vect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
-  
-  if ( *vect == NULL )	/* nothing to be done */
-    goto finished;
-  
-  for (i=0; i < (*vect)->length; i++)
+  for (i=0; i < vect->length; i++)
     {
-      sft = &( (*vect)->data[i] );
+      sft = &( vect->data[i] );
       if ( sft->data )
 	{
 	  if ( sft->data->data )
@@ -278,17 +383,12 @@ LALDestroySFTVector (LALStatus *status,
 	}
     }
 
-  LALFree ( (*vect)->data );
-  LALFree ( *vect );
+  LALFree ( vect->data );
+  LALFree ( vect );
 
-  *vect = NULL;
-  
- finished:
-  DETATCHSTATUSPTR( status );
-  RETURN (status);
+  return;
 
-} /* LALDestroySFTVector() */
-
+} /* XLALDestroySFTVector() */
 
 
 
