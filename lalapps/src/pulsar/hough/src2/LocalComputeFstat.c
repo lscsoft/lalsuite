@@ -1029,7 +1029,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 #ifdef EAH_HOTLOOP_RECIPROCAL
 	  /* could hardly be slower than two divisions */
 	  {
-	    RAL4 r_qn = 1.0 / qn;
+	    REAL4 r_qn = 1.0 / qn;
 	    U_alpha = Sn * r_qn;
 	    V_alpha = Tn * r_qn;
 	  }
