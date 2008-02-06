@@ -1,7 +1,7 @@
 /*
  * fr_ninja.c - save numerical relativity waveforms as a frame
  *
- * Copyright (C) 2007 Adam Mercer
+ * Copyright (C) 2007, 2008 Adam Mercer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -117,6 +117,7 @@ INT4 main(INT4 argc, CHAR **argv)
   CHAR s2x[HISTORY_COMMENT];
   CHAR s2y[HISTORY_COMMENT];
   CHAR s2z[HISTORY_COMMENT];
+  CHAR creator[HISTORY_COMMENT];
 
   /* channel names */
   CHAR *plus_channel[MAX_L][(2*MAX_L) + 1];
@@ -307,6 +308,7 @@ INT4 main(INT4 argc, CHAR **argv)
   LALSnprintf(s2x, HISTORY_COMMENT, "spin2x:%s", spin2x);
   LALSnprintf(s2y, HISTORY_COMMENT, "spin2y:%s", spin2y);
   LALSnprintf(s2z, HISTORY_COMMENT, "spin2z:%s", spin2z);
+  LALSnprintf(creator, HISTORY_COMMENT, "creator:$Id$");
 
   /* define frame */
   frame = XLALFrameNew(&epoch, duration, "NR", 0, 1, detector_flags);
@@ -322,7 +324,7 @@ INT4 main(INT4 argc, CHAR **argv)
   XLALFrHistoryAdd(frame, "spin2x", s2x);
   XLALFrHistoryAdd(frame, "spin2y", s2y);
   XLALFrHistoryAdd(frame, "spin2z", s2z);
-
+  XLALFrHistoryAdd(frame, "creator", creator);
 
   /* loop over l & m values */
   for (l = MIN_L; l <= MAX_L; l++)
