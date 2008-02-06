@@ -39,15 +39,15 @@
 
 #include "LocalOptimizationFlags.h"
 
-#ifdef _MSC_VER && (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_SSE)
-#include <xmmintrin.h>
+#if defined(_MSC_VER) && (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_SSE)
+#include "xmmintrin.h"
 #endif
 
 NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 
 
 /*---------- local DEFINES ----------*/
-#define TRUE (1==1)
+#define TRUE  (1==1)
 #define FALSE (1==0)
 
 #define LD_SMALL4       (2.0e-4)		/**< "small" number for REAL4*/ 
