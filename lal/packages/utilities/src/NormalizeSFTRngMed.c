@@ -166,8 +166,12 @@ LALPeriodoToRngmed (LALStatus  *status,
 
   /* check lengths are same */
   length = periodo->data->length;
-  ASSERT (length == rngmed->data->length, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
-  ASSERT (length > blockSize, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
+  ASSERT (length == rngmed->data->length, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
+
+  if ( length <= blockSize ) {
+    XLALPrintError ("Need at least %d bins in SFT (have %d) to perform running median!\n", blockSize + 1, length );
+    ABORT ( status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
+  }
 
   blocks2 = blockSize/2 - 1; /* integer division */
 
