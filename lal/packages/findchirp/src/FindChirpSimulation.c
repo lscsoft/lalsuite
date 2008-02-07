@@ -373,8 +373,14 @@ LALFindChirpInjectSignals (
     else
     {
       INT4 i, dataLength, wfmLength, sampleRate;
-      REAL8 dynRange = 1.0/(resp->data->data[0].re);
+      /* XXX this code will BREAK if the first element of the frequency series XXX */
+      /* XXX does not contain dynRange. This is the case for calibrated strain XXX */
+      /* XXX data, but will not be the case when filtering uncalibrated data.  XXX */
+      REAL8 dynRange;
       float *x1;
+      
+      LALWarning (status, "Attempting to calculate dynRange: Will break if un-calibrated strain-data is used."); 
+      dynRange = 1.0/(resp->data->data[0].re);
       
       /* set the start times for injection */
       LALINT8toGPS( status->statusPtr, &(waveform.h->epoch), &waveformStartTime );
