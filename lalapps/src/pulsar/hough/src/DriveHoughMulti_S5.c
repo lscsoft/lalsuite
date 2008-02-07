@@ -2701,7 +2701,7 @@ void ComputeandPrintChi2 ( LALStatus                *status,
 
     /* Open file to write the toplist with 2 new columns: significance and chi2 */
 
-    fpChi2 = fopen("hough_chi2.dat", "w");
+    fpChi2 = fopen("hough_top.dat", "w");
 
     /* ----------------------------------------------------------------------------------*/
     /* Loop over all the elements in the TopList */
