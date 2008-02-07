@@ -647,120 +647,65 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  }
 	}
 
-#elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_ALTIVEC) && FALSE
+#elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_ALTIVEC)
 
         {
 	  /* THIS IS DANGEROUS!! It relies on current implementation of COMPLEX8 type!! */
-	  REAL4 *Xalpha_kR4 = (REAL4*)(Xalpha_l + 1);
+	  REAL4 *Xalpha_kR4 = (REAL4*)(Xalpha_l);
 	
-	  /* temporary variables to prevent double calculations */
-	  /*
-	    REAL4 tsin2pi = s_alpha * (REAL4)OOTWOPI;
-	    REAL4 tcos2pi = c_alpha * (REAL4)OOTWOPI;
-	  */
-	  REAL4 XRes, XIms;
-	  REAL8 combAF;
-
-	  /* The main idea of the vectorization is that
-
-	  [0] of a vector holds the real part of an even-index element
-	  [1] of a vector holds the imaginary part of an even-index element
-	  [2] of a vector holds the real part of an odd-index element
-	  [3] of a vector holds the imaginary part of an odd-index element
-	  
-	  The calculations for the four vector elements are performed independently
-	  possibly using vector-operations, and the sums for even- and odd-indexed
-	  element are combined at the very end.
-
-	  There was added a double-precision part that calculates the "inner"
-	  elements of the loop (that contribute the most to the result) in
-	  double precision. If vectorized, a complex calculation (i.e. two
-	  real ones) should be performed on a 128Bit vector unit capable of double
-	  precision, such as SSE or AltiVec
-	  */
-
-	  float XsumR[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
 	  float XsumS[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
 	  float aFreq[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
 	  /* the following vectors actually become registers in the AVUnit */
-	  vector unsigned char perm;     /* holds permutation pattern for unaligned memory access */
-	  vector float load0, load1, load2, load3, load4;  /* temp registers for unaligned memory access */
-	  vector float load5, load6, load7, load8, load9; /**/
-	  vector float fdval, reTFreq;              /* temporary variables */
-	  vector float aFreqV = {1,1,1,1};
-	  vector float zero   = {0,0,0,0};
-	  vector float Xsum   = {0,0,0,0};           /* collects the sums */
-	  vector float XsumV  = {0,0,0,0};           /* collects the sums */
-	  vector float four2  = {2,2,2,2};           /* vector constants */
-	  vector float skip   = {6,6,6,6};
-	  vector float tFreq  = {((float)(kappa_max - 1)), /* tempFreq as vector */
-				 ((float)(kappa_max - 1)),
-				 ((float)(kappa_max - 2)),
-				 ((float)(kappa_max - 2)) };
+	  vector unsigned char perm;      /* holds permutation pattern for unaligned memory access */
+	  vector float load0, load1, load2, load3, load4;  /* temp registers for ... */
+	  vector float load5, load6, load7, load8, load9;  /* ... unaligned memory access */
+	  vector float fdval  /* xmm3 */; /* SFT data loaded from memory */
+	  vector float XsumV  /* xmm1 */; /* collects the sums */
+	  vector float zero              = {0,0,0,0}; /* zero vector constant */
+	  vector float four2  /* xmm4 */ = {2,2,2,2}; /* vector constant */
+	  vector float tFreq  /* xmm2 */ = {((float)(kappa_max - 0)), /* tempFreq as vector */
+					    ((float)(kappa_max - 0)),
+					    ((float)(kappa_max - 1)),
+					    ((float)(kappa_max - 1)) };
+	  vector float aFreqV /* xmm0 */ = tFreq;
 
-	  /* REAL4 tFreqS, aFreqS = 1;      // tempFreq and accFreq for double precision */
-	  /* REAL4 XsumS[2] = {0,0};        // partial sums */
+	  /* init the memory access and put first data into Xsum */
+	  load0   = vec_ld  (0,(Xalpha_kR4));
+	  perm    = vec_lvsl(0,(Xalpha_kR4));
+	  load1   = vec_ld  (0,(Xalpha_kR4+4));
+	  XsumV   = vec_perm(load0,load1,perm);
 
-	  /* Vectorized version of the Kernel loop */
-	  /* This loop has now been unrolled manually */
-	  {
-	    /* single precision vector "loop" (isn't actually a loop anymore) */
-#define VEC_LOOP_RE(n,a,b)\
-	      perm    = vec_lvsl(0,(Xalpha_kR4+(n)));\
-              load##b = vec_ld(0,(Xalpha_kR4+(n)+4));\
-	      fdval   = vec_perm(load##a,load##b,perm);\
-	      reTFreq = vec_re(tFreq);\
-	      tFreq   = vec_sub(tFreq,four2);\
-	      Xsum    = vec_madd(fdval, reTFreq, Xsum);
-
+	  /* unrolled vectorized version of the Kernel loop */
 #define VEC_LOOP_AV(n,a,b)\
-	      perm    = vec_lvsl(0,(Xalpha_kR4+(n)));\
-              load##b = vec_ld(0,(Xalpha_kR4+(n)+4));\
-	      fdval   = vec_perm(load##a,load##b,perm);\
-              fdval   = vec_madd(fdval,aFreqV,zero);\
-	      XsumV   = vec_madd(XsumV, aFreqV, fdval);\
-              aFreqV  = vec_madd(aFreqV,tFreq,zero);\
-	      tFreq   = vec_sub(tFreq,four2);
+	  perm    = vec_lvsl(0,(Xalpha_kR4+(n)));\
+          load##b = vec_ld(0,(Xalpha_kR4+(n)+4));\
+	  fdval   = vec_perm(load##a,load##b,perm);\
+	  tFreq   = vec_sub(tFreq,four2);            /* xmm2 -= xmm4 */ \
+	  fdval   = vec_madd(fdval,aFreqV,zero);     /* xmm3 *= xmm0 */ \
+	  aFreqV  = vec_madd(aFreqV,tFreq,zero);     /* xmm0 *= xmm2 */ \
+	  XsumV   = vec_madd(XsumV, aFreqV, fdval);  /* xmm1 = xmm1 * xmm2 + xmm3 */ \
 
-	      /* non-vectorizing double-precision "loop" */
-	      /* not used anymore */
-#define VEC_LOOP_D(n)\
-              XsumS[0] = XsumS[0] * tFreqS + aFreqS * Xalpha_kR4[n];\
-              XsumS[1] = XsumS[1] * tFreqS + aFreqS * Xalpha_kR4[n+1];\
-	      aFreqS *= tFreqS;\
-              tFreqS -= 1.0;
+	  VEC_LOOP_AV( 4,1,2);
+	  VEC_LOOP_AV( 8,2,3);
+	  VEC_LOOP_AV(12,3,4);
+	  VEC_LOOP_AV(16,4,5);
+	  VEC_LOOP_AV(20,5,6);
+	  VEC_LOOP_AV(24,6,7);
+	  VEC_LOOP_AV(28,7,8);
 
-	    /* init the memory access */
-	    load0 = vec_ld(0,(Xalpha_kR4));
-	  
-	    /* six reciprocal estimates first */
-	    VEC_LOOP_RE(0,0,1);
-	    VEC_LOOP_RE(4,1,2);
-	    VEC_LOOP_RE(8,2,3);
-	  
-	    /* six single-precision common-denominator calculations */
-	    VEC_LOOP_AV(12,3,4);
-	    VEC_LOOP_AV(16,4,5);
-	    VEC_LOOP_AV(20,5,6);
-
-	    /* the rest is done with reciprocal estimates again */
-	    VEC_LOOP_RE(24,6,7);
-	    VEC_LOOP_RE(32,7,8);
-	    VEC_LOOP_RE(36,8,9); 
-	  }
-	  
-	  /* output the vector */
-	  vec_st(Xsum,0,XsumR);
+	  /* output the vectors */
 	  vec_st(XsumV,0,XsumS);
 	  vec_st(aFreqV,0,aFreq);
-	
-	  /* conbination of the four partial sums: */
-	  combAF  = 1.0 / (aFreq[0] * aFreq[2]);
-	  XRes = (XsumS[0] * aFreq[2] + XsumS[2] * aFreq[0]) * combAF + XsumR[0] + XsumR[2];
-	  XIms = (XsumS[1] * aFreq[3] + XsumS[3] * aFreq[1]) * combAF + XsumR[1] + XsumR[3];
 
-	  realXP = s_alpha * XRes - c_alpha * XIms;
-	  imagXP = c_alpha * XRes + s_alpha * XIms;
+	  /* conbination of the partial sums: */
+	  {
+	    REAL8 combAF  = 1.0 / (aFreq[0] * aFreq[2]);
+	    REAL4 XRes = (XsumS[0] * aFreq[2] + XsumS[2] * aFreq[0]) * combAF;
+	    REAL4 XIms = (XsumS[1] * aFreq[3] + XsumS[3] * aFreq[1]) * combAF;
+	    
+	    realXP = s_alpha * XRes - c_alpha * XIms;
+	    imagXP = c_alpha * XRes + s_alpha * XIms;
+	  }
 	} /* if x cannot be close to 0 */
 
 #elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_SSE)
@@ -908,10 +853,10 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	      
 	  __asm {
 		 mov      esi , Xalpha_l 	
-		 movss    xmm2, kappa_m	/* X2:  -   -   -   C */
+		 movss    xmm2, kappa_m			/* X2:  -   -   -   C */
 		 movlps   xmm1, MMWORD PTR [esi]	/* X1:  -   -  Y00 X00 */
 		 movhps   xmm1, MMWORD PTR [esi+0x08]	/* X1: Y01 X01 Y00 X00 */
-		 shufps   xmm2, xmm2, 0x00	/* X2:  C   C   C   C */
+		 shufps   xmm2, xmm2, 0x00		/* X2:  C   C   C   C */
 		 movaps   xmm4, XMMWORD PTR v2222	/* X7:  2   2   2   2 */
 		 subps    xmm2, XMMWORD PTR v0011	/* X2: C-1 C-1  C   C */
 		 /* -------------------------------------------------------------------; */
@@ -1014,7 +959,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  REAL4 qn = pn;
 	  REAL4 U_alpha, V_alpha;
 	  
-	  /* recursion with 2*DTERMS steps */
+	  /* 2*DTERMS iterations */
 	  UINT4 l;
 	  for ( l = 1; l < 2*DTERMS; l ++ )
 	    {
