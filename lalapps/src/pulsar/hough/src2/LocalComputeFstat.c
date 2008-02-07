@@ -652,24 +652,24 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
         {
 	  /* THIS IS DANGEROUS!! It relies on current implementation of COMPLEX8 type!! */
 	  REAL4 *Xalpha_kR4 = (REAL4*)(Xalpha_l);
-	
+
 	  float XsumS[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
 	  float aFreq[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
 	  /* the vectors actually become registers in the AVUnit */
-	  vector unsigned char perm;         /* permutation pattern for unaligned memory access */
-	  vector float load0, load1, load2;                /* temp registers for ... */
-	  vector float fdval  /* xmm3 */;                  /* SFT data loaded from memory */
-	  vector float XsumV  /* xmm1 */;                  /* sums up the dividend */
-	  vector float zero              = {0,0,0,0};      /* zero vector constant */
-	  vector float four2  /* xmm4 */ = {2,2,2,2};      /* vector constant */
+	  vector unsigned char perm;      /* permutation pattern for unaligned memory access */
+	  vector float load0, load1, load2;    /* temp registers for unaligned memory access */
+	  vector float fdval  /* xmm3 */;                     /* SFT data loaded from memory */
+	  vector float XsumV  /* xmm1 */;                            /* sums up the dividend */
+	  vector float zero              = {0,0,0,0};                /* zero vector constant */
+	  vector float four2  /* xmm4 */ = {2,2,2,2};                     /* vector constant */
 	  vector float tFreq  /* xmm2 */ = {((float)(kappa_max)), /* tempFreq (see LALDemod) */
 					    ((float)(kappa_max)),
 					    ((float)(kappa_max - 1)),
 					    ((float)(kappa_max - 1)) };
-	  vector float aFreqV /* xmm0 */ = tFreq; /* common divisor, initally = 1.0 * tFreq */
+	  vector float aFreqV /* xmm0 */ = tFreq;  /* common divisor, initally = 1.0 * tFreq */
 	  /*    this column above (^) lists the corresponding register in the SSE version */
 
-	  /* init the memory access and put first data into Xsum */
+	  /* init the memory access (load0,load1) and put first Xalpha_k element into Xsum */
 	  load0   = vec_ld  (0,(Xalpha_kR4));
 	  perm    = vec_lvsl(0,(Xalpha_kR4));
 	  load1   = vec_ld  (0,(Xalpha_kR4+4));
@@ -683,9 +683,9 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  tFreq   = vec_sub(tFreq,four2);            /* xmm2 -= xmm4 */ \
 	  fdval   = vec_madd(fdval,aFreqV,zero);     /* xmm3 *= xmm0 */ \
 	  aFreqV  = vec_madd(aFreqV,tFreq,zero);     /* xmm0 *= xmm2 */ \
-	  XsumV   = vec_madd(XsumV, tFreq, fdval);   /* xmm1 = xmm1 * xmm0 + xmm3 */
+	  XsumV   = vec_madd(XsumV,tFreq,fdval);     /* xmm1 = xmm1 * xmm0 + xmm3 */
 
-	  /* do the above 7 times using load1-8 for unaligned memory access */
+	  /* do the above 7 times using load0-2 for unaligned memory access */
 	  VEC_LOOP_AV( 4,1,2);
 	  VEC_LOOP_AV( 8,2,0);
 	  VEC_LOOP_AV(12,0,1);
