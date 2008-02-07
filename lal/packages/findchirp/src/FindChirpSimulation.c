@@ -113,7 +113,6 @@ LALFindChirpInjectSignals (
   INT8                  waveformStartTime;
   INT8                  chanStartTime;
   REAL4TimeSeries       signal;
-  REAL4TimeSeries      *tmpSig;
   COMPLEX8Vector       *unity = NULL;
   CHAR                  warnMsg[512];
   CHAR                  ifo[LIGOMETA_IFO_MAX];
@@ -273,29 +272,29 @@ LALFindChirpInjectSignals (
     CHECKSTATUSPTR( status );
 
     LALInfo( status, ppnParams.termDescription );
-
-    if ( strstr( thisEvent->waveform, "KludgeIMR") || 
-        strstr( thisEvent->waveform, "KludgeRingOnly") )
-    {
-      CoherentGW *wfm;
-      SimRingdownTable *ringEvent;
-      int injectSignalType = imr_inject;
-
- 
-      ringEvent = (SimRingdownTable *) 
-        LALCalloc( 1, sizeof(SimRingdownTable) ); 
-      wfm = XLALGenerateInspRing( &waveform, thisEvent, ringEvent, 
-          injectSignalType);
-      LALFree(ringEvent);
-
-      if ( !wfm )
-      {
-        LALInfo( status, "Unable to generate merger/ringdown, "
-            "injecting inspiral only");
-        ABORT( status, FINDCHIRPH_EIMRW, FINDCHIRPH_MSGEIMRW );
-      }
-      waveform = *wfm;
-    }
+    
+    if ( strstr( thisEvent->waveform, "KludgeIMR") || 	 
+         strstr( thisEvent->waveform, "KludgeRingOnly") ) 	 
+     { 	 
+       CoherentGW *wfm; 	 
+       SimRingdownTable *ringEvent; 	 
+       int injectSignalType = imr_inject; 	 
+  	 
+  	 
+       ringEvent = (SimRingdownTable *) 	 
+         LALCalloc( 1, sizeof(SimRingdownTable) ); 	 
+       wfm = XLALGenerateInspRing( &waveform, thisEvent, ringEvent, 	 
+           injectSignalType); 	 
+       LALFree(ringEvent); 	 
+  	 
+       if ( !wfm ) 	 
+       { 	 
+         LALInfo( status, "Unable to generate merger/ringdown, " 	 
+             "injecting inspiral only"); 	 
+         ABORT( status, FINDCHIRPH_EIMRW, FINDCHIRPH_MSGEIMRW ); 	 
+       } 	 
+       waveform = *wfm; 	 
+     }
 
 
     if ( thisEvent->geocent_end_time.gpsSeconds )
@@ -333,25 +332,16 @@ LALFindChirpInjectSignals (
         waveformStartTime );
     LALInfo( status, warnMsg );
 
-    /* clear the signal structure */
-    memset( &signal, 0, sizeof(REAL4TimeSeries) );
-
-    /* The below if-else can be considered as
-        if use simulateCoherentGW
-        else use XLALCalculateNRStain */
+    /* if we generated waveform.h then use LALInjectStrainGW
+       otherwise use SimulateCoherentGW */
     if( waveform.h == NULL)
     {
-      /* set the start times for injection */
-      LALINT8toGPS( status->statusPtr, &(waveform.a->epoch), &waveformStartTime );
-      CHECKSTATUSPTR( status );
-      memcpy( &(waveform.f->epoch), &(waveform.a->epoch), 
-          sizeof(LIGOTimeGPS) );
-      memcpy( &(waveform.phi->epoch), &(waveform.a->epoch), 
-          sizeof(LIGOTimeGPS) );
-
+      /* clear the signal structure */
+      memset( &signal, 0, sizeof(REAL4TimeSeries) );
+      
       /* set the start time of the signal vector to the start time of the chan */
       signal.epoch = chan->epoch;
-
+      
       /* set the parameters for the signal time series */
       signal.deltaT = chan->deltaT;
       if ( ( signal.f0 = chan->f0 ) != 0 )
@@ -360,6 +350,14 @@ LALFindChirpInjectSignals (
       }
       signal.sampleUnits = lalADCCountUnit;
 
+      /* set the start times for injection */
+      LALINT8toGPS( status->statusPtr, &(waveform.a->epoch), &waveformStartTime );
+      CHECKSTATUSPTR( status );
+      memcpy( &(waveform.f->epoch), &(waveform.a->epoch), 
+          sizeof(LIGOTimeGPS) );
+      memcpy( &(waveform.phi->epoch), &(waveform.a->epoch), 
+          sizeof(LIGOTimeGPS) );
+
       /* simulate the detectors response to the inspiral */
       LALSCreateVector( status->statusPtr, &(signal.data), chan->data->length );
       CHECKSTATUSPTR( status );
@@ -367,29 +365,43 @@ LALFindChirpInjectSignals (
       LALSimulateCoherentGW( status->statusPtr, 
           &signal, &waveform, &detector );
       CHECKSTATUSPTR( status );
+    
+      /* inject the signal into the data channel */
+      LALSSInjectTimeSeries( status->statusPtr, chan, &signal );
+      CHECKSTATUSPTR( status );
     }
     else
     {
-      INT4 i, kh, length, sampleRate;
+      INT4 i, dataLength, wfmLength, sampleRate;
+      REAL8 dynRange = 1.0/(resp->data->data[0].re);
       float *x1;
-      FILE *fileName;
+      
+      /* set the start times for injection */
+      LALINT8toGPS( status->statusPtr, &(waveform.h->epoch), &waveformStartTime );
+      CHECKSTATUSPTR( status );
+      memcpy( &(waveform.f->epoch), &(waveform.h->epoch), 
+          sizeof(LIGOTimeGPS) );
+      memcpy( &(waveform.phi->epoch), &(waveform.h->epoch), 
+          sizeof(LIGOTimeGPS) );
+      memcpy( &(waveform.a->epoch), &(waveform.a->epoch), 
+          sizeof(LIGOTimeGPS) );
 
-      length = waveform.h->data->length;
-      kh = 2*length;
-      x1 = (float *) LALMalloc(sizeof(x1)*kh);     
+      wfmLength = waveform.h->data->length;
+      dataLength = 2*wfmLength;
+      x1 = (float *) LALMalloc(sizeof(x1)*dataLength);     
       /* 
-       * XLALCalculateNRStrain does not take a vector with alternating 
-       * h+ & hx but rather one that stores h+ in the first half and hx
-       * in the second half.
+       * We are using functions from NRWaveInject which do not take a vector 
+       * with alternating h+ & hx but rather one that stores h+ in the first 
+       * half and hx in the second half.
        */
-      for( i = 0; i < kh; i++)
+      for( i = 0; i < dataLength; i++)
       {
         x1[i] = waveform.h->data->data[i];
       }
-      for( i = 0; i < length; i++)
+      for( i = 0; i < wfmLength; i++)
       {
             waveform.h->data->data[i] = x1[2*i];
-            waveform.h->data->data[length+i] = x1[2*i+1];
+            waveform.h->data->data[wfmLength+i] = x1[2*i+1];
       }	  
 
       LALFree(x1);
@@ -401,23 +413,17 @@ LALFindChirpInjectSignals (
         exit(0);
       }
       
-      waveform.h->data->vectorLength = length;
-      tmpSig = XLALCalculateNRStrain( waveform.h , thisEvent, ifo, sampleRate);
-      signal = *tmpSig;
+      waveform.h->data->vectorLength = wfmLength;
 
-      fileName = fopen("tmp1.dat", "w");
-      for( i = 0; i < length; i++)
-      {
-            fprintf(fileName, "%e\n", signal.data->data[i]);
-      }	  
-      fclose(fileName);
-      
+      LALInjectStrainGW( status->statusPtr , 
+                                      chan ,
+                                waveform.h ,
+                                 thisEvent ,
+                                       ifo ,
+                                  dynRange  );
       
     }
 
-    /* inject the signal into the data channel */
-    LALSSInjectTimeSeries( status->statusPtr, chan, &signal );
-    CHECKSTATUSPTR( status );
 
 
 
@@ -1368,4 +1374,3 @@ XLALFindChirpBankSimComputeMatch (
   return maxMatch;
 
 }
-
