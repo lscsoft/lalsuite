@@ -64,11 +64,6 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 /*---------- optimization dependant switches ----------*/
 
 
-/* definitely fastest on PowerPC */
-#if (EAH_OPTIMIZATION == 2)
-#define SINCOS_FLOOR
-#endif
-
 /*----- Macros ----- */
 /** fixed DTERMS to allow for loop unrolling */
 #define DTERMS 8
@@ -90,9 +85,14 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 
 #if EAH_SINCOS_ROUND == EAH_SINCOS_ROUND_PLUS2
 /* this only makes sense for the linear sin/cos approximation */
+#if defined(__GNUC__)
 #define SINCOS_TRIM_X(y,x) \
   y = x - rint(x) + 1.0;
-#elif EAH_SINCOS_ROUND == EAH_SINCOS_ROUND_FLOOR
+#else 
+#define SINCOS_TRIM_X(y,x) \
+  y = (x) - (INT8)(x) + 1.0;
+#endif
+#elif EAH_SINCOS_ROUND == EAH_SINCOS_ROUND_FLOOR 
 #define SINCOS_TRIM_X(y,x) \
   y = x - floor(x);
 #elif EAH_SINCOS_ROUND == EAH_SINCOS_ROUND_INT4
@@ -1183,7 +1183,7 @@ static void local_sin_cos_2PI_LUT_init (void)
 
 
 static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x) {
-  INT4  i,n;
+  INT4  i, n, ix;
   union {
     REAL8 asreal;
     INT8  asint;
@@ -1204,13 +1204,14 @@ static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 
 
 #if EAH_SINCOS_F2IBITS == EAH_SINCOS_F2IBITS_MEMCPY
   REAL8 asreal = x + SINCOS_ADDS;
-  memcpy(&(ux.asint), &asreal, sizeof(ux.asint));
+  memcpy(&(ix), &asreal, sizeof(ix));
 #else
   ux.asreal = x + SINCOS_ADDS;
+  ix = (INT4) ux.asint;
 #endif
 
-  i  = ux.asint & SINCOS_MASK1;
-  n  = ux.asint & SINCOS_MASK2;
+  i  = ix & SINCOS_MASK1;
+  n  = ix & SINCOS_MASK2;
   i  = i >> SINCOS_SHIFT;
   
   (*sin2pix) = sincosLUTbase[i]  + n * sincosLUTdiff[i];
