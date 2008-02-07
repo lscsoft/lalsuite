@@ -655,19 +655,20 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	
 	  float XsumS[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
 	  float aFreq[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
-	  /* the following vectors actually become registers in the AVUnit */
-	  vector unsigned char perm;      /* holds permutation pattern for unaligned memory access */
+	  /* the vectors actually become registers in the AVUnit */
+	  vector unsigned char perm;    /* permutation pattern for unaligned memory access */
 	  vector float load0, load1, load2, load3, load4;  /* temp registers for ... */
-	  vector float load5, load6, load7, load8, load9;  /* ... unaligned memory access */
-	  vector float fdval  /* xmm3 */; /* SFT data loaded from memory */
-	  vector float XsumV  /* xmm1 */; /* collects the sums */
-	  vector float zero              = {0,0,0,0}; /* zero vector constant */
-	  vector float four2  /* xmm4 */ = {2,2,2,2}; /* vector constant */
-	  vector float tFreq  /* xmm2 */ = {((float)(kappa_max - 0)), /* tempFreq as vector */
-					    ((float)(kappa_max - 0)),
+	  vector float load5, load6, load7, load8, load9;  /*  ... unaligned memory access */
+	  vector float fdval  /* xmm3 */;                  /* SFT data loaded from memory */
+	  vector float XsumV  /* xmm1 */;                  /* sums up the dividend */
+	  vector float zero              = {0,0,0,0};      /* zero vector constant */
+	  vector float four2  /* xmm4 */ = {2,2,2,2};      /* vector constant */
+	  vector float tFreq  /* xmm2 */ = {((float)(kappa_max)), /* tempFreq (see LALDemod) */
+					    ((float)(kappa_max)),
 					    ((float)(kappa_max - 1)),
 					    ((float)(kappa_max - 1)) };
-	  vector float aFreqV /* xmm0 */ = tFreq;
+	  vector float aFreqV /* xmm0 */ = tFreq; /* common divisor, initally = 1.0 * tFreq */
+	  /*    this column above (^) lists the corresponding register in the SSE version */
 
 	  /* init the memory access and put first data into Xsum */
 	  load0   = vec_ld  (0,(Xalpha_kR4));
