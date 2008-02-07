@@ -228,7 +228,6 @@ LALSFTtoRngmed (LALStatus  *status,
   ASSERT (rngmed->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
   ASSERT (rngmed->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
   ASSERT (rngmed->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (blockSize > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
 
   length = sft->data->length;
   
@@ -250,15 +249,20 @@ LALSFTtoRngmed (LALStatus  *status,
   } ENDFAIL (status);
 
   /* calculate the rngmed */
-  LALPeriodoToRngmed (status->statusPtr, rngmed, &periodo, blockSize);
-  BEGINFAIL (status) { 
-    LALFree (periodo.data->data);
-    LALFree (periodo.data);
-  } ENDFAIL (status);
-  
-  /* free memory */
-  LALFree(periodo.data->data);
-  LALFree(periodo.data);
+  if ( blockSize > 0 )
+    {
+      LALPeriodoToRngmed (status->statusPtr, rngmed, &periodo, blockSize);
+      BEGINFAIL (status) { 
+	LALFree (periodo.data->data);
+	LALFree (periodo.data);
+      } ENDFAIL (status);
+      
+      /* free memory */
+      LALFree(periodo.data->data);
+      LALFree(periodo.data);
+    }
+  else
+    (*rngmed) = periodo;	/* struct-copy */
 
   DETATCHSTATUSPTR (status);
   /* normal exit */
@@ -292,8 +296,6 @@ LALNormalizeSFT (LALStatus           *status,
   ASSERT (rngmed->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
   ASSERT (rngmed->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
   ASSERT (rngmed->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-
-  ASSERT (blockSize > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
 
   /* make sure there is no size mismatch */
   if ( rngmed->data->length != sft->data->length ) {
@@ -338,7 +340,6 @@ LALNormalizeSFTVect (LALStatus  *status,
   ASSERT (sftVect, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
   ASSERT (sftVect->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
   ASSERT (sftVect->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
-  ASSERT (blockSize > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
 
   /* memory allocation of rngmed using length of first sft 
      -- assume all sfts have the same length*/
@@ -429,8 +430,6 @@ LALNormalizeMultiSFTVect (LALStatus      *status,
 
   ASSERT (multiRngmed, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
   ASSERT ( *multiRngmed == NULL, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-
-  ASSERT (blockSize > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
 
   /* first memory allocation for multipsd structure */
   if ( (ret = (MultiPSDVector *)LALCalloc(1, sizeof(MultiPSDVector))) == NULL) {
