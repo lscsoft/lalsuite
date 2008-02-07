@@ -54,7 +54,7 @@ RCSID( "$Id$");
 #if defined(__INTEL_COMPILER) ||  defined(_MSC_VER)
 // not tested yet with icc or MS Visual C 
 #include "xmmintrin.h"
-#define PREFETCH(a) _mm_prefetch(a,_MM_HINT_T0)
+#define PREFETCH(a) _mm_prefetch((char *)(void *)(a),_MM_HINT_T0)
 #elif defined(__GNUC__)
 #define PREFETCH(a) __builtin_prefetch(a)
 #else
