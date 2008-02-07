@@ -183,10 +183,18 @@ SERIESTYPE *`XLALAdd'SERIESTYPE (
 	unsigned i, j;
 
 	/* make sure arguments are compatible */
-	if(XLALIsREAL8FailNaN(unit_ratio))
+	if(XLALIsREAL8FailNaN(unit_ratio)) {
+		XLALPrintError("%s(): incompatible units\n", func);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
-	if((arg1->f0 != arg2->f0) || (arg1->deltaT != arg2->deltaT))
+	}
+	if(arg1->f0 != arg2->f0) {
+		XLALPrintError("%s(): incompatible heterodyne frequencies\n", func);
 		XLAL_ERROR_NULL(func, XLAL_EDATA);
+	}
+	if(arg1->deltaT != arg2->deltaT) {
+		XLALPrintError("%s(): incompatible sample periods\n", func);
+		XLAL_ERROR_NULL(func, XLAL_EDATA);
+	}
 
 	/* set start indexes */
 	if(Delta_epoch >= 0) {

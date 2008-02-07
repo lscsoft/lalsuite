@@ -164,10 +164,18 @@ SERIESTYPE *`XLALAdd'SERIESTYPE (
 	unsigned i, j;
 
 	/* make sure arguments are compatible */
-	if(XLALIsREAL8FailNaN(unit_ratio))
+	if(XLALIsREAL8FailNaN(unit_ratio)) {
+		XLALPrintError("%s(): incompatible sample units\n", func);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
-	if(XLALGPSCmp(&arg1->epoch, &arg2->epoch) || (arg1->deltaF != arg2->deltaF))
+	}
+	if(XLALGPSCmp(&arg1->epoch, &arg2->epoch)) {
+		XLALPrintError("%s(): incompatible epochs\n", func);
 		XLAL_ERROR_NULL(func, XLAL_EDATA);
+	}
+	if(arg1->deltaF != arg2->deltaF) {
+		XLALPrintError("%s(): incompatible frequency resolution\n", func);
+		XLAL_ERROR_NULL(func, XLAL_EDATA);
+	}
 
 	/* set start indexes */
 	if(Delta_f0 >= 0) {
@@ -225,10 +233,18 @@ SERIESTYPE *`XLALMultiply'SERIESTYPE (
 	unsigned i, j;
 
 	/* make sure arguments are compatible */
-	if(XLALIsREAL8FailNaN(unit_ratio))
+	if(XLALIsREAL8FailNaN(unit_ratio)) {
+		XLALPrintError("%s(): incompatible sample units\n", func);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
-	if(XLALGPSCmp(&arg1->epoch, &arg2->epoch))
+	}
+	if(XLALGPSCmp(&arg1->epoch, &arg2->epoch)) {
+		XLALPrintError("%s(): incompatible epochs\n", func);
 		XLAL_ERROR_NULL(func, XLAL_EDATA);
+	}
+	if(arg1->deltaF != arg2->deltaF) {
+		XLALPrintError("%s(): incompatible frequency resolution\n", func);
+		XLAL_ERROR_NULL(func, XLAL_EDATA);
+	}
 
 	/* set start indexes */
 	if(Delta_f0 >= 0) {
