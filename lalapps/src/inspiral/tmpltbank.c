@@ -456,6 +456,9 @@ int main ( int argc, char *argv[] )
 
   /* set the mode of the frame stream to fail on gaps or time errors */
   frStream->mode = LAL_FR_VERBOSE_MODE;
+  
+  /* enable frame-file checksum checking */
+  XLALFrSetMode( frStream, frStream->mode | LAL_FR_CHECKSUM_MODE );
 
   /* seek to required epoch and set chan name */
   LAL_CALL( LALFrSeek( &status, &(chan.epoch), frStream ), &status );
