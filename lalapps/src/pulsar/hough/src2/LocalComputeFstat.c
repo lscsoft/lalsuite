@@ -656,9 +656,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  float XsumS[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
 	  float aFreq[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
 	  /* the vectors actually become registers in the AVUnit */
-	  vector unsigned char perm;    /* permutation pattern for unaligned memory access */
-	  vector float load0, load1, load2, load3, load4;  /* temp registers for ... */
-	  vector float load5, load6, load7, load8, load9;  /*  ... unaligned memory access */
+	  vector unsigned char perm;         /* permutation pattern for unaligned memory access */
+	  vector float load0, load1, load2;                /* temp registers for ... */
 	  vector float fdval  /* xmm3 */;                  /* SFT data loaded from memory */
 	  vector float XsumV  /* xmm1 */;                  /* sums up the dividend */
 	  vector float zero              = {0,0,0,0};      /* zero vector constant */
@@ -678,27 +677,28 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
 	  /* unrolled vectorized version of the Kernel loop */
 #define VEC_LOOP_AV(n,a,b)\
-	  perm    = vec_lvsl(0,(Xalpha_kR4+(n)));\
-          load##b = vec_ld(0,(Xalpha_kR4+(n)+4));\
-	  fdval   = vec_perm(load##a,load##b,perm);\
+	  perm    = vec_lvsl(0,(Xalpha_kR4+(n)));    /* xmm3 = Xalpha_k[n] */ \
+	  load##b = vec_ld(0,(Xalpha_kR4+(n)+4));    /* ... continued */ \
+	  fdval   = vec_perm(load##a,load##b,perm);  /* ... continued */ \
 	  tFreq   = vec_sub(tFreq,four2);            /* xmm2 -= xmm4 */ \
 	  fdval   = vec_madd(fdval,aFreqV,zero);     /* xmm3 *= xmm0 */ \
 	  aFreqV  = vec_madd(aFreqV,tFreq,zero);     /* xmm0 *= xmm2 */ \
-	  XsumV   = vec_madd(XsumV, aFreqV, fdval);  /* xmm1 = xmm1 * xmm2 + xmm3 */ \
+	  XsumV   = vec_madd(XsumV, tFreq, fdval);   /* xmm1 = xmm1 * xmm0 + xmm3 */
 
+	  /* do the above 7 times using load1-8 for unaligned memory access */
 	  VEC_LOOP_AV( 4,1,2);
-	  VEC_LOOP_AV( 8,2,3);
-	  VEC_LOOP_AV(12,3,4);
-	  VEC_LOOP_AV(16,4,5);
-	  VEC_LOOP_AV(20,5,6);
-	  VEC_LOOP_AV(24,6,7);
-	  VEC_LOOP_AV(28,7,8);
+	  VEC_LOOP_AV( 8,2,0);
+	  VEC_LOOP_AV(12,0,1);
+	  VEC_LOOP_AV(16,1,2);
+	  VEC_LOOP_AV(20,2,0);
+	  VEC_LOOP_AV(24,0,1);
+	  VEC_LOOP_AV(28,1,0);
 
 	  /* output the vectors */
 	  vec_st(XsumV,0,XsumS);
 	  vec_st(aFreqV,0,aFreq);
 
-	  /* conbination of the partial sums: */
+	  /* conbine the partial sums: */
 	  {
 	    REAL8 combAF  = 1.0 / (aFreq[0] * aFreq[2]);
 	    REAL4 XRes = (XsumS[0] * aFreq[2] + XsumS[2] * aFreq[0]) * combAF;
@@ -707,7 +707,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	    realXP = s_alpha * XRes - c_alpha * XIms;
 	    imagXP = c_alpha * XRes + s_alpha * XIms;
 	  }
-	} /* if x cannot be close to 0 */
+	}
 
 #elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_SSE)
 
@@ -959,7 +959,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  REAL4 pn = kappa_max;
 	  REAL4 qn = pn;
 	  REAL4 U_alpha, V_alpha;
-	  
+
 	  /* 2*DTERMS iterations */
 	  UINT4 l;
 	  for ( l = 1; l < 2*DTERMS; l ++ )
