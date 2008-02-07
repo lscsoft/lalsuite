@@ -111,7 +111,7 @@ We define the post-Newtonian expansion \emph{not} to be valid if
 magnitude than the leading (lowest-order nonzero) term.
 \item The inferred orbital radius, approximated by
 $r\sim4m_\mathrm{tot}\Theta^{1/4}$, drops below $2m_\mathrm{tot}$;
-i.e.\ $\Theta<1/16$ or $x>1/\sqrt{2}$.
+i.e.\ $\Theta<1/16$ or $x>\sqrt{2}$.
 \item The frequency evolution becomes non-monotonic.
 \end{enumerate}
 We can further require as a matter of convention that the lowest-order
@@ -125,7 +125,7 @@ lowest-order nonzero coefficient; then for every nonzero $C_{k>j}$
 we can define a point $x_k=|C_j/C_k|^{1/(k-j)}$ where that term
 exceeds the leading-order term in magnitude.  We can therefore limit
 the range of $x$ to values less than $x_\mathrm{max}$, which is the
-minimum of $1/\sqrt{2}$ and all $x_k$.  We note that even if we were
+minimum of $\sqrt{2}$ and all $x_k$.  We note that even if we were
 to extend the post-Newtonian expansion in Eq.~\ref{eq:ppn-fnorm} to an
 infinite number of terms, this definition of $x_\mathrm{max}$ implies
 that the frequency is guaranteed to be monotonic up to
