@@ -122,7 +122,7 @@ def generate_segments(ifo1_data, ifo2_data, ifo3_data, ifo4_data):
 ##############################################################################
 # function to set up datafind, template bank and inspiral jobs for an ifo  
 def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
-  prev_df,dag, exttrigInjections, usertag=None):
+  prev_df,dag, exttrigInjections, usertag=None, inspinjNode = None):
   """
   Analyze the data from a single IFO.  Since the way we treat all this data is
   the same, this function is the same for all interferometers. Returns the last
@@ -139,6 +139,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
   exttrigInjections = specifies the number of external trigger injections 
                       in the same data seg.
   usertag = the usertag to add to the job names
+  inspinjNode = the inspinj node to be added as a parent to inspirals
   """
 
   # add the non veto inspiral options
@@ -306,6 +307,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
              else:
                 insp.set_bank(bank.get_output())
              if opts.datafind: insp.add_parent(df)
+             if inspinjNode and opts.inspiral: insp.add_parent(inspinjNode) 
              if (opts.template_bank and not GeoBank): insp.add_parent(bank)
              if inj>0:
                 insp.add_parent(inspinj)
@@ -983,7 +985,9 @@ parser.add_option("-Q", "--four-ifo",action="store_true",default=False,\
     help="analyze four intereferometer data")
   
 parser.add_option("-A", "--analyze-all",action="store_true",default=False,\
-    help="analyze all ifos and all data (over-rides above) (option not available since there are 5 instruments and the code only supports quadruple coincidence)")
+    help="analyze all ifos and all data (over-rides above)" \
+    "(option not available since there are 5 instruments and the code " \
+    "only supports quadruple coincidence)")
 
 
 parser.add_option("-d", "--datafind",action="store_true",default=False,\
@@ -1082,7 +1086,8 @@ elif opts.analyze_all:
 
 if opts.g1_data and opts.h1_data and opts.h2_data and opts.l1_data \
     and opts.v1_data:
-  print >> sys.stderr, "Too many IFOs specified. Please choose up to four IFOs, but not five."
+  print >> sys.stderr, "Too many IFOs specified. " \
+      "Please choose up to four IFOs, but not five."
   sys.exit(1)
 
 if not opts.one_ifo and not opts.two_ifo and not opts.three_ifo and \
@@ -1442,22 +1447,6 @@ if opts.priority:
   for job in all_jobs:
     job.add_condor_cmd('priority',str(opts.priority))
 
-##############################################################################
-# read in the injection-file from the ini file 
-# and add to inspiral and sire jobs
-try:
-  inj_file = string.strip(cp.get('input','injection-file'))
-except:
-  inj_file = None
-  
-if inj_file:
-  inj_jobs = [sire_job, coire_job, coire_slide_job]
-  inj_jobs.extend(insp_jobs.values())
-  inj_jobs.extend(insp_veto_jobs.values())
-  inj_jobs.extend(insp_coh_jobs.values())
-
-  for job in inj_jobs:  
-     job.add_file_opt('injection-file',inj_file)
 
 ##############################################################################
 # read in the number of time-slides from the ini file 
@@ -1531,16 +1520,6 @@ else:
   print "Invalid playground data mask " + play_data_mask + " specified"
   sys.exit(1)
 
-##############################################################################
-if inj_file or doExtTrig:
-  # add the injection coincidence to the sire jobs
-  try: sire_job.add_ini_opts(cp,'sire-inj')
-  except: pass
-
-  try: 
-    coire_job.add_ini_opts(cp,'coire-inj')
-    coire_slide_job.add_ini_opts(cp,'coire-inj')
-  except: pass
  
  
 ##############################################################################
@@ -1625,6 +1604,24 @@ for ifo in ifo_list:
         0,0,overlap/2,pad)
 
 print "done"
+
+# work out the earliest and latest times that are being analyzed
+if not gps_start_time:
+  gps_start_time = 10000000000
+  for ifo in ifo_list:
+    if data[ifo] and (data[ifo][0].start() < gps_start_time):
+      gps_start_time = data[ifo][0].start()
+  print "GPS start time not specified, obtained from segment lists as " + \
+    str(gps_start_time)
+
+
+if not gps_end_time:
+  gps_end_time = 0
+  for ifo in ifo_list:
+    if data[ifo] and (data[ifo][-1].end() > gps_end_time):
+      gps_end_time = data[ifo][0].end()
+  print "GPS end time not specified, obtained from segment lists as " + \
+    str(gps_end_time)
 
 ##############################################################################
 #   Step 2: determine analyzable times
@@ -1712,8 +1709,44 @@ for ifo in ifo_list:
   data_to_do[ifo].coalesce() 
 
 ##############################################################################
-# Step 4: Determine which of the master chunks needs to be filtered
+# Step 3b: Set up the injection job
 
+# if doing injections then set up the injection analysis
+try: seed = cp.get("input","injection-seed")
+except: seed = None
+if seed:
+  inspinj = inspiral.InspInjNode(inspinj_job)
+  inspinj.set_start(gps_start_time)
+  inspinj.set_end(gps_end_time)
+  inspinj.set_seed(seed)
+  if opts.inspiral: dag.add_node(inspinj)
+  inj_file = inspinj.get_output()
+else: 
+  inj_file = None
+  inspinj = None
+
+# add the injection details to inspiral/sire/coire jobs  
+if inj_file:
+  inj_jobs = [sire_job, coire_job, coire_slide_job]
+  inj_jobs.extend(insp_jobs.values())
+  inj_jobs.extend(insp_veto_jobs.values())
+  inj_jobs.extend(insp_coh_jobs.values())
+
+  for job in inj_jobs:  
+     job.add_file_opt('injection-file',inj_file)
+
+if inj_file or doExtTrig:
+  # add the injection coincidence to the sire jobs
+  try: sire_job.add_ini_opts(cp,'sire-inj')
+  except: pass
+
+  try: 
+    coire_job.add_ini_opts(cp,'coire-inj')
+    coire_slide_job.add_ini_opts(cp,'coire-inj')
+  except: pass
+
+##############################################################################
+# Step 4: Determine which of the master chunks needs to be filtered
 chunks_analyzed = {}
 
 prev_df = None
@@ -1724,7 +1757,7 @@ for ifo in ifo_list:
 
   (prev_df,chunks_analyzed[ifo]) = analyze_ifo(ifo,data[ifo],data_to_do[ifo],  
       tmplt_jobs[ifo],insp_jobs[ifo],df_job,prev_df,dag,exttrigInjections,
-      usertag)
+      usertag,inspinj)
   
   # Step 4S: Run sire on the single ifo triggers
   if opts.sire_inspiral and len(chunks_analyzed[ifo]):

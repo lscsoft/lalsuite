@@ -288,14 +288,14 @@ def findSegmentsToAnalyze(config,ifo,generate_segments=True,\
 
 ##############################################################################
 # Function to set up lalapps_inspiral_hipe
-def hipe_setup(hipeDir, config, ifos, logPath, injFile=None, dfOnly = False, \
+def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
     playOnly = False, vetoCat = None, vetoFiles = None):
   """
   run lalapps_inspiral_hipe and add job to dag
   hipeDir   = directory in which to run inspiral hipe
   config    = config file
   logPath   = location where log files will be written
-  injFile   = injection file to use when running
+  injSeed   = injection file to use when running
   dfOnly    = only run the datafind step of the pipeline
   vetoCat   = run this category of veto
   vetoFiles = dictionary of veto files
@@ -330,6 +330,8 @@ def hipe_setup(hipeDir, config, ifos, logPath, injFile=None, dfOnly = False, \
   hipecp.remove_option("condor","plot")
   hipecp.remove_option("condor","follow")
 
+  # add the inspinj section
+  hipecp.add_section("inspinj")
 
   # set the data type
   if playOnly:
@@ -344,8 +346,10 @@ def hipe_setup(hipeDir, config, ifos, logPath, injFile=None, dfOnly = False, \
     usertag = hipeDir.upper()
 
   if vetoCat:
-    # set the old usertag in inspiral, so that we pick up the inspiral xml
-    for section in ["inspiral"]:
+    # set the old usertag in inspiral and inspinj, 
+    # so that we pick up the correct xml inputs
+    sections = ["inspiral"]
+    for section in ["inspiral","inspinj"]:
       hipecp.set(section, "user-tag",usertag)
 
     # set the correct pipeline usertag
@@ -359,15 +363,16 @@ def hipe_setup(hipeDir, config, ifos, logPath, injFile=None, dfOnly = False, \
   # set the usertag
   hipecp.set("pipeline", "user-tag",usertag)
 
-  if injFile:
-    # add the injection options to the ini file
-    if injFile[0] != "/": injFile = "../../" + injFile
-    hipecp.set("input", "injection-file", injFile )
-    hipecp.set("input", "num-slides", "")
+  if injSeed:
+    # copy over the arguments from the relevant injection section
+    for (name,value) in config.items(hipeDir):
+      hipecp.set("inspinj",name,value)
+    hipecp.remove_section(hipeDir)
+    hipecp.set("input","injection-seed",injSeed)
+
   else:
     # add the time slide to the ini file
     hipecp.set("input","num-slides", config.get("input","num-slides") )
-    hipecp.set("input", "injection-file", "" )
 
     # sanity check of numSlides
     maxLength = None
@@ -395,7 +400,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injFile=None, dfOnly = False, \
 
   print "Running hipe in directory " + hipeDir
   if dfOnly: print "Running datafind only"
-  elif injFile: print "Injection file: " + hipecp.get("input", "injection-file")
+  elif injSeed: print "Injection seed: " + injSeed
   else: print "No injections, " + str(hipecp.get("input","num-slides")) + \
       " time slides"
   if vetoCat: print "Running the category " + str(vetoCat) + " vetoes"
@@ -513,6 +518,7 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
   plotcp.set("pipeline","found-suffix",injectionSuffix)
   plotcp.set("pipeline","missed-suffix",injectionSuffix)
   plotcp.set("pipeline","bank-suffix",bankSuffix)
+  plotcp.set("pipeline","trigbank-suffix",bankSuffix)
   plotcp.set("pipeline","zerolag-suffix",zerolagSuffix)
   plotcp.set("pipeline","trig-suffix",zerolagSuffix)
   plotcp.set("pipeline","coinc-suffix",zerolagSuffix)

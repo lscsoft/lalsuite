@@ -471,16 +471,23 @@ class InspInjNode(InspiralAnalysisNode):
     job = A CondorDAGJob that can run an instance of lalapps_inspinj.
     """
     InspiralAnalysisNode.__init__(self,job)
+    self.__outputName = None
+    self.__seed = None
 
   def set_seed(self,seed):
     """
     Set the seed of the injection file by setting a --seed option to the
-    node when it is executed. The seed is automatically the number of
-    the injection 'round'.
+    node when it is executed. 
     @param seed: seed of the job
     """
     self.add_var_opt('seed',seed)
     self.__seed = seed
+
+  def get_seed(self):
+    """
+    return the seed
+    """
+    return( self.__seed)
 
   def set_output(self, outputName):
     """
@@ -495,8 +502,14 @@ class InspInjNode(InspiralAnalysisNode):
     Return the manually-set output name if it exists, otherwise, derive the
     name like other InspiralAnalysisNodes.
     """
-    return self.__outputName or InspiralAnalysisNode.get_output(self)
-
+    if self.__outputName: return self.__outputName
+    else:
+      outputFile = "HL-INJECTIONS_" + str(self.get_seed())
+      if self.get_user_tag():
+        outputFile += "_" + self.get_user_tag()
+      outputFile += "-" + str(self.get_start()) + "-" + str(self.get_end() - \
+          self.get_start()) + ".xml"
+      return(outputFile)
 
 class BbhInjNode(InspiralAnalysisNode):
   """

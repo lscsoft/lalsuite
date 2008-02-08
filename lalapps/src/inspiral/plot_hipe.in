@@ -28,9 +28,9 @@ sys.path.append('@PYTHONLIBDIR@')
 # import the modules we need to build the pipeline
 from glue import pipeline
 
-from lalapps import inspiral
-from lalapps.inspiralutils import determine_sieve_patterns
-from lalapps import inspiralutils
+import inspiral
+from inspiralutils import determine_sieve_patterns
+import inspiralutils
 ##############################
 # Convert ifo list to string
 def combo2str(combo):
@@ -519,6 +519,38 @@ if opts.plotinspmissed:
 
   all_jobs.extend(plotinspmissed_jobs.values())
 
+# NOTE: Please don't delete the commented section below, currently Alex and Jessica are working on plotinspmissed, 
+# and the changes below would then be implemented. 
+
+
+#for ifos in ifo_combo:
+    #combostring = combo2str(ifos)
+#    if opts.first_stage:
+#      plotinspmissed_jobs[combostring +"FIRST"] = inspiral.PlotInspmissedJob(cp)
+#      plotinspmissed_jobs[combostring +"FIRST"].add_opt("ifo", combostring)
+#      pattern_dict = determine_sieve_patterns(cp, this_section,
+#        "FIRST", input_user_tag)
+#      for opt, val in pattern_dict.iteritems():
+#        val = val.replace("CAT_4","")
+#        val = val.replace("CAT_2","")
+#        val = val.replace("CAT_3","")
+#        plotinspmissed_jobs[combostring + "FIRST"].add_opt(opt, val)
+#      plotinspmissed_jobs[combostring + "FIRST"].add_opt("ifo-times", combostring)
+#      plotinspmissed_jobs[combostring + "FIRST"].add_opt("ifo-tag", "FIRST_" + combostring)
+#      plotinspmissed_jobs[combostring +"FIRST"].set_sub_file( basename + '.plotinspmissed_FIRST_' + combostring + subsuffix )
+#    if opts.second_stage:
+#      plotinspmissed_jobs[combostring +"SECOND"] = inspiral.PlotInspmissedJob(cp)
+#      plotinspmissed_jobs[combostring + "SECOND"].add_opt("ifo-times", combostring)
+#      plotinspmissed_jobs[combostring +"SECOND"].add_opt("ifo", combostring)
+#      pattern_dict = determine_sieve_patterns(cp, this_section,
+#        "SECOND", input_user_tag)
+#      for opt, val in pattern_dict.iteritems():
+#        plotinspmissed_jobs[combostring + "SECOND"].add_opt(opt, val)
+#      plotinspmissed_jobs[combostring +"SECOND"].add_opt("ifo-tag", "SECOND_" + combostring)
+#      plotinspmissed_jobs[combostring +"SECOND"].set_sub_file( basename + '.plotinspmissed_SECOND_' + combostring + subsuffix )
+#
+#  all_jobs.extend(plotinspmissed_jobs.values())
+
 
 #plotinspinj
 if opts.plotinspinj:
@@ -538,6 +570,7 @@ if opts.plotinspinj:
         plotinspinj_jobs[ifo + "FIRST"].add_opt(opt, val)
       plotinspinj_jobs[ifo + "FIRST"].add_opt("ifo-times", ifo)
       plotinspinj_jobs[ifo + "FIRST"].add_opt("ifo-tag", "FIRST_" + ifo)
+      plotinspinj_jobs[ifo + "FIRST"].add_opt("title-text",ifo)
       plotinspinj_jobs[ifo + "FIRST"].set_sub_file( basename + '.plotinspinj_FIRST_' + ifo + subsuffix )
     if opts.second_stage:
       plotinspinj_jobs[ifo + "SECOND"] = inspiral.PlotInspinjJob(cp)
@@ -550,6 +583,7 @@ if opts.plotinspinj:
         plotinspinj_jobs[ifo + "SECOND"].add_opt(opt, val)
       plotinspinj_jobs[ifo + "SECOND"].add_opt("ifo-times", ifo)
       plotinspinj_jobs[ifo + "SECOND"].add_opt("ifo-tag", "SECOND_" + ifo)
+      plotinspinj_jobs[ifo + "SECOND"].add_opt("title-text",ifo)
       plotinspinj_jobs[ifo + "SECOND"].set_sub_file( basename + '.plotinspinj_SECOND_' + ifo + subsuffix )
 
   all_jobs.extend(plotinspinj_jobs.values())
@@ -668,7 +702,6 @@ if opts.plotethinca:
       plotethinca_node =inspiral.PlotEthincaNode(plotethinca_jobs[combostring + "SECOND"])
       dag.add_node(plotethinca_node)
 
-
 if opts.plotinspmissed:
   if opts.first_stage:
     for ifo in ifolist:
@@ -678,6 +711,20 @@ if opts.plotinspmissed:
     for ifo in ifolist:
       plotinspmissed_node =inspiral.PlotInspmissedNode(plotinspmissed_jobs[ifo + "SECOND"])
       dag.add_node(plotinspmissed_node)
+
+# Please don't delete the commented section below.
+
+#if opts.plotinspmissed:
+#  if opts.first_stage:
+#    for ifos in ifo_combo:
+#      combostring = combo2str(ifos)
+#      plotinspmissed_node =inspiral.PlotInspmissedNode(plotinspmissed_jobs[combostring + "FIRST"])
+#      dag.add_node(plotinspmissed_node)
+#  if opts.second_stage:
+#    for ifos in ifo_combo:
+#      combostring = combo2str(ifos)
+#      plotinspmissed_node =inspiral.PlotInspmissedNode(plotinspmissed_jobs[combostring + "SECOND"])
+#      dag.add_node(plotinspmissed_node)
 
 
 

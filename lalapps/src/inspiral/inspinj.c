@@ -1477,6 +1477,9 @@ int main( int argc, char *argv[] )
         outputFileName);
   }
 
+  /* increment the random seed by the GPS start time:*/
+  rand_seed += gpsStartTime.gpsSeconds;
+
   /* set up the LAL random number generator */
   LALCreateRandomParams( &status, &randParams, rand_seed );
 
