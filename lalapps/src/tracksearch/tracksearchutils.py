@@ -1471,9 +1471,9 @@ class candidateList:
         closely related to createSummaryStructure method.  We have as
         output of this method.  This is a list of lists with fields
         0 GPS Start
-        1 GPS Stop
+        1 Duration
         2 Start F
-        3 Stop F
+        3 Bandwidth
         4 GPS Bright
         5 Freq Bright
         6 Pow Bright
@@ -1499,8 +1499,6 @@ class candidateList:
             j=tmp[0][4] #The pixel power value for brightest pixel
             m=tmp[1] #Mean power of pixels in curve
             s=tmp[2] #stddev^2 of pixel power in curve
-            #summary.append([t,s,f,g,l,p,d,F])
-            #summary.append([t,S,f,g,l,p,d,F,v,h,m,s,j])
             summary.append([t,d,f,F,h,v,j,m,s,l,p])
         return summary
     #End dumpCandidateKurveSummary()
@@ -1515,12 +1513,21 @@ class candidateList:
         """
         # Set the output formatting string here for all summary
         # display calls
-        self.summaryFormat="%10.5f %10.5f %10.5f %10.5f %10.5f %10.5f %10.5f %10.5f %10.5f %10.5f %10.5f %10.5f\n" 
+        self.summaryFormat="%10.5f %10.5f %10.5f %10.5f %10.5f %10.5f %10.5f %10.5f %10.5f %10.5f %10.5f \n"
         summaryData=self.dumpCandidateKurveSummary()
         output=[]
+        entryFormatFloat="%10.6f\t"
+        entryFormatDouble="%10.6e\t"
+        format=""
+        for index in range(0,summaryData[0].__len__()):
+            if str(summaryData[0][index]).__contains__('e'):
+                format=format+entryFormatDouble
+            else:
+                format=format+entryFormatFloat
+        format=format.rstrip('\t')+"\n"
         for entry in summaryData:
-            outString=self.summaryFormat%(entry[0],entry[6],entry[2],entry[3],entry[7],entry[9],entry[8],entry[12],entry[10],entry[11],entry[4],entry[5])
-#            outString=self.summaryFormat%(entry[0],entry[1],entry[2],entry[3],entry[4],entry[5],entry[6],entry[7],entry[8],entry[9])
+            tupleForm=tuple(entry)
+            outString=format%tupleForm
             output.append(outString)
         return output
     #End createSummaryStructure method
@@ -1537,7 +1544,7 @@ class candidateList:
         outRoot,outExt=os.path.splitext(sourceFile)
         outFile=outRoot+'.summary'
         fp=open(outFile,'w')
-        key="# GPSstart Duration Fstart Fstop Fband Tbright Fbright AvgBright StdDevBright CL IP\n"
+        key="# GPSstart\t Duration\t StartF\t Bandwidth\t GPSBright\t FBright\t PBright\t MeanP\t StdP\t CL\t IP\n"
         fp.write(key)
         for entry in self.createSummaryStructure():
             fp.write(entry)
