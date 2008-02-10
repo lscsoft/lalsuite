@@ -711,10 +711,10 @@ class tracksearchThresholdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.add_condor_cmd('should_transfer_files','yes')
         self.add_condor_cmd('when_to_transfer_output','on_exit')
         self.add_condor_cmd('transfer_input_files',self.candUtil)
-        #self.add_input_file(self.candUtil)
+        self.add_condor_cmd('initialdir',self.initialDir)
         #Setp escaping possible quotes in threshold string!
-        if cp.has_option('candidatethreshold','expression_threshold'):
-            newVal=val=cp.get('candidatethreshold','expression_threshold')
+        if cp.has_option('candidatethreshold','expression-threshold'):
+            newVal=val=cp.get('candidatethreshold','expression-threshold')
             #Introduce proper shell escapes for submit file to work...
             if val.__contains__('"'):
                 newVal=str(val).replace('"','\\"')
