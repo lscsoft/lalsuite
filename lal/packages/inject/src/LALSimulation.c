@@ -198,6 +198,9 @@ REAL8TimeSeries * XLALSimDetectorStrainREAL8TimeSeries( REAL8TimeSeries *hplus, 
  * Antenna response factors are computed sample-by-sample, but waveform is
  * not Doppler corrected or otherwise re-interpolated to account for
  * detector motion.
+ *
+ * The output time series units are the same as the two input time series
+ * (which must both have the same sample units).
  */
 
 
@@ -269,7 +272,7 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
  * response).
  *
  * This function accepts source and target time series whose units are not
- * the same, and allows the time series to be herterodyned (although it
+ * the same, and allows the two time series to be herterodyned (although it
  * currently requires them to have the same heterodyne frequency).
  */
 
