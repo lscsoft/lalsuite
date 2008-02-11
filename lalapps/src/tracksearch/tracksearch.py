@@ -717,8 +717,8 @@ class tracksearchThresholdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         if cp.has_option('candidatethreshold',optionText):
             newVal=val=cp.get('candidatethreshold',optionText)
             #Introduce proper shell escapes for submit file to work...
-            if newVal.__contains__('"'):
-                newVal=str(val).replace('"','\\"')
+            if (newVal.__contains__('"') and not newVal.__contains__('\\')):
+                newVal=str(newVal).replace('"','\\"')
                 cp.set('candidatethreshold',optionText,newVal)
         for sec in ['candidatethreshold']:
                 self.add_ini_opts(cp,sec)
