@@ -608,32 +608,38 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
       /* if no danger of denominator -> 0 */
       if (__builtin_expect((kappa_star > LD_SMALL4) && (kappa_star < 1.0 - LD_SMALL4), (0==0)))
 
+	/* THIS IS DANGEROUS!! It relies on current implementation of COMPLEX8 type!! */
+
 #if (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_AUTOVECT) && FALSE
 
-	/* FIXME: this version still needs to be fixed after switching from 2*DTERMS+1 to 2*DTERMS calc */
 	/* vectorization with common denominator */
-
 	{
-	  UINT4 l,ve;
-	  REAL4 *Xal   = (REAL4*)(Xalpha_l+1);
-	  REAL4 STn[4] = {0.0f, 0.0f, Xalpha_l[0].re, Xalpha_l[0].im};
-	  REAL4 pn[4]  = {kappa_max-1.0f, kappa_max-1.0f, kappa_max-2.0f, kappa_max-2.0f};
-	  REAL4 qn[4]  = {1.0f, 1.0f, kappa_max, kappa_max};
+	  UINT4 l;
+	  UINT4 ve;
+	  REAL4 *Xal   /*esi*/  = (REAL4*)Xalpha_l;
+	  REAL4 STn[4] /*xmm1*/ = {Xal[0],Xal[1],Xal[2],Xal[3]};
+	  REAL4 pn[4]  /*xmm2*/ = {kappa_max, kappa_max, kappa_max-1.0f, kappa_max-1.0f};
+	  REAL4 qn[4]  /*xmm0*/ = {kappa_max, kappa_max, kappa_max-1.0f, kappa_max-1.0f};
 
 	  for ( l = 0; l < DTERMS - 1; l ++ ) {
+	    Xal += 4;
 	    for ( ve = 0; ve < 4; ve++) {
+	      pn[ve] -= 2.0f;
 	      STn[ve] = pn[ve] * STn[ve] + qn[ve] * Xal[ve];
 	      qn[ve] *= pn[ve];
-	      pn[ve] -= 2.0f;
             }
-	    Xal += 4;
-	  }
-	  for ( ve = 0; ve < 4; ve++) {
-	    STn[ve] = pn[ve] * STn[ve] + qn[ve] * Xal[ve];
-	    qn[ve] *= pn[ve];
 	  }
 	  
+	  /* combine the partial sums: */
 	  {
+#ifdef EAH_HOTLOOP_RECIPROCAL
+	    REAL4 reci  = 1.0 / (qn[0] * qn[2]);
+	    REAL4 U_alpha = (STn[0] * qn[2] + STn[2] * qn[0]) * reci;
+	    REAL4 V_alpha = (STn[1] * qn[3] + STn[3] * qn[1]) * reci;
+	    
+	    realXP = s_alpha * U_alpha - c_alpha * V_alpha;
+	    imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
+#else
 	    REAL4 U_alpha, V_alpha;
 
 	    for ( ve = 0; ve < 4; ve++)
@@ -641,7 +647,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
 	    U_alpha = (STn[0] + STn[2]);
 	    V_alpha = (STn[1] + STn[3]);
-
+#endif
 	    realXP = s_alpha * U_alpha - c_alpha * V_alpha;
 	    imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
 	  }
@@ -650,11 +656,10 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 #elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_ALTIVEC)
 
         {
-	  /* THIS IS DANGEROUS!! It relies on current implementation of COMPLEX8 type!! */
 	  REAL4 *Xalpha_kR4 = (REAL4*)(Xalpha_l);
 
-	  float XsumS[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
-	  float aFreq[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
+	  float STn[4] __attribute__ ((aligned (16))); /* aligned for vector output */
+	  float qn[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
 	  /* the vectors actually become registers in the AVUnit */
 	  vector unsigned char perm;      /* permutation pattern for unaligned memory access */
 	  vector float load0, load1, load2;    /* temp registers for unaligned memory access */
@@ -662,11 +667,11 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  vector float XsumV  /* xmm1 */;                            /* sums up the dividend */
 	  vector float zero              = {0,0,0,0};                /* zero vector constant */
 	  vector float four2  /* xmm4 */ = {2,2,2,2};                     /* vector constant */
-	  vector float tFreq  /* xmm2 */ = {((float)(kappa_max)), /* tempFreq (see LALDemod) */
+	  vector float pn     /* xmm2 */ = {((float)(kappa_max)), /* tempFreq (see LALDemod) */
 					    ((float)(kappa_max)),
 					    ((float)(kappa_max - 1)),
 					    ((float)(kappa_max - 1)) };
-	  vector float aFreqV /* xmm0 */ = tFreq;  /* common divisor, initally = 1.0 * tFreq */
+	  vector float qnV /* xmm0 */ = pn;  /* common divisor, initally = 1.0 * pn */
 	  /*    this column above (^) lists the corresponding register in the SSE version */
 
 	  /* init the memory access (load0,load1) and put first Xalpha_k element into Xsum */
@@ -680,10 +685,10 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  perm    = vec_lvsl(0,(Xalpha_kR4+(n)));    /* xmm3 = Xalpha_k[n] */ \
 	  load##b = vec_ld(0,(Xalpha_kR4+(n)+4));    /* ... continued */ \
 	  fdval   = vec_perm(load##a,load##b,perm);  /* ... continued */ \
-	  tFreq   = vec_sub(tFreq,four2);            /* xmm2 -= xmm4 */ \
-	  fdval   = vec_madd(fdval,aFreqV,zero);     /* xmm3 *= xmm0 */ \
-	  aFreqV  = vec_madd(aFreqV,tFreq,zero);     /* xmm0 *= xmm2 */ \
-	  XsumV   = vec_madd(XsumV,tFreq,fdval);     /* xmm1 = xmm1 * xmm0 + xmm3 */
+	  pn      = vec_sub(pn,four2);            /* xmm2 -= xmm4 */ \
+	  fdval   = vec_madd(fdval,qnV,zero);     /* xmm3 *= xmm0 */ \
+	  qnV     = vec_madd(qnV,pn,zero);     /* xmm0 *= xmm2 */ \
+	  XsumV   = vec_madd(XsumV,pn,fdval);     /* xmm1 = xmm1 * xmm0 + xmm3 */
 
 	  /* do the above 7 times using load0-2 for unaligned memory access */
 	  VEC_LOOP_AV( 4,1,2);
@@ -695,17 +700,17 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  VEC_LOOP_AV(28,1,0);
 
 	  /* output the vectors */
-	  vec_st(XsumV,0,XsumS);
-	  vec_st(aFreqV,0,aFreq);
+	  vec_st(XsumV,0,STn);
+	  vec_st(qnV,0,qn);
 
 	  /* conbine the partial sums: */
 	  {
-	    REAL8 combAF  = 1.0 / (aFreq[0] * aFreq[2]);
-	    REAL4 XRes = (XsumS[0] * aFreq[2] + XsumS[2] * aFreq[0]) * combAF;
-	    REAL4 XIms = (XsumS[1] * aFreq[3] + XsumS[3] * aFreq[1]) * combAF;
+	    REAL8 reci  = 1.0 / (qn[0] * qn[2]);
+	    REAL4 U_alpha = (STn[0] * qn[2] + STn[2] * qn[0]) * reci;
+	    REAL4 V_alpha = (STn[1] * qn[3] + STn[3] * qn[1]) * reci;
 	    
-	    realXP = s_alpha * XRes - c_alpha * XIms;
-	    imagXP = c_alpha * XRes + s_alpha * XIms;
+	    realXP = s_alpha * U_alpha - c_alpha * V_alpha;
+	    imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
 	  }
 	}
 
@@ -1133,6 +1138,10 @@ static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 
   union {
     REAL8 asreal;
     INT8  asint;
+    struct {
+      INT4 high;
+      INT4 low;
+    } as2int;
   } ux;
   
   static const REAL4* cosbase = sincosLUTbase + (SINCOS_LUT_RES/4);
@@ -1151,10 +1160,14 @@ static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 
 #if EAH_SINCOS_F2IBITS == EAH_SINCOS_F2IBITS_MEMCPY
   REAL8 asreal = x + SINCOS_ADDS;
   memcpy(&(ix), &asreal, sizeof(ix));
-#else
+#else /* EAH_SINCOS_F2IBITS_MEMCPY */
   ux.asreal = x + SINCOS_ADDS;
-  ix = (INT4) ux.asint;
-#endif
+#ifdef __BIG_ENDIAN__
+  ix = ux.as2int.low;
+#else /* BIG_ENDIAN */
+  ix = ux.as2int.high;
+#endif /* BIG_ENDIAN */
+#endif /* EAH_SINCOS_F2IBITS_MEMCPY */
 
   i  = ix & SINCOS_MASK1;
   n  = ix & SINCOS_MASK2;
