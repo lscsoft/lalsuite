@@ -32,8 +32,12 @@ disableGraphics=False
 import numarray
 try:
     import pylab
-except RuntimeError,ImportError:
+except Exception, errorInfo: #RuntimeError,ImportError:
     disableGraphics=True
+    sys.stderr.write("Error trying to import pylab!\n")
+    sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
+    sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
+    sys.stderr.write("Pylab functionality unavailable!\n")
 
 """
 This file provides the class and methods needed to process candidate
@@ -1804,6 +1808,7 @@ class candidateList:
                 [fullpath,extension]=os.path.splitext(self.filename[0])
                 filename=os.path.basename(fullpath)+'_histogram.png'
             pylab.savefig(filename)
+            pylab.close()
     #End showHistogram
 
 
@@ -1969,7 +1974,17 @@ class candidateList:
         for entry in triggers:
             histList.append([entry[10],entry[0]])
             powList.append(entry[10])
-        [entries,bins,patches]=pylab.hist(powList,colCount,bottom=1,log=True)
+        try:
+            [entries,bins,patches]=pylab.hist(powList,colCount,bottom=1,log=True)
+        except:
+            sys.stderr.writelines('Error trying to create log scale histogram.\n')
+            sys.stderr.writelines('Using restricted linear scale instead.\n')
+            sys.stderr.flush()
+            pylab.close()
+            pylab.figure()
+            [entries,bins,patches]=pylab.hist(powList,colCount)
+            #pylab.semilogy(bins,entries)
+            #pylab.plot(bins,entries)
         if statReport:
             return [entries,bins,patches]
     # END __triggerHistogramPrimative__():
