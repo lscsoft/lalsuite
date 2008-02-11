@@ -67,6 +67,7 @@ def parse_command_line():
 		usage = "%prog [options] --distribution-segments segments_file cache_file ...",
 		description = "Constructs the likelihood-ratio based coincidence stage for an excess power analysis.  The input consists of one or more LAL caches listing the sqlite database trigger files, and a list of segments giving the time intervals that should be considered to be independent.  The LAL caches list all trigger files together, that is injections, time slides, and zero-lag.  The individual trigger files are self-describing, so the analysis codes can autodetect their type.  Each segment will be analyzed using the files that intersect it:  the likelihood ratios will be constructed from the injections and time-lag triggers contained in files that intersect the segment, and that data used to assign likelihoods to the injections, time-lag, and zero-lag coincs in all files that intersect the same segment."
 	)
+	parser.add_option("--apply-to", metavar = "filename", action = "append", default = [], help = "Apply likelihood ratio data to the trigger files listed in this LAL cache.  The files in this cache are treated identically to the files in the main caches except that they are not included in the first pass, when the likelihood ratio functions are measured.")
 	parser.add_option("--condor-log-dir", metavar = "path", default = ".", help = "Set the directory for Condor log files (default = \".\").")
 	parser.add_option("--config-file", metavar = "filename", default = "power.ini", help = "Set .ini configuration file name (default = \"power.ini\").")
 	parser.add_option("--distribution-segments", metavar = "filename", help = "Read boundaries for distribution data intervals from this segwizard format segments file. (required)")
@@ -127,6 +128,11 @@ for filename in filenames:
 	if options.verbose:
 		print >>sys.stderr, "reading %s ..." % filename
 	input_cache += map(CacheEntry, file(filename))
+output_cache = list(input_cache)
+for filename in options.apply_to:
+	if options.verbose:
+		print >>sys.stderr, "reading %s ..." % filename
+	output_cache += map(CacheEntry, file(filename))
 if options.verbose:
 	print >>sys.stderr, "reading %s ..." % options.distribution_segments
 distribution_segments = segmentsUtils.fromsegwizard(file(options.distribution_segments), coltype = LIGOTimeGPS)
@@ -175,7 +181,7 @@ for cache_entry in [cache_entry for node in nodes for cache_entry in node.get_ou
 #
 
 
-nodes = power.make_burca2_fragment(dag, nodes, input_cache, "LIKELIHOOD")
+nodes = power.make_burca2_fragment(dag, nodes, output_cache, "LIKELIHOOD")
 
 
 #
