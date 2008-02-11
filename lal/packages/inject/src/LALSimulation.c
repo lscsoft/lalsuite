@@ -51,6 +51,11 @@
  */
 
 
+/*
+ * Note:  this function will round really really large numbers "up" to 0.
+ */
+
+
 static unsigned long round_up_to_power_of_two(unsigned long x)
 {
 	unsigned n;
@@ -166,112 +171,6 @@ REAL8TimeSeries * XLALSimDetectorStrainREAL8TimeSeries( REAL8TimeSeries *hplus, 
 }
 
 
-REAL8TimeSeries * XLALSimInjectionREAL8TimeSeries( REAL8TimeSeries *h, LIGOTimeGPS *start, REAL8 deltaT, UINT4 length, COMPLEX16FrequencySeries *response )
-{
-	static const char *func = "XLALSimInjectionREAL8TimeSeries";
-
-	REAL8TimeSeries *injection;
-	COMPLEX16FrequencySeries *injtilde;
-	REAL8FFTPlan *plan;
-	REAL8 injdur = length * deltaT;
-	REAL8 sigdur = h->data->length * h->deltaT;
-	REAL8 dt;
-	UINT4 newlength;
-	UINT4 j;
-	UINT4 k;
-
-	/* cannot presently support different sample rates */
-	if ( deltaT != h->deltaT )
-		XLAL_ERROR_NULL( func, XLAL_EINVAL );
-
-	injection = XLALCreateREAL8TimeSeries( "INJECTION", start, h->f0, deltaT, &lalStrainUnit, length );
-	memset( injection->data->data, 0, injection->data->length*sizeof(*injection->data->data) );
-
-	dt = XLALGPSDiff( &h->epoch, start );
-	/* if signal starts after the injection period or
-	 * if the signal ends before the injection period
-	 * just return an empty injection */
-	if ( dt > injdur || dt < -sigdur ) {
-		if ( response )
-			XLALUnitMultiply( &injection->sampleUnits, &injection->sampleUnits, &response->sampleUnits );
-		return injection;
-	}
-
-	/* minimum duration is twice signal duration plus a padding
-	 * of one second to take care of possible wrap-around corruption */
-	newlength = length;
-	if ( injdur < sigdur )
-		newlength = (2.0*sigdur + 1.0)/deltaT;
-	else
-		newlength = (injdur + sigdur + 1.0)/deltaT;
-	/* for efficiency sake, make sure newlength is a power of two */
-	/* newlength = pow( 2, ceil( log(newlength)/log(2) ) ); */
-	if ( ((newlength - 1) & newlength) ) { /* if statment not necessary */
-		/* note: this doesn't work for values greater than 2147483648 */
-		--newlength;
-		newlength |= (newlength >> 1);
-		newlength |= (newlength >> 2);
-		newlength |= (newlength >> 4);
-		newlength |= (newlength >> 8);
-		newlength |= (newlength >> 16);
-		++newlength;
-	}
-
-	XLALResizeREAL8TimeSeries( injection, 0, newlength );
-
-	/* copy signal to beginning of injection */
-	for ( j = 0; j < h->data->length; ++j )
-		injection->data->data[j] = h->data->data[j];
-
-	/* put injection into frequency domain and apply delay correction
-	 * and response function, if necessary */
-
-	injtilde = XLALCreateCOMPLEX16FrequencySeries( "INJTILDE", start, 0.0, 1.0/(newlength * deltaT), &lalDimensionlessUnit, newlength/2 + 1 );
-
-	plan = XLALCreateForwardREAL8FFTPlan( newlength, 0 );
-	XLALREAL8TimeFreqFFT( injtilde, injection, plan );
-	XLALDestroyREAL8FFTPlan( plan );
-
-
-	/* eliminate DC and Nyquist components and apply phase correction for
-	 * time delay as well as response function */
-	injtilde->data->data[0] = LAL_COMPLEX16_ZERO;
-	injtilde->data->data[injtilde->data->length-1] = LAL_COMPLEX16_ZERO;
-	for ( k = 1; k < injtilde->data->length - 1; ++k ) {
-		COMPLEX16 fac;
-		REAL8 f = k * injtilde->deltaF;
-		REAL8 phi = -LAL_TWOPI * f * dt;
-		fac = LAL_CMUL_REAL( LAL_COMPLEX16_I, phi );
-		fac = LAL_CEXP( fac );
-		if ( response ) {
-			UINT4 k2 = floor( 0.5 + f / response->deltaF );
-			if ( k2 > response->data->length )
-				k2 = response->data->length;
-			if ( LAL_COMPLEX_EQ( response->data->data[k2], LAL_COMPLEX16_ZERO ) )
-				fac = LAL_COMPLEX16_ZERO;
-			else
-				fac = LAL_CDIV( fac, response->data->data[k2] );
-		}
-		injtilde->data->data[k] = LAL_CMUL( injtilde->data->data[k], fac );
-	}
-
-	plan = XLALCreateReverseREAL8FFTPlan( newlength, 0 );
-	XLALREAL8FreqTimeFFT( injection, injtilde, plan );
-	XLALDestroyREAL8FFTPlan( plan );
-
-	XLALDestroyCOMPLEX16FrequencySeries( injtilde );
-
-	XLALResizeREAL8TimeSeries( injection, 0, length );
-
-	/* TODO: for some reason, response doesn't have correct units.
-	if ( response )
-		XLALUnitDivide( &injection->sampleUnits, &injection->sampleUnits, &response->sampleUnits );
-	*/
-
-	return injection;
-}
-
-
 #else	/* KIPPSPROPOSAL */
 
 
@@ -281,9 +180,9 @@ REAL8TimeSeries * XLALSimInjectionREAL8TimeSeries( REAL8TimeSeries *h, LIGOTimeG
  * - h+ and hx time series for the injection with t = 0 interpreted to be
  *   the "time" of the injection,
  *
- * - the right ascension and declination of the source,
+ * - the right ascension and declination of the source in radians.
  *
- * - the orientation of the wave co-ordinate system,
+ * - the orientation of the wave co-ordinate system, psi, in radians.
  *
  * - the detector into which the injection is destined to be injected,
  *
@@ -328,7 +227,7 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 	/* allocate output time series.  epoch = injection "time" at
 	 * geocentre */
 
-	h = XLALCreateREAL8TimeSeries(name, injection_time_at_geocentre, hplus->f0, hplus->deltaT, &lalStrainUnit, hplus->data->length);
+	h = XLALCreateREAL8TimeSeries(name, injection_time_at_geocentre, hplus->f0, hplus->deltaT, &hplus->sampleUnits, hplus->data->length);
 	if(!h)
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
@@ -341,11 +240,11 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 	/* project + and x time series onto detector */
 
 	for(i = 0; i < h->data->length; i++) {
-		LIGOTimeGPS epoch = h->epoch;
+		LIGOTimeGPS t = h->epoch;
 		double fplus, fcross;
 
-		XLALGPSAdd(&epoch, i * h->deltaT);
-		XLALComputeDetAMResponse(&fplus, &fcross, detector->response, right_ascension, declination, psi, XLALGreenwichMeanSiderealTime(&epoch));
+		XLALGPSAdd(&t, i * h->deltaT);
+		XLALComputeDetAMResponse(&fplus, &fcross, detector->response, right_ascension, declination, psi, XLALGreenwichMeanSiderealTime(&t));
 
 		h->data->data[i] = fplus * hplus->data->data[i] + fcross * hcross->data->data[i];
 	}
@@ -354,6 +253,9 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 
 	return h;
 }
+
+
+#endif	/* KIPPSPROPOSAL */
 
 
 /**
@@ -365,49 +267,78 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
  * source time series is modified in place by this function.  Passing NULL
  * for the response function turns this feature off (i.e., uses a unit
  * response).
+ *
+ * This function accepts source and target time series whose units are not
+ * the same, and allows the time series to be herterodyned (although it
+ * currently requires them to have the same heterodyne frequency).
  */
 
 
-int XLALAddInjectionREAL8TimeSeries(
+int XLALSimAddInjectionREAL8TimeSeries(
 	REAL8TimeSeries *target,
 	REAL8TimeSeries *h,
 	const COMPLEX16FrequencySeries *response
 )
 {
-	static const char func[] = "XLALAddInjectionREAL8TimeSeries";
+	static const char func[] = "XLALSimAddInjectionREAL8TimeSeries";
 	COMPLEX16FrequencySeries *tilde_h;
 	REAL8FFTPlan *plan;
+	/* the source time series is padded with at least this many 0's at
+	 * the start and end before re-interpolation in an attempt to
+	 * suppress aperiodicity artifacts, and 1/2 this many samples is
+	 * clipped from the start and end afterwards */
+	const unsigned aperiodicity_suppression_buffer = 32768;
 	unsigned i;
-	long start_sample_int;
+	double start_sample_int;
 	double start_sample_frac;
 
 	/* check input */
 
-	if(h->deltaT != target->deltaT || h->f0 != target->f0)
+	/* FIXME:  since we route the source time series through the
+	 * frequency domain, it might not be hard to adjust the heterodyne
+	 * frequency and sample rate to match the target time series
+	 * instead of making it an error if they don't match. */
+
+	if(h->deltaT != target->deltaT || h->f0 != target->f0) {
+		XLALPrintError("%s(): error: input sample rates or heterodyne frequencies do not match\n", func);
 		XLAL_ERROR(func, XLAL_EINVAL);
+	}
 
-	/* extend the injection time series by (at least) 1 second of 0s in
-	 * both directions with the hope that this suppresses
-	 * (a)periodicity artifacts sufficiently.  for efficiency's sake,
-	 * make sure the new length is a power of two */
+	/* extend the source time series by adding the "aperiodicity
+	 * padding" to the start and end.  for efficiency's sake, make sure
+	 * the new length is a power of two. */
 
-	i = round_up_to_power_of_two(h->data->length + 2.0 / h->deltaT) - h->data->length;
+	i = round_up_to_power_of_two(h->data->length + 2 * aperiodicity_suppression_buffer);
+	if(i < h->data->length) {
+		/* integer overflow */
+		XLALPrintError("%s(): error: source time series too long\n", func);
+		XLAL_ERROR(func, XLAL_EBADLEN);
+	}
+	i -= h->data->length;
 	if(!XLALResizeREAL8TimeSeries(h, -(int) (i / 2), h->data->length + i))
 		XLAL_ERROR(func, XLAL_EFUNC);
 
 	/* compute the integer and fractional parts of the sample index in
-	 * the target time series on which the injection time series
-	 * begins.  the fractional part is always positive, e.g. -3.5 -->
-	 * -4 + 0.5.  the integer part will be used to set a new epoch and
-	 * the fractional part used to re-interpolate the injection */
+	 * the target time series on which the source time series begins.
+	 * modf() returns integer and fractional parts that have the same
+	 * sign, e.g. -3.9 --> -3 + -0.9.  we adjust these so that the
+	 * magnitude of the fractional part is not greater than 0.5, e.g.
+	 * -3.9 --> -4 + 0.1, so that we never do more than 1/2 a sample of
+	 * re-interpolation.  I don't know if really makes any difference,
+	 * though */
 
-	start_sample_frac = XLALGPSDiff(&h->epoch, &target->epoch) / target->deltaT;
-	start_sample_int = floor(start_sample_frac);
-	start_sample_frac -= start_sample_int;
+	start_sample_frac = modf(XLALGPSDiff(&h->epoch, &target->epoch) / target->deltaT, &start_sample_int);
+	if(start_sample_frac < -0.5) {
+		start_sample_frac += 1.0;
+		start_sample_int -= 1.0;
+	} else if(start_sample_frac > +0.5) {
+		start_sample_frac -= 1.0;
+		start_sample_int += 1.0;
+	}
 
-	/* transform injection to frequency domain.  the FFT function
-	 * populates the frequency series' metadata with the appropirate
-	 * values. */
+	/* transform source time series to frequency domain.  the FFT
+	 * function populates the frequency series' metadata with the
+	 * appropriate values. */
 
 	tilde_h = XLALCreateCOMPLEX16FrequencySeries(NULL, &h->epoch, 0, 0, &lalDimensionlessUnit, h->data->length / 2 + 1);
 	plan = XLALCreateForwardREAL8FFTPlan(h->data->length, 0);
@@ -423,22 +354,37 @@ int XLALAddInjectionREAL8TimeSeries(
 		XLAL_ERROR(func, XLAL_EFUNC);
 	}
 
-	/* apply delay correction and optional response function */
+	/* apply sub-sample time correction and optional response function
+	 * */
 
 	for(i = 0; i < tilde_h->data->length; i++) {
 		const double f = tilde_h->f0 + i * tilde_h->deltaF;
 		COMPLEX16 fac;
 
-		/* phase for time delay */
+		/* phase for sub-sample time correction */
 
 		fac = LAL_CEXP(LAL_CMUL_REAL(LAL_COMPLEX16_I, -LAL_TWOPI * f * start_sample_frac * target->deltaT));
 
-		/* response function */
+		/* divide the source by the response function.  if a
+		 * frequency is required that lies outside the domain of
+		 * definition of the response function, then the response
+		 * is assumed equal to its value at the nearest edge of the
+		 * domain of definition.  within the domain of definition,
+		 * frequencies are rounded to the nearest bin.  if the
+		 * response function is zero in some bin, then the source
+		 * data is zeroed in that bin (instead of dividing by 0).
+		 * */
+
+		/* FIXME:  should we use GSL to construct an interpolator
+		 * for the modulus and phase as functions of frequency, and
+		 * use that to evaluate the response? */
 
 		if(response) {
-			unsigned j = (f < response->f0) ? 0 : floor((f - response->f0) / response->deltaF + 0.5);
-			if(j > response->data->length)
-				j = response->data->length;
+			int j = floor((f - response->f0) / response->deltaF + 0.5);
+			if(j < 0)
+				j = 0;
+			else if((unsigned) j > response->data->length - 1)
+				j = response->data->length - 1;
 			if(LAL_COMPLEX_EQ(response->data->data[j], LAL_COMPLEX16_ZERO))
 				fac = LAL_COMPLEX16_ZERO;
 			else
@@ -452,7 +398,9 @@ int XLALAddInjectionREAL8TimeSeries(
 
 	/* zero DC and Nyquist components */
 
-	if(tilde_h->f0 == 0)
+	/* FIXME:  why is this done? */
+
+	if(tilde_h->f0 == 0.0)
 		tilde_h->data->data[0] = LAL_COMPLEX16_ZERO;
 	tilde_h->data->data[tilde_h->data->length - 1] = LAL_COMPLEX16_ZERO;
 
@@ -469,26 +417,33 @@ int XLALAddInjectionREAL8TimeSeries(
 	if(i)
 		XLAL_ERROR(func, XLAL_EFUNC);
 
-	/* the deltaT can get corrupted by floating point round-off during
-	 * its trip through the frequency domain.  since this function
-	 * starts by confirming that the sample rate of the injection
+	/* the deltaT can get "corrupted" by floating point round-off
+	 * during its trip through the frequency domain.  since this
+	 * function starts by confirming that the sample rate of the source
 	 * matches that of the target time series, we can use the target
-	 * series' sample rate to reset the injection's sample rate to its
-	 * original value.  but do a check to make sure we're not masking a
-	 * real bug */
+	 * series' sample rate to reset the source's sample rate to its
+	 * original value.  but we do a check to make sure we're not
+	 * masking a real bug */
 
-	if(fabs(h->deltaT - target->deltaT) / h->deltaT > 1e-12) {
-		XLALPrintError("sample rate mismatch");
+	if(fabs(h->deltaT - target->deltaT) / target->deltaT > 1e-12) {
+		XLALPrintError("%s(): error: oops, internal sample rate mismatch\n", func);
 		XLAL_ERROR(func, XLAL_EERR);
 	}
 	h->deltaT = target->deltaT;
 
-	/* set epoch from integer sample offset */
+	/* set source epoch from target epoch and integer sample offset */
 
 	h->epoch = target->epoch;
 	XLALGPSAdd(&h->epoch, start_sample_int * target->deltaT);
 
-	/* add to target time series */
+	/* clip half of the "aperiodicity padding" from the start and end
+	 * of the source time series in a continuing effort to suppress
+	 * aperiodicity artifacts. */
+
+	if(!XLALResizeREAL8TimeSeries(h, aperiodicity_suppression_buffer / 2, h->data->length - aperiodicity_suppression_buffer))
+		XLAL_ERROR(func, XLAL_EFUNC);
+
+	/* add source time series to target time series */
 
 	if(!XLALAddREAL8TimeSeries(target, h))
 		XLAL_ERROR(func, XLAL_EFUNC);
@@ -497,5 +452,3 @@ int XLALAddInjectionREAL8TimeSeries(
 
 	return 0;
 }
-
-#endif	/* KIPPSPROPOSAL */

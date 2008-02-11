@@ -104,7 +104,7 @@ int XLALGenerateSimBurst(
 			XLAL_ERROR(func, XLAL_EFUNC);
 	} else {
 		/* unrecognized waveform */
-		XLALPrintError("%s(): unrecognized waveform\n");
+		XLALPrintError("%s(): error: unrecognized waveform\n");
 		XLAL_ERROR(func, XLAL_EINVAL);
 	}
 
@@ -149,7 +149,7 @@ int XLALBurstInjectSignals(
 		}
 	}
 	if(i >= LAL_NUM_DETECTORS) {
-		XLALPrintError("%s(): can't identify instrument from channel '%s'", func, series->name);
+		XLALPrintError("%s(): error: can't identify instrument from channel '%s'", func, series->name);
 		XLAL_ERROR(func, XLAL_EDATA);
 	}
 	XLALPrintInfo("%s(): channel name is '%s', instrument appears to be '%s'", func, series->name, detector.frDetector.prefix);
@@ -169,9 +169,8 @@ int XLALBurstInjectSignals(
 		if(XLALGenerateSimBurst(&hplus, &hcross, sim_burst, series->deltaT))
 			XLAL_ERROR(func, XLAL_EFUNC);
 
-		/* project the wave strain onto the detector's response
-		 * tensor to produce the injection strain as seen in the
-		 * detector. */
+		/* project the wave onto the detector to produce the strain
+		 * in the detector. */
 
 		h = XLALSimDetectorStrainREAL8TimeSeries(hplus, hcross, sim_burst->ra, sim_burst->dec, sim_burst->psi, &detector, &sim_burst->time_geocent_gps);
 		XLALDestroyREAL8TimeSeries(hplus);
@@ -182,12 +181,14 @@ int XLALBurstInjectSignals(
 		/* add the injection strain time series to the detector
 		 * data */
 
-		if(XLALAddInjectionREAL8TimeSeries(series, h, response)) {
+		if(XLALSimAddInjectionREAL8TimeSeries(series, h, response)) {
 			XLALDestroyREAL8TimeSeries(h);
 			XLAL_ERROR(func, XLAL_EFUNC);
 		}
 		XLALDestroyREAL8TimeSeries(h);
 	}
+
+	/* done */
 
 	return 0;
 }
