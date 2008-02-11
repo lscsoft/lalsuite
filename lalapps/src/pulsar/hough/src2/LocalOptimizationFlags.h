@@ -43,7 +43,7 @@
 #define EAH_HOUGH_ASS       EAH_HOUGH_ASS_NONE
 
 #elif EAH_OPTIMIZATION == 2 /* AltiVec Code (currently not working) */
-#define EAH_SINCOS_VARIANT  EAH_SINCOS_VARIANT_LAL
+#define EAH_SINCOS_VARIANT  EAH_SINCOS_VARIANT_LINEAR
 #define EAH_SINCOS_ROUND    EAH_SINCOS_ROUND_FLOOR
 #define EAH_HOTLOOP_VARIANT EAH_HOTLOOP_VARIANT_ALTIVEC
 #define EAH_HOUGH_PREFETCH  EAH_HOUGH_PREFETCH_DIRECT /* should be somethig similar to ASS, but isn't there yet */
@@ -64,7 +64,6 @@
 #define EAH_HOUGH_ASS       EAH_HOUGH_ASS_X87
 
 #endif /* EAH_OPTIMIZATION == */
-
 
 /* defaults - if they haven't been set special, set them to GENERIC */
 #ifndef EAH_SINCOS_VARIANT
