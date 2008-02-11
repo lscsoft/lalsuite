@@ -689,7 +689,7 @@ static SimBurst *random_galactic_core(double minf, double maxf, double minband, 
 
 	/* energy */
 
-	sim_burst->egw_over_rsquared = ran_flat_log(rng, minEoverr2, maxEoverr2) * pow(sim_burst->frequency / 100.0, 3.0);
+	sim_burst->egw_over_rsquared = ran_flat_log(rng, minEoverr2, maxEoverr2) * pow(sim_burst->frequency / 100.0, 4.0);
 
 	/* populate the hrss column for convenience later */
 	/* FIXME:  sample rate is hard-coded to 8192 Hz, which is what the
