@@ -608,113 +608,17 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
       /* if no danger of denominator -> 0 */
       if (__builtin_expect((kappa_star > LD_SMALL4) && (kappa_star < 1.0 - LD_SMALL4), (0==0)))
 
-	/* THIS IS DANGEROUS!! It relies on current implementation of COMPLEX8 type!! */
+	/* -------- NOTE: to understand the variants, read them in the order:
+	 * - generic  (bottom-most after #else)
+	 * - AUTOVECT (still plain C)
+	 * - ALTIVEC  (uses vector intrinsics)
+	 * - SSE      (Assembler)
+	 * (in the code roughly from bottom to top)
+	*/
 
-#if (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_AUTOVECT) && FALSE
+	/* WARNING: all current optimized loops rely on current implementation of COMPLEX8 type */
 
-	/* vectorization with common denominator */
-	{
-	  UINT4 l;
-	  UINT4 ve;
-	  REAL4 *Xal   /*esi*/  = (REAL4*)Xalpha_l;
-	  REAL4 STn[4] /*xmm1*/ = {Xal[0],Xal[1],Xal[2],Xal[3]};
-	  REAL4 pn[4]  /*xmm2*/ = {kappa_max, kappa_max, kappa_max-1.0f, kappa_max-1.0f};
-	  REAL4 qn[4]  /*xmm0*/ = {kappa_max, kappa_max, kappa_max-1.0f, kappa_max-1.0f};
-
-	  for ( l = 0; l < DTERMS - 1; l ++ ) {
-	    Xal += 4;
-	    for ( ve = 0; ve < 4; ve++) {
-	      pn[ve] -= 2.0f;
-	      STn[ve] = pn[ve] * STn[ve] + qn[ve] * Xal[ve];
-	      qn[ve] *= pn[ve];
-            }
-	  }
-	  
-	  /* combine the partial sums: */
-	  {
-#ifdef EAH_HOTLOOP_RECIPROCAL
-	    REAL4 reci  = 1.0 / (qn[0] * qn[2]);
-	    REAL4 U_alpha = (STn[0] * qn[2] + STn[2] * qn[0]) * reci;
-	    REAL4 V_alpha = (STn[1] * qn[3] + STn[3] * qn[1]) * reci;
-	    
-	    realXP = s_alpha * U_alpha - c_alpha * V_alpha;
-	    imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
-#else
-	    REAL4 U_alpha, V_alpha;
-
-	    for ( ve = 0; ve < 4; ve++)
-	      STn[ve] /= qn[ve];
-
-	    U_alpha = (STn[0] + STn[2]);
-	    V_alpha = (STn[1] + STn[3]);
-#endif
-	    realXP = s_alpha * U_alpha - c_alpha * V_alpha;
-	    imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
-	  }
-	}
-
-#elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_ALTIVEC)
-
-        {
-	  REAL4 *Xalpha_kR4 = (REAL4*)(Xalpha_l);
-
-	  float STn[4] __attribute__ ((aligned (16))); /* aligned for vector output */
-	  float qn[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
-	  /* the vectors actually become registers in the AVUnit */
-	  vector unsigned char perm;      /* permutation pattern for unaligned memory access */
-	  vector float load0, load1, load2;    /* temp registers for unaligned memory access */
-	  vector float fdval  /* xmm3 */;                     /* SFT data loaded from memory */
-	  vector float XsumV  /* xmm1 */;                            /* sums up the dividend */
-	  vector float zero              = {0,0,0,0};                /* zero vector constant */
-	  vector float four2  /* xmm4 */ = {2,2,2,2};                     /* vector constant */
-	  vector float pn     /* xmm2 */ = {((float)(kappa_max)), /* tempFreq (see LALDemod) */
-					    ((float)(kappa_max)),
-					    ((float)(kappa_max - 1)),
-					    ((float)(kappa_max - 1)) };
-	  vector float qnV /* xmm0 */ = pn;  /* common divisor, initally = 1.0 * pn */
-	  /*    this column above (^) lists the corresponding register in the SSE version */
-
-	  /* init the memory access (load0,load1) and put first Xalpha_k element into Xsum */
-	  load0   = vec_ld  (0,(Xalpha_kR4));
-	  perm    = vec_lvsl(0,(Xalpha_kR4));
-	  load1   = vec_ld  (0,(Xalpha_kR4+4));
-	  XsumV   = vec_perm(load0,load1,perm);
-
-	  /* unrolled vectorized version of the Kernel loop */
-#define VEC_LOOP_AV(n,a,b)\
-	  perm    = vec_lvsl(0,(Xalpha_kR4+(n)));    /* xmm3 = Xalpha_k[n] */ \
-	  load##b = vec_ld(0,(Xalpha_kR4+(n)+4));    /* ... continued */ \
-	  fdval   = vec_perm(load##a,load##b,perm);  /* ... continued */ \
-	  pn      = vec_sub(pn,four2);            /* xmm2 -= xmm4 */ \
-	  fdval   = vec_madd(fdval,qnV,zero);     /* xmm3 *= xmm0 */ \
-	  qnV     = vec_madd(qnV,pn,zero);     /* xmm0 *= xmm2 */ \
-	  XsumV   = vec_madd(XsumV,pn,fdval);     /* xmm1 = xmm1 * xmm0 + xmm3 */
-
-	  /* do the above 7 times using load0-2 for unaligned memory access */
-	  VEC_LOOP_AV( 4,1,2);
-	  VEC_LOOP_AV( 8,2,0);
-	  VEC_LOOP_AV(12,0,1);
-	  VEC_LOOP_AV(16,1,2);
-	  VEC_LOOP_AV(20,2,0);
-	  VEC_LOOP_AV(24,0,1);
-	  VEC_LOOP_AV(28,1,0);
-
-	  /* output the vectors */
-	  vec_st(XsumV,0,STn);
-	  vec_st(qnV,0,qn);
-
-	  /* conbine the partial sums: */
-	  {
-	    REAL8 reci  = 1.0 / (qn[0] * qn[2]);
-	    REAL4 U_alpha = (STn[0] * qn[2] + STn[2] * qn[0]) * reci;
-	    REAL4 V_alpha = (STn[1] * qn[3] + STn[3] * qn[1]) * reci;
-	    
-	    realXP = s_alpha * U_alpha - c_alpha * V_alpha;
-	    imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
-	  }
-	}
-
-#elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_SSE)
+#if (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_SSE)
 
 	/** SSE version from Akos */
 
@@ -722,8 +626,12 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
         {
 
           COMPLEX8 XSums __attribute__ ((aligned (16))); /* sums of Xa.re and Xa.im for SSE */
-
 	  REAL4 kappa_m = kappa_max; /* single precision version of kappa_max */
+
+	  REAL4 *Xal   /*esi*/  = (REAL4*)Xalpha_l;
+	  REAL4 STn[4] /*xmm1*/ = {Xal[0],Xal[1],Xal[2],Xal[3]};
+	  REAL4 pn[4]  /*xmm2*/ = {kappa_max, kappa_max, kappa_max-1.0f, kappa_max-1.0f};
+	  REAL4 qn[4]  /*xmm0*/ = {kappa_max, kappa_max, kappa_max-1.0f, kappa_max-1.0f};
 
           /* vector constants */
           /* having these not aligned will crash the assembler code */
@@ -731,6 +639,14 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
           static REAL4 V2222[4] __attribute__ ((aligned (16))) = { 2,2,2,2 };
 
 	  /* hand-coded SSE version from Akos */
+#define VEC_LOOP_AV(a,b)\
+	     "MOVLPS " #a "(%[Xa]),%%xmm3   	\n\t" \
+	     "MOVHPS " #b "(%[Xa]),%%xmm3   	\n\t" \
+	     "SUBPS	%%xmm4,%%xmm2   	\n\t" \
+	     "MULPS	%%xmm0,%%xmm3   	\n\t" \
+	     "MULPS	%%xmm2,%%xmm1   	\n\t" \
+	     "MULPS	%%xmm2,%%xmm0   	\n\t" \
+	     "ADDPS	%%xmm3,%%xmm1   	\n\t"
 
           __asm __volatile
 	    (
@@ -751,68 +667,15 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	     /* xmm2: current denumerator ( counter type ) */
 	     /* xmm3: current numerator ( current Re,Im elements ) */
 	     /* -------------------------------------------------------------------; */
-	     /*  Im3, Re3, Im2, Re2 */
-	     "MOVLPS	16(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y02 X02 */
-	     "MOVHPS	24(%[Xa]),%%xmm3   	\n\t"	/* X3: Y03 X03 Y02 X02 */
-	     "SUBPS	%%xmm4,%%xmm2   	\n\t"	/* X2: C-3 C-3 C-2 C-2 */
-	     "MULPS	%%xmm0,%%xmm3   	\n\t"	/* X3: Xnew*Ccol */
-	     "MULPS	%%xmm2,%%xmm1   	\n\t"	/* X1: Xold*Cnew */
-	     "MULPS	%%xmm2,%%xmm0   	\n\t"	/* X0: Ccol=Ccol*Cnew */
-	     "ADDPS	%%xmm3,%%xmm1   	\n\t"	/* X1: Xold=Xold*Cnew+Xnew*Ccol */
-	     /* -------------------------------------------------------------------; */
-	     /*  Im5, Re5, Im4, Re4 */
-	     "MOVLPS	32(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y04 X04 */
-	     "MOVHPS	40(%[Xa]),%%xmm3   	\n\t"	/* X3: Y05 X05 Y04 X04 */
-	     "SUBPS	%%xmm4,%%xmm2   	\n\t"	/* X2: C-5 C-5 C-4 C-4 */
-	     "MULPS	%%xmm0,%%xmm3   	\n\t"	/* X3: Xnew*Ccol */
-	     "MULPS	%%xmm2,%%xmm1   	\n\t"	/* X1: Xold*Cnew */
-	     "MULPS	%%xmm2,%%xmm0   	\n\t"	/* X0: Ccol=Ccol*Cnew */
-	     "ADDPS	%%xmm3,%%xmm1   	\n\t"	/* X1: Xold=Xold*Cnew+Xnew*Ccol */
-	     /* -------------------------------------------------------------------; */
-	     /*  Im7, Re7, Im6, Re6 */
-	     "MOVLPS	48(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y06 X06 */
-	     "MOVHPS	56(%[Xa]),%%xmm3   	\n\t"	/* X3: Y07 X07 Y06 X06 */
-	     "SUBPS	%%xmm4,%%xmm2   	\n\t"	/* X2: C-7 C-7 C-6 C-6 */
-	     "MULPS	%%xmm0,%%xmm3   	\n\t"	/* X3: Xnew*Ccol */
-	     "MULPS	%%xmm2,%%xmm1   	\n\t"	/* X1: Xold*Cnew */
-	     "MULPS	%%xmm2,%%xmm0   	\n\t"	/* X0: Ccol=Ccol*Cnew */
-	     "ADDPS	%%xmm3,%%xmm1   	\n\t"	/* X1: Xold=Xold*Cnew+Xnew*Ccol */
-	     /* -------------------------------------------------------------------; */
-	     /*  Im9, Re9, Im8, Re8 */
-	     "MOVLPS	64(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y08 X08 */
-	     "MOVHPS	72(%[Xa]),%%xmm3   	\n\t"	/* X3: Y09 X09 Y08 X08 */
-	     "SUBPS	%%xmm4,%%xmm2   	\n\t"	/* X2: C-9 C-9 C-8 C-8 */
-	     "MULPS	%%xmm0,%%xmm3   	\n\t"	/* X3: Xnew*Ccol */
-	     "MULPS	%%xmm2,%%xmm1   	\n\t"	/* X1: Xold*Cnew */
-	     "MULPS	%%xmm2,%%xmm0   	\n\t"	/* X0: Ccol=Ccol*Cnew */
-	     "ADDPS	%%xmm3,%%xmm1   	\n\t"	/* X1: Xold=Xold*Cnew+Xnew*Ccol */
-	     /* -------------------------------------------------------------------; */
-	     /*  Im11, Re11, Im10, Re10 */
-	     "MOVLPS	80(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y10 X10 */
-	     "MOVHPS	88(%[Xa]),%%xmm3   	\n\t"	/* X3: Y11 X11 Y10 X10 */
-	     "SUBPS	%%xmm4,%%xmm2   	\n\t"	/* X2: C11 C11 C10 C10 */
-	     "MULPS	%%xmm0,%%xmm3   	\n\t"	/* X3: Xnew*Ccol */
-	     "MULPS	%%xmm2,%%xmm1   	\n\t"	/* X1: Xold*Cnew */
-	     "MULPS	%%xmm2,%%xmm0   	\n\t"	/* X0: Ccol=Ccol*Cnew */
-	     "ADDPS	%%xmm3,%%xmm1   	\n\t"	/* X1: Xold=Xold*Cnew+Xnew*Ccol */
-	     /* -------------------------------------------------------------------; */
-	     /*  Im13, Re13, Im12, Re12 */
-	     "MOVLPS	96(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y12 X12 */
-	     "MOVHPS	104(%[Xa]),%%xmm3   	\n\t"	/* X3: Y13 X13 Y12 X12 */
-	     "SUBPS	%%xmm4,%%xmm2   	\n\t"	/* X2: C13 C13 C12 C12 */
-	     "MULPS	%%xmm0,%%xmm3   	\n\t"	/* X3: Xnew*Ccol */
-	     "MULPS	%%xmm2,%%xmm1   	\n\t"	/* X1: Xold*Cnew */
-	     "MULPS	%%xmm2,%%xmm0   	\n\t"	/* X0: Ccol=Ccol*Cnew */
-	     "ADDPS	%%xmm3,%%xmm1   	\n\t"	/* X1: Xold=Xold*Cnew+Xnew*Ccol */
-	     /* -------------------------------------------------------------------; */
-	     /*  Im15, Re15, Im14, Re14 */
-	     "MOVLPS	112(%[Xa]),%%xmm3   	\n\t"	/* X3:  -   -  Y14 X14 */
-	     "MOVHPS	120(%[Xa]),%%xmm3   	\n\t"	/* X3: Y15 X15 Y14 X14 */
-	     "SUBPS	%%xmm4,%%xmm2   	\n\t"	/* X2: C15 C15 C14 C14 */
-	     "MULPS	%%xmm0,%%xmm3   	\n\t"	/* X3: Xnew*Ccol */
-	     "MULPS	%%xmm2,%%xmm1   	\n\t"	/* X1: Xold*Cnew */
-	     "MULPS	%%xmm2,%%xmm0   	\n\t"	/* X0: Ccol=Ccol*Cnew */
-	     "ADDPS	%%xmm3,%%xmm1   	\n\t"	/* X1: Xold=Xold*Cnew+Xnew*Ccol */
+
+	     VEC_LOOP_AV(16,24)
+	     VEC_LOOP_AV(32,40)
+	     VEC_LOOP_AV(48,56)
+	     VEC_LOOP_AV(64,72)
+	     VEC_LOOP_AV(80,88)
+	     VEC_LOOP_AV(96,104)
+	     VEC_LOOP_AV(112,120)
+
 	     /* -------------------------------------------------------------------; */
 	     /* Four divisions at once ( two for real parts and two for imaginary parts ) */
 	     "DIVPS	%%xmm0,%%xmm1   	\n\t"	/* X1: Y0G X0G Y1F X1F */
@@ -952,7 +815,114 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	}
 #endif
 
-#else /* EAH_HOTLLOP_VARIANT */
+#elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_ALTIVEC)
+
+        {
+	  REAL4 *Xalpha_kR4 = (REAL4*)(Xalpha_l);
+
+	  float STn[4] __attribute__ ((aligned (16))); /* aligned for vector output */
+	  float qn[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
+	  /* the vectors actually become registers in the AVUnit */
+	  vector unsigned char perm;      /* permutation pattern for unaligned memory access */
+	  vector float load0, load1, load2;    /* temp registers for unaligned memory access */
+	  vector float XaiV   /* xmm3 */;                     /* SFT data loaded from memory */
+	  vector float STnV   /* xmm1 */;                            /* sums up the dividend */
+	  vector float V0000             = {0,0,0,0};                /* zero vector constant */
+	  vector float V2222  /* xmm4 */ = {2,2,2,2};                     /* vector constant */
+	  vector float pnV    /* xmm2 */ = {((float)(kappa_max)),
+					    ((float)(kappa_max)),
+					    ((float)(kappa_max - 1)),
+					    ((float)(kappa_max - 1)) };
+	  vector float qnV    /* xmm0 */ = pnV;  /* common divisor, initally = 1.0 * pnV */
+	  /*    this column above (^) lists the corresponding register in the SSE version */
+
+	  /* unrolled vectorized version of the Kernel loop */
+#define VEC_LOOP_AV(n,a,b)\
+	  perm    = vec_lvsl(0,(Xalpha_kR4+(n)));    /* xmm3 = Xalpha_k[n] */ \
+	  load##b = vec_ld(0,(Xalpha_kR4+(n)+4));    /* ... continued */ \
+	  XaiV    = vec_perm(load##a,load##b,perm);  /* ... continued */ \
+	  pnV     = vec_sub(pnV,V2222);              /* xmm2 -= xmm4 */ \
+	  XaiV    = vec_madd(XaiV,qnV,V0000);        /* xmm3 *= xmm0 */ \
+	  qnV     = vec_madd(qnV,pnV,V0000);         /* xmm0 *= xmm2 */ \
+	  STnV    = vec_madd(STnV,pnV,XaiV);         /* xmm1 = xmm1 * xmm0 + xmm3 */
+
+	  /* init the memory access (load0,load1) and put first Xalpha_k element into Xsum */
+	  load0   = vec_ld  (0,(Xalpha_kR4));
+	  perm    = vec_lvsl(0,(Xalpha_kR4));
+	  load1   = vec_ld  (0,(Xalpha_kR4+4));
+	  STnV    = vec_perm(load0,load1,perm);
+
+	  /* do the "loop" 7 times using load0-2 for unaligned memory access */
+	  VEC_LOOP_AV( 4,1,2);
+	  VEC_LOOP_AV( 8,2,0);
+	  VEC_LOOP_AV(12,0,1);
+	  VEC_LOOP_AV(16,1,2);
+	  VEC_LOOP_AV(20,2,0);
+	  VEC_LOOP_AV(24,0,1);
+	  VEC_LOOP_AV(28,1,0);
+
+	  /* output the vectors */
+	  vec_st(STnV,0,STn);
+	  vec_st(qnV,0,qn);
+
+	  /* conbine the partial sums: */
+	  {
+	    REAL8 reci  = 1.0 / (qn[0] * qn[2]);
+	    REAL4 U_alpha = (STn[0] * qn[2] + STn[2] * qn[0]) * reci;
+	    REAL4 V_alpha = (STn[1] * qn[3] + STn[3] * qn[1]) * reci;
+	    
+	    realXP = s_alpha * U_alpha - c_alpha * V_alpha;
+	    imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
+	  }
+	}
+
+#elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_AUTOVECT)
+
+	/* vectorization with common denominator */
+
+	/* note: vectorizes with gcc-4.2.3 and gcc-4.1.3 */
+
+	{
+	  UINT4 l;
+	  UINT4 ve;
+	  REAL4 *Xal   /*esi*/  = (REAL4*)Xalpha_l;
+	  REAL4 STn[4] /*xmm1*/ = {Xal[0],Xal[1],Xal[2],Xal[3]};
+	  REAL4 pn[4]  /*xmm2*/ = {kappa_max, kappa_max, kappa_max-1.0f, kappa_max-1.0f};
+	  REAL4 qn[4]  /*xmm0*/ = {kappa_max, kappa_max, kappa_max-1.0f, kappa_max-1.0f};
+
+	  for ( l = 0; l < DTERMS - 1; l ++ ) {
+	    Xal += 4;
+	    for ( ve = 0; ve < 4; ve++) {
+	      pn[ve] -= 2.0f;
+	      STn[ve] = pn[ve] * STn[ve] + qn[ve] * Xal[ve];
+	      qn[ve] *= pn[ve];
+            }
+	  }
+	  
+	  /* combine the partial sums: */
+	  {
+#ifdef EAH_HOTLOOP_RECIPROCAL
+	    REAL4 reci  = 1.0 / (qn[0] * qn[2]);
+	    REAL4 U_alpha = (STn[0] * qn[2] + STn[2] * qn[0]) * reci;
+	    REAL4 V_alpha = (STn[1] * qn[3] + STn[3] * qn[1]) * reci;
+	    
+	    realXP = s_alpha * U_alpha - c_alpha * V_alpha;
+	    imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
+#else
+	    REAL4 U_alpha, V_alpha;
+
+	    for ( ve = 0; ve < 4; ve++)
+	      STn[ve] /= qn[ve];
+
+	    U_alpha = (STn[0] + STn[2]);
+	    V_alpha = (STn[1] + STn[3]);
+#endif
+	    realXP = s_alpha * U_alpha - c_alpha * V_alpha;
+	    imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
+	  }
+	}
+
+#else /* EAH_HOTLOOP_VARIANT */
 
 	{ 
 	  /* improved hotloop algorithm by Fekete Akos: 
