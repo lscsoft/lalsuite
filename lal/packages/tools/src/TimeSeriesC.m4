@@ -179,6 +179,10 @@ SERIESTYPE *`XLALAdd'SERIESTYPE (
 {
 	static const char func[] = "`XLALAdd'SERIESTYPE";
 	REAL8 Delta_epoch = XLALGPSDiff(&arg2->epoch, &arg1->epoch);
+	/* number of arg1 units per arg2 unit.  XLALUnitRatio() returns the
+	 * number one obtains when one divides 1 of the first argument by 1
+	 * of the second argument, for example if arg2 is in m and arg1 is
+	 * in cm then unit_ratio = 100.0 */
 	REAL8 unit_ratio = XLALUnitRatio(&arg2->sampleUnits, &arg1->sampleUnits);
 	unsigned i, j;
 
