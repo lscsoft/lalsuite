@@ -17,22 +17,10 @@
  *  MA  02111-1307  USA
  */
 
+
 #include <lal/LALDatatypes.h>
 #include <lal/LALDetectors.h>
 
-#define KIPPSPROPOSAL
-#ifndef KIPPSPROPOSAL
-
-REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
-	REAL8TimeSeries *hplus,
-	REAL8TimeSeries *hcross,
-	REAL8 right_ascension,
-	REAL8 declination,
-	REAL8 psi,
-	LALDetector *detector
-);
-
-#else	/* KIPPSPROPOSAL */
 
 REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 	const REAL8TimeSeries *hplus,
@@ -40,11 +28,9 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 	REAL8 right_ascension,
 	REAL8 declination,
 	REAL8 psi,
-	LALDetector *detector,
-	const LIGOTimeGPS *injection_time_at_geocentre
+	LALDetector *detector
 );
 
-#endif	/* KIPPSPROPOSAL */
 
 int XLALSimAddInjectionREAL8TimeSeries(
 	REAL8TimeSeries *target,

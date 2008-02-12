@@ -133,60 +133,19 @@ REAL8TimeSeries * XLALSimQuasiPeriodicInjectionREAL8TimeSeries( REAL8TimeSeries 
 }
 #endif
 
-#define KIPPSPROPOSAL
-#ifndef KIPPSPROPOSAL
-
-REAL8TimeSeries * XLALSimDetectorStrainREAL8TimeSeries( REAL8TimeSeries *hplus, REAL8TimeSeries *hcross, REAL8 right_ascension, REAL8 declination, REAL8 psi, LALDetector *detector )
-{
-	static const char *func = "XLALSimDetectorStrainREAL8TimeSeries";
-	REAL8TimeSeries *h;
-	LIGOTimeGPS epoch;
-	REAL8 fplus;
-	REAL8 fcross;
-	REAL8 gmst;
-	REAL8 delay;
-	UINT4 j;
-
-	LAL_CHECK_VALID_SERIES(hplus, NULL);
-	LAL_CHECK_VALID_SERIES(hcross, NULL);
-	LAL_CHECK_CONSISTENT_TIME_SERIES(hplus, hcross, NULL);
-
-	/* FIXME: sanity check on parameters */
-
-	epoch = hplus->epoch;
-	gmst = XLALGreenwichMeanSiderealTime( &epoch );
-
-	XLALComputeDetAMResponse( &fplus, &fcross, detector->response, right_ascension, declination, psi, gmst );
-	delay = XLALTimeDelayFromEarthCenter( detector->location, right_ascension, declination, &epoch );
-	XLALGPSAdd( &epoch, delay );
-
-	/* TODO: Encode detector in name */
-	h = XLALCreateREAL8TimeSeries( "DETECTOR_STRAIN", &epoch, hplus->f0, hplus->deltaT, &lalStrainUnit, hplus->data->length );
-	if ( ! h )
-		XLAL_ERROR_NULL( func, XLAL_EFUNC );
-	for ( j = 0; j < hplus->data->length; ++j )
-		h->data->data[j] = fplus * hplus->data->data[j] + fcross * hcross->data->data[j];
-
-	return h;
-}
-
-
-#else	/* KIPPSPROPOSAL */
-
 
 /**
  * Input
  *
- * - h+ and hx time series for the injection with t = 0 interpreted to be
- *   the "time" of the injection,
+ * - h+ and hx time series for the injection with their epochs set to the
+ *   start of those time series at the geocentre (for simplicity the epochs
+ *   must be the same),
  *
  * - the right ascension and declination of the source in radians.
  *
  * - the orientation of the wave co-ordinate system, psi, in radians.
  *
  * - the detector into which the injection is destined to be injected,
- *
- * - and the "time" of the injection as observed at the geocentre.
  *
  * Output
  *
@@ -210,8 +169,7 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 	REAL8 right_ascension,
 	REAL8 declination,
 	REAL8 psi,
-	LALDetector *detector,
-	const LIGOTimeGPS *injection_time_at_geocentre
+	LALDetector *detector
 )
 {
 	static const char func[] = "XLALSimDetectorStrainREAL8TimeSeries";
@@ -227,18 +185,17 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 
 	sprintf(name, "%2s injection", detector->frDetector.prefix);
 
-	/* allocate output time series.  epoch = injection "time" at
-	 * geocentre */
+	/* allocate output time series. */
 
-	h = XLALCreateREAL8TimeSeries(name, injection_time_at_geocentre, hplus->f0, hplus->deltaT, &hplus->sampleUnits, hplus->data->length);
+	h = XLALCreateREAL8TimeSeries(name, &hplus->epoch, hplus->f0, hplus->deltaT, &hplus->sampleUnits, hplus->data->length);
 	if(!h)
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
-	/* add start time of input time series and the detector's geometric
-	 * delay.  after this, epoch = the time of the injection time
-	 * series' first sample at the desired detector */
+	/* add the detector's geometric delay.  after this, epoch = the
+	 * time of the injection time series' first sample at the desired
+	 * detector */
 
-	XLALGPSAdd(&h->epoch, XLALGPSGetREAL8(&hplus->epoch) + XLALTimeDelayFromEarthCenter(detector->location, right_ascension, declination, injection_time_at_geocentre));
+	XLALGPSAdd(&h->epoch, XLALTimeDelayFromEarthCenter(detector->location, right_ascension, declination, &h->epoch));
 
 	/* project + and x time series onto detector */
 
@@ -256,9 +213,6 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 
 	return h;
 }
-
-
-#endif	/* KIPPSPROPOSAL */
 
 
 /**
@@ -380,7 +334,8 @@ int XLALSimAddInjectionREAL8TimeSeries(
 
 		/* FIXME:  should we use GSL to construct an interpolator
 		 * for the modulus and phase as functions of frequency, and
-		 * use that to evaluate the response? */
+		 * use that to evaluate the response?  instead of rounding
+		 * to nearest bin? */
 
 		if(response) {
 			int j = floor((f - response->f0) / response->deltaF + 0.5);

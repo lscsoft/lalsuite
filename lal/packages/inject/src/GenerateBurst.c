@@ -164,15 +164,24 @@ int XLALBurstInjectSignals(
 			continue;
 
 		/* construct the h+ and hx time series for the injection
-		 * waveform */
+		 * waveform.  in the time series produced by this function,
+		 * t = 0 */
 
 		if(XLALGenerateSimBurst(&hplus, &hcross, sim_burst, series->deltaT))
 			XLAL_ERROR(func, XLAL_EFUNC);
 
+		/* add the time of the injection at the geocentre to the
+		 * start times of the h+ and hx time series.  after this,
+		 * their epochs mark the start of those time series at the
+		 * geocentre. */
+
+		XLALGPSAddGPS(&hcross->epoch, &sim_burst->time_geocent_gps);
+		XLALGPSAddGPS(&hplus->epoch, &sim_burst->time_geocent_gps);
+
 		/* project the wave onto the detector to produce the strain
 		 * in the detector. */
 
-		h = XLALSimDetectorStrainREAL8TimeSeries(hplus, hcross, sim_burst->ra, sim_burst->dec, sim_burst->psi, &detector, &sim_burst->time_geocent_gps);
+		h = XLALSimDetectorStrainREAL8TimeSeries(hplus, hcross, sim_burst->ra, sim_burst->dec, sim_burst->psi, &detector);
 		XLALDestroyREAL8TimeSeries(hplus);
 		XLALDestroyREAL8TimeSeries(hcross);
 		if(!h)
