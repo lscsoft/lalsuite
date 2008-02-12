@@ -724,15 +724,15 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  REAL4 kappa_m = kappa_max; /* single precision version of kappa_max */
 	      
 #define VEC_LOOP_AV(a,b)\
-	  __asm { \
-		 movlps   xmm3, MMWORD PTR [esi+a] \
-		 movhps   xmm3, MMWORD PTR [esi+b] \
-		 subps    xmm2, xmm4 \
-		 mulps    xmm3, xmm0 \
-		 mulps    xmm1, xmm2 \
-		 mulps    xmm0, xmm2 \
-		 addps    xmm1, xmm3 \
-		   };
+	  { \
+	      __asm movlps   xmm3, MMWORD PTR [esi+a]	\
+	      __asm movhps   xmm3, MMWORD PTR [esi+b]	\
+	      __asm subps    xmm2, xmm4			\
+	      __asm mulps    xmm3, xmm0			\
+	      __asm mulps    xmm1, xmm2			\
+	      __asm mulps    xmm0, xmm2			\
+	      __asm addps    xmm1, xmm3			\
+	      }
 
 	  __asm {
 		 mov      esi , Xalpha_l 	
