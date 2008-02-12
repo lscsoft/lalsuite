@@ -1135,6 +1135,7 @@ static void local_sin_cos_2PI_LUT_init (void)
 
 static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x) {
   INT4  i, n, ix;
+#if EAH_SINCOS_F2IBITS == EAH_SINCOS_F2IBITS_UNION
   union {
     REAL8 asreal;
     INT8  asint;
@@ -1143,7 +1144,8 @@ static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 
       INT4 low;
     } as2int;
   } ux;
-  
+#endif
+
   static const REAL4* cosbase = sincosLUTbase + (SINCOS_LUT_RES/4);
   static const REAL4* cosdiff = sincosLUTdiff + (SINCOS_LUT_RES/4);
 
