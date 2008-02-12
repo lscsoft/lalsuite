@@ -39,6 +39,7 @@
 #include <lal/RealFFT.h>
 #include <lal/Units.h>
 #include <lal/Date.h>
+#include "check_series_macros.h"
 
 
 /*
@@ -73,7 +74,7 @@ static void gaussian_noise(REAL8TimeSeries * series, REAL8 rms, gsl_rng * rng)
  */
 
 
-REAL8 XLALMeasureHPeak(REAL8TimeSeries *series)
+REAL8 XLALMeasureHPeak(const REAL8TimeSeries *series)
 {
 	static const char func[] = "XLALMeasureHPeak";
 	double hpeak;
@@ -91,30 +92,31 @@ REAL8 XLALMeasureHPeak(REAL8TimeSeries *series)
 }
 
 
-/*
- * Returns what people call the "root-sum-square strain".  Infact, this is
+/**
+ * From two time series, s1 and s2, computes and returns
  *
- * \sqrt{\sum h^{2} \Delta t},
- *
- * which is an approximation of
- *
- * \sqrt{\int h^{2} \diff t}
+ * \int s1(t) s2(t) \diff t.
  */
 
 
-REAL8 XLALMeasureIntHSquaredDT(REAL8TimeSeries *series)
+REAL8 XLALMeasureIntS1S2DT(const REAL8TimeSeries *s1, const REAL8TimeSeries *s2)
 {
+	static const char func[] = "XLALMeasureIntS1S2DT";
 	double e = 0.0;
 	double sum = 0.0;
 	unsigned i;
 
+	/* FIXME:  this is overly strict, this function could be smarter */
+
+	LAL_CHECK_CONSISTENT_TIME_SERIES(s1, s2, XLAL_REAL8_FAIL_NAN);
+
 	/* Kahans's compensated summation algorithm */
 
-	for(i = 0; i < series->data->length; i++) {
+	for(i = 0; i < s1->data->length; i++) {
 		double tmp = sum;
-		/* what we want to add = h^{2} + "error from last
+		/* what we want to add = s1 * s2 + "error from last
 		 * iteration" */
-		double x = series->data->data[i] * series->data->data[i] + e;
+		double x = s1->data->data[i] * s2->data->data[i] + e;
 		/* add */
 		sum += x;
 		/* negative of what was actually added */
@@ -123,13 +125,24 @@ REAL8 XLALMeasureIntHSquaredDT(REAL8TimeSeries *series)
 		e += x;
 	}
 
-	return sum * series->deltaT;
+	return sum * s1->deltaT;
 }
 
 
-REAL8 XLALMeasureHrss(REAL8TimeSeries *series)
+/*
+ * Returns what people call the "root-sum-square strain".  Infact, this is
+ *
+ * \sqrt{\sum h^{2} \Delta t},
+ *
+ * which is an approximation of
+ *
+ * \sqrt{\int h^{2} \diff t}.
+ */
+
+
+REAL8 XLALMeasureHrss(const REAL8TimeSeries *series)
 {
-	return sqrt(XLALMeasureIntHSquaredDT(series));
+	return sqrt(XLALMeasureIntS1S2DT(series, series));
 }
 
 
@@ -145,7 +158,7 @@ REAL8 XLALMeasureHrss(REAL8TimeSeries *series)
  */
 
 
-REAL8 XLALMeasureIntHDotSquaredDT(COMPLEX16FrequencySeries *fseries)
+REAL8 XLALMeasureIntHDotSquaredDT(const COMPLEX16FrequencySeries *fseries)
 {
 	unsigned i;
 	double e = 0.0;
