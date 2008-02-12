@@ -717,8 +717,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	}
 #else
 	{
-	  __declspec(align(16)) static struct { REAL8 a,b,c,d; } v0011 = {0.0, 0.0, 1.0, 1.0};
-	  __declspec(align(16)) static struct { REAL8 a,b,c,d; } v2222 = {2.0, 2.0, 2.0, 2.0};
+	  __declspec(align(16)) static struct { REAL4 a,b,c,d; } v0011 = {0.0, 0.0, 1.0, 1.0};
+	  __declspec(align(16)) static struct { REAL4 a,b,c,d; } v2222 = {2.0, 2.0, 2.0, 2.0};
   	  __declspec(align(16)) COMPLEX8 XSums; 
 	
 	  REAL4 kappa_m = kappa_max; /* single precision version of kappa_max */
