@@ -69,7 +69,7 @@ static void gaussian_noise(REAL8TimeSeries * series, REAL8 rms, gsl_rng * rng)
  */
 
 
-/*
+/**
  * Returns the strain of the sample with the largest magnitude.
  */
 
@@ -129,7 +129,7 @@ REAL8 XLALMeasureIntS1S2DT(const REAL8TimeSeries *s1, const REAL8TimeSeries *s2)
 }
 
 
-/*
+/**
  * Returns what people call the "root-sum-square strain".  Infact, this is
  *
  * \sqrt{\sum h^{2} \Delta t},
@@ -146,7 +146,7 @@ REAL8 XLALMeasureHrss(const REAL8TimeSeries *series)
 }
 
 
-/*
+/**
  * Given the Fourier transform of a real-valued function h(t), compute and
  * return the integral of the square of its derivative:
  *
@@ -203,7 +203,7 @@ REAL8 XLALMeasureIntHDotSquaredDT(const COMPLEX16FrequencySeries *fseries)
  */
 
 
-/*
+/**
  * Parameters:
  *
  * duration
@@ -438,7 +438,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
  */
 
 
-/*
+/**
  * Input:
  *
  * Q:  the "Q" of the waveform.  The Gaussian envelope is exp(-1/2 t^{2} /
@@ -561,7 +561,7 @@ int XLALSimBurstSineGaussian(
  */
 
 
-/*
+/**
  * Input:
  *	amplitude = waveform's amplitude parameter
  *	f_high = high frequency cutoff
