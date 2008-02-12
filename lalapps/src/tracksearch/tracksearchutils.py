@@ -1602,6 +1602,9 @@ class candidateList:
         if self.curves.__len__() < 1:
             print "Warning no information to threshold."
             return self
+        #If verbose call setup spinner
+        spinner=progressSpinner(self.verboseMode)
+        spinner.setTag('Stats')
         #There is no error checking.  We rely on eval to do this for us!
         testExp=expressionString
         #Convert everything to lower case
@@ -1609,6 +1612,7 @@ class candidateList:
         resultsList=[]
         #print "String to threshold with :",testExp
         for lineInfo in self.curves:
+            spinner.updateSpinner()
             curveID,l,p=lineInfo.getKurveHeader()
             d=lineInfo.getCandidateDuration()
             b=lineInfo.getCandidateBandwidth()
@@ -1636,6 +1640,7 @@ class candidateList:
         outputObject=copy.deepcopy(self)
         outputObject.curves=copy.deepcopy(resultsList)
         outputObject.totalCount=resultsList.__len__()
+        spinner.closeSpinner()
         return outputObject
     #end applyAbitraryThresholds method
     
