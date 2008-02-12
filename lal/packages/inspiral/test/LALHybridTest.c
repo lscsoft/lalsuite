@@ -332,15 +332,15 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
 
   /* Compute and print Aeff */
   Aeff = XLALHybridP1Amplitude(&params, fLow, df, eta, totalMass, 1 + numPoints/2);
-  LALDPrintFrequencySeries( Aeff, &fA);
+  LALDPrintFrequencySeries( Aeff, fA);
 
   /* Compute and print Phieff */
   Phieff = XLALHybridP1Phase(&params, fLow, df, eta, totalMass, 1 + numPoints/2);
-  LALDPrintFrequencySeries( Phieff, &fPhi); 
+  LALDPrintFrequencySeries( Phieff, fPhi); 
 
   /* Construct u(f) = Aeff*e^(i*Phieff) */
   uF = XLALConstructComplexVector( Aeff, Phieff);
-  LALPrintComplex16Vec(uF,df,&fuF);
+  LALPrintComplex16Vec(uF,df,fuF);
 
   /* Inverse Fourier transform */
   LALCreateReverseREAL8FFTPlan( &status, &prev, numPoints, 0);
@@ -348,7 +348,7 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
   LALReverseREAL8FFT( &status, hPlus, uF, prev);
 
   /* Print hplus to file */
-  LALPrintReal8Vec(hPlus, dt, &hpFile); 
+  LALPrintReal8Vec(hPlus, dt, hpFile); 
 
   /* Free Memory */
   XLALDestroyREAL8FrequencySeries(Aeff);
@@ -444,6 +444,8 @@ XLALHybridP1Phase(
 
   REAL8FrequencySeries *Phieff = NULL;
 
+  LIGOTimeGPS epoch;
+
   psi0 = params -> psi0;
   psi2 = params -> psi2;
   psi3 = params -> psi3;
@@ -454,10 +456,9 @@ XLALHybridP1Phase(
   piM = LAL_PI * M * LAL_MTSUN_SI;
 
   /* Allocate memory for the frequency series */
-  Phieff = LALCalloc(1, sizeof(*Phieff));	
-  Phieff->data = XLALCreateREAL8Sequence(len);
-  Phieff->deltaF = df;
-  Phieff->f0 = 0.0;
+  epoch.gpsSeconds = 0;
+  epoch.gpsNanoSeconds = 0;
+  Phieff = XLALCreateREAL8FrequencySeries("", &epoch, 0, df, &lalDimensionlessUnit, len);
 
   f = 0.0;
 
@@ -504,6 +505,8 @@ XLALHybridP1Amplitude(
 
   REAL8FrequencySeries *Aeff = NULL;
 
+  LIGOTimeGPS epoch;
+
   fMerg = params->fMerger;
   fCut = params->fCut;
   fRing = params->fRing;
@@ -519,10 +522,9 @@ XLALHybridP1Amplitude(
   cConst = 1.0;
 
   /* Allocate memory for the frequency series */
-  Aeff = LALCalloc(1, sizeof(*Aeff));	
-  Aeff->data = XLALCreateREAL8Sequence(len);
-  Aeff->deltaF = df;
-  Aeff->f0 = 0.0;
+  epoch.gpsSeconds = 0;
+  epoch.gpsNanoSeconds = 0;
+  Aeff = XLALCreateREAL8FrequencySeries("", &epoch, 0, df, &lalDimensionlessUnit, len);
 
   f = 0.0;
 
