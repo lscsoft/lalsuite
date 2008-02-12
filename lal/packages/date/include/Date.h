@@ -171,6 +171,9 @@ REAL8 XLALGPSGetREAL8( const LIGOTimeGPS *epoch );
 /** Adds dt to a GPS time. */
 LIGOTimeGPS * XLALGPSAdd( LIGOTimeGPS *epoch, REAL8 dt );
 
+/** Adds two GPS times. */
+LIGOTimeGPS * XLALGPSAddGPS( LIGOTimeGPS *epoch, const LIGOTimeGPS *dt );
+
 /** Difference between two GPS times. */
 REAL8 XLALGPSDiff( const LIGOTimeGPS *t1, const LIGOTimeGPS *t0 );
 
