@@ -160,6 +160,10 @@ SERIESTYPE *`XLALAdd'SERIESTYPE (
 {
 	static const char func[] = "`XLALAdd'SERIESTYPE";
 	REAL8 Delta_f0 = arg2->f0 - arg1->f0;
+	/* number of arg1 units per arg2 unit.  XLALUnitRatio() returns the
+	 * number one obtains when one divides 1 of the first argument by 1
+	 * of the second argument, for example if arg2 is in m and arg1 is
+	 * in cm then unit_ratio = 100.0 */
 	REAL8 unit_ratio = XLALUnitRatio(&arg2->sampleUnits, &arg1->sampleUnits);
 	unsigned i, j;
 
@@ -229,10 +233,15 @@ SERIESTYPE *`XLALMultiply'SERIESTYPE (
 {
 	static const char func[] = "`XLALMultiply'SERIESTYPE";
 	REAL8 Delta_f0 = arg2->f0 - arg1->f0;
+	/* number of arg1 units per arg2 unit.  XLALUnitRatio() returns the
+	 * number one obtains when one divides 1 of the first argument by 1
+	 * of the second argument, for example if arg2 is in m and arg1 is
+	 * in cm then unit_ratio = 100.0 */
 	REAL8 unit_ratio = XLALUnitRatio(&arg2->sampleUnits, &arg1->sampleUnits);
 	unsigned i, j;
 
 	/* make sure arguments are compatible */
+
 	if(XLALIsREAL8FailNaN(unit_ratio)) {
 		XLALPrintError("%s(): incompatible sample units\n", func);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
@@ -247,15 +256,31 @@ SERIESTYPE *`XLALMultiply'SERIESTYPE (
 	}
 
 	/* set start indexes */
+
 	if(Delta_f0 >= 0) {
-		i = floor(Delta_f0 / arg1->deltaF + 0.5);
+		unsigned start = floor(Delta_f0 / arg1->deltaF + 0.5);
+
+		/* zero the first part of arg1 */
+
+		for(i = 0; i < start && i < arg1->data->length; i++) {
+			ifelse(DATATYPE, COMPLEX8,
+			arg1->data->data[i].re = 0.0;
+			arg1->data->data[i].im = 0.0;
+			, DATATYPE, COMPLEX16,
+			arg1->data->data[i].re = 0.0;
+			arg1->data->data[i].im = 0.0;
+			, 
+			arg1->data->data[i] = 0.0;)
+		}
+
 		j = 0;
 	} else {
 		i = 0;
 		j = floor(-Delta_f0 / arg2->deltaF + 0.5);
 	}
 
-	/* multiply arg2 by arg1, adjusting the units */
+	/* multiply arg1 by arg2 */
+
 	for(; i < arg1->data->length && j < arg2->data->length; i++, j++) {
 		ifelse(DATATYPE, COMPLEX8,
 		REAL4 re = arg2->data->data[j].re * unit_ratio;
@@ -269,6 +294,19 @@ SERIESTYPE *`XLALMultiply'SERIESTYPE (
 		arg1->data->data[i].im = arg1->data->data[i].re * im + arg1->data->data[i].im * re;
 		, 
 		arg1->data->data[i] *= arg2->data->data[j] * unit_ratio;)
+	}
+
+	/* zero the last part of arg1 */
+
+	for(; i < arg1->data->length; i++) {
+		ifelse(DATATYPE, COMPLEX8,
+		arg1->data->data[i].re = 0.0;
+		arg1->data->data[i].im = 0.0;
+		, DATATYPE, COMPLEX16,
+		arg1->data->data[i].re = 0.0;
+		arg1->data->data[i].im = 0.0;
+		, 
+		arg1->data->data[i] = 0.0;)
 	}
 
 	return(arg1);
