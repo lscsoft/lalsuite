@@ -715,7 +715,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	     imagXP = c_alpha * XSums.re + s_alpha * XSums.im;
 	     
 	}
-#else
+#else /* __GNUC__ */
 	{
 	  __declspec(align(16)) static struct { REAL4 a,b,c,d; } v0011 = {0.0, 0.0, 1.0, 1.0};
 	  __declspec(align(16)) static struct { REAL4 a,b,c,d; } v2222 = {2.0, 2.0, 2.0, 2.0};
@@ -740,10 +740,10 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  { \
 	      __asm movlps   xmm3, MMWORD PTR [esi+a] /* Xai = Xal[a]  ...*/\
 	      __asm movhps   xmm3, MMWORD PTR [esi+b] /* ... continued    */\
-	      __asm subps    xmm2, xmm4		      /* pn  -= V2222     */\
-	      __asm mulps    xmm3, xmm0		      /* Xai *= qn        */\
+	      __asm subps    xmm2, xmm4		      /* pn   -= V2222    */\
+	      __asm mulps    xmm3, xmm0		      /* Xai  *= qn       */\
 	      __asm mulps    xmm1, xmm2		      /* STnV *= pn       */\
-	      __asm mulps    xmm0, xmm2		      /* qn  *= pn        */\
+	      __asm mulps    xmm0, xmm2		      /* qn   *= pn       */\
 	      __asm addps    xmm1, xmm3		      /* STnV += Xai      */\
 	      }
 
@@ -768,7 +768,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  imagXP = c_alpha * STn.re + s_alpha * STn.im;
 	     
 	}
-#endif
+#endif /* __GNUC__ */
 
 #elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_ALTIVEC)
 
@@ -791,6 +791,12 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  vector float qnV    /* xmm0 */ = pnV;  /* common divisor, initally = 1.0 * pnV */
 	  /*    this column above (^) lists the corresponding register in the SSE version */
 
+	  /* init the memory access (load0,load1) and put first Xalpha_k element into Xsum */
+	  load0   = vec_ld  (0,(Xalpha_kR4));
+	  perm    = vec_lvsl(0,(Xalpha_kR4));
+	  load1   = vec_ld  (0,(Xalpha_kR4+4));
+	  STnV    = vec_perm(load0,load1,perm);
+
 	  /* one loop iteration as a macro */
 #define VEC_LOOP_AV(n,a,b)\
 	  perm    = vec_lvsl(0,(Xalpha_kR4+(n)));    /* xmm3 = Xalpha_k[n] */ \
@@ -800,12 +806,6 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  XaiV    = vec_madd(XaiV,qnV,V0000);        /* xmm3 *= xmm0 */ \
 	  qnV     = vec_madd(qnV,pnV,V0000);         /* xmm0 *= xmm2 */ \
 	  STnV    = vec_madd(STnV,pnV,XaiV);         /* xmm1 = xmm1 * xmm0 + xmm3 */
-
-	  /* init the memory access (load0,load1) and put first Xalpha_k element into Xsum */
-	  load0   = vec_ld  (0,(Xalpha_kR4));
-	  perm    = vec_lvsl(0,(Xalpha_kR4));
-	  load1   = vec_ld  (0,(Xalpha_kR4+4));
-	  STnV    = vec_perm(load0,load1,perm);
 
 	  /* do the "loop" 7 times using load0-2 for unaligned memory access */
 	  VEC_LOOP_AV( 4,1,2);
@@ -845,7 +845,10 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  REAL4 *Xal   = (REAL4*)Xalpha_l;
 	  REAL4 STn[4] = {Xal[0],Xal[1],Xal[2],Xal[3]};
 	  REAL4 pn[4]  = {kappa_max, kappa_max, kappa_max-1.0f, kappa_max-1.0f};
-	  REAL4 qn[4]  = {kappa_max, kappa_max, kappa_max-1.0f, kappa_max-1.0f};
+	  REAL4 qn[4];
+
+	  for ( ve = 0; ve < 4; ve++)
+	    qn[ve] = pn[ve];
 
 	  for ( l = 1; l < DTERMS; l ++ ) {
 	    Xal += 4;
@@ -861,9 +864,9 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 #ifdef EAH_HOTLOOP_RECIPROCAL
 	    /* if the division is to be done outside the SIMD unit */
 
-	    REAL4 reci  = 1.0 / (qn[0] * qn[2]);
-	    REAL4 U_alpha = (STn[0] * qn[2] + STn[2] * qn[0]) * reci;
-	    REAL4 V_alpha = (STn[1] * qn[3] + STn[3] * qn[1]) * reci;
+	    REAL4 r_qn  = 1.0 / (qn[0] * qn[2]);
+	    REAL4 U_alpha = (STn[0] * qn[2] + STn[2] * qn[0]) * r_qn;
+	    REAL4 V_alpha = (STn[1] * qn[3] + STn[3] * qn[1]) * r_qn;
 	    
 	    realXP = s_alpha * U_alpha - c_alpha * V_alpha;
 	    imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
@@ -912,22 +915,21 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	    } /* for l < 2*DTERMS */
 
 #ifdef EAH_HOTLOOP_RECIPROCAL
-	  /* could hardly be slower than two divisions */
-	  {
+	  { /* could hardly be slower than two divisions */
 	    REAL4 r_qn = 1.0 / qn;
 	    U_alpha = Sn * r_qn;
 	    V_alpha = Tn * r_qn;
 	  }
-#else
+#else /* EAH_HOTLOOP_RECIPROCAL */
 	  U_alpha = Sn / qn;
 	  V_alpha = Tn / qn;
-#endif
+#endif /* EAH_HOTLOOP_RECIPROCAL */
 
  	  realXP = s_alpha * U_alpha - c_alpha * V_alpha;
  	  imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
 	}
 
-#endif
+#endif /* EAH_HOTLOOP_VARIANT */
 
       /* if |remainder| > LD_SMALL4 */
       else
