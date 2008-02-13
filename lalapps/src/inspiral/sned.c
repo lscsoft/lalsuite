@@ -116,10 +116,12 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "                           instead of for a non-spinning search\n"\
 "  --inject-overhead        inject signals from overhead detector\n"\
 "  --write-chan             write out time series showing inspiral waveform\n"\
-"  --inj-file    FILE       xml FILE contains injections \n"\
-"  --coire-flag             use this if inj file is a coire file \n"\
-"  --output-file FILE       FILE for output \n"\
-"  --f-lower     FREQ       freq at which to begin integration \n"\
+"  --inj-file    FILE       xml FILE contains injections\n"\
+"  --coire-flag             use this if inj file is a coire file\n"\
+"  --output-file FILE       FILE for output\n"\
+"  --f-lower     FREQ       freq at which to begin integration\n"\
+"  --ligo-only              only normalize the eff_dist columns for\n"\
+"                           LIGO detectors\n"\
 "\n"
 
 static void destroyCoherentGW( CoherentGW *waveform );
@@ -160,6 +162,7 @@ int writechan;               /* whether to write chan txt files */
 int injoverhead;             /* perform inj overhead if this option is set */
 int coireflg;                /* is input file coire (1) or inj (null) */
 int nonSpinningSearch = 1;   /* normalize for a non-spinning search */
+int ligoOnly = 0;            /* only normalize the LIGO eff_dist columns */
 
 int main( int argc, char *argv[] )
 {
@@ -168,14 +171,20 @@ int main( int argc, char *argv[] )
   UINT4                         k;
   UINT4                         kLow;
   UINT4                         kHi;
-  INT4                          numPoints       = 524288;
-  REAL4                         fSampling       = 2048.;
+  REAL4                         fSampling       = 16384.;
+  REAL4                         fReSampling     = 4096.;
   REAL4                         fLow            = 70.;
   REAL4                         fLowInj         = 40.;
+  INT4                          numPoints       = 1048576;
+  INT4                          numRawPoints    = floor(
+      numPoints * fSampling / fReSampling + 0.5 );
   REAL8                         deltaT          = 1./fSampling;
-  REAL8                         deltaF          = fSampling / numPoints;
+  REAL8                         deltaTReSample  = 1./fReSampling;
+  REAL8                         deltaF          = fReSampling / numPoints;
 
-  REAL4                          statValue;
+  ResampleTSParams              resampleParams;
+
+  REAL4                         statValue;
  
   /* vars required to make freq series */
   LIGOTimeGPS                   epoch = { 0, 0 };
@@ -207,13 +216,14 @@ int main( int argc, char *argv[] )
   COMPLEX8FrequencySeries       *resp          = NULL;
   COMPLEX8FrequencySeries       *detTransDummy = NULL;
   REAL4TimeSeries               *chan          = NULL;
+  REAL4TimeSeries               *chanDummy     = NULL;
   RealFFTPlan                   *pfwd          = NULL;
   COMPLEX8FrequencySeries       *fftData       = NULL;
   COMPLEX8FrequencySeries       *fftStandardData = NULL;
   REAL8                          thisSigmasq     = 0;
-  REAL8                          spinningSigmasqVec[6];
+  REAL8                          spinningSigmasqVec[6] = {1, 1, 1, 1, 1, 1};
   REAL8                          thisStandardSigmasq = 0;
-  REAL8                          standardSigmasqVec[6];
+  REAL8                          standardSigmasqVec[6] = {1, 1, 1, 1, 1, 1};
   REAL8                          thisMixedSigmasq = 0;
   REAL8                          mixedSigmasqVec[6];
   REAL8                          dynRange      = 1./(3.0e-23);
@@ -223,7 +233,8 @@ int main( int argc, char *argv[] )
   CoherentGW                 nonSpinningWaveform;
   PPNParamStruc              ppnParams;
   DetectorResponse           detector;
-  InterferometerNumber       ifoNumber   = LAL_UNKNOWN_IFO;
+  INT4                       ifos[6] = {1, 1, 1, 1, 1, 1};
+  InterferometerNumber       ifoNumber = LAL_UNKNOWN_IFO;
 
   /* output data */
   LIGOLwXMLStream       xmlStream;
@@ -269,6 +280,7 @@ int main( int argc, char *argv[] )
       {"write-chan",              no_argument,       &writechan,         1 },
       {"inject-overhead",         no_argument,       &injoverhead,       1 },
       {"f-lower",                 required_argument, 0,                 'g'},
+      {"ligo-only",               no_argument,       &ligoOnly,          1 },
       {"debug-level",             required_argument, 0,                 'z'}, 
       {0, 0, 0, 0}
     };
@@ -407,43 +419,6 @@ int main( int argc, char *argv[] )
     fprintf( stdout, "output file is %s\n", outputFile );
   }
 
-  LAL_CALL( LALCreateREAL4TimeSeries( &status, &chan, "", epoch, f0, deltaT, 
-                                     lalADCCountUnit, numPoints ), &status );
-
-  /*
-   *
-   * set up the response function
-   *
-   */
-  LAL_CALL( LALCreateCOMPLEX8FrequencySeries( &status, &resp, chan->name, 
-     chan->epoch, f0, deltaF, strainPerCount, (numPoints / 2 + 1) ), &status );
-
-  /* create vector that will contain detector.transfer info, since this 
-   * is constant I calculate it once outside of all the loops and pass it 
-   * in to detector.transfer when required 
-   */
-  LAL_CALL( LALCreateCOMPLEX8FrequencySeries( &status, &detTransDummy, 
-                  chan->name, chan->epoch, f0, deltaF, strainPerCount, 
-                  (numPoints / 2 + 1) ), &status );
-
-  /* invert the response function to get the transfer function */
-  unity = XLALCreateCOMPLEX8Vector( resp->data->length );
-  for ( k = 0; k < unity->length; ++k )
-     {
-        unity->data[k].re = 1.0;
-        unity->data[k].im = 0.0;
-     }
-
-  /* set response */
-  for ( k = 0; k < resp->data->length; ++k )
-  {
-      resp->data->data[k].re = 1.0;
-      resp->data->data[k].im = 0.0;
-  }
-
-  XLALCCVectorDivide( detTransDummy->data, unity, resp->data );
-  XLALDestroyCOMPLEX8Vector( unity );
-
   /* read in injections from injection file */
   /* set endtime to 0 so that we read in all events */
   if ( vrbflg ) fprintf( stdout, "Reading sim_inspiral table of %s\n",
@@ -473,8 +448,54 @@ int main( int argc, char *argv[] )
     if ( vrbflg ) fprintf( stdout, " done\n");
   }
 
+  if ( ligoOnly )
+  {
+    ifos[0] = 0;
+    ifos[2] = 0;
+    ifos[4] = 0;
+    ifos[5] = 0;
+  }
+
   /* make sure we start at head of linked list */
   thisInjection = injectionHead;
+
+  LAL_CALL( LALCreateREAL4TimeSeries( &status, &chanDummy, "", epoch, f0,
+      deltaT, lalADCCountUnit, numRawPoints ), &status );
+
+  /*
+   *
+   * set up the response function
+   *
+   */
+  LAL_CALL( LALCreateCOMPLEX8FrequencySeries( &status, &resp, chanDummy->name,
+     chanDummy->epoch, f0, deltaF, strainPerCount, (numRawPoints / 2 + 1) ),
+     &status );
+
+  /* create vector that will contain detector.transfer info, since this 
+   * is constant I calculate it once outside of all the loops and pass it 
+   * in to detector.transfer when required 
+   */
+  LAL_CALL( LALCreateCOMPLEX8FrequencySeries( &status, &detTransDummy,
+      chanDummy->name, chanDummy->epoch, f0, deltaF, strainPerCount,
+      (numRawPoints / 2 + 1) ), &status );
+
+  /* invert the response function to get the transfer function */
+  unity = XLALCreateCOMPLEX8Vector( resp->data->length );
+  for ( k = 0; k < unity->length; ++k )
+  {
+    unity->data[k].re = 1.0;
+    unity->data[k].im = 0.0;
+  }
+
+  /* set response */
+  for ( k = 0; k < resp->data->length; ++k )
+  {
+    resp->data->data[k].re = 1.0;
+    resp->data->data[k].im = 0.0;
+  }
+
+  XLALCCVectorDivide( detTransDummy->data, unity, resp->data );
+  XLALDestroyCOMPLEX8Vector( unity );
 
   /* setting fixed waveform injection parameters */
   memset( &ppnParams, 0, sizeof(PPNParamStruc) );
@@ -482,10 +503,14 @@ int main( int argc, char *argv[] )
   ppnParams.lengthIn = 0;
   ppnParams.ppn      = NULL;
 
+  /* set up resampling parameters */   
+  memset( &resampleParams, 0, sizeof(ResampleTSParams) );
+  resampleParams.deltaT = deltaTReSample;
+  resampleParams.filterType = LDASfirLP;
+
   /* loop over injections */
   injSimCount = 0;
-    
-        
+
   do
   {
     fprintf( stdout, "injection %d/%d\n", injSimCount+1, numInjections );
@@ -493,9 +518,6 @@ int main( int argc, char *argv[] )
     /* reset waveform structure */
     memset( &waveform, 0, sizeof(CoherentGW) );
     memset( &nonSpinningWaveform, 0, sizeof(CoherentGW) );
-
-    /* reset chan structure */
-    memset( chan->data->data, 0, chan->data->length * sizeof(REAL4) );
 
     if (thisInjection->f_lower == 0)\
     {
@@ -506,7 +528,7 @@ int main( int argc, char *argv[] )
 
     /* create the waveform, amp, freq phase etc */
     LAL_CALL( LALGenerateInspiral(&status, &waveform, thisInjection,
-        &ppnParams), &status);
+        &ppnParams), &status );
 
     /* create the non-spinning waveform, amp, freq phase etc */
     thisNonSpinningInjection = thisInjection;
@@ -526,372 +548,404 @@ int main( int argc, char *argv[] )
       fprintf( stdout, "at index %d \n", kLow);
     }
     /* calc upper index for integration */
-    kHi = floor(fSampling / (2. * deltaF));
+    kHi = floor(fReSampling / (2. * deltaF));
     if ( vrbflg )
     {
       fprintf( stdout, "ending integration to find sigmasq at frequency %e ",
-          fSampling / 2.);
+          fReSampling / 2.);
       fprintf( stdout, "at index %d \n", kHi);
     }
 
     /* loop over ifo */
     for ( ifoNumber = 0; ifoNumber < 6; ifoNumber++ )
     {
-      /* allocate memory and copy the parameters describing the freq series */
-      memset( &detector, 0, sizeof( DetectorResponse ) );
-      detector.site = (LALDetector *) LALMalloc( sizeof(LALDetector) );
-
-      if (injoverhead)
-      { 
-        if ( vrbflg ) fprintf( stdout,
-            "WARNING: perform overhead injections\n");
-        /* setting detector.site to NULL causes SimulateCoherentGW to
-         * perform overhead injections */  
-        detector.site = NULL; 
-      }
-      else
+      if ( ifos[ifoNumber] )
       {
-        /* if not overhead, set detector.site using ifonumber */  
-        XLALReturnDetector( detector.site, ifoNumber );
-      } 
+        /* allocate memory and copy the parameters describing the freq series */
+        memset( &detector, 0, sizeof( DetectorResponse ) );
+        detector.site = (LALDetector *) LALMalloc( sizeof(LALDetector) );
 
-      /* get the gps start time of the signal to inject */
-      LALGPStoINT8( &status, &waveformStartTime, 
-          &(thisInjection->geocent_end_time) );
-      waveformStartTime -= (INT8) ( 1000000000.0 * ppnParams.tc );
+        if (injoverhead)
+        { 
+          if ( vrbflg ) fprintf( stdout,
+              "WARNING: perform overhead injections\n");
+          /* setting detector.site to NULL causes SimulateCoherentGW to
+           * perform overhead injections */  
+          detector.site = NULL; 
+        }
+        else
+        {
+          /* if not overhead, set detector.site using ifonumber */  
+          XLALReturnDetector( detector.site, ifoNumber );
+        } 
 
-      offset = (chan->data->length / 2.0) * chan->deltaT;
-      gpsStartTime.gpsSeconds =
-          thisInjection->geocent_end_time.gpsSeconds - offset;
-      gpsStartTime.gpsNanoSeconds =
-          thisInjection->geocent_end_time.gpsNanoSeconds;
-      chan->epoch = gpsStartTime;
+        if (vrbflg) fprintf(stdout,
+            "generating chan to put waveform in\n" );
+
+        LAL_CALL( LALCreateREAL4TimeSeries( &status, &chan, "", epoch, f0,
+            deltaT, lalADCCountUnit, numRawPoints ), &status );
+
+        /* reset chan structure */
+        memset( chan->data->data, 0, chan->data->length * sizeof(REAL4) );
+
+        /* get the gps start time of the signal to inject */
+        LALGPStoINT8( &status, &waveformStartTime, 
+            &(thisInjection->geocent_end_time) );
+        waveformStartTime -= (INT8) ( 1000000000.0 * ppnParams.tc );
+
+        offset = (chan->data->length / 2.0) * chan->deltaT;
+        gpsStartTime.gpsSeconds =
+            thisInjection->geocent_end_time.gpsSeconds - offset;
+        gpsStartTime.gpsNanoSeconds =
+            thisInjection->geocent_end_time.gpsNanoSeconds;
+        chan->epoch = gpsStartTime;
 
 
-      if (vrbflg) fprintf(stdout,
-          "offset start time of injection by %f seconds \n", offset ); 
+        if (vrbflg) fprintf(stdout,
+            "offset start time of injection by %f seconds \n", offset ); 
        
-      /* is this okay? copying in detector transfer which so far only contains
-       * response info  */
-      detector.transfer = detTransDummy;
+        /* is this okay? copying in detector transfer which so far only
+         * contains response info  */
+        detector.transfer = detTransDummy;
 
-      XLALUnitInvert( &(detector.transfer->sampleUnits),
-          &(resp->sampleUnits) );
+        XLALUnitInvert( &(detector.transfer->sampleUnits),
+            &(resp->sampleUnits) );
 
-      /* set the start times for injection */
-      LALINT8toGPS( &status, &(waveform.a->epoch), &waveformStartTime );
-      memcpy(&(waveform.f->epoch), &(waveform.a->epoch), sizeof(LIGOTimeGPS) );
-      memcpy(&(waveform.phi->epoch), &(waveform.a->epoch),
-          sizeof(LIGOTimeGPS) );
-      memcpy(&(nonSpinningWaveform.a->epoch), &(waveform.a->epoch),
-          sizeof(LIGOTimeGPS) );
-      memcpy(&(nonSpinningWaveform.f->epoch), &(waveform.a->epoch),
-          sizeof(LIGOTimeGPS) );
-      memcpy(&(nonSpinningWaveform.phi->epoch), &(waveform.a->epoch),
-          sizeof(LIGOTimeGPS) );
+        /* set the start times for injection */
+        LALINT8toGPS( &status, &(waveform.a->epoch), &waveformStartTime );
+        memcpy(&(waveform.f->epoch), &(waveform.a->epoch),
+            sizeof(LIGOTimeGPS) );
+        memcpy(&(waveform.phi->epoch), &(waveform.a->epoch),
+            sizeof(LIGOTimeGPS) );
+        memcpy(&(nonSpinningWaveform.a->epoch), &(waveform.a->epoch),
+            sizeof(LIGOTimeGPS) );
+        memcpy(&(nonSpinningWaveform.f->epoch), &(waveform.a->epoch),
+            sizeof(LIGOTimeGPS) );
+        memcpy(&(nonSpinningWaveform.phi->epoch), &(waveform.a->epoch),
+            sizeof(LIGOTimeGPS) );
 
-      /* perform the non-spinning injection */
-      LAL_CALL( LALSimulateCoherentGW(&status, chan, &nonSpinningWaveform,
-          &detector ), &status);
+        /* perform the non-spinning injection */
+        LAL_CALL( LALSimulateCoherentGW(&status, chan, &nonSpinningWaveform,
+            &detector ), &status);
+        LAL_CALL( LALResampleREAL4TimeSeries( &status, chan,
+            &resampleParams ), &status );
 
-      if (writechan)
-      {
-        /* write out channel data */
-        if (vrbflg) fprintf(stdout, "writing channel data to file... \n" );
-        switch ( ifoNumber )
+        if (writechan)
         {
-          case LAL_IFO_G1:
-            LALSnprintf(chanfilename, FILENAME_MAX, "nonspinning_G1_inj%d.dat",
-                injSimCount+1);
-            if (vrbflg) fprintf( stdout,
-                "writing G1 channel time series out to %s\n", chanfilename );
-            LALSPrintTimeSeries(chan, chanfilename );
-            break;
-          case LAL_IFO_H1:
-            LALSnprintf(chanfilename, FILENAME_MAX, "nonspinning_H1_inj%d.dat",
-                injSimCount+1);
-            if (vrbflg) fprintf( stdout,
-                "writing H1 channel time series out to %s\n", chanfilename );
-            LALSPrintTimeSeries(chan, chanfilename );
-            break;
-          case LAL_IFO_H2:
-            LALSnprintf(chanfilename, FILENAME_MAX, "nonspinning_H2_inj%d.dat",
-                injSimCount+1);
-            if (vrbflg) fprintf( stdout,
-                "writing H2 channel time series out to %s\n", chanfilename );
-            LALSPrintTimeSeries(chan, chanfilename );
-            break;
-          case LAL_IFO_L1:
-            LALSnprintf(chanfilename, FILENAME_MAX, "nonspinning_L1_inj%d.dat",
-                injSimCount+1);
-            if (vrbflg) fprintf( stdout,
-                "writing L1 channel time series out to %s\n", chanfilename );
-            LALSPrintTimeSeries(chan, chanfilename );
-            break;
-          case LAL_IFO_T1:
-            LALSnprintf(chanfilename, FILENAME_MAX, "nonspinning_T1_inj%d.dat",
-                injSimCount+1);
-            if (vrbflg) fprintf( stdout,
-                "writing T1 channel time series out to %s\n", chanfilename );
-            LALSPrintTimeSeries(chan, chanfilename );
-            break;
-          case LAL_IFO_V1:
-            LALSnprintf(chanfilename, FILENAME_MAX, "nonspinning_V1_inj%d.dat",
-                injSimCount+1);
-            if (vrbflg) fprintf( stdout,
-                "writing V1 channel time series out to %s\n", chanfilename );
-            LALSPrintTimeSeries(chan, chanfilename );
-            break;
-          default:
-            fprintf( stderr,
-                "Error: ifoNumber %d does not correspond to a known IFO: \n",
-                ifoNumber );
-            exit( 1 );
-        }
-      }
-
-      LAL_CALL( LALCreateForwardRealFFTPlan( &status, &pfwd,
-          chan->data->length, 0), &status);
-      LAL_CALL( LALCreateCOMPLEX8FrequencySeries( &status, &fftStandardData,
-          chan->name, chan->epoch, f0, deltaF, lalDimensionlessUnit,
-          (numPoints / 2 + 1) ), &status );
-      LAL_CALL( LALTimeFreqRealFFT( &status, fftStandardData, chan, pfwd ),
-          &status);
-      LAL_CALL( LALDestroyRealFFTPlan( &status, &pfwd ), &status);
-      pfwd = NULL;
-
-      /* reset chan structure */
-      memset( chan->data->data, 0, chan->data->length * sizeof(REAL4) );
-
-      /* perform the spinning injection */
-      LAL_CALL( LALSimulateCoherentGW(&status, chan, &waveform, &detector ),
-          &status);
-
-      if (writechan)
-      {
-        /* write out channel data */
-        if (vrbflg) fprintf(stdout, "writing channel data to file... \n" );
-        switch ( ifoNumber )
-        {
-          case LAL_IFO_G1:
-            LALSnprintf( chanfilename, FILENAME_MAX, "spinning_G1_inj%d.dat",
-                injSimCount+1);
-            if (vrbflg) fprintf( stdout,
-                "writing G1 channel time series out to %s\n", chanfilename );
-            LALSPrintTimeSeries(chan, chanfilename );
-            break;
-          case LAL_IFO_H1:
-            LALSnprintf( chanfilename, FILENAME_MAX, "spinning_H1_inj%d.dat",
-                injSimCount+1);
-            if (vrbflg) fprintf( stdout,
-                "writing H1 channel time series out to %s\n", chanfilename );
-            LALSPrintTimeSeries(chan, chanfilename );
-            break;
-          case LAL_IFO_H2:
-            LALSnprintf( chanfilename, FILENAME_MAX, "spinning_H2_inj%d.dat",
-                injSimCount+1);
-            if (vrbflg) fprintf( stdout,
-                "writing H2 channel time series out to %s\n", chanfilename );
-            LALSPrintTimeSeries(chan, chanfilename );
-            break;
-          case LAL_IFO_L1:
-            LALSnprintf( chanfilename, FILENAME_MAX, "spinning_L1_inj%d.dat",
-                injSimCount+1);
-            if (vrbflg) fprintf( stdout,
-                "writing L1 channel time series out to %s\n", chanfilename );
-            LALSPrintTimeSeries(chan, chanfilename );
-            break;
-          case LAL_IFO_T1:
-            LALSnprintf( chanfilename, FILENAME_MAX, "spinning_T1_inj%d.dat",
-                injSimCount+1);
-            if (vrbflg) fprintf( stdout,
-                "writing T1 channel time series out to %s\n", chanfilename );
-            LALSPrintTimeSeries(chan, chanfilename );
-            break;
-          case LAL_IFO_V1:
-            LALSnprintf( chanfilename, FILENAME_MAX, "spinning_V1_inj%d.dat",
-                injSimCount+1);
-            if (vrbflg) fprintf( stdout,
-                "writing V1 channel time series out to %s\n", chanfilename );
-            LALSPrintTimeSeries(chan, chanfilename );
-            break;
-          default:
-            fprintf( stderr,
-                "Error: ifoNumber %d does not correspond to a known IFO: \n",
-                ifoNumber );
-            exit( 1 );
-        }
-      }
-
-      LAL_CALL( LALCreateForwardRealFFTPlan( &status, &pfwd,
-          chan->data->length, 0), &status);
-      LAL_CALL( LALCreateCOMPLEX8FrequencySeries( &status, &fftData,
-          chan->name, chan->epoch, f0, deltaF, lalDimensionlessUnit,
-          (numPoints / 2 + 1) ), &status );
-      LAL_CALL( LALTimeFreqRealFFT( &status, fftData, chan, pfwd ), &status);
-      LAL_CALL( LALDestroyRealFFTPlan( &status, &pfwd ), &status);
-      pfwd = NULL;
-
-      /* compute the Standard Sigmasq */
-      thisStandardSigmasq = 0;
-
-      /* avoid f=0 part of psd */
-      {
-        if (vrbflg) fprintf( stdout, "using LIGOI PSD \n");
-        for ( k = kLow; k < kHi; k++ )
-        {
-          REAL8 freq;
-          REAL8 sim_psd_value;
-          freq = fftStandardData->deltaF * k;
-          switch( ifoNumber )
+          /* write out channel data */
+          if (vrbflg) fprintf(stdout, "writing channel data to file... \n" );
+          switch ( ifoNumber )
           {
-            case LAL_IFO_G1: LALGEOPsd( NULL, &sim_psd_value, freq ); break;
-            case LAL_IFO_H1: LALLIGOIPsd( NULL, &sim_psd_value, freq ); break;
-            case LAL_IFO_H2: LALLIGOIPsd( NULL, &sim_psd_value, freq ); break;
-            case LAL_IFO_L1: LALLIGOIPsd( NULL, &sim_psd_value, freq ); break;
-            case LAL_IFO_T1: LALTAMAPsd( NULL, &sim_psd_value, freq ); break;
-            case LAL_IFO_V1: LALVIRGOPsd( NULL, &sim_psd_value, freq ); break;
+            case LAL_IFO_G1:
+              LALSnprintf(chanfilename, FILENAME_MAX,
+                  "nonspinning_G1_inj%d.dat", injSimCount+1);
+              if (vrbflg) fprintf( stdout,
+                  "writing G1 channel time series out to %s\n", chanfilename );
+              LALSPrintTimeSeries(chan, chanfilename );
+              break;
+            case LAL_IFO_H1:
+              LALSnprintf(chanfilename, FILENAME_MAX,
+                  "nonspinning_H1_inj%d.dat", injSimCount+1);
+              if (vrbflg) fprintf( stdout,
+                  "writing H1 channel time series out to %s\n", chanfilename );
+              LALSPrintTimeSeries(chan, chanfilename );
+              break;
+            case LAL_IFO_H2:
+              LALSnprintf(chanfilename, FILENAME_MAX,
+                  "nonspinning_H2_inj%d.dat", injSimCount+1);
+              if (vrbflg) fprintf( stdout,
+                  "writing H2 channel time series out to %s\n", chanfilename );
+              LALSPrintTimeSeries(chan, chanfilename );
+              break;
+            case LAL_IFO_L1:
+              LALSnprintf(chanfilename, FILENAME_MAX,
+                  "nonspinning_L1_inj%d.dat", injSimCount+1);
+              if (vrbflg) fprintf( stdout,
+                  "writing L1 channel time series out to %s\n", chanfilename );
+              LALSPrintTimeSeries(chan, chanfilename );
+              break;
+            case LAL_IFO_T1:
+              LALSnprintf(chanfilename, FILENAME_MAX,
+                  "nonspinning_T1_inj%d.dat", injSimCount+1);
+              if (vrbflg) fprintf( stdout,
+                  "writing T1 channel time series out to %s\n", chanfilename );
+              LALSPrintTimeSeries(chan, chanfilename );
+              break;
+            case LAL_IFO_V1:
+              LALSnprintf(chanfilename, FILENAME_MAX,
+                  "nonspinning_V1_inj%d.dat", injSimCount+1);
+              if (vrbflg) fprintf( stdout,
+                  "writing V1 channel time series out to %s\n", chanfilename );
+              LALSPrintTimeSeries(chan, chanfilename );
+              break;
             default:
               fprintf( stderr,
                   "Error: ifoNumber %d does not correspond to a known IFO: \n",
                   ifoNumber );
               exit( 1 );
           }
-
-          thisStandardSigmasq +=
-              ((fftStandardData->data->data[k].re * dynRange) *
-               (fftStandardData->data->data[k].re * dynRange)) /
-              sim_psd_value;
-          thisStandardSigmasq +=
-              ((fftStandardData->data->data[k].im * dynRange) *
-               (fftStandardData->data->data[k].im * dynRange)) /
-              sim_psd_value;
         }
-      }
 
-      thisStandardSigmasq *= 4*fftData->deltaF;
-      standardSigmasqVec[ifoNumber-1] = thisStandardSigmasq;
-      if ( vrbflg )
-      {
-        fprintf( stdout, "thisStandardSigmasq %e\n", thisStandardSigmasq );
-        fprintf( stdout, "standardSigmasqVec  %e\n",
-            standardSigmasqVec[ifoNumber-1] );
-        fflush( stdout );
-      }
+        LAL_CALL( LALCreateForwardRealFFTPlan( &status, &pfwd,
+            chan->data->length, 0), &status);
+        LAL_CALL( LALCreateCOMPLEX8FrequencySeries( &status, &fftStandardData,
+            chan->name, chan->epoch, f0, deltaF, lalDimensionlessUnit,
+            (numPoints / 2 + 1) ), &status );
+        LAL_CALL( LALTimeFreqRealFFT( &status, fftStandardData, chan, pfwd ),
+            &status);
+        LAL_CALL( LALDestroyRealFFTPlan( &status, &pfwd ), &status);
+        pfwd = NULL;
 
-      /* compute the Mixed Sigmasq */
-      thisMixedSigmasq = 0;
+        /* reset chan structure */
+        LAL_CALL( LALDestroyREAL4TimeSeries( &status, chan ), &status );
+        LAL_CALL( LALCreateREAL4TimeSeries( &status, &chan, "", epoch, f0,
+            deltaT, lalADCCountUnit, numRawPoints ), &status );
 
-      /* avoid f=0 part of psd */
-      {
-        if (vrbflg) fprintf( stdout, "using LIGOI PSD \n");
-        for ( k = kLow; k < kHi; k++ )
+        /* get the gps start time of the signal to inject */
+        LALGPStoINT8( &status, &waveformStartTime,
+            &(thisInjection->geocent_end_time) );
+        waveformStartTime -= (INT8) ( 1000000000.0 * ppnParams.tc );
+
+        offset = (chan->data->length / 2.0) * chan->deltaT;
+        gpsStartTime.gpsSeconds =
+            thisInjection->geocent_end_time.gpsSeconds - offset;
+        gpsStartTime.gpsNanoSeconds =
+            thisInjection->geocent_end_time.gpsNanoSeconds;
+        chan->epoch = gpsStartTime;
+
+        /* perform the spinning injection */
+        LAL_CALL( LALSimulateCoherentGW(&status, chan, &waveform, &detector ),
+            &status);
+        LAL_CALL( LALResampleREAL4TimeSeries( &status, chan,
+            &resampleParams ), &status );
+
+        if (writechan)
         {
-          REAL8 numerator = 0.0;
-          REAL8 freq;
-          REAL8 sim_psd_value;
-          freq = fftData->deltaF * k;
-          switch( ifoNumber )
-          { 
-            case LAL_IFO_G1: LALGEOPsd( NULL, &sim_psd_value, freq ); break;
-            case LAL_IFO_H1: LALLIGOIPsd( NULL, &sim_psd_value, freq ); break;
-            case LAL_IFO_H2: LALLIGOIPsd( NULL, &sim_psd_value, freq ); break;
-            case LAL_IFO_L1: LALLIGOIPsd( NULL, &sim_psd_value, freq ); break;
-            case LAL_IFO_T1: LALTAMAPsd( NULL, &sim_psd_value, freq ); break;
-            case LAL_IFO_V1: LALVIRGOPsd( NULL, &sim_psd_value, freq ); break;
+          /* write out channel data */
+          if (vrbflg) fprintf(stdout, "writing channel data to file... \n" );
+          switch ( ifoNumber )
+          {
+            case LAL_IFO_G1:
+              LALSnprintf( chanfilename, FILENAME_MAX, "spinning_G1_inj%d.dat",
+                  injSimCount+1);
+              if (vrbflg) fprintf( stdout,
+                  "writing G1 channel time series out to %s\n", chanfilename );
+              LALSPrintTimeSeries(chan, chanfilename );
+              break;
+            case LAL_IFO_H1:
+              LALSnprintf( chanfilename, FILENAME_MAX, "spinning_H1_inj%d.dat",
+                  injSimCount+1);
+              if (vrbflg) fprintf( stdout,
+                  "writing H1 channel time series out to %s\n", chanfilename );
+              LALSPrintTimeSeries(chan, chanfilename );
+              break;
+            case LAL_IFO_H2:
+              LALSnprintf( chanfilename, FILENAME_MAX, "spinning_H2_inj%d.dat",
+                  injSimCount+1);
+              if (vrbflg) fprintf( stdout,
+                  "writing H2 channel time series out to %s\n", chanfilename );
+              LALSPrintTimeSeries(chan, chanfilename );
+              break;
+            case LAL_IFO_L1:
+              LALSnprintf( chanfilename, FILENAME_MAX, "spinning_L1_inj%d.dat",
+                  injSimCount+1);
+              if (vrbflg) fprintf( stdout,
+                  "writing L1 channel time series out to %s\n", chanfilename );
+              LALSPrintTimeSeries(chan, chanfilename );
+              break;
+            case LAL_IFO_T1:
+              LALSnprintf( chanfilename, FILENAME_MAX, "spinning_T1_inj%d.dat",
+                  injSimCount+1);
+              if (vrbflg) fprintf( stdout,
+                  "writing T1 channel time series out to %s\n", chanfilename );
+              LALSPrintTimeSeries(chan, chanfilename );
+              break;
+            case LAL_IFO_V1:
+              LALSnprintf( chanfilename, FILENAME_MAX, "spinning_V1_inj%d.dat",
+                  injSimCount+1);
+              if (vrbflg) fprintf( stdout,
+                  "writing V1 channel time series out to %s\n", chanfilename );
+              LALSPrintTimeSeries(chan, chanfilename );
+              break;
             default:
               fprintf( stderr,
                   "Error: ifoNumber %d does not correspond to a known IFO: \n",
                   ifoNumber );
               exit( 1 );
           }
-
-          numerator += pow((fftStandardData->data->data[k].re * dynRange) *
-                           (fftData->data->data[k].re * dynRange) +
-                           (fftStandardData->data->data[k].im * dynRange) *
-                           (fftData->data->data[k].im * dynRange),2.0);
-          numerator += pow((fftStandardData->data->data[k].im * dynRange) *
-                           (fftData->data->data[k].re * dynRange) -
-                           (fftStandardData->data->data[k].re * dynRange) *
-                           (fftData->data->data[k].im * dynRange),2.0);
-
-          thisMixedSigmasq += pow(numerator,0.5) / sim_psd_value;
         }
-      }
 
-      thisMixedSigmasq *= 4*fftData->deltaF;
-      mixedSigmasqVec[ifoNumber-1] = thisMixedSigmasq;
+        LAL_CALL( LALCreateForwardRealFFTPlan( &status, &pfwd,
+            chan->data->length, 0), &status);
+        LAL_CALL( LALCreateCOMPLEX8FrequencySeries( &status, &fftData,
+            chan->name, chan->epoch, f0, deltaF, lalDimensionlessUnit,
+            (numPoints / 2 + 1) ), &status );
+        LAL_CALL( LALTimeFreqRealFFT( &status, fftData, chan, pfwd ), &status);
+        LAL_CALL( LALDestroyRealFFTPlan( &status, &pfwd ), &status);
+        pfwd = NULL;
 
-      if ( vrbflg )
-      {
-        fprintf( stdout, "thisMixedSigmasq %e\n", thisMixedSigmasq );
-        fprintf( stdout, "mixedSigmasqVec  %e\n",
-            mixedSigmasqVec[ifoNumber-1] );
-        fflush( stdout );
-      }
+        /* compute the Standard Sigmasq */
+        thisStandardSigmasq = 0;
 
-      /* compute the Spinning sigmasq */
-      thisSigmasq = 0;
-
-      /* avoid f=0 part of psd */  
-      {
-        if (vrbflg) fprintf( stdout, "using LIGOI PSD \n");
-        for ( k = kLow; k < kHi; k++ )
+        /* avoid f=0 part of psd */
         {
-          REAL8 freq;
-          REAL8 sim_psd_value;
-          freq = fftData->deltaF * k;
-          switch( ifoNumber )
-          { 
-            case LAL_IFO_G1: LALGEOPsd( NULL, &sim_psd_value, freq ); break;
-            case LAL_IFO_H1: LALLIGOIPsd( NULL, &sim_psd_value, freq ); break;
-            case LAL_IFO_H2: LALLIGOIPsd( NULL, &sim_psd_value, freq ); break;
-            case LAL_IFO_L1: LALLIGOIPsd( NULL, &sim_psd_value, freq ); break;
-            case LAL_IFO_T1: LALTAMAPsd( NULL, &sim_psd_value, freq ); break;
-            case LAL_IFO_V1: LALVIRGOPsd( NULL, &sim_psd_value, freq ); break;
-            default:
-              fprintf( stderr,
-                  "Error: ifoNumber %d does not correspond to a known IFO: \n",
-                  ifoNumber );
-              exit( 1 );
+          if (vrbflg) fprintf( stdout, "using LIGOI PSD \n");
+          for ( k = kLow; k < kHi; k++ )
+          {
+            REAL8 freq;
+            REAL8 sim_psd_value;
+            freq = fftStandardData->deltaF * k;
+            switch( ifoNumber )
+            {
+              case LAL_IFO_G1: LALGEOPsd( NULL, &sim_psd_value, freq ); break;
+              case LAL_IFO_H1: LALLIGOIPsd( NULL, &sim_psd_value, freq ); break;
+              case LAL_IFO_H2: LALLIGOIPsd( NULL, &sim_psd_value, freq ); break;
+              case LAL_IFO_L1: LALLIGOIPsd( NULL, &sim_psd_value, freq ); break;
+              case LAL_IFO_T1: LALTAMAPsd( NULL, &sim_psd_value, freq ); break;
+              case LAL_IFO_V1: LALVIRGOPsd( NULL, &sim_psd_value, freq ); break;
+              default:
+                fprintf( stderr,
+                    "Error: ifoNumber %d does not correspond to a known IFO: \n",
+                    ifoNumber );
+                exit( 1 );
+            }
+
+            thisStandardSigmasq +=
+                ((fftStandardData->data->data[k].re * dynRange) *
+                 (fftStandardData->data->data[k].re * dynRange)) /
+                sim_psd_value;
+            thisStandardSigmasq +=
+                ((fftStandardData->data->data[k].im * dynRange) *
+                 (fftStandardData->data->data[k].im * dynRange)) /
+                sim_psd_value;
           }
-
-          thisSigmasq +=
-              ((fftData->data->data[k].re * dynRange) * 
-               (fftData->data->data[k].re * dynRange)) /
-              sim_psd_value;
-          thisSigmasq +=
-              ((fftData->data->data[k].im * dynRange) * 
-               (fftData->data->data[k].im * dynRange)) /
-              sim_psd_value;
         }
-      }
 
-      thisSigmasq *= 4*fftData->deltaF;
-      spinningSigmasqVec[ifoNumber-1] = thisSigmasq; 
-      LAL_CALL( LALDestroyCOMPLEX8FrequencySeries( &status, fftData),
-          &status );
-      LAL_CALL( LALDestroyCOMPLEX8FrequencySeries( &status, fftStandardData),
-          &status );
+        thisStandardSigmasq *= 4*fftStandardData->deltaF;
+        standardSigmasqVec[ifoNumber-1] = thisStandardSigmasq;
+        if ( vrbflg )
+        {
+          fprintf( stdout, "thisStandardSigmasq %e\n", thisStandardSigmasq );
+          fprintf( stdout, "standardSigmasqVec  %e\n",
+              standardSigmasqVec[ifoNumber-1] );
+          fflush( stdout );
+        }
 
-      if ( vrbflg )
-      {
-        fprintf( stdout, "thisSigmasq        %e\n", thisSigmasq );
-        fprintf( stdout, "spinningSigmasqVec %e\n",
-             spinningSigmasqVec[ifoNumber-1] );
-        fflush( stdout );
-      }
+        /* compute the Mixed Sigmasq */
+        thisMixedSigmasq = 0;
 
-      /* free some memory */
-      if (detector.transfer) detector.transfer = NULL;
-      if ( detector.site )
-      {
-        LALFree( detector.site);
-        detector.site = NULL;
+        /* avoid f=0 part of psd */
+        {
+          if (vrbflg) fprintf( stdout, "using LIGOI PSD \n");
+          for ( k = kLow; k < kHi; k++ )
+          {
+            REAL8 numerator = 0.0;
+            REAL8 freq;
+            REAL8 sim_psd_value;
+            freq = fftData->deltaF * k;
+            switch( ifoNumber )
+            { 
+              case LAL_IFO_G1: LALGEOPsd( NULL, &sim_psd_value, freq ); break;
+              case LAL_IFO_H1: LALLIGOIPsd( NULL, &sim_psd_value, freq ); break;
+              case LAL_IFO_H2: LALLIGOIPsd( NULL, &sim_psd_value, freq ); break;
+              case LAL_IFO_L1: LALLIGOIPsd( NULL, &sim_psd_value, freq ); break;
+              case LAL_IFO_T1: LALTAMAPsd( NULL, &sim_psd_value, freq ); break;
+              case LAL_IFO_V1: LALVIRGOPsd( NULL, &sim_psd_value, freq ); break;
+              default:
+                fprintf( stderr,
+                    "Error: ifoNumber %d does not correspond to a known IFO: \n",
+                    ifoNumber );
+                exit( 1 );
+            }
+
+            numerator += pow((fftStandardData->data->data[k].re * dynRange) *
+                             (fftData->data->data[k].re * dynRange) +
+                             (fftStandardData->data->data[k].im * dynRange) *
+                             (fftData->data->data[k].im * dynRange),2.0);
+            numerator += pow((fftStandardData->data->data[k].im * dynRange) *
+                             (fftData->data->data[k].re * dynRange) -
+                             (fftStandardData->data->data[k].re * dynRange) *
+                             (fftData->data->data[k].im * dynRange),2.0);
+
+            thisMixedSigmasq += pow(numerator,0.5) / sim_psd_value;
+          }
+        }
+
+        thisMixedSigmasq *= 4*fftData->deltaF;
+        mixedSigmasqVec[ifoNumber-1] = thisMixedSigmasq;
+
+        if ( vrbflg )
+        {
+          fprintf( stdout, "thisMixedSigmasq %e\n", thisMixedSigmasq );
+          fprintf( stdout, "mixedSigmasqVec  %e\n",
+              mixedSigmasqVec[ifoNumber-1] );
+          fflush( stdout );
+        }
+
+        /* compute the Spinning sigmasq */
+        thisSigmasq = 0;
+
+        /* avoid f=0 part of psd */  
+        {
+          if (vrbflg) fprintf( stdout, "using LIGOI PSD \n");
+          for ( k = kLow; k < kHi; k++ )
+          {
+            REAL8 freq;
+            REAL8 sim_psd_value;
+            freq = fftData->deltaF * k;
+            switch( ifoNumber )
+            { 
+              case LAL_IFO_G1: LALGEOPsd( NULL, &sim_psd_value, freq ); break;
+              case LAL_IFO_H1: LALLIGOIPsd( NULL, &sim_psd_value, freq ); break;
+              case LAL_IFO_H2: LALLIGOIPsd( NULL, &sim_psd_value, freq ); break;
+              case LAL_IFO_L1: LALLIGOIPsd( NULL, &sim_psd_value, freq ); break;
+              case LAL_IFO_T1: LALTAMAPsd( NULL, &sim_psd_value, freq ); break;
+              case LAL_IFO_V1: LALVIRGOPsd( NULL, &sim_psd_value, freq ); break;
+              default:
+                fprintf( stderr,
+                    "Error: ifoNumber %d does not correspond to a known IFO: \n",
+                    ifoNumber );
+                exit( 1 );
+           }
+
+            thisSigmasq +=
+                ((fftData->data->data[k].re * dynRange) * 
+                 (fftData->data->data[k].re * dynRange)) /
+                sim_psd_value;
+            thisSigmasq +=
+                ((fftData->data->data[k].im * dynRange) * 
+                 (fftData->data->data[k].im * dynRange)) /
+                sim_psd_value;
+          }
+        }
+
+        thisSigmasq *= 4*fftData->deltaF;
+        spinningSigmasqVec[ifoNumber-1] = thisSigmasq; 
+        LAL_CALL( LALDestroyCOMPLEX8FrequencySeries( &status, fftData),
+            &status );
+        LAL_CALL( LALDestroyCOMPLEX8FrequencySeries( &status, fftStandardData),
+            &status );
+
+        if ( vrbflg )
+        {
+          fprintf( stdout, "thisSigmasq        %e\n", thisSigmasq );
+          fprintf( stdout, "spinningSigmasqVec %e\n",
+               spinningSigmasqVec[ifoNumber-1] );
+          fflush( stdout );
+        }
+
+        /* free some memory */
+        if (detector.transfer) detector.transfer = NULL;
+        if ( detector.site )
+        {
+          LALFree( detector.site);
+          detector.site = NULL;
+        }
+        LAL_CALL( LALDestroyREAL4TimeSeries( &status, chan ), &status );
       }
     }
     /* end loop over ifo */
-  
+
     destroyCoherentGW( &waveform );
     destroyCoherentGW( &nonSpinningWaveform );
 
@@ -923,7 +977,6 @@ int main( int argc, char *argv[] )
     {
       thisInjection = thisInjection->next;
     }
-
   } while ( ++injSimCount < numInjections ); 
   /* end loop over injections */
 
@@ -931,15 +984,18 @@ int main( int argc, char *argv[] )
 
   /* open the output xml file */
   memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
-  LALSnprintf( fname, sizeof(fname), outputFile);
-  LAL_CALL( LALOpenLIGOLwXMLFile  ( &status, &xmlStream, fname), &status);
+  LALSnprintf( fname, sizeof(fname), outputFile );
+  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlStream, fname ), &status );
 
   /* write out the process and process params tables */
   if ( vrbflg ) fprintf( stdout, "process... " );
-  LAL_CALL(LALGPSTimeNow(&status, &(proctable.processTable->end_time), &accuracy), &status);
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable, process_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
+  LAL_CALL( LALGPSTimeNow( &status, &(proctable.processTable->end_time ),
+      &accuracy ), &status );
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ),
+      &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable,
+      process_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream ), &status );
   free( proctable.processTable );
   /* Just being pedantic here ... */
   proctable.processTable = NULL;
@@ -952,42 +1008,47 @@ int main( int argc, char *argv[] )
 
   /* write the process params table */
   if ( vrbflg ) fprintf( stdout, "process_params... " );
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_params_table ), &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, procparams, process_params_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream,
+      process_params_table ), &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, procparams,
+      process_params_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream ), &status );
 
   /* write the search summary table */
-  if ( coireflg ){
-     if ( vrbflg ) fprintf( stdout, "search_summary... " );
-     outputTable.searchSummaryTable = searchSummHead;
-     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, search_summary_table), &status);
-     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputTable, search_summary_table), &status);
-     LAL_CALL( LALEndLIGOLwXMLTable  ( &status, &xmlStream), &status);
-   }
+  if ( coireflg )
+  {
+    if ( vrbflg ) fprintf( stdout, "search_summary... " );
+    outputTable.searchSummaryTable = searchSummHead;
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream,
+      search_summary_table ), &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputTable,
+        search_summary_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream ), &status );
+  }
 
   /* write the sim inspiral table */
   if ( vrbflg ) fprintf( stdout, "sim_inspiral... " );
   outputTable.simInspiralTable = injectionHead;
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, sim_inspiral_table), &status);
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputTable, sim_inspiral_table), &status);
-  LAL_CALL( LALEndLIGOLwXMLTable  ( &status, &xmlStream), &status);
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, sim_inspiral_table ),
+      &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputTable,
+      sim_inspiral_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream ), &status );
 
   /* write the sngl inspiral table */
-  if ( coireflg ){
-     if ( vrbflg ) fprintf( stdout, "sngl_inspiral... " );
-     outputTable.snglInspiralTable = snglHead;
-     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, sngl_inspiral_table), &status);
-     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputTable, sngl_inspiral_table), &status);
-     LAL_CALL( LALEndLIGOLwXMLTable  ( &status, &xmlStream), &status);
+  if ( coireflg )
+  {
+    if ( vrbflg ) fprintf( stdout, "sngl_inspiral... " );
+    outputTable.snglInspiralTable = snglHead;
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream,
+        sngl_inspiral_table ), &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputTable,
+        sngl_inspiral_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream ), &status );
   } 
 
   /* close the xml file */ 
-  LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlStream), &status);
-
-  /* Freeing memory */
-  LAL_CALL( LALDestroyREAL4TimeSeries( &status, chan), &status );
-  LAL_CALL( LALDestroyCOMPLEX8FrequencySeries( &status, resp), &status );
-  LAL_CALL( LALDestroyCOMPLEX8FrequencySeries( &status, detTransDummy), &status );
+  LAL_CALL( LALCloseLIGOLwXMLFile( &status, &xmlStream ), &status );
 
   free( injectionFile ); 
   injectionFile = NULL;
@@ -1008,6 +1069,13 @@ int main( int argc, char *argv[] )
     injectionHead = injectionHead->next;
     LALFree( thisInjection );
   }
+
+  /* Freeing memory */
+  LAL_CALL( LALDestroyREAL4TimeSeries( &status, chanDummy ), &status );
+  LAL_CALL( LALDestroyCOMPLEX8FrequencySeries( &status, resp ), &status );
+  LAL_CALL( LALDestroyCOMPLEX8FrequencySeries( &status, detTransDummy ),
+      &status );
+
 
   /*check for memory leaks */
   LALCheckMemoryLeaks(); 
