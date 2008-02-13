@@ -146,7 +146,7 @@ LIGOTimeGPS *XLALGreenwichMeanSiderealTimeToGPS(
 	int iterations = 10;
 	double error;
 
-	gps->gpsSeconds = gps->gpsNanoSeconds = 0;
+	XLALGPSSet(gps, 0, 0);
 
 	do {
 		error = gmst - XLALGreenwichMeanSiderealTime(gps);
