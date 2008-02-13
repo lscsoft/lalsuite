@@ -719,32 +719,35 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	{
 	  __declspec(align(16)) static struct { REAL4 a,b,c,d; } v0011 = {0.0, 0.0, 1.0, 1.0};
 	  __declspec(align(16)) static struct { REAL4 a,b,c,d; } v2222 = {2.0, 2.0, 2.0, 2.0};
-  	  __declspec(align(16)) COMPLEX8 XSums; 
+  	  __declspec(align(16)) COMPLEX8 STn; 
 	
 	  REAL4 kappa_m = kappa_max; /* single precision version of kappa_max */
 	      
+	  /* prelude */
+	  __asm {
+ 	      mov      esi , Xalpha_l                 /* Xal = Xalpha_l         */
+	      movss    xmm2, kappa_m                  /* pn[0] = kappa_max      */
+	      movlps   xmm1, MMWORD PTR [esi]         /* STnV = Xal ...         */
+	      movhps   xmm1, MMWORD PTR [esi+8]       /* ... continued          */
+	      shufps   xmm2, xmm2, 0                  /* pn[3]=pn[2]=pn[1]=pn[0]*/
+	      movaps   xmm4, XMMWORD PTR v2222        /* xmm4 = V2222           */
+	      subps    xmm2, XMMWORD PTR v0011        /* pn[2]-=1.0; pn[3]-=1.0 */
+	      movaps   xmm0, xmm2                     /* qn = pn                */
+	      };
+
+	  /* one loop iteration as a macro */
 #define VEC_LOOP_AV(a,b)\
 	  { \
-	      __asm movlps   xmm3, MMWORD PTR [esi+a]	\
-	      __asm movhps   xmm3, MMWORD PTR [esi+b]	\
-	      __asm subps    xmm2, xmm4			\
-	      __asm mulps    xmm3, xmm0			\
-	      __asm mulps    xmm1, xmm2			\
-	      __asm mulps    xmm0, xmm2			\
-	      __asm addps    xmm1, xmm3			\
+	      __asm movlps   xmm3, MMWORD PTR [esi+a] /* Xai = Xal[a]  ...*/\
+	      __asm movhps   xmm3, MMWORD PTR [esi+b] /* ... continued    */\
+	      __asm subps    xmm2, xmm4		      /* pn  -= V2222     */\
+	      __asm mulps    xmm3, xmm0		      /* Xai *= qn        */\
+	      __asm mulps    xmm1, xmm2		      /* STnV *= pn       */\
+	      __asm mulps    xmm0, xmm2		      /* qn  *= pn        */\
+	      __asm addps    xmm1, xmm3		      /* STnV += Xai      */\
 	      }
 
-	  __asm {
-		 mov      esi , Xalpha_l 	
-		 movss    xmm2, kappa_m
-		 movlps   xmm1, MMWORD PTR [esi]
-		 movhps   xmm1, MMWORD PTR [esi+8]
-		 shufps   xmm2, xmm2, 0
-		 movaps   xmm4, XMMWORD PTR v2222
-		 subps    xmm2, XMMWORD PTR v0011
-		 movaps   xmm0, xmm2
-		   };
-
+	  /* seven macro calls i.e. loop iterations */
 	  VEC_LOOP_AV(16,24);
 	  VEC_LOOP_AV(32,40);
 	  VEC_LOOP_AV(48,56);
@@ -753,15 +756,16 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  VEC_LOOP_AV(96,104);
 	  VEC_LOOP_AV(112,120);
 
+	  /* four divisions and summing in SSE, then write out the result */
 	  __asm {
-		 divps    xmm1, xmm0
-		 movhlps  xmm4, xmm1
-		 addps    xmm4, xmm1
-		 movlps   XSums, xmm4
-		   };
+	      divps    xmm1, xmm0                     /* STnV      /= qn       */
+	      movhlps  xmm4, xmm1                     /* / STnV[0] += STnV[2] \ */
+	      addps    xmm4, xmm1                     /* \ STnV[1] += STnV[3] / */
+	      movlps   STn, xmm4                      /* STn = STnV */
+	      };
 
-	  realXP = s_alpha * XSums.re - c_alpha * XSums.im;
-	  imagXP = c_alpha * XSums.re + s_alpha * XSums.im;
+	  realXP = s_alpha * STn.re - c_alpha * STn.im;
+	  imagXP = c_alpha * STn.re + s_alpha * STn.im;
 	     
 	}
 #endif
