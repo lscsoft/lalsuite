@@ -239,6 +239,11 @@ REAL8 XLALCheckOverlapOfEllipsoids (
     while (min_status == GSL_CONTINUE && iter < max_iter && s->f_minimum > -1.0L  );
     /* End of minimization routine */
 
+    /* Throw an error if max iterations would have been exceeded */
+    if ( iter == max_iter && min_status == GSL_CONTINUE )
+    {
+      XLAL_ERROR_REAL8( func, XLAL_EMAXITER );
+    }
 
     return ( -(s->f_minimum) );
 }
