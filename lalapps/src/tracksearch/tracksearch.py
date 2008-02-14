@@ -646,7 +646,7 @@ class tracksearchClusterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
         pipeline.AnalysisJob.__init__(self,cp)
         self.block_id=blockID=block_id
-        layerID='RESULTS_'+str(blockID)
+        layerID='RESULTS_'+channel+'_'+str(blockID)
         #Do not use channel information for initial dir.
         #Set initial to RESULTS directory above CHANNEL dirs
         self.initialDir=layerPath=determineLayerPath(cp,blockID,layerID)
@@ -691,7 +691,8 @@ class tracksearchThresholdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
         pipeline.AnalysisJob.__init__(self,cp)
         self.block_id=blockID=block_id
-        layerID='RESULTS_'+str(blockID)
+        #layerID='RESULTS_'+str(blockID)
+        layerID='RESULTS_'+channel+'_'+str(blockID)
         #Do not set channel name information here.  This puts all
         #threshold output files into same place
         self.initialDir=layerPath=determineLayerPath(cp,blockID,layerID)
@@ -1179,7 +1180,6 @@ class tracksearch:
         for i in range(1,layerID):
             tracksearchCluster_node=tracksearchClusterNode(tracksearchCluster_job)
             layer2work=determineLayerPath(self.cp,self.blockID,i,channel)+"/*.candidates"
-            #globFilename="Glob::"+str(channel)+"::"+str(self.blockID)+"::"+str(i)+".candidates"
             globFilename=globformat%(str(channel),str(self.blockID),str(i))
             tracksearchCluster_node.add_var_opt('file',layer2work)
             tracksearchCluster_node.add_var_opt('outfile',globFilename)

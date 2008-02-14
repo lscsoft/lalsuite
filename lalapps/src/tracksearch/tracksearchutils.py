@@ -1523,6 +1523,10 @@ class candidateList:
         entryFormatFloat="%10.6f\t"
         entryFormatDouble="%10.6e\t"
         format=""
+        if (summaryData.__len__() == 0):
+            if self.verboseMode:
+                sys.stdout.write("Empty candidate object; no summary.\n")
+            return output
         for index in range(0,summaryData[0].__len__()):
             if str(summaryData[0][index]).__contains__('e'):
                 format=format+entryFormatDouble
@@ -2094,17 +2098,26 @@ class candidateList:
         """
         if type(glitchDatabase) == type(''):
             glitchDatabase=self.createGlitchDatabase(self.verboseMode)
-        format="%s\t"
-        entryFormat="%10.5f\t"
-        for index in range(1,glitchDatabase[0].__len__(),1):
-            format=format+entryFormat
-        format=format.rstrip('\t')+"\n"
         if override=='':
             sourceFile=self.filename[0]
         else:
             sourceFile=override
         outRoot,outExt=os.path.splitext(sourceFile)
         outFile=outRoot+'.glitchDB'
+        if (glitchDatabase.__len__() == 0):
+            if self.verboseMode:
+                sys.stdout.write("Empty candidate object; no summary.\n")
+            fp=open(outFile,'w')
+            fp.close()
+            return
+        format="%s\t"
+        entryFormat="%10.5f\t"
+        if (glitchDatabase.__len__() == 0):
+            if self.verboseMode:
+                sys.stdout.write("Empty candidate object; no glitchDB info.\n")
+        for index in range(1,glitchDatabase[0].__len__(),1):
+            format=format+entryFormat
+        format=format.rstrip('\t')+"\n"
         fp=open(outFile,'w')
         counter=0
         for entry in self.createGlitchDatabase(self.verboseMode):
@@ -2187,7 +2200,7 @@ class progressSpinner:
         Method that you call when you don't need spinner any longer!
         """
         if self.verbose:
-            sys.stderr.writelines('\n\n')
+            sys.stderr.writelines('\n')
             sys.stderr.flush()
     #End closeSpinner
 #Misc methods
