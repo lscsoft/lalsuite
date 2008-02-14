@@ -16,6 +16,7 @@ DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 
 PREFIX = /usr
+DATADIR = /
 
 CFLAGS = -Wall -g
 
@@ -34,7 +35,9 @@ config.status: configure
 #LDFLAGS="-Wl,-z,defs"
 	CFLAGS="$(CFLAGS)" \
 	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
-	    --prefix=$(PREFIX) --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
+	    --prefix=$(PREFIX) \
+	    --datadir=$(DATADIR) \
+	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
 	    --enable-nightly=no \
 	    --enable-frame --enable-metaio \
 	    --disable-debug
