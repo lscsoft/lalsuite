@@ -475,7 +475,7 @@ XLALHybridP1Phase(
 
     Phieff->data->data[k] = psi0 * pow(f*piM , -5./3.) + 
                             psi2 * pow(f*piM , -3./3.) +
-                            psi3 * pow(f*piM , -3./3.) +
+                            psi3 * pow(f*piM , -2./3.) +
                             psi4 * pow(f*piM , -1./3.) +
                             psi6 * pow(f*piM , 1./3.) +
                             psi7 * pow(f*piM , 2./3.);
