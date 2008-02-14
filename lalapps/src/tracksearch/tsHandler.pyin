@@ -35,8 +35,12 @@ from tracksearchutils import *
 disableGraphics=False
 try:
     from pylab import *
-except RuntimeError,ImportError:
+except Exception, errorInfo:
     disableGraphics=True
+    sys.stderr.write("Error trying to import pylab!\n")
+    sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
+    sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
+    sys.stderr.write("Pylab functionality unavailable!\n")
 
 # Need to add import for pylab and if the import fails disable the
 # printing options available from the command line with error messages
