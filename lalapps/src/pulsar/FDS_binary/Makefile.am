@@ -4,11 +4,6 @@
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-## build everything completely static
-## not useable before automake-1.6
-#AM_LDFLAGS = -all-static
-
-
 bin_PROGRAMS = lalapps_ComputeFStatisticBinary lalapps_GenerateBinaryMesh \
 	lalapps_MakeSubMesh lalapps_GenerateRandomBinaryInput \
 	lalapps_GenerateBinaryInput lalapps_GenerateSearchInput	\

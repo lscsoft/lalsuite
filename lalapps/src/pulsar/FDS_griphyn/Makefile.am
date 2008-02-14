@@ -3,7 +3,7 @@
 if FRAME
 FRAMEPROGRAMS = lalapps_narrowBandExtract
 else
-FRAMEPROGRAMS = 
+FRAMEPROGRAMS =
 endif
 bin_PROGRAMS = $(FRAMEPROGRAMS)
 bin_SCRIPTS = lalapps_GatherLFN lalapps_QueryMetadataLFN lalapps_ClusterComputeF lalapps_QueryMetadataEphemeris

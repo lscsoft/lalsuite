@@ -11,7 +11,7 @@ sftdir="${srcdir}/.."
 
 sftbase="SFT.0000"
 IFO="LHO"
-FCOMPARE="${builddir}compareFstats"
+FCOMPARE="${builddir}lalapps_compareFstats"
 CFS_DEFAULT="${builddir}lalapps_ComputeFStatistic"
 
 outfile1="Fstatv1_1.dat";

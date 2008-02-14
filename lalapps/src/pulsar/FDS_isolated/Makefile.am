@@ -1,16 +1,16 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 
-SUBDIRS = ResamplingFstat
-
 AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
+SUBDIRS = ResamplingFstat
+
 bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnalyticF \
-	lalapps_polka lalapps_uberpolka lalapps_FstatShapeTestLAL compareFstats\
+	lalapps_polka lalapps_uberpolka lalapps_FstatShapeTestLAL lalapps_compareFstats\
 	lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh \
 	lalapps_monteint lalapps_zellepolka		\
-	ComputeFStatistic_v2 lalapps_PredictFStat
+	lalapps_ComputeFStatistic_v2 lalapps_PredictFStat
 
 lalapps_zellepolka_SOURCES = zellepolka.c
 lalapps_monteint_SOURCES = monteint.c
@@ -40,9 +40,9 @@ lalapps_extractSFTband_SOURCES=extractSFTband.c
 
 lalapps_FindSh_SOURCES=FindSh.c FindSh.h clusters.c clusters.h
 
-compareFstats_SOURCES = compareFstats.c
+lalapps_compareFstats_SOURCES = compareFstats.c
 
-ComputeFStatistic_v2_SOURCES = 	ComputeFStatistic_v2.c  HeapToplist.c HeapToplist.h
+lalapps_ComputeFStatistic_v2_SOURCES = 	ComputeFStatistic_v2.c  HeapToplist.c HeapToplist.h
 
 lalapps_PredictFStat_SOURCES = PredictFStat.c
 

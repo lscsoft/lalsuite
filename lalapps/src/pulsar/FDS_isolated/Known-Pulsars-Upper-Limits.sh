@@ -11,8 +11,8 @@ twopi=6.28318530717959
 
 # Some codes which are needed for this run
 randCode=makerandparam
-mfd_code="lalapps_Makefakedata"
-cfsv2_code="ComputeFStatistic_v2"
+mfd_code="lalapps_Makefakedata_v4"
+cfsv2_code="lalapps_ComputeFStatistic_v2"
 
 SFTdir="./Real-Fake-SFTs"
 

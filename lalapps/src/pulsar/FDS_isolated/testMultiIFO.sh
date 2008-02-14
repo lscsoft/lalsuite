@@ -11,10 +11,10 @@ extra_args="$@"
 
 ##---------- names of codes and input/output files  
 saf_code="lalapps_SemiAnalyticF"
-mfd_code="lalapps_Makefakedata"
+mfd_code="lalapps_Makefakedata_v4"
 cfs_code="lalapps_ComputeFStatistic"
-cfsv2_code="ComputeFStatistic_v2"
-cmp_code="compareFstats"
+cfsv2_code="lalapps_ComputeFStatistic_v2"
+cmp_code="lalapps_compareFstats"
 pfs_code="lalapps_PredictFStat"
 
 SFTdir="./testSFTs"

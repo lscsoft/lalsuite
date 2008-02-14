@@ -1,24 +1,22 @@
 ## Process this file with automake to produce Makefile.in
-
 # $Id$
+
+INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
+LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 
 SUBDIRS = Injections FDS_isolated FDS_griphyn hough FDS_binary MakeSFTs SideBand templateBanks radiometer
 
-
 if FRAME
-FRAMEPROGS = lalapps_make_job_input_data lalapps_make_sfts lalapps_Calibrate60sSFTs lalapps_Calibrate1800SFTs lalapps_FreqAverager lalapps_psd lalapps_ComputePSD lalapps_FreqAverager_v2 lalapps_GetSFTVelocities
+FRAMEPROGS = lalapps_make_job_input_data lalapps_make_sfts
 else
-FRAMEPROGS = lalapps_Calibrate60sSFTs lalapps_Calibrate1800SFTs lalapps_FreqAverager lalapps_psd lalapps_ComputePSD  lalapps_FreqAverager_v2 lalapps_GetSFTVelocities
+FRAMEPROGS =
 endif
 
-bin_PROGRAMS = $(FRAMEPROGS)
-#bin_PROGRAMS = $(FRAMEPROGS) SFTfileIOTest
-
-#SFTfileIOTest_SOURCES = SFTfileIOTest.c SFTfileIO.c SFTfileIO.h
+bin_PROGRAMS = $(FRAMEPROGS) lalapps_Calibrate60sSFTs lalapps_Calibrate1800SFTs lalapps_FreqAverager lalapps_psd \
+	lalapps_ComputePSD  lalapps_FreqAverager_v2 lalapps_GetSFTVelocities
 
 if FRAME
-#lalapps_stripAdc_SOURCES = stripAdc.c lalDebugLevel.c
 lalapps_make_job_input_data_SOURCES = make_job_input_data.c
 lalapps_make_sfts_SOURCES = make_sfts.c
 endif
@@ -61,5 +59,3 @@ S1-L1segments.txt \
 S2-H1segments.txt \
 S2-H2segments.txt \
 S2-L1segments.txt
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la

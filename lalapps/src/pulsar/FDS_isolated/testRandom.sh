@@ -12,10 +12,10 @@ twopi=6.28318530717959
 # Some codes which are needed for this run
 randCode=makerandparam
 saf_code="lalapps_SemiAnalyticF"
-mfd_code="lalapps_Makefakedata"
+mfd_code="lalapps_Makefakedata_v4"
 cfs_code="lalapps_ComputeFStatistic"
-cfsv2_code="ComputeFStatistic_v2"
-cmp_code="compareFstats"
+cfsv2_code="lalapps_ComputeFStatistic_v2"
+cmp_code="lalapps_compareFstats"
 pfs_code="lalapps_PredictFStat"
 
 SFTdir="./testSFTs"

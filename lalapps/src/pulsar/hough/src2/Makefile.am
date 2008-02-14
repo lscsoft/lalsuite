@@ -5,26 +5,24 @@
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/src/pulsar/FDS_isolated
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-## not usable before automake-1.6:
-## AM_LDFLAGS = -all-static
+bin_PROGRAMS = lalapps_HoughValidateAM lalapps_HoughMismatch lalapps_HierarchicalSearch lalapps_HierarchicalSearch_v2
 
-bin_PROGRAMS = HoughValidateAM HoughMismatch HierarchicalSearch HierarchicalSearch_v2
-
-HoughValidateAM_SOURCES = HoughValidateAM.c ../src/MCInjectHoughS2.h \
+lalapps_HoughValidateAM_SOURCES = HoughValidateAM.c ../src/MCInjectHoughS2.h \
 	                  ../src/SFTbin.h ../src/SFTbin.c \
 			  ../src/DriveHoughColor.h ../src/PeakSelect.h \
-				  ../src/PeakSelect.c
-HoughMismatch_SOURCES = HoughMismatch.c ../src/MCInjectHoughS2.h \
+			  ../src/PeakSelect.c
+
+lalapps_HoughMismatch_SOURCES = HoughMismatch.c ../src/MCInjectHoughS2.h \
 			../src/SFTbin.h ../src/SFTbin.c \
 			../src/DriveHoughColor.h ../src/PeakSelect.h \
 			../src/PeakSelect.c
 
-HierarchicalSearch_SOURCES = HierarchicalSearch.c HierarchicalSearch.h StackSlideFstat.c StackSlideFstat.h \
+lalapps_HierarchicalSearch_SOURCES = HierarchicalSearch.c HierarchicalSearch.h StackSlideFstat.c StackSlideFstat.h \
 			  ../../FDS_isolated/FstatToplist.c ../../FDS_isolated/FstatToplist.h \
 			  ../../FDS_isolated/HeapToplist.c ../../FDS_isolated/HeapToplist.h \
 			  ../../FDS_isolated/ComputeFStatistic.h
 
-HierarchicalSearch_v2_SOURCES = HierarchicalSearch_v2.c HierarchicalSearch.h StackSlideFstat.c StackSlideFstat.h \
+lalapps_HierarchicalSearch_v2_SOURCES = HierarchicalSearch_v2.c HierarchicalSearch.h StackSlideFstat.c StackSlideFstat.h \
 			  ../../FDS_isolated/FstatToplist.c ../../FDS_isolated/FstatToplist.h \
 			  ../../FDS_isolated/HeapToplist.c ../../FDS_isolated/HeapToplist.h \
 			  ../../FDS_isolated/ComputeFStatistic.h

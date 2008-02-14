@@ -13,10 +13,10 @@ else
 fi
 
 ##---------- names of codes and input/output files
-mfd_code="${injectdir}lalapps_Makefakedata"
+mfd_code="${injectdir}lalapps_Makefakedata_v4"
 cfs_code="${builddir}lalapps_ComputeFStatistic"
-cfsv2_code="${builddir}ComputeFStatistic_v2"
-cmp_code="${builddir}compareFstats"
+cfsv2_code="${builddir}lalapps_ComputeFStatistic_v2"
+cmp_code="${builddir}lalapps_compareFstats"
 
 SFTdir="./testSFTs"
 
