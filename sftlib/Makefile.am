@@ -27,7 +27,7 @@ SFTdumpall_SOURCES =  SFTdumpall.c
 LDADD = $(lib_LIBRARIES)	
 
 #handling our documentation files
-docsdir=$(prefix)/doc
+###docsdir=$(prefix)/share/doc/sftlib
 
 docname         = T040164
 
@@ -38,7 +38,7 @@ docsources      =      README 		\
                        ligodcc.cls 	\
                        pdfdraftcopy.sty 
 
-docs_DATA       =      $(docname).pdf 	\
+doc_DATA        =      $(docname).pdf 	\
                        $(docsources)
 
 #rule for our pdf documentation-file
@@ -47,7 +47,7 @@ $(docname).pdf : $(docname).tex ligodcc.cls pdfdraftcopy.sty
 	cd $(srcdir); $(PDFLATEX) $(docname).tex
 
 # add documentation-sources to distribution
-EXTRA_DIST      =      $(docs_DATA) \
+EXTRA_DIST      =      $(doc_DATA) \
                        run_validate.sh
 
 CLEANFILES      =      SFT-test[1-7] SFT-bad[1-9] SFT-bad1[0-4] SFT-good *.aux *.log $(docname).pdf
