@@ -1856,7 +1856,7 @@ int main( int argc, char *argv[] )
           INT4 tmpSlide, tmpSlideNS;
           tmpSlideNS = (INT4) (-1000000000*
               modf(numSlides * slideStep[ifoNumber], &tmpInt) );
-          tmpSlide = (INT4) tmpInt;
+          tmpSlide = (INT4) (-tmpInt);
           slideTimes[ifoNumber].gpsSeconds = tmpSlide;
           slideTimes[ifoNumber].gpsNanoSeconds = tmpSlideNS;
           slideReset[ifoNumber].gpsSeconds = (-tmpSlide);
