@@ -105,6 +105,13 @@ void LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
 			     HOUGHMapDeriv  *hd,  /**< the Hough map derivative */
 			     HOUGHphmd      *phmd); /**< info from a partial map */ 
 
+void LocalHOUGHAddPHMD2HD_Wlr (LALStatus*    status,
+			       HoughDT*      map,
+			       HOUGHBorder** pBorderP,
+			       UINT2         length,
+			       HoughDT       weight,
+			       UINT2         xSide, 
+			       UINT2         ySide);
 
 void LocalComputeFstatHoughMap (LALStatus *status,
 				SemiCohCandidateList  *out,   /* output candidates */
@@ -133,11 +140,6 @@ void LocalComputeFstatHoughMap (LALStatus *status,
   LIGOTimeGPS refTimeGPS;
   LIGOTimeGPSVector   *tsMid;
   REAL8Vector *timeDiffV=NULL;
-  UINT8Vector hist; /* histogram vector */ 
-  UINT8Vector histTotal; /* total histogram vector */
-  HoughStats stats; /* statistics struct */
-  CHAR *fileStats = NULL;
-  FILE *fpStats = NULL;
 
   toplist_t *houghToplist;
 
@@ -336,7 +338,6 @@ void LocalComputeFstatHoughMap (LALStatus *status,
   while( fBin <= fBinFin ){
     INT8 fBinSearch, fBinSearchMax;
     UINT4 i,j; 
-    REAL8UnitPolarCoor sourceLocation;
     	
     parRes.f0Bin =  fBin;      
     TRY( LocalHOUGHComputeSizePar( status->statusPtr, &parSize, &parRes ),  status );
@@ -557,9 +558,9 @@ void LocalComputeFstatHoughMap (LALStatus *status,
 /** Adds a hough map derivative into a total hough map derivative taking into
     account the weight of the partial hough map */
 /* *******************************  <lalVerbatim file="HoughMapD"> */
-void LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
-			   HOUGHMapDeriv  *hd,  /**< the Hough map derivative */
-			   HOUGHphmd      *phmd) /**< info from a partial map */ 
+void LocalHOUGHAddPHMD2HD__W (LALStatus      *status, /**< the status pointer */
+			      HOUGHMapDeriv  *hd,  /**< the Hough map derivative */
+			      HOUGHphmd      *phmd) /**< info from a partial map */ 
 { /*   *********************************************  </lalVerbatim> */
 
   INT4     k,j;
@@ -578,7 +579,7 @@ void LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
 
 
    /* --------------------------------------------- */
-  INITSTATUS (status, "LocalHOUGHAddPHMD2HD_W", rcsid);
+  INITSTATUS (status, "LocalHOUGHAddPHMD2HD__W", rcsid);
   ATTATCHSTATUSPTR (status); 
 
   /*   Make sure the arguments are not NULL: */ 
@@ -678,7 +679,7 @@ __asm __volatile (
 	"lea (%%eax,%%ebx,0x2), %%esi  		\n\t"
 	"mov %[xSideP1], %%edx   		\n\t"
 
-	"mov %[yUpper] , %%edi  			\n\t"
+	"mov %[yUpper] , %%edi  		\n\t"
 	"lea -0x2(%%eax,%%edi,0x2),%%eax  	\n\t"
 	
 	"mov %[map] , %%edi  			\n\t"
@@ -690,9 +691,8 @@ __asm __volatile (
 	"cmp  %%eax,%%esi  			\n\t"
 	"jmp  2f 				\n\t"
 
-	AD_ALIGN32 "\n"
+	AD_ALIGN32                             "\n"
 	"1:  					\n\t"
-	
 	"movzwl (%%esi),%%ebx			\n\t"
 	"movzwl 2(%%esi),%%ecx			\n\t"
 		
@@ -702,43 +702,48 @@ __asm __volatile (
 	"lea (%%edi,%%ecx,0x8) , %%ecx   	\n\t"
 	"fldl (%%ecx)  				\n\t"
 
-	"fxch %%st(1)			\n\t"
+	"fxch %%st(1)   			\n\t"
 	"fadd %%st(2),%%st  			\n\t"
 	"fstpl (%%ebx)  			\n\t"
 	"fadd %%st(1),%%st	  		\n\t"	
 	"fstpl (%%ecx)  			\n\t"
-	"lea (%%edi,%%edx,0x8), %%edi  	\n\t"	
+	"lea (%%edi,%%edx,0x8), %%edi   	\n\t"	
 
-	"lea 4(%%esi) , %%esi  		\n\t"
-	"cmp  %%eax,%%esi  		\n\t"
+	"lea 4(%%esi) , %%esi   		\n\t"
+	"cmp  %%eax,%%esi       		\n"
+
 	"2:	  				\n\t"
-
 	"jbe 1b	  				\n\t"
 	"add $0x2,%%eax				\n\t"
 	"cmp %%eax,%%esi			\n\t"
 	"jne 3f  				\n\t"
 
-
 	"movzwl (%%esi) , %%ebx  		\n\t"
 	"lea (%%edi, %%ebx, 0x8) , %%ebx  	\n\t"
 	"fldl (%%ebx)  				\n\t"
 	"fadd %%st(1),%%st  			\n\t"
-	"fstpl (%%ebx)  			\n\t"
+	"fstpl (%%ebx)  			\n"
 	
 	"3:  					\n\t"
-	
 	"fstp %%st  				\n\t"
 	"pop %%ebx				\n\t"
-	
-: 
-:     [xPixel] "m" (xPixel) , [yLower] "m" (yLower) , [yUpper] "m" (yUpper), [xSideP1] "m" (xSideP1) , [map] "m" (map_pointer) , [w] "m" (weight)
-:     "eax", "ecx", "edx", "esi","edi","cc", "st","st(1)", "st(2)","st(3)", "st(4)","st(5)", "st(6)" , "st(7)" 
 
-    );
+	: 
+	:
+	[xPixel]  "m" (xPixel) ,
+	[yLower]  "m" (yLower) ,
+	[yUpper]  "m" (yUpper),
+	[xSideP1] "m" (xSideP1) ,
+	[map]     "m" (map_pointer) ,
+	[w]       "m" (weight)
+	:
+	"eax", "ecx", "edx", "esi", "edi", "cc",
+	"st","st(1)", "st(2)", "st(3)", "st(4)", "st(5)", "st(6)", "st(7)" 
+	);
 
 #else 
+
      _asm{
-	
 	push     ebx 
 	mov      eax, xPixel
 	mov      ebx, yLower
@@ -794,15 +799,12 @@ __asm __volatile (
 	};
 #endif
 
-
-
 #elif defined(EAH_HOUGH_BATCHSIZELD)
 
     sidxBase=yLower*xSideP1;
-    sidxBase_n = sidxBase+(xSideP1 << EAH_HOUGH_BATCHSIZE_LOG2);	
-    /* fill first cache entries */	
-
+    sidxBase_n = sidxBase+(xSideP1 << EAH_HOUGH_BATCHSIZELD);
     
+    /* fill first cache entries */
     c_c =0;
     c_n =EAH_HOUGH_BATCHSIZE;
 
@@ -989,9 +991,8 @@ __asm __volatile (
 	"cmp  %%eax,%%esi  			\n\t"
 	"jmp  2f 				\n\t"
 
-	AD_ALIGN32 "\n"
+	AD_ALIGN32                             "\n"
 	"1:  					\n\t"
-
 	"movzwl (%%esi),%%ebx			\n\t"
 	"movzwl 2(%%esi),%%ecx			\n\t"
 
@@ -1001,39 +1002,43 @@ __asm __volatile (
 	"lea (%%edi,%%ecx,0x8) , %%ecx   	\n\t"
 	"fldl (%%ecx)  				\n\t"
 
-
-	"fxch %%st(1)			\n\t"
+	"fxch %%st(1)   			\n\t"
 	"fsub %%st(2),%%st  			\n\t"
 	"fstpl (%%ebx)  			\n\t"
 	"fsub %%st(1),%%st	  		\n\t"	
 	"fstpl (%%ecx)  			\n\t"
-	"lea (%%edi,%%edx,0x8), %%edi  	\n\t"	
-	"lea 4(%%esi) , %%esi  		\n\t"
-	"cmp  %%eax,%%esi  		\n\t"
-	"2:	  				\n\t"
+	"lea (%%edi,%%edx,0x8), %%edi   	\n\t"	
+	"lea 4(%%esi) , %%esi   		\n\t"
+	"cmp  %%eax,%%esi       		\n"
 
+	"2:	  				\n\t"
 	"jbe 1b	  				\n\t"
 	"add $0x2,%%eax				\n\t"
 	"cmp %%eax,%%esi			\n\t"
 	"jne 3f  				\n\t"
 
-
 	"movzwl (%%esi) , %%ebx  		\n\t"
 	"lea (%%edi, %%ebx, 0x8) , %%ebx  	\n\t"
 	"fldl (%%ebx)  				\n\t"
 	"fsub %%st(1),%%st  			\n\t"
-	"fstpl (%%ebx)  			\n\t"
+	"fstpl (%%ebx)  			\n"
 	
-	"3:  					\n\t"
-	
+	"3:  					\n\t"	
 	"fstp %%st  				\n\t"
 	"pop %%ebx				\n\t"
 	
-: 
-: [xPixel] "m" (xPixel) , [yLower] "m" (yLower) , [yUpper] "m" (yUpper), [xSideP1] "m" (xSideP1) , [map] "m" (map_pointer) , [w] "m" (weight)
-: "eax", "ecx", "edx", "esi","edi","cc", "st","st(1)", "st(2)","st(3)", "st(4)","st(5)", "st(6)" , "st(7)" 
-
-);
+	: 
+	:
+	[xPixel]  "m" (xPixel) ,
+	[yLower]  "m" (yLower) ,
+	[yUpper]  "m" (yUpper),
+	[xSideP1] "m" (xSideP1) ,
+	[map]     "m" (map_pointer) ,
+	[w]       "m" (weight)
+	:
+	"eax", "ecx", "edx", "esi", "edi", "cc",
+	"st","st(1)", "st(2)", "st(3)", "st(4)", "st(5)", "st(6)", "st(7)" 
+	);
 #else
 
 
@@ -1095,12 +1100,10 @@ __asm __volatile (
 
 #endif
 
-
-
 #elif defined(EAH_HOUGH_BATCHSIZELD)
 
     sidxBase=yLower*xSideP1;
-    sidxBase_n = sidxBase+(xSideP1 << EAH_HOUGH_BATCHSIZE_LOG2);	
+    sidxBase_n = sidxBase+(xSideP1 << EAH_HOUGH_BATCHSIZELD);	
     /* fill first cache entries */	
 
     
@@ -1341,4 +1344,105 @@ void LocalHOUGHConstructHMT_W (LALStatus                  *status,
   DETATCHSTATUSPTR (status);
   /* normal exit */
   RETURN (status);
+}
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/** Adds a hough map derivative into a total hough map derivative taking into
+    account the weight of the partial hough map */
+/* *******************************  <lalVerbatim file="HoughMapD"> */
+void LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
+			     HOUGHMapDeriv  *hd,  /**< the Hough map derivative */
+			     HOUGHphmd      *phmd) /**< info from a partial map */ 
+{ /*   *********************************************  </lalVerbatim> */
+
+  INT2     k;
+  UINT2    xSide,ySide;
+  HoughDT  weight;
+
+   /* --------------------------------------------- */
+  INITSTATUS (status, "LALHOUGHAddPHMD2HD_W", rcsid);
+  ATTATCHSTATUSPTR (status); 
+
+  /*   Make sure the arguments are not NULL: */ 
+  ASSERT (hd,   status, HOUGHMAPH_ENULL, HOUGHMAPH_MSGENULL);
+  ASSERT (phmd, status, HOUGHMAPH_ENULL, HOUGHMAPH_MSGENULL);
+  /* -------------------------------------------   */
+  /* Make sure the map contains some pixels */
+  ASSERT (hd->xSide, status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
+  ASSERT (hd->ySide, status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
+
+  weight = phmd->weight;
+  xSide = hd->xSide;
+  ySide = hd->ySide;
+  
+  /* first column correction */
+  for ( k=0; k< ySide; ++k ){
+    hd->map[k*(xSide+1) + 0] += phmd->firstColumn[k] * weight;
+  }
+
+  /* left borders =>  increase according to weight*/
+  TRY ( LocalHOUGHAddPHMD2HD_Wlr (status,
+				  hd->map,
+				  phmd->leftBorderP,
+				  phmd->lengthLeft,
+				  weight,
+				  xSide,
+				  ySide), status );
+  
+  /* right borders => decrease according to weight*/
+  TRY ( LocalHOUGHAddPHMD2HD_Wlr (status,
+				  hd->map,
+				  phmd->rightBorderP,
+				  phmd->lengthRight,
+				  - weight,
+				  xSide,
+				  ySide), status );
+  
+  DETATCHSTATUSPTR (status);
+  
+  RETURN (status);
+}
+
+void LocalHOUGHAddPHMD2HD_Wlr (LALStatus*    status,
+			       HoughDT*      map,
+			       HOUGHBorder** pBorderP,
+			       UINT2         length,
+			       HoughDT       weight,
+			       UINT2         xSide, 
+			       UINT2         ySide) {
+  INT2        k,j;
+  INT2        yLower, yUpper;
+  COORType    *xPixel;
+  HOUGHBorder *borderP;
+  INT4        sidx; /* pre-calcuted array index for sanity check */
+
+  /* right borders => decrease according to weight*/
+  for (k=0; k< length; ++k) {
+
+    borderP = pBorderP[k];
+    yLower = (*borderP).yLower;
+    yUpper = (*borderP).yUpper;
+    xPixel =  &((*borderP).xPixel[0]);
+   
+    if (yLower < 0) {
+      fprintf(stderr,"WARNING: Fixing yLower (%d -> 0) [HoughMap.c %d]\n",
+	      yLower, __LINE__);
+      yLower = 0;
+    }
+    if (yUpper >= ySide) {
+      fprintf(stderr,"WARNING: Fixing yUpper (%d -> %d) [HoughMap.c %d]\n",
+	      yUpper, ySide-1, __LINE__);
+      yUpper = ySide - 1;
+    }
+
+    for(j=yLower; j<=yUpper;++j){
+      sidx = j*(xSide+1) + xPixel[j];
+      if ((sidx < 0) || (sidx >= ySide*(xSide+1))) {
+	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d\n",
+		__FILE__,__LINE__,sidx,ySide*(xSide+1),j,xPixel[j] );
+	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
+      }
+      map[sidx] += weight;
+    }
+  }
 }
