@@ -96,27 +96,31 @@ static int smallerHough(const void *a,const void *b) {
 
 /* possibly optimized local copies of LALHOUGH functions */
 
-void LocalHOUGHConstructHMT_W (LALStatus                  *status, 
-			       HOUGHMapTotal              *ht, /**< The output hough map */
-			       UINT8FrequencyIndexVector  *freqInd, /**< time-frequency trajectory */ 
-			       PHMDVectorSequence         *phmdVS); /**< set of partial hough map derivatives */
+void
+LocalHOUGHConstructHMT_W  (LALStatus                  *status, 
+			   HOUGHMapTotal              *ht     , /**< The output hough map */
+			   UINT8FrequencyIndexVector  *freqInd, /**< time-frequency trajectory */ 
+			   PHMDVectorSequence         *phmdVS); /**< set of partial hough map derivatives */
 
-void LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
-			     HOUGHMapDeriv  *hd,  /**< the Hough map derivative */
-			     HOUGHphmd      *phmd); /**< info from a partial map */ 
+void
+LocalHOUGHAddPHMD2HD_W    (LALStatus      *status, /**< the status pointer */
+			   HOUGHMapDeriv  *hd,     /**< the Hough map derivative */
+			   HOUGHphmd      *phmd);  /**< info from a partial map */ 
 
-void LocalHOUGHAddPHMD2HD_Wlr (LALStatus*    status,
-			       HoughDT*      map,
-			       HOUGHBorder** pBorderP,
-			       UINT2         length,
-			       HoughDT       weight,
-			       UINT2         xSide, 
-			       UINT2         ySide);
+inline void
+LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status,
+			   HoughDT*      map,
+			   HOUGHBorder** pBorderP,
+			   UINT2         length,
+			   HoughDT       weight,
+			   UINT2         xSide, 
+			   UINT2         ySide);
 
-void LocalComputeFstatHoughMap (LALStatus *status,
-				SemiCohCandidateList  *out,   /* output candidates */
-				HOUGHPeakGramVector *pgV, /* peakgram vector */
-				SemiCoherentParams *params)
+void
+LocalComputeFstatHoughMap (LALStatus            *status,
+			   SemiCohCandidateList *out,    /* output candidates */
+			   HOUGHPeakGramVector  *pgV,    /* peakgram vector */
+			   SemiCoherentParams   *params)
 {
   /* hough structures */
   HOUGHMapTotal ht;
@@ -1405,13 +1409,15 @@ void LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
   RETURN (status);
 }
 
-void LocalHOUGHAddPHMD2HD_Wlr (LALStatus*    status,
-			       HoughDT*      map,
-			       HOUGHBorder** pBorderP,
-			       UINT2         length,
-			       HoughDT       weight,
-			       UINT2         xSide, 
-			       UINT2         ySide) {
+inline void
+LocalHOUGHAddPHMD2HD_Wlr (LALStatus*    status,
+			  HoughDT*      map,
+			  HOUGHBorder** pBorderP,
+			  UINT2         length,
+			  HoughDT       weight,
+			  UINT2         xSide, 
+			  UINT2         ySide)
+{
   INT2        k,j;
   INT2        yLower, yUpper;
   COORType    *xPixel;
