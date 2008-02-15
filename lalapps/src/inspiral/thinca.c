@@ -2068,8 +2068,13 @@ int main( int argc, char *argv[] )
               "Kept %d non-H1H2 coincs in slide.\n", numCoincInSlide );
         }
 
-        for (numCoincInSlide = 1, thisCoinc = coincInspiralList; 
-            thisCoinc->next; ++numCoincInSlide, thisCoinc = thisCoinc->next );
+        numCoincInSlide = 0;
+        thisCoinc = coincInspiralList;
+        while( thisCoinc )
+        {
+          ++numCoincInSlide;
+          thisCoinc = thisCoinc->next;
+        }
         
         if ( vrbflg ) fprintf( stdout,
             "%d coincident triggers found in slide.\n", numCoincInSlide );
@@ -2102,7 +2107,7 @@ int main( int argc, char *argv[] )
       LAL_CALL( LALExtractSnglInspiralFromCoinc( &status, &slideOutput, 
             coincInspiralList, &startCoinc, slideNum), &status );
 
-      if ( numSlides ) 
+      if ( numSlides && coincInspiralList ) 
       {
  
         /* the output triggers should be slid back to original time */
