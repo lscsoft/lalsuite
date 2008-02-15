@@ -1359,18 +1359,18 @@ void LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
   UINT2    xSide,ySide;
   HoughDT  weight;
 
-   /* --------------------------------------------- */
   INITSTATUS (status, "LALHOUGHAddPHMD2HD_W", rcsid);
   ATTATCHSTATUSPTR (status); 
 
   /*   Make sure the arguments are not NULL: */ 
   ASSERT (hd,   status, HOUGHMAPH_ENULL, HOUGHMAPH_MSGENULL);
   ASSERT (phmd, status, HOUGHMAPH_ENULL, HOUGHMAPH_MSGENULL);
-  /* -------------------------------------------   */
+
   /* Make sure the map contains some pixels */
   ASSERT (hd->xSide, status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
   ASSERT (hd->ySide, status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
 
+  /* aliases */
   weight = phmd->weight;
   xSide = hd->xSide;
   ySide = hd->ySide;
@@ -1380,7 +1380,7 @@ void LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
     hd->map[k*(xSide+1) + 0] += phmd->firstColumn[k] * weight;
   }
 
-  /* left borders =>  increase according to weight*/
+  /* left borders =>  increase according to weight */
   TRY ( LocalHOUGHAddPHMD2HD_Wlr (status,
 				  hd->map,
 				  phmd->leftBorderP,
@@ -1389,7 +1389,7 @@ void LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
 				  xSide,
 				  ySide), status );
   
-  /* right borders => decrease according to weight*/
+  /* right borders => decrease according to weight */
   TRY ( LocalHOUGHAddPHMD2HD_Wlr (status,
 				  hd->map,
 				  phmd->rightBorderP,
@@ -1398,8 +1398,10 @@ void LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
 				  xSide,
 				  ySide), status );
   
+  /* cleanup */
   DETATCHSTATUSPTR (status);
   
+  /* normal exit */
   RETURN (status);
 }
 
@@ -1414,16 +1416,17 @@ void LocalHOUGHAddPHMD2HD_Wlr (LALStatus*    status,
   INT2        yLower, yUpper;
   COORType    *xPixel;
   HOUGHBorder *borderP;
-  INT4        sidx; /* pre-calcuted array index for sanity check */
+  INT4        sidx;
 
-  /* right borders => decrease according to weight*/
   for (k=0; k< length; ++k) {
 
+    /* local aliases */
     borderP = pBorderP[k];
     yLower = (*borderP).yLower;
     yUpper = (*borderP).yUpper;
     xPixel =  &((*borderP).xPixel[0]);
    
+    /* check boundary conditions */
     if (yLower < 0) {
       fprintf(stderr,"WARNING: Fixing yLower (%d -> 0) [HoughMap.c %d]\n",
 	      yLower, __LINE__);
@@ -1435,7 +1438,8 @@ void LocalHOUGHAddPHMD2HD_Wlr (LALStatus*    status,
       yUpper = ySide - 1;
     }
 
-    for(j=yLower; j<=yUpper;++j){
+    /* increase / decrease according to weight */
+    for(j = yLower; j <= yUpper; j++){
       sidx = j*(xSide+1) + xPixel[j];
       if ((sidx < 0) || (sidx >= ySide*(xSide+1))) {
 	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d\n",
