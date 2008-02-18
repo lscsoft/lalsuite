@@ -585,11 +585,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
 	}
 #else
-#ifdef EAH_SINCOS_SINONLY
-      local_sin_2PI_LUT_trimmed ( &s_alpha, kappa_star );
-#else
       local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
-#endif
 #endif
       c_alpha -= 1.0f;
 
