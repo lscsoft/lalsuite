@@ -68,6 +68,11 @@ RCSID( "$Id$");
 #define HSMIN(x,y) ( (x) < (y) ? (x) : (y) )
 #define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
+
+
+
+
+
 /* comparison function for the toplist */
 static int smallerHough(const void *a,const void *b) {
   SemiCohCandidate a1, b1;
@@ -94,6 +99,7 @@ static int smallerHough(const void *a,const void *b) {
 #define LocalHOUGHupdateSpacePHMDup  LALHOUGHupdateSpacePHMDup
 #define LocalHOUGHWeighSpacePHMD     LALHOUGHWeighSpacePHMD
 
+
 /* possibly optimized local copies of LALHOUGH functions */
 
 void
@@ -111,10 +117,12 @@ inline void
 LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status,
 			   HoughDT*      map,
 			   HOUGHBorder** pBorderP,
-			   UINT2         length,
+			   INT4         length,
 			   HoughDT       weight,
-			   UINT2         xSide, 
-			   UINT2         ySide);
+			   INT4         xSide, 
+			   INT4         ySide);
+
+
 
 void
 LocalComputeFstatHoughMap (LALStatus            *status,
@@ -558,693 +566,6 @@ LocalComputeFstatHoughMap (LALStatus            *status,
 
 
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/** Adds a hough map derivative into a total hough map derivative taking into
-    account the weight of the partial hough map */
-/* *******************************  <lalVerbatim file="HoughMapD"> */
-void LocalHOUGHAddPHMD2HD__W (LALStatus      *status, /**< the status pointer */
-			      HOUGHMapDeriv  *hd,  /**< the Hough map derivative */
-			      HOUGHphmd      *phmd) /**< info from a partial map */ 
-{ /*   *********************************************  </lalVerbatim> */
-
-  INT4     k,j;
-  INT4     yLower, yUpper;
-  UINT4    lengthLeft,lengthRight, xSide,ySide,xSideP1,xSideP1_2,xSideP1_3;
-  COORType     *xPixel;
-  HOUGHBorder  *borderP;
-  HoughDT    weight;
-  register HoughDT    tempM0,tempM1,tempM2,tempM3;
-  INT4       sidx,sidx0,sidx1,sidx2,sidx3,sidxBase, sidxBase_n; /* pre-calcuted array index for sanity check */
-  INT4	     c_c, c_n ,offs;
-
-  HoughDT  *map_pointer;
-  HoughDT  *pf_addr[8]; 
-
-
-
-   /* --------------------------------------------- */
-  INITSTATUS (status, "LocalHOUGHAddPHMD2HD__W", rcsid);
-  ATTATCHSTATUSPTR (status); 
-
-  /*   Make sure the arguments are not NULL: */ 
-  ASSERT (hd,   status, HOUGHMAPH_ENULL, HOUGHMAPH_MSGENULL);
-  ASSERT (phmd, status, HOUGHMAPH_ENULL, HOUGHMAPH_MSGENULL);
-
-  PREFETCH(phmd->leftBorderP);
-  PREFETCH(phmd->rightBorderP);
-
-
-  /* -------------------------------------------   */
-  /* Make sure the map contains some pixels */
-  ASSERT (hd->xSide, status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
-  ASSERT (hd->ySide, status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
-
-  weight = phmd->weight;
-
-  xSide = hd->xSide;
-  ySide = hd->ySide;
-  xSideP1=xSide+1;
-  xSideP1_2=xSideP1+xSideP1;
-  xSideP1_3=xSideP1_2+xSideP1;
-  map_pointer = &( hd->map[0]);
-
-  lengthLeft = phmd->lengthLeft;
-  lengthRight= phmd->lengthRight;
-  
-
-  if(lengthLeft > 0) {
-      borderP = phmd->leftBorderP[0];
-#if EAH_HOUGH_PREFETCH > EAH_HOUGH_PREFETCH_NONE
-      PREFETCH(&(borderP->xPixel[borderP->yLower]));
-#endif
-  }	
-
-  if(lengthRight > 0) {
-      borderP = phmd->rightBorderP[0];
-#if EAH_HOUGH_PREFETCH > EAH_HOUGH_PREFETCH_NONE
-      PREFETCH(&(borderP->xPixel[borderP->yLower]));
-#endif
-  }	
-  
-  /* first column correction */
-  for ( k=0; k< ySide; ++k ){
-    map_pointer[k*(xSide+1) + 0] += phmd->firstColumn[k] * weight;
-  }
-
-
-  /* left borders =>  increase according to weight*/
-  for (k=0; k< lengthLeft; ++k){
-
-    /*  Make sure the arguments are not NULL: (Commented for performance) */ 
-    /*  ASSERT (phmd->leftBorderP[k], status, HOUGHMAPH_ENULL,
-	HOUGHMAPH_MSGENULL); */
-
-    borderP = phmd->leftBorderP[k];
-    xPixel =  &( (*borderP).xPixel[0] );
-
-    yLower = (*borderP).yLower;
-    yUpper = (*borderP).yUpper;
-
-#if EAH_HOUGH_PREFETCH > EAH_HOUGH_PREFETCH_NONE
-    if(k < lengthLeft-1) {
-	INT4 ylkp1 = phmd->leftBorderP[k+1]->yLower;
-	PREFETCH(&(phmd->leftBorderP[k+1]->xPixel[ylkp1]));
-    } 	
-
-    if(k < lengthLeft-2) {
-	PREFETCH(phmd->leftBorderP[k+2]);
-    } 	
-#endif
-
-   
-    if (yLower < 0) {
-      fprintf(stderr,"WARNING: Fixing yLower (%d -> 0) [HoughMap.c %d]\n",
-	      yLower, __LINE__);
-      yLower = 0;
-    }
-    if (yUpper >= ySide) {
-      fprintf(stderr,"WARNING: Fixing yUpper (%d -> %d) [HoughMap.c %d]\n",
-	      yUpper, ySide-1, __LINE__);
-      yUpper = ySide - 1;
-    }
-
-
-#if EAH_HOUGH_ASS == EAH_HOUGH_ASS_X87
-
-
-#ifdef __GNUC__
-
-/* don't clobber ebx , used for PIC on Mac OS */
-
-__asm __volatile (
-	"push %%ebx				\n\t"
-	"mov %[xPixel], %%eax  			\n\t"
-	"mov %[yLower], %%ebx  			\n\t"
-	"lea (%%eax,%%ebx,0x2), %%esi  		\n\t"
-	"mov %[xSideP1], %%edx   		\n\t"
-
-	"mov %[yUpper] , %%edi  		\n\t"
-	"lea -0x2(%%eax,%%edi,0x2),%%eax  	\n\t"
-	
-	"mov %[map] , %%edi  			\n\t"
-	"mov %%ebx,%%ecx  			\n\t"
-	"imul %%edx, %%ecx  			\n\t"	
-	"lea (%%edi, %%ecx, 0x8), %%edi  	\n\t"
-	"fldl %[w]  				\n\t"
-
-	"cmp  %%eax,%%esi  			\n\t"
-	"jmp  2f 				\n\t"
-
-	AD_ALIGN32                             "\n"
-	"1:  					\n\t"
-	"movzwl (%%esi),%%ebx			\n\t"
-	"movzwl 2(%%esi),%%ecx			\n\t"
-		
-	"lea (%%edi, %%ebx, 0x8) , %%ebx  	\n\t"
-	"fldl (%%ebx)  				\n\t"	
-	"lea (%%edi,%%edx,0x8) , %%edi  	\n\t"
-	"lea (%%edi,%%ecx,0x8) , %%ecx   	\n\t"
-	"fldl (%%ecx)  				\n\t"
-
-	"fxch %%st(1)   			\n\t"
-	"fadd %%st(2),%%st  			\n\t"
-	"fstpl (%%ebx)  			\n\t"
-	"fadd %%st(1),%%st	  		\n\t"	
-	"fstpl (%%ecx)  			\n\t"
-	"lea (%%edi,%%edx,0x8), %%edi   	\n\t"	
-
-	"lea 4(%%esi) , %%esi   		\n\t"
-	"cmp  %%eax,%%esi       		\n"
-
-	"2:	  				\n\t"
-	"jbe 1b	  				\n\t"
-	"add $0x2,%%eax				\n\t"
-	"cmp %%eax,%%esi			\n\t"
-	"jne 3f  				\n\t"
-
-	"movzwl (%%esi) , %%ebx  		\n\t"
-	"lea (%%edi, %%ebx, 0x8) , %%ebx  	\n\t"
-	"fldl (%%ebx)  				\n\t"
-	"fadd %%st(1),%%st  			\n\t"
-	"fstpl (%%ebx)  			\n"
-	
-	"3:  					\n\t"
-	"fstp %%st  				\n\t"
-	"pop %%ebx				\n\t"
-
-	: 
-	:
-	[xPixel]  "m" (xPixel) ,
-	[yLower]  "m" (yLower) ,
-	[yUpper]  "m" (yUpper),
-	[xSideP1] "m" (xSideP1) ,
-	[map]     "m" (map_pointer) ,
-	[w]       "m" (weight)
-	:
-	"eax", "ecx", "edx", "esi", "edi", "cc",
-	"st","st(1)", "st(2)", "st(3)", "st(4)", "st(5)", "st(6)", "st(7)" 
-	);
-
-#else 
-
-     _asm{
-	push     ebx 
-	mov      eax, xPixel
-	mov      ebx, yLower
-	lea      esi, DWORD PTR [eax+ebx*2]
-	mov      edx, xSideP1
-	mov      edi, yUpper
-	lea      eax, DWORD PTR [eax+edi*2-2]
-	mov      edi, map_pointer
-	mov      ecx, ebx
-	imul     ecx, edx
-	lea      edi, DWORD PTR [edi+ecx*8]
-	fld      QWORD PTR weight
-	cmp      esi, eax
-	jmp      l1_a
-	
-		ALIGN 16 
-	
-	l2_a:
-
-	movzx    ebx, WORD PTR [esi]
-	movzx    ecx, WORD PTR [esi+0x2]
-	lea      ebx, DWORD PTR [edi+ebx*8]
-	fld      QWORD PTR [ebx]
-	lea      edi, DWORD PTR [edi+edx*8]
-	lea      ecx, DWORD PTR [edi+ecx*8]
-	fld      QWORD PTR [ecx]
-	fxch     st(1)
-	fadd     st(0), st(2)
-	fstp     QWORD PTR [ebx]
-	fadd     st(0), st(1)
-	fstp     QWORD PTR [ecx]
-	lea      edi, DWORD PTR [edi+edx*8]
-	lea      esi, DWORD PTR [esi+0x4]
-	cmp      esi, eax
-	
-	l1_a:
-	
-	jbe      l2_a
-	
-	add      eax, 0x2
-	cmp      esi, eax
-	jnz      l_end_a
-	movzx    ebx, WORD PTR [esi]
-	lea      ebx, DWORD PTR [edi+ebx*8]
-	fld      QWORD PTR [ebx]
-	fadd     st(0), st(1)
-	fstp     QWORD PTR [ebx]
-
-	l_end_a:    
-
-	fstp     st(0)
-	pop      ebx 
-	};
-#endif
-
-#elif defined(EAH_HOUGH_BATCHSIZELD)
-
-    sidxBase=yLower*xSideP1;
-    sidxBase_n = sidxBase+(xSideP1 << EAH_HOUGH_BATCHSIZELD);
-    
-    /* fill first cache entries */
-    c_c =0;
-    c_n =EAH_HOUGH_BATCHSIZE;
-
-    offs = yUpper - yLower+1;
-    if (offs > EAH_HOUGH_BATCHSIZE) {
-	offs = EAH_HOUGH_BATCHSIZE; 
-    }	
-	
-    	
-    for(j=yLower; j < yLower+offs; j++) {
-        PREFETCH(pf_addr[c_c++] = map_pointer + xPixel[j] + j*xSideP1);		
-#ifndef LAL_NDEBUG       
-      	sidx0=xPixel[j]+ j*xSideP1;
-        if ((sidx0 < 0) || (sidx0 >= ySide*(xSide+1)) || xPixel[j] < 0 || xPixel[j] >= xSideP1 ) {
-  	  fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n",
-	  	  __FILE__,__LINE__,sidx,ySide*(xSide+1),j,xPixel[j],xSide );
-	  ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
-        }
-#endif	
-    }		
-		
-    c_c=0;
-    for(j=yLower; j<=yUpper-(2*EAH_HOUGH_BATCHSIZE-1);j+=EAH_HOUGH_BATCHSIZE){
-
-      	
-      sidx0 = xPixel[j+EAH_HOUGH_BATCHSIZE]+sidxBase_n;; 
-#if (EAH_HOUGH_BATCHSIZE == 4) || (EAH_HOUGH_BATCHSIZE == 2)
-      sidx1 = xPixel[j+(EAH_HOUGH_BATCHSIZE+1)]+sidxBase_n+xSideP1;
-#endif
-#if (EAH_HOUGH_BATCHSIZE == 4)
-      sidx2 = xPixel[j+(EAH_HOUGH_BATCHSIZE+2)]+sidxBase_n+xSideP1_2;
-      sidx3 = xPixel[j+(EAH_HOUGH_BATCHSIZE+3)]+sidxBase_n+xSideP1_3;;
-#endif
-	
-      PREFETCH(xPixel +(j+(EAH_HOUGH_BATCHSIZE+EAH_HOUGH_BATCHSIZE)));
-
-      PREFETCH(pf_addr[c_n] = map_pointer+sidx0);
-#if (EAH_HOUGH_BATCHSIZE == 4) || (EAH_HOUGH_BATCHSIZE == 2)
-      PREFETCH(pf_addr[c_n+1] = map_pointer+sidx1);
-#endif
-#if (EAH_HOUGH_BATCHSIZE == 4)
-      PREFETCH(pf_addr[c_n+2] = map_pointer+sidx2);
-      PREFETCH(pf_addr[c_n+3] = map_pointer+sidx3);
-#endif
-
-#ifndef LAL_NDEBUG 
-      if ((sidx0 < 0) || (sidx0 >= ySide*(xSide+1))|| xPixel[j+EAH_HOUGH_BATCHSIZE] < 0 || xPixel[j+EAH_HOUGH_BATCHSIZE] >= xSideP1) {
-	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n",
-		__FILE__,__LINE__,sidx,ySide*(xSide+1),j+EAH_HOUGH_BATCHSIZE,xPixel[j+EAH_HOUGH_BATCHSIZE],xSide );
-	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
-      }
-#if (EAH_HOUGH_BATCHSIZE == 4) || (EAH_HOUGH_BATCHSIZE == 2)
-      if ((sidx1 < 0) || (sidx1 >= ySide*(xSide+1))|| xPixel[j+EAH_HOUGH_BATCHSIZE+1] < 0 || xPixel[j+EAH_HOUGH_BATCHSIZE+1] >= xSideP1) {
-	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n",
-		__FILE__,__LINE__,sidx,ySide*(xSide+1),j+EAH_HOUGH_BATCHSIZE+1,xPixel[j+EAH_HOUGH_BATCHSIZE+1],xSide );
-	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
-      }
-#endif
-#if (EAH_HOUGH_BATCHSIZE == 4)
-      if ((sidx2 < 0) || (sidx2 >= ySide*(xSide+1))|| xPixel[j+EAH_HOUGH_BATCHSIZE+2] < 0 || xPixel[j+EAH_HOUGH_BATCHSIZE+2] >= xSideP1) {
-	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n",
-		__FILE__,__LINE__,sidx2,ySide*(xSide+1),j+EAH_HOUGH_BATCHSIZE+2,xPixel[j+EAH_HOUGH_BATCHSIZE+2],xSide );
-	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
-      }
-      if ((sidx3 < 0) || (sidx3 >= ySide*(xSide+1))|| xPixel[j+EAH_HOUGH_BATCHSIZE+3] < 0 || xPixel[j+EAH_HOUGH_BATCHSIZE+3] >= xSideP1) {
-	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n",
-		__FILE__,__LINE__,sidx3,ySide*(xSide+1),j+EAH_HOUGH_BATCHSIZE+3,xPixel[j+EAH_HOUGH_BATCHSIZE+3],xSide );
-	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
-      }
-#endif
-#endif 
-
-      tempM0 = *(pf_addr[c_c]) +weight;
-#if (EAH_HOUGH_BATCHSIZE == 4) || (EAH_HOUGH_BATCHSIZE == 2)
-      tempM1 = *(pf_addr[c_c+1]) +weight;
-#endif
-#if (EAH_HOUGH_BATCHSIZE == 4)
-      tempM2 = *(pf_addr[c_c+2]) +weight;
-      tempM3 = *(pf_addr[c_c+3]) +weight;
-#endif
-      sidxBase = sidxBase_n;
-      sidxBase_n+=xSideP1 << EAH_HOUGH_BATCHSIZE_LOG2;
-      
-      (*(pf_addr[c_c]))=tempM0;
-#if (EAH_HOUGH_BATCHSIZE == 4) || (EAH_HOUGH_BATCHSIZE == 2)
-      (*(pf_addr[c_c+1]))=tempM1;
-#endif
-#if (EAH_HOUGH_BATCHSIZE == 4)
-      (*(pf_addr[c_c+2]))=tempM2;
-      (*(pf_addr[c_c+3]))=tempM3;
-#endif 
-
-      c_c ^= EAH_HOUGH_BATCHSIZE;
-      c_n ^= EAH_HOUGH_BATCHSIZE;
-    }
-
-    sidxBase=j*xSideP1;
-    for(; j<=yUpper;++j){
-      sidx = sidxBase + xPixel[j];
-#ifndef LAL_NDEBUG
-      if ((sidx < 0) || (sidx >= ySide*(xSide+1)) || xPixel[j] < 0 || xPixel[j] >= xSideP1) {
-	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n",
-		__FILE__,__LINE__,sidx,ySide*(xSide+1),j,xPixel[j],xSide );
- 
-	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
-      }
-#endif
-      map_pointer[sidx] += weight;
-      sidxBase+=xSideP1;
-    }
-
-
-#else
-    for(j=yLower; j<=yUpper;++j){
-      sidx = j *(xSide+1) + xPixel[j];
-      if ((sidx < 0) || (sidx >= ySide*(xSide+1))) {
-	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d\n",
-		__FILE__,__LINE__,sidx,ySide*(xSide+1),j,xPixel[j] );
-	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
-      }
-      map_pointer[sidx] += weight;
-    }
-
-#endif
-
-  }
-
-  /* right borders => decrease according to weight*/
-  for (k=0; k< lengthRight; ++k){
-  
-    /*  Make sure the arguments are not NULL: (Commented for performance) */ 
-    /*  ASSERT (phmd->rightBorderP[k], status, HOUGHMAPH_ENULL,
-	HOUGHMAPH_MSGENULL); */
-
-    borderP = phmd->rightBorderP[k];
-  	
-    yLower = (*borderP).yLower;
-    yUpper = (*borderP).yUpper;
-    xPixel =  &( (*borderP).xPixel[0] );
-
-#if EAH_HOUGH_PREFETCH > EAH_HOUGH_PREFETCH_NONE
-    if(k < lengthRight-1) {
-	INT4 ylkp1 = phmd->rightBorderP[k+1]->yLower;
-	PREFETCH(&(phmd->rightBorderP[k+1]->xPixel[ylkp1]));
-    } 	
-
-    if(k < lengthRight-2) {
-	PREFETCH(phmd->rightBorderP[k+2]);
-    } 	
-#endif
-   
-    if (yLower < 0) {
-      fprintf(stderr,"WARNING: Fixing yLower (%d -> 0) [HoughMap.c %d]\n",
-	      yLower, __LINE__);
-      yLower = 0;
-    }
-    if (yUpper >= ySide) {
-      fprintf(stderr,"WARNING: Fixing yUpper (%d -> %d) [HoughMap.c %d]\n",
-	      yUpper, ySide-1, __LINE__);
-      yUpper = ySide - 1;
-    }
-
-
-#if EAH_HOUGH_ASS == EAH_HOUGH_ASS_X87
-
-#ifdef __GNUC__
-
-__asm __volatile (
-	"push %%ebx				\n\t"
-	"mov %[xPixel], %%eax  			\n\t"
-	"mov %[yLower], %%ebx  			\n\t"
-	"mov %[xSideP1], %%edx   		\n\t"
-	"lea (%%eax,%%ebx,0x2), %%esi  		\n\t"
-
-	"mov %[yUpper] , %%edi  		\n\t"
-	"lea -0x2(%%eax,%%edi,0x2),%%eax  	\n\t"
-	
-	"mov %[map] , %%edi  			\n\t"
-	"mov %%ebx,%%ecx  			\n\t"
-	"imul %%edx, %%ecx  			\n\t"	
-	"lea (%%edi, %%ecx, 0x8), %%edi  	\n\t"
-	"fldl %[w]  				\n\t"
-
-	"cmp  %%eax,%%esi  			\n\t"
-	"jmp  2f 				\n\t"
-
-	AD_ALIGN32                             "\n"
-	"1:  					\n\t"
-	"movzwl (%%esi),%%ebx			\n\t"
-	"movzwl 2(%%esi),%%ecx			\n\t"
-
-	"lea (%%edi, %%ebx, 0x8) , %%ebx  	\n\t"
-	"fldl (%%ebx)  				\n\t"	
-	"lea (%%edi,%%edx,0x8) , %%edi  	\n\t"
-	"lea (%%edi,%%ecx,0x8) , %%ecx   	\n\t"
-	"fldl (%%ecx)  				\n\t"
-
-	"fxch %%st(1)   			\n\t"
-	"fsub %%st(2),%%st  			\n\t"
-	"fstpl (%%ebx)  			\n\t"
-	"fsub %%st(1),%%st	  		\n\t"	
-	"fstpl (%%ecx)  			\n\t"
-	"lea (%%edi,%%edx,0x8), %%edi   	\n\t"	
-	"lea 4(%%esi) , %%esi   		\n\t"
-	"cmp  %%eax,%%esi       		\n"
-
-	"2:	  				\n\t"
-	"jbe 1b	  				\n\t"
-	"add $0x2,%%eax				\n\t"
-	"cmp %%eax,%%esi			\n\t"
-	"jne 3f  				\n\t"
-
-	"movzwl (%%esi) , %%ebx  		\n\t"
-	"lea (%%edi, %%ebx, 0x8) , %%ebx  	\n\t"
-	"fldl (%%ebx)  				\n\t"
-	"fsub %%st(1),%%st  			\n\t"
-	"fstpl (%%ebx)  			\n"
-	
-	"3:  					\n\t"	
-	"fstp %%st  				\n\t"
-	"pop %%ebx				\n\t"
-	
-	: 
-	:
-	[xPixel]  "m" (xPixel) ,
-	[yLower]  "m" (yLower) ,
-	[yUpper]  "m" (yUpper),
-	[xSideP1] "m" (xSideP1) ,
-	[map]     "m" (map_pointer) ,
-	[w]       "m" (weight)
-	:
-	"eax", "ecx", "edx", "esi", "edi", "cc",
-	"st","st(1)", "st(2)", "st(3)", "st(4)", "st(5)", "st(6)", "st(7)" 
-	);
-#else
-
-
-    _asm{
-	push     ebx 
-	mov      eax, xPixel
-	mov      ebx, yLower
-	lea      esi, DWORD PTR [eax+ebx*2]
-	mov      edx, xSideP1
-	mov      edi, yUpper
-	lea      eax, DWORD PTR [eax+edi*2-2]
-	mov      edi, map_pointer
-	mov      ecx, ebx
-	imul     ecx, edx
-	lea      edi, DWORD PTR [edi+ecx*8]
-	fld      QWORD PTR weight
-	cmp      esi, eax
-	jmp      l1_b
-	
-	ALIGN 16
-	
-	l2_b:
-
-	movzx    ebx, WORD PTR [esi]
-	movzx    ecx, WORD PTR [esi+0x2]
-	lea      ebx, DWORD PTR [edi+ebx*8]
-	fld      QWORD PTR [ebx]
-	lea      edi, DWORD PTR [edi+edx*8]
-	lea      ecx, DWORD PTR [edi+ecx*8]
-	fld      QWORD PTR [ecx]
-	fxch     st(1)
-	fsub     st(0), st(2)
-	fstp     QWORD PTR [ebx]
-	fsub     st(0), st(1)
-	fstp     QWORD PTR [ecx]
-	lea      edi, DWORD PTR [edi+edx*8]
-	lea      esi, DWORD PTR [esi+0x4]
-	cmp      esi, eax
-
-	l1_b:
-
-	jbe      l2_b
-	
-	add      eax, 0x2
-	cmp      esi, eax
-	jnz      l_end_b
-	movzx    ebx, WORD PTR [esi]
-	lea      ebx, DWORD PTR [edi+ebx*8]
-	fld      QWORD PTR [ebx]
-	fsub     st(0), st(1)
-	fstp     QWORD PTR [ebx]
-
-	l_end_b:    
-
-	fstp     st(0)
-	pop      ebx 
-    }
-
-
-#endif
-
-#elif defined(EAH_HOUGH_BATCHSIZELD)
-
-    sidxBase=yLower*xSideP1;
-    sidxBase_n = sidxBase+(xSideP1 << EAH_HOUGH_BATCHSIZELD);	
-    /* fill first cache entries */	
-
-    
-    c_c =0;
-    c_n =EAH_HOUGH_BATCHSIZE;
-
-    offs = yUpper - yLower+1;
-    if (offs > EAH_HOUGH_BATCHSIZE) {
-	offs = EAH_HOUGH_BATCHSIZE; 
-    }	
-	
-    	
-    for(j=yLower; j < yLower+offs; j++) {
-        PREFETCH(pf_addr[c_c++] = map_pointer + xPixel[j] + j*xSideP1);			
-#ifndef LAL_NDEBUG       
-      	sidx0=xPixel[j]+ j*xSideP1;
-        if ((sidx0 < 0) || (sidx0 >= ySide*(xSide+1)) || xPixel[j] < 0 || xPixel[j] >= xSideP1 ) {
-  	  fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n",
-	  	  __FILE__,__LINE__,sidx,ySide*(xSide+1),j,xPixel[j],xSide );
-	  ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
-        }
-#endif
-    }		
-		
-    c_c=0;
-    for(j=yLower; j<=yUpper-(EAH_HOUGH_BATCHSIZE*2-1);j+=EAH_HOUGH_BATCHSIZE){
-
-      	
-      sidx0 = xPixel[j+EAH_HOUGH_BATCHSIZE]+sidxBase_n;; 
-#if (EAH_HOUGH_BATCHSIZE == 4) || (EAH_HOUGH_BATCHSIZE == 2)
-      sidx1 = xPixel[j+(EAH_HOUGH_BATCHSIZE+1)]+sidxBase_n+xSideP1;
-#endif
-#if (EAH_HOUGH_BATCHSIZE == 4) 
-      sidx2 = xPixel[j+(EAH_HOUGH_BATCHSIZE+2)]+sidxBase_n+xSideP1_2;
-      sidx3 = xPixel[j+(EAH_HOUGH_BATCHSIZE+3)]+sidxBase_n+xSideP1_3;;
-#endif
-	
-      PREFETCH(xPixel +(j+(EAH_HOUGH_BATCHSIZE+EAH_HOUGH_BATCHSIZE)));
-
-      PREFETCH(pf_addr[c_n] = map_pointer+sidx0);
-#if (EAH_HOUGH_BATCHSIZE == 4) || (EAH_HOUGH_BATCHSIZE == 2)
-      PREFETCH(pf_addr[c_n+1] = map_pointer+sidx1);
-#endif
-#if (EAH_HOUGH_BATCHSIZE == 4) 
-      PREFETCH(pf_addr[c_n+2] = map_pointer+sidx2);
-      PREFETCH(pf_addr[c_n+3] = map_pointer+sidx3);
-#endif
-
-#ifndef LAL_NDEBUG       
-      if ((sidx0 < 0) || (sidx0 >= ySide*(xSide+1)) || xPixel[j+EAH_HOUGH_BATCHSIZE] < 0 || xPixel[j+EAH_HOUGH_BATCHSIZE] >= xSideP1 ) {
-	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n",
-		__FILE__,__LINE__,sidx,ySide*(xSide+1),j+EAH_HOUGH_BATCHSIZE,xPixel[j+EAH_HOUGH_BATCHSIZE],xSide );
-	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
-      }
-#if (EAH_HOUGH_BATCHSIZE == 4) || (EAH_HOUGH_BATCHSIZE == 2)
-      if ((sidx1 < 0) || (sidx1 >= ySide*(xSide+1)) || xPixel[j+EAH_HOUGH_BATCHSIZE+1] < 0 || xPixel[j+EAH_HOUGH_BATCHSIZE+1] >= xSideP1 ) {
-	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n",
-		__FILE__,__LINE__,sidx,ySide*(xSide+1),j+EAH_HOUGH_BATCHSIZE+1,xPixel[j+EAH_HOUGH_BATCHSIZE+1],xSide );
-	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
-      }
-#endif
-#if (EAH_HOUGH_BATCHSIZE == 4) 
-      if ((sidx2 < 0) || (sidx2 >= ySide*(xSide+1)) || xPixel[j+EAH_HOUGH_BATCHSIZE+2] < 0 || xPixel[j+EAH_HOUGH_BATCHSIZE+2] >= xSideP1 ) {
-	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n",
-		__FILE__,__LINE__,sidx2,ySide*(xSide+1),j+EAH_HOUGH_BATCHSIZE+2,xPixel[j+EAH_HOUGH_BATCHSIZE+2],xSide );
-	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
-      }
-      if ((sidx3 < 0) || (sidx3 >= ySide*(xSide+1)) || xPixel[j+EAH_HOUGH_BATCHSIZE+3] < 0 || xPixel[j+EAH_HOUGH_BATCHSIZE+3] >= xSideP1) {
-	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n",
-		__FILE__,__LINE__,sidx3,ySide*(xSide+1),j+EAH_HOUGH_BATCHSIZE+3,xPixel[j+EAH_HOUGH_BATCHSIZE+3],xSide );
-	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
-      }
-#endif
-#endif 
-
-      tempM0 = *(pf_addr[c_c]) -weight;
-#if (EAH_HOUGH_BATCHSIZE == 4) || (EAH_HOUGH_BATCHSIZE == 2)
-      tempM1 = *(pf_addr[c_c+1]) -weight;
-#endif
-#if (EAH_HOUGH_BATCHSIZE == 4) 
-      tempM2 = *(pf_addr[c_c+2]) -weight;
-      tempM3 = *(pf_addr[c_c+3]) -weight;
-#endif
-
-      sidxBase = sidxBase_n;
-      sidxBase_n+=xSideP1 << EAH_HOUGH_BATCHSIZE_LOG2;
-      
-      (*(pf_addr[c_c]))=tempM0;
-#if (EAH_HOUGH_BATCHSIZE == 4) || (EAH_HOUGH_BATCHSIZE == 2)
-      (*(pf_addr[c_c+1]))=tempM1;
-#endif
-#if (EAH_HOUGH_BATCHSIZE == 4) 
-      (*(pf_addr[c_c+2]))=tempM2;
-      (*(pf_addr[c_c+3]))=tempM3;
-#endif
-      c_c ^= EAH_HOUGH_BATCHSIZE;
-      c_n ^= EAH_HOUGH_BATCHSIZE;
-    }
-
-    sidxBase=j*xSideP1;
-    for(; j<=yUpper;++j){
-      sidx = sidxBase + xPixel[j];
-#ifndef LAL_NDEBUG
-      if ((sidx < 0) || (sidx >= ySide*(xSide+1)) || xPixel[j] < 0 || xPixel[j] >= xSideP1 ) {
-	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n",
-		__FILE__,__LINE__,sidx,ySide*(xSide+1),j,xPixel[j],xSide );
-  	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
-      }
-#endif
-      map_pointer[sidx] -= weight;
-      sidxBase += xSideP1;
-    }
-
-#else
-
-    for(j=yLower; j<=yUpper;++j){
-      sidx = j*(xSide+1) + xPixel[j];
-      if ((sidx < 0) || (sidx >= ySide*(xSide+1))) {
-	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d\n",
-		__FILE__,__LINE__,sidx,ySide*(xSide+1),j,xPixel[j] );
-	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
-      }
-      map_pointer[sidx] -= weight;
-    }
-#endif
-
-  }
-
-
-  /* -------------------------------------------   */
-  
-  DETATCHSTATUSPTR (status);
-  
-  /* normal exit */
-  RETURN (status);
-}
-
 
 /** Calculates the total hough map for a given trajectory in the 
     time-frequency plane and a set of partial hough map derivatives allowing 
@@ -1409,17 +730,354 @@ void LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
   RETURN (status);
 }
 
+
+
+#if EAH_HOUGH_ASS == EAH_HOUGH_ASS_X87
+
+inline void
+LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status,
+			   HoughDT*      map,
+			   HOUGHBorder** pBorderP,
+			   INT4         length,
+			   HoughDT       weight,
+			   INT4         xSide, 
+			   INT4         ySide) {
+
+  INT4  xSideP1 = xSide +1; /* avoid 16 bit types */
+  INT4  yLower, yUpper;
+  INT4  k;
+  COORType     *xPixel;
+  HOUGHBorder* borderP;
+   
+
+  /* left borders =>  increase according to weight*/
+  for (k=0; k< length; ++k){
+
+    /*  Make sure the arguments are not NULL: (Commented for performance) */ 
+    /*  ASSERT (phmd->leftBorderP[k], status, HOUGHMAPH_ENULL,
+	HOUGHMAPH_MSGENULL); */
+
+
+    borderP = pBorderP[k];
+    xPixel =  &( (*borderP).xPixel[0] );
+
+    yLower = (*borderP).yLower;
+    yUpper = (*borderP).yUpper;
+
+#if EAH_HOUGH_PREFETCH > EAH_HOUGH_PREFETCH_NONE
+    if(k < length-1) {
+	INT4 ylkp1 = pBorderP[k+1]->yLower;
+	PREFETCH(&(pBorderP[k+1]->xPixel[ylkp1]));
+    } 	
+
+    if(k < length-2) {
+	PREFETCH(pBorderP[k+2]);
+    } 	
+#endif
+
+   
+    if (yLower < 0) {
+      fprintf(stderr,"WARNING: Fixing yLower (%d -> 0) [HoughMap.c %d]\n",
+	      yLower, __LINE__);
+      yLower = 0;
+    }
+    if (yUpper >= ySide) {
+      fprintf(stderr,"WARNING: Fixing yUpper (%d -> %d) [HoughMap.c %d]\n",
+	      yUpper, ySide-1, __LINE__);
+      yUpper = ySide - 1;
+    }
+
+#ifdef __GNUC__
+
+/* don't clobber ebx , used for PIC on Mac OS */
+
+__asm __volatile (
+	"push %%ebx				\n\t"
+	"mov %[xPixel], %%eax  			\n\t"
+	"mov %[yLower], %%ebx  			\n\t"
+	"lea (%%eax,%%ebx,0x2), %%esi  		\n\t"
+	"mov %[xSideP1], %%edx   		\n\t"
+
+	"mov %[yUpper] , %%edi  		\n\t"
+	"lea -0x2(%%eax,%%edi,0x2),%%eax  	\n\t"
+	
+	"mov %[map] , %%edi  			\n\t"
+	"mov %%ebx,%%ecx  			\n\t"
+	"imul %%edx, %%ecx  			\n\t"	
+	"lea (%%edi, %%ecx, 0x8), %%edi  	\n\t"
+	"fldl %[w]  				\n\t"
+
+	"cmp  %%eax,%%esi  			\n\t"
+	"jmp  2f 				\n\t"
+
+	AD_ALIGN32                             "\n"
+	"1:  					\n\t"
+	"movzwl (%%esi),%%ebx			\n\t"
+	"movzwl 2(%%esi),%%ecx			\n\t"
+		
+	"lea (%%edi, %%ebx, 0x8) , %%ebx  	\n\t"
+	"fldl (%%ebx)  				\n\t"	
+	"lea (%%edi,%%edx,0x8) , %%edi  	\n\t"
+	"lea (%%edi,%%ecx,0x8) , %%ecx   	\n\t"
+	"fldl (%%ecx)  				\n\t"
+
+	"fxch %%st(1)   			\n\t"
+	"fadd %%st(2),%%st  			\n\t"
+	"fstpl (%%ebx)  			\n\t"
+	"fadd %%st(1),%%st	  		\n\t"	
+	"fstpl (%%ecx)  			\n\t"
+	"lea (%%edi,%%edx,0x8), %%edi   	\n\t"	
+
+	"lea 4(%%esi) , %%esi   		\n\t"
+	"cmp  %%eax,%%esi       		\n"
+
+	"2:	  				\n\t"
+	"jbe 1b	  				\n\t"
+	"add $0x2,%%eax				\n\t"
+	"cmp %%eax,%%esi			\n\t"
+	"jne 3f  				\n\t"
+
+	"movzwl (%%esi) , %%ebx  		\n\t"
+	"lea (%%edi, %%ebx, 0x8) , %%ebx  	\n\t"
+	"fldl (%%ebx)  				\n\t"
+	"fadd %%st(1),%%st  			\n\t"
+	"fstpl (%%ebx)  			\n"
+	
+	"3:  					\n\t"
+	"fstp %%st  				\n\t"
+	"pop %%ebx				\n\t"
+
+	: 
+	:
+	[xPixel]  "m" (xPixel) ,
+	[yLower]  "m" (yLower) ,
+	[yUpper]  "m" (yUpper),
+	[xSideP1] "m" (xSideP1) ,
+	[map]     "m" (map) ,
+	[w]       "m" (weight)
+	:
+	"eax", "ecx", "edx", "esi", "edi", "cc",
+	"st","st(1)", "st(2)", "st(3)", "st(4)", "st(5)", "st(6)", "st(7)" 
+	);
+
+#else 
+
+     _asm{
+	push     ebx 
+	mov      eax, xPixel
+	mov      ebx, yLower
+	lea      esi, DWORD PTR [eax+ebx*2]
+	mov      edx, xSideP1
+	mov      edi, yUpper
+	lea      eax, DWORD PTR [eax+edi*2-2]
+	mov      edi, map
+	mov      ecx, ebx
+	imul     ecx, edx
+	lea      edi, DWORD PTR [edi+ecx*8]
+	fld      QWORD PTR weight
+	cmp      esi, eax
+	jmp      l1_a
+	
+		ALIGN 16 
+	
+	l2_a:
+
+	movzx    ebx, WORD PTR [esi]
+	movzx    ecx, WORD PTR [esi+0x2]
+	lea      ebx, DWORD PTR [edi+ebx*8]
+	fld      QWORD PTR [ebx]
+	lea      edi, DWORD PTR [edi+edx*8]
+	lea      ecx, DWORD PTR [edi+ecx*8]
+	fld      QWORD PTR [ecx]
+	fxch     st(1)
+	fadd     st(0), st(2)
+	fstp     QWORD PTR [ebx]
+	fadd     st(0), st(1)
+	fstp     QWORD PTR [ecx]
+	lea      edi, DWORD PTR [edi+edx*8]
+	lea      esi, DWORD PTR [esi+0x4]
+	cmp      esi, eax
+	
+	l1_a:
+	
+	jbe      l2_a
+	
+	add      eax, 0x2
+	cmp      esi, eax
+	jnz      l_end_a
+	movzx    ebx, WORD PTR [esi]
+	lea      ebx, DWORD PTR [edi+ebx*8]
+	fld      QWORD PTR [ebx]
+	fadd     st(0), st(1)
+	fstp     QWORD PTR [ebx]
+
+	l_end_a:    
+
+	fstp     st(0)
+	pop      ebx 
+	};
+#endif
+
+    };
+};
+
+
+#elif EAH_HOUGH_ASS == EAH_HOUGH_ASS_C_PREFETCH
+
+#define EAH_HOUGH_BATCHSIZE 4
+#define EAH_HOUGH_BATCHSIZE_LOG2 2
+
+#define CHECK_INDEX(IDX,OFFSET) \
+      if ((IDX < 0) || ( IDX >= ySide*(xSide+1))|| xPixel[OFFSET] < 0 || xPixel[OFFSET] >= xSideP1) { \
+	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n", \
+		__FILE__,__LINE__,IDX,ySide*(xSide+1),OFFSET,xPixel[OFFSET],xSide ); \
+	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE); \
+      } 
+
 inline void
 LocalHOUGHAddPHMD2HD_Wlr (LALStatus*    status,
 			  HoughDT*      map,
 			  HOUGHBorder** pBorderP,
-			  UINT2         length,
-			  HoughDT       weight,
-			  UINT2         xSide, 
-			  UINT2         ySide)
+			  INT4         length,
+			  HoughDT      weight,
+			  INT4         xSide, 
+			  INT4         ySide)
 {
-  INT2        k,j;
-  INT2        yLower, yUpper;
+
+  INT4        k,j;
+  INT4        yLower, yUpper;
+  register    HoughDT    tempM0,tempM1,tempM2,tempM3;
+  INT4        sidx,sidx0,sidx1,sidx2,sidx3,sidxBase, sidxBase_n; /* pre-calcuted array index for sanity check */
+  INT4        c_c,c_n,offs;
+  COORType    *xPixel;
+  HOUGHBorder *borderP;
+  INT4        xSideP1 = xSide +1; /* avoid 16 bit types */
+  INT4        xSideP1_2=xSideP1+xSideP1;
+  INT4        xSideP1_3=xSideP1_2+xSideP1;
+
+  HoughDT     *pf_addr[8]; 
+
+  for (k=0; k< length; ++k) {
+
+    /*  Make sure the arguments are not NULL: (Commented for performance) */ 
+    /*  ASSERT (phmd->leftBorderP[k], status, HOUGHMAPH_ENULL,
+	HOUGHMAPH_MSGENULL); */
+
+    borderP = pBorderP[k];
+    xPixel =  &( (*borderP).xPixel[0] );
+
+    yLower = borderP->yLower;
+    yUpper = borderP->yUpper;
+
+    sidxBase=yLower*xSideP1;
+    sidxBase_n = sidxBase+(xSideP1 << EAH_HOUGH_BATCHSIZE_LOG2);
+
+
+    if(k < length-1) {
+	INT4 ylkp1 = pBorderP[k+1]->yLower;
+	PREFETCH(&(pBorderP[k+1]->xPixel[ylkp1]));
+    } 	
+
+    if(k < length-2) {
+	PREFETCH(pBorderP[k+2]);
+    } 	
+
+   
+    if (yLower < 0) {
+      fprintf(stderr,"WARNING: Fixing yLower (%d -> 0) [HoughMap.c %d]\n",
+	      yLower, __LINE__);
+      yLower = 0;
+    }
+    if (yUpper >= ySide) {
+      fprintf(stderr,"WARNING: Fixing yUpper (%d -> %d) [HoughMap.c %d]\n",
+	      yUpper, ySide-1, __LINE__);
+      yUpper = ySide - 1;
+    }
+
+
+    /* fill first prefetch address array entries */
+    c_c =0;
+    c_n =EAH_HOUGH_BATCHSIZE;
+
+    offs = yUpper - yLower+1;
+    if (offs > EAH_HOUGH_BATCHSIZE) {
+	offs = EAH_HOUGH_BATCHSIZE; 
+    }	
+	
+    	
+    for(j=yLower; j < yLower+offs; j++) {
+        sidx0=xPixel[j]+ j*xSideP1;
+        PREFETCH(pf_addr[c_c++] = map + sidx0);
+#ifndef LAL_NDEBUG
+        CHECK_INDEX(sidx0,j);
+#endif
+    }		
+		
+    c_c=0;
+    for(j=yLower; j<=yUpper-(2*EAH_HOUGH_BATCHSIZE-1);j+=EAH_HOUGH_BATCHSIZE){
+
+      sidx0 = xPixel[j+EAH_HOUGH_BATCHSIZE]+sidxBase_n;; 
+      sidx1 = xPixel[j+EAH_HOUGH_BATCHSIZE+1]+sidxBase_n+xSideP1;
+      sidx2 = xPixel[j+EAH_HOUGH_BATCHSIZE+2]+sidxBase_n+xSideP1_2;
+      sidx3 = xPixel[j+EAH_HOUGH_BATCHSIZE+3]+sidxBase_n+xSideP1_3;;
+	
+      PREFETCH(xPixel +(j+(EAH_HOUGH_BATCHSIZE+EAH_HOUGH_BATCHSIZE)));
+
+      PREFETCH(pf_addr[c_n] = map + sidx0);
+      PREFETCH(pf_addr[c_n+1] = map + sidx1);
+      PREFETCH(pf_addr[c_n+2] = map + sidx2);
+      PREFETCH(pf_addr[c_n+3] = map + sidx3);
+
+#ifndef LAL_NDEBUG 
+      CHECK_INDEX(sidx0,j+EAH_HOUGH_BATCHSIZE);
+      CHECK_INDEX(sidx1,j+EAH_HOUGH_BATCHSIZE+1);
+      CHECK_INDEX(sidx2,j+EAH_HOUGH_BATCHSIZE+2);
+      CHECK_INDEX(sidx3,j+EAH_HOUGH_BATCHSIZE+3);
+#endif
+
+      tempM0 = *(pf_addr[c_c]) +weight;
+      tempM1 = *(pf_addr[c_c+1]) +weight;
+      tempM2 = *(pf_addr[c_c+2]) +weight;
+      tempM3 = *(pf_addr[c_c+3]) +weight;
+
+      sidxBase = sidxBase_n;
+      sidxBase_n+=xSideP1 << EAH_HOUGH_BATCHSIZE_LOG2;
+
+      (*(pf_addr[c_c]))=tempM0;
+      (*(pf_addr[c_c+1]))=tempM1;
+      (*(pf_addr[c_c+2]))=tempM2;
+      (*(pf_addr[c_c+3]))=tempM3;
+
+      c_c ^= EAH_HOUGH_BATCHSIZE;
+      c_n ^= EAH_HOUGH_BATCHSIZE;
+    }
+
+    sidxBase=j*xSideP1;
+    for(; j<=yUpper;++j){
+      sidx = sidxBase + xPixel[j];
+#ifndef LAL_NDEBUG
+      CHECK_INDEX(sidx0,j);
+#endif
+      map[sidx] += weight;
+      sidxBase+=xSideP1;
+    }
+
+  }
+};
+
+
+#else 
+inline void
+LocalHOUGHAddPHMD2HD_Wlr (LALStatus*    status,
+			  HoughDT*      map,
+			  HOUGHBorder** pBorderP,
+			  INT4         length,
+			  HoughDT      weight,
+			  INT4         xSide, 
+			  INT4         ySide)
+{
+  INT4        k,j;
+  INT4        yLower, yUpper;
   COORType    *xPixel;
   HOUGHBorder *borderP;
   INT4        sidx;
@@ -1456,3 +1114,4 @@ LocalHOUGHAddPHMD2HD_Wlr (LALStatus*    status,
     }
   }
 }
+#endif
