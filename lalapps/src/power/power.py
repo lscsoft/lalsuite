@@ -1116,13 +1116,13 @@ def make_burca_tailor_fragment(dag, input_cache, seg, tag):
 	input_cache = list(input_cache)
 	input_cache.sort(reverse = True)
 	nodes = set()
-	max_t_per_job = 2**20
+	max_cost_per_job = 2**20
 	while input_cache:
 		cache = []
-		t = 0
-		while input_cache and t <= max_t_per_job:
+		cost = 0
+		while input_cache and cost <= max_cost_per_job:
 			cache.append(input_cache.pop())
-			t += float(abs(cache[-1].segment))
+			cost += float(abs(cache[-1].segment))
 		node = BurcaTailorNode(burcatailorjob)
 		node.add_input_cache(cache)
 		node.set_name("ligolw_burca_tailor_%s_%d_%d_%d" % (tag, int(seg[0]), int(abs(seg)), len(nodes)))
@@ -1148,13 +1148,13 @@ def make_burca2_fragment(dag, parents, input_cache, tag):
 	input_cache = list(input_cache)
 	input_cache.sort(reverse = True)
 	nodes = set()
-	max_t_per_job = 2**17
+	max_cost_per_job = 2**17
 	while input_cache:
 		cache = []
-		t = 0
-		while input_cache and t <= max_t_per_job:
+		cost = 0
+		while input_cache and cost <= max_cost_per_job:
 			cache.append(input_cache.pop())
-			t += float(abs(cache[-1].segment))
+			cost += float(abs(cache[-1].segment))
 		node = BurcaNode(burca2job)
 		node.set_name("ligolw_burca2_%s_%d" % (tag, len(nodes)))
 		node.add_macro("macrocomment", tag)
