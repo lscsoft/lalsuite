@@ -1117,50 +1117,6 @@ static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 
   return XLAL_SUCCESS;
 }
 
-static int local_sin_2PI_LUT_trimmed (REAL4 *sin2pix, REAL8 x) {
-  INT4  i, n, ix;
-#if EAH_SINCOS_F2IBITS == EAH_SINCOS_F2IBITS_UNION
-  union {
-    REAL8 asreal;
-    INT8  asint;
-    struct {
-      INT4 high;
-      INT4 low;
-    } as2int;
-  } ux;
-#endif
-
-#ifndef LAL_NDEBUG
-  if(x > SINCOS_ADDS) {
-    LogPrintf(LOG_DEBUG,"sin_LUT: x too large: %22f > %f\n",x,SINCOS_ADDS);
-    return XLAL_FAILURE;
-  } else if(x < -SINCOS_ADDS) {
-    LogPrintf(LOG_DEBUG,"sin_LUT: x too small: %22f < %f\n",x,-SINCOS_ADDS);
-    return XLAL_FAILURE;
-  }
-#endif
-
-#if EAH_SINCOS_F2IBITS == EAH_SINCOS_F2IBITS_MEMCPY
-  REAL8 asreal = x + SINCOS_ADDS;
-  memcpy(&(ix), &asreal, sizeof(ix));
-#else /* EAH_SINCOS_F2IBITS_MEMCPY */
-  ux.asreal = x + SINCOS_ADDS;
-#ifdef __BIG_ENDIAN__
-  ix = ux.as2int.low;
-#else /* BIG_ENDIAN */
-  ix = ux.as2int.high;
-#endif /* BIG_ENDIAN */
-#endif /* EAH_SINCOS_F2IBITS_MEMCPY */
-
-  i  = ix & SINCOS_MASK1;
-  n  = ix & SINCOS_MASK2;
-  i  = i >> SINCOS_SHIFT;
-  
-  (*sin2pix) = sincosLUTbase[i]  + n * sincosLUTdiff[i];
-
-  return XLAL_SUCCESS;
-}
-
 #else  /* EAH_SINCOS_VARIANT */
 #error no valid EAH_SINCOS_VARIANT specified
 #endif /* EAH_SINCOS_VARIANT */
