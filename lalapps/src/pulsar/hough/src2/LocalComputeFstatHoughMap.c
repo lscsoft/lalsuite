@@ -45,31 +45,9 @@ RCSID( "$Id$");
 #define AD_ALIGN64 ".align 64" 
 #endif 
 
-#ifdef EAH_HOUGH_BATCHSIZELD
-#define EAH_HOUGH_BATCHSIZE (1 << EAH_HOUGH_BATCHSIZELD)
-#endif
-
-/* prefetch compiler directives */
-#if EAH_HOUGH_PREFETCH == EAH_HOUGH_PREFETCH_DIRECT
-#if defined(__INTEL_COMPILER) ||  defined(_MSC_VER)
-// not tested yet with icc or MS Visual C 
-#include "xmmintrin.h"
-#define PREFETCH(a) _mm_prefetch((char *)(void *)(a),_MM_HINT_T0)
-#elif defined(__GNUC__)
-#define PREFETCH(a) __builtin_prefetch(a)
-#else
-#define PREFETCH(a) a
-#endif
-#else 
-#define PREFETCH(a) a
-#endif
-
 #define HSMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define HSMIN(x,y) ( (x) < (y) ? (x) : (y) )
 #define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
-
-
-
 
 
 
@@ -86,6 +64,7 @@ static int smallerHough(const void *a,const void *b) {
   else
     return(0);
 }
+
 
 /* we point nearly all LocalHOUGH functions back to LAL */
 
@@ -113,6 +92,7 @@ LocalHOUGHAddPHMD2HD_W    (LALStatus      *status, /**< the status pointer */
 			   HOUGHMapDeriv  *hd,     /**< the Hough map derivative */
 			   HOUGHphmd      *phmd);  /**< info from a partial map */ 
 
+/* this is the only function that's actually changed for optimization */
 inline void
 LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status,
 			   HoughDT*      map,
@@ -123,7 +103,9 @@ LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status,
 			   INT4         ySide);
 
 
-
+/* this function is identical to LALComputeFstatHoughMap() in HierarchicalSearch.c,
+   except for calling the LocalHOUGH* functions instead of the LALHOUGH* ones
+*/
 void
 LocalComputeFstatHoughMap (LALStatus            *status,
 			   SemiCohCandidateList *out,    /* output candidates */
@@ -566,18 +548,14 @@ LocalComputeFstatHoughMap (LALStatus            *status,
 
 
 
-
-/** Calculates the total hough map for a given trajectory in the 
-    time-frequency plane and a set of partial hough map derivatives allowing 
-    each PHMD to have a different weight factor to account for varying
-    sensitivity at different sky-locations. */ 
-/* *******************************  <lalVerbatim file="DriveHoughD"> */
+/* this function is identical to LALHOUGHConstructHMT_W in DriveHough.c,
+   except for that it calls LocalHOUGHAddPHMD2HD_W instead of LALHOUGHAddPHMD2HD_W
+*/
 void LocalHOUGHConstructHMT_W (LALStatus                  *status, 
 			       HOUGHMapTotal              *ht, /**< The output hough map */
 			       UINT8FrequencyIndexVector  *freqInd, /**< time-frequency trajectory */ 
 			       PHMDVectorSequence         *phmdVS) /**< set of partial hough map derivatives */
-{ /*   *********************************************  </lalVerbatim> */
-
+{
 
   UINT4    k,j;
   UINT4    breakLine;
@@ -671,14 +649,19 @@ void LocalHOUGHConstructHMT_W (LALStatus                  *status,
   RETURN (status);
 }
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/** Adds a hough map derivative into a total hough map derivative taking into
-    account the weight of the partial hough map */
-/* *******************************  <lalVerbatim file="HoughMapD"> */
+
+
+/* this function is derived from LALHOUGHAddPHMD2HD_W in HoughMap.c.
+   The two originally almost identical loops were put into the inline function
+   LocalHOUGHAddPHMD2HD_Wlr() that is augmented with prefetching code to
+   speed up memory access. The parameterization is such that the originally
+   two loops become actually identical in LocalHOUGHAddPHMD2HD_Wlr
+   (leftBorder<->rightBorder, lengthLeft<->lengthRight, weight <-> -weight)
+*/
 void LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
 			     HOUGHMapDeriv  *hd,  /**< the Hough map derivative */
 			     HOUGHphmd      *phmd) /**< info from a partial map */ 
-{ /*   *********************************************  </lalVerbatim> */
+{
 
   INT2     k;
   UINT2    xSide,ySide;
@@ -732,7 +715,23 @@ void LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
 
 
 
-#if EAH_HOUGH_ASS == EAH_HOUGH_ASS_X87
+/* prefetch compiler directives */
+#if EAH_HOUGH_PREFETCH > EAH_HOUGH_PREFETCH_NONE
+#if defined(__INTEL_COMPILER) ||  defined(_MSC_VER)
+// not tested yet with icc or MS Visual C 
+#include "xmmintrin.h"
+#define PREFETCH(a) _mm_prefetch((char *)(void *)(a),_MM_HINT_T0)
+#elif defined(__GNUC__)
+#define PREFETCH(a) __builtin_prefetch(a)
+#else
+#define PREFETCH(a) a
+#endif
+#else 
+#define PREFETCH(a) a
+#endif
+
+
+#if EAH_HOUGH_PREFETCH == EAH_HOUGH_PREFETCH_X87
 
 inline void
 LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status,
@@ -749,14 +748,7 @@ LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status,
   COORType     *xPixel;
   HOUGHBorder* borderP;
    
-
-  /* left borders =>  increase according to weight*/
   for (k=0; k< length; ++k){
-
-    /*  Make sure the arguments are not NULL: (Commented for performance) */ 
-    /*  ASSERT (phmd->leftBorderP[k], status, HOUGHMAPH_ENULL,
-	HOUGHMAPH_MSGENULL); */
-
 
     borderP = pBorderP[k];
     xPixel =  &( (*borderP).xPixel[0] );
@@ -764,7 +756,6 @@ LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status,
     yLower = (*borderP).yLower;
     yUpper = (*borderP).yUpper;
 
-#if EAH_HOUGH_PREFETCH > EAH_HOUGH_PREFETCH_NONE
     if(k < length-1) {
 	INT4 ylkp1 = pBorderP[k+1]->yLower;
 	PREFETCH(&(pBorderP[k+1]->xPixel[ylkp1]));
@@ -773,8 +764,6 @@ LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status,
     if(k < length-2) {
 	PREFETCH(pBorderP[k+2]);
     } 	
-#endif
-
    
     if (yLower < 0) {
       fprintf(stderr,"WARNING: Fixing yLower (%d -> 0) [HoughMap.c %d]\n",
@@ -922,10 +911,12 @@ __asm __volatile (
 };
 
 
-#elif EAH_HOUGH_ASS == EAH_HOUGH_ASS_C_PREFETCH
+#elif EAH_HOUGH_PREFETCH == EAH_HOUGH_PREFETCH_DIRECT
 
-#define EAH_HOUGH_BATCHSIZE 4
+#ifndef EAH_HOUGH_BATCHSIZE_LOG2
 #define EAH_HOUGH_BATCHSIZE_LOG2 2
+#endif
+#define EAH_HOUGH_BATCHSIZE (1 << EAH_HOUGH_BATCHSIZE_LOG2)
 
 #define CHECK_INDEX(IDX,OFFSET) \
       if ((IDX < 0) || ( IDX >= ySide*(xSide+1))|| xPixel[OFFSET] < 0 || xPixel[OFFSET] >= xSideP1) { \
@@ -1063,10 +1054,13 @@ LocalHOUGHAddPHMD2HD_Wlr (LALStatus*    status,
     }
 
   }
-};
+}
 
 
-#else 
+#else /* EAH_HOUGH_PREFETCH */
+
+/* original generic version w/o prefetching */
+
 inline void
 LocalHOUGHAddPHMD2HD_Wlr (LALStatus*    status,
 			  HoughDT*      map,
@@ -1114,4 +1108,5 @@ LocalHOUGHAddPHMD2HD_Wlr (LALStatus*    status,
     }
   }
 }
-#endif
+
+#endif /* EAH_HOUGH_PREFETCH */

@@ -1,8 +1,8 @@
 /* constants */
 #define EAH_GENERIC 0
 
-#define EAH_OPTIMIZATION_SSE         3
 #define EAH_OPTIMIZATION_ALTIVEC     2
+#define EAH_OPTIMIZATION_SSE         3
 
 #define EAH_SINCOS_ROUND_FLOOR       EAH_GENERIC
 #define EAH_SINCOS_ROUND_MODF        1
@@ -23,12 +23,11 @@
 #define EAH_HOTLOOP_VARIANT_x87      EAH_GENERIC
 
 #define EAH_HOUGH_PREFETCH_NONE      EAH_GENERIC
-#define EAH_HOUGH_PREFETCH_DIRECT    1
-#define EAH_HOUGH_PREFETCH_C         2
+#define EAH_HOUGH_PREFETCH_DIRECT    1 /* prefetching using compiler directives */
+#define EAH_HOUGH_PREFETCH_X87       7 /* prefetch commands inlined in x87 assembler */
 
-#define EAH_HOUGH_ASS_NONE           EAH_GENERIC
-#define EAH_HOUGH_ASS_X87            7
-/* #define EAH_HOUGH_BATCHSIZELD 0 /* not using it yet */
+/* this is the default. there _may_ be systems for which you want to change this */
+/* #define EAH_HOUGH_BATCHSIZE_LOG2 2 */
 
 #ifndef EAH_OPTIMIZATION
 #define EAH_OPTIMIZATION EAH_GENERIC
@@ -40,36 +39,31 @@
 #define EAH_HOTLOOP_VARIANT EAH_HOTLOOP_VARIANT_LAL
 #define EAH_HOTLOOP_RECIPROCAL /* might give it a try - on old CPUs this might give a little speedup */
 #define EAH_HOUGH_PREFETCH  EAH_HOUGH_PREFETCH_NONE
-#define EAH_HOUGH_ASS       EAH_HOUGH_ASS_NONE
 
 #elif EAH_OPTIMIZATION == 2 /* AltiVec Code (currently not working) */
 #define EAH_SINCOS_VARIANT  EAH_SINCOS_VARIANT_LINEAR
 #define EAH_SINCOS_ROUND    EAH_SINCOS_ROUND_FLOOR
 #define EAH_SINCOS_F2IBITS  EAH_SINCOS_F2IBITS_UNION
 #define EAH_HOTLOOP_VARIANT EAH_HOTLOOP_VARIANT_ALTIVEC
-#define EAH_HOUGH_PREFETCH  EAH_HOUGH_PREFETCH_DIRECT /* should be somethig similar to ASS, but isn't there yet */
-#define EAH_HOUGH_ASS       EAH_HOUGH_ASS_NONE
+#define EAH_HOUGH_PREFETCH  EAH_HOUGH_PREFETCH_DIRECT
 
 #elif EAH_OPTIMIZATION == 3 /* SSE code, contains assembler */
 #define EAH_SINCOS_VARIANT  EAH_SINCOS_VARIANT_LINEAR
 #define EAH_SINCOS_ROUND    EAH_SINCOS_ROUND_PLUS2
 #define EAH_HOTLOOP_VARIANT EAH_HOTLOOP_VARIANT_SSE
-#define EAH_HOUGH_PREFETCH  EAH_HOUGH_PREFETCH_DIRECT
-#define EAH_HOUGH_ASS       EAH_HOUGH_ASS_X87
+#define EAH_HOUGH_PREFETCH  EAH_HOUGH_PREFETCH_X87
 
 #elif EAH_OPTIMIZATION == 4 /* contains x87 assembler, but no SSE instructions */
 #define EAH_SINCOS_VARIANT  EAH_SINCOS_VARIANT_LINEAR
 #define EAH_SINCOS_ROUND    EAH_SINCOS_ROUND_PLUS2
 #define EAH_HOTLOOP_VARIANT EAH_HOTLOOP_VARIANT_x87 
 #define EAH_HOUGH_PREFETCH  EAH_HOUGH_PREFETCH_NONE
-#define EAH_HOUGH_ASS       EAH_HOUGH_ASS_X87
 
 #elif EAH_OPTIMIZATION == 9 /* experimental */
 #define EAH_SINCOS_VARIANT  EAH_SINCOS_VARIANT_LINEAR
 #define EAH_SINCOS_ROUND    EAH_SINCOS_ROUND_PLUS2
 #define EAH_HOTLOOP_VARIANT EAH_HOTLOOP_VARIANT_AUTOVECT
 #define EAH_HOUGH_PREFETCH  EAH_HOUGH_PREFETCH_NONE
-#define EAH_HOUGH_ASS       EAH_HOUGH_ASS_NONE
 
 #endif /* EAH_OPTIMIZATION == */
 
@@ -85,9 +79,6 @@
 #endif
 #ifndef EAH_HOUGH_PREFETCH
 #define EAH_HOUGH_PREFETCH  EAH_GENERIC
-#endif
-#ifndef EAH_HOUGH_ASS
-#define EAH_HOUGH_ASS       EAH_GENERIC
 #endif
 
 /* it looks like for most compilers this is actually faster... */
