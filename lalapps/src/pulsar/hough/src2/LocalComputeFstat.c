@@ -1071,16 +1071,13 @@ static void local_sin_cos_2PI_LUT_init (void)
 
 static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x) {
   INT4  i, n, ix;
-#if EAH_SINCOS_F2IBITS == EAH_SINCOS_F2IBITS_UNION
   union {
     REAL8 asreal;
-    INT8  asint;
     struct {
       INT4 high;
       INT4 low;
     } as2int;
   } ux;
-#endif
 
   static const REAL4* cosbase = sincosLUTbase + (SINCOS_LUT_RES/4);
   static const REAL4* cosdiff = sincosLUTdiff + (SINCOS_LUT_RES/4);
@@ -1096,16 +1093,16 @@ static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 
 #endif
 
 #if EAH_SINCOS_F2IBITS == EAH_SINCOS_F2IBITS_MEMCPY
-  REAL8 asreal = x + SINCOS_ADDS;
-  memcpy(&(ix), &asreal, sizeof(ix));
-#else /* EAH_SINCOS_F2IBITS_MEMCPY */
+  ux.asreal = x + SINCOS_ADDS;
+  memcpy(&(ix), &ux.asreal, sizeof(ix));
+#elif EAH_SINCOS_F2IBITS == EAH_SINCOS_F2IBITS_UNION
   ux.asreal = x + SINCOS_ADDS;
 #ifdef __BIG_ENDIAN__
   ix = ux.as2int.low;
 #else /* BIG_ENDIAN */
   ix = ux.as2int.high;
 #endif /* BIG_ENDIAN */
-#endif /* EAH_SINCOS_F2IBITS_MEMCPY */
+#endif /* EAH_SINCOS_F2IBITS */
 
   i  = ix & SINCOS_MASK1;
   n  = ix & SINCOS_MASK2;
