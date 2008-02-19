@@ -26,7 +26,8 @@
 #define EAH_HOUGH_PREFETCH_DIRECT    1 /* prefetching using compiler directives */
 #define EAH_HOUGH_PREFETCH_X87       7 /* prefetch commands inlined in x87 assembler */
 
-/* this is the default. there _may_ be systems for which you want to change this */
+/* this is the default batch size for prefetching, which should be ok for SSE and PPC.
+   there _may_ be systems for which you want to change this */
 /* #define EAH_HOUGH_BATCHSIZE_LOG2 2 */
 
 #ifndef EAH_OPTIMIZATION
@@ -37,7 +38,7 @@
 #define EAH_SINCOS_VARIANT  EAH_SINCOS_VARIANT_LINEAR
 #define EAH_SINCOS_ROUND    EAH_SINCOS_ROUND_PLUS2
 #define EAH_HOTLOOP_VARIANT EAH_HOTLOOP_VARIANT_LAL
-#define EAH_HOTLOOP_RECIPROCAL /* might give it a try - on old CPUs this might give a little speedup */
+#define EAH_HOTLOOP_RECIPROCAL /* on old CPUs this might give a little speedup */
 #define EAH_HOUGH_PREFETCH  EAH_HOUGH_PREFETCH_NONE
 
 #elif EAH_OPTIMIZATION == 2 /* AltiVec Code (currently not working) */
@@ -63,7 +64,7 @@
 #define EAH_SINCOS_VARIANT  EAH_SINCOS_VARIANT_LINEAR
 #define EAH_SINCOS_ROUND    EAH_SINCOS_ROUND_PLUS2
 #define EAH_HOTLOOP_VARIANT EAH_HOTLOOP_VARIANT_AUTOVECT
-#define EAH_HOUGH_PREFETCH  EAH_HOUGH_PREFETCH_NONE
+#define EAH_HOUGH_PREFETCH  EAH_HOUGH_PREFETCH_X87
 
 #endif /* EAH_OPTIMIZATION == */
 
