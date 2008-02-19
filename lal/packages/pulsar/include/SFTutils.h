@@ -43,6 +43,7 @@ extern "C" {
 
 NRCSID( SFTUTILSH, "$Id$" );
 /*---------- INCLUDES ----------*/
+#include <stdarg.h>
 
 #include <lal/LALDatatypes.h>
 #include <lal/DetectorSite.h>
@@ -191,6 +192,8 @@ void LALDestroyTimestampVector (LALStatus *status, LIGOTimeGPSVector **vect);
 
 void LALMakeTimestamps (LALStatus *, LIGOTimeGPSVector **timestamps, const LIGOTimeGPS tStart, REAL8 duration, REAL8 Tsft);
 void LALGetSFTtimestamps (LALStatus *, LIGOTimeGPSVector **timestamps, const SFTVector *sfts );
+
+LALStringVector *XLALCreateStringVector ( const CHAR *str1, ... );
 
 void XLALDestroyStringVector ( LALStringVector *vect );
 void LALDestroyStringVector ( LALStatus *, LALStringVector **vect );

@@ -29,6 +29,8 @@
  */
 
 /*---------- INCLUDES ----------*/
+#include <stdarg.h>
+
 #include <gsl/gsl_sort_double.h>
 
 #include <lal/AVFactories.h>
@@ -698,6 +700,63 @@ LALAppendString2Vector (LALStatus *status,
 } /* LALAppendString2Vector() */
 
 
+
+/** Create a LALStringVector from the list of strings passed as arguments
+ */
+LALStringVector *
+XLALCreateStringVector ( const CHAR *str1, ... )
+{
+  const CHAR *fn = "XLALCreateStringVector()";
+  LALStringVector *ret;
+  const CHAR *next;
+  va_list ap;
+
+  if ( !str1 ) {
+    XLAL_ERROR_NULL (fn, XLAL_EINVAL );
+  }
+
+  /* set up return vector of strings, and handle first argument */
+  if ( (ret = LALCalloc ( 1, sizeof(*ret) )) == NULL ) {
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+  if ( (ret->data = LALCalloc ( 1, sizeof(ret->data[0]) )) == NULL) {
+    LALFree ( ret );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+  if ( (ret->data[0] = LALCalloc ( strlen(str1)+1, sizeof(CHAR) )) == NULL ) {
+    LALFree ( ret->data );
+    LALFree ( ret );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+  strcpy ( ret->data[0], str1 );
+  ret->length ++;
+
+  /* handle remaining variable-length list of (assumed)string arguments */
+  va_start(ap, str1);
+
+  while ( (next = va_arg(ap, const CHAR *)) != NULL )
+    {
+      ret->length ++;
+      if ( (ret->data = LALRealloc ( ret->data, ret->length * sizeof(ret->data[0]))) == NULL )
+	goto failed;
+      if ( (ret->data[ret->length-1] = LALCalloc( strlen(next)+1, sizeof(CHAR) )) == NULL )
+	goto failed;
+
+      strcpy ( ret->data[ret->length-1], next );
+
+    } /* while more arguments */
+
+  va_end(ap);
+
+  return ret;
+
+ failed:
+  va_end(ap);
+  XLALDestroyStringVector ( ret );
+  XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+
+} /* XLALCreateStringVector() */
+
 
 /** XLAL-interface: Free a string-vector ;) */
 void
