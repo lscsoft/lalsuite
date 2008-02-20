@@ -2295,20 +2295,9 @@ int main( int argc, char *argv[] )
         for ( bankCurrent = subBankCurrent->bankHead, subBankIndex = 0;
             bankCurrent; bankCurrent = bankCurrent->next, ++subBankIndex )
         {
-          /* set fcFilterInput and qVec to the correct ones 
-          fcFilterInput = bankVetoData.fcInputArray[subBankIndex];
-          if ( vrbflg ) fprintf( stdout,
-              "Using template in fcInputArray[%d] at %p\n", subBankIndex,
-              fcFilterInput );
-          fcFilterParams->qVec = bankVetoData.qVecArray[subBankIndex];
-          if ( vrbflg ) fprintf( stdout,
-              "Using qVec in qVecArray[%d] at %p\n", subBankIndex,
-              fcFilterParams->qVec );
-          if (vrbflg) fprintf(stderr, "\n analyseTag %d\n\n", analyseTag);*/
           /* filter data segment */ 
           if ( analyseTag )
           {
-            /* CHAD - moved to fix enable filter inj only bug */
             /* set fcFilterInput and qVec to the correct ones */
             fcFilterInput = bankVetoData.fcInputArray[subBankIndex];
             if ( vrbflg ) fprintf( stdout,
@@ -2319,7 +2308,6 @@ int main( int argc, char *argv[] )
             if ( vrbflg ) fprintf( stdout,
                 "Using qVec in qVecArray[%d] at %p\n", subBankIndex,
                 fcFilterParams->qVec );
-            /* END CHADs CHANGES */
             if ( vrbflg ) fprintf( stdout, 
                 "filtering segment %d/%d [%ld-%ld] "
                 "against template %d/%d (%e,%e)\n", 
