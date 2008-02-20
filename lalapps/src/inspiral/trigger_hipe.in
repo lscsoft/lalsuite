@@ -37,6 +37,7 @@ from glue.ligolw import ligolw
 from glue.ligolw import utils
 from glue.ligolw import table
 from glue.ligolw import lsctables
+from glue import lal
 from glue import segments
 from glue import segmentsUtils
 from glue import pipeline
@@ -369,6 +370,33 @@ def concatenate_files(input_names, output_name):
   """
   inspiralutils.make_external_call("cat %s > %s" % \
                                    (" ".join(input_names), output_name))
+
+def make_ligolw_add(orig_cache, pattern, outfile, logdir, cp, ligolw_job=None):
+  """
+  Take a cache, sieve it for pattern, run make a ligolw_add on
+  the matching files, and create a LigolwAddNode that will create a new
+  output cache with the matching files replaced by the single ligolw_added
+  file.
+  """
+  # determine the files to ligolw_add
+  sub_cache = orig_cache.sieve(description=pattern)
+  sub_files = sub_cache.pfnlist()
+
+  if len(sub_files) == 0:
+    print >>sys.stderr, "warning: no files on which to run ligolw_add"
+    return None
+
+  if ligolw_job is None:
+    ligolw_job = pipeline.LigolwAddJob(logdir, cp)
+    ligolw_job.set_stdout_file(outfile)
+
+  node = pipeline.LigolwAddNode(ligolw_job)
+  for sub_file in sub_files:
+    node.add_input_file(sub_file)
+
+  new_cache = lal.Cache([entry for entry in orig_cache if entry.path() not in sub_files])
+  new_cache.extend(lal.Cache.from_urls([outfile]))
+  return node, new_cache
 
 ##############################################################################
 # define usage and command line options and arguments - parse
@@ -760,7 +788,31 @@ for grb in ext_trigs:
       injection_analysis.set_injections(injrun, deltaIndex)
       injection_node = injection_analysis.finalize(uberdag=uberdag,
                                                    parent=datafind_node)
-      hipe_caches.append(injection_analysis.get_cache_name())
+      
+      # ligolw_add FOUND and MISSED files
+      injection_cache_filename = injection_analysis.get_cache_name()
+      injection_cache = lal.Cache.fromfile(open(injection_cache_filename))
+      ligolw_added_cache_filename = injection_cache_filename.replace("HIPE",
+        "HIPE_LIGOLW_ADDED")
+      
+      found_filename = "%s-COIRE_FOUND_%s-%d-%d.xml" % \
+        ("".join(grb_ifolist), usertag, offSourceSegment[0],
+         abs(offSourceSegment))
+      ligolw_add_1, new_cache = make_ligolw_add(injection_cache,
+                                     "COIRE_*_FOUND", found_filename,
+                                     opts.log_path, cp)
+      ligolw_add_1.add_parent(injection_node)
+      uberdag.add_node(ligolw_add_1)
+      
+      missed_filename = found_filename.replace("FOUND", "MISSED")
+      ligolw_add_2, new_cache = make_ligolw_add(new_cache,
+                                "COIRE_*_MISSED", missed_filename,
+                                opts.log_path, cp)
+      ligolw_add_2.add_parent(injection_node)
+      new_cache.tofile(open(ligolw_added_cache_filename, "w"))
+      uberdag.add_node(ligolw_add_2)
+      
+      hipe_caches.append(ligolw_added_cache_filename)
   
   grb_cache_name = idirectory + "/" + idirectory + ".cache"
   concatenate_files(hipe_caches, grb_cache_name)
