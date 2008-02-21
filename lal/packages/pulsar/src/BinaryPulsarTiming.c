@@ -1120,10 +1120,15 @@ http://www.stjarnhimlen.se/comp/time.html for details) */
 /* Matt - you have tested these function using the radio pulsar data that Michael 
 Kramer sent you and they are correct and are especially needed for the binary system 
 epochs */
+
+/* a very good paper describing the tranforms between different time systems
+and why they are necessary can be found in Seidelmann and Fukushima, A&A 265
+(1992) http://ukads.nottingham.ac.uk/abs/1992A%26A...265..833S */
+
 REAL8 LALTTMJDtoGPS(REAL8 MJD){
   REAL8 GPS;
 
-  /* Check not before the start of GPS time (MJD 44222) */
+  /* Check not before the start of GPS time (MJD 44244) */
   if(MJD < 44244.){
     fprintf(stderr, "Input time is not in range.\n");
     exit(0);
@@ -1138,24 +1143,55 @@ start of GPS time */
 
 REAL8 LALTDBMJDtoGPS(REAL8 MJD){
   REAL8 GPS;
-  REAL8 Tdiff, meanAnomaly, TDBtoTT;
-  
-  /* Check not before the start of GPS time (MJD 44222) */
+  REAL8 Tdiff, TDBtoTT;
+
+  /* Check not before the start of GPS time (MJD 44244) */
   if(MJD < 44244.){
     fprintf(stderr, "Input time is not in range.\n");
     exit(0);
   } 
   
+  /* use factors from Seidelmann and Fukushima (their factors in the sin terms
+     are ~36525 times larger than what I use here as the time T they use is in
+     Julian centuries rather than Julian days) */
   Tdiff = MJD + (2400000.5-2451545.0);
-  meanAnomaly = 357.53 + 0.98560028*Tdiff; /* mean anomaly in degrees */
-  meanAnomaly *= LAL_PI_180; /* mean anomaly in rads */
   
-  TDBtoTT = 0.001658*sin(meanAnomaly) + 0.000014*sin(2.*meanAnomaly); /* time diff in seconds */
+  /* time diff in seconds */
+  TDBtoTT = 0.0016568*sin((357.5 + 0.98560028*Tdiff) * LAL_PI_180) +
+            0.0000224*sin((246.0 + 0.90251882*Tdiff) * LAL_PI_180) +
+            0.0000138*sin((355.0 + 1.97121697*Tdiff) * LAL_PI_180) +
+            0.0000048*sin((25.0 + 0.08309103*Tdiff) * LAL_PI_180) + 
+            0.0000047*sin((230.0 + 0.95215058*Tdiff) *LAL_PI_180);
 
   /* convert TDB to TT (TDB-TDBtoTT) and then convert TT to GPS */
   /* there is the magical number factor of 32.184 + 19 leap seconds to the
 start of GPS time */
   GPS = (MJD-44244.)*86400. - 51.184 - TDBtoTT;
+
+  return GPS;
+}
+
+/*TEMPO2 uses TCB rather than TDB so have another function for that conversion*/
+REAL8 LALTCBMJDtoGPS(REAL8 MJD){
+  REAL8 GPS;
+  REAL8 Tdiff;
+  REAL8 TCBtoTDB;
+
+  /* Check not before the start of GPS time (MJD 44244) */
+  if(MJD < 44244.){
+    fprintf(stderr, "Input time is not in range.\n");
+    exit(0);
+  } 
+
+  /* from Seidelmann and Fukushima */
+  Tdiff = MJD + (2400000.5 - 2443144.5)*86400.;
+  TCBtoTDB = 1.550506e-8 * Tdiff;
+
+  /* convert from TDB to GPS */
+  GPS = LALTDBMJDtoGPS(MJD);
+  
+  /* add extra factor as the MJD was really in TCB not TDB) */
+  GPS -= TCBtoTDB;
 
   return GPS;
 }

@@ -264,6 +264,9 @@ LALTTMJDtoGPS(REAL8 MJD);
 REAL8
 LALTDBMJDtoGPS(REAL8 MJD);
 
+REAL8
+LALTCBMJDtoGPS(REAL8 MJD);
+
 /* function to print out all the pulsar parameters read in from a par file */
 void
 PrintPulsarParameters( BinaryPulsarParams params );
