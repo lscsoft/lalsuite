@@ -153,7 +153,7 @@ XLALLorentzian (
 		REAL8 fRing,
 		REAL8 sigma  );
 
-COMPLEX16Vector *
+COMPLEX16FrequencySeries *
 XLALConstructComplexVector(
 			   REAL8FrequencySeries  *Ampl,
 			   REAL8FrequencySeries  *Phase  );
@@ -187,9 +187,9 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
 
   REAL8FrequencySeries  *Aeff = NULL;
   REAL8FrequencySeries  *Phieff = NULL;
-  COMPLEX16Vector       *uF = NULL;
+  COMPLEX16FrequencySeries *uF = NULL;
 
-  REAL8Vector      *hPlus = NULL, *hCross = NULL;
+  REAL8TimeSeries      *hPlus = NULL, *hCross = NULL;
   REAL8FFTPlan     *prev = NULL;
 
   CHAR fA[20], fPhi[20], hpFile[20], hcFile[20], fuF[20];
@@ -340,23 +340,23 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
 
   /* Construct u(f) = Aeff*e^(i*Phieff) */
   uF = XLALConstructComplexVector( Aeff, Phieff);
-  LALPrintComplex16Vec(uF,df,fuF);
+  LALZPrintFrequencySeries(uF,fuF);
 
   /* Inverse Fourier transform */
   LALCreateReverseREAL8FFTPlan( &status, &prev, numPoints, 0);
-  hPlus = XLALCreateREAL8Vector(numPoints);
-  LALReverseREAL8FFT( &status, hPlus, uF, prev);
+  /*hPlus = XLALCreateREAL8Vector(numPoints);*/
+  XLALREAL8FreqTimeFFT( hPlus, uF, prev);
 
   /* Print hplus to file */
-  LALPrintReal8Vec(hPlus, dt, hpFile); 
+  LALDPrintTimeSeries(hPlus, hpFile); 
 
   /* Free Memory */
   XLALDestroyREAL8FrequencySeries(Aeff);
   XLALDestroyREAL8FrequencySeries(Phieff);
-  XLALDestroyCOMPLEX16Vector(uF);
+  XLALDestroyCOMPLEX16FrequencySeries(uF);
 
   XLALDestroyREAL8FFTPlan(prev);
-  XLALDestroyREAL8Vector(hPlus);
+  XLALDestroyREAL8TimeSeries(hPlus);
 
   return(0);
 
@@ -365,54 +365,20 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
 
 /* My funtions */
 
-void  LALPrintReal8Vec(
-		       REAL8Vector *h, 
-		       REAL8       dt, 
-		       CHAR        *outFile)  {
-
-    UINT4 i, n;
-    FILE *fp;
-    n = h->length;
-    
-    fp = LALFopen(outFile, "w");
-    for (i=0; i < n; i++) {
-      fprintf (fp, "%e\t%e\t\n", i*dt, h->data[i]);
-    }
-}
-
-
-void LALPrintComplex16Vec (
-			   COMPLEX16Vector *hT,
-			   REAL8 dt,
-			   CHAR *outFile) {
-
-    UINT4 i, n;
-    FILE *fp;
-    COMPLEX16 num;
-    n = hT->length;
-    
-    fp = LALFopen(outFile, "w");
-    for (i=0; i < n; i++) {
-      num = hT->data[i];
-      fprintf (fp, "%e\t%e\t%e\t%e\t%e\n", dt*i, num.re, num.im, sqrt( pow(num.re,2.) + pow(num.im,2.)), atan(num.im/num.re));
-    }
-}
-
-
-COMPLEX16Vector *
+COMPLEX16FrequencySeries *
 XLALConstructComplexVector(
 			   REAL8FrequencySeries  *Ampl,
 			   REAL8FrequencySeries  *Phase  )
 {
-  COMPLEX16Vector *ComplVec = NULL;
+  COMPLEX16FrequencySeries *ComplVec = NULL;
   COMPLEX16 num;
   REAL8 Re, Im;
   UINT4 k, n;
   
   n = Ampl->data->length;
 
-  ComplVec = LALCalloc(1, sizeof(*ComplVec)); 
-  ComplVec = XLALCreateCOMPLEX16Vector(n);
+  ComplVec = XLALCreateCOMPLEX16FrequencySeries("u(f)", &Ampl->epoch,
+      Ampl->f0, Ampl->deltaF, &Ampl->sampleUnits, n);
 
   for( k = 0 ; k < n ; k++ ) {
 
@@ -420,7 +386,7 @@ XLALConstructComplexVector(
     Im = Ampl->data->data[k] * sin(Phase->data->data[k]);
     num.re = Re;
     num.im = Im;
-    ComplVec->data[k] = num;
+    ComplVec->data->data[k] = num;
   }
 
   return ComplVec;
