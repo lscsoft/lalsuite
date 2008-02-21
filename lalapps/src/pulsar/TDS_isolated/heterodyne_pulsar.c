@@ -1131,7 +1131,7 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 time,
   FrFileIEnd(frfile);
 
   /* fill into REAL8 vector */
-  if((strstr(channel, "STRAIN") == NULL || strstr(channel, "DER_DATA") == NULL)
+  if((strstr(channel, "STRAIN") == NULL && strstr(channel, "DER_DATA") == NULL)
     && strstr(channel, ":LSC") != NULL){ /* data is uncalibrated single
     precision - not neccesarily from DARM_ERR or AS_Q though - might be
     analysing an enviromental channel */
@@ -1141,7 +1141,7 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 time,
   }
   else if(strstr(channel, "STRAIN") != NULL || strstr(channel, "DER_DATA") !=
     NULL){ /* data is calibrated h(t) */
-    for(i=0;i<(INT4)length;i++){
+   for(i=0;i<(INT4)length;i++){
       dblseries->data->data[i] = scalefac*frvect->dataD[i];
     }
     
