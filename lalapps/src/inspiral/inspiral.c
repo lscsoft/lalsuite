@@ -2107,7 +2107,7 @@ int main( int argc, char *argv[] )
     
     /* only sort the bank if doing bank veto */
 
-    if (!bankSimCount) /*just doing this once is fine*/
+    if (!bankSimCount && numTmplts > 0) /*just doing this once is fine*/
     {
       if (subBankSize > 1)   
           bankHead = XLALFindChirpSortTemplates( bankHead, numTmplts );
@@ -2733,25 +2733,28 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALFindChirpChisqVetoFinalize( &status, 
         fcFilterParams->chisqParams, fcInitParams->numChisqBins ), 
       &status );
-
-  for ( i = 0; i < bankVetoData.length; ++i )
-  {
-    XLALDestroyCOMPLEX8Vector( bankVetoData.qVecArray[i] );
-    XLALDestroyCOMPLEX8Vector( bankVetoData.qtildeVecArray[i] ); 
-    bankVetoData.qVecArray[i] = NULL;
-    bankVetoData.qtildeVecArray[i] = NULL;
-    LAL_CALL( LALDestroyFindChirpInput( &status, 
-          &(bankVetoData.fcInputArray[i]) ), &status );
-    bankVetoData.fcInputArray[i] = NULL;
-  }
   fcFilterParams->qVec = NULL;
   fcFilterParams->qtildeVec = NULL;
-  LALFree( bankVetoData.qVecArray );
-  LALFree( bankVetoData.qtildeVecArray );
-  LALFree( bankVetoData.fcInputArray );
-  XLALDestroyVector( bankVetoData.ccMat );
-  XLALDestroyVector( bankVetoData.normMat );
-  /* XLALDestroyVector( bankVetoData.normMat ); */
+
+  if ( numTmplts > 0 )
+  {
+    for ( i = 0; i < bankVetoData.length; ++i )
+    {
+      XLALDestroyCOMPLEX8Vector( bankVetoData.qVecArray[i] );
+      XLALDestroyCOMPLEX8Vector( bankVetoData.qtildeVecArray[i] ); 
+      bankVetoData.qVecArray[i] = NULL;
+      bankVetoData.qtildeVecArray[i] = NULL;
+      LAL_CALL( LALDestroyFindChirpInput( &status, 
+            &(bankVetoData.fcInputArray[i]) ), &status );
+      bankVetoData.fcInputArray[i] = NULL;
+    }
+    LALFree( bankVetoData.qVecArray );
+    LALFree( bankVetoData.qtildeVecArray );
+    LALFree( bankVetoData.fcInputArray );
+    XLALDestroyVector( bankVetoData.ccMat );
+    XLALDestroyVector( bankVetoData.normMat );
+    /* XLALDestroyVector( bankVetoData.normMat ); */
+  }
 
   fcFilterParams->qtildeVec = NULL;
 
@@ -2770,23 +2773,26 @@ int main( int argc, char *argv[] )
   LALFree( fcInitParams );
 
   /* free the template bank */
-  while ( subBankHead )
+  if ( subBankHead )
   {
-    subBankCurrent = subBankHead;
-    while ( subBankCurrent->bankHead )
+    while ( subBankHead )
     {
-      bankCurrent = subBankCurrent->bankHead;
-      subBankCurrent->bankHead = subBankCurrent->bankHead->next;
-      if ( bankCurrent->event_id )
+      subBankCurrent = subBankHead;
+      while ( subBankCurrent->bankHead )
       {
-        LALFree( bankCurrent->event_id );
+        bankCurrent = subBankCurrent->bankHead;
+        subBankCurrent->bankHead = subBankCurrent->bankHead->next;
+        if ( bankCurrent->event_id )
+        {
+          LALFree( bankCurrent->event_id );
+        }
+        LALFree( bankCurrent );
+        bankCurrent = NULL;
       }
-      LALFree( bankCurrent );
-      bankCurrent = NULL;
+      subBankHead = subBankHead->next;
+      LALFree( subBankCurrent );
+      subBankCurrent = NULL;
     }
-    subBankHead = subBankHead->next;
-    LALFree( subBankCurrent );
-    subBankCurrent = NULL;
   }
 
   /* free any bank sim parameters */
