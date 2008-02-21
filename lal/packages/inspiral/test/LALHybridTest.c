@@ -173,7 +173,6 @@ void  LALPrintReal8Vec(
 /* Main Program */
 INT4 main ( INT4 argc, CHAR *argv[] ) {
 
-  static LALStatus status;
   int c;
   REAL8 dt = -1, totTime = -1;
   REAL8 totalMass, massRatio = -1;
