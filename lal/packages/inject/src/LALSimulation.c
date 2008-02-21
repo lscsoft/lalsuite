@@ -39,6 +39,7 @@
 #include <lal/TimeSeries.h>
 #include <lal/FrequencySeries.h>
 #include <lal/TimeFreqFFT.h>
+#include <lal/Window.h>
 #include "check_series_macros.h"
 
 
@@ -240,6 +241,7 @@ int XLALSimAddInjectionREAL8TimeSeries(
 	static const char func[] = "XLALSimAddInjectionREAL8TimeSeries";
 	COMPLEX16FrequencySeries *tilde_h;
 	REAL8FFTPlan *plan;
+	REAL8Window *window;
 	/* the source time series is padded with at least this many 0's at
 	 * the start and end before re-interpolation in an attempt to
 	 * suppress aperiodicity artifacts, and 1/2 this many samples is
@@ -354,13 +356,24 @@ int XLALSimAddInjectionREAL8TimeSeries(
 		tilde_h->data->data[i] = LAL_CMUL(tilde_h->data->data[i], fac);
 	}
 
-	/* zero DC and Nyquist components */
+	/* adjust DC and Nyquist components */
 
-	/* FIXME:  why is this done? */
-
-	if(tilde_h->f0 == 0.0)
-		tilde_h->data->data[0] = LAL_COMPLEX16_ZERO;
-	tilde_h->data->data[tilde_h->data->length - 1] = LAL_COMPLEX16_ZERO;
+	if(response) {
+		/* a response function has been provided.  zero the DC and
+		 * Nyquist components */
+		if(tilde_h->f0 == 0.0)
+			tilde_h->data->data[0] = LAL_COMPLEX16_ZERO;
+		tilde_h->data->data[tilde_h->data->length - 1] = LAL_COMPLEX16_ZERO;
+	} else {
+		/* no response has been provided.  set the phase of the DC
+		 * component to 0, set the imaginary component of the
+		 * Nyquist to 0 */
+		if(tilde_h->f0 == 0.0) {
+			tilde_h->data->data[0].re = LAL_CABS(tilde_h->data->data[0]);
+			tilde_h->data->data[0].im = 0.0;
+		}
+		tilde_h->data->data[tilde_h->data->length - 1].im = 0.0;
+	}
 
 	/* return to time domain */
 
@@ -400,6 +413,18 @@ int XLALSimAddInjectionREAL8TimeSeries(
 
 	if(!XLALResizeREAL8TimeSeries(h, aperiodicity_suppression_buffer / 2, h->data->length - aperiodicity_suppression_buffer))
 		XLAL_ERROR(func, XLAL_EFUNC);
+
+	/* apply a Tukey window whose tapers lie within the remaining
+	 * aperiodicity padding. leaving one sample of the aperiodicty
+	 * padding untouched on each side of the original time series
+	 * because the data might have been shifted into it */
+
+	window = XLALCreateTukeyREAL8Window(h->data->length, (double) (aperiodicity_suppression_buffer - 2) / h->data->length);
+	if(!window)
+		XLAL_ERROR(func, XLAL_EFUNC);
+	for(i = 0; i < h->data->length; i++)
+		h->data->data[i] *= window->data->data[i];
+	XLALDestroyREAL8Window(window);
 
 	/* add source time series to target time series */
 
