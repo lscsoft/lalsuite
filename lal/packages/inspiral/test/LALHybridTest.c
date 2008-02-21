@@ -343,7 +343,7 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
   LALZPrintFrequencySeries(uF,fuF);
 
   /* Inverse Fourier transform */
-  LALCreateReverseREAL8FFTPlan( &status, &prev, numPoints, 0);
+  prev = XLALCreateReverseREAL8FFTPlan(numPoints, 0);
   /*hPlus = XLALCreateREAL8Vector(numPoints);*/
   XLALREAL8FreqTimeFFT( hPlus, uF, prev);
 
