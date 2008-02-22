@@ -82,6 +82,7 @@ LALInspiralWave2Engine(
                 LALStatus        *status,
                 REAL4Vector      *output1,
                 REAL4Vector      *output2,
+                REAL4Vector      *h,
                 REAL4Vector      *a,
                 REAL4Vector      *ff,
                 REAL8Vector      *phi,
@@ -118,7 +119,7 @@ LALInspiralWave2(
   ASSERT((REAL8)params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT((REAL8)params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT((INT4)params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT((INT4)params->order <= 7, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT((INT4)params->order <= 8, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
   /* Initially the waveform is empty */
   memset(output->data, 0, output->length * sizeof(REAL4));
@@ -130,7 +131,7 @@ LALInspiralWave2(
   CHECKSTATUSPTR(status);
 
   /* Call the engine function */
-  LALInspiralWave2Engine(status->statusPtr, output, NULL, NULL, 
+  LALInspiralWave2Engine(status->statusPtr, output, NULL, NULL, NULL, 
 			NULL, NULL, &count, params, &paramsInit);
   CHECKSTATUSPTR(status);
 
@@ -169,7 +170,7 @@ LALInspiralWave2Templates(
   ASSERT((REAL8)params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT((REAL8)params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT((INT4)params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT((INT4)params->order <= 7, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT((INT4)params->order <= 8, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
   /* Initially the waveforms are empty */
   memset(output1->data, 0, output1->length * sizeof(REAL4));
@@ -182,7 +183,7 @@ LALInspiralWave2Templates(
   CHECKSTATUSPTR(status);
 
   /* Call the engine function */
-  LALInspiralWave2Engine(status->statusPtr, output1, output2, NULL, 
+  LALInspiralWave2Engine(status->statusPtr, output1, output2, NULL, NULL, 
 			   NULL, NULL, &count, params, &paramsInit);
   CHECKSTATUSPTR(status);
 
@@ -211,6 +212,7 @@ LALInspiralWave2ForInjection(
   UINT4 count, i;
 
   REAL4Vector *a   = NULL;/* pointers to generated amplitude  data */
+  REAL4Vector *h   = NULL;/* pointers to generated polarizations */
   REAL4Vector *ff  = NULL;/* pointers to generated  frequency data */
   REAL8Vector *phi = NULL;/* pointer to generated phase data */
 
@@ -230,6 +232,7 @@ LALInspiralWave2ForInjection(
   ASSERT( params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
   ASSERT(waveform, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);  
   ASSERT( !( waveform->a ), status, LALINSPIRALH_ENULL,  LALINSPIRALH_MSGENULL );
+  ASSERT( !( waveform->h ), status, LALINSPIRALH_ENULL,  LALINSPIRALH_MSGENULL );
   ASSERT( !( waveform->f ), status, LALINSPIRALH_ENULL,  LALINSPIRALH_MSGENULL );
   ASSERT( !( waveform->phi ), status, LALINSPIRALH_ENULL,  LALINSPIRALH_MSGENULL );
   ASSERT( !( waveform->shift ), status, LALINSPIRALH_ENULL,  LALINSPIRALH_MSGENULL );
@@ -258,11 +261,18 @@ LALInspiralWave2ForInjection(
   memset(a->data, 0, 2 * paramsInit.nbins * sizeof(REAL4));
   memset(phi->data, 0, paramsInit.nbins * sizeof(REAL8));
 
+  if( params->ampOrder )
+  {
+    LALSCreateVector(status->statusPtr, &h, 2*paramsInit.nbins);
+    CHECKSTATUSPTR(status);   
+    memset(h->data, 0, 2 * paramsInit.nbins * sizeof(REAL4));
+  }
+
   count = 0;
 
 
   /* Call the engine function */
-  LALInspiralWave2Engine(status->statusPtr, NULL, NULL, a, ff,
+  LALInspiralWave2Engine(status->statusPtr, NULL, NULL, h, a, ff,
 			     phi, &count, params, &paramsInit);
 
   BEGINFAIL(status)
@@ -273,6 +283,11 @@ LALInspiralWave2ForInjection(
      CHECKSTATUSPTR(status);
      LALDDestroyVector(status->statusPtr, &phi);
      CHECKSTATUSPTR(status);
+     if( params->ampOrder )
+     {
+       LALSDestroyVector(status->statusPtr, &h);
+       CHECKSTATUSPTR(status);
+     }
   }
   ENDFAIL(status);
   
@@ -354,6 +369,24 @@ LALInspiralWave2ForInjection(
       ppnParams->termDescription = GENERATEPPNINSPIRALH_MSGEFSTOP;
       
       ppnParams->fStart   = ppnParams->fStartIn;
+
+      if( params->ampOrder )
+      {  
+        if ( ( waveform->a = (REAL4TimeVectorSeries *)
+	       LALCalloc(1, sizeof(REAL4TimeVectorSeries) ) ) == NULL ) 
+        {
+	  ABORT( status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM );
+        }
+        LALSCreateVectorSequence( status->statusPtr,
+				  &( waveform->h->data ), &in );
+        CHECKSTATUSPTR(status);      
+        memcpy(waveform->h->data->data , h->data, 2*count*(sizeof(REAL4)));
+        waveform->h->deltaT = 1./params->tSampling;
+        waveform->h->sampleUnits   = lalStrainUnit;
+        LALSnprintf( waveform->h->name, LALNameLength,   "T2 inspiral polarizations" );
+        LALSDestroyVector(status->statusPtr, &h);
+        CHECKSTATUSPTR(status);
+      }
     }/*end of coherentGW storage */
 
   
@@ -383,6 +416,7 @@ LALInspiralWave2Engine(
                 LALStatus        *status,
                 REAL4Vector      *output1,
                 REAL4Vector      *output2,
+                REAL4Vector      *h,
                 REAL4Vector      *a,
                 REAL4Vector      *ff,
                 REAL8Vector      *phi,
@@ -431,7 +465,7 @@ LALInspiralWave2Engine(
                                                                                                                              
   rootIn.function = func.timing2; /* function to solve for v, given t:*/
 
-  if (a)           /* Only used in injection case */
+  if (a || h)           /* Only used in injection case */
   {
     mTot   =  params->mass1 + params->mass2;
     etab   =  params->mass1 * params->mass2;
@@ -541,13 +575,22 @@ LALInspiralWave2Engine(
     }
     else
     {
+      int ice, ico;
+      ice = 2*count;
+      ico = ice + 1;
       omega = v*v*v;
                                                                                                                              
       ff->data[count]= (REAL4)(omega/unitHz);
       f2a = pow (f2aFac * omega, 2./3.);
-      a->data[2*count]          = (REAL4)(4.*apFac * f2a);
-      a->data[2*count+1]        = (REAL4)(4.*acFac * f2a);
+      a->data[ice]          = (REAL4)(4.*apFac * f2a);
+      a->data[ico]        = (REAL4)(4.*acFac * f2a);
       phi->data[count]          = (REAL8)(phase);
+
+      if(h)
+      {
+        h->data[ice] = LALInspiralHPlusPolarization( phase, v, params );
+        h->data[ico] = LALInspiralHCrossPolarization( phase, v, params );
+      }
     }
     i++;
     ++count;
