@@ -331,6 +331,12 @@ tagCHARVector
 }
 CHARVector;
 
+/** Vector of type CHAR*, ie 'strings'  */
+typedef struct {
+  UINT4 length;  /**< Number of elements in array. */
+  CHAR **data;	 /**< Pointer to the data array. */
+} LALStringVector;
+
 /** Vector of type INT2. */
 typedef struct
 tagINT2Vector

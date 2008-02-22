@@ -3,7 +3,9 @@ noinst_LTLIBRARIES = libfactories.la
 
 libfactories_la_SOURCES = \
   VectorFactories.c VectorSequenceFactories.c \
-  ArrayFactories.c ArraySequenceFactories.c
+  ArrayFactories.c ArraySequenceFactories.c   \
+  StringVector.c
+
 MAINTAINERCLEANFILES = $(libfactories_la_SOURCES)
 EXTRA_DIST = \
   VectorFactories.m4 CreateVector.m4 ResizeVector.m4 DestroyVector.m4 \

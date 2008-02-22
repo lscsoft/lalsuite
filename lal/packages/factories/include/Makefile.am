@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-pkginclude_HEADERS = AVFactories.h SeqFactories.h
+pkginclude_HEADERS = AVFactories.h SeqFactories.h StringVector.h
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 MAINTAINERCLEANFILES = SeqFactories.h AVFactories.h

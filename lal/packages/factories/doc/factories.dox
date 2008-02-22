@@ -1,0 +1,5 @@
+/** \defgroup factories Vector/Sequence 'factories'
+    \ingroup general
+    \brief This package provides routines for creating and destroying
+    the LAL aggregate datatypes.
+*/

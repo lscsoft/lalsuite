@@ -65,7 +65,6 @@ const MultiNoiseWeights empty_MultiNoiseWeights;
 const MultiREAL4TimeSeries empty_MultiREAL4TimeSeries;
 const LIGOTimeGPSVector empty_LIGOTimeGPSVector;
 const MultiLIGOTimeGPSVector empty_MultiLIGOTimeGPSVector;
-const LALStringVector empty_LALStringVector;
 
 /*---------- internal prototypes ----------*/
 
@@ -667,141 +666,6 @@ LALAppendSFT2Vector (LALStatus *status,
   RETURN(status);
 
 } /* LALAppendSFT2Vector() */
-
-
-
-/** Append the given string to the string-vector */
-void
-LALAppendString2Vector (LALStatus *status,
-			LALStringVector *vect,	/**< destination vector to append to */
-			const CHAR *string)	/**< string to append */
-{
-  UINT4 oldlen;
-  INITSTATUS( status, "LALAppendString2Vector", SFTUTILSC);
-
-  ASSERT ( string, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
-  ASSERT ( vect, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
-
-  oldlen = vect->length;
-  
-  if ( (vect->data = LALRealloc ( vect->data, (oldlen + 1)*sizeof( *vect->data ) )) == NULL ) {
-    ABORT ( status, SFTUTILS_EMEM, SFTUTILS_MSGEMEM ); 
-  }
-  vect->length ++;
-
-  if ( (vect->data[oldlen] = LALCalloc(1, strlen(string) + 1 )) == NULL ) {
-    ABORT ( status, SFTUTILS_EMEM, SFTUTILS_MSGEMEM ); 
-  }
-
-  strcpy ( vect->data[oldlen], string );
-  
-  RETURN(status);
-
-} /* LALAppendString2Vector() */
-
-
-
-/** Create a LALStringVector from the list of strings passed as arguments
- */
-LALStringVector *
-XLALCreateStringVector ( const CHAR *str1, ... )
-{
-  const CHAR *fn = "XLALCreateStringVector()";
-  LALStringVector *ret;
-  const CHAR *next;
-  va_list ap;
-
-  if ( !str1 ) {
-    XLAL_ERROR_NULL (fn, XLAL_EINVAL );
-  }
-
-  /* set up return vector of strings, and handle first argument */
-  if ( (ret = LALCalloc ( 1, sizeof(*ret) )) == NULL ) {
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
-  }
-  if ( (ret->data = LALCalloc ( 1, sizeof(ret->data[0]) )) == NULL) {
-    LALFree ( ret );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
-  }
-  if ( (ret->data[0] = LALCalloc ( strlen(str1)+1, sizeof(CHAR) )) == NULL ) {
-    LALFree ( ret->data );
-    LALFree ( ret );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
-  }
-  strcpy ( ret->data[0], str1 );
-  ret->length ++;
-
-  /* handle remaining variable-length list of (assumed)string arguments */
-  va_start(ap, str1);
-
-  while ( (next = va_arg(ap, const CHAR *)) != NULL )
-    {
-      ret->length ++;
-      if ( (ret->data = LALRealloc ( ret->data, ret->length * sizeof(ret->data[0]))) == NULL )
-	goto failed;
-      if ( (ret->data[ret->length-1] = LALCalloc( strlen(next)+1, sizeof(CHAR) )) == NULL )
-	goto failed;
-
-      strcpy ( ret->data[ret->length-1], next );
-
-    } /* while more arguments */
-
-  va_end(ap);
-
-  return ret;
-
- failed:
-  va_end(ap);
-  XLALDestroyStringVector ( ret );
-  XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
-
-} /* XLALCreateStringVector() */
-
-
-/** XLAL-interface: Free a string-vector ;) */
-void
-XLALDestroyStringVector ( LALStringVector *vect )
-{
-  UINT4 i;
-
-  if ( !vect )
-    return;
-  
-  if ( vect->data )
-    {
-      for ( i=0; i < vect->length; i++ )
-	{
-	  if ( vect->data[i] )
-	    LALFree ( vect->data[i] );
-	}
-      
-      LALFree ( vect->data );
-    }
-  
-  LALFree ( vect );
-  
-  return;
-
-} /* XLALDestroyStringVector() */
-
-/** LAL-interface: Free a string-vector ;) */
-void
-LALDestroyStringVector ( LALStatus *status,
-			 LALStringVector **vect )
-{
-  INITSTATUS( status, "LALDestroyStringVector", SFTUTILSC);
-
-  ASSERT ( vect, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
-  
-  if ( (*vect) ) 
-    {
-      XLALDestroyStringVector ( (*vect) );
-      (*vect) = NULL;
-    }
-
-  RETURN(status);
-
-} /* LALDestroyStringVector() */
 
 
 

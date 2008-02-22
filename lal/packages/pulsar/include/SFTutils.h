@@ -135,12 +135,6 @@ typedef struct {
   LIGOTimeGPSVector 	**data;    /**< timestamps vector for each ifo */
 } MultiLIGOTimeGPSVector;
 
-/* A vector of strings */
-typedef struct {
-  UINT4 length;
-  CHAR **data;
-} LALStringVector;
-
 /*---------- Global variables ----------*/
 /* empty init-structs for the types defined in here */
 extern const SFTtype empty_SFTtype;
@@ -152,8 +146,6 @@ extern const MultiNoiseWeights empty_MultiNoiseWeights;
 extern const MultiREAL4TimeSeries empty_MultiREAL4TimeSeries;
 extern const LIGOTimeGPSVector empty_LIGOTimeGPSVector;
 extern const MultiLIGOTimeGPSVector empty_MultiLIGOTimeGPSVector;
-extern const LALStringVector empty_LALStringVector;
-
 
 /*---------- exported prototypes [API] ----------*/
 /* ----------------------------------------------------------------------
@@ -192,12 +184,6 @@ void LALDestroyTimestampVector (LALStatus *status, LIGOTimeGPSVector **vect);
 
 void LALMakeTimestamps (LALStatus *, LIGOTimeGPSVector **timestamps, const LIGOTimeGPS tStart, REAL8 duration, REAL8 Tsft);
 void LALGetSFTtimestamps (LALStatus *, LIGOTimeGPSVector **timestamps, const SFTVector *sfts );
-
-LALStringVector *XLALCreateStringVector ( const CHAR *str1, ... );
-
-void XLALDestroyStringVector ( LALStringVector *vect );
-void LALDestroyStringVector ( LALStatus *, LALStringVector **vect );
-void LALAppendString2Vector (LALStatus *, LALStringVector *vect, const CHAR *string );
 
 CHAR *XLALGetChannelPrefix ( const CHAR *name );
 LALDetector *XLALGetSiteInfo ( const CHAR *name );

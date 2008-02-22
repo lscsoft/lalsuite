@@ -30,6 +30,7 @@
 #include <lal/LALStdio.h>
 #include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
+#include <lal/StringVector.h>
 
 NRCSID( USERINPUTC, "$Id$");
 
@@ -75,13 +76,8 @@ static void RegisterUserVar (LALStatus *, const CHAR *name, UserVarType type, CH
 
 static void UvarValue2String (LALStatus *, CHAR **outstr, LALUserVariable *uvar);
 void UvarType2String (LALStatus *status, CHAR **out, LALUserVariable *uvar);
-CHAR *deblank_string ( const CHAR *start, UINT4 len );
 CHAR *copy_string_unquoted ( const CHAR *in );
 void check_and_mark_as_set ( LALUserVariable *varp );
-
-LALStringVector *XLALParseCSV2StringVector ( const CHAR *CSVlist );
-
-
 
 
 /*---------- Function definitions ---------- */
@@ -1236,109 +1232,6 @@ UvarValue2String (LALStatus *status, CHAR **outstr, LALUserVariable *uvar)
   RETURN (status);
 
 } /* UvarValue2String() */
-
-
-
-/** Parse a list of comma-separated values (CSV) into a StringVector 
- */
-LALStringVector *
-XLALParseCSV2StringVector ( const CHAR *CSVlist )
-{
-  UINT4 counter, i;
-  const CHAR *start, *tmp;
-  CHAR **data = NULL;
-  LALStringVector *ret = NULL;
-
-  if ( !CSVlist )
-    return NULL;
-
-  /* prepare return string-vector */
-  if ( ( ret = LALCalloc ( 1, sizeof( *ret )) ) == NULL )
-    XLAL_ERROR_NULL ( "XLALParseCSV2StringVector", XLAL_ENOMEM );
-
-  start = CSVlist;
-  counter = 0;
-  do
-    {
-      UINT4 len;
-
-      /* extend string-array */
-      if ( ( data = LALRealloc ( data, (counter+1) * sizeof(CHAR*) )) == NULL )
-	goto failed;
-
-      /* determine string-length of next value */
-      if ( ( tmp = strchr ( start, ',' ) ) )
-	len = tmp - start;
-      else
-	len = strlen ( start );
-
-      /* allocate space for that value in string-array */
-      if ( (data[counter] = deblank_string ( start, len ) ) == NULL )
-	goto failed;
-
-      counter ++;
-
-    } while ( tmp && (start = tmp + 1) );
-  
-  ret -> length = counter;
-  ret -> data = data;
-
-  /* success: */
-  return ( ret );
-
- failed:
-  for ( i=0; i < counter; i++ )
-    if ( data[i] ) 
-      LALFree ( data[i] );
-
-  if ( data ) 
-    LALFree ( data );
-
-  if ( ret )
-    LALFree ( ret );
-
-  XLAL_ERROR_NULL ( "XLALParseCSV2StringVector", XLAL_ENOMEM );  
-
-} /* XLALParseCSV2StringVector() */
-
-
-/** Copy (and allocate) string from 'start' with length 'len', removing
- * all starting- and trailing blanks!
- */
-CHAR *
-deblank_string ( const CHAR *start, UINT4 len )
-{
-  const CHAR *blank_chars = " \t\n";
-  const CHAR *pos0, *pos1;
-  UINT4 newlen;
-  CHAR *ret;
-
-  if ( !start || !len )
-    return NULL;
-
-  /* clip from beginning */
-  pos0 = start;
-  pos1 = start + len - 1;
-  while ( (pos0 < pos1) && strchr ( blank_chars, *pos0 ) )
-    pos0 ++;
-
-  /* clip backwards from end */
-  while ( (pos1 >= pos0) && strchr ( blank_chars, *pos1 ) )
-    pos1 --;
-
-  newlen = pos1 - pos0 + 1;
-  if ( !newlen )
-    return NULL;
-
-  if ( (ret = LALCalloc(1, newlen + 1)) == NULL )
-    return NULL;
-
-  strncpy ( ret, pos0, newlen );
-  ret[ newlen ] = 0;
-  
-  return ret;
-
-} /* deblank_string() */
 
 /** Copy (and allocate) string 'in', possibly with quotes \" or \' removed.
  * If quotes are present at the beginning of 'in', they must have a matching 

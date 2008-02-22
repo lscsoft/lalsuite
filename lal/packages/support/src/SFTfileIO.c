@@ -41,7 +41,8 @@
 
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
-#include "lal/SFTfileIO.h"
+#include <lal/SFTfileIO.h>
+#include <lal/StringVector.h>
 
 NRCSID (SFTFILEIOC, "$Id$");
 /*---------- DEFINES ----------*/
@@ -122,8 +123,6 @@ const SFTCatalog empty_SFTCatalog;
 /*---------- internal prototypes ----------*/
 static LALStringVector *find_files (const CHAR *fpattern);
 
-static void DestroyStringVector (LALStringVector *strings);
-static void SortStringVector (LALStringVector *strings);
 static void endian_swap(CHAR * pdata, size_t dsize, size_t nelements);
 static int amatch(char *str, char *p);	/* glob pattern-matcher (public domain)*/
 
@@ -232,14 +231,14 @@ LALSFTdataFind (LALStatus *status,
       if ( ( fp = LALFopen( fname, "rb" ) ) == NULL )
 	{
 	  XLALPrintError ( "\nFailed to open matched file '%s'\n\n", fname );
-	  LALDestroyStringVector ( status->statusPtr, &fnames );
+	  XLALDestroyStringVector ( fnames );
 	  LALDestroySFTCatalog ( status->statusPtr, &ret );
 	  ABORT( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	}
       if ( (file_len = get_file_len(fp)) == 0 )
 	{
 	  XLALPrintError ( "\nGot file-len == 0 for '%s'\n\n", fname );
-	  LALDestroyStringVector ( status->statusPtr, &fnames );
+	  XLALDestroyStringVector ( fnames );
 	  LALDestroySFTCatalog ( status->statusPtr, &ret );
 	  fclose(fp);
 	  ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
@@ -259,7 +258,7 @@ LALSFTdataFind (LALStatus *status,
 	  if ( (this_filepos = ftell(fp)) == -1 )
 	    {
 	      XLALPrintError ("\nftell() failed for '%s'\n\n", fname );
-	      LALDestroyStringVector ( status->statusPtr, &fnames );
+	      XLALDestroyStringVector ( fnames );
 	      LALDestroySFTCatalog ( status->statusPtr, &ret );
 	      fclose (fp);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
@@ -269,7 +268,7 @@ LALSFTdataFind (LALStatus *status,
 					&endian, &this_comment, &this_nsamples ) != 0 )
 	    {
 	      XLALPrintError ("\nERROR:File-block '%s:%ld' is not a valid SFT!\n\n", fname, ftell(fp));
-	      LALDestroyStringVector ( status->statusPtr, &fnames );
+	      XLALDestroyStringVector ( fnames );
 	      if ( this_comment ) LALFree ( this_comment );
 	      LALDestroySFTCatalog ( status->statusPtr, &ret );
 	      fclose(fp);
@@ -284,7 +283,7 @@ LALSFTdataFind (LALStatus *status,
 		{
 		  XLALPrintError ("merged SFT-file '%s' contains inconsistent SFT-blocks!\n\n", fname);
 		  if ( this_comment ) LALFree ( this_comment );
-		  LALDestroyStringVector ( status->statusPtr, &fnames );
+		  XLALDestroyStringVector ( fnames );
 		  LALDestroySFTCatalog ( status->statusPtr, &ret );
 		  fclose(fp);
 		  ABORT ( status, SFTFILEIO_EMERGEDSFT, SFTFILEIO_MSGEMERGEDSFT );
@@ -300,7 +299,7 @@ LALSFTdataFind (LALStatus *status,
 	    {
 	      XLALPrintError ( "\nFailed to skip DATA field for SFT '%s': %s\n", fname, strerror(errno) );
 	      if ( this_comment ) LALFree ( this_comment );
-	      LALDestroyStringVector ( status->statusPtr, &fnames );
+	      XLALDestroyStringVector ( fnames );
 	      LALDestroySFTCatalog ( status->statusPtr, &ret );
 	      fclose(fp);
 	      ABORT ( status, SFTFILEIO_ESFTFORMAT, SFTFILEIO_MSGESFTFORMAT);
@@ -348,7 +347,7 @@ LALSFTdataFind (LALStatus *status,
 		    {
 		      XLALPrintError("Memeory reallocation for SFTs failed: nSFT:%d, length:%d, add:%d\n",
 				     numSFTs, ret->length, REALLOC_BLOCKSIZE);
-		      LALDestroyStringVector ( status->statusPtr, &fnames );
+		      XLALDestroyStringVector ( fnames );
 		      LALDestroySFTCatalog ( status->statusPtr, &ret );
 		      if ( this_comment ) LALFree ( this_comment );
 		      fclose(fp);
@@ -368,7 +367,7 @@ LALSFTdataFind (LALStatus *status,
 		desc->locator->fname = LALCalloc( 1, strlen(fname) + 1 );
 	      if ( (desc->locator == NULL) || (desc->locator->fname == NULL ) )
 		{
-		  LALDestroyStringVector ( status->statusPtr, &fnames );
+		  XLALDestroyStringVector ( fnames );
 		  LALDestroySFTCatalog ( status->statusPtr, &ret );
 		  fclose(fp);
 		  ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
@@ -397,7 +396,7 @@ LALSFTdataFind (LALStatus *status,
     } /* for i < numFiles */
 
   /* free matched filenames */
-  LALDestroyStringVector ( status->statusPtr, &fnames );
+  XLALDestroyStringVector ( fnames );
 
   /* now realloc SFT-vector (alloc'ed blockwise) to its *actual size* */
   if ( (ret->data = LALRealloc ( ret->data, numSFTs * sizeof( *(ret->data) ) )) == NULL )
@@ -1863,7 +1862,7 @@ LALGetSFTheaders (LALStatus *status,
 
   out->length = numHeaders;
 
-  DestroyStringVector (fnames);
+  XLALDestroyStringVector (fnames);
 
   *headers = out;
   
@@ -2031,7 +2030,7 @@ LALReadSFTfiles (LALStatus *status,
   /* read header of first sft to determine Tsft, and therefore dfreq */
   LALReadSFTheader(status->statusPtr, &header, fnames->data[0]);
   BEGINFAIL(status) {
-    DestroyStringVector (fnames);    
+    XLALDestroyStringVector (fnames);    
   } ENDFAIL(status);
 
   numSFTs = fnames->length;
@@ -2043,7 +2042,7 @@ LALReadSFTfiles (LALStatus *status,
     {
       LALReadSFTfile (status->statusPtr, &oneSFT, fMin-fWing, fMax+fWing, fnames->data[i]);
       BEGINFAIL (status) {
-	DestroyStringVector (fnames);    
+	XLALDestroyStringVector (fnames);    
 	LALDestroySFTtype (status->statusPtr, &oneSFT);
 	if (out) LALDestroySFTVector (status->statusPtr, &out);
       } ENDFAIL (status);
@@ -2053,7 +2052,7 @@ LALReadSFTfiles (LALStatus *status,
       /* make sure all SFTs have same length */
       if ( oneSFT->data->length != firstlen )
 	{
-	  DestroyStringVector (fnames);    
+	  XLALDestroyStringVector (fnames);    
 	  LALDestroySFTtype (status->statusPtr, &oneSFT);
 	  LALDestroySFTVector (status->statusPtr, &out);
 	  ABORT (status, SFTFILEIO_EDIFFLENGTH, SFTFILEIO_MSGEDIFFLENGTH);
@@ -2061,7 +2060,7 @@ LALReadSFTfiles (LALStatus *status,
 
       LALAppendSFT2Vector ( status->statusPtr, out, oneSFT );
       BEGINFAIL(status) {
-	DestroyStringVector (fnames);    
+	XLALDestroyStringVector (fnames);    
 	LALDestroySFTtype (status->statusPtr, &oneSFT);
 	LALDestroySFTVector (status->statusPtr, &out);
       } ENDFAIL(status);
@@ -2071,7 +2070,7 @@ LALReadSFTfiles (LALStatus *status,
 
     } /* for i < numSFTs */
 
-  DestroyStringVector (fnames);
+  XLALDestroyStringVector (fnames);
 
   *sftvect = out;
 
@@ -3380,7 +3379,7 @@ find_files (const CHAR *globdir)
 	    newNumFiles = numFiles + ret->length;
 
 	    if ((filelist = LALRealloc (filelist, (newNumFiles) * sizeof(CHAR*))) == NULL) {
-	      DestroyStringVector(ret);
+	      XLALDestroyStringVector(ret);
 	      LALFree(thisFname);
 	      return (NULL);
 	    }
@@ -3410,7 +3409,7 @@ find_files (const CHAR *globdir)
 	newNumFiles = numFiles + ret->length;
 
 	if ((filelist = LALRealloc (filelist, (newNumFiles) * sizeof(CHAR*))) == NULL) {
-	  DestroyStringVector(ret);
+	  XLALDestroyStringVector(ret);
 	  return (NULL);
 	}
 
@@ -3560,39 +3559,10 @@ find_files (const CHAR *globdir)
   ret->data = filelist;
 
   /* sort this alphabetically (in-place) */
-  SortStringVector (ret);
+  XLALSortStringVector (ret);
 
   return (ret);
 } /* find_files() */
-
-
-static void
-DestroyStringVector (LALStringVector *strings)
-{
-  UINT4 i;
-
-  for (i=0; i < strings->length; i++)
-    LALFree (strings->data[i]);
-  
-  LALFree (strings->data);
-  LALFree (strings);
-
-} /* DestroyStringVector () */
-
-/* comparison function for strings */
-static int mycomp (const void *p1, const void *p2)
-{
-  const char *s1 = p1;
-  const char *s2 = p2;
-  return (strcmp ( s1, s2 ) );
-}
-
-/* sort string-vector alphabetically */
-static void
-SortStringVector (LALStringVector *strings)
-{
-  qsort ( (void*)(strings->data), (size_t)(strings->length), sizeof(CHAR*), mycomp );
-} /* SortStringVector() */
 
 /* portable file-len function */
 static long get_file_len ( FILE *fp )
