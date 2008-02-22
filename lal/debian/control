@@ -1,25 +1,22 @@
 Source: lal
 Section: lscsoft
 Priority: optional
-Maintainer: Kipp Cannon <kipp@gravity.phys.uwm.edu>
-Build-Depends: debhelper (>= 4.0.0), autotools-dev, libframe-dev, libmetaio-dev, libgsl0-dev (>= 1.9), fftw3-dev, zlib1g-dev
-Standards-Version: 3.6.0
+Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
+Build-Depends: debhelper (>= 5), autotools-dev, automake, m4, libgsl0-dev (>= 1.9), libframe-dev, libmetaio-dev, fftw3-dev, zlib1g-dev
+Standards-Version: 3.7.2
 
 Package: lal
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libframe0, libmetaio0, libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.9), fftw3, zlib1g
+Depends: ${shlibs:Depends}, ${misc:Depends}, libgsl0 (>= 1.9), libframe0, libmetaio0, fftw3, zlib1g
 Description: LSC Algorithm Library
- LAL contains core routines for gravitational wave data analysis as used by the
- LIGO Scientific Collaboration (LSC).
- .
- This package contains the shared-object library needed to run LAL
- applications.
+ The LSC Algorithm Library for gravitational wave analysis.
+ This package contains the shared-object libraries needed to run applications
+ that use the LAL library.
 
 Package: lal-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, lal (= ${Source-Version}), libframe-dev, libmetaio-dev, libgsl0-dev (>= 1.9), fftw3-dev, zlib1g-dev
-Description: LSC Algorithm Library
- LAL contains core routines for gravitational wave data analysis as used by the  LIGO Scientific Collaboration (LSC).
- .
- This package contains the files needed for building LAL programs, as
- well as the documentation for the library.
+Depends: ${shlibs:Depends}, ${misc:Depends}, libgsl0-dev (>= 1.9), libframe-dev, libmetaio-dev, fftw3-dev, zlib1g-dev
+Description: Files and documentation needed for compiling programs that use LAL
+ The LSC Algorithm Library for gravitational wave analysis.
+ This package contains files needed to build applications that use the LAL library
+ as well as the documentation for the library.
