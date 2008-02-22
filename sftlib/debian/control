@@ -1,0 +1,12 @@
+Source: sftlib
+Section: unknown
+Priority: extra
+Maintainer: root <root@deepthought.aei.mpg.de>
+Build-Depends: debhelper (>= 5), autotools-dev, automake
+Standards-Version: 3.7.2
+
+Package: sftlib
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: <insert up to 60 chars description>
+ <insert long description, indented with spaces>

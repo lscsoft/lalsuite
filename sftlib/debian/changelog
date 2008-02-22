@@ -1,0 +1,6 @@
+sftlib (0.01-1) unstable; urgency=low
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- root <root@deepthought.aei.mpg.de>  Fri, 18 Jan 2008 17:09:25 +0100
+
