@@ -451,7 +451,8 @@ typedef enum {
    FrameFile,
    AmpCorPPN,
    NumRel,
-   Eccentricity
+   Eccentricity,
+   EOBNR
  } Approximant;
 /* </lalVerbatim>  */
 
@@ -491,6 +492,7 @@ tagInspiralTemplate
 /*  Parameters needed to generate Taylor/Pade waveforms */
   Approximant approximant;
   Order order;
+  Order ampOrder;
   REAL8 mass1; 
   REAL8 mass2;
   REAL8 fCutoff;
@@ -662,7 +664,7 @@ tagexpnCoeffs {
    /* Taylor expansion coefficients of factored flux*/
    REAL8 fTaN, fTa1, fTa2, fTa3, fTa4, fTa5, fTa6, fTa7;
    /* Coefficients of the corresponding P-approximant*/
-   REAL8 fPaN, fPa1, fPa2, fPa3, fPa4, fPa5, fPa6, fPa7;
+   REAL8 fPaN, fPa1, fPa2, fPa3, fPa4, fPa5, fPa6, fPa7, fPa8;
 
    /* Taylor expansion coefficents in t(v)*/
    REAL8 tvaN, tva2, tva3, tva4, tva5, tva6, tva7, tvl6; 
@@ -1498,6 +1500,16 @@ void LALInspiralFrequency3_7PN (
      REAL8 td,
      expnCoeffs *ak);
 
+REAL4 LALInspiralHPlusPolarization( 
+     REAL8 phase, 
+     REAL8 v, 
+     InspiralTemplate *params );
+
+REAL4 LALInspiralHCrossPolarization( 
+     REAL8 phase, 
+     REAL8 v, 
+     InspiralTemplate *params );
+
 /*  <lalLaTeX>
 \newpage\input{LALRungeKutta4C}
 </lalLaTeX>  */
@@ -1557,6 +1569,40 @@ LALInspiralITStructureHelp(void);
 /*  <lalLaTeX>
 \newpage\input{LALInspiralSpinningBHBinariesTestC}
 </lalLaTeX>  */
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralRingdownWaveC}
+</lalLaTeX>  */
+INT4 XLALInspiralRingdownWave (
+	REAL4Vector				*rdwave1,
+	REAL4Vector				*rdwave2,
+	InspiralTemplate		*params,
+	REAL4VectorSequence		*inspwave1,
+	REAL4VectorSequence		*inspwave2,
+	COMPLEX8Vector			*modefreqs,
+	UINT4					nmodes
+	);
+	
+INT4 XLALGenerateWaveDerivatives (
+	REAL4Vector				*dwave,
+	REAL4Vector				*ddwave,
+	REAL4Vector				*wave,
+	InspiralTemplate		*params
+	);
+	
+INT4 XLALGenerateQNMFreq(
+	COMPLEX8Vector			*modefreqs,
+	InspiralTemplate		*params,
+	UINT4					l,
+	UINT4					m,
+	UINT4					nmodes
+	);
+	
+INT4 XLALFinalMassSpin(
+	REAL8					*finalMass,
+	REAL8					*finalSpin,
+	InspiralTemplate		*params
+	);
 
 #ifdef  __cplusplus
 }
