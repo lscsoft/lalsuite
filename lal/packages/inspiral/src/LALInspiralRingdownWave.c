@@ -148,8 +148,8 @@ INT4 XLALInspiralRingdownWave (
 	gsl_matrix_set(coef, 2, i, modefreqs->data[i].im * modefreqs->data[i].im
 							 - modefreqs->data[i].re * modefreqs->data[i].re);
 	gsl_matrix_set(coef, 3, i, 0);
-	gsl_matrix_set(coef, 4, i, - modefreqs->data[i].re);
-	gsl_matrix_set(coef, 5, i, 2 * modefreqs->data[i].re * modefreqs->data[i].im);
+	gsl_matrix_set(coef, 4, i, modefreqs->data[i].re);
+	gsl_matrix_set(coef, 5, i, - 2 * modefreqs->data[i].re * modefreqs->data[i].im);
 	
 	gsl_vector_set(hderivs, i, inspwave1->data[(i + 1) * inspwave1->vectorLength - 1]);
 	gsl_vector_set(hderivs, i + nmodes, inspwave2->data[(i + 1) * inspwave2->vectorLength - 1]);
@@ -203,11 +203,12 @@ INT4 XLALInspiralRingdownWave (
   return errcode;
 }
 
+
 /* <lalVerbatim file="XLALGenerateWaveDerivatives">  */
 INT4 XLALGenerateWaveDerivatives (
-	REAL4Vector				*dwave,
-	REAL4Vector				*ddwave,
-	REAL4Vector				*wave,
+	REAL4Vector			*dwave,
+	REAL4Vector			*ddwave,
+	REAL4Vector			*wave,
 	InspiralTemplate		*params
 	)
 /* </lalVerbatim> */
@@ -215,44 +216,26 @@ INT4 XLALGenerateWaveDerivatives (
   /* XLAL error handling */
   INT4 errcode = XLAL_SUCCESS;
   static const char* func = "XLALGenerateQNMFreq";
-  
-  INT4 j;
-  
+
   /* Sampling rate from input */
   REAL8 dt = params -> tSampling;
-  
-  /* Getting interpolation and derivatives of the waveform using gsl spline routine */
-  /* Initiate arrays and supporting variables for gsl */
-  double *x, *y;
-  x = (double *) malloc(wave->length * sizeof(double));
-  y = (double *) malloc(wave->length * sizeof(double));
-  for (j = 0; j < wave->length; ++j)
+
+  INT4 j;
+  INT4 x0 = wave->length - 1; /* Matching point - last data point */
+
+  /* We only need the derivatives at the matching point, set other values to zero */
+  for (j = 0; j < x0; ++j)
   {
-	x[j] = j;
-	y[j] = wave->data[j];
+	dwave->data[j] = 0.;
+	ddwave->data[j] = 0.;
   }
-  gsl_interp_accel *acc = gsl_interp_accel_alloc();
-  gsl_spline *spline = gsl_spline_alloc(gsl_interp_cspline, wave->length);
-  
-  /* Gall gsl spline interpolation */
-  gsl_spline_init(spline, x, y, wave->length);
-  
-  /* Getting first and second order time derivatives from gsl interpolations */
-  for (j = 0; j < wave->length; ++j)
-  {
-	dwave->data[j] = gsl_spline_eval_deriv(spline, j, acc);
-	ddwave->data[j] = gsl_spline_eval_deriv2(spline, j, acc);
-  }
-  
-  /* Free gsl variables */
-  gsl_spline_free(spline);
-  gsl_interp_accel_free(acc);
-  free(x);
-  free(y);
-  
+
+  /* Now compute the derivatives at the matching point by finite diff. */
+  dwave->data[x0] = ( wave->data[x0-2] - 4.*wave->data[x0-1] + 3.*wave->data[x0] ) / (2.*dt);
+  ddwave->data[x0] = ( wave->data[x0-2] - 2.*wave->data[x0-1] + wave->data[x0] ) / (dt*dt);
+
   return errcode;
 }
-
 
 /* <lalVerbatim file="XLALGenerateQNMFreqCP">  */
 INT4 XLALGenerateQNMFreq(
