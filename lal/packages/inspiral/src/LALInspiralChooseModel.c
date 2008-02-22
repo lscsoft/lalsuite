@@ -441,6 +441,21 @@ static REAL8 Fp7(REAL8 v, expnCoeffs *ak)
 }
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
+static REAL8 Fp8(REAL8 v, expnCoeffs *ak)
+{ /* </lalVerbatim>  */
+   REAL8 flux,v2,v4,v8,v10;
+   v2 = v*v;
+   v4 = v2*v2;
+   v8 = v4*v4;
+   v10 = v8*v2;
+   flux = ak->fPaN * v10/ ((1.+ak->fPa1*v/(1.+ak->fPa2*v/ (1.+ak->fPa3*v
+        / (1.+ak->fPa4*v / (1.+ak->fPa5*v / (1.+ak->fPa6*v / (1.+ak->fPa7*v / (1.+ak->fPa8*v))))))))
+        * (1.-v/ak->vpoleP6));
+   return (flux);
+}
+
+
+/*  <lalVerbatim file="LALInspiralChooseModelCP"> */
 void 
 LALInspiralChooseModel(
    LALStatus        *status,
@@ -463,7 +478,7 @@ LALInspiralChooseModel(
    ASSERT (params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (params->order != oneHalfPN,status,LALINSPIRALH_ENULL,LALINSPIRALH_MSGENULL);
    ASSERT((INT4)params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT((INT4)params->order <= 7, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT((INT4)params->order <= 8, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
    vlso = 0;
 
@@ -697,6 +712,29 @@ LALInspiralChooseModel(
             f->dEnergy = dEp6;
             f->flux = Fp7;
             break;
+         case PadeF1:
+            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+            break;
+         default:
+            break;
+      }
+      case pseudoFourPN:
+      switch (params->approximant)
+      {
+         case EOB:
+            ak->vn = ak->vlso = vlso = ak->vlsoP6;
+            f->dEnergy = dEp6;
+            f->flux = Fp8;
+            break;
+         case AmpCorPPN:
+         case TaylorT1:
+         case TaylorT2:
+         case TaylorT3:
+         case TaylorF1:
+         case TaylorF2:
+         case SpinTaylorT3:
+         case SpinTaylor:
+         case PadeT1:
          case PadeF1:
             ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
             break;

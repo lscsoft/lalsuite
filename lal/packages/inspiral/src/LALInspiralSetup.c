@@ -83,7 +83,7 @@ LALInspiralSetup (
     * */
    REAL8 lso, eta, vpole;
    REAL8 a1, a2, a3, a4, a5, a6, a7;
-   REAL8 c1, c2, c3, c4, c5, c6, c7;
+   REAL8 c1, c2, c3, c4, c5, c6, c7, c8;
    REAL8 oneby6=1.0/6.0;
 
    INITSTATUS (status, "LALInspiralSetup", LALINSPIRALSETUPC);
@@ -341,6 +341,9 @@ LALInspiralSetup (
       case threePointFivePN:
          vpole = ak->vpoleP6;
          break;
+      case pseudoFourPN:
+         vpole = ak->vpoleP6;
+         break;
    }
 
    ak->fTa1 = ak->FTa1 - 1./vpole;
@@ -440,6 +443,7 @@ LALInspiralSetup (
       + 4.*c1*pow(c2,4.)*c3*c4
       + 2.*pow(c2,2.)*c1*c3*pow(c4,3.)
       + 2.*pow(c2,2.)*c1*c3*c4*pow(c5,2.))/(c1*c2*c3*c4*c5*c6);
+   c8 = 0.;
 
    ak->fPa1 = c1;
    ak->fPa2 = c2;
@@ -448,6 +452,7 @@ LALInspiralSetup (
    ak->fPa5 = c5;
    ak->fPa6 = c6;
    ak->fPa7 = c7;
+   ak->fPa8 = c8;
 
 
    /* spinning case */
