@@ -96,6 +96,7 @@ LALFindChirpSPTemplate (
   COMPLEX8     *expPsi     = NULL;
   REAL4        *xfac       = NULL;
   REAL4         x1         = 0.0;
+  REAL4         psi        = 0.0;
   REAL4         psi0       = 0.0;
   INT4          k          = 0;
   INT4          kmin       = 0;
@@ -110,7 +111,7 @@ LALFindChirpSPTemplate (
 
   /* variables used to compute chirp time */
   REAL4 c0T, c2T, c3T, c4T, c5T, c6T, c6LogT, c7T;
-  REAL4 xT, x2T, x3T, x4T, x5T, x6T, x7T, x8T;
+  REAL4 x, xT, x2T, x3T, x4T, x5T, x6T, x7T, x8T;
 
   /* chebychev coefficents for expansion of sin and cos */
   const REAL4 s2 = -0.16605;
@@ -256,8 +257,8 @@ LALFindChirpSPTemplate (
   /* This formula works for any PN order, because */
   /* higher order coeffs will be set to zero.     */
 
-    REAL4 x = x1 * xfac[kmin];
-    REAL4 psi = c0 * ( x * ( c20 + x * ( c15 + x * (c10 + x * x ) ) ) 
+    x = x1 * xfac[kmin];
+    psi = c0 * ( x * ( c20 + x * ( c15 + x * (c10 + x * x ) ) ) 
                 + c25 - c25Log * log(x) + (1.0/x) 
                 * ( c30 - c30Log * log(x) + (1.0/x) * ( c35 - (1.0/x) 
                 * c40P * log(x) ) ) );
