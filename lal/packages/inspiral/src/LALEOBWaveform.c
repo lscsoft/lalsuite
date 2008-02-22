@@ -1,5 +1,6 @@
 /*
-*  Copyright (C) 2007 Stas Babak, David Churches, Duncan Brown, David Chin, Jolien Creighton, B.S. Sathyaprakash, Craig Robinson , Thomas Cokelaer
+*  Copyright (C) 2007 Stas Babak, David Churches, Duncan Brown, David Chin, Jolien Creighton, 
+*                     B.S. Sathyaprakash, Craig Robinson , Thomas Cokelaer, Evan Ochsner
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -83,14 +84,19 @@ A fourth order Runge-Kutta is used to solve the differential equations.
    LALRungeKutta4
    LALHCapDerivatives
    LALHCapDerivatives3PN
+   LALHCapDerivativesP4PN
    LALlightRingRadius
    LALlightRingRadius3PN
+   LALlightRingRadiusP4PN
    LALpphiInit
    LALpphiInit3PN
+   LALpphiInitP4PN
    LALprInit
    LALprInit3PN
+   LALprInitP4PN
    LALrOfOmega
    LALrOfOmega3PN
+   LALrOfOmegaP4PN
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -123,6 +129,12 @@ omegaofr3PN (
 	     REAL8 *x,
 	     REAL8 r, 
 	     void *params) ;
+
+static void
+omegaofrP4PN (
+             REAL8 *x,
+             REAL8 r,
+             void *params) ;
 
 static 
 void LALHCapDerivatives(	REAL8Vector *values, 
@@ -170,11 +182,32 @@ void LALrOfOmega3PN (LALStatus *status, REAL8 *x, REAL8 r, void *params);
 static
 void LALvr3PN(REAL8 *vr, void *params);
 
+static
+void LALHCapDerivativesP4PN(     REAL8Vector     *values,
+                                REAL8Vector     *dvalues,
+                                void                    *funcParams);
+
+static
+void LALprInitP4PN(LALStatus *status, REAL8 *pr , REAL8 , void  *params);
+
+static
+void LALpphiInitP4PN(REAL8 *phase, REAL8 r, REAL8 eta, REAL8 omegaS);
+
+static
+void LALlightRingRadiusP4PN(LALStatus *status, REAL8 *x, REAL8 r, void *params);
+
+static
+void LALrOfOmegaP4PN (LALStatus *status, REAL8 *x, REAL8 r, void *params);
+
+static
+void LALvrP4PN(REAL8 *vr, void *params);
+
 static void
 LALEOBWaveformEngine (
                 LALStatus        *status,
                 REAL4Vector      *signal1,
                 REAL4Vector      *signal2,
+                REAL4Vector      *h,
                 REAL4Vector      *a,
                 REAL4Vector      *ff,
                 REAL8Vector      *phi,
@@ -638,15 +671,319 @@ LALHCapDerivatives3PN(
   *vr = FDIS * x1;
 }
 
-
+/*-------------------------------------------------------------------*/
+/*                      pseudo-4PN functions                         */
 /*-------------------------------------------------------------------*/
 
+void
+LALpphiInitP4PN(
+            REAL8 *phase,
+            REAL8 r,
+            REAL8 eta,
+            REAL8 omegaS
+            )
+{
+  REAL8 u, u2, u3, u4, a4, a5, eta2, NA, DA, A, dA;
+
+  eta2 = eta*eta;
+  u = 1./r;
+  u2 = u*u;
+  u3 = u2*u;
+  u4 = u2*u2;
+  a4 = (ninty4by3etc - 2. * omegaS) * eta;
+  a5 = 60.*eta;
+  NA = (32. - 24.*eta - 4.*a4 - a5)*u + (a4 - 16. + 8.*eta);
+  DA = a4 - 16. + 8.*eta - (2.*a4 + a5 + 8.*eta)*u - (4.*a4 + 2.*a5 + 16.*eta)*u2
+       - (8.*a4 + 4.*a5 + 2.*a4*eta + 16.*eta2)*u3
+       + (-a4*a4 - 8.*a5 - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u4;
+  A = NA/DA;
+  dA = ( (32. - 24.*eta - 4.*a4 - a5) * DA - NA *
+         ( -(2.*a4 + a5 + 8.*eta) - 2.*(4.*a4 + 2.*a5 + 16.*eta)*u
+          - 3.*(8.*a4 + 4.*a5 + 2.*a4*eta + 16.*eta2)*u2
+          + 4.*(-a4*a4 - 8.*a5 - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u3))/(DA*DA);
+  *phase = sqrt(-dA/(2.*u*A + u2 * dA));
+/* why is it called phase? This is initial j!? */
+}
+
+/*-------------------------------------------------------------------*/
+  void
+LALprInitP4PN(
+             LALStatus *status,
+             REAL8 *pr,
+             REAL8 p,
+             void *params
+             )
+{
+  REAL8   u, u2, u3, u4, p2, p3, p4, q2, A, DA, NA;
+  REAL8  onebyD, AbyD, Heff, HReal, etahH;
+  REAL8 omegaS, eta, eta2, a4, a5, z3, r, vr, q;
+  pr3In *ak;
+
+  INITSTATUS(status, "LALprInit3PN", LALPRINIT3PN);
+  ATTATCHSTATUSPTR(status);
+  ak = (pr3In *) params;
+
+  eta = ak->eta;
+  vr = ak->vr;
+  r = ak->r;
+  q = ak->q;
+  omegaS = ak->omegaS;
+  eta2 = eta*eta;
+
+
+   p2 = p*p;
+   p3 = p2*p;
+   p4 = p2*p2;
+   q2 = q*q;
+   u = 1./ r;
+   u2 = u*u;
+   u3 = u2 * u;
+   u4 = u2 * u2;
+   z3 = 2. * (4. - 3. * eta) * eta;
+   a4 = (ninty4by3etc - 2. * omegaS) * eta;
+   a5 = 60.*eta;
+
+   NA = (32. - 24.*eta - 4.*a4 - a5)*u + (a4 - 16. + 8.*eta);
+   DA = a4 - 16. + 8.*eta - (2.*a4 + a5 + 8.*eta)*u - (4.*a4 + 2.*a5 + 16.*eta)*u2
+        - (8.*a4 + 4.*a5 + 2.*a4*eta + 16.*eta2)*u3
+        + (-a4*a4 - 8.*a5 - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u4;
+   A = NA/DA;
+   onebyD = 1. + 6.*eta*u2 + 2. * ( 26. - 3. * eta) * eta * u3 + 36.*eta*u4;
+   AbyD = A * onebyD;
+
+   Heff = pow (A*(1. + AbyD * p2 + q*q * u2 + z3 * p4 * u2), 0.5);
+   HReal = pow (1. + 2.*eta*(Heff - 1.), 0.5) / eta;
+   etahH = eta*Heff*HReal;
+
+   *pr = -vr +  A*(AbyD*p + 2. * z3 * u2 * p3)/etahH;
+/* This sets pr = dH/dpr - vr, calls rootfinder, 
+   gets value of pr s.t. dH/pr = vr */
+   DETATCHSTATUSPTR(status);
+   RETURN(status);
+}
+
+
+/*-------------------------------------------------------------------*/
+static void
+omegaofrP4PN (
+             REAL8 *x,
+             REAL8 r,
+             void *params)
+{
+   REAL8 u, u2, u3, u4, a4, a5, eta, eta2, NA, DA, A, dA;
+   REAL8   omegaS;
+
+   /*include a status here ?*/
+   pr3In *ak;
+   ak = (pr3In *) params;
+   omegaS = ak->omegaS;
+   eta = ak->eta;
+   eta2 = eta*eta;
+
+   u = 1./r;
+   u2 = u*u;
+   u3 = u2*u;
+   u4 = u2*u2;
+   a4 = (ninty4by3etc - 2. * omegaS) * eta;
+   a5 = 60.*eta;
+   NA = (32. - 24.*eta - 4.*a4 - a5)*u + (a4 - 16. + 8.*eta);
+   DA = a4 - 16. + 8.*eta - (2.*a4 + a5 + 8.*eta)*u - (4.*a4 + 2.*a5 + 16.*eta)*u2
+        - (8.*a4 + 4.*a5 + 2.*a4*eta + 16.*eta2)*u3
+        + (-a4*a4 - 8.*a5 - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u4;
+   A = NA/DA;
+   dA = ( (32. - 24.*eta - 4.*a4 - a5) * DA - NA *
+          ( -(2.*a4 + a5 + 8.*eta) - 2.*(4.*a4 + 2.*a5 + 16.*eta)*u
+           - 3.*(8.*a4 + 4.*a5 + 2.*a4*eta + 16.*eta2)*u2
+           + 4.*(-a4*a4 - 8.*a5 - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u3))/(DA*DA); 
+
+   *x = pow(u,1.5) * sqrt ( -0.5 * dA /(1. + 2.*eta * (A/sqrt(A+0.5 * u*dA)-1.)));
+
+}
+
+
+/*-------------------------------------------------------------------*/
+void
+LALrOfOmegaP4PN(
+            LALStatus *status,
+            REAL8 *x,
+            REAL8 r,
+            void *params)
+{
+  REAL8  omega1,omega2,eta ;
+  pr3In *pr3in;
+
+  status = NULL;
+  pr3in = (pr3In *) params;
+  eta = pr3in->eta;
+
+  omega1 = pr3in->omega;
+  omegaofrP4PN(&omega2,r, params);
+  *x = -omega1 + omega2;
+
+}
+
+
+/*-------------------------------------------------------------------*/
+static void
+LALlightRingRadiusP4PN(
+                      LALStatus *status,
+                      REAL8 *x,
+                      REAL8 r,
+                      void *params
+                      )
+{
+  REAL8 eta, eta2, u, u2, u3, u4, a4, a5, NA, DA, A, dA;
+  rOfOmegaIn *rofomegain;
+  REAL8 omegaS=0;
+  status = NULL;
+  rofomegain = (rOfOmegaIn *) params;
+  eta = rofomegain->eta;
+  eta2 = eta*eta;
+
+
+  u = 1./r;
+  u2 = u*u;
+  u3 = u2*u;
+  u4 = u2*u2;
+  a4 = (ninty4by3etc - 2. * omegaS) * eta;
+  a5 = 60.*eta;
+  NA = (32. - 24.*eta - 4.*a4 - a5)*u + (a4 - 16. + 8.*eta);
+  DA = a4 - 16. + 8.*eta - (2.*a4 + a5 + 8.*eta)*u - (4.*a4 + 2.*a5 + 16.*eta)*u2 
+       - (8.*a4 + 4.*a5 + 2.*a4*eta + 16.*eta2)*u3 
+       + (-a4*a4 - 8.*a5 - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u4;
+  A = NA/DA;
+  dA = ( (32. - 24.*eta - 4.*a4 - a5) * DA - NA * 
+         ( -(2.*a4 + a5 + 8.*eta) - 2.*(4.*a4 + 2.*a5 + 16.*eta)*u 
+          - 3.*(8.*a4 + 4.*a5 + 2.*a4*eta + 16.*eta2)*u2 
+          + 4.*(-a4*a4 - 8.*a5 - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u3))/(DA*DA);
+  *x = 2 * A + dA * u;
+}
+
+/*-------------------------------------------------------------------*/
+ void
+LALHCapDerivativesP4PN(
+                  REAL8Vector *values,
+                  REAL8Vector *dvalues,
+                  void *funcParams
+                  )
+{
+   REAL8 r, s, p, q, u, u2, u3, u4, u5, p2, p3, p4, q2, Apot, DA, NA;
+   REAL8  dA, onebyD, DonebyD, AbyD, Heff, HReal, etahH;
+   REAL8 omega, v, eta, eta2, a4, z2, z30, z3, zeta2;
+   REAL8 a5, n1, c1, d1, d2, d3, oneby4meta, vu, omegaS;
+   REAL8    flexNonAdiab = 0;
+   REAL8    flexNonCirc = 0;
+
+   InspiralDerivativesIn *ak;
+
+   ak = (InspiralDerivativesIn *) funcParams;
+   eta = ak->coeffs->eta;
+   zeta2 = ak->coeffs->zeta2;
+   omegaS = ak->coeffs->omegaS;
 
 
 
 
+   r = values->data[0];
+   s = values->data[1];
+   p = values->data[2];
+   q = values->data[3];
+
+   p2 = p*p;
+   p3 = p2*p;
+   p4 = p2*p2;
+   q2 = q*q;
+   u = 1./r;
+   u2 = u*u;
+   u3 = u2 * u;
+   u4 = u2 * u2;
+   u5 = u*u4;
+   z30 = 2.L * (4.L - 3.L * eta) * eta;
+   z2 = 0.75L * z30 * zeta2,
+   z3 = z30 * (1.L - zeta2);
+   eta2 = eta*eta;
+
+   a4 = (ninty4by3etc - 2. * omegaS) * eta;
+   a5 = 60.*eta;
+
+   NA = (32. - 24.*eta - 4.*a4 - a5)*u + (a4 - 16. + 8.*eta);
+   DA = a4 - 16. + 8.*eta - (2.*a4 + a5 + 8.*eta)*u - (4.*a4 + 2.*a5 + 16.*eta)*u2
+        - (8.*a4 + 4.*a5 + 2.*a4*eta + 16.*eta2)*u3
+        + (-a4*a4 - 8.*a5 - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u4;
+   Apot = NA/DA; /* This A(u) assume zeta2=0 (the default value) */
+
+   onebyD = 1. + 6.*eta*u2 + (2.*eta * ( 26. - 3.*eta ) - z2)* u3 + 36.*eta*u4;
+   AbyD = Apot * onebyD;
+   Heff = pow (Apot*(1. + AbyD * p2 + q*q * u2 + z3 * p4 * u2), 0.5);
+   HReal = pow (1. + 2.*eta*(Heff - 1.), 0.5) / eta;
+   dA = -u2 * ( (32. - 24.*eta - 4.*a4 - a5) * DA - NA *
+          ( -(2.*a4 + a5 + 8.*eta) - 2.*(4.*a4 + 2.*a5 + 16.*eta)*u
+          - 3.*(8.*a4 + 4.*a5 + 2.*a4*eta + 16.*eta2)*u2
+          + 4.*(-a4*a4 - 8.*a5 - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u3))/(DA*DA);
+
+   DonebyD = -12.*eta*u3 - (6.*eta*(26. - 3.*eta) - z2)*u4 - 144.*eta*u5;
+   etahH = eta*Heff*HReal;
+
+   dvalues->data[0] = Apot*(AbyD*p +  z30 * u2 *(2.* p3
+              + zeta2*(-0.5*p3 + 0.75*p*q2*u2)))/etahH;
+   dvalues->data[1] = omega = Apot * q * u2 * (1. + 0.75*z30*zeta2*p2*u2)/ etahH;
+   v = pow(omega,oneby3);
+
+   dvalues->data[2] = -0.5 * Apot * (dA*Heff*Heff/(Apot*Apot) - 2.*q2*u3
+              + (dA * onebyD + Apot * DonebyD) * p2
+              + z30 * u3 *(-2.* p4+zeta2*(0.5*p4 - 3.0*p2*q2*u2))) / etahH;
+   c1 = 1.+(u2 - 2.*u3*Apot/dA) * q2;/*below:dpphi/dt = F_RR*/
+   dvalues->data[3] = -(1. - flexNonAdiab*c1) * (1. + flexNonCirc*p2/(q2*u2))
+                                        * ak->flux(v,ak->coeffs)/(eta * v*v*v);
+   vu = pow(u,0.5);/* This vu is not used anywhere, what is it for?*/
+}
 
 
+/*-------------------------------------------------------------------*/
+ void LALvrP4PN(REAL8 *vr, void *params )
+{
+  REAL8 A, dA, d2A, NA, DA, dDA, dNA, d2DA;
+  REAL8 u, u2, u3, u4, v, x1;
+  REAL8 eta, eta2, a4, a5, FDIS;
+
+  pr3In *pr3in;
+  pr3in = (pr3In *)params;
+
+  eta = pr3in->eta;
+  u = 1./ pr3in->r;
+
+  u2 = u*u;
+  u3 = u2*u;
+  u4 = u2*u2;
+  eta2 = eta*eta;
+
+
+  a4 = (ninty4by3etc - 2. * pr3in->omegaS) * eta;
+  a5 = 60.*eta;
+  NA = (32. - 24.*eta - 4.*a4 - a5)*u + (a4 - 16. + 8.*eta);
+  DA = a4 - 16. + 8.*eta - (2.*a4 + a5 + 8.*eta)*u - (4.*a4 + 2.*a5 + 16.*eta)*u2
+       - (8.*a4 + 4.*a5 + 2.*a4*eta + 16.*eta2)*u3
+       + (-a4*a4 - 8.*a5 - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u4;
+  A = NA/DA;
+  dNA = (32. - 24.*eta - 4.*a4 - a5);
+  dDA = - (2.*a4 + a5 + 8.*eta) - 2.*(4.*a4 + 2.*a5 + 16.*eta)*u
+       - 3.*(8.*a4 + 4.*a5 + 2.*a4*eta + 16.*eta2)*u2
+       + 4.*(-a4*a4 - 8.*a5 - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u3;
+  d2DA = - 2.*(4.*a4 + 2.*a5 + 16.*eta)
+       - 6.*(8.*a4 + 4.*a5 + 2.*a4*eta + 16.*eta2)*u
+       + 12.*(-a4*a4 - 8.*a5 - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u2;
+
+  dA = (dNA * DA - NA * dDA)/ (DA*DA);
+  d2A = (-NA * DA * d2DA - 2. * dNA * DA * dDA + 2. * NA * dDA * dDA)/pow(DA,3.);
+  v = pow(pr3in->omega,oneby3);
+  FDIS = -pr3in->in3copy.flux(v, pr3in->in3copy.coeffs)/(eta* pr3in->omega);
+  x1 = -1./u2 * sqrt (-dA * pow(2.* u * A + u2 * dA, 3.) )
+                / (2.* u * dA * dA + A*dA - u * A * d2A);
+  *vr = FDIS * x1;
+}
+
+
+/*-------------------------------------------------------------------*/
 
 /*  <lalVerbatim file="LALEOBWaveformCP"> */
 void 
@@ -688,7 +1025,7 @@ LALEOBWaveform (
    memset(signal->data, 0, signal->length * sizeof( REAL4 ));
 
    /* Call the engine function */
-   LALEOBWaveformEngine(status->statusPtr, signal, NULL, NULL, 
+   LALEOBWaveformEngine(status->statusPtr, signal, NULL, NULL, NULL, 
 			NULL, NULL, &count, params, &paramsInit);
    CHECKSTATUSPTR( status );
 
@@ -749,7 +1086,7 @@ LALEOBWaveformTemplates (
    memset(signal2->data, 0, signal2->length * sizeof( REAL4 ));
 
    /* Call the engine function */
-   LALEOBWaveformEngine(status->statusPtr, signal1, signal2, NULL, 
+   LALEOBWaveformEngine(status->statusPtr, signal1, signal2, NULL, NULL, 
 			   NULL, NULL, &count, params, &paramsInit);
    CHECKSTATUSPTR( status );
 
@@ -775,6 +1112,7 @@ LALEOBWaveformForInjection (
   UINT4 count, i;
 
   REAL4Vector *a=NULL;/* pointers to generated amplitude  data */
+  REAL4Vector *h=NULL;/* pointers to generated polarization data */
   REAL4Vector *ff=NULL ;/* pointers to generated  frequency data */
   REAL8Vector *phi=NULL;/* pointer to generated phase data */
 
@@ -795,6 +1133,8 @@ LALEOBWaveformForInjection (
   ASSERT(waveform, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);  
   /* Make sure waveform fields don't exist. */
   ASSERT( !( waveform->a ), status, 
+  	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
+  ASSERT( !( waveform->h ), status, 
   	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
   ASSERT( !( waveform->f ), status, 
   	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
@@ -825,8 +1165,15 @@ LALEOBWaveformForInjection (
   memset(a->data, 0, 2 * paramsInit.nbins * sizeof(REAL4));
   memset(phi->data, 0, paramsInit.nbins * sizeof(REAL8));
 
+  if( params->ampOrder )
+  {
+    LALSCreateVector(status->statusPtr, &h, 2*paramsInit.nbins);
+    CHECKSTATUSPTR(status);
+    memset(h->data, 0, 2 * paramsInit.nbins * sizeof(REAL4));
+  }
+
   /* Call the engine function */
-  LALEOBWaveformEngine(status->statusPtr, NULL, NULL, a, ff, 
+  LALEOBWaveformEngine(status->statusPtr, NULL, NULL, h, a, ff, 
 			   phi, &count, params, &paramsInit);
   BEGINFAIL( status )
   {
@@ -836,6 +1183,11 @@ LALEOBWaveformForInjection (
      CHECKSTATUSPTR(status);
      LALDDestroyVector(status->statusPtr, &phi);
      CHECKSTATUSPTR(status);
+     if( params->ampOrder )
+     {
+       LALSDestroyVector(status->statusPtr, &h);
+       CHECKSTATUSPTR(status);
+     }
   }
   ENDFAIL( status );
 
@@ -851,6 +1203,12 @@ LALEOBWaveformForInjection (
       CHECKSTATUSPTR(status);
       LALDDestroyVector(status->statusPtr, &phi);
       CHECKSTATUSPTR(status);
+      /* ??? Do we need this - didn't we just do it if a failure? */
+      if( params->ampOrder )
+      {
+        LALSDestroyVector(status->statusPtr, &h);
+        CHECKSTATUSPTR(status);
+      }
  
       DETATCHSTATUSPTR( status );
       RETURN( status );
@@ -957,6 +1315,25 @@ LALEOBWaveformForInjection (
       ppnParams->termDescription = GENERATEPPNINSPIRALH_MSGEFSTOP;
       
       ppnParams->fStart   = ppnParams->fStartIn;
+
+      if( params->ampOrder )
+      {
+        if ( ( waveform->a = (REAL4TimeVectorSeries *)
+	       LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL )
+        {
+	  ABORT( status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM );
+        }
+        LALSCreateVectorSequence( status->statusPtr,
+				  &( waveform->h->data ), &in );
+        CHECKSTATUSPTR(status);      
+        memcpy(waveform->h->data->data , h->data, 2*count*(sizeof(REAL4)));
+        waveform->h->deltaT = 1./params->tSampling;
+        waveform->h->sampleUnits = lalStrainUnit;
+        LALSnprintf( waveform->h->name, 
+	  	  LALNameLength, "EOB inspiral polarizations");
+        LALSDestroyVector(status->statusPtr, &h);
+        CHECKSTATUSPTR(status);
+      }
     } /* end phase condition*/
 
   /* --- free memory --- */
@@ -983,6 +1360,7 @@ LALEOBWaveformEngine (
                 LALStatus        *status,
                 REAL4Vector      *signal1,
                 REAL4Vector      *signal2,
+                REAL4Vector      *h,
                 REAL4Vector      *a,
                 REAL4Vector      *ff,
                 REAL8Vector      *phi,
@@ -1062,7 +1440,7 @@ LALEOBWaveformEngine (
    m = ak.totalmass;
 
    /* only used in injection case */
-   if (a)
+   if (a || h)
    {
      mTot   =  params->mass1 + params->mass2;
      etab   =  params->mass1 * params->mass2;
@@ -1110,7 +1488,7 @@ LALEOBWaveformEngine (
    rofomegain.eta = eta;
    rofomegain.omega = omega;
 
-   
+   /* I added 3.5PN case, same as 3PN case, is this right? */
    rootIn.xacc = 1.0e-16;
    switch (params->order)
      {
@@ -1119,7 +1497,11 @@ LALEOBWaveformEngine (
        rootIn.function = LALlightRingRadius;
        break;
      case threePN:
+     case threePointFivePN:
        rootIn.function = LALlightRingRadius3PN;
+       break;
+     case pseudoFourPN:
+       rootIn.function = LALlightRingRadiusP4PN;
        break;
      default:
        fprintf(stderr, 
@@ -1128,20 +1510,22 @@ LALEOBWaveformEngine (
        LALFree(dummy.data);
        ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE); 
      }
-   rootIn.xmax = 2.;
+   rootIn.xmax = 1.;
    rootIn.xmin = 4.;
    funcParams = (void *) &rofomegain;
 
 /*-------------------------------------------------------------------
-Userful for debugging: Make sure a solution for r exists.
+Useful for debugging: Make sure a solution for r exists.
 --------------------------------------------------------
-   for (r=0.01; r<10.; r+=.01) {
+   for (r=rootIn.xmax; r<rootIn.xmin; r+=.01) {
+      REAL8 x;
       LALlightRingRadius(status->statusPtr, &x, r, funcParams);
       CHECKSTATUSPTR(status);
       printf("%e %e\n", r, x);
    }
    printf("&\n");
    for (r=1; r<100.; r+=.1) {
+      REAL8 x;
       LALrOfOmega(status->statusPtr, &x, r, funcParams);
       CHECKSTATUSPTR(status);
       printf("%e %e\n", r, x);
@@ -1150,8 +1534,7 @@ Userful for debugging: Make sure a solution for r exists.
 
    LALDBisectionFindRoot(status->statusPtr, &rn, &rootIn, funcParams);
    CHECKSTATUSPTR(status);
-
-
+    /* I added 3.5PN case, same as 3PN case, is this right? */
     /*rofOmega */
     switch (params->order)
      {
@@ -1164,6 +1547,7 @@ Userful for debugging: Make sure a solution for r exists.
        CHECKSTATUSPTR(status);
        break;
      case threePN:
+     case threePointFivePN:
        rootIn.function = LALrOfOmega3PN;
        pr3in.eta = eta;
        pr3in.omegaS = params->OmegaS;
@@ -1174,6 +1558,18 @@ Userful for debugging: Make sure a solution for r exists.
        LALDBisectionFindRoot(status->statusPtr, &r, &rootIn, (void *)&pr3in);
        CHECKSTATUSPTR(status);
        break;
+     case pseudoFourPN:
+       rootIn.function = LALrOfOmegaP4PN;
+       pr3in.eta = eta;
+       pr3in.omegaS = params->OmegaS;
+       pr3in.zeta2 = params->Zeta2;
+       pr3in.omega = omega;
+       rootIn.xmax = 1000.;
+       rootIn.xmin = 3.;
+       LALDBisectionFindRoot(status->statusPtr, &r, &rootIn, (void *)&pr3in);
+       CHECKSTATUSPTR(status);
+       break;
+
      default:
        fprintf(stderr, 
 	 	"There are no EOB waveforms implemented at order %d\n", 
@@ -1242,6 +1638,25 @@ Userful for debugging: Make sure a solution for r exists.
        CHECKSTATUSPTR(status);
        in4.function = LALHCapDerivatives3PN;
        break;
+     case pseudoFourPN:
+       LALpphiInitP4PN(&q,r,eta, params->OmegaS);
+       rootIn.function = LALprInitP4PN;
+       rootIn.xmax = 5;
+       rootIn.xmin = -10;
+       /* first we compute vr (we need coeef->Fp6) */
+       pr3in.in3copy = in3;
+       pr3in.eta = eta;
+       pr3in.omegaS = params->OmegaS;
+       pr3in.r = r;
+       pr3in.q = q;
+       pr3in.zeta2 = params->Zeta2;
+       pr3in.omega = omega;
+       LALvrP4PN(&pr3in.vr,(void *) &pr3in);
+       /* then we compute the initial value of p */
+       LALDBisectionFindRoot(status->statusPtr, &p, &rootIn,(void *) &pr3in );
+       CHECKSTATUSPTR(status);
+       in4.function = LALHCapDerivativesP4PN;
+       break;
      default:
        fprintf(stderr, 
 	 	"There are no EOB waveforms at order %d\n", 
@@ -1278,10 +1693,26 @@ Userful for debugging: Make sure a solution for r exists.
    count = params->nStartPad;
 
    /* Calculate the initial value of omega */
-   if (params->order<threePN)
-       LALHCapDerivatives(&values, &dvalues, funcParams);
-   else
-       LALHCapDerivatives3PN(&values, &dvalues, funcParams);
+   switch(params->order)
+     {
+     case twoPN:
+     case twoPointFivePN:
+	LALHCapDerivatives(&values, &dvalues, funcParams);
+	break;
+     case threePN:
+     case threePointFivePN:
+	LALHCapDerivatives3PN(&values, &dvalues, funcParams);
+	break;
+     case pseudoFourPN:
+	LALHCapDerivativesP4PN(&values, &dvalues, funcParams);
+	break;
+     default:
+        fprintf(stderr,
+                "There are no EOB waveforms at order %d\n",
+                params->order);
+        ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+     }
+
 
    CHECKSTATUSPTR(status);
 
@@ -1329,18 +1760,44 @@ Userful for debugging: Make sure a solution for r exists.
         }
         else if (a)   /* For injections */
         {
+          int ice, ico;
+	  ice = 2*count;
+	  ico = ice + 1;
+
           ff->data[count]= (REAL4)(omega/unitHz);
           f2a = pow (f2aFac * omega, 2./3.);
           a->data[2*count]          = (REAL4)(4.*apFac * f2a);
           a->data[2*count+1]        = (REAL4)(4.*acFac * f2a);
           phi->data[count]          = (REAL8)(2* s);
+
+          if(h)
+          {
+            h->data[ice] = LALInspiralHPlusPolarization( s, v, params );
+            h->data[ico] = LALInspiralHCrossPolarization( s, v, params );
+          }
         }
       }
 
-      if (params->order<threePN) 
-          LALHCapDerivatives(&values, &dvalues, funcParams);
-      else
-          LALHCapDerivatives3PN(&values, &dvalues, funcParams);
+      switch(params->order)
+     	{
+     	  case twoPN:
+     	  case twoPointFivePN:
+            LALHCapDerivatives(&values, &dvalues, funcParams);
+            break;
+     	  case threePN:
+     	  case threePointFivePN:
+            LALHCapDerivatives3PN(&values, &dvalues, funcParams);
+            break;
+     	  case pseudoFourPN:
+            LALHCapDerivativesP4PN(&values, &dvalues, funcParams);
+            break;
+     	  default:
+            fprintf(stderr,
+                  "There are no EOB waveforms at order %d\n",
+                  params->order);
+            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+        }
+
 
       CHECKSTATUSPTR(status);
 
