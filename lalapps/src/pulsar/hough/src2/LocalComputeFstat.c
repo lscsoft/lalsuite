@@ -205,9 +205,15 @@ void LocalComputeFStatFreqBand ( LALStatus *status,
       }
 
       /* write out optimization settings */
-      fprintf(stderr,"\n$Revision$ OPT:%d SCV:%d, SCTRIM:%d, HLV:%d, HP:%d\n",
-	      EAH_OPTIMIZATION, EAH_SINCOS_VARIANT, EAH_SINCOS_ROUND, EAH_HOTLOOP_VARIANT, EAH_HOUGH_PREFETCH);
-      first = 0;
+      fprintf(stderr,
+	      "\n$Revision$ REV:%s, OPT:%d, "
+	      "SCVAR:%d, SCTRIM:%d, "
+	      "HOTVAR:%d, HOTDIV:%d, "
+	      "HGHPRE:%d, HGHBAT:%d\n",
+	      EAH_OPTIMIZATION_REVISION, EAH_OPTIMIZATION,
+	      EAH_SINCOS_VARIANT,  EAH_SINCOS_ROUND,
+	      EAH_HOTLOOP_VARIANT, EAH_HOTLOOP_DIVS,
+	      EAH_HOUGH_PREFETCH,  EAH_HOUGH_BATCHSIZE_LOG2);
     }
   }
 
@@ -861,7 +867,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  
 	  /* combine the partial sums: */
 	  {
-#ifdef EAH_HOTLOOP_RECIPROCAL
+#if EAH_HOTLOOP_DIVS == EAH_HOTLOOP_DIVS_RECIPROCAL
 	    /* if the division is to be done outside the SIMD unit */
 
 	    REAL4 r_qn  = 1.0 / (qn[0] * qn[2]);
@@ -871,7 +877,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	    realXP = s_alpha * U_alpha - c_alpha * V_alpha;
 	    imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
 
-#else /* EAH_HOTLOOP_RECIPROCAL */
+#else /* EAH_HOTLOOP_DIVS */
 	    /* if the division can and should be done inside the SIMD unit */
 
 	    REAL4 U_alpha, V_alpha;
@@ -882,7 +888,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	    U_alpha = (STn[0] + STn[2]);
 	    V_alpha = (STn[1] + STn[3]);
 
-#endif /* EAH_HOTLOOP_RECIPROCAL */
+#endif /* EAH_HOTLOOP_DIVS */
 
 	    realXP = s_alpha * U_alpha - c_alpha * V_alpha;
 	    imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
@@ -914,16 +920,16 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	      qn *= pn; 			  /* q_(n+1) */
 	    } /* for l < 2*DTERMS */
 
-#ifdef EAH_HOTLOOP_RECIPROCAL
+#if EAH_HOTLOOP_DIVS == EAH_HOTLOOP_DIVS_RECIPROCAL
 	  { /* could hardly be slower than two divisions */
 	    REAL4 r_qn = 1.0 / qn;
 	    U_alpha = Sn * r_qn;
 	    V_alpha = Tn * r_qn;
 	  }
-#else /* EAH_HOTLOOP_RECIPROCAL */
+#else /* EAH_HOTLOOP_DIVS */
 	  U_alpha = Sn / qn;
 	  V_alpha = Tn / qn;
-#endif /* EAH_HOTLOOP_RECIPROCAL */
+#endif /* EAH_HOTLOOP_DIVS */
 
  	  realXP = s_alpha * U_alpha - c_alpha * V_alpha;
  	  imagXP = c_alpha * U_alpha + s_alpha * V_alpha;

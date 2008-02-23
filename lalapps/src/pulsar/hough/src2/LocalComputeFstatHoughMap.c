@@ -30,21 +30,6 @@
 
 RCSID( "$Id$");
 
-/* specials for Apples assembler */ 
-#ifdef __APPLE__ 
-#define AD_FLOAT ".single " 
-#define AD_ASCII ".ascii " 
-#define AD_ALIGN16 ".align 4" 
-#define AD_ALIGN32 ".align 5" 
-#define AD_ALIGN64 ".align 6" 
-#else /* x86 gas */ 
-#define AD_FLOAT ".float " 
-#define AD_ASCII ".string " 
-#define AD_ALIGN16 ".align 16" 
-#define AD_ALIGN32 ".align 32" 
-#define AD_ALIGN64 ".align 64" 
-#endif 
-
 #define HSMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define HSMIN(x,y) ( (x) < (y) ? (x) : (y) )
 #define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
@@ -656,11 +641,11 @@ void LocalHOUGHConstructHMT_W (LALStatus                  *status,
    LocalHOUGHAddPHMD2HD_Wlr() that is augmented with prefetching code to
    speed up memory access. The parameterization is such that the originally
    two loops become actually identical in LocalHOUGHAddPHMD2HD_Wlr
-   (leftBorder<->rightBorder, lengthLeft<->lengthRight, weight <-> -weight)
+   (leftBorder <-> rightBorder, lengthLeft <-> lengthRight, weight <-> -weight)
 */
 void LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
-			     HOUGHMapDeriv  *hd,  /**< the Hough map derivative */
-			     HOUGHphmd      *phmd) /**< info from a partial map */ 
+			     HOUGHMapDeriv  *hd,     /**< the Hough map derivative */
+			     HOUGHphmd      *phmd)   /**< info from a partial map */ 
 {
 
   INT2     k;
@@ -726,7 +711,7 @@ void LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
 #else
 #define PREFETCH(a) a
 #endif
-#else 
+#else
 #define PREFETCH(a) a
 #endif
 
@@ -777,6 +762,21 @@ LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status,
     }
 
 #ifdef __GNUC__
+
+/* specials for Apples assembler */ 
+#ifdef __APPLE__ 
+#define AD_FLOAT ".single " 
+#define AD_ASCII ".ascii " 
+#define AD_ALIGN16 ".align 4" 
+#define AD_ALIGN32 ".align 5" 
+#define AD_ALIGN64 ".align 6" 
+#else /* x86 gas */ 
+#define AD_FLOAT ".float " 
+#define AD_ASCII ".string " 
+#define AD_ALIGN16 ".align 16" 
+#define AD_ALIGN32 ".align 32" 
+#define AD_ALIGN64 ".align 64" 
+#endif 
 
 /* don't clobber ebx , used for PIC on Mac OS */
 
@@ -867,7 +867,7 @@ __asm __volatile (
 	cmp      esi, eax
 	jmp      l1_a
 	
-		ALIGN 16 
+	ALIGN 16 
 	
 	l2_a:
 

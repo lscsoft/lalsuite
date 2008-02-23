@@ -22,6 +22,9 @@
 #define EAH_HOTLOOP_VARIANT_SSE      3
 #define EAH_HOTLOOP_VARIANT_x87      EAH_GENERIC
 
+#define EAH_HOTLOOP_DIVS_MULTIPLE    EAH_GENERIC
+#define EAH_HOTLOOP_DIVS_RECIPROCAL  1
+
 #define EAH_HOUGH_PREFETCH_NONE      EAH_GENERIC
 #define EAH_HOUGH_PREFETCH_DIRECT    1 /* prefetching using compiler directives */
 #define EAH_HOUGH_PREFETCH_X87       7 /* prefetch commands inlined in x87 assembler */
@@ -38,7 +41,7 @@
 #define EAH_SINCOS_VARIANT  EAH_SINCOS_VARIANT_LINEAR
 #define EAH_SINCOS_ROUND    EAH_SINCOS_ROUND_PLUS2
 #define EAH_HOTLOOP_VARIANT EAH_HOTLOOP_VARIANT_LAL
-#define EAH_HOTLOOP_RECIPROCAL /* on old CPUs this might give a little speedup */
+#define EAH_HOTLOOP_DIVS    EAH_HOTLOOP_DIVS_RECIPROCAL
 #define EAH_HOUGH_PREFETCH  EAH_HOUGH_PREFETCH_NONE
 
 #elif EAH_OPTIMIZATION == 2 /* AltiVec Code (currently not working) */
@@ -69,20 +72,32 @@
 #endif /* EAH_OPTIMIZATION == */
 
 /* defaults - if they haven't been set special, set them to GENERIC */
+
 #ifndef EAH_SINCOS_VARIANT
 #define EAH_SINCOS_VARIANT  EAH_GENERIC
 #endif
 #ifndef EAH_SINCOS_ROUND
 #define EAH_SINCOS_ROUND    EAH_GENERIC
 #endif
+
 #ifndef EAH_HOTLOOP_VARIANT
 #define EAH_HOTLOOP_VARIANT EAH_GENERIC
 #endif
+#ifndef EAH_HOTLOOP_DIVS
+#define EAH_HOTLOOP_DIVS    EAH_GENERIC
+#endif
+
 #ifndef EAH_HOUGH_PREFETCH
 #define EAH_HOUGH_PREFETCH  EAH_GENERIC
+#endif
+
+#ifndef EAH_HOUGH_BATCHSIZE_LOG2
+#define EAH_HOUGH_BATCHSIZE_LOG2 2
 #endif
 
 /* it looks like for most compilers this is actually faster... */
 #ifndef EAH_SINCOS_F2IBITS
 #define EAH_SINCOS_F2IBITS  EAH_SINCOS_F2IBITS_MEMCPY
 #endif
+
+#define EAH_OPTIMIZATION_REVISION "$Revision"
