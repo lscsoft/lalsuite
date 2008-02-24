@@ -236,7 +236,7 @@ LALInspiralWaveTemplates(
 
    INITSTATUS(status, "LALInspiralWaveTemplates", LALINSPIRALWAVETEMPLATESC);
    ATTATCHSTATUSPTR(status);
-
+   
    ASSERT (signal1->length >= 2, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT (signal2->length >= 2, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT (signal1,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -267,7 +267,7 @@ LALInspiralWaveTemplates(
            CHECKSTATUSPTR(status);
       	   break;
       case EOB:
-           LALEOBWaveformTemplates(status->statusPtr, signal1, signal2, params);
+           LALEOBWaveformTemplates(status->statusPtr, NULL, signal1, signal2, params);
            CHECKSTATUSPTR(status);
            break;
       case TaylorF1:

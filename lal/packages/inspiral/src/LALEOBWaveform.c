@@ -1042,6 +1042,7 @@ NRCSID (LALEOBWAVEFORMTEMPLATESC,
 void 
 LALEOBWaveformTemplates (
    LALStatus        *status,
+   REAL4Vector      *omega,
    REAL4Vector      *signal1,
    REAL4Vector      *signal2,
    InspiralTemplate *params
@@ -1054,10 +1055,14 @@ LALEOBWaveformTemplates (
  
    INITSTATUS(status, "LALEOBWaveformTemplates", LALEOBWAVEFORMTEMPLATESC);
    ATTATCHSTATUSPTR(status);
-
+   
+   ASSERT(omega,  status,
+	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT(signal1,  status,
 	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT(signal2,  status,
+   	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(omega->data,  status, 
    	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT(signal1->data,  status, 
    	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -1081,13 +1086,14 @@ LALEOBWaveformTemplates (
    LALInspiralChooseModel(status->statusPtr, &(paramsInit.func), 
 					&(paramsInit.ak), params);
    CHECKSTATUSPTR(status);
-
+   
+   memset(omega->data, 0, signal1->length * sizeof( REAL4 ));
    memset(signal1->data, 0, signal1->length * sizeof( REAL4 ));
    memset(signal2->data, 0, signal2->length * sizeof( REAL4 ));
 
    /* Call the engine function */
    LALEOBWaveformEngine(status->statusPtr, signal1, signal2, NULL, NULL, 
-			   NULL, NULL, &count, params, &paramsInit);
+			   omega, NULL, &count, params, &paramsInit);
    CHECKSTATUSPTR( status );
 
    DETATCHSTATUSPTR(status);
@@ -1405,7 +1411,7 @@ LALEOBWaveformEngine (
    REAL8 f2aFac;/* factor multiplying f in amplitude function */
    REAL8 apFac, acFac;/* extra factor in plus and cross amplitudes */
    REAL8 phiC;/* phase at coalescence */
- 
+   
    INITSTATUS(status, "LALEOBWaveformEngine", LALEOBWAVEFORMC);
    ATTATCHSTATUSPTR(status);
 
@@ -1455,7 +1461,8 @@ LALEOBWaveformEngine (
      apFac *= 1.0 + cosI*cosI;
      acFac *= 2.0*cosI;
    }
-
+   /* fprintf(stdout, "unitHz components: %e, %e, %e\n", mTot, LAL_MTSUN_SI, LAL_PI);
+   fprintf(stdout, "unitHz itself: %e\n", unitHz); */
    /* Find the initial velocity given the lower frequency */
    t = 0.0;
    in1.t = t;
@@ -1757,6 +1764,9 @@ Useful for debugging: Make sure a solution for r exists.
             h2 = amp * cos(2.* (s - sSubtract) + LAL_PI_2);
             *(signal2->data + count) = (REAL4) h2;
           }
+		  
+		  ff->data[count]= (REAL4)(omega);
+		  /* fprintf(stdout, "omega: %e, %e, %e\n", omega/unitHz, omega, unitHz); */
         }
         else if (a)   /* For injections */
         {

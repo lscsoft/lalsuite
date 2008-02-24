@@ -16,6 +16,7 @@ LALInspiralPhasing2.c\
 LALInspiralPhasing3.c\
 LALInspiralPhiofVIntegrand.c\
 LALInspiralPolarizations.c\
+LALInspiralRingdownWave.c\
 LALInspiralSetup.c\
 LALInspiralSpinningBHBinary.c\
 LALInspiralStationaryPhaseApprox1.c\
