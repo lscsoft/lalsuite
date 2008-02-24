@@ -76,7 +76,7 @@ int main( int argc, char *argv[] )
   memset( &tmplt, 0, sizeof(InspiralTemplate) );
   
   tmplt.approximant = EOB;
-  tmplt.order = 6;
+  tmplt.order = 8;
   
   tmplt.OmegaS = 0.;
   tmplt.Theta = 0.;
@@ -108,8 +108,10 @@ int main( int argc, char *argv[] )
   }
   
   /* Create memory for the inspiral waveform */
+  REAL4Vector *omega;
   REAL4Vector *inspwave1;
   REAL4Vector *inspwave2;
+  omega		= XLALCreateREAL4Vector( N );
   inspwave1 = XLALCreateREAL4Vector( N );
   inspwave2 = XLALCreateREAL4Vector( N );
   
@@ -129,7 +131,32 @@ int main( int argc, char *argv[] )
   } */
   
   /* Generate inspiral waveforms */
-  LALInspiralWaveTemplates(&status, inspwave1, inspwave2, &tmplt);
+  LALEOBWaveformTemplates(&status, omega, inspwave1, inspwave2, &tmplt);
+  
+  /* Attaching position set by omega_match */
+  /* Omega_match is given by Eq.(37) of PRD 76, 104049 (2007) */
+  /* -0.01 because the current EOBNR 4PN setting can't reach omega_match */
+  REAL8 omegamatch = -0.01 + 0.133 + 0.183 * tmplt.eta + 0.161 * tmplt.eta * tmplt.eta;
+  UINT4 attpos = 0;
+  for (j = 0; j < N; ++j)
+  {
+    if(omega->data[j] > omegamatch)
+	{
+	  attpos = j - 1;
+	  break;
+	}
+  }
+  
+  FILE *omegafile;
+  omegafile = fopen( "myomega.dat", "w" );
+  if( omegafile != NULL )
+  {
+	for (j = 0; j < N; ++j)
+	{
+	  fprintf( omegafile, "%f\n", omega->data[j]);
+	}
+  }
+  fclose(omegafile);
   
   /* Create memory for the QNM frequencies */
   COMPLEX8Vector *modefreqs;
@@ -143,10 +170,8 @@ int main( int argc, char *argv[] )
   
   /* Ringdown signal length: 10 times the decay time of the n=0 mode */
   UINT4 Nrdwave = 10 / modefreqs->data[0].im / deltaT;
-  /* Attaching position found by hand, should set to LR or other automatic value */
-  UINT4 attpos = 29070;
   /* Patch length, centered around the matching point "attpos" */
-  UINT4 Npatch = 21;
+  UINT4 Npatch = 11;
   
   /* Create memory for the ring-down and full waveforms, and derivatives of inspirals */
   REAL4Vector			*rdwave1;
@@ -207,6 +232,7 @@ int main( int argc, char *argv[] )
 	inspwaves2->data[j + 2 * (Npatch + 1) / 2] = ddinspwave->data[j];
   }
   
+  
   /* Generate ring-down waveforms */
   errcode = XLALInspiralRingdownWave( rdwave1, rdwave2, &tmplt, inspwaves1, inspwaves2, 
 								  modefreqs, 3);
@@ -215,7 +241,7 @@ int main( int argc, char *argv[] )
     fprintf( stderr, "XLALInspiralComputePTFWDeriv failed\n" );
     exit( 1 );
   }
-  /* Generate fll waveforms, by stitching inspiral and ring-down waveforms */
+  /* Generate full waveforms, by stitching inspiral and ring-down waveforms */
   for (j = 0; j < attpos; ++j)
   {
 	fullwave1->data[j] = inspwave1->data[j];
@@ -226,6 +252,7 @@ int main( int argc, char *argv[] )
 	fullwave1->data[j + attpos - 1] = rdwave1->data[j];
 	fullwave2->data[j + attpos - 1] = rdwave2->data[j];
   }
+  
   
   /* Write waveforms to file */
   FILE *inspfile;
@@ -267,6 +294,7 @@ int main( int argc, char *argv[] )
   XLALDestroyREAL4Vector( rdwave2 );
   XLALDestroyREAL4VectorSequence( inspwaves1 );
   XLALDestroyREAL4VectorSequence( inspwaves2 );
+  XLALDestroyREAL4Vector( omega );
   XLALDestroyREAL4Vector( inspwave1 );
   XLALDestroyREAL4Vector( inspwave2 );
 
