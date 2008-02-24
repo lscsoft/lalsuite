@@ -1,6 +1,6 @@
 Source: sftlib
-Section: unknown
-Priority: extra
+Section: lscsoft
+Priority: optional
 Maintainer: root <root@deepthought.aei.mpg.de>
 Build-Depends: debhelper (>= 5), autotools-dev, automake
 Standards-Version: 3.7.2
