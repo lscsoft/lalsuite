@@ -88,12 +88,12 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 #ifdef _MSC_VER /* no C99 */
 #define SINCOS_TRIM_X(y,x) \
   { \
-    __asm FLD     QWORD PTR x \
-    __asm FRNDINT             \
-    __asm FSUBR   QWORD PTR x \
-    __asm FLD1                \
-    __asm ADDP                \
-    __asm FSTP    QWORD PTR y \
+    __asm FLD     QWORD PTR x 	\
+    __asm FRNDINT             	\
+    __asm FSUBR   QWORD PTR x 	\
+    __asm FLD1                	\
+    __asm FADDP   ST(1),ST	\
+    __asm FSTP    QWORD PTR y 	\
     }
 #else
 #define SINCOS_TRIM_X(y,x) \
@@ -958,8 +958,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
       /* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
       {
-	REAL8 _lambda_alpha;
-	SINCOS_TRIM_X (_lambda_alpha,(-lambda_alpha));
+	REAL8 _lambda_alpha = -lambda_alpha;
+	SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
 #ifndef LAL_NDEBUG
 	if ( local_sin_cos_2PI_LUT_trimmed ( &imagQ, &realQ, _lambda_alpha ) ) {
 	  XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
