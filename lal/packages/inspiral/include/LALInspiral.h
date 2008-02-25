@@ -1130,7 +1130,6 @@ void LALEOBWaveform(
 
 void LALEOBWaveformTemplates(
      LALStatus *status,
-	 REAL4Vector *omega,
      REAL4Vector *signalvec1,
      REAL4Vector *signalvec2,
      InspiralTemplate *params);
