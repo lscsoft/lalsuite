@@ -107,6 +107,7 @@ typedef struct{
 char *program;
 
 void printf_timeseries (UINT4 n, REAL4 *signal, REAL8 delta, REAL8 t0) ;
+void printf_timeseries2 (UINT4 n, REAL4 *signal1, REAL4 *signal2, REAL8 delta, REAL8 t0) ;
 void ParseParameters(UINT4 argc, CHAR **argv, OtherParamIn *otherIn);
 void LALGenerateInspiralWaveformHelp(void);
 
@@ -159,7 +160,7 @@ int main (int argc , char **argv) {
   if (otherIn.PrintParameters)
     {
       fprintf(stderr, "#Testing Inspiral Signal Generation Codes:\n");
-      fprintf(stderr, "#Signal length=%d, t0=%e, t2=%e, \n", n, params.t0, params.t2);  
+      fprintf(stderr, "#Signal length=%d, t0=%e, t2=%e, t3=%e\n", n, params.t0, params.t2, params.t3);  
       fprintf(stderr,"#size in bins %d\n",n);
       fprintf(stderr,"#size in seconds %f\n",params.tC);
     }
@@ -191,7 +192,6 @@ int main (int argc , char **argv) {
 
     SUB( LALReverseRealFFT(&status, signal2, Signal1, revp), &status);
     SUB( LALCDestroyVector (&status, &Signal1), &status);
-    printf_timeseries(signal2->length, signal2->data, dt, params.startTime);
     SUB( LALDestroyRealFFTPlan (&status, &revp), &status);
     SUB( LALSDestroyVector(&status, &signal2), &status);
     SUB( LALSDestroyVector(&status, &signal1), &status);
@@ -204,9 +204,12 @@ int main (int argc , char **argv) {
   case PadeT1:
   case SpinTaylor:
   case Eccentricity:
+    /*
     SUB(LALInspiralWave(&status, signal2, &params), &status);
+    */
+    SUB(LALInspiralWaveTemplates(&status, signal1, signal2, &params), &status);
     if (status.statusCode == 0){
-      printf_timeseries(signal2->length, signal2->data, dt, params.startTime);   	  
+      printf_timeseries2(signal1->length, signal2->data, signal1->data, dt, params.startTime);   	  
       SUB( LALSDestroyVector(&status, &signal2), &status);
       SUB( LALSDestroyVector(&status, &signal1), &status);
     }
@@ -221,7 +224,7 @@ int main (int argc , char **argv) {
 	    break;
   }
 
-  fprintf(stderr, "fFinal = %f Hz tFinal = %f seconds" , params.fFinal, params.tC) ;
+  fprintf(stderr, "fFinal = %f Hz tFinal = %f seconds\n" , params.fFinal, params.tC) ;
   
   if (otherIn.PrintParameters){
     fprintf(stderr, "the inspiral structure after the call to the waveform generation:\n");
@@ -289,7 +292,9 @@ void printf_timeseries (UINT4 n, REAL4 *signal, REAL8 delta, REAL8 t0)
   outfile1=fopen("wave1.dat","w");
 
   do 
-     fprintf (outfile1,"%e %e\n", i*delta+t0, *(signal+i)  );
+     /* fprintf (outfile1,"%e %e\n", i*delta+t0, *(signal+i)  );
+      */
+     fprintf (outfile1,"%e\n", *(signal+i)  );
   while (n-++i); 
 
   fprintf(outfile1,"&\n");
@@ -297,4 +302,20 @@ void printf_timeseries (UINT4 n, REAL4 *signal, REAL8 delta, REAL8 t0)
 }
 
 
+
+void printf_timeseries2 (UINT4 n, REAL4 *signal1, REAL4 *signal2, REAL8 delta, REAL8 t0) 
+{
+  UINT4 i=0;
+  FILE *outfile1;
+
+  outfile1=fopen("wave2.dat","w");
+
+  do 
+     /* fprintf (outfile1,"%e %e\n", i*delta+t0, *(signal+i)  );
+      */
+     fprintf (outfile1,"%e %e %e\n", i*delta, *(signal1+i), *(signal2+i)  );
+  while (n-++i); 
+
+  fclose(outfile1);
+}
 
