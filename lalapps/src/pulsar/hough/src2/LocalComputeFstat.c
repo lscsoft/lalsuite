@@ -85,12 +85,19 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 
 #if EAH_SINCOS_ROUND == EAH_SINCOS_ROUND_PLUS2
 /* this only makes sense for the linear sin/cos approximation */
-#if defined(__GNUC__)
+#ifdef _MSC_VER /* no C99 */
+#define SINCOS_TRIM_X(y,x) \
+  { \
+    __asm FLD     QWORD PTR x \
+    __asm FRNDINT             \
+    __asm FSUBR   QWORD PTR x \
+    __asm FLD1                \
+    __asm ADDP                \
+    __asm FSTP    QWORD PTR y \
+    }
+#else
 #define SINCOS_TRIM_X(y,x) \
   y = x - rint(x) + 1.0;
-#else 
-#define SINCOS_TRIM_X(y,x) \
-  y = (x) - (INT8)(x) + 1.0;
 #endif
 #elif EAH_SINCOS_ROUND == EAH_SINCOS_ROUND_FLOOR 
 #define SINCOS_TRIM_X(y,x) \
