@@ -267,7 +267,7 @@ LALInspiralWaveTemplates(
            CHECKSTATUSPTR(status);
       	   break;
       case EOB:
-           LALEOBWaveformTemplates(status->statusPtr, NULL, signal1, signal2, params);
+           LALEOBWaveformTemplates(status->statusPtr, signal1, signal2, params);
            CHECKSTATUSPTR(status);
            break;
       case TaylorF1:
