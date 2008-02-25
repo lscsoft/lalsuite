@@ -233,6 +233,7 @@ typedef struct PolkaConfigVarsTag
   UINT4 NFiles;      /*  Number of input files read */
   INT4 Nthr;         /*  Show exective results of cells with numbers of coincidence above Nthr. */
   INT4 CellGrid;
+  INT4 MinCellCoin;   /*  Output cells having Coin's > MinCellCoin into separate files. */
   REAL4 Sthr;        /*  Show exective results of cells with significance above Sthr. */
   BOOLEAN AutoOut;
   BOOLEAN UseUnzip;
@@ -921,9 +922,9 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
   CHAR fnameMaxOverSky[256]; 
   CHAR cgn[256];  /* Cell-grid number*/
   CHAR fnameAllCells[256]; /* Output file to write all cell information to */
+  CHAR fnameMinCellCoin[256];
 
-
-  FILE *fp = NULL, *fpSigTime = NULL, *fpSigCell = NULL, *fpCoiTime = NULL, *fpCoiCell = NULL;
+  FILE *fp = NULL, *fpSigTime = NULL, *fpSigCell = NULL, *fpCoiTime = NULL, *fpCoiCell = NULL, *fpMinCellCoin = NULL;
   INT4 *count;
   INT4 nc, nmax,idxmax = 0;
   INT4 idxmaxcoin = 0;
@@ -1123,7 +1124,8 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
     fclose(fpSigCell);
   }
 
-  /* ------------------------------------------------------------- */
+
+  /* ---------------------------------------------------------------------------------- */
   /* Output the maximum coincident event over each frequency cell and over all the sky. */
 
   /* faster sorting. */
@@ -1160,12 +1162,41 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
 	}
       }
       else {
-	for( icell=0; icell<(*ncell); icell++ ) {
-	  if( cell[CellListi[icell]].iFreq != prev_iFreq ) {
-	    print_info_of_the_cell( lalStatus->statusPtr, fp, cell, CellListi[icell], CellListi[icell]+1, 0, 0);
-	    BEGINFAIL(lalStatus) {fclose(fp);} ENDFAIL(lalStatus);
+
+	/* ---------------------------------------------------------------------------------- */
+	/* Ouput individual candidate events of each cells with more than 'MinCellCoin' coincidences */
+	if( CLA->MinCellCoin > 0 ) {
+	  for( icell=0; icell<(*ncell); icell++ ) {
+            if( cell[CellListi[icell]].iFreq != prev_iFreq ) {
+              print_info_of_the_cell( lalStatus->statusPtr, fp, cell, CellListi[icell], CellListi[icell]+1, 0, 0);
+              BEGINFAIL(lalStatus) {fclose(fp);} ENDFAIL(lalStatus);
+
+	      if( cell[CellListi[icell]].nCand >= CLA->MinCellCoin )
+		{
+		  sprintf(fnameMinCellCoin,"ZP_G%02d_COIN%02d_CID%d_.dat", cellgridnum, cell[CellListi[icell]].nCand, CellListi[icell]);
+
+		  if( (fpMinCellCoin = fopen(fnameMinCellCoin,"w")) == NULL )
+		    {
+		      LALPrintError("\n Cannot open file %s or %s\n",fnameCoiCell,fnameCoiTime);
+		      exit(POLKA_EXIT_ERR);
+		    }
+		  print_Fstat_of_the_cell( lalStatus->statusPtr, fpMinCellCoin, cell, CList, CellListi[icell], CellListi[icell]+1, 0, 0 );
+		  fclose(fpMinCellCoin);
+		}
+	      }
+            prev_iFreq = cell[CellListi[icell]].iFreq;
+          }
+
+	}
+	else {
+	  for( icell=0; icell<(*ncell); icell++ ) {
+	    if( cell[CellListi[icell]].iFreq != prev_iFreq ) {
+	      print_info_of_the_cell( lalStatus->statusPtr, fp, cell, CellListi[icell], CellListi[icell]+1, 0, 0);
+	      BEGINFAIL(lalStatus) {fclose(fp);} ENDFAIL(lalStatus);
+	      }
+	    prev_iFreq = cell[CellListi[icell]].iFreq;
 	  }
-	  prev_iFreq = cell[CellListi[icell]].iFreq;
+
 	}
       }
     }
@@ -1574,8 +1605,11 @@ void print_Fstat_of_the_cell( LALStatus *lalStatus,
       ic = 0;
       while( p !=NULL && ic <= LINKEDSTR_MAX_DEPTH ) { 
 	idx = p->data;
-	fprintf(fp,"%" LAL_INT4_FORMAT "\t%" LAL_INT4_FORMAT "\t%" LAL_REAL4_FORMAT "\n", 
-		icell, CList[idx].FileID, CList[idx].TwoF );
+
+	fprintf(fp,"%" LAL_INT4_FORMAT "\t%" LAL_INT4_FORMAT "\t%" LAL_REAL8_FORMAT "\t%"\
+		LAL_REAL8_FORMAT "\t%" LAL_REAL8_FORMAT "\t%g \t%" LAL_REAL4_FORMAT "\n", 
+		icell, CList[idx].FileID, CList[idx].f, CList[idx].Alpha, CList[idx].Delta, CList[idx].F1dot, CList[idx].TwoF );
+
 	p = p->next;
 	ic++;
       } /*   while( p !=NULL && ic <= LINKEDSTR_MAX_DEPTH ) {  */
@@ -2783,6 +2817,7 @@ ReadCommandLineArgs( LALStatus *lalStatus,
 
   BOOLEAN uvar_AutoOut;
   INT4 uvar_Nthr;  
+  INT4 uvar_MinCellCoin;
   INT4 uvar_CellGrid;
   REAL8 uvar_Sthr;      
   REAL8 uvar_TwoFthr;
@@ -2822,6 +2857,7 @@ ReadCommandLineArgs( LALStatus *lalStatus,
   strcpy (uvar_EahRun, BNAME);
 
   /* The following numbers are arbitrary. */
+  uvar_MinCellCoin = 0;
   uvar_Nthr = 65536;     
   uvar_Sthr = 1.0e5; 
   uvar_TwoFthr = 0.0;
@@ -2870,6 +2906,7 @@ ReadCommandLineArgs( LALStatus *lalStatus,
   LALregREALUserVar(lalStatus,       DeltaShift,     'D', UVAR_OPTIONAL, "Declination shift in DeltaWindow");
 
   LALregSTRINGUserVar(lalStatus,     EahRun,         'r', UVAR_OPTIONAL, "E@H identifying run label for ifo split-up (S4R2a, S5R1a, Nautilus)");
+  LALregINTUserVar(lalStatus,        MinCellCoin,     0,  UVAR_OPTIONAL, "Output all cells  with Coin's > MinCellCoin into separate files");
 
   TRY (LALUserVarReadAllInput(lalStatus->statusPtr,argc,argv),lalStatus); 
 
@@ -2965,6 +3002,7 @@ ReadCommandLineArgs( LALStatus *lalStatus,
 
 
   CLA->AutoOut = uvar_AutoOut;
+  CLA->MinCellCoin = uvar_MinCellCoin;
   CLA->Nthr = uvar_Nthr;
   CLA->Sthr = uvar_Sthr;
   CLA->TwoFthr = uvar_TwoFthr;
