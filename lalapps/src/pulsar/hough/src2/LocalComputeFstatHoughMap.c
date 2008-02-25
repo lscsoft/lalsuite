@@ -66,7 +66,7 @@ static int smallerHough(const void *a,const void *b) {
 /* possibly optimized local copies of LALHOUGH functions */
 
 /* stupid MSC doesn't understand inline function (at least not in VS2003) */
-#ifdef (_MSC_VER)
+#ifdef _MSC_VER
 #define INLINE
 #else
 #define INLINE inline
