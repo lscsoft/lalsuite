@@ -36,6 +36,10 @@
    using the Hough transform.  For a single IFO, this should be essentially equivalent 
    to DriveHough_v3.  validatehoughmultichi2
 
+   The main difference between DriveHoughMulti_S5.c and DriveHoughMulti.c is that in the 
+   first one the cylinder is been modified so that one can really do nfsize cylinder  f_dot
+   values and not just half. This code just does spin-downs values. 
+
    \par User input
 
    The user inputs the following parameters:
@@ -328,7 +332,7 @@ int main(int argc, char *argv[]){
   static HoughSignificantEventVector nStarEventVec;
 
   /* miscellaneous */
-  INT4   iHmap, nSpin1Max;
+  INT4   iHmap, nSpin1Max ;
   UINT4  mObsCoh, mObsCohBest;
   INT8   f0Bin, fLastBin, fBin;
   REAL8  alpha, delta, timeBase, deltaF, f1jump;
@@ -857,8 +861,11 @@ int main(int argc, char *argv[]){
       iHmap = 0;
       
       /* ***** for spin-down case ****/
-      nSpin1Max = floor(uvar_nfSizeCylinder/2.0);
+      nSpin1Max = uvar_nfSizeCylinder - 1 ;
+      /* nSpin1Max = floor(uvar_nfSizeCylinder/2.0) ;*/
+
       f1jump = 1./tObs;
+
       
       /* start of main loop over search frequency bins */
       /********** starting the search from f0Bin to fLastBin.
@@ -907,7 +914,9 @@ int main(int argc, char *argv[]){
 	}
         
 	/************* build the set of  PHMD centered around fBin***********/     
-	phmdVS.fBinMin = fBin - floor( uvar_nfSizeCylinder/2. );
+	phmdVS.fBinMin = fBin - uvar_nfSizeCylinder +1 ;
+	/*phmdVS.fBinMin = fBin - floor( uvar_nfSizeCylinder/2.) ;*/
+	
 	LAL_CALL( LALHOUGHConstructSpacePHMD(&status, &phmdVS, best.pgV, &lutV), &status );
 	if (uvar_weighAM || uvar_weighNoise) {
 	  LAL_CALL( LALHOUGHWeighSpacePHMD(&status, &phmdVS, best.weightsV), &status);
@@ -922,7 +931,8 @@ int main(int argc, char *argv[]){
 
 	/*  Search frequency interval possible using the same LUTs */
 	fBinSearch = fBin;
-	fBinSearchMax = fBin + parSize.nFreqValid - 1 - floor( (uvar_nfSizeCylinder - 1)/2.0);
+	fBinSearchMax = fBin + parSize.nFreqValid - 1 ;
+	/*fBinSearchMax = fBin + parSize.nFreqValid - 1 - floor((uvar_nfSizeCylinder/2. ) ;*/
 	
 
 	/* Study all possible frequencies with one set of LUT */	
@@ -1875,7 +1885,7 @@ void SelectBestStuff(LALStatus      *status,
 		     UINT4          mObsCohBest)
 {
 
-  UINT4 *index=NULL;
+  size_t *index=NULL;
   UINT4 k, mObsCoh;
 
   INITSTATUS (status, "SelectBestStuff", rcsid);
@@ -1930,7 +1940,7 @@ void SelectBestStuff(LALStatus      *status,
     out->pgV->pg = (HOUGHPeakGram *)LALCalloc(1, mObsCoh*sizeof(HOUGHPeakGram));
   }
 
-  index = LALCalloc(1, mObsCohBest*sizeof(UINT4));  
+  index = LALCalloc(1, mObsCohBest*sizeof(size_t));  
   gsl_sort_largest_index( index, mObsCohBest, in->weightsV->data, 1, mObsCoh);	
 
   for ( k = 0; k < mObsCohBest; k++) {
@@ -2691,7 +2701,7 @@ void ComputeandPrintChi2 ( LALStatus                *status,
 
     /* Open file to write the toplist with 2 new columns: significance and chi2 */
 
-    fpChi2 = fopen("hough_chi2.dat", "w");
+    fpChi2 = fopen("hough_top.dat", "w");
 
     /* ----------------------------------------------------------------------------------*/
     /* Loop over all the elements in the TopList */
