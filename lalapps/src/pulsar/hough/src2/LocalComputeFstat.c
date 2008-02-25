@@ -200,8 +200,8 @@ void LocalComputeFStatFreqBand ( LALStatus *status,
   ASSERT ( fstatVector->data->length > 0, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
   ASSERT ( DTERMS == params->Dterms, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
   {
-    static int first = !0;
-    if (first) {
+    static int firstcall = TRUE;
+    if (firstcall) {
       /* init sin/cos lookup tables */
       local_sin_cos_2PI_LUT_init();
 
@@ -221,6 +221,7 @@ void LocalComputeFStatFreqBand ( LALStatus *status,
 	      EAH_SINCOS_VARIANT,  EAH_SINCOS_ROUND,
 	      EAH_HOTLOOP_VARIANT, EAH_HOTLOOP_DIVS,
 	      EAH_HOUGH_PREFETCH,  EAH_HOUGH_BATCHSIZE_LOG2);
+      firstcall = FALSE;
     }
   }
 
