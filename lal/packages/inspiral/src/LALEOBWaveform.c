@@ -1042,7 +1042,6 @@ NRCSID (LALEOBWAVEFORMTEMPLATESC,
 void 
 LALEOBWaveformTemplates (
    LALStatus        *status,
-   REAL4Vector      *omega,
    REAL4Vector      *signal1,
    REAL4Vector      *signal2,
    InspiralTemplate *params
@@ -1056,13 +1055,9 @@ LALEOBWaveformTemplates (
    INITSTATUS(status, "LALEOBWaveformTemplates", LALEOBWAVEFORMTEMPLATESC);
    ATTATCHSTATUSPTR(status);
    
-   ASSERT(omega,  status,
-	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT(signal1,  status,
 	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT(signal2,  status,
-   	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(omega->data,  status, 
    	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT(signal1->data,  status, 
    	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -1087,13 +1082,12 @@ LALEOBWaveformTemplates (
 					&(paramsInit.ak), params);
    CHECKSTATUSPTR(status);
    
-   memset(omega->data, 0, signal1->length * sizeof( REAL4 ));
    memset(signal1->data, 0, signal1->length * sizeof( REAL4 ));
    memset(signal2->data, 0, signal2->length * sizeof( REAL4 ));
 
    /* Call the engine function */
    LALEOBWaveformEngine(status->statusPtr, signal1, signal2, NULL, NULL, 
-			   omega, NULL, &count, params, &paramsInit);
+			   NULL, NULL, &count, params, &paramsInit);
    CHECKSTATUSPTR( status );
 
    DETATCHSTATUSPTR(status);
@@ -1765,8 +1759,10 @@ Useful for debugging: Make sure a solution for r exists.
             *(signal2->data + count) = (REAL4) h2;
           }
 		  
+	  /*
 		  ff->data[count]= (REAL4)(omega);
-		  /* fprintf(stdout, "omega: %e, %e, %e\n", omega/unitHz, omega, unitHz); */
+	   */
+	  /* fprintf(stdout, "omega: %e, %e, %e\n", omega/unitHz, omega, unitHz); */
         }
         else if (a)   /* For injections */
         {
