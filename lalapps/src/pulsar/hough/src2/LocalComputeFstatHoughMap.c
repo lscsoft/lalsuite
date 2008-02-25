@@ -35,7 +35,6 @@ RCSID( "$Id$");
 #define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
 
-
 /* comparison function for the toplist */
 static int smallerHough(const void *a,const void *b) {
   SemiCohCandidate a1, b1;
@@ -66,6 +65,13 @@ static int smallerHough(const void *a,const void *b) {
 
 /* possibly optimized local copies of LALHOUGH functions */
 
+/* stupid MSC doesn't understand inline function (at least not in VS2003) */
+#ifdef (_MSC_VER)
+#define INLINE
+#else
+#define INLINE inline
+#endif
+
 void
 LocalHOUGHConstructHMT_W  (LALStatus                  *status, 
 			   HOUGHMapTotal              *ht     , /**< The output hough map */
@@ -78,7 +84,7 @@ LocalHOUGHAddPHMD2HD_W    (LALStatus      *status, /**< the status pointer */
 			   HOUGHphmd      *phmd);  /**< info from a partial map */ 
 
 /* this is the only function that's actually changed for optimization */
-inline void
+INLINE void
 LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status,
 			   HoughDT*      map,
 			   HOUGHBorder** pBorderP,
@@ -718,7 +724,7 @@ void LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
 
 #if EAH_HOUGH_PREFETCH == EAH_HOUGH_PREFETCH_X87
 
-inline void
+INLINE void
 LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status,
 			   HoughDT*      map,
 			   HOUGHBorder** pBorderP,
@@ -925,7 +931,7 @@ __asm __volatile (
 	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE); \
       } 
 
-inline void
+INLINE void
 LocalHOUGHAddPHMD2HD_Wlr (LALStatus*    status,
 			  HoughDT*      map,
 			  HOUGHBorder** pBorderP,
@@ -1061,7 +1067,7 @@ LocalHOUGHAddPHMD2HD_Wlr (LALStatus*    status,
 
 /* original generic version w/o prefetching */
 
-inline void
+INLINE void
 LocalHOUGHAddPHMD2HD_Wlr (LALStatus*    status,
 			  HoughDT*      map,
 			  HOUGHBorder** pBorderP,
