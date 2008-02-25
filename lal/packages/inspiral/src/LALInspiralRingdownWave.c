@@ -200,6 +200,7 @@ INT4 XLALInspiralRingdownWave (
 	}
   }
   
+  XLALDestroyREAL8Vector(modeamps);
   return errcode;
 }
 
