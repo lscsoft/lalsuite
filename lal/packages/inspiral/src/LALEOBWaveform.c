@@ -561,7 +561,7 @@ LALHCapDerivatives3PN(
    REAL8 r, s, p, q, u, u2, u3, u4, p2, p3, p4, q2, Apot, DA, NA;
    REAL8  dA, onebyD, DonebyD, AbyD, Heff, HReal, etahH;
    REAL8 omega, v, eta, a4, a4p4eta, a4peta2, z2, z30, z3, zeta2;
-   REAL8 a5, n1, c1, d1, d2, d3, oneby4meta, vu, omegaS;
+   REAL8 n1, c1, d1, d2, d3, oneby4meta, vu, omegaS;
    REAL8    flexNonAdiab = 0;
    REAL8    flexNonCirc = 0;
 
@@ -593,7 +593,6 @@ LALHCapDerivatives3PN(
    z3 = z30 * (1.L - zeta2);
 
    a4 = (ninty4by3etc - 2. * omegaS) * eta;
-   a5 = 0;
    a4p4eta = a4 + 4. * eta;
    a4peta2 = a4 + eta * eta;
    
@@ -691,16 +690,16 @@ LALpphiInitP4PN(
   u3 = u2*u;
   u4 = u2*u2;
   a4 = (ninty4by3etc - 2. * omegaS) * eta;
-  a5 = 60.*eta;
-  NA = (32. - 24.*eta - 4.*a4 - a5)*u + (a4 - 16. + 8.*eta);
-  DA = a4 - 16. + 8.*eta - (2.*a4 + a5 + 8.*eta)*u - (4.*a4 + 2.*a5 + 16.*eta)*u2
-       - (8.*a4 + 4.*a5 + 2.*a4*eta + 16.*eta2)*u3
-       + (-a4*a4 - 8.*a5 - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u4;
+  a5 = 60.;
+  NA = (32. - 24.*eta - 4.*a4 - a5*eta)*u + (a4 - 16. + 8.*eta);
+  DA = a4 - 16. + 8.*eta - (2.*a4 + a5*eta + 8.*eta)*u - (4.*a4 + 2.*a5*eta + 16.*eta)*u2
+       - (8.*a4 + 4.*a5*eta + 2.*a4*eta + 16.*eta2)*u3
+       + (-a4*a4 - 8.*a5*eta - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u4;
   A = NA/DA;
-  dA = ( (32. - 24.*eta - 4.*a4 - a5) * DA - NA *
-         ( -(2.*a4 + a5 + 8.*eta) - 2.*(4.*a4 + 2.*a5 + 16.*eta)*u
-          - 3.*(8.*a4 + 4.*a5 + 2.*a4*eta + 16.*eta2)*u2
-          + 4.*(-a4*a4 - 8.*a5 - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u3))/(DA*DA);
+  dA = ( (32. - 24.*eta - 4.*a4 - a5*eta) * DA - NA *
+         ( -(2.*a4 + a5*eta + 8.*eta) - 2.*(4.*a4 + 2.*a5*eta + 16.*eta)*u
+          - 3.*(8.*a4 + 4.*a5*eta + 2.*a4*eta + 16.*eta2)*u2
+          + 4.*(-a4*a4 - 8.*a5*eta - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u3))/(DA*DA);
   *phase = sqrt(-dA/(2.*u*A + u2 * dA));
 /* why is it called phase? This is initial j!? */
 }
@@ -741,12 +740,12 @@ LALprInitP4PN(
    u4 = u2 * u2;
    z3 = 2. * (4. - 3. * eta) * eta;
    a4 = (ninty4by3etc - 2. * omegaS) * eta;
-   a5 = 60.*eta;
+   a5 = 60.;
 
-   NA = (32. - 24.*eta - 4.*a4 - a5)*u + (a4 - 16. + 8.*eta);
-   DA = a4 - 16. + 8.*eta - (2.*a4 + a5 + 8.*eta)*u - (4.*a4 + 2.*a5 + 16.*eta)*u2
-        - (8.*a4 + 4.*a5 + 2.*a4*eta + 16.*eta2)*u3
-        + (-a4*a4 - 8.*a5 - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u4;
+   NA = (32. - 24.*eta - 4.*a4 - a5*eta)*u + (a4 - 16. + 8.*eta);
+   DA = a4 - 16. + 8.*eta - (2.*a4 + a5*eta + 8.*eta)*u - (4.*a4 + 2.*a5*eta + 16.*eta)*u2
+        - (8.*a4 + 4.*a5*eta + 2.*a4*eta + 16.*eta2)*u3
+        + (-a4*a4 - 8.*a5*eta - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u4;
    A = NA/DA;
    onebyD = 1. + 6.*eta*u2 + 2. * ( 26. - 3. * eta) * eta * u3 + 36.*eta*u4;
    AbyD = A * onebyD;
@@ -785,16 +784,16 @@ omegaofrP4PN (
    u3 = u2*u;
    u4 = u2*u2;
    a4 = (ninty4by3etc - 2. * omegaS) * eta;
-   a5 = 60.*eta;
-   NA = (32. - 24.*eta - 4.*a4 - a5)*u + (a4 - 16. + 8.*eta);
-   DA = a4 - 16. + 8.*eta - (2.*a4 + a5 + 8.*eta)*u - (4.*a4 + 2.*a5 + 16.*eta)*u2
-        - (8.*a4 + 4.*a5 + 2.*a4*eta + 16.*eta2)*u3
-        + (-a4*a4 - 8.*a5 - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u4;
+   a5 = 60.;
+   NA = (32. - 24.*eta - 4.*a4 - a5*eta)*u + (a4 - 16. + 8.*eta);
+   DA = a4 - 16. + 8.*eta - (2.*a4 + a5*eta + 8.*eta)*u - (4.*a4 + 2.*a5*eta + 16.*eta)*u2
+        - (8.*a4 + 4.*a5*eta + 2.*a4*eta + 16.*eta2)*u3
+        + (-a4*a4 - 8.*a5*eta - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u4;
    A = NA/DA;
-   dA = ( (32. - 24.*eta - 4.*a4 - a5) * DA - NA *
-          ( -(2.*a4 + a5 + 8.*eta) - 2.*(4.*a4 + 2.*a5 + 16.*eta)*u
-           - 3.*(8.*a4 + 4.*a5 + 2.*a4*eta + 16.*eta2)*u2
-           + 4.*(-a4*a4 - 8.*a5 - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u3))/(DA*DA); 
+   dA = ( (32. - 24.*eta - 4.*a4 - a5*eta) * DA - NA *
+          ( -(2.*a4 + a5*eta + 8.*eta) - 2.*(4.*a4 + 2.*a5*eta + 16.*eta)*u
+           - 3.*(8.*a4 + 4.*a5*eta + 2.*a4*eta + 16.*eta2)*u2
+           + 4.*(-a4*a4 - 8.*a5*eta - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u3))/(DA*DA); 
 
    *x = pow(u,1.5) * sqrt ( -0.5 * dA /(1. + 2.*eta * (A/sqrt(A+0.5 * u*dA)-1.)));
 
@@ -846,16 +845,16 @@ LALlightRingRadiusP4PN(
   u3 = u2*u;
   u4 = u2*u2;
   a4 = (ninty4by3etc - 2. * omegaS) * eta;
-  a5 = 60.*eta;
-  NA = (32. - 24.*eta - 4.*a4 - a5)*u + (a4 - 16. + 8.*eta);
-  DA = a4 - 16. + 8.*eta - (2.*a4 + a5 + 8.*eta)*u - (4.*a4 + 2.*a5 + 16.*eta)*u2 
-       - (8.*a4 + 4.*a5 + 2.*a4*eta + 16.*eta2)*u3 
-       + (-a4*a4 - 8.*a5 - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u4;
+  a5 = 60.;
+  NA = (32. - 24.*eta - 4.*a4 - a5*eta)*u + (a4 - 16. + 8.*eta);
+  DA = a4 - 16. + 8.*eta - (2.*a4 + a5*eta + 8.*eta)*u - (4.*a4 + 2.*a5*eta + 16.*eta)*u2 
+       - (8.*a4 + 4.*a5*eta + 2.*a4*eta + 16.*eta2)*u3 
+       + (-a4*a4 - 8.*a5*eta - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u4;
   A = NA/DA;
-  dA = ( (32. - 24.*eta - 4.*a4 - a5) * DA - NA * 
-         ( -(2.*a4 + a5 + 8.*eta) - 2.*(4.*a4 + 2.*a5 + 16.*eta)*u 
-          - 3.*(8.*a4 + 4.*a5 + 2.*a4*eta + 16.*eta2)*u2 
-          + 4.*(-a4*a4 - 8.*a5 - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u3))/(DA*DA);
+  dA = ( (32. - 24.*eta - 4.*a4 - a5*eta) * DA - NA * 
+         ( -(2.*a4 + a5*eta + 8.*eta) - 2.*(4.*a4 + 2.*a5*eta + 16.*eta)*u 
+          - 3.*(8.*a4 + 4.*a5*eta + 2.*a4*eta + 16.*eta2)*u2 
+          + 4.*(-a4*a4 - 8.*a5*eta - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u3))/(DA*DA);
   *x = 2 * A + dA * u;
 }
 
@@ -904,22 +903,22 @@ LALHCapDerivativesP4PN(
    eta2 = eta*eta;
 
    a4 = (ninty4by3etc - 2. * omegaS) * eta;
-   a5 = 60.*eta;
+   a5 = 60.;
 
-   NA = (32. - 24.*eta - 4.*a4 - a5)*u + (a4 - 16. + 8.*eta);
-   DA = a4 - 16. + 8.*eta - (2.*a4 + a5 + 8.*eta)*u - (4.*a4 + 2.*a5 + 16.*eta)*u2
-        - (8.*a4 + 4.*a5 + 2.*a4*eta + 16.*eta2)*u3
-        + (-a4*a4 - 8.*a5 - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u4;
+   NA = (32. - 24.*eta - 4.*a4 - a5*eta)*u + (a4 - 16. + 8.*eta);
+   DA = a4 - 16. + 8.*eta - (2.*a4 + a5*eta + 8.*eta)*u - (4.*a4 + 2.*a5*eta + 16.*eta)*u2
+        - (8.*a4 + 4.*a5*eta + 2.*a4*eta + 16.*eta2)*u3
+        + (-a4*a4 - 8.*a5*eta - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u4;
    Apot = NA/DA; /* This A(u) assume zeta2=0 (the default value) */
 
    onebyD = 1. + 6.*eta*u2 + (2.*eta * ( 26. - 3.*eta ) - z2)* u3 + 36.*eta*u4;
    AbyD = Apot * onebyD;
    Heff = pow (Apot*(1. + AbyD * p2 + q*q * u2 + z3 * p4 * u2), 0.5);
    HReal = pow (1. + 2.*eta*(Heff - 1.), 0.5) / eta;
-   dA = -u2 * ( (32. - 24.*eta - 4.*a4 - a5) * DA - NA *
-          ( -(2.*a4 + a5 + 8.*eta) - 2.*(4.*a4 + 2.*a5 + 16.*eta)*u
-          - 3.*(8.*a4 + 4.*a5 + 2.*a4*eta + 16.*eta2)*u2
-          + 4.*(-a4*a4 - 8.*a5 - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u3))/(DA*DA);
+   dA = -u2 * ( (32. - 24.*eta - 4.*a4 - a5*eta) * DA - NA *
+          ( -(2.*a4 + a5*eta + 8.*eta) - 2.*(4.*a4 + 2.*a5*eta + 16.*eta)*u
+          - 3.*(8.*a4 + 4.*a5*eta + 2.*a4*eta + 16.*eta2)*u2
+          + 4.*(-a4*a4 - 8.*a5*eta - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u3))/(DA*DA);
 
    DonebyD = -12.*eta*u3 - (6.*eta*(26. - 3.*eta) - z2)*u4 - 144.*eta*u5;
    etahH = eta*Heff*HReal;
@@ -959,19 +958,19 @@ LALHCapDerivativesP4PN(
 
 
   a4 = (ninty4by3etc - 2. * pr3in->omegaS) * eta;
-  a5 = 60.*eta;
-  NA = (32. - 24.*eta - 4.*a4 - a5)*u + (a4 - 16. + 8.*eta);
-  DA = a4 - 16. + 8.*eta - (2.*a4 + a5 + 8.*eta)*u - (4.*a4 + 2.*a5 + 16.*eta)*u2
-       - (8.*a4 + 4.*a5 + 2.*a4*eta + 16.*eta2)*u3
-       + (-a4*a4 - 8.*a5 - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u4;
+  a5 = 60.;
+  NA = (32. - 24.*eta - 4.*a4 - a5*eta)*u + (a4 - 16. + 8.*eta);
+  DA = a4 - 16. + 8.*eta - (2.*a4 + a5*eta + 8.*eta)*u - (4.*a4 + 2.*a5*eta + 16.*eta)*u2
+       - (8.*a4 + 4.*a5*eta + 2.*a4*eta + 16.*eta2)*u3
+       + (-a4*a4 - 8.*a5*eta - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u4;
   A = NA/DA;
-  dNA = (32. - 24.*eta - 4.*a4 - a5);
-  dDA = - (2.*a4 + a5 + 8.*eta) - 2.*(4.*a4 + 2.*a5 + 16.*eta)*u
-       - 3.*(8.*a4 + 4.*a5 + 2.*a4*eta + 16.*eta2)*u2
-       + 4.*(-a4*a4 - 8.*a5 - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u3;
-  d2DA = - 2.*(4.*a4 + 2.*a5 + 16.*eta)
-       - 6.*(8.*a4 + 4.*a5 + 2.*a4*eta + 16.*eta2)*u
-       + 12.*(-a4*a4 - 8.*a5 - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u2;
+  dNA = (32. - 24.*eta - 4.*a4 - a5*eta);
+  dDA = - (2.*a4 + a5*eta + 8.*eta) - 2.*(4.*a4 + 2.*a5*eta + 16.*eta)*u
+       - 3.*(8.*a4 + 4.*a5*eta + 2.*a4*eta + 16.*eta2)*u2
+       + 4.*(-a4*a4 - 8.*a5*eta - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u3;
+  d2DA = - 2.*(4.*a4 + 2.*a5*eta + 16.*eta)
+       - 6.*(8.*a4 + 4.*a5*eta + 2.*a4*eta + 16.*eta2)*u
+       + 12.*(-a4*a4 - 8.*a5*eta - 8.*a4*eta + 2.*a5*eta - 16.*eta2)*u2;
 
   dA = (dNA * DA - NA * dDA)/ (DA*DA);
   d2A = (-NA * DA * d2DA - 2. * dNA * DA * dDA + 2. * NA * dDA * dDA)/pow(DA,3.);
@@ -1370,7 +1369,8 @@ LALEOBWaveformEngine (
                 )
 {
 
-   UINT4 count, nn=4;
+   UINT4 j, count, nn=4;
+   INT4 errcode;
    REAL8 amp, eta, m, rn, r, rOld, s, p, q, dt, t, h1, h2, v, omega, f;
    REAL8Vector dummy, values, dvalues, newvalues, yt, dym, dyt;
    TofVIn in1;
@@ -1405,7 +1405,10 @@ LALEOBWaveformEngine (
    REAL8 f2aFac;/* factor multiplying f in amplitude function */
    REAL8 apFac, acFac;/* extra factor in plus and cross amplitudes */
    REAL8 phiC;/* phase at coalescence */
-   
+   REAL8 omegamatch;
+   UINT4 attpos = 0;
+   REAL4Vector *Omega;
+ 
    INITSTATUS(status, "LALEOBWaveformEngine", LALEOBWAVEFORMC);
    ATTATCHSTATUSPTR(status);
 
@@ -1426,6 +1429,15 @@ LALEOBWaveformEngine (
 
    if (!(dummy.data = (REAL8 * ) LALMalloc(sizeof(REAL8) * nn * 6))) {
       ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
+   }
+
+   if (signal2)
+   {
+   /* Attaching position set by omega_match */
+   /* Omega_match is given by Eq.(37) of PRD 76, 104049 (2007) */
+   /* -0.01 because the current EOBNR 4PN setting can't reach omega_match */
+      omegamatch = -0.022 + 0.133 + 0.183 * params->eta + 0.161 * params->eta * params->eta;
+      Omega = XLALCreateREAL4Vector( signal2->length );
    }
 
    values.data = &dummy.data[0];
@@ -1757,12 +1769,10 @@ Useful for debugging: Make sure a solution for r exists.
           {
             h2 = amp * cos(2.* (s - sSubtract) + LAL_PI_2);
             *(signal2->data + count) = (REAL4) h2;
+	    Omega->data[count]= (REAL4)(omega);
+	  /* fprintf(stdout, "omega: %e, %e, %e\n", omega/unitHz, omega, unitHz); */
           }
 		  
-	  /*
-		  ff->data[count]= (REAL4)(omega);
-	   */
-	  /* fprintf(stdout, "omega: %e, %e, %e\n", omega/unitHz, omega, unitHz); */
         }
         else if (a)   /* For injections */
         {
@@ -1838,6 +1848,118 @@ Record the final cutoff frequency of BD Waveforms for record keeping
    params->fFinal = pow(v,3.)/(LAL_PI*m);
    if (signal1 && !signal2) params->tC = t;
    *countback = count;
+  
+   if (signal2)
+   {
+      COMPLEX8Vector *modefreqs;
+      UINT4 Nrdwave, Npatch;
+      REAL4Vector		*rdwave1;
+      REAL4Vector		*rdwave2;
+      REAL4Vector		*inspwave;
+      REAL4Vector		*dinspwave;
+      REAL4Vector		*ddinspwave;
+      REAL4VectorSequence	*inspwaves1;
+      REAL4VectorSequence	*inspwaves2;
+
+      for (j = 0; j < Omega->length; ++j)
+      {
+        if(Omega->data[j] > omegamatch)
+	    {
+	      attpos = j - 1;
+	      break;
+	    }
+      
+      }
+   
+      /* Create memory for the QNM frequencies */
+      modefreqs = XLALCreateCOMPLEX8Vector( 3 );
+      errcode = XLALGenerateQNMFreq( modefreqs, params, 2, 2, 3 );
+      if ( errcode != XLAL_SUCCESS )
+      {
+        fprintf( stderr, "XLALGenerateQNMFreq failed\n" );
+        exit( 1 );
+      }
+      
+      /* Ringdown signal length: 10 times the decay time of the n=0 mode */
+      Nrdwave = (INT4) (10 / modefreqs->data[0].im / dt);
+      /* Patch length, centered around the matching point "attpos" */
+      Npatch = 11;
+      
+      /* Create memory for the ring-down and full waveforms, and derivatives of inspirals */
+      
+      rdwave1 = XLALCreateREAL4Vector( Nrdwave );
+      rdwave2 = XLALCreateREAL4Vector( Nrdwave );
+      inspwave = XLALCreateREAL4Vector( Npatch );
+      dinspwave = XLALCreateREAL4Vector( Npatch );
+      ddinspwave = XLALCreateREAL4Vector( Npatch );
+      inspwaves1 = XLALCreateREAL4VectorSequence( 3, (Npatch + 1) / 2 );
+      inspwaves2 = XLALCreateREAL4VectorSequence( 3, (Npatch + 1) / 2 );
+    
+      /* Generate derivatives of the last part of inspiral waves */
+      /* Take the last part of signal1 */
+      for (j = 0; j < Npatch; j++)
+      {
+	    inspwave->data[j] = signal1->data[attpos - (Npatch + 1) / 2 + j];
+      }	
+      /* Get derivatives of signal1 */
+      errcode = XLALGenerateWaveDerivatives( dinspwave, ddinspwave, inspwave, params );
+      if ( errcode != XLAL_SUCCESS )
+      {
+        fprintf( stderr, "XLALGenerateQNMFreq failed\n" );
+        exit( 1 );
+      }
+      for (j = 0; j < (Npatch + 1) / 2; j++)
+      {
+	    inspwaves1->data[j] = inspwave->data[j];
+	    inspwaves1->data[j + (Npatch + 1) / 2] = dinspwave->data[j];
+	    inspwaves1->data[j + 2 * (Npatch + 1) / 2] = ddinspwave->data[j];
+      }
+      /* Take the last part of signal2 */
+      for (j = 0; j < Npatch; j++)
+      {
+	    inspwave->data[j] = signal2->data[attpos - (Npatch + 1) / 2 + j];
+      }	
+      /* Get derivatives of signal2 */
+      errcode = XLALGenerateWaveDerivatives( dinspwave, ddinspwave, inspwave, params );
+      if ( errcode != XLAL_SUCCESS )
+      {
+        fprintf( stderr, "XLALGenerateQNMFreq failed\n" );
+        exit( 1 );
+      }
+      for (j = 0; j < (Npatch + 1) / 2; j++)
+      {
+	    inspwaves2->data[j] = inspwave->data[j];
+	    inspwaves2->data[j + (Npatch + 1) / 2] = dinspwave->data[j];
+	    inspwaves2->data[j + 2 * (Npatch + 1) / 2] = ddinspwave->data[j];
+      }
+      
+      
+      /* Generate ring-down waveforms */
+      errcode = XLALInspiralRingdownWave( rdwave1, rdwave2, params, inspwaves1, inspwaves2, 
+								      modefreqs, 3);
+      if ( errcode != XLAL_SUCCESS )
+      {
+        fprintf( stderr, "XLALInspiralComputePTFWDeriv failed\n" );
+        exit( 1 );
+      }
+      /* Generate full waveforms, by stitching inspiral and ring-down waveforms */
+      for (j = 1; j < Nrdwave; ++j)
+      {
+	    signal1->data[j + attpos - 1] = rdwave1->data[j];
+	    signal2->data[j + attpos - 1] = rdwave2->data[j];
+      }
+      
+      /* Free memory */
+      XLALDestroyCOMPLEX8Vector( modefreqs );
+      XLALDestroyREAL4Vector( rdwave1 );
+      XLALDestroyREAL4Vector( rdwave2 );
+      XLALDestroyREAL4Vector( inspwave );
+      XLALDestroyREAL4Vector( dinspwave );
+      XLALDestroyREAL4Vector( ddinspwave );
+      XLALDestroyREAL4VectorSequence( inspwaves1 );
+      XLALDestroyREAL4VectorSequence( inspwaves2 );
+      XLALDestroyREAL4Vector( Omega );
+   }
    
    XLALRungeKutta4Free( integrator );
    LALFree(dummy.data);
@@ -1845,3 +1967,16 @@ Record the final cutoff frequency of BD Waveforms for record keeping
    RETURN(status);
 }
 
+/*
+  FILE *omegafile;
+  omegafile = fopen( "myomega.dat", "w" );
+  if( omegafile != NULL )
+  {
+	for (j = 0; j < N; ++j)
+	{
+	  fprintf( omegafile, "%f\n", Omega->data[j]);
+	}
+  }
+  fclose(omegafile);
+*/
+  
