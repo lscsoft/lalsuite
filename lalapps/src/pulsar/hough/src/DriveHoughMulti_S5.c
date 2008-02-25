@@ -1885,7 +1885,7 @@ void SelectBestStuff(LALStatus      *status,
 		     UINT4          mObsCohBest)
 {
 
-  UINT4 *index=NULL;
+  size_t *index=NULL;
   UINT4 k, mObsCoh;
 
   INITSTATUS (status, "SelectBestStuff", rcsid);
@@ -1940,7 +1940,7 @@ void SelectBestStuff(LALStatus      *status,
     out->pgV->pg = (HOUGHPeakGram *)LALCalloc(1, mObsCoh*sizeof(HOUGHPeakGram));
   }
 
-  index = LALCalloc(1, mObsCohBest*sizeof(UINT4));  
+  index = LALCalloc(1, mObsCohBest*sizeof(size_t));  
   gsl_sort_largest_index( index, mObsCohBest, in->weightsV->data, 1, mObsCoh);	
 
   for ( k = 0; k < mObsCohBest; k++) {
