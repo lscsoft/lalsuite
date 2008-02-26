@@ -1369,8 +1369,7 @@ LALEOBWaveformEngine (
                 )
 {
 
-   UINT4 j, count, nn=4;
-   INT4 errcode;
+   UINT4 count, nn=4;
    REAL8 amp, eta, m, rn, r, rOld, s, p, q, dt, t, h1, h2, v, omega, f;
    REAL8Vector dummy, values, dvalues, newvalues, yt, dym, dyt;
    TofVIn in1;
@@ -1405,8 +1404,6 @@ LALEOBWaveformEngine (
    REAL8 f2aFac;/* factor multiplying f in amplitude function */
    REAL8 apFac, acFac;/* extra factor in plus and cross amplitudes */
    REAL8 phiC;/* phase at coalescence */
-   REAL8 omegamatch;
-   UINT4 attpos = 0;
    REAL4Vector *Omega;
  
    INITSTATUS(status, "LALEOBWaveformEngine", LALEOBWAVEFORMC);
@@ -1433,11 +1430,8 @@ LALEOBWaveformEngine (
 
    if (signal2)
    {
-   /* Attaching position set by omega_match */
-   /* Omega_match is given by Eq.(37) of PRD 76, 104049 (2007) */
-   /* -0.01 because the current EOBNR 4PN setting can't reach omega_match */
-      omegamatch = -0.022 + 0.133 + 0.183 * params->eta + 0.161 * params->eta * params->eta;
       Omega = XLALCreateREAL4Vector( signal2->length );
+      memset(Omega->data, 0, Omega->length * sizeof( REAL4 ));
    }
 
    values.data = &dummy.data[0];
@@ -1851,132 +1845,13 @@ Record the final cutoff frequency of BD Waveforms for record keeping
   
    if (signal2)
    {
-      COMPLEX8Vector *modefreqs;
-      UINT4 Nrdwave, Npatch;
-      REAL4Vector		*rdwave1;
-      REAL4Vector		*rdwave2;
-      REAL4Vector		*inspwave;
-      REAL4Vector		*dinspwave;
-      REAL4Vector		*ddinspwave;
-      REAL4VectorSequence	*inspwaves1;
-      REAL4VectorSequence	*inspwaves2;
-
-      for (j = 0; j < Omega->length; ++j)
-      {
-        if(Omega->data[j] > omegamatch)
-	    {
-	      attpos = j - 1;
-	      break;
-	    }
-      
-      }
-   
-      /* Create memory for the QNM frequencies */
-      modefreqs = XLALCreateCOMPLEX8Vector( 3 );
-      errcode = XLALGenerateQNMFreq( modefreqs, params, 2, 2, 3 );
-      if ( errcode != XLAL_SUCCESS )
-      {
-        fprintf( stderr, "XLALGenerateQNMFreq failed\n" );
-        exit( 1 );
-      }
-      
-      /* Ringdown signal length: 10 times the decay time of the n=0 mode */
-      Nrdwave = (INT4) (10 / modefreqs->data[0].im / dt);
-      /* Patch length, centered around the matching point "attpos" */
-      Npatch = 11;
-      
-      /* Create memory for the ring-down and full waveforms, and derivatives of inspirals */
-      
-      rdwave1 = XLALCreateREAL4Vector( Nrdwave );
-      rdwave2 = XLALCreateREAL4Vector( Nrdwave );
-      inspwave = XLALCreateREAL4Vector( Npatch );
-      dinspwave = XLALCreateREAL4Vector( Npatch );
-      ddinspwave = XLALCreateREAL4Vector( Npatch );
-      inspwaves1 = XLALCreateREAL4VectorSequence( 3, (Npatch + 1) / 2 );
-      inspwaves2 = XLALCreateREAL4VectorSequence( 3, (Npatch + 1) / 2 );
-    
-      /* Generate derivatives of the last part of inspiral waves */
-      /* Take the last part of signal1 */
-      for (j = 0; j < Npatch; j++)
-      {
-	    inspwave->data[j] = signal1->data[attpos - (Npatch + 1) / 2 + j];
-      }	
-      /* Get derivatives of signal1 */
-      errcode = XLALGenerateWaveDerivatives( dinspwave, ddinspwave, inspwave, params );
-      if ( errcode != XLAL_SUCCESS )
-      {
-        fprintf( stderr, "XLALGenerateQNMFreq failed\n" );
-        exit( 1 );
-      }
-      for (j = 0; j < (Npatch + 1) / 2; j++)
-      {
-	    inspwaves1->data[j] = inspwave->data[j];
-	    inspwaves1->data[j + (Npatch + 1) / 2] = dinspwave->data[j];
-	    inspwaves1->data[j + 2 * (Npatch + 1) / 2] = ddinspwave->data[j];
-      }
-      /* Take the last part of signal2 */
-      for (j = 0; j < Npatch; j++)
-      {
-	    inspwave->data[j] = signal2->data[attpos - (Npatch + 1) / 2 + j];
-      }	
-      /* Get derivatives of signal2 */
-      errcode = XLALGenerateWaveDerivatives( dinspwave, ddinspwave, inspwave, params );
-      if ( errcode != XLAL_SUCCESS )
-      {
-        fprintf( stderr, "XLALGenerateQNMFreq failed\n" );
-        exit( 1 );
-      }
-      for (j = 0; j < (Npatch + 1) / 2; j++)
-      {
-	    inspwaves2->data[j] = inspwave->data[j];
-	    inspwaves2->data[j + (Npatch + 1) / 2] = dinspwave->data[j];
-	    inspwaves2->data[j + 2 * (Npatch + 1) / 2] = ddinspwave->data[j];
-      }
-      
-      
-      /* Generate ring-down waveforms */
-      errcode = XLALInspiralRingdownWave( rdwave1, rdwave2, params, inspwaves1, inspwaves2, 
-								      modefreqs, 3);
-      if ( errcode != XLAL_SUCCESS )
-      {
-        fprintf( stderr, "XLALInspiralComputePTFWDeriv failed\n" );
-        exit( 1 );
-      }
-      /* Generate full waveforms, by stitching inspiral and ring-down waveforms */
-      for (j = 1; j < Nrdwave; ++j)
-      {
-	    signal1->data[j + attpos - 1] = rdwave1->data[j];
-	    signal2->data[j + attpos - 1] = rdwave2->data[j];
-      }
-      
-      /* Free memory */
-      XLALDestroyCOMPLEX8Vector( modefreqs );
-      XLALDestroyREAL4Vector( rdwave1 );
-      XLALDestroyREAL4Vector( rdwave2 );
-      XLALDestroyREAL4Vector( inspwave );
-      XLALDestroyREAL4Vector( dinspwave );
-      XLALDestroyREAL4Vector( ddinspwave );
-      XLALDestroyREAL4VectorSequence( inspwaves1 );
-      XLALDestroyREAL4VectorSequence( inspwaves2 );
+      XLALInspiralAttachRingdownWave( Omega, signal1, signal2, params );
       XLALDestroyREAL4Vector( Omega );
    }
-   
+
    XLALRungeKutta4Free( integrator );
    LALFree(dummy.data);
    DETATCHSTATUSPTR(status);
    RETURN(status);
 }
 
-/*
-  FILE *omegafile;
-  omegafile = fopen( "myomega.dat", "w" );
-  if( omegafile != NULL )
-  {
-	for (j = 0; j < N; ++j)
-	{
-	  fprintf( omegafile, "%f\n", Omega->data[j]);
-	}
-  }
-  fclose(omegafile);
-*/
-  
