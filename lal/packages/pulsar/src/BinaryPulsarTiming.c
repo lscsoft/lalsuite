@@ -1105,7 +1105,10 @@ REAL8 LALDegsToRads(CHAR *degs, const CHAR *coord){
     radians += LAL_PI_180*(REAL8)m/60.0;
     radians += LAL_PI_180*s/(60.0*60.0);
   }
-  
+
+  /* free mem */
+  LALFree(sc);
+
   return radians;
 }
 
