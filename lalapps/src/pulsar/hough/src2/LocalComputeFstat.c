@@ -562,6 +562,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 #endif
 	lambda_alpha = phi_alpha - 0.5 * Dphi_alpha;
 	
+	/* FIXME: that might be possible to do faster */
 	kstar = (INT4) (Dphi_alpha);	/* k* = floor(Dphi_alpha*chi) for positive Dphi */
 	kappa_star = Dphi_alpha - 1.0 * kstar;	/* remainder of Dphi_alpha: >= 0 ! */
 	kappa_max = kappa_star + Dterms_1f;
@@ -588,20 +589,6 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  }
 
       } /* compute kappa_star, lambda_alpha */
-
-      /* NOTE: sin[ 2pi (Dphi_alpha - k) ] = sin [ 2pi Dphi_alpha ], therefore
-       * the trig-functions need to be calculated only once!
-       * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the 
-       * closest to zero and will pose no numerical difficulties !
-       */
-#ifndef LAL_NDEBUG
-	if ( local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star ) ) {
-	  XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
-	}
-#else
-      local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
-#endif
-      c_alpha -= 1.0f;
 
       /* ---------- calculate the (truncated to DTERMS) sum over k ---------- */
 
@@ -725,8 +712,24 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 #endif
 	     );
 
-	     realXP = s_alpha * XSums.re - c_alpha * XSums.im;
-	     imagXP = c_alpha * XSums.re + s_alpha * XSums.im;
+	  /* moved the sin/cos call down here to avoid the store/forward stall of Core2s */
+
+	  /* NOTE: sin[ 2pi (Dphi_alpha - k) ] = sin [ 2pi Dphi_alpha ], therefore
+	   * the trig-functions need to be calculated only once!
+	   * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the 
+	   * closest to zero and will pose no numerical difficulties !
+	   */
+#ifndef LAL_NDEBUG
+	  if ( local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star ) ) {
+	    XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
+	  }
+#else
+	  local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
+#endif
+	  c_alpha -= 1.0f;
+	  
+	  realXP = s_alpha * XSums.re - c_alpha * XSums.im;
+	  imagXP = c_alpha * XSums.re + s_alpha * XSums.im;
 	     
 	}
 #else /* __GNUC__ */
@@ -778,6 +781,20 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	      movlps   STn, xmm4                      /* STn = STnV */
 	      };
 
+	  /* NOTE: sin[ 2pi (Dphi_alpha - k) ] = sin [ 2pi Dphi_alpha ], therefore
+	   * the trig-functions need to be calculated only once!
+	   * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the 
+	   * closest to zero and will pose no numerical difficulties !
+	   */
+#ifndef LAL_NDEBUG
+	  if ( local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star ) ) {
+	    XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
+	  }
+#else
+	  local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
+#endif
+	  c_alpha -= 1.0f;
+
 	  realXP = s_alpha * STn.re - c_alpha * STn.im;
 	  imagXP = c_alpha * STn.re + s_alpha * STn.im;
 	     
@@ -786,6 +803,20 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
 #elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_ALTIVEC)
 
+	/* NOTE: sin[ 2pi (Dphi_alpha - k) ] = sin [ 2pi Dphi_alpha ], therefore
+	 * the trig-functions need to be calculated only once!
+	 * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the 
+	 * closest to zero and will pose no numerical difficulties !
+	 */
+#ifndef LAL_NDEBUG
+	if ( local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star ) ) {
+	  XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
+	}
+#else
+	local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
+#endif
+	c_alpha -= 1.0f;
+	
         {
 	  REAL4 *Xalpha_kR4 = (REAL4*)(Xalpha_l);
 
@@ -848,8 +879,21 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 #elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_AUTOVECT)
 
 	/* designed for four vector elemens (ve) as there are in SSE and AltiVec */
-
 	/* vectorizes with gcc-4.2.3 and gcc-4.1.3 */
+
+	/* NOTE: sin[ 2pi (Dphi_alpha - k) ] = sin [ 2pi Dphi_alpha ], therefore
+	 * the trig-functions need to be calculated only once!
+	 * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the 
+	 * closest to zero and will pose no numerical difficulties !
+	 */
+#ifndef LAL_NDEBUG
+	if ( local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star ) ) {
+	  XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
+	}
+#else
+	local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
+#endif
+	c_alpha -= 1.0f;
 
 	{
 	  /* the initialization already handles the first elements,
@@ -905,6 +949,20 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
 #else /* EAH_HOTLOOP_VARIANT */
 
+	/* NOTE: sin[ 2pi (Dphi_alpha - k) ] = sin [ 2pi Dphi_alpha ], therefore
+	 * the trig-functions need to be calculated only once!
+	 * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the 
+	 * closest to zero and will pose no numerical difficulties !
+	 */
+#ifndef LAL_NDEBUG
+	if ( local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star ) ) {
+	  XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
+	}
+#else
+	local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
+#endif
+	c_alpha -= 1.0f;
+	
 	{ 
 	  /* improved hotloop algorithm by Fekete Akos: 
 	   * take out repeated divisions into a single common denominator,
