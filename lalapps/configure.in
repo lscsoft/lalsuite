@@ -230,6 +230,7 @@ AC_OUTPUT( 				\
 	src/pulsar/FDS_binary/Makefile  \
 	src/pulsar/SideBand/Makefile    \
 	src/pulsar/templateBanks/Makefile \
+	src/pulsar/TimingTests/Makefile \
 	src/inspiral/Makefile		\
 	src/zmsearch/Makefile		\
 	src/detresponse/Makefile	\
