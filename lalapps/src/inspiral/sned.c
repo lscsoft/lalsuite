@@ -225,7 +225,7 @@ int main( int argc, char *argv[] )
   REAL8                          thisStandardSigmasq = 0;
   REAL8                          standardSigmasqVec[6] = {1, 1, 1, 1, 1, 1};
   REAL8                          thisMixedSigmasq = 0;
-  REAL8                          mixedSigmasqVec[6];
+  REAL8                          mixedSigmasqVec[6] = {1, 1, 1, 1, 1, 1};
   REAL8                          dynRange      = 1./(3.0e-23);
 
   /* needed for inj */
@@ -789,7 +789,30 @@ int main( int argc, char *argv[] )
 
         /* avoid f=0 part of psd */
         {
-          if (vrbflg) fprintf( stdout, "using LIGOI PSD \n");
+          if (vrbflg)
+          {
+            switch ( ifoNumber )
+            {
+              case LAL_IFO_G1: fprintf( stdout, "using GEO PSD \n"); break;
+              case LAL_IFO_H1:
+                fprintf( stdout, "using LIGOI PSD with Hanford Location \n");
+                break;
+              case LAL_IFO_H2:
+                fprintf( stdout, "using LIGOI PSD with Hanford Location \n");
+                break;
+              case LAL_IFO_L1:
+                fprintf( stdout, "using LIGOI PSD with Livingston Location \n");
+                break;
+              case LAL_IFO_T1: fprintf( stdout, "using TAMA PSD \n"); break;
+              case LAL_IFO_V1: fprintf( stdout, "using VIRGO PSD \n"); break;
+              default:
+                fprintf( stderr,
+                    "Error: ifoNumber %d does not correspond to a known IFO: \n",
+                    ifoNumber );
+                exit( 1 );
+
+            }
+          }
           for ( k = kLow; k < kHi; k++ )
           {
             REAL8 freq;
@@ -822,12 +845,12 @@ int main( int argc, char *argv[] )
         }
 
         thisStandardSigmasq *= 4*fftStandardData->deltaF;
-        standardSigmasqVec[ifoNumber-1] = thisStandardSigmasq;
+        standardSigmasqVec[ifoNumber] = thisStandardSigmasq;
         if ( vrbflg )
         {
           fprintf( stdout, "thisStandardSigmasq %e\n", thisStandardSigmasq );
           fprintf( stdout, "standardSigmasqVec  %e\n",
-              standardSigmasqVec[ifoNumber-1] );
+              standardSigmasqVec[ifoNumber] );
           fflush( stdout );
         }
 
@@ -836,7 +859,30 @@ int main( int argc, char *argv[] )
 
         /* avoid f=0 part of psd */
         {
-          if (vrbflg) fprintf( stdout, "using LIGOI PSD \n");
+          if (vrbflg)
+          {
+            switch ( ifoNumber )
+            {
+              case LAL_IFO_G1: fprintf( stdout, "using GEO PSD \n"); break;
+              case LAL_IFO_H1:
+                fprintf( stdout, "using LIGOI PSD with Hanford Location \n");
+                break;
+              case LAL_IFO_H2:
+                fprintf( stdout, "using LIGOI PSD with Hanford Location \n");
+                break;
+              case LAL_IFO_L1:
+                fprintf( stdout, "using LIGOI PSD with Livingston Location \n");
+                break;
+              case LAL_IFO_T1: fprintf( stdout, "using TAMA PSD \n"); break;
+              case LAL_IFO_V1: fprintf( stdout, "using VIRGO PSD \n"); break;
+              default:
+                fprintf( stderr,
+                    "Error: ifoNumber %d does not correspond to a known IFO: \n",
+                    ifoNumber );
+                exit( 1 );
+
+            }
+          }
           for ( k = kLow; k < kHi; k++ )
           {
             REAL8 numerator = 0.0;
@@ -872,13 +918,13 @@ int main( int argc, char *argv[] )
         }
 
         thisMixedSigmasq *= 4*fftData->deltaF;
-        mixedSigmasqVec[ifoNumber-1] = thisMixedSigmasq;
+        mixedSigmasqVec[ifoNumber] = thisMixedSigmasq;
 
         if ( vrbflg )
         {
           fprintf( stdout, "thisMixedSigmasq %e\n", thisMixedSigmasq );
           fprintf( stdout, "mixedSigmasqVec  %e\n",
-              mixedSigmasqVec[ifoNumber-1] );
+              mixedSigmasqVec[ifoNumber] );
           fflush( stdout );
         }
 
@@ -887,7 +933,30 @@ int main( int argc, char *argv[] )
 
         /* avoid f=0 part of psd */  
         {
-          if (vrbflg) fprintf( stdout, "using LIGOI PSD \n");
+          if (vrbflg)
+          {
+            switch ( ifoNumber )
+            {
+              case LAL_IFO_G1: fprintf( stdout, "using GEO PSD \n"); break;
+              case LAL_IFO_H1:
+                fprintf( stdout, "using LIGOI PSD with Hanford Location \n");
+                break;
+              case LAL_IFO_H2:
+                fprintf( stdout, "using LIGOI PSD with Hanford Location \n");
+                break;
+              case LAL_IFO_L1:
+                fprintf( stdout, "using LIGOI PSD with Livingston Location \n");
+                break;
+              case LAL_IFO_T1: fprintf( stdout, "using TAMA PSD \n"); break;
+              case LAL_IFO_V1: fprintf( stdout, "using VIRGO PSD \n"); break;
+              default:
+                fprintf( stderr,
+                    "Error: ifoNumber %d does not correspond to a known IFO: \n",
+                    ifoNumber );
+                exit( 1 );
+
+            }
+          }
           for ( k = kLow; k < kHi; k++ )
           {
             REAL8 freq;
@@ -920,7 +989,7 @@ int main( int argc, char *argv[] )
         }
 
         thisSigmasq *= 4*fftData->deltaF;
-        spinningSigmasqVec[ifoNumber-1] = thisSigmasq; 
+        spinningSigmasqVec[ifoNumber] = thisSigmasq; 
         LAL_CALL( LALDestroyCOMPLEX8FrequencySeries( &status, fftData),
             &status );
         LAL_CALL( LALDestroyCOMPLEX8FrequencySeries( &status, fftStandardData),
@@ -930,7 +999,7 @@ int main( int argc, char *argv[] )
         {
           fprintf( stdout, "thisSigmasq        %e\n", thisSigmasq );
           fprintf( stdout, "spinningSigmasqVec %e\n",
-               spinningSigmasqVec[ifoNumber-1] );
+               spinningSigmasqVec[ifoNumber] );
           fflush( stdout );
         }
 
@@ -952,24 +1021,34 @@ int main( int argc, char *argv[] )
     /* normalize the eff_dist columns */
     if ( nonSpinningSearch )
     {
-      thisInjection->eff_dist_g *= standardSigmasqVec[0]/mixedSigmasqVec[0];
-      thisInjection->eff_dist_h *= standardSigmasqVec[1]/mixedSigmasqVec[1];
-      thisInjection->eff_dist_l *= standardSigmasqVec[3]/mixedSigmasqVec[3];
-      thisInjection->eff_dist_t *= standardSigmasqVec[4]/mixedSigmasqVec[4];
-      thisInjection->eff_dist_v *= standardSigmasqVec[5]/mixedSigmasqVec[5];
+      thisInjection->eff_dist_g *=
+          standardSigmasqVec[LAL_IFO_G1]/mixedSigmasqVec[LAL_IFO_G1];
+      thisInjection->eff_dist_h *=
+          standardSigmasqVec[LAL_IFO_H1]/mixedSigmasqVec[LAL_IFO_H1];
+      thisInjection->eff_dist_l *=
+          standardSigmasqVec[LAL_IFO_L1]/mixedSigmasqVec[LAL_IFO_L1];
+      thisInjection->eff_dist_t *=
+          standardSigmasqVec[LAL_IFO_T1]/mixedSigmasqVec[LAL_IFO_T1];
+      thisInjection->eff_dist_v *=
+          standardSigmasqVec[LAL_IFO_V1]/mixedSigmasqVec[LAL_IFO_V1];
     }
     else
     {
       thisInjection->eff_dist_g *=
-          pow( standardSigmasqVec[0]/spinningSigmasqVec[0], 0.5 );
+          pow( standardSigmasqVec[LAL_IFO_G1]/spinningSigmasqVec[LAL_IFO_G1],
+              0.5 );
       thisInjection->eff_dist_h *=
-          pow( standardSigmasqVec[1]/spinningSigmasqVec[1], 0.5 );
+          pow( standardSigmasqVec[LAL_IFO_H1]/spinningSigmasqVec[LAL_IFO_H1],
+              0.5 );
       thisInjection->eff_dist_l *=
-          pow( standardSigmasqVec[3]/spinningSigmasqVec[3], 0.5 );
+          pow( standardSigmasqVec[LAL_IFO_L1]/spinningSigmasqVec[LAL_IFO_L1],
+              0.5 );
       thisInjection->eff_dist_t *=
-          pow( standardSigmasqVec[4]/spinningSigmasqVec[4], 0.5 );
+          pow( standardSigmasqVec[LAL_IFO_T1]/spinningSigmasqVec[LAL_IFO_T1],
+              0.5 );
       thisInjection->eff_dist_v *=
-          pow( standardSigmasqVec[5]/spinningSigmasqVec[5], 0.5 );
+          pow( standardSigmasqVec[LAL_IFO_V1]/spinningSigmasqVec[LAL_IFO_V1],
+              0.5 );
     }
 
     /* increment the bank sim sim_inspiral table if necessary */
