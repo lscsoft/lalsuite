@@ -443,17 +443,19 @@ INT4 main( INT4 argc, CHAR *argv[] )
       memset( injData[i]->data->data, 0.0, injData[i]->data->length * sizeof(REAL4) );
     }
 
-    if (vrbflg)
-      fprintf(stdout, "generating unity response...\n");
-
-
     /* setup a unity response frequency series */
-    response = XLALCreateCOMPLEX8FrequencySeries("", &gpsStartTime, 0,
-        1, &strainPerCount, (sampleRate * (gpsEndSec - gpsStartSec))/2 + 1);
-    for ( i = 0; i < (INT4)response->data->length; i++)
+    if ( noNR != 0 )
     {
-      response->data->data[i].re = 1.0;
-      response->data->data[i].im = 0;
+      if (vrbflg)
+        fprintf(stdout, "generating unity response...\n");
+
+      response = XLALCreateCOMPLEX8FrequencySeries("", &gpsStartTime, 0,
+          1, &strainPerCount, (sampleRate * (gpsEndSec - gpsStartSec))/2 + 1);
+      for ( i = 0; i < (INT4)response->data->length; i++)
+      {
+        response->data->data[i].re = 1.0;
+        response->data->data[i].im = 0;
+      }
     }
 
     /* loop over ifos */
@@ -518,7 +520,8 @@ INT4 main( INT4 argc, CHAR *argv[] )
   for ( i = 0; i < num_ifos; i++ )
     XLALDestroyREAL4TimeSeries(injData[i]);
 
-  XLALDestroyCOMPLEX8FrequencySeries(response);
+  if ( noNR != 0 )
+    XLALDestroyCOMPLEX8FrequencySeries(response);
 
   while ( injections )
   {
