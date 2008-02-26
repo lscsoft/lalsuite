@@ -1574,35 +1574,41 @@ LALInspiralITStructureHelp(void);
 \newpage\input{LALInspiralRingdownWaveC}
 </lalLaTeX>  */
 INT4 XLALInspiralRingdownWave (
-	REAL4Vector				*rdwave1,
-	REAL4Vector				*rdwave2,
+	REAL4Vector			*rdwave1,
+	REAL4Vector			*rdwave2,
 	InspiralTemplate		*params,
 	REAL4VectorSequence		*inspwave1,
 	REAL4VectorSequence		*inspwave2,
 	COMPLEX8Vector			*modefreqs,
-	UINT4					nmodes
+	UINT4				nmodes
 	);
 	
 INT4 XLALGenerateWaveDerivatives (
-	REAL4Vector				*dwave,
-	REAL4Vector				*ddwave,
-	REAL4Vector				*wave,
-	InspiralTemplate		*params
+	REAL4Vector		*dwave,
+	REAL4Vector		*ddwave,
+	REAL4Vector		*wave,
+	InspiralTemplate	*params
 	);
 	
 INT4 XLALGenerateQNMFreq(
-	COMPLEX8Vector			*modefreqs,
-	InspiralTemplate		*params,
-	UINT4					l,
-	UINT4					m,
-	UINT4					nmodes
+	COMPLEX8Vector		*modefreqs,
+	InspiralTemplate	*params,
+	UINT4			l,
+	UINT4			m,
+	UINT4			nmodes
 	);
 	
 INT4 XLALFinalMassSpin(
-	REAL8					*finalMass,
-	REAL8					*finalSpin,
-	InspiralTemplate		*params
+	REAL8			*finalMass,
+	REAL8			*finalSpin,
+	InspiralTemplate	*params
 	);
+
+INT4 XLALInspiralAttachRingdownWave (
+        REAL4Vector 	 *Omega,
+        REAL4Vector 	 *signal1,
+        REAL4Vector  	 *signal2,
+        InspiralTemplate *params);
 
 #ifdef  __cplusplus
 }
