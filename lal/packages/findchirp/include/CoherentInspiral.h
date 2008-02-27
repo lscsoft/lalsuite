@@ -158,7 +158,7 @@ for the event.
 \item[\texttt{REAL4 effDist}] The effective distance in megaparsecs to the
 event.
 
-\item[\texttt{REAL4 coaPhase}] The coalescence phase of the chirp.
+ \item[\texttt{REAL4 coaPhase}] The coalescence phase of the chirp.
 
 \item[\texttt{CHAR ifoName[2]}] Array for storing the two character
 interferometer name (e.g. L1, H2, etc.)
@@ -185,7 +185,7 @@ tagCoherentInspiralInitParams
   UINT4                         numPoints;
   UINT4                         numBeamPoints;
   UINT4                         cohSNROut;
-  UINT4                         cohPhaseDiffOut;
+  UINT4                         cohH1H2SNROut;
   UINT4                         nullStatOut;
 }
 CoherentInspiralInitParams;
@@ -234,12 +234,12 @@ tagCoherentInspiralFilterParams
   REAL4                         templateNorm;
   INT4                          segmentLength; /* time points */
   UINT4                         cohSNROut;
-  UINT4                         cohPhaseDiffOut;
+  UINT4                         cohH1H2SNROut;
   UINT4                         nullStatOut;
   UINT2Vector                  *detIDVec; /* Note: H1, H2 are from same site, but are different detectors */
   DetectorVector               *detectorVec; /*stores detectors' site info */
   REAL4TimeSeries              *cohSNRVec;
-  REAL4TimeSeries              *cohPhaseDiffVec;
+  REAL4TimeSeries              *cohH1H2SNRVec;
   REAL4TimeSeries              *nullStatVec;
   REAL4                         chirpTime;
 }
