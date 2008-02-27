@@ -459,9 +459,8 @@ parser.add_option("-L","--l1-segments",action="store",type="string",\
   default=None, metavar=" L1_SEGMENTS", help="L1 input segment to read" )
 parser.add_option("-V","--v1-segments",action="store",type="string",\
   default=None, metavar=" V1_SEGMENTS", help="V1 input segment to read" )
-parser.add_option("-T","--grb",action="append",type="string",\
-    default=["all"], metavar=" GRB NAME",\
-    help="name of the GRB to be analyzed")
+parser.add_option("-T","--grb",action="append", default=[],
+  help="name of the GRB to be analyzed")
 parser.add_option("-l","--list",action="store",type="string",\
     default=None, metavar=" GRB LIST",\
     help="path to the file with GRB data stored")
@@ -512,14 +511,20 @@ cp.read(opts.config_file)
 # read in the GRB data from the list
 ext_trigs = grbsummary.load_external_triggers(opts.list)
 
-if not (len(opts.grb) == 1 and opts.grb[0] == "all"):
-  temp_list = filter(lambda row: row.event_number_grb in opts.grb, ext_trigs)
-  ext_trigs = table.new_from_template(ext_trigs).extend(temp_list)
-
-if len(ext_trigs) == 0:
-  print "No external triggers found.  Nothing to do."
+if ext_trigs is None:
+  print >>sys.stderr, "No external triggers found.  Nothing to do."
   sys.exit()
+  
+if len(opts.grb) > 0:
+  temp_list = filter(lambda row: row.event_number_grb in opts.grb, ext_trigs)
+  ext_trigs = table.new_from_template(ext_trigs)
+  ext_trigs.extend(temp_list)
 
+if len(ext_trigs) != len(opts.grb):
+  missing = set(opts.grb) - set([row.event_number_grb for row in ext_trigs])
+  raise ValueError, "could not find the following requested GRBs: " \
+        + "".join(missing)
+  
 if opts.verbose:
   print "Will construct workflows to analyze:", \
     ", ".join(["GRB" + trig.event_number_grb for trig in ext_trigs])
