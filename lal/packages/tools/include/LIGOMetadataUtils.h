@@ -150,6 +150,7 @@ and \texttt{all\_data}.
 /* <lalVerbatim> */
 typedef enum 
 { 
+  unspecified_test,
   no_test,
   m1_and_m2, 
   psi0_and_psi3,  
