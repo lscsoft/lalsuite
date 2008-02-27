@@ -86,7 +86,6 @@ static void print_usage(char *program)
       " [--user-tag]      usertag     set the process_params usertag\n"\
       " [--comment]       string      set the process table comment\n"\
       " [--write-compress]            write a compressed xml file\n"\
-      "  --bank-file      file        the input trigger file.\n"\
       "  --ifos           ifos        list of ifos for which we have data\n"\
       "  --gps-start-time start_time  start time of the job\n"\
       "  --gps-end-time   end_time    end time of the job\n"\
@@ -101,7 +100,7 @@ int main( int argc, char *argv[] )
   static LALStatus      status;
   LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
-
+  INT4 i;
   INT4 numTriggers = 0;
   INT4 numCoincs = 0;
   INT4 numTmplts = 0;
@@ -112,7 +111,6 @@ int main( int argc, char *argv[] )
   LIGOTimeGPS endTimeGPS = {0,0};
 
   CHAR  ifos[LIGOMETA_IFOS_MAX];
-  CHAR *inputFileName = NULL;
 
   CHAR  comment[LIGOMETA_COMMENT_MAX];
   CHAR *userTag = NULL;
@@ -154,7 +152,6 @@ int main( int argc, char *argv[] )
     {"help",                   no_argument,           0,                 'h'}, 
     {"debug-level",            required_argument,     0,                 'z'},
     {"version",                no_argument,           0,                 'V'},
-    {"bank-file",              required_argument,     0,                 'b'},
     {"gps-start-time",         required_argument,     0,                 's'},
     {"gps-end-time",           required_argument,     0,                 't'},
     {"ifos",                   required_argument,     0,                 'i'},
@@ -199,7 +196,7 @@ int main( int argc, char *argv[] )
     long int gpstime;
 
     c = getopt_long_only( argc, argv, 
-        "b:hi:s:t:x:z:VZ:", long_options, 
+        "hi:s:t:x:z:VZ:", long_options, 
         &option_index );
 
     /* detect the end of the options */
@@ -222,14 +219,6 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, optarg );
           exit( 1 );
         }
-        break;
-
-      case 'b':
-        /* set bank file */
-        optarg_len = strlen( optarg ) + 1;
-        inputFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( inputFileName, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'i':
@@ -351,18 +340,6 @@ int main( int argc, char *argv[] )
         exit( 1 );
     }
   }
-
-  if (optind < argc)
-  {
-    fprintf( stderr, "extraneous command line arguments:\n" );
-    while ( optind < argc )
-    {
-      fprintf ( stderr, "%s\n", argv[optind++] );
-    }
-    exit( 1 );      
-  }
-
-  /* fill the comment, if a user has specified one, or leave it blank */
   if ( ! *comment )
   {
     LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
@@ -425,36 +402,48 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  if( !inputFileName )
-  {
-    fprintf(stderr,"You must specify a bank file. Exiting.\n");
-    exit(1);
-  }
-
   if ( !strlen(ifos) )
   {
     fprintf(stderr,"You must specify a list of ifos with --ifos. Exiting.\n");
     exit(1);
   }
 
+  /*
+   *
+   * read in the input data from the rest of the arguments
+   *
+   */
 
-     
-  /* read in the triggers */
-  numTriggers = XLALReadInspiralTriggerFile( &inspiralEventList,
-      &currentTrigger, &searchSummList, &inputFiles, inputFileName );
-  
-  if ( numTriggers < 0 )
+  if ( optind < argc )
   {
-    fprintf(stderr, "Error reading triggers from file %s", inputFileName);
+    for( i = optind; i < argc; ++i )
+    {
+      INT4 numFileTriggers = 0;
+
+      numFileTriggers = XLALReadInspiralTriggerFile( &inspiralEventList,
+          &currentTrigger, &searchSummList, &inputFiles, argv[i] );
+      if (numFileTriggers < 0)
+      {
+        fprintf(stderr, "Error reading triggers from file %s",
+            argv[i]);
+        exit( 1 );
+      }
+      
+      numTriggers += numFileTriggers;
+    }
+  }
+  else
+  {
+    fprintf( stderr, "Error: No trigger files specified.\n" );
     exit( 1 );
   }
-  else if ( numTriggers == 0 )
+  
+  if ( numTriggers == 0 )
   { 
     if( vrbflg )
     {
       fprintf( stdout, 
-         "%s contains no triggers - the coherent bank will be empty\n",
-         inputFileName );
+         "No triggers found - the coherent bank will be empty.\n");
     }
   }
   else
@@ -462,8 +451,7 @@ int main( int argc, char *argv[] )
     if( vrbflg )
     {
       fprintf( stdout, 
-          "Read in %d triggers from the file %s\n", numTriggers, 
-          inputFileName );
+          "Read in a total of %d triggers.\n", numTriggers); 
     }
     
     /* reconstruct the coincs */
