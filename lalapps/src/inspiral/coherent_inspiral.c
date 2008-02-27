@@ -154,7 +154,7 @@ int    bankDuration     = 0;
 CHAR   cohbankFileName[FILENAME_MAX]; /* name of input template bank */
 /* CHAR  *cohbankFileName = NULL; name of input template bank  */
 UINT4  cohSNROut            = 0;    /* default is not to write frame */
-UINT4  cohPhaseDiffOut      = 0;    /* default is not to write frame */
+UINT4  cohH1H2SNROut      = 0;    /* default is not to write frame */
 UINT4  nullStatOut       = 0;    /* default is not to write frame */
 UINT4  eventsOut            = 0;    /* default is not to write events */
 REAL4  cohSNRThresh         = -1;
@@ -389,7 +389,7 @@ int main( int argc, char *argv[] )
       /* frame output data */
       struct FrFile *frOutFile  = NULL;
       struct FrameH *outFrameCoh   = NULL;
-      struct FrameH *outFrameCohPhaseDiff   = NULL;
+      struct FrameH *outFrameCohH1H2SNR   = NULL;
       struct FrameH *outFrameNullStat   = NULL;
       
       
@@ -490,10 +490,26 @@ int main( int argc, char *argv[] )
 	  cohInspInitParams->numPoints               = numPoints;
 	  cohInspInitParams->numBeamPoints           = numBeamPoints;
 	  cohInspInitParams->cohSNROut               = cohSNROut;
-	  cohInspInitParams->cohPhaseDiffOut         = cohPhaseDiffOut;
-	  cohInspInitParams->nullStatOut             = nullStatOut;
-	  
-	  
+          /* In addition to the network cohSNR, output the cohH1H2SNR if
+             the user wants it and the network has the ifos H1 and H2; since
+             in a 2D network this will make one of cohSNR and cohH1H2SNR
+             redundant, do not output the latter for < 3D networks */
+          if( cohH1H2SNROut && caseID[1] && caseID[2] && (numDetectors > 2) ) {
+	    cohInspInitParams->cohH1H2SNROut       = 1;
+          }
+          else {
+            if ( vrbflg && cohH1H2SNROut ) fprintf( stdout, "Not outputting cohH1H2SNR because either numDetectors > 2 or at least one of H1 and H2 is missing ...\n " );
+            cohInspInitParams->cohH1H2SNROut       = 0;
+          }
+          /* Currently, the null-statistic is computed only for a H1H2 network */
+          if( nullStatOut && caseID[1] && caseID[2] ) {
+	    cohInspInitParams->nullStatOut         = 1;
+	  }
+          else {
+            if ( vrbflg && nullStatOut ) fprintf( stdout, "Not outputting nullStatOut because at least one of H1 and H2 is missing ...\n " );
+            cohInspInitParams->nullStatOut         = 0; 
+	  }
+
 	  /* create the data structures needed for coherentInspiral */
 	  
 	  if ( vrbflg ) fprintf( stdout, "initializing coherentInspiral...\n " );
@@ -520,18 +536,21 @@ int main( int argc, char *argv[] )
 	  
 	  LAL_CALL( LALCoherentInspiralFilterParamsInit (&status, &cohInspFilterParams,
 							 cohInspInitParams),&status );
-	  /* initParams not needed anymore */
-	  free( cohInspInitParams );
-	  cohInspInitParams = NULL;
-	  
+	 
+          /* Initialize the filter param structure for thisCoinc trigger */ 
+
 	  cohInspFilterParams->deltaT                  = 1.0/((REAL8) sampleRate);
 	  cohInspFilterParams->cohSNRThresh            = cohSNRThresh;  
-	  cohInspFilterParams->cohSNROut               = cohSNROut;
-	  cohInspFilterParams->cohPhaseDiffOut         = cohPhaseDiffOut;
-	  cohInspFilterParams->nullStatOut             = nullStatOut;
+	  cohInspFilterParams->cohSNROut               = cohInspInitParams->cohSNROut;
+	  cohInspFilterParams->cohH1H2SNROut           = cohInspInitParams->cohH1H2SNROut;
+	  cohInspFilterParams->nullStatOut             = cohInspInitParams->nullStatOut;
 	  cohInspFilterParams->numTmplts               = 1;
 	  cohInspFilterParams->fLow                    = fLow;
 	  cohInspFilterParams->maximizeOverChirp       = maximizeOverChirp;
+
+          /* initParams not needed anymore */
+          free( cohInspInitParams );
+          cohInspInitParams = NULL;
 
 	  if (vrbflg)  fprintf( stdout, "deltaT:%f cohSNRThresh:%f numTmplts:%d\n", cohInspFilterParams->deltaT,cohInspFilterParams->cohSNRThresh,cohInspFilterParams->numTmplts);
 	  
@@ -957,7 +976,7 @@ int main( int argc, char *argv[] )
 	      thisEventTemp = thisEventTemp->next;
 	    }
 	  
-	  if ( cohSNROut )
+	  if ( cohInspFilterParams->cohSNROut )
 	    {
 	      LALSnprintf( cohdataStr, LALNameLength*sizeof(CHAR),
 			   "SNR_%Ld", eventID );
@@ -965,17 +984,18 @@ int main( int argc, char *argv[] )
 	      outFrameCoh = fr_add_proc_REAL4TimeSeries( outFrameCoh, cohInspFilterParams->cohSNRVec, "none", cohdataStr );
 	    }
 	  
-	  /* save coherent phase diff in frames only if any triggers found */
-	  if ( cohPhaseDiffOut && thisEvent)
+	  /* save the coherent-snr of the H1-H2 pair in frames only 
+             if any triggers found */
+	  if ( cohInspFilterParams->cohH1H2SNROut && thisEvent)
 	    {
 	      LALSnprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-			   "PhaseDiff_%Ld", eventID );
-	      strcpy( cohInspFilterParams->cohPhaseDiffVec->name, "Coherent");
-	      outFrameCohPhaseDiff = fr_add_proc_REAL4TimeSeries( outFrameCohPhaseDiff, cohInspFilterParams->cohPhaseDiffVec, "none", cohdataStr );
+			   "H1H2SNR_%Ld", eventID );
+	      strcpy( cohInspFilterParams->cohH1H2SNRVec->name, "Coherent");
+	      outFrameCohH1H2SNR = fr_add_proc_REAL4TimeSeries( outFrameCohH1H2SNR, cohInspFilterParams->cohH1H2SNRVec, "none", cohdataStr );
 	    }
 	  
 	  /* save null-stream statistic in frames only if any triggers found */
-	  if ( nullStatOut && thisEvent)
+	  if ( cohInspFilterParams->nullStatOut && thisEvent)
 	    {
 	      LALSnprintf( cohdataStr, LALNameLength*sizeof(CHAR),
 			   "NullStat_%Ld", eventID );
@@ -1076,29 +1096,16 @@ int main( int argc, char *argv[] )
 	}/* Close loop over cohtrigs*/
       
       /* Write the summary information */
-
-      if ( slideNumber ) {
-	if ( userTag )	{
-	  LALSnprintf( fileName, FILENAME_MAX, "%s-COH_PHASE_DIFF_SLIDE_%s-%d-%d-%d", ifoTag, userTag, 
+      if ( userTag )	{
+	  LALSnprintf( fileName, FILENAME_MAX, "%s-COH_H1H2_SNR_%s-%d-%d-%d", ifoTag, userTag, 
 		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
-	}
-	else	  {
-	  LALSnprintf( fileName, FILENAME_MAX, "%s-COH_PHASE_DIFF_SLIDE-%d-%d-%d", ifoTag, 
-		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
-	}
       }
-      else {
-	if ( userTag )	{
-	  LALSnprintf( fileName, FILENAME_MAX, "%s-COH_PHASE_DIFF%s-%d-%d-%d", ifoTag, userTag, 
+      else	  {
+	  LALSnprintf( fileName, FILENAME_MAX, "%s-COH_H1H2_SNR-%d-%d-%d", ifoTag, 
 		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
-	}
-	else	  {
-	  LALSnprintf( fileName, FILENAME_MAX, "%s-COH_PHASE_DIFF-%d-%d-%d", ifoTag, 
-		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
-	}
       }
       
-      if( outFrameCohPhaseDiff )
+      if( outFrameCohH1H2SNR )
 	{
 	  if ( outputPath[0] )
 	    {
@@ -1109,33 +1116,21 @@ int main( int argc, char *argv[] )
 	      LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
 	    }
 	  
-	  if ( vrbflg ) fprintf( stdout, "writing coherent phase difference frame data to %s....", framename );
+	  if ( vrbflg ) fprintf( stdout, "writing H1-H2 coherent-snr frame data to %s....", framename );
 	  frOutFile = FrFileONew( framename, 0);
-	  FrameWrite( outFrameCohPhaseDiff, frOutFile);
+	  FrameWrite( outFrameCohH1H2SNR, frOutFile);
 	  FrFileOEnd( frOutFile );
 	  if ( vrbflg ) fprintf(stdout, "done\n");
 	  
 	}
       
-      if ( slideNumber ) {
-	if ( userTag )	{
-	  LALSnprintf( fileName, FILENAME_MAX, "%s-COH_NULL_STAT_SLIDE_%s-%d-%d-%d", ifoTag, userTag, 
-		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
-	}
-	else	{
-	  LALSnprintf( fileName, FILENAME_MAX, "%s-COH_NULL_STAT_SLIDE-%d-%d-%d", ifoTag, 
-		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
-	}
-      }
-      else {
-	if ( userTag )	{
+      if ( userTag )	{
 	  LALSnprintf( fileName, FILENAME_MAX, "%s-COH_NULL_STAT_%s-%d-%d-%d", ifoTag, userTag, 
 		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
-	}
-	else	{
+      }
+      else	{
 	  LALSnprintf( fileName, FILENAME_MAX, "%s-COH_NULL_STAT-%d-%d-%d", ifoTag, 
 		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
-	}
       }
 
       if( outFrameNullStat )
@@ -1155,30 +1150,18 @@ int main( int argc, char *argv[] )
 	  FrFileOEnd( frOutFile );
 	  if ( vrbflg ) fprintf(stdout, "done\n");
 	  
-	}
-  
-      if ( slideNumber ) {
-	if ( userTag )	  {
-	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHERENT_SLIDE_%s-%d-%d-%d", ifoTag, userTag, 
-		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
-	}
-	else	{
-	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHERENT-SLIDE-%d-%d-%d", ifoTag, 
-		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
-	}
       }
-      else {
-	if ( userTag )	  {
+  
+      if ( userTag )	  {
 	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHERENT_%s-%d-%d-%d", ifoTag, userTag, 
 		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
-	}
-	else	{
+      }
+      else	{
 	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHERENT-%d-%d-%d", ifoTag, 
 		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
-	}
       }
       
-      if( cohSNROut )
+      if( outFrameCoh )
 	{
 	  if ( outputPath[0] )
 	    {
@@ -1419,7 +1402,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --write-events               write events\n"\
 "  --write-cohsnr               write cohsnr\n"\
 "  --write-cohnullstat          write coherent null statistic \n"\
-"  --write-cohphasediff         write H1-H2 coherent phase difference when data from both ifos are present\n"\
+"  --write-cohh1h2snr           write H1-H2 coherent-snr when data from both ifos are present\n"\
 "  --output-path                write files here\n"\
 "  --write-compress             write compressed xml files\n"\
 "  --H1-framefile               frame data for H1\n"\
@@ -1458,7 +1441,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      {"write-events",             no_argument,       &eventsOut,         1 },
      {"write-cohsnr",             no_argument,       &cohSNROut,         1 },
      {"write-cohnullstat",        no_argument,       &nullStatOut,       1 },
-     {"write-cohphasediff",       no_argument,       &cohPhaseDiffOut,   1 },
+     {"write-cohh1h2snr",         no_argument,       &cohH1H2SNROut,     1 },
      {"gps-start-time",           required_argument, 0,                 'a'},
      {"gps-end-time",             required_argument, 0,                 'b'},
      {"output-path",              required_argument, 0,                 'P'},
@@ -1764,6 +1747,56 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
          }
        exit( 1 );      
      }
+
+   /*  Store optional arguments in the process param table */
+   if ( eventsOut == 1 )
+     {
+       LALSnprintf( procparams.processParamsTable->program, 
+		    LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
+       LALSnprintf( procparams.processParamsTable->param,
+		    LIGOMETA_PARAM_MAX, "--write-events" );
+       LALSnprintf( procparams.processParamsTable->type, 
+		    LIGOMETA_TYPE_MAX, "string" );
+       LALSnprintf( procparams.processParamsTable->value, 
+		    LIGOMETA_VALUE_MAX, " " );
+     }
+   
+   if ( cohSNROut == 1 )
+     {
+       this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+	 calloc( 1, sizeof(ProcessParamsTable) );
+       LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+		    "%s", PROGRAM_NAME );
+       LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+		    "--write-cohsnr" );
+       LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+       LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
+     }
+   
+   if ( cohH1H2SNROut == 1 )
+     {    
+       this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+	 calloc( 1, sizeof(ProcessParamsTable) );
+       LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+		    "%s", PROGRAM_NAME );
+       LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+		    "--write-cohh1h2snr" );
+       LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+       LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
+     }
+   
+   if ( nullStatOut == 1 )
+     {
+       this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+	 calloc( 1, sizeof(ProcessParamsTable) );
+       LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+		    "%s", PROGRAM_NAME );
+       LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+		    "--write-cohnullstat" );
+       LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+       LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
+     }
+
    /* check validity of input data time if globbing */
    /* the times should be that spanned by the bank(trigger) file */
    if ( ! gpsStartTimeNS )
