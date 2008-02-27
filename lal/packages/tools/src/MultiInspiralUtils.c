@@ -533,8 +533,8 @@ XLALMultiSimInspiralTest (
   MultiInspiralTable *prevEvent   = NULL;
   MultiInspiralTable *thisMissed  = NULL;
   EventIDColumn     *thisId      = NULL;
-  CHAR              *ifos;
-  
+  CHAR              *ifo; 
+ 
   int numSimFound  = 0;
   int coincidence = 0;
   
@@ -600,15 +600,19 @@ XLALMultiSimInspiralTest (
         {
 	  /*CHECK: The following assumes that the first ifo 
 	    in the ifos string is the
-	    reference ifo for checking time consistency */     
-          /* this event may be in coincidence window, need to check site
+	    reference ifo for checking time consistency. */     
+          /* This event may be in coincidence window, need to check site
            * end time
 	   strncpy( ifos, thisEvent->ifos, 2);
 	   simSiteTime = XLALReturnSimInspiralEndTime( thisSimEvent, 
 	                                                       ifos );
 	  */
-	  simSiteTime = XLALReturnSimInspiralEndTime( thisSimEvent, 
-						        thisEvent->ifos );
+
+	  /* read in the first (single) ifo in the multiInspiral network (ifos) */
+	  LALSnprintf( ifo, LIGOMETA_IFO_MAX * sizeof(CHAR),
+		       "%s", thisEvent->ifos );
+	  
+	  simSiteTime = XLALReturnSimInspiralEndTime( thisSimEvent, ifo ); 
 	  
 	  if ( (inspiralTime > (simSiteTime - injectWindowNS)) &&
 	       (inspiralTime < (simSiteTime + injectWindowNS)) ) {
