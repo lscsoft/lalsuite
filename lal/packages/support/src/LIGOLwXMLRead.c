@@ -463,7 +463,7 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
       REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
       REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8; 
       INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
-
+      UINT8 i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
       if ( tableDir[j].idx == 0 )
       {
         LALSnprintf( thisEvent->ifos, LIGOMETA_IFO_MAX * sizeof(CHAR), 
@@ -617,6 +617,68 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
       else if ( tableDir[j].idx == 37 )
       {
         thisEvent->polarization = r4colData;
+      }
+      else if ( tableDir[j].idx == 38 )
+      {
+        if ( tableDir[j].pos > 0 && i8colData )
+        {
+          thisEvent->event_id = (EventIDColumn *)
+            LALCalloc( 1, sizeof(EventIDColumn) );
+          thisEvent->event_id->id = i8colData;
+          thisEvent->event_id->multiInspiralTable = thisEvent;
+        }
+      }
+      else if ( tableDir[j].idx == 39 )
+      {
+        thisEvent->null_statistic = r8colData;
+      }
+      else if ( tableDir[j].idx == 40 )
+      {
+        thisEvent->h1quad.re = r4colData;
+      }
+      else if ( tableDir[j].idx == 41 )
+      {
+        thisEvent->h1quad.im = r4colData;
+      }
+      else if ( tableDir[j].idx == 42 )
+      {
+        thisEvent->h2quad.re = r4colData;
+      }
+      else if ( tableDir[j].idx == 43 )
+      {
+        thisEvent->h2quad.im = r4colData;
+      }
+      else if ( tableDir[j].idx == 44 )
+      {
+        thisEvent->l1quad.re = r4colData;
+      }
+      else if ( tableDir[j].idx == 45 )
+      {
+        thisEvent->l1quad.im = r4colData;
+      }
+      else if ( tableDir[j].idx == 46 )
+      {
+        thisEvent->v1quad.re = r4colData;
+      }
+      else if ( tableDir[j].idx == 47 )
+      {
+        thisEvent->v1quad.im = r4colData;
+      }
+      else if ( tableDir[j].idx == 48 )
+      {
+        thisEvent->g1quad.re = r4colData;
+      }
+      else if ( tableDir[j].idx == 49 )
+      {
+        thisEvent->g1quad.im = r4colData;
+      }
+      else if ( tableDir[j].idx == 50 )
+      {
+        thisEvent->t1quad.re = r4colData;
+      }
+      else if ( tableDir[j].idx == 51 )
+      {
+        thisEvent->t1quad.im = r4colData;
       }
       else
       {
@@ -3542,26 +3604,33 @@ LALMultiInspiralTableFromLIGOLw (
           {"snr",                     -1, 24},
           {"chisq",                   -1, 25},
           {"chisq_dof",               -1, 26},
-          {"sigmasq",                 -1, 27},
-          {"ligo_axis_ra",            -1, 28},
-          {"ligo_axis_dec",           -1, 29},
-          {"ligo_angle",              -1, 30},
-          {"ligo_angle_sig",          -1, 31},
-          {"inclination",             -1, 32},
-          {"polarization",            -1, 33},
-          {"event_id",                -1, 34},
-          {"null_statistic",          -1, 35},
+          {"bank_chisq",              -1, 27},
+          {"bank_chisq_dof",          -1, 28},
+          {"cont_chisq",              -1, 29},
+          {"cont_chisq_dof",          -1, 30},
+          {"sigmasq",                 -1, 31},
+          {"ligo_axis_ra",            -1, 32},
+          {"ligo_axis_dec",           -1, 33},
+          {"ligo_angle",              -1, 34},
+          {"ligo_angle_sig",          -1, 35},
+          {"inclination",             -1, 36},
+          {"polarization",            -1, 37},
+          {"event_id",                -1, 38},
+          {"null_statistic",          -1, 39},
+          {"h1quad_re",               -1, 40},
+          {"h1quad_im",               -1, 41},
+          {"h2quad_re",               -1, 42},
+          {"h2quad_im",               -1, 43},
+          {"l1quad_re",               -1, 44},
+          {"l1quad_im",               -1, 45},
+          {"v1quad_re",               -1, 46},
+          {"v1quad_im",               -1, 47},
+          {"g1quad_re",               -1, 48},
+          {"g1quad_im",               -1, 49},
+          {"t1quad_re",               -1, 50},
+          {"t1quad_im",               -1, 51},
           {NULL,                       0, 0}
     };
-
-  /*CHECK: TO be added after defining COMPLEX 8 c8colData below
-          {"h1quad",                  -1, 36},
-          {"h2quad",                  -1, 37},
-          {"l1quad",                  -1, 38},
-          {"g1quad",                  -1, 39},
-          {"v1quad",                  -1, 40},
-          {"t1quad",                  -1, 41},
-  */
 
   /* check that the bank handle and pointer are valid */
   if ( ! eventHead )
@@ -3814,6 +3883,54 @@ LALMultiInspiralTableFromLIGOLw (
       else if ( tableDir[j].idx == 39 )
       {
         thisEvent->null_statistic = r8colData;
+      }
+      else if ( tableDir[j].idx == 40 )
+      {
+        thisEvent->h1quad.re = r4colData;
+      }
+      else if ( tableDir[j].idx == 41 )
+      {
+        thisEvent->h1quad.im = r4colData;
+      }
+      else if ( tableDir[j].idx == 42 )
+      {
+        thisEvent->h2quad.re = r4colData;
+      }
+      else if ( tableDir[j].idx == 43 )
+      {
+        thisEvent->h2quad.im = r4colData;
+      }
+      else if ( tableDir[j].idx == 44 )
+      {
+        thisEvent->l1quad.re = r4colData;
+      }
+      else if ( tableDir[j].idx == 45 )
+      {
+        thisEvent->l1quad.im = r4colData;
+      }
+      else if ( tableDir[j].idx == 46 )
+      {
+        thisEvent->v1quad.re = r4colData;
+      }
+      else if ( tableDir[j].idx == 47 )
+      {
+        thisEvent->v1quad.im = r4colData;
+      }
+      else if ( tableDir[j].idx == 48 )
+      {
+        thisEvent->g1quad.re = r4colData;
+      }
+      else if ( tableDir[j].idx == 49 )
+      {
+        thisEvent->g1quad.im = r4colData;
+      }
+      else if ( tableDir[j].idx == 50 )
+      {
+        thisEvent->t1quad.re = r4colData;
+      }
+      else if ( tableDir[j].idx == 51 )
+      {
+        thisEvent->t1quad.im = r4colData;
       }
       else
       {
