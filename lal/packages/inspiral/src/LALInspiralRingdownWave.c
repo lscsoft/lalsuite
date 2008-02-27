@@ -115,7 +115,6 @@ INT4 XLALInspiralRingdownWave (
 {
   /* XLAL error handling */
   INT4 errcode = XLAL_SUCCESS;
-  static const char* func = "XLALInspiralRingdownWave";
   
   UINT4 i, j, k;
   
@@ -154,7 +153,7 @@ INT4 XLALInspiralRingdownWave (
 	gsl_matrix_set(coef, 0, i, 1);
 	gsl_matrix_set(coef, 1, i, - modefreqs->data[i].im);
 	gsl_matrix_set(coef, 2, i, modefreqs->data[i].im * modefreqs->data[i].im
-							 - modefreqs->data[i].re * modefreqs->data[i].re);
+			- modefreqs->data[i].re * modefreqs->data[i].re);
 	gsl_matrix_set(coef, 3, i, 0);
 	gsl_matrix_set(coef, 4, i, - modefreqs->data[i].re);
 	gsl_matrix_set(coef, 5, i,  2 * modefreqs->data[i].re * modefreqs->data[i].im);
@@ -199,11 +198,11 @@ INT4 XLALInspiralRingdownWave (
 	for (i = 0; i < nmodes; ++i)
 	{
 	  rdwave1->data[j] += exp(- tj * modefreqs->data[i].im) 
-						* (  modeamps->data[i]			* cos(tj * modefreqs->data[i].re)
-						   + modeamps->data[i + nmodes] * sin(tj * modefreqs->data[i].re) );
+			* ( modeamps->data[i] * cos(tj * modefreqs->data[i].re)
+			+   modeamps->data[i + nmodes] * sin(tj * modefreqs->data[i].re) );
 	  rdwave2->data[j] += exp(- tj * modefreqs->data[i].im) 
-						* (- modeamps->data[i]			* sin(tj * modefreqs->data[i].re)
-						   + modeamps->data[i + nmodes] * cos(tj * modefreqs->data[i].re) );
+			* (- modeamps->data[i] * sin(tj * modefreqs->data[i].re)
+			+   modeamps->data[i + nmodes] * cos(tj * modefreqs->data[i].re) );
 	}
   }
   
@@ -222,7 +221,6 @@ INT4 XLALGenerateWaveDerivatives (
 {
   /* XLAL error handling */
   INT4 errcode = XLAL_SUCCESS;
-  static const char* func = "XLALGenerateQNMFreq";
   
   UINT4 j;
   REAL8 dt;
@@ -341,7 +339,8 @@ INT4 XLALInspiralAttachRingdownWave (
       COMPLEX8Vector *modefreqs;
       UINT4 Nrdwave, Npatch;
       UINT4 attpos = 0;
-      INT4 j, errcode;
+      UINT4 j; 
+      INT4 errcode;
 
       UINT4 nmodes;
       INT4 l, m;
@@ -359,7 +358,7 @@ INT4 XLALInspiralAttachRingdownWave (
    /* -0.01 because the current EOBNR 4PN setting can't reach omega_match */
 
       dt = 1./params->tSampling;
-      omegamatch = -0.022 + 0.133 + 0.183 * params->eta + 0.161 * params->eta * params->eta;
+      omegamatch = -0.052 + 0.133 + 0.183 * params->eta + 0.161 * params->eta * params->eta;
 
       for (j = 0; j < Omega->length; ++j)
       {
@@ -384,7 +383,13 @@ INT4 XLALInspiralAttachRingdownWave (
         fprintf( stderr, "XLALGenerateQNMFreq failed\n" );
         exit( 1 );
       }
-      fprintf(stderr, "f0=%e, f1=%e f2=%e\n", (modefreqs->data[0].re)/LAL_TWOPI, (modefreqs->data[1].re)/LAL_TWOPI, (modefreqs->data[2].re)/LAL_TWOPI); 
+
+      /*
+      fprintf(stderr, "f0=%e, f1=%e f2=%e\n", 
+		      (modefreqs->data[0].re)/LAL_TWOPI, 
+		      (modefreqs->data[1].re)/LAL_TWOPI, 
+		      (modefreqs->data[2].re)/LAL_TWOPI); 
+      */
       
       /* Ringdown signal length: 10 times the decay time of the n=0 mode */
       Nrdwave = (INT4) (10 / modefreqs->data[0].im / dt);
@@ -420,6 +425,7 @@ INT4 XLALInspiralAttachRingdownWave (
 	    inspwaves1->data[j + (Npatch + 1) / 2] = dinspwave->data[j];
 	    inspwaves1->data[j + 2 * (Npatch + 1) / 2] = ddinspwave->data[j];
       }
+      
       /* Take the last part of signal2 */
       for (j = 0; j < Npatch; j++)
       {
@@ -464,4 +470,6 @@ INT4 XLALInspiralAttachRingdownWave (
       XLALDestroyREAL4Vector( ddinspwave );
       XLALDestroyREAL4VectorSequence( inspwaves1 );
       XLALDestroyREAL4VectorSequence( inspwaves2 );
+
+      return errcode;
    }
