@@ -229,7 +229,7 @@ class hipe_run(object):
     """
     allowed_stages = set(["datafind", "template-bank", "inspiral",
       "coincidence", "trigbank", "inspiral-veto", "second-coinc", 
-      "coire-second-coinc", "sire-inspiral"])
+      "coire-second-coinc"])
 
     if only_run is not None:
       if not (set(only_run) <= allowed_stages):
@@ -392,7 +392,7 @@ def make_ligolw_add(orig_cache, pattern, outfile, logdir, cp, ligolw_job=None):
 
   node = pipeline.LigolwAddNode(ligolw_job)
   for sub_file in sub_files:
-    node.add_input_file(sub_file)
+    node.add_file_arg(sub_file)
 
   new_cache = lal.Cache([entry for entry in orig_cache if entry.path() not in sub_files])
   new_cache.extend(lal.Cache.from_urls([outfile]))
@@ -555,7 +555,7 @@ if opts.do_dataquality:
   # download and parse DQ segments once for each IFO
   for ifo in ifolist:
     # download (if necessary) and parse DQ segments
-    dq_segfile = ifo + "_dq_segments.txt"
+    dq_segfile = cp.get("segments", ifo.lower() + "-dq-segfile")
     dq_segdict.update(dqutils.download_and_parse_dq_segs(dq_segfile, ifo,
                                                          verbose=opts.verbose))
   
@@ -586,8 +586,8 @@ if opts.do_dataquality:
       window_file = cp.get("segments", ifo.lower() + "-cat-" + str(category) + \
                            "-veto-file")
       veto_windows = dqutils.from_veto_file(open(window_file))
-      vetoed_segs |= dqutils.determine_vetoes(veto_windows, dq_segdict,
-                                              segdict[ifo])
+      vetoed_segs = vetoed_segs | dqutils.determine_vetoes(veto_windows,
+        dq_segdict, segdict[ifo])
       cum_vetoed_segs[(ifo, category)] = vetoed_segs
     cum_category = "".join([str(c) for c in range(2, category+1)])
     vetoed_filename = ifo.lower() + "-cat" + cum_category + "_veto_segments.txt"
