@@ -115,7 +115,7 @@ int main( int argc, char *argv[] )
 
   extern int vrbflg;
   LALPlaygroundDataMask  dataType = unspecified_data_type;
-  SnglInspiralParameterTest  test = no_test;
+  SnglInspiralParameterTest  test = unspecified_test;
 
   INT4  startTime = -1;
   LIGOTimeGPS startTimeGPS = {0,0};
@@ -443,6 +443,12 @@ int main( int argc, char *argv[] )
   {
     fprintf( stderr, "Error: --data-type must be specified\n");
     exit(1);
+  }
+  
+  if ( test == unspecified_test )
+  {
+      fprintf( stderr, "Error: --parameter-test must be specified\n");
+      exit(1);
   }
 
   /* fill the comment, if a user has specified one, or leave it blank */
