@@ -1318,11 +1318,12 @@ LALEOBWaveformForInjection (
 
       if( params->ampOrder )
       {
-        if ( ( waveform->a = (REAL4TimeVectorSeries *)
+        if ( ( waveform->h = (REAL4TimeVectorSeries *)
 	       LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL )
         {
 	  ABORT( status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM );
         }
+        memset( waveform->h, 0, sizeof(REAL4TimeVectorSeries) );
         LALSCreateVectorSequence( status->statusPtr,
 				  &( waveform->h->data ), &in );
         CHECKSTATUSPTR(status);      
