@@ -114,6 +114,7 @@ at the last stable orbit. It is recommended that a rather generous
 #include <lal/LALInspiral.h>
 #include <lal/FindRoot.h>
 #include <lal/SeqFactories.h>
+#include <lal/NRWaveInject.h>
 
 typedef struct tagrOfOmegaIn {
    REAL8 eta, omega;
@@ -869,7 +870,7 @@ LALHCapDerivativesP4PN(
    REAL8 r, s, p, q, u, u2, u3, u4, u5, p2, p3, p4, q2, Apot, DA, NA;
    REAL8  dA, onebyD, DonebyD, AbyD, Heff, HReal, etahH;
    REAL8 omega, v, eta, eta2, a4, z2, z30, z3, zeta2;
-   REAL8 a5, n1, c1, d1, d2, d3, oneby4meta, vu, omegaS;
+   REAL8 a5, c1, vu, omegaS;
    REAL8    flexNonAdiab = 0;
    REAL8    flexNonCirc = 0;
 
@@ -1224,7 +1225,7 @@ LALEOBWaveformForInjection (
 
   sprintf( message, "final coalescence phase with respet to actual data =%f ",
   	(ff->data[count]-ff->data[count-1])/2/3.14159); 
-  LALInfo(status->statusPtr, message);
+  LALInfo(status, message);
   
 
 
@@ -1403,7 +1404,6 @@ LALEOBWaveformEngine (
    REAL8 fFac; /* SI normalization for f and t */
    REAL8 f2aFac;/* factor multiplying f in amplitude function */
    REAL8 apFac, acFac;/* extra factor in plus and cross amplitudes */
-   REAL8 phiC;/* phase at coalescence */
    REAL4Vector *Omega;
  
    INITSTATUS(status, "LALEOBWaveformEngine", LALEOBWAVEFORMC);
@@ -1428,9 +1428,14 @@ LALEOBWaveformEngine (
       ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
    }
 
-   if (signal2)
+   if (signal2||h)
    {
-      Omega = XLALCreateREAL4Vector( signal2->length );
+      UINT4 length;
+      if (signal2)
+	 length = signal2->length;
+      else
+	 length = h->length/2;
+      Omega = XLALCreateREAL4Vector( length );
       memset(Omega->data, 0, Omega->length * sizeof( REAL4 ));
    }
 
@@ -1446,23 +1451,23 @@ LALEOBWaveformEngine (
    m = ak.totalmass;
 
    /* only used in injection case */
-   if (a || h)
-   {
-     mTot   =  params->mass1 + params->mass2;
-     etab   =  params->mass1 * params->mass2;
-     etab  /= mTot;
-     etab  /= mTot;
-     unitHz = (mTot) *LAL_MTSUN_SI*(REAL8)LAL_PI;
-     cosI   = cos( params->inclination );
-     mu     = etab * mTot;
-     fFac   = 1.0 / ( 4.0*LAL_TWOPI*LAL_MTSUN_SI*mTot );
-     f2aFac = LAL_PI*LAL_MTSUN_SI*mTot*fFac;
-     apFac  = acFac = -2.0 * mu * LAL_MRSUN_SI/params->distance;
-     apFac *= 1.0 + cosI*cosI;
-     acFac *= 2.0*cosI;
-   }
+   mTot   =  params->mass1 + params->mass2;
+   etab   =  params->mass1 * params->mass2;
+   etab  /= mTot;
+   etab  /= mTot;
+   unitHz = (mTot) *LAL_MTSUN_SI*(REAL8)LAL_PI;
+   cosI   = cos( params->inclination );
+   mu     = etab * mTot;
+   fFac   = 1.0 / ( 4.0*LAL_TWOPI*LAL_MTSUN_SI*mTot );
+   f2aFac = LAL_PI*LAL_MTSUN_SI*mTot*fFac;
+   apFac  = acFac = -2.0 * mu * LAL_MRSUN_SI/params->distance;
+   apFac *= 1.0 + cosI*cosI;
+   acFac *= 2.0*cosI;
+
    /* fprintf(stdout, "unitHz components: %e, %e, %e\n", mTot, LAL_MTSUN_SI, LAL_PI);
-   fprintf(stdout, "unitHz itself: %e\n", unitHz); */
+      fprintf(stdout, "unitHz itself: %e\n", unitHz); 
+    */
+
    /* Find the initial velocity given the lower frequency */
    t = 0.0;
    in1.t = t;
@@ -1544,7 +1549,7 @@ Useful for debugging: Make sure a solution for r exists.
     /* I added 3.5PN case, same as 3PN case, is this right? */
     /*rofOmega */
     switch (params->order)
-     {
+    {
      case twoPN:
      case twoPointFivePN:
        rootIn.function = LALrOfOmega;
@@ -1576,36 +1581,32 @@ Useful for debugging: Make sure a solution for r exists.
        LALDBisectionFindRoot(status->statusPtr, &r, &rootIn, (void *)&pr3in);
        CHECKSTATUSPTR(status);
        break;
-
      default:
-       fprintf(stderr, 
-	 	"There are no EOB waveforms implemented at order %d\n", 
-	 	params->order);
+       fprintf(stderr, "There are no EOB waveforms implemented at order %d\n", params->order);
        LALFree(dummy.data);
        ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
-     }
+    }
 
-   if (a && r < 6){
-        sprintf(message,
-                "EOB:initialCondition:Initial r found = %f ",r);
-        sprintf(message,
-                "too small (below 6 no waveform is generated)\n");
-        LALWarning(status->statusPtr, message);
-        RETURN( status );
-   }
+    if (a && r < 6)
+    {
+      sprintf(message, "EOB:initialCondition:Initial r found = %f ",r);
+      sprintf(message, "too small (below 6 no waveform is generated)\n");
+      LALWarning(status->statusPtr, message);
+      RETURN( status );
+    }
 
    /* We want the waveform to generate from a point which won't cause
     * problems with the initial conditions. Therefore we force the code
     * to start at least at r = 10 M.
     */
-   if (r < 10.0)
-   {
-     r = 10.0;
-   }
+    if (r < 10.0)
+    {
+      r = 10.0;
+    }
    /*params->rInitial = r;
-   params->vInitial = v;
-   params->rLightRing = rn;
-*/
+    params->vInitial = v;
+    params->rLightRing = rn;
+    */
 /* 
    LALInspiralPhasing1(v) gives the GW phase (= twice the orbital phase).
    The ODEs we solve give the orbital phase. Therefore, set the
@@ -1618,7 +1619,7 @@ Useful for debugging: Make sure a solution for r exists.
    funcParams = (void *) &in3;
 
    switch (params->order)
-     {
+   {
      case twoPN:
      case twoPointFivePN:
        LALpphiInit(&q, r, eta);
@@ -1670,13 +1671,12 @@ Useful for debugging: Make sure a solution for r exists.
 	 	params->order);
        LALFree(dummy.data);
        ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
-     }
+   }
 
    values.data[0] = r;
    values.data[1] = s;
    values.data[2] = p;
    values.data[3] = q;
-
    
    in4.y = &values;
    in4.h = dt/m;
@@ -1700,29 +1700,7 @@ Useful for debugging: Make sure a solution for r exists.
    count = params->nStartPad;
 
    /* Calculate the initial value of omega */
-   switch(params->order)
-     {
-     case twoPN:
-     case twoPointFivePN:
-	LALHCapDerivatives(&values, &dvalues, funcParams);
-	break;
-     case threePN:
-     case threePointFivePN:
-	LALHCapDerivatives3PN(&values, &dvalues, funcParams);
-	break;
-     case pseudoFourPN:
-	LALHCapDerivativesP4PN(&values, &dvalues, funcParams);
-	break;
-     default:
-        fprintf(stderr,
-                "There are no EOB waveforms at order %d\n",
-                params->order);
-        ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
-     }
-
-
-   CHECKSTATUSPTR(status);
-
+   in4.function(&values, &dvalues, funcParams);
    omega = dvalues.data[1];
 
    /* Begin integration loop here */
@@ -1770,45 +1748,34 @@ Useful for debugging: Make sure a solution for r exists.
         }
         else if (a)   /* For injections */
         {
-          int ice, ico;
+          int ice, ico, length;
 	  ice = 2*count;
 	  ico = ice + 1;
+	  length = h->length/2;
 
           ff->data[count]= (REAL4)(omega/unitHz);
           f2a = pow (f2aFac * omega, 2./3.);
-          a->data[2*count]          = (REAL4)(4.*apFac * f2a);
-          a->data[2*count+1]        = (REAL4)(4.*acFac * f2a);
-          phi->data[count]          = (REAL8)(2* s);
+          a->data[ice]     = (REAL4)(4.*apFac * f2a);
+          a->data[ico]     = (REAL4)(4.*acFac * f2a);
+          phi->data[count] = (REAL8)(2* s);
 
           if(h)
           {
+	    /*
             h->data[ice] = LALInspiralHPlusPolarization( s, v, params );
             h->data[ico] = LALInspiralHCrossPolarization( s, v, params );
+	    */
+            amp = v*v;
+            h1 = amp * cos(2.* (s - sSubtract));
+            h2 = amp * cos(2.* (s - sSubtract) + LAL_PI_2);
+            h->data[count] = (REAL4) h1;
+            h->data[count+length] = (REAL4) h2;
+	    Omega->data[count]= (REAL4)(omega);
           }
         }
       }
 
-      switch(params->order)
-     	{
-     	  case twoPN:
-     	  case twoPointFivePN:
-            LALHCapDerivatives(&values, &dvalues, funcParams);
-            break;
-     	  case threePN:
-     	  case threePointFivePN:
-            LALHCapDerivatives3PN(&values, &dvalues, funcParams);
-            break;
-     	  case pseudoFourPN:
-            LALHCapDerivativesP4PN(&values, &dvalues, funcParams);
-            break;
-     	  default:
-            fprintf(stderr,
-                  "There are no EOB waveforms at order %d\n",
-                  params->order);
-            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
-        }
-
-
+      in4.function(&values, &dvalues, funcParams);
       CHECKSTATUSPTR(status);
 
       omega = dvalues.data[1];
@@ -1843,15 +1810,63 @@ Record the final cutoff frequency of BD Waveforms for record keeping
    if (signal1 && !signal2) params->tC = t;
    *countback = count;
   
-   if (signal2)
+   if (signal2 || h)
    {
-      XLALInspiralAttachRingdownWave( Omega, signal1, signal2, params );
+      COMPLEX16  MultSphHarm;
+      REAL4      tmp1, tmp2;
+      UINT4      vecLength, k, modeL;
+      INT4       modeM;
+      REAL4      inclination;    /**< binary inclination      */
+      REAL4      coa_phase;      /**< binary coalescence phase*/
+       
+      inclination = (REAL4)params->inclination;
+      coa_phase = 0.;
+      /* Calculating the (2,2) Spherical Harmonic */
+      /* need some error checking */
+      modeL = 2;
+      modeM = 2;
+      XLALSphHarm( &MultSphHarm, modeL, modeM, inclination, coa_phase );
+
+      if (signal2)
+      {
+	vecLength = signal1->length;
+        XLALInspiralAttachRingdownWave( Omega, signal1, signal2, params );
+        /* Filling the data vector with the data multiplied by the Harmonic */
+        for ( k = 0; k < vecLength; k++)
+        {
+	  tmp1 = signal1->data[k];
+	  tmp2 = signal2->data[k];
+	  signal1->data[k] = (tmp1 * MultSphHarm.re) + (tmp2 * MultSphHarm.im);
+	  signal2->data[k] = (tmp2 * MultSphHarm.re) - (tmp1 * MultSphHarm.im);
+	}
+      }
+      else
+      {
+        REAL4Vector s1, s2;
+	vecLength = h->length/2;
+        s1.length = vecLength;
+        s2.length = vecLength;
+        s1.data = h->data;
+        s2.data = h->data+vecLength;
+        XLALInspiralAttachRingdownWave( Omega, &s1, &s2, params );
+        /* Filling the data vector with the data multiplied by the Harmonic */
+        for ( k = 0; k < vecLength; k++)
+        {
+	    tmp1 = s1.data[k];
+	    tmp2 = s2.data[k];
+	    h->data[k]           = (tmp1 * MultSphHarm.re) + (tmp2 * MultSphHarm.im);
+	    h->data[vecLength+k] = (tmp2 * MultSphHarm.re) - (tmp1 * MultSphHarm.im);
+   
+	}
+      }
+
       XLALDestroyREAL4Vector( Omega );
    }
-
+      
    XLALRungeKutta4Free( integrator );
    LALFree(dummy.data);
    DETATCHSTATUSPTR(status);
    RETURN(status);
 }
+
 
