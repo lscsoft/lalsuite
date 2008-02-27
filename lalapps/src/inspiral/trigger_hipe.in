@@ -45,6 +45,12 @@ from pylal import grbsummary
 from pylal import dqutils
 from lalapps import inspiralutils
 
+# For Python 2.3 compatibility
+try:
+  set
+except NameError:
+  from sets import Set as set
+  
 ##############################################################################
 # define a few utility functions that make this job easier
 
@@ -519,11 +525,11 @@ if len(opts.grb) > 0:
   temp_list = filter(lambda row: row.event_number_grb in opts.grb, ext_trigs)
   ext_trigs = table.new_from_template(ext_trigs)
   ext_trigs.extend(temp_list)
-
-if len(ext_trigs) != len(opts.grb):
-  missing = set(opts.grb) - set([row.event_number_grb for row in ext_trigs])
-  raise ValueError, "could not find the following requested GRBs: " \
-        + "".join(missing)
+  
+  if len(ext_trigs) != len(opts.grb):
+    missing = set(opts.grb) - set([row.event_number_grb for row in ext_trigs])
+    raise ValueError, "could not find the following requested GRBs: " \
+      + "".join(missing)
   
 if opts.verbose:
   print "Will construct workflows to analyze:", \
