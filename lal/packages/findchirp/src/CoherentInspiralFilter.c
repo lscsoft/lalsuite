@@ -416,15 +416,16 @@ LALCoherentInspiralFilterParamsInit (
 
   /*
    *
-   * create vector to store H1-H2 coherent phase difference if outputting it
+   * create vector to store H1-H2 coherent-snr if that pair is in 
+   * and numDetectors > 2 and if the user wants it 
    *
    */
 
-  if( params->cohPhaseDiffOut )
+  if( params->cohH1H2SNROut )
     {
-      outputPtr->cohPhaseDiffVec = (REAL4TimeSeries *) 
+      outputPtr->cohH1H2SNRVec = (REAL4TimeSeries *) 
 	LALCalloc( 1, sizeof(REAL4TimeSeries) );
-      LALCreateVector (status->statusPtr, &(outputPtr->cohPhaseDiffVec->data), 
+      LALCreateVector (status->statusPtr, &(outputPtr->cohH1H2SNRVec->data), 
 		       params->numPoints);
       BEGINFAIL( status ) {
 	if( params->cohSNROut )
@@ -441,8 +442,8 @@ LALCoherentInspiralFilterParamsInit (
 	    LALFree( outputPtr->detIDVec );
 	    outputPtr->detIDVec = NULL;
 	  }
-	LALFree( outputPtr->cohPhaseDiffVec );
-	outputPtr->cohPhaseDiffVec = NULL;
+	LALFree( outputPtr->cohH1H2SNRVec );
+	outputPtr->cohH1H2SNRVec = NULL;
 	LALFree( outputPtr->detectorVec );
 	outputPtr->detectorVec = NULL;
 	LALFree( outputPtr );
@@ -464,12 +465,12 @@ LALCoherentInspiralFilterParamsInit (
         LALCreateVector (status->statusPtr, &(outputPtr->nullStatVec->data), 
 		         params->numPoints);
 	BEGINFAIL( status ) {
-	  if( params->cohPhaseDiffOut )
+	  if( params->cohH1H2SNROut )
 	    {
-	      TRY( LALDestroyVector( status->statusPtr, &(outputPtr->cohPhaseDiffVec->data)),
+	      TRY( LALDestroyVector( status->statusPtr, &(outputPtr->cohH1H2SNRVec->data)),
 		   status); 
-	      LALFree( outputPtr->cohPhaseDiffVec );
-	      outputPtr->cohPhaseDiffVec = NULL;
+	      LALFree( outputPtr->cohH1H2SNRVec );
+	      outputPtr->cohH1H2SNRVec = NULL;
 	    } 
 	  if( params->cohSNROut )
 	    {
@@ -515,12 +516,12 @@ LALCoherentInspiralFilterParamsInit (
 	  LALFree( outputPtr->nullStatVec );
 	  outputPtr->nullStatVec = NULL;
 	} 
-      if( params->cohPhaseDiffOut )
+      if( params->cohH1H2SNROut )
 	{
-	  TRY( LALDestroyVector( status->statusPtr, &(outputPtr->cohPhaseDiffVec->data)),
+	  TRY( LALDestroyVector( status->statusPtr, &(outputPtr->cohH1H2SNRVec->data)),
 	       status); 
-	  LALFree( outputPtr->cohPhaseDiffVec );
-	  outputPtr->cohPhaseDiffVec = NULL;
+	  LALFree( outputPtr->cohH1H2SNRVec );
+	  outputPtr->cohH1H2SNRVec = NULL;
 	} 
       if( params->cohSNROut )
 	{
@@ -558,12 +559,12 @@ LALCoherentInspiralFilterParamsInit (
 	  LALFree( outputPtr->nullStatVec );
 	  outputPtr->nullStatVec = NULL;
 	} 
-      if( params->cohPhaseDiffOut )
+      if( params->cohH1H2SNROut )
 	{
-	  TRY( LALDestroyVector( status->statusPtr, &(outputPtr->cohPhaseDiffVec->data)),
+	  TRY( LALDestroyVector( status->statusPtr, &(outputPtr->cohH1H2SNRVec->data)),
 	       status); 
-	  LALFree( outputPtr->cohPhaseDiffVec );
-	  outputPtr->cohPhaseDiffVec = NULL;
+	  LALFree( outputPtr->cohH1H2SNRVec );
+	  outputPtr->cohH1H2SNRVec = NULL;
 	} 
       if( params->cohSNROut )
 	{
@@ -599,12 +600,12 @@ LALCoherentInspiralFilterParamsInit (
 	  LALFree( outputPtr->nullStatVec );
 	  outputPtr->nullStatVec = NULL;
 	} 
-      if( params->cohPhaseDiffOut )
+      if( params->cohH1H2SNROut )
 	{
-	  TRY( LALDestroyVector( status->statusPtr, &(outputPtr->cohPhaseDiffVec->data)),
+	  TRY( LALDestroyVector( status->statusPtr, &(outputPtr->cohH1H2SNRVec->data)),
 	       status); 
-	  LALFree( outputPtr->cohPhaseDiffVec );
-	  outputPtr->cohPhaseDiffVec = NULL;
+	  LALFree( outputPtr->cohH1H2SNRVec );
+	  outputPtr->cohH1H2SNRVec = NULL;
 	} 
       if( params->cohSNROut )
 	{
@@ -692,11 +693,11 @@ LALCoherentInspiralFilterParamsFinalize (
    * destroy H1-H2 coherent phase difference vector, if it exists
    *
    */
-  if ( outputPtr->cohPhaseDiffVec ) {
-    LALDestroyVector( status->statusPtr, &(outputPtr->cohPhaseDiffVec->data) );
+  if ( outputPtr->cohH1H2SNRVec ) {
+    LALDestroyVector( status->statusPtr, &(outputPtr->cohH1H2SNRVec->data) );
     CHECKSTATUSPTR( status );
-    LALFree( outputPtr->cohPhaseDiffVec );
-    outputPtr->cohPhaseDiffVec = NULL;
+    LALFree( outputPtr->cohH1H2SNRVec );
+    outputPtr->cohH1H2SNRVec = NULL;
   }
   
   /*
@@ -4028,43 +4029,88 @@ LALCoherentInspiralFilterSegment (
 
   /* Compute null-statistic, just for H1-H2 as of now,
      and cohSNRH1H2, if not computed above already */
-  if( caseID[1] && caseID[2] && nullStatOut && thisEvent) {	
-    
+  if( thisEvent && params->nullStatOut && params->cohH1H2SNROut ) {
+
     /* Prepare norm for null statistic */
     nullNorm = ( 1.0 / sigmasq[1]  + 1.0 /  sigmasq[2] );
 
-    /* Allocate memory for null statistic */	  
+    /* Allocate memory for null statistic */
     memset( params->nullStatVec->data->data, 0, numPoints*sizeof(REAL4));
 
-    /* Allocate memory for null statistic if cohSNRH1H2 has 
-       not been computed above already*/	  
-    if( !(params->numDetectors == 2) )
-      memset( params->cohPhaseDiffVec->data->data, 0, numPoints*sizeof(REAL4));
-    
+    /* Allocate memory for cohSNRH1H2Vec if that SNR has 
+       not been computed above already*/
+    memset( params->cohH1H2SNRVec->data->data, 0, numPoints*sizeof(REAL4));
+
     /*CHECK: Will not give intended result if first det is "G1", since it 
       assumes that cdata[0] is H1 and cdata[1] is H1; rectify this in next rev. */
     for (k=0;k<(INT4)numPoints;k++) {
 
       /*Compute cohH1H2 snr, with index m replaced by k */
       cohSnrRe = sqrt(sigmasq[1])*cData[0]->data->data[k].re
-	+ sqrt(sigmasq[2])*cData[1]->data->data[k].re;
+        + sqrt(sigmasq[2])*cData[1]->data->data[k].re;
       cohSnrIm = sqrt(sigmasq[1])*cData[0]->data->data[k].im
-	+ sqrt(sigmasq[2])*cData[1]->data->data[k].im;
-      
-      params->cohPhaseDiffVec->data->data[k]
-	= sqrt( (cohSnrRe*cohSnrRe + cohSnrIm*cohSnrIm) / 
-		(sigmasq[1] + sigmasq[2] ) );
+        + sqrt(sigmasq[2])*cData[1]->data->data[k].im;
+
+      params->cohH1H2SNRVec->data->data[k]
+        = sqrt( (cohSnrRe*cohSnrRe + cohSnrIm*cohSnrIm) /
+                (sigmasq[1] + sigmasq[2] ) );
 
       /* Compute null-stream statistic; 
-	 in next rev. report re and im parts separately */
+         in next rev. report re and im parts separately */
       nullStatRe = cData[0]->data->data[k].re / sqrt(sigmasq[1])
-	- cData[1]->data->data[k].re / sqrt(sigmasq[2]);
+        - cData[1]->data->data[k].re / sqrt(sigmasq[2]);
       nullStatIm = cData[0]->data->data[k].im / sqrt(sigmasq[1])
-	- cData[1]->data->data[k].im / sqrt(sigmasq[2]);
+        - cData[1]->data->data[k].im / sqrt(sigmasq[2]);
       params->nullStatVec->data->data[k] = 
-	( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
+        ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
     }
     thisEvent->null_statistic = params->nullStatVec->data->data[(INT4)(numPoints/2)];
+  }
+
+  /* Compute null-statistic ONLY, just for H1-H2 as of now, and NOT cohH1H2SNR */
+  if( thisEvent && params->nullStatOut && !(params->cohH1H2SNROut) ) {
+
+    /* Prepare norm for null statistic */
+    nullNorm = ( 1.0 / sigmasq[1]  + 1.0 /  sigmasq[2] );
+
+    /* Allocate memory for null statistic */
+    memset( params->nullStatVec->data->data, 0, numPoints*sizeof(REAL4));
+
+    /*CHECK: Will not give intended result if first det is "G1", since it 
+      assumes that cdata[0] is H1 and cdata[1] is H2; rectify this in next rev. */
+    for (k=0;k<(INT4)numPoints;k++) {
+      /* Compute null-stream statistic; 
+         in next rev. report re and im parts separately */
+      nullStatRe = cData[0]->data->data[k].re / sqrt(sigmasq[1])
+        - cData[1]->data->data[k].re / sqrt(sigmasq[2]);
+      nullStatIm = cData[0]->data->data[k].im / sqrt(sigmasq[1])
+        - cData[1]->data->data[k].im / sqrt(sigmasq[2]);
+      params->nullStatVec->data->data[k] = 
+        ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
+    }
+    thisEvent->null_statistic = params->nullStatVec->data->data[(INT4)(numPoints/2)];
+  }
+
+  /* Compute cohSNRH1H2 ONLY, if not computed above already, and NOT null-stat */
+  if( params->cohH1H2SNROut && !nullStatOut ) {
+    /* Allocate memory for cohSNRH1H2Vec if that SNR has 
+       not been computed above already*/
+    memset( params->cohH1H2SNRVec->data->data, 0, numPoints*sizeof(REAL4));
+
+    /*CHECK: Will not give intended result if first det is "G1", since it 
+      assumes that cdata[0] is H1 and cdata[1] is H1; rectify this in next rev. */
+    for (k=0;k<(INT4)numPoints;k++) {
+
+      /*Compute cohH1H2 snr, with index m replaced by k */
+      cohSnrRe = sqrt(sigmasq[1])*cData[0]->data->data[k].re
+        + sqrt(sigmasq[2])*cData[1]->data->data[k].re;
+      cohSnrIm = sqrt(sigmasq[1])*cData[0]->data->data[k].im
+        + sqrt(sigmasq[2])*cData[1]->data->data[k].im;
+
+      params->cohH1H2SNRVec->data->data[k]
+        = sqrt( (cohSnrRe*cohSnrRe + cohSnrIm*cohSnrIm) /
+                (sigmasq[1] + sigmasq[2] ) );
+    }
   }
 
   /* normal exit */
