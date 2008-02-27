@@ -810,14 +810,16 @@ def coire_segs(segments, coire_job, dag, do_input, ifos,
 ##############################################################################
 # function to set up the cohbank and cohinspiral jobs for a network of ifos
 
-def coherent_analysis(ifos,single_ifo_segments,coinc_nodes,cb_job,
-                      trig_coh_jobs,insp_coh_jobs,cohinsp_job,dag):
+def coherent_analysis(ifos,single_ifo_segments,cb_job,trig_coh_jobs,
+                      insp_coh_jobs,cohinsp_job,dag,coinc_nodes,
+                      coinc_slide_nodes=None):
   """
   Do a coherent analysis
 
   ifos                = ordered set of ifo identifiers
   single_ifo_segments = dictionary of data segments for the singl ifos
   coinc_nodes         = The coincident nodes for this ifo combination
+  coinc_slide_nodes   = The coincident slide nodes for this ifo combination
   cb_job              = coherent bank job
   trig_coh_jobs       = dictionary of trigbank jobs
   insp_coh_jobs       = dictionary of inspiral jobs to produce c-data 
@@ -860,11 +862,22 @@ def coherent_analysis(ifos,single_ifo_segments,coinc_nodes,cb_job,
       cohbank.set_category('cohbank')
     if not opts.disable_dag_priorities:
       cohbank.set_priority(6)
-    cohbank.set_bank(coinc_done.get_dag_node().get_output())
     cohbank.set_start(coinc_done.get_chunk().start())
     cohbank.set_end(coinc_done.get_chunk().end())
     cohbank.set_ifos(ifos) 
+    cohbank.add_file_arg(coinc_done.get_dag_node().get_output())
     if opts.second_coinc: cohbank.add_parent(coinc_done.get_dag_node())
+
+    # add coinc-slide files as arguments for cohbank jobs
+    if coinc_slide_nodes:
+      done_this_coinc = 0
+      for coinc_slide_done in coinc_slide_nodes:
+        if ( coinc_slide_done.get_chunk().start() == coinc_done.get_chunk().start() ):
+          if not done_this_coinc:
+            done_this_coinc = 1
+            cohbank.add_file_arg(coinc_slide_done.get_dag_node().get_output())
+            if opts.second_coinc: cohbank.add_parent(coinc_slide_done.get_dag_node())
+
     if opts.coherent_bank: dag.add_node(cohbank)
     
     # set up cohinsp
@@ -1959,9 +1972,14 @@ for ifos in ifo_coincs:
 for ifos in ifo_coincs:
   print "setting up coherent jobs on " + ifos + " data...",
   sys.stdout.flush()
-  
-  coherent_analysis(ifos,data,coinc2_nodes[ifos],cb_job,
-      trig_coh_jobs,insp_coh_jobs,cohinsp_jobs[ifos],dag)
+ 
+  if num_slides:
+    coherent_analysis(ifos,data,cb_job,trig_coh_jobs,
+      insp_coh_jobs,cohinsp_jobs[ifos],dag,coinc2_nodes[ifos],
+      coinc2_slide_nodes[ifos])
+  else:
+    coherent_analysis(ifos,data,cb_job,trig_coh_jobs,
+      insp_coh_jobs,cohinsp_jobs[ifos],dag,coinc2_nodes[ifos],0)
 
   print "done"
 
