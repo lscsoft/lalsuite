@@ -497,6 +497,9 @@ parser.add_option("-p", "--log-path",action="store",type="string",\
     metavar=" PATH",help="directory to write condor log file")
 
 # Add some extra capabilities
+parser.add_option("", "--skip-datafind", action="store_false", default=True,
+  dest="do_datafind", help="skip a query for data file locations (place "\
+  "the file caches in ./GRBxxxxxx/datafind/cache).")
 parser.add_option("", "--skip-dataquality", action="store_false", default=True,
   dest="do_dataquality", help="skip a query for data quality")
 
@@ -714,12 +717,16 @@ for grb in ext_trigs:
   
   hipe_caches = []
   
-  if opts.verbose: print "Creating datafind DAG"
-  datafind_dag = hipe_run(idirectory + "/datafind", cp, grb_ifolist,
-                          opts.log_path, source_file, "datafind",
-                          offSourceSegment, usertag=idirectory + "_DATAFIND",
-                          verbose=opts.verbose, only_run=["datafind"])
-  datafind_node = datafind_dag.finalize(uberdag=uberdag, parent=None)
+  if opts.do_datafind:
+    if opts.verbose: print "Creating datafind DAG"
+    datafind_dag = hipe_run(idirectory + "/datafind", cp, grb_ifolist,
+                            opts.log_path, source_file, "datafind",
+                            offSourceSegment, usertag=idirectory + "_DATAFIND",
+                            verbose=opts.verbose, only_run=["datafind"])
+    datafind_node = datafind_dag.finalize(uberdag=uberdag, parent=None)
+  else:
+    # the other nodes will try to use datafind_node as a parent; set to None.
+    datafind_node = None
   
   if opts.verbose: print "Creating DAG for offsource analysis"
   offsource_analysis = hipe_run(idirectory + "/offsource", cp, grb_ifolist,
