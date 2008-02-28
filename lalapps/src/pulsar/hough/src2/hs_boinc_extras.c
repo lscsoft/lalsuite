@@ -1709,12 +1709,12 @@ int sse_disabled() {
      "MOVL    $1,%%EAX                   \n\t" 
      "CPUID                              \n\t"
      "TEST    $0x2000000,%%EDX           \n\t" /* test SSE support */
-     "JZ      noSSE                      \n\t"
+     "JZ      %0f                        \n\t"
      "TEST    $0x1000000,%%EDX           \n\t" /* test FXSAVE/FXRSTOR support */
-     "JZ      noSSE                      \n\t"
+     "JZ      %0f                        \n\t"
      "SMSW    %%AX                       \n\t" /* read lower part of CR0 without violating privilege */
      "TEST    $4,%%AL                    \n\t" /* test if FXSAVE is emulated */
-     "JNZ     noSSE                      \n\t"
+     "JNZ     %0f                        \n\t"
      "PUSH    %%EBP                      \n\t"
      "MOV     %%ESP,%%ESI                \n\t" /* save stack pointer */
      "SUB     $0x200,%%ESP               \n\t" /* allocate space for FXSAVE */
@@ -1738,10 +1738,10 @@ int sse_disabled() {
      "MOV     %%ESI,%%ESP                \n\t" /* restore ESP */
      "POP     %%EBP                      \n\t" /* restore EBP */
      "SUB     %%EAX,%%EAX                \n\t" /* mark SSE support */
-     "JMP     okSSE                      \n\t" 
-     "noSSE:                             \n\t" 
+     "JMP     %1f                        \n\t" 
+     "0:                                 \n\t" 
      "MOV     $-1,%%EAX                  \n\t" 
-     "okSSE:                             \n\t" 
+     "1:                                 \n\t" 
      "MOVL    %%EAX,%0                   \n\t" /* store the result */
      : "=m" (ret)
      : 
