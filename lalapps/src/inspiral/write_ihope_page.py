@@ -19,20 +19,23 @@ import ConfigParser
 
 
 def functionId(nFramesUp):
-    """ Create a string naming the function n frames up on the stack.
-    """
-    try:
-      co = sys._getframe(nFramesUp+1).f_code
-      msg = "%s (%s @ %d)" % (co.co_name, co.co_filename, co.co_firstlineno)
-      if msg.startswith("?") is False:
-        print "-->ERROR in function: " + msg
-    except:
-      msg=[]
-    return msg
+  """ 
+  Create a string naming the function n frames up on the stack.
+  """
+  try:
+    co = sys._getframe(nFramesUp+1).f_code
+    msg = "%s (%s @ %d)" % (co.co_name, co.co_filename, co.co_firstlineno)
+    if msg.startswith("?") is False:
+      print "-->ERROR in function: " + msg
+  except:
+    msg=[]
+  return msg
 
 # ***************************************************************************
 # ***************************************************************************
 def logText(logfile, text, tag="done", debug=True):
+  """
+  """ 
   
   if tag=="warning":
     msg= "<"+tag+">"+text+"</"+tag+">\n"
@@ -211,6 +214,7 @@ def write_general(page,opts):
 
   # The search parameters 
   try:
+    # todo : get this information from the ini file
     executables = ("inspiral", "tmpltbank", "sire", "thinca", "trigbank", "coire" , "inspinj")
     page.h3("The search used the following resources:")
     
@@ -223,7 +227,7 @@ def write_general(page,opts):
     page.ul.close()
     page.li.close()
 
-    page.add("<li>Segment information:") #section section
+    page.add("<li>Segment information (see the Data Information section for more details):") #section section
     page.ul()
     for this in get_ifos():
         seg = this +'-SELECTED_SEGS-'+opts.gps_start_time+'-'+opts.duration+'.txt'
@@ -232,8 +236,15 @@ def write_general(page,opts):
     page.ul.close()
     page.li.close()
 
+
+    # let us give the ihope.ini and log file. We need to copy some files to the webdir
+    cmd = 'cp '+opts.datadir + '/ihope.pipeline.log  '+opts.physdir
+    print cmd
+    make_external_call(cmd, opts.debug, opts.debug, False)
     text=("The configuration is contained in the file <a href=\"" + \
         webdir + "/" + ini + "\">" + ini + "</a>")
+    text+=("which was used by lalapps_ihope as reported in the  <a href=\"" + \
+        webdir + "/" + "ihope.pipeline.log" + "\"> [ihope.pipeline.log]</a> file.")
     page.li(text) #third section
     text = "A list of category files stored in this directory ("  \
    	+ "<a href=\""+ webdir + "/catlists/\"> catlists</a>"  +\
@@ -264,6 +275,8 @@ def write_general(page,opts):
 # ***************************************************************************
 # ***************************************************************************
 def write_title(page, text, tag):
+  """
+  """
   page.h2()
   page.add("<a name=\""+text.replace(" ", "_")+"\">")
   input = "input_"+tag
@@ -279,6 +292,8 @@ def write_title(page, text, tag):
 # ***************************************************************************
 # ***************************************************************************
 def write_summary(page,opts):
+  """
+  """
   # first, get some information 
   webdir = opts.webdir
   datadir = opts.datadir
@@ -294,8 +309,9 @@ def write_summary(page,opts):
   
   page.div(id="div_verlaine", style='display:none') #(3)
   page = heading(page, "Selected segments", "Switch details on/off")  #(4)
-  page.p("""The segments files above were created with no data quality flags 
-set. The times analyzed according to hipe are (SELECTED_SEGS):""")
+  page.p("""The segments files provided in the general section were created with no data quality flags 
+set. The times analyzed according to ihope/hipe are provided here below, where we used the files
+ (<ifo>-SELECTED_SEGS-<start-time>-<duration>.txt) and the MISSED files:""")
   page.p(e.br())
   page.table()
   segs = get_segments_tag("SELECTED_SEGS")
@@ -308,12 +324,14 @@ set. The times analyzed according to hipe are (SELECTED_SEGS):""")
       page.tr.close()
   page.table.close()
   page.div.close() #(3)
+  
+
 
   i=0
   for cat in ("CATEGORY_1_VETO_SEGS","CATEGORY_2_VETO_SEGS","CATEGORY_3_VETO_SEGS","CATEGORY_4_VETO_SEGS"):
     i=i+1
     try:
-      page = heading(page, "Category " + str(i) + " veto segments")  #(4)
+      page = heading(page, "Category " + str(i) + " veto segments (flags and time)")  #(4)
       
       page.add("This category includes the following flags : ")
       for ifo in ifos:
@@ -338,8 +356,8 @@ set. The times analyzed according to hipe are (SELECTED_SEGS):""")
       logText(logfile, "Problems parsing category veto segment list "+str(i), "warning")
      
 
-  for tag in ["SCIENCE_SEGMENTS", "RDS_C03_L2"] :
-    page = heading(page, "Science segments ") #(4)
+  for tag in ["SCIENCE_SEGMENTS", "RDS_C03_L2", "MISSED_SEGS"] :
+    page = heading(page, tag +"summary ") #(4)
     page.add("The science segments (category 1) according to hipe are "+tag+": <br/>")
     page.table()
     segs = get_segments_tag(tag)
@@ -366,6 +384,8 @@ set. The times analyzed according to hipe are (SELECTED_SEGS):""")
 # ***************************************************************************
 # ***************************************************************************
 def write_injection(fname,dir):
+  """
+  """
   fname.write("<a name=\"eff\"><h2>Efficiency Plots</h2></a>\n\n")
 
   for ifos in opts.ifos:
@@ -391,7 +411,8 @@ def write_injection(fname,dir):
 # ***************************************************************************
 # ***************************************************************************
 def write_upperlimit(page, opts):
-  
+  """
+  """
   webdir = opts.webdir
   ini = opts.config_file
   ifos = get_ifos()
@@ -459,6 +480,8 @@ def write_upperlimit(page, opts):
 # ***************************************************************************
 # ***************************************************************************
 def write_tuning(page,opts):
+  """
+  """
   webdir = opts.webdir
   ini = opts.config_file
   ifos = get_ifos()
@@ -518,7 +541,8 @@ def write_tuning(page,opts):
 # ***************************************************************************
 # ***************************************************************************
 def write_analysis(page,opts, thisSearch='playground'):
-  
+  """
+  """
   webdir = opts.webdir
   ini = opts.config_file
   ifos = get_ifos()
@@ -537,7 +561,7 @@ def write_analysis(page,opts, thisSearch='playground'):
   page.div(id="div_hugo", style='display:none')
   page.add("This section summarizes the analysis of the "+thisSearch+" data.<br/>")
   
-  #table and venn diagramm
+  #table and venn diagram
   
   try:
     page = heading(page, "General information", "see details here")
@@ -579,7 +603,7 @@ def write_analysis(page,opts, thisSearch='playground'):
         data = data +coincs.get(coinc) + " "
     create_venn(data, thisSearch)
     # and incorporate into html
-    comment = "Venn diagramm showing distribution of"
+    comment = "Venn diagram showing distribution of"
     for coinc in  coincs.keys():
       comment = comment + " "+ coinc
     page = add_figure(page, fnames =[thisSearch+"/venn_"+thisSearch+".png"], caption=comment, size="half")
@@ -627,10 +651,10 @@ def write_analysis(page,opts, thisSearch='playground'):
   caption = "Trigger rate at second inspiral stage"
   page = fom(page, opts, tag, caption, images_dir)
   page.div.close()
-  #---------------------------- the first inspiral stage (no veto)
-  page = heading(page, "Second thinca step (all ifo combinaison)")
+  #---------------------------- the second  stage (cat veto 2)
+  page = heading(page, "Second thinca step (all ifo combinaison and category veto 2 )")
   page = add_config_section(page, "thinca")
-  tag = '*plotthinca_SECOND*PLAYGROUND*'
+  tag = '*plotthinca_SECOND*PLAYGROUND*CAT_2*'
   caption = "Trigger rate at second inspiral stage"
   page = fom(page, opts, tag, caption, images_dir)
   page.div.close()
@@ -870,6 +894,8 @@ def write_analysis(page,opts, thisSearch='playground'):
 # ***************************************************************************
 # ***************************************************************************
 def write_injection(page, opts):
+  """
+  """
   webdir = opts.webdir
   ini = opts.config_file
   ifos = get_ifos()
@@ -997,6 +1023,8 @@ def get_numslide(run):
 # ***************************************************************************
 # ***************************************************************************
 def add_config_section(page, section):
+  """
+  """
   ini  = hipecp.items(section)
   page.add("<pre>")
   page.add("------------------------------------" +section)
@@ -1008,6 +1036,8 @@ def add_config_section(page, section):
 # ***************************************************************************
 # ***************************************************************************
 def add_input_h3(page, title):
+  """
+  """
   #increment block number
   global count_block 
   input=str(count_block)
@@ -1020,7 +1050,10 @@ def add_input_h3(page, title):
   return page
 
 def heading(page, title="None", label="Switch details on/off", heading="h3"):
+  """
+  """
   #increment block number
+
   global count_block 
   input=str(count_block)
   count_block=count_block+1
@@ -1040,12 +1073,16 @@ def heading(page, title="None", label="Switch details on/off", heading="h3"):
 # ***************************************************************************
 # ***************************************************************************
 def add_caption(page, caption):
+  """
+  """
   global fig_num
   page.p("Figure "+str(fig_num) + ": "+caption)
   fig_num = fig_num + 1
   return page
 
 def add_figure(page,fnames="test", caption="add a caption", size="full", alt="no figure found"):
+  """
+  """
   global fig_num
   dir = opts.webdir
   page.add("<!-- insert a figure -->\n<div class=\"figure\">")
@@ -1074,7 +1111,7 @@ def add_figure(page,fnames="test", caption="add a caption", size="full", alt="no
 ####
 def create_venn(data, tag):
   """
-  Create a venn diagramm for the 2 or 3 ifos case
+  Create a venn diagram for the 2 or 3 ifos case
   data has to be H1H2 H1 H2L1 H2 H1L1 L1 H1H2L1 array 
   """
   try:
@@ -1096,9 +1133,11 @@ def create_venn(data, tag):
 # ***************************************************************************
 # ***************************************************************************
 def sortDict(d):
-    items = d.items()
-    items.sort()
-    return [value for key, value in items]
+  """
+  """
+  items = d.items()
+  items.sort()
+  return [value for key, value in items]
 
 # ***************************************************************************
 # ***************************************************************************
@@ -1149,13 +1188,16 @@ def get_segments_tag(tag):
   try:
     ncols, status = make_external_call(command, False, opts.debug, True)
     ncols = ncols[len(ncols)-2]
-    if float(ncols)==4:  
+    # some files may be empty, so the first line (the comment 
+    # which has 5 cols)will be read, which explaine the >= and not strict ==. 
+    if float(ncols)>=4:  
       for ifo in ifos:
         command = 'awk \'{sum=sum+$4} END {print sum/3600/24}\' ' +  datadir +'/segments/' + ifo + this_tag
         output_days, status = make_external_call(command, opts.debug, opts.debug, True)
         command = 'awk \'{sum=sum+$4} END {print sum}\' ' +  datadir +'/segments/' + ifo + this_tag
         output_seconds, status = make_external_call(command, opts.debug, opts.debug, True)
         thisdata[ifo] = [ output_days, output_seconds]
+    # unfortunately, right now, there is no standard, so some files have only 2 columns
     elif float(ncols)==2:
       for ifo in ifos:
         command = 'awk \'{sum=sum+$2-$1} END {print sum/3600/24}\' ' +  datadir +'/segments/' + ifo + this_tag
@@ -1231,8 +1273,12 @@ def get_ifos():
 # ***************************************************************************
 # ***************************************************************************
 def get_version(executable): 
+  """
+  search for the tag and version of an executable using the --version argument.
+  """
   output=[]
   try:
+    # this is surely useless now to make a distinction with trigbank 
     if executable=="trigbank":
       pathname = hipecp.get("condor", "trigbank") 
     else:
@@ -1247,20 +1293,38 @@ def get_version(executable):
     output= '(not found)' 
     pass
 
-  if output.find('CVS Tag')>0:
-    output = output.split()
-    output = ' has tag version '+output[len(output)-2]
-  elif output.find('CVS Version')>0:
-    output = output.split()
-    output = ' no tag found but the version is '+output[len(output)-7] + output[len(output)-6] 
-  else:
-    output = ' not tag found, no version found...check me'
-  return output
+  output = output.split()
+  
+  #searching for the tagname, which may be empty(undefined)
+  try:
+    index=  output.index("Tag:")
+    tagname = output[index+2]
+    # found the "Tag" string. Is it different from $ ?
+    if tagname=="$":
+      tagname = ' Undefined tag name.'
+    else:
+      tagname = ', tag name is '+tagname+'. '
+  except:
+    tagname = ' Cannot find the tag name'
+
+
+  #searching for the version, which may be empty(undefined)
+  try:
+    index=  output.index("Version:")
+    version = output[index+3]
+    version = 'Version is '+ version +'.'
+  except:
+    version = '. Undefined version.'
+
+  return tagname+' '+version
 
 # ***************************************************************************
 # ***************************************************************************
 #### function to copy the segment files in the appropriate directory
 def copy_segments():
+  """
+  
+  """
 
 
   # parsing the ini file, find the cat file and thenread the ./segments directory
@@ -1361,10 +1425,12 @@ def fom(page, opts, tag, caption, directory="playground_summary_plots"):
         command = 'cp ' + dir + filename+' ' +opts.physdir        
         make_external_call(command.replace("\n", " "), False, opts.debug, True)
         msg =" <a href=\""+filename.replace("/pictures", "")+\
-            "\">click here to get all pictures and arguments used to generate the plots</a> "
+            "\"> --Click here to get all pictures (full resolution) as well as the pylal arguments used to generate the plots</a> "
     this.close()
-   
-    page = add_figure(page, fnames=fnameList, caption=(caption+msg), size="third", alt=fnameList)
+  
+    source = eachcache.split('/') 
+    source = source[len(source)-1]
+    page = add_figure(page, fnames=fnameList, caption=(caption+' '+msg+'\nSource:'+source), size="third", alt=fnameList)
 
     this.close()
   page.div.close()
@@ -1447,6 +1513,7 @@ gps-end-time    = 849974770
 title           = "Low mass CBC analysis"
 ihope-ini-file  = ihope.ini
 ihope-directory = /archive/home/cokelaer/S5/Month1/full_analysis/
+home-directory  = /archive/home/
 url             = ldas-jobs.ligo.caltech.edu
 username        = cokelaer
 output          = index.shtml
@@ -1477,7 +1544,7 @@ configcp = ConfigParser.ConfigParser()
 configcp.read(config)
 
 #----------------------------------------
-# First, we open an xml file, for the log
+# First, we open an xml file, for the log file
 print >>sys.stdout,"Openning the log file"
 try :
   logfile = open(__name__+".xml", "w")
@@ -1489,9 +1556,10 @@ except:
   print >>sys.stderr, "Could not create the log file...quitting"
   raise 
 
+
 #---------------------------------------
+# then, we parse the write_ihope_page.ini file
 print >>sys.stdout,"Parsing the ini file: " + opts.config
-#parsing the ini file
 try:
   opts.config_file 	= configcp.get("main", "ihope-ini-file")
   opts.gps_start_time 	= configcp.get("main", "gps-start-time")
@@ -1501,6 +1569,7 @@ try:
   opts.url	 	= configcp.get("main", "url")
   opts.username	 	= configcp.get("main", "username")
   opts.output	 	= configcp.get("main", "output")
+  opts.home_directory 	= configcp.get("main", "home-directory")
 except:
   print >>sys.stderr, "ERROR::The ini file does not have the proper field in the [main] section" 
   print >> sys.stderr,"       Consider adding those fields if missing: ihope-ini-file, gps-start-time,gps-end-time, ihope-directory, title,url, username, output"
@@ -1513,7 +1582,7 @@ opts.gpsdir =  '/'+str(opts.gps_start_time)+'-'+str(opts.gps_end_time)+'/'
 opts.duration = str(int(opts.gps_end_time) - int(opts.gps_start_time))
 opts.webdir = 'http://' + opts.url + '/~' + opts.username  + opts.gpsdir
 opts.datadir = opts.ihope_directory + opts.gpsdir
-opts.physdir = '/archive/home/'+opts.username+'/public_html/'+ opts.gpsdir
+opts.physdir = opts.home_directory+'/'+opts.username+'/public_html/'+ opts.gpsdir
   
 #------------------------------------------------------------------------------------
 #read the different css style available and copy the style files in the web directory.
@@ -1539,7 +1608,7 @@ except:
 
 
 #-----------------------------------------
-# here is the directory we want to look at
+# here is the directory we want to extract information from
 msg = "Entering " + opts.datadir
 print >> sys.stdout, msg
 if not  os.path.isdir(opts.datadir):
@@ -1574,7 +1643,7 @@ hipecp.read(hipe)
 make_external_call( 'cp '+opts.config_file + ' ' + opts.physdir, False, opts.debug, True)
 
 #-----------------------------------------
-# now we copy the segments to the web directory
+# now we copy the segments to the web directory and other relevant information
 msg =   "Copying segments"
 logText(logfile, msg)
 copy_segments()
@@ -1587,7 +1656,7 @@ html_order = ['toc', 'general', 'summary', 'playground', 'injection', \
     'tuning', 'analysis', 'upperlimit', 'logfile', 'about']
 
 html_sections['toc'] = "Table of Contents"
-html_sections['general'] = "General Information"
+html_sections['general'] = "General Information (tags, ihope ini file, ifo details,...)"
 html_sections['summary'] = "Data Information"
 if opts.playground is True: html_sections['playground']	= "Playground"
 if opts.injection is True: html_sections['injection'] = "Injection"
@@ -1628,9 +1697,8 @@ for each_section in html_order:
 
  
 
-##### the endi
-
-
+##### the end
+# the valid HTML and CSS footer
 page.add("<table><tr><td>")
 page.add("<a href=\"http://validator.w3.org/check?uri=referer\">")
 page.add("<img src=\"http://validator.w3.org/images/valid_icons/valid-xhtml10\" alt=\"Valid XHTML 1.0!\" height=\"31\" width=\"88\"/></a> ")
