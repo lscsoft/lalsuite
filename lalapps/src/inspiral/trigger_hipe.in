@@ -749,7 +749,7 @@ for grb in ext_trigs:
   hipe_caches.append(onsource_analysis.get_cache_name())
   if opts.do_dataquality:
     for cat, subdict in veto_filename_dict.iteritems():
-      dq_analysis = make_dq_run(offsource_analysis, subdict, cat)
+      dq_analysis = make_dq_run(onsource_analysis, subdict, cat)
       dq_analysis_node = dq_analysis.finalize(uberdag=uberdag,
                                               parent=onsource_node)
       hipe_caches.append(dq_analysis.get_cache_name())
