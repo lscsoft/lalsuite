@@ -1221,7 +1221,7 @@ LALEOBWaveformForInjection (
   sprintf(message, "fFinal = %f", params->fFinal);
   LALInfo(status, message);
 
- sprintf(message, "cycles = %f", s/3.14159);
+  sprintf(message, "cycles = %f", s/3.14159);
   LALInfo(status, message);
 
   sprintf( message, "final coalescence phase with respet to actual data =%f ",
@@ -1767,7 +1767,7 @@ Useful for debugging: Make sure a solution for r exists.
             h->data[ice] = LALInspiralHPlusPolarization( s, v, params );
             h->data[ico] = LALInspiralHCrossPolarization( s, v, params );
 	    */
-            amp = v*v;
+            amp = 4.*apFac*f2a; 
             h1 = amp * cos(2.* (s - sSubtract));
             h2 = amp * cos(2.* (s - sSubtract) + LAL_PI_2);
             h->data[count] = (REAL4) h1;
@@ -1808,7 +1808,6 @@ Record the final cutoff frequency of BD Waveforms for record keeping
 -----------------------------------------------------------------*/
    /*params->rFinal = rOld;
    params->vFinal = v;*/
-   params->fFinal = pow(v,3.)/(LAL_PI*m);
    if (signal1 && !signal2) params->tC = t;
    *countback = count;
   
@@ -1844,29 +1843,59 @@ Record the final cutoff frequency of BD Waveforms for record keeping
       }
       else
       {
-        REAL4Vector s1, s2;
+        REAL4Vector *s1, *s2;
 	vecLength = h->length/2;
-        s1.length = vecLength;
-        s2.length = vecLength;
-        s1.data = h->data;
-        s2.data = h->data+vecLength;
-        XLALInspiralAttachRingdownWave( Omega, &s1, &s2, params );
+	s1 = XLALCreateREAL4Vector( vecLength );
+	s2 = XLALCreateREAL4Vector( vecLength );
+	    
+        for ( k = 0; k < vecLength; k++ )
+        {
+	   int k1, k2;
+	   k1 = k;
+	   k2 = k+vecLength;
+	   s1->data[k] = h->data[k1];
+	   s2->data[k] = h->data[k2];
+	   /*
+	   fprintf(stdout, "%e %e %e\n", dt*k, s1->data[k], s2->data[k]);
+	   */
+	}
+	/*
+	fprintf(stdout, "&\n");
+	*/
+        XLALInspiralAttachRingdownWave( Omega, s1, s2, params );
         /* Filling the data vector with the data multiplied by the Harmonic */
         for ( k = 0; k < vecLength; k++)
         {
 	    int k1, k2;
 	    k1 = 2*k;
 	    k2 = k1+1;
-	    tmp1 = s1.data[k];
-	    tmp2 = s2.data[k];
-	    h->data[k1] = (tmp1 * MultSphHarm.re) + (tmp2 * MultSphHarm.im);
-	    h->data[k2] = (tmp2 * MultSphHarm.re) - (tmp1 * MultSphHarm.im);
+	    tmp1 = s1->data[k];
+	    tmp2 = s2->data[k];
+	    if (tmp1 || tmp2)
+	    {
+	       h->data[k1] = (tmp1 * MultSphHarm.re) + (tmp2 * MultSphHarm.im);
+	       h->data[k2] = (tmp2 * MultSphHarm.re) - (tmp1 * MultSphHarm.im);
+	       /*
+	       fprintf(stdout, "%e %e %e\n", dt*k, tmp1, tmp2);
+	       */
+	       if (k >= count) 
+	       {
+		  phi->data[k] = phi->data[k-1]+LAL_PI/20.;
+		  (*countback)++;
+	       }
+	    }
    
 	}
+	XLALDestroyREAL4Vector( s1 );
+	XLALDestroyREAL4Vector( s2 );
       }
 
       XLALDestroyREAL4Vector( Omega );
    }
+   params->fFinal = 2.*pow(v,3.)/(LAL_PI*m);
+   /*
+   fprintf(stderr, "COUNT=%d %d %e %e\n", count, *countback, phi->data[count], phi->data[*countback]);
+   */
       
    XLALRungeKutta4Free( integrator );
    LALFree(dummy.data);
