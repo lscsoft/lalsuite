@@ -718,6 +718,7 @@ LALInspiralChooseModel(
          default:
             break;
       }
+      break;
       case pseudoFourPN:
       switch (params->approximant)
       {
