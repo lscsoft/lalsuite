@@ -1,7 +1,5 @@
 static volatile const char *cpu_type_features_h_rcsid = "$Id$";
 
-extern int global_cpu_type;
-
 #if defined(__POWERPC__) && defined(__APPLE__)
 
 #define FEAT_CPU_TYPE_1 FEAT_ALTIVEC

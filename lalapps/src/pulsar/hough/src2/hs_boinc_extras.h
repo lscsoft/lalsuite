@@ -46,6 +46,8 @@
 #define COMPUTEFSTATHOUGHMAP LocalComputeFstatHoughMap
 #define COMPUTEFSTATFREQBAND LocalComputeFStatFreqBand
 
+#include "HierarchicalSearch.h"
+
 extern void
 LocalComputeFStatFreqBand ( LALStatus *status, 
                             REAL8FrequencySeries *FstatVector,
@@ -90,6 +92,8 @@ LocalComputeFstatHoughMap ( LALStatus *status,
 #ifdef  __cplusplus
 extern "C" {
 #endif
+
+extern int global_cpu_type;
 
 extern LALStatus *global_status;
 
