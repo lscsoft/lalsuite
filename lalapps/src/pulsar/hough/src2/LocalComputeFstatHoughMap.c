@@ -67,18 +67,18 @@ static int smallerHough(const void *a,const void *b) {
 
 /* stupid MSC doesn't understand inline function (at least not in VS2003) */
 #ifdef _MSC_VER
-#define INLINE
+#define INLINE static
 #else
 #define INLINE inline
 #endif
 
-void
+static void
 LocalHOUGHConstructHMT_W  (LALStatus                  *status, 
 			   HOUGHMapTotal              *ht     , /**< The output hough map */
 			   UINT8FrequencyIndexVector  *freqInd, /**< time-frequency trajectory */ 
 			   PHMDVectorSequence         *phmdVS); /**< set of partial hough map derivatives */
 
-void
+static void
 LocalHOUGHAddPHMD2HD_W    (LALStatus      *status, /**< the status pointer */
 			   HOUGHMapDeriv  *hd,     /**< the Hough map derivative */
 			   HOUGHphmd      *phmd);  /**< info from a partial map */ 
@@ -542,10 +542,11 @@ LocalComputeFstatHoughMap (LALStatus            *status,
 /* this function is identical to LALHOUGHConstructHMT_W in DriveHough.c,
    except for that it calls LocalHOUGHAddPHMD2HD_W instead of LALHOUGHAddPHMD2HD_W
 */
-void LocalHOUGHConstructHMT_W (LALStatus                  *status, 
-			       HOUGHMapTotal              *ht, /**< The output hough map */
-			       UINT8FrequencyIndexVector  *freqInd, /**< time-frequency trajectory */ 
-			       PHMDVectorSequence         *phmdVS) /**< set of partial hough map derivatives */
+static void
+LocalHOUGHConstructHMT_W (LALStatus                  *status, 
+			  HOUGHMapTotal              *ht, /**< The output hough map */
+			  UINT8FrequencyIndexVector  *freqInd, /**< time-frequency trajectory */ 
+			  PHMDVectorSequence         *phmdVS) /**< set of partial hough map derivatives */
 {
 
   UINT4    k,j;
@@ -649,9 +650,10 @@ void LocalHOUGHConstructHMT_W (LALStatus                  *status,
    two loops become actually identical in LocalHOUGHAddPHMD2HD_Wlr
    (leftBorder <-> rightBorder, lengthLeft <-> lengthRight, weight <-> -weight)
 */
-void LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
-			     HOUGHMapDeriv  *hd,     /**< the Hough map derivative */
-			     HOUGHphmd      *phmd)   /**< info from a partial map */ 
+static void
+LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
+			HOUGHMapDeriv  *hd,     /**< the Hough map derivative */
+			HOUGHphmd      *phmd)   /**< info from a partial map */ 
 {
 
   INT2     k;
