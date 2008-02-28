@@ -933,7 +933,7 @@ static void worker (void) {
     LogPrintf (LOG_DEBUG, "Set up communication with graphics process.\n",res);
 #endif
 
-#ifdef EAH_DETECT_CPU_FETAURES
+#ifdef EAH_DETECT_CPU_FEATURES
   detect_cpu_type();
   LogPrintf (LOG_DEBUG, "CPU type:%d\n",global_cpu_type);
 #endif
