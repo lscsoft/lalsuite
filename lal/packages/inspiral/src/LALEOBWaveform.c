@@ -1146,6 +1146,7 @@ LALEOBWaveformForInjection (
   /* Compute some parameters*/
   LALInspiralInit(status->statusPtr, params, &paramsInit);
   CHECKSTATUSPTR(status);   
+
   if (paramsInit.nbins==0)
     {
       DETATCHSTATUSPTR(status);
@@ -1752,7 +1753,7 @@ Useful for debugging: Make sure a solution for r exists.
           int ice, ico, length;
 	  ice = 2*count;
 	  ico = ice + 1;
-	  length = h->length/2;
+	  length = a->length/2;
 
           ff->data[count]= (REAL4)(omega/unitHz);
           f2a = pow (f2aFac * omega, 2./3.);
@@ -1853,10 +1854,13 @@ Record the final cutoff frequency of BD Waveforms for record keeping
         /* Filling the data vector with the data multiplied by the Harmonic */
         for ( k = 0; k < vecLength; k++)
         {
+	    int k1, k2;
+	    k1 = 2*k;
+	    k2 = k1+1;
 	    tmp1 = s1.data[k];
 	    tmp2 = s2.data[k];
-	    h->data[k]           = (tmp1 * MultSphHarm.re) + (tmp2 * MultSphHarm.im);
-	    h->data[vecLength+k] = (tmp2 * MultSphHarm.re) - (tmp1 * MultSphHarm.im);
+	    h->data[k1] = (tmp1 * MultSphHarm.re) + (tmp2 * MultSphHarm.im);
+	    h->data[k2] = (tmp2 * MultSphHarm.re) - (tmp1 * MultSphHarm.im);
    
 	}
       }
