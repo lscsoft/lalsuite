@@ -116,7 +116,7 @@ REAL4 LALInspiralHPlusPolarization( REAL8 phase, REAL8 v, InspiralTemplate *para
 		case newtonian:
 		hPlus = hPlus - (1.+cI2) * cos(2.*phase);
 		break;
-		default: fprintf(stderr, "There are no EOB waveforms at order %d in amplitude\n", params->order);
+		default: fprintf(stderr, "There are no EOB waveforms at order %d in amplitude\n", params->ampOrder);
 	}
         return 2.* M * LAL_MTSUN_SI* eta * v * v * hPlus * LAL_C_SI / ( LAL_PC_SI * 1.e6 );
 }
@@ -172,7 +172,7 @@ REAL4 LALInspiralHCrossPolarization( REAL8 phase, REAL8 v, InspiralTemplate *par
 		case newtonian:
 		hCross = hCross - 2.* cI * sin(2.*phase);
 		break;
-		default:  fprintf(stderr, "There are no EOB waveforms at order %d in amplitude\n", params->order);
+		default:  fprintf(stderr, "There are no EOB waveforms at order %d in amplitude\n", params->ampOrder);
 	}
         return 2.* M * LAL_MTSUN_SI * eta * v * v * hCross * LAL_C_SI/ ( LAL_PC_SI * 1.e6 );
 
