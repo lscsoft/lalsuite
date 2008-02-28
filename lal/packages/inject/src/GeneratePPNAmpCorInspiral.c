@@ -311,7 +311,6 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   else
     ampOrder = params->ampOrder;	  
   
-  fprintf(stderr, "\n ampOrder = %d \n", ampOrder);
   q[0] = 1.0;
   for(i = 1; i < AMPMAXORDER; i++)
     q[i] = ( i <= ampOrder? 1.0 : 0.0 );
