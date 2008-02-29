@@ -1,6 +1,6 @@
-#!/usr/bin/env @PYTHONPROG@
+#!/usr/bin/python
 """
-cosmicstring_pipe.py - standalone ring pipeline driver script
+Standalone ring pipeline driver script
 
 
 $Id$
@@ -19,11 +19,10 @@ import sys, os, random
 import getopt, re, string
 import tempfile
 import ConfigParser
-sys.path.append('@PYTHONLIBDIR@')
 
 # import the modules we need to build the pipeline
 from glue import pipeline
-import cosmicstring
+from lalapps import cosmicstring
 
 def usage():
   msg = """\
@@ -118,7 +117,7 @@ cp = ConfigParser.ConfigParser()
 cp.read(config_file)
 
 # create a log file that the Condor jobs will write to
-basename = re.sub(r'\.ini',r'',config_file)
+basename = os.path.splitext(os.path.basename(config_file))[0]
 tempfile.tempdir = log_path
 
 tempfile.template = basename + '.log'
@@ -128,7 +127,7 @@ fh.close()
 
 # create the DAG writing the log to the specified directory
 dag = pipeline.CondorDAG(logfile)
-dag.set_dag_file(basename + '.dag')
+dag.set_dag_file(basename)
 
 # create the Condor jobs that will be used in the DAG
 df_job = pipeline.LSCDataFindJob('cache','logs',cp)
