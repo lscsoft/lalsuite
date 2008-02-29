@@ -25,7 +25,7 @@ ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
 endif
 
 PREFIX = /usr
-DATADIR = /
+SYSCONF = /etc/lal
 
 configure:
 	sh ./00boot
@@ -37,7 +37,7 @@ config.status : configure
 	CFLAGS="$(CFLAGS)" \
 	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 		--prefix=$(PREFIX) \
-		--datadir=$(DATADIR) \
+		--sysconfdir=$(SYSCONF) \
 		--mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
 		--enable-nightly=no \
 		--enable-frame --enable-metaio \
@@ -86,12 +86,13 @@ install : build
 	$(MAKE) install DESTDIR=$(CURDIR)/debian/tmp
 	dh_install --sourcedir=debian/tmp
 
+# remove unneeded /etc/lal
+	-rm -rf $(CURDIR)/debian/lal/etc
+	
 	# split off -dev
 	-mv $(CURDIR)/debian/lal/$(PREFIX)/include/* $(CURDIR)/debian/lal-dev/$(PREFIX)/include
 	-mv $(CURDIR)/debian/lal/$(PREFIX)/lib/*a $(CURDIR)/debian/lal-dev/$(PREFIX)/lib
 	-mv $(CURDIR)/debian/lal/$(PREFIX)/lib/pkgconfig $(CURDIR)/debian/lal-dev/$(PREFIX)/lib
-#	mv $(CURDIR)/debian/lal/$(PREFIX)/lib/*a $(CURDIR)/debian/lal-dev/$(PREFIX)/lib
-#	mv $(CURDIR)/debian/lal/$(PREFIX)/lib/pkgconfig $(CURDIR)/debian/lal-dev/$(PREFIX)/lib
 #	dh_install -s
 
 
