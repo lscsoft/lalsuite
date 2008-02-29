@@ -1,0 +1,59 @@
+#!/usr/bin/env tclshexe
+package require segments
+
+set j 0
+foreach ifo [list H1 L1] {
+    set sitecode [string index $ifo 0]
+
+    #-- Read in list of 30-hour data segments
+    set anasegs($ifo) [SegRead S4${ifo}_EatH_segs.txt ]
+    #-- Read in list of SFT times
+    set sfttimes($ifo) [list]
+    set fid [open SFT_TStamps_S4_L${sitecode}O.txt ]
+    foreach item [regexp -all -inline {\d{9,10} 0} [read $fid]] {
+	foreach {start stop} $item break
+	lappend sfttimes($ifo) [list $start [expr {$start+1800}]]
+    }
+    close $fid
+    #-- Read in list of science-mode segments from segwizard
+    set scisegs($ifo) [SegRead segwizard_S4_v10_$ifo.txt ]
+    #-- Read in list of time intervals when hardware injections were on
+    set injsegs($ifo) [SegRead S4${ifo}_HWInjRunning_try2.txt ]
+
+    #-- Loop over analysis segments
+    foreach anaseg $anasegs($ifo) {
+	incr j
+
+	foreach {anastart anastop} $anaseg break
+	puts "$ifo j=$j   ($anastart-$anastop)"
+
+	set tspan [expr {$anastop-$anastart}]
+	set hours [expr {$tspan/3600.0} ]
+	puts [format "  Tspan = %6d sec = %5.2f hr" $tspan $hours ]
+
+	set segmask [list $anaseg]
+	set selsci [SegIntersection $scisegs($ifo) $segmask]
+	set tsci [SegSum $selsci]
+        set hours [expr {$tsci/3600.0} ]
+        puts [format "  Tscimode = %6d sec = %5.2f hr" $tsci $hours ]
+
+	set selsft [SegIntersection $selsci $sfttimes($ifo)]
+	set tsfts [SegSum $selsft]
+        set hours [expr {$tsfts/3600.0} ]
+        puts [format "  TinSFTs = %6d sec = %5.2f hr" $tsfts $hours ]
+
+	set badsft [SegIntersection $selsft [SegInvert $selsci] ]
+	set tbadsfts [SegSum $badsft]
+        set hours [expr {$tbadsfts/3600.0} ]
+        puts [format "  TSFTs_notScience! = %6d sec = %5.2f hr" $tbadsfts $hours ]
+
+	set selinj [SegIntersection $selsft $injsegs($ifo)]
+	set tinj [SegSum $selinj]
+        set hours [expr {$tinj/3600.0} ]
+	set pct [expr {100.0*$tinj/$tsfts}]
+        puts [format "  THWinj = %6d sec = %5.2f hr, %6.2f%% of SFT times" \
+		  $tinj $hours $pct ]
+
+    }
+
+}
