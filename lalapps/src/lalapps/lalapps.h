@@ -34,7 +34,7 @@ NRCSID( LALAPPSH, "$Id$" );
 extern const LALStatus blank_status;
 
 typedef int ( *lal_errhandler_t )(
-    LALStatus  *stat,
+    LALStatus  *,
     const char *func,
     const char *file,
     const int   line,
@@ -45,27 +45,27 @@ typedef int ( *lal_errhandler_t )(
 extern lal_errhandler_t lal_errhandler;
 
 extern int LAL_ERR_EXIT(
-    LALStatus  *stat,
+    LALStatus  *,
     const char *func,
     const char *file,
     const int   line,
     volatile const char *id
     );
 extern int LAL_ERR_ABRT(
-    LALStatus  *stat,
+    LALStatus  *,
     const char *func,
     const char *file,
     const int   line,
     volatile const char *id
     );
 extern int LAL_ERR_RTRN(
-    LALStatus  *stat,
+    LALStatus  *,
     const char *func,
     const char *file,
     const int   line,
     volatile const char *id
     );
-extern int clear_status( LALStatus *stat );
+extern int clear_status( LALStatus * );
 extern int set_debug_level( const char *s );
 
 #define LAL_CALL( function, statusptr ) \
