@@ -172,10 +172,6 @@ datatype2 = cp.get('input','type2')
 datatype3 = cp.get('input','type3')
 
 # create all the LSCdataFind jobs to run in sequence
-prev_df1 = None
-prev_df2 = None
-prev_df3 = None
-prev_inject = None
 
 segment_number = -1
 for seg in data:
@@ -190,11 +186,8 @@ for seg in data:
   df1.set_observatory(ifo1[0])
   df1.set_type(datatype1)
   df1.set_name("df_"+ifo1+"_"+str(segment_number))
-  if do_datafind and prev_df1: 
-    df1.add_parent(prev_df1)
   if do_datafind:
     dag.add_node(df1)
-  prev_df1 = df1
 
   # find data for second ifo
   df2 = pipeline.LSCDataFindNode(df_job)
@@ -203,11 +196,8 @@ for seg in data:
   df2.set_observatory(ifo2[0])
   df2.set_type(datatype2)
   df2.set_name("df_"+ifo2+"_"+str(segment_number))
-  if do_datafind and prev_df2: 
-    df2.add_parent(prev_df2)
   if do_datafind:
     dag.add_node(df2)
-  prev_df2 = df2
 
   # find data for third ifo
   df3 = pipeline.LSCDataFindNode(df_job)
@@ -216,11 +206,8 @@ for seg in data:
   df3.set_observatory(ifo3[0])
   df3.set_type(datatype3)
   df3.set_name("df_"+ifo3+"_"+str(segment_number))
-  if do_datafind and prev_df3: 
-    df3.add_parent(prev_df3)
   if do_datafind:
     dag.add_node(df3)
-  prev_df3 = df3
 
   if do_inj:
     # create injection jobs
@@ -232,10 +219,7 @@ for seg in data:
     seed = int(1e6 * random.uniform(0.0,1.0))
     inject1.add_var_opt('seed',seed)
     inject1.set_name("inj_"+str(segment_number))
-    if prev_inject: 
-      inject1.add_parent(prev_inject)
     dag.add_node(inject1)
-    prev_inject = inject1
 
   chunk_number=-1    
   for chunk in seg:
