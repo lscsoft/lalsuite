@@ -87,7 +87,7 @@ install : build
 	dh_install --sourcedir=debian/tmp
 
 # remove unneeded /etc/lal
-	-rm -rf $(CURDIR)/debian/lal/etc
+#	-rm -rf $(CURDIR)/debian/lal/etc
 	
 	# split off -dev
 	-mv $(CURDIR)/debian/lal/$(PREFIX)/include/* $(CURDIR)/debian/lal-dev/$(PREFIX)/include

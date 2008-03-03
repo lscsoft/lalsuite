@@ -78,7 +78,7 @@ install: build
 	$(MAKE) DESTDIR=$(CURDIR)/debian/lalapps install
 
 # remove unneeded /etc/lalapps
-	-rm -rf $(CURDIR)/debian/lalapps/etc
+#	-rm -rf $(CURDIR)/debian/lalapps/etc
 
 # Build architecture-independent files here.
 binary-indep: build install
