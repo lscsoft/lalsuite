@@ -225,8 +225,17 @@ class hipe_run(object):
     
     # set the usertag
     if usertag is not None:
-      self._cp.set("pipeline", "user-tag", usertag)
+      self.set_usertag(usertag)
 
+  def get_usertag(self):
+    if self._cp.has_option("pipeline", "user-tag"):
+      return self._cp.get("pipeline", "user-tag")
+    else:
+      return None
+      
+  def set_usertag(self, usertag):
+    self._cp.set("pipeline", "user-tag", usertag)
+      
   def determine_stages(self, only_run=None, dont_run=None):
     """
     Determine what stages should inspiral_hipe should construct.  Store them
@@ -366,7 +375,11 @@ def make_dq_run(base_analysis, veto_file_dict, category):
   analysis = copy.deepcopy(base_analysis)
   analysis.determine_stages(only_run=["second-coinc", "coire-second-coinc"])
   analysis.set_veto_files(veto_file_dict)
-  analysis.dag_base_name += "_CATEGORY_" + str(category)
+  old_usertag = analysis.get_usertag()
+  if old_usertag is None:
+    analysis.set_usertag("CATEGORY_" + str(category))
+  else:
+    analysis.set_usertag(old_usertag + "_CATEGORY_" + str(category))
 
   return analysis
 
