@@ -803,76 +803,72 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
 #elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_ALTIVEC)
 
-	/* NOTE: sin[ 2pi (Dphi_alpha - k) ] = sin [ 2pi Dphi_alpha ], therefore
-	 * the trig-functions need to be calculated only once!
-	 * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the 
-	 * closest to zero and will pose no numerical difficulties !
-	 */
+	{
 #ifndef LAL_NDEBUG
-	if ( local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star ) ) {
+	  if ( local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star ) ) {
 	  XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
-	}
+	  }
 #else
-	local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
+	  local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
 #endif
-	c_alpha -= 1.0f;
-	
-        {
-	  REAL4 *Xalpha_kR4 = (REAL4*)(Xalpha_l);
-
-	  float STn[4] __attribute__ ((aligned (16))); /* aligned for vector output */
-	  float qn[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
-	  /* the vectors actually become registers in the AVUnit */
-	  vector unsigned char perm;      /* permutation pattern for unaligned memory access */
-	  vector float load0, load1, load2;    /* temp registers for unaligned memory access */
-	  vector float XaiV   /* xmm3 */;                     /* SFT data loaded from memory */
-	  vector float STnV   /* xmm1 */;                            /* sums up the dividend */
-	  vector float V0000             = {0,0,0,0};                /* zero vector constant */
-	  vector float V2222  /* xmm4 */ = {2,2,2,2};                     /* vector constant */
-	  vector float pnV    /* xmm2 */ = {((float)(kappa_max)),
-					    ((float)(kappa_max)),
-					    ((float)(kappa_max - 1)),
-					    ((float)(kappa_max - 1)) };
-	  vector float qnV    /* xmm0 */ = pnV;  /* common divisor, initally = 1.0 * pnV */
-	  /*    this column above (^) lists the corresponding register in the SSE version */
-
-	  /* init the memory access (load0,load1) and put first Xalpha_k element into Xsum */
-	  load0   = vec_ld  (0,(Xalpha_kR4));
-	  perm    = vec_lvsl(0,(Xalpha_kR4));
-	  load1   = vec_ld  (0,(Xalpha_kR4+4));
-	  STnV    = vec_perm(load0,load1,perm);
-
-	  /* one loop iteration as a macro */
-#define VEC_LOOP_AV(n,a,b)\
-	  perm    = vec_lvsl(0,(Xalpha_kR4+(n)));    /* xmm3 = Xalpha_k[n] */ \
-	  load##b = vec_ld(0,(Xalpha_kR4+(n)+4));    /* ... continued */ \
-	  XaiV    = vec_perm(load##a,load##b,perm);  /* ... continued */ \
-	  pnV     = vec_sub(pnV,V2222);              /* xmm2 -= xmm4 */ \
-	  XaiV    = vec_madd(XaiV,qnV,V0000);        /* xmm3 *= xmm0 */ \
-	  qnV     = vec_madd(qnV,pnV,V0000);         /* xmm0 *= xmm2 */ \
-	  STnV    = vec_madd(STnV,pnV,XaiV);         /* xmm1 = xmm1 * xmm0 + xmm3 */
-
-	  /* do the "loop" 7 times using load0-2 for unaligned memory access */
-	  VEC_LOOP_AV( 4,1,2);
-	  VEC_LOOP_AV( 8,2,0);
-	  VEC_LOOP_AV(12,0,1);
-	  VEC_LOOP_AV(16,1,2);
-	  VEC_LOOP_AV(20,2,0);
-	  VEC_LOOP_AV(24,0,1);
-	  VEC_LOOP_AV(28,1,0);
-
-	  /* output the vectors */
-	  vec_st(STnV,0,STn);
-	  vec_st(qnV,0,qn);
-
-	  /* conbine the partial sums: */
+	  c_alpha -= 1.0f;
 	  {
-	    REAL8 reci  = 1.0 / (qn[0] * qn[2]);
-	    REAL4 U_alpha = (STn[0] * qn[2] + STn[2] * qn[0]) * reci;
-	    REAL4 V_alpha = (STn[1] * qn[3] + STn[3] * qn[1]) * reci;
+	    REAL4 *Xalpha_kR4 = (REAL4*)(Xalpha_l);
 	    
-	    realXP = s_alpha * U_alpha - c_alpha * V_alpha;
-	    imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
+	    float STn[4] __attribute__ ((aligned (16))); /* aligned for vector output */
+	    float qn[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
+	    /* the vectors actually become registers in the AVUnit */
+	    vector unsigned char perm;      /* permutation pattern for unaligned memory access */
+	    vector float load0, load1, load2;    /* temp registers for unaligned memory access */
+	    vector float XaiV   /* xmm3 */;                     /* SFT data loaded from memory */
+	    vector float STnV   /* xmm1 */;                            /* sums up the dividend */
+	    vector float V0000             = {0,0,0,0};                /* zero vector constant */
+	    vector float V2222  /* xmm4 */ = {2,2,2,2};                     /* vector constant */
+	    vector float pnV    /* xmm2 */ = {((float)(kappa_max)),
+					      ((float)(kappa_max)),
+					      ((float)(kappa_max - 1)),
+					      ((float)(kappa_max - 1)) };
+	    vector float qnV    /* xmm0 */ = pnV;  /* common divisor, initally = 1.0 * pnV */
+	    /*    this column above (^) lists the corresponding register in the SSE version */
+	    
+	    /* init the memory access (load0,load1) and put first Xalpha_k element into Xsum */
+	    load0   = vec_ld  (0,(Xalpha_kR4));
+	    perm    = vec_lvsl(0,(Xalpha_kR4));
+	    load1   = vec_ld  (0,(Xalpha_kR4+4));
+	    STnV    = vec_perm(load0,load1,perm);
+
+	    /* one loop iteration as a macro */
+#define VEC_LOOP_AV(n,a,b)						\
+	    perm    = vec_lvsl(0,(Xalpha_kR4+(n)));    /* xmm3 = Xalpha_k[n] */ \
+	    load##b = vec_ld(0,(Xalpha_kR4+(n)+4));    /* ... continued */ \
+	    XaiV    = vec_perm(load##a,load##b,perm);  /* ... continued */ \
+	    pnV     = vec_sub(pnV,V2222);              /* xmm2 -= xmm4 */ \
+	    XaiV    = vec_madd(XaiV,qnV,V0000);        /* xmm3 *= xmm0 */ \
+	    qnV     = vec_madd(qnV,pnV,V0000);         /* xmm0 *= xmm2 */ \
+	    STnV    = vec_madd(STnV,pnV,XaiV);         /* xmm1 = xmm1 * xmm0 + xmm3 */
+	    
+	    /* do the "loop" 7 times using load0-2 for unaligned memory access */
+	    VEC_LOOP_AV( 4,1,2);
+	    VEC_LOOP_AV( 8,2,0);
+	    VEC_LOOP_AV(12,0,1);
+	    VEC_LOOP_AV(16,1,2);
+	    VEC_LOOP_AV(20,2,0);
+	    VEC_LOOP_AV(24,0,1);
+	    VEC_LOOP_AV(28,1,0);
+
+	    /* output the vectors */
+	    vec_st(STnV,0,STn);
+	    vec_st(qnV,0,qn);
+	    
+	    /* conbine the partial sums: */
+	    {
+	      REAL8 reci  = 1.0 / (qn[0] * qn[2]);
+	      REAL4 U_alpha = (STn[0] * qn[2] + STn[2] * qn[0]) * reci;
+	      REAL4 V_alpha = (STn[1] * qn[3] + STn[3] * qn[1]) * reci;
+	      
+	      realXP = s_alpha * U_alpha - c_alpha * V_alpha;
+	      imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
+	    }
 	  }
 	}
 
@@ -880,20 +876,6 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
 	/* designed for four vector elemens (ve) as there are in SSE and AltiVec */
 	/* vectorizes with gcc-4.2.3 and gcc-4.1.3 */
-
-	/* NOTE: sin[ 2pi (Dphi_alpha - k) ] = sin [ 2pi Dphi_alpha ], therefore
-	 * the trig-functions need to be calculated only once!
-	 * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the 
-	 * closest to zero and will pose no numerical difficulties !
-	 */
-#ifndef LAL_NDEBUG
-	if ( local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star ) ) {
-	  XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
-	}
-#else
-	local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
-#endif
-	c_alpha -= 1.0f;
 
 	{
 	  /* the initialization already handles the first elements,
@@ -904,44 +886,55 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  REAL4 STn[4] = {Xal[0],Xal[1],Xal[2],Xal[3]};
 	  REAL4 pn[4]  = {kappa_max, kappa_max, kappa_max-1.0f, kappa_max-1.0f};
 	  REAL4 qn[4];
-
+	  
 	  for ( ve = 0; ve < 4; ve++)
 	    qn[ve] = pn[ve];
-
+	  
 	  for ( l = 1; l < DTERMS; l ++ ) {
 	    Xal += 4;
 	    for ( ve = 0; ve < 4; ve++) {
 	      pn[ve] -= 2.0f;
 	      STn[ve] = pn[ve] * STn[ve] + qn[ve] * Xal[ve];
 	      qn[ve] *= pn[ve];
-            }
+	    }
 	  }
 	  
+	  {
+#ifndef LAL_NDEBUG
+	    if ( local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star ) ) {
+	      XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
+	    }
+#else
+	    local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
+#endif
+	    c_alpha -= 1.0f;
+	  }
+
 	  /* combine the partial sums: */
 	  {
 #if EAH_HOTLOOP_DIVS == EAH_HOTLOOP_DIVS_RECIPROCAL
 	    /* if the division is to be done outside the SIMD unit */
-
+	    
 	    REAL4 r_qn  = 1.0 / (qn[0] * qn[2]);
 	    REAL4 U_alpha = (STn[0] * qn[2] + STn[2] * qn[0]) * r_qn;
 	    REAL4 V_alpha = (STn[1] * qn[3] + STn[3] * qn[1]) * r_qn;
 	    
 	    realXP = s_alpha * U_alpha - c_alpha * V_alpha;
 	    imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
-
+	    
 #else /* EAH_HOTLOOP_DIVS */
 	    /* if the division can and should be done inside the SIMD unit */
-
+	    
 	    REAL4 U_alpha, V_alpha;
-
+	    
 	    for ( ve = 0; ve < 4; ve++)
 	      STn[ve] /= qn[ve];
-
+	    
 	    U_alpha = (STn[0] + STn[2]);
 	    V_alpha = (STn[1] + STn[3]);
-
+	    
 #endif /* EAH_HOTLOOP_DIVS */
-
+	    
 	    realXP = s_alpha * U_alpha - c_alpha * V_alpha;
 	    imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
 	  }
@@ -954,15 +947,6 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	 * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the 
 	 * closest to zero and will pose no numerical difficulties !
 	 */
-#ifndef LAL_NDEBUG
-	if ( local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star ) ) {
-	  XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
-	}
-#else
-	local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
-#endif
-	c_alpha -= 1.0f;
-	
 	{ 
 	  /* improved hotloop algorithm by Fekete Akos: 
 	   * take out repeated divisions into a single common denominator,
@@ -997,6 +981,15 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  V_alpha = Tn / qn;
 #endif /* EAH_HOTLOOP_DIVS */
 
+#ifndef LAL_NDEBUG
+	  if ( local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star ) ) {
+	    XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
+	  }
+#else
+	  local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
+#endif
+	  c_alpha -= 1.0f;
+	
  	  realXP = s_alpha * U_alpha - c_alpha * V_alpha;
  	  imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
 	}
