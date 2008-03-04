@@ -933,10 +933,10 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	    U_alpha = (STn[0] + STn[2]);
 	    V_alpha = (STn[1] + STn[3]);
 	    
-#endif /* EAH_HOTLOOP_DIVS */
-	    
 	    realXP = s_alpha * U_alpha - c_alpha * V_alpha;
 	    imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
+
+#endif /* EAH_HOTLOOP_DIVS */	    
 	  }
 	}
 
