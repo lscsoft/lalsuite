@@ -589,7 +589,6 @@ class candidateList:
         self.sorted=False
         #Should be list of objects of class kurve
         self.curves=[]
-        self.summaryFormat="";
     #End init method
 
     def __sec2pixel__(self,seconds):
@@ -1490,9 +1489,15 @@ class candidateList:
         for lineInfo in self.curves:
             curveID,l,p=lineInfo.getKurveHeader()
             #See notes in methods below for explaination
-            #Offsets in d,F are likely wrong...Tina-Thu-Oct-04-2007:200710041448 
-            d=lineInfo.getCandidateDuration()+self.gpsWidth.getAsFloat()
-            F=lineInfo.getCandidateBandwidth()+self.freqWidth
+            #Offsets in d,F are likely
+            #wrong...Tina-Thu-Oct-04-2007:200710041448 
+            #revised Tue-Mar-04-2008:200803041544 
+            d=lineInfo.getCandidateDuration()
+            if d == 0:
+                d=d+self.gpsWidth.getAsFloat()
+            F=lineInfo.getCandidateBandwidth()
+            if F == 0:
+                F=F+self.freqWidth
             t=float(lineInfo.printStartGPS())
             S=float(lineInfo.printStopGPS())
             f=float(lineInfo.printStartFreq())
@@ -1503,7 +1508,7 @@ class candidateList:
             j=tmp[0][4] #The pixel power value for brightest pixel
             m=tmp[1] #Mean power of pixels in curve
             s=tmp[2] #stddev^2 of pixel power in curve
-            summary.append([t,d,f,F,h,v,j,m,s,l,p])
+            summary.append([t,d,f,g,F,h,v,j,m,s,l,p])
         return summary
     #End dumpCandidateKurveSummary()
 
@@ -1517,7 +1522,6 @@ class candidateList:
         """
         # Set the output formatting string here for all summary
         # display calls
-        self.summaryFormat="%10.5f %10.5f %10.5f %10.5f %10.5f %10.5f %10.5f %10.5f %10.5f %10.5f %10.5f \n"
         summaryData=self.dumpCandidateKurveSummary()
         output=[]
         entryFormatFloat="%10.6f\t"
@@ -1552,7 +1556,7 @@ class candidateList:
         outRoot,outExt=os.path.splitext(sourceFile)
         outFile=outRoot+'.summary'
         fp=open(outFile,'w')
-        key="# GPSstart\t Duration\t StartF\t Bandwidth\t GPSBright\t FBright\t PBright\t MeanP\t StdP\t CL\t IP\n"
+        key="# GPSstart\t Duration\t StartF\t StopF\t Bandwidth\t GPSBright\t FBright\t PBright\t MeanP\t StdP\t CL\t IP\n"
         fp.write(key)
         for entry in self.createSummaryStructure():
             fp.write(entry)
@@ -1981,8 +1985,8 @@ class candidateList:
         histList=[]
         powList=[]
         for entry in triggers:
-            histList.append([entry[10],entry[0]])
-            powList.append(entry[10])
+            histList.append([entry[11],entry[0]])
+            powList.append(entry[11])
         try:
             [entries,bins,patches]=pylab.hist(powList,colCount,bottom=1,log=True)
         except:
