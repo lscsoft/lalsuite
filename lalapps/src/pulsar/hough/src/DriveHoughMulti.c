@@ -794,6 +794,9 @@ int main(int argc, char *argv[]){
       else {
 	LAL_CALL( DuplicateBestStuff( &status, &best, &temp), &status);	
       }
+
+      /* Normalize the Best SFTs weights */
+      LAL_CALL( LALHOUGHNormalizeWeights( &status, best.weightsV), &status);
       
       /* calculate the sum of the weights squared */
       sumWeightSquare = 0.0;
