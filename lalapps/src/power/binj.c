@@ -697,7 +697,7 @@ static SimBurst *random_galactic_core(double minf, double maxf, double minband, 
 	 * because it can be easily changed this is not good */
 
 	XLALGenerateSimBurst(&hplus, &hcross, sim_burst, 1.0 / 8192);
-	sim_burst->hrss = sqrt(pow(XLALMeasureHrss(hplus), 2) + pow(XLALMeasureHrss(hcross), 2));
+	sim_burst->hrss = XLALMeasureHrss(hplus, hcross);
 	XLALDestroyREAL8TimeSeries(hplus);
 	XLALDestroyREAL8TimeSeries(hcross);
 
