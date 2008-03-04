@@ -59,6 +59,9 @@ int finite(double);
 
 #include <lalapps.h>
 
+#include <lal/lalGitID.h>
+#include <lalappsGitID.h>
+
 /* local includes */
 
 #include "HeapToplist.h"
@@ -1193,15 +1196,12 @@ WriteFStatLog (LALStatus *status, char *argv[], const CHAR *log_fname )
   fprintf (fplog, logstr);
   LALFree (logstr);
 
-  /* append an ident-string defining the exact CVS-version of the code used */
-  fprintf (fplog, "\n\n%% CVS-versions of executable:\n");
-  fprintf (fplog, "%% ----------------------------------------------------------------------\n");
+  /* append an ident-string defining the exact RC-version of the code used */
+  fprintf (fplog, "\n\n%% SC-version of executable:\n");
+  fprintf (fplog, "%% lalCommitID = %s\n", lalCommitID );
+  fprintf (fplog, "%% lalappsCommitID = %s\n", lalappsCommitID );
   fclose (fplog);
-    
-  sprintf (command, "ident %s 2> /dev/null | sort -u >> %s", argv[0], log_fname);
-  system (command);	/* we don't check this. If it fails, we assume that */
-    			/* one of the system-commands was not available, and */
-    			/* therefore the CVS-versions will not be logged */
+
 
   DETATCHSTATUSPTR (status);
   RETURN(status);

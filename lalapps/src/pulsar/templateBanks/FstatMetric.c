@@ -53,6 +53,8 @@
 #include <lal/LogPrintf.h>
 
 
+#include <lal/lalGitID.h>
+#include <lalappsGitID.h>
 
 RCSID ("$Id$");
 
@@ -268,6 +270,9 @@ main(int argc, char *argv[])
   FILE *fpMetric = 0;
   PhaseType_t phaseType;
   MetricType_t startMetricType, stopMetricType, metricType;
+  CHAR dummy[512];
+  sprintf (dummy, "%s", lalCommitID );
+  sprintf (dummy, "%s", lalappsCommitID );
 
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */

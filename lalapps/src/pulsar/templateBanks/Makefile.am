@@ -1,11 +1,18 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 
-AM_CFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
+AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/misc
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 bin_PROGRAMS = lalapps_skynet lalapps_getMetric lalapps_testFlatPulsarMetric lalapps_matchGrids \
 	lalapps_getMesh lalapps_FstatMetric lalapps_testFlatLatticeTiling lalapps_testLatticeCovering
+
+## make sure LALAPPSgitID.h is re-generated at every 'make'
+.PHONY: gitID
+gitID:
+	cd $(top_builddir)/misc && $(MAKE) gitID
+BUILT_SOURCES = gitID
+
 
 lalapps_testFlatLatticeTiling_SOURCES  = testLatticeCovering.c
 lalapps_testLatticeCovering_SOURCES  = testFlatLatticeTiling.c
