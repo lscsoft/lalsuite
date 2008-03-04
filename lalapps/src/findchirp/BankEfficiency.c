@@ -1850,10 +1850,7 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
   }
     
      
-  fclose( xmlStream.fp->fp );
-  xmlStream.fp->fp = NULL;
-    
-  /*LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlStream ), &status );*/
+  LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlStream ), &status );
       
 }
 
