@@ -1,0 +1,72 @@
+#!/bin/sh
+
+## ----- allow local testing outside of 'make'
+if test -n "$1"; then
+    srcdir="$1";
+else
+    srcdir=".";
+fi
+if test -n "$2"; then
+    prefix="$2";
+else
+    prefix="";
+fi
+
+pwd0=`pwd`;
+cd ${srcdir};
+
+outfile="misc/${prefix}GitID.h"
+tmpfile="misc/__${prefix}GitID.h"
+
+## ---------- read out git-log of last commit --------------------
+fmt="format:${prefix}CommitID: %H %n${prefix}CommitDate: %aD %n${prefix}CommitAuthor: %ae %n${prefix}CommitTitle: %s";
+logcmd="git-log -1 --pretty='$fmt'";
+statuscmd="git-status -a";
+
+if ! git_log=`eval $logcmd`  2>/dev/null; then
+    git_log="%n${prefix}CommitID: no git revision %n";
+    have_git="false";
+else
+    have_git="true";
+fi
+
+## ---------- check for modified/added git-content [ignores untracked files!] ----------
+if test "$have_git" = "true"; then
+    if $statuscmd >/dev/null; then
+	git_status="UNCLEAN: some modifications were not commited!";
+    else
+	git_status="CLEAN. No uncommited modifications.";
+    fi
+else	## no git or git-repository
+    git_status="unknown. Not derived from a git-repository?";
+fi
+
+git_log="${git_log}
+${prefix}GitStatus: ${git_status}";
+
+## ---------- parse output and generate ${prefix}GitID.h header file --------------------
+
+## make sure the 'git_log' string doesn't contain any double-quotes or $-signs, from commit-messages,
+## to avoid messing up the C-string and ident-keywords
+git_log_safe=`echo "$git_log" | sed -e"s/\"/''/g" | sed -e"s/[$]/_/g" `;
+
+## put proper $ quotations for each line to form proper 'ident' keyword strings:
+git_log_ident=`echo "$git_log_safe" | sed -e"s/\(.*\)/\"$\1 $\\\\\\n\"/g"`;
+
+cat > $tmpfile <<EOF
+#ifndef ${prefix}GITID_H
+#define ${prefix}GITID_H
+#include <lal/LALRCSID.h>
+NRCSID (${prefix}CommitID, $git_log_ident);
+#endif
+EOF
+
+if diff $tmpfile $outfile  >/dev/null 2>&1; then
+    ## files are identical, no update required
+    exit 0;
+else
+    ## files diff: update
+    cp $tmpfile $outfile;
+fi
+
+cd ${pwd0}

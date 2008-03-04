@@ -8,6 +8,9 @@ CLEANFILES = uninstall-lal.sh lal-user-env.sh lal-user-env.csh
 sysconf_DATA = lal-user-env.sh lal-user-env.csh
 BUILT_SOURCES = lal-user-env.sh lal-user-env.csh
 
+pkginclude_HEADERS = lalGitID.h
+lalGitID.h: gitID
+
 install-exec-local: uninstall-lal-sh-target
 	$(mkinstalldirs) $(DESTDIR)$(sbindir)
 	$(INSTALL_SCRIPT) uninstall-lal.sh $(DESTDIR)$(sbindir)/uninstall-lal.sh
@@ -53,3 +56,9 @@ lal-user-env.csh:
 	echo "else" >>$@ ;\
 	echo "	setenv PKG_CONFIG_PATH \"$(libdir)/pkgconfig\"" >>$@ ;\
 	echo "endif" >>$@
+
+.PHONY : gitID
+gitID:
+	if test -f $(top_srcdir)/misc/generateGitID.sh; then \
+	$(SHELL) $(top_srcdir)/misc/generateGitID.sh $(top_srcdir) lal; \
+	fi
