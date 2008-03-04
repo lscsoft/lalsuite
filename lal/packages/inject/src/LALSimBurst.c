@@ -132,17 +132,20 @@ REAL8 XLALMeasureIntS1S2DT(const REAL8TimeSeries *s1, const REAL8TimeSeries *s2)
 /**
  * Returns what people call the "root-sum-square strain".  Infact, this is
  *
- * \sqrt{\sum h^{2} \Delta t},
+ * \sqrt{\sum (h_{+}^{2} + h_{x}^{2}) \Delta t},
  *
  * which is an approximation of
  *
- * \sqrt{\int h^{2} \diff t}.
+ * \sqrt{\int (h_{+}^{2} + h_{x}^{2}) \diff t}.
  */
 
 
-REAL8 XLALMeasureHrss(const REAL8TimeSeries *series)
+REAL8 XLALMeasureHrss(
+	const REAL8TimeSeries *hplus,
+	const REAL8TimeSeries *hcross
+)
 {
-	return sqrt(XLALMeasureIntS1S2DT(series, series));
+	return sqrt(XLALMeasureIntS1S2DT(hplus, hplus) + XLALMeasureIntS1S2DT(hcross, hcross));
 }
 
 

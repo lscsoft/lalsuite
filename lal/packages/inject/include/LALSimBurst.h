@@ -75,5 +75,5 @@ int XLALSimBurstSineGaussian(
 
 REAL8 XLALMeasureHPeak(const REAL8TimeSeries *);
 REAL8 XLALMeasureIntS1S2DT(const REAL8TimeSeries *, const REAL8TimeSeries *);
-REAL8 XLALMeasureHrss(const REAL8TimeSeries *);
+REAL8 XLALMeasureHrss(const REAL8TimeSeries *, const REAL8TimeSeries *);
 REAL8 XLALMeasureIntHDotSquaredDT(const COMPLEX16FrequencySeries *);
