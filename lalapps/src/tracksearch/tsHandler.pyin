@@ -32,6 +32,8 @@ import time
 sys.path.append('@PYTHONLIBDIR@')
 from tracksearchutils import *
 
+print sys.argv
+
 disableGraphics=False
 try:
     from pylab import *
