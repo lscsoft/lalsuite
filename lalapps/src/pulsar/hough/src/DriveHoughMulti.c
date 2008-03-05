@@ -142,6 +142,8 @@ BOOLEAN uvar_EnableExtraInfo, uvar_EnableChi2;
 
 #define NBLOCKSTEST 8 /* number of data blocks to do Chi2 test */
 
+#define SPINDOWNJUMP 1 /* "Jump" to the next spin-down being analyzed (to avoid doing them all) */
+
 /* ****************************************
  * Structure, HoughParamsTest, typedef
  */
@@ -368,6 +370,7 @@ int main(int argc, char *argv[]){
   CHAR     *uvar_skyRegion=NULL;
   LALStringVector *uvar_linefiles=NULL;
   INT4     uvar_chiSqBins;
+  INT4     uvar_spindownJump;
 
   /* Set up the default parameters */
 
@@ -395,6 +398,7 @@ int main(int argc, char *argv[]){
   uvar_EnableExtraInfo=FALSE;
   uvar_EnableChi2=FALSE;
   uvar_chiSqBins = NBLOCKSTEST;
+  uvar_spindownJump = SPINDOWNJUMP;
 
 
   uvar_earthEphemeris = (CHAR *)LALCalloc( HOUGHMAXFILENAMELENGTH , sizeof(CHAR));
@@ -441,6 +445,8 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printExtraInfo",  0,  UVAR_OPTIONAL, "Print HoughMaps, HoughStatistics, expected number count stdev", &uvar_EnableExtraInfo), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "chiSqBins",       0,  UVAR_OPTIONAL, "Number of chi-square bins for veto tests",  &uvar_chiSqBins), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "enableChi2",      0,  UVAR_OPTIONAL, "Print Chi2 value for each element in the Toplist", &uvar_EnableChi2), &status);
+LAL_CALL( LALRegisterINTUserVar(    &status, "spindownJump",       0,  UVAR_OPTIONAL, "Jump to the next spin-down being analyzed (to avoid doing them all)",  &uvar_spindownJump), &status);
+
 
   /* developer input variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    0, UVAR_DEVELOPER, "Running Median block size", &uvar_blocksRngMed), &status);
@@ -867,7 +873,7 @@ int main(int argc, char *argv[]){
       nSpin1Max = uvar_nfSizeCylinder - 1 ;
       /* nSpin1Max = floor(uvar_nfSizeCylinder/2.0) ;*/
 
-      f1jump = 1./tObs;
+      f1jump = 1./tObs * uvar_spindownJump;
 
       
       /* start of main loop over search frequency bins */
@@ -954,7 +960,7 @@ int main(int argc, char *argv[]){
 	    ht.spinRes.data = NULL;
 	    ht.spinRes.data = (REAL8 *)LALCalloc(ht.spinRes.length, sizeof(REAL8));
 	    
-	    for ( n = 0; n <= nSpin1Max; ++n) { 
+	    for ( n = 0; n <= floor(nSpin1Max/uvar_spindownJump); ++n) { 
 	      /*loop over all spindown values */
 
 	      f1dis = - n * f1jump;
