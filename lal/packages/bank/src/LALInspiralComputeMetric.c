@@ -396,10 +396,16 @@ LALInspiralComputeMetric (
       params->order != onePointFivePN &&
       params->order != twoPN )
   {
-    ABORT( status, LALINSPIRALBANKH_EORDER, LALINSPIRALBANKH_MSGEORDER );
+    /* Let us force the order to be twoPN because that is the only order
+     * available for the template bank anyway. */
+    PNorder = twoPN;
   }
-  PNorder = (UINT4) params->order;
+  else
+  {
+    PNorder = (UINT4) params->order;
+  }
 
+  
   /* Setting up \Psi_{mn} coefficients  */
   InspiralComputeMetricGetPsiCoefficients( Psi, params, moments );
 
