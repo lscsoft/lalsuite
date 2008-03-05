@@ -60,8 +60,12 @@ static double all_sky_average(struct detectors detectors)
 int main(int argc, char *argv[])
 {
 	struct detectors detectors;
+	/* galactic core */
 	double ra = 2.0318570464121519;
 	double dec = -0.50628171572274738;
+	/* sn1987a */
+	/*double ra = 1.4637516476674761;
+	double dec = -1.2089885547477417;*/
 	int i;
 
 	detectors.n = 3;
@@ -71,7 +75,7 @@ int main(int argc, char *argv[])
 	detectors.detector[1] = lalCachedDetectors[LAL_LHO_2K_DETECTOR];
 	detectors.detector[2] = lalCachedDetectors[LAL_LLO_4K_DETECTOR];
 
-	printf("\nAverage of product of F+^2 + Fx^2\n---------------------------------\n");
+	printf("\nAverage of product of (F+^2 + Fx^2)\n-----------------------------------\n");
 	printf("\nDetectors: ");
 	for(i = 0; i < detectors.n; i++)
 		printf(" %s", detectors.detector[i].frDetector.prefix);
