@@ -395,7 +395,7 @@ INT4 XLALSphHarm ( COMPLEX16 *out, /**< output */
       case 0:
 	deptheta = sqrt( 15.0 / ( 32.0 * LAL_PI ) ) * sin( theta )*sin( theta );
 	out->re = deptheta;
-	out->im = deptheta;
+	out->im = 0.0;
 	break;
 	
       case 1:
@@ -442,7 +442,7 @@ INT4 XLALSphHarm ( COMPLEX16 *out, /**< output */
 	case 0:
 	  deptheta = (sqrt(105./(2.*LAL_PI))*cos(theta)*pow(sin(theta),2))/4.;
 	  out->re = deptheta;
-	  out->im = deptheta;
+	  out->im = 0.0;
 	  break;
 	  
 	case 1:
@@ -502,7 +502,7 @@ INT4 XLALSphHarm ( COMPLEX16 *out, /**< output */
       case 0:
 	deptheta = (3.*sqrt(5./(2.*LAL_PI))*(5. + 7.*cos(2*theta))*pow(sin(theta),2))/16.;
 	out->re = deptheta;
-	out->im = deptheta;
+	out->im = 0.0;
 	break;
 	
       case 1:
@@ -574,7 +574,7 @@ INT4 XLALSphHarm ( COMPLEX16 *out, /**< output */
 	case 0:
 	  deptheta = (sqrt(1155./(2.*LAL_PI))*(5.*cos(theta) + 3.*cos(3.*theta))*pow(sin(theta),2))/32.;
 	  out->re = deptheta;
-	  out->im = deptheta;
+	  out->im = 0.0;
 	  break;
 	  
 	case 1:
