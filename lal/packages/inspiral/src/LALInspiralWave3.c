@@ -260,6 +260,7 @@ LALInspiralWave3ForInjection (
   CreateVectorSequenceIn in;
 
   REAL8 phiC;/* phase at coalescence */
+  CHAR message[256];
 
   
   InspiralInit paramsInit;  
@@ -277,9 +278,13 @@ LALInspiralWave3ForInjection (
   ASSERT( !( waveform->phi ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
   ASSERT( !( waveform->shift ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
   
+  params->ampOrder = 0;
+  sprintf(message, "WARNING: Amp Order has been reset to %d", params->ampOrder);
+  LALInfo(status, message);
   /* Compute some parameters*/
   LALInspiralInit(status->statusPtr, params, &paramsInit);
   CHECKSTATUSPTR(status);   
+
   if (paramsInit.nbins==0)
     {
       DETATCHSTATUSPTR(status);
