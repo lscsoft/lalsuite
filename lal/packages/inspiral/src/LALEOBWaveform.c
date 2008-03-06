@@ -1143,6 +1143,10 @@ LALEOBWaveformForInjection (
   ASSERT( !( waveform->shift ), status, 
   	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
 
+  params->ampOrder = 0;
+  sprintf(message, "WARNING: Amp Order has been reset to %d", params->ampOrder);
+  LALInfo(status, message);
+
   /* Compute some parameters*/
   LALInspiralInit(status->statusPtr, params, &paramsInit);
   CHECKSTATUSPTR(status);   
@@ -1152,7 +1156,6 @@ LALEOBWaveformForInjection (
       DETATCHSTATUSPTR(status);
       RETURN (status);      
     }
-
   /* Now we can allocate memory and vector for coherentGW structure*/     
   LALSCreateVector(status->statusPtr, &ff, paramsInit.nbins);
   CHECKSTATUSPTR(status);
