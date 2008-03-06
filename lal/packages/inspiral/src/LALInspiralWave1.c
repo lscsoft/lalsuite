@@ -195,10 +195,11 @@ LALInspiralWave1ForInjection(
   INT4        count, i;
   REAL8       p, phiC;  
   
-  REAL4Vector a;           /* pointers to generated amplitude  data */
-  REAL4Vector h;           /* pointers to generated polarizations */
-  REAL4Vector ff;          /* pointers to generated  frequency data */
-  REAL8Vector phi;         /* generated phase data */
+  REAL4Vector *a   = NULL;      /* pointers to generated amplitude  data */
+  REAL4Vector *h   = NULL;      /* pointers to generated polarizations */
+  REAL4Vector *ff  = NULL;      /* pointers to generated  frequency data */
+  REAL8Vector *phi = NULL;      /* pointer to generated phase data */
+
   
   CreateVectorSequenceIn in;
   
@@ -218,6 +219,9 @@ LALInspiralWave1ForInjection(
   ASSERT( !( waveform->f ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
   ASSERT( !( waveform->phi ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
   
+  params->ampOrder = 0;
+  sprintf(message, "WARNING: Amp Order has been reset to %d", params->ampOrder);
+  LALInfo(status, message);
   /* Compute some parameters*/
   LALInspiralInit(status->statusPtr, params, &paramsInit);
   CHECKSTATUSPTR(status);   
@@ -228,68 +232,67 @@ LALInspiralWave1ForInjection(
   }
 
   /* Now we can allocate memory and vector for coherentGW structure*/     
-
-  ff.length  = paramsInit.nbins;
-  a.length   = 2* paramsInit.nbins;
-  phi.length = paramsInit.nbins;
+  LALSCreateVector(status->statusPtr, &ff, paramsInit.nbins);
+  CHECKSTATUSPTR(status);   
+  LALSCreateVector(status->statusPtr, &a, 2*paramsInit.nbins);
+  CHECKSTATUSPTR(status);   
+  LALDCreateVector(status->statusPtr, &phi, paramsInit.nbins);
+  CHECKSTATUSPTR(status);
   
-  ff.data = (REAL4 *) LALCalloc(paramsInit.nbins, sizeof(REAL4));
-  a.data  = (REAL4 *) LALCalloc(2 * paramsInit.nbins, sizeof(REAL4));
-  phi.data= (REAL8 *) LALCalloc(paramsInit.nbins, sizeof(REAL8));
+  /* By default the waveform is empty */
+  memset(ff->data, 0, paramsInit.nbins * sizeof(REAL4));
+  memset(a->data, 0, 2 * paramsInit.nbins * sizeof(REAL4));
+  memset(phi->data, 0, paramsInit.nbins * sizeof(REAL8));
 
-  /* Check momory allocation is okay */
-  if (!(ff.data) || !(a.data) || !(phi.data))
-  {
-    if (ff.data)  LALFree(ff.data);
-    if (a.data)   LALFree(a.data);
-    if (phi.data) LALFree(phi.data);
-
-    ABORT( status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM );
-  }
 
   if( params->ampOrder )
   {
-    h.length   = 2* paramsInit.nbins;
-    h.data  = (REAL4 *) LALCalloc(2 * paramsInit.nbins, sizeof(REAL4));
-    if (!(h.data) )
-    {
-        ABORT( status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM );
-    }
+    LALSCreateVector(status->statusPtr, &h, 2*paramsInit.nbins);
+    CHECKSTATUSPTR(status);   
+    memset(h->data, 0, 2 * paramsInit.nbins * sizeof(REAL4));
   }
+
   count = 0;
 
   /* Call the engine function */
-  LALInspiralWave1Engine(status->statusPtr, NULL, NULL, &h, &a, &ff, &phi, &count, params);
+  LALInspiralWave1Engine(status->statusPtr, NULL, NULL, h, a, ff, 
+		             phi, &count, params);
   BEGINFAIL( status )
   {
-    LALFree(ff.data);
-    LALFree(a.data);
-    LALFree(phi.data);
-    if( params->ampOrder )
-    {
-      LALFree(h.data);
-    }
+     LALSDestroyVector(status->statusPtr, &ff);
+     CHECKSTATUSPTR(status);
+     LALSDestroyVector(status->statusPtr, &a);
+     CHECKSTATUSPTR(status);
+     LALDDestroyVector(status->statusPtr, &phi);
+     CHECKSTATUSPTR(status);
+     if( params->ampOrder )
+     {
+       LALSDestroyVector(status->statusPtr, &h);
+       CHECKSTATUSPTR(status);
+     }
   }
   ENDFAIL( status );
      
-  p = phi.data[count-1];
+  p = phi->data[count-1];
   
-  params->fFinal = ff.data[count-1];
-  sprintf(message, "cycles = %f", p/(double)LAL_TWOPI);
+  params->fFinal = ff->data[count-1];
+  sprintf(message, "cycles = %f", fabs(p)/(double)LAL_TWOPI);
   LALInfo(status, message);
 
   if ( (INT4)(p/LAL_TWOPI) < 2 ){
     sprintf(message, "The waveform has only %f cycles; we don't keep waveform with less than 2 cycles.", 
-	       p/(double)LAL_TWOPI );
+	       fabs(p)/(double)LAL_TWOPI );
     XLALPrintError(message);
     LALWarning(status, message);
   }
+  else
+  {
 
       /*wrap the phase vector*/
-      phiC =  phi.data[count-1] ;
+      phiC =  phi->data[count-1] ;
       for (i = 0; i < count; i++)
 	{
-	  phi.data[i] =  phi.data[i] - phiC + ppnParams->phi;
+	  phi->data[i] =  phi->data[i] - phiC + ppnParams->phi;
 	}
       
       /* Allocate the waveform structures. */
@@ -325,9 +328,9 @@ LALInspiralWave1ForInjection(
       CHECKSTATUSPTR(status);        
       
      
-      memcpy(waveform->f->data->data , ff.data, count*(sizeof(REAL4)));
-      memcpy(waveform->a->data->data , a.data, 2*count*(sizeof(REAL4)));
-      memcpy(waveform->phi->data->data ,phi.data, count*(sizeof(REAL8)));
+      memcpy(waveform->f->data->data , ff->data, count*(sizeof(REAL4)));
+      memcpy(waveform->a->data->data , a->data, 2*count*(sizeof(REAL4)));
+      memcpy(waveform->phi->data->data ,phi->data, count*(sizeof(REAL8)));
       
       waveform->a->deltaT = waveform->f->deltaT = waveform->phi->deltaT
 	= ppnParams->deltaT;
@@ -346,8 +349,7 @@ LALInspiralWave1ForInjection(
       ppnParams->tc     = (double)(count-1) / params->tSampling ;
       ppnParams->length = count;
       ppnParams->dfdt   = ((REAL4)(waveform->f->data->data[count-1] 
-				   - waveform->f->data->data[count-2]))
-	* ppnParams->deltaT;
+			- waveform->f->data->data[count-2])) * ppnParams->deltaT;
       ppnParams->fStop  = params->fFinal;
       ppnParams->termCode        = GENERATEPPNINSPIRALH_EFSTOP;
       ppnParams->termDescription = GENERATEPPNINSPIRALH_MSGEFSTOP;
@@ -363,18 +365,23 @@ LALInspiralWave1ForInjection(
         }
         LALSCreateVectorSequence( status->statusPtr, &( waveform->h->data ), &in );
         CHECKSTATUSPTR(status);
-        memcpy(waveform->h->data->data , h.data, 2*count*(sizeof(REAL4)));
+        memcpy(waveform->h->data->data , h->data, 2*count*(sizeof(REAL4)));
         waveform->h->deltaT = ppnParams->deltaT;
         waveform->h->sampleUnits    = lalStrainUnit;
         LALSnprintf( waveform->h->name, LALNameLength,   "T1 inspiral polarizations" );
-        LALFree(h.data);
+        LALSDestroyVector(status->statusPtr, &h);
+        CHECKSTATUSPTR(status);
       }
+  }
 
   /* --- free memory --- */
-  LALFree(ff.data);
-  LALFree(a.data);
-  LALFree(phi.data); 
- 
+  LALSDestroyVector(status->statusPtr, &ff);
+  CHECKSTATUSPTR(status);
+  LALSDestroyVector(status->statusPtr, &a);
+  CHECKSTATUSPTR(status);
+  LALDDestroyVector(status->statusPtr, &phi);
+  CHECKSTATUSPTR(status);
+  
   DETATCHSTATUSPTR(status);
   RETURN (status);
 }
