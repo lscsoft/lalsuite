@@ -238,9 +238,13 @@ LALInspiralWave2ForInjection(
   ASSERT( !( waveform->shift ), status, LALINSPIRALH_ENULL,  LALINSPIRALH_MSGENULL );
    
   
+  params->ampOrder = 0;
+  sprintf(message, "WARNING: Amp Order has been reset to %d", params->ampOrder);
+  LALInfo(status, message);
   /* Compute some parameters*/
   LALInspiralInit(status->statusPtr, params, &paramsInit);
   CHECKSTATUSPTR(status);   
+
   if (paramsInit.nbins == 0)
     {
       DETATCHSTATUSPTR(status);
@@ -294,6 +298,7 @@ LALInspiralWave2ForInjection(
   if ( fabs(phi->data[count-1]/2.)/LAL_PI < 2. ){
         sprintf(message, "The waveform has only %f cycles; we don't keep waveform with less than 2 cycles.", 
 	       (double)(fabs(phi->data[count-1]/2.)/LAL_PI) );
+    XLALPrintError(message);
     LALWarning(status, message);
 
 
@@ -302,9 +307,9 @@ LALInspiralWave2ForInjection(
     {
       /*wrap the phase vector*/
       phiC =  phi->data[count-1] ;
-      for (i=0; i<count;i++)
+      for (i=0; i<count; i++)
 	{
-	  phi->data[i] =  phi->data[i] -phiC + ppnParams->phi;
+	  phi->data[i] =  phi->data[i] - phiC + ppnParams->phi;
 	}
       /* Allocate the waveform structures. */
       if ( ( waveform->a = (REAL4TimeVectorSeries *)
@@ -329,14 +334,11 @@ LALInspiralWave2ForInjection(
       
       in.length = (UINT4)count;
       in.vectorLength = 2;
-      LALSCreateVectorSequence( status->statusPtr,
-				&( waveform->a->data ), &in );
+      LALSCreateVectorSequence( status->statusPtr, &( waveform->a->data ), &in );
       CHECKSTATUSPTR(status);      
-      LALSCreateVector( status->statusPtr,
-			&( waveform->f->data ), count);
+      LALSCreateVector( status->statusPtr, &( waveform->f->data ), count);
       CHECKSTATUSPTR(status);      
-      LALDCreateVector( status->statusPtr,
-			&( waveform->phi->data ), count );
+      LALDCreateVector( status->statusPtr, &( waveform->phi->data ), count );
       CHECKSTATUSPTR(status);        
       
       memcpy(waveform->f->data->data , ff->data, count*(sizeof(REAL4)));
@@ -345,7 +347,7 @@ LALInspiralWave2ForInjection(
       
       
       waveform->a->deltaT = waveform->f->deltaT = waveform->phi->deltaT
-	= 1./params->tSampling;
+	= ppnParams->deltaT;
       
       waveform->a->sampleUnits   = lalStrainUnit;
       waveform->f->sampleUnits   = lalHertzUnit;
@@ -362,8 +364,7 @@ LALInspiralWave2ForInjection(
       ppnParams->tc     = (double)(count-1) / params->tSampling ;
       ppnParams->length = count;
       ppnParams->dfdt   = ((REAL4)(waveform->f->data->data[count-1] 
-				   - waveform->f->data->data[count-2]))
-	* ppnParams->deltaT;
+			- waveform->f->data->data[count-2])) * ppnParams->deltaT;
       ppnParams->fStop  = params->fFinal;
       ppnParams->termCode        = GENERATEPPNINSPIRALH_EFSTOP;
       ppnParams->termDescription = GENERATEPPNINSPIRALH_MSGEFSTOP;
@@ -372,7 +373,7 @@ LALInspiralWave2ForInjection(
 
       if( params->ampOrder )
       {  
-        if ( ( waveform->a = (REAL4TimeVectorSeries *)
+        if ( ( waveform->h = (REAL4TimeVectorSeries *)
 	       LALCalloc(1, sizeof(REAL4TimeVectorSeries) ) ) == NULL ) 
         {
 	  ABORT( status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM );
