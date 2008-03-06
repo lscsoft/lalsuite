@@ -187,7 +187,6 @@ class hipe_run(object):
     self._span = span
     
     self.dag_base_name = dag_base_name
-    self.usertag = usertag
     self.set_span(span)
     
     # create directory here
@@ -224,17 +223,17 @@ class hipe_run(object):
       self._cp.set('input', 'exttrig-analyze', 'all')
     
     # set the usertag
-    if usertag is not None:
-      self.set_usertag(usertag)
+    self.set_usertag(usertag)
 
   def get_usertag(self):
-    if self._cp.has_option("pipeline", "user-tag"):
-      return self._cp.get("pipeline", "user-tag")
-    else:
-      return None
+    return self.usertag
       
   def set_usertag(self, usertag):
-    self._cp.set("pipeline", "user-tag", usertag)
+    self.usertag = usertag
+    if usertag is not None:
+      self._cp.set("pipeline", "user-tag", usertag)
+    else:
+      self._cp.remove_option("pipeline", "user-tag")
       
   def determine_stages(self, only_run=None, dont_run=None):
     """
@@ -291,7 +290,7 @@ class hipe_run(object):
     Create directory and run lalapps_inspiral_hipe to create the DAG.
     """
     # write out an appropriate ini file
-    ini_file_name = self.dag_base_name + '.ini'
+    ini_file_name = self.dag_base_name + ".ini"
     os.chdir(self._hipe_dir)
     if not os.path.isdir(self._log_path):  # in case of relative path
       os.mkdir(self._log_path)
@@ -326,17 +325,18 @@ class hipe_run(object):
       inspiralutils.hipe_cache(self._ifos, self.usertag, self._span[0],
                                self._span[1])
   
+  def get_dag_name(self):
+    dag_name = self.dag_base_name
+    if self.usertag is not None:
+      dag_name = dag_name + "." + self.usertag
+    dag_name = dag_name + ".dag"
+    return dag_name
+  
   def get_dag_path(self):
     """
     Determine the full path of the DAG
     """
-    dag_path = self._hipe_dir + "/" + self.dag_base_name
-    
-    # match inspiral_hipe's convention
-    if self.usertag is not None:
-      dag_path += "." + self.usertag
-    
-    return dag_path + '.dag'
+    return self._hipe_dir + "/" + self.get_dag_name()
   
   def create_dag_node(self):
     """
