@@ -129,7 +129,7 @@ void ComputeParamsFromCoeffs(
 			     REAL8        eta,
 			     REAL8        M);
 
-REAL8FrequencySeries *
+REAL4FrequencySeries *
 XLALHybridP1Amplitude( 
 		      PhenomParams *params,
 		      REAL8        fLow,
@@ -138,7 +138,7 @@ XLALHybridP1Amplitude(
 		      REAL8        M,
 		      UINT4        len  );
 
-REAL8FrequencySeries *
+REAL4FrequencySeries *
 XLALHybridP1Phase( 
 		  PhenomParams  *params,
 		  REAL8         fLow,
@@ -153,59 +153,69 @@ XLALLorentzian (
 		REAL8 fRing,
 		REAL8 sigma  );
 
-COMPLEX16FrequencySeries *
-XLALConstructComplexVector(
-			   REAL8FrequencySeries  *Ampl,
-			   REAL8FrequencySeries  *Phase  );
+void
+XLALComputeComplexVector(
+			 COMPLEX8Vector **outPlus, 
+			 COMPLEX8Vector **outCross,
+			 REAL4FrequencySeries *Ampl, 
+			 REAL4FrequencySeries *Phase);
 
+REAL4Vector *
+XLALComputeFreq(
+		REAL4TimeSeries *hp,
+		REAL4TimeSeries *hc);
+REAL4TimeSeries *
+XLALCutAtFreq( 
+	      REAL4TimeSeries *h, 
+	      REAL4Vector     *freq, 
+	      REAL8           cutFreq);
 
-void LALPrintComplex16Vec (
-			   COMPLEX16Vector *hT,
-			   REAL8 dt,
-			   CHAR *outFile);
-
-void  LALPrintReal8Vec(
-		       REAL8Vector *h, 
-		       REAL8       dt, 
-		       CHAR        *outFile);
+void LALPrintHPlusCross(
+			REAL4TimeSeries *hp,
+			REAL4TimeSeries *hc,
+			CHAR            *out );
 
 
 /* Main Program */
 INT4 main ( INT4 argc, CHAR *argv[] ) {
 
-  int c;
-  REAL8 dt = -1, totTime = -1;
-  REAL8 totalMass, massRatio = -1;
-  REAL8 fLow, df; 
-  CHAR  outFile[20];
+  static LALStatus status;
+  INT4 c;
+  UINT4 i;
+  REAL8 dt, totTime;
+  REAL8 totalMass = -1, massRatio = -1;
+  REAL8 lowFreq = -1, df, fLow; 
+  CHAR  outFile[100];
   REAL8 eta;
-  UINT4 numPoints;
-
+  REAL8 newtonianChirpTime, PN1ChirpTime, mergTime; 
+  UINT4 numPts;
+  LIGOTimeGPS epoch;
+  REAL8 offset;
+  
   PhenomCoeffs coeffs;
   PhenomParams params;
 
-  REAL8FrequencySeries  *Aeff = NULL;
-  REAL8FrequencySeries  *Phieff = NULL;
-  COMPLEX16FrequencySeries *uF = NULL;
+  REAL4FrequencySeries     *Aeff   = NULL, *Phieff  = NULL;
+  COMPLEX8Vector           *uFPlus = NULL, *uFCross = NULL;
 
-  REAL8TimeSeries      *hPlus = NULL, *hCross = NULL;
-  REAL8FFTPlan     *prev = NULL;
+  COMPLEX8 num;
 
-  CHAR fA[20], fPhi[20], hpFile[20], hcFile[20], fuF[20];
+  REAL4Vector      *hPlus = NULL, *hCross = NULL;
+  REAL4TimeSeries  *hPlusSeries = NULL, *hCrossSeries = NULL;
+  REAL4TimeSeries  *hP = NULL, *hC = NULL;
+  REAL4FFTPlan     *prevPlus = NULL, *prevCross = NULL;
+  
+  REAL4Vector      *Freq = NULL;
 
-  strcpy(fA,"Aeff.dat");
-  strcpy(fPhi,"Phieff.dat");
-  strcpy(outFile, "phenom_out.dat");
-  strcpy(hpFile, "hPlus.dat");
-  strcpy(hcFile, "hCross.dat");
-  strcpy(fuF, "uF.dat");
-    
+  strcpy(outFile, "output");
+
   /* getopt arguments */
   struct option long_options[] =
   {
     {"mass-ratio",              required_argument, 0,                'q'},
-    {"total-time (units M_sun)",required_argument, 0,                't'},
-    {"delta-t (units M_sun)",   required_argument, 0,                'd'},
+    {"low-freq (Hz)",           required_argument, 0,                'f'},
+    {"total-mass (M_sun)",      required_argument, 0,                'm'},
+    {"output-file",             required_argument, 0,                'o'},    
     {"help",                    no_argument,       0,                'h'},
     {"version",                 no_argument,       0,                'V'},
     {0, 0, 0, 0}
@@ -216,7 +226,6 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
   {
     /* getopt_long stores long option here */
     int option_index = 0;
-    size_t optarg_len;
 
     /* parse command line arguments */
     c = getopt_long_only( argc, argv, "q:t:d:hV",
@@ -224,9 +233,9 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
 
     /* detect the end of the options */
     if ( c == -1 )
-    {
-      break;
-    }
+      {
+	break;
+      }
 
     switch ( c )
     {
@@ -244,7 +253,8 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
 
       case 'V':
         /* print version information and exit */
-        fprintf( stdout, "%s - Compute Ajith's Phenomenological Waveforms and output them to a plain text file\n" \
+        fprintf( stdout, "%s - Compute Ajith's Phenomenological Waveforms " \
+		 "(arXiv:0710.2335) and output them to a plain text file\n" \
             "CVS Version: %s\nCVS Tag: %s\n", PROGRAM_NAME, CVS_ID_STRING, \
             CVS_NAME_STRING );
         exit( 0 );
@@ -255,16 +265,21 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
         massRatio = atof( optarg );
         break;
 
-      case 't':
+      case 'f':
         /* set low freq */
-        totTime = atof( optarg );
+        lowFreq = atof( optarg );
         break;
 
-      case 'd':
-        /* set delta t */
-        dt = atof( optarg );
+      case 'm':
+        /* set total mass */
+        totalMass = atof( optarg );
         break;
-	
+
+      case 'o':
+	/* set name of output file */
+	strcpy( outFile, optarg );
+	break;
+
       case '?':
         print_usage( argv[0] );
         exit( 1 );
@@ -281,81 +296,161 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
   {
     fprintf( stderr, "ERROR: Extraneous command line arguments:\n" );
     while ( optind < argc )
-    {
-      fprintf ( stderr, "%s\n", argv[optind++] );
-    }
+      {
+	fprintf ( stderr, "%s\n", argv[optind++] );
+      }
     exit( 1 );
   }
 
-
-  /* Check validity of arguments */
-
-  /* check we have freqs */
-  if ( totTime < 0 )
-  {
-    fprintf( stderr, "ERROR: --total-time must be specified\n" );
-    exit( 1 );
-  }
-
-  /* check we have mass ratio and delta t*/
-  if ( massRatio < 0 )
-  {
-    fprintf( stderr, "ERROR: --mass-ratio must be specified\n" );
-    exit( 1 );
-  }
-  if ( dt < 0 )
-  {
-    fprintf( stderr, "ERROR: --delta-t must be specified\n" );
-    exit( 1 );
-  }
 
   /* * * * * * * * */
   /* Main Program  */
   /* * * * * * * * */
 
   eta = 1. / pow(1. + massRatio, 2.);
-  totalMass = 1.0;
-  fLow = 40.0;
 
-  /* if dt and totTime are given in M_sun */
-  numPoints = (UINT4) totTime/dt;
-  
-  /* df is given by the number of points and sampling ratio of h(t) */
-  df = 1/(numPoints * dt * LAL_MTSUN_SI);
+  /* This freq low is the one used for the FFT */
+  fLow = 2.E-3/(totalMass*LAL_MTSUN_SI);
+
+  sprintf(outFile, "%s_Phenom_M%3.1f_R%2.1f.dat", outFile, totalMass, massRatio); 
 
   /* Phenomenological coefficients as in Ajith et. al */
-  GetPhenomCoeffs(&coeffs);
+  GetPhenomCoeffsLongJena( &coeffs );
 
   /* Compute phenomenologial parameters */
-  ComputeParamsFromCoeffs(&params, &coeffs, eta, totalMass);
+  ComputeParamsFromCoeffs( &params, &coeffs, eta, totalMass );
 
-  /* Compute and print Aeff */
-  Aeff = XLALHybridP1Amplitude(&params, fLow, df, eta, totalMass, 1 + numPoints/2);
-  LALDPrintFrequencySeries( Aeff, fA);
 
-  /* Compute and print Phieff */
-  Phieff = XLALHybridP1Phase(&params, fLow, df, eta, totalMass, 1 + numPoints/2);
-  LALDPrintFrequencySeries( Phieff, fPhi); 
+  /* Check validity of arguments */
+
+  /* check we have freqs */
+  if ( totalMass < 0 )
+    {
+      fprintf( stderr, "ERROR: --total-mass must be specified\n" );
+      exit( 1 );
+    }
+
+  /* check we have mass ratio and delta t*/
+  if ( massRatio < 0 )
+    {
+      fprintf( stderr, "ERROR: --mass-ratio must be specified\n" );
+      exit( 1 );
+    }
+  if ( lowFreq < 0 )
+    {
+      fprintf( stderr, "ERROR: --low-freq must be specified\n" );
+      exit( 1 );
+    }
+  if ( lowFreq > params.fCut )
+    {
+      fprintf( stderr, "\nERROR in --low-freq\n"\
+	       "The value chosen for the low frequency is larger "\
+	       "than the frequency at the merger.\n"
+	       "Frequency at the merger: %4.2f Hz\nPick either a lower value"\
+	       " for --low-freq or a lower total mass\n\n", params.fCut);
+      exit(1);
+    }
+  if ( lowFreq < fLow )
+    {
+      fprintf( stderr, "\nERROR in --low-freq\n"\
+	       "The value chosen for the low frequency is lower "\
+	       "than the lowest frequency computed\nby the implemented FFT.\n"
+	       "Lowest frequency allowed: %4.2f Hz\nPick either a higher value"\
+	       " for --low-freq or a higher total mass\n\n", fLow);
+      exit(1);
+    }
+ 
+  /* dt chosen well above the Nyquist */
+  dt = 1/(4.*params.fCut);
+
+  /* Estimation of the time duration of the binary           */
+  /* See Sathya (1994) for the Newtonian and PN1 chirp times */
+  /* The merger time is overestimated                        */
+  newtonianChirpTime = 
+    (5./(256.*eta))*pow(totalMass*LAL_MTSUN_SI,-5./3.)*pow(LAL_PI*fLow,-8./3.);
+  PN1ChirpTime = 
+    5.*(743.+924.*eta)/(64512.*eta*totalMass*LAL_MTSUN_SI*pow(LAL_PI*fLow,2.));
+  mergTime = 2000.*totalMass*LAL_MTSUN_SI;
+  totTime = 1.2 * (newtonianChirpTime + PN1ChirpTime + mergTime);
+
+  numPts = (UINT4) ceil(totTime/dt);
+  df = 1/(numPts * dt);
+
+  /* Compute Amplitude and Phase from the paper (Eq. 4.19) */
+  Aeff = XLALHybridP1Amplitude(&params, fLow, df, eta, totalMass, numPts/2+1);
+  Phieff = XLALHybridP1Phase(&params, fLow, df, eta, totalMass, numPts/2 +1);
 
   /* Construct u(f) = Aeff*e^(i*Phieff) */
-  uF = XLALConstructComplexVector( Aeff, Phieff);
-  LALZPrintFrequencySeries(uF,fuF);
+  XLALComputeComplexVector(&uFPlus, &uFCross, Aeff, Phieff);
+
+  /* Scale this to units of M */
+  for (i = 0; i < numPts/2 + 1; i++) {
+    num = uFPlus->data[i];
+    num.re *= 1./(dt*totalMass*LAL_MTSUN_SI);
+    num.im *= 1./(dt*totalMass*LAL_MTSUN_SI);
+    uFPlus->data[i] = num;
+    num = uFCross->data[i];
+    num.re *= 1./(dt*totalMass*LAL_MTSUN_SI);
+    num.im *= 1./(dt*totalMass*LAL_MTSUN_SI);
+    uFCross->data[i] = num;
+  }
 
   /* Inverse Fourier transform */
-  prev = XLALCreateReverseREAL8FFTPlan(numPoints, 0);
-  /*hPlus = XLALCreateREAL8Vector(numPoints);*/
-  XLALREAL8FreqTimeFFT( hPlus, uF, prev);
+  LALCreateReverseREAL4FFTPlan( &status, &prevPlus, numPts, 0 );
+  LALCreateReverseREAL4FFTPlan( &status, &prevCross, numPts, 0 );
+  hPlus = XLALCreateREAL4Vector(numPts);
+  hCross = XLALCreateREAL4Vector(numPts);
 
-  /* Print hplus to file */
-  LALDPrintTimeSeries(hPlus, hpFile); 
+  LALReverseREAL4FFT( &status, hPlus, uFPlus, prevPlus );
+  LALReverseREAL4FFT( &status, hCross, uFCross, prevCross );
+
+  /* The LAL implementation of the FFT omits the factor 1/n */
+  for (i = 0; i < numPts; i++) {
+    hPlus->data[i] /= numPts;
+    hCross->data[i] /= numPts;
+  }
+
+  /* Create TimeSeries to store more info about the waveforms */
+  /* Note: it could be done easier using LALFreqTimeFFT instead of ReverseFFT */
+  epoch.gpsSeconds = 0;
+  epoch.gpsNanoSeconds = 0;
+
+  hPlusSeries = 
+    XLALCreateREAL4TimeSeries("", &epoch, 0, dt, &lalDimensionlessUnit, numPts);
+  hPlusSeries->data = hPlus;
+  hCrossSeries = 
+    XLALCreateREAL4TimeSeries("", &epoch, 0, dt, &lalDimensionlessUnit, numPts);
+  hCrossSeries->data = hCross;
+
+  /* Cutting off the part of the waveform with f < fLow */
+  Freq = XLALComputeFreq( hPlusSeries, hCrossSeries);
+  hP = XLALCutAtFreq( hPlusSeries, Freq, lowFreq);
+  hC = XLALCutAtFreq( hCrossSeries, Freq, lowFreq);
+
+  /* Convert t column to units of (1/M) */
+  offset *= (1./(totalMass * LAL_MTSUN_SI));
+  hP->deltaT *= (1./(totalMass * LAL_MTSUN_SI));
+
+  /* Set t = 0 at the merger (defined as the max of the NR wave) */
+  XLALFindNRCoalescenceTime( &offset, hP);
+  XLALAddFloatToGPS( &(hP->epoch), -offset);
+  XLALAddFloatToGPS( &(hC->epoch), -offset);
+
+  /* Print waveforms to file */
+  LALPrintHPlusCross( hP, hC, outFile );
 
   /* Free Memory */
-  XLALDestroyREAL8FrequencySeries(Aeff);
-  XLALDestroyREAL8FrequencySeries(Phieff);
-  XLALDestroyCOMPLEX16FrequencySeries(uF);
+  XLALDestroyREAL4FrequencySeries(Aeff);
+  XLALDestroyREAL4FrequencySeries(Phieff);
+  XLALDestroyCOMPLEX8Vector(uFPlus);
+  XLALDestroyCOMPLEX8Vector(uFCross);
 
-  XLALDestroyREAL8FFTPlan(prev);
-  XLALDestroyREAL8TimeSeries(hPlus);
+  XLALDestroyREAL4FFTPlan(prevPlus);
+  XLALDestroyREAL4FFTPlan(prevCross);
+  XLALDestroyREAL4TimeSeries(hPlusSeries);
+  XLALDestroyREAL4TimeSeries(hCrossSeries);
+  XLALDestroyREAL4TimeSeries(hP);
+  XLALDestroyREAL4TimeSeries(hC);
 
   return(0);
 
@@ -364,50 +459,196 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
 
 /* My funtions */
 
-COMPLEX16FrequencySeries *
-XLALConstructComplexVector(
-			   REAL8FrequencySeries  *Ampl,
-			   REAL8FrequencySeries  *Phase  )
+void LALPrintHPlusCross(
+			REAL4TimeSeries *hp,
+			REAL4TimeSeries *hc,
+			CHAR            *out )
 {
-  COMPLEX16FrequencySeries *ComplVec = NULL;
-  COMPLEX16 num;
-  REAL8 Re, Im;
+  UINT4 i, n;
+  FILE *file;
+  REAL8 dt, off;
+
+  n = hp->data->length;
+  dt = hp->deltaT;
+  XLALFloatToGPS( &(hp->epoch), off);
+
+  file = LALFopen(out, "w");
+  fprintf (file, "#   t(1/M)\t    h_+\t\t   h_x\n"); 
+  for (i=0; i < n; i++) 
+    {
+      fprintf (file, "%e\t%e\t%e\t\n", 
+	       i*dt+off, hp->data->data[i], hc->data->data[i]);
+    }
+}
+
+
+void
+XLALComputeComplexVector(
+			 COMPLEX8Vector **outPlus, 
+			 COMPLEX8Vector **outCross,
+			 REAL4FrequencySeries *Ampl, 
+			 REAL4FrequencySeries *Phase)
+{
+  COMPLEX8Vector *uPlus = NULL, *uCross = NULL;
+  COMPLEX8 num;
+  REAL4 Re, Im;
   UINT4 k, n;
-  
+    
   n = Ampl->data->length;
 
-  ComplVec = XLALCreateCOMPLEX16FrequencySeries("u(f)", &Ampl->epoch,
-      Ampl->f0, Ampl->deltaF, &Ampl->sampleUnits, n);
+  uPlus = LALCalloc(1, sizeof(*uPlus)); 
+  uPlus = XLALCreateCOMPLEX8Vector(n);
+  uCross = LALCalloc(1, sizeof(*uCross)); 
+  uCross = XLALCreateCOMPLEX8Vector(n);
 
   for( k = 0 ; k < n ; k++ ) {
-
     Re = Ampl->data->data[k] * cos(Phase->data->data[k]);
     Im = Ampl->data->data[k] * sin(Phase->data->data[k]);
     num.re = Re;
     num.im = Im;
-    ComplVec->data->data[k] = num;
+    uPlus->data[k] = num;
+
+    Re = Ampl->data->data[k] * cos(Phase->data->data[k] - LAL_PI/2.);
+    Im = Ampl->data->data[k] * sin(Phase->data->data[k] - LAL_PI/2.);
+    num.re = Re;
+    num.im = Im;
+    uCross->data[k] = num;
   }
 
-  return ComplVec;
+  *outPlus = uPlus;
+  *outCross = uCross;
 
 }
 
-REAL8FrequencySeries *
+
+REAL4TimeSeries *
+XLALCutAtFreq( 
+	      REAL4TimeSeries *h, 
+	      REAL4Vector     *freq, 
+	      REAL8           cutFreq)
+{
+  REAL8 dt;
+  UINT4 k, k0, kMid, len;
+  REAL4 currentFreq;
+  UINT4 newLen;
+
+  REAL4TimeSeries *newH = NULL;
+
+  LIGOTimeGPS epoch;
+
+  len = freq->length;
+  dt = h->deltaT;
+
+  /* Since the boundaries of this freq vector are likely to have   */
+  /* FFT crap, let's scan the freq values starting from the middle */
+  kMid = len/2;
+  currentFreq = freq->data[kMid];
+  k = kMid;
+  
+  /* freq is an increasing function of time */
+  /* If we are above the cutFreq we move to the left; else to the right */
+  if (currentFreq > cutFreq && k > 0)
+    {
+      while(currentFreq > cutFreq)
+	{
+	  currentFreq = freq->data[k];
+	  k--;
+	}
+      k0 = k;
+    }
+  else 
+    {
+      while(currentFreq < cutFreq && k < len)
+	{
+	  currentFreq = freq->data[k];
+	  k++;
+	}
+      k0 = k;
+    }
+    
+  newLen = len - k0;
+
+  /* Allocate memory for the frequency series */
+  epoch.gpsSeconds = 0;
+  epoch.gpsNanoSeconds = 0;
+  newH = 
+    XLALCreateREAL4TimeSeries("", &epoch, 0, dt, &lalDimensionlessUnit, newLen);
+
+  for(k = 0; k < newLen; k++)
+    {
+      newH->data->data[k] = h->data->data[k0 + k]; 
+    }
+
+  return newH;
+
+}
+
+
+REAL4Vector *
+XLALComputeFreq(
+		REAL4TimeSeries *hp,
+		REAL4TimeSeries *hc)
+{
+  REAL4Vector *Freq = NULL;
+  REAL4Vector *hpDot = NULL, *hcDot = NULL;
+  UINT4 k, len;
+  REAL8 dt;
+
+  len = hp->data->length;
+  dt = hp->deltaT;
+  Freq = LALCalloc(1, sizeof(*Freq)); 
+  Freq= XLALCreateREAL4Vector(len);
+
+  hpDot = LALCalloc(1, sizeof(*hpDot)); 
+  hpDot= XLALCreateREAL4Vector(len);
+  hcDot = LALCalloc(1, sizeof(*hcDot)); 
+  hcDot= XLALCreateREAL4Vector(len);
+
+  /* Construct the dot vectors (2nd order differencing) */
+  hpDot->data[0] = 0.0;
+  hpDot->data[len] = 0.0;
+  hcDot->data[0] = 0.0;
+  hcDot->data[len] = 0.0;
+  for( k = 1; k < len-1; k++)
+    {
+      hpDot->data[k] = 1./(2.*dt) * 
+	(hp->data->data[k+1]-hp->data->data[k-1]);
+      hcDot->data[k] = 1./(2.*dt) * 
+	(hc->data->data[k+1]-hc->data->data[k-1]);
+    }
+
+  /* Compute frequency using the fact that  */
+  /*h(t) = A(t) e^(i Phi) = Re(h) + i Im(h) */
+  for( k = 0; k < len; k++)
+    {
+      Freq->data[k] = hcDot->data[k] * hp->data->data[k] -
+	hpDot->data[k] * hc->data->data[k];
+      Freq->data[k] /= LAL_TWOPI;
+      Freq->data[k] /= (pow(hp->data->data[k],2.) + pow(hc->data->data[k], 2.));
+    }
+
+  return Freq;
+
+}
+
+
+REAL4FrequencySeries *
 XLALHybridP1Phase( 
 		  PhenomParams  *params,
 		  REAL8         fLow,
 		  REAL8         df,
 		  REAL8         eta,
 		  REAL8         M,
-		  UINT4         len )
+		  UINT4         n )
 {
-  /* Computes phi_eff as in arXiv:0710.2335 [gr-qc] */
+  /* Computes effective phase as in arXiv:0710.2335 [gr-qc] */
 
-  INT4 k;
+  UINT4 k;
   REAL8 piM;
   REAL8 f, psi0, psi2, psi3, psi4, psi6, psi7;
+  REAL8 softfLow, softfCut;
 
-  REAL8FrequencySeries *Phieff = NULL;
+  REAL4FrequencySeries *Phieff = NULL;
 
   LIGOTimeGPS epoch;
 
@@ -423,22 +664,32 @@ XLALHybridP1Phase(
   /* Allocate memory for the frequency series */
   epoch.gpsSeconds = 0;
   epoch.gpsNanoSeconds = 0;
-  Phieff = XLALCreateREAL8FrequencySeries("", &epoch, 0, df, &lalDimensionlessUnit, len);
+  Phieff = 
+    XLALCreateREAL4FrequencySeries("", &epoch, 0, df, &lalDimensionlessUnit, n);
+
+  /* We will soften the discontinuities of this function by multiplying it by
+     the function (1/4)[1+tanh(k(f-fLow))][1-tanh(k(f-fCut))] with k=1.0.
+     The step function is now a soft step. We estimate its width by requiring 
+     that the step function at the new boundaries takes the value 0.001
+     Solving the eq. with Mathematica leads to a width = 3.45338, we take 3.5 */
+
+  softfLow = fLow - 3.5;
+  softfCut = params->fCut + 3.5;
 
   f = 0.0;
 
-  for( k = 0 ; k < len ; k++ ) {
+  for( k = 0 ; k < n ; k++ ) {
 
-    if (f <= fLow ) {
+    if ( f <= softfLow || f > softfCut ) {
       Phieff->data->data[k] = 0.0;
     }
     else {
 
     /* QUESTION: what happens with the 2*pi*f*t_0 and psi_0 terms? */
-    /* for the moment they're set to zero */
+    /* for the moment they're set to zero abd this seems to work   */
     /* (see Eq. (4.19) of the paper */
 
-    Phieff->data->data[k] = psi0 * pow(f*piM , -5./3.) + 
+    Phieff->data->data[k] = psi0 * pow(f*piM , -5./3.) +
                             psi2 * pow(f*piM , -3./3.) +
                             psi3 * pow(f*piM , -2./3.) +
                             psi4 * pow(f*piM , -1./3.) +
@@ -454,21 +705,22 @@ XLALHybridP1Phase(
 }
 
 
-REAL8FrequencySeries *
+REAL4FrequencySeries *
 XLALHybridP1Amplitude( 
 		      PhenomParams *params,
 		      REAL8        fLow,
        		      REAL8        df,
 		      REAL8        eta,
 		      REAL8        M,
-		      UINT4        len  )
+		      UINT4        n  )
 {
-  INT4 k;
+  UINT4 k;
   REAL8 piM;
   REAL8 cConst;
   REAL8 f, fNorm, fMerg, fRing, fCut, sigma;
+  REAL8 softfLow, softfCut, softFact;
 
-  REAL8FrequencySeries *Aeff = NULL;
+  REAL4FrequencySeries *Aeff = NULL;
 
   LIGOTimeGPS epoch;
 
@@ -479,39 +731,47 @@ XLALHybridP1Amplitude(
 
   piM = LAL_PI * M * LAL_MTSUN_SI;
 
-  /* This constant has units of time */
-  /* cConst = pow(LAL_PI,-1./2.) * LAL_MTSUN_SI * mass * 
-    pow( piMfMerg, -1./6. ) /( piMfMerg/piM * effDist );
-    cConst *= pow(5.*eta/24., 1./2.); */
-  /* For the moment let's not care about this constant */
-  cConst = 1.0;
+  /* Set amplitude of the wave (Ajith et al. Eq. 4.17) */
+  cConst = pow(LAL_MTSUN_SI*M, 5./6.)*pow(fMerg,-7./6.)/pow(LAL_PI,2./3.);
+  cConst *= pow(5.*eta/24., 1./2.); 
 
   /* Allocate memory for the frequency series */
   epoch.gpsSeconds = 0;
   epoch.gpsNanoSeconds = 0;
-  Aeff = XLALCreateREAL8FrequencySeries("", &epoch, 0, df, &lalDimensionlessUnit, len);
+  Aeff = 
+    XLALCreateREAL4FrequencySeries("", &epoch, 0, df, &lalDimensionlessUnit, n);
 
   f = 0.0;
 
-  for( k = 0 ; k < len ; k++ ) {
+  /* We will soften the discontinuities of this function by multiplying it by
+     the function (1/4)[1+tanh(k(f-fLow))][1-tanh(k(f-fCut))] with k=1.0.
+     The step function is now a soft step. We estimate its width by requiring 
+     that the step function at the new boundaries takes the value 0.001
+     Solving the eq. with Mathematica leads to a width = 3.45338, we take 3.5 */
+
+  softfLow = fLow - 3.5;
+  softfCut = fCut + 3.5;
+
+  for( k = 0 ; k < n ; k++ ) {
 
     fNorm = f / fMerg;
+    softFact = (1+tanh(f-fLow))*(1-tanh(f-fCut))/4.;
 
-    if (f <= fLow ) {
-      Aeff->data->data[k] = 0.0;
+    if ( f <= softfLow || f > softfCut ) {
+       Aeff->data->data[k] = 0.0; 
     }
-    else if ( f > fLow && f <= fMerg ) {
+    else if ( f > softfLow && f <= fMerg ) {
       Aeff->data->data[k] = pow (fNorm, -7./6.);
+      Aeff->data->data[k] *= softFact;
     }
     else if ( f > fMerg && f <= fRing ) {
       Aeff->data->data[k] = pow (fNorm, -2./3.);
+      Aeff->data->data[k] *= softFact;
     }
-    else if ( f > fRing && f <= fCut ) {
+    else if ( f > fRing && f <= softfCut ) {
       Aeff->data->data[k] = XLALLorentzian ( f, fRing, sigma);
       Aeff->data->data[k] *= LAL_PI_2*pow(fRing/fMerg,-2./3.)*sigma;
-    }
-    else if (f > fCut ) {
-      Aeff->data->data[k] = 0.0;
+      Aeff->data->data[k] *= softFact;
     }
     Aeff->data->data[k] *= cConst; 
     f += df; 
@@ -520,12 +780,13 @@ XLALHybridP1Amplitude(
   return Aeff;
 }
 
-void ComputeParamsFromCoeffs(
-			     PhenomParams *params,
-			     PhenomCoeffs *coeffs,
-			     REAL8        eta,
-			     REAL8        M) {
-
+void 
+ComputeParamsFromCoeffs(
+			PhenomParams *params,
+			PhenomCoeffs *coeffs,
+			REAL8        eta,
+			REAL8        M) 
+{
   REAL8 piM;
   piM = LAL_PI * M * LAL_MTSUN_SI;
   
@@ -552,42 +813,45 @@ void ComputeParamsFromCoeffs(
                    coeffs->psi7_z ;
 }
 
+
 /* Coeffs from the paper - matching with Jena short waveforms */
-void GetPhenomCoeffs(
-		     PhenomCoeffs *co) {
-
-    co->fMerg_a = 2.9740e-1; co->fMerg_b = 4.4810e-2; co->fMerg_c = 9.5560e-2;
-    co->fRing_a = 5.9411e-1; co->fRing_b = 8.9794e-2;; co->fRing_c = 1.9111e-1;
-    co->sigma_a = 5.0801e-1;; co->sigma_b = 7.7515e-2; co->sigma_c = 2.2369e-2;
-    co->fCut_a = 8.4845e-1; co->fCut_b = 1.2848e-1; co->fCut_c = 2.7299e-1;
+void 
+GetPhenomCoeffs(
+		PhenomCoeffs *co) 
+{
+  co->fMerg_a = 2.9740e-1; co->fMerg_b = 4.4810e-2; co->fMerg_c = 9.5560e-2;
+  co->fRing_a = 5.9411e-1; co->fRing_b = 8.9794e-2;; co->fRing_c = 1.9111e-1;
+  co->sigma_a = 5.0801e-1;; co->sigma_b = 7.7515e-2; co->sigma_c = 2.2369e-2;
+  co->fCut_a = 8.4845e-1; co->fCut_b = 1.2848e-1; co->fCut_c = 2.7299e-1;
     
-    co->psi0_x = 1.7516e-1; co->psi0_y = 7.9483e-2; co->psi0_z = -7.2390e-2;
-    co->psi2_x = -5.1571e1; co->psi2_y = -1.7595e1; co->psi2_z = 1.3253e1;
-    co->psi3_x = 6.5866e2; co->psi3_y = 1.7803e2; co->psi3_z = -1.5972e2;
-    co->psi4_x = -3.9031e3; co->psi4_y = -7.7493e2; co->psi4_z = 8.8195e2;
-    co->psi6_x = -2.4874e4; co->psi6_y = -1.4892e3; co->psi6_z = 4.4588e3;
-    co->psi7_x = 2.5196e4; co->psi7_y = 3.3970e2; co->psi7_z = -3.9573e3;
-
+  co->psi0_x = 1.7516e-1; co->psi0_y = 7.9483e-2; co->psi0_z = -7.2390e-2;
+  co->psi2_x = -5.1571e1; co->psi2_y = -1.7595e1; co->psi2_z = 1.3253e1;
+  co->psi3_x = 6.5866e2; co->psi3_y = 1.7803e2; co->psi3_z = -1.5972e2;
+  co->psi4_x = -3.9031e3; co->psi4_y = -7.7493e2; co->psi4_z = 8.8195e2;
+  co->psi6_x = -2.4874e4; co->psi6_y = -1.4892e3; co->psi6_z = 4.4588e3;
+  co->psi7_x = 2.5196e4; co->psi7_y = 3.3970e2; co->psi7_z = -3.9573e3;
 }
+
 
 /* This function contains the coeffs from the matching with the LONG */
-/* Jena waveforms (those are not the published in the paper)         */
-void GetPhenomCoeffsLongJena(
-		     PhenomCoeffs *co) {
-
-    co->fMerg_a = 6.6389e-01; co->fMerg_b = -1.0321e-01; co->fMerg_c = 1.0979e-01;
-    co->fRing_a = 1.3278e+00; co->fRing_b = -2.0642e-01; co->fRing_c = 2.1957e-01;
-    co->sigma_a = 1.1383e+00; co->sigma_b = -1.7700e-01; co->sigma_c = 4.6834e-02;
-    co->fCut_a = 1.7086e+00; co->fCut_b = -2.6592e-01; co->fCut_c = 2.8236e-01;
-    
-    co->psi0_x = -1.5829e-01; co->psi0_y = 8.7016e-02; co->psi0_z = -3.3382e-02;
-    co->psi2_x = 3.2967e+01; co->psi2_y = -1.9000e+01; co->psi2_z = 2.1345e+00;
-    co->psi3_x = -3.0849e+02; co->psi3_y = 1.8211e+02; co->psi3_z = -2.1727e+01;
-    co->psi4_x = 1.1525e+03; co->psi4_y = -7.1477e+02; co->psi4_z = 9.9692e+01;
-    co->psi6_x = 1.2057e+03; co->psi6_y = -8.4233e+02; co->psi6_z = 1.8046e+02;
-    co->psi7_x = -0.0000e+00; co->psi7_y = 0.0000e+00; co->psi7_z = 0.0000e+00;
-
+/* Jena waveforms (those are not the ones published in the paper)         */
+void 
+GetPhenomCoeffsLongJena(
+			PhenomCoeffs *co) 
+{
+  co->fMerg_a = 6.6389e-01; co->fMerg_b = -1.0321e-01; co->fMerg_c = 1.0979e-01;
+  co->fRing_a = 1.3278e+00; co->fRing_b = -2.0642e-01; co->fRing_c = 2.1957e-01;
+  co->sigma_a = 1.1383e+00; co->sigma_b = -1.7700e-01; co->sigma_c = 4.6834e-02;
+  co->fCut_a = 1.7086e+00; co->fCut_b = -2.6592e-01; co->fCut_c = 2.8236e-01;
+  
+  co->psi0_x = -1.5829e-01; co->psi0_y = 8.7016e-02; co->psi0_z = -3.3382e-02;
+  co->psi2_x = 3.2967e+01; co->psi2_y = -1.9000e+01; co->psi2_z = 2.1345e+00;
+  co->psi3_x = -3.0849e+02; co->psi3_y = 1.8211e+02; co->psi3_z = -2.1727e+01;
+  co->psi4_x = 1.1525e+03; co->psi4_y = -7.1477e+02; co->psi4_z = 9.9692e+01;
+  co->psi6_x = 1.2057e+03; co->psi6_y = -8.4233e+02; co->psi6_z = 1.8046e+02;
+  co->psi7_x = -0.0000e+00; co->psi7_y = 0.0000e+00; co->psi7_z = 0.0000e+00;
 }
+
 
 REAL8
 XLALLorentzian (
@@ -603,18 +867,24 @@ XLALLorentzian (
   return(out);
 }
 
+
 /* function to display program usgae */
-static void print_usage( CHAR *program )
+static void 
+print_usage( CHAR *program )
 {
   fprintf( stderr,
-      "Usage:  %s [options]\n"\
-      "The following options are recognized.\n"\
-	"   Options not surrounded in [] are required.\n"\
+      "\n Usage: %s [options]\n\n"\
+      " The following options are recognized.\n"\
+      "  Options not surrounded in [] are required.\n\n"\
       "  [--help]                 display this message\n"\
       "  [--version]              print version information and exit\n"\
-      "  --mass-ratio         q   set mass ratio to q\n"\
-      "  --total-time (M_sun) T   set total length (in M_sun) of the hybrid waveform\n"\
-      "  --delta-t (M_sun)    dt  set dt (in M_sun) of the hybrid waveform\n"\
-      "  The output waveform will be written to hPlus.dat\n"\
+      "  --mass-ratio     q       set mass ratio to q\n"\
+      "  --total-mass     M       set total mass (in M_sun) of the binary "\
+	   "system\n"\
+      "  --low-freq (Hz)  fLow    set the lower frequency (in Hz) of the "\
+	   "hybrid wave\n"\
+      "  [--output-file] (output) output file name\n\n"\
+      " Disclaimer: beta version.\n"\
+      " Recommended use: 1 M_sun < M < 100 M_sun and 1 < mass ratio < 4\n"\
       "\n", program );
 }
