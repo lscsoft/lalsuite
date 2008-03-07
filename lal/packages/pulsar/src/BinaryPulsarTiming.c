@@ -109,7 +109,7 @@ LALBinaryPulsarDeltaT( LALStatus            *status,
                        BinaryPulsarInput    *input,
                        BinaryPulsarParams   *params )
 {
-  REAL8 dt; /* binary pulsar deltaT */
+  REAL8 dt=0.; /* binary pulsar deltaT */
   REAL8 x, xdot;	/* x = asini/c */
   REAL8 w;  /* longitude of periastron */
   REAL8 e, edot;  /* eccentricity */
@@ -200,55 +200,108 @@ LALBinaryPulsarDeltaT( LALStatus            *status,
   /* set time at which to calculate the binary time delay */
   tb = input->tb;
   
-  /* for BT model */
+  /* for BT, BT1P and BT2P models (and BTX model, but only for one orbit) */
   if(strstr(model, "BT") != NULL){
     REAL8 tt0;
-    REAL8 orbits; 
-    INT4 norbits;
+    REAL8 orbits=0.; 
+    INT4 norbits=0.;
     REAL8 phase; /* same as mean anomaly */
     REAL8 u = 0.0; /* eccentric anomaly */
     REAL8 du = 1.0; 
   
-    /* set some vars for bnrybt.f (TEMPO) method */
-    /*REAL8 tt;
-    REAL8 som;
-    REAL8 com;
-    REAL8 alpha, beta;*/
-    /*REAL8 q, r, s;*/
+    INT4 nplanets=1; /* number of orbitting bodies in system */
+    INT4 i=1, j=1;
+    REAL8 fac=1.; /* factor in front of fb coefficients */  
 
-    /*fprintf(stderr, "You are using the Blandford-Teukolsky (BT) binary model.\n");*/		
+    /* work out number of orbits i.e. have we got a BT1P or BT2P model */
+    if(strstr(model, "BT1P") != NULL)
+      nplanets = 2;
+    if(strstr(model, "BT2P") != NULL)
+      nplanets = 3;
 
-    tt0 = tb - T0;
+    for ( i=1 ; i < nplanets+1 ; i++){
 
-    x = x + xdot*tt0;
-    e = e + edot*tt0;
-    w = w0 + wdot*tt0; /* calculate w */
+      /* set some vars for bnrybt.f (TEMPO) method */
+      /*REAL8 tt;
+      REAL8 som;
+      REAL8 com;
+      REAL8 alpha, beta;*/
+      /*REAL8 q, r, s;*/
 
-    orbits = tt0/Pb - 0.5*(pbdot+xpbdot)*(tt0/Pb)*(tt0/Pb);
-    norbits = (INT4)floor(orbits);
+      /*fprintf(stderr, "You are using the Blandford-Teukolsky (BT) binary
+        model.\n");*/		
 
-    if(orbits < 0)
-      norbits = norbits - 1;
+      if(i==2){
+        T0 = params->T02;
+        w0 = params->w02*LAL_PI_180;
+        x = params->x2;
+        e = params->e2;
+        Pb = params->Pb2*DAYSTOSECS;
+      }
+      else if(i==3){
+        T0 = params->T03;
+        w0 = params->w03*LAL_PI_180;
+        x = params->x3;
+        e = params->e3;
+        Pb = params->Pb3*DAYSTOSECS;
+      }
 
-    phase = LAL_TWOPI*(orbits - (REAL8)norbits); /* called phase in TEMPO */
-    /*phase = LAL_TWOPI*(orbits);*/
-    du = 1.0;
+      tt0 = tb - T0;
 
-    /* use numerical iteration to solve Kepler's eq for eccentric anomaly u */
-    u = phase + e*sin(phase)*(1.0 + e*cos(phase));
-    while(fabs(du) > 1.0e-12){
-      du = (phase-(u-e*sin(u)))/(1.0-e*cos(u));
-      u += du;
-    }
+      /* only do relativistic corrections for first orbit */
+      if(i==1){
+        x = x + xdot*tt0;
+        e = e + edot*tt0;
+        w = w0 + wdot*tt0; /* calculate w */
 
-    /*fprintf(stderr, "Eccentric anomaly = %f, phase = %f.\n", u, phase);*/
+        if( strstr(model, "BTX") != NULL ){
+          fac = 1.;
+          for ( j=1 ; j < params->nfb + 1; j++){
+            fac /= (REAL8)j;
+            orbits += fac*params->fb[j-1]*pow(tt0,j);
+          }
+        }
+        else{ 
+          orbits = tt0/Pb - 0.5*(pbdot+xpbdot)*(tt0/Pb)*(tt0/Pb);
+        }
+      }
+      else{
+        orbits = tt0/Pb;
+      }
+
+      norbits = (INT4)floor(orbits);
+
+      if(orbits < 0)
+        norbits = norbits - 1;
+
+      phase = LAL_TWOPI*(orbits - (REAL8)norbits); /* called phase in TEMPO */
+      /*phase = LAL_TWOPI*(orbits);*/
+      du = 1.0;
+
+      /* use numerical iteration to solve Kepler's eq for eccentric anomaly u */
+      u = phase + e*sin(phase)*(1.0 + e*cos(phase));
+      while(fabs(du) > 1.0e-12){
+        du = (phase-(u-e*sin(u)))/(1.0-e*cos(u));
+        u += du;
+      }
+
+      /*fprintf(stderr, "Eccentric anomaly = %f, phase = %f.\n", u, phase);*/
     
-    /* see eq 5 of Taylor and Weisberg (1989) */
+      /* see eq 5 of Taylor and Weisberg (1989) */
+      /**********************************************************/
+      if( strstr(model, "BTX") != NULL ){
+        dt += (x*sin(w)*(cos(u)-e) + (x*cos(w)*sqrt(1.0-e*e) +
+          gamma)*sin(u))*(1.0 - params->fb[0]*(x*cos(w)*sqrt(1.0 -
+          e*e)*cos(u) - x*sin(w)*sin(u))/(1.0 - e*cos(u)));
+      }
+      else{
+        dt += (x*sin(w)*(cos(u)-e) + (x*cos(w)*sqrt(1.0-e*e) +
+          gamma)*sin(u))*(1.0 - (LAL_TWOPI/Pb)*(x*cos(w)*sqrt(1.0 -
+          e*e)*cos(u) - x*sin(w)*sin(u))/(1.0 - e*cos(u)));
+      }
     /**********************************************************/
-    dt = (x*sin(w)*(cos(u)-e) + (x*cos(w)*sqrt(1.0-e*e) + gamma)*sin(u))*(1.0 -
-    (LAL_TWOPI/Pb)*(x*cos(w)*sqrt(1.0-e*e)*cos(u) - x*sin(w)*sin(u))/(1.0 - e*cos(u)));
-    /**********************************************************/
-    
+    }    
+
     /* use method from Taylor etal 1976 ApJ Lett and used in bnrybt.f */
     /**********************************************************/
     /*tt = 1.0-e*e;
@@ -479,6 +532,18 @@ LALReadTEMPOParFile(  LALStatus *status,
   output->x=0.0;      /* projected semi-major axis/speed of light (light secs) */
   output->T0=0.0;     /* time of orbital perisastron as measured in TDB (MJD) */
 
+  output->e2=0.0;      
+  output->Pb2=0.0;     
+  output->w02=0.0;     
+  output->x2=0.0;      
+  output->T02=0.0;
+
+  output->e3=0.0;      
+  output->Pb3=0.0;     
+  output->w03=0.0;     
+  output->x3=0.0;      
+  output->T03=0.0;
+
   output->xpbdot=0.0;  /* (10^-12) */
   
   output->eps1=0.0;       /* e*sin(w) */
@@ -486,6 +551,9 @@ LALReadTEMPOParFile(  LALStatus *status,
   output->eps1dot=0.0;
   output->eps2dot=0.0;
   output->Tasc=0.0;   /* time of the ascending node (used rather than T0) */
+
+  output->fb = {0.,0.,0.,0.,0.,0.};
+  output->nfb=0;
 
   output->wdot=0.0;   /* precesion of longitude of periastron w = w0 + wdot(tb-T0) (degs/year) */
   output->gamma=0.0;  /* gravitational redshift and time dilation parameter (s)*/
@@ -562,6 +630,20 @@ LALReadTEMPOParFile(  LALStatus *status,
   output->xErr=0.0;
   output->T0Err=0.0;
   
+  output->e2Err =0.0;
+  output->w02Err=0.0;
+  output->Pb2Err=0.0;
+  output->x2Err=0.0;
+  output->T02Err=0.0;
+  
+  output->e3Err =0.0;
+  output->w03Err=0.0;
+  output->Pb3Err=0.0;
+  output->x3Err=0.0;
+  output->T03Err=0.0;
+
+  output->fbErr = {0.,0.,0.,0.,0.,0.};
+
   fp = fopen(pulsarAndPath, "r");
   
   ASSERT(fp!=NULL, status, BINARYPULSARTIMINGH_EPARFILEERROR,
@@ -946,6 +1028,169 @@ LALReadTEMPOParFile(  LALStatus *status,
         output->dthErr = atof(val[i+3]);
         j+=2;
       }
+    }
+
+    /* add parameters extra orbital parameters for the BT1P and BT2P models */
+    else if( !strcmp(val[i],"a1_2") || !strcmp(val[i],"A1_2")) {
+      output->x2 = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->x2Err = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"e_2") || !strcmp(val[i],"E_2") ||
+      !strcmp(val[i],"ECC_2")      || !strcmp(val[i],"ecc_2")) {
+      output->e2 = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->e2Err = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"pb_2") || !strcmp(val[i],"PB_2")) {
+      output->Pb2 = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->Pb2Err = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"om_2") || !strcmp(val[i],"OM_2")) {
+      output->w02 = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->w02Err = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i], "T0_2")){
+      output->T02 = LALTDBMJDtoGPS(atof(val[i+1]));
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->T02Err = atof(val[i+3])*DAYSTOSECS; /* convert to seconds */
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"a1_3") || !strcmp(val[i],"A1_3")) {
+      output->x3 = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->x3Err = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"e_3") || !strcmp(val[i],"E_3") ||
+      !strcmp(val[i],"ECC_3")      || !strcmp(val[i],"ecc_3")) {
+      output->e2 = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->e3Err = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"pb_3") || !strcmp(val[i],"PB_3")) {
+      output->Pb3 = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->Pb3Err = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"om_3") || !strcmp(val[i],"OM_3")) {
+      output->w03 = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->w03Err = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i], "T0_3")){
+      output->T03 = LALTDBMJDtoGPS(atof(val[i+1]));
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->T03Err = atof(val[i+3])*DAYSTOSECS; /* convert to seconds */
+        j+=2;
+      }
+    }
+
+    /* orbital frequency coefficients for BTX model (up to 6 coefficients), but
+       only one orbit at the moment i.e. only a two body system */
+    else if( !strcmp(val[i], "fb0") || !strcmp(val[i], "FB0") ){
+      output->fb[0] = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->fbErr[0] = atof(val[i+3]);
+        j+=2;
+      }
+
+      output->nfb++; /* add to number of coefficients */
+    }
+    else if( !strcmp(val[i], "fb1") || !strcmp(val[i], "FB1") ){
+      output->fb[1] = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->fbErr[1] = atof(val[i+3]);
+        j+=2;
+      }
+
+      output->nfb++;
+    }
+    else if( !strcmp(val[i], "fb2") || !strcmp(val[i], "FB2") ){
+      output->fb[2] = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->fbErr[2] = atof(val[i+3]);
+        j+=2;
+      }
+    
+      output->nfb++;
+    }
+    else if( !strcmp(val[i], "fb3") || !strcmp(val[i], "FB3") ){
+      output->fb[3] = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->fbErr[3] = atof(val[i+3]);
+        j+=2;
+      }
+
+      output->nfb++;
+    }
+    else if( !strcmp(val[i], "fb4") || !strcmp(val[i], "FB4") ){
+      output->fb[4] = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->fbErr[4] = atof(val[i+3]);
+        j+=2;
+      }
+      
+      output->nfb++;
+    }
+    else if( !strcmp(val[i], "fb5") || !strcmp(val[i], "FB5") ){
+      output->fb[5] = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->fbErr[5] = atof(val[i+3]);
+        j+=2;
+      }
+
+      output->nfb++;
     }
 
     if(j==i){
