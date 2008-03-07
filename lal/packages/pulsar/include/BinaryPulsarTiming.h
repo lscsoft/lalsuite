@@ -137,6 +137,15 @@ tagBinaryPulsarParams
   REAL8 x;      /* projected semi-major axis/speed of light (light secs) */
   REAL8 T0;     /* time of orbital perisastron as measured in TDB (MJD) */
   
+  /* add extra parameters for the BT1P and BT2P models which contain two and
+     three orbits respectively (only the first one can be relativistic, so the
+     others only have the Keplerian parameters) */
+  REAL8 e2, e3;
+  REAL8 Pb2, Pb3;
+  REAL8 w02, w03;
+  REAL8 x2, x3;
+  REAL8 T02, T03;
+
   REAL8 xpbdot;	/* (10^-12) */
 
   /* for low eccentricity orbits (ELL1 model) use Laplace parameters */
@@ -156,7 +165,7 @@ tagBinaryPulsarParams
   REAL8 Pbdot;  /* rate of change of Pb (dimensionless 10^-12) */
   REAL8 xdot;   /* rate of change of x(=asini/c) - optional (10^-12)*/
   REAL8 edot;   /* rate of change of e (10^-12)*/
-  
+
   /* for Epstein-Haugan (EH) model */
   REAL8 s; /* Shapiro 'shape' parameter sin i */
 
@@ -170,6 +179,11 @@ tagBinaryPulsarParams
   /* we do not need wdot, gamma, Pbdot, s, r, xdot and edot */
   REAL8 M;      /* M = m1 + m2 (m1 = pulsar mass, m2 = companion mass) */
   REAL8 m2;     /* companion mass */
+
+  /* orbital frequency coefficients for BTX model (only for one orbit at the
+     moment i.e. a two body system) */
+  REAL8 fb[6]; /* have up to 6 coefficients */
+  INT nfb; /* the number of fb coefficients */
 
   /******** errors read in from a .par file **********/
   REAL8 f0Err;
@@ -185,11 +199,11 @@ tagBinaryPulsarParams
   REAL8 pmraErr;
   REAL8 pmdecErr;
 
-  REAL8 eErr;
-  REAL8 PbErr;
-  REAL8 w0Err;
-  REAL8 xErr;
-  REAL8 T0Err;
+  REAL8 eErr, e2Err, e3Err;
+  REAL8 PbErr, Pb2Err, Pb3Err;
+  REAL8 w0Err, w02Err, w03Err;
+  REAL8 xErr, x2Err, x3Err;
+  REAL8 T0Err, T02Err, T03Err;
 
   REAL8 xpbdotErr;	
 
@@ -214,6 +228,9 @@ tagBinaryPulsarParams
 
   REAL8 MErr;
   REAL8 m2Err;
+
+  REAL8 fbErr[6];
+
 }BinaryPulsarParams;
 
 typedef struct
