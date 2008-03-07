@@ -207,10 +207,8 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
   
   REAL4Vector      *Freq = NULL;
 
-  strcpy(outFile, "output");
-
   /* getopt arguments */
-  struct option long_options[] =
+  struct option long_options[] = 
   {
     {"mass-ratio",              required_argument, 0,                'q'},
     {"low-freq (Hz)",           required_argument, 0,                'f'},
