@@ -164,6 +164,7 @@ REAL4Vector *
 XLALComputeFreq(
 		REAL4TimeSeries *hp,
 		REAL4TimeSeries *hc);
+
 REAL4TimeSeries *
 XLALCutAtFreq( 
 	      REAL4TimeSeries *h, 
@@ -185,7 +186,8 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
   REAL8 dt, totTime;
   REAL8 totalMass = -1, massRatio = -1;
   REAL8 lowFreq = -1, df, fLow; 
-  CHAR  outFile[100];
+  CHAR  *outFile = NULL, *outFileLong = NULL, tail[50];
+  size_t optarg_len;
   REAL8 eta;
   REAL8 newtonianChirpTime, PN1ChirpTime, mergTime; 
   UINT4 numPts;
@@ -275,7 +277,9 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
 
       case 'o':
 	/* set name of output file */
-	strcpy( outFile, optarg );
+        optarg_len = strlen(optarg) + 1;
+        outFile = (CHAR *)calloc(optarg_len, sizeof(CHAR));
+        memcpy(outFile, optarg, optarg_len);
 	break;
 
       case '?':
@@ -309,8 +313,6 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
 
   /* This freq low is the one used for the FFT */
   fLow = 2.E-3/(totalMass*LAL_MTSUN_SI);
-
-  sprintf(outFile, "%s_Phenom_M%3.1f_R%2.1f.dat", outFile, totalMass, massRatio); 
 
   /* Phenomenological coefficients as in Ajith et. al */
   GetPhenomCoeffsLongJena( &coeffs );
@@ -357,6 +359,17 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
 	       " for --low-freq or a higher total mass\n\n", fLow);
       exit(1);
     }
+  if ( outFile == NULL )
+    {
+      fprintf( stderr, "ERROR: --output-file must be specified\n" );
+      exit( 1 );
+    }
+
+  /* Complete file name with details of the input variables */
+  sprintf(tail, "%s-Phenom_M%3.1f_R%2.1f.dat\0", outFile, totalMass, massRatio);
+  optarg_len = strlen(tail) + strlen(outFile) + 1;
+  outFileLong = (CHAR *)calloc(optarg_len, sizeof(CHAR));
+  strcpy(outFileLong, tail);
  
   /* dt chosen well above the Nyquist */
   dt = 1/(4.*params.fCut);
@@ -435,16 +448,18 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
   XLALAddFloatToGPS( &(hC->epoch), -offset);
 
   /* Print waveforms to file */
-  LALPrintHPlusCross( hP, hC, outFile );
+  LALPrintHPlusCross( hP, hC, outFileLong );
 
   /* Free Memory */
+
   XLALDestroyREAL4FrequencySeries(Aeff);
   XLALDestroyREAL4FrequencySeries(Phieff);
-  XLALDestroyCOMPLEX8Vector(uFPlus);
-  XLALDestroyCOMPLEX8Vector(uFCross);
 
   XLALDestroyREAL4FFTPlan(prevPlus);
   XLALDestroyREAL4FFTPlan(prevCross);
+
+  XLALDestroyCOMPLEX8Vector(uFPlus);
+  XLALDestroyCOMPLEX8Vector(uFCross);
   XLALDestroyREAL4TimeSeries(hPlusSeries);
   XLALDestroyREAL4TimeSeries(hCrossSeries);
   XLALDestroyREAL4TimeSeries(hP);
@@ -778,6 +793,7 @@ XLALHybridP1Amplitude(
   return Aeff;
 }
 
+
 void 
 ComputeParamsFromCoeffs(
 			PhenomParams *params,
@@ -866,7 +882,7 @@ XLALLorentzian (
 }
 
 
-/* function to display program usgae */
+/* function to display program usage */
 static void 
 print_usage( CHAR *program )
 {
@@ -880,7 +896,7 @@ print_usage( CHAR *program )
 	   "system\n"\
       "  --low-freq (Hz)  fLow    set the lower frequency (in Hz) of the "\
 	   "hybrid wave\n"\
-      "  [--output-file] (output) output file name\n\n"\
+      "  --output-file            output file name\n\n"\
       " Disclaimer: beta version.\n"\
       " Recommended use: 1 < M < 100 (M_sun) and 1 < mRatio < 4\n"\
       "\n", program );
