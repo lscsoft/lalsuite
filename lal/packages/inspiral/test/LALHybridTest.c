@@ -874,7 +874,6 @@ print_usage( CHAR *program )
 {
   fprintf( stderr,
       "\n Usage: %s [options]\n\n"\
-      " The following options are recognized.\n"\
       "  Options not surrounded in [] are required.\n\n"\
       "  [--help]                 display this message\n"\
       "  [--version]              print version information and exit\n"\
@@ -885,6 +884,6 @@ print_usage( CHAR *program )
 	   "hybrid wave\n"\
       "  [--output-file] (output) output file name\n\n"\
       " Disclaimer: beta version.\n"\
-      " Recommended use: 1 M_sun < M < 100 M_sun and 1 < mass ratio < 4\n"\
+      " Recommended use: 1 < M < 100 (M_sun) and 1 < mRatio < 4\n"\
       "\n", program );
 }
