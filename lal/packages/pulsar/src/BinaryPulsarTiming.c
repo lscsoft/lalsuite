@@ -552,7 +552,14 @@ LALReadTEMPOParFile(  LALStatus *status,
   output->eps2dot=0.0;
   output->Tasc=0.0;   /* time of the ascending node (used rather than T0) */
 
-  output->fb = {0.,0.,0.,0.,0.,0.};
+  /*output->fb = {0.,0.,0.,0.,0.,0.};*/
+  output->fb[0] = 0.;
+  output->fb[1] = 0.;
+  output->fb[2] = 0.;
+  output->fb[3] = 0.;
+  output->fb[4] = 0.;
+  output->fb[5] = 0.;
+
   output->nfb=0;
 
   output->wdot=0.0;   /* precesion of longitude of periastron w = w0 + wdot(tb-T0) (degs/year) */
@@ -642,7 +649,14 @@ LALReadTEMPOParFile(  LALStatus *status,
   output->x3Err=0.0;
   output->T03Err=0.0;
 
-  output->fbErr = {0.,0.,0.,0.,0.,0.};
+  /*output->fbErr = {0.,0.,0.,0.,0.,0.};*/
+  output->fbErr[0] = 0.;
+  output->fbErr[1] = 0.;
+  output->fbErr[2] = 0.;
+  output->fbErr[3] = 0.;
+  output->fbErr[4] = 0.;
+  output->fbErr[5] = 0.;
+
 
   fp = fopen(pulsarAndPath, "r");
   
