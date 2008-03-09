@@ -309,7 +309,7 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
   /* Main Program  */
   /* * * * * * * * */
 
-  eta = 1. / pow(1. + massRatio, 2.);
+  eta = massRatio / pow(1. + massRatio, 2.);
 
   /* This freq low is the one used for the FFT */
   fLow = 2.E-3/(totalMass*LAL_MTSUN_SI);
