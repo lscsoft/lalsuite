@@ -59,7 +59,7 @@ lalDebugLevel
 NRCSID(FLATMESHTESTC,"$Id$");
 
 /* Default parameter settings. */
-INT4 lalDebugLevel = 0;
+INT4 lalDebugLevel = 1;
 
 int
 main(int argc, char **argv)
@@ -70,7 +70,7 @@ main(int argc, char **argv)
   static InspiralCoarseBankIn coarseIn;
   void *noisemodel = LALLIGOIPsd;
   double beta;
-  SnglInspiralTable *tiles=NULL;
+  SnglInspiralTable *tiles=NULL, *first=NULL;
   FILE *fpr;
 
 /* Number of templates is nlist */
@@ -121,10 +121,14 @@ main(int argc, char **argv)
   
   
   LALInspiralBCVSpinRandomBank (&status, &tiles, &nlist1, &coarseIn);
+/*
   LALInspiralBankGeneration(&status, &coarseIn, &tiles, &nlist1);
+*/
+  LALDDestroyVector( &status, &(coarseIn.shf.data) );
 
   fprintf (fpr, "#numtemplaes=%d %e %e %e %e %e %e\n", nlist1, coarseIn.psi0Min, coarseIn.psi0Max, coarseIn.psi3Min, coarseIn.psi3Max, coarseIn.betaMin, coarseIn.betaMax);
   beta = tiles->beta;
+  first = tiles;
   for (j=0; j<nlist1; j++)
   {
 	  fprintf(fpr, "%7.3f %e %e\n", beta, tiles->psi0, tiles->psi3);
@@ -134,11 +138,15 @@ main(int argc, char **argv)
 		  beta = tiles->beta;
 	  }
   }
- 
-
   fclose(fpr);
-  LALDDestroyVector( &status, &(coarseIn.shf.data) );
-  LALFree(tiles);
+
+  tiles = first;
+  for (j=0; j<nlist1; j++)
+  {
+          first = tiles ->next;
+	  if (tiles != NULL) LALFree(tiles);
+          tiles = first;
+  }
   LALCheckMemoryLeaks();
   return 0;
 }
