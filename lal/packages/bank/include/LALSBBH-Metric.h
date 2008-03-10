@@ -121,7 +121,7 @@ int rescale_metric(/*input*/ double MinMatch, int ndata, double metric1[4][4],
 int BCVspin_metric(/*input*/
 		double MinMatch, int N,double *Sn,double fmin,double fmax,double beta,
 		/*output*/
-		double bcv2metric[4][4],int dbg);
+		double **bcv2metric,int dbg);
 
 double determinant3(gsl_matrix *matrix);
 
