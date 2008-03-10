@@ -14,8 +14,8 @@ gitID:
 BUILT_SOURCES = gitID
 
 
-lalapps_testFlatLatticeTiling_SOURCES  = testLatticeCovering.c
-lalapps_testLatticeCovering_SOURCES  = testFlatLatticeTiling.c
+lalapps_testFlatLatticeTiling_SOURCES = testFlatLatticeTiling.c
+lalapps_testLatticeCovering_SOURCES = testLatticeCovering.c
 
 lalapps_skynet_SOURCES = skynet.c
 
