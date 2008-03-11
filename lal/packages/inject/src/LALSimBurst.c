@@ -197,6 +197,61 @@ REAL8 XLALMeasureIntHDotSquaredDT(const COMPLEX16FrequencySeries *fseries)
 }
 
 
+/**
+ * Given h+ and hx in the waveframe, compute and return E/r^2.  The return
+ * value is in LAL's native units, computed by evaluating
+ *
+ * \int [ \dot{h}_{+}^{2} + \dot{h}_{\cross}^{2} ] \diff t
+ *
+ * and multiplying by LAL_C_SI^{3} / (4 LAL_G_SI).
+ */
+
+
+REAL8 XLALMeasureEoverRsquared(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross)
+{
+	static const char func[] = "XLALMeasureEoverRsquared";
+	REAL8FFTPlan *plan;
+	COMPLEX16FrequencySeries *tilde_hplus, *tilde_hcross;
+	double e_over_rsquared;
+	unsigned i;
+
+	/* FIXME:  this is overly strict, this function could be smarter */
+
+	LAL_CHECK_CONSISTENT_TIME_SERIES(hplus, hcross, XLAL_REAL8_FAIL_NAN);
+
+	/* transform to the frequency domain */
+
+	plan = XLALCreateForwardREAL8FFTPlan(hplus->data->length, 0);
+	tilde_hplus = XLALCreateCOMPLEX16FrequencySeries(NULL, &hplus->epoch, 0.0, 0.0, &lalDimensionlessUnit, hplus->data->length / 2 + 1);
+	tilde_hcross = XLALCreateCOMPLEX16FrequencySeries(NULL, &hcross->epoch, 0.0, 0.0, &lalDimensionlessUnit, hcross->data->length / 2 + 1);
+	if(!plan || !tilde_hplus || !tilde_hcross) {
+		XLALDestroyCOMPLEX16FrequencySeries(tilde_hplus);
+		XLALDestroyCOMPLEX16FrequencySeries(tilde_hcross);
+		XLALDestroyREAL8FFTPlan(plan);
+		XLAL_ERROR(func, XLAL_EFUNC);
+	}
+	i = XLALREAL8TimeFreqFFT(tilde_hplus, hplus, plan);
+	i |= XLALREAL8TimeFreqFFT(tilde_hcross, hcross, plan);
+	XLALDestroyREAL8FFTPlan(plan);
+	if(i) {
+		XLALDestroyCOMPLEX16FrequencySeries(tilde_hplus);
+		XLALDestroyCOMPLEX16FrequencySeries(tilde_hcross);
+		XLAL_ERROR(func, XLAL_EFUNC);
+	}
+
+	/* measure E / r^2 */
+
+	e_over_rsquared = (double) LAL_C_SI * LAL_C_SI * LAL_C_SI / (4 * LAL_G_SI) * (XLALMeasureIntHDotSquaredDT(tilde_hplus) + XLALMeasureIntHDotSquaredDT(tilde_hcross));
+
+	/* done */
+
+	XLALDestroyCOMPLEX16FrequencySeries(tilde_hplus);
+	XLALDestroyCOMPLEX16FrequencySeries(tilde_hcross);
+
+	return e_over_rsquared;
+}
+
+
 /*
  * ============================================================================
  *
@@ -324,7 +379,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 
 	plan = XLALCreateForwardREAL8FFTPlan((*hplus)->data->length, 0);
 	tilde_hplus = XLALCreateCOMPLEX16FrequencySeries(NULL, &epoch, 0.0, 0.0, &lalDimensionlessUnit, (*hplus)->data->length / 2 + 1);
-	tilde_hcross = XLALCreateCOMPLEX16FrequencySeries(NULL, &epoch, 0.0, 0.0, &lalDimensionlessUnit, (*hplus)->data->length / 2 + 1);
+	tilde_hcross = XLALCreateCOMPLEX16FrequencySeries(NULL, &epoch, 0.0, 0.0, &lalDimensionlessUnit, (*hcross)->data->length / 2 + 1);
 	if(!plan || !tilde_hplus || !tilde_hcross) {
 		XLALDestroyCOMPLEX16FrequencySeries(tilde_hplus);
 		XLALDestroyCOMPLEX16FrequencySeries(tilde_hcross);
