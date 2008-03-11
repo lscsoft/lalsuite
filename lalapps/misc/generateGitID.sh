@@ -21,24 +21,39 @@ tmpfile="misc/__${prefix}GitID.h"
 ## ---------- read out git-log of last commit --------------------
 fmt="format:${prefix}CommitID: %H %n${prefix}CommitDate: %aD %n${prefix}CommitAuthor: %ae %n${prefix}CommitTitle: %s";
 logcmd="git-log -1 --pretty='$fmt'";
-statuscmd="git-status -a";
 
-if ! git_log=`eval $logcmd`  2>/dev/null; then
-    git_log="%n${prefix}CommitID: no git revision %n";
-    have_git="false";
+## first check if the git-log works at all: could be a) no git installed or b) no git-repository
+if eval "$logcmd >& /dev/null"; then
+    git_log_ok="true";
 else
-    have_git="true";
+    git_log_ok="false";
+fi
+
+if test "$git_log_ok" = "true"; then
+    git_log=`eval $logcmd`;
+else
+    git_log="%n${prefix}CommitID: unknown.%n";
 fi
 
 ## ---------- check for modified/added git-content [ignores untracked files!] ----------
-if test "$have_git" = "true"; then
-    if $statuscmd >/dev/null; then
+statuscmd="git-status";
+## first check if git-status is actually available:
+if test "$git_log_ok" = "true"; then
+    if eval "$statuscmd -h >& /dev/null" }; then
+	git_status_ok="true";
+    fi
+else
+    git_status_ok="false";
+fi
+
+if test "$git_status_ok" = "true"; then
+    if eval "$statuscmd -a >& /dev/null"; then
 	git_status="UNCLEAN: some modifications were not commited!";
     else
-	git_status="CLEAN. No uncommited modifications.";
+	git_status="CLEAN. All modifications commited.";
     fi
 else	## no git or git-repository
-    git_status="unknown. Not derived from a git-repository?";
+    git_status="unknown.";
 fi
 
 git_log="${git_log}
@@ -51,7 +66,7 @@ ${prefix}GitStatus: ${git_status}";
 git_log_safe=`echo "$git_log" | sed -e"s/\"/''/g" | sed -e"s/[$]/_/g" `;
 
 ## put proper $ quotations for each line to form proper 'ident' keyword strings:
-git_log_ident=`echo "$git_log_safe" | sed -e"s/\(.*\)/\"$\1 $\"/g"`;
+git_log_ident=`echo "$git_log_safe" | sed -e"s/\(.*\)/\"$\1 $\\\\\\n\"/g"`;
 
 cat > $tmpfile <<EOF
 #ifndef ${prefix}GITID_H
