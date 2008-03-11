@@ -50,13 +50,14 @@ extern "C" {
 "Usage: %s [options]\n\n"\
 " --help              display this message\n"\
 " --verbose           display all error messages\n"\
-" --detectors         all IFOs with data to be analysed e.g. \"H1 H2\"\n"\
+" --detectors         all IFOs with data to be analysed e.g. H1,H2 \
+                     (delimited by commas)\n"\
 " --pulsar            name of pulsar e.g. J0534+2200\n"\
 " --par-file          pulsar parameter (.par) file (full path) \n"\
 " --input-dir         directory containing the input data files\n"\
 " --output-dir        directory for output data files\n"\
 " --dob-ul            (REAL8) percentage degree-of-belief for upper limit\n\
-                     - if 0 (default no upper limit is produced\n"\
+                     - if 0 (default no upper limit is produced)\n"\
 " --output-post       output the full log(posterior)\n"\
 " --chunk-min         (INT4) minimum stationary length of data to be used in\n\
                      the likelihood e.g. 5 mins\n"\
@@ -109,13 +110,13 @@ extern "C" {
                      output every tenth sample\n"\
 " --nglitch           (INT4) number of glitches\n"\
 " --glitch-times      (CHAR) a string of pulsar glitch times given in MJD\n\
-                     e.g. \"45623.872, 52839.243, 53992.091\" - at each\n\
+                     e.g. 45623.872,52839.243,53992.091 - at each\n\
                      glitch an additional MCMC phase parameter will be used\n"\
 " --glitch-cut        (REAL8) the number of seconds of data to ignore\n\
                      before and after a glitch\n"\
 "\n"
 
-#define MAXLENGTH 500000
+#define MAXLENGTH 1000000
 
 /** define structures */
 

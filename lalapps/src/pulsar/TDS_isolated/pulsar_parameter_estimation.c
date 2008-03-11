@@ -71,7 +71,8 @@ INT4 main(INT4 argc, CHAR *argv[]){
   REAL8 maxPost=0.;
   REAL8 logNoiseEv[5]; /* log evidence for noise only (no signal) */
   Results results;
-  
+  REAL8 h0ul=0.;  
+
   CHAR *params[]={"h0", "phi", "psi", "ciota"};
   
   /*===================== GET AND SET THE INPUT PARAMETER ====================*/
@@ -289,6 +290,9 @@ INT4 main(INT4 argc, CHAR *argv[]){
     
         results = marginalise_posterior(singleLike, inputs.priors, inputs.mesh,
           output);
+
+        if( output.dob != 0. && strcmp( output.margParam, "h0" ) == 0)
+          h0ul = results.h0UpperLimit;       
       }
       
       /* open file to output the evidence */
@@ -299,10 +303,9 @@ INT4 main(INT4 argc, CHAR *argv[]){
     
       /* output the log odds ratio and an UL if requested */
       fprintf(fp, "%s\t%le\n", output.det, results.evidence-logNoiseEv[i]);
-      if( output.dob != 0. ){
-        fprintf(fp, "%.1lf%% h0 upper limit = %lf\n", output.dob,
-          results.h0UpperLimit);
-      }
+      if( output.dob != 0. )
+        fprintf(fp, "%.1lf%% h0 upper limit = %le\n", output.dob, h0ul);
+      
       fclose(fp);
     
       XLALDestroyCOMPLEX16Vector(data[k].data);
@@ -1107,7 +1110,7 @@ Results marginalise_posterior(REAL8 ****logPost, PriorVals prior,
   REAL8 maxPost=-1.e200;
   REAL8 evVal=0., sumVal=0.;
   
-  Results results;            /* the results structure */
+  Results results={0.,0.,0.,0.}; /* the results structure */
   
   INT4 numSteps1=0, numSteps2=0, numSteps3=0, numSteps4=0;
   REAL8 step=0., minVal=0.;
@@ -1116,7 +1119,7 @@ Results marginalise_posterior(REAL8 ****logPost, PriorVals prior,
   
   CHAR outputFile[256];  /* filname to output the marginalised pdf */
   FILE *fp=NULL;
-   
+  
   /* check which parameter we will not be integrating over for the output */
   if( strcmp( output.margParam, "h0" ) == 0 ){
     numSteps1 = mesh.h0Steps;
@@ -1464,15 +1467,14 @@ REAL8 get_upper_limit(REAL8 *cumsum, REAL8 limit, MeshGrid mesh){
     }
   }
   
-  /* couldn't calculate and upper limit! */
+  /* couldn't calculate an upper limit! */
   if( point2 == 0. ){
     fprintf(stderr, "Couldn't calculate a %.1lf%% upper limit!\n", limit);
-    exit(0);
   } 
  
   h0s[0] = mesh.minVals.h0 + (REAL8)(point1*mesh.delta.h0);
   h0s[1] = mesh.minVals.h0 + (REAL8)(point2*mesh.delta.h0);
-  
+
   /* find out if point one or point two is closer to UL */
   if( fabs(cumsum[point1] - limit/100.) < fabs(cumsum[point2] - limit/100.) ){
     vals[2] = cumsum[point1-1];
@@ -1499,11 +1501,11 @@ REAL8 get_upper_limit(REAL8 *cumsum, REAL8 limit, MeshGrid mesh){
   
   /* put equation in the form ax^2 + bx + c = 0 */
   c[2] -= limit/100.;
-  
+
   /* use quadratic formula to calculate upper limit */
   ul1 = (-c[1] + sqrt(c[1]*c[1] - 4.*c[0]*c[2]))/(2.*c[0]);
   ul2 = (-c[1] - sqrt(c[1]*c[1] - 4.*c[0]*c[2]))/(2.*c[0]);
-  
+
   /* return smaller value as cumulative prob gradient will always be positive */
   if( ul1 < ul2 )
     return ul1;
@@ -1590,12 +1592,20 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
         free(gtimestr);
       }
       
-      /* set initial values for extra params */
-      extraVars[i].h0 = (REAL8)XLALUniformDeviate(randomParams) *
-        (input.mesh.maxVals.h0 - input.mesh.minVals.h0);
-      extraVars[i].phi0 = (REAL8)XLALUniformDeviate(randomParams) *
-        (input.mesh.maxVals.phi0 - input.mesh.minVals.phi0);
-      
+      /* set initial values for extra params (all start at same point) */
+      if( i==0 ){
+        extraVars[i].h0 = input.mesh.minVals.h0 +
+          (REAL8)XLALUniformDeviate(randomParams) *
+          (input.mesh.maxVals.h0 - input.mesh.minVals.h0);
+        extraVars[i].phi0 = input.mesh.minVals.phi0 +
+          (REAL8)XLALUniformDeviate(randomParams) *
+          (input.mesh.maxVals.phi0 - input.mesh.minVals.phi0);
+      }
+      else{
+        extraVars[i].h0 = extraVars[i-1].h0;
+        extraVars[i].phi0 = extraVars[i-1].phi0;
+      }
+
       /* find the position before and after the glitch +/- the cut-off time/2 */
       for( j = 0 ; j < numDets ; j++ ){        
         if( i == 0 )
@@ -1673,6 +1683,8 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   /* set initial chain parameters */
   vars.h0 = input.mesh.minVals.h0 + (REAL8)XLALUniformDeviate(randomParams) *
              (input.mesh.maxVals.h0 - input.mesh.minVals.h0);
+  if( input.mcmc.nGlitches > 0 )
+    vars.h0 = extraVars[0].h0;
   vars.phi0 = input.mesh.minVals.phi0 + (REAL8)XLALUniformDeviate(randomParams)
              * (input.mesh.maxVals.phi0 - input.mesh.minVals.phi0);
   vars.psi = input.mesh.minVals.psi + (REAL8)XLALUniformDeviate(randomParams) *
@@ -1739,6 +1751,9 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   
   count = 0;
   
+  fprintf(stderr, "var.h0 = %le, extravars.h0 = %le.\n",
+vars.h0, extraVars[0].h0);
+
   /*====================== MCMC LOOP =========================================*/
   for( i = 0 ; i < input.mcmc.iterations + input.mcmc.burnIn ; i++ ){
     if( verbose ){ 
@@ -1754,9 +1769,9 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     below0 = 0;
     for( j = 0 ; j < nGlitches ; j++ ){
       extraVarsNew[j].h0 = extraVars[j].h0 +
-        input.mcmc.sigmas.h0*randNum->data[4+j];
+        input.mcmc.sigmas.h0*randNum->data[4+2*j];
       extraVarsNew[j].phi0 = extraVars[j].phi0 +
-        input.mcmc.sigmas.phi0*randNum->data[4+j+1];
+        input.mcmc.sigmas.phi0*randNum->data[4+2*j+1];
       
       if( extraVarsNew[j].phi0 < 0. ){
         extraVarsNew[j].phi0 = fmod(extraVarsNew[j].phi0, LAL_TWOPI);
@@ -1768,6 +1783,18 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
       /* if any of the h0 jump below zero then write out data below */
       if( extraVarsNew[j].h0 < 0. )
         below0 = 1;
+
+      /* make it so that values of h0 after a glitch must be smaller than
+         before the glitch i.e. the pulsar always relaxes to a lower energy
+         state - if this happens set below0 = 1 to output the current state */
+      if( j==0 ){
+        if( extraVarsNew[j].h0 > varsNew.h0 )
+          below0 = 1;
+      }
+      else{
+        if( extraVarsNew[j].h0 > extraVarsNew[j-1].h0 )
+          below0 = 1;
+      }
     }
     
     /* if h0 jumps negative then this is equivalent to having jumped outside
