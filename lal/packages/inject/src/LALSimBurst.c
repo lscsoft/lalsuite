@@ -170,7 +170,11 @@ REAL8 XLALMeasureIntHDotSquaredDT(const COMPLEX16FrequencySeries *fseries)
 	/* Kahan's compensated summation algorithm. The summation is done
 	 * from lowest to highest frequency under the assumption that high
 	 * frequency components tend to add more to the magnitude of the
-	 * derivative.  */
+	 * derivative.  Note that because only half the components of the
+	 * Fourier transform are stored a factor of 2 is added after the
+	 * sum.  The DC component should only count once, but it does not
+	 * contribute anything to the sum so no special case is required to
+	 * handle it. */
 
 	for(i = 0; i < fseries->data->length; i++) {
 		double tmp = sum;
