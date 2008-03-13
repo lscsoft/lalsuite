@@ -605,7 +605,7 @@ int three_metric(/* input */
 
 int generate_fit_points(/*input*/double MinMatch, double funcG[7][7][4][4],
 			int ndata, 
-			/*output*/ double fit_point[JJ+1][4])
+			/*output*/ double **fit_point)
 {
   const gsl_rng_type * T;
   gsl_rng * r;
@@ -731,20 +731,18 @@ int generate_metric_data(/* input */double MinMatch,
   double norm;
   const gsl_rng_type * T;
   gsl_rng * r;
-  double fit_point[JJ+1][4];
   /*
-  double **fit_point;
+  double fit_point[JJ+1][4];
   */
+  double **fit_point;
 	
 	
 
-  /*
   fit_point = (double **) malloc(sizeof(double *)*(JJ+1));
   for (i=0; i<4; i++)
   {
 	  fit_point[i] = (double *) malloc(sizeof(double) * 4);
   }
-  */
 
   generate_fit_points(MinMatch,funcG,JJ,fit_point);
 	
