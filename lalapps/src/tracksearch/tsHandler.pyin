@@ -130,7 +130,7 @@ parser.add_option("-T","--expression-threshold",dest="expThreshold",
 parser.add_option("-s","--write-summary",dest="dumpSummaryDisk",
                   default=False,
                   action="store_true",
-                  help="This will write the summary information for the candidate file(s) opened. The filename scheme replaces candidate with summary. The data store is Length Pixels,Power,Duration Sec,Bandwidth Hz.  This option can be invoked along with the thresholding option to write out summary files of the results immediately after thresholding the data."
+                  help="This will write the summary information for the candidate file(s) opened. The filename scheme replaces candidate with summary. The data store is Length Pixels,Power(actually energy),Duration Sec,Bandwidth Hz.  This option can be invoked along with the thresholding option to write out summary files of the results immediately after thresholding the data."
                   )
 parser.add_option("-d","--display-summary",dest="dumpSummaryScreen",
                   default=False,
@@ -201,7 +201,7 @@ topTol=float(options.topPercentile)
 
 if verboseSwitch:
     print "Setting verbose mode to candidateHandler call."
-    
+
 if filename == "":
     print "Filename argument either not specified or invalid!"
     os.abort()
@@ -304,6 +304,10 @@ elif ((expThreshold != "") and (canList.__len__() >=1)):
         candidateObject=candidateList(verboseSwitch)
         candidateObject.__loadfileQuick__(entry)
         #Build Threshold list
+        if expThreshold.__contains__('"'):
+            if verboseSwitch:
+                sys.stdout.write("Found extra parenthesis in threshold expressions!")
+        expThreshold=expThreshold.strip('"')
         expThresholdLIST=str(expThreshold).split(',')
         for singleThreshold in expThresholdLIST:
             candidateResults=candidateObject.applyArbitraryThresholds(singleThreshold)
@@ -314,6 +318,8 @@ elif ((expThreshold != "") and (canList.__len__() >=1)):
                 if expThresholdLIST.__len__()>1:
                     outfile=singleThreshold+outfile
                 candidateResults.writefile(outfile)
+                if verboseSwitch:
+                    print "Wrote file :",saveFiles
                 if dumpSummaryDisk:
                     candidateResults.writeSummary(outfile)
                 if glitchdb:
@@ -324,10 +330,10 @@ elif ((expThreshold != "") and (canList.__len__() >=1)):
                 candidateResults.writefile(saveFiles)
                 if verboseSwitch:
                     print "Wrote file :",saveFiles
-            if dumpSummaryDisk:
-                candidateResults.writeSummary(saveFiles)
-            if glitchdb:
-                candidateResults.writeGlitchDatabase('',saveFiles)
+            	if dumpSummaryDisk:
+                	candidateResults.writeSummary(saveFiles)
+            	if glitchdb:
+                	candidateResults.writeGlitchDatabase('',saveFiles)
             del candidateResults
         del entry
     del candidateObject

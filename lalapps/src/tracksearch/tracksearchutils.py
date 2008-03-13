@@ -885,7 +885,8 @@ class candidateList:
         """
         TDArrayFreq=[]
         TDArrayGPSFloat=[]
-        curveEstimateLimit=5000
+        #curveEstimateLimit=5000
+        curveEstimateLimit=1000
         decimateFactor=int(self.curves.__len__()/curveEstimateLimit)
         dataIndex=[]
         counter=0
@@ -1803,10 +1804,10 @@ class candidateList:
         transitionValue=bins[index]
         if index==entries.__len__()-1:
             topPercentage=float(tally)/count
-        pylab.xlabel(str("Power"))
+        pylab.xlabel(str("Trigger Energy"))
         pylab.ylabel(str("Count"))
         pylab.figtext(0.01,0.95,
-                      "Upper Percentile :%3f%% , Power Threshold :%f"%(float(100)*topPercentage,transitionValue))
+                      "Upper Percentile :%3f%% , IP Threshold :%f"%(float(100)*topPercentage,transitionValue))
         if ((filename.upper()=='') or (filename.upper()=='AUTO')):
             [name,extension]=os.path.splitext(self.filename[0])
             figtitle=os.path.basename(name)
