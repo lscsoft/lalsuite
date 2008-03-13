@@ -103,7 +103,7 @@ int three_metric(/* input */
 
 int generate_fit_points(/*input*/double MinMatch, double funcG[7][7][4][4],
 			int ndata, 
-			/*output*/ double fit_point[ndata+1][4]);
+			/*output*/ double **fit_point);
 
 int generate_metric_data(/* input */double MinMatch,
 			 double funcG[7][7][4][4]);
