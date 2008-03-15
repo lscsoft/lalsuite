@@ -495,22 +495,17 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
     /* output frame */
     if ( ifosFlag )
-    {
       output_multi_channel_frame( num_ifos, gpsStartSec, gpsEndSec, injData );
-    }
     else
-    {
       output_frame( ifo, gpsStartSec, gpsEndSec, injData[0] );
-    }
   }
 
   /* write mdc log */
   if ( mdcFlag )
-  {
     write_mdc_log_file(mdcFileName, injections, gpsStartSec, setName);
-  }
 
 
+  /* free memeory */
   if ( injectionFile )
     free( injectionFile );
 
@@ -611,9 +606,7 @@ static void output_frame(CHAR *ifo,
   XLALFrameAddREAL4TimeSeriesSimData( frame, injData );
 
   if ( vrbflg )
-  {
     fprintf( stdout, "Writing injection to frame: '%s'\n", fname );
-  }
 
   /* write frame */
   if (XLALFrameWrite( frame, fname, 8) != 0)
@@ -662,14 +655,10 @@ static void output_multi_channel_frame(INT4 num_ifos,
 
   /* add channels to frame */
   for( i = 0; i < num_ifos; i++ )
-  {
     XLALFrameAddREAL4TimeSeriesSimData( frame, injData[i] );
-  }
 
   if (vrbflg)
-  {
     fprintf( stdout, "Writing injections to frame: '%s'\n", fname );
-  }
 
   /* write frame */
   if ( XLALFrameWrite( frame, fname, 8 ) != 0 )
@@ -683,6 +672,7 @@ static void output_multi_channel_frame(INT4 num_ifos,
 
   return;
 }
+
 
 /* function to write a Burst MDC log file */
 static void write_mdc_log_file(CHAR *filename, SimInspiralTable *injections, INT4 gps_start, CHAR *set_name)
@@ -701,9 +691,7 @@ static void write_mdc_log_file(CHAR *filename, SimInspiralTable *injections, INT
   }
 
   if (vrbflg)
-  {
     fprintf(stdout, "Writing MDC log file: '%s'\n", filename);
-  }
 
   /* loop over injections */
   for (thisInj = injections; thisInj; thisInj = thisInj->next)
@@ -775,5 +763,3 @@ static void write_mdc_log_file(CHAR *filename, SimInspiralTable *injections, INT
   /* close output file */
   fclose(output);
 }
-
-
