@@ -1555,24 +1555,9 @@ LALInspiralITStructureHelp(void);
 /* --- TEST PROTOTYPES --- */
 
 /*  <lalLaTeX>
-\newpage\input{LALInspiralTestC}
-</lalLaTeX>  */
-
-/*  <lalLaTeX>
 \newpage\input{GenerateInspiralWaveformC}
 </lalLaTeX>  */
 
-/*  <lalLaTeX>
-\newpage\input{LALSTPNWaveformTestC}
-</lalLaTeX>  */
-
-/*  <lalLaTeX>
-\newpage\input{LALInspiralSpinningBHBinariesTestC}
-</lalLaTeX>  */
-
-/*  <lalLaTeX>
-\newpage\input{LALInspiralRingdownWaveC}
-</lalLaTeX>  */
 INT4 XLALInspiralRingdownWave (
 	REAL4Vector			*rdwave1,
 	REAL4Vector			*rdwave2,
