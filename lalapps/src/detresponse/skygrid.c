@@ -70,7 +70,7 @@ void init_ephemeris(LALStatus *status, EphemerisData *p_ephemeris_data)
     sundat_path[i] = '\0';
   }
   
-  lal_prefix = getenv("LAL_LOCATION");
+  lal_prefix = getenv("LAL_PREFIX");
   
   if (lal_prefix != NULL)
   {
@@ -82,8 +82,19 @@ void init_ephemeris(LALStatus *status, EphemerisData *p_ephemeris_data)
       fprintf(stderr, "oops!\n");
       exit(7);
     }
+    if (strlen(earthdat_path) >= mystrlcat(earthdat_path, share_path, LALNameLength))
+    {
+      fprintf(stderr, "oops!\n");
+      exit(7);
+    }
   
+
     if (strlen(sundat_path) >= mystrlcat(sundat_path, lal_prefix, LALNameLength))
+    {
+      fprintf(stderr, "oops!\n");
+      exit(7);
+    }
+    if (strlen(sundat_path) >= mystrlcat(sundat_path, share_path, LALNameLength))
     {
       fprintf(stderr, "oops!\n");
       exit(7);
@@ -100,7 +111,13 @@ void init_ephemeris(LALStatus *status, EphemerisData *p_ephemeris_data)
     fprintf(stderr, "bah!\n");
     exit(7);
   }
-  
+  if (strlen(earthdat_path) >= mystrlcat(earthdat_path, fn_earthdat, LALNameLength))
+  {
+    fprintf(stderr, "bah!\n");
+    exit(7);
+  }
+    
+
   if (lalDebugLevel > 3)
   {
     printf("LALNameLength = %d\n", LALNameLength);

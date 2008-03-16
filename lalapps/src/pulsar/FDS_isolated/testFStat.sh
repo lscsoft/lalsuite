@@ -46,13 +46,16 @@ fi
 
 # test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
 if [ -z "$LAL_DATA_PATH" ]; then
-    echo
-    echo "Need environment-variable LAL_DATA_PATH to point to your ephemeris-directory (e.g. /usr/local/share/lal)"
     if [ -n "$LAL_PREFIX" ]; then
-	echo "You have LAL_PREFIX set, I suggest setting 'LAL_DATA_PATH=\$LAL_PREFIX/share/lal'"
+	export LAL_DATA_PATH=".:${LAL_PREFIX}/share/lal";
+    else
+	echo
+	echo "Need environment-variable LAL_PREFIX, or LAL_DATA_PATH to be set"
+	echo "to your ephemeris-directory (e.g. /usr/local/share/lal)"
+	echo "This might indicate an incomplete LAL installation"
+	echo
+	exit 1
     fi
-    echo
-    exit 1
 fi
 
 ## Tests start here
