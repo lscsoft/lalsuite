@@ -16,7 +16,6 @@ CFS_DEFAULT="${builddir}lalapps_ComputeFStatistic"
 
 outfile1="Fstatv1_1.dat";
 outfile2="Fstatv1_2.dat";
-outfile3="Fstatv1_3.dat";
 
 CFSparams1="--IFO=$IFO --DataDir=$sftdir --BaseName=$sftbase --Freq=300.1 --Fthreshold=0\
 --FreqBand=0.2 --Alpha=2.2 --AlphaBand=0.012 --Delta=0.8 --DeltaBand=0.018 --gridType=0 --outputFstat=$outfile1"
@@ -113,3 +112,7 @@ else
     echo "OUCH... files differ. Something might be wrong..."
     exit 2
 fi
+
+## clean up files
+rm -f $outfile1 $outfile2 test1.dat test2.dat Fstats Fstats.log
+

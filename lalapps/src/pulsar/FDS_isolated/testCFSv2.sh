@@ -186,3 +186,6 @@ else
     echo "OK."
 fi
 
+## clean up files
+rm -rf $SFTdir $outfile_v1 $outfile_v2NWon $outfile_v2NWoff Fstats Fstats.log
+

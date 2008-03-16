@@ -254,3 +254,7 @@ else
 fi
 
 echo
+
+## clean up files
+rm -rf $SFTdir $outputv2_0 $outputv2_1 $outputv2_2 $outputv1_0 $outputv1_1 $outputv1_2 Fstats Fstats.log
+

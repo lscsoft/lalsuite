@@ -55,3 +55,4 @@ lalapps_PredictFStat_SOURCES = PredictFStat.c
 EXTRA_DIST = testFStat.sh testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2
 TESTS = testFStat.sh testCFSv2.sh testGridv2.sh
 
+CLEANFILES = 
