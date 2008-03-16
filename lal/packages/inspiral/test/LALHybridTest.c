@@ -184,6 +184,7 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
   INT4 c;
   UINT4 i;
   REAL8 dt, totTime;
+  REAL8 sampleRate = -1;
   REAL8 totalMass = -1, massRatio = -1;
   REAL8 lowFreq = -1, df, fLow; 
   CHAR  *outFile = NULL, *outFileLong = NULL, tail[50];
@@ -215,6 +216,7 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
     {"mass-ratio",              required_argument, 0,                'q'},
     {"low-freq (Hz)",           required_argument, 0,                'f'},
     {"total-mass (M_sun)",      required_argument, 0,                'm'},
+    {"sample-rate",             required_argument, 0,                's'},
     {"output-file",             required_argument, 0,                'o'},    
     {"help",                    no_argument,       0,                'h'},
     {"version",                 no_argument,       0,                'V'},
@@ -273,6 +275,11 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
       case 'm':
         /* set total mass */
         totalMass = atof( optarg );
+        break;
+
+      case 's':
+        /* set sample rate */
+        sampleRate = atof( optarg );
         break;
 
       case 'o':
@@ -341,6 +348,11 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
       fprintf( stderr, "ERROR: --low-freq must be specified\n" );
       exit( 1 );
     }
+  if ( sampleRate < 0 )
+    {
+      fprintf( stderr, "ERROR: --sample-rate must be specified\n" );
+      exit( 1 );
+    }
   if ( lowFreq > params.fCut )
     {
       fprintf( stderr, "\nERROR in --low-freq\n"\
@@ -372,8 +384,16 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
   strcpy(outFileLong, tail);
  
   /* dt chosen well above the Nyquist */
-  dt = 1/(4.*params.fCut);
-
+  /* check sample rate is enough */
+  if (1/sampleRate < 8.*params.fCut)
+    {
+      dt = 1./sampleRate;
+    }
+  else
+    {
+      dt = 1/(8.*params.fCut);
+    }
+      
   /* Estimation of the time duration of the binary           */
   /* See Sathya (1994) for the Newtonian and PN1 chirp times */
   /* The merger time is overestimated                        */
@@ -895,6 +915,8 @@ print_usage( CHAR *program )
       "  --total-mass     M       set total mass (in M_sun) of the binary "\
 	   "system\n"\
       "  --low-freq (Hz)  fLow    set the lower frequency (in Hz) of the "\
+	   "hybrid wave\n"\
+      "  --sample-rate            set the sample rate of the output waveform " \
 	   "hybrid wave\n"\
       "  --output-file            output file name\n\n"\
       " Disclaimer: beta version.\n"\
