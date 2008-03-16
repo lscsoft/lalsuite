@@ -52,5 +52,6 @@ lalapps_ComputeFStatistic_v2_SOURCES = 	ComputeFStatistic_v2.c  HeapToplist.c He
 
 lalapps_PredictFStat_SOURCES = PredictFStat.c
 
+EXTRA_DIST = testFStat.sh testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2
 TESTS = testFStat.sh testCFSv2.sh testGridv2.sh
 
