@@ -455,18 +455,12 @@ INT4 main(INT4 argc, CHAR **argv)
       }
 
       /* hplus */
-      if (hplus[l][m]) {
-        LALFree(hplus[l][m]->data->data);
-        LALFree(hplus[l][m]->data);
-        LALFree(hplus[l][m]);
-      }
+      if (hplus[l][m])
+        XLALDestroyREAL4TimeSeries(hplus[l][m]);
 
       /* hcross */
-      if (hcross[l][m]) {
-        LALFree(hcross[l][m]->data->data);
-        LALFree(hcross[l][m]->data);
-        LALFree(hcross[l][m]);
-      }
+      if (hcross[l][m])
+        XLALDestroyREAL4TimeSeries(hcross[l][m]);
     }
   }
 
