@@ -64,7 +64,6 @@ RCSID("$Id$");
 
 /* function prototypes */
 static void print_usage(FILE *ptr, CHAR *program);
-/* static CHAR* channel_name(CHAR *polarisation, UINT4 l, UINT4 m, CHAR *channel); */
 
 
 /* verbose flag */
@@ -340,8 +339,6 @@ INT4 main(INT4 argc, CHAR **argv)
       hcross[l][m] = NULL;
 
       /* generate channel names */
-      /* plus_channel[l][m] = channel_name("plus", l, m, plus_channel[l][m]); */
-      /* cross_channel[l][m] = channel_name("cross", l, m, cross_channel[l][m]); */
       plus_channel[l][m] = XLALGetNinjaChannelName( "plus", l, m - MAX_L);
       cross_channel[l][m] = XLALGetNinjaChannelName("cross", l, m - MAX_L);
 
@@ -498,58 +495,3 @@ static void print_usage(FILE *ptr, CHAR *program)
       "                           waveforms\n"\
       " --output         FILE     name of output frame file\n", program);
 }
-
-
-/* function to return channel name */
-/* static CHAR* channel_name(CHAR *polarisation, UINT4 l, UINT4 m, CHAR *channel) */
-/* { */
-/*   /\* variables *\/ */
-/*   CHAR sign; */
-
-/*   /\* check that channel is a NULL pointer *\/ */
-/*   if (channel != NULL) */
-/*   { */
-/*     fprintf(stderr, "Error: 'channel' should be a NULL pointer\n"); */
-/*     exit(1); */
-/*   } */
-
-/*   /\* check for suppored polarisation *\/ */
-/*   if (strncmp(polarisation, "plus", 4) == 0) */
-/*   { */
-/*     /\* supported polarisation *\/ */
-/*   } */
-/*   else if (strncmp(polarisation, "cross", 5) == 0) */
-/*   { */
-/*     /\* supported polarisation *\/ */
-/*   } */
-/*   else */
-/*   { */
-/*     fprintf(stderr, "Error: Unknown polarisation '%s'\n", polarisation); */
-/*     exit(1); */
-/*   } */
-
-/*   /\* allocate memory for channel *\/ */
-/*   channel = (CHAR *)LALCalloc(1, LIGOMETA_CHANNEL_MAX * sizeof(CHAR)); */
-
-/*   /\* get sign of m *\/ */
-/*   if (m < MAX_L) */
-/*   { */
-/*     /\* negative *\/ */
-/*     strncpy(&sign, "n", 1); */
-/*   } */
-/*   else */
-/*   { */
-/*     /\* positive *\/ */
-/*     strncpy(&sign, "p", 1); */
-/*   } */
-
-/*   /\* set channel name *\/ */
-/*   LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l%d_m%c%d", polarisation, l, sign, abs(m - MAX_L)); */
-
-/*   /\* return channel name *\/ */
-/*   return channel; */
-/* } */
-
-
-
-
