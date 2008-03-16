@@ -68,9 +68,9 @@ RCSID( "$Id$" );
 /* function prototypes */
 static void print_usage( CHAR *program );
 static void output_frame( CHAR *ifo, INT4 gpsStart, INT4 gpsEnd,
-    REAL4TimeSeries *injData );
+    REAL4TimeSeries *injData, CHAR *frameType );
 static void output_multi_channel_frame( INT4 num_ifos, INT4 gpsStart,
-    INT4 gpsEnd, REAL4TimeSeries *injData[LAL_NUM_IFO] );
+    INT4 gpsEnd, REAL4TimeSeries *injData[LAL_NUM_IFO], CHAR *frameType );
 static void write_mdc_log_file( CHAR *filename, SimInspiralTable *injections,
     INT4 gps_start, CHAR *set_name );
 
@@ -97,6 +97,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
   CHAR *injectionFile = NULL;
   CHAR *setName       = NULL;
   CHAR *mdcFileName   = NULL;
+  CHAR *frameType     = NULL;
 
   /* ifo name */
   CHAR *ifo = NULL;
@@ -142,6 +143,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
     {"injection-file",          required_argument, 0,                'f'},
     {"sample-rate",             required_argument, 0,                'r'},
     {"ifo",                     required_argument, 0,                'i'},
+    {"frame-type",              required_argument, 0,                't'},
     {"set-name",                required_argument, 0,                'n'},
     {"mdc-log",                 required_argument, 0,                'o'},
     {"help",                    no_argument,       0,                'h'},
@@ -282,6 +284,12 @@ INT4 main( INT4 argc, CHAR *argv[] )
         }
         break;
 
+      case 't':
+        /* create storage for the frame type */
+        optarg_len = strlen( optarg ) + 1;
+        frameType = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( frameType, optarg, optarg_len );
+
       case 'n':
         /* create storage for the injection set name */
         optarg_len = strlen(optarg) + 1;
@@ -343,6 +351,13 @@ INT4 main( INT4 argc, CHAR *argv[] )
     if (( !ifo ) && ( ifosFlag == 0 ))
     {
       fprintf( stderr, "ERROR: --ifo, or --all-ifos, must be specifed\n" );
+      exit( 1 );
+    }
+
+    /* check that frameType has been specified */
+    if ( !frameType )
+    {
+      fprintf( stderr, "ERROR: --frame-type must be specified\n");
       exit( 1 );
     }
   }
@@ -495,9 +510,9 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
     /* output frame */
     if ( ifosFlag )
-      output_multi_channel_frame( num_ifos, gpsStartSec, gpsEndSec, injData );
+      output_multi_channel_frame( num_ifos, gpsStartSec, gpsEndSec, injData, frameType );
     else
-      output_frame( ifo, gpsStartSec, gpsEndSec, injData[0] );
+      output_frame( ifo, gpsStartSec, gpsEndSec, injData[0], frameType );
   }
 
   /* write mdc log */
@@ -562,7 +577,8 @@ static void print_usage( CHAR *program )
 static void output_frame(CHAR *ifo,
     INT4 gpsStart,
     INT4 gpsEnd,
-    REAL4TimeSeries *injData)
+    REAL4TimeSeries *injData,
+    CHAR *frameType)
 {
   CHAR fname[FILENAME_MAX];
   INT4 duration;
@@ -572,8 +588,8 @@ static void output_frame(CHAR *ifo,
 
   /* get frame filename */
   duration = gpsEnd - gpsStart;
-  LALSnprintf( fname, FILENAME_MAX, "%s-NR_WAVE-%d-%d.gwf", ifo, gpsStart,
-      duration );
+  LALSnprintf( fname, FILENAME_MAX, "%s-%s-%d-%d.gwf", ifo, frameType,
+      gpsStart, duration );
 
   /* set detector flags */
   if ( strncmp( ifo, "H2", 2 ) == 0 )
@@ -626,7 +642,8 @@ static void output_frame(CHAR *ifo,
 static void output_multi_channel_frame(INT4 num_ifos,
     INT4 gpsStart,
     INT4 gpsEnd,
-    REAL4TimeSeries *injData[LAL_NUM_IFO])
+    REAL4TimeSeries *injData[LAL_NUM_IFO],
+    CHAR *frameType)
 {
   CHAR fname[FILENAME_MAX];
   INT4 duration;
@@ -637,8 +654,8 @@ static void output_multi_channel_frame(INT4 num_ifos,
 
   /* get frame filename */
   duration = gpsEnd - gpsStart;
-  LALSnprintf( fname, FILENAME_MAX, "GHLTV-NR_WAVE-%d-%d.gwf", gpsStart,
-      duration );
+  LALSnprintf( fname, FILENAME_MAX, "GHLTV-%s-%d-%d.gwf", frameType,
+      gpsStart, duration );
 
   /* set detector flags */
   detectorFlags = LAL_GEO_600_DETECTOR_BIT | LAL_LHO_4K_DETECTOR_BIT |
