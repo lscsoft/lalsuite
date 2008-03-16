@@ -64,6 +64,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/TimeFreqFFT.h>
 #include <lal/RealFFT.h>
 #include <lal/ComplexFFT.h>
+#include <lal/ResampleTimeSeries.h>
 
 #include <FrameL.h>
 #include <series.h>
@@ -92,7 +93,7 @@ REAL4 tmpx, tmpy;
       tmpc ) )
 
 
-#define MAXLINESRS   100000     /* Maximum # of lines in a Response file */
+#define MAXLINESRS   60000     /* Maximum # of lines in a Response file */
 #define MAXFACTORS   100000       /* Maximum # of factors to be computed */
 #define MAXFREQUENCIES 100       /* Maximum number of frequemcies for which to do the comparison */
 
@@ -149,7 +150,7 @@ typedef struct ResponseFunctionTag
 /* GLOBAL VARIABLES */
 
 static LALStatus status;
-INT4 lalDebugLevel=3;
+INT4 lalDebugLevel=0;
 
 FrCache *hoftframecache=NULL;                                           /* frame reading variables */
 FrStream *hoftframestream=NULL;
@@ -183,6 +184,16 @@ REAL8 gamma_fac[MAXFACTORS];
 REAL8 frequencies[MAXFREQUENCIES]; /* frequency array */
 INT4 Nfrequencies;  /* number of frequencies */
 
+void printmemuse() 
+{
+   pid_t mypid=getpid();
+   char commandline[256];
+   fflush(NULL);
+   sprintf(commandline,"cat /proc/%d/status | /bin/grep Vm | /usr/bin/fmt -140 -u", (int)mypid);
+   system(commandline);
+   fflush(NULL);
+}
+
 /***************************************************************************/
 
 /* FUNCTION PROTOTYPES */
@@ -205,7 +216,13 @@ int main(int argc,char *argv[])
 {
   int i, N; 
 
+/*   fprintf(stdout,"Made it to: -4\n"); */
+/*   printmemuse();  */
+
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
+
+/*   fprintf(stdout,"Made it to: -3\n"); */
+/*   printmemuse();  */
 
   if (ReadCalFiles(CommandLineArgs)) return 2;
 
@@ -222,9 +239,9 @@ int main(int argc,char *argv[])
   gpsepoch.gpsSeconds=CommandLineArgs.GPSStart;
   gpsepoch.gpsNanoSeconds=0;
 
-  if(Initialise(CommandLineArgs)) return 3;
-
   if(GetFactors(CommandLineArgs)) return 4;
+
+  if(Initialise(CommandLineArgs)) return 3;
   
   for(i=0;i<N;i++)
     {
@@ -247,7 +264,6 @@ int main(int argc,char *argv[])
 
 int Initialise(struct CommandLineArgsTag CLA)
 {
-
   /* create Frame cache, open frame stream and delete frame cache */
   LALFrCacheImport(&status,&derrframecache,CommandLineArgs.derrFrCacheFile);
   TESTSTATUS( &status );
@@ -277,6 +293,7 @@ int Initialise(struct CommandLineArgsTag CLA)
   TESTSTATUS( &status );
   LALFrGetREAL4TimeSeries(&status,&derr,&chanin_derr,derrframestream);
   TESTSTATUS( &status );
+
   /* h(t) */
   LALFrSeek(&status,&gpsepoch,hoftframestream);
   TESTSTATUS( &status );
@@ -286,28 +303,21 @@ int Initialise(struct CommandLineArgsTag CLA)
   TESTSTATUS( &status );
 
   /* Allocate space for data vectors */
-  LALCreateVector(&status,&derr.data,(UINT4)(CLA.t/derr.deltaT +0.5));
+  LALCreateVector(&status,&derr.data,(UINT4)(CLA.t/(derr.deltaT) +0.5));
   TESTSTATUS( &status );
-  LALDCreateVector(&status,&hoft.data,(UINT4)(CLA.t/hoft.deltaT +0.5));
+
+  LALDCreateVector(&status,&hoft.data,(UINT4)(CLA.t/(hoft.deltaT) +0.5));
   TESTSTATUS( &status );
 
   /* Create Window vectors */
-  LALCreateVector(&status,&derrwin,(UINT4)(CLA.t/derr.deltaT +0.5));
-  TESTSTATUS( &status );
-  LALCreateVector(&status,&hoftwin,(UINT4)(CLA.t/hoft.deltaT +0.5));
+  LALCreateVector(&status,&derrwin,(UINT4)(CLA.t/(derr.deltaT*4) +0.5));
   TESTSTATUS( &status );
 
   winparams.type=Hann;
    
-  /* make windows  */
-  /*  DARM_ERR */
-  winparams.length=(INT4)(CLA.t/derr.deltaT +0.5);
+  /* make window  */
+  winparams.length=(INT4)(CLA.t/(derr.deltaT*4) +0.5);
   LALWindow(&status,derrwin,&winparams);
-  TESTSTATUS( &status );
-  
-  /* h(t) */
-  winparams.length=(INT4)(CLA.t/hoft.deltaT +0.5);
-  LALWindow(&status,hoftwin,&winparams);
   TESTSTATUS( &status );
 
   /* Open output file */
@@ -319,19 +329,33 @@ int Initialise(struct CommandLineArgsTag CLA)
     }
   /*   setvbuf( fpout, NULL, _IONBF, 0 );  */
   
-/*   fprintf(fpout,"%s  GPS start time      h(t) noise     Calibrated DARM_ERR noise      Ratio\n", "%"); */
+/*   fprintf(stdout,"Made it to: 0\n"); */
+/*   printmemuse();  */
 
-  LALCreateForwardREAL8FFTPlan( &status, &fftPlanDouble, hoft.data->length, 0 );
-  TESTSTATUS( &status );
-  LALCreateForwardREAL4FFTPlan( &status, &fftPlan, derr.data->length, 0 );
+  LALCreateForwardREAL8FFTPlan( &status, &fftPlanDouble, hoft.data->length/4, 0 );
   TESTSTATUS( &status );
 
-  LALZCreateVector( &status, &ffthtData, hoft.data->length / 2 + 1 );
+/*   fprintf(stdout,"Made it to: 1\n"); */
+/*   printmemuse();  */
+
+  LALCreateForwardREAL4FFTPlan( &status, &fftPlan, derr.data->length/4, 0 );
+  TESTSTATUS( &status );
+
+/*   fprintf(stdout,"Made it to: 2\n"); */
+/*   printmemuse();  */
+
+  LALZCreateVector( &status, &ffthtData, (hoft.data->length/4) / 2 + 1 );
   TESTSTATUS( &status );  
 
-  LALCCreateVector( &status, &fftderrData, hoft.data->length / 2 + 1 );
+/*   fprintf(stdout,"Made it to: 3\n"); */
+/*   printmemuse();  */
+
+  LALCCreateVector( &status, &fftderrData, (hoft.data->length/4) / 2 + 1 );
   TESTSTATUS( &status );  
   
+/*   fprintf(stdout,"Made it to: 4\n"); */
+/*   printmemuse();  */
+
   return 0;
 }
 
@@ -343,17 +367,15 @@ int GetFactors(struct CommandLineArgsTag CLA)
 FrPos pos1;
 
 static REAL4TimeSeries darm;
-static REAL4TimeSeries asq;
 static REAL4TimeSeries exc;
 
 static FrChanIn chanin_darm;
-static FrChanIn chanin_asq;
 static FrChanIn chanin_exc;
 
 CalFactors factors;
 UpdateFactorsParams params;
 
-REAL4Vector *asqwin=NULL,*excwin=NULL,*darmwin=NULL;  /* windows */
+REAL4Vector *excwin=NULL,*darmwin=NULL;  /* window */
 
 LALWindowParams winparams;
 
@@ -372,13 +394,9 @@ FrStream *framestream=NULL;
   LALDestroyFrCache(&status,&framecache);
   TESTSTATUS( &status );
 
- 
-
-  chanin_asq.type  = ADCDataChannel;
   chanin_darm.type = ADCDataChannel;
   chanin_exc.type  = ADCDataChannel;
 
-  chanin_asq.name  = CLA.asq_chan;
   chanin_darm.name = CLA.darm_chan;
   chanin_exc.name  = CLA.exc_chan; 
 
@@ -387,10 +405,7 @@ FrStream *framestream=NULL;
   TESTSTATUS( &status );
   LALFrGetPos(&status,&pos1,framestream);
   TESTSTATUS( &status );
-  LALFrGetREAL4TimeSeries(&status,&asq,&chanin_asq,framestream);
-  TESTSTATUS( &status );
-  LALFrSetPos(&status,&pos1,framestream);
-  TESTSTATUS( &status );
+
   LALFrGetREAL4TimeSeries(&status,&darm,&chanin_darm,framestream);
   TESTSTATUS( &status );
   LALFrSetPos(&status,&pos1,framestream);
@@ -398,32 +413,24 @@ FrStream *framestream=NULL;
   LALFrGetREAL4TimeSeries(&status,&exc,&chanin_exc,framestream);
   TESTSTATUS( &status );
 
-
   /* Allocate space for data vectors */
-  LALCreateVector(&status,&asq.data,(UINT4)(CLA.t/asq.deltaT +0.5));
-  TESTSTATUS( &status );
   LALCreateVector(&status,&darm.data,(UINT4)(CLA.t/darm.deltaT +0.5));
   TESTSTATUS( &status );
   LALCreateVector(&status,&exc.data,(UINT4)(CLA.t/exc.deltaT +0.5));
   TESTSTATUS( &status );
 
-
   /* Create Window vectors */
-  LALCreateVector(&status,&asqwin,(UINT4)(CLA.t/asq.deltaT +0.5));
-  TESTSTATUS( &status );
+
   LALCreateVector(&status,&darmwin,(UINT4)(CLA.t/darm.deltaT +0.5));
   TESTSTATUS( &status );
+
   LALCreateVector(&status,&excwin,(UINT4)(CLA.t/exc.deltaT +0.5));
   TESTSTATUS( &status );
+
 
   winparams.type=Hann;
    
   /* windows for time domain channels */
-  /* asq */
-  winparams.length=(INT4)(CLA.t/asq.deltaT +0.5);
-  LALWindow(&status,asqwin,&winparams);
-  TESTSTATUS( &status );
-  
   /* darm */
   winparams.length=(INT4)(CLA.t/darm.deltaT +0.5);
   LALWindow(&status,darmwin,&winparams);
@@ -444,11 +451,6 @@ FrStream *framestream=NULL;
 
       LALFrSetPos(&status,&pos1,framestream);
       TESTSTATUS( &status );
-      LALFrGetREAL4TimeSeries(&status,&asq,&chanin_asq,framestream);
-      TESTSTATUS( &status );
-
-      LALFrSetPos(&status,&pos1,framestream);
-      TESTSTATUS( &status );
       LALFrGetREAL4TimeSeries(&status,&darm,&chanin_darm,framestream);
       TESTSTATUS( &status );
 
@@ -458,10 +460,6 @@ FrStream *framestream=NULL;
       TESTSTATUS( &status );
 
       /* Window the data */
-      for(k=0;k<(INT4)(CLA.t/asq.deltaT +0.5);k++)
-	{
-	  asq.data->data[k] *= 2.0*asqwin->data[k];
-	}
       for(k=0;k<(INT4)(CLA.t/darm.deltaT +0.5);k++)
 	{
 	  darm.data->data[k] *= 2.0*darmwin->data[k];
@@ -473,7 +471,7 @@ FrStream *framestream=NULL;
       
       /* set params to call LALComputeCalibrationFactors */
       params.darmCtrl = &darm;
-      params.asQ = &asq;
+      params.asQ = &darm;
       params.exc = &exc;
       params.lineFrequency = CLA.fcal;
       params.openloop.re =  CLA.G0Re;
@@ -503,7 +501,6 @@ FrStream *framestream=NULL;
 	      factors.darm.re*2/CLA.t,factors.darm.im*2/CLA.t,
 	      factors.exc.re*2/CLA.t,factors.exc.im*2/CLA.t);
 
-
       gtime += CLA.t;	
       localgpsepoch.gpsSeconds = (INT4)gtime;
       localgpsepoch.gpsNanoSeconds = (INT4)((gtime-(INT4)gtime)*1E+09);      
@@ -513,11 +510,7 @@ FrStream *framestream=NULL;
   TESTSTATUS( &status );
   LALDestroyVector(&status,&exc.data);
   TESTSTATUS( &status );
-  LALDestroyVector(&status,&asq.data);
-  TESTSTATUS( &status );
 
-  LALDestroyVector(&status,&asqwin);
-  TESTSTATUS( &status );
   LALDestroyVector(&status,&darmwin);
   TESTSTATUS( &status );
   LALDestroyVector(&status,&excwin);
@@ -561,6 +554,21 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
   LALFrGetREAL8TimeSeries(&status,&hoft,&chanin_hoft,hoftframestream);
   TESTSTATUS( &status );
 
+/*   fprintf(stdout,"Made it to: 5\n"); */
+/*   printmemuse();  */
+
+  XLALResampleREAL4TimeSeries( &derr, derr.deltaT*4);
+  TESTSTATUS( &status );
+
+/*   fprintf(stdout,"Made it to: 6\n"); */
+/*   printmemuse();  */
+
+  XLALResampleREAL8TimeSeries( &hoft, hoft.deltaT*4);
+  TESTSTATUS( &status );
+
+/*   fprintf(stdout,"Made it to: 7\n"); */
+/*   printmemuse();  */
+
   /* Window the data */
   for(k=0;k<(INT4)(CLA.t/derr.deltaT +0.5);k++)
     {
@@ -568,12 +576,24 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
     }
   for(k=0;k<(INT4)(CLA.t/hoft.deltaT +0.5);k++)
     {
-      hoft.data->data[k] *= 2.0*hoftwin->data[k];
+      hoft.data->data[k] *= 2.0*derrwin->data[k];
     }
+
+/*   for(k=0;k<(INT4)(CLA.t/hoft.deltaT +0.5);k++) */
+/*     { */
+/*       fprintf(stdout,"%e\n",hoft.data->data[k]); */
+/*     } */
 
   /* FFT the data */
   XLALREAL8ForwardFFT( ffthtData, hoft.data, fftPlanDouble );
+
+/*   fprintf(stdout,"Made it to: 8\n"); */
+/*   printmemuse();  */
+
   XLALREAL4ForwardFFT( fftderrData, derr.data, fftPlan );
+
+/*   fprintf(stdout,"Made it to: 9\n"); */
+/*   printmemuse();  */
 
   fprintf(fpout, "%d ", gpsepoch.gpsSeconds);
 
@@ -614,17 +634,20 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
 	    
 	    mean_Sh_derr += dpsq;
 	    mean_Sh_hoft += hpsq;
+
+/* 	    fprintf(stdout,"%e %e\n",mean_Sh_derr,mean_Sh_hoft); */
       
 	  }
 	mean_Sh_derr *= 2.0*derr.deltaT/(REAL4)derr.data->length;
 	mean_Sh_hoft *= 2.0*hoft.deltaT/(REAL4)hoft.data->length;
       }
-    
-
       fprintf(fpout, "%e %e %e ",sqrt(mean_Sh_hoft), sqrt(mean_Sh_derr), sqrt(mean_Sh_hoft)/sqrt(mean_Sh_derr));
     }
   
   fprintf(fpout, "\n");
+
+/*   fprintf(stdout,"Made it to: 10\n"); */
+/*   printmemuse();  */
 
   return 0;
 }
@@ -817,28 +840,58 @@ int ReadCalFiles(struct CommandLineArgsTag CLA)
 
 int Finalise(void)
 {
+/*   fprintf(stdout,"Made it to: 12\n"); */
+/*   printmemuse();  */
 
-  LALDestroyVector(&status,&derr.data);
-  TESTSTATUS( &status );
   LALDDestroyVector(&status,&hoft.data);
   TESTSTATUS( &status );
 
+/*   fprintf(stdout,"Made it to: 11\n"); */
+/*   printmemuse();  */
+
+  LALDestroyVector(&status,&derr.data);
+  TESTSTATUS( &status );
+
+/*   fprintf(stdout,"Made it to: 13\n"); */
+/*   printmemuse();  */
+
   LALDestroyVector(&status,&derrwin);
   TESTSTATUS( &status );
-  LALDestroyVector(&status,&hoftwin);
-  TESTSTATUS( &status );
+
+/*   fprintf(stdout,"Made it to: 14\n"); */
+/*   printmemuse();  */
 
   LALZDestroyVector( &status, &ffthtData);
+
+/*   fprintf(stdout,"Made it to: 15\n"); */
+/*   printmemuse();  */
+
   LALCDestroyVector( &status, &fftderrData);
 
+/*   fprintf(stdout,"Made it to: 16\n"); */
+/*   printmemuse();  */
+
   LALDestroyREAL8FFTPlan( &status, &fftPlanDouble );
+
+/*   fprintf(stdout,"Made it to: 17\n"); */
+/*   printmemuse();  */
+
   LALDestroyREAL4FFTPlan( &status, &fftPlan );
+
+/*   fprintf(stdout,"Made it to: 18\n"); */
+/*   printmemuse();  */
 
   LALFrClose(&status,&derrframestream);
   TESTSTATUS( &status );
 
+/*   fprintf(stdout,"Made it to: 19\n"); */
+/*   printmemuse();  */
+
   LALFrClose(&status,&hoftframestream);
   TESTSTATUS( &status );
+
+/*   fprintf(stdout,"Made it to: 20\n"); */
+/*   printmemuse();  */
 
   fclose(fpout);
   
