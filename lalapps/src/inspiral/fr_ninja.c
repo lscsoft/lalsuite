@@ -396,6 +396,9 @@ INT4 main(INT4 argc, CHAR **argv)
     }
   }
 
+  if (vrbflg)
+    fprintf(stdout, "writing frame: %s\n", frame_name);
+
   /* write frame */
   if (XLALFrameWrite(frame, frame_name, 8) != 0 )
   {
