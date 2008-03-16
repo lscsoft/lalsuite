@@ -3,7 +3,7 @@ sysconf_DATA = lalapps-user-env.sh lalapps-user-env.csh
 BUILT_SOURCES = lalapps-user-env.sh lalapps-user-env.csh
 CLEANFILES = lalapps-user-env.sh lalapps-user-env.csh
 
-include_HEADERS = lalappsGitID.h
+noinst_HEADERS = lalappsGitID.h
 lalappsGitID.h: gitID
 
 .PHONY: gitID
