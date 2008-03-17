@@ -221,14 +221,19 @@ XLALInterpolateNRWave( REAL4TimeSeries *in,           /**< input strain time ser
     /* y1 and y2 are the input values at x1 and x2 */
     /* here we need to make sure that we don't exceed
        bounds of input vector */
-    y1 = in->data->data[lo];
-    y2 = in->data->data[lo+1];
+    if ( lo < in->data->length - 1) {
+      y1 = in->data->data[lo];
+      y2 = in->data->data[lo+1];
 
-    /* we want to calculate y2*r + y1*(1-r) where
-       r = (x-x1)/(x2-x1) */
-    r = k*deltaTout / deltaTin - lo;
-    
-    ret->data->data[k] = y2 * r + y1 * (1 - r);
+      /* we want to calculate y2*r + y1*(1-r) where
+	 r = (x-x1)/(x2-x1) */
+      r = k*deltaTout / deltaTin - lo;
+      
+      ret->data->data[k] = y2 * r + y1 * (1 - r);
+    }
+    else {
+      ret->data->data[k] = 0.0;
+    }    
   }
 
   /* destroy input vector */
