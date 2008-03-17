@@ -132,6 +132,9 @@ parser.add_option("-s", "--plotsnrchi" ,action="store_true",default=False,\
 parser.add_option("-z", "--plotinspiralrange" ,action="store_true",default=False,\
     help="run plotinspiralrange to plot range of inspiral (Mpc) vs end time (in days).")
 
+parser.add_option("", "--ploteffdistcut" ,action="store_true",default=False,\
+    help="run ploteffdistcut to plot the effective distance cut.")
+
 parser.add_option("-f", "--config-file",action="store",type="string",\
     metavar=" FILE",help="use configuration file FILE")
 
@@ -141,7 +144,8 @@ parser.add_option("", "--first-stage",action="store_true", default=False,\
     metavar="FIRSTSTAGE",help="to make plots for output of the first inspiral stage")
 parser.add_option("", "--second-stage",action="store_true", default=False,\
     metavar="SECONDSTAGE",help="to make plots for output of the second inspiral stage")
-
+parser.add_option("-P", "--priority",action="store",type="int",\
+    metavar=" PRIO",help="run jobs with condor priority PRIO")
 
 #################################
 
@@ -187,10 +191,19 @@ if not opts.g1_data and not opts.h1_data and not opts.h2_data and \
   print >> sys.stderr, "or use --analyze-all to analyze all ifos all data"
   sys.exit(1)
 
+# Checks for consistency when running ploteffdistcut
+
+if not opts.h1_data and not opys.h2_data and opts.ploteffdistcut:
+  print >> sys.stderr, "How can I plot effdistcut when H1 and H2 are not"
+  print >> sys.stderr, "being analysed??? I will not run ploteffdistcut."
+  opts.ploteffdistcut = False
+
 # Checks for ifos dependind on plotting routine.
 # Checks for plots which require more than two ifos.
-if ((opts.plotthinca or opts.plotethinca or opts.plotinspmissed or opts.plotinjnum or opts.plotinspinj \
-    or opts.plotsnrchi ) and not (opts.two_ifo or opts.three_ifo or opts.four_ifo or opts.analyze_all)):
+if ((opts.plotthinca or opts.plotethinca or opts.plotinspmissed or \
+     opts.plotinjnum or opts.plotinspinj \
+     or opts.plotsnrchi or opts.ploteffdistcut ) and \
+     not (opts.two_ifo or opts.three_ifo or opts.four_ifo or opts.analyze_all)):
   print >> sys.stderr, "No number of ifos given. Please specify at least two"
   print >> sys.stderr, "--two-ifo, --three-ifo, --four-ifo"
   print >> sys.stderr, "or use --analyze-all to analyze all ifos all data"
@@ -455,7 +468,7 @@ if opts.plotethinca:
   this_section = "plotethinca"
   cp = set_common_options(cp, this_section)
 
-  for ifos in  ifo_combo:
+  for ifos in ifo_combo:
     combostring = combo2str(ifos)
     ifosoption=ifos[0]
     for i in range(1,len(ifos)):
@@ -492,12 +505,12 @@ if opts.plotinspmissed:
   plotinspmissed_jobs = {}
   this_section = "plotinspmissed"
   cp = set_common_options(cp, this_section)
-
   for ifos in ifo_combo:
     combostring = combo2str(ifos)
     if opts.first_stage:
+      if cp.has_option('plotinspmissed','do-followup'):
+        cp.remove_option ('plotinspmissed','do-followup')
       plotinspmissed_jobs[combostring +"FIRST"] = inspiral.PlotInspmissedJob(cp)
-      plotinspmissed_jobs[combostring +"FIRST"].add_opt("ifo", combostring)
       pattern_dict = determine_sieve_patterns(cp, this_section,
         "FIRST", input_user_tag)
       for opt, val in pattern_dict.iteritems():
@@ -511,15 +524,66 @@ if opts.plotinspmissed:
     if opts.second_stage:
       plotinspmissed_jobs[combostring +"SECOND"] = inspiral.PlotInspmissedJob(cp)
       plotinspmissed_jobs[combostring + "SECOND"].add_opt("ifo-times", combostring)
-      plotinspmissed_jobs[combostring +"SECOND"].add_opt("ifo", combostring)
       pattern_dict = determine_sieve_patterns(cp, this_section,
         "SECOND", input_user_tag)
       for opt, val in pattern_dict.iteritems():
         plotinspmissed_jobs[combostring + "SECOND"].add_opt(opt, val)
       plotinspmissed_jobs[combostring +"SECOND"].add_opt("ifo-tag", "SECOND_" + combostring)
+      plotinspmissed_jobs[combostring + "SECOND"].add_opt("followup-tag" ,
+                cp.get("pipeline","inj-suffix").split("_")[0])
       plotinspmissed_jobs[combostring +"SECOND"].set_sub_file( basename + '.plotinspmissed_SECOND_' + combostring + subsuffix )
 
   all_jobs.extend(plotinspmissed_jobs.values())
+
+#ploteffdistcut
+if opts.ploteffdistcut:
+
+  ploteffdistcut_jobs = {}
+  this_section = "ploteffdistcut"
+  cp = set_common_options(cp, this_section)
+
+  ifos = ('H1','H2')
+  combostring = combo2str(ifos)
+  if opts.first_stage:
+    ploteffdistcut_jobs[combostring +"FIRST"] = inspiral.PlotEffdistcutJob(cp)
+    pattern_dict = determine_sieve_patterns(cp, this_section,
+      "FIRST", input_user_tag)
+    for opt, val in pattern_dict.iteritems():
+      val = val.replace("CAT_4","")
+      val = val.replace("CAT_2","")
+      val = val.replace("CAT_3","")
+      ploteffdistcut_jobs[combostring + "FIRST"].add_opt(opt, val)
+    ploteffdistcut_jobs[combostring + "FIRST"].add_opt( \
+          "ifo-times", combostring)
+    ploteffdistcut_jobs[combostring + "FIRST"].add_opt("ifoa", "H1")
+    ploteffdistcut_jobs[combostring + "FIRST"].add_opt("ifob", "H2")
+    ploteffdistcut_jobs[combostring + "FIRST"].add_opt("gps-start-time", 
+          cp.get("common","gps-start-time"))
+    ploteffdistcut_jobs[combostring + "FIRST"].add_opt("gps-end-time", 
+          cp.get("common","gps-end-time"))
+    ploteffdistcut_jobs[combostring + "FIRST"].add_opt("ifo-tag", 
+          "FIRST_" + combostring)
+    ploteffdistcut_jobs[combostring +"FIRST"].set_sub_file( basename + \
+          '.ploteffdistcut_FIRST_' + combostring + subsuffix )
+  if opts.second_stage:
+    ploteffdistcut_jobs[combostring +"SECOND"] = inspiral.PlotEffdistcutJob(cp)
+    ploteffdistcut_jobs[combostring + "SECOND"].add_opt("ifo-times", 
+          combostring)
+    pattern_dict = determine_sieve_patterns(cp, this_section,
+      "SECOND", input_user_tag)
+    for opt, val in pattern_dict.iteritems():
+      ploteffdistcut_jobs[combostring + "SECOND"].add_opt(opt, val)
+    ploteffdistcut_jobs[combostring + "SECOND"].add_opt("ifoa", "H1")
+    ploteffdistcut_jobs[combostring + "SECOND"].add_opt("ifob", "H2")
+    ploteffdistcut_jobs[combostring + "SECOND"].add_opt("gps-start-time",
+          cp.get("common","gps-start-time"))
+    ploteffdistcut_jobs[combostring + "SECOND"].add_opt("gps-end-time",
+          cp.get("common","gps-end-time"))
+    ploteffdistcut_jobs[combostring +"SECOND"].add_opt("ifo-tag", 
+          "SECOND_" + combostring)
+    ploteffdistcut_jobs[combostring +"SECOND"].set_sub_file( basename + '.ploteffdistcut_SECOND_' + combostring + subsuffix )
+
+  all_jobs.extend(ploteffdistcut_jobs.values())
 
 
 #plotinspinj
@@ -607,6 +671,10 @@ if usertag is not None:
   for job in all_jobs:
     job.add_opt('user-tag',usertag)
 
+# Setting priority of plotting jobs.
+for job in all_jobs:
+  job.add_condor_cmd('priority',str(opts.priority))
+ 
 ##############################################################################
 #  The meat of the DAG generation comes below
 #
@@ -685,7 +753,17 @@ if opts.plotinspmissed:
       plotinspmissed_node =inspiral.PlotInspmissedNode(plotinspmissed_jobs[combostring + "SECOND"])
       dag.add_node(plotinspmissed_node)
 
-
+if opts.ploteffdistcut:
+  if opts.first_stage:
+    ifos = "H1H2"
+    combostring = combo2str(ifos)
+    ploteffdistcut_node =inspiral.PlotEffdistcutNode(ploteffdistcut_jobs[combostring + "FIRST"])
+    dag.add_node(ploteffdistcut_node)
+  if opts.second_stage:
+    ifos = "H1H2"
+    combostring = combo2str(ifos)
+    ploteffdistcut_node =inspiral.PlotEffdistcutNode(ploteffdistcut_jobs[combostring + "SECOND"])
+    dag.add_node(ploteffdistcut_node)
 
 if opts.plotinspinj:
   if opts.first_stage:

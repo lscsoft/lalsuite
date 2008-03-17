@@ -178,6 +178,12 @@ cp.read(opts.config_file)
 cp.set("input", "gps-start-time", str(opts.gps_start_time) )
 cp.set("input", "gps-end-time", str(opts.gps_end_time) )
 
+# Check for --disable-dag-categories
+
+opts.do_dag_categories = not cp.has_option(
+              "hipe-arguments","disable-dag-categories")
+
+
 ##############################################################################
 # create a directory called executables and copy them over
 inspiralutils.mkdir("executables")
@@ -371,6 +377,8 @@ if opts.run_plots:
     playPlotNode = inspiralutils.plot_setup("playground_summary_plots", \
         plotcp, opts.log_path, "both", "", "PLAYGROUND", "PLAYGROUND", \
         "PLAYGROUND", "../" + cachefilename, tag="SNGL" )
+    if opts.do_dag_categories:
+      playPlotNode.set_category('plotting')
     dag.add_node(playPlotNode)
     if opts.run_search and opts.run_play_analysis:
       playPlotNode.add_parent(hipePlayNode)
@@ -383,9 +391,13 @@ if opts.run_plots:
     playPlotCoincNode = inspiralutils.plot_setup("playground_summary_plots", 
         plotcp, opts.log_path, "first", "", "PLAYGROUND", "PLAYGROUND", \
         "PLAYGROUND", "../" + cachefilename, tag="COINC" )
+    if opts.do_dag_categories:
+      playPlotCoincNode.set_category('plotting')
     dag.add_node(playPlotCoincNode)
     if opts.run_search and opts.run_play_analysis:
       playPlotCoincNode.add_parent(hipePlayNode)
+    if not opts.do_dag_categories:
+      playPlotNode.add_parent(playPlotNode)
 
     # coincs second (require DQ)
     plotcp = copy.deepcopy(cp)
@@ -396,10 +408,158 @@ if opts.run_plots:
         plotcp, opts.log_path, "second", "", "PLAYGROUND_CAT_2_VETO", \
         "PLAYGROUND_CAT_2_VETO", "PLAYGROUND_CAT_2_VETO", \
         "../" + cachefilename, tag="COINC_CAT_2" )
+    if opts.do_dag_categories:
+      playPlotVetoNode.set_category('plotting')
     dag.add_node(playPlotVetoNode)
     if opts.run_data_quality and opts.run_play_analysis:
       playPlotVetoNode.add_parent(hipePlayVetoNode[2])
+    if not opts.do_dag_categories:
+      playPlotVetoNode.add_parent(playPlotCoincNode)
 
+# Setting up plots for injection run.
+
+  if opts.run_injections:
+    injPlotNode = {}
+    injPlotCoincNode = {}
+    injPlotVetoNode = {}
+    for (injDir, injSeed) in cp.items("injections"):
+      print "Making plots depending on the injection runs"
+      # single ifo
+      plotcp = copy.deepcopy(cp)
+      plotcp.add_section("plot-arguments")
+      plotcp.set("plot-arguments","plotinspiralrange","")
+      plotcp.set("plot-arguments","plotnumtemplates","")
+      plotcp.set("plot-arguments","plotinspinj","")
+      plotcp.set("plot-arguments","plotsnrchi","")
+      plotcp.set("plot-arguments","write-script","")
+      injPlotNode[injDir] = inspiralutils.plot_setup(
+          injDir + "_summary_plots", \
+          plotcp, opts.log_path, "both", injDir.upper(), "PLAYGROUND", \
+          "PLAYGROUND", injDir.upper(), "../" + cachefilename, tag="SNGL" )
+      if opts.do_dag_categories:
+        injPlotNode[injDir].set_category('plotting')
+      dag.add_node(injPlotNode[injDir])
+      if opts.run_search and opts.run_play_analysis:
+        injPlotNode[injDir].add_parent(hipePlayNode)
+      if opts.run_search and opts.run_injections:
+        injPlotNode[injDir].add_parent(hipeInjNode[injDir])
+
+      # coincs
+      plotcp = copy.deepcopy(cp)
+      plotcp.add_section("plot-arguments")
+      plotcp.set("plot-arguments","plotinjnum","")
+      plotcp.set("plot-arguments","plotinspmissed","")
+      plotcp.set("plot-arguments","ploteffdistcut","")
+      plotcp.set("plot-arguments","write-script","")
+      injPlotCoincNode[injDir] = inspiralutils.plot_setup(
+          injDir + "_summary_plots",\
+          plotcp, opts.log_path, "first", injDir.upper(), "PLAYGROUND" , \
+          "PLAYGROUND", injDir.upper(), "../" + cachefilename, tag="COINC" )
+      if opts.do_dag_categories:
+        injPlotCoincNode[injDir].set_category('plotting')
+      dag.add_node(injPlotCoincNode[injDir])
+      if opts.run_search and opts.run_injections:
+        injPlotCoincNode[injDir].add_parent(hipeInjNode[injDir])
+      if opts.run_search and opts.run_play_analysis:
+        injPlotCoincNode[injDir].add_parent(hipePlayNode)
+      if not opts.do_dag_categories:
+        injPlotCoincNode[injDir].add_parent(injPlotNode[injDir])
+
+      # coincs second (require DQ)
+      plotcp = copy.deepcopy(cp)
+      plotcp.add_section("plot-arguments")
+      plotcp.set("plot-arguments","plotethinca","")
+      plotcp.set("plot-arguments","plotinjnum","")
+      plotcp.set("plot-arguments","plotinspmissed","")
+      plotcp.set("plot-arguments","ploteffdistcut","")
+      plotcp.set("plot-arguments","write-script","")
+      injPlotVetoNode[injDir] = inspiralutils.plot_setup(
+          injDir + "_summary_plots", \
+          plotcp, opts.log_path, "second", injDir.upper() + "_CAT_2_VETO", \
+          "PLAYGROUND" + "_CAT_2_VETO", \
+          "PLAYGROUND" + "_CAT_2_VETO", injDir.upper() + "_CAT_2_VETO", \
+          "../" + cachefilename, tag="COINC_CAT_2" )
+      if opts.do_dag_categories:
+        injPlotVetoNode[injDir].set_category('plotting')
+      dag.add_node(injPlotVetoNode[injDir])
+      if opts.run_data_quality and opts.run_play_analysis:
+        injPlotVetoNode[injDir].add_parent(hipePlayVetoNode[2])
+      if opts.run_data_quality and opts.run_injections:
+        injPlotVetoNode[injDir].add_parent(hipeInjVetoNode[injDir][2])
+      if not opts.do_dag_categories:
+        injPlotVetoNode[injDir].add_parent(injPlotCoincNode[injDir])
+
+    # Plotting all injections on the same graphs.    
+    # single ifo
+    plotcp = copy.deepcopy(cp)
+    plotcp.add_section("plot-arguments")
+    plotcp.set("plot-arguments","plotinspiralrange","")
+    plotcp.set("plot-arguments","plotnumtemplates","")
+    plotcp.set("plot-arguments","plotinspinj","")
+    plotcp.set("plot-arguments","plotsnrchi","")
+    plotcp.set("plot-arguments","write-script","")
+    allinjPlotNode = inspiralutils.plot_setup(
+        "allinj" + "_summary_plots", \
+        plotcp, opts.log_path, "both", "*INJ" , "PLAYGROUND", \
+        "PLAYGROUND", "*INJ" , "../" + cachefilename, tag="SNGL" )
+    if opts.do_dag_categories:
+      allinjPlotNode.set_category('plotting')
+    dag.add_node(allinjPlotNode)
+    if opts.run_search and opts.run_play_analysis:
+      allinjPlotNode.add_parent(hipePlayNode)
+    if opts.run_search and opts.run_injections:
+      for (injDir, injSeed) in cp.items("injections"):
+        allinjPlotNode.add_parent(hipeInjNode[injDir])
+
+    # coincs
+    plotcp = copy.deepcopy(cp)
+    plotcp.add_section("plot-arguments")
+    plotcp.set("plot-arguments","plotinjnum","")
+    plotcp.set("plot-arguments","plotinspmissed","")
+    plotcp.set("plot-arguments","ploteffdistcut","")
+    plotcp.set("plot-arguments","write-script","")
+    allinjPlotCoincNode = inspiralutils.plot_setup(
+        "allinj" + "_summary_plots",\
+        plotcp, opts.log_path, "first", "*INJ" , "PLAYGROUND" , \
+        "PLAYGROUND", "*INJ", "../" + cachefilename, tag="COINC" )
+    if opts.do_dag_categories:
+      allinjPlotCoincNode.set_category('plotting')
+    dag.add_node(allinjPlotCoincNode)
+    if opts.run_search and opts.run_injections:
+      for (injDir, injSeed) in cp.items("injections"):
+        allinjPlotCoincNode.add_parent(hipeInjNode[injDir])
+    if opts.run_search and opts.run_play_analysis:
+      allinjPlotCoincNode.add_parent(hipePlayNode)
+    if not opts.do_dag_categories:
+      allinjPlotCoincNode.add_parent(allinjPlotNode)
+
+    # coincs second (require DQ)
+    plotcp = copy.deepcopy(cp)
+    plotcp.add_section("plot-arguments")
+    plotcp.set("plot-arguments","plotethinca","")
+    plotcp.set("plot-arguments","plotinjnum","")
+    plotcp.set("plot-arguments","plotinspmissed","")
+    plotcp.set("plot-arguments","ploteffdistcut","")
+    plotcp.set("plot-arguments","write-script","")
+    allinjPlotVetoNode = inspiralutils.plot_setup(
+        "allinj" + "_summary_plots", \
+        plotcp, opts.log_path, "second", "*INJ" + "_CAT_2_VETO", \
+        "PLAYGROUND" + "_CAT_2_VETO", \
+        "PLAYGROUND" + "_CAT_2_VETO", "*INJ" + "_CAT_2_VETO", \
+        "../" + cachefilename, tag="COINC_CAT_2" )
+    if opts.do_dag_categories:
+      allinjPlotVetoNode.set_category('plotting')
+    dag.add_node(allinjPlotVetoNode)
+    if opts.run_data_quality and opts.run_play_analysis:
+      allinjPlotVetoNode.add_parent(hipePlayVetoNode[2])
+    if opts.run_data_quality and opts.run_injections:
+      for (injDir, injSeed) in cp.items("injections"):
+        allinjPlotVetoNode.add_parent(hipeInjVetoNode[injDir][2])
+    if not opts.do_dag_categories:
+      allinjPlotVetoNode.add_parent(allinjPlotCoincNode)
+
+  if opts.do_dag_categories:
+    dag.add_maxjobs_category('plotting',2)
 
 ##############################################################################
 # Set up the directories for followup and run lalapps_followup_pipe

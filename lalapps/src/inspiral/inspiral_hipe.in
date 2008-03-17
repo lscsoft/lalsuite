@@ -431,8 +431,8 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
       coinc_analyzed.append(AnalyzedIFOData(seg,thinca,inj))
 
       if do_coire and inj > 0: 
-        coire_segs([AnalyzedIFOData(seg,thinca,inj)],
-            coire_job, dag, do_coinc, ifos, inj_file=inj_file, 
+        coire_segments_individually([AnalyzedIFOData(seg,thinca,inj)],
+            coire_job, dag, do_coire, do_coinc, ifos, inj_file=inj_file, 
             num_slides=slides, ifotag=ifotag, usertag=exttrigUserTag)
 
   return coinc_analyzed
@@ -719,9 +719,80 @@ def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
 
   return follow_chunks_analyzed, bankList
 
+
+
 ##############################################################################
 # function to sweep up data using sire
-def sire_segs(segments, sire_job, dag, do_input, ifo,
+def sire_segments(segments, sire_job, dag, do_sire, do_input, ifo, 
+  sire_start, sire_end, inj_file=None, ifotag=None, usertag=None, 
+  write_input_file=False):
+  """
+  Do a sire to sweep up all the triggers of a specific kind
+  
+  segments  = list of segments to use
+  sire_job  = sire job to use for the analysis
+  dag       = name of the dag
+  do_sire   = whether the sired jobs are to be run by the dag
+  do_input  = whether the files to be sired were produced by this dag
+  ifo       = which ifo triggers to keep
+  sire_start= start time for sire job
+  sire_end  = end time for sire job
+  inj_file  = name of injection file
+  ifotag    = ifotag used in naming the file
+  usertag   = the usertag to add to the output file name
+  write_input_file = write an input file (default to false: use glob)
+  """
+  sire = inspiral.SireNode(sire_job)
+  if not opts.disable_dag_categories:
+    sire.set_category('sire')
+  if not opts.disable_dag_priorities:
+    sire.set_priority(100)
+
+  # set the options:
+  sire.set_ifo(ifo)
+  if inj_file: 
+    sire.set_inj_file(inj_file)
+  if ifotag: sire.set_ifo_tag(ifotag)
+  if usertag: sire.set_user_tag(usertag)
+
+  # set the segment
+  sire.set_start(sire_start)
+  sire.set_end(sire_end)
+
+  if write_input_file:
+    input_file = sire.get_output().replace(".xml", ".input") 	 
+    f = open(input_file, 'w') 	 
+
+
+  for seg in segments:
+    # set the glob file for sire
+    if do_input: sire.add_parent(seg.get_dag_node())
+
+    if seg.get_dag_node().get_output():
+      output = seg.get_dag_node().get_output()
+    else: 
+      output = seg.get_dag_node().get_output_a()
+
+    if write_input_file:
+      f.write('%s\n' % output)
+    else:
+      # set up glob
+      sire.set_glob(output)
+
+  if write_input_file:
+    f.close() 	 
+  	 
+    # add the input file name to sire 	 
+    sire.set_input(input_file)
+    
+  if do_sire: dag.add_node(sire) 
+
+  return sire
+
+
+##############################################################################
+# function to sweep up data using sire
+def sire_segments_individually(segments, sire_job, dag, do_sire, do_input, ifo,
   inj_file=None, ifotag=None, usertag=None):
   """
   Do a sire to sweep up all the triggers of a specific kind
@@ -729,49 +800,103 @@ def sire_segs(segments, sire_job, dag, do_input, ifo,
   segments  = list of thinca segments to use
   sire_job  = sire job to use for the analysis
   dag       = name of the dag
+  do_sire   = whether the sired jobs are to be run by the dag
   do_input  = whether the files to be sired were produced by this dag
   ifo       = which ifo triggers to keep
   inj_file  = name of injection file
   ifotag    = ifotag used in naming the file
   usertag   = the usertag to add to the output file name
   """
+  sire_analyzed = []
   for seg in segments:
-    sire = inspiral.SireNode(sire_job)
-    if not opts.disable_dag_categories:
-      sire.set_category('sire')
-    if not opts.disable_dag_priorities:
-      sire.set_priority(100)
+    sire_node = sire_segments([seg], sire_job, dag, do_sire, do_input, ifo, \
+        seg.get_chunk().start(), seg.get_chunk().end(), inj_file, ifotag, 
+        usertag)
 
-    # set the options:
-    sire.set_ifo(ifo)
-    if inj_file: 
-      sire.set_inj_file(inj_file)
-    if ifotag: sire.set_ifo_tag(ifotag)
-    if usertag: sire.set_user_tag(usertag)
+    sire_analyzed.append(AnalyzedIFOData(seg,sire_node))
 
-    # set the segment
-    sire.set_start(seg.get_chunk().start())
-    sire.set_end(seg.get_chunk().end())
-
-    # set the glob file for sire
-    if do_input: sire.add_parent(seg.get_dag_node())
-    if seg.get_dag_node().get_output():
-      sire.set_glob(seg.get_dag_node().get_output())
-    else: 
-      sire.set_glob(seg.get_dag_node().get_output_a())
-
-    dag.add_node(sire) 
+  return sire_analyzed
 
 ##############################################################################
 # function to sweep up data using coire  
-def coire_segs(segments, coire_job, dag, do_input, ifos,
-  inj_file=None, num_slides=0, ifotag=None, usertag=None):
+def coire_segments(segments, coire_job, dag, do_coire, do_input, ifos,
+  coire_start, coire_end, inj_file=None, num_slides=0, ifotag=None, 
+  usertag=None, write_input_file = False):
   """
   Do a coire to sweep up all the triggers of a specific kind
   
   segments  = list of thinca segments to use
   coire_job = coire job to use for the analysis
   dag       = name of the dag
+  do_coire  = whether the coire node generated should be added to the dag
+  do_input  = whether the files to be coired were produced by this dag
+  ifos      = which ifos were analyzed
+  inj_file  = name of injection file
+  cluster   = whether we should add the cluster arguments
+  num_slides = the number of time slides
+  usertag   = the usertag to add to the output file name
+  write_input_file = whether to write an input file (default to glob)
+  """
+
+  coire = inspiral.CoireNode(coire_job)
+  if not opts.disable_dag_categories:
+    coire.set_category('coire')
+  if not opts.disable_dag_priorities:
+    coire.set_priority(100)
+
+  # set the options:
+  coire.set_ifos(ifos)
+  if inj_file:
+    coire.set_inj_file(inj_file)
+  if ifotag is not None: coire.set_ifo_tag(ifotag)
+  if num_slides: coire.set_slides(num_slides)
+  if usertag: coire.set_user_tag(usertag)
+ 
+  # set the segment
+  coire.set_start(coire_start)
+  coire.set_end(coire_end)
+
+  if write_input_file:
+    input_file = coire.get_output().replace(".xml", ".input") 	 
+    f = open(input_file, 'w') 	 
+
+  for seg in segments:
+    # set the glob file for coire 
+    if do_input: coire.add_parent(seg.get_dag_node())
+
+    if seg.get_dag_node().get_output():
+      output = seg.get_dag_node().get_output()
+    else: 
+      output = seg.get_dag_node().get_output_a()
+
+    if write_input_file:
+      f.write('%s\n' % output)
+    else:
+      # set up glob
+      coire.set_glob(output)
+
+  if write_input_file:
+    f.close() 	 
+  	 
+    # add the input file name to coire 	 
+    coire.set_input(input_file)
+    
+  coire.finalize()
+  if do_coire: dag.add_node(coire)
+
+  return coire
+
+##############################################################################
+# function to sweep up data using coire  
+def coire_segments_individually(segments, coire_job, dag, do_coire, do_input, 
+  ifos, inj_file=None, num_slides=0, ifotag=None, usertag=None):
+  """
+  Do a coire to sweep up all the triggers of a specific kind
+  
+  segments  = list of thinca segments to use
+  coire_job = coire job to use for the analysis
+  dag       = name of the dag
+  do_coire  = whether the coire nodes should be added to the dag
   do_input  = whether the files to be coired were produced by this dag
   ifos      = which ifos were analyzed
   inj_file  = name of injection file
@@ -780,32 +905,15 @@ def coire_segs(segments, coire_job, dag, do_input, ifos,
   usertag   = the usertag to add to the output file name
   """
 
+  coire_analyzed = []
   for seg in segments:
-    coire = inspiral.CoireNode(coire_job)
-    if not opts.disable_dag_categories:
-      coire.set_category('coire')
-    if not opts.disable_dag_priorities:
-      coire.set_priority(100)
+    coire_node = coire_segments([seg], coire_job, dag, do_coire, do_input, ifos,
+        seg.get_chunk().start(), seg.get_chunk().end(), inj_file = inj_file, 
+        num_slides = num_slides, ifotag = ifotag, usertag = usertag)
 
-    # set the options:
-    coire.set_ifos(ifos)
-    if inj_file:
-      coire.set_inj_file(inj_file)
-    if ifotag is not None: coire.set_ifo_tag(ifotag)
-    if num_slides: coire.set_slides(num_slides)
-    if usertag: coire.set_user_tag(usertag)
- 
-    # set the segment
-    coire.set_start(seg.get_chunk().start())
-    coire.set_end(seg.get_chunk().end())
- 
-    # set the glob file for coire 
-    if do_input: coire.add_parent(seg.get_dag_node())
-    coire.set_glob(seg.get_dag_node().get_output())
-  
-    coire.finalize()
-    dag.add_node(coire) 
+    coire_analyzed.append(AnalyzedIFOData(seg,coire_node))
 
+  return coire_analyzed
 
 ##############################################################################
 # function to set up the cohbank and cohinspiral jobs for a network of ifos
@@ -1031,10 +1139,18 @@ parser.add_option("-C", "--second-coinc" ,action="store_true",default=False,\
     help="run lalapps_thinca on the inspiral veto triggers")
 parser.add_option("-E", "--coire-second-coinc",action="store_true",
     default=False, help="do coires to sweep up triggers")
+parser.add_option("-F", "--sire-second-coinc",action="store_true",
+    default=False, help="do sires to sweep up triggers")
 parser.add_option("-j", "--coherent-bank",action="store_true",default=False,\
     help="run lalapps_coherentbank to make coherent bank")
 parser.add_option("-k", "--coherent-inspiral",action="store_true",
     default=False,help="run lalapps_coherent_inspiral for coherent analysis")
+parser.add_option("-X", "--summary-trigger-files",action="store_true", \
+    default=False, \
+    help="Produce summary triggers from run.  This will produce "
+    "sire (first inspiral) and coire (second coincidence) files "
+    "containing triggers from the whole run.  Use with care, "
+    "as files can become very large.")
 
 parser.add_option("-R", "--read-cache",action="store_true",default=False,\
     help="read cache file from ini-file (if LSCDataFind is broken)")
@@ -1126,14 +1242,16 @@ if not opts.datafind and not opts.template_bank and \
      not opts.trigbank and not opts.inspiral_veto and \
      not opts.sire_inspiral_veto and not opts.td_follow_bank and \
      not opts.td_follow_inspiral and not opts.second_coinc and \
-     not opts.coire_second_coinc and not opts.coherent_bank and \
-     not opts.coherent_inspiral: 
+     not opts.coire_second_coinc and not opts.sire_second_coinc and \
+     not opts.coherent_bank and not opts.coherent_inspiral and \
+     not opts.summary_trigger_files: 
   print >> sys.stderr, """  No steps of the pipeline specified.
   Please specify at least one of
   --datafind, --template-bank, --inspiral, --sire-inspiral, --coincidence, 
   --coire-coincidence, --trigbank, --inspiral-veto, --sire-inspiral-veto,
   --td-follow-bank, --td-follow-inspiral, --second-coinc, 
-  --coire-second-coinc, --coherent-bank, --coherent-inspiral"""
+  --coire-second-coinc, --sire-second-coinc, --coherent-bank, 
+  --coherent-inspiral, --summary-trigger-files"""
   sys.exit(1)
    
 ifo_list = ['H1','H2','L1','V1','G1']
@@ -1422,16 +1540,24 @@ for ifos in ifo_coincs:
 # sire:
 sire_job = inspiral.SireJob(cp)
 sire_job.set_sub_file( basename + '.sire' + subsuffix )
+sire_summary_job = inspiral.SireJob(cp)
+sire_summary_job.set_sub_file( basename + '.sire_summary' + subsuffix )
 
 # coire:
 coire_job = inspiral.CoireJob(cp)
 coire_job.set_sub_file( basename + '.coire' + subsuffix )
 coire_slide_job = inspiral.CoireJob(cp)
 coire_slide_job.set_sub_file( basename + '.coire_slide' + subsuffix )
+coire_summary_job = inspiral.CoireJob(cp)
+coire_summary_job.set_sub_file( basename + '.coire_summary' + subsuffix )
+coire_slide_summary_job = inspiral.CoireJob(cp)
+coire_slide_summary_job.set_sub_file( basename + '.coire_slide_summary' + \
+    subsuffix )
 
 
 all_jobs = [inspinj_job, single_inca_job, trig_job, cb_job, sire_job, 
-  coire_job, coire_slide_job]
+  sire_summary_job, coire_job, coire_slide_job, coire_summary_job, 
+  coire_slide_summary_job]
 all_jobs.extend(tmplt_jobs.values())
 all_jobs.extend(insp_jobs.values())
 all_jobs.extend(thinca_jobs.values())
@@ -1470,6 +1596,7 @@ except:
 
 if num_slides:
   coire_slide_job.add_opt('num-slides', str(num_slides))
+  coire_slide_summary_job.add_opt('num-slides', str(num_slides))
 
 ##############################################################################
 # read in the maximum length of a science segment for thinca from the ini file
@@ -1500,7 +1627,8 @@ try:
 except:
   play_data_mask = None
 
-play_jobs = [trig_job, sire_job, coire_job, coire_slide_job]
+play_jobs = [trig_job, sire_job, sire_summary_job, coire_job, coire_slide_job,
+  coire_summary_job, coire_slide_summary_job]
 play_jobs.extend(thinca_jobs.values())
 play_jobs.extend(thinca_slide_jobs.values())
 play_jobs.extend(thinca2_jobs.values())
@@ -1740,7 +1868,8 @@ else:
 
 # add the injection details to inspiral/sire/coire jobs  
 if inj_file:
-  inj_jobs = [sire_job, coire_job, coire_slide_job]
+  inj_jobs = [sire_job, sire_summary_job, coire_job, coire_slide_job, 
+    coire_summary_job, coire_slide_summary_job]
   inj_jobs.extend(insp_jobs.values())
   inj_jobs.extend(insp_veto_jobs.values())
   inj_jobs.extend(insp_coh_jobs.values())
@@ -1750,12 +1879,16 @@ if inj_file:
 
 if inj_file or doExtTrig:
   # add the injection coincidence to the sire jobs
-  try: sire_job.add_ini_opts(cp,'sire-inj')
+  try: 
+    sire_job.add_ini_opts(cp,'sire-inj')
+    sire_summary_job.add_ini_opts(cp,'sire-inj')
   except: pass
 
   try: 
     coire_job.add_ini_opts(cp,'coire-inj')
     coire_slide_job.add_ini_opts(cp,'coire-inj')
+    coire_summary_job.add_ini_opts(cp,'coire-inj')
+    coire_slide_summary_job.add_ini_opts(cp,'coire-inj')
   except: pass
 
 ##############################################################################
@@ -1773,9 +1906,17 @@ for ifo in ifo_list:
       usertag,inspinj)
   
   # Step 4S: Run sire on the single ifo triggers
-  if opts.sire_inspiral and len(chunks_analyzed[ifo]):
-    sire_segs(chunks_analyzed[ifo], sire_job, dag, opts.inspiral, ifo,
-        inj_file = inj_file, ifotag="FIRST", usertag = usertag)
+  print opts.sire_inspiral
+  print opts.inspiral
+  sire_nodes = sire_segments_individually(chunks_analyzed[ifo], sire_job, 
+      dag, opts.sire_inspiral, opts.inspiral, ifo, inj_file = inj_file, 
+      ifotag="FIRST", usertag = usertag)
+
+  if len(sire_nodes):
+    sire_segments(sire_nodes, sire_summary_job, dag, 
+        opts.summary_trigger_files, opts.sire_inspiral, ifo, gps_start_time, 
+        gps_end_time, inj_file = inj_file, ifotag="SUMMARY_FIRST", 
+        usertag = usertag, write_input_file = True)
 
   print "done" 
 
@@ -1793,9 +1934,9 @@ for ifo in ifo_list:
      analyzed_data[ifo],single_inca_job,dag,usertag)
    
   # Step 5S: Run sire on the single ifo triggers
-  if opts.coire_coincidence and len(single_coinc_nodes[ifo]):
-    sire_segs(single_coinc_nodes[ifo], sire_job, dag, opts.inspiral, ifo,
-        inj_file=inj_file, usertag=usertag, ifotag="FIRST")
+  sire_segments_individually(single_coinc_nodes[ifo], sire_job, dag, 
+      opts.coire_coincidence, opts.coincidence, ifo,
+      inj_file=inj_file, usertag=usertag, ifotag="FIRST")
 
 print "done"
   
@@ -1816,10 +1957,10 @@ for ifos in ifo_coincs:
       usertag, coire_job=coire_job, do_coire=opts.coire_coincidence)
 
   # Step 6 coire: Run coire on coinc triggers
-  if opts.coire_coincidence and len(coinc_nodes[ifos])\
-         and not doExtTrig:
-    coire_segs(coinc_nodes[ifos], coire_job, dag, opts.coincidence, 
-        ifos, inj_file=inj_file, ifotag="FIRST", usertag=usertag) 
+  if not doExtTrig:
+    coire_segments_individually(coinc_nodes[ifos], coire_job, dag, 
+        opts.coire_coincidence, opts.coincidence, ifos, inj_file=inj_file, 
+        ifotag="FIRST", usertag=usertag) 
   
 
 
@@ -1833,11 +1974,11 @@ for ifos in ifo_coincs:
         opts.inspiral,exttrigInjections, usertag, coire_job=coire_slide_job, 
         do_coire=opts.coire_coincidence, ifotag=ifotag, slides=num_slides )
 
-    if opts.coire_coincidence and len(coinc_slide_nodes[ifos]) \
-           and not doExtTrig:
-      coire_segs(coinc_slide_nodes[ifos], coire_slide_job, dag, 
-          opts.coincidence, ifos, inj_file = inj_file, num_slides = num_slides,
-          ifotag="FIRST", usertag=usertag)
+    if not doExtTrig:
+      coire_segments_individually(coinc_slide_nodes[ifos], coire_slide_job, 
+          dag, opts.coire_coincidence, opts.coincidence, ifos, 
+          inj_file = inj_file, num_slides = num_slides, ifotag="FIRST", 
+          usertag=usertag)
 
   # Concatenate the zerolag and slide nodes
   coinc_nodes[ifos] = coinc_nodes[ifos] + coinc_slide_nodes[ifos]
@@ -1895,10 +2036,9 @@ for ifos in ifo_coincs:
             coinc_nodes[ifos],ifos,trig_job,insp_veto_jobs[ifo],dag,
             exttrigInjections,usertag)
       
-        if opts.sire_inspiral_veto and len(analyzed_coinc_data[ifos][ifo]):   
-          sire_segs(analyzed_coinc_data[ifos][ifo], sire_job, dag, 
-              opts.inspiral_veto, ifo, inj_file = inj_file, usertag = usertag, 
-              ifotag="SECOND_" + ifo)
+        sire_segments_individually(analyzed_coinc_data[ifos][ifo], sire_job, 
+              dag, opts.sire_inspiral_veto, opts.inspiral_veto, ifo, 
+              inj_file = inj_file, usertag = usertag, ifotag="SECOND_" + ifo)
 
       print "done"
 
@@ -1930,10 +2070,23 @@ for ifos in ifo_coincs:
       opts.inspiral_veto, exttrigInjections, usertag=usertag,
       coire_job=coire_job, do_coire=opts.coire_second_coinc, ifotag=ifos)
 
-    if opts.coire_second_coinc and len(coinc2_nodes[ifos])\
-           and not doExtTrig :
-      coire_segs(coinc2_nodes[ifos], coire_job, dag, opts.second_coinc, 
+    if not doExtTrig:
+      coire_nodes = coire_segments_individually(coinc2_nodes[ifos], coire_job, 
+          dag, opts.coire_second_coinc, opts.second_coinc, 
           ifos, inj_file=inj_file, ifotag="SECOND_" + ifos, usertag=usertag)
+ 
+      if len(coire_nodes):
+        coire_segments(coire_nodes, coire_summary_job, dag,
+            opts.summary_trigger_files, 
+            opts.coire_second_coinc, ifos, gps_start_time, gps_end_time, 
+            inj_file=inj_file, ifotag="SUMMARY_SECOND_" + ifos, usertag=usertag,
+            write_input_file = True)
+
+      for ifo in ifo_list:
+        if ifo in ifos: 
+          sire_segments_individually(coinc2_nodes[ifos], sire_job, dag, 
+              opts.sire_second_coinc, opts.second_coinc, ifo, 
+              inj_file=inj_file, ifotag="SECOND_" + ifos, usertag=usertag)
 
   # Step 8slide: Time slides on the data
   if num_slides:
@@ -1950,21 +2103,36 @@ for ifos in ifo_coincs:
           coire_job=coire_slide_job, do_coire=opts.coire_second_coinc, 
           ifotag=ifos+'_'+this_approx, slides=num_slides)
     else: 
-     coinc2_slide_nodes[ifos] = thinca_coinc(ifos,
+      coinc2_slide_nodes[ifos] = thinca_coinc(ifos,
         analyzed_coinc_data[ifos], analyzed_data[ifos],
         thinca2_slide_jobs[ifos], dag, opts.second_coinc, opts.inspiral_veto,
         exttrigInjections, usertag=usertag, coire_job=coire_slide_job,
         do_coire=opts.coire_second_coinc, ifotag=ifos, slides=num_slides)
 
-     if opts.coire_second_coinc and len(coinc2_slide_nodes[ifos])\
-            and not doExtTrig:
-       coire_segs(coinc2_slide_nodes[ifos], coire_slide_job, dag, 
-           opts.second_coinc, ifos, inj_file = inj_file, 
-           num_slides=num_slides, ifotag="SECOND_" + ifos, usertag=usertag)
+      if not doExtTrig:
+        coire_slide_nodes = coire_segments_individually(
+            coinc2_slide_nodes[ifos], coire_slide_job, 
+            dag, opts.coire_second_coinc, opts.second_coinc, ifos, 
+            num_slides=num_slides, ifotag="SECOND_" + ifos,
+            usertag=usertag)
+
+      
+        if len(coire_slide_nodes):
+          coire_segments(coire_slide_nodes, coire_slide_summary_job, dag, 
+              opts.summary_trigger_files, opts.coire_second_coinc, ifos, 
+              gps_start_time, gps_end_time, num_slides=num_slides, 
+              ifotag="SUMMARY_SECOND_" + ifos, usertag=usertag, 
+              write_input_file = True)
+
+
+        for ifo in ifo_list:
+          if ifo in ifos: 
+            sire_segments_individually(coinc2_slide_nodes[ifos], sire_job, dag, 
+                opts.sire_second_coinc, opts.second_coinc, ifo, 
+                inj_file = inj_file, ifotag="SECOND_SLIDE_" + ifos, 
+                usertag=usertag)
 
   print "done"
-
-
 
 ##############################################################################
 # Step 9: Do the coherent analyses:

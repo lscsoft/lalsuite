@@ -238,14 +238,14 @@ def findSegmentsToAnalyze(config,ifo,generate_segments=True,\
 
   # download the dq segments to generate the veto files
   if generate_segments:
-    # XXX FIXME:hard coded path to get the dq-segments from:
-    dq_url_pattern = \
-        "http://ldas-cit.ligo.caltech.edu/segments/S5/%s/dq_segments.txt"
+    dq_url = config.get("segments","dq-server-url")
+    dq_segdb_file = config.get("segments", ifo.lower() + '-dq-file')
 
-    print "Downloading the latest daily dump of segment database to " \
-        + dqSegFile + " ...",
+    print "Downloading DQ segment file " + dq_segdb_file + " from " \
+        + dq_url + " to " + dqSegFile + " ...",
     sys.stdout.flush()
-    dqSegFile, info = urllib.urlretrieve(dq_url_pattern % ifo, dqSegFile)
+    dqSegFile, info = urllib.urlretrieve(dq_url + '/' + dq_segdb_file,
+        dqSegFile)
     print "done"
 
     print "Generating cat 1 veto segments for " + ifo + " ...",
@@ -369,6 +369,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
       hipecp.set("inspinj",name,value)
     hipecp.remove_section(hipeDir)
     hipecp.set("input","injection-seed",injSeed)
+    hipecp.set("input", "num-slides", "")
 
   else:
     # add the time slide to the ini file
@@ -499,7 +500,8 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
       "plotinspmissed", "plotinspmissed-meta", \
       "plotinspinj", "plotinspinj-meta", \
       "plotsnrchi", "plotsnrchi-meta", \
-      "plotinspiralrange", "plotinspiralrange-meta"]
+      "plotinspiralrange", "plotinspiralrange-meta", \
+      "ploteffdistcut", "ploteffdistcut-meta"]
 
   for seg in plotcp.sections():
     if not seg in plotSections: plotcp.remove_section(seg)
@@ -523,6 +525,20 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
   plotcp.set("pipeline","trig-suffix",zerolagSuffix)
   plotcp.set("pipeline","coinc-suffix",zerolagSuffix)
   plotcp.set("pipeline","slide-suffix",slideSuffix)
+
+  # Adding followup options to plotinspmissed
+  analysisstart = plotcp.get("common","gps-start-time")
+  analysisend = plotcp.get("common","gps-end-time")
+  analysisduration = int(analysisend) - int(analysisstart)
+  plotcp.set("plotinspmissed","followup-vetofile-h1",
+        "../segments/H1-CATEGORY_2_VETO_SEGS-" + analysisstart 
+        + "-" + str(analysisduration) + ".txt")
+  plotcp.set("plotinspmissed","followup-vetofile-h2",
+        "../segments/H2-CATEGORY_2_VETO_SEGS-" + analysisstart 
+        + "-" + str(analysisduration) + ".txt")
+  plotcp.set("plotinspmissed","followup-vetofile-l1",
+        "../segments/L1-CATEGORY_2_VETO_SEGS-" + analysisstart 
+        + "-" + str(analysisduration) + ".txt")
 
 
   # set the user-tag
@@ -558,6 +574,7 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
   plotCommand = config.get("condor","plot")
   plotCommand += " --log-path " + logPath
   plotCommand += " --config-file " + iniFile
+  plotCommand += " --priority 10"
   for item in config.items("ifo-details"):
       plotCommand += " --" + item[0] + " " + item[1]
 

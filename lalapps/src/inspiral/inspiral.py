@@ -1530,6 +1530,36 @@ class PlotInspmissedNode(InspiralAnalysisNode):
 
 #############################################################################
 
+class PlotEffdistcutJob(InspiralAnalysisJob):
+  """
+  A ploteffdistcut job. The static options are read from the section
+  [ploteffdistcut] in the ini file.  The stdout and stderr from the job
+  are directed to the logs directory.  The path to the executable is
+  determined from the ini file.
+  """
+  def __init__(self,cp,dax=False):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    exec_name = 'ploteffdistcut'
+    sections = ['ploteffdistcut']
+    extension = 'html'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    self.add_condor_cmd('getenv', 'True')
+
+class PlotEffdistcutNode(InspiralAnalysisNode):
+  """
+  A PlotEffdistcutNode runs an instance of the 
+  ploteffdistcut code in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of ploteffdistcut.
+    """
+    InspiralAnalysisNode.__init__(self,job)
+
+#############################################################################
+
 class PlotInspinjJob(InspiralAnalysisJob):
   """
   A plotinspinj job. The static options are read from the section
