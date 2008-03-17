@@ -152,21 +152,19 @@ LALTracksearchFindLambda(
   sumX=0;
   sumXSqr=0;
   current=0;
-  for (i = 1;i < map.tCol;i++)
+  for (i = 0;i < map.tCol;i++)
     { 
-      for (j = 1;j <(map.fRow/2+1);j++)
+      for (j = 0;j <(map.fRow/2+1);j++)
 	{
 	  current=0;
 	  current=map.map[i][j];
-	  if (current < myFloor)
-		       myFloor=current;
 	  sumX=sumX+current;
 	  sumXSqr=sumXSqr+(current*current);
           counter=counter+1;
 	};
     };
   /* Determine mean H value */
-  meanH=(sumX/counter)-myFloor;
+  meanH=(sumX/counter);
   /* Determine STD of H value */
   stdH=sqrt((sumXSqr-(sumX*sumX)/counter)/counter-1);
   myGaussian=localGauss2(searchParams->LineWidth);
