@@ -378,7 +378,7 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
     }
 
   /* Complete file name with details of the input variables */
-  sprintf(tail, "%s-Phenom_M%3.1f_R%2.1f.dat\0", outFile, totalMass, massRatio);
+  sprintf(tail, "%s-Phenom_M%3.1f_R%2.1f.dat", outFile, totalMass, massRatio);
   optarg_len = strlen(tail) + strlen(outFile) + 1;
   outFileLong = (CHAR *)calloc(optarg_len, sizeof(CHAR));
   strcpy(outFileLong, tail);
