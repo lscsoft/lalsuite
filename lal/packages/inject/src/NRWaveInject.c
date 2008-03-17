@@ -38,7 +38,20 @@
 #include <lal/NRWaveInject.h>
 #include <lal/Random.h>
 #include <lal/Inject.h>
+#include <lal/LALSimulation.h>
+#include <lal/LALDetectors.h>
+#include <lal/LALComplex.h>
+#include <lal/DetResponse.h>
+#include <lal/TimeDelay.h>
+#include <lal/SkyCoordinates.h>
+#include <lal/TimeSeries.h>
+#include <lal/FrequencySeries.h>
+#include <lal/TimeFreqFFT.h>
+#include <lal/Window.h>
+
 #include <gsl/gsl_heapsort.h> 
+
+
 
 NRCSID (NRWAVEINJECTC, "$Id$");
 
@@ -768,6 +781,70 @@ void LALInjectStrainGW( LALStatus                 *status,
 
   XLALDestroyREAL4Vector ( htData->data);
   LALFree(htData);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+  
+}
+
+
+/** REAL8 version of above but using Jolien's new functions */
+void LALInjectStrainGWREAL8( LALStatus                 *status,
+			     REAL8TimeSeries           *injData,
+			     REAL8TimeVectorSeries     *strain,
+			     SimInspiralTable          *thisInj,
+			     CHAR                      *ifo,
+			     REAL8                     dynRange)
+{
+
+  REAL8 sampleRate;
+  REAL8TimeSeries *htData = NULL;
+  REAL8TimeSeries *hplus = NULL;  
+  REAL8TimeSeries *hcross = NULL;  
+  UINT4  k, len;
+  REAL8 offset;
+  InterferometerNumber  ifoNumber = LAL_UNKNOWN_IFO;
+  LALDetector det;
+
+  INITSTATUS (status, "LALNRInject",  NRWAVEINJECTC);
+  ATTATCHSTATUSPTR (status); 
+
+  /* get the detector information */
+  memset( &det, 0, sizeof(LALDetector) );
+  ifoNumber = XLALIFONumber( ifo );
+  XLALReturnDetector( &det, ifoNumber );
+
+  /* sampleRate = 1.0/strain->deltaT;   */
+  /* use the sample rate required for the output time series */
+  sampleRate = 1.0/injData->deltaT;
+  len = strain->data->vectorLength;
+
+  hplus = XLALCreateREAL8TimeSeries ( strain->name, &strain->epoch, strain->f0, 
+				      strain->deltaT, &strain->sampleUnits, len);
+  hcross = XLALCreateREAL8TimeSeries ( strain->name, &strain->epoch, strain->f0, 
+				       strain->deltaT, &strain->sampleUnits, len);
+  
+  for ( k = 0; k < len; k++) {
+    hplus->data->data[k] = strain->data->data[k];
+    hplus->data->data[k] = strain->data->data[k + len];
+  }
+
+  htData = XLALSimDetectorStrainREAL8TimeSeries( hplus, hcross, thisInj->longitude, 
+						 thisInj->latitude, thisInj->polarization, 
+						 &det);
+
+  XLALFindNRCoalescenceTimeREAL8( &offset, htData);
+  XLALAddFloatToGPS( &(htData->epoch), -offset);
+
+  XLALSimAddInjectionREAL8TimeSeries( injData, htData, NULL);
+  
+  /* set channel name */
+  LALSnprintf( injData->name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
+    "%s:STRAIN", ifo ); 
+
+  XLALDestroyREAL8TimeSeries ( htData);
+  XLALDestroyREAL8TimeSeries ( hplus);
+  XLALDestroyREAL8TimeSeries ( hcross);
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
