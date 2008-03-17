@@ -368,7 +368,7 @@ XLALFindNRCoalescenceTimeREAL8(REAL8 *tc,
   len = in->data->length;
   ind = LALCalloc(len, sizeof(*ind));  
 
-  gsl_heapsort_index( ind, in->data->data, len, sizeof(REAL4), compare_abs_float);
+  gsl_heapsort_index( ind, in->data->data, len, sizeof(REAL8), compare_abs_double);
 
   *tc = ind[len-1] * in->deltaT;
 
