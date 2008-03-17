@@ -473,6 +473,9 @@ INT4 main( INT4 argc, CHAR *argv[] )
       }
     }
 
+    if (vrbflg)
+      fprintf(stdout, "Generating injection for:");
+
     /* loop over ifos */
     for ( i = 0; i < num_ifos; i++ )
     {
@@ -481,6 +484,12 @@ INT4 main( INT4 argc, CHAR *argv[] )
       {
         ifo = (CHAR *) calloc( LIGOMETA_IFO_MAX, sizeof(CHAR));
         XLALReturnIFO( ifo, i );
+      }
+
+      if (vrbflg)
+      {
+        fprintf(stdout, " %s", ifo);
+        fflush(stdout);
       }
 
       if (noNR)
@@ -507,6 +516,9 @@ INT4 main( INT4 argc, CHAR *argv[] )
       injData[i]->sampleUnits = lalStrainUnit;
 
     } /* loop over ifos */
+
+    if (vrbflg)
+      fprintf(stdout, "\n");
 
     /* output frame */
     if ( ifosFlag )
