@@ -43,7 +43,7 @@
 NRCSID (NRWAVEINJECTC, "$Id$");
 
 int compare_abs_float(const void *a, const void *b);
-
+int compare_abs_double(const void *a, const void *b);
 
 /** Takes a strain of h+ and hx data and stores it in a temporal
  *  strain in order to perform the sum over l and m modes **/
@@ -64,11 +64,68 @@ XLALSumStrain(
     return( tempstrain );
 }
 
+/* REAL8 version */
+REAL8TimeVectorSeries *
+XLALSumStrainREAL8( 
+    REAL8TimeVectorSeries *tempstrain,     /**< storing variable */ 
+    REAL8TimeVectorSeries *strain          /**< variable to add  */)
+{
+    UINT4      vecLength, length, k;
+
+    vecLength = strain->data->vectorLength;
+    length = strain->data->length;
+
+    for ( k = 0; k < vecLength*length; k++)    
+      {
+	tempstrain->data->data[k] += strain->data->data[k];
+      }
+    return( tempstrain );
+}
+
+
 /** Takes a (sky averaged) numerical relativity waveform and returns the
  * waveform appropriate for given coalescence phase and inclination angles */
 REAL4TimeVectorSeries *
 XLALOrientNRWave( 
     REAL4TimeVectorSeries *strain,         /**< sky average h+, hx data */ 
+    UINT4                  modeL,          /**< L                       */
+    INT4                   modeM,          /**< M                       */
+    REAL4                  inclination,    /**< binary inclination      */
+    REAL4                  coa_phase       /**< binary coalescence phase*/)
+{
+    COMPLEX16  MultSphHarm;
+    REAL4      tmp1, tmp2;
+    UINT4      vecLength, k;
+
+    vecLength = strain->data->vectorLength;
+
+    /* Calculating the (2,2) Spherical Harmonic */
+    /* need some error checking */
+    XLALSphHarm( &MultSphHarm, modeL, modeM, inclination, coa_phase );
+
+    /* Filling the data vector with the data multiplied by the Harmonic */
+    for ( k = 0; k < vecLength; k++)
+    {
+	tmp1 = strain->data->data[k];
+	tmp2 = strain->data->data[vecLength + k];
+
+	strain->data->data[k] = 
+	    (tmp1 * MultSphHarm.re) + 
+	    (tmp2 * MultSphHarm.im);
+
+	strain->data->data[vecLength + k] = 
+	    (tmp2 * MultSphHarm.re) -
+	    (tmp1 * MultSphHarm.im);
+    }
+  return( strain );
+}
+
+
+/** Takes a (sky averaged) numerical relativity waveform and returns the
+ * waveform appropriate for given coalescence phase and inclination angles */
+REAL8TimeVectorSeries *
+XLALOrientNRWaveREAL8( 
+    REAL8TimeVectorSeries *strain,         /**< sky average h+, hx data */ 
     UINT4                  modeL,          /**< L                       */
     INT4                   modeM,          /**< M                       */
     REAL4                  inclination,    /**< binary inclination      */
@@ -247,10 +304,10 @@ XLALInterpolateNRWave( REAL4TimeSeries *in,           /**< input strain time ser
 
 int compare_abs_float(const void *a, const void *b){
 
-  const float *af, *bf;
+  const REAL4 *af, *bf;
 
-  af = (const float *)a;
-  bf = (const float *)b;
+  af = (const REAL4 *)a;
+  bf = (const REAL4 *)b;
 
   if ( fabs(*af) > fabs(*bf))
     return 1;
@@ -260,6 +317,21 @@ int compare_abs_float(const void *a, const void *b){
     return 0;
 }
 
+
+int compare_abs_double(const void *a, const void *b){
+
+  const REAL8 *af, *bf;
+
+  af = (const REAL8 *)a;
+  bf = (const REAL8 *)b;
+
+  if ( fabs(*af) > fabs(*bf))
+    return 1;
+  else if  ( fabs(*af) < fabs(*bf))
+    return -1;
+  else 
+    return 0;
+}
 
 
 /** Function for calculating the coalescence time (defined to be the peak) of a NR wave */
@@ -283,6 +355,27 @@ XLALFindNRCoalescenceTime(REAL8 *tc,
   return 0;
 }
 
+
+/** Function for calculating the coalescence time (defined to be the peak) of a NR wave */
+INT4
+XLALFindNRCoalescenceTimeREAL8(REAL8 *tc, 
+			       const REAL8TimeSeries *in   /**< input strain time series */)
+{
+
+  size_t *ind=NULL;
+  size_t len;
+
+  len = in->data->length;
+  ind = LALCalloc(len, sizeof(*ind));  
+
+  gsl_heapsort_index( ind, in->data->data, len, sizeof(REAL4), compare_abs_float);
+
+  *tc = ind[len-1] * in->deltaT;
+
+  LALFree(ind);
+
+  return 0;
+}
 
 
 
