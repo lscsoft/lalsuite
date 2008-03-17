@@ -910,7 +910,6 @@ print_usage( CHAR *program )
       "\n Usage: %s [options]\n\n"\
       "  Options not surrounded in [] are required.\n\n"\
       "  [--help]                 display this message\n"\
-      "  [--version]              print version information and exit\n"\
       "  --mass-ratio     q       set mass ratio to q\n"\
       "  --total-mass     M       set total mass (in M_sun) of the binary "\
 	   "system\n"\
@@ -919,7 +918,6 @@ print_usage( CHAR *program )
       "  --sample-rate            set the sample rate of the output waveform " \
 	   "hybrid wave\n"\
       "  --output-file            output file name\n\n"\
-      " Disclaimer: beta version.\n"\
       " Recommended use: 1 < M < 100 (M_sun) and 1 < mRatio < 4\n"\
       "\n", program );
 }
