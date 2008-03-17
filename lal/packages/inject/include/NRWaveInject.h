@@ -100,11 +100,24 @@ XLALSumStrain(
     REAL4TimeVectorSeries *tempstrain,  
     REAL4TimeVectorSeries *strain);
 
+REAL8TimeVectorSeries *
+XLALSumStrainREAL8( 
+    REAL8TimeVectorSeries *tempstrain,
+    REAL8TimeVectorSeries *strain);
+
 REAL4TimeVectorSeries *
 XLALOrientNRWave( 
     REAL4TimeVectorSeries *strain,
     UINT4                  modeL,
     INT4                   modeM,
+    REAL4                  inclination,
+    REAL4                  coa_phase);
+
+REAL8TimeVectorSeries *
+XLALOrientNRWaveREAL8( 
+    REAL8TimeVectorSeries *strain,     
+    UINT4                  modeL,      
+    INT4                   modeM,      
     REAL4                  inclination,
     REAL4                  coa_phase);
 
@@ -137,6 +150,13 @@ void LALInjectStrainGW( LALStatus *status,
 			SimInspiralTable *thisInj, 
 			CHAR *ifo, 
 			REAL8 dynRange);
+
+void LALInjectStrainGWREAL8( LALStatus                 *status,
+			     REAL8TimeSeries           *injData,
+			     REAL8TimeVectorSeries     *strain,
+			     SimInspiralTable          *thisInj,
+			     CHAR                      *ifo,
+			     REAL8                     dynRange);
 
 INT4
 XLALFindNRCoalescenceTime(REAL8 *tc, 
