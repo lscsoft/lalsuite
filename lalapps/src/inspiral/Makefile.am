@@ -142,12 +142,7 @@ EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-CLEANFILES = lalapps_inspiral_pipe lalapps_inspiral_hipe \
-	     lalapps_multi_hipe lalapps_trigger_hipe\
-             lalapps_inspiral_online_pipe \
-             lalapps_inspiral_online_pipe_inject python_config.sed \
-             lalapps_check_hipe_times lalapps_ihope lalapps_ihope_status\
-	     lalapps_followup_pipe lalapps_plot_hipe
+CLEANFILES = $(bin_SCRIPTS) python_config.sed
 
 MOSTLYCLEANFILES = *INSPIRAL*.xml *INSPIRAL*.gwf \
                    *TMPLTBANK*.gwf *TMPLTBANK*.xml
