@@ -205,6 +205,9 @@ extern "C" {
     UINT4             smoothAvgPSD;/*(>0) True apply running median to AvgPSD*/
     REAL4             highPass;/*Real f value to high pass filter with*/
     REAL4             lowPass;/*Real f value to low pass filter with*/
+    REAL4             listLinesToRemove[64];/*Up to 64 harm lines*/
+    UINT4             numLinesToRemove;/*Tally of harms to remove*/
+    UINT4             maxHarmonics;/*Max num of harms to remove*/
   }TSSearchParams;
 
 
