@@ -166,7 +166,7 @@ LALTracksearchFindLambda(
   /* Determine mean H value */
   meanH=(sumX/counter);
   /* Determine STD of H value */
-  stdH=sqrt((sumXSqr-((sumX*sumX)/counter))/(counter-1));
+  stdH=sqrt((sumXSqr-(sumX*meanH))/(counter-1));
   myGaussian=localGauss2(searchParams->LineWidth);
   /* Given desired contrast Z score */
   upperThresh=(meanH+(searchParams->autoThresh*stdH))*myGaussian;
@@ -176,7 +176,7 @@ LALTracksearchFindLambda(
   if (searchParams->verbosity >= verbose)
     {
       fprintf(stdout,"Auto lambda invoked\n");
-      fprintf(stdout,"Lh %e \t Ll %e \n 2nd D Gauss %f \t  Mean h  %e \t Std h %f Floor: %f \n",searchParams->StartThresh,searchParams->LinePThresh,myGaussian,meanH,stdH,myFloor);
+      fprintf(stdout,"Lh %e \t Ll %e \n 2nd D Gauss %f \t  Mean h  %e \t Std h %f \n",searchParams->StartThresh,searchParams->LinePThresh,myGaussian,meanH,stdH);
     }
   /* Need to throw an error if we get a value Lh <= 0 */
   DETATCHSTATUSPTR(status);
