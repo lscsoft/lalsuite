@@ -177,6 +177,9 @@ else:
         segment.set_end(segment.end()+dataToBurn)
     allData.make_optimised_chunks(minSize,dataBlockSize)
     
+    print "Writing the actually segment list to disk for reference."
+    reformatSegList.writeChunkListToDisk(allData,str(segmentListName+".dataUsed"))
+    #Write out the data chunks actually configured for search.
     
 #Setup logfile mask
 logFilePath=cp.get('filelayout','logpath')

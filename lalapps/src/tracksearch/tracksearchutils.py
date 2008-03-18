@@ -589,7 +589,37 @@ class candidateList:
         self.sorted=False
         #Should be list of objects of class kurve
         self.curves=[]
+        self.qualities=[["curveid","Curve ID","getKurveHeader()[0]"],
+                        ["l","Curve Length","getKurveHeader()[1]"],
+                        ["p","Integrated Power","getKurveHeader()[2]"],
+                        ["d","Duration","getCandidateDuration()"],
+                        ["b","Bandwidth","getCandidateBandwidth()"],
+                        ["t","Start GPS","printStartGPS()"],
+                        ["s","Stop GPS","printStopGPS()"],
+                        ["f","Start Freq","printStartFreq()"],
+                        ["g","Stop Freq","printStopFreq()"],
+                        ["v","Bright Freq","getBrightPixelAndStats()[0][3]"],
+                        ["h","Bright GPS","getBrightPixelAndStats()[0][2].getAsFloat()"],
+                        ["j","Bright Energy","getBrightPixelAndStats()[0][4]"],
+                        ["m","Mean Brightness","getBrightPixelAndStats()[1]"],
+                        ["c","StdDev Brightness","getBrightPixelAndStats()[2]"]]
+                        
     #End init method
+
+    def __getCurveField__(self,curve='',field='curveID'):
+        """
+        This method takes a Kurve instance and a field entry
+        it returns the {Value,TxtLabel} in return.
+        """
+        for entry in self.qualities:
+            if field.lower().strip() == entry[0]:
+                optString="curve."+entry[2]
+                if curve == '':
+                    output=0
+                else:
+                    output=eval(optString)
+                return [output,entry[1]]
+        return [0,"NULL"]
 
     def __sec2pixel__(self,seconds):
         """
@@ -1771,7 +1801,7 @@ class candidateList:
     #End method graphdata
 
 
-    def showHistogram(self,filename='',colCount=50,topPercentage=float(0.05)):
+    def showHistogram(self,triggerTrait='p',filename='',colCount=50,topPercentage=float(0.05)):
         """
         Show a histogram of integrated power for each trigger in the
         trigger library.  It uses a input filename if needed and a 
@@ -1779,7 +1809,8 @@ class candidateList:
         break the trigger library into.
         """
         pylab.figure()
-        [entries,bins,patches]=self. __triggerHistogramPrimative__(colCount,
+        [entries,bins,patches]=self. __triggerHistogramPrimative__(triggerTrait,
+                                                                   colCount,
                                                                    True)
         # Setup a percentile ranking score mark!
         index=entries.__len__()-1
@@ -1804,10 +1835,11 @@ class candidateList:
         transitionValue=bins[index]
         if index==entries.__len__()-1:
             topPercentage=float(tally)/count
-        pylab.xlabel(str("Trigger Energy"))
+        plotLabel=str(self.__getCurveField__('',triggerTrait)[1])
+        pylab.xlabel(str(plotLabel))
         pylab.ylabel(str("Count"))
-        pylab.figtext(0.01,0.95,
-                      "Upper Percentile :%3f%% , IP Threshold :%f"%(float(100)*topPercentage,transitionValue))
+        figTitle="Upper Percentile :%3f%% ,%s Threshold :%f"%(float(100)*topPercentage,plotLabel,transitionValue)
+        pylab.figtext(0.01,0.95,figTitle)
         if ((filename.upper()=='') or (filename.upper()=='AUTO')):
             [name,extension]=os.path.splitext(self.filename[0])
             figtitle=os.path.basename(name)
@@ -1820,7 +1852,7 @@ class candidateList:
         else:
             if (filename.upper()=='AUTO'):
                 [fullpath,extension]=os.path.splitext(self.filename[0])
-                filename=os.path.basename(fullpath)+'_histogram.png'
+                filename=os.path.basename(fullpath)+'_histogram_'+plotLabel.replace(" ","_")+'.png'
             pylab.savefig(filename)
             pylab.close()
     #End showHistogram
@@ -1973,7 +2005,7 @@ class candidateList:
     # END  __triggerLinePlotPrimative__
 
 
-    def __triggerHistogramPrimative__(self,colCount=50,statReport=False):
+    def __triggerHistogramPrimative__(self,triggerTrait='p',colCount=50,statReport=False):
         """
         This method plots a histogram of the triggers present in a
         trigger library and plots a reference lines mean 1std 2std
@@ -1982,23 +2014,23 @@ class candidateList:
         The number of bins to create
         Boolean flag to indicate that results should be returned
         """
-        triggers=self.dumpCandidateKurveSummary()
         histList=[]
         powList=[]
-        for entry in triggers:
-            histList.append([entry[11],entry[0]])
-            powList.append(entry[11])
+        for trigger in self.curves:
+            fieldValue=self.__getCurveField__(trigger,triggerTrait)[0]
+            fieldID=self.__getCurveField__(trigger,"curveID")[0]
+            histList.append([fieldValue,fieldID])
+            powList.append(fieldValue)
         try:
             [entries,bins,patches]=pylab.hist(powList,colCount,bottom=1,log=True)
         except:
             sys.stderr.writelines('Error trying to create log scale histogram.\n')
-            sys.stderr.writelines('Using restricted linear scale instead.\n')
+            sys.stderr.writelines('Using restrictive linear scale instead.\n')
             sys.stderr.flush()
             pylab.close()
             pylab.figure()
             [entries,bins,patches]=pylab.hist(powList,colCount)
-            #pylab.semilogy(bins,entries)
-            #pylab.plot(bins,entries)
+
         if statReport:
             return [entries,bins,patches]
     # END __triggerHistogramPrimative__():

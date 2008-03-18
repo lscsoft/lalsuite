@@ -32,7 +32,7 @@ import time
 sys.path.append('@PYTHONLIBDIR@')
 from tracksearchutils import *
 
-print sys.argv
+#print sys.argv
 
 disableGraphics=False
 try:
@@ -174,6 +174,11 @@ parser.add_option("-m","--histogram",
                   dest="histogram",
                   action="store_true",
                   help="This option will show a histogram. For the candidate trigger library.")
+parser.add_option("-q","--trigger-property",
+                  default="p",
+                  dest="triggerTrait",
+                  help="Please give single character field as argument.  See the explaination for thresholding for allowable fields. You can specify multiple histogram to create via using comma delimited entries IE p,d,v.  To override the default value of histCol for any particular plot use a : for example p,d:10,v means plot the histogram for p with histCol columns but for d use 10 columns instead."
+                  )
 parser.add_option("-P","--top-percentile",
                   default=0.05,
                   dest="topPercentile",
@@ -187,6 +192,7 @@ clobberFilename=str(options.clobberFilename)
 expThreshold=str(options.expThreshold)
 graph2file=options.imageFilemask
 createHistogram=bool(options.histogram)
+triggerTrait=str(options.triggerTrait).split(',')
 histogramcolumns=int(options.histCol)
 graph2screen=int(options.imageCount)
 graphGPSoffset=float(options.graphGPSoffset)
@@ -257,7 +263,6 @@ elif (clobberFilename != '') and (canList.__len__() == 1):
     else:
         newClobberedList.writefile(clobberVictim.__filemaskClob__(newCandidateClobberObject))
     #
-    # >>> TINA <<<
     # Add logic branch to do a report graphic...  Try original trigger
     # curve plots, show power histogram, then show a cut trigger plot
     # 
@@ -288,13 +293,33 @@ elif (createHistogram and (canList.__len__() >=1)):
     for entry in canList:
         candidateObject=candidateList(verboseSwitch)
         candidateObject.__loadfileQuick__(entry)
-        try:
-            candidateObject.showHistogram(graph2file,histogramcolumns,topTol)
-        except Exception, errorInfo:
-            sys.stderr.write("Problem trying to create histogram plot, %s !\n"%(os.path.basename(graph2file)))
-            sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
-            sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
-            sys.stderr.write("Skipping this plot. Sorry.\n")
+        for singleTriggerTrait in triggerTrait:
+            newHistCol=int(0)
+            if singleTriggerTrait.__contains__(":"):
+                property=singleTriggerTrait.strip().split(":")
+                myTrait=str(property[0])
+                newHistCol=int(property[1])
+            else:
+                myTrait=singleTriggerTrait
+
+            if verboseSwitch:
+                thisTrait=candidateObject.__getCurveField__('',singleTriggerTrait)[1]
+            if newHistCol == 0:
+                newHistCol=histogramcolumns
+
+            if verboseSwitch:
+                sys.stdout.write("Creating histogram for %s, Columns %i\n"%
+                                 (str(candidateObject.__getCurveField__('',myTrait)[1]),int(newHistCol)))
+            try:
+                candidateObject.showHistogram(myTrait,
+                                              graph2file,
+                                              newHistCol,
+                                              topTol)
+            except Exception, errorInfo:
+                sys.stderr.write("Problem trying to create histogram plot, %s !\n"%(os.path.basename(graph2file)))
+                sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
+                sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
+                sys.stderr.write("Skipping this plot. Sorry.\n")
         del candidateObject
 
     #SECTION APPLY ABITRARY THRESHOLDS

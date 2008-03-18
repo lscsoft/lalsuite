@@ -331,6 +331,16 @@ class tracksearchConvertSegList:
                 output_fp.write(label)
         output_fp.close
 
+    def writeChunkListToDisk(data,filename='default'):
+        """
+        Write the gps stamps of the created search data chunks.
+        """
+        output_fp=open(filename,'w')
+        for entry in data:
+            label="%d %d\n"%(entry.start(),entry.stop())
+            output_fp.write(label)
+        output_fp.close()
+
     def getSegmentName(self):
         #Return a string containing the name of the revised segment list
         return(self.newSegFilename)
