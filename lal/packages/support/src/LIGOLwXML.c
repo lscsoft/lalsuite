@@ -428,7 +428,8 @@ LALWriteLIGOLwXMLTable (
           fprintf( xml->fp, SEARCH_SUMMVARS_ROW,
               tablePtr.searchSummvarsTable->name,
               tablePtr.searchSummvarsTable->string,
-              tablePtr.searchSummvarsTable->value
+              tablePtr.searchSummvarsTable->value,
+              xml->rowCount
               );
         tablePtr.searchSummvarsTable = tablePtr.searchSummvarsTable->next;
         ++(xml->rowCount);
@@ -812,7 +813,8 @@ LALWriteLIGOLwXMLTable (
               tablePtr.summValueTable->ifo,
               tablePtr.summValueTable->name,
               tablePtr.summValueTable->value,
-              tablePtr.summValueTable->comment
+              tablePtr.summValueTable->comment,
+              xml->rowCount
               );
         tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
         ++(xml->rowCount);

@@ -170,10 +170,11 @@ fputs( "      <Column Name=\"search_summvarsgroup:search_summvars:process_id\" T
 fputs( "      <Column Name=\"search_summvarsgroup:search_summvars:name\" Type=\"lstring\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"search_summvarsgroup:search_summvars:string\" Type=\"lstring\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"search_summvarsgroup:search_summvars:value\" Type=\"real_8\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"search_summvarsgroup:search_summvars:search_summvar_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
 fputs( "      <Stream Name=\"search_summvarsgroup:search_summvars:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SEARCH_SUMMVARS_ROW \
-"         \"process:process_id:0\",\"%s\",\"%s\",%22.16e"
+"         \"process:process_id:0\",\"%s\",\"%s\",%22.16e,\"search_summvars:search_summvar_id:%" LAL_UINT8_FORMAT "\""
 
 #define PRINT_LIGOLW_XML_SNGL_BURST(fp) ( \
 fputs( "\t<Table Name=\"sngl_burst:table\">\n", fp ) == EOF || \
@@ -272,10 +273,11 @@ fputs( "      <Column Name=\"summ_valuegroup:summ_value:ifo\" Type=\"lstring\"/>
 fputs( "      <Column Name=\"summ_valuegroup:summ_value:name\" Type=\"lstring\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"summ_valuegroup:summ_value:value\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"summ_valuegroup:summ_value:comment\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"summ_valuegroup:summ_value:summ_value_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
 fputs( "      <Stream Name=\"summ_valuegroup:summ_value:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SUMM_VALUE_ROW \
-"         \"%s\",\"process:process_id:0\",%d,%d,%d,%d,\"%s\",\"%s\",%e,\"%s\""
+"         \"%s\",\"process:process_id:0\",%d,%d,%d,%d,\"%s\",\"%s\",%e,\"%s\",\"summ_value:summ_value_id:%" LAL_UINT8_FORMAT "\""
 
 #define PRINT_LIGOLW_XML_SIM_INST_PARAMS(fp) ( \
 fputs( "   <Table Name=\"sim_inst_paramsgroup:sim_inst_params:table\">\n" , fp ) == EOF || \
