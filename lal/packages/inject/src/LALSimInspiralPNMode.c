@@ -31,7 +31,7 @@
  * Implements Equation (79) of:
  * Lawrence E. Kidder, "Using Full Information When Computing Modes of
  * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
- * Orbit", arXiv:0710.0614v1 [gr-qc].
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
  */
 COMPLEX16 XLALSimInspiralPNMode22(REAL8 x, REAL8 phi, REAL8 m1, REAL8 m2, REAL8 r, int O)
 {
@@ -76,7 +76,7 @@ COMPLEX16 XLALSimInspiralPNMode22(REAL8 x, REAL8 phi, REAL8 m1, REAL8 m2, REAL8 
  * Implements Equation (80) of:
  * Lawrence E. Kidder, "Using Full Information When Computing Modes of
  * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
- * Orbit", arXiv:0710.0614v1 [gr-qc].
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
  */
 COMPLEX16 XLALSimInspiralPNMode21(REAL8 x, REAL8 phi, REAL8 m1, REAL8 m2, REAL8 r, int O)
 {
@@ -119,7 +119,7 @@ COMPLEX16 XLALSimInspiralPNMode21(REAL8 x, REAL8 phi, REAL8 m1, REAL8 m2, REAL8 
  * Implements Equation (82) of:
  * Lawrence E. Kidder, "Using Full Information When Computing Modes of
  * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
- * Orbit", arXiv:0710.0614v1 [gr-qc].
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
  */
 COMPLEX16 XLALSimInspiralPNMode33(REAL8 x, REAL8 phi, REAL8 m1, REAL8 m2, REAL8 r, int O)
 {
@@ -163,7 +163,7 @@ COMPLEX16 XLALSimInspiralPNMode33(REAL8 x, REAL8 phi, REAL8 m1, REAL8 m2, REAL8 
  * Implements Equation (83) of:
  * Lawrence E. Kidder, "Using Full Information When Computing Modes of
  * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
- * Orbit", arXiv:0710.0614v1 [gr-qc].
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
  */
 COMPLEX16 XLALSimInspiralPNMode32(REAL8 x, REAL8 phi, REAL8 m1, REAL8 m2, REAL8 r, int O)
 {
@@ -204,7 +204,7 @@ COMPLEX16 XLALSimInspiralPNMode32(REAL8 x, REAL8 phi, REAL8 m1, REAL8 m2, REAL8 
  * Implements Equation (84) of:
  * Lawrence E. Kidder, "Using Full Information When Computing Modes of
  * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
- * Orbit", arXiv:0710.0614v1 [gr-qc].
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
  */
 COMPLEX16 XLALSimInspiralPNMode31(REAL8 x, REAL8 phi, REAL8 m1, REAL8 m2, REAL8 r, int O)
 {

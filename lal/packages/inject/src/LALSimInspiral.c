@@ -218,6 +218,18 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(REAL8 theta, REAL8 phi, int s, int l
 }
 
 
+/**
+ * Multiplies a mode h(l,m) by a spin-2 weighted spherical harmonic
+ * to obtain hplus - i hcross, which is added to the time series.
+ *
+ * Implements the sum of a single term of Eq. (11) of:
+ * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ *
+ * If sym is non-zero, symmetrically add the m and -m terms assuming
+ * that h(l,-m) = (-1)^l h(l,m)*; see Eq. (78) ibid.
+ */
 int XLALSimAddMode(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross, COMPLEX16TimeSeries *hmode, REAL8 theta, REAL8 phi, int l, int m, int sym)
 {
 	static const char *func = "XLALSimAddMode";
@@ -378,6 +390,7 @@ REAL8 XLALSimInspiralPNEnergy(REAL8 x, REAL8 m1, REAL8 m2, int O)
 }
 
 
+/* GSL integrand routine */
 struct XLALSimInspiralPNEvolveOrbitParams { REAL8 m1; REAL8 m2; int O; };
 static int XLALSimInspiralPNEvolveOrbitTaylorT4Integrand(double t, const double y[], double ydot[], void *params)
 {
@@ -389,8 +402,17 @@ static int XLALSimInspiralPNEvolveOrbitTaylorT4Integrand(double t, const double 
 }
 
 
-
-int XLALSimInspiralPNEvolveOrbitTaylorT4(REAL8TimeSeries **x, REAL8TimeSeries **phi, LIGOTimeGPS *tc, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fmin, int O)
+/**
+ * Evolves a post-Newtonian orbit using the Taylor T4 method.
+ *
+ * See:
+ * Michael Boyle, Duncan A. Brown, Lawrence E. Kidder, Abdul H. Mroue, 
+ * Harald P. Pfeiﬀer, Mark A. Scheel, Gregory B. Cook, and Saul A. Teukolsky 
+ * "High-accuracy comparison of numerical relativity simulations with
+ * post-Newtonian expansions"
+ * arXiv:0710.0158v1 (2007).
+ */
+int XLALSimInspiralPNEvolveOrbitTaylorT4(REAL8TimeSeries **x, REAL8TimeSeries **phi, LIGOTimeGPS *tc, REAL8 phic, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fmin, int O)
 {
 	static const char *func = "XLALSimInspiralPNEvolveOrbitTaylorT4";
 	const UINT4 blocklen = 1024;
@@ -414,6 +436,8 @@ int XLALSimInspiralPNEvolveOrbitTaylorT4(REAL8TimeSeries **x, REAL8TimeSeries **
 	/* allocate memory */
 	*x = XLALCreateREAL8TimeSeries( "ORBITAL_FREQUENCY_PARAMETER", tc, 0.0, deltaT, &lalDimensionlessUnit, blocklen );
 	*phi = XLALCreateREAL8TimeSeries( "ORBITAL_PHASE", tc, 0.0, deltaT, &lalDimensionlessUnit, blocklen );
+	if ( !x || !phi )
+		XLAL_ERROR(func, XLAL_EFUNC);
 
 	params.m1 = m1;
 	params.m2 = m2;
@@ -422,6 +446,8 @@ int XLALSimInspiralPNEvolveOrbitTaylorT4(REAL8TimeSeries **x, REAL8TimeSeries **
 	y[0] = (*x)->data->data[0] = pow(LAL_PI*LAL_G_SI*m*fmin/pow(LAL_C_SI,3.0), 2.0/3.0);
 	y[1] = (*phi)->data->data[0] = 0.0;
 	E = XLALSimInspiralPNEnergy(y[0], m1, m2, O);
+	if (XLALIsREAL8FailNaN(E))
+		XLAL_ERROR(func, XLAL_EFUNC);
 	j = 0;
 
 	s = gsl_odeiv_step_alloc(T, 2);
@@ -431,12 +457,14 @@ int XLALSimInspiralPNEvolveOrbitTaylorT4(REAL8TimeSeries **x, REAL8TimeSeries **
 		/* MECO termination condition */
 		dE = -E;
 		dE += E = XLALSimInspiralPNEnergy(y[0], m1, m2, O);
+		if (XLALIsREAL8FailNaN(E))
+			XLAL_ERROR(func, XLAL_EFUNC);
 		if ( dE > 0.0 ) {
 			XLALPrintInfo("XLAL Info - %s: PN inspiral terminated at MECO\n", func);
 			break;
 		}
 		/* ISCO termination condition for quadrupole, 1pN, 2.5pN */
-		if ( (O == 0 || O == 1 || O == 2 || O == 5 ) && y[0] > xisco ) {
+		if ( (O == 0 || O == 1 || O == 2 || O == 5) && y[0] > xisco ) {
 			XLALPrintInfo("XLAL Info - %s: PN inspiral terminated at ISCO\n", func);
 			break;
 		}
@@ -444,26 +472,52 @@ int XLALSimInspiralPNEvolveOrbitTaylorT4(REAL8TimeSeries **x, REAL8TimeSeries **
 		(*phi)->data->data[j] = y[1];
 		++j;
 		if ( j >= (*x)->data->length ) {
-			XLALResizeREAL8TimeSeries(*x, 0, (*x)->data->length + blocklen);
-			XLALResizeREAL8TimeSeries(*phi, 0, (*phi)->data->length + blocklen);
+			if ( ! XLALResizeREAL8TimeSeries(*x, 0, (*x)->data->length + blocklen) )
+				XLAL_ERROR(func, XLAL_EFUNC);
+			if ( ! XLALResizeREAL8TimeSeries(*phi, 0, (*phi)->data->length + blocklen) )
+				XLAL_ERROR(func, XLAL_EFUNC);
 		}
 	}
 	gsl_odeiv_step_free(s);
+
 	/* make the correct length */
-	XLALResizeREAL8TimeSeries(*x, 0, j);
-	XLALResizeREAL8TimeSeries(*phi, 0, j);
+	if ( ! XLALResizeREAL8TimeSeries(*x, 0, j) )
+		XLAL_ERROR(func, XLAL_EFUNC);
+	if ( ! XLALResizeREAL8TimeSeries(*phi, 0, j) )
+		XLAL_ERROR(func, XLAL_EFUNC);
+
+	/* adjust to correct tc and phic */
 	XLALGPSAdd(&(*phi)->epoch, -1.0*j*deltaT);
 	XLALGPSAdd(&(*x)->epoch, -1.0*j*deltaT);
-	return j;
+
+	phic -= (*phi)->data->data[(*phi)->data->length - 1];
+	for (j = 0; j < (*phi)->data->length; ++j)
+		(*phi)->data->data[j] += phic;
+
+	return (int)(*x)->data->length;
 }
 
 
+/**
+ * Computes h(l,m) mode timeseries of spherical harmonic decomposition of
+ * the post-Newtonian inspiral waveform.
+ *
+ * See Eqns. (79)-(116) of:
+ * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ */
 COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(REAL8TimeSeries *x, REAL8TimeSeries *phi, REAL8 m1, REAL8 m2, REAL8 r, int O, int l, int m)
 {
-	static const char *func = "XLALSimInspiralPNMode";
+	static const char *func = "XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries";
 	COMPLEX16TimeSeries *h;
 	UINT4 j;
+	LAL_CHECK_VALID_SERIES(x, NULL);
+	LAL_CHECK_VALID_SERIES(phi, NULL);
+	LAL_CHECK_CONSISTENT_TIME_SERIES(x, phi, NULL);
 	h = XLALCreateCOMPLEX16TimeSeries( "H_MODE", &x->epoch, 0.0, x->deltaT, &lalStrainUnit, x->data->length );
+	if ( !h )
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	if ( l == 2 && abs(m) == 2 )
 		for ( j = 0; j < h->data->length; ++j )
 			h->data->data[j] = XLALSimInspiralPNMode22(x->data->data[j], phi->data->data[j], m1, m2, r, O);
@@ -493,49 +547,87 @@ COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(REAL8TimeSer
 }
 
 
-int XLALSimInspiralPN(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, LIGOTimeGPS *tc, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fmin, REAL8 r, REAL8 i, int O)
+/**
+ * Given an orbit evolution phasing, construct the waveform h+ and hx.
+ *
+ * Implements Equation (11) of:
+ * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ */
+int XLALSimInspiralPNPolarizationWaveforms(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8TimeSeries *x, REAL8TimeSeries *phi, REAL8 m1, REAL8 m2, REAL8 r, REAL8 i, int O)
 {
-	REAL8TimeSeries *x;
-	REAL8TimeSeries *phi;
-	COMPLEX16TimeSeries *hmode;
-	UINT4 n;
+	static const char *func = "XLALSimInspiralPNPolarizationWaveforms";
 	int l, m;
-	n = XLALSimInspiralPNEvolveOrbitTaylorT4(&x, &phi, tc, deltaT, m1, m2, fmin, O);
-	*hplus = XLALCreateREAL8TimeSeries( "H_PLUS", &x->epoch, 0.0, deltaT, &lalStrainUnit, n );
-	*hcross = XLALCreateREAL8TimeSeries( "H_CROSS", &x->epoch, 0.0, deltaT, &lalStrainUnit, n );
+	LAL_CHECK_VALID_SERIES(x, XLAL_FAILURE);
+	LAL_CHECK_VALID_SERIES(phi, XLAL_FAILURE);
+	LAL_CHECK_CONSISTENT_TIME_SERIES(x, phi, XLAL_FAILURE);
+	*hplus = XLALCreateREAL8TimeSeries( "H_PLUS", &x->epoch, 0.0, x->deltaT, &lalStrainUnit, x->data->length );
+	*hcross = XLALCreateREAL8TimeSeries( "H_CROSS", &x->epoch, 0.0, x->deltaT, &lalStrainUnit, x->data->length );
+	if ( ! hplus || ! hcross )
+		XLAL_ERROR(func, XLAL_EFUNC);
 	memset((*hplus)->data->data, 0, (*hplus)->data->length*sizeof(*(*hplus)->data->data));
 	memset((*hcross)->data->data, 0, (*hcross)->data->length*sizeof(*(*hcross)->data->data));
 	for ( l = 2; l <= LAL_PN_MODE_L_MAX; ++l ) {
 		for ( m = 1; m <= l; ++m ) {
+			COMPLEX16TimeSeries *hmode;
 			hmode = XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(x, phi, m1, m2, r, O, l, m);
-			XLALSimAddMode(*hplus, *hcross, hmode, i, 0.0, l, m, 1);
+			if ( ! hmode )
+				XLAL_ERROR(func, XLAL_EFUNC);
+			if ( XLALSimAddMode(*hplus, *hcross, hmode, i, 0.0, l, m, 1) < 0 )
+				XLAL_ERROR(func, XLAL_EFUNC);
 			XLALDestroyCOMPLEX16TimeSeries(hmode);
 		}
 	}
+	return 0;
+}
+
+/**
+ * Driver routine to compute the post-Newtonian inspiral waveform.
+ * 
+ * This routine allows the user to specify different pN orders
+ * for phasing calcuation vs. amplitude calculations.
+ */
+int XLALSimInspiralPNGenerator(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, LIGOTimeGPS *tc, REAL8 phic, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fmin, REAL8 r, REAL8 i, int amplitudeO, int phaseO)
+{
+	static const char *func = "XLALSimInspiralPNGenerator";
+	REAL8TimeSeries *x;
+	REAL8TimeSeries *phi;
+	int status;
+	int n;
+	n = XLALSimInspiralPNEvolveOrbitTaylorT4(&x, &phi, tc, phic, deltaT, m1, m2, fmin, phaseO);
+	if ( n < 0 )
+		XLAL_ERROR(func, XLAL_EFUNC);
+	status = XLALSimInspiralPNPolarizationWaveforms(hplus, hcross, x, phi, m1, m2, r, i, amplitudeO);
 	XLALDestroyREAL8TimeSeries(phi);
 	XLALDestroyREAL8TimeSeries(x);
+	if ( status < 0 )
+		XLAL_ERROR(func, XLAL_EFUNC);
 	return n;
 }
 
-int XLALSimInspiralPNRestricted(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, LIGOTimeGPS *tc, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fmin, REAL8 r, REAL8 i, int O)
+/**
+ * Driver routine to compute the post-Newtonian inspiral waveform.
+ * 
+ * This routine uses the same pN order for phasing and amplitude
+ * (unless the order is -1 in which case the highest available
+ * order is used for both of these -- which might not be the same).
+ */
+int XLALSimInspiralPN(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, LIGOTimeGPS *tc, REAL8 phic, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fmin, REAL8 r, REAL8 i, int O)
 {
-	REAL8TimeSeries *x;
-	REAL8TimeSeries *phi;
-	COMPLEX16TimeSeries *hmode;
-	UINT4 n;
-	n = XLALSimInspiralPNEvolveOrbitTaylorT4(&x, &phi, tc, deltaT, m1, m2, fmin, O);
-	*hplus = XLALCreateREAL8TimeSeries( "H_PLUS", &x->epoch, 0.0, deltaT, &lalStrainUnit, n );
-	*hcross = XLALCreateREAL8TimeSeries( "H_CROSS", &x->epoch, 0.0, deltaT, &lalStrainUnit, n );
-	memset((*hplus)->data->data, 0, (*hplus)->data->length*sizeof(*(*hplus)->data->data));
-	memset((*hcross)->data->data, 0, (*hcross)->data->length*sizeof(*(*hcross)->data->data));
-	/* restricted pN: only quadrupole amplitude */
-	hmode = XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(x, phi, m1, m2, r, 0, 2, 2);
-	XLALSimAddMode(*hplus, *hcross, hmode, i, 0.0, 2, 2, 1);
+	return XLALSimInspiralPNGenerator(hplus, hcross, tc, phic, deltaT, m1, m2, fmin, r, i, O, O);
+}
 
-	XLALDestroyCOMPLEX16TimeSeries(hmode);
-	XLALDestroyREAL8TimeSeries(phi);
-	XLALDestroyREAL8TimeSeries(x);
-	return n;
+/**
+ * Driver routine to compute the restricted post-Newtonian inspiral waveform.
+ * 
+ * This routine computes the phasing to the specified order, but
+ * only computes the amplitudes to the Newtonian (quadrupole) order.
+ */
+int XLALSimInspiralPNRestricted(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, LIGOTimeGPS *tc, REAL8 phic, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fmin, REAL8 r, REAL8 i, int O)
+{
+	/* use Newtonian order for amplitude */
+	return XLALSimInspiralPNGenerator(hplus, hcross, tc, phic, deltaT, m1, m2, fmin, r, i, O, 0);
 }
 
 
@@ -545,6 +637,7 @@ int lalDebugLevel = 7;
 int main(void)
 {
 	LIGOTimeGPS tc = { 888888888, 222222222 };
+	REAL8 phic = 1.0;
 	REAL8 deltaT = 1.0/16384.0;
 	REAL8 m1 = 1.4*LAL_MSUN_SI;
 	REAL8 m2 = 1.4*LAL_MSUN_SI;
@@ -554,7 +647,7 @@ int main(void)
 	int O = -1;
 	REAL8TimeSeries *hplus;
 	REAL8TimeSeries *hcross;
-	XLALSimInspiralPN(&hplus, &hcross, &tc, deltaT, m1, m2, fmin, r, i, O);
+	XLALSimInspiralPN(&hplus, &hcross, &tc, phic, deltaT, m1, m2, fmin, r, i, O);
 	LALDPrintTimeSeries(hplus, "hp.dat");
 	LALDPrintTimeSeries(hcross, "hc.dat");
 	XLALDestroyREAL8TimeSeries(hplus);

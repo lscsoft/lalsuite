@@ -38,6 +38,18 @@
  */
 COMPLEX16 XLALSpinWeightedSphericalHarmonic(REAL8 theta, REAL8 phi, int s, int l, int m);
 
+/**
+ * Multiplies a mode h(l,m) by a spin-2 weighted spherical harmonic
+ * to obtain hplus - i hcross, which is added to the time series.
+ *
+ * Implements the sum of a single term of Eq. (11) of:
+ * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ *
+ * If sym is non-zero, symmetrically add the m and -m terms assuming
+ * that h(l,-m) = (-1)^l h(l,m)*; see Eq. (78) ibid.
+ */
 int XLALSimAddMode(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross, COMPLEX16TimeSeries *hmode, REAL8 theta, REAL8 phi, int l, int m, int sym);
 
 /**
@@ -97,7 +109,17 @@ REAL8 XLALSimInspiralPNAngularVelocity(REAL8 x, REAL8 m1, REAL8 m2);
  */
 REAL8 XLALSimInspiralPNEnergy(REAL8 x, REAL8 m1, REAL8 m2, int O);
 
-int XLALSimInspiralPNEvolveOrbitTaylorT4(REAL8TimeSeries **x, REAL8TimeSeries **phi, LIGOTimeGPS *tc, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fmin, int O);
+/**
+ * Evolves a post-Newtonian orbit using the Taylor T4 method.
+ *
+ * See:
+ * Michael Boyle, Duncan A. Brown, Lawrence E. Kidder, Abdul H. Mroue, 
+ * Harald P. Pfeiﬀer, Mark A. Scheel, Gregory B. Cook, and Saul A. Teukolsky 
+ * "High-accuracy comparison of numerical relativity simulations with
+ * post-Newtonian expansions"
+ * arXiv:0710.0158v1 (2007).
+ */
+int XLALSimInspiralPNEvolveOrbitTaylorT4(REAL8TimeSeries **x, REAL8TimeSeries **phi, LIGOTimeGPS *tc, REAL8 phic, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fmin, int O);
 
 /**
  * Computes h(l,m) modes of spherical harmonic decomposition of
@@ -114,8 +136,48 @@ COMPLEX16 XLALSimInspiralPNMode33(REAL8 x, REAL8 phi, REAL8 m1, REAL8 m2, REAL8 
 COMPLEX16 XLALSimInspiralPNMode32(REAL8 x, REAL8 phi, REAL8 m1, REAL8 m2, REAL8 r, int O);
 COMPLEX16 XLALSimInspiralPNMode31(REAL8 x, REAL8 phi, REAL8 m1, REAL8 m2, REAL8 r, int O);
 
+/**
+ * Computes h(l,m) mode timeseries of spherical harmonic decomposition of
+ * the post-Newtonian inspiral waveform.
+ *
+ * See Eqns. (79)-(116) of:
+ * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ */
 COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(REAL8TimeSeries *x, REAL8TimeSeries *phi, REAL8 m1, REAL8 m2, REAL8 r, int O, int l, int m);
 
-int XLALSimInspiralPN(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, LIGOTimeGPS *tc, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fmin, REAL8 r, REAL8 i, int O);
+/**
+ * Given an orbit evolution phasing, construct the waveform h+ and hx.
+ *
+ * Implements Equation (11) of:
+ * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ */
+int XLALSimInspiralPNPolarizationWaveforms(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8TimeSeries *x, REAL8TimeSeries *phi, REAL8 m1, REAL8 m2, REAL8 r, REAL8 i, int O);
 
-int XLALSimInspiralPNRestricted(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, LIGOTimeGPS *tc, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fmin, REAL8 r, REAL8 i, int O);
+/**
+ * Driver routine to compute the post-Newtonian inspiral waveform.
+ * 
+ * This routine allows the user to specify different pN orders
+ * for phasing calcuation vs. amplitude calculations.
+ */
+int XLALSimInspiralPNGenerator(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, LIGOTimeGPS *tc, REAL8 phic, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fmin, REAL8 r, REAL8 i, int amplitudeO, int phaseO);
+
+/**
+ * Driver routine to compute the post-Newtonian inspiral waveform.
+ * 
+ * This routine uses the same pN order for phasing and amplitude
+ * (unless the order is -1 in which case the highest available
+ * order is used for both of these -- which might not be the same).
+ */
+int XLALSimInspiralPN(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, LIGOTimeGPS *tc, REAL8 phic, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fmin, REAL8 r, REAL8 i, int O);
+
+/**
+ * Driver routine to compute the restricted post-Newtonian inspiral waveform.
+ * 
+ * This routine computes the phasing to the specified order, but
+ * only computes the amplitudes to the Newtonian (quadrupole) order.
+ */
+int XLALSimInspiralPNRestricted(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, LIGOTimeGPS *tc, REAL8 phic, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fmin, REAL8 r, REAL8 i, int O);
