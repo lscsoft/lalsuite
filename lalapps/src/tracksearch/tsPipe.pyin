@@ -32,6 +32,7 @@ sys.path.append('@PYTHONLIBDIR@')
 import tracksearch
 from tracksearchutils import progressSpinner
 from tracksearchutils import autoCreateSegmentList
+from tracksearchutils import determineDataPadding
 
 #Parse the command line options and create help features
 parser = OptionParser()
@@ -166,20 +167,17 @@ else:
             print "Aborting pipeline construction."
             os.abort
     allData=pipeline.ScienceData()
-    allData.read(segmentListName,dataBlockSize)
+    allData.read(segmentListName,minSize)
     if cp.has_option('layerconfig','burndata'):
-        dataToBurn=int(cp.get('layerconfig','burndata'))
+        burndata=int(cp.get('layerconfig','burndata'))
     else:
-        dataToBurn=int(0)
-    
+        burndata=int(0)
+    dataToBurn=max([determineDataPadding(cp),burndata])
+    print "Selected data burn seconds :"+str(dataToBurn)+" out of "+str(determineDataPadding(cp))+" and "+str(burndata)
     for segment in allData:
         segment.set_start(segment.start()+dataToBurn)
-        segment.set_end(segment.end()+dataToBurn)
+        segment.set_end(segment.end()-dataToBurn)
     allData.make_optimised_chunks(minSize,dataBlockSize)
-    
-    print "Writing the actually segment list to disk for reference."
-    reformatSegList.writeChunkListToDisk(allData,str(segmentListName+".dataUsed"))
-    #Write out the data chunks actually configured for search.
     
 #Setup logfile mask
 logFilePath=cp.get('filelayout','logpath')
@@ -198,6 +196,10 @@ indexA=0
 # can handle a search on a limitless amount of data using a single DAG
 # to manage the workflow.  The results of each segment should still be
 # stored independently
+
+#Write out the data chunks actually configured for search.
+print "Writing the actually segment list to disk for reference."
+tracksearch.writeChunkListToDisk(allData,str(segmentListName+".dataUsed"))
 
 ##### New initialization method
 tracksearchLogFile="tracksearchDag.log"

@@ -916,7 +916,7 @@ class candidateList:
         TDArrayFreq=[]
         TDArrayGPSFloat=[]
         #curveEstimateLimit=5000
-        curveEstimateLimit=1000
+        curveEstimateLimit=750
         decimateFactor=int(self.curves.__len__()/curveEstimateLimit)
         dataIndex=[]
         counter=0

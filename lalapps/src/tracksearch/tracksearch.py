@@ -70,6 +70,20 @@ def buildDir(dirpath):
         os.stderr.write(str(pathArray))
 #End def
 
+def writeChunkListToDisk(data,filename='default'):
+    """
+    Write the gps stamps of the created search data chunks.
+    """
+    output_fp=open(filename,'w')
+    counter=0
+    for block in data:
+        for entry in block:
+            label="%d %d %d %d\n"%(counter,entry.start(),entry.end(),(entry.end()-entry.start()))
+            output_fp.write(label)
+            counter=counter+1
+    output_fp.close()
+#End def
+
 def isPowOf2(input):
     inNum=int(input)
     ans=inNum&(inNum-1)
@@ -330,16 +344,6 @@ class tracksearchConvertSegList:
                 label="%d %d %d %d\n"%(index,newChunk.start(),newChunk.end(),newChunk.end()-newChunk.start())
                 output_fp.write(label)
         output_fp.close
-
-    def writeChunkListToDisk(data,filename='default'):
-        """
-        Write the gps stamps of the created search data chunks.
-        """
-        output_fp=open(filename,'w')
-        for entry in data:
-            label="%d %d\n"%(entry.start(),entry.stop())
-            output_fp.write(label)
-        output_fp.close()
 
     def getSegmentName(self):
         #Return a string containing the name of the revised segment list
@@ -837,13 +841,19 @@ class tracksearch:
     """
     #TO HANDLE FUTURE COINCIDENT ANALYSIS WE NEED TO ADJUST DAGDIR FOR
     #EACH IFO THEN MAKE A CLUSTERING DIR OR SOMETHING LIKE THAT
-    def __init__(self,cparser,injectFlag,logfile,scienceSegment=''):
+    def __init__(self,cparser,injectFlag,logfile,scienceSegment='',rubberBlock=False):
+        # NEED TO HAVE A FLAG TO DELINATE A RUBBER BLOCK RUN SO THAT
+        # WE CAN READ TOPBLOCK FLAG THEN SCALE BACK TO PROPER SIZE
+        # BECAUSE THE NORM WILL HAVE THE AMOUNT OF DATA LESS THAN
+        # TOPBLOCKSIZE IN CONFIG OPTIONS! THAT VALUE WILL CHANGE TO
+        # MATCH THE DATA_CHUNK SIZE!!!!
         #For large DAG of may possible data Blocks track each call
         #to createJobs() which is called once per data Block for analysis
         self.sciSeg=''
         self.runStartTime=''
         self.blockID=''
         self.lastBlockID=''
+        self.rubberBlock=bool(False)
         self.dagName=''
         self.cp=cparser
         self.resultPath=self.cp.get('filelayout','workpath')
@@ -1090,15 +1100,20 @@ class tracksearch:
         padsize=determineDataPadding(self.cp)
         #Create the chunk list that we will makeing data find jobs for
         #If padding is requested implicity assume the data is available
-        self.sciSeg.make_chunks((setSize*mapTime))
-        if ((self.sciSeg.dur()>=self.sciSeg.unused()) and (self.sciSeg.__len__() <= 1)):
-            sys.stderr.write("\n")
-            sys.stderr.write("WARNING: Set Size and Map Time(s) seem inconsistent!\n")
-            sys.stderr.write("Set Size :"+str(setSize)+"\n")
-            sys.stderr.write("Map Time :"+str(mapTime)+"\n")
-            sys.stderr.write("Pad Size :"+str(padsize)+"\n")
-            sys.stderr.write("Pipeline may be incorrectly constructed! Check your inputs.\n")
-            sys.stderr.write("\n")
+        try:
+            self.sciSeg.make_chunks((setSize*mapTime))
+        except:
+            if ((self.sciSeg.dur()>=self.sciSeg.unused()) and (self.sciSeg.__len__() <= 1)):
+                sys.stderr.write("\n")
+                sys.stderr.write("WARNING: Set Size and Map Time(s) seem inconsistent!\n")
+                sys.stderr.write("Set Size :"+str(setSize)+"\n")
+                sys.stderr.write("Map Time :"+str(mapTime)+"\n")
+                sys.stderr.write("Pad Size :"+str(padsize)+"\n")
+                sys.stderr.write("Pipeline may be incorrectly constructed! Check your inputs.\n")
+                sys.stderr.write("This segment reported bound : Start:%i End:%i\n"%(self.sciSeg.start(),self.sciSeg.end()))
+                sys.stderr.write("Reported duration %f with chunk count %i\n"%(self.sciSeg.dur(),self.sciSeg.__len__()))
+                sys.stderr.write("\n")
+            os.abort()
         #Setup time marker for entire run
         runStartTime=self.runStartTime
         #What is name of dagDir location of dags and sub files
@@ -1121,27 +1136,27 @@ class tracksearch:
         channel=self.currentchannel
         prevLayerJobList=[]        
         prev_df = None
-        if not str(self.cp.get('condor','datafind')).lower().__contains__(str('LSCdataFind').lower()):
-            sys.stdout.write("Assuming we do not need standard data find job! Hardwiring in cache file to pipeline!\n")
-            sys.stdout.write("Looking for ini option: condor,datafind_fixcache\n")
-            # Pop first chunk off list to keep from repeating jobs!
-            # We do this because the for look has a repeat issue the first job
-            # seems to be a repeat of 2nd analysis chunk.  The for loop catches these types
-            # AnalysisSegment,
-            #<ScienceSegment: id 1, start 731488412, end 731554412, dur 66000, unused 0>
-            #<AnalysisChunk: start 731488412, end 731554412>
-            #<AnalysisChunk: start 731488412, end 731488742>
-            # Notice first analysis chunk has bounds of all data then second chunk bounds same
-            # start but the proper length.  The quick hack is to pop(0) the list of chunks
-            # as done above removing the first entry.  This must be unique to the way we create
-            # evenly spaced jobs in terms of samples and start times.  This saves 1 job per pipeline.
-            # Only works on datafind_fixcache jobs!!!! (Temp fix)
-            self.sciSeg._ScienceSegment__chunks.pop(0)
-        else:
-            self.sciSeg._ScienceSegment__chunks.pop(0)
         if (self.sciSeg._ScienceSegment__chunks.__len__() < 1):
             sys.stdout.write("WARNING: Data to be analyzed not properly divided or absent!\n")
             sys.stdout.write("The input options must be WRONG!\n")
+        if not str(self.cp.get('condor','datafind')).lower().__contains__(str('LSCdataFind').lower()):
+            sys.stdout.write("Assuming we do not need standard data find job! Hardwiring in cache file to pipeline!\n")
+            sys.stdout.write("Looking for ini option: condor,datafind_fixcache\n")
+        # Pop first chunk off list to keep from repeating jobs!
+        # We do this because the for look has a repeat issue the first job
+        # seems to be a repeat of 2nd analysis chunk.  The for loop catches these types
+        # AnalysisSegment,
+        #<ScienceSegment: id 1, start 731488412, end 731554412, dur 66000, unused 0>
+        #<AnalysisChunk: start 731488412, end 731554412>
+        #<AnalysisChunk: start 731488412, end 731488742>
+        # Notice first analysis chunk has bounds of all data then second chunk bounds same
+        # start but the proper length.  The quick hack is to pop(0) the list of chunks
+        # as done above removing the first entry.  This must be unique to the way we create
+        # evenly spaced jobs in terms of samples and start times.  This saves 1 job per pipeline.
+        # Only works on datafind_fixcache jobs!!!! (Temp fix)
+        firstChunk=self.sciSeg.__getitem__(0)
+        if firstChunk.start() == firstChunk.end():
+            self.sciSeg._ScienceSegment__chunks.pop(0)
         for chunk in self.sciSeg:
             #Method that creates a dataFind job if needed and returns
             #appropriate new node entry if it doesn't exists for that
@@ -1149,7 +1164,6 @@ class tracksearch:
             #time interval
             nodeStart=chunk.start()-padsize
             nodeEnd=chunk.end()+padsize
-
             #Set the node job time markers from chunk! This adjustment must
             #reflect any buffering that might be specified on the command line.
             tracksearchTime_node=tracksearchTimeNode(tracksearchTime_job)
@@ -1229,7 +1243,7 @@ class tracksearch:
             self.dag.add_node(tracksearchHousekeeper_node)
         #Only do setup the threshold jobs if the ini file has a threshold section!
         if self.cp.has_section('candidatethreshold'):
-            tracksearchThreshold_job=tracksearchThresholdJob(self.cp,self.blockID,self.dagDirectory)
+            tracksearchThreshold_job=tracksearchThresholdJob(self.cp,self.blockID,self.dagDirectory,self.currentchannel)
             DLP=tracksearchThreshold_job.initialDir
             tracksearchThreshold_node=tracksearchThresholdNode(tracksearchThreshold_job)
             tracksearchThreshold_node.add_var_opt('file',os.path.normpath(str(DLP+'/*.candidates')))
@@ -1341,7 +1355,7 @@ class tracksearch:
         self.__finalSearchLayer__(layerCount+1,nodeLinkage)
     #End __createSingleJob___()
     
-    def createJobs(self,scienceSegment=''):
+    def createJobs(self,scienceSegment='',rubberBlock=False):
         """
         This method will call all the needed jobs/node objects to create
         a coherent job dag
@@ -1350,6 +1364,7 @@ class tracksearch:
         Need a new housekeeping method which will go to each step
         deleting the MAP:*.dat files to save disk space
         """
+        self.rubberBlock=rubberBlock
         stype=type('')
         if ((type(scienceSegment) != stype) and (self.dataSegmentCount<0)):
             sys.stderr.write("Error Inconsistent calling of tracksearch pipe methods!\n")

@@ -864,8 +864,6 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 				     tmpExtendedAveragePSD,
 				     smoothingPSDparams),
 		   status);
-	  LALPrintVector(tmpExtendedAveragePSD);
-	  LALPrintVector(smoothedAveragePSD);
 	  LAL_CALL(LALRngMedBias(status,
 				 &smoothingAveragePSDBias,
 				 smoothingPSDparams.blocksize),
