@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <lal/Date.h>
+#include <lal/LALStdio.h>
 #include <lal/XLALError.h>
 
 NRCSID(STRINGCONVERTTESTC, "$Id$");
@@ -50,7 +51,7 @@ static int runtest(const struct TESTCASE *testcase)
 	XLALClearErrno();
 	retval = XLALStrToGPS(&gps, testcase->string, &endptr);
 
-	fprintf(stdout, "Input = \"%s\"\n\tOutput =\t%lld ns with \"%s\" remainder, errno %d\n\tCorrect =\t%lld ns with \"%s\" remainder, errno %d\n\t\t===>", testcase->string, XLALGPSToINT8NS(&gps), endptr, XLALGetBaseErrno(), XLALGPSToINT8NS(&gpsCorrect), testcase->remainder, testcase->xlal_errno);
+	fprintf(stdout, "Input = \"%s\"\n\tOutput =\t%" LAL_INT8_FORMAT " ns with \"%s\" remainder, errno %d\n\tCorrect =\t%" LAL_INT8_FORMAT " ns with \"%s\" remainder, errno %d\n\t\t===>", testcase->string, XLALGPSToINT8NS(&gps), endptr, XLALGetBaseErrno(), XLALGPSToINT8NS(&gpsCorrect), testcase->remainder, testcase->xlal_errno);
 
 	if(retval == 0 && testcase->xlal_errno == 0) {
 		if(XLALGPSCmp(&gps, &gpsCorrect) || strcmp(endptr, testcase->remainder))
