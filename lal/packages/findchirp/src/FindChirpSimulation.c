@@ -399,10 +399,14 @@ LALFindChirpInjectSignals (
        * We are using functions from NRWaveInject which do not take a vector 
        * with alternating h+ & hx but rather one that stores h+ in the first 
        * half and hx in the second half.
+       *
+       * We also must multiply the strain by the distance to be compatible
+       * with NRWaveInject.
+       *
        */
       for( i = 0; i < dataLength; i++)
       {
-        x1[i] = waveform.h->data->data[i];
+        x1[i] = waveform.h->data->data[i]*thisEvent->distance;
       }
       for( i = 0; i < wfmLength; i++)
       {
@@ -412,15 +416,8 @@ LALFindChirpInjectSignals (
 
       LALFree(x1);
 
-      sampleRate = (INT4) (1./waveform.h->deltaT);
-      if (abs((REAL4) sampleRate - 1./waveform.h->deltaT) > 0.5)
-      {
-	fprintf(stderr, "problem with sample rate in FindChirpInjectSignals\n");
-        exit(0);
-      }
-      
       waveform.h->data->vectorLength = wfmLength;
-
+     
       LALInjectStrainGW( status->statusPtr , 
                                       chan ,
                                 waveform.h ,
