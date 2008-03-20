@@ -34,6 +34,7 @@
 
 #include "check_series_macros.h"
 
+NRCSID(LALSIMINSPIRALC, "$Id$");
 
 /**
  * Computes the (s)Y(l,m) spin-weighted spherical harmonic.
@@ -49,7 +50,13 @@
  *
  * Currently only supports s=-2, l=2,3,4,5 modes.
  */
-COMPLEX16 XLALSpinWeightedSphericalHarmonic(REAL8 theta, REAL8 phi, int s, int l, int m)
+COMPLEX16 XLALSpinWeightedSphericalHarmonic(
+		REAL8 theta,  /**< polar angle (rad) */
+	       	REAL8 phi,    /**< azimuthal angle (rad) */
+	       	int s,        /**< spin weight */
+	       	int l,        /**< mode number l */
+	       	int m         /**< mode number m */
+		)
 {
 	static const char *func = "XLALSpinWeightedSphericalHarmonic";
 	REAL8 fac;
@@ -230,7 +237,16 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(REAL8 theta, REAL8 phi, int s, int l
  * If sym is non-zero, symmetrically add the m and -m terms assuming
  * that h(l,-m) = (-1)^l h(l,m)*; see Eq. (78) ibid.
  */
-int XLALSimAddMode(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross, COMPLEX16TimeSeries *hmode, REAL8 theta, REAL8 phi, int l, int m, int sym)
+int XLALSimAddMode(
+		REAL8TimeSeries *hplus,      /**< +-polarization waveform */
+	       	REAL8TimeSeries *hcross,     /**< x-polarization waveform */
+	       	COMPLEX16TimeSeries *hmode,  /**< complex mode h(l,m) */
+	       	REAL8 theta,                 /**< polar angle (rad) */
+	       	REAL8 phi,                   /**< azimuthal angle (rad) */
+	       	int l,                       /**< mode number l */
+	       	int m,                       /**< mode number m */
+	       	int sym                      /**< flag to add -m mode too */
+		)
 {
 	static const char *func = "XLALSimAddMode";
 	COMPLEX16 Y;
@@ -286,7 +302,12 @@ int XLALSimAddMode(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross, COMPLEX16Tim
  * post-Newtonian expansions"
  * arXiv:0710.0158v1 (2007).
  */
-REAL8 XLALSimInspiralPNAngularAcceleration(REAL8 x, REAL8 m1, REAL8 m2, int O)
+REAL8 XLALSimInspiralPNAngularAcceleration(
+		REAL8 x,  /**< post-Newtonian parameter */
+	       	REAL8 m1, /**< mass of companion 1 */
+	       	REAL8 m2, /**< mass of companion 2 */
+	       	int O     /**< twice post-Newtonian order */
+		)
 {
 	static const char *func = "XLALSimInspiralPNAngularAcceleration";
 	const REAL8 theta = (1039.0/4620.0);
@@ -332,7 +353,11 @@ REAL8 XLALSimInspiralPNAngularAcceleration(REAL8 x, REAL8 m1, REAL8 m2, int O)
  * post-Newtonian expansions"
  * arXiv:0710.0158v1 (2007).
  */
-REAL8 XLALSimInspiralPNAngularVelocity(REAL8 x, REAL8 m1, REAL8 m2)
+REAL8 XLALSimInspiralPNAngularVelocity(
+		REAL8 x,  /**< post-Newtonian parameter */
+	       	REAL8 m1, /**< mass of companion 1 */
+	       	REAL8 m2  /**< mass of companion 2 */
+		)
 {
 	REAL8 m = m1 + m2;
 	REAL8 ans;
@@ -359,7 +384,12 @@ REAL8 XLALSimInspiralPNAngularVelocity(REAL8 x, REAL8 m1, REAL8 m2)
  * Note: this equation is actually dx/dt rather than (domega/dt)/(omega)^2
  * so the leading coefficient is different.
  */
-REAL8 XLALSimInspiralPNEnergy(REAL8 x, REAL8 m1, REAL8 m2, int O)
+REAL8 XLALSimInspiralPNEnergy(
+		REAL8 x,  /**< post-Newtonian parameter */
+	       	REAL8 m1, /**< mass of companion 1 */
+	       	REAL8 m2, /**< mass of companion 2 */
+	       	int O     /**< twice post-Newtonian order */
+		)
 {
 	static const char *func = "XLALSimInspiralPNEnergy";
 	const REAL8 lambda = -(1987.0/3080.0);
@@ -412,7 +442,17 @@ static int XLALSimInspiralPNEvolveOrbitTaylorT4Integrand(double t, const double 
  * post-Newtonian expansions"
  * arXiv:0710.0158v1 (2007).
  */
-int XLALSimInspiralPNEvolveOrbitTaylorT4(REAL8TimeSeries **x, REAL8TimeSeries **phi, LIGOTimeGPS *tc, REAL8 phic, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fmin, int O)
+int XLALSimInspiralPNEvolveOrbitTaylorT4(
+		REAL8TimeSeries **x,   /**< post-Newtonian parameter [returned] */
+	       	REAL8TimeSeries **phi, /**< orbital phase [returned] */
+	       	LIGOTimeGPS *tc,       /**< coalescence time */
+	       	REAL8 phic,            /**< coalescence phase */
+	       	REAL8 deltaT,          /**< sampling interval */
+		REAL8 m1,              /**< mass of companion 1 */
+		REAL8 m2,              /**< mass of companion 2 */
+		REAL8 fmin,            /**< start frequency */
+		int O                  /**< twice post-Newtonian order */
+		)
 {
 	static const char *func = "XLALSimInspiralPNEvolveOrbitTaylorT4";
 	const UINT4 blocklen = 1024;
@@ -507,7 +547,17 @@ int XLALSimInspiralPNEvolveOrbitTaylorT4(REAL8TimeSeries **x, REAL8TimeSeries **
  * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
  * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
  */
-COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(REAL8TimeSeries *x, REAL8TimeSeries *phi, REAL8 m1, REAL8 m2, REAL8 r, int O, int l, int m)
+COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(
+		REAL8TimeSeries *x,   /**< post-Newtonian parameter */
+	       	REAL8TimeSeries *phi, /**< orbital phase */
+	       	REAL8 x0,             /**< tail-term gauge choice thing (if you don't know, just set it to zero) */
+	       	REAL8 m1,             /**< mass of companion 1 */
+	       	REAL8 m2,             /**< mass of companion 2 */
+	       	REAL8 r,              /**< distance of source */
+	       	int O,                /**< twice post-Newtonain order */
+	       	int l,                /**< mode number l */
+	       	int m                 /**< mode number m */
+		)
 {
 	static const char *func = "XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries";
 	COMPLEX16TimeSeries *h;
@@ -520,19 +570,19 @@ COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(REAL8TimeSer
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	if ( l == 2 && abs(m) == 2 )
 		for ( j = 0; j < h->data->length; ++j )
-			h->data->data[j] = XLALSimInspiralPNMode22(x->data->data[j], phi->data->data[j], m1, m2, r, O);
+			h->data->data[j] = XLALSimInspiralPNMode22(x->data->data[j], phi->data->data[j], x0 > 0.0 ? log(x->data->data[j]/x0) : 0.0, m1, m2, r, O);
 	else if ( l == 2 && abs(m) == 1 )
 		for ( j = 0; j < h->data->length; ++j )
-			h->data->data[j] = XLALSimInspiralPNMode21(x->data->data[j], phi->data->data[j], m1, m2, r, O);
+			h->data->data[j] = XLALSimInspiralPNMode21(x->data->data[j], phi->data->data[j], x0 > 0.0 ? log(x->data->data[j]/x0) : 0.0, m1, m2, r, O);
 	else if ( l == 3 && abs(m) == 3 )
 		for ( j = 0; j < h->data->length; ++j )
-			h->data->data[j] = XLALSimInspiralPNMode33(x->data->data[j], phi->data->data[j], m1, m2, r, O);
+			h->data->data[j] = XLALSimInspiralPNMode33(x->data->data[j], phi->data->data[j], x0 > 0.0 ? log(x->data->data[j]/x0) : 0.0, m1, m2, r, O);
 	else if ( l == 3 && abs(m) == 2 )
 		for ( j = 0; j < h->data->length; ++j )
-			h->data->data[j] = XLALSimInspiralPNMode32(x->data->data[j], phi->data->data[j], m1, m2, r, O);
+			h->data->data[j] = XLALSimInspiralPNMode32(x->data->data[j], phi->data->data[j], x0 > 0.0 ? log(x->data->data[j]/x0) : 0.0, m1, m2, r, O);
 	else if ( l == 3 && abs(m) == 1 )
 		for ( j = 0; j < h->data->length; ++j )
-			h->data->data[j] = XLALSimInspiralPNMode31(x->data->data[j], phi->data->data[j], m1, m2, r, O);
+			h->data->data[j] = XLALSimInspiralPNMode31(x->data->data[j], phi->data->data[j], x0 > 0.0 ? log(x->data->data[j]/x0) : 0.0, m1, m2, r, O);
 	else {
 		XLALDestroyCOMPLEX16TimeSeries(h);
 		XLALPrintError("XLAL Error - %s: Unsupported mode l=%d, m=%d\n", func, l, m );
@@ -555,7 +605,18 @@ COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(REAL8TimeSer
  * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
  * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
  */
-int XLALSimInspiralPNPolarizationWaveforms(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8TimeSeries *x, REAL8TimeSeries *phi, REAL8 m1, REAL8 m2, REAL8 r, REAL8 i, int O)
+int XLALSimInspiralPNPolarizationWaveforms(
+		REAL8TimeSeries **hplus,  /**< +-polarization waveform [returned] */
+	       	REAL8TimeSeries **hcross, /**< x-polarization waveform [returned] */
+	       	REAL8TimeSeries *x,       /**< post-Newtonian parameter */
+	       	REAL8TimeSeries *phi,     /**< orbital phase */
+	       	REAL8 x0,                 /**< tail-term gauge choice thing (if you don't know, just set it to zero) */
+	       	REAL8 m1,                 /**< mass of companion 1 */
+	       	REAL8 m2,                 /**< mass of companion 2 */
+	       	REAL8 r,                  /**< distance of source */
+	       	REAL8 i,                  /**< inclination of source (rad) */
+	       	int O                     /**< twice post-Newtonian order */
+		)
 {
 	static const char *func = "XLALSimInspiralPNPolarizationWaveforms";
 	int l, m;
@@ -571,7 +632,7 @@ int XLALSimInspiralPNPolarizationWaveforms(REAL8TimeSeries **hplus, REAL8TimeSer
 	for ( l = 2; l <= LAL_PN_MODE_L_MAX; ++l ) {
 		for ( m = 1; m <= l; ++m ) {
 			COMPLEX16TimeSeries *hmode;
-			hmode = XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(x, phi, m1, m2, r, O, l, m);
+			hmode = XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(x, phi, x0, m1, m2, r, O, l, m);
 			if ( ! hmode )
 				XLAL_ERROR(func, XLAL_EFUNC);
 			if ( XLALSimAddMode(*hplus, *hcross, hmode, i, 0.0, l, m, 1) < 0 )
@@ -588,7 +649,21 @@ int XLALSimInspiralPNPolarizationWaveforms(REAL8TimeSeries **hplus, REAL8TimeSer
  * This routine allows the user to specify different pN orders
  * for phasing calcuation vs. amplitude calculations.
  */
-int XLALSimInspiralPNGenerator(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, LIGOTimeGPS *tc, REAL8 phic, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fmin, REAL8 r, REAL8 i, int amplitudeO, int phaseO)
+int XLALSimInspiralPNGenerator(
+		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
+	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
+	       	LIGOTimeGPS *tc,          /**< coalescence time */
+	       	REAL8 phic,               /**< coalescence phase */
+	       	REAL8 x0,                 /**< tail-term gauge choice thing (if you don't know, just set it to zero) */
+	       	REAL8 deltaT,             /**< sampling interval */
+	       	REAL8 m1,                 /**< mass of companion 1 */
+	       	REAL8 m2,                 /**< mass of companion 2 */
+	       	REAL8 fmin,               /**< start frequency */
+	       	REAL8 r,                  /**< distance of source */
+	       	REAL8 i,                  /**< inclination of source (rad) */
+	       	int amplitudeO,           /**< twice post-Newtonian amplitude order */
+	       	int phaseO                /**< twice post-Newtonian phase order */
+		)
 {
 	static const char *func = "XLALSimInspiralPNGenerator";
 	REAL8TimeSeries *x;
@@ -598,7 +673,7 @@ int XLALSimInspiralPNGenerator(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross
 	n = XLALSimInspiralPNEvolveOrbitTaylorT4(&x, &phi, tc, phic, deltaT, m1, m2, fmin, phaseO);
 	if ( n < 0 )
 		XLAL_ERROR(func, XLAL_EFUNC);
-	status = XLALSimInspiralPNPolarizationWaveforms(hplus, hcross, x, phi, m1, m2, r, i, amplitudeO);
+	status = XLALSimInspiralPNPolarizationWaveforms(hplus, hcross, x, phi, x0, m1, m2, r, i, amplitudeO);
 	XLALDestroyREAL8TimeSeries(phi);
 	XLALDestroyREAL8TimeSeries(x);
 	if ( status < 0 )
@@ -612,10 +687,25 @@ int XLALSimInspiralPNGenerator(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross
  * This routine uses the same pN order for phasing and amplitude
  * (unless the order is -1 in which case the highest available
  * order is used for both of these -- which might not be the same).
+ *
+ * Log terms in amplitudes are ignored.  This is a gauge choice.
  */
-int XLALSimInspiralPN(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, LIGOTimeGPS *tc, REAL8 phic, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fmin, REAL8 r, REAL8 i, int O)
+int XLALSimInspiralPN(
+		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
+	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
+	       	LIGOTimeGPS *tc,          /**< coalescence time */
+	       	REAL8 phic,               /**< coalescence phase */
+	       	REAL8 deltaT,             /**< sampling interval */
+	       	REAL8 m1,                 /**< mass of companion 1 */
+	       	REAL8 m2,                 /**< mass of companion 2 */
+	       	REAL8 fmin,               /**< start frequency */
+	       	REAL8 r,                  /**< distance of source */
+	       	REAL8 i,                  /**< inclination of source (rad) */
+	       	int O                     /**< twice post-Newtonian order */
+		)
 {
-	return XLALSimInspiralPNGenerator(hplus, hcross, tc, phic, deltaT, m1, m2, fmin, r, i, O, O);
+	/* set x0=0 to ignore log terms */
+	return XLALSimInspiralPNGenerator(hplus, hcross, tc, phic, 0.0, deltaT, m1, m2, fmin, r, i, O, O);
 }
 
 /**
@@ -623,11 +713,26 @@ int XLALSimInspiralPN(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, LIGOTim
  * 
  * This routine computes the phasing to the specified order, but
  * only computes the amplitudes to the Newtonian (quadrupole) order.
+ *
+ * Log terms in amplitudes are ignored.  This is a gauge choice.
  */
-int XLALSimInspiralPNRestricted(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, LIGOTimeGPS *tc, REAL8 phic, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fmin, REAL8 r, REAL8 i, int O)
+int XLALSimInspiralPNRestricted(
+		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
+	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
+	       	LIGOTimeGPS *tc,          /**< coalescence time */
+	       	REAL8 phic,               /**< coalescence phase */
+	       	REAL8 deltaT,             /**< sampling interval */
+	       	REAL8 m1,                 /**< mass of companion 1 */
+	       	REAL8 m2,                 /**< mass of companion 2 */
+	       	REAL8 fmin,               /**< start frequency */
+	       	REAL8 r,                  /**< distance of source */
+	       	REAL8 i,                  /**< inclination of source (rad) */
+	       	int O                     /**< twice post-Newtonian phase order */
+		)
 {
 	/* use Newtonian order for amplitude */
-	return XLALSimInspiralPNGenerator(hplus, hcross, tc, phic, deltaT, m1, m2, fmin, r, i, O, 0);
+	/* set x0=0 to ignore log terms */
+	return XLALSimInspiralPNGenerator(hplus, hcross, tc, phic, 0.0, deltaT, m1, m2, fmin, r, i, O, 0);
 }
 
 
