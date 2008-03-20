@@ -315,7 +315,6 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   for(i = 1; i < AMPMAXORDER; i++)
     q[i] = ( i <= ampOrder? 1.0 : 0.0 );
   
-  
   /* Set number of harmonics in accordance with params->ampOrder*/
   /* Dominant harmonic is the 2nd */
   Harmonics = ampOrder + 2;
@@ -344,7 +343,7 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   cos2I = cosI*cosI;
   cos4I = cos2I*cos2I;
   cos6I = cos4I*cos2I;
-
+  
   phiC = params->phi;
 
   preFac = -2.0*mu*LAL_MRSUN_SI/params->d; 
@@ -770,11 +769,12 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
      
      a7 = q[5]*a7Pseven*fseven;
      
-     *(h++) = preFac*(a1*cos(1.0*(phiC - phase)) + a2*cos(2.0*(phiC - phase)) + a3*cos(3.0*(phiC - phase)) 
-	            + a4*cos(4.0*(phiC - phase)) + a5*cos(5.0*(phiC - phase)) + a6*cos(6.0*(phiC - phase))
-		    + a7*cos(7.0*(phiC - phase))
-		    + a1mix*sin(1.0*(phiC - phase)) + a2mix*sin(2.0*(phiC - phase)) + a3mix*sin(3.0*(phiC - phase))
-		    + a4mix*sin(4.0*(phiC - phase)));      
+     *(h++) = preFac*(a1*cos(1.0/2.0*(phiC - phase)) + a2*cos(2.0/2.0*(phiC - phase)) + a3*cos(3.0/2.0*(phiC - phase)) 
+	            + a4*cos(4.0/2.0*(phiC - phase)) + a5*cos(5.0/2.0*(phiC - phase)) + a6*cos(6.0/2.0*(phiC - phase))
+		    + a7*cos(7.0/2.0*(phiC - phase))
+		    + a1mix*sin(1.0/2.0*(phiC - phase)) + a2mix*sin(2.0/2.0*(phiC - phase)) + a3mix*sin(3.0/2.0*(phiC - phase))
+		    + a4mix*sin(4.0/2.0*(phiC - phase)));      
+
 
      /* CROSS */
      a1 = q[1]*a1Cthree*fthree + q[3]*a1Cfive*ffive + q[4]*a1Csix*fsix + q[5]*a1Cseven*fseven;         	     
@@ -795,12 +795,12 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
      
      a7 = q[5]*a7Cseven*fseven;
      
-     *(h++) = preFac*(a1*sin(1.0*(phiC - phase)) + a2*sin(2.0*(phiC - phase)) + a3*sin(3.0*(phiC - phase)) 
-		    + a4*sin(4.0*(phiC - phase)) + a5*sin(5.0*(phiC - phase)) + a6*sin(6.0*(phiC - phase))
-		    + a7*sin(7.0*(phiC - phase))
-		    + a1mix*cos(1.0*(phiC - phase)) + a2mix*cos(2.0*(phiC - phase)) + a3mix*cos(3.0*(phiC - phase))
-	            + a4mix*cos(4.0*(phiC - phase)));          
-
+     *(h++) = preFac*(a1*sin(1.0/2.0*(phiC - phase)) + a2*sin(2.0/2.0*(phiC - phase)) + a3*sin(3.0/2.0*(phiC - phase)) 
+		    + a4*sin(4.0/2.0*(phiC - phase)) + a5*sin(5.0/2.0*(phiC - phase)) + a6*sin(6.0/2.0*(phiC - phase))
+		    + a7*sin(7.0/2.0*(phiC - phase))
+		    + a1mix*cos(1.0/2.0*(phiC - phase)) + a2mix*cos(2.0/2.0*(phiC - phase)) + a3mix*cos(3.0/2.0*(phiC - phase))
+	            + a4mix*cos(4.0/2.0*(phiC - phase)));          
+     
      n++;
      t = t0 + n*dt;
      yOld = y;
