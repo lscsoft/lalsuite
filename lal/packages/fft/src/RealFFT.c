@@ -155,11 +155,7 @@
 
 #include <config.h>
 
-#ifdef LAL_FFTW3_ENABLED
 #include <fftw3.h>
-#else
-#error "FFTW3 is **REQUIRED**"
-#endif
 
 #include <lal/LALStdlib.h>
 #include <lal/SeqFactories.h>
