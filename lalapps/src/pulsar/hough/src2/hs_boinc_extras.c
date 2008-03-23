@@ -705,41 +705,41 @@ static void worker (void) {
     /* handle output file */
     else if ((0 == strncmp("-o",argv[arg],strlen("-o"))) ||
 	     (0 == strncmp("--fnameout",argv[arg],strlen("--fnameout")))) {
+
       /* these are two similar but not equal cases ("option file" and "option=file") */
       if ((0 == strncmp("-o=",argv[arg],strlen("-o="))) ||
-	  (0 == strncmp("--fnameout=",argv[arg],strlen("--fnameout=")))) {
-	int s;
-	startc = strchr(argv[arg],'=');
-	if (startc == NULL) {
-	  LogPrintf(LOG_CRITICAL,"ERROR in command line: no output file\n");
-	  res = HIERARCHICALSEARCH_EFILE;
-	}
-	startc++; /* filename begins after '=' */
-	if (boinc_resolve_filename(startc,resultfile,sizeof(resultfile))) {
+	  (0 == strncmp("--fnameout=",argv[arg],strlen("--fnameout="))))
+	{
+	  int s;
+	  startc = strchr(argv[arg],'=');
+	  startc++; /* filename begins _after_ '=' */
+	  if (boinc_resolve_filename(startc,resultfile,sizeof(resultfile))) {
 	  LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", startc);
-	}
-	s = (startc - argv[arg]) + strlen(resultfile) + 1;
-        rargv[rarg] = (char*)calloc(s,sizeof(char));
-	if(!rargv[rarg]){
-	  LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	  boinc_finish(HIERARCHICALSEARCH_EMEM);
-	}
-	strncpy(rargv[rarg],argv[arg], (startc - argv[arg]));
-        strncat(rargv[rarg],resultfile,s);
-      } else {
-	rargv[rarg] = argv[arg]; /* copy the "-o" */
-	arg++;                   /* grab next argument */
-	rarg++;
-	if(arg >= argc) {
-	  LogPrintf(LOG_CRITICAL,"ERROR in command line: no argument following '-o' option\n");
-	  res = HIERARCHICALSEARCH_EFILE;
-	} else {
-	  if (boinc_resolve_filename(argv[arg],resultfile,sizeof(resultfile))) {
-	    LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", argv[arg]);
 	  }
-	  rargv[rarg] = resultfile;
+	  s = (startc - argv[arg]) + strlen(resultfile) + 1;
+	  rargv[rarg] = (char*)calloc(s,sizeof(char));
+	  if(!rargv[rarg]){
+	    LogPrintf(LOG_CRITICAL, "Out of memory\n");
+	    boinc_finish(HIERARCHICALSEARCH_EMEM);
+	  }
+	  strncpy(rargv[rarg],argv[arg], (startc - argv[arg]));
+	  strncat(rargv[rarg],resultfile,s);
 	}
-      }
+      else
+	{
+	  if(arg + 1 >= argc) {
+	    LogPrintf(LOG_CRITICAL,"ERROR in command line: no argument following %s option\n",argv[arg]);
+	    res = HIERARCHICALSEARCH_EFILE;
+	  } else {
+	    rargv[rarg] = argv[arg]; /* copy the "-o" */
+	    arg++;                   /* grab next argument */
+	    rarg++;
+	    if (boinc_resolve_filename(argv[arg],resultfile,sizeof(resultfile))) {
+	      LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", argv[arg]);
+	    }
+	    rargv[rarg] = resultfile;
+	  }
+	}
     }
 
     /* set the "flops estimation" */
