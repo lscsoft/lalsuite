@@ -99,10 +99,6 @@ extern LALStatus *global_status;
 
 /* function prototypes, they are defined in boinc_extras.c */
 
-/** allows the App to register another output file to be put into the
-    zip archive that is sent back to the server */
-extern void register_output_file(char*filename);
-
 /** show progress of the App.
     NOTE: This also sets the count & total (skypos) for checkpointing */
 extern void show_progress(double rac, double dec,

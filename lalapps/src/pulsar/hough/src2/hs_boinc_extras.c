@@ -107,13 +107,7 @@ char* HSBOINCEXTRASCRCSID = "$Id$";
 /** the cpu type, see cpu_type_features.h */
 int global_cpu_type;
 
-/** The program might have multiple output file(s) that are to be zipped into the archive
-    to be returned. A program can "register" files to be finally sent back by calling
-    register_output_file(). The function stores the information it gets in the following
-    variables (global within this module)
-*/
-static char **outfiles = NULL;        /**< the names  of the output files */
-static int  noutfiles  = 0;           /**< the number of the output files */
+/** output filename - probably not needed to be public anymore */
 static char resultfile[MAX_PATH_LEN]; /**< the name of the file / zip archive to return */
 
 
@@ -393,30 +387,6 @@ void show_progress(double rac,  /**< right ascension */
 }
 
 
-
-
-
-/**
-  this registers a new output file to be zipped into the archive that is returned
-  to the server as a result file
- */
-void register_output_file(char*filename /**< name of the output file to 'register' */
-			  ) {
-  int len = strlen(filename)+1;
-  outfiles = (char**)realloc(outfiles,(noutfiles+1)*sizeof(char*));
-  if (outfiles == NULL) {
-    LogPrintf (LOG_CRITICAL, "ERROR: Can't allocate output filename '%s'\n", filename);
-    noutfiles = 0;
-    return;
-  }
-  outfiles[noutfiles] = calloc(len,sizeof(char));
-  if (outfiles[noutfiles] == NULL) {
-    LogPrintf (LOG_CRITICAL, "ERROR: Can't allocate output filename '%s'\n", filename);
-    return;
-  }
-  strncpy(outfiles[noutfiles],filename,len);
-  noutfiles++;
-}
 
 
 
@@ -736,8 +706,27 @@ static void worker (void) {
     else if ((0 == strncmp("-o",argv[arg],strlen("-o"))) ||
 	     (0 == strncmp("--fnameout",argv[arg],strlen("--fnameout")))) {
       /* these are two similar but not equal cases ("option file" and "option=file") */
-      if ((0 == strncmp("-o",argv[arg],strlen("-o") + 1)) ||
-	  (0 == strncmp("--fnameout",argv[arg],strlen("--fnameout") + 1))) {
+      if ((0 == strncmp("-o=",argv[arg],strlen("-o="))) ||
+	  (0 == strncmp("--fnameout=",argv[arg],strlen("--fnameout=")))) {
+	int s;
+	startc = strchr(argv[arg],'=');
+	if (startc == NULL) {
+	  LogPrintf(LOG_CRITICAL,"ERROR in command line: no output file\n");
+	  res = HIERARCHICALSEARCH_EFILE;
+	}
+	startc++; /* filename begins after '=' */
+	if (boinc_resolve_filename(startc,resultfile,sizeof(resultfile))) {
+	  LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", startc);
+	}
+	s = (startc - argv[arg]) + strlen(resultfile) + 1;
+        rargv[rarg] = (char*)calloc(s,sizeof(char));
+	if(!rargv[rarg]){
+	  LogPrintf(LOG_CRITICAL, "Out of memory\n");
+	  boinc_finish(HIERARCHICALSEARCH_EMEM);
+	}
+	strncpy(rargv[rarg],argv[arg], (startc - argv[arg]));
+        strncat(rargv[rarg],resultfile,s);
+      } else {
 	rargv[rarg] = argv[arg]; /* copy the "-o" */
 	arg++;                   /* grab next argument */
 	rarg++;
@@ -750,25 +739,6 @@ static void worker (void) {
 	  }
 	  rargv[rarg] = resultfile;
 	}
-      } else {
-	int s;
-	startc = strchr(argv[arg],'=');
-	if (startc == NULL) {
-	  LogPrintf(LOG_CRITICAL,"ERROR in command line: no output file\n");
-	  res = HIERARCHICALSEARCH_EFILE;
-	}
-	startc++; /* filename begins after '=' */
-	if (boinc_resolve_filename(startc,resultfile,sizeof(resultfile))) {
-	  LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", argv[arg]);
-	}
-	s = (startc - argv[arg]) + strlen(resultfile) + 1;
-        rargv[rarg] = (char*)calloc(s,sizeof(char));
-	if(!rargv[rarg]){
-	  LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	  boinc_finish(HIERARCHICALSEARCH_EMEM);
-	}
-	strncpy(rargv[rarg],argv[arg], (startc - argv[arg]));
-        strncat(rargv[rarg],resultfile,s);
       }
     }
 
@@ -932,7 +902,7 @@ static void worker (void) {
     strncat(zipfile,OUTPUT_EXT,s);
 
     if ( boinc_zip(ZIP_IT, zipfile, resultfile) ) {
-      LogPrintf (LOG_NORMAL, "WARNING: Can't zip output file '%s'\n", outfiles[i]);
+      LogPrintf (LOG_NORMAL, "WARNING: Can't zip output file '%s'\n", resultfile);
     } else if( boinc_rename(zipfile, resultfile) ) {
       LogPrintf (LOG_NORMAL, "WARNING: Couldn't rename '%s' to '%s'\n", zipfile, resultfile);
     }
