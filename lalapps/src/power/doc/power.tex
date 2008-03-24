@@ -1704,6 +1704,7 @@ E
 [\option{--min-frequency}~\parm{Hertz}]
 [\option{--population}~\parm{name}]
 [\option{--q}~\parm{value}]
+[\option{--ra-dec}~\parm{radians},\parm{radians}]
 [\option{--seed}~\parm{value}]
 [\option{--time-step}~\parm{value}]
 [\option{--user-tag}~\parm{string}]
@@ -1718,10 +1719,10 @@ injections described therein while analyzing data.
 injection population simulating cosmological string cusp burst events, an
 injection population consisting of sine-Gaussians uniformly distributed
 over the sky, and an injection population of band- and time-limited
-white-noise burst waveforms originating from the direction of the galactic
-core.  These populations are selected with the \option{--population}
-option.  Each population required additional parameters to characterize it,
-and other command line options are associated with these.
+white-noise burst waveforms originating from a specific location on the
+sky.  These populations are selected with the \option{--population} option.
+Each population required additional parameters to characterize it, and
+other command line options are associated with these.
 
 The output is written to a file name in the standard burst pipeline format:
 \begin{quote}
@@ -1808,13 +1809,17 @@ This only affects sine-Gaussian injections.  See \option{--max-hrss} for
 more information.
 
 \item[\option{--population} \parm{name}]
-Select the injection population.  The allowed names are
-\option{galactic\_core}, \option{string\_cusp},
-\option{all\_sky\_sinegaussian}.
+Select the injection population.  The allowed names are \option{targeted},
+\option{string\_cusp}, \option{all\_sky\_sinegaussian}.
 
 \item[\option{--q} \parm{value}]
 Set the \(Q\) of the injections.  This only affects sine-Gaussian
 injections.
+
+\item[\option{--ra-dec}~\parm{radians},\parm{radians}]
+Set the right-ascension and declination of the sky location from which
+injections should originate when generating a targeted population.
+Co-ordinates are in radians.
 
 \item[\option{--seed} \parm{value}]
 Set the seed for the random number generator.  This allows an injection

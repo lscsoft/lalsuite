@@ -28,15 +28,12 @@
  */
 
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <regex.h>
 #include <time.h>
 #include <math.h>
 #include <limits.h>
@@ -68,10 +65,6 @@ int snprintf(char *str, size_t size, const char *format, ...);
 RCSID("$Id$");
 
 
-#define MW_CENTER_J2000_RA_RAD 2.0318570464121519l /* = 27940.04 s = 7 h 45 m 40.04 s */
-#define MW_CENTER_J2000_DEC_RAD -0.50628171572274738l /* = -29o 00' 28.1" */
-
-
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
@@ -88,7 +81,7 @@ RCSID("$Id$");
 
 
 enum population {
-	POPULATION_GALACTIC_CORE,
+	POPULATION_TARGETED,
 	POPULATION_ALL_SKY_SINEGAUSSIAN,
 	POPULATION_STRING_CUSP
 };
@@ -98,6 +91,8 @@ struct options {
 	INT8 gps_start_time;
 	INT8 gps_end_time;
 	enum population population;
+	double ra;
+	double dec;
 	double maxA;
 	double minA;
 	double maxbandwidth;
@@ -119,27 +114,29 @@ struct options {
 
 static struct options options_defaults(void)
 {
-	struct options defaults = {
-		.gps_start_time = 0,
-		.gps_end_time = 0,
-		.population = -1,
-		.maxbandwidth = XLAL_REAL8_FAIL_NAN,
-		.minbandwidth = XLAL_REAL8_FAIL_NAN,
-		.maxduration = XLAL_REAL8_FAIL_NAN,
-		.minduration = XLAL_REAL8_FAIL_NAN,
-		.maxEoverr2 = XLAL_REAL8_FAIL_NAN,
-		.minEoverr2 = XLAL_REAL8_FAIL_NAN,
-		.maxf = XLAL_REAL8_FAIL_NAN,
-		.minf = XLAL_REAL8_FAIL_NAN,
-		.maxhrss = XLAL_REAL8_FAIL_NAN,
-		.minhrss = XLAL_REAL8_FAIL_NAN,
-		.minA = XLAL_REAL8_FAIL_NAN,
-		.maxA = XLAL_REAL8_FAIL_NAN,
-		.q = XLAL_REAL8_FAIL_NAN,
-		.seed = 0,
-		.time_step = 210.0 / LAL_PI,
-		.user_tag = NULL
-	};
+	struct options defaults;
+	
+	defaults.gps_start_time = 0;
+	defaults.gps_end_time = 0;
+	defaults.population = -1;
+	defaults.ra = XLAL_REAL8_FAIL_NAN;
+	defaults.dec = XLAL_REAL8_FAIL_NAN;
+	defaults.maxbandwidth = XLAL_REAL8_FAIL_NAN;
+	defaults.minbandwidth = XLAL_REAL8_FAIL_NAN;
+	defaults.maxduration = XLAL_REAL8_FAIL_NAN;
+	defaults.minduration = XLAL_REAL8_FAIL_NAN;
+	defaults.maxEoverr2 = XLAL_REAL8_FAIL_NAN;
+	defaults.minEoverr2 = XLAL_REAL8_FAIL_NAN;
+	defaults.maxf = XLAL_REAL8_FAIL_NAN;
+	defaults.minf = XLAL_REAL8_FAIL_NAN;
+	defaults.maxhrss = XLAL_REAL8_FAIL_NAN;
+	defaults.minhrss = XLAL_REAL8_FAIL_NAN;
+	defaults.minA = XLAL_REAL8_FAIL_NAN;
+	defaults.maxA = XLAL_REAL8_FAIL_NAN;
+	defaults.q = XLAL_REAL8_FAIL_NAN;
+	defaults.seed = 0;
+	defaults.time_step = 210.0 / LAL_PI;
+	defaults.user_tag = NULL;
 
 	return defaults;
 }
@@ -200,11 +197,17 @@ static void print_usage(void)
 	); fprintf(stderr, 
 "--population name\n" \
 "	Select the injection population to synthesize.  Allowed values are\n" \
-"	galactic_core, string_cusp, all_sky_sinegaussian.\n" \
+"	\"targeted\", \"string_cusp\", and \"all_sky_sinegaussian\".\n" \
 "\n" \
 "--q value\n" \
 "	Set the Q for sine-Gaussian injections.\n" \
 "\n" \
+"--ra-dec ra,dec\n" \
+"	Set the right-ascension and declination of the sky location from which\n" \
+"	injections should originate when generating a targeted population.\n" \
+"	Co-ordinates are in radians.\n" \
+"\n" \
+	); fprintf(stderr, 
 "--seed value\n" \
 "	Set the random number generator's seed (0 = off, default = 0).\n" \
 "\n" \
@@ -258,6 +261,7 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 		{"min-hrss", required_argument, NULL, 'M'},
 		{"population", required_argument, NULL, 'N'},
 		{"q", required_argument, NULL, 'O'},
+		{"ra-dec", required_argument, NULL, 'U'},
 		{"seed", required_argument, NULL, 'P'},
 		{"time-step", required_argument, NULL, 'Q'},
 		{"user-tag", required_argument, NULL, 'R'},
@@ -348,8 +352,8 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 		break;
 
 	case 'N':
-		if(!strcmp(optarg, "galactic_core"))
-			options.population = POPULATION_GALACTIC_CORE;
+		if(!strcmp(optarg, "targeted"))
+			options.population = POPULATION_TARGETED;
 		else if(!strcmp(optarg, "string_cusp"))
 			options.population = POPULATION_STRING_CUSP;
 		else if(!strcmp(optarg, "all_sky_sinegaussian"))
@@ -389,6 +393,27 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 	case 'T':
 		options.minEoverr2 = atof(optarg);
 		ADD_PROCESS_PARAM("real_8");
+		break;
+
+	case 'U':
+		{
+			char *end;
+			options.ra = strtod(optarg, &end);
+			while(isspace(*end))
+				end++;
+			if(*end != ',') {
+				fprintf(stderr, "error: cannot parse --ra-dec \"%s\"\n", optarg);
+				exit(1);
+			}
+			options.dec = strtod(end + 1, &end);
+			while(isspace(*end))
+				end++;
+			if(*end != '\0') {
+				fprintf(stderr, "error: cannot parse --ra-dec \"%s\"\n", optarg);
+				exit(1);
+			}
+		}
+		ADD_PROCESS_PARAM("lstring");
 		break;
 
 	case 0:
@@ -642,18 +667,18 @@ static SimBurst *random_string_cusp(double flow, double fhigh, double Alow, doub
 /* 
  * ============================================================================
  *
- *                         Galactic Core Simulations
+ *                            Directed Simulations
  *
  * ============================================================================
  */
 
 
 /*
- * Pick a random galactic core band- and time-limited white noise burst.
+ * Pick a random band- and time-limited white noise burst.
  */
 
 
-static SimBurst *random_galactic_core(double minf, double maxf, double minband, double maxband, double mindur, double maxdur, double minEoverr2, double maxEoverr2, gsl_rng *rng)
+static SimBurst *random_directed_btlwnb(double ra, double dec, double minf, double maxf, double minband, double maxband, double mindur, double maxdur, double minEoverr2, double maxEoverr2, gsl_rng *rng)
 {
 	REAL8TimeSeries *hplus, *hcross;
 	SimBurst *sim_burst = XLALCreateSimBurst();
@@ -665,8 +690,8 @@ static SimBurst *random_galactic_core(double minf, double maxf, double minband, 
 
 	/* sky location and wave frame orientation */
 
-	sim_burst->ra = MW_CENTER_J2000_RA_RAD;
-	sim_burst->dec = MW_CENTER_J2000_DEC_RAD;
+	sim_burst->ra = ra;
+	sim_burst->dec = dec;
 	sim_burst->psi = gsl_ran_flat(rng, 0, LAL_TWOPI);
 
 	/* pick a waveform */
@@ -704,8 +729,8 @@ static SimBurst *random_galactic_core(double minf, double maxf, double minband, 
 	/* not sure if this makes sense.  these parameters are ignored by
 	 * the injection code, but post-processing tools sometimes wish to
 	 * know with what amplitude an injection should've been seen in an
-	 * instrument, and the use these to project the + and x amplitudes
-	 * onto the projector.  setting the eccentricity to 0 and the angle
+	 * instrument, and they use these to project the + and x amplitudes
+	 * onto the detector.  setting the eccentricity to 0 and the angle
 	 * to anything makes such tools believe the amplitude is equally
 	 * partitioned between the two polarizations which is true for
 	 * these injections. */
@@ -802,7 +827,6 @@ static void write_xml(MetadataTable proctable, MetadataTable procparams, Metadat
 		snprintf(fname, sizeof(fname), "HL-INJECTIONS_%s-%d-%d.xml", options.user_tag, (int) (options.gps_start_time / LAL_INT8_C(1000000000)), (int) ((options.gps_end_time - options.gps_start_time) / LAL_INT8_C(1000000000)));
 	else
 		snprintf(fname, sizeof(fname), "HL-INJECTIONS-%d-%d.xml", (int) (options.gps_start_time / LAL_INT8_C(1000000000)), (int) ((options.gps_end_time - options.gps_start_time) / LAL_INT8_C(1000000000)));
-
 
 	LAL_CALL(LALOpenLIGOLwXMLFile(&status, &xmlfp, fname), &status);
 
@@ -919,8 +943,8 @@ int main(int argc, char *argv[])
 		/* create an injection */
 
 		switch(options.population) {
-		case POPULATION_GALACTIC_CORE:
-			*sim_burst = random_galactic_core(options.minf, options.maxf, options.minbandwidth, options.maxbandwidth, options.minduration, options.maxduration, options.minEoverr2, options.maxEoverr2, rng);
+		case POPULATION_TARGETED:
+			*sim_burst = random_directed_btlwnb(options.ra, options.dec, options.minf, options.maxf, options.minbandwidth, options.maxbandwidth, options.minduration, options.maxduration, options.minEoverr2, options.maxEoverr2, rng);
 			break;
 
 		case POPULATION_ALL_SKY_SINEGAUSSIAN:
