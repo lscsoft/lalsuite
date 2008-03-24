@@ -1193,13 +1193,26 @@ int init_and_read_checkpoint(toplist_t*tl     , /**< the toplist to checkpoint *
   } else {
     /* create an own checkpoint file name if we didn't get passed one */
 #define CHECKPOINT_EXT ".cpt"
-    int s = strlen(outputname)+strlen(CHECKPOINT_EXT)+1;
+    int s;
+    char *c;
+    c = strrchr(outputname,'/');
+    if (c) {
+      c++;
+    } else {
+      c = strrchr(outputname,'\\');
+      if (c) {
+	c++;
+      } else {
+	c = outputname;
+      }
+    }
+    s = strlen(c)+strlen(CHECKPOINT_EXT)+1;
     cptfilename = (char*)calloc(s,sizeof(char));
     if(!cptfilename){
       LogPrintf(LOG_CRITICAL, "Out of memory\n");
       return(-2);
     }
-    strncpy(cptfilename,outputname,s);
+    strncpy(cptfilename,c,s);
     strncat(cptfilename,CHECKPOINT_EXT,s);
   }
   
