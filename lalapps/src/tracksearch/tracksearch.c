@@ -98,18 +98,15 @@ int main (int argc, char *argv[])
   /* End Global Variable Declarations */
 
   /* SET LAL DEBUG STUFF */
-  set_debug_level("NONE");
+  /*set_debug_level("ERROR | WARNING | MEMDBG");/*
+  /*  set_debug_level("NONE");*/
   memset(&status, 0, sizeof(status));
   /*lal_errhandler = LAL_ERR_EXIT;*/
   lal_errhandler = LAL_ERR_ABRT;
   /*lal_errhandler = LAL_ERR_RTRN;*/
-  set_debug_level("MEMDBG");
-  set_debug_level("ERROR");
-  set_debug_level("3");
-  /*  set_debug_level("ERROR | WARNING | MEMDBG");*/
   /*  set_debug_level("ERROR | WARNING | MEMDBG");*/
   /*  set_debug_level("ERROR | WARNING ");*/
-  /*  set_debug_level("ALLDBG"); */
+  set_debug_level("ALLDBG");
 
   /*
    * Initialize status structure 
@@ -815,6 +812,13 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 					 &avgPSDParams),
 		 status);
 
+      if (averagePSDPlan)
+	{
+	  LAL_CALL( LALDestroyREAL4FFTPlan(status,&averagePSDPlan),
+		    status);
+	}
+
+
       if (params.smoothAvgPSD > 2)
 	{
 	  /* Error check that median block size less than =
@@ -977,7 +981,7 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 			   status);
 		}
 	      if (params.verbosity >= verbose)
-		fprintf(stdout,"Whitening data segment: %i of %i\n",i,dataSegments->length);
+		fprintf(stdout,"Whitening data segment: %i of %i\n",i+1,dataSegments->length);
 	      LAL_CALL(LALTrackSearchWhitenCOMPLEX8FrequencySeries(status,
 								   signalFFT,
 								   averagePSD,
@@ -1027,9 +1031,6 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 	  if (windowPSD)
 	    LAL_CALL( LALDestroyREAL4Window(status,
 					    &windowPSD),
-		      status);
-	  if (averagePSDPlan)
-	    LAL_CALL( LALDestroyREAL4FFTPlan(status,&averagePSDPlan),
 		      status);
 	  if (averagePSD)
 	    LAL_CALL(LALDestroyREAL4FrequencySeries(status,averagePSD),
@@ -2275,8 +2276,6 @@ void LALappsGetFrameData(LALStatus*          status,
 			  TRACKSEARCHC_MSGEDATA);
 	}
       /* End of error for invalid data types in frame file.*/
-      /* close the frame stream */
-      LAL_CALL( LALFrClose( status, &stream ), status);
 
       if (params->verbosity >= printFiles)
 	{
@@ -2352,7 +2351,14 @@ void LALappsGetFrameData(LALStatus*          status,
 	LAL_CALL(LALDestroyREAL4TimeSeries(status,tmpData),
 		 status);
     }
+
+  if (stream)
+    {
+      /*Close the frame stream if found open*/
+      LAL_CALL(LALFrClose(status,&stream),status);
+    }
 }
+
 /* End frame reading code */
 
 /* MISSING CLOSE } */
@@ -2424,7 +2430,14 @@ void LALappsDoTrackSearch(
 	  tsMarkers.mapStopGPS.gpsNanoSeconds);
   /* Flag to prepare structure inside LALTrackSearch */
   tsInputs.allocFlag = 1; 
+
   outputCurves.curves = NULL;
+  outputCurves.numberOfCurves=0;
+  outputCurves.minPowerCut=params.MinPower;
+  outputCurves.minLengthCut=params.MinLength;
+  outputCurves.startThreshCut=tsInputs.high;
+  outputCurves.linePThreshCut=tsInputs.low;
+
   /*
    * The power thresholding is not done in the LALroutine
    * This information is forwarded to this function for a post processing 
@@ -2447,6 +2460,10 @@ void LALappsDoTrackSearch(
 		status);
       tsInputs.high=params.StartThresh;
       tsInputs.low=params.LinePThresh;
+      /*Reset to show the auto selected values.*/
+      outputCurves.startThreshCut=tsInputs.high;
+      outputCurves.linePThreshCut=tsInputs.low;
+
     }
   /* Catch the error code here and abort */
   LAL_CALL( LALSignalTrackSearch(status,&outputCurves,tfmap,&tsInputs),
