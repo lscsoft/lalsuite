@@ -82,8 +82,9 @@ LALInspiralSetup (
    /*INT4  pnorder=7;
     * */
    REAL8 lso, eta, vpole;
-   REAL8 a1, a2, a3, a4, a5, a6, a7;
+   REAL8 a1, a2, a3, a4, a5, a6, a7, a8;
    REAL8 c1, c2, c3, c4, c5, c6, c7, c8;
+   REAL8 a12, a22, a32, a42, a52, a62, a72, a23, a33, a43, a53, a34, a44;
    REAL8 oneby6=1.0/6.0;
 
    INITSTATUS (status, "LALInspiralSetup", LALINSPIRALSETUPC);
@@ -205,11 +206,12 @@ LALInspiralSetup (
    ak->FTa5 = -(8191./672.+583./24.*ieta*eta)*LAL_PI;
    ak->FTl6 = -1712./105.;
    ak->FTa6 = 6643739519./69854400. + 16.*LAL_PI*LAL_PI/3. + ak->FTl6 * log (4.L)
-            - 1712./105.*ak->EulerC+ (-11497453./272160. + 41.*LAL_PI*LAL_PI/48.
-               + 176./9. * ak->lambda - 88.*ak->theta/3.) * ieta*eta
+            - 1712./105.*ak->EulerC+ (-134543./7776. + 41.*LAL_PI*LAL_PI/48.) * ieta*eta
             - 94403./3024. * ieta*eta*eta - 775./324. * ieta * eta*eta*eta;
    ak->FTa7 = LAL_PI * (-16285./504. + 214745./1728. * ieta*eta
                + 193385./3024.* ieta*eta*eta);
+   ak->FTa8 = - 117.5043907226773;
+   ak->FTl8 =   52.74308390022676;
 
 /* Initialize members of the structures which get fed into 
    phasing3() and frequency3(). 
@@ -299,11 +301,6 @@ LALInspiralSetup (
    * PRD66,027502,2002, where there are typos in Eq 1.1, 1.2, 2.9, 2.10, and
    * 2.11.. */
   
-
-       
-       
-       
-  
    ak->pfaN = 3.L/(128.L * eta);
    ak->pfa2 = 5.L*(743.L/84.L + 11.L * ieta*eta)/9.L;
    ak->pfa3 = -16.L*LAL_PI;
@@ -320,8 +317,6 @@ LALInspiralSetup (
    ak->pfl6 = -6848.L/21.L;
 
    ak->pfa7 = LAL_PI * 5.L/756.L * ( 15419335.L/336.L + 75703.L/2.L * ieta*eta - 14809.L * ieta*eta*eta);
-  
-    
      
 /* 
   Taylor coefficients of f(v)=(1-v/vpole)F(v) 
@@ -339,10 +334,10 @@ LALInspiralSetup (
          break;
       case threePN:
       case threePointFivePN:
-         vpole = ak->vpoleP6;
+            vpole = ak->vpoleP6;
          break;
       case pseudoFourPN:
-         vpole = ak->vpoleP6;
+            vpole = ak->vpoleP6;
          break;
    }
 
@@ -351,8 +346,9 @@ LALInspiralSetup (
    ak->fTa3 = ak->FTa3 - ak->FTa2/vpole;
    ak->fTa4 = ak->FTa4 - ak->FTa3/vpole;
    ak->fTa5 = ak->FTa5 - ak->FTa4/vpole;
-   ak->fTa6 = ak->FTa6 + ak->FTl6*log(ak->vlsoP4) - ak->FTa5/vpole;
-   ak->fTa7 = ak->FTa7 - ak->FTa6/vpole;
+   ak->fTa6 = ak->FTa6 - ak->FTa5/vpole + ak->FTl6*log(ak->vlsoP4);
+   ak->fTa7 = ak->FTa7 - ( ak->FTa6 + ak->FTl6*log(ak->vlsoP4))/vpole;
+   ak->fTa8 = ak->FTa8 - ak->FTa7/vpole + ak->FTl8*log(ak->vlsoP4);
 /* 
    Pade coefficients of f(v);  assumes that a0=1 => c0=1 
 */
@@ -364,6 +360,7 @@ LALInspiralSetup (
    a5 = ak->fTa5;
    a6 = ak->fTa6;
    a7 = ak->fTa7;
+   a8 = ak->fTa8;
 
    c1 = -a1;
    c2 = -(c1*c1 - a2)/c1;
@@ -379,71 +376,56 @@ LALInspiralSetup (
       + c1*c2*c3*c4*c5*(c5 + 2.*(c1+c2+c3+c4)) 
       - a6)/(c1*c2*c3*c4*c5);
 
-   c7 = -(15.*pow(c1,5.)*pow(c2,2.)
-      + 6.*pow(c1,2.)*c2*pow(c3,3.)*c4
-      + 6.*c1*c2*pow(c3,3.)*pow(c4,2.)
-      + a7
-      + c1*pow(c2,6.)
-      + 2.*c1*c2*pow(c3,2.)*c4*c5*c6
-      + 3.*c1*c2*pow(c4,2.)*pow(c5,2.)*c3
-      + c1*c2*c3*c4*c5*pow(c6,2.)
-      + 6.*c1*c2*pow(c3,2.)*pow(c4,2.)*c5
-      + 2.*c1*c2*c3*pow(c4,2.)*c5*c6
-      + 3.*c1*c2*pow(c3,3.)*c4*c5
-      + 3.*c1*c2*pow(c4,3.)*c5*c3
-      + c1*c2*c3*c4*pow(c5,3.)
-      + 4.*pow(c2,2.)*c1*c3*pow(c4,2.)*c5
-      + 2.*pow(c2,2.)*c1*c3*c4*c5*c6
-      + 5.*c1*pow(c2,2.)*pow(c3,4.)
-      + 10.*c1*pow(c2,3.)*pow(c3,3.)
-      + 10.*c1*pow(c2,4.)*pow(c3,2.)
-      + 5.*pow(c2,5.)*c3*c1
-      + pow(c1,7.)
-      + 4.*pow(c1,4.)*c2*c3*c4
-      + 18.*pow(c1,2.)*pow(c2,2.)*pow(c3,2.)*c4
-      + 12.*pow(c1,2.)*pow(c2,3.)*c3*c4
-      + 12.*pow(c1,3.)*pow(c2,2.)*c3*c4
-      + 15.*pow(c1,3.)*pow(c2,4.)
-      + 12.*pow(c1,2.)*pow(c2,2.)*pow(c3,3.)
-      + 24.*pow(c1,2.)*pow(c2,3.)*pow(c3,2.)
-      + 20.*pow(c1,2.)*pow(c2,4.)*c3
-      + 18.*pow(c1,3.)*pow(c2,2.)*pow(c3,2.)
-      + 30.*pow(c1,3.)*pow(c2,3.)*c3
-      + 6.*pow(c1,2.)*pow(c2,5.)
-      + 4.*pow(c1,4.)*c2*pow(c3,2.)
-      + 20.*pow(c1,4.)*pow(c2,2.)*c3
-      + c1*c2*pow(c3,5.)
-      + 20.*pow(c1,4.)*pow(c2,3.)
-      + 6.*c2*pow(c1,6.)
-      + 5.*pow(c1,5.)*c2*c3
-      + 3.*pow(c1,3.)*c2*c3*pow(c4,2.)
-      + 6.*pow(c1,3.)*c2*pow(c3,2.)*c4
-      + 3.*pow(c1,3.)*c2*pow(c3,3.)
-      + 3.*pow(c1,3.)*c2*c3*c4*c5
-      + 2.*pow(c1,2.)*c2*c3*c4*pow(c5,2.)
-      + 6.*pow(c1,2.)*c2*pow(c3,2.)*pow(c4,2.)
-      + 2.*pow(c1,2.)*c2*c3*pow(c4,3.)
-      + 4.*pow(c1,2.)*c2*pow(c3,2.)*c4*c5
-      + 4.*pow(c1,2.)*c2*c3*pow(c4,2.)*c5
-      + 6.*c1*pow(c2,2.)*pow(c3,2.)*c4*c5
-      + 2.*pow(c1,2.)*c2*c3*c4*c5*c6
-      + 6.*pow(c1,2.)*pow(c2,2.)*c3*c4*c5
-      + 2.*pow(c1,2.)*c2*pow(c3,4.)
-      + 6.*pow(c1,2.)*pow(c2,2.)*c3*pow(c4,2.)
-      + 2.*c1*c2*pow(c3,2.)*c4*pow(c5,2.)
-      + 3.*c1*pow(c2,3.)*c3*c4*c5
-      + 9.*c1*pow(c2,2.)*pow(c3,2.)*pow(c4,2.)
-      + 12.*c1*pow(c2,2.)*pow(c3,3.)*c4
-      + 3.*c1*pow(c2,3.)*c3*pow(c4,2.)
-      + 2.*c1*c2*c3*c4*pow(c5,2.)*c6
-      + 12.*c1*pow(c2,3.)*pow(c3,2.)*c4
-      + c1*c2*c3*pow(c4,4.)
-      + 4.*c1*c2*pow(c3,2.)*pow(c4,3.)
-      + 4.*c1*pow(c3,4.)*c4*c2
-      + 4.*c1*pow(c2,4.)*c3*c4
-      + 2.*pow(c2,2.)*c1*c3*pow(c4,3.)
-      + 2.*pow(c2,2.)*c1*c3*c4*pow(c5,2.))/(c1*c2*c3*c4*c5*c6);
-   c8 = 0.;
+   a12 = a1*a1;
+   a22 = a2*a2;
+   a32 = a3*a3;
+   a42 = a4*a4;
+   a52 = a5*a5;
+   a62 = a6*a6;
+   a72 = a7*a7;
+   a23 = a22*a2;
+   a33 = a32*a3;
+   a43 = a42*a4;
+   a53 = a52*a5;
+   a34 = a33*a3;
+   a44 = a43*a4;
+
+   c7 = ((a23 + a32 + a12*a4 - a2*(2*a1*a3 + a4)) * 
+      (-a44 - a32*a52 + a1*a53 - a22*a62 + a33*a7 
+      + a22*a5*a7 + a42*(3*a3*a5 + 2*a2*a6 + a1*a7) 
+      + a3*(2*a2*a5*a6 + a1*a62 - a1*a5*a7) 
+      - 2*a4*((a32 + a1*a5)*a6 + a2*(a52 + a3*a7))))/ 
+      ((a33 + a1*a42 + a22*a5 - a3*(2*a2*a4 + a1*a5))* 
+      (a34 + a22*a42 - a43 - 2*a1*a2*a4*a5 + a12*a52 
+      - a2*a52 - a23*a6 - a12*a4*a6 + a2*a4*a6 
+      - a32*(3*a2*a4 + 2*a1*a5 + a6) 
+      + 2*a3*((a22 + a4)*a5 + a1*(a42 + a2*a6))));
+
+
+   c8 = -(((a33 + a1*a42 + a22*a5 - a3*(2*a2*a4 + a1*a5)) * 
+      (pow(a4,5) + pow(a5,4) - 2*a33*a5*a6 + 2*a1*a3*a52*a6 
+      + 2*a3*a5*a62 + a12*a62*a6 - 2*a3*a52*a7 
+      + 2*a1*a32*a6*a7 - 2*a12*a5*a6*a7 + a32*a72 
+      + pow(a3,4)*a8 - 2*a1*a32*a5*a8 + a12*a52*a8 
+      - a32*a6*a8 - a43*(4*a3*a5 + 3*a2*a6 + 2*a1*a7 + a8) 
+      + a42*(3*a2*a52 + 3*a32*a6 + 4*a1*a5*a6 + a62 
+      + 4*a2*a3*a7 + 2*a5*a7 + a22*a8 + 2*a1*a3*a8) 
+      + a22*(a52*a6 - 2*a3*a6*a7 + 2*a3*a5*a8) 
+      + a22*a2*(a72 - a6*a8) - a4*(3*a52*a6 - 2*a22*a62 + 2*a33*a7 
+      + 4*a22*a5*a7 + a2*a72 - a2*a6*a8 - 3*a32*(a52 - a2*a8) 
+      + 2*a3*(a2*a5*a6 + 2*a1*a62 + a6*a7 - a5*a8) 
+      + 2*a1*(a52*a5 - a2*a6*a7 + a2*a5*a8) + a12*(-a72 + a6*a8)) 
+      + a2*(-a62*a6 + 2*a5*a6*a7 + 2*a1*a5*(-a62 + a5*a7) 
+      + a32*(a62 + 2*a5*a7) - a52*a8 
+      - 2*a3*(a52*a5 + a1*(a72 - a6*a8)))))
+      / ((pow(a3,4) + a22*a42 - a43 - 2*a1*a2*a4*a5 
+      + a12*a52 - a2*a52 - a22*a2*a6 - a12*a4*a6 + a2*a4*a6 
+      - a32*(3*a2*a4 + 2*a1*a5 + a6) 
+      + 2*a3*((a22 + a4)*a5 + a1*(a42 + a2*a6)))
+      * (-pow(a4,4) - a32*a52 + a1*a52*a5 - a22*a62 + a33*a7 
+      + a22*a5*a7 + a42*(3*a3*a5 + 2*a2*a6 + a1*a7) 
+      + a3*(2*a2*a5*a6 + a1*a62 - a1*a5*a7) 
+      - 2*a4*((a32 + a1*a5)*a6 + a2*(a52 + a3*a7)))));
 
    ak->fPa1 = c1;
    ak->fPa2 = c2;
@@ -453,7 +435,6 @@ LALInspiralSetup (
    ak->fPa6 = c6;
    ak->fPa7 = c7;
    ak->fPa8 = c8;
-
 
    /* spinning case */
    ak->thetahat = 1039.0/4620.0;  /* value of thetahat set according to
@@ -863,4 +844,70 @@ static void LALPadeCoeffs7(int n, double *cs, double *as)
     cs[7] = -(t188 + t214 + t236 + t255) * t3 * t19 * t260 * t262;
     return ;
 } /* LALPadeCoeffs7 */
+   c7 = -(15.*pow(c1,5.)*pow(c2,2.)
+      + 6.*pow(c1,2.)*c2*pow(c3,3.)*c4
+      + 6.*c1*c2*pow(c3,3.)*pow(c4,2.)
+      + a7
+      + c1*pow(c2,6.)
+      + 2.*c1*c2*pow(c3,2.)*c4*c5*c6
+      + 3.*c1*c2*pow(c4,2.)*pow(c5,2.)*c3
+      + c1*c2*c3*c4*c5*pow(c6,2.)
+      + 6.*c1*c2*pow(c3,2.)*pow(c4,2.)*c5
+      + 2.*c1*c2*c3*pow(c4,2.)*c5*c6
+      + 3.*c1*c2*pow(c3,3.)*c4*c5
+      + 3.*c1*c2*pow(c4,3.)*c5*c3
+      + c1*c2*c3*c4*pow(c5,3.)
+      + 4.*pow(c2,2.)*c1*c3*pow(c4,2.)*c5
+      + 2.*pow(c2,2.)*c1*c3*c4*c5*c6
+      + 5.*c1*pow(c2,2.)*pow(c3,4.)
+      + 10.*c1*pow(c2,3.)*pow(c3,3.)
+      + 10.*c1*pow(c2,4.)*pow(c3,2.)
+      + 5.*pow(c2,5.)*c3*c1
+      + pow(c1,7.)
+      + 4.*pow(c1,4.)*c2*c3*c4
+      + 18.*pow(c1,2.)*pow(c2,2.)*pow(c3,2.)*c4
+      + 12.*pow(c1,2.)*pow(c2,3.)*c3*c4
+      + 12.*pow(c1,3.)*pow(c2,2.)*c3*c4
+      + 15.*pow(c1,3.)*pow(c2,4.)
+      + 12.*pow(c1,2.)*pow(c2,2.)*pow(c3,3.)
+      + 24.*pow(c1,2.)*pow(c2,3.)*pow(c3,2.)
+      + 20.*pow(c1,2.)*pow(c2,4.)*c3
+      + 18.*pow(c1,3.)*pow(c2,2.)*pow(c3,2.)
+      + 30.*pow(c1,3.)*pow(c2,3.)*c3
+      + 6.*pow(c1,2.)*pow(c2,5.)
+      + 4.*pow(c1,4.)*c2*pow(c3,2.)
+      + 20.*pow(c1,4.)*pow(c2,2.)*c3
+      + c1*c2*pow(c3,5.)
+      + 20.*pow(c1,4.)*pow(c2,3.)
+      + 6.*c2*pow(c1,6.)
+      + 5.*pow(c1,5.)*c2*c3
+      + 3.*pow(c1,3.)*c2*c3*pow(c4,2.)
+      + 6.*pow(c1,3.)*c2*pow(c3,2.)*c4
+      + 3.*pow(c1,3.)*c2*pow(c3,3.)
+      + 3.*pow(c1,3.)*c2*c3*c4*c5
+      + 2.*pow(c1,2.)*c2*c3*c4*pow(c5,2.)
+      + 6.*pow(c1,2.)*c2*pow(c3,2.)*pow(c4,2.)
+      + 2.*pow(c1,2.)*c2*c3*pow(c4,3.)
+      + 4.*pow(c1,2.)*c2*pow(c3,2.)*c4*c5
+      + 4.*pow(c1,2.)*c2*c3*pow(c4,2.)*c5
+      + 6.*c1*pow(c2,2.)*pow(c3,2.)*c4*c5
+      + 2.*pow(c1,2.)*c2*c3*c4*c5*c6
+      + 6.*pow(c1,2.)*pow(c2,2.)*c3*c4*c5
+      + 2.*pow(c1,2.)*c2*pow(c3,4.)
+      + 6.*pow(c1,2.)*pow(c2,2.)*c3*pow(c4,2.)
+      + 2.*c1*c2*pow(c3,2.)*c4*pow(c5,2.)
+      + 3.*c1*pow(c2,3.)*c3*c4*c5
+      + 9.*c1*pow(c2,2.)*pow(c3,2.)*pow(c4,2.)
+      + 12.*c1*pow(c2,2.)*pow(c3,3.)*c4
+      + 3.*c1*pow(c2,3.)*c3*pow(c4,2.)
+      + 2.*c1*c2*c3*c4*pow(c5,2.)*c6
+      + 12.*c1*pow(c2,3.)*pow(c3,2.)*c4
+      + c1*c2*c3*pow(c4,4.)
+      + 4.*c1*c2*pow(c3,2.)*pow(c4,3.)
+      + 4.*c1*pow(c3,4.)*c4*c2
+      + 4.*c1*pow(c2,4.)*c3*c4
+      + 2.*pow(c2,2.)*c1*c3*pow(c4,3.)
+      + 2.*pow(c2,2.)*c1*c3*c4*pow(c5,2.))/(c1*c2*c3*c4*c5*c6);
+
+   fprintf(stderr, "c7 from old formula=%e\n", c7);
 #endif
