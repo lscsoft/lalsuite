@@ -351,14 +351,14 @@ INT4 XLALInspiralAttachRingdownWave (
       REAL4Vector		*ddinspwave;
       REAL4VectorSequence	*inspwaves1;
       REAL4VectorSequence	*inspwaves2;
-      REAL8 omegamatch, dt;
+      REAL8 omegamatch, dt, c1;
 
    /* Attaching position set by omega_match */
    /* Omega_match is given by Eq.(37) of PRD 76, 104049 (2007) */
    /* -0.01 because the current EOBNR 4PN setting can't reach omega_match */
 
       dt = 1./params->tSampling;
-      omegamatch = -0.052 + 0.133 + 0.183 * params->eta + 0.161 * params->eta * params->eta;
+      omegamatch = -0.01 + 0.133 + 0.183 * params->eta + 0.161 * params->eta * params->eta;
 
       for (j = 0; j < Omega->length; ++j)
       {
@@ -370,8 +370,8 @@ INT4 XLALInspiralAttachRingdownWave (
 	    }
       
       }
-      fprintf(stderr, "here omegamatch=%e, attpos=%d omega=%e\n", omegamatch/LAL_PI/(LAL_MTSUN_SI*params->totalMass), attpos, Omega->data[attpos]/LAL_PI/(LAL_MTSUN_SI*params->totalMass));
-   
+      c1 = 1./(LAL_PI*LAL_MTSUN_SI*params->totalMass);
+
       /* Create memory for the QNM frequencies */
       nmodes = 3;
       l = 2;
