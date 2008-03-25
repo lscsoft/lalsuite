@@ -64,6 +64,7 @@ LALInspiralBankGeneration(
   {
   case BCV:
   case EOB:
+  case EOBNR:
   case PadeT1:
   case PadeF1:
   case TaylorF1:
