@@ -118,6 +118,7 @@ LALInspiralWaveOverlap
 	case TaylorT3:
 	case PadeT1:
 	case EOB:
+	case EOBNR:
 	case SpinTaylorT3: 
         case SpinTaylor:
         case Eccentricity:
