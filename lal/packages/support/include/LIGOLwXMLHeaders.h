@@ -384,11 +384,12 @@ fputs( "      <Column Name=\"filtergroup:filter:process_id\" Type=\"ilwd:char\"/
 fputs( "      <Column Name=\"filtergroup:filter:program\" Type=\"lstring\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"filtergroup:filter:start_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"filtergroup:filter:filter_name\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"filtergroup:filter:filter_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"filtergroup:filter:comment\" Type=\"lstring\"/>\n" , fp ) == EOF || \
 fputs( "      <Stream Name=\"filtergroup:filter:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define FILTER_ROW \
-"         \"process:process_id:0\",\"%s\",%d,\"%s\",\"%s\""
+"         \"process:process_id:0\",\"%s\",%d,\"%s\",\"%s\",\"filter:filter_id:%" LAL_UINT8_FORMAT "\""
 
 #ifdef  __cplusplus
 #pragma {
