@@ -81,7 +81,8 @@ bin_SCRIPTS = lalapps_inspiral_pipe lalapps_inspiral_hipe \
               lalapps_inspiral_online_pipe_inject \
               lalapps_check_hipe_times lalapps_ihope \
               lalapps_followup_pipe lalapps_plot_hipe \
-              lalapps_ihope_status lalapps_write_ihope_page
+              lalapps_ihope_status lalapps_write_ihope_page \
+	      lalapps_compare_ini
 pkgpython_DATA = inspiral.py inspiralutils.py
 endif
 
@@ -108,6 +109,9 @@ lalapps_ihope_status: $(srcdir)/ihope_status.in python_config.sed
 lalapps_write_ihope_page: $(srcdir)/write_ihope_page.in python_config.sed
 	sed -f python_config.sed $(srcdir)/write_ihope_page.in > lalapps_write_ihope_page
 	chmod +x lalapps_write_ihope_page
+lalapps_compare_ini: $(srcdir)/compare_ini.in python_config.sed
+	sed -f python_config.sed $(srcdir)/compare_ini.in > lalapps_compare_ini
+	chmod +x lalapps_compare_ini
 lalapps_followup_pipe: $(srcdir)/followup_pipe.in python_config.sed
 lalapps_followup_pipe: $(srcdir)/followup_pipe.in python_config.sed
 	sed -f python_config.sed $(srcdir)/followup_pipe.in > lalapps_followup_pipe
@@ -137,6 +141,7 @@ EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
 	     multi_hipe.in trigger_hipe.in ihope.in ihope_status.in\
              inspiral_online_pipe_inject.in check_hipe_times.in \
 	     followup_pipe.in plot_hipe.in  write_ihope_page.in\
+	     compare_ini.in \
              $(DATA)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
