@@ -448,9 +448,15 @@ LALFindChirpInjectSignals (
       LALSDestroyVectorSequence( status->statusPtr, &(waveform.a->data) );
       CHECKSTATUSPTR( status );
       LALFree( waveform.a );
-      /* destroy the signal */
-      LALSDestroyVector( status->statusPtr, &(signal.data) );
-      CHECKSTATUSPTR( status );
+      /* 
+       * destroy the signal only if waveform.h is NULL as otherwise it won't
+       * be created
+       * */
+      if ( waveform.h == NULL ) 
+      {
+	LALSDestroyVector( status->statusPtr, &(signal.data) );
+        CHECKSTATUSPTR( status );
+      }
     }
     if( waveform.f )
     {
