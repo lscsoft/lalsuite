@@ -90,6 +90,7 @@ None
 
 #define  INSPIRALTEMPLATE_APPROXIMANT 	TaylorT3
 #define  INSPIRALTEMPLATE_ORDER 	twoPN
+#define  INSPIRALTEMPLATE_AMPORDER 	twoPN
 #define  INSPIRALTEMPLATE_MASS1  	10.
 #define  INSPIRALTEMPLATE_MASS2 	10.
 #define  INSPIRALTEMPLATE_FCUTOFF 	1000.
@@ -169,6 +170,8 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	    params->approximant = PadeF1;}
 	  else if (strcmp(argv[i],"EOB")==0){
 	    params->approximant = EOB;}
+	  else if (strcmp(argv[i],"EOBNR")==0){
+	    params->approximant = EOBNR;}
 	  else if (strcmp(argv[i],"SpinTaylor")==0){
 	    params->approximant = SpinTaylor;}
 	  else if (strcmp(argv[i],"BCV")==0){
@@ -185,8 +188,12 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	    params->approximant = Eccentricity; }
 	  else {fprintf(stderr,"Approximant not found in ParseParameter function\n");} /*is it correct ? */
 	}/* SpinTaylor is not available here only for inject package*/
+      else if (strcmp(argv[i], "--fcutoff")==0){
+	params->fCutoff = atof(argv[++i]);}
       else if (strcmp(argv[i], "--order")==0){
 	params->order = atoi(argv[++i]);}
+      else if (strcmp(argv[i], "--ampOrder")==0){
+	params->ampOrder = atoi(argv[++i]);}
       else if (strcmp(argv[i], "--nStartPad")==0){
 	params->nStartPad = atoi(argv[++i]);}
       else if (strcmp(argv[i], "--nEndPad")==0){
@@ -285,6 +292,7 @@ void LALInspiralITStructurePrint(LALStatus *status,
   /* later */
   printf("# approximant = %-15.12d\n", params.approximant);
   printf("# order       = %-15.12d\n", params.order);
+  printf("# ampOrder    = %-15.12d\n", params.ampOrder);
   printf("# mass1       = %-15.12f\n", params.mass1); 
   printf("# mass2       = %-15.12f\n", params.mass2);
   printf("# fFinal      = %-15.12f\n", params.fFinal);
@@ -353,6 +361,7 @@ void LALInspiralITStructureSetDefault(LALStatus *status,
   
   params->approximant  = INSPIRALTEMPLATE_APPROXIMANT;
   params->order        = INSPIRALTEMPLATE_ORDER ;
+  params->ampOrder     = INSPIRALTEMPLATE_AMPORDER ;
   params->mass1        = INSPIRALTEMPLATE_MASS1 ;
   params->mass2        = INSPIRALTEMPLATE_MASS2 ;
   params->fCutoff      = INSPIRALTEMPLATE_FCUTOFF;
@@ -410,6 +419,7 @@ void LALInspiralITStructureHelp()
   fprintf(stderr,"InspiralTemplate Structure; parsing arguments\n");
   fprintf(stderr,"--approximant (TaylorT1, TaylorT2, TaylorT3, EOB, BCV, BCVSpin, PadeT1, AmpCorPPN)\n");
   fprintf(stderr,"--order       (0, 1, 2, 3, 4, 5, 6 (i.e. 4==twoPN)\n");
+  fprintf(stderr,"--ampOrder    (0, 1, 2, 3, 4, 5 (i.e. 4==twoPN)\n");
   fprintf(stderr,"--mass1       (in solar mass)\n"); 
   fprintf(stderr,"--mass2       (in solar mass)\n");
   fprintf(stderr,"--fcutoff (currently not implemented) \n");
