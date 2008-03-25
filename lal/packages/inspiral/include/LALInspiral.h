@@ -660,9 +660,9 @@ tagexpnCoeffs {
    REAL8 dETaN, dETa1, dETa2, dETa3;
 
    /* Taylor expansion coefficients of energy flux*/
-   REAL8 FTaN, FTa1, FTa2, FTa3, FTa4, FTa5, FTa6, FTa7, FTl6;
+   REAL8 FTaN, FTa1, FTa2, FTa3, FTa4, FTa5, FTa6, FTa7, FTa8, FTl6, FTl8;
    /* Taylor expansion coefficients of factored flux*/
-   REAL8 fTaN, fTa1, fTa2, fTa3, fTa4, fTa5, fTa6, fTa7;
+   REAL8 fTaN, fTa1, fTa2, fTa3, fTa4, fTa5, fTa6, fTa7, fTa8;
    /* Coefficients of the corresponding P-approximant*/
    REAL8 fPaN, fPa1, fPa2, fPa3, fPa4, fPa5, fPa6, fPa7, fPa8;
 
