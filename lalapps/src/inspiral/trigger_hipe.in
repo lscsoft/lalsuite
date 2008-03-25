@@ -707,7 +707,9 @@ for grb in ext_trigs:
         veto_filename = idirectory + "/" + ifo.lower() + "-cat" + cum_category \
           + "_veto_segments.txt"
         segmentsUtils.tosegwizard(open(veto_filename, "w"), grb_cum_veto_segs)
-        veto_filename_dict[category][ifo] = veto_filename
+        rel_veto_filename = "../" + ifo.lower() + "-cat" + cum_category \
+          + "_veto_segments.txt"
+        veto_filename_dict[category][ifo] = rel_veto_filename
 
   ############################################################################
   # set up the analysis dag for this interval
