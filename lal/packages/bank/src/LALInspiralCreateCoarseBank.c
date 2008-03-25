@@ -319,6 +319,7 @@ LALInspiralCreateCoarseBank(
     case PadeT1: 
     case PadeF1: 
     case EOB:     
+    case EOBNR:     
     case FindChirpPTF:
       ASSERT( coarseIn.space == Tau0Tau2 || coarseIn.space == Tau0Tau3, status,
           LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE );
