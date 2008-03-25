@@ -98,15 +98,15 @@ int main (int argc, char *argv[])
   /* End Global Variable Declarations */
 
   /* SET LAL DEBUG STUFF */
-  /*set_debug_level("ERROR | WARNING | MEMDBG");/*
-  /*  set_debug_level("NONE");*/
-  memset(&status, 0, sizeof(status));
+  /*set_debug_level("ERROR | WARNING | MEMDBG");*/
+    set_debug_level("NONE");
+    memset(&status, 0, sizeof(status));
   /*lal_errhandler = LAL_ERR_EXIT;*/
   lal_errhandler = LAL_ERR_ABRT;
   /*lal_errhandler = LAL_ERR_RTRN;*/
   /*  set_debug_level("ERROR | WARNING | MEMDBG");*/
   /*  set_debug_level("ERROR | WARNING ");*/
-  set_debug_level("ALLDBG");
+  /*set_debug_level("ALLDBG");*/
 
   /*
    * Initialize status structure 
@@ -787,7 +787,7 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
       windowParamsPSD.length=(params.SegLengthPoints+(2*params.SegBufferPoints));
       windowParamsPSD.type=params.avgSpecWindow;
       LAL_CALL( LALCreateREAL4Window(status,
-				     &(windowPSD),
+				     &windowPSD,
 				     &windowParamsPSD),
 		status);
       /* If we only do one map we need to something special here*/
@@ -931,7 +931,7 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
        * Allocate Frequency Struture to use as memory space for 
        * subsequent ffts of segments
        */
-      LAL_CALL( 
+      LAL_CALL(
 	       LALCreateCOMPLEX8FrequencySeries(
 						status,
 						&signalFFT,
@@ -1043,12 +1043,11 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 	    LAL_CALL( LALDestroyREAL4Window(status,
 					    &windowPSD),
 		      status);
-	  if (avgPSDParams.window)
-	    LALFree(avgPSDParams.window);
 
 	  if (averagePSD)
 	    LAL_CALL(LALDestroyREAL4FrequencySeries(status,averagePSD),
 		     status);
+
 	  if (forwardPlan)
 	    {
 	      LAL_CALL(
