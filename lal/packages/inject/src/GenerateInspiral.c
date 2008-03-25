@@ -49,7 +49,7 @@ $Id$
 \begin{description}
 \item[\texttt{LALGenerateInspiral()}] create an inspiral binary
 waveform generated either by the \texttt{inspiral} package (EOB,
-PadeT1, TaylorT1, TaylorT2, TaylorT3, SpinTaylor) or the
+EOBNR, PadeT1, TaylorT1, TaylorT2, TaylorT3, SpinTaylor) or the
 \texttt{inject} package	(GeneratePPN).	It is used in the module
 \texttt{FindChirpSimulation} in \texttt{findchirp} package.
  
@@ -322,6 +322,10 @@ LALGetOrderFromString(
   {
     *order = threePointFivePN;
   }
+  else if ( strstr(thisEvent, 	"pseudoFourPN") )
+  {
+    *order = pseudoFourPN;
+  }
   else
   {
     LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
@@ -365,6 +369,10 @@ LALGetApproximantFromString(
   else if ( strstr(thisEvent, "TaylorT3" ) )
   {
     *approximant = TaylorT3;
+  }
+  else if ( strstr(thisEvent, "EOBNR" ) )
+  {
+    *approximant = EOBNR;
   }
   else if ( strstr(thisEvent, "EOB" ) )
   {
