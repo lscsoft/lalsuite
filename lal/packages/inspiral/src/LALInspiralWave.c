@@ -170,6 +170,7 @@ LALInspiralWave(
            CHECKSTATUSPTR(status);
 	   break;
       case EOB:
+      case EOBNR:
            LALEOBWaveform(status->statusPtr, signal, params);
            CHECKSTATUSPTR(status);
 	   break;
@@ -267,6 +268,7 @@ LALInspiralWaveTemplates(
            CHECKSTATUSPTR(status);
       	   break;
       case EOB:
+      case EOBNR:
            LALEOBWaveformTemplates(status->statusPtr, signal1, signal2, params);
            CHECKSTATUSPTR(status);
            break;
@@ -333,6 +335,7 @@ LALInspiralWaveForInjection(
        CHECKSTATUSPTR(status);
        break;
      case EOB:
+     case EOBNR:
        LALEOBWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
        CHECKSTATUSPTR(status);
 	   break;
