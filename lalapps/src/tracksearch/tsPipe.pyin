@@ -138,7 +138,7 @@ if testIniFile.numberErrors() > 0 :
 if (injectFileFlag == True):
     print "Checking injection options."
     if not(testIniFile.hasInjectSec()):
-        print "Double check the paramter file's injection section!"
+        print "Double check the parameter file's injection section!"
         os.abort()
 
 #We assume the input segment list has entries exceeding layerTopBlockSize
@@ -148,7 +148,7 @@ segmentListName=segmentList
 dataBlockSize=int(float(str.strip(cp.get('layerconfig','layerTopBlockSize'))))
 if not(topBlockFloat):
     #Convert the segment list to smaller blocks
-    reformatSegList=tracksearch.tracksearchConvertSegList(segmentList,dataBlockSize,cp)
+    reformatSegList=tracksearch.tracksearchConvertSegList(segmentList,dataBlockSize,cp,topBlockFloat)
     reformatSegList.writeSegList()
     segmentListName=reformatSegList.getSegmentName()
     allData=pipeline.ScienceData()
@@ -160,24 +160,20 @@ else:
     setSize=int(cp.get('layerconfig','layer1SetSize'))
     timeScale=float(cp.get('layerconfig','layer1TimeScale'))
     minSize=setSize*timeScale
-    print "Building pipe with rubber to block size. Minimum duration: "+str(minSize)
+    print "Building pipe with rubber to block size."
+    print "Minimum duration block: "+str(minSize)
+    print "Maximum duration block: "+str(dataBlockSize)
     for opt in cp.options('layerconfig'):
         if str(opt).lower().__contains__(str('layer2TimeScale').lower()):
             print "Error found additional layerconfig options for multi-resolution search."
             print "Aborting pipeline construction."
             os.abort
+    rubberSegList=tracksearch.tracksearchConvertSegList(segmentList,minSize,cp,topBlockFloat)
+    rubberSegList.writeSegList()
+    rubberSegListName=rubberSegList.getSegmentName()
     allData=pipeline.ScienceData()
-    allData.read(segmentListName,minSize)
-    if cp.has_option('layerconfig','burndata'):
-        burndata=int(cp.get('layerconfig','burndata'))
-    else:
-        burndata=int(0)
-    dataToBurn=max([determineDataPadding(cp),burndata])
-    print "Selected data burn seconds :"+str(dataToBurn)+" out of "+str(determineDataPadding(cp))+" and "+str(burndata)
-    for segment in allData:
-        segment.set_start(segment.start()+dataToBurn)
-        segment.set_end(segment.end()-dataToBurn)
-    allData.make_optimised_chunks(minSize,dataBlockSize)
+    allData.read(rubberSegListName,minSize)
+    allData.make_optimised_chunks(0,dataBlockSize)
     
 #Setup logfile mask
 logFilePath=cp.get('filelayout','logpath')
@@ -215,16 +211,8 @@ for block in allData:
     tracksearchBlock.createJobs(block)
 progress.closeSpinner
 tracksearchBlock.writePipelineDAG()
-
-### OLD multiple pipe building method.
-# for block in allData:
-#     indexA+=1
-#     logfile=logFileMask+str(indexA)+'.log'
-#     tracksearchBlock=tracksearch.tracksearch(cp,injectFileFlag,logfile,block)
-#     tracksearchBlock.createJobs()
-#     tracksearchBlock.writePipelineDAG()
         
-print "We prepared "+str(allData.__len__())+" analysis segments."
+print "\n We prepared "+str(allData.__len__())+" analysis segments."
 print "The dag info should be found in :",cp.get('filelayout','dagpath')
 sys.exit(0)
 

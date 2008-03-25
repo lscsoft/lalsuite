@@ -17,7 +17,7 @@
  *  MA  02111-1307  USA
  */
 /*
- * Author: Torres Cristina (Univ of TX at Brownsville)
+ * Author: Torres Cristina 
  */
 
 #include "tracksearch.h"
@@ -125,7 +125,8 @@ int main (int argc, char *argv[])
 			       injectParams,
 			       &(cachefile),
 			       &(dirpath));
-
+  if (params->verbosity >= verbose)
+    fprintf(stdout,"Done initializing input structure.\n");
   /*
    * Check params structure what analysis are we doing?
    * Do we look for tseries data files or map data files?
@@ -137,11 +138,15 @@ int main (int argc, char *argv[])
        */
       if (cachefile != NULL)
 	cachefileDataField=cachefile->data;
+      if (params->verbosity >= verbose)
+	fprintf(stdout,"Doing a time series analysis.\n");
       LALappsDoTimeSeriesAnalysis(&status,
 				  *params,
 				  *injectParams,
 				  cachefileDataField,
 				  dirpath);
+      if (params->verbosity >= verbose)
+	fprintf(stdout,"Done performing a time series analysis.\n");
     }
   else
     {
@@ -149,7 +154,11 @@ int main (int argc, char *argv[])
        * Assume we have preformed maps to use and do a map
        * analysis instead
        */
+      if (params->verbosity >= verbose)
+	fprintf(stdout,"Performing a TF Map analysis.\n");
       LALappsDoTSAMapAnalysis(&status,*params);
+      if (params->verbosity >= verbose)
+	fprintf(stdout,"Done performing a TF Map analysis.\n");
     }
   /* 
    * Free searchParams input arguement structure from InitializeRoutine
@@ -214,6 +223,7 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
   CHARVector               *dataLabel=NULL;
   COMPLEX8FrequencySeries  *response=NULL;
   COMPLEX8FrequencySeries  *signalFFT=NULL;
+  COMPLEX8FrequencySeries  *signalFFT_harmonic=NULL;
   CalibrationUpdateParams   calfacts;
   FrCache                  *calcache = NULL;
   LALUnit                   originalFrequecyUnits;
@@ -476,6 +486,7 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
    * End the Butterworth filtering
    *****************************************
    */
+
   if (params.numLinesToRemove > 0)
     {
       /*
@@ -516,7 +527,7 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
       LAL_CALL(
 	       LALCreateCOMPLEX8FrequencySeries(
 						status,
-						&signalFFT,
+						&signalFFT_harmonic,
 						"tmpSegPSD",
 						gps_zero,
 						0,
@@ -539,7 +550,7 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 
   
       LAL_CALL( LALForwardREAL4FFT(status,
-				   signalFFT->data,
+				   signalFFT_harmonic->data,
 				   dataSet->data,
 				   forwardPlan),
 		status);
@@ -559,7 +570,7 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
       /* The  CLR Frequency Vector  */
       inputFVectorCLR->length = inputPSDVector->length;
       inputFVectorCLR->data = inputPSDVector->data; 
-      inputFVectorCLR->deltaF = signalFFT->deltaF;
+      inputFVectorCLR->deltaF = signalFFT_harmonic->deltaF;
       inputFVectorCLR->fLine =  inputTVectorCLR->fLine;
 
       for (i=0;i<referenceSignal->length;i++)
@@ -603,7 +614,7 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 
 	  LAL_CALL( LALRefInterference(status,
 				       tmpReferenceSignal,
-				       signalFFT->data,
+				       signalFFT_harmonic->data,
 				       harmonicIndexCompliment),
 		    status);
 
@@ -658,10 +669,10 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 		   status);
 	}
 
-      if (signalFFT)
+      if (signalFFT_harmonic)
 	{
 	  LAL_CALL( LALDestroyCOMPLEX8FrequencySeries(status,
-						      signalFFT),
+						      signalFFT_harmonic),
 		    status);
 	}
 
@@ -1032,6 +1043,9 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 	    LAL_CALL( LALDestroyREAL4Window(status,
 					    &windowPSD),
 		      status);
+	  if (avgPSDParams.window)
+	    LALFree(avgPSDParams.window);
+
 	  if (averagePSD)
 	    LAL_CALL(LALDestroyREAL4FrequencySeries(status,averagePSD),
 		     status);
@@ -1733,7 +1747,6 @@ void LALappsTrackSearchInitialize(
 	  params->TimeLengthPoints=params->TimeLengthPoints-params->discardTLP;
 	  if ((params->verbosity >= verbose))
 	    fprintf(stdout,"We need to throw away %i trailing data points for %i, evenly matched data segments\n",params->discardTLP,params->NumSeg);
-	  
 	};
       /* 
        * Determine the number of additional points required to negate
@@ -1783,21 +1796,22 @@ void LALappsTrackSearchInitialize(
       fprintf(stderr,TRACKSEARCHC_MSGEARGS);
       exit(TRACKSEARCHC_EARGS);
     }
-  if (
+  if (/*Convolution kernel sigma must \geq 1*/
+      params->LineWidth/(2*sqrt(3)) < 1 
+      )
+    {
+      fprintf(stderr,"Sigma value too small to be useful try increasing line width to at least %i\n",
+	      (INT4) ceil(sqrt(3)*2.0));
+      fprintf(stderr,TRACKSEARCHC_MSGEARGS);
+      exit(TRACKSEARCHC_EARGS);
+    }
+      
+  if (/* Minimum line width to use: sigma \geq (line_width/(2*\sqrt(3))) */
       ((params->LineWidth) < ceil((2.0/MASK_SIZE)*(2.0*sqrt(3))))
-    ||
-      (params->LineWidth/(2.0*sqrt(3)) < 1)
       )
     {
       optWidth=0;
-      if ((2.0*sqrt(3)) < ceil((2.0/MASK_SIZE)))
-	{
-	  optWidth=ceil((2.0/MASK_SIZE)*(2.0*sqrt(3)));
-	}
-      else
-	{
-	  optWidth=ceil(2.0*sqrt(3));
-	}
+      optWidth=ceil((2.0/MASK_SIZE)*(2.0*sqrt(3)));
       fprintf(stderr,"Line width inappropriate try mimimum of: %i\n",
 	      (INT4) optWidth);
       fprintf(stderr,TRACKSEARCHC_MSGEARGS);
@@ -3145,7 +3159,7 @@ LALappsDoTSAMapSearch(LALStatus          *status,
   /*
    * Setup search parameter structure
    */
-  inputs.sigma=params->LineWidth;
+  inputs.sigma=(params->LineWidth)/(2*sqrt(3));
   inputs.high=params->StartThresh;
   inputs.low=params->LinePThresh;
   inputs.width=((tfmap->imageRep->fRow/2)+1);

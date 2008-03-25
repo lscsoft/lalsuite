@@ -70,6 +70,31 @@ def buildDir(dirpath):
         os.stderr.write(str(pathArray))
 #End def
 
+def customAnalysisChunkBuilder(scienceSegment,smallestBlockAllowed,largestBlockAllowed):
+    """
+    A workaround to missing make_optimised_chunks inside a sciencesegment
+    assumes the segment has not analysischunks pre defined!
+    """
+    time_left=scienceSegment.dur()
+    chunk_start=scienceSegment.start()
+    while time_left > smallestBlockAllowed:
+        if time_left-largestBlockAllowed >=0:
+            chunk_end=chunk_start+largestBlockAllowed
+            scienceSegment.add_chunk(chunk_start,chunk_end)
+            chunk_start=chunk_end
+            time_left=time_left-largestBlockAllowed
+        else:
+            #Determine how much i*smallestBlockAllowed is available
+            #make that block
+            chunks_left=math.floor(time_left/smallestBlockAllowed)
+            chunk_duration=chunks_left*smallestBlockAllowed
+            chunk_end=chunk_start+chunk_duration
+            scienceSegment.add_chunk(chunk_start,chunk_end)
+            chunk_start=chunk_end
+            time_left=time_left-chunk_duration
+        scienceSegment.set_unused(time_left)
+#End customAnalysisChunkBuilder
+
 def writeChunkListToDisk(data,filename='default'):
     """
     Write the gps stamps of the created search data chunks.
@@ -273,13 +298,14 @@ class tracksearchConvertSegList:
     from data in the original segments file.  It is this file from where we
     construct an analysis DAG for each line item.
     """
-    def __init__(self,segmentFileName,newDuration,configOpts):
+    def __init__(self,segmentFileName,newDuration,configOpts,rubberBlock=False):
         self.origSegObject=pipeline.ScienceData()
         self.newSegObject=pipeline.ScienceData()
         self.newSegFilename=segmentFileName+'.revised'
         self.segFilename=segmentFileName
         self.duration=newDuration
         self.cp=configOpts
+        self.rubberBlock=rubberBlock
     #End __init__()
     
     def writeSegList(self):
@@ -306,6 +332,8 @@ class tracksearchConvertSegList:
             self.segFilename=tmpFilename
             sys.stderr.write("Reparsed it.  Trying to load reparsed TMP file.\n")
             self.origSegObject.read(self.segFilename,self.duration)
+        #    
+        #End Except section
         #
         #Read the file header
         input_fp=open(self.segFilename,'r')
@@ -334,15 +362,30 @@ class tracksearchConvertSegList:
         else:
             burnOption=0
         dataToBurn=max([determineDataPadding(self.cp),burnOption])
+        print "Number of segments loaded :"+str(self.origSegObject.__len__())
         for bigChunks in self.origSegObject:
             #Burn off data from bigChunks
             bigChunks.set_start(bigChunks.start()+dataToBurn)
             bigChunks.set_end(bigChunks.end()-dataToBurn)
-            bigChunks.make_chunks(self.duration)
+            largestBlockAllowed=int(float(str.strip(self.cp.get('layerconfig','layerTopBlockSize'))))
+            smallestBlockAllowed=self.duration
+            if self.rubberBlock:
+                customAnalysisChunkBuilder(bigChunks,smallestBlockAllowed,largestBlockAllowed)
+            else:
+                bigChunks.make_chunks(self.duration)
             for newChunk in bigChunks:
                 index+=1
                 label="%d %d %d %d\n"%(index,newChunk.start(),newChunk.end(),newChunk.end()-newChunk.start())
                 output_fp.write(label)
+        totalTimeInSegmentList=0
+        totalTimeLostDueToMinBlockSize=0
+        totalTimeBurned=self.origSegObject.__len__()*2*dataToBurn
+        for bigChunks in self.origSegObject:
+            totalTimeInSegmentList=totalTimeInSegmentList+bigChunks.dur()
+            totalTimeLostDueToMinBlockSize=totalTimeLostDueToMinBlockSize+bigChunks.unused()
+        print "Total time available in segment list       :"+str(totalTimeInSegmentList)
+        print "Total time burned from data segments       :"+str(totalTimeBurned)
+        print "Total time lost due to min Block Size req  :"+str(totalTimeLostDueToMinBlockSize)
         output_fp.close
 
     def getSegmentName(self):
@@ -1155,7 +1198,7 @@ class tracksearch:
         # evenly spaced jobs in terms of samples and start times.  This saves 1 job per pipeline.
         # Only works on datafind_fixcache jobs!!!! (Temp fix)
         firstChunk=self.sciSeg.__getitem__(0)
-        if firstChunk.start() == firstChunk.end():
+        if ((firstChunk.start() == self.sciSeg.start()) and (firstChunk.end() == self.sciSeg.end())):
             self.sciSeg._ScienceSegment__chunks.pop(0)
         for chunk in self.sciSeg:
             #Method that creates a dataFind job if needed and returns
