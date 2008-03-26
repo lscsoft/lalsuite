@@ -243,6 +243,7 @@ class hipe_run(object):
     """
     allowed_stages = set(["datafind", "template-bank", "inspiral",
       "coincidence", "trigbank", "inspiral-veto", "second-coinc", 
+      "sire-inspiral", "sire-inspiral-veto", "coire-coinc",
       "coire-second-coinc"])
 
     if only_run is not None:
@@ -375,11 +376,19 @@ def make_dq_run(base_analysis, veto_file_dict, category):
   analysis = copy.deepcopy(base_analysis)
   analysis.determine_stages(only_run=["second-coinc", "coire-second-coinc"])
   analysis.set_veto_files(veto_file_dict)
+  
   old_usertag = analysis.get_usertag()
+  
+  # set new usertag
   if old_usertag is None:
     analysis.set_usertag("CATEGORY_" + str(category))
+  elif old_usertag[-len("CATEGORY_N"):-1] == "CATEGORY_":
+    analysis.set_usertag(old_usertag[:-1] + str(category))
   else:
     analysis.set_usertag(old_usertag + "_CATEGORY_" + str(category))
+
+  # set old usertag on inspiral jobs so that coire can find them
+  analysis._cp.set("inspiral", "user-tag", old_usertag)
 
   return analysis
 
@@ -747,7 +756,7 @@ for grb in ext_trigs:
   offsource_analysis = hipe_run(idirectory + "/offsource", cp, grb_ifolist,
                             opts.log_path, source_file, "offsource",
                             offSourceSegment,
-                            usertag=idirectory + "_OFFSOURCE",
+                            usertag=idirectory + "_OFFSOURCE_CATEGORY_1",
                             exttrig_analyze="off_source", verbose=opts.verbose,
                             dont_run=["datafind"])
   offsource_node = offsource_analysis.finalize(uberdag=uberdag,
@@ -764,7 +773,7 @@ for grb in ext_trigs:
   onsource_analysis = hipe_run(idirectory + "/onsource", cp, grb_ifolist,
                                opts.log_path, source_file, "onsource",
                                onSourceSegment, exttrig_analyze="on_source",
-                               usertag=idirectory + "_ONSOURCE",
+                               usertag=idirectory + "_ONSOURCE_CATEGORY_1",
                                verbose=opts.verbose, dont_run=["datafind"])
   onsource_node = onsource_analysis.finalize(uberdag=uberdag,
                                              parent=datafind_node)
@@ -789,11 +798,10 @@ for grb in ext_trigs:
       hipe_dir = os.path.join(idirectory, injrun)
       usertag = idirectory + "_" + injrun
       injection_analysis = hipe_run(hipe_dir, cp, grb_ifolist,
-                                    opts.log_path, source_file, injrun,
-                                    offSourceSegment, usertag=usertag,
-                                    verbose=opts.verbose,
-                                    exttrig_analyze="off_source",
-                                    dont_run=["datafind"])
+        opts.log_path, source_file, injrun, offSourceSegment, usertag=usertag,
+        verbose=opts.verbose, exttrig_analyze="off_source",
+        dont_run=["datafind", "sire-inspiral", "sire-inspiral-veto",
+                  "coire-coincidence"])
 
       # create the master injection file and gets its content
       if opts.verbose: print "  Creating injections..."
@@ -828,9 +836,9 @@ for grb in ext_trigs:
       ligolw_added_cache_filename = injection_cache_filename.replace("HIPE",
         "HIPE_LIGOLW_ADDED")
       
-      found_filename = "%s-COIRE_FOUND_%s-%d-%d.xml" % \
-        ("".join(grb_ifolist), usertag, offSourceSegment[0],
-         abs(offSourceSegment))
+      found_filename = "%s-COIRE_INJECTION_FOUND_SECOND_%s_%s-%d-%d.xml" % \
+        ("".join(grb_ifolist), "".join(grb_ifolist), usertag,
+         offSourceSegment[0], abs(offSourceSegment))
       ligolw_add_1, new_cache = make_ligolw_add(injection_cache,
                                      "COIRE_*_FOUND", found_filename,
                                      opts.log_path, cp)
