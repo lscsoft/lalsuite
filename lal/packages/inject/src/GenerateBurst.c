@@ -149,10 +149,10 @@ int XLALBurstInjectSignals(
 		}
 	}
 	if(i >= LAL_NUM_DETECTORS) {
-		XLALPrintError("%s(): error: can't identify instrument from channel '%s'", func, series->name);
+		XLALPrintError("%s(): error: can't identify instrument from channel '%s'\n", func, series->name);
 		XLAL_ERROR(func, XLAL_EDATA);
 	}
-	XLALPrintInfo("%s(): channel name is '%s', instrument appears to be '%s'", func, series->name, detector.frDetector.prefix);
+	XLALPrintInfo("%s(): channel name is '%s', instrument appears to be '%s'\n", func, series->name, detector.frDetector.prefix);
 
 	/* iterate over injections */
 
