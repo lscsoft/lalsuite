@@ -382,6 +382,10 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
   ifotag = the ifotag to add to the output file name
   slides = number of time slides req'd, used as a boolean
   """
+  if ifotag:
+    ifotag = "SECOND_" + ifotag
+  else:
+    ifotag = "FIRST"
 
   # add time slide arguments if doing a slide
   if slides and cp.has_section('thinca-slide') :
@@ -404,10 +408,7 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
       if inj>0: thinca.set_user_tag(exttrigUserTag)
       thinca.set_start(seg.start())
       thinca.set_end(seg.end())
-      if ifotag:
-        thinca.set_ifo_tag("SECOND_" + ifotag)
-      else:
-        thinca.set_ifo_tag("FIRST")
+      thinca.set_ifo_tag(ifotag)
       if slides: thinca.set_num_slides(slides)
 
       # scroll through ifos, adding the appropriate ones
