@@ -1398,6 +1398,7 @@ LALSPAF(
 </lalLaTeX> */
 INT4 XLALInspiralComputePTFIntrinsticMetric (
     InspiralMetric             *metric,
+	REAL8Vector				   *fullmetric,
     REAL8FrequencySeries       *psd,
     InspiralTemplate           *params
     );
@@ -1405,6 +1406,25 @@ INT4 XLALInspiralComputePTFIntrinsticMetric (
 INT4 XLALInspiralComputePTFFullMetric (
     InspiralMetric             *metric,
     REAL8FrequencySeries       *psd,
+    InspiralTemplate           *params
+    );
+
+INT4 XLALInspiralComputePTFWaveform (
+    REAL8Vector				   *ptfwave,
+    InspiralTemplate           *params
+    );
+	
+INT4 XLALInspiralComputePTFWDeriv (
+    COMPLEX16Vector			   *Wderiv,
+	REAL8FrequencySeries       *psd,
+    InspiralTemplate           *params,
+	INT4					   paramid,
+	REAL8					   initdelta,
+	REAL8					   tolerance
+    );
+	
+INT4 XLALInspiralComputePTFQDeriv (
+    REAL8VectorSequence		   *Qderiv,
     InspiralTemplate           *params
     );
 
