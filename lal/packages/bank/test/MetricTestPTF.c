@@ -52,6 +52,7 @@ lalDebugLevel
 
 #include <math.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/LALStdio.h>
 #include <lal/AVFactories.h>
@@ -63,34 +64,52 @@ int lalDebugLevel = 1;
 
 int main( int argc, char *argv[] )
 {
-  UINT4 i;
+  UINT4 i, j;
   LALStatus status;
   INT4 errcode;
   InspiralMetric metric;
+  /* create memory for the full metric */
+  REAL8Vector *fullmetric;
+  fullmetric = XLALCreateREAL8Vector( 45 );
   InspiralTemplate tmplt;
   REAL8FrequencySeries psd;
   void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
   FILE *fp;
-  REAL8 deltaT = 1.0/4096.0;
-  UINT4 N = 262144;
+  REAL8 deltaT = 1.0/16384.0;
+  UINT4 N = 16384;
   REAL8 deltaF = 1.0/((REAL8)N * deltaT);
 
   memset( &status, 0, sizeof(LALStatus) );
   memset( &tmplt, 0, sizeof(InspiralTemplate) );
   memset( &metric, 0, sizeof(InspiralMetric) );
 
-  tmplt.mass1 = 1.4;
-  tmplt.mass2 = 5.0;
+  tmplt.massChoice = m1Andm2;
+  tmplt.mass1 = 5.0;
+  tmplt.mass2 = 1.4;
   tmplt.chi = 0.8;
   tmplt.kappa = 0.5;
 
-  tmplt.fLower=40.0; 
+  tmplt.fLower=100.0; 
   tmplt.fCutoff = 1.0 / (2.0 * deltaT);
   tmplt.tSampling = deltaT;
-
+  
+  tmplt.sourceTheta = LAL_PI / 3.;
+  tmplt.sourcePhi = LAL_PI / 6.;
+  tmplt.polarisationAngle = LAL_PI / 4.;
+  tmplt.startPhase = 0.;
+  tmplt.startTime = 0.;
+  tmplt.signalAmplitude = 1.0;
+  
+  LALInspiralParameterCalc(&status, &tmplt);
+  if ( status.statusCode )
+  {
+    REPORTSTATUS( &status );
+    exit( 1 );
+  }
+  
   /* create memory for the PSD */
   memset( &psd, 0, sizeof(REAL8FrequencySeries) );
-  LALDCreateVector( &status, &(psd.data), N/2+1 );
+  LALDCreateVector( &status, &(psd.data), N / 2 + 1 );
   if ( status.statusCode )
   {
     REPORTSTATUS( &status );
@@ -106,18 +125,21 @@ int main( int argc, char *argv[] )
     REPORTSTATUS( &status );
     exit( 1 );
   }
-
-  errcode = XLALInspiralComputePTFIntrinsticMetric( &metric, &psd, &tmplt );
+  
+  errcode = XLALInspiralComputePTFIntrinsicMetric( &metric, fullmetric, &psd, &tmplt );
   if ( errcode != XLAL_SUCCESS )
   {
     fprintf( stderr, "XLALInspiralComputePTFIntrinsticMetric failed\n" );
     exit( 1 );
   }
-
+  
   for ( i = 0; i < 10; ++i )
   {
     fprintf( stdout, "Gamma[%d] = %e\n", i, metric.Gamma[i] );
   }
+  
+  /* destory memory for the fullmetric */
+  XLALDestroyREAL8Vector( fullmetric );
 
   return 0;
 }
