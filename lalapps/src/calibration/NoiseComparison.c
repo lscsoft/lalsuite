@@ -493,7 +493,7 @@ FrStream *framestream=NULL;
 	  gamma_fac[m]   = 1.0;
 	}
 
-      fprintf(stdout,"%18.9Lf %f %f %f %f %f %f %f %f %f %f %f %f %f \n",gtime,
+      fprintf(stdout,"%18.9Lf %e %e %e %e %e %e %e %e %e %e %e %e %e \n",gtime,
 	      factors.alpha.re,factors.alpha.im,
 	      factors.beta.re,factors.beta.im,
 	      factors.alphabeta.re,gamma_fac[m],factors.alphabeta.im,
@@ -594,6 +594,14 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
 
 /*   fprintf(stdout,"Made it to: 9\n"); */
 /*   printmemuse();  */
+
+
+/* resize the time series back to original length */
+  LALResizeREAL8TimeSeries(&status, &hoft, 0,hoft.data->length*4);
+  hoft.deltaT= hoft.deltaT/4;
+
+  LALResizeREAL4TimeSeries(&status, &derr, 0,derr.data->length*4);
+  derr.deltaT= derr.deltaT/4;
 
   fprintf(fpout, "%d ", gpsepoch.gpsSeconds);
 
