@@ -131,22 +131,13 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   REAL4 onebysqrtoftwo = 1.0 / sqrtoftwo;
   REAL4 onebysqrtofsix = 1.0 / sqrt(6.0);
 
-  /* get a local copy of the intrinstic parameters */
-  REAL8 chirpMass = params->chirpMass;
-  REAL8 eta = params->eta;
-  REAL8 chi = params->chi;
-  REAL8 kappa = params->kappa;
-
   /* get a local copy of the extrinstic parameters */
   REAL8 Theta = params->sourceTheta;
   REAL8 Phi = params->sourcePhi;
   REAL8 Psi = params->polarisationAngle;
   REAL8 phi0 = params->startPhase;
-  REAL8 t0 = params->startTime;
 
   /* bounds on the power spectrum integration for the moments */
-  REAL8 fLower = params->fLower;
-  REAL8 fCutoff = params->fCutoff;
   REAL8 deltaT = params->tSampling;
   REAL8 deltaF = 1.0 / ((REAL8)N * deltaT);
 
@@ -447,7 +438,7 @@ INT4 XLALInspiralComputePTFFullMetric (
     )
 /* </lalVerbatim> */
 {
-
+  return XLAL_SUCCESS;
 }
 
 
@@ -464,29 +455,20 @@ INT4 XLALInspiralComputePTFWaveform (
 
   /* number of points in a time-domain segment */
   UINT4 N = ptfwave->length; 
-  UINT4 i, j, k;
+  UINT4 i, j;
 
   /* some useful numbers */
   REAL8 sqrtoftwo      = sqrt(2.0);
   REAL8 onebysqrtoftwo = 1.0 / sqrtoftwo;
   REAL8 onebysqrtofsix = 1.0 / sqrt(6.0);
 
-  /* get a local copy of the intrinstic parameters */
-  REAL8 chirpMass = params->chirpMass;
-  REAL8 eta = params->eta;
-  REAL8 chi = params->chi;
-  REAL8 kappa = params->kappa;
-
   /* get a local copy of the extrinstic parameters */
   REAL8 Theta = params->sourceTheta;
   REAL8 Phi = params->sourcePhi;
   REAL8 Psi = params->polarisationAngle;
   REAL8 phi0 = params->startPhase;
-  REAL8 t0 = params->startTime;
 
   /* bounds on the power spectrum integration for the moments */
-  REAL8 fLower = params->fLower;
-  REAL8 fCutoff = params->fCutoff;
   REAL8 deltaT = params->tSampling;
 
   /* P-factors */
@@ -624,33 +606,16 @@ INT4 XLALInspiralComputePTFWDeriv (
   
   /* number of points in a time-domain segment */
   UINT4 N = (Wderiv->length - 1) * 2; 
-  UINT4 i, j, k;
-
-  /* some useful numbers */
-  REAL8 sqrtoftwo      = sqrt(2.0);
-  REAL8 onebysqrtoftwo = 1.0 / sqrtoftwo;
-  REAL8 onebysqrtofsix = 1.0 / sqrt(6.0);
-  
+  UINT4 j, k;
+    
   /* get a local copy of the intrinstic parameters */
   REAL8 totalMass = params->totalMass;
   REAL8 eta = params->eta;
   REAL8 chi = params->chi;
   REAL8 kappa = params->kappa;
 
-  /* get a local copy of the extrinstic parameters */
-  REAL8 Theta = params->sourceTheta;
-  REAL8 Phi = params->sourcePhi;
-  REAL8 Psi = params->polarisationAngle;
-  REAL8 phi0 = params->startPhase;
-  REAL8 t0 = params->startTime;
-
   /* bounds on the power spectrum integration for the moments */
-  REAL8 fLower = params->fLower;
-  REAL8 fCutoff = params->fCutoff;
   REAL8 deltaT = params->tSampling;
-  REAL8 deltaF = 1.0 / (deltaT * N);
-  UINT4 kmin = fLower / deltaF > 1.0 ? fLower / deltaF : 1;
-  UINT4 kmax = fCutoff / deltaF < N/2 ? fCutoff / deltaF : N/2;
   
   /* deviated template parameters */
   InspiralTemplate pparams = *params;
@@ -924,5 +889,5 @@ INT4 XLALInspiralComputePTFQDeriv (
     )
 /* </lalVerbatim> */
 {
-
+  return XLAL_SUCCESS;
 }
