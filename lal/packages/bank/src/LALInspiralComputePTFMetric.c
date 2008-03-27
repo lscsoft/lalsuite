@@ -172,6 +172,17 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   REAL4VectorSequence			*PTFe2;
   REAL8FFTPlan					*fwdPlan;
   REAL8FFTPlan					*revPlan;
+  COMPLEX16Vector			*fsig0;
+  COMPLEX16Vector			*fsig1;
+  COMPLEX16Vector			*fsig;
+  COMPLEX16Vector			*intrinsicderiv;
+  COMPLEX16VectorSequence	*derivs;
+  REAL8		initdelta = 0.001;
+  REAL8		tolerance = 0.001;
+  REAL8Vector		*invpsd;
+  REAL8Vector		*tempnorm;
+  COMPLEX16Vector	*tempnormtilde;
+  REAL8 wavenorm = fullmetric->data[2];
   
   PTFQ = XLALCreateREAL8VectorSequence( 5, N );
   PTFQtilde = XLALCreateCOMPLEX16VectorSequence( 5, N / 2 + 1 );
@@ -264,9 +275,6 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   PdPs[4] = - 3 * sin(Theta) * sin(Theta) * sin(Psi);
   
   /* Prepare frequency domain signals */
-  COMPLEX16Vector			*fsig0;
-  COMPLEX16Vector			*fsig1;
-  COMPLEX16Vector			*fsig;
   fsig0 = XLALCreateCOMPLEX16Vector(N / 2 + 1);
   fsig1 = XLALCreateCOMPLEX16Vector(N / 2 + 1);
   fsig  = XLALCreateCOMPLEX16Vector(N / 2 + 1);
@@ -296,8 +304,6 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   }
   
   /* Waveform derivatives */
-  COMPLEX16Vector			*intrinsicderiv;
-  COMPLEX16VectorSequence	*derivs;
   intrinsicderiv = XLALCreateCOMPLEX16Vector(N / 2 + 1);
   derivs = XLALCreateCOMPLEX16VectorSequence(9, N / 2 + 1);
   
@@ -337,8 +343,6 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   }
   
   /* Compute intrinsic derivatives */
-  REAL8		initdelta = 0.001;
-  REAL8		tolerance = 0.001;
   for (i = 5; i < 9; ++i)
   {
 	errcode = XLALInspiralComputePTFWDeriv(intrinsicderiv, psd, params, i - 4, initdelta, tolerance);
@@ -361,9 +365,6 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   }
   
   /* Compute full metric */
-  REAL8Vector		*invpsd;
-  REAL8Vector		*tempnorm;
-  COMPLEX16Vector	*tempnormtilde;
   invpsd		= XLALCreateREAL8Vector(N / 2 + 1);
   tempnorm		= XLALCreateREAL8Vector(N);
   tempnormtilde = XLALCreateCOMPLEX16Vector(N / 2 + 1);
@@ -397,7 +398,6 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
 	}
   }
   
-  REAL8 wavenorm = fullmetric->data[2];
   for (i = 0; i < 45; ++i)
   {
 	fullmetric->data[i] /= wavenorm;
@@ -621,9 +621,6 @@ INT4 XLALInspiralComputePTFWDeriv (
   /* XLAL error handling */
   INT4 errcode = XLAL_SUCCESS;
   static const char* func = "XLALInspiralComputePTFWDeriv";
-
-  LALStatus status;
-  memset( &status, 0, sizeof(LALStatus) );
   
   /* number of points in a time-domain segment */
   UINT4 N = (Wderiv->length - 1) * 2; 
@@ -658,8 +655,6 @@ INT4 XLALInspiralComputePTFWDeriv (
   /* deviated template parameters */
   InspiralTemplate pparams = *params;
   InspiralTemplate mparams = *params;
-  pparams.massChoice = totalMassAndEta;
-  mparams.massChoice = totalMassAndEta;
   
   /* Waveform length recorder */
   UINT4 clen, plen, mlen;
@@ -685,6 +680,20 @@ INT4 XLALInspiralComputePTFWDeriv (
   COMPLEX16Vector			*derivdiffpowertilde;
   REAL8FFTPlan				*fwdPlan;
   REAL8FFTPlan				*revPlan;
+  UINT4 iter = 1;
+  UINT4 maxiter = 20;
+  REAL8 reldelta = initdelta;
+  REAL8 absdelta;
+  REAL8 relderivdiff = 1.0;
+  REAL8 relderivdifflist[20];
+  REAL8 invpsd;
+  REAL8 powerderiv;
+  REAL8 powerderivdiff;
+
+  LALStatus status;
+  memset( &status, 0, sizeof(LALStatus) );
+  pparams.massChoice = totalMassAndEta;
+  mparams.massChoice = totalMassAndEta;
   
   cwave = XLALCreateREAL8Vector( N );
   pwavenew = XLALCreateREAL8Vector( N );
@@ -706,12 +715,6 @@ INT4 XLALInspiralComputePTFWDeriv (
   revPlan = XLALCreateReverseREAL8FFTPlan( N, 0 );
   
   /* main loop */
-  UINT4 iter = 1;
-  UINT4 maxiter = 20;
-  REAL8 reldelta = initdelta;
-  REAL8 absdelta;
-  REAL8 relderivdiff = 1.0;
-  REAL8 relderivdifflist[maxiter];
   
   /* Generate central waveform */
   errcode = XLALInspiralComputePTFWaveform(cwave, params);
@@ -850,7 +853,6 @@ INT4 XLALInspiralComputePTFWDeriv (
 	XLALREAL8ForwardFFT( derivtilde, wavederivold, fwdPlan);
     XLALREAL8ForwardFFT( derivdifftilde, wavederivdiff, fwdPlan);
 	
-	REAL8 invpsd;
 	for (k = 0; k < N/2 + 1; ++k)
 	{
 	  if (psd->data->data[k] == 0.)
@@ -871,8 +873,6 @@ INT4 XLALInspiralComputePTFWDeriv (
     XLALREAL8ReverseFFT( wavederiv_2, derivpowertilde, revPlan);		 
     XLALREAL8ReverseFFT( wavederivdiff_2, derivdiffpowertilde, revPlan);
 	/* I will take the power for now */
-	REAL8 powerderiv;
-	REAL8 powerderivdiff;
 	powerderiv = 4.0 * wavederiv_2->data[0];
 	powerderivdiff = 4.0 * wavederivdiff_2->data[0];
 	
