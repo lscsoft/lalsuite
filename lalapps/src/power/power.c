@@ -1411,15 +1411,26 @@ static void output_results(LALStatus *stat, char *file, const char *ifo, Metadat
  */
 
 
+static int XLALPrintProgressBar(double fraction)
+{
+	static const char func[] = "XLALPrintProgressBar";
+	static const char mrk[] = "+++++++++++++++++++++++++++++++++++++++++++++++++)";
+	static const char spc[] = "-------------------------------------------------)";
+	int l = sizeof(mrk)/sizeof(*mrk) - 1;
+	int offset = fraction * l + 0.5;
+
+	if(fraction < 0 || fraction > 1)
+		XLAL_ERROR(func, XLAL_EDOM);
+
+	return XLALPrintInfo("[%s%s %.1f%%", mrk + l - offset, spc + offset, 100.0 * fraction);
+}
+
+
 static void print_progress_bar(const char *func, const LIGOTimeGPS *start, const LIGOTimeGPS *end, const LIGOTimeGPS *t)
 {
-	static const char bar[] = "+++++++++++++++++++++++++++++++++++++++++++++++++)";
-	static const char spc[] = "-------------------------------------------------)";
-	double fraction = XLALGPSDiff(t, start) / XLALGPSDiff(end, start);
-	int l = sizeof(bar)/sizeof(*bar) - 1;
-	int offset = fraction * l;
-
-	XLALPrintInfo("%s: [%s%s %.1f%% complete\n", func, bar + l - offset, spc + offset, 100.0 * fraction);
+	XLALPrintInfo("%s: ", func);
+	XLALPrintProgressBar(XLALGPSDiff(t, start) / XLALGPSDiff(end, start));
+	XLALPrintInfo(" complete\n");
 }
 
 
