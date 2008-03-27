@@ -118,7 +118,6 @@ void XLALDestroyTFPlane(
 
 
 INT4 XLALTFPlaneMakeChannelFilters(
-	const COMPLEX16FrequencySeries *template,
 	REAL8TimeFrequencyPlane *plane,
 	const REAL8FrequencySeries *psd
 );

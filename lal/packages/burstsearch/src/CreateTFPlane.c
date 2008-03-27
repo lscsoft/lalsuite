@@ -590,8 +590,8 @@ static REAL8 filter_inner_product(
 	const REAL8Sequence *correlation
 )
 {
-	const int k10 = filter1->f0 / filter1->deltaF;
-	const int k20 = filter2->f0 / filter2->deltaF;
+	const int k10 = floor(filter1->f0 / filter1->deltaF + 0.5);
+	const int k20 = floor(filter2->f0 / filter2->deltaF + 0.5);
 	int k1, k2;
 	COMPLEX16 sum = {0, 0};
 
@@ -618,8 +618,8 @@ static REAL8 psd_weighted_filter_inner_product(
 	const REAL8FrequencySeries *psd
 )
 {
-	const int k10 = filter1->f0 / filter1->deltaF;
-	const int k20 = filter2->f0 / filter2->deltaF;
+	const int k10 = floor(filter1->f0 / filter1->deltaF + 0.5);
+	const int k20 = floor(filter2->f0 / filter2->deltaF + 0.5);
 	const REAL8 *pdata = psd->data->data - (int) (psd->f0 / psd->deltaF);
 	int k1, k2;
 	COMPLEX16 sum = {0, 0};
@@ -654,7 +654,6 @@ static REAL8 psd_weighted_filter_inner_product(
 
 
 static COMPLEX16FrequencySeries *generate_filter(
-	const COMPLEX16FrequencySeries *template,
 	REAL8 channel_flow,
 	REAL8 channel_width,
 	const REAL8FrequencySeries *psd,
@@ -668,9 +667,6 @@ static COMPLEX16FrequencySeries *generate_filter(
 	REAL8 *pdata;
 	unsigned i;
 	REAL8 norm;
-
-	if(psd->deltaF != template->deltaF)
-		XLAL_ERROR_NULL(func, XLAL_EINVAL);
 
 	sprintf(filter_name, "channel %g +/- %g Hz", channel_flow + channel_width / 2, channel_width / 2);
 
@@ -693,7 +689,7 @@ static COMPLEX16FrequencySeries *generate_filter(
 	 * Tukey window.  (you'll have to draw yourself a picture).
 	 */
 
-	filter = XLALCreateCOMPLEX16FrequencySeries(filter_name, &template->epoch, channel_flow - channel_width / 2, template->deltaF, &lalDimensionlessUnit, 2 * channel_width / template->deltaF + 1);
+	filter = XLALCreateCOMPLEX16FrequencySeries(filter_name, &psd->epoch, channel_flow - channel_width / 2, psd->deltaF, &lalDimensionlessUnit, 2 * channel_width / psd->deltaF + 1);
 	/* FIXME:  decide what to do about this */
 	hann = XLALCreateHannREAL8Window(filter->data->length);
 	/*hann = XLALCreateTukeyREAL8Window(filter->data->length, 2 / ((channel_width / 2.0) + 1));*/
@@ -712,7 +708,7 @@ static COMPLEX16FrequencySeries *generate_filter(
 	 * divide by square root of PSD to "overwhiten".
 	 */
 
-	pdata = psd->data->data + (int) ((filter->f0 - psd->f0) / psd->deltaF);
+	pdata = psd->data->data + (int) floor((filter->f0 - psd->f0) / psd->deltaF + 0.5);
 	for(i = 0; i < filter->data->length; i++) {
 		filter->data->data[i].re /= sqrt(pdata[i]);
 		filter->data->data[i].im /= sqrt(pdata[i]);
@@ -740,15 +736,11 @@ static COMPLEX16FrequencySeries *generate_filter(
 
 /*
  * From the power spectral density function, generate the comb of channel
- * filters for the time-frequency plane.  The template frequency series is
- * used only to obtain meta-data about the frequency series that will
- * eventually be used to construct the time-frequency plane:  heterodyne
- * frequency, resolution, etc.
+ * filters for the time-frequency plane.
  */
 
 
 INT4 XLALTFPlaneMakeChannelFilters(
-	const COMPLEX16FrequencySeries *template,
 	REAL8TimeFrequencyPlane *plane,
 	const REAL8FrequencySeries *psd
 )
@@ -760,7 +752,7 @@ INT4 XLALTFPlaneMakeChannelFilters(
 		if(plane->filter[i])
 			XLALDestroyCOMPLEX16FrequencySeries(plane->filter[i]);
 
-		plane->filter[i] = generate_filter(template, plane->flow + i * plane->deltaF, plane->deltaF, psd, plane->two_point_spectral_correlation);
+		plane->filter[i] = generate_filter(plane->flow + i * plane->deltaF, plane->deltaF, psd, plane->two_point_spectral_correlation);
 		if(!plane->filter[i]) {
 			while(i--) {
 				XLALDestroyCOMPLEX16FrequencySeries(plane->filter[i]);
@@ -770,14 +762,14 @@ INT4 XLALTFPlaneMakeChannelFilters(
 		}
 
 		/* compute the unwhitened root mean square for this channel */
-		plane->unwhitened_rms->data[i] = sqrt(psd_weighted_filter_inner_product(plane->filter[i], plane->filter[i], plane->two_point_spectral_correlation, psd) * template->deltaF / 2);
+		plane->unwhitened_rms->data[i] = sqrt(psd_weighted_filter_inner_product(plane->filter[i], plane->filter[i], plane->two_point_spectral_correlation, psd) * psd->deltaF / 2);
 	}
 
 	/* compute the cross terms for the channel normalizations and
 	 * unwhitened mean squares */
 	for(i = 0; i < plane->channels - 1; i++) {
 		plane->twice_channel_overlap->data[i] = 2 * filter_inner_product(plane->filter[i], plane->filter[i + 1], plane->two_point_spectral_correlation);
-		plane->unwhitened_cross->data[i] = psd_weighted_filter_inner_product(plane->filter[i], plane->filter[i + 1], plane->two_point_spectral_correlation, psd) * template->deltaF;
+		plane->unwhitened_cross->data[i] = psd_weighted_filter_inner_product(plane->filter[i], plane->filter[i + 1], plane->two_point_spectral_correlation, psd) * psd->deltaF;
 	}
 
 	/* done */
@@ -825,7 +817,7 @@ struct ExcessPowerTemplateBank *XLALCreateExcessPowerTemplateBank(
 	i = 0;
 	for(channels = plane->tiles.min_channels; channels <= plane->tiles.max_channels; channels *= 2)
 		for(channel_end = (channel = 0) + channels; channel_end <= plane->channels; channel_end = (channel += channels / plane->tiles.inv_fractional_stride) + channels) {
-			templates[i].filter = generate_filter(template, plane->flow + channel * plane->deltaF, channels * plane->deltaF, psd, plane->two_point_spectral_correlation);
+			templates[i].filter = generate_filter(plane->flow + channel * plane->deltaF, channels * plane->deltaF, psd, plane->two_point_spectral_correlation);
 			if(!templates[i].filter) {
 				while(i--)
 					XLALDestroyCOMPLEX16FrequencySeries(templates[i].filter);

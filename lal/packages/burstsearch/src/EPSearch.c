@@ -144,6 +144,16 @@ SnglBurstTable *XLALEPSearch(
 		diagnostics->XLALWriteLIGOLwXMLArrayREAL8FrequencySeries(diagnostics->LIGOLwXMLStream, NULL, psd);
 
 	/*
+	 * Construct the time-frequency plane's channel filters.
+	 */
+
+	XLALPrintInfo("%s(): constructing channel filters\n", func);
+	if(XLALTFPlaneMakeChannelFilters(plane, psd)) {
+		errorcode = XLAL_EFUNC;
+		goto error;
+	}
+
+	/*
 	 * Loop over data applying excess power method.
 	 */
 
@@ -185,21 +195,8 @@ SnglBurstTable *XLALEPSearch(
 #endif
 
 		/*
-		 * Construct the time-frequency plane's channel filters.
-		 *
-		 * FIXME:  this could be moved out of the loop for a
-		 * performance boost.
-		 */
-
-		XLALPrintInfo("%s(): constructing channel filters ...\n", func);
-		if(XLALTFPlaneMakeChannelFilters(fseries, plane, psd)) {
-			errorcode = XLAL_EFUNC;
-			goto error;
-		}
-
-		/*
 		 * Compute the time-frequency plane from the frequency
-		 * series.
+		 * series and channel filters.
 		 */
 
 #if 1
@@ -214,10 +211,10 @@ SnglBurstTable *XLALEPSearch(
 		/*
 		 * Compute the excess power for each time-frequency tile
 		 * using the data in the time-frequency plane, and add
-		 * those whose confidence is above threshold to the trigger
-		 * list.  Note that because it is possible for there to be
-		 * 0 triggers found, we can't check for errors by testing
-		 * for head == NULL.
+		 * those tiles whose confidence is above threshold to the
+		 * trigger list.  Note that because it is possible for
+		 * there to be 0 triggers found, we can't check for errors
+		 * by testing for head == NULL.
 		 */
 
 		XLALPrintInfo("%s(): computing the excess power for each tile\n", func);
