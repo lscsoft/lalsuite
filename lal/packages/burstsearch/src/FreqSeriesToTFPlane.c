@@ -49,8 +49,8 @@ NRCSID(FREQSERIESTOTFPLANEC, "$Id$");
 
 /*
  * Multiply the data by the filter.  The check that the frequency
- * resolutions are compatible is omitted because it is implied by the
- * calling code.
+ * resolutions and units are compatible is omitted because it is implied by
+ * the calling code.
  */
 
 
@@ -76,20 +76,16 @@ static COMPLEX16Sequence *apply_filter(
 	/* find bounds of common frequencies */
 	const double flo = max(filterseries->f0, inputseries->f0);
 	const double fhi = min(filterseries->f0 + filterseries->data->length * filterseries->deltaF, inputseries->f0 + inputseries->data->length * inputseries->deltaF);
-	COMPLEX16 *output = outputseq->data + (int) ((flo - inputseries->f0) / inputseries->deltaF);
-	COMPLEX16 *last = outputseq->data + (int) ((fhi - inputseries->f0) / inputseries->deltaF);
-	const COMPLEX16 *input = inputseries->data->data + (int) ((flo - inputseries->f0) / inputseries->deltaF);
-	const COMPLEX16 *filter = filterseries->data->data + (int) ((flo - filterseries->f0) / filterseries->deltaF);
+	COMPLEX16 *output = outputseq->data + (int) floor((flo - inputseries->f0) / inputseries->deltaF + 0.5);
+	COMPLEX16 *last = outputseq->data + (int) floor((fhi - inputseries->f0) / inputseries->deltaF + 0.5);
+	const COMPLEX16 *input = inputseries->data->data + (int) floor((flo - inputseries->f0) / inputseries->deltaF + 0.5);
+	const COMPLEX16 *filter = filterseries->data->data + (int) floor((flo - filterseries->f0) / filterseries->deltaF + 0.5);
 
 	if(outputseq->length != inputseries->data->length)
 		XLAL_ERROR_NULL(func, XLAL_EBADLEN);
 
 	/* zero the product vector */
 	memset(outputseq->data, 0, outputseq->length * sizeof(*outputseq->data));
-
-	if(fhi < flo)
-		/* no op */
-		return outputseq;
 
 	/* output = inputseries * conj(filter) */
 	for(; output < last; output++, input++, filter++) {
@@ -102,7 +98,7 @@ static COMPLEX16Sequence *apply_filter(
 
 
 /*
- * Proeject a frequency series onto the comb of channel filters
+ * Project a frequency series onto the comb of channel filters
  */
 
 
