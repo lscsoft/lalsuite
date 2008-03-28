@@ -66,10 +66,8 @@ REAL8 XLALChisqCdf(
 	/* use GSL because our previous version sucked */
 	XLAL_CALLGSL(prob = gsl_cdf_chisq_P(chi2, dof));
 
-	/* Check that final answer is a legal probability.  The third test
-	 * is necessary since there are some numbers x for which (x>0.0)
-	 * evaluates as TRUE but for which 1/x evaluates to inf */
-	if((prob < 0.0) || (prob > 1.0) || (1.0 / prob > LAL_REAL8_MAX))
+	/* Check that final answer is a legal probability.  */
+	if((prob < 0.0) || (prob > 1.0))
 		XLAL_ERROR_REAL8(func, XLAL_ERANGE);
 
 	return (prob);
@@ -94,9 +92,6 @@ REAL8 XLALOneMinusChisqCdf(
 	 *  int_{chi^2/2}^\infty dx  x^((n/2)-1) e^(-x) / Gamma(n/2), where
 	 *  n = dof = number of degrees of freedom.  note chi2 = 2 * cal E,
 	 *  calE = variable used in paper.
-	 *  
-	 *  This function's code is the same as the function XLALChisqCdf()
-	 *  except for the very end.
 	 */
 
 	const char func[] = "XLALOneMinusChisqCdf";
@@ -108,13 +103,9 @@ REAL8 XLALOneMinusChisqCdf(
 	/* Use GSL because our previous version sucked */
 	XLAL_CALLGSL(prob = gsl_cdf_chisq_Q(chi2, dof));
 
-	/* Check that final answer is a legal probability. Third test is
-	 * necessary since there are some numbers x for which (x>0.0)
-	 * evaluates as TRUE but for which 1/x evaluates to inf */
+	/* Check that final answer is a legal probability. */
 	if ((prob < 0.0) || (prob > 1.0))
 		XLAL_ERROR_REAL8(func, XLAL_ERANGE);
-	if (1.0 / prob > LAL_REAL8_MAX)
-		prob = exp(-700.0);
 
 	return (prob);
 }
@@ -185,12 +176,12 @@ static REAL8 Factorial(INT4 n)
 	for(; n >= 2; n--)
 		nfactorial *= n;
 
-	return(nfactorial);
+	return nfactorial;
 }
 
 
 /******** <lalVerbatim file="NoncChisqCdfP"> ********/
-REAL8 XLALNoncChisqCdfNonSafe(
+REAL8 XLALNoncChisqCdf(
 	REAL8 chi2,
 	REAL8 dof,
 	REAL8 nonCentral
@@ -211,12 +202,11 @@ REAL8 XLALNoncChisqCdfNonSafe(
 	 */
 
 	const char func[] = "XLALNoncChisqCdfNonSafe";
-	const REAL8 fractionalAccuracy = 1.0e-5;
-	const INT4 maxloop = 170;	/* Factorial() breaks down here */
-	REAL8 temp;
-	REAL8 current;
-	REAL8 sum;
-	INT4 n;
+	const double epsilon = 1.0e-8;
+	const int maxloop = 170;	/* Factorial() breaks down here */
+	double term;
+	double sum;
+	int n;
 
 	/* Arguments chi2, dof and nonCentral must be non-negative */
 	if((dof <= 0.0) ||
@@ -224,53 +214,25 @@ REAL8 XLALNoncChisqCdfNonSafe(
 	   (nonCentral < 0.0))
 		XLAL_ERROR_REAL8(func, XLAL_EDOM);
 
-	/* Evaluate the first term in the series   */
-	temp = XLALChisqCdf(chi2, dof);
-	if(XLALIsREAL8FailNaN(temp))
-		XLAL_ERROR_REAL8(func, XLAL_EFUNC);
-	sum = temp * exp(-nonCentral / 2.0);
+	/* Add terms from the series until either sufficient accuracy is
+	 * achieved, or we exceed the maximum allowed number of terms */
 
-	/* Now add successive higher terms in the series until either
-	 * sufficient accuracy is achieved, or we exceed the maximum allowed
-	 * number of terms */
-
+	sum = 0;
 	n = 0;
 	do {
+		double P = XLALChisqCdf(chi2, dof + 2.0 * n);
+		if(XLALIsREAL8FailNaN(P))
+			XLAL_ERROR_REAL8(func, XLAL_EFUNC);
+		sum += term = exp(-nonCentral / 2.0 + n * log(nonCentral / 2.0)) * P / Factorial(n);
 		if(++n >= maxloop)
 			XLAL_ERROR_REAL8(func, XLAL_EMAXITER);
-		temp = XLALChisqCdf(chi2, dof + 2.0 * n);
-		if(XLALIsREAL8FailNaN(temp))
-			XLAL_ERROR_REAL8(func, XLAL_EFUNC);
-		current = exp(-nonCentral / 2.0 + n * log(nonCentral / 2.0)) * temp / Factorial(n);
-		sum += current;
-	}
-	while(fabs(current / sum) > fractionalAccuracy);
+	} while(fabs(term / sum) > epsilon);
 
-	return(sum);
-}
-
-
-/******** <lalVerbatim file="NoncChisqCdfP"> ********/
-REAL8 XLALNoncChisqCdf(
-	REAL8 chi2,
-	REAL8 dof,
-	REAL8 nonCentral
-)
-/******** </lalVerbatim> ********/
-{
-	const char func[] = "XLALNoncChisqCdf";
-	REAL8 prob = XLALNoncChisqCdfNonSafe(chi2, dof, nonCentral);
-
-	if(XLALIsREAL8FailNaN(prob))
-		XLAL_ERROR_REAL8(func, XLAL_EFUNC);
-
-	/* check that final answer is a legal probability.  third test is
-	 * necessary since there are some numbers x for which (x > 0.0)
-	 * evaluates as TRUE but for which 1/x evaluates to inf */
-
-	if((prob <= 0.0) || (prob >= 1.0) || (1.0 / prob >= LAL_REAL8_MAX))
+	/* check that final answer is a legal probability. */
+	if((sum < 0.0) || (sum > 1.0))
 		XLAL_ERROR_REAL8(func, XLAL_ERANGE);
-	return(prob);
+
+	return sum;
 }
 
 
@@ -309,17 +271,11 @@ struct NoncChisqCdfParams
 
 static REAL8 NoncChisqCdf(REAL8 lnrho, void *data)
 {
-	/* Wrap XLALNoncChisqCdfNonSafe() for use with the root-finding
+	/* Wrap XLALNoncChisqCdf() for use with the root-finding
 	 * functions in XLALRhoThreshold() below. */
 	struct NoncChisqCdfParams *params = data;
-	REAL8 chi2 = params->chi2;
-	REAL8 dof = params->dof;
-	REAL8 nonCentral = exp(2.0 * lnrho);
-	REAL8 falseDismissal = params->falseDismissal;
 
-	/* use the "nonsafe" version because it's ok for the result to be 1 or
-	 * 0 */
-	return(XLALNoncChisqCdfNonSafe(chi2, dof, nonCentral) - falseDismissal);
+	return XLALNoncChisqCdf(params->chi2, params->dof, exp(2.0 * lnrho)) - params->falseDismissal;
 }
 
 

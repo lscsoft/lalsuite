@@ -60,7 +60,7 @@ REAL8 XLALNoncChisqCdf (
 );
 
 
-REAL8 XLALNoncChisqCdfNonSafe (
+REAL8 XLALNoncChisqCdf (
 	REAL8 chi2,
 	REAL8 dof,
 	REAL8 nonCentral
