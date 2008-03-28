@@ -35,13 +35,11 @@ NRCSID (COMPUTEFREQUENCYSERIESC, "$Id$");
 #include <lal/XLALError.h>
 
 
-/******** <lalVerbatim file="ComputeFrequencySeriesCP"> ********/
 COMPLEX8FrequencySeries *XLALWindowedREAL4ForwardFFT(
 	const REAL4TimeSeries *tseries,
 	const REAL4Window *window,
 	const REAL4FFTPlan *plan
 )
-/******** </lalVerbatim> ********/
 {
 	/*
 	 * This function accepts a time series and a window function, and
@@ -103,13 +101,11 @@ COMPLEX8FrequencySeries *XLALWindowedREAL4ForwardFFT(
 }
 
 
-/******** <lalVerbatim file="ComputeFrequencySeriesCP"> ********/
 COMPLEX16FrequencySeries *XLALWindowedREAL8ForwardFFT(
 	const REAL8TimeSeries *tseries,
 	const REAL8Window *window,
 	const REAL8FFTPlan *plan
 )
-/******** </lalVerbatim> ********/
 {
 	/*
 	 * This function accepts a time series and a window function, and

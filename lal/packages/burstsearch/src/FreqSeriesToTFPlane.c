@@ -102,13 +102,11 @@ static COMPLEX16Sequence *apply_filter(
  */
 
 
-/******** <lalVerbatim file="FreqSeriesToTFPlaneCP"> ********/
 int XLALFreqSeriesToTFPlane(
 	REAL8TimeFrequencyPlane *plane,
 	const COMPLEX16FrequencySeries *fseries,
 	const REAL8FFTPlan *reverseplan
 )
-/******** </lalVerbatim> ********/
 {
 	static const char func[] = "XLALFreqSeriesToTFPlane";
 	COMPLEX16Sequence *fcorr;
@@ -260,13 +258,11 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
  */
 
 
-/******** <lalVerbatim file="ComputeExcessPowerCP"> ********/
 SnglBurstTable *XLALComputeExcessPower(
 	const REAL8TimeFrequencyPlane *plane,
 	SnglBurstTable *head,
 	double confidence_threshold
 )
-/******** </lalVerbatim> ********/
 {
 	static const char func[] = "XLALComputeExcessPower";
 	unsigned start;
