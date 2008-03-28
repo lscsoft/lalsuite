@@ -37,27 +37,24 @@ NRCSID(THRESHOLDSC, "$Id$");
 #include <lal/XLALError.h>
 
 
-/******** <lalVerbatim file="ChisqCdfP"> ********/
+/**
+ * Cumulative Probability Distribution for Chi Squared distribution.
+ *
+ * returns probability that x_1^2 + .. x_dof^2 <= chi2, where x_1, ..
+ * x_dof are independent Gaussians of zero mean and unit variance.  The
+ * integral expression is prob = int_0^{chi^2/2} dx x^((n/2)-1) e^(-x) /
+ * Gamma(n/2), where n = dof = number of degrees of freedom.  note chi2 = 2
+ * * cal E, calE = variable used in paper.
+ */
+
+
 REAL8 XLALChisqCdf(
 	REAL8 chi2,
 	REAL8 dof
 )
-/******** </lalVerbatim> ********/
 {
-	/*
-	 * Cumulative Probability Distribution for Chi Squared
-	 * distribution.
-	 *  
-	 *  returns probability that x_1^2 + .. x_dof^2 <= chi2, where x_1,
-	 *  ..  x_dof are independent Gaussians of zero mean and unit
-	 *  variance.  The integral expression is prob = int_0^{chi^2/2} dx
-	 *  x^((n/2)-1) e^(-x) / Gamma(n/2), where n = dof = number of
-	 *  degrees of freedom.  note chi2 = 2 * cal E, calE = variable
-	 *  used in paper.
-	 */
-
 	const char func[] = "XLALChisqCdf";
-	REAL8 prob;
+	double prob;
 
 	/* Arguments chi2 and dof must be non-negative */
 	if((chi2 < 0.0) || (dof <= 0.0))
@@ -70,58 +67,56 @@ REAL8 XLALChisqCdf(
 	if((prob < 0.0) || (prob > 1.0))
 		XLAL_ERROR_REAL8(func, XLAL_ERANGE);
 
-	return (prob);
+	return prob;
 }
 
 
-/******** <lalVerbatim file="OneMinusChisqCdfP"> ********/
+/**
+ * Cumulative Probability Distribution for Chi Squared distribution.
+ * Alternative version which is more accurate for large rho.
+ *
+ * returns probability that x_1^2 + .. x_dof^2 >= chi2, where x_1, ..
+ * x_dof are independent Gaussians of zero mean and unit variance.  The
+ * integral expression is prob = int_{chi^2/2}^\infty dx  x^((n/2)-1)
+ * e^(-x) / Gamma(n/2), where n = dof = number of degrees of freedom.  note
+ * chi2 = 2 * cal E, calE = variable used in paper.
+ */
+
+
 REAL8 XLALOneMinusChisqCdf(
 	REAL8 chi2,
 	REAL8 dof
 )
-/******** </lalVerbatim> ********/
 {
-	/*
-	 *  Cumulative Probability Distribution for Chi Squared
-	 *  distribution.  Alternative version which is more accurate for
-	 *  large rho.
-	 *  
-	 *  returns probability that x_1^2 + .. x_dof^2 >= chi2, where x_1,
-	 *  ..  x_dof are independent Gaussians of zero mean and unit
-	 *  variance.  The integral expression is prob =
-	 *  int_{chi^2/2}^\infty dx  x^((n/2)-1) e^(-x) / Gamma(n/2), where
-	 *  n = dof = number of degrees of freedom.  note chi2 = 2 * cal E,
-	 *  calE = variable used in paper.
-	 */
-
 	const char func[] = "XLALOneMinusChisqCdf";
-	REAL8 prob;
+	double prob;
 
-	if ((chi2 < 0.0) || (dof <= 0.0))
+	if((chi2 < 0.0) || (dof <= 0.0))
 		XLAL_ERROR_REAL8(func, XLAL_EDOM);
 
 	/* Use GSL because our previous version sucked */
 	XLAL_CALLGSL(prob = gsl_cdf_chisq_Q(chi2, dof));
 
 	/* Check that final answer is a legal probability. */
-	if ((prob < 0.0) || (prob > 1.0))
+	if((prob < 0.0) || (prob > 1.0))
 		XLAL_ERROR_REAL8(func, XLAL_ERANGE);
 
-	return (prob);
+	return prob;
 }
 
 
-/******** <lalVerbatim file="OneMinusChisqCdfP"> ********/
+/**
+ * This function returns the natural logarithm of the result returned by
+ * XLALOneMinusChisqCdf(), i.e. ln(Q(chi^2, dof))
+ */
+
+
 REAL8 XLALlnOneMinusChisqCdf(
 	REAL8 chi2,
 	REAL8 dof
 )
-/******** </lalVerbatim> ********/
 {
 	/*
-	 * This function returns the natural logarithm of the result returned
-	 * by XLALOneMinusChisqCdf(), i.e. ln(Q(chi^2, dof))
-	 *
 	 * Notes:
 	 *
 	 * Q(chi^2, dof) = Gamma(dof/2, chi^2/2) / Gamma(dof/2)
@@ -180,27 +175,25 @@ static REAL8 Factorial(INT4 n)
 }
 
 
-/******** <lalVerbatim file="NoncChisqCdfP"> ********/
+/**
+ * Cumulative distribution function for noncentral chi-squared distribution
+ *
+ * returns probability that (x_1+rho)^2 + x_2^2 + .. x_dof^2 \le chi2,
+ * where x_1, ..  x_dof are independent Gaussians of zero mean and unit
+ * variance, and where nonCentral = rho^2 and dof = number of degrees of
+ * freedom
+ *
+ * We use the series formula to evaluate the probability.  Each term in the
+ * series involves a call to XLALChisqCdf().
+ */
+
+
 REAL8 XLALNoncChisqCdf(
 	REAL8 chi2,
 	REAL8 dof,
 	REAL8 nonCentral
 )
-/******** </lalVerbatim> ********/
 {
-	/*
-	 *  Cumulative distribution function for noncentral chi-squared
-	 *  distribution
-	 *  
-	 *  returns probability that (x_1+rho)^2 + x_2^2 + .. x_dof^2 \le
-	 *  chi2, where x_1, ..  x_dof are independent Gaussians of zero
-	 *  mean and unit variance, and where nonCentral = rho^2 and dof =
-	 *  number of degrees of freedom
-	 *
-	 *  We use the series formula to evaluate the probability.  Each
-	 *  term in the series involves a call to XLALChisqCdf().
-	 */
-
 	const char func[] = "XLALNoncChisqCdfNonSafe";
 	const double epsilon = 1.0e-8;
 	const int maxloop = 170;	/* Factorial() breaks down here */
@@ -236,15 +229,18 @@ REAL8 XLALNoncChisqCdf(
 }
 
 
-/******** <lalVerbatim file="Chi2ThresholdP"> ********/
+/**
+ * Threshold for chi2.  Returns value of chi2 such that
+ *
+ * 	falseAlarm = 1 - chisqCdf(chi2,dof)
+ */
+
+
 REAL8 XLALChi2Threshold(
 	REAL8 dof,
 	REAL8 falseAlarm
 )
-/******** </lalVerbatim> ********/
 {
-	/* threshold for chi2:  returns value of chi2 such that falseAlarm = 1
-	 * - chisqCdf(chi2,dof) */
 	const char func[] = "XLALChi2Threshold";
 	REAL8 chi2;
 
@@ -261,8 +257,11 @@ REAL8 XLALChi2Threshold(
 }
 
 
-struct NoncChisqCdfParams
-{
+/* Wrap XLALNoncChisqCdf() for use with the root-finding functions in
+ * XLALRhoThreshold() below. */
+
+
+struct NoncChisqCdfParams {
 	REAL8 chi2;
 	REAL8 dof;
 	REAL8 falseDismissal;
@@ -271,27 +270,27 @@ struct NoncChisqCdfParams
 
 static REAL8 NoncChisqCdf(REAL8 lnrho, void *data)
 {
-	/* Wrap XLALNoncChisqCdf() for use with the root-finding
-	 * functions in XLALRhoThreshold() below. */
 	struct NoncChisqCdfParams *params = data;
 
 	return XLALNoncChisqCdf(params->chi2, params->dof, exp(2.0 * lnrho)) - params->falseDismissal;
 }
 
 
-/******** <lalVerbatim file="RhoThresholdP"> ********/
+/**
+ * Threshold for rho.  Returns value of rho such that
+ *
+ * 	falseAlarm = noncChisqCdf(chi2,dof,rho^2)
+ *
+ * note that rho^2 is the same as nonCentral.
+ */
+
+
 REAL8 XLALRhoThreshold(
 	REAL8 chi2,
 	REAL8 dof,
 	REAL8 falseDismissal
 )
-/******** </lalVerbatim> ********/
 {
-	/*
-	 * threshold for rho:  returns value of rho such that falseAlarm =
-	 * noncChisqCdf(chi2,dof,rho^2) note that rho^2 is the same as
-	 * nonCentral
-	 */
 	const char func[] = "XLALRhoThreshold";
 	REAL8 xmin = -2.0;
 	REAL8 xmax = +2.0;
@@ -305,7 +304,7 @@ REAL8 XLALRhoThreshold(
 	   (falseDismissal >= 1.0))
 		XLAL_ERROR_REAL8(func, XLAL_EDOM);
 
-	/* Setup NoncChisqCdf1() parameters */
+	/* Setup NoncChisqCdf() parameters */
 	params.chi2 = chi2;
 	params.dof = dof;
 	params.falseDismissal = falseDismissal;
@@ -313,5 +312,5 @@ REAL8 XLALRhoThreshold(
 	/* Now bracket and find the root */
 	XLALDBracketRoot(NoncChisqCdf, &xmin, &xmax, &params);
 
-	return(exp(XLALDBisectionFindRoot(NoncChisqCdf, xmin, xmax, 1e-5, &params)));
+	return exp(XLALDBisectionFindRoot(NoncChisqCdf, xmin, xmax, 1e-5, &params));
 }
