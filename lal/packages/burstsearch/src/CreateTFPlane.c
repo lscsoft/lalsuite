@@ -379,22 +379,22 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	 * total number of channels
 	 */
 
-	const int channels = bandwidth / deltaF;
+	const int channels = floor(bandwidth / deltaF + 0.5);
 
 	/*
 	 * stride
 	 */
 
-	const unsigned inv_fractional_stride = 1 / tiling_fractional_stride;
+	const unsigned inv_fractional_stride = floor(1.0 / tiling_fractional_stride + 0.5);
 
 	/*
 	 * tile size limits
 	 */
 
-	const unsigned min_length = (1 / max_tile_bandwidth) / tseries_deltaT;
-	const unsigned max_length = max_tile_duration / tseries_deltaT;
+	const unsigned min_length = floor((1 / max_tile_bandwidth) / tseries_deltaT + 0.5);
+	const unsigned max_length = floor(max_tile_duration / tseries_deltaT + 0.5);
 	const unsigned min_channels = inv_fractional_stride;
-	const unsigned max_channels = max_tile_bandwidth / deltaF;
+	const unsigned max_channels = floor(max_tile_bandwidth / deltaF + 0.5);
 
 	/*
 	 * sample on which tiling starts
