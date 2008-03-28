@@ -1665,7 +1665,7 @@ int main(int argc, char *argv[])
 	 */
 
 	XLALSortSnglBurst(&burstEvent, XLALCompareSnglBurstByStartTimeAndLowFreq);
-	XLALSnglBurstAssignIDs(burstEvent);
+	XLALSnglBurstAssignIDs(burstEvent, 0, 0);
 
 	/*
 	 * Check event rate limit.

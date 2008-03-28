@@ -298,7 +298,7 @@ int main(int argc,char *argv[])
      XLALSortSnglBurst(&events, XLALCompareSnglBurstByPeakTimeAndSNR);
    }
 
- XLALSnglBurstAssignIDs(events);
+ XLALSnglBurstAssignIDs(events, 0, 0);
 
  if (OutputEvents(CommandLineArgs)) return 12;
 
@@ -522,12 +522,12 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 
 	  if ( *thisEvent ) /* create a new event */
             {
-              (*thisEvent)->next = LALCalloc( 1, sizeof( *(*thisEvent)->next ) );
+              (*thisEvent)->next = XLALCreateSnglBurstTable();
               *thisEvent = (*thisEvent)->next;
             }
 	  else /* create the list */
             {
-              *thisEvent = events = LALCalloc( 1, sizeof( *events ) );
+              *thisEvent = events = XLALCreateSnglBurstTable();
             }
 
 	  if ( ! *thisEvent ) /* allocation error */
