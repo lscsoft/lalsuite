@@ -165,7 +165,7 @@ int XLALBurstInjectSignals(
 
 		/* construct the h+ and hx time series for the injection
 		 * waveform.  in the time series produced by this function,
-		 * t = 0 */
+		 * t = 0 is the "time" of the injection. */
 
 		if(XLALGenerateSimBurst(&hplus, &hcross, sim_burst, series->deltaT))
 			XLAL_ERROR(func, XLAL_EFUNC);
