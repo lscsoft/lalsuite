@@ -169,12 +169,11 @@ void SplitSFTs(LALStatus         *status,
 	       REAL8Vector       *weightsV, 
 	       HoughParamsTest   *chi2Params);
 
-void ComputeFoft(LALStatus   *status,
+void ComputeFoft_NM(LALStatus   *status,
 		 REAL8Vector          *foft,
                  HoughTemplate        *pulsarTemplate,
 		 REAL8Vector          *timeDiffV,
-		 REAL8Cart3CoorVector *velV,
-                 REAL8                 timeBase);
+		 REAL8Cart3CoorVector *velV);
 
 void ComputeandPrintChi2 ( LALStatus                *status,
 		           toplist_t                *tl,
@@ -2495,16 +2494,16 @@ FILE *fp1 = *fp1_ptr;
 
 
 /********************************************************************************/
-void ComputeFoft(LALStatus   *status,
+/*                Computing the frequency path with no mismatch                 */
+/********************************************************************************/
+void ComputeFoft_NM(LALStatus   *status,
 		 REAL8Vector          *foft,
                  HoughTemplate        *pulsarTemplate,
 		 REAL8Vector          *timeDiffV,
-		 REAL8Cart3CoorVector *velV,
-                 REAL8                 timeBase){
+		 REAL8Cart3CoorVector *velV){
   
   INT4   mObsCoh;
   REAL8   f0new, vcProdn, timeDiffN;
-  INT4    f0newBin;
   REAL8   sourceDelta, sourceAlpha, cosDelta;
   INT4    j,i, nspin, factorialN; 
   REAL8Cart3Coor  sourceLocation;
@@ -2547,8 +2546,7 @@ void ComputeFoft(LALStatus   *status,
       f0new += pulsarTemplate->spindown.data[i]* timeDiffN / factorialN;
       timeDiffN *= timeDiffN;
     }
-    f0newBin = floor( f0new * timeBase + 0.5);
-    foft->data[j] = f0newBin * (1.0 +vcProdn) / timeBase;
+    foft->data[j] = f0new * (1.0 +vcProdn);
   }    
     
   DETATCHSTATUSPTR (status);
@@ -2748,7 +2746,7 @@ void ComputeandPrintChi2 ( LALStatus                *status,
 	sigmaN = sqrt (sumWeightSquare * alphaPeak * (1.0 - alphaPeak));
 	
 	/* the received frequency as a function of time  */
-	TRY( ComputeFoft(status->statusPtr, &foft, &pulsarTemplate, timeDiffV, velV, timeBase), status);   
+	TRY( ComputeFoft_NM(status->statusPtr, &foft, &pulsarTemplate, timeDiffV, velV), status);   
 
 	
 	/* Split the SFTs into p blocs */
