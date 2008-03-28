@@ -791,7 +791,7 @@ LALSnglBurstTableFromLIGOLw (
     /* initialize values that don't come from the intput file */
     thisEvent->string_cluster_t = XLAL_REAL4_FAIL_NAN;
 
-    /* parse the contents of the row into the InspiralTemplate structure */
+    /* copy the contents of the cells into the row structure */
     for ( j = 0; tableDir[j].name; ++j )
     {
       REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
@@ -855,7 +855,7 @@ LALSnglBurstTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 13 )
       {
-        sscanf(lscolData, "[^0-9]%u", &thisEvent->event_id);
+        sscanf(lscolData, "[^0-9]%ld", &thisEvent->event_id);
       }
       else
       {

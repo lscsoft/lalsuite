@@ -934,7 +934,8 @@ LALWriteLIGOLwXMLTable (
               tablePtr.filterTable->program,
               tablePtr.filterTable->start_time,
               tablePtr.filterTable->filter_name,
-              tablePtr.filterTable->comment
+              tablePtr.filterTable->comment,
+              xml->rowCount
               );
         tablePtr.filterTable = tablePtr.filterTable->next;
         ++(xml->rowCount);

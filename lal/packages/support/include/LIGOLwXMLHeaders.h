@@ -196,7 +196,7 @@ fputs( "\t\t<Column Name=\"sngl_burst:event_id\" Type=\"ilwd:char\"/>\n", fp ) =
 fputs( "\t\t<Stream Name=\"sngl_burst:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SNGL_BURST_ROW \
-"\t\t\t\"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,\"sngl_burst:event_id:%u\""
+"\t\t\t\"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,\"sngl_burst:event_id:%ld\""
 
 #define PRINT_LIGOLW_XML_SNGL_RINGDOWN(fp) ( \
 fputs( "   <Table Name=\"sngl_ringdowngroup:sngl_ringdown:table\">\n", fp ) == EOF || \
@@ -386,6 +386,7 @@ fputs( "      <Column Name=\"filtergroup:filter:start_time\" Type=\"int_4s\"/>\n
 fputs( "      <Column Name=\"filtergroup:filter:filter_name\" Type=\"lstring\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"filtergroup:filter:filter_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"filtergroup:filter:comment\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"filtergroup:filter:filter_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
 fputs( "      <Stream Name=\"filtergroup:filter:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define FILTER_ROW \

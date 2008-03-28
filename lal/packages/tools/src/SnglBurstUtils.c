@@ -126,7 +126,7 @@ void XLALFreeSnglBurst(SnglBurstTable *event)
 void XLALSnglBurstAssignIDs(SnglBurstTable *head)
 /* </lalVerbatim> */
 {
-	unsigned int id;
+	long id;
 
 	for(id = 0; head; head = head->next)
 		head->event_id = id++;

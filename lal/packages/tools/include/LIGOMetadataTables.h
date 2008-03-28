@@ -348,20 +348,20 @@ Document table.
 typedef struct
 tagSnglBurstTable
 {
-  struct tagSnglBurstTable *next;
-  CHAR          ifo[LIGOMETA_IFO_MAX];
-  CHAR          search[LIGOMETA_SEARCH_MAX];
-  CHAR          channel[LIGOMETA_CHANNEL_MAX];
-  LIGOTimeGPS   start_time;
-  LIGOTimeGPS   peak_time;
-  REAL4         duration;
-  REAL4         central_freq;
-  REAL4         bandwidth;
-  REAL4         amplitude;
-  REAL4         snr;
-  REAL4         confidence;
-  REAL4         string_cluster_t;
-  UINT4         event_id;
+	struct tagSnglBurstTable *next;
+	CHAR ifo[LIGOMETA_IFO_MAX];
+	CHAR search[LIGOMETA_SEARCH_MAX];
+	CHAR channel[LIGOMETA_CHANNEL_MAX];
+	LIGOTimeGPS start_time;
+	LIGOTimeGPS peak_time;
+	REAL4 duration;
+	REAL4 central_freq;
+	REAL4 bandwidth;
+	REAL4 amplitude;
+	REAL4 snr;
+	REAL4 confidence;
+	REAL4 string_cluster_t;
+	long event_id;
 }
 SnglBurstTable;
 /* </lalVerbatim> */
