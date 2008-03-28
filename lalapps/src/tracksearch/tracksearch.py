@@ -373,6 +373,8 @@ class tracksearchConvertSegList:
                 customAnalysisChunkBuilder(bigChunks,smallestBlockAllowed,largestBlockAllowed)
             else:
                 bigChunks.make_chunks(self.duration)
+            #Save the unused chunk times to disk also
+            self.writeLostDataSegmentToDisk()
             for newChunk in bigChunks:
                 index+=1
                 label="%d %d %d %d\n"%(index,newChunk.start(),newChunk.end(),newChunk.end()-newChunk.start())
@@ -387,6 +389,24 @@ class tracksearchConvertSegList:
         print "Total time burned from data segments       :"+str(totalTimeBurned)
         print "Total time lost due to min Block Size req  :"+str(totalTimeLostDueToMinBlockSize)
         output_fp.close
+
+    def writeLostDataSegmentToDisk(self):
+        """
+        This consults the object segment list. It uses the unused
+        variable to note the GPS intervals that didn't get analyzed
+        using this search configuration specified by ConfigParser and
+        the segment list called.
+        """
+        output_fp=open(self.newSegFilename+".lost","w")
+        index=0
+        for bigChunks in self.origSegObject:
+            index+=1
+            newStart=bigChunk.end()-bigChunk.unused()
+            newEnd=bigChunk.end()
+            outputLine="%d %d %d %d\n"%(index,newStart,newEnd,newEnd-newStart)
+            output_fp.write(outputLine)
+        output_fp.close()
+    # done writeLostDataSegmentToDisk()
 
     def getSegmentName(self):
         #Return a string containing the name of the revised segment list
