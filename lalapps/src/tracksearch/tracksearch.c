@@ -212,63 +212,18 @@ int main (int argc, char *argv[])
  * Can do whitening and calibration on the segments
  * TINA -- Setup the removal of COHERENT LINES here!
  */
-void LALappsTrackSearchPrepareData( LALStatus*        status,
+void LALappsTrackSearchPrepareData( LALStatus        *status,
 				    REAL4TimeSeries  *dataSet,
 				    REAL4TimeSeries  *injectSet,
 				    TSSegmentVector  *dataSegments,
 				    TSSearchParams    params)
 /* Add option NULL or with data called REAL4TimeSeries injectSet */
 {
-  AverageSpectrumParams     avgPSDParams;
-  CHARVector               *dataLabel=NULL;
-  COMPLEX8FrequencySeries  *response=NULL;
-  COMPLEX8FrequencySeries  *signalFFT=NULL;
-  COMPLEX8FrequencySeries  *signalFFT_harmonic=NULL;
-  CalibrationUpdateParams   calfacts;
-  FrCache                  *calcache = NULL;
-  LALUnit                   originalFrequecyUnits;
-  LALWindowParams           windowParamsPSD;
-  REAL4FFTPlan             *forwardPlan=NULL;
-  REAL4FFTPlan             *reversePlan=NULL;
-  REAL4FFTPlan             *averagePSDPlan=NULL;
-  REAL4FFTPlan             *dataSetPlan=NULL;
-  COMPLEX8FrequencySeries  *dataSetFFT=NULL;
-  REAL4FrequencySeries     *averagePSD=NULL;
-  REAL4Vector              *smoothedAveragePSD=NULL;
-  REAL4Vector              *tmpExtendedAveragePSD=NULL;
-  REAL8                     smoothingAveragePSDBias=0;
-  LALRunningMedianPar       smoothingPSDparams;
-  REAL4TimeSeries          *tmpSignalPtr=NULL;
-  REAL4Window              *windowPSD=NULL;
-  UINT4                     i=0;
-  UINT4                     j=0;
-  UINT4                     k=0;
-  UINT4                     segmentPoints=0;
-  UINT4                    planLength=0;
-  PassBandParamStruc       bandPassParams;
-  const LALUnit     strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
-  const LIGOTimeGPS        gps_zero = LIGOTIMEGPSZERO;
-  INT4Vector              *harmonicIndex=NULL;
-  INT4Vector              *harmonicIndexCompliment=NULL;
-  COMPLEX8Vector          *referenceSignal=NULL;
-  COMPLEX8Vector          *tmpReferenceSignal=NULL;
-  REAL4TVectorCLR         *inputTVectorCLR=NULL;
-  REAL4FVectorCLR         *inputFVectorCLR=NULL;
-  REAL4Vector             *inputPSDVector=NULL;
-  REAL4Vector             *cleanData=NULL;
-  UINT4                    tmpHarmonicCount=0;
-  REAL4                    tmpLineFreq=0.0;
-  
-  /* 31May07
-   * Note to self: Tina please double check that data in units
-   * structure is properly migrated though function call...
-   */
-  if (params.verbosity == printFiles)
+  if (params.verbosity >= printFiles)
     {
       print_lalUnit(dataSet->sampleUnits,"Pre_DataCondEntireInputDataSet_Units.diag");
       print_real4tseries(dataSet,"Pre_DataCondEntireInputDataSet.diag");
     }
-
   /*
    * Calibrate entire input data set
    */
@@ -276,152 +231,18 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
     {
       if (params.verbosity >= verbose)
 	fprintf(stdout,"Performing calibration on input data\n");
-      /* 
-       * Create response function based on starting epoch from 
-       * first data segment.  We assume it is constant over 
-       * all the other data segments available.
-       */
-      segmentPoints=params.SegLengthPoints;
-      /* 
-       * Implicity set Epoch, Unit and df for Response extract
-       */
-      LAL_CALL( LALCreateCOMPLEX8FrequencySeries(status,
-						 &response,
-						 "tmpResponse",
-						 dataSet->epoch,
-						 0,
-						 1/(dataSet->deltaT*dataSet->data->length),
-						 strainPerCount,
-						 segmentPoints/2+1),
-		status);
 
-      LAL_CALL(LALFrCacheImport(status,
-				&calcache, 
-				params.calFrameCache),
-	       status);
-      /*
-       * Extract response function from calibration cache
-       */
-      /* Configure calfacts */
-      memset(&calfacts, 0, sizeof(calfacts));
-      calfacts.ifo = (CHAR*) LALMalloc(3*sizeof(CHAR));
-      strcpy(calfacts.ifo,params.calibrateIFO);
-
-
-      LAL_CALL( LALExtractFrameResponse(status,
-					response, 
-					calcache, 
-					&calfacts),
-		status);
-      if (params.verbosity == printFiles)
+      if (params.verbosity >= printFiles)
 	{
-	  print_lalUnit(response->sampleUnits,"extractedResponseFunction_Units.diag");
-	  print_complex8fseries(response,"extractedResponseFunction.diag");
+	  print_lalUnit(dataSet->sampleUnits,"Pre_DataCalibrationTimeDomain_Units.diag");
+	  print_real4tseries(dataSet,"Pre_DataCalibrationTimeDomain.diag");
 	}
-      /*
-       * Destroy IFO text pointer
-       */
-      LALFree(calfacts.ifo);
-      /*
-       * Destroy frame cache
-       */
-      if (calcache)
+      LALappsTrackSearchCalibrate(status,dataSet,params);
+      if (params.verbosity >= printFiles)
 	{
-	  LAL_CALL( LALDestroyFrCache(status, &calcache),status);
+	  print_lalUnit(dataSet->sampleUnits,"Post_DataCalibrationTimeDomain_Units.diag");
+	  print_real4tseries(dataSet,"Post_DataCalibrationTimeDomain.diag");
 	}
-      /* Done getting response function */
-      /*
-       * Allocate frequency series for Set FFT
-       */
-      LAL_CALL(
-	       LALCreateCOMPLEX8FrequencySeries(status,
-						&dataSetFFT,
-						"Entire data FFTed",
-						dataSet->epoch,
-						0,
-						(dataSet->deltaT*dataSet->data->length),
-						dataSet->sampleUnits,
-						dataSet->data->length/2+1),
-	       status);
-      /*
-       * FFT input unsegmented data set
-       */
-      LAL_CALL( LALCreateForwardREAL4FFTPlan(status,
-					     &dataSetPlan,
-					     dataSet->data->length,
-					     0),
-		status);
-      LAL_CALL( LALForwardREAL4FFT(status,
-				   dataSetFFT->data,
-				   dataSet->data,
-				   dataSetPlan),
-		status);
-      if (dataSetPlan)
-	LAL_CALL(LALDestroyREAL4FFTPlan(status,&dataSetPlan),status);
-
-      if (params.verbosity == printFiles)
-	{
-	  print_complex8fseries(dataSetFFT,"Pre_CalibrateDataSetFFT.diag");
-	  print_lalUnit(dataSetFFT->sampleUnits,"Pre_CalibrateDataSetFFT_Units.diag");
-	}
-      /*
-       * Calibrate
-       */
-      LAL_CALL(LALTrackSearchCalibrateCOMPLEX8FrequencySeries(status,
-							      dataSetFFT,
-							      response),
-	       status);
-
-      if (params.verbosity == printFiles)
-	{
-	  print_complex8fseries(dataSetFFT,"Post_CalibrateDataSetFFT.diag");
-	  print_lalUnit(dataSetFFT->sampleUnits,"Post_CalibrateDataSetFFT_Units.diag");
-	}
-      /*
-       * Inverse FFT the entire dataSet
-       */
-      fprintf(stderr,"Hack on Response function...Don't forget\n");
-      fprintf(stderr,"Will cause memory leak for some reason?\n");
-      dataSetFFT->data->data[dataSetFFT->data->length-1].im=0;
-      dataSetFFT->data->data[dataSetFFT->data->length].im=0;
-      
-      LAL_CALL(LALCreateReverseREAL4FFTPlan(status,
-					    &dataSetPlan,
-					    dataSet->data->length,
-					    0),
-	       status);
-      LAL_CALL(LALReverseREAL4FFT(status,
-				  dataSet->data,
-				  dataSetFFT->data,
-				  dataSetPlan),
-	       status);
-      /* 
-       * Migrate units fields from F basis to T basis
-       */
-      dataSet->sampleUnits=dataSetFFT->sampleUnits;
-      /*
-       * Apply missing factor 1/n
-       */
-      for (j=0;j<dataSet->data->length;j++)
-	dataSet->data->data[i]=dataSet->data->data[i]/dataSet->data->length;
-
-      if (dataSetPlan)
-	LAL_CALL(LALDestroyREAL4FFTPlan(status,&dataSetPlan),status);
-      
-      if (params.verbosity == printFiles)
-	{
-	  print_real4tseries(dataSet,"Post_CalibrateTimeDomainDataSet.diag");
-	  print_lalUnit(dataSet->sampleUnits,"Post_CalibrateTimeDomainDataSe__Units.diag");
-	}
-      /*
-       * Free the FFT memory space
-       */
-      if (dataSetFFT)
-	LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(status,dataSetFFT),
-		 status);
-      if (response)
-	LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(status,response),
-		 status);
     }
   else
     {
@@ -431,318 +252,49 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
   /* 
    *End calibration conditional 
    */
-
-  /*****************************************
-   * Perform low and or high  pass filtering on 
-   * the input data stream if requested
-   */
-  if ((params.verbosity >= printFiles) && ((params.highPass > 0)||(params.lowPass)))
-    print_real4tseries(dataSet,"Pre_ButterworthFiltered_AllDataset.diag");
-
-  if (params.lowPass > 0)
+  if ((params.highPass > 0)||(params.lowPass > 0))
     {
       if (params.verbosity >= verbose)
-	fprintf(stdout,"You requested a low pass filter of the data at %f Hz\n",params.lowPass);
-
-      bandPassParams.name=NULL;
-      bandPassParams.nMax=10;
-      /* F < f1 kept, F > f2 kept */
-      bandPassParams.f1=params.lowPass;
-      bandPassParams.f2=0;
-      bandPassParams.a1=0.9;
-      bandPassParams.a2=0;
-      /*
-       * Band pass is achieved by low pass first then high pass!
-       * Call the low pass filter function.
-       */
-      LAL_CALL(LALButterworthREAL4TimeSeries(status,
-					     dataSet,
-					     &bandPassParams),
-	       status);
+	fprintf(stdout,"Bandpassing requensted.\n");
+      if (params.verbosity >= printFiles)
+	print_real4tseries(dataSet,"Pre_ButterworthFiltered_TimeDomain.diag");
+      LALappsTrackSearchBandPassing(status,dataSet,params);
+      if (params.verbosity >= printFiles)
+	print_real4tseries(dataSet,"Post_ButterworthFiltered_TimeDomain.diag");
     }
-  /*
-   * Call the high pass filter function.
-   */
-  if (params.highPass > 0)
-    {
-      if (params.verbosity >= verbose)
-	fprintf(stdout,"You requested a high pass filter of the data at %f Hz\n",params.highPass);
-
-      bandPassParams.name=NULL;
-      bandPassParams.nMax=10;
-      /* F < f1 kept, F > f2 kept */
-      bandPassParams.f1=0;
-      bandPassParams.f2=params.highPass;
-      bandPassParams.a1=0;
-      bandPassParams.a2=0.9;
-      LAL_CALL(LALButterworthREAL4TimeSeries(status,
-					     dataSet,
-					     &bandPassParams),
-	       status);
-    }
-  if ((params.verbosity >= printFiles) && ((params.highPass > 0)||(params.lowPass)))
-    print_real4tseries(dataSet,"Post_ButterworthFiltered_AllDataset.diag");
-  /*
-   * End the Butterworth filtering
-   *****************************************
-   */
+  else if (params.verbosity >= verbose)
+    fprintf(stdout,"No bandpassing requensted.\n");
 
   if (params.numLinesToRemove > 0)
     {
-      /*
-       * Perform the removal of COHERENT LINES specified by user to entire
-       * data set.  We want to remove up to n harmonics which have been
-       * specified at the command line.  
-       */
-      if (params.verbosity > quiet)
+      if (params.verbosity >= verbose)
 	{
-	  fprintf(stdout,"Removing requested coherent lines.\n");
-	  for (i=0;i<params.numLinesToRemove;i++)
-	    fprintf(stdout," %f, ",params.listLinesToRemove[i]);
-	  fprintf(stdout,"\n");
-	  fprintf(stdout,"Up to %i harmonics for %i lines will be removed.\n",params.maxHarmonics,params.numLinesToRemove);
+	  fprintf(stdout,"Lines and Harmonics will be removed.\n");
+	  fprintf(stdout,"LINES CAN NOT BE REMOVED FUNCTION NOT WORKING!\n");
 	}
-      /* Loop over all lines */
-      /* Setup tmp reference signal */
-      /* Add tmp reference to global Reference */
-      /* Use global reference signal to clean input data */
-      /* Take input data to Fourier Domain */
-  
-      /* Setup both T and F domain input data structures */
-      inputTVectorCLR=(REAL4TVectorCLR*)LALMalloc(sizeof(REAL4TVectorCLR));
-      inputFVectorCLR=(REAL4FVectorCLR*)LALMalloc(sizeof(REAL4FVectorCLR));
-  
-      /* Take data to F domain */
-      planLength=dataSet->data->length;
-      LAL_CALL(LALCCreateVector(status,
-				&tmpReferenceSignal,
-				planLength),
-	       status);
-
-      LAL_CALL(LALCCreateVector(status,
-				&referenceSignal,
-				planLength),
-	       status);
-
-      LAL_CALL(
-	       LALCreateCOMPLEX8FrequencySeries(
-						status,
-						&signalFFT_harmonic,
-						"tmpSegPSD",
-						gps_zero,
-						0,
-						1/(dataSet->data->length*dataSet->deltaT),
-						dataSet->sampleUnits,
-						planLength/2+1),
-	       status);
-
-
-      LAL_CALL(  LALSCreateVector(status,
-				  &inputPSDVector,
-				  planLength/2+1),
-		 status);
-
-      LAL_CALL(  LALCreateForwardREAL4FFTPlan(status,
-					      &forwardPlan,
-					      planLength,
-					      0),
-		 status);
-
-  
-      LAL_CALL( LALForwardREAL4FFT(status,
-				   signalFFT_harmonic->data,
-				   dataSet->data,
-				   forwardPlan),
-		status);
-
-
-      LAL_CALL( LALRealPowerSpectrum(status,
-				     inputPSDVector,
-				     dataSet->data,
-				     forwardPlan),
-		status);
-      /*Assign CLR data structures*/
-      /* The  CLR Time Vector  */
-      inputTVectorCLR->length = dataSet->data->length;
-      inputTVectorCLR->data = dataSet->data->data;
-      inputTVectorCLR->deltaT = dataSet->deltaT; /* inverse of the sampling frequency */
-      inputTVectorCLR->fLine = 0.0;
-      /* The  CLR Frequency Vector  */
-      inputFVectorCLR->length = inputPSDVector->length;
-      inputFVectorCLR->data = inputPSDVector->data; 
-      inputFVectorCLR->deltaF = signalFFT_harmonic->deltaF;
-      inputFVectorCLR->fLine =  inputTVectorCLR->fLine;
-
-      for (i=0;i<referenceSignal->length;i++)
-	{
-	  referenceSignal->data[i].re=0;
-	  referenceSignal->data[i].im=0;
-	  tmpReferenceSignal->data[i].re=0;
-	  tmpReferenceSignal->data[i].im=0;
-	}
-      for (j=0;j<params.numLinesToRemove;j++)
-	{
-	  if (params.verbosity > quiet)
-	    {
-	      fprintf(stdout,"Creating reference signal :%f\n",params.listLinesToRemove[j]);
-	    }
-	  /* Create reference signal */
-	  tmpHarmonicCount=params.maxHarmonics;
-	  tmpLineFreq=params.listLinesToRemove[j];
-	  if ((params.SamplingRate/tmpLineFreq) < tmpHarmonicCount)
-	    tmpHarmonicCount=floor(params.SamplingRate/tmpLineFreq);
-      
-	  LAL_CALL(LALI4CreateVector(status,
-				     &harmonicIndex,
-				     tmpHarmonicCount),
-		   status);
-	  LAL_CALL(LALI4CreateVector(status,
-				     &harmonicIndexCompliment,
-				     3*tmpHarmonicCount),
-		   status);
-	  for (i=0;i<tmpHarmonicCount;i++)
-	    harmonicIndex->data[i]=i+1;
-
-	  inputTVectorCLR->fLine = tmpLineFreq;
-	  inputFVectorCLR->fLine = tmpLineFreq;
-
-	  LAL_CALL( LALHarmonicFinder(status,
-				      harmonicIndexCompliment,
-				      inputFVectorCLR,
-				      harmonicIndex),
-		    status);
-
-	  LAL_CALL( LALRefInterference(status,
-				       tmpReferenceSignal,
-				       signalFFT_harmonic->data,
-				       harmonicIndexCompliment),
-		    status);
-
-
-
-	  if (harmonicIndexCompliment)
-	    {
-	      LAL_CALL(LALI4DestroyVector(status,
-					  &harmonicIndexCompliment),
-		       status);
-	    }
-
-	  if (harmonicIndex)
-	    {
-	      LAL_CALL(LALI4DestroyVector(status,
-					  &harmonicIndex),
-		       status);
-	    }
-	  /* Copy this temp reference into global reference signal variable??*/
-	  for (k=0;k < referenceSignal->length;k++)
-	    {
-	      referenceSignal->data[k].re=
-		referenceSignal->data[k].re +
-		tmpReferenceSignal->data[k].re;
-	      referenceSignal->data[k].im=
-		referenceSignal->data[k].im +
-		tmpReferenceSignal->data[k].im;
-	    }
-	}
-      /* Clean up input time series with global reference signal */
-      LAL_CALL(  LALSCreateVector(status,
-				  &cleanData,
-				  dataSet->data->length),
-		 status);
-  
-      LAL_CALL( LALCleanAll(status,
-			    cleanData,
-			    referenceSignal,
-			    inputTVectorCLR),
-		status);
-
-      /*Copy the clean data back into the variable dataSet */
-      for (j=0;j<dataSet->data->length;j++)
-	dataSet->data->data[j]=cleanData->data[j];
-  
-
-      if (cleanData)
-	{
-	  LAL_CALL(
-		   LALDestroyVector(status,
-				    &cleanData),
-		   status);
-	}
-
-      if (signalFFT_harmonic)
-	{
-	  LAL_CALL( LALDestroyCOMPLEX8FrequencySeries(status,
-						      signalFFT_harmonic),
-		    status);
-	}
-
-      if (inputPSDVector)
-	{
-	  LAL_CALL(
-		   LALDestroyVector(status,
-				    &inputPSDVector),
-		   status);
-	}
-      if (forwardPlan)
-	{
-	  LAL_CALL(
-		   LALDestroyREAL4FFTPlan(status,
-					  &forwardPlan),
-		   status);
-	}
-      if (tmpReferenceSignal)
-	{
-	  LAL_CALL(LALCDestroyVector(status,
-				     &tmpReferenceSignal),
-		   status);
-	}
-
-      if (referenceSignal)
-	{
-	  LAL_CALL(LALCDestroyVector(status,
-				     &referenceSignal),
-		   status);
-	}
-
-      if (inputTVectorCLR)
-	LALFree(inputTVectorCLR);
-
-      if (inputFVectorCLR)
-	LALFree(inputFVectorCLR);
-
-      /*
-       * END COHERENT LINE removal section
-       */
+      if (params.verbosity >= printFiles)
+	print_real4tseries(dataSet,"Pre_LineRemoval_TimeDomain.diag");
+      fprintf(stdout,"Harmonic removal sub-routine SKIPPED!\n");
+      /*LALappsTracksearchRemoveHarmonics(status,dataSet,params);*/
+      if (params.verbosity >= printFiles)
+	print_real4tseries(dataSet,"Post_LineRemoval_TimeDomain.diag");
     }
+  else if (params.verbosity >= verbose)
+    	fprintf(stdout,"Lines and Harmonics will NOT be removed.\n");
   /*
    * Perform injections when inject structure has data.
    */
   if (injectSet != NULL)
     {
-      if (params.verbosity > quiet)
+      if (params.verbosity >= verbose)
 	{
-	  printf("Making requested injections.\n");
+	  fprintf(stdout,"Making requested injections.\n");
 	  fprintf(stderr,"If frame was REAL8 data converted to REAL4 data.\n");
 	  fprintf(stderr,"Potential problem with possibly prefactored input data.\n");
 	}
       if (params.verbosity >= printFiles)
 	print_real4tseries(dataSet,"Pre_SoftwareInjectDataSet.diag");
-      /*
-       * NOTE TO SELF: Tina add code to compare any factor in the dataSet
-       * units structure and factor the injected data appropriately to
-       * match the input data (dataSet).  This is bug affected by the
-       * REAL8->REAL4 conversions in frame reading code only.
-       */
-      for (i=0,j=0;
-	   ((i<injectSet->data->length)&&((j+params.SegBufferPoints)<dataSet->data->length));
-	   i++,j++)
-	if (j<params.SegBufferPoints)
-	  dataSet->data->data[j]=dataSet->data->data[i];
-	else
-	  dataSet->data->data[j]=
-	    injectSet->data->data[i-params.SegBufferPoints]+
-	    dataSet->data->data[i];
-
+      LALappsTrackSearchPerformInjection(status,dataSet,injectSet,params);
       if (params.verbosity >= printFiles)
 	print_real4tseries(dataSet,"Post_SoftwareInjectDataSet.diag");
     }
@@ -757,326 +309,20 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 				       params),
 	   status);
   /*
-   * If injection requested inject a single waveform into each segment
-   * scaled to fit the segment sample rate and use specified scale factor
-   * We don't bandpass the injected waveform!!
-   */
-  /*
    * If we are to whiten first let us calculate the 
    * average PSD using the non segment data structure
    */
-
   if (params.whiten !=0 )
     {
-      if (params.verbosity >= verbose )
-	fprintf(stdout,"Estimating PSD for whitening\n");
-      LAL_CALL(
-	       LALCreateREAL4FrequencySeries(status,
-					     &averagePSD,
-					     "averagePSD",
-					     gps_zero,
-					     0,
-					     1/((params.SegLengthPoints+(2*params.SegBufferPoints))*dataSet->deltaT),
-					     lalDimensionlessUnit,
-					     (params.SegLengthPoints+(2*params.SegBufferPoints))/2+1),
-	       status);
-      /*
-       * The given units above need to be correct to truly reflect the
-       * units stored in the frame file
-       */
-      windowParamsPSD.length=(params.SegLengthPoints+(2*params.SegBufferPoints));
-      windowParamsPSD.type=params.avgSpecWindow;
-      LAL_CALL( LALCreateREAL4Window(status,
-				     &windowPSD,
-				     &windowParamsPSD),
-		status);
-      /* If we only do one map we need to something special here*/
-      if (params.NumSeg < 2)
-	avgPSDParams.overlap=1;
-      else /* use same as segment overlap request*/
-	{
-	  avgPSDParams.overlap=params.overlapFlag;
-	  /*
-	   * Shift around the overlap for PSD estimation to accomodate
-	   * the extra data points of 2*params.SegBufferPoints.  This
-	   * not guarantee that we will have the same number of
-	   * segments in our PSD estimate as we will process.
-	   */
-	  if (params.SegBufferPoints > 0)
-	    avgPSDParams.overlap=2*params.SegBufferPoints;
-	}
-      
-
-      avgPSDParams.window=windowPSD;
-      avgPSDParams.method=params.avgSpecMethod;
-      /* Set PSD plan length and plan*/
-      LAL_CALL( LALCreateForwardREAL4FFTPlan(status,
-					     &averagePSDPlan,
-					     params.SegLengthPoints+(2*params.SegBufferPoints),
-					     0),
-		status);
-      avgPSDParams.plan=averagePSDPlan;
-
-      LAL_CALL(  LALREAL4AverageSpectrum(status,
-					 averagePSD,
-					 dataSet,
-					 &avgPSDParams),
-		 status);
-
-      if (averagePSDPlan)
-	{
-	  LAL_CALL( LALDestroyREAL4FFTPlan(status,&averagePSDPlan),
-		    status);
-	}
-
-
-      if (params.smoothAvgPSD > 2)
-	{
-	  /* Error check that median block size less than =
-	     length of power psd
-	  */
-	  if (params.verbosity >= verbose)
-	    {
-	      fprintf(stdout,"We will do the running median smoothing of the average PSD with block size of %i\n",
-		      params.smoothAvgPSD);
-	    }
-	  if (params.verbosity >= printFiles)
-	    {
-	      print_real4fseries(averagePSD,"Pre_SmoothingAveragePSD.diag");
-	      print_lalUnit(averagePSD->sampleUnits,
-			    "Pre_SmoothingAveragePSD_Units.diag");
-	    }
-	  
-	  /*
-	   * Perform running median on the average PSD using
-	   * blocks of size n
-	   */
-	  LAL_CALL(LALSCreateVector(status,
-				    &smoothedAveragePSD,
-				    averagePSD->data->length),
-		   status);
-	  LAL_CALL(LALSCreateVector(status,
-				    &tmpExtendedAveragePSD,
-				    averagePSD->data->length+params.smoothAvgPSD-1),
-		   status);
-	  /*
-	   * Build a buffered PSD rep so that median estimate
-	   * returned will have m points equal to the n points of the 
-	   * original average PSD
-	   */
-	  for (i=0;i<averagePSD->data->length;i++)
-	    tmpExtendedAveragePSD->data[i]=averagePSD->data->data[i];
-	  for (i=averagePSD->data->length-1;
-	       i<tmpExtendedAveragePSD->length;
-	       i++)
-	    tmpExtendedAveragePSD->data[i]=averagePSD->data->data[averagePSD->data->length-1];
-	  /*
-	   * Setup running median parameters
-	   */
-	  smoothingPSDparams.blocksize=params.smoothAvgPSD;
-	  LAL_CALL(LALSRunningMedian(status,
-				     smoothedAveragePSD,
-				     tmpExtendedAveragePSD,
-				     smoothingPSDparams),
-		   status);
-	  LAL_CALL(LALRngMedBias(status,
-				 &smoothingAveragePSDBias,
-				 smoothingPSDparams.blocksize),
-		   status);
-	  /*
-	   * Fix possible bias of the running median
-	   */
-	  for (i=0;i<smoothedAveragePSD->length;i++)
-	    smoothedAveragePSD->data[i]=
-	      smoothingAveragePSDBias*smoothedAveragePSD->data[i];
-	  /*
-	   * Copy newly smoothed PSD to frequency series
-	   */
-	  for (i=0;i<averagePSD->data->length;i++)
-	    averagePSD->data->data[i]=smoothedAveragePSD->data[i];
-
-	  if (smoothedAveragePSD)
-	    LAL_CALL(LALSDestroyVector(status,
-				       &smoothedAveragePSD),
-		     status);
-
-	  if (tmpExtendedAveragePSD)
-	    LAL_CALL(LALSDestroyVector(status,
-				       &tmpExtendedAveragePSD),
-		     status);
-	  
-	  
-	}
-      if (params.verbosity == printFiles)
-	{
-	  print_real4tseries(dataSet,"timeDomainAllDataSet.diag");
-	  print_real4fseries(averagePSD,"Post_SmoothingAveragePSD.diag");
-	  print_lalUnit(averagePSD->sampleUnits,"Post_SmoothingAveragePSD_Units.diag");
-	}
-      /*
-       * Setup global FFT plans 
-       */
-      planLength=params.SegLengthPoints+(2*params.SegBufferPoints);
-      LAL_CALL(  LALCreateForwardREAL4FFTPlan(status,
-					      &forwardPlan,
-					      planLength,
-					      0),
-		 status);
-      LAL_CALL( LALCreateReverseREAL4FFTPlan(status,
-					     &reversePlan,
-					     planLength,
-					     0),
-		status);
-      /*
-       * Allocate Frequency Struture to use as memory space for 
-       * subsequent ffts of segments
-       */
-      LAL_CALL(
-	       LALCreateCOMPLEX8FrequencySeries(
-						status,
-						&signalFFT,
-						"tmpSegPSD",
-						gps_zero,
-						0,
-						1/(dataSegments->dataSeg[0]->deltaT * dataSegments->dataSeg[0]->data->length),
-						dataSegments->dataSeg[0]->sampleUnits,
-						planLength/2+1),
-	       status);
-      /*
-       * Grab original units for manipulations later
-       */
-      originalFrequecyUnits=signalFFT->sampleUnits;
-
-      /* Sanity check those units above should be counts or strain */
-      /* 
-       * Actually whiten each data segment
-       */
-      if (params.verbosity >= printFiles)
-	{
-	  tmpSignalPtr=NULL;
-	  for (i=0;i<dataSegments->length;i++)
-	    {
-	      tmpSignalPtr=(dataSegments->dataSeg[i]);
-	      LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
-		       status);
-	      sprintf(dataLabel->data,"Pre_WhitenTimeDomainDataSeg_%i.diag",i);
-	      print_real4tseries(tmpSignalPtr,dataLabel->data);
-	      sprintf(dataLabel->data,"Pre_WhitenTimeDomainDataSeg_%i_Units.diag",i);
-	      print_lalUnit(tmpSignalPtr->sampleUnits,dataLabel->data);
-	      LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
-		       status);
-	    }
-	  tmpSignalPtr=NULL;
-
-	  for (i=0;i<dataSegments->length;i++)
-	    {
-	      tmpSignalPtr = (dataSegments->dataSeg[i]);
-	      /*
-	       * FFT segment
-	       */
-	      LAL_CALL( LALForwardREAL4FFT(status,
-					   signalFFT->data,
-					   tmpSignalPtr->data,
-					   forwardPlan),
-			status);
-	      /*
-	       * Whiten
-	       */
-	      if (params.verbosity >= printFiles)
-		{
-		  LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
-			   status);
-		  sprintf(dataLabel->data,"Pre_whitenSignalFFT_%i.diag",i);
-		  print_complex8fseries(signalFFT,dataLabel->data);
-		  LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
-			   status);
-		}
-	      if (params.verbosity >= verbose)
-		fprintf(stdout,"Whitening data segment: %i of %i\n",i+1,dataSegments->length);
-	      LAL_CALL(LALTrackSearchWhitenCOMPLEX8FrequencySeries(status,
-								   signalFFT,
-								   averagePSD,
-								   params.whiten),
-		       status);
-	      if (params.verbosity >= printFiles)
-		{
-		  LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
-			   status);
-		  sprintf(dataLabel->data,"Post_whitenSignalFFT_%i.diag",i);
-		  print_complex8fseries(signalFFT,dataLabel->data);
-		  LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
-			   status);
-		}
-		
-	    
-	      /*
-	       * Reverse FFT
-	       */
-	      LAL_CALL( LALReverseREAL4FFT(status,
-					   tmpSignalPtr->data,
-					   signalFFT->data,
-					   reversePlan),
-			status);
-	      /* 
-	       * Normalize the IFFT by 1/n factor
-	       * See lsd-5 p259 10.1 for explaination
-	       */
-	      for (j=0;j<tmpSignalPtr->data->length;j++)
-		tmpSignalPtr->data->data[j]= 
-		  tmpSignalPtr->data->data[j]/tmpSignalPtr->data->length;
-	    }
-	  /*
-	   * Reset the tmp frequency series units
-	   */
-	  signalFFT->sampleUnits=originalFrequecyUnits;
-	  tmpSignalPtr=NULL;
-      
-	  /*
-	   * Free temporary Frequency Series
-	   */
-	  if (signalFFT)
-	    {
-	      LAL_CALL( LALDestroyCOMPLEX8FrequencySeries(status,signalFFT),
-			status);
-	    }
-	  if (windowPSD)
-	    LAL_CALL( LALDestroyREAL4Window(status,
-					    &windowPSD),
-		      status);
-
-	  if (averagePSD)
-	    LAL_CALL(LALDestroyREAL4FrequencySeries(status,averagePSD),
-		     status);
-
-	  if (forwardPlan)
-	    {
-	      LAL_CALL(
-		       LALDestroyREAL4FFTPlan(status,&forwardPlan),
-		       status);
-	    }
-	  if (reversePlan)
-	    {
-	      LAL_CALL( LALDestroyREAL4FFTPlan(status,&reversePlan),
-			status);
-	    }
-	}
-      if (params.verbosity >= printFiles)
-	{
-	  tmpSignalPtr=NULL;
-	  for (i=0;i<dataSegments->length;i++)
-	    {
-	      tmpSignalPtr=(dataSegments->dataSeg[i]);
-	      LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
-		       status);
-	      sprintf(dataLabel->data,"Post_WhitenTimeDomainDataSeg_%i.diag",i);
-	      print_real4tseries(tmpSignalPtr,dataLabel->data);
-	      sprintf(dataLabel->data,"Post_WhitenTimeDomainDataSeg_%i_Units.diag",i);
-	      print_lalUnit(tmpSignalPtr->sampleUnits,dataLabel->data);
-	      LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
-		       status);
-	    }
-	}
+      if (params.verbosity >= verbose)
+	fprintf(stdout,"Preparing to whiten data segments.\n");
+      LALappsTrackSearchWhitenSegments(status,dataSet,dataSegments,params);
     }
+  else if (params.verbosity >= verbose)
+    fprintf(stdout,"No data whitening will be done.\n");
+
+  if (params.verbosity >= verbose)
+    fprintf(stdout,"Done preparing input data.\n");
   return;
 }
   /* End the LALappsTrackSearchPrepareData routine */
@@ -1153,10 +399,6 @@ void LALappsTrackSearchInitialize(
     };
   
   int              C;
-
-  /*  INITSTATUS (status, "getparams", TRACKSEARCHC);*/
-  /*  ATTATCHSTATUSPTR (status);*/
-
   /*
    * Set default values for optional arguments 
    * These options will be used if omitted from the command line 
@@ -1434,8 +676,18 @@ void LALappsTrackSearchInitialize(
 	    /*Create string reader code*/
 	    /* Implement Spectrogram type selection via einteger later */
 	    /* For now we rely on numeric representation */
-	    params->TransformType = atoi(optarg);
-	    /*params->TransformType =  Spectrogram;*/
+	    if (!strcmp(optarg,"Spectrogram"))
+	      params->TransformType=Spectrogram;
+	    else if (!strcmp(optarg,"RSpectrogram"))
+	      params->TransformType=RSpectrogram;
+	    else if (!strcmp(optarg,"WignerVille"))
+	      params->TransformType=WignerVille;
+	    else if (!strcmp(optarg,"PSWignerVille"))
+	      params->TransformType=PSWignerVille;
+	    else{
+	      fprintf(stderr,"Invald TF Transform selected using Spectrogram.\n");
+	      params->TransformType=Spectrogram;
+	    };
 	  }
 	  break;
 
@@ -1816,8 +1068,6 @@ void LALappsTrackSearchInitialize(
       fprintf(stderr,TRACKSEARCHC_MSGEARGS);
       exit(TRACKSEARCHC_EARGS);
     }
-
-  /*  DETATCHSTATUSPTR(status);*/
   return;
 }
 /* End initialization subroutine for search */
@@ -3683,6 +2933,851 @@ void LALappsCreateInjectableData(LALStatus           *status,
  * End of function LALappsCreateInjectableData to create injectable
  * data structure for calibration etc
  */
+
+/* 
+ * Function to perform calibration of input data if necessary
+ */
+void LALappsTrackSearchCalibrate( LALStatus          *status,
+				  REAL4TimeSeries    *dataSet,
+				  TSSearchParams      params)
+{
+  FrCache                  *calcache = NULL;
+  COMPLEX8FrequencySeries  *response=NULL;
+  REAL4FFTPlan             *dataSetPlan=NULL;
+  COMPLEX8FrequencySeries  *dataSetFFT=NULL;
+  const LALUnit     strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
+  UINT4                     segmentPoints=0;
+  CalibrationUpdateParams   calfacts;
+  UINT4                     i=0;
+  UINT4                     j=0;
+
+  /* 
+   * Create response function based on starting epoch from 
+   * first data segment.  We assume it is constant over 
+   * all the other data segments available.
+   */
+  segmentPoints=params.SegLengthPoints;
+  /* 
+   * Implicity set Epoch, Unit and df for Response extract
+   */
+  LAL_CALL( LALCreateCOMPLEX8FrequencySeries(status,
+					     &response,
+					     "tmpResponse",
+					     dataSet->epoch,
+					     0,
+					     1/(dataSet->deltaT*dataSet->data->length),
+					     strainPerCount,
+					     segmentPoints/2+1),
+	    status);
+
+  LAL_CALL(LALFrCacheImport(status,
+			    &calcache, 
+			    params.calFrameCache),
+	   status);
+  /*
+   * Extract response function from calibration cache
+   */
+  /* Configure calfacts */
+  memset(&calfacts, 0, sizeof(calfacts));
+  calfacts.ifo = (CHAR*) LALMalloc(3*sizeof(CHAR));
+  strcpy(calfacts.ifo,params.calibrateIFO);
+
+
+  LAL_CALL( LALExtractFrameResponse(status,
+				    response, 
+				    calcache, 
+				    &calfacts),
+	    status);
+  if (params.verbosity >= printFiles)
+    {
+      print_lalUnit(response->sampleUnits,"extractedResponseFunction_Units.diag");
+      print_complex8fseries(response,"extractedResponseFunction.diag");
+    }
+  /*
+   * Destroy IFO text pointer
+   */
+  LALFree(calfacts.ifo);
+  /*
+   * Destroy frame cache
+   */
+  if (calcache)
+    {
+      LAL_CALL( LALDestroyFrCache(status, &calcache),status);
+    }
+  /* Done getting response function */
+  /*
+   * Allocate frequency series for Set FFT
+   */
+  LAL_CALL(
+	   LALCreateCOMPLEX8FrequencySeries(status,
+					    &dataSetFFT,
+					    "Entire data FFTed",
+					    dataSet->epoch,
+					    0,
+					    (dataSet->deltaT*dataSet->data->length),
+					    dataSet->sampleUnits,
+					    dataSet->data->length/2+1),
+	   status);
+  /*
+   * FFT input unsegmented data set
+   */
+  LAL_CALL( LALCreateForwardREAL4FFTPlan(status,
+					 &dataSetPlan,
+					 dataSet->data->length,
+					 0),
+	    status);
+  LAL_CALL( LALForwardREAL4FFT(status,
+			       dataSetFFT->data,
+			       dataSet->data,
+			       dataSetPlan),
+	    status);
+  if (dataSetPlan)
+    LAL_CALL(LALDestroyREAL4FFTPlan(status,&dataSetPlan),status);
+
+  if (params.verbosity >= printFiles)
+    {
+      print_complex8fseries(dataSetFFT,"Pre_CalibrateDataSetFFT.diag");
+      print_lalUnit(dataSetFFT->sampleUnits,"Pre_CalibrateDataSetFFT_Units.diag");
+    }
+  LAL_CALL(LALTrackSearchCalibrateCOMPLEX8FrequencySeries(status,
+							  dataSetFFT,
+							  response),
+	   status);
+  if (params.verbosity >= printFiles)
+    {
+      print_complex8fseries(dataSetFFT,"Post_CalibrateDataSetFFT.diag");
+      print_lalUnit(dataSetFFT->sampleUnits,"Post_CalibrateDataSetFFT_Units.diag");
+    }
+  /*
+   * Inverse FFT the entire dataSet
+   */
+  fprintf(stderr,"Hack on Response function...Don't forget\n");
+  fprintf(stderr,"Will cause memory leak for some reason?\n");
+  dataSetFFT->data->data[dataSetFFT->data->length-1].im=0;
+  dataSetFFT->data->data[dataSetFFT->data->length].im=0;
+      
+  LAL_CALL(LALCreateReverseREAL4FFTPlan(status,
+					&dataSetPlan,
+					dataSet->data->length,
+					0),
+	   status);
+  LAL_CALL(LALReverseREAL4FFT(status,
+			      dataSet->data,
+			      dataSetFFT->data,
+			      dataSetPlan),
+	   status);
+  /* 
+   * Migrate units fields from F basis to T basis
+   */
+  dataSet->sampleUnits=dataSetFFT->sampleUnits;
+  /*
+   * Apply missing factor 1/n
+   */
+  for (j=0;j<dataSet->data->length;j++)
+    dataSet->data->data[i]=dataSet->data->data[i]/dataSet->data->length;
+
+  if (dataSetPlan)
+    LAL_CALL(LALDestroyREAL4FFTPlan(status,&dataSetPlan),status);
+  /*
+   * Free the FFT memory space
+   */
+  if (dataSetFFT)
+    LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(status,dataSetFFT),
+	     status);
+  if (response)
+    LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(status,response),
+	     status);
+  return;
+}
+/*
+ * End function to perform calibration
+ */
+
+/*
+ * Butterworth Band passing
+ */
+void LALappsTrackSearchBandPassing( LALStatus           *status,
+				    REAL4TimeSeries     *dataSet,
+				    TSSearchParams       params)
+{
+  PassBandParamStruc       bandPassParams;
+
+  if (params.lowPass > 0)
+    {
+      if (params.verbosity >= verbose)
+	fprintf(stdout,"You requested a low pass filter of the data at %f Hz\n",params.lowPass);
+
+      bandPassParams.name=NULL;
+      bandPassParams.nMax=10;
+      /* F < f1 kept, F > f2 kept */
+      bandPassParams.f1=params.lowPass;
+      bandPassParams.f2=0;
+      bandPassParams.a1=0.9;
+      bandPassParams.a2=0;
+      /*
+       * Band pass is achieved by low pass first then high pass!
+       * Call the low pass filter function.
+       */
+      LAL_CALL(LALButterworthREAL4TimeSeries(status,
+					     dataSet,
+					     &bandPassParams),
+	       status);
+    }
+  /*
+   * Call the high pass filter function.
+   */
+  if (params.highPass > 0)
+    {
+      if (params.verbosity >= verbose)
+	fprintf(stdout,"You requested a high pass filter of the data at %f Hz\n",params.highPass);
+
+      bandPassParams.name=NULL;
+      bandPassParams.nMax=10;
+      /* F < f1 kept, F > f2 kept */
+      bandPassParams.f1=0;
+      bandPassParams.f2=params.highPass;
+      bandPassParams.a1=0;
+      bandPassParams.a2=0.9;
+      LAL_CALL(LALButterworthREAL4TimeSeries(status,
+					     dataSet,
+					     &bandPassParams),
+	       status);
+    }
+  return;
+}
+/*
+ * End Butterworth Band passing
+ */
+/*
+ * Removing harmonic lines from data
+ */
+void LALappsTracksearchRemoveHarmonics( LALStatus             *status,
+				        REAL4TimeSeries       *dataSet,
+				        TSSearchParams         params)
+{
+  COMPLEX8Vector          *referenceSignal=NULL;
+  UINT4                    tmpHarmonicCount=0;
+  REAL4                    tmpLineFreq=0.0;
+  COMPLEX8FrequencySeries  *signalFFT_harmonic=NULL;
+  REAL4FFTPlan             *forwardPlan=NULL;
+  INT4Vector              *harmonicIndex=NULL;
+  INT4Vector              *harmonicIndexCompliment=NULL;
+  COMPLEX8Vector          *tmpReferenceSignal=NULL;
+  REAL4TVectorCLR         *inputTVectorCLR=NULL;
+  REAL4FVectorCLR         *inputFVectorCLR=NULL;
+  REAL4Vector             *inputPSDVector=NULL;
+  REAL4Vector             *cleanData=NULL;
+  UINT4                    i=0;
+  UINT4                    j=0;
+  UINT4                    k=0;
+  const LIGOTimeGPS        gps_zero = LIGOTIMEGPSZERO;
+  UINT4                    planLength=0;
+
+  if (params.numLinesToRemove > 0)
+    {
+      /*
+       * Perform the removal of COHERENT LINES specified by user to entire
+       * data set.  We want to remove up to n harmonics which have been
+       * specified at the command line.  
+       */
+      if (params.verbosity > quiet)
+	{
+	  fprintf(stdout,"Removing requested coherent lines.\n");
+	  for (i=0;i<params.numLinesToRemove;i++)
+	    fprintf(stdout," %f, ",params.listLinesToRemove[i]);
+	  fprintf(stdout,"\n");
+	  fprintf(stdout,"Up to %i harmonics for %i lines will be removed.\n",params.maxHarmonics,params.numLinesToRemove);
+	}
+      /* Loop over all lines */
+      /* Setup tmp reference signal */
+      /* Add tmp reference to global Reference */
+      /* Use global reference signal to clean input data */
+      /* Take input data to Fourier Domain */
+  
+      /* Setup both T and F domain input data structures */
+      inputTVectorCLR=(REAL4TVectorCLR*)LALMalloc(sizeof(REAL4TVectorCLR));
+      inputFVectorCLR=(REAL4FVectorCLR*)LALMalloc(sizeof(REAL4FVectorCLR));
+  
+      /* Take data to F domain */
+      planLength=dataSet->data->length;
+      LAL_CALL(LALCCreateVector(status,
+				&tmpReferenceSignal,
+				planLength),
+	       status);
+
+      LAL_CALL(LALCCreateVector(status,
+				&referenceSignal,
+				planLength),
+	       status);
+
+      LAL_CALL(
+	       LALCreateCOMPLEX8FrequencySeries(
+						status,
+						&signalFFT_harmonic,
+						"tmpSegPSD",
+						gps_zero,
+						0,
+						1/(dataSet->data->length*dataSet->deltaT),
+						dataSet->sampleUnits,
+						planLength/2+1),
+	       status);
+
+
+      LAL_CALL(  LALSCreateVector(status,
+				  &inputPSDVector,
+				  planLength/2+1),
+		 status);
+
+      LAL_CALL(  LALCreateForwardREAL4FFTPlan(status,
+					      &forwardPlan,
+					      planLength,
+					      0),
+		 status);
+
+  
+      LAL_CALL( LALForwardREAL4FFT(status,
+				   signalFFT_harmonic->data,
+				   dataSet->data,
+				   forwardPlan),
+		status);
+
+
+      LAL_CALL( LALRealPowerSpectrum(status,
+				     inputPSDVector,
+				     dataSet->data,
+				     forwardPlan),
+		status);
+      /*Assign CLR data structures*/
+      /* The  CLR Time Vector  */
+      inputTVectorCLR->length = dataSet->data->length;
+      inputTVectorCLR->data = dataSet->data->data;
+      inputTVectorCLR->deltaT = dataSet->deltaT; /* inverse of the sampling frequency */
+      inputTVectorCLR->fLine = 0.0;
+      /* The  CLR Frequency Vector  */
+      inputFVectorCLR->length = inputPSDVector->length;
+      inputFVectorCLR->data = inputPSDVector->data; 
+      inputFVectorCLR->deltaF = signalFFT_harmonic->deltaF;
+      inputFVectorCLR->fLine =  inputTVectorCLR->fLine;
+
+      for (i=0;i<referenceSignal->length;i++)
+	{
+	  referenceSignal->data[i].re=0;
+	  referenceSignal->data[i].im=0;
+	  tmpReferenceSignal->data[i].re=0;
+	  tmpReferenceSignal->data[i].im=0;
+	}
+      for (j=0;j<params.numLinesToRemove;j++)
+	{
+	  if (params.verbosity > quiet)
+	    {
+	      fprintf(stdout,"Creating reference signal :%f\n",params.listLinesToRemove[j]);
+	    }
+	  /* Create reference signal */
+	  tmpHarmonicCount=params.maxHarmonics;
+	  tmpLineFreq=params.listLinesToRemove[j];
+	  if ((params.SamplingRate/tmpLineFreq) < tmpHarmonicCount)
+	    tmpHarmonicCount=floor(params.SamplingRate/tmpLineFreq);
+      
+	  LAL_CALL(LALI4CreateVector(status,
+				     &harmonicIndex,
+				     tmpHarmonicCount),
+		   status);
+	  LAL_CALL(LALI4CreateVector(status,
+				     &harmonicIndexCompliment,
+				     3*tmpHarmonicCount),
+		   status);
+	  for (i=0;i<tmpHarmonicCount;i++)
+	    harmonicIndex->data[i]=i+1;
+
+	  inputTVectorCLR->fLine = tmpLineFreq;
+	  inputFVectorCLR->fLine = tmpLineFreq;
+
+	  LAL_CALL( LALHarmonicFinder(status,
+				      harmonicIndexCompliment,
+				      inputFVectorCLR,
+				      harmonicIndex),
+		    status);
+
+	  LAL_CALL( LALRefInterference(status,
+				       tmpReferenceSignal,
+				       signalFFT_harmonic->data,
+				       harmonicIndexCompliment),
+		    status);
+
+
+
+	  if (harmonicIndexCompliment)
+	    {
+	      LAL_CALL(LALI4DestroyVector(status,
+					  &harmonicIndexCompliment),
+		       status);
+	    }
+
+	  if (harmonicIndex)
+	    {
+	      LAL_CALL(LALI4DestroyVector(status,
+					  &harmonicIndex),
+		       status);
+	    }
+	  /* Copy this temp reference into global reference signal variable??*/
+	  for (k=0;k < referenceSignal->length;k++)
+	    {
+	      referenceSignal->data[k].re=
+		referenceSignal->data[k].re +
+		tmpReferenceSignal->data[k].re;
+	      referenceSignal->data[k].im=
+		referenceSignal->data[k].im +
+		tmpReferenceSignal->data[k].im;
+	    }
+	}
+      /* Clean up input time series with global reference signal */
+      LAL_CALL(  LALSCreateVector(status,
+				  &cleanData,
+				  dataSet->data->length),
+		 status);
+  
+      LAL_CALL( LALCleanAll(status,
+			    cleanData,
+			    referenceSignal,
+			    inputTVectorCLR),
+		status);
+
+      /*Copy the clean data back into the variable dataSet */
+      for (j=0;j<dataSet->data->length;j++)
+	dataSet->data->data[j]=cleanData->data[j];
+  
+
+      if (cleanData)
+	{
+	  LAL_CALL(
+		   LALDestroyVector(status,
+				    &cleanData),
+		   status);
+	}
+
+      if (signalFFT_harmonic)
+	{
+	  LAL_CALL( LALDestroyCOMPLEX8FrequencySeries(status,
+						      signalFFT_harmonic),
+		    status);
+	}
+
+      if (inputPSDVector)
+	{
+	  LAL_CALL(
+		   LALDestroyVector(status,
+				    &inputPSDVector),
+		   status);
+	}
+      if (forwardPlan)
+	{
+	  LAL_CALL(
+		   LALDestroyREAL4FFTPlan(status,
+					  &forwardPlan),
+		   status);
+	}
+      if (tmpReferenceSignal)
+	{
+	  LAL_CALL(LALCDestroyVector(status,
+				     &tmpReferenceSignal),
+		   status);
+	}
+
+      if (referenceSignal)
+	{
+	  LAL_CALL(LALCDestroyVector(status,
+				     &referenceSignal),
+		   status);
+	}
+
+      if (inputTVectorCLR)
+	LALFree(inputTVectorCLR);
+
+      if (inputFVectorCLR)
+	LALFree(inputFVectorCLR);
+
+      /*
+       * END COHERENT LINE removal section
+       */
+    }
+  return;
+}
+/*
+ * End line removal
+ */
+/*
+ * Perform software injections if data is available
+ */
+void LALappsTrackSearchPerformInjection( LALStatus       *status,
+					REAL4TimeSeries  *dataSet,
+					REAL4TimeSeries  *injectSet,
+					TSSearchParams     params)
+{
+  /*
+   * NOTE TO SELF: Tina add code to compare any factor in the dataSet
+   * units structure and factor the injected data appropriately to
+   * match the input data (dataSet).  This is bug affected by the
+   * REAL8->REAL4 conversions in frame reading code only.
+   */
+  UINT4                     i=0;
+  UINT4                     j=0;
+
+  for (i=0,j=0;
+       ((i<injectSet->data->length)&&((j+params.SegBufferPoints)<dataSet->data->length));
+       i++,j++)
+    if (j<params.SegBufferPoints)
+      dataSet->data->data[j]=dataSet->data->data[i];
+    else
+      dataSet->data->data[j]=
+	injectSet->data->data[i-params.SegBufferPoints]+
+	dataSet->data->data[i];
+  return;
+}
+/*
+ * End software injections
+ */
+/*
+ * Whiten data segments
+ */
+void LALappsTrackSearchWhitenSegments( LALStatus        *status,
+				       REAL4TimeSeries  *dataSet,
+				       TSSegmentVector  *dataSegments,
+				       TSSearchParams     params)
+{
+  UINT4                    planLength=0;
+  REAL4TimeSeries          *tmpSignalPtr=NULL;
+  LALWindowParams           windowParamsPSD;
+  LALUnit                   originalFrequecyUnits;
+  AverageSpectrumParams     avgPSDParams;
+  REAL8                     smoothingAveragePSDBias=0;
+  LALRunningMedianPar       smoothingPSDparams;
+  CHARVector               *dataLabel=NULL;
+  COMPLEX8FrequencySeries  *signalFFT=NULL;
+  REAL4FFTPlan             *reversePlan=NULL;
+  REAL4FFTPlan             *forwardPlan=NULL;
+  REAL4FFTPlan             *averagePSDPlan=NULL;
+  REAL4FrequencySeries     *averagePSD=NULL;
+  REAL4Vector              *smoothedAveragePSD=NULL;
+  REAL4Vector              *tmpExtendedAveragePSD=NULL;
+  REAL4Window              *windowPSD=NULL;
+  UINT4                     i=0;
+  UINT4                     j=0;
+  const LIGOTimeGPS        gps_zero = LIGOTIMEGPSZERO;
+
+  if (params.verbosity >= verbose )
+    fprintf(stdout,"Estimating PSD for whitening\n");
+  LAL_CALL(
+	   LALCreateREAL4FrequencySeries(status,
+					 &averagePSD,
+					 "averagePSD",
+					 gps_zero,
+					 0,
+					 1/((params.SegLengthPoints+(2*params.SegBufferPoints))*dataSet->deltaT),
+					 lalDimensionlessUnit,
+					 (params.SegLengthPoints+(2*params.SegBufferPoints))/2+1),
+	   status);
+  /*
+   * The given units above need to be correct to truly reflect the
+   * units stored in the frame file
+   */
+  windowParamsPSD.length=(params.SegLengthPoints+(2*params.SegBufferPoints));
+  windowParamsPSD.type=params.avgSpecWindow;
+  LAL_CALL( LALCreateREAL4Window(status,
+				 &windowPSD,
+				 &windowParamsPSD),
+	    status);
+  /* If we only do one map we need to something special here*/
+  if (params.NumSeg < 2)
+    avgPSDParams.overlap=1;
+  else /* use same as segment overlap request*/
+    {
+      avgPSDParams.overlap=params.overlapFlag;
+      /*
+       * Shift around the overlap for PSD estimation to accomodate
+       * the extra data points of 2*params.SegBufferPoints.  This
+       * not guarantee that we will have the same number of
+       * segments in our PSD estimate as we will process.
+       */
+      if (params.SegBufferPoints > 0)
+	avgPSDParams.overlap=2*params.SegBufferPoints;
+    }
+      
+
+  avgPSDParams.window=windowPSD;
+  avgPSDParams.method=params.avgSpecMethod;
+  /* Set PSD plan length and plan*/
+  LAL_CALL( LALCreateForwardREAL4FFTPlan(status,
+					 &averagePSDPlan,
+					 params.SegLengthPoints+(2*params.SegBufferPoints),
+					 0),
+	    status);
+  avgPSDParams.plan=averagePSDPlan;
+
+  LAL_CALL(  LALREAL4AverageSpectrum(status,
+				     averagePSD,
+				     dataSet,
+				     &avgPSDParams),
+	     status);
+
+  if (averagePSDPlan)
+    {
+      LAL_CALL( LALDestroyREAL4FFTPlan(status,&averagePSDPlan),
+		status);
+    }
+
+
+  if (params.smoothAvgPSD > 2)
+    {
+      /* Error check that median block size less than =
+	 length of power psd
+      */
+      if (params.verbosity >= verbose)
+	{
+	  fprintf(stdout,"We will do the running median smoothing of the average PSD with block size of %i\n",
+		  params.smoothAvgPSD);
+	}
+      if (params.verbosity >= printFiles)
+	{
+	  print_real4fseries(averagePSD,"Pre_SmoothingAveragePSD.diag");
+	  print_lalUnit(averagePSD->sampleUnits,
+			"Pre_SmoothingAveragePSD_Units.diag");
+	}
+	  
+      /*
+       * Perform running median on the average PSD using
+       * blocks of size n
+       */
+      LAL_CALL(LALSCreateVector(status,
+				&smoothedAveragePSD,
+				averagePSD->data->length),
+	       status);
+      LAL_CALL(LALSCreateVector(status,
+				&tmpExtendedAveragePSD,
+				averagePSD->data->length+params.smoothAvgPSD-1),
+	       status);
+      /*
+       * Build a buffered PSD rep so that median estimate
+       * returned will have m points equal to the n points of the 
+       * original average PSD
+       */
+      for (i=0;i<averagePSD->data->length;i++)
+	tmpExtendedAveragePSD->data[i]=averagePSD->data->data[i];
+      for (i=averagePSD->data->length-1;
+	   i<tmpExtendedAveragePSD->length;
+	   i++)
+	tmpExtendedAveragePSD->data[i]=averagePSD->data->data[averagePSD->data->length-1];
+      /*
+       * Setup running median parameters
+       */
+      smoothingPSDparams.blocksize=params.smoothAvgPSD;
+      LAL_CALL(LALSRunningMedian(status,
+				 smoothedAveragePSD,
+				 tmpExtendedAveragePSD,
+				 smoothingPSDparams),
+	       status);
+      LAL_CALL(LALRngMedBias(status,
+			     &smoothingAveragePSDBias,
+			     smoothingPSDparams.blocksize),
+	       status);
+      /*
+       * Fix possible bias of the running median
+       */
+      for (i=0;i<smoothedAveragePSD->length;i++)
+	smoothedAveragePSD->data[i]=
+	  smoothingAveragePSDBias*smoothedAveragePSD->data[i];
+      /*
+       * Copy newly smoothed PSD to frequency series
+       */
+      for (i=0;i<averagePSD->data->length;i++)
+	averagePSD->data->data[i]=smoothedAveragePSD->data[i];
+
+      if (smoothedAveragePSD)
+	LAL_CALL(LALSDestroyVector(status,
+				   &smoothedAveragePSD),
+		 status);
+
+      if (tmpExtendedAveragePSD)
+	LAL_CALL(LALSDestroyVector(status,
+				   &tmpExtendedAveragePSD),
+		 status);
+	  
+	  
+    }
+  if (params.verbosity == printFiles)
+    {
+      print_real4tseries(dataSet,"timeDomainAllDataSet.diag");
+      print_real4fseries(averagePSD,"Post_SmoothingAveragePSD.diag");
+      print_lalUnit(averagePSD->sampleUnits,"Post_SmoothingAveragePSD_Units.diag");
+    }
+  /*
+   * Setup global FFT plans 
+   */
+  planLength=params.SegLengthPoints+(2*params.SegBufferPoints);
+  LAL_CALL(  LALCreateForwardREAL4FFTPlan(status,
+					  &forwardPlan,
+					  planLength,
+					  0),
+	     status);
+  LAL_CALL( LALCreateReverseREAL4FFTPlan(status,
+					 &reversePlan,
+					 planLength,
+					 0),
+	    status);
+  /*
+   * Allocate Frequency Struture to use as memory space for 
+   * subsequent ffts of segments
+   */
+  LAL_CALL(
+	   LALCreateCOMPLEX8FrequencySeries(
+					    status,
+					    &signalFFT,
+					    "tmpSegPSD",
+					    gps_zero,
+					    0,
+					    1/(dataSegments->dataSeg[0]->deltaT * dataSegments->dataSeg[0]->data->length),
+					    dataSegments->dataSeg[0]->sampleUnits,
+					    planLength/2+1),
+	   status);
+  /*
+   * Grab original units for manipulations later
+   */
+  originalFrequecyUnits=signalFFT->sampleUnits;
+
+  /* Sanity check those units above should be counts or strain */
+  /* 
+   * Actually whiten each data segment
+   */
+  if (params.verbosity >= printFiles)
+    {
+      tmpSignalPtr=NULL;
+      for (i=0;i<dataSegments->length;i++)
+	{
+	  tmpSignalPtr=(dataSegments->dataSeg[i]);
+	  LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
+		   status);
+	  sprintf(dataLabel->data,"Pre_WhitenTimeDomainDataSeg_%i.diag",i);
+	  print_real4tseries(tmpSignalPtr,dataLabel->data);
+	  sprintf(dataLabel->data,"Pre_WhitenTimeDomainDataSeg_%i_Units.diag",i);
+	  print_lalUnit(tmpSignalPtr->sampleUnits,dataLabel->data);
+	  LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
+		   status);
+	}
+      tmpSignalPtr=NULL;
+
+      for (i=0;i<dataSegments->length;i++)
+	{
+	  tmpSignalPtr = (dataSegments->dataSeg[i]);
+	  /*
+	   * FFT segment
+	   */
+	  LAL_CALL( LALForwardREAL4FFT(status,
+				       signalFFT->data,
+				       tmpSignalPtr->data,
+				       forwardPlan),
+		    status);
+	  /*
+	   * Whiten
+	   */
+	  if (params.verbosity >= printFiles)
+	    {
+	      LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
+		       status);
+	      sprintf(dataLabel->data,"Pre_whitenSignalFFT_%i.diag",i);
+	      print_complex8fseries(signalFFT,dataLabel->data);
+	      LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
+		       status);
+	    }
+	  if (params.verbosity >= verbose)
+	    fprintf(stdout,"Whitening data segment: %i of %i\n",i+1,dataSegments->length);
+	  LAL_CALL(LALTrackSearchWhitenCOMPLEX8FrequencySeries(status,
+							       signalFFT,
+							       averagePSD,
+							       params.whiten),
+		   status);
+	  if (params.verbosity >= printFiles)
+	    {
+	      LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
+		       status);
+	      sprintf(dataLabel->data,"Post_whitenSignalFFT_%i.diag",i);
+	      print_complex8fseries(signalFFT,dataLabel->data);
+	      LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
+		       status);
+	    }
+		
+	    
+	  /*
+	   * Reverse FFT
+	   */
+	  LAL_CALL( LALReverseREAL4FFT(status,
+				       tmpSignalPtr->data,
+				       signalFFT->data,
+				       reversePlan),
+		    status);
+	  /* 
+	   * Normalize the IFFT by 1/n factor
+	   * See lsd-5 p259 10.1 for explaination
+	   */
+	  for (j=0;j<tmpSignalPtr->data->length;j++)
+	    tmpSignalPtr->data->data[j]= 
+	      tmpSignalPtr->data->data[j]/tmpSignalPtr->data->length;
+	}
+      /*
+       * Reset the tmp frequency series units
+       */
+      signalFFT->sampleUnits=originalFrequecyUnits;
+      tmpSignalPtr=NULL;
+      
+      /*
+       * Free temporary Frequency Series
+       */
+      if (signalFFT)
+	{
+	  LAL_CALL( LALDestroyCOMPLEX8FrequencySeries(status,signalFFT),
+		    status);
+	}
+      if (windowPSD)
+	LAL_CALL( LALDestroyREAL4Window(status,
+					&windowPSD),
+		  status);
+
+      if (averagePSD)
+	LAL_CALL(LALDestroyREAL4FrequencySeries(status,averagePSD),
+		 status);
+
+      if (forwardPlan)
+	{
+	  LAL_CALL(
+		   LALDestroyREAL4FFTPlan(status,&forwardPlan),
+		   status);
+	}
+      if (reversePlan)
+	{
+	  LAL_CALL( LALDestroyREAL4FFTPlan(status,&reversePlan),
+		    status);
+	}
+    }
+  if (params.verbosity >= printFiles)
+    {
+      tmpSignalPtr=NULL;
+      for (i=0;i<dataSegments->length;i++)
+	{
+	  tmpSignalPtr=(dataSegments->dataSeg[i]);
+	  LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
+		   status);
+	  sprintf(dataLabel->data,"Post_WhitenTimeDomainDataSeg_%i.diag",i);
+	  print_real4tseries(tmpSignalPtr,dataLabel->data);
+	  sprintf(dataLabel->data,"Post_WhitenTimeDomainDataSeg_%i_Units.diag",i);
+	  print_lalUnit(tmpSignalPtr->sampleUnits,dataLabel->data);
+	  LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
+		   status);
+	}
+    }
+  return;
+}
+/*
+ * End Whiten data segments
+ */
+
 
 /*
  * End of Semi Private functions

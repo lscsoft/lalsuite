@@ -100,6 +100,34 @@ LALappsTrackSearchPrepareData(
 			      TSSegmentVector*,
 			      TSSearchParams);
 
+
+void 
+LALappsTrackSearchCalibrate( LALStatus*,
+			     REAL4TimeSeries*,
+			     TSSearchParams);
+
+void 
+LALappsTrackSearchBandPassing( LALStatus*,
+			       REAL4TimeSeries*,
+			       TSSearchParams);
+
+void 
+LALappsTracksearchRemoveHarmonics( LALStatus*,
+				   REAL4TimeSeries*,
+				   TSSearchParams);
+
+void 
+LALappsTrackSearchPerformInjection( LALStatus*,
+				    REAL4TimeSeries*,
+				    REAL4TimeSeries*,
+				    TSSearchParams);
+
+void
+LALappsTrackSearchWhitenSegments( LALStatus*,
+				  REAL4TimeSeries*,
+				  TSSegmentVector*,
+				  TSSearchParams);
+
 void 
 LALappsTrackSearchInitialize(LALStatus*,
 			     int argc,

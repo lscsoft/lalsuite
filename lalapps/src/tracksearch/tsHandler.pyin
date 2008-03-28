@@ -63,12 +63,10 @@ def buildCandidateGlob(fileList,verboseSwitch=False):
             print "Globbing is not possible only one file found!"
             print "Returning the result as that entry!"
         tmpObject=candidateList()
-        #tmpObject.loadfile(canList.pop(0))
         tmpObject.__loadfileQuick__(canList.pop(0))
         newCandidateObject=copy.deepcopy(tmpObject)
     else:
         newCandidateObject=candidateList()
-        #newCandidateObject.loadfile(canList.pop(0))
         newCandidateObject.__loadfileQuick__(canList.pop(0))
     for entry in canList:
         if verboseSwitch:
@@ -168,7 +166,7 @@ parser.add_option("-v","--verbose",dest="verbose",
 parser.add_option("-n","--bin-count",
                   default=50,
                   dest="histCol",
-                  help="Sets up a integrated power histogram column count so we can see significant outliers in the trigger distributions.")
+                  help="Sets up,for example, the integrated power histogram column count so we can see significant outliers in the trigger distributions.")
 parser.add_option("-m","--histogram",
                   default=False,
                   dest="histogram",
@@ -177,7 +175,7 @@ parser.add_option("-m","--histogram",
 parser.add_option("-q","--trigger-property",
                   default="p",
                   dest="triggerTrait",
-                  help="Please give single character field as argument.  See the explaination for thresholding for allowable fields. You can specify multiple histogram to create via using comma delimited entries IE p,d,v.  To override the default value of histCol for any particular plot use a : for example p,d:10,v means plot the histogram for p with histCol columns but for d use 10 columns instead."
+                  help="Please give single character field as argument.  See the explaination for thresholding for allowable fields. You can specify multiple histogram to create via using comma delimited entries IE p,d,v.  To override the default value of histCol for any particular plot use a : for example p,d:10,v means plot the histogram for p with histCol columns but for d use 10 columns instead. If you want to set a maximum value to histogram up to use, try instead d:10:1274, which means take property d create 10 bins equally spaced up to value 1274"
                   )
 parser.add_option("-P","--top-percentile",
                   default=0.05,
@@ -294,22 +292,32 @@ elif (createHistogram and (canList.__len__() >=1)):
         candidateObject=candidateList(verboseSwitch)
         candidateObject.__loadfileQuick__(entry)
         for singleTriggerTrait in triggerTrait:
-            newHistCol=int(0)
+            newHistCol=histogramcolumns
             if singleTriggerTrait.__contains__(":"):
                 property=singleTriggerTrait.strip().split(":")
                 myTrait=str(property[0])
                 newHistCol=int(property[1])
+                if property.__len__() > 2:
+                    maxBinValue=float(property[2])
+                    #Since we have a max bin and bin count
+                    #make newHistCol not a number but vector of
+                    #bins to histogram with.
+                    resolution=maxBinValue/newHistCol
+                    print resolution
+                    binList=[]
+                    for index in range(0,newHistCol,1):
+                        binList.append(index*resolution)
+                    newHistCol=binList
+                else:
+                    maxBinValue=float(-1)
             else:
                 myTrait=singleTriggerTrait
 
             if verboseSwitch:
                 thisTrait=candidateObject.__getCurveField__('',singleTriggerTrait)[1]
-            if newHistCol == 0:
-                newHistCol=histogramcolumns
-
             if verboseSwitch:
-                sys.stdout.write("Creating histogram for %s, Columns %i\n"%
-                                 (str(candidateObject.__getCurveField__('',myTrait)[1]),int(newHistCol)))
+                sys.stdout.write("Creating histogram for %s "%
+                                 (str(candidateObject.__getCurveField__('',myTrait)[1])[0]))
             try:
                 candidateObject.showHistogram(myTrait,
                                               graph2file,

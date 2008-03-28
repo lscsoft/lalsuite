@@ -828,6 +828,7 @@ class candidateList:
             del self.curves
             del line
             return 
+        del line
         input_fp.close()
         if self.curves.__len__() < 1:
             print "Error no lines in file?"
@@ -986,6 +987,11 @@ class candidateList:
         if self.verboseMode:
             outString='Found: FRes %2.3f TRes %s'%(self.freqWidth,self.gpsWidth.display())
             print outString
+        del uniqT
+        del uniqF
+        del diff_T
+        del diff_F
+        del dataIndex
     #End def newFindBinWidths
     
     def OLD_findBinWidths(self):
@@ -1832,6 +1838,7 @@ class candidateList:
             else:
                 thisPatch.set_facecolor('blue')
             patchIndex=patchIndex+1
+        #
         transitionValue=bins[index]
         if index==entries.__len__()-1:
             topPercentage=float(tally)/count
@@ -1893,7 +1900,7 @@ class candidateList:
                         minX = float(point[0])
         #Convert the time (X) axis scale to given above argument
         conversionFactor=1;
-        timeLabel="(seconds)"
+        timeLabel="(second)"
         if timescale.lower().__contains__("minute"):
             conversionFactor=60
             timeLabel="(minutes)"
@@ -1906,42 +1913,22 @@ class candidateList:
         spinner=progressSpinner(self.verboseMode)
         spinner.setTag('Plotting')
         elementIPlist=[]
+        #Cycle through all trigger IP values to set color scaling
         for element in self.curves:
-            xtmp=[]
-            ytmp=[]
-            ztmp=[]
-            bP=element.getBrightPixelAndStats()
-            brightSpotX.append((bP[0][2].getAsFloat()-minX)/conversionFactor)
-            brightSpotY.append(bP[0][3])
-            if (bP[2] == 0):
-                #Unable to determine Z score
-                brightSpotZ.append(0)
-            else:
-                brightSpotZ.append(float(bP[0][4]-bP[1]).__abs__()/bP[2])
-            #Get curve stats IP
-            for point in element.getKurveDataBlock_HumanReadable():
-                xtmp.append((float(point[0])-minX)/conversionFactor)
-                ytmp.append(float(point[1]))
-                ztmp.append(float(point[2]))
             elementIP=element.getKurveHeader()[2]
             elementIPlist.append(elementIP)
-            line2plot.append([xtmp,ytmp,ztmp,elementIP])
-            del xtmp
-            del ytmp
-            del ztmp
-            spinner.updateSpinner()
-        spinner.closeSpinner()
         maxValue=float(max(elementIPlist))
         minValue=float(min(elementIPlist))
+        del elementIPlist
+        #Setting up colorbar if possible
         if maxValue==minValue:
             minValue=maxValue-1
         #Setup colorbar hack
         stepSize=(maxValue-minValue)/256
-        linearValueMatrix=pylab.outerproduct(pylab.arange(minValue,maxValue,stepSize),pylab.ones(1))
-        #Set jet colormap
-        #Determine mapping of IP to colors
-        maxValue=max(elementIPlist)
-        minValue=min(elementIPlist)
+        try:
+            linearValueMatrix=pylab.outerproduct(pylab.arange(minValue,maxValue,stepSize),pylab.ones(1))
+        except:
+            linearValueMatrix=pylab.outer(pylab.arange(minValue,maxValue,stepSize),pylab.ones(1))
         pylab.cm.ScalarMappable().set_cmap(myColorMap)
         linearColorScale=pylab.matplotlib.colors.normalize(minValue,maxValue)
         if (minValue > 0) and (maxValue > 0):
@@ -1957,11 +1944,31 @@ class candidateList:
             pylab.hold(True)
             pylab.colorbar(tickfmt='%2.1e',orientation='vertical')
         currentPalette=pylab.get_cmap()
-        for entry in line2plot:
+        #Cycle through each trigger plotting it down.
+        for element in self.curves:
+            xtmp=[]
+            ytmp=[]
+            #ztmp=[]
+            bP=element.getBrightPixelAndStats()
+            brightSpotX.append((bP[0][2].getAsFloat()-minX)/conversionFactor)
+            brightSpotY.append(bP[0][3])
+            if (bP[2] == 0):
+                #Unable to determine Z score
+                brightSpotZ.append(0)
+            else:
+                brightSpotZ.append(float(bP[0][4]-bP[1]).__abs__()/bP[2])
+            #Get curve stats IP
+            for point in element.getKurveDataBlock_HumanReadable():
+                xtmp.append((float(point[0])-minX)/conversionFactor)
+                ytmp.append(float(point[1]))
+                #ztmp.append(float(point[2]))
+            #Plot this curve
+            spinner.updateSpinner()
+            entry=[xtmp,ytmp,element.getKurveHeader()[2]]
             if useLogColors:
                 try:
                     myRed,myGreen,myBlue,myAlpha=currentPalette(
-                        logColorScale(math.log(entry[3])))
+                        logColorScale(math.log(entry[2])))
                 except:
                     sys.stderr.write("Problem mapping trigger log color.\n")
                     sys.stderr.write("Value causing errors is %e\n"%(entry[3]))
@@ -1969,18 +1976,23 @@ class candidateList:
             else:
                 try:
                     myRed,myGreen,myBlue,myAlpha=currentPalette(
-                        linearColorScale(entry[3]))
+                        linearColorScale(entry[2]))
                 except:
                     sys.stderr.write("Problem mapping trigger linear color.\n")
-                    sys.stderr.write("Value causing errors is %e\n"%(entry[3]))
+                    sys.stderr.write("Value causing errors is %e\n"%(entry[2]))
                     myRed,myGreen,myBlue,myAlpha=(0,0,0,1)
             pylab.plot(entry[0],entry[1],color=(myRed,myGreen,myBlue))
+            del xtmp
+            del ytmp
+            del entry
+            #del ztmp
         #Normalize the brightSpotZ max -> 0..5
         normalizeZscoreTo=100
         if brightSpotZ.__len__() < 1:
             factor=1;
         else:
             factor=normalizeZscoreTo/(max(brightSpotZ))
+        del line2plot
         tmpZ=[]
         for entry in brightSpotZ:
             tmpZ.append(entry*factor)
@@ -2002,6 +2014,7 @@ class candidateList:
             sys.stderr.write("Error setting colorbar! Sorry, figure will have no colorbar.\n")
             sys.stderr.write("Using matlibplot version :"+pylab.matplotlib.__version__+"\n")
         pylab.grid(True)
+        spinner.closeSpinner()
     # END  __triggerLinePlotPrimative__
 
 
@@ -2030,7 +2043,9 @@ class candidateList:
             pylab.close()
             pylab.figure()
             [entries,bins,patches]=pylab.hist(powList,colCount)
-
+        if max(powList) > max(bins):
+            patches[patches.__len__()-1].set_edgecolor('green')
+            patches[patches.__len__()-1].set_linewidth(5)
         if statReport:
             return [entries,bins,patches]
     # END __triggerHistogramPrimative__():
