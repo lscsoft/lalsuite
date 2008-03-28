@@ -70,7 +70,6 @@ int main( int argc, char *argv[] )
   InspiralMetric metric;
   /* create memory for the full metric */
   REAL8Vector *fullmetric;
-  fullmetric = XLALCreateREAL8Vector( 45 );
   InspiralTemplate tmplt;
   REAL8FrequencySeries psd;
   void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
@@ -78,6 +77,8 @@ int main( int argc, char *argv[] )
   REAL8 deltaT = 1.0/16384.0;
   UINT4 N = 16384;
   REAL8 deltaF = 1.0/((REAL8)N * deltaT);
+
+  fullmetric = XLALCreateREAL8Vector( 45 );
 
   memset( &status, 0, sizeof(LALStatus) );
   memset( &tmplt, 0, sizeof(InspiralTemplate) );
