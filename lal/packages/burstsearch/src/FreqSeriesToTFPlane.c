@@ -286,18 +286,18 @@ SnglBurstTable *XLALComputeExcessPower(
 		/* the mean square of the "uwapprox" quantity computed
 		 * below, which is proportional to an approximation of the
 		 * unwhitened time series. */
-		double uwapprox_mean_square;
+		double uwsample_mean_square;
 		/* true unwhitened mean square for this channel.  the ratio
-		 * of this to uwapprox_mean_square is the correction factor to
+		 * of this to uwsample_mean_square is the correction factor to
 		 * be applied to uwapprox^{2} to convert it to an
 		 * approximation of the square of the unwhitened channel */
 		const double strain_mean_square = XLALREAL8SequenceSumSquares(plane->unwhitened_rms, channel, channels) + XLALREAL8SequenceSum(plane->unwhitened_cross, channel, channels - 1);
 		unsigned c;
 
-		/* compute uwapprox_mean_square */
-		uwapprox_mean_square = XLALREAL8SequenceSumSquares(plane->unwhitened_rms, channel, channels);
+		/* compute uwsample_mean_square */
+		uwsample_mean_square = XLALREAL8SequenceSumSquares(plane->unwhitened_rms, channel, channels);
 		for(c = channel; c < channel_end - 1; c++)
-			uwapprox_mean_square += plane->twice_channel_overlap->data[c] * plane->unwhitened_rms->data[c] * plane->unwhitened_rms->data[c + 1] * plane->fseries_deltaF / plane->deltaF;
+			uwsample_mean_square += plane->twice_channel_overlap->data[c] * plane->unwhitened_rms->data[c] * plane->unwhitened_rms->data[c + 1] * plane->fseries_deltaF / plane->deltaF;
 
 	/* start with at least 2 degrees of freedom */
 	for(length = 2 / (channels * plane->tiles.dof_per_pixel); length <= plane->tiles.max_length; length *= 2) {
@@ -315,30 +315,30 @@ SnglBurstTable *XLALComputeExcessPower(
 		/* compute sum of squares, and unwhitened sum of squares */
 		for(t = start + stride / 2; t < end; t += stride) {
 			double sample = 0;
-			double uwapprox = 0;
+			double uwsample = 0;
 
 			/* compute the whitened and (approximate)
 			 * unwhitened time series samples for this t */
 			for(c = channel; c < channel_end; c++) {
 				sample += plane->channel[c]->data[t];
-				uwapprox += plane->channel[c]->data[t] * plane->unwhitened_rms->data[c] * sqrt(plane->fseries_deltaF / plane->deltaF);
+				uwsample += plane->channel[c]->data[t] * plane->unwhitened_rms->data[c] * sqrt(plane->fseries_deltaF / plane->deltaF);
 			}
 
 #if 0
 			/* diagnostic code to dump data for the s_{j} histogram */
 			{
 			FILE *f = fopen("sj.dat", "a");
-			fprintf(f, "%g\n", uwapprox / sqrt(uwapprox_mean_square));
+			fprintf(f, "%g\n", uwsample / sqrt(uwsample_mean_square));
 			fclose(f);
 			}
 #endif
 
 			sumsquares += sample * sample;
-			uwsumsquares += uwapprox * uwapprox;
+			uwsumsquares += uwsample * uwsample;
 		}
 		/* normalization to give each sample a mean square of 1.0 */
 		sumsquares /= sample_mean_square;
-		uwsumsquares /= uwapprox_mean_square;
+		uwsumsquares /= uwsample_mean_square;
 
 		/* compute statistical confidence */
 		/* FIXME:  the 0.62 is an empirically determined
