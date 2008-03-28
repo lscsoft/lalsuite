@@ -31,6 +31,7 @@ NRCSID(FREQSERIESTOTFPLANEC, "$Id$");
 #include <lal/Date.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/RealFFT.h>
 #include <lal/Sequence.h>
 #include <lal/TFTransform.h>
@@ -216,7 +217,7 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 )
 {
 	static const char func[] = "XLALTFTileToBurstEvent";
-	SnglBurstTable *event = XLALCalloc(1, sizeof(*event));
+	SnglBurstTable *event = XLALCreateSnglBurstTable();
 
 	if(!event)
 		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
@@ -240,10 +241,6 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 	event->snr = E / d - 1;
 	/* -ln P(event | stationary Gaussian white noise) */
 	event->confidence = confidence;
-	/* for safety */
-	event->string_cluster_t = XLAL_REAL4_FAIL_NAN;
-	/* will be set correctly later */
-	event->event_id = 0;
 
 	return(event);
 }

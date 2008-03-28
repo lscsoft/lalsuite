@@ -196,7 +196,7 @@ fputs( "\t\t<Column Name=\"sngl_burst:event_id\" Type=\"ilwd:char\"/>\n", fp ) =
 fputs( "\t\t<Stream Name=\"sngl_burst:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SNGL_BURST_ROW \
-"\t\t\t\"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,\"sngl_burst:event_id:%ld\""
+"\t\t\t\"process:process_id:%ld\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,\"sngl_burst:event_id:%ld\""
 
 #define PRINT_LIGOLW_XML_SNGL_RINGDOWN(fp) ( \
 fputs( "   <Table Name=\"sngl_ringdowngroup:sngl_ringdown:table\">\n", fp ) == EOF || \

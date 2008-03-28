@@ -440,6 +440,7 @@ LALWriteLIGOLwXMLTable (
       {
         FIRST_TABLE_ROW
           fprintf( xml->fp, SNGL_BURST_ROW,
+              tablePtr.snglBurstTable->process_id,
               tablePtr.snglBurstTable->ifo,
               tablePtr.snglBurstTable->search,
               tablePtr.snglBurstTable->channel,

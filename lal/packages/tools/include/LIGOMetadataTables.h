@@ -360,7 +360,9 @@ tagSnglBurstTable
 	REAL4 amplitude;
 	REAL4 snr;
 	REAL4 confidence;
+	/* FIXME:  remove string_cluster_t from the structure */
 	REAL4 string_cluster_t;
+	long process_id;
 	long event_id;
 }
 SnglBurstTable;

@@ -171,13 +171,10 @@ MultiInspiralTable* XLALMultiInspiralTableFromLIGOLw (
     CHAR               *fileName
     );
 
-
-void
-LALSnglBurstTableFromLIGOLw (
-    LALStatus          *status,
-    SnglBurstTable    **eventHead,
-    CHAR               *fileName
-    );
+SnglBurstTable *
+XLALSnglBurstTableFromLIGOLw(
+    const CHAR *filename
+);
 
 SimBurst *
 XLALSimBurstTableFromLIGOLw (

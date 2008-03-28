@@ -117,19 +117,26 @@ void XLALFreeSnglBurst(SnglBurstTable *event)
 }
 
 
-/*
- * Assign event_id values to the entries in a sngl_burst linked list.
+/**
+ * Assign event_id values to the entries in a sngl_burst linked list.  All
+ * sngl_burst rows in the list will be blamed on the given process_id, and
+ * assigned event_ids in order starting with the given event_id.  The
+ * return value is the next event_id after the last one assigned to a row
+ * in the list.
  */
 
 
-/* <lalVerbatim file="SnglBurstUtilsCP"> */
-void XLALSnglBurstAssignIDs(SnglBurstTable *head)
-/* </lalVerbatim> */
+long XLALSnglBurstAssignIDs(
+	SnglBurstTable *head,
+	long process_id,
+	long event_id
+)
 {
-	long id;
-
-	for(id = 0; head; head = head->next)
-		head->event_id = id++;
+	for(; head; head = head->next) {
+		head->process_id = process_id;
+		head->event_id = event_id++;
+	}
+	return event_id;
 }
 
 
@@ -435,8 +442,52 @@ void XLALClusterSnglBurstTable (
 }
 
 
-/*
- * Create and destroy a SimBurst structure.
+/**
+ * Create a SnglBurstTable structure.
+ */
+
+
+SnglBurstTable *XLALCreateSnglBurstTable(void)
+{
+	static const char func[] = "XLALCreateSnglBurstTable";
+	SnglBurstTable *new = XLALMalloc(sizeof(*new));
+
+	if(!new)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+
+	new->next = NULL;
+	new->process_id = new->event_id = -1;
+	memset(new->ifo, 0, sizeof(new->ifo));
+	memset(new->search, 0, sizeof(new->search));
+	memset(new->channel, 0, sizeof(new->channel));
+	XLALGPSSet(&new->start_time, 0, 0);
+	XLALGPSSet(&new->peak_time, 0, 0);
+	new->duration = XLAL_REAL4_FAIL_NAN;
+	new->central_freq = XLAL_REAL4_FAIL_NAN;
+	new->bandwidth = XLAL_REAL4_FAIL_NAN;
+	new->amplitude = XLAL_REAL4_FAIL_NAN;
+	new->snr = XLAL_REAL4_FAIL_NAN;
+	new->confidence = XLAL_REAL4_FAIL_NAN;
+	/* FIXME:  remove string_cluster_t from the structure */
+	new->string_cluster_t = XLAL_REAL4_FAIL_NAN;
+
+	return new;
+}
+
+
+/**
+ * Destroy a SnglBurstTable structure.
+ */
+
+
+void XLALDestroySnglBurstTable(SnglBurstTable *sngl_burst)
+{
+	XLALFree(sngl_burst);
+}
+
+
+/**
+ * Create a SimBurst structure.
  */
 
 
@@ -449,7 +500,7 @@ SimBurst *XLALCreateSimBurst(void)
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
 	new->next = NULL;
-	new->process_id = new->simulation_id = 0;
+	new->process_id = new->simulation_id = -1;
 	memset(new->waveform, 0, sizeof(new->waveform));
 	new->ra = XLAL_REAL8_FAIL_NAN;
 	new->dec = XLAL_REAL8_FAIL_NAN;
@@ -471,16 +522,25 @@ SimBurst *XLALCreateSimBurst(void)
 }
 
 
+/**
+ * Destroy a SimBurst structure.
+ */
+
+
 void XLALDestroySimBurst(SimBurst *sim_burst)
 {
 	XLALFree(sim_burst);
 }
 
 
-void XLALSimBurstAssignIDs(SimBurst *sim_burst)
-{
-	long id;
+/**
+ * Assign IDs to a linked list of SimBurst structures.
+ */
 
-	for(id = 0; sim_burst; sim_burst = sim_burst->next)
-		sim_burst->simulation_id = id++;
+
+long XLALSimBurstAssignIDs(SimBurst *sim_burst, long simulation_id)
+{
+	for(; sim_burst; sim_burst = sim_burst->next)
+		sim_burst->simulation_id = simulation_id++;
+	return simulation_id;
 }
