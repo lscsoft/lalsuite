@@ -69,6 +69,7 @@ RCSID( "$Id$" );
 "  --output OUTPUT            write output data to file: OUTPUT\n"\
 " [--mass-cut] MASS_TYPE      keep only triggers in mass range of type\n"\
 "                             MASS_TYPE (mtotal|mchirp|mcomp)\n"\
+"                             (if MASS_TYPE = mcomp, mass2 is the smaller mass)\n"\
 " [--mass-range-low] MIN      set the minimum mass to MIN\n"\
 " [--mass-range-high] MAX     set the maximum mass to MAX\n"\
 " [--mass2-range-low] MIN     set the minimum mass2 to MIN\n"\
