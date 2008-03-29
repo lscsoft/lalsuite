@@ -159,6 +159,14 @@ SnglBurstTable *XLALEPSearch(
 
 	for(start_sample = 0; start_sample + plane->window->data->length <= tseries->data->length; start_sample += plane->window_shift) {
 		/*
+		 * Verbosity.
+		 */
+
+		XLALPrintInfo("%s(): ", func);
+		XLALPrintProgressBar(start_sample / (double) (tseries->data->length - plane->window->data->length));
+		XLALPrintInfo(" complete\n");
+
+		/*
 		 * Extract a window-length of data from the time series,
 		 * compute its DFT, then free it.
 		 */
