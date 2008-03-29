@@ -138,6 +138,9 @@ int XLALPrintWarning( const char *fmt, ... );
 /** Prints an info message if info printing is enabled by lalDebugLevel. */
 int XLALPrintInfo( const char *fmt, ... );
 
+/** Prints a progress bar at the "info" verbosity level. */
+int XLALPrintProgressBar( double );
+
 
 /* silence gcc warnings about certain (possibly) unused symbols */
 #ifdef __GNUC__

@@ -68,7 +68,7 @@ int XLALPrintWarning( const char *fmt, ... )
   return n;
 }
 
-/** Prints a warning message if warning printing is enabled by lalDebugLevel. */
+/** Prints an info message if info printing is enabled by lalDebugLevel. */
 int XLALPrintInfo( const char *fmt, ... )
 {
   int n = 0;
@@ -80,6 +80,24 @@ int XLALPrintInfo( const char *fmt, ... )
     va_end( ap );
   }
   return n;
+}
+
+/**
+ * Prints a progress bar at the "info" verbosity level.
+ */
+
+int XLALPrintProgressBar( double fraction )
+{
+  static const char func[] = "XLALPrintProgressBar";
+  static const char mrk[] = "+++++++++++++++++++++++++++++++++++++++++++++++++)";
+  static const char spc[] = "-------------------------------------------------)";
+  int l = sizeof(mrk)/sizeof(*mrk) - 1;
+  int offset = fraction * l + 0.5;
+
+  if(fraction < 0 || fraction > 1)
+    XLAL_ERROR(func, XLAL_EDOM);
+
+  return XLALPrintInfo("[%s%s %.1f%%", mrk + l - offset, spc + offset, 100.0 * fraction);
 }
 
 
