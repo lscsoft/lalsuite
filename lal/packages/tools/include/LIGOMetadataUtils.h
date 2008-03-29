@@ -274,7 +274,8 @@ typedef enum
   effective_snrsq,
   s3_snr_chi_stat,
   bitten_l,
-  bitten_lsq
+  bitten_lsq,
+  ifar
 } 
 CoincInspiralStatistic;
 /*</lalVerbatim> */
@@ -928,6 +929,12 @@ XLALCompareCoincInspiralByTime (
     const void *b
     );
 
+int
+XLALCompareCoincInspiralByEffectiveSnr (
+    const void *a,
+    const void *b
+    );
+
 CoincInspiralTable *
 XLALSortCoincInspiral (
     CoincInspiralTable  *eventHead,
@@ -969,6 +976,44 @@ XLALStatCutCoincInspiral (
     CoincInspiralStatistic      coincStat,
     CoincInspiralBittenLParams *bittenLParams,
     REAL4                       statCut
+    );
+
+REAL4
+XLALRateStatCalcOneCoincInspiral (
+    CoincInspiralTable         *thisEvent,
+    CoincInspiralTable         *eventSlideHead,
+    CoincInspiralStatistic      coincStat,
+    CoincInspiralBittenLParams *bittenLParams,
+    REAL4                       timeAnalyzed,
+    REAL4                       fitStat,
+    REAL4                       fitA,
+    REAL4                       fitB
+    );
+
+REAL4
+XLALRateStatCalcCoincInspiral (
+    CoincInspiralTable         *thisEvent,
+    CoincInspiralTable         *eventSlideHead,
+    CoincInspiralStatistic      coincStat,
+    CoincInspiralBittenLParams *bittenLParams,
+    REAL4                       timeAnalyzed,
+    REAL4                       fitStat,
+    REAL4                       fitA,
+    REAL4                       fitB
+    );
+
+CoincInspiralTable *
+XLALRateStatCutCoincInspiral (
+    CoincInspiralTable         *eventZeroHead,
+    CoincInspiralTable         *eventSlideHead,
+    CoincInspiralStatistic      coincStat,
+    CoincInspiralBittenLParams *bittenLParams,
+    REAL4                       statCut,
+    REAL4                       rateCut,
+    REAL4                       timeAnalyzed,
+    REAL4                       fitStat,
+    REAL4                       fitA,
+    REAL4                       fitB
     );
 
 SnglInspiralTable *
