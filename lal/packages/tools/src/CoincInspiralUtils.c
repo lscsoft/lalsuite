@@ -2390,7 +2390,7 @@ XLALStatCutCoincInspiral (
     CoincInspiralTable *tmpEvent = thisEvent;
     thisEvent = thisEvent->next;
     
-    if ( XLALCoincInspiralStat(tmpEvent,coincStat,bittenLParams) > statCut )
+    if ( XLALCoincInspiralStat(tmpEvent,coincStat,bittenLParams) >= statCut )
     {
       /* keep this template */
       if ( ! eventHead  )
