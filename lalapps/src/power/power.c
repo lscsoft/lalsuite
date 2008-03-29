@@ -1317,6 +1317,9 @@ static SnglBurstTable **analyze_series(SnglBurstTable **addpoint, REAL8TimeSerie
 		if(!interval)
 			XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
+		XLALPrintInfo("%s(): ", func);
+		XLALPrintProgressBar(i / (double) (series->data->length + psd_shift - psd_length));
+		XLALPrintInfo(" complete\n");
 		XLALPrintInfo("%s(): analyzing samples %zu -- %zu (%.9lf s -- %.9lf s)\n", func, start, start + interval->data->length, start * interval->deltaT, (start + interval->data->length) * interval->deltaT);
 
 		*addpoint = XLALEPSearch(
@@ -1399,23 +1402,6 @@ static void output_results(LALStatus *stat, char *file, const char *ifo, Metadat
 	LAL_CALL(LALEndLIGOLwXMLTable(stat, &xml), stat);
 
 	LAL_CALL(LALCloseLIGOLwXMLFile(stat, &xml), stat);
-}
-
-
-/*
- * ============================================================================
- *
- *                                Progress Bar
- *
- * ============================================================================
- */
-
-
-static void print_progress_bar(const char *func, const LIGOTimeGPS *start, const LIGOTimeGPS *end, const LIGOTimeGPS *t)
-{
-	XLALPrintInfo("%s: ", func);
-	XLALPrintProgressBar(XLALGPSDiff(t, start) / XLALGPSDiff(end, start));
-	XLALPrintInfo(" complete\n");
 }
 
 
@@ -1514,7 +1500,9 @@ int main(int argc, char *argv[])
 		 * Progress bar.
 		 */
 
-		print_progress_bar(argv[0], &options->gps_start, &boundepoch, &epoch);
+		XLALPrintInfo("%s: ", argv[0]);
+		XLALPrintProgressBar(XLALGPSDiff(&epoch, &options->gps_start) / XLALGPSDiff(&boundepoch, &options->gps_start));
+		XLALPrintInfo(" complete\n");
 
 		/*
 		 * Get the data.
