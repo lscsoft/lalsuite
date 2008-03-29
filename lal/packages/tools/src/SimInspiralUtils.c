@@ -334,6 +334,8 @@ XLALSimInspiralCompMassCut(
   SimInspiralTable    *prevEvent = NULL;
 
   INT4 numInj;
+  REAL4 mass1, mass2;
+
 
   /* Remove all the triggers which are not of the desired type */
 
@@ -345,10 +347,21 @@ XLALSimInspiralCompMassCut(
     SimInspiralTable *tmpEvent = thisEvent;
     thisEvent = thisEvent->next;
 
-    if ( ( tmpEvent->mass1 >= minCompMass ) &&
-         ( tmpEvent->mass1 < maxCompMass ) &&
-         ( tmpEvent->mass2 >= minCompMass2 ) &&
-         ( tmpEvent->mass2 < maxCompMass2 ) )
+    if ( tmpEvent->mass1 >= tmpEvent->mass2 )
+    {
+      mass1 = tmpEvent->mass1;
+      mass2 = tmpEvent->mass2;
+    }
+    else
+    {
+      mass1 = tmpEvent->mass2;
+      mass2 = tmpEvent->mass1;
+    }
+
+    if ( ( mass1 >= minCompMass ) &&
+         ( mass1 < maxCompMass ) &&
+         ( mass2 >= minCompMass2 ) &&
+         ( mass2 < maxCompMass2 ) )
     {
       /* keep this trigger */
       if ( ! inspiralEventList  )
