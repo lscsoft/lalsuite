@@ -83,12 +83,17 @@ NRCSID( COINCINSPIRALUTILSC, "$Id$" );
 \idx{XLALClusterCoincInspiralTable()}
 \idx{XLALCoincInspiralIfos()}
 \idx{XLALCoincInspiralIfosCut()}
+\idx{XLALCoincInspiralIfosDiscard()}
 \idx{XLALCoincInspiralIdNumber()}
 \idx{XLALCoincInspiralSlideCut()}
 \idx{XLALInspiralSNRCutBCV2()}
 \idx{XLALSNRCutCoincInspiral()}
 \idx{XLALSortCoincInspiral()}
 \idx{XLALCompareCoincInspiralByTime()}
+\idx{XLALCompareCoincInspiralByEffectiveSnr()}
+\idx{XLALRateStatCalcOneCoincInspiral()}
+\idx{XLALRateStatCalcCoincInspiral()}
+\idx{XLALRateStatCutCoincInspiral()}
 \idx{XLALCountInspiralTable()}
 
 \subsubsection*{Description}
@@ -1819,7 +1824,6 @@ XLALCoincInspiralStat(
         statValue += tmp_snr * tmp_snr / 
           sqrt ( tmp_chisq/(2*tmp_bins-2) * (1+tmp_snr*tmp_snr/250) ) ;
       }
-
       else if ( coincStat == bitten_l || coincStat == bitten_lsq)
       {
         statValues[ifoNumber] = bittenLParams->param_a[ifoNumber] 
@@ -1834,6 +1838,10 @@ XLALCoincInspiralStat(
         
         statValue += tmp_snr * tmp_snr * tmp_snr * tmp_snr / 
           ( tmp_chisq * ( 250 + tmp_snr * tmp_snr ) );
+      }
+      else if ( coincStat == ifar )
+      {
+        statValue = 1/snglInspiral->alpha;
       }
 
     }
@@ -1980,6 +1988,39 @@ XLALCompareCoincInspiralByTime (
   }
 }
 
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+int   
+XLALCompareCoincInspiralByEffectiveSnr (
+    const void *a,
+    const void *b
+    ) 
+/* </lalVerbatim> */
+{
+  CoincInspiralTable *aPtr = *((CoincInspiralTable * const *)a);
+  CoincInspiralTable *bPtr = *((CoincInspiralTable * const *)b);
+  REAL4 ta, tb;
+
+  CoincInspiralStatistic coincStat = effective_snrsq;
+  CoincInspiralBittenLParams bittenLParams;
+  memset( &bittenLParams, 0, sizeof(CoincInspiralBittenLParams) );
+
+  ta = XLALCoincInspiralStat(aPtr,coincStat,&bittenLParams);
+  tb = XLALCoincInspiralStat(bPtr,coincStat,&bittenLParams);
+ 
+  if ( ta > tb )
+  {
+    return -1;
+  }
+  else if ( ta < tb )
+  {
+    return 1;
+  }
+  else
+  { 
+    return 0;
+  } 
+}
+
 
 /* <lalVerbatim file="CoincInspiralUtilsCP"> */
 CoincInspiralTable *
@@ -2064,13 +2105,14 @@ XLALCoincInspiralIfos (
   }
   return( ifosMatch );
 }  
-      
-         
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
 int
 XLALCoincInspiralIfosCut(
     CoincInspiralTable **coincHead,
-    char                *ifos    
+    char                *ifos
     )
+/* </lalVerbatim> */
 {
   CoincInspiralTable    *prevCoinc = NULL;
   CoincInspiralTable    *thisCoinc = NULL;
@@ -2108,7 +2150,6 @@ XLALCoincInspiralIfosCut(
   
   return( numCoinc );
 }
-
 
 /* <lalVerbatim file="CoincInspiralUtilsCP"> */
 int
@@ -2349,7 +2390,7 @@ XLALStatCutCoincInspiral (
     CoincInspiralTable *tmpEvent = thisEvent;
     thisEvent = thisEvent->next;
     
-    if ( XLALCoincInspiralStat(tmpEvent,coincStat,bittenLParams) >= statCut )
+    if ( XLALCoincInspiralStat(tmpEvent,coincStat,bittenLParams) > statCut )
     {
       /* keep this template */
       if ( ! eventHead  )
@@ -2370,6 +2411,207 @@ XLALStatCutCoincInspiral (
     }
   }
   return( eventHead );
+}
+
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+REAL4
+XLALRateStatCalcOneCoincInspiral (
+    CoincInspiralTable         *thisEvent,
+    CoincInspiralTable         *coincSlideHead,
+    CoincInspiralStatistic      coincStat,
+    CoincInspiralBittenLParams *bittenLParams,
+    REAL4                       timeAnalyzed,
+    REAL4                       fitStat,
+    REAL4                       fitA,
+    REAL4                       fitB
+    )
+/* </lalVerbatim> */
+{
+  CoincInspiralTable    *thisSlideEvent = coincSlideHead;
+
+  REAL4  thisStat;
+  REAL4  thisRate = 0;
+
+  thisStat = XLALCoincInspiralStat(thisEvent, coincStat, bittenLParams);
+  if ( (fitStat > 0) && (thisStat > fitStat) )
+  {
+    thisRate = fitA * exp(fitB * thisStat);
+  }
+  else
+  {
+    while ( thisSlideEvent )
+    {
+      CoincInspiralTable *tmpEvent = thisSlideEvent;
+
+      if ( XLALCoincInspiralStat(tmpEvent,coincStat,bittenLParams) > thisStat )
+      {
+        /* count this slide coinc towards the rate */
+        thisRate += 1.;
+        thisSlideEvent = thisSlideEvent->next;
+      }
+      else
+        break;
+    }
+  }
+
+  thisRate /= timeAnalyzed;
+
+  return( thisRate );
+}
+
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+REAL4
+XLALRateStatCalcCoincInspiral (
+    CoincInspiralTable         *coincZeroHead,
+    CoincInspiralTable         *coincSlideHead,
+    CoincInspiralStatistic      coincStat,
+    CoincInspiralBittenLParams *bittenLParams,
+    REAL4                       timeAnalyzed,
+    REAL4                       fitStat,
+    REAL4                       fitA,
+    REAL4                       fitB
+    )
+/* </lalVerbatim> */
+{
+  CoincInspiralTable    *thisSlideEvent = coincSlideHead;
+  CoincInspiralTable    *thisEvent = coincZeroHead;
+
+  REAL4  thisStat;
+  REAL4  thisSlideStat;
+  REAL4  thisRate = 0.;
+  REAL4  loudestRate = -1;
+
+  while ( thisEvent )
+  {
+    thisStat = XLALCoincInspiralStat(thisEvent, coincStat, bittenLParams);
+
+    if ( (fitStat > 0) && (thisStat > fitStat) )
+    {
+      /* put thisRate in sngl_inspiral->alpha for thisEvent[ifo] 
+       * for all ifos in thisEvent 
+       * FIXME in the future */
+      InterferometerNumber ifoNumber = LAL_UNKNOWN_IFO;
+
+      thisRate = fitA * exp(fitB * thisStat);
+
+      for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+      {
+        if ( thisEvent->snglInspiral[ifoNumber] )
+          thisEvent->snglInspiral[ifoNumber]->alpha = thisRate/timeAnalyzed;
+      }
+    }
+    else
+    {
+      while ( thisSlideEvent )
+      {
+        thisSlideStat =
+            XLALCoincInspiralStat(thisSlideEvent, coincStat, bittenLParams);
+
+        if ( thisSlideStat > thisStat )
+        {
+          /* count this slide coinc towards the rate */
+          thisRate += 1.;
+          thisSlideEvent = thisSlideEvent->next;
+        }
+        else
+        {
+          /* put thisRate in sngl_inspiral->alpha for thisEvent[ifo] 
+           * for all ifos in thisEvent 
+           * FIXME in the future */
+          InterferometerNumber ifoNumber = LAL_UNKNOWN_IFO;
+
+          for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+          {
+            if ( thisEvent->snglInspiral[ifoNumber] )
+              thisEvent->snglInspiral[ifoNumber]->alpha = thisRate/timeAnalyzed;
+          }
+
+          break;
+        }
+      }
+    }
+
+    if ( loudestRate < 0 ) loudestRate = thisRate/timeAnalyzed;
+    thisEvent = thisEvent->next;
+  }
+
+  return( loudestRate );  
+}
+
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+CoincInspiralTable *
+XLALRateStatCutCoincInspiral (
+    CoincInspiralTable         *eventZeroHead,
+    CoincInspiralTable         *eventSlideHead,
+    CoincInspiralStatistic      coincStat,
+    CoincInspiralBittenLParams *bittenLParams,
+    REAL4                       statCut,
+    REAL4                       rateCut,
+    REAL4                       timeAnalyzed,
+    REAL4                       fitStat,
+    REAL4                       fitA,
+    REAL4                       fitB
+    )
+/* </lalVerbatim> */     
+{ 
+  CoincInspiralTable    *thisEvent = NULL;
+  CoincInspiralTable    *prevEvent = NULL;
+  REAL4                  thisRate;
+  REAL4                  thisStat;
+
+  thisEvent = eventZeroHead;
+  eventZeroHead = NULL;
+
+  while ( thisEvent )
+  {
+    CoincInspiralTable *tmpEvent = thisEvent;
+    thisEvent = thisEvent->next;
+    thisRate = XLALRateStatCalcOneCoincInspiral( tmpEvent, eventSlideHead,
+                   coincStat, bittenLParams, timeAnalyzed, fitStat, fitA,
+                   fitB );
+    thisStat = XLALCoincInspiralStat(tmpEvent,coincStat,bittenLParams);
+    if ( thisRate > rateCut )
+    {
+      /* discard the remaining templates */
+      XLALFreeCoincInspiral ( &tmpEvent );
+      while ( thisEvent )
+      {
+        tmpEvent = thisEvent;
+        thisEvent = thisEvent->next;
+        XLALFreeCoincInspiral ( &tmpEvent );
+      }
+    }
+    else if ( ( thisRate == rateCut ) &&
+        (  thisStat < statCut ) )
+    {
+      /* discard the remaining templates */
+      XLALFreeCoincInspiral ( &tmpEvent );
+      while ( thisEvent )
+      {
+        tmpEvent = thisEvent;
+        thisEvent = thisEvent->next;
+        XLALFreeCoincInspiral ( &tmpEvent );
+      }
+    }
+    else
+    {
+      /* keep this template */
+      if ( ! eventZeroHead  )
+      {
+        eventZeroHead = tmpEvent;
+      }
+      else
+      {
+        prevEvent->next = tmpEvent;
+      }
+      tmpEvent->next = NULL;
+      prevEvent = tmpEvent;
+    }
+  }
+  return( eventZeroHead );
 }
 
 
