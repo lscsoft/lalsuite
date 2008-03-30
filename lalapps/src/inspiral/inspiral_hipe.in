@@ -973,7 +973,7 @@ def coherent_analysis(ifos,single_ifo_segments,cb_job,trig_coh_jobs,
       cohbank.set_priority(6)
     cohbank.set_start(coinc_done.get_chunk().start())
     cohbank.set_end(coinc_done.get_chunk().end())
-    cohbank.set_ifos(ifos) 
+    cohbank.set_ifos(ifos)
     cohbank.add_file_arg(coinc_done.get_dag_node().get_output())
     if opts.second_coinc: cohbank.add_parent(coinc_done.get_dag_node())
 
@@ -998,6 +998,7 @@ def coherent_analysis(ifos,single_ifo_segments,cb_job,trig_coh_jobs,
     cohinsp.set_bank(cohbank.get_output())
     cohinsp.set_start(coinc_done.get_chunk().start())
     cohinsp.set_end(coinc_done.get_chunk().end())
+    cohinsp.set_ifo_tag(ifotag)
     cohinsp.add_var_opt('ifo-tag',ifotag)
     
     # set up trigbank and inspiral
@@ -1009,11 +1010,11 @@ def coherent_analysis(ifos,single_ifo_segments,cb_job,trig_coh_jobs,
           frjoin.set_category('frjoin')
         if not opts.disable_dag_priorities:
           frjoin.set_priority(8)
-        outputName = ifo + '-INSPIRAL_'
-        if usertag: outputName += usertag + '_'
-        outputName += ifotag + '-' + str(coinc_done.get_chunk().start()) + \
+        outputName = ifo + '-INSPIRAL_' + ifotag
+        if usertag: outputName += '_' + usertag
+        outputName += '-' + str(coinc_done.get_chunk().start()) + \
             '-' + str(coinc_done.get_chunk().end() - \
-            coinc_done.get_chunk().start()) + '.gwf'      
+            coinc_done.get_chunk().start()) + '.gwf'
         frjoin.set_output(outputName)
 
         for seg in single_ifo_segments[ifo]:
