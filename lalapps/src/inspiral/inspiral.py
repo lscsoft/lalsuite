@@ -1322,6 +1322,41 @@ class ChiaNode(InspiralAnalysisNode):
     self.add_var_opt('bank-file', bank)
     self.add_input_file(bank)
 
+  def set_ifo_tag(self,ifo_tag):
+    """
+    Set the ifo tag that is passed to the analysis code.
+    @param ifo_tag: a string to identify one or more IFOs
+    """
+    self.__ifo_tag = ifo_tag
+
+  def get_ifo_tag(self):
+    """
+    Returns the IFO tag string
+    """
+    return self.__ifo_tag  
+  
+  def get_output(self):
+    """
+    Returns the file name of output from coherent inspiral.
+    """
+    if not self.get_start() or not self.get_end() or not self.get_ifo_tag():
+      raise InspiralError, "Start time, end time or ifos have not been set"
+      
+    basename = self.get_ifo_tag() + '-COHERENT'
+
+    if self.get_user_tag():
+      basename += '_' + self.get_user_tag()
+
+    filename = basename + '-' + str(self.get_start()) + '-' + \
+      str(self.get_end() - self.get_start()) + '.xml'
+
+    if self.get_zip_output():
+      filename += '.gz'
+
+    self.add_output_file(filename)
+
+    return filename
+
 
 ##############################################################################
 #Plotting Jobs and Nodes
