@@ -77,7 +77,24 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
     having a severe impact on runtime of the E@H Linux App.
     So let's allow to give gcc a hint which path has a higher probablility */
 #define __builtin_expect(a,b) a
+
 #endif
+
+
+#if EAH_HOUGH_PREFETCH > EAH_HOUGH_PREFETCH_NONE
+#if defined(__INTEL_COMPILER) ||  defined(_MSC_VER)
+#include "xmmintrin.h"
+#define PREFETCH(a) _mm_prefetch((char *)(void *)(a),_MM_HINT_T0)
+#elif defined(__GNUC__)
+#define PREFETCH(a) __builtin_prefetch(a)
+#else
+#define PREFETCH(a) a
+#endif
+#else
+#define PREFETCH(a) a
+#endif
+
+
 
 /** the way of trimming x to the interval [0..1) for the sin_cos_LUT functions
     give significant differences in speed, so we provide various ways here.
@@ -519,7 +536,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
       COMPLEX8 *Xalpha_l; 	/* pointer to frequency-bin k in current SFT */
       REAL4 s_alpha, c_alpha;	/* sin(2pi kappa_alpha) and (cos(2pi kappa_alpha)-1) */
       REAL4 realQ, imagQ;	/* Re and Im of Q = e^{-i 2 pi lambda_alpha} */
-      REAL4 realXP, imagXP;	/* Re/Im of sum_k X_ak * P_ak */
+      REAL4 realXP, imagXP;     /* re/im of sum_k X_ak * P_ak */
       REAL4 realQXP, imagQXP;	/* Re/Im of Q_alpha R_alpha */
 
       REAL8 lambda_alpha, kappa_max, kappa_star;
@@ -529,6 +546,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	UINT4 s; 		/* loop-index over spindown-order */
 	REAL8 phi_alpha, Dphi_alpha, DT_al;
 	REAL8 Tas;	/* temporary variable to calculate (DeltaT_alpha)^s */
+        REAL8 TAS_invfact_s;
 	static const REAL8 Dterms_1f = DTERMS - 1; /* Dterms - 1 as a double constant */
 
 	/* init for s=0 */
@@ -536,10 +554,11 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	Dphi_alpha = 0.0;
 	DT_al = (*DeltaT_al);
 	Tas = 1.0;		/* DeltaT_alpha ^ 0 */
+	TAS_invfact_s=1.0;    /* TAS / s! */
 
 	for (s=0; s <= spdnOrder; s++) {
 	  REAL8 fsdot = fkdot[s];
-	  Dphi_alpha += fsdot * Tas * inv_fact[s]; 	/* here: DT^s/s! */
+	  Dphi_alpha += fsdot * TAS_invfact_s; 	/* here: DT^s/s! */
 #ifdef EAH_CHECK_FINITE_DPHI
 	  if (!finite(Dphi_alpha)) {
 	    LogPrintf(LOG_CRITICAL, "non-finite Dphi_alpha:%e, alpha:%d, spind#:%d, fkdot:%e, Tas:%e, inv_fact[s]:%e, inv_fact[s+1]:%e, phi_alpha:%e. DT_al:%e\n",
@@ -548,7 +567,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  }
 #endif
 	  Tas *= DT_al;				/* now: DT^(s+1) */
-	  phi_alpha += fsdot * Tas * inv_fact[s+1];
+          TAS_invfact_s= Tas * inv_fact[s+1];
+	  phi_alpha += fsdot * TAS_invfact_s;
 	} /* for s <= spdnOrder */
 
 	/* Step 3: apply global factors to complete Dphi_alpha */
@@ -602,9 +622,10 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
        */
 
       Xalpha_l = Xalpha + k0 - freqIndex0;  /* first frequency-bin in sum */
-
+/* not needed
       realXP = 0;
       imagXP = 0;
+*/
 
       /* if no danger of denominator -> 0 */
       if (__builtin_expect((kappa_star > LD_SMALL4) && (kappa_star < 1.0 - LD_SMALL4), (0==0)))
@@ -618,8 +639,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	*/
 
 	/* WARNING: all current optimized loops rely on current implementation of COMPLEX8 type */
-
-#if (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_SSE)
+#if (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_SSE_AKOS08)
 
 	/** SSE version from Akos */
 
@@ -627,92 +647,297 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
         {
 
           COMPLEX8 XSums __attribute__ ((aligned (16))); /* sums of Xa.re and Xa.im for SSE */
-	  REAL4 kappa_m = kappa_max; /* single precision version of kappa_max */
+	  REAL4 kappa_s = kappa_star; /* single precision version of kappa_star */
 
-	  REAL4 *Xal   /*esi*/  = (REAL4*)Xalpha_l;
-	  REAL4 STn[4] /*xmm1*/ = {Xal[0],Xal[1],Xal[2],Xal[3]};
-	  REAL4 pn[4]  /*xmm2*/ = {kappa_max, kappa_max, kappa_max-1.0f, kappa_max-1.0f};
-	  REAL4 qn[4]  /*xmm0*/ = {kappa_max, kappa_max, kappa_max-1.0f, kappa_max-1.0f};
-
+	  static REAL4 *scd 		  =  &(sincosLUTdiff[0]);
+	  static REAL4 *scb 		  =  &(sincosLUTbase[0]);
+	  static REAL4 M1 = -1.0f;
+	  static REAL8 sincos_adds = 402653184.0;
+	  REAL8 tmp;
+          REAL8 _lambda_alpha = -lambda_alpha;
           /* vector constants */
           /* having these not aligned will crash the assembler code */
-          static REAL4 V0011[4] __attribute__ ((aligned (16))) = { 0,0,1,1 };
-          static REAL4 V2222[4] __attribute__ ((aligned (16))) = { 2,2,2,2 };
+          static  REAL4 D2222[4] __attribute__ ((aligned (16))) = { 2,2,2,2 };
+	  
+	  static  REAL4 D1100[4] __attribute__ ((aligned (16))) = {1.0f, 1.0f, 0.0f, 0.0f};
+	  static  REAL4 D3322[4] __attribute__ ((aligned (16))) = {3.0f, 3.0f, 2.0f, 2.0f};
+	  static  REAL4 D5544[4] __attribute__ ((aligned (16))) = {5.0f, 5.0f, 4.0f, 4.0f};
+	  static  REAL4 D7766[4] __attribute__ ((aligned (16))) = {7.0f, 7.0f, 6.0f, 6.0f};
+
+	  static  REAL4 Daabb[4] __attribute__ ((aligned (16))) = {-1.0f, -1.0f, -2.0f, -2.0f};
+	  static  REAL4 Dccdd[4] __attribute__ ((aligned (16))) = {-3.0f, -3.0f, -4.0f, -4.0f};
+	  static  REAL4 Deeff[4] __attribute__ ((aligned (16))) = {-5.0f, -5.0f, -6.0f, -6.0f};
+	  static  REAL4 Dgghh[4] __attribute__ ((aligned (16))) = {-7.0f, -7.0f, -8.0f, -8.0f};
 
 	  /* hand-coded SSE version from Akos */
 
 	  /* one loop iteration as a macro */
-#define VEC_LOOP_AV(a,b)\
-	     "MOVLPS " #a "(%[Xa]),%%xmm3   	\n\t" \
-	     "MOVHPS " #b "(%[Xa]),%%xmm3   	\n\t" \
-	     "SUBPS	%%xmm4,%%xmm2   	\n\t" \
-	     "MULPS	%%xmm0,%%xmm3   	\n\t" \
-	     "MULPS	%%xmm2,%%xmm1   	\n\t" \
-	     "MULPS	%%xmm2,%%xmm0   	\n\t" \
-	     "ADDPS	%%xmm3,%%xmm1   	\n\t"
 
+#ifdef EAH_HOTLOOP_INTERLEAVED
+/* Macros to interleave linear sin/cos calculation (in x87 opcodes)
+   with SSE hotloop.*/
+
+/* Version 1 : with trimming of input argument 
+   to [0,2) */ 
+#define LIN_SIN_COS_TRIM_P0A(alpha) \
+		"fldl %[" #alpha "] \n\t"   /* st: alpha */ \
+		"fistpll %[tmp] \n\t"	    /* tmp=(INT8)(round((alpha)) */ \
+		"fld1 \n\t" 	            /* st: 1.0 */ \
+		"fildll %[tmp] \n\t"        /* st: 1.0;(round((alpha))*/ 
+
+#define LIN_SIN_COS_TRIM_P0B(alpha)\
+		"fsubrp %%st,%%st(1) \n\t"  /* st: 1.0 -round(alpha) */  \
+		"faddl %[" #alpha "] \n\t"  /* st: alpha -round(alpha)+1.0*/ \
+		"faddl  %[sincos_adds]  \n\t" /* ..continue lin. sin/cos as lebow */ \
+		"fstpl  %[tmp]    \n\t" 
+/* Version 2 : assumes input argument is already trimmed */ 
+		
+#define LIN_SIN_COS_P0(alpha) \
+		"fldl %[" #alpha "] \n\t"     /*st:alpha */\
+		"faddl  %[sincos_adds]  \n\t" /*st:alpha+A */\
+		"fstpl  %[tmp]    \n\t"
+#define LIN_SIN_COS_P1 \
+		"mov  %[tmp],%%eax \n\t"      /* alpha +A ->eax (ix)*/ \
+                "mov  %%eax,%%edx  \n\t"      /* n  = ix & SINCOS_MASK2 */\
+		"and  $0x3fff,%%eax \n\t"     	
+#define LIN_SIN_COS_P2 \
+		"mov  %%eax,%[tmp] \n\t"     \
+		"mov  %[scd], %%eax \n\t"    \
+		"and  $0xffffff,%%edx \n\t"   /* i  = ix & SINCOS_MASK1;*/
+#define LIN_SIN_COS_P3 \
+		"fildl %[tmp]\n\t" \
+		"sar $0xe,%%edx \n\t"        /*  i  = i >> SINCOS_SHIFT;*/\
+		"fld %%st  \n\t"   	     /* st: n; n; */
+#define LIN_SIN_COS_P4 \
+		"fmuls (%%eax,%%edx,4)   \n\t" \
+		"mov  %[scb], %%edi \n\t" \
+		"fadds (%%edi,%%edx,4)   \n\t" /*st:sincosLUTbase[i]+n*sincosLUTdiff[i]; n*/
+#define LIN_SIN_COS_P5(sin)\
+		"add $0x100,%%edx \n\t"   /*edx+=SINCOS_LUT_RES/4*/\
+		"fstps %[" #sin "] \n\t"  /*(*sin)=sincosLUTbase[i]+n*sincosLUTdiff[i]*/\
+		"fmuls (%%eax,%%edx,4)   \n\t"
+#define LIN_SIN_COS_P6(cos) \
+		"fadds (%%edi,%%edx,4)   \n\t" \
+		"fstps %[" #cos "] \n\t" /*(*cos)=cosbase[i]+n*cosdiff[i];*/
+
+	
+#else
+#define LIN_SIN_COS_TRIM_P0A(alpha) ""
+#define LIN_SIN_COS_TRIM_P0B(alpha) ""
+#define LIN_SIN_COS_P0(alpha) ""
+#define LIN_SIN_COS_P1 ""
+#define LIN_SIN_COS_P2 "" 
+#define LIN_SIN_COS_P3 ""
+#define LIN_SIN_COS_P4(sin) ""
+#define LIN_SIN_COS_P5(cos) ""		
+
+#ifndef LAL_NDEBUG
+	  if ( local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star ) ) {
+	    XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
+	  }
+#else
+	  local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
+#endif	  
+
+          SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
+#endif /* EAH_HOTLOOP_INTERLEAVED */
           __asm __volatile
 	    (
-	     /* -------------------------------------------------------------------; */
-	     /* Prepare common divisor method for 4 values ( two Re-Im pair ) */
-	     /*  Im1, Re1, Im0, Re0 */
-	     "MOVSS	%[kappa_m],%%xmm2   	\n\t"	/* X2:  -   -   -   C */
-	     "MOVLPS	0(%[Xa]),%%xmm1   	\n\t"	/* X1:  -   -  Y00 X00 */
-	     "MOVHPS	8(%[Xa]),%%xmm1   	\n\t"	/* X1: Y01 X01 Y00 X00 */
-	     "SHUFPS	$0,%%xmm2,%%xmm2   	\n\t"	/* X2:  C   C   C   C */
-	     "MOVAPS	%[V2222],%%xmm4   	\n\t"	/* X7:  2   2   2   2 */
-	     "SUBPS	%[V0011],%%xmm2   	\n\t"	/* X2: C-1 C-1  C   C */
-	     /* -------------------------------------------------------------------; */
-	     "MOVAPS	%%xmm2,%%xmm0   	\n\t"	/* X0: C-1 C-1  C   C */
-	     /* -------------------------------------------------------------------; */
-	     /* xmm0: collected denumerators -> a new element will multiply by this */
-	     /* xmm1: collected numerators -> we will divide it by the denumerator last */
-	     /* xmm2: current denumerator ( counter type ) */
-	     /* xmm3: current numerator ( current Re,Im elements ) */
-	     /* -------------------------------------------------------------------; */
+		"movaps %[D7766],%%xmm0\n\t"
+		"movaps %[D5544],%%xmm1	\n\t"
+		"movups (%[Xa]),%%xmm2	\n\t"
+		"movups 0x10(%[Xa]),%%xmm3 \n\t"
+		"movss  %[kappa_s],%%xmm7\n\t"
+		"shufps $0x0,%%xmm7,%%xmm7\n\t"
+	LIN_SIN_COS_P0(kappa_star)
+		"addps  %%xmm7,%%xmm0\n\t"
+		"addps  %%xmm7,%%xmm1\n\t"
+		"rcpps  %%xmm0,%%xmm0\n\t"
+		"rcpps  %%xmm1,%%xmm1\n\t"
+		"mulps  %%xmm2,%%xmm0\n\t"
+		"mulps  %%xmm3,%%xmm1\n\t"
+	LIN_SIN_COS_P1
+		"addps  %%xmm1,%%xmm0\n\t"
+		"movaps %[D3322],%%xmm2\n\t"
+		"movaps %[Dccdd],%%xmm3\n\t"
+		"movups 0x20(%[Xa]),%%xmm4\n\t"
+		"movups 0x50(%[Xa]),%%xmm5\n\t"
+	LIN_SIN_COS_P2
+		"addps  %%xmm7,%%xmm2\n\t"
+		"addps  %%xmm7,%%xmm3\n\t"
+		"rcpps  %%xmm2,%%xmm2\n\t"
+		"rcpps  %%xmm3,%%xmm3\n\t"
+		"mulps  %%xmm4,%%xmm2\n\t"
+		"mulps  %%xmm5,%%xmm3\n\t"
+	LIN_SIN_COS_P3
+		"addps  %%xmm3,%%xmm2\n\t"
+		"movaps %[Deeff],%%xmm4\n\t"
+		"movaps %[Dgghh],%%xmm5\n\t"
+		"movups 0x60(%[Xa]),%%xmm1\n\t"
+		"movups 0x70(%[Xa]),%%xmm6\n\t"
+	LIN_SIN_COS_P4
+		"addps  %%xmm7,%%xmm4\n\t"
+		"addps  %%xmm7,%%xmm5\n\t"
+		"rcpps  %%xmm4,%%xmm4\n\t"
+		"rcpps  %%xmm5,%%xmm5\n\t"
+		"mulps  %%xmm1,%%xmm4\n\t"
+		"mulps  %%xmm6,%%xmm5\n\t"
+	LIN_SIN_COS_P5(sin)
+		"addps  %%xmm2,%%xmm0\n\t"
+		"addps  %%xmm5,%%xmm4\n\t"
+		"movaps %[D1100],%%xmm1\n\t"
+		"movaps %[Daabb],%%xmm2\n\t"
+	LIN_SIN_COS_P6(cos)
+		"addps  %%xmm7,%%xmm1\n\t"
+		"addps  %%xmm7,%%xmm2\n\t"
+		"rcpps  %%xmm1,%%xmm5\n\t"
+		"rcpps  %%xmm2,%%xmm6\n\t"
+	LIN_SIN_COS_TRIM_P0A(_lambda_alpha)
+		"addps  %%xmm4,%%xmm0\n\t"
+		"movaps %[D2222],%%xmm3\n\t"
+		"movaps %[D2222],%%xmm4\n\t"
+		"mulps  %%xmm5,%%xmm1\n\t"
+		"mulps  %%xmm6,%%xmm2\n\t"
+	LIN_SIN_COS_TRIM_P0B(_lambda_alpha)
+		"subps  %%xmm1,%%xmm3\n\t"
+		"subps  %%xmm2,%%xmm4\n\t"
+		"mulps  %%xmm3,%%xmm5\n\t"
+		"mulps  %%xmm4,%%xmm6\n\t"
+		"movups 0x30(%[Xa]),%%xmm1\n\t"
+		"movups 0x40(%[Xa]),%%xmm2\n\t"
+	LIN_SIN_COS_P1
+		"mulps  %%xmm5,%%xmm1\n\t"
+		"mulps  %%xmm6,%%xmm2\n\t"
+		"addps  %%xmm1,%%xmm0\n\t"
+		"addps  %%xmm2,%%xmm0\n\t"
+	LIN_SIN_COS_P2
+		"movhlps %%xmm0,%%xmm1\n\t"
+		"addps  %%xmm1,%%xmm0\n\t"
 
-	     /* seven "loop iterations" (unrolled) */
-	     VEC_LOOP_AV(16,24)
-	     VEC_LOOP_AV(32,40)
-	     VEC_LOOP_AV(48,56)
-	     VEC_LOOP_AV(64,72)
-	     VEC_LOOP_AV(80,88)
-	     VEC_LOOP_AV(96,104)
-	     VEC_LOOP_AV(112,120)
+/*	  
+        c_alpha-=1.0f;
+	  realXP = s_alpha * XSums.re - c_alpha * XSums.im;
+	  imagXP = c_alpha * XSums.re + s_alpha * XSums.im;
+*/
 
-	     /* -------------------------------------------------------------------; */
-	     /* Four divisions at once ( two for real parts and two for imaginary parts ) */
-	     "DIVPS	%%xmm0,%%xmm1   	\n\t"	/* X1: Y0G X0G Y1F X1F */
-	     /* -------------------------------------------------------------------; */
-	     /* So we have to add the two real and two imaginary parts */
-	     "MOVHLPS   %%xmm1,%%xmm4	        \n\t"	/* X4:  -   -  Y0G X0G */
-	     "ADDPS	%%xmm1,%%xmm4   	\n\t"	/* X4:  -   -  YOK XOK */
-	     /* -------------------------------------------------------------------; */
-	     /* Save values for FPU part */
-	     "MOVLPS	%%xmm4,%[XSums]   	\n\t"	/*  */
+		"movss %[M1],%%xmm5 \n\t"
+		"movaps %%xmm0,%%xmm3 \n\t"
+		"shufps $1,%%xmm3,%%xmm3 \n\t"	
+	LIN_SIN_COS_P3
+		"movss %[cos],%%xmm2 \n\t"
+		"movss %[sin],%%xmm1 \n\t"
+		"addss %%xmm5,%%xmm2 \n\t"	
+		"movss %%xmm2,%%xmm6 \n\t"	
+	LIN_SIN_COS_P4
+		"movss %%xmm1,%%xmm5  \n\t"
+		"mulss %%xmm0,%%xmm1 \n\t"		
+		"mulss %%xmm0,%%xmm2 \n\t"
+
+	LIN_SIN_COS_P5(Qimag)
+		"mulss %%xmm3,%%xmm5 \n\t"
+		"mulss %%xmm3,%%xmm6 \n\t"
+		"addss %%xmm5,%%xmm2 \n\t"
+		"subss %%xmm6,%%xmm1 \n\t"
+	LIN_SIN_COS_P6(Qreal)
+		"MOVSS	%%xmm2,%[XPimag]   	\n\t"	/*  */
+		"MOVSS	%%xmm1,%[XPreal]   	\n\t"	/*  */
 
 	     /* interface */
 	     :
 	     /* output  (here: to memory)*/
-	     [XSums]      "=m" (XSums)
+	     [XPreal]      "=m" (realXP),
+	     [XPimag]      "=m" (imagXP),
+	     [Qreal]      "=m" (realQ),
+	     [Qimag]      "=m" (imagQ),
+	     [sin]	  "=m" (s_alpha),
+	     [cos]	  "=m" (c_alpha),
+	     [tmp]        "=m" (tmp)
 
 	     :
 	     /* input */
 	     [Xa]          "r"  (Xalpha_l),
-	     [kappa_m]     "m"  (kappa_m),
+	     [kappa_s]     "m"  (kappa_s),
+	     [kappa_star]  "m"  (kappa_star),
+	     [_lambda_alpha] "m" (_lambda_alpha),
+	     [scd]	   "m"  (scd),
+	     [scb]	   "m"  (scb),
+	     [sincos_adds] "m"  (sincos_adds),
+	     [M1]	  "m" (M1),
+
 
 	     /* vector constants */
-	     [V0011]       "m"  (V0011[0]),
-	     [V2222]       "m"  (V2222[0])
+	     [D2222]       "m"  (D2222[0]),
+	     [D1100]       "m"  (D1100[0]),
+	     [D3322]       "m"  (D3322[0]),
+	     [D5544]       "m"  (D5544[0]),
+	     [D7766]       "m"  (D7766[0]),
+	     [Daabb]       "m"  (Daabb[0]),
+	     [Dccdd]       "m"  (Dccdd[0]),
+	     [Deeff]       "m"  (Deeff[0]),
+	     [Dgghh]       "m"  (Dgghh[0])
 
-#ifndef IGNORE_XMM_REGISTERS
 	     :
 	     /* clobbered registers */
-	     "xmm0","xmm1","xmm2","xmm3","xmm4"
-#endif
+	     "xmm0","xmm1","xmm2","xmm3","xmm4","xmm5","xmm6","xmm7","st","st(1)","st(2)","eax","edx","edi","cc"
 	     );
 
 	  /* moved the sin/cos call down here to avoid the store/forward stall of Core2s */
+
+	  /* NOTE: sin[ 2pi (Dphi_alpha - k) ] = sin [ 2pi Dphi_alpha ], therefore
+	   * the trig-functions need to be calculated only once!
+	   * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the 
+	   * closest to zero and will pose no numerical difficulties !
+	   */
+
+	}
+#else /* __GNUC__ */
+	{
+	  __declspec(align(16)) static struct { REAL4 a,b,c,d; } v0011 = {0.0, 0.0, 1.0, 1.0};
+	  __declspec(align(16)) static struct { REAL4 a,b,c,d; } v2222 = {2.0, 2.0, 2.0, 2.0};
+  	  __declspec(align(16)) COMPLEX8 STn; 
+	
+	  REAL4 kappa_m = kappa_max; /* single precision version of kappa_max */
+	      
+	  /* prelude */
+	  __asm {
+ 	      mov      esi , Xalpha_l                 /* Xal = Xalpha_l         */
+	      movss    xmm2, kappa_m                  /* pn[0] = kappa_max      */
+	      movlps   xmm1, MMWORD PTR [esi]         /* STnV = Xal ...         */
+	      movhps   xmm1, MMWORD PTR [esi+8]       /* ... continued          */
+	      shufps   xmm2, xmm2, 0                  /* pn[3]=pn[2]=pn[1]=pn[0]*/
+	      movaps   xmm4, XMMWORD PTR v2222        /* xmm4 = V2222           */
+	      subps    xmm2, XMMWORD PTR v0011        /* pn[2]-=1.0; pn[3]-=1.0 */
+	      movaps   xmm0, xmm2                     /* qn = pn                */
+	      };
+
+	  /* one loop iteration as a macro */
+#define VEC_LOOP_AV(a,b)\
+	  { \
+	      __asm movlps   xmm3, MMWORD PTR [esi+a] /* Xai = Xal[a]  ...*/\
+	      __asm movhps   xmm3, MMWORD PTR [esi+b] /* ... continued    */\
+	      __asm subps    xmm2, xmm4		      /* pn   -= V2222    */\
+	      __asm mulps    xmm3, xmm0		      /* Xai  *= qn       */\
+	      __asm mulps    xmm1, xmm2		      /* STnV *= pn       */\
+	      __asm mulps    xmm0, xmm2		      /* qn   *= pn       */\
+	      __asm addps    xmm1, xmm3		      /* STnV += Xai      */\
+	      }
+
+	  /* seven macro calls i.e. loop iterations */
+	  VEC_LOOP_AV(16,24);
+	  VEC_LOOP_AV(32,40);
+	  VEC_LOOP_AV(48,56);
+	  VEC_LOOP_AV(64,72);
+	  VEC_LOOP_AV(80,88);
+	  VEC_LOOP_AV(96,104);
+	  VEC_LOOP_AV(112,120);
+
+	  /* four divisions and summing in SSE, then write out the result */
+	  __asm {
+	      divps    xmm1, xmm0                     /* STnV      /= qn       */
+	      movhlps  xmm4, xmm1                     /* / STnV[0] += STnV[2] \ */
+	      addps    xmm4, xmm1                     /* \ STnV[1] += STnV[3] / */
+	      movlps   STn, xmm4                      /* STn = STnV */
+	      };
 
 	  /* NOTE: sin[ 2pi (Dphi_alpha - k) ] = sin [ 2pi Dphi_alpha ], therefore
 	   * the trig-functions need to be calculated only once!
@@ -727,10 +952,272 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
 #endif
 	  c_alpha -= 1.0f;
+
+	  realXP = s_alpha * STn.re - c_alpha * STn.im;
+	  imagXP = c_alpha * STn.re + s_alpha * STn.im;
+	     
+	}
+#endif /* __GNUC__ */
+
+
+
+
+#elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_SSE)
+
+	/** SSE version from Akos */
+
+#ifdef __GNUC__
+        {
+
+          COMPLEX8 XSums __attribute__ ((aligned (16))); /* sums of Xa.re and Xa.im for SSE */
+	  REAL4 kappa_m = kappa_max; /* single precision version of kappa_max */
+
+	  static REAL4 *scd 		  =  &(sincosLUTdiff[0]);
+	  static REAL4 *scb 		  =  &(sincosLUTbase[0]);
+	  static REAL4 M1 = -1.0f;
+	  static REAL8 sincos_adds = 402653184.0;
+	  REAL8 tmp;
+          REAL8 _lambda_alpha = -lambda_alpha;
+          /* vector constants */
+          /* having these not aligned will crash the assembler code */
+          static REAL4 V0011[4] __attribute__ ((aligned (16))) = { 0,0,1,1 };
+          static REAL4 V2222[4] __attribute__ ((aligned (16))) = { 2,2,2,2 };
 	  
+	  /* hand-coded SSE version from Akos */
+
+	  /* one loop iteration as a macro */
+
+#define VEC_LOOP_AV(a)\
+	     "MOVUPS " #a "(%[Xa]),%%xmm3   	\n\t" \
+	     "SUBPS	%%xmm4,%%xmm2   	\n\t" \
+	     "MULPS	%%xmm0,%%xmm3   	\n\t" \
+	     "MULPS	%%xmm2,%%xmm1   	\n\t" \
+	     "MULPS	%%xmm2,%%xmm0   	\n\t" \
+	     "ADDPS	%%xmm3,%%xmm1   	\n\t" 
+
+
+#ifdef EAH_HOTLOOP_INTERLEAVED
+
+#define LIN_SIN_COS_TRIM_P0A(alpha) \
+		"fldl %[" #alpha "] \n\t" \
+		"fistpll %[tmp] \n\t" \
+		"fld1 \n\t" 	\
+		"fildll %[tmp] \n\t" 
+
+#define LIN_SIN_COS_TRIM_P0B(alpha)\
+		"fsubrp %%st,%%st(1) \n\t" \
+		"faddl %[" #alpha "] \n\t" \
+		"faddl  %[sincos_adds]  \n\t" \
+		"fstpl  %[tmp]    \n\t" 
+		
+#define LIN_SIN_COS_P0(alpha) \
+		"fldl %[" #alpha "] \n\t" \
+		"faddl  %[sincos_adds]  \n\t" \
+		"fstpl  %[tmp]    \n\t" 
+
+#define LIN_SIN_COS_P1 \
+		"mov  %[tmp],%%eax \n\t"  \
+                "mov  %%eax,%%edx  \n\t" \
+		"and  $0x3fff,%%eax \n\t" 
+#define LIN_SIN_COS_P2 \
+		"mov  %%eax,%[tmp] \n\t"   \
+		"mov  %[scd], %%eax \n\t"\
+		"and  $0xffffff,%%edx \n\t" \
+		"fildl %[tmp]\n\t" 
+#define LIN_SIN_COS_P3 \
+		"sar $0xe,%%edx \n\t" \
+		"fld %%st  \n\t"   \
+		"fmuls (%%eax,%%edx,4)   \n\t" \
+		"mov  %[scb], %%edi \n\t"
+#define LIN_SIN_COS_P4(sin)\
+		"fadds (%%edi,%%edx,4)   \n\t" \
+		"add $0x100,%%edx \n\t"   \
+		"fstps %[" #sin "] \n\t" \
+		"fmuls (%%eax,%%edx,4)   \n\t"
+#define LIN_SIN_COS_P5(cos) \
+		"fadds (%%edi,%%edx,4)   \n\t" \
+		"fstps %[" #cos "] \n\t"		
+
+	
+#else
+#define LIN_SIN_COS_TRIM_P0A(alpha) ""
+#define LIN_SIN_COS_TRIM_P0B(alpha) ""
+#define LIN_SIN_COS_P0(alpha) ""
+#define LIN_SIN_COS_P1 ""
+#define LIN_SIN_COS_P2 "" 
+#define LIN_SIN_COS_P3 ""
+#define LIN_SIN_COS_P4(sin) ""
+#define LIN_SIN_COS_P5(cos) ""		
+
+#ifndef LAL_NDEBUG
+	  if ( local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star ) ) {
+	    XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
+	  }
+#else
+	  local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
+#endif	  
+
+          SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
+#endif
+          __asm __volatile
+	    (
+	     /* -------------------------------------------------------------------; */
+	     /* Prepare common divisor method for 4 values ( two Re-Im pair ) */
+	     /*  Im1, Re1, Im0, Re0 */
+	     "MOVAPS	%[V0011],%%xmm6   	\n\t"	
+	     "MOVSS	%[kappa_m],%%xmm2   	\n\t"	/* X2:  -   -   -   C */
+	     "MOVUPS	(%[Xa]),%%xmm1   	\n\t"	/* X1: Y01 X01 Y00 X00 */
+	     "SHUFPS	$0,%%xmm2,%%xmm2   	\n\t"	/* X2:  C   C   C   C */
+	     "MOVAPS	%[V2222],%%xmm4   	\n\t"	/* X7:  2   2   2   2 */
+	     "SUBPS	%%xmm6,%%xmm2   	\n\t"	/* X2: C-1 C-1  C   C */
+	     /* -------------------------------------------------------------------; */
+	     "MOVAPS	%%xmm2,%%xmm0   	\n\t"	/* X0: C-1 C-1  C   C */
+	     /* -------------------------------------------------------------------; */
+	     /* xmm0: collected denumerators -> a new element will multiply by this */
+	     /* xmm1: collected numerators -> we will divide it by the denumerator last */
+	     /* xmm2: current denumerator ( counter type ) */
+	     /* xmm3: current numerator ( current Re,Im elements ) */
+	     /* -------------------------------------------------------------------; */
+
+	     /* seven "loop iterations" (unrolled) */
+LIN_SIN_COS_P0(kappa_star)
+	     VEC_LOOP_AV(16)
+LIN_SIN_COS_P1
+	     VEC_LOOP_AV(32)
+LIN_SIN_COS_P2
+	     VEC_LOOP_AV(48)
+LIN_SIN_COS_P3
+	     VEC_LOOP_AV(64)
+LIN_SIN_COS_P4(sin)
+	     VEC_LOOP_AV(80)
+LIN_SIN_COS_P5(cos)
+	     VEC_LOOP_AV(96)
+
+LIN_SIN_COS_TRIM_P0A(_lambda_alpha)
+
+
+#if EAH_HOTLOOP_DIVS == EAH_HOTLOOP_DIVS_RECIPROCAL
+	     "movhlps %%xmm6,%%xmm6     \n\t"
+#endif
+	     "movss %[M1] , %%xmm5 \n\t"
+	     VEC_LOOP_AV(112)
+
+
+#if EAH_HOTLOOP_DIVS == EAH_HOTLOOP_DIVS_RECIPROCAL
+	     "movhlps %%xmm0,%%xmm2   	\n\t"
+	     "mulss %%xmm0,%%xmm2	\n\t"
+
+#ifdef EAH_HOTLOOP_RENR 
+	     "RCPSS %%xmm2,%%xmm6	\n\t"
+	     "MULSS %%xmm6,%%xmm2	\n\t"
+	     "MULSS %%xmm6,%%xmm2	\n\t"
+	LIN_SIN_COS_TRIM_P0B(_lambda_alpha)
+	     "ADDSS %%xmm6,%%xmm6	\n\t"
+	     "SUBSS %%xmm2,%%xmm6	\n\t"
+#else
+	     "divss %%xmm2,%%xmm6	\n\t"
+	LIN_SIN_COS_TRIM_P0B(_lambda_alpha)
+
+#endif
+
+	     "shufps $78,%%xmm0,%%xmm0  \n\t"
+	     "mulps  %%xmm1,%%xmm0      \n\t"
+	     "movhlps %%xmm0,%%xmm4	\n\t"
+	     "addps %%xmm0,%%xmm4	\n\t"
+
+	     "shufps $160,%%xmm6,%%xmm6   \n\t"
+	     "mulps %%xmm6,%%xmm4	\n\t"		
+#else
+	     /* -------------------------------------------------------------------; */
+	     /* Four divisions at once ( two for real parts and two for imaginary parts ) */
+#ifdef EAH_HOTLOOP_RENR 
+	     "RCPPS %%xmm0,%%xmm6	\n\t"
+	     "MULPS %%xmm6,%%xmm0	\n\t"
+	     "MULPS %%xmm6,%%xmm0	\n\t"
+	LIN_SIN_COS_TRIM_P0B(_lambda_alpha)
+	     "ADDPS %%xmm6,%%xmm6	\n\t"
+	     "SUBPS %%xmm0,%%xmm6	\n\t"
+	     "MULPS %%xmm6,%%xmm1	\n\t"
+#else
+	     "DIVPS	%%xmm0,%%xmm1   	\n\t"	/* X1: Y0G X0G Y1F X1F */
+	LIN_SIN_COS_TRIM_P0B(_lambda_alpha)
+#endif
+	     /* -------------------------------------------------------------------; */
+	     /* So we have to add the two real and two imaginary parts */
+	     "MOVHLPS   %%xmm1,%%xmm4	        \n\t"	/* X4:  -   -  Y0G X0G */
+	     "ADDPS	%%xmm1,%%xmm4   	\n\t"	/* X4:  -   -  YOK XOK */
+	     /* -------------------------------------------------------------------; */
+#endif
+
+/*	  
+        c_alpha-=1.0f;
 	  realXP = s_alpha * XSums.re - c_alpha * XSums.im;
 	  imagXP = c_alpha * XSums.re + s_alpha * XSums.im;
-	     
+*/
+
+		"movaps %%xmm4,%%xmm3 \n\t"
+		"shufps $1,%%xmm3,%%xmm3 \n\t"
+		"movss %[cos],%%xmm2 \n\t"
+	LIN_SIN_COS_P1	
+		"movss %[sin],%%xmm1 \n\t"
+		"addss %%xmm5,%%xmm2\n\t"	
+		"movss %%xmm2,%%xmm6 \n\t"
+	LIN_SIN_COS_P2	
+		"movss %%xmm1,%%xmm5  \n\t"
+		"mulss %%xmm4,%%xmm1 \n\t"		
+		"mulss %%xmm4,%%xmm2 \n\t"
+	LIN_SIN_COS_P3
+		"mulss %%xmm3,%%xmm5 \n\t"
+		"mulss %%xmm3,%%xmm6 \n\t"
+	LIN_SIN_COS_P4(Qimag)		
+		"addss %%xmm5,%%xmm2 \n\t"
+		"subss %%xmm6,%%xmm1 \n\t"
+	LIN_SIN_COS_P5(Qreal)
+		"MOVss	%%xmm2,%[XPimag]   	\n\t"	/*  */
+		"MOVss	%%xmm1,%[XPreal]   	\n\t"	/*  */
+
+	     /* interface */
+	     :
+	     /* output  (here: to memory)*/
+	     [XPreal]      "=m" (realXP),
+	     [XPimag]      "=m" (imagXP),
+	     [Qreal]      "=m" (realQ),
+	     [Qimag]      "=m" (imagQ),
+	     [tmp]        "=m" (tmp),
+	     [sin]	  "=m" (s_alpha),
+	     [cos]	  "=m" (c_alpha)
+
+	     :
+	     /* input */
+	     [Xa]          "r"  (Xalpha_l),
+	     [kappa_m]     "m"  (kappa_m),
+	     [kappa_star]  "m"  (kappa_star),
+	     [_lambda_alpha] "m" (_lambda_alpha),
+	     [scd]	   "m"  (scd),
+	     [scb]	   "m"  (scb),
+	     [sincos_adds]       "m"  (sincos_adds),
+	     [M1]	  "m" (M1),
+
+
+	     /* vector constants */
+	     [V0011]       "m"  (V0011[0]),
+	     [V2222]       "m"  (V2222[0])
+
+#ifndef IGNORE_XMM_REGISTERS
+	     :
+	     /* clobbered registers */
+	     "xmm0","xmm1","xmm2","xmm3","xmm4","xmm5","xmm6","xmm7","st","st(1)","st(2)","eax","edx","edi","cc"
+#endif
+	     );
+
+	  /* moved the sin/cos call down here to avoid the store/forward stall of Core2s */
+
+	  /* NOTE: sin[ 2pi (Dphi_alpha - k) ] = sin [ 2pi Dphi_alpha ], therefore
+	   * the trig-functions need to be calculated only once!
+	   * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the 
+	   * closest to zero and will pose no numerical difficulties !
+	   */
+
 	}
 #else /* __GNUC__ */
 	{
@@ -1006,10 +1493,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	    ind0 = DTERMS;
  	  realXP = TWOPI_FLOAT * Xalpha_l[ind0].re;
  	  imagXP = TWOPI_FLOAT * Xalpha_l[ind0].im;
-	} /* if |remainder| <= LD_SMALL4 */
-
-      /* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
-      {
+#ifdef EAH_HOTLOOP_INTERLEAVED
 	REAL8 _lambda_alpha = -lambda_alpha;
 	SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
 #ifndef LAL_NDEBUG
@@ -1019,7 +1503,24 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 #else
 	local_sin_cos_2PI_LUT_trimmed ( &imagQ, &realQ, _lambda_alpha );
 #endif
+#endif
+	} /* if |remainder| <= LD_SMALL4 */
+
+      {
+#ifndef EAH_HOTLOOP_INTERLEAVED
+	REAL8 _lambda_alpha = -lambda_alpha;
+	SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
+#ifndef LAL_NDEBUG
+	if ( local_sin_cos_2PI_LUT_trimmed ( &imagQ, &realQ, _lambda_alpha ) ) {
+	  XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
+	}
+#else
+	local_sin_cos_2PI_LUT_trimmed ( &imagQ, &realQ, _lambda_alpha );
+#endif
+#endif
       }
+
+      /* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
       
       realQXP = realQ * realXP - imagQ * imagXP;
       imagQXP = realQ * imagXP + imagQ * realXP;
