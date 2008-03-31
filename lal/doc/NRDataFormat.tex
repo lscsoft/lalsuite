@@ -367,34 +367,41 @@ that we suggest to be provided as functions of time in units of $M$.
 
 Let us now specialize in simulations of binary black hole coalescence.
 A numerical relativity simulation has many parameters that need to be
-specified, and several of them may not be directly relevant to the data
-analysis problem. We need to specify which parameters of the
+specified, and several of them may not be directly relevant to the
+data analysis problem. We need to specify which parameters of the
 numerical simulation will be significantly useful for the astrophysics
-of a binary black hole system in a circular orbit. For our purposes,
-a single numerical waveform is defined by at least seven parameters:
-the mass ratio $q = M_1/M_2$ and the three components of the
-individual spins $\vec{S}_1$ and $\vec{S}_2$. These parameters will
-be referred to as the ``metadata'' for a waveform; more parameters can
-be added as necessary. We use the convention that $M_1$ denotes the
-larger of the two masses so that $q\geq 1$. The choice of precisely
-how $M_1$, $M_2$ and the spins are calculated is left up to the
-individual numerical relativity groups. We suggest the data for a
-single mode $rh_{+,\times}^{(\ell m)}$ to be written as a plain text
-file in three columns for the time $t$, $rh_+^{(\ell m)}$ and
-$rh_\times^{(\ell m)}$ respectively. For a given simulation,
-numerical groups may wish to decide the maximum value of $\ell =
-\ell_{\rm max}$ to which they will provide the waveform. From the data
-analysis standpoint, it is most useful that for every $\ell \leq
-\ell_{\rm max}$, waveforms are provided for all values of $m = -\ell,
-\ldots, \ell$, irrespective of any symmetries that may be
-present in the simulation. If there are certain modes which, due to
-small amplitude, cannot be accurately determined, these can be set to
-zero. Numerical groups often extract the waveform from the simulation
-at several different radii and then use Richardson extrapolation to
-determine the most accurate waveform. For data analysis purposes, we
-do not consider waveforms from different radii as distinct, and would
-prefer only the most accurate determination of the waveform from any
-given simulation.
+of a binary black hole system in a circular orbit. For our purposes, a
+single numerical waveform is defined by at least seven parameters: the
+mass ratio $q = M_1/M_2$ and the three components of the individual
+spins $\vec{S}_1$ and $\vec{S}_2$. These parameters will be referred
+to as the ``metadata'' for a waveform; more parameters can be added as
+necessary. We use the convention that $M_1$ denotes the larger of the
+two masses so that $q\geq 1$. The choice of precisely how $M_1$, $M_2$
+and the spins are calculated is left up to the individual numerical
+relativity groups. In addition, the start frequency $f_0/M$ of the
+waveform, in units of $M$, is an important parameter relevant for data
+analysis.  For a given value of the mass, this gives the physical
+start frequency of the waveform, and this will need to be lesser than
+the lower cut-off frequency relevant for a particular detector.  For
+example, $f_0 = 40\,$Hz is an appropriate value appropriate for the
+initial LIGO detectors.
+
+For the wavfeorm data itself, we suggest the data for a single mode
+$rh_{+,\times}^{(\ell m)}$ to be written as a plain text file in three
+columns for the time $t$, $rh_+^{(\ell m)}$ and $rh_\times^{(\ell m)}$
+respectively. For a given simulation, numerical groups may wish to
+decide the maximum value of $\ell = \ell_{\rm max}$ to which they will
+provide the waveform. From the data analysis standpoint, it is most
+useful that for every $\ell \leq \ell_{\rm max}$, waveforms are
+provided for all values of $m = -\ell, \ldots, \ell$, irrespective of
+any symmetries that may be present in the simulation. If there are
+certain modes which, due to small amplitude, cannot be accurately
+determined, these can be set to zero. Numerical groups often extract
+the waveform from the simulation at several different radii and then
+use Richardson extrapolation to determine the most accurate waveform.
+For data analysis purposes, we do not consider waveforms from
+different radii as distinct, and would prefer only the most accurate
+determination of the waveform from any given simulation.
 
 It is natural to use the total mass $M$ of the binary as the unit for
 the time and strain columns. However, there can be subtleties in the
@@ -447,7 +454,7 @@ The metadata information for the different datafiles will be stored in a
 separate file. This metadata can contain (at least) two sections,
 one for the simulation metadata, and the other listing the filenames
 which correspond to the various $(\ell,m)$ modes of the waveform. There
-will be a separate metadata file for each waveform.
+will be a separate metadata file for each simulation.
 
 This could be an example of a metadata file:
 
@@ -463,6 +470,7 @@ spin1z = 0.5
 spin2x = 0.0
 spin2y = 0.8
 spin2z = 0.0
+f0M = 0.1
 
 [ht-data]
 2,2  = example1_22.dat
@@ -486,10 +494,11 @@ describe the physical parameters of the waveform. To begin with, for
 non-spinning waveforms, the only required parameter is the mass ratio.
 For waveforms with spin, the initial spins of the two black holes (in
 the co-ordinates discussed in the previous section) must also be
-specified. We emphasize that whenever necessary, we will add more
-parameters such as, for example, the eccentricity of the orbit. Lines
-starting with a $\%$ or $\#$ will be taken to be comment lines; there
-can be an arbitrary number of comment lines.
+specified.  The start frequency of the waveform in units of $M$ is
+denoted by $\mathtt{f0M}$.  We emphasize that whenever necessary, we
+will add more parameters such as, for example, the eccentricity of the
+orbit. Lines starting with a $\%$ or $\#$ will be taken to be comment
+lines; there can be an arbitrary number of comment lines.
 
 The section \texttt{[ht-data]} contains one line for each $(\ell,m)$
 mode. These give the file names containing the corresponding modes.
