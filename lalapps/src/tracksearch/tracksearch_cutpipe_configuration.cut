@@ -1,0 +1,50 @@
+; EXAMPLE TEMPLATE OF TRACKSEARCH PIPELINE CONFIGURATION FILE
+; AUTHOR: Cristina V. Torres
+;
+; Available sections for this file:
+; this file is similiar to that for a analysis pipeline build.
+;
+; condor     -- (required)
+;                specifies universes to run each component in and the
+;		 associated componenet binaries
+;
+; pylibraryfiles -- (required)
+;                   it is assumed that the nodes do not have access to
+;		    the tracksearch python library module and condor
+; 		    will copy it to the node 
+;
+; candidatethreshold -- (required) 
+;                       allows invocation of arbitrarily complex
+;                       trigger thresholds after completion of the
+;                       pipeline.  This can supplement the basic
+;                       thresholding in the 'C' analysis code, set in
+;                       tracksearchbase.  It also serves for post processing.
+;
+;  graphicsthreshold -- (optional)
+;                       specifies the plotting related options for creating
+;			both histograms and trigger plots in an
+;			automagic format.
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Cut Pipe Configuration File
+; Use this as a starting point to setup your own cutpipe followup
+; pipeline.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+[condor]
+clustertool_universe = local
+clustertool = ~/research.d/src/lalapps/src/tracksearch/lalapps_tracksearch_handler
+
+[pylibraryfiles]
+pyutilfile =  ~/research.d/src/lalapps/src/tracksearch/tracksearchutils.py
+
+[candidatethreshold]
+expression-threshold = "(P>0)and(L>0)"
+
+
+[graphicsthreshold]
+trigger-property = p,l:1:200,d:300:600,b:32:8,f:32:8,g:32:8,v:32:8,j,m,c
+histogram = 
+print = AUTO
+line-plot =
+timescale = days
