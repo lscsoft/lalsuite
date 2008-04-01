@@ -91,6 +91,64 @@ def gnuplotScriptFile(filename):
     output_fp.close()
 #End method gnuplotScriptFile()
 
+def wrapperGraphTriggers(candidateObject):
+    """
+    Optimized internal function
+    """
+    global graphGPSoffset
+    global timescale
+    global graph2file
+    try:
+        candidateObject.graphTriggers(graph2file,graphGPSoffset,timescale)
+    except Exception, errorInfo:
+        sys.stderr.write("Problem trying to create plot, %s !\n"%(os.path.basename(graph2file)))
+        sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
+        sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
+        sys.stderr.write("Skipping this plot. Sorry.\n")
+
+def wrapperShowHistogram(candidateObject):
+    """
+    Optimized internal function
+    """
+    global triggerTrait
+    global verboseSwitch
+
+    for singleTriggerTrait in triggerTrait:
+        newHistCol=histogramcolumns
+        if singleTriggerTrait.__contains__(":"):
+            property=singleTriggerTrait.strip().split(":")
+            myTrait=str(property[0])
+            newHistCol=int(property[1])
+            if property.__len__() > 2:
+                maxBinValue=float(property[2])
+                #Since we have a max bin and bin count
+                #make newHistCol not a number but vector of
+                #bins to histogram with.
+                resolution=maxBinValue/newHistCol
+                binList=[]
+                for index in range(0,newHistCol,1):
+                    binList.append(index*resolution)
+                newHistCol=binList
+            else:
+                maxBinValue=float(-1)
+        else:
+            myTrait=singleTriggerTrait
+
+        if verboseSwitch:
+            property=candidateObject.__getCurveField__('',myTrait)
+            sys.stdout.write("Creating histogram for %s \n"%
+                             (property[1]))
+        try:
+            candidateObject.showHistogram(myTrait,
+                                          graph2file,
+                                          newHistCol,
+                                          topTol)
+        except Exception, errorInfo:
+            sys.stderr.write("Problem trying to create histogram plot, %s !\n"%(os.path.basename(graph2file)))
+            sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
+            sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
+            sys.stderr.write("Skipping this plot. Sorry.\n")
+
 ###################End internal methods #################
 usage=''
 if disableGraphics:
@@ -138,6 +196,11 @@ parser.add_option("-d","--display-summary",dest="dumpSummaryScreen",
 parser.add_option("-p","--print",dest="imageFilemask",
                   default='',
                   help="This option states that files specified with the --file option should be printed to a PNG file.  This method will name the file according to the directive given on the command line.  If more than one image will be created then depending on the --file option then the AUTO argument will be invoked by force to create multiple graphic files.  If the AUTO option is given then the image will have the same name as the candidate library file with the extension changed to PNG."
+                  )
+parser.add_option("-L","--line-plot",dest="linePlot",
+                  default=False,
+                  action="store_true",
+                  help="This flag must be set to invoke creating the line plot of triggers from the candidate object."
                   )
 parser.add_option("-i","--image",dest="imageCount",
                   default='0',
@@ -189,6 +252,7 @@ glob=options.glob
 clobberFilename=str(options.clobberFilename)
 expThreshold=str(options.expThreshold)
 graph2file=options.imageFilemask
+linePlot=bool(options.linePlot)
 createHistogram=bool(options.histogram)
 triggerTrait=str(options.triggerTrait).split(',')
 histogramcolumns=int(options.histCol)
@@ -265,7 +329,7 @@ elif (clobberFilename != '') and (canList.__len__() == 1):
     # curve plots, show power histogram, then show a cut trigger plot
     # 
     #Create a scatterplot on screen of the curves in the candidateList
-elif (not createHistogram and (canList.__len__() >=1) and ((graph2screen>0) or (graph2file!=''))):
+elif (linePlot and not createHistogram and (canList.__len__() >=1) and ((graph2screen>0) or (graph2file!=''))):
     if ((graph2screen < canList.__len__()) and (graph2file=='')):
         print "Number of images to create exceeds your request!"
         print "Estimate images in this data structure are ",canList.__len__()
@@ -276,13 +340,7 @@ elif (not createHistogram and (canList.__len__() >=1) and ((graph2screen>0) or (
     for entry in canList:
         candidateObject=candidateList(verboseSwitch)
         candidateObject.__loadfileQuick__(entry)
-        try:
-            candidateObject.graphTriggers(graph2file,graphGPSoffset,timescale)
-        except Exception, errorInfo:
-            sys.stderr.write("Problem trying to create plot, %s !\n"%(os.path.basename(graph2file)))
-            sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
-            sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
-            sys.stderr.write("Skipping this plot. Sorry.\n")
+        wrapperGraphTriggers(candidateObject)
         del candidateObject
     #SECTION CREATE HISTOGRAMS
 elif (createHistogram and (canList.__len__() >=1)):
@@ -291,43 +349,9 @@ elif (createHistogram and (canList.__len__() >=1)):
     for entry in canList:
         candidateObject=candidateList(verboseSwitch)
         candidateObject.__loadfileQuick__(entry)
-        for singleTriggerTrait in triggerTrait:
-            newHistCol=histogramcolumns
-            if singleTriggerTrait.__contains__(":"):
-                property=singleTriggerTrait.strip().split(":")
-                myTrait=str(property[0])
-                newHistCol=int(property[1])
-                if property.__len__() > 2:
-                    maxBinValue=float(property[2])
-                    #Since we have a max bin and bin count
-                    #make newHistCol not a number but vector of
-                    #bins to histogram with.
-                    resolution=maxBinValue/newHistCol
-                    print resolution
-                    binList=[]
-                    for index in range(0,newHistCol,1):
-                        binList.append(index*resolution)
-                    newHistCol=binList
-                else:
-                    maxBinValue=float(-1)
-            else:
-                myTrait=singleTriggerTrait
-
-            if verboseSwitch:
-                thisTrait=candidateObject.__getCurveField__('',singleTriggerTrait)[1]
-            if verboseSwitch:
-                sys.stdout.write("Creating histogram for %s "%
-                                 (str(candidateObject.__getCurveField__('',myTrait)[1])[0]))
-            try:
-                candidateObject.showHistogram(myTrait,
-                                              graph2file,
-                                              newHistCol,
-                                              topTol)
-            except Exception, errorInfo:
-                sys.stderr.write("Problem trying to create histogram plot, %s !\n"%(os.path.basename(graph2file)))
-                sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
-                sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
-                sys.stderr.write("Skipping this plot. Sorry.\n")
+        wrapperShowHistogram(candidateObject)
+        if linePlot:
+            wrapperGraphTriggers(candidateObject)
         del candidateObject
 
     #SECTION APPLY ABITRARY THRESHOLDS
@@ -367,6 +391,11 @@ elif ((expThreshold != "") and (canList.__len__() >=1)):
                 	candidateResults.writeSummary(saveFiles)
             	if glitchdb:
                 	candidateResults.writeGlitchDatabase('',saveFiles)
+                candidateResults.__setfilename__(saveFiles)
+                if createHistogram:
+                    wrapperShowHistogram(candidateResults)
+                if linePlot:
+                    wrapperGraphTriggers(candidateResults)
             del candidateResults
         del entry
     del candidateObject
