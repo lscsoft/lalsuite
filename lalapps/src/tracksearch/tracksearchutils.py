@@ -606,6 +606,14 @@ class candidateList:
                         
     #End init method
 
+    def __setfilename__(self,newfilename):
+        """
+        Override the list of possible filesname and replace with just
+        one.
+        """
+        self.filename=[]
+        self.filename.append(newfilename)
+
     def __getCurveField__(self,curve='',field='curveID'):
         """
         This method takes a Kurve instance and a field entry
@@ -1682,6 +1690,8 @@ class candidateList:
                 resultsList.append(lineInfo)
         #Return the a modified structure with self.curves
         #made only of passing candidates
+        if self.verboseMode:
+            sys.stdout.write("There are %i candidates passing the %s threshold requested\n"%(int(resultsList.__len__()),str(textExp)))
         outputObject=copy.deepcopy(self)
         outputObject.curves=copy.deepcopy(resultsList)
         outputObject.totalCount=resultsList.__len__()

@@ -25,7 +25,8 @@ endif
 
 EXTRA_DIST = $(TRACKSEARCHSRCS)
 pkgdata_DATA = tracksearch_pipeline_configuration.ini \
-	       tracksearch_tuning_configuration.tun
+	       tracksearch_tuning_configuration.tun \
+               tracksearch_cutpipe_configuration.cut
 
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
@@ -34,6 +35,7 @@ bin_SCRIPTS = lalapps_tracksearch_handler \
 	      lalapps_tracksearch_pipe \
               lalapps_tracksearch_housekeeper \
               lalapps_tracksearch_tune_pipe \
+              lalapps_tracksearch_cutpipe \
               lalapps_tracksearch_mapcachebuilder
 pkgpython_DATA = tracksearchutils.py tracksearch.py
 endif
@@ -50,6 +52,10 @@ lalapps_tracksearch_handler: $(srcdir)/tsHandler.pyin python_config.sed
 lalapps_tracksearch_pipe: $(srcdir)/tsPipe.pyin python_config.sed
 	sed -f python_config.sed $(srcdir)/tsPipe.pyin > lalapps_tracksearch_pipe
 	chmod +x lalapps_tracksearch_pipe
+
+lalapps_tracksearch_cutpipe: $(srcdir)/tsCutPipe.pyin python_config.sed
+	sed -f python_config.sed $(srcdir)/tsCutPipe.pyin > lalapps_tracksearch_cutpipe
+	chmod +x lalapps_tracksearch_cutpipe
 
 lalapps_tracksearch_housekeeper: $(srcdir)/tsHousekeeper.pyin python_config.sed
 	sed -f python_config.sed $(srcdir)/tsHousekeeper.pyin > lalapps_tracksearch_housekeeper
