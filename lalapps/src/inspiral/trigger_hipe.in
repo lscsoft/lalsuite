@@ -194,7 +194,7 @@ class hipe_run(object):
  
     ## Determine arguments to inspiral_hipe
     self._hipe_args = ["--output-segs", "--log-path=%s" % log_path,
-      "--config-file=%s", "--write-script"]
+      "--config-file=%s", "--write-script", "--noop-inspinj"]
     
     # decide what stages to run
     self.determine_stages(only_run, dont_run)

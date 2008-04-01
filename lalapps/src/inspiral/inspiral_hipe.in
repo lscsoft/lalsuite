@@ -1164,6 +1164,9 @@ parser.add_option("", "--disable-dag-categories",action="store_true",
     default=False,help="disable the internal dag category maxjobs")
 parser.add_option("", "--disable-dag-priorities",action="store_true",
     default=False,help="disable the depth first priorities")
+
+parser.add_option("", "--noop-inspinj", action="store_true", default=False,
+    help="create a DAG with fake (no-op) inspinj jobs")
  
 parser.add_option("-f", "--config-file",action="store",type="string",\
     metavar=" FILE",help="use configuration file FILE")
@@ -1435,6 +1438,9 @@ for ifo in ifo_list:
 # inspinj:
 inspinj_job = inspiral.InspInjJob(cp) 
 inspinj_job.set_sub_file( basename + '.inspinj' + subsuffix )
+
+if opts.noop_inspinj:
+  inspinj_job.add_condor_cmd("noop_job", "true")
 
 # inspiral:
 insp_jobs = {}
