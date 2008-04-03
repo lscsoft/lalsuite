@@ -606,6 +606,30 @@ class candidateList:
                         
     #End init method
 
+    def __cloneCandidateList__(doner,all=False):
+        """
+        This is a smarter way of copying data from a previously
+        created candidateList object.  If we specify the optional
+        input argument to be TRUE.  This function works like invoking
+        a plain A=copy.deepcopy(B). Where A is this object and B is
+        what we want to completely clone.  If we specifiy an argument
+        of FALSE.  Then we clone everything but the self.curves[]
+        list.
+        """
+        self.verboseMode=copy.deepcopy(doner.verboseMode)
+        self.totalCount=copy.deepcopy(doner.totalCount)
+        self.filename=copy.deepcopy(doner.filename)
+        self.numFbins=copy.deepcopy(doner.numFbins)
+        self.numTbins=copy.deepcopy(doner.numTbins)
+        self.gpsSpan=copy.deepcopy(doner.gpsSpan)
+        self.freqSpan=copy.deepcopy(doner.freqSpan)
+        self.freqWidth=copy.deepcopy(doner.freqWidth)
+        self.gpsWidth=copy.deepcopy(doner.gpsWidth)
+        self.sorted=copy.deepcopy(doner.sorted)
+       #End __cloneCandidateList__()
+                    
+        
+
     def __setfilename__(self,newfilename):
         """
         Override the list of possible filesname and replace with just
@@ -1218,7 +1242,9 @@ class candidateList:
                     candidateToRemove.append(i)
         #Now just copy the candidates which were not found in the clobber
         #listing.
-        resultList=copy.deepcopy(self)
+        #resultList=copy.deepcopy(self)
+        resultList=candidateList()
+        resultList.__closeCandidateList__(self)
         resultList.filename=["ClobberedList"]
         resultList.curves=[]
         for index in range(0,self.curves.__len__()):
@@ -1284,10 +1310,14 @@ class candidateList:
         #Sort this keyed list
         curvesA.sort()
         curvesB.sort()
-        resultA=copy.deepcopy(libA)
-        resultB=copy.deepcopy(libB)
-        del resultA.curves
-        del resultB.curves
+#         resultA=copy.deepcopy(libA)
+#         resultB=copy.deepcopy(libB)
+#         del resultA.curves
+#         del resultB.curves
+        resultA=candidateList()
+        resultB=candidateList()
+        resultA.__cloneCandidateList(libA)
+        resultB.__cloneCandidateList(libB)
         for keyA in curvesA:
             keyA[1]=keyA[1]-tOffset
             keyA[2]=keyA[2]+tOffset
@@ -1692,7 +1722,9 @@ class candidateList:
         #made only of passing candidates
         if self.verboseMode:
             sys.stdout.write("There are %i candidates passing the %s threshold requested\n"%(int(resultsList.__len__()),str(testExp)))
-        outputObject=copy.deepcopy(self)
+#         outputObject=copy.deepcopy(self)
+        outputObject=candidateList()
+        outputObject.__cloneCandidateList__(self)
         outputObject.curves=copy.deepcopy(resultsList)
         outputObject.totalCount=resultsList.__len__()
         spinner.closeSpinner()
