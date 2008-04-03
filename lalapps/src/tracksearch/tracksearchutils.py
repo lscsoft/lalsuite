@@ -606,7 +606,7 @@ class candidateList:
                         
     #End init method
 
-    def __cloneCandidateList__(doner,all=False):
+    def __cloneCandidateList__(self,doner,all=False):
         """
         This is a smarter way of copying data from a previously
         created candidateList object.  If we specify the optional
