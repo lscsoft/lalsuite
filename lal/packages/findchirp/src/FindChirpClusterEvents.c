@@ -227,6 +227,19 @@ LALFindChirpClusterEvents (
      deltaEventIndex = 
        (UINT4) rint( (params->clusterWindow / deltaT) + 1.0 );
    }
+   else if ( params->clusterMethod == tmpltwindow )
+   {
+     if ( input->fcTmplt->tmplt.tC > params->clusterWindow )
+     {
+       deltaEventIndex = 
+        (UINT4) rint( (input->fcTmplt->tmplt.tC / deltaT) + 1.0 );
+     }
+     else
+     {
+       deltaEventIndex =
+        (UINT4) rint( (params->clusterWindow / deltaT) + 1.0 );
+     }
+   }
 
 
   /* look for an events in the filter output */
