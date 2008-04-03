@@ -427,7 +427,8 @@ to maximize over a chirp in a data segment.
 typedef enum {
    noClustering,
    tmplt,
-   window
+   window,
+   tmpltwindow
  } 
 Clustering;
 /* </lalVerbatim> */
