@@ -3262,7 +3262,7 @@ fprintf( a, "  --snr-threshold RHO          set signal-to-noise threshold to RHO
 fprintf( a, "  --chisq-bins P               set number of chisq veto bins to P\n");\
 fprintf( a, "  --chisq-delta DELTA          set chisq delta parameter to DELTA\n");\
 fprintf( a, "  --chisq-threshold X          threshold on chi^2 < X * ( p + DELTA *rho^2 ) \n");\
-fprintf( a, "  --cluster-method MTHD        max over chirp MTHD (tmplt|window|none) \n");\
+fprintf( a, "  --cluster-method MTHD        max over chirp MTHD (tmplt|window|tmpltwindow|none) \n");\
 fprintf( a, "  --cluster-window SEC         set length of clustering time window if required\n");\
 fprintf( a, "\n");\
 fprintf( a, "  --enable-rsq-veto            enable the r^2 veto test\n");\
@@ -4436,12 +4436,16 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         else if ( ! strcmp( "window", optarg ) )
         {
           clusterMethod = window;
-        } 
+        }
+        else if ( ! strcmp( "tmpltwindow", optarg ) )
+        {
+          clusterMethod = tmpltwindow; 
+        }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown clustering method: "
-              "%s (must be 'none', 'template' or 'window')\n", 
+              "%s (must be 'none', 'template', 'window' or 'tmpltwindow')\n", 
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -4960,16 +4964,16 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     fprintf( stderr, "--cluster-method must be specified\n" );
     exit( 1 );
   }
-  if ( clusterMethod == window && clusterWindow == -1 )
+  if ( ( clusterMethod == window || clusterMethod == tmpltwindow ) && clusterWindow == -1 )
   {
     fprintf( stderr, "--cluster-window must be specified "
         "if --clustering method 'window' chosen\n" );
     exit( 1 );
   }
-  if ( clusterMethod != window && clusterWindow != -1 )
+  if ( clusterMethod != window && clusterMethod != tmpltwindow && clusterWindow != -1 )
   {
     fprintf( stderr, "--cluster-window specified "
-        "but --clustering method 'window' not chosen\n" );
+        "but --clustering method 'window' or 'tmpltwindow' not chosen\n" );
     exit( 1 );
   }
   if ( invSpecTrunc < 0 )
