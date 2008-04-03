@@ -1691,7 +1691,7 @@ class candidateList:
         #Return the a modified structure with self.curves
         #made only of passing candidates
         if self.verboseMode:
-            sys.stdout.write("There are %i candidates passing the %s threshold requested\n"%(int(resultsList.__len__()),str(textExp)))
+            sys.stdout.write("There are %i candidates passing the %s threshold requested\n"%(int(resultsList.__len__()),str(testExp)))
         outputObject=copy.deepcopy(self)
         outputObject.curves=copy.deepcopy(resultsList)
         outputObject.totalCount=resultsList.__len__()

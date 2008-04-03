@@ -399,7 +399,7 @@ class tracksearchConvertSegList:
         """
         output_fp=open(self.newSegFilename+".lost","w")
         index=0
-        for bigChunks in self.origSegObject:
+        for bigChunk in self.origSegObject:
             index+=1
             newStart=bigChunk.end()-bigChunk.unused()
             newEnd=bigChunk.end()
