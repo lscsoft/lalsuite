@@ -553,13 +553,22 @@ void XLALDestroySimBurstTable(SimBurst *head)
 
 
 /**
- * Assign IDs to a linked list of SimBurst structures.
+ * Assign simulation_id values to the entries in a sim_burst linked list.
+ * All sim_burst rows in the list will be blamed on the given process_id,
+ * and assigned simulation_ids in order starting with the given
+ * simulation_id.  The return value is the next simulation_id after the
+ * last one assigned to a row in the list.
  */
 
 
-long XLALSimBurstAssignIDs(SimBurst *sim_burst, long simulation_id)
+long XLALSimBurstAssignIDs(
+	SimBurst *sim_burst,
+	long process_id,
+	long simulation_id)
 {
-	for(; sim_burst; sim_burst = sim_burst->next)
+	for(; sim_burst; sim_burst = sim_burst->next) {
+		sim_burst->process_id = process_id;
 		sim_burst->simulation_id = simulation_id++;
+	}
 	return simulation_id;
 }

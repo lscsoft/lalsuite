@@ -1310,11 +1310,32 @@ XLALClusterSnglBurstTable(
 	void (*clusterfunc)(SnglBurst *, const SnglBurst *)
 );
 
-SnglBurst *XLALCreateSnglBurst(void);
-SimBurst *XLALCreateSimBurst(void);
-void XLALDestroySimBurst(SimBurst *);
-void XLALDestroySimBurstTable(SimBurst *);
-long XLALSimBurstAssignIDs(SimBurst *, long);
+SnglBurst *
+XLALCreateSnglBurst(
+	void
+);
+
+SimBurst *
+XLALCreateSimBurst(
+	void
+);
+
+void
+XLALDestroySimBurst(
+	SimBurst *row
+);
+
+void
+XLALDestroySimBurstTable(
+	SimBurst *head
+);
+
+long
+XLALSimBurstAssignIDs(
+	SimBurst *head,
+	long process_id,
+	long event_id
+);
 
 
 /*
