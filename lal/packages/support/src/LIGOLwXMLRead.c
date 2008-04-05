@@ -830,14 +830,14 @@ SnglBurstTable *XLALSnglBurstTableFromLIGOLw(
 
 		/* populate the columns */
 
-		if(sscanf(env.ligo_lw.table.elt[column_pos.process_id].data.lstring.data, "process:process_id:%ld", &row->process_id) < 1) {
+		if(sscanf((char *) env.ligo_lw.table.elt[column_pos.process_id].data.ilwd_char.data, "process:process_id:%ld", &row->process_id) < 1) {
 			while(head) {
 				SnglBurstTable *tmp = head->next;
 				XLALDestroySnglBurstTable(head);
 				head = tmp;
 			}
 			MetaioAbort(&env);
-			XLALPrintError("cannot parse process_id '%s'\n", env.ligo_lw.table.elt[column_pos.process_id].data.lstring.data);
+			XLALPrintError("cannot parse process_id '%s'\n", (char *) env.ligo_lw.table.elt[column_pos.process_id].data.ilwd_char.data);
 			XLAL_ERROR_NULL(func, XLAL_EIO);
 		}
 		strncpy(row->ifo, env.ligo_lw.table.elt[column_pos.ifo].data.lstring.data, sizeof(row->ifo) - 1);
@@ -851,14 +851,14 @@ SnglBurstTable *XLALSnglBurstTableFromLIGOLw(
 		row->amplitude = env.ligo_lw.table.elt[column_pos.amplitude].data.real_4;
 		row->snr = env.ligo_lw.table.elt[column_pos.snr].data.real_4;
 		row->confidence = env.ligo_lw.table.elt[column_pos.confidence].data.real_4;
-		if(sscanf(env.ligo_lw.table.elt[column_pos.event_id].data.lstring.data, "sngl_burst:event_id:%ld", &row->event_id) < 1) {
+		if(sscanf((char *) env.ligo_lw.table.elt[column_pos.event_id].data.ilwd_char.data, "sngl_burst:event_id:%ld", &row->event_id) < 1) {
 			while(head) {
 				SnglBurstTable *tmp = head->next;
 				XLALDestroySnglBurstTable(head);
 				head = tmp;
 			}
 			MetaioAbort(&env);
-			XLALPrintError("cannot parse event_id '%s'\n", env.ligo_lw.table.elt[column_pos.event_id].data.lstring.data);
+			XLALPrintError("cannot parse event_id '%s'\n", (char *) env.ligo_lw.table.elt[column_pos.event_id].data.ilwd_char.data);
 			XLAL_ERROR_NULL(func, XLAL_EIO);
 		}
 
@@ -994,14 +994,14 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 
 		/* populate the columns */
 
-		if(sscanf(env.ligo_lw.table.elt[column_pos.process_id].data.lstring.data, "process:process_id:%ld", &sim_burst->process_id) < 1) {
+		if(sscanf((char *) env.ligo_lw.table.elt[column_pos.process_id].data.ilwd_char.data, "process:process_id:%ld", &sim_burst->process_id) < 1) {
 			while(head) {
 				SimBurst *tmp = head->next;
 				XLALDestroySimBurst(head);
 				head = tmp;
 			}
 			MetaioAbort(&env);
-			XLALPrintError("cannot parse process_id '%s'\n", env.ligo_lw.table.elt[column_pos.process_id].data.lstring.data);
+			XLALPrintError("cannot parse process_id '%s'\n", (char *) env.ligo_lw.table.elt[column_pos.process_id].data.ilwd_char.data);
 			XLAL_ERROR_NULL(func, XLAL_EIO);
 		}
 		strncpy(sim_burst->waveform, env.ligo_lw.table.elt[column_pos.waveform].data.lstring.data, sizeof(sim_burst->waveform) - 1);
@@ -1014,14 +1014,14 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 		XLALGPSSet(&sim_burst->time_geocent_gps, env.ligo_lw.table.elt[column_pos.time_geocent_gps].data.int_4s, env.ligo_lw.table.elt[column_pos.time_geocent_gps_ns].data.int_4s);
 		if(column_pos.time_geocent_gmst >= 0)
 			sim_burst->time_geocent_gmst = env.ligo_lw.table.elt[column_pos.time_geocent_gmst].data.real_8;
-		if(sscanf(env.ligo_lw.table.elt[column_pos.simulation_id].data.lstring.data, "sim_burst:simulation_id:%ld", &sim_burst->simulation_id) < 1) {
+		if(sscanf((char *) env.ligo_lw.table.elt[column_pos.simulation_id].data.ilwd_char.data, "sim_burst:simulation_id:%ld", &sim_burst->simulation_id) < 1) {
 			while(head) {
 				SimBurst *tmp = head->next;
 				XLALDestroySimBurst(head);
 				head = tmp;
 			}
 			MetaioAbort(&env);
-			XLALPrintError("cannot parse simulation_id '%s'\n", env.ligo_lw.table.elt[column_pos.simulation_id].data.lstring.data);
+			XLALPrintError("cannot parse simulation_id '%s'\n", (char *) env.ligo_lw.table.elt[column_pos.simulation_id].data.ilwd_char.data);
 			XLAL_ERROR_NULL(func, XLAL_EIO);
 		}
 
