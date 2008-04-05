@@ -1164,21 +1164,12 @@ static int add_burst_injections(REAL8TimeSeries *h, const char *filename)
 
 	XLALPrintInfo("%s(): computing injections and adding to input time series\n", func);
 	if(XLALBurstInjectSignals(h, sim_burst, NULL)) {
-		while(sim_burst) {
-			SimBurst *next = sim_burst->next;
-			XLALDestroySimBurst(sim_burst);
-			sim_burst = next;
-		}
+		XLALDestroySimBurstTable(sim_burst);
 		XLAL_ERROR(func, XLAL_EFUNC);
 	}
 
+	XLALDestroySimBurstTable(sim_burst);
 	XLALPrintInfo("%s(): done\n", func);
-
-	while(sim_burst) {
-		SimBurst *next = sim_burst->next;
-		XLALDestroySimBurst(sim_burst);
-		sim_burst = next;
-	}
 
 	return 0;
 }
@@ -1673,11 +1664,7 @@ int main(int argc, char *argv[])
 		XLALFree(table);
 	}
 
-	while(burstEvent) {
-		SnglBurst *event = burstEvent;
-		burstEvent = burstEvent->next;
-		XLALFree(event);
-	}
+	XLALDestroySnglBurstTable(burstEvent);
 
 	if(options->diagnostics)
 		LAL_CALL(LALCloseLIGOLwXMLFile(&stat, options->diagnostics->LIGOLwXMLStream), &stat);
