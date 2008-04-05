@@ -1228,85 +1228,85 @@ XLALMultiSimInspiralTest (
 
 void
 XLALFreeSnglBurst(
-	SnglBurstTable *event
+	SnglBurst *event
 );
 
 int 
 XLALSnglBurstTableLength( 
-	SnglBurstTable *head 
+	SnglBurst *head 
 );
 
 long
 XLALSnglBurstAssignIDs(
-	SnglBurstTable *head,
+	SnglBurst *head,
 	long process_id,
 	long event_id
 );
 
 void
 XLALSortSnglBurst(
-	SnglBurstTable **head,
-	int (*comparefunc)(const SnglBurstTable * const *, const SnglBurstTable * const *)
+	SnglBurst **head,
+	int (*comparefunc)(const SnglBurst * const *, const SnglBurst * const *)
 );
 
 int
 XLALCompareSnglBurstByStartTime(
-	const SnglBurstTable * const *a,
-	const SnglBurstTable * const *b
+	const SnglBurst * const *a,
+	const SnglBurst * const *b
 );
 
 int
 XLALCompareSnglBurstByExactPeakTime(
-	const SnglBurstTable * const *a,
-	const SnglBurstTable * const *b
+	const SnglBurst * const *a,
+	const SnglBurst * const *b
 );
 
 int
 XLALCompareStringBurstByTime(
-	const SnglBurstTable * const *a,
-	const SnglBurstTable * const *b
+	const SnglBurst * const *a,
+	const SnglBurst * const *b
 );
 
 int
 XLALCompareSnglBurstBySNR(
-	const SnglBurstTable * const *a,
-	const SnglBurstTable * const *b
+	const SnglBurst * const *a,
+	const SnglBurst * const *b
 );
 
 int
 XLALCompareSnglBurstByPeakTimeAndSNR(
-	const SnglBurstTable * const *a,
-	const SnglBurstTable * const *b
+	const SnglBurst * const *a,
+	const SnglBurst * const *b
 );
 
 int
 XLALCompareSnglBurstByLowFreq(
-	const SnglBurstTable * const *a,
-	const SnglBurstTable * const *b
+	const SnglBurst * const *a,
+	const SnglBurst * const *b
 );
 
 int
 XLALCompareSnglBurstByStartTimeAndLowFreq(
-	const SnglBurstTable * const *a,
-	const SnglBurstTable * const *b
+	const SnglBurst * const *a,
+	const SnglBurst * const *b
 );
 
 void
 XLALStringBurstCluster(
-	SnglBurstTable *a,
-	const SnglBurstTable *b
+	SnglBurst *a,
+	const SnglBurst *b
 );
 
 void
 XLALClusterSnglBurstTable(
-	SnglBurstTable  **list,
-	int (*bailoutfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *),
-	int (*testfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *),
-	void (*clusterfunc)(SnglBurstTable *, const SnglBurstTable *)
+	SnglBurst  **list,
+	int (*bailoutfunc)(const SnglBurst * const *, const SnglBurst * const *),
+	int (*testfunc)(const SnglBurst * const *, const SnglBurst * const *),
+	void (*clusterfunc)(SnglBurst *, const SnglBurst *)
 );
 
-SnglBurstTable *XLALCreateSnglBurstTable(void);
-void XLALDestroySnglBurstTable(SnglBurstTable *);
+SnglBurst *XLALCreateSnglBurst(void);
+void XLALDestroySnglBurst(SnglBurst *);
 SimBurst *XLALCreateSimBurst(void);
 void XLALDestroySimBurst(SimBurst *);
 long XLALSimBurstAssignIDs(SimBurst *, long);

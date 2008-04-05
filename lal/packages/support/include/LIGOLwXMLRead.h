@@ -171,7 +171,7 @@ MultiInspiralTable* XLALMultiInspiralTableFromLIGOLw (
     CHAR               *fileName
     );
 
-SnglBurstTable *
+SnglBurst *
 XLALSnglBurstTableFromLIGOLw(
     const CHAR *filename
 );

@@ -130,9 +130,9 @@ int XLALFreqSeriesToTFPlane(
 );
 
 
-SnglBurstTable *XLALComputeExcessPower(
+SnglBurst *XLALComputeExcessPower(
 	const REAL8TimeFrequencyPlane *plane,
-	SnglBurstTable *head,
+	SnglBurst *head,
 	double confidence_threshold
 );
 
@@ -184,11 +184,11 @@ void XLALDestroyExcessPowerTemplateBank(
 );
 
 
-SnglBurstTable *XLALExcessPowerProject(
+SnglBurst *XLALExcessPowerProject(
 	const COMPLEX16FrequencySeries *fseries,
 	REAL8TimeFrequencyPlane *plane,
 	const struct ExcessPowerTemplateBank *bank,
-	SnglBurstTable *head,
+	SnglBurst *head,
 	double confidence_threshold,
 	const REAL8FFTPlan *reverseplan
 );

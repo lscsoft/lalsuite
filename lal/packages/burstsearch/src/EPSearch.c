@@ -43,13 +43,13 @@ NRCSID(EPSEARCHC, "$Id$");
 
 
 /*
- * Delete a SnglBurstTable linked list
+ * Delete a SnglBurst linked list
  */
 
 
-static void XLALDestroySnglBurstTable(SnglBurstTable *head)
+static void XLALDestroySnglBurstTable(SnglBurst *head)
 {
-	SnglBurstTable *event;
+	SnglBurst *event;
 
 	while(head) {
 		event = head;
@@ -64,7 +64,7 @@ static void XLALDestroySnglBurstTable(SnglBurstTable *head)
  */
 
 
-SnglBurstTable *XLALEPSearch(
+SnglBurst *XLALEPSearch(
 	struct XLALEPSearchDiagnostics *diagnostics,
 	const REAL8TimeSeries *tseries,
 	REAL8Window *window,
@@ -77,7 +77,7 @@ SnglBurstTable *XLALEPSearch(
 )
 { 
 	static const char func[] = "XLALEPSearch";
-	SnglBurstTable *head = NULL;
+	SnglBurst *head = NULL;
 	int errorcode = 0;
 	int start_sample;
 	COMPLEX16FrequencySeries *fseries = NULL;

@@ -254,9 +254,6 @@ LALBeginLIGOLwXMLTable (
     case search_summvars_table:
       myfprintf( xml->fp, LIGOLW_XML_SEARCH_SUMMVARS );
       break;
-    case sngl_burst_table:
-      myfprintf( xml->fp, LIGOLW_XML_SNGL_BURST );
-      break;
     case sngl_inspiral_table:
       myfprintf( xml->fp, LIGOLW_XML_SNGL_INSPIRAL );
       break;
@@ -433,30 +430,6 @@ LALWriteLIGOLwXMLTable (
               );
         tablePtr.searchSummvarsTable = tablePtr.searchSummvarsTable->next;
         ++(xml->rowCount);
-      }
-      break;
-    case sngl_burst_table:
-      while( tablePtr.snglBurstTable )
-      {
-        FIRST_TABLE_ROW
-          fprintf( xml->fp, SNGL_BURST_ROW,
-              tablePtr.snglBurstTable->process_id,
-              tablePtr.snglBurstTable->ifo,
-              tablePtr.snglBurstTable->search,
-              tablePtr.snglBurstTable->channel,
-              tablePtr.snglBurstTable->start_time.gpsSeconds,
-              tablePtr.snglBurstTable->start_time.gpsNanoSeconds,
-              tablePtr.snglBurstTable->peak_time.gpsSeconds,
-              tablePtr.snglBurstTable->peak_time.gpsNanoSeconds,
-              tablePtr.snglBurstTable->duration,
-              tablePtr.snglBurstTable->central_freq,
-              tablePtr.snglBurstTable->bandwidth,
-              tablePtr.snglBurstTable->amplitude,
-	      tablePtr.snglBurstTable->snr,
-	      tablePtr.snglBurstTable->confidence,
-	      tablePtr.snglBurstTable->event_id
-              );
-        tablePtr.snglBurstTable = tablePtr.snglBurstTable->next;
       }
       break;
     case sngl_inspiral_table:
@@ -951,6 +924,88 @@ LALWriteLIGOLwXMLTable (
 #undef FIRST_TABLE_ROW /* undefine first table row macro */
 
 
+/**
+ * Write a sngl_burst table to an XML file.
+ */
+
+
+int XLALWriteLIGOLwXMLSnglBurstTable(
+	LIGOLwXMLStream *xml,
+	const SnglBurst *sngl_burst
+)
+{
+	static const char func[] = "XLALWriteLIGOLwXMLSnglBurstTable";
+	const char *row_head = "\n\t\t\t";
+
+	if(xml->table != no_table) {
+		XLALPrintError("a table is still open");
+		XLAL_ERROR(func, XLAL_EFAILED);
+	}
+
+	/* table header */
+
+	XLALClearErrno();
+	XLALFilePuts("\t<Table Name=\"sngl_burst:table\">\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sngl_burst:process_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sngl_burst:ifo\" Type=\"lstring\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sngl_burst:search\" Type=\"lstring\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sngl_burst:channel\" Type=\"lstring\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sngl_burst:start_time\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sngl_burst:start_time_ns\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sngl_burst:peak_time\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sngl_burst:peak_time_ns\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sngl_burst:duration\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sngl_burst:central_freq\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sngl_burst:bandwidth\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sngl_burst:amplitude\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sngl_burst:snr\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sngl_burst:confidence\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sngl_burst:event_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Stream Name=\"sngl_burst:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
+	if(XLALGetBaseErrno())
+		XLAL_ERROR(func, XLAL_EFUNC);
+
+	/* rows */
+
+	for(; sngl_burst; sngl_burst = sngl_burst->next) {
+		if(XLALFilePrintf(xml->fp, "%s\"process:process_id:%ld\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,\"sngl_burst:event_id:%ld\"",
+			row_head,
+			sngl_burst->process_id,
+			sngl_burst->ifo,
+			sngl_burst->search,
+			sngl_burst->channel,
+			sngl_burst->start_time.gpsSeconds,
+			sngl_burst->start_time.gpsNanoSeconds,
+			sngl_burst->peak_time.gpsSeconds,
+			sngl_burst->peak_time.gpsNanoSeconds,
+			sngl_burst->duration,
+			sngl_burst->central_freq,
+			sngl_burst->bandwidth,
+			sngl_burst->amplitude,
+			sngl_burst->snr,
+			sngl_burst->confidence,
+			sngl_burst->event_id
+		) < 0)
+			XLAL_ERROR(func, XLAL_EFUNC);
+		row_head = ",\n\t\t\t";
+	}
+
+	/* table footer */
+
+	if(XLALFilePuts("\n\t\t</Stream>\n\t</Table>\n", xml->fp) < 0)
+		XLAL_ERROR(func, XLAL_EFUNC);
+
+	/* done */
+
+	return 0;
+}
+
+
+/**
+ * Write a sim_burst table to an XML file.
+ */
+
+
 int XLALWriteLIGOLwXMLSimBurstTable(
 	LIGOLwXMLStream *xml,
 	const SimBurst *sim_burst
@@ -1033,3 +1088,4 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 
 	return 0;
 }
+

@@ -86,19 +86,19 @@ NRCSID( SNGLBURSTUTILSC, "$Id$" );
  */
 
 
-static INT8 start_time(const SnglBurstTable *x)
+static INT8 start_time(const SnglBurst *x)
 {
 	return(XLALGPStoINT8(&x->start_time));
 }
 
 
-static INT8 peak_time(const SnglBurstTable *x)
+static INT8 peak_time(const SnglBurst *x)
 {
 	return(XLALGPStoINT8(&x->peak_time));
 }
 
 
-static REAL4 lo_freq(const SnglBurstTable *x)
+static REAL4 lo_freq(const SnglBurst *x)
 {
 	return(x->central_freq - x->bandwidth / 2);
 }
@@ -110,7 +110,7 @@ static REAL4 lo_freq(const SnglBurstTable *x)
 
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
-void XLALFreeSnglBurst(SnglBurstTable *event)
+void XLALFreeSnglBurst(SnglBurst *event)
 /* </lalVerbatim> */
 {
 	XLALFree(event);
@@ -127,7 +127,7 @@ void XLALFreeSnglBurst(SnglBurstTable *event)
 
 
 long XLALSnglBurstAssignIDs(
-	SnglBurstTable *head,
+	SnglBurst *head,
 	long process_id,
 	long event_id
 )
@@ -141,13 +141,13 @@ long XLALSnglBurstAssignIDs(
 
 
 /*
- * Sort a list of SnglBurstTable events into increasing order according to the
+ * Sort a list of SnglBurst events into increasing order according to the
  * supplied comparison function.
  */
 
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
-int XLALSnglBurstTableLength(SnglBurstTable *head)
+int XLALSnglBurstTableLength(SnglBurst *head)
 /* </lalVerbatim> */
 {
 	int length;
@@ -162,15 +162,15 @@ int XLALSnglBurstTableLength(SnglBurstTable *head)
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 void XLALSortSnglBurst(
-	SnglBurstTable **head,
-	int (*comparefunc)(const SnglBurstTable * const *, const SnglBurstTable * const *)
+	SnglBurst **head,
+	int (*comparefunc)(const SnglBurst * const *, const SnglBurst * const *)
 )
 /* </lalVerbatim> */
 {
 	int i;
 	int length;
-	SnglBurstTable *event;
-	SnglBurstTable **array;
+	SnglBurst *event;
+	SnglBurst **array;
 
 	/* empty list --> no-op */
 	if(!head || !*head)
@@ -196,14 +196,14 @@ void XLALSortSnglBurst(
 
 
 /*
- * Compare the start times of two SnglBurstTable events.
+ * Compare the start times of two SnglBurst events.
  */
 
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 int XLALCompareSnglBurstByStartTime(
-	const SnglBurstTable * const *a,
-	const SnglBurstTable * const *b
+	const SnglBurst * const *a,
+	const SnglBurst * const *b
 )
 /* </lalVerbatim> */
 {
@@ -227,8 +227,8 @@ int XLALCompareSnglBurstByStartTime(
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 int XLALCompareSnglBurstByExactPeakTime(
-	const SnglBurstTable * const *a,
-	const SnglBurstTable * const *b
+	const SnglBurst * const *a,
+	const SnglBurst * const *b
 )
 /* </lalVerbatim> */
 {
@@ -246,14 +246,14 @@ int XLALCompareSnglBurstByExactPeakTime(
 
 
 /*
- * Compare the SNRs of two SnglBurstTable events.
+ * Compare the SNRs of two SnglBurst events.
  */
 
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 int XLALCompareSnglBurstBySNR(
-	const SnglBurstTable * const *a,
-	const SnglBurstTable * const *b
+	const SnglBurst * const *a,
+	const SnglBurst * const *b
 )
 /* </lalVerbatim> */
 {
@@ -269,14 +269,14 @@ int XLALCompareSnglBurstBySNR(
 
 
 /*
- * Compare the peak times and SNRs of two SnglBurstTable events.
+ * Compare the peak times and SNRs of two SnglBurst events.
  */
 
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 int XLALCompareSnglBurstByPeakTimeAndSNR(
-	const SnglBurstTable * const *a,
-	const SnglBurstTable * const *b
+	const SnglBurst * const *a,
+	const SnglBurst * const *b
 )
 /* </lalVerbatim> */
 {
@@ -298,8 +298,8 @@ int XLALCompareSnglBurstByPeakTimeAndSNR(
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 int XLALCompareStringBurstByTime(
-	const SnglBurstTable * const *a,
-	const SnglBurstTable * const *b
+	const SnglBurst * const *a,
+	const SnglBurst * const *b
 )
 /* </lalVerbatim> */
 {
@@ -321,14 +321,14 @@ int XLALCompareStringBurstByTime(
 
 
 /*
- * Compare the low frequency limits of two SnglBurstTable events.
+ * Compare the low frequency limits of two SnglBurst events.
  */
 
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 int XLALCompareSnglBurstByLowFreq(
-	const SnglBurstTable * const *a,
-	const SnglBurstTable * const *b
+	const SnglBurst * const *a,
+	const SnglBurst * const *b
 )
 /* </lalVerbatim> */
 {
@@ -353,8 +353,8 @@ int XLALCompareSnglBurstByLowFreq(
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 int XLALCompareSnglBurstByStartTimeAndLowFreq(
-	const SnglBurstTable * const *a,
-	const SnglBurstTable * const *b
+	const SnglBurst * const *a,
+	const SnglBurst * const *b
 )
 /* </lalVerbatim> */
 {
@@ -374,8 +374,8 @@ int XLALCompareSnglBurstByStartTimeAndLowFreq(
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 void XLALStringBurstCluster(
-	SnglBurstTable *a,
-	const SnglBurstTable *b
+	SnglBurst *a,
+	const SnglBurst *b
 )
 /* </lalVerbatim> */
 {
@@ -395,29 +395,29 @@ void XLALStringBurstCluster(
 
 
 /*
- * Recursively cluster a linked list of SnglBurstTable events until the list
+ * Recursively cluster a linked list of SnglBurst events until the list
  * stops changing.  testfunc() should return 0 if the two given events are to
  * be clustered.  If bailoutfunc() is provided (not NULL), then testfunc() will
  * be used to sort the trigger list before each clustering pass and
  * bailoutfunc() will be called to check for the option of terminating the
  * inner loop early.  In the ideal case, use of bailoutfunc() converts this
  * algorithm from O(n^3) to order O(n log n).  The clusterfunc() should replace
- * the SnglBurstTable event pointed to by its first argument with the cluster
+ * the SnglBurst event pointed to by its first argument with the cluster
  * of that event and the event pointed to by the second argument.
  */
 
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 void XLALClusterSnglBurstTable (
-	SnglBurstTable **list,
-	int (*bailoutfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *),
-	int (*testfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *),
-	void (*clusterfunc)(SnglBurstTable *, const SnglBurstTable *)
+	SnglBurst **list,
+	int (*bailoutfunc)(const SnglBurst * const *, const SnglBurst * const *),
+	int (*testfunc)(const SnglBurst * const *, const SnglBurst * const *),
+	void (*clusterfunc)(SnglBurst *, const SnglBurst *)
 )
 /* </lalVerbatim> */
 {
 	int did_cluster;
-	SnglBurstTable *a, *b, *prev;
+	SnglBurst *a, *b, *prev;
 
 	do {
 		did_cluster = 0;
@@ -427,13 +427,13 @@ void XLALClusterSnglBurstTable (
 
 		for(a = *list; a; a = a->next)
 			for(prev = a, b = a->next; b; b = prev->next) {
-				if(!testfunc((const SnglBurstTable * const *) &a, (const SnglBurstTable * const *) &b)) {
+				if(!testfunc((const SnglBurst * const *) &a, (const SnglBurst * const *) &b)) {
 					clusterfunc(a, b);
 					prev->next = b->next;
 					XLALFreeSnglBurst(b);
 					did_cluster = 1;
 				} else {
-					if(bailoutfunc && bailoutfunc((const SnglBurstTable * const *) &a, (const SnglBurstTable * const *) &b))
+					if(bailoutfunc && bailoutfunc((const SnglBurst * const *) &a, (const SnglBurst * const *) &b))
 						break;
 					prev = b;
 				}
@@ -443,14 +443,14 @@ void XLALClusterSnglBurstTable (
 
 
 /**
- * Create a SnglBurstTable structure.
+ * Create a SnglBurst structure.
  */
 
 
-SnglBurstTable *XLALCreateSnglBurstTable(void)
+SnglBurst *XLALCreateSnglBurst(void)
 {
-	static const char func[] = "XLALCreateSnglBurstTable";
-	SnglBurstTable *new = XLALMalloc(sizeof(*new));
+	static const char func[] = "XLALCreateSnglBurst";
+	SnglBurst *new = XLALMalloc(sizeof(*new));
 
 	if(!new)
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
@@ -476,11 +476,11 @@ SnglBurstTable *XLALCreateSnglBurstTable(void)
 
 
 /**
- * Destroy a SnglBurstTable structure.
+ * Destroy a SnglBurst structure.
  */
 
 
-void XLALDestroySnglBurstTable(SnglBurstTable *sngl_burst)
+void XLALDestroySnglBurst(SnglBurst *sngl_burst)
 {
 	XLALFree(sngl_burst);
 }

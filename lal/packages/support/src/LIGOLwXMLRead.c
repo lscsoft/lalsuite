@@ -758,7 +758,7 @@ static long XLALLIGOLwParseIlwdChar(
 	const char *ilwd_char_column_name
 )
 {
-	const char func[] = "XLALLIGOLwParseIlwdChar";
+	static const char func[] = "XLALLIGOLwParseIlwdChar";
 	char *fmt;
 	const char *ilwd_char = (char *) env->ligo_lw.table.elt[column_number].data.ilwd_char.data;
 	long id;
@@ -783,18 +783,18 @@ static long XLALLIGOLwParseIlwdChar(
 
 /**
  * Read the sngl_burst table from a LIGO Light Weight XML file into a
- * linked list of SnglBurstTable structures.
+ * linked list of SnglBurst structures.
  */
 
 
-SnglBurstTable *XLALSnglBurstTableFromLIGOLw(
+SnglBurst *XLALSnglBurstTableFromLIGOLw(
 	const CHAR *filename
 )
 {
 	static const char func[] = "XLALSnglBurstTableFromLIGOLw";
 	int miostatus;
-	SnglBurstTable *head = NULL;
-	SnglBurstTable **next = &head;
+	SnglBurst *head = NULL;
+	SnglBurst **next = &head;
 	struct MetaioParseEnvironment env;
 	struct {
 		int process_id;
@@ -858,12 +858,12 @@ SnglBurstTable *XLALSnglBurstTableFromLIGOLw(
 	while((miostatus = MetaioGetRow(&env)) > 0) {
 		/* create a new row */
 
-		SnglBurstTable *row = XLALCreateSnglBurstTable();
+		SnglBurst *row = XLALCreateSnglBurst();
 
 		if(!row) {
 			while(head) {
-				SnglBurstTable *tmp = head->next;
-				XLALDestroySnglBurstTable(head);
+				SnglBurst *tmp = head->next;
+				XLALDestroySnglBurst(head);
 				head = tmp;
 			}
 			MetaioAbort(&env);
@@ -874,8 +874,8 @@ SnglBurstTable *XLALSnglBurstTableFromLIGOLw(
 
 		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
 			while(head) {
-				SnglBurstTable *tmp = head->next;
-				XLALDestroySnglBurstTable(head);
+				SnglBurst *tmp = head->next;
+				XLALDestroySnglBurst(head);
 				head = tmp;
 			}
 			MetaioAbort(&env);
@@ -894,8 +894,8 @@ SnglBurstTable *XLALSnglBurstTableFromLIGOLw(
 		row->confidence = env.ligo_lw.table.elt[column_pos.confidence].data.real_4;
 		if((row->event_id = XLALLIGOLwParseIlwdChar(&env, column_pos.event_id, "sngl_burst", "event_id")) < 0) {
 			while(head) {
-				SnglBurstTable *tmp = head->next;
-				XLALDestroySnglBurstTable(head);
+				SnglBurst *tmp = head->next;
+				XLALDestroySnglBurst(head);
 				head = tmp;
 			}
 			MetaioAbort(&env);
@@ -909,8 +909,8 @@ SnglBurstTable *XLALSnglBurstTableFromLIGOLw(
 	}
 	if(miostatus < 0) {
 		while(head) {
-			SnglBurstTable *tmp = head->next;
-			XLALDestroySnglBurstTable(head);
+			SnglBurst *tmp = head->next;
+			XLALDestroySnglBurst(head);
 			head = tmp;
 		}
 		MetaioAbort(&env);
@@ -922,8 +922,8 @@ SnglBurstTable *XLALSnglBurstTableFromLIGOLw(
 
 	if(MetaioClose(&env)) {
 		while(head) {
-			SnglBurstTable *tmp = head->next;
-			XLALDestroySnglBurstTable(head);
+			SnglBurst *tmp = head->next;
+			XLALDestroySnglBurst(head);
 			head = tmp;
 		}
 		XLALPrintError("error parsing document after sngl_burst table\n");

@@ -58,7 +58,7 @@ struct XLALEPSearchDiagnostics {
 };
 
 
-SnglBurstTable *XLALEPSearch(
+SnglBurst *XLALEPSearch(
 	struct XLALEPSearchDiagnostics *diagnostics,
 	const REAL8TimeSeries  *tseries,
 	REAL8Window *window,

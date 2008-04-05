@@ -172,42 +172,6 @@ MetaTableDirectory* XLALCreateMetaTableDir(
           "unable to index type search_summvars_table\n" );
       XLAL_ERROR_NULL( func, XLAL_EINVAL );
       break;
-    case sngl_burst_table:
-      {
-        MetaTableDirectory tmpTableDir[] =
-        {
-          {"ifo",                     -1, 0},
-          {"search",                  -1, 1},
-          {"channel",                 -1, 2},
-          {"start_time",              -1, 3},
-          {"start_time_ns",           -1, 4},
-          {"duration",                -1, 5},
-          {"central_freq",            -1, 6},
-          {"bandwidth",               -1, 7},
-          {"amplitude",               -1, 8},
-          {"snr",                     -1, 9},
-          {"confidence",              -1, 10},
-          {"peak_time",               -1, 11},
-          {"peak_time_ns",            -1, 12},
-          {"event_id",                -1, 13},
-          {NULL,                       0, 0}
-        };
-        for ( i=0 ; tmpTableDir[i].name; ++i )
-        {
-          if ( (tmpTableDir[i].pos = 
-                MetaioFindColumn( env, tmpTableDir[i].name )) < 0 )
-          {
-            XLALPrintError( "XLALError - unable to find column %s\n", 
-                tmpTableDir[i].name );
-            XLAL_ERROR_NULL( func, XLAL_EFAILED );
-          }
-        }
-
-        tableDir = (MetaTableDirectory *) LALMalloc( (i+1) * 
-            sizeof(MetaTableDirectory)) ;
-        memcpy(tableDir, tmpTableDir, (i+1)*sizeof(MetaTableDirectory) );
-      }
-      break;
     case sngl_inspiral_table:
       XLALPrintError( "XLALError - "
           "unable to index type sngl_inspiral_table\n" );
@@ -414,42 +378,6 @@ LALCreateMetaTableDir(
       break;
     case search_summvars_table:
       ABORT( status, LIGOLWXMLREADH_EMTAB, LIGOLWXMLREADH_MSGEMTAB );
-      break;
-    case sngl_burst_table:
-      {
-        MetaTableDirectory tmpTableDir[] =
-        {
-          {"ifo",                     -1, 0},
-          {"search",                  -1, 1},
-          {"channel",                 -1, 2},
-          {"start_time",              -1, 3},
-          {"start_time_ns",           -1, 4},
-          {"duration",                -1, 5},
-          {"central_freq",            -1, 6},
-          {"bandwidth",               -1, 7},
-          {"amplitude",               -1, 8},
-          {"snr",                     -1, 9},
-          {"confidence",              -1, 10},
-          {"peak_time",               -1, 11},
-          {"peak_time_ns",            -1, 12},
-          {"event_id",                -1, 14},
-          {NULL,                       0, 0}
-        };
-        for ( i=0 ; tmpTableDir[i].name; ++i )
-        {
-          if ( (tmpTableDir[i].pos = 
-                MetaioFindColumn( env, tmpTableDir[i].name )) < 0 )
-          {
-            fprintf( stderr, "unable to find column %s\n", 
-                tmpTableDir[i].name );
-            ABORT(status,LIGOLWXMLREADH_ENCOL,LIGOLWXMLREADH_MSGENCOL);
-          }
-        }
-
-        *tableDir = (MetaTableDirectory *) LALMalloc( (i+1) * 
-            sizeof(MetaTableDirectory)) ;
-        memcpy(*tableDir, tmpTableDir, (i+1)*sizeof(MetaTableDirectory) );
-      }
       break;
     case sngl_inspiral_table:
       ABORT( status, LIGOLWXMLREADH_EMTAB, LIGOLWXMLREADH_MSGEMTAB );

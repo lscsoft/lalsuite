@@ -61,10 +61,6 @@ defined in this file are
 \item SEARCH\_SUMMARY\_ROW 
 \item LIGOLW\_XML\_SEARCH\_SUMMVARS 
 \item SEARCH\_SUMMVARS\_ROW 
-\item LIGOLW\_XML\_SNGL\_BURST 
-\item SNGL\_BURST\_ROW 
-\item LIGOLW\_XML\_SIM\_BURST 
-\item SIM\_BURST\_ROW 
 \item LIGOLW\_XML\_SIM\_RINGDOWN
 \item SIM\_RINGDOWN\_ROW
 \item LIGOLW\_XML\_SUMM\_VALUE 
@@ -175,28 +171,6 @@ fputs( "      <Stream Name=\"search_summvarsgroup:search_summvars:table\" Type=\
 
 #define SEARCH_SUMMVARS_ROW \
 "         \"process:process_id:0\",\"%s\",\"%s\",%22.16e,\"search_summvars:search_summvar_id:%" LAL_UINT8_FORMAT "\""
-
-#define PRINT_LIGOLW_XML_SNGL_BURST(fp) ( \
-fputs( "\t<Table Name=\"sngl_burst:table\">\n", fp ) == EOF || \
-fputs( "\t\t<Column Name=\"sngl_burst:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
-fputs( "\t\t<Column Name=\"sngl_burst:ifo\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "\t\t<Column Name=\"sngl_burst:search\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "\t\t<Column Name=\"sngl_burst:channel\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "\t\t<Column Name=\"sngl_burst:start_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-fputs( "\t\t<Column Name=\"sngl_burst:start_time_ns\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-fputs( "\t\t<Column Name=\"sngl_burst:peak_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-fputs( "\t\t<Column Name=\"sngl_burst:peak_time_ns\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-fputs( "\t\t<Column Name=\"sngl_burst:duration\" Type=\"real_4\"/>\n", fp ) == EOF || \
-fputs( "\t\t<Column Name=\"sngl_burst:central_freq\" Type=\"real_4\"/>\n", fp ) == EOF || \
-fputs( "\t\t<Column Name=\"sngl_burst:bandwidth\" Type=\"real_4\"/>\n", fp ) == EOF || \
-fputs( "\t\t<Column Name=\"sngl_burst:amplitude\" Type=\"real_4\"/>\n", fp ) == EOF || \
-fputs( "\t\t<Column Name=\"sngl_burst:snr\" Type=\"real_4\"/>\n", fp ) == EOF || \
-fputs( "\t\t<Column Name=\"sngl_burst:confidence\" Type=\"real_4\"/>\n", fp ) == EOF || \
-fputs( "\t\t<Column Name=\"sngl_burst:event_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
-fputs( "\t\t<Stream Name=\"sngl_burst:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
-
-#define SNGL_BURST_ROW \
-"\t\t\t\"process:process_id:%ld\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,\"sngl_burst:event_id:%ld\""
 
 #define PRINT_LIGOLW_XML_SNGL_RINGDOWN(fp) ( \
 fputs( "   <Table Name=\"sngl_ringdowngroup:sngl_ringdown:table\">\n", fp ) == EOF || \

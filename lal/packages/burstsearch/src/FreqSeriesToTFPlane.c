@@ -200,11 +200,11 @@ int XLALFreqSeriesToTFPlane(
 
 
 /*
- * Convert time-frequency tile info to a SnglBurstTable row.
+ * Convert time-frequency tile info to a SnglBurst row.
  */
 
 
-static SnglBurstTable *XLALTFTileToBurstEvent(
+static SnglBurst *XLALTFTileToBurstEvent(
 	const REAL8TimeFrequencyPlane *plane,
 	unsigned tile_start,
 	unsigned tile_length,
@@ -217,7 +217,7 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 )
 {
 	static const char func[] = "XLALTFTileToBurstEvent";
-	SnglBurstTable *event = XLALCreateSnglBurstTable();
+	SnglBurst *event = XLALCreateSnglBurst();
 
 	if(!event)
 		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
@@ -255,9 +255,9 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
  */
 
 
-SnglBurstTable *XLALComputeExcessPower(
+SnglBurst *XLALComputeExcessPower(
 	const REAL8TimeFrequencyPlane *plane,
-	SnglBurstTable *head,
+	SnglBurst *head,
 	double confidence_threshold
 )
 {
@@ -348,7 +348,7 @@ SnglBurstTable *XLALComputeExcessPower(
 		/* record tiles whose statistical confidence is above
 		 * threshold and that have real-valued h_rss */
 		if((confidence >= confidence_threshold) && (uwsumsquares >= tile_dof)) {
-			SnglBurstTable *oldhead = head;
+			SnglBurst *oldhead = head;
 
 			/* compute h_rss */
 			h_rss = sqrt((uwsumsquares - tile_dof) * strain_mean_square * stride * plane->deltaT);
@@ -402,11 +402,11 @@ static void heterodyne_channel(
 }
 
 
-SnglBurstTable *XLALExcessPowerProject(
+SnglBurst *XLALExcessPowerProject(
 	const COMPLEX16FrequencySeries *fseries,
 	REAL8TimeFrequencyPlane *plane,
 	const struct ExcessPowerTemplateBank *bank,
-	SnglBurstTable *head,
+	SnglBurst *head,
 	double confidence_threshold,
 	const REAL8FFTPlan *reverseplan
 )
@@ -497,7 +497,7 @@ SnglBurstTable *XLALExcessPowerProject(
 			XLAL_ERROR_NULL(func, XLAL_EFUNC);
 		}
 		if(confidence >= confidence_threshold) {
-			SnglBurstTable *oldhead;
+			SnglBurst *oldhead;
 
 			/* compute h_rss */
 			h_rss = sqrt((sumsquares - tile_dof) * bank->templates[template].unwhitened_mean_square * stride * plane->deltaT);

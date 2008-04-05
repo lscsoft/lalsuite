@@ -108,7 +108,7 @@ NRCSID( LIGOMETADATATABLESH, "$Id$" );
 \idx[Type]{ProcessParamsTable}
 \idx[Type]{SearchSummaryTable}
 \idx[Type]{SearchSummvarsTable}
-\idx[Type]{SnglBurstTable}
+\idx[Type]{SnglBurst}
 \idx[Type]{SnglInspiralTable}
 \idx[Type]{SnglRingdownTable}
 \idx[Type]{SummValueTable}
@@ -128,7 +128,6 @@ typedef enum
   process_params_table,
   search_summary_table,
   search_summvars_table,
-  sngl_burst_table,
   sngl_inspiral_table,
   sngl_inspiral_table_bns,
   sngl_inspiral_table_bcv,
@@ -340,15 +339,15 @@ SearchSummvarsTable;
 
 Document table.
 
-\subsubsection*{Type \texttt{SnglBurstTable}}
+\subsubsection*{Type \texttt{SnglBurst}}
 
 </lalLaTeX>
 #endif
 /* <lalVerbatim> */
 typedef struct
-tagSnglBurstTable
+tagSnglBurst
 {
-	struct tagSnglBurstTable *next;
+	struct tagSnglBurst *next;
 	CHAR ifo[LIGOMETA_IFO_MAX];
 	CHAR search[LIGOMETA_SEARCH_MAX];
 	CHAR channel[LIGOMETA_CHANNEL_MAX];
@@ -365,7 +364,7 @@ tagSnglBurstTable
 	long process_id;
 	long event_id;
 }
-SnglBurstTable;
+SnglBurst;
 /* </lalVerbatim> */
 #if 0
 <lalLaTeX>
@@ -1035,12 +1034,11 @@ tagMetadataTable
   ProcessParamsTable    *processParamsTable;
   SearchSummaryTable    *searchSummaryTable;
   SearchSummvarsTable   *searchSummvarsTable;
-  SnglBurstTable        *snglBurstTable;
+  SnglBurst             *snglBurst;
   SnglInspiralTable     *snglInspiralTable;
   SnglRingdownTable     *snglRingdownTable;
   MultiInspiralTable    *multiInspiralTable;
   SimInspiralTable      *simInspiralTable;
-  SimBurst              *simBurst;
   SimRingdownTable      *simRingdownTable;
   SnglTransdataTable    *snglTransdataTable;
   SummValueTable        *summValueTable;
