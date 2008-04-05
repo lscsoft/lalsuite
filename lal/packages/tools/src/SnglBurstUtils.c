@@ -104,16 +104,31 @@ static REAL4 lo_freq(const SnglBurst *x)
 }
 
 
-/*
+/**
  * Free a sngl_burst 
  */
 
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
-void XLALFreeSnglBurst(SnglBurst *event)
+void XLALDestroySnglBurst(SnglBurst *event)
 /* </lalVerbatim> */
 {
 	XLALFree(event);
+}
+
+
+/**
+ * Free a SnglBurst linked list.
+ */
+
+
+void XLALDestroySnglBurstTable(SnglBurst *head)
+{
+	while(head) {
+		SnglBurst *next = head->next;
+		XLALDestroySnglBurst(head);
+		head = next;
+	}
 }
 
 
@@ -430,7 +445,7 @@ void XLALClusterSnglBurstTable (
 				if(!testfunc((const SnglBurst * const *) &a, (const SnglBurst * const *) &b)) {
 					clusterfunc(a, b);
 					prev->next = b->next;
-					XLALFreeSnglBurst(b);
+					XLALDestroySnglBurst(b);
 					did_cluster = 1;
 				} else {
 					if(bailoutfunc && bailoutfunc((const SnglBurst * const *) &a, (const SnglBurst * const *) &b))
@@ -472,17 +487,6 @@ SnglBurst *XLALCreateSnglBurst(void)
 	new->string_cluster_t = XLAL_REAL4_FAIL_NAN;
 
 	return new;
-}
-
-
-/**
- * Destroy a SnglBurst structure.
- */
-
-
-void XLALDestroySnglBurst(SnglBurst *sngl_burst)
-{
-	XLALFree(sngl_burst);
 }
 
 
@@ -530,6 +534,21 @@ SimBurst *XLALCreateSimBurst(void)
 void XLALDestroySimBurst(SimBurst *sim_burst)
 {
 	XLALFree(sim_burst);
+}
+
+
+/**
+ * Destroy a SimBurst linked list.
+ */
+
+
+void XLALDestroySimBurstTable(SimBurst *head)
+{
+	while(head) {
+		SimBurst *next = head->next;
+		XLALDestroySimBurst(head);
+		head = next;
+	}
 }
 
 

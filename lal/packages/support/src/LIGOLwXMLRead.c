@@ -861,11 +861,7 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 		SnglBurst *row = XLALCreateSnglBurst();
 
 		if(!row) {
-			while(head) {
-				SnglBurst *tmp = head->next;
-				XLALDestroySnglBurst(head);
-				head = tmp;
-			}
+			XLALDestroySnglBurstTable(head);
 			MetaioAbort(&env);
 			XLAL_ERROR_NULL(func, XLAL_EFUNC);
 		}
@@ -873,11 +869,7 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 		/* populate the columns */
 
 		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
-			while(head) {
-				SnglBurst *tmp = head->next;
-				XLALDestroySnglBurst(head);
-				head = tmp;
-			}
+			XLALDestroySnglBurstTable(head);
 			MetaioAbort(&env);
 			XLAL_ERROR_NULL(func, XLAL_EFUNC);
 		}
@@ -893,11 +885,7 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 		row->snr = env.ligo_lw.table.elt[column_pos.snr].data.real_4;
 		row->confidence = env.ligo_lw.table.elt[column_pos.confidence].data.real_4;
 		if((row->event_id = XLALLIGOLwParseIlwdChar(&env, column_pos.event_id, "sngl_burst", "event_id")) < 0) {
-			while(head) {
-				SnglBurst *tmp = head->next;
-				XLALDestroySnglBurst(head);
-				head = tmp;
-			}
+			XLALDestroySnglBurstTable(head);
 			MetaioAbort(&env);
 			XLAL_ERROR_NULL(func, XLAL_EFUNC);
 		}
@@ -908,11 +896,7 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 		next = &(*next)->next;
 	}
 	if(miostatus < 0) {
-		while(head) {
-			SnglBurst *tmp = head->next;
-			XLALDestroySnglBurst(head);
-			head = tmp;
-		}
+		XLALDestroySnglBurstTable(head);
 		MetaioAbort(&env);
 		XLALPrintError("I/O error parsing sngl_burst table\n");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
@@ -921,11 +905,7 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 	/* close file */
 
 	if(MetaioClose(&env)) {
-		while(head) {
-			SnglBurst *tmp = head->next;
-			XLALDestroySnglBurst(head);
-			head = tmp;
-		}
+		XLALDestroySnglBurstTable(head);
 		XLALPrintError("error parsing document after sngl_burst table\n");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
@@ -1028,11 +1008,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 		SimBurst *row = XLALCreateSimBurst();
 
 		if(!row) {
-			while(head) {
-				SimBurst *tmp = head->next;
-				XLALDestroySimBurst(head);
-				head = tmp;
-			}
+			XLALDestroySimBurstTable(head);
 			MetaioAbort(&env);
 			XLAL_ERROR_NULL(func, XLAL_EFUNC);
 		}
@@ -1040,11 +1016,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 		/* populate the columns */
 
 		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
-			while(head) {
-				SimBurst *tmp = head->next;
-				XLALDestroySimBurst(head);
-				head = tmp;
-			}
+			XLALDestroySimBurstTable(head);
 			MetaioAbort(&env);
 			XLAL_ERROR_NULL(func, XLAL_EFUNC);
 		}
@@ -1059,22 +1031,14 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 		if(column_pos.time_geocent_gmst >= 0)
 			row->time_geocent_gmst = env.ligo_lw.table.elt[column_pos.time_geocent_gmst].data.real_8;
 		if((row->simulation_id = XLALLIGOLwParseIlwdChar(&env, column_pos.simulation_id, "sim_burst", "simulation_id")) < 0) {
-			while(head) {
-				SimBurst *tmp = head->next;
-				XLALDestroySimBurst(head);
-				head = tmp;
-			}
+			XLALDestroySimBurstTable(head);
 			MetaioAbort(&env);
 			XLAL_ERROR_NULL(func, XLAL_EFUNC);
 		}
 
 		if(!strcmp(row->waveform, "StringCusp")) {
 			if(column_pos.duration < 0 || column_pos.frequency < 0 || column_pos.amplitude < 0) {
-				while(head) {
-					SimBurst *tmp = head->next;
-					XLALDestroySimBurst(head);
-					head = tmp;
-				}
+				XLALDestroySimBurstTable(head);
 				MetaioAbort(&env);
 				XLALPrintError("missing required column in sim_burst table\n");
 				XLAL_ERROR_NULL(func, XLAL_EIO);
@@ -1084,11 +1048,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 			row->amplitude = env.ligo_lw.table.elt[column_pos.amplitude].data.real_8;
 		} else if(!strcmp(row->waveform, "SineGaussian")) {
 			if(column_pos.duration < 0 || column_pos.frequency < 0 || column_pos.bandwidth < 0 || column_pos.q < 0 || column_pos.pol_ellipse_angle < 0 || column_pos.pol_ellipse_e < 0 || column_pos.hrss < 0) {
-				while(head) {
-					SimBurst *tmp = head->next;
-					XLALDestroySimBurst(head);
-					head = tmp;
-				}
+				XLALDestroySimBurstTable(head);
 				MetaioAbort(&env);
 				XLALPrintError("missing required column in sim_burst table\n");
 				XLAL_ERROR_NULL(func, XLAL_EIO);
@@ -1102,11 +1062,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 			row->hrss = env.ligo_lw.table.elt[column_pos.hrss].data.real_8;
 		} else if(!strcmp(row->waveform, "BTLWNB")) {
 			if(column_pos.duration < 0 || column_pos.frequency < 0 || column_pos.bandwidth < 0 || column_pos.egw_over_rsquared < 0 || column_pos.waveform_number < 0) {
-				while(head) {
-					SimBurst *tmp = head->next;
-					XLALDestroySimBurst(head);
-					head = tmp;
-				}
+				XLALDestroySimBurstTable(head);
 				MetaioAbort(&env);
 				XLALPrintError("missing required column in sim_burst table\n");
 				XLAL_ERROR_NULL(func, XLAL_EIO);
@@ -1120,11 +1076,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 			row->waveform_number = env.ligo_lw.table.elt[column_pos.waveform_number].data.int_8s;
 		} else {
 			/* unrecognized waveform */
-			while(head) {
-				SimBurst *tmp = head->next;
-				XLALDestroySimBurst(head);
-				head = tmp;
-			}
+			XLALDestroySimBurstTable(head);
 			MetaioAbort(&env);
 			XLALPrintError("unrecognized waveform '%s' in sim_burst table\n", row->waveform);
 			XLAL_ERROR_NULL(func, XLAL_EIO);
@@ -1143,11 +1095,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 		next = &(*next)->next;
 	}
 	if(miostatus < 0) {
-		while(head) {
-			SimBurst *tmp = head->next;
-			XLALDestroySimBurst(head);
-			head = tmp;
-		}
+		XLALDestroySimBurstTable(head);
 		MetaioAbort(&env);
 		XLALPrintError("I/O error parsing sim_burst table\n");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
@@ -1156,11 +1104,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 	/* close file */
 
 	if(MetaioClose(&env)) {
-		while(head) {
-			SimBurst *tmp = head->next;
-			XLALDestroySimBurst(head);
-			head = tmp;
-		}
+		XLALDestroySimBurstTable(head);
 		XLALPrintError("error parsing document after sim_burst table\n");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}

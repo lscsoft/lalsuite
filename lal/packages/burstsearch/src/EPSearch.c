@@ -30,6 +30,7 @@
 #include <lal/LALStatusMacros.h>
 #include <lal/LALStdlib.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/RealFFT.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/TFTransform.h>
@@ -40,23 +41,6 @@
 
 
 NRCSID(EPSEARCHC, "$Id$");
-
-
-/*
- * Delete a SnglBurst linked list
- */
-
-
-static void XLALDestroySnglBurstTable(SnglBurst *head)
-{
-	SnglBurst *event;
-
-	while(head) {
-		event = head;
-		head = head->next;
-		XLALFree(event);
-	}
-}
 
 
 /*
