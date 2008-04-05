@@ -961,11 +961,6 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 
-		/* set process and simulation ids */
-
-		(*sim_burst)->process_id = 0;
-		(*sim_burst)->simulation_id = searchsumm.searchSummaryTable->nevents++;
-
 		/* peak time at geocentre in GPS seconds */
 
 		XLALINT8NSToGPS(&(*sim_burst)->time_geocent_gps, tinj);
@@ -981,6 +976,7 @@ int main(int argc, char *argv[])
 
 	/* output */
 
+	searchsumm.searchSummaryTable->nevents = XLALSimBurstAssignIDs(sim_burst_head, 0, 0);
 	write_xml(proctable, procparams, searchsumm, sim_burst_head, options);
 
 	/* done */
