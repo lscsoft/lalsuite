@@ -1300,7 +1300,7 @@ static REAL8TimeSeries *add_mdc_injections(const char *mdccachefile, const char 
  */
 
 
-static SnglBurstTable **analyze_series(SnglBurstTable **addpoint, REAL8TimeSeries *series, int psd_length, int psd_shift, struct options *options)
+static SnglBurst **analyze_series(SnglBurst **addpoint, REAL8TimeSeries *series, int psd_length, int psd_shift, struct options *options)
 {
 	static const char func[] = "analyze_series";
 	unsigned i;
@@ -1356,11 +1356,10 @@ static SnglBurstTable **analyze_series(SnglBurstTable **addpoint, REAL8TimeSerie
  */
 
 
-static void output_results(LALStatus *stat, char *file, const char *ifo, MetadataTable *_process_table, MetadataTable *_process_params_table, MetadataTable *_search_summary_table, SnglBurstTable *burstEvent)
+static void output_results(LALStatus *stat, char *file, const char *ifo, MetadataTable *_process_table, MetadataTable *_process_params_table, MetadataTable *_search_summary_table, SnglBurst *head)
 {
 	LIGOLwXMLStream xml;
 	LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
-	MetadataTable myTable;
 
 	memset(&xml, 0, sizeof(LIGOLwXMLStream));
 	LAL_CALL(LALOpenLIGOLwXMLFile(stat, &xml, file), stat);
@@ -1387,7 +1386,7 @@ static void output_results(LALStatus *stat, char *file, const char *ifo, Metadat
 	 */
 
 	snprintf(_search_summary_table->searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
-	_search_summary_table->searchSummaryTable->nevents = XLALSnglBurstTableLength(burstEvent);
+	_search_summary_table->searchSummaryTable->nevents = XLALSnglBurstTableLength(head);
 	LAL_CALL(LALBeginLIGOLwXMLTable(stat, &xml, search_summary_table), stat);
 	LAL_CALL(LALWriteLIGOLwXMLTable(stat, &xml, *_search_summary_table, search_summary_table), stat);
 	LAL_CALL(LALEndLIGOLwXMLTable(stat, &xml), stat);
@@ -1396,10 +1395,14 @@ static void output_results(LALStatus *stat, char *file, const char *ifo, Metadat
 	 * burst table
 	 */
 
-	LAL_CALL(LALBeginLIGOLwXMLTable(stat, &xml, sngl_burst_table), stat);
-	myTable.snglBurstTable = burstEvent;
-	LAL_CALL(LALWriteLIGOLwXMLTable(stat, &xml, myTable, sngl_burst_table), stat);
-	LAL_CALL(LALEndLIGOLwXMLTable(stat, &xml), stat);
+	if(XLALWriteLIGOLwXMLSnglBurstTable(&xml, head)) {
+		/* FIXME:  error occured. do something smarter */
+		return;
+	}
+
+	/*
+	 * done
+	 */
 
 	LAL_CALL(LALCloseLIGOLwXMLFile(stat, &xml), stat);
 }
@@ -1423,8 +1426,8 @@ int main(int argc, char *argv[])
 	LIGOTimeGPS boundepoch;
 	int overlap;
 	REAL8TimeSeries *series = NULL;
-	SnglBurstTable *burstEvent = NULL;
-	SnglBurstTable **EventAddPoint = &burstEvent;
+	SnglBurst *burstEvent = NULL;
+	SnglBurst **EventAddPoint = &burstEvent;
 	/* the ugly underscores are because some badger put global symbols
 	 * in LAL by exactly these names. it's a mad house, a maad house */
 	MetadataTable _process_table;
@@ -1625,8 +1628,8 @@ int main(int argc, char *argv[])
 		 * Advancing the epoch by the post-conditioning series length
 		 * provides exactly the overlap needed to account for
 		 * conditioning corruption.  The post-conditioning overlap
-		 * computed earlier provides the additional overlap that is
-		 * needed.
+		 * computed earlier provides the additional overlap needed
+		 * for the time-frequency tiling.
 		 */
 
 		XLALGPSAdd(&epoch, (series->data->length - overlap) * series->deltaT);
@@ -1671,7 +1674,7 @@ int main(int argc, char *argv[])
 	}
 
 	while(burstEvent) {
-		SnglBurstTable *event = burstEvent;
+		SnglBurst *event = burstEvent;
 		burstEvent = burstEvent->next;
 		XLALFree(event);
 	}

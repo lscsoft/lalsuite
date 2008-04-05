@@ -173,7 +173,7 @@ int NTemplates;
 
 LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
 
-SnglBurstTable *events=NULL;
+SnglBurst *events=NULL;
 MetadataTable  procTable;
 MetadataTable  procparams;
 MetadataTable  searchsumm;
@@ -225,7 +225,7 @@ int FindStringBurst(struct CommandLineArgsTag CLA);
 
 /* Finds events above SNR threshold specified  */
 int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, 
-	       INT4 i, INT4 m, SnglBurstTable **thisEvent);
+	       INT4 i, INT4 m, SnglBurst **thisEvent);
 
 /* Writes out the xml file with the events it found  */
 int OutputEvents(struct CommandLineArgsTag CLA);
@@ -458,12 +458,9 @@ int OutputEvents(struct CommandLineArgsTag CLA)
   LALEndLIGOLwXMLTable(&status, &xml);
 
   /* burst table */
-  LALBeginLIGOLwXMLTable(&status, &xml, sngl_burst_table);
-
-  myTable.snglBurstTable = events;
-      
-  LALWriteLIGOLwXMLTable(&status, &xml, myTable, sngl_burst_table);
-  LALEndLIGOLwXMLTable(&status, &xml);
+  if(XLALWriteLIGOLwXMLSnglBurstTable(&xml, events)) {
+    return -1;
+  }
 
   LALCloseLIGOLwXMLFile(&status, &xml);
   
@@ -471,7 +468,7 @@ int OutputEvents(struct CommandLineArgsTag CLA)
 
   while ( events )
   {
-    SnglBurstTable *next = events->next;
+    SnglBurst *next = events->next;
     LALFree( events );
     events = next;
   }
@@ -490,7 +487,7 @@ int OutputEvents(struct CommandLineArgsTag CLA)
 
 /*******************************************************************************/
 
-int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 m, SnglBurstTable **thisEvent)
+int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 m, SnglBurst **thisEvent)
 {
   int p;
 
@@ -522,12 +519,12 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 
 	  if ( *thisEvent ) /* create a new event */
             {
-              (*thisEvent)->next = XLALCreateSnglBurstTable();
+              (*thisEvent)->next = XLALCreateSnglBurst();
               *thisEvent = (*thisEvent)->next;
             }
 	  else /* create the list */
             {
-              *thisEvent = events = XLALCreateSnglBurstTable();
+              *thisEvent = events = XLALCreateSnglBurst();
             }
 
 	  if ( ! *thisEvent ) /* allocation error */
@@ -592,7 +589,7 @@ int FindStringBurst(struct CommandLineArgsTag CLA)
   int i,p,m; 
   REAL4Vector *vector = NULL;
   COMPLEX8Vector *vtilde = NULL;
-  SnglBurstTable *thisEvent = NULL;
+  SnglBurst *thisEvent = NULL;
 
   /* create vector that will hold the data for each overlapping chunk */ 
   LALSCreateVector( &status, &vector, GV.seg_length);
