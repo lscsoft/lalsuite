@@ -726,7 +726,7 @@ static void write_mdc_log_file(CHAR *filename, SimInspiralTable *injections, INT
   for (thisInj = injections; thisInj; thisInj = thisInj->next)
   {
     /* GravEn_SimID */
-    fprintf(output, "file ");
+    fprintf(output, "%s ", thisInj->numrel_data);
     /* GravEn_Ampl */
     fprintf(output, "1 ");
     /* StartSamp1 */
