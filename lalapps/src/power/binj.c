@@ -884,7 +884,7 @@ int main(int argc, char *argv[])
 
 
 	lal_errhandler = LAL_ERR_EXIT;
-	lalDebugLevel = LALERROR | LALNMEMDBG | LALNMEMPAD | LALNMEMTRK;
+	lalDebugLevel = LALINFO | LALWARNING | LALERROR | LALNMEMDBG | LALNMEMPAD | LALNMEMTRK;
 
 
 	/*
@@ -940,7 +940,17 @@ int main(int argc, char *argv[])
 
 
 	for(tinj = options.gps_start_time; tinj <= options.gps_end_time; tinj += options.time_step * 1e9) {
-		/* create an injection */
+		/*
+		 * Progress bar.
+		 */
+
+		XLALPrintInfo("%s: ", argv[0]);
+		XLALPrintProgressBar((tinj - options.gps_start_time) / (double) (options.gps_end_time - options.gps_start_time));
+		XLALPrintInfo(" complete\n");
+
+		/*
+		 * Create an injection
+		 */
 
 		switch(options.population) {
 		case POPULATION_TARGETED:
@@ -961,15 +971,21 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 
-		/* peak time at geocentre in GPS seconds */
+		/*
+		 * Peak time at geocentre in GPS seconds
+		 */
 
 		XLALINT8NSToGPS(&(*sim_burst)->time_geocent_gps, tinj);
 
-		/* peak time at geocentre in GMST radians */
+		/*
+		 * Peak time at geocentre in GMST radians
+		 */
 
 		(*sim_burst)->time_geocent_gmst = XLALGreenwichMeanSiderealTime(&(*sim_burst)->time_geocent_gps);
 
-		/* move to next injection */
+		/*
+		 * Move to next injection
+		 */
 
 		sim_burst = &(*sim_burst)->next;
 	}
