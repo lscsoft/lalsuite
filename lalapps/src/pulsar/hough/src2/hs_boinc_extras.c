@@ -438,6 +438,7 @@ static int resolve_and_unzip(const char*filename, /**< filename to resolve */
   char buf[MAX_PATH_LEN]; /**< buffer for filename modifications */
   int zipped; /**< flag: is the file zipped? */
   int ret; /** keep return values */
+  FILE*fp;
 
   ret = boinc_resolve_filename(filename,resfilename,size);
   if (ret) {
@@ -445,13 +446,21 @@ static int resolve_and_unzip(const char*filename, /**< filename to resolve */
     return(-1);
   }
   if (strncmp(filename,resfilename,size) == 0) {
-    /* filename wasn't a softlink */
+    /* boinc_resove() returned the same filename, so filename wasn't a softlink */
+
     strncpy(buf,filename,sizeof(buf));
     strncat(buf,LINKED_EXT,sizeof(buf));
-    if (!boinc_resolve_filename(buf,resfilename,size)) {
+    /* f**king BOINC's new symlink behavior returns no error if the link file doesn't,
+       exist, so we need to check it manually */
+    if(fp=fopen(buf),"r") {
+      fclose(fp);
       /* this could only be the remainder of a previous interrupted unzip */
       LogPrintf (LOG_NORMAL, "WARNING: found old link file '%s'\n", buf);
 
+      /* try to resolve it (again) */
+      if (boinc_resolve_filename(buf,resfilename,size))
+	LogPrintf (LOG_NORMAL, "WARNING: Couldn't boinc_resolve '%s' though should be a softlink\n", buf);
+	
       /* unzip */
       if (boinc_zip(UNZIP_IT,resfilename,".") ) {
 	LogPrintf (LOG_CRITICAL, "ERROR: Couldn't unzip '%s'\n", resfilename);
