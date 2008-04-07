@@ -424,7 +424,7 @@ static int is_zipped ( const char *fname /**< name of the file to check for bein
 /**
   prepare an input file for the program, i.e. boinc_resolve and/or unzip it if necessary
  */
-/* better: if the file is a BOINC symlink to a zipped file, (boinc_resolve succeeds),
+/* better: if the file is a BOINC softlink to a zipped file, (boinc_resolve succeeds),
    first rename the link, then unzip the file, then remove the renamed link.
    Thus, at the beginning, if the file couldn't be found (i.e. resolved), try to resolve
    the renamed link, and upon success, unzip the file and remove the link.
@@ -445,7 +445,7 @@ static int resolve_and_unzip(const char*filename, /**< filename to resolve */
     return(-1);
   }
   if (strncmp(filename,resfilename,size) == 0) {
-    /* filename wasn't a symbolic link */
+    /* filename wasn't a softlink */
     strncpy(buf,filename,sizeof(buf));
     strncat(buf,LINKED_EXT,sizeof(buf));
     if (!boinc_resolve_filename(buf,resfilename,size)) {
@@ -495,7 +495,7 @@ static int resolve_and_unzip(const char*filename, /**< filename to resolve */
     return(0);
   }
 
-  /** we end up here if boinc_resolve found the filename to be a symlink */
+  /** we end up here if boinc_resolve found the filename to be a softlink */
   zipped = is_zipped (resfilename);
 
   /** return if not zipped or couldn't find out because of an error */
