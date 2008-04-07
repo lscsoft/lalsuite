@@ -1317,7 +1317,6 @@ LIN_SIN_COS_TRIM_P0A(_lambda_alpha)
 	    vector float qnV    /* xmm0 */ = pnV;  /* common divisor, initally = 1.0 * pnV */
 	    /*    this column above (^) lists the corresponding register in the SSE version */
 	    
-#ifdef EAH_USE_RE
 	    vector float tV;  /* temporary vector used for Newton-Rhapson iterarion */
 
 	    /* init the memory access (load0,load1) */
@@ -1330,6 +1329,8 @@ LIN_SIN_COS_TRIM_P0A(_lambda_alpha)
 	    qnV     = vec_re(pnV);
 	    STnV    = vec_madd(XaiV, qnV, V0000);
 
+	    /* use a reciprocal estimate as a replacement for a division.
+	       in our case this is only valid for the "outer" elements of the kernel loop */
 #define VEC_LOOP_RE(n,a,b)\
 	    pnV     = vec_sub(pnV,V2222);\
 	    perm    = vec_lvsl(0,(Xalpha_kR4+(n)));\
@@ -1338,6 +1339,9 @@ LIN_SIN_COS_TRIM_P0A(_lambda_alpha)
 	    qnV     = vec_re(pnV);\
 	    STnV    = vec_madd(XaiV, qnV, STnV);  /* STnV = XaiV * qnV + STnV */
 
+	    /* refine the reciprocal estimate to by a Newton-Rhapson iteration.
+	       y = re(x) * (2 - x * re(x))
+	       this should give as much precision as a normal float division */
 #define VEC_LOOP_RE_NR(n,a,b)\
 	    pnV     = vec_sub(pnV,V2222);\
 	    perm    = vec_lvsl(0,(Xalpha_kR4+(n)));\
@@ -1368,63 +1372,6 @@ LIN_SIN_COS_TRIM_P0A(_lambda_alpha)
 	      realXP = s_alpha * U_alpha - c_alpha * V_alpha;
 	      imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
 	    }
-
-	    /* translations from old CFSLoop AV RE code:
-	       XRes     <-> U_alpha
-	       XIms     <-> V_alpha
-	       tsin2pi  <-> s_aplha
-	       tcos2pi  <-> c_aplha
-	       Xsum     <-> STnV (xmm1)
-	       XsumS    <-> STn
-	       combAF   <-> reci
-	       reTFreq  <~> qnV  (xmm0)
-	       tFreq    <-> pnV  (xmm2)
-	       fdval    <-> XaiV (xmm3)
-	       four2    <-> V2222
-	    */
-
-#else /* USE_RE */
-	    float qn[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
-
-	    /* init the memory access (load0,load1) and put first Xalpha_k element into Xsum */
-	    load0   = vec_ld  (0,(Xalpha_kR4));
-	    perm    = vec_lvsl(0,(Xalpha_kR4));
-	    load1   = vec_ld  (0,(Xalpha_kR4+4));
-	    STnV    = vec_perm(load0,load1,perm);
-
-	    /* one loop iteration as a macro */
-#define VEC_LOOP_AV(n,a,b)\
-	    perm    = vec_lvsl(0,(Xalpha_kR4+(n)));    /* xmm3 = Xalpha_k[n] */ \
-	    load##b = vec_ld(0,(Xalpha_kR4+(n)+4));    /* ... continued */ \
-	    XaiV    = vec_perm(load##a,load##b,perm);  /* ... continued */ \
-	    pnV     = vec_sub(pnV,V2222);              /* xmm2 -= xmm4 */ \
-	    XaiV    = vec_madd(XaiV,qnV,V0000);        /* xmm3 *= xmm0 */ \
-	    qnV     = vec_madd(qnV,pnV,V0000);         /* xmm0 *= xmm2 */ \
-	    STnV    = vec_madd(STnV,pnV,XaiV);         /* xmm1 = xmm1 * xmm0 + xmm3 */
-
-	    /* do the "loop" 7 times using load0-2 for unaligned memory access */
-	    VEC_LOOP_AV( 4,1,2);
-	    VEC_LOOP_AV( 8,2,0);
-	    VEC_LOOP_AV(12,0,1);
-	    VEC_LOOP_AV(16,1,2);
-	    VEC_LOOP_AV(20,2,0);
-	    VEC_LOOP_AV(24,0,1);
-	    VEC_LOOP_AV(28,1,0);
-
-	    /* output the vectors */
-	    vec_st(STnV,0,STn);
-	    vec_st(qnV,0,qn);
-	    
-	    /* conbine the partial sums: */
-	    {
-	      REAL8 reci  = 1.0 / (qn[0] * qn[2]);
-	      REAL4 U_alpha = (STn[0] * qn[2] + STn[2] * qn[0]) * reci;
-	      REAL4 V_alpha = (STn[1] * qn[3] + STn[3] * qn[1]) * reci;
-	      
-	      realXP = s_alpha * U_alpha - c_alpha * V_alpha;
-	      imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
-	    }
-#endif /* USE_RE */
 	  }
 	}
 
