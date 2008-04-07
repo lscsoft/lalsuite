@@ -452,7 +452,7 @@ static int resolve_and_unzip(const char*filename, /**< filename to resolve */
     strncat(buf,LINKED_EXT,sizeof(buf));
     /* f**king BOINC's new symlink behavior returns no error if the link file doesn't,
        exist, so we need to check it manually */
-    if(fp=fopen(buf),"r") {
+    if(fp=fopen(buf,"r")) {
       fclose(fp);
       /* this could only be the remainder of a previous interrupted unzip */
       LogPrintf (LOG_NORMAL, "WARNING: found old link file '%s'\n", buf);
