@@ -1340,7 +1340,8 @@ LIN_SIN_COS_TRIM_P0A(_lambda_alpha)
 	    STnV    = vec_madd(XaiV, qnV, STnV);  /* STnV = XaiV * qnV + STnV */
 
 	    /* refine the reciprocal estimate to by a Newton-Rhapson iteration.
-	       y = re(x) * (2 - x * re(x))
+	       re1(x) = re0(x) * (2 - x * re0(x))
+	       (see http://en.wikipedia.org/wiki/Division_(digital)#Newton-Raphson_division)
 	       this should give as much precision as a normal float division */
 #define VEC_LOOP_RE_NR(n,a,b)\
 	    pnV     = vec_sub(pnV,V2222);\
