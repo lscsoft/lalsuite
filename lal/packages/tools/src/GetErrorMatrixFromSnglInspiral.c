@@ -123,16 +123,27 @@ gsl_matrix * XLALGetErrorMatrixFromSnglInspiral(SnglInspiralTable *event,
   fisher = gsl_matrix_alloc( 3, 3 );
   p      = gsl_permutation_alloc( 3 );
 
+  REAL8 freqRatio0 = 0.0;
+  REAL8 freqRatio3 = 0.0;
+  REAL8 fLow = 0.0;
+  REAL8 mtotal = 0.0;
+  
+  mtotal = (event->mtotal)*LAL_MTSUN_SI;
+  fLow =  5.0 / (256.0 * event->eta * pow(mtotal, 5.0/3.0) * event->tau0 );
+  fLow = pow(fLow, 3.0/8.0) / LAL_PI;
+  freqRatio0 = pow(fLow, 8.0/3.0);
+  freqRatio3 = pow(fLow, 5.0/3.0);
+
   /* Fill in the elements of the fisher matrix */
   gsl_matrix_set( fisher, 0, 0, event->Gamma[0] );
-  gsl_matrix_set( fisher, 0, 1, event->Gamma[1] );
-  gsl_matrix_set( fisher, 1, 0, event->Gamma[1] );
-  gsl_matrix_set( fisher, 0, 2, event->Gamma[2] );
-  gsl_matrix_set( fisher, 2, 0, event->Gamma[2] );
-  gsl_matrix_set( fisher, 1, 1, event->Gamma[3] );
-  gsl_matrix_set( fisher, 1, 2, event->Gamma[4] );
-  gsl_matrix_set( fisher, 2, 1, event->Gamma[4] );
-  gsl_matrix_set( fisher, 2, 2, event->Gamma[5] );
+  gsl_matrix_set( fisher, 0, 1, event->Gamma[1]/freqRatio0 );
+  gsl_matrix_set( fisher, 1, 0, event->Gamma[1]/freqRatio0 );
+  gsl_matrix_set( fisher, 0, 2, event->Gamma[2]/freqRatio3 );
+  gsl_matrix_set( fisher, 2, 0, event->Gamma[2]/freqRatio3 );
+  gsl_matrix_set( fisher, 1, 1, event->Gamma[3]/(freqRatio0*freqRatio0) );
+  gsl_matrix_set( fisher, 1, 2, event->Gamma[4]/(freqRatio0*freqRatio3) );
+  gsl_matrix_set( fisher, 2, 1, event->Gamma[4]/(freqRatio0*freqRatio3) );
+  gsl_matrix_set( fisher, 2, 2, event->Gamma[5]/(freqRatio3*freqRatio3) );
 
   gsl_matrix_scale( fisher, 1.0 / eMatch );
 
@@ -162,9 +173,20 @@ gsl_vector * XLALGetPositionFromSnglInspiral( SnglInspiralTable *table )
   endTime = (REAL8) table->end_time.gpsSeconds +
         (REAL8) table->end_time.gpsNanoSeconds * 1.0e-9;
 
+  REAL8 freqRatio0 = 0.0;
+  REAL8 freqRatio3 = 0.0;
+  REAL8 fLow = 0.0;
+  REAL8 mtotal = 0.0;
+
+  mtotal = (table->mtotal)*LAL_MTSUN_SI;
+  fLow =  5.0 / (256.0 * table->eta * pow(mtotal, 5.0/3.0) * table->tau0 );
+  fLow = pow(fLow, 3.0/8.0) / LAL_PI;
+  freqRatio0 = pow(fLow, 8.0/3.0);
+  freqRatio3 = pow(fLow, 5.0/3.0); 
+
   gsl_vector_set( position, 0, endTime );
-  gsl_vector_set( position, 1, table->tau0 );
-  gsl_vector_set( position, 2, table->tau3 );
+  gsl_vector_set( position, 1, freqRatio0*table->tau0 );
+  gsl_vector_set( position, 2, freqRatio3*table->tau3 );
 
   return position;
 }
