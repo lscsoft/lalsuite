@@ -1303,7 +1303,6 @@ LIN_SIN_COS_TRIM_P0A(_lambda_alpha)
 	    REAL4 *Xalpha_kR4 = (REAL4*)(Xalpha_l);
 	    
 	    float STn[4] __attribute__ ((aligned (16))); /* aligned for vector output */
-	    float qn[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
 	    /* the vectors actually become registers in the AVUnit */
 	    vector unsigned char perm;      /* permutation pattern for unaligned memory access */
 	    vector float load0, load1, load2;    /* temp registers for unaligned memory access */
@@ -1351,10 +1350,10 @@ LIN_SIN_COS_TRIM_P0A(_lambda_alpha)
 	    STnV    = vec_madd(XaiV, qnV, STnV);
 
 	    VEC_LOOP_RE(4,1,2);
-	    VEC_LOOP_RE_RN(8,2,0);
-	    VEC_LOOP_RE_RN(12,0,1);
-	    VEC_LOOP_RE_RN(16,1,2);
-	    VEC_LOOP_RE_RN(20,2,0);
+	    VEC_LOOP_RE_NR(8,2,0);
+	    VEC_LOOP_RE_NR(12,0,1);
+	    VEC_LOOP_RE_NR(16,1,2);
+	    VEC_LOOP_RE_NR(20,2,0);
 	    VEC_LOOP_RE(24,0,1);
 	    VEC_LOOP_RE(28,1,0);
 
@@ -1385,6 +1384,8 @@ LIN_SIN_COS_TRIM_P0A(_lambda_alpha)
 	    */
 
 #else /* USE_RE */
+	    float qn[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
+
 	    /* init the memory access (load0,load1) and put first Xalpha_k element into Xsum */
 	    load0   = vec_ld  (0,(Xalpha_kR4));
 	    perm    = vec_lvsl(0,(Xalpha_kR4));
@@ -1423,8 +1424,8 @@ LIN_SIN_COS_TRIM_P0A(_lambda_alpha)
 	      realXP = s_alpha * U_alpha - c_alpha * V_alpha;
 	      imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
 	    }
-	  }
 #endif /* USE_RE */
+	  }
 	}
 
 #elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_AUTOVECT)
