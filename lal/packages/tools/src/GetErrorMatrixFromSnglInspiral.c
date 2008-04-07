@@ -105,6 +105,11 @@ gsl_matrix * XLALGetErrorMatrixFromSnglInspiral(SnglInspiralTable *event,
   gsl_matrix *fisher = NULL;
   gsl_permutation *p = NULL;
 
+  REAL8 freqRatio0 = 0.0;
+  REAL8 freqRatio3 = 0.0;
+  REAL8 fLow = 0.0;
+  REAL8 mtotal = 0.0;
+
   int signum;
 
   if (!event)
@@ -123,11 +128,6 @@ gsl_matrix * XLALGetErrorMatrixFromSnglInspiral(SnglInspiralTable *event,
   fisher = gsl_matrix_alloc( 3, 3 );
   p      = gsl_permutation_alloc( 3 );
 
-  REAL8 freqRatio0 = 0.0;
-  REAL8 freqRatio3 = 0.0;
-  REAL8 fLow = 0.0;
-  REAL8 mtotal = 0.0;
-  
   mtotal = (event->mtotal)*LAL_MTSUN_SI;
   fLow =  5.0 / (256.0 * event->eta * pow(mtotal, 5.0/3.0) * event->tau0 );
   fLow = pow(fLow, 3.0/8.0) / LAL_PI;
@@ -166,17 +166,17 @@ gsl_vector * XLALGetPositionFromSnglInspiral( SnglInspiralTable *table )
   gsl_vector *position = NULL;
   REAL8 endTime;
 
+  REAL8 freqRatio0 = 0.0;
+  REAL8 freqRatio3 = 0.0;
+  REAL8 fLow = 0.0;
+  REAL8 mtotal = 0.0;
+
   XLAL_CALLGSL( position = gsl_vector_alloc( 3 ) );
   if ( !position )
     XLAL_ERROR_NULL( func, XLAL_ENOMEM );
 
   endTime = (REAL8) table->end_time.gpsSeconds +
         (REAL8) table->end_time.gpsNanoSeconds * 1.0e-9;
-
-  REAL8 freqRatio0 = 0.0;
-  REAL8 freqRatio3 = 0.0;
-  REAL8 fLow = 0.0;
-  REAL8 mtotal = 0.0;
 
   mtotal = (table->mtotal)*LAL_MTSUN_SI;
   fLow =  5.0 / (256.0 * table->eta * pow(mtotal, 5.0/3.0) * table->tau0 );
