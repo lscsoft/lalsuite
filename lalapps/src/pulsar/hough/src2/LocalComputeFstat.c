@@ -1346,7 +1346,7 @@ LIN_SIN_COS_TRIM_P0A(_lambda_alpha)
 	    qnV     = vec_re(pnV);\
             tV      = vec_madd(qnV,pnV,V0000);\
             tV      = vec_sub(V2222,tV);\
-            qnV     = vec_madd(qnV,tV,V0000)\;
+            qnV     = vec_madd(qnV,tV,V0000);\
 	    STnV    = vec_madd(XaiV, qnV, STnV);
 
 	    VEC_LOOP_RE(4,1,2);
