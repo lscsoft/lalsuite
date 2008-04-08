@@ -1198,8 +1198,8 @@ WriteFStatLog (LALStatus *status, char *argv[], const CHAR *log_fname )
 
   /* append an ident-string defining the exact RC-version of the code used */
   fprintf (fplog, "\n\n%% SC-version of executable:\n");
-  fprintf (fplog, "%% lalCommitID = %s\n", lalCommitID );
-  fprintf (fplog, "%% lalappsCommitID = %s\n", lalappsCommitID );
+  fprintf (fplog, "%% lalCommitID = %s\n", lalGitID );
+  fprintf (fplog, "%% lalappsCommitID = %s\n", lalappsGitID );
   fclose (fplog);
 
 

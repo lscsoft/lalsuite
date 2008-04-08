@@ -180,8 +180,8 @@ main(int argc, char *argv[])
   CHAR dummy[512];
   DopplerMetric *metric;
 
-  sprintf (dummy, "%s", lalCommitID );
-  sprintf (dummy, "%s", lalappsCommitID );
+  sprintf (dummy, "%s", lalGitID );
+  sprintf (dummy, "%s", lalappsGitID );
 
   lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
@@ -269,7 +269,7 @@ main(int argc, char *argv[])
       if ( (fpMetric = fopen ( uvar.outputMetric, "wb" )) == NULL )
 	return FSTATMETRIC_EFILE;
 
-      fprintf ( fpMetric, "%%%% History: %s\n%%%%%s\n", lalCommitID, lalappsCommitID );
+      fprintf ( fpMetric, "%%%% History: %s\n%%%%%s\n", lalGitID, lalappsGitID );
       fprintf ( fpMetric, "%%%% DopplerCoordinates = [ " );
       for ( i=0; i < meta->coordSys.dim; i ++ )
 	{

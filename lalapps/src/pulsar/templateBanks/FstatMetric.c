@@ -271,8 +271,8 @@ main(int argc, char *argv[])
   PhaseType_t phaseType;
   MetricType_t startMetricType, stopMetricType, metricType;
   CHAR dummy[512];
-  sprintf (dummy, "%s", lalCommitID );
-  sprintf (dummy, "%s", lalappsCommitID );
+  sprintf (dummy, "%s", lalGitID );
+  sprintf (dummy, "%s", lalappsGitID );
 
   lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
