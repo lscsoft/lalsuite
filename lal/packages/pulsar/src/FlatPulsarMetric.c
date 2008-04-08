@@ -75,10 +75,9 @@ typedef struct {
 LALStatus empty_status;
 
 /*---------- Global variables ----------*/
-static const REAL8 sp1_fact_inv[] = { 1.0/1.0, 1.0/2, 1.0/(3*2), 1.0/(4*3*2), 1.0/(5*4*3*2), 1.0/(6*5*4*3*2) };	/* 1/(s+1)! */
+
 
 /*---------- internal prototypes ----------*/
-REAL8 XLALcov ( const REAL8Vector *at, const REAL8Vector *bt );
 double Phi_i ( double ti, void *params );
 double Phi_i_Phi_j ( double ti, void *params );
 REAL8 cov_Phi_ij ( const cov_params_t *params );
@@ -186,24 +185,25 @@ Phi_i ( double tt, void *params )
       LALStatus status = empty_status;
       EarthState earth;
       LIGOTimeGPS tGPS;
+      REAL8 rOrb[3];
       REAL8 rX, rY;
-      REAL8 VT = LAL_TWOPI * LAL_AU_SI /  LAL_YRSID_SI * par->Tspan;
+      REAL8 Rorb = LAL_AU_SI;
 
       XLALFloatToGPS( &tGPS, ti );
       LALBarycenterEarth( &status, &earth, &tGPS, par->edat );
 
-      rX = LAL_C_SI * earth.posNow[0]  / VT;
-      rY = LAL_C_SI * ( coseps * earth.posNow[1] + sineps * earth.posNow[2] ) / VT ;
+      rX = LAL_C_SI * earth.posNow[0]  / Rorb;
+      rY = LAL_C_SI * ( coseps * earth.posNow[1] + sineps * earth.posNow[2] ) / Rorb ;
 
       if ( par->comp == COMP_RX )
-	ret = - rX;	/* NOTE the '-' sign: the skypos-variable is k \propto -n  */
+	ret = rX;	/* NOTE the '-' sign: the skypos-variable is k \propto -n  */
       else
-	ret= - rY;
+	ret= rY;
     } /* rX,rY */
   else
     {
       int s = par->comp;
-      ret = pow ( (ti - par->refTime)/par->Tspan, s + 1 ) * sp1_fact_inv[s];
+      ret = pow ( (ti - par->refTime)/par->Tspan, s + 1 );
     }
 
   return ret;
@@ -215,12 +215,12 @@ Phi_i ( double tt, void *params )
  * the detector in ecliptic coordinates.
  *
  * gij has to be an allocated symmetric matrix of dimension \a dim: the order of coordinates
- * is \f$[ \omega_0, \tilde{k}_x, \tilde{k}_y, \omega_1, \omega_2, ... ]\f$,
+ * is \f$[ \omega_0, \tilde{n}_x, \tilde{n}_y, \omega_1, \omega_2, ... ]\f$,
  * but \a dim must be at least 3 and maximally 6 (Freq + 2 sky + 3 spin-downs)
  * The dimensionless coordinates are defined as
- * \f$\omega_s \equiv 2\pi \, f^{(s)}\, T^{s+1}\f$ in terms of the observation time \f$T\f$,
- * and \f$\tilde{k}_l \equiv - 2\pi \bar{f} \hat{n} V T / c\f$, where \f$V\f$ is the average
- * orbital velocity.
+ * \f$\omega_s \equiv 2\pi \, f^{(s)}\, T^{s+1} / (s+1)!\f$ in terms of the observation time \f$T\f$,
+ * and \f$\tilde{n}_l \equiv 2\pi \bar{f} \hat{n} R_{orb} / c\f$, where \f$R_{orb}\f$ is the orbital
+ * radius (AU).
  *
  */
 int
@@ -310,64 +310,6 @@ XLALFlatMetricCW ( gsl_matrix *gij, 			/**< [out] metric */
   return 0;
 
 } /* XLALFlatMetricCW() */
-
-
-/** Compute the 'covariance' between two time-series a(t), and b(t), namely
- * \f$\mathrm{cov}(a,b) = \langle a\, b\rangle - \langle a \rangle \langle b \rangle\f$,
- * where \f$ \langle a \rangle = (1/T) \int_0^T a(t) \, d t\f$.
- */
-REAL8
-XLALcov ( const REAL8Vector *at, const REAL8Vector *bt )
-{
-  UINT4 i, N;
-  REAL8 norm;
-  REAL8 av_a, av_b, av_ab;
-  const REAL8 *this_a, *this_b;
-
-  if ( !at || !bt || at->length != bt->length ) {
-    LALPrintError("\nXLALcov(): NULL input or time-series of different lengths!\n\n");
-    XLAL_ERROR_REAL8 ( "XLALcov()", XLAL_EINVAL );
-  }
-
-  N = at->length;
-
-  av_ab = av_a = av_b = 0;
-  this_a = &at->data[0];
-  this_b = &bt->data[0];
-
-
-  /* use trapezoidal rule */
-  for ( i=0; i <  N ; i ++ )
-    {
-      REAL8 a = *this_a;
-      REAL8 b = *this_b;
-
-      if ( (i > 0) && ( i < N -1 ) )
-	{
-	  av_ab += a * b;
-	  av_a  += a;
-	  av_b  += b;
-	}
-      else
-	{
-	  av_ab += 0.5 * a * b;
-	  av_a  += 0.5 * a;
-	  av_b  += 0.5 * b;
-	}
-
-      this_a ++;
-      this_b ++;
-    } /* for i < N */
-
-  norm = (1.0 / (N - 1.0));
-  av_ab *= norm;
-  av_a  *= norm;
-  av_b  *= norm;
-
-  return ( av_ab - av_a * av_b );
-
-} /* XLALcov() */
-
 
 
 /* [OBSOLETE?] ================================================================================*/
