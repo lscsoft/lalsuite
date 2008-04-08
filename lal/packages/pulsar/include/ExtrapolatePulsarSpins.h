@@ -12,8 +12,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
@@ -21,30 +21,30 @@
  *  \ingroup pulsarCommon
  *  \author Reinhard Prix
  *  \date $Date$
- *  \brief  Extrapolate the Pulsar spin-paramters 
- *  \f$\{f^{(k)}\}\equiv\{f, \stackrel{.}{f},\ddot{f},...\}\f$, and "spin-ranges" 
+ *  \brief  Extrapolate the Pulsar spin-paramters
+ *  \f$\{f^{(k)}\}\equiv\{f, \stackrel{.}{f},\ddot{f},...\}\f$, and "spin-ranges"
  * \f$\{ f^{(k)}, \Delta f^{(k)} \}\f$ from one SSB epoch to another.
- * 
- * The central function of this module is LALExtrapolatePulsarSpinRange(), which extrapolates 
- * a complete "spin range" (defined as LALPulsarSpinRange) from one epoch to another.  
+ *
+ * The central function of this module is LALExtrapolatePulsarSpinRange(), which extrapolates
+ * a complete "spin range" (defined as LALPulsarSpinRange) from one epoch to another.
  * A "spin-range" contains an epoch, and \em two vectors, \f$f^{(k)}\f$ and \f$\Delta f^{(k)}\f$
  * (where "canonical" ordering refers to \f$\Delta f^{(k)} >= 0\f$ for all k.
  *
  *
  * The extrapolation is defined by the pulsar spindown-model:
- * \f[ f(\tau_1) = f(\tau_0) + {\stackrel{.}{f}(\tau_0) \over 1!} \,\Delta\tau 
+ * \f[ f(\tau_1) = f(\tau_0) + {\stackrel{.}{f}(\tau_0) \over 1!} \,\Delta\tau
  *     + {\ddot{f}(\tau_0) \over 2!} \,\Delta\tau^2 + ...
  *  = \sum_{k=0}^s {f^{(k)}(\tau_0) \over k!}\, \Delta\tau^k\,,
  * \f]
- * where \f[\Delta\tau \equiv \tau_1 - \tau_0\f\,,\f] 
+ * where \f[\Delta\tau \equiv \tau_1 - \tau_0\f\,,\f]
  * and therefore generally
  *
  * \f[
  * f^{(l)}(\tau_1) = \sum_{k=0}^{s - l} { f^{(k+l)}(\tau_0) \over k! }\, \Delta\tau^k\,.
  * \f]
  *
- * This expression is used to extrapolate a whole "spin-range", namely at each spindown-order \f$(l)\f$ 
- * the extrapolated range is given by 
+ * This expression is used to extrapolate a whole "spin-range", namely at each spindown-order \f$(l)\f$
+ * the extrapolated range is given by
  * \f[
  * \min\left[ f^{(l)}(\tau_1) \right] = \sum_{k=0}^{s - l} {1\over k!} \min\left[ f^{(k+l)}(\tau_0) \, \Delta\tau^k \right]\,.
  * \f]
@@ -52,12 +52,12 @@
  * \f[
  * \max\left[ f^{(l)}(\tau_1) \right] = \sum_{k=0}^{s - l} {1\over k!} \max\left[ f^{(k+l)}(\tau_0) \, \Delta\tau^k \right]\,.
  * \f]
- * 
+ *
  * This ensures that the range will be correctly extrapolated even if \f$\tau_1 < \tau_0\f$, i.e. \f$\Delta\tau < 0\f$.
- * 
+ *
  */
 
-/** \file 
+/** \file
  * \ingroup ExtrapolatePulsarSpins
  * \author Reinhard Prix
  * \date $Date$
