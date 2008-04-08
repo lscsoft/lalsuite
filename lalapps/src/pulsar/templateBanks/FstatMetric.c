@@ -12,8 +12,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
@@ -153,7 +153,7 @@ typedef struct {
   REAL8 vel[3];
 } PosVel_t;
 
-typedef struct 
+typedef struct
 {
   EphemerisData *edat;		/**< ephemeris data (from LALInitBarycenter()) */
   LIGOTimeGPS startTime;	/**< start time of observation */
@@ -171,22 +171,22 @@ typedef struct
 } ConfigVariables;
 
 
-typedef struct 
-{ 
+typedef struct
+{
   BOOLEAN help;
 
   LALStringVector* IFOs;	/**< list of detector-names "H1,H2,L1,.." or single detector*/
   LALStringVector* IFOweights; /**< list of relative detector-weights "w1, w2, w3, .." */
-  
+
   REAL8 Freq;		/**< target-frequency */
   REAL8 dFreq;		/**< target-frequency offset */
-  
+
   REAL8 Alpha;		/**< skyposition Alpha: radians, equatorial coords. */
   REAL8 dAlpha;		/**< skyposition Alpha offset */
 
   REAL8 Delta;		/**< skyposition Delta: radians, equatorial coords. */
   REAL8 dDelta;		/**< skyposition Delta offset */
-  
+
   REAL8 f1dot;		/**< target 1. spindown-value df/dt */
   REAL8 df1dot;		/**< spindown df/dt offset */
 
@@ -200,10 +200,10 @@ typedef struct
 
   REAL8 cosi;		/**< cos(iota) */
   REAL8 psi;		/**< polarization-angle psi */
-  
+
   BOOLEAN printMotion;	/**< output orbital motion? */
   CHAR* outputMetric;	/**< filename to write metrics into */
-  
+
   INT4 metricType;	/**< metric to compute: F-, phase-, orbital-, Ptole- metric */
   INT4 unitsType;	/**< which units to use for 't' and 'rX/c': SI vs natural */
 
@@ -223,16 +223,16 @@ extern int vrbflg;
 /* ---------- local prototypes ---------- */
 void initUserVars (LALStatus *status, UserVariables_t *uvar);
 void InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar);
-void getMultiPhaseDerivs (LALStatus *, MultiPhaseDerivs **derivs, 
-			  const MultiDetectorStateSeries *detStates, 
-			  const DopplerPoint *dopplerPoint, 
-			  PhaseType_t type, 
+void getMultiPhaseDerivs (LALStatus *, MultiPhaseDerivs **derivs,
+			  const MultiDetectorStateSeries *detStates,
+			  const DopplerPoint *dopplerPoint,
+			  PhaseType_t type,
 			  const DopplerPoint *offsetUnits );
 
 void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch, BOOLEAN isLISA);
 
-int computeFstatMetric ( gsl_matrix *gF_ij, gsl_matrix *gFav_ij, 
-			 gsl_matrix *m1_ij, gsl_matrix *m2_ij, gsl_matrix *m3_ij, 
+int computeFstatMetric ( gsl_matrix *gF_ij, gsl_matrix *gFav_ij,
+			 gsl_matrix *m1_ij, gsl_matrix *m2_ij, gsl_matrix *m3_ij,
 			 ConfigVariables *cfg );
 int computePhaseMetric ( gsl_matrix *g_ij, const PhaseDerivs *dphi, const REAL8Vector *GLweights );
 
@@ -255,7 +255,7 @@ void gauleg(double x1, double x2, double x[], double w[], int n);
  *============================================================*/
 
 int
-main(int argc, char *argv[]) 
+main(int argc, char *argv[])
 {
   LALStatus status = blank_status;
   ConfigVariables config = empty_ConfigVariables;
@@ -274,7 +274,7 @@ main(int argc, char *argv[])
   sprintf (dummy, "%s", lalCommitID );
   sprintf (dummy, "%s", lalappsCommitID );
 
-  lalDebugLevel = 0;  
+  lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
 
   /* set LAL error-handler */
@@ -286,10 +286,10 @@ main(int argc, char *argv[])
   /* set log-level */
   LogSetLevel ( lalDebugLevel );
 
-  LAL_CALL (initUserVars (&status, &uvar), &status);	  
+  LAL_CALL (initUserVars (&status, &uvar), &status);
 
-  /* read cmdline & cfgfile  */	
-  LAL_CALL (LALUserVarReadAllInput (&status, argc,argv), &status);  
+  /* read cmdline & cfgfile  */
+  LAL_CALL (LALUserVarReadAllInput (&status, argc,argv), &status);
 
   if (uvar.help) 	/* help requested: we're done */
     exit (0);
@@ -297,7 +297,7 @@ main(int argc, char *argv[])
   if ( uvar.outputMetric )
     if ( (fpMetric = fopen ( uvar.outputMetric, "wb" )) == NULL )
       return FSTATMETRIC_EFILE;
-  
+
   /* basic setup and initializations */
   gF_ij = gsl_matrix_calloc ( METRIC_DIM, METRIC_DIM );
   gFav_ij = gsl_matrix_calloc ( METRIC_DIM, METRIC_DIM );
@@ -329,29 +329,29 @@ main(int argc, char *argv[])
 	phaseType = PHASE_ORBITAL;
       else if ( metricType == METRIC_PTOLE )
 	phaseType = PHASE_PTOLE;
-      else 
+      else
 	phaseType = PHASE_NONE;
       if ( phaseType > PHASE_NONE )
-	LAL_CALL ( getMultiPhaseDerivs (&status, &config.multidPhi, config.multiDetStates, 
+	LAL_CALL ( getMultiPhaseDerivs (&status, &config.multidPhi, config.multiDetStates,
 					&(config.dopplerPoint), phaseType, &(config.offsetUnits)), &status );
-      
+
       switch ( metricType )
 	{
 	case METRIC_FSTAT:
-	  
+
 	  if ( computeFstatMetric ( gF_ij, gFav_ij, m1_ij, m2_ij, m3_ij, &config ) )
 	    {
 	      printf ("\nSomething failed in computeFstatMetric() \n\n");
 	      return -1;
 	    }
-	  
-	  mF   = quad_form ( gF_ij,   config.dopplerOffset ); 
-	  mFav = quad_form ( gFav_ij, config.dopplerOffset ); 
-	  
+
+	  mF   = quad_form ( gF_ij,   config.dopplerOffset );
+	  mFav = quad_form ( gFav_ij, config.dopplerOffset );
+
 	  m1 = quad_form ( m1_ij, config.dopplerOffset );
 	  m2 = quad_form ( m2_ij, config.dopplerOffset );
 	  m3 = quad_form ( m3_ij, config.dopplerOffset );
-	  
+
 	  disc = mFav * mFav - ( m1 * m2 - m3 * m3 ) / config.Dd;
 	  if ( disc < 0 )
 	    {
@@ -363,32 +363,32 @@ main(int argc, char *argv[])
 	      disc = - disc;
 	    }
 	  disc = sqrt(disc);
-	  
+
 	  mMin = mFav - disc;
 	  mMax = mFav + disc;
-	  
+
 	  if ( fpMetric )
 	    {
 	      fprintf ( fpMetric, "\nA = %.16g; B = %.16g; C = %.16g; D = %.16g;\n",
 			config.Ad, config.Bd, config.Cd, config.Dd );
-	      
+
 	      fprintf ( fpMetric, "\ngF_ij = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  gF_ij );
 	      fprintf ( fpMetric, "\ngFav_ij = \\\n");XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  gFav_ij );
 	      fprintf ( fpMetric, "\nm1_ij = \\\n");  XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  m1_ij );
 	      fprintf ( fpMetric, "\nm2_ij = \\\n");  XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  m2_ij );
 	      fprintf ( fpMetric, "\nm3_ij = \\\n");  XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  m3_ij );
-	      
+
 	      fprintf ( fpMetric, "\nmF = %.16g;\nmFav = %.16g;\nmMin = %.16g;\nmMax = %.16g;\n\n",
 			mF, mFav, mMin, mMax );
 	    } /* if fpMetric */
-	  
+
 	  break;
-	  
+
 	  /* variants of the phase-metric */
 	case METRIC_PHASE:
 	case METRIC_ORBITAL:
 	case METRIC_PTOLE:
-	  
+
 	  /* only single-detector case allowed  */
 	  if ( computePhaseMetric ( g_ij, config.multidPhi->data[0], config.GLweights) )
 	    {
@@ -396,7 +396,7 @@ main(int argc, char *argv[])
 	      return -1;
 	    }
 	  mm = quad_form ( g_ij, config.dopplerOffset );
-	  
+
 	  if ( fpMetric )
 	    {
 	      const CHAR *gprefix, *mprefix;
@@ -407,7 +407,7 @@ main(int argc, char *argv[])
 		  gprefix = "gPh_projected_ij = \\\n"; mprefix = "mPh_projected = ";
 		  fprintf ( fpMetric, gprefix ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT, gamma_ij );
 		  fprintf ( fpMetric, "\n%s %.16g;\n\n", mprefix, mm_projected );
-		} 
+		}
 		gprefix = "gPh_ij = \\\n"; mprefix = "mPh = ";
 	      } else if ( metricType == METRIC_ORBITAL ) {
 		gprefix = "gOrb_ij = \\\n"; mprefix = "mOrb = ";
@@ -416,20 +416,20 @@ main(int argc, char *argv[])
 	      }
 	      fprintf ( fpMetric, gprefix ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT, g_ij );
 	      fprintf ( fpMetric, "\n%s %.16g;\n\n", mprefix, mm );
-	      
+
 	    } /* if fpMetric */
-	  
+
 	  break;
 
 	case METRIC_FLAT:
 	  {
-	    REAL8 dkX, dkY, dom0, dom1; 	/* 'canonical' Doppler-variables */
+	    REAL8 dntX, dntY, dom0, dom1; 	/* 'canonical' Doppler-variables */
 	    gsl_vector *dopplerOffsetCanon;
 	    REAL8 n1x, n1y, n1z, n2x, n2y, n2z, dnx, dny, dnz, dnX, dnY;
 	    REAL8 sind1, sina1, cosd1, cosa1, sind2, sina2, cosd2, cosa2;
 	    REAL8 sineps, coseps;
 	    REAL8 Tspan = uvar.duration;
-	    REAL8 VT = LAL_TWOPI * LAL_AU_SI /  LAL_YRSID_SI * Tspan;
+	    REAL8 Rorb = LAL_AU_SI;
 
 	    /* ----- translate Doppler-offsets into 'canonical coords ----- */
 	    if ( config.edat->leap < 0 )	/* signals that we're dealing with LISA */
@@ -465,20 +465,21 @@ main(int argc, char *argv[])
 	    dnY = coseps * dny + sineps * dnz;
 
 	    /* sky-pos offset in canonical units */
-	    dkX = - LAL_TWOPI * uvar.Freq * VT / LAL_C_SI * dnX;
-	    dkY = - LAL_TWOPI * uvar.Freq * VT / LAL_C_SI * dnY;
+	    dntX = LAL_TWOPI * uvar.Freq * Rorb / LAL_C_SI * dnX;
+	    dntY = LAL_TWOPI * uvar.Freq * Rorb / LAL_C_SI * dnY;
 
 	    /* spin-offsets in canonical units */
-	    dom0 = LAL_TWOPI * Tspan * uvar.dFreq;
-	    dom1 = LAL_TWOPI * Tspan * Tspan * uvar.df1dot;
+	    dom0 = 1.0 * LAL_TWOPI * Tspan * uvar.dFreq;	/* / (s+1)! */
+	    dom1 = 0.5 * LAL_TWOPI * Tspan * Tspan * uvar.df1dot;
 
 	    dopplerOffsetCanon = gsl_vector_calloc ( METRIC_DIM );
 	    gsl_vector_set ( dopplerOffsetCanon, 0, dom0 );
-	    gsl_vector_set ( dopplerOffsetCanon, 1, dkX );
-	    gsl_vector_set ( dopplerOffsetCanon, 2, dkY );
+	    gsl_vector_set ( dopplerOffsetCanon, 1, dntX );
+	    gsl_vector_set ( dopplerOffsetCanon, 2, dntY );
 	    gsl_vector_set ( dopplerOffsetCanon, 3, dom1 );
 
-	    LogPrintf (LOG_DETAIL, "Offsets: dom0 = %.15g, dkX = %.15g, dkY = %.15g, dom1 = %.15g\n", dom0, dkX, dkY, dom1 );
+	    LogPrintf (LOG_DETAIL, "Offsets: dom0 = %.15g, dntX = %.15g, dntY = %.15g, dom1 = %.15g\n",
+		       dom0, dntX, dntY, dom1 );
 
 	    if ( 0 != XLALFlatMetricCW ( gFlat_ij, config.refTime, config.startTime, Tspan, config.edat ) )
 	      {
@@ -491,20 +492,20 @@ main(int argc, char *argv[])
 	      {
 		const CHAR *gprefix = "gFlat_ij = \\\n";
 		const CHAR *mprefix = "mFlat = ";
-		
+
 		fprintf ( fpMetric, gprefix); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT, gFlat_ij );
 		fprintf ( fpMetric, "\n%s %.16g;\n\n", mprefix, mm );
 	      } /* if fpMetric */
-	    
+
 	  }
 	  break;
-	  
+
 	default:
 	  LALPrintError("\nInvalid metric-number '%d'.\n\n", metricType );
 	  return -1;
 	  break;
 	} /* switch ( metricType ) */
-      
+
       XLALDestroyMultiPhaseDerivs ( config.multidPhi );
       config.multidPhi = NULL;
 
@@ -526,7 +527,7 @@ main(int argc, char *argv[])
 
   LAL_CALL (FreeMem(&status, &config), &status);
 
-  LALCheckMemoryLeaks(); 
+  LALCheckMemoryLeaks();
 
   return 0;
 } /* main */
@@ -534,11 +535,11 @@ main(int argc, char *argv[])
 
 /* calculate Fstat-metric components m1_ij, m2_ij, m3_ij, which must
  * be allocated 4x4 matrices.
- * 
+ *
  * Return 0 = OK, -1 on error.
  */
 int
-computeFstatMetric ( gsl_matrix *gF_ij, gsl_matrix *gFav_ij, 
+computeFstatMetric ( gsl_matrix *gF_ij, gsl_matrix *gFav_ij,
 		     gsl_matrix *m1_ij, gsl_matrix *m2_ij, gsl_matrix *m3_ij,
 		     ConfigVariables *cfg )
 {
@@ -600,10 +601,10 @@ computeFstatMetric ( gsl_matrix *gF_ij, gsl_matrix *gFav_ij,
   a2_a2 = gsl_matrix_calloc ( METRIC_DIM, METRIC_DIM );
   a2_b2 = gsl_matrix_calloc ( METRIC_DIM, METRIC_DIM );
   a2_ab = gsl_matrix_calloc ( METRIC_DIM, METRIC_DIM );
-  
+
   b2_b2 = gsl_matrix_calloc ( METRIC_DIM, METRIC_DIM );
   b2_ab = gsl_matrix_calloc ( METRIC_DIM, METRIC_DIM );
-  
+
   ab_ab = gsl_matrix_calloc ( METRIC_DIM, METRIC_DIM );
 
   /* ----- calculate averages ----- */
@@ -630,44 +631,44 @@ computeFstatMetric ( gsl_matrix *gF_ij, gsl_matrix *gFav_ij,
 	  REAL8 a2 = SQ(a);
 	  REAL8 b2 = SQ(b);
 	  REAL8 ab = a * b;
-      
+
 	  gsl_vector_set ( dPhi_i, 0, dPhi->dFreq->data[i] );
 	  gsl_vector_set ( dPhi_i, 1, dPhi->dAlpha->data[i]);
 	  gsl_vector_set ( dPhi_i, 2, dPhi->dDelta->data[i]);
 	  gsl_vector_set ( dPhi_i, 3, dPhi->df1dot->data[i]);
-      
+
 	  outer_product(mat1, dPhi_i, dPhi_i );
 
 	  /* ----- P1_ij ----- */
 	  gsl_matrix_memcpy (mat2, mat1);
 	  gsl_matrix_scale ( mat2, a2 );
 	  gsl_matrix_add ( P1_Xij, mat2 );
-	  
+
 	  /* ----- P2_ij ----- */
 	  gsl_matrix_memcpy (mat2, mat1);
 	  gsl_matrix_scale ( mat2, b2 );
 	  gsl_matrix_add ( P2_Xij, mat2 );
-	  
+
 	  /* ----- P3_ij ----- */
 	  gsl_matrix_memcpy (mat2, mat1);
 	  gsl_matrix_scale ( mat2, ab );
 	  gsl_matrix_add ( P3_Xij, mat2 );
-	  
+
 	  /* ----- a2_dPhi_i ----- */
 	  gsl_vector_memcpy ( vec, dPhi_i );
 	  gsl_vector_scale ( vec, a2 );
 	  gsl_vector_add ( a2_dPhi_Xi, vec );
-	  
+
 	  /* ----- b2_dPhi_i ----- */
 	  gsl_vector_memcpy ( vec, dPhi_i );
 	  gsl_vector_scale ( vec, b2 );
 	  gsl_vector_add ( b2_dPhi_Xi, vec );
-	  
+
 	  /* ----- ab_dPhi_i ----- */
 	  gsl_vector_memcpy ( vec, dPhi_i );
 	  gsl_vector_scale ( vec, ab );
 	  gsl_vector_add ( ab_dPhi_Xi, vec );
-      
+
 	} /* for i < numSteps */
 
       gsl_matrix_add ( P1_ij, P1_Xij );
@@ -683,13 +684,13 @@ computeFstatMetric ( gsl_matrix *gF_ij, gsl_matrix *gFav_ij,
       gsl_matrix_free ( P1_Xij );
       gsl_matrix_free ( P2_Xij );
       gsl_matrix_free ( P3_Xij );
-      
+
       gsl_vector_free ( a2_dPhi_Xi );
       gsl_vector_free ( b2_dPhi_Xi );
       gsl_vector_free ( ab_dPhi_Xi );
 
     } /* for X < numDet */
-  
+
   /* ---------- composite quantities ---------- */
   A = cfg->multiAMcoe->Mmunu.Ad ;
   B = cfg->multiAMcoe->Mmunu.Bd ;
@@ -699,61 +700,61 @@ computeFstatMetric ( gsl_matrix *gF_ij, gsl_matrix *gFav_ij,
   cfg->Bd = B;
   cfg->Cd = C;
   cfg->Dd = D;
-  
+
   outer_product (a2_a2, a2_dPhi_i, a2_dPhi_i );
   outer_product (a2_b2, a2_dPhi_i, b2_dPhi_i );
   outer_product (a2_ab, a2_dPhi_i, ab_dPhi_i );
-  
+
   outer_product (b2_b2, b2_dPhi_i, b2_dPhi_i );
   outer_product (b2_ab, b2_dPhi_i, ab_dPhi_i );
-  
+
   outer_product (ab_ab, ab_dPhi_i, ab_dPhi_i );
-  
+
   /* ----- Q1_ij ----- */
   gsl_matrix_memcpy ( mat1, ab_ab );
-  gsl_matrix_scale ( mat1, A/D );	
+  gsl_matrix_scale ( mat1, A/D );
   gsl_matrix_memcpy ( Q1_ij, mat1 );	/*  = (A/D)<ab_dPhi_i><ab_dPhi_j> */
-  
+
   gsl_matrix_memcpy ( mat1, a2_a2 );
-  gsl_matrix_scale ( mat1, B/D );	
+  gsl_matrix_scale ( mat1, B/D );
   gsl_matrix_add ( Q1_ij, mat1 );	/*  + (B/D)<a2_dPhi_i><a2_dPhi_j> */
-  
+
   gsl_matrix_memcpy ( mat1, a2_ab );
-  gsl_matrix_scale ( mat1, - 2.0 * C/D );	
+  gsl_matrix_scale ( mat1, - 2.0 * C/D );
   gsl_matrix_add ( Q1_ij, mat1 );	/*  -2(C/D)<a2_dPhi_i><ab_dPhi_j> */
 
   symmetrize ( Q1_ij );		/* (i,j) */
 
   /* ----- Q2_ij ----- */
   gsl_matrix_memcpy ( mat1, b2_b2 );
-  gsl_matrix_scale ( mat1, A/D );	
+  gsl_matrix_scale ( mat1, A/D );
   gsl_matrix_memcpy ( Q2_ij, mat1 );	/*  = (A/D)<b2_dPhi_i><b2_dPhi_j> */
-  
+
   gsl_matrix_memcpy ( mat1, ab_ab );
-  gsl_matrix_scale ( mat1, B/D );	
+  gsl_matrix_scale ( mat1, B/D );
   gsl_matrix_add ( Q2_ij, mat1 );	/*  + (B/D)<ab_dPhi_i><ab_dPhi_j> */
-  
+
   gsl_matrix_memcpy ( mat1, b2_ab );
-  gsl_matrix_scale ( mat1, - 2.0 * C/D );	
+  gsl_matrix_scale ( mat1, - 2.0 * C/D );
   gsl_matrix_add ( Q2_ij, mat1 );	/*  -2(C/D)<b2_dPhi_i><ab_dPhi_j> */
 
   symmetrize ( Q2_ij );		/* (i,j) */
 
   /* ----- Q3_ij ----- */
   gsl_matrix_memcpy ( mat1, b2_ab );
-  gsl_matrix_scale ( mat1, A/D );	
+  gsl_matrix_scale ( mat1, A/D );
   gsl_matrix_memcpy ( Q3_ij, mat1 );	/*  = (A/D)<b2_dPhi_i><ab_dPhi_j> */
-  
+
   gsl_matrix_memcpy ( mat1, a2_ab );
-  gsl_matrix_scale ( mat1, B/D );	
+  gsl_matrix_scale ( mat1, B/D );
   gsl_matrix_add ( Q3_ij, mat1 );	/*  + (B/D)<a2_dPhi_i><ab_dPhi_j> */
-  
+
   gsl_matrix_memcpy ( mat1, a2_b2 );
   gsl_matrix_add ( mat1, ab_ab );
-  gsl_matrix_scale ( mat1, - 1.0 * C/D );	
+  gsl_matrix_scale ( mat1, - 1.0 * C/D );
   gsl_matrix_add ( Q3_ij, mat1 );	/*  -(C/D)(<a2_dPhi_i><b2_dPhi_j> + <ab_dPhi_i><ab_dPhi_j>)*/
 
-  symmetrize ( Q3_ij );		/* (i,j) */  
+  symmetrize ( Q3_ij );		/* (i,j) */
 
   /* ===== final matrics: m1_ij, m2_ij, m3_ij ===== */
   gsl_matrix_memcpy ( m1_ij, P1_ij );
@@ -761,39 +762,39 @@ computeFstatMetric ( gsl_matrix *gF_ij, gsl_matrix *gFav_ij,
 
   gsl_matrix_memcpy ( m2_ij, P2_ij );
   gsl_matrix_sub ( m2_ij, Q2_ij );
-  
+
   gsl_matrix_memcpy ( m3_ij, P3_ij );
   gsl_matrix_sub ( m3_ij, Q3_ij );
 
 
   /* ===== full F-metric gF_ij */
   AMA = A  * cfg->Al1 + B  * cfg->Al2 + 2.0 * C  * cfg->Al3;
-  
+
   gsl_matrix_memcpy (gF_ij, m1_ij );
   gsl_matrix_scale ( gF_ij, cfg->Al1 );	/* alpha1 m^1_ij */
-  
+
   gsl_matrix_memcpy (mat1, m2_ij );
-  gsl_matrix_scale ( mat1, cfg->Al2 );	
+  gsl_matrix_scale ( mat1, cfg->Al2 );
   gsl_matrix_add ( gF_ij, mat1 );	/* + alpha2 m^2_ij */
-  
+
   gsl_matrix_memcpy (mat1, m3_ij );
-  gsl_matrix_scale ( mat1, 2.0 * cfg->Al3 );	
+  gsl_matrix_scale ( mat1, 2.0 * cfg->Al3 );
   gsl_matrix_add ( gF_ij, mat1 );	/* + 2 * alpha3 m^3_ij */
-  
+
   gsl_matrix_scale ( gF_ij, 1.0 / AMA );
 
   /* ===== averaged F-metric gFav_ij */
   gsl_matrix_memcpy (gFav_ij, m1_ij );
   gsl_matrix_scale ( gFav_ij, B );	/* B m^1_ij */
-    
+
   gsl_matrix_memcpy (mat1, m2_ij );
   gsl_matrix_scale ( mat1, A );
   gsl_matrix_add ( gFav_ij, mat1 );	/* + A m^2_ij */
-  
+
   gsl_matrix_memcpy (mat1, m3_ij );
   gsl_matrix_scale ( mat1, - 2.0 * C );
   gsl_matrix_add ( gFav_ij, mat1 );	/* - 2C m^3_ij */
-  
+
   gsl_matrix_scale ( gFav_ij, 1.0 / ( 2.0 * D ) ); /* 1/ (2D) */
 
 
@@ -819,19 +820,19 @@ computeFstatMetric ( gsl_matrix *gF_ij, gsl_matrix *gFav_ij,
   gsl_matrix_free ( a2_a2 );
   gsl_matrix_free ( a2_b2 );
   gsl_matrix_free ( a2_ab );
-  
+
   gsl_matrix_free ( b2_b2 );
   gsl_matrix_free ( b2_ab );
-  
+
   gsl_matrix_free ( ab_ab );
 
-  
+
   return 0;
-  
+
 } /* computeFstatMetric() */
 
 /* calculate pure Phase-metric gij, which must be allocated 4x4 matrix.
- * 
+ *
  * Return 0 = OK, -1 on error.
  */
 int
@@ -875,7 +876,7 @@ computePhaseMetric ( gsl_matrix *g_ij, const PhaseDerivs *dPhi, const REAL8Vecto
       gsl_vector_set ( dPhi_i, 3, dPhi->df1dot->data[i]);
 
       outer_product(dPhi_i_dPhi_j, dPhi_i, dPhi_i );
-      
+
       /* Gauss-Legendre integration: weighted sum */
       gsl_vector_scale ( dPhi_i, wi );
       gsl_matrix_scale ( dPhi_i_dPhi_j, wi );
@@ -885,9 +886,9 @@ computePhaseMetric ( gsl_matrix *g_ij, const PhaseDerivs *dPhi, const REAL8Vecto
 
       /* ----- av_dPhi_i_dPhi_j ----- */
       gsl_matrix_add ( aPhi_ij, dPhi_i_dPhi_j );
-      
+
     } /* for i < numSteps */
-  
+
   /* ---------- composite quantities ---------- */
   outer_product (aPhi_i_aPhi_j, aPhi_i, aPhi_i );
 
@@ -901,9 +902,9 @@ computePhaseMetric ( gsl_matrix *g_ij, const PhaseDerivs *dPhi, const REAL8Vecto
   gsl_matrix_free ( aPhi_ij );
   gsl_vector_free ( aPhi_i );
   gsl_matrix_free ( aPhi_i_aPhi_j );
-  
+
   return 0;
-  
+
 } /* computePhaseMetric() */
 
 
@@ -992,7 +993,7 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
     XLALFloatToGPS( &(cfg->refTime), uvar->refTime );
   else
     XLALFloatToGPS( &(cfg->refTime), uvar->startTime );
-  
+
 
   { /* ----- load ephemeris-data ----- */
     CHAR *ephemDir;
@@ -1063,8 +1064,8 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
     gsl_vector_set ( cfg->dopplerOffset, 3, df1dot );
   } /* set Doppler-offset */
 
-  /* ----- construct Gauss-Legendre timestamps and corresponding weights 
-   * for computing the integrals by Gauss-Legendre quadrature 
+  /* ----- construct Gauss-Legendre timestamps and corresponding weights
+   * for computing the integrals by Gauss-Legendre quadrature
    */
   {
     UINT4 i;
@@ -1083,7 +1084,7 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
 
     /* compute Gauss-Legendre roots, timestamps and associated weights */
     gauleg(uvar->startTime, uvar->startTime+uvar->duration, ti->data, cfg->GLweights->data, uvar->numSteps);
-    
+
     /* convert REAL8-times into LIGOTimeGPS-times */
     for ( i=0; i < (UINT4)uvar->numSteps; i ++ )
       {
@@ -1092,7 +1093,7 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
       }
 
     XLALDestroyREAL8Vector ( ti );
-    
+
   } /* setup time-series of GL-timestamps */
 
   /* ----- initialize IFOs and (Multi-)DetectorStateSeries  ----- */
@@ -1117,7 +1118,7 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
 	  ABORT (status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT);
 	}
 	/* obtain detector positions and velocities, together with LMSTs */
-	TRY (LALGetDetectorStates(status->statusPtr, &(cfg->multiDetStates->data[X]), GLtimestamps, 
+	TRY (LALGetDetectorStates(status->statusPtr, &(cfg->multiDetStates->data[X]), GLtimestamps,
 				  ifo, cfg->edat, 0 ), status);
 	LALFree ( ifo );
 
@@ -1132,24 +1133,24 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
   }
   for ( X=0; X < numDet ; X ++ )
     detWeights->data[X] = 1.0;	/* default: equal weights */
-  
+
   if ( uvar->IFOweights )
     {
       if ( uvar->IFOweights->length != numDet )
 	{
 	  LALPrintError ("\nNumber of IFOweights must agree with IFOs if given!\n\n");
-	  ABORT (status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT);	  
+	  ABORT (status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT);
 	}
       for ( X=0; X < numDet ; X ++ )
 	{
 	  if ( 1 != sscanf ( uvar->IFOweights->data[X], "%lf", &(detWeights->data[X])) )
 	    {
-	      LALPrintError ("\nFailed to parse noise-weight '%s' into float.\n\n", 
+	      LALPrintError ("\nFailed to parse noise-weight '%s' into float.\n\n",
 			     uvar->IFOweights->data[X] );
-	      ABORT (status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT);	  
+	      ABORT (status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT);
 	    }
 	} /* for X < numDet */
-      
+
     } /* if uvar->IFOweights */
 
   /* ---------- combine relative detector-weights with GL-weights ----------*/
@@ -1159,31 +1160,31 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
       ABORT (status,  FSTATMETRIC_EMEM,  FSTATMETRIC_MSGEMEM);
     }
     tmp->length = numDet;
-    
+
     if ( (tmp->data = LALCalloc( numDet, sizeof(*(tmp->data)))) == NULL) {
-      ABORT (status,  FSTATMETRIC_EMEM,  FSTATMETRIC_MSGEMEM);      
+      ABORT (status,  FSTATMETRIC_EMEM,  FSTATMETRIC_MSGEMEM);
     }
-    
-    for ( X = 0; X < numDet; X ++) 
+
+    for ( X = 0; X < numDet; X ++)
       {
 	UINT4 alpha;
-	
+
 	/* create k^th weights vector */
 	if ( (tmp->data[X] = XLALCreateREAL8Vector ( uvar->numSteps )) == NULL ) {
-	  ABORT (status,  FSTATMETRIC_EMEM,  FSTATMETRIC_MSGEMEM);      
+	  ABORT (status,  FSTATMETRIC_EMEM,  FSTATMETRIC_MSGEMEM);
 	}
-	
+
 	/* set all weights to detectorWeight * GLweight */
-	for ( alpha = 0; alpha < (UINT4)uvar->numSteps; alpha ++ ) 
+	for ( alpha = 0; alpha < (UINT4)uvar->numSteps; alpha ++ )
 	  tmp->data[X]->data[alpha] = detWeights->data[X] * cfg->GLweights->data[alpha];
-	
+
       } /* for X < numDet */
-    
+
     cfg->multiNoiseWeights = tmp;
 
   } /* ----- construct multiNoiseWeights */
 
-  TRY ( LALGetMultiAMCoeffs (status->statusPtr, &(cfg->multiAMcoe), cfg->multiDetStates, 
+  TRY ( LALGetMultiAMCoeffs (status->statusPtr, &(cfg->multiAMcoe), cfg->multiDetStates,
 			     cfg->dopplerPoint.skypos ), status );
 
   if ( XLALWeighMultiAMCoeffs( cfg->multiAMcoe, cfg->multiNoiseWeights ) != XLAL_SUCCESS )
@@ -1202,7 +1203,7 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
     cfg->Al2 = SQ(Aplus) * SQ( sin2psi ) + SQ(Across) * SQ(cos2psi);
     cfg->Al3 = ( SQ(Aplus) - SQ(Across) ) * sin2psi * cos2psi ;
   }
-  
+
   /* free temporary memory */
   XLALDestroyREAL8Vector ( detWeights );
   XLALDestroyTimestampVector ( GLtimestamps);
@@ -1214,7 +1215,7 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
 } /* InitFStat() */
 
 
-/** calculate the phase-derivatives \f$\partial_i \phi \f$ for the 
+/** calculate the phase-derivatives \f$\partial_i \phi \f$ for the
  * time-series detStates and the given doppler-point.
  * Has the option of using only the orbital part of the phase (PHASE_ORBITAL)
  * or the full-phase (PHASE_FULL).
@@ -1222,9 +1223,9 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
  * returned PhaseDerivs is allocated in here.
  */
 void
-getMultiPhaseDerivs (LALStatus *status, 
-		     MultiPhaseDerivs **multidPhi, 
-		     const MultiDetectorStateSeries *multiDetStates, 
+getMultiPhaseDerivs (LALStatus *status,
+		     MultiPhaseDerivs **multidPhi,
+		     const MultiDetectorStateSeries *multiDetStates,
 		     const DopplerPoint *dopplerPoint,
 		     PhaseType_t phaseType,
 		     const DopplerPoint *offsetUnits )
@@ -1246,7 +1247,7 @@ getMultiPhaseDerivs (LALStatus *status,
   ASSERT ( dopplerPoint, status, FSTATMETRIC_ENULL, FSTATMETRIC_MSGENULL );
   ASSERT ( dopplerPoint->skypos.system == COORDINATESYSTEM_EQUATORIAL,
 	   status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT);
-  ASSERT ( dopplerPoint->fkdot->length == 2, 
+  ASSERT ( dopplerPoint->fkdot->length == 2,
 	   status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT);
 
   ASSERT ( multiDetStates, status, FSTATMETRIC_ENULL, FSTATMETRIC_MSGENULL );
@@ -1285,7 +1286,7 @@ getMultiPhaseDerivs (LALStatus *status,
     {
       UINT4 numStepsX = multiDetStates->data[X]->length;
       DetectorStateSeries *detStatesX = multiDetStates->data[X];
-      PhaseDerivs *dPhi; 
+      PhaseDerivs *dPhi;
 
       if ( ( dPhi = LALCalloc ( 1, sizeof ( *dPhi ) )) == NULL )
 	goto failed;
@@ -1293,7 +1294,7 @@ getMultiPhaseDerivs (LALStatus *status,
       dPhi->dFreq = XLALCreateREAL8Vector ( numStepsX );
       dPhi->dAlpha = XLALCreateREAL8Vector ( numStepsX );
       dPhi->dDelta = XLALCreateREAL8Vector ( numStepsX );
-      if ( (dPhi->df1dot = XLALCreateREAL8Vector ( numStepsX )) == NULL ) 
+      if ( (dPhi->df1dot = XLALCreateREAL8Vector ( numStepsX )) == NULL )
 	goto failed;
 
       mdPhi->data[X] = dPhi;
@@ -1305,14 +1306,14 @@ getMultiPhaseDerivs (LALStatus *status,
 	  REAL8 rDet[3];	/* vector from earth center to detector */
 	  REAL8 fi;		/* instantaneous intrinsic frequency in SSB */
 	  PosVel_t posvel;
-	  
+
 	  ti = GPS2REAL8 ( detStatesX->data[i].tGPS ) - refTime;
-	  
+
 	  /* compute detector-vector relative to earth's center */
 	  rDet[0] = detStatesX->data[i].rDetector[0] - detStatesX->data[i].earthState.posNow[0];
 	  rDet[1] = detStatesX->data[i].rDetector[1] - detStatesX->data[i].earthState.posNow[1];
 	  rDet[2] = detStatesX->data[i].rDetector[2] - detStatesX->data[i].earthState.posNow[2];
-	  
+
 	  switch ( phaseType )
 	    {
 	    case PHASE_FULL:
@@ -1334,7 +1335,7 @@ getMultiPhaseDerivs (LALStatus *status,
 	      zEcl[0] = 0;
 	      zEcl[1] = -sin(eps);
 	      zEcl[2] =  cos(eps);
-	      
+
 	      /* projected out z-motion wrt to ecliptic plane */
 	      tmp[0] = rDet[0];
 	      tmp[1] = cos(eps) * rDet[1];
@@ -1346,7 +1347,7 @@ getMultiPhaseDerivs (LALStatus *status,
 	      tmp[1] = proj * zEcl[1];
 	      tmp[2] = proj * zEcl[2];
 
-	      /* 
+	      /*
 		 printf ("%f \t %f %f %f \t %f %f %f\n", ti, rX[0], rX[1], rX[2], tmp[0], tmp[1], tmp[2] );
 	      */
 
@@ -1360,26 +1361,26 @@ getMultiPhaseDerivs (LALStatus *status,
 	      ABORT ( status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT );
 	      break;
 	    } /* switch(phaseType) */
-	  
+
 	  /* correct for time-delay from SSB to detector */
 	  dT = SCALAR(vn, rX );
 	  taui = ( ti + dT );
 
 	  fi = dopplerPoint->fkdot->data[0] + taui * dopplerPoint->fkdot->data[1];
-	  
+
 	  /* phase-derivatives */
 	  dPhi->dFreq->data[i] 	= LAL_TWOPI * offsetUnits->fkdot->data[0] * taui;
-	  
-	  dPhi->dAlpha->data[i]	= LAL_TWOPI * offsetUnits->skypos.longitude 
+
+	  dPhi->dAlpha->data[i]	= LAL_TWOPI * offsetUnits->skypos.longitude
 	    * fi * cos(Delta)*( - rX[0] * sin(Alpha) + rX[1] * cos(Alpha) );
-	  
-	  dPhi->dDelta->data[i] = LAL_TWOPI * offsetUnits->skypos.latitude 
-	    * fi * ( - rX[0] * cos(Alpha) * sin(Delta)  
-		     - rX[1] * sin(Alpha) * sin(Delta)  
+
+	  dPhi->dDelta->data[i] = LAL_TWOPI * offsetUnits->skypos.latitude
+	    * fi * ( - rX[0] * cos(Alpha) * sin(Delta)
+		     - rX[1] * sin(Alpha) * sin(Delta)
 		     + rX[2] * cos(Delta) );
-	  
+
 	  dPhi->df1dot->data[i] = LAL_TWOPI * offsetUnits->fkdot->data[1] * 0.5 * SQ( taui );
-	  
+
 	} /* for i < numStepsX */
 
     } /* for X < numDet */
@@ -1392,7 +1393,7 @@ getMultiPhaseDerivs (LALStatus *status,
 
  failed:
   XLALDestroyMultiPhaseDerivs ( mdPhi );
-  ABORT ( status, FSTATMETRIC_EMEM, FSTATMETRIC_MSGEMEM ); 
+  ABORT ( status, FSTATMETRIC_EMEM, FSTATMETRIC_MSGEMEM );
 
 } /* getMultiPhaseDerivs() */
 
@@ -1416,8 +1417,8 @@ FreeMem ( LALStatus *status, ConfigVariables *cfg )
   XLALDestroyREAL8Vector ( cfg->dopplerPoint.fkdot );
 
   gsl_vector_free ( cfg->dopplerOffset );
-  
-  XLALDestroyMultiDetectorStateSeries ( cfg->multiDetStates ); 
+
+  XLALDestroyMultiDetectorStateSeries ( cfg->multiDetStates );
 
   XLALDestroyMultiAMCoeffs ( cfg->multiAMcoe );
 
@@ -1431,13 +1432,13 @@ FreeMem ( LALStatus *status, ConfigVariables *cfg )
 } /* FreeMem() */
 
 
-/** Calculate the projected metric onto the subspace of 'c' given by                                                                                                   
+/** Calculate the projected metric onto the subspace of 'c' given by
  * ret_ij = g_ij - ( g_ic * g_jc / g_cc ) , where c is the value of the projected coordinate
- * The output-matrix ret must be allocated                                                                                              
- *                                                                                                                                                                              
- * return 0 = OK, -1 on error.                                                                                                                                                  
+ * The output-matrix ret must be allocated
+ *
+ * return 0 = OK, -1 on error.
  */
-int 
+int
 project_metric( gsl_matrix *ret_ij, gsl_matrix * g_ij, const UINT4 c )
 {
   UINT4 i,j;
@@ -1466,27 +1467,27 @@ project_metric( gsl_matrix *ret_ij, gsl_matrix * g_ij, const UINT4 c )
 
 
 /** Calculate the outer product ret_ij of vectors u_i and v_j, given by
- * ret_ij = u_i v_j 
- * The output-matrix ret must be allocated and have dimensions len(u) x len(v) 
- * 
+ * ret_ij = u_i v_j
+ * The output-matrix ret must be allocated and have dimensions len(u) x len(v)
+ *
  * return 0 = OK, -1 on error.
  */
 int
 outer_product (gsl_matrix *ret_ij, const gsl_vector *u_i, const gsl_vector *v_j )
 {
   UINT4 i, j;
-  
+
   if ( !ret_ij || !u_i || !v_j )
     return -1;
 
   if ( (ret_ij->size1 != u_i->size) || ( ret_ij->size2 != v_j->size) )
     return -1;
 
-  
+
   for ( i=0; i < ret_ij->size1; i ++)
     for ( j=0; j < ret_ij->size2; j ++ )
       gsl_matrix_set ( ret_ij, i, j, gsl_vector_get(u_i, i) * gsl_vector_get(v_j, j) );
-  
+
   return 0;
 
 } /* outer_product() */
@@ -1499,13 +1500,13 @@ symmetrize ( gsl_matrix *mat )
 {
   gsl_matrix *tmp;
 
-  if ( !mat ) 
+  if ( !mat )
     return -1;
   if ( mat->size1 != mat->size2 )
     return -1;
 
   tmp = gsl_matrix_calloc ( mat->size1, mat->size2 );
-  
+
   gsl_matrix_transpose_memcpy ( tmp, mat );
 
   gsl_matrix_add (mat, tmp );
@@ -1521,7 +1522,7 @@ symmetrize ( gsl_matrix *mat )
 
 /* compute the quadratic form = vec.mat.vec
  */
-REAL8 
+REAL8
 quad_form ( const gsl_matrix *mat, const gsl_vector *vec )
 {
   UINT4 i, j;
@@ -1535,13 +1536,13 @@ quad_form ( const gsl_matrix *mat, const gsl_vector *vec )
   for (i=0; i < mat->size1; i ++ )
     for (j=0; j < mat->size2; j ++ )
       ret += gsl_vector_get(vec, i) * gsl_matrix_get (mat, i, j) * gsl_vector_get(vec,j);
-    
+
   return ret;
 
 } /* quad_form() */
 
 
-/** Get Ptolemaic position and velocity at time tGPS 
+/** Get Ptolemaic position and velocity at time tGPS
  * cut-down version of LALDTBaryPtolemaic()
  */
 
@@ -1600,7 +1601,7 @@ XLALDestroyMultiPhaseDerivs ( MultiPhaseDerivs *mdPhi )
       LALFree ( dPhiX );
 
     } /* for X < numDet */
-  
+
   LALFree ( mdPhi->data );
   LALFree ( mdPhi );
 
@@ -1610,12 +1611,12 @@ XLALDestroyMultiPhaseDerivs ( MultiPhaseDerivs *mdPhi )
 
 /** Load Ephemeris from ephemeris data-files  */
 void
-InitEphemeris (LALStatus * status,   
+InitEphemeris (LALStatus * status,
 	       EphemerisData *edat,	/**< [out] the ephemeris-data */
 	       const CHAR *ephemDir,	/**< directory containing ephems */
 	       const CHAR *ephemYear,	/**< which years do we need? */
 	       LIGOTimeGPS epoch,	/**< epoch of observation */
-	       BOOLEAN isLISA		/**< hack this function for LISA ephemeris */	
+	       BOOLEAN isLISA		/**< hack this function for LISA ephemeris */
 	       )
 {
 #define FNAME_LENGTH 1024
@@ -1636,7 +1637,7 @@ InitEphemeris (LALStatus * status,
 	LALSnprintf(EphemEarth, FNAME_LENGTH, "%s/ephemMLDC.dat", ephemDir);
       else
 	LALSnprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", ephemDir, ephemYear);
-      
+
       LALSnprintf(EphemSun, FNAME_LENGTH, "%s/sun%s.dat", ephemDir, ephemYear);
     }
   else
@@ -1647,10 +1648,10 @@ InitEphemeris (LALStatus * status,
 	LALSnprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", ephemYear);
       LALSnprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  ephemYear);
     }
-  
+
   EphemEarth[FNAME_LENGTH-1]=0;
   EphemSun[FNAME_LENGTH-1]=0;
-  
+
   /* NOTE: the 'ephiles' are ONLY ever used in LALInitBarycenter, which is
    * why we can use local variables (EphemEarth, EphemSun) to initialize them.
    */
@@ -1659,7 +1660,7 @@ InitEphemeris (LALStatus * status,
 
   TRY (LALInitBarycenter(status->statusPtr, edat), status);
 
-  if ( isLISA )	
+  if ( isLISA )
     {
       edat->leap = -1;	/* dirty hack: signal that ephemeris are in *ECLIPTIC* coords, not EQUATORIAL */
     }
@@ -1677,8 +1678,8 @@ InitEphemeris (LALStatus * status,
 
 
 /* ================================================================================*/
-/* taken from Numerical recipes: 
- * function to compute roots and weights for order-N Gauss-Legendre integration 
+/* taken from Numerical recipes:
+ * function to compute roots and weights for order-N Gauss-Legendre integration
  * modified to use standard C-conventions for arrays (indexed 0... N-1)
  */
 #define EPS 3.0e-11
@@ -1687,13 +1688,13 @@ InitEphemeris (LALStatus * status,
  * arrays x[0..n-1] and w[0..n-1] of length n, containing the abscissas and weights of the Gauss-
  * Legendre n-point quadrature formula.
  */
-void 
+void
 gauleg(double x1, double x2, double x[], double w[], int n)
 {
      int m,j,i;
      /* High precision is a good idea for this routine. */
      double z1,z,xm,xl,pp,p3,p2,p1;
-                                                        
+
      /* The roots are symmetric in the interval, so
       * we only have to find half of them. */
      m=(n+1)/2;
@@ -1703,20 +1704,20 @@ gauleg(double x1, double x2, double x[], double w[], int n)
      /* Loop over the desired roots. */
      for (i=1;i<=m;i++) {
        z=cos( LAL_PI *(i-0.25)/(n+0.5));
-       /* Starting with the above approximation to the ith root, 
+       /* Starting with the above approximation to the ith root,
 	* we enter the main loop of refinement by Newton's method.
 	*/
        do {
 	 p1=1.0;
 	 p2=0.0;
 	 /* Loop up the recurrence relation to get the
-	  * Legendre polynomial evaluated at z. 
+	  * Legendre polynomial evaluated at z.
 	  */
 	 for (j=1;j<=n;j++) {
-	   
+
 	   p3=p2;
 	   p2=p1;
-	   p1=((2.0*j-1.0)*z*p2-(j-1.0)*p3)/j; 
+	   p1=((2.0*j-1.0)*z*p2-(j-1.0)*p3)/j;
 	 }
 	 /* p1 is now the desired Legendre polynomial. We next compute pp, its derivative,
 	  * by a standard relation involving also p2, the polynomial of one lower order.
@@ -1728,12 +1729,12 @@ gauleg(double x1, double x2, double x[], double w[], int n)
        } while (fabs(z-z1) > EPS);
        /* Scale the root to the desired interval,  and put in its symmetric counterpart. */
        x[i - 1]=xm-xl*z;	/*RP: changed to C-convention */
-       
+
        x[n+1-i - 1]=xm+xl*z; 	/*RP: changed to C-convention */
 
        /* Compute the weight and its symmetric counterpart. */
        w[i-1]=2.0*xl/((1.0-z*z)*pp*pp); /*RP: changed to C-convention */
-       
+
        w[n+1-i - 1]=w[i - 1];		/*RP: changed to C-convention */
      }
 
