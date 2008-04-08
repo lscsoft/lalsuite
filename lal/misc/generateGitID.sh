@@ -72,7 +72,7 @@ cat > $tmpfile <<EOF
 #ifndef ${prefix}GITID_H
 #define ${prefix}GITID_H
 #include <lal/LALRCSID.h>
-NRCSID (${prefix}CommitID, $git_log_ident);
+NRCSID (${prefix}GitID, $git_log_ident);
 #endif
 EOF
 
