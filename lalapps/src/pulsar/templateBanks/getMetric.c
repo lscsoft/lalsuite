@@ -363,9 +363,11 @@ printFlatPulsarMetric (LALStatus *status, const UserInput *uvar, const ConfigVar
 
 } /* printFlatPulsarMetric() */
 
-
+/* Printout metric in 'standard' format of [freq, sky1, sky2, f1dot, f2dot, ... ]
+ * while the input is in 'internal' format of [sky1, sky2, freq, f1dot, ... ]
+ */
 void
-printMetric (LALStatus *status, const REAL8Vector *metric ) 
+printMetric (LALStatus *status, const REAL8Vector *metric )
 {
   UINT4 row, col, dim;
 
@@ -383,10 +385,9 @@ printMetric (LALStatus *status, const REAL8Vector *metric )
       if ( row > 0 ) printf ("  ");
       for ( col = 0; col < dim; col ++ )
 	{
-	  if ( col > 0 ) printf (",");
-	  printf (" %16g", metric->data[ PMETRIC_INDEX(row,col) ] );
+	  printf (" %.16g", metric->data[ PMETRIC_INDEX(row,col) ] );
 	}
-      if ( row < dim - 1 ) 
+      if ( row < dim - 1 )
 	printf (";\n");
       else printf("];\n");
     }
