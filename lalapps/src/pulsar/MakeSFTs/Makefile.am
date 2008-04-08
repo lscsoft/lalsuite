@@ -4,6 +4,12 @@
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
+## make sure LALAPPSgitID.h is re-generated at every 'make'
+.PHONY: gitID
+gitID:
+	cd $(top_builddir)/misc && $(MAKE) gitID
+BUILT_SOURCES = gitID
+
 if FRAME
 frameprogs = lalapps_MakeSFTs
 else
