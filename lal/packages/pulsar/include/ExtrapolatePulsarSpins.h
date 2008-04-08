@@ -107,8 +107,9 @@ void LALExtrapolatePulsarSpinRange( LALStatus *, PulsarSpinRange *range1, LIGOTi
 
 void LALExtrapolatePulsarSpins (LALStatus *, PulsarSpins fkdot1, LIGOTimeGPS epoch1, const PulsarSpins fkdot0, LIGOTimeGPS epoch0 );
 
-void LALExtrapolatePulsarPhase (LALStatus *, REAL8 *phi1, PulsarSpins fkdot1, LIGOTimeGPS epoch1, REAL8 phi0, LIGOTimeGPS epoch0);
+void LALExtrapolatePulsarPhase (LALStatus *, REAL8 *phi1, PulsarSpins fkdot1, LIGOTimeGPS epoch1, REAL8 phi0, LIGOTimeGPS epoch0 );
 
+int XLALExtrapolatePulsarSpins ( PulsarSpins fkdotOut, const PulsarSpins fkdotIn, REAL8 DeltaTau );
 
 #ifdef  __cplusplus
 }

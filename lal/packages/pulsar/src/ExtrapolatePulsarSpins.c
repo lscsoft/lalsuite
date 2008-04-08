@@ -141,23 +141,42 @@ LALExtrapolatePulsarSpins (LALStatus   *status,
 			   LIGOTimeGPS  epoch0		/**< [in] GPS SSB-time of reference-epoch0 */
 			   )
 {
-  UINT4 numSpins = PULSAR_MAX_SPINS; 			/* fixed size array */
-  UINT4 k, l;
-  REAL8 kfact, dtau, dtauk;
-  PulsarSpins inSpins;
+  REAL8 dtau;
 
   INITSTATUS( status, "LALExtrapolatePulsarSpins", EXTRAPOLATEPULSARSPINSC );
 
   ASSERT ( fkdot1, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
 
-  /* keep a local copy of input to allow the input- and output- pointers to be identical */
-  memcpy ( inSpins, fkdot0, sizeof(PulsarSpins) );
-
-  /* ----- translate each spin-value \f$\f^{(l)}\f$ from epoch0 to epoch1 */
   dtau = XLALDeltaFloatGPS( &epoch1, &epoch0 );
 
+  if ( XLALExtrapolatePulsarSpins ( fkdot1, fkdot0, dtau ) ) {
+    ABORT ( status,  EXTRAPOLATEPULSARSPINS_EXLAL,  EXTRAPOLATEPULSARSPINS_MSGEXLAL );
+  }
+
+  RETURN(status);
+
+} /* LALExtrapolatePulsarSpins() */
+
+/** Lightweight API to extrapolate PulsarSpins by a time-difference 'DeltaTau'.
+ *
+ * NOTE: This allows fkdotIn to point to the same memory as fkdotOut !
+ */
+int
+XLALExtrapolatePulsarSpins ( PulsarSpins fkdotOut,		/**< output fkdot array */
+			     const PulsarSpins fkdotIn,		/**< inptut fkdot array */
+			     REAL8 DeltaTau 			/**< time-difference to extrapolate fkdot to */
+			     )
+{
+  UINT4 numSpins = sizeof(PulsarSpins); 	/* fixed size array */
+  UINT4 k, l;
+  REAL8 kfact, dtauk;
+  PulsarSpins inSpins;
+
+  /* keep a local copy of input to allow the input- and output- pointers to be identical */
+  memcpy ( inSpins, fkdotIn, sizeof(PulsarSpins) );
+
   for ( l = 0; l < numSpins; l ++ )
-    fkdot1[l] = 0;
+    fkdotOut[l] = 0;
 
   kfact = 1;
   dtauk = 1;	/* values of k! and (dTau)^k at k=0 */
@@ -165,16 +184,17 @@ LALExtrapolatePulsarSpins (LALStatus   *status,
     {
       REAL8 kcoef  = dtauk / kfact;
       for ( l=0; l < numSpins - k ; l ++ )
-	fkdot1[l] += inSpins[ k + l ] * kcoef;
+	fkdotOut[l] += inSpins[ k + l ] * kcoef;
 
-      kfact *= (k+1);
-      dtauk *= dtau;
+      kfact *= (k + 1.0);
+      dtauk *= DeltaTau;
 
     } /* for k < numSpins */
 
-  RETURN(status);
+  return XLAL_SUCCESS;
 
-} /* LALExtrapolateSpins2() */
+} /* XLALExtrapolatePulsarSpins() */
+
 
 
 /** Extrapolate phase phi0 from epoch0 to epoch1, given the spins fkdot1 at epoch1
