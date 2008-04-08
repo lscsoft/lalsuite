@@ -1443,6 +1443,14 @@ XLALComputeAntennaPatternCoeffs ( REAL8 *ai,   			/**< [out] antenna-pattern fun
   }
   oneStepSeries->data[0] = (*tGPS);
 
+  /* prepare antenna-pattern struct */
+  if ( (amcoeffs.a = XLALCreateREAL4Vector ( 1 )) == NULL ) {
+    XLAL_ERROR_REAL8( fn, XLAL_ENOMEM );
+  }
+  if ( (amcoeffs.b = XLALCreateREAL4Vector ( 1 )) == NULL ) {
+    XLAL_ERROR_REAL8( fn, XLAL_ENOMEM );
+  }
+
   LALGetDetectorStates (&status, &detState, oneStepSeries, site, edat, 0 );
   if ( status.statusCode != 0 ) {
     XLALPrintError ( "%s: call to LALGetDetectorStates() failed!\n\n", fn);
