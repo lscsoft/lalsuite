@@ -255,8 +255,14 @@ XLALfprintfGSLmatrix ( FILE *fp, const char *fmt, const gsl_matrix *gij )
   int i, j;
 
   /* check user input */
-  if ( !gij || !fp || !fmt )
+  if ( !fp || !fmt )
     return -1;
+
+  if ( gij == NULL )	/* treat as valid empty matrix */
+    {
+      fprintf ( fp, "[ ];\n");
+      return 0;
+    }
 
   rows = gij->size1;
   cols = gij->size2;
