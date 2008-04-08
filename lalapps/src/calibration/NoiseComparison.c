@@ -69,6 +69,8 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <FrameL.h>
 #include <series.h>
 
+double hypot(double, double);
+
 extern char *optarg;
 extern int optind, opterr, optopt;
 
@@ -134,6 +136,7 @@ struct CommandLineArgsTag {
   REAL8 W0Im;              /* Imaginary part of whitening filter at cal line freq. */
   REAL8 gamma_fudgefactor; /* fudge factor to divide gammas by */
   INT4 nofactors;
+  INT4 outputphase;
 } CommandLineArgs;
 
 typedef struct ResponseFunctionTag
@@ -530,6 +533,7 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
   INT4 k,j;
   REAL8 mean_Sh_derr;
   REAL8 mean_Sh_hoft;
+  REAL4 mean_overlap, mean_r, mean_i;
   COMPLEX8 R,H,C;
 
   /* Fill data vectors with data */
@@ -596,13 +600,6 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
 /*   printmemuse();  */
 
 
-/* resize the time series back to original length */
-  LALResizeREAL8TimeSeries(&status, &hoft, 0,hoft.data->length*4);
-  hoft.deltaT= hoft.deltaT/4;
-
-  LALResizeREAL4TimeSeries(&status, &derr, 0,derr.data->length*4);
-  derr.deltaT= derr.deltaT/4;
-
   fprintf(fpout, "%d ", gpsepoch.gpsSeconds);
 
   for (j=0; j < Nfrequencies; j++)  
@@ -610,6 +607,8 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
       /* Compute the noise */
       mean_Sh_derr = 0.0;
       mean_Sh_hoft = 0.0;
+      mean_overlap = 0.0;
+      mean_r=mean_i=0.0;
       {
 	int firstbin=(INT4)(frequencies[j]*CLA.t+0.5);
 	int nsamples=(INT4)(CLA.b*CLA.t+0.5);
@@ -624,7 +623,7 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
 	    REAL4 hr= ffthtData->data[k+firstbin].re;
 	    REAL4 hi= ffthtData->data[k+firstbin].im;
 	    REAL8 hpsq;
-	    
+	    	    
 	    /* Compute Response */
 	    C.re=gamma_fac[n]*Sensing[j].re[k];
 	    C.im=gamma_fac[n]*Sensing[j].im[k];
@@ -640,19 +639,31 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
 	    dpsq=pow(caldr,2.0)+pow(caldi,2);
 	    hpsq=pow(hr,2.0)+pow(hi,2);
 	    
-	    mean_Sh_derr += dpsq;
-	    mean_Sh_hoft += hpsq;
-
-/* 	    fprintf(stdout,"%e %e\n",mean_Sh_derr,mean_Sh_hoft); */
+	    mean_Sh_derr += dpsq/nsamples;
+	    mean_Sh_hoft += hpsq/nsamples;
       
+	    mean_r += (caldr-hr)/caldr/nsamples;
+	    mean_i += (caldi-hi)/caldi/nsamples;
+	    
+	    if(CLA.outputphase)
+ 	    fprintf(stdout,"%e %e %e %e \n",hr,hi,caldr,caldi); 
+
 	  }
 	mean_Sh_derr *= 2.0*derr.deltaT/(REAL4)derr.data->length;
 	mean_Sh_hoft *= 2.0*hoft.deltaT/(REAL4)hoft.data->length;
       }
-      fprintf(fpout, "%e %e %e ",sqrt(mean_Sh_hoft), sqrt(mean_Sh_derr), sqrt(mean_Sh_hoft)/sqrt(mean_Sh_derr));
+      fprintf(fpout, "%e %e %e ",sqrt(mean_Sh_hoft), sqrt(mean_Sh_derr), 
+	      sqrt(mean_Sh_hoft)/sqrt(mean_Sh_derr));
     }
   
   fprintf(fpout, "\n");
+
+  /* resize the time series back to original length */
+  LALResizeREAL8TimeSeries(&status, &hoft, 0,hoft.data->length*4);
+  hoft.deltaT= hoft.deltaT/4;
+  
+  LALResizeREAL4TimeSeries(&status, &derr, 0,derr.data->length*4);
+  derr.deltaT= derr.deltaT/4;
 
 /*   fprintf(stdout,"Made it to: 10\n"); */
 /*   printmemuse();  */
@@ -940,10 +951,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"version",              no_argument, NULL,                 'x'},
     {"gamma-fudge-factor",   required_argument, NULL,           'y'},
     {"no-factors",           no_argument, NULL,                 'z'},
+    {"output-phase",         no_argument, NULL,                 'Q'},    
     {"help",                 no_argument, NULL,                 'h'},
     {0, 0, 0, 0}
   };
-  char args[] = "ha:b:c:d:e:g:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:xy:z";
+  char args[] = "ha:b:c:d:e:g:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:xy:zQ";
 
   /* Initialize default values */
   CLA->freqfile=NULL;
@@ -969,6 +981,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->W0Re=0.0;
   CLA->W0Im=0.0;
   CLA->gamma_fudgefactor=1.0;
+  CLA->outputphase=0;
   CLA->nofactors=0;
 
   /* Scan through list of command line arguments */
@@ -1079,6 +1092,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'z':
       CLA->nofactors=1;
       break;
+    case 'Q':
+      CLA->outputphase=1;
+      break;
     case 'h':
       /* print usage/help message */
       fprintf(stdout,"Arguments are:\n");
@@ -1106,6 +1122,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tfcal (-w)\tFLOAT\t Calibration line frequency.\n");
       fprintf(stdout,"\tgamma-fudge-factor (-y)\tFLAG\t Fudge factor used to adjust factor values. Gamma is divided by this value.\n");
       fprintf(stdout,"\tno-factors (-z)\tFLAG\t Set factors to 1.\n");
+      fprintf(stdout,"\toutput-phase (-Q)\tFLAG\t Outputs real and imaginary parts of each frequency bin (careful! will make big files!).\n");
       fprintf(stdout,"\thelp (-h)\tFLAG\t This message\n");    
       exit(0);
       break;
