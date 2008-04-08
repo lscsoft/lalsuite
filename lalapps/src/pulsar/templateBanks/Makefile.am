@@ -5,7 +5,8 @@ AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/mi
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 bin_PROGRAMS = lalapps_skynet lalapps_getMetric lalapps_testFlatPulsarMetric lalapps_matchGrids \
-	lalapps_getMesh lalapps_FstatMetric lalapps_testFlatLatticeTiling lalapps_testLatticeCovering
+	lalapps_getMesh lalapps_FstatMetric lalapps_testFlatLatticeTiling lalapps_testLatticeCovering  \
+	lalapps_FstatMetric_v2
 
 ## make sure LALAPPSgitID.h is re-generated at every 'make'
 .PHONY: gitID
@@ -29,3 +30,4 @@ lalapps_matchGrids_SOURCES = matchGrids.c
 
 lalapps_FstatMetric_SOURCES = FstatMetric.c
 
+lalapps_FstatMetric_v2_SOURCES = FstatMetric_v2.c
