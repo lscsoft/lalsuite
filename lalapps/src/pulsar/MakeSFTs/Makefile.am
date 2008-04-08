@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
+INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/misc
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 ## make sure LALAPPSgitID.h is re-generated at every 'make'

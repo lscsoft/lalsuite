@@ -48,10 +48,8 @@
 #include <lal/LogPrintf.h>
 #include <lal/Date.h>
 
-#if 0
 #include <lal/lalGitID.h>
 #include <lalappsGitID.h>
-#endif
 
 /* lisaXML stuff */
 #include "readxml.h"
