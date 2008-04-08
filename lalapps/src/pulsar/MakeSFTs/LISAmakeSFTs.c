@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2007 Deepak Khurana
- * Copyright (C) 2006, 2007 Reinhard Prix, John T Whelan
+ * Copyright (C) 2006, 2007, 2008 Reinhard Prix, John T Whelan
  *
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -22,7 +22,7 @@
 
 /**
  * \author Reinhard Prix, John T Whelan, Deepak Khurana
- * \date 2006
+ * \date 2006-2008
  * \file
  * \brief Read in MLDC timeseries-files and produce SFTs (v2) for them
  *
@@ -46,6 +46,7 @@
 #include <lal/GeneratePulsarSignal.h>
 #include <lal/LISAspecifics.h>
 #include <lal/LogPrintf.h>
+#include <lal/Date.h>
 
 /* lisaXML stuff */
 #include "readxml.h"
@@ -462,7 +463,10 @@ ConvertLISAtimeseries2LAL ( LALStatus *status, MultiREAL4TimeSeries **lalTs, con
       LALSnprintf ( name, LALNameLength, "Z%d:%s_%s", i+1, thisTs->Name, lisaTs->FileName );
       name[LALNameLength-1] = 0; /* close string if it was truncated */
 
-      epoch.gpsSeconds = thisTs->TimeOffset + LISA_TIME_ORIGIN;	/* offset for convenience of GPS-time ranges */
+      /* Workaround for LISAsim metadata error: read start time from t column of data */
+      XLALFloatToGPS( &epoch, lisaTs->Data[0]->data[0] );
+
+      epoch.gpsSeconds += LISA_TIME_ORIGIN;	/* offset for convenience of GPS-time ranges */
 
       if ( ( ret->data[i] = XLALCreateREAL4TimeSeries ( name, &epoch, f0, deltaT, &units, length )) == NULL )
 	goto failed;
