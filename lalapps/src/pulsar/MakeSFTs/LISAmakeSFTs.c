@@ -39,6 +39,9 @@
 
 #include <lalapps.h>
 
+#include <lal/lalGitID.h>
+#include <lalappsGitID.h>
+
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/TimeSeries.h>
