@@ -187,16 +187,16 @@ Phi_i ( double tt, void *params )
       LIGOTimeGPS tGPS;
       REAL8 rOrb[3];
       REAL8 rX, rY;
-      REAL8 Rorb = LAL_AU_SI;
+      REAL8 Rorb = LAL_AU_SI / LAL_C_SI;
 
       XLALFloatToGPS( &tGPS, ti );
       LALBarycenterEarth( &status, &earth, &tGPS, par->edat );
 
-      rX = LAL_C_SI * earth.posNow[0]  / Rorb;
-      rY = LAL_C_SI * ( coseps * earth.posNow[1] + sineps * earth.posNow[2] ) / Rorb ;
+      rX = earth.posNow[0]  / Rorb;
+      rY = ( coseps * earth.posNow[1] + sineps * earth.posNow[2] ) / Rorb ;
 
       if ( par->comp == COMP_RX )
-	ret = rX;	/* NOTE the '-' sign: the skypos-variable is k \propto -n  */
+	ret = rX;
       else
 	ret= rY;
     } /* rX,rY */
@@ -300,7 +300,7 @@ XLALFlatMetricCW ( gsl_matrix *gij, 			/**< [out] metric */
 
     } /* for s < numSpins */
 
-  /* get metric from {kx, ky, w0, w1, w2,..} into 'canonical' order {w0, kx, ky, w1, w2, ... } */
+  /* get metric from {nxt, nyt, w0, w1, w2,..} into 'canonical' order {w0, nxt, nyt, w1, w2, ... } */
   gsl_matrix_swap_rows (gij, 0, 2);	/* swap w0 <--> kx */
   gsl_matrix_swap_rows (gij, 1, 2);	/* swap kx <--> ky */
   gsl_matrix_swap_columns (gij, 0, 2);	/* swap w0 <--> kx */
