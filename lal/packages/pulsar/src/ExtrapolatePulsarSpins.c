@@ -167,7 +167,7 @@ XLALExtrapolatePulsarSpins ( PulsarSpins fkdotOut,		/**< output fkdot array */
 			     REAL8 DeltaTau 			/**< time-difference to extrapolate fkdot to */
 			     )
 {
-  UINT4 numSpins = sizeof(PulsarSpins); 	/* fixed size array */
+  UINT4 numSpins = sizeof(PulsarSpins) / sizeof(fkdotIn[0]); 	/* fixed size array */
   UINT4 k, l;
   REAL8 kfact, dtauk;
   PulsarSpins inSpins;
