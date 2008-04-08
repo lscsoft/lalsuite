@@ -1021,7 +1021,7 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
     {
       REAL8 nNat = uvar->Freq * uvar->duration * ORB_V0;
       cfg->offsetUnits.fkdot->data[0] = 1.0 / ( LAL_TWOPI * uvar->duration );
-      cfg->offsetUnits.fkdot->data[1] = 2.0 / SQ( LAL_TWOPI * uvar->duration );
+      cfg->offsetUnits.fkdot->data[1] = 2.0 / ( LAL_TWOPI * SQ( uvar->duration ) );
       cfg->offsetUnits.skypos.longitude = 1.0;
       cfg->offsetUnits.skypos.latitude = 1.0;
     }
