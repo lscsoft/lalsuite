@@ -259,6 +259,16 @@ LALNewGetAMCoeffs(LALStatus *,
 		  const DetectorStateSeries *DetectorStates,
 		  SkyPosition skypos);
 
+
+int
+XLALComputeAntennaPatternCoeffs ( REAL8 *ai,
+				  REAL8 *bi,
+				  const SkyPosition *skypos,
+				  const LIGOTimeGPS *tGPS,
+				  const LALDetector *site,
+				  const EphemerisData *edat
+				  );
+
 void
 LALGetMultiSSBtimes (LALStatus *,
 		     MultiSSBtimes **multiSSB,
@@ -304,6 +314,7 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
 /* destructors */
 void XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB );
 void XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef );
+void XLALDestroyAMCoeffs ( AMCoeffs *amcoef );
 
 void XLALEmptyComputeFBuffer ( ComputeFBuffer *cfb );
 

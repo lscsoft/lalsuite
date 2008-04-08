@@ -85,6 +85,7 @@ static void EccentricAnomoly(LALStatus *status, REAL8 *tr, REAL8 lE, void *tr0);
 
 /* empty initializers  */
 static const LALStatus empty_status;
+static const AMCoeffs empty_AMCoeffs;
 
 const SSBtimes empty_SSBtimes;
 const MultiSSBtimes empty_MultiSSBtimes;
@@ -1408,6 +1409,71 @@ LALNewGetAMCoeffs(LALStatus *status,
 
 } /* LALNewGetAMCoeffs() */
 
+
+
+/** Compute single time-stamp antenna-pattern coefficients a(t), b(t)
+ *
+ * This is a simplified (ugly) wrapper to LALNewGetAMCoeffs() to allow the
+ * computing a single-timestamp antenna-pattern, without having to
+ * worry about the whole DetectorStateSeries complexity...
+ */
+int
+XLALComputeAntennaPatternCoeffs ( REAL8 *ai,   			/**< [out] antenna-pattern function a(t) */
+				  REAL8 *bi,			/**< [out] antenna-pattern function b(t) */
+				  const SkyPosition *skypos,	/**< [in] skyposition {alpha, delta} */
+				  const LIGOTimeGPS *tGPS,	/**< [in] GPS time t */
+				  const LALDetector *site,	/**< [in] detector */
+				  const EphemerisData *edat	/**< [in] ephemeris-data */
+				  )
+{
+  const CHAR *fn = "XLALComputeAntennaPatternCoeffs()";
+
+  DetectorStateSeries *detState = NULL;
+  LALStatus status = empty_status;
+  LIGOTimeGPSVector *oneStepSeries = NULL;
+  AMCoeffs amcoeffs = empty_AMCoeffs;
+
+  if ( !ai || !bi || !skypos || !tGPS || !site || !edat) {
+    XLAL_ERROR( fn, XLAL_EINVAL );
+  }
+
+  /* construct dummy 1-timestamp detector-state 'series' */
+  if ( (oneStepSeries = XLALCreateTimestampVector ( 1 )) == NULL ) {
+    XLAL_ERROR_REAL8( fn, XLAL_ENOMEM );
+  }
+  oneStepSeries->data[0] = (*tGPS);
+
+  LALGetDetectorStates (&status, &detState, oneStepSeries, site, edat, 0 );
+  if ( status.statusCode != 0 ) {
+    XLALPrintError ( "%s: call to LALGetDetectorStates() failed!\n\n", fn);
+    XLAL_ERROR( fn, XLAL_EFUNC );
+  }
+
+  /* call antenna-pattern function to get a(tt), b(tt) */
+  LALNewGetAMCoeffs (&status, &amcoeffs, detState, (*skypos) );
+  if ( status.statusCode != 0 ) {
+    XLALPrintError ( "%s: call to LALNewGetAMCoeffs() failed!\n\n", fn);
+    XLAL_ERROR( fn, XLAL_EFUNC );
+  }
+
+  (*ai) = amcoeffs.a->data[0];
+  (*bi) = amcoeffs.b->data[0];
+
+  /* free memory */
+  XLALDestroyREAL4Vector ( amcoeffs.a );
+  XLALDestroyREAL4Vector ( amcoeffs.b );
+  XLALDestroyTimestampVector ( oneStepSeries );
+  oneStepSeries = NULL;
+  XLALDestroyDetectorStateSeries ( detState );
+
+  return XLAL_SUCCESS;
+
+} /* XLALComputeAntennaPatternCoeffs() */
+
+
+
+
+
 /** For a given OrbitalParams, calculate the time-differences
  *  \f$\Delta T_\alpha\equiv T(t_\alpha) - T_0\f$, and their
  *  derivatives \f$Tdot_\alpha \equiv d T / d t (t_\alpha)\f$.
@@ -1934,7 +2000,6 @@ void
 XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef )
 {
   UINT4 X;
-  AMCoeffs *tmp;
 
   if ( ! multiAMcoef )
     return;
@@ -1943,14 +2008,7 @@ XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef )
     {
       for ( X=0; X < multiAMcoef->length; X ++ )
 	{
-	  if ( (tmp = multiAMcoef->data[X]) != NULL )
-	    {
-	      if ( tmp->a )
-		XLALDestroyREAL4Vector ( tmp->a );
-	      if ( tmp->b )
-		XLALDestroyREAL4Vector ( tmp->b );
-	      LALFree ( tmp );
-	    } /* if multiAMcoef->data[X] */
+	  XLALDestroyAMCoeffs ( multiAMcoef->data[X] );
 	} /* for X < numDetectors */
       LALFree ( multiAMcoef->data );
     }
@@ -1959,6 +2017,29 @@ XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef )
   return;
 
 } /* XLALDestroyMultiAMCoeffs() */
+
+/** Destroy a AMCoeffs structure.
+ * Note, this is "NULL-robust" in the sense that it will not crash
+ * on NULL-entries anywhere in this struct, so it can be used
+ * for failure-cleanup even on incomplete structs
+ */
+void
+XLALDestroyAMCoeffs ( AMCoeffs *amcoef )
+{
+  if ( ! amcoef )
+    return;
+
+  if ( amcoef->a )
+    XLALDestroyREAL4Vector ( amcoef->a );
+  if ( amcoef->b )
+    XLALDestroyREAL4Vector ( amcoef->b );
+
+  LALFree ( amcoef );
+
+  return;
+
+} /* XLALDestroyAMCoeffs() */
+
 
 
 /** Destruction of a ComputeFBuffer *contents*,
