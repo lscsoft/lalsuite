@@ -39,9 +39,6 @@
 
 #include <lalapps.h>
 
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
-
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/TimeSeries.h>
@@ -50,6 +47,11 @@
 #include <lal/LISAspecifics.h>
 #include <lal/LogPrintf.h>
 #include <lal/Date.h>
+
+#if 0
+#include <lal/lalGitID.h>
+#include <lalappsGitID.h>
+#endif
 
 /* lisaXML stuff */
 #include "readxml.h"
