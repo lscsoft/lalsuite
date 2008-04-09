@@ -1,4 +1,4 @@
-/*
+/**
 *  Copyright (C) 2007 
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -396,7 +396,7 @@ LALInspiralEccentricityEngine(
 
  
    
-   REAL8 amp, m, dt, t,  h1, h2, f,  fHigh, piM;
+   REAL8 amp, m, dt, t,  h1, h2, f,  fHigh, piM, fu;
    REAL8Vector dummy, values, dvalues, valuesNew, yt, dym, dyt;
 
    rk4In in4;
@@ -554,7 +554,12 @@ LALInspiralEccentricityEngine(
 
    t = 0.0;
 
-   fHigh = 1024.;
+   
+   fu = params->fCutoff;
+   if (fu) 
+      fHigh = (fu < ak.flso) ? fu : ak.flso; 
+   else 
+      fHigh = ak.flso;
       
    f = 1./(pow(orbital_element_p, 3./2.))/piM;
   
@@ -584,19 +589,19 @@ LALInspiralEccentricityEngine(
           + 0.5 * orbital_element_e * cos(threePhim2Beta) + orbital_element_e_squared * cos2Beta) * onepCosSqI +
           + ( orbital_element_e * cos(orbital_element_p) + orbital_element_e_squared) * SinSqI);
 /*        fprintf(stderr, "p=%e, e=%e, phase = %e\n", orbital_element_p, orbital_element_e, phase);fflush(stderr);*/
-/*         if (f>=params->fLower){*/
+/*         if (f>=params->fLower)*/
+        {
           *(signal1->data + count) = (REAL4) h1;
-/*          t = (++count-params->nStartPad) * dt;
-         }*/
+         }
 
 	 if (signal2)
 	 {
             h2 = amp * ( ( 4. * sin(twoPhim2Beta) + 5 * orbital_element_e * sin(phim2Beta) 
           + orbital_element_e * sin(threePhim2Beta) - 2. * orbital_element_e_squared * sin2Beta) * cosI);
-/*           if (f>=params->fLower){*/
+/*           if (f>=params->fLower)*/
+           {
               *(signal2->data + count) = (REAL4) h2;
-/*              t = (++count-params->nStartPad) * dt;
-            }*/
+            }
 	 }
          /*fprintf(stderr, "t=%.8e h1=%.8e\n", t,h1);fflush(stderr);*/
       }
@@ -629,7 +634,10 @@ LALInspiralEccentricityEngine(
       *(values.data+1) = phase = *(valuesNew.data+1);
       *(values.data+2) = orbital_element_e = *(valuesNew.data+2);
 
+/*      if (f>=params->fLower)*/
+      {
       t = (++count-params->nStartPad) * dt;
+      }
       /* v^3 is equal to p^(3/2)*/
       f = 1./(pow(orbital_element_p, 3./2.))/piM;
 /*      fprintf(stderr, "p=%e, e=%e, phase = %e\n", orbital_element_p, orbital_element_e, phase);
@@ -638,9 +646,10 @@ LALInspiralEccentricityEngine(
 /*      fprintf(stderr, "rbyM=%e rbyMFlso=%e t=%e, ak.tn=%e\n",rbyM, rbyMFlso, t, ak.tn);
       fflush(stderr);*/
       
-   } while ( (t < ak.tn) && (rbyM>rbyMFlso) );
+   } while ( (t < ak.tn) && (rbyM>rbyMFlso) && (f<fHigh));
 
-/*    fprintf(stderr, "t=%e %e %e rbyMFlso=%e", t, ak.tn, rbyM, rbyMFlso);*/
+
+/*    fprintf(stderr, "t=%e ak.tn=%e rbyM=%e rbyMFlso=%e f=%f fHigh=%f", t, ak.tn, rbyM, rbyMFlso, f, fHigh);*/
    
    /*also need to add for the fupper nyquist frequency**/
    params->vFinal = orbital_element_p;
