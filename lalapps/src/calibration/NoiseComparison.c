@@ -547,6 +547,7 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
   TESTSTATUS( &status );
   LALFrGetREAL4TimeSeries(&status,&derr,&chanin_derr,derrframestream);
   TESTSTATUS( &status );
+
   /* h(t) */
   LALFrSeek(&status,&gpsepoch,hoftframestream);
   TESTSTATUS( &status );
@@ -557,6 +558,13 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
   TESTSTATUS( &status );
   LALFrGetREAL8TimeSeries(&status,&hoft,&chanin_hoft,hoftframestream);
   TESTSTATUS( &status );
+
+  if ( derr.epoch.gpsSeconds !=  gpsepoch.gpsSeconds || hoft.epoch.gpsSeconds !=  gpsepoch.gpsSeconds)
+    {
+      fprintf(stderr,"GPS start time of darm err data (%d) or h(t) data (%d) does not agree with requested start time (%d). Exiting.\n", 
+	      derr.epoch.gpsSeconds, hoft.epoch.gpsSeconds, gpsepoch.gpsSeconds);
+      return 1;
+    }
 
 /*   fprintf(stdout,"Made it to: 5\n"); */
 /*   printmemuse();  */
