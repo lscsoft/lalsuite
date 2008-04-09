@@ -328,7 +328,7 @@ where
   d^\ell_{m,s}(\iota) = \sum_{k = k_1}^{k_2}
     \frac{(-1)^k[(\ell+m)!(\ell-m)!(\ell+s)!(\ell-s)!]^{1/2}}{(\ell +m
       -k)!(\ell-s-k)!k!(k+s-m)!}  
-    \times \left(\frac{\cos\iota}{2}\right)^{2\ell+m-s-2k}\left(\frac{\sin\iota}{2}\right)^{2k+s-m}  
+    \times \left(\cos\left(\frac{\iota}{2}\right)\right)^{2\ell+m-s-2k}\left(\sin\left(\frac{\iota}{2}\right)\right)^{2k+s-m}  
 \end{equation}
 with $k_1 = \textrm{max}(0, m-s)$ and $k_2=\textrm{min}(\ell+m,
 \ell-s)$. For reference,
@@ -470,7 +470,7 @@ spin1z = 0.5
 spin2x = 0.0
 spin2y = 0.8
 spin2z = 0.0
-f0M = 0.1
+freqStart22 = 0.1
 
 [ht-data]
 2,2  = example1_22.dat
