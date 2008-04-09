@@ -1,0 +1,54 @@
+dag :
+	mkdir injections
+	pushd injections && lalapps_cosmicstring_pipe --injections --config-file ../S4_StringDag.ini --log-path $(TMPDIR) --datafind --burst-search ; popd
+	mkdir noninjections
+	pushd noninjections && lalapps_cosmicstring_pipe --config-file ../S4_StringDag.ini --log-path $(TMPDIR) --datafind --burst-search ; popd
+
+
+ligolw_tisi :
+	# build time slide files
+	ligolw_tisi --verbose --instrument H1=0:0:0 --instrument H2=0:0:0 --instrument L1=0:0:0 injections/time_slides.xml.gz
+	ligolw_tisi --verbose --instrument H1=0:0:0 --instrument H2=0:0:0 --instrument L1=-89.26990816987241548050:89.26990816987241548050:1.78539816339744830961 noninjections/time_slides.xml.gz
+
+
+ligolw_cafe :
+	# scan the trigger files and build caches for ligolw_add
+	pushd injections && lalapps_ll2cache --verbose "HL-INJECTIONS*" "triggers/*" | ligolw_cafe --verbose --time-slides time_slides.xml.gz --base cache/cafe_ ; popd
+	pushd noninjections && lalapps_ll2cache --verbose "triggers/*" | ligolw_cafe --verbose --time-slides time_slides.xml.gz --base cache/cafe_ ; popd
+	# for some reason, the pipeline doesn't generate injections for all
+	# segments, and that annoys ligolw_binjfind later on so move these
+	# caches out of the way
+	pushd injections/cache && for f in $$(grep -L HL-INJECTIONS cafe*.cache) ; do mv $$f $${f/cafe/nosimburst_cafe} ; done ; popd
+
+
+ligolw_add :
+	# run ligolw_add on each of the trigger caches
+	pushd injections/cache && for f in cafe_*.cache ; do ligolw_add --verbose --input-cache $$f --output ../triggers/$${f/.cache/.xml.gz} ../time_slides.xml.gz ; done ; popd
+	pushd noninjections/cache && for f in cafe_*.cache ; do ligolw_add --verbose --input-cache $$f --output ../triggers/$${f/.cache/.xml.gz} ../time_slides.xml.gz ; done ; popd
+
+
+ligolw_burca :
+	# run ligolw_burca
+	pushd injections/triggers && ligolw_burca --verbose --coincidence-algorithm stringcusp --program StringSearch --thresholds H1,H2=0.002 --thresholds H1,L1=0.012 --thresholds H2,L1=0.012 --stringcusp-params 3.0,0.5 cafe*.xml.gz ; popd
+	pushd noninjections/triggers && ligolw_burca --verbose --coincidence-algorithm stringcusp --program StringSearch --thresholds H1,H2=0.002 --thresholds H1,L1=0.012 --thresholds H2,L1=0.012 --stringcusp-params 3.0,0.5 cafe*.xml.gz ; popd
+
+
+ligolw_binjfind :
+	# run ligolw_binjfind
+	pushd injections/triggers && ligolw_binjfind --verbose --match-algorithm stringcusp cafe*.xml.gz ; popd
+
+
+ligolw_sqlite :
+	# convert to sqlite databases
+	pushd injections/triggers && for f in cafe*xml.gz ; do ligolw_sqlite --verbose --tmp-space $${TMPDIR} --replace --preserve-ids --database $${f/.xml.gz/.sqlite} $$f ; done ; popd
+	pushd noninjections/triggers && for f in cafe*xml.gz ; do ligolw_sqlite --verbose --tmp-space $${TMPDIR} --replace --preserve-ids --database $${f/.xml.gz/.sqlite} $$f ; done ; popd
+
+
+final :
+	lalapps_stringfinal --verbose --cal-uncertainty 0.08 noninjections/triggers/cafe*.sqlite >lalapps_stringfinal.log
+	lalapps_stringfinal --verbose --injections --injections-bin-size 16 --loudest-survivor H1=3.4744909e-20 --cal-uncertainty 0.08 injections/triggers/cafe*.sqlite >lalapps_stringfinal_injections.log
+
+
+realclean :
+	rm -Rvf injections
+	rm -Rvf noninjections
