@@ -729,11 +729,10 @@ static void worker (void) {
 	    LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", startc);
 	  }
 #ifndef _WIN32
-	  /* if boinc_resolve() returnea a symbolic link, resolve it outself */
+	  /* if boinc_resolve() returns a symbolic link, resolve it outself */
 	  if (readlink(resultfile,targetpath,sizeof(targetpath)) != -1)
 	    strncpy(resultfile,targetpath,sizeof(resultfile));
 #endif
-	  rargv[rarg] = resultfile;
 	  s = (startc - argv[arg]) + strlen(resultfile) + 1;
 	  rargv[rarg] = (char*)calloc(s,sizeof(char));
 	  if(!rargv[rarg]){
@@ -756,7 +755,7 @@ static void worker (void) {
 	      LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", argv[arg]);
 	    }
 #ifndef _WIN32
-	    /* if boinc_resolve() returnea a symbolic link, resolve it outself */
+	    /* if boinc_resolve() returns a symbolic link, resolve it outself */
 	    if (readlink(resultfile,targetpath,sizeof(targetpath)) != -1)
 	      strncpy(resultfile,targetpath,sizeof(resultfile));
 	    rargv[rarg] = resultfile;
