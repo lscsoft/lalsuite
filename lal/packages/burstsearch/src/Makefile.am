@@ -2,7 +2,3 @@
 noinst_LTLIBRARIES = libburstsearch.la
 libburstsearch_la_SOURCES = Thresholds.c ComputeFrequencySeries.c CreateTFPlane.c FreqSeriesToTFPlane.c EPSearch.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-MOSTLYCLEANFILES = .dvi-dep
-DISTCLEANFILES = *.tex
-dvi-local: .dvi-dep
-@DVIMKFILE@

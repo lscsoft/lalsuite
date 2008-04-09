@@ -7,7 +7,4 @@ ThresholdsTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(t
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = ThresholdsTest
 TESTS_ENVIRONMENT = 1>/dev/null
-MOSTLYCLEANFILES = .dvi-dep PrintVector.*
-DISTCLEANFILES = *.tex
-dvi-local: .dvi-dep
-@DVIMKFILE@
+MOSTLYCLEANFILES = PrintVector.*
