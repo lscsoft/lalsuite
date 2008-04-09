@@ -715,6 +715,9 @@ static void worker (void) {
     else if ((0 == strncmp("-o",argv[arg],strlen("-o"))) ||
 	     (0 == strncmp("--fnameout",argv[arg],strlen("--fnameout")))) {
 
+      char targetpath[MAX_PATH_LEN];
+      memset(targetpath,0,MAX_PATH_LEN);
+
       /* these are two similar but not equal cases ("option file" and "option=file") */
       if ((0 == strncmp("-o=",argv[arg],strlen("-o="))) ||
 	  (0 == strncmp("--fnameout=",argv[arg],strlen("--fnameout="))))
@@ -723,8 +726,14 @@ static void worker (void) {
 	  startc = strchr(argv[arg],'=');
 	  startc++; /* filename begins _after_ '=' */
 	  if (boinc_resolve_filename(startc,resultfile,sizeof(resultfile))) {
-	  LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", startc);
+	    LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", startc);
 	  }
+#ifndef _WIN32
+	  /* if boinc_resolve() returnea a symbolic link, resolve it outself */
+	  if (readlink(resultfile,targetpath,sizeof(targetpath)) != -1)
+	    strncpy(resultfile,targetpath,sizeof(resultfile));
+#endif
+	  rargv[rarg] = resultfile;
 	  s = (startc - argv[arg]) + strlen(resultfile) + 1;
 	  rargv[rarg] = (char*)calloc(s,sizeof(char));
 	  if(!rargv[rarg]){
@@ -746,7 +755,12 @@ static void worker (void) {
 	    if (boinc_resolve_filename(argv[arg],resultfile,sizeof(resultfile))) {
 	      LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", argv[arg]);
 	    }
+#ifndef _WIN32
+	    /* if boinc_resolve() returnea a symbolic link, resolve it outself */
+	    if (readlink(resultfile,targetpath,sizeof(targetpath)) != -1)
+	      strncpy(resultfile,targetpath,sizeof(resultfile));
 	    rargv[rarg] = resultfile;
+#endif
 	  }
 	}
     }
