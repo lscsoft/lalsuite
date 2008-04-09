@@ -85,14 +85,13 @@ static COMPLEX16Sequence *apply_filter(
 	if(outputseq->length != inputseries->data->length)
 		XLAL_ERROR_NULL(func, XLAL_EBADLEN);
 
-	/* zero the product vector */
-	memset(outputseq->data, 0, outputseq->length * sizeof(*outputseq->data));
-
 	/* output = inputseries * conj(filter) */
+	memset(outputseq->data, 0, (output - outputseq->data) * sizeof(*outputseq->data));
 	for(; output < last; output++, input++, filter++) {
 		output->re = input->re * filter->re + input->im * filter->im;
 		output->im = input->im * filter->re - input->re * filter->im;
 	}
+	memset(last, 0, (outputseq->length - (last - outputseq->data)) * sizeof(*outputseq->data));
 
 	return outputseq;
 }
