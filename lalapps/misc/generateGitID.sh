@@ -23,7 +23,7 @@ fmt="format:${prefix}CommitID: %H %n${prefix}CommitDate: %aD %n${prefix}CommitAu
 logcmd="git-log -1 --pretty='$fmt'";
 
 ## first check if the git-log works at all: could be a) no git installed or b) no git-repository
-if eval "$logcmd >& /dev/null"; then
+if eval "$logcmd > /dev/null 2>&1"; then
     git_log_ok="true";
 else
     git_log_ok="false";
@@ -39,7 +39,7 @@ fi
 statuscmd="git-status";
 ## first check if git-status is actually available:
 if test "$git_log_ok" = "true"; then
-    if eval "$statuscmd -h >& /dev/null" }; then
+    if eval `$statuscmd -a 2>&1 1> /dev/null` ; then
 	git_status_ok="true";
     fi
 else
@@ -47,7 +47,7 @@ else
 fi
 
 if test "$git_status_ok" = "true"; then
-    if eval "$statuscmd -a >& /dev/null"; then
+    if eval "$statuscmd -a > /dev/null 2>&1"; then
 	git_status="UNCLEAN: some modifications were not commited!";
     else
 	git_status="CLEAN. All modifications commited.";
