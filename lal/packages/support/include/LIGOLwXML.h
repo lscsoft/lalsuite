@@ -161,6 +161,11 @@ LALWriteLIGOLwXMLTable (
     MetadataTableType    table
     );
 
+int XLALWriteLIGOLwXMLProcessTable(
+	LIGOLwXMLStream *,
+	const ProcessTable *
+);
+
 int XLALWriteLIGOLwXMLSnglBurstTable(
 	LIGOLwXMLStream *,
 	const SnglBurst *

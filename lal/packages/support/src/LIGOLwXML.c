@@ -925,6 +925,82 @@ LALWriteLIGOLwXMLTable (
 
 
 /**
+ * Write a process_table table to an XML file.
+ */
+
+
+int XLALWriteLIGOLwXMLProcessTable(
+	LIGOLwXMLStream *xml,
+	const ProcessTable *process
+)
+{
+	static const char func[] = "XLALWriteLIGOLwXMLProcessTable";
+	const char *row_head = "\n\t\t\t";
+
+	if(xml->table != no_table) {
+		XLALPrintError("a table is still open");
+		XLAL_ERROR(func, XLAL_EFAILED);
+	}
+
+	/* table header */
+
+	XLALClearErrno();
+	fputs("\t<Table Name=\"process:table\">\n", xml->fp);
+	fputs("\t\t<Column Name=\"process:program\" Type=\"lstring\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"process:version\" Type=\"lstring\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"process:cvs_repository\" Type=\"lstring\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"process:cvs_entry_time\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"process:comment\" Type=\"lstring\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"process:is_online\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"process:node\" Type=\"lstring\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"process:username\" Type=\"lstring\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"process:unix_procid\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"process:start_time\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"process:end_time\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"process:jobid\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"process:domain\" Type=\"lstring\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"process:ifos\" Type=\"lstring\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	fputs("\t\t<Stream Name=\"process:table\" Type=\"Local\" Delimiter=\",\">\n", xml->fp);
+	if(XLALGetBaseErrno())
+		XLAL_ERROR(func, XLAL_EFUNC);
+
+	/* rows */
+
+	for(; process; process = process->next) {
+		if(fprintf(xml->fp, "%s\"%s\",\"%s\",\"%s\",%d,\"%s\",%d,\"%s\",\"%s\",%d,%d,%d,%d,\"%s\",\"%s\",\"process:process_id:0\"",
+			row_head,
+			process->program,
+			process->version,
+			process->cvs_repository,
+			process->cvs_entry_time.gpsSeconds,
+			process->comment,
+			process->is_online,
+			process->node,
+			process->username,
+			process->unix_procid,
+			process->start_time.gpsSeconds,
+			process->end_time.gpsSeconds,
+			process->jobid,
+			process->domain,
+			process->ifos
+		) < 0)
+			XLAL_ERROR(func, XLAL_EFUNC);
+		row_head = ",\n\t\t\t";
+	}
+
+	/* table footer */
+
+	if(fputs("\n\t\t</Stream>\n\t</Table>\n", xml->fp) < 0)
+		XLAL_ERROR(func, XLAL_EFUNC);
+
+	/* done */
+
+	return 0;
+}
+
+
+/**
  * Write a sngl_burst table to an XML file.
  */
 
