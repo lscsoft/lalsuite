@@ -925,7 +925,7 @@ LALWriteLIGOLwXMLTable (
 
 
 /**
- * Write a process_table table to an XML file.
+ * Write a process table to an XML file.
  */
 
 
@@ -961,7 +961,7 @@ int XLALWriteLIGOLwXMLProcessTable(
 	fputs("\t\t<Column Name=\"process:domain\" Type=\"lstring\"/>\n", xml->fp);
 	fputs("\t\t<Column Name=\"process:ifos\" Type=\"lstring\"/>\n", xml->fp);
 	fputs("\t\t<Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", xml->fp);
-	fputs("\t\t<Stream Name=\"process:table\" Type=\"Local\" Delimiter=\",\">\n", xml->fp);
+	fputs("\t\t<Stream Name=\"process:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
 	if(XLALGetBaseErrno())
 		XLAL_ERROR(func, XLAL_EFUNC);
 
@@ -984,6 +984,62 @@ int XLALWriteLIGOLwXMLProcessTable(
 			process->jobid,
 			process->domain,
 			process->ifos
+		) < 0)
+			XLAL_ERROR(func, XLAL_EFUNC);
+		row_head = ",\n\t\t\t";
+	}
+
+	/* table footer */
+
+	if(fputs("\n\t\t</Stream>\n\t</Table>\n", xml->fp) < 0)
+		XLAL_ERROR(func, XLAL_EFUNC);
+
+	/* done */
+
+	return 0;
+}
+
+
+/**
+ * Write a process_params table to an XML file.
+ */
+
+
+int XLALWriteLIGOLwXMLProcessParamsTable(
+	LIGOLwXMLStream *xml,
+	const ProcessParamsTable *process_params
+)
+{
+	static const char func[] = "XLALWriteLIGOLwXMLProcessParamsTable";
+	const char *row_head = "\n\t\t\t";
+
+	if(xml->table != no_table) {
+		XLALPrintError("a table is still open");
+		XLAL_ERROR(func, XLAL_EFAILED);
+	}
+
+	/* table header */
+
+	XLALClearErrno();
+	fputs("\t<Table Name=\"process_params:table\">\n", xml->fp);
+	fputs("\t\t<Column Name=\"process_params:program\" Type=\"lstring\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"process_params:process_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"process_params:param\" Type=\"lstring\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"process_params:type\" Type=\"lstring\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"process_params:value\" Type=\"lstring\"/>\n", xml->fp);
+	fputs("\t\t<Stream Name=\"process_params:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
+	if(XLALGetBaseErrno())
+		XLAL_ERROR(func, XLAL_EFUNC);
+
+	/* rows */
+
+	for(; process_params; process_params = process_params->next) {
+		if(fprintf(xml->fp, "%s\"%s\",\"process:process_id:0\",\"%s\",\"%s\",\"%s\"",
+			row_head,
+			process_params->program,
+			process_params->param,
+			process_params->type,
+			process_params->value
 		) < 0)
 			XLAL_ERROR(func, XLAL_EFUNC);
 		row_head = ",\n\t\t\t";
