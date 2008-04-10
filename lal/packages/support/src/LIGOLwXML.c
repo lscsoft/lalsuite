@@ -945,30 +945,30 @@ int XLALWriteLIGOLwXMLSnglBurstTable(
 	/* table header */
 
 	XLALClearErrno();
-	XLALFilePuts("\t<Table Name=\"sngl_burst:table\">\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sngl_burst:process_id\" Type=\"ilwd:char\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sngl_burst:ifo\" Type=\"lstring\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sngl_burst:search\" Type=\"lstring\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sngl_burst:channel\" Type=\"lstring\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sngl_burst:start_time\" Type=\"int_4s\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sngl_burst:start_time_ns\" Type=\"int_4s\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sngl_burst:peak_time\" Type=\"int_4s\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sngl_burst:peak_time_ns\" Type=\"int_4s\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sngl_burst:duration\" Type=\"real_4\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sngl_burst:central_freq\" Type=\"real_4\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sngl_burst:bandwidth\" Type=\"real_4\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sngl_burst:amplitude\" Type=\"real_4\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sngl_burst:snr\" Type=\"real_4\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sngl_burst:confidence\" Type=\"real_4\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sngl_burst:event_id\" Type=\"ilwd:char\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Stream Name=\"sngl_burst:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
+	fputs("\t<Table Name=\"sngl_burst:table\">\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_burst:process_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_burst:ifo\" Type=\"lstring\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_burst:search\" Type=\"lstring\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_burst:channel\" Type=\"lstring\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_burst:start_time\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_burst:start_time_ns\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_burst:peak_time\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_burst:peak_time_ns\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_burst:duration\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_burst:central_freq\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_burst:bandwidth\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_burst:amplitude\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_burst:snr\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_burst:confidence\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_burst:event_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	fputs("\t\t<Stream Name=\"sngl_burst:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
 	if(XLALGetBaseErrno())
 		XLAL_ERROR(func, XLAL_EFUNC);
 
 	/* rows */
 
 	for(; sngl_burst; sngl_burst = sngl_burst->next) {
-		if(XLALFilePrintf(xml->fp, "%s\"process:process_id:%ld\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,\"sngl_burst:event_id:%ld\"",
+		if(fprintf(xml->fp, "%s\"process:process_id:%ld\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,\"sngl_burst:event_id:%ld\"",
 			row_head,
 			sngl_burst->process_id,
 			sngl_burst->ifo,
@@ -992,7 +992,7 @@ int XLALWriteLIGOLwXMLSnglBurstTable(
 
 	/* table footer */
 
-	if(XLALFilePuts("\n\t\t</Stream>\n\t</Table>\n", xml->fp) < 0)
+	if(fputs("\n\t\t</Stream>\n\t</Table>\n", xml->fp) < 0)
 		XLAL_ERROR(func, XLAL_EFUNC);
 
 	/* done */
@@ -1022,29 +1022,29 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 	/* table header */
 
 	XLALClearErrno();
-	XLALFilePuts("\t<Table Name=\"sim_burst:table\">\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sim_burst:process_id\" Type=\"ilwd:char\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sim_burst:waveform\" Type=\"lstring\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sim_burst:ra\" Type=\"real_8\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sim_burst:dec\" Type=\"real_8\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sim_burst:psi\" Type=\"real_8\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sim_burst:time_geocent_gps\" Type=\"int_4s\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sim_burst:time_geocent_gps_ns\" Type=\"int_4s\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sim_burst:time_geocent_gmst\" Type=\"real_8\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sim_burst:duration\" Type=\"real_8\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sim_burst:frequency\" Type=\"real_8\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sim_burst:bandwidth\" Type=\"real_8\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sim_burst:q\" Type=\"real_8\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sim_burst:pol_ellipse_angle\" Type=\"real_8\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sim_burst:pol_ellipse_e\" Type=\"real_8\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sim_burst:amplitude\" Type=\"real_8\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sim_burst:hrss\" Type=\"real_8\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sim_burst:egw_over_rsquared\" Type=\"real_8\"/>\n", xml->fp);
+	fputs("\t<Table Name=\"sim_burst:table\">\n", xml->fp);
+	fputs("\t\t<Column Name=\"sim_burst:process_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sim_burst:waveform\" Type=\"lstring\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sim_burst:ra\" Type=\"real_8\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sim_burst:dec\" Type=\"real_8\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sim_burst:psi\" Type=\"real_8\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sim_burst:time_geocent_gps\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sim_burst:time_geocent_gps_ns\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sim_burst:time_geocent_gmst\" Type=\"real_8\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sim_burst:duration\" Type=\"real_8\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sim_burst:frequency\" Type=\"real_8\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sim_burst:bandwidth\" Type=\"real_8\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sim_burst:q\" Type=\"real_8\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sim_burst:pol_ellipse_angle\" Type=\"real_8\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sim_burst:pol_ellipse_e\" Type=\"real_8\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sim_burst:amplitude\" Type=\"real_8\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sim_burst:hrss\" Type=\"real_8\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sim_burst:egw_over_rsquared\" Type=\"real_8\"/>\n", xml->fp);
 	/* FIXME:  waveform is an unsigned long, but metaio doesn't support
 	 * int_8u columns */
-	XLALFilePuts("\t\t<Column Name=\"sim_burst:waveform_number\" Type=\"int_8s\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sim_burst:simulation_id\" Type=\"ilwd:char\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Stream Name=\"sim_burst:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
+	fputs("\t\t<Column Name=\"sim_burst:waveform_number\" Type=\"int_8s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sim_burst:simulation_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	fputs("\t\t<Stream Name=\"sim_burst:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
 	if(XLALGetBaseErrno())
 		XLAL_ERROR(func, XLAL_EFUNC);
 
@@ -1053,7 +1053,7 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 	for(; sim_burst; sim_burst = sim_burst->next) {
 		/* FIXME:  waveform is an unsigned long, but metaio doesn't
 		 * support int_8u columns */
-		if(XLALFilePrintf(xml->fp, "%s\"process:process_id:%ld\",\"%s\",%.16g,%.16g,%.16g,%d,%d,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%ld,\"sim_burst:simulation_id:%ld\"",
+		if(fprintf(xml->fp, "%s\"process:process_id:%ld\",\"%s\",%.16g,%.16g,%.16g,%d,%d,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%ld,\"sim_burst:simulation_id:%ld\"",
 			row_head,
 			sim_burst->process_id,
 			sim_burst->waveform,
@@ -1081,7 +1081,7 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 
 	/* table footer */
 
-	if(XLALFilePuts("\n\t\t</Stream>\n\t</Table>\n", xml->fp) < 0)
+	if(fputs("\n\t\t</Stream>\n\t</Table>\n", xml->fp) < 0)
 		XLAL_ERROR(func, XLAL_EFUNC);
 
 	/* done */
