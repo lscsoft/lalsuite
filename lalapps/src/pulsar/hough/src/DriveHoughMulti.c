@@ -1945,7 +1945,7 @@ void SelectBestStuff(LALStatus      *status,
   if (out->pgV == NULL) {
     out->pgV = (HOUGHPeakGramVector *)LALCalloc(1, sizeof(HOUGHPeakGramVector));
     out->pgV->length = mObsCohBest;
-    out->pgV->pg = (HOUGHPeakGram *)LALCalloc(1, mObsCoh*sizeof(HOUGHPeakGram));
+    out->pgV->pg = (HOUGHPeakGram *)LALCalloc(1, mObsCohBest*sizeof(HOUGHPeakGram));
   }
 
   index = LALCalloc(1, mObsCohBest*sizeof(size_t));  
