@@ -150,6 +150,71 @@ files.
   </lalLaTeX>
 #endif
 
+
+/**
+ * Convenience wrapper for MetaioFindColumn(), translating to XLAL-style
+ * error reporting and printing useful error messages on failure.  Returns
+ * the integer index of the column, or a negative integer if the column is
+ * not found.  If required is non-zero, then an XLAL error is reported if
+ * the column is missing, but if required is zero then no error is
+ * generated for missing columns.
+ */
+
+
+static int XLALLIGOLwFindColumn(
+	struct MetaioParseEnvironment *env,
+	const char *name,
+	int required
+)
+{
+	static const char func[] = "XLALLIGOLwFindColumn";
+	int pos = MetaioFindColumn(env, name);
+	if(pos < 0 && required) {
+		XLALPrintError("%s(): missing required column \"%s\"\n", func, name);
+		XLAL_ERROR(func, XLAL_EIO);
+	}
+	return pos;
+}
+
+
+/**
+ * Convenience function to extract the integer part of an ilwd:char ID
+ * string with some error checking.
+ */
+
+
+static long XLALLIGOLwParseIlwdChar(
+	const struct MetaioParseEnvironment *env,
+	int column_number,
+	const char *ilwd_char_table_name,
+	const char *ilwd_char_column_name
+)
+{
+	static const char func[] = "XLALLIGOLwParseIlwdChar";
+	char *fmt;
+	const char *ilwd_char = (char *) env->ligo_lw.table.elt[column_number].data.ilwd_char.data;
+	long id;
+
+	/* +1 for the '\0', +2 for the ':' characters, and +4 for the
+	 * "%%ld" string */
+	fmt = malloc(strlen(ilwd_char_table_name) + strlen(ilwd_char_column_name) + 7);
+	if(!fmt)
+		XLAL_ERROR(func, XLAL_ENOMEM);
+
+	sprintf(fmt, "%s:%s:%%ld", ilwd_char_table_name, ilwd_char_column_name);
+
+	if(sscanf(ilwd_char, fmt, &id) < 1) {
+		free(fmt);
+		XLALPrintError("%s(): invalid %s \"%s\" for %s\n", func, ilwd_char_column_name, ilwd_char, ilwd_char_table_name);
+		XLAL_ERROR(func, XLAL_EIO);
+	}
+
+	free(fmt);
+
+	return id;
+}
+
+
 #define XLAL_CLOBBER_EVENTS \
   while ( eventHead ); \
 { \
@@ -724,64 +789,6 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
 
 
 /**
- * Convenience wrapper for MetaioFindColumn(), translating to XLAL-style
- * error reporting and printing useful error messages on failure.
- */
-
-
-static int XLALLIGOLwFindColumn(
-	struct MetaioParseEnvironment *env,
-	const char *name,
-	int required
-)
-{
-	static const char func[] = "XLALLIGOLwFindColumn";
-	int pos = MetaioFindColumn(env, name);
-	if(pos < 0 && required) {
-		XLALPrintError("missing required column '%s'\n", name);
-		XLAL_ERROR(func, XLAL_EIO);
-	}
-	return pos;
-}
-
-
-/**
- * Convenience function to extract the integer part of an ilwd:char ID
- * string with some error checking.
- */
-
-
-static long XLALLIGOLwParseIlwdChar(
-	const struct MetaioParseEnvironment *env,
-	int column_number,
-	const char *ilwd_char_table_name,
-	const char *ilwd_char_column_name
-)
-{
-	static const char func[] = "XLALLIGOLwParseIlwdChar";
-	char *fmt;
-	const char *ilwd_char = (char *) env->ligo_lw.table.elt[column_number].data.ilwd_char.data;
-	long id;
-
-	fmt = malloc(strlen(ilwd_char_table_name) + strlen(ilwd_char_column_name) + 7);
-	if(!fmt)
-		XLAL_ERROR(func, XLAL_ENOMEM);
-
-	sprintf(fmt, "%s:%s:%%ld", ilwd_char_table_name, ilwd_char_column_name);
-
-	if(sscanf(ilwd_char, fmt, &id) < 1) {
-		free(fmt);
-		XLALPrintError("invalid %s '%s'\n", ilwd_char_column_name, ilwd_char);
-		XLAL_ERROR(func, XLAL_EIO);
-	}
-
-	free(fmt);
-
-	return id;
-}
-
-
-/**
  * Read the sngl_burst table from a LIGO Light Weight XML file into a
  * linked list of SnglBurst structures.
  */
@@ -817,12 +824,12 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 	/* open the file and find table */
 
 	if(MetaioOpenFile(&env, filename)) {
-		XLALPrintError("error opening '%s'\n", filename);
+		XLALPrintError("%s(): error opening \"'%s\"\n", func, filename);
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
 	if(MetaioOpenTableOnly(&env, "sngl_burst")) {
 		MetaioAbort(&env);
-		XLALPrintError("cannot find sngl_burst table\n");
+		XLALPrintError("%s(): cannot find sngl_burst table\n", func);
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
 
@@ -849,7 +856,7 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 
 	if(XLALGetBaseErrno()) {
 		MetaioAbort(&env);
-		XLALPrintError("failure reading sngl_burst table\n");
+		XLALPrintError("%s(): failure reading sngl_burst table\n", func);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 
@@ -898,7 +905,7 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 	if(miostatus < 0) {
 		XLALDestroySnglBurstTable(head);
 		MetaioAbort(&env);
-		XLALPrintError("I/O error parsing sngl_burst table\n");
+		XLALPrintError("%s(): I/O error parsing sngl_burst table\n", func);
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
 
@@ -906,7 +913,7 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 
 	if(MetaioClose(&env)) {
 		XLALDestroySnglBurstTable(head);
-		XLALPrintError("error parsing document after sngl_burst table\n");
+		XLALPrintError("%s(): error parsing document after sngl_burst table\n", func);
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
 
@@ -960,12 +967,12 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 	/* open the file and find table */
 
 	if(MetaioOpenFile(&env, filename)) {
-		XLALPrintError("error opening '%s'\n", filename);
+		XLALPrintError("%s(): error opening \"%s\"\n", func, filename);
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
 	if(MetaioOpenTableOnly(&env, "sim_burst")) {
 		MetaioAbort(&env);
-		XLALPrintError("cannot find sim_burst table\n");
+		XLALPrintError("%s(): cannot find sim_burst table\n", func);
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
 
@@ -996,7 +1003,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 
 	if(XLALGetBaseErrno()) {
 		MetaioAbort(&env);
-		XLALPrintError("failure reading sim_burst table\n");
+		XLALPrintError("%s(): failure reading sim_burst table\n", func);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 
@@ -1040,7 +1047,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 			if(column_pos.duration < 0 || column_pos.frequency < 0 || column_pos.amplitude < 0) {
 				XLALDestroySimBurstTable(head);
 				MetaioAbort(&env);
-				XLALPrintError("missing required column in sim_burst table\n");
+				XLALPrintError("%s(): missing required column in sim_burst table\n", func);
 				XLAL_ERROR_NULL(func, XLAL_EIO);
 			}
 			row->duration = env.ligo_lw.table.elt[column_pos.duration].data.real_8;
@@ -1050,7 +1057,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 			if(column_pos.duration < 0 || column_pos.frequency < 0 || column_pos.bandwidth < 0 || column_pos.q < 0 || column_pos.pol_ellipse_angle < 0 || column_pos.pol_ellipse_e < 0 || column_pos.hrss < 0) {
 				XLALDestroySimBurstTable(head);
 				MetaioAbort(&env);
-				XLALPrintError("missing required column in sim_burst table\n");
+				XLALPrintError("%s(): missing required column in sim_burst table\n", func);
 				XLAL_ERROR_NULL(func, XLAL_EIO);
 			}
 			row->duration = env.ligo_lw.table.elt[column_pos.duration].data.real_8;
@@ -1064,7 +1071,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 			if(column_pos.duration < 0 || column_pos.frequency < 0 || column_pos.bandwidth < 0 || column_pos.egw_over_rsquared < 0 || column_pos.waveform_number < 0) {
 				XLALDestroySimBurstTable(head);
 				MetaioAbort(&env);
-				XLALPrintError("missing required column in sim_burst table\n");
+				XLALPrintError("%s(): missing required column in sim_burst table\n", func);
 				XLAL_ERROR_NULL(func, XLAL_EIO);
 			}
 			row->duration = env.ligo_lw.table.elt[column_pos.duration].data.real_8;
@@ -1078,7 +1085,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 			/* unrecognized waveform */
 			XLALDestroySimBurstTable(head);
 			MetaioAbort(&env);
-			XLALPrintError("unrecognized waveform '%s' in sim_burst table\n", row->waveform);
+			XLALPrintError("%s(): unrecognized waveform \"%s\" in sim_burst table\n", func, row->waveform);
 			XLAL_ERROR_NULL(func, XLAL_EIO);
 		}
 
@@ -1097,7 +1104,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 	if(miostatus < 0) {
 		XLALDestroySimBurstTable(head);
 		MetaioAbort(&env);
-		XLALPrintError("I/O error parsing sim_burst table\n");
+		XLALPrintError("%s(): I/O error parsing sim_burst table\n", func);
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
 
@@ -1105,7 +1112,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 
 	if(MetaioClose(&env)) {
 		XLALDestroySimBurstTable(head);
-		XLALPrintError("error parsing document after sim_burst table\n");
+		XLALPrintError("%s(): error parsing document after sim_burst table\n", func);
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
 
