@@ -1057,6 +1057,82 @@ int XLALWriteLIGOLwXMLProcessParamsTable(
 
 
 /**
+ * Write a search_summary table to an XML file.
+ */
+
+
+int XLALWriteLIGOLwXMLSearchSummaryTable(
+	LIGOLwXMLStream *xml,
+	const SearchSummaryTable *search_summary
+)
+{
+	static const char func[] = "XLALWriteLIGOLwXMLSearchSummaryTable";
+	const char *row_head = "\n\t\t\t";
+
+	if(xml->table != no_table) {
+		XLALPrintError("a table is still open");
+		XLAL_ERROR(func, XLAL_EFAILED);
+	}
+
+	/* table header */
+
+	XLALClearErrno();
+	fputs("\t<Table Name=\"search_summary:table\">\n", xml->fp);
+	fputs("\t\t<Column Name=\"search_summary:process_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"search_summary:shared_object\" Type=\"lstring\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"search_summary:lalwrapper_cvs_tag\" Type=\"lstring\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"search_summary:lal_cvs_tag\" Type=\"lstring\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"search_summary:comment\" Type=\"lstring\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"search_summary:ifos\" Type=\"lstring\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"search_summary:in_start_time\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"search_summary:in_start_time_ns\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"search_summary:in_end_time\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"search_summary:in_end_time_ns\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"search_summary:out_start_time\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"search_summary:out_start_time_ns\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"search_summary:out_end_time\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"search_summary:out_end_time_ns\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"search_summary:nevents\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"search_summary:nnodes\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Stream Name=\"search_summary:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
+	if(XLALGetBaseErrno())
+		XLAL_ERROR(func, XLAL_EFUNC);
+
+	/* rows */
+
+	for(; search_summary; search_summary = search_summary->next) {
+		if(fprintf(xml->fp, "%s\"process:process_id:0\",\"standalone\",\"\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
+			row_head,
+			lalCVSTag,
+			search_summary->comment,
+			search_summary->ifos,
+			search_summary->in_start_time.gpsSeconds,
+			search_summary->in_start_time.gpsNanoSeconds,
+			search_summary->in_end_time.gpsSeconds,
+			search_summary->in_end_time.gpsNanoSeconds,
+			search_summary->out_start_time.gpsSeconds,
+			search_summary->out_start_time.gpsNanoSeconds,
+			search_summary->out_end_time.gpsSeconds,
+			search_summary->out_end_time.gpsNanoSeconds,
+			search_summary->nevents,
+			search_summary->nnodes
+		) < 0)
+			XLAL_ERROR(func, XLAL_EFUNC);
+		row_head = ",\n\t\t\t";
+	}
+
+	/* table footer */
+
+	if(fputs("\n\t\t</Stream>\n\t</Table>\n", xml->fp) < 0)
+		XLAL_ERROR(func, XLAL_EFUNC);
+
+	/* done */
+
+	return 0;
+}
+
+
+/**
  * Write a sngl_burst table to an XML file.
  */
 

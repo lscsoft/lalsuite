@@ -171,6 +171,11 @@ int XLALWriteLIGOLwXMLProcessParamsTable(
 	const ProcessParamsTable *
 );
 
+int XLALWriteLIGOLwXMLSearchSummaryTable(
+	LIGOLwXMLStream *,
+	const SearchSummaryTable *
+);
+
 int XLALWriteLIGOLwXMLSnglBurstTable(
 	LIGOLwXMLStream *,
 	const SnglBurst *
