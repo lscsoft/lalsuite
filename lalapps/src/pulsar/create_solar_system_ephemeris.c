@@ -1,5 +1,6 @@
 /*
-*  Copyright (C) 2008 Matt Pitkin
+*  Copyright (C) 2008 Matt Pitkin, Curt Cutler, E. Miles Standish, David
+*  Hoffman.
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -69,7 +70,10 @@
                      (in integer hours)\n"\
 " --overlap           number of days overlap with previous and next year\n"\
 " --target            the target solar system body (e.g. SUN, EARTH)\n"\
+" --test              compare output with current ephemeris files\n"\
 "\n"
+
+#define TESTFAIL 11
 
 /* struct for the binary header records (adpated from
 http://www.projectpluto.com/jpl_eph.htm file ephem_types.h) */
@@ -121,13 +125,14 @@ REAL8 Tbeg=0., Tend=0., Tspan=0.;
 
 /* global variables */
 INT4 verbose=0;
+INT4 test=0;
 
 INT4 ARRAY_SIZE=0;
 REAL8 coeffArray[10000]; 
 
 /* function to convert a GPS time in JD to TDB (similar to my routine
 LALTDBMJDtoGPS */
-void convert(REAL8 *gps_JD, REAL8 *ET);
+void convert(REAL8 *gps_JD, REAL8 *time);
 
 /* function to read the record length of the binary file - this differs for
    different ephemeris files (equivalent to Standish's FSIZER2 */
@@ -137,11 +142,11 @@ INT4 fsizer(FILE *fp);
 void endian_swap(CHAR *pdata, size_t dsize, size_t nelements);
 
 /* function to read in coefficients from the ephemeris file for a give time */
-void read_coeffs(REAL8 time, FILE *fp);
+void read_coeffs(REAL8 *time, FILE *fp);
 
-void interpolate_state(REAL8 time, INT4 target, REAL8 *state, FILE *fp);
+void interpolate_state(REAL8 *time, INT4 target, REAL8 *state, FILE *fp);
 
-void pleph(REAL8 time, INT4 target, REAL8 *state, FILE *fp);
+void pleph(REAL8 *time, INT4 target, REAL8 *state, FILE *fp);
 
 /* function to get the input arguments from the command line */
 void get_input_args(inputParams *inputParams, INT4 argc, CHAR *argv[]);
@@ -154,7 +159,7 @@ int main(int argc, char **argv){
   REAL8 jd_2000=2451544.5;
   INT4 gps=0, gps_2000=630720000, gps_yr=0, gps_start=0;
   REAL8 fgps=0.; /* float version of gps */
-  REAL8 ET[2], R[6], A[3], gps_JD[2], time=0.;
+  REAL8 time[2], R[6], A[3], gps_JD[2];
   REAL8 Vlast[3], Vnow[3], Vnext[3], Rnow[3];
   INT4 nyr=0, nhr=0;
 
@@ -172,10 +177,45 @@ int main(int argc, char **argv){
 
   INT4 i=0;
 
+  CHAR *lalpath=NULL, earthEphem[256];
+  REAL8 pos[3], vel[3], acc[3], title[3];
+
   inputParams inputs;
 
   /* get input parameters */
   get_input_args(&inputs, argc, argv);
+
+  if(test){
+    if(verbose)
+      fprintf(stderr, "Performing test against the existing ephemeris.\n");
+
+    /* get the path to LAL from the environment variables */
+    if((lalpath = getenv("LAL_PREFIX")) == NULL){
+      if((lalpath = getenv("LAL_LOCATION")) == NULL){
+        fprintf(stderr, "No LAL location environment variable set. Cannot\
+ perform test!\n");
+      }
+      return TESTFAIL;
+    }
+
+    /* set the name of one of the earth ephemeris files in LAL */
+    sprintf(earthEphem, "%s/lal/packages/pulsar/test/earth98.dat", lalpath);
+
+    /* set other inputs */
+    sprintf(inputs.ephemfile, "%s/lal/packages/pulsar/test/DE405.1950.2050",
+      lalpath);
+    inputs.targName="EARTH";
+    inputs.target = EARTH;
+    inputs.year = 1998;
+    inputs.nhre = 4;
+    inputs.noverlap = 10;
+
+    if((fpe = fopen(earthEphem, "r")) == NULL){
+      fprintf(stderr, "Error... couldn't open file %s for reading!\n",
+      earthEphem);
+      return TESTFAIL;
+    }
+  }
 
   if(verbose){
     fprintf(stderr, "Input information:\n");
@@ -225,16 +265,32 @@ inputs.noverlap);
   coeffArray = (REAL8*)calloc(ARRAY_SIZE, sizeof(REAL8));
 
   /* get first set of coefficients from ephemeris file */
-  time=0.;
+  /*time=0.; */
+  time[0] = 0.;
+  time[1] = 0.;
   read_coeffs(time, fp);
 
-  /* open the Earth and Sun files for writing */
-  if((fpe = fopen(inputs.outputfile, "w")) == NULL){
-    fprintf(stderr, "Error... can't open output ephemeris file for writing!\n");
-    exit(1);
+  if(test){
+    fscanf(fpe, "%lf%lf%lf", &title[0], &title[1], &title[2]);
+    
+    /* check that values are the same as in the existing ephemeris file */
+    if(gps_yr - title[0] != 0. || inputs.nhre*hour - title[1] != 0. ||
+       nentries_e - title[2] != 0.){
+      fprintf(stderr, "Start time, or length of ephemeris is not the same as \
+in the existing file!\n");
+      return TESTFAIL;
+    }
   }
+  else{
+    /* open the Earth and Sun files for writing */
+    if((fpe = fopen(inputs.outputfile, "w")) == NULL){
+      fprintf(stderr, "Error... can't open output ephemeris file for \
+writing!\n");
+      exit(1);
+    }
 
-  fprintf(fpe, "\t%d\t%lf\t%d\n", gps_yr, inputs.nhre*hour, nentries_e);
+    fprintf(fpe, "\t%d\t%lf\t%d\n", gps_yr, inputs.nhre*hour, nentries_e);
+  }
 
   nhr = inputs.nhre;
 
@@ -246,8 +302,7 @@ inputs.noverlap);
 
   gps = gps_2000 + (gps_JD[0] - jd_2000)*day;
   
-  convert(gps_JD, ET);
-  time = ET[0] + ET[1]; /* put time into one variable */
+  convert(gps_JD, time);
   
   pleph(time, inputs.target, R, fp);
 
@@ -261,8 +316,7 @@ inputs.noverlap);
   gps_JD[0] = gps_JD_start1 - 1.;
   gps_JD[1] = 1. - halfinterval_jd;
 
-  convert(gps_JD, ET);
-  time = ET[0] + ET[1];
+  convert(gps_JD, time);
 
   /* get values of velocity around present time to calculate the accelerations
   */
@@ -274,8 +328,7 @@ inputs.noverlap);
   gps_JD[0] = gps_JD_start1;
   gps_JD[1] = halfinterval_jd;
   
-  convert(gps_JD, ET);
-  time = ET[0] + ET[1];
+  convert(gps_JD, time);
   
   pleph(time, inputs.target, R, fp);
   Vnext[0] = R[3];
@@ -289,10 +342,26 @@ inputs.noverlap);
 
   fgps = (REAL8)gps;
 
-  fprintf(fpe,
+  if(test){
+    /* compare the ephemeris positions, velocites and accelerations */
+    fscanf(fpe, "%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf", &fgps, &pos[0], &pos[1],
+      &pos[2], &vel[0], &vel[1], &vel[2], &acc[0], &acc[1], &acc[2]);
+    if(fabs(Rnow[0]-pos[0]) > 1e-12 || fabs(Rnow[1]-pos[1]) > 1e-12 ||
+      fabs(Rnow[2]-pos[2]) > 1e-12 || fabs(Vnow[0]-vel[0]) > 1e-19 || 
+      fabs(Vnow[1]-vel[1]) > 1e-19 || fabs(Vnow[2]-vel[2]) > 1e-19 ||
+      fabs(A[0]-acc[0]) > 1e-23 || fabs(A[1]-acc[1]) > 1e-23 || 
+      fabs(A[2]-acc[2]) > 1e-23){
+      fprintf(stderr, "Position, velocity or acceleration is not the same as \
+in the exiting ephmeris file.\n");
+        return TESTFAIL;
+    }
+  }
+  else{
+    fprintf(fpe,
 "\t%.7lf\t%.15lf\t%.15lf\n\t%.15lf\t%.16le\t%.16le\n\t%.16le\t%.16le\t%.16le\n\
 \t%.16le\n", fgps, Rnow[0], Rnow[1], Rnow[2], Vnow[0], Vnow[1], Vnow[2],
 A[0], A[1], A[2]);
+  }
 
   /* reset Vnext to Vlast */
   Vlast[0] = Vnext[0];
@@ -312,8 +381,7 @@ A[0], A[1], A[2]);
 
     gps = gps_2000 + (gps_JD[0] - jd_2000)*day + (INT4)(gps_JD[1]*day + 1.e-4);
 /* the int call and 1.d-4 are just to make sure gps is the ``right'' integer*/
-    convert(gps_JD, ET);
-    time = ET[0] + ET[1];
+    convert(gps_JD, time);
 
     pleph(time, inputs.target, R, fp);
     Rnow[0] = R[0];
@@ -329,8 +397,7 @@ A[0], A[1], A[2]);
       gps_JD[0] += 1.;
     }
 
-    convert(gps_JD, ET);
-    time = ET[0] + ET[1];
+    convert(gps_JD, time);
 
     pleph(time, inputs.target, R, fp);
     Vnext[0] = R[3];
@@ -342,10 +409,26 @@ A[0], A[1], A[2]);
 
     fgps = (REAL8)gps;
 
-    fprintf(fpe,
+    if(test){
+      /* compare the ephemeris positions, velocites and accelerations */
+      fscanf(fpe, "%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf", &fgps, &pos[0], &pos[1],
+        &pos[2], &vel[0], &vel[1], &vel[2], &acc[0], &acc[1], &acc[2]);
+      if(fabs(Rnow[0]-pos[0]) > 1e-12 || fabs(Rnow[1]-pos[1]) > 1e-12 ||
+         fabs(Rnow[2]-pos[2]) > 1e-12 || fabs(Vnow[0]-vel[0]) > 1e-19 || 
+         fabs(Vnow[1]-vel[1]) > 1e-19 || fabs(Vnow[2]-vel[2]) > 1e-19 ||
+         fabs(A[0]-acc[0]) > 1e-23 || fabs(A[1]-acc[1]) > 1e-23 || 
+         fabs(A[2]-acc[2]) > 1e-23){
+        fprintf(stderr, "Position, velocity or acceleration is not the same as \
+in the exiting ephmeris file.\n");
+        return TESTFAIL;
+      }
+    }
+    else{
+      fprintf(fpe,
 "\t%.7lf\t%.15lf\t%.15lf\n\t%.15lf\t%.16le\t%.16le\n\t%.16le\t%.16le\t%.16le\n\
-\t%.16le\n", fgps, Rnow[0], Rnow[1], Rnow[2], Vnow[0], Vnow[1], Vnow[2],
-A[0], A[1], A[2]);
+\t%.16le\n", fgps, Rnow[0], Rnow[1], Rnow[2], Vnow[0], Vnow[1], Vnow[2], A[0],
+A[1], A[2]);
+    }
 
     /* reset Vnext to Vlast */
     Vlast[0] = Vnext[0];
@@ -439,7 +522,7 @@ INT4 fsizer(FILE *fp){
   return size;
 }
 
-void convert(REAL8 *gps_JD, REAL8 *ET){
+void convert(REAL8 *gps_JD, REAL8 *time){
   REAL8 g=0.;
   REAL8 tdt2=0.;
   REAL8 diff=0., diff1=0.;
@@ -450,24 +533,24 @@ void convert(REAL8 *gps_JD, REAL8 *ET){
   diff = diff1+tdt2;
   g = 6.24008 + 0.017202*diff;
 
-  ET[0] = gps_JD[0];
-  ET[1] = tdt2 + (0.001658*sin(g) + 1.4e-5*sin(2.*g))/86400.;
+  time[0] = gps_JD[0];
+  time[1] = tdt2 + (0.001658*sin(g) + 1.4e-5*sin(2.*g))/86400.;
 
-  if(ET[1] >= 1.){
-    ET[1] = ET[1] - 1.;
-    ET[0] = ET[0] + 1.;
+  if(time[1] >= 1.){
+    time[1] = time[1] - 1.;
+    time[0] = time[0] + 1.;
   }
 }
 
 /* this is taken from David Hoffman's ephem_read functions from
    http://www.projectpluto.com/jpl_eph.htm */
-void read_coeffs(REAL8 time, FILE *fp){
+void read_coeffs(REAL8 *time, FILE *fp){
   REAL8 Tdelta = 0.;
   INT4 offset = 0;
 
   /* for first time in this time should be set to zero to read in the first set
      of coefficients */
-  if( time == 0. ){
+  if( time[0] == 0. ){
     fread(&coeffArray, sizeof(REAL8), ARRAY_SIZE, fp);
 
     /* swap bits */
@@ -487,13 +570,13 @@ void read_coeffs(REAL8 time, FILE *fp){
     /* find the record in the file that contains the input time conpared to the
        previous record (which gave the values of Tbeg and Tend) */
 
-    if( time < Tbeg ){ /* this will be backwards from last point */
-      Tdelta = Tbeg - time;
+    if( time[0]+time[1] < Tbeg ){ /* this will be backwards from last point */
+      Tdelta = Tbeg - time[0] + time[1];
       offset = -(INT4)ceil(Tdelta/Tspan);
     }
 
-    if( time > Tend ){
-      Tdelta = time - Tend;
+    if( time[0]+time[1] > Tend ){
+      Tdelta = time[0] - Tend + time[1];
       offset = (INT4)ceil(Tdelta/Tspan);
     }
 
@@ -511,7 +594,7 @@ void read_coeffs(REAL8 time, FILE *fp){
   }
 }
 
-void pleph(REAL8 time, INT4 target, REAL8 *state, FILE *fp){
+void pleph(REAL8 *time, INT4 target, REAL8 *state, FILE *fp){
   REAL8 stateTemp[6];  
 
   INT4 i=0;
@@ -561,7 +644,7 @@ void pleph(REAL8 time, INT4 target, REAL8 *state, FILE *fp){
 /* this function will compute the position and velocity vector of a given
 planetary body from the Chebyshev coefficients - it does not compute nutations
 of librations */
-void interpolate_state(REAL8 time, INT4 target, REAL8 *state, FILE *fp){
+void interpolate_state(REAL8 *time, INT4 target, REAL8 *state, FILE *fp){
   REAL8 A[50], B[50], Cp[50], Psum[3], Vsum[3], Up[50];
   REAL8 Tbreak = 0., Tseg = 0., Tsub=0., Tc=0.;
 
@@ -575,7 +658,7 @@ void interpolate_state(REAL8 time, INT4 target, REAL8 *state, FILE *fp){
   }
 
   /* determin if we need a new record to be read, or if the current one is OK */
-  if( time < Tbeg || time > Tend) read_coeffs(time, fp);
+  if( time[0]+time[1] < Tbeg || time[0]+time[1] > Tend) read_coeffs(time, fp);
 
   /* read coefficients from the header record */
   C = head1.data.ipt[target][0] - 1;        /* coeff array entry point */
@@ -584,7 +667,8 @@ void interpolate_state(REAL8 time, INT4 target, REAL8 *state, FILE *fp){
 
   /* compute the normalised time of the Chebyshev polynomials */
   if ( G == 1 ){
-    Tc = 2.*(time - Tbeg)/Tspan - 1.;
+    /* Tc = 2.*(time - Tbeg)/Tspan - 1.;*/
+    Tc = (2.*(time[0]-Tbeg)/Tspan) + (2.*time[1]/Tspan) - 1.;
     
     for (i=C ; i<(C+3*N) ; i++)  A[i-C] = coeffArray[i];
   }
@@ -594,14 +678,15 @@ void interpolate_state(REAL8 time, INT4 target, REAL8 *state, FILE *fp){
     for ( j=G ; j>0 ; j-- ){
       Tbreak = Tbeg + ((REAL8) j-1) * Tsub;
       
-      if ( time > Tbreak ){
+      if ( time[0]+time[1] > Tbreak ){
         Tseg  = Tbreak;
         offset = j-1;
         break;
       }
     }
             
-    Tc = 2.*(time - Tseg)/Tsub - 1.;
+    /* Tc = 2.*(time - Tseg)/Tsub - 1.; */
+    Tc = (2.*(time[0] - Tseg)/Tsub) + (2.*time[1]/Tsub) - 1.;
     C  = C + 3 * offset * N;
        
     for (i=C ; i<(C+3*N) ; i++) A[i-C] = coeffArray[i];
@@ -636,13 +721,11 @@ data.\n");
     state[i] = Psum[i];
     state[i+3] = Vsum[i]*2.*((REAL8) G)/(Tspan);
   }
-
-  /* fprintf(stderr, "%lf %lf %lf\n", Psum[0], Psum[1], Psum[2]); */
 }
 
 
 /* a little endian-swapper */
-void endian_swap(CHAR * pdata, size_t dsize, size_t nelements){
+void endian_swap(CHAR *pdata, size_t dsize, size_t nelements){
   UINT4 i, j, indx;
   CHAR tempbyte;
 
@@ -676,6 +759,7 @@ void get_input_args(inputParams *inputParams, INT4 argc, CHAR *argv[]){
     { "interval",      required_argument, 0, 'i'},
     { "overlap",       required_argument, 0, 'n'},
     { "target",        required_argument, 0, 't'},
+    { "test",          no_argument, &test, 1},
     { 0, 0, 0, 0 }
   };
 
