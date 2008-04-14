@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2008 Matt Pitkin, Curt Cutler, E. Miles Standish, David
+*  Copyright (C) 2008 Matt Pitkin, Curt Cutler, E. Myles Standish, David
 *  Hoffman.
 *
 *  This program is free software; you can redistribute it and/or modify
