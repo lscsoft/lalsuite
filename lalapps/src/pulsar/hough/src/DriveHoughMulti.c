@@ -36,9 +36,7 @@
    using the Hough transform.  For a single IFO, this should be essentially equivalent 
    to DriveHough_v3.  validatehoughmultichi2
 
-   The main difference between DriveHoughMulti_S5.c and DriveHoughMulti.c is that in the 
-   first one the cylinder is been modified so that one can really do nfsize cylinder  f_dot
-   values and not just half. This code just does spin-downs values. 
+   This code just does spin-downs values. 
 
    \par User input
 
@@ -979,22 +977,22 @@ LAL_CALL( LALRegisterINTUserVar(    &status, "spindownJump",       0,  UVAR_OPTI
 
 
 	      /* ********************* perfom stat. analysis on the maps ****************** */
-	      LAL_CALL( LALHoughStatistics ( &status, &stats, &ht), &status );
-	      LAL_CALL( LALStereo2SkyLocation (&status, &sourceLocation, 
-				       stats.maxIndex[0], stats.maxIndex[1], &patch, &parDem), &status);
-
+	      
 	      if ( uvar_EnableExtraInfo ) {
 
+		LAL_CALL( LALHoughStatistics ( &status, &stats, &ht), &status );
+	        LAL_CALL( LALStereo2SkyLocation (&status, &sourceLocation, 
+				       stats.maxIndex[0], stats.maxIndex[1], &patch, &parDem), &status);
+		
 		/*LAL_CALL( LALHoughHistogram ( &status, &hist, &ht), &status);*/
 		LAL_CALL( LALHoughHistogramSignificance ( &status, hist, &ht, meanN, sigmaN, 
 							  minSignificance, maxSignificance), &status);
 
 		for(j = 0; j < histTotal->length; j++){ 
 		  histTotal->data[j] += hist->data[j]; 
-		}	      
-	      }
-
-	      significance =  (stats.maxCount - meanN)/sigmaN;	      
+		}
+		significance =  (stats.maxCount - meanN)/sigmaN;   
+	      }	      	      
 
 	      /* select candidates from hough maps */
 	      LAL_CALL( GetToplistFromHoughmap( &status, toplist, &ht, &patch, &parDem, meanN, sigmaN), &status);
@@ -1769,12 +1767,13 @@ void SetUpSkyPatches(LALStatus           *status,
       out->alphaSize[skyCounter] = dAlpha;
       out->deltaSize[skyCounter] = dDelta;
       
-      if ((dopplerpos.Delta>0) && (dopplerpos.Delta < atan(4*LAL_PI/dAlpha/dDelta) ))
+      /*  if ((dopplerpos.Delta>0) && (dopplerpos.Delta < atan(4*LAL_PI/dAlpha/dDelta) ))
         out->alphaSize[skyCounter] = dAlpha*cos(dopplerpos.Delta -0.5*dDelta)/cos(dopplerpos.Delta);
 
       if ((dopplerpos.Delta<0) && (dopplerpos.Delta > -atan(4*LAL_PI/dAlpha/dDelta) ))
         out->alphaSize[skyCounter] = dAlpha*cos(dopplerpos.Delta +0.5*dDelta)/cos(dopplerpos.Delta);
-      
+      */      
+
       XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
       skyCounter++;
       
