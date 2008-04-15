@@ -182,7 +182,7 @@ tagBinaryPulsarParams
 
   /* orbital frequency coefficients for BTX model (only for one orbit at the
      moment i.e. a two body system) */
-  REAL8 fb[6]; /* have up to 6 coefficients */
+  REAL8 fb[12]; /* have up to 12 coefficients */
   INT4 nfb; /* the number of fb coefficients */
 
   /******** errors read in from a .par file **********/
@@ -229,7 +229,7 @@ tagBinaryPulsarParams
   REAL8 MErr;
   REAL8 m2Err;
 
-  REAL8 fbErr[6];
+  REAL8 fbErr[12];
 
 }BinaryPulsarParams;
 
