@@ -426,6 +426,8 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
   elif vetoCat:
     hipeCommand = test_and_add_hipe_arg(hipeCommand,"second-coinc")
     hipeCommand = test_and_add_hipe_arg(hipeCommand,"coire-second-coinc")
+    hipeCommand = test_and_add_hipe_arg(hipeCommand,"summary-coinc-triggers")
+
   else:
     omit = ["datafind", "disable-dag-categories", "disable-dag-priorities"]
     for (opt, arg) in config.items("hipe-arguments"):
@@ -447,7 +449,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
 
   # make hipe job/node
   hipeDag = iniFile.rstrip("ini") + usertag + ".dag"
-  hipeJob = pipeline.CondorDAGManJob(hipeDir + "/" + hipeDag)
+  hipeJob = pipeline.CondorDAGManJob(hipeDag, hipeDir)
   if vetoCat: hipeJob.add_opt("maxjobs", "5")
   hipeNode = pipeline.CondorDAGNode(hipeJob)
 
@@ -591,7 +593,7 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
 
   # make hipe job/node
   plotDag = iniFile.rstrip("ini") + usertag + ".dag"
-  plotJob = pipeline.CondorDAGManJob(plotDir + "/" + plotDag)
+  plotJob = pipeline.CondorDAGManJob(plotDag, plotDir)
   plotJob.add_opt("maxjobs", "2")
   plotNode = pipeline.CondorDAGNode(plotJob)
 
@@ -675,7 +677,7 @@ def followup_setup(followupDir, config, opts, hipeDir):
   f.close()
 
   # add job to dag
-  followupJob = pipeline.CondorDAGManJob(followupDir + "/" + followupDag)
+  followupJob = pipeline.CondorDAGManJob(followupDag,followupDir)
   followupNode = pipeline.CondorDAGNode(followupJob)
 
   # write the pre-script to run lalapps_followup_pipe at the appropriate time
@@ -704,6 +706,8 @@ def fix_rescue(dagNode):
 
   dagNode = the node for the subdag
   """
+  if not os.path.isfile("rescue.sh"):
+    os.symlink("../rescue.sh", "rescue.sh")
   dagNode.set_post_script( "rescue.sh")
   dagNode.add_post_script_arg( "$RETURN" )
   dagNode.add_post_script_arg( dagNode.job().get_sub_file().rstrip(".condor.sub") )
@@ -721,10 +725,12 @@ def write_rescue():
 
   if (( ${1}>0 ))
   then
-    DIR=${2%/*}
-    DAG=${2##*/}
-    mv ${2} ${2}.orig
-    `sed "s+DIR ${DIR}++g" ${DAG}.rescue > ${2}`
+    file=${2}
+    if [ -f ${file}.rescue ]
+    then
+      mv ${file} ${file}.orig
+      mv ${file}.rescue ${file}
+    fi
     exit ${1}
   fi""")
   f.close()
